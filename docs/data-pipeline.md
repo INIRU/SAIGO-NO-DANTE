@@ -4,6 +4,43 @@
 
 2026-09-12부터 추가 로케일 입력은 사용자의 [최애의 관리자/assets/26.09.12](https://drive.google.com/drive/folders/1f81Nt5q-w_fm7Utf1SXbGsZvHRZ0mKnC)에 있는 `Localize.zip`을 사용한다. 기존 복구 입력은 보존한다.
 
+## 어시스트 이미지 인식
+
+`scripts/vision/build_embedding_index.py`는 기존 기프트·이벤트 아트를 ImageNet 사전학습 MobileNetV3-small의 동일한 인코더로 576차원 벡터화한다. `--input`, `--output-index`, `--output-model`을 지정하며, 로컬 아트를 재사용하려면 `--gift-dir`와 `--event-dir`를 전달한다. 출력은 `public/models/assist-scene/visual-encoder.onnx`와 `embedding-index.json`이다. 기프트 투명 영역은 어두운 배경에 합성하고 이벤트는 화면과 대응하는 그림 영역을 사용한다. Worker 수정 후 `npm run build:assist-worker`로 배포 번들을 갱신한다.
+
+화면은 로컬 Worker에서만 처리한다. 현재 장면 분류와 정해진 화면 영역의 이미지 임베딩을 함께 사용하고, 코사인 유사도 및 차순위와의 차이가 부족하면 후보를 내지 않는다. 후보는 3초 후 만료되며 획득·선택 기록은 사용자가 직접 처리한다. 같은 그림을 공유하는 이벤트는 복수 후보로 반환하고, 텍스트만 있는 선택지는 그림으로 식별하지 않는다. 벡터 검색은 브라우저의 로컬 인덱스에서 수행한다.
+
+현재 검증 범위는 본인 영상의 16:9 화면이다. 같은 영상에서 조정한 185개 검수 프레임의 실제 Chrome Worker 결과는 이벤트 15/18 프레임, 보상 기프트 6/20 프레임의 10개 후보, 상점 구매창 2/22 프레임의 2개 후보였다. 수락한 그림은 원본과 일치했으며, 비이벤트 167개에서는 이벤트 후보가 없었고 보상·상점 이외 143개에서는 기프트 후보가 없었다. 독립 영상의 일반 정확도가 아니며 상점 목록의 작은 아이콘·다른 배치·검은 여백이 있는 캡처는 아직 보장하지 않는다. `scripts/vision/evaluate_visual_worker.mjs`로 실제 Worker를 다시 평가하며 프레임과 상세 평가 자료는 로컬에 보관한다.
+
+### 화면 전체 OCR 보조 인식
+
+이미지 인식과 별도로 Tesseract.js Worker가 3초 간격으로 화면 전체의 글자를 읽는다. 실행 중에는 프레임을 추가로 쌓지 않으며, 언어별 모델·WASM·Worker는 `/models/assist-ocr/`에서 같은 출처로 제공한다. `npm run build:assist-ocr`로 번들과 언어 파일을 준비하며 일반 빌드에도 포함된다. 화면·OCR 원문을 서버로 보내거나 기록하지 않는다.
+
+읽은 글자는 기프트 이름, 이벤트 지문과 선택지 문구의 후보를 찾는 데만 사용한다. 짧은 일반 문구와 다른 이벤트가 공유하는 선택지는 보수적으로 제외한다. OCR 후보는 6초 후 만료되며 이미지 후보와 합치되 두 점수를 직접 비교하지 않는다. 획득과 선택 기록은 자동으로 변경하지 않는다. OCR 초기화에 실패해도 기존 이미지 인식은 계속된다.
+
+기프트 448개·이벤트 330개·선택지 736개의 실제 카탈로그로 본인 영상의 이벤트 두 장면, 보상 한 장면, 전투 한 장면을 확인했다. 이벤트 한 장면을 0.75배로 축소해 1800×1200 화면의 비중앙에 배치해도 같은 이벤트와 두 선택지를 찾았다. 보상에서는 두 기프트를 찾았고 전투에서는 후보가 없었다. 이는 제한된 장면의 회귀 검증이며 모든 해상도·언어·영상의 인식률을 뜻하지 않는다. 글자가 없거나 작은 아이콘만 있는 화면의 임의 위치 이미지 인식은 아직 해결되지 않았다.
+
+### 게임 원문 텍스트 임베딩
+
+`scripts/embeddings/`는 기프트 이름·강화별 효과, 이벤트 이름·지문, 선택지 문구·설명·결과를 ko/en/ja 각각 벡터화한다. 비어 있는 번역은 다른 언어로 대체하지 않는다. 입력 JSON은 `gifts`, `events`, `choices` 배열이며 기존 DB의 해당 행을 읽어 준비한다. 생성물과 모델은 저장소 밖에 보관한다.
+
+모델은 `intfloat/multilingual-e5-small`의 고정 revision `614241f622f53c4eeff9890bdc4f31cfecc418b3`이며 가중치 해시도 검증한다. 원문은 `passage:`, 검색문은 `query:` 접두사를 사용한다. 384 토큰 단위·32 토큰 겹침으로 긴 지문을 나누고 masked mean pooling과 L2 정규화로 384차원 벡터를 만든다. 이미지의 576차원 벡터와는 별도다. 원문·표시 텍스트·모델·토크나이저·전처리 버전을 기록하며 `--reuse-from`으로 변경되지 않은 벡터를 재사용한다.
+
+```bash
+python scripts/embeddings/build_text_embeddings.py \
+  --source <catalog.json> --model-dir <pinned-model-directory> \
+  --output-dir <new-private-output-directory> --dry-run
+# 생성 시 --dry-run 제거. 기존 벡터 재사용은 --reuse-from <previous-output-directory>.
+python scripts/embeddings/sync_text_embeddings.py --artifact <output-directory>
+# 검토 후 실제 동기화: ASSIST_DATABASE_URL 환경 변수와
+# --apply --expect-source-hash <manifest-source-sha256> 필요.
+python -m unittest discover -s scripts/embeddings -p 'test_*.py'
+```
+
+2026-09-23에는 기프트 448개·이벤트 330개·선택지 736개의 비어 있지 않은 원문 9,528개 필드를 9,530개 벡터로 생성해 `limbus.assist_text_embeddings`에 적재했다. 초기 적재는 기존 서버용 Supabase 클라이언트의 배치 upsert를 사용했으며 원본 테이블은 변경하지 않았다. DB 행 수·차원·정규화·접근 권한·검색 RPC를 확인했다. 동일 입력 재생성에서는 9,530개를 모두 재사용했고 결과 파일 해시가 같았다. 세 언어의 대표 원문 검색 12건이 해당 필드를 1위로 반환했지만 이는 화면 인식률을 뜻하지 않는다.
+
+현재 텍스트 벡터는 서버 전용 검색 자료다. 실시간 화면 OCR은 브라우저에서 처리하며 이 DB에 OCR 원문을 전송하거나 벡터 검색 결과로 자동 획득을 기록하지 않는다.
+
 ## 사용자 전체 추출본 준비
 
 현재 입력은 `~/Downloads/LimbusAssets` 폴더다. 이전에 잘못 압축한 `LimbusAssets_2026-09-19-full.zip`은 입력으로 사용하지 않는다. 새 입력의 `Reports/manifest.json`, `data-manifest.json`, `run.json`을 기준으로 이미지 7,138개와 JSON 8,122개(정적 데이터 1,587 / KR 2,177 / EN 2,171 / JP 2,187)를 검사한다. 추출 보고서의 `latestGameServerVersionVerified=false`이므로 추출 날짜를 최신 게임 서버 버전 검증으로 해석하지 않는다.
@@ -31,6 +68,8 @@ npx tsx scripts/sync/prepare-extracted-assets.ts \
 사용자가 지정한 iCloud `My Project/무제 폴더/theme-pack-image-work/`는 기존 테마팩 합성 작업 자료다. 저장소의 `scripts/assets/build-theme-packs.py`가 이미 사용하는 비닐·로고·보스·경고·배턴·극한 테두리 합성은 유지한다. `LIMBUS_EXTRACTED_ASSET_ROOT`를 지정하면 새 manifest의 원래 `name`과 `path`로 테마팩/보스 원본을 찾아 합성한다. 이름이 중복되거나 파일이 없으면 중단하며 한국어 폴더명을 추정하지 않는다.
 
 공통 오버레이 원본은 `MainUI_MirrorDungeon4_4.png`, `MainUI_MirrorDungeon6_17.png`, `Baton.png`다. 앞의 두 파일은 iCloud 작업 폴더의 `reference/composition_assets/`에 있고, 세 파일 모두 초기 복구 자료의 `theme-composition/`에 보존돼 있다. 새 묶음의 테마팩 이미지만으로는 공통 오버레이를 대체하지 않는다.
+
+어시스트의 선택 테두리는 Drive 원본 `MainUI_MirrorDungeon4_4.png`(파일 ID `1tu_cNQt61d20xXAWco-sZbEqaFs76h7y`, SHA-256 `8f4d38e68080474f86b9255fa9f8c3e4b373b4bccf3e8e473232fd63b3d1176d`)의 좌상단 기준 영역 `(0, 210, 436, 950)`을 자른 `public/assets/game-ui/themes/selected-frame.webp`다. 크기는 436×740이며 무손실 WebP의 RGBA 픽셀 일치와 중앙 투명도를 확인했다. 선택한 팩에만 원본 테두리를 겹치고 중앙의 선택 문구는 UI에서 현지화한다.
 
 ```bash
 LIMBUS_EXTRACTED_ASSET_ROOT="$HOME/Downloads/LimbusAssets" \

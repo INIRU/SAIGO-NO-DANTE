@@ -52,6 +52,9 @@
 .condition svg { flex-shrink: 0; align-self: center; }
 .choiceBody { overflow-wrap: anywhere; }
 .choice > .choiceBody { padding: 0 .875rem .875rem; }
+.recordChoice { min-height: 2.5rem; margin: .75rem; padding: .4rem .8rem; border: 1px solid var(--border-gold); border-radius: .25rem; color: var(--gold-light); font-size: .75rem; font-weight: 700; cursor: pointer; }
+.recordChoice:focus-visible { outline: 2px solid var(--gold-light); outline-offset: 2px; }
+.recordChoice[aria-pressed="true"] { background: color-mix(in srgb, var(--gold) 18%, var(--bg-card)); }
 .nextChoices { margin-top: .875rem; padding-left: .625rem; border-left: 1px solid var(--border-gold); }
 .branches { display: grid; grid-template-columns: minmax(0, 1fr); gap: .75rem; padding: .75rem; }
 .branch { min-width: 0; }

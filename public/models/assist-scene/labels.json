@@ -1,0 +1,17 @@
+[
+  "battle",
+  "battle_setup",
+  "enhance",
+  "event",
+  "exploration",
+  "fusion",
+  "gift_acquired",
+  "loading",
+  "reward_choice",
+  "run_end",
+  "run_setup",
+  "sell",
+  "shop",
+  "start_gift",
+  "theme_select"
+]

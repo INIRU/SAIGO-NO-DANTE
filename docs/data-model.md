@@ -13,10 +13,13 @@
 | 수감자 | sinners → identities / ego, lib/db/queries.ts |
 | 전투 정보 | skills, passives, 정신력 조건 / 패닉 데이터, lib/types/index.ts |
 | 거울 던전 | ego_gifts, ego_gift_themes, 조합·이벤트 데이터, lib/planner |
+| 어시스트 텍스트 검색 | assist_text_embeddings: 게임 원문의 언어·필드·청크별 384차원 파생 벡터 |
 | 덱/플래너 | decks, deck_identities, deck_egos와 댓글·추천; md_plans의 deck/egos JSON, app/api |
 | 계정/운영 | profiles, 법률 동의, 감사 로그, 공지, site_maintenance |
 
 SQL 변경 근거는 supabase/migrations와 기존 supabase/migration-*.sql이다. 신규 변경은 dated migration으로 추가하고 실제 적용 여부를 따로 확인한다.
+
+`assist_text_embeddings`는 원본 게임 테이블을 보존하는 별도 파생 자료다. 모델 ID/revision·전처리 버전·종류·게임 ID·언어·필드·청크를 복합 키로 사용하고 원문/내용 해시와 벡터를 저장한다. RLS를 활성화하고 anon/authenticated 권한을 회수해 서버의 service_role만 접근한다. 따라서 공개 RLS 정책이 없는 것은 의도된 서버 전용 경계다. `match_assist_text_embeddings`는 같은 모델·전처리 버전·언어만 비교하는 security invoker 함수이며 결과는 최대 20개다. 갱신 도구는 해당 모델의 파생 행만 동기화하며 원본 기프트·이벤트·사용자 기록을 변경하지 않는다.
 
 - 쿼리는 .schema('limbus')를 지정하고 error를 처리한다.
 - Supabase 관리자 클라이언트는 서버 전용이다. 사용자별 쓰기는 세션·권한·입력을 검사한다.

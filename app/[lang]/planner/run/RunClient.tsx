@@ -1,22 +1,24 @@
 'use client'
 
-import { useMemo, useEffect, useState, useCallback } from 'react'
-import { motion, AnimatePresence } from 'motion/react'
-import { Link } from '@/lib/i18n/navigation'
-import { ArrowLeft, RotateCcw, ChevronRight, ChevronsRight, ChevronsLeft } from 'lucide-react'
-import { type RunState } from '@/lib/planner/run-types'
+import { useEffect, useMemo, useState } from 'react'
+import { useLocale, useTranslations } from 'next-intl'
+import { toast } from 'sonner'
+import { ArrowLeft, RotateCcw, MonitorUp } from 'lucide-react'
+import { Link, useRouter } from '@/lib/i18n/navigation'
 import { buildGiftMap } from '@/lib/planner/fusion'
-import { saveRunToHistory, decodePlan, loadPlanForRun } from '@/lib/planner/encoder'
+import { decodedPlanToPlannerState, decodePlan, loadPlanForRun, runStateToPlannerState, saveDraftToLocal } from '@/lib/planner/encoder'
 import { enrichIdentitySlotsForGiftConditions } from '@/lib/planner/gift-condition-status'
 import { useRunStore } from '@/lib/stores/run'
-import { type ThemeData, type GiftData, type RecipeData, type IdentityData, type SinnerData, type SkillSummary, type EgoData, type PassiveData } from '@/lib/planner/types'
-import type { MirrorDungeonEvent } from '@/components/mirror-dungeon/types'
-import dynamic from 'next/dynamic'
+import type { ThemeData, GiftData, RecipeData, IdentityData, SinnerData, SkillSummary, EgoData, PassiveData } from '@/lib/planner/types'
+import type { MdEvent, MdEventChoice } from '@/components/mirror-dungeon/types'
 import RunSetup from '@/components/planner/run/RunSetup'
 import FloorProgress from '@/components/planner/run/FloorProgress'
 import FloorPanel from '@/components/planner/run/FloorPanel'
-
-const InventoryPanel = dynamic(() => import('@/components/planner/run/InventoryPanel'), { ssr: false })
+import CompanionPanel from '@/components/planner/run/CompanionPanel'
+import RecognitionModeControl from '@/components/planner/run/RecognitionModeControl'
+import { readRecognitionMode, RECOGNITION_MODE_STORAGE_KEY, type RecognitionMode } from '@/lib/vision/recognition-profile'
+import ConfirmModal from '@/components/ui/ConfirmModal'
+import { captureEvidence, useAssistCapture } from '@/lib/hooks/useAssistCapture'
 
 interface Props {
   themes: ThemeData[]
@@ -27,223 +29,169 @@ interface Props {
   skills: SkillSummary[]
   passives: PassiveData[]
   egos: EgoData[]
-  events: MirrorDungeonEvent[]
+  events: MdEvent[]
+  eventChoices: MdEventChoice[]
+  dataError?: boolean
 }
 
-export default function RunClient({ themes, gifts, recipes, identities, sinners, skills, passives, egos, events }: Props) {
+export default function RunClient({ themes, gifts, recipes, identities, sinners, skills, passives, egos, events, eventChoices, dataError }: Props) {
+  const t = useTranslations('planner.run')
+  const locale = useLocale()
+  const router = useRouter()
   const state = useRunStore()
   const dispatch = useRunStore(s => s.dispatch)
+  const [loadingPlan, setLoadingPlan] = useState(true)
+  const [confirmReset, setConfirmReset] = useState(false)
+  const giftReferences = useMemo(() => gifts.map(gift => ({ id: String(gift.game_id), imageUrl: gift.image_url })), [gifts])
+  const eventReferences = useMemo(() => events.map(event => ({ id: String(event.id), imageUrl: event.image_url })), [events])
+  const ocrCatalog = useMemo(() => ({
+    gifts: gifts.map(gift => ({
+      id: String(gift.game_id),
+      texts: [gift.name, gift.name_en, gift.name_jp].filter((value): value is string => Boolean(value)),
+      effectTexts: [gift.effect_base, gift.effect_base_en, gift.effect_base_jp,
+        gift.effect_plus, gift.effect_plus_en, gift.effect_plus_jp,
+        gift.effect_plusplus, gift.effect_plusplus_en, gift.effect_plusplus_jp]
+        .filter((value): value is string => Boolean(value)),
+    })),
+    events: events.map(event => ({ id: String(event.id), texts: [event.name, event.desc_text, event.name_en, event.desc_text_en, event.name_jp, event.desc_text_jp].filter((value): value is string => Boolean(value)) })),
+    choices: eventChoices.map(choice => ({ id: String(choice.id), eventId: String(choice.event_id), texts: [choice.message, choice.message_en, choice.message_jp].filter((value): value is string => Boolean(value)),
+      resultTexts: [choice.result_text, choice.result_text_en, choice.result_text_jp].filter((value): value is string => Boolean(value)) })),
+  }), [gifts, events, eventChoices])
+  const themeCatalog = useMemo(() => themes.map(theme => ({ id: String(theme.id),
+    texts: [theme.name, theme.name_en, theme.name_jp].filter((value): value is string => Boolean(value)) })), [themes])
+  // Balanced unless the user chose another mode in this browser; read after mount (the server cannot see storage).
+  const [recognitionMode, setRecognitionMode] = useState<RecognitionMode>('balanced')
+  useEffect(() => { setRecognitionMode(readRecognitionMode(window.localStorage)) }, [])
+  const changeRecognitionMode = (next: RecognitionMode) => {
+    setRecognitionMode(next)
+    try { window.localStorage.setItem(RECOGNITION_MODE_STORAGE_KEY, next) } catch { /* the choice still applies to this session */ }
+  }
+  const capture = useAssistCapture({ giftReferences, eventReferences, ocrCatalog, themeCatalog, mode: recognitionMode,
+    language: locale === 'en' || locale === 'ja' ? locale : 'ko', floor: state.phase === 'playing' ? state.currentFloor : null })
+  const { visualCandidates, ocrCandidates, eventChoiceEvidence } =
+    captureEvidence(capture, state.phase === 'playing' ? state.currentFloor : null, Date.now())
+  // The stable scene switches a capture or two after a battle starts; frames already classified as combat never
+  // promote gifts, so the order stays frozen from the first battle frame.
+  const combatFrame = ['battle', 'battle_setup', 'loading'].includes(capture.prediction?.label ?? '')
+  const observedGiftIds = combatFrame ? [] : [...new Set([
+    ...(visualCandidates?.gifts.map(item => Number(item.id)) ?? []),
+    ...(ocrCandidates?.gifts.map(item => Number(item.id)) ?? []),
+  ].filter(Number.isInteger))]
+  const observedEventIds = [...new Set([
+    ...(visualCandidates?.events.map(item => Number(item.id)) ?? []),
+    ...(ocrCandidates?.events.map(item => Number(item.id)) ?? []),
+    ...(ocrCandidates?.choices.map(item => Number(item.eventId)) ?? []),
+  ].filter(Number.isInteger))]
   const giftMap = useMemo(() => buildGiftMap(gifts), [gifts])
-  const giftConditionState = useMemo<RunState>(() => ({
+  const giftConditionState = useMemo(() => ({
     ...state,
     identitySlots: enrichIdentitySlotsForGiftConditions(state.identitySlots, identities),
   }), [state, identities])
 
-  // 트리거 모드: Navbar, Footer 숨김
   useEffect(() => {
-    document.documentElement.classList.add('trigger-mode')
-    return () => { document.documentElement.classList.remove('trigger-mode') }
-  }, [])
-
-  // URL 파라미터 처리
-  useEffect(() => {
+    let active = true
     const params = new URLSearchParams(window.location.search)
-
-    // ?from-plan=1: localStorage에서 full state 로드 (slot_order 보존)
-    if (params.get('from-plan') === '1') {
-      const planState = loadPlanForRun()
-      if (planState) {
-        dispatch({ type: 'LOAD_FROM_PLAN', planState })
-      }
-      return
+    const consumeImportQuery = () => {
+      const url = new URL(window.location.href)
+      url.searchParams.delete('plan')
+      url.searchParams.delete('from-plan')
+      url.searchParams.delete('entry')
+      window.history.replaceState(window.history.state, '', url)
     }
-
-    // ?plan=<encoded>: URL 인코딩된 플랜 (legacy, slot_order 미보존)
-    const planParam = params.get('plan')
-    if (planParam) {
-      decodePlan(planParam).then(decoded => {
-        const slots = decoded.identityIds.map((id, i) => {
-          const ident = identities.find(x => x.id === id)
-          if (!ident) return null
-          return {
-            identity_id: id, sinner_id: ident.sinner_id, name_kr: ident.name_kr,
-            rarity: ident.rarity, keywords: ident.keywords ?? [], skill_keyword_list: ident.skill_keyword_list,
-            affiliation: ident.affiliation, association_list: ident.association_list,
-            game_id: ident.game_id, folder_name: ident.folder_name, slot_order: i,
-          }
-        }).filter(Boolean) as any[]
-
-        const egoSlots = decoded.egoIds.map(id => {
-          const ego = egos.find(x => x.id === id)
-          if (!ego) return null
-          return { ego_id: id, sinner_id: ego.sinner_id, name_kr: ego.name_kr ?? ego.name, grade: ego.grade, sin_affinity: ego.sin_affinity }
-        }).filter(Boolean) as any[]
-
-        dispatch({
-          type: 'LOAD_FROM_PLAN',
-          planState: {
-            difficulty: decoded.difficulty,
-            identitySlots: slots,
-            egoSlots,
-            floorPlan: decoded.floorThemeIds.map((tid, i) => ({
-              floor: i + 1,
-              difficulty: decoded.floorDifficulties[i],
-              theme_id: tid,
-              gift_ids: [] as string[],
-              memo: '',
-            })),
-            giftInventory: decoded.giftIds,
-          },
+    // Opened from the board without a plan: a draft that was never started must not carry an earlier plan into
+    // setup; a started run is left as is and resumes (it can still be reset from the run header).
+    if (params.get('entry') === 'board') {
+      const current = useRunStore.getState()
+      if (current.phase === 'setup' && (current.sourcePlanSnapshot || current.sourcePlanEncoded)) dispatch({ type: 'RESET' })
+      consumeImportQuery()
+    }
+    const handoff = params.get('from-plan') === '1' ? loadPlanForRun() : null
+    if (handoff) { dispatch({ type: 'LOAD_FROM_PLAN', planState: handoff }); consumeImportQuery() }
+    const encoded = !handoff && params.get('plan')
+    if (encoded) {
+      decodePlan(encoded)
+        .then(decoded => {
+          if (active) { dispatch({ type: 'LOAD_FROM_PLAN', planState: decodedPlanToPlannerState(decoded, identities, egos) }); consumeImportQuery() }
         })
-      }).catch(() => { /* invalid */ })
-      return
+        .catch(() => { if (active) toast.error(t('invalidPlan')) })
+        .finally(() => { if (active) setLoadingPlan(false) })
+    } else {
+      setLoadingPlan(false)
     }
-    // ?draft=1 — Zustand persist가 자동 복원하므로 별도 처리 불필요
-  }, [identities, egos])
+    return () => { active = false }
+  }, [dispatch, identities, egos, t])
 
-  // Zustand persist가 자동 저장 처리
+  useEffect(() => { if (state.phase !== 'playing') capture.stop() }, [state.phase, capture.stop])
 
-  // 완료 시 히스토리 저장
-  useEffect(() => {
-    if (state.phase === 'completed') {
-      saveRunToHistory(state)
-    }
-  }, [state.phase])
-
-  const handleReset = useCallback(() => { dispatch({ type: 'RESET' }) }, [dispatch])
-  const [sidebarOpen, setSidebarOpen] = useState(true)
-
-  // ── Setup ──
-  if (state.phase === 'setup') {
-    return (
-      <div className="min-h-screen" style={{ background: '#0d0b08', color: '#e8e0d0' }}>
-        <div className="mx-auto" style={{ maxWidth: '72rem', padding: '1.5rem 1rem' }}>
-          <Link href="/planner" className="inline-flex items-center gap-2 hover:opacity-80 mb-6" style={{ color: '#c8900a', fontSize: '0.875rem', minHeight: '2.75rem' }}>
-            <ArrowLeft style={{ width: '1.125rem', height: '1.125rem' }} /> 플래너로 돌아가기
-          </Link>
-          <h1 className="font-serif" style={{ fontSize: '1.75rem', marginBottom: '1.5rem' }}>거울 던전 트리거 모드</h1>
-          <RunSetup state={state} dispatch={dispatch} gifts={gifts} giftMap={giftMap} identities={identities} sinners={sinners} egos={egos} />
-        </div>
-      </div>
-    )
+  const reset = () => { capture.stop(); dispatch({ type: 'RESET' }); toast.success(t('resetDone')) }
+  const reviewDraft = () => {
+    if (!saveDraftToLocal(runStateToPlannerState(state))) { toast.error(t('draftSaveFailed')); return }
+    toast.success(t('draftReady'))
+    router.push('/planner')
   }
+  const card = 'rounded-lg border border-[var(--border)] bg-[var(--bg-card)]'
 
-  // ── Completed ──
-  if (state.phase === 'completed') {
-    const total = state.giftInventory.length
-    const played = state.floorLogs.filter(l => l.completedAt).length
-    return (
-      <div className="min-h-screen" style={{ background: '#0d0b08', color: '#e8e0d0' }}>
-        <div className="mx-auto text-center" style={{ maxWidth: '40rem', padding: '3rem 1rem' }}>
-          <h1 className="font-serif" style={{ fontSize: '2rem', color: '#c8900a', marginBottom: '1rem' }}>런 완료</h1>
-          <div className="rounded-lg" style={{ background: '#1a1510', padding: '1.5rem', marginBottom: '1.5rem' }}>
-            <p style={{ fontSize: '1.125rem', marginBottom: '0.5rem' }}>{played}층 클리어 · 기프트 {total}개</p>
-          </div>
-          <div className="flex justify-center gap-3">
-            <button onClick={handleReset} className="inline-flex items-center gap-2 rounded-lg" style={{ background: '#2a2015', padding: '0.625rem 1.25rem', fontSize: '0.875rem', border: '1px solid #3a3020', minHeight: '2.75rem' }}>
-              <RotateCcw style={{ width: '0.875rem', height: '0.875rem' }} /> 새 런
-            </button>
-            <Link href="/planner" className="inline-flex items-center gap-2 rounded-lg" style={{ background: '#c8900a', color: '#0d0b08', padding: '0.625rem 1.25rem', fontSize: '0.875rem', fontWeight: 600, minHeight: '2.75rem' }}>
-              플래너로
-            </Link>
-          </div>
+  return <div data-assist-run className="min-h-screen bg-[var(--bg-deep)] text-[var(--text-primary)]">
+    <div className="mx-auto max-w-[90rem] px-4 pb-12 pt-20 sm:px-6 sm:pt-24 lg:px-8">
+      <header className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border)] pb-3">
+        <div className="flex min-w-0 items-center gap-3">
+          <Link href="/planner" aria-label={t('backToPlanner')} title={t('backToPlanner')} className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--gold-light)] focus-visible:outline-2 focus-visible:outline-[var(--gold-light)]"><ArrowLeft size={18} /></Link>
+          <h1 className="font-[family-name:var(--font-heading)] text-lg leading-tight text-[var(--gold-light)] sm:text-xl">{t('title')}</h1>
         </div>
-      </div>
-    )
-  }
-
-  // ── Playing: 3-column layout ──
-  const currentLog = state.floorLogs[state.currentFloor - 1]
-  const isLastFloor = state.currentFloor >= state.maxFloors
-
-  return (
-    <div className="min-h-screen" style={{ background: '#0d0b08', color: '#e8e0d0' }}>
-      {/* 모바일 상단 바 */}
-      <div className="lg:hidden flex items-center justify-between" style={{ padding: '0.75rem 1rem', borderBottom: '1px solid #2a2015', gap: '0.5rem' }}>
-        <Link href="/planner" className="flex items-center justify-center shrink-0" style={{ color: '#c8900a', minWidth: '2.75rem', minHeight: '2.75rem' }}>
-          <ArrowLeft style={{ width: '1.25rem', height: '1.25rem' }} />
-        </Link>
-        <div className="flex-1 min-w-0 text-center">
-          <span className="font-serif block" style={{ fontSize: '1rem' }}>층 {state.currentFloor} / {state.maxFloors}</span>
-          {(() => {
-            const log = state.floorLogs[state.currentFloor - 1]
-            const theme = log?.themeId ? themes.find(t => t.id === log.themeId) : null
-            return theme ? (
-              <span className="block truncate" style={{ fontSize: '0.6875rem', color: '#888' }}>{theme.name}</span>
-            ) : null
-          })()}
-        </div>
-        <button
-          onClick={() => dispatch({ type: isLastFloor ? 'COMPLETE_RUN' : 'NEXT_FLOOR' })}
-          className="rounded shrink-0 flex items-center justify-center gap-0.5"
-          style={{ background: '#c8900a', color: '#0d0b08', padding: '0.5rem 1rem', fontSize: '0.8125rem', fontWeight: 600, minHeight: '2.75rem' }}
-        >
-          {isLastFloor ? '완료' : '다음 층'} <ChevronRight style={{ width: '0.875rem', height: '0.875rem' }} />
-        </button>
-      </div>
-
-      <div className="flex flex-col lg:flex-row" style={{ minHeight: 'calc(100vh - 3rem)' }}>
-        {/* 좌측: 층 타임라인 (데스크톱) */}
-        <aside className="hidden lg:block shrink-0" style={{ width: '8rem', borderRight: '1px solid #2a2015' }}>
-          <div className="sticky top-0" style={{ padding: '1rem 0.5rem' }}>
-            <Link href="/planner" className="inline-flex items-center gap-1 hover:opacity-80 mb-4" style={{ color: '#c8900a', fontSize: '0.75rem' }}>
-              <ArrowLeft style={{ width: '0.75rem', height: '0.75rem' }} /> 플래너
-            </Link>
-            <FloorProgress state={state} dispatch={dispatch} themes={themes} />
-          </div>
-        </aside>
-
-        {/* 중앙: 메인 패널 */}
-        <main className="flex-1 min-w-0">
-          <FloorPanel
-            state={giftConditionState} dispatch={dispatch}
-            themes={themes} gifts={gifts} giftMap={giftMap}
-            identities={identities} sinners={sinners} skills={skills} passives={passives} egos={egos}
-            events={events}
-          />
-        </main>
-
-        {/* 우측: 인벤토리 (접기/펼치기) */}
-        <aside className="shrink-0 lg:border-l border-t lg:border-t-0 relative" style={{ borderColor: '#2a2015' }}>
-          {/* 데스크톱 사이드바 토글 탭 */}
-          <button
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="hidden lg:flex items-center justify-center z-[3] transition-all"
-            style={{
-              position: 'absolute', top: '50%', transform: 'translateY(-50%)',
-              left: '-1.25rem',
-              width: '1.25rem', height: '3rem',
-              borderRadius: '0.375rem 0 0 0.375rem',
-              background: sidebarOpen ? '#1a1510' : 'rgba(200,144,10,0.15)',
-              borderTop: `1px solid ${sidebarOpen ? '#2a2015' : 'rgba(200,144,10,0.3)'}`,
-              borderBottom: `1px solid ${sidebarOpen ? '#2a2015' : 'rgba(200,144,10,0.3)'}`,
-              borderLeft: `1px solid ${sidebarOpen ? '#2a2015' : 'rgba(200,144,10,0.3)'}`,
-              color: sidebarOpen ? '#555' : '#c8900a',
-            }}
-            title={sidebarOpen ? '사이드바 접기' : '사이드바 펼치기'}
-          >
-            {sidebarOpen ? <ChevronsRight style={{ width: '0.75rem', height: '0.75rem' }} /> : <ChevronsLeft style={{ width: '0.75rem', height: '0.75rem' }} />}
+        {state.phase === 'playing' && <div className="flex flex-wrap gap-2">
+          {/* Owns the PiP window and every capture-driven record (acquisitions, packs, events, Undo); renders only its button here. */}
+          <CompanionPanel state={state} dispatch={dispatch} themes={themes} giftMap={giftMap}
+            observedGiftIds={observedGiftIds} popupAcquisitions={capture.status === 'running' ? capture.popupAcquisitions : []}
+            events={events} eventChoices={eventChoices} eventChoiceEvidence={eventChoiceEvidence}
+            captureRunning={capture.status === 'running'} scene={capture.status === 'running' ? capture.scene : null}
+            themeSelectionFloor={capture.status === 'running' ? capture.themeSelectionFloor : null}
+            floorThemeObservation={capture.status === 'running' ? capture.floorThemeObservation : null}
+            observedFloor={capture.status === 'running' ? capture.observedFloor : null}
+            fusionEvidence={capture.status === 'running' ? capture.fusionEvidence : null}
+            />
+          <button type="button" disabled={capture.mobile} title={capture.mobile ? t('captureMobileBlocked') : undefined} onClick={() => { if (capture.status === 'running' || capture.status === 'loading' || capture.status === 'requesting') capture.stop(); else void capture.start() }} className="inline-flex min-h-10 items-center gap-2 rounded-md border border-[var(--border-gold)] px-3 text-xs text-[var(--gold-light)] hover:bg-[var(--bg-elevated)] disabled:border-[var(--border)] disabled:text-[var(--text-muted)] disabled:hover:bg-transparent focus-visible:outline-2 focus-visible:outline-[var(--gold-light)]">
+            <MonitorUp size={16} /> {t(capture.status === 'running' || capture.status === 'loading' || capture.status === 'requesting' ? 'stopScreenPreview' : 'screenPreview')}
           </button>
-          {/* 모바일: 항상 InventoryPanel 렌더 (자체 토글 사용), 데스크톱: sidebarOpen 따라 표시 */}
-          <div className="lg:hidden">
-            <InventoryPanel state={giftConditionState} dispatch={dispatch} gifts={gifts} giftMap={giftMap} recipes={recipes} />
+          <button type="button" onClick={() => setConfirmReset(true)} className="inline-flex min-h-10 items-center gap-2 rounded-md border border-[var(--border)] px-3 text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] focus-visible:outline-2 focus-visible:outline-[var(--gold-light)]">
+            <RotateCcw size={15} /> {t('reset')}
+          </button>
+        </div>}
+      </header>
+      {state.phase === 'playing' && !capture.mobile && <div className="mb-4 max-w-3xl" data-recognition-mode-control>
+        <RecognitionModeControl value={recognitionMode} onChange={changeRecognitionMode} label={t('recognitionModeLabel')}
+          note={capture.status === 'running' ? t('recognitionModeLiveNote') : undefined}
+          options={{ performance: { label: t('recognitionModePerformance'), description: t('recognitionModePerformanceHint') },
+            balanced: { label: t('recognitionModeBalanced'), description: t('recognitionModeBalancedHint') },
+            quality: { label: t('recognitionModeQuality'), description: t('recognitionModeQualityHint') } }} />
+      </div>}
+      {state.phase === 'playing' && capture.mobile && <p role="note" className="mb-5 rounded-md border border-[var(--border)] bg-[var(--bg-card)] p-3 text-sm text-[var(--text-secondary)]" data-capture-mobile>{t('captureMobileBlocked')}</p>}
+      {state.phase === 'playing' && !capture.mobile && <div data-capture-state={capture.status} role={capture.status === 'error' ? 'alert' : 'status'}
+        className="mb-5 flex min-w-0 items-start gap-2.5">
+        {/* Static state dot: gold while connected, red on failure, muted otherwise. */}
+        <span aria-hidden="true" className={`mt-[0.4rem] h-2 w-2 shrink-0 rounded-full ${capture.status === 'running' ? 'bg-[var(--gold)] shadow-[0_0_0_3px_color-mix(in_srgb,var(--gold)_22%,transparent)]'
+          : capture.status === 'error' || capture.status === 'unsupported' ? 'bg-[var(--error)]' : 'bg-[var(--text-muted)]'}`} />
+        <p className="min-w-0 break-keep text-sm leading-6">
+          <span className={`font-semibold ${capture.status === 'error' || capture.status === 'unsupported' ? 'text-[var(--error)]' : 'text-[var(--gold-light)]'}`}>{t(`capture_${capture.status}`)}</span>
+          <span className="block text-[var(--text-secondary)]">{t('captureFramesPrivacy')}</span>
+        </p>
+      </div>}
+
+      {dataError && <p role="alert" className="mb-5 rounded-md border border-[var(--error)] p-3 text-sm text-[var(--error)]">{t('dataError')}</p>}
+      {loadingPlan ? <div role="status" className={`${card} animate-pulse p-8 text-center text-[var(--text-secondary)]`}>{t('loadingPlan')}</div> : state.phase === 'setup' ?
+        <div className="max-w-3xl">
+          <RunSetup state={state} dispatch={dispatch} gifts={gifts} giftMap={giftMap} identities={identities} sinners={sinners} egos={egos} />
+        </div> : state.phase === 'completed' ?
+        <section className={`${card} mx-auto max-w-xl p-8 text-center`}>
+          <h2 className="font-[family-name:var(--font-heading)] text-2xl text-[var(--gold-light)]">{t('completed')}</h2>
+          <p className="mt-4 text-[var(--text-secondary)]">{t('completedSummary', { floors: state.floorLogs.filter(log => log.completedAt).length, gifts: state.giftInventory.length })}</p>
+          <div className="mt-7 flex flex-wrap justify-center gap-3"><button onClick={reset} className="min-h-11 rounded-md border border-[var(--border-gold)] px-5 text-[var(--gold-light)]">{t('newRun')}</button><button onClick={reviewDraft} className="min-h-11 rounded-md bg-[var(--gold)] px-5 font-bold text-[var(--bg-deep)]">{t('reviewDraft')}</button></div>
+        </section> : <>
+          <FloorProgress state={state} dispatch={dispatch} />
+          <div className="mt-3">
+            <main className="min-w-0"><FloorPanel state={giftConditionState} dispatch={dispatch} themes={themes} gifts={gifts} giftMap={giftMap} recipes={recipes} identities={identities} sinners={sinners} skills={skills} passives={passives} egos={egos} events={events} eventChoices={eventChoices} observedEventIds={observedEventIds} /></main>
           </div>
-          <AnimatePresence>
-            {sidebarOpen && (
-              <motion.div
-                className="hidden lg:block lg:sticky lg:top-0 lg:overflow-y-auto"
-                style={{ maxHeight: '100vh' }}
-                initial={{ x: 50, opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
-                exit={{ x: 50, opacity: 0 }}
-                transition={{ duration: 0.3, ease: 'easeOut' }}
-              >
-                <InventoryPanel state={giftConditionState} dispatch={dispatch} gifts={gifts} giftMap={giftMap} recipes={recipes} />
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </aside>
-      </div>
+        </>}
     </div>
-  )
+    <ConfirmModal open={confirmReset} title={t('resetTitle')} message={t('resetMessage')} confirmLabel={t('reset')} cancelLabel={t('cancel')} variant="danger" onCancel={() => setConfirmReset(false)} onConfirm={() => { setConfirmReset(false); reset() }} />
+  </div>
 }

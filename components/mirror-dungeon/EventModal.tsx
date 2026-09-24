@@ -33,6 +33,9 @@ interface EventModalProps {
   themes: EgoGiftTheme[]
   onClose: () => void
   onSelectGift: (gift: EgoGift) => void
+  onRecordChoice?: (eventId: number, optionIndex: number) => void
+  isChoiceRecorded?: (eventId: number, optionIndex: number) => boolean
+  recordLabels?: { record: string; recorded: string }
 }
 
 const SIN_LABELS: Record<string, { ko: string; en: string; ja: string }> = {
@@ -92,6 +95,9 @@ interface FlowProps {
   choicesByEventId: Map<number, MdEventChoice[]>
   giftByGameId: Map<number, EgoGift>
   onSelectGift: (gift: EgoGift) => void
+  onRecordChoice?: EventModalProps['onRecordChoice']
+  isChoiceRecorded?: EventModalProps['isChoiceRecorded']
+  recordLabels?: EventModalProps['recordLabels']
 }
 const languageText = (lang: SupportedLang, ko: string, en: string, ja: string) => lang === 'en' ? en : lang === 'ja' ? ja : ko
 
@@ -158,6 +164,10 @@ function NextEvent({ id, path, ...props }: FlowProps & { id: number; path: numbe
         className={`${styles.branch} ${styles.sourceBranch}`} data-event-branch={kind}>
         <h5>{kind === 'success' ? <Check size={14} aria-hidden /> : <Minus size={14} aria-hidden />}{choice.message}</h5>
         <ChoiceResult {...props} choice={choice} path={nextPath} />
+        {props.onRecordChoice && props.recordLabels && (() => {
+          const index = groupEventChoices(choices).findIndex(group => group.some(item => item.id === choice.id))
+          return index < 0 ? null : <button type="button" className={styles.recordChoice} aria-pressed={props.isChoiceRecorded?.(id, index) ?? false} onClick={() => props.onRecordChoice?.(id, index)}>{props.isChoiceRecorded?.(id, index) ? props.recordLabels.recorded : props.recordLabels.record}</button>
+        })()}
       </div>)}</div>
     </> : <ChoiceList {...props} choices={choices} path={nextPath} />}
   </section>
@@ -186,6 +196,7 @@ function ChoiceList({ choices, path, ...props }: FlowProps & { choices: MdEventC
       </span><ChevronDown className={styles.choiceChevron} size={17} aria-hidden />
     </summary>
     {group.map(choice => <ChoiceResult {...props} key={choice.id} choice={choice} path={path} />)}
+    {props.onRecordChoice && props.recordLabels && <button type="button" className={styles.recordChoice} aria-pressed={props.isChoiceRecorded?.(path[path.length - 1], index) ?? false} onClick={() => props.onRecordChoice?.(path[path.length - 1], index)}>{props.isChoiceRecorded?.(path[path.length - 1], index) ? props.recordLabels.recorded : props.recordLabels.record}</button>}
   </details>)}</div>
 }
 
@@ -211,11 +222,12 @@ function EventChoices({ event, ...props }: FlowProps & { event: MdEvent }) {
       <div className={styles.sectionHeading}><h3>{tEvent('mirrorDungeon.event.choiceResult', props.lang)}</h3>
         <span>{String(active + 1).padStart(2, '0')} / {String(groups.length).padStart(2, '0')}</span></div>
       {group.map(choice => <ChoiceResult {...props} key={choice.id} choice={choice} path={[event.id]} />)}
+      {props.onRecordChoice && props.recordLabels && <button type="button" className={styles.recordChoice} aria-pressed={props.isChoiceRecorded?.(event.id, active) ?? false} onClick={() => props.onRecordChoice?.(event.id, active)}>{props.isChoiceRecorded?.(event.id, active) ? props.recordLabels.recorded : props.recordLabels.record}</button>}
     </section>
   </div>
 }
 
-export default function EventModal({ lang, event, eventById, choicesByEventId, giftByGameId, themes, onClose, onSelectGift }: EventModalProps) {
+export default function EventModal({ lang, event, eventById, choicesByEventId, giftByGameId, themes, onClose, onSelectGift, onRecordChoice, isChoiceRecorded, recordLabels }: EventModalProps) {
   const contentRef = useRef<HTMLDivElement>(null)
   const eventTitle = getEventTitle(event, lang)
   const eventDesc = getEventDesc(event, lang)
@@ -258,7 +270,7 @@ export default function EventModal({ lang, event, eventById, choicesByEventId, g
             </div>
           </div>
           <div ref={contentRef} tabIndex={-1} className={`event-modal-content ${styles.content}`}>
-            <EventChoices key={event.id} lang={lang} event={event} eventById={eventById} choicesByEventId={choicesByEventId} giftByGameId={giftByGameId} onSelectGift={handleSelectGift} />
+            <EventChoices key={event.id} lang={lang} event={event} eventById={eventById} choicesByEventId={choicesByEventId} giftByGameId={giftByGameId} onSelectGift={handleSelectGift} onRecordChoice={onRecordChoice} isChoiceRecorded={isChoiceRecorded} recordLabels={recordLabels} />
           </div>
         </div>
       </div>

@@ -511,3 +511,28 @@ body:has([data-board-browse]) :is(footer, [data-floating-font-control]) { displa
   .note-direct-picker .note-tier-dropdown{width:auto}
   .note-direct-picker--skill .note-direct-sidebar>button{display:inline-flex}
 }
+
+/* ── Page-scoped additions: other pages keep the site defaults above. ── */
+/* Plan detail: the page height changes a lot while loading (skeleton, data, images); keep the page scrollbar's space. */
+html:has([data-plan-detail]) { scrollbar-gutter: stable; }
+/* Assist run page and its PiP window only. */
+html:has([data-assist-run]), html[data-assist-pip] { scrollbar-gutter: stable; scrollbar-color: var(--gold-dim) var(--bg-deep); scrollbar-width: thin; }
+/* Radix keeps the body scroll-locked; the root gutter already reserves its width. */
+@supports (scrollbar-gutter: stable) {
+  html:has([data-assist-run]) body[data-scroll-locked] { margin-right: 0 !important; }
+}
+html:has([data-assist-run])::-webkit-scrollbar, html:has([data-assist-run]) ::-webkit-scrollbar,
+html[data-assist-pip]::-webkit-scrollbar, html[data-assist-pip] ::-webkit-scrollbar { width: 8px; height: 8px; }
+html:has([data-assist-run])::-webkit-scrollbar-thumb, html:has([data-assist-run]) ::-webkit-scrollbar-thumb,
+html[data-assist-pip]::-webkit-scrollbar-thumb, html[data-assist-pip] ::-webkit-scrollbar-thumb { border: 2px solid var(--bg-deep); border-radius: 8px; }
+/* Preserve a visible keyboard cue even on borderless search fields. */
+:is([data-assist-run], html[data-assist-pip]) input:not([type="checkbox"], [type="radio"], [type="range"], [type="file"]):hover,
+:is([data-assist-run], html[data-assist-pip]) textarea:hover {
+  box-shadow: inset 0 0 0 1px var(--border-hover);
+}
+:is([data-assist-run], html[data-assist-pip]) input:not([type="checkbox"], [type="radio"], [type="range"], [type="file"]):focus-visible,
+:is([data-assist-run], html[data-assist-pip]) textarea:focus-visible {
+  outline: 2px solid var(--gold-light) !important;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--gold) 16%, transparent);
+}

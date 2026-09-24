@@ -1,12 +1,16 @@
 'use client'
 
+import { useLocale, useTranslations } from 'next-intl'
 import { useState, useEffect, useMemo } from 'react'
-import Image from 'next/image'
 import { Play, Search, X, RotateCcw } from 'lucide-react'
+import GiftArtwork from '@/components/ui/GiftArtwork'
+import RunCaptureGuide from './RunCaptureGuide'
 import { DIFFICULTY_CONFIG, type Difficulty } from '@/lib/planner/types'
 import type { RunState, RunAction } from '@/lib/planner/run-types'
 import type { GiftData, IdentityData, SinnerData, EgoData } from '@/lib/planner/types'
 import { loadRunDraft } from '@/lib/planner/encoder'
+import { getLocalizedName } from '@/lib/i18n/localize'
+import type { SupportedLang } from '@/lib/i18n/types'
 
 interface Props {
   state: RunState
@@ -18,39 +22,44 @@ interface Props {
   egos: EgoData[]
 }
 
-const DIFFICULTIES: { key: Difficulty; label: string }[] = [
-  { key: 'normal', label: '노말' },
-  { key: 'hard', label: '하드' },
-  { key: 'overlap', label: '평행중첩' },
-  { key: 'extreme', label: '익스트림' },
-]
+const DIFFICULTIES: Difficulty[] = ['normal', 'hard', 'overlap', 'extreme']
 
 export default function RunSetup({ state, dispatch, gifts, giftMap }: Props) {
+  const t = useTranslations('planner.run')
+  const locale = useLocale() as SupportedLang
+  const giftName = (gift: GiftData) => getLocalizedName({ name_kr: gift.name, name_en: gift.name_en, name_jp: gift.name_jp }, locale)
   const [giftSearch, setGiftSearch] = useState('')
   const [draft, setDraft] = useState<ReturnType<typeof loadRunDraft>>(null)
   useEffect(() => { setDraft(loadRunDraft()) }, [])
 
   const searchResults = useMemo(() => {
     if (!giftSearch.trim()) return []
-    return gifts.filter(g => g.name.includes(giftSearch.trim())).slice(0, 15)
-  }, [giftSearch, gifts])
+    return gifts.filter(g => giftName(g).toLocaleLowerCase().includes(giftSearch.trim().toLocaleLowerCase())).slice(0, 15)
+  }, [giftSearch, gifts, locale])
 
   const inventoryGifts = useMemo(() =>
     state.giftInventory.map(id => giftMap.get(Number(id))).filter(Boolean) as GiftData[]
   , [state.giftInventory, giftMap])
 
   return (
-    <div className="space-y-6" style={{ maxWidth: '40rem' }}>
+    <div className="space-y-5 min-w-0">
+      <section className="border-b border-[var(--border)] pb-3">
+        <h2 className="font-[family-name:var(--font-heading)] text-lg text-[var(--gold-light)]">{t(state.sourcePlanSnapshot ? 'planMode' : 'recordMode')}</h2>
+        <p className="mt-1 break-keep text-xs leading-5 text-[var(--text-secondary)]">{t('setupHelp')}</p>
+        {state.startFloor > 1 && <p role="status" className="mt-2 text-sm text-amber-400">{t('limited')}</p>}
+      </section>
+      {/* The capture button only exists once the run starts, so the game waits before Enter until it is connected. */}
+      <RunCaptureGuide />
       {/* 난이도 선택 */}
       <section>
-        <h2 style={{ fontSize: '0.9375rem', fontWeight: 600, marginBottom: '0.75rem' }}>난이도</h2>
+        <h2 style={{ fontSize: '0.9375rem', fontWeight: 600, marginBottom: '0.75rem' }}>{t('difficulty')}</h2>
         <div className="flex flex-wrap gap-2">
           {DIFFICULTIES.map(d => {
-            const active = state.difficulty === d.key
+            const active = state.difficulty === d
             return (
               <button
-                key={d.key}
-                onClick={() => dispatch({ type: 'INIT', difficulty: d.key, startFloor: state.startFloor })}
+                key={d}
+                onClick={() => dispatch({ type: 'INIT', difficulty: d, startFloor: state.startFloor })}
                 className="rounded-lg transition-all"
                 style={{
                   padding: '0.625rem 1.25rem',
@@ -62,19 +71,19 @@ export default function RunSetup({ state, dispatch, gifts, giftMap }: Props) {
                   minHeight: '2.75rem',
                 }}
               >
-                {d.label}
+                {t(`difficulty_${d}`)}
               </button>
             )
           })}
         </div>
         <p style={{ fontSize: '0.75rem', color: '#666', marginTop: '0.5rem' }}>
-          {DIFFICULTY_CONFIG[state.difficulty].floors}층
+          {t('floorCount', { count: DIFFICULTY_CONFIG[state.difficulty].floors })}
         </p>
       </section>
 
       {/* 시작 층 */}
       <section>
-        <h2 style={{ fontSize: '0.9375rem', fontWeight: 600, marginBottom: '0.75rem' }}>시작 층</h2>
+        <h2 style={{ fontSize: '0.9375rem', fontWeight: 600, marginBottom: '0.75rem' }}>{t('startFloor')}</h2>
         <div className="flex flex-wrap gap-1">
           {Array.from({ length: state.maxFloors }, (_, i) => i + 1).map(floor => {
             const active = state.startFloor === floor
@@ -101,15 +110,16 @@ export default function RunSetup({ state, dispatch, gifts, giftMap }: Props) {
       {/* 기존 기프트 (중간 진입) */}
       {state.startFloor > 1 && (
         <section>
-          <h2 style={{ fontSize: '0.9375rem', fontWeight: 600, marginBottom: '0.75rem' }}>보유 기프트 입력</h2>
+          <h2 style={{ fontSize: '0.9375rem', fontWeight: 600, marginBottom: '0.75rem' }}>{t('startingGifts')}</h2>
           <div className="relative" style={{ marginBottom: '0.75rem' }}>
             <Search className="absolute" style={{ left: '0.75rem', top: '50%', transform: 'translateY(-50%)', width: '0.875rem', height: '0.875rem', color: '#555' }} />
             <input
               type="text"
+              aria-label={t('searchGifts')}
               value={giftSearch}
               onChange={e => setGiftSearch(e.target.value)}
-              placeholder="기프트 이름 검색..."
-              className="w-full rounded-lg"
+              placeholder={t('searchGifts')}
+              className="w-full rounded-lg focus-visible:ring-2 focus-visible:ring-[var(--gold)]"
               style={{
                 padding: '0.5rem 0.75rem 0.5rem 2.25rem',
                 background: '#1a1510', border: '1px solid #2a2015', color: '#e8e0d0',
@@ -128,10 +138,8 @@ export default function RunSetup({ state, dispatch, gifts, giftMap }: Props) {
                   onMouseEnter={e => { e.currentTarget.style.background = 'rgba(200,144,10,0.1)' }}
                   onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
                 >
-                  {gift.image_url && (
-                    <Image src={gift.image_url} alt="" width={24} height={24} style={{ width: '1.5rem', height: '1.5rem', objectFit: 'contain' }} />
-                  )}
-                  {gift.name}
+                  <span className="w-8 shrink-0"><GiftArtwork gift={gift} displayName={giftName(gift)} sizes="32px" /></span>
+                  {giftName(gift)}
                   {gift.keyword && <span style={{ color: '#666' }}>({gift.keyword})</span>}
                 </button>
               ))}
@@ -141,8 +149,8 @@ export default function RunSetup({ state, dispatch, gifts, giftMap }: Props) {
             <div className="flex flex-wrap gap-1">
               {inventoryGifts.map((gift, i) => (
                 <span key={`${gift.game_id}-${i}`} className="inline-flex items-center gap-1 rounded" style={{ background: '#2a2015', padding: '0.375rem 0.5rem', fontSize: '0.6875rem', color: '#ccc' }}>
-                  {gift.name}
-                  <button onClick={() => dispatch({ type: 'REMOVE_GIFT', giftId: String(gift.game_id) })} style={{ color: '#666', padding: '0.25rem' }}>
+                  {giftName(gift)}
+                  <button aria-label={t('removeGift', { name: giftName(gift) })} onClick={() => dispatch({ type: 'REMOVE_GIFT', giftId: String(gift.game_id) })} style={{ color: '#666', padding: '0.25rem' }}>
                     <X style={{ width: '0.75rem', height: '0.75rem' }} />
                   </button>
                 </span>
@@ -157,7 +165,7 @@ export default function RunSetup({ state, dispatch, gifts, giftMap }: Props) {
         <section className="rounded-lg" style={{ background: '#1a1510', border: '1px solid #2a2015', padding: '1rem' }}>
           <div className="flex items-center justify-between">
             <div>
-              <p style={{ fontSize: '0.8125rem', fontWeight: 600 }}>이전 런 이어하기</p>
+              <p style={{ fontSize: '0.8125rem', fontWeight: 600 }}>{t('resumeRun')}</p>
               <p style={{ fontSize: '0.6875rem', color: '#888' }}>{draft.label}</p>
             </div>
             <button
@@ -165,7 +173,7 @@ export default function RunSetup({ state, dispatch, gifts, giftMap }: Props) {
               className="inline-flex items-center gap-1 rounded-lg shrink-0"
               style={{ background: 'rgba(200,144,10,0.1)', border: '1px solid rgba(200,144,10,0.3)', padding: '0.5rem 0.75rem', fontSize: '0.75rem', color: '#e8b030', minHeight: '2.75rem' }}
             >
-              <RotateCcw style={{ width: '0.75rem', height: '0.75rem' }} /> 복원
+              <RotateCcw style={{ width: '0.75rem', height: '0.75rem' }} /> {t('restore')}
             </button>
           </div>
         </section>
@@ -182,7 +190,7 @@ export default function RunSetup({ state, dispatch, gifts, giftMap }: Props) {
         }}
       >
         <Play style={{ width: '1.125rem', height: '1.125rem' }} />
-        트리거 모드 시작
+        {t('start')}
       </button>
     </div>
   )

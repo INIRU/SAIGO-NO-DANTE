@@ -33,71 +33,17 @@ interface ThemePackCardProps {
   showGiftCount?: boolean
   /** Use a bare image surface when the surrounding layout already provides the frame. */
   imageSurface?: 'default' | 'bare'
+  /** Mirror Dungeon selection sprite; only used by the assist theme picker. */
+  selectedFrameOverlay?: boolean
 }
 
-const TITLE_MIN_FONT_REM = 0.5
-const TITLE_SIDE_PADDING_PERCENT = 6
+const TITLE_MIN_FONT_REM = 0.32
 const THEME_CARD_ASPECT_RATIO = '416/684'
-const TITLE_LINE_BREAK_REFERENCE = '어느 도서관의 어떤 책'
-
-const EXPLICIT_KOREAN_TITLE_LINES = new Map<string, string[]>([
-  ['어느 도서관의 어떤 책 속으로', ['어느 도서관의 어떤 책', '속으로']],
-])
 
 function normalizeTitle(title: string): string {
   return title.replace(/\s+/g, ' ').trim()
 }
 
-function getTitleVisualLength(title: string): number {
-  return Array.from(title).reduce((total, char) => {
-    if (/\s/.test(char)) return total + 0.3
-    if (/[\u3000-\u9fff\uac00-\ud7af]/.test(char)) return total + 1
-    if (/[A-Za-z0-9]/.test(char)) return total + 0.55
-    return total + 0.25
-  }, 0)
-}
-
-const TITLE_LINE_BREAK_LIMIT = getTitleVisualLength(TITLE_LINE_BREAK_REFERENCE)
-
-function splitTitleAtBestPoint(title: string): string[] {
-  const words = title.split(' ').filter(Boolean)
-
-  if (words.length <= 1) {
-    const chars = Array.from(title)
-    const midpoint = Math.ceil(chars.length / 2)
-    return [chars.slice(0, midpoint).join(''), chars.slice(midpoint).join('')]
-  }
-
-  let bestSplit = 1
-  let bestScore = Number.POSITIVE_INFINITY
-
-  for (let index = 1; index < words.length; index += 1) {
-    const first = words.slice(0, index).join(' ')
-    const second = words.slice(index).join(' ')
-    const firstLength = getTitleVisualLength(first)
-    const secondLength = getTitleVisualLength(second)
-    const score = Math.max(firstLength, secondLength) + Math.abs(firstLength - secondLength) * 0.4
-
-    if (score < bestScore) {
-      bestScore = score
-      bestSplit = index
-    }
-  }
-
-  return [words.slice(0, bestSplit).join(' '), words.slice(bestSplit).join(' ')]
-}
-
-function getThemePackTitleLines(title: string, lang: SupportedLang): string[] {
-  const normalizedTitle = normalizeTitle(title)
-  const explicitTitleLines = lang === 'ko'
-    ? EXPLICIT_KOREAN_TITLE_LINES.get(normalizedTitle)
-    : null
-
-  if (explicitTitleLines) return explicitTitleLines
-  if (getTitleVisualLength(normalizedTitle) <= TITLE_LINE_BREAK_LIMIT) return [normalizedTitle]
-
-  return splitTitleAtBestPoint(normalizedTitle)
-}
 
 export default function ThemePackCard({
   theme,
@@ -106,6 +52,7 @@ export default function ThemePackCard({
   lang: langProp,
   showGiftCount,
   imageSurface = 'default',
+  selectedFrameOverlay = false,
 }: ThemePackCardProps) {
   const locale = useLocale()
   const lang = langProp ?? (locale as SupportedLang)
@@ -118,14 +65,12 @@ export default function ThemePackCard({
   const nameColor = getThemePackNameColor(numId)
   const titleTrackRef = useRef<HTMLDivElement>(null)
   const [titleMeasureWidth, setTitleMeasureWidth] = useState(0)
+  const [titleTrackHeight, setTitleTrackHeight] = useState(0)
+  const [rootFontSize, setRootFontSize] = useState(16)
   const displayName = normalizeTitle(getLocalizedName({ name_kr: theme.name, name_en: theme.name_en, name_jp: theme.name_jp }, lang))
   const displayNameSegments = getThemePackNameSegments(numId, lang)
-  const titleLines = displayNameSegments ? [displayName] : getThemePackTitleLines(displayName, lang)
-  const isMultilineTitle = !displayNameSegments && titleLines.length > 1
-  const titleMeasureText = titleLines.length > 1
-    ? titleLines.reduce((longest, line) => (getTitleVisualLength(line) > getTitleVisualLength(longest) ? line : longest), '')
-    : displayName
   const visualConfig = getThemePackVisualConfig(numId)
+  const isExtreme = visualConfig?.kind === 'extreme'
   const imageSrc = visualConfig ? getThemePackCompositeImageUrl(numId) : theme.image_url
   const isBareImageSurface = imageSurface === 'bare'
   const titleFontFamily = lang === 'en'
@@ -137,8 +82,10 @@ export default function ThemePackCard({
   const titleTextShadow = lang === 'en'
     ? '0.04rem 0.04rem 0 rgba(0,0,0,0.95), 0.08rem 0.08rem 0.08rem rgba(0,0,0,0.65)'
     : '0.05rem 0.05rem 0 rgba(0,0,0,0.95), 0.1rem 0.1rem 0 rgba(0,0,0,0.6), 0.15rem 0.15rem 0.1rem rgba(0,0,0,0.3)'
-  const titleMaxFontRem = isMultilineTitle ? 1.05 : 1.5
-  const fontSize = useAutoFontSize(titleMeasureText, titleMaxFontRem, TITLE_MIN_FONT_REM, titleMeasureWidth, titleFontFamily, titleFontWeight)
+  const titleMaxFontRem = titleMeasureWidth && titleTrackHeight
+    ? Math.max(TITLE_MIN_FONT_REM, Math.min(1.5, (titleMeasureWidth / (isExtreme ? 0.64 : 0.65328)) * 0.097 / rootFontSize, titleTrackHeight / rootFontSize))
+    : 0.75
+  const fontSize = useAutoFontSize(displayName, titleMaxFontRem, TITLE_MIN_FONT_REM, titleMeasureWidth, titleFontFamily, titleFontWeight)
   const giftCount = (theme.ego_gift_ids ?? []).length
   const giftCountLabel = lang === 'en'
     ? `${giftCount} ${t('mirrorDungeon.theme.gifts')}`
@@ -153,6 +100,10 @@ export default function ThemePackCard({
       const horizontalPadding = parseFloat(style.paddingLeft) + parseFloat(style.paddingRight)
       const nextWidth = Math.max(1, Math.round(element.getBoundingClientRect().width - horizontalPadding))
       setTitleMeasureWidth(prevWidth => (Math.abs(prevWidth - nextWidth) > 1 ? nextWidth : prevWidth))
+      const nextHeight = element.getBoundingClientRect().height
+      setTitleTrackHeight(prevHeight => (Math.abs(prevHeight - nextHeight) > 1 ? nextHeight : prevHeight))
+      const nextRootFontSize = parseFloat(getComputedStyle(element.ownerDocument.documentElement).fontSize) || 16
+      setRootFontSize(prevSize => (Math.abs(prevSize - nextRootFontSize) > 0.1 ? nextRootFontSize : prevSize))
     }
 
     const measure = () => updateMeasureWidth()
@@ -174,6 +125,7 @@ export default function ThemePackCard({
       type="button"
       onClick={onClick}
       aria-label={displayName}
+      aria-pressed={isSelected}
       className="group relative w-full overflow-hidden text-left transition-[border-color,box-shadow,transform] duration-200 motion-safe:active:scale-[0.985] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold)] focus-visible:ring-offset-2 focus-visible:ring-offset-[#131110]"
       style={{
         background: 'transparent',
@@ -217,20 +169,24 @@ export default function ThemePackCard({
             ref={titleTrackRef}
             className="absolute left-0 right-0 flex items-center justify-center"
             style={{
-              top: isMultilineTitle ? '72.6%' : '74.6%',
-              height: isMultilineTitle ? '11.5%' : '8.55%',
-              paddingInline: `${TITLE_SIDE_PADDING_PERCENT}%`,
+              left: isExtreme ? '18%' : '18.273%',
+              right: isExtreme ? '18%' : '16.399%',
+              top: isExtreme ? '81%' : '74.5667%',
+              height: isExtreme ? '10%' : '8.5%',
             }}
           >
             <div
-              className="text-center [--theme-title-cap:0.9375rem] sm:[--theme-title-cap:1.5rem]"
+              className="text-center"
               style={{
                 '--theme-title-auto-size': `${fontSize}rem`,
                 color: nameColor,
                 fontFamily: titleFontFamily,
-                fontSize: 'min(var(--theme-title-auto-size), var(--theme-title-cap))',
+                fontSize: 'var(--theme-title-auto-size)',
                 fontWeight: titleFontWeight,
-                lineHeight: isMultilineTitle ? 1.02 : 1.2,
+                lineHeight: 1,
+                letterSpacing: '-0.02em',
+                wordSpacing: '-0.05em',
+                transform: 'translateY(0.104em)',
                 textShadow: titleTextShadow,
                 WebkitTextStroke: 0,
                 width: '100%',
@@ -244,13 +200,7 @@ export default function ThemePackCard({
                 display: 'block',
               } as CSSProperties}
             >
-              {isMultilineTitle
-                ? titleLines.map(line => (
-                    <span key={line} style={{ display: 'block', whiteSpace: 'nowrap' }}>
-                      {line}
-                    </span>
-                  ))
-                : displayNameSegments
+              {displayNameSegments
                 ? displayNameSegments.map((segment, index) => (
                     <span key={`${segment.text}-${index}`} style={{ color: segment.color ?? nameColor }}>
                       {segment.text}
@@ -270,11 +220,21 @@ export default function ThemePackCard({
           )}
 
           {/* Selected indicator */}
-          {isSelected && (
+          {isSelected && !selectedFrameOverlay && (
             <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-center" style={{ padding: '0.375rem', background: 'rgba(200,144,10,0.15)' }}>
               <Check style={{ width: '0.875rem', height: '0.875rem', color: '#c8900a' }} />
               <span style={{ color: '#c8900a', fontSize: '0.75rem', fontWeight: 700, marginLeft: '0.25rem' }}>{t('mirrorDungeon.theme.selected')}</span>
             </div>
+          )}
+          {isSelected && selectedFrameOverlay && (
+            <>
+              {/* The transparent center exposes the original theme poster. */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/assets/game-ui/themes/selected-frame.webp" alt="" aria-hidden="true" data-theme-selected-frame loading="eager" className="pointer-events-none absolute inset-0 z-20 h-full w-full object-fill" />
+              <span className="pointer-events-none absolute inset-x-[10%] top-1/2 z-30 -translate-y-1/2 bg-[rgba(13,11,8,0.82)] py-1 text-center font-[family-name:var(--font-heading)] text-sm font-bold text-[var(--gold-light)]">
+                {t('mirrorDungeon.theme.selected')}
+              </span>
+            </>
           )}
         </div>
       ) : (

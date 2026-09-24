@@ -429,9 +429,11 @@ export default function PlanDeckTabs({
   return (
     <>
       {/* 서브탭 헤더 */}
+      {/* The baseline is an inset line under the tabs, so the active underline covers it without the strip
+          overflowing its own box (which made the horizontally scrollable strip show a vertical scrollbar). */}
       <div style={{
         display: 'flex', alignItems: 'center',
-        borderBottom: '1px solid #222', marginBottom: '0.75rem',
+        boxShadow: 'inset 0 -1px 0 #222', marginBottom: '0.75rem',
         overflowX: 'auto', WebkitOverflowScrolling: 'touch',
       }}>
         {tabs.map(tab => {
@@ -447,7 +449,6 @@ export default function PlanDeckTabs({
                 background: active ? 'rgba(200,144,10,0.05)' : 'transparent',
                 border: 'none',
                 borderBottom: `2px solid ${active ? '#c8900a' : 'transparent'}`,
-                marginBottom: '-1px',
               }}
             >
               {tab.label}

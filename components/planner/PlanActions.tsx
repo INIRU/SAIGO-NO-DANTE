@@ -229,6 +229,7 @@ export default function PlanActions({
     <>
       <div className="grid grid-cols-1 gap-2 min-[420px]:grid-cols-2">
         <button
+          data-plan-action={codeCopied ? 'copied' : 'copy'}
           onClick={handleCopyCode}
           className={codeCopied ? `${actionBase} border-emerald-500/40 bg-emerald-500/10 text-emerald-300` : quietAction}
         >
@@ -237,6 +238,7 @@ export default function PlanActions({
         </button>
 
         <button
+          data-plan-action="fork"
           onClick={handleFork}
           className={quietAction}
         >
@@ -245,6 +247,7 @@ export default function PlanActions({
         </button>
 
         <button
+          data-plan-action="assist"
           onClick={handleRunMode}
           className={`${primaryAction} min-[420px]:col-span-2`}
         >
@@ -255,6 +258,7 @@ export default function PlanActions({
         {(isOwner || isAdmin) && (
           <>
             <button
+              data-plan-action="edit"
               onClick={handleEdit}
               className={`${actionBase} border-[#6f5115] bg-[#15100b] text-[#c8900a]`}
             >
@@ -262,6 +266,7 @@ export default function PlanActions({
               {tCommon('edit')}
             </button>
             <button
+              data-plan-action="delete"
               onClick={() => setShowDeleteModal(true)}
               className={`${actionBase} border-red-500/35 bg-[#15100b] text-red-300 hover:border-red-400 hover:text-red-200`}
             >

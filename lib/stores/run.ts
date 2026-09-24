@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware'
 import {
   runReducer,
   createInitialRunState,
+  normalizeRunState,
   type RunState,
   type RunAction,
 } from '@/lib/planner/run-types'
@@ -24,6 +25,7 @@ export const useRunStore = create<RunStore>()(
     }),
     {
       name: 'md-run-draft',
+      merge: (persisted, current) => ({ ...current, ...normalizeRunState(persisted) }),
       partialize: (state) => ({
         phase: state.phase,
         difficulty: state.difficulty,
@@ -37,6 +39,7 @@ export const useRunStore = create<RunStore>()(
         floorLogs: state.floorLogs,
         giftInventory: state.giftInventory,
         sourcePlanEncoded: state.sourcePlanEncoded,
+        sourcePlanSnapshot: state.sourcePlanSnapshot,
         targetGifts: state.targetGifts,
       }),
     },
