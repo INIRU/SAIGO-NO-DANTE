@@ -4,6 +4,8 @@ import { useLocale } from "next-intl";
 import { Link } from "@/lib/i18n/navigation";
 import { signIn, useSession } from "next-auth/react";
 import useSWR from "swr";
+import { useHtmlFlag } from "@/hooks/useHtmlFlag";
+import PageHeader from "@/components/ui/PageHeader";
 import { KeyRound, Copy, Trash2, Code2, Plus, EyeOff, ChartNoAxesColumn, LoaderCircle, ArrowUpRight } from "lucide-react";
 
 type KeyRow = {
@@ -18,6 +20,7 @@ export default function DeveloperConsole() {
   const lang = useLocale();
   const label = (ko: string, ja: string, en: string) => lang === "ko" ? ko : lang === "ja" ? ja : en;
   const { status } = useSession();
+  useHtmlFlag("with-compact-footer");
   const [name, setName] = useState("");
   const [secret, setSecret] = useState("");
   const [message, setMessage] = useState("");
@@ -69,15 +72,8 @@ export default function DeveloperConsole() {
   const example = `GET /api/v1/${resource}?limit=20&offset=0\nAuthorization: Bearer YOUR_API_KEY`;
 
   return (
-    <div className="mx-auto max-w-6xl px-4 pb-20 pt-28 text-[var(--text-primary)] sm:px-6" data-developer-console>
-      <header className="mb-8">
-        <h1 className="font-[family-name:var(--font-heading)] text-[2rem] leading-tight text-[var(--gold)]">
-          {label("개발자 도구", "開発者ツール", "Developer tools")}
-        </h1>
-        <p className="mt-3 text-sm leading-relaxed text-[var(--text-secondary)]">
-          {label("공개 덱과 플랜을 내 서비스에 연결하세요.", "公開デッキとプランを自分のサービスに接続できます。", "Connect public decks and plans to your service.")}
-        </p>
-      </header>
+    <div className="mx-auto max-w-6xl px-4 pb-20 pt-[5.5rem] text-[var(--text-primary)] sm:px-6" data-developer-console>
+      <PageHeader title={label("개발자 도구", "開発者ツール", "Developer tools")} description={label("공개 덱과 플랜을 내 서비스에 연결하세요.", "公開デッキとプランを自分のサービスに接続できます。", "Connect public decks and plans to your service.")} />
 
       <div className="grid items-stretch gap-5 lg:grid-cols-[minmax(0,2fr)_minmax(16rem,1fr)]">
         <section className="min-w-0 rounded-lg bg-[var(--bg-panel)] p-5 sm:p-6" aria-labelledby="api-keys-heading">

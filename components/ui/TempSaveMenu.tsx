@@ -40,7 +40,7 @@ export default function TempSaveMenu<T>({ title, slots, onSave, onLoad, onDelete
       <button type="button" onClick={() => setOpen(value => !value)} aria-expanded={open} aria-haspopup="menu"
         className="inline-flex min-h-9 items-center gap-1.5 rounded-md border border-[rgba(200,144,10,0.3)] bg-[rgba(200,144,10,0.1)] px-2.5 text-[0.9375rem] font-semibold text-[#e8b030] transition-colors hover:bg-[rgba(200,144,10,0.18)] focus-visible:outline-2 focus-visible:outline-[#e8b030]">
         <Save size={13} aria-hidden="true" />
-        {t('button')}
+        <span className="max-sm:sr-only">{t('button')}</span>
         <span className="text-[0.8125rem] font-medium text-[#a8894e]">{used}/{slots.length}</span>
         <ChevronDown size={13} aria-hidden="true" className={`transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>

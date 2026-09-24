@@ -57,9 +57,10 @@ export function getGiftKeywordSlug(keyword: string | null): string | null {
 
 // ── 기프트 키워드 색상 ──────────────────────────────────────────────────────
 export const GIFT_KEYWORD_COLORS: Record<string, string> = {
-  화상: '#e85830', 출혈: '#c83030', 진동: '#d0a020', 파열: '#8040c0',
-  침잠: '#3060b0', 호흡: '#40a060', 충전: '#e0c020', 참격: '#cc4444',
-  관통: '#dd8833', 타격: '#cc8822', 공통: '#888888', '공통/범용': '#888888',
+  // 게임 키워드 아이콘에서 뽑은 색을 화면용으로 조금 밝힌 값
+  화상: '#e0503a', 출혈: '#d1323a', 진동: '#dca24a', 파열: '#22c4a4',
+  침잠: '#3a82dc', 호흡: '#7fb3ae', 충전: '#22b8cc', 참격: '#c0784a',
+  관통: '#c0784a', 타격: '#c0784a', 공통: '#9c8b73', '공통/범용': '#9c8b73',
 }
 
 export function getGiftKeywordColor(keyword: string | null): string {
@@ -69,3 +70,5 @@ export function getGiftKeywordColor(keyword: string | null): string {
 
 // ── 기프트 이미지 배경 URL ──────────────────────────────────────────────────
 export const GIFT_BG_URL = getGameUiAsset('gift/background')
+/** Slot of a gift enhanced to + or ++: orange stripes and a yellow inner octagon. */
+export const GIFT_BG_ENHANCED_URL = getGameUiAsset('gift/background-enhanced')

@@ -1,25 +1,8 @@
 .page {
   max-width: 76rem;
   margin: auto;
-  padding: 6rem 1.5rem 5rem;
+  padding: 5.5rem 1.5rem 5rem;
   color: var(--text-primary);
-}
-.hero {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 2rem;
-  margin-bottom: 2rem;
-}
-.hero h1 {
-  font-family: var(--font-heading);
-  font-size: clamp(1.8rem, 4vw, 2.6rem);
-  color: var(--gold-light);
-  margin: 0.4rem 0 0.8rem;
-}
-.hero p:not(.eyebrow) {
-  color: var(--text-secondary);
-  line-height: 1.7;
 }
 .eyebrow {
   font-size: 0.7rem;
@@ -358,17 +341,7 @@
 }
 @media (max-width: 640px) {
   .page {
-    padding: 6rem 0.75rem 4rem;
-  }
-  .hero {
-    gap: 0.5rem;
-  }
-  .hero img {
-    width: 4.5rem;
-    height: 4.5rem;
-  }
-  .hero p:not(.eyebrow) {
-    font-size: 0.8rem;
+    padding: 5.5rem 0.75rem 4rem;
   }
   .totals {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -506,14 +479,6 @@
 .settingsBody {
   padding: 1.25rem;
   border-top: 1px solid var(--border);
-}
-.hero > img {
-  width: 5rem;
-  height: 5rem;
-  opacity: 0.7;
-}
-.hero h1 {
-  font-size: clamp(1.7rem, 3vw, 2.3rem);
 }
 .dayTotal {
   display: grid;

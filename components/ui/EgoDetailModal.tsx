@@ -13,6 +13,7 @@ import { useTranslations, useLocale } from 'next-intl'
 import { getLocalizedName } from '@/lib/i18n'
 import type { SupportedLang } from '@/lib/i18n/types'
 import type { TranslationKey } from '@/lib/i18n'
+import Skeleton, { SkeletonLine, SkeletonPage } from '@/components/ui/Skeleton'
 
 // ── 타입 ──────────────────────────────────────────────────────────────────
 type EgoSkillData = {
@@ -173,18 +174,19 @@ export default function EgoDetailModal({ egoId, onClose }: EgoDetailModalProps) 
 // ── 로딩 스켈레톤 ────────────────────────────────────────────────────────
 function LoadingSkeleton() {
   return (
-    <div className="p-5 space-y-4">
+    <SkeletonPage className="space-y-4 p-5">
       <div className="flex items-center gap-3">
-        <div className="rounded" style={{ width: '3rem', height: '3rem', background: '#1a1510' }} />
-        <div className="flex-1 space-y-2">
-          <div className="rounded" style={{ width: '60%', height: '1rem', background: '#1a1510' }} />
-          <div className="rounded" style={{ width: '40%', height: '0.75rem', background: '#1a1510' }} />
-        </div>
+        <Skeleton className="h-12 w-12 shrink-0" />
+        <div className="flex-1 space-y-2"><SkeletonLine w="60%" h="1rem" /><SkeletonLine w="40%" h="0.75rem" /></div>
       </div>
+      <div className="flex gap-4 border-b border-[#2e2417] pb-2"><SkeletonLine w="2.5rem" h="0.875rem" /><SkeletonLine w="3rem" h="0.875rem" /><SkeletonLine w="3rem" h="0.875rem" /></div>
       {[1, 2, 3].map(i => (
-        <div key={i} className="rounded-lg" style={{ height: '4rem', background: '#1a1510' }} />
+        <div key={i} className="flex gap-3 rounded-lg border border-[#2e2417] p-3">
+          <Skeleton className="h-10 w-10 shrink-0" />
+          <div className="flex-1 space-y-2"><SkeletonLine w="35%" h="0.875rem" /><SkeletonLine w="90%" h="0.75rem" /><SkeletonLine w="70%" h="0.75rem" /></div>
+        </div>
       ))}
-    </div>
+    </SkeletonPage>
   )
 }
 

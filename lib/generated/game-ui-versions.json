@@ -83,5 +83,15 @@
   "stats/offense": "bf54d7314681",
   "stats/pierce": "da26caee4aff",
   "stats/slash": "f01b3e5c6793",
-  "stats/speed": "efa802881ec2"
+  "stats/speed": "efa802881ec2",
+  "gift/enhance-minus": "3dc90e203a3f",
+  "gift/enhance-plus-idle": "a516767f8098",
+  "gift/enhance-plusplus-idle": "c04ad9f5e0a1",
+  "gift/enhance-plus": "883208f5601c",
+  "gift/enhance-plusplus": "6449e7ba89f0",
+  "uptie/1": "e472d9f037ec",
+  "uptie/2": "12b5ae79aff5",
+  "uptie/3": "380c3c33015d",
+  "uptie/4": "fc61d7a9cff9",
+  "gift/background-enhanced": "dff98b871777"
 }

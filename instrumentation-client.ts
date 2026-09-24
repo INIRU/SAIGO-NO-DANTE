@@ -72,16 +72,8 @@ Sentry.init({
 
   enableLogs: true,
 
-  integrations: [
-    Sentry.replayIntegration({
-      maskAllText: true,
-      maskAllInputs: true,
-      blockAllMedia: true,
-      networkCaptureBodies: false,
-      networkRequestHeaders: [],
-      networkResponseHeaders: [],
-    }),
-  ],
+  // 세션 리플레이는 첫 화면 이후에 따로 불러온다(아래 loadReplay)
+  integrations: [],
 
   beforeSend: scrubEvent,
   beforeSendTransaction: scrubEvent,
@@ -101,3 +93,24 @@ Sentry.init({
 });
 
 export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;
+
+// Replay is the largest part of the Sentry bundle; load it as a separate chunk once the page is idle.
+// @sentry-internal/replay is Sentry's own package pinned to the same version as @sentry/nextjs.
+function loadReplay() {
+  if (process.env.NODE_ENV !== "production") return;
+  import("@sentry-internal/replay").then(({ replayIntegration }) => {
+    Sentry.addIntegration(replayIntegration({
+      maskAllText: true,
+      maskAllInputs: true,
+      blockAllMedia: true,
+      networkCaptureBodies: false,
+      networkRequestHeaders: [],
+      networkResponseHeaders: [],
+    }));
+  }).catch(() => {});
+}
+if (typeof window !== "undefined") {
+  const idle = (window as Window & { requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => void }).requestIdleCallback;
+  const start = () => (idle ? idle(loadReplay, { timeout: 8000 }) : setTimeout(loadReplay, 4000));
+  if (document.readyState === "complete") start(); else window.addEventListener("load", start, { once: true });
+}

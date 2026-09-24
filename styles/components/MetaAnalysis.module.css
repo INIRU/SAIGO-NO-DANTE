@@ -1,6 +1,4 @@
-.page { position: relative; max-width: 80rem; margin: auto; min-height: 100dvh; padding: 6.5rem 1.5rem 4rem; font-family: var(--font-body); color: var(--text-primary); }
-.heading { margin-bottom: 1.75rem; }
-.heading h1 { font-family: var(--font-paperlogy), sans-serif; font-size: clamp(1.75rem, 3vw, 2.5rem); font-weight: 700; line-height: 1.3; margin-bottom: .625rem; letter-spacing: -.04em; }
+.page { position: relative; max-width: 80rem; margin: auto; min-height: 100dvh; padding: 5.5rem 1.5rem 4rem; font-family: var(--font-body); color: var(--text-primary); }
 .toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .75rem 1.5rem; padding: .375rem; margin-bottom: 1rem; background: var(--bg-panel); border: 1px solid var(--border); border-radius: .5rem; }
 .toolbar [role=tablist] { border-bottom: 0 !important; }
 .toolbar [role=tab] { border-radius: .25rem; }

@@ -13,7 +13,7 @@ type Props = {
 }
 
 export default function EgoStageTabs({ levels, value, onChange, label, color, corrosion = false }: Props) {
-  const border = corrosion ? 'rgba(180,20,20,0.4)' : 'var(--border)'
+  const border = corrosion ? 'rgba(180,20,20,0.4)' : '#2e2417'
   return (
     <div role="tablist" aria-label={label} className="flex rounded overflow-hidden" style={{ border: `1px solid ${border}` }}>
       {levels.map((level, index) => (
@@ -29,7 +29,7 @@ export default function EgoStageTabs({ levels, value, onChange, label, color, co
             onChange(levels[target])
             ;(event.currentTarget.parentElement?.children[target] as HTMLButtonElement)?.focus()
           }}
-          className="px-3 py-1.5 text-xs font-semibold transition-all"
+          className="min-h-10 px-3 py-1.5 text-xs font-semibold transition-colors"
           style={{ minWidth: '2.5rem', background: value === level ? (corrosion ? 'rgba(180,20,20,0.3)' : `${color}20`) : 'transparent', borderRight: index < levels.length - 1 ? `1px solid ${border}` : undefined }}>
           <Image src={`/assets/ego-stages/${level}.webp`} alt={ROMAN[level]} width={224} height={192} unoptimized
             style={{ height: '1.5rem', width: '1.75rem', maxWidth: 'none', margin: 'auto', opacity: value === level ? 1 : 0.5 }} />

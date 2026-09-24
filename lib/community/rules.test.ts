@@ -1,6 +1,6 @@
 import { expect, it } from "vitest";
 import { communitySettingsSchema } from "./rules";
-import { inquiryReplySchema, inquirySchema } from "@/lib/support";
+import { inquiryAdminPatchSchema, inquirySchema } from "@/lib/support";
 
 it("only accepts the owner profile visibility setting", () => {
   for (const data of [
@@ -16,27 +16,10 @@ it("only accepts the owner profile visibility setting", () => {
     communitySettingsSchema.safeParse({ public_profile: false }).success,
   ).toBe(true);
 });
-it("requires a reviewed response before awarding a contribution", () => {
+it("keeps contribution approval an explicit admin change", () => {
+  expect(inquiryAdminPatchSchema.safeParse({}).success).toBe(false);
   expect(
-    inquiryReplySchema.safeParse({
-      reply: "",
-      status: "closed",
-      contribution_accepted: true,
-    }).success,
-  ).toBe(false);
-  expect(
-    inquiryReplySchema.safeParse({
-      reply: "Fixed",
-      status: "open",
-      contribution_accepted: true,
-    }).success,
-  ).toBe(false);
-  expect(
-    inquiryReplySchema.safeParse({
-      reply: "Fixed",
-      status: "answered",
-      contribution_accepted: true,
-    }).success,
+    inquiryAdminPatchSchema.safeParse({ contribution_accepted: true }).success,
   ).toBe(true);
   expect(
     inquirySchema.parse({
