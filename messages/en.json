@@ -502,6 +502,8 @@
       "pipThemePossible": "Available",
       "pipThemePlanGifts": "Plan gifts to obtain from this theme pack",
       "pipPlanGift": "Gift set in the plan",
+      "fusionTierGiftsCount": "Tier IV+ gifts to fuse ({count})",
+      "fusionTierGiftsOwned": "You own every tier IV+ gift.",
       "skillExchangeTitle": "{sinner} skill replacement guide",
       "skillExchangeCounts": "Now {current} → plan {target}",
       "skillExchangePlanOnly": "Plan {target}",

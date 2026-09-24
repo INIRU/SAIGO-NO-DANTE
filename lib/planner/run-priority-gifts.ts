@@ -16,6 +16,28 @@ export function planThemeGiftIds(state: RunState, themeId: string, floor?: numbe
   return [...new Set(entries.flatMap(entry => entry.gift_ids ?? []).map(giftGameId).filter((id): id is number => id !== null))]
 }
 
+/** The plan's final targets, then every floor's gifts, in plan order. */
+export function planGiftIds(state: RunState): number[] {
+  return [...new Set([...state.targetGifts, ...(state.sourcePlanSnapshot?.floorPlan ?? []).flatMap(entry => entry.gift_ids ?? [])]
+    .map(giftGameId).filter((id): id is number => id !== null))]
+}
+
+/**
+ * Unowned tier IV and V gifts for the fusion screen, where they are mostly obtained: the plan's gifts first (plan order),
+ * then tier V, then tier IV, each in catalog order.
+ */
+export function getFusionTierGifts(state: RunState, giftMap: Map<number, GiftData>): GiftData[] {
+  const owned = new Set(state.giftInventory.map(giftGameId))
+  const tier = (gift: GiftData) => ['4', '5'].includes(String(gift.grade)) ? Number(gift.grade) : 0
+  const result = new Map<number, GiftData>()
+  const add = (gift: GiftData | undefined, wanted?: number) => {
+    if (gift && tier(gift) && (wanted === undefined || tier(gift) === wanted) && !owned.has(gift.game_id)) result.set(gift.game_id, result.get(gift.game_id) ?? gift)
+  }
+  for (const id of planGiftIds(state)) add(giftMap.get(id))
+  for (const wanted of [5, 4]) for (const gift of giftMap.values()) add(gift, wanted)
+  return [...result.values()]
+}
+
 /**
  * Scene labels (lib/vision scene classifier) where gifts on screen are offered or shown outside combat, so a sighting
  * may move a gift forward. battle/battle_setup freeze the promotion; loading, unknown labels or no stable scene leave
