@@ -408,12 +408,15 @@ export default function CompanionPanel({ state, dispatch, themes, giftMap, obser
       Math.floor((availableWidth - (themeColumns - 1) * 8) / themeColumns),
       Math.floor((((inPip ? actualSize.height : 448) - 112 - (themeRows - 1) * 8) / themeRows) * 416 / 684),
     ))
-    const packGiftSize = Math.max(24, Math.min(32, Math.floor((themeWidth - 24) / 3)))
     const packGiftList = (themeId: string) => {
       const list = packGifts.get(themeId) ?? []
-      return list.length > 0 && <div data-theme-plan-gifts={themeId} className="pointer-events-none absolute inset-x-1 top-1 z-20 rounded border border-[var(--border-gold)] bg-[rgba(13,11,8,0.94)] p-1.5 opacity-0 shadow-lg transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100">
-        <p className="mb-1 text-center text-[0.625rem] font-bold leading-tight text-[var(--gold-light)]">{t('pipThemePlanGifts')}</p>
-        <ul aria-label={t('pipThemePlanGifts')} className="flex flex-wrap justify-center gap-1">{list.map(gift => {
+      // The popup covers the whole poster; icons take the largest size (up to 64 px) at which every gift fits.
+      const inner = themeWidth - 12
+      const height = Math.floor(themeWidth * 684 / 416) - 12
+      const fit = (columns: number) => Math.min(64, Math.floor((inner - (columns - 1) * 4) / columns), Math.floor((height - (Math.ceil(list.length / columns) - 1) * 4) / Math.ceil(list.length / columns)))
+      const packGiftSize = Math.max(20, ...[1, 2, 3, 4].map(fit))
+      return list.length > 0 && <div data-theme-plan-gifts={themeId} className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center rounded border border-[var(--border-gold)] bg-[rgba(13,11,8,0.94)] p-1.5 opacity-0 shadow-lg transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100">
+        <ul aria-label={t('pipThemePlanGifts')} className="flex flex-wrap content-center justify-center gap-1">{list.map(gift => {
         const have = owned.has(gift.game_id)
         const label = have ? `${localized(gift)} · ${t('owned')}` : localized(gift)
         return <li key={gift.game_id} title={label} aria-label={label} data-owned={have || undefined} className={have ? 'opacity-40' : undefined} style={{ width: packGiftSize }}><GiftArtwork gift={gift} displayName={localized(gift)} sizes={`${packGiftSize}px`} /></li>
