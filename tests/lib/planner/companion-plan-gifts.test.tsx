@@ -28,18 +28,19 @@ function render(state: RunState, skillExchange: { sinner: number; current: [numb
 const started = () => ({ ...runReducer(createInitialRunState('hard'), { type: 'START_RUN' }),
   sourcePlanSnapshot: { floorPlan: [{ floor: 1, theme_id: 'A', gift_ids: ['20', '30_plus'] }] } as RunState['sourcePlanSnapshot'] })
 
-it('shows the plan gifts of a recommended pack in a popup on hover or focus, dimming owned ones', () => {
+it('shows only the planned pack, its poster beside the plan gifts for it, dimming owned ones', () => {
   const html = render({ ...started(), giftInventory: ['30'] })
-  expect(html).toContain('data-theme-choice="A"')
+  expect(html.match(/data-theme-choice=/g)).toHaveLength(1)
   // The pack card of the Mirror Dungeon page, with its name over the poster and the PiP guidance as its accessible name.
-  const choice = html.match(/<li[^>]*data-theme-choice="A".*?<\/button>/)?.[0] ?? ''
+  const choice = html.match(/<div[^>]*data-theme-choice="A".*?<\/button>/)?.[0] ?? ''
   expect(choice).toMatch(/aria-label="pack-A · [^"]*"/)
   expect(choice).toMatch(/>pack-A<\/div>/)
-  const list = html.match(/<div[^>]*data-theme-plan-gifts="A"[^>]*>.*?<\/ul><\/div>/)?.[0] ?? ''
-  // Hidden over the poster until the pack is hovered or focused; the list no longer sits below the poster.
-  expect(list).toMatch(/class="[^"]*absolute[^"]*opacity-0[^"]*group-hover:opacity-100[^"]*group-focus-within:opacity-100/)
-  expect(html).toMatch(/<li[^>]*data-theme-choice="A"[^>]*class="group relative/)
-  expect(list).toContain(messages.planner.run.pipThemePlanGifts)
+  // Beside the poster in a 360 px window, always visible, sized so every gift fits the poster's height.
+  expect(html).toMatch(/<div[^>]*data-theme-choice="A"[^>]*class="flex justify-center gap-2\.5 items-start"/)
+  const list = html.match(/<ul[^>]*data-theme-plan-gifts="A"[^>]*>.*?<\/ul>/)?.[0] ?? ''
+  expect(list).toContain(`aria-label="${messages.planner.run.pipThemePlanGifts}"`)
+  expect(list).not.toContain('opacity-0')
+  expect(list).toMatch(/grid-template-columns:repeat\(2, 56px\)/)
   expect(list).toContain('title="gift-20"')
   expect(list).toContain(`title="gift-30 · ${messages.planner.run.owned}" aria-label="gift-30 · ${messages.planner.run.owned}" data-owned="true"`)
   expect(list).not.toContain('gift-10')

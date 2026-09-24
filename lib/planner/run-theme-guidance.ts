@@ -37,7 +37,10 @@ function effectivePlan(state: RunState): Map<number, string> {
   return plan
 }
 
-/** The current planned pack first, then only direct two-floor swaps in plan order. */
+/**
+ * The pack the plan puts on the current floor (after replaying packs picked elsewhere), when it can be chosen there.
+ * Alternative packs are not suggested: they made the selection view hard to read.
+ */
 export function getRunThemeGuidance(state: RunState, themes: ThemeData[]): ThemeGuidance[] {
   const current = state.currentFloor
   if (state.floorLogs[current - 1]?.themeId) return []
@@ -52,26 +55,13 @@ export function getRunThemeGuidance(state: RunState, themes: ThemeData[]): Theme
     return [floor, new Set(getAvailableThemes(themes, DIFFICULTY_FLOOR_KEY[difficulty], floor).map(theme => theme.id))] as const
   }))
   const eligible = (id: string, floor: number) => availableIds.get(floor)?.has(id) ?? false
-  const choices: { themeId: string; swapFloor?: number }[] = [{ themeId: plannedHere }]
-  for (const floor of openFloors) {
-    const id = plan.get(floor)
-    if (floor === current || !id || id === plannedHere) continue
-    if (eligible(id, current) && eligible(plannedHere, floor) && !choices.some(choice => choice.themeId === id)) {
-      choices.push({ themeId: id, swapFloor: floor })
-    }
-  }
-
-  return choices.flatMap(({ themeId, swapFloor }) => {
-    const theme = byId.get(themeId)
-    if (!theme || !eligible(themeId, current)) return []
-    const remainingOrder = openFloors.filter(floor => floor !== current).flatMap(floor => {
-      const id = floor === swapFloor ? plannedHere : plan.get(floor)
-      const next = id && byId.get(id)
-      return next ? [{ floor, theme: next }] : []
-    })
-    return [{ theme, availableFloors: openFloors.filter(floor => eligible(themeId, floor)),
-      feasible: true, remainingOrder, plannedHere: swapFloor === undefined }]
+  const theme = byId.get(plannedHere)
+  if (!theme || !eligible(plannedHere, current)) return []
+  const remainingOrder = openFloors.filter(floor => floor !== current).flatMap(floor => {
+    const next = byId.get(plan.get(floor) ?? '')
+    return next ? [{ floor, theme: next }] : []
   })
+  return [{ theme, availableFloors: openFloors.filter(floor => eligible(plannedHere, floor)), feasible: true, remainingOrder, plannedHere: true }]
 }
 
 /**

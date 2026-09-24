@@ -410,32 +410,27 @@ export default function CompanionPanel({ state, dispatch, themes, giftMap, obser
         <CompanionStartGifts start={gifts(start)} observe={gifts(observe)} owned={ownedIds} width={availableWidth} onAcquire={(id, event) => acquire(id, event)} />
       </div>
     }
-    const themeCount = guidance.length
-    const themeColumns = Math.min(themeCount || 1, 3)
-    const themeRows = Math.ceil(themeCount / themeColumns) || 1
-    // Each recommended pack shows the plan's gifts for it in a popup over the poster on hover or focus.
-    const owned = ownedIds
-    const packGifts = new Map(guidance.map(item => [item.theme.id, planThemeGiftIds(state, themes, item.theme.id).flatMap(id => giftMap.get(id) ?? [])]))
-    const themeWidth = Math.max(72, Math.min(
-      themeCount <= 1 ? 156 : themeCount === 2 ? 136 : 112,
-      Math.floor((availableWidth - (themeColumns - 1) * 8) / themeColumns),
-      Math.floor((((inPip ? actualSize.height : 448) - 112 - (themeRows - 1) * 8) / themeRows) * 416 / 684),
-    ))
-    const packGiftList = (themeId: string) => {
-      const list = packGifts.get(themeId) ?? []
-      // The popup covers the whole poster; icons take the largest size (up to 64 px) at which every gift fits.
-      const inner = themeWidth - 12
-      const height = Math.floor(themeWidth * 684 / 416) - 12
-      const fit = (columns: number) => Math.min(64, Math.floor((inner - (columns - 1) * 4) / columns), Math.floor((height - (Math.ceil(list.length / columns) - 1) * 4) / Math.ceil(list.length / columns)))
-      const packGiftSize = Math.max(20, ...[1, 2, 3, 4].map(fit))
-      return list.length > 0 && <div data-theme-plan-gifts={themeId} className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center rounded border border-[var(--border-gold)] bg-[rgba(13,11,8,0.94)] p-1.5 opacity-0 shadow-lg transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100">
-        <ul aria-label={t('pipThemePlanGifts')} className="flex flex-wrap content-center justify-center gap-1">{list.map(gift => {
-        const have = owned.has(gift.game_id)
+    // One planned pack: its poster beside the plan's gifts for it. Icons take the largest size (up to 56 px) at which
+    // every gift fits beside the poster; a very narrow window puts the gifts under it, and a very long list scrolls.
+    const pack = guidance[0]
+    const packGifts = pack ? planThemeGiftIds(state, themes, pack.theme.id).flatMap(id => giftMap.get(id) ?? []) : []
+    const stacked = packGifts.length > 0 && availableWidth < 300
+    const posterWidth = Math.max(96, Math.min(packGifts.length && !stacked ? 150 : 180, Math.floor(availableWidth * (packGifts.length && !stacked ? 0.42 : 0.6)),
+      Math.floor(((inPip ? actualSize.height : 448) - 112) * 416 / 684)))
+    const posterHeight = Math.floor(posterWidth * 684 / 416)
+    const giftArea = { width: stacked ? availableWidth : availableWidth - posterWidth - 10, height: stacked ? Infinity : posterHeight }
+    const giftLayout = [1, 2, 3, 4, 5, 6].map(columns => {
+      const rows = Math.ceil(packGifts.length / columns)
+      return { columns, size: Math.min(56, Math.floor((giftArea.width - (columns - 1) * 4) / columns), Math.floor((giftArea.height - (rows - 1) * 4) / rows)) }
+    }).filter(option => option.size >= 28 && option.columns <= Math.max(1, packGifts.length))
+      .sort((x, y) => y.size - x.size || y.columns - x.columns)[0] ?? { columns: Math.max(1, Math.floor((giftArea.width + 4) / 32)), size: 28 }
+    const packGiftList = packGifts.length > 0 && <ul aria-label={t('pipThemePlanGifts')} data-theme-plan-gifts={pack!.theme.id}
+      className="grid content-start justify-center gap-1 overflow-y-auto" style={{ gridTemplateColumns: `repeat(${Math.min(giftLayout.columns, packGifts.length)}, ${giftLayout.size}px)`,
+        maxHeight: stacked ? undefined : posterHeight }}>{packGifts.map(gift => {
+        const have = ownedIds.has(gift.game_id)
         const label = have ? `${localized(gift)} · ${t('owned')}` : localized(gift)
-        return <li key={gift.game_id} title={label} aria-label={label} data-owned={have || undefined} className={have ? 'opacity-40' : undefined} style={{ width: packGiftSize }}><GiftArtwork gift={gift} displayName={localized(gift)} sizes={`${packGiftSize}px`} /></li>
+        return <li key={gift.game_id} title={label} aria-label={label} data-owned={have || undefined} className={have ? 'opacity-40' : undefined}><GiftArtwork gift={gift} displayName={localized(gift)} sizes={`${giftLayout.size}px`} /></li>
       })}</ul>
-      </div>
-    }
     const plannedGiftIds = new Set(fusionView.current ? planGiftIds(state)
       : planThemeGiftIds(state, themes, state.floorLogs[state.currentFloor - 1]?.themeId ?? '', state.currentFloor))
     return <div data-companion-content={inPip ? 'pip' : 'inline'}>
@@ -443,7 +438,7 @@ export default function CompanionPanel({ state, dispatch, themes, giftMap, obser
       {theme ? <div className="flex items-baseline gap-2 border-b border-[var(--border)] pb-2"><span className="font-[family-name:var(--font-title)] text-xl text-[var(--gold-light)]" aria-label={t('currentFloor')}>{String(state.currentFloor).padStart(2, '0')}</span><h2 data-theme-title tabIndex={-1} className="min-w-0 break-words font-[family-name:var(--font-heading)] text-sm text-[var(--text-primary)]">{localized(theme)}</h2></div> : <div className="text-center font-[family-name:var(--font-title)] text-xl text-[var(--gold-light)]" aria-label={t('currentFloor')}>{String(viewFloor).padStart(2, '0')}</div>}
       {!theme ? <section aria-label={t('pipThemeGuidance')}>
         <div className="mb-2 flex justify-end gap-1"><button type="button" disabled={!canUndo} onClick={undo} aria-label={t('pipUndo')} title={t('pipUndo')} className="inline-flex h-9 w-9 items-center justify-center rounded border border-[var(--border)] disabled:opacity-35 focus-visible:outline-2 focus-visible:outline-[var(--gold-light)]"><RotateCcw size={15} /></button>{inPip && nextFloor}</div>
-        {guidance.length ? <ul className="flex flex-wrap justify-center gap-2">{guidance.map(item => <li key={item.theme.id} data-theme-choice={item.theme.id} className="group relative shrink-0" style={{ width: themeWidth }}><ThemePackCard theme={item.theme} imageSurface="bare" sizes={`${themeWidth}px`} ariaLabel={`${localized(item.theme)} · ${t('pipThemePossible')} · ${t('pipThemeFloors', { floors: item.availableFloors.join(', ') || '—' })}${item.remainingOrder.length ? ` · ${t('pipThemeRemaining', { themes: item.remainingOrder.map(next => `${next.floor}F ${localized(next.theme)}`).join(' · ') })}` : ''}`} title={`${localized(item.theme)} · ${t('pipThemeFloors', { floors: item.availableFloors.join(', ') || '—' })}`} onClick={event => { const owner = event.currentTarget.ownerDocument; const surface = event.currentTarget.closest('[data-companion-content]')?.getAttribute('data-companion-content'); chooseTheme(item.theme.id); if (surface) owner.defaultView?.requestAnimationFrame(() => owner.querySelector<HTMLElement>(`[data-companion-content="${surface}"] [data-theme-title]`)?.focus({ preventScroll: true })); toast.success(t('themeSelected', { name: localized(item.theme) })) }} />{packGiftList(item.theme.id)}</li>)}</ul> : <p role="status" className="grid place-items-center px-2 text-center font-[family-name:var(--font-heading)] text-lg font-semibold text-[var(--gold-light)]" style={{ minHeight: inPip ? Math.max(160, actualSize.height - 130) : 180 }}>{t('pipChooseThemeBlank')}</p>}</section> : <section>
+        {pack ? <div data-theme-choice={pack.theme.id} className={`flex justify-center gap-2.5 ${stacked ? 'flex-col items-center' : 'items-start'}`}><div className="shrink-0" style={{ width: posterWidth }}><ThemePackCard theme={pack.theme} imageSurface="bare" sizes={`${posterWidth}px`} ariaLabel={`${localized(pack.theme)} · ${t('pipThemePossible')} · ${t('pipThemeFloors', { floors: pack.availableFloors.join(', ') || '—' })}${pack.remainingOrder.length ? ` · ${t('pipThemeRemaining', { themes: pack.remainingOrder.map(next => `${next.floor}F ${localized(next.theme)}`).join(' · ') })}` : ''}`} title={`${localized(pack.theme)} · ${t('pipThemeFloors', { floors: pack.availableFloors.join(', ') || '—' })}`} onClick={event => { const owner = event.currentTarget.ownerDocument; const surface = event.currentTarget.closest('[data-companion-content]')?.getAttribute('data-companion-content'); chooseTheme(pack.theme.id); if (surface) owner.defaultView?.requestAnimationFrame(() => owner.querySelector<HTMLElement>(`[data-companion-content="${surface}"] [data-theme-title]`)?.focus({ preventScroll: true })); toast.success(t('themeSelected', { name: localized(pack.theme) })) }} /></div>{packGiftList}</div> : <p role="status" className="grid place-items-center px-2 text-center font-[family-name:var(--font-heading)] text-lg font-semibold text-[var(--gold-light)]" style={{ minHeight: inPip ? Math.max(160, actualSize.height - 130) : 180 }}>{t('pipChooseThemeBlank')}</p>}</section> : <section>
         <div className={`flex items-center justify-between gap-1 ${inPip ? 'sticky top-0 z-10 border-b border-[var(--border)] bg-[var(--bg-deep)] py-1' : ''}`}><h3 className="text-xs font-bold text-[var(--gold-light)]">{t(fusionView.current ? 'fusionTierGiftsCount' : 'currentThemeGiftsCount', { count })}</h3><div className="flex gap-1"><button type="button" disabled={!canUndo} onClick={undo} aria-label={t('pipUndo')} title={t('pipUndo')} className="inline-flex h-9 w-9 items-center justify-center rounded border border-[var(--border)] disabled:opacity-35 focus-visible:outline-2 focus-visible:outline-[var(--gold-light)]"><RotateCcw size={15} /></button><button type="button" disabled={!canRedo} onClick={redo} aria-label={t('pipRedo')} title={t('pipRedo')} className="inline-flex h-9 w-9 items-center justify-center rounded border border-[var(--border)] disabled:opacity-35 focus-visible:outline-2 focus-visible:outline-[var(--gold-light)]"><RotateCw size={15} /></button>{inPip && nextFloor}</div></div>
         {count ? <ul className="mt-2 grid justify-center gap-[6px]" style={{ gridTemplateColumns: `repeat(${columns}, ${cell}px)` }} data-gift-grid><AnimatePresence initial={false} mode="popLayout">{availableGifts.map(gift => <motion.li key={gift.game_id} layout={reducedMotion ? false : 'position'} initial={reducedMotion ? false : { opacity: 0, scale: 0.94 }} animate={{ opacity: 1, scale: 1 }} exit={reducedMotion ? { opacity: 1 } : { opacity: 0, scale: 0.94 }} transition={{ duration: reducedMotion ? 0 : 0.18 }} title={localized(gift)} className="min-w-0"><button type="button" data-gift-id={gift.game_id} onClick={event => acquire(gift.game_id, event)} title={localized(gift)} aria-label={plannedGiftIds.has(gift.game_id) ? `${t('pipAcquireGift', { name: localized(gift) })} · ${t('pipPlanGift')}` : t('pipAcquireGift', { name: localized(gift) })} data-plan-gift={plannedGiftIds.has(gift.game_id) || undefined} className="w-full rounded-sm p-1 text-center hover:bg-[var(--bg-elevated)] focus-visible:outline-2 focus-visible:outline-[var(--gold-light)]"><span className="relative mx-auto block" style={{ width: artwork }}><GiftArtwork gift={gift} displayName={localized(gift)} sizes={`${artwork}px`} />{plannedGiftIds.has(gift.game_id) && <GiftWarningMark label={t('pipPlanGift')} className="-right-0.5 -top-0.5 h-4 w-4" />}</span><span className="mt-1 block line-clamp-2 break-words text-[0.65rem] leading-4 text-[var(--text-secondary)]">{localized(gift)}</span></button></motion.li>)}</AnimatePresence></ul> : <p className="mt-2 text-xs text-[var(--text-tertiary)]">{t(fusionView.current ? 'fusionTierGiftsOwned' : 'allThemeGiftsOwned')}</p>}
       </section>}
