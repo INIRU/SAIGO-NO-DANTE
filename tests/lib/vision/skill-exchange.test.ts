@@ -13,10 +13,18 @@ it('reads the sinner and current skill counts from the replacement window', () =
   expect(readSkillExchange(heathcliff)).toEqual({ sinner: 7, current: [2, 2, 2] })
   expect(readSkillExchange(confirm)).toEqual({ sinner: 8, current: [2, 2, 2] })
   // A misread count keeps the sinner; English titles need the counts; other shop screens never match.
-  expect(readSkillExchange('이상 스킬 교체\nSKILL1x3\nSKILL2x9')).toEqual({ sinner: 1, current: null })
+  expect(readSkillExchange('스킬보유현황\n이상 스킬 교체\nSKILL1x3\nSKILL2x9')).toEqual({ sinner: 1, current: null })
+  // Two holding counts read as one line (f55680).
+  expect(readSkillExchange('스킬보유현황\n이스마엘 스킬 교체\n561486\nSKILL1X1 S\nSKILL2x2 SKILL3x3\nSKILL 2')).toEqual({ sinner: 8, current: [1, 2, 3] })
   expect(readSkillExchange('Ishmael Skill Replacement\nSKILL1x3\nSKILL2x2\nSKILL3x1')).toEqual({ sinner: 8, current: [3, 2, 1] })
   expect(readSkillExchange('Ishmael Skill Replacement')).toBeNull()
   expect(readSkillExchange('E.G.O 기프트 판매\n이상\n스킬 1')).toBeNull()
+  // The shop list names skill replacement items the same way; without the window's own text they never count (f15780, f157500, f245400).
+  expect(readSkillExchange('상점\n키워드\n새로고침\n1422\nShop\n이스마엘 스킬 교체\n고목 함정\n기프트\n강화\n합성\n판매')).toBeNull()
+  expect(readSkillExchange('특별한 상점\n인격 스킬 관측\n돈키호테 스킬 교체\n이상 스킬 교체\n모조발전기')).toBeNull()
+  expect(readSkillExchange('스킬을 교체할 수감자를 선택해주세요\n인격 스킬 관측\n뫼르소 스킬 교체\n오티스 스킬 교체\n도착증')).toBeNull()
+  expect(readSkillExchange('스킬보유현황\n로쟈 스킬 교체\n그레고르 스킬 교체\nSKILL1x3\nSKILL2x2\nSKILL3x1')).toBeNull()
+  expect(readSkillExchange('스킬 보유현황\n키워드\n로쟈 스킬 교체\nSKILL1x3\nSKILL2x2\nSKILL3X1')).toEqual({ sinner: 9, current: [3, 2, 1] })
 })
 
 it('plans the fewest replacements from the current counts to the plan', () => {

@@ -16,26 +16,26 @@ export function planThemeGiftIds(state: RunState, themeId: string, floor?: numbe
   return [...new Set(entries.flatMap(entry => entry.gift_ids ?? []).map(giftGameId).filter((id): id is number => id !== null))]
 }
 
-/** The plan's final targets, then every floor's gifts, in plan order. */
+/** The plan's final targets, every floor's gifts, then its inventory (without start and observation gifts), in plan order. */
 export function planGiftIds(state: RunState): number[] {
-  return [...new Set([...state.targetGifts, ...(state.sourcePlanSnapshot?.floorPlan ?? []).flatMap(entry => entry.gift_ids ?? [])]
+  const inventory = (state.sourcePlanSnapshot?.giftInventory ?? []).filter(id => !/^(start|observe)_/.test(id))
+  return [...new Set([...state.targetGifts, ...(state.sourcePlanSnapshot?.floorPlan ?? []).flatMap(entry => entry.gift_ids ?? []), ...inventory]
     .map(giftGameId).filter((id): id is number => id !== null))]
 }
 
 /**
- * Unowned tier IV and V gifts for the fusion screen, where they are mostly obtained: the plan's gifts first (plan order),
- * then tier V, then tier IV, each in catalog order.
+ * The plan's unowned tier IV and V gifts for the fusion screen, where they are mostly obtained, in plan order. A pack's
+ * exclusive gift is listed only on the floor whose pack it is.
  */
-export function getFusionTierGifts(state: RunState, giftMap: Map<number, GiftData>): GiftData[] {
+export function getFusionTierGifts(state: RunState, themes: ThemeData[], giftMap: Map<number, GiftData>): GiftData[] {
   const owned = new Set(state.giftInventory.map(giftGameId))
-  const tier = (gift: GiftData) => ['4', '5'].includes(String(gift.grade)) ? Number(gift.grade) : 0
-  const result = new Map<number, GiftData>()
-  const add = (gift: GiftData | undefined, wanted?: number) => {
-    if (gift && tier(gift) && (wanted === undefined || tier(gift) === wanted) && !owned.has(gift.game_id)) result.set(gift.game_id, result.get(gift.game_id) ?? gift)
-  }
-  for (const id of planGiftIds(state)) add(giftMap.get(id))
-  for (const wanted of [5, 4]) for (const gift of giftMap.values()) add(gift, wanted)
-  return [...result.values()]
+  const exclusive = new Set(themes.flatMap(theme => theme.specific_ego_gift_ids ?? []))
+  const floorTheme = themes.find(theme => theme.id === state.floorLogs[state.currentFloor - 1]?.themeId)
+  const here = new Set(floorTheme?.specific_ego_gift_ids ?? [])
+  return planGiftIds(state).flatMap(id => {
+    const gift = giftMap.get(id)
+    return gift && ['4', '5'].includes(String(gift.grade)) && !owned.has(id) && (!exclusive.has(id) || here.has(id)) ? [gift] : []
+  })
 }
 
 /**

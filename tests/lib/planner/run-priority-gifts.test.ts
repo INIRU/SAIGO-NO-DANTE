@@ -189,13 +189,17 @@ it('reads the plan gifts for a pack wherever the plan placed it, plus the given 
   expect(planThemeGiftIds(createInitialRunState(), 'A', 1)).toEqual([])
 })
 
-it('lists unowned tier IV and V gifts for the fusion screen, plan gifts first', () => {
+it('lists the plan unowned tier IV+ gifts for the fusion screen, a pack exclusive only on its own floor', () => {
   const tiered = (game_id: number, grade: string) => ({ game_id, name: String(game_id), grade }) as GiftData
-  const map = new Map([tiered(1, '3'), tiered(2, '4'), tiered(3, '5'), tiered(4, '4'), tiered(5, 'EX'), tiered(6, '5')].map(item => [item.game_id, item]))
+  const map = new Map([tiered(1, '3'), tiered(2, '4'), tiered(3, '5'), tiered(4, '4'), tiered(5, 'EX'), tiered(6, '5'), tiered(7, '4'), tiered(8, '4')].map(item => [item.game_id, item]))
   const state = createInitialRunState()
   state.targetGifts = ['final_4_plusplus', '1']
-  state.sourcePlanSnapshot = { floorPlan: [{ floor: 2, gift_ids: ['6'] }] } as RunState['sourcePlanSnapshot']
+  state.sourcePlanSnapshot = { floorPlan: [{ floor: 2, gift_ids: ['6', '7'] }], giftInventory: ['start_8', '3', '2'] } as RunState['sourcePlanSnapshot']
   state.giftInventory = ['3_plus']
-  expect(getFusionTierGifts(state, map).map(item => item.game_id)).toEqual([4, 6, 2])
-  expect(planGiftIds(state)).toEqual([4, 1, 6])
+  const packs = [theme('A', [], [7]), theme('B', [], [])]
+  // Gift 8 (tier IV, not in the plan) never shows; 7 is pack A's exclusive.
+  expect(getFusionTierGifts(state, packs, map).map(item => item.game_id)).toEqual([4, 6, 2])
+  state.floorLogs[state.currentFloor - 1].themeId = 'A'
+  expect(getFusionTierGifts(state, packs, map).map(item => item.game_id)).toEqual([4, 6, 7, 2])
+  expect(planGiftIds(state)).toEqual([4, 1, 6, 7, 3, 2])
 })
