@@ -12,24 +12,21 @@ const SINNER_NAMES = SINNER_SLUGS.map((slug, index) => ({ sinner: index + 1,
   names: Object.values(translations[`sinner.${slug}` as keyof typeof translations]).map(squash) }))
 
 /**
- * Reads the window from a full-frame OCR text: a line starting with a sinner name and the skill word
- * ("이스마엘 스킬 교체") plus the three "SKILL1x3" holding lines, or the Korean "교체" title alone.
+ * Reads the window from a full-frame OCR text: one line starting with a sinner name and the skill word ("이스마엘 스킬 교체")
+ * and the window's "스킬 보유 현황" header or "SKILL1x3" holding counts. The shop list itself shows items with the same
+ * "로쟈 스킬 교체" wording, so a title without the window's own text, or several titles, never count.
  */
 export function readSkillExchange(text: string): SkillExchangeRead | null {
   const lines = text.split('\n').map(squash)
   const counts: number[] = []
-  for (const line of lines) {
-    const match = /^skill([123])[x×]([0-6])$/.exec(line)
-    if (match) counts[Number(match[1]) - 1] = Number(match[2])
-  }
+  // Two holding counts are sometimes read as one line ("SKILL2x2 SKILL3x3").
+  for (const line of lines) for (const match of line.matchAll(/skill([123])[x×]([0-6])/g)) counts[Number(match[1]) - 1] ??= Number(match[2])
   const current = counts.length === 3 && counts.every(Number.isInteger) && counts[0] + counts[1] + counts[2] === 6
     ? counts as SkillCounts : null
-  for (const line of lines) {
-    const hit = SINNER_NAMES.find(({ names }) => names.some(name => line.startsWith(name) && /^(스킬|skill|スキル)/.test(line.slice(name.length))))
-    // English/Japanese title words are unverified, so outside Korean the holding lines must confirm the window.
-    if (hit && (current || line.endsWith('교체'))) return { sinner: hit.sinner, current }
-  }
-  return null
+  if (!current && !lines.some(line => line.includes('스킬보유현황'))) return null
+  const sinners = new Set(lines.flatMap(line => SINNER_NAMES.filter(({ names }) =>
+    names.some(name => line.startsWith(name) && /^(스킬|skill|スキル)/.test(line.slice(name.length)))).map(item => item.sinner)))
+  return sinners.size === 1 ? { sinner: [...sinners][0], current } : null
 }
 
 /** One kind of replacement the window offers (S1→S2, S2→S3 or S1→S3) and how many times to buy it. */

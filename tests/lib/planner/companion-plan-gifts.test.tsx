@@ -54,28 +54,34 @@ it('marks the plan gifts among this floor available gifts with the warning trian
   expect(render(runReducer({ ...started(), sourcePlanSnapshot: undefined }, { type: 'SET_FLOOR_THEME', themeId: 'A' }))).not.toContain('data-gift-warning')
 })
 
-it('shows the replacements toward the plan for the sinner in the skill window, above the floor gifts', () => {
+it('replaces the gift list with the planned skills and the replacements to buy while the skill window is open', () => {
   const ishmael = { identity_id: 'i', sinner_id: 'ishmael', name_kr: '', rarity: 3, keywords: [], game_id: '10808', folder_name: null, slot_order: 8, s1_count: 1, s2_count: 0, s3_count: 5 }
   const planned = runReducer({ ...started(), sourcePlanSnapshot: { ...started().sourcePlanSnapshot, identitySlots: [ishmael] } }, { type: 'SET_FLOOR_THEME', themeId: 'A' })
-  const html = render(planned, { sinner: 8, current: [3, 2, 1] })
-  const card = html.match(/<section[^>]*data-skill-exchange="8".*?<\/section>/)?.[0] ?? ''
-  expect(card).toContain('이스마엘 스킬 교체 추천')
-  expect(card).toContain('현재 3·2·1 → 플랜 1·0·5')
-  expect(card).toContain('data-skill-move="1-3"')
-  expect(card).toContain('SKILL 1 → SKILL 3 × 2')
-  expect(card).toContain('SKILL 2 → SKILL 3 × 2')
-  expect(html.indexOf('data-skill-exchange')).toBeLessThan(html.indexOf('data-gift-grid'))
+  const skills = [1, 2, 3].map(order => ({ identity_id: 'i', name: `skill-${order}`, sin_affinity: '분노', skill_type: 'attack', skill_order: order, uptie_level: 4 }))
+  const html = renderToStaticMarkup(<NextIntlClientProvider locale="ko" messages={messages} timeZone="Asia/Seoul">
+    <CompanionPanel state={planned} dispatch={() => {}} themes={[theme('A', [10, 20, 30])]} giftMap={giftMap} captureRunning scene={{ label: 'shop', since: 1 }}
+      skillExchange={{ sinner: 8, current: [3, 2, 1] }} skills={skills} />
+  </NextIntlClientProvider>)
+  expect(html).toContain('이스마엘 스킬 교체 추천')
+  expect(html).not.toContain('data-gift-grid')
+  for (const order of [1, 2, 3]) expect(html).toContain(`skill-${order}`)
+  expect(html).toMatch(/data-skill-row="3".*?×1 → .*?×5/)
+  expect(html).toContain('aria-label="SKILL 1 → SKILL 3 × 2"')
+  expect(html).toContain('aria-label="SKILL 2 → SKILL 3 × 2"')
   expect(render(planned, { sinner: 1, current: [3, 2, 1] })).toContain(messages.planner.run.skillExchangeNotInPlan)
   expect(render(planned, { sinner: 8, current: [1, 0, 5] })).toContain(messages.planner.run.skillExchangeDone)
-  expect(render(planned)).not.toContain('data-skill-exchange')
+  expect(render(planned)).toContain('data-gift-grid')
 })
 
-it('switches the gift list to tier IV+ gifts while the fusion screen and its result popups are shown', () => {
+it('switches the gift list to the plan tier IV+ gifts while the fusion screen is shown', () => {
   const planned = runReducer({ ...started(), targetGifts: ['40'] }, { type: 'SET_FLOOR_THEME', themeId: 'A' })
   const grid = (html: string) => [...html.matchAll(/data-gift-id="(\d+)"/g)].map(match => Number(match[1]))
   const fusion = render(planned, null, 'fusion')
-  expect(fusion).toContain('합성으로 얻을 4등급 이상 기프트 (2개)')
-  expect(grid(fusion)).toEqual([40, 50])
+  // Tier V gift 50 is not in the plan, so it is not listed.
+  expect(fusion).toContain('합성으로 얻을 플랜 4등급 이상 기프트 (1개)')
+  expect(grid(fusion)).toEqual([40])
   expect(fusion.match(/<button[^>]*data-gift-id="40".*?<\/button>/)?.[0]).toContain('data-gift-warning')
   expect(grid(render(planned, null, 'shop'))).toEqual([20, 30, 10])
+  // Without a plan the fusion screen keeps the floor list.
+  expect(grid(render(runReducer({ ...started(), sourcePlanSnapshot: undefined }, { type: 'SET_FLOOR_THEME', themeId: 'A' }), null, 'fusion'))).toEqual([10, 20, 30])
 })

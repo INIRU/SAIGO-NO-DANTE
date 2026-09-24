@@ -11,7 +11,7 @@ import { getCurrentFloorPriorityGifts, getFusionTierGifts, giftGameId, nextGiftP
 import { acquisitionAttributionFloor, clearedThemeFloors, floorThemeObservationAction, getRunThemeGuidance, pendingThemeSelectionFloor, planStartGiftIds, runStartEnded } from '@/lib/planner/run-theme-guidance'
 import { EVENT_EXIT_SCENES, EVENT_IDLE_EXIT_MS, nextEventView, type StableScene } from '@/lib/vision/scene-state'
 import { normalizeRunState, runReducer, type RunAction, type RunState } from '@/lib/planner/run-types'
-import type { ThemeData, GiftData } from '@/lib/planner/types'
+import type { ThemeData, GiftData, SkillSummary } from '@/lib/planner/types'
 import GiftArtwork from '@/components/ui/GiftArtwork'
 import { GiftWarningMark } from '@/components/ui/GiftCard'
 import { getLocalizedName } from '@/lib/i18n/localize'
@@ -50,6 +50,8 @@ interface Props {
   giftSales?: GiftSale[]
   /** Shop skill replacement window on screen. */
   skillExchange?: SkillExchangeRead | null
+  /** Identity skills for the skill replacement guide. */
+  skills?: SkillSummary[]
   events?: MdEvent[]
   eventChoices?: MdEventChoice[]
   eventChoiceEvidence?: { eventId: number; observedAt: number; floor: number | null } | null
@@ -67,7 +69,7 @@ interface Props {
 export default function CompanionPanel({ state, dispatch, themes, giftMap, observedGiftIds = [], popupAcquisitions = [],
   events = [], eventChoices = [], eventChoiceEvidence = null, captureRunning = false, scene = null,
   themeSelectionFloor = null, floorThemeObservation = null, observedFloor = null, fusionEvidence = null, prediction = null, giftSales = [],
-  skillExchange = null }: Props) {
+  skillExchange = null, skills = [] }: Props) {
   const t = useTranslations('planner.run')
   const locale = useLocale() as SupportedLang
   const localized = (item: { name: string; name_en?: string | null; name_jp?: string | null }) => getLocalizedName({ name_kr: item.name, name_en: item.name_en, name_jp: item.name_jp }, locale)
@@ -130,9 +132,9 @@ export default function CompanionPanel({ state, dispatch, themes, giftMap, obser
   // The fusion screen lists tier IV+ gifts, which are mostly fused; its result popups keep that list, any other screen ends it.
   const fusionView = useRef(false)
   if (!captureRunning) fusionView.current = false
-  else if (scene?.label === 'fusion') fusionView.current = true
+  else if (scene?.label === 'fusion' && state.sourcePlanSnapshot) fusionView.current = true
   else if (scene && scene.label !== 'gift_acquired') fusionView.current = false
-  const availableGifts = fusionView.current ? getFusionTierGifts(state, giftMap)
+  const availableGifts = fusionView.current ? getFusionTierGifts(state, themes, giftMap)
     : getCurrentFloorPriorityGifts(state, themes, giftMap, giftPromotion.current?.ids)
   const guidance = useMemo(() => getRunThemeGuidance(viewFloor === state.currentFloor ? state : { ...state, currentFloor: viewFloor }, themes),
     [state, themes, viewFloor])
@@ -381,6 +383,11 @@ export default function CompanionPanel({ state, dispatch, themes, giftMap, obser
     const columns = Math.max(1, Math.min(count || 1, Math.floor((availableWidth + 6) / 62)))
     const cell = Math.max(52, Math.min(76, Math.floor((availableWidth - (columns - 1) * 6) / columns)))
     const artwork = Math.max(44, Math.min(64, cell - 8))
+    // The skill replacement window takes the whole view until it closes; the gift list returns after it.
+    if (skillExchange && state.sourcePlanSnapshot) return <div data-companion-content={inPip ? 'pip' : 'inline'}>
+      {inPip && <div className="mb-2 flex justify-end">{nextFloor}</div>}
+      <CompanionSkillExchange exchange={skillExchange} slots={state.sourcePlanSnapshot.identitySlots ?? []} skills={skills} />
+    </div>
     if (startPhase) {
       const { start, observe } = planStartGiftIds(state)
       const gifts = (ids: number[]) => ids.flatMap(id => giftMap.get(id) ?? [])
@@ -414,7 +421,6 @@ export default function CompanionPanel({ state, dispatch, themes, giftMap, obser
     const plannedGiftIds = new Set(fusionView.current ? planGiftIds(state)
       : planThemeGiftIds(state, state.floorLogs[state.currentFloor - 1]?.themeId ?? '', state.currentFloor))
     return <div data-companion-content={inPip ? 'pip' : 'inline'}>
-      {skillExchange && state.sourcePlanSnapshot && <div className="mb-3"><CompanionSkillExchange exchange={skillExchange} slots={state.sourcePlanSnapshot.identitySlots ?? []} /></div>}
       <motion.div key={theme?.id ?? 'unselected'} initial={reducedMotion ? false : { opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: reducedMotion ? 0 : 0.18, ease: 'easeOut' }} className="space-y-3">
       {theme ? <div className="flex items-baseline gap-2 border-b border-[var(--border)] pb-2"><span className="font-[family-name:var(--font-title)] text-xl text-[var(--gold-light)]" aria-label={t('currentFloor')}>{String(state.currentFloor).padStart(2, '0')}</span><h2 data-theme-title tabIndex={-1} className="min-w-0 break-words font-[family-name:var(--font-heading)] text-sm text-[var(--text-primary)]">{localized(theme)}</h2></div> : <div className="text-center font-[family-name:var(--font-title)] text-xl text-[var(--gold-light)]" aria-label={t('currentFloor')}>{String(viewFloor).padStart(2, '0')}</div>}
       {!theme ? <section aria-label={t('pipThemeGuidance')}>
