@@ -93,8 +93,8 @@ export default function IdentityInfoCard({ identity, currentSeason = 7 }: Identi
         <div className="border-t border-white/10 pt-5 space-y-3">
           {identity.release_date && (
             <div className="flex items-center gap-2">
-              <span style={{ color: '#999', fontSize: '0.75rem', minWidth: '52px' }}>{t('identity.info.releaseDate')}</span>
-              <span style={{ color: '#bbb', fontSize: '0.75rem' }}>{identity.release_date}</span>
+              <span style={{ color: '#9c8b73', fontSize: '0.75rem', minWidth: '52px' }}>{t('identity.info.releaseDate')}</span>
+              <span style={{ color: '#e8dcc8', fontSize: '0.75rem' }}>{identity.release_date}</span>
             </div>
           )}
           {(() => {
@@ -102,19 +102,19 @@ export default function IdentityInfoCard({ identity, currentSeason = 7 }: Identi
             if (!info) return null
 
             const TYPE_LABELS: Record<string, { label: string; color: string; bg: string }> = {
-              default:    { label: t('identity.info.type.default'),    color: '#8a8a8a', bg: 'rgba(138,138,138,0.12)' },
-              standard:   { label: t('identity.info.type.standard'),   color: '#6bbbff', bg: 'rgba(107,187,255,0.12)' },
-              limited:    { label: t('identity.info.type.limited'),    color: '#ffa502', bg: 'rgba(255,165,2,0.12)' },
-              event:      { label: t('identity.info.type.event'),      color: '#ff9f43', bg: 'rgba(255,159,67,0.12)' },
-              walpurgis:  { label: t('identity.info.type.walpurgis'),  color: '#7bed9f', bg: 'rgba(123,237,159,0.12)' },
-              attendance: { label: t('identity.info.type.attendance'), color: '#a29bfe', bg: 'rgba(162,155,254,0.12)' },
+              default:    { label: t('identity.info.type.default'),    color: '#9c8b73', bg: 'rgba(156,139,115,0.12)' },
+              standard:   { label: t('identity.info.type.standard'),   color: '#e8dcc8', bg: 'rgba(232,220,200,0.12)' },
+              limited:    { label: t('identity.info.type.limited'),    color: '#e8b030', bg: 'rgba(232,176,48,0.12)' },
+              event:      { label: t('identity.info.type.event'),      color: '#e8b030', bg: 'rgba(232,176,48,0.12)' },
+              walpurgis:  { label: t('identity.info.type.walpurgis'),  color: '#d9826b', bg: 'rgba(217,130,107,0.12)' },
+              attendance: { label: t('identity.info.type.attendance'), color: '#b8a684', bg: 'rgba(184,166,132,0.12)' },
             }
             const GACHA_LABELS: Record<string, { label: string; color: string }> = {
-              always:   { label: t('identity.info.gacha.always'),    color: '#6bbbff' },
-              seasonal: { label: t('identity.info.gacha.seasonal'),  color: '#ffa502' },
-              pickup:   { label: t('identity.info.gacha.pickup'),    color: '#ffa502' },
-              walpurgis:{ label: t('identity.info.gacha.walpurgis'), color: '#7bed9f' },
-              none:     { label: t('identity.info.gacha.none'),      color: '#999' },
+              always:   { label: t('identity.info.gacha.always'),    color: '#e8dcc8' },
+              seasonal: { label: t('identity.info.gacha.seasonal'),  color: '#e8b030' },
+              pickup:   { label: t('identity.info.gacha.pickup'),    color: '#e8b030' },
+              walpurgis:{ label: t('identity.info.gacha.walpurgis'), color: '#d9826b' },
+              none:     { label: t('identity.info.gacha.none'),      color: '#9c8b73' },
             }
 
             const typeInfo = TYPE_LABELS[info.type] ?? TYPE_LABELS.standard
@@ -125,7 +125,7 @@ export default function IdentityInfoCard({ identity, currentSeason = 7 }: Identi
               <div className="space-y-2">
                 {/* 타입 + 시즌 배지 */}
                 <div className="flex items-center gap-2">
-                  <span style={{ color: '#999', fontSize: '0.75rem', minWidth: '52px' }}>{t('identity.info.acquisition')}</span>
+                  <span style={{ color: '#9c8b73', fontSize: '0.75rem', minWidth: '52px' }}>{t('identity.info.acquisition')}</span>
                   <div className="flex items-center gap-1.5 flex-wrap">
                     {/* 타입 배지 */}
                     <span
@@ -161,9 +161,9 @@ export default function IdentityInfoCard({ identity, currentSeason = 7 }: Identi
                         style={{
                           fontSize: '0.75rem', fontWeight: 500,
                           padding: '2px 8px', borderRadius: '3px',
-                          color: '#7bed9f',
-                          background: 'rgba(123,237,159,0.08)',
-                          border: '1px solid rgba(123,237,159,0.2)',
+                          color: '#d9826b',
+                          background: 'rgba(217,130,107,0.08)',
+                          border: '1px solid rgba(217,130,107,0.2)',
                         }}
                       >
                         {info.walpurgis_edition}{t('identity.info.walpurgisEdition')}
@@ -176,9 +176,9 @@ export default function IdentityInfoCard({ identity, currentSeason = 7 }: Identi
                         style={{
                           fontSize: '0.75rem', fontWeight: 500,
                           padding: '2px 8px', borderRadius: '3px',
-                          color: '#ff9f43',
-                          background: 'rgba(255,159,67,0.08)',
-                          border: '1px solid rgba(255,159,67,0.2)',
+                          color: '#e8b030',
+                          background: 'rgba(232,176,48,0.08)',
+                          border: '1px solid rgba(232,176,48,0.2)',
                         }}
                       >
                         {info.event_name}
@@ -190,7 +190,7 @@ export default function IdentityInfoCard({ identity, currentSeason = 7 }: Identi
                 {/* 추출 상태 */}
                 {info.type !== 'default' && (
                   <div className="flex items-center gap-2">
-                    <span style={{ color: '#999', fontSize: '0.75rem', minWidth: '52px' }}>{t('identity.info.extraction')}</span>
+                    <span style={{ color: '#9c8b73', fontSize: '0.75rem', minWidth: '52px' }}>{t('identity.info.extraction')}</span>
                     <div className="flex items-center gap-1.5 flex-wrap">
                       <span style={{ fontSize: '0.75rem', color: gachaInfo.color }}>
                         {gachaInfo.label}
@@ -198,7 +198,7 @@ export default function IdentityInfoCard({ identity, currentSeason = 7 }: Identi
                         {info.gacha === 'pickup' && info.gacha_from_season && ` (S${info.gacha_from_season}~)`}
                       </span>
                       {info.target_sinner && (
-                        <span style={{ fontSize: '0.75rem', color: '#ffa502' }}>
+                        <span style={{ fontSize: '0.75rem', color: '#e8b030' }}>
                           · {info.target_sinner} {t('identity.info.targetExtraction')}
                         </span>
                       )}
@@ -208,8 +208,8 @@ export default function IdentityInfoCard({ identity, currentSeason = 7 }: Identi
 
                 {gachaName && (
                   <div className="flex items-center gap-2">
-                    <span style={{ color: '#999', fontSize: '0.75rem', minWidth: '52px' }}>{t('identity.info.gachaBanner')}</span>
-                    <span style={{ fontSize: '0.75rem', color: '#bbb' }}>{gachaName}</span>
+                    <span style={{ color: '#9c8b73', fontSize: '0.75rem', minWidth: '52px' }}>{t('identity.info.gachaBanner')}</span>
+                    <span style={{ fontSize: '0.75rem', color: '#e8dcc8' }}>{gachaName}</span>
                   </div>
                 )}
 
@@ -247,11 +247,11 @@ export default function IdentityInfoCard({ identity, currentSeason = 7 }: Identi
                     detail = `${t('identity.info.fragmentCost')} ${info.fragment_cost} (${t('identity.info.permanent')})`
                   }
 
-                  const detailColor = isNew7dLock || isNextSeasonLock ? '#ff6b6b' : '#bbb'
+                  const detailColor = isNew7dLock || isNextSeasonLock ? '#ff6b6b' : '#e8dcc8'
 
                   return (
                     <div className="flex items-center gap-2">
-                      <span style={{ color: '#999', fontSize: '0.75rem', minWidth: '52px' }}>{t('identity.info.fragmentExchange')}</span>
+                      <span style={{ color: '#9c8b73', fontSize: '0.75rem', minWidth: '52px' }}>{t('identity.info.fragmentExchange')}</span>
                       <SinnerShardIcon sinnerId={identity.sinner_id} />
                       <span style={{ fontSize: '0.75rem', color: detailColor }}>
                         {detail}

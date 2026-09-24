@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Skill } from '@/lib/types'
-import { groupIdentitySkills, buildSkillVariantMap, selectIdentitySkills, selectUptieRows } from '@/lib/identity/skill-model'
+import { groupIdentitySkills, buildSkillVariantMap, dropRepeatedTopUptie, selectIdentitySkills, selectUptieRows, uptieLevels } from '@/lib/identity/skill-model'
 
 const skill = (id: string, order: number, level?: number) => ({ id, skill_order: order, uptie_level: level } as Skill)
 
@@ -14,6 +14,21 @@ describe('identity skill model', () => {
     const third = skill('third', 1, 3)
     const fourth = skill('fourth', 1, 4)
     expect(selectUptieRows([third, fourth], 4)).toEqual([fourth])
+  })
+
+  it('drops a top uptie identical to the level below and keeps a changed one', () => {
+    const same = [skill('a3', 1, 3), skill('a4', 1, 4)].map(row => ({ ...row, identity_id: 'a' }))
+    const changed = [skill('b3', 1, 3), skill('b4', 2, 4)].map(row => ({ ...row, identity_id: 'b' }))
+    const kept = dropRepeatedTopUptie([...same, ...changed], row => row.identity_id)
+    expect(kept.map(row => row.id)).toEqual(['a3', 'b3', 'b4'])
+    expect(selectUptieRows(kept.filter(row => row.identity_id === 'a'), 4).map(row => row.id)).toEqual(['a3'])
+  })
+
+  it('lists uptie levels I–IV present and picks the nearest one (lower on ties)', () => {
+    const rows = [skill('one', 1, 1), skill('legacy', 1), skill('four', 1, 4)]
+    expect(uptieLevels(rows, [skill('two', 1, 2)])).toEqual([1, 2, 3, 4])
+    expect(selectUptieRows(rows, 2).map(row => row.id)).toEqual(['one'])
+    expect(selectUptieRows(rows, 3).map(row => row.id)).toEqual(['legacy'])
   })
 
   it('keeps skill variants beside S3 and defense last without changing source order', () => {

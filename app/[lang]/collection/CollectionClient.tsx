@@ -15,6 +15,7 @@ import type { IdentityInfo, EGOInfo, CollectionData } from '@/lib/collection'
 import CollectionSection from '@/components/mypage/CollectionSection'
 import { usePretextSingleLineTruncate } from '@/lib/hooks/usePretextTruncate'
 import { motion } from 'motion/react'
+import PageHeader from '@/components/ui/PageHeader'
 
 // CollectionViewer receives pre-fetched data from the Server Component page.
 // Only the ?code decoding (URL param → owned Set) remains client-side.
@@ -324,20 +325,9 @@ function CollectionViewer({ data }: { data: CollectionData }) {
 
   if (!code) {
     return (
-      <div className="min-h-screen pt-24 pb-16 px-6">
+      <div className="min-h-screen pt-[5.5rem] pb-16 px-6">
         <div className="max-w-5xl mx-auto">
-          <div className="mb-6">
-            <p style={{ color: 'var(--gold-dim)', fontFamily: 'var(--font-mono)', fontSize: '0.625rem', letterSpacing: '0.3em', marginBottom: '0.5rem' }}>
-              MY COLLECTION
-            </p>
-            <h1 className="font-serif text-3xl md:text-4xl font-bold" style={{ color: 'var(--gold)' }}>
-              보유 현황 설정
-            </h1>
-            <p className="mt-2" style={{ color: '#6a6080', fontSize: '0.75rem', fontFamily: 'var(--font-heading)' }}>
-              로그인 없이 보유 인격/EGO를 설정하고 공유 링크를 만들 수 있습니다.
-            </p>
-            <div style={{ width: '8rem', height: '0.0625rem', background: 'linear-gradient(90deg, var(--gold), transparent)', marginTop: '1rem' }} />
-          </div>
+          <PageHeader title="보유 현황 설정" description="로그인 없이 보유 인격/EGO를 설정하고 공유 링크를 만들 수 있습니다." />
           <CollectionSection persistMode="local" />
         </div>
       </div>
@@ -351,7 +341,7 @@ function CollectionViewer({ data }: { data: CollectionData }) {
   const currentEgos = showUnowned ? filteredEgos : filteredEgos.filter(e => owned.has(e.id))
 
   return (
-    <div className="min-h-screen pt-24 pb-16 px-6" style={{ position: 'relative', overflow: 'hidden' }}>
+    <div className="min-h-screen pt-[5.5rem] pb-16 px-6" style={{ position: 'relative', overflow: 'hidden' }}>
       {/* Background atmospheric glow */}
       <div style={{
         position: 'fixed',
@@ -365,26 +355,10 @@ function CollectionViewer({ data }: { data: CollectionData }) {
         zIndex: 0,
       }} />
       <div className="max-w-5xl mx-auto">
-        {/* 헤더 */}
-        <motion.div
-          className="mb-6"
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, ease: [0.33, 1, 0.68, 1] }}
-        >
-          <p style={{ color: 'var(--gold-dim)', fontFamily: 'var(--font-mono)', fontSize: '0.625rem', letterSpacing: '0.3em', marginBottom: '0.5rem' }}>
-            MY COLLECTION
-          </p>
-          <h1 className="font-serif text-3xl md:text-4xl font-bold" style={{ color: 'var(--gold)' }}>
-            보유 현황
-          </h1>
-          <div className="mt-3 flex items-center gap-3" style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6875rem', color: '#6a6080' }}>
-            <span>인격 <span style={{ color: 'var(--gold)' }}>{stats.ownedIdentities}</span>/{stats.totalIdentities}</span>
-            <span style={{ color: '#5a5065', fontFamily: 'sans-serif' }}>·</span>
-            <span>EGO <span style={{ color: 'var(--gold)' }}>{stats.ownedEgos}</span>/{stats.totalEgos}</span>
-          </div>
-          <div style={{ width: '8rem', height: '0.0625rem', background: 'linear-gradient(90deg, var(--gold), transparent)', marginTop: '1rem' }} />
-        </motion.div>
+        <PageHeader title="보유 현황" description={<span className="flex gap-4 tabular-nums">
+          <span>인격 <span className="text-[var(--gold-light)]">{stats.ownedIdentities}</span>/{stats.totalIdentities}</span>
+          <span>EGO <span className="text-[var(--gold-light)]">{stats.ownedEgos}</span>/{stats.totalEgos}</span>
+        </span>} />
 
         {/* 보기 모드 토글 */}
         <motion.div

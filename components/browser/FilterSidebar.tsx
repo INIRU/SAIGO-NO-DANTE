@@ -32,15 +32,15 @@ export default function FilterSidebar({ children, activeCount }: Props) {
     <>
       {/* 데스크탑 사이드바 */}
       <aside
-        className="hidden lg:block shrink-0 sticky self-start overflow-y-auto scrollbar-thin"
+        className="sticky-under-nav hidden lg:block shrink-0 self-start overflow-y-auto scrollbar-thin"
         style={{
           width: '16rem',
-          top: '5rem',
-          maxHeight: '70dvh',
+          top: 'calc(var(--nav-offset) + 1rem)',
+          maxHeight: 'calc(100dvh - var(--nav-offset) - 2rem)',
           paddingRight: '0.75rem',
         }}
       >
-        <div className="flex flex-col gap-4 pb-12">
+        <div className="flex flex-col gap-4 pb-6">
           {children}
         </div>
       </aside>
@@ -48,6 +48,7 @@ export default function FilterSidebar({ children, activeCount }: Props) {
       {/* 모바일 플로팅 버튼 */}
       <div className="lg:hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-40">
         <button
+          type="button"
           onClick={() => setMobileOpen(true)}
           className="flex items-center gap-2 rounded-full px-5 py-2.5 shadow-lg transition-transform active:scale-95"
           style={{
@@ -93,12 +94,14 @@ export default function FilterSidebar({ children, activeCount }: Props) {
               borderBottom: '1px solid rgba(255,255,255,0.08)',
               zIndex: 1,
             }}>
-              <span className="font-mono text-xs" style={{ color: 'var(--gold)', letterSpacing: '0.1em' }}>
-                FILTERS
+              <span className="text-sm font-semibold" style={{ color: 'var(--gold)' }}>
+                필터
               </span>
               <button
+                type="button"
                 onClick={() => setMobileOpen(false)}
-                style={{ cursor: 'pointer', color: '#888' }}
+                className="grid h-10 w-10 place-items-center"
+                style={{ cursor: 'pointer', color: 'var(--text-muted)' }}
                 aria-label="필터 닫기"
               >
                 <X size={20} />

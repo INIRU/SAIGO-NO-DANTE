@@ -19,6 +19,7 @@ import { useTranslations, useLocale } from 'next-intl'
 import type { SupportedLang } from '@/lib/i18n'
 import { useAutoFontSize } from '@/lib/hooks/useAutoFontSize'
 import { getLocalizedName } from '@/lib/i18n/localize'
+import styles from '@/styles/components/SinnerDetail.module.css'
 
 interface IdentityPortraitSectionProps {
   sinner: Sinner
@@ -149,41 +150,23 @@ export default function IdentityPortraitSection({
           <div className="flex-1 min-w-0">
             <h1
               ref={titleRef}
-              className="font-serif whitespace-nowrap"
-              style={{ color: '#e8dcc8', fontSize: `${titleSize}rem`, lineHeight: 1.25, fontWeight: 700 }}
+              className="whitespace-nowrap"
+              style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-heading)', fontSize: `${titleSize}rem`, lineHeight: 1.25, fontWeight: 400 }}
             >
               {localizedName}
             </h1>
-            <p className="truncate" style={{ color: '#a08a60', fontSize: '0.6875rem' }}>
+            <p className="truncate" style={{ color: 'var(--text-muted)', fontSize: '0.8125rem' }}>
               {getLocalizedName({ name_kr: sinner.name_kr, name_en: sinner.name, name_jp: sinner.name_jp }, locale as SupportedLang)}
             </p>
           </div>
         </div>
 
         {/* 일반/각성 토글 */}
-        <div className="flex gap-1.5">
-          <button
-            aria-pressed={!gacksung}
-            onClick={() => setGacksung(false)}
-            className="flex-1 py-1.5 text-xs font-medium rounded transition-all"
-            style={{
-              background: !gacksung ? sinColor : 'transparent',
-              color: !gacksung ? '#0d0b08' : '#a39b8d',
-              border: `1px solid ${!gacksung ? sinColor : 'var(--border)'}`,
-            }}
-          >
+        <div className={`${styles.segment} ${styles.segmentFill}`} role="group">
+          <button type="button" aria-pressed={!gacksung} onClick={() => setGacksung(false)}>
             {t('identity.portrait.illustration')}
           </button>
-          <button
-            aria-pressed={gacksung}
-            onClick={() => setGacksung(true)}
-            className="flex-1 py-1.5 text-xs font-medium rounded transition-all"
-            style={{
-              background: gacksung ? '#ff6b6b' : 'transparent',
-              color: gacksung ? '#0d0b08' : '#a39b8d',
-              border: `1px solid ${gacksung ? '#ff6b6b' : 'var(--border)'}`,
-            }}
-          >
+          <button type="button" aria-pressed={gacksung} onClick={() => setGacksung(true)}>
             {t('identity.portrait.uptieIllustration')}
           </button>
         </div>
@@ -240,50 +223,21 @@ export default function IdentityPortraitSection({
             )}
           </button>
 
-          {/* 첫 방문 툴팁: 풀 일러스트 안내 */}
+          {/* 첫 방문 안내: 풀 일러스트 (그림을 가리지 않게 모서리에) */}
           {showArtTip && (
-            <div
+            <button
+              type="button"
               onClick={() => {
                 setShowArtTip(false)
                 localStorage.setItem('art-tip-seen', '1')
                 setShowFullArt(true)
               }}
-              style={{
-                position: 'absolute',
-                inset: 0,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                background: 'rgba(0,0,0,0.55)',
-                borderRadius: '0.5rem',
-                cursor: 'pointer',
-                animation: 'fadeIn 0.4s ease',
-              }}
+              className="absolute bottom-3 right-3 max-w-[calc(100%-1.5rem)] rounded px-3 py-2 text-left"
+              style={{ background: 'rgba(13,11,8,0.88)', border: '1px solid #4a3a22' }}
             >
-              <div style={{
-                background: 'rgba(26,21,16,0.95)',
-                border: '1px solid var(--border-gold)',
-                borderRadius: '0.5rem',
-                padding: '0.625rem 1rem',
-                textAlign: 'center',
-                boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
-              }}>
-                <p style={{
-                  fontFamily: 'var(--font-heading)',
-                  fontSize: '0.75rem',
-                  color: 'var(--gold)',
-                  marginBottom: '0.25rem',
-                }}>
-                  {t('identity.portrait.artTipTitle')}
-                </p>
-                <p style={{
-                  fontSize: '0.6875rem',
-                  color: '#9e9e9e',
-                }}>
-                  {t('identity.portrait.artTipDesc')}
-                </p>
-              </div>
-            </div>
+              <span className="block text-xs" style={{ color: 'var(--gold)' }}>{t('identity.portrait.artTipTitle')}</span>
+              <span className="block text-[0.6875rem]" style={{ color: 'var(--text-secondary)' }}>{t('identity.portrait.artTipDesc')}</span>
+            </button>
           )}
         </div>
 

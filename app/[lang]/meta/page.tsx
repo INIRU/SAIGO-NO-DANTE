@@ -4,6 +4,7 @@ import { Suspense } from 'react'
 import { getMetaData } from '@/lib/db/meta'
 import MetaClient from './MetaClient'
 import styles from '@/styles/components/MetaAnalysis.module.css'
+import PageHeader from '@/components/ui/PageHeader'
 
 export const metadata: Metadata = {
   title: '인격 메타 분석 | SAIGO NO DANTE',
@@ -30,17 +31,7 @@ export default async function MetaPage() {
       }} />
 
       {/* Server-rendered header — always in HTML for LCP */}
-      <div className={styles.heading}>
-        <p style={{ color: 'var(--gold-dim)', fontFamily: 'var(--font-mono)', fontSize: '0.625rem', letterSpacing: '0.3em', marginBottom: '0.5rem' }}>
-          IDENTITY ANALYSIS
-        </p>
-        <h1 >
-          {t('title')}
-        </h1>
-        <p className="text-xs md:text-sm" style={{ color: 'var(--text-tertiary)' }}>
-          {t('description')}
-        </p>
-      </div>
+      <PageHeader title={t('title')} description={t('description')} />
 
       {/* Query-state controls require a Suspense boundary. */}
       <Suspense fallback={null}>

@@ -1,6 +1,6 @@
 'use client'
 
-import { cloneElement, createContext, isValidElement, useCallback, useContext, useEffect, useRef, useState } from 'react'
+import { cloneElement, createContext, isValidElement, useCallback, useContext, useEffect, useId, useRef, useState } from 'react'
 import KeywordIcon from '@/components/ui/KeywordIcon'
 import { createPortal } from 'react-dom'
 import { useLocale, useTranslations } from 'next-intl'
@@ -9,6 +9,7 @@ import { getKeywordIconUrl } from '@/lib/constants/keywords'
 import { getKeywordIndex, getLocalizedKeywordIndex, resolveKeywordIconUrl, type KeywordInfo } from '@/lib/keywords/catalog'
 export { resolveKeywordIconUrl, type KeywordInfo } from '@/lib/keywords/catalog'
 import { SIN_COLORS } from '@/lib/constants/sin'
+import { GIFT_KEYWORD_COLORS } from '@/lib/constants/gift'
 import { getLocalizedKeywordDesc, getLocalizedKeywordName } from '@/lib/i18n'
 import type { SupportedLang } from '@/lib/i18n'
 import { skillConditionColor } from '@/lib/identity/skill-condition-color'
@@ -165,6 +166,8 @@ export function useKeywords() {
 type FormatSkillDescOptions = {
   /** Notes can opt in to a single backslash as a literal-keyword escape. */
   escapeKeywords?: boolean
+  /** Tooltips: numbers turn gold and Potency/Count terms take this colour. */
+  highlightValues?: string
 }
 
 /** formatSkillDesc를 훅으로 제공 — 컴포넌트 최상위에서 호출 */
@@ -220,8 +223,17 @@ function isParticleAfter(text: string, kwLen: number): boolean {
   return PARTICLES.has(nextCh)
 }
 
-function KwTooltipPopup({ rect, iconUrl, keyword, info, onMouseEnter, onMouseLeave }: {
-  rect: DOMRect; iconUrl: string | null; keyword: string; info: KeywordInfo
+const VALUE_PATTERN = /(효과 위력|위력|횟수|Potency|Count|威力|回数|[+-]?\d+(?:\.\d+)?%?)/
+
+function highlightValues(text: string, termColor: string) {
+  return text.split(VALUE_PATTERN).map((part, i) =>
+    i % 2 === 0 ? part
+      : /\d/.test(part) ? <b key={i} style={{ color: '#e8b030', fontWeight: 700 }}>{part}</b>
+        : <span key={i} style={{ color: termColor, fontWeight: 600 }}>{part}</span>)
+}
+
+function KwTooltipPopup({ id, rect, iconUrl, keyword, info, onMouseEnter, onMouseLeave }: {
+  id: string; rect: DOMRect; iconUrl: string | null; keyword: string; info: KeywordInfo
   onMouseEnter: () => void; onMouseLeave: () => void
 }) {
   const contentRef = useRef<HTMLDivElement>(null)
@@ -236,7 +248,14 @@ function KwTooltipPopup({ rect, iconUrl, keyword, info, onMouseEnter, onMouseLea
   const spaceAbove = rect.top
   const spaceBelow = window.innerHeight - rect.bottom
   const showAbove = spaceAbove > spaceBelow
-  const maxH = Math.min((showAbove ? spaceAbove : spaceBelow) - 20, window.innerHeight * 0.5)
+  const maxH = Math.min((showAbove ? spaceAbove : spaceBelow) - 24, window.innerHeight * 0.5)
+  // 22rem, never wider than the viewport minus 0.75rem gutters; arrow stays over the trigger.
+  const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16
+  const width = Math.min(22 * rem, window.innerWidth - 1.5 * rem)
+  const gutter = 0.75 * rem
+  const left = Math.max(gutter, Math.min(rect.left + rect.width / 2 - width / 2, window.innerWidth - width - gutter))
+  const arrowX = Math.max(12, Math.min(rect.left + rect.width / 2 - left, width - 12))
+  const color = GIFT_KEYWORD_COLORS[keyword] ?? resolveKeywordTextColor(keyword, info)
 
   useEffect(() => {
     const el = contentRef.current
@@ -245,48 +264,60 @@ function KwTooltipPopup({ rect, iconUrl, keyword, info, onMouseEnter, onMouseLea
 
   return (
     <span
-      className="z-[200] rounded shadow-lg text-left"
+      id={id}
+      className="z-[200] rounded text-left"
       role="tooltip"
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
       style={{
         position: 'fixed',
-        left: Math.max(12, Math.min(rect.left, window.innerWidth - Math.min(384, window.innerWidth - 24) - 12)),
+        left,
         ...(showAbove
-          ? { bottom: window.innerHeight - rect.top + 6 }
-          : { top: rect.bottom + 6 }),
-        background: 'var(--bg-deep, #100e0b)' ,
-        border: '1px solid #51432d',
-        boxShadow: '0 12px 32px #0009',
-        width: 'min(24rem, calc(100vw - 1.5rem))',
+          ? { bottom: window.innerHeight - rect.top + 8 }
+          : { top: rect.bottom + 8 }),
+        background: '#17120c',
+        border: `1px solid ${color}66`,
+        boxShadow: '0 12px 32px #000a',
+        width,
         whiteSpace: 'normal',
-        overflow: 'hidden',
       }}
     >
+      <span aria-hidden style={{
+        position: 'absolute', left: arrowX - 5, width: 10, height: 10, background: '#17120c', transform: 'rotate(45deg)',
+        ...(showAbove
+          ? { bottom: -6, borderRight: `1px solid ${color}66`, borderBottom: `1px solid ${color}66` }
+          : { top: -6, borderLeft: `1px solid ${color}66`, borderTop: `1px solid ${color}66` }),
+      }} />
       <div
         ref={contentRef}
         style={{
-          padding: '1rem',
+          position: 'relative',
+          padding: '0.875rem 1rem 1rem',
           maxHeight: maxH,
           overflowY: 'auto',
           overscrollBehavior: 'contain',
         }}
       >
-        <span style={{ color: resolveKeywordTextColor(keyword, info), fontSize: '1rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem', paddingBottom: '0.75rem', borderBottom: '1px solid #ffffff14' }}>
+        <span style={{ color, fontFamily: 'var(--font-heading)', fontSize: '1.0625rem', display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.625rem', paddingBottom: '0.625rem', borderBottom: `1px solid ${color}33` }}>
           {iconUrl && (
             <KeywordIcon src={iconUrl} alt="" width={16} height={16} unoptimized style={{ flexShrink: 0, width: '1.5rem', height: '1.5rem' }} />
           )}
-          {localName}{info.maxStack ? ` (${t('keyword.maxStack')} ${info.maxStack})` : ''}
+          {localName}
+          {info.maxStack ? (
+            <span style={{ marginLeft: 'auto', fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+              {t('keyword.maxStack')} <b style={{ color: '#e8b030' }}>{info.maxStack}</b>
+            </span>
+          ) : null}
         </span>
         <span style={{ color: '#d0c7b8', fontSize: '0.875rem', lineHeight: 1.75, display: 'block', whiteSpace: 'pre-line' }}>
-          {formatDescription(localDesc, '#d0c7b8')}
+          {formatDescription(localDesc, '#d0c7b8', undefined, undefined, { highlightValues: color })}
         </span>
       </div>
       {overflowing && (
         <div style={{
           position: 'absolute',
           bottom: 0, left: 0, right: 0, height: 32,
-          background: 'linear-gradient(to bottom, transparent, #1a1510)',
+          background: 'linear-gradient(to bottom, transparent, #17120c)',
           borderRadius: '0 0 4px 4px',
           pointerEvents: 'none',
         }} />
@@ -314,6 +345,7 @@ export function KeywordWithTooltip({
   displayColor?: string
 }) {
   const ref = useRef<HTMLSpanElement>(null)
+  const tooltipId = useId()
   const [rect, setRect] = useState<DOMRect | null>(null)
   const hideTimeout = useRef<ReturnType<typeof setTimeout>>(undefined)
   const keywords = useKeywords()
@@ -379,10 +411,15 @@ export function KeywordWithTooltip({
   return (
     <span
       ref={ref}
-      className="inline keyword-token"
+      className="inline keyword-token rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--gold)]"
       onMouseEnter={show}
       onMouseLeave={scheduleHide}
+      onFocus={show}
+      onBlur={scheduleHide}
+      onKeyDown={info ? e => { if (e.key === 'Escape') hide() } : undefined}
       onClick={toggle}
+      tabIndex={info ? 0 : undefined}
+      aria-describedby={rect && info ? tooltipId : undefined}
       style={{ cursor: info ? 'help' : 'default', position: 'relative' }}
     >
       {visibleIconUrl && (
@@ -404,7 +441,7 @@ export function KeywordWithTooltip({
       )}
       {renderedChildren}
       {rect && info && typeof document !== 'undefined' && createPortal(
-        <KwTooltipPopup rect={rect} iconUrl={visibleIconUrl} keyword={lookupKey} info={info} onMouseEnter={cancelHide} onMouseLeave={scheduleHide} />,
+        <KwTooltipPopup id={tooltipId} rect={rect} iconUrl={visibleIconUrl} keyword={lookupKey} info={info} onMouseEnter={cancelHide} onMouseLeave={scheduleHide} />,
         document.body,
       )}
     </span>
@@ -566,7 +603,7 @@ function formatSkillDescInner(
         const resolvedSkillNameColor = resolveKeywordTextColor(p.text)
         return <span key={i} style={{ color: resolvedSkillNameColor === KEYWORD_DEFAULT_COLOR ? p.skillColor : resolvedSkillNameColor, fontWeight: 600 }}>{p.text}</span>
       default:
-        return <span key={i}>{p.text}</span>
+        return <span key={i}>{options?.highlightValues ? highlightValues(p.text, options.highlightValues) : p.text}</span>
     }
   })
 }

@@ -12,3 +12,8 @@ export async function readAllMetaRows<T>(readPage: (from: number, to: number) =>
     rows.push(...data)
   }
 }
+
+/** readAllMetaRows as a { data, error } result, for callers that report errors instead of throwing. */
+export function readAllRows<T>(readPage: Parameters<typeof readAllMetaRows<T>>[0]) {
+  return readAllMetaRows(readPage, 1000).then(data => ({ data, error: null }), (error: Error) => ({ data: null, error }))
+}

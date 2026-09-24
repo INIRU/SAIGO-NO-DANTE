@@ -2,42 +2,32 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { type Skill, type Passive, SIN_COLORS, computeSkillImageIndices } from '@/lib/data/sinners'
-import { selectUptieRows, selectIdentitySkills, buildSkillVariantMap } from '@/lib/identity/skill-model'
+import { selectUptieRows, selectIdentitySkills, buildSkillVariantMap, uptieLevels as listUptieLevels } from '@/lib/identity/skill-model'
 import { computeSkillDiffs, computePassiveDiffs } from '@/lib/utils/uptie-diff'
 
 export function useIdentitySkillModel(skills: Skill[], passives: Passive[]) {
-  const [uptieLevel, setUptieLevel] = useState<3 | 4>(4)
+  // Every uptie level with data (I–IV); the toggle grows automatically as levels are imported.
+  const uptieLevels = useMemo(() => listUptieLevels(skills, passives), [skills, passives])
+  const maxLevel = uptieLevels[uptieLevels.length - 1] ?? 4
+  const [selectedLevel, setUptieLevel] = useState<number | null>(null)
+  const uptieLevel = selectedLevel != null && uptieLevels.includes(selectedLevel) ? selectedLevel : maxLevel
+  const nextLevel = uptieLevels.find(level => level > uptieLevel) ?? null
+
   const [showDiff, setShowDiff] = useState(true)
   useEffect(() => {
     setShowDiff(localStorage.getItem('uptie-diff') !== 'off')
   }, [])
-  // 동기화 단계 필터링
-  const hasUptieData = useMemo(() =>
-    skills.some(s => (s.uptie_level ?? 3) === 4) || passives.some(p => (p.uptie_level ?? 3) === 4),
-    [skills, passives]
-  )
+
   const filteredSkills = useMemo(() => selectIdentitySkills(skills, uptieLevel), [skills, uptieLevel])
   const filteredPassives = useMemo(() => selectUptieRows(passives, uptieLevel), [passives, uptieLevel])
 
-  // 동기화 비교 데이터
-  const level3Skills = useMemo(() =>
-    skills.filter(s => (s.uptie_level ?? 3) === 3), [skills])
-  const level4Skills = useMemo(() =>
-    skills.filter(s => (s.uptie_level ?? 3) === 4), [skills])
-  const level3Passives = useMemo(() =>
-    passives.filter(p => (p.uptie_level ?? 3) === 3), [passives])
-  const level4Passives = useMemo(() =>
-    passives.filter(p => (p.uptie_level ?? 3) === 4), [passives])
-
-  const skillDiffResult = useMemo(() => {
-    if (uptieLevel !== 3 || !showDiff || !hasUptieData) return null
-    return computeSkillDiffs(level3Skills, level4Skills)
-  }, [uptieLevel, showDiff, hasUptieData, level3Skills, level4Skills])
-
-  const passiveDiffResult = useMemo(() => {
-    if (uptieLevel !== 3 || !showDiff || !hasUptieData) return null
-    return computePassiveDiffs(level3Passives, level4Passives)
-  }, [uptieLevel, showDiff, hasUptieData, level3Passives, level4Passives])
+  // 선택한 단계 → 바로 다음 단계 변경점
+  const skillDiffResult = useMemo(() =>
+    showDiff && nextLevel != null ? computeSkillDiffs(filteredSkills, selectIdentitySkills(skills, nextLevel)) : null,
+    [showDiff, nextLevel, filteredSkills, skills])
+  const passiveDiffResult = useMemo(() =>
+    showDiff && nextLevel != null ? computePassiveDiffs(filteredPassives, selectUptieRows(passives, nextLevel)) : null,
+    [showDiff, nextLevel, filteredPassives, passives])
 
   const variantMap = useMemo(() => buildSkillVariantMap(filteredSkills), [filteredSkills])
 
@@ -53,5 +43,5 @@ export function useIdentitySkillModel(skills: Skill[], passives: Passive[]) {
     return colors
   }, [filteredSkills])
 
-  return { hasUptieData, filteredSkills, filteredPassives, skillDiffResult, passiveDiffResult, variantMap, skillImgIdxMap, skillNameColors, uptieLevel, setUptieLevel, showDiff, setShowDiff }
+  return { uptieLevels, filteredSkills, filteredPassives, skillDiffResult, passiveDiffResult, variantMap, skillImgIdxMap, skillNameColors, uptieLevel, nextLevel, setUptieLevel, showDiff, setShowDiff }
 }

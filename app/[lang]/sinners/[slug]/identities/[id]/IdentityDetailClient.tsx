@@ -24,6 +24,7 @@ import { useTranslations, useLocale } from 'next-intl'
 import type { SupportedLang } from '@/lib/i18n/types'
 import { getLocalizedName } from '@/lib/i18n/localize'
 import { staggerContainer, workbenchReveal, workbenchStaggerItem } from '@/lib/animations'
+import styles from '@/styles/components/SinnerDetail.module.css'
 
 interface Props {
   sinner: Sinner
@@ -99,33 +100,33 @@ export default function IdentityDetailClient({
         {/* 브레드크럼 */}
         <motion.div
           className="mb-6 flex flex-wrap items-center gap-2 text-xs"
-          style={{ color: '#888888' }}
+          style={{ color: 'var(--text-muted)' }}
           variants={shouldReduceMotion ? undefined : workbenchStaggerItem}
         >
           <Link href="/sinners" className="hover:text-yellow-300 transition-colors">
             {t('sinners.title')}
           </Link>
-          <span>›</span>
+          <span aria-hidden style={{ color: '#4a3d2c' }}>›</span>
           <Link href={`/sinners/${sinner.id}`} className="hover:text-yellow-300 transition-colors">
             {getLocalizedName({ name_kr: sinner.name_kr, name_en: sinner.name, name_jp: sinner.name_jp }, lang)}
           </Link>
-          <span>›</span>
-          <span style={{ color: sinColor }}>{getLocalizedName(identity, lang) || identity.name}</span>
+          <span aria-hidden style={{ color: '#4a3d2c' }}>›</span>
+          <span style={{ color: 'var(--gold)' }}>{getLocalizedName(identity, lang) || identity.name}</span>
         </motion.div>
 
         <motion.div
-          className="space-y-8"
+          className="space-y-6"
           variants={shouldReduceMotion ? undefined : staggerContainer(0.07, 0.06)}
           initial={shouldReduceMotion ? false : 'initial'}
           animate="animate"
         >
           {/* 상세 정보와 덱 */}
           <motion.div
-            className="identity-detail-content min-w-0 space-y-8"
+            className="identity-detail-content min-w-0 space-y-6"
             variants={shouldReduceMotion ? undefined : staggerContainer(0.06, 0.08)}
           >
             {/* 최상위 페이지 탭: 인격 정보 / 덱 */}
-            <div className="inline-flex gap-1 rounded-lg border border-[var(--border)] bg-[var(--bg-deep)] p-1">
+            <div className={styles.tabs} role="tablist">
               {([
                 { key: 'info' as const, label: t('identity.pageTab.info') },
                 { key: 'decks' as const, label: t('identity.pageTab.decks') },
@@ -134,6 +135,8 @@ export default function IdentityDetailClient({
                 return (
                   <button
                     key={tab.key}
+                    type="button"
+                    role="tab"
                     onClick={() => {
                       if (pageTab !== tab.key) {
                         const hash = tab.key === 'decks' ? '#decks' : ''
@@ -141,9 +144,7 @@ export default function IdentityDetailClient({
                         setPageTab(tab.key)
                       }
                     }}
-                    aria-pressed={isActive}
-                    className="rounded-md px-6 py-2.5 text-sm font-semibold transition-colors"
-                    style={{ color: isActive ? '#0d0b08' : 'var(--text-secondary)', background: isActive ? 'var(--gold)' : 'transparent' }}
+                    aria-selected={isActive}
                   >
                     {tab.label}
                   </button>
@@ -218,21 +219,8 @@ export default function IdentityDetailClient({
               <motion.div variants={shouldReduceMotion ? undefined : workbenchStaggerItem}>
               <Link
                 href={`/sinners/${sinner.id}`}
-                className="block text-center py-3 font-medium text-sm transition-all duration-300 hover:border-opacity-60"
-                style={{
-                  background: 'linear-gradient(135deg, rgba(200,144,10,0.06) 0%, rgba(200,144,10,0.02) 100%)',
-                  border: '0.0625rem solid rgba(200,144,10,0.15)',
-                  borderRadius: '0.375rem',
-                  color: 'var(--gold-dim)',
-                }}
-                onMouseEnter={e => {
-                  e.currentTarget.style.borderColor = 'rgba(200,144,10,0.35)'
-                  e.currentTarget.style.background = 'linear-gradient(135deg, rgba(200,144,10,0.1) 0%, rgba(200,144,10,0.04) 100%)'
-                }}
-                onMouseLeave={e => {
-                  e.currentTarget.style.borderColor = 'rgba(200,144,10,0.15)'
-                  e.currentTarget.style.background = 'linear-gradient(135deg, rgba(200,144,10,0.06) 0%, rgba(200,144,10,0.02) 100%)'
-                }}
+                className="inline-flex min-h-11 items-center text-sm transition-colors hover:text-[var(--gold)]"
+                style={{ color: 'var(--text-muted)' }}
               >
                 {t('identity.backToSinner')}
               </Link>

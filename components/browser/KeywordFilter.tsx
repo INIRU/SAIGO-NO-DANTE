@@ -6,6 +6,7 @@ import Image from 'next/image'
 import { X, Search } from 'lucide-react'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
 import { useKeywordAutocomplete } from '@/hooks/useKeywordAutocomplete'
+import { filterStyles } from './FilterToggleGroup'
 
 type Props = {
   selected: Set<string>
@@ -36,12 +37,7 @@ export default function KeywordFilter({ selected, onToggle }: Props) {
 
   return (
     <div>
-      <div className="font-mono mb-2" style={{
-        fontSize: '0.5625rem',
-        letterSpacing: '0.15em',
-        color: 'var(--gold-dim)',
-        textTransform: 'uppercase',
-      }}>
+      <div className={filterStyles.label}>
         키워드 필터
       </div>
 
@@ -84,7 +80,7 @@ export default function KeywordFilter({ selected, onToggle }: Props) {
 
       {/* 검색 입력 */}
       <div className="relative">
-        <Search size={14} className="absolute left-2 top-1/2 -translate-y-1/2" style={{ color: '#555' }} />
+        <Search size={14} className="absolute left-2 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-muted)' }} aria-hidden />
         <input
           ref={inputRef}
           type="text"
@@ -92,13 +88,7 @@ export default function KeywordFilter({ selected, onToggle }: Props) {
           onChange={e => setQuery(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="키워드 입력 후 Enter..."
-          className="w-full rounded pl-7 pr-2 py-1.5 text-xs outline-none"
-          style={{
-            background: 'rgba(255,255,255,0.04)',
-            border: '1px solid rgba(255,255,255,0.1)',
-            color: '#ccc',
-            fontSize: '0.75rem',
-          }}
+          className={filterStyles.input}
           role="combobox"
           aria-expanded={suggestions.length > 0}
           aria-label="키워드 필터 검색"
