@@ -18,10 +18,11 @@ const theme = (id: string, gifts: number[]): ThemeData =>
   ({ id, name: `pack-${id}`, floor_info: { '하드': [1] }, dungeon_id: null, ego_gift_ids: gifts, specific_ego_gift_ids: [], image_url: `https://example.test/${id}.webp`, difficulty: null })
 const gift = (game_id: number) => ({ id: String(game_id), game_id, name: `gift-${game_id}`, keyword: null, grade: null, image_url: null, effect_base: null, effect_plus: null }) as GiftData
 const giftMap = new Map([10, 20, 30].map(id => [id, gift(id)]))
+for (const [id, grade] of [[40, '4'], [50, '5'], [60, '3']] as const) giftMap.set(id, { ...gift(id), grade })
 
-function render(state: RunState, skillExchange: { sinner: number; current: [number, number, number] | null } | null = null) {
+function render(state: RunState, skillExchange: { sinner: number; current: [number, number, number] | null } | null = null, scene = 'exploration') {
   return renderToStaticMarkup(<NextIntlClientProvider locale="ko" messages={messages} timeZone="Asia/Seoul">
-    <CompanionPanel state={state} dispatch={() => {}} themes={[theme('A', [10, 20, 30])]} giftMap={giftMap} captureRunning scene={{ label: 'exploration', since: 1 }} skillExchange={skillExchange} />
+    <CompanionPanel state={state} dispatch={() => {}} themes={[theme('A', [10, 20, 30])]} giftMap={giftMap} captureRunning scene={{ label: scene, since: 1 }} skillExchange={skillExchange} />
   </NextIntlClientProvider>)
 }
 const started = () => ({ ...runReducer(createInitialRunState('hard'), { type: 'START_RUN' }),
@@ -63,4 +64,14 @@ it('shows the replacements toward the plan for the sinner in the skill window, a
   expect(render(planned, { sinner: 1, current: [3, 2, 1] })).toContain(messages.planner.run.skillExchangeNotInPlan)
   expect(render(planned, { sinner: 8, current: [1, 0, 5] })).toContain(messages.planner.run.skillExchangeDone)
   expect(render(planned)).not.toContain('data-skill-exchange')
+})
+
+it('switches the gift list to tier IV+ gifts while the fusion screen and its result popups are shown', () => {
+  const planned = runReducer({ ...started(), targetGifts: ['40'] }, { type: 'SET_FLOOR_THEME', themeId: 'A' })
+  const grid = (html: string) => [...html.matchAll(/data-gift-id="(\d+)"/g)].map(match => Number(match[1]))
+  const fusion = render(planned, null, 'fusion')
+  expect(fusion).toContain('합성으로 얻을 4등급 이상 기프트 (2개)')
+  expect(grid(fusion)).toEqual([40, 50])
+  expect(fusion.match(/<button[^>]*data-gift-id="40".*?<\/button>/)?.[0]).toContain('data-gift-warning')
+  expect(grid(render(planned, null, 'shop'))).toEqual([20, 30, 10])
 })

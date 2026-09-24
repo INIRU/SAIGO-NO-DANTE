@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest'
-import { GIFT_PROMOTION_SCENES, getCurrentFloorPriorityGifts, nextGiftPromotion, planThemeGiftIds, type GiftPromotion } from '../../../lib/planner/run-priority-gifts'
+import { GIFT_PROMOTION_SCENES, getCurrentFloorPriorityGifts, getFusionTierGifts, nextGiftPromotion, planGiftIds, planThemeGiftIds, type GiftPromotion } from '../../../lib/planner/run-priority-gifts'
 import { createInitialRunState, normalizeRunState } from '../../../lib/planner/run-types'
 import type { GiftData, ThemeData } from '../../../lib/planner/types'
 
@@ -187,4 +187,15 @@ it('reads the plan gifts for a pack wherever the plan placed it, plus the given 
   expect(planThemeGiftIds(state, 'A', 3)).toEqual([10, 20, 50])
   expect(planThemeGiftIds(state, 'C')).toEqual([])
   expect(planThemeGiftIds(createInitialRunState(), 'A', 1)).toEqual([])
+})
+
+it('lists unowned tier IV and V gifts for the fusion screen, plan gifts first', () => {
+  const tiered = (game_id: number, grade: string) => ({ game_id, name: String(game_id), grade }) as GiftData
+  const map = new Map([tiered(1, '3'), tiered(2, '4'), tiered(3, '5'), tiered(4, '4'), tiered(5, 'EX'), tiered(6, '5')].map(item => [item.game_id, item]))
+  const state = createInitialRunState()
+  state.targetGifts = ['final_4_plusplus', '1']
+  state.sourcePlanSnapshot = { floorPlan: [{ floor: 2, gift_ids: ['6'] }] } as RunState['sourcePlanSnapshot']
+  state.giftInventory = ['3_plus']
+  expect(getFusionTierGifts(state, map).map(item => item.game_id)).toEqual([4, 6, 2])
+  expect(planGiftIds(state)).toEqual([4, 1, 6])
 })

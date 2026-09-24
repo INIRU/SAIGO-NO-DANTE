@@ -502,6 +502,8 @@
       "pipThemePossible": "選択可能",
       "pipThemePlanGifts": "このテーマパックで入手するプランのE.G.Oギフト",
       "pipPlanGift": "プランに設定したE.G.Oギフト",
+      "fusionTierGiftsCount": "合成で入手するランクIV以上のE.G.Oギフト（{count}個）",
+      "fusionTierGiftsOwned": "ランクIV以上のE.G.Oギフトをすべて所持しています。",
       "skillExchangeTitle": "{sinner} スキル交換のおすすめ",
       "skillExchangeCounts": "現在 {current} → プラン {target}",
       "skillExchangePlanOnly": "プラン {target}",
