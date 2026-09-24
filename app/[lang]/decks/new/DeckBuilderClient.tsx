@@ -1,8 +1,12 @@
 'use client'
 
+import BackLink from '@/components/navigation/BackLink'
 import { pendingNoteUploads, noteUploadInProgressMessage } from '@/lib/notes/images'
 
-import { showError } from '@/lib/toast'
+import { showError, showSuccess } from '@/lib/toast'
+import { deleteTempSlot, saveTempSlot, type TempSlot } from '@/lib/drafts/temp-slots'
+import { DECK_DRAFTS_KEY, isDeckDraft, loadDeckDraftSlots, type DeckDraft } from '@/lib/drafts/deck-drafts'
+import TempSaveMenu from '@/components/ui/TempSaveMenu'
 
 import { useState, useMemo, useEffect } from 'react'
 import dynamic from 'next/dynamic'
@@ -116,6 +120,7 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
   const sinnerT = useTranslations('sinner')
   const deckT = useTranslations('decks')
   const builderT = useTranslations('decks.builder')
+  const tTempSaves = useTranslations('planner.tempSaves')
   const router = useRouter()
   const initData = editMode ?? forkMode
   const [tabParam, setTab] = useQueryState('tab', parseAsString.withDefault('identity'))
@@ -170,12 +175,11 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
   const [codeApplying, setCodeApplying] = useState(false)
   const [codeError, setCodeError] = useState(false)
   const { status: authStatus } = useSession()
-  const [draftSaved, setDraftSaved] = useState(false)
-  const [hasDraft, setHasDraft] = useState(false)
+  const [draftSlots, setDraftSlots] = useState<TempSlot<DeckDraft>[]>([])
   const reduceMotion = useReducedMotion()
 
   useEffect(() => {
-    setHasDraft(!!localStorage.getItem('limbus-deck-draft'))
+    setDraftSlots(loadDeckDraftSlots())
   }, [])
 
   // 거던 아닐 때 스킬 편성 탭이면 인격 탭으로 이동
@@ -374,9 +378,9 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
     }
   }
 
-  const handleSaveDraft = () => {
+  const handleSaveDraft = (slot: TempSlot<DeckDraft>) => {
     if (pendingNoteUploads.size) { showError(noteUploadInProgressMessage(locale)); return }
-    const draft = {
+    const draft: DeckDraft = {
       title,
       contentType,
       description,
@@ -395,17 +399,16 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
       savedAt: Date.now(),
     }
     Object.assign(draft, { gacksungSlots, skillDistribution })
-    localStorage.setItem('limbus-deck-draft', JSON.stringify(draft))
-    setHasDraft(true)
-    setDraftSaved(true)
-    setTimeout(() => setDraftSaved(false), 2000)
+    const slots = saveTempSlot(DECK_DRAFTS_KEY, slot.slotNumber, draft, title.trim() || tTempSaves('untitledDeck'), isDeckDraft)
+    if (!slots) { showError(tTempSaves('saveFailed')); return }
+    setDraftSlots(slots)
+    showSuccess(tTempSaves(slot.draft ? 'overwritten' : 'savedToSlot', { slot: slot.slotNumber }))
   }
 
-  const handleLoadDraft = () => {
+  const handleLoadDraft = (slot: TempSlot<DeckDraft>) => {
     try {
-      const raw = localStorage.getItem('limbus-deck-draft')
-      if (!raw) return
-      const draft = JSON.parse(raw)
+      const draft = slot.draft?.state
+      if (!draft) return
       if (draft.title) setTitle(draft.title)
       if (draft.contentType) setContentType(draft.contentType)
       if (draft.description) setDescription(draft.description)
@@ -435,10 +438,13 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
         setEgoSlots(slots)
       }
       if (draft.gacksungSlots) setGacksungSlots(draft.gacksungSlots)
-      if (draft.skillDistribution) setSkillDistribution(draft.skillDistribution)
-      setHasDraft(false)
-      localStorage.removeItem('limbus-deck-draft')
+      if (draft.skillDistribution) setSkillDistribution(draft.skillDistribution as typeof skillDistribution)
+      showSuccess(tTempSaves('loadedFromSlot', { slot: slot.slotNumber }))
     } catch { /* ignore */ }
+  }
+  const handleDeleteDraft = (slot: TempSlot<DeckDraft>) => {
+    setDraftSlots(deleteTempSlot(DECK_DRAFTS_KEY, slot.slotNumber, isDeckDraft))
+    showSuccess(tTempSaves('deletedFromSlot', { slot: slot.slotNumber }))
   }
 
   const handleApplyCode = async () => {
@@ -482,9 +488,9 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
           <div className="deck-workspace-header py-4">
             <div className="deck-workspace-heading">
               <div className="min-w-0">
-                <Link href="/decks" locale={locale as SupportedLang} className="mb-0.5 inline-flex min-h-10 items-center gap-1.5 rounded px-1 transition-colors sm:min-h-11" style={{ color: 'var(--text-muted)', fontSize: '0.9375rem' }}>
+                <BackLink href="/decks" locale={locale as SupportedLang} className="mb-0.5 inline-flex min-h-10 items-center gap-1.5 rounded px-1 transition-colors sm:min-h-11" style={{ color: 'var(--text-muted)', fontSize: '0.9375rem' }}>
                 <ArrowLeft style={{ width: '1rem', height: '1rem' }} /> {builderT('backToDecks')}
-                </Link>
+                </BackLink>
                 <h1 className="sr-only">{editMode ? builderT('titleEdit') : builderT('titleNew')}</h1>
                 <p className="sr-only">
                   {builderT('description')}
@@ -508,19 +514,7 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
                   </CompactButton>
                   {codeError && <span role="alert" className="deck-workspace-code-error">{builderT('fields.codeError')}</span>}
                 </div>
-                {hasDraft && (
-                  <CompactButton icon={undefined} onClick={handleLoadDraft} variant="muted">
-                    {builderT('actions.loadDraft')}
-                  </CompactButton>
-                )}
-                <CompactButton
-                  icon={draftSaved ? Check : Save}
-                  onClick={handleSaveDraft}
-                  disabled={!title.trim()}
-                  variant={draftSaved ? 'success' : 'gold'}
-                >
-                  {draftSaved ? builderT('actions.draftSaved') : builderT('actions.saveDraft')}
-                </CompactButton>
+                <TempSaveMenu title={tTempSaves('deckMenuLabel')} slots={draftSlots} onSave={handleSaveDraft} onLoad={handleLoadDraft} onDelete={handleDeleteDraft} />
                 <CompactButton
                   icon={codeCopied ? Check : Copy}
                   onClick={handleCopyCode}

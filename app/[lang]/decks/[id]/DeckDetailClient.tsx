@@ -1,5 +1,6 @@
 'use client'
 
+import BackLink from '@/components/navigation/BackLink'
 import { useState, useEffect, useCallback, useMemo, type CSSProperties } from 'react'
 import dynamic from 'next/dynamic'
 import Image from 'next/image'
@@ -905,7 +906,7 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
       >
         {/* 라인 1: 뒤로가기 + 제목 */}
         <div className="flex flex-col items-start gap-4 mb-4">
-          <Link
+          <BackLink
             href="/decks"
             locale={locale}
             className="inline-flex items-center gap-1 transition-opacity hover:opacity-70 flex-shrink-0"
@@ -913,7 +914,7 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
           >
             <ArrowLeft style={{ width: '0.75rem', height: '0.75rem' }} />
             {t('backToList')}
-          </Link>
+          </BackLink>
           <h1
             className="font-bold leading-tight break-words"
             style={{ color: 'var(--text-primary)', fontSize: 'clamp(1.6rem, 3vw, 2.3rem)', fontFamily: 'var(--font-heading)' }}
