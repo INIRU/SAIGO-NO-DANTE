@@ -1,3 +1,4 @@
+import { deleteTempSlot, loadTempSlots, saveTempSlot, type TempDraft, type TempSlot } from '@/lib/drafts/temp-slots'
 import { createInitialState, getIdentitySkillDistribution, normalizePlannerThemeId, normalizeSkillDistribution, type PlannerState, type Difficulty, type SkillDistribution, type IdentityData, type EgoData } from './types'
 import { getLegacyPlanFloorDifficulty, isFloorDifficulty } from './floor-difficulty'
 import type { RunState } from './run-types'
@@ -184,26 +185,8 @@ export function runStateToPlannerState(run: RunState): PlannerState {
 // localStorage 키
 const PLANNER_HANDOFF_KEY = 'md-planner-handoff'
 const PLANNER_TEMP_DRAFTS_KEY = 'md-planner-temp-drafts'
-const PLANNER_TEMP_SLOTS_VERSION = 1
-
-export interface PlannerTempDraft {
-  id: string
-  label: string
-  savedAt: string
-  state: PlannerState
-}
-
-export type PlannerTempSlotNumber = 1 | 2 | 3
-
-export interface PlannerTempSlot {
-  slotNumber: PlannerTempSlotNumber
-  draft: PlannerTempDraft | null
-}
-
-interface PlannerTempSlotStorage {
-  version: number
-  slots: (PlannerTempDraft | null)[]
-}
+export type PlannerTempDraft = TempDraft<PlannerState>
+export type PlannerTempSlot = TempSlot<PlannerState>
 
 function snapshotPlannerState(state: PlannerState): PlannerState {
   return {
@@ -237,66 +220,10 @@ function isPlannerState(value: unknown): value is PlannerState {
   )
 }
 
-function makeDraftId(): string {
-  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
-    return crypto.randomUUID()
-  }
-  return `${Date.now()}-${Math.random().toString(36).slice(2)}`
-}
-
 function makePlannerTempLabel(state: PlannerState, fallbackLabel?: string): string {
   const title = state.title.trim()
   if (title) return title
   return fallbackLabel?.trim() || 'Untitled'
-}
-
-function isPlannerTempDraft(value: unknown): value is PlannerTempDraft {
-  if (!value || typeof value !== 'object') return false
-  const draft = value as Partial<PlannerTempDraft>
-  return (
-    typeof draft.id === 'string' &&
-    typeof draft.label === 'string' &&
-    typeof draft.savedAt === 'string' &&
-    isPlannerState(draft.state)
-  )
-}
-
-function emptyPlannerTempSlots(): PlannerTempSlot[] {
-  return [1, 2, 3].map(slotNumber => ({ slotNumber: slotNumber as PlannerTempSlotNumber, draft: null }))
-}
-
-function normalizeSlotNumber(slotNumber: number): PlannerTempSlotNumber | null {
-  return slotNumber === 1 || slotNumber === 2 || slotNumber === 3 ? slotNumber : null
-}
-
-function parsePlannerTempSlots(raw: string | null): PlannerTempSlot[] {
-  const emptySlots = emptyPlannerTempSlots()
-  if (!raw) return emptySlots
-
-  try {
-    const parsed = JSON.parse(raw)
-    const parsedSlots = (parsed as Partial<PlannerTempSlotStorage>)?.slots
-    const sourceSlots = Array.isArray(parsed)
-      ? parsed
-      : Array.isArray(parsedSlots)
-        ? parsedSlots
-        : []
-
-    return emptySlots.map((slot, index) => {
-      const draft = sourceSlots[index]
-      return { ...slot, draft: isPlannerTempDraft(draft) ? draft : null }
-    })
-  } catch {
-    return emptySlots
-  }
-}
-
-function persistPlannerTempSlots(slots: PlannerTempSlot[]): void {
-  const storage: PlannerTempSlotStorage = {
-    version: PLANNER_TEMP_SLOTS_VERSION,
-    slots: slots.map(slot => slot.draft),
-  }
-  localStorage.setItem(PLANNER_TEMP_DRAFTS_KEY, JSON.stringify(storage))
 }
 
 export function saveDraftToLocal(state: PlannerState): boolean {
@@ -321,69 +248,17 @@ export function clearDraftFromLocal(): void {
   try { localStorage.removeItem(PLANNER_HANDOFF_KEY) } catch { /* */ }
 }
 
-export function loadPlannerTempDrafts(): PlannerTempDraft[] {
-  return loadPlannerTempSlots()
-    .map(slot => slot.draft)
-    .filter((draft): draft is PlannerTempDraft => Boolean(draft))
-}
-
-export function savePlannerTempDraft(state: PlannerState, fallbackLabel?: string): PlannerTempDraft[] {
-  savePlannerTempSlot(1, state, fallbackLabel)
-  return loadPlannerTempDrafts()
-}
-
-export function deletePlannerTempDraft(id: string): PlannerTempDraft[] {
-  const slots = loadPlannerTempSlots()
-  const matchingSlot = slots.find(slot => slot.draft?.id === id)
-  if (matchingSlot) deletePlannerTempSlot(matchingSlot.slotNumber)
-  return loadPlannerTempDrafts()
-}
-
 export function loadPlannerTempSlots(): PlannerTempSlot[] {
-  try {
-    return parsePlannerTempSlots(localStorage.getItem(PLANNER_TEMP_DRAFTS_KEY))
-  } catch {
-    return emptyPlannerTempSlots()
-  }
+  return loadTempSlots(PLANNER_TEMP_DRAFTS_KEY, isPlannerState)
 }
 
-export function savePlannerTempSlot(slotNumber: PlannerTempSlotNumber, state: PlannerState, fallbackLabel?: string): PlannerTempSlot[] {
-  try {
-    const normalizedSlot = normalizeSlotNumber(slotNumber)
-    if (!normalizedSlot) return loadPlannerTempSlots()
-    const savedAt = new Date().toISOString()
-    const slots = loadPlannerTempSlots().map(slot => (
-      slot.slotNumber === normalizedSlot
-        ? {
-          ...slot,
-          draft: {
-            id: makeDraftId(),
-            label: makePlannerTempLabel(state, fallbackLabel),
-            savedAt,
-            state: snapshotPlannerState(state),
-          },
-        }
-        : slot
-    ))
-    persistPlannerTempSlots(slots)
-    return slots
-  } catch {
-    return loadPlannerTempSlots()
-  }
+/** Null when the browser refused to store it. */
+export function savePlannerTempSlot(slotNumber: number, state: PlannerState, fallbackLabel?: string): PlannerTempSlot[] | null {
+  return saveTempSlot(PLANNER_TEMP_DRAFTS_KEY, slotNumber, snapshotPlannerState(state), makePlannerTempLabel(state, fallbackLabel), isPlannerState)
 }
 
-export function deletePlannerTempSlot(slotNumber: PlannerTempSlotNumber): PlannerTempSlot[] {
-  try {
-    const normalizedSlot = normalizeSlotNumber(slotNumber)
-    if (!normalizedSlot) return loadPlannerTempSlots()
-    const slots = loadPlannerTempSlots().map(slot => (
-      slot.slotNumber === normalizedSlot ? { ...slot, draft: null } : slot
-    ))
-    persistPlannerTempSlots(slots)
-    return slots
-  } catch {
-    return loadPlannerTempSlots()
-  }
+export function deletePlannerTempSlot(slotNumber: number): PlannerTempSlot[] {
+  return deleteTempSlot(PLANNER_TEMP_DRAFTS_KEY, slotNumber, isPlannerState)
 }
 
 // ── Plan → Trigger Mode 전환용 (slot_order 보존) ──────────────────────────

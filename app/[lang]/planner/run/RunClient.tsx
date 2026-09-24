@@ -1,5 +1,10 @@
 'use client'
 
+import TempSaveMenu from '@/components/ui/TempSaveMenu'
+import { deleteTempSlot, loadTempSlots, saveTempSlot, type TempSlot } from '@/lib/drafts/temp-slots'
+import { normalizeRunState, type RunState } from '@/lib/planner/run-types'
+
+import BackLink from '@/components/navigation/BackLink'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 import { toast } from 'sonner'
@@ -22,6 +27,12 @@ import { readRecognitionMode, RECOGNITION_MODE_STORAGE_KEY, type RecognitionMode
 import ConfirmModal from '@/components/ui/ConfirmModal'
 import { captureEvidence, useAssistCapture } from '@/lib/hooks/useAssistCapture'
 
+/** Assist temporary saves: five slots of whole runs in this browser. */
+const RUN_DRAFTS_KEY = 'md-run-temp-slots'
+const isRunState = (value: unknown): value is RunState => !!value && typeof value === 'object' && Array.isArray((value as RunState).floorLogs)
+const DIFFICULTY_NAMES: Record<string, string> = { normal: 'N', hard: 'H', overlap: 'P', extreme: 'EX' }
+const runSlotLabel = (state: RunState) => `${state.sourcePlanSnapshot?.title?.trim() || DIFFICULTY_NAMES[state.difficulty] || state.difficulty} · ${state.currentFloor}F · ${state.giftInventory.length}`
+
 interface Props {
   themes: ThemeData[]
   gifts: GiftData[]
@@ -43,6 +54,9 @@ export default function RunClient({ themes, gifts, recipes, identities, sinners,
   const state = useRunStore()
   const dispatch = useRunStore(s => s.dispatch)
   const [loadingPlan, setLoadingPlan] = useState(true)
+  const tTempSaves = useTranslations('planner.tempSaves')
+  const [runSlots, setRunSlots] = useState<TempSlot<RunState>[]>([])
+  useEffect(() => { setRunSlots(loadTempSlots(RUN_DRAFTS_KEY, isRunState)) }, [])
   const [confirmReset, setConfirmReset] = useState(false)
   const giftReferences = useMemo(() => gifts.map(gift => ({ id: String(gift.game_id), imageUrl: gift.image_url })), [gifts])
   const eventReferences = useMemo(() => events.map(event => ({ id: String(event.id), imageUrl: event.image_url })), [events])
@@ -142,15 +156,33 @@ export default function RunClient({ themes, gifts, recipes, identities, sinners,
     router.push('/planner')
   }
   const card = 'rounded-lg border border-[var(--border)] bg-[var(--bg-card)]'
+  const saveRunSlot = (slot: TempSlot<RunState>) => {
+    const slots = saveTempSlot(RUN_DRAFTS_KEY, slot.slotNumber, state, runSlotLabel(state), isRunState)
+    if (!slots) { toast.error(tTempSaves('saveFailed')); return }
+    setRunSlots(slots)
+    toast.success(tTempSaves(slot.draft ? 'overwritten' : 'savedToSlot', { slot: slot.slotNumber }))
+  }
+  const loadRunSlot = (slot: TempSlot<RunState>) => {
+    if (!slot.draft) return
+    capture.stop()
+    dispatch({ type: 'LOAD_RUN', state: normalizeRunState(slot.draft.state) })
+    toast.success(tTempSaves('loadedFromSlot', { slot: slot.slotNumber }))
+  }
+  const deleteRunSlot = (slot: TempSlot<RunState>) => {
+    setRunSlots(deleteTempSlot(RUN_DRAFTS_KEY, slot.slotNumber, isRunState))
+    toast.success(tTempSaves('deletedFromSlot', { slot: slot.slotNumber }))
+  }
 
   return <div data-assist-run className="min-h-screen bg-[var(--bg-deep)] text-[var(--text-primary)]">
     <div className="mx-auto max-w-[90rem] px-4 pb-12 pt-20 sm:px-6 sm:pt-24 lg:px-8">
       <header className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border)] pb-3">
         <div className="flex min-w-0 items-center gap-3">
-          <Link href="/planner" aria-label={t('backToPlanner')} title={t('backToPlanner')} className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--gold-light)] focus-visible:outline-2 focus-visible:outline-[var(--gold-light)]"><ArrowLeft size={18} /></Link>
+          <BackLink href="/" aria-label={t('backToPlanner')} title={t('backToPlanner')} className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--gold-light)] focus-visible:outline-2 focus-visible:outline-[var(--gold-light)]"><ArrowLeft size={18} /></BackLink>
           <h1 className="font-[family-name:var(--font-heading)] text-lg leading-tight text-[var(--gold-light)] sm:text-xl">{t('title')}</h1>
         </div>
-        {state.phase === 'playing' && <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <TempSaveMenu title={tTempSaves('runMenuLabel')} slots={runSlots} onSave={saveRunSlot} onLoad={loadRunSlot} onDelete={deleteRunSlot} />
+        {state.phase === 'playing' && <>
           {/* Owns the PiP window and every capture-driven record (acquisitions, packs, events, Undo); renders only its button here. */}
           <CompanionPanel state={state} dispatch={dispatch} themes={themes} giftMap={giftMap}
             observedGiftIds={observedGiftIds} popupAcquisitions={capture.status === 'running' ? capture.popupAcquisitions : []}
@@ -172,7 +204,8 @@ export default function RunClient({ themes, gifts, recipes, identities, sinners,
           <button type="button" onClick={() => setConfirmReset(true)} className="inline-flex min-h-10 items-center gap-2 rounded-md border border-[var(--border)] px-3 text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] focus-visible:outline-2 focus-visible:outline-[var(--gold-light)]">
             <RotateCcw size={15} /> {t('reset')}
           </button>
-        </div>}
+        </>}
+        </div>
       </header>
       {state.phase === 'playing' && !capture.mobile && <div className="mb-4 max-w-3xl" data-recognition-mode-control>
         <RecognitionModeControl value={recognitionMode} onChange={changeRecognitionMode} label={t('recognitionModeLabel')}

@@ -1,5 +1,6 @@
 'use client'
 
+import BackLink from '@/components/navigation/BackLink'
 import { resolvePlannerIdentity, resolvePlannerEgo } from '@/lib/planner/catalog-references'
 
 import { getGameUiAsset } from '@/lib/utils/game-ui'
@@ -505,13 +506,13 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
     <NoteGiftClickContext value={openNoteGift}>
     <div data-plan-detail className="min-h-screen bg-[#0d0b08] pt-24 pb-16">
       <div className="mx-auto w-full max-w-7xl px-3 sm:px-6">
-        <Link
+        <BackLink
           href="/planner/community"
           className="mb-4 inline-flex min-h-[44px] items-center gap-2 rounded-sm px-1 text-[0.9375rem] font-medium text-[#7f7364] transition-colors hover:text-[#c8900a] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#c8900a]"
         >
           <ArrowLeft className="h-4 w-4" aria-hidden="true" />
           {tDetail('backToCommunity')}
-        </Link>
+        </BackLink>
 
         <motion.header
           className="mb-8 overflow-hidden rounded-lg border border-[#241c14] bg-[#1a1510]"

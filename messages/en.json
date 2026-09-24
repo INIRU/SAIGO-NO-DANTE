@@ -535,7 +535,7 @@
       "metaTitle": "Mirror Dungeon — Assist Mode",
       "metaDescription": "Record Mirror Dungeon themes, gifts, formation, events, and floor progress in Assist Mode.",
       "title": "Assist Mode",
-      "backToPlanner": "Back to Planner",
+      "backToPlanner": "Back",
       "screenPreview": "Connect screen",
       "stopScreenPreview": "Stop screen preview",
       "screenPreviewFailed": "Could not connect the screen.",
@@ -794,6 +794,10 @@
       "deletedFromSlot": "Cleared slot {slot}.",
       "untitled": "Untitled plan",
       "deleteSlotLabel": "Clear slot {slot}",
+      "untitledDeck": "Untitled deck",
+      "deckMenuLabel": "Deck temporary saves",
+      "runMenuLabel": "Assist temporary saves",
+      "saveFailed": "Could not save: this browser's storage is full or blocked.",
       "deleteLabel": "Delete temporary save {label}"
     },
     "communityBoard": {

@@ -1,5 +1,6 @@
 import '@/styles/globals/workspaces.css'
 import VisitTracker from '@/components/discovery/VisitTracker'
+import { NavigationTracker } from '@/components/navigation/BackLink'
 import { Suspense } from 'react'
 import type { Metadata } from 'next'
 import { NextIntlClientProvider, hasLocale } from 'next-intl'
@@ -72,6 +73,7 @@ export default async function LangLayout({
       <AprilFoolsWrapper />
       <div className="site-navigation"><Navbar mainNavLabel={mainNavLabel} /></div>
       <Suspense fallback={null}><VisitTracker /></Suspense>
+      <Suspense fallback={null}><NavigationTracker /></Suspense>
       <main id="main-content">{children}</main>
       <Footer />
       <PageNavigation />

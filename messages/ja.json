@@ -536,7 +536,7 @@
       "metaTitle": "ミラーダンジョン — アシストモード",
       "metaDescription": "ミラーダンジョンのテーマ、ギフト、編成、イベント、階ごとの進行を手動で記録するアシストモードです。",
       "title": "アシストモード",
-      "backToPlanner": "プランナーに戻る",
+      "backToPlanner": "戻る",
       "screenPreview": "画面を接続",
       "stopScreenPreview": "画面プレビューを終了",
       "screenPreviewFailed": "画面を接続できませんでした。",
@@ -795,6 +795,10 @@
       "deletedFromSlot": "スロット {slot}を空にしました。",
       "untitled": "無題のプラン",
       "deleteSlotLabel": "スロット {slot}を空にする",
+      "untitledDeck": "無題のデッキ",
+      "deckMenuLabel": "デッキの一時保存",
+      "runMenuLabel": "アシストの一時保存",
+      "saveFailed": "ブラウザの保存領域が不足しているため一時保存できませんでした。",
       "deleteLabel": "{label} の一時保存を削除"
     },
     "communityBoard": {

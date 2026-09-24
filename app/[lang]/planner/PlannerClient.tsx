@@ -1,5 +1,6 @@
 'use client'
 
+import BackLink from '@/components/navigation/BackLink'
 import { pendingNoteUploads, noteUploadInProgressMessage } from '@/lib/notes/images'
 
 import { useMemo, useEffect, useState } from 'react'
@@ -9,7 +10,7 @@ import { Link } from '@/lib/i18n/navigation'
 import { useSession } from 'next-auth/react'
 import { useLocale, useTranslations } from 'next-intl'
 import { useQueryState, parseAsString } from 'nuqs'
-import { ArrowLeft, Users, Star, Gift, Layers, FileText, Copy, Upload, Check, Play, Save, ChevronDown, Trash2, FolderOpen, X } from 'lucide-react'
+import { ArrowLeft, Users, Star, Gift, Layers, FileText, Copy, Upload, Check, Play } from 'lucide-react'
 import { createInitialState, type PlannerState, type PlannerTab, type ThemeData, type GiftData, type RecipeData, type IdentityData, type SinnerData, type PassiveData, type SkillSummary, type EgoData } from '@/lib/planner/types'
 import { buildGiftMap } from '@/lib/planner/fusion'
 import { encodePlan, savePlanForRun, loadDraftFromLocal, clearDraftFromLocal, loadPlannerTempSlots, savePlannerTempSlot, deletePlannerTempSlot, type PlannerTempSlot } from '@/lib/planner/encoder'
@@ -21,6 +22,7 @@ import FloorTab from '@/components/planner/FloorTab'
 import SummaryTab from '@/components/planner/SummaryTab'
 import BlessingTab from '@/components/planner/BlessingTab'
 import GiftPlanTab from '@/components/planner/GiftPlanTab'
+import TempSaveMenu from '@/components/ui/TempSaveMenu'
 import { workbenchReveal } from '@/lib/animations'
 
 interface Props {
@@ -80,7 +82,6 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
   const [uploading, setUploading] = useState(false)
   const [uploaded, setUploaded] = useState(false)
   const [editId, setEditId] = useState<string | null>(null)
-  const [tempSavesOpen, setTempSavesOpen] = useState(false)
   const [tempSlots, setTempSlots] = useState<PlannerTempSlot[]>([])
 
   useEffect(() => {
@@ -142,6 +143,7 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
   const handleSaveTempSlot = (slot: PlannerTempSlot) => {
     if (pendingNoteUploads.size) { showError(noteUploadInProgressMessage(locale)); return }
     const slots = savePlannerTempSlot(slot.slotNumber, state, tTempSaves('untitled'))
+    if (!slots) { showError(tTempSaves('saveFailed')); return }
     setTempSlots(slots)
     showSuccess(tTempSaves(slot.draft ? 'overwritten' : 'savedToSlot', { slot: slot.slotNumber }))
   }
@@ -150,24 +152,12 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
     const draft = slot.draft
     if (!draft) return
     dispatch({ type: 'LOAD_PLAN', state: draft.state })
-    setTempSavesOpen(false)
     showSuccess(tTempSaves('loadedFromSlot', { slot: slot.slotNumber }))
   }
 
   const handleDeleteTempSlot = (slot: PlannerTempSlot) => {
     setTempSlots(deletePlannerTempSlot(slot.slotNumber))
     showSuccess(tTempSaves('deletedFromSlot', { slot: slot.slotNumber }))
-  }
-
-  const formatTempSavedAt = (savedAt: string) => {
-    const date = new Date(savedAt)
-    if (Number.isNaN(date.getTime())) return ''
-    return new Intl.DateTimeFormat(locale, {
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    }).format(date)
   }
 
   // URL 파라미터 또는 1회성 handoff 복원. 자동 localStorage persist는 사용하지 않는다.
@@ -276,9 +266,9 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
           animate={shouldReduceMotion ? undefined : 'animate'}
         >
           <div>
-            <Link href="/planner/community" className="inline-flex items-center gap-1 mb-2 transition-colors" style={{ color: '#666', fontSize: '0.875rem' }}>
+            <BackLink href="/planner/community" className="inline-flex items-center gap-1 mb-2 transition-colors" style={{ color: '#666', fontSize: '0.875rem' }}>
               <ArrowLeft style={{ width: '0.75rem', height: '0.75rem' }} /> {tPlanner('community')}
-            </Link>
+            </BackLink>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             <button
@@ -302,100 +292,7 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
               {copied ? <Check size={12} /> : <Copy size={12} />}
               {copied ? tPlanner('actions.copied') : tPlanner('actions.copyUrl')}
             </button>
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => setTempSavesOpen(open => !open)}
-                aria-expanded={tempSavesOpen}
-                aria-haspopup="menu"
-                style={{
-                  display: 'flex', alignItems: 'center', gap: '0.25rem', padding: '0.375rem 0.625rem',
-                  background: 'rgba(200,144,10,0.1)',
-                  border: '1px solid rgba(200,144,10,0.3)',
-                  borderRadius: '0.375rem', color: '#e8b030',
-                  fontSize: '0.9375rem', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s',
-                }}
-              >
-                <Save size={12} />
-                {tTempSaves('button')}
-                <ChevronDown size={12} style={{ transform: tempSavesOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }} />
-              </button>
-              {tempSavesOpen && (
-                <div
-                  role="menu"
-                  aria-label={tTempSaves('menuLabel')}
-                  className="fixed left-3 right-3 top-40 z-40 mt-2 max-w-[calc(100vw-1.5rem)] overflow-hidden rounded-lg sm:absolute sm:left-auto sm:right-0 sm:top-full sm:w-[26rem]"
-                  style={{ background: '#1a1510', border: '1px solid rgba(200,144,10,0.25)' }}
-                >
-                  <div className="flex items-center justify-between border-b border-[#241c14] px-3 py-2 sm:hidden">
-                    <span style={{ color: '#e8dcc8', fontSize: '0.9375rem', fontWeight: 700 }}>
-                      {tTempSaves('menuLabel')}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setTempSavesOpen(false)}
-                      aria-label={tTempSaves('closeMenu')}
-                      className="flex items-center justify-center rounded"
-                      style={{ width: '2.75rem', minHeight: '2.75rem', color: '#e8b030' }}
-                    >
-                      <X size={16} aria-hidden="true" />
-                    </button>
-                  </div>
-                  <div style={{ padding: '0.375rem' }}>
-                    {tempSlots.map(slot => (
-                      <div key={slot.slotNumber} style={{ padding: '0.625rem 0.5rem', borderTop: slot.slotNumber === 1 ? 'none' : '1px solid #241c14' }}>
-                        <div className="flex min-w-0 items-center gap-2">
-                          <span className="flex items-center justify-center rounded" style={{ width: '1.625rem', height: '1.625rem', flexShrink: 0, background: 'rgba(200,144,10,0.12)', color: '#e8b030', fontSize: '0.875rem', fontWeight: 700 }}>
-                            {slot.slotNumber}
-                          </span>
-                          <span className="min-w-0 flex-1" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto', alignItems: 'baseline', gap: '0.75rem' }}>
-                            <span className="block truncate" style={{ color: slot.draft ? '#e8dcc8' : '#8a8175', fontSize: '0.9375rem', fontWeight: 600 }}>
-                              {slot.draft?.label ?? tTempSaves('emptySlot')}
-                            </span>
-                            <span className="block" style={{ color: '#8a8175', fontSize: '0.875rem', whiteSpace: 'nowrap' }}>
-                              {slot.draft ? formatTempSavedAt(slot.draft.savedAt) : tTempSaves('slotLabel', { slot: slot.slotNumber })}
-                            </span>
-                          </span>
-                        </div>
-                        <div className="mt-2 grid gap-1" style={{ gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr) 2.25rem' }}>
-                          <button
-                            type="button"
-                            role="menuitem"
-                            onClick={() => handleSaveTempSlot(slot)}
-                            className="inline-flex min-w-0 items-center justify-center gap-1 rounded transition-colors"
-                            style={{ minHeight: '2.25rem', padding: '0.375rem 0.5rem', color: '#e8b030', background: 'rgba(200,144,10,0.1)', border: '1px solid rgba(200,144,10,0.25)', fontSize: '0.875rem', fontWeight: 700 }}
-                          >
-                            <Save size={14} />
-                            <span className="truncate">{tTempSaves(slot.draft ? 'overwriteSlot' : 'saveToSlot')}</span>
-                          </button>
-                          <button
-                            type="button"
-                            role="menuitem"
-                            onClick={() => handleLoadTempSlot(slot)}
-                            disabled={!slot.draft}
-                            className="inline-flex min-w-0 items-center justify-center gap-1 rounded transition-colors"
-                            style={{ minHeight: '2.25rem', padding: '0.375rem 0.5rem', color: slot.draft ? '#e8dcc8' : '#5a5045', background: slot.draft ? 'rgba(232,220,200,0.06)' : 'rgba(90,80,69,0.05)', border: '1px solid #2a2118', fontSize: '0.875rem', fontWeight: 600, cursor: slot.draft ? 'pointer' : 'not-allowed' }}
-                          >
-                            <FolderOpen size={14} />
-                            <span className="truncate">{tTempSaves('loadSlot')}</span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteTempSlot(slot)}
-                            disabled={!slot.draft}
-                            aria-label={tTempSaves('deleteSlotLabel', { slot: slot.slotNumber })}
-                            className="flex items-center justify-center rounded transition-colors"
-                            style={{ width: '2.25rem', minHeight: '2.25rem', color: slot.draft ? '#a16855' : '#5a5045', border: '1px solid #2a2118', cursor: slot.draft ? 'pointer' : 'not-allowed', opacity: slot.draft ? 1 : 0.55 }}
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
+            <TempSaveMenu title={tTempSaves('menuLabel')} slots={tempSlots} onSave={handleSaveTempSlot} onLoad={handleLoadTempSlot} onDelete={handleDeleteTempSlot} />
             <button
               onClick={session.status === 'authenticated' ? handleUpload : undefined}
               disabled={session.status !== 'authenticated' || uploading}

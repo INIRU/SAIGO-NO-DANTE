@@ -535,7 +535,7 @@
       "metaTitle": "거울 던전 어시스트 모드",
       "metaDescription": "거울 던전의 테마, 기프트, 편성, 이벤트와 층별 진행을 수동으로 기록하는 어시스트 모드입니다.",
       "title": "어시스트 모드",
-      "backToPlanner": "플래너로 돌아가기",
+      "backToPlanner": "뒤로 가기",
       "screenPreview": "화면 연결",
       "stopScreenPreview": "화면 연결 종료",
       "screenPreviewFailed": "화면을 연결하지 못했습니다.",
@@ -794,6 +794,10 @@
       "deletedFromSlot": "슬롯 {slot}을 비웠습니다.",
       "untitled": "제목 없는 플랜",
       "deleteSlotLabel": "슬롯 {slot} 비우기",
+      "untitledDeck": "제목 없는 덱",
+      "deckMenuLabel": "덱 임시 저장",
+      "runMenuLabel": "어시스트 임시 저장",
+      "saveFailed": "브라우저 저장 공간이 부족해 임시 저장하지 못했습니다.",
       "deleteLabel": "{label} 임시 저장본 삭제"
     },
     "communityBoard": {
