@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import {
   buildSkillRows,
   areSkillRowsDifferent,
+  withStableSkillIds,
   cleanLocaleContent,
   findStaleRichTextKeywordMetaNames,
   hasLocalizedSkillContent,
@@ -403,5 +404,21 @@ describe('identity-data sync helpers', () => {
       [baseSkill],
       [{ id: 'db-skill-1', ...baseSkill }, { id: 'stale-skill', ...baseSkill, name: '삭제 대상' }],
     )).toBe(true)
+  })
+
+  it('keeps existing skill ids when a rebuild only changes content', () => {
+    const skill = { name: '가드', skill_order: 4, uptie_level: 4, variant_order: 1, image_id: '1010104' }
+    const rows = withStableSkillIds(
+      [{ ...skill, image_id: '1010104_4' }, { ...skill, name: '신규 스킬' }],
+      [{ id: 'db-skill-1', ...skill, image_id: '1010104' }],
+    )
+    expect(rows.map(row => row.id)).toEqual(['db-skill-1', undefined])
+    expect(rows[0].image_id).toBe('1010104_4')
+  })
+
+  it('treats same-name skill variants as equal regardless of row order', () => {
+    const a = { name: '도축 - 갈비뼈', skill_order: 1, uptie_level: 4, base_power: 3, coin_power: 4, variant_order: 1, image_id: '1021501' }
+    const b = { ...a, variant_order: 4, image_id: '1021505' }
+    expect(areSkillRowsDifferent([a, b], [b, a])).toBe(false)
   })
 })
