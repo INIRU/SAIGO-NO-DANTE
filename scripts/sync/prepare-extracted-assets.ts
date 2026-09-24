@@ -67,6 +67,10 @@ function readJson(path: string) {
   return JSON.parse(text) as unknown
 }
 
+// macOS unzip stores Korean names as NFD while manifests use NFC. APFS opens either form but Linux does not,
+// so walked files remember their on-disk spelling for checkedPath.
+const onDiskPaths = new Map<string, string>()
+
 function walk(root: string): string[] {
   const result: string[] = []
   const visit = (dir: string) => {
@@ -75,8 +79,10 @@ function walk(root: string): string[] {
       const info = lstatSync(path)
       if (info.isSymbolicLink()) throw new Error(`symlink is not allowed: ${relative(root, path)}`)
       if (info.isDirectory()) visit(path)
-      // macOS unzip stores Korean names as NFD while manifests use NFC; APFS opens either form.
-      else if (info.isFile()) result.push(path.normalize('NFC'))
+      else if (info.isFile()) {
+        onDiskPaths.set(path.normalize('NFC'), path)
+        result.push(path.normalize('NFC'))
+      }
     }
   }
   visit(root)
@@ -86,7 +92,7 @@ function walk(root: string): string[] {
 function checkedPath(source: string, rel: string) {
   const path = resolve(source, safeRelativePath(rel))
   if (!inside(path, source)) throw new Error(`path escapes source: ${rel}`)
-  return path
+  return onDiskPaths.get(path) ?? path
 }
 
 function reportPath(output: string) {
