@@ -1,5 +1,6 @@
 'use client'
 
+import { MAX_OBSERVED_GIFTS, OBSERVATION_GIFT_IDS, observationCost } from '@/lib/planner/observation'
 import GiftGrade from '@/components/ui/GiftGrade'
 
 import { GIFT_BG_URL } from '@/lib/constants/gift'
@@ -186,10 +187,8 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap, recipes }
   }, [filteredFinalSourceGifts])
 
   const observeGifts = useMemo(
-    () => gifts.filter(g => {
-      const grade = parseInt(g.grade ?? '0')
-      return grade >= 1 && grade <= 3 && !g.name.includes('잔영')
-    }),
+    // Only what the start observation can actually offer, per the game's observation list.
+    () => gifts.filter(g => OBSERVATION_GIFT_IDS.has(g.game_id)),
     [gifts]
   )
 
@@ -274,7 +273,7 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap, recipes }
                 height={16}
                 style={{ width: '1rem', height: '1rem', verticalAlign: 'middle' }}
               />
-              <span style={{ color: '#e8b030', fontWeight: 700 }}>{observeIds.size * 70}</span>
+              <span style={{ color: '#e8b030', fontWeight: 700 }}>{observationCost(observeIds.size)}</span>
             </span>
             <span style={{
               fontSize: '0.6875rem',
@@ -303,7 +302,7 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap, recipes }
                 const key = `observe_${gift.game_id}`
                 if (observeIds.has(gift.game_id)) {
                   dispatch({ type: 'REMOVE_GIFT', giftId: key })
-                } else if (observeIds.size < 3) {
+                } else if (observeIds.size < MAX_OBSERVED_GIFTS) {
                   dispatch({ type: 'ADD_GIFT', giftId: key })
                 }
               }}
@@ -343,7 +342,7 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap, recipes }
                       height={14}
                       style={{ width: '0.875rem', height: '0.875rem' }}
                     />
-                    {t('observe.starlightCost', { count: observeIds.size * 70 })}
+                    {t('observe.starlightCost', { count: observationCost(observeIds.size) })}
                   </div>
                 ) : undefined
               }
