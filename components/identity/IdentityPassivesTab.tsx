@@ -1,9 +1,10 @@
 'use client'
 
 import Image from 'next/image'
-import { Passive, SIN_COLORS, SIN_KR_TO_EN, getSinIconUrl, STORAGE_BASE } from '@/lib/data/sinners'
+import { Passive, SIN_COLORS, SIN_KR_TO_EN, getSinIconUrl } from '@/lib/data/sinners'
 import SkillDescription from '@/components/skill/SkillDescription'
-import type { PassiveDiff } from '@/lib/utils/uptie-diff'
+import { UptieChangePanel } from '@/components/identity/UptieChanges'
+import { diffDescriptionLines, type PassiveDiff } from '@/lib/utils/uptie-diff'
 import { useTranslations, useLocale } from 'next-intl'
 
 interface IdentityPassivesTabProps {
@@ -13,6 +14,8 @@ interface IdentityPassivesTabProps {
   allowedKeywords?: Set<string>
   passiveDiffs?: Map<string, PassiveDiff>
   newPassives?: Passive[]
+  /** Next uptie level with data; diffs above compare against it. */
+  nextLevel?: number | null
 }
 
 type PassiveWithFlavor = Passive & {
@@ -28,7 +31,7 @@ function localPassiveFlavor(passive: Passive, locale: string): string | null | u
   return p.flavor
 }
 
-export default function IdentityPassivesTab({ filteredPassives, sinColor, skillNameColors, allowedKeywords, passiveDiffs, newPassives }: IdentityPassivesTabProps) {
+export default function IdentityPassivesTab({ filteredPassives, sinColor, skillNameColors, allowedKeywords, passiveDiffs, newPassives, nextLevel }: IdentityPassivesTabProps) {
   const t = useTranslations()
   const locale = useLocale()
   const localPassiveName = (p: Passive) =>
@@ -58,6 +61,7 @@ export default function IdentityPassivesTab({ filteredPassives, sinColor, skillN
     const primaryColor = sinTypes[0] ? SIN_COLORS[sinTypes[0]] : '#cccccc'
     const passiveDescription = localPassiveDesc(p)
     const passiveFlavor = localPassiveFlavor(p, locale)
+    const diff = passiveDiffs?.get(p.id)
 
     return (
       <div key={p.id} className="py-2">
@@ -97,11 +101,6 @@ export default function IdentityPassivesTab({ filteredPassives, sinColor, skillN
             {p.sin_count != null && p.sin_count > 0 && (
               <span className="font-bold" style={{ color: '#e8dcc8', fontSize: '0.9375rem', fontFamily: 'var(--font-heading)' }}>
                 x{p.sin_count}
-                {passiveDiffs?.get(p.id)?.sin_count && (
-                  <span style={{ color: '#e8b030', fontSize: '0.75rem', fontWeight: 700, marginLeft: '0.25rem' }}>
-                    {'\u2192'}x{passiveDiffs.get(p.id)!.sin_count!.to}
-                  </span>
-                )}
               </span>
             )}
             {p.active_cond && (
@@ -125,12 +124,16 @@ export default function IdentityPassivesTab({ filteredPassives, sinColor, skillN
             showCoinBadges={false}
             allowedKeywords={allowedKeywords}
             flavorText={passiveFlavor}
-            level4Desc={passiveDiffs?.get(p.id)?.hasDescDiff ? (() => {
-              const pd = passiveDiffs.get(p.id)!
-              return locale === 'en' && pd.level4Desc_en ? pd.level4Desc_en
-                : locale === 'ja' && pd.level4Desc_jp ? pd.level4Desc_jp
-                : pd.level4Desc
-            })() : undefined}
+          />
+        )}
+        {diff && nextLevel != null && (
+          <UptieChangePanel
+            level={nextLevel}
+            stats={diff.sin_count ? [{ label: t('identity.uptie.requirement'), diff: diff.sin_count }] : []}
+            lines={diffDescriptionLines(passiveDescription || '', localPassiveDesc(diff.next) || '')}
+            accentColor={primaryColor}
+            skillNameColors={skillNameColors}
+            allowedKeywords={allowedKeywords}
           />
         )}
       </div>
@@ -138,38 +141,18 @@ export default function IdentityPassivesTab({ filteredPassives, sinColor, skillN
   }
 
   const SectionBadge = ({ children }: { children: React.ReactNode }) => (
-    <div className="flex items-center gap-3 my-4">
-      {/* 좌측 장식선 */}
-      <div className="flex-1" style={{
-        height: '1px',
-        background: 'linear-gradient(90deg, transparent 0%, var(--gold-dim) 100%)',
-      }} />
-      <span
-        className="text-sm font-bold tracking-widest"
-        style={{
-          color: 'var(--gold)',
-          fontFamily: 'var(--font-heading)',
-          letterSpacing: '0.25em',
-          textShadow: '0 0 12px rgba(200,144,10,0.15)',
-        }}
-      >
-        {children}
-      </span>
-      {/* 우측 장식선 */}
-      <div className="flex-1" style={{
-        height: '1px',
-        background: 'linear-gradient(90deg, var(--gold-dim) 0%, transparent 100%)',
-      }} />
-    </div>
+    <h3 className="mb-3 pb-2" style={{ color: 'var(--gold)', fontFamily: 'var(--font-heading)', fontSize: '1rem', borderBottom: '1px solid #2e2417' }}>
+      {children}
+    </h3>
   )
 
   return (
-    <div className="card p-6" style={{ borderTopLeftRadius: 0, borderTopRightRadius: 0 }}>
+    <div className="rounded border border-[#2e2417] bg-[#17120c] p-4 sm:p-6">
 
       {battlePassives.length > 0 && (
-        <div className="mb-6">
+        <div className="mb-8 last:mb-0">
           <SectionBadge>{t('identity.passives.battle')}</SectionBadge>
-          <div className="divide-y divide-white/5 space-y-4">
+          <div className="divide-y divide-[#2e2417] space-y-4">
             {battlePassives.map(renderPassive)}
           </div>
         </div>
@@ -178,54 +161,28 @@ export default function IdentityPassivesTab({ filteredPassives, sinColor, skillN
       {supportPassives.length > 0 && (
         <div>
           <SectionBadge>{t('identity.passives.support')}</SectionBadge>
-          <div className="divide-y divide-white/5 space-y-4">
+          <div className="divide-y divide-[#2e2417] space-y-4">
             {supportPassives.map(renderPassive)}
           </div>
         </div>
       )}
 
-      {/* 4동기화 전용 패시브 (dimmed + lock) */}
-      {newPassives && newPassives.length > 0 && (
-        <div className="mt-4 space-y-2">
-          {newPassives.map(p => {
-            const pColor = p.sin_affinity ? SIN_COLORS[SIN_KR_TO_EN[p.sin_affinity] || p.sin_affinity] || sinColor : sinColor
-            const passiveDescription = localPassiveDesc(p)
-            const passiveFlavor = localPassiveFlavor(p, locale)
-            return (
-              <div
-                key={p.id}
-                className="relative p-3 rounded"
-                style={{ opacity: 0.35, pointerEvents: 'none', background: `${pColor}08`, border: `1px solid ${pColor}15` }}
-              >
-                <div className="absolute top-2 left-2 z-10">
-                  <Image
-                    src={`${STORAGE_BASE}/icons/ui/lock.webp`}
-                    alt=""
-                    width={118}
-                    height={157}
-                    style={{ width: '0.75rem', height: 'auto', filter: 'brightness(0.7)' }}
-                  />
-                </div>
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-xs font-bold" style={{ color: pColor }}>{localPassiveName(p)}</span>
-                  <span className="text-xs" style={{ color: '#555' }}>{p.passive_type === 'battle' ? t('identity.passives.typeBattle') : t('identity.passives.typeSupport')}</span>
-                </div>
-                {(passiveDescription || passiveFlavor) && (
-                  <SkillDescription
-                    description={passiveDescription}
-                    accentColor={pColor}
-                    variant="detail"
-                    skillNameColors={skillNameColors}
-                    showCoinBadges={false}
-                    allowedKeywords={allowedKeywords}
-                    flavorText={passiveFlavor}
-                  />
-                )}
-              </div>
-            )
-          })}
-        </div>
-      )}
+      {/* 다음 동기화에서 새로 생기는 패시브 */}
+      {nextLevel != null && newPassives?.map(p => (
+        <UptieChangePanel
+          key={p.id}
+          level={nextLevel}
+          title={<>
+            <span className="text-[var(--text-primary)]">{localPassiveName(p)}</span>
+            <span className="text-[var(--text-muted)]">{t('identity.uptie.newPassive')}</span>
+            <span className="text-[var(--text-muted)]">{p.passive_type === 'battle' ? t('identity.passives.typeBattle') : t('identity.passives.typeSupport')}</span>
+          </>}
+          lines={diffDescriptionLines('', localPassiveDesc(p) || '')}
+          accentColor={sinColor}
+          skillNameColors={skillNameColors}
+          allowedKeywords={allowedKeywords}
+        />
+      ))}
     </div>
   )
 }

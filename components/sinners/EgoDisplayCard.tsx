@@ -717,7 +717,7 @@ export default function EgoDisplayCard({
         href={href}
         className={rootClassName}
         style={rootStyle}
-        aria-label={`${name} 상세 보기`}
+        aria-label={name}
       >
         {body}
       </Link>
@@ -730,7 +730,7 @@ export default function EgoDisplayCard({
       onClick={onClick}
       className={rootClassName}
       style={rootStyle}
-      aria-label={`${name} 상세 보기`}
+      aria-label={name}
       aria-pressed={selected || undefined}
     >
       {body}

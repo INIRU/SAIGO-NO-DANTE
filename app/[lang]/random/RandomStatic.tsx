@@ -7,37 +7,12 @@ type Props = {
 }
 
 /**
- * Server-rendered header + ghost grid skeleton.
+ * Server-rendered ghost grid skeleton.
  * Painted in initial HTML — no client JS needed — so it becomes the LCP element.
  */
 export default function RandomStatic({ sinners }: Props) {
   return (
     <>
-      {/* Header */}
-      <div className="mb-[1.5rem] relative" style={{ paddingBottom: '1rem' }}>
-        <h1
-          className="font-serif text-[1.75rem] text-[#c8900a]"
-          style={{ textShadow: '0 0 2rem rgba(200,144,10,0.15)' }}
-        >
-          랜덤 편성
-        </h1>
-        <p
-          className="text-[0.75rem] mt-[0.25rem]"
-          style={{ color: '#5a4830', letterSpacing: '0.05em' }}
-        >
-          운명의 수감자를 선택하세요
-        </p>
-        {/* Decorative line */}
-        <div
-          className="mt-[0.75rem]"
-          style={{
-            height: '1px',
-            background:
-              'linear-gradient(90deg, rgba(200,144,10,0.4) 0%, rgba(138,96,16,0.15) 50%, transparent 100%)',
-          }}
-        />
-      </div>
-
       {/* Ghost card grid — 12 sinners, visible immediately from server HTML */}
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-x-[0.75rem] gap-y-[1rem]">
         {sinners.map((sinner, idx) => (

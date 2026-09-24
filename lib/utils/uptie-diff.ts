@@ -1,133 +1,102 @@
 import type { Skill, Passive } from '@/lib/types'
 
 export type NumDiff = { from: number; to: number }
+/** A description line that differs between two uptie levels. coin 0 = not inside a coin section. */
+export type LineChange = { kind: 'added' | 'removed'; coin: number; text: string }
 
 export type SkillDiff = {
+  next: Skill
   base_power?: NumDiff
   coin_power?: NumDiff
   coins?: NumDiff
   offense_level?: NumDiff
   atk_weight?: NumDiff
-  hasDescDiff: boolean
-  level4Desc?: string
-  level4Desc_en?: string
-  level4Desc_jp?: string
 }
 
-export type PassiveDiff = {
-  sin_count?: NumDiff
-  hasDescDiff: boolean
-  level4Desc?: string
-  level4Desc_en?: string
-  level4Desc_jp?: string
-}
+export type PassiveDiff = { next: Passive; sin_count?: NumDiff }
 
-function skillKey(s: Skill): string {
-  return `${s.skill_order}:${s.variant_order ?? 0}`
-}
+type Described = { description?: string | null; description_en?: string | null; description_jp?: string | null }
 
-function passiveKey(p: Passive): string {
-  return `${p.passive_type}:${p.passive_order}`
-}
+const skillKey = (s: Skill) => `${s.skill_order}:${s.variant_order ?? 0}`
+const passiveKey = (p: Passive) => `${p.passive_type}:${p.passive_order}`
 
 function numDiff(a: number | undefined | null, b: number | undefined | null): NumDiff | undefined {
-  if (a == null || b == null || a === b) return undefined
-  return { from: a, to: b }
+  return a == null || b == null || a === b ? undefined : { from: a, to: b }
 }
 
-export function computeSkillDiffs(
-  level3: Skill[],
-  level4: Skill[],
-): { diffs: Map<string, SkillDiff>; newSkills: Skill[] } {
-  const map3 = new Map<string, Skill>()
-  for (const s of level3) map3.set(skillKey(s), s)
+const descChanged = (a: Described, b: Described) =>
+  (['description', 'description_en', 'description_jp'] as const).some(f => (a[f] || '') !== (b[f] || ''))
 
+const COIN_PREFIX = /^\[(?:코인|Coin|コイン)\s?(\d+)\]\s*/
+
+/** Non-empty lines tagged with their coin; the "[코인 N]" prefix moves into the tag. */
+function taggedLines(description: string) {
+  let coin = 0
+  return description.split('\n').flatMap(raw => {
+    const match = raw.match(COIN_PREFIX)
+    if (match) coin = Number(match[1])
+    const text = raw.replace(COIN_PREFIX, '').trim()
+    return text ? [{ coin, text }] : []
+  })
+}
+
+/**
+ * Line diff (LCS) from one description to the next level's. Only changed lines are returned;
+ * within each changed run, removed lines come before the lines that replace them.
+ */
+export function diffDescriptionLines(from: string, to: string): LineChange[] {
+  const a = taggedLines(from)
+  const b = taggedLines(to)
+  const same = (i: number, j: number) => a[i].coin === b[j].coin && a[i].text === b[j].text
+  const lcs = Array.from({ length: a.length + 1 }, () => new Array<number>(b.length + 1).fill(0))
+  for (let i = a.length - 1; i >= 0; i--)
+    for (let j = b.length - 1; j >= 0; j--)
+      lcs[i][j] = same(i, j) ? lcs[i + 1][j + 1] + 1 : Math.max(lcs[i + 1][j], lcs[i][j + 1])
+
+  const out: LineChange[] = []
+  let removed: LineChange[] = []
+  let added: LineChange[] = []
+  const flush = () => { out.push(...removed, ...added); removed = []; added = [] }
+  let i = 0
+  let j = 0
+  while (i < a.length || j < b.length) {
+    if (i < a.length && j < b.length && same(i, j)) { flush(); i++; j++ }
+    else if (j < b.length && (i === a.length || lcs[i][j + 1] >= lcs[i + 1][j])) added.push({ kind: 'added', ...b[j++] })
+    else removed.push({ kind: 'removed', ...a[i++] })
+  }
+  flush()
+  return out
+}
+
+/** Compares the current level's skills with the next level's, keyed by slot and variant. */
+export function computeSkillDiffs(current: Skill[], next: Skill[]): { diffs: Map<string, SkillDiff>; newSkills: Skill[] } {
+  const byKey = new Map(current.map(s => [skillKey(s), s]))
   const diffs = new Map<string, SkillDiff>()
   const newSkills: Skill[] = []
-
-  for (const s4 of level4) {
-    const s3 = map3.get(skillKey(s4))
-    if (!s3) { newSkills.push(s4); continue }
-
-    const diff: SkillDiff = { hasDescDiff: false }
-    const bp = numDiff(s3.base_power, s4.base_power)
-    if (bp) diff.base_power = bp
-    const cp = numDiff(s3.coin_power, s4.coin_power)
-    if (cp) diff.coin_power = cp
-    const co = numDiff(s3.coins, s4.coins)
-    if (co) diff.coins = co
-    const ol = numDiff(s3.offense_level, s4.offense_level)
-    if (ol) diff.offense_level = ol
-    const aw = numDiff(s3.atk_weight, s4.atk_weight)
-    if (aw) diff.atk_weight = aw
-
-    if ((s3.description || '') !== (s4.description || '')) {
-      diff.hasDescDiff = true
-      diff.level4Desc = s4.description || ''
-      diff.level4Desc_en = s4.description_en || ''
-      diff.level4Desc_jp = s4.description_jp || ''
+  for (const to of next) {
+    const from = byKey.get(skillKey(to))
+    if (!from) { newSkills.push(to); continue }
+    const numbers = {
+      base_power: numDiff(from.base_power, to.base_power),
+      coin_power: numDiff(from.coin_power, to.coin_power),
+      coins: numDiff(from.coins, to.coins),
+      offense_level: numDiff(from.offense_level, to.offense_level),
+      atk_weight: numDiff(from.atk_weight, to.atk_weight),
     }
-
-    // Also check EN/JP description diffs (KR same but EN/JP differs)
-    if (!diff.hasDescDiff) {
-      if ((s3.description_en || '') !== (s4.description_en || '') ||
-          (s3.description_jp || '') !== (s4.description_jp || '')) {
-        diff.hasDescDiff = true
-        diff.level4Desc = s4.description || ''
-        diff.level4Desc_en = s4.description_en || ''
-        diff.level4Desc_jp = s4.description_jp || ''
-      }
-    }
-
-    const { hasDescDiff, level4Desc, level4Desc_en, level4Desc_jp, ...rest } = diff
-    if (hasDescDiff || Object.values(rest).some(v => v !== undefined)) {
-      diffs.set(s3.id, diff)
-    }
+    if (descChanged(from, to) || Object.values(numbers).some(Boolean)) diffs.set(from.id, { next: to, ...numbers })
   }
-
   return { diffs, newSkills }
 }
 
-export function computePassiveDiffs(
-  level3: Passive[],
-  level4: Passive[],
-): { diffs: Map<string, PassiveDiff>; newPassives: Passive[] } {
-  const map3 = new Map<string, Passive>()
-  for (const p of level3) map3.set(passiveKey(p), p)
-
+export function computePassiveDiffs(current: Passive[], next: Passive[]): { diffs: Map<string, PassiveDiff>; newPassives: Passive[] } {
+  const byKey = new Map(current.map(p => [passiveKey(p), p]))
   const diffs = new Map<string, PassiveDiff>()
   const newPassives: Passive[] = []
-
-  for (const p4 of level4) {
-    const p3 = map3.get(passiveKey(p4))
-    if (!p3) { newPassives.push(p4); continue }
-
-    const diff: PassiveDiff = { hasDescDiff: false }
-    const sc = numDiff(p3.sin_count, p4.sin_count)
-    if (sc) diff.sin_count = sc
-
-    if ((p3.description || '') !== (p4.description || '')) {
-      diff.hasDescDiff = true
-      diff.level4Desc = p4.description || ''
-      diff.level4Desc_en = p4.description_en || ''
-      diff.level4Desc_jp = p4.description_jp || ''
-    }
-
-    // Also check EN/JP description diffs (KR same but EN/JP differs)
-    if (!diff.hasDescDiff) {
-      if ((p3.description_en || '') !== (p4.description_en || '') ||
-          (p3.description_jp || '') !== (p4.description_jp || '')) {
-        diff.hasDescDiff = true
-        diff.level4Desc = p4.description || ''
-        diff.level4Desc_en = p4.description_en || ''
-        diff.level4Desc_jp = p4.description_jp || ''
-      }
-    }
-
-    if (diff.hasDescDiff || diff.sin_count) {
-      diffs.set(p3.id, diff)
-    }
+  for (const to of next) {
+    const from = byKey.get(passiveKey(to))
+    if (!from) { newPassives.push(to); continue }
+    const sin_count = numDiff(from.sin_count, to.sin_count)
+    if (descChanged(from, to) || sin_count) diffs.set(from.id, { next: to, sin_count })
   }
-
   return { diffs, newPassives }
 }

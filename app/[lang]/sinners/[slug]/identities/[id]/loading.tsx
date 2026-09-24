@@ -1,71 +1,36 @@
+import Skeleton, { SkeletonCircle, SkeletonLine, SkeletonPage } from '@/components/ui/Skeleton'
+
+const divider = <div className="h-px bg-[#2e2417]" />
+const Tabs = ({ widths }: { widths: string[] }) => <div className="flex gap-7 border-b border-[#2e2417]">{widths.map((w, i) => <div key={i} className={`-mb-px flex min-h-11 items-center border-b-2 ${i === 0 ? 'border-[var(--gold)]' : 'border-transparent'}`}><SkeletonLine w={w} h="1rem" /></div>)}</div>
+
+/** 인격 상세: 경로, 정보/덱 탭, 왼쪽 이름·일러스트 탭·초상, 오른쪽 기본 정보·스탯 패널, 아래 스킬 탭과 스킬 카드. */
 export default function Loading() {
-  return (
-    <div className="min-h-screen pt-24 pb-16 animate-pulse" style={{ background: '#0d0b08' }}>
-      <div className="max-w-6xl mx-auto px-6">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-
-          {/* 왼쪽: 초상화 + 이름 헤더 */}
-          <div className="space-y-4">
-            {/* 이름 헤더: 프레임 아이콘 + 이름/영문명 */}
-            <div className="flex items-center gap-2">
-              <div className="shrink-0 rounded" style={{ width: '2.5rem', height: '2.5rem', background: '#2a2318' }} />
-              <div className="flex-1 space-y-1.5">
-                <div className="rounded" style={{ width: '8rem', height: '1.25rem', background: '#2a2318' }} />
-                <div className="rounded" style={{ width: '5rem', height: '0.6875rem', background: '#1e1a12' }} />
-              </div>
-            </div>
-            {/* 인격 정보 이미지 */}
-            <div className="rounded-lg overflow-hidden" style={{ aspectRatio: '3/2', background: '#120e09', border: '1px solid rgba(200,144,10,0.08)' }} />
-          </div>
-
-          {/* 오른쪽: 탭 + 콘텐츠 */}
-          <div className="lg:col-span-2 space-y-4">
-            {/* 탭 바 */}
-            <div className="flex gap-1" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '0' }}>
-              {[5, 4.5, 4].map((w, i) => (
-                <div
-                  key={i}
-                  className="rounded-t"
-                  style={{
-                    width: `${w}rem`,
-                    height: '2.5rem',
-                    background: i === 0 ? 'rgba(200,144,10,0.12)' : '#1a1510',
-                    borderBottom: i === 0 ? '2px solid #c8900a' : '2px solid transparent',
-                  }}
-                />
-              ))}
-            </div>
-
-            {/* 스킬 카드 3개 */}
-            {[0, 1, 2].map(i => (
-              <div key={i} className="rounded-lg p-4 space-y-3" style={{ background: '#1a1510', border: '1px solid rgba(200,144,10,0.08)' }}>
-                <div className="flex items-center gap-3">
-                  <div className="rounded shrink-0" style={{ width: '2.5rem', height: '2.5rem', background: '#2a2318' }} />
-                  <div className="flex-1 space-y-1.5">
-                    <div className="rounded" style={{ width: '6rem', height: '1rem', background: '#2a2318' }} />
-                    <div className="flex gap-1.5">
-                      <div className="rounded" style={{ width: '3rem', height: '0.75rem', background: '#1e1a12' }} />
-                      <div className="rounded" style={{ width: '3rem', height: '0.75rem', background: '#1e1a12' }} />
-                    </div>
-                  </div>
-                </div>
-                <div className="space-y-1.5">
-                  <div className="rounded" style={{ width: '100%', height: '0.75rem', background: '#1e1a12' }} />
-                  <div className="rounded" style={{ width: '75%', height: '0.75rem', background: '#1e1a12' }} />
-                </div>
-              </div>
-            ))}
-
-            {/* 패시브 섹션 */}
-            <div className="rounded-lg p-4 space-y-2" style={{ background: '#1a1510', border: '1px solid rgba(200,144,10,0.08)' }}>
-              <div className="rounded" style={{ width: '4rem', height: '1rem', background: '#2a2318' }} />
-              <div className="rounded" style={{ width: '100%', height: '0.75rem', background: '#1e1a12' }} />
-              <div className="rounded" style={{ width: '60%', height: '0.75rem', background: '#1e1a12' }} />
-            </div>
-          </div>
-
+  return <SkeletonPage className="min-h-[100dvh] pb-16 pt-24">
+    <div className="mx-auto max-w-7xl space-y-6 px-4 sm:px-6">
+      <div className="flex items-center gap-2"><SkeletonLine w="3.5rem" h="0.75rem" /><SkeletonLine w="2rem" h="0.75rem" /><SkeletonLine w="4rem" h="0.75rem" /></div>
+      <Tabs widths={['3.6rem', '1.2rem']} />
+      <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,.85fr)_minmax(0,1.15fr)] lg:gap-10">
+        <div className="min-w-0">
+          <div className="flex items-center gap-3"><SkeletonCircle size="1.75rem" /><Skeleton className="h-9 w-[11rem] sm:w-[13rem]" /></div>
+          <SkeletonLine w="2rem" h="0.7rem" className="ml-10 mt-2" />
+          <div className="mt-4 grid grid-cols-2 border border-[#2e2417]"><div className="flex h-9 items-center justify-center border-b-2 border-[var(--gold)] bg-[rgba(200,144,10,0.12)]"><SkeletonLine w="3rem" h="0.75rem" /></div><div className="flex h-9 items-center justify-center"><SkeletonLine w="5rem" h="0.75rem" /></div></div>
+          <Skeleton className="mx-auto mt-2 w-full max-w-[25rem]" style={{ aspectRatio: '2 / 3' }} />
+          <SkeletonLine w="80%" h="0.8rem" className="mx-auto mt-5" />
+        </div>
+        <div className="min-w-0 space-y-5">
+          <div className="flex items-center justify-between"><Skeleton className="h-7 w-[6rem]" /><Skeleton className="h-6 w-[2.5rem]" /></div>
+          <SkeletonLine w="4rem" h="0.75rem" />
+          <div className="flex gap-2">{['4rem', '3.6rem', '3.6rem'].map((w, i) => <Skeleton key={i} line className="h-9" style={{ width: w }} />)}</div>
+          <SkeletonLine w="5rem" h="0.75rem" />
+          <div className="flex gap-6"><SkeletonLine w="5rem" h="0.8rem" /><SkeletonLine w="3rem" h="0.8rem" /></div>
+          {divider}
+          {['5rem', '5rem', '4rem', '16rem', '12rem'].map((w, i) => <div key={i} className="flex items-center gap-4"><SkeletonLine w="2.5rem" h="0.75rem" /><SkeletonLine w={w} h="0.8rem" /></div>)}
+          <Skeleton line className="h-[16rem] w-full" />
         </div>
       </div>
+      <div className="flex items-end justify-between border-b border-[#2e2417]"><div className="flex gap-7">{['2.6rem', '3.6rem'].map((w, i) => <div key={i} className={`-mb-px flex min-h-11 items-center border-b-2 ${i === 0 ? 'border-[var(--gold)]' : 'border-transparent'}`}><SkeletonLine w={w} h="1rem" /></div>)}</div><Skeleton line className="mb-1.5 h-8 w-[4.5rem]" /></div>
+      <div className="space-y-2">{Array.from({ length: 3 }, (_, i) => <Skeleton key={i} line className="h-[6rem] w-full" />)}</div>
     </div>
-  )
+  </SkeletonPage>
 }
+

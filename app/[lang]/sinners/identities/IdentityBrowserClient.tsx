@@ -1,7 +1,7 @@
 'use client'
 
 // Design Ref: §5.1 — 인격 전체 브라우저 클라이언트
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from '@/lib/i18n/navigation'
 import { Search } from 'lucide-react'
 import { motion, useReducedMotion } from 'motion/react'
@@ -15,12 +15,14 @@ import RarityFilter from '@/components/browser/RarityFilter'
 import SinFilter from '@/components/browser/SinFilter'
 import AtkTypeFilter from '@/components/browser/AtkTypeFilter'
 import KeywordFilter from '@/components/browser/KeywordFilter'
-import FilterToggleGroup from '@/components/browser/FilterToggleGroup'
+import FilterToggleGroup, { filterStyles } from '@/components/browser/FilterToggleGroup'
 import NumericFilter from '@/components/browser/NumericFilter'
 import ActiveFilterChips from '@/components/browser/ActiveFilterChips'
 import BrowserHeader from '@/components/browser/BrowserHeader'
 import IdentityCard from '@/components/sinners/IdentityCard'
 import { staggerContainer, workbenchReveal, workbenchStaggerItem } from '@/lib/animations'
+
+const GRID_PAGE = 36
 
 type Props = {
   identities: IdentityBrowserItem[]
@@ -69,6 +71,17 @@ export default function IdentityBrowserClient({ identities, sinners }: Props) {
 
   const filteredCount = nameQuery.trim() ? filtered.length : filterCount
 
+  // Render the grid in pages as the reader scrolls: 188 cards at once is ~5k DOM nodes.
+  const [shown, setShown] = useState(GRID_PAGE)
+  const moreRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const el = moreRef.current
+    if (!el) return
+    const io = new IntersectionObserver(([entry]) => { if (entry.isIntersecting) setShown(n => n + GRID_PAGE) }, { rootMargin: '400px 0px' })
+    io.observe(el)
+    return () => io.disconnect()
+  }, [shown, filtered.length])
+
   // 숫자 필터용 가능한 값 추출
   const availableWeights = useMemo(() => {
     const ws = new Set<number>()
@@ -83,7 +96,7 @@ export default function IdentityBrowserClient({ identities, sinners }: Props) {
   }, [representativeKeywordIdentities])
 
   return (
-    <div className="min-h-[100dvh] pt-24 pb-16 px-4 md:px-6 max-w-7xl mx-auto">
+    <div className="min-h-[100dvh] pt-[5.5rem] pb-16 px-4 md:px-6 max-w-7xl mx-auto">
       <motion.div
         initial={shouldReduceMotion ? false : 'initial'}
         animate="animate"
@@ -110,44 +123,33 @@ export default function IdentityBrowserClient({ identities, sinners }: Props) {
           <FilterSidebar activeCount={activeCount}>
             {/* 이름 검색 */}
             <div>
-              <div className="font-mono mb-2" style={{
-                fontSize: '0.5625rem',
-                letterSpacing: '0.15em',
-                color: 'var(--gold-dim)',
-                textTransform: 'uppercase',
-              }}>
+              <div className={filterStyles.label}>
                 이름 검색
               </div>
               <div className="relative">
-                <Search size={14} className="absolute left-2 top-1/2 -translate-y-1/2" style={{ color: '#555' }} />
+                <Search size={14} className="absolute left-2 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-muted)' }} aria-hidden />
                 <input
                   type="text"
                   value={nameQuery}
                   onChange={e => setNameQuery(e.target.value)}
                   placeholder="인격 이름..."
-                  className="w-full rounded pl-7 pr-2 py-1.5 text-xs outline-none"
-                  style={{
-                    background: 'rgba(255,255,255,0.04)',
-                    border: '1px solid rgba(255,255,255,0.1)',
-                    color: '#ccc',
-                    fontSize: '0.75rem',
-                  }}
+                  className={filterStyles.input}
                   aria-label="인격 이름 검색"
                 />
               </div>
             </div>
-            <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }} />
+            <div style={{ borderTop: '1px solid #2e2417' }} />
             <SinnerFilter
               sinners={sinners}
               selected={filters.sinners}
               onToggle={v => toggle('sinners', v)}
             />
-            <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }} />
+            <div style={{ borderTop: '1px solid #2e2417' }} />
             <RarityFilter
               selected={filters.rarities}
               onToggle={v => toggle('rarities', v)}
             />
-            <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }} />
+            <div style={{ borderTop: '1px solid #2e2417' }} />
             <FilterToggleGroup
               sectionLabel="시즌"
               items={[0,1,2,3,4,5,6,7].map(s => ({ value: s, label: s === 0 ? '기본' : `S${s}` }))}
@@ -155,29 +157,29 @@ export default function IdentityBrowserClient({ identities, sinners }: Props) {
               onToggle={(v: number) => toggle('seasons', v)}
               columns={4}
             />
-            <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }} />
+            <div style={{ borderTop: '1px solid #2e2417' }} />
             <SinFilter
               selected={filters.sins}
               onToggle={v => toggle('sins', v)}
             />
-            <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }} />
+            <div style={{ borderTop: '1px solid #2e2417' }} />
             <AtkTypeFilter
               selected={filters.atkTypes}
               onToggle={v => toggle('atkTypes', v)}
             />
-            <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }} />
+            <div style={{ borderTop: '1px solid #2e2417' }} />
             <KeywordFilter
               selected={filters.keywords}
               onToggle={v => toggle('keywords', v)}
             />
-            <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }} />
+            <div style={{ borderTop: '1px solid #2e2417' }} />
             <NumericFilter
               sectionLabel="가중치"
               values={availableWeights}
               selected={filters.atkWeights}
               onToggle={v => toggle('atkWeights', v)}
             />
-            <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }} />
+            <div style={{ borderTop: '1px solid #2e2417' }} />
             <NumericFilter
               sectionLabel="코인 수"
               values={availableCoins}
@@ -197,18 +199,18 @@ export default function IdentityBrowserClient({ identities, sinners }: Props) {
               animate="animate"
               variants={shouldReduceMotion ? undefined : workbenchReveal}
             >
-              <p style={{ color: '#555', fontSize: '0.875rem' }}>조건에 맞는 인격이 없습니다</p>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>조건에 맞는 인격이 없습니다</p>
             </motion.div>
           ) : (
             <motion.div
               role="list"
-              className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-3"
+              className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6 gap-x-3 gap-y-6 pt-2"
               initial={shouldReduceMotion ? false : 'initial'}
               whileInView={shouldReduceMotion ? undefined : 'animate'}
               viewport={shouldReduceMotion ? undefined : { once: true, margin: '-48px' }}
               variants={shouldReduceMotion ? undefined : staggerContainer(0.025)}
             >
-              {filtered.map(id => (
+              {filtered.slice(0, shown).map(id => (
                 <motion.div
                   key={id.id}
                   role="listitem"
@@ -216,7 +218,7 @@ export default function IdentityBrowserClient({ identities, sinners }: Props) {
                 >
                   <Link
                     href={`/sinners/${id.sinner_slug}/identities/${id.id}`}
-                    aria-label={`${id.name_kr || id.name} 상세 보기`}
+                    aria-label={id.name_kr || id.name}
                   >
                     <IdentityCard
                       identity={{
@@ -229,6 +231,7 @@ export default function IdentityBrowserClient({ identities, sinners }: Props) {
               ))}
             </motion.div>
           )}
+          {shown < filtered.length && <div ref={moreRef} aria-hidden="true" />}
         </div>
       </div>
     </div>

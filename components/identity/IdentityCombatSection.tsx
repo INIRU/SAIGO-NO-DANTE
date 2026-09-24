@@ -5,9 +5,11 @@ import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { useTranslations } from 'next-intl'
 import type { Identity } from '@/lib/types'
 import type { useIdentitySkillModel } from './useIdentitySkillModel'
+import { UPTIE_NUMERALS, UptieNumeral } from './UptieChanges'
 import IdentitySkillsTab from './IdentitySkillsTab'
 import IdentityPassivesTab from './IdentityPassivesTab'
 import { workbenchReveal, workbenchStaggerItem } from '@/lib/animations'
+import styles from '@/styles/components/SinnerDetail.module.css'
 
 type Props = {
   level: number
@@ -21,87 +23,56 @@ export default function IdentityCombatSection({ identity, sinColor, allowedKeywo
   const [activeTab, setActiveTab] = useState<'skills' | 'passives'>('skills')
   const shouldReduceMotion = useReducedMotion()
   const t = useTranslations()
-  const { hasUptieData, filteredSkills, filteredPassives, skillDiffResult, passiveDiffResult, variantMap, skillImgIdxMap, skillNameColors, uptieLevel, setUptieLevel, showDiff, setShowDiff } = model
+  const { uptieLevels, filteredSkills, filteredPassives, skillDiffResult, passiveDiffResult, variantMap, skillImgIdxMap, skillNameColors, uptieLevel, nextLevel, setUptieLevel, showDiff, setShowDiff } = model
   return (
     <motion.div variants={shouldReduceMotion ? undefined : workbenchStaggerItem}>
       {/* 탭 바 + 동기화 토글 */}
-      <div className="flex flex-wrap items-end gap-2">
-        <div
-          className="flex flex-1 rounded-t-lg overflow-hidden"
-          style={{
-            background: 'rgba(0,0,0,0.3)',
-            border: '1px solid var(--border)',
-            borderBottom: 'none',
-            padding: '3px 3px 0 3px',
-          }}
-        >
+      <div className={styles.tabs} role="tablist">
           {[
             { key: 'skills' as const, label: t('identity.tab.skills'), count: filteredSkills.length },
             { key: 'passives' as const, label: t('identity.tab.passives'), count: filteredPassives.length },
-          ].map(tab => {
-            const isActive = activeTab === tab.key
-            return (
-              <button
-                key={tab.key}
-                onClick={() => setActiveTab(tab.key)}
-                className="flex-1 relative px-5 py-2.5 font-semibold rounded-t-md transition-all"
-                style={{
-                  background: isActive ? `${sinColor}18` : 'transparent',
-                  color: isActive ? '#e8dcc8' : '#a39b8d',
-                  fontSize: '0.8125rem',
-                  borderTop: isActive ? `1px solid ${sinColor}40` : '1px solid transparent',
-                  borderLeft: isActive ? `1px solid ${sinColor}40` : '1px solid transparent',
-                  borderRight: isActive ? `1px solid ${sinColor}40` : '1px solid transparent',
-                  borderBottom: 'none',
-                  boxShadow: isActive ? `0 0 8px ${sinColor}15` : 'none',
-                }}
-              >
-                <span>{tab.label}</span>
-                <span
-                  className="font-mono"
-                  style={{
-                    color: isActive ? sinColor : '#a39b8d',
-                    fontSize: '0.75rem',
-                    marginLeft: '10px',
-                  }}
-                >
-                  {tab.count}
-                </span>
-              </button>
-            )
-          })}
-        </div>
+          ].map(tab => (
+            <button key={tab.key} type="button" role="tab" aria-selected={activeTab === tab.key} onClick={() => setActiveTab(tab.key)}>
+              {tab.label}
+              <span className={styles.tabCount}>{tab.count}</span>
+            </button>
+          ))}
 
-        {/* 3/4동기화 토글 + 변경점 토글 */}
-        {hasUptieData && (
-          <div
-            className="flex rounded-t-lg overflow-hidden mb-0"
-            style={{
-              border: '1px solid var(--border)',
-              borderBottom: 'none',
-              background: 'rgba(0,0,0,0.3)',
-            }}
-          >
-            {([3, 4] as const).map(level => {
-              const isActive = uptieLevel === level
-              return (
-                <button
-                  key={level}
-                  onClick={() => setUptieLevel(level)}
-                  className="px-3 py-2 text-xs font-semibold transition-all"
-                  style={{
-                    background: isActive ? `${sinColor}25` : 'transparent',
-                    color: isActive ? sinColor : '#a39b8d',
-                    borderRight: level === 3 ? `1px solid var(--border)` : 'none',
-                  }}
-                >
-                  {level === 3 ? t('identity.uptie.level3') : t('identity.uptie.level4')}
-                </button>
-              )
-            })}
+        {/* 데이터가 있는 동기화 단계만 (I–IV) */}
+        {uptieLevels.length > 1 && (
+          <div className={`${styles.segment} ${styles.tabsAside}`} role="group">
+            {uptieLevels.map(n => (
+              <button key={n} type="button" aria-pressed={uptieLevel === n} onClick={() => setUptieLevel(n)}
+                aria-label={t('identity.uptie.level', { level: UPTIE_NUMERALS[n] ?? n })}
+                style={uptieLevel === n ? undefined : { filter: 'grayscale(1)' }}>
+                <UptieNumeral level={n} />
+              </button>
+            ))}
           </div>
         )}
       </div>
+
+      {/* 선택한 단계 → 바로 다음 단계 변경점 */}
+      {nextLevel != null && (
+        <div className="-mt-1 mb-3 flex justify-end">
+          <button
+            type="button"
+            aria-pressed={showDiff}
+            onClick={() => setShowDiff(d => {
+              localStorage.setItem('uptie-diff', d ? 'off' : 'on')
+              return !d
+            })}
+            className={`${styles.control} transition-colors hover:text-[var(--text-primary)]`}
+            style={showDiff ? { borderColor: 'var(--gold)', color: 'var(--gold-light, #e8b030)' } : undefined}
+          >
+            <span aria-hidden className="grid h-3.5 w-3.5 place-items-center rounded-sm border" style={{ borderColor: showDiff ? 'var(--gold)' : '#51432d', background: showDiff ? 'var(--gold)' : 'transparent' }}>
+              {showDiff && <svg viewBox="0 0 10 10" className="h-2.5 w-2.5"><path d="M2 5.2 4.2 7.4 8 2.8" fill="none" stroke="#17120c" strokeWidth="1.6" /></svg>}
+            </span>
+            {t('identity.uptie.nextChanges')}
+            <UptieNumeral level={nextLevel} height="0.875rem" />
+          </button>
+        </div>
+      )}
 
       <AnimatePresence mode="wait" initial={false}>
         {activeTab === 'skills' && (
@@ -122,12 +93,7 @@ export default function IdentityCombatSection({ identity, sinColor, allowedKeywo
               allowedKeywords={allowedKeywords}
               skillDiffs={skillDiffResult?.diffs}
               newSkills={skillDiffResult?.newSkills}
-              showDiff={showDiff && uptieLevel === 3 && hasUptieData}
-              onToggleDiff={() => setShowDiff(d => {
-                const next = !d
-                localStorage.setItem('uptie-diff', next ? 'on' : 'off')
-                return next
-              })}
+              nextLevel={nextLevel}
             />
           </motion.div>
         )}
@@ -147,6 +113,7 @@ export default function IdentityCombatSection({ identity, sinColor, allowedKeywo
               allowedKeywords={allowedKeywords}
               passiveDiffs={passiveDiffResult?.diffs}
               newPassives={passiveDiffResult?.newPassives}
+              nextLevel={nextLevel}
             />
           </motion.div>
         )}

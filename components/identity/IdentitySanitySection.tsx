@@ -120,16 +120,16 @@ export default function IdentitySanitySection({ sanityConditions, panicInfo }: I
     panicInfo?.id === 9994 ? BRAIN_LOVE_HATE_URL : BRAIN_URL
 
   return (
-    <div className="card p-6">
+    <div className="rounded border border-[#2e2417] bg-[#17120c] p-4 sm:p-6">
       {/* Section heading */}
       <h2
-        className="font-serif font-light mb-5"
-        style={{ color: 'var(--gold)', fontSize: '1rem', letterSpacing: '0.08em' }}
+        className="mb-4 pb-2"
+        style={{ color: 'var(--gold)', fontFamily: 'var(--font-heading)', fontSize: '1.125rem', borderBottom: '1px solid #2e2417' }}
       >
         {t('identity.panic')}
       </h2>
 
-      <div className="space-y-4">
+      <div className="grid gap-6 lg:grid-cols-3">
         {/* ── 패닉 타입 ─────────────────────────────────── */}
         {panicInfo && (
           <div>
@@ -150,58 +150,47 @@ export default function IdentitySanitySection({ sanityConditions, panicInfo }: I
               </span>
             </div>
 
-            <div className="flex items-start gap-4 mb-3">
+            <div className="flex items-start gap-4">
               <div className="flex-shrink-0">
                 <Image
                   src={panicImageUrl}
-                  alt="panic"
+                  alt=""
                   width={88}
                   height={88}
                   style={{
-                    width: '5.5rem',
-                    height: '5.5rem',
+                    width: '4.5rem',
+                    height: '4.5rem',
                     objectFit: 'contain',
                   }}
                 />
               </div>
 
-              <div className="flex-1 min-w-0 pt-1">
+              <div className="flex-1 min-w-0">
+                <div style={{ color: '#e04040', fontFamily: 'var(--font-heading)', fontSize: '1.25rem', lineHeight: 1.25, marginBottom: '0.375rem' }}>
+                  {localText(panicInfo.name, panicInfo.name_en, panicInfo.name_jp)}
+                </div>
                 <div
                   style={{
                     fontSize: '0.8125rem',
-                    fontWeight: 800,
-                    letterSpacing: '0.06em',
                     color: '#d4a050',
-                    marginBottom: '4px',
+                    marginBottom: '0.125rem',
                     fontFamily: 'var(--font-heading)',
                   }}
                 >
-                  · {t('identity.sanity.panicEffect')}
+                  {t('identity.sanity.panicEffect')}
                 </div>
                 {panicInfo.description && (
                   <p
                     style={{
-                      color: '#cccccc',
+                      color: 'var(--text-secondary)',
                       fontSize: '0.8125rem',
-                      lineHeight: 1.75,
+                      lineHeight: 1.7,
                     }}
                   >
                     {localText(panicInfo.description, panicInfo.description_en, panicInfo.description_jp)}
                   </p>
                 )}
               </div>
-            </div>
-
-            <div
-              className="font-serif font-bold"
-              style={{
-                color: '#e04040',
-                fontSize: '1.5rem',
-                lineHeight: 1.2,
-                textShadow: '0 0 16px rgba(220,60,60,0.35)',
-              }}
-            >
-              {localText(panicInfo.name, panicInfo.name_en, panicInfo.name_jp)}
             </div>
           </div>
         )}

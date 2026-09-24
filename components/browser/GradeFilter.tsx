@@ -34,7 +34,8 @@ export default function GradeFilter({ selected, onToggle }: Props) {
       selected={selected}
       onToggle={onToggle}
       columns={5}
-      iconSize={28}
+      iconSize={14}
+      showLabels={false}
     />
   )
 }

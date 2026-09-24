@@ -39,7 +39,7 @@ export default function BrowserHeader({
         >
           <ArrowLeft size={20} />
         </Link>
-        <h1 className="font-serif text-2xl md:text-3xl font-bold" style={{ color: 'var(--gold)' }}>
+        <h1 className="break-keep font-[family-name:var(--font-heading)] text-[1.375rem] leading-tight text-[var(--gold)] md:text-[1.75rem]">
           {title}
         </h1>
       </div>

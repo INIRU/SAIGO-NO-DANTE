@@ -8,15 +8,15 @@ import {
   Identity,
   Skill,
   SIN_COLORS,
-  STORAGE_BASE,
   SKILL_TYPE_LABELS,
   getSkillIconUrl,
 } from '@/lib/data/sinners'
 import SkillDescription from '@/components/skill/SkillDescription'
 import SkillNameBanner from '@/components/skill/SkillNameBanner'
 import SkillFrame from '@/components/identity/SkillFrame'
+import { UptieChangePanel, type StatChange } from '@/components/identity/UptieChanges'
 import { getDetailStatIconUrl } from '@/lib/utils/images'
-import type { SkillDiff } from '@/lib/utils/uptie-diff'
+import { diffDescriptionLines, type SkillDiff } from '@/lib/utils/uptie-diff'
 import { useTranslations, useLocale } from 'next-intl'
 
 const ATTACK_TYPE_MAP: Record<string, 'slash' | 'pierce' | 'blunt'> = {
@@ -65,19 +65,8 @@ interface IdentitySkillsTabProps {
   allowedKeywords?: Set<string>
   skillDiffs?: Map<string, SkillDiff>
   newSkills?: Skill[]
-  showDiff?: boolean
-  onToggleDiff?: () => void
-}
-
-function DiffBadge({ to }: { from: number; to: number }) {
-  return (
-    <span
-      className="inline-flex items-center gap-0.5 ml-1"
-      style={{ color: '#e8b030', fontSize: '0.6875rem', fontWeight: 700 }}
-    >
-      <span style={{ opacity: 0.5 }}>{'\u2192'}</span>{to}
-    </span>
-  )
+  /** Next uptie level with data; diffs above compare against it. */
+  nextLevel?: number | null
 }
 
 export default function IdentitySkillsTab({
@@ -90,8 +79,7 @@ export default function IdentitySkillsTab({
   allowedKeywords,
   skillDiffs,
   newSkills,
-  showDiff,
-  onToggleDiff,
+  nextLevel,
 }: IdentitySkillsTabProps) {
   const t = useTranslations()
   const locale = useLocale()
@@ -99,6 +87,13 @@ export default function IdentitySkillsTab({
     locale === 'en' && s.name_en ? s.name_en : locale === 'ja' && s.name_jp ? s.name_jp : s.name
   const localSkillDesc = (s: Skill) =>
     locale === 'en' && s.description_en ? s.description_en : locale === 'ja' && s.description_jp ? s.description_jp : s.description
+  const statChanges = (diff: SkillDiff): StatChange[] => ([
+    { label: t('identity.uptie.basePower'), diff: diff.base_power },
+    { label: t('identity.uptie.coinPower'), diff: diff.coin_power, signed: true },
+    { label: t('identity.uptie.coins'), diff: diff.coins },
+    { label: t('identity.uptie.offenseLevel'), diff: diff.offense_level },
+    { label: t('identity.skills.atkWeight'), diff: diff.atk_weight },
+  ] as const).filter((row): row is StatChange => !!row.diff)
 
   if (filteredSkills.length === 0) {
     return (
@@ -112,36 +107,12 @@ export default function IdentitySkillsTab({
   }
 
   return (
-    <div className="card p-4 sm:p-6" style={{ borderTopLeftRadius: 0, borderTopRightRadius: 0 }}>
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="font-serif font-light" style={{ color: 'var(--gold)', fontSize: '1rem' }}>
-          {t('identity.skills.title')}
-        </h2>
-        {onToggleDiff && (
-          <button
-            onClick={onToggleDiff}
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs transition-all"
-            style={{
-              background: showDiff ? '#c8900a15' : 'transparent',
-              border: `1px solid ${showDiff ? '#c8900a40' : '#333'}`,
-              color: showDiff ? '#e8b030' : '#555',
-            }}
-          >
-            <Image
-              src={`${STORAGE_BASE}/icons/ui/lock.webp`}
-              alt=""
-              width={118}
-              height={157}
-              style={{ width: '0.5625rem', height: 'auto', opacity: showDiff ? 0.9 : 0.4 }}
-            />
-            {t('identity.skills.uptie4Diff')}
-          </button>
-        )}
-      </div>
+    <div>
+      <h2 className="sr-only">{t('identity.skills.title')}</h2>
 
-      <div className="space-y-5">
+      <div className="space-y-3">
         {groupIdentitySkills(filteredSkills).map(group => (
-          <div key={group[0].id} className="rounded border border-[var(--border)] bg-[var(--bg-deep)] px-4 sm:px-6">
+          <div key={group[0].id} className="rounded border border-[#2e2417] bg-[#17120c] px-4 sm:px-6">
           {group.map(skill => {
           const skillSinColor = SIN_COLORS[skill.sin_affinity] || '#cccccc'
           const imgIdx = skillImgIdxMap[skill.id] ?? skill.skill_order
@@ -167,10 +138,10 @@ export default function IdentitySkillsTab({
           return (
             <div
               key={skill.id}
-              className="grid min-w-0 gap-5 py-5 sm:py-6 [&+div]:border-t [&+div]:border-white/10"
+              className="grid min-w-0 gap-3 py-4 sm:py-5 lg:grid-cols-[27rem_minmax(0,1fr)] lg:gap-8 [&+div]:border-t [&+div]:border-[#2e2417]"
             >
               {/* 스킬 프레임 + 정보 영역 */}
-              <div className="flex items-center gap-1 sm:gap-2 mb-2">
+              <div className="flex items-center gap-1 sm:gap-2 self-start">
                 {/* 프레임 + 오버레이 */}
                 <div className="relative shrink-0 ml-1 sm:ml-4 w-[6.5rem] h-[6.5rem] sm:w-[8rem] sm:h-[8rem]">
                   {/* 죄악 색 삼각형 */}
@@ -239,7 +210,7 @@ export default function IdentitySkillsTab({
                     })}
                   </div>
                   {/* 스킬명 배너 (사선 꼬리, pretext 기반 동적 너비) */}
-                  <SkillNameBanner name={localSkillName(skill)} sinColor={skillSinColor} fontSize="clamp(1rem, 2vw, 1.375rem)" />
+                  <SkillNameBanner name={localSkillName(skill)} sinColor={skillSinColor} fontSize="clamp(1rem, 1.6vw, 1.25rem)" />
                   {/* 공격 레벨 + 가중치 */}
                   <div className="flex items-center gap-1.5 sm:gap-3 flex-wrap">
                     {skill.offense_level != null && (
@@ -247,7 +218,6 @@ export default function IdentitySkillsTab({
                         <Image src={getDetailStatIconUrl(isDefense ? 'defense' : 'offense')} alt="" width={22} height={22} className="w-4 h-4 sm:w-[1.375rem] sm:h-[1.375rem]" />
                         <span style={{ fontFamily: "var(--font-excelsior), sans-serif", color: '#e8dcc8', fontSize: 'clamp(1rem, 3vw, 1.375rem)', textDecoration: 'underline', textUnderlineOffset: '3px', textDecorationColor: '#e8dcc8' }}>
                           {skill.offense_level}
-                          {diff?.offense_level && <DiffBadge from={diff.offense_level.from} to={diff.offense_level.to} />}
                         </span>
                         {offCorrStr && <span style={{ fontFamily: "var(--font-excelsior), sans-serif", color: '#888', fontSize: '1rem' }}>{offCorrStr}</span>}
                       </div>
@@ -267,8 +237,8 @@ export default function IdentitySkillsTab({
               </div>
 
               {/* 스킬 설명 */}
-              {(skillDescription || skillFlavor) && (
-                <div className="min-w-0 max-w-[75ch] [&>div]:text-[.875rem]! [&>div]:text-[#c9c3b8]!">
+              {(skillDescription || skillFlavor || diff) && (
+                <div className="min-w-0 max-w-[75ch] lg:pt-3 [&>div]:text-[.875rem]! [&>div]:text-[#c9c3b8]!">
                 <SkillDescription
                   description={skillDescription}
                   accentColor="#c2b79f"
@@ -276,12 +246,17 @@ export default function IdentitySkillsTab({
                   skillNameColors={skillNameColors}
                   allowedKeywords={allowedKeywords}
                   flavorText={skillFlavor}
-                  level4Desc={diff?.hasDescDiff ? (
-                    locale === 'en' && diff.level4Desc_en ? diff.level4Desc_en
-                    : locale === 'ja' && diff.level4Desc_jp ? diff.level4Desc_jp
-                    : diff.level4Desc
-                  ) : undefined}
                 />
+                {diff && nextLevel != null && (
+                  <UptieChangePanel
+                    level={nextLevel}
+                    stats={statChanges(diff)}
+                    lines={diffDescriptionLines(skillDescription || '', localSkillDesc(diff.next) || '')}
+                    accentColor="#c2b79f"
+                    skillNameColors={skillNameColors}
+                    allowedKeywords={allowedKeywords}
+                  />
+                )}
                 </div>
               )}
             </div>
@@ -291,47 +266,21 @@ export default function IdentitySkillsTab({
         ))}
       </div>
 
-      {/* 4동기화 전용 스킬 (dimmed + lock) */}
-      {newSkills && newSkills.length > 0 && (
-        <div className="mt-4 flex flex-col gap-3">
-          {newSkills.map(skill => {
-            const skillSinColor = SIN_COLORS[skill.sin_affinity] || '#888'
-            const skillDescription = localSkillDesc(skill)
-            const skillFlavor = localSkillFlavor(skill, locale)
-            return (
-              <div
-                key={skill.id}
-                className="relative card p-3"
-                style={{ opacity: 0.35, pointerEvents: 'none' }}
-              >
-                <div className="absolute top-2 left-2 z-10 flex items-center gap-1" style={{ opacity: 1 }}>
-                  <Image
-                    src={`${STORAGE_BASE}/icons/ui/lock.webp`}
-                    alt=""
-                    width={118}
-                    height={157}
-                    style={{ width: '0.75rem', height: 'auto', filter: 'brightness(0.7)' }}
-                  />
-                </div>
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-xs font-bold" style={{ color: skillSinColor }}>{localSkillName(skill)}</span>
-                  <span className="text-xs" style={{ color: '#555' }}>{SKILL_TYPE_LABELS[skill.skill_type] || skill.skill_type}</span>
-                </div>
-                {(skillDescription || skillFlavor) && (
-                  <SkillDescription
-                    description={skillDescription}
-                    accentColor="#c2b79f"
-                    variant="detail"
-                    skillNameColors={skillNameColors}
-                    allowedKeywords={allowedKeywords}
-                    flavorText={skillFlavor}
-                  />
-                )}
-              </div>
-            )
-          })}
-        </div>
-      )}
+      {/* 다음 동기화에서 새로 생기는 스킬 */}
+      {nextLevel != null && newSkills?.map(skill => (
+        <UptieChangePanel
+          key={skill.id}
+          level={nextLevel}
+          title={<>
+            <span style={{ color: SIN_COLORS[skill.sin_affinity] || '#c2b79f' }}>{localSkillName(skill)}</span>
+            <span className="text-[var(--text-muted)]">{t('identity.uptie.newSkill')}</span>
+          </>}
+          lines={diffDescriptionLines('', localSkillDesc(skill) || '')}
+          accentColor="#c2b79f"
+          skillNameColors={skillNameColors}
+          allowedKeywords={allowedKeywords}
+        />
+      ))}
     </div>
   )
 }

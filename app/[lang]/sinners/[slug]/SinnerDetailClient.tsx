@@ -8,8 +8,10 @@ import { useRouter, usePathname } from '@/lib/i18n/navigation'
 import Image from 'next/image'
 import KeywordIcon from '@/components/ui/KeywordIcon'
 import { getKeywordIconUrl } from '@/lib/constants/keywords'
-import { Search, X, ArrowLeft } from 'lucide-react'
+import { Search, X, ArrowLeft, ArrowDown, ArrowUp } from 'lucide-react'
 import Dropdown from '@/components/ui/Dropdown'
+
+const DROPDOWN_BUTTON_STYLE = { minHeight: '2.5rem', background: '#120e09', borderColor: '#2e2417', fontFamily: 'var(--font-body)', fontSize: '0.8125rem' }
 import { Sinner, Identity, EGO, getSinnerProfileUrl, getSinnerLogoUrl, STORAGE_BASE, SIN_COLORS, type SinType, GRADE_COLORS, BLUR_PLACEHOLDER } from '@/lib/data/sinners'
 import { getBlurDataURL } from '@/lib/utils/thumbhash'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
@@ -390,29 +392,23 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
       </div>
       <div className="max-w-[90rem] mx-auto px-5 sm:px-8 relative" style={{ zIndex: 1 }}>
         {/* 브레드크럼 */}
-        <div className="mb-2 sm:mb-8 flex items-center gap-2 text-xs sm:text-sm" style={{ color: '#888888' }}>
+        <div className="mb-2 sm:mb-6 flex items-center gap-2 text-xs sm:text-sm" style={{ color: 'var(--text-muted)' }}>
           <Link href="/sinners" className="inline-flex min-h-11 items-center gap-2 hover:text-yellow-300 transition-colors">
             <ArrowLeft size={16} aria-hidden />{t('sinners.title')}
           </Link>
-          <span style={{ color: '#333344' }}>&rsaquo;</span>
+          <span aria-hidden style={{ color: '#4a3d2c' }}>&rsaquo;</span>
           <span style={{ color: 'var(--gold)' }}>{getName(sinner.name_kr, sinner.name_en, sinner.name_jp)}</span>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-[15rem_minmax(0,1fr)] xl:grid-cols-[16rem_minmax(0,1fr)] gap-5 sm:gap-8">
           {/* 좌측: 캐릭터 정보 (sticky) */}
           <motion.div
-            className="lg:sticky lg:top-24 lg:self-start"
-            initial={shouldReduceMotion ? false : { opacity: 0, y: 20 }}
+            className={`${styles.profileCol} lg:self-start`}
+            initial={shouldReduceMotion ? false : { y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: shouldReduceMotion ? 0 : 0.6, ease: [0.33, 1, 0.68, 1] }}
           >
-            <div className="p-3 sm:p-6" style={{
-              background: 'linear-gradient(180deg, rgba(20,18,14,0.96) 0%, rgba(15,13,10,0.9) 100%)',
-              borderTop: '0.0625rem solid rgba(200,144,10,0.22)',
-              borderBottom: '0.0625rem solid rgba(200,144,10,0.12)',
-              borderRadius: '0.375rem',
-              boxShadow: '0 0.75rem 2rem rgba(0,0,0,0.28)',
-            }}>
+            <div className={styles.profile}>
               <div className="flex gap-4 lg:block">
               {/* 프로필 이미지 */}
               <div
@@ -460,25 +456,23 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                 />
                 <div className="flex-1 min-w-0" style={{ containerType: 'inline-size' }}>
                   <h1
-                    className="font-serif text-lg sm:text-[clamp(1.5rem,22cqw,1.875rem)] font-bold leading-tight whitespace-nowrap overflow-hidden text-ellipsis"
-                    style={{
-                      color: 'var(--gold)',
-                      fontFamily: 'var(--font-paperlogy), sans-serif',
-                    }}
+                    className="text-xl sm:text-[clamp(1.5rem,22cqw,1.875rem)] leading-tight whitespace-nowrap overflow-hidden text-ellipsis"
+                    style={{ color: 'var(--gold)', fontFamily: 'var(--font-heading)', fontWeight: 400 }}
                   >
                     {getName(sinner.name_kr, sinner.name_en, sinner.name_jp)}
                   </h1>
-                  <p className="text-[0.625rem] sm:text-sm" style={{ color: '#666688' }}>
-                    {sinner.name} · #{String(sinner.order_num).padStart(2, '0')}
+                  <p className="flex items-baseline gap-2 text-xs sm:text-sm" style={{ color: 'var(--text-muted)' }}>
+                    <span>{sinner.name}</span>
+                    <span style={{ fontFamily: 'var(--font-title)', letterSpacing: '0.04em' }}>No.{String(sinner.order_num).padStart(2, '0')}</span>
                   </p>
                 </div>
               </div>
 
               {/* 설명 */}
               <p
-                className="text-[0.6875rem] sm:text-sm leading-snug sm:leading-relaxed mb-1.5 sm:mb-4"
+                className="text-xs sm:text-sm leading-snug sm:leading-relaxed mt-1 sm:mt-3 mb-1.5 sm:mb-3"
                 style={{
-                  color: '#9e9e9e',
+                  color: 'var(--text-secondary)',
                   display: '-webkit-box',
                   WebkitLineClamp: 2,
                   WebkitBoxOrient: 'vertical',
@@ -495,13 +489,8 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
 
               {/* 문학 출처 */}
               <div
-                className="text-[0.5625rem] sm:text-xs italic px-2 sm:px-3 py-1 sm:py-2"
-                style={{
-                  background: 'linear-gradient(135deg, rgba(200,144,10,0.08) 0%, rgba(200,144,10,0.03) 100%)',
-                  borderLeft: '0.125rem solid var(--gold)',
-                  borderRadius: '0 0.25rem 0.25rem 0',
-                  color: 'rgba(200,164,90,0.7)',
-                }}
+                className="text-[0.6875rem] sm:text-xs pl-2 sm:pl-3"
+                style={{ borderLeft: '0.125rem solid var(--gold)', color: 'var(--text-muted)' }}
               >
                 {literarySource}
               </div>
@@ -513,54 +502,36 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
           {/* 우측: 탭 콘텐츠 */}
           <motion.div
             className="min-w-0"
-            initial={shouldReduceMotion ? false : { opacity: 0, y: 20 }}
+            initial={shouldReduceMotion ? false : { y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: shouldReduceMotion ? 0 : 0.6, delay: shouldReduceMotion ? 0 : 0.2, ease: [0.33, 1, 0.68, 1] }}
           >
             {/* 탭 */}
-            <div
-              className={`${styles.tabs} flex gap-0 mb-4 sm:mb-5 overflow-hidden`}
-              style={{
-                border: '0.0625rem solid var(--border)',
-                borderRadius: '0.375rem',
-              }}
-            >
+            <div className={styles.tabs} role="tablist">
               {(['identities', 'ego'] as Tab[]).map(tabKey => (
                 <button
                   key={tabKey}
+                  type="button"
+                  role="tab"
+                  aria-selected={tab === tabKey}
                   onClick={() => changeTab(tabKey)}
-                  className="flex-1 py-2 sm:py-3 text-xs sm:text-sm font-medium transition-all duration-200 relative"
-                  style={{
-                    background: tab === tabKey
-                      ? 'linear-gradient(180deg, rgba(200,144,10,0.2) 0%, rgba(200,144,10,0.08) 100%)'
-                      : 'transparent',
-                    color: tab === tabKey ? 'var(--gold-light)' : '#555566',
-                    borderBottom: tab === tabKey ? '0.125rem solid var(--gold)' : '0.125rem solid transparent',
-                    letterSpacing: '0.1em',
-                  }}
                 >
-                  {tabKey === 'identities' ? t('sinners.identities') : 'EGO'}
-                  {tab === tabKey && (
-                    <span style={{
-                      marginLeft: '0.375rem',
-                      fontSize: '0.625rem',
-                      color: 'var(--gold-dim)',
-                      fontFamily: 'var(--font-mono)',
-                    }}>
-                      {tabKey === 'identities' ? filteredIdentities.length : filteredEgos.length}
-                    </span>
-                  )}
+                  {tabKey === 'identities' ? t('sinners.identities') : 'E.G.O'}
+                  <span className={styles.tabCount}>
+                    {tabKey === 'identities' ? filteredIdentities.length : filteredEgos.length}
+                  </span>
                 </button>
               ))}
             </div>
 
             {/* 검색 바 + 자동완성 (공통) */}
-            <div className="mb-2 sm:mb-3" ref={autocompleteRef}>
+            <div className={styles.searchWrap} ref={autocompleteRef}>
               <div className="relative">
                 <Search
-                  size={14}
+                  size={16}
                   className="absolute left-3 top-1/2 -translate-y-1/2"
-                  style={{ color: '#555' }}
+                  style={{ color: 'var(--text-muted)' }}
+                  aria-hidden
                 />
                 <input
                   ref={searchInputRef}
@@ -568,25 +539,21 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                   value={searchQuery}
                   onChange={e => { setSearchQuery(e.target.value); setShowAutocomplete(true) }}
                   placeholder={tab === 'identities' ? t('sinnerDetail.searchIdentity') : t('sinnerDetail.searchEgo')}
-                  className="w-full pl-9 pr-8 py-2.5 rounded text-xs transition-all"
-                  style={{
-                    background: 'rgba(0,0,0,0.3)',
-                    border: '1px solid var(--border)',
-                    color: '#ccc',
-                    outline: 'none',
-                    minHeight: '3rem',
-                  }}
+                  aria-label={tab === 'identities' ? t('sinnerDetail.searchIdentity') : t('sinnerDetail.searchEgo')}
+                  className={styles.search}
                   onFocus={() => { if (searchQuery.trim()) setShowAutocomplete(true) }}
                   onKeyDown={handleSearchKeyDown}
                 />
                 {hasActiveFilters && (
                   <button
+                    type="button"
                     onClick={clearFilters}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 rounded hover:opacity-80 transition-opacity"
-                    style={{ color: '#666' }}
+                    className="absolute right-1 top-1/2 -translate-y-1/2 grid h-9 w-9 place-items-center rounded hover:text-[var(--text-primary)]"
+                    style={{ color: 'var(--text-muted)' }}
                     title={t('sinnerDetail.resetFilter')}
+                    aria-label={t('sinnerDetail.resetFilter')}
                   >
-                    <X size={14} />
+                    <X size={16} />
                   </button>
                 )}
 
@@ -724,66 +691,33 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                 transition={{ duration: shouldReduceMotion ? 0 : 0.22, ease: [0.33, 1, 0.68, 1] }}
               >
                 {/* 필터 바 */}
-                <div
-                  className={styles.filters}
-                >
-                  <div className="flex flex-wrap items-center gap-3">
+                <div className={styles.filters}>
                   {/* 등급 필터 */}
-                  <div
-                    className="grid grid-cols-4 rounded overflow-hidden lg:flex-none"
-                    style={{
-                      border: '1px solid var(--border)',
-                      background: 'rgba(0,0,0,0.22)',
-                    }}
-                    aria-label="rarity filter"
-                  >
+                  <div className={styles.segment} role="group" aria-label={t('sinnerDetail.rarityFilter')}>
                     {[
                       { value: null, label: t('sinnerDetail.allFilter'), icon: null },
                       { value: '1성', label: '1성', icon: `${STORAGE_BASE}/icons/Rarity/1star.webp` },
                       { value: '2성', label: '2성', icon: `${STORAGE_BASE}/icons/Rarity/2star.webp` },
                       { value: '3성', label: '3성', icon: `${STORAGE_BASE}/icons/Rarity/3star.webp` },
-                    ].map(({ value, label, icon }, index, items) => {
-                      const isActive = rarityFilter === value
-                      const borderColor = value === '3성' ? '#c8900a' : value === '2성' ? '#5588bb' : value === '1성' ? '#556677' : 'var(--border)'
-                      return (
-                        <button
-                          type="button"
-                          key={label}
-                          onClick={() => setRarityFilter(value)}
-                          className="flex items-center justify-center gap-1.5 px-2.5 py-1.5 lg:px-2 lg:py-1 text-xs font-medium transition-all duration-200 min-h-11 min-w-[3.25rem] lg:min-w-[3rem]"
-                          style={{
-                            background: isActive ? `${borderColor}20` : 'transparent',
-                            borderRight: index === items.length - 1 ? '0' : '1px solid var(--border)',
-                            color: isActive ? (value === null ? 'var(--gold)' : borderColor) : '#555',
-                            opacity: isActive ? 1 : 0.6,
-                            boxShadow: isActive ? `inset 0 -0.125rem 0 ${value === null ? 'var(--gold)' : borderColor}` : 'none',
-                          }}
-                        >
-                          {icon ? (
-                            <Image
-                              src={icon}
-                              alt={label}
-                              width={28}
-                              height={14}
-                              unoptimized
-                              style={{
-                                height: '0.875rem',
-                                width: 'auto',
-                                filter: isActive ? 'none' : 'grayscale(0.8) brightness(0.6)',
-                              }}
-                            />
-                          ) : (
-                            label
-                          )}
-                        </button>
-                      )
-                    })}
+                    ].map(({ value, label, icon }, index) => (
+                      <button
+                        type="button"
+                        key={label}
+                        onClick={() => setRarityFilter(value)}
+                        aria-pressed={rarityFilter === value}
+                      >
+                        {icon ? (
+                          <Image src={icon} alt={(t.raw('identity.rarity') as string[])[index] ?? label} width={index * 24} height={24} unoptimized />
+                        ) : (
+                          label
+                        )}
+                      </button>
+                    ))}
                   </div>
 
-                  <div className="flex flex-wrap items-center gap-2 lg:min-w-0 lg:flex-none lg:flex-nowrap lg:gap-1.5">
+                  <div className={styles.controls}>
                     {/* 보유 필터 드롭다운 */}
                     {ownedIds !== null && (
-                      <div className="min-w-0 sm:min-w-[7rem] lg:w-[7rem] lg:min-w-[7rem] [&>div]:w-full [&>div>button]:w-full [&>div>button]:min-h-11 [&>div>button]:justify-between lg:[&>div>button]:px-2">
                       <Dropdown
                         value={ownershipFilter}
                         defaultValue="all"
@@ -794,56 +728,28 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                         ]}
                         onChange={v => setOwnershipFilter(v as OwnershipFilter)}
                         minWidth={110}
+                        buttonStyle={DROPDOWN_BUTTON_STYLE}
                       />
-                      </div>
                     )}
 
                     {/* 정렬 토글 */}
-                    <button
-                      type="button"
-                      onClick={() => setSortOrder(s => s === 'newest' ? 'oldest' : 'newest')}
-                      className="flex min-w-0 items-center justify-center gap-1.5 px-2.5 py-1.5 lg:px-2 lg:py-1 rounded text-xs font-medium transition-all duration-200 min-h-11 sm:min-w-[6.5rem] lg:w-[6rem] lg:min-w-[6rem] whitespace-nowrap"
-                      style={{
-                        background: 'rgba(200,164,90,0.08)',
-                        border: '1px solid var(--border)',
-                        color: '#999',
-                      }}
-                    >
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        {sortOrder === 'newest' ? (
-                          <><path d="M12 5v14"/><path d="M5 12l7 7 7-7"/></>
-                        ) : (
-                          <><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></>
-                        )}
-                      </svg>
+                    <button type="button" className={styles.control} onClick={() => setSortOrder(s => s === 'newest' ? 'oldest' : 'newest')}>
+                      {sortOrder === 'newest' ? <ArrowDown size={14} aria-hidden /> : <ArrowUp size={14} aria-hidden />}
                       {sortOrder === 'newest' ? t('sinnerDetail.newest') : t('sinnerDetail.oldest')}
                     </button>
 
                   {/* 일반/각성 토글 */}
-                  <button
-                    type="button"
-                    onClick={() => setGacksung(!gacksung)}
-                    className="flex min-w-0 items-center justify-center gap-2 px-3 py-1.5 lg:px-2 lg:py-1 rounded text-xs font-medium transition-all duration-200 min-h-11 sm:min-w-[6.5rem] lg:w-[6rem] lg:min-w-[6rem] whitespace-nowrap"
-                    style={{
-                      background: gacksung ? 'rgba(255,107,107,0.15)' : 'rgba(200,164,90,0.1)',
-                      border: `1px solid ${gacksung ? 'rgba(255,107,107,0.4)' : 'var(--border)'}`,
-                      color: gacksung ? '#ff6b6b' : '#888',
-                    }}
-                  >
-                    <span
-                      className="inline-block w-2 h-2 rounded-full transition-colors"
-                      style={{ background: gacksung ? '#ff6b6b' : '#555' }}
-                    />
-                    {gacksung ? t('sinnerDetail.uptie3') : t('sinnerDetail.normal')}
-                  </button>
-                  </div>
+                    <div className={styles.segment} role="group" aria-label={t('sinnerDetail.artFilter')}>
+                      <button type="button" aria-pressed={!gacksung} onClick={() => setGacksung(false)}>{t('sinnerDetail.normal')}</button>
+                      <button type="button" aria-pressed={gacksung} onClick={() => setGacksung(true)}>{t('sinnerDetail.uptie3')}</button>
+                    </div>
                   </div>
                 </div>
 
                 {filteredIdentities.length === 0 ? (
                   <div
                     className="text-center py-16"
-                    style={{ color: '#888888' }}
+                    style={{ color: 'var(--text-muted)' }}
                   >
                     {hasActiveFilters ? t('sinnerDetail.noResults') : t('sinnerDetail.noIdentities')}
                   </div>
@@ -880,23 +786,10 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                 transition={{ duration: shouldReduceMotion ? 0 : 0.22, ease: [0.33, 1, 0.68, 1] }}
               >
                 {/* 정렬 + 보유 필터 */}
-                <div className="flex items-center justify-end gap-2 mb-4 pb-3" style={{ borderBottom: '1px solid var(--border)' }}>
-                  <button
-                    onClick={() => setSortOrder(s => s === 'newest' ? 'oldest' : 'newest')}
-                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded text-xs font-medium transition-all duration-200"
-                    style={{
-                      background: 'rgba(200,164,90,0.08)',
-                      border: '1px solid var(--border)',
-                      color: '#999',
-                    }}
-                  >
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      {sortOrder === 'newest' ? (
-                        <><path d="M12 5v14"/><path d="M5 12l7 7 7-7"/></>
-                      ) : (
-                        <><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></>
-                      )}
-                    </svg>
+                <div className={styles.filters}>
+                  <div className={styles.controls}>
+                  <button type="button" className={styles.control} onClick={() => setSortOrder(s => s === 'newest' ? 'oldest' : 'newest')}>
+                    {sortOrder === 'newest' ? <ArrowDown size={14} aria-hidden /> : <ArrowUp size={14} aria-hidden />}
                     {sortOrder === 'newest' ? t('sinnerDetail.newest') : t('sinnerDetail.oldest')}
                   </button>
 
@@ -912,18 +805,18 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                       ]}
                       onChange={v => setOwnershipFilter(v as OwnershipFilter)}
                       minWidth={110}
+                        buttonStyle={DROPDOWN_BUTTON_STYLE}
                     />
                   )}
+                  </div>
                 </div>
 
                 {filteredEgos.length === 0 ? (
-                  <div className="card p-8 text-center" style={{ color: '#888888' }}>
-                    <p style={{ fontFamily: 'var(--font-heading)', fontSize: '1.125rem' }}>
-                      {hasActiveFilters ? t('sinnerDetail.noResults') : t('sinnerDetail.noEgo')}
-                    </p>
+                  <div className="text-center py-16" style={{ color: 'var(--text-muted)' }}>
+                    {hasActiveFilters ? t('sinnerDetail.noResults') : t('sinnerDetail.noEgo')}
                   </div>
                 ) : (
-                  <StaggerReveal key={filteredEgos.map(e => e.id).join()} className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-3 gap-y-8 sm:gap-x-4 sm:gap-y-9" staggerDelay={0.05}>
+                  <StaggerReveal key={filteredEgos.map(e => e.id).join()} className={styles.egoGrid} staggerDelay={0.05}>
                     {filteredEgos.map((ego) => {
                       const egoName = getName(ego.name_kr, ego.name_en, ego.name_jp) || ego.name
 

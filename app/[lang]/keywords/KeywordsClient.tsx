@@ -14,6 +14,7 @@ import { translations } from '@/lib/i18n/translations'
 import type { SupportedLang } from '@/lib/i18n/types'
 import { getLocalizedName, getLocalizedKeywordName, getLocalizedKeywordDesc } from '@/lib/i18n/localize'
 import { workbenchReveal } from '@/lib/animations'
+import PageHeader from '@/components/ui/PageHeader'
 
 /* ── 타입 ── */
 interface Keyword {
@@ -238,36 +239,8 @@ export default function KeywordsClient({
   const handleClose = useCallback(() => setSelected(null), [])
 
   return (
-    <div className="min-h-[100dvh] pt-24 pb-16 px-4 md:px-6 max-w-7xl mx-auto">
-      {/* ── 헤더 ── */}
-      <motion.div
-        className="text-center mb-10"
-        initial={shouldReduceMotion ? false : 'initial'}
-        animate="animate"
-        variants={shouldReduceMotion ? undefined : workbenchReveal}
-      >
-        <p className="font-mono text-[0.625rem] tracking-[0.3em] mb-2" style={{ color: '#c8900a' }}>
-          {t('keyword.label')}
-        </p>
-        <h1 className="font-serif text-3xl md:text-4xl font-bold mb-2" style={{ color: '#e8dcc8' }}>
-          {t('keyword.title')}
-        </h1>
-        <p className="text-[0.8125rem]" style={{ color: '#7a6845' }}>
-          {t('keyword.subtitle').replace('{count}', String(keywords.length))}
-        </p>
-      </motion.div>
-
-      {/* 장식선 */}
-      <motion.div
-        className="flex items-center justify-center gap-2 mb-8"
-        initial={shouldReduceMotion ? false : 'initial'}
-        animate="animate"
-        variants={shouldReduceMotion ? undefined : workbenchReveal}
-      >
-        <div style={{ width: '4rem', height: '0.0625rem', background: 'linear-gradient(90deg, transparent, rgba(200,144,10,0.3))' }} />
-        <div style={{ width: '0.25rem', height: '0.25rem', background: '#c8900a', transform: 'rotate(45deg)', opacity: 0.5 }} />
-        <div style={{ width: '4rem', height: '0.0625rem', background: 'linear-gradient(90deg, rgba(200,144,10,0.3), transparent)' }} />
-      </motion.div>
+    <div className="min-h-[100dvh] pt-[5.5rem] pb-16 px-4 md:px-6 max-w-7xl mx-auto">
+      <PageHeader title={t('keyword.title')} description={t('keyword.subtitle').replace('{count}', String(keywords.length))} />
 
       {/* ── 사이드바 + 콘텐츠 ── */}
       <div className="flex gap-6">

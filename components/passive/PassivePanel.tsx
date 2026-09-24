@@ -12,6 +12,9 @@ interface PlannerPassivePanelProps {
   passives: PlannerPassiveLike[]
   sinners: PlannerPassiveSinnerLike[]
   deckSinCounts: Record<string, number>
+  /** Lets a parent size the panel to its row and scroll the list inside. */
+  className?: string
+  listClassName?: string
 }
 
 export default function PassivePanel({
@@ -19,6 +22,8 @@ export default function PassivePanel({
   passives,
   sinners,
   deckSinCounts,
+  className,
+  listClassName,
 }: PlannerPassivePanelProps) {
   const t = useTranslations('decks.detail')
   const [passiveTab, setPassiveTab] = useState<'battle' | 'support'>('battle')
@@ -28,7 +33,7 @@ export default function PassivePanel({
   )
 
   return (
-    <div style={{ flex: 1, background: '#120e09', border: '1px solid #221a0f', borderRadius: '0.375rem', overflow: 'hidden' }}>
+    <div className={className} style={{ flex: 1, background: '#120e09', border: '1px solid #221a0f', borderRadius: '0.375rem', overflow: 'hidden' }}>
       <div className="flex" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
         {(['battle', 'support'] as const).map(tab => {
           const active = passiveTab === tab
@@ -48,7 +53,7 @@ export default function PassivePanel({
         })}
       </div>
       {/* Switching battle/support passives changes the content height; the reserved gutter keeps rows from shifting. */}
-      <div style={{ maxHeight: '20rem', overflowY: 'auto', scrollbarGutter: 'stable' }}>
+      <div className={listClassName} style={{ maxHeight: listClassName ? undefined : '20rem', overflowY: 'auto', scrollbarGutter: 'stable' }}>
         {model.slots.map(({ slot, sinnerName: sName, ...tabs }, idx) => {
           const slotP = tabs[passiveTab]
           if (slotP.length === 0) return null

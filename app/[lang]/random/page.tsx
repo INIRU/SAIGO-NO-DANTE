@@ -4,6 +4,7 @@ import { getSinners, getIdentities, getEGOs } from '@/lib/db/queries'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import RandomStatic from './RandomStatic'
 import RandomInteractive from './RandomInteractive'
+import PageHeader from '@/components/ui/PageHeader'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -27,10 +28,11 @@ export default async function RandomPage() {
 
   return (
     <div style={{ paddingTop: '64px' }}>
-      <div className="mx-auto max-w-[80rem] px-[1rem] py-[2rem] pb-[6rem] md:pb-[2rem]">
+      <div className="mx-auto max-w-[80rem] px-[1rem] pt-[1.5rem] pb-[6rem] md:pb-[2rem]">
+        <PageHeader title="랜덤 편성" description="운명의 수감자를 선택하세요" />
         {/*
           RandomStatic is a pure Server Component.
-          The header <h1> and ghost card grid are painted in the initial HTML —
+          The ghost card grid is painted in the initial HTML —
           the browser renders them before any JS executes, making them the LCP element.
         */}
         {/* SSR skeleton — hidden once interactive client mounts */}
