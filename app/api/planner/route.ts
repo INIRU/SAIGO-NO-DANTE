@@ -7,6 +7,7 @@ import { authOptions, requireActiveUser } from '@/lib/auth'
 import { findOrCreateSupabaseUser } from '@/lib/supabase/findOrCreateUser'
 import { normalizePlannerListKeywords, stripPlanForList } from '@/lib/planner/stripPlanForList'
 import { normalizeFloorPlanDifficulty, normalizePlanDifficulty } from '@/lib/planner/floor-difficulty'
+import { planFormationCount } from '@/lib/planner/plan-formation-count'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import { checkRequestRateLimit, rateLimitResponse } from '@/lib/rate-limit'
 import { writeAuditLog } from '@/lib/audit'
@@ -84,6 +85,14 @@ function parseOffsetParam(value: string | null) {
 
   const parsed = Number(value)
   if (!Number.isSafeInteger(parsed) || parsed < 0) return { error: 'offset must be a non-negative integer' }
+  return { value: parsed }
+}
+
+/** Same bounds and message as the deck board's formation_count. */
+function parseFormationCountParam(value: string | null): { value: number | null } | { error: string } {
+  if (value === null || value === '') return { value: null }
+  const parsed = /^\d+$/.test(value) ? Number(value) : NaN
+  if (!Number.isSafeInteger(parsed) || parsed < 1 || parsed > 12) return { error: 'formation_count must be an integer from 1 to 12' }
   return { value: parsed }
 }
 
@@ -264,14 +273,18 @@ export async function GET(req: NextRequest) {
     const keywordTagModeResult = parseModeParam(getParam(searchParams, 'keyword_tag_mode', 'ktm'), 'keyword_tag_mode')
     if ('error' in keywordTagModeResult) return NextResponse.json({ error: keywordTagModeResult.error }, { status: 400 })
 
+    const formationCountResult = parseFormationCountParam(getParam(searchParams, 'formation_count', 'fc'))
+    if ('error' in formationCountResult) return NextResponse.json({ error: formationCountResult.error }, { status: 400 })
+
     const { value: lang } = langResult
     const { value: limit } = limitResult
     const { value: offset } = offsetResult
     const { value: identityMode } = identityModeResult
     const { value: keywordTagMode } = keywordTagModeResult
+    const { value: formationCount } = formationCountResult
     const identityIds = parseCsvParam(getParam(searchParams, 'identity_ids', 'ids'))
     const keywordTags = normalizePlannerListKeywords(parseCsvParam(getParam(searchParams, 'keyword_tags', 'kt')))
-    const hasAdvancedFilters = identityIds.length > 0 || keywordTags.length > 0
+    const hasAdvancedFilters = identityIds.length > 0 || keywordTags.length > 0 || formationCount !== null
 
     // userId=me 또는 votedBy=me → 인증 필요
     let resolvedUserId: string | null = null
@@ -330,7 +343,8 @@ export async function GET(req: NextRequest) {
       const filteredPlans = enrichedRows
         .map(plan => ({ plan, summary: stripPlanForList(plan) }))
         .filter(({ plan, summary }) => {
-          return matchesIdentityFilters(plan, identityIds, identityMode) &&
+          return (formationCount === null || planFormationCount(plan.deck) === formationCount) &&
+            matchesIdentityFilters(plan, identityIds, identityMode) &&
             matchesKeywordFilters(summary, keywordTags, keywordTagMode)
         })
         .map(({ summary }) => summary)
