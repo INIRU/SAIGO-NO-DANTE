@@ -1,10 +1,7 @@
 'use client'
 
-import { getEgoGradeBannerUrl } from '@/lib/utils/images'
-
 import { useState, useMemo } from 'react'
 import dynamic from 'next/dynamic'
-import Image from 'next/image'
 import { useLocale, useTranslations } from 'next-intl'
 import { translations } from '@/lib/i18n/translations'
 import DeckInsights, { type DeckInsightIdentity } from '@/components/deck-analysis/DeckInsights'
@@ -14,18 +11,18 @@ import FormationBoard, { type FormationBoardSlot } from '@/components/decks/Form
 import { localizeIdentityName, localizePassiveDescription, localizePassiveName } from '@/components/deck-detail/DeckIdentityCard'
 import type { EgoEntry } from '@/components/deck-detail/DeckIdentityCard'
 import type { Identity } from '@/lib/types'
-import { getIdentityImageUrl, getSinnerLogoUrl, getSkillIconUrl } from '@/lib/utils/images'
-import { STORAGE_BASE, GRADE_COLORS } from '@/lib/constants/game'
-import { SIN_COLORS, SIN_KR_TO_EN } from '@/lib/constants/sin'
+import { getIdentityImageUrl, getSkillIconUrl } from '@/lib/utils/images'
+import { SIN_COLORS } from '@/lib/constants/sin'
 import { getIdentitySkillDistribution } from '@/lib/planner/types'
 import { rowsAtUptie } from '@/lib/decks/deck-identity-uptie'
 import SkillExchangePanel from './SkillExchangePanel'
+import { FormationEgoGrid, FormationTabs, type FormationEgo } from '@/components/decks/FormationEgoGrid'
+import { getLocalizedName } from '@/lib/i18n/localize'
+import type { SupportedLang } from '@/lib/i18n/types'
 
 const IdentityDetailModal = dynamic(() => import('@/components/ui/IdentityDetailModal'), { ssr: false })
 const EgoDetailModal = dynamic(() => import('@/components/ui/EgoDetailModal'), { ssr: false })
 
-const S = STORAGE_BASE
-const GRADE_ORDER = ['ZAYIN', 'TETH', 'HE', 'WAW', 'ALEPH']
 
 type IdentitySlot = {
   identity_id?: string
@@ -273,15 +270,17 @@ export default function PlanDeckTabs({
     })
   }, [identityMap, locale, sinners, slotBySinner, slotGiftMap])
 
-  const egoByGradeMap = useMemo(() => {
-    const map: Record<string, Record<string, EgoSlot>> = {}
-    for (const e of egoSlots) {
-      if (!e.sinner_id || !e.grade) continue
-      if (!map[e.sinner_id]) map[e.sinner_id] = {}
-      map[e.sinner_id][e.grade] = e
+  const formationEgos = useMemo(() => {
+    const egoById = new Map(egos.map(ego => [ego.id, ego]))
+    const map: Record<string, Record<string, FormationEgo>> = {}
+    for (const slot of egoSlots) {
+      if (!slot.sinner_id || !slot.grade || !slot.ego_id) continue
+      const ego = egoById.get(slot.ego_id)
+      const name = getLocalizedName({ name_kr: ego?.name_kr ?? slot.name_kr ?? ego?.name ?? '', name_en: ego?.name_en, name_jp: ego?.name_jp }, locale as SupportedLang)
+      ;(map[slot.sinner_id] ??= {})[slot.grade] = { id: slot.ego_id, name, sin_affinity: ego?.sin_affinity ?? null }
     }
     return map
-  }, [egoSlots])
+  }, [egoSlots, egos, locale])
 
   // 키워드 분포·패시브·공격 유형·죄악 자원 (플래너 덱 탭과 같은 패널)
   const insightIdentities = useMemo<DeckInsightIdentity[]>(() => sinners.flatMap(sinner => {
@@ -322,33 +321,13 @@ export default function PlanDeckTabs({
 
   return (
     <>
-      {/* 서브탭 헤더 — the baseline is an inset line under the tabs, so the active underline covers it
-          without the strip overflowing its own box (a negative margin made the scrollable strip show a vertical scrollbar). */}
-      <div className="mb-4 flex flex-wrap items-end justify-between gap-x-4 gap-y-1">
-      <div role="tablist" aria-label={tDeck('subTabs.label')} className="flex min-w-0 max-w-full overflow-x-auto shadow-[inset_0_-1px_0_#2e2417]">
-        {tabs.map(tab => {
-          const active = deckSubTab === tab.key
-          return (
-            <button
-              key={tab.key}
-              type="button"
-              role="tab"
-              aria-selected={active}
-              onClick={() => setDeckSubTab(tab.key)}
-              className={`inline-flex min-h-11 shrink-0 items-center gap-1.5 whitespace-nowrap border-b-2 px-3.5 text-[0.9375rem] transition-colors first:pl-0.5 focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[#e8b030] motion-reduce:transition-none ${active
-                ? 'border-[#c8900a] font-semibold text-[#e8dcc8]'
-                : 'border-transparent text-[#9c8b73] hover:text-[#e8dcc8]'}`}
-            >
-              {tab.label}
-              {tab.count && <span className="font-normal tabular-nums text-[#7f7364]">{tab.count}</span>}
-            </button>
-          )
-        })}
-      </div>
-      {deckSubTab === 'identity' && deck.length > 0 && (
-        <p className="pb-2 text-[0.8125rem] text-[#7f7364]">{tDeck('identity.openDetailHint')}</p>
-      )}
-      </div>
+      <FormationTabs
+        tabs={tabs}
+        active={deckSubTab}
+        onChange={setDeckSubTab}
+        label={tDeck('subTabs.label')}
+        hint={deckSubTab === 'identity' && deck.length > 0 ? tDeck('identity.openDetailHint') : null}
+      />
 
       {/* 인격 그리드 */}
       {deckSubTab === 'identity' && (
@@ -369,57 +348,12 @@ export default function PlanDeckTabs({
       {/* EGO 그리드 */}
       {deckSubTab === 'ego' && (
         deck.length > 0 ? (
-          <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
-            {sinners.map(sinner => {
-              const slot = slotBySinner[sinner.id]
-              const egoByGrade = egoByGradeMap[sinner.id] ?? {}
-              return (
-                <li key={sinner.id} className={`min-w-0 overflow-hidden rounded border border-[#241c14] bg-[#17120c] ${slot ? '' : 'opacity-50'}`}>
-                  <div className="flex items-center gap-2 border-b border-[#241c14] px-2.5 py-2">
-                    <Image src={getSinnerLogoUrl(sinner.id)} alt="" width={16} height={16} className="h-4 w-4 opacity-60" />
-                    <span className={`truncate font-[family-name:var(--font-heading)] text-[0.875rem] ${slot ? 'text-[#cfc2ad]' : 'text-[#7f7364]'}`}>
-                      {sinner.name_kr}
-                    </span>
-                  </div>
-                  <div className="flex flex-col gap-0.5 p-1">
-                    {GRADE_ORDER.map(grade => {
-                      const ego = egoByGrade[grade]
-                      const gc = GRADE_COLORS[grade] ?? '#555'
-                      const egoFull = ego ? egos.find(e => e.id === ego.ego_id) : null
-                      const sinEn = egoFull?.sin_affinity ? (SIN_KR_TO_EN[egoFull.sin_affinity] ?? egoFull.sin_affinity) : null
-                      const ec = sinEn ? (SIN_COLORS[sinEn as keyof typeof SIN_COLORS] ?? gc) : gc
-                      const banner = (
-                        <Image
-                          src={getEgoGradeBannerUrl(grade)} alt={grade} width={22} height={11} unoptimized
-                          className={`h-3 w-auto shrink-0 ${ego ? 'opacity-90' : 'opacity-30'}`}
-                        />
-                      )
-                      return ego?.ego_id ? (
-                        <button
-                          key={grade}
-                          type="button"
-                          onClick={() => setEgoModalId(ego.ego_id!)}
-                          className="flex min-h-8 items-center gap-2 rounded-sm border px-1.5 py-1 text-left transition-[filter] hover:brightness-125 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#e8b030]"
-                          style={{ background: `${ec}1a`, borderColor: `${ec}55` }}
-                        >
-                          {banner}
-                          <span className="min-w-0 flex-1 text-[0.75rem] font-semibold leading-tight" style={{ color: gc }}>{ego.name_kr}</span>
-                        </button>
-                      ) : (
-                        <div key={grade} className="flex min-h-8 items-center gap-2 rounded-sm border border-transparent px-1.5 py-1">
-                          {banner}
-                          {slot && <span className="text-[0.75rem] text-[#4a3f31]" aria-hidden="true">—</span>}
-                        </div>
-                      )
-                    })}
-                  </div>
-                  {!slot && (
-                    <p className="px-2 pb-2 text-center text-[0.75rem] text-[#7f7364]">{tDeck('ego.noIdentity')}</p>
-                  )}
-                </li>
-              )
-            })}
-          </ul>
+          <FormationEgoGrid
+            sinners={sinners.map(sinner => ({ id: sinner.id, name: tSinner(sinner.id as Parameters<typeof tSinner>[0]), filled: Boolean(slotBySinner[sinner.id]) }))}
+            egos={formationEgos}
+            onEgoClick={setEgoModalId}
+            noIdentityLabel={tDeck('ego.noIdentity')}
+          />
         ) : (
           <EmptyState text={tDeck('skillset.selectIdentityFirst')} />
         )
