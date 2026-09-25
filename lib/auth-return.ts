@@ -6,3 +6,9 @@ export function safeLoginReturn(value: string | null, locale: string): string {
     return url.pathname + url.search + url.hash
   } catch { return `/${locale}` }
 }
+
+/** Sends the browser to the site's login page (terms consent first), coming back to `returnTo` (default: this page). */
+export function goToLogin(locale: string, returnTo?: string) {
+  const back = returnTo ?? window.location.pathname + window.location.search + window.location.hash
+  window.location.assign(`/${locale}/login?callbackUrl=${encodeURIComponent(back)}`)
+}

@@ -2,7 +2,8 @@
 import { useState } from "react";
 import { useLocale } from "next-intl";
 import { Link } from "@/lib/i18n/navigation";
-import { signIn, useSession } from "next-auth/react";
+import { useSession } from "next-auth/react";
+import { goToLogin } from "@/lib/auth-return";
 import useSWR from "swr";
 import { useHtmlFlag } from "@/hooks/useHtmlFlag";
 import PageHeader from "@/components/ui/PageHeader";
@@ -83,7 +84,7 @@ export default function DeveloperConsole() {
           ) : status !== "authenticated" ? (
             <div className="space-y-4">
               <p className="text-sm leading-relaxed text-[var(--text-secondary)]">{label("로그인하면 API 키를 발급하고 사용량을 확인할 수 있습니다.", "ログインするとキーの発行と使用量の確認ができます。", "Sign in to create API keys and track their usage.")}</p>
-              <button className={`${button} bg-[var(--gold)] text-[var(--bg-deep)] hover:brightness-110`} onClick={() => signIn("google")}>
+              <button className={`${button} bg-[var(--gold)] text-[var(--bg-deep)] hover:brightness-110`} onClick={() => goToLogin(lang)}>
                 <Plus size={16} aria-hidden />{label("로그인 후 키 발급", "ログインして発行", "Sign in to create a key")}
               </button>
             </div>

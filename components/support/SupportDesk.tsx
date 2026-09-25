@@ -1,7 +1,8 @@
 'use client'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
-import { signIn, useSession } from 'next-auth/react'
+import { useSession } from 'next-auth/react'
+import { goToLogin } from '@/lib/auth-return'
 import { ArrowLeft, LockKeyhole, MessageSquare, Plus, Send } from 'lucide-react'
 import { Link } from '@/lib/i18n/navigation'
 import { useHtmlFlag } from '@/hooks/useHtmlFlag'
@@ -138,7 +139,7 @@ export default function SupportDesk({ admin = false, initialTopic }: { admin?: b
           <p>{t('loginHint')}</p>
           <button
             className="desk-button primary"
-            onClick={() => signIn('google', { callbackUrl: '/' + lang + '/support' + (initialTopic === 'api-limit' ? '?topic=api-limit' : '') })}
+            onClick={() => goToLogin(lang, '/' + lang + '/support' + (initialTopic === 'api-limit' ? '?topic=api-limit' : ''))}
           >
             {t('login')}
           </button>
