@@ -1,6 +1,7 @@
 import { withoutOtherLocales } from '@/lib/i18n/strip-locales'
 import * as Sentry from '@sentry/nextjs'
 import type { Metadata } from 'next'
+import { localeAlternates } from '@/lib/seo/metadata'
 import { Suspense } from 'react'
 import { cacheLife, cacheTag } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
@@ -22,7 +23,7 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
   return {
     title: t('mirrorDungeon.meta.title'),
     description: t('mirrorDungeon.meta.description'),
-    alternates: { canonical: 'https://saigo-no-dante.com/mirror-dungeon' },
+    alternates: localeAlternates(lang, '/mirror-dungeon'),
     openGraph: {
       title: t('mirrorDungeon.meta.title'),
       description: t('mirrorDungeon.meta.description'),

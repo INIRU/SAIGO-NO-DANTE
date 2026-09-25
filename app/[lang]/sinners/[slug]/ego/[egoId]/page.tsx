@@ -1,4 +1,6 @@
 import type { Metadata } from 'next'
+import { localeAlternates } from '@/lib/seo/metadata'
+import { getLocalizedName } from '@/lib/i18n/localize'
 import { Suspense } from 'react'
 import { cacheLife, cacheTag } from 'next/cache'
 import { getSinnerById, getEGOById } from '@/lib/db/queries'
@@ -35,11 +37,13 @@ export async function generateMetadata({
   const description = `${sinner.name_kr} ${ego.name_kr ?? ego.name} — ${ego.grade} 등급${sinStr ? `, ${sinStr} 속성` : ''} EGO. 스킬, 패시브, 내성 정보.`
   const canonical = absoluteUrl(`/${lang}/sinners/${slug}/ego/${egoId}`)
   const ogImage = absoluteUrl(`/${lang}/sinners/${slug}/ego/${egoId}/opengraph-image`)
+  const egoName = getLocalizedName({ ...ego, name_kr: ego.name_kr ?? ego.name }, lang)
+  const sinnerName = getLocalizedName({ name_kr: sinner.name_kr, name_en: sinner.name, name_jp: sinner.name_jp }, lang)
 
   return {
-    title: `${ego.name_kr ?? ego.name} — ${sinner.name_kr}`,
+    title: `${egoName} — ${sinnerName} E.G.O`,
     description,
-    alternates: { canonical },
+    alternates: localeAlternates(lang, `/sinners/${slug}/ego/${egoId}`),
     openGraph: {
       title: `${ego.name_kr ?? ego.name} — ${sinner.name_kr} | 최애의 관리자`,
       description,

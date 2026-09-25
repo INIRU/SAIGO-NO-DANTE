@@ -1,4 +1,6 @@
 import type { Metadata } from 'next'
+import { localeAlternates, localeUrl } from '@/lib/seo/metadata'
+import { getLocalizedName } from '@/lib/i18n/localize'
 import { Suspense } from 'react'
 import { cacheLife, cacheTag } from 'next/cache'
 import { getSinnerById } from '@/lib/db/queries'
@@ -18,18 +20,22 @@ export function generateStaticParams() {
   return SINNER_SLUGS.map(slug => ({ slug }))
 }
 
-export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+export async function generateMetadata({ params }: { params: Promise<{ lang: string; slug: string }> }): Promise<Metadata> {
   'use cache'
   cacheLife('max')
-  const { slug } = await params
+  const { lang: rawLang, slug } = await params
+  const lang: SupportedLang = rawLang === 'en' || rawLang === 'ja' ? rawLang : 'ko'
   cacheTag(CACHE_TAGS.sinner(slug), CACHE_TAGS.sinners, CACHE_TAGS.gameData)
   const sinner = await getSinnerById(slug)
   if (!sinner) return { title: '수감자를 찾을 수 없습니다', robots: { index: false } }
-  const siteUrl = 'https://saigo-no-dante.com'
+  const name = getLocalizedName({ name_kr: sinner.name_kr, name_en: sinner.name, name_jp: sinner.name_jp }, lang)
+  const title = lang === 'ko'
+    ? `${sinner.name_kr} 인격·E.G.O 목록 — 림버스 컴퍼니 수감자`
+    : lang === 'ja' ? `${name} 人格・E.G.O一覧` : `${name} Identities & E.G.O`
   return {
-    title: `${sinner.name_kr} (${sinner.name})`,
+    title,
     description: `${sinner.name_kr}의 모든 인격과 EGO — ${sinner.description ?? `Limbus Company ${sinner.name_kr} 수감자 정보`}`,
-    alternates: { canonical: `${siteUrl}/sinners/${slug}` },
+    alternates: localeAlternates(lang, `/sinners/${slug}`),
     openGraph: {
       title: `${sinner.name_kr} | 최애의 관리자`,
       description: `${sinner.name_kr}의 인격, EGO, 스킬 데이터를 확인하세요.`,
@@ -81,22 +87,22 @@ export default async function SinnerPage({ params }: { params: Promise<{ slug: s
   const { sinner, identities, egos } = await getCachedSinnerData(slug)
   if (!sinner) notFound()
 
-  const siteUrl = 'https://saigo-no-dante.com'
+  const siteUrl = localeUrl(lang)
   const profileUrl = getSinnerProfileUrl(sinner.id)
 
   return (
     <>
       <JsonLd data={breadcrumbJsonLd([
         { name: '홈', url: siteUrl },
-        { name: '수감자', url: `${siteUrl}/sinners` },
-        { name: sinner.name_kr, url: `${siteUrl}/sinners/${slug}` },
+        { name: '수감자', url: localeUrl(lang, '/sinners') },
+        { name: sinner.name_kr, url: localeUrl(lang, `/sinners/${slug}`) },
       ])} />
       {profileUrl && (
         <JsonLd data={gameCharacterJsonLd({
           name: `${sinner.name_kr} (${sinner.name})`,
           description: sinner.description ?? `Limbus Company 수감자 ${sinner.name_kr}`,
           image: profileUrl,
-          url: `${siteUrl}/sinners/${slug}`,
+          url: localeUrl(lang, `/sinners/${slug}`),
           siteUrl,
         })} />
       )}

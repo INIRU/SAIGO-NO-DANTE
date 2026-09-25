@@ -2,6 +2,7 @@ import { notePlainText } from '@/lib/notes/blocks'
 import * as Sentry from '@sentry/nextjs'
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import type { Metadata } from 'next'
+import { localeAlternates } from '@/lib/seo/metadata'
 import { connection } from 'next/server'
 import { Suspense } from 'react'
 import { cacheLife, cacheTag } from 'next/cache'
@@ -537,7 +538,7 @@ async function getCachedDeckMetadata(lang: 'ko' | 'en' | 'ja', id: string): Prom
   return {
     title,
     description,
-    alternates: { canonical },
+    alternates: localeAlternates(lang, `/decks/${id}`),
     openGraph: {
       title: `${title} | 덱 게시판`,
       description,

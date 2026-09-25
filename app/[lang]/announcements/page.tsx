@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { localeAlternates } from '@/lib/seo/metadata'
 import { Suspense } from 'react'
 import { Loader2 } from 'lucide-react'
 import { cacheLife, cacheTag } from 'next/cache'
@@ -10,11 +11,7 @@ import { HtmlFlag } from '@/hooks/useHtmlFlag'
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang: rawLang } = await params
   const lang = rawLang === 'en' || rawLang === 'ja' ? rawLang : 'ko'
-  const title = lang === 'en'
-    ? 'Announcements | SAIGO NO DANTE'
-    : lang === 'ja'
-      ? 'お知らせ | SAIGO NO DANTE'
-      : '공지사항 | SAIGO NO DANTE'
+  const title = lang === 'en' ? 'Announcements' : lang === 'ja' ? 'お知らせ' : '공지사항'
   const description = lang === 'en'
     ? 'Check site updates and notices.'
     : lang === 'ja'
@@ -23,7 +20,7 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
   return {
     title,
     description,
-    alternates: { canonical: `https://saigo-no-dante.com/${lang}/announcements` },
+    alternates: localeAlternates(lang, '/announcements'),
   }
 }
 

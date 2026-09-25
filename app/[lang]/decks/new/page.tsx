@@ -20,13 +20,10 @@ async function fetchDeckBuilderStaticData() {
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: SupportedLang }> }): Promise<Metadata> {
   const { lang } = await params
-  const [builderT, siteT] = await Promise.all([
-    getTranslations({ locale: lang, namespace: 'decks.builder.metadata' }),
-    getTranslations({ locale: lang, namespace: 'site' }),
-  ])
+  const builderT = await getTranslations({ locale: lang, namespace: 'decks.builder.metadata' })
 
   return {
-    title: `${builderT('title')} | ${siteT('name')}`,
+    title: builderT('title'),
     description: builderT('description'),
   }
 }

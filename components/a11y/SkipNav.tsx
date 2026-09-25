@@ -1,7 +1,7 @@
 import { getTranslations } from 'next-intl/server'
 
-export default async function SkipNav() {
-  const t = await getTranslations('common')
+export default async function SkipNav({ lang }: { lang: string }) {
+  const t = await getTranslations({ locale: lang, namespace: 'common' })
   return (
     <a
       href="#main-content"

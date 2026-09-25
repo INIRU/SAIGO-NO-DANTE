@@ -5,6 +5,7 @@ import { checkRateLimit } from '@/lib/rate-limit'
 import createMiddleware from 'next-intl/middleware'
 import { routing } from './lib/i18n/routing'
 import { isAllowedRequestOrigin } from './lib/request-origin'
+import { PRIMARY_LOCALE } from './lib/seo/metadata'
 
 const intlMiddleware = createMiddleware(routing)
 
@@ -221,6 +222,14 @@ export async function proxy(request: NextRequest) {
 
   // ── 6. i18n routing (next-intl middleware) ──
   if (!pathname.startsWith('/api/')) {
+    // Crawlers send no Accept-Language; next-intl would send them to the 'en' default. Korean is the primary site.
+    // 308 only for the bare '/', whose canonical target is /ko; deeper paths keep 307.
+    if (!locale && !request.headers.has('accept-language') && !request.cookies.has('NEXT_LOCALE') && !request.cookies.has('preferred_lang')) {
+      const url = request.nextUrl.clone()
+      url.pathname = `/${PRIMARY_LOCALE}${routePathname === '/' ? '' : routePathname}`
+      return NextResponse.redirect(url, routePathname === '/' ? 308 : 307)
+    }
+
     // Migration: carry over legacy preferred_lang cookie → NEXT_LOCALE so
     // returning users aren't dropped to the default locale on first visit.
     const legacyCookie = request.cookies.get('preferred_lang')?.value

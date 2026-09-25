@@ -1,9 +1,18 @@
 import { cacheLife, cacheTag } from 'next/cache'
+import type { Metadata } from 'next'
+import { getTranslations } from 'next-intl/server'
+import { localeAlternates } from '@/lib/seo/metadata'
 import { getLegalDoc, type LegalDoc } from '@/lib/data/legal'
 import { getLatestIdentities } from '@/lib/db/queries'
 import { getIdentityProfileUrl } from '@/lib/utils/images'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import LoginClient from './LoginClient'
+
+export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
+  const { lang } = await params
+  const t = await getTranslations({ locale: lang, namespace: 'loginPage' })
+  return { title: t('title'), alternates: localeAlternates(lang, '/login') }
+}
 
 async function loginDocs(lang: string): Promise<LegalDoc[]> {
   'use cache'

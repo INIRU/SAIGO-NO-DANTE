@@ -1,7 +1,7 @@
 import Skeleton from '@/components/ui/Skeleton'
 
 /**
- * Home loading skeleton (root boundary, outside the locale provider, so no translated label).
+ * Home loading skeleton, scoped to the (home) group so other sections keep their own boundaries.
  * Same column classes as HomeClient's hero plus the announcement bar under it, so nothing moves on first paint.
  */
 export default function HomeLoading() {

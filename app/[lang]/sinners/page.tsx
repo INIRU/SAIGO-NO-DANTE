@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { localeAlternates, localeUrl } from '@/lib/seo/metadata'
 import { Suspense } from 'react'
 import { cacheLife, cacheTag } from 'next/cache'
 import { getSinners } from '@/lib/db/queries'
@@ -10,8 +11,6 @@ import { getLocale, setRequestLocale } from 'next-intl/server'
 import type { SupportedLang } from '@/lib/i18n/types'
 import { translations } from '@/lib/i18n/translations'
 
-const SITE_URL = 'https://saigo-no-dante.com'
-
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params
   const t = (key: string) => {
@@ -22,7 +21,7 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
   return {
     title: t('sinners.meta.title'),
     description: t('sinners.meta.description'),
-    alternates: { canonical: `${SITE_URL}/sinners` },
+    alternates: localeAlternates(lang, '/sinners'),
     openGraph: {
       title: t('sinners.meta.ogTitle'),
       description: t('sinners.meta.ogDescription'),
@@ -46,10 +45,10 @@ export default async function SinnersPage() {
   const sinnerListLd = itemListJsonLd({
     name: '림버스 컴퍼니 수감자 목록',
     description: 'Limbus Company 12인 수감자 — 인격, EGO, 스킬 데이터',
-    url: `${SITE_URL}/sinners`,
+    url: localeUrl(lang, '/sinners'),
     items: sinners.map((s, i) => ({
       name: s.name_kr ?? s.name,
-      url: `${SITE_URL}/sinners/${s.id}`,
+      url: localeUrl(lang, `/sinners/${s.id}`),
       position: i + 1,
     })),
   })
