@@ -92,6 +92,8 @@ interface DeckListFiltersProps {
   onClearSelectedIdentities: () => void
   languageFilter: DeckLanguageFilter
   onLanguageFilterChange: (value: DeckLanguageFilter) => void
+  /** Board facet sections (affiliation, E.G.O), placed before the collection filter. */
+  facetSections?: React.ReactNode
 }
 
 type SortKey = 'latest' | 'popular'
@@ -475,7 +477,7 @@ export default function DeckListFilters({
   selectedIdentityIds, selectedIdentities,
   identityMode,
   onToggleSelectedIdentity, onToggleIdentityMode, onClearSelectedIdentities,
-  languageFilter, onLanguageFilterChange,
+  languageFilter, onLanguageFilterChange, facetSections,
 }: DeckListFiltersProps) {
   const t = useTranslations('decks')
   const rootT = useTranslations()
@@ -1117,6 +1119,8 @@ export default function DeckListFilters({
         </div>
       </section>
 
+
+      {facetSections}
 
       <section>
         <SectionToggle label={t('filters.collection')} open={showCollectionFilter} active={collectionCount > 0} count={collectionCount} onClick={onToggleCollectionFilter} />
