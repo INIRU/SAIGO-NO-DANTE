@@ -633,14 +633,12 @@
       "pipObserveGifts": "観測ギフト",
       "pipStartGiftsEmpty": "このプランには開始ギフト・観測ギフトがありません。",
       "pipStartThemeWait": "テーマパック選択画面を認識すると、おすすめのテーマパックを表示します。",
-
       "planMode": "プラン実行モード",
       "recordMode": "白紙記録モード",
       "planGoals": "作成者の階別計画",
       "unselected": "未指定",
       "limited": "途中参加：開始前の記録は復元できません。",
       "start": "アシストモード開始",
-
       "metaTitle": "ミラーダンジョン — アシストモード",
       "metaDescription": "ミラーダンジョンのテーマ、ギフト、編成、イベント、階ごとの進行を手動で記録するアシストモードです。",
       "title": "アシストモード",
@@ -800,7 +798,7 @@
       "themeGiftsCount": "テーマギフト（{count}個）",
       "scrollForMoreGifts": "全{count}個 · スクロールして続きを表示できます。",
       "giftListEnd": "全{count}個を表示しました。",
-     "giftSearchCount": "検索結果 {count}件",
+      "giftSearchCount": "検索結果 {count}件",
       "addGiftIdleHint": "キーワードか等級を選ぶか、名前で検索してください。押すと所持ギフトに追加し、もう一度押すと外します。",
       "themeGiftsHint": "テーマを選ぶと専用ギフトが表示されます。",
       "shopPurchase": "ショップで購入",
@@ -1058,7 +1056,10 @@
       "floor": "階層計画",
       "summary": "プラン紹介"
     },
-    "intro": { "titlePlaceholder": "プランのタイトル", "titleLabel": "プランのタイトル" },
+    "intro": {
+      "titlePlaceholder": "プランのタイトル",
+      "titleLabel": "プランのタイトル"
+    },
     "sectionNav": "プランの項目",
     "summaryHint": "アップロードにはタイトルが必要です",
     "difficultyValues": {
@@ -1139,7 +1140,7 @@
       "finalGradeFilter": "等級",
       "filterAll": "すべて",
       "allGiftAddPanel": "全ギフトから追加",
-     "allGiftCatalog": "全ギフト",
+      "allGiftCatalog": "全ギフト",
       "finalBlockedByRecipe": "{gift}: {result}の合成素材のため最終ギフトに入れられません",
       "allGiftAddHint": "カードを押すと最終一覧へ追加し、追加済みのカードはもう一度押すと削除します。",
       "allGiftSearchPlaceholder": "全ギフト検索...",
@@ -1646,11 +1647,15 @@
     "google": "Googleで続ける",
     "busy": "接続中…",
     "back": "サイトに戻る",
-    "consent": "続行すると<terms>利用規約</terms>と<privacy>プライバシーポリシー</privacy>に同意したものとみなされます。",
     "errorConnect": "ログインに接続できませんでした。もう一度お試しください。",
     "errorCallback": "Googleログインが完了しませんでした。もう一度お試しください。",
     "errorDenied": "このアカウントではログインできません。",
-    "errorRequired": "このページを見るにはログインが必要です。"
+    "errorRequired": "このページを見るにはログインが必要です。",
+    "agreeTerms": "[必須] 利用規約に同意する",
+    "agreePrivacy": "[必須] 個人情報の収集・利用に同意する",
+    "readFull": "全文を見る",
+    "hideFull": "閉じる",
+    "readToAgree": "全文を最後まで読むと同意できます。"
   },
   "sinners": {
     "title": "囚人一覧",

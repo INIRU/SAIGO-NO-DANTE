@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import { LOGIN_CONSENT_KEY, consentMatches } from '@/lib/legal-consent'
 import { useSession } from 'next-auth/react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -98,8 +99,17 @@ export default function LegalVersionModal() {
     let cancelled = false
     fetch('/api/legal/status', { cache: 'no-store' })
       .then(response => response.ok ? response.json() as Promise<StatusPayload> : null)
-      .then(payload => {
-        if (!cancelled) setLegal(payload?.legal ?? null)
+      .then(async payload => {
+        const next = payload?.legal ?? null
+        // Consent given on the login page (full text read, both boxes checked) is the acknowledgement: record it quietly.
+        let agreed: unknown = null
+        try { agreed = JSON.parse(sessionStorage.getItem(LOGIN_CONSENT_KEY) ?? 'null'); sessionStorage.removeItem(LOGIN_CONSENT_KEY) } catch { /* ask instead */ }
+        if (next?.required && consentMatches(agreed, next)) {
+          const saved = await fetch('/api/legal/acknowledgements', { method: 'POST' }).then(response => response.ok, () => false)
+          if (!cancelled) setLegal(saved ? { ...next, required: false, stale: false } : next)
+          return
+        }
+        if (!cancelled) setLegal(next)
       })
       .catch(() => {
         if (!cancelled) setLegal(null)
