@@ -6,7 +6,7 @@
 const ICON: Record<string, string> = {
   "H사": 'a-0a7639b8',
   "로보토미 본사": 'a-4a2d12cf',
-  "거미집": 'a-8d043b3b',
+  "거미집": 'a-527a557a',
   "흑수": 'a-13e01821',
   "W사": 'a-3ecdffd0',
   "N사": 'n-corp',
@@ -50,7 +50,7 @@ const ICON: Record<string, string> = {
   "LCD": 'a-70704c6c',
   "밤의 송곳": 'a-b3065e66',
   "와일드헌트": 'a-ba954017',
-  "소지": 'a-527a557a',
+  "소지": 'soji',
   "송곳니 사냥 사무소": 'a-7367c80e',
   "7대 패밀리": 'a-48e64158',
   "외우피 협회": 'a-d6ee4b2d',

@@ -2,7 +2,6 @@
 # affiliation: keywords its identities use that almost no other identity does. Keep in step with lib/constants/affiliation-icons.ts.
 a-0a7639b8	keyword:HeishouCombo_존명.png
 a-4a2d12cf	keyword:HystericGauge_히스테리.png
-a-8d043b3b	keyword:DongbaekFlorescence_개화.png
 a-13e01821	keyword:HeishouCombo_존명.png
 a-3ecdffd0	keyword:ChargeForceField_충전 역장.png
 a-6c7ec1ec	gift:9216
@@ -46,3 +45,4 @@ a-e5b7b058	keyword:FirePunchFuelOverheated_과열 연료.png
 a-b040451b	keyword:Unjust_Enrichment_부당 수익.png
 a-bc82020e	keyword:TheUdjatOutis_우제트의 눈 [선봉].png
 a-3b263698	keyword:NoirSuit_르누아르 개버딘 원단 코트.png
+soji	keyword:PhantomIncisionTotal_지혜성도.png
