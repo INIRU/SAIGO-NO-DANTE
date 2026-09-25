@@ -7,6 +7,8 @@ import type { SupportedLang } from '@/lib/i18n/types'
 import { getLocalizedName } from '@/lib/i18n/localize'
 import { groupEventChoices, eventResultCondition } from '@/lib/utils/event-flow'
 import { getEventOutcomes, type EventOutcomeKind } from '@/lib/utils/event-outcomes'
+import { SIN_COLORS } from '@/lib/constants/sin'
+import type { SinType } from '@/lib/types'
 import { Lock, Swords } from 'lucide-react'
 import GiftArtwork from '@/components/ui/GiftArtwork'
 
@@ -14,8 +16,29 @@ type BranchSummary = { lines: string[]; gifts: { id: number; conditional: boolea
 const number = (value: unknown): number | null => typeof value === 'number' && Number.isFinite(value) ? value : null
 const record = (value: unknown): Record<string, unknown> => value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : {}
 
-function targetName(raw: unknown, t: ReturnType<typeof useTranslations<'planner.run'>>): string {
-  return raw === 'EveryAlly' ? t('pipEventAllAllies') : raw === 'ChosenPersonality' ? t('pipEventChosenSinner') : ''
+// 게임 데이터의 죄악 속성 코드
+const SIN_CODES: Record<string, SinType> = {
+  CRIMSON: 'wrath', SCARLET: 'lust', ORANGE: 'lust', AMBER: 'sloth', YELLOW: 'sloth',
+  SHAMROCK: 'gluttony', GREEN: 'gluttony', AZURE: 'gloom', INDIGO: 'pride', VIOLET: 'envy',
+}
+
+/** 효과가 누구에게 가는지: 대상(모든 아군, 무작위 N명…)과 조건(속성 스킬 보유/미보유, 판정 성공/실패)을 한 문구로. */
+function TargetLabel({ target, condition, t, ts }: { target: string; condition?: string; t: Translate; ts: (key: string) => string }) {
+  const random = /^RandomAlly_(\d+)$/.exec(target)
+  const pick = random ? t('pipEventRandomAllies', { count: Number(random[1]) })
+    : target === 'LowestHpAlly_1' ? t('pipEventLowestHp')
+    : target === 'LowestMpAlly_1' ? t('pipEventLowestSp') : ''
+  const skill = condition ? /^(Not)?IncludeSkillAttribute_(.+)$/.exec(condition) : null
+  const sins = skill?.[2].split(',').flatMap(code => SIN_CODES[code] ? [SIN_CODES[code]] : []) ?? []
+  if (sins.length) {
+    const sinNames = () => sins.map((sin, index) => <span key={sin}>{index > 0 && '·'}<span style={{ color: SIN_COLORS[sin] }}>{ts(sin)}</span></span>)
+    const group = t.rich(skill?.[1] ? 'pipEventLacksSinSkill' : 'pipEventHasSinSkill', { sins: sinNames })
+    return <span className="text-[var(--text-secondary)]">{pick ? t.rich('pipEventAmong', { group: () => group, target: pick }) : group}</span>
+  }
+  const label = condition === 'SUCCESS' ? t('pipEventCheckPassed')
+    : condition === 'FAILURE' ? t('pipEventCheckFailed')
+    : pick || (target === 'EveryAlly' ? t('pipEventAllAllies') : target === 'ChosenPersonality' ? t('pipEventChosenSinner') : '')
+  return label ? <span className="text-[var(--text-secondary)]">{label}</span> : null
 }
 
 /** Structured DB effects only; no narration or inferred clicked choice. */
@@ -50,13 +73,15 @@ export function summarizeChoiceEffects(effects: ChoiceEffect[] | null, lang: Sup
     const different = /^(Lose|Recover)HpMpDifferentAmount_(\d+)_(\d+)$/.exec(result)
     const same = /^(Lose|Recover)HpMpSameAmount_(\d+)$/.exec(result)
     const single = /^(Lose|Recover)(Ratio)?(Hp|Mp)Only_(\d+)$/.exec(result)
+    // 대상|조건: 조건이 다르면 같은 수치여도 다른 줄이다(오만 보유 인격 회복 ≠ 모든 아군 회복)
+    const who = [source.resultEffectTarget ?? '', source.resultEffectCondition1].filter(Boolean).join('|')
     if (different) {
       const sign = different[1] === 'Lose' ? '−' : '+'
-      lines.push(`stat:${source.resultEffectTarget ?? ''}:HP${sign}${different[2]} · SP${sign}${different[3]}`)
+      lines.push(`stat:${who}:HP${sign}${different[2]} · SP${sign}${different[3]}`)
     } else if (same) {
       const sign = same[1] === 'Lose' ? '−' : '+'
-      lines.push(`stat:${source.resultEffectTarget ?? ''}:HP${sign}${same[2]} · SP${sign}${same[2]}`)
-    } else if (single) lines.push(`stat:${source.resultEffectTarget ?? ''}:${single[3] === 'Hp' ? 'HP' : 'SP'}${single[1] === 'Lose' ? '−' : '+'}${single[4]}${single[2] ? '%' : ''}`)
+      lines.push(`stat:${who}:HP${sign}${same[2]} · SP${sign}${same[2]}`)
+    } else if (single) lines.push(`stat:${who}:${single[3] === 'Hp' ? 'HP' : 'SP'}${single[1] === 'Lose' ? '−' : '+'}${single[4]}${single[2] ? '%' : ''}`)
     else if (effect.type === 'hp_mp_loss' || effect.type === 'hp_mp_recover') {
       const hp = number(effect.hp)
       const sp = number(effect.mp)
@@ -103,27 +128,27 @@ function selectionLabel(raw: string | null | undefined, giftMap: Map<number, Gif
 type Translate = ReturnType<typeof useTranslations<'planner.run'>>
 
 /** Splits a summary line into readable parts: a signed stat keeps its number apart so the sign can carry colour. */
-export function effectTokens(line: string): { kind: 'battle' | 'nothing' | 'unknown' } | { kind: 'values'; target: string; values: { stat: 'HP' | 'SP' | 'cost'; sign: '+' | '−'; amount: string }[] } {
+export function effectTokens(line: string): { kind: 'battle' | 'nothing' | 'unknown' } | { kind: 'values'; target: string; condition?: string; values: { stat: 'HP' | 'SP' | 'cost'; sign: '+' | '−'; amount: string }[] } {
   if (line === 'battle' || line === 'nothing' || line === 'unknown') return { kind: line }
   if (line.startsWith('cost:')) {
     const [, sign, amount] = /^cost:([+-])(.+)$/.exec(line) ?? []
     return sign ? { kind: 'values', target: '', values: [{ stat: 'cost', sign: sign === '-' ? '−' : '+', amount }] } : { kind: 'unknown' }
   }
-  const [, target = '', amounts = ''] = /^stat:([^:]*):(.*)$/.exec(line) ?? []
+  const [, who = '', amounts = ''] = /^stat:([^:]*):(.*)$/.exec(line) ?? []
+  const [target, condition] = who.split('|')
   const values = amounts.split(' · ').flatMap(part => {
     const match = /^(HP|SP)([+−])(.+)$/.exec(part)
     return match ? [{ stat: match[1] as 'HP' | 'SP', sign: match[2] as '+' | '−', amount: match[3] }] : []
   })
-  return values.length ? { kind: 'values', target, values } : { kind: 'unknown' }
+  return values.length ? { kind: 'values', target, condition: condition || undefined, values } : { kind: 'unknown' }
 }
 
-function Effect({ line, t }: { line: string; t: Translate }) {
+function Effect({ line, t, ts }: { line: string; t: Translate; ts: (key: string) => string }) {
   const token = effectTokens(line)
   if (token.kind === 'battle') return <span className="inline-flex items-center gap-1 font-semibold text-[var(--text-primary)]"><Swords size={13} aria-hidden="true" className="text-[var(--gold-light)]" />{t('pipEventBattle')}</span>
   if (token.kind !== 'values') return <span className="text-[var(--text-tertiary)]">{t(token.kind === 'nothing' ? 'pipEventNothing' : 'pipEventUnknownEffect')}</span>
-  const target = targetName(token.target, t)
   return <span className="inline-flex flex-wrap items-baseline gap-x-2">
-    {target && <span className="text-[var(--text-secondary)]">{target}</span>}
+    <TargetLabel target={token.target} condition={token.condition} t={t} ts={ts} />
     {token.values.map(value => <span key={value.stat} data-effect-sign={value.sign === '+' ? 'gain' : 'loss'} className="whitespace-nowrap">
       <span className="text-[var(--text-secondary)]">{t(value.stat === 'HP' ? 'pipEventHp' : value.stat === 'SP' ? 'pipEventSp' : 'pipEventCost')}</span>{' '}
       <span className={`font-[family-name:var(--font-title)] text-[0.9375rem] leading-none tracking-wide ${value.sign === '+' ? 'text-[var(--success)]' : 'text-[#e0685c]'}`}>{value.sign}{value.amount}</span>
@@ -138,6 +163,7 @@ export default function CompanionEventChoices({ eventId, events, choices, giftMa
   giftMap: Map<number, GiftData>
 }) {
   const t = useTranslations('planner.run')
+  const ts = useTranslations('sin')
   const lang = useLocale() as SupportedLang
   const eventById = new Map(events.map(event => [event.id, event]))
   const choicesById = new Map<number, MdEventChoice[]>()
@@ -167,7 +193,7 @@ export default function CompanionEventChoices({ eventId, events, choices, giftMa
           {kind !== 'other' && t(kind === 'success' ? 'pipEventSuccess' : 'pipEventFailure')}{kind !== 'other' && condition ? ' ' : ''}
           {condition && <span className="font-normal text-[var(--text-secondary)]">{condition}</span>}
         </span>}
-        {summary.lines.map(line => <Effect key={line} line={line} t={t} />)}
+        {summary.lines.map(line => <Effect key={line} line={line} t={t} ts={ts} />)}
         {!summary.lines.length && !summary.gifts.length && !choice.next_event_id &&
           <span className="text-[var(--text-tertiary)]">{t('pipEventNoKnownOutcome')}</span>}
       </div>
