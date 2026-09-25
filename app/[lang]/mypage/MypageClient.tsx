@@ -21,7 +21,7 @@ import { FollowList, ProfilePrivacy } from "@/components/community/Follows";
 import Skeleton from "@/components/ui/Skeleton";
 import { getCommunityCopy } from "@/lib/community/copy";
 import { achievementProgress } from "@/lib/community/achievements";
-import { readEggs, type EasterEgg } from "@/lib/community/easter-eggs";
+import { EASTER_EGGS, EGGS_KEY, readEggs, type EasterEgg } from "@/lib/community/easter-eggs";
 import BackLink from "@/components/navigation/BackLink";
 import DanteLogo from "@/components/brand/DanteLogo";
 import { ArrowLeft } from "lucide-react";
@@ -78,13 +78,23 @@ export default function MypageClient() {
   const [eggs, setEggs] = useState<EasterEgg[]>([]);
   // A workspace like assist and support: no site navbar or footer; the rail's back link leads out.
   useHtmlFlag("with-mypage");
-  useEffect(() => { setEggs(readEggs(localStorage)); }, []);
   useEffect(() => {
     const next = search.get("tab") || localStorage.getItem("mypage-tab");
     setActiveTab(next && MYPAGE_TABS.includes(next as MypageTab) ? (next as MypageTab) : "badges");
   }, [search]);
   const { data, error, isLoading, mutate } = useSWR<ProfileData>(status === "authenticated" ? "/api/profile" : null, fetcher);
   const community = useSWR<CommunityProfile>(status === "authenticated" ? "/api/community/me" : null, fetcher);
+  // Eggs found in this browser and on the account are merged both ways, so every browser shows the same badges.
+  const accountEggs = community.data?.eggs;
+  useEffect(() => {
+    if (!accountEggs) return;
+    const local = readEggs(localStorage);
+    const missing = local.filter((egg) => !accountEggs.includes(egg));
+    if (missing.length) void fetch("/api/profile/eggs", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ eggs: missing }) }).catch(() => {});
+    const merged = EASTER_EGGS.filter((egg) => local.includes(egg) || accountEggs.includes(egg));
+    try { localStorage.setItem(EGGS_KEY, JSON.stringify(merged)); } catch { /* private mode */ }
+    setEggs(merged);
+  }, [accountEggs]);
   // Anonymous posts written in this browser before signing in can be moved to the account.
   const guest = useGuestPosts(status === "authenticated");
   const [claiming, setClaiming] = useState(false);

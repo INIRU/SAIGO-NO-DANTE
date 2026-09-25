@@ -15,7 +15,7 @@ export async function loadCommunityProfile(
   if (profileResult.error) throw new Error("Profile lookup failed");
   const row = profileResult.data;
   if (!row || (!owner && (!row.public_profile || row.suspended))) return null;
-  const [summary, decks] = await Promise.all([
+  const [summary, decks, eggs] = await Promise.all([
     db.schema("limbus").rpc("community_summary", { p_user_id: id }),
     db
       .schema("limbus")
@@ -24,8 +24,9 @@ export async function loadCommunityProfile(
       .eq("user_id", id)
       .order("created_at", { ascending: false })
       .limit(12),
+    db.schema("limbus").from("profile_easter_eggs").select("egg").eq("user_id", id),
   ]);
-  if (summary.error || decks.error) throw new Error("Community lookup failed");
+  if (summary.error || decks.error || eggs.error) throw new Error("Community lookup failed");
   // Never spread the database profile: IPs, device signals, email and account fields stay private.
   return {
     profile: {
@@ -38,5 +39,6 @@ export async function loadCommunityProfile(
     },
     stats: summary.data,
     decks: (decks.data ?? []) as unknown as CommunityProfile["decks"],
+    eggs: (eggs.data ?? []).map((egg) => egg.egg as CommunityProfile["eggs"][number]),
   };
 }
