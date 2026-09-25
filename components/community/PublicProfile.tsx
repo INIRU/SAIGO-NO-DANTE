@@ -59,7 +59,7 @@ export default function PublicProfile({ id }: { id: string }) {
             <div className={styles.head}>
               <h2 className={styles.title}>{t.badges}<span className={styles.titleCount}>{earned.length}</span></h2>
             </div>
-            <AchievementGrid items={earned} />
+            <AchievementGrid items={earned} bare />
           </section>
         )}
         <section className={styles.section}>
