@@ -51,11 +51,11 @@ export default function RunSetup({ state, dispatch, gifts, giftMap, recognition,
   const plan = state.sourcePlanSnapshot
 
   return (
-    <div className="grid min-w-0 gap-x-10 gap-y-8 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
+    <div className="grid min-w-0 gap-x-10 gap-y-8 lg:min-h-0 lg:flex-1 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
       {/* The capture button only exists once the run starts, so the game waits before Enter until it is connected. */}
-      <div className="min-w-0"><RunCaptureGuide /></div>
+      <div className="min-w-0 lg:min-h-0"><RunCaptureGuide /></div>
 
-      <section aria-labelledby="run-setup" className="min-w-0 self-start border-t-2 border-[var(--gold)] bg-[var(--bg-panel)] p-4 sm:p-6">
+      <section aria-labelledby="run-setup" className="min-w-0 self-start border-t-2 border-[var(--gold)] bg-[var(--bg-panel)] p-4 sm:p-6 lg:max-h-full lg:overflow-y-auto lg:overscroll-contain">
         <h2 id="run-setup" className="font-[family-name:var(--font-heading)] text-xl text-[var(--gold-light)]">{t('setupTitle')}</h2>
 
         <div className="mt-5 space-y-6">

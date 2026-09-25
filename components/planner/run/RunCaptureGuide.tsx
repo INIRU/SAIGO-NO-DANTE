@@ -19,9 +19,9 @@ export default function RunCaptureGuide() {
   const steps = [t('captureGuideStep1'), t('captureGuideStep2', { start: t('start') }), t('captureGuideStep3', { connect: t('screenPreview') }),
     t('captureGuideStep4')]
   return <section aria-labelledby="run-capture-guide" data-capture-guide
-    className="@container min-w-0">
+    className="@container min-w-0 lg:flex lg:h-full lg:flex-col">
     <h2 id="run-capture-guide" className="mb-3 font-[family-name:var(--font-heading)] text-lg text-[var(--gold-light)]">{t('captureGuideTitle')}</h2>
-    <div className="grid min-w-0 gap-4 @[64rem]:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)] @[64rem]:items-start">
+    <div className="grid min-w-0 gap-4 lg:min-h-0 lg:flex-1 lg:grid-rows-[auto_minmax(0,1fr)] @[64rem]:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)] @[64rem]:items-start">
       <ol className="min-w-0 space-y-2">
         {steps.map((step, index) => {
           const here = index === 1
@@ -36,8 +36,8 @@ export default function RunCaptureGuide() {
           </li>
         })}
       </ol>
-      <figure className="min-w-0">
-        <div className="relative w-full overflow-hidden rounded-md border border-[var(--border)] bg-[var(--bg-deep)]" style={{ aspectRatio: '1919 / 1079' }}>
+      <figure className="min-w-0 lg:min-h-0 lg:[container-type:size]">
+        <div className="relative w-full overflow-hidden rounded-md border border-[var(--border)] bg-[var(--bg-deep)] lg:w-[min(100cqw,calc(100cqh*1919/1079))]" style={{ aspectRatio: '1919 / 1079' }}>
           <Image src="/assets/guides/mirror-dungeon-pre-entry.webp" alt={t('captureGuideImageAlt')} fill loading="eager" sizes="(min-width: 1024px) 52rem, 100vw"
             className="object-contain" />
           <ul className="absolute inset-0">

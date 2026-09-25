@@ -216,8 +216,8 @@ export default function RunClient({ themes, gifts, recipes, identities, sinners,
   const running = !loadingPlan && state.phase === 'playing'
   useHtmlFlag('with-assist-run')
   useHtmlFlag('with-assist-running', running)
-  return <div data-assist-run data-assist-running={running || undefined} className={`bg-[var(--bg-deep)] text-[var(--text-primary)] ${running ? 'flex h-dvh flex-col overflow-hidden' : 'min-h-screen'}`}>
-    <div className={`mx-auto w-full max-w-[90rem] px-4 sm:px-6 lg:px-8 ${running ? 'flex min-h-0 flex-1 flex-col py-2 sm:py-3' : 'pb-12 pt-4 sm:pt-6'}`}>
+  return <div data-assist-run data-assist-running={running || undefined} className={`bg-[var(--bg-deep)] text-[var(--text-primary)] ${running ? 'flex h-dvh flex-col overflow-hidden' : 'min-h-dvh lg:flex lg:h-dvh lg:flex-col lg:overflow-hidden'}`}>
+    <div className={`mx-auto w-full max-w-[90rem] px-4 sm:px-6 lg:px-8 ${running ? 'flex min-h-0 flex-1 flex-col py-2 sm:py-3' : 'pb-12 pt-4 sm:pt-6 lg:flex lg:min-h-0 lg:flex-1 lg:flex-col lg:pb-6'}`}>
       <header className={`flex shrink-0 items-center justify-between gap-x-3 gap-y-2 border-b border-[var(--border)] max-sm:flex-nowrap sm:flex-wrap ${running ? 'mb-3 pb-2' : 'mb-4 pb-3'}`}>
         <div className="flex min-w-0 items-center gap-3">
           <BackLink href="/" aria-label={t('backToPlanner')} title={t('backToPlanner')} className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--gold-light)] focus-visible:outline-2 focus-visible:outline-[var(--gold-light)]"><ArrowLeft size={18} /></BackLink>
