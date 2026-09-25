@@ -37,6 +37,11 @@ const recolor = arg('recolor', null)
 const sceneMiss = flag('scene-miss')
 /** --detect gifts[,events,themes]: only these detection kinds are on (default: all). */
 const detect = arg('detect', null)
+/**
+ * --throttle: the page's timers run at most once a second, as Chrome does for a tab hidden or covered by the game window
+ * (the real way Assist runs). The default launch disables that throttling, so plain replays measure a foreground tab.
+ */
+const throttle = flag('throttle')
 const RECOLOR_KEEP = [
   ...[[544, 308], [337, 515], [751, 515], [554, 316], [357, 388], [746, 388], [357, 543], [746, 543]].map(([x, y]) => [x - 50, y - 50, 100, 100]),
   ...[373, 697, 1021].map(x => [x - 90, 368, 180, 180]), ...[296, 490, 686, 880, 1074].map(x => [x - 50, 414, 100, 100]),
@@ -74,6 +79,11 @@ function pageInit(cfg) {
   const push = (kind, data) => R.log.push({ kind, at: Date.now(), vt: vt(), ...data })
   // Wall clock -> video time samples, for capture timestamps (Date.now() in the hook).
   setInterval(() => { if (R.video && !R.video.paused) R.clock.push([Date.now(), R.video.currentTime]) }, 50)
+  if (cfg.throttle) {
+    const interval = window.setInterval.bind(window), timeout = window.setTimeout.bind(window)
+    window.setInterval = (fn, delay, ...rest) => interval(fn, Math.max(Number(delay) || 0, 1000), ...rest)
+    window.setTimeout = (fn, delay, ...rest) => timeout(fn, Math.max(Number(delay) || 0, 1000), ...rest)
+  }
   navigator.mediaDevices.getDisplayMedia = async () => {
     const video = document.createElement('video')
     video.crossOrigin = 'anonymous'; video.muted = true; video.playsInline = true; video.preload = 'auto'; video.src = cfg.videoUrl
@@ -399,7 +409,7 @@ async function main() {
     const { server, url } = await serveFile(truth.video)
     const warmupStart = Math.max(0, truth.start - Number(arg('warmup', 4)))
     const { page, hmr } = await openPage(browser, { runState: runState(truth.seed, truth.floor ?? 1), mode, videoUrl: url, start: truth.start, warmupStart, mask,
-      recolor, recolorKeep: RECOLOR_KEEP, sceneMiss, detect })
+      recolor, recolorKeep: RECOLOR_KEEP, sceneMiss, detect, throttle })
     const button = page.locator('header button:has(svg.lucide-monitor-up)')
     await button.waitFor({ timeout: 180000 })
     hmr.frozen = true
@@ -430,7 +440,7 @@ async function main() {
     // Capture/observation timestamps to video time.
     for (const row of record.log) for (const key of ['capturedAt', 'observedAt', 'lastSeenAt', 'closedAt']) if (row[key] !== undefined) row[key + 'Vt'] = toVideoTime(record.clock, row[key])
     const evaluation = evaluate(truth, record)
-    const result = { case: truth.id, mode, mask, recolor, sceneMiss, detect, headless: !headed, video: path.basename(truth.video), start: truth.start, end: truth.end, readyMs, playback: record.playback,
+    const result = { case: truth.id, mode, mask, recolor, sceneMiss, detect, throttle, headless: !headed, video: path.basename(truth.video), start: truth.start, end: truth.end, readyMs, playback: record.playback,
       appFiles: appFileHashes(), stopped: record.log.filter(row => row.kind === 'captureState' && row.at >= record.startedAt && row.state !== 'running').map(row => ({ vt: row.vt, state: row.state })),
       ocrEngines: record.ocrEngines, evaluation, events: record.log.filter(row => row.at >= record.startedAt - 500), worker: record.worker.filter(row => row.at >= record.startedAt - 500 && row.type !== 'infer'),
       raw: { initialInventory: record.initialInventory, startedAt: record.startedAt, log: record.log.filter(row => row.kind !== 'toast') } }

@@ -173,6 +173,16 @@ function validMatches(value: unknown): value is VisualMatch[] {
     typeof match.score === 'number' && Number.isFinite(match.score) && match.score >= -1 && match.score <= 1)
 }
 
+type OpenFrame = { source: HTMLVideoElement | VideoFrame; width: number; height: number; release: () => void }
+type FrameTask = { ms: number; last: number; work: () => void; live: () => boolean }
+/** Runs a timer's work unless it ran within its interval (timer ticks and frame arrivals share one clock). */
+export function runFrameTask(task: FrameTask, now = performance.now()): boolean {
+  if (!task.live() || now - task.last < task.ms - 5) return false
+  task.last = now
+  task.work()
+  return true
+}
+
 export function useAssistCapture({ giftReferences = [], eventReferences = [], ocrCatalog, themeCatalog, language = 'ko', floor = null,
   mode = 'balanced', detection = DEFAULT_DETECTION, resolvePopup }: {
   giftReferences?: VisualReference[]
@@ -288,6 +298,36 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
   const popupTimer = useRef<ReturnType<typeof setInterval> | null>(null)
   const exploreTimer = useRef<ReturnType<typeof setInterval> | null>(null)
   const statusTimer = useRef<ReturnType<typeof setInterval> | null>(null)
+  // Newest frame from the track reader. A hidden or covered tab (the game in front) runs timers about once a second and may
+  // stop painting <video>; frames from the track keep arriving, so reads take them from here and the reader drives the timers' work.
+  const latestFrame = useRef<VideoFrame | null>(null)
+  const frameTasks = useRef<FrameTask[]>([])
+  /** A copy of the newest captured frame (the track's, or the video element's before the reader starts); release it after use. */
+  const openFrame = (): OpenFrame | null => {
+    const frame = latestFrame.current
+    if (frame) {
+      const copy = frame.clone()
+      return { source: copy, width: copy.displayWidth, height: copy.displayHeight, release: () => copy.close() }
+    }
+    const element = video.current
+    if (!element || element.readyState < HTMLMediaElement.HAVE_CURRENT_DATA || !element.videoWidth) return null
+    return { source: element, width: element.videoWidth, height: element.videoHeight, release: () => {} }
+  }
+  const hasFrame = () => latestFrame.current !== null ||
+    (video.current !== null && video.current.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA)
+  const grabBitmap = async () => {
+    const frame = openFrame()
+    if (!frame) throw new Error('No captured frame')
+    try { return await createImageBitmap(frame.source) } finally { frame.release() }
+  }
+  /** setInterval whose work the frame reader also runs; either caller runs it at most once per \`ms\`, and it stops with its timer. */
+  const every = (slot: { current: ReturnType<typeof setInterval> | null }, ms: number, work: () => void) => {
+    const task: FrameTask = { ms, last: 0, work, live: () => false }
+    const id = setInterval(() => runFrameTask(task), ms)
+    slot.current = id
+    task.live = () => slot.current === id
+    frameTasks.current.push(task)
+  }
   const exploreCapture = useRef<{ at: number; requestId: number } | null>(null)
   const lastExploration = useRef<ExplorationObservation | null>(null)
   const lastFloorRead = useRef<{ floor: number; at: number } | null>(null)
@@ -334,6 +374,9 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
     fusionRequest.current = null
     if (wheelTimer.current) clearInterval(wheelTimer.current)
     wheelTimer.current = null
+    frameTasks.current = []
+    latestFrame.current?.close()
+    latestFrame.current = null
     for (const item of wheelFrames.current) item.frame.close()
     wheelFrames.current = []
     wheelRequest.current = null
@@ -971,8 +1014,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
           // With one shared worker, queued popups go first, but only for one extra interval.
           const shared = pool.popup === pool.screen
           if (!alive(lane) || lane.inFlight || !lane.ready || now - recognizedAt < interval ||
-            (shared && popupQueue.current.length && now - recognizedAt < interval * 2) || !video.current ||
-            video.current.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) return
+            (shared && popupQueue.current.length && now - recognizedAt < interval * 2) || !hasFrame()) return
           recognizedAt = now
           lane.inFlight = true
           const requestId = ++ocrRequestId.current
@@ -980,7 +1022,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
           try {
             // Capture time is taken before the copy, so every read of this frame is dated by when it was on screen.
             const at = Date.now()
-            const frame = await createImageBitmap(video.current)
+            const frame = await grabBitmap()
             if (!alive(lane)) { frame.close(); return }
             ocrCapture.current = { at, floor: currentFloor.current, width: frame.width, height: frame.height }
             // The fusion screen belongs to the shop and may be classified either way; one copy at a time, closed on the next.
@@ -1007,13 +1049,13 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
           // With one shared worker, popups go first, but a steady stream of detections must not starve the banner.
           if (!alive(lane) || !detectionRef.current.themes || language !== 'ko' || !themeReferences.current?.length || lane.inFlight || !lane.ready || now - exploredAt < delay ||
             (shared && popupQueue.current.length && delay >= profile.exploreMs.idle && now - exploredAt < delay * 2) ||
-            !video.current || video.current.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) return
+            !hasFrame()) return
           exploredAt = now
           lane.inFlight = true
           const requestId = ++ocrRequestId.current
           lane.activeRequest = requestId
           try {
-            const frame = await createImageBitmap(video.current)
+            const frame = await grabBitmap()
             if (!alive(lane)) { frame.close(); return }
             exploreCapture.current = { at: Date.now(), requestId }
             lane.worker.postMessage({ type: 'explore', requestId, frame }, [frame])
@@ -1045,8 +1087,8 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
               pool.started = true
               if (ocrTimer.current) clearInterval(ocrTimer.current)
               if (exploreTimer.current) clearInterval(exploreTimer.current)
-              ocrTimer.current = setInterval(() => { void recognize() }, 250)
-              exploreTimer.current = setInterval(() => { void explore() }, 300)
+              every(ocrTimer, 250, () => { void recognize() })
+              every(exploreTimer, 300, () => { void explore() })
               void recognize()
             }
           } else if (result.type === 'result' && mine && typeof result.text === 'string' && Array.isArray(result.words)) {
@@ -1254,7 +1296,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
       let inferredAt = 0
       const readFusionSlots = async () => {
         const wanted = fusionWanted.current
-        if (!wanted || inFlight.current || !video.current || video.current.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) return false
+        if (!wanted || inFlight.current || !hasFrame()) return false
         if (Date.now() - wanted.at > 6000) {
           finishFusionDialog()
           return false
@@ -1286,7 +1328,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
             return true
           }
           const at = Date.now()
-          const frame = await createImageBitmap(video.current)
+          const frame = await grabBitmap()
           if (run !== generation.current || !worker.current) { frame.close(); return true }
           const requestId = ++ocrRequestId.current
           fusionRequest.current = { requestId, at, count: wanted.count, token: fusionDialog.current?.token ?? '', view: 'dialog' }
@@ -1301,16 +1343,16 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
         const pruned = wheelFrames.current.filter(item => now - item.lastAt <= WHEEL_KEEP_MS)
         for (const item of wheelFrames.current) if (!pruned.includes(item)) item.frame.close()
         wheelFrames.current = pruned
-        const source = video.current
-        if (wheelBusy || !onFusionScreen(latestLabel.current, fusionTitleAt.current, now) || !source ||
-          source.readyState < HTMLMediaElement.HAVE_CURRENT_DATA || !source.videoWidth) return
+        if (wheelBusy || !onFusionScreen(latestLabel.current, fusionTitleAt.current, now)) return
+        const source = openFrame()
+        if (!source) return
         wheelBusy = true
         try {
-          const frameSize = { width: source.videoWidth, height: source.videoHeight }
+          const frameSize = { width: source.width, height: source.height }
           const anchors = wheelAnchors.current?.anchors
           const crop = fusionWheelCrop(frameSize.width, frameSize.height, anchors)
           const scale = Math.min(1, WHEEL_CROP_WIDTH / crop.width)
-          const frame = await createImageBitmap(source, crop.x, crop.y, crop.width, crop.height,
+          const frame = await createImageBitmap(source.source, crop.x, crop.y, crop.width, crop.height,
             scale < 1 ? { resizeWidth: Math.round(crop.width * scale), resizeHeight: Math.round(crop.height * scale), resizeQuality: 'high' } : undefined)
           if (run !== generation.current) { frame.close(); return }
           const signature = wheelSignature(frame)
@@ -1324,7 +1366,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
           }
           wheelFrames.current.push({ frame, at: now, lastAt: now, signature, band, origin: { x: crop.x, y: crop.y }, scale, frameSize, anchors, reads: {} })
           while (wheelFrames.current.length > WHEEL_FRAMES) wheelFrames.current.shift()!.frame.close()
-        } catch { /* A missed crop only thins the wheel history. */ } finally { wheelBusy = false }
+        } catch { /* A missed crop only thins the wheel history. */ } finally { source.release(); wheelBusy = false }
       }
       /** Reads one wheel state in one layout into its cache (a copy of its frame goes to the worker; it may be read again). */
       const readWheelState = async (state: WheelFrame, capacity: number) => {
@@ -1367,12 +1409,11 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
         if (gifts && Date.now() - inferredAt < profileRef.current.sceneIntervalMs - 20 && await preReadWheel()) return
         // Popup icons go first, but scene inference still runs at least every 3s.
         if (inFlight.current || Date.now() - inferredAt < profileRef.current.sceneIntervalMs - 20 ||
-          (popupVisionQueue.current.length && Date.now() - inferredAt < 3000) || !video.current ||
-          video.current.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) return
+          (popupVisionQueue.current.length && Date.now() - inferredAt < 3000) || !hasFrame()) return
         inferredAt = Date.now()
         inFlight.current = true
         try {
-          const frame = await createImageBitmap(video.current)
+          const frame = await grabBitmap()
           if (run !== generation.current || !worker.current) {
             frame.close()
             return
@@ -1391,8 +1432,8 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
           setInference({ provider: result.provider === 'webgpu' ? 'webgpu' : 'wasm',
             adapter: typeof result.adapter === 'string' ? result.adapter.slice(0, 60) : '' })
           setStatus('running')
-          timer.current = setInterval(() => { void capture() }, 250)
-          wheelTimer.current = setInterval(() => { void sampleWheel() }, 150)
+          every(timer, 250, () => { void capture() })
+          every(wheelTimer, 150, () => { void sampleWheel() })
           // Polled at a low rate from the real queues; React only re-renders when a count changes.
           statusTimer.current = setInterval(() => {
             if (run !== generation.current) return
@@ -1415,14 +1456,20 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
                     const { value, done } = await reader.read()
                     if (done) break
                     try {
+                      latestFrame.current?.close()
+                      latestFrame.current = value.clone()
                       const now = performance.now()
                       if (now - lastSample >= 33) { lastSample = now; await samplePopup(value) }
+                      frameTasks.current = frameTasks.current.filter(task => task.live())
+                      for (const task of frameTasks.current) runFrameTask(task)
                     } finally { value.close() }
                   }
                 } catch { /* A failed frame reader falls back to the video element. */ }
                 finally {
                   if (popupReader.current === reader) {
                     popupReader.current = null
+                    latestFrame.current?.close()
+                    latestFrame.current = null
                     popupTimer.current = setInterval(() => { if (video.current) void samplePopup(video.current) }, 50)
                   }
                   try { reader.releaseLock() } catch { /* Cancellation may still be settling. */ }
