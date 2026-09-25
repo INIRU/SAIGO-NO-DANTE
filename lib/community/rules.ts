@@ -23,8 +23,11 @@ export type CommunityProfile = {
   stats: Record<ActivityKind, number> & { points: number };
   /** The latest public decks, in the deck board's card shape. */
   decks: DeckSummary[];
+  /** The latest plans, in the plan board's card shape. */
+  plans: PlanSummary[];
   /** Easter eggs found on the account (any browser). */
   eggs: EasterEgg[];
 };
 import type { DeckSummary } from "@/components/decks/DeckCard";
+import type { PlanSummary } from "@/components/planner/PlanCard";
 import type { EasterEgg } from "./easter-eggs";

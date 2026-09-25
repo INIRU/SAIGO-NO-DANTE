@@ -2,10 +2,11 @@
 import { useMemo } from "react";
 import useSWR from "swr";
 import { useLocale } from "next-intl";
-import { Layers } from "lucide-react";
+import { Layers, Map as MapIcon } from "lucide-react";
 import ProfileRail from "./ProfileRail";
 import AchievementGrid from "./AchievementGrid";
 import DeckCard from "@/components/decks/DeckCard";
+import PlanCard from "@/components/planner/PlanCard";
 import Skeleton from "@/components/ui/Skeleton";
 import { getCommunityCopy } from "@/lib/community/copy";
 import { achievementProgress } from "@/lib/community/achievements";
@@ -20,7 +21,7 @@ async function fetcher(url: string): Promise<CommunityProfile> {
   return r.json();
 }
 
-/** Someone's profile: the same rail as my page, then the badges they earned and their latest decks. */
+/** Someone's profile: the same rail as my page, then the badges they earned and their latest decks and plans. */
 export default function PublicProfile({ id }: { id: string }) {
   const locale = useLocale(),
     t = getCommunityCopy(locale);
@@ -70,6 +71,16 @@ export default function PublicProfile({ id }: { id: string }) {
             <ul className={styles.list}>{data.decks.map((deck) => <li key={deck.id} className={styles.item}><DeckCard deck={deck} /></li>)}</ul>
           ) : (
             <div className={styles.empty}><Layers aria-hidden="true" /><p>{t.noDecks}</p></div>
+          )}
+        </section>
+        <section className={styles.section}>
+          <div className={styles.head}>
+            <h2 className={styles.title}>{t.recentPlans}<span className={styles.titleCount}>{data.plans.length}</span></h2>
+          </div>
+          {data.plans.length ? (
+            <ul className={styles.list}>{data.plans.map((plan) => <li key={plan.id} className={styles.item}><PlanCard plan={plan} /></li>)}</ul>
+          ) : (
+            <div className={styles.empty}><MapIcon aria-hidden="true" /><p>{t.noPlans}</p></div>
           )}
         </section>
       </div>
