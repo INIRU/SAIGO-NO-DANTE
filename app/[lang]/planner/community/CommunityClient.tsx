@@ -1,6 +1,7 @@
 'use client'
 
 import BoardSkeleton from '@/components/discovery/BoardSkeleton'
+import { useLoadMoreSentinel } from '@/hooks/useLoadMoreSentinel'
 import DiscoveryShelf from '@/components/discovery/DiscoveryShelf'
 import BoardBrowseLock from '@/components/discovery/BoardBrowseLock'
 
@@ -341,7 +342,6 @@ export default function CommunityClient({ initialPlans, initialTotal }: Communit
   const [debouncedSearch, setDebouncedSearch] = useState(search)
   const offsetRef = useRef(initialPlans?.length ?? 0)
   const scrollRootRef = useRef<HTMLDivElement>(null)
-  const sentinelRef = useRef<HTMLDivElement>(null)
   const initialDataKey = useRef<string | null>(initialPlans !== undefined ? (() => {
     const params = new URLSearchParams()
     params.set('sort', 'latest')
@@ -626,16 +626,7 @@ export default function CommunityClient({ initialPlans, initialTotal }: Communit
     setLoadingMore(false)
   }, [serverQueryKey])
 
-  useEffect(() => {
-    const el = sentinelRef.current
-    if (!el) return
-    const observer = new IntersectionObserver(
-      entries => { if (entries[0]?.isIntersecting) loadMore() },
-      { root: scrollRootRef.current, rootMargin: '300px' },
-    )
-    observer.observe(el)
-    return () => observer.disconnect()
-  }, [loadMore, serverQueryKey])
+  const sentinelRef = useLoadMoreSentinel(loadMore, scrollRootRef, serverQueryKey)
 
   useEffect(() => {
     collectionDataRef.current = collectionData

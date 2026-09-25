@@ -15,7 +15,7 @@ interface DeckGridProps {
   hasMore: boolean
   loadingMore: boolean
   hasAnyFilter: boolean
-  sentinelRef: React.RefObject<HTMLDivElement | null>
+  sentinelRef: React.Ref<HTMLDivElement>
   onTagClick: (tag: string) => void
 }
 
