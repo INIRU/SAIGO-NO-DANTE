@@ -36,13 +36,13 @@ import { deriveFinalGifts, finalEnhanceEdit, type FinalGift } from '@/lib/planne
 import { isAllowedFloorDifficulty, isFloorDifficulty } from '@/lib/planner/floor-difficulty'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
 import {
-  useNoteAutocomplete,
-  NoteAutocompleteDropdown,
   buildKeywordPool,
   buildEgoGiftPool,
   type AutocompleteSuggestion,
 } from '@/components/notes/NoteAutocomplete'
 import { NoteRenderer, type NoteEgoGiftEntry } from '@/components/decks/NoteChips'
+import NoteDocumentEditor from '@/components/notes/NoteDocumentEditor'
+import type { NoteFormationMember } from '@/lib/notes/assets'
 import { getLocalizedName } from '@/lib/i18n/localize'
 import type { SupportedLang } from '@/lib/i18n/types'
 import { normalizeThemeKeyword } from '@/lib/constants/keywords'
@@ -100,70 +100,35 @@ function normalizeFloorDifficulty(entryDifficulty: unknown, floor: number): Floo
   return 'extreme'
 }
 
+/** A floor's memo: the same block editor as the plan description and deck notes, with its own preview toggle. */
 function FloorMemo({
   value,
   onChange,
   pool,
+  formation,
   allowedKeywords,
   egoGiftLookup,
 }: {
   value: string
   onChange: (v: string) => void
   pool: AutocompleteSuggestion[]
+  formation: NoteFormationMember[]
   allowedKeywords?: Set<string>
   egoGiftLookup?: Record<string, NoteEgoGiftEntry>
 }) {
-  const t = useTranslations('planner.floorTab')
-  const ref = useRef<HTMLTextAreaElement>(null)
-  const ac = useNoteAutocomplete({
-    text: value,
-    setText: onChange,
-    textareaRef: ref,
-    pool,
-  })
-
+  const [preview, setPreview] = useState(false)
   return (
-    <div className="relative">
-      <textarea
-        ref={ref}
-        value={value}
-        onChange={e => {
-          onChange(e.target.value)
-          ac.onTextChange(e)
-        }}
-        onSelect={ac.onTextSelect}
-        onKeyDown={ac.handleKeyDown}
-        onCompositionStart={ac.onCompositionStart}
-        onCompositionEnd={ac.onCompositionEnd}
-        placeholder={t('memoPlaceholder')}
-        rows={3}
-        // field-sizing grows the box with its text; browsers without it keep rows + manual resize.
-        className="max-h-[24rem] min-h-[5rem] w-full resize-y rounded-md border bg-[#0d0b08] px-3 py-2 text-[0.9375rem] leading-relaxed text-neutral-200 outline-none transition-colors [field-sizing:content] focus:border-[var(--gold)]"
-        style={{
-          borderColor: '#2e2417',
-          fontFamily: 'inherit',
-        }}
-      />
-      <NoteAutocompleteDropdown
-        suggestions={ac.suggestions}
-        selectedIdx={ac.selectedIdx}
-        onSelect={ac.select}
-        onHover={ac.setSelectedIdx}
-      />
-      {value.trim() && (
-        <div
-          className="mt-2 rounded-md border bg-[#0d0b08] px-3 py-2"
-          style={{ borderColor: '#2e2417' }}
-        >
-          <div
-            className="mb-1 text-sm"
-            style={{ color: '#9c8b73' }}
-          >
-            {t('memoPreview')}
-          </div>
-          <NoteRenderer text={value} allowedKeywords={allowedKeywords} egoGiftLookup={egoGiftLookup} />
-        </div>
-      )}
+    // 층 메모는 짧다: 편집기 기본 높이(24rem)를 줄인다
+    <div className="[&_.note-document-content]:!min-h-[7rem] [&_.note-document-content]:!px-5 [&_.note-document-content]:!py-4 [&_.note-editor-preview]:!min-h-[7rem] [&_.note-editor-preview]:!p-4">
+    <NoteDocumentEditor
+      formation={formation}
+      pool={pool}
+      value={value}
+      onChange={onChange}
+      preview={preview}
+      onPreviewChange={setPreview}
+      previewContent={<NoteRenderer text={value} allowedKeywords={allowedKeywords} egoGiftLookup={egoGiftLookup} />}
+    />
     </div>
   )
 }
@@ -180,6 +145,12 @@ interface FloorTabProps {
 export default function FloorTab({ state, dispatch, themes, gifts, recipes, giftMap }: FloorTabProps) {
   const locale = useLocale() as SupportedLang
   const t = useTranslations('planner.floorTab')
+  const sinnerT = useTranslations('sinner')
+  // 메모 편집기의 스킬·인격 넣기용 편성(편성 순서대로)
+  const noteFormation = useMemo<NoteFormationMember[]>(() => [...state.identitySlots]
+    .filter(slot => slot.slot_order < 99)
+    .sort((a, b) => a.slot_order - b.slot_order)
+    .map(slot => ({ identityId: slot.identity_id, sinnerId: slot.sinner_id, name: sinnerT(slot.sinner_id as Parameters<typeof sinnerT>[0]) })), [sinnerT, state.identitySlots])
   const shouldReduceMotion = useReducedMotion()
   const [activeFloor, setActiveFloor] = useState<number | null>(null)
   const [themeModalOpen, setThemeModalOpen] = useState(false)
@@ -839,6 +810,7 @@ export default function FloorTab({ state, dispatch, themes, gifts, recipes, gift
             value={entry.memo}
             onChange={memo => dispatch({ type: 'SET_FLOOR_MEMO', floor: entry.floor, memo })}
             pool={acPool}
+            formation={noteFormation}
             allowedKeywords={allowedKeywords}
             egoGiftLookup={egoGiftLookup}
           />

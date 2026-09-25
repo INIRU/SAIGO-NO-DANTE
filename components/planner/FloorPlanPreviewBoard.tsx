@@ -1,5 +1,7 @@
 'use client'
 
+import FloorMemoView from './FloorMemoView'
+
 import { isConfiguredFloor } from '@/lib/planner/stripPlanForList'
 
 import './floor-preview.css'
@@ -242,18 +244,9 @@ export default function FloorPlanPreviewBoard({
                     </div>
 
                     {memoPreview ? (
-                      <details className="group min-w-0 rounded-md bg-[#0d0b0855] px-3 py-2">
-                        <summary className="min-h-8 cursor-pointer list-none text-[0.9375rem] font-medium leading-snug text-[#9d8d72] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#c8900a] [&::-webkit-details-marker]:hidden">
-                          <span className="group-open:hidden">
-                            <span className="line-clamp-2">{memoPreview}</span>
-                            <span className="mt-1 block font-semibold text-[#c8900a]">{tFloor('memoExpand')}</span>
-                          </span>
-                          <span className="hidden font-semibold text-[#c8900a] group-open:inline">{tFloor('memoCollapse')}</span>
-                        </summary>
-                        <div className="mt-2 whitespace-pre-wrap text-[0.9375rem] leading-relaxed text-[#cfc2ad]">
-                          {renderMemo ? renderMemo(entry.memo.trim()) : entry.memo.trim()}
-                        </div>
-                      </details>
+                      <FloorMemoView moreLabel={tFloor('memoExpand')} lessLabel={tFloor('memoCollapse')}>
+                        {renderMemo ? renderMemo(entry.memo.trim()) : entry.memo.trim()}
+                      </FloorMemoView>
                     ) : null}
                   </div>
                   <div className="floor-preview-guidance"><FloorGuidance entry={entry} entries={floorPlan} inventory={inventory} recipes={recipes} gifts={giftMap} onGiftClick={onGiftClick} events={events} onEventClick={onEventClick} onEventPrefetch={onEventPrefetch} /></div>
