@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server'
-import { requireActiveUser } from '@/lib/auth'
+import { requireUser } from '@/lib/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { findOrCreateSupabaseUser } from '@/lib/supabase/findOrCreateUser'
 import { INQUIRY_FIELDS, inquirySchema } from '@/lib/support'
 import { checkRequestRateLimit, rateLimitResponse } from '@/lib/rate-limit'
 export async function GET() {
-  const auth = await requireActiveUser()
+  const auth = await requireUser()
   if (auth.error) return auth.response
   const db = createAdminClient()
   const userId = await findOrCreateSupabaseUser(db, auth.session.user!.email!)
@@ -24,7 +24,7 @@ export async function GET() {
     : NextResponse.json(data, { headers: { 'Cache-Control': 'private, no-store' } })
 }
 export async function POST(request: Request) {
-  const auth = await requireActiveUser()
+  const auth = await requireUser()
   if (auth.error) return auth.response
   const limit = checkRequestRateLimit(request, {
     bucket: 'create',

@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server'
-import { requireActiveUser } from '@/lib/auth'
+import { requireUser } from '@/lib/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
 /** Navbar dot: one RPC, no account creation. */
 export async function GET() {
-  const auth = await requireActiveUser()
+  const auth = await requireUser()
   if (auth.error) return auth.response
   const { data, error } = await createAdminClient()
     .schema('limbus')

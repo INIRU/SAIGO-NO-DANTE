@@ -153,7 +153,7 @@ export default function LegalVersionModal() {
   if (!shouldShow || !mounted) return null
 
   return (
-    <BaseModal open onClose={() => {}} title={copy.modalTitle} maxWidth="28rem" blur={false}>
+    <BaseModal open onClose={() => {}} title={copy.modalTitle} maxWidth="28rem" blur={false} initialFocus="dialog">
       <section className="rounded-xl border border-[rgba(200,144,10,0.22)] bg-[#17120c] p-6 shadow-[0_1.5rem_3rem_rgba(0,0,0,0.55)]">
         <h2 className="text-[1.25rem] font-bold leading-snug text-[#f0e6d2]">{copy.heading}</h2>
         <p className="mt-2 text-[0.9375rem] leading-relaxed text-[#a89a84]">{copy.description}</p>

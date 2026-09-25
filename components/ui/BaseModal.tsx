@@ -29,6 +29,8 @@ interface BaseModalProps {
   padding?: string
   /** Below 640px, dock the panel to the bottom edge like a sheet. */
   sheet?: boolean
+  /** 'dialog' focuses the dialog itself on open instead of its first control (notices, where a ring on the first button reads as a selection). */
+  initialFocus?: 'first' | 'dialog'
 }
 
 export default function BaseModal({
@@ -43,6 +45,7 @@ export default function BaseModal({
   blur = true,
   padding = '1rem',
   sheet = false,
+  initialFocus = 'first',
 }: BaseModalProps) {
   // null until the modal has been open, so a modal that mounts closed never touches the scroll position
   const scrollYRef = useRef<number | null>(null)
@@ -90,6 +93,7 @@ export default function BaseModal({
               {...(!description ? { 'aria-describedby': undefined } : {})}
               onPointerDownOutside={() => onClose()}
               onEscapeKeyDown={() => onClose()}
+              onOpenAutoFocus={initialFocus === 'dialog' ? event => { event.preventDefault(); (event.currentTarget as HTMLElement | null)?.focus({ preventScroll: true }) } : undefined}
             >
               <motion.div
                 className={sheet ? 'fixed inset-0 flex items-end justify-center sm:items-center sm:p-4' : 'fixed inset-0 flex items-center justify-center'}

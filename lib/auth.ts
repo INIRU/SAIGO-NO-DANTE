@@ -81,3 +81,12 @@ export async function requireActiveUser() {
   }
   return { error: false as const, session }
 }
+
+/** Requires sign-in only. For routes a suspended user must still reach, such as appealing through support inquiries. */
+export async function requireUser() {
+  const session = await getServerSession(authOptions)
+  if (!session?.user?.email) {
+    return { error: true as const, response: NextResponse.json({ error: '로그인이 필요합니다.' }, { status: 401 }) }
+  }
+  return { error: false as const, session }
+}
