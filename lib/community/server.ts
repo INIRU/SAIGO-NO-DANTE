@@ -1,6 +1,7 @@
 import "server-only";
 import type { createAdminClient } from "@/lib/supabase/admin";
 import type { CommunityProfile } from "./rules";
+import { stripPlanForList } from "@/lib/planner/stripPlanForList";
 export async function loadCommunityProfile(
   db: ReturnType<typeof createAdminClient>,
   id: string,
@@ -15,7 +16,7 @@ export async function loadCommunityProfile(
   if (profileResult.error) throw new Error("Profile lookup failed");
   const row = profileResult.data;
   if (!row || (!owner && (!row.public_profile || row.suspended))) return null;
-  const [summary, decks, eggs] = await Promise.all([
+  const [summary, decks, plans, eggs] = await Promise.all([
     db.schema("limbus").rpc("community_summary", { p_user_id: id }),
     db
       .schema("limbus")
@@ -24,9 +25,16 @@ export async function loadCommunityProfile(
       .eq("user_id", id)
       .order("created_at", { ascending: false })
       .limit(12),
+    db
+      .schema("limbus")
+      .from("md_plans")
+      .select("id,user_id,title,description,lang,difficulty,deck,egos,floor_plan,tags,created_at,vote_count,view_count,comment_count,profiles:user_id(username,avatar_url)")
+      .eq("user_id", id)
+      .order("created_at", { ascending: false })
+      .limit(12),
     db.schema("limbus").from("profile_easter_eggs").select("egg").eq("user_id", id),
   ]);
-  if (summary.error || decks.error || eggs.error) throw new Error("Community lookup failed");
+  if (summary.error || decks.error || plans.error || eggs.error) throw new Error("Community lookup failed");
   // Never spread the database profile: IPs, device signals, email and account fields stay private.
   return {
     profile: {
@@ -39,6 +47,7 @@ export async function loadCommunityProfile(
     },
     stats: summary.data,
     decks: (decks.data ?? []) as unknown as CommunityProfile["decks"],
+    plans: (plans.data ?? []).map((plan) => stripPlanForList(plan as Record<string, unknown>)),
     eggs: (eggs.data ?? []).map((egg) => egg.egg as CommunityProfile["eggs"][number]),
   };
 }
