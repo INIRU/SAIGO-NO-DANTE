@@ -110,3 +110,8 @@
   .settings { grid-template-columns: minmax(0, 1fr) 20rem; }
 }
 @media (prefers-reduced-motion: reduce) { .meter > span, .ghost, .primary, .navItem, .seg button, .itemAction { transition: none; } }
+
+/* Public profiles keep the site navbar: leave room under it and stick the rail below it. */
+.withNav { padding-top: calc(64px + 1.5rem); }
+.section + .section { margin-top: 2.5rem; }
+@media (min-width: 64rem) { .page.withNav .rail { top: calc(var(--nav-offset) + 1.25rem); } }

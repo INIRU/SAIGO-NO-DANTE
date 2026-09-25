@@ -21,12 +21,7 @@ export type CommunityProfile = {
     public_profile: boolean;
   };
   stats: Record<ActivityKind, number> & { points: number };
-  decks: {
-    id: string;
-    title: string;
-    description: string | null;
-    vote_count: number;
-    created_at: string;
-    lang: string;
-  }[];
+  /** The latest public decks, in the deck board's card shape. */
+  decks: DeckSummary[];
 };
+import type { DeckSummary } from "@/components/decks/DeckCard";

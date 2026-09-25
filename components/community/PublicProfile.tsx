@@ -1,81 +1,78 @@
 "use client";
+import { useMemo } from "react";
 import useSWR from "swr";
 import { useLocale } from "next-intl";
-import { Link } from "@/lib/i18n/navigation";
-import { Heart } from "lucide-react";
-import ProfileSummary from "./ProfileSummary";
+import { Layers } from "lucide-react";
+import ProfileRail from "./ProfileRail";
+import AchievementGrid from "./AchievementGrid";
+import DeckCard from "@/components/decks/DeckCard";
+import Skeleton from "@/components/ui/Skeleton";
 import { getCommunityCopy } from "@/lib/community/copy";
+import { achievementProgress } from "@/lib/community/achievements";
 import { useHtmlFlag } from "@/hooks/useHtmlFlag";
 import type { CommunityProfile } from "@/lib/community/rules";
+import "./community.css";
+import styles from "./profile.module.css";
+
 async function fetcher(url: string): Promise<CommunityProfile> {
   const r = await fetch(url);
   if (!r.ok) throw Object.assign(new Error(), { status: r.status });
   return r.json();
 }
+
+/** Someone's profile: the same rail as my page, then the badges they earned and their latest decks. */
 export default function PublicProfile({ id }: { id: string }) {
   const locale = useLocale(),
     t = getCommunityCopy(locale);
   useHtmlFlag("with-compact-footer");
-  const { data, error, mutate } = useSWR(
-    `/api/community/profiles/${id}`,
-    fetcher,
-    { shouldRetryOnError: false },
-  );
-  return (
-    <div className="community-shell">
-      <div className="community-profile-panel">
-      <div className="community-page-heading">
-        <span>{t.publicProfile}</span>
-        <Link href="/decks" className="community-link">
-          {t.back}
-        </Link>
-      </div>
-      {error ? (
-        <div className="community-state" role="alert">
+  const { data, error, mutate } = useSWR(`/api/community/profiles/${id}`, fetcher, { shouldRetryOnError: false });
+  // Easter eggs live in the owner's browser, so a public profile shows only badges earned by activity.
+  const earned = useMemo(() => (data ? achievementProgress(data.stats).filter((badge) => badge.earned && !badge.hidden) : []), [data]);
+
+  if (error)
+    return (
+      <div className={`${styles.page} ${styles.withNav}`}>
+        <div className={`${styles.empty} lg:col-span-2`} role="alert">
           <p>{error.status === 404 ? t.unavailable : t.error}</p>
-          {error.status !== 404 && (
-            <button className="community-button" onClick={() => void mutate()}>
-              {t.retry}
-            </button>
-          )}
+          {error.status !== 404 && <button type="button" className={styles.ghost} onClick={() => void mutate()}>{t.retry}</button>}
         </div>
-      ) : !data ? (
-        <div className="community-state" role="status">
-          {t.loading}
-        </div>
-      ) : (
-        <ProfileSummary data={data} />
-      )}
       </div>
-      {data && !error && (
-          <section className="community-recent">
-            <h2>{t.recentDecks}</h2>
-            {data.decks.length ? (
-              <div className="community-deck-grid">
-                {data.decks.map((deck) => (
-                  <Link
-                    key={deck.id}
-                    href={`/decks/${deck.id}`}
-                    className="community-deck-entry"
-                  >
-                    <h3>{deck.title}</h3>
-                    <small>
-                      <time>
-                        {new Date(deck.created_at).toLocaleDateString(locale)}
-                      </time>
-                      <span>
-                        <Heart size={14} />
-                        {deck.vote_count}
-                      </span>
-                    </small>
-                  </Link>
-                ))}
-              </div>
-            ) : (
-              <p className="community-muted">{t.noDecks}</p>
-            )}
+    );
+  if (!data)
+    return (
+      <div className={`${styles.page} ${styles.withNav}`} role="status" aria-busy="true">
+        <div className={`${styles.rail} sticky-under-nav`}><Skeleton line className="h-[24rem] rounded-xl" /></div>
+        <div className={styles.main}>
+          <div className={styles.head}><Skeleton className="h-6 w-28" /></div>
+          <Skeleton line className="h-40 rounded-xl" />
+        </div>
+      </div>
+    );
+  return (
+    <div className={`${styles.page} ${styles.withNav}`}>
+      <div className={`${styles.rail} sticky-under-nav`}>
+        <ProfileRail data={data} />
+      </div>
+      <div className={styles.main}>
+        {earned.length > 0 && (
+          <section className={styles.section}>
+            <div className={styles.head}>
+              <h2 className={styles.title}>{t.badges}<span className={styles.titleCount}>{earned.length}</span></h2>
+            </div>
+            <AchievementGrid items={earned} />
           </section>
-      )}
+        )}
+        <section className={styles.section}>
+          <div className={styles.head}>
+            <h2 className={styles.title}>{t.recentDecks}<span className={styles.titleCount}>{data.decks.length}</span></h2>
+          </div>
+          {data.decks.length ? (
+            <ul className={styles.list}>{data.decks.map((deck) => <li key={deck.id} className={styles.item}><DeckCard deck={deck} /></li>)}</ul>
+          ) : (
+            <div className={styles.empty}><Layers aria-hidden="true" /><p>{t.noDecks}</p></div>
+          )}
+        </section>
+      </div>
     </div>
   );
 }
