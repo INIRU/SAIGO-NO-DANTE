@@ -216,8 +216,18 @@ export function stripPlanForList(plan: Record<string, unknown>): PlanSummary {
   // Slim egos: keep only ego_id for owned-ego filter
   const slimEgos = egos?.map(e => ({ ego_id: e.ego_id })) ?? null
 
+  // Board filters: every gift the plan aims for (floor picks and final gifts) and every theme pack it routes through.
+  const floors = Array.isArray(plan.floor_plan) ? plan.floor_plan as FloorPlanEntryRaw[] : []
+  const gift_ids = [...new Set([
+    ...floors.flatMap(floor => Array.isArray(floor.gift_ids) ? floor.gift_ids : []),
+    ...(Array.isArray(plan.gift_inventory) ? plan.gift_inventory as unknown[] : [])
+      .flatMap(entry => { const match = typeof entry === 'string' ? /^final_(\d+)/.exec(entry) : null; return match ? [match[1]] : [] }),
+  ].map(Number).filter(id => Number.isInteger(id) && id > 0))]
+  const theme_ids = [...new Set(floors.map(floor => Number(floor.theme_id)).filter(id => Number.isInteger(id) && id > 0))]
+  const { floor_plan: _floorPlan, gift_inventory: _giftInventory, ...rest } = plan
+
   return {
-    ...plan,
+    ...rest,
     deck: slimDeck,
     egos: slimEgos,
     theme_keywords,
@@ -225,6 +235,8 @@ export function stripPlanForList(plan: Record<string, unknown>): PlanSummary {
     selected_keywords,
     difficulty_summary,
     identity_names,
+    gift_ids,
+    theme_ids,
   } as unknown as PlanSummary
 }
 

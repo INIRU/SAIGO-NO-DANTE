@@ -5,7 +5,7 @@ export type DiscoveryKind = 'deck' | 'planner'
 // Shared by the public discovery shelf and the personal "for you" shelf.
 export const DISCOVERY_COLUMNS: Record<DiscoveryKind, string> = {
   deck: 'id,user_id,guest_tag,profiles!decks_user_id_fkey(username,avatar_url),title,description,tags,main_keywords,content_type,lang,created_at,updated_at,vote_count,view_count,comment_count,deck_identities(slot_order,identities(id,sinner_id,folder_name,game_id,name_kr))',
-  planner: 'id,user_id,guest_tag,profiles:user_id(username,avatar_url),title,description,lang,difficulty,deck,egos,floor_plan,tags,created_at,updated_at,vote_count,view_count,comment_count',
+  planner: 'id,user_id,guest_tag,profiles:user_id(username,avatar_url),title,description,lang,difficulty,deck,egos,floor_plan,gift_inventory,tags,created_at,updated_at,vote_count,view_count,comment_count',
 }
 export const DISCOVERY_TABLE: Record<DiscoveryKind, string> = { deck: 'decks', planner: 'md_plans' }
 

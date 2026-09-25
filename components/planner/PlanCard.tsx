@@ -47,6 +47,9 @@ export type PlanSummary = {
     end: number
     counts: Partial<Record<Difficulty, number>>
   }[]
+  /** Pre-computed server-side: gifts the plan aims for (floor picks and final gifts) and the theme packs it routes through */
+  gift_ids?: number[]
+  theme_ids?: number[]
   /** Pre-computed server-side: identity name_kr values for search */
   identity_names?: string[]
 }

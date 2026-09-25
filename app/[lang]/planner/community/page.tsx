@@ -44,7 +44,7 @@ async function getCachedInitialPlans(lang: string, cardMetaVersion: string) {
       .schema('limbus')
       .from('md_plans')
       .select(
-        'id, title, description, difficulty, deck, egos, floor_plan, tags, lang, vote_count, view_count, comment_count, created_at, user_id, guest_tag, profiles:user_id(username, avatar_url)',
+        'id, title, description, difficulty, deck, egos, floor_plan, gift_inventory, tags, lang, vote_count, view_count, comment_count, created_at, user_id, guest_tag, profiles:user_id(username, avatar_url)',
         { count: 'exact' }
       )
       .eq('lang', normalizePlannerLang(lang))

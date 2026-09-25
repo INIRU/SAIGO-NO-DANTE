@@ -19,7 +19,7 @@ const ADVANCED_FILTER_CANDIDATE_LIMIT = 1000
 const SUPPORTED_PLANNER_LANGS = ['ko', 'en', 'ja'] as const
 const IDENTITY_MODE_VALUES = ['or', 'and'] as const
 const COMBAT_SKILL_TYPES = ['slash', 'pierce', 'blunt'] as const
-const PLANNER_LIST_SELECT = 'id, title, description, difficulty, deck, egos, floor_plan, tags, lang, vote_count, view_count, comment_count, created_at, user_id, guest_tag, profiles:user_id(username, avatar_url)'
+const PLANNER_LIST_SELECT = 'id, title, description, difficulty, deck, egos, floor_plan, gift_inventory, tags, lang, vote_count, view_count, comment_count, created_at, user_id, guest_tag, profiles:user_id(username, avatar_url)'
 
 type PlannerLang = typeof SUPPORTED_PLANNER_LANGS[number]
 type PlannerLangFilter = PlannerLang | 'all'
