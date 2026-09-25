@@ -844,7 +844,9 @@
       "setupPlanPick": "플랜 고르기",
       "setupPlanChange": "다른 플랜 고르기",
       "setupPlanUntitled": "제목 없는 플랜",
-      "setupRecognitionTitle": "화면 인식 설정"
+      "setupRecognitionTitle": "화면 인식 설정",
+      "floorGiftPickerTitle": "{floor}층 획득 기프트",
+      "addGiftButton": "추가"
     },
     "community": "커뮤니티 플랜",
     "detail": {
@@ -1180,7 +1182,8 @@
         "rewardTitle": "{gift}: 테마팩 클리어 보상으로 자동 포함",
         "packExclusive": "이 테마팩에서만 얻는 기프트",
         "changeThemeAria": "{floor}층 테마팩 변경, 현재 {theme}"
-      }
+      },
+      "floorGiftPickerTitle": "{floor}층 획득 기프트"
     },
     "actions": {
       "triggerMode": "어시스트 모드",
@@ -1594,6 +1597,11 @@
     "searchTheme": "테마팩 이름 검색",
     "postCount": "글 {count}개",
     "remove": "{label} 빼기"
+  },
+  "floorGiftPicker": {
+    "onlyFloor": "이 층에서 얻을 수 있는 기프트만",
+    "close": "닫기",
+    "empty": "고를 수 있는 기프트가 없어요"
   },
   "mypage": {
     "title": "마이 페이지"

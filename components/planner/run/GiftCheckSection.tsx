@@ -6,11 +6,10 @@ import { Search } from 'lucide-react'
 import type { RunState, RunAction } from '@/lib/planner/run-types'
 import type { ThemeData, GiftData } from '@/lib/planner/types'
 import { getGiftActivationConditionStatus, getGiftConditionCountsForSlots } from '@/lib/planner/gift-condition-status'
-import { getGiftsFromThemes } from '@/lib/planner/fusion'
+import { getGiftsFromThemes, themeExclusiveGiftIds } from '@/lib/planner/fusion'
+import FloorGiftPickerModal from '@/components/planner/FloorGiftPickerModal'
 import GiftCard from '@/components/ui/GiftCard'
 import GiftArtwork from '@/components/ui/GiftArtwork'
-import GiftCatalog, { giftKeywordIcon, toCatalogGift, useGiftCatalogFilters } from '@/components/gifts/GiftCatalog'
-import type { EgoGift } from '@/components/mirror-dungeon/types'
 import { getLocalizedName } from '@/lib/i18n/localize'
 import type { SupportedLang } from '@/lib/i18n/types'
 
@@ -32,8 +31,6 @@ export default function GiftCheckSection({ state, dispatch, gifts, giftMap, them
 
   const ownedSet = useMemo(() => new Set(state.giftInventory.map(Number)), [state.giftInventory])
   const ownedIds = useMemo(() => new Set(state.giftInventory.map(String)), [state.giftInventory])
-  const catalogFilters = useGiftCatalogFilters()
-  const catalogGifts = useMemo(() => gifts.map(toCatalogGift), [gifts])
 
   const conditionCounts = useMemo(
     () => getGiftConditionCountsForSlots(state.identitySlots),
@@ -45,9 +42,18 @@ export default function GiftCheckSection({ state, dispatch, gifts, giftMap, them
     return getGiftActivationConditionStatus({ gift, ...conditionCounts })
   }
 
+  const [pickerOpen, setPickerOpen] = useState(false)
+  const currentTheme = currentLog?.themeId ? themes.find(theme => String(theme.id) === String(currentLog.themeId)) ?? null : null
+  // 이번 층에서 얻을 수 있는 전체: 다른 테마팩 전용 기프트만 뺀다(합성·조합식 결과는 포함)
+  const reachableGifts = useMemo(() => {
+    const own = new Set(currentTheme ? themeExclusiveGiftIds(currentTheme) : [])
+    const others = new Set(themes.flatMap(theme => themeExclusiveGiftIds(theme)).filter(id => !own.has(id)))
+    return gifts.filter(gift => !others.has(gift.game_id))
+  }, [currentTheme, gifts, themes])
+
   // 현재 테마에서 얻을 수 있는 기프트
   const themeGifts = useMemo(() => {
-    const theme = currentLog?.themeId ? themes.find(t => String(t.id) === String(currentLog.themeId)) : null
+    const theme = currentTheme
     if (!theme) return []
     const list = getGiftsFromThemes([String(theme.id)], themes, giftMap)
     // 체크된건 하단 정렬
@@ -56,7 +62,7 @@ export default function GiftCheckSection({ state, dispatch, gifts, giftMap, them
       const bOwned = ownedSet.has(b.game_id) ? 1 : 0
       return aOwned - bOwned
     })
-  }, [currentLog?.themeId, themes, giftMap, ownedSet])
+  }, [currentTheme, themes, giftMap, ownedSet])
 
   // 최종 기프트 (플래너에서 선정한 목표 기프트) — 먹은건 하단
   const targetSet = useMemo(() => new Set((state.targetGifts ?? []).map(Number)), [state.targetGifts])
@@ -189,17 +195,18 @@ export default function GiftCheckSection({ state, dispatch, gifts, giftMap, them
         </div>
       </section>
 
-      {/* 최종 기프트 추가: 미러 던전 기프트 목록과 같은 카탈로그. 누르면 획득/해제 */}
-      <section className="min-w-0 lg:col-start-1" aria-labelledby="run-add-gift-title" style={{ '--gift-catalog-bg': 'var(--bg-card)' } as React.CSSProperties}>
+      {/* 기프트 추가: 플래너 층별 계획과 같은 선택 창. 기본은 이번 층 테마팩 기프트, 체크를 끄면 합성·조합식까지 전체 */}
+      <section className="min-w-0 lg:col-start-1" aria-labelledby="run-add-gift-title">
         <h3 id="run-add-gift-title" style={{ fontSize: '0.8125rem', fontWeight: 600, marginBottom: '0.5rem', color: '#999' }}>{t('addFinalGift')}</h3>
-        <GiftCatalog
-          compact
-          gifts={catalogGifts}
-          getGiftKeywordIcon={giftKeywordIcon}
-          filters={catalogFilters}
+        <GiftCard gift={{ name: t('addGiftButton') }} variant="insert" size="4.75rem" showName ariaLabel={t('addFinalGift')} onClick={() => setPickerOpen(true)} />
+        <FloorGiftPickerModal
+          open={pickerOpen}
+          title={t('floorGiftPickerTitle', { floor: state.currentFloor })}
+          floorGifts={currentTheme ? themeGifts : null}
+          allGifts={reachableGifts}
           selectedIds={ownedIds}
-          idleHint={t('addGiftIdleHint')}
-          onGiftClick={(gift: EgoGift) => dispatch({ type: ownedIds.has(gift.id) ? 'REMOVE_GIFT' : 'ACQUIRE_GIFT', giftId: gift.id })}
+          onToggle={gift => dispatch({ type: ownedIds.has(String(gift.game_id)) ? 'REMOVE_GIFT' : 'ACQUIRE_GIFT', giftId: String(gift.game_id) })}
+          onClose={() => setPickerOpen(false)}
         />
       </section>
 

@@ -844,7 +844,9 @@
       "setupPlanPick": "Choose a plan",
       "setupPlanChange": "Choose another plan",
       "setupPlanUntitled": "Untitled plan",
-      "setupRecognitionTitle": "Screen recognition"
+      "setupRecognitionTitle": "Screen recognition",
+      "floorGiftPickerTitle": "Floor {floor} gifts",
+      "addGiftButton": "Add"
     },
     "community": "Community Plans",
     "detail": {
@@ -1180,7 +1182,8 @@
         "rewardTitle": "{gift}: included automatically as the pack's clear reward",
         "packExclusive": "Only obtainable from this pack",
         "changeThemeAria": "Change floor {floor} pack, currently {theme}"
-      }
+      },
+      "floorGiftPickerTitle": "Floor {floor} gifts"
     },
     "actions": {
       "triggerMode": "Assist Mode",
@@ -1594,6 +1597,11 @@
     "searchTheme": "Search theme packs",
     "postCount": "{count} posts",
     "remove": "Remove {label}"
+  },
+  "floorGiftPicker": {
+    "onlyFloor": "Only gifts from this floor",
+    "close": "Close",
+    "empty": "No gifts to choose from"
   },
   "mypage": {
     "title": "My Page"

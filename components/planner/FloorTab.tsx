@@ -7,13 +7,14 @@ import FloorGuidance from './FloorGuidance'
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useReducedMotion } from 'motion/react'
-import { ChevronUp, Package, Plus, Search, X } from 'lucide-react'
+import { ChevronUp, Package, Plus, X } from 'lucide-react'
 import { useLocale, useTranslations } from 'next-intl'
 import GiftCard from '@/components/ui/GiftCard'
 import GiftCatalog, { GiftGradeChip, GiftKeywordTab, giftKeywordIcon, giftKeywordLabel, toCatalogGift, useGiftCatalogFilters, type GiftCatalogCardProps } from '@/components/gifts/GiftCatalog'
 import { GIFT_KEYWORD_COLORS } from '@/lib/constants/gift'
 import type { EgoGift } from '@/components/mirror-dungeon/types'
 import FinalGiftTile from './FinalGiftTile'
+import FloorGiftPickerModal from './FloorGiftPickerModal'
 import FinalGiftPresets from './FinalGiftPresets'
 import ThemePackCard from '@/components/ui/ThemePackCard'
 import {
@@ -60,16 +61,6 @@ const FINAL_KEYWORD_ORDER = ['general', 'burn', 'bleed', 'tremor', 'rupture', 's
 const FINAL_GIFT_GRADE_ORDER = ['1', '2', '3', '4', '5', 'EX']
 // Below this many final gifts the keyword/grade filters are noise.
 const FINAL_FILTER_MIN = 8
-
-function buildGiftSearchText(gift: GiftData) {
-  return [
-    gift.name,
-    gift.name_en,
-    gift.name_jp,
-    gift.keyword,
-    gift.effect_base,
-  ].filter(Boolean).join(' ').toLocaleLowerCase()
-}
 
 function getDifficultyTone(difficulty: FloorDifficulty) {
   if (difficulty === 'extreme') return '#d0675c'
@@ -155,7 +146,6 @@ export default function FloorTab({ state, dispatch, themes, gifts, recipes, gift
   const [activeFloor, setActiveFloor] = useState<number | null>(null)
   const [themeModalOpen, setThemeModalOpen] = useState(false)
   const [giftPickerOpen, setGiftPickerOpen] = useState(false)
-  const [giftPickerQuery, setGiftPickerQuery] = useState('')
   const [finalGiftKeyword, setFinalGiftKeyword] = useState<string | null>(null)
   const [finalGiftGrade, setFinalGiftGrade] = useState<string | null>(null)
   const [dismissedFusionIds, setDismissedFusionIds] = useState<Set<string>>(() => new Set())
@@ -444,7 +434,6 @@ export default function FloorTab({ state, dispatch, themes, gifts, recipes, gift
     dispatch({ type: 'SET_FLOOR_THEME', floor: activeEntry.floor, themeId })
     setThemeModalOpen(false)
     setGiftPickerOpen(false)
-    setGiftPickerQuery('')
   }, [activeEntry, dispatch])
 
   const setDifficulty = useCallback((difficulty: FloorDifficulty) => {
@@ -527,7 +516,6 @@ export default function FloorTab({ state, dispatch, themes, gifts, recipes, gift
     setActiveFloor(floor)
     setThemeModalOpen(false)
     setGiftPickerOpen(false)
-    setGiftPickerQuery('')
   }
 
   function toggleFloor(floor: number) {
@@ -538,7 +526,6 @@ export default function FloorTab({ state, dispatch, themes, gifts, recipes, gift
     setActiveFloor(null)
     setThemeModalOpen(false)
     setGiftPickerOpen(false)
-    setGiftPickerQuery('')
   }
 
   function getFloorGifts(entry: FloorEntry, theme: ThemeData | null) {
@@ -553,11 +540,12 @@ export default function FloorTab({ state, dispatch, themes, gifts, recipes, gift
   const availableGifts = selectedTheme
     ? getThemeAvailableGifts(selectedTheme).filter(gift => !blockedFinalMaterialIds.has(gift.game_id))
     : []
-  const filteredAvailableGifts = availableGifts.filter(gift => {
-    const query = giftPickerQuery.trim().toLocaleLowerCase()
-    if (!query) return true
-    return buildGiftSearchText(gift).includes(query)
-  })
+  // 이 층에서 얻을 수 있는 전체: 다른 테마팩 전용 기프트와 합성 재료로 막힌 기프트만 뺀다(합성·조합식 결과는 포함)
+  const reachableGifts = useMemo(() => {
+    const ownExclusive = new Set(selectedTheme ? themeExclusiveGiftIds(selectedTheme) : [])
+    const otherExclusive = new Set(themes.flatMap(theme => themeExclusiveGiftIds(theme)).filter(id => !ownExclusive.has(id)))
+    return gifts.filter(gift => !otherExclusive.has(gift.game_id) && !blockedFinalMaterialIds.has(gift.game_id))
+  }, [blockedFinalMaterialIds, gifts, selectedTheme, themes])
   const exclusiveLabel = t('ladder.packExclusive')
   const configuredCount = state.floorPlan.filter(isConfiguredFloor).length
   const segments = LADDER_SEGMENTS
@@ -724,7 +712,7 @@ export default function FloorTab({ state, dispatch, themes, gifts, recipes, gift
                 size="4rem"
                 showName
                 ariaLabel={t('giftPickerTitle')}
-                onClick={() => setGiftPickerOpen(open => !open)}
+                onClick={() => setGiftPickerOpen(true)}
               />
             </div>
           ) : (
@@ -733,70 +721,15 @@ export default function FloorTab({ state, dispatch, themes, gifts, recipes, gift
             </p>
           )}
 
-          {giftPickerOpen && selectedTheme && (
-            <div
-              role="region"
-              aria-label={t('giftPickerTitle')}
-              className="mt-3 rounded-sm border p-3"
-              style={{ background: '#0d0b08', borderColor: '#2e2417' }}
-            >
-              <div className="mb-2 flex items-center justify-between gap-2">
-                <p className="text-sm leading-snug" style={{ color: '#9c8b73' }}>
-                  {t('giftPickerHint', { theme: activeThemeName ?? selectedTheme.name })}
-                </p>
-                <button
-                  type="button"
-                  onClick={() => setGiftPickerOpen(false)}
-                  aria-label={t('close')}
-                  className={`inline-flex min-h-[2.75rem] min-w-[2.75rem] shrink-0 items-center justify-center rounded-md transition-colors hover:bg-white/10 ${focusRing}`}
-                  style={{ color: '#9c8b73' }}
-                >
-                  <X size={18} aria-hidden="true" />
-                </button>
-              </div>
-              <label className="mb-3 block">
-                <span className="sr-only">{t('giftPickerSearchPlaceholder')}</span>
-                <span className="relative block">
-                  <Search size={16} aria-hidden="true" className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2" style={{ color: '#6f675e' }} />
-                  <input
-                    type="search"
-                    value={giftPickerQuery}
-                    onChange={event => setGiftPickerQuery(event.target.value)}
-                    placeholder={t('giftPickerSearchPlaceholder')}
-                    className="min-h-[2.75rem] w-full rounded-md border bg-[#0d0b08] py-1.5 pl-8 pr-3 text-[0.9375rem] text-neutral-200 outline-none transition-colors placeholder:text-neutral-600 focus:border-[var(--gold)] focus:ring-1 focus:ring-[var(--gold)]"
-                    style={{ borderColor: '#2e2417' }}
-                  />
-                </span>
-              </label>
-              <div className="max-h-[22rem] overflow-y-auto overscroll-contain pr-0.5">
-                {availableGifts.length === 0 ? (
-                  <p className="py-6 text-center text-[0.9375rem]" style={{ color: '#9c8b73' }}>{t('noThemeGifts')}</p>
-                ) : filteredAvailableGifts.length === 0 ? (
-                  <p className="py-6 text-center text-[0.9375rem]" style={{ color: '#9c8b73' }}>{t('giftPickerEmpty')}</p>
-                ) : (
-                  <ul className="grid grid-cols-[repeat(auto-fill,minmax(3.5rem,1fr))] justify-items-center gap-x-1.5 gap-y-2 sm:grid-cols-[repeat(auto-fill,minmax(4rem,1fr))]">
-                    {filteredAvailableGifts.map(gift => {
-                      const isAdded = entry.gift_ids.includes(String(gift.game_id))
-                      const isInFinal = finalGiftIds.has(gift.game_id)
-                      return (
-                        <li key={gift.game_id} className="w-full min-w-0 max-w-[4.25rem]">
-                          <GiftCard
-                            gift={gift}
-                            size="100%"
-                            showName={false}
-                            isSelected={isAdded}
-                            onClick={() => toggleGiftId(String(gift.game_id), entry.gift_ids)}
-                            title={!isInFinal && !isAdded ? `${gift.name}\n${t('addToFinal')}` : undefined}
-                          />
-                          <span aria-hidden="true" className="mt-0.5 block truncate text-center text-[0.6875rem] leading-tight" style={{ color: isAdded ? '#e8b030' : '#9c8b73' }}>{gift.name}</span>
-                        </li>
-                      )
-                    })}
-                  </ul>
-                )}
-              </div>
-            </div>
-          )}
+          <FloorGiftPickerModal
+            open={giftPickerOpen && Boolean(selectedTheme)}
+            title={t('floorGiftPickerTitle', { floor: entry.floor })}
+            floorGifts={availableGifts}
+            allGifts={reachableGifts}
+            selectedIds={plannedIds}
+            onToggle={gift => toggleGiftId(String(gift.game_id), entry.gift_ids)}
+            onClose={() => setGiftPickerOpen(false)}
+          />
         </div>
 
         <FloorConstraints floor={entry.floor} entries={state.floorPlan} onChange={ids => dispatch({ type: 'SET_FLOOR_CONSTRAINTS', floor: entry.floor, ids })} />
