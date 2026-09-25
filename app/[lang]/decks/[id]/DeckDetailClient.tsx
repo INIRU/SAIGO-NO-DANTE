@@ -1,6 +1,7 @@
 'use client'
 
 import BackLink from '@/components/navigation/BackLink'
+import { PostTranslationProvider, TranslateButton, TranslatedText } from '@/components/translate/PostTranslation'
 import DeckDetailSkeleton from '@/components/decks/DeckDetailSkeleton'
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import dynamic from 'next/dynamic'
@@ -57,7 +58,6 @@ import { workbenchReveal } from '@/lib/animations'
 import styles from './DeckDetail.module.css'
 
 const IdentityDetailModal = dynamic(() => import('@/components/ui/IdentityDetailModal'), { ssr: false })
-const DeckIdentityPreviewModal = dynamic(() => import('@/components/deck-detail/DeckIdentityPreviewModal'), { ssr: false })
 const EgoDetailModal = dynamic(() => import('@/components/ui/EgoDetailModal'), { ssr: false })
 
 const postedDeckViews = new Set<string>()
@@ -389,7 +389,6 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
   const [voting, setVoting] = useState(false)
   const [copied, setCopied] = useState(false)
   const [identityPreview, setIdentityPreview] = useState<IdentityPreviewState | null>(null)
-  const [keywordMeta, setKeywordMeta] = useState<Record<string, { description: string }>>({})
 
   const [bookmarked, setBookmarked] = useState(false)
   const [bookmarking, setBookmarking] = useState(false)
@@ -398,7 +397,6 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
   const [shareGenerating, setShareGenerating] = useState(false)
 
   const [egoGiftLookup, setEgoGiftLookup] = useState<Record<string, NoteEgoGiftEntry>>({})
-  const [identityModalId, setIdentityModalId] = useState<string | null>(null)
   const [egoModalId, setEgoModalId] = useState<string | null>(null)
 
   useEffect(() => {
@@ -412,17 +410,6 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
       keepalive: true,
     }).catch(() => {})
   }, [id])
-
-  useEffect(() => {
-    fetch('/api/keyword-meta')
-      .then(r => r.ok ? r.json() : [])
-      .then((rows: { name: string; description: string }[]) => {
-        const map: Record<string, { description: string }> = {}
-        for (const r of rows) map[r.name] = { description: r.description }
-        setKeywordMeta(map)
-      })
-      .catch(() => {})
-  }, [])
 
   useEffect(() => {
     fetch('/api/ego-gifts')
@@ -794,6 +781,7 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
     setActiveSection(sectionId)
   }
 
+  const translationTexts = [deck?.title, deck?.description]
   if (loading) return <DeckDetailSkeleton />
 
   if (!deck) {
@@ -832,6 +820,7 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
   }
 
   return (
+    <PostTranslationProvider kind="deck" id={deck.id} texts={translationTexts}>
     <div className="min-h-screen bg-[#0d0b08] pt-24 pb-20">
       <div className="mx-auto w-full max-w-7xl px-3 sm:px-6">
         <BackLink
@@ -863,7 +852,7 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
                 })}
               </ul>
             )}
-            <h1 className={styles.title}>{deck.title}</h1>
+            <h1 className={styles.title}><TranslatedText text={deck.title} /></h1>
           </div>
 
           <div className={styles.author}>
@@ -928,6 +917,7 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
               {shared ? <Check className="h-4 w-4" aria-hidden="true" /> : <Share2 className="h-4 w-4" aria-hidden="true" />}
               {shared ? t('copied') : t('share')}
             </button>
+            <TranslateButton />
             {deck.deck_code && (
               <button type="button" onClick={handleCopyCode} data-done={copied || undefined}>
                 {copied ? <Check className="h-4 w-4" aria-hidden="true" /> : <Copy className="h-4 w-4" aria-hidden="true" />}
@@ -1071,15 +1061,11 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
         </main>
       </div>
 
-      {identityModalId && (
-        <IdentityDetailModal identityId={identityModalId} onClose={() => setIdentityModalId(null)} />
-      )}
       {identityPreview?.slot.identities && (
-        <DeckIdentityPreviewModal
-          open
-          slot={identityPreview.slot}
+        <IdentityDetailModal
+          identityId={identityPreview.slot.identities.id}
+          uptie={slotUptie(identityPreview.slot)}
           egos={egoGrouped[identityPreview.slot.identities.sinner_id] ?? []}
-          keywordMeta={keywordMeta}
           onEgoClick={setEgoModalId}
           onClose={() => setIdentityPreview(null)}
         />
@@ -1098,6 +1084,7 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
         onCancel={() => setConfirmDelete(false)}
       />
     </div>
+    </PostTranslationProvider>
   )
 }
 
