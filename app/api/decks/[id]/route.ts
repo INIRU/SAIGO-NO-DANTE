@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { revalidateTag } from 'next/cache'
+import { ownsPost, resolveAuthor } from '@/lib/guest/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getServerSession } from 'next-auth'
-import { authOptions, requireActiveUser } from '@/lib/auth'
-import { findOrCreateSupabaseUser } from '@/lib/supabase/findOrCreateUser'
+import { authOptions } from '@/lib/auth'
 import { writeAuditLog } from '@/lib/audit'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import { parseDeckMainKeywordsInput } from '@/lib/decks/keyword-rules'
@@ -34,7 +34,7 @@ export async function GET(
       .from('decks')
       .select(`
         id, user_id, title, description, tags, main_keywords, content_type, vote_count, view_count, comment_count, created_at,
-        profiles!decks_user_id_fkey(username),
+        guest_tag, profiles!decks_user_id_fkey(username),
         deck_identities(
           slot_order, gacksung, uptie, s1_count, s2_count, s3_count,
           identities(
@@ -172,38 +172,29 @@ export async function GET(
 
 // ── DELETE ──────────────────────────────────────────────────────────────────
 export async function DELETE(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params
-    const activeUser = await requireActiveUser()
-    if (activeUser.error) return activeUser.response
-    const { session } = activeUser
-
     const admin = createAdminClient()
-    const userId = await findOrCreateSupabaseUser(
-      admin,
-      session.user.email!,
-      session.user.name,
-      session.user.image,
-    )
-    if (!userId) {
-      return NextResponse.json({ error: '사용자를 찾을 수 없습니다.' }, { status: 500 })
-    }
+    const resolved = await resolveAuthor(request, admin)
+    if ('response' in resolved) return resolved.response
+    const { author } = resolved
+    const userId = author.kind === 'user' ? author.userId : null
 
     // 소유권 확인
     const { data: deck } = await admin
       .schema('limbus')
       .from('decks')
-      .select('user_id')
+      .select('id, user_id')
       .eq('id', id)
       .single()
 
     if (!deck) {
       return NextResponse.json({ error: '덱을 찾을 수 없습니다.' }, { status: 404 })
     }
-    if (deck.user_id !== userId) {
+    if (!(await ownsPost(admin, author, 'deck', deck))) {
       return NextResponse.json({ error: '삭제 권한이 없습니다.' }, { status: 403 })
     }
 
@@ -236,10 +227,6 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params
-    const activeUser = await requireActiveUser()
-    if (activeUser.error) return activeUser.response
-    const { session } = activeUser
-
     const body = await request.json()
     const { title, description, tags, identitySlots, egoSlots, content_type } = body
 
@@ -248,29 +235,24 @@ export async function PATCH(
     }
 
     const admin = createAdminClient()
-    const userId = await findOrCreateSupabaseUser(
-      admin,
-      session.user.email!,
-      session.user.name,
-      session.user.image,
-    )
-    if (!userId) {
-      return NextResponse.json({ error: '사용자를 찾을 수 없습니다.' }, { status: 500 })
-    }
+    const resolved = await resolveAuthor(request, admin)
+    if ('response' in resolved) return resolved.response
+    const { author } = resolved
+    const userId = author.kind === 'user' ? author.userId : null
 
     // 소유권 확인 (관리자는 소유자가 아니어도 수정 가능, 단 소유자 변경 불가)
     const { data: deck } = await admin
       .schema('limbus')
       .from('decks')
-      .select('user_id, title, description, tags, main_keywords, content_type')
+      .select('id, user_id, title, description, tags, main_keywords, content_type')
       .eq('id', id)
       .single()
 
     if (!deck) {
       return NextResponse.json({ error: '덱을 찾을 수 없습니다.' }, { status: 404 })
     }
-    const isOwner = deck.user_id === userId
-    const isAdmin = session.user?.isAdmin === true
+    const isOwner = await ownsPost(admin, author, 'deck', deck)
+    const isAdmin = author.kind === 'user' && author.isAdmin
     if (!isOwner && !isAdmin) {
       return NextResponse.json({ error: '수정 권한이 없습니다.' }, { status: 403 })
     }

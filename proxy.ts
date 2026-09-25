@@ -114,16 +114,24 @@ export async function proxy(request: NextRequest) {
     }
   }
 
-  // Creation routes are private; community and database views remain public.
+  // Assist mode reads the Korean client only: other locales go to the planner board instead.
+  if (locale && locale !== 'ko' && hasPathPrefix(routePathname, '/planner/run')) {
+    const url = request.nextUrl.clone()
+    url.pathname = `/${locale}/planner/community`
+    url.search = ''
+    return NextResponse.redirect(url)
+  }
+
+  // Anyone can write decks and plans (guests anonymously, with a browser key); suspended accounts cannot.
   const isCreationPage = routePathname === '/decks/new' || routePathname === '/planner'
   if (isCreationPage) {
     const token = await getToken({ req: request })
-    if (!token || token.isSuspended) {
+    if (token?.isSuspended) {
       const url = request.nextUrl.clone()
       url.pathname = locale ? `/${locale}/login` : '/login'
       url.search = ''
       url.searchParams.set('callbackUrl', pathname + request.nextUrl.search)
-      if (token?.isSuspended) url.searchParams.set('error', 'suspended')
+      url.searchParams.set('error', 'suspended')
       return NextResponse.redirect(url)
     }
   }
