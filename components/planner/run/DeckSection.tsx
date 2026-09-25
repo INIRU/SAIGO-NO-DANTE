@@ -442,7 +442,7 @@ export default function DeckSection({ state, dispatch, identities, sinners, skil
 
       {/* 인격 상세 모달 (꾹 눌러서 열림) */}
       {detailIdentityId && (
-        <IdentityDetailModal identityId={detailIdentityId} onClose={() => setDetailIdentityId(null)} />
+        <IdentityDetailModal identityId={detailIdentityId} uptie={state.identitySlots.find(item => item.identity_id === detailIdentityId)?.uptie} onClose={() => setDetailIdentityId(null)} />
       )}
     </div>
   )

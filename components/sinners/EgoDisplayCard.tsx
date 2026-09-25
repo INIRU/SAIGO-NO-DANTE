@@ -316,6 +316,10 @@ const measureEgoNameLayout = (
     }
   }
 
+  // Long localized names with a kanji subtitle ("… [着影揮刀]") drop the subtitle before wrapping past the banner; title keeps the full name.
+  const withoutSubtitle = normalized.replace(/\s*[[(（【「][^\])）】」]*[\])）】」]$/, '')
+  if (withoutSubtitle && withoutSubtitle !== normalized) return measureEgoNameLayout(withoutSubtitle, locale, maxWidth, rootFontSize)
+
   return {
     allowAnywhere: true,
     fontSizeRem: EGO_NAME_MIN_FONT_REM,

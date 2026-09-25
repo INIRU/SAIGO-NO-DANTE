@@ -474,26 +474,13 @@
       "similarDecksDescription": "Decks close in formation, theme, or E.G.O setup."
     },
     "identityPreview": {
-      "formationSlot": "Formation {order}",
-      "backupSlot": "Backup Slot",
-      "close": "Close preview",
-      "preview": "IDENTITY PREVIEW",
-      "sinnerLabel": "{sinner} Sinner",
-      "skills": "Skills",
-      "passives": "Passives",
+      "title": "Identity details",
+      "close": "Close",
       "ego": "E.G.O",
-      "noSkills": "No skill information",
-      "noPassives": "No passive information",
       "noEgo": "No E.G.O assigned",
-      "portraitAlt": "{identity} portrait",
-      "rarity": "{rarity} Star",
-      "resistance": {
-        "fatal": "Fatal",
-        "normal": "Normal",
-        "endured": "Resist",
-        "ineffective": "Endure",
-        "nullified": "Null"
-      }
+      "openPage": "Identity page",
+      "loadError": "Could not load this identity",
+      "retry": "Try again"
     },
     "egoGifts": {
       "conditionCount": "{count} units",

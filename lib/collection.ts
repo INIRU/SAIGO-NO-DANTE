@@ -1,8 +1,8 @@
 // ── 컬렉션 비트 인코딩/디코딩 공유 유틸리티 ─────────────────────────────────
 
-export type SinnerInfo = { id: string; name_kr: string; order_num: number }
+export type SinnerInfo = { id: string; name_kr: string; name_en?: string | null; name_jp?: string | null; order_num: number }
 export type IdentityInfo = { id: string; sinner_id: string; name_kr: string; game_id: string | null; folder_name: string | null; rarity: number; keywords: string[] | null }
-export type EGOInfo = { id: string; sinner_id: string; name_kr: string | null; grade: string; sin_affinity: string | null; folder_name: string | null; image_url: string | null }
+export type EGOInfo = { id: string; sinner_id: string; name_kr: string | null; name_en?: string | null; name_jp?: string | null; grade: string; sin_affinity: string | null; folder_name: string | null; image_url: string | null }
 
 export type CollectionData = {
   sinners: SinnerInfo[]

@@ -5,12 +5,14 @@ import { type Skill, type Passive, SIN_COLORS, computeSkillImageIndices } from '
 import { selectUptieRows, selectIdentitySkills, buildSkillVariantMap, uptieLevels as listUptieLevels } from '@/lib/identity/skill-model'
 import { computeSkillDiffs, computePassiveDiffs } from '@/lib/utils/uptie-diff'
 
-export function useIdentitySkillModel(skills: Skill[], passives: Passive[]) {
+/** initialLevel: starting uptie (deck slot); a level without data resolves to the nearest one (ties: the lower). */
+export function useIdentitySkillModel(skills: Skill[], passives: Passive[], initialLevel?: number | null) {
   // Every uptie level with data (I–IV); the toggle grows automatically as levels are imported.
   const uptieLevels = useMemo(() => listUptieLevels(skills, passives), [skills, passives])
   const maxLevel = uptieLevels[uptieLevels.length - 1] ?? 4
-  const [selectedLevel, setUptieLevel] = useState<number | null>(null)
-  const uptieLevel = selectedLevel != null && uptieLevels.includes(selectedLevel) ? selectedLevel : maxLevel
+  const [selectedLevel, setUptieLevel] = useState<number | null>(initialLevel ?? null)
+  const uptieLevel = selectedLevel == null || uptieLevels.length === 0 ? maxLevel
+    : [...uptieLevels].sort((a, b) => Math.abs(a - selectedLevel) - Math.abs(b - selectedLevel) || a - b)[0]
   const nextLevel = uptieLevels.find(level => level > uptieLevel) ?? null
 
   const [showDiff, setShowDiff] = useState(true)

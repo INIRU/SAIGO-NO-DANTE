@@ -17,13 +17,14 @@ import { isNoteImageUrl, pendingNoteUploads } from '@/lib/notes/images'
 import { NoteAssetView, NoteAssetArtwork, NoteKeywordLabel, NoteVideo, fetchNoteAssets } from './NoteBlockViewer'
 
 const tr = (lang:string,ko:string,ja:string,en:string)=>lang==='ja'?ja:lang==='en'?en:ko
+const pickTitle = (kind:BlockKind,lang:string)=>{const label=blockLabel(kind,lang);return tr(lang,`${label} 선택`,`${label}を選択`,`Choose ${kind==='ego'||kind==='youtube'?label:label.toLowerCase()}`)}
 function LegacyAssetPicker({kind,onSelect,onClose}:{kind:AssetKind;onSelect:(asset:NoteAssetData)=>void;onClose:()=>void}) {
   const lang=useLocale(), [query,setQuery]=useState(''), [debounced,setDebounced]=useState(''), [offset,setOffset]=useState(0), [grade,setGrade]=useState('')
   useEffect(()=>{const timer=setTimeout(()=>{setDebounced(query);setOffset(0)},180);return()=>clearTimeout(timer)},[query])
   const {data,error,isLoading,mutate}=useSWR(`/api/notes/assets?kind=${kind}&q=${encodeURIComponent(debounced)}&offset=${offset}&grade=${grade}`,fetchNoteAssets,{revalidateOnFocus:false})
-  return <BaseModal open onClose={onClose} title={`${blockLabel(kind,lang)} ${tr(lang,'선택','選択','selection')}`} maxWidth="48rem" zIndex={10000}>
+  return <BaseModal open onClose={onClose} title={pickTitle(kind,lang)} maxWidth="48rem" zIndex={10000}>
     <div className={`note-picker note-picker--${kind} note-catalog-picker`}>
-      <header className="note-picker-header"><h2>{blockLabel(kind,lang)} {tr(lang,'선택','選択','selection')}</h2><button type="button" onClick={onClose} aria-label={tr(lang,'닫기','閉じる','Close')}><X size={20}/></button></header>
+      <header className="note-picker-header"><h2>{pickTitle(kind,lang)}</h2><button type="button" onClick={onClose} aria-label={tr(lang,'닫기','閉じる','Close')}><X size={20}/></button></header>
       <div className="character-picker-layout">
       <div className="note-picker-controls">
       <label className="note-picker-search"><Search size={18}/><input autoFocus value={query} onChange={e=>setQuery(e.target.value)} placeholder={tr(lang,'이름으로 검색','名前で検索','Search by name')} aria-label={tr(lang,'에셋 검색','アセット検索','Search assets')}/></label>
@@ -47,7 +48,7 @@ function LegacyAssetPicker({kind,onSelect,onClose}:{kind:AssetKind;onSelect:(ass
 function AssetPicker(props: {kind:AssetKind;onSelect:(asset:NoteAssetData)=>void;onClose:()=>void}) { return props.kind==='identity' || props.kind==='ego' ? <NoteCharacterPicker {...props} kind={props.kind}/> : props.kind==='skill' || props.kind==='gift' ? <NoteAssetPicker {...props} kind={props.kind}/> : <LegacyAssetPicker {...props}/> }
 function AssetNodeView({node,updateAttributes,deleteNode,selected}:NodeViewProps) {
   const lang=useLocale(),[picking,setPicking]=useState(false),kind=node.attrs.kind as AssetKind
-  const title=`${blockLabel(kind,lang)} ${tr(lang,'선택','選択','selection')}`
+  const title=pickTitle(kind,lang)
   return <NodeViewWrapper className={`note-asset-node note-asset-node--${kind}`} data-selected={selected || undefined} contentEditable={false}>
     <div className="note-block-actions"><span data-drag-handle aria-hidden="true"><GripVertical size={14}/></span><button type="button" onClick={deleteNode} aria-label={tr(lang,'블록 삭제','ブロック削除','Delete block')}><X size={14}/></button></div>
     {node.attrs.id ? <><NoteAssetView kind={kind} id={node.attrs.id}/><button className="note-asset-replace" type="button" onClick={()=>setPicking(true)}>{tr(lang,'변경','変更','Change')}</button></> : <button type="button" className={`note-empty-slot note-empty-slot--${kind}`} onClick={()=>setPicking(true)} aria-label={title}><Plus size={25}/><span>{title}</span></button>}
@@ -57,7 +58,7 @@ function AssetNodeView({node,updateAttributes,deleteNode,selected}:NodeViewProps
 function KeywordNodeView({node,updateAttributes}:NodeViewProps) {
   const [picking,setPicking]=useState(false), lang=useLocale()
   return <NodeViewWrapper as="span" className="note-keyword-node" contentEditable={false}>
-    {node.attrs.id ? <NoteKeywordLabel id={node.attrs.id}/> : <button type="button" aria-label={`${blockLabel('keyword',lang)} ${tr(lang,'선택','選択','selection')}`} className="note-keyword-insert" onClick={()=>setPicking(true)}><Plus size={14}/>{blockLabel('keyword',lang)}</button>}
+    {node.attrs.id ? <NoteKeywordLabel id={node.attrs.id}/> : <button type="button" aria-label={pickTitle("keyword",lang)} className="note-keyword-insert" onClick={()=>setPicking(true)}><Plus size={14}/>{blockLabel('keyword',lang)}</button>}
     {picking && <AssetPicker kind="keyword" onClose={()=>setPicking(false)} onSelect={asset=>{updateAttributes({id:asset.id});setPicking(false)}}/>}
   </NodeViewWrapper>
 }
@@ -165,7 +166,7 @@ export function NoteBlockMenu({editor}:{editor:Editor|null}) {
     else insertNoteBlock(editor,kind,range)
     setOpen(false);setSlash(null)
   }
-  const kinds=(Object.keys(BLOCK_LABELS) as BlockKind[]).filter(k=>!slash || `${blockLabel(k,lang)} ${k} ${BLOCK_LABELS[k][0]} ${k==='ego'?'에고':''}`.toLowerCase().includes(slash.query.toLowerCase()))
+  const kinds=(Object.keys(BLOCK_LABELS) as BlockKind[]).filter(k=>!slash || [...BLOCK_LABELS[k],k,k==='ego'?'에고':''].join(' ').toLowerCase().includes(slash.query.toLowerCase()))
   useEffect(()=>{
     if(!editor)return
     const update=()=>{const s=editor.state.selection,before=s.$from.parent.textBetween(0,s.$from.parentOffset,'\n');const match=before.match(/(?:^|\s)\/([^\s/]*)$/);setSlash(s.empty&&match?{from:s.from-match[1].length-1,to:s.from,query:match[1]}:null);setIndex(0)}
@@ -186,7 +187,7 @@ export function NoteBlockMenu({editor}:{editor:Editor|null}) {
   },[editor,slash,kinds,index])
   useEffect(()=>{if(!open)return;const close=(e:KeyboardEvent)=>{if(e.key==='Escape')setOpen(false)};document.addEventListener('keydown',close);return()=>document.removeEventListener('keydown',close)},[open])
   return <div className="note-block-menu">
-    {(['skill','gift'] as const).map(kind=><button type="button" key={kind} disabled={!editor} className="note-insert-button" onMouseDown={e=>e.preventDefault()} onClick={()=>choose(kind)}>{blockLabel(kind,lang)} {tr(lang,'추가','追加','Add')}</button>)}
+    {(['skill','gift'] as const).map(kind=><button type="button" key={kind} disabled={!editor} className="note-insert-button" onMouseDown={e=>e.preventDefault()} onClick={()=>choose(kind)}>{tr(lang,`${blockLabel(kind,lang)} 추가`,`${blockLabel(kind,lang)}追加`,`Add ${kind}`)}</button>)}
     {picking && <NoteAssetPicker kind={picking} onClose={()=>setPicking(null)} onSelect={asset=>{
       if(!editor || !insertion.current)return
       editor.commands.insertContentAt(insertion.current,[{type:'noteAsset',attrs:{kind:picking,id:asset.id}},{type:'paragraph'}])
@@ -195,7 +196,7 @@ export function NoteBlockMenu({editor}:{editor:Editor|null}) {
 
     <button type="button" disabled={!editor} aria-expanded={open} onClick={()=>setOpen(!open)} className="note-insert-button"><Plus size={16}/>{tr(lang,'블록 삽입','ブロック挿入','Insert block')}<ChevronDown size={14}/></button>
     {(open || (slash && kinds.length>0)) && <div className="note-command-menu" role="menu" aria-label={tr(lang,'블록 선택','ブロック選択','Choose block')}>
-      {kinds.map((kind,i)=><button type="button" role="menuitem" key={kind} data-active={i===index||undefined} onMouseDown={e=>e.preventDefault()} onClick={()=>{choose(kind,slash ?? undefined)}}><span>{blockLabel(kind,lang)}</span><small>/{BLOCK_LABELS[kind][0]}</small>{i===index&&<kbd>Tab</kbd>}</button>)}
+      {kinds.map((kind,i)=><button type="button" role="menuitem" key={kind} data-active={i===index||undefined} onMouseDown={e=>e.preventDefault()} onClick={()=>{choose(kind,slash ?? undefined)}}><span>{blockLabel(kind,lang)}</span><small>/{lang==='ko'?BLOCK_LABELS[kind][0]:kind}</small>{i===index&&<kbd>Tab</kbd>}</button>)}
     </div>}
   </div>
 }

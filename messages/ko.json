@@ -474,26 +474,13 @@
       "similarDecksDescription": "편성, 테마, E.G.O 구성이 가까운 덱입니다."
     },
     "identityPreview": {
-      "formationSlot": "편성 {order}",
-      "backupSlot": "대기 슬롯",
-      "close": "미리보기 닫기",
-      "preview": "IDENTITY PREVIEW",
-      "sinnerLabel": "{sinner} 수감자",
-      "skills": "스킬",
-      "passives": "패시브",
+      "title": "인격 상세",
+      "close": "닫기",
       "ego": "E.G.O",
-      "noSkills": "스킬 정보 없음",
-      "noPassives": "패시브 정보 없음",
       "noEgo": "편성된 E.G.O 없음",
-      "portraitAlt": "{identity} 포트레이트",
-      "rarity": "{rarity}성",
-      "resistance": {
-        "fatal": "취약",
-        "normal": "보통",
-        "endured": "내성",
-        "ineffective": "견딤",
-        "nullified": "무효"
-      }
+      "openPage": "인격 페이지",
+      "loadError": "인격 정보를 불러오지 못했습니다",
+      "retry": "다시 시도"
     },
     "egoGifts": {
       "conditionCount": "{count}인",

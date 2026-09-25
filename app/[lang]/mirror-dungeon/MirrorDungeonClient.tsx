@@ -323,10 +323,9 @@ export default function MirrorDungeonClient({
                   role="tab"
                   aria-selected={isActive}
                   onClick={() => setActiveTab(tab.key)}
-                  className="flex min-h-[3rem] flex-1 shrink-0 items-baseline justify-center gap-1.5 px-3 pt-2 transition-colors hover:text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--gold-light)] sm:flex-none sm:justify-start sm:px-5"
+                  className="flex min-h-[3rem] flex-1 shrink-0 items-baseline justify-center gap-1.5 whitespace-nowrap px-2 pt-2 text-[0.9375rem] transition-colors hover:text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--gold-light)] sm:flex-none sm:justify-start sm:px-5 sm:text-[1.0625rem]"
                   style={{
                     fontFamily: 'var(--font-heading)',
-                    fontSize: '1.0625rem',
                     color: isActive ? 'var(--text-primary)' : '#9c8b73',
                     borderBottom: `3px solid ${isActive ? 'var(--gold)' : 'transparent'}`,
                     marginBottom: '-1px',

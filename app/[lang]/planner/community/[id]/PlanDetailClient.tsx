@@ -541,7 +541,7 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
     }
   }
 
-  const difficultyLabel = difficultyBadge.labelKeys.map(key => tCommunity(`difficulty.${key}`)).join("/")
+  const difficultyLabel = difficultyBadge.labelKeys.map(key => tCommunity(`difficulty.${key}`)).join("/\u200b")
   const mainKeywords = (plan.tags ?? []).filter(Boolean)
   const configuredFloors = floorPlan.filter(f => f.theme_id).length
   const floorCountLabel = tFloor('configuredFloorCount', { configured: configuredFloors, total: floorPlan.length })

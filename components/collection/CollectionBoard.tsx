@@ -8,6 +8,7 @@ import EgoDisplayCard from '@/components/sinners/EgoDisplayCard'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
 import { SIN_COLORS } from '@/lib/constants/sin'
 import { getSinnerLogoUrl } from '@/lib/utils/images'
+import { getLocalizedName } from '@/lib/i18n/localize'
 import type { CollectionData, EGOInfo, IdentityInfo } from '@/lib/collection'
 import type { SupportedLang } from '@/lib/i18n/types'
 import styles from './CollectionBoard.module.css'
@@ -71,7 +72,7 @@ export default function CollectionBoard({ data, filtered, counts, owned, sinner,
       <section key={s.id} className={styles.section}>
         {sinner === COLLECTION_ALL && (
           <h3 className={styles.sinnerHead}>
-            <Image src={getSinnerLogoUrl(s.id)} alt="" width={24} height={24} />{s.name_kr}
+            <Image src={getSinnerLogoUrl(s.id)} alt="" width={24} height={24} />{getLocalizedName(s, lang)}
             <span>{(counts[s.id]?.owned ?? 0)}/{(counts[s.id]?.total ?? 0)}</span>
           </h3>
         )}
@@ -88,7 +89,7 @@ export default function CollectionBoard({ data, filtered, counts, owned, sinner,
             <p className={styles.kind}>{label.egos}<b>{egos.filter(e => owned.has(e.id)).length}/{egos.length}</b></p>
             <ul className={styles.egos}>
               {GRADES.flatMap(grade => egos.filter(e => e.grade === grade)).map(ego => item(ego.id,
-                <EgoDisplayCard displayOnly ego={{ grade: ego.grade, image_url: ego.image_url, sin_affinity: ego.sin_affinity }} name={ego.name_kr ?? ''} sinnerId={ego.sinner_id} lang={lang} />,
+                <EgoDisplayCard displayOnly ego={{ grade: ego.grade, image_url: ego.image_url, sin_affinity: ego.sin_affinity }} name={getLocalizedName({ ...ego, name_kr: ego.name_kr ?? '' }, lang)} sinnerId={ego.sinner_id} lang={lang} />,
               ))}
             </ul>
           </>
@@ -101,7 +102,7 @@ export default function CollectionBoard({ data, filtered, counts, owned, sinner,
     <div className={styles.board}>
       <div className={styles.sinners}>
         {sinnerTile(COLLECTION_ALL, label.all, total)}
-        {data.sinners.map(s => sinnerTile(s.id, s.name_kr, counts[s.id] ?? { owned: 0, total: 0 }, getSinnerLogoUrl(s.id)))}
+        {data.sinners.map(s => sinnerTile(s.id, getLocalizedName(s, lang), counts[s.id] ?? { owned: 0, total: 0 }, getSinnerLogoUrl(s.id)))}
       </div>
       <div className={styles.filters}>
         <div className={styles.keywords}>
