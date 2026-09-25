@@ -1636,9 +1636,9 @@
     "planBoard": "プラン掲示板",
     "tools": {
       "title": "ツール",
-      "planner": "ミラーダンジョンプランナー",
+      "planner": "鏡ダンジョンプラン",
       "assist": "アシストモード",
-      "deckBuilder": "デッキビルダー",
+      "deckBuilder": "デッキ掲示板",
       "experience": "経験値計算機",
       "lunacy": "月間狂気計算機",
       "random": "ランダム編成"

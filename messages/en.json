@@ -1636,9 +1636,9 @@
     "planBoard": "Plan board",
     "tools": {
       "title": "Tools",
-      "planner": "Mirror Dungeon Planner",
+      "planner": "Mirror Dungeon plans",
       "assist": "Assist Mode",
-      "deckBuilder": "Deck Builder",
+      "deckBuilder": "Deck board",
       "experience": "EXP Calculator",
       "lunacy": "Monthly Lunacy Calculator",
       "random": "Random Formation"
