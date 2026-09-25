@@ -633,7 +633,6 @@
       "pipObserveGifts": "Observed gifts",
       "pipStartGiftsEmpty": "This plan has no starting or observed gifts.",
       "pipStartThemeWait": "Recommended theme packs appear once the theme pack selection screen is recognized.",
-
       "planMode": "Follow a plan",
       "recordMode": "Record a run",
       "planGoals": "Author’s floor plan",
@@ -799,7 +798,7 @@
       "themeGiftsCount": "Theme gifts ({count})",
       "scrollForMoreGifts": "{count} gifts total · scroll the list to see more.",
       "giftListEnd": "All {count} gifts shown.",
-     "giftSearchCount": "{count} search results",
+      "giftSearchCount": "{count} search results",
       "addGiftIdleHint": "Pick a keyword or grade, or search by name. Tap a gift to add it to your held gifts; tap again to remove it.",
       "themeGiftsHint": "Select a theme to view its gifts.",
       "shopPurchase": "Shop purchase",
@@ -1057,7 +1056,10 @@
       "floor": "Floor Plan",
       "summary": "Plan intro"
     },
-    "intro": { "titlePlaceholder": "Plan title", "titleLabel": "Plan title" },
+    "intro": {
+      "titlePlaceholder": "Plan title",
+      "titleLabel": "Plan title"
+    },
     "sectionNav": "Plan sections",
     "summaryHint": "A title is required to upload",
     "difficultyValues": {
@@ -1138,7 +1140,7 @@
       "finalGradeFilter": "Grade",
       "filterAll": "All",
       "allGiftAddPanel": "Add from all gifts",
-     "allGiftCatalog": "All gifts",
+      "allGiftCatalog": "All gifts",
       "finalBlockedByRecipe": "{gift}: an ingredient of {result}, so it can't be a final gift",
       "allGiftAddHint": "Click a card to add it to final inventory. Click an already-added card again to remove it.",
       "allGiftSearchPlaceholder": "Search all gifts...",
@@ -1645,11 +1647,15 @@
     "google": "Continue with Google",
     "busy": "Connecting…",
     "back": "Back to the site",
-    "consent": "By continuing, you agree to the <terms>Terms of Service</terms> and <privacy>Privacy Policy</privacy>.",
     "errorConnect": "Could not connect to sign-in. Please try again.",
     "errorCallback": "Google sign-in did not finish. Please try again.",
     "errorDenied": "This account cannot sign in.",
-    "errorRequired": "Sign in to view this page."
+    "errorRequired": "Sign in to view this page.",
+    "agreeTerms": "[Required] I agree to the Terms of Service",
+    "agreePrivacy": "[Required] I agree to the collection and use of personal information",
+    "readFull": "Read",
+    "hideFull": "Close",
+    "readToAgree": "Read the full text to the end to agree."
   },
   "sinners": {
     "title": "Sinners",

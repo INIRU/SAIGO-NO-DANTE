@@ -4,8 +4,8 @@ import { useEffect, useRef } from 'react'
 import styles from './HeroWordmark.module.css'
 
 // HOSHI twists into SAIGO on a CSS loop; paused while the tab is hidden or the hero is off-screen.
-export default function HeroWordmark({ className = '' }: { className?: string }) {
-  const ref = useRef<HTMLHeadingElement>(null)
+export default function HeroWordmark({ className = '', as: Tag = 'h1' }: { className?: string; as?: 'h1' | 'p' }) {
+  const ref = useRef<HTMLHeadingElement & HTMLParagraphElement>(null)
 
   useEffect(() => {
     const el = ref.current
@@ -19,7 +19,7 @@ export default function HeroWordmark({ className = '' }: { className?: string })
   }, [])
 
   return (
-    <h1 ref={ref} className={`${styles.wordmark} ${className}`}>
+    <Tag ref={ref} className={`${styles.wordmark} ${className}`}>
       <span className="sr-only">SAIGO NO DANTE</span>
       <span className={styles.visual} aria-hidden="true">
         <span className={styles.slot}>
@@ -29,6 +29,6 @@ export default function HeroWordmark({ className = '' }: { className?: string })
         </span>
         <span>NO DANTE</span>
       </span>
-    </h1>
+    </Tag>
   )
 }
