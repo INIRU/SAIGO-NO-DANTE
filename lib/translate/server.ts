@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto'
 import { generateText } from 'ai'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { AFFILIATION_MAP } from '@/lib/i18n/localize'
 import { textLanguage, uniqueSegments, type TranslateLang } from './segments'
 
 export type PostKind = 'deck' | 'plan'
@@ -8,6 +9,8 @@ export type TranslationPairs = [string, string][]
 
 // Cheap, fast model through Vercel AI Gateway (OIDC on Vercel, AI_GATEWAY_API_KEY locally).
 const MODEL = 'google/gemini-2.5-flash-lite'
+// Bump when the prompt or glossary changes so stored translations are made again.
+const TRANSLATION_VERSION = 2
 const MAX_CHARS = 30_000
 const LANGS: TranslateLang[] = ['ko', 'en', 'ja']
 const LANG_NAME: Record<TranslateLang, string> = { ko: 'Korean', en: 'English', ja: 'Japanese' }
@@ -29,39 +32,50 @@ export async function postTexts(kind: PostKind, id: string): Promise<(string | n
   return [data.title, data.description, ...memos]
 }
 
-const hashOf = (segments: string[]) => createHash('sha256').update(JSON.stringify(segments)).digest('hex')
+const hashOf = (segments: string[]) => createHash('sha256').update(JSON.stringify([TRANSLATION_VERSION, segments])).digest('hex')
 
-async function keywordNames() {
-  const rows: { name: string; name_en: string | null; name_jp: string | null }[] = []
+type NameRow = Record<string, string | null>
+
+/** Every row of a name table (PostgREST returns at most 1000 per request). */
+async function allNames(table: string, columns: string): Promise<NameRow[]> {
+  const rows: NameRow[] = []
   for (let from = 0; ; from += 1000) {
-    const { data, error } = await db().from('keyword_meta').select('name, name_en, name_jp').range(from, from + 999)
+    const { data, error } = await db().from(table).select(columns).range(from, from + 999)
     if (error || !data?.length) break
-    rows.push(...data)
+    rows.push(...(data as unknown as NameRow[]))
     if (data.length < 1000) break
   }
   return rows
 }
 
 /**
- * Game terms that appear in the text, with the official name in the target language: status keywords (화상 → Burn)
- * and Sinners. Given to the model so players' shorthand is translated with the game's own words.
+ * Game names that appear in the text, with the official name in the target language: status keywords (화상 → Burn),
+ * Sinners, affiliations (중지 → The Middle), E.G.O Gifts, Theme Packs, Identities and E.G.O. Given to the model so
+ * proper nouns come out as in the game instead of word by word.
  */
 async function glossary(segments: string[], source: TranslateLang, target: TranslateLang) {
   const text = segments.join('\n')
-  const [keywords, sinners] = await Promise.all([
-    keywordNames(),
-    db().from('sinners').select('name_kr, name_en, name_jp'),
+  const [keywords, sinners, gifts, themes, identities, egos] = await Promise.all([
+    allNames('keyword_meta', 'name, name_en, name_jp'),
+    allNames('sinners', 'name_kr, name_en, name_jp'),
+    allNames('ego_gifts', 'name, name_en, name_jp'),
+    allNames('ego_gift_themes', 'name, name_en, name_jp'),
+    allNames('identities', 'name_kr, name_en, name_jp'),
+    allNames('ego', 'name_kr, name_en, name_jp'),
   ])
-  const rows = [
-    ...keywords.map(row => ({ ko: row.name, en: row.name_en, ja: row.name_jp })),
-    ...(sinners.data ?? []).map(row => ({ ko: row.name_kr, en: row.name_en, ja: row.name_jp })),
-  ] as Record<TranslateLang, string | null>[]
+  const byName = (row: NameRow) => ({ ko: row.name, en: row.name_en, ja: row.name_jp })
+  const byKr = (row: NameRow) => ({ ko: row.name_kr, en: row.name_en, ja: row.name_jp })
+  const rows: Record<TranslateLang, string | null>[] = [
+    ...keywords.map(byName), ...sinners.map(byKr), ...gifts.map(byName), ...themes.map(byName), ...identities.map(byKr), ...egos.map(byKr),
+    ...Object.entries(AFFILIATION_MAP).map(([ko, names]) => ({ ko, en: names.en, ja: names.ja })),
+  ]
   const pairs = new Map<string, string>()
   for (const row of rows) {
     const from = row[source]?.trim(), to = row[target]?.trim()
     if (from && to && from !== to && from.length >= 2 && text.includes(from)) pairs.set(from, to)
   }
-  return [...pairs].slice(0, 300)
+  // Longest first, so "새벽 사무소 해결사" wins over "새벽 사무소".
+  return [...pairs].sort((a, b) => b[0].length - a[0].length).slice(0, 400)
 }
 
 async function translateSegments(segments: string[], source: TranslateLang, target: TranslateLang) {
@@ -97,7 +111,8 @@ export async function translatePost(kind: PostKind, id: string, only?: Translate
     const source = textLanguage(segments.join('\n'))
     if (!segments.length || !source || segments.reduce((sum, s) => sum + s.length, 0) > MAX_CHARS) return null
     const hash = hashOf(segments)
-    const targets = LANGS.filter(lang => lang !== source && (!only || lang === only))
+    // Every other site language is made at once; `only` just picks which one to return.
+    const targets = LANGS.filter(lang => lang !== source)
     const { data: existing } = await db().from('post_translations').select('lang, source_hash, pairs').eq('kind', kind).eq('post_id', id)
     let result: TranslationPairs | null = null
     for (const lang of targets) {
