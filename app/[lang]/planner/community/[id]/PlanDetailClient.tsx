@@ -325,6 +325,8 @@ function GiftGrid({ gifts, getCondition, onGiftClick, locale }: {
 
 interface Props {
   plan: Plan
+  /** Stored translation of the plan's texts into the page language (made when the plan was saved). */
+  translation?: [string, string][] | null
   themes: ThemeData[]
   gifts: GiftData[]
   recipes: RecipeData[]
@@ -340,7 +342,7 @@ interface Props {
 
 // ── Main component ────────────────────────────────────────────────────────────
 
-export default function PlanDetailClient({ plan, themes, gifts, recipes, identities, sinners, skills, passives, egos, events, eventChoices }: Props) {
+export default function PlanDetailClient({ plan, translation, themes, gifts, recipes, identities, sinners, skills, passives, egos, events, eventChoices }: Props) {
   useHtmlFlag('with-plan-detail')
   const locale = useLocale() as SupportedLang
   const tPlanner = useTranslations('planner')
@@ -614,7 +616,7 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
   }
 
   return (
-    <PostTranslationProvider kind="plan" id={plan.id} texts={translationTexts}>
+    <PostTranslationProvider kind="plan" id={plan.id} texts={translationTexts} initial={translation}>
     <NoteGiftClickContext value={openNoteGift}>
     <div data-plan-detail className="min-h-screen bg-[#0d0b08] pt-24 pb-20">
       <div className="mx-auto w-full max-w-7xl px-3 sm:px-6">

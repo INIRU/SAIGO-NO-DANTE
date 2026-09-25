@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse, after } from 'next/server'
+import { translatePost } from '@/lib/translate/server'
 import { revalidateTag } from 'next/cache'
 import { ownsPost, resolveAuthor } from '@/lib/guest/server'
 import { createAdminClient } from '@/lib/supabase/admin'
@@ -89,6 +90,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
     revalidateTag(CACHE_TAGS.plan(id), 'max')
     revalidateTag(CACHE_TAGS.plansList, 'max')
+    after(() => translatePost('plan', id))
     return NextResponse.json({ ok: true })
   } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

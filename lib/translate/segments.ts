@@ -34,7 +34,8 @@ export function segmentsOf(text: string | null | undefined): string[] {
 export function applyTranslations(text: string, translations: ReadonlyMap<string, string>): string {
   if (!translations.size || !text) return text
   const doc = noteDoc(text)
-  if (!doc) return translations.get(text) ?? text
+  // Markdown texts are keyed by the whole text; callers sometimes pass it trimmed.
+  if (!doc) return translations.get(text) ?? translations.get(text.trim()) ?? [...translations].find(([source]) => source.trim() === text.trim())?.[1] ?? text
   const walk = (node: Node): Node => node.type === 'text' && typeof node.text === 'string'
     ? { ...node, text: translations.get(node.text) ?? node.text }
     : node.content ? { ...node, content: node.content.map(walk) } : node

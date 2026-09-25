@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse, after } from 'next/server'
+import { translatePost } from '@/lib/translate/server'
 import { revalidateTag } from 'next/cache'
 import { authorColumns, authorRateKey, recordGuestAuthorship, resolveAuthor } from '@/lib/guest/server'
 import { createClient } from '@/lib/supabase/server'
@@ -429,6 +430,7 @@ export async function POST(req: NextRequest) {
     })
 
     revalidateTag(CACHE_TAGS.plansList, 'max')
+    after(() => translatePost('plan', data.id))
     return NextResponse.json({ id: data.id }, { status: 201 })
   } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

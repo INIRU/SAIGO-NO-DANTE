@@ -366,11 +366,13 @@ type IdentityPreviewState = {
 type DeckDetailClientProps = {
   id: string
   initialDeck?: DeckDetail | null
+  /** Stored translation of the deck's texts into the page language (made when the deck was saved). */
+  translation?: [string, string][] | null
   initialComments?: Comment[]
   initialRecommendations?: DeckRecommendationsData | null
 }
 
-export default function DeckDetailClient({ id, initialDeck, initialComments, initialRecommendations }: DeckDetailClientProps) {
+export default function DeckDetailClient({ id, initialDeck, initialComments, initialRecommendations, translation }: DeckDetailClientProps) {
   const router = useRouter()
   const locale = useLocale() as SupportedLang
   const t = useTranslations('decks.detail')
@@ -820,7 +822,7 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
   }
 
   return (
-    <PostTranslationProvider kind="deck" id={deck.id} texts={translationTexts}>
+    <PostTranslationProvider kind="deck" id={deck.id} texts={translationTexts} initial={translation}>
     <div className="min-h-screen bg-[#0d0b08] pt-24 pb-20">
       <div className="mx-auto w-full max-w-7xl px-3 sm:px-6">
         <BackLink

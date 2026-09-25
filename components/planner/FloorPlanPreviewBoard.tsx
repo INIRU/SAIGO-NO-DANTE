@@ -1,6 +1,7 @@
 'use client'
 
 import { isConfiguredFloor } from '@/lib/planner/stripPlanForList'
+import { usePostTranslator } from '@/components/translate/PostTranslation'
 
 import './floor-preview.css'
 import FloorConstraints from './FloorConstraints'
@@ -102,6 +103,7 @@ export default function FloorPlanPreviewBoard({
   onEventPrefetch,
 }: FloorPlanPreviewBoardProps) {
   const locale = useLocale() as SupportedLang
+  const translate = usePostTranslator()
   const tFloor = useTranslations('planner.floorTab')
   const shouldReduceMotion = useReducedMotion()
   const segments = FLOOR_PLAN_SEGMENTS
@@ -154,7 +156,7 @@ export default function FloorPlanPreviewBoard({
               const floorGifts = withThemeRewards(entry.gift_ids, theme)
                 .map(id => giftMap.get(parseInt(id, 10)))
                 .filter((gift): gift is GiftData => Boolean(gift))
-              const memoPreview = getMemoPreview(entry.memo)
+              const memoPreview = getMemoPreview(translate(entry.memo))
 
               const themeImageSrc = theme ? getThemeImageSrc(theme) : null
 

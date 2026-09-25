@@ -1,5 +1,6 @@
 import { notePlainText } from '@/lib/notes/blocks'
 import { resolvePlannerIdentity } from '@/lib/planner/catalog-references'
+import { storedTranslation } from '@/lib/translate/server'
 import { selectUptieRows } from '@/lib/identity/skill-model'
 import type { Metadata } from 'next'
 import { localeAlternates } from '@/lib/seo/metadata'
@@ -114,7 +115,7 @@ export default async function PlanDetailPage({ params }: Props) {
   const supabase = await createClient()
 
   // 플랜과 캐시된 게임 데이터를 함께 읽고, 스킬·패시브만 편성 인격 기준으로 한 번 더 읽는다(DB 왕복 4번 → 2번)
-  const [plan, game] = await Promise.all([fetchFullPlan(id), fetchPlanDetailGameData()])
+  const [plan, game, translation] = await Promise.all([fetchFullPlan(id), fetchPlanDetailGameData(), storedTranslation('plan', id, lang)])
   if (!plan) notFound()
   const planGiftIds = [...new Set((Array.isArray(plan.floor_plan) ? plan.floor_plan : [])
     .flatMap((entry: { gift_ids?: unknown }) => Array.isArray(entry?.gift_ids) ? entry.gift_ids.map(Number) : [])
@@ -145,6 +146,7 @@ export default async function PlanDetailPage({ params }: Props) {
     <Suspense fallback={<PlanDetailSkeleton />}>
       <PlanDetailClient
         plan={plan as any}
+        translation={translation}
         themes={themes}
         gifts={gifts}
         recipes={recipes}

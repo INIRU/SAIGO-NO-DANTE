@@ -16,6 +16,8 @@ describe('post translation segments', () => {
     expect(parsed.content[0].content.map((n: { text?: string; type: string }) => n.text ?? n.type)).toEqual(['Burn deck', 'noteAsset', '추천'])
     expect(parsed.content[0].content[2].marks).toEqual([{ type: 'bold' }])
     expect(applyTranslations('제목', new Map([['제목', 'Title']]))).toBe('Title')
+    // Floor memos are rendered trimmed; the stored key is the original text.
+    expect(applyTranslations('1층 화상', new Map([['1층 화상\n', 'Floor 1 Burn\n']]))).toBe('Floor 1 Burn\n')
   })
   it('guesses the source language', () => {
     expect(textLanguage('화상 덱')).toBe('ko')
