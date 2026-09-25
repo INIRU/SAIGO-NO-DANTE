@@ -14,6 +14,8 @@ import { type DeckSummary } from '@/components/decks/DeckCard'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
 import { decodeCollectionAsync, missingFormationCount, withBaseIdentities } from '@/lib/collection'
 import { useOwnedIdentities } from '@/hooks/useOwnedIdentities'
+import { FacetPickerModal, FacetSections, type FacetKind } from '@/components/board/FacetPicker'
+import { hasAll, useBoardFacets } from '@/hooks/useBoardFacets'
 import type { CollectionData } from '@/lib/collection'
 import { getActiveTerm } from '@/lib/utils/search'
 import { THEME_KEYWORDS, normalizeThemeKeyword } from '@/lib/constants/keywords'
@@ -67,6 +69,8 @@ type DeckDerivedIndex = {
   keywordTagValues: string[]
   identityIds: string[]
   egoIds: string[]
+  /** Affiliations of the formed identities (filled in once the board facets load). */
+  formedIdentityIds: string[]
   formationCount: number
   hasFormationOrder: boolean
   hasNonDefaultEgo: boolean
@@ -131,6 +135,7 @@ function buildDeckDerivedIndex(deck: DeckSummary): DeckDerivedIndex {
     keywordTagValues: [...keywordTagValues],
     identityIds,
     egoIds: (deck.deck_egos ?? []).map(e => e.ego_id),
+    formedIdentityIds: (deck.deck_identities ?? []).filter(slot => slot.slot_order < 99 && slot.identities?.id).map(slot => slot.identities!.id),
     formationCount,
     hasFormationOrder,
     hasNonDefaultEgo,
@@ -388,6 +393,20 @@ export default function DecksClient({
   }, [inputValue, search, setSearch, startTransition])
 
   // ── URL-synced filter state ──
+  // 소속·E.G.O: 고른 것을 모두 담은 덱만 남긴다(플랜 게시판과 같은 선택 창)
+  const [affiliationQuery, setAffiliationQuery] = useQueryState('af', parseAsString.withDefault(''))
+  const [egoFacetQuery, setEgoFacetQuery] = useQueryState('eg', parseAsString.withDefault(''))
+  const csv = (value: string) => value ? value.split(',').map(item => item.trim()).filter(Boolean) : []
+  const facetSelections: Record<FacetKind, string[]> = { affiliation: csv(affiliationQuery), ego: csv(egoFacetQuery), gift: [], theme: [] }
+  const toggleFacet = (kind: FacetKind, id: string) => {
+    const next = new Set(facetSelections[kind])
+    if (next.has(id)) next.delete(id)
+    else next.add(id)
+    const value = [...next].join(',') || null
+    void (kind === 'affiliation' ? setAffiliationQuery(value, QUERY_OPTIONS) : setEgoFacetQuery(value, QUERY_OPTIONS))
+  }
+  const [facetModal, setFacetModal] = useState<FacetKind | null>(null)
+  const facetData = useBoardFacets('deck').data
   const [filterQuery, setFilterQuery] = useQueryStates({
     contentType: parseAsString.withDefault(''),
     tags: parseAsString.withDefault(''),
@@ -788,12 +807,17 @@ export default function DecksClient({
       })
     }
 
+    const { affiliation, ego } = facetSelections
+    if (affiliation.length) list = list.filter(d => hasAll(affiliation, new Set((deckDerived.byId.get(d.id)?.formedIdentityIds ?? [])
+      .flatMap(id => facetData?.identityAffiliations[id] ?? []))))
+    if (ego.length) list = list.filter(d => hasAll(ego, new Set(deckDerived.byId.get(d.id)?.egoIds ?? [])))
+
     return list
-  }, [decks, deckDerived, filterOwnedIdentity, filterOwnedEgo, effectiveOwned])
+  }, [decks, deckDerived, filterOwnedIdentity, filterOwnedEgo, effectiveOwned, affiliationQuery, egoFacetQuery, facetData]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const languageFilterCount = languageFilter === 'mine' ? 0 : 1
-  const hasAnyFilter = Boolean(inputValue || activeContentType || activeTags.size > 0 || activeKeywordTags.size > 0 || activeMainKeywords.size > 0 || formationCount !== null || minInfoScore !== null || selectedIdentityIds.size > 0 || filterOwnedIdentity || filterOwnedEgo || languageFilterCount)
-  const advancedFilterCount = activeTags.size + activeKeywordTags.size + activeMainKeywords.size + (formationCount !== null ? 1 : 0) + (minInfoScore !== null ? 1 : 0) + selectedIdentityIds.size + (filterOwnedIdentity ? 1 : 0) + (filterOwnedEgo ? 1 : 0) + languageFilterCount
+  const hasAnyFilter = Boolean(inputValue || activeContentType || activeTags.size > 0 || activeKeywordTags.size > 0 || activeMainKeywords.size > 0 || formationCount !== null || minInfoScore !== null || selectedIdentityIds.size > 0 || filterOwnedIdentity || filterOwnedEgo || languageFilterCount || affiliationQuery || egoFacetQuery)
+  const advancedFilterCount = activeTags.size + activeKeywordTags.size + activeMainKeywords.size + (formationCount !== null ? 1 : 0) + (minInfoScore !== null ? 1 : 0) + selectedIdentityIds.size + (filterOwnedIdentity ? 1 : 0) + (filterOwnedEgo ? 1 : 0) + languageFilterCount + facetSelections.affiliation.length + facetSelections.ego.length
 
   if (browse !== 'all' && !(hasAnyFilter)) return <DiscoveryShelf kind="deck" onBrowse={() => setBrowse('all', { history: 'push' })} />
 
@@ -874,7 +898,10 @@ export default function DecksClient({
           onClearSelectedIdentities={() => { void setFilterQuery({ identityIds: null }) }}
           languageFilter={languageFilter}
           onLanguageFilterChange={value => { void setLanguageQuery(value === 'mine' ? null : value, QUERY_OPTIONS) }}
+          facetSections={<FacetSections kinds={['affiliation', 'ego']} facets={facetData} selections={facetSelections} onRemove={toggleFacet} onOpen={setFacetModal} />}
         />
+        <FacetPickerModal kind={facetModal} facets={facetData} selected={facetModal ? facetSelections[facetModal] : []}
+          onToggle={id => { if (facetModal) toggleFacet(facetModal, id) }} onClose={() => setFacetModal(null)} />
 
         <div ref={scrollRootRef} className="min-h-0 flex-1 overflow-y-auto pb-16 pr-1 scrollbar-thin">
           {/* ── 결과 수 ── */}

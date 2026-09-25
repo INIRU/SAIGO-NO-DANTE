@@ -16,7 +16,7 @@ import { DIFFICULTY_CONFIG, type Difficulty } from '@/lib/planner/types'
 import { useKeywordData, useKeywords } from '@/components/providers/KeywordProvider'
 import DeckIdentityFilterModal, { type DeckFilterIdentity, type DeckFilterSinner } from '@/components/decks/DeckIdentityFilterModal'
 import FormationCountFilter from '@/components/decks/FormationCountFilter'
-import { FacetPickerModal, FacetSelection, type FacetKind } from '@/components/board/FacetPicker'
+import { FacetPickerModal, FacetSections, type FacetKind } from '@/components/board/FacetPicker'
 import { hasAll, useBoardFacets } from '@/hooks/useBoardFacets'
 import { decodeCollectionAsync, missingFormationCount, withBaseIdentities, type CollectionData } from '@/lib/collection'
 import { useOwnedIdentities } from '@/hooks/useOwnedIdentities'
@@ -350,7 +350,6 @@ export default function CommunityClient({ initialPlans, initialTotal }: Communit
     void facetSetters[kind](serializeCsvParam(next) || null, QUERY_OPTIONS)
   }
   const [facetModal, setFacetModal] = useState<FacetKind | null>(null)
-  const [openFacets, setOpenFacets] = useState<Set<FacetKind>>(() => new Set(['affiliation', 'ego', 'gift', 'theme']))
   const facetData = useBoardFacets('planner').data
   const [formationCountQuery, setFormationCountQuery] = useQueryState('fc', parseAsInteger)
   const formationCount = formationCountQuery !== null && Number.isInteger(formationCountQuery) && formationCountQuery >= 1 && formationCountQuery <= 12
@@ -1308,19 +1307,8 @@ export default function CommunityClient({ initialPlans, initialTotal }: Communit
       </section>
 
 
-      {(['affiliation', 'ego', 'gift', 'theme'] as const).map(kind => (
-        <section key={kind}>
-          <SectionToggle
-            label={rootT(`boardFacets.${kind}`)}
-            open={openFacets.has(kind)}
-            active={facetSelections[kind].length > 0}
-            count={facetSelections[kind].length}
-            onClick={() => setOpenFacets(current => { const next = new Set(current); if (next.has(kind)) next.delete(kind); else next.add(kind); return next })}
-          />
-          {openFacets.has(kind) && <FacetSelection kind={kind} facets={facetData} selected={facetSelections[kind]}
-            onRemove={id => toggleFacet(kind, id)} onOpen={() => setFacetModal(kind)} />}
-        </section>
-      ))}
+      <FacetSections kinds={['affiliation', 'ego', 'gift', 'theme']} facets={facetData} selections={facetSelections}
+        onRemove={toggleFacet} onOpen={setFacetModal} />
 
 
       <LanguageFilter

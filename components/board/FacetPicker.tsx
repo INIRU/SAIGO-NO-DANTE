@@ -3,7 +3,7 @@
 import { useMemo, useState, type ReactNode } from 'react'
 import Image from 'next/image'
 import { useLocale, useTranslations } from 'next-intl'
-import { Plus, Search, X } from 'lucide-react'
+import { ChevronDown, ChevronRight, Plus, Search, X } from 'lucide-react'
 import BaseModal from '@/components/ui/BaseModal'
 import ThemePackCard from '@/components/ui/ThemePackCard'
 import EgoDisplayCard from '@/components/sinners/EgoDisplayCard'
@@ -194,3 +194,35 @@ export function FacetSelection({ kind, facets, selected, onRemove, onOpen }: {
   )
 }
 
+
+/** The facet sections of a board sidebar, styled like its other collapsible sections; each opens FacetPickerModal. */
+export function FacetSections({ kinds, facets, selections, onRemove, onOpen }: {
+  kinds: readonly FacetKind[]
+  facets: BoardFacets | undefined
+  selections: Record<FacetKind, string[]>
+  onRemove: (kind: FacetKind, id: string) => void
+  onOpen: (kind: FacetKind) => void
+}) {
+  const t = useTranslations('boardFacets')
+  const [closed, setClosed] = useState<Set<FacetKind>>(() => new Set())
+  return <>
+    {kinds.map(kind => {
+      const open = !closed.has(kind)
+      const count = selections[kind].length
+      const Icon = open ? ChevronDown : ChevronRight
+      return (
+        <section key={kind}>
+          <button type="button" aria-expanded={open}
+            onClick={() => setClosed(current => { const next = new Set(current); if (next.has(kind)) next.delete(kind); else next.add(kind); return next })}
+            className="flex w-full items-center gap-2 text-left transition-colors hover:bg-white/[0.025]"
+            style={{ minHeight: 'var(--deck-filter-control-min)', color: count ? 'var(--gold)' : '#666', fontFamily: 'var(--font-body)', fontSize: 'var(--deck-filter-label-text)' }}>
+            <Icon size={13} style={{ flexShrink: 0, opacity: 0.6 }} />
+            <span className="min-w-0 flex-1 truncate">{t(kind)}</span>
+            {count > 0 && <span style={{ background: 'rgba(200,144,10,0.18)', color: 'var(--gold)', minWidth: '1.375rem', padding: '0.0625rem 0.4375rem', borderRadius: '999rem', fontSize: 'var(--deck-filter-control-text)', lineHeight: 1.2, textAlign: 'center' }}>{count}</span>}
+          </button>
+          {open && <FacetSelection kind={kind} facets={facets} selected={selections[kind]} onRemove={id => onRemove(kind, id)} onOpen={() => onOpen(kind)} />}
+        </section>
+      )
+    })}
+  </>
+}
