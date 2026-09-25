@@ -13,6 +13,7 @@ import type { GiftData } from '@/lib/planner/types'
 import type { SupportedLang } from '@/lib/i18n/types'
 import { getLocalizedAffiliation } from '@/lib/i18n/localize'
 import { getSinnerLogoUrl } from '@/lib/utils/images'
+import { getAffiliationIconUrl } from '@/lib/constants/affiliation-icons'
 import { SINNER_SLUGS } from '@/lib/constants/game'
 import type { BoardFacets } from '@/hooks/useBoardFacets'
 
@@ -24,7 +25,7 @@ const localizedName = (item: Named, lang: SupportedLang) =>
 
 /** Display name and thumbnail of a selected option, for the sidebar list and removable chips. */
 export function facetOption(kind: FacetKind, id: string, facets: BoardFacets | undefined, lang: SupportedLang): { label: string; image: string | null } {
-  if (kind === 'affiliation') return { label: getLocalizedAffiliation(id, lang), image: null }
+  if (kind === 'affiliation') return { label: getLocalizedAffiliation(id, lang), image: getAffiliationIconUrl(id) }
   const item = kind === 'ego' ? facets?.egos.find(ego => ego.id === id)
     : kind === 'gift' ? facets?.gifts.find(gift => String(gift.game_id) === id)
       : facets?.themes.find(theme => String(theme.id) === id)
@@ -82,6 +83,7 @@ export function FacetPickerModal({ kind, facets, selected, onToggle, onClose }: 
             <button key={item.key} type="button" aria-pressed={active} onClick={() => onToggle(item.key)}
               className="flex min-h-10 items-center gap-2 rounded px-3 text-[0.9375rem] font-semibold transition-colors"
               style={{ background: active ? 'var(--deck-filter-surface-active)' : 'var(--deck-filter-surface-muted)', color: active ? 'var(--gold)' : 'var(--deck-filter-text-muted)' }}>
+              {getAffiliationIconUrl(item.key) && <Image src={getAffiliationIconUrl(item.key)!} alt="" width={24} height={24} className="h-6 w-6 shrink-0" />}
               {getLocalizedAffiliation(item.key, lang)}
               <span className="font-[family-name:var(--font-title)] text-[1rem] font-normal leading-none opacity-70">{item.count}</span>
             </button>
@@ -129,7 +131,7 @@ export function FacetPickerModal({ kind, facets, selected, onToggle, onClose }: 
       <div className="grid grid-cols-3 gap-x-3 gap-y-2 sm:grid-cols-5 md:grid-cols-7">
         {(facets?.themes ?? []).filter(theme => match(theme.name, theme.name_en, theme.name_jp)).map(theme => (
           <div key={theme.id} className="min-w-0">
-            <ThemePackCard theme={theme} sizes="7rem" isSelected={selectedSet.has(String(theme.id))} onClick={() => onToggle(String(theme.id))} />
+            <ThemePackCard theme={theme} sizes="7rem" imageSurface="bare" isSelected={selectedSet.has(String(theme.id))} onClick={() => onToggle(String(theme.id))} />
             <Count value={theme.count} />
           </div>
         ))}
@@ -139,7 +141,7 @@ export function FacetPickerModal({ kind, facets, selected, onToggle, onClose }: 
 
   return (
     <BaseModal open={kind !== null} onClose={() => { setQuery(''); onClose() }} title={kind ? t(kind) : ''} maxWidth="64rem">
-      <div className="flex max-h-[80dvh] flex-col rounded-xl border border-[rgba(200,144,10,0.22)] bg-[#17120c] shadow-[0_1.5rem_3rem_rgba(0,0,0,0.55)]">
+      <div className="flex h-[min(80dvh,56rem)] flex-col rounded-xl border border-[rgba(200,144,10,0.22)] bg-[#17120c] shadow-[0_1.5rem_3rem_rgba(0,0,0,0.55)]">
         <div className="flex shrink-0 items-center justify-between border-b border-[#2e2417] px-5 py-3">
           <h2 className="font-[family-name:var(--font-heading)] text-[1.125rem] text-[#e8dcc8]">
             {kind && t(kind)}
@@ -150,7 +152,8 @@ export function FacetPickerModal({ kind, facets, selected, onToggle, onClose }: 
             <X size={18} />
           </button>
         </div>
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-5">{body}</div>
+        {/* 위쪽 여백은 안쪽에: 기프트 목록의 고정 도구줄이 스크롤 상자 맨 위에 붙어 그 위로 내용이 비치지 않는다 */}
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pb-5"><div className="pt-5">{body}</div></div>
       </div>
     </BaseModal>
   )
@@ -175,7 +178,7 @@ export function FacetSelection({ kind, facets, selected, onRemove, onOpen }: {
             className="flex min-h-9 items-center gap-2 rounded px-2 text-left transition-colors hover:bg-white/5"
             style={{ background: 'var(--deck-filter-surface-active)', color: 'var(--gold)', fontSize: 'var(--deck-filter-control-text)' }}>
             {image && <span className={`relative h-6 w-6 shrink-0 overflow-hidden ${kind === 'ego' ? 'rounded-full' : kind === 'theme' ? 'rounded-sm' : ''}`}>
-              <Image src={image} alt="" fill sizes="24px" className={kind === 'gift' ? 'object-contain' : 'object-cover'} />
+              <Image src={image} alt="" fill sizes="24px" className={kind === 'gift' || kind === 'affiliation' ? 'object-contain' : 'object-cover'} />
             </span>}
             <span className="min-w-0 flex-1 truncate font-semibold">{label}</span>
             <X size={13} aria-hidden="true" className="shrink-0 opacity-70" />
