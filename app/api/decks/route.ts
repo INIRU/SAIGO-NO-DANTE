@@ -1,7 +1,8 @@
 
 import { notePlainText } from '@/lib/notes/blocks'
 import { authorColumns, authorRateKey, recordGuestAuthorship, resolveAuthor } from '@/lib/guest/server'
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse, after } from 'next/server'
+import { translatePost } from '@/lib/translate/server'
 import { revalidatePath, revalidateTag } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
@@ -609,6 +610,7 @@ export async function POST(request: NextRequest) {
     revalidatePath('/decks')
     revalidateTag(CACHE_TAGS.deck(deck.id), 'max')
     revalidateTag(CACHE_TAGS.decksList, 'max')
+    after(() => translatePost('deck', deck.id))
     return NextResponse.json(deck, { status: 201 })
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Internal Server Error'
