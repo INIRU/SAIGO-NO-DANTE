@@ -12,7 +12,8 @@ import { parseAsBoolean, parseAsInteger, parseAsString, useQueryState, useQueryS
 import { useSession } from 'next-auth/react'
 import { type DeckSummary } from '@/components/decks/DeckCard'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
-import { decodeCollectionAsync } from '@/lib/collection'
+import { decodeCollectionAsync, missingFormationCount, withBaseIdentities } from '@/lib/collection'
+import { useOwnedIdentities } from '@/hooks/useOwnedIdentities'
 import type { CollectionData } from '@/lib/collection'
 import { getActiveTerm } from '@/lib/utils/search'
 import { THEME_KEYWORDS, normalizeThemeKeyword } from '@/lib/constants/keywords'
@@ -604,7 +605,9 @@ export default function DecksClient({
       const profileData = await fetch('/api/profile').then(r => r.json()) as { profile?: { collection_code?: string | null } }
       const code = profileData.profile?.collection_code
       if (!code) return false
-      const decoded = await decodeCollectionAsync(code, data.sinners, data.identities, data.egos)
+      const ticked = await decodeCollectionAsync(code, data.sinners, data.identities, data.egos)
+      // An empty code is invalid; LCB identities are added only after that check.
+      const decoded = ticked.size ? withBaseIdentities(ticked, data.identities) : ticked
       setOwnedIds(decoded)
       setHasCollection(true)
       return true
@@ -631,7 +634,9 @@ export default function DecksClient({
     try {
       const data = await ensureCollectionData()
       if (!data) { setCodeError(true); return }
-      const decoded = await decodeCollectionAsync(code, data.sinners, data.identities, data.egos)
+      const ticked = await decodeCollectionAsync(code, data.sinners, data.identities, data.egos)
+      // An empty code is invalid; LCB identities are added only after that check.
+      const decoded = ticked.size ? withBaseIdentities(ticked, data.identities) : ticked
       if (decoded.size === 0) { setCodeError(true); return }
       setOwnedIds(decoded)
       setHasCollection(true)
@@ -764,26 +769,27 @@ export default function DecksClient({
     void setFilterQuery({ identityIds: serializeCsvParam(next) })
   }, [filterIdentities, selectedIdentityIds, setFilterQuery])
 
+  // 붙여 넣은 보유 코드가 없으면 카드 뱃지와 같은 저장된 보유 현황을 쓴다(링크로 oi=1이 먼저 켜져도 바로 걸린다)
+  const profileOwned = useOwnedIdentities()
+  const effectiveOwned = ownedIds ?? profileOwned
   // ── Filter application ──
   const filtered = useMemo(() => {
     let list = decks
 
-    if (filterOwnedIdentity && ownedIds) {
-      list = list.filter(d => {
-        const ids = deckDerived.byId.get(d.id)?.identityIds ?? []
-        return ids.length === 0 || ids.every(id => ownedIds.has(id))
-      })
+    if (filterOwnedIdentity && effectiveOwned) {
+      // 카드 뱃지와 같은 기준: 편성 순서가 있는 인격만(대기 인격은 없어도 된다)
+      list = list.filter(d => missingFormationCount((d.deck_identities ?? []).map(slot => ({ id: slot.identities?.id, slot_order: slot.slot_order })), effectiveOwned) === 0)
     }
 
-    if (filterOwnedEgo && ownedIds) {
+    if (filterOwnedEgo && effectiveOwned) {
       list = list.filter(d => {
         const egoIds = deckDerived.byId.get(d.id)?.egoIds ?? []
-        return egoIds.length === 0 || egoIds.every(id => ownedIds.has(id))
+        return egoIds.length === 0 || egoIds.every(id => effectiveOwned.has(id))
       })
     }
 
     return list
-  }, [decks, deckDerived, filterOwnedIdentity, filterOwnedEgo, ownedIds])
+  }, [decks, deckDerived, filterOwnedIdentity, filterOwnedEgo, effectiveOwned])
 
   const languageFilterCount = languageFilter === 'mine' ? 0 : 1
   const hasAnyFilter = Boolean(inputValue || activeContentType || activeTags.size > 0 || activeKeywordTags.size > 0 || activeMainKeywords.size > 0 || formationCount !== null || minInfoScore !== null || selectedIdentityIds.size > 0 || filterOwnedIdentity || filterOwnedEgo || languageFilterCount)

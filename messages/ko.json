@@ -1574,21 +1574,12 @@
     "decksTitle": "관리자님 취향의 덱",
     "plansTitle": "관리자님 취향의 플랜",
     "hint": "최근 찾아본 인격, 덱, 플랜을 바탕으로 골랐어요.",
-    "identityTrend": "관리자분들이 <link>{name}</link> 인격을 가장 많이 찾아봤어요.",
-    "deckKeywordTrend": "다른 관리자분들은 <link>{keyword}</link> 덱을 많이 찾고 있어요.",
-    "planKeywordTrend": "다른 관리자분들은 <link>{keyword}</link> 플랜을 많이 찾고 있어요.",
-    "keywords": {
-      "burn": "화상",
-      "bleed": "출혈",
-      "tremor": "진동",
-      "rupture": "파열",
-      "sinking": "침잠",
-      "breath": "호흡",
-      "charge": "충전",
-      "slash": "참격",
-      "pierce": "관통",
-      "blunt": "타격"
-    }
+    "ownedDecks": "보유 인격으로 편성할 수 있는 덱만 보기",
+    "ownedPlans": "보유 인격으로 편성할 수 있는 플랜만 보기"
+  },
+  "ownedBadge": {
+    "owned": "보유",
+    "missing": "{count}인격 부족"
   },
   "mypage": {
     "title": "마이 페이지"
@@ -1647,11 +1638,11 @@
     "errorCallback": "Google 로그인이 끝나지 않았습니다. 다시 시도해 주세요.",
     "errorDenied": "이 계정으로는 로그인할 수 없습니다.",
     "errorRequired": "이 페이지를 보려면 로그인해야 합니다.",
+    "agreeAll": "모두 동의",
     "agreeTerms": "[필수] 이용약관 동의",
     "agreePrivacy": "[필수] 개인정보 수집·이용 동의",
     "readFull": "전문 보기",
-    "hideFull": "접기",
-    "readToAgree": "전문을 끝까지 읽으면 동의할 수 있습니다."
+    "hideFull": "접기"
   },
   "sinners": {
     "title": "수감자 목록",

@@ -15,6 +15,7 @@ import { contentTypeMessageKey, localizeDeckKeyword } from '@/components/decks/d
 import type { SupportedLang } from '@/lib/i18n'
 import { guestAuthorName } from '@/lib/guest/copy'
 import { computeDeckMainKeywordsFromSlots, normalizeDeckMainKeyword } from '@/lib/decks/keyword-rules'
+import OwnedBadge, { useMissingSinners } from '@/components/collection/OwnedBadge'
 const EMPTY_NOTE_LOOKUP: Record<string, never> = Object.freeze({})
 
 type IdentityPreview = {
@@ -79,6 +80,7 @@ function DeckCard({ deck, onTagClick }: DeckCardProps) {
   }), [deck.deck_identities])
 
   const thumbnailSlots = useMemo(() => sorted.map(slot => ({ ...slot.identities, slot_order: slot.slot_order, gacksung: slot.gacksung })), [sorted])
+  const missing = useMissingSinners(useMemo(() => sorted.map(slot => ({ id: slot.identities?.id, sinnerId: slot.identities?.sinner_id, slot_order: slot.slot_order })), [sorted]))
 
   const showContentType = !!(deck.content_type && deck.content_type !== '없음' && CONTENT_TYPE_COLORS[deck.content_type])
 
@@ -100,7 +102,8 @@ function DeckCard({ deck, onTagClick }: DeckCardProps) {
     <div className="board-card group relative flex flex-col h-full overflow-hidden">
       <div className="relative flex flex-col flex-1">
         <Link href={`/decks/${deck.id}`} locale={locale} aria-label={deck.title} className="absolute inset-0 z-[1]" />
-        <FormationThumbnail slots={thumbnailSlots} />
+        <FormationThumbnail slots={thumbnailSlots} missing={missing} />
+        <OwnedBadge missing={missing} />
 
         <div className="flex flex-col flex-1" style={{ padding: '0.875rem' }}>
           {/* 제목 */}

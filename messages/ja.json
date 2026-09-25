@@ -1574,21 +1574,12 @@
     "decksTitle": "あなたへのおすすめデッキ",
     "plansTitle": "あなたへのおすすめプラン",
     "hint": "最近見た人格、デッキ、プランをもとに選びました。",
-    "identityTrend": "管理人たちが最もよく見た人格は<link>{name}</link>です。",
-    "deckKeywordTrend": "他の管理人は<link>{keyword}</link>デッキをよく探しています。",
-    "planKeywordTrend": "他の管理人は<link>{keyword}</link>プランをよく探しています。",
-    "keywords": {
-      "burn": "火傷",
-      "bleed": "出血",
-      "tremor": "振動",
-      "rupture": "破裂",
-      "sinking": "沈潜",
-      "breath": "呼吸",
-      "charge": "充電",
-      "slash": "斬撃",
-      "pierce": "貫通",
-      "blunt": "打撃"
-    }
+    "ownedDecks": "所持人格で組めるデッキだけ見る",
+    "ownedPlans": "所持人格で組めるプランだけ見る"
+  },
+  "ownedBadge": {
+    "owned": "所持",
+    "missing": "{count}人格不足"
   },
   "mypage": {
     "title": "マイページ"
@@ -1647,11 +1638,11 @@
     "errorCallback": "Googleログインが完了しませんでした。もう一度お試しください。",
     "errorDenied": "このアカウントではログインできません。",
     "errorRequired": "このページを見るにはログインが必要です。",
+    "agreeAll": "すべてに同意",
     "agreeTerms": "[必須] 利用規約に同意する",
     "agreePrivacy": "[必須] 個人情報の収集・利用に同意する",
     "readFull": "全文を見る",
-    "hideFull": "閉じる",
-    "readToAgree": "全文を最後まで読むと同意できます。"
+    "hideFull": "閉じる"
   },
   "sinners": {
     "title": "囚人一覧",

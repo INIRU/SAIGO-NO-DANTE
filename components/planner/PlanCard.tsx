@@ -17,6 +17,7 @@ import { localizeDeckKeyword } from '@/components/decks/decks-types'
 import type { SupportedLang } from '@/lib/i18n'
 import { normalizePlannerListKeywords, planDifficultyBadge } from '@/lib/planner/stripPlanForList'
 import { guestAuthorName } from '@/lib/guest/copy'
+import OwnedBadge, { useMissingSinners } from '@/components/collection/OwnedBadge'
 
 export type PlanSummary = {
   id: string
@@ -69,6 +70,7 @@ function PlanCard({
   const locale = useLocale() as SupportedLang
   const t = useTranslations('planner.communityBoard.card')
   const difficultyT = useTranslations('planner.communityBoard.difficulty')
+  const missing = useMissingSinners(Array.isArray(plan.deck) ? plan.deck.map(slot => ({ id: slot.identity_id, sinnerId: slot.sinner_id, slot_order: slot.slot_order })) : [])
   const diffStyle = DIFFICULTY_STYLE[plan.difficulty]
   const username = plan.profiles?.username ?? guestAuthorName(plan.guest_tag, locale) ?? t('anonymous')
   const avatarUrl = plan.profiles?.avatar_url ?? DEFAULT_AVATAR_URL
@@ -86,7 +88,8 @@ function PlanCard({
       className="board-card group relative flex flex-col h-full overflow-hidden"
     >
       <Link href={`/planner/community/${plan.id}`} className="flex flex-col flex-1">
-        <FormationThumbnail slots={Array.isArray(plan.deck) ? plan.deck : []} />
+        <FormationThumbnail slots={Array.isArray(plan.deck) ? plan.deck : []} missing={missing} />
+        <OwnedBadge missing={missing} />
 
         <div className="flex flex-col flex-1 p-4">
           {/* 제목 */}
