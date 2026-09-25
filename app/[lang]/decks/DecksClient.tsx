@@ -1,6 +1,7 @@
 'use client'
 
 import { notePlainText } from '@/lib/notes/blocks'
+import { useLoadMoreSentinel } from '@/hooks/useLoadMoreSentinel'
 
 import DiscoveryShelf from '@/components/discovery/DiscoveryShelf'
 import BoardBrowseLock from '@/components/discovery/BoardBrowseLock'
@@ -230,7 +231,6 @@ export default function DecksClient({
   const [loadingMore, setLoadingMore] = useState(false)
   const [hasMore, setHasMore] = useState(true)
   const scrollRootRef = useRef<HTMLDivElement>(null)
-  const sentinelRef = useRef<HTMLDivElement>(null)
   const initialDataKey = useRef<string | null>(hasServerInitialDecks ? `${initialSort}:${initialLanguageFilter}` : null)
   const deckRequestId = useRef(0)
   const loadMoreRequestId = useRef(0)
@@ -573,16 +573,7 @@ export default function DecksClient({
   }, [serverQueryKey])
 
   // ── Infinite scroll observer ──
-  useEffect(() => {
-    const el = sentinelRef.current
-    if (!el) return
-    const observer = new IntersectionObserver(
-      entries => { if (entries[0]?.isIntersecting) loadMore() },
-      { root: scrollRootRef.current, rootMargin: '300px' }
-    )
-    observer.observe(el)
-    return () => observer.disconnect()
-  }, [loadMore, serverQueryKey])
+  const sentinelRef = useLoadMoreSentinel(loadMore, scrollRootRef, serverQueryKey)
 
   const ensureCollectionData = useCallback(async () => {
     if (collectionData) return collectionData
