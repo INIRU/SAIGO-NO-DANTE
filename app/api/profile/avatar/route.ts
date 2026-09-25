@@ -9,7 +9,7 @@ export async function GET() {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.email) {
-      return NextResponse.json({ avatar_url: null })
+      return NextResponse.json({ avatar_url: null, username: null })
     }
 
     const admin = createAdminClient()
@@ -20,17 +20,18 @@ export async function GET() {
       session.user.image,
     )
     if (!userId) {
-      return NextResponse.json({ avatar_url: null })
+      return NextResponse.json({ avatar_url: null, username: null })
     }
 
     const { data } = await admin
       .schema('limbus')
       .from('profiles')
-      .select('avatar_url')
+      .select('avatar_url, username')
       .eq('id', userId)
       .single()
 
-    return NextResponse.json({ avatar_url: data?.avatar_url ?? null })
+    // The site nickname, not the Google account name, is what the site shows.
+    return NextResponse.json({ avatar_url: data?.avatar_url ?? null, username: data?.username ?? null })
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Internal Server Error'
     return NextResponse.json({ error: message }, { status: 500 })

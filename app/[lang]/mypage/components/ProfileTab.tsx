@@ -42,6 +42,7 @@ export default function ProfileTab({
     setBusy(true);
     try {
       await patch("/api/profile", { username: name, bio });
+      window.dispatchEvent(new CustomEvent("username-changed", { detail: name.trim() }));
       await onProfileUpdate();
       showSuccess(t.saved);
     } catch {
