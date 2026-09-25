@@ -16,7 +16,8 @@ import { LOGIN_CONSENT_KEY } from '@/lib/legal-consent'
 import LoginConsent, { type LoginConsentState } from './LoginConsent'
 import './login.css'
 
-const art = getIdentityImageUrl('don-quixote', 'The Manager of La Manchaland', '10310_gacksung')
+const FALLBACK_ART = getIdentityImageUrl('don-quixote', 'The Manager of La Manchaland', '10310_gacksung')
+const WALL_ROWS = 6
 type ErrorKey = 'errorConnect' | 'errorCallback' | 'errorDenied' | 'errorRequired'
 // next-auth sends OAuth failures back to the sign-in page as ?error=<code>.
 function errorKey(code: string | null): ErrorKey | null {
@@ -27,7 +28,7 @@ function errorKey(code: string | null): ErrorKey | null {
   return 'errorConnect'
 }
 
-export default function LoginClient({ docs }: { docs: LegalDoc[] }) {
+export default function LoginClient({ docs, art }: { docs: LegalDoc[]; art: string[] }) {
   useHtmlFlag('with-login-page')
   const { status } = useSession()
   const locale = useLocale()
@@ -50,7 +51,18 @@ export default function LoginClient({ docs }: { docs: LegalDoc[] }) {
   }
   return (
     <div className="login-page">
-      <div className="login-art" aria-hidden="true"><Image src={art} alt="" fill priority sizes="100vw" /></div>
+      {/* Tilted wall of identity illustrations; rows drift left and right in turn. Each row repeats its tiles once so the loop is seamless. */}
+      <div className="login-wall" aria-hidden="true">
+        {Array.from({ length: WALL_ROWS }, (_, row) => {
+          const pool = art.length ? art : [FALLBACK_ART]
+          const tiles = Array.from({ length: 6 }, (_, i) => pool[(row * 5 + i * 3) % pool.length])
+          return <div key={row} className="login-wall-row" data-reverse={row % 2 === 1 || undefined}>
+            {[...tiles, ...tiles].map((src, i) => <div key={i} className="login-wall-tile">
+              <Image src={src} alt="" fill sizes="22rem" priority={row < 2 && i < 4} />
+            </div>)}
+          </div>
+        })}
+      </div>
       <Link href="/" className="login-back"><ArrowLeft size={16} aria-hidden="true" />{t('back')}</Link>
       <main className="login-main">
         <div className="login-title">
