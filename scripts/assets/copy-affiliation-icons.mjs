@@ -19,7 +19,7 @@ export const ICONS = {
   heishou: 'HeishouSynergy_모든 흑수의 주인.png',
   middle: 'ResentmentIshmael_중지 - 원한.png',
   thumb: 'TeachersCommand_엄지 아비의 명령.png',
-  'blade-lineage': 'BladelineagePride_살수본위.png',
+  'blade-lineage-hwando': 'ChoiSwordsmanship_본국검술[살].png',
   't-corp': 'TcorpSpecialInvestigator_T사 특별 수사관 배지.png',
   'la-manchaland': 'ParadeConcentration_라만차 퍼레이드.png',
   'rosespanner': 'RoseWedge_장미 쐐기.png',
