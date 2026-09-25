@@ -5,10 +5,22 @@ import AchievementBadge from './AchievementBadge'
 import { ACHIEVEMENT_COPY, type AchievementProgress } from '@/lib/community/achievements'
 import styles from './AchievementGrid.module.css'
 
-/** Badge cards; unearned ones show their condition and progress, hidden ones (easter eggs) stay secret until found. */
-export default function AchievementGrid({ items }: { items: AchievementProgress[] }) {
+/**
+ * Badge cards; unearned ones show their condition and progress, hidden ones (easter eggs) stay secret until found.
+ * `bare`: the badge art alone (public profiles), name on hover only, so how an easter egg is found stays private.
+ */
+export default function AchievementGrid({ items, bare = false }: { items: AchievementProgress[]; bare?: boolean }) {
   const locale = useLocale()
   const copy = ACHIEVEMENT_COPY[locale === 'en' || locale === 'ja' ? locale : 'ko']
+  if (bare) return (
+    <ul className={styles.bareGrid}>
+      {items.map(item => (
+        <li key={item.id} title={copy.name[item.id]} aria-label={copy.name[item.id]}>
+          <AchievementBadge glyph={item.glyph} tier={item.tier} goal={item.goal} earned={item.earned} className={styles.bareArt} />
+        </li>
+      ))}
+    </ul>
+  )
   return (
     <ul className={styles.grid}>
       {items.map(item => {

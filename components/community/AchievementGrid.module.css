@@ -14,3 +14,5 @@
 .bar { height: 0.25rem; flex: 1; overflow: hidden; border-radius: 999px; background: #241c12; }
 .bar > span { display: block; height: 100%; border-radius: inherit; background: #8a6010; }
 .count { color: #8a7d69; font: 0.875rem/1 var(--font-title); letter-spacing: 0.02em; }
+.bareGrid { display: flex; flex-wrap: wrap; gap: 0.75rem; margin: 0; padding: 0; list-style: none; }
+.bareArt { display: block; width: 4.5rem; height: 4.5rem; filter: drop-shadow(0 0.25rem 0.75rem rgba(232, 176, 48, 0.2)); }
