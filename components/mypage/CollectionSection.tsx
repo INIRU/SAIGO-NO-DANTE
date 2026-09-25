@@ -339,20 +339,12 @@ export default function CollectionSection({ savedCode, persistMode = 'db' }: Col
 
   return (
     <section>
-      <div className="flex items-center justify-between mb-5">
-        <h2 className="flex items-center gap-2">
-          <span style={{ color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)', fontSize: '0.75rem', letterSpacing: '0.15em' }}>
-            MY COLLECTION
-          </span>
-          <span className="font-serif font-light" style={{ color: 'var(--gold)', fontSize: '1.125rem' }}>
-            보유 현황
-          </span>
-        </h2>
-        <div className="flex items-center gap-2" style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: '#6a6080' }}>
-          <span>인격 <span style={{ color: 'var(--gold)' }}>{stats.ownedIdentities}</span>/{stats.totalIdentities}</span>
-          <span style={{ color: '#8a8095', fontFamily: 'sans-serif' }}>·</span>
-          <span>EGO <span style={{ color: 'var(--gold)' }}>{stats.ownedEgos}</span>/{stats.totalEgos}</span>
-        </div>
+      <div className="mb-4 flex min-h-11 flex-wrap items-center justify-between gap-x-4 gap-y-1">
+        <h2 style={{ color: '#f0e6d2', fontFamily: 'var(--font-heading)', fontSize: '1.25rem' }}>보유 현황</h2>
+        <p className="flex items-baseline gap-4" style={{ color: '#9c8b73', fontSize: '0.875rem' }}>
+          <span>인격 <b style={{ color: 'var(--gold-light)', fontFamily: 'var(--font-title)', fontSize: '1.125rem', fontWeight: 400 }}>{stats.ownedIdentities}</b>/{stats.totalIdentities}</span>
+          <span>E.G.O <b style={{ color: 'var(--gold-light)', fontFamily: 'var(--font-title)', fontSize: '1.125rem', fontWeight: 400 }}>{stats.ownedEgos}</b>/{stats.totalEgos}</span>
+        </p>
       </div>
 
       <div

@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import Image from "next/image";
 import { useLocale } from "next-intl";
 import { useSearchParams } from "next/navigation";
 import { signOut } from "next-auth/react";
@@ -81,16 +82,24 @@ export default function ProfileTab({
   }
   return (
     <section className="community-settings">
-      <h2>{t.profile}</h2>
-      <button
-        type="button"
-        className="community-link mb-4"
-        onClick={() => setAvatarOpen(true)}
-        disabled={busy}
-      >
-        <Pencil size={15} />
-        {t.editAvatar}
-      </button>
+      <div className="mb-5 flex items-center gap-4">
+        <Image
+          src={profile.avatar_url || DEFAULT_AVATAR_URL}
+          alt=""
+          width={56}
+          height={56}
+          className="h-14 w-14 rounded-full object-cover shadow-[0_0_0_2px_#0d0b08,0_0_0_3px_#5a4526]"
+        />
+        <button
+          type="button"
+          className="community-link"
+          onClick={() => setAvatarOpen(true)}
+          disabled={busy}
+        >
+          <Pencil size={15} />
+          {t.editAvatar}
+        </button>
+      </div>
       <form onSubmit={save}>
         <label>
           {t.name}

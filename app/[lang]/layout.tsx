@@ -10,6 +10,7 @@ import ServiceWorkerRegister from '@/components/pwa/ServiceWorkerRegister'
 import JsonLd, { websiteJsonLd, organizationJsonLd, videoGameJsonLd } from '@/components/seo/JsonLd'
 import VisitTracker from '@/components/discovery/VisitTracker'
 import { NavigationTracker } from '@/components/navigation/BackLink'
+import { KonamiListener } from '@/components/community/easterEggs'
 import { Suspense } from 'react'
 import type { Metadata } from 'next'
 import { hasLocale } from 'next-intl'
@@ -159,6 +160,7 @@ export default async function LangLayout({
                     <div className="site-navigation"><Suspense fallback={null}><Navbar mainNavLabel={mainNavLabel} /></Suspense></div>
                     <Suspense fallback={null}><VisitTracker /></Suspense>
                     <Suspense fallback={null}><NavigationTracker /></Suspense>
+                    <KonamiListener />
                     {/* Catches page-level dynamic holes (formerly caught by app/loading.tsx above <html>); plain Suspense keeps the old page during navigations. */}
                     <main id="main-content"><Suspense fallback={null}>{children}</Suspense></main>
                     <Footer lang={validLang} />

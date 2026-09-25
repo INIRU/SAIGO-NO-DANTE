@@ -16,3 +16,5 @@ html[data-with-compact-footer] .footer-content { gap: .75rem; padding-block: 1.5
 /* Tool screens (random formation): no footer; on desktop tall enough for the whole board, no page scroll either. */
 html[data-with-tool-screen] .site-footer { display: none; }
 @media (min-width: 64rem) and (min-height: 45rem) { html[data-with-tool-screen], html[data-with-tool-screen] body { overflow: hidden; } }
+/* My page: its rail carries the way back, so neither the navbar nor the footer is needed. */
+html[data-with-mypage] :is(.site-navigation, .site-footer) { display: none; }
