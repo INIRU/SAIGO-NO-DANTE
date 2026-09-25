@@ -1919,10 +1919,10 @@
     "showAllTime": "全期間を表示",
     "periodLabel": "集計期間",
     "period": {
+      "7": "過去7日",
       "30": "直近30日",
       "90": "直近90日",
-      "all": "全期間",
-      "7": "過去7日"
+      "all": "全期間"
     },
     "sample": "有効編成 {count}件 · デッキ {decks}件 · プラン {planner}件 · 空の編成 {excluded}件を除外",
     "methodologyLabel": "集計基準",
@@ -2030,5 +2030,31 @@
     "delete": "削除",
     "cancel": "キャンセル",
     "discard": "破棄"
+  },
+  "randomPage": {
+    "title": "ランダム編成",
+    "metaDescription": "リンバスカンパニーのランダム編成。レアリティ・キーワード・所持条件で12人の人格とE.G.Oを抽選します。",
+    "draw": "抽選対象",
+    "identity": "人格",
+    "ego": "E.G.O",
+    "rarity": "レアリティ",
+    "all": "すべて",
+    "keywords": "キーワード",
+    "keywordMin": "最低{count}人",
+    "collection": "所持のみ",
+    "collectionPlaceholder": "所持状況の共有URLまたはコード",
+    "collectionLinked": "連携済み",
+    "roll": "抽選",
+    "reroll": "{name}を引き直す",
+    "copyCode": "編成コードをコピー",
+    "copied": "編成コードをコピーしました",
+    "copyFailed": "編成コードをコピーできませんでした",
+    "pickOne": "人格かE.G.Oのどちらかをオンにしてください",
+    "noIdentity": "{names}に抽選できる人格がありません",
+    "noZayin": "{names}のZAYIN E.G.Oがコレクションにありません",
+    "keywordMax": "キーワードは2つまで選べます",
+    "keywordImpossible": "条件を満たす人格が足りません",
+    "invalidCode": "コレクションコードが正しくありません",
+    "decodeFailed": "コレクションコードを読み込めませんでした"
   }
 }

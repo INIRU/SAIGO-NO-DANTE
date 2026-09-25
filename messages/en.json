@@ -1919,10 +1919,10 @@
     "showAllTime": "View all time",
     "periodLabel": "Time range",
     "period": {
+      "7": "Last 7 days",
       "30": "Last 30 days",
       "90": "Last 90 days",
-      "all": "All time",
-      "7": "Last 7 days"
+      "all": "All time"
     },
     "sample": "{count} valid formations · {decks} decks · {planner} plans · {excluded} empty formations excluded",
     "methodologyLabel": "How counts work",
@@ -2030,5 +2030,31 @@
     "delete": "Delete",
     "cancel": "Cancel",
     "discard": "Discard"
+  },
+  "randomPage": {
+    "title": "Random Formation",
+    "metaDescription": "Limbus Company random formation. Draw 12 identities and E.G.O by rarity, keyword and owned-only filters.",
+    "draw": "Draw",
+    "identity": "Identities",
+    "ego": "E.G.O",
+    "rarity": "Rarity",
+    "all": "All",
+    "keywords": "Keywords",
+    "keywordMin": "At least {count}",
+    "collection": "Owned only",
+    "collectionPlaceholder": "Collection share URL or code",
+    "collectionLinked": "Linked",
+    "roll": "Roll",
+    "reroll": "Reroll {name}",
+    "copyCode": "Copy formation code",
+    "copied": "Formation code copied",
+    "copyFailed": "Could not copy the formation code",
+    "pickOne": "Turn on identities or E.G.O",
+    "noIdentity": "No identity to draw for {names}",
+    "noZayin": "No ZAYIN E.G.O in your collection for {names}",
+    "keywordMax": "You can pick up to 2 keywords",
+    "keywordImpossible": "Not enough identities match these keywords",
+    "invalidCode": "This collection code is not valid",
+    "decodeFailed": "Could not read the collection code"
   }
 }
