@@ -10,6 +10,7 @@ import type { SupportedLang } from '@/lib/i18n/types'
 import IdentityFrameCard from '@/components/ui/IdentityFrameCard'
 import EgoDisplayCard from '@/components/sinners/EgoDisplayCard'
 import DeckCard, { type DeckSummary } from '@/components/decks/DeckCard'
+import FaustPortrait from './FaustPortrait'
 import PlanCard, { type PlanSummary } from '@/components/planner/PlanCard'
 import { CardSkeleton } from '@/components/discovery/BoardSkeleton'
 import LiteYoutube from '@/components/ui/LiteYoutube'
@@ -130,7 +131,7 @@ function CommunitySkeleton() {
 
 const TOOLS = [
   { href: '/planner/community', key: 'planner', art: ['start-buffs/starlight'] },
-  { href: '/planner/run', key: 'assist', art: [], portrait: '/assets/home/faust-portrait.webp' },
+  { href: '/planner/run', key: 'assist', art: [], portrait: true },
   { href: '/decks', key: 'deckBuilder', art: [] },
   { href: '/tools/experience', key: 'experience', art: ['resources/ticket-4'], wide: true },
   { href: '/tools/lunacy', key: 'lunacy', art: ['resources/lunacy-5'] },
@@ -151,7 +152,7 @@ function Tools({ t, identities, lang }: { t: TFn; identities: IdentityWithSinner
               </span>
             ) : 'portrait' in tool ? (
               // Faust, the clever one, for the recognition helper.
-              <Image src={tool.portrait} alt="" width={256} height={280} className={`${styles.toolArt} ${styles.portrait}`} />
+              <FaustPortrait className={`${styles.toolArt} ${styles.portrait}`} />
             ) : tool.art.length > 1 ? (
               <span className={`${styles.toolArt} ${styles.fan} ${styles.shardFan}`} aria-hidden>
                 {tool.art.map(art => <Image key={art} src={getGameUiAsset(art)} alt="" width={256} height={256} className={styles.fanCard} unoptimized />)}

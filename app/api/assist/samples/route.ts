@@ -6,6 +6,8 @@ import { parseSampleMeta, SAMPLE_FRAMES_EACH_SIDE, SAMPLE_MAX_FRAME_BYTES, SAMPL
 
 const BUCKET = 'assist-samples'
 const KEEP_MS = 180 * 86_400_000
+/** All uploads together, per UTC day. At about 1.5 MB a sample this is ~1,300 samples a day; later ones are dropped for the day. */
+const DAILY_BYTES = 2 * 1024 ** 3
 const bad = (error: string, status = 400) => NextResponse.json({ error }, { status })
 
 /** Opt-in recognition samples from Assist: no account, email or IP is stored with them. */
@@ -25,12 +27,17 @@ export async function POST(request: Request) {
   if (images.some(image => image[0] !== 0xff || image[1] !== 0xd8 || image[2] !== 0xff)) return bad('invalid frames')
 
   const admin = createAdminClient()
+  const day = new Date().toISOString().slice(0, 10)
+  const today = await admin.schema('limbus').rpc('assist_sample_bytes_since', { since: day })
+  const used = Number(today.data ?? 0)
+  const size = images.reduce((total, image) => total + image.length, 0)
+  if (today.error || used + size > DAILY_BYTES) return bad('daily limit', 429)
   const bucket = admin.storage.from(BUCKET)
-  const path = `${new Date().toISOString().slice(0, 10)}/${randomUUID()}`
+  const path = `${day}/${randomUUID()}`
   const files = images.map((_, index) => `${path}/${index}.jpg`)
   const uploads = await Promise.all(images.map((image, index) => bucket.upload(files[index], image, { contentType: 'image/jpeg', upsert: false })))
   const { error } = uploads.some(upload => upload.error) ? { error: true }
-    : await admin.schema('limbus').from('assist_samples').insert({ reason: meta.reason, meta, frame_count: images.length, path })
+    : await admin.schema('limbus').from('assist_samples').insert({ reason: meta.reason, meta, frame_count: images.length, bytes: size, path })
   if (error) {
     await bucket.remove(files)
     return bad('not saved', 500)
