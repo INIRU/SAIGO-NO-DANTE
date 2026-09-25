@@ -17,7 +17,7 @@ const m = vi.hoisted(() => ({
   },
 }))
 vi.mock('@/lib/auth', () => ({
-  requireActiveUser: m.auth,
+  requireUser: m.auth,
   requireAdmin: m.admin,
 }))
 vi.mock('@/lib/supabase/admin', () => ({ createAdminClient: m.db }))
