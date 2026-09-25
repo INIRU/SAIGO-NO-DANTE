@@ -63,7 +63,7 @@ export async function POST(request: Request) {
   const cached = await db.from('post_translations').select('source_hash, pairs').eq('kind', kind).eq('post_id', id).eq('lang', target).maybeSingle()
   if (cached.data?.source_hash === hash) return NextResponse.json({ pairs: cached.data.pairs }, { headers })
 
-  if (!process.env.AI_GATEWAY_API_KEY && !process.env.VERCEL_OIDC_TOKEN) return NextResponse.json({ error: 'Translation unavailable' }, { status: 503, headers })
+  if (!process.env.AI_GATEWAY_API_KEY && !process.env.VERCEL) return NextResponse.json({ error: 'Translation unavailable' }, { status: 503, headers })
   const limit = checkRequestRateLimit(request, { bucket: 'create', scope: 'translate' })
   if (!limit.allowed) return rateLimitResponse(limit)
   try {
