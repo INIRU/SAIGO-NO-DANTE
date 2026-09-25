@@ -26,8 +26,8 @@ export default function PublicProfile({ id }: { id: string }) {
     t = getCommunityCopy(locale);
   useHtmlFlag("with-compact-footer");
   const { data, error, mutate } = useSWR(`/api/community/profiles/${id}`, fetcher, { shouldRetryOnError: false });
-  // Easter eggs live in the owner's browser, so a public profile shows only badges earned by activity.
-  const earned = useMemo(() => (data ? achievementProgress(data.stats).filter((badge) => badge.earned && !badge.hidden) : []), [data]);
+  // Hidden (easter egg) badges appear once found; unfound ones stay secret.
+  const earned = useMemo(() => (data ? achievementProgress(data.stats, data.eggs ?? []).filter((badge) => badge.earned) : []), [data]);
 
   if (error)
     return (

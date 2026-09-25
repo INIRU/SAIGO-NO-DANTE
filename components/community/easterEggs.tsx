@@ -6,9 +6,10 @@ import { showSuccess } from '@/lib/toast'
 
 const FOUND = { ko: '이스터 에그를 발견했어요', en: 'You found an easter egg', ja: 'イースターエッグを見つけました' }
 
-/** Records an easter egg and says so once. */
+/** Records an easter egg in this browser and, when signed in, on the account (a 401 when signed out is fine). */
 export function discoverEgg(egg: EasterEgg) {
   if (!recordEgg(localStorage, egg)) return
+  void fetch('/api/profile/eggs', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ eggs: [egg] }) }).catch(() => {})
   const lang = document.documentElement.lang
   showSuccess(FOUND[lang === 'en' || lang === 'ja' ? lang : 'ko'])
 }
