@@ -6,12 +6,21 @@ create table if not exists limbus.assist_samples (
   reason text not null,
   meta jsonb not null,
   frame_count smallint not null check (frame_count between 1 and 10),
+  bytes integer not null default 0,
   path text not null
 );
 create index if not exists assist_samples_created_at on limbus.assist_samples(created_at);
 alter table limbus.assist_samples enable row level security;
 revoke all on limbus.assist_samples from anon, authenticated;
 grant select, insert, delete on limbus.assist_samples to service_role;
+
+-- Bytes stored since a time: the route's daily cap for all uploads together.
+create or replace function limbus.assist_sample_bytes_since(since timestamptz) returns bigint
+language sql stable security definer set search_path = '' as $$
+  select coalesce(sum(bytes), 0)::bigint from limbus.assist_samples where created_at >= since
+$$;
+revoke all on function limbus.assist_sample_bytes_since(timestamptz) from public, anon, authenticated;
+grant execute on function limbus.assist_sample_bytes_since(timestamptz) to service_role;
 
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 values ('assist-samples', 'assist-samples', false, 409600, array['image/jpeg'])
