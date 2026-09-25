@@ -469,6 +469,15 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
     return cleanup
   }, [cleanup])
 
+  // Closing, reloading or leaving the tab while the screen is connected asks first (the browser's own prompt):
+  // a closed tab loses the capture, which needs a new screen share.
+  useEffect(() => {
+    if (status !== 'loading' && status !== 'running') return
+    const confirmLeave = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = '' }
+    window.addEventListener('beforeunload', confirmLeave)
+    return () => window.removeEventListener('beforeunload', confirmLeave)
+  }, [status])
+
   useEffect(() => {
     if (!visualCandidates) return
     const observedAt = visualCandidates.observedAt
