@@ -18,8 +18,6 @@ type StatusPayload = {
   suspension?: SuspensionPayload | null
 }
 
-const SUSPENSION_DISCORD_URL = 'https://discord.gg/efaGjQwsVB'
-
 type SuspensionLocale = 'ko' | 'en' | 'ja'
 
 const SUSPENSION_MODAL_COPY = {
@@ -33,7 +31,6 @@ const SUSPENSION_MODAL_COPY = {
     reason: '사유',
     until: '제한 종료',
     support: '문의하기',
-    discord: 'Discord로 문의',
     dateLocale: 'ko-KR',
   },
   en: {
@@ -46,7 +43,6 @@ const SUSPENSION_MODAL_COPY = {
     reason: 'Reason',
     until: 'Ends',
     support: 'Contact support',
-    discord: 'Ask on Discord',
     dateLocale: 'en-US',
   },
   ja: {
@@ -59,7 +55,6 @@ const SUSPENSION_MODAL_COPY = {
     reason: '理由',
     until: '制限終了',
     support: 'お問い合わせ',
-    discord: 'Discordで問い合わせ',
     dateLocale: 'ja-JP',
   },
 } as const
@@ -131,10 +126,6 @@ export default function SuspensionNoticeModal() {
           className="mt-5 flex min-h-12 w-full items-center justify-center rounded-lg bg-[var(--gold)] text-[1rem] font-bold text-[#0d0b08] transition-[filter] hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--gold-light)]">
           {copy.support}
         </Link>
-        <a href={SUSPENSION_DISCORD_URL} target="_blank" rel="noreferrer"
-          className="mt-2 flex min-h-10 items-center justify-center rounded-lg text-[0.875rem] font-medium text-[#a89a84] transition-colors hover:text-[#e8dcc8] focus-visible:outline-2 focus-visible:outline-[var(--gold)]">
-          {copy.discord}
-        </a>
       </section>
     </BaseModal>
   )
