@@ -1,5 +1,6 @@
 import { BoardShelfSkeleton } from '@/components/discovery/BoardSkeleton'
 import type { Metadata } from 'next'
+import { localeAlternates } from '@/lib/seo/metadata'
 import { Suspense } from 'react'
 import { cacheLife, cacheTag } from 'next/cache'
 import { getTranslations } from 'next-intl/server'
@@ -16,7 +17,7 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
   return {
     title: t('title'),
     description: t('description'),
-    alternates: { canonical: 'https://saigo-no-dante.com/planner/community' },
+    alternates: localeAlternates(lang, '/planner/community'),
   }
 }
 

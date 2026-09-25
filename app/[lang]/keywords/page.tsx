@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { localeAlternates } from '@/lib/seo/metadata'
 import { Suspense } from 'react'
 import { cacheLife, cacheTag } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
@@ -17,6 +18,7 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
   return {
     title: t('keyword.meta.title'),
     description: t('keyword.meta.description'),
+    alternates: localeAlternates(lang, '/keywords'),
     openGraph: {
       title: `${t('keyword.title')} | SAIGO NO DANTE`,
     },

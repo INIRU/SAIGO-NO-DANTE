@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { localeAlternates } from '@/lib/seo/metadata'
 import { getTranslations } from 'next-intl/server'
 import { Suspense } from 'react'
 import { getMetaData } from '@/lib/db/meta'
@@ -6,9 +7,14 @@ import MetaClient from './MetaClient'
 import styles from '@/styles/components/MetaAnalysis.module.css'
 import PageHeader from '@/components/ui/PageHeader'
 
-export const metadata: Metadata = {
-  title: '인격 메타 분석 | SAIGO NO DANTE',
-  description: '덱 게시판과 거울 던전 플래너의 공개 편성 기반 인격별 편성 순서·덱 용도·EGO 사용률 분석',
+export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
+  const { lang } = await params
+  const t = await getTranslations({ locale: lang, namespace: 'meta' })
+  return {
+    title: lang === 'ko' ? '림버스 인격 메타 분석 — 편성 채용률' : t('title'),
+    description: lang === 'ko' ? '덱 게시판과 거울 던전 플래너의 공개 편성 기반 인격별 편성 순서·덱 용도·E.G.O 사용률 분석' : t('description'),
+    alternates: localeAlternates(lang, '/meta'),
+  }
 }
 
 export default async function MetaPage() {

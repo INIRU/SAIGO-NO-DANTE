@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { localeAlternates } from '@/lib/seo/metadata'
 import { cacheLife, cacheTag } from 'next/cache'
 import { getTranslations } from 'next-intl/server'
 import BoardHeader from '@/components/discovery/BoardHeader'
@@ -15,7 +16,7 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
   return {
     title: t('title'),
     description: t('description'),
-    alternates: { canonical: 'https://saigo-no-dante.com/decks' },
+    alternates: localeAlternates(lang, '/decks'),
   }
 }
 

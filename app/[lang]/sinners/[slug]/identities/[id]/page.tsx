@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { localeAlternates } from '@/lib/seo/metadata'
 import { Suspense } from 'react'
 import { cacheLife, cacheTag } from 'next/cache'
 import { getSinnerById, getIdentityById, getSkills, getPassives, getSanityConditions, getPanicInfo } from '@/lib/db/queries'
@@ -43,12 +44,12 @@ export async function generateMetadata({
   const description = `${sinnerName} ${identityName} — ${rarityStr}${keywordsStr ? `, ${keywordsStr}` : ''}. ${descSuffix}.`
   const canonical = `${SITE_URL}/${lang}/sinners/${slug}/identities/${id}`
   const ogImage = absoluteUrl(`/${lang}/sinners/${slug}/identities/${id}/opengraph-image`)
-  const pageTitle = `${identityName} | ${sinnerName} | SAIGO NO DANTE`
+  const pageTitle = lang === 'ko' ? `${identityName} ${sinnerName} 인격 정보` : `${identityName} — ${sinnerName}`
 
   return {
-    title: { absolute: pageTitle },
+    title: pageTitle,
     description,
-    alternates: { canonical },
+    alternates: localeAlternates(lang, `/sinners/${slug}/identities/${id}`),
     openGraph: {
       title: pageTitle,
       description,
@@ -103,7 +104,7 @@ export default async function IdentityPage({
   return (
     <>
       <JsonLd data={breadcrumbJsonLd([
-        { name: t('nav.home'), url: SITE_URL },
+        { name: t('nav.home'), url: `${SITE_URL}/${lang}` },
         { name: t('nav.sinners'), url: `${SITE_URL}/${lang}/sinners` },
         { name: sinnerName, url: `${SITE_URL}/${lang}/sinners/${slug}` },
         { name: identityName, url: canonical },
@@ -114,7 +115,7 @@ export default async function IdentityPage({
           description: `${sinnerName} ${identityName}. Limbus Company.`,
           image: identityImageUrl,
           url: canonical,
-          siteUrl: SITE_URL,
+          siteUrl: `${SITE_URL}/${lang}`,
         })} />
       )}
       <Suspense fallback={null}>

@@ -6,14 +6,19 @@ import RandomStatic from './RandomStatic'
 import RandomInteractive from './RandomInteractive'
 import PageHeader from '@/components/ui/PageHeader'
 import type { Metadata } from 'next'
+import { localeAlternates } from '@/lib/seo/metadata'
 
-export const metadata: Metadata = {
-  title: '랜덤 편성',
-  description: '림버스 컴퍼니 랜덤 편성 — 키워드 필터, 컬렉션 연동으로 랜덤 덱을 즉석에서 뽑아보세요.',
-  openGraph: {
-    title: '랜덤 편성 | 최애의 관리자',
+export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
+  const { lang } = await params
+  return {
+    title: '랜덤 편성',
     description: '림버스 컴퍼니 랜덤 편성 — 키워드 필터, 컬렉션 연동으로 랜덤 덱을 즉석에서 뽑아보세요.',
-  },
+    alternates: localeAlternates(lang, '/random'),
+    openGraph: {
+      title: '랜덤 편성 | 최애의 관리자',
+      description: '림버스 컴퍼니 랜덤 편성 — 키워드 필터, 컬렉션 연동으로 랜덤 덱을 즉석에서 뽑아보세요.',
+    },
+  }
 }
 
 export default async function RandomPage() {

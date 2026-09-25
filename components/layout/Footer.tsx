@@ -1,4 +1,5 @@
-import { Link } from '@/lib/i18n/navigation'
+// next/link with explicit /{lang} paths: next-intl's server Link reads the request locale, which the static shell cannot.
+import Link from 'next/link'
 import { getTranslations } from 'next-intl/server'
 import DanteLogo from '@/components/brand/DanteLogo'
 
@@ -8,10 +9,13 @@ const NAV_LINKS = [
   { href: '/meta', labelKey: 'other.meta' },
 ] as const
 
-export default async function Footer() {
-  const tCommon = await getTranslations('common')
-  const tNav = await getTranslations('nav')
-  const tSite = await getTranslations('site')
+/** Explicit locale: rendered in the static layout shell, where the request locale is unavailable. */
+export default async function Footer({ lang }: { lang: string }) {
+  const [tCommon, tNav, tSite] = await Promise.all([
+    getTranslations({ locale: lang, namespace: 'common' }),
+    getTranslations({ locale: lang, namespace: 'nav' }),
+    getTranslations({ locale: lang, namespace: 'site' }),
+  ])
   return (
     <footer className="site-footer mt-24">
       {/* 장식선 */}
@@ -36,7 +40,7 @@ export default async function Footer() {
           {NAV_LINKS.map(({ href, labelKey }) => (
             <Link
               key={href}
-              href={href}
+              href={`/${lang}${href}`}
               className="text-xs tracking-widest transition-colors duration-200 hover:text-[var(--gold-dim)]"
               style={{ color: 'var(--text-tertiary)' }}
             >
@@ -57,13 +61,13 @@ export default async function Footer() {
 
         {/* 약관 링크 */}
         <div className="flex items-center gap-4">
-          <Link href="/terms"
+          <Link href={`/${lang}/terms`}
             className="transition-colors hover:text-yellow-300"
             style={{ color: 'var(--text-tertiary)', fontSize: 'var(--text-xs)' }}>
             {tCommon('terms')}
           </Link>
           <span style={{ color: 'var(--text-muted)' }}>·</span>
-          <Link href="/privacy"
+          <Link href={`/${lang}/privacy`}
             className="transition-colors hover:text-yellow-300"
             style={{ color: 'var(--text-tertiary)', fontSize: 'var(--text-xs)' }}>
             {tCommon('privacy')}

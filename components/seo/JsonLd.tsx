@@ -1,4 +1,5 @@
 import { JsonLdScript } from 'next-seo'
+import { localeUrl } from '@/lib/seo/metadata'
 
 type JsonLdProps = {
   data: Record<string, unknown>
@@ -8,23 +9,16 @@ export default function JsonLd({ data }: JsonLdProps) {
   return <JsonLdScript data={data} scriptKey={String(data['@type'] ?? 'structured-data')} />
 }
 
-export function websiteJsonLd(siteUrl: string) {
+/** No SearchAction: site search has no URL form (the old /sinners?q= target ignored the query). */
+export function websiteJsonLd(lang: string) {
   return {
     '@context': 'https://schema.org',
     '@type': 'WebSite',
     name: '최애의 관리자 | SAIGO NO DANTE',
     alternateName: 'SAIGO NO DANTE',
-    url: siteUrl,
+    url: localeUrl(lang),
     description: 'Limbus Company 팬 아카이브 — 수감자 DB, 덱 빌더, 덱 공유',
-    inLanguage: 'ko',
-    potentialAction: {
-      '@type': 'SearchAction',
-      target: {
-        '@type': 'EntryPoint',
-        urlTemplate: `${siteUrl}/sinners?q={search_term_string}`,
-      },
-      'query-input': 'required name=search_term_string',
-    },
+    inLanguage: lang,
   }
 }
 
@@ -53,7 +47,7 @@ export function breadcrumbJsonLd(
   }
 }
 
-export function videoGameJsonLd(siteUrl: string) {
+export function videoGameJsonLd(lang: string) {
   return {
     '@context': 'https://schema.org',
     '@type': 'VideoGame',
@@ -75,7 +69,7 @@ export function videoGameJsonLd(siteUrl: string) {
     subjectOf: {
       '@type': 'WebSite',
       name: '최애의 관리자 | SAIGO NO DANTE',
-      url: siteUrl,
+      url: localeUrl(lang),
       description: '림버스 컴퍼니 비공식 팬 정보 사이트',
     },
   }

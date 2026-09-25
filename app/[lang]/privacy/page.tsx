@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { localeAlternates } from '@/lib/seo/metadata'
 import { cacheLife } from 'next/cache'
 import { getLegalDoc } from '@/lib/data/legal'
 import { translations } from '@/lib/i18n/translations'
@@ -12,7 +13,7 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
     if (!entry) return key
     return entry[lang as SupportedLang] ?? entry['ko'] ?? key
   }
-  return { title: `${t('legal.privacy.title')} | SAIGO NO DANTE` }
+  return { title: t('legal.privacy.title'), alternates: localeAlternates(lang, '/privacy') }
 }
 
 export default async function PrivacyPage({ params }: { params: Promise<{ lang: string }> }) {

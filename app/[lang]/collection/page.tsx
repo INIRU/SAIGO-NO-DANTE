@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { localeAlternates } from '@/lib/seo/metadata'
 import { Suspense } from 'react'
 import { cacheLife, cacheTag } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
@@ -6,10 +7,13 @@ import type { CollectionData } from '@/lib/collection'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import CollectionClient from './CollectionClient'
 
-export const metadata: Metadata = {
-  title: '보유 현황',
-  description: '림버스 컴퍼니 인격·EGO 보유 현황을 체크하고 URL로 공유하세요.',
-  alternates: { canonical: 'https://saigo-no-dante.com/collection' },
+export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
+  const { lang } = await params
+  return {
+    title: '보유 현황',
+    description: '림버스 컴퍼니 인격·EGO 보유 현황을 체크하고 URL로 공유하세요.',
+    alternates: localeAlternates(lang, '/collection'),
+  }
 }
 
 async function fetchCollectionData(): Promise<CollectionData> {

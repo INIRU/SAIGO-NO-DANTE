@@ -2,6 +2,7 @@ import { withoutOtherLocales } from '@/lib/i18n/strip-locales'
 import { withEgoStage } from '@/lib/db/queries'
 import * as Sentry from '@sentry/nextjs'
 import type { Metadata } from 'next'
+import { localeAlternates } from '@/lib/seo/metadata'
 import { Suspense } from 'react'
 import { cacheLife, cacheTag } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
@@ -18,7 +19,7 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
   return {
     title: t('metaTitle'),
     description: '림버스 컴퍼니 거울 던전 플래너 — 층별 테마팩 시뮬레이션, 덱 편성, 기프트 조합식, 키워드 시너지를 한번에 계획하세요.',
-    alternates: { canonical: 'https://saigo-no-dante.com/planner' },
+    alternates: localeAlternates(lang, '/planner'),
   }
 }
 

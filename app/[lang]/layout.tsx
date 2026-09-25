@@ -1,23 +1,43 @@
 import '@/styles/globals/workspaces.css'
+import type { CSSProperties } from 'react'
+import { Analytics } from '@vercel/analytics/next'
+import { Toaster } from 'sonner'
+import { MotionConfig } from 'motion/react'
+import { NuqsAdapter } from 'nuqs/adapters/next/app'
+import SessionProvider from '@/components/providers/SessionProvider'
+import SWRProvider from '@/components/providers/SWRProvider'
+import ServiceWorkerRegister from '@/components/pwa/ServiceWorkerRegister'
+import JsonLd, { websiteJsonLd, organizationJsonLd, videoGameJsonLd } from '@/components/seo/JsonLd'
 import VisitTracker from '@/components/discovery/VisitTracker'
 import { NavigationTracker } from '@/components/navigation/BackLink'
 import { Suspense } from 'react'
 import type { Metadata } from 'next'
-import { NextIntlClientProvider, hasLocale } from 'next-intl'
+import { hasLocale } from 'next-intl'
+import IntlClientProvider from '@/components/providers/IntlClientProvider'
 import { getMessages, setRequestLocale, getTranslations } from 'next-intl/server'
 import { notFound } from 'next/navigation'
 import { routing } from '@/lib/i18n/routing'
 import type { SupportedLang } from '@/lib/i18n/types'
+import { translations } from '@/lib/i18n/translations'
+import { SITE_URL, localeUrl } from '@/lib/seo/metadata'
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
 import PageNavigation from '@/components/ui/PageNavigation'
 import SkipNav from '@/components/a11y/SkipNav'
 import AprilFoolsWrapper from '@/components/events/AprilFoolsWrapper'
-import SetHtmlLang from '@/components/i18n/SetHtmlLang'
 import { KeywordProvider } from '@/components/providers/KeywordProvider'
 import { getKeywordData, localizeKeywordCatalog } from '@/lib/keywords/server-data'
+import { fontVariables } from '../fonts'
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://saigo-no-dante.com'
+const SITE_NAME: Record<SupportedLang, string> = { ko: '최애의 관리자', en: 'SAIGO NO DANTE', ja: 'SAIGO NO DANTE' }
+const OG_LOCALE: Record<SupportedLang, string> = { ko: 'ko_KR', en: 'en_US', ja: 'ja_JP' }
+const shouldRenderAnalytics = process.env.VERCEL === '1'
+const toastPositionStyle = {
+  '--toast-close-button-start': 'unset',
+  '--toast-close-button-end': '0',
+  '--toast-close-button-transform': 'translate(35%, -35%)',
+} as CSSProperties
+
 function absoluteUrl(path: string): string {
   return new URL(path, SITE_URL).toString()
 }
@@ -38,13 +58,57 @@ export async function generateMetadata({
   const { lang: rawLang } = await params
   const lang = isSupportedLang(rawLang) ? rawLang : 'ko'
   const ogImage = absoluteUrl(`/${lang}/opengraph-image`)
+  const title = translations['home.meta.title'][lang]
+  const description = translations['home.meta.description'][lang]
 
+  // No alternates here: a layout cannot know the page path, and an inherited canonical would point every page at home.
   return {
+    title: { default: title, template: `%s | ${SITE_NAME[lang]}` },
+    description,
+    keywords: [
+      'Limbus Company', '림버스 컴퍼니', '림버스', '림버스 정보', '림버스 도감',
+      '림버스 인격', '림버스 E.G.O', '림버스 덱', '거울 던전', '에고 기프트', '키워드 도감',
+      '최애의 관리자', 'SAIGO NO DANTE', 'Project Moon', '프로젝트 문',
+    ],
+    authors: [{ name: 'SAIGO NO DANTE' }],
+    creator: 'SAIGO NO DANTE',
     openGraph: {
+      type: 'website',
+      locale: OG_LOCALE[lang],
+      url: localeUrl(lang),
+      siteName: SITE_NAME[lang],
+      title,
+      description,
       images: [{ url: ogImage, width: 1200, height: 630 }],
     },
     twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
       images: [ogImage],
+    },
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: { index: true, follow: true, 'max-image-preview': 'large' },
+    },
+    verification: {
+      google: 'Aj4bgbiMwETOsd8qKciqA6u8AyX7str5bylMewPSfxw',
+    },
+    appleWebApp: {
+      capable: true,
+      statusBarStyle: 'black-translucent',
+      title: '최애의 관리자',
+    },
+    icons: {
+      icon: [
+        { url: '/favicon.ico', sizes: '16x16 32x32 48x48' },
+        { url: '/icons/icon.svg', type: 'image/svg+xml' },
+      ],
+      apple: '/icons/apple-touch-icon.png',
+    },
+    other: {
+      'mobile-web-app-capable': 'yes',
     },
   }
 }
@@ -64,24 +128,66 @@ export default async function LangLayout({
 
   setRequestLocale(validLang)
 
-  const [messages, keywordCatalog] = await Promise.all([getMessages(), getKeywordData()])
+  // Explicit locale: with Cache Components the shell (<html>) must not read the request locale from headers.
+  const [messages, keywordCatalog, t] = await Promise.all([
+    getMessages({ locale: validLang }),
+    getKeywordData(),
+    getTranslations({ locale: validLang }),
+  ])
   const keywords = localizeKeywordCatalog(keywordCatalog, validLang)
-  const t = await getTranslations()
   const mainNavLabel = t('common.mainNav')
 
   return (
-    <NextIntlClientProvider locale={validLang} messages={messages} timeZone="Asia/Seoul">
-      <KeywordProvider keywords={keywords}>
-      <SetHtmlLang lang={validLang} />
-      <SkipNav />
-      <AprilFoolsWrapper />
-      <div className="site-navigation"><Navbar mainNavLabel={mainNavLabel} /></div>
-      <Suspense fallback={null}><VisitTracker /></Suspense>
-      <Suspense fallback={null}><NavigationTracker /></Suspense>
-      <main id="main-content">{children}</main>
-      <Footer />
-      <PageNavigation />
-      </KeywordProvider>
-    </NextIntlClientProvider>
+    <html lang={validLang} suppressHydrationWarning data-scroll-behavior="smooth" className={fontVariables}>
+      <head>
+        <link rel="preconnect" href="https://lpgqcleszdlldneiwgep.supabase.co" />
+        <link rel="preconnect" href="https://lh3.googleusercontent.com" crossOrigin="anonymous" />
+        <JsonLd data={websiteJsonLd(validLang)} />
+        <JsonLd data={organizationJsonLd(SITE_URL)} />
+        <JsonLd data={videoGameJsonLd(validLang)} />
+      </head>
+      <body className="antialiased">
+        <NuqsAdapter>
+          <SessionProvider>
+            <SWRProvider>
+              <MotionConfig reducedMotion="user">
+                <IntlClientProvider locale={validLang} messages={messages} timeZone="Asia/Seoul">
+                  <KeywordProvider keywords={keywords}>
+                    <SkipNav lang={validLang} />
+                    <AprilFoolsWrapper />
+                    {/* Navbar/PageNavigation read the pathname, which is request data on routes with unknown params (e.g. /decks/[id]). */}
+                    <div className="site-navigation"><Suspense fallback={null}><Navbar mainNavLabel={mainNavLabel} /></Suspense></div>
+                    <Suspense fallback={null}><VisitTracker /></Suspense>
+                    <Suspense fallback={null}><NavigationTracker /></Suspense>
+                    {/* Catches page-level dynamic holes (formerly caught by app/loading.tsx above <html>); plain Suspense keeps the old page during navigations. */}
+                    <main id="main-content"><Suspense fallback={null}>{children}</Suspense></main>
+                    <Footer lang={validLang} />
+                    <Suspense fallback={null}><PageNavigation /></Suspense>
+                  </KeywordProvider>
+                </IntlClientProvider>
+              </MotionConfig>
+            </SWRProvider>
+          </SessionProvider>
+        </NuqsAdapter>
+        <Toaster
+          theme="dark"
+          position="top-right"
+          closeButton
+          style={toastPositionStyle}
+          toastOptions={{
+            closeButtonAriaLabel: 'Dismiss notification',
+            style: {
+              background: '#1a1510',
+              border: '0.0625rem solid #3a3020',
+              color: '#e8dcc8',
+              fontFamily: 'var(--font-body)',
+              paddingRight: '2.5rem',
+            },
+          }}
+        />
+        {shouldRenderAnalytics ? <Analytics /> : null}
+        <ServiceWorkerRegister />
+      </body>
+    </html>
   )
 }

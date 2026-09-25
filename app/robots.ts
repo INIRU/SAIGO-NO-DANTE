@@ -1,16 +1,16 @@
 import type { MetadataRoute } from 'next'
+import { SITE_URL } from '@/lib/seo/metadata'
 
 export default function robots(): MetadataRoute.Robots {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://saigo-no-dante.com'
-
   return {
     rules: [
       {
         userAgent: '*',
         allow: '/',
-        disallow: ['/admin/', '/api/', '/mypage'],
+        // Pages live under /{lang}/, so each private path is listed with a locale wildcard too.
+        disallow: ['/admin/', '/*/admin', '/api/', '/mypage', '/*/mypage', '/*/login?callbackUrl='],
       },
     ],
-    sitemap: `${baseUrl}/sitemap.xml`,
+    sitemap: `${SITE_URL}/sitemap.xml`,
   }
 }

@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { localeAlternates } from '@/lib/seo/metadata'
 import { cacheLife, cacheTag } from 'next/cache'
 import { getLatestEGOs, getLatestIdentities } from '@/lib/db/queries'
 import { getPinnedAnnouncementForLang } from '@/lib/db/announcements'
@@ -23,9 +24,9 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
     return entry[lang as SupportedLang] ?? entry['ko'] ?? key
   }
   return {
-    title: t('home.meta.title'),
+    title: { absolute: t('home.meta.title') },
     description: t('home.meta.description'),
-    alternates: { canonical: 'https://saigo-no-dante.com' },
+    alternates: localeAlternates(lang, '/'),
   }
 }
 

@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { localeAlternates } from '@/lib/seo/metadata'
 import { cacheLife, cacheTag } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { readAllRows } from '@/lib/meta/pagination'
@@ -16,7 +17,7 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
   return {
     title: t('run.metaTitle'),
     description: t('run.metaDescription'),
-    alternates: { canonical: 'https://saigo-no-dante.com/planner/run' },
+    alternates: localeAlternates(lang, '/planner/run'),
   }
 }
 

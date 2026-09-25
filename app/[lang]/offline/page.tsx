@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { cacheLife } from 'next/cache'
 
 export const metadata: Metadata = {
-  title: '오프라인 | 최애의 관리자',
+  title: '오프라인',
   description: '인터넷 연결을 확인해 주세요.',
 }
 
