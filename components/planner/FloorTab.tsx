@@ -45,6 +45,8 @@ import {
 import { NoteRenderer, type NoteEgoGiftEntry } from '@/components/decks/NoteChips'
 import { getLocalizedName } from '@/lib/i18n/localize'
 import type { SupportedLang } from '@/lib/i18n/types'
+import { normalizeThemeKeyword } from '@/lib/constants/keywords'
+import { getGiftActivationConditionStatus, getGiftConditionCountsForSlots } from '@/lib/planner/gift-condition-status'
 
 // The descent rail: its colour marks which stretch of the dungeon a floor belongs to.
 const LADDER_SEGMENTS = [
@@ -308,6 +310,14 @@ export default function FloorTab({ state, dispatch, themes, gifts, recipes, gift
     }
   }, [blockedFinalMaterialIds, dispatch, storedFinalIds])
 
+  // 편성으로 발동 조건을 못 채우는 기프트에 조건 미달/위험 덮개를 씌운다(기프트 탭과 같은 판정)
+  const conditionCounts = useMemo(() => getGiftConditionCountsForSlots(state.identitySlots), [state.identitySlots])
+  const conditionOf = useCallback((gift: GiftData | undefined) => gift ? getGiftActivationConditionStatus({
+    gift,
+    ...conditionCounts,
+    formatKeywordLabel: keyword => giftKeywordLabel(normalizeThemeKeyword(keyword), locale),
+  }) : null, [conditionCounts, locale])
+
   const finalFloorGifts = useMemo(() => {
     return finalEntries
       .map(entry => giftMap.get(entry.id))
@@ -429,7 +439,8 @@ export default function FloorTab({ state, dispatch, themes, gifts, recipes, gift
     const id = Number(gift.id)
     const blocked = blockedFinalMaterialIds.has(id)
     const source = finalEntryById.get(id)?.source
-    const key = `${id}|${blocked ? blockedBy.get(id) ?? '' : '-'}|${source ?? ''}`
+    const conditionStatus = blocked ? null : conditionOf(giftMap.get(id))
+    const key = `${id}|${blocked ? blockedBy.get(id) ?? '' : '-'}|${source ?? ''}|${conditionStatus?.level ?? ''}${conditionStatus?.text ?? ''}`
     const cached = cardPropsCache.get(key)
     if (cached) return cached
     const name = getLocalizedName({ name_kr: gift.name, name_en: gift.name_en, name_jp: gift.name_jp }, locale)
@@ -441,11 +452,11 @@ export default function FloorTab({ state, dispatch, themes, gifts, recipes, gift
       const label = source === 'start' || source === 'observe'
         ? `${name}. ${t(source === 'start' ? 'finalAutoStart' : 'finalAutoObserve')}`
         : source ? t('removeAlreadyAddedGift', { gift: name }) : t('addFinalGift', { gift: name })
-      props = { title: label, ariaLabel: label }
+      props = { title: label, ariaLabel: label, conditionStatus, conditionDetail: false }
     }
     cardPropsCache.set(key, props)
     return props
-  }, [blockedBy, blockedFinalMaterialIds, cardPropsCache, finalEntryById, locale, t])
+  }, [blockedBy, blockedFinalMaterialIds, cardPropsCache, conditionOf, finalEntryById, giftMap, locale, t])
 
   // Keeps a pick's place in the inventory and swaps only its level suffix. 인벤토리는 ref로 읽어 함수가 바뀌지 않게 한다(타일 memo 유지).
   const inventoryRef = useRef(state.giftInventory)
@@ -1039,6 +1050,7 @@ export default function FloorTab({ state, dispatch, themes, gifts, recipes, gift
                   key={gift.game_id}
                   gift={gift}
                   entry={entry}
+                  conditionStatus={conditionOf(giftMap.get(gift.game_id))}
                   onEnhance={setFinalEnhance}
                   onRemove={removeFinalGift}
                 />

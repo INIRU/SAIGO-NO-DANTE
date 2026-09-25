@@ -24,6 +24,7 @@ const LEVELS = [
 type Props = {
   gift: GiftData
   entry: FinalGift
+  conditionStatus?: { level: 'warn' | 'unmet'; text: string } | null
   onEnhance: (entry: FinalGift, level: number) => void
   onRemove: (giftId: number) => void
 }
@@ -34,7 +35,7 @@ const sameFields = (a: object, b: object) => {
 }
 
 // gift·entry는 누를 때마다 새 객체로 온다: 값이 같으면 다시 그리지 않는다(최종 기프트 하나를 더해도 모든 칸이 다시 그려지던 지연)
-export default memo(function FinalGiftTile({ gift, entry, onEnhance: setLevel, onRemove: removeGift }: Props) {
+export default memo(function FinalGiftTile({ gift, entry, conditionStatus, onEnhance: setLevel, onRemove: removeGift }: Props) {
   const onEnhance = (level: number) => setLevel(entry, level)
   const onRemove = () => removeGift(gift.game_id)
   const t = useTranslations('planner.floorTab')
@@ -73,6 +74,7 @@ export default memo(function FinalGiftTile({ gift, entry, onEnhance: setLevel, o
           showName={false}
           className={`hover:transform-none! ${max === 0 ? 'cursor-default!' : ''}`}
           enhance={entry.level || undefined}
+          conditionStatus={conditionStatus}
           onClick={() => {
             if (press.current.fired) { press.current.fired = false; return }
             if (max > 0) onEnhance(nextEnhanceLevel(gift, entry.level))
@@ -134,4 +136,5 @@ export default memo(function FinalGiftTile({ gift, entry, onEnhance: setLevel, o
     </li>
   )
 }, (prev, next) => prev.onEnhance === next.onEnhance && prev.onRemove === next.onRemove &&
+  prev.conditionStatus?.level === next.conditionStatus?.level && prev.conditionStatus?.text === next.conditionStatus?.text &&
   sameFields(prev.gift, next.gift) && sameFields(prev.entry, next.entry))

@@ -1263,8 +1263,7 @@
     "giftTab": {
       "tabs": {
         "observe": "관측 기프트",
-        "start": "시작 기프트",
-        "final": "최종 기프트"
+        "start": "시작 기프트"
       },
       "observe": {
         "cost": "관측 비용:",
@@ -1279,17 +1278,7 @@
         "selectedTitle": "시작 기프트"
       },
       "final": {
-        "all": "전체",
-        "buildTitle": "최종 기프트 빌드",
-        "selectedCount": "{count}개",
-        "clearAll": "전체 삭제",
-        "help": "아래 목록에서 드래그하거나 클릭하여 추가 · 강화 가능한 기프트는 클릭하여 +/++ 강화",
-        "conditionUnmet": "조건 미달 — 전체 인격으로도 부족",
-        "conditionWarn": "조건 주의 — 편성(1-7)만으로는 부족, 대기 포함 시 충족",
-        "emptyDrop": "기프트를 아래에서 드래그하거나 클릭하여 추가하세요",
-        "listTitle": "전체 기프트 목록",
-        "searchPlaceholder": "기프트 이름 검색...",
-        "noResults": "검색 결과가 없습니다"
+        "searchPlaceholder": "기프트 이름 검색..."
       },
       "grid": {
         "grade": "{grade}등급",

@@ -6,29 +6,18 @@ import GiftGrade from '@/components/ui/GiftGrade'
 import { GIFT_BG_URL } from '@/lib/constants/gift'
 
 import { getGameUiAsset } from '@/lib/utils/game-ui'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import Image from 'next/image'
 import { useLocale, useTranslations } from 'next-intl'
-import { Search } from 'lucide-react'
-import type { PlannerState, PlannerAction, GiftData, RecipeData } from '@/lib/planner/types'
-import { normalizeThemeKeyword } from '@/lib/constants/keywords'
-import { getGiftActivationConditionStatus, getGiftConditionCountsForSlots } from '@/lib/planner/gift-condition-status'
-import {
-  getFinalGiftVariantIds,
-  parseFinalGiftIds,
-} from '@/lib/planner/fusion'
-import { deriveFinalGifts, finalEnhanceEdit } from '@/lib/planner/final-gifts'
+import type { PlannerState, PlannerAction, GiftData } from '@/lib/planner/types'
 import {
   GRADE_ROMAN,
-  GRADE_COLORS,
   GRADE_ORDER,
-  KEYWORD_FILTERS,
   OCTAGON_CLIP,
   getKeywordIconUrl,
   getKeywordSlug,
 } from './gift-plan/constants'
 import type { GiftSubTab } from './gift-plan/constants'
-import GiftCard, { GiftEnhancePicker } from '@/components/ui/GiftCard'
 import GiftGridPanel from './gift-plan/GiftGridPanel'
 import SelectedPanel from './gift-plan/SelectedPanel'
 
@@ -37,41 +26,18 @@ interface Props {
   dispatch: React.Dispatch<PlannerAction>
   gifts: GiftData[]
   giftMap: Map<number, GiftData>
-  recipes: RecipeData[]
 }
 
 // ── Main component ───────────────────────────────────────────────────────────
-export default function GiftPlanTab({ state, dispatch, gifts, giftMap, recipes }: Props) {
+export default function GiftPlanTab({ state, dispatch, gifts, giftMap }: Props) {
   const locale = useLocale()
   const t = useTranslations('planner.giftTab')
   const [subTab, setSubTab] = useState<GiftSubTab>('observe')
-  const [finalDragOver, setFinalDragOver] = useState(false)
-  const [finalSearch, setFinalSearch] = useState('')
-  const [finalFilterKeyword, setFinalFilterKeyword] = useState<string | null>(null)
-  const [finalFilterGrade, setFinalFilterGrade] = useState<string | null>(null)
   const getGiftDisplayName = (gift: GiftData) => locale === 'en'
     ? gift.name_en || gift.name
     : locale === 'ja'
       ? gift.name_jp || gift.name
       : gift.name
-
-  const conditionCounts = useMemo(
-    () => getGiftConditionCountsForSlots(state.identitySlots),
-    [state.identitySlots],
-  )
-
-  // 조건 체크: null=충족, {level:'warn',text} = 대기 포함 시 충족, {level:'unmet',text} = 불충족
-  function getConditionStatus(gift: GiftData): { level: 'warn' | 'unmet'; text: string } | null {
-    return getGiftActivationConditionStatus({
-      gift,
-      ...conditionCounts,
-      formatKeywordLabel: keyword => {
-        const normalized = normalizeThemeKeyword(keyword)
-        const slug = getKeywordSlug(normalized)
-        return slug ? keywordLabel(slug) : normalized
-      },
-    })
-  }
 
   // Parse selected IDs by prefix. 관찰 목록은 observe_ 항목이 바뀔 때만 새로 만든다(최종 기프트를 눌러도 관찰 격자를 다시 그리지 않게)
   const observeKey = state.giftInventory.filter(id => id.startsWith('observe_')).join()
@@ -95,72 +61,11 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap, recipes }
     ),
     [state.giftInventory]
   )
-  // Stored picks versus the derived final set: picks plus start/observed gifts, minus what a fusion result consumed.
-  const storedFinalIds = useMemo(() => parseFinalGiftIds(state.giftInventory), [state.giftInventory])
-  const { gifts: finalEntries, consumed: blockedFinalMaterialIds } = useMemo(
-    () => deriveFinalGifts(state.giftInventory, recipes, giftMap),
-    [giftMap, recipes, state.giftInventory],
-  )
-  const finalIds = useMemo(() => new Set(finalEntries.map(entry => entry.id)), [finalEntries])
-  const finalVisibleIds = finalIds
-
-  const removeFinalGiftVariants = useCallback((giftGameId: number) => {
-    for (const giftId of getFinalGiftVariantIds(giftGameId)) {
-      dispatch({ type: 'REMOVE_GIFT', giftId })
-    }
-  }, [dispatch])
-
-  const addFinalGift = useCallback((gift: GiftData) => {
-    if (finalIds.has(gift.game_id)) return
-    if (blockedFinalMaterialIds.has(gift.game_id)) return
-    dispatch({ type: 'ADD_GIFT', giftId: `final_${gift.game_id}` })
-  }, [blockedFinalMaterialIds, dispatch, finalIds])
-
-  useEffect(() => {
-    if (blockedFinalMaterialIds.size === 0) return
-
-    for (const blockedId of blockedFinalMaterialIds) {
-      if (!storedFinalIds.has(blockedId)) continue
-      for (const giftId of getFinalGiftVariantIds(blockedId)) {
-        dispatch({ type: 'REMOVE_GIFT', giftId })
-      }
-    }
-  }, [blockedFinalMaterialIds, dispatch, storedFinalIds])
-
   function getGiftsByIds(ids: Set<number>): GiftData[] {
     return Array.from(ids)
       .map(id => giftMap.get(id))
       .filter(Boolean) as GiftData[]
   }
-
-  // Observe: grade 1-3, exclude 잔영
-  const filteredFinalSourceGifts = useMemo(() => {
-    return gifts.filter(g => {
-      if (blockedFinalMaterialIds.has(g.game_id)) return false
-      if (finalFilterGrade && g.grade !== finalFilterGrade) return false
-      if (finalFilterKeyword) {
-        const slug = getKeywordSlug(g.keyword ?? null)
-        if (slug !== finalFilterKeyword) return false
-      }
-      if (finalSearch.trim()) {
-        const query = finalSearch.trim().toLocaleLowerCase()
-        const displayName = getGiftDisplayName(g).toLocaleLowerCase()
-        const koreanName = g.name.toLocaleLowerCase()
-        if (!displayName.includes(query) && !koreanName.includes(query)) return false
-      }
-      return true
-    })
-  }, [blockedFinalMaterialIds, gifts, finalFilterGrade, finalFilterKeyword, finalSearch, locale])
-
-  const finalGradeGroups = useMemo(() => {
-    const groups: Record<string, GiftData[]> = {}
-    for (const g of filteredFinalSourceGifts) {
-      const grade = g.grade ?? '1'
-      if (!groups[grade]) groups[grade] = []
-      groups[grade].push(g)
-    }
-    return groups
-  }, [filteredFinalSourceGifts])
 
   const observeGifts = useMemo(
     // Only what the start observation can actually offer, per the game's observation list.
@@ -171,7 +76,6 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap, recipes }
   const subTabs: { key: GiftSubTab; label: string; count: number }[] = [
     { key: 'observe', label: t('tabs.observe'), count: observeIds.size },
     { key: 'start', label: t('tabs.start'), count: startIds.size },
-    { key: 'final', label: t('tabs.final'), count: finalVisibleIds.size },
   ]
   const keywordLabel = (slug: string | null) => t(`keywords.${slug ?? 'all'}`)
 
@@ -473,339 +377,6 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap, recipes }
         )
       })()}
 
-      {/* ── Final tab ───────────────────────────────────────────────────── */}
-      {subTab === 'final' && (() => {
-        // hooks moved to component top level
-        const gradeGroups = finalGradeGroups
-
-        const GRADE_OPTIONS = [
-          { value: null, label: t('final.all') },
-          { value: 'EX', label: 'EX' },
-          { value: '5', label: 'Ⅴ' },
-          { value: '4', label: 'Ⅳ' },
-          { value: '3', label: 'Ⅲ' },
-          { value: '2', label: 'Ⅱ' },
-          { value: '1', label: 'Ⅰ' },
-        ]
-
-        const gradeGroupOrder = ['EX', '5', '4', '3', '2', '1']
-
-        return (
-          <div className="planner-gift-final" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-
-            {/* ── Top section: drop zone ──────────────────────────────── */}
-            <div
-              onDragOver={e => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; setFinalDragOver(true) }}
-              onDragLeave={() => setFinalDragOver(false)}
-              onDrop={e => {
-                e.preventDefault()
-                setFinalDragOver(false)
-                const gameId = e.dataTransfer.getData('text/plain')
-                const gift = giftMap.get(Number(gameId))
-                if (gift) {
-                  addFinalGift(gift)
-                }
-              }}
-              className="planner-gift-final-build"
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '0.625rem',
-                padding: '0.625rem',
-                background: finalDragOver ? 'rgba(200,144,10,0.07)' : 'rgba(26,21,16,0.4)',
-                border: `1px ${finalDragOver ? 'solid' : 'solid'} ${finalDragOver ? '#c8900a' : '#1f1a14'}`,
-                borderRadius: '0.5rem',
-                boxShadow: finalDragOver ? '0 0 0.75rem rgba(200,144,10,0.25)' : 'none',
-                transition: 'all 0.15s',
-                minHeight: '6rem',
-              }}
-            >
-              {/* Drop zone header */}
-              <div className="planner-gift-final-build-header" style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: '0.5rem',
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <span style={{ fontSize: '0.75rem', color: '#9ca3af', fontWeight: 600 }}>
-                    {t('final.buildTitle')}
-                  </span>
-                  {finalVisibleIds.size > 0 && (
-                    <span style={{
-                      fontSize: '0.5625rem',
-                      color: '#c8900a',
-                      background: 'rgba(200,144,10,0.12)',
-                      padding: '0.0625rem 0.375rem',
-                      borderRadius: '0.25rem',
-                      border: '1px solid rgba(200,144,10,0.2)',
-                      fontWeight: 700,
-                    }}>
-                      {t('final.selectedCount', { count: finalVisibleIds.size })}
-                    </span>
-                  )}
-                </div>
-                {finalVisibleIds.size > 0 && (
-                  <button
-                    onClick={() => {
-                      Array.from(storedFinalIds).forEach(id => {
-                        removeFinalGiftVariants(id)
-                      })
-                    }}
-                    style={{
-                      fontSize: '0.6875rem',
-                      color: '#dc2626',
-                      background: 'rgba(220,38,38,0.08)',
-                      border: '1px solid rgba(220,38,38,0.2)',
-                      borderRadius: '0.25rem',
-                      padding: '0.125rem 0.5rem',
-                      cursor: 'pointer',
-                      transition: 'all 0.15s',
-                    }}
-                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(220,38,38,0.16)' }}
-                    onMouseLeave={e => { e.currentTarget.style.background = 'rgba(220,38,38,0.08)' }}
-                  >
-                    {t('final.clearAll')}
-                  </button>
-                )}
-              </div>
-              <p className="planner-gift-final-help" style={{ fontSize: '0.625rem', color: '#44403c', marginTop: '-0.25rem' }}>
-                {t('final.help')}
-              </p>
-              {state.identitySlots.length > 0 && finalVisibleIds.size > 0 && (
-                <div className="planner-gift-final-condition-legend" style={{ display: 'flex', gap: '0.75rem', marginTop: '0.125rem', fontSize: '0.5625rem' }}>
-                  <span style={{ color: '#ef4444' }}>● {t('final.conditionUnmet')}</span>
-                  <span style={{ color: '#e8b030' }}>● {t('final.conditionWarn')}</span>
-                </div>
-              )}
-
-              {/* Drop zone content */}
-              {finalVisibleIds.size === 0 ? (
-                <div className="planner-gift-final-drop-empty" style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  minHeight: '4rem',
-                  border: '1px dashed rgba(200,144,10,0.2)',
-                  borderRadius: '0.375rem',
-                  color: finalDragOver ? '#c8900a' : '#3f3520',
-                  fontSize: '0.75rem',
-                  transition: 'color 0.15s',
-                }}>
-                  {t('final.emptyDrop')}
-                </div>
-              ) : (
-                <div className="planner-gift-card-grid planner-gift-final-selected-grid" style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fill, minmax(4.5rem, 1fr))',
-                  gap: '0.5rem',
-                }}>
-                  {finalEntries.map(entry => {
-                    const gift = giftMap.get(entry.id)
-                    if (!gift) return null
-                    const enh = entry.level
-                    const canEnh = !!(gift.effect_plus)
-                    const setEnh = (level: number) => {
-                      const { oldId, newId } = finalEnhanceEdit(state.giftInventory, entry, level)
-                      if (oldId && newId) dispatch({ type: 'REPLACE_GIFT', oldId, newId })
-                      else if (newId) dispatch({ type: 'ADD_GIFT', giftId: newId })
-                      else if (oldId) dispatch({ type: 'REMOVE_GIFT', giftId: oldId })
-                    }
-                    const cycleEnh = () => {
-                      if (!canEnh) return
-                      setEnh((enh + 1) % (gift.effect_plusplus ? 3 : 2))
-                    }
-                    // Start and observed gifts are removed from their own tabs.
-                    const removeGift = entry.source === 'final' ? () => removeFinalGiftVariants(gift.game_id) : undefined
-                    return (
-                      <div key={gift.id} className="min-w-0">
-                        <GiftCard
-                          gift={gift}
-                          isSelected={false}
-                          onClick={canEnh ? cycleEnh : () => {}}
-                          enhance={canEnh ? enh : undefined}
-                          onEnhance={canEnh ? cycleEnh : undefined}
-                          onRemove={removeGift}
-                          conditionStatus={getConditionStatus(gift)}
-                        />
-                        {canEnh && <GiftEnhancePicker level={enh} max={gift.effect_plusplus ? 2 : 1} giftName={gift.name} onChange={setEnh} />}
-                      </div>
-                    )
-                  })}
-                </div>
-              )}
-
-            </div>
-
-            {/* ── Bottom section: full gift list ──────────────────────── */}
-            <div className="planner-gift-final-list" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-              <span style={{ fontSize: '0.75rem', color: '#666', fontWeight: 600 }}>{t('final.listTitle')}</span>
-
-              {/* Search input */}
-              <div className="planner-gift-final-search" style={{ position: 'relative' }}>
-                <Search
-                  size={14}
-                  color="#555"
-                  style={{ position: 'absolute', left: '0.625rem', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}
-                />
-                <input
-                  type="text"
-                  placeholder={t('final.searchPlaceholder')}
-                  value={finalSearch}
-                  onChange={e => setFinalSearch(e.target.value)}
-                  style={{
-                    width: '100%',
-                    paddingLeft: '2rem',
-                    paddingRight: '0.75rem',
-                    paddingTop: '0.375rem',
-                    paddingBottom: '0.375rem',
-                    background: '#1a1510',
-                    border: '1px solid #2a2520',
-                    borderRadius: '0.375rem',
-                    color: '#d1d5db',
-                    fontSize: '0.8125rem',
-                    outline: 'none',
-                    boxSizing: 'border-box',
-                  }}
-                />
-              </div>
-
-              {/* Keyword filter tabs + grade dropdown */}
-              <div className="planner-gift-final-filters" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                {/* Scrollable keyword tabs */}
-                <div className="planner-gift-final-keywords" style={{
-                  display: 'flex',
-                  gap: '0.25rem',
-                  overflowX: 'auto',
-                  flex: 1,
-                  paddingBottom: '0.125rem',
-                  scrollbarWidth: 'none',
-                }}>
-                  {KEYWORD_FILTERS.map(tab => {
-                    const isActive = finalFilterKeyword === tab.slug
-                    const iconUrl = tab.slug ? getKeywordIconUrl(tab.slug) : null
-                    return (
-                      <button
-                        key={tab.slug ?? 'all'}
-                        onClick={() => setFinalFilterKeyword(isActive && tab.slug !== null ? null : tab.slug)}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '0.25rem',
-                          padding: '0.25rem 0.5rem',
-                          background: isActive ? 'rgba(200,144,10,0.18)' : '#1a1510',
-                          border: `1px solid ${isActive ? '#c8900a60' : '#2a2520'}`,
-                          borderRadius: '0.375rem',
-                          cursor: 'pointer',
-                          color: isActive ? '#e8b030' : '#888',
-                          fontSize: '0.6875rem',
-                          whiteSpace: 'nowrap',
-                          flexShrink: 0,
-                          transition: 'all 0.15s',
-                        }}
-                      >
-                        {iconUrl && (
-                          <Image src={iconUrl} alt="" width={12} height={12} style={{ width: '0.75rem', height: '0.75rem', objectFit: 'contain' }} />
-                        )}
-                        {keywordLabel(tab.slug)}
-                      </button>
-                    )
-                  })}
-                </div>
-
-                {/* Grade dropdown */}
-                <select
-                  value={finalFilterGrade ?? ''}
-                  onChange={e => setFinalFilterGrade(e.target.value || null)}
-                  className="planner-gift-grade-select"
-                  style={{
-                    background: '#1a1510',
-                    border: '1px solid #2a2520',
-                    borderRadius: '0.375rem',
-                    color: '#d1d5db',
-                    fontSize: '0.6875rem',
-                    padding: '0.25rem 0.375rem',
-                    cursor: 'pointer',
-                    flexShrink: 0,
-                    outline: 'none',
-                  }}
-                >
-                  {GRADE_OPTIONS.map(opt => (
-                    <option key={opt.value ?? 'all'} value={opt.value ?? ''}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Gift grid (grouped by grade) */}
-              <div className="planner-gift-final-grid-scroll" style={{ maxHeight: '35rem', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                {gradeGroupOrder.filter(g => gradeGroups[g]?.length > 0).map(grade => (
-                  <div key={grade}>
-                    {/* Grade divider */}
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.5rem',
-                      marginBottom: '0.375rem',
-                    }}>
-                      <span style={{
-                        fontSize: '0.75rem',
-                        fontWeight: 700,
-                        color: GRADE_COLORS[grade] ?? '#888',
-                        fontFamily: "'Bebas Neue', var(--font-title), sans-serif",
-                      }}>
-                        {GRADE_ROMAN[grade]}
-                      </span>
-                      <div style={{ flex: 1, height: '1px', background: `${GRADE_COLORS[grade] ?? '#333'}40` }} />
-                      <span style={{ fontSize: '0.5625rem', color: '#444' }}>{gradeGroups[grade].length}</span>
-                    </div>
-
-                    {/* Cards row */}
-                    <div className="planner-gift-card-grid planner-gift-final-source-grid" style={{
-                      display: 'grid',
-                      gridTemplateColumns: 'repeat(auto-fill, minmax(4.5rem, 1fr))',
-                      gap: '0.5rem',
-                    }}>
-                      {gradeGroups[grade].map(gift => {
-                        const alreadyAdded = finalIds.has(gift.game_id)
-                        return (
-                          <div
-                            key={gift.id}
-                            draggable={!alreadyAdded}
-                            onDragStart={e => {
-                              e.dataTransfer.setData('text/plain', String(gift.game_id))
-                              e.dataTransfer.effectAllowed = 'copy'
-                            }}
-                            style={{ opacity: alreadyAdded ? 0.3 : 1, transition: 'opacity 0.15s' }}
-                          >
-                            <GiftCard
-                              gift={gift}
-                              isSelected={alreadyAdded}
-                              onClick={() => {
-                                if (!alreadyAdded) {
-                                  addFinalGift(gift)
-                                }
-                              }}
-                              disabled={alreadyAdded}
-                              conditionStatus={getConditionStatus(gift)}
-                            />
-                          </div>
-                        )
-                      })}
-                    </div>
-                  </div>
-                ))}
-                {filteredFinalSourceGifts.length === 0 && (
-                  <div style={{ textAlign: 'center', color: '#3f3520', fontSize: '0.75rem', padding: '2rem 0' }}>
-                    {t('final.noResults')}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        )
-      })()}
       <style jsx global>{`
         @media (max-width: 767px) {
           .planner-gift-tab {

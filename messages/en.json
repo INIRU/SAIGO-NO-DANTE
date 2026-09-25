@@ -1263,8 +1263,7 @@
     "giftTab": {
       "tabs": {
         "observe": "Observed Gifts",
-        "start": "Starter Gifts",
-        "final": "Final Gifts"
+        "start": "Starter Gifts"
       },
       "observe": {
         "cost": "Observe cost:",
@@ -1279,17 +1278,7 @@
         "selectedTitle": "Starter Gifts"
       },
       "final": {
-        "all": "All",
-        "buildTitle": "Final Gift Build",
-        "selectedCount": "{count} selected",
-        "clearAll": "Clear all",
-        "help": "Drag or click gifts below to add · click upgradable gifts for +/++",
-        "conditionUnmet": "Unmet — not enough with all identities",
-        "conditionWarn": "Warning — needs bench identities",
-        "emptyDrop": "Drag or click gifts below to add",
-        "listTitle": "All Gifts",
-        "searchPlaceholder": "Search gift name...",
-        "noResults": "No results"
+        "searchPlaceholder": "Search gift name..."
       },
       "grid": {
         "grade": "Grade {grade}",

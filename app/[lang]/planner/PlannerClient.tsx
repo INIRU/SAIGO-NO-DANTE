@@ -60,8 +60,8 @@ const DeckSection = memo(DeckTab, sameKeys(['egoSlots', 'identitySlots', 'mainKe
 const blessingKey = (state: PlannerState) => state.giftInventory.filter(id => id.startsWith('blessing_')).join()
 const BlessingSection = memo(BlessingTab, ((prev: SectionProps, next: SectionProps) =>
   blessingKey(prev.state) === blessingKey(next.state) && sameKeys([])(prev, next)) as never)
-const GiftSection = memo(GiftPlanTab, sameKeys(['giftInventory', 'identitySlots']) as never)
-const FloorSection = memo(FloorTab, sameKeys(['floorPlan', 'giftInventory', 'difficulty']) as never)
+const GiftSection = memo(GiftPlanTab, sameKeys(['giftInventory']) as never)
+const FloorSection = memo(FloorTab, sameKeys(['floorPlan', 'giftInventory', 'difficulty', 'identitySlots']) as never)
 const IntroSection = memo(PlanIntroEditor, sameKeys(['title', 'description', 'identitySlots']) as never)
 const SECTION_KEYS = ['difficulty', 'mainKeywords', 'mainKeywordsManual', 'identitySlots', 'egoSlots', 'floorPlan', 'giftInventory'] as const
 
@@ -89,10 +89,15 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
   if (sectionState !== state && SECTION_KEYS.some(key => sectionState[key] !== state[key])) setSectionState(state)
 
   const giftMap = useMemo(() => buildGiftMap(gifts), [gifts])
+  // 인격이 바뀔 때만 다시 만든다: 기프트·층 구역은 identitySlots가 같은 배열이면 다시 그리지 않는다
+  const conditionSlots = useMemo(
+    () => enrichIdentitySlotsForGiftConditions(sectionState.identitySlots, identities),
+    [sectionState.identitySlots, identities],
+  )
   const giftConditionState = useMemo<PlannerState>(() => ({
     ...sectionState,
-    identitySlots: enrichIdentitySlotsForGiftConditions(sectionState.identitySlots, identities),
-  }), [sectionState, identities])
+    identitySlots: conditionSlots,
+  }), [sectionState, conditionSlots])
 
   const [copied, setCopied] = useState(false)
   const handleCopyUrl = async () => {
@@ -364,8 +369,8 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
     summary: <IntroSection state={state} dispatch={dispatch} themes={themes} gifts={gifts} giftMap={giftMap} sinners={sinners} />,
     deck: <DeckSection state={sectionState} dispatch={dispatch} identities={identities} sinners={sinners} themes={themes} gifts={gifts} giftMap={giftMap} passives={passives} skills={skills} egos={egos} />,
     blessing: <BlessingSection state={sectionState} dispatch={dispatch} />,
-    gift: <GiftSection state={giftConditionState} dispatch={dispatch} gifts={gifts} recipes={recipes} giftMap={giftMap} />,
-    floor: <FloorSection state={sectionState} dispatch={dispatch} themes={themes} gifts={gifts} recipes={recipes} giftMap={giftMap} />,
+    gift: <GiftSection state={sectionState} dispatch={dispatch} gifts={gifts} giftMap={giftMap} />,
+    floor: <FloorSection state={giftConditionState} dispatch={dispatch} themes={themes} gifts={gifts} recipes={recipes} giftMap={giftMap} />,
   }
   const plannedFloors = state.floorPlan.filter(floor => floor.theme_id).length
   const sectionStatus: Partial<Record<PlannerTab, string>> = {
