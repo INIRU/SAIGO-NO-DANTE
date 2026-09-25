@@ -1027,7 +1027,8 @@
         "clearAll": "すべて解除",
         "remove": "{label}の絞り込みを外す",
         "moreResults": "ほかに{count}件あります。名前で検索してください。",
-        "postCount": "{count}件"
+        "postCount": "{count}件",
+        "egoSinner": "囚人"
       },
       "languageFilter": {
         "label": "言語",

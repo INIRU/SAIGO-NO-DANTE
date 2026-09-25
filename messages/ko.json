@@ -1027,7 +1027,8 @@
         "clearAll": "모두 지우기",
         "remove": "{label} 필터 빼기",
         "moreResults": "{count}개 더 있어요. 이름으로 검색해 보세요.",
-        "postCount": "{count}개 플랜"
+        "postCount": "{count}개 플랜",
+        "egoSinner": "수감자"
       },
       "languageFilter": {
         "label": "언어",

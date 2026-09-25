@@ -1027,7 +1027,8 @@
         "clearAll": "Clear all",
         "remove": "Remove {label} filter",
         "moreResults": "{count} more. Search by name to find them.",
-        "postCount": "{count} plans"
+        "postCount": "{count} plans",
+        "egoSinner": "Sinner"
       },
       "languageFilter": {
         "label": "Language",
