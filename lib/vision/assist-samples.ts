@@ -12,7 +12,8 @@ export const SAMPLE_FRAMES_EACH_SIDE = 5
 export const SAMPLE_MAX_FRAME_BYTES = 400 * 1024
 export const SAMPLE_MAX_TOTAL_BYTES = 3 * 1024 * 1024
 export const SAMPLE_DAILY_LIMIT = 30
-const SAMPLE_INTERVAL_MS = 100
+// 판정은 팝업이 닫힌 뒤에야 끝나는 일이 많다: 5장 × 300 ms로 직전 약 1.5초를 담는다(100 ms일 때는 0.5초라 팝업이 빠졌다)
+const SAMPLE_INTERVAL_MS = 300
 const SAMPLE_COOLDOWN_MS = 20_000
 const SAMPLE_WIDTH = 960
 

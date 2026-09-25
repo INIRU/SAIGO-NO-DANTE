@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest'
-import { acquiredGiftFromPopup, acquisitionFloor } from '../../../lib/vision/popup-evidence'
+import { acquiredGiftFromPopup, acquisitionFloor, popupHeaderEvidence, popupPurchaseHeader } from '../../../lib/vision/popup-evidence'
 
 const gifts = [
   { id: '9073', texts: ['엔도르핀 키트'] },
@@ -69,4 +69,11 @@ it('accepts a one-glyph misread of a long name only when two reads agree and no 
     gifts: catalog })).toBeNull()
   expect(acquiredGiftFromPopup({ header, labels: [near('뜨거운 육즘 다리살'), near('뜨거운 육즘 다리살')], iconGiftId: '9028',
     gifts: catalog })).toBeNull()
+})
+
+it('tells the shop purchase dialog apart from an acquisition popup', () => {
+  expect(popupPurchaseHeader('E.G.O 기프트 구매')).toBe(true)
+  expect(popupHeaderEvidence('E.G.O 기프트 구매')).toBe(false)
+  expect(popupPurchaseHeader('E.G.O 기프트를 획득했습니다.')).toBe(false)
+  expect(popupHeaderEvidence('E.G.O 기프트를 획득했습니다.')).toBe(true)
 })

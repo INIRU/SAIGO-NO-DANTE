@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { VisualCandidates, VisualMatch, VisualReference } from '@/lib/vision/embedding-match'
 import { corroboratedChoiceEvent, effectGiftIds, eventScreenEvidence, matchOcrCandidates, type EventScreenEvidence, type OcrCatalog, type OcrMatches,
   type OcrWord } from '@/lib/vision/ocr-match'
-import { acquiredGiftFromPopup, acquisitionFloor, popupCandidateIds, popupHeaderEvidence, type PopupLabelRead } from '@/lib/vision/popup-evidence'
+import { acquiredGiftFromPopup, acquisitionFloor, popupCandidateIds, popupHeaderEvidence, popupPurchaseHeader, type PopupLabelRead } from '@/lib/vision/popup-evidence'
 import type { RecipePopupEvidence } from '@/lib/planner/fusion'
 import type { StableScene } from '@/lib/vision/scene-state'
 import { isMobileDevice } from '@/lib/vision/device'
@@ -737,9 +737,12 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
             (fusionWanted.current !== null && Date.now() - fusionWanted.current.at < 20_000))
           : verdict
         if (!giftId) {
-          // Every frame of a real gift popup read and none named the gift: a hard case worth a sample.
+          // Every frame of a real gift popup read and none named the gift: a hard case worth a sample. Without the
+          // "acquired" header read, only outside battle (skill panels there look like popups) and never a purchase dialog.
           const last = lastPopup.current
-          if ((icons.length || popupHeaderEvidence(header)) && ![...popupPending.current.values()].some(other => other.episode === pending.episode) &&
+          const acquired = popupHeaderEvidence(header)
+          if ((acquired || (icons.length && latestLabel.current !== 'battle' && !popupPurchaseHeader(header))) &&
+            ![...popupPending.current.values()].some(other => other.episode === pending.episode) &&
             (last?.episode !== pending.episode || last.attempts >= profileRef.current.popupAttempts))
             sampleRecorder.current?.trigger('popup-unresolved', [...icons, ...effects])
           return

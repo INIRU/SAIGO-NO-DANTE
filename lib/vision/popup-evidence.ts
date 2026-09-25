@@ -3,6 +3,11 @@ import type { OcrReference, OcrWord } from './ocr-match'
 const normalized = (text: string) => text.normalize('NFKC').toLocaleLowerCase().replace(/[^\p{L}\p{N}]/gu, '')
 const ACQUIRED_HEADER = '기프트를획득했습니다'
 
+/** The shop's "E.G.O 기프트 구매" confirmation: not an acquisition yet. */
+export function popupPurchaseHeader(value: string): boolean {
+  return normalized(value).includes('기프트구매')
+}
+
 export function popupHeaderEvidence(value: string): boolean {
   const text = normalized(value)
   if (text.includes(ACQUIRED_HEADER)) return true
