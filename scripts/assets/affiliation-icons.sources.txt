@@ -32,7 +32,6 @@ a-70b1d816	keyword:CoveringFire_타겟 포착.png
 a-e03eb397	keyword:KCorpSerum_K사 앰플.png
 a-aa67e38b	keyword:TiedRopeHonglu_포박 [홍루].png
 a-413c108f	keyword:RougeIshmaelEclose_새단장.png
-a-70704c6c	keyword:BladelineagePride_살수본위.png
 a-b3065e66	keyword:HorrHurtNightStiletto_치명적인 상처.png
 a-ba954017	keyword:WildHunt_와일드헌트.png
 a-527a557a	keyword:SojiRyoshuEntangle_절연[絕緣].png
@@ -46,3 +45,5 @@ a-b040451b	keyword:Unjust_Enrichment_부당 수익.png
 a-bc82020e	keyword:TheUdjatOutis_우제트의 눈 [선봉].png
 a-3b263698	keyword:NoirSuit_르누아르 개버딘 원단 코트.png
 soji	keyword:PhantomIncisionTotal_지혜성도.png
+blade-lineage-hwando	keyword:ChoiSwordsmanship_본국검술[살].png
+lcd	keyword:AengduNewArmIshmael_도깨비팔.png
