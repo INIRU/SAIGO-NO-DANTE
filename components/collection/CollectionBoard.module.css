@@ -51,8 +51,9 @@
 .kind b { color: #8a7d69; font: 400 1rem var(--font-title); letter-spacing: 0.02em; }
 
 /* Cards stay small with air between them; the frame badge pokes out, so rows keep a little top room. */
-.identities { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem 0.875rem; margin: 0; padding: 0.375rem 0.375rem 0 0; list-style: none; }
-.egos { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem 0.75rem; margin: 0; padding: 0; list-style: none; }
+/* Column count follows the available width (my page's column is narrower than /collection), so cards never overlap. */
+.identities { display: grid; grid-template-columns: repeat(auto-fill, minmax(6.5rem, 1fr)); gap: 1rem 0.875rem; margin: 0; padding: 0.375rem 0.375rem 0 0; list-style: none; }
+.egos { display: grid; grid-template-columns: repeat(auto-fill, minmax(7rem, 1fr)); gap: 1rem 0.75rem; margin: 0; padding: 0; list-style: none; }
 .item { position: relative; min-width: 0; }
 .toggle { display: block; width: 100%; padding: 0; border: 0; background: none; color: inherit; text-align: inherit; cursor: pointer; }
 .toggle:focus-visible { outline: 2px solid var(--gold-light); outline-offset: 3px; border-radius: 0.25rem; }
@@ -63,12 +64,8 @@
 
 .empty { margin: 0; padding: 3rem 1rem; border: 1px dashed #3a2a15; border-radius: 0.75rem; color: #9c8b73; text-align: center; font-size: 0.9375rem; }
 
-@media (min-width: 40rem) {
-  .identities { grid-template-columns: repeat(5, minmax(0, 1fr)); }
-  .egos { grid-template-columns: repeat(6, minmax(0, 1fr)); }
-}
 @media (min-width: 64rem) {
-  .identities { grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 1.25rem 1.125rem; }
-  .egos { grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 1.25rem 1rem; }
+  .identities { grid-template-columns: repeat(auto-fill, minmax(8.5rem, 1fr)); gap: 1.25rem 1.125rem; }
+  .egos { grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr)); gap: 1.25rem 1rem; }
 }
 @media (prefers-reduced-motion: reduce) { .sinner, .sinner img, .bar > span, .chip, .switch, .switch::before, .item > * { transition: none; } }
