@@ -6,6 +6,7 @@ import { findOrCreateSupabaseUser } from '@/lib/supabase/findOrCreateUser'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import { writeAuditLog } from '@/lib/audit'
 import { normalizeFloorPlanDifficulty, normalizePlanDifficulty } from '@/lib/planner/floor-difficulty'
+import { storedPlanDifficulty } from '@/lib/planner/stripPlanForList'
 
 
 // GET /api/planner/[id] — 플랜 상세
@@ -72,6 +73,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         'floor_plan' in body ? body.floor_plan : plan.floor_plan,
         planDifficulty,
       ).floorPlan
+      updates.difficulty = storedPlanDifficulty(updates.floor_plan, normalizePlanDifficulty(planDifficulty))
     }
 
     const { error } = await admin.schema('limbus').from('md_plans').update(updates).eq('id', id)

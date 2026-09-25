@@ -14,7 +14,7 @@ import { useKeywordData, useKeywords } from '@/components/providers/KeywordProvi
 import { useLocale, useTranslations } from 'next-intl'
 import { localizeDeckKeyword } from '@/components/decks/decks-types'
 import type { SupportedLang } from '@/lib/i18n'
-import { normalizePlannerListKeywords } from '@/lib/planner/stripPlanForList'
+import { normalizePlannerListKeywords, planDifficultyBadge } from '@/lib/planner/stripPlanForList'
 
 export type PlanSummary = {
   id: string
@@ -52,41 +52,6 @@ const DIFFICULTY_STYLE: Record<Difficulty, { bg: string; color: string; border: 
   hard:    { bg: 'rgba(200,144,10,0.12)',  color: '#e8b030', border: 'rgba(200,144,10,0.3)' },
   overlap: { bg: 'rgba(72,152,176,0.12)',  color: '#48b0c0', border: 'rgba(72,152,176,0.3)' },
   extreme: { bg: 'rgba(200,48,48,0.12)',   color: '#e05050', border: 'rgba(200,48,48,0.3)' },
-}
-
-type CardDifficultyBadge = {
-  key: Difficulty | 'normal-hard'
-  styleKey: Difficulty
-  labelKeys: Difficulty[]
-}
-
-function getCardDifficultyBadge(plan: PlanSummary): CardDifficultyBadge {
-  const summary = plan.difficulty_summary?.filter(segment => Object.values(segment.counts).some(count => (count ?? 0) > 0)) ?? []
-  if (summary.length === 0) return { key: plan.difficulty, styleKey: plan.difficulty, labelKeys: [plan.difficulty] }
-
-  if (summary.some(segment => segment.key === '11-15' && (segment.counts.extreme ?? 0) > 0)) {
-    return { key: 'extreme', styleKey: 'extreme', labelKeys: ['extreme'] }
-  }
-
-  if (summary.some(segment => segment.key === '6-10' && (segment.counts.overlap ?? 0) > 0)) {
-    return { key: 'overlap', styleKey: 'overlap', labelKeys: ['overlap'] }
-  }
-
-  let hasNormal = false
-  let hasHard = false
-
-  for (const segment of summary) {
-    if (segment.key === '1-5') {
-      hasNormal ||= (segment.counts.normal ?? 0) > 0
-      hasHard ||= (segment.counts.hard ?? 0) > 0
-    }
-  }
-
-  if (hasNormal && hasHard) return { key: 'normal-hard', styleKey: 'hard', labelKeys: ['normal', 'hard'] }
-  if (hasNormal) return { key: 'normal', styleKey: 'normal', labelKeys: ['normal'] }
-  if (hasHard) return { key: 'hard', styleKey: 'hard', labelKeys: ['hard'] }
-
-  return { key: plan.difficulty, styleKey: plan.difficulty, labelKeys: [plan.difficulty] }
 }
 
 function PlannerRelativeTime({
@@ -148,7 +113,7 @@ function PlanCard({
   const topKeywords = normalizePlannerListKeywords((plan.selected_keywords && plan.selected_keywords.length > 0)
     ? plan.selected_keywords
     : (plan.theme_keywords ?? []))
-  const difficultyBadge = getCardDifficultyBadge(plan)
+  const difficultyBadge = planDifficultyBadge(plan.difficulty, plan.difficulty_summary)
   const visibleKeywords = topKeywords.slice(0, 3)
   const hiddenKeywordCount = Math.max(0, topKeywords.length - visibleKeywords.length)
 

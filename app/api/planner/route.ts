@@ -5,7 +5,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { getServerSession } from 'next-auth'
 import { authOptions, requireActiveUser } from '@/lib/auth'
 import { findOrCreateSupabaseUser } from '@/lib/supabase/findOrCreateUser'
-import { normalizePlannerListKeywords, stripPlanForList } from '@/lib/planner/stripPlanForList'
+import { normalizePlannerListKeywords, storedPlanDifficulty, stripPlanForList } from '@/lib/planner/stripPlanForList'
 import { normalizeFloorPlanDifficulty, normalizePlanDifficulty } from '@/lib/planner/floor-difficulty'
 import { planFormationCount } from '@/lib/planner/plan-formation-count'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
@@ -380,8 +380,8 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json()
     const { title, description, difficulty, deck, egos, floor_plan, gift_inventory, tags } = body
-    const planDifficulty = normalizePlanDifficulty(difficulty)
-    const normalizedFloorPlan = normalizeFloorPlanDifficulty(floor_plan ?? [], planDifficulty).floorPlan
+    const normalizedFloorPlan = normalizeFloorPlanDifficulty(floor_plan ?? [], normalizePlanDifficulty(difficulty)).floorPlan
+    const planDifficulty = storedPlanDifficulty(normalizedFloorPlan, normalizePlanDifficulty(difficulty))
     const lang = parsePlannerMutationLang(body?.lang, body?.locale)
 
     if (!title?.trim()) return NextResponse.json({ error: '제목을 입력하세요' }, { status: 400 })
