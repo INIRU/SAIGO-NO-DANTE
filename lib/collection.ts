@@ -64,3 +64,15 @@ export async function decodeCollectionAsync(
 
   return owned
 }
+
+/** LCB (1★) identities come with every account, so they always count as owned even when not ticked. */
+export function withBaseIdentities(owned: Set<string>, identities: Record<string, IdentityInfo[]>): Set<string> {
+  for (const list of Object.values(identities)) for (const identity of list) if (identity.rarity === 1) owned.add(identity.id)
+  return owned
+}
+
+/** Formed identities (slot_order < 99; backups are optional) missing from the owned set. */
+export function missingFormationCount(slots: readonly { id?: string | null; slot_order?: number | null }[], owned: ReadonlySet<string>): number {
+  return slots.filter(slot => slot.id && (slot.slot_order ?? 99) < 99 && !owned.has(slot.id)).length
+}
+

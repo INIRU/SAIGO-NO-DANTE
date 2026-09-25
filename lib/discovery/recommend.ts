@@ -68,13 +68,3 @@ export function recommend<T extends { id: string }>(
   const popular = popularIds.map(id => unseen.get(id)).filter((c): c is T => !!c && !picked.has(c.id))
   return [...scored, ...popular].slice(0, limit)
 }
-
-/** Main keyword with the most unique visitors across the popular posts, or null when nothing was visited. */
-export function keywordTrend(posts: Record<string, unknown>[], visitors: Map<string, number>) {
-  const totals = new Map<string, number>()
-  for (const post of posts)
-    for (const keyword of postFeatures(post).keywords)
-      totals.set(keyword, (totals.get(keyword) ?? 0) + (visitors.get(post.id as string) ?? 0))
-  const [top] = [...totals].filter(([, n]) => n > 0).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
-  return top ? top[0] : null
-}

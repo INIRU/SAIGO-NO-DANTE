@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { interestProfile, keywordTrend, postFeatures, recommend } from '@/lib/discovery/recommend'
+import { interestProfile, postFeatures, recommend } from '@/lib/discovery/recommend'
 
 const deck = (id: string, identity: string, sinner: string, keywords: string[]) => ({
   id,
@@ -44,11 +44,5 @@ describe('discovery recommendations', () => {
   it('returns only popular posts for an empty profile', () => {
     const posts = [deck('a', 'x', 'faust', []), deck('b', 'y', 'faust', [])]
     expect(recommend(posts, new Map(), new Set(), ['b']).map(p => p.id)).toEqual(['b'])
-  })
-
-  it('picks the keyword with the most visitors across popular posts', () => {
-    const posts = [deck('a', 'x', 'faust', ['파열', '호흡']), deck('b', 'y', 'faust', ['화상']), deck('c', 'z', 'faust', ['호흡'])]
-    expect(keywordTrend(posts, new Map([['a', 10], ['b', 12], ['c', 5]]))).toBe('호흡')
-    expect(keywordTrend(posts, new Map())).toBeNull()
   })
 })

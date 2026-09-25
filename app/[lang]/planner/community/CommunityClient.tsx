@@ -6,7 +6,7 @@ import DiscoveryShelf from '@/components/discovery/DiscoveryShelf'
 import BoardBrowseLock from '@/components/discovery/BoardBrowseLock'
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
-import { useQueryState, parseAsInteger, parseAsString } from 'nuqs'
+import { useQueryState, parseAsBoolean, parseAsInteger, parseAsString } from 'nuqs'
 import { Link } from '@/lib/i18n/navigation'
 import Image from 'next/image'
 import { useSession } from 'next-auth/react'
@@ -16,7 +16,8 @@ import { DIFFICULTY_CONFIG, type Difficulty } from '@/lib/planner/types'
 import { useKeywordData, useKeywords } from '@/components/providers/KeywordProvider'
 import DeckIdentityFilterModal, { type DeckFilterIdentity, type DeckFilterSinner } from '@/components/decks/DeckIdentityFilterModal'
 import FormationCountFilter from '@/components/decks/FormationCountFilter'
-import { decodeCollectionAsync, type CollectionData } from '@/lib/collection'
+import { decodeCollectionAsync, missingFormationCount, withBaseIdentities, type CollectionData } from '@/lib/collection'
+import { useOwnedIdentities } from '@/hooks/useOwnedIdentities'
 import { parseSearchQuery, getActiveTerm, termMatchesAny } from '@/lib/utils/search'
 import { THEME_KEYWORDS } from '@/lib/constants/keywords'
 import { normalizePlannerListKeywords } from '@/lib/planner/stripPlanForList'
@@ -502,7 +503,8 @@ export default function CommunityClient({ initialPlans, initialTotal }: Communit
 
   // 컬렉션 필터
   const [showCollectionFilter, setShowCollectionFilter] = useState(true)
-  const [filterOwnedIdentity, setFilterOwnedIdentity] = useState(false)
+  // URL에 남긴다: 게시판 위 "보유 인격으로 편성할 수 있는 플랜만 보기" 링크가 이 필터를 켠 채로 연다(덱 게시판과 같은 oi)
+  const [filterOwnedIdentity, setFilterOwnedIdentity] = useQueryState('oi', parseAsBoolean.withDefault(false))
   const [filterOwnedEgo, setFilterOwnedEgo] = useState(false)
   const [ownedIds, setOwnedIds] = useState<Set<string> | null>(null)
   const [hasCollection, setHasCollection] = useState(false)
@@ -679,7 +681,9 @@ export default function CommunityClient({ initialPlans, initialTotal }: Communit
       const profileData = await fetch('/api/profile').then(r => r.json()) as { profile?: { collection_code?: string | null } }
       const code = profileData.profile?.collection_code
       if (!code) return false
-      const decoded = await decodeCollectionAsync(code, data.sinners, data.identities, data.egos)
+      const ticked = await decodeCollectionAsync(code, data.sinners, data.identities, data.egos)
+      // An empty code is invalid; LCB identities are added only after that check.
+      const decoded = ticked.size ? withBaseIdentities(ticked, data.identities) : ticked
       if (decoded.size === 0) return false
       setOwnedIds(decoded)
       setHasCollection(true)
@@ -710,7 +714,9 @@ export default function CommunityClient({ initialPlans, initialTotal }: Communit
     try {
       const data = await loadCollectionData()
       if (!data) { setCodeError(true); return }
-      const decoded = await decodeCollectionAsync(code, data.sinners, data.identities, data.egos)
+      const ticked = await decodeCollectionAsync(code, data.sinners, data.identities, data.egos)
+      // An empty code is invalid; LCB identities are added only after that check.
+      const decoded = ticked.size ? withBaseIdentities(ticked, data.identities) : ticked
       if (decoded.size === 0) { setCodeError(true); return }
       setOwnedIds(decoded)
       setHasCollection(true)
@@ -725,7 +731,7 @@ export default function CommunityClient({ initialPlans, initialTotal }: Communit
       hasOwnedIds = await loadProfileCollection()
     }
     if (!hasOwnedIds) return
-    setFilterOwnedIdentity(prev => !prev)
+    void setFilterOwnedIdentity(prev => !prev)
   }, [loadProfileCollection, ownedIds])
 
   const toggleFilterOwnedEgo = useCallback(async () => {
@@ -837,6 +843,9 @@ export default function CommunityClient({ initialPlans, initialTotal }: Communit
       .filter((id): id is string => Boolean(id)),
   })), [plans])
 
+  // 붙여 넣은 보유 코드가 없으면 카드 뱃지와 같은 저장된 보유 현황을 쓴다(링크로 oi=1이 먼저 켜져도 바로 걸린다)
+  const profileOwned = useOwnedIdentities()
+  const effectiveOwned = ownedIds ?? profileOwned
   // 클라이언트 필터
   const filtered = useMemo(() => {
     let list = planIndexes
@@ -877,23 +886,21 @@ export default function CommunityClient({ initialPlans, initialTotal }: Communit
     }
 
     // 보유 인격 필터
-    if (filterOwnedIdentity && ownedIds) {
-      list = list.filter(({ identityIds }) => {
-        if (identityIds.length === 0) return true
-        return identityIds.every(id => ownedIds.has(id))
-      })
+    if (filterOwnedIdentity && effectiveOwned) {
+      // 카드 뱃지와 같은 기준: 편성 순서가 있는 인격만(대기 인격은 없어도 된다)
+      list = list.filter(({ plan }) => missingFormationCount((plan.deck ?? []).map(slot => ({ id: slot.identity_id, slot_order: slot.slot_order })), effectiveOwned) === 0)
     }
 
     // 보유 에고 필터
-    if (filterOwnedEgo && ownedIds) {
+    if (filterOwnedEgo && effectiveOwned) {
       list = list.filter(({ egoIds }) => {
         if (egoIds.length === 0) return true
-        return egoIds.every(id => ownedIds.has(id))
+        return egoIds.every(id => effectiveOwned.has(id))
       })
     }
 
     return list.map(({ plan }) => plan)
-  }, [planIndexes, debouncedSearch, activeKeywordList, keywordMode, selectedIdentityIdList, identityMode, filterOwnedIdentity, filterOwnedEgo, ownedIds])
+  }, [planIndexes, debouncedSearch, activeKeywordList, keywordMode, selectedIdentityIdList, identityMode, filterOwnedIdentity, filterOwnedEgo, effectiveOwned])
 
   const renderedPlanCards = useMemo(() => filtered.map(plan => (
     <PlanCard key={plan.id} plan={plan} onKeywordToggle={toggleKeyword} />
@@ -907,7 +914,7 @@ export default function CommunityClient({ initialPlans, initialTotal }: Communit
   const clearCollectionFilters = () => {
     setOwnedIds(null)
     setHasCollection(false)
-    setFilterOwnedIdentity(false)
+    void setFilterOwnedIdentity(false)
     setFilterOwnedEgo(false)
     setCodeInput('')
     setCodeError(false)

@@ -1574,21 +1574,12 @@
     "decksTitle": "Decks for you",
     "plansTitle": "Plans for you",
     "hint": "Picked from the identities, decks and plans you viewed recently.",
-    "identityTrend": "Managers looked up <link>{name}</link> the most.",
-    "deckKeywordTrend": "Other managers are looking for <link>{keyword}</link> decks.",
-    "planKeywordTrend": "Other managers are looking for <link>{keyword}</link> plans.",
-    "keywords": {
-      "burn": "Burn",
-      "bleed": "Bleed",
-      "tremor": "Tremor",
-      "rupture": "Rupture",
-      "sinking": "Sinking",
-      "breath": "Breath",
-      "charge": "Charge",
-      "slash": "Slash",
-      "pierce": "Pierce",
-      "blunt": "Blunt"
-    }
+    "ownedDecks": "Only decks I can field with my collection",
+    "ownedPlans": "Only plans I can field with my collection"
+  },
+  "ownedBadge": {
+    "owned": "Owned",
+    "missing": "{count} missing"
   },
   "mypage": {
     "title": "My Page"
@@ -1647,11 +1638,11 @@
     "errorCallback": "Google sign-in did not finish. Please try again.",
     "errorDenied": "This account cannot sign in.",
     "errorRequired": "Sign in to view this page.",
+    "agreeAll": "Agree to all",
     "agreeTerms": "[Required] I agree to the Terms of Service",
     "agreePrivacy": "[Required] I agree to the collection and use of personal information",
     "readFull": "Read",
-    "hideFull": "Close",
-    "readToAgree": "Read the full text to the end to agree."
+    "hideFull": "Close"
   },
   "sinners": {
     "title": "Sinners",

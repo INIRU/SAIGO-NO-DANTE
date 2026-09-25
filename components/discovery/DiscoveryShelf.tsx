@@ -109,7 +109,7 @@ export default function DiscoveryShelf({
             <ArrowUpRight size={14} />
           </button>
         </div>
-        <ForYou kind={kind} data={data} base={base} personal={history.enabled} />
+        <ForYou kind={kind} base={base} personal={history.enabled} />
         {error && (
           <button
             onClick={() => mutate()}
