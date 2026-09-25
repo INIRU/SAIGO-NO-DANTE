@@ -33,7 +33,7 @@
 
 - 갈색·금색 계열 안에서 명도로 층을 나눈다. 파랑·보라 같은 새 강조색을 만들지 않는다.
 - 키워드 색은 `GIFT_KEYWORD_COLORS`, 죄악 색은 `SIN_COLORS` 하나만 쓴다. 파일마다 색을 새로 적지 않는다.
-- 강화된 기프트 배경은 주황빛 테두리 에셋(`gift/background-enhanced.webp`)이다. 노란색으로 칠하지 않는다.
+- 강화된 기프트 배경(`gift/background-enhanced.webp`)은 주황 줄무늬 슬롯 위에 노란 팔각형을 얹은 게임 슬롯이다(`scripts/assets/extract-gift-slot-enhanced.mjs`). 아틀라스의 주황 발광 테두리는 선택 표시라서 넣지 않는다. 노란색으로 칠하지 않는다.
 - 회색조(greyscale) 필터로 비활성 상태를 표현하지 않는다. 투명도나 오버레이를 쓴다.
 
 ## 3. 글꼴
