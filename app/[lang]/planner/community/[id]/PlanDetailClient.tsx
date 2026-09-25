@@ -20,6 +20,7 @@ import { useKeywordData } from '@/components/providers/KeywordProvider'
 import { type Difficulty, type FloorDifficulty, type GiftActivationCondition, type IdentitySlot as PlannerIdentitySlot, type RecipeData } from '@/lib/planner/types'
 import { buildGiftMap } from '@/lib/planner/fusion'
 import { normalizeFloorPlanDifficulty } from '@/lib/planner/floor-difficulty'
+import { computeDifficultySummary, planDifficultyBadge } from '@/lib/planner/stripPlanForList'
 import { showError, showSuccess } from '@/lib/toast'
 import RelativeTime from '@/components/ui/RelativeTime'
 const PlannerGiftModal = dynamic(() => import('@/components/planner/PlannerGiftModal'), { ssr: false })
@@ -357,7 +358,8 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
 
   const isAdmin = (session?.user as { isAdmin?: boolean } | undefined)?.isAdmin === true
 
-  const diffStyle = DIFFICULTY_STYLE[plan.difficulty]
+  const difficultyBadge = planDifficultyBadge(plan.difficulty, computeDifficultySummary(plan.floor_plan, plan.difficulty))
+  const diffStyle = DIFFICULTY_STYLE[difficultyBadge.styleKey]
 
   const deck: IdentitySlot[] = (Array.isArray(plan.deck) ? plan.deck : []).map(slot => ({ ...slot, identity_id: resolvePlannerIdentity(slot, identities)?.id ?? slot.identity_id }))
   const egoSlots: EgoSlot[] = (Array.isArray(plan.egos) ? plan.egos : []).map(slot => ({ ...slot, ego_id: resolvePlannerEgo(slot, egos)?.id ?? slot.ego_id }))
@@ -529,7 +531,7 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
     }
   }
 
-  const difficultyLabel = tCommunity(`difficulty.${plan.difficulty}`)
+  const difficultyLabel = difficultyBadge.labelKeys.map(key => tCommunity(`difficulty.${key}`)).join("/")
   const mainKeywords = (plan.tags ?? []).filter(Boolean)
   const configuredFloors = floorPlan.filter(f => f.theme_id).length
   const floorCountLabel = tFloor('configuredFloorCount', { configured: configuredFloors, total: floorPlan.length })

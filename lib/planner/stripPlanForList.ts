@@ -75,7 +75,7 @@ function getFloorNumber(entry: FloorPlanEntryRaw, index: number) {
     : index + 1
 }
 
-function computeDifficultySummary(floorPlan: unknown, planDifficulty: unknown): PlanSummary['difficulty_summary'] {
+export function computeDifficultySummary(floorPlan: unknown, planDifficulty: unknown): PlanSummary['difficulty_summary'] {
   if (!Array.isArray(floorPlan) || floorPlan.length === 0) return undefined
 
   const normalizedPlanDifficulty = normalizePlanDifficulty(planDifficulty)
@@ -226,4 +226,29 @@ export function stripPlanForList(plan: Record<string, unknown>): PlanSummary {
     difficulty_summary,
     identity_names,
   } as unknown as PlanSummary
+}
+
+export type PlanDifficultyBadge = {
+  key: Difficulty | 'normal-hard'
+  styleKey: Difficulty
+  labelKeys: Difficulty[]
+}
+
+/** The difficulty a plan is shown with, from its floors: the hardest segment wins (a plan saved as hard with extreme floors is extreme). */
+export function planDifficultyBadge(difficulty: Difficulty, summary: PlanSummary['difficulty_summary']): PlanDifficultyBadge {
+  const segments = summary?.filter(segment => Object.values(segment.counts).some(count => (count ?? 0) > 0)) ?? []
+  if (segments.length === 0) return { key: difficulty, styleKey: difficulty, labelKeys: [difficulty] }
+  if (segments.some(segment => segment.key === '11-15' && (segment.counts.extreme ?? 0) > 0)) return { key: 'extreme', styleKey: 'extreme', labelKeys: ['extreme'] }
+  if (segments.some(segment => segment.key === '6-10' && (segment.counts.overlap ?? 0) > 0)) return { key: 'overlap', styleKey: 'overlap', labelKeys: ['overlap'] }
+  const first = segments.find(segment => segment.key === '1-5')
+  const hasNormal = (first?.counts.normal ?? 0) > 0, hasHard = (first?.counts.hard ?? 0) > 0
+  if (hasNormal && hasHard) return { key: 'normal-hard', styleKey: 'hard', labelKeys: ['normal', 'hard'] }
+  if (hasNormal) return { key: 'normal', styleKey: 'normal', labelKeys: ['normal'] }
+  if (hasHard) return { key: 'hard', styleKey: 'hard', labelKeys: ['hard'] }
+  return { key: difficulty, styleKey: difficulty, labelKeys: [difficulty] }
+}
+
+/** The difficulty stored on a plan, which the board filters by: the one it is shown with. Pass a floor plan whose floors carry their difficulty. */
+export function storedPlanDifficulty(floorPlan: unknown, planDifficulty: Difficulty): Difficulty {
+  return planDifficultyBadge(planDifficulty, computeDifficultySummary(floorPlan, planDifficulty)).styleKey
 }
