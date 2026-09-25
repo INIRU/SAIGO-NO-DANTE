@@ -1,13 +1,13 @@
 import type { Metadata } from 'next'
-import { Suspense } from 'react'
 import { cacheLife, cacheTag } from 'next/cache'
-import { getLatestIdentities } from '@/lib/db/queries'
+import { getLatestEGOs, getLatestIdentities } from '@/lib/db/queries'
 import { getPinnedAnnouncementForLang } from '@/lib/db/announcements'
 import HomeClient from './HomeClient'
-import HomeStaticSections from '@/components/home/HomeStaticSections'
-import { SkeletonLine, SkeletonPage, SkeletonPoster } from '@/components/ui/Skeleton'
+import HomeStaticSections, { type CommunityShelf } from '@/components/home/HomeStaticSections'
+import { loadDiscovery } from '@/lib/discovery/feed'
+import type { DeckSummary } from '@/components/decks/DeckCard'
+import type { PlanSummary } from '@/components/planner/PlanCard'
 import JsonLd, { faqJsonLd } from '@/components/seo/JsonLd'
-import type { IdentityWithSinner } from '@/lib/types'
 import { getLocale, setRequestLocale } from 'next-intl/server'
 import type { SupportedLang } from '@/lib/i18n/types'
 import { translations } from '@/lib/i18n/translations'
@@ -93,21 +93,23 @@ async function getLatestYoutubeVideo(): Promise<YoutubeVideo | null> {
 }
 
 
-async function BelowFoldContent({ latestIdentities }: { latestIdentities: IdentityWithSinner[] }) {
-  const latestVideo = await getLatestYoutubeVideo()
-  return <HomeStaticSections latestIdentities={latestIdentities} latestVideo={latestVideo} />
+type DiscoveryFeed = Awaited<ReturnType<typeof loadDiscovery>>
+
+/** 이번 주 방문이 많은 글 3개. 3개가 안 되면 최신 글로 채운다. */
+function pickShelf<T>(feed: DiscoveryFeed, kind: 'deck' | 'planner'): CommunityShelf<T> {
+  const visitors = new Map(feed.counts.filter(r => r.kind === kind).map(r => [r.entity_id, r.visitors]))
+  const popular = [...feed.popular].sort((x, y) => (visitors.get(String(y.id)) ?? 0) - (visitors.get(String(x.id)) ?? 0))
+  const posts = popular.length >= 3 ? popular : feed.recent
+  return { popular: popular.length >= 3, posts: posts.slice(0, 3) as unknown as T[] }
 }
 
-function BelowFoldSkeleton() {
-  return (
-    <SkeletonPage className="mx-auto max-w-7xl space-y-16 px-5 py-16 md:px-10">
-      <div><SkeletonLine w="6rem" h="1.5rem" className="mb-6" /><SkeletonPoster ratio="16 / 6" line className="max-md:[aspect-ratio:16/10]" /></div>
-      <div>
-        <SkeletonLine w="6rem" h="1.5rem" className="mb-6" />
-        <div className="grid grid-cols-3 gap-4 md:grid-cols-6">{Array.from({ length: 6 }, (_, i) => <SkeletonPoster key={i} ratio="290 / 428" line />)}</div>
-      </div>
-    </SkeletonPage>
-  )
+async function getCommunity() {
+  try {
+    const [plans, decks] = await Promise.all([loadDiscovery('planner', 7), loadDiscovery('deck', 7)])
+    return { plans: pickShelf<PlanSummary>(plans, 'planner'), decks: pickShelf<DeckSummary>(decks, 'deck') }
+  } catch {
+    return null
+  }
 }
 
 async function getCachedHomeData(lang: SupportedLang) {
@@ -121,20 +123,31 @@ async function getCachedHomeData(lang: SupportedLang) {
   return { latestIdentities, pinnedAnnouncement }
 }
 
+async function getCachedLatestEgos() {
+  'use cache'
+  cacheLife('max')
+  cacheTag(CACHE_TAGS.gameData, CACHE_TAGS.ego, CACHE_TAGS.sinners)
+  return getLatestEGOs(2)
+}
+
 export default async function HomePage() {
   // cookies() is dynamic — call outside 'use cache'
   const locale = await getLocale()
   const lang = (locale === 'en' || locale === 'ja' ? locale : 'ko') as SupportedLang
   setRequestLocale(lang)
-  const { latestIdentities, pinnedAnnouncement } = await getCachedHomeData(lang)
+  const [{ latestIdentities, pinnedAnnouncement }, latestEgos] = await Promise.all([getCachedHomeData(lang), getCachedLatestEgos()])
 
   return (
     <>
       <JsonLd data={faqJsonLd(HOME_FAQ)} />
       <HomeClient latestIdentities={latestIdentities} pinnedAnnouncement={pinnedAnnouncement} />
-      <Suspense fallback={<BelowFoldSkeleton />}>
-        <BelowFoldContent latestIdentities={latestIdentities} />
-      </Suspense>
+      <HomeStaticSections
+        lang={lang}
+        latestIdentities={latestIdentities}
+        latestEgos={latestEgos}
+        community={getCommunity()}
+        latestVideo={getLatestYoutubeVideo()}
+      />
     </>
   )
 }

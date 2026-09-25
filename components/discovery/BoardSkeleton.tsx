@@ -3,7 +3,7 @@ import Skeleton, { SkeletonCircle, SkeletonLine, SkeletonPage } from '@/componen
 type Kind = 'deck' | 'planner'
 
 /** DeckCard / PlanCard와 같은 뼈대: 6×2 초상 격자 + 제목·메타·태그. */
-function CardSkeleton({ kind }: { kind: Kind }) {
+export function CardSkeleton({ kind }: { kind: Kind }) {
   return <div className="flex h-full flex-col overflow-hidden rounded-md border border-[#2e2417] bg-[var(--bg-card)]">
     <div className="grid grid-cols-6 border-b border-[#2e2417]">{Array.from({ length: 12 }, (_, j) => <Skeleton key={j} raised className="!rounded-none" style={{ aspectRatio: '3 / 4', opacity: j % 3 === 0 ? 1 : 0.75 }} />)}</div>
     {kind === 'deck'
