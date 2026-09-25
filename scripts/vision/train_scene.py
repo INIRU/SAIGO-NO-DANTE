@@ -75,10 +75,22 @@ def read_annotations(path, manifest):
 
 
 def split_scenes(rows):
-    """Chronological 70/15/15 split. No frames from a temporal block cross boundaries."""
+    """Split whole scene groups into train/validation/test; no temporal block crosses a boundary.
+
+    With seven or more groups per video, every seventh group of each video (in time order) goes to validation and the
+    next to test, so every recording (and UI theme) is represented in all three. Otherwise a chronological 70/15/15 split.
+    """
     groups = sorted({r["scene_id"] for r in rows}, key=lambda g: min(
-        r["timestamp_seconds"] for r in rows if r["scene_id"] == g))
+        (r["video"], r["timestamp_seconds"]) for r in rows if r["scene_id"] == g))
     n = len(groups)
+    if n >= 7:
+        video_of = {r["scene_id"]: r["video"] for r in rows}
+        position, assignment = Counter(), {}
+        for g in groups:
+            i = position[video_of[g]]; position[video_of[g]] += 1
+            assignment[g] = "validation" if i % 7 == 5 else "test" if i % 7 == 6 else "train"
+        return {name: [r for r in rows if assignment[r["scene_id"]] == name]
+                for name in ("train", "validation", "test")}
     n_train, n_val = max(1, int(n * .70)), max(1, int(n * .15))
     if n_train + n_val >= n:
         n_train, n_val = n - 2, 1
@@ -87,10 +99,24 @@ def split_scenes(rows):
             for name in ("train", "validation", "test")}
 
 
+def black_theme(image):
+    """Approximates the game's black UI theme: warm low-chroma chrome (brown panels, frames) turns dark grey."""
+    a = np.asarray(image, dtype=np.float32) / 255
+    high, low = a.max(2), a.min(2)
+    chroma = high - low
+    warm = (a[..., 2] <= a[..., 1]) & (a[..., 1] <= a[..., 0] + .02)
+    chrome = warm * np.clip((.35 - chroma) / .1, 0, 1) * np.clip((chroma - .015) / .025, 0, 1)
+    light = a @ np.array([.299, .587, .114], dtype=np.float32)
+    grey = np.where(light > .6, light, light * .35)[..., None]
+    out = a * (1 - chrome[..., None]) + grey * chrome[..., None]
+    return Image.fromarray((out * 255).clip(0, 255).astype(np.uint8))
+
+
 class FrameDataset(Dataset):
-    def __init__(self, rows, manifest, root, labels, preprocessing):
+    def __init__(self, rows, manifest, root, labels, preprocessing, augment=None):
         self.items = []
         self.transform = preprocessing
+        self.augment = augment
         for row in rows:
             meta = manifest["videos"][row["video"]]
             video = (Path(root) / meta["path"]).resolve()
@@ -109,14 +135,16 @@ class FrameDataset(Dataset):
             cap.release()
             if not ok:
                 raise ValueError(f"cannot decode frame {row['frame_index']} from {video.name}")
-            image = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
-            self.items.append((self.transform(image), labels[row["label"]]))
+            # Kept at 480x270 (the model input is 224x224, full frame): augmentation runs per epoch on this copy.
+            image = Image.fromarray(cv2.cvtColor(cv2.resize(frame, (480, 270), interpolation=cv2.INTER_AREA), cv2.COLOR_BGR2RGB))
+            self.items.append((image, labels[row["label"]]))
 
     def __len__(self):
         return len(self.items)
 
     def __getitem__(self, index):
-        return self.items[index]
+        image, label = self.items[index]
+        return self.transform(self.augment(image) if self.augment else image), label
 
 
 def evaluate(model, loader, device, labels):
@@ -232,19 +260,33 @@ def main():
         transforms.ToTensor(),
         transforms.Normalize(weight_preprocessing.mean, weight_preprocessing.std),
     ])
-    data = {name: FrameDataset(part, manifest, args.video_root, label_ids, preprocessing)
+    # Captures differ in UI theme, brightness and window crop; the black theme is simulated on a third of the frames.
+    augment = transforms.Compose([
+        transforms.RandomApply([transforms.Lambda(black_theme)], p=.3),
+        transforms.ColorJitter(brightness=.25, contrast=.2, saturation=.2),
+        transforms.RandomResizedCrop((270, 480), scale=(.85, 1), ratio=(1.7, 1.85)),
+    ])
+    data = {name: FrameDataset(part, manifest, args.video_root, label_ids, preprocessing,
+                               augment if name == "train" else None)
             for name, part in splits.items()}
-    loaders = {name: DataLoader(ds, batch_size=args.batch_size, shuffle=name == "train")
+    # Battle frames dominate recordings: sample every class about equally per epoch.
+    counts = Counter(label for _, label in data["train"].items)
+    sample_weights = [1 / counts[label] for _, label in data["train"].items]
+    sampler = torch.utils.data.WeightedRandomSampler(sample_weights, num_samples=len(sample_weights), replacement=True)
+    loaders = {name: DataLoader(ds, batch_size=args.batch_size, sampler=sampler if name == "train" else None)
                for name, ds in data.items()}
     model = models.mobilenet_v3_small(weights=weights)
     model.classifier[-1] = nn.Linear(model.classifier[-1].in_features, len(labels))
     for parameter in model.parameters():
         parameter.requires_grad = False
-    for parameter in model.classifier[-1].parameters():
+    # The last feature blocks and the classifier head learn; earlier ImageNet features stay fixed.
+    trainable = [*model.features[9:].parameters(), *model.classifier.parameters()]
+    for parameter in trainable:
         parameter.requires_grad = True
     model.to(device)
-    optimizer = torch.optim.AdamW(model.classifier[-1].parameters(), lr=1e-3)
-    loss_fn = nn.CrossEntropyLoss()
+    optimizer = torch.optim.AdamW([{"params": model.features[9:].parameters(), "lr": 3e-4},
+                                   {"params": model.classifier.parameters(), "lr": 1e-3}], weight_decay=1e-4)
+    loss_fn = nn.CrossEntropyLoss(label_smoothing=.05)
     for epoch in range(args.epochs):
         model.train()
         for images, target in loaders["train"]:
@@ -287,9 +329,11 @@ def main():
         "onnx_max_abs_error": parity,
         "onnx_parity_input": "first actual held-out test frame",
         "preprocessing": preprocess_report,
-        "training": {"initialization": "MobileNet_V3_Small_Weights.DEFAULT", "trainable": "classifier[-1] only",
+        "training": {"initialization": "MobileNet_V3_Small_Weights.DEFAULT", "trainable": "features[9:] and classifier",
+                     "augmentation": "black UI theme simulation (p=.3), color jitter, 85-100% crops", "sampling": "class-balanced",
                      "epochs": args.epochs, "seed": 42},
-        "limitations": ["185 reviewed frames from one source run", "screen class is not proof of a committed transaction",
+        "limitations": [f"{len(rows)} reviewed frames from {len({r['video'] for r in rows})} recordings",
+                        "screen class is not proof of a committed transaction",
                         "battle includes victory screens", "shop includes purchase confirmations and skill changes"],
     }, indent=2))
     (args.out / "labels.json").write_text(json.dumps(labels, indent=2))

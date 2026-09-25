@@ -4,7 +4,7 @@ Runtime files for the Assist Mode scene worker (`lib/vision/scene-worker.ts`), s
 
 | File | What it is | Source |
 |---|---|---|
-| `scene.onnx` | Screen-state classifier (15 labels in `labels.json`, input described in `metadata.json`) | torchvision MobileNetV3-small with ImageNet weights (`MobileNet_V3_Small_Weights.DEFAULT`, BSD-3-Clause), fine-tuned by `scripts/vision/train_scene.py` on the maintainer's own gameplay screenshots. The training frames are not distributed. Experimental. |
+| `scene.onnx` | Screen-state classifier (15 labels in `labels.json`, input described in `metadata.json`) | torchvision MobileNetV3-small with ImageNet weights (`MobileNet_V3_Small_Weights.DEFAULT`, BSD-3-Clause), fine-tuned by `scripts/vision/train_scene.py` (last feature blocks and head, class-balanced, black UI theme simulated) on 1,278 reviewed frames from five of the maintainer's own recordings (2026-09-21 to 09-25, brown and black UI themes). The training frames are not distributed. Held-out accuracy 163/170 (the previous model 149/170; black UI frames 30/30 vs 23/30). |
 | `visual-encoder.onnx` | 576-dimension image encoder | The same torchvision MobileNetV3-small ImageNet weights, exported unchanged by `scripts/vision/build_embedding_index.py` |
 | `embedding-index.json` | Encoder vectors of the site's own E.G.O gift and event artwork | `scripts/vision/build_embedding_index.py` |
 

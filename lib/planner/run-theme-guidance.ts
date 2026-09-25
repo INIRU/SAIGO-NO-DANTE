@@ -177,9 +177,9 @@ export function pendingThemeSelectionFloor(pending: number | null, { state, runn
 
 /** Screens a run shows before its first pack selection: setup, the start gift choice and gift popups, loading. */
 /**
- * Screens that only come after the first pack selection. The start screens themselves get mixed labels (the start gift
- * grid reads as reward_choice, observation as start_gift, confirmation dialogs as sell, popups as gift_acquired or
- * shop), so the start is ended by what follows it rather than by a list of start labels.
+ * Screens that only come after the first pack selection. The start screens themselves get mixed labels (start and
+ * observation gift screens read as start_gift, their confirmation dialogs and popups as other labels), so the start is
+ * ended by what follows it rather than by a list of start labels.
  */
 export const AFTER_START_SCENES: ReadonlySet<string> = new Set(['theme_select', 'exploration', 'battle', 'event', 'run_end'])
 /** A single confident classifier frame of the selection screen ends the start without waiting for the stable scene. */
