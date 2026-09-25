@@ -709,6 +709,9 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
         const pending = popupPending.current.get(requestId)
         if (!pending?.ocr || !pending.icon) return
         popupPending.current.delete(requestId)
+        // A later read of a popup already decided: nothing to add, and its (often mid-fade) frame must not count as a
+        // hard case either (these were most "unresolved" samples: the gift had been recorded from an earlier frame).
+        if (pending.settled) return
         // A dispatched frame already passed the queue expiry; a floor change since capture must not lose the gift.
         const catalog = ocrReferences.current
         if (!catalog) return
