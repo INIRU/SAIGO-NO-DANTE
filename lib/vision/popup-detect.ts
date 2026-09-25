@@ -45,6 +45,39 @@ export function detectGiftPopupLabel(image: ImageData): PopupLabelBox | null {
   return best
 }
 
+/** Acquired-gift popup at 1920×1080, centred in the game view: its name plate and the title bar text above it. */
+const POPUP_PLATE = { x: 480, y: 604, width: 268, height: 128 }
+const POPUP_TITLE = { x: 640, y: 250, width: 640, height: 55 }
+
+/**
+ * Name plate of an acquired-gift popup whose plate is not colored (the start and observation popups in the game's black
+ * UI theme draw it dark). Found from the popup's bright title text instead; the popup reader still checks the title says
+ * the gift was acquired, so a false box costs one read.
+ * assumes the game view fills the capture (scaled and centred); a window with borders would need text anchors.
+ */
+export function darkPopupPlate(image: ImageData): PopupLabelBox | null {
+  const { data, width, height } = image
+  const scale = Math.min(width / 1920, height / 1080)
+  const place = (box: typeof POPUP_PLATE): PopupLabelBox => ({ x: (width - 1920 * scale) / 2 + box.x * scale,
+    y: (height - 1080 * scale) / 2 + box.y * scale, width: box.width * scale, height: box.height * scale })
+  const title = place(POPUP_TITLE)
+  // The title is centred: both halves carry bright text (a confirmation header like "선택한 기프트 3/3" fills only the left).
+  const half = (from: number, to: number) => {
+    let total = 0, bright = 0, count = 0
+    for (let y = Math.max(0, Math.floor(title.y)); y < Math.min(height, title.y + title.height); y++) {
+      for (let x = Math.max(0, Math.floor(from)); x < Math.min(width, to); x++) {
+        const at = (y * width + x) * 4
+        const light = data[at] * 0.3 + data[at + 1] * 0.59 + data[at + 2] * 0.11
+        total += light; count++
+        if (light > 170) bright++
+      }
+    }
+    return count > 0 && total / count >= 60 && bright / count >= 0.15
+  }
+  // Measured: popup titles about 90 mean / 22-27% bright text per half; dialogs and other screens at most 2% on the right.
+  return half(title.x, title.x + title.width / 2) && half(title.x + title.width / 2, title.x + title.width) ? place(POPUP_PLATE) : null
+}
+
 export function popupIconBox(label: PopupLabelBox): PopupLabelBox {
   const size = label.height
   return {

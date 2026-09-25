@@ -19,7 +19,7 @@ import { acquisitionSeq, acquisitionsToRelease, continuesFusionDialog, dialogFor
   type FusionSlotRead } from '@/lib/vision/fusion-evidence'
 import { confirmsExploration, explorationFloor, explorationThemeMatch, themeSelectionHeaderFloor, type ExplorationObservation,
   type ExplorationThemeReference } from '@/lib/vision/exploration-match'
-import { detectGiftPopupLabel, popupCaptureAction, popupIconSignature, popupLabelColor, popupPriority, popupQuality, POPUP_SETTLE_MS,
+import { darkPopupPlate, detectGiftPopupLabel, popupCaptureAction, popupIconSignature, popupLabelColor, popupPriority, popupQuality, POPUP_SETTLE_MS,
   samePopupEpisode, type PopupLabelBox, type PopupObservation } from '@/lib/vision/popup-detect'
 
 type CaptureStatus = 'idle' | 'requesting' | 'loading' | 'running' | 'unsupported' | 'error'
@@ -855,7 +855,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
           sampleCanvas.height = Math.max(60, Math.round(480 * sourceHeight / sourceWidth))
           sampleContext.drawImage(source, 0, 0, sampleCanvas.width, sampleCanvas.height)
           const pixels = sampleContext.getImageData(0, 0, sampleCanvas.width, sampleCanvas.height)
-          const label = detectGiftPopupLabel(pixels)
+          const label = detectGiftPopupLabel(pixels) ?? darkPopupPlate(pixels)
           const now = Date.now()
           const previous = lastPopup.current
           if (!label) {
