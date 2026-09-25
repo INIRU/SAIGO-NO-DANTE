@@ -415,7 +415,7 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
               <ArrowLeft style={{ width: '0.75rem', height: '0.75rem' }} /> {tPlanner('community')}
             </BackLink>
           </div>
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap sm:justify-end">
             {assistAvailable(locale) && <button
               onClick={() => { savePlanForRun({ ...giftConditionState, title: state.title, description: state.description }); window.location.href = '/planner/run?from-plan=1' }}
               style={{
