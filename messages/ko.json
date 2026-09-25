@@ -679,6 +679,12 @@
       "detectionThemesHint": "테마팩 선택 화면과 탐사 중인 층을 읽어 추천을 맞춥니다.",
       "detectionEvents": "선택지 이벤트 감지",
       "detectionEventsHint": "이벤트 화면을 읽어 추천 선택지를 보여 줍니다.",
+      "samplesLabel": "인식 개선에 참여",
+      "samplesHint": "인식이 불확실한 순간의 게임 화면을 앞뒤 5장씩 보내 인식을 개선합니다. 계정과 연결되지 않으며 180일 후 삭제됩니다.",
+      "samplesPrompt": "인식 개선에 참여할까요?",
+      "samplesYes": "참여",
+      "samplesNo": "참여 안 함",
+      "captureFramesPrivacySamples": "화면은 이 브라우저에서 분석해요. 인식이 불확실할 때만 앞뒤 화면 몇 장을 인식 개선용으로 보내요.",
       "ocrWorkers": "동시 처리 {count}개",
       "floorBehindInventoryOnly": "화면은 {observed}층, 기록은 {recorded}층입니다. 층이 확정될 때까지 획득한 기프트는 층 기록 없이 보유 기프트에만 추가합니다.",
       "ocr_idle": "문자 인식 대기",
@@ -1609,20 +1615,6 @@
       "planner": "거던 플래너",
       "discordBot": "디스코드 봇"
     },
-    "feat": {
-      "sinnerDb": "수감자 DB",
-      "sinnerDbDesc": "12인 수감자의 인격, EGO, 스킬 데이터를 한 곳에서.",
-      "deckBoard": "덱 게시판",
-      "deckBoardDesc": "커뮤니티 덱 빌드를 탐색하고 나만의 덱을 등록.",
-      "mirrorDungeon": "거울 던전",
-      "mirrorDungeonDesc": "EGO 기프트 도감, 키워드 필터, 조합 레시피.",
-      "collection": "보유 현황",
-      "collectionDesc": "나의 인격·EGO 체크리스트, URL로 공유.",
-      "random": "랜덤 편성",
-      "randomDesc": "슬롯머신 UI로 무작위 편성, 키워드 필터.",
-      "planner": "거던 플래너",
-      "plannerDesc": "층별 테마팩 선택, 전략 시뮬레이션."
-    },
     "official": {
       "site": "공식 사이트",
       "discord": "팬 디스코드",
@@ -1630,13 +1622,27 @@
       "youtubeSub": "공식 채널"
     },
     "watchVideo": "영상 보기",
-    "archiveShortcuts": "아카이브 바로가기",
     "officialChannels": "공식 채널",
     "latestVideo": "최신 영상",
     "viewChannel": "채널 더보기",
-    "latestIdentity": "최신 인격",
     "viewAllSinners": "전체 수감자 보기",
-    "fanArchiveFooter": "Limbus Company 팬 아카이브"
+    "fanArchiveFooter": "Limbus Company 팬 아카이브",
+    "newIdentities": "신규 인격",
+    "newEgos": "신규 E.G.O",
+    "popularPlans": "이번 주 인기 플랜",
+    "popularDecks": "이번 주 인기 덱",
+    "newPlans": "새로 올라온 플랜",
+    "newDecks": "새로 올라온 덱",
+    "planBoard": "플랜 게시판",
+    "tools": {
+      "title": "도구",
+      "planner": "거울 던전 플래너",
+      "assist": "어시스트 모드",
+      "deckBuilder": "덱 빌더",
+      "experience": "경험치 계산기",
+      "lunacy": "월간 광기 계산기",
+      "random": "랜덤 편성"
+    }
   },
   "site": {
     "name": "최애의 관리자"

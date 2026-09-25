@@ -679,6 +679,12 @@
       "detectionThemesHint": "テーマパック選択画面と探索中の階層を読み取り、おすすめを合わせます。",
       "detectionEvents": "選択肢イベント検出",
       "detectionEventsHint": "イベント画面を読み取り、おすすめの選択肢を表示します。",
+      "samplesLabel": "認識の改善に協力",
+      "samplesHint": "認識が不確かな瞬間のゲーム画面を前後5枚ずつ送信し、認識を改善します。アカウントとは紐付けられず、180日後に削除されます。",
+      "samplesPrompt": "認識の改善に協力しますか？",
+      "samplesYes": "協力する",
+      "samplesNo": "協力しない",
+      "captureFramesPrivacySamples": "画面はこのブラウザー内で解析します。認識が不確かなときだけ、前後の画面数枚を認識改善のために送信します。",
       "ocrWorkers": "同時処理 {count}件",
       "floorBehindInventoryOnly": "画面は{observed}階、記録は{recorded}階です。階が確定するまで、獲得したギフトは階の記録なしで所持ギフトにのみ追加します。",
       "ocr_idle": "文字認識は待機中",
@@ -1609,20 +1615,6 @@
       "planner": "ミラダンプランナー",
       "discordBot": "Discordボット"
     },
-    "feat": {
-      "sinnerDb": "囚人DB",
-      "sinnerDbDesc": "12人の囚人の人格、EGO、スキルデータを一か所で。",
-      "deckBoard": "デッキ掲示板",
-      "deckBoardDesc": "コミュニティデッキを探索し、自分のデッキを登録。",
-      "mirrorDungeon": "ミラーダンジョン",
-      "mirrorDungeonDesc": "EGOギフト図鑑、キーワードフィルター、合成レシピ。",
-      "collection": "コレクション",
-      "collectionDesc": "自分の人格・EGOチェックリスト、URLで共有。",
-      "random": "ランダム編成",
-      "randomDesc": "スロットマシンUIでランダム編成、キーワードフィルター。",
-      "planner": "ミラダンプランナー",
-      "plannerDesc": "階別テーマパック選択、戦略シミュレーション。"
-    },
     "official": {
       "site": "公式サイト",
       "discord": "ファンDiscord",
@@ -1630,13 +1622,27 @@
       "youtubeSub": "公式チャンネル"
     },
     "watchVideo": "映像を見る",
-    "archiveShortcuts": "アーカイブを探す",
     "officialChannels": "公式チャンネル",
     "latestVideo": "最新映像",
     "viewChannel": "チャンネルを見る",
-    "latestIdentity": "最新人格",
     "viewAllSinners": "全囚人を見る",
-    "fanArchiveFooter": "Limbus Company ファンアーカイブ"
+    "fanArchiveFooter": "Limbus Company ファンアーカイブ",
+    "newIdentities": "新規人格",
+    "newEgos": "新規E.G.O",
+    "popularPlans": "今週の人気プラン",
+    "popularDecks": "今週の人気デッキ",
+    "newPlans": "新着プラン",
+    "newDecks": "新着デッキ",
+    "planBoard": "プラン掲示板",
+    "tools": {
+      "title": "ツール",
+      "planner": "ミラーダンジョンプランナー",
+      "assist": "アシストモード",
+      "deckBuilder": "デッキビルダー",
+      "experience": "経験値計算機",
+      "lunacy": "月間狂気計算機",
+      "random": "ランダム編成"
+    }
   },
   "site": {
     "name": "SAIGO NO DANTE"
