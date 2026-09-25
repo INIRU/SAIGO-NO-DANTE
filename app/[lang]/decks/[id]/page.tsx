@@ -1,6 +1,5 @@
 import { notePlainText } from '@/lib/notes/blocks'
 import * as Sentry from '@sentry/nextjs'
-import { storedTranslation } from '@/lib/translate/server'
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import type { Metadata } from 'next'
 import { localeAlternates } from '@/lib/seo/metadata'
@@ -708,11 +707,11 @@ async function DeckDetailRuntime({ params }: Props) {
   await connection()
   const { lang: rawLang, id } = await params
   const lang = isSupportedLang(rawLang) ? rawLang : 'ko'
-  const [{
+  const {
     initialDeck,
     initialComments,
     initialRecommendations,
-  }, translation] = await Promise.all([getCachedDeckDetailPayload(lang, id), storedTranslation('deck', id, lang)])
+  } = await getCachedDeckDetailPayload(lang, id)
 
   return (
     <>
@@ -722,7 +721,6 @@ async function DeckDetailRuntime({ params }: Props) {
           initialDeck={initialDeck}
           initialComments={initialComments}
           initialRecommendations={initialRecommendations}
-          translation={translation}
         />
       </Suspense>
     </>
