@@ -5,6 +5,7 @@ import { GIFT_KEYWORD_COLORS } from '@/lib/constants/gift'
 import { useState, useMemo, useCallback, useRef, type CompositionEvent as ReactCompositionEvent, type KeyboardEvent as ReactKeyboardEvent, type RefObject } from 'react'
 import { createPortal } from 'react-dom'
 import Image from 'next/image'
+import { useLocale } from 'next-intl'
 import KeywordIcon from '@/components/ui/KeywordIcon'
 import {
   SIN_COLORS,
@@ -76,6 +77,14 @@ const BLOCK_TYPE_SUGGESTIONS: AutocompleteSuggestion[] = [
   { label: '패시브 설명', type: 'passive', typeLabel: '{{passive:', color: '#88a830', token: '{{passive:', syntax: 'block' },
   { label: '기프트 카드', type: 'egogift', typeLabel: '{{gift:', color: '#d0a85a', token: '{{gift:', syntax: 'block' },
 ]
+
+// [ja, en] for the fixed Korean labels above
+const LABEL_I18N: Record<string, [string, string]> = {
+  '인격': ['人格', 'Identity'], '스킬': ['スキル', 'Skill'], '패시브': ['パッシブ', 'Passive'],
+  '키워드': ['キーワード', 'Keyword'], '기프트': ['ギフト', 'Gift'], '스킬 프레임': ['スキル枠', 'Skill frame'],
+  '패시브 설명': ['パッシブ説明', 'Passive text'], '기프트 카드': ['ギフトカード', 'Gift card'],
+}
+const localizeLabel = (label: string, lang: string) => lang === 'ko' ? label : LABEL_I18N[label]?.[lang === 'ja' ? 0 : 1] ?? label
 
 const DROPDOWN_WIDTH_REM = 17.5
 const DROPDOWN_MAX_HEIGHT_REM = 10
@@ -227,7 +236,7 @@ export function getNoteAutocompleteSuggestions(
     const source = currentContext.syntax === 'block' ? BLOCK_TYPE_SUGGESTIONS : TOKEN_TYPE_SUGGESTIONS
     if (!query) return source
     return source.filter(s =>
-      s.label.toLowerCase().includes(query) ||
+      [s.label, ...(LABEL_I18N[s.label] ?? [])].some(label => label.toLowerCase().includes(query)) ||
       s.typeLabel?.toLowerCase().includes(query) ||
       s.token.toLowerCase().includes(query)
     )
@@ -528,6 +537,7 @@ export function NoteAutocompleteDropdown({
   onHover: (idx: number) => void
   anchor?: CaretAnchor | null
 }) {
+  const lang = useLocale()
   if (suggestions.length === 0) return null
   const positionStyle: React.CSSProperties = anchor
     ? {
@@ -553,7 +563,8 @@ export function NoteAutocompleteDropdown({
           const isSelected = i === Math.max(selectedIdx, 0)
           const Icon = sugg.type === 'keyword' ? KeywordIcon : Image
           const hasLeadingMeta = !sugg.imageUrl && !sugg.iconUrl && Boolean(sugg.typeLabel)
-          const trailingMeta = hasLeadingMeta ? undefined : getSuggestionMeta(sugg)
+          const meta = hasLeadingMeta ? undefined : getSuggestionMeta(sugg)
+          const trailingMeta = meta && localizeLabel(meta, lang)
           return (
             <button
               key={sugg.token}
@@ -584,7 +595,7 @@ export function NoteAutocompleteDropdown({
               ) : (
                 <span style={{ width: 24, flexShrink: 0 }} />
               )}
-              <span style={{ color: sugg.color, fontSize: '0.875rem', fontWeight: 650, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{sugg.label}</span>
+              <span style={{ color: sugg.color, fontSize: '0.875rem', fontWeight: 650, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{sugg.token.endsWith(':') ? localizeLabel(sugg.label, lang) : sugg.label}</span>
               {trailingMeta && (
                 <span style={{
                   color: '#a79a86',

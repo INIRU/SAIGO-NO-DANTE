@@ -443,7 +443,7 @@
       "edit": "編集",
       "editDeck": "デッキ編集",
       "forkDeck": "デッキフォーク",
-      "copyDeckCode": "デッキコードをコピー",
+      "copyDeckCode": "コードをコピー",
       "saved": "保存済み",
       "save": "保存",
       "copied": "コピー済み",
@@ -474,26 +474,13 @@
       "similarDecksDescription": "編成、テーマ、E.G.O構成が近いデッキです。"
     },
     "identityPreview": {
-      "formationSlot": "編成 {order}",
-      "backupSlot": "待機スロット",
-      "close": "プレビューを閉じる",
-      "preview": "IDENTITY PREVIEW",
-      "sinnerLabel": "{sinner} 囚人",
-      "skills": "スキル",
-      "passives": "パッシブ",
+      "title": "人格詳細",
+      "close": "閉じる",
       "ego": "E.G.O",
-      "noSkills": "スキル情報がありません",
-      "noPassives": "パッシブ情報がありません",
       "noEgo": "編成されたE.G.Oがありません",
-      "portraitAlt": "{identity} ポートレート",
-      "rarity": "{rarity}星",
-      "resistance": {
-        "fatal": "脆弱",
-        "normal": "普通",
-        "endured": "耐性",
-        "ineffective": "我慢",
-        "nullified": "無効"
-      }
+      "openPage": "人格ページ",
+      "loadError": "人格情報を読み込めませんでした",
+      "retry": "再試行"
     },
     "egoGifts": {
       "conditionCount": "{count}人",
@@ -1920,7 +1907,7 @@
     "source": {
       "all": "統合",
       "decks": "デッキ掲示板",
-      "planner": "鏡ダンジョンプランナー"
+      "planner": "プランナー"
     },
     "emptyPeriod": "選択した期間に集計対象の編成がありません。",
     "showAllTime": "全期間を表示",
