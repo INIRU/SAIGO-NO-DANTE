@@ -28,7 +28,7 @@ export async function loadCommunityProfile(
     db
       .schema("limbus")
       .from("md_plans")
-      .select("id,user_id,title,description,lang,difficulty,deck,egos,floor_plan,tags,created_at,vote_count,view_count,comment_count,profiles:user_id(username,avatar_url)")
+      .select("id,user_id,title,description,lang,difficulty,deck,egos,floor_plan,gift_inventory,tags,created_at,vote_count,view_count,comment_count,profiles:user_id(username,avatar_url)")
       .eq("user_id", id)
       .order("created_at", { ascending: false })
       .limit(12),
