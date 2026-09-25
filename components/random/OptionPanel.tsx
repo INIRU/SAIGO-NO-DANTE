@@ -1,11 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import type { ReactNode } from 'react'
 import Image from 'next/image'
-import { ChevronDown, ChevronUp, Check, Settings2 } from 'lucide-react'
-import { RARITY_ICON_MAP, RARITY_COLORS } from '@/lib/constants/game'
-import KeywordChips from './KeywordChips'
+import { Check } from 'lucide-react'
+import { useTranslations } from 'next-intl'
+import { RARITY_ICON_MAP } from '@/lib/constants/game'
 import type { KeywordCondition } from '@/lib/random/engine'
+import KeywordChips from './KeywordChips'
+import styles from './random.module.css'
 
 type Props = {
   identityEnabled: boolean
@@ -22,177 +24,73 @@ type Props = {
   onKeywordsChange: (keywords: KeywordCondition[]) => void
   onKeywordMaxExceeded: () => void
   onRarityFilterChange: (filter: Set<number> | null) => void
+  /** Roll / copy buttons, shown at the bottom of the panel on desktop. */
+  actions: ReactNode
 }
+
+const RARITIES = [1, 2, 3]
 
 export default function OptionPanel(props: Props) {
-  const [collapsed, setCollapsed] = useState(false)
-
+  const t = useTranslations('randomPage')
+  // Every rarity on = no filter; the last one can't be turned off.
+  function toggleRarity(rarity: number) {
+    const current = props.rarityFilter ?? new Set(RARITIES)
+    const next = new Set(current)
+    if (next.has(rarity)) { if (next.size === 1) return; next.delete(rarity) } else next.add(rarity)
+    props.onRarityFilterChange(next.size === RARITIES.length ? null : next)
+  }
   return (
-    <div
-      className="rounded-[0.375rem] mb-[1.5rem] overflow-hidden"
-      style={{
-        border: '1px solid rgba(138,96,16,0.15)',
-        background: 'linear-gradient(160deg, #16120d 0%, #0f0c08 100%)',
-        boxShadow: '0 0.25rem 1rem rgba(0,0,0,0.2)',
-      }}
-    >
-      <button
-        onClick={() => setCollapsed(!collapsed)}
-        className="w-full flex items-center justify-between px-[1rem] py-[0.75rem] transition-colors hover:bg-[#1a1510]/50"
-      >
-        <div className="flex items-center gap-[0.5rem]">
-          <Settings2 style={{ width: '0.875rem', height: '0.875rem', color: '#5a4830' }} />
-          <span className="font-serif text-[1rem] text-[#8a6010]">옵션</span>
+    <aside className={`${styles.panel} sticky-under-nav`}>
+      <section className={styles.group}>
+        <h2 className={styles.label}>{t('draw')}</h2>
+        <div className={styles.pair}>
+          <button type="button" className={styles.toggle} aria-pressed={props.identityEnabled} onClick={props.onIdentityToggle}>{t('identity')}</button>
+          <button type="button" className={styles.toggle} aria-pressed={props.egoEnabled} onClick={props.onEgoToggle}>{t('ego')}</button>
         </div>
-        {collapsed
-          ? <ChevronDown style={{ width: '1rem', height: '1rem', color: '#5a4830' }} />
-          : <ChevronUp style={{ width: '1rem', height: '1rem', color: '#5a4830' }} />
-        }
-      </button>
+      </section>
 
-      {!collapsed && (
-        <div className="px-[1rem] pb-[1rem] space-y-[0.875rem]" style={{ borderTop: '1px solid rgba(138,96,16,0.1)' }}>
-          {/* Toggles row */}
-          <div className="flex flex-wrap gap-[0.5rem] items-center pt-[0.75rem]">
-            <ToggleChip label="인격" active={props.identityEnabled} onClick={props.onIdentityToggle} />
-            <ToggleChip label="E.G.O" active={props.egoEnabled} onClick={props.onEgoToggle} />
+      <section className={styles.group}>
+        <h2 className={styles.label}>{t('rarity')}</h2>
+        <div className={styles.rarities}>
+          {RARITIES.map(rarity => {
+            const on = props.rarityFilter === null || props.rarityFilter.has(rarity)
+            return (
+              <button key={rarity} type="button" className={styles.toggle} aria-pressed={on} aria-label={`${rarity}`} onClick={() => toggleRarity(rarity)} disabled={!props.identityEnabled}>
+                <Image src={RARITY_ICON_MAP[rarity]} alt="" width={rarity * 24} height={24} unoptimized className={styles.rarityIcon} />
+              </button>
+            )
+          })}
+        </div>
+      </section>
 
-            <div className="h-[1rem] w-px bg-[#8a6010]/20 mx-[0.25rem]" />
+      <section className={styles.group}>
+        <h2 className={styles.label}>{t('keywords')}</h2>
+        <KeywordChips keywords={props.keywords} onChange={props.onKeywordsChange} onMaxExceeded={props.onKeywordMaxExceeded} disabled={!props.identityEnabled} />
+      </section>
 
-            <ToggleChip label="컬렉션 연동" active={props.collectionEnabled} onClick={props.onCollectionToggle} />
-
-            {props.collectionEnabled && props.collectionDecoded && (
-              <span className="flex items-center gap-[0.25rem] text-[0.6875rem] text-[#50b878]">
-                <Check style={{ width: '0.75rem', height: '0.75rem' }} />
-                연동됨
-              </span>
-            )}
-          </div>
-
-          {/* Collection code input */}
-          {props.collectionEnabled && (
-            <div>
-              <input
-                type="text"
-                placeholder="컬렉션 코드 또는 URL을 붙여넣기"
-                value={props.collectionCode}
-                onChange={e => {
-                  let val = e.target.value
-                  const match = val.match(/[?&]code=([^&]+)/)
-                  if (match) val = decodeURIComponent(match[1])
-                  props.onCollectionCodeChange(val)
-                }}
-                className="w-full bg-[#0a0806] rounded-[0.375rem] px-[0.75rem] py-[0.4375rem] text-[0.8125rem] text-[#e8e4d8] placeholder-[#3a3020] focus:outline-none transition-all"
-                style={{
-                  border: '1px solid rgba(138,96,16,0.2)',
-                  boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.3)',
-                }}
-                onFocus={e => { e.currentTarget.style.borderColor = 'rgba(200,144,10,0.4)'; e.currentTarget.style.boxShadow = 'inset 0 1px 3px rgba(0,0,0,0.3), 0 0 0.5rem rgba(200,144,10,0.08)' }}
-                onBlur={e => { e.currentTarget.style.borderColor = 'rgba(138,96,16,0.2)'; e.currentTarget.style.boxShadow = 'inset 0 1px 3px rgba(0,0,0,0.3)' }}
-              />
-              <p className="text-[0.6875rem] text-[#3a3020] mt-[0.25rem]">
-                보유 현황 페이지의 공유 URL 또는 코드를 입력하세요
-              </p>
-            </div>
-          )}
-
-          {/* Rarity filter */}
-          <div className="space-y-[0.375rem]">
-            <span className="text-[0.6875rem] text-[#5a4830]" style={{ letterSpacing: '0.06em' }}>등급 필터</span>
-            <div className="flex flex-wrap gap-[0.375rem] items-center">
-              {[1, 2, 3].map(rarity => {
-                const allSelected = props.rarityFilter === null
-                const isActive = allSelected || props.rarityFilter!.has(rarity)
-                const colors = RARITY_COLORS[rarity] ?? RARITY_COLORS[1]
-
-                return (
-                  <button
-                    key={rarity}
-                    onClick={() => {
-                      if (props.rarityFilter === null) {
-                        // All selected → deselect this one (keep the other two)
-                        const next = new Set([1, 2, 3].filter(r => r !== rarity))
-                        props.onRarityFilterChange(next.size === 3 ? null : next)
-                      } else if (props.rarityFilter.has(rarity)) {
-                        // Deselect (but don't allow empty)
-                        if (props.rarityFilter.size <= 1) return
-                        const next = new Set(props.rarityFilter)
-                        next.delete(rarity)
-                        props.onRarityFilterChange(next)
-                      } else {
-                        // Select
-                        const next = new Set(props.rarityFilter)
-                        next.add(rarity)
-                        props.onRarityFilterChange(next.size === 3 ? null : next)
-                      }
-                    }}
-                    className="flex min-h-[2.75rem] min-w-[2.75rem] items-center justify-center gap-[0.25rem] rounded-full px-[0.875rem] py-[0.5rem] text-[0.75rem] transition-all duration-200 sm:min-h-0 sm:min-w-0 sm:px-[0.625rem] sm:py-[0.1875rem]"
-                    style={isActive ? {
-                      border: `1px solid ${colors.border}88`,
-                      background: `${colors.border}20`,
-                      color: colors.border,
-                      boxShadow: `0 0 0.5rem ${colors.glow}20`,
-                    } : {
-                      border: '1px solid rgba(138,96,16,0.15)',
-                      background: 'rgba(20,16,10,0.5)',
-                      color: '#5a5040',
-                      opacity: 0.6,
-                    }}
-                  >
-                    {RARITY_ICON_MAP[rarity] && (
-                      <Image
-                        src={RARITY_ICON_MAP[rarity]}
-                        alt={`${rarity}성`}
-                        width={16}
-                        height={16}
-                        unoptimized
-                        style={{ height: '0.875rem', width: 'auto', opacity: isActive ? 1 : 0.4 }}
-                      />
-                    )}
-                  </button>
-                )
-              })}
-              {props.rarityFilter !== null && (
-                <button
-                  onClick={() => props.onRarityFilterChange(null)}
-                  className="inline-flex min-h-[2.75rem] items-center justify-center rounded-full px-[0.875rem] py-[0.5rem] text-[0.6875rem] transition-colors sm:min-h-0 sm:px-[0.5rem] sm:py-[0.125rem]"
-                  style={{ color: '#5a4830', border: '1px solid rgba(138,96,16,0.15)' }}
-                >
-                  전체
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* Keywords */}
-          <KeywordChips
-            keywords={props.keywords}
-            onChange={props.onKeywordsChange}
-            onMaxExceeded={props.onKeywordMaxExceeded}
+      <section className={styles.group}>
+        <label className={styles.switchRow}>
+          <span className={styles.label}>{t('collection')}</span>
+          {props.collectionEnabled && props.collectionDecoded && <span className={styles.linked}><Check aria-hidden="true" />{t('collectionLinked')}</span>}
+          <input type="checkbox" role="switch" className={styles.switch} checked={props.collectionEnabled} onChange={props.onCollectionToggle} />
+        </label>
+        {props.collectionEnabled && (
+          <input
+            type="text"
+            className={styles.input}
+            placeholder={t('collectionPlaceholder')}
+            aria-label={t('collectionPlaceholder')}
+            value={props.collectionCode}
+            onChange={event => {
+              const value = event.target.value
+              const code = value.match(/[?&]code=([^&]+)/)?.[1]
+              props.onCollectionCodeChange(code ? decodeURIComponent(code) : value)
+            }}
           />
-        </div>
-      )}
-    </div>
-  )
-}
+        )}
+      </section>
 
-function ToggleChip({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
-  return (
-    <button
-      onClick={onClick}
-      className="inline-flex min-h-[2.75rem] items-center justify-center rounded-full px-[1rem] py-[0.5rem] text-[0.8125rem] transition-all duration-200 sm:min-h-0 sm:px-[0.75rem] sm:py-[0.25rem]"
-      style={active ? {
-        border: '1px solid rgba(200,144,10,0.5)',
-        background: 'linear-gradient(135deg, rgba(200,144,10,0.15), rgba(200,144,10,0.08))',
-        color: '#e8b030',
-        boxShadow: '0 0 0.75rem rgba(200,144,10,0.1), inset 0 0 0.5rem rgba(200,144,10,0.05)',
-      } : {
-        border: '1px solid rgba(138,96,16,0.15)',
-        background: 'rgba(20,16,10,0.5)',
-        color: '#5a5040',
-      }}
-    >
-      {label}
-    </button>
+      {props.actions}
+    </aside>
   )
 }
