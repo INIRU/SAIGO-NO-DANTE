@@ -1,7 +1,6 @@
 'use client'
 
 import BackLink from '@/components/navigation/BackLink'
-import { PostTranslationProvider, TranslateButton, TranslatedText } from '@/components/translate/PostTranslation'
 import DeckDetailSkeleton from '@/components/decks/DeckDetailSkeleton'
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import dynamic from 'next/dynamic'
@@ -366,13 +365,11 @@ type IdentityPreviewState = {
 type DeckDetailClientProps = {
   id: string
   initialDeck?: DeckDetail | null
-  /** Stored translation of the deck's texts into the page language (made when the deck was saved). */
-  translation?: [string, string][] | null
   initialComments?: Comment[]
   initialRecommendations?: DeckRecommendationsData | null
 }
 
-export default function DeckDetailClient({ id, initialDeck, initialComments, initialRecommendations, translation }: DeckDetailClientProps) {
+export default function DeckDetailClient({ id, initialDeck, initialComments, initialRecommendations }: DeckDetailClientProps) {
   const router = useRouter()
   const locale = useLocale() as SupportedLang
   const t = useTranslations('decks.detail')
@@ -783,7 +780,6 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
     setActiveSection(sectionId)
   }
 
-  const translationTexts = [deck?.title, deck?.description]
   if (loading) return <DeckDetailSkeleton />
 
   if (!deck) {
@@ -822,7 +818,6 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
   }
 
   return (
-    <PostTranslationProvider kind="deck" id={deck.id} texts={translationTexts} initial={translation}>
     <div className="min-h-screen bg-[#0d0b08] pt-24 pb-20">
       <div className="mx-auto w-full max-w-7xl px-3 sm:px-6">
         <BackLink
@@ -854,7 +849,7 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
                 })}
               </ul>
             )}
-            <h1 className={styles.title}><TranslatedText text={deck.title} /></h1>
+            <h1 className={styles.title}>{deck.title}</h1>
           </div>
 
           <div className={styles.author}>
@@ -919,7 +914,6 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
               {shared ? <Check className="h-4 w-4" aria-hidden="true" /> : <Share2 className="h-4 w-4" aria-hidden="true" />}
               {shared ? t('copied') : t('share')}
             </button>
-            <TranslateButton />
             {deck.deck_code && (
               <button type="button" onClick={handleCopyCode} data-done={copied || undefined}>
                 {copied ? <Check className="h-4 w-4" aria-hidden="true" /> : <Copy className="h-4 w-4" aria-hidden="true" />}
@@ -1086,7 +1080,6 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
         onCancel={() => setConfirmDelete(false)}
       />
     </div>
-    </PostTranslationProvider>
   )
 }
 

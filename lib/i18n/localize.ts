@@ -14,7 +14,7 @@ export function getLocalizedName(entity: LocalizableEntity, lang: SupportedLang)
 
 /* ── Affiliation localization ── */
 
-export const AFFILIATION_MAP: Record<string, { en: string; ja: string }> = {
+const AFFILIATION_MAP: Record<string, { en: string; ja: string }> = {
   '해결사': { en: 'Fixer', ja: 'フィクサー' },
   '가씨 가문': { en: 'Jia Family', ja: 'ジア家' },
   '갈고리 사무소': { en: 'Hook Office', ja: '鈎事務所' },

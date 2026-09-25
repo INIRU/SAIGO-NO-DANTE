@@ -1,7 +1,6 @@
 'use client'
 
 import BackLink from '@/components/navigation/BackLink'
-import { PostTranslationProvider, TranslateButton, TranslatedText } from '@/components/translate/PostTranslation'
 import { useHtmlFlag } from '@/hooks/useHtmlFlag'
 import { useGuestPosts } from '@/hooks/useGuestPosts'
 import { guestAuthorName } from '@/lib/guest/copy'
@@ -325,8 +324,6 @@ function GiftGrid({ gifts, getCondition, onGiftClick, locale }: {
 
 interface Props {
   plan: Plan
-  /** Stored translation of the plan's texts into the page language (made when the plan was saved). */
-  translation?: [string, string][] | null
   themes: ThemeData[]
   gifts: GiftData[]
   recipes: RecipeData[]
@@ -342,7 +339,7 @@ interface Props {
 
 // ── Main component ────────────────────────────────────────────────────────────
 
-export default function PlanDetailClient({ plan, translation, themes, gifts, recipes, identities, sinners, skills, passives, egos, events, eventChoices }: Props) {
+export default function PlanDetailClient({ plan, themes, gifts, recipes, identities, sinners, skills, passives, egos, events, eventChoices }: Props) {
   useHtmlFlag('with-plan-detail')
   const locale = useLocale() as SupportedLang
   const tPlanner = useTranslations('planner')
@@ -375,7 +372,6 @@ export default function PlanDetailClient({ plan, translation, themes, gifts, rec
   const deck: IdentitySlot[] = (Array.isArray(plan.deck) ? plan.deck : []).map(slot => ({ ...slot, identity_id: resolvePlannerIdentity(slot, identities)?.id ?? slot.identity_id }))
   const egoSlots: EgoSlot[] = (Array.isArray(plan.egos) ? plan.egos : []).map(slot => ({ ...slot, ego_id: resolvePlannerEgo(slot, egos)?.id ?? slot.ego_id }))
   const floorPlan: FloorEntry[] = normalizeFloorPlanDifficulty(plan.floor_plan, plan.difficulty).floorPlan as FloorEntry[]
-  const translationTexts = useMemo(() => [plan.title, plan.description, ...floorPlan.map(floor => floor.memo)], [plan.title, plan.description, floorPlan])
   const giftInventory: string[] = Array.isArray(plan.gift_inventory) ? plan.gift_inventory : []
 
   const username = plan.profiles?.username ?? guestAuthorName(plan.guest_tag, locale) ?? tDetail('anonymous')
@@ -616,7 +612,6 @@ export default function PlanDetailClient({ plan, translation, themes, gifts, rec
   }
 
   return (
-    <PostTranslationProvider kind="plan" id={plan.id} texts={translationTexts} initial={translation}>
     <NoteGiftClickContext value={openNoteGift}>
     <div data-plan-detail className="min-h-screen bg-[#0d0b08] pt-24 pb-20">
       <div className="mx-auto w-full max-w-7xl px-3 sm:px-6">
@@ -650,7 +645,7 @@ export default function PlanDetailClient({ plan, translation, themes, gifts, rec
                 })}
               </ul>
             )}
-            <h1 className={styles.title}><TranslatedText text={plan.title} /></h1>
+            <h1 className={styles.title}>{plan.title}</h1>
           </div>
 
           <div className={`${styles.author} flex items-center gap-3`}>
@@ -699,7 +694,6 @@ export default function PlanDetailClient({ plan, translation, themes, gifts, rec
               <Share2 className="h-4 w-4" aria-hidden="true" />
               {tShare('share')}
             </button>
-            <TranslateButton />
             <PlanActions
               planId={plan.id}
               planTitle={plan.title}
@@ -880,6 +874,5 @@ export default function PlanDetailClient({ plan, translation, themes, gifts, rec
       )}
     </div>
     </NoteGiftClickContext>
-    </PostTranslationProvider>
   )
 }

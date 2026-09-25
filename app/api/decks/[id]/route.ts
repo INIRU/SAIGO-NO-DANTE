@@ -1,5 +1,4 @@
-import { NextRequest, NextResponse, after } from 'next/server'
-import { translatePost } from '@/lib/translate/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { revalidateTag } from 'next/cache'
 import { ownsPost, resolveAuthor } from '@/lib/guest/server'
 import { createClient } from '@/lib/supabase/server'
@@ -367,7 +366,6 @@ export async function PATCH(
 
     revalidateTag(CACHE_TAGS.deck(id), 'max')
     revalidateTag(CACHE_TAGS.decksList, 'max')
-    after(() => translatePost('deck', id))
     return NextResponse.json({ ok: true })
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Internal Server Error'
