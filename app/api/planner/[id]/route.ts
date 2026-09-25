@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { revalidateTag } from 'next/cache'
+import { ownsPost, resolveAuthor } from '@/lib/guest/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { requireActiveUser } from '@/lib/auth'
-import { findOrCreateSupabaseUser } from '@/lib/supabase/findOrCreateUser'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import { writeAuditLog } from '@/lib/audit'
 import { normalizeFloorPlanDifficulty, normalizePlanDifficulty } from '@/lib/planner/floor-difficulty'
@@ -40,21 +39,20 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
-    const auth = await requireActiveUser()
-    if (auth.error) return auth.response
-    const { session } = auth
-
     const admin = createAdminClient()
-    const userId = await findOrCreateSupabaseUser(admin, session.user.email!, session.user.name, session.user.image)
+    const resolved = await resolveAuthor(req, admin)
+    if ('response' in resolved) return resolved.response
+    const { author } = resolved
+    const userId = author.kind === 'user' ? author.userId : null
 
     const { data: plan, error: planError } = await admin
       .schema('limbus')
       .from('md_plans')
-      .select('user_id, difficulty, floor_plan')
+      .select('id, user_id, difficulty, floor_plan')
       .eq('id', id)
       .single()
     if (planError) return NextResponse.json({ error: planError.message }, { status: 500 })
-    if (!plan || plan.user_id !== userId) return NextResponse.json({ error: '권한이 없습니다' }, { status: 403 })
+    if (!plan || !(await ownsPost(admin, author, 'plan', plan))) return NextResponse.json({ error: '권한이 없습니다' }, { status: 403 })
 
     const body = await req.json()
     const allowed = ['title', 'description', 'difficulty', 'deck', 'egos', 'floor_plan', 'gift_inventory', 'tags']
@@ -98,19 +96,18 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 }
 
 // DELETE /api/planner/[id] — 플랜 삭제
-export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
-    const auth = await requireActiveUser()
-    if (auth.error) return auth.response
-    const { session } = auth
-
     const admin = createAdminClient()
-    const userId = await findOrCreateSupabaseUser(admin, session.user.email!, session.user.name, session.user.image)
+    const resolved = await resolveAuthor(req, admin)
+    if ('response' in resolved) return resolved.response
+    const { author } = resolved
+    const userId = author.kind === 'user' ? author.userId : null
 
-    const { data: plan, error: planError } = await admin.schema('limbus').from('md_plans').select('user_id').eq('id', id).single()
+    const { data: plan, error: planError } = await admin.schema('limbus').from('md_plans').select('id, user_id').eq('id', id).single()
     if (planError) return NextResponse.json({ error: planError.message }, { status: 500 })
-    if (!plan || plan.user_id !== userId) return NextResponse.json({ error: '권한이 없습니다' }, { status: 403 })
+    if (!plan || !(await ownsPost(admin, author, 'plan', plan))) return NextResponse.json({ error: '권한이 없습니다' }, { status: 403 })
 
     const { error } = await admin.schema('limbus').from('md_plans').delete().eq('id', id)
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })

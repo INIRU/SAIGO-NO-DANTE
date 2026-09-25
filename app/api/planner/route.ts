@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { revalidateTag } from 'next/cache'
+import { authorColumns, authorRateKey, recordGuestAuthorship, resolveAuthor } from '@/lib/guest/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getServerSession } from 'next-auth'
-import { authOptions, requireActiveUser } from '@/lib/auth'
+import { authOptions } from '@/lib/auth'
 import { findOrCreateSupabaseUser } from '@/lib/supabase/findOrCreateUser'
 import { normalizePlannerListKeywords, storedPlanDifficulty, stripPlanForList } from '@/lib/planner/stripPlanForList'
 import { normalizeFloorPlanDifficulty, normalizePlanDifficulty } from '@/lib/planner/floor-difficulty'
@@ -18,7 +19,7 @@ const ADVANCED_FILTER_CANDIDATE_LIMIT = 1000
 const SUPPORTED_PLANNER_LANGS = ['ko', 'en', 'ja'] as const
 const IDENTITY_MODE_VALUES = ['or', 'and'] as const
 const COMBAT_SKILL_TYPES = ['slash', 'pierce', 'blunt'] as const
-const PLANNER_LIST_SELECT = 'id, title, description, difficulty, deck, egos, floor_plan, tags, lang, vote_count, view_count, comment_count, created_at, user_id, profiles:user_id(username, avatar_url)'
+const PLANNER_LIST_SELECT = 'id, title, description, difficulty, deck, egos, floor_plan, tags, lang, vote_count, view_count, comment_count, created_at, user_id, guest_tag, profiles:user_id(username, avatar_url)'
 
 type PlannerLang = typeof SUPPORTED_PLANNER_LANGS[number]
 type PlannerLangFilter = PlannerLang | 'all'
@@ -364,19 +365,18 @@ export async function GET(req: NextRequest) {
 // POST /api/planner — 플랜 생성
 export async function POST(req: NextRequest) {
   try {
-    const activeUser = await requireActiveUser()
-    if (activeUser.error) return activeUser.response
-    const { session } = activeUser
+    const admin = createAdminClient()
+    const resolved = await resolveAuthor(req, admin)
+    if ('response' in resolved) return resolved.response
+    const { author } = resolved
+    const userId = author.kind === 'user' ? author.userId : null
 
     const rateLimit = checkRequestRateLimit(req, {
       bucket: 'create',
-      scope: 'planner:create',
-      authenticatedKey: session.user.email,
+      scope: author.kind === 'guest' ? 'planner:create:guest' : 'planner:create',
+      authenticatedKey: authorRateKey(author),
     })
     if (!rateLimit.allowed) return rateLimitResponse(rateLimit)
-
-    const admin = createAdminClient()
-    const userId = await findOrCreateSupabaseUser(admin, session.user.email!, session.user.name, session.user.image)
 
     const body = await req.json()
     const { title, description, difficulty, deck, egos, floor_plan, gift_inventory, tags } = body
@@ -390,7 +390,7 @@ export async function POST(req: NextRequest) {
       .schema('limbus')
       .from('md_plans')
       .insert({
-        user_id: userId,
+        ...authorColumns(author),
         title: title.trim(),
         description: description?.trim() ?? '',
         difficulty: planDifficulty,
@@ -406,7 +406,9 @@ export async function POST(req: NextRequest) {
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-    const { error: activityError } = await admin.schema('limbus').rpc('community_record_plan', { p_plan_id: data.id, p_user_id: userId })
+    const { error: activityError } = userId
+      ? await admin.schema('limbus').rpc('community_record_plan', { p_plan_id: data.id, p_user_id: userId })
+      : { error: await recordGuestAuthorship(admin, author, 'plan', data.id) }
     if (activityError) {
       await admin.schema('limbus').from('md_plans').delete().eq('id', data.id)
       return NextResponse.json({ error: '플랜을 저장하지 못했습니다. 다시 시도해주세요.' }, { status: 500 })

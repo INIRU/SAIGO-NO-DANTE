@@ -1,12 +1,11 @@
 
 import { notePlainText } from '@/lib/notes/blocks'
+import { authorColumns, authorRateKey, recordGuestAuthorship, resolveAuthor } from '@/lib/guest/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { revalidatePath, revalidateTag } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { insertDeckIdentities, normalizeUptie } from '@/lib/decks/deck-identity-uptie'
-import { requireActiveUser } from '@/lib/auth'
-import { findOrCreateSupabaseUser } from '@/lib/supabase/findOrCreateUser'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import { checkRequestRateLimit, rateLimitResponse } from '@/lib/rate-limit'
 import { writeAuditLog } from '@/lib/audit'
@@ -27,29 +26,29 @@ const PINNED_DECK_KEYWORD_SET = new Set<string>(DECK_MAIN_KEYWORDS)
 const THEME_KEYWORD_SET = new Set<string>(THEME_KEYWORDS)
 const DECK_LIST_FILTER_BASE_SELECT = `
         id, user_id, title, description, tags, main_keywords, content_type, lang, vote_count, view_count, comment_count, created_at,
-        profiles!decks_user_id_fkey(username)
+        guest_tag, profiles!decks_user_id_fkey(username)
       `
 const DECK_LIST_FILTER_SELECT_WITH_SKILL_KEYWORDS = `
         id, user_id, title, description, tags, main_keywords, content_type, lang, vote_count, view_count, comment_count, created_at,
-        profiles!decks_user_id_fkey(username),
+        guest_tag, profiles!decks_user_id_fkey(username),
         deck_identities(slot_order, identities(id, keywords, skill_keyword_list, skills(atk_type, skill_type))),
         deck_egos(grade)
       `
 const DECK_LIST_FILTER_SELECT_LEGACY = `
         id, user_id, title, description, tags, content_type, lang, vote_count, view_count, comment_count, created_at,
-        profiles!decks_user_id_fkey(username),
+        guest_tag, profiles!decks_user_id_fkey(username),
         deck_identities(slot_order, identities(id, keywords)),
         deck_egos(grade)
       `
 const DECK_LIST_SELECT_WITH_SKILL_KEYWORDS = `
         id, user_id, title, description, tags, main_keywords, content_type, lang, vote_count, view_count, comment_count, created_at,
-        profiles!decks_user_id_fkey(username),
+        guest_tag, profiles!decks_user_id_fkey(username),
         deck_identities(slot_order, gacksung, s1_count, s2_count, s3_count, identities(id, sinner_id, folder_name, game_id, keywords, skill_keyword_list, name_kr)),
         deck_egos(ego_id, grade)
       `
 const DECK_LIST_SELECT_LEGACY = `
         id, user_id, title, description, tags, content_type, lang, vote_count, view_count, comment_count, created_at,
-        profiles!decks_user_id_fkey(username),
+        guest_tag, profiles!decks_user_id_fkey(username),
         deck_identities(slot_order, gacksung, s1_count, s2_count, s3_count, identities(id, sinner_id, folder_name, game_id, keywords, name_kr)),
         deck_egos(ego_id, grade)
       `
@@ -501,14 +500,16 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const auth = await requireActiveUser()
-    if (auth.error) return auth.response
-    const { session } = auth
+    const admin = createAdminClient()
+    const resolved = await resolveAuthor(request, admin)
+    if ('response' in resolved) return resolved.response
+    const { author } = resolved
+    const userId = author.kind === 'user' ? author.userId : null
 
     const rateLimit = checkRequestRateLimit(request, {
       bucket: 'create',
-      scope: 'decks:create',
-      authenticatedKey: session.user.email,
+      scope: author.kind === 'guest' ? 'decks:create:guest' : 'decks:create',
+      authenticatedKey: authorRateKey(author),
     })
     if (!rateLimit.allowed) return rateLimitResponse(rateLimit)
 
@@ -526,20 +527,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: '제목을 입력해주세요.' }, { status: 400 })
     }
 
-    const admin = createAdminClient()
-
-    const userId = await findOrCreateSupabaseUser(
-      admin,
-      session.user.email!,
-      session.user.name,
-      session.user.image,
-    )
-
     const { data: deck, error: deckError } = await admin
       .schema('limbus')
       .from('decks')
       .insert({
-        user_id: userId,
+        ...authorColumns(author),
         title,
         description,
         tags: tags || [],
@@ -587,7 +579,10 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const { error: activityError } = await admin.schema('limbus').rpc('community_record_deck', { p_deck_id: deck.id, p_user_id: userId })
+    // Guests earn no activity points; their key is recorded instead (points follow when the deck moves to an account).
+    const { error: activityError } = userId
+      ? await admin.schema('limbus').rpc('community_record_deck', { p_deck_id: deck.id, p_user_id: userId })
+      : { error: await recordGuestAuthorship(admin, author, 'deck', deck.id) }
     if (activityError) {
       await admin.schema('limbus').from('decks').delete().eq('id', deck.id)
       return NextResponse.json({ error: '덱을 저장하지 못했습니다. 다시 시도해주세요.' }, { status: 500 })
