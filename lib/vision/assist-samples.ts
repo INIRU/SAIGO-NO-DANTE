@@ -1,5 +1,5 @@
 /**
- * Opt-in recognition samples: when Assist is unsure, the 5 frames before and 5 after are sent (JPEG, 960 px wide) so
+ * Opt-in recognition samples: when Assist is unsure, the 5 frames before and 5 after are sent (JPEG, 1280 px wide) so
  * the recognizer can be retrained on real hard cases. Off unless the user chose it; never tied to an account.
  */
 import { DETECTION_KINDS, type DetectionSettings } from './detection-settings'
@@ -15,7 +15,8 @@ export const SAMPLE_DAILY_LIMIT = 30
 // 판정은 팝업이 닫힌 뒤에야 끝나는 일이 많다: 5장 × 300 ms로 직전 약 1.5초를 담는다(100 ms일 때는 0.5초라 팝업이 빠졌다)
 const SAMPLE_INTERVAL_MS = 300
 const SAMPLE_COOLDOWN_MS = 20_000
-const SAMPLE_WIDTH = 960
+// 이름판 글자를 학습에 쓸 만한 폭(960 px는 작은 글자가 뭉개졌다). JPEG 한 장 약 135 KB로 장당·샘플당 제한 안이다.
+const SAMPLE_WIDTH = 1280
 
 /** true/false once chosen in this browser, null while never asked. */
 export function readSampleConsent(storage: Pick<Storage, 'getItem'> | null | undefined): boolean | null {
@@ -96,7 +97,7 @@ export function parseSampleMeta(raw: unknown): SampleMeta | null {
 export type SampleContext = Omit<SampleMeta, 'reason' | 'width' | 'height' | 'candidates' | 'clientAt'>
 
 /**
- * Browser side: offered every captured frame, keeps the last 5 (one per 100 ms, 960 px wide). A trigger takes those
+ * Browser side: offered every captured frame, keeps the last 5 (one per 300 ms, 1280 px wide). A trigger takes those
  * plus the next 5 and posts them as JPEG. Every failure is silent and recognition never waits on it.
  */
 export class AssistSampleRecorder {
