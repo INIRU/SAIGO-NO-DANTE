@@ -1,6 +1,7 @@
 'use client'
 
 import { GIFT_KEYWORD_COLORS } from '@/lib/constants/gift'
+import { useTranslatedText } from '@/components/translate/PostTranslation'
 
 import { useState, useRef, useEffect, useCallback, useContext } from 'react'
 import { createPortal } from 'react-dom'
@@ -655,6 +656,8 @@ export function NoteRenderer({
 }) {
   const formatSkillDesc = useFormatSkillDesc()
   const locale = useLocale()
+  // Inside a translated deck or plan, the reader's language (block structure is kept).
+  text = useTranslatedText(text)
   if (!text.trim()) return null
   const doc = parseBlockDocument(text)
   if (doc) return <NoteBlockViewer doc={doc} renderText={value => <NoteRenderer text={value} skillLookup={skillLookup} passiveLookup={passiveLookup} egoLookup={egoLookup} identityLookup={identityLookup} egoGiftLookup={egoGiftLookup} allowedKeywords={allowedKeywords} inline />} />
