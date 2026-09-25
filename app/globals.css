@@ -547,3 +547,5 @@ html:is([data-with-assist-run], [data-assist-pip])::-webkit-scrollbar-thumb, htm
 html:is([data-nav-hidden],[data-with-admin-shell],[data-with-assist-running]){--nav-offset:0rem}
 .sticky-under-nav{position:sticky;top:var(--nav-offset);transition:top 300ms cubic-bezier(0.4,0,0.2,1)}
 @media (prefers-reduced-motion:reduce){.sticky-under-nav{transition:none}}
+/* Print: page content only, on white. */
+@media print{.site-navigation,.site-footer{display:none!important}html,body{background:#fff!important}}

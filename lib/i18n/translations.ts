@@ -387,14 +387,13 @@ export const translations = {
   'login.privacy.link': { ko: '전문 보기', en: 'View full policy', ja: '全文を見る' },
 
   // Legal pages (shared between terms and privacy)
-  'legal.breadcrumb.home': { ko: '홈', en: 'Home', ja: 'ホーム' },
   'legal.terms.title': { ko: '이용약관', en: 'Terms of Service', ja: '利用規約' },
   'legal.privacy.title': { ko: '개인정보 처리방침', en: 'Privacy Policy', ja: 'プライバシーポリシー' },
   'legal.lastUpdated': { ko: '최종 수정일', en: 'Last updated', ja: '最終更新日' },
+  'legal.version': { ko: '버전', en: 'Version', ja: 'バージョン' },
   'legal.empty': { ko: '문서를 불러올 수 없습니다', en: 'Unable to load document', ja: 'ドキュメントを読み込めません' },
   'legal.terms.linkToPrivacy': { ko: '개인정보 처리방침 보기', en: 'View Privacy Policy', ja: 'プライバシーポリシーを見る' },
   'legal.privacy.linkToTerms': { ko: '이용약관 보기', en: 'View Terms of Service', ja: '利用規約を見る' },
-  'legal.backToTop': { ko: '맨 위로', en: 'Back to top', ja: 'トップへ戻る' },
   'legal.tableOfContents': { ko: '목차', en: 'Table of Contents', ja: '目次' },
 
   // Mirror Dungeon — Tab labels

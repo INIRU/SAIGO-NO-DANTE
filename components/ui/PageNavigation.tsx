@@ -40,7 +40,7 @@ export default function PageNavigation() {
 
   return (
     // 두 버튼을 항상 두고 칸 높이를 전환해 갑자기 튀어나오지 않게 한다
-    <nav className={styles.navigation} aria-label={t('label')} data-open={directions.up || directions.down || undefined}>
+    <nav className={`${styles.navigation} print:hidden!`} aria-label={t('label')} data-open={directions.up || directions.down || undefined}>
       <div className={styles.slot} data-open={directions.up || undefined} data-divider={(directions.up && directions.down) || undefined}>
         <div><button type="button" onClick={() => move('top')} aria-label={t('top')} title={t('top')} tabIndex={directions.up ? undefined : -1} aria-hidden={!directions.up || undefined}>
           <ArrowUp aria-hidden="true" />
