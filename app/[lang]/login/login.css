@@ -36,26 +36,3 @@ html[data-with-login-page], html[data-with-login-page] body { overflow: hidden; 
 @keyframes login-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { .login-main { animation: none; } .login-google { transition: none; } .login-wall-row { animation: none; } }
 @media (max-height: 700px) { .login-title svg { width: 52px; height: 52px; } .login-wordmark { font-size: 2.4rem; } .login-panel { margin-top: 1rem; } }
-
-/* Required consent: each document's full text opens inside the panel and must be scrolled to the end before its box can be checked. */
-.login-consent-list { display: grid; gap: .5rem; margin: 1rem 0 0; padding: 0; list-style: none; text-align: left; }
-.login-consent-item { overflow: hidden; border: 1px solid #2e2417; border-radius: .6rem; background: #120e09; }
-.login-consent-item[data-open] { border-color: #5a4526; }
-.login-consent-row { display: flex; align-items: center; gap: .5rem; min-height: 2.75rem; padding: 0 .25rem 0 .75rem; }
-.login-consent-check { display: flex; flex: 1; min-width: 0; align-items: center; gap: .6rem; color: var(--text-primary); font-size: .85rem; line-height: 1.4; cursor: pointer; }
-.login-consent-check[data-disabled] { color: var(--text-secondary); cursor: not-allowed; }
-.login-consent-check input { position: absolute; opacity: 0; width: 1px; height: 1px; }
-.login-consent-box { border-radius: .25rem; display: grid; flex-shrink: 0; place-items: center; width: 1.15rem; height: 1.15rem; border: 1px solid #5a4526; background: #0d0b08; color: transparent; transition: background-color 150ms, border-color 150ms; }
-.login-consent-check input:checked + .login-consent-box { border-color: var(--gold); background: var(--gold); color: #0d0b08; }
-.login-consent-check input:disabled + .login-consent-box { opacity: .45; }
-.login-consent-check input:focus-visible + .login-consent-box { outline: 2px solid var(--gold-light); outline-offset: 2px; }
-.login-consent-toggle { display: inline-flex; flex-shrink: 0; align-items: center; gap: .25rem; min-height: 2.5rem; padding: 0 .6rem; border: 0; background: none; color: var(--gold-light); font: 600 .8rem var(--font-body); cursor: pointer; }
-.login-consent-toggle svg { transition: transform 150ms; }
-.login-consent-toggle[aria-expanded="true"] svg { transform: rotate(180deg); }
-.login-consent-text { border-radius: .4rem; max-height: min(13rem, 28dvh); overflow-y: auto; overscroll-behavior: contain; margin: 0 .75rem .75rem; padding: .75rem; border-top: 1px solid #2e2417; background: #0d0b08; color: var(--text-secondary); font-size: .78rem; line-height: 1.7; }
-.login-consent-text:focus-visible { outline: 2px solid var(--gold-light); outline-offset: 2px; }
-.login-consent-meta { margin-bottom: .5rem; color: var(--text-muted); font-size: .72rem; }
-.login-consent-text h3 { margin: .75rem 0 .25rem; color: var(--gold-light); font: .82rem/1.4 var(--font-heading), var(--font-body); }
-.login-consent-text ul { margin: .25rem 0 0; padding-left: 1rem; list-style: disc; }
-.login-consent-hint { margin: -.25rem .75rem .6rem 2.5rem; color: var(--text-muted); font-size: .72rem; }
-@media (prefers-reduced-motion: reduce) { .login-consent-box, .login-consent-toggle svg { transition: none; } }
