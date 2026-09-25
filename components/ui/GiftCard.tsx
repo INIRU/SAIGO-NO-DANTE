@@ -35,6 +35,8 @@ interface GiftCardProps {
   // ── Condition status ──
   warning?: string
   conditionStatus?: { level: 'warn' | 'unmet'; text: string } | null
+  /** 조건 덮개 아래 설명 줄. 촘촘한 격자에서는 꺼서 줄 높이를 맞춘다(설명은 덮개 title에 남는다). */
+  conditionDetail?: boolean
 }
 
 // ── Component ────────────────────────────────────────────────────────────────
@@ -135,6 +137,7 @@ const GiftCard = memo(function GiftCard({
   onEnhance,
   onRemove,
   conditionStatus,
+  conditionDetail = true,
   warning,
 }: GiftCardProps) {
   const locale = useLocale()
@@ -266,7 +269,7 @@ const GiftCard = memo(function GiftCard({
           {displayName}
         </p>
       )}
-      {!isInsert && conditionStatus && (
+      {!isInsert && conditionStatus && conditionDetail && (
         <p style={{ fontSize: '0.5rem', color: conditionStatus.level === 'unmet' ? '#ef4444' : '#e8b030', textAlign: 'center', lineHeight: 1.2, marginTop: '0.0625rem' }}>
           {conditionStatus.text}
         </p>

@@ -14,4 +14,4 @@ export {
 
 export { STORAGE_BASE } from '@/lib/constants/game'
 
-export type GiftSubTab = 'observe' | 'start' | 'final'
+export type GiftSubTab = 'observe' | 'start'

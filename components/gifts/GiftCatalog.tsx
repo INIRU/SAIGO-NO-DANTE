@@ -205,6 +205,7 @@ export interface GiftCatalogCardProps {
   title?: string
   ariaLabel?: string
   conditionStatus?: { level: 'warn' | 'unmet'; text: string } | null
+  conditionDetail?: boolean
   onRemove?: () => void
 }
 

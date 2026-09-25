@@ -1263,8 +1263,7 @@
     "giftTab": {
       "tabs": {
         "observe": "観測ギフト",
-        "start": "開始ギフト",
-        "final": "最終ギフト"
+        "start": "開始ギフト"
       },
       "observe": {
         "cost": "観測費用:",
@@ -1279,17 +1278,7 @@
         "selectedTitle": "開始ギフト"
       },
       "final": {
-        "all": "全て",
-        "buildTitle": "最終ギフトビルド",
-        "selectedCount": "{count}個",
-        "clearAll": "全削除",
-        "help": "下の一覧からドラッグまたはクリックで追加・強化可能なギフトはクリックで+/++",
-        "conditionUnmet": "条件未達 — 全人格でも不足",
-        "conditionWarn": "条件注意 — 編成(1-7)のみでは不足、控え込みで達成",
-        "emptyDrop": "下のギフトをドラッグまたはクリックして追加",
-        "listTitle": "全ギフト一覧",
-        "searchPlaceholder": "ギフト名を検索...",
-        "noResults": "検索結果がありません"
+        "searchPlaceholder": "ギフト名を検索..."
       },
       "grid": {
         "grade": "{grade}等級",
