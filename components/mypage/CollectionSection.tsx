@@ -10,6 +10,8 @@ import { STORAGE_BASE, GRADE_COLORS, SIN_COLORS, normalizeSin, type SinType } fr
 import { useKeywordData } from '@/components/providers/KeywordProvider'
 import { Check, CheckSquare, Square, Link2, Download } from 'lucide-react'
 import DownloadModal from './DownloadModal'
+import CollectionBoard, { COLLECTION_ALL } from '@/components/collection/CollectionBoard'
+import Skeleton from '@/components/ui/Skeleton'
 import { normalizeThemeKeyword, THEME_KEYWORDS } from '@/lib/constants/keywords'
 import { decodeCollectionAsync, BITS_IDENTITY, BITS_EGO, BITS_PER_SINNER } from '@/lib/collection'
 import type { SinnerInfo, IdentityInfo, EGOInfo, CollectionData } from '@/lib/collection'
@@ -86,9 +88,11 @@ const LOCAL_STORAGE_KEY = 'limbus-collection'
 interface CollectionSectionProps {
   savedCode?: string | null
   persistMode?: 'db' | 'local'
+  /** h1 when the section is the page (/collection). */
+  titleAs?: 'h1' | 'h2'
 }
 
-export default function CollectionSection({ savedCode, persistMode = 'db' }: CollectionSectionProps) {
+export default function CollectionSection({ savedCode, persistMode = 'db', titleAs: Title = 'h2' }: CollectionSectionProps) {
   const searchParams = useSearchParams()
 
   const [data, setData] = useState<CollectionData | null>(null)
@@ -166,28 +170,15 @@ export default function CollectionSection({ savedCode, persistMode = 'db' }: Col
     setDirty(true)
   }, [])
 
-  // 전체 선택/해제 (현재 수감자)
-  const selectAll = useCallback(() => {
-    if (!data) return
+  // Marks every currently shown identity and E.G.O as owned or not.
+  const setMany = useCallback((ids: string[], on: boolean) => {
     setOwned(prev => {
       const next = new Set(prev)
-      for (const id of data.identities[activeSinner] ?? []) next.add(id.id)
-      for (const ego of data.egos[activeSinner] ?? []) next.add(ego.id)
+      for (const id of ids) if (on) next.add(id); else next.delete(id)
       return next
     })
     setDirty(true)
-  }, [data, activeSinner])
-
-  const deselectAll = useCallback(() => {
-    if (!data) return
-    setOwned(prev => {
-      const next = new Set(prev)
-      for (const id of data.identities[activeSinner] ?? []) next.delete(id.id)
-      for (const ego of data.egos[activeSinner] ?? []) next.delete(ego.id)
-      return next
-    })
-    setDirty(true)
-  }, [data, activeSinner])
+  }, [])
 
   // 저장 (local: localStorage, db: API)
   const saveCollection = useCallback(async () => {
@@ -305,439 +296,58 @@ export default function CollectionSection({ savedCode, persistMode = 'db' }: Col
   // 통계
   const { stats, sinnerCounts, filtered } = useCollectionModel(data, owned, keywordFilter)
 
-  if (loading) {
-    return (
-      <section style={{ background: '#1a1510', border: '1px solid var(--border)', borderRadius: '0.5rem', padding: '1.5rem' }}>
-        <div style={{ width: '8.75rem', height: '0.875rem', background: '#2a2015', borderRadius: '0.125rem', marginBottom: '1rem' }} />
-        <div className="flex gap-2 mb-4">
-          {Array.from({ length: 12 }).map((_, i) => (
-            <div key={i} style={{ width: '2.5rem', height: '2.5rem', borderRadius: '50%', background: '#2a2015' }} />
-          ))}
-        </div>
-        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
-          {Array.from({ length: 10 }).map((_, i) => (
-            <div key={i} style={{ aspectRatio: '3/4', background: '#2a2015', borderRadius: '0.375rem', opacity: 0.4 + i * 0.05 }} />
-          ))}
-        </div>
-      </section>
-    )
-  }
+  if (loading) return <CollectionSkeleton />
 
   if (!data) return null
 
-  const allIdentities = (filtered.identities[activeSinner] ?? [])
-  const allEgos = (filtered.egos[activeSinner] ?? [])
-  const currentIdentities = showUnowned === 'true' ? allIdentities : allIdentities.filter(i => owned.has(i.id))
-  const currentEgos = showUnowned === 'true' ? allEgos : allEgos.filter(e => owned.has(e.id))
-
-  // EGO를 등급별로 그룹핑
-  const egosByGrade = GRADE_ORDER.reduce<Record<string, EGOInfo[]>>((acc, grade) => {
-    const filtered = currentEgos.filter(e => e.grade === grade)
-    if (filtered.length > 0) acc[grade] = filtered
-    return acc
-  }, {})
-
+  const visibleIds = (activeSinner === COLLECTION_ALL ? data.sinners : data.sinners.filter(s => s.id === activeSinner))
+    .flatMap(s => [...(filtered.identities[s.id] ?? []), ...(filtered.egos[s.id] ?? [])].map(item => item.id))
+  const actionButton = 'inline-flex min-h-10 items-center gap-1.5 rounded-lg border border-[#3a2a15] px-3.5 text-[0.875rem] font-semibold text-[#e8dcc8] transition-colors hover:bg-[#241c12] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--gold-light)] disabled:cursor-wait disabled:opacity-60'
   return (
     <section>
-      <div className="mb-4 flex min-h-11 flex-wrap items-center justify-between gap-x-4 gap-y-1">
-        <h2 style={{ color: '#f0e6d2', fontFamily: 'var(--font-heading)', fontSize: '1.25rem' }}>보유 현황</h2>
-        <p className="flex items-baseline gap-4" style={{ color: '#9c8b73', fontSize: '0.875rem' }}>
-          <span>인격 <b style={{ color: 'var(--gold-light)', fontFamily: 'var(--font-title)', fontSize: '1.125rem', fontWeight: 400 }}>{stats.ownedIdentities}</b>/{stats.totalIdentities}</span>
-          <span>E.G.O <b style={{ color: 'var(--gold-light)', fontFamily: 'var(--font-title)', fontSize: '1.125rem', fontWeight: 400 }}>{stats.ownedEgos}</b>/{stats.totalEgos}</span>
-        </p>
+      <div className="mb-4 flex min-h-11 flex-wrap items-center justify-between gap-x-6 gap-y-2">
+        <Title className={Title === 'h1' ? 'text-[1.375rem] md:text-[1.75rem]' : 'text-[1.25rem]'} style={{ color: Title === 'h1' ? 'var(--gold)' : '#f0e6d2', fontFamily: 'var(--font-heading)' }}>보유 현황</Title>
+        <dl className="flex gap-6">
+          {([['인격', stats.ownedIdentities, stats.totalIdentities], ['E.G.O', stats.ownedEgos, stats.totalEgos]] as const).map(([label, have, all]) => (
+            <div key={label} className="flex min-w-[8rem] flex-col gap-1">
+              <dt className="flex items-baseline justify-between gap-3 text-[0.8125rem] text-[#9c8b73]">
+                {label}
+                <dd style={{ color: 'var(--gold-light)', fontFamily: 'var(--font-title)', fontSize: '1.125rem', letterSpacing: '0.02em' }}>{have}<span style={{ color: '#8a7d69' }}>/{all}</span></dd>
+              </dt>
+              <span className="h-[3px] overflow-hidden rounded-full bg-[#2e2417]"><span className="block h-full rounded-full bg-[var(--gold)]" style={{ width: `${all ? (have / all) * 100 : 0}%` }} /></span>
+            </div>
+          ))}
+        </dl>
       </div>
-
-      <div
-        style={{
-          background: '#1a1510',
-          border: '1px solid var(--border)',
-          borderRadius: '8px',
-          overflow: 'hidden',
-        }}
-      >
-        {/* 수감자 탭 */}
-        <div
-          className="flex gap-1 p-3 overflow-x-auto"
-          style={{ borderBottom: '1px solid var(--border)', background: '#150f0a' }}
-        >
-          {data.sinners.map(s => {
-            const isActive = s.id === activeSinner
-            const ownCount = (sinnerCounts[s.id]?.owned ?? 0)
-            const totalCount = (sinnerCounts[s.id]?.total ?? 0)
-            return (
-              <button
-                key={s.id}
-                onClick={() => setActiveSinner(s.id)}
-                className="flex flex-col items-center gap-1 px-2 py-1.5 rounded transition-all flex-shrink-0"
-                style={{
-                  background: isActive ? 'rgba(200,144,10,0.12)' : 'transparent',
-                  border: `1px solid ${isActive ? 'var(--gold-dim)' : 'transparent'}`,
-                  cursor: 'pointer',
-                  minWidth: '3.25rem',
-                }}
-              >
-                <Image
-                  src={sinnerLogoUrl(s.id)}
-                  alt={s.name_kr}
-                  width={28}
-                  height={28}
-                  style={{
-                    borderRadius: '50%',
-                    opacity: isActive ? 1 : 0.4,
-                    transition: 'opacity 0.2s',
-                    filter: isActive ? 'none' : 'grayscale(0.5)',
-                  }}
-                />
-                <span style={{
-                  fontSize: '0.6875rem',
-                  color: isActive ? 'var(--gold)' : '#6a6080',
-                  fontFamily: 'var(--font-heading)',
-                  whiteSpace: 'nowrap',
-                }}>
-                  {s.name_kr}
-                </span>
-                <span style={{
-                  fontSize: '0.75rem',
-                  fontFamily: 'var(--font-mono)',
-                  color: ownCount === totalCount ? 'var(--gold)' : '#5a5070',
-                }}>
-                  {ownCount}/{totalCount}
-                </span>
-              </button>
-            )
-          })}
-        </div>
-
-        <div className="p-4">
-          {/* 키워드 필터 */}
-          <div className="flex items-center gap-1.5 flex-wrap mb-4 pb-3" style={{ borderBottom: '1px solid rgba(58,42,21,0.3)' }}>
-            <button
-              onClick={() => setKeywordFilter(null)}
-              className="flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium transition-all duration-200"
-              style={{
-                background: !keywordFilter || keywordFilter === '' ? 'rgba(200,144,10,0.15)' : 'transparent',
-                border: `1px solid ${!keywordFilter || keywordFilter === '' ? 'var(--gold-dim)' : 'rgba(58,42,21,0.4)'}`,
-                color: !keywordFilter || keywordFilter === '' ? 'var(--gold)' : '#6a6080',
-                cursor: 'pointer',
-              }}
-            >
-              전체
+      <CollectionBoard
+        data={data}
+        filtered={filtered}
+        counts={sinnerCounts}
+        owned={owned}
+        sinner={activeSinner}
+        onSinner={setActiveSinner}
+        keyword={keywordFilter || null}
+        onKeyword={setKeywordFilter}
+        showUnowned={showUnowned === 'true'}
+        onShowUnowned={show => setShowUnowned(show ? 'true' : 'false')}
+        onToggle={toggle}
+        actions={<>
+          <button type="button" onClick={() => setMany(visibleIds, true)} className={actionButton}><CheckSquare size={16} aria-hidden="true" />보이는 항목 모두 보유</button>
+          <button type="button" onClick={() => setMany(visibleIds, false)} className={actionButton}><Square size={16} aria-hidden="true" />모두 해제</button>
+          <span className="flex-1" />
+          {persistMode === 'db' && saved && <span className="flex items-center gap-1 text-[0.8125rem] text-[#6fcf97]"><Check size={14} aria-hidden="true" />저장했습니다</span>}
+          {persistMode === 'local' && autoSaved && <span className="flex items-center gap-1 text-[0.8125rem] text-[#6fcf97]"><Check size={14} aria-hidden="true" />자동 저장됨</span>}
+          {saveError && <span className="text-[0.8125rem] text-[#e8a08a]" role="alert">{saveError}</span>}
+          <button type="button" onClick={copyShareLink} className={actionButton}>{copied ? <Check size={16} aria-hidden="true" /> : <Link2 size={16} aria-hidden="true" />}{copied ? '복사했습니다' : '공유 링크 복사'}</button>
+          <button type="button" onClick={() => setShowDownloadModal(true)} disabled={generating} className={actionButton}><Download size={16} aria-hidden="true" />{generating ? '이미지 만드는 중' : '이미지 저장'}</button>
+          {persistMode === 'db' && (
+            <button type="button" onClick={saveCollection} disabled={saving || !dirty}
+              className="inline-flex min-h-10 items-center gap-1.5 rounded-lg bg-[var(--gold)] px-4 text-[0.875rem] font-bold text-[#0d0b08] transition-[filter,opacity] hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--gold-light)] disabled:cursor-default disabled:opacity-40 disabled:hover:brightness-100">
+              {saving ? '저장 중' : '저장'}
             </button>
-            {MAIN_KEYWORDS.map(({ keyword, sin }) => {
-              const isActive = keywordFilter === keyword
-              const color = SIN_COLORS[sin]
-              return (
-                <button
-                  key={keyword}
-                  onClick={() => setKeywordFilter(isActive ? null : keyword)}
-                  className="flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium transition-all duration-200"
-                  style={{
-                    background: isActive ? `${color}20` : 'transparent',
-                    border: `1px solid ${isActive ? color : 'rgba(58,42,21,0.4)'}`,
-                    color: isActive ? color : '#6a6080',
-                    cursor: 'pointer',
-                  }}
-                >
-                  {getIconUrl(keyword) && (
-                    <Image
-                      src={getIconUrl(keyword)!}
-                      alt={keyword}
-                      width={14}
-                      height={14}
-                      unoptimized
-                      style={{
-                        filter: isActive ? `drop-shadow(0 0 3px ${color}80)` : 'grayscale(0.7) brightness(0.5)',
-                      }}
-                    />
-                  )}
-                  {keyword}
-                </button>
-              )
-            })}
-          </div>
-
-          {/* 미보유 표시 + 전체 선택/해제 */}
-          <div className="flex items-center gap-2 mb-3">
-            <button
-              onClick={selectAll}
-              className="flex items-center gap-1 px-2.5 py-1.5 rounded text-xs transition-opacity hover:opacity-80"
-              style={{ color: '#a08a60', border: '1px solid var(--border)', cursor: 'pointer', fontFamily: 'var(--font-heading)' }}
-            >
-              <CheckSquare size={11} />
-              전체 선택
-            </button>
-            <button
-              onClick={deselectAll}
-              className="flex items-center gap-1 px-2.5 py-1.5 rounded text-xs transition-opacity hover:opacity-80"
-              style={{ color: '#a08a60', border: '1px solid var(--border)', cursor: 'pointer', fontFamily: 'var(--font-heading)' }}
-            >
-              <Square size={11} />
-              전체 해제
-            </button>
-            <div className="flex-1" />
-            <button
-              onClick={() => setShowUnowned(showUnowned === 'true' ? 'false' : 'true')}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium transition-all duration-200"
-              style={{
-                background: showUnowned === 'true' ? 'rgba(90,80,112,0.15)' : 'transparent',
-                border: `1px solid ${showUnowned === 'true' ? '#5a5070' : 'rgba(58,42,21,0.4)'}`,
-                color: showUnowned === 'true' ? '#8a7aaa' : '#6a6080',
-                cursor: 'pointer',
-              }}
-            >
-              {showUnowned === 'true' ? (
-                <CheckSquare size={12} />
-              ) : (
-                <Square size={12} />
-              )}
-              미보유 표시
-            </button>
-          </div>
-
-          {/* 공유 / 다운로드 */}
-          <div className="flex items-center gap-2 mb-4 pb-3" style={{ borderBottom: '1px solid rgba(58,42,21,0.3)' }}>
-            {/* DB 모드: 수동 저장 버튼 + 성공/에러 표시 */}
-            {persistMode === 'db' && dirty && (
-              <button
-                onClick={saveCollection}
-                disabled={saving}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium transition-all duration-200 hover:brightness-110"
-                style={{
-                  background: 'rgba(200,144,10,0.15)',
-                  color: 'var(--gold)',
-                  border: '1px solid var(--gold-dim)',
-                  cursor: 'pointer',
-                  fontFamily: 'var(--font-heading)',
-                }}
-              >
-                <Check size={12} />
-                {saving ? '저장 중...' : '저장'}
-              </button>
-            )}
-            {persistMode === 'db' && saved && (
-              <span className="flex items-center gap-1 text-xs" style={{ color: '#50b878', fontFamily: 'var(--font-heading)' }}>
-                <Check size={12} />
-                저장 완료
-              </span>
-            )}
-            {saveError && (
-              <span className="text-xs" style={{ color: '#d06060', fontFamily: 'var(--font-heading)' }}>
-                {saveError}
-              </span>
-            )}
-            {/* Local 모드: 자동 저장 표시 */}
-            {persistMode === 'local' && autoSaved && (
-              <span className="flex items-center gap-1 text-xs" style={{ color: '#50b878', fontFamily: 'var(--font-heading)' }}>
-                <Check size={12} />
-                자동 저장됨
-              </span>
-            )}
-            <button
-              onClick={copyShareLink}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium transition-all duration-200 hover:brightness-110"
-              style={{
-                background: copied ? 'rgba(26,100,26,0.8)' : 'rgba(200,144,10,0.15)',
-                color: copied ? '#80ff80' : 'var(--gold)',
-                border: `1px solid ${copied ? 'rgba(26,100,26,0.5)' : 'var(--gold-dim)'}`,
-                cursor: 'pointer',
-                fontFamily: 'var(--font-heading)',
-              }}
-            >
-              {copied ? <Check size={12} /> : <Link2 size={12} />}
-              {copied ? '복사 완료!' : '공유 링크 복사'}
-            </button>
-            <button
-              onClick={() => setShowDownloadModal(true)}
-              disabled={generating}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium transition-all duration-200 hover:brightness-110"
-              style={{
-                background: 'rgba(90,80,112,0.15)',
-                color: '#8a7aaa',
-                border: '1px solid rgba(90,80,112,0.4)',
-                cursor: generating ? 'wait' : 'pointer',
-                fontFamily: 'var(--font-heading)',
-                opacity: generating ? 0.6 : 1,
-              }}
-            >
-              <Download size={12} />
-              {generating ? '생성 중...' : '이미지 다운로드'}
-            </button>
-          </div>
-
-          {/* 인격 섹션 */}
-          <div className="mb-5">
-            <div className="flex items-center gap-2 mb-3">
-              <span style={{ color: 'var(--text-tertiary)', fontSize: '0.8125rem', fontFamily: 'var(--font-heading)' }}>인격</span>
-              <span style={{ color: 'var(--text-tertiary)', fontSize: '0.75rem', fontFamily: 'var(--font-mono)' }}>
-                {currentIdentities.filter(i => owned.has(i.id)).length}/{currentIdentities.length}
-              </span>
-            </div>
-
-            {currentIdentities.length > 0 ? (
-            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2">
-              {currentIdentities.map(identity => {
-                const isOwned = owned.has(identity.id)
-                const url = identityProfileUrl(identity)
-                return (
-                  <button
-                    key={identity.id}
-                    onClick={() => toggle(identity.id)}
-                    className="relative rounded overflow-hidden transition-all duration-200"
-                    style={{
-                      aspectRatio: '3/4',
-                      border: `2px solid ${isOwned ? 'var(--gold-dim)' : 'rgba(58,42,21,0.3)'}`,
-                      cursor: 'pointer',
-                      background: '#0a0806',
-                    }}
-                  >
-                    {url && (
-                      <Image
-                        src={url}
-                        alt={identity.name_kr}
-                        fill
-                        sizes="(max-width: 640px) 33vw, (max-width: 768px) 25vw, (max-width: 1024px) 20vw, 16vw"
-                        className="object-cover"
-                        style={{
-                          objectPosition: 'center top',
-                          filter: isOwned ? 'none' : 'grayscale(1) brightness(0.3)',
-                          transition: 'filter 0.2s',
-                        }}
-                      />
-                    )}
-                    {/* 체크 표시 */}
-                    {isOwned && (
-                      <div style={{
-                        position: 'absolute', top: '0.1875rem', right: '0.1875rem',
-                        width: '1rem', height: '1rem', borderRadius: '50%',
-                        background: 'var(--gold)',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      }}>
-                        <Check size={10} style={{ color: '#0d0b08' }} />
-                      </div>
-                    )}
-                    {/* 이름 */}
-                    <div
-                      style={{
-                        position: 'absolute', bottom: 0, left: 0, right: 0,
-                        background: 'linear-gradient(to top, rgba(10,8,6,0.95) 0%, transparent 100%)',
-                        padding: '1rem 0.25rem 0.25rem',
-                      }}
-                    >
-                      <p style={{
-                        fontSize: '0.8125rem',
-                        color: isOwned ? '#c8a450' : '#6a6080',
-                        textAlign: 'center',
-                        fontFamily: 'var(--font-heading)',
-                        lineHeight: 1.2,
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap',
-                      }}>
-                        {identity.name_kr}
-                      </p>
-                    </div>
-                  </button>
-                )
-              })}
-            </div>
-            ) : (
-              <p className="text-center py-6" style={{ color: 'var(--text-tertiary)', fontSize: '0.75rem' }}>
-                해당 키워드의 인격이 없습니다
-              </p>
-            )}
-          </div>
-
-          {/* EGO 섹션 */}
-          {Object.keys(egosByGrade).length > 0 && (
-            <div>
-              <div className="flex items-center gap-2 mb-3">
-                <span style={{ color: 'var(--text-tertiary)', fontSize: '0.8125rem', fontFamily: 'var(--font-heading)' }}>E.G.O</span>
-                <span style={{ color: 'var(--text-tertiary)', fontSize: '0.75rem', fontFamily: 'var(--font-mono)' }}>
-                  {currentEgos.filter(e => owned.has(e.id)).length}/{currentEgos.length}
-                </span>
-              </div>
-
-              {Object.entries(egosByGrade).map(([grade, egoList]) => (
-                <div key={grade} className="mb-3">
-                  <p className="mb-1.5" style={{
-                    fontSize: '0.6875rem',
-                    fontFamily: 'var(--font-mono)',
-                    letterSpacing: '0.1em',
-                    color: GRADE_COLORS[grade] ?? '#555',
-                  }}>
-                    {grade}
-                  </p>
-                  <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-2">
-                    {egoList.map(ego => {
-                      const isOwned = owned.has(ego.id)
-                      const sinType = normalizeSin(ego.sin_affinity)
-                      const egoSinColor = sinType ? SIN_COLORS[sinType] : 'var(--gold-dim)'
-                      return (
-                        <button
-                          key={ego.id}
-                          onClick={() => toggle(ego.id)}
-                          className="relative rounded overflow-hidden transition-all duration-200"
-                          style={{
-                            aspectRatio: '1',
-                            border: `2px solid ${isOwned ? egoSinColor : 'rgba(58,42,21,0.3)'}`,
-                            cursor: 'pointer',
-                            background: '#0a0806',
-                          }}
-                        >
-                          {ego.image_url && (
-                            <Image
-                              src={ego.image_url}
-                              alt={ego.name_kr ?? ''}
-                              fill
-                              sizes="(max-width: 640px) 25vw, (max-width: 768px) 20vw, (max-width: 1024px) 16vw, 12vw"
-                              className="object-cover"
-                              style={{
-                                filter: isOwned ? 'none' : 'grayscale(1) brightness(0.3)',
-                                transition: 'filter 0.2s',
-                              }}
-                            />
-                          )}
-                          {isOwned && (
-                            <div style={{
-                              position: 'absolute', top: '0.125rem', right: '0.125rem',
-                              width: '0.875rem', height: '0.875rem', borderRadius: '50%',
-                              background: egoSinColor,
-                              display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            }}>
-                              <Check size={8} style={{ color: '#0d0b08' }} />
-                            </div>
-                          )}
-                          <div
-                            style={{
-                              position: 'absolute', bottom: 0, left: 0, right: 0,
-                              background: 'linear-gradient(to top, rgba(10,8,6,0.95) 0%, transparent 100%)',
-                              padding: '0.75rem 0.1875rem 0.1875rem',
-                            }}
-                          >
-                            <p style={{
-                              fontSize: '0.75rem',
-                              color: isOwned ? '#c8a450' : '#6a6080',
-                              textAlign: 'center',
-                              fontFamily: 'var(--font-heading)',
-                              lineHeight: 1.2,
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              whiteSpace: 'nowrap',
-                            }}>
-                              {ego.name_kr}
-                            </p>
-                          </div>
-                        </button>
-                      )
-                    })}
-                  </div>
-                </div>
-              ))}
-            </div>
           )}
-
-        </div>
-      </div>
+        </>}
+      />
       {/* 다운로드 옵션 모달 */}
       <DownloadModal
         open={showDownloadModal}
@@ -761,6 +371,20 @@ export default function CollectionSection({ savedCode, persistMode = 'db' }: Col
         sinnerLogoUrl={sinnerLogoUrl}
         identityProfileUrl={identityProfileUrl}
       />}
+    </section>
+  )
+}
+
+/** Same layout as the loaded board: title with totals, sinner strip, filter row, card grid. */
+function CollectionSkeleton() {
+  return (
+    <section aria-busy="true" role="status">
+      <div className="mb-4 flex min-h-11 items-center justify-between gap-6"><Skeleton className="h-6 w-24" /><div className="flex gap-6"><Skeleton className="h-8 w-32" /><Skeleton className="h-8 w-32" /></div></div>
+      <div className="grid gap-4">
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(4.75rem,1fr))] gap-1.5">{Array.from({ length: 13 }, (_, i) => <Skeleton key={i} line className="h-[6.25rem] rounded-[0.625rem]" />)}</div>
+        <div className="flex flex-wrap gap-1.5">{Array.from({ length: 8 }, (_, i) => <Skeleton key={i} className="h-9 w-[4.5rem] !rounded-full" />)}</div>
+        <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-6">{Array.from({ length: 12 }, (_, i) => <Skeleton key={i} line style={{ aspectRatio: '290 / 428' }} />)}</div>
+      </div>
     </section>
   )
 }
