@@ -1002,7 +1002,7 @@
         "identity": "인격 필터",
         "identityModeToggle": "인격 OR/AND 조건 전환",
         "identitySelected": "선택됨",
-        "collection": "보유",
+        "collection": "보유 필터",
         "ownedIdentityPlan": "보유 인격 플랜",
         "ownedEgoPlan": "보유 E.G.O 플랜",
         "collectionCodePlaceholder": "보유 현황 URL 또는 코드",
@@ -1012,23 +1012,7 @@
         "invalidCode": "잘못된 코드",
         "clear": "초기화",
         "or": "OR",
-        "and": "AND",
-        "keywordsShort": "키워드",
-        "affiliation": "소속",
-        "identityShort": "인격",
-        "gift": "기프트",
-        "theme": "테마팩",
-        "searchAffiliation": "소속 이름 검색",
-        "searchEgo": "E.G.O 이름 검색",
-        "searchGift": "기프트 이름 검색",
-        "searchTheme": "테마팩 이름 검색",
-        "matchAny": "하나라도 포함",
-        "matchAll": "모두 포함",
-        "clearAll": "모두 지우기",
-        "remove": "{label} 필터 빼기",
-        "moreResults": "{count}개 더 있어요. 이름으로 검색해 보세요.",
-        "postCount": "{count}개 플랜",
-        "egoSinner": "수감자"
+        "and": "AND"
       },
       "languageFilter": {
         "label": "언어",
@@ -1596,6 +1580,20 @@
   "ownedBadge": {
     "owned": "보유",
     "missing": "{count}인격 부족"
+  },
+  "boardFacets": {
+    "affiliation": "소속",
+    "ego": "E.G.O",
+    "gift": "기프트",
+    "theme": "테마팩",
+    "pick": "고르기",
+    "pickMore": "더 고르기",
+    "close": "닫기",
+    "sinner": "수감자",
+    "searchAffiliation": "소속 이름 검색",
+    "searchTheme": "테마팩 이름 검색",
+    "postCount": "글 {count}개",
+    "remove": "{label} 빼기"
   },
   "mypage": {
     "title": "마이 페이지"
