@@ -1,94 +1,45 @@
 'use client'
 
 import { useState } from 'react'
-import { Link } from '@/lib/i18n/navigation'
+import { useLocale } from 'next-intl'
 import useSWR from 'swr'
-import { Plus, Map } from 'lucide-react'
+import { Heart, Map as MapIcon, Plus } from 'lucide-react'
+import { Link } from '@/lib/i18n/navigation'
 import PlanCard, { type PlanSummary } from '@/components/planner/PlanCard'
-
-// Design Ref: §5.4 — 내 플랜 + 추천 플랜 (lazy load)
+import Skeleton from '@/components/ui/Skeleton'
+import { getCommunityCopy } from '@/lib/community/copy'
+import styles from '../mypage.module.css'
 
 export default function PlannerTab() {
-  const { data: myData, isLoading: myLoading } = useSWR<{ plans: PlanSummary[] }>('/api/planner?userId=me&limit=50')
-  const { data: votedData, isLoading: votedLoading } = useSWR<{ plans: PlanSummary[] }>('/api/planner?votedBy=me&limit=50')
-  const myPlans = myData?.plans ?? []
-  const votedPlans = votedData?.plans ?? []
-  const loading = myLoading || votedLoading
-  const [subTab, setSubTab] = useState<'mine' | 'voted'>('mine')
-
-  if (loading) {
-    return (
-      <div className="space-y-4">
-        {Array.from({ length: 3 }).map((_, i) => (
-          <div key={i} style={{ background: '#1a1510', border: '1px solid var(--border)', borderRadius: '0.375rem', height: '12rem', opacity: 0.4 + i * 0.15 }} />
-        ))}
-      </div>
-    )
-  }
-
-  const activePlans = subTab === 'mine' ? myPlans : votedPlans
-
+  const t = getCommunityCopy(useLocale())
+  const mine = useSWR<{ plans: PlanSummary[] }>('/api/planner?userId=me&limit=50')
+  const liked = useSWR<{ plans: PlanSummary[] }>('/api/planner?votedBy=me&limit=50')
+  const [subTab, setSubTab] = useState<'mine' | 'liked'>('mine')
+  const myPlans = mine.data?.plans ?? []
+  const likedPlans = liked.data?.plans ?? []
+  const loading = mine.isLoading || liked.isLoading
+  const list = subTab === 'mine' ? myPlans : likedPlans
   return (
     <>
-      {/* 서브탭 + CTA */}
-      <div className="mb-5 flex flex-wrap items-center justify-between gap-2">
-        <div className="flex gap-1 overflow-x-auto">
-          {[
-            { key: 'mine' as const, label: '내 플랜', count: myPlans.length },
-            { key: 'voted' as const, label: '추천한 플랜', count: votedPlans.length },
-          ].map(({ key, label, count }) => (
-            <button
-              key={key}
-              onClick={() => setSubTab(key)}
-              className="min-h-11 rounded-md px-3 text-[0.9375rem] transition-all duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--gold)]"
-              style={{
-                background: subTab === key ? 'rgba(200,144,10,0.1)' : 'transparent',
-                color: subTab === key ? 'var(--gold)' : 'var(--text-tertiary)',
-                border: subTab === key ? '1px solid rgba(200,144,10,0.2)' : '1px solid transparent',
-                cursor: 'pointer',
-                fontFamily: 'var(--font-body)',
-              }}
-            >
-              {label}
-              {count > 0 && (
-                <span style={{ marginLeft: '0.375rem', fontFamily: 'var(--font-mono)', fontSize: '0.875rem' }}>{count}</span>
-              )}
-            </button>
-          ))}
+      <div className={styles.head}>
+        <div className={styles.seg} role="group" aria-label={t.planner}>
+          <button type="button" aria-pressed={subTab === 'mine'} onClick={() => setSubTab('mine')}>{t.myPlans}<b>{loading ? '' : myPlans.length}</b></button>
+          <button type="button" aria-pressed={subTab === 'liked'} onClick={() => setSubTab('liked')}>{t.likedPlans}<b>{loading ? '' : likedPlans.length}</b></button>
         </div>
-        <Link
-          href="/planner"
-          className="flex min-h-11 items-center gap-1.5 rounded px-4 text-[0.9375rem] font-medium transition-all duration-200 hover:brightness-110 active:scale-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--gold)]"
-          style={{ background: 'var(--gold)', color: 'var(--bg-deep)', borderRadius: '0.25rem', fontFamily: 'var(--font-heading)' }}
-        >
-          <Plus size={16} aria-hidden="true" />
-          새 플랜
-        </Link>
+        <Link href="/planner" className={styles.primary}><Plus aria-hidden="true" />{t.newPlan}</Link>
       </div>
-
-      {/* 플랜 목록 */}
-      {activePlans.length === 0 ? (
-        <div
-          className="flex flex-col items-center justify-center gap-4 rounded-lg border border-[var(--border)] bg-[#1a1510] py-16"
-        >
-          <Map size={28} style={{ color: '#3a2a18', strokeWidth: 1.5 }} aria-hidden="true" />
-          <p className="font-serif text-[1rem]" style={{ color: 'var(--text-tertiary)', fontFamily: 'var(--font-heading)' }}>
-            {subTab === 'mine' ? '아직 작성한 플랜이 없습니다.' : '아직 추천한 플랜이 없습니다.'}
-          </p>
-          <Link
-            href={subTab === 'mine' ? '/planner' : '/planner/community'}
-            className="inline-flex min-h-11 items-center rounded px-4 transition-all duration-200 hover:opacity-90"
-            style={{ color: 'var(--bg-deep)', background: 'var(--gold)', fontSize: '0.9375rem', fontFamily: 'var(--font-heading)', cursor: 'pointer' }}
-          >
-            {subTab === 'mine' ? '첫 번째 플랜 만들기' : '플래너 커뮤니티 둘러보기'}
+      {loading ? (
+        <div className={styles.list}>{Array.from({ length: 3 }, (_, i) => <Skeleton key={i} line className="h-48 rounded-lg" />)}</div>
+      ) : list.length === 0 ? (
+        <div className={styles.empty}>
+          {subTab === 'mine' ? <MapIcon aria-hidden="true" /> : <Heart aria-hidden="true" />}
+          <p>{subTab === 'mine' ? t.emptyPlans : t.emptyLiked}</p>
+          <Link href={subTab === 'mine' ? '/planner' : '/planner/community'} className={subTab === 'mine' ? styles.primary : styles.ghost}>
+            {subTab === 'mine' ? t.firstPlan : t.browsePlans}
           </Link>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-          {activePlans.map(plan => (
-            <PlanCard key={plan.id} plan={plan} />
-          ))}
-        </div>
+        <ul className={styles.list}>{list.map(plan => <li key={plan.id} className={styles.item}><PlanCard plan={plan} /></li>)}</ul>
       )}
     </>
   )

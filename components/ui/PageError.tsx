@@ -1,7 +1,9 @@
 'use client'
 
 import DanteLogo from '@/components/brand/DanteLogo'
+import { useEffect } from 'react'
 import { useTranslations } from 'next-intl'
+import { discoverEgg } from '@/components/community/easterEggs'
 import BackLink from '@/components/navigation/BackLink'
 import { useHtmlFlag } from '@/hooks/useHtmlFlag'
 import { Link } from '@/lib/i18n/navigation'
@@ -14,6 +16,7 @@ const secondary = `${button} border border-[color-mix(in_srgb,var(--gold)_45%,tr
 export default function PageError({ code, reset }: { code: '404' | '500'; reset?: () => void }) {
   const t = useTranslations('errorPage')
   useHtmlFlag('with-page-error')
+  useEffect(() => { if (code === '404') discoverEgg('lost-manager') }, [code])
   const kind = code === '404' ? 'notFound' : 'error'
 
   return (

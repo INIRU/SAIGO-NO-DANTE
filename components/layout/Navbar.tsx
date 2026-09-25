@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from '@/lib/i18n/navigation'
+import { useTapEgg } from '@/components/community/easterEggs'
 import Image from 'next/image'
 import { usePathname } from '@/lib/i18n/navigation'
 import { useSession, signOut } from 'next-auth/react'
@@ -61,6 +62,7 @@ interface NavbarProps {
 }
 
 export default function Navbar({ mainNavLabel }: NavbarProps) {
+  const tapClock = useTapEgg('clock-head', 7)
   const [hidden, setHidden] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -218,6 +220,7 @@ export default function Navbar({ mainNavLabel }: NavbarProps) {
         <div className="max-w-7xl mx-auto h-16 px-4 md:px-6 flex items-center gap-6 xl:gap-10">
           <Link
             href="/"
+            onClick={tapClock}
             className={`flex shrink-0 items-center gap-2 rounded-md text-[1.0625rem] md:text-[1.1875rem] text-[var(--gold)] transition-colors hover:text-[var(--gold-light)] ${focusRing}`}
             style={{ fontFamily: 'var(--font-heading)' }}
           >

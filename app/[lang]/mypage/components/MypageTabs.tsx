@@ -1,96 +1,43 @@
 'use client'
 
+import { useCallback, useRef } from 'react'
 import { useLocale } from 'next-intl'
+import { Archive, Layers, Map as MapIcon, Medal, Settings, Users } from 'lucide-react'
 import { getCommunityCopy } from '@/lib/community/copy'
-import { useRef, useCallback } from 'react'
-import { User, Layers, Map, Archive, Users } from 'lucide-react'
+import styles from '../mypage.module.css'
 
-// Design Ref: §5.1 — 탭 네비게이션 UI
-export type MypageTab = 'profile' | 'decks' | 'planner' | 'collection' | 'follows'
+export type MypageTab = 'badges' | 'decks' | 'planner' | 'collection' | 'follows' | 'profile'
+export const MYPAGE_TABS: MypageTab[] = ['badges', 'decks', 'planner', 'collection', 'follows', 'profile']
 
-const TABS: { key: MypageTab; label: string; icon: typeof User }[] = [
-  { key: 'profile', label: '프로필', icon: User },
-  { key: 'decks', label: '덱', icon: Layers },
-  { key: 'planner', label: '플래너', icon: Map },
-  { key: 'collection', label: '컬렉션', icon: Archive },
-  { key: 'follows', label: '팔로우', icon: Users },
-]
+const ICONS: Record<MypageTab, typeof Medal> = { badges: Medal, decks: Layers, planner: MapIcon, collection: Archive, follows: Users, profile: Settings }
 
-type Props = {
+export default function MypageTabs({ activeTab, onTabChange, counts }: {
   activeTab: MypageTab
   onTabChange: (tab: MypageTab) => void
-  counts?: { deckCount?: number; planCount?: number }
-}
-
-export default function MypageTabs({ activeTab, onTabChange, counts }: Props) {
+  counts: Partial<Record<MypageTab, string | number>>
+}) {
   const t = getCommunityCopy(useLocale())
-  const tablistRef = useRef<HTMLDivElement>(null)
-
-  // Plan SC: SC-09 — 키보드 좌/우 화살표 탭 전환
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    const idx = TABS.findIndex(t => t.key === activeTab)
-    let next = idx
-    if (e.key === 'ArrowRight') next = (idx + 1) % TABS.length
-    else if (e.key === 'ArrowLeft') next = (idx - 1 + TABS.length) % TABS.length
-    else return
-    e.preventDefault()
-    onTabChange(TABS[next].key)
-    const btn = tablistRef.current?.querySelectorAll<HTMLButtonElement>('[role="tab"]')[next]
-    btn?.focus()
+  const listRef = useRef<HTMLDivElement>(null)
+  // Arrow keys move between tabs (both directions work in the row and the vertical list).
+  const onKeyDown = useCallback((event: React.KeyboardEvent) => {
+    const step = event.key === 'ArrowRight' || event.key === 'ArrowDown' ? 1 : event.key === 'ArrowLeft' || event.key === 'ArrowUp' ? -1 : 0
+    if (!step) return
+    event.preventDefault()
+    const next = (MYPAGE_TABS.indexOf(activeTab) + step + MYPAGE_TABS.length) % MYPAGE_TABS.length
+    onTabChange(MYPAGE_TABS[next])
+    listRef.current?.querySelectorAll<HTMLButtonElement>('[role="tab"]')[next]?.focus()
   }, [activeTab, onTabChange])
-
   return (
-    <div
-      ref={tablistRef}
-      role="tablist"
-      aria-label={t.mypage}
-      className="mypage-tabs flex gap-1 overflow-x-auto scrollbar-hide"
-      style={{
-        background: 'transparent',
-        borderTop: '1px solid var(--border)',
-        padding: '1.25rem 0 0',
-      }}
-      onKeyDown={handleKeyDown}
-    >
-      {TABS.map(({ key, label, icon: Icon }) => {
-        const isActive = activeTab === key
-        const count = key === 'decks' ? counts?.deckCount : key === 'planner' ? counts?.planCount : undefined
+    <div ref={listRef} role="tablist" aria-label={t.mypage} aria-orientation="vertical" className={styles.nav} onKeyDown={onKeyDown}>
+      {MYPAGE_TABS.map(key => {
+        const Icon = ICONS[key]
+        const selected = activeTab === key
         return (
-          <button
-            key={key}
-            role="tab"
-            id={`tab-${key}`}
-            aria-selected={isActive}
-            aria-controls={`panel-${key}`}
-            tabIndex={isActive ? 0 : -1}
-            onClick={() => onTabChange(key)}
-            className="flex min-h-11 flex-shrink-0 items-center gap-2 rounded-md px-4 transition-all duration-200 whitespace-nowrap focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--gold)]"
-            style={{
-              background: isActive ? 'rgba(200,144,10,0.1)' : 'transparent',
-              color: isActive ? 'var(--gold)' : 'var(--text-tertiary)',
-              fontSize: '0.9375rem',
-              fontFamily: 'var(--font-body)',
-              cursor: 'pointer',
-              border: 'none',
-            }}
-          >
-            <Icon style={{ width: '1rem', height: '1rem' }} aria-hidden="true" />
-            <span>{t[key]}</span>
-            {count !== undefined && count > 0 && (
-              <span
-                style={{
-                  fontSize: '0.875rem',
-                  fontFamily: 'var(--font-mono)',
-                  color: isActive ? 'var(--gold)' : '#555',
-                  background: isActive ? 'rgba(200,144,10,0.15)' : 'rgba(255,255,255,0.05)',
-                  padding: '0 0.375rem',
-                  borderRadius: '2rem',
-                  lineHeight: '1.375rem',
-                }}
-              >
-                {count}
-              </span>
-            )}
+          <button key={key} type="button" role="tab" id={`tab-${key}`} aria-selected={selected} aria-controls={`panel-${key}`} tabIndex={selected ? 0 : -1}
+            className={styles.navItem} onClick={() => onTabChange(key)}>
+            <Icon aria-hidden="true" />
+            {t[key]}
+            {counts[key] !== undefined && <span className={styles.navCount}>{counts[key]}</span>}
           </button>
         )
       })}

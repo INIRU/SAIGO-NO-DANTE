@@ -1,23 +1,31 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useLocale } from "next-intl";
-import { Link, useRouter } from "@/lib/i18n/navigation";
+import { useRouter } from "@/lib/i18n/navigation";
 import { useSearchParams } from "next/navigation";
 import useSWR from "swr";
 import { showSuccess, showError } from "@/lib/toast";
 import { useHtmlFlag } from "@/hooks/useHtmlFlag";
-import MypageTabs, { type MypageTab } from "./components/MypageTabs";
+import MypageTabs, { MYPAGE_TABS, type MypageTab } from "./components/MypageTabs";
+import ProfileRail from "./components/ProfileRail";
 import ProfileTab from "./components/ProfileTab";
 import DecksTab from "./components/DecksTab";
 import PlannerTab from "./components/PlannerTab";
 import CollectionTab from "./components/CollectionTab";
 import { type DeckSummary } from "@/components/decks/DeckCard";
-import ProfileSummary from "@/components/community/ProfileSummary";
-import { getCommunityCopy } from "@/lib/community/copy";
-import type { CommunityProfile } from "@/lib/community/rules";
+import AchievementGrid from "@/components/community/AchievementGrid";
 import { FollowList, ProfilePrivacy } from "@/components/community/Follows";
-import { Plus } from "lucide-react";
+import Skeleton from "@/components/ui/Skeleton";
+import { getCommunityCopy } from "@/lib/community/copy";
+import { achievementProgress } from "@/lib/community/achievements";
+import { readEggs, type EasterEgg } from "@/lib/community/easter-eggs";
+import BackLink from "@/components/navigation/BackLink";
+import DanteLogo from "@/components/brand/DanteLogo";
+import { ArrowLeft } from "lucide-react";
+import type { CommunityProfile } from "@/lib/community/rules";
+import "@/components/community/community.css";
+import styles from "./mypage.module.css";
 
 type Profile = {
   username: string | null;
@@ -31,18 +39,29 @@ type ProfileData = {
   decks: DeckSummary[];
   bookmarkedDecks: DeckSummary[];
   email: string;
-  stats: {
-    deckCount: number;
-    planCount: number;
-    bookmarkCount: number;
-    totalVotesReceived: number;
-  };
+  stats: { deckCount: number; planCount: number; bookmarkCount: number; totalVotesReceived: number };
 };
-const tabs = ["profile", "decks", "planner", "collection", "follows"];
 async function fetcher(url: string) {
   const r = await fetch(url);
   if (!r.ok) throw Error();
   return r.json();
+}
+
+/** Same layout as the loaded page: rail card and menu on the left, a titled panel on the right. */
+function MypageSkeleton() {
+  return (
+    <div className={styles.page} role="status" aria-busy="true">
+      <div className={`${styles.rail} sticky-under-nav`}>
+        <Skeleton className="h-10 w-40 rounded-lg" />
+        <Skeleton line className="h-[27rem] rounded-xl" />
+        <Skeleton line className="hidden h-[19rem] rounded-xl lg:block" />
+      </div>
+      <div className={styles.main}>
+        <div className={styles.head}><Skeleton className="h-6 w-32" /></div>
+        <Skeleton line className="h-[24rem] rounded-xl" />
+      </div>
+    </div>
+  );
 }
 
 export default function MypageClient() {
@@ -51,25 +70,22 @@ export default function MypageClient() {
     search = useSearchParams();
   const t = getCommunityCopy(useLocale());
   const [followKind, setFollowKind] = useState<"following" | "followers">("following");
-  const [activeTab, setActiveTab] = useState<MypageTab>("profile");
-  useHtmlFlag("with-compact-footer");
+  const [activeTab, setActiveTab] = useState<MypageTab>("badges");
+  const [eggs, setEggs] = useState<EasterEgg[]>([]);
+  // A workspace like assist and support: no site navbar or footer; the rail's back link leads out.
+  useHtmlFlag("with-mypage");
+  useEffect(() => { setEggs(readEggs(localStorage)); }, []);
   useEffect(() => {
-    const param = search.get("tab"),
-      saved = localStorage.getItem("mypage-tab");
-    const next = param || saved;
-    setActiveTab(next && tabs.includes(next) ? (next as MypageTab) : "profile");
+    const next = search.get("tab") || localStorage.getItem("mypage-tab");
+    setActiveTab(next && MYPAGE_TABS.includes(next as MypageTab) ? (next as MypageTab) : "badges");
   }, [search]);
-  const { data, error, isLoading, mutate } = useSWR<ProfileData>(
-    status === "authenticated" ? "/api/profile" : null,
-    fetcher,
-  );
-  const community = useSWR<CommunityProfile>(
-    status === "authenticated" ? "/api/community/me" : null,
-    fetcher,
-  );
+  const { data, error, isLoading, mutate } = useSWR<ProfileData>(status === "authenticated" ? "/api/profile" : null, fetcher);
+  const community = useSWR<CommunityProfile>(status === "authenticated" ? "/api/community/me" : null, fetcher);
   useEffect(() => {
     if (status === "unauthenticated") router.replace("/login");
   }, [status, router]);
+  const badges = useMemo(() => (community.data ? achievementProgress(community.data.stats, eggs) : []), [community.data, eggs]);
+  const earned = badges.filter((badge) => badge.earned).length;
   function changeTab(tab: MypageTab) {
     setActiveTab(tab);
     localStorage.setItem("mypage-tab", tab);
@@ -77,8 +93,7 @@ export default function MypageClient() {
   }
   async function deleteDeck(id: string) {
     try {
-      if (!(await fetch(`/api/decks/${id}`, { method: "DELETE" })).ok)
-        throw Error();
+      if (!(await fetch(`/api/decks/${id}`, { method: "DELETE" })).ok) throw Error();
       await Promise.all([mutate(), community.mutate()]);
       showSuccess(t.deleteSuccess);
     } catch {
@@ -87,8 +102,7 @@ export default function MypageClient() {
   }
   async function removeBookmark(id: string) {
     try {
-      if (!(await fetch(`/api/decks/${id}/bookmark`, { method: "POST" })).ok)
-        throw Error();
+      if (!(await fetch(`/api/decks/${id}/bookmark`, { method: "POST" })).ok) throw Error();
       await mutate();
       showSuccess(t.bookmarkSuccess);
     } catch {
@@ -97,79 +111,51 @@ export default function MypageClient() {
   }
   if (error || community.error)
     return (
-      <div className="community-shell">
-        <div className="community-state" role="alert">
+      <div className={styles.page}>
+        <div className={`${styles.empty} lg:col-span-2`} role="alert">
           <p>{t.error}</p>
-          <button
-            className="community-button"
-            onClick={() => {
-              void mutate();
-              void community.mutate();
-            }}
-          >
-            {t.retry}
-          </button>
+          <button type="button" className={styles.ghost} onClick={() => { void mutate(); void community.mutate(); }}>{t.retry}</button>
         </div>
       </div>
     );
-  if (status !== "authenticated" || isLoading || !data || !community.data)
-    return (
-      <div className="community-shell">
-        <div className="community-state" role="status">
-          {t.loading}
-        </div>
-      </div>
-    );
+  if (status !== "authenticated" || isLoading || !data || !community.data) return <MypageSkeleton />;
   return (
-    <div className="community-shell">
-      <div className="community-profile-panel">
-      <div className="community-page-heading">
-        <span>{t.mypage}</span>
-        <Link href="/decks/new" className="community-button primary">
-          <Plus size={16} />
-          {t.newDeck}
-        </Link>
+    <div className={styles.page}>
+      <div className={`${styles.rail} sticky-under-nav`}>
+        <div className={styles.top}>
+          <BackLink href="/" className={styles.back}><ArrowLeft aria-hidden="true" />{t.backToSite}</BackLink>
+          <DanteLogo size="2rem" className="text-[var(--gold-light)]" />
+        </div>
+        <ProfileRail data={community.data} onEdit={() => changeTab("profile")} onOpenFollows={(kind) => { setFollowKind(kind); changeTab("follows"); }} />
+        <MypageTabs activeTab={activeTab} onTabChange={changeTab}
+          counts={{ badges: `${earned}/${badges.length}`, decks: data.stats.deckCount, planner: data.stats.planCount }} />
       </div>
-      <ProfileSummary data={community.data} owner onOpenFollows={(kind) => { setFollowKind(kind); changeTab("follows"); }} />
-      </div>
-      <MypageTabs
-        activeTab={activeTab}
-        onTabChange={changeTab}
-        counts={{
-          deckCount: data.stats.deckCount,
-          planCount: data.stats.planCount,
-        }}
-      />
-      <div
-        className="mt-6"
-        role="tabpanel"
-        id={`panel-${activeTab}`}
-        aria-labelledby={`tab-${activeTab}`}
-      >
-        {activeTab === "profile" && (
-          <div className="community-settings-layout">
-            <ProfileTab
-              profile={data.profile}
-              email={data.email}
-              onProfileUpdate={async () => {
-                await Promise.all([mutate(), community.mutate()]);
-              }}
-            />
-            <ProfilePrivacy id={community.data.profile.id} publicProfile={community.data.profile.public_profile} onSaved={async () => { await community.mutate(); }} />
-          </div>
+      <div className={styles.main} role="tabpanel" id={`panel-${activeTab}`} aria-labelledby={`tab-${activeTab}`}>
+        {activeTab === "badges" && (
+          <>
+            <div className={styles.head}>
+              <h2 className={styles.title}>{t.badges}<span className={styles.titleCount}>{earned}/{badges.length}</span></h2>
+            </div>
+            <AchievementGrid items={badges} />
+          </>
         )}
-        {activeTab === "follows" && <FollowList key={followKind} id={community.data.profile.id} initialKind={followKind} />}
-        {activeTab === "decks" && (
-          <DecksTab
-            decks={data.decks}
-            bookmarkedDecks={data.bookmarkedDecks}
-            onDeleteDeck={deleteDeck}
-            onRemoveBookmark={removeBookmark}
-          />
-        )}
+        {activeTab === "decks" && <DecksTab decks={data.decks} bookmarkedDecks={data.bookmarkedDecks} onDeleteDeck={deleteDeck} onRemoveBookmark={removeBookmark} />}
         {activeTab === "planner" && <PlannerTab />}
-        {activeTab === "collection" && (
-          <CollectionTab savedCode={data.profile.collection_code} />
+        {activeTab === "collection" && <CollectionTab savedCode={data.profile.collection_code} />}
+        {activeTab === "follows" && (
+          <>
+            <div className={styles.head}><h2 className={styles.title}>{t.follows}</h2></div>
+            <div className={styles.panel}><FollowList key={followKind} id={community.data.profile.id} initialKind={followKind} /></div>
+          </>
+        )}
+        {activeTab === "profile" && (
+          <>
+            <div className={styles.head}><h2 className={styles.title}>{t.profile}</h2></div>
+            <div className={styles.settings}>
+              <ProfileTab profile={data.profile} email={data.email} onProfileUpdate={async () => { await Promise.all([mutate(), community.mutate()]); }} />
+              <ProfilePrivacy id={community.data.profile.id} publicProfile={community.data.profile.public_profile} onSaved={async () => { await community.mutate(); }} />
+            </div>
+          </>
         )}
       </div>
     </div>
