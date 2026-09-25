@@ -10,9 +10,14 @@ import { useQueryState, parseAsBoolean, parseAsInteger, parseAsString } from 'nu
 import { Link } from '@/lib/i18n/navigation'
 import Image from 'next/image'
 import { useSession } from 'next-auth/react'
-import { Link2, PackageOpen, Search, User, X } from 'lucide-react'
+import { Check, Link2, PackageOpen, Search, User, X } from 'lucide-react'
 import ThemePackCard from '@/components/ui/ThemePackCard'
-import FilterDock, { FacetChip, FacetSearch, type DockApplied, type DockFacet } from '@/components/board/FilterDock'
+import FilterDock, { FacetChip, FacetSearch, FacetTile, type DockApplied, type DockFacet } from '@/components/board/FilterDock'
+import EgoDisplayCard from '@/components/sinners/EgoDisplayCard'
+import GiftCatalog, { giftKeywordIcon, toCatalogGift, useGiftCatalogFilters } from '@/components/gifts/GiftCatalog'
+import type { EgoGift } from '@/components/mirror-dungeon/types'
+import type { GiftData } from '@/lib/planner/types'
+import { SINNER_SLUGS } from '@/lib/constants/game'
 import { hasAll, useBoardFacets } from '@/hooks/useBoardFacets'
 import { getLocalizedAffiliation } from '@/lib/i18n/localize'
 import PlanCard, { type PlanSummary } from '@/components/planner/PlanCard'
@@ -187,6 +192,8 @@ export default function CommunityClient({ initialPlans, initialTotal }: Communit
   const selectedGiftIds = useMemo(() => parseCsvParam(giftQuery), [giftQuery])
   const selectedThemeIds = useMemo(() => parseCsvParam(themeQuery), [themeQuery])
   const facetData = useBoardFacets('planner').data
+  const giftFilters = useGiftCatalogFilters()
+  const [egoSinner, setEgoSinner] = useState<string | null>(null)
   const [formationCountQuery, setFormationCountQuery] = useQueryState('fc', parseAsInteger)
   const formationCount = formationCountQuery !== null && Number.isInteger(formationCountQuery) && formationCountQuery >= 1 && formationCountQuery <= 12
     ? formationCountQuery : null
@@ -887,11 +894,11 @@ export default function CommunityClient({ initialPlans, initialTotal }: Communit
 
   const keywordPanel = (
     <>
-      <div className="flex flex-wrap gap-1.5">
+      <div className="grid grid-cols-4 gap-1.5 sm:grid-cols-6 lg:grid-cols-11">
         {availableKeywords.map(kw => {
           const icon = getIconUrl(kw)
-          return <FacetChip key={kw} active={activeKeywords.has(kw)} onClick={() => toggleKeyword(kw)} label={localKeyword(kw)}
-            icon={icon ? <Image src={icon} alt="" width={16} height={16} className="shrink-0" /> : undefined} />
+          return <FacetTile key={kw} active={activeKeywords.has(kw)} onClick={() => toggleKeyword(kw)} label={localKeyword(kw)}
+            icon={icon ? <Image src={icon} alt="" width={28} height={28} className="h-7 w-7 object-contain" /> : null} />
         })}
       </div>
       {activeKeywords.size >= 2 && modeToggle(keywordMode, toggleKeywordMode)}
@@ -926,6 +933,7 @@ export default function CommunityClient({ initialPlans, initialTotal }: Communit
               className={`relative flex aspect-[3/4] min-w-0 flex-col justify-end overflow-hidden rounded-md border text-left transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#e8b030] ${selectedForSinner.length ? 'border-[#c8900a]' : 'border-[#2e2417] hover:border-[#5a4526]'}`}
               aria-label={`${sinnerName} ${t('identityFilter.fallbackTitle')}${selectedForSinner.length > 0 ? `, ${selectedForSinner.length} ${t('filters.identitySelected')}` : ''}`}
             >
+              {selectedForSinner.length > 0 && <span aria-hidden="true" className="absolute right-1 top-1 z-[1] grid h-4 w-4 place-items-center rounded-sm bg-[#c8900a] text-[#0d0b08]"><Check size={11} strokeWidth={3.5} /></span>}
               {imageUrl
                 ? <Image src={imageUrl} alt="" fill sizes="6rem" className="object-cover object-[center_14%]" />
                 : <span className="absolute inset-0 grid place-items-center bg-[#17120c]"><Image src={getSinnerLogoUrl(sinner.id)} alt="" width={40} height={40} className="h-9 w-9 object-contain opacity-50" /></span>}
@@ -940,33 +948,40 @@ export default function CommunityClient({ initialPlans, initialTotal }: Communit
     </>
   )
 
+  const egoSinners = SINNER_SLUGS.filter(id => (facetData?.egos ?? []).some(ego => ego.sinner_id === id))
   const egoPanel = (
     <>
-      <FacetSearch value={facetQuery} onChange={setFacetQuery} placeholder={t('filters.searchEgo')} />
-      <div className="flex flex-wrap gap-1.5">
-        {(facetData?.egos ?? []).filter(ego => facetMatch(ego.name, ego.name_kr, ego.name_en, ego.name_jp)).map(ego => (
-          <FacetChip key={ego.id} active={selectedEgoIds.includes(ego.id)} onClick={() => toggleCsv(selectedEgoIds, ego.id, setEgoQuery)}
-            label={localized(ego)} count={ego.count} title={`${rootT(`sinner.${ego.sinner_id}` as Parameters<typeof rootT>[0])} · ${ego.grade}`}
-            icon={ego.image_url ? <span className="relative h-6 w-6 shrink-0 overflow-hidden rounded-full"><Image src={ego.image_url} alt="" fill sizes="24px" className="object-cover" /></span> : undefined} />
+      <div className="mb-4 flex flex-wrap items-center gap-1" role="group" aria-label={t('filters.egoSinner')}>
+        {egoSinners.map(id => {
+          const active = egoSinner === id
+          return (
+            <button key={id} type="button" aria-pressed={active} onClick={() => setEgoSinner(active ? null : id)}
+              title={rootT(`sinner.${id}` as Parameters<typeof rootT>[0])}
+              className={`grid h-10 w-10 place-items-center rounded border transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#e8b030] ${active ? 'border-[#c8900a] bg-[#241c12]' : 'border-[#241c14] bg-[#17120c] hover:border-[#3a2a15]'}`}>
+              <Image src={getSinnerLogoUrl(id)} alt={rootT(`sinner.${id}` as Parameters<typeof rootT>[0])} width={28} height={28} className={`h-7 w-7 object-contain ${active ? '' : 'opacity-55'}`} />
+            </button>
+          )
+        })}
+      </div>
+      <div className="grid grid-cols-3 gap-x-3 gap-y-4 sm:grid-cols-5 lg:grid-cols-8">
+        {(facetData?.egos ?? []).filter(ego => !egoSinner || ego.sinner_id === egoSinner).map(ego => (
+          <div key={ego.id} className="min-w-0">
+            <EgoDisplayCard ego={ego} name={localized(ego)} sinnerId={ego.sinner_id} lang={locale} selected={selectedEgoIds.includes(ego.id)}
+              onClick={() => toggleCsv(selectedEgoIds, ego.id, setEgoQuery)} />
+            <p className="mt-1 text-center text-[0.75rem] text-[#7f7364]">{t('filters.postCount', { count: ego.count })}</p>
+          </div>
         ))}
       </div>
     </>
   )
 
-  const GIFT_LIMIT = 60
-  const matchedGifts = (facetData?.gifts ?? []).filter(gift => facetMatch(gift.name, gift.name_en, gift.name_jp))
+  const catalogGifts = useMemo(() => (facetData?.gifts ?? []).map(gift => toCatalogGift(gift as unknown as GiftData)), [facetData])
+  const selectedGiftSet = useMemo(() => new Set(selectedGiftIds), [selectedGiftIds])
+  const onGiftFacet = useCallback((gift: EgoGift) => toggleCsv(selectedGiftIds, gift.id, setGiftQuery), [selectedGiftIds]) // eslint-disable-line react-hooks/exhaustive-deps
   const giftPanel = (
-    <>
-      <FacetSearch value={facetQuery} onChange={setFacetQuery} placeholder={t('filters.searchGift')} />
-      <div className="flex flex-wrap gap-1.5">
-        {matchedGifts.slice(0, GIFT_LIMIT).map(gift => (
-          <FacetChip key={gift.game_id} active={selectedGiftIds.includes(String(gift.game_id))} onClick={() => toggleCsv(selectedGiftIds, String(gift.game_id), setGiftQuery)}
-            label={localized(gift)} count={gift.count}
-            icon={gift.image_url ? <Image src={gift.image_url} alt="" width={24} height={24} className="h-6 w-6 shrink-0 object-contain" /> : undefined} />
-        ))}
-      </div>
-      {matchedGifts.length > GIFT_LIMIT && <p className="mt-3 text-[0.8125rem] text-[#7f7364]">{t('filters.moreResults', { count: matchedGifts.length - GIFT_LIMIT })}</p>}
-    </>
+    <div style={{ '--gift-catalog-bg': '#120e09', '--gift-catalog-sticky-top': '0px', '--gift-catalog-min-h': '0px' } as React.CSSProperties}>
+      <GiftCatalog compact gifts={catalogGifts} getGiftKeywordIcon={giftKeywordIcon} filters={giftFilters} selectedIds={selectedGiftSet} onGiftClick={onGiftFacet} />
+    </div>
   )
 
   const themePanel = (
@@ -1065,17 +1080,16 @@ export default function CommunityClient({ initialPlans, initialTotal }: Communit
     <div data-board-browse className="relative min-h-0 flex-1 overflow-hidden px-4 pb-4 md:px-6">
       <BoardBrowseLock />
       <div className="relative z-[1] mx-auto flex h-full min-h-0 w-full max-w-7xl flex-col">
-        <FilterDock
-          toolbar={toolbar}
-          facets={facetsList}
-          applied={appliedFilters}
-          onClearAll={clearAllFilters}
-          clearLabel={t('filters.clearAll')}
-          removeLabel={label => t('filters.remove', { label })}
-          summary={loading ? null : hasAnyFilter || filtered.length !== total ? t('result.filtered', { filtered: filtered.length, total }) : t('result.total', { count: total })}
-        />
-
         <div ref={scrollRootRef} className="min-h-0 flex-1 overflow-y-auto pb-16 pr-1 scrollbar-thin">
+          <FilterDock
+            toolbar={toolbar}
+            facets={facetsList}
+            applied={appliedFilters}
+            onClearAll={clearAllFilters}
+            clearLabel={t('filters.clearAll')}
+            removeLabel={label => t('filters.remove', { label })}
+            summary={loading ? null : hasAnyFilter || filtered.length !== total ? t('result.filtered', { filtered: filtered.length, total }) : t('result.total', { count: total })}
+          />
           {loading ? (
             <BoardSkeleton kind="planner" />
           ) : filtered.length === 0 ? (
