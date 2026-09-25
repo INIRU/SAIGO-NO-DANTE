@@ -166,28 +166,31 @@ export default function Navbar({ mainNavLabel }: NavbarProps) {
   const user = session?.user as { name?: string | null; email?: string | null; image?: string | null; isAdmin?: boolean; isWanjang?: boolean; isSuspended?: boolean } | undefined
   const supportUnread = useSupportUnread(!!user?.email && !user.isSuspended)
   const [profileAvatar, setProfileAvatar] = useState<string | null>(null)
+  const [profileName, setProfileName] = useState<string | null>(null)
   const userEmail = user?.email
 
   // 프로필 아바타 가져오기
   useEffect(() => {
-    if (!userEmail) { setProfileAvatar(null); return }
+    if (!userEmail) { setProfileAvatar(null); setProfileName(null); return }
     fetch('/api/profile/avatar')
       .then(r => r.json())
-      .then(d => setProfileAvatar(d.avatar_url))
+      .then(d => { setProfileAvatar(d.avatar_url); setProfileName(d.username ?? null) })
       .catch(() => {})
   }, [userEmail])
 
-  // 마이페이지에서 아바타 변경 시 동기화
+  // 마이페이지에서 아바타·닉네임 변경 시 동기화
   useEffect(() => {
     const handler = (e: Event) => {
       setProfileAvatar((e as CustomEvent).detail)
     }
+    const renamed = (e: Event) => setProfileName((e as CustomEvent<string>).detail)
     window.addEventListener('avatar-changed', handler)
-    return () => window.removeEventListener('avatar-changed', handler)
+    window.addEventListener('username-changed', renamed)
+    return () => { window.removeEventListener('avatar-changed', handler); window.removeEventListener('username-changed', renamed) }
   }, [])
 
   const avatarUrl = profileAvatar || DEFAULT_AVATAR_URL
-  const displayName = user?.name ?? user?.email ?? ''
+  const displayName = profileName ?? ''
 
   // Strip lang prefix from pathname so active-state checks work regardless of prefix
   const strippedPathname = pathname.replace(/^\/(ko|en|ja)(?=\/|$)/, '') || '/'
