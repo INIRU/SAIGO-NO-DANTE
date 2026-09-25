@@ -1,22 +1,6 @@
-import { Black_Han_Sans, Song_Myung, Noto_Sans_JP, Noto_Sans_Mono } from 'next/font/google'
 import localFont from 'next/font/local'
 
-// decorative — display:optional prevents FOUT (stays on fallback if not loaded in time)
-const songMyung = Song_Myung({
-  weight: '400',
-  variable: '--font-song-myung',
-  display: 'optional',
-})
-
-// decorative — display:optional prevents FOUT
-const blackHanSans = Black_Han_Sans({
-  subsets: ['latin'],
-  weight: '400',
-  variable: '--font-black-han',
-  display: 'optional',
-})
-
-/* ── Local Fonts ──────────────────────────────────────── */
+/* ── All fonts are self-hosted; licenses in public/fonts/licenses ── */
 
 // numeric overlay font — loaded on demand outside critical layout text
 const excelsiorSans = localFont({
@@ -86,20 +70,55 @@ const paperlogy = localFont({
   preload: false,
 })
 
-const notoSansJP = Noto_Sans_JP({
-  subsets: ['latin'],
-  weight: ['400', '500', '700'],
+// Japanese UI text: M PLUS 1p (OFL), subset to JIS X 0208 + kana + Latin.
+// Variable name kept so existing var(--font-noto-jp) callers keep working.
+const japaneseSans = localFont({
+  src: [
+    { path: '../public/fonts/MPLUS1p-Regular.woff2', weight: '400', style: 'normal' },
+    { path: '../public/fonts/MPLUS1p-Bold.woff2', weight: '700', style: 'normal' },
+  ],
   variable: '--font-noto-jp',
-  display: 'optional',
+  display: 'swap',
   preload: false,
+  fallback: ['Hiragino Kaku Gothic ProN', 'Yu Gothic', 'Meiryo', 'sans-serif'],
 })
 
-const notoSansMono = Noto_Sans_Mono({
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
+// Japanese identity names: Corporate Logo Bold (OFL, LOGOTYPE.JP), subset to JIS level-1 kanji + kana + card titles.
+const corporateLogo = localFont({
+  src: '../public/fonts/CorporateLogo-Bold.woff2',
+  weight: '700',
+  variable: '--font-corporate-logo',
+  display: 'swap',
+  preload: false,
+  fallback: ['Hiragino Kaku Gothic ProN', 'Yu Gothic', 'Meiryo', 'sans-serif'],
+})
+
+// en/ja headings are always bold, like KOTRA Bold on Korean pages (weight 400 in components still renders bold).
+// Pretendard variable clamped to 700; M PLUS 1p Bold declared for every weight.
+const headingLatin = localFont({
+  src: '../public/fonts/PretendardVariable.woff2',
+  weight: '700',
+  variable: '--font-heading-latin',
+  display: 'swap',
+  preload: false,
+  fallback: ['Segoe UI', 'sans-serif'],
+})
+
+const headingJapanese = localFont({
+  src: '../public/fonts/MPLUS1p-Bold.woff2',
+  weight: '100 900',
+  variable: '--font-heading-jp',
+  display: 'swap',
+  preload: false,
+  fallback: ['Hiragino Kaku Gothic ProN', 'Yu Gothic', 'Meiryo', 'sans-serif'],
+})
+
+const notoSansMono = localFont({
+  src: '../public/fonts/NotoSansMono-Variable.woff2',
+  weight: '100 900',
   variable: '--font-noto-sans-mono',
   display: 'swap',
   preload: false,
 })
 
-export const fontVariables = [songMyung, blackHanSans, excelsiorSans, mikodacs, bebasKai, kotraBold, scDream, pretendard, paperlogy, notoSansJP, notoSansMono].map(font => font.variable).join(' ')
+export const fontVariables = [excelsiorSans, mikodacs, bebasKai, kotraBold, scDream, pretendard, paperlogy, japaneseSans, corporateLogo, headingLatin, headingJapanese, notoSansMono].map(font => font.variable).join(' ')

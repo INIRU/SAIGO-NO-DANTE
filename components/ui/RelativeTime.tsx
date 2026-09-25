@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { relativeTime } from '@/lib/utils/time'
+import { useTranslations } from 'next-intl'
 
 /**
  * Hydration-safe 상대 시간 컴포넌트.
@@ -21,13 +21,26 @@ export default function RelativeTime({
   className?: string
   style?: React.CSSProperties
 }) {
+  const t = useTranslations('planner.communityBoard.relativeTime')
   const [text, setText] = useState<string | null>(null)
 
   useEffect(() => {
-    setText(relativeTime(date))
-    const id = setInterval(() => setText(relativeTime(date)), 60_000)
+    const format = () => {
+      const mins = Math.floor((Date.now() - new Date(date).getTime()) / 60000)
+      if (mins < 1) return t('now')
+      if (mins < 60) return t('minutes', { count: mins })
+      const hours = Math.floor(mins / 60)
+      if (hours < 24) return t('hours', { count: hours })
+      const days = Math.floor(hours / 24)
+      if (days < 30) return t('days', { count: days })
+      const months = Math.floor(days / 30)
+      if (months < 12) return t('months', { count: months })
+      return t('years', { count: Math.floor(months / 12) })
+    }
+    setText(format())
+    const id = setInterval(() => setText(format()), 60_000)
     return () => clearInterval(id)
-  }, [date])
+  }, [date, t])
 
   return <span className={className} style={style}>{text}</span>
 }

@@ -636,7 +636,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                                   style={{ background: ident.rarity === 3 ? '#c8900a' : ident.rarity === 2 ? '#5588bb' : '#556677' }}
                                 />
                                 <span>{getName(ident.name_kr, ident.name_en, ident.name_jp)}</span>
-                                <span style={{ color: '#444', fontSize: '0.625rem', marginLeft: 'auto' }}>{ident.rarity}성</span>
+                                <span style={{ color: '#444', fontSize: '0.625rem', marginLeft: 'auto' }}>{t('browser.rarityStar', { n: ident.rarity })}</span>
                               </div>
                             )
                           })}

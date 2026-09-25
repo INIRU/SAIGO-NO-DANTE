@@ -1,7 +1,8 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
 import type { SinType } from '@/lib/types'
-import { SIN_ORDER, SIN_LABELS_KR, SIN_ICON_MAP } from '@/lib/constants/sin'
+import { SIN_ORDER, SIN_ICON_MAP } from '@/lib/constants/sin'
 import FilterToggleGroup, { type FilterToggleItem } from './FilterToggleGroup'
 
 type Props = {
@@ -10,15 +11,16 @@ type Props = {
 }
 
 export default function SinFilter({ selected, onToggle }: Props) {
+  const t = useTranslations()
   const items: FilterToggleItem<SinType>[] = SIN_ORDER.map(s => ({
     value: s,
     icon: SIN_ICON_MAP[s],
-    label: SIN_LABELS_KR[s],
+    label: t(`sin.${s}`),
   }))
 
   return (
     <FilterToggleGroup
-      sectionLabel="죄악 속성"
+      sectionLabel={t('browser.sin')}
       items={items}
       selected={selected}
       onToggle={onToggle}

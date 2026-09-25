@@ -9,6 +9,8 @@ export type IdentityBrowserItem = {
   sinner_id: string
   name: string
   name_kr: string
+  name_en?: string | null
+  name_jp?: string | null
   rarity: number
   sin_affinity?: SinType | null
   keywords: string[]
@@ -42,6 +44,8 @@ export type EGOBrowserItem = {
   sinner_id: string
   name: string
   name_kr: string | null
+  name_en?: string | null
+  name_jp?: string | null
   grade: string
   sin_affinity: SinType | null
   keywords: string[] | null
@@ -83,8 +87,4 @@ export const EGO_GRADE_LABELS: Record<string, string> = {
   ZAYIN: 'ZAYIN', TETH: 'TETH', HE: 'HE', WAW: 'WAW', ALEPH: 'ALEPH',
 }
 export const ATK_TYPES = ['slash', 'pierce', 'blunt', 'evade', 'defense', 'counter'] as const
-export const ATK_TYPE_LABELS: Record<string, string> = {
-  slash: '참격', pierce: '관통', blunt: '타격',
-  evade: '회피', defense: '수비', counter: '반격',
-}
 export const RARITIES = [1, 2, 3] as const

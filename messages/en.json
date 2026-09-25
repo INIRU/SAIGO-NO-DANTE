@@ -127,7 +127,9 @@
       "label": "Page navigation",
       "top": "Back to top",
       "bottom": "End of content"
-    }
+    },
+    "confirm": "Confirm",
+    "imagePending": "Image coming soon"
   },
   "globalSearch": {
     "ariaLabel": "Global search",
@@ -1642,6 +1644,10 @@
       "experience": "EXP Calculator",
       "lunacy": "Monthly Lunacy Calculator",
       "random": "Random Formation"
+    },
+    "slide": {
+      "view": "Show {name}",
+      "awakened": "{name} (Uptie 3)"
     }
   },
   "site": {
@@ -1902,7 +1908,8 @@
     "noSkillData": "No skill data",
     "noCorSkillData": "No corrosion skill data",
     "backToEgoList": "Back to EGO list",
-    "sinResistance": "Sin Resistance"
+    "sinResistance": "Sin Resistance",
+    "detailTitle": "E.G.O details"
   },
   "keyword": {
     "maxStack": "Max"
@@ -2056,5 +2063,82 @@
     "keywordImpossible": "Not enough identities match these keywords",
     "invalidCode": "This collection code is not valid",
     "decodeFailed": "Could not read the collection code"
+  },
+  "browser": {
+    "identitiesTitle": "All Identities",
+    "egoTitle": "All E.G.O",
+    "back": "Back to Sinners",
+    "countAll": "<b>{total}</b> total",
+    "countFiltered": "<b>{filtered}</b> of {total}",
+    "sortPrefix": "Sort:",
+    "sort": {
+      "default": "Default",
+      "name": "Name",
+      "rarity": "Rarity",
+      "grade": "Grade"
+    },
+    "nameSearch": "Search by name",
+    "identityPlaceholder": "Identity name...",
+    "identitySearchLabel": "Search identities by name",
+    "egoPlaceholder": "E.G.O name...",
+    "egoSearchLabel": "Search E.G.O by name",
+    "sinner": "Sinner",
+    "rarity": "Rarity",
+    "rarityStar": "{n}★",
+    "season": "Season",
+    "seasonBase": "Base",
+    "sin": "Sin Affinity",
+    "skillType": "Skill Type",
+    "atk": {
+      "slash": "Slash",
+      "pierce": "Pierce",
+      "blunt": "Blunt",
+      "evade": "Evade",
+      "defense": "Guard",
+      "counter": "Counter"
+    },
+    "weight": "Atk Weight",
+    "coins": "Coins",
+    "egoGrade": "E.G.O Grade",
+    "keyword": "Keywords",
+    "keywordPlaceholder": "Type a keyword, then Enter...",
+    "keywordSearchLabel": "Search keywords",
+    "keywordRemove": "Remove {kw} filter",
+    "added": "Added",
+    "filter": "Filters",
+    "filterPanel": "Filter panel",
+    "closeFilter": "Close filters",
+    "reset": "Reset filters ({count} active)",
+    "resetAll": "Reset all filters",
+    "emptyIdentity": "No identities match these filters",
+    "emptyEgo": "No E.G.O match these filters",
+    "meta": {
+      "identitiesDescription": "Search and filter every Limbus Company Identity for all 12 Sinners by keyword, sin affinity, attack type and rarity.",
+      "identitiesOgTitle": "All Identities | SAIGO NO DANTE",
+      "identitiesOgDescription": "Cross-filter 200+ Identities by keyword, sin affinity and attack type.",
+      "identitiesListName": "Limbus Company Identity List",
+      "egoDescription": "Search and filter every Limbus Company E.G.O for all 12 Sinners by grade, sin affinity and keyword.",
+      "egoOgTitle": "All E.G.O | SAIGO NO DANTE",
+      "egoOgDescription": "Cross-filter every E.G.O by grade and sin affinity.",
+      "egoListName": "Limbus Company E.G.O List"
+    }
+  },
+  "identityDecks": {
+    "searchPlaceholder": "Search title, description, tags, keywords...",
+    "keyword": "Keywords",
+    "tabHint": "Tab to select",
+    "latest": "Latest",
+    "popular": "Popular",
+    "count": "{count, plural, one {# deck} other {# decks}}",
+    "filtered": " (filtered)",
+    "noResults": "No results found.",
+    "empty": "No decks use this Identity yet.",
+    "loading": "Loading..."
+  },
+  "collectionPage": {
+    "title": "Collection",
+    "description": "Track which Limbus Company Identities and E.G.O you own and share it with a link.",
+    "sharedTitle": "Shared collection",
+    "identities": "Identities"
   }
 }

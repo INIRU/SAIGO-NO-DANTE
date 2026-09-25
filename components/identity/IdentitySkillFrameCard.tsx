@@ -46,10 +46,10 @@ type IdentitySkillFrameCardProps = {
   style?: CSSProperties
 }
 
-const DEFENSE_LABELS: Record<string, string> = {
-  evade: '회피',
-  defense: '수비',
-  counter: '반격',
+const DEFENSE_LABELS: Record<string, { ko: string; en: string; ja: string }> = {
+  evade: { ko: '회피', en: 'Evade', ja: '回避' },
+  defense: { ko: '수비', en: 'Guard', ja: '防御' },
+  counter: { ko: '반격', en: 'Counter', ja: '反撃' },
 }
 
 const ALL_SINS = new Set<SinType>(['wrath', 'lust', 'sloth', 'gluttony', 'gloom', 'pride', 'envy'])
@@ -71,8 +71,9 @@ function localizedText(
   return fallback
 }
 
-function variantLabel(skill: SkillFrameSkill, skills: SkillFrameSkill[]): string {
-  if (DEFENSE_LABELS[skill.skill_type]) return DEFENSE_LABELS[skill.skill_type]
+function variantLabel(skill: SkillFrameSkill, skills: SkillFrameSkill[], lang?: string): string {
+  const defense = DEFENSE_LABELS[skill.skill_type]
+  if (defense) return lang === 'en' || lang === 'ja' ? defense[lang] : defense.ko
 
   const sameOrder = skills
     .filter(item => item.skill_order === skill.skill_order)
@@ -118,7 +119,7 @@ export default function IdentitySkillFrameCard({
         sin={sin}
         sinColor={sinColor}
         skillSlot={skill.skill_order <= 3 ? skill.skill_order : 1}
-        label={variantLabel(skill, skills)}
+        label={variantLabel(skill, skills, lang)}
         size={size}
         name={localizedText(lang, skill.name, skill.name_en, skill.name_jp) ?? skill.name}
         basePower={skill.base_power}

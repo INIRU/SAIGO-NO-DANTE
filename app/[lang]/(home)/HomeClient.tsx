@@ -51,12 +51,13 @@ function CommandUtilityLink({
 // ── Rarity icon (small helper, no own file needed) ─────────────────────────
 
 function RarityIcon({ rarity }: { rarity: number }) {
+  const t = useTranslations('browser')
   const src = RARITY_ICON_MAP[rarity]
   if (!src) return null
   return (
     <Image
       src={src}
-      alt={`${rarity}성`}
+      alt={t('rarityStar', { n: rarity })}
       width={48}
       height={16}
       loading="eager"

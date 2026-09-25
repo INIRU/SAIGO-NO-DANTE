@@ -13,6 +13,7 @@ import { NoteRenderer } from '@/components/decks/NoteChips'
 import { CONTENT_TYPE_COLORS } from '@/lib/constants/deck-tokens'
 import { contentTypeMessageKey, localizeDeckKeyword } from '@/components/decks/decks-types'
 import type { SupportedLang } from '@/lib/i18n'
+import { guestAuthorName } from '@/lib/guest/copy'
 import { computeDeckMainKeywordsFromSlots, normalizeDeckMainKeyword } from '@/lib/decks/keyword-rules'
 const EMPTY_NOTE_LOOKUP: Record<string, never> = Object.freeze({})
 
@@ -48,6 +49,7 @@ export type DeckSummary = {
   comment_count?: number
   created_at: string
   username?: string
+  guest_tag?: string | null
   main_keywords?: string[] | null
   deck_identities?: IdentityPreview[]
   deck_egos?: { ego_id: string; grade?: string | null }[]
@@ -256,12 +258,17 @@ function DeckCard({ deck, onTagClick }: DeckCardProps) {
               className="flex min-w-0 items-center"
               style={{ gap: '0.25rem', fontSize: '0.75rem', color: 'var(--text-tertiary)' }}
             >
-              {deck.username && (
+              {deck.username ? (
                 <>
                   {deck.user_id ? <Link href={`/users/${deck.user_id}`} className="relative z-10 hover:text-[var(--gold)] hover:underline">{deck.username}</Link> : <span>{deck.username}</span>}
                   <span style={{ color: 'var(--text-tertiary)' }}>·</span>
                 </>
-              )}
+              ) : deck.guest_tag ? (
+                <>
+                  <span>{guestAuthorName(deck.guest_tag, locale)}</span>
+                  <span style={{ color: 'var(--text-tertiary)' }}>·</span>
+                </>
+              ) : null}
               <span style={{ color: 'var(--text-tertiary)' }}>{date}</span>
             </div>
 

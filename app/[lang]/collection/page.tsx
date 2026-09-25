@@ -6,12 +6,14 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import type { CollectionData } from '@/lib/collection'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import CollectionClient from './CollectionClient'
+import { getTranslations } from 'next-intl/server'
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params
+  const t = await getTranslations({ locale: lang, namespace: 'collectionPage' })
   return {
-    title: '보유 현황',
-    description: '림버스 컴퍼니 인격·EGO 보유 현황을 체크하고 URL로 공유하세요.',
+    title: t('title'),
+    description: t('description'),
     alternates: localeAlternates(lang, '/collection'),
   }
 }

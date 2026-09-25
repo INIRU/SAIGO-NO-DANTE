@@ -4,17 +4,19 @@ import { notePlainText } from '@/lib/notes/blocks'
 import { NoteRenderer } from '@/components/decks/NoteChips'
 
 import FormationThumbnail from '@/components/ui/FormationThumbnail'
-import { memo, useEffect, useState } from 'react'
+import RelativeTime from '@/components/ui/RelativeTime'
+import { memo } from 'react'
 import { Link } from '@/lib/i18n/navigation'
 import Image from 'next/image'
 import { Heart, Eye, MessageCircle } from 'lucide-react'
-import { DIFFICULTY_CONFIG, type Difficulty } from '@/lib/planner/types'
+import type { Difficulty } from '@/lib/planner/types'
 import { DEFAULT_AVATAR_URL } from '@/lib/constants/game'
 import { useKeywordData, useKeywords } from '@/components/providers/KeywordProvider'
 import { useLocale, useTranslations } from 'next-intl'
 import { localizeDeckKeyword } from '@/components/decks/decks-types'
 import type { SupportedLang } from '@/lib/i18n'
 import { normalizePlannerListKeywords, planDifficultyBadge } from '@/lib/planner/stripPlanForList'
+import { guestAuthorName } from '@/lib/guest/copy'
 
 export type PlanSummary = {
   id: string
@@ -30,6 +32,7 @@ export type PlanSummary = {
   created_at: string
   lang?: 'ko' | 'en' | 'ja' | null
   profiles: { username: string | null; avatar_url: string | null } | null
+  guest_tag?: string | null
   /** Pre-computed server-side: theme keywords extracted from deck */
   theme_keywords?: string[]
   /** Pre-computed server-side: theme + combat keywords used by board filters */
@@ -54,50 +57,11 @@ const DIFFICULTY_STYLE: Record<Difficulty, { bg: string; color: string; border: 
   extreme: { bg: 'rgba(200,48,48,0.12)',   color: '#e05050', border: 'rgba(200,48,48,0.3)' },
 }
 
-function PlannerRelativeTime({
-  date,
-  localized = false,
-  style,
-}: {
-  date: string
-  localized?: boolean
-  style?: React.CSSProperties
-}) {
-  const t = useTranslations('planner.communityBoard.relativeTime')
-  const [text, setText] = useState<string | null>(null)
-
-  useEffect(() => {
-    const format = () => {
-      const diff = Date.now() - new Date(date).getTime()
-      const mins = Math.floor(diff / 60000)
-      if (mins < 1) return localized ? t('now') : '방금 전'
-      if (mins < 60) return localized ? t('minutes', { count: mins }) : `${mins}분 전`
-      const hours = Math.floor(mins / 60)
-      if (hours < 24) return localized ? t('hours', { count: hours }) : `${hours}시간 전`
-      const days = Math.floor(hours / 24)
-      if (days < 30) return localized ? t('days', { count: days }) : `${days}일 전`
-      const months = Math.floor(days / 30)
-      if (months < 12) return localized ? t('months', { count: months }) : `${months}달 전`
-      const years = Math.floor(months / 12)
-      return localized ? t('years', { count: years }) : `${years}년 전`
-    }
-
-    setText(format())
-    const id = setInterval(() => setText(format()), 60_000)
-    return () => clearInterval(id)
-  }, [date, localized, t])
-
-  return <span style={style}>{text}</span>
-}
-
-
 function PlanCard({
   plan,
-  localized = false,
   onKeywordToggle,
 }: {
   plan: PlanSummary
-  localized?: boolean
   onKeywordToggle?: (keyword: string) => void
 }) {
   const { getIconUrl } = useKeywordData()
@@ -106,7 +70,7 @@ function PlanCard({
   const t = useTranslations('planner.communityBoard.card')
   const difficultyT = useTranslations('planner.communityBoard.difficulty')
   const diffStyle = DIFFICULTY_STYLE[plan.difficulty]
-  const username = plan.profiles?.username ?? (localized ? t('anonymous') : '익명')
+  const username = plan.profiles?.username ?? guestAuthorName(plan.guest_tag, locale) ?? t('anonymous')
   const avatarUrl = plan.profiles?.avatar_url ?? DEFAULT_AVATAR_URL
 
   // 자동 키워드 태그: API에서 서버사이드로 계산된 값 우선 사용
@@ -145,7 +109,7 @@ function PlanCard({
                 <Image src={avatarUrl} alt={username} width={18} height={18} style={{ width: '1.125rem', height: '1.125rem', objectFit: 'cover' }} />
               </div>
               <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>{username}</span>
-              <PlannerRelativeTime localized={localized} date={plan.created_at} style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }} />
+              <RelativeTime date={plan.created_at} style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }} />
             </div>
             <div className="ml-auto flex items-center gap-2.5">
               <span className="flex items-center gap-0.5" style={{ fontSize: '0.75rem', color: plan.vote_count > 0 ? 'var(--gold)' : 'var(--text-muted)' }}>
@@ -176,14 +140,14 @@ function PlanCard({
               borderRadius: '0.25rem', fontFamily: 'var(--font-body)',
               fontSize: '0.8125rem', fontWeight: 700,
             }}>
-              {difficultyBadge.labelKeys.map(difficulty => localized ? difficultyT(difficulty) : DIFFICULTY_CONFIG[difficulty].label).join('/')}
+              {difficultyBadge.labelKeys.map(difficulty => difficultyT(difficulty)).join('/')}
           </span>
         </div>
         {visibleKeywords.length > 0 && (
           <div className="flex min-w-0 max-w-[58%] items-center justify-end gap-1 overflow-hidden">
             {visibleKeywords.map(kw => {
               const iconUrl = getIconUrl(kw)
-              const label = localized ? localizeDeckKeyword(kw, keywords[kw], locale) : kw
+              const label = localizeDeckKeyword(kw, keywords[kw], locale)
               const commonStyle = {
                 padding: '0.125rem 0.25rem',
                 background: 'transparent',

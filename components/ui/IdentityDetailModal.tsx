@@ -14,6 +14,10 @@ import SkillDescription from '@/components/skill/SkillDescription'
 import IdentitySkillFrameCard from '@/components/identity/IdentitySkillFrameCard'
 import BaseModal from '@/components/ui/BaseModal'
 import { useLocale } from 'next-intl'
+import { translations } from '@/lib/i18n/translations'
+import { identityNameLines } from '@/lib/decks/identity-name-lines'
+import { localizeDeckKeyword } from '@/components/decks/decks-types'
+import { useKeywords } from '@/components/providers/KeywordProvider'
 import Skeleton, { SkeletonLine, SkeletonPage } from '@/components/ui/Skeleton'
 
 // ── 타입 ──────────────────────────────────────────────────────────────────
@@ -121,6 +125,26 @@ const RES_STYLE: Record<string, { color: string; label: string }> = {
   '면역': { color: '#40c060', label: '면역' },
 }
 
+type Lang = 'ko' | 'en' | 'ja'
+const toLang = (locale: string): Lang => (locale === 'en' || locale === 'ja' ? locale : 'ko')
+
+const COPY = {
+  ko: { title: '인격 상세', close: '닫기', loadError: '데이터를 불러올 수 없습니다', skill: '스킬', passive: '패시브', sanity: '정신력', slash: '참격', pierce: '관통', blunt: '타격', breakSection: '흐트러짐 구간', noSkill: '스킬 정보 없음', noPassive: '패시브 정보 없음', supportPassive: '서포트 패시브', noSanity: '정신력 정보 없음', panicType: '패닉 타입', panic: '패닉', panicEffect: '· 패닉 효과', sanityUp: '기본 정신력 증가 조건', sanityDown: '기본 정신력 감소 조건', resonance: '공명', stock: '보유', rarity: (n: number) => `${n}성` },
+  en: { title: 'Identity details', close: 'Close', loadError: 'Could not load data', skill: 'Skills', passive: 'Passive', sanity: 'Sanity', slash: 'Slash', pierce: 'Pierce', blunt: 'Blunt', breakSection: 'Stagger Threshold', noSkill: 'No skill data', noPassive: 'No passive data', supportPassive: 'Support Passive', noSanity: 'No sanity data', panicType: 'Panic Type', panic: 'Panic', panicEffect: '· Panic Effect', sanityUp: 'Base SP gain conditions', sanityDown: 'Base SP loss conditions', resonance: 'Res', stock: 'Owned', rarity: (n: number) => `${n}★` },
+  ja: { title: '人格詳細', close: '閉じる', loadError: 'データを読み込めません', skill: 'スキル', passive: 'パッシブ', sanity: '精神力', slash: '斬撃', pierce: '貫通', blunt: '打撃', breakSection: '混乱区間', noSkill: 'スキル情報なし', noPassive: 'パッシブ情報なし', supportPassive: 'サポートパッシブ', noSanity: '精神力情報なし', panicType: 'パニックタイプ', panic: 'パニック', panicEffect: '· パニック効果', sanityUp: '基本精神力増加条件', sanityDown: '基本精神力減少条件', resonance: '共鳴', stock: '保有', rarity: (n: number) => `${n}★` },
+} satisfies Record<Lang, Record<string, unknown>>
+
+const RES_LABEL: Record<string, Record<Exclude<Lang, 'ko'>, string>> = {
+  '치명': { en: 'Fatal', ja: '致命' },
+  '효율': { en: 'Weak', ja: '弱点' },
+  '취약': { en: 'Weak', ja: '弱点' },
+  '보통': { en: 'Normal', ja: '普通' },
+  '내성': { en: 'Resist', ja: '耐性' },
+  '견딤': { en: 'Endure', ja: '忍耐' },
+  '무효': { en: 'Ineffective', ja: '無効' },
+  '면역': { en: 'Immune', ja: '免疫' },
+}
+
 
 
 
@@ -225,6 +249,7 @@ export default function IdentityDetailModal({ identityId, onClose }: IdentityDet
   const [data, setData] = useState<ApiResponse | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const copy = COPY[toLang(useLocale())]
 
   useEffect(() => {
     let cancelled = false
@@ -233,13 +258,13 @@ export default function IdentityDetailModal({ identityId, onClose }: IdentityDet
     fetch(`/api/identity/${identityId}`)
       .then(r => { if (!r.ok) throw new Error('Failed'); return r.json() })
       .then((d: ApiResponse) => { if (!cancelled) setData(d) })
-      .catch(() => { if (!cancelled) setError('데이터를 불러올 수 없습니다') })
+      .catch(() => { if (!cancelled) setError(copy.loadError) })
       .finally(() => { if (!cancelled) setLoading(false) })
     return () => { cancelled = true }
-  }, [identityId])
+  }, [identityId, copy.loadError])
 
   return (
-    <BaseModal open={!!identityId} onClose={onClose} maxWidth="52rem" padding="1rem" title="인격 상세">
+    <BaseModal open={!!identityId} onClose={onClose} maxWidth="52rem" padding="1rem" title={copy.title}>
       <div
         className="relative overflow-y-auto rounded-xl"
         style={{
@@ -252,7 +277,7 @@ export default function IdentityDetailModal({ identityId, onClose }: IdentityDet
         {/* 닫기 버튼 */}
         <button
           onClick={onClose}
-          aria-label="닫기"
+          aria-label={copy.close}
           className="absolute top-3 right-3 z-20 p-1.5 rounded-full transition-colors hover:bg-white/10"
           style={{ cursor: 'pointer', color: 'rgba(255,255,255,0.5)' }}
         >
@@ -291,18 +316,19 @@ function LoadingSkeleton() {
 }
 
 // ── 탭 정의 ───────────────────────────────────────────────────────────────
-const MODAL_TABS = [
-  { key: 'skill', label: '스킬' },
-  { key: 'passive', label: '패시브' },
-  { key: 'sanity', label: '정신력' },
-] as const
-type ModalTab = typeof MODAL_TABS[number]['key']
+const MODAL_TABS = ['skill', 'passive', 'sanity'] as const
+type ModalTab = typeof MODAL_TABS[number]
 
 // ── 모달 본문 ─────────────────────────────────────────────────────────────
 function ModalContent({ data }: { data: ApiResponse }) {
   const { identity, sinner_name, skills, passives, sanity_conditions: sanityConditions = [], panic_info: panicInfo = null } = data
   const [activeTab, setActiveTab] = useState<ModalTab>('skill')
   const lang = useLocale()
+  const l = toLang(lang)
+  const copy = COPY[l]
+  const keywordInfo = useKeywords()
+  const displayName = identityNameLines(identity.name_kr, identity.game_id, l).join(' ')
+  const sinnerName = translations[`sinner.${identity.sinner_id}` as keyof typeof translations]?.[l] ?? sinner_name
 
   // 4동기화 우선 스킬
   const sortedSkills = bestUptie(skills, s => `${s.skill_order}:${s.variant_order ?? 0}`)
@@ -330,7 +356,7 @@ function ModalContent({ data }: { data: ApiResponse }) {
           {portraitUrl && (
             <div className="flex-shrink-0 rounded-lg overflow-hidden" style={{ width: '4.5rem', height: '6rem', border: `1px solid ${rarityColor}40` }}>
               <Image
-                src={portraitUrl} alt={identity.name_kr}
+                src={portraitUrl} alt={displayName}
                 width={72} height={96}
                 style={{ width: '4.5rem', height: '6rem', objectFit: 'cover', objectPosition: 'center top' }}
               />
@@ -339,28 +365,28 @@ function ModalContent({ data }: { data: ApiResponse }) {
           <div className="flex-1 min-w-0 pt-1">
             <div className="flex items-center gap-2 mb-1">
               <span className="font-serif" style={{ color: '#e8dcc8', fontSize: '1.0625rem', lineHeight: 1.2 }}>
-                {identity.name_kr}
+                {displayName}
               </span>
               {RARITY_ICON_MAP[identity.rarity] && (
                 <Image
                   src={RARITY_ICON_MAP[identity.rarity]}
-                  alt={`${identity.rarity}성`}
+                  alt={copy.rarity(identity.rarity)}
                   width={identity.rarity === 1 ? 16 : identity.rarity === 2 ? 30 : 36}
                   height={14}
                   style={{ flexShrink: 0, opacity: 0.9, height: '0.875rem', width: 'auto' }}
                 />
               )}
             </div>
-            {sinner_name && (
+            {sinnerName && (
               <p style={{ color: '#8a7050', fontSize: '0.75rem', fontFamily: 'var(--font-body)', marginBottom: '0.375rem' }}>
-                {sinner_name}
+                {sinnerName}
               </p>
             )}
             {representativeKeywords.length > 0 && (
               <div className="flex flex-wrap gap-1">
                 {representativeKeywords.map(kw => (
                   <span key={kw} className="px-1.5 py-0.5 rounded" style={{ background: 'rgba(120,76,28,0.12)', color: '#907040', border: '1px solid rgba(120,76,28,0.22)', fontSize: '0.6875rem', fontFamily: 'var(--font-heading)' }}>
-                    {kw}
+                    {localizeDeckKeyword(kw, keywordInfo[kw], l)}
                   </span>
                 ))}
               </div>
@@ -395,9 +421,9 @@ function ModalContent({ data }: { data: ApiResponse }) {
         {/* 저항 */}
         <div className="flex flex-wrap gap-2">
           {([
-            { label: '참격', icon: 'slash', val: identity.slash_res },
-            { label: '관통', icon: 'pierce', val: identity.pierce_res },
-            { label: '타격', icon: 'blunt', val: identity.blunt_res },
+            { label: copy.slash, icon: 'slash', val: identity.slash_res },
+            { label: copy.pierce, icon: 'pierce', val: identity.pierce_res },
+            { label: copy.blunt, icon: 'blunt', val: identity.blunt_res },
           ] as const).map(({ label, icon, val }) => {
             if (!val) return null
             const st = RES_STYLE[val] ?? { color: '#667788', label: val }
@@ -405,7 +431,7 @@ function ModalContent({ data }: { data: ApiResponse }) {
               <span key={label} className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded" style={{ background: `${st.color}15`, color: st.color, border: `1px solid ${st.color}30`, fontFamily: 'var(--font-mono)', fontSize: '0.75rem' }}>
                 <Image src={getDetailStatIconUrl(icon)} alt={label} width={14} height={14} style={{ width: '0.875rem', height: '0.875rem', opacity: 0.75 }} />
                 {label}
-                <strong>{val}</strong>
+                <strong>{l === 'ko' ? val : RES_LABEL[val]?.[l] ?? val}</strong>
               </span>
             )
           })}
@@ -414,7 +440,7 @@ function ModalContent({ data }: { data: ApiResponse }) {
         {/* 흐트러짐 구간 */}
         {identity.break_section && identity.break_section.length > 0 && identity.hp != null && (
           <div style={{ marginTop: '0.625rem' }}>
-            <p style={{ color: '#888', fontSize: '0.6875rem', marginBottom: '0.375rem', fontFamily: 'var(--font-heading)' }}>흐트러짐 구간</p>
+            <p style={{ color: '#888', fontSize: '0.6875rem', marginBottom: '0.375rem', fontFamily: 'var(--font-heading)' }}>{copy.breakSection}</p>
             <div className="relative rounded overflow-hidden" style={{ height: '1.5rem', background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.06)' }}>
               <div className="absolute inset-0" style={{ background: 'linear-gradient(90deg, rgba(200,60,60,0.25), rgba(200,144,10,0.1))' }} />
               {identity.break_section.map((pct: number, i: number) => (
@@ -437,11 +463,11 @@ function ModalContent({ data }: { data: ApiResponse }) {
       {/* ── 탭 바 ────────────────────────────────────────────── */}
       <div className="flex" style={{ borderBottom: '1px solid rgba(32,20,8,0.7)', overflowX: 'auto' }}>
         {MODAL_TABS.map(tab => {
-          const active = activeTab === tab.key
+          const active = activeTab === tab
           return (
             <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
+              key={tab}
+              onClick={() => setActiveTab(tab)}
               style={{
                 padding: '0.625rem 1rem',
                 fontSize: '0.8125rem',
@@ -456,7 +482,7 @@ function ModalContent({ data }: { data: ApiResponse }) {
                 transition: 'all 0.15s',
               }}
             >
-              {tab.label}
+              {copy[tab]}
             </button>
           )
         })}
@@ -466,7 +492,7 @@ function ModalContent({ data }: { data: ApiResponse }) {
       {activeTab === 'skill' && (
         <div className="px-5 py-3">
           {atkSkills.length === 0 && defSkills.length === 0 ? (
-            <p style={{ color: '#5a5070', fontSize: '0.75rem', fontStyle: 'italic' }}>스킬 정보 없음</p>
+            <p style={{ color: '#5a5070', fontSize: '0.75rem', fontStyle: 'italic' }}>{copy.noSkill}</p>
           ) : (
             <div className="flex flex-col gap-2">
               {atkSkills.map(skill => (
@@ -484,7 +510,7 @@ function ModalContent({ data }: { data: ApiResponse }) {
       {activeTab === 'passive' && (
         <div className="px-5 py-3">
           {sortedPassives.length === 0 ? (
-            <p style={{ color: '#5a5070', fontSize: '0.75rem', fontStyle: 'italic' }}>패시브 정보 없음</p>
+            <p style={{ color: '#5a5070', fontSize: '0.75rem', fontStyle: 'italic' }}>{copy.noPassive}</p>
           ) : (
             <>
               {/* 배틀 패시브 */}
@@ -492,7 +518,7 @@ function ModalContent({ data }: { data: ApiResponse }) {
                 <>
                   <div className="flex items-center gap-3 my-3">
                     <div className="flex-1" style={{ height: '1px', background: 'linear-gradient(90deg, transparent 0%, rgba(200,144,10,0.3) 100%)' }} />
-                    <span style={{ fontSize: '0.6875rem', fontWeight: 700, letterSpacing: '0.2em', color: '#c8900a', fontFamily: 'var(--font-heading)' }}>패시브</span>
+                    <span style={{ fontSize: '0.6875rem', fontWeight: 700, letterSpacing: '0.2em', color: '#c8900a', fontFamily: 'var(--font-heading)' }}>{copy.passive}</span>
                     <div className="flex-1" style={{ height: '1px', background: 'linear-gradient(90deg, rgba(200,144,10,0.3) 0%, transparent 100%)' }} />
                   </div>
                   <div className="flex flex-col gap-2">
@@ -507,7 +533,7 @@ function ModalContent({ data }: { data: ApiResponse }) {
                 <>
                   <div className="flex items-center gap-3 my-3">
                     <div className="flex-1" style={{ height: '1px', background: 'linear-gradient(90deg, transparent 0%, rgba(200,144,10,0.3) 100%)' }} />
-                    <span style={{ fontSize: '0.6875rem', fontWeight: 700, letterSpacing: '0.2em', color: '#c8900a', fontFamily: 'var(--font-heading)' }}>서포트 패시브</span>
+                    <span style={{ fontSize: '0.6875rem', fontWeight: 700, letterSpacing: '0.2em', color: '#c8900a', fontFamily: 'var(--font-heading)' }}>{copy.supportPassive}</span>
                     <div className="flex-1" style={{ height: '1px', background: 'linear-gradient(90deg, rgba(200,144,10,0.3) 0%, transparent 100%)' }} />
                   </div>
                   <div className="flex flex-col gap-2">
@@ -526,7 +552,7 @@ function ModalContent({ data }: { data: ApiResponse }) {
       {activeTab === 'sanity' && (
         <div className="px-5 py-3">
           {!panicInfo && sanityConditions.length === 0 ? (
-            <p style={{ color: '#5a5070', fontSize: '0.75rem', fontStyle: 'italic' }}>정신력 정보 없음</p>
+            <p style={{ color: '#5a5070', fontSize: '0.75rem', fontStyle: 'italic' }}>{copy.noSanity}</p>
           ) : (
             <div className="flex flex-col gap-3">
               {/* 패닉 타입 */}
@@ -539,14 +565,14 @@ function ModalContent({ data }: { data: ApiResponse }) {
                       color: '#80c9ff', border: '1px solid rgba(128,201,255,0.5)',
                       padding: '1px 6px', fontFamily: 'var(--font-heading)',
                     }}>
-                      패닉 타입
+                      {copy.panicType}
                     </span>
                   </div>
                   <div className="flex items-start gap-3 mb-2">
                     <div className="flex-shrink-0">
                       <Image
                         src={panicInfo.id === 9994 ? PANIC_LOVE_HATE_URL : PANIC_IMG_URL}
-                        alt="패닉"
+                        alt={copy.panic}
                         width={64}
                         height={64}
                         style={{ width: '4rem', height: 'auto', filter: 'drop-shadow(0 0 6px rgba(200,60,60,0.5))' }}
@@ -554,7 +580,7 @@ function ModalContent({ data }: { data: ApiResponse }) {
                     </div>
                     <div className="flex-1 min-w-0 pt-1">
                       <div style={{ fontSize: '0.6875rem', fontWeight: 800, letterSpacing: '0.06em', color: '#d4a050', marginBottom: '0.25rem', fontFamily: 'var(--font-heading)' }}>
-                        · 패닉 효과
+                        {copy.panicEffect}
                       </div>
                       {panicInfo.description && (
                         <p style={{ color: '#cccccc', fontSize: '0.6875rem', lineHeight: 1.75 }}>
@@ -582,7 +608,7 @@ function ModalContent({ data }: { data: ApiResponse }) {
                       color: '#80c9ff', border: '1px solid rgba(128,201,255,0.5)',
                       padding: '1px 6px', fontFamily: 'var(--font-heading)',
                     }}>
-                      기본 정신력 증가 조건
+                      {copy.sanityUp}
                     </span>
                   </div>
                   <div className="relative" style={{ color: '#cccccc', fontSize: '0.6875rem', lineHeight: 1.85, whiteSpace: 'pre-line' }}>
@@ -606,7 +632,7 @@ function ModalContent({ data }: { data: ApiResponse }) {
                       color: '#fe4b48', border: '1px solid rgba(254,75,72,0.5)',
                       padding: '1px 6px', fontFamily: 'var(--font-heading)',
                     }}>
-                      기본 정신력 감소 조건
+                      {copy.sanityDown}
                     </span>
                   </div>
                   <div className="relative" style={{ color: '#cccccc', fontSize: '0.6875rem', lineHeight: 1.85, whiteSpace: 'pre-line' }}>
@@ -709,7 +735,7 @@ function PassiveCard({ passive }: { passive: PassiveData }) {
           )}
           {passive.active_cond && (
             <span style={{ fontFamily: 'var(--font-heading)', fontSize: '0.8125rem', fontWeight: 700, color: '#e8dcc8' }}>
-              {passive.active_cond === 'resonance' ? '공명' : passive.active_cond === 'stock' ? '보유' : passive.active_cond}
+              {passive.active_cond === 'resonance' ? COPY[toLang(lang)].resonance : passive.active_cond === 'stock' ? COPY[toLang(lang)].stock : passive.active_cond}
             </span>
           )}
         </div>

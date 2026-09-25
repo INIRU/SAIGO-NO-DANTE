@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useTranslations } from 'next-intl'
 import Image, { type ImageProps } from 'next/image'
 import { getBlurDataURL } from '@/lib/utils/thumbhash'
 
@@ -39,6 +40,7 @@ export default function ImageWithFallback({
   ...props
 }: ImageWithFallbackProps) {
   const [errored, setErrored] = useState(false)
+  const t = useTranslations('common')
 
   // Determine if image is rendered at < 40x40 — skip thumbhash blur to avoid Next.js warning
   const dimW = resolveNumericDim(props.width) ?? resolveNumericDim(style?.width as string | undefined)
@@ -92,7 +94,7 @@ export default function ImageWithFallback({
               fontFamily: 'var(--font-heading)',
             }}
           >
-            이미지 제공 예정
+            {t('imagePending')}
           </span>
         )}
       </span>

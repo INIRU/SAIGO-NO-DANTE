@@ -6,18 +6,22 @@ import { getAllIdentitiesForBrowser, getSinners } from '@/lib/db/queries'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import IdentityBrowserClient from './IdentityBrowserClient'
 import JsonLd, { itemListJsonLd } from '@/components/seo/JsonLd'
+import { getTranslations } from 'next-intl/server'
+import { getLocalizedName } from '@/lib/i18n/localize'
+import type { SupportedLang } from '@/lib/i18n/types'
 
 const TITLE = { ko: '림버스 컴퍼니 인격 도감 — 전체 인격 목록', en: 'Limbus Company Identity List', ja: 'リンバスカンパニー 人格一覧' }
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params
+  const t = await getTranslations({ locale: lang, namespace: 'browser.meta' })
   return {
     title: TITLE[lang as keyof typeof TITLE] ?? TITLE.ko,
-    description: '림버스 컴퍼니 12인 수감자의 모든 인격을 한 곳에서 검색하고 필터링하세요. 키워드, 죄악, 공격유형, 등급별 필터 지원.',
+    description: t('identitiesDescription'),
     alternates: localeAlternates(lang, '/sinners/identities'),
     openGraph: {
-      title: '인격 전체 목록 | 최애의 관리자',
-      description: '200+ 인격을 키워드, 죄악, 공격유형으로 크로스 필터링하세요.',
+      title: t('identitiesOgTitle'),
+      description: t('identitiesOgDescription'),
     },
   }
 }
@@ -27,17 +31,18 @@ export default async function IdentitiesPage({ params }: { params: Promise<{ lan
   cacheLife('max')
   cacheTag(CACHE_TAGS.identities, CACHE_TAGS.gameData)
   const { lang } = await params
-  const [identities, sinners] = await Promise.all([
+  const [identities, sinners, t] = await Promise.all([
     getAllIdentitiesForBrowser(),
     getSinners(),
+    getTranslations({ locale: lang, namespace: 'browser' }),
   ])
 
   const identityListLd = itemListJsonLd({
-    name: '림버스 컴퍼니 인격 전체 목록',
-    description: '12인 수감자의 모든 인격 — 키워드, 죄악, 공격유형별 필터',
+    name: t('meta.identitiesListName'),
+    description: t('meta.identitiesOgDescription'),
     url: localeUrl(lang, '/sinners/identities'),
     items: identities.slice(0, 50).map((id, i) => ({
-      name: id.name_kr || id.name,
+      name: getLocalizedName({ name_kr: id.name_kr || id.name, name_en: id.name_en, name_jp: id.name_jp }, lang as SupportedLang),
       url: localeUrl(lang, `/sinners/${id.sinner_slug}/identities/${id.id}`),
       position: i + 1,
     })),

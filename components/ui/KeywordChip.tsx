@@ -3,6 +3,8 @@ import { getGiftKeywordColor, getGiftKeywordSlug, getGiftKeywordIconUrl } from '
 
 interface KeywordChipProps {
   keyword: string
+  /** Visible text when it differs from the keyword key (localized label). */
+  label?: string
   /** Size variant (default: 'sm') */
   size?: 'xs' | 'sm' | 'md'
   /** Show keyword icon (default: true) */
@@ -19,7 +21,7 @@ const SIZE_STYLES = {
   md: { fontSize: '0.75rem', padding: '0.25rem 0.625rem', gap: '0.3125rem', iconSize: 15, clip: 6 },
 } as const
 
-export default function KeywordChip({ keyword, size = 'sm', showIcon = true, color, className }: KeywordChipProps) {
+export default function KeywordChip({ keyword, label, size = 'sm', showIcon = true, color, className }: KeywordChipProps) {
   const kwColor = color ?? getGiftKeywordColor(keyword)
   const slug = getGiftKeywordSlug(keyword)
   const iconUrl = slug ? getGiftKeywordIconUrl(slug) : null
@@ -45,7 +47,7 @@ export default function KeywordChip({ keyword, size = 'sm', showIcon = true, col
       {showIcon && iconUrl && (
         <Image src={iconUrl} alt="" width={s.iconSize} height={s.iconSize} style={{ objectFit: 'contain', width: `${s.iconSize}px`, height: `${s.iconSize}px` }} />
       )}
-      {keyword}
+      {label ?? keyword}
     </span>
   )
 }

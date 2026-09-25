@@ -7,6 +7,8 @@ import { useSearchParams } from "next/navigation";
 import useSWR from "swr";
 import { showSuccess, showError } from "@/lib/toast";
 import { useHtmlFlag } from "@/hooks/useHtmlFlag";
+import { claimGuestPosts, useGuestPosts } from "@/hooks/useGuestPosts";
+import { getGuestCopy } from "@/lib/guest/copy";
 import MypageTabs, { MYPAGE_TABS, type MypageTab } from "./components/MypageTabs";
 import ProfileRail from "@/components/community/ProfileRail";
 import ProfileTab from "./components/ProfileTab";
@@ -68,7 +70,9 @@ export default function MypageClient() {
   const { status } = useSession(),
     router = useRouter(),
     search = useSearchParams();
-  const t = getCommunityCopy(useLocale());
+  const locale = useLocale();
+  const t = getCommunityCopy(locale);
+  const guestT = getGuestCopy(locale);
   const [followKind, setFollowKind] = useState<"following" | "followers">("following");
   const [activeTab, setActiveTab] = useState<MypageTab>("badges");
   const [eggs, setEggs] = useState<EasterEgg[]>([]);
@@ -81,6 +85,25 @@ export default function MypageClient() {
   }, [search]);
   const { data, error, isLoading, mutate } = useSWR<ProfileData>(status === "authenticated" ? "/api/profile" : null, fetcher);
   const community = useSWR<CommunityProfile>(status === "authenticated" ? "/api/community/me" : null, fetcher);
+  // Anonymous posts written in this browser before signing in can be moved to the account.
+  const guest = useGuestPosts(status === "authenticated");
+  const [claiming, setClaiming] = useState(false);
+  const guestDecks = guest.posts.data?.decks.length ?? 0;
+  const guestPlans = guest.posts.data?.plans.length ?? 0;
+  async function claimGuest() {
+    if (!guest.key) return;
+    setClaiming(true);
+    try {
+      const moved = await claimGuestPosts(guest.key);
+      guest.reloadKey();
+      await Promise.all([mutate(), community.mutate()]);
+      showSuccess(guestT.claimed(moved.decks, moved.plans));
+    } catch {
+      showError(guestT.claimFailed);
+    } finally {
+      setClaiming(false);
+    }
+  }
   useEffect(() => {
     if (status === "unauthenticated") router.replace("/login");
   }, [status, router]);
@@ -131,6 +154,12 @@ export default function MypageClient() {
           counts={{ badges: `${earned}/${badges.length}`, decks: data.stats.deckCount, planner: data.stats.planCount }} />
       </div>
       <div className={styles.main} role="tabpanel" id={`panel-${activeTab}`} aria-labelledby={`tab-${activeTab}`}>
+        {guestDecks + guestPlans > 0 && (
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-lg border border-[#5a4526] bg-[#17120c] px-4 py-2.5">
+            <p className="m-0 min-w-0 text-[0.9375rem] text-[#e8dcc8]">{guestT.notice(guestDecks, guestPlans)}</p>
+            <button type="button" className={styles.primary} onClick={claimGuest} disabled={claiming}>{claiming ? guestT.claiming : guestT.claim}</button>
+          </div>
+        )}
         {activeTab === "badges" && (
           <>
             <div className={styles.head}>

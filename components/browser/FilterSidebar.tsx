@@ -3,6 +3,7 @@
 // Design Ref: §5.3 — 반응형 사이드바 (데스크탑 sticky / 모바일 슬라이드업)
 import { useState, useEffect, useRef } from 'react'
 import { SlidersHorizontal, X } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 
 type Props = {
   children: React.ReactNode
@@ -10,6 +11,7 @@ type Props = {
 }
 
 export default function FilterSidebar({ children, activeCount }: Props) {
+  const t = useTranslations('browser')
   const [mobileOpen, setMobileOpen] = useState(false)
   const panelRef = useRef<HTMLDivElement>(null)
 
@@ -60,7 +62,7 @@ export default function FilterSidebar({ children, activeCount }: Props) {
           }}
         >
           <SlidersHorizontal size={16} />
-          필터{activeCount > 0 ? ` (${activeCount})` : ''}
+          {t('filter')}{activeCount > 0 ? ` (${activeCount})` : ''}
         </button>
       </div>
 
@@ -70,7 +72,7 @@ export default function FilterSidebar({ children, activeCount }: Props) {
           className="lg:hidden fixed inset-0 z-50"
           role="dialog"
           aria-modal="true"
-          aria-label="필터 패널"
+          aria-label={t('filterPanel')}
         >
           {/* 백드롭 */}
           <div
@@ -95,14 +97,14 @@ export default function FilterSidebar({ children, activeCount }: Props) {
               zIndex: 1,
             }}>
               <span className="text-sm font-semibold" style={{ color: 'var(--gold)' }}>
-                필터
+                {t('filter')}
               </span>
               <button
                 type="button"
                 onClick={() => setMobileOpen(false)}
                 className="grid h-10 w-10 place-items-center"
                 style={{ cursor: 'pointer', color: 'var(--text-muted)' }}
-                aria-label="필터 닫기"
+                aria-label={t('closeFilter')}
               >
                 <X size={20} />
               </button>

@@ -30,8 +30,8 @@ export async function GET() {
       .eq('id', userId)
       .single()
 
-    // The site nickname, not the Google account name, is what the site shows.
-    return NextResponse.json({ avatar_url: data?.avatar_url ?? null, username: data?.username ?? null })
+    // The site nickname, not the Google account name, is what the site shows. id lets pages tell the viewer's own posts apart.
+    return NextResponse.json({ id: userId, avatar_url: data?.avatar_url ?? null, username: data?.username ?? null })
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Internal Server Error'
     return NextResponse.json({ error: message }, { status: 500 })

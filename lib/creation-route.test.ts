@@ -5,13 +5,19 @@ vi.mock('next-auth/jwt', () => ({ getToken: token }))
 vi.mock('next-intl/middleware', () => ({ default: () => () => new Response(null, {status:200}) }))
 import { proxy } from '../proxy'
 beforeEach(() => { token.mockResolvedValue(null); vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ok:true,json:async()=>[]})) })
-it('guards creation routes in every locale and preserves query return paths', async () => {
+it('opens creation routes to guests in every locale, and sends suspended accounts to login with the return path', async () => {
   for (const locale of ['ko','en','ja']) for (const path of ['/decks/new?fork=abc','/planner?tab=gift']) {
-    const res=await proxy(new NextRequest(`http://localhost:3001/${locale}${path}`))
-    const target=new URL(res.headers.get('location')!)
+    token.mockResolvedValue(null)
+    expect((await proxy(new NextRequest(`http://localhost:3001/${locale}${path}`))).status).toBe(200)
+    token.mockResolvedValue({sub:'local-test',isSuspended:true})
+    const target=new URL((await proxy(new NextRequest(`http://localhost:3001/${locale}${path}`))).headers.get('location')!)
     expect(target.pathname).toBe(`/${locale}/login`)
     expect(target.searchParams.get('callbackUrl')).toBe(`/${locale}${path}`)
   }
+})
+it('keeps assist mode on the Korean site only', async () => {
+  expect((await proxy(new NextRequest('http://localhost:3001/ko/planner/run'))).status).toBe(200)
+  for (const locale of ['en','ja']) expect(new URL((await proxy(new NextRequest(`http://localhost:3001/${locale}/planner/run`))).headers.get('location')!).pathname).toBe(`/${locale}/planner/community`)
 })
 it('preserves public viewing and allows active sessions, but rejects suspended sessions', async () => {
   for (const path of ['/ko/decks','/ko/decks/abc','/ko/planner/community','/ko/planner/community/abc']) expect((await proxy(new NextRequest(`http://localhost:3001${path}`))).status).toBe(200)

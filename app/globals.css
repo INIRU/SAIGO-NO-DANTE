@@ -132,17 +132,18 @@
   --deck-filter-label-text: 0.875rem;
 }
 
-/* Japanese font override — Noto Sans JP for all text, no Korean-only fonts */
+/* Japanese: M PLUS 1p for all text (Dante's Planner uses HigashiOme Gothic C, an M+ derivative) */
 html[lang="ja"] {
-  --font-body: var(--font-noto-jp), sans-serif;
-  --font-heading: var(--font-noto-jp), sans-serif;
-  --font-serif: var(--font-noto-jp), sans-serif;
+  --font-body: var(--font-noto-jp), 'Hiragino Kaku Gothic ProN', 'Yu Gothic', 'Meiryo', sans-serif;
+  --font-heading: var(--font-heading-jp), 'Hiragino Kaku Gothic ProN', 'Yu Gothic', 'Meiryo', sans-serif;
+  --font-serif: var(--font-heading-jp), 'Hiragino Kaku Gothic ProN', 'Yu Gothic', 'Meiryo', sans-serif;
 }
 
-/* English font override */
+/* English: Pretendard for body and headings, like Dante's Planner */
 html[lang="en"] {
-  --font-body: var(--font-pretendard), var(--font-scdream), 'SCDream5 Fallback', 'Segoe UI', sans-serif;
-  --font-heading: var(--font-kotra-bold), var(--font-scdream), var(--font-pretendard), 'SCDream5 Fallback', sans-serif;
+  --font-body: var(--font-pretendard), 'Segoe UI', sans-serif;
+  --font-heading: var(--font-heading-latin), var(--font-pretendard), 'Segoe UI', sans-serif;
+  --font-serif: var(--font-heading-latin), var(--font-pretendard), 'Segoe UI', sans-serif;
 }
 
 * {

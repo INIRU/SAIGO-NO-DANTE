@@ -6,7 +6,7 @@ import Image from 'next/image'
 import styles from '@/styles/components/HeroGlitch.module.css'
 import { type IdentityWithSinner, getIdentityProfileUrl, BLUR_PLACEHOLDER } from '@/lib/data/sinners'
 import { getBlurDataURL } from '@/lib/utils/thumbhash'
-import { useLocale } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 
 type HeroSlide = { url: string; identity: IdentityWithSinner; gacksung: boolean }
 type Layer = { key: number; slide: HeroSlide; dur: number }
@@ -30,6 +30,7 @@ function requestIdle(callback: () => void) {
 // 화면 밖·숨은 탭에서는 animation-play-state로 줌과 타이머가 함께 멈춘다.
 export default function HeroGlitchSlider({ identities, onSlideChange }: HeroGlitchSliderProps) {
   const locale = useLocale()
+  const t = useTranslations('home.slide')
   const getName = (kr?: string | null, en?: string | null, jp?: string | null): string => {
     if (locale === 'en') return en ?? kr ?? ''
     if (locale === 'ja') return jp ?? kr ?? ''
@@ -188,13 +189,14 @@ export default function HeroGlitchSlider({ identities, onSlideChange }: HeroGlit
       {slides.length > 1 && (
         <div className="absolute bottom-5 right-5 flex gap-2" style={{ zIndex: 20 }}>
           {slides.map(s => {
-            const label = `${getName(s.identity.name_kr, s.identity.name_en, s.identity.name_jp)}${s.gacksung ? ' 각성' : ''}`
+            const name = getName(s.identity.name_kr, s.identity.name_en, s.identity.name_jp)
+            const label = s.gacksung ? t('awakened', { name }) : name
             const active = s.url === current.slide.url
             return (
               <button
                 key={s.url}
                 onClick={() => goTo(s)}
-                aria-label={`${label} 슬라이드 보기`}
+                aria-label={t('view', { name: label })}
                 aria-current={active ? 'true' : undefined}
                 className={`${styles.indicator} ${active ? styles.indicatorActive : ''}`}
                 title={label}

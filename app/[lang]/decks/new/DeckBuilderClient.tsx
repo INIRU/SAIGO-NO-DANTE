@@ -4,6 +4,8 @@ import BackLink from '@/components/navigation/BackLink'
 import { pendingNoteUploads, noteUploadInProgressMessage } from '@/lib/notes/images'
 
 import { showError, showSuccess } from '@/lib/toast'
+import { guestHeaders } from '@/lib/guest/key'
+import { getGuestCopy } from '@/lib/guest/copy'
 import { deleteTempSlot, saveTempSlot, type TempSlot } from '@/lib/drafts/temp-slots'
 import { DECK_DRAFTS_KEY, isDeckDraft, loadDeckDraftSlots, type DeckDraft } from '@/lib/drafts/deck-drafts'
 import TempSaveMenu from '@/components/ui/TempSaveMenu'
@@ -352,13 +354,15 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
     )
     const url = editMode ? `/api/decks/${editMode.deckId}` : '/api/decks'
     const method = editMode ? 'PATCH' : 'POST'
+    const signedIn = authStatus === 'authenticated'
     const res = await fetch(url, {
       method,
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...guestHeaders(signedIn) },
       body: JSON.stringify({ title, description, tags: [], main_keywords: effectiveMainKeywords, content_type: contentType, identitySlots, egoSlots: egoRows }),
     })
     setSaving(false)
     if (res.ok) {
+      if (!signedIn) showSuccess(editMode ? getGuestCopy(locale).updated : getGuestCopy(locale).posted)
       router.push(editMode ? `/decks/${editMode.deckId}` : '/decks', { locale: locale as SupportedLang })
     } else {
       const data = await res.json().catch(() => null)
@@ -514,16 +518,20 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
                 >
                   {codeCopied ? builderT('actions.copied') : builderT('actions.copyCode')}
                 </CompactButton>
-                {authStatus === 'authenticated' && (
-                  <CompactButton
-                    icon={Upload}
-                    onClick={handleSave}
-                    disabled={!title.trim() || identityCount < 12 || !contentType || saving}
-                    variant="primary"
-                    title={!contentType ? builderT('actions.contentRequired') : identityCount < 12 ? builderT('actions.identityRequired', { count: identityCount, total: sinners.length }) : ''}
-                  >
-                    {saving ? builderT('actions.saving') : editMode ? builderT('actions.save') : builderT('actions.upload')}
-                  </CompactButton>
+                <CompactButton
+                  icon={Upload}
+                  onClick={handleSave}
+                  disabled={authStatus === 'loading' || !title.trim() || identityCount < 12 || !contentType || saving}
+                  variant="primary"
+                  title={!contentType ? builderT('actions.contentRequired') : identityCount < 12 ? builderT('actions.identityRequired', { count: identityCount, total: sinners.length }) : ''}
+                >
+                  {saving ? builderT('actions.saving') : editMode ? builderT('actions.save') : builderT('actions.upload')}
+                </CompactButton>
+                {authStatus === 'unauthenticated' && (
+                  <p className="w-full text-right text-[0.8125rem] text-[var(--text-muted)]">
+                    {getGuestCopy(locale).saveHint}{' '}
+                    <Link href="/guest" className="text-[var(--gold-light)] underline-offset-4 hover:underline">{getGuestCopy(locale).manage}</Link>
+                  </p>
                 )}
               </div>
             </div>

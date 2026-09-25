@@ -127,7 +127,9 @@
       "label": "ページ移動",
       "top": "ページの先頭へ",
       "bottom": "本文の末尾へ"
-    }
+    },
+    "confirm": "確認",
+    "imagePending": "画像準備中"
   },
   "globalSearch": {
     "ariaLabel": "グローバル検索",
@@ -1642,6 +1644,10 @@
       "experience": "経験値計算機",
       "lunacy": "月間狂気計算機",
       "random": "ランダム編成"
+    },
+    "slide": {
+      "view": "{name}を表示",
+      "awakened": "{name}（同期化3）"
     }
   },
   "site": {
@@ -1902,7 +1908,8 @@
     "noSkillData": "スキルデータなし",
     "noCorSkillData": "侵蝕スキルデータなし",
     "backToEgoList": "EGO一覧へ",
-    "sinResistance": "罪悪耐性"
+    "sinResistance": "罪悪耐性",
+    "detailTitle": "E.G.O詳細"
   },
   "keyword": {
     "maxStack": "最大"
@@ -2056,5 +2063,82 @@
     "keywordImpossible": "条件を満たす人格が足りません",
     "invalidCode": "コレクションコードが正しくありません",
     "decodeFailed": "コレクションコードを読み込めませんでした"
+  },
+  "browser": {
+    "identitiesTitle": "全人格",
+    "egoTitle": "全E.G.O",
+    "back": "囚人一覧に戻る",
+    "countAll": "全<b>{total}件</b>",
+    "countFiltered": "<b>{filtered}件</b> / 全{total}件",
+    "sortPrefix": "並び替え:",
+    "sort": {
+      "default": "デフォルト",
+      "name": "名前順",
+      "rarity": "レアリティ順",
+      "grade": "等級順"
+    },
+    "nameSearch": "名前検索",
+    "identityPlaceholder": "人格名...",
+    "identitySearchLabel": "人格名で検索",
+    "egoPlaceholder": "E.G.O名...",
+    "egoSearchLabel": "E.G.O名で検索",
+    "sinner": "囚人",
+    "rarity": "レアリティ",
+    "rarityStar": "{n}★",
+    "season": "シーズン",
+    "seasonBase": "恒常",
+    "sin": "罪悪属性",
+    "skillType": "スキルタイプ",
+    "atk": {
+      "slash": "斬撃",
+      "pierce": "貫通",
+      "blunt": "打撃",
+      "evade": "回避",
+      "defense": "防御",
+      "counter": "反撃"
+    },
+    "weight": "攻撃加重値",
+    "coins": "コイン数",
+    "egoGrade": "E.G.O等級",
+    "keyword": "キーワード",
+    "keywordPlaceholder": "キーワードを入力してEnter...",
+    "keywordSearchLabel": "キーワード検索",
+    "keywordRemove": "{kw}フィルターを解除",
+    "added": "追加済み",
+    "filter": "フィルター",
+    "filterPanel": "フィルターパネル",
+    "closeFilter": "フィルターを閉じる",
+    "reset": "フィルターをリセット（{count}件）",
+    "resetAll": "すべてのフィルターをリセット",
+    "emptyIdentity": "条件に合う人格がありません",
+    "emptyEgo": "条件に合うE.G.Oがありません",
+    "meta": {
+      "identitiesDescription": "リンバスカンパニー12人の囚人の全人格を検索・絞り込み。キーワード、罪悪属性、攻撃タイプ、レアリティで絞り込めます。",
+      "identitiesOgTitle": "全人格一覧 | SAIGO NO DANTE",
+      "identitiesOgDescription": "200以上の人格をキーワード・罪悪属性・攻撃タイプで絞り込み。",
+      "identitiesListName": "リンバスカンパニー 人格一覧",
+      "egoDescription": "リンバスカンパニー12人の囚人の全E.G.Oを検索・絞り込み。等級、罪悪属性、キーワードで絞り込めます。",
+      "egoOgTitle": "全E.G.O一覧 | SAIGO NO DANTE",
+      "egoOgDescription": "全E.G.Oを等級・罪悪属性で絞り込み。",
+      "egoListName": "リンバスカンパニー E.G.O一覧"
+    }
+  },
+  "identityDecks": {
+    "searchPlaceholder": "タイトル、説明、タグ、キーワードで検索...",
+    "keyword": "キーワード",
+    "tabHint": "Tabで選択",
+    "latest": "新着順",
+    "popular": "人気順",
+    "count": "デッキ{count}件",
+    "filtered": "（絞り込み中）",
+    "noResults": "検索結果がありません。",
+    "empty": "この人格を使ったデッキはまだありません。",
+    "loading": "読み込み中..."
+  },
+  "collectionPage": {
+    "title": "所持状況",
+    "description": "リンバスカンパニーの人格・E.G.Oの所持状況をチェックしてURLで共有できます。",
+    "sharedTitle": "共有された所持状況",
+    "identities": "人格"
   }
 }

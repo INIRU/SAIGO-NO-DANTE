@@ -1,10 +1,9 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
 import { RARITY_ICON_MAP } from '@/lib/constants/game'
 import { RARITIES } from '@/lib/types/browser'
 import FilterToggleGroup, { type FilterToggleItem } from './FilterToggleGroup'
-
-const RARITY_LABELS: Record<number, string> = { 1: '1성', 2: '2성', 3: '3성' }
 
 type Props = {
   selected: Set<number>
@@ -12,15 +11,16 @@ type Props = {
 }
 
 export default function RarityFilter({ selected, onToggle }: Props) {
+  const t = useTranslations('browser')
   const items: FilterToggleItem<number>[] = RARITIES.map(r => ({
     value: r,
     icon: RARITY_ICON_MAP[r],
-    label: RARITY_LABELS[r],
+    label: t('rarityStar', { n: r }),
   }))
 
   return (
     <FilterToggleGroup
-      sectionLabel="등급"
+      sectionLabel={t('rarity')}
       items={items}
       selected={selected}
       onToggle={onToggle}

@@ -25,7 +25,8 @@
   -webkit-text-stroke: 0.09em rgba(12, 8, 4, 0.9); paint-order: stroke fill;
   text-shadow: 0 0.06em 0.18em rgba(0, 0, 0, 0.9);
 }
-.name[data-locale='en'], .name[data-locale='ja'] { font-family: var(--font-sans); font-weight: 800; font-size: 9.5cqi; }
+.name[data-locale='en'] { font-family: var(--font-mikodacs), var(--font-pretendard), sans-serif; font-weight: 400; font-size: 9.5cqi; }
+.name[data-locale='ja'] { font-family: var(--font-corporate-logo), var(--font-noto-jp), sans-serif; font-weight: 700; font-size: 9.5cqi; }
 
 .card[data-deployed] :is(.art, .rarity, .badge, .label, .frame) { filter: brightness(0.56) saturate(0.84); }
 

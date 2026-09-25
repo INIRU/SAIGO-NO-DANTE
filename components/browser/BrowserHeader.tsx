@@ -3,6 +3,7 @@
 // Design Ref: §5.6 — 브라우저 헤더 (타이틀 + 카운트 + 정렬)
 import { Link } from '@/lib/i18n/navigation'
 import { ArrowLeft } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import Dropdown, { type DropdownOption } from '@/components/ui/Dropdown'
 import type { SortOption } from '@/lib/types/browser'
 
@@ -25,7 +26,9 @@ export default function BrowserHeader({
   sortOptions,
   backHref = '/sinners',
 }: Props) {
+  const t = useTranslations('browser')
   const showFiltered = filteredCount !== totalCount
+  const gold = (chunks: React.ReactNode) => <span style={{ color: 'var(--gold)' }}>{chunks}</span>
 
   return (
     <div className="mb-6">
@@ -35,7 +38,7 @@ export default function BrowserHeader({
           href={backHref}
           className="transition-colors hover:text-[var(--gold)]"
           style={{ color: '#666' }}
-          aria-label="수감자 목록으로 돌아가기"
+          aria-label={t('back')}
         >
           <ArrowLeft size={20} />
         </Link>
@@ -47,17 +50,15 @@ export default function BrowserHeader({
       {/* 카운트 + 정렬 */}
       <div className="flex items-center justify-between">
         <p aria-live="polite" style={{ color: '#888', fontSize: '0.8125rem' }}>
-          {showFiltered ? (
-            <><span style={{ color: 'var(--gold)' }}>{filteredCount}개</span> / 전체 {totalCount}개</>
-          ) : (
-            <>전체 <span style={{ color: 'var(--gold)' }}>{totalCount}개</span></>
-          )}
+          {showFiltered
+            ? t.rich('countFiltered', { filtered: filteredCount, total: totalCount, b: gold })
+            : t.rich('countAll', { total: totalCount, b: gold })}
         </p>
         <Dropdown
           value={sort}
           options={sortOptions}
           onChange={onSortChange}
-          prefix="정렬:"
+          prefix={t('sortPrefix')}
           defaultValue={'default' as SortOption}
         />
       </div>

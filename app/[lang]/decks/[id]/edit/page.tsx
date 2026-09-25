@@ -10,19 +10,13 @@ import { normalizeUptie } from '@/lib/decks/deck-identity-uptie'
 export default async function EditDeckPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
 
-  // 인증 확인
+  // 인증 확인. 익명 덱은 로그인 없이 열고, 저장할 때 브라우저의 익명 키로 소유를 확인한다.
   const session = await getServerSession(authOptions)
-  if (!session?.user?.email) {
-    redirect('/login')
-  }
 
   const admin = createAdminClient()
-  const userId = await findOrCreateSupabaseUser(
-    admin,
-    session.user.email,
-    session.user.name,
-    session.user.image,
-  )
+  const userId = session?.user?.email
+    ? await findOrCreateSupabaseUser(admin, session.user.email, session.user.name, session.user.image)
+    : null
 
   const deckSelectWithMainKeywords = `
     id, user_id, title, description, tags, main_keywords, content_type,
@@ -71,8 +65,11 @@ export default async function EditDeckPage({ params }: { params: Promise<{ id: s
   }
 
   // 소유자 또는 관리자만 수정 가능
-  const isOwner = deck.user_id === userId
-  const isAdmin = session.user?.isAdmin === true
+  if (!userId && deck.user_id !== null) {
+    redirect('/login')
+  }
+  const isOwner = userId ? deck.user_id === userId : deck.user_id === null
+  const isAdmin = session?.user?.isAdmin === true
   if (!isOwner && !isAdmin) {
     redirect(`/decks/${id}`)
   }

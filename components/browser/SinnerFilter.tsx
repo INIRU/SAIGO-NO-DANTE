@@ -1,6 +1,9 @@
 'use client'
 
+import { useLocale, useTranslations } from 'next-intl'
 import type { Sinner } from '@/lib/types'
+import { getLocalizedName } from '@/lib/i18n/localize'
+import type { SupportedLang } from '@/lib/i18n/types'
 import { getSinnerLogoUrl } from '@/lib/utils/images'
 import FilterToggleGroup, { type FilterToggleItem } from './FilterToggleGroup'
 
@@ -11,15 +14,17 @@ type Props = {
 }
 
 export default function SinnerFilter({ sinners, selected, onToggle }: Props) {
+  const lang = useLocale() as SupportedLang
+  const t = useTranslations('browser')
   const items: FilterToggleItem<string>[] = sinners.map(s => ({
     value: s.id,
     icon: getSinnerLogoUrl(s.id),
-    label: s.name_kr,
+    label: getLocalizedName(s, lang),
   }))
 
   return (
     <FilterToggleGroup
-      sectionLabel="수감자"
+      sectionLabel={t('sinner')}
       items={items}
       selected={selected}
       onToggle={onToggle}

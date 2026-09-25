@@ -34,7 +34,8 @@ const KEYWORD_TRANSLATION_KEYS: Record<string, keyof typeof translations> = {
 
 /** Gift keyword ('화상', '공통', ...) in the page language. */
 export function localizeGiftKeyword(keyword: string, lang: SupportedLang): string {
-  const key = KEYWORD_TRANSLATION_KEYS[keyword]
+  // DB rows use variants such as '공통 ' or '공통(…)'; the catalog groups them all under 공통.
+  const key = KEYWORD_TRANSLATION_KEYS[keyword.startsWith('공통') ? '공통' : keyword.trim()]
   const entry = key ? (translations[key] as Record<string, string>) : null
   return entry?.[lang] ?? keyword
 }
@@ -263,7 +264,7 @@ export default function GiftDetailModal({ gift, lang, onClose, initialLevel = 0,
                 {gift.name}
               </h2>
               <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                {gift.keyword && <KeywordChip keyword={gift.keyword} size="md" />}
+                {gift.keyword && <KeywordChip keyword={gift.keyword} label={localizeGiftKeyword(gift.keyword, lang)} size="md" />}
                 {gift.badges?.map(b => (
                   <span key={b.label} className="inline-flex items-center rounded-sm border px-2" style={{ minHeight: '1.5rem', fontSize: '0.75rem', color: BADGE_TONES[b.tone].color, borderColor: BADGE_TONES[b.tone].border }}>
                     {b.label}

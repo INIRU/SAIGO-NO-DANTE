@@ -111,6 +111,7 @@ type RecommendationSourceDeck = {
   comment_count: number | null
   created_at: string
   profiles: { username: string | null } | { username: string | null }[] | null
+  guest_tag?: string | null
   deck_identities: Array<{
     slot_order: number | null
     gacksung: boolean | null
@@ -240,6 +241,7 @@ function toRecommendationSummary(deck: RecommendationSourceDeck): DeckRecommenda
     comment_count: deck.comment_count ?? 0,
     created_at: deck.created_at,
     username: getUsername(deck.profiles),
+    guest_tag: deck.guest_tag ?? null,
     deck_identities: (deck.deck_identities ?? []).map((slot) => ({
       slot_order: slot.slot_order ?? 99,
       gacksung: slot.gacksung ?? false,
@@ -443,7 +445,7 @@ async function fetchDeckRecommendations(
       .from('decks')
       .select(`
         id, lang, title, description, tags, main_keywords, content_type, vote_count, view_count, comment_count, created_at,
-        profiles!decks_user_id_fkey(username),
+        guest_tag, profiles!decks_user_id_fkey(username),
         deck_identities(
           slot_order, gacksung, uptie,
           identities(id, sinner_id, folder_name, game_id, keywords, skill_keyword_list, affiliation, association_list, name, name_kr, name_en, name_jp)
@@ -525,29 +527,30 @@ async function getCachedDeckMetadata(lang: 'ko' | 'en' | 'ja', id: string): Prom
   if (error) Sentry.captureException(error, { tags: { location: 'decks/[id]/page:generateMetadata' }, extra: { msg: 'Failed to fetch deck metadata' } })
 
   if (!data) {
-    return { title: '덱을 찾을 수 없습니다' }
+    return { title: { ko: '덱을 찾을 수 없습니다', en: 'Deck not found', ja: 'デッキが見つかりません' }[lang] }
   }
 
   const title = data.title
   const description = data.description
     ? notePlainText(data.description).slice(0, 160)
-    : `${data.title} — 림버스 컴퍼니 덱 빌드`
+    : `${data.title} — ${{ ko: '림버스 컴퍼니 덱 빌드', en: 'Limbus Company deck build', ja: 'リンバスカンパニー デッキ構築' }[lang]}`
   const canonical = absoluteUrl(`/${lang}/decks/${id}`)
   const ogImage = absoluteUrl(`/${lang}/decks/${id}/opengraph-image`)
+  const boardName = { ko: '덱 게시판', en: 'Deck Board', ja: 'デッキ掲示板' }[lang]
 
   return {
     title,
     description,
     alternates: localeAlternates(lang, `/decks/${id}`),
     openGraph: {
-      title: `${title} | 덱 게시판`,
+      title: `${title} | ${boardName}`,
       description,
       url: canonical,
       images: [{ url: ogImage, width: 1200, height: 630, alt: `${title} | SAIGO NO DANTE` }],
     },
     twitter: {
       card: 'summary_large_image',
-      title: `${title} | 덱 게시판`,
+      title: `${title} | ${boardName}`,
       description,
       images: [ogImage],
     },
@@ -573,7 +576,7 @@ async function getCachedDeckDetailPayload(lang: 'ko' | 'en' | 'ja', id: string) 
         .from('decks')
         .select(`
           id, lang, user_id, title, description, tags, main_keywords, content_type, vote_count, view_count, created_at,
-          profiles!decks_user_id_fkey(username),
+          guest_tag, profiles!decks_user_id_fkey(username),
           deck_identities(
             slot_order, gacksung, uptie, s1_count, s2_count, s3_count,
             identities(

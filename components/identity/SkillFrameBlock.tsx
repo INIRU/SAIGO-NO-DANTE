@@ -174,7 +174,7 @@ export default function SkillFrameBlock({
                 <Image
                   key={i}
                   src={isUb ? COIN_IMAGES.unbreakable : COIN_IMAGES.normal}
-                  alt={isUb ? '파괴 불가 코인' : '코인'}
+                  alt={isUb ? t('identity.skills.unbreakableCoin') : t('identity.skills.coin')}
                   width={16} height={16}
                   style={{ width: coinIconSize, height: coinIconSize }}
                 />

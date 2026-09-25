@@ -1,7 +1,8 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
 import { ATK_TYPE_ICON_MAP } from '@/lib/constants/game'
-import { ATK_TYPES, ATK_TYPE_LABELS } from '@/lib/types/browser'
+import { ATK_TYPES } from '@/lib/types/browser'
 import FilterToggleGroup, { type FilterToggleItem } from './FilterToggleGroup'
 
 type Props = {
@@ -10,15 +11,16 @@ type Props = {
 }
 
 export default function AtkTypeFilter({ selected, onToggle }: Props) {
-  const items: FilterToggleItem<string>[] = ATK_TYPES.map(t => ({
-    value: t,
-    icon: ATK_TYPE_ICON_MAP[t],
-    label: ATK_TYPE_LABELS[t],
+  const t = useTranslations('browser')
+  const items: FilterToggleItem<string>[] = ATK_TYPES.map(type => ({
+    value: type,
+    icon: ATK_TYPE_ICON_MAP[type],
+    label: t(`atk.${type}`),
   }))
 
   return (
     <FilterToggleGroup
-      sectionLabel="스킬 유형"
+      sectionLabel={t('skillType')}
       items={items}
       selected={selected}
       onToggle={onToggle}

@@ -106,7 +106,7 @@ export default function IdentityPortraitSection({
             className="absolute top-4 right-4 z-10 p-2 rounded-full transition-colors hover:bg-white/10"
             style={{ color: '#aaa', cursor: 'pointer' }}
             onClick={closeFullArt}
-            aria-label="닫기"
+            aria-label={t('common.close')}
           >
             <X size={24} />
           </button>
@@ -242,7 +242,8 @@ export default function IdentityPortraitSection({
         </div>
 
         {/* 인격 대사 */}
-        {identity.quote && (
+        {/* Quotes exist only in Korean; hide them on en/ja pages. */}
+        {identity.quote && locale === 'ko' && (
           <blockquote
             className="mx-auto max-w-[42ch] border-t border-white/10 px-2 pt-4 text-[.8125rem] italic leading-[1.85] break-words"
             style={{

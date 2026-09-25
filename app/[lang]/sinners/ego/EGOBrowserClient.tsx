@@ -3,6 +3,7 @@
 // Design Ref: §5.1 — EGO 전체 브라우저 클라이언트
 import { useState, useMemo } from 'react'
 import { Search } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { motion, useReducedMotion } from 'motion/react'
 import type { Sinner } from '@/lib/types'
 import type { EGOBrowserItem, SortOption } from '@/lib/types/browser'
@@ -24,13 +25,13 @@ type Props = {
   sinners: Sinner[]
 }
 
-const SORT_OPTIONS: DropdownOption<SortOption>[] = [
-  { value: 'default', label: '기본' },
-  { value: 'name', label: '이름순' },
-  { value: 'grade', label: '등급순' },
-]
-
 export default function EGOBrowserClient({ egos, sinners }: Props) {
+  const t = useTranslations('browser')
+  const sortOptions: DropdownOption<SortOption>[] = [
+    { value: 'default', label: t('sort.default') },
+    { value: 'name', label: t('sort.name') },
+    { value: 'grade', label: t('sort.grade') },
+  ]
   const [nameQuery, setNameQuery] = useState('')
   const shouldReduceMotion = useReducedMotion()
 
@@ -46,7 +47,9 @@ export default function EGOBrowserClient({ egos, sinners }: Props) {
     if (!q) return filterResult
     return filterResult.filter(e =>
       (e.name_kr || '').toLowerCase().includes(q) ||
-      (e.name || '').toLowerCase().includes(q)
+      (e.name || '').toLowerCase().includes(q) ||
+      (e.name_en || '').toLowerCase().includes(q) ||
+      (e.name_jp || '').toLowerCase().includes(q)
     )
   }, [filterResult, nameQuery])
 
@@ -60,12 +63,12 @@ export default function EGOBrowserClient({ egos, sinners }: Props) {
         variants={shouldReduceMotion ? undefined : workbenchReveal}
       >
         <BrowserHeader
-          title="E.G.O 전체"
+          title={t('egoTitle')}
           totalCount={totalCount}
           filteredCount={filteredCount}
           sort={sort}
           onSortChange={setSort}
-          sortOptions={SORT_OPTIONS}
+          sortOptions={sortOptions}
         />
       </motion.div>
 
@@ -81,7 +84,7 @@ export default function EGOBrowserClient({ egos, sinners }: Props) {
             {/* 이름 검색 */}
             <div>
               <div className={filterStyles.label}>
-                이름 검색
+                {t('nameSearch')}
               </div>
               <div className="relative">
                 <Search size={14} className="absolute left-2 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-muted)' }} aria-hidden />
@@ -89,9 +92,9 @@ export default function EGOBrowserClient({ egos, sinners }: Props) {
                   type="text"
                   value={nameQuery}
                   onChange={e => setNameQuery(e.target.value)}
-                  placeholder="E.G.O 이름..."
+                  placeholder={t('egoPlaceholder')}
                   className={filterStyles.input}
-                  aria-label="E.G.O 이름 검색"
+                  aria-label={t('egoSearchLabel')}
                 />
               </div>
             </div>
@@ -129,7 +132,7 @@ export default function EGOBrowserClient({ egos, sinners }: Props) {
               animate="animate"
               variants={shouldReduceMotion ? undefined : workbenchReveal}
             >
-              <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>조건에 맞는 E.G.O가 없습니다</p>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>{t('emptyEgo')}</p>
             </motion.div>
           ) : (
             <motion.div

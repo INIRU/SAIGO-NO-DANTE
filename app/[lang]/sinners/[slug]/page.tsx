@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { localeAlternates, localeUrl } from '@/lib/seo/metadata'
 import { getLocalizedName } from '@/lib/i18n/localize'
+import { translations } from '@/lib/i18n/translations'
 import { Suspense } from 'react'
 import { cacheLife, cacheTag } from 'next/cache'
 import { getSinnerById } from '@/lib/db/queries'
@@ -27,18 +28,36 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
   const lang: SupportedLang = rawLang === 'en' || rawLang === 'ja' ? rawLang : 'ko'
   cacheTag(CACHE_TAGS.sinner(slug), CACHE_TAGS.sinners, CACHE_TAGS.gameData)
   const sinner = await getSinnerById(slug)
-  if (!sinner) return { title: '수감자를 찾을 수 없습니다', robots: { index: false } }
+  if (!sinner) return { title: { ko: '수감자를 찾을 수 없습니다', en: 'Sinner not found', ja: '囚人が見つかりません' }[lang], robots: { index: false } }
   const name = getLocalizedName({ name_kr: sinner.name_kr, name_en: sinner.name, name_jp: sinner.name_jp }, lang)
-  const title = lang === 'ko'
-    ? `${sinner.name_kr} 인격·E.G.O 목록 — 림버스 컴퍼니 수감자`
-    : lang === 'ja' ? `${name} 人格・E.G.O一覧` : `${name} Identities & E.G.O`
+  const desc = translations[`sinnerDetail.desc.${slug}` as keyof typeof translations]?.[lang] ?? sinner.description
+  const copy = {
+    ko: {
+      title: `${sinner.name_kr} 인격·E.G.O 목록 — 림버스 컴퍼니 수감자`,
+      description: `${sinner.name_kr}의 모든 인격과 EGO — ${sinner.description ?? `Limbus Company ${sinner.name_kr} 수감자 정보`}`,
+      ogTitle: `${sinner.name_kr} | 최애의 관리자`,
+      ogDescription: `${sinner.name_kr}의 인격, EGO, 스킬 데이터를 확인하세요.`,
+    },
+    en: {
+      title: `${name} Identities & E.G.O`,
+      description: `Every Identity and E.G.O for ${name} in Limbus Company. ${desc ?? ''}`.trim(),
+      ogTitle: `${name} | SAIGO NO DANTE`,
+      ogDescription: `${name}'s Identities, E.G.O and skill data.`,
+    },
+    ja: {
+      title: `${name} 人格・E.G.O一覧`,
+      description: `リンバスカンパニー ${name}の全人格とE.G.O。${desc ?? ''}`,
+      ogTitle: `${name} | SAIGO NO DANTE`,
+      ogDescription: `${name}の人格、E.G.O、スキルデータ。`,
+    },
+  }[lang]
   return {
-    title,
-    description: `${sinner.name_kr}의 모든 인격과 EGO — ${sinner.description ?? `Limbus Company ${sinner.name_kr} 수감자 정보`}`,
+    title: copy.title,
+    description: copy.description,
     alternates: localeAlternates(lang, `/sinners/${slug}`),
     openGraph: {
-      title: `${sinner.name_kr} | 최애의 관리자`,
-      description: `${sinner.name_kr}의 인격, EGO, 스킬 데이터를 확인하세요.`,
+      title: copy.ogTitle,
+      description: copy.ogDescription,
     },
   }
 }
@@ -93,9 +112,9 @@ export default async function SinnerPage({ params }: { params: Promise<{ slug: s
   return (
     <>
       <JsonLd data={breadcrumbJsonLd([
-        { name: '홈', url: siteUrl },
-        { name: '수감자', url: localeUrl(lang, '/sinners') },
-        { name: sinner.name_kr, url: localeUrl(lang, `/sinners/${slug}`) },
+        { name: translations['nav.home'][lang], url: siteUrl },
+        { name: translations['nav.sinners'][lang], url: localeUrl(lang, '/sinners') },
+        { name: getLocalizedName({ name_kr: sinner.name_kr, name_en: sinner.name, name_jp: sinner.name_jp }, lang), url: localeUrl(lang, `/sinners/${slug}`) },
       ])} />
       {profileUrl && (
         <JsonLd data={gameCharacterJsonLd({

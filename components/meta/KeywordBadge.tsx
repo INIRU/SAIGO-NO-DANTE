@@ -2,7 +2,9 @@
 
 import Image from 'next/image'
 import { SIN_COLORS } from '@/lib/data/sinners'
-import { useKeywordData } from '@/components/providers/KeywordProvider'
+import { useLocale } from 'next-intl'
+import { useKeywordData, useKeywords } from '@/components/providers/KeywordProvider'
+import { localizeDeckKeyword } from '@/components/decks/decks-types'
 
 interface KeywordBadgeProps {
   keyword: string
@@ -13,6 +15,7 @@ export default function KeywordBadge({ keyword }: KeywordBadgeProps) {
   const sin = kwSinMap[keyword]
   const color = sin ? SIN_COLORS[sin] : '#888'
   const iconUrl = getIconUrl(keyword)
+  const label = localizeDeckKeyword(keyword, useKeywords()[keyword], useLocale())
 
   return (
     <span
@@ -30,7 +33,7 @@ export default function KeywordBadge({ keyword }: KeywordBadgeProps) {
       {iconUrl && (
         <Image src={iconUrl} alt="" width={12} height={12} style={{ display: 'inline-block' }} />
       )}
-      {keyword}
+      {label}
     </span>
   )
 }

@@ -8,6 +8,8 @@ import { Copy, GitFork, Pencil, Trash2, Check, Play } from 'lucide-react'
 import { saveDraftToLocal, savePlanForRun } from '@/lib/planner/encoder'
 import { encodeDeckCode } from '@/components/deck-builder/deckCodeUtils'
 import { showSuccess, showError } from '@/lib/toast'
+import { guestHeaders } from '@/lib/guest/key'
+import { getGuestCopy } from '@/lib/guest/copy'
 import ConfirmModal from '@/components/ui/ConfirmModal'
 import type { Difficulty, FloorDifficulty, IdentitySlot as PlannerIdentitySlot, EgoSlot as PlannerEgoSlot, FloorEntry as PlannerFloorEntry } from '@/lib/planner/types'
 import { getLegacyPlanFloorDifficulty, isAllowedFloorDifficulty, isFloorDifficulty } from '@/lib/planner/floor-difficulty'
@@ -82,6 +84,8 @@ interface Props {
   egos: EgoData[]
   isOwner: boolean
   isAdmin: boolean
+  /** Signed-out visitor whose browser key wrote this plan: writes send the key. */
+  guestOwner?: boolean
 }
 
 export default function PlanActions({
@@ -99,11 +103,13 @@ export default function PlanActions({
   egos,
   isOwner,
   isAdmin,
+  guestOwner = false,
 }: Props) {
   const router = useRouter()
   const t = useTranslations('planner.detail')
   const tCommon = useTranslations('common')
-  const showAssist = assistAvailable(useLocale())
+  const locale = useLocale()
+  const showAssist = assistAvailable(locale)
   const [codeCopied, setCodeCopied] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
 
@@ -210,8 +216,9 @@ export default function PlanActions({
 
   const handleDelete = async () => {
     try {
-      const res = await fetch(`/api/planner/${planId}`, { method: 'DELETE' })
+      const res = await fetch(`/api/planner/${planId}`, { method: 'DELETE', headers: guestOwner ? guestHeaders(false) : {} })
       if (res.ok) {
+        if (guestOwner) showSuccess(getGuestCopy(locale).deleted)
         router.push('/planner/community')
       } else {
         const data = await res.json()

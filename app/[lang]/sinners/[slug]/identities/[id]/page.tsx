@@ -10,7 +10,8 @@ import { getIdentityInfoUrl, getIdentityProfileUrl } from '@/lib/utils/images'
 import dynamic from 'next/dynamic'
 const IdentityDetailClient = dynamic(() => import('./IdentityDetailClient'))
 import JsonLd, { breadcrumbJsonLd, gameCharacterJsonLd } from '@/components/seo/JsonLd'
-import { getLocalizedName } from '@/lib/i18n/localize'
+import { getLocalizedName, getLocalizedKeywordName } from '@/lib/i18n/localize'
+import { getKeywordData } from '@/lib/keywords/server-data'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import type { SupportedLang } from '@/lib/i18n/types'
 
@@ -29,17 +30,18 @@ export async function generateMetadata({
   const { lang: rawLang, slug, id } = await params
   const lang = (['ko', 'en', 'ja'].includes(rawLang) ? rawLang : 'ko') as SupportedLang
   cacheTag(CACHE_TAGS.sinner(slug), CACHE_TAGS.identities, CACHE_TAGS.gameData)
-  const [sinner, identity, t] = await Promise.all([
+  const [sinner, identity, t, keywordData] = await Promise.all([
     getSinnerById(slug),
     getIdentityById(id),
     getTranslations({ locale: lang }),
+    getKeywordData(),
   ])
   if (!sinner || !identity) return { title: t('identity.notFound'), robots: { index: false } }
 
   const sinnerName = getLocalizedName({ name_kr: sinner.name_kr, name_en: sinner.name, name_jp: sinner.name_jp }, lang)
   const identityName = getLocalizedName(identity, lang)
   const rarityStr = identity.rarity === 3 ? t('identity.rarity.3') : identity.rarity === 2 ? t('identity.rarity.2') : t('identity.rarity.1')
-  const keywordsStr = identity.keywords?.length ? identity.keywords.slice(0, 3).join(', ') : ''
+  const keywordsStr = identity.keywords?.length ? identity.keywords.slice(0, 3).map(kw => getLocalizedKeywordName(kw, keywordData[kw], lang)).join(', ') : ''
   const descSuffix = t('identity.meta.description')
   const description = `${sinnerName} ${identityName} — ${rarityStr}${keywordsStr ? `, ${keywordsStr}` : ''}. ${descSuffix}.`
   const canonical = `${SITE_URL}/${lang}/sinners/${slug}/identities/${id}`
