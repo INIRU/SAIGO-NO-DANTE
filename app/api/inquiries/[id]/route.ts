@@ -1,13 +1,13 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
-import { requireActiveUser } from '@/lib/auth'
+import { requireUser } from '@/lib/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { findOrCreateSupabaseUser } from '@/lib/supabase/findOrCreateUser'
 import { INQUIRY_FIELDS, sortMessages, statusAfterMessage, supportMessageSchema, type Inquiry } from '@/lib/support'
 import { checkRequestRateLimit, rateLimitResponse } from '@/lib/rate-limit'
 type Params = { params: Promise<{ id: string }> }
 async function ownThread({ params }: Params) {
-  const auth = await requireActiveUser()
+  const auth = await requireUser()
   if (auth.error) return { response: auth.response }
   const { id } = await params
   if (!z.string().uuid().safeParse(id).success)

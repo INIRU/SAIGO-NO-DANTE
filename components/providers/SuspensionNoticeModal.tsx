@@ -1,9 +1,10 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
+import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { AlertTriangle, ExternalLink, X } from 'lucide-react'
+import { X } from 'lucide-react'
 import BaseModal from '@/components/ui/BaseModal'
 
 type SuspensionPayload = {
@@ -11,63 +12,61 @@ type SuspensionPayload = {
   reason?: string | null
   suspended_until?: string | null
   suspendedUntil?: string | null
-  appeal_url?: string | null
-  appealUrl?: string | null
 }
 
 type StatusPayload = {
   suspension?: SuspensionPayload | null
 }
 
-const SUSPENSION_APPEAL_URL = 'https://discord.gg/efaGjQwsVB'
+const SUSPENSION_DISCORD_URL = 'https://discord.gg/efaGjQwsVB'
 
 type SuspensionLocale = 'ko' | 'en' | 'ja'
 
 const SUSPENSION_MODAL_COPY = {
   ko: {
     modalTitle: '계정 이용 제한 안내',
-    closeLabel: '정지 안내 닫기',
-    eyebrow: '계정 이용 제한',
+    closeLabel: '닫기',
     heading: '이용이 제한된 계정입니다',
-    defaultReason: '운영 정책 위반으로 계정 이용이 제한되었습니다.',
+    description: '글 작성과 수정은 제한 기간이 끝나면 다시 할 수 있어요. 제한에 이의가 있으면 문의로 알려주세요.',
+    defaultReason: '운영 정책 위반',
     indefinite: '무기한',
     reason: '사유',
     until: '제한 종료',
-    description: '이의 제기나 추가 확인은 Discord 서버에서 운영진에게 문의하세요.',
-    appeal: '이의 제기',
+    support: '문의하기',
+    discord: 'Discord로 문의',
     dateLocale: 'ko-KR',
   },
   en: {
     modalTitle: 'Account restriction notice',
-    closeLabel: 'Close suspension notice',
-    eyebrow: 'Account restricted',
-    heading: 'This account has restricted access',
-    defaultReason: 'Account access has been restricted for violating the operating policy.',
+    closeLabel: 'Close',
+    heading: 'This account is restricted',
+    description: 'You can post and edit again once the restriction ends. If you disagree, let us know through support.',
+    defaultReason: 'Violation of the site policy',
     indefinite: 'Indefinite',
     reason: 'Reason',
-    until: 'Restriction ends',
-    description: 'For an appeal or additional review, contact the moderation team on the Discord server.',
-    appeal: 'Appeal',
+    until: 'Ends',
+    support: 'Contact support',
+    discord: 'Ask on Discord',
     dateLocale: 'en-US',
   },
   ja: {
     modalTitle: 'アカウント利用制限のお知らせ',
-    closeLabel: '停止案内を閉じる',
-    eyebrow: 'アカウント利用制限',
+    closeLabel: '閉じる',
     heading: 'このアカウントは利用が制限されています',
-    defaultReason: '運営ポリシー違反によりアカウントの利用が制限されています。',
+    description: '制限期間が終わると投稿と編集ができるようになります。異議がある場合はお問い合わせください。',
+    defaultReason: '運営ポリシー違反',
     indefinite: '無期限',
     reason: '理由',
     until: '制限終了',
-    description: '異議申し立てや追加確認は、Discordサーバーで運営チームにお問い合わせください。',
-    appeal: '異議申し立て',
+    support: 'お問い合わせ',
+    discord: 'Discordで問い合わせ',
     dateLocale: 'ja-JP',
   },
 } as const
 
-function getLocaleFromPathname(pathname: string | null): SuspensionLocale {
+function localeOf(pathname: string | null): SuspensionLocale {
   const pathLocale = pathname?.split('/')[1]
-  return pathLocale === 'ko' || pathLocale === 'ja' ? pathLocale : 'en'
+  return pathLocale === 'en' || pathLocale === 'ja' ? pathLocale : 'ko'
 }
 
 function formatUntil(value: string | null, copy: typeof SUSPENSION_MODAL_COPY[SuspensionLocale]) {
@@ -91,80 +90,51 @@ export default function SuspensionNoticeModal() {
 
   useEffect(() => {
     if (status !== 'authenticated') return
-
     let cancelled = false
     fetch('/api/legal/status', { cache: 'no-store' })
       .then(response => response.ok ? response.json() as Promise<StatusPayload> : null)
-      .then(payload => {
-        if (!cancelled) setRemote(payload?.suspension ?? null)
-      })
-      .catch(() => {
-        if (!cancelled) setRemote(null)
-      })
-
+      .then(payload => { if (!cancelled) setRemote(payload?.suspension ?? null) })
+      .catch(() => { if (!cancelled) setRemote(null) })
     return () => { cancelled = true }
   }, [status])
 
-  const active = remote?.active === true || session?.user?.isSuspended === true
-  const locale = useMemo(() => getLocaleFromPathname(pathname), [pathname])
+  const locale = localeOf(pathname)
   const copy = SUSPENSION_MODAL_COPY[locale]
+  const active = remote?.active === true || session?.user?.isSuspended === true
+  // The support page is where the appeal is written; don't cover it.
+  const onSupport = pathname?.split('/')[2] === 'support'
+  if (!active || dismissed || onSupport || !mounted) return null
+
   const until = remote?.suspended_until ?? remote?.suspendedUntil ?? null
   const reason = remote?.reason?.trim() || copy.defaultReason
-  const appealUrl = SUSPENSION_APPEAL_URL
-
-  if (!active || dismissed) return null
-  if (!mounted) return null
-
   return (
-    <BaseModal open onClose={() => setDismissed(true)} title={copy.modalTitle} maxWidth="30rem" blur={false}>
-      <section
-        className="rounded-md border"
-        style={{
-          background: '#1a1510',
-          borderColor: 'rgba(200,144,10,0.24)',
-          boxShadow: '0 1rem 2rem rgba(13,11,8,0.48)',
-        }}
-      >
-        <header className="flex items-start justify-between gap-3 border-b" style={{ borderColor: 'rgba(200,144,10,0.14)', padding: '1rem' }}>
-          <div className="flex min-w-0 items-start gap-3">
-            <span className="flex shrink-0 items-center justify-center rounded-sm border" style={{ width: '2rem', height: '2rem', borderColor: 'rgba(170,92,70,0.42)', color: '#c98272' }}>
-              <AlertTriangle size="1rem" aria-hidden="true" />
-            </span>
-            <div className="min-w-0">
-              <p className="font-mono uppercase" style={{ color: '#8a7a5a', fontSize: '0.6875rem' }}>{copy.eyebrow}</p>
-              <h2 className="mt-1 font-serif" style={{ color: '#d6be7a', fontSize: '1.125rem', fontWeight: 700 }}>{copy.heading}</h2>
-            </div>
+    <BaseModal open onClose={() => setDismissed(true)} title={copy.modalTitle} maxWidth="26rem" blur={false} initialFocus="dialog">
+      <section className="relative overflow-hidden rounded-xl border border-[#3a2a15] bg-[#17120c] p-6 shadow-[0_1.5rem_3rem_rgba(0,0,0,0.55)]">
+        <span aria-hidden="true" className="absolute inset-x-0 top-0 h-[3px] bg-[#9b2c23]" />
+        <button type="button" onClick={() => setDismissed(true)} aria-label={copy.closeLabel}
+          className="absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-md text-[#8a7d69] transition-colors hover:bg-white/5 hover:text-[#e8dcc8] focus-visible:outline-2 focus-visible:outline-[var(--gold)]">
+          <X size={16} aria-hidden="true" />
+        </button>
+        <h2 className="pr-8 text-[1.25rem] font-bold leading-snug text-[#f0e6d2]">{copy.heading}</h2>
+        <p className="mt-2 text-[0.9375rem] leading-relaxed text-[#a89a84]">{copy.description}</p>
+        <dl className="mt-5 divide-y divide-[#2e2417] rounded-lg border border-[#2e2417] bg-[#120e09]">
+          <div className="flex gap-4 px-4 py-3">
+            <dt className="w-16 shrink-0 text-[0.8125rem] text-[#8a7d69]">{copy.reason}</dt>
+            <dd className="min-w-0 break-words text-[0.9375rem] leading-relaxed text-[#e8dcc8]">{reason}</dd>
           </div>
-          <button
-            type="button"
-            onClick={() => setDismissed(true)}
-            className="rounded-sm border transition-colors hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold)]"
-            style={{ borderColor: 'rgba(200,144,10,0.18)', color: '#8a7a5a', padding: '0.375rem' }}
-            aria-label={copy.closeLabel}
-          >
-            <X size="1rem" aria-hidden="true" />
-          </button>
-        </header>
-
-        <div className="space-y-3" style={{ padding: '1rem' }}>
-          <dl className="grid gap-2">
-            <div className="rounded-sm border" style={{ borderColor: 'rgba(200,144,10,0.12)', padding: '0.75rem' }}>
-              <dt className="font-mono" style={{ color: '#7a6845', fontSize: '0.6875rem' }}>{copy.reason}</dt>
-              <dd className="mt-1 break-words" style={{ color: '#d6be7a', fontSize: '0.8125rem', lineHeight: 1.6 }}>{reason}</dd>
-            </div>
-            <div className="rounded-sm border" style={{ borderColor: 'rgba(200,144,10,0.12)', padding: '0.75rem' }}>
-              <dt className="font-mono" style={{ color: '#7a6845', fontSize: '0.6875rem' }}>{copy.until}</dt>
-              <dd className="mt-1 font-mono" style={{ color: '#c8a450', fontSize: '0.8125rem' }}>{formatUntil(until, copy)}</dd>
-            </div>
-          </dl>
-          <p style={{ color: '#9a8a6a', fontSize: '0.75rem', lineHeight: 1.65 }}>{copy.description}</p>
-          <div className="flex flex-wrap justify-end gap-2">
-            <a href={appealUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-sm border transition-colors hover:bg-[rgba(200,144,10,0.08)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold)]" style={{ borderColor: 'rgba(200,144,10,0.36)', color: 'var(--gold)', padding: '0.5rem 0.75rem', fontSize: '0.8125rem' }}>
-              {copy.appeal}
-              <ExternalLink size="0.875rem" aria-hidden="true" />
-            </a>
+          <div className="flex gap-4 px-4 py-3">
+            <dt className="w-16 shrink-0 text-[0.8125rem] text-[#8a7d69]">{copy.until}</dt>
+            <dd className="text-[0.9375rem] font-semibold text-[#e8a08a]">{formatUntil(until, copy)}</dd>
           </div>
-        </div>
+        </dl>
+        <Link href={`/${locale}/support`} onClick={() => setDismissed(true)}
+          className="mt-5 flex min-h-12 w-full items-center justify-center rounded-lg bg-[var(--gold)] text-[1rem] font-bold text-[#0d0b08] transition-[filter] hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--gold-light)]">
+          {copy.support}
+        </Link>
+        <a href={SUSPENSION_DISCORD_URL} target="_blank" rel="noreferrer"
+          className="mt-2 flex min-h-10 items-center justify-center rounded-lg text-[0.875rem] font-medium text-[#a89a84] transition-colors hover:text-[#e8dcc8] focus-visible:outline-2 focus-visible:outline-[var(--gold)]">
+          {copy.discord}
+        </a>
       </section>
     </BaseModal>
   )
