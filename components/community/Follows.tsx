@@ -2,7 +2,8 @@
 import { useState } from 'react'
 import Image from 'next/image'
 import { useLocale } from 'next-intl'
-import { signIn, useSession } from 'next-auth/react'
+import { useSession } from 'next-auth/react'
+import { goToLogin } from '@/lib/auth-return'
 import useSWR, { useSWRConfig } from 'swr'
 import { LockKeyhole, Users, X } from 'lucide-react'
 import { Link } from '@/lib/i18n/navigation'
@@ -16,10 +17,10 @@ const endpoint = (id:string) => `/api/community/profiles/${id}/follows`
 async function fetcher(url:string):Promise<FollowState> { const r=await fetch(url);if(!r.ok)throw Error();return r.json() }
 function useCopy() {const lang=useLocale();return (ko:string,ja:string,en:string)=>lang==='ko'?ko:lang==='ja'?ja:en}
 function useFollowMutation() {
-  const {mutate}=useSWRConfig(), label=useCopy(), {status}=useSession()
+  const {mutate}=useSWRConfig(), label=useCopy(), {status}=useSession(), lang=useLocale()
   const [busy,setBusy]=useState(false)
   async function change(id:string,following:boolean) {
-    if(status!=='authenticated'){void signIn('google');return}
+    if(status!=='authenticated'){goToLogin(lang);return}
     if(busy)return
     setBusy(true)
     try { const r=await fetch(endpoint(id),{method:following?'DELETE':'POST'});if(!r.ok)throw Error();await mutate(k=>typeof k==='string'&&k.includes('/follows'));showSuccess(label(following?'팔로우를 취소했습니다.':'팔로우했습니다.',following?'フォローを解除しました。':'フォローしました。',following?'Unfollowed.':'Following.')) }
