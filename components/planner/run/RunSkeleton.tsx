@@ -3,7 +3,7 @@ import Skeleton, { SkeletonCircle, SkeletonLine, SkeletonPage } from '@/componen
 /** 어시스트 모드 준비 화면: 왼쪽 화면 연결 안내, 오른쪽 기록 설정 패널. */
 export default function RunSkeleton() {
   return <SkeletonPage className="min-h-screen bg-[var(--bg-deep)]">
-    <div className="mx-auto max-w-[90rem] px-4 pb-12 pt-20 sm:px-6 sm:pt-24 lg:px-8">
+    <div className="mx-auto max-w-[90rem] px-4 pb-12 pt-4 sm:px-6 sm:pt-6 lg:px-8">
       <div className="mb-4 flex items-center justify-between gap-3 border-b border-[var(--border)] pb-3">
         <div className="flex items-center gap-3">
           <Skeleton className="h-10 w-10" />

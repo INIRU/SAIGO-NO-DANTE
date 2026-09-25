@@ -6,7 +6,7 @@ interface RateLimitEntry {
   timestamps: number[]
 }
 
-type RateLimitBucket = 'write' | 'readonly' | 'comment' | 'create' | 'rating' | 'report'
+type RateLimitBucket = 'write' | 'readonly' | 'comment' | 'create' | 'rating' | 'report' | 'sample'
 
 type RateLimitConfig = {
   maxRequests: number
@@ -32,6 +32,7 @@ const BUCKET_LIMITS: Record<RateLimitBucket, RateLimitConfig> = {
   create: { maxRequests: 6, windowMs: 60_000 },
   rating: { maxRequests: 15, windowMs: 60_000 },
   report: { maxRequests: 5, windowMs: 60_000 },
+  sample: { maxRequests: 30, windowMs: 86_400_000 },
 }
 
 let lastCleanup = Date.now()
@@ -41,9 +42,9 @@ function cleanup() {
   if (now - lastCleanup < CLEANUP_INTERVAL) return
   lastCleanup = now
 
-  const maxWindowMs = Math.max(...Object.values(BUCKET_LIMITS).map(config => config.windowMs))
-  const cutoff = now - maxWindowMs
   for (const [key, entry] of store) {
+    // Keys start with their bucket, so a day-long window does not keep minute buckets around for a day.
+    const cutoff = now - (BUCKET_LIMITS[key.slice(0, key.indexOf(':')) as RateLimitBucket]?.windowMs ?? 60_000)
     entry.timestamps = entry.timestamps.filter(t => t > cutoff)
     if (entry.timestamps.length === 0) store.delete(key)
   }

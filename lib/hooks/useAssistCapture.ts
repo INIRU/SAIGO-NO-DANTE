@@ -10,6 +10,7 @@ import type { StableScene } from '@/lib/vision/scene-state'
 import { isMobileDevice } from '@/lib/vision/device'
 import { RECOGNITION_PROFILES, type RecognitionMode } from '@/lib/vision/recognition-profile'
 import { DEFAULT_DETECTION, type DetectionSettings } from '@/lib/vision/detection-settings'
+import { AssistSampleRecorder } from '@/lib/vision/assist-samples'
 import { EMPTY_SALE_STATE, isSellWindow, readSaleStep, sellCost, sellGiftId } from '@/lib/vision/sell-evidence'
 import { readSkillExchange, type SkillExchangeRead } from '@/lib/vision/skill-exchange'
 import { acquisitionSeq, acquisitionsToRelease, continuesFusionDialog, dialogForResult, dialoglessFusionResult, fusionAnchors,
@@ -184,7 +185,7 @@ export function runFrameTask(task: FrameTask, now = performance.now()): boolean 
 }
 
 export function useAssistCapture({ giftReferences = [], eventReferences = [], ocrCatalog, themeCatalog, language = 'ko', floor = null,
-  mode = 'balanced', detection = DEFAULT_DETECTION, resolvePopup }: {
+  mode = 'balanced', detection = DEFAULT_DETECTION, resolvePopup, samples = false }: {
   giftReferences?: VisualReference[]
   eventReferences?: VisualReference[]
   ocrCatalog?: OcrCatalog
@@ -201,6 +202,8 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
    * Used for fixed-recipe fusions, whose result follows from their materials.
    */
   resolvePopup?: (evidence: RecipePopupEvidence, verdict: string | null, inFusion: boolean) => string | null
+  /** Opt-in recognition samples (lib/vision/assist-samples.ts); read live. */
+  samples?: boolean
 } = {}) {
   const [supported, setSupported] = useState(false)
   const [status, setStatus] = useState<CaptureStatus>('idle')
@@ -288,6 +291,18 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
   themeReferences.current = themeCatalog
   const currentFloor = useRef(floor)
   currentFloor.current = floor
+  // Opt-in samples: the recorder follows the switch from the frame reader; its metadata is read when a sample is sent.
+  const sampleRecorder = useRef<AssistSampleRecorder | null>(null)
+  const samplesRef = useRef(samples)
+  samplesRef.current = samples
+  const sampleState = useRef({ prediction, mode, detection, inference, ocrEngine, floor })
+  sampleState.current = { prediction, mode, detection, inference, ocrEngine, floor }
+  const readSampleContext = () => {
+    const { prediction, mode, detection, inference, ocrEngine, floor } = sampleState.current
+    return { scene: prediction && { label: prediction.label.slice(0, 40), confidence: prediction.confidence }, mode, detection, inference,
+      ocr: ocrEngine && { engine: ocrEngine.engine, adapter: ocrEngine.adapter.slice(0, 80) }, dpr: window.devicePixelRatio,
+      userAgent: navigator.userAgent.slice(0, 400), build: process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA ?? null, floor }
+  }
   const generation = useRef(0)
   const stream = useRef<MediaStream | null>(null)
   const worker = useRef<Worker | null>(null)
@@ -377,6 +392,8 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
     frameTasks.current = []
     latestFrame.current?.close()
     latestFrame.current = null
+    sampleRecorder.current?.close()
+    sampleRecorder.current = null
     for (const item of wheelFrames.current) item.frame.close()
     wheelFrames.current = []
     wheelRequest.current = null
@@ -643,6 +660,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
         if (dialog && !dialog.published && run === generation.current) {
           dialog.published = true
           const materials = fusionMaterials(dialog.reads, dialog.count, dialog.capacity)
+          if (materials.length < dialog.count && !dialog.dialogless) sampleRecorder.current?.trigger('fusion-materials', materials)
           // Dated by the dialog's own first frame: wheel reads come from before it, possibly before the previous result.
           if (materials.length) publishFusion({ materials, observedAt: dialog.firstAt, lastSeenAt: dialog.lastSeenAt,
             closedAt: dialog.closedAt, token: dialog.token })
@@ -718,7 +736,14 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
             materials: popupDialogMaterials(pending.capturedAt) }, verdict, onFusionScreen(latestLabel.current, fusionTitleAt.current, Date.now()) ||
             (fusionWanted.current !== null && Date.now() - fusionWanted.current.at < 20_000))
           : verdict
-        if (!giftId) return
+        if (!giftId) {
+          // Every frame of a real gift popup read and none named the gift: a hard case worth a sample.
+          const last = lastPopup.current
+          if ((icons.length || popupHeaderEvidence(header)) && ![...popupPending.current.values()].some(other => other.episode === pending.episode) &&
+            (last?.episode !== pending.episode || last.attempts >= profileRef.current.popupAttempts))
+            sampleRecorder.current?.trigger('popup-unresolved', [...icons, ...effects])
+          return
+        }
         popupEvidence.current.delete(pending.episode)
         for (const queue of [popupQueue, popupVisionQueue]) {
           queue.current = queue.current.filter(item => {
@@ -1154,6 +1179,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
                   lastSeenAt: Math.max(...wheel.map(item => item.lastAt)),
                   reads: [], wheel, published: false, dialogless: true, undecided: known === null }
                 takeWheelReads(fusionDialog.current)
+                sampleRecorder.current?.trigger('fusion-dialogless')
                 fusionWanted.current = { count: capacity, capacity, at: Date.now() }
                 lastDialogAt.current = Math.max(lastDialogAt.current, pending.capturedAt)
               }
@@ -1467,6 +1493,8 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
                     try {
                       latestFrame.current?.close()
                       latestFrame.current = value.clone()
+                      if (samplesRef.current) (sampleRecorder.current ??= new AssistSampleRecorder(readSampleContext)).offer(value)
+                      else if (sampleRecorder.current) { sampleRecorder.current.close(); sampleRecorder.current = null }
                       const now = performance.now()
                       if (now - lastSample >= 33) { lastSample = now; await samplePopup(value) }
                       frameTasks.current = frameTasks.current.filter(task => task.live())
@@ -1598,6 +1626,8 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
     const step = readSaleStep(saleState.current, { at: capture.at, text, cost,
       giftId: name => ocrReferences.current ? sellGiftId(name, ocrReferences.current.gifts) : null })
     saleState.current = step.state
+    // A sell dialog whose gift or cost could not be settled.
+    if (!step.state.dialog && text.replace(/\s+/g, '').includes('판매하시겠')) sampleRecorder.current?.trigger('sale-unresolved')
     if (step.sold.length) setGiftSales(items => [...items, ...step.sold.map(sale =>
       ({ giftId: sale.giftId, token: `sell:${sale.at}:${sale.giftId}`, capturedAt: sale.at }))].slice(-8))
   }
