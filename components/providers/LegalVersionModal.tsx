@@ -7,6 +7,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import BaseModal from '@/components/ui/BaseModal'
 import LegalConsent, { type LegalConsentState } from '@/components/legal/LegalConsent'
+import { LEGAL_CHANGES, LEGAL_KEY_POINTS } from '@/lib/legal-summary'
 import type { LegalDoc } from '@/lib/data/legal'
 import { showError, showSuccess } from '@/lib/toast'
 
@@ -35,42 +36,45 @@ const LEGAL_MODAL_COPY = {
     toastError: '동의 기록을 저장하지 못했습니다.',
     modalTitle: '법률 문서 업데이트',
     heading: '약관과 개인정보 처리방침이 바뀌었어요',
-    description: '바뀐 전문을 끝까지 읽고 동의하면 계속 이용할 수 있어요.',
+    description: '바뀐 내용을 확인하고 동의하면 계속 이용할 수 있어요.',
+    changesTitle: '이번에 바뀐 내용',
     versionLabel: '버전',
     saving: '저장 중...',
     confirm: '동의하고 계속하기',
     withdraw: '동의하지 않고 탈퇴하기',
     terms: '이용약관',
     privacy: '개인정보 처리방침',
-    consent: { agreeTerms: '[필수] 이용약관 동의', agreePrivacy: '[필수] 개인정보 수집·이용 동의', readFull: '전문 보기', hideFull: '접기', readToAgree: '전문을 끝까지 읽으면 동의할 수 있습니다.' },
+    consent: { agreeAll: '모두 동의', agreeTerms: '[필수] 이용약관 동의', agreePrivacy: '[필수] 개인정보 수집·이용 동의', readFull: '전문 보기', hideFull: '접기' },
   },
   en: {
     toastSuccess: 'Your agreement was saved.',
     toastError: 'We could not save your agreement.',
     modalTitle: 'Legal document update',
     heading: 'Terms and Privacy Policy have been updated',
-    description: 'Read each updated document to the end and agree to keep using the site.',
+    description: 'Check what changed and agree to keep using the site.',
+    changesTitle: 'What changed',
     versionLabel: 'Version',
     saving: 'Saving...',
     confirm: 'Agree and continue',
     withdraw: 'Decline and delete my account',
     terms: 'Terms of Service',
     privacy: 'Privacy Policy',
-    consent: { agreeTerms: '[Required] I agree to the Terms of Service', agreePrivacy: '[Required] I agree to the Privacy Policy', readFull: 'Read full text', hideFull: 'Close', readToAgree: 'Scroll to the end of the text to agree.' },
+    consent: { agreeAll: 'Agree to all', agreeTerms: '[Required] I agree to the Terms of Service', agreePrivacy: '[Required] I agree to the Privacy Policy', readFull: 'Read full text', hideFull: 'Close' },
   },
   ja: {
     toastSuccess: '同意を記録しました。',
     toastError: '同意を保存できませんでした。',
     modalTitle: '法的文書の更新',
     heading: '利用規約とプライバシーポリシーが更新されました',
-    description: '更新された全文を最後まで読んで同意すると、引き続きご利用いただけます。',
+    description: '変更点を確認して同意すると、引き続きご利用いただけます。',
+    changesTitle: '今回の変更点',
     versionLabel: 'バージョン',
     saving: '保存中...',
     confirm: '同意して続ける',
     withdraw: '同意せずに退会する',
     terms: '利用規約',
     privacy: 'プライバシーポリシー',
-    consent: { agreeTerms: '[必須] 利用規約に同意', agreePrivacy: '[必須] 個人情報の収集・利用に同意', readFull: '全文を読む', hideFull: '閉じる', readToAgree: '全文を最後まで読むと同意できます。' },
+    consent: { agreeAll: 'すべてに同意', agreeTerms: '[必須] 利用規約に同意', agreePrivacy: '[必須] 個人情報の収集・利用に同意', readFull: '全文を読む', hideFull: '閉じる' },
   },
 } as const
 
@@ -159,7 +163,8 @@ export default function LegalVersionModal() {
         <p className="mt-2 text-[0.9375rem] leading-relaxed text-[#a89a84]">{copy.description}</p>
         {currentVersion && <p className="mt-1 text-[0.8125rem] text-[#7d7160]">{copy.versionLabel} {currentVersion}</p>}
         {texts.length > 0
-          ? <LegalConsent docs={texts} agreed={agreed} onChange={setAgreed} labels={copy.consent} />
+          ? <LegalConsent docs={texts} agreed={agreed} onChange={setAgreed} labels={copy.consent}
+              summary={currentVersion && LEGAL_CHANGES[currentVersion] ? { title: copy.changesTitle, items: LEGAL_CHANGES[currentVersion][locale] } : LEGAL_KEY_POINTS[locale]} />
           : <p className="mt-4 flex gap-4 text-[0.9375rem] font-semibold">
               <Link href={`/${locale}/terms`} target="_blank" className="text-[var(--gold-light)] underline underline-offset-4">{copy.terms}</Link>
               <Link href={`/${locale}/privacy`} target="_blank" className="text-[var(--gold-light)] underline underline-offset-4">{copy.privacy}</Link>
