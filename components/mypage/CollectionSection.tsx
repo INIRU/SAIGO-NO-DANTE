@@ -309,12 +309,10 @@ export default function CollectionSection({ savedCode, persistMode = 'db', title
         <Title className={Title === 'h1' ? 'text-[1.375rem] md:text-[1.75rem]' : 'text-[1.25rem]'} style={{ color: Title === 'h1' ? 'var(--gold)' : '#f0e6d2', fontFamily: 'var(--font-heading)' }}>보유 현황</Title>
         <dl className="flex gap-6">
           {([['인격', stats.ownedIdentities, stats.totalIdentities], ['E.G.O', stats.ownedEgos, stats.totalEgos]] as const).map(([label, have, all]) => (
-            <div key={label} className="flex min-w-[8rem] flex-col gap-1">
-              <dt className="flex items-baseline justify-between gap-3 text-[0.8125rem] text-[#9c8b73]">
-                {label}
-                <dd style={{ color: 'var(--gold-light)', fontFamily: 'var(--font-title)', fontSize: '1.125rem', letterSpacing: '0.02em' }}>{have}<span style={{ color: '#8a7d69' }}>/{all}</span></dd>
-              </dt>
-              <span className="h-[3px] overflow-hidden rounded-full bg-[#2e2417]"><span className="block h-full rounded-full bg-[var(--gold)]" style={{ width: `${all ? (have / all) * 100 : 0}%` }} /></span>
+            <div key={label} className="grid min-w-[8rem] grid-cols-[1fr_auto] items-baseline gap-x-3 gap-y-1">
+              <dt className="text-[0.8125rem] text-[#9c8b73]">{label}</dt>
+              <dd style={{ color: 'var(--gold-light)', fontFamily: 'var(--font-title)', fontSize: '1.125rem', letterSpacing: '0.02em' }}>{have}<span style={{ color: '#8a7d69' }}>/{all}</span></dd>
+              <span className="col-span-2 h-[3px] overflow-hidden rounded-full bg-[#2e2417]"><span className="block h-full rounded-full bg-[var(--gold)]" style={{ width: `${all ? (have / all) * 100 : 0}%` }} /></span>
             </div>
           ))}
         </dl>
