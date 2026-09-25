@@ -172,7 +172,7 @@
   },
   "decks": {
     "meta": {
-      "title": "덱 게시판",
+      "title": "림버스 덱 게시판 — 인격 편성 공유",
       "description": "림버스 컴퍼니 덱 공유 게시판 - 인격 편성, E.G.O 조합, 운영법을 공유하세요."
     },
     "header": {
@@ -1636,9 +1636,9 @@
     "planBoard": "플랜 게시판",
     "tools": {
       "title": "도구",
-      "planner": "거울 던전 플래너",
+      "planner": "거울 던전 플랜",
       "assist": "어시스트 모드",
-      "deckBuilder": "덱 빌더",
+      "deckBuilder": "덱 게시판",
       "experience": "경험치 계산기",
       "lunacy": "월간 광기 계산기",
       "random": "랜덤 편성"
