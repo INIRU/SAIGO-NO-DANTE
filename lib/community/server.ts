@@ -20,10 +20,10 @@ export async function loadCommunityProfile(
     db
       .schema("limbus")
       .from("decks")
-      .select("id,title,description,vote_count,created_at,lang")
+      .select("id,title,description,tags,main_keywords,content_type,vote_count,view_count,comment_count,created_at,lang,deck_identities(slot_order,gacksung,identities(sinner_id,folder_name,game_id,keywords))")
       .eq("user_id", id)
       .order("created_at", { ascending: false })
-      .limit(24),
+      .limit(12),
   ]);
   if (summary.error || decks.error) throw new Error("Community lookup failed");
   // Never spread the database profile: IPs, device signals, email and account fields stay private.
@@ -37,6 +37,6 @@ export async function loadCommunityProfile(
       public_profile: row.public_profile,
     },
     stats: summary.data,
-    decks: decks.data ?? [],
+    decks: (decks.data ?? []) as unknown as CommunityProfile["decks"],
   };
 }

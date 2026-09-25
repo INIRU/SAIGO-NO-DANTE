@@ -8,7 +8,7 @@ import useSWR from "swr";
 import { showSuccess, showError } from "@/lib/toast";
 import { useHtmlFlag } from "@/hooks/useHtmlFlag";
 import MypageTabs, { MYPAGE_TABS, type MypageTab } from "./components/MypageTabs";
-import ProfileRail from "./components/ProfileRail";
+import ProfileRail from "@/components/community/ProfileRail";
 import ProfileTab from "./components/ProfileTab";
 import DecksTab from "./components/DecksTab";
 import PlannerTab from "./components/PlannerTab";
@@ -25,7 +25,7 @@ import DanteLogo from "@/components/brand/DanteLogo";
 import { ArrowLeft } from "lucide-react";
 import type { CommunityProfile } from "@/lib/community/rules";
 import "@/components/community/community.css";
-import styles from "./mypage.module.css";
+import styles from "@/components/community/profile.module.css";
 
 type Profile = {
   username: string | null;

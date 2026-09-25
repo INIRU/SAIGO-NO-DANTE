@@ -8,7 +8,7 @@ import { Link } from '@/lib/i18n/navigation'
 import PlanCard, { type PlanSummary } from '@/components/planner/PlanCard'
 import Skeleton from '@/components/ui/Skeleton'
 import { getCommunityCopy } from '@/lib/community/copy'
-import styles from '../mypage.module.css'
+import styles from '@/components/community/profile.module.css'
 
 export default function PlannerTab() {
   const t = getCommunityCopy(useLocale())

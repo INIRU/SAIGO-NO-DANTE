@@ -6,7 +6,7 @@ import { Bookmark, Layers, Plus, Trash2, X } from 'lucide-react'
 import { Link } from '@/lib/i18n/navigation'
 import DeckCard, { type DeckSummary } from '@/components/decks/DeckCard'
 import { getCommunityCopy } from '@/lib/community/copy'
-import styles from '../mypage.module.css'
+import styles from '@/components/community/profile.module.css'
 
 export default function DecksTab({ decks, bookmarkedDecks, onDeleteDeck, onRemoveBookmark }: {
   decks: DeckSummary[]

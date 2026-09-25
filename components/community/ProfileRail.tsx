@@ -10,7 +10,7 @@ import { ACHIEVEMENT_COPY, nextPointsBadge } from '@/lib/community/achievements'
 import type { CommunityProfile } from '@/lib/community/rules'
 import { FollowSummary } from '@/components/community/Follows'
 import { showError, showSuccess } from '@/lib/toast'
-import styles from '../mypage.module.css'
+import styles from '@/components/community/profile.module.css'
 
 const STATS = [
   { key: 'deck', icon: Layers },
@@ -19,10 +19,11 @@ const STATS = [
   { key: 'contribution', icon: BookOpenCheck },
 ] as const
 
+/** The profile card of my page and public profiles: identity, follows, activity score. Owner-only controls when onEdit is set. */
 export default function ProfileRail({ data, onEdit, onOpenFollows }: {
   data: CommunityProfile
-  onEdit: () => void
-  onOpenFollows: (kind: 'following' | 'followers') => void
+  onEdit?: () => void
+  onOpenFollows?: (kind: 'following' | 'followers') => void
 }) {
   const locale = useLocale()
   const t = getCommunityCopy(locale)
@@ -39,7 +40,7 @@ export default function ProfileRail({ data, onEdit, onOpenFollows }: {
   }
   return (
     <section className={`${styles.card} relative`} data-testid="community-profile">
-      <button type="button" className={`${styles.ghost} ${styles.icon} ${styles.edit}`} onClick={onEdit} aria-label={t.editProfile} title={t.editProfile}><Pencil aria-hidden="true" /></button>
+      {onEdit && <button type="button" className={`${styles.ghost} ${styles.icon} ${styles.edit}`} onClick={onEdit} aria-label={t.editProfile} title={t.editProfile}><Pencil aria-hidden="true" /></button>}
       <div className={styles.who}>
         <Image src={profile.avatar_url || DEFAULT_AVATAR_URL} alt="" width={72} height={72} className={styles.avatar} />
         <div className="min-w-0">
@@ -49,7 +50,7 @@ export default function ProfileRail({ data, onEdit, onOpenFollows }: {
       </div>
       <p className={styles.bio} data-empty={!profile.bio || undefined}>{profile.bio || t.noBio}</p>
       <FollowSummary id={profile.id} onOpen={onOpenFollows} />
-      <div className={styles.links}>
+      {onEdit && <div className={styles.links}>
         {profile.public_profile ? (
           <>
             <Link href={`/users/${profile.id}`} className={styles.ghost}>{t.view}<ArrowUpRight aria-hidden="true" /></Link>
@@ -58,7 +59,7 @@ export default function ProfileRail({ data, onEdit, onOpenFollows }: {
         ) : (
           <span className={styles.ghost} aria-disabled="true">{t.private}</span>
         )}
-      </div>
+      </div>}
 
       <div className={styles.score}>
         <p className={styles.scoreLabel}>{t.points}</p>
