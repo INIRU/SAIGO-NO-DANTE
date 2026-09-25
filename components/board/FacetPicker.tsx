@@ -120,7 +120,7 @@ export function FacetPickerModal({ kind, facets, selected, onToggle, onClose }: 
     )
   }
   if (kind === 'gift') body = (
-    <div style={{ '--gift-catalog-bg': '#17120c', '--gift-catalog-sticky-top': '0px', '--gift-catalog-min-h': '0px' } as React.CSSProperties}>
+    <div style={{ '--gift-catalog-bg': 'var(--bg-card)', '--gift-catalog-sticky-top': '0px', '--gift-catalog-min-h': '0px' } as React.CSSProperties}>
       <GiftCatalog compact gifts={catalogGifts} getGiftKeywordIcon={giftKeywordIcon} filters={giftFilters} selectedIds={selectedSet}
         onGiftClick={(gift: EgoGift) => onToggle(gift.id)} />
     </div>
