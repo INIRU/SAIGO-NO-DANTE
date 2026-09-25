@@ -1,177 +1,128 @@
 'use client'
 
+import type { Ref } from 'react'
+import Image from 'next/image'
 import KeywordIcon from '@/components/ui/KeywordIcon'
-import { ChevronRight } from 'lucide-react'
-import { SIN_COLORS } from '@/lib/constants/sin'
+import Skeleton, { SkeletonLine } from '@/components/ui/Skeleton'
+import { getSinIconUrl, normalizeSin } from '@/lib/constants/sin'
 import { translations } from '@/lib/i18n/translations'
 import type { SupportedLang } from '@/lib/i18n/types'
 import { getLocalizedKeywordName, getLocalizedKeywordDesc } from '@/lib/i18n/localize'
-import { resolveKeywordIconUrl } from '@/components/providers/KeywordProvider'
+import { keywordAccentColor, resolveKeywordIconUrl, useKeywords } from '@/components/providers/KeywordProvider'
 
-interface KeywordCardProps {
-  keyword: {
-    name: string
-    description: string | null
-    max_stack: number | null
-    icon_slug: string | null
-    sin_affinity: string | null
-    category: string | null
-    name_en?: string | null
-    name_jp?: string | null
-    description_en?: string | null
-    description_jp?: string | null
-  }
-  identityCount: number
-  egoCount: number
-  giftCount: number
-  animationDelay: number
-  onClick: () => void
-  lang: SupportedLang
+export interface KeywordEntry {
+  name: string
+  description: string | null
+  max_stack: number | null
+  icon_slug: string | null
+  sin_affinity: string | null
+  category: string | null
+  name_en?: string | null
+  name_jp?: string | null
+  description_en?: string | null
+  description_jp?: string | null
 }
 
-export default function KeywordCard({
-  keyword: kw, identityCount, egoCount, giftCount, animationDelay, onClick, lang,
-}: KeywordCardProps) {
-  const t = (key: string) => {
-    const entry = translations[key as keyof typeof translations]
-    if (!entry) return key
-    return entry[lang] ?? entry['ko'] ?? key
+export const kt = (key: string, lang: SupportedLang) => {
+  const entry = translations[key as keyof typeof translations]
+  return entry ? entry[lang] ?? entry.ko : key
+}
+
+export const keywordName = (kw: KeywordEntry, lang: SupportedLang) =>
+  getLocalizedKeywordName(kw.name, { nameEn: kw.name_en, nameJp: kw.name_jp, descEn: null, descJp: null }, lang)
+
+export const keywordDesc = (kw: KeywordEntry, lang: SupportedLang) =>
+  getLocalizedKeywordDesc(kw.description ?? '', { nameEn: null, nameJp: null, descEn: kw.description_en, descJp: kw.description_jp }, lang)
+
+/** Name colour used by the in-game keyword tooltip. */
+export function useKeywordColor(name: string) {
+  return keywordAccentColor(name, useKeywords()[name])
+}
+
+const CARD = 'kw-card flex h-full w-full flex-col rounded-md border border-[#2e2417] bg-[#17120c] text-left'
+const DETAIL = `${CARD} p-4`
+const TILE = `${CARD} items-center gap-2 px-1.5 pb-2.5 pt-3`
+const INTERACTIVE = 'cursor-pointer transition-colors hover:border-[#3a2a15] hover:bg-[#1d160e] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold-light)] motion-reduce:transition-none'
+
+export default function KeywordCard({ keyword: kw, counts, onClick, lang, compact = false }: {
+  keyword: KeywordEntry
+  counts: { identity: number; ego: number; gift: number }
+  onClick: () => void
+  lang: SupportedLang
+  compact?: boolean
+}) {
+  const color = useKeywordColor(kw.name)
+  const iconUrl = resolveKeywordIconUrl(kw.name, kw.icon_slug)
+  const name = keywordName(kw, lang)
+
+  if (compact) {
+    return (
+      <button type="button" onClick={onClick} className={`${TILE} ${INTERACTIVE}`}>
+        <span className="flex size-10 items-center justify-center">
+          {iconUrl && <KeywordIcon src={iconUrl} alt="" width={36} height={36} className="size-9 object-contain" />}
+        </span>
+        <span className="line-clamp-2 min-h-[2.025rem] w-full break-keep text-center text-[0.75rem] leading-[1.35]" style={{ color }}>{name}</span>
+      </button>
+    )
   }
 
-  const sinColor = kw.sin_affinity
-    ? ((SIN_COLORS as Record<string, string>)[kw.sin_affinity] || '#c8900a')
-    : null
-  const iconUrl = resolveKeywordIconUrl(kw.name, kw.icon_slug)
-
-  const displayName = getLocalizedKeywordName(kw.name, {
-    nameEn: kw.name_en,
-    nameJp: kw.name_jp,
-    descEn: null,
-    descJp: null,
-  }, lang)
-
-  const displayDesc = getLocalizedKeywordDesc(kw.description ?? '', {
-    nameEn: null,
-    nameJp: null,
-    descEn: kw.description_en,
-    descJp: kw.description_jp,
-  }, lang)
-
-  const sinLabel = kw.sin_affinity
-    ? (translations[('sin.' + kw.sin_affinity) as keyof typeof translations]?.[lang] ?? kw.sin_affinity)
-    : null
-
+  const sin = normalizeSin(kw.sin_affinity)
+  const stats = [
+    { label: kt('keyword.stat.identities', lang), value: counts.identity },
+    { label: 'E.G.O', value: counts.ego },
+    { label: kt('keyword.stat.gifts', lang), value: counts.gift },
+  ]
   return (
-    <button
-      onClick={onClick}
-      className="kw-card group text-left rounded-lg transition-all duration-200 hover:scale-[1.02] w-full h-full flex flex-col"
-      style={{
-        background: '#1a1510',
-        border: '0.0625rem solid rgba(200,144,10,0.08)',
-        cursor: 'pointer',
-        position: 'relative',
-        width: '100%',
-      }}
-      onMouseEnter={e => {
-        const el = e.currentTarget
-        el.style.borderColor = sinColor ? `${sinColor}40` : 'rgba(200,144,10,0.25)'
-        el.style.boxShadow = `0 0 1.5rem ${sinColor ? `${sinColor}15` : 'rgba(200,144,10,0.08)'}`
-      }}
-      onMouseLeave={e => {
-        const el = e.currentTarget
-        el.style.borderColor = 'rgba(200,144,10,0.08)'
-        el.style.boxShadow = 'none'
-      }}
-    >
-      {/* 죄악 색상 좌측 보더 */}
-      {sinColor && (
-        <div
-          className="absolute left-0 top-0 bottom-0 rounded-l-lg"
-          style={{ width: '0.125rem', background: `${sinColor}60` }}
-        />
-      )}
-
-      <div className="p-3 flex items-start gap-2.5 flex-1">
-        {/* 아이콘 */}
-        <div
-          className="shrink-0 flex items-center justify-center rounded"
-          style={{
-            width: '2.5rem', height: '2.5rem',
-            background: sinColor ? `${sinColor}10` : 'rgba(200,144,10,0.06)',
-            border: `0.0625rem solid ${sinColor ? `${sinColor}20` : 'rgba(200,144,10,0.1)'}`,
-          }}
-        >
-          {iconUrl ? (
-            <KeywordIcon src={iconUrl} alt={displayName} width={22} height={22}
-              style={{ width: '1.375rem', height: 'auto' }} />
-          ) : (
-            <span style={{ color: '#555', fontSize: '0.75rem' }}>?</span>
-          )}
-        </div>
-
-        {/* 텍스트 */}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-1.5 mb-0.5">
-            <span className="font-bold text-[0.8125rem] truncate" style={{ color: '#e8dcc8' }}>
-              {displayName}
+    <button type="button" onClick={onClick} className={`${DETAIL} ${INTERACTIVE}`}>
+      <span className="flex h-11 w-full items-center gap-3">
+        <span className="flex size-11 shrink-0 items-center justify-center rounded bg-[#0d0b08]">
+          {iconUrl && <KeywordIcon src={iconUrl} alt="" width={32} height={32} className="size-8 object-contain" />}
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="flex items-center gap-1.5">
+            <span className="truncate font-[family-name:var(--font-heading)] text-[0.9375rem] leading-tight" style={{ color }}>{name}</span>
+            {sin && <Image src={getSinIconUrl(sin)} alt={kt(`sin.${sin}`, lang)} width={16} height={16} className="size-4 shrink-0" />}
+          </span>
+          {kw.max_stack ? (
+            <span className="mt-0.5 block text-[0.75rem] leading-tight text-[#9c8b73]">
+              {kt('keyword.maxStack', lang)} <span className="font-[family-name:var(--font-title)] text-[0.9375rem] tabular-nums text-[#e8b030]">{kw.max_stack}</span>
             </span>
-            {kw.max_stack && (
-              <span className="text-[0.625rem] shrink-0" style={{ color: '#7a6845' }}>
-                ({t('keyword.maxStack')} {kw.max_stack})
-              </span>
-            )}
-          </div>
-          {kw.description && (
-            <p
-              className="text-[0.6875rem] leading-relaxed line-clamp-2"
-              style={{ color: '#7a6845' }}
-              title={displayDesc}
-            >
-              {displayDesc}
-            </p>
-          )}
-          {/* 카운트 태그 */}
-          <div className="flex flex-wrap gap-1 mt-1.5">
-            {identityCount > 0 && (
-              <span className="text-[0.5625rem] px-1.5 py-0.5 rounded"
-                style={{ background: 'rgba(200,144,10,0.08)', color: '#c8900a' }}>
-                {t('keyword.related.identities')} {identityCount}
-              </span>
-            )}
-            {egoCount > 0 && (
-              <span className="text-[0.5625rem] px-1.5 py-0.5 rounded"
-                style={{ background: 'rgba(180,100,100,0.08)', color: '#b06060' }}>
-                EGO {egoCount}
-              </span>
-            )}
-            {giftCount > 0 && (
-              <span className="text-[0.5625rem] px-1.5 py-0.5 rounded"
-                style={{ background: 'rgba(100,180,100,0.08)', color: '#6a9a6a' }}>
-                {t('keyword.related.gifts')} {giftCount}
-              </span>
-            )}
-            {sinColor && sinLabel && (
-              <span className="text-[0.5625rem] px-1.5 py-0.5 rounded"
-                style={{ background: `${sinColor}10`, color: sinColor }}>
-                {t('keyword.sinAffinity')}: {sinLabel}
-              </span>
-            )}
-          </div>
-        </div>
-
-        <ChevronRight size={14} className="shrink-0 mt-1 opacity-0 group-hover:opacity-60 transition-opacity" style={{ color: '#c8900a' }} />
-      </div>
-
-      {/* 하단 글로우 */}
-      {sinColor && (
-        <div
-          className="absolute bottom-0 left-0 right-0 pointer-events-none rounded-b-lg"
-          style={{
-            height: '1.5rem',
-            background: `linear-gradient(transparent, ${sinColor}08)`,
-          }}
-        />
-      )}
+          ) : null}
+        </span>
+      </span>
+      <span className="mt-3 line-clamp-2 min-h-[2.6rem] w-full text-[0.8125rem] leading-[1.6] text-[#bfae92]">{keywordDesc(kw, lang)}</span>
+      <span className="mt-auto grid w-full grid-cols-3 border-t border-[#2e2417] pt-2.5">
+        {stats.map(s => (
+          <span key={s.label} className="flex h-6 items-baseline gap-1.5">
+            <span className="font-[family-name:var(--font-title)] text-[1.25rem] leading-6 tabular-nums" style={{ color: s.value ? '#e8dcc8' : '#6a6058' }}>{s.value}</span>
+            <span className="truncate text-[0.75rem] text-[#9c8b73]">{s.label}</span>
+          </span>
+        ))}
+      </span>
     </button>
+  )
+}
+
+/** Same box as KeywordCard; used by loading.tsx and while more cards are revealed. */
+export function KeywordCardSkeleton({ compact = false, ref }: { compact?: boolean; ref?: Ref<HTMLDivElement> }) {
+  if (compact) {
+    return (
+      <div ref={ref} aria-hidden="true" className={TILE}>
+        <Skeleton raised className="size-10" />
+        <span className="flex min-h-[2.025rem] w-full items-start justify-center pt-0.5"><SkeletonLine raised w="70%" h="0.75rem" /></span>
+      </div>
+    )
+  }
+  return (
+    <div ref={ref} aria-hidden="true" className={DETAIL}>
+      <div className="flex h-11 w-full items-center gap-3">
+        <Skeleton raised className="size-11 shrink-0" />
+        <div className="min-w-0 flex-1 space-y-1.5"><SkeletonLine raised w="6rem" h="0.9375rem" /><SkeletonLine raised w="3rem" h="0.75rem" /></div>
+      </div>
+      <div className="mt-3 min-h-[2.6rem] w-full space-y-2 pt-1"><SkeletonLine raised w="95%" h="0.8125rem" /><SkeletonLine raised w="65%" h="0.8125rem" /></div>
+      <div className="mt-auto grid w-full grid-cols-3 border-t border-[#2e2417] pt-2.5">
+        {[0, 1, 2].map(i => <div key={i} className="flex h-6 items-center"><SkeletonLine raised w="3.5rem" h="0.875rem" /></div>)}
+      </div>
+    </div>
   )
 }
