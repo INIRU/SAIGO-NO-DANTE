@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { localeAlternates } from '@/lib/seo/metadata'
+import { localeUrl } from '@/lib/seo/metadata'
 import { cacheLife, cacheTag } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { readAllRows } from '@/lib/meta/pagination'
@@ -17,7 +17,7 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
   return {
     title: t('run.metaTitle'),
     description: t('run.metaDescription'),
-    alternates: localeAlternates(lang, '/planner/run'),
+    alternates: { canonical: localeUrl('ko', '/planner/run') },
   }
 }
 

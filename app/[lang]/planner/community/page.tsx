@@ -1,5 +1,6 @@
 import { BoardShelfSkeleton } from '@/components/discovery/BoardSkeleton'
 import type { Metadata } from 'next'
+import { assistAvailable } from '@/lib/assist/availability'
 import { localeAlternates } from '@/lib/seo/metadata'
 import { Suspense } from 'react'
 import { cacheLife, cacheTag } from 'next/cache'
@@ -43,7 +44,7 @@ async function getCachedInitialPlans(lang: string, cardMetaVersion: string) {
       .schema('limbus')
       .from('md_plans')
       .select(
-        'id, title, description, difficulty, deck, egos, floor_plan, tags, lang, vote_count, view_count, comment_count, created_at, user_id, profiles:user_id(username, avatar_url)',
+        'id, title, description, difficulty, deck, egos, floor_plan, tags, lang, vote_count, view_count, comment_count, created_at, user_id, guest_tag, profiles:user_id(username, avatar_url)',
         { count: 'exact' }
       )
       .eq('lang', normalizePlannerLang(lang))
@@ -69,7 +70,7 @@ export default async function CommunityPage({ params }: { params: Promise<{ lang
 
   return (
     <div className="community-board flex min-h-screen flex-col" style={{ background: 'var(--bg-deep)' }}>
-      <BoardHeader kind="planner" lang={lang} title={t('title')} subtitle={t('subtitle')} action={t('newPlan')} assist={tActions('triggerMode')} />
+      <BoardHeader kind="planner" lang={lang} title={t('title')} subtitle={t('subtitle')} action={t('newPlan')} assist={assistAvailable(lang) ? tActions('triggerMode') : undefined} />
       <Suspense fallback={<BoardShelfSkeleton kind="planner" />}>
         <CommunityClient initialPlans={initialPlans} initialTotal={initialTotal} />
       </Suspense>
