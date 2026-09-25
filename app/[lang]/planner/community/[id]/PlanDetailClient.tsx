@@ -2,6 +2,8 @@
 
 import BackLink from '@/components/navigation/BackLink'
 import { useHtmlFlag } from '@/hooks/useHtmlFlag'
+import { useGuestPosts } from '@/hooks/useGuestPosts'
+import { guestAuthorName } from '@/lib/guest/copy'
 import { resolvePlannerIdentity, resolvePlannerEgo } from '@/lib/planner/catalog-references'
 
 import { getGameUiAsset } from '@/lib/utils/game-ui'
@@ -13,6 +15,7 @@ import { Link } from '@/lib/i18n/navigation'
 import Image from 'next/image'
 import { useLocale, useTranslations } from 'next-intl'
 import { useSession } from 'next-auth/react'
+import useSWR from 'swr'
 import { ArrowLeft, Heart, Share2 } from 'lucide-react'
 import { NoteRenderer, type NoteEgoGiftEntry } from '@/components/decks/NoteChips'
 import { NoteGiftClickContext } from '@/components/notes/NoteBlockViewer'
@@ -232,6 +235,7 @@ type Plan = {
   comment_count: number
   created_at: string
   user_id: string
+  guest_tag?: string | null
   profiles: { username: string | null; avatar_url: string | null } | null
 }
 
@@ -344,7 +348,11 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
   const tCommunity = useTranslations('planner.communityBoard')
   const tBlessing = useTranslations('planner.blessingTab')
   const tShare = useTranslations('decks.detail')
-  const { data: session } = useSession()
+  const { data: session, status: authStatus } = useSession()
+  const viewer = useSWR<{ id?: string }>(authStatus === 'authenticated' ? '/api/profile/avatar' : null, (url: string) => fetch(url).then(res => res.json())).data
+  // Signed-out visitors own a guest plan when this browser's key wrote it.
+  const guestPosts = useGuestPosts(authStatus === 'unauthenticated' && !plan.user_id).posts
+  const guestOwner = authStatus === 'unauthenticated' && !!guestPosts.data?.plans.some(post => post.id === plan.id)
   const [voted, setVoted] = useState(false)
   const [voteCount, setVoteCount] = useState(plan.vote_count)
   const [voteLoading, setVoteLoading] = useState(false)
@@ -366,7 +374,7 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
   const floorPlan: FloorEntry[] = normalizeFloorPlanDifficulty(plan.floor_plan, plan.difficulty).floorPlan as FloorEntry[]
   const giftInventory: string[] = Array.isArray(plan.gift_inventory) ? plan.gift_inventory : []
 
-  const username = plan.profiles?.username ?? tDetail('anonymous')
+  const username = plan.profiles?.username ?? guestAuthorName(plan.guest_tag, locale) ?? tDetail('anonymous')
   const avatarUrl = plan.profiles?.avatar_url ?? DEFAULT_AVATAR_URL
 
   // Maps
@@ -699,7 +707,8 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
               identities={identities}
               sinners={sinners}
               egos={egos}
-              isOwner={!!(session?.user?.email && plan.profiles?.username)}
+              isOwner={(!!viewer?.id && viewer.id === plan.user_id) || guestOwner}
+              guestOwner={guestOwner}
               isAdmin={isAdmin}
             />
           </div>

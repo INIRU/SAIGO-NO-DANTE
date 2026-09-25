@@ -43,11 +43,11 @@ export default async function SinnersPage() {
   const sinners = await getCachedSinners()
 
   const sinnerListLd = itemListJsonLd({
-    name: '림버스 컴퍼니 수감자 목록',
-    description: 'Limbus Company 12인 수감자 — 인격, EGO, 스킬 데이터',
+    name: translations['sinners.meta.ogTitle'][lang],
+    description: translations['sinners.meta.ogDescription'][lang],
     url: localeUrl(lang, '/sinners'),
     items: sinners.map((s, i) => ({
-      name: s.name_kr ?? s.name,
+      name: translations[`sinner.${s.id}` as keyof typeof translations]?.[lang] ?? s.name_kr ?? s.name,
       url: localeUrl(lang, `/sinners/${s.id}`),
       position: i + 1,
     })),

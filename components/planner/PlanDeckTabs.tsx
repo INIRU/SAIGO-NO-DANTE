@@ -6,6 +6,7 @@ import { useState, useMemo } from 'react'
 import dynamic from 'next/dynamic'
 import Image from 'next/image'
 import { useLocale, useTranslations } from 'next-intl'
+import { translations } from '@/lib/i18n/translations'
 import DeckInsights, { type DeckInsightIdentity } from '@/components/deck-analysis/DeckInsights'
 import DeckResourceSummary from '@/components/deck-analysis/DeckResourceSummary'
 import { computeAttackTypeCounts, computeEgoCostTotals, computeSinProduction } from '@/lib/decks/deck-analysis'
@@ -367,7 +368,7 @@ export default function PlanDeckTabs({
         giftBadgeUrls: slot?.slot_order != null && slot.slot_order < 99
           ? (slotGiftMap.get(slot.slot_order + 1) ?? [])
           : [],
-        ariaLabel: identityName ? `${index + 1}. ${identityName}` : `${index + 1}. ${sinner.name_kr}`,
+        ariaLabel: identityName ? `${index + 1}. ${identityName}` : `${index + 1}. ${translations[`sinner.${sinner.id}` as keyof typeof translations]?.[locale as 'ko' | 'en' | 'ja'] ?? sinner.name_kr}`,
         onClick: slot?.identity_id ? () => setIdentityModalId(slot.identity_id!) : undefined,
       }
     })

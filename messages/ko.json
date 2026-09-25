@@ -127,7 +127,9 @@
       "label": "페이지 이동",
       "top": "맨 위로",
       "bottom": "본문 맨 아래로"
-    }
+    },
+    "confirm": "확인",
+    "imagePending": "이미지 제공 예정"
   },
   "globalSearch": {
     "ariaLabel": "전역 검색",
@@ -1642,6 +1644,10 @@
       "experience": "경험치 계산기",
       "lunacy": "월간 광기 계산기",
       "random": "랜덤 편성"
+    },
+    "slide": {
+      "view": "{name} 슬라이드 보기",
+      "awakened": "{name} 각성"
     }
   },
   "site": {
@@ -1902,7 +1908,8 @@
     "noSkillData": "스킬 데이터 없음",
     "noCorSkillData": "침식 스킬 데이터 없음",
     "backToEgoList": "EGO 목록으로",
-    "sinResistance": "죄악 내성"
+    "sinResistance": "죄악 내성",
+    "detailTitle": "E.G.O 상세"
   },
   "keyword": {
     "maxStack": "최대"
@@ -2056,5 +2063,82 @@
     "keywordImpossible": "조건을 만족하는 인격이 부족합니다",
     "invalidCode": "컬렉션 코드가 올바르지 않습니다",
     "decodeFailed": "컬렉션 코드를 읽지 못했습니다"
+  },
+  "browser": {
+    "identitiesTitle": "인격 전체",
+    "egoTitle": "E.G.O 전체",
+    "back": "수감자 목록으로 돌아가기",
+    "countAll": "전체 <b>{total}개</b>",
+    "countFiltered": "<b>{filtered}개</b> / 전체 {total}개",
+    "sortPrefix": "정렬:",
+    "sort": {
+      "default": "기본",
+      "name": "이름순",
+      "rarity": "등급순",
+      "grade": "등급순"
+    },
+    "nameSearch": "이름 검색",
+    "identityPlaceholder": "인격 이름...",
+    "identitySearchLabel": "인격 이름 검색",
+    "egoPlaceholder": "E.G.O 이름...",
+    "egoSearchLabel": "E.G.O 이름 검색",
+    "sinner": "수감자",
+    "rarity": "등급",
+    "rarityStar": "{n}성",
+    "season": "시즌",
+    "seasonBase": "기본",
+    "sin": "죄악 속성",
+    "skillType": "스킬 유형",
+    "atk": {
+      "slash": "참격",
+      "pierce": "관통",
+      "blunt": "타격",
+      "evade": "회피",
+      "defense": "수비",
+      "counter": "반격"
+    },
+    "weight": "가중치",
+    "coins": "코인 수",
+    "egoGrade": "EGO 등급",
+    "keyword": "키워드 필터",
+    "keywordPlaceholder": "키워드 입력 후 Enter...",
+    "keywordSearchLabel": "키워드 필터 검색",
+    "keywordRemove": "{kw} 필터 제거",
+    "added": "추가됨",
+    "filter": "필터",
+    "filterPanel": "필터 패널",
+    "closeFilter": "필터 닫기",
+    "reset": "필터 초기화 ({count}개 활성)",
+    "resetAll": "모든 필터 초기화",
+    "emptyIdentity": "조건에 맞는 인격이 없습니다",
+    "emptyEgo": "조건에 맞는 E.G.O가 없습니다",
+    "meta": {
+      "identitiesDescription": "림버스 컴퍼니 12인 수감자의 모든 인격을 한 곳에서 검색하고 필터링하세요. 키워드, 죄악, 공격유형, 등급별 필터 지원.",
+      "identitiesOgTitle": "인격 전체 목록 | 최애의 관리자",
+      "identitiesOgDescription": "200+ 인격을 키워드, 죄악, 공격유형으로 크로스 필터링하세요.",
+      "identitiesListName": "림버스 컴퍼니 인격 전체 목록",
+      "egoDescription": "림버스 컴퍼니 12인 수감자의 모든 E.G.O를 한 곳에서 검색하고 필터링하세요. 등급, 죄악, 키워드별 필터 지원.",
+      "egoOgTitle": "E.G.O 전체 목록 | 최애의 관리자",
+      "egoOgDescription": "모든 E.G.O를 등급, 죄악 속성으로 크로스 필터링하세요.",
+      "egoListName": "림버스 컴퍼니 E.G.O 전체 목록"
+    }
+  },
+  "identityDecks": {
+    "searchPlaceholder": "제목, 설명, 태그, 키워드 검색...",
+    "keyword": "키워드",
+    "tabHint": "Tab으로 선택",
+    "latest": "최신순",
+    "popular": "인기순",
+    "count": "{count}개의 덱",
+    "filtered": " (필터 적용됨)",
+    "noResults": "검색 결과가 없습니다.",
+    "empty": "이 인격이 사용된 덱이 아직 없습니다.",
+    "loading": "불러오는 중..."
+  },
+  "collectionPage": {
+    "title": "보유 현황",
+    "description": "림버스 컴퍼니 인격·EGO 보유 현황을 체크하고 URL로 공유하세요.",
+    "sharedTitle": "공유된 보유 현황",
+    "identities": "인격"
   }
 }

@@ -30,7 +30,7 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
   }
 }
 
-const HOME_FAQ = [
+const HOME_FAQ: Record<SupportedLang, { question: string; answer: string }[]> = { ko: [
   {
     question: '림버스 컴퍼니 거울 던전 기프트 조합식은 어디서 볼 수 있나요?',
     answer: '거울 던전 페이지에서 E.G.O 기프트 408종의 키워드별 필터, 등급별 검색, 조합 레시피를 확인할 수 있습니다. 테마팩별 전용 기프트도 확인 가능합니다.',
@@ -47,7 +47,41 @@ const HOME_FAQ = [
     question: '림버스 컴퍼니 덱 빌더란?',
     answer: '덱 빌더는 12명의 수감자 인격을 편성하고 활성화되는 E.G.O 기프트를 확인할 수 있는 도구입니다. 만든 덱을 커뮤니티에 공유하고 다른 유저의 덱을 참고할 수도 있습니다.',
   },
-]
+], en: [
+  {
+    question: 'Where can I find Limbus Company Mirror Dungeon E.G.O Gift fusion recipes?',
+    answer: 'The Mirror Dungeon page lists all 408 E.G.O Gifts with keyword filters, tier search and fusion recipes, plus the gifts exclusive to each Theme Pack.',
+  },
+  {
+    question: 'How many Sinners are in Limbus Company?',
+    answer: 'Limbus Company has 12 Sinners: Yi Sang, Faust, Don Quixote, Ryōshū, Meursault, Hong Lu, Heathcliff, Ishmael, Rodion, Sinclair, Outis and Gregor.',
+  },
+  {
+    question: 'Where can I check Limbus Company Identity skills?',
+    answer: 'Each Sinner page shows every Identity with skill power, coin count, coin power, attack type, sin affinity and passives, including Uptie 3 and Uptie 4 data.',
+  },
+  {
+    question: 'What is the Limbus Company deck builder?',
+    answer: 'The deck builder lets you assemble Identities for all 12 Sinners and see which E.G.O Gifts they activate. You can share decks with the community and browse decks from other players.',
+  },
+], ja: [
+  {
+    question: 'リンバスカンパニーのミラーダンジョンのE.G.Oギフト合成レシピはどこで見られますか？',
+    answer: 'ミラーダンジョンページで408種のE.G.Oギフトをキーワード・等級で絞り込み、合成レシピを確認できます。テーマパックごとの専用ギフトも確認できます。',
+  },
+  {
+    question: 'リンバスカンパニーの囚人は何人ですか？',
+    answer: 'イサン、ファウスト、ドンキホーテ、良秀、ムルソー、ホンル、ヒースクリフ、イシュメール、ロージャ、シンクレア、ウーティス、グレゴールの12人です。',
+  },
+  {
+    question: 'リンバスカンパニーの人格スキルはどこで確認できますか？',
+    answer: '囚人ページで各人格のスキル威力、コイン数、コイン威力、攻撃タイプ、罪悪属性、パッシブを確認できます。同期化3・4のデータもあります。',
+  },
+  {
+    question: 'デッキビルダーとは何ですか？',
+    answer: '12人の囚人の人格を編成し、発動するE.G.Oギフトを確認できるツールです。作ったデッキをコミュニティに共有し、他のプレイヤーのデッキも参考にできます。',
+  },
+] }
 
 export type Announcement = {
   id: string
@@ -140,7 +174,7 @@ export default async function HomePage() {
 
   return (
     <>
-      <JsonLd data={faqJsonLd(HOME_FAQ)} />
+      <JsonLd data={faqJsonLd(HOME_FAQ[lang])} />
       <HomeClient latestIdentities={latestIdentities} pinnedAnnouncement={pinnedAnnouncement} />
       <HomeStaticSections
         lang={lang}

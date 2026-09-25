@@ -4,7 +4,7 @@ import { expect, it, vi } from 'vitest'
 import { renderToStaticMarkup } from 'react-dom/server'
 import PlanActions from '@/components/planner/PlanActions'
 
-vi.mock('next-intl', () => ({ useTranslations: () => (key: string) => key }))
+vi.mock('next-intl', () => ({ useTranslations: () => (key: string) => key, useLocale: () => 'ko' }))
 vi.mock('@/lib/i18n/navigation', () => ({ useRouter: () => ({ push: () => {} }) }))
 vi.mock('@/components/ui/ConfirmModal', () => ({ default: () => null }))
 

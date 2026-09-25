@@ -7,7 +7,8 @@ import Skeleton, { SkeletonLine } from '@/components/ui/Skeleton'
 import { getSinIconUrl, normalizeSin } from '@/lib/constants/sin'
 import { translations } from '@/lib/i18n/translations'
 import type { SupportedLang } from '@/lib/i18n/types'
-import { getLocalizedKeywordName, getLocalizedKeywordDesc } from '@/lib/i18n/localize'
+import { getLocalizedKeywordDesc } from '@/lib/i18n/localize'
+import { localizeDeckKeyword } from '@/components/decks/decks-types'
 import { keywordAccentColor, resolveKeywordIconUrl, useKeywords } from '@/components/providers/KeywordProvider'
 
 export interface KeywordEntry {
@@ -29,7 +30,7 @@ export const kt = (key: string, lang: SupportedLang) => {
 }
 
 export const keywordName = (kw: KeywordEntry, lang: SupportedLang) =>
-  getLocalizedKeywordName(kw.name, { nameEn: kw.name_en, nameJp: kw.name_jp, descEn: null, descJp: null }, lang)
+  localizeDeckKeyword(kw.name, { nameEn: kw.name_en, nameJp: kw.name_jp }, lang)
 
 export const keywordDesc = (kw: KeywordEntry, lang: SupportedLang) =>
   getLocalizedKeywordDesc(kw.description ?? '', { nameEn: null, nameJp: null, descEn: kw.description_en, descJp: kw.description_jp }, lang)

@@ -1,6 +1,7 @@
 'use client'
 
 import { RotateCcw } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 
 type Props = {
   activeCount: number
@@ -8,6 +9,7 @@ type Props = {
 }
 
 export default function ActiveFilterChips({ activeCount, onReset }: Props) {
+  const t = useTranslations('browser')
   if (activeCount === 0) return null
 
   return (
@@ -21,10 +23,10 @@ export default function ActiveFilterChips({ activeCount, onReset }: Props) {
           border: '1px solid rgba(255,255,255,0.08)',
           background: 'transparent',
         }}
-        aria-label="모든 필터 초기화"
+        aria-label={t('resetAll')}
       >
         <RotateCcw size={12} />
-        필터 초기화 ({activeCount}개 활성)
+        {t('reset', { count: activeCount })}
       </button>
     </div>
   )

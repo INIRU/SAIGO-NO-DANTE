@@ -4,6 +4,9 @@
 import { useRef, useMemo } from 'react'
 import Image from 'next/image'
 import { X, Search } from 'lucide-react'
+import { useLocale, useTranslations } from 'next-intl'
+import { getLocalizedKeywordName } from '@/lib/i18n/localize'
+import type { SupportedLang } from '@/lib/i18n/types'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
 import { useKeywordAutocomplete } from '@/hooks/useKeywordAutocomplete'
 import { filterStyles } from './FilterToggleGroup'
@@ -15,8 +18,14 @@ type Props = {
 
 export default function KeywordFilter({ selected, onToggle }: Props) {
   const { getIconUrl, keywords } = useKeywordData()
-  const allKeywordNames = useMemo(() => Object.keys(keywords), [keywords])
-  const { query, setQuery, suggestions, reset } = useKeywordAutocomplete(allKeywordNames)
+  const t = useTranslations('browser')
+  const lang = useLocale() as SupportedLang
+  const label = (kw: string) => getLocalizedKeywordName(kw, keywords[kw], lang)
+  // Autocomplete runs on the visible (localized) names; filter state keeps the Korean keys.
+  const byLabel = useMemo(() => new Map(Object.keys(keywords).map(kw => [getLocalizedKeywordName(kw, keywords[kw], lang), kw])), [keywords, lang])
+  const allLabels = useMemo(() => [...byLabel.keys()], [byLabel])
+  const { query, setQuery, suggestions: labelSuggestions, reset } = useKeywordAutocomplete(allLabels)
+  const suggestions = labelSuggestions.map(l => byLabel.get(l) ?? l)
   const inputRef = useRef<HTMLInputElement>(null)
 
   // 엔터 또는 클릭으로 선택
@@ -38,7 +47,7 @@ export default function KeywordFilter({ selected, onToggle }: Props) {
   return (
     <div>
       <div className={filterStyles.label}>
-        키워드 필터
+        {t('keyword')}
       </div>
 
       {/* 선택된 키워드 칩 (상단) */}
@@ -58,19 +67,19 @@ export default function KeywordFilter({ selected, onToggle }: Props) {
                   color: 'var(--gold)',
                   fontSize: '0.625rem',
                 }}
-                aria-label={`${kw} 필터 제거`}
+                aria-label={t('keywordRemove', { kw: label(kw) })}
               >
                 {iconUrl && (
                   <Image
                     src={iconUrl}
-                    alt={kw}
+                    alt=""
                     width={12}
                     height={12}
                     style={{ width: '0.75rem', height: '0.75rem' }}
                     unoptimized
                   />
                 )}
-                {kw}
+                {label(kw)}
                 <X size={10} />
               </button>
             )
@@ -87,11 +96,11 @@ export default function KeywordFilter({ selected, onToggle }: Props) {
           value={query}
           onChange={e => setQuery(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="키워드 입력 후 Enter..."
+          placeholder={t('keywordPlaceholder')}
           className={filterStyles.input}
           role="combobox"
           aria-expanded={suggestions.length > 0}
-          aria-label="키워드 필터 검색"
+          aria-label={t('keywordSearchLabel')}
         />
 
         {/* 자동완성 드롭다운 */}
@@ -122,15 +131,15 @@ export default function KeywordFilter({ selected, onToggle }: Props) {
                   {iconUrl && (
                     <Image
                       src={iconUrl}
-                      alt={kw}
+                      alt=""
                       width={16}
                       height={16}
                       style={{ width: '1rem', height: '1rem' }}
                       unoptimized
                     />
                   )}
-                  <span>{kw}</span>
-                  {isSelected && <span style={{ color: 'var(--gold-dim)', marginLeft: 'auto', fontSize: '0.5625rem' }}>추가됨</span>}
+                  <span>{label(kw)}</span>
+                  {isSelected && <span style={{ color: 'var(--gold-dim)', marginLeft: 'auto', fontSize: '0.5625rem' }}>{t('added')}</span>}
                 </button>
               )
             })}

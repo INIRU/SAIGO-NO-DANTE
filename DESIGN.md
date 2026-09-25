@@ -45,7 +45,9 @@
 | 본문, 버튼, 입력 | Pretendard | `--font-body` |
 
 - Bebas는 숫자(층, 비용, 편성 번호, 수치)와 로고에만 쓴다. 한글 제목에 쓰지 않는다.
-- 일본어는 Noto Sans JP로 자동 전환된다(`:lang(ja)`).
+- 영어(`html[lang=en]`)는 제목·본문 모두 Pretendard를 쓴다. 인격 카드 이름은 Mikodacs.
+- 일본어(`html[lang=ja]`)는 제목·본문 모두 M PLUS 1p(`--font-noto-jp` 변수), 인격 카드 이름은 Corporate Logo Bold를 쓴다.
+- 모든 글꼴은 `public/fonts`에 직접 올려 `next/font/local`로 불러온다(Google Fonts 사용 안 함). 라이선스는 `public/fonts/licenses/`.
 - 크기는 `--text-xs`(11px)부터 `--text-xl`(28px)까지의 단계를 쓴다. 페이지 제목은 과하게 키우지 않는다. 거울 던전 소개처럼 한 줄 설명이 붙은 머리말은 작게 둔다.
 - 굵기는 제목 700, 본문 400, 강조 600 정도로 제한한다. 모든 글자를 굵게 만들지 않는다.
 

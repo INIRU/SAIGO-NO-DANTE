@@ -1,5 +1,6 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
 import BaseModal from './BaseModal'
 
 interface ConfirmModalProps {
@@ -13,15 +14,16 @@ interface ConfirmModalProps {
   onCancel: () => void
 }
 
-export default function ConfirmModal({open,title,message,confirmLabel='확인',cancelLabel='취소',variant='default',onConfirm,onCancel}:ConfirmModalProps) {
+export default function ConfirmModal({open,title,message,confirmLabel,cancelLabel,variant='default',onConfirm,onCancel}:ConfirmModalProps) {
+  const t = useTranslations('common')
   return (
     <BaseModal open={open} onClose={onCancel} title={title ?? message} description={message} maxWidth="28rem" zIndex={9999}>
       <section className="popup-confirm">
         {title && <h2>{title}</h2>}
         <p>{message}</p>
         <div className="popup-actions">
-          <button type="button" onClick={onCancel}>{cancelLabel}</button>
-          <button type="button" className={variant === 'danger' ? 'popup-danger' : 'popup-primary'} onClick={onConfirm}>{confirmLabel}</button>
+          <button type="button" onClick={onCancel}>{cancelLabel ?? t('cancel')}</button>
+          <button type="button" className={variant === 'danger' ? 'popup-danger' : 'popup-primary'} onClick={onConfirm}>{confirmLabel ?? t('confirm')}</button>
         </div>
       </section>
     </BaseModal>

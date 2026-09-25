@@ -1,5 +1,6 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
 import { getEgoGradeBannerUrl } from '@/lib/utils/images'
 
 import { GRADE_COLORS } from '@/lib/constants/game'
@@ -20,6 +21,7 @@ type Props = {
 }
 
 export default function GradeFilter({ selected, onToggle }: Props) {
+  const t = useTranslations('browser')
   const items: FilterToggleItem<string>[] = EGO_GRADES.map(g => ({
     value: g,
     icon: GRADE_ICON_URL[g],
@@ -29,7 +31,7 @@ export default function GradeFilter({ selected, onToggle }: Props) {
 
   return (
     <FilterToggleGroup
-      sectionLabel="EGO 등급"
+      sectionLabel={t('egoGrade')}
       items={items}
       selected={selected}
       onToggle={onToggle}

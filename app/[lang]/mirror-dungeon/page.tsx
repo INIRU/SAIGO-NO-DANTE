@@ -31,7 +31,7 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
   }
 }
 
-const MIRROR_FAQ = [
+const MIRROR_FAQ: Record<'ko' | 'en' | 'ja', { question: string; answer: string }[]> = { ko: [
   {
     question: '림버스 거울 던전 기프트 조합식은 어떻게 확인하나요?',
     answer: '거울 던전 도감에서 각 기프트 카드를 클릭하면 조합 레시피(필요 재료 기프트)를 확인할 수 있습니다. 키워드 필터와 등급 필터로 원하는 기프트를 빠르게 찾을 수 있습니다.',
@@ -44,7 +44,33 @@ const MIRROR_FAQ = [
     question: '거울 던전 이벤트에서 얻을 수 있는 기프트는?',
     answer: '거울 던전 진행 중 랜덤 이벤트에서 특정 기프트를 획득할 수 있습니다. 이벤트 탭에서 각 이벤트의 선택지와 보상 기프트를 미리 확인할 수 있습니다.',
   },
-]
+], en: [
+  {
+    question: 'How do I check Mirror Dungeon E.G.O Gift fusion recipes?',
+    answer: 'Click any gift card in the Mirror Dungeon database to see its fusion recipe and required ingredient gifts. Keyword and tier filters help you find gifts quickly.',
+  },
+  {
+    question: 'What is a Mirror Dungeon Theme Pack?',
+    answer: 'Theme Packs are the gift pools you pick on each Mirror Dungeon floor. Each pack has exclusive and shared gifts, and the floors it appears on depend on Normal, Hard or Extreme difficulty.',
+  },
+  {
+    question: 'Which gifts can I get from Mirror Dungeon events?',
+    answer: 'Random events during a Mirror Dungeon run can grant specific gifts. The Events tab shows each event’s choices and reward gifts in advance.',
+  },
+], ja: [
+  {
+    question: 'ミラーダンジョンのE.G.Oギフト合成レシピはどう確認しますか？',
+    answer: 'ミラーダンジョン図鑑で各ギフトカードをクリックすると、合成レシピ（必要な素材ギフト）を確認できます。キーワードと等級のフィルターで目的のギフトをすぐに探せます。',
+  },
+  {
+    question: 'ミラーダンジョンのテーマパックとは何ですか？',
+    answer: 'テーマパックはミラーダンジョンの各階で選べるギフトのセットです。専用ギフトと共通ギフトが含まれ、ノーマル・ハード・エクストリームの難易度によって出現する階が異なります。',
+  },
+  {
+    question: 'ミラーダンジョンのイベントで入手できるギフトは？',
+    answer: 'ミラーダンジョン進行中のランダムイベントで特定のギフトを入手できます。イベントタブで各イベントの選択肢と報酬ギフトを事前に確認できます。',
+  },
+] }
 
 export default async function MirrorDungeonPage({ params }: { params: Promise<{ lang: string }> }) {
   'use cache'
@@ -78,7 +104,7 @@ export default async function MirrorDungeonPage({ params }: { params: Promise<{ 
 
   return (
     <>
-      <JsonLd data={faqJsonLd(MIRROR_FAQ)} />
+      <JsonLd data={faqJsonLd(MIRROR_FAQ[lang === 'en' || lang === 'ja' ? lang : 'ko'])} />
       {/* MirrorDungeonClient uses nuqs (useSearchParams internally), requiring Suspense
           to prevent CSR bailout from de-opting the entire page to client rendering. */}
       <Suspense fallback={<MirrorDungeonSkeleton />}>

@@ -896,7 +896,7 @@ export default function CommunityClient({ initialPlans, initialTotal }: Communit
   }, [planIndexes, debouncedSearch, activeKeywordList, keywordMode, selectedIdentityIdList, identityMode, filterOwnedIdentity, filterOwnedEgo, ownedIds])
 
   const renderedPlanCards = useMemo(() => filtered.map(plan => (
-    <PlanCard key={plan.id} plan={plan} localized onKeywordToggle={toggleKeyword} />
+    <PlanCard key={plan.id} plan={plan} onKeywordToggle={toggleKeyword} />
   )), [filtered, toggleKeyword])
 
   const collectionFilterCount = (filterOwnedIdentity ? 1 : 0) + (filterOwnedEgo ? 1 : 0)

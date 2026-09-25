@@ -4,6 +4,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from '@/lib/i18n/navigation'
 import { Search } from 'lucide-react'
+import { useLocale, useTranslations } from 'next-intl'
+import { getLocalizedName } from '@/lib/i18n/localize'
+import type { SupportedLang } from '@/lib/i18n/types'
 import { motion, useReducedMotion } from 'motion/react'
 import type { Sinner } from '@/lib/types'
 import type { IdentityBrowserItem, SortOption } from '@/lib/types/browser'
@@ -34,13 +37,14 @@ type IdentityBrowserItemWithRepresentativeKeywords = IdentityBrowserItem & {
   keywords?: string[] | null
 }
 
-const SORT_OPTIONS: DropdownOption<SortOption>[] = [
-  { value: 'default', label: '기본' },
-  { value: 'name', label: '이름순' },
-  { value: 'rarity', label: '등급순' },
-]
-
 export default function IdentityBrowserClient({ identities, sinners }: Props) {
+  const t = useTranslations('browser')
+  const lang = useLocale() as SupportedLang
+  const sortOptions: DropdownOption<SortOption>[] = [
+    { value: 'default', label: t('sort.default') },
+    { value: 'name', label: t('sort.name') },
+    { value: 'rarity', label: t('sort.rarity') },
+  ]
   const [nameQuery, setNameQuery] = useState('')
   const shouldReduceMotion = useReducedMotion()
   const representativeKeywordIdentities = useMemo<IdentityBrowserItem[]>(() => (
@@ -65,7 +69,9 @@ export default function IdentityBrowserClient({ identities, sinners }: Props) {
     if (!q) return filterResult
     return filterResult.filter(id =>
       (id.name_kr || '').toLowerCase().includes(q) ||
-      (id.name || '').toLowerCase().includes(q)
+      (id.name || '').toLowerCase().includes(q) ||
+      (id.name_en || '').toLowerCase().includes(q) ||
+      (id.name_jp || '').toLowerCase().includes(q)
     )
   }, [filterResult, nameQuery])
 
@@ -103,12 +109,12 @@ export default function IdentityBrowserClient({ identities, sinners }: Props) {
         variants={shouldReduceMotion ? undefined : workbenchReveal}
       >
         <BrowserHeader
-          title="인격 전체"
+          title={t('identitiesTitle')}
           totalCount={totalCount}
           filteredCount={filteredCount}
           sort={sort}
           onSortChange={setSort}
-          sortOptions={SORT_OPTIONS}
+          sortOptions={sortOptions}
         />
       </motion.div>
 
@@ -124,7 +130,7 @@ export default function IdentityBrowserClient({ identities, sinners }: Props) {
             {/* 이름 검색 */}
             <div>
               <div className={filterStyles.label}>
-                이름 검색
+                {t('nameSearch')}
               </div>
               <div className="relative">
                 <Search size={14} className="absolute left-2 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-muted)' }} aria-hidden />
@@ -132,9 +138,9 @@ export default function IdentityBrowserClient({ identities, sinners }: Props) {
                   type="text"
                   value={nameQuery}
                   onChange={e => setNameQuery(e.target.value)}
-                  placeholder="인격 이름..."
+                  placeholder={t('identityPlaceholder')}
                   className={filterStyles.input}
-                  aria-label="인격 이름 검색"
+                  aria-label={t('identitySearchLabel')}
                 />
               </div>
             </div>
@@ -151,8 +157,8 @@ export default function IdentityBrowserClient({ identities, sinners }: Props) {
             />
             <div style={{ borderTop: '1px solid #2e2417' }} />
             <FilterToggleGroup
-              sectionLabel="시즌"
-              items={[0,1,2,3,4,5,6,7].map(s => ({ value: s, label: s === 0 ? '기본' : `S${s}` }))}
+              sectionLabel={t('season')}
+              items={[0,1,2,3,4,5,6,7].map(s => ({ value: s, label: s === 0 ? t('seasonBase') : `S${s}` }))}
               selected={filters.seasons}
               onToggle={(v: number) => toggle('seasons', v)}
               columns={4}
@@ -174,14 +180,14 @@ export default function IdentityBrowserClient({ identities, sinners }: Props) {
             />
             <div style={{ borderTop: '1px solid #2e2417' }} />
             <NumericFilter
-              sectionLabel="가중치"
+              sectionLabel={t('weight')}
               values={availableWeights}
               selected={filters.atkWeights}
               onToggle={v => toggle('atkWeights', v)}
             />
             <div style={{ borderTop: '1px solid #2e2417' }} />
             <NumericFilter
-              sectionLabel="코인 수"
+              sectionLabel={t('coins')}
               values={availableCoins}
               selected={filters.coinCounts}
               onToggle={v => toggle('coinCounts', v)}
@@ -199,7 +205,7 @@ export default function IdentityBrowserClient({ identities, sinners }: Props) {
               animate="animate"
               variants={shouldReduceMotion ? undefined : workbenchReveal}
             >
-              <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>조건에 맞는 인격이 없습니다</p>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>{t('emptyIdentity')}</p>
             </motion.div>
           ) : (
             <motion.div
@@ -218,7 +224,7 @@ export default function IdentityBrowserClient({ identities, sinners }: Props) {
                 >
                   <Link
                     href={`/sinners/${id.sinner_slug}/identities/${id.id}`}
-                    aria-label={id.name_kr || id.name}
+                    aria-label={getLocalizedName({ name_kr: id.name_kr || id.name, name_en: id.name_en, name_jp: id.name_jp }, lang)}
                   >
                     <IdentityCard
                       identity={{

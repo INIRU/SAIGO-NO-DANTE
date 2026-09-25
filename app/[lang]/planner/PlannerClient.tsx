@@ -6,7 +6,7 @@ import { pendingNoteUploads, noteUploadInProgressMessage } from '@/lib/notes/ima
 
 import { memo, useMemo, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { motion, useReducedMotion } from 'motion/react'
-import { useRouter } from '@/lib/i18n/navigation'
+import { Link, useRouter } from '@/lib/i18n/navigation'
 import { useSession } from 'next-auth/react'
 import { useLocale, useTranslations } from 'next-intl'
 import { useQueryState, parseAsString } from 'nuqs'
@@ -18,6 +18,8 @@ import { enrichIdentitySlotsForGiftConditions } from '@/lib/planner/gift-conditi
 import { withLcbIdentitySlots } from '@/lib/planner/lcb'
 import { usePlannerStore } from '@/lib/stores/planner'
 import { showSuccess, showError } from '@/lib/toast'
+import { guestHeaders } from '@/lib/guest/key'
+import { getGuestCopy } from '@/lib/guest/copy'
 import DeckTab from '@/components/planner/DeckTab'
 import FloorTab from '@/components/planner/FloorTab'
 import PlanIntroEditor from '@/components/planner/PlanIntroEditor'
@@ -225,15 +227,16 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
       }
       const url = editId ? `/api/planner/${editId}` : '/api/planner'
       const method = editId ? 'PATCH' : 'POST'
+      const signedIn = session.status === 'authenticated'
       const res = await fetch(url, {
         method,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...guestHeaders(signedIn) },
         body: JSON.stringify(planBody),
       })
       if (res.ok) {
         const result = await res.json()
         setUploaded(true)
-        showSuccess(editId ? tPlanner('actions.updated') : tPlanner('actions.uploaded'))
+        showSuccess(editId ? tPlanner('actions.updated') : signedIn ? tPlanner('actions.uploaded') : getGuestCopy(locale).posted)
         const targetId = editId ?? result.id
         if (targetId) {
           setTimeout(() => router.push(`/planner/community/${targetId}`), 800)
@@ -272,6 +275,8 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
 
   // URL 파라미터 또는 1회성 handoff 복원. 자동 localStorage persist는 사용하지 않는다.
   // 화면을 그리기 전에 적용해 LCB 기본 배치가 늦게 끼어들지 않게 한다.
+  // handoff는 한 번만 읽어 ref에 둔다: 효과가 다시 돌아도(StrictMode, identities 갱신) 같은 플랜을 다시 적용하고 빈 플랜으로 덮지 않는다.
+  const handoffRef = useRef<ReturnType<typeof loadDraftFromLocal> | undefined>(undefined)
   useLayoutEffect(() => {
     const params = new URLSearchParams(window.location.search)
     const planCode = params.get('plan') ?? params.get('p')
@@ -340,11 +345,14 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
       return
     }
 
-    const handoff = loadDraftFromLocal()
+    if (handoffRef.current === undefined) {
+      handoffRef.current = loadDraftFromLocal()
+      clearDraftFromLocal()
+    }
+    const handoff = handoffRef.current
     if (handoff) {
       // 수감자가 빠진 옛 플랜도 LCB 인격으로 채워 빈 칸이 없게 한다
       dispatch({ type: 'LOAD_PLAN', state: { ...handoff, identitySlots: withLcbIdentitySlots(identities, handoff.identitySlots ?? []) } })
-      clearDraftFromLocal()
       return
     }
 
@@ -426,19 +434,18 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
             </button>
             <TempSaveMenu title={tTempSaves('menuLabel')} slots={tempSlots} onSave={handleSaveTempSlot} onLoad={handleLoadTempSlot} onDelete={handleDeleteTempSlot} />
             <button
-              onClick={session.status === 'authenticated' ? handleUpload : undefined}
-              disabled={session.status !== 'authenticated' || uploading}
+              onClick={handleUpload}
+              disabled={session.status === 'loading' || uploading}
               style={{
                 display: 'flex', alignItems: 'center', gap: '0.25rem', padding: '0.375rem 0.625rem',
-                background: uploaded ? 'rgba(34,197,94,0.12)' : session.status === 'authenticated' ? 'rgba(200,144,10,0.1)' : '#1a1510',
-                border: `1px solid ${uploaded ? 'rgba(34,197,94,0.35)' : session.status === 'authenticated' ? 'rgba(200,144,10,0.3)' : '#222'}`,
+                background: uploaded ? 'rgba(34,197,94,0.12)' : 'rgba(200,144,10,0.1)',
+                border: `1px solid ${uploaded ? 'rgba(34,197,94,0.35)' : 'rgba(200,144,10,0.3)'}`,
                 borderRadius: '0.375rem',
-                color: uploaded ? '#4ade80' : session.status === 'authenticated' ? '#e8b030' : '#4b5563',
-                fontSize: '0.9375rem', cursor: session.status === 'authenticated' ? 'pointer' : 'not-allowed',
-                opacity: session.status === 'authenticated' ? 1 : 0.5,
+                color: uploaded ? '#4ade80' : '#e8b030',
+                fontSize: '0.9375rem', cursor: session.status === 'loading' ? 'wait' : 'pointer',
                 transition: 'all 0.2s',
               }}
-              title={session.status !== 'authenticated' ? tPlanner('actions.loginRequired') : tPlanner('actions.uploadTitle')}
+              title={tPlanner('actions.uploadTitle')}
             >
               {uploaded ? <Check size={12} /> : <Upload size={12} />}
               {uploading
@@ -447,6 +454,12 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
                   ? (editId ? tPlanner('actions.updateComplete') : tPlanner('actions.uploadComplete'))
                   : (editId ? tPlanner('actions.update') : tPlanner('actions.upload'))}
             </button>
+            {session.status === 'unauthenticated' && (
+              <p className="w-full text-[0.8125rem] text-[#6a6058] sm:text-right">
+                {getGuestCopy(locale).saveHint}{' '}
+                <Link href="/guest" className="text-[#e8b030] underline-offset-4 hover:underline">{getGuestCopy(locale).manage}</Link>
+              </p>
+            )}
           </div>
         </motion.div>
 

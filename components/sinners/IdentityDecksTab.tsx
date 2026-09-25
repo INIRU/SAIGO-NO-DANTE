@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import Image from 'next/image'
+import { useTranslations } from 'next-intl'
 import DeckCard, { DeckSummary } from '@/components/decks/DeckCard'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
 const PAGE_SIZE = 12
@@ -27,6 +28,7 @@ interface Props {
 }
 
 export default function IdentityDecksTab({ identityId }: Props) {
+  const t = useTranslations('identityDecks')
   const { iconMap: kwIconMap, getIconUrl } = useKeywordData()
   const ALL_KEYWORDS = useMemo(() => Object.keys(kwIconMap), [kwIconMap])
   const [decks, setDecks] = useState<DeckSummary[]>([])
@@ -176,7 +178,7 @@ export default function IdentityDecksTab({ identityId }: Props) {
           </svg>
           <input
             type="text"
-            placeholder="제목, 설명, 태그, 키워드 검색..."
+            placeholder={t('searchPlaceholder')}
             value={search}
             onChange={e => { setSearch(e.target.value); setShowSuggestions(true) }}
             onFocus={() => setShowSuggestions(true)}
@@ -212,7 +214,7 @@ export default function IdentityDecksTab({ identityId }: Props) {
               }}
             >
               <div className="px-3 py-1" style={{ background: 'rgba(255,255,255,0.03)', color: '#999', fontSize: '0.75rem', fontWeight: 600 }}>
-                키워드 <span style={{ color: '#999', fontWeight: 400 }}>Tab으로 선택</span>
+                {t('keyword')} <span style={{ color: '#999', fontWeight: 400 }}>{t('tabHint')}</span>
               </div>
               {suggestions.map((kw, i) => {
                 const iconUrl = getIconUrl(kw)
@@ -259,7 +261,7 @@ export default function IdentityDecksTab({ identityId }: Props) {
                 fontSize: '0.75rem',
               }}
             >
-              {s === 'latest' ? '최신순' : '인기순'}
+              {s === 'latest' ? t('latest') : t('popular')}
             </button>
           ))}
         </div>
@@ -268,8 +270,8 @@ export default function IdentityDecksTab({ identityId }: Props) {
       {/* 결과 수 */}
       {!loading && (
         <p className="text-xs" style={{ color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)' }}>
-          {filtered.length}개의 덱{hasMore && '+'}
-          {search.trim() && ' (필터 적용됨)'}
+          {t('count', { count: filtered.length })}{hasMore && '+'}
+          {search.trim() && t('filtered')}
         </p>
       )}
 
@@ -290,7 +292,7 @@ export default function IdentityDecksTab({ identityId }: Props) {
         <div className="flex flex-col items-center justify-center py-20 gap-4">
           <div style={{ color: '#8a8095', fontSize: '3rem' }}>⊘</div>
           <p className="font-serif text-base" style={{ color: 'var(--text-tertiary)' }}>
-            {search.trim() ? '검색 결과가 없습니다.' : '이 인격이 사용된 덱이 아직 없습니다.'}
+            {search.trim() ? t('noResults') : t('empty')}
           </p>
         </div>
       ) : (
@@ -310,7 +312,7 @@ export default function IdentityDecksTab({ identityId }: Props) {
                 className="w-4 h-4 rounded-full animate-spin"
                 style={{ border: '2px solid var(--border)', borderTopColor: 'var(--gold)' }}
               />
-              불러오는 중...
+              {t('loading')}
             </div>
           )}
         </div>

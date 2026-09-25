@@ -9,8 +9,12 @@ import { motion, useReducedMotion } from 'motion/react'
 import { useLocale, useTranslations } from 'next-intl'
 import { Link, useRouter } from '@/lib/i18n/navigation'
 import { useSession } from 'next-auth/react'
-import { ArrowLeft, Heart, Bookmark, Share2, GitFork, Copy, Check, Pencil } from 'lucide-react'
+import { ArrowLeft, Heart, Bookmark, Share2, GitFork, Copy, Check, Pencil, Trash2 } from 'lucide-react'
 import { showSuccess, showError } from '@/lib/toast'
+import ConfirmModal from '@/components/ui/ConfirmModal'
+import { useGuestPosts } from '@/hooks/useGuestPosts'
+import { guestHeaders } from '@/lib/guest/key'
+import { getGuestCopy, guestAuthorName } from '@/lib/guest/copy'
 import { DEFAULT_AVATAR_URL, STORAGE_BASE } from '@/lib/constants/game'
 import { SIN_COLORS, SIN_KR_TO_EN, normalizeSin } from '@/lib/constants/sin'
 import { getIdentityImageUrl, getIdentityPortraitUrl, getSkillIconUrl, computeSkillImageIndices } from '@/lib/utils/images'
@@ -110,6 +114,7 @@ type DeckDetail = {
   is_owner?: boolean
   is_admin?: boolean
   user_id: string
+  guest_tag?: string | null
   profiles: { username: string; avatar_url?: string | null } | null
   deck_identities: IdentitySlot[]
   deck_egos?: EgoSlot[]
@@ -375,6 +380,10 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
 
   const [deck, setDeck] = useState<DeckDetail | null>(initialDeck ?? null)
   const [loading, setLoading] = useState(!initialDeck)
+  // Signed-out visitors own a guest deck when this browser's key wrote it.
+  const guestPosts = useGuestPosts(authStatus === 'unauthenticated' && !deck?.user_id).posts
+  const guestOwner = authStatus === 'unauthenticated' && !!guestPosts.data?.decks.some(post => post.id === id)
+  const [confirmDelete, setConfirmDelete] = useState(false)
   const [voted, setVoted] = useState(false)
   const [voteCount, setVoteCount] = useState(0)
   const [voting, setVoting] = useState(false)
@@ -811,7 +820,16 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
   const contentLabel = deck.content_type && deck.content_type !== '없음'
     ? decksT(`contentTypes.${contentTypeMessageKey(deck.content_type)}`)
     : null
-  const canEdit = deck.is_owner || deck.is_admin
+  const canEdit = deck.is_owner || deck.is_admin || guestOwner
+  const guestT = getGuestCopy(locale)
+  const deleteGuestDeck = async () => {
+    setConfirmDelete(false)
+    const res = await fetch(`/api/decks/${id}`, { method: 'DELETE', headers: guestHeaders(false) }).catch(() => null)
+    if (!res?.ok) { showError(guestT.deleteFailed); return }
+    void guestPosts.mutate()
+    showSuccess(guestT.deleted)
+    router.push('/decks')
+  }
 
   return (
     <div className="min-h-screen bg-[#0d0b08] pt-24 pb-20">
@@ -854,7 +872,7 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
               {deck.profiles?.username ? (
                 <Link href={`/users/${deck.user_id}`} className="block truncate text-[1rem] font-semibold leading-snug text-[#e8dcc8] hover:text-[#e8b030]">{deck.profiles.username}</Link>
               ) : (
-                <p className="text-[1rem] font-semibold leading-snug text-[#e8dcc8]">{commentsT('anonymous')}</p>
+                <p className="text-[1rem] font-semibold leading-snug text-[#e8dcc8]">{guestAuthorName(deck.guest_tag, locale) ?? commentsT('anonymous')}</p>
               )}
               <RelativeTime date={deck.created_at} className="text-[0.875rem] text-[#9c8b73]" />
             </div>
@@ -921,6 +939,12 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
                 <Pencil className="h-4 w-4" aria-hidden="true" />
                 {t('editDeck')}
               </Link>
+            )}
+            {guestOwner && (
+              <button type="button" onClick={() => setConfirmDelete(true)} style={{ color: '#e8a08a' }}>
+                <Trash2 className="h-4 w-4" aria-hidden="true" />
+                {rootT('common.delete')}
+              </button>
             )}
             <button type="button" onClick={handleFork} data-primary>
               <GitFork className="h-4 w-4" aria-hidden="true" />
@@ -1063,6 +1087,16 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
       {egoModalId && (
         <EgoDetailModal egoId={egoModalId} onClose={() => setEgoModalId(null)} />
       )}
+      <ConfirmModal
+        open={confirmDelete}
+        title={guestT.deleteDeckTitle}
+        message={guestT.deleteDeckMessage}
+        confirmLabel={rootT('common.delete')}
+        cancelLabel={rootT('common.cancel')}
+        variant="danger"
+        onConfirm={deleteGuestDeck}
+        onCancel={() => setConfirmDelete(false)}
+      />
     </div>
   )
 }

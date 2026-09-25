@@ -6,18 +6,22 @@ import { getAllEGOsForBrowser, getSinners } from '@/lib/db/queries'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import EGOBrowserClient from './EGOBrowserClient'
 import JsonLd, { itemListJsonLd } from '@/components/seo/JsonLd'
+import { getTranslations } from 'next-intl/server'
+import { getLocalizedName } from '@/lib/i18n/localize'
+import type { SupportedLang } from '@/lib/i18n/types'
 
 const TITLE = { ko: '림버스 컴퍼니 E.G.O 도감 — 전체 E.G.O 목록', en: 'Limbus Company E.G.O List', ja: 'リンバスカンパニー E.G.O一覧' }
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params
+  const t = await getTranslations({ locale: lang, namespace: 'browser.meta' })
   return {
     title: TITLE[lang as keyof typeof TITLE] ?? TITLE.ko,
-    description: '림버스 컴퍼니 12인 수감자의 모든 E.G.O를 한 곳에서 검색하고 필터링하세요. 등급, 죄악, 키워드별 필터 지원.',
+    description: t('egoDescription'),
     alternates: localeAlternates(lang, '/sinners/ego'),
     openGraph: {
-      title: 'E.G.O 전체 목록 | 최애의 관리자',
-      description: '모든 E.G.O를 등급, 죄악 속성으로 크로스 필터링하세요.',
+      title: t('egoOgTitle'),
+      description: t('egoOgDescription'),
     },
   }
 }
@@ -27,17 +31,18 @@ export default async function EGOBrowsePage({ params }: { params: Promise<{ lang
   cacheLife('max')
   cacheTag(CACHE_TAGS.ego, CACHE_TAGS.gameData)
   const { lang } = await params
-  const [egos, sinners] = await Promise.all([
+  const [egos, sinners, t] = await Promise.all([
     getAllEGOsForBrowser(),
     getSinners(),
+    getTranslations({ locale: lang, namespace: 'browser' }),
   ])
 
   const egoListLd = itemListJsonLd({
-    name: '림버스 컴퍼니 E.G.O 전체 목록',
-    description: '12인 수감자의 모든 E.G.O — 등급, 죄악별 필터',
+    name: t('meta.egoListName'),
+    description: t('meta.egoOgDescription'),
     url: localeUrl(lang, '/sinners/ego'),
     items: egos.slice(0, 50).map((e, i) => ({
-      name: e.name_kr || e.name,
+      name: getLocalizedName({ name_kr: e.name_kr || e.name, name_en: e.name_en, name_jp: e.name_jp }, lang as SupportedLang),
       url: localeUrl(lang, `/sinners/${e.sinner_slug}/ego/${e.id}`),
       position: i + 1,
     })),

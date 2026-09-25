@@ -311,7 +311,7 @@ export async function getAllIdentitiesForBrowser(): Promise<IdentityBrowserItem[
     supabase()
       .schema('limbus')
       .from('identities')
-      .select('id, sinner_id, name, name_kr, rarity, sin_affinity, keywords, skill_keyword_list, folder_name, game_id, hp, speed_min, speed_max, def_level, acquisition_info, sinner:sinners(id, name_kr, order_num)')
+      .select('id, sinner_id, name, name_kr, name_en, name_jp, rarity, sin_affinity, keywords, skill_keyword_list, folder_name, game_id, hp, speed_min, speed_max, def_level, acquisition_info, sinner:sinners(id, name_kr, order_num)')
       .order('rarity', { ascending: false })
       .order('name'),
     supabase()
@@ -349,6 +349,8 @@ export async function getAllIdentitiesForBrowser(): Promise<IdentityBrowserItem[
       sinner_id: id.sinner_id,
       name: id.name,
       name_kr: id.name_kr,
+      name_en: id.name_en,
+      name_jp: id.name_jp,
       rarity: id.rarity,
       sin_affinity: id.sin_affinity as SinType | null,
       keywords: id.keywords ?? [],
@@ -376,7 +378,7 @@ export async function getAllEGOsForBrowser(): Promise<EGOBrowserItem[]> {
   const { data, error } = await supabase()
     .schema('limbus')
     .from('ego')
-    .select('id, sinner_id, name, name_kr, grade, sin_affinity, keywords, folder_name, image_url, game_id, stage_levels:ego_skills(construe_level), sinner:sinners(id, name_kr, order_num)')
+    .select('id, sinner_id, name, name_kr, name_en, name_jp, grade, sin_affinity, keywords, folder_name, image_url, game_id, stage_levels:ego_skills(construe_level), sinner:sinners(id, name_kr, order_num)')
     .order('grade')
     .order('name')
   if (error) throw error
@@ -388,6 +390,8 @@ export async function getAllEGOsForBrowser(): Promise<EGOBrowserItem[]> {
       sinner_id: e.sinner_id,
       name: e.name,
       name_kr: e.name_kr,
+      name_en: e.name_en,
+      name_jp: e.name_jp,
       grade: e.grade,
       max_construe_level: withEgoStage(e).max_construe_level,
       sin_affinity: e.sin_affinity as SinType | null,

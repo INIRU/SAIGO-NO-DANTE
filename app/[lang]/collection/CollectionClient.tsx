@@ -2,6 +2,7 @@
 
 import { Suspense, useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { useCollectionModel } from '@/components/collection/useCollectionModel'
 import CollectionBoard from '@/components/collection/CollectionBoard'
 import CollectionSection from '@/components/mypage/CollectionSection'
@@ -11,6 +12,7 @@ const PAGE = 'mx-auto max-w-[80rem] px-4 pb-16 pt-[calc(64px+1.5rem)] md:px-6'
 
 /** /collection: without ?code it is the editor (saved in this browser, synced when signed in); with ?code a shared, read-only view. */
 function CollectionViewer({ data }: { data: CollectionData }) {
+  const t = useTranslations('collectionPage')
   const code = useSearchParams()?.get('code') ?? null
   const [owned, setOwned] = useState<Set<string>>(new Set())
   const [sinner, setSinner] = useState(data.sinners[0]?.id ?? '')
@@ -31,9 +33,9 @@ function CollectionViewer({ data }: { data: CollectionData }) {
   return (
     <div className={PAGE}>
       <header className="mb-4 flex min-h-11 flex-wrap items-center justify-between gap-x-6 gap-y-2">
-        <h1 className="font-[family-name:var(--font-heading)] text-[1.375rem] text-[var(--gold)] md:text-[1.75rem]">공유된 보유 현황</h1>
+        <h1 className="font-[family-name:var(--font-heading)] text-[1.375rem] text-[var(--gold)] md:text-[1.75rem]">{t('sharedTitle')}</h1>
         <p className="flex gap-5 text-[0.875rem] text-[#9c8b73]">
-          <span>인격 <b className="font-[family-name:var(--font-title)] text-[1.125rem] font-normal text-[var(--gold-light)]">{stats.ownedIdentities}</b>/{stats.totalIdentities}</span>
+          <span>{t('identities')} <b className="font-[family-name:var(--font-title)] text-[1.125rem] font-normal text-[var(--gold-light)]">{stats.ownedIdentities}</b>/{stats.totalIdentities}</span>
           <span>E.G.O <b className="font-[family-name:var(--font-title)] text-[1.125rem] font-normal text-[var(--gold-light)]">{stats.ownedEgos}</b>/{stats.totalEgos}</span>
         </p>
       </header>

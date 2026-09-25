@@ -23,13 +23,13 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
 const PAGE_SIZE = 12
 const DECK_LIST_SELECT_WITH_SKILL_KEYWORDS = `
       id, user_id, title, description, tags, main_keywords, content_type, lang, vote_count, view_count, comment_count, created_at,
-      profiles!decks_user_id_fkey(username),
+      guest_tag, profiles!decks_user_id_fkey(username),
       deck_identities(slot_order, gacksung, s1_count, s2_count, s3_count, identities(id, sinner_id, folder_name, game_id, keywords, skill_keyword_list, name_kr)),
       deck_egos(ego_id, grade)
     `
 const DECK_LIST_SELECT_LEGACY = `
       id, user_id, title, description, tags, content_type, lang, vote_count, view_count, comment_count, created_at,
-      profiles!decks_user_id_fkey(username),
+      guest_tag, profiles!decks_user_id_fkey(username),
       deck_identities(slot_order, gacksung, s1_count, s2_count, s3_count, identities(id, sinner_id, folder_name, game_id, keywords, name_kr)),
       deck_egos(ego_id, grade)
     `

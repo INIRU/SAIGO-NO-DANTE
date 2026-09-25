@@ -31,7 +31,7 @@ async function fetchFullPlan(id: string) {
   const { data } = await supabase
     .schema('limbus')
     .from('md_plans')
-    .select('id, title, description, difficulty, tags, deck, egos, floor_plan, gift_inventory, vote_count, view_count, comment_count, created_at, user_id, profiles:user_id(username, avatar_url)')
+    .select('id, title, description, difficulty, tags, deck, egos, floor_plan, gift_inventory, vote_count, view_count, comment_count, created_at, user_id, guest_tag, profiles:user_id(username, avatar_url)')
     .eq('id', id)
     .maybeSingle()
   return data
