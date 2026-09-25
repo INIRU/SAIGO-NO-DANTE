@@ -49,6 +49,7 @@ import {
   type IdentitySlot,
 } from '@/components/deck-detail/DeckIdentityCard'
 import FormationBoard, { type FormationBoardSlot } from '@/components/decks/FormationBoard'
+import { FormationEgoGrid, FormationTabs, type FormationEgo } from '@/components/decks/FormationEgoGrid'
 import DeckRecommendations, { type DeckRecommendationsData } from '@/components/deck-detail/DeckRecommendations'
 import DeckComments from '@/components/deck-detail/DeckComments'
 import { getGiftActivationConditionStatus } from '@/lib/planner/gift-condition-status'
@@ -388,6 +389,7 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
   const [voting, setVoting] = useState(false)
   const [copied, setCopied] = useState(false)
   const [identityPreview, setIdentityPreview] = useState<IdentityPreviewState | null>(null)
+  const [formationTab, setFormationTab] = useState<'identity' | 'ego'>('identity')
 
   const [bookmarked, setBookmarked] = useState(false)
   const [bookmarking, setBookmarking] = useState(false)
@@ -574,6 +576,15 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
     })
   }, [deck?.deck_identities])
   const boardSlots = useMemo(() => buildBoardSlots(sorted), [sorted])
+  // E.G.O 탭: 수감자 → 등급 → E.G.O
+  const formationEgos = useMemo(() => {
+    const map: Record<string, Record<string, FormationEgo>> = {}
+    for (const row of deck?.deck_egos ?? []) {
+      if (!row.ego) continue
+      ;(map[row.ego.sinner_id] ??= {})[row.grade] = { id: row.ego.id, name: localizeEgoName(row.ego, locale), sin_affinity: row.ego.sin_affinity }
+    }
+    return map
+  }, [deck?.deck_egos, locale])
   const keywords = useMemo(() => {
     const persistedKeywords = (deck?.main_keywords ?? [])
       .map(normalizeDeckMainKeyword)
@@ -957,11 +968,29 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
 
         <main className="min-w-0 overflow-x-clip">
           <section id="deck-formation" aria-labelledby="deck-formation-title" className={styles.section}>
-            <SectionHead id="deck-formation-title" title={t('sectionFormation')} meta={filledSlots.length > 0 ? t('boardHintShort') : undefined} />
+            <SectionHead id="deck-formation-title" title={t('sectionFormation')} />
             {filledSlots.length === 0 ? (
               <p className={styles.empty}>{t('identityEmpty')}</p>
             ) : (
               <>
+                <FormationTabs
+                  tabs={[
+                    { key: 'identity', label: rootT('planner.deckTab.subTabs.identity'), count: `${formedSlots.length}/${BOARD_SLOT_COUNT}` },
+                    { key: 'ego', label: rootT('planner.deckTab.subTabs.ego'), count: String(deck.deck_egos?.filter(row => row.ego).length ?? 0) },
+                  ]}
+                  active={formationTab}
+                  onChange={setFormationTab}
+                  label={rootT('planner.deckTab.subTabs.label')}
+                  hint={formationTab === 'identity' ? t('boardHintShort') : null}
+                />
+                {formationTab === 'ego' ? (
+                  <FormationEgoGrid
+                    sinners={SINNER_ORDER.map((sinnerId, index) => ({ id: sinnerId, name: rootT(`sinner.${sinnerId}`), filled: Boolean(boardSlots[index]?.identities) }))}
+                    egos={formationEgos}
+                    onEgoClick={setEgoModalId}
+                    noIdentityLabel={rootT('planner.deckTab.ego.noIdentity')}
+                  />
+                ) : (<>
                 <FormationBoard
                   slots={boardSlots.map((slot, index): FormationBoardSlot => {
                     const identity = slot?.identities ?? null
@@ -979,6 +1008,7 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
                 />
 
                 <DeckInsights identities={insightIdentities} sinCounts={deckAnalysis.sinCounts} baseSinCounts={deckAnalysis.baseSinCounts} summary={deckAnalysis.summary} />
+                </>)}
               </>
             )}
           </section>
