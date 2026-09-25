@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useLocale } from "next-intl";
+import { useSearchParams } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { showSuccess, showError } from "@/lib/toast";
 import AvatarPicker from "@/components/mypage/AvatarPicker";
@@ -24,11 +25,13 @@ export default function ProfileTab({
 }) {
   const locale = useLocale(),
     t = getCommunityCopy(locale);
+  // Arriving from the legal update modal ("decline and delete"): open straight at the withdrawal confirmation.
+  const askWithdraw = useSearchParams().get("withdraw") === "1";
   const [name, setName] = useState(profile.username || ""),
     [bio, setBio] = useState(profile.bio || "");
   const [busy, setBusy] = useState(false),
     [avatarOpen, setAvatarOpen] = useState(false),
-    [withdraw, setWithdraw] = useState(false);
+    [withdraw, setWithdraw] = useState(askWithdraw);
   async function patch(url: string, data: unknown) {
     const r = await fetch(url, {
       method: "PATCH",
@@ -118,7 +121,7 @@ export default function ProfileTab({
           {busy ? t.saving : t.save}
         </button>
       </form>
-      <details className="community-account">
+      <details className="community-account" open={askWithdraw || undefined}>
         <summary>{t.account}</summary>
         <p className="community-muted">{email}</p>
         {withdraw ? (

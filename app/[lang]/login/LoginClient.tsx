@@ -13,7 +13,7 @@ import { useLocale, useTranslations } from 'next-intl'
 import { getIdentityImageUrl } from '@/lib/utils/images'
 import type { LegalDoc } from '@/lib/data/legal'
 import { LOGIN_CONSENT_KEY } from '@/lib/legal-consent'
-import LoginConsent, { type LoginConsentState } from './LoginConsent'
+import LegalConsent, { type LegalConsentState } from '@/components/legal/LegalConsent'
 import './login.css'
 
 const FALLBACK_ART = getIdentityImageUrl('don-quixote', 'The Manager of La Manchaland', '10310_gacksung')
@@ -36,7 +36,7 @@ export default function LoginClient({ docs, art }: { docs: LegalDoc[]; art: stri
   const siteName = useTranslations('site')('name')
   const [pending, setPending] = useState(false)
   const [error, setError] = useState<ErrorKey | null>(null)
-  const [agreed, setAgreed] = useState<LoginConsentState>({})
+  const [agreed, setAgreed] = useState<LegalConsentState>({})
   const allAgreed = docs.length > 0 && docs.every(doc => agreed[doc.type])
   const returnUrl = () => safeLoginReturn(new URLSearchParams(window.location.search).get('callbackUrl'), locale)
   useEffect(() => { setError(errorKey(new URLSearchParams(window.location.search).get('error'))) }, [])
@@ -72,7 +72,8 @@ export default function LoginClient({ docs, art }: { docs: LegalDoc[]; art: stri
         </div>
         <section className="login-panel" aria-labelledby="login-title">
           <h1 id="login-title" className="sr-only">{t('title')}</h1>
-          <LoginConsent docs={docs} agreed={agreed} onChange={setAgreed} />
+          <LegalConsent docs={docs} agreed={agreed} onChange={setAgreed}
+            labels={{ agreeTerms: t('agreeTerms'), agreePrivacy: t('agreePrivacy'), readFull: t('readFull'), hideFull: t('hideFull'), readToAgree: t('readToAgree') }} />
           <button type="button" className="login-google" onClick={login} disabled={pending || !allAgreed || status !== 'unauthenticated'} aria-busy={pending}>
             <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
               <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>

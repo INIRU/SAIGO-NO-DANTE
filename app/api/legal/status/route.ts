@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { getCurrentLegalDocs, getUserLegalAcknowledgements, toLegalStatusPayload } from '@/lib/data/legal'
+import { getCurrentLegalDocs, getLegalDoc, getUserLegalAcknowledgements, toLegalStatusPayload, type LegalDoc } from '@/lib/data/legal'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { findOrCreateSupabaseUser } from '@/lib/supabase/findOrCreateUser'
 
@@ -34,7 +34,13 @@ function buildSuspensionPayload(profile: ProfileSuspensionRow | null) {
   }
 }
 
-export async function GET() {
+// Full text in the reader's language (Korean when missing), so the update modal can require reading it before agreeing.
+async function legalTexts(lang: string) {
+  const docType = async (type: LegalDoc['type']) => (await getLegalDoc(type, lang)) ?? (lang === 'ko' ? null : getLegalDoc(type, 'ko'))
+  return (await Promise.all([docType('terms'), docType('privacy')])).filter((doc): doc is LegalDoc => doc !== null)
+}
+
+export async function GET(request: Request) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.email) {
@@ -67,8 +73,11 @@ export async function GET() {
       return NextResponse.json({ error: profileRes.error.message }, { status: 500 })
     }
 
+    const legal = toLegalStatusPayload(docs, acknowledgements)
+    const lang = new URL(request.url).searchParams.get('lang')
     return NextResponse.json({
-      legal: toLegalStatusPayload(docs, acknowledgements),
+      legal,
+      texts: legal.required && lang ? await legalTexts(['ko', 'en', 'ja'].includes(lang) ? lang : 'ko') : undefined,
       suspension: buildSuspensionPayload(profileRes.data as ProfileSuspensionRow | null),
     })
   } catch (err: unknown) {
