@@ -1002,7 +1002,7 @@
         "identity": "人格フィルター",
         "identityModeToggle": "人格の OR/AND 条件を切り替え",
         "identitySelected": "選択中",
-        "collection": "所持",
+        "collection": "所持フィルター",
         "ownedIdentityPlan": "所持人格プラン",
         "ownedEgoPlan": "所持E.G.Oプラン",
         "collectionCodePlaceholder": "所持状況URLまたはコード",
@@ -1012,23 +1012,7 @@
         "invalidCode": "無効なコード",
         "clear": "クリア",
         "or": "OR",
-        "and": "AND",
-        "keywordsShort": "キーワード",
-        "affiliation": "所属",
-        "identityShort": "人格",
-        "gift": "ギフト",
-        "theme": "テーマパック",
-        "searchAffiliation": "所属名で検索",
-        "searchEgo": "E.G.O名で検索",
-        "searchGift": "ギフト名で検索",
-        "searchTheme": "テーマパック名で検索",
-        "matchAny": "いずれかを含む",
-        "matchAll": "すべて含む",
-        "clearAll": "すべて解除",
-        "remove": "{label}の絞り込みを外す",
-        "moreResults": "ほかに{count}件あります。名前で検索してください。",
-        "postCount": "{count}件",
-        "egoSinner": "囚人"
+        "and": "AND"
       },
       "languageFilter": {
         "label": "言語",
@@ -1596,6 +1580,20 @@
   "ownedBadge": {
     "owned": "所持",
     "missing": "{count}人格不足"
+  },
+  "boardFacets": {
+    "affiliation": "所属",
+    "ego": "E.G.O",
+    "gift": "ギフト",
+    "theme": "テーマパック",
+    "pick": "選ぶ",
+    "pickMore": "さらに選ぶ",
+    "close": "閉じる",
+    "sinner": "囚人",
+    "searchAffiliation": "所属名で検索",
+    "searchTheme": "テーマパック名で検索",
+    "postCount": "{count}件",
+    "remove": "{label}を外す"
   },
   "mypage": {
     "title": "マイページ"

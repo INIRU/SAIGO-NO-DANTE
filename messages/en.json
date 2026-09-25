@@ -1002,7 +1002,7 @@
         "identity": "Identity Filter",
         "identityModeToggle": "Toggle identity OR/AND condition",
         "identitySelected": "selected",
-        "collection": "Owned",
+        "collection": "Collection Filter",
         "ownedIdentityPlan": "Owned Identity Plans",
         "ownedEgoPlan": "Owned E.G.O Plans",
         "collectionCodePlaceholder": "Collection URL or code",
@@ -1012,23 +1012,7 @@
         "invalidCode": "Invalid code",
         "clear": "Clear",
         "or": "OR",
-        "and": "AND",
-        "keywordsShort": "Keywords",
-        "affiliation": "Affiliation",
-        "identityShort": "Identity",
-        "gift": "Gifts",
-        "theme": "Theme packs",
-        "searchAffiliation": "Search affiliations",
-        "searchEgo": "Search E.G.O",
-        "searchGift": "Search gifts",
-        "searchTheme": "Search theme packs",
-        "matchAny": "Any of these",
-        "matchAll": "All of these",
-        "clearAll": "Clear all",
-        "remove": "Remove {label} filter",
-        "moreResults": "{count} more. Search by name to find them.",
-        "postCount": "{count} plans",
-        "egoSinner": "Sinner"
+        "and": "AND"
       },
       "languageFilter": {
         "label": "Language",
@@ -1596,6 +1580,20 @@
   "ownedBadge": {
     "owned": "Owned",
     "missing": "{count} missing"
+  },
+  "boardFacets": {
+    "affiliation": "Affiliation",
+    "ego": "E.G.O",
+    "gift": "Gifts",
+    "theme": "Theme packs",
+    "pick": "Choose",
+    "pickMore": "Choose more",
+    "close": "Close",
+    "sinner": "Sinner",
+    "searchAffiliation": "Search affiliations",
+    "searchTheme": "Search theme packs",
+    "postCount": "{count} posts",
+    "remove": "Remove {label}"
   },
   "mypage": {
     "title": "My Page"
