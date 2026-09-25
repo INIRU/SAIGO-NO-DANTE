@@ -22,8 +22,9 @@ import FloorProgress from '@/components/planner/run/FloorProgress'
 import FloorPanel from '@/components/planner/run/FloorPanel'
 import CompanionPanel from '@/components/planner/run/CompanionPanel'
 import RecognitionModeControl from '@/components/planner/run/RecognitionModeControl'
-import DetectionToggles from '@/components/planner/run/DetectionToggles'
+import DetectionToggles, { ToggleSwitch } from '@/components/planner/run/DetectionToggles'
 import { DETECTION_STORAGE_KEY, DEFAULT_DETECTION, readDetectionSettings, type DetectionSettings } from '@/lib/vision/detection-settings'
+import { readSampleConsent, SAMPLES_STORAGE_KEY } from '@/lib/vision/assist-samples'
 import { readRecognitionMode, RECOGNITION_MODE_STORAGE_KEY, type RecognitionMode } from '@/lib/vision/recognition-profile'
 import ConfirmModal from '@/components/ui/ConfirmModal'
 import { captureEvidence, useAssistCapture } from '@/lib/hooks/useAssistCapture'
@@ -89,12 +90,19 @@ export default function RunClient({ themes, gifts, recipes, identities, sinners,
     setDetection(next)
     try { window.localStorage.setItem(DETECTION_STORAGE_KEY, JSON.stringify(next)) } catch { /* applies to this session */ }
   }
+  // Recognition samples: off until chosen; undefined until this browser's choice is read, null while never asked.
+  const [samples, setSamples] = useState<boolean | null | undefined>(undefined)
+  useEffect(() => { setSamples(readSampleConsent(window.localStorage)) }, [])
+  const changeSamples = (next: boolean) => {
+    setSamples(next)
+    try { window.localStorage.setItem(SAMPLES_STORAGE_KEY, next ? 'on' : 'off') } catch { /* applies to this session */ }
+  }
   const giftMap = useMemo(() => buildGiftMap(gifts), [gifts])
   // Fixed-recipe fusions: their materials decide the result, and a popup the recognizer cannot settle may still be the
   // only recipe result the current inventory can make.
   const resolvePopup = useCallback((evidence: RecipePopupEvidence, verdict: string | null, inFusion: boolean) =>
     settleResultPopup(evidence, verdict, useRunStore.getState().giftInventory, recipes, giftMap, inFusion), [recipes, giftMap])
-  const capture = useAssistCapture({ giftReferences, eventReferences, ocrCatalog, themeCatalog, mode: recognitionMode, detection, resolvePopup,
+  const capture = useAssistCapture({ giftReferences, eventReferences, ocrCatalog, themeCatalog, mode: recognitionMode, detection, resolvePopup, samples: samples === true,
     language: locale === 'en' || locale === 'ja' ? locale : 'ko', floor: state.phase === 'playing' ? state.currentFloor : null })
   const { visualCandidates, ocrCandidates, eventChoiceEvidence } =
     captureEvidence(capture, state.phase === 'playing' ? state.currentFloor : null, Date.now())
@@ -182,6 +190,8 @@ export default function RunClient({ themes, gifts, recipes, identities, sinners,
       options={{ gifts: { label: t('detectionGifts'), description: t('detectionGiftsHint') },
         themes: { label: t('detectionThemes'), description: t('detectionThemesHint') },
         events: { label: t('detectionEvents'), description: t('detectionEventsHint') } }} />
+    <ToggleSwitch data-assist-samples="" on={samples === true} onChange={() => changeSamples(samples !== true)}
+      label={t('samplesLabel')} description={t('samplesHint')} />
   </div>
   const recognitionSummary = { fastest: t('recognitionModeFastest'), performance: t('recognitionModePerformance'),
     balanced: t('recognitionModeBalanced'), quality: t('recognitionModeQuality') }[recognitionMode]
@@ -202,12 +212,12 @@ export default function RunClient({ themes, gifts, recipes, identities, sinners,
     toast.success(tTempSaves('deletedFromSlot', { slot: slot.slotNumber }))
   }
 
-  // A started run fills exactly one screen without site chrome; only the tab content scrolls.
+  // The whole Assist page (setup included) is a tool screen without site chrome; a started run fills exactly one screen.
   const running = !loadingPlan && state.phase === 'playing'
   useHtmlFlag('with-assist-run')
   useHtmlFlag('with-assist-running', running)
   return <div data-assist-run data-assist-running={running || undefined} className={`bg-[var(--bg-deep)] text-[var(--text-primary)] ${running ? 'flex h-dvh flex-col overflow-hidden' : 'min-h-screen'}`}>
-    <div className={`mx-auto w-full max-w-[90rem] px-4 sm:px-6 lg:px-8 ${running ? 'flex min-h-0 flex-1 flex-col py-2 sm:py-3' : 'pb-12 pt-20 sm:pt-24'}`}>
+    <div className={`mx-auto w-full max-w-[90rem] px-4 sm:px-6 lg:px-8 ${running ? 'flex min-h-0 flex-1 flex-col py-2 sm:py-3' : 'pb-12 pt-4 sm:pt-6'}`}>
       <header className={`flex shrink-0 items-center justify-between gap-x-3 gap-y-2 border-b border-[var(--border)] max-sm:flex-nowrap sm:flex-wrap ${running ? 'mb-3 pb-2' : 'mb-4 pb-3'}`}>
         <div className="flex min-w-0 items-center gap-3">
           <BackLink href="/" aria-label={t('backToPlanner')} title={t('backToPlanner')} className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--gold-light)] focus-visible:outline-2 focus-visible:outline-[var(--gold-light)]"><ArrowLeft size={18} /></BackLink>
@@ -243,14 +253,14 @@ export default function RunClient({ themes, gifts, recipes, identities, sinners,
       </header>
       {state.phase === 'playing' && capture.mobile && <p role="note" className="mb-3 shrink-0 rounded-md border border-[var(--border)] bg-[var(--bg-card)] px-3 py-2 text-xs text-[var(--text-secondary)]" data-capture-mobile>{t('captureMobileBlocked')}</p>}
       {state.phase === 'playing' && !capture.mobile && <div className="mb-2 flex shrink-0 flex-wrap items-center justify-between gap-x-6 gap-y-2">
-      <div data-capture-state={capture.status} role={capture.status === 'error' ? 'alert' : 'status'} title={t('captureFramesPrivacy')}
+      <div data-capture-state={capture.status} role={capture.status === 'error' ? 'alert' : 'status'} title={t(samples ? 'captureFramesPrivacySamples' : 'captureFramesPrivacy')}
         className="flex min-w-0 max-w-3xl flex-1 items-center gap-2">
         {/* Static state dot: gold while connected, red on failure, muted otherwise. */}
         <span aria-hidden="true" className={`h-2 w-2 shrink-0 rounded-full ${capture.status === 'running' ? 'bg-[var(--gold)] shadow-[0_0_0_3px_color-mix(in_srgb,var(--gold)_22%,transparent)]'
           : capture.status === 'error' || capture.status === 'unsupported' ? 'bg-[var(--error)]' : 'bg-[var(--text-muted)]'}`} />
         <p className="min-w-0 break-keep text-[0.8125rem] leading-5">
           <span className={`font-semibold ${capture.status === 'error' || capture.status === 'unsupported' ? 'text-[var(--error)]' : 'text-[var(--gold-light)]'}`}>{t(`capture_${capture.status}`)}</span>
-          <span className="sr-only"> {t('captureFramesPrivacy')}</span>
+          <span className="sr-only"> {t(samples ? 'captureFramesPrivacySamples' : 'captureFramesPrivacy')}</span>
         </p>
       </div>
       {/* 떠 있는 팝오버: 열어도 아래 화면을 밀지 않는다 */}
@@ -261,6 +271,13 @@ export default function RunClient({ themes, gifts, recipes, identities, sinners,
         </summary>
         <div className="absolute right-0 top-[calc(100%+0.375rem)] z-40 max-h-[70dvh] w-[min(48rem,calc(100vw-2rem))] overflow-y-auto rounded-lg border border-[var(--border)] bg-[var(--bg-panel)] p-3 shadow-[0_1rem_2.5rem_rgba(0,0,0,0.55)]">{recognitionControls}</div>
       </details>
+      {/* Asked once, the first time the screen is connected; the switch in the recognition settings changes it later. */}
+      {captureActive && samples === null && <div role="group" aria-label={t('samplesLabel')} data-assist-samples-prompt
+        className="flex w-full flex-wrap items-center gap-2 rounded-md border border-[var(--border-gold)] bg-[var(--bg-card)] px-3 py-2 text-xs">
+        <p className="min-w-0 flex-1 basis-64 break-keep leading-5 text-[var(--text-secondary)]"><span className="font-semibold text-[var(--gold-light)]">{t('samplesPrompt')}</span> {t('samplesHint')}</p>
+        <button type="button" onClick={() => changeSamples(true)} className="min-h-9 rounded-md bg-[var(--gold)] px-3 font-semibold text-[var(--bg-deep)] hover:bg-[var(--gold-light)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--gold-light)]">{t('samplesYes')}</button>
+        <button type="button" onClick={() => changeSamples(false)} className="min-h-9 rounded-md border border-[var(--border)] px-3 text-[var(--text-secondary)] hover:text-[var(--text-primary)] focus-visible:outline-2 focus-visible:outline-[var(--gold-light)]">{t('samplesNo')}</button>
+      </div>}
       </div>}
 
       {dataError && <p role="alert" className="mb-5 shrink-0 rounded-md border border-[var(--error)] p-3 text-sm text-[var(--error)]">{t('dataError')}</p>}

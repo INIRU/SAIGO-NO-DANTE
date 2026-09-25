@@ -1,8 +1,8 @@
 /* Workspaces keep navigation useful without a second large page at the bottom. */
 /* Owning components set these html[data-with-…] flags while they are mounted (hooks/useHtmlFlag.ts). */
 html[data-with-admin-shell] :is(.site-navigation, .site-footer) { display: none; }
-/* A started assist run is a full-screen tool: its own header carries the way back. */
-html[data-with-assist-running] :is(.site-navigation, .site-footer) { display: none; }
+/* Assist mode (setup and run) is a full-screen tool: its own header carries the way back. */
+html[data-with-assist-run] :is(.site-navigation, .site-footer) { display: none; }
 /* Support is a full-viewport chat; only its inner panes scroll and its list header links back to the site. */
 html[data-with-support-page] :is(.site-navigation, .site-footer) { display: none; }
 html[data-with-support-page], html[data-with-support-page] body { overflow: hidden; }
