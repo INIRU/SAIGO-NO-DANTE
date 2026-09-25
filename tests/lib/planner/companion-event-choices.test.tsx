@@ -6,7 +6,9 @@ import type { GiftData } from '@/lib/planner/types'
 
 vi.mock('next-intl', () => ({
   useLocale: () => 'ko',
-  useTranslations: () => (key: string) => key,
+  useTranslations: () => Object.assign((key: string) => key, {
+    rich: (key: string, values: Record<string, unknown>) => [key, ...Object.values(values).map(value => typeof value === 'function' ? value([]) : value)],
+  }),
 }))
 vi.mock('@/components/ui/GiftArtwork', () => ({ default: () => <span data-test-artwork /> }))
 
@@ -83,4 +85,31 @@ it('numbers each choice for assistive tech, shows conditions and outcomes but no
   expect(html).toContain('pipEventCostRequirement')
   expect(html).toContain('pipEventUnknownEffect')
   expect(html).not.toMatch(/선택지 지문|결과 지문/)
+})
+
+it('keeps who an effect applies to: a Pride-skill heal is not an all-allies heal', () => {
+  // 오만 선택지(901026·901028)와 판정 실패 선택지의 실제 데이터 모양
+  const effects = [
+    { type: 'source', source: { resultEffect: 'RecoverHpOnly_10', resultEffectTarget: 'EveryAlly' } },
+    { type: 'source', source: { resultEffect: 'RecoverHpOnly_10', resultEffectTarget: 'EveryAlly', resultEffectCondition1: 'IncludeSkillAttribute_INDIGO' } },
+    { type: 'source', source: { resultEffect: 'LoseHpOnly_10', resultEffectTarget: 'RandomAlly_1', resultEffectCondition1: 'NotIncludeSkillAttribute_CRIMSON,VIOLET' } },
+    { type: 'source', source: { resultEffect: 'LoseMpOnly_12', resultEffectTarget: 'ChosenPersonality', resultEffectCondition1: 'FAILURE' } },
+  ]
+  const { lines } = summarizeChoiceEffects(effects, 'ko')
+  expect(lines).toEqual([
+    'stat:EveryAlly:HP+10',
+    'stat:EveryAlly|IncludeSkillAttribute_INDIGO:HP+10',
+    'stat:RandomAlly_1|NotIncludeSkillAttribute_CRIMSON,VIOLET:HP−10',
+    'stat:ChosenPersonality|FAILURE:SP−12',
+  ])
+  expect(effectTokens(lines[1])).toMatchObject({ target: 'EveryAlly', condition: 'IncludeSkillAttribute_INDIGO' })
+
+  const html = renderToStaticMarkup(<CompanionEventChoices eventId={901026} events={[{ id: 901026 }] as MdEvent[]}
+    choices={[choice(21, 901026, 0, { effects })]} giftMap={new Map()} />)
+  expect(html).toContain('pipEventAllAllies')
+  expect(html).toContain('pipEventHasSinSkill')
+  expect(html).toMatch(/color:#3870b0[^>]*>pride/)
+  expect(html).toContain('pipEventLacksSinSkill')
+  expect(html).toContain('pipEventAmong')
+  expect(html).toContain('pipEventCheckFailed')
 })
