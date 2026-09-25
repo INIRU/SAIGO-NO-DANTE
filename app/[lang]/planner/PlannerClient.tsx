@@ -1,6 +1,7 @@
 'use client'
 
 import BackLink from '@/components/navigation/BackLink'
+import { assistAvailable } from '@/lib/assist/availability'
 import { pendingNoteUploads, noteUploadInProgressMessage } from '@/lib/notes/images'
 
 import { memo, useMemo, useEffect, useLayoutEffect, useRef, useState } from 'react'
@@ -402,7 +403,7 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
             </BackLink>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
-            <button
+            {assistAvailable(locale) && <button
               onClick={() => { savePlanForRun({ ...giftConditionState, title: state.title, description: state.description }); window.location.href = '/planner/run?from-plan=1' }}
               style={{
                 display: 'flex', alignItems: 'center', gap: '0.25rem', padding: '0.375rem 0.625rem',
@@ -412,7 +413,7 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
             >
               <Play size={12} />
               {tPlanner('actions.triggerMode')}
-            </button>
+            </button>}
             <button onClick={handleCopyUrl} style={{
               display: 'flex', alignItems: 'center', gap: '0.25rem', padding: '0.375rem 0.625rem',
               background: copied ? 'rgba(34,197,94,0.15)' : 'rgba(200,144,10,0.1)',

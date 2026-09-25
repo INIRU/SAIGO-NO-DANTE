@@ -52,7 +52,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     entry('/decks', latest(deckRows, 'updated_at'), 'daily', 0.8),
     entry('/mirror-dungeon', null, 'weekly', 0.8),
     entry('/planner/community', latest(planRows, 'updated_at'), 'daily', 0.7),
-    entry('/planner/run', null, 'monthly', 0.5),
+    { ...entry('/planner/run', null, 'monthly', 0.5), alternates: undefined }, // Korean only (assist reads the Korean client)
     entry('/keywords', null, 'weekly', 0.7),
     entry('/meta', null, 'daily', 0.7),
     entry('/collection', gameDataDate, 'weekly', 0.5),

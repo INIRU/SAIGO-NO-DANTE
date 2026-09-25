@@ -2,7 +2,8 @@
 
 import { useState } from 'react'
 import { useRouter } from '@/lib/i18n/navigation'
-import { useTranslations } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
+import { assistAvailable } from '@/lib/assist/availability'
 import { Copy, GitFork, Pencil, Trash2, Check, Play } from 'lucide-react'
 import { saveDraftToLocal, savePlanForRun } from '@/lib/planner/encoder'
 import { encodeDeckCode } from '@/components/deck-builder/deckCodeUtils'
@@ -102,6 +103,7 @@ export default function PlanActions({
   const router = useRouter()
   const t = useTranslations('planner.detail')
   const tCommon = useTranslations('common')
+  const showAssist = assistAvailable(useLocale())
   const [codeCopied, setCodeCopied] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
 
@@ -246,14 +248,14 @@ export default function PlanActions({
           {t('fork')}
         </button>
 
-        <button
+        {showAssist && <button
           data-plan-action="assist"
           onClick={handleRunMode}
           className={`${primaryAction} min-[420px]:col-span-2`}
         >
           <Play className="h-4 w-4" aria-hidden="true" />
           {t('triggerMode')}
-        </button>
+        </button>}
 
         {(isOwner || isAdmin) && (
           <>
