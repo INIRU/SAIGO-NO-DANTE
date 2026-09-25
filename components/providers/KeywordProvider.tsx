@@ -145,6 +145,11 @@ function resolveKeywordTextColor(keyword: string, info?: KeywordInfo, fallbackKe
   return KEYWORD_DEFAULT_COLOR
 }
 
+/** Keyword name colour shared by the tooltip and the keyword archive. */
+export function keywordAccentColor(keyword: string, info?: KeywordInfo): string {
+  return GIFT_KEYWORD_COLORS[keyword] ?? resolveKeywordTextColor(keyword, info)
+}
+
 export function KeywordProvider({
   keywords,
   children,
@@ -255,7 +260,7 @@ function KwTooltipPopup({ id, rect, iconUrl, keyword, info, onMouseEnter, onMous
   const gutter = 0.75 * rem
   const left = Math.max(gutter, Math.min(rect.left + rect.width / 2 - width / 2, window.innerWidth - width - gutter))
   const arrowX = Math.max(12, Math.min(rect.left + rect.width / 2 - left, width - 12))
-  const color = GIFT_KEYWORD_COLORS[keyword] ?? resolveKeywordTextColor(keyword, info)
+  const color = keywordAccentColor(keyword, info)
 
   useEffect(() => {
     const el = contentRef.current
