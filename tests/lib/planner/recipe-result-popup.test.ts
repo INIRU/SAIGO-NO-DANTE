@@ -62,6 +62,22 @@ it('collects every gift a result popup points at, weak reads included, only unde
   expect(popupCandidateIds({ header: '합성', labels: [read('탁마')], iconGiftIds: ['9277'], effectGiftIds: [], gifts })).toEqual({ named: [], others: [] })
 })
 
+it('REQ-ASSIST-038 settles a misread fusion result from its weak lexicon name when only that recipe is craftable', () => {
+  // Sample 2026-09-25 f7af0303: plate OCR "회중시계:라임트", lexicon best 타입 E by 7.6 nats (below the 9-nat bar), no icon.
+  const gifts = names.map(([id, name]) => ({ id: String(id), texts: [name] }))
+  const header = 'E.G.O 기프트를 획득했습니다.'
+  const labels = [{ text: '회중시계:라임트', words: [] }]
+  const evidence = popupCandidateIds({ header, labels, iconGiftIds: [], effectGiftIds: [], lexiconGiftIds: ['9729'], gifts })
+  expect(evidence).toEqual({ named: [], others: ['9729'] })
+  // Both cases and both hands held (타입 Y was fused right after): the weak name picks 타입 E among four craftable types.
+  expect(settleResultPopup(evidence, null, ['9721', '9722', '9723', '9724'], recipes, giftMap, true)).toBe('9729')
+  // Not craftable from the inventory: stays unresolved.
+  expect(settleResultPopup(evidence, null, ['9722', '9723'], recipes, giftMap, true)).toBeNull()
+  // No header: no candidates at all.
+  expect(popupCandidateIds({ header: '합성', labels, iconGiftIds: [], effectGiftIds: [], lexiconGiftIds: ['9729'], gifts }))
+    .toEqual({ named: [], others: [] })
+})
+
 it('takes a fusion of exactly one recipe\'s ingredients as that recipe\'s result, its only source', () => {
   const all = ['9721', '9722', '9723', '9724', '9001']
   const ev = (named: string[], others: string[] = [], materials: string[] = []) => ({ named, others, materials })
