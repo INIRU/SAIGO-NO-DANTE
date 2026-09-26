@@ -677,7 +677,7 @@
       "detectionEvents": "Choice events",
       "detectionEventsHint": "Reads event screens to show the recommended choice.",
       "samplesLabel": "Help improve recognition",
-      "samplesHint": "When recognition is unsure, sends 5 game frames before and after that moment to improve it. Not linked to your account; deleted after 180 days.",
+      "samplesHint": "When recognition is unsure, sends about 5 game frames before and after that moment to improve it. Not linked to your account; deleted after 180 days.",
       "samplesPrompt": "Help improve recognition?",
       "samplesYes": "Join",
       "samplesNo": "No thanks",

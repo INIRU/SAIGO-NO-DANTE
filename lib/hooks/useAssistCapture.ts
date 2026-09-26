@@ -660,7 +660,8 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
         if (dialog && !dialog.published && run === generation.current) {
           dialog.published = true
           const materials = fusionMaterials(dialog.reads, dialog.count, dialog.capacity)
-          if (materials.length < dialog.count && !dialog.dialogless) sampleRecorder.current?.trigger('fusion-materials', materials)
+          // The fusion's folder is sent only when its materials could not all be read.
+          sampleRecorder.current?.closeFolder(materials.length < dialog.count ? { reason: dialog.dialogless ? 'fusion-dialogless' : 'fusion-materials', candidates: materials } : null)
           // Dated by the dialog's own first frame: wheel reads come from before it, possibly before the previous result.
           if (materials.length) publishFusion({ materials, observedAt: dialog.firstAt, lastSeenAt: dialog.lastSeenAt,
             closedAt: dialog.closedAt, token: dialog.token })
@@ -694,6 +695,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
         }
         heldAcquisitions.current.push(evidence)
         if (onFusionScreen(latestLabel.current, fusionTitleAt.current, Date.now()) || fusionWanted.current) {
+          sampleRecorder.current?.markNext()
           scheduleRelease()
           return
         }
@@ -1153,6 +1155,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
               const confirmation = fusionConfirmation(result.text)
               const fusionScreen = showsFusionTitle(result.text)
               if (fusionScreen) {
+                sampleRecorder.current?.openFolder()
                 fusionTitleAt.current = Math.max(fusionTitleAt.current, capture.at)
                 // The PiP and scene consumers follow the same fusion decision as the reader, whatever the classifier said.
                 setScene(current => current?.label === 'fusion' || current?.label === 'gift_acquired' ? current : { label: 'fusion', since: capture.at })
@@ -1185,7 +1188,6 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
                   lastSeenAt: Math.max(...wheel.map(item => item.lastAt)),
                   reads: [], wheel, published: false, dialogless: true, undecided: known === null }
                 takeWheelReads(fusionDialog.current)
-                sampleRecorder.current?.trigger('fusion-dialogless')
                 fusionWanted.current = { count: capacity, capacity, at: Date.now() }
                 lastDialogAt.current = Math.max(lastDialogAt.current, pending.capturedAt)
               }
@@ -1207,6 +1209,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
                 dialogBreakAt.current = Math.max(dialogBreakAt.current, capture.at)
               }
               if (confirmation) {
+                sampleRecorder.current?.markNext()
                 // The shop capacity (3 normal, 5 special) picks the dialog's slot layout.
                 const { count, capacity } = confirmation
                 const found = fusionAnchors(result.words)
@@ -1406,6 +1409,8 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
             return
           }
           wheelFrames.current.push({ frame, at: now, lastAt: now, signature, band, origin: { x: crop.x, y: crop.y }, scale, frameSize, anchors, reads: {} })
+          // Each new wheel state is a scene of this fusion's sample folder (whole screen, before the source is released).
+          await sampleRecorder.current?.keepFrame(source.source, frameSize.width, frameSize.height)
           while (wheelFrames.current.length > WHEEL_FRAMES) wheelFrames.current.shift()!.frame.close()
         } catch { /* A missed crop only thins the wheel history. */ } finally { source.release(); wheelBusy = false }
       }

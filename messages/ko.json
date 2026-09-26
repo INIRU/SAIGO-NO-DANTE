@@ -677,7 +677,7 @@
       "detectionEvents": "선택지 이벤트 감지",
       "detectionEventsHint": "이벤트 화면을 읽어 추천 선택지를 보여 줍니다.",
       "samplesLabel": "인식 개선에 참여",
-      "samplesHint": "인식이 불확실한 순간의 게임 화면을 앞뒤 5장씩 보내 인식을 개선합니다. 계정과 연결되지 않으며 180일 후 삭제됩니다.",
+      "samplesHint": "인식이 불확실한 순간의 게임 화면을 앞뒤 5장 안팎으로 보내 인식을 개선합니다. 계정과 연결되지 않으며 180일 후 삭제됩니다.",
       "samplesPrompt": "인식 개선에 참여할까요?",
       "samplesYes": "참여",
       "samplesNo": "참여 안 함",
