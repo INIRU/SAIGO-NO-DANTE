@@ -3,12 +3,12 @@ import * as ort from 'onnxruntime-web/webgpu'
 import { popupEffectBox, popupHeaderBox, popupPlateUnit } from './popup-detect'
 import { popupHeaderEvidence } from './popup-evidence'
 import { explorationFloor } from './exploration-match'
-import { ctcDecode, detSize, detTensor, fillRecLine, mergeTileRects, recAlphabet, recBatchWidth, recLineWidth, REC_HEIGHT,
-  textRects, tileGrid, type TextRect } from './paddle-text'
+import { ctcDecode, ctcLexiconBest, detSize, detTensor, fillRecLine, lexiconEntries, mergeTileRects, recAlphabet, recBatchWidth,
+  recLineWidth, REC_HEIGHT, textRects, tileGrid, type LexiconEntry, type TextRect } from './paddle-text'
 
 type Language = 'ko' | 'en' | 'ja'
 type Request =
-  | { type: 'init'; language: Language }
+  | { type: 'init'; language: Language; giftNames?: { id: string; name: string }[] }
   | { type: 'recognize'; requestId: number; frame: ImageBitmap; mode?: 'full' | 'line' | 'word'; detSide?: number; grid?: number; tileScale?: number }
   | { type: 'popup'; requestId: number; frame: ImageBitmap; box: { x: number; y: number; width: number; height: number } }
   | { type: 'explore'; requestId: number; frame: ImageBitmap }
@@ -27,7 +27,7 @@ type Response =
   | { type: 'ready' }
   | { type: 'result'; requestId: number; text: string; words: OcrWord[] }
   | { type: 'popupResult'; requestId: number; header: string; label: string; labelWords: OcrWord[];
-    labels: { text: string; words: OcrWord[] }[]; body: string }
+    labels: { text: string; words: OcrWord[] }[]; body: string; lexicon?: LexiconRead | null }
   | { type: 'popupError'; requestId: number }
   | { type: 'exploreResult'; requestId: number; floorText: string; themeReads: OcrWord[][] }
   | { type: 'error'; requestId?: number; message: string }
@@ -52,6 +52,16 @@ const REC_BATCH = 6
 class RegionError extends Error {}
 let paddle: { det: ort.InferenceSession; rec: ort.InferenceSession; alphabet: string[]; adapter: string } | null = null
 let paddleFailed = false
+
+type LexiconRead = { id: string; name: string; margin: number; gap: number }
+// Plate lines are also decoded against the gift names (lexicon CTC). Measured on 36 acquisition popups of the 2026-09-25/26
+// samples: right names led the runner-up by 10.6+ nats and fell short of the greedy path by at most 9.7 (two misread
+// glyphs); the one wrong best name led by 7.6 and fell short by 30. A wrong read is still only one more name read, so a
+// disagreeing icon or name makes the popup abstain.
+const LEXICON_MARGIN = 9
+const LEXICON_GAP = 12
+let giftNames: { id: string; name: string }[] = []
+let lexicon: LexiconEntry[] | null = null
 
 function respond(message: Response) {
   self.postMessage(message)
@@ -265,10 +275,10 @@ async function detectRects(source: CanvasImageSource, region: { x: number; y: nu
 }
 
 /** Recognition of line boxes (source pixels) read from `source` at native resolution. */
-async function recognizeRects(source: CanvasImageSource, rects: TextRect[]) {
+async function recognizeRects(source: CanvasImageSource, rects: TextRect[], names?: LexiconEntry[] | null) {
   const engine = paddle
   if (!engine) throw new Error('GPU OCR unavailable')
-  const lines: { text: string; score: number; rect: TextRect }[] = new Array(rects.length)
+  const lines: { text: string; score: number; rect: TextRect; lexicon?: LexiconRead | null }[] = new Array(rects.length)
   // Similar aspect ratios share a batch, as in the official batching, so padding stays small.
   const order = rects.map((_, index) => index).sort((first, second) =>
     rects[first].width / rects[first].height - rects[second].width / rects[second].height)
@@ -285,7 +295,8 @@ async function recognizeRects(source: CanvasImageSource, rects: TextRect[]) {
     const [, steps, classes] = logits.dims
     batch.forEach((index, slot) => {
       const decoded = ctcDecode(logits.data, slot, steps, classes, engine.alphabet)
-      lines[index] = { ...decoded, rect: rects[index] }
+      const lexicon = names?.length ? ctcLexiconBest(logits.data, slot, steps, classes, names) : undefined
+      lines[index] = { ...decoded, rect: rects[index], lexicon }
     })
   }
   return lines
@@ -320,8 +331,16 @@ async function readPopupPaddle(frame: ImageBitmap, box: Extract<Request, { type:
   const header = (await paddleLines(frame, clampRegion(frame, headerBox.x, headerBox.y, headerBox.width, headerBox.height), small, 6))
     .map(line => line.text).join('\n').slice(0, 300)
   if (!popupHeaderEvidence(header)) return { header, label: '', labelWords: [], labels: [], body: '' }
-  const plate = await paddleLines(frame, clampRegion(frame, box.x - 10, box.y - 10, box.width + 20, box.height + 20), small, 3)
+  lexicon ??= giftNames.length ? lexiconEntries(giftNames, paddle!.alphabet) : null
+  const plateRegion = clampRegion(frame, box.x - 10, box.y - 10, box.width + 20, box.height + 20)
+  const plate = await recognizeRects(frame, await detectRects(frame, plateRegion, small, 3), lexicon)
   const label = { text: plate.map(line => line.text).join(' ').slice(0, 300), words: lineWords(plate) }
+  const named = plate.map(line => line.lexicon).filter((read): read is LexiconRead => Boolean(read))
+    .sort((first, second) => second.margin - first.margin)[0] ?? null
+  const labels = [label]
+  if (named && named.margin >= LEXICON_MARGIN && named.gap <= LEXICON_GAP) {
+    labels.push({ text: named.name, words: [{ text: named.name, confidence: 99, left: box.x, top: box.y, width: box.width, height: box.height }] })
+  }
   let body = ''
   try {
     const effect = popupEffectBox(box)
@@ -331,7 +350,7 @@ async function readPopupPaddle(frame: ImageBitmap, box: Extract<Request, { type:
     // A GPU failure must reach the fallback; an effect panel cut off by the frame edge only loses that evidence.
     if (!(error instanceof RegionError)) throw error
   }
-  return { header, label: label.text, labelWords: label.words, labels: [label], body }
+  return { header, label: label.text, labelWords: label.words, labels, body, lexicon: named }
 }
 
 /**
@@ -435,6 +454,8 @@ self.onmessage = async (event: MessageEvent<Request>) => {
       respond({ type: 'error', message: 'Invalid OCR initialization' })
       return
     }
+    if (Array.isArray(request.giftNames)) giftNames = request.giftNames.filter(item =>
+      typeof item?.id === 'string' && typeof item?.name === 'string' && item.name.length <= 80).slice(0, 5000)
     try {
       const created = await createWorker(LANGUAGES[request.language], 1, {
         workerPath: `${ROOT}/tesseract-worker.min.js`,
