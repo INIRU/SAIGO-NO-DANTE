@@ -38,8 +38,8 @@ export function newBlock(kind: BlockKind): JSONContent {
   return kind === 'youtube' ? { type: 'noteVideo', attrs: { videoId: '' } }
     : { type: 'noteAsset', attrs: { kind, id: '' } }
 }
-const TYPES = new Set(['doc', 'paragraph', 'heading', 'text', 'hardBreak', 'blockquote', 'bulletList', 'orderedList', 'listItem', 'codeBlock', 'horizontalRule', 'image', 'noteAccordion', 'noteTitle', 'noteBody', 'noteAsset', 'noteVideo', 'noteKeyword'])
-const INLINE_TYPES = new Set(['text', 'hardBreak', 'noteKeyword'])
+const TYPES = new Set(['doc', 'paragraph', 'heading', 'text', 'hardBreak', 'blockquote', 'bulletList', 'orderedList', 'listItem', 'codeBlock', 'horizontalRule', 'image', 'noteAccordion', 'noteTitle', 'noteBody', 'noteAsset', 'noteVideo', 'noteKeyword', 'noteGift'])
+const INLINE_TYPES = new Set(['text', 'hardBreak', 'noteKeyword', 'noteGift'])
 const BLOCK_TYPES = new Set(['paragraph', 'heading', 'blockquote', 'bulletList', 'orderedList', 'codeBlock', 'horizontalRule', 'image', 'noteAccordion', 'noteAsset', 'noteVideo'])
 // The same bounded allowlist is used for persisted documents and pasted editor nodes.
 export function normalizeDocument(value: unknown): JSONContent | null {
@@ -71,6 +71,7 @@ export function normalizeDocument(value: unknown): JSONContent | null {
       result.attrs = { kind: n.attrs!.kind, id: typeof n.attrs?.id === 'string' ? n.attrs.id.slice(0, 150) : '' }
     }
     if (n.type === 'noteKeyword') result.attrs = {id:typeof n.attrs?.id === 'string' ? n.attrs.id.slice(0,150) : ''}
+    if (n.type === 'noteGift') result.attrs = {id:typeof n.attrs?.id === 'string' ? n.attrs.id.slice(0,150) : '', name:typeof n.attrs?.name === 'string' ? n.attrs.name.slice(0,100) : ''}
     if (n.type === 'noteVideo') result.attrs = { videoId: /^[\w-]{11}$/.test(n.attrs?.videoId ?? '') ? n.attrs!.videoId : '' }
     if (Array.isArray(n.content)) result.content = n.content.flatMap(c => { const clean = node(c, depth + 1); return clean ? [clean] : [] })
     if (['paragraph', 'heading', 'noteTitle'].includes(n.type)) result.content = (result.content ?? []).filter(c => INLINE_TYPES.has(c.type!))
@@ -84,7 +85,7 @@ export function normalizeDocument(value: unknown): JSONContent | null {
       result.content = (result.content ?? []).filter(c => c.type === 'listItem')
       if (!result.content.length) return null
     }
-    if (['text','hardBreak','horizontalRule','image','noteAsset','noteVideo','noteKeyword'].includes(n.type)) delete result.content
+    if (['text','hardBreak','horizontalRule','image','noteAsset','noteVideo','noteKeyword','noteGift'].includes(n.type)) delete result.content
     if (n.type === 'noteAccordion') {
       result.content = [result.content?.find(c => c.type === 'noteTitle') ?? { type: 'noteTitle' }, result.content?.find(c => c.type === 'noteBody') ?? { type: 'noteBody', content: [{ type: 'paragraph' }] }]
     }
@@ -101,7 +102,7 @@ export function hasBlocks(node: JSONContent): boolean {
   return node.type?.startsWith('note') === true || (node.content ?? []).some(hasBlocks)
 }
 export function visibleNode(node: JSONContent): boolean {
-  if (node.type === 'noteAsset' || node.type === 'noteKeyword') return Boolean(node.attrs?.id)
+  if (node.type === 'noteAsset' || node.type === 'noteKeyword' || node.type === 'noteGift') return Boolean(node.attrs?.id)
   if (node.type === 'noteVideo') return Boolean(node.attrs?.videoId)
   if (node.type === 'image') return isNoteImageUrl(node.attrs?.src)
   return Boolean(node.text?.trim()) || (node.content ?? []).some(visibleNode)
@@ -109,6 +110,7 @@ export function visibleNode(node: JSONContent): boolean {
 export function assetRefs(doc: JSONContent): string {
   const refs = new Map<string, {kind: AssetKind; id: string}>()
   function visit(n: JSONContent) {
+    if (n.type === 'noteGift' && n.attrs?.id) refs.set('gift:' + n.attrs.id, {kind: 'gift', id: n.attrs.id})
     if (n.type === 'noteAsset' && isAssetKind(n.attrs?.kind) && n.attrs?.id) refs.set(`${n.attrs.kind}:${n.attrs.id}`, {kind: n.attrs.kind, id: n.attrs.id})
     n.content?.forEach(visit)
   }
@@ -118,6 +120,6 @@ export function assetRefs(doc: JSONContent): string {
 export function notePlainText(value: string): string {
   const doc = parseBlockDocument(value)
   if (!doc) return value.startsWith(NOTE_PREFIX) ? '' : value
-  function text(n: JSONContent): string { return (n.type === 'noteKeyword' ? n.attrs?.id : n.text) ?? (n.content ?? []).map(text).join(' ') }
+  function text(n: JSONContent): string { return (n.type === 'noteKeyword' ? n.attrs?.id : n.type === 'noteGift' ? n.attrs?.name : n.text) ?? (n.content ?? []).map(text).join(' ') }
   return text(doc).trim()
 }

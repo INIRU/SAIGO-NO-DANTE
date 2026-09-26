@@ -4,6 +4,9 @@ import { EditorContent, useEditor, type Editor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
 import { useLocale } from "next-intl";
+import useSWR from "swr";
+import { GIFT_KEYWORD_COLORS } from "@/lib/constants/gift";
+import { assetName } from "@/lib/notes/assets";
 import { Bold, Italic, Heading2, List, ListOrdered, Quote, Undo2, Redo2, Eye, Pencil, Link2, X } from "lucide-react";
 import {
   NoteAutocompleteDropdown,
@@ -14,7 +17,7 @@ import {
   type CaretAnchor,
 } from "./NoteAutocomplete";
 import { noteBlockExtensions, NoteInput, notePlaceholder } from "./NoteBlocks";
-import { NoteAssetsProvider } from "./NoteBlockViewer";
+import { NoteAssetsProvider, fetchNoteAssets } from "./NoteBlockViewer";
 import { pendingNoteUploads } from "@/lib/notes/images";
 import { useKeywords } from '@/components/providers/KeywordProvider';
 import NoteImage from "./NoteImage";
@@ -47,6 +50,12 @@ export default function NoteDocumentEditor({
   const keywords=useKeywords();
   const keywordPool=useMemo(()=>buildKeywordPool(keywords).map(item=>({...item,label:(lang==='en'?keywords[item.label]?.nameEn:lang==='ja'?keywords[item.label]?.nameJp:null) || item.label})),[keywords,lang]);
   const combinedPool=useMemo(()=>[...keywordPool,...pool.filter(item=>item.type!=='keyword')],[keywordPool,pool]);
+  // Gift names typed in a sentence become inline gifts, like keywords. The whole catalog (about 450) is one cached request.
+  const {data:giftCatalog}=useSWR('/api/notes/assets?kind=gift&catalog=1',fetchNoteAssets,{revalidateOnFocus:false});
+  const giftPool=useMemo<AutocompleteSuggestion[]>(()=>(giftCatalog ?? []).map(gift=>({
+    label:assetName(gift,lang), type:'egogift', typeLabel:label('기프트','ギフト','Gift'), color:GIFT_KEYWORD_COLORS[gift.keyword ?? ''] ?? '#c8b898',
+    imageUrl:gift.image_url ?? undefined, token:'[gift:'+gift.id+']', syntax:'inline',
+  })),[giftCatalog,lang]);
   const last = useRef(value),
     change = useRef(onChange);
   useEffect(() => {
@@ -62,22 +71,40 @@ export default function NoteDocumentEditor({
   const [suggestions, setSuggestions] = useState<AutocompleteSuggestion[]>([]);
   const [selected, setSelected] = useState(0);
   const [anchor, setAnchor] = useState<CaretAnchor | null>(null);
+  /**
+   * The word just typed, if it names a keyword or gift: at the caret, or right before one space (Korean IME only ends a
+   * syllable when the next key is typed, often the space). Returns the text before the caret and the name's offset.
+   */
+  function textBeforeCaret(current: Editor) {
+    const selection = current.state.selection;
+    return selection.$from.parent.textBetween(0, selection.$from.parentOffset, "\n", "\ufffc");
+  }
+  function nameEnd(before: string, label: string): number {
+    for (const end of [before.length, before.endsWith(' ') ? before.length-1 : -1]) {
+      if (end < label.length || before.slice(end-label.length, end) !== label) continue;
+      if (end-label.length === 0 || /[\s(\[（]/u.test(before[end-label.length-1])) return end;
+    }
+    return -1;
+  }
+  // Suggestions are computed while a syllable is still being composed; only choosing waits for the composition to end.
   function refresh(current: Editor) {
-    if (composing.current || !current.state.selection.empty) {
+    if (!current.state.selection.empty) {
       setSuggestions([]);
       return;
     }
     const selection = current.state.selection;
-    const before = selection.$from.parent.textBetween(
-      0,
-      selection.$from.parentOffset,
-      "\n",
-      "\ufffc",
-    );
+    const before = textBeforeCaret(current);
     const context=getNoteAutocompleteContext(before,before.length);
-    const exact=keywordPool.filter(item=>before.endsWith(item.label) && (before.length===item.label.length || /[\s(\[（]/u.test(before[before.length-item.label.length-1]))).sort((a,b)=>b.label.length-a.label.length);
-    const items = context.mode==='word' && !context.query.startsWith('/')
-      ? (exact.length ? exact : context.query ? keywordPool.filter(item=>item.label.toLowerCase().startsWith(context.query.toLowerCase())).slice(0,6) : [])
+    const named=(item:AutocompleteSuggestion)=>nameEnd(before,item.label)>=0;
+    // A name that is both a keyword and a gift (데스페라도) offers both; the keyword stays first.
+    const exact=[...keywordPool.filter(named),...giftPool.filter(named)].sort((a,b)=>b.label.length-a.label.length || (a.type==='keyword'?-1:1));
+    const query=context.query.toLowerCase();
+    const items = exact.length && !context.query.startsWith('/') && context.mode!=='type' && context.mode!=='value' ? exact.slice(0,6)
+      : context.mode==='word' && !context.query.startsWith('/')
+      ? (query ? [
+        ...keywordPool.filter(item=>item.label.toLowerCase().startsWith(query)).slice(0,4),
+        ...(query.length>=2 ? giftPool.filter(item=>item.label.toLowerCase().startsWith(query)).slice(0,4) : []),
+      ].slice(0,6) : [])
       : getNoteAutocompleteSuggestions(before, before.length, combinedPool);
     setSuggestions(items);
     setSelected(0);
@@ -86,29 +113,35 @@ export default function NoteDocumentEditor({
       setAnchor({ left: point.left, top: point.bottom + 6, width: 260 });
     }
   }
+  const pendingSelect = useRef<AutocompleteSuggestion | null>(null);
   function select(item: AutocompleteSuggestion) {
-    if (!editor || composing.current) return;
+    if (!editor) return;
+    if (composing.current) {
+      // Finish the syllable being typed first (blurring ends the composition); compositionend inserts the choice.
+      pendingSelect.current = item;
+      editor.commands.blur();
+      return;
+    }
     const selection = editor.state.selection;
-    const before = selection.$from.parent.textBetween(
-      0,
-      selection.$from.parentOffset,
-      "\n",
-      "\ufffc",
-    );
+    const before = textBeforeCaret(editor);
+    const inline = item.type==='keyword' || item.token.startsWith('[gift:');
+    const end = inline ? nameEnd(before, item.label) : -1;
     const context = getNoteAutocompleteContext(before, before.length);
-    if (context.mode === "closed") return;
+    if (end < 0 && context.mode === "closed") return;
     const start = selection.$from.start();
+    const range = end >= 0 ? { from: start + end - item.label.length, to: selection.from }
+      : { from: start + context.replaceStart, to: start + context.replaceEnd };
     editor
       .chain()
       .focus(undefined, { scrollIntoView: false })
-      .deleteRange({
-        from: item.type==='keyword' && context.mode==='word' && before.endsWith(item.label) ? selection.from-item.label.length : start + context.replaceStart,
-        to: start + context.replaceEnd,
-      })
-      .insertContent(item.type==='keyword' && /^\[k:.+\]$/.test(item.token) ? [{type:'noteKeyword',attrs:{id:item.token.slice(3,-1)}},{type:'text',text:' '}] : item.token)
+      .deleteRange(range)
+      .insertContent(item.type==='keyword' && /^\[k:.+\]$/.test(item.token) ? [{type:'noteKeyword',attrs:{id:item.token.slice(3,-1)}},{type:'text',text:' '}]
+        : /^\[gift:.+\]$/.test(item.token) ? [{type:'noteGift',attrs:{id:item.token.slice(6,-1),name:item.label}},{type:'text',text:' '}] : item.token)
       .run();
     setSuggestions([]);
   }
+  const selectRef = useRef(select);
+  selectRef.current = select;
   const editor = useEditor({
     immediatelyRender: false,
     extensions: [
@@ -121,7 +154,8 @@ export default function NoteDocumentEditor({
       NoteInput.configure({lang}),
       Placeholder.configure({
         includeChildren: true,
-        showOnlyCurrent: false,
+        // Only the line being typed on shows the hint (every empty line showed it before).
+        showOnlyCurrent: true,
         placeholder: ({node}) => notePlaceholder(lang, node.type.name),
       }),
     ],
@@ -130,11 +164,19 @@ export default function NoteDocumentEditor({
       handleDOMEvents: {
         compositionstart: () => {
           composing.current = true;
-          setSuggestions([]);
           return false;
         },
         compositionend: () => {
           composing.current = false;
+          // The view has the final syllable after this event: choose the pending suggestion or recompute.
+          setTimeout(() => {
+            const current = editorRef.current;
+            if (!current || current.isDestroyed) return;
+            const pending = pendingSelect.current;
+            pendingSelect.current = null;
+            if (pending) { current.commands.focus(); selectRef.current(pending); }
+            else refresh(current);
+          });
           return false;
         },
       },
@@ -153,6 +195,8 @@ export default function NoteDocumentEditor({
     },
     onSelectionUpdate: ({ editor }) => refresh(editor),
   });
+  const editorRef = useRef<Editor | null>(null);
+  editorRef.current = editor;
   useEffect(() => {
     let cancelled=false;
     // React node views flush synchronously; update them after the effect completes.
