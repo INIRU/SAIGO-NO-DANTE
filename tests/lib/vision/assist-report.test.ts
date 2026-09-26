@@ -42,3 +42,16 @@ it('REQ-ASSIST-039 rejects malformed reports and links samples to their session'
   expect(parseSampleMeta({ ...meta, session: report.session })?.session).toBe(report.session)
   expect(parseSampleMeta({ ...meta, session: 'not-a-uuid' })).toBeNull()
 })
+
+it('REQ-ASSIST-044 reports the capture size so windowed and full-screen captures can be told apart', () => {
+  const tally = new AssistReportTally(() => ({ ...context, width: 1602, height: 932 }))
+  tally.settle('fusion', true)
+  const report = tally.take()!
+  expect(report).toMatchObject({ width: 1602, height: 932 })
+  expect(parseAssistReport(JSON.parse(JSON.stringify(report)))).toMatchObject({ width: 1602, height: 932 })
+  // Reports from builds before the size was added, or with the size unknown, are still accepted without it.
+  const { width: _width, height: _height, ...older } = report
+  expect(parseAssistReport(older)).toMatchObject({ width: null, height: null })
+  for (const size of [{ width: 0, height: 932 }, { width: 1602.5, height: 932 }, { width: 1602, height: '932' }, { width: 20000, height: 932 }])
+    expect(parseAssistReport({ ...report, ...size })).toBeNull()
+})
