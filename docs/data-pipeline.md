@@ -436,6 +436,7 @@ E.G.O 상세의 메인 이미지는 256×256 `_awaken_profile` 확대 대신 새
 
 - 신규 인격 10917(오트쿠튀르:: 수선실 로쟈)은 `identity-data.ts --fix --no-acquisition`으로 추가했다. 획득처는 `syncIdentityAcquisition({ gameIds: ['10917'] })`로 이 인격만 적용했고, 일러스트와 스킬 아이콘은 `sync-extracted-identities.cjs --ids 10917`로 올렸다.
 - 신규 E.G.O 20610(거절선포)과 20910(거울촉각)은 `bootstrap-data.ts --ego-ids 20610,20910 --output <작업 폴더>`로 추가했다. 이 옵션은 수감자와 다른 E.G.O를 다시 쓰지 않는다. 폴더명은 기존 규칙인 영어 이름을 따른다. 출시일은 원본 `updatedDate`(2026-08-24, 2026-08-20)를 그대로 쓴다.
+- 오트쿠튀르 인격 10416·10816·10917의 256px 아바타 프로필(`_normal_profile`, `_gacksung_profile`)이 빠져 있었다. 스크립트가 `_profile`을 고르지 않았기 때문이다. 이제 기본 동기화가 프로필도 고르고, 2026-09-26 `sync-extracted-identities.cjs --ids 10917,10816,10416 --source ~/Downloads/"LimbusAssets 2" --output ~/Downloads/Limbus-profile-sync-2026-09-26 --profile-only --fix`로 6장을 올렸다. 프로필이 없어 풀 일러 주소를 아바타로 저장한 계정 2개는 `avatar_url`을 `_profile` 주소로 고쳤다.
 - 동기화 4단계 스킬 아이콘(`1010104_4` 등)은 #247 이후 `image_id`로 쓰이지만 업로드되지 않았다. `sync-extracted-identities.cjs --skill-variants`로 139개 인격의 152장을 올린 뒤 스킬을 재구축했다.
 - 스킬 재구축은 이제 같은 `skill_order/uptie_level/variant_order/name`의 기존 행 ID를 유지한다. 노트 스킬 블럭이 `skills.id`를 참조하기 때문이다. 이 규칙이 생기기 전에 바뀐 1,016개 ID는 원래 값으로 되돌렸다(`skill-id-restore-map.json`).
 - `keyword_meta`는 `--rebuild-keyword-meta`로 10개를 추가했다. 새 키워드 아이콘은 태그 이름 대신 버프 데이터의 `iconId`로 원본을 찾는다(예: `NoirScissorAlly` → `ScissorsMark`). 기존 키워드 15개의 수정 이미지는 화살표가 겹친 변형이라 확인 전까지 기존 아이콘을 유지한다.
