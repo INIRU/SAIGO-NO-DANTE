@@ -148,3 +148,16 @@ export function acceptedIcon(ranked: { id: string; score: number }[]): { id: str
   const [first, second] = ranked
   return first && first.score >= ICON_MATCH_MIN && first.score - (second?.score ?? -1) >= ICON_MATCH_MARGIN ? first : null
 }
+
+/**
+ * A fusion material slot read. Materials can only be gifts the player holds (or vestiges), so when the best catalog icon
+ * is held, its margin is measured against the other held gifts only: an unheld lookalike no longer holds it back. When an
+ * unheld icon is best, the catalog read stands, so an incomplete inventory never turns a slot into a held lookalike.
+ */
+export function heldSlotRead(all: { id: string; score: number }[], held: { id: string; score: number }[]) {
+  const [first, second] = all
+  if (!first) return null
+  const [best, runnerUp] = held
+  if (best?.id === first.id) return { id: best.id, score: best.score, margin: best.score - (runnerUp?.score ?? -1) }
+  return { id: first.id, score: first.score, margin: first.score - (second?.score ?? -1) }
+}

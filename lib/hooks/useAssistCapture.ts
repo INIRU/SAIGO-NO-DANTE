@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { VisualCandidates, VisualMatch, VisualReference } from '@/lib/vision/embedding-match'
 import { corroboratedChoiceEvent, effectGiftIds, eventScreenEvidence, matchOcrCandidates, type EventScreenEvidence, type OcrCatalog, type OcrMatches,
   type OcrWord } from '@/lib/vision/ocr-match'
-import { acquiredGiftFromPopup, acquisitionFloor, popupCandidateIds, popupHeaderEvidence, type PopupLabelRead } from '@/lib/vision/popup-evidence'
+import { acquiredGiftFromPopup, acquisitionFloor, AUTO_ACQUIRE_EXCLUDED_GIFT_IDS, popupCandidateIds, popupHeaderEvidence, type PopupLabelRead } from '@/lib/vision/popup-evidence'
 import type { RecipePopupEvidence } from '@/lib/planner/fusion'
 import type { StableScene } from '@/lib/vision/scene-state'
 import { isMobileDevice } from '@/lib/vision/device'
@@ -186,7 +186,7 @@ export function runFrameTask(task: FrameTask, now = performance.now()): boolean 
 }
 
 export function useAssistCapture({ giftReferences = [], eventReferences = [], ocrCatalog, themeCatalog, language = 'ko', floor = null,
-  mode = 'balanced', detection = DEFAULT_DETECTION, resolvePopup, samples = false }: {
+  mode = 'balanced', detection = DEFAULT_DETECTION, resolvePopup, samples = false, heldGiftIds = [] }: {
   giftReferences?: VisualReference[]
   eventReferences?: VisualReference[]
   ocrCatalog?: OcrCatalog
@@ -205,6 +205,8 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
   resolvePopup?: (evidence: RecipePopupEvidence, verdict: string | null, inFusion: boolean) => string | null
   /** Opt-in recognition samples (lib/vision/assist-samples.ts); read live. */
   samples?: boolean
+  /** The run's inventory: fusion material slots are measured against these gifts (and vestiges). Read live. */
+  heldGiftIds?: readonly string[]
 } = {}) {
   const [supported, setSupported] = useState(false)
   const [status, setStatus] = useState<CaptureStatus>('idle')
@@ -298,6 +300,11 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
   const reportTally = useRef<AssistReportTally | null>(null)
   const samplesRef = useRef(samples)
   samplesRef.current = samples
+  const heldRef = useRef(heldGiftIds)
+  heldRef.current = heldGiftIds
+  /** Gifts a fusion can use: held ones by catalog id (enhancement suffixes dropped) and the vestiges, never auto-recorded. */
+  const fusionCandidates = () => [...new Set([...heldRef.current.map(key => String(parseInt(key, 10))).filter(id => id !== 'NaN'),
+    ...AUTO_ACQUIRE_EXCLUDED_GIFT_IDS])]
   const sampleState = useRef({ prediction, mode, detection, inference, ocrEngine, floor })
   sampleState.current = { prediction, mode, detection, inference, ocrEngine, floor }
   const readSampleContext = () => {
@@ -1395,7 +1402,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
             const requestId = ++ocrRequestId.current
             fusionRequest.current = { requestId, at: retained.at, count: retained.count, token: fusionDialog.current?.token ?? '', view: 'dialog' }
             worker.current.postMessage({ type: 'fusion-slots', requestId, frame: retained.frame, count: retained.count, capacity: retained.capacity,
-              anchors: retained.anchors }, [retained.frame])
+              anchors: retained.anchors, candidates: fusionCandidates() }, [retained.frame])
             return true
           }
           const at = Date.now()
@@ -1403,7 +1410,8 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
           if (run !== generation.current || !worker.current) { frame.close(); return true }
           const requestId = ++ocrRequestId.current
           fusionRequest.current = { requestId, at, count: wanted.count, token: fusionDialog.current?.token ?? '', view: 'dialog' }
-          worker.current.postMessage({ type: 'fusion-slots', requestId, frame, count: wanted.count, capacity: wanted.capacity, anchors: wanted.anchors }, [frame])
+          worker.current.postMessage({ type: 'fusion-slots', requestId, frame, count: wanted.count, capacity: wanted.capacity, anchors: wanted.anchors,
+            candidates: fusionCandidates() }, [frame])
         } catch { inFlight.current = false }
         return true
       }
@@ -1449,7 +1457,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
           const requestId = ++ocrRequestId.current
           wheelRequest.current = { requestId, state, capacity }
           worker.current.postMessage({ type: 'fusion-wheel', requestId, frame, capacity, origin: state.origin, scale: state.scale,
-            frameSize: state.frameSize, anchors: state.anchors }, [frame])
+            frameSize: state.frameSize, anchors: state.anchors, candidates: fusionCandidates() }, [frame])
         } catch {
           // A state whose frame is gone cannot be read; it counts as read (with nothing) so the queue moves on.
           state.reads[capacity] = { view: 'wheel', slots: [], observedAt: state.at }
