@@ -31,6 +31,14 @@ export function sequenceEventIds(sequence: unknown): number[] {
     Array.isArray((step as { numberList?: unknown }).numberList)
     ? (step as { numberList: unknown[] }).numberList.filter((id): id is number => Number.isInteger(id) && (id as number) > 0) : [])
 }
+/** Unit keys of "SpecificUnit_*" judgment corrections (game spelling) → character IDs in *_Characters. */
+const SINNER_UNITS: Record<string, number> = { Yisang: 1, Faust: 2, Donquixote: 3, Ryosyu: 4, Meursault: 5, Honglu: 6,
+  Heathcliff: 7, Ishmael: 8, Rodion: 9, Sinclair: 10, Outis: 11, Gregor: 12 }
+export function sinnerCharacterId(key: string): number {
+  const id = SINNER_UNITS[key]
+  if (!id) throw Error(`Unknown sinner key ${key}`)
+  return id
+}
 export function walkEventGraph(events: ReadonlyMap<number, SourceEvent>, entries: ReadonlySet<number>) {
   const reachable = new Set<number>(), edges: [number, number][] = []
   const queue = [...entries]
