@@ -56,6 +56,9 @@ export default function MetaClient({ initialData }: { initialData: MetaData | nu
             <div className={styles.chartBlock}><SkeletonLine w="7rem" h="0.9375rem" />{[0, 1, 2, 3, 4, 5].map(j => <SkeletonLine key={j} h="2.5rem" raised className="my-0.5" />)}</div>
           </div>
         </div>
+        <div className={styles.panel}><div className={styles.sectionHead}><SkeletonLine w="9rem" h="1rem" /></div>
+          <div className={styles.sinnerGrid}>{Array.from({ length: 12 }, (_, i) => <SkeletonLine key={i} h="9.5rem" raised />)}</div>
+        </div>
         <div className={styles.subject}><SkeletonLine w="7rem" h="9rem" raised /><div className="flex-1 space-y-3"><SkeletonLine w="4rem" h="0.75rem" /><SkeletonLine w="14rem" h="1.5rem" /><SkeletonLine w="8rem" h="2.5rem" /></div></div>
       </SkeletonPage>}
       {data && <>

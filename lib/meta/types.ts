@@ -18,6 +18,11 @@ export const META_USAGES = ['mirrorDungeon', 'story', 'expDungeon', 'threadDunge
 export type MetaUsage = typeof META_USAGES[number]
 export interface CountStat<K extends string = string> { key: K; count: number }
 
+/** What plans fielding an identity (or all plans) aim for. Gift keys are game ids; theme keys are pack ids. */
+export interface MetaPlanSummary { count: number; difficulty: CountStat[]; gifts: CountStat[]; themes: CountStat[] }
+export interface MetaGift { game_id: number; name: string; name_en?: string | null; name_jp?: string | null; grade: string | null; keyword: string | null; image_url: string | null }
+export interface MetaTheme { id: number; name: string; name_en?: string | null; name_jp?: string | null; image_url: string | null }
+
 export interface Synergy {
   a_id: string; a_name: string; a_sinner_id: string; a_folder: string | null; a_game_id: string | null
   b_id: string; b_name: string; b_sinner_id: string; b_folder: string | null; b_game_id: string | null
@@ -54,6 +59,10 @@ export interface MetaData {
   usageStats: CountStat<MetaUsage>[]
   /** One entry per sample: keyword deck combo ('화상+진동'), '' when no keyword reaches the threshold. */
   comboStats: CountStat[]
+  planStats: MetaPlanSummary
+  /** Display data for every gift and theme pack referenced by planStats or an insight's plan summary. */
+  giftCatalog: Record<string, MetaGift>
+  themeCatalog: Record<string, MetaTheme>
   synergies: Synergy[]
   egoStats: EGOStat[]
 }
@@ -74,6 +83,11 @@ export type MetaPost = {
   title?: string
   keywords?: string[] | null
   content_type?: string | null
+  difficulty?: string | null
+  /** Gift game ids in the plan's final inventory (start and observation gifts included). */
+  gifts?: string[]
+  /** Theme pack ids chosen across the plan's floors. */
+  themes?: string[]
   identities: unknown
   egos: unknown
 }
@@ -97,6 +111,8 @@ export interface IdentityInsight {
   egos: EGOStat[]
   /** Formation posts first, then bench-only posts marked support. */
   posts: MetaInsightPost[]
+  /** Plans that field this identity. Absent when none do. */
+  plan?: MetaPlanSummary
 }
 
 export function isBaseEgo(gameId: string | null | undefined): boolean {

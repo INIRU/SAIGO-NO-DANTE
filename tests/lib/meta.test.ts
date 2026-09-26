@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { aggregateMeta } from '@/lib/meta/aggregate'
+import { aggregateMeta, planGiftIds, planThemeIds } from '@/lib/meta/aggregate'
 import { readAllMetaRows } from '@/lib/meta/pagination'
 import { isBaseEgo, type MetaIdentity, type MetaPost } from '@/lib/meta/types'
 
@@ -169,4 +169,17 @@ it('counts each companion identity separately with the selected identity denomin
   expect(aggregate(posts, 'decks').identityInsights.b.companions).toEqual([{ identity_id: 'a', count: 1 }])
   expect(aggregate(posts, 'all', '90').identityInsights.b.companions).toEqual([{ identity_id: 'a', count: 2 }, { identity_id: 'a2', count: 1 }, { identity_id: 'c', count: 1 }])
   expect(aggregate([solo]).identityInsights.b.companions).toEqual([])
+})
+it('tallies plan difficulty, final gifts and theme packs overall and for each fielded identity', () => {
+  expect(planGiftIds(['final_9765', 'start_9029', 'observe_9191', 'blessing_100_3', 'final_9765', 'final_'])).toEqual(['9765', '9029', '9191'])
+  expect(planThemeIds([{ theme_id: '1010' }, { theme_id: null }, { theme_id: 1010 }, { theme_id: 1114 }])).toEqual(['1010', '1114'])
+  const plan = (id: string, difficulty: string, gifts: string[], themes: string[], identities: unknown) => ({ ...post(id, 'planner'), difficulty, gifts, themes, identities })
+  const data = aggregate([
+    plan('p1', 'extreme', ['1', '2'], ['t1'], [{ identity_id: 'a', slot_order: 0 }, { identity_id: 'b', slot_order: 99 }]),
+    plan('p2', 'hard', ['1'], ['t1', 't2'], [{ identity_id: 'a', slot_order: 1 }, { identity_id: 'b', slot_order: 2 }]),
+    post('deck'),
+  ])
+  expect(data.planStats).toEqual({ count: 2, difficulty: [{ key: 'extreme', count: 1 }, { key: 'hard', count: 1 }], gifts: [{ key: '1', count: 2 }, { key: '2', count: 1 }], themes: [{ key: 't1', count: 2 }, { key: 't2', count: 1 }] })
+  expect(data.identityInsights.a.plan?.count).toBe(2)
+  expect(data.identityInsights.b.plan).toMatchObject({ count: 1, gifts: [{ key: '1', count: 1 }] })
 })
