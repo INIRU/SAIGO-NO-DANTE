@@ -28,6 +28,7 @@ import CompanionSkillExchange from './CompanionSkillExchange'
 import ThemePackCard from '@/components/ui/ThemePackCard'
 import type { SkillExchangeRead } from '@/lib/vision/skill-exchange'
 import { AUTO_ACQUIRE_EXCLUDED_GIFT_IDS } from '@/lib/vision/popup-evidence'
+import { recordingAutomatically } from '@/lib/vision/assist-report'
 
 type HistoryEntry = { before: RunState; after: RunState; beforeKey: string; afterKey: string; pendingFloor: number | null }
 const snapshot = (state: RunState): RunState => normalizeRunState(JSON.parse(JSON.stringify(state)))
@@ -171,7 +172,7 @@ export default function CompanionPanel({ state, dispatch, themes, giftMap, obser
    * Applies an action with an Undo entry and reports whether the run changed. The computed state itself is loaded, so
    * time-stamped actions (NEXT_FLOOR) store exactly the snapshot kept for Undo/Redo.
    */
-  function record(action: RunAction): boolean {
+  function record(action: RunAction, automatic = false): boolean {
     const before = snapshot(current.current)
     const beforeKey = keyOf(before)
     if (expected.current && expected.current !== beforeKey) { undoStack.current = []; redoStack.current = [] }
@@ -182,7 +183,9 @@ export default function CompanionPanel({ state, dispatch, themes, giftMap, obser
     redoStack.current = []
     expected.current = afterKey
     current.current = after
-    dispatch({ type: 'LOAD_RUN', state: after })
+    // Recognized actions are marked so the recognition report tells them from the user's own edits.
+    if (automatic) recordingAutomatically(() => dispatch({ type: 'LOAD_RUN', state: after }))
+    else dispatch({ type: 'LOAD_RUN', state: after })
     setHistoryVersion(value => value + 1)
     return true
   }
@@ -196,7 +199,7 @@ export default function CompanionPanel({ state, dispatch, themes, giftMap, obser
       consumedSaleTokens.current.add(sale.token)
       const gift = giftMap.get(Number(sale.giftId))
       if (!gift || !current.current.giftInventory.includes(sale.giftId)) continue
-      if (record({ type: 'REMOVE_GIFT', giftId: sale.giftId }))
+      if (record({ type: 'REMOVE_GIFT', giftId: sale.giftId }, true))
         announce([{ kind: 'consumed', token: `${sale.token}:sold`, at: Date.now(), materials: [{ gift, name: localized(gift) }], label: t('giftSold') }])
     }
   }, [saleTokens])
@@ -207,7 +210,7 @@ export default function CompanionPanel({ state, dispatch, themes, giftMap, obser
     const surface = event?.currentTarget.closest('[data-companion-content]')?.getAttribute('data-companion-content')
     const owner = event?.currentTarget.ownerDocument
     if (current.current.giftInventory.includes(String(id))) return
-    if (!record({ type: 'ACQUIRE_GIFT', giftId: String(id), ...(floor === undefined ? {} : { floor }) })) return
+    if (!record({ type: 'ACQUIRE_GIFT', giftId: String(id), ...(floor === undefined ? {} : { floor }) }, automatic)) return
     // The one place both manual and confirmed automatic acquisitions pass; Undo/Redo and restores never animate.
     const gift = giftMap.get(id)!
     setAcquisitionEvents(items => [...items.slice(-31), { token: `${id}-${++acquisitionSeq.current}`, at: Date.now(), gift, name: localized(gift) }])
@@ -268,7 +271,7 @@ export default function CompanionPanel({ state, dispatch, themes, giftMap, obser
     undoStack.current.pop()
     current.current = entry.before
     expected.current = entry.beforeKey
-    if (!record({ type: 'CRAFT_FUSION', materialIds: materials, resultId: last.giftId })) {
+    if (!record({ type: 'CRAFT_FUSION', materialIds: materials, resultId: last.giftId }, true)) {
       undoStack.current.push(entry)
       current.current = entry.after
       expected.current = entry.afterKey
@@ -288,7 +291,7 @@ export default function CompanionPanel({ state, dispatch, themes, giftMap, obser
    */
   function fuse(resultId: number, materials: string[], token: string): boolean {
     const before = current.current.giftInventory
-    if (!record({ type: 'CRAFT_FUSION', materialIds: materials, resultId: String(resultId) })) return false
+    if (!record({ type: 'CRAFT_FUSION', materialIds: materials, resultId: String(resultId) }, true)) return false
     announce(fusionFeedback(token, Date.now(), before, current.current.giftInventory, String(resultId), describeGift))
     const gift = giftMap.get(resultId)!
     toast.success(t('fusionAutoApplied', { name: localized(gift), count: materials.length }))
@@ -313,7 +316,7 @@ export default function CompanionPanel({ state, dispatch, themes, giftMap, obser
       userClearedFloors.current)
     const observedTheme = action && themes.find(item => String(item.id) === action.themeId)
     if (!action || !observedTheme) return
-    record(action)
+    record(action, true)
     toast.success(t('floorThemeObserved', { floor: action.floor, name: localized(observedTheme) }))
   }, [floorThemeObservation, state.phase, themes])
   useEffect(() => {

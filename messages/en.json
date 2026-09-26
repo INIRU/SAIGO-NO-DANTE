@@ -677,7 +677,7 @@
       "detectionEvents": "Choice events",
       "detectionEventsHint": "Reads event screens to show the recommended choice.",
       "samplesLabel": "Help improve recognition",
-      "samplesHint": "When Assist fails to read an action (one fusion, a gift popup, a sale), sends that action’s game frames to improve recognition. Frames of actions read correctly are discarded in this browser. Not linked to your account; deleted after 180 days.",
+      "samplesHint": "When Assist fails to read an action (one fusion, a gift popup, a sale), sends that action’s game frames, along with how many actions it read or missed and the gifts you added or removed by hand, to improve recognition. Frames of actions read correctly are discarded in this browser. Not linked to your account; deleted after 180 days.",
       "samplesPrompt": "Help improve recognition?",
       "samplesYes": "Join",
       "samplesNo": "No thanks",
