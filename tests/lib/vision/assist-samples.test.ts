@@ -1,5 +1,5 @@
 import { expect, it, vi } from 'vitest'
-import { parseSampleMeta, readSampleConsent, SAMPLES_STORAGE_KEY, takeDailySample } from '@/lib/vision/assist-samples'
+import { AssistSampleRecorder, parseSampleMeta, readSampleConsent, SAMPLE_DAILY_LIMIT, SAMPLES_STORAGE_KEY, screenChanged, takeDailySample } from '@/lib/vision/assist-samples'
 import { checkRateLimit } from '@/lib/rate-limit'
 
 const memory = () => {
@@ -14,10 +14,10 @@ it('stays off until chosen', () => {
   expect(readSampleConsent({ getItem: () => { throw new Error('blocked') } })).toBeNull()
 })
 
-it('allows 30 samples per local day and starts over the next day', () => {
+it('allows a limited number of samples per local day and starts over the next day', () => {
   const storage = memory()
   const day = new Date(2026, 8, 25, 23, 0)
-  for (let index = 0; index < 30; index++) expect(takeDailySample(storage, day)).toBe(true)
+  for (let index = 0; index < SAMPLE_DAILY_LIMIT; index++) expect(takeDailySample(storage, day)).toBe(true)
   expect(takeDailySample(storage, day)).toBe(false)
   expect(takeDailySample(storage, new Date(2026, 8, 26, 0, 1))).toBe(true)
   expect(takeDailySample({ getItem: () => null, setItem: () => { throw new Error('full') } }, day)).toBe(false)
@@ -42,56 +42,61 @@ it('limits sample posts to 30 a day per key', () => {
   expect(checkRateLimit('assist-samples:test', 'sample').allowed).toBe(false)
 })
 
-it('keeps a fusion folder in the browser: discarded when read in full, sent with the next frames when not', async () => {
-  const { AssistSampleRecorder } = await import('@/lib/vision/assist-samples')
-  const bitmaps: { closed: boolean }[] = []
-  const bitmap = () => { const b = { width: 1280, height: 720, closed: false, close() { b.closed = true } }; bitmaps.push(b); return b }
+function recorderHarness() {
   let clock = 0
+  let shade = 0
   vi.spyOn(performance, 'now').mockImplementation(() => (clock += 400))
-  vi.stubGlobal('createImageBitmap', async () => bitmap())
   vi.stubGlobal('window', { localStorage: memory() })
-  vi.stubGlobal('OffscreenCanvas', class { getContext() { return { transferFromImageBitmap() {} } } async convertToBlob() { return new Blob(['j'], { type: 'image/jpeg' }) } })
-  const posts: FormData[] = []
-  vi.stubGlobal('fetch', async (_url: string, init: { body: FormData }) => { posts.push(init.body); return new Response(null) })
-  const frame = { displayWidth: 1920, displayHeight: 1080, clone: () => ({ close() {} }) } as unknown as VideoFrame
-  const settle = () => new Promise(resolve => setTimeout(resolve, 0))
-  const recorder = new AssistSampleRecorder(() => ({ scene: null, mode: 'quality', detection: { gifts: true, themes: true, events: true }, inference: null, ocr: null, dpr: 1, userAgent: 't', build: null, floor: 1 }))
-
-  await recorder.keepFrame({} as ImageBitmapSource, 1920, 1080)
-  await recorder.keepFrame({} as ImageBitmapSource, 1920, 1080)
-  recorder.closeFolder(null)
-  expect(bitmaps.slice(0, 2).every(b => b.closed)).toBe(true)
-  expect(posts).toHaveLength(0)
-
-  await recorder.keepFrame({} as ImageBitmapSource, 1920, 1080)
-  recorder.markNext()
-  recorder.offer(frame); await settle(); await settle()
-  recorder.closeFolder({ reason: 'fusion-materials', candidates: ['9108'] })
-  for (let i = 0; i < 3; i++) { recorder.offer(frame); await settle(); await settle() }
-  await settle()
-  expect(posts).toHaveLength(1)
-  expect(posts[0].getAll('frame')).toHaveLength(5)
-  expect(JSON.parse(String(posts[0].get('meta')))).toMatchObject({ reason: 'fusion-materials', candidates: ['9108'] })
-  vi.unstubAllGlobals()
-  vi.restoreAllMocks()
-})
-it('sends at most six scenes of a fusion folder plus the frames after it', async () => {
-  const { AssistSampleRecorder } = await import('@/lib/vision/assist-samples')
-  let clock = 0
-  vi.spyOn(performance, 'now').mockImplementation(() => (clock += 400))
   vi.stubGlobal('createImageBitmap', async () => ({ width: 1280, height: 720, close() {} }))
-  vi.stubGlobal('window', { localStorage: memory() })
-  vi.stubGlobal('OffscreenCanvas', class { getContext() { return { transferFromImageBitmap() {} } } async convertToBlob() { return new Blob(['j'], { type: 'image/jpeg' }) } })
-  const posts: FormData[] = []
-  vi.stubGlobal('fetch', async (_url: string, init: { body: FormData }) => { posts.push(init.body); return new Response(null) })
-  const frame = { displayWidth: 1920, displayHeight: 1080, clone: () => ({ close() {} }) } as unknown as VideoFrame
-  const settle = () => new Promise(resolve => setTimeout(resolve, 0))
-  const recorder = new AssistSampleRecorder(() => ({ scene: null, mode: 'quality', detection: { gifts: true, themes: true, events: true }, inference: null, ocr: null, dpr: 1, userAgent: 't', build: null, floor: 1 }))
-  for (let i = 0; i < 9; i++) await recorder.keepFrame({} as ImageBitmapSource, 1920, 1080)
-  recorder.closeFolder({ reason: 'fusion-dialogless', candidates: [] })
-  for (let i = 0; i < 3; i++) { recorder.offer(frame); await settle(); await settle() }
-  await settle()
-  expect(posts[0].getAll('frame')).toHaveLength(9)
-  vi.unstubAllGlobals()
-  vi.restoreAllMocks()
+  vi.stubGlobal('OffscreenCanvas', class {
+    getContext(kind: string) {
+      return kind === '2d' ? { drawImage() {}, getImageData: () => ({ data: new Uint8ClampedArray(64 * 36 * 4).fill(shade) }) } : { transferFromImageBitmap() {} }
+    }
+    async convertToBlob() { return new Blob(['frame' + shade], { type: 'image/jpeg' }) }
+  })
+  const uploads: { reason: string; frames: string[] }[] = []
+  const recorder = new AssistSampleRecorder(() => ({ scene: null, mode: 'quality', detection: { gifts: true, themes: true, events: true },
+    inference: null, ocr: null, dpr: 1, userAgent: 't', build: null, floor: 1 }), async (meta, frames) => {
+    uploads.push({ reason: meta.reason, frames: await Promise.all(frames.map(frame => frame.text())) })
+  })
+  const frame = { displayWidth: 1920, displayHeight: 1080, clone: () => ({ displayWidth: 1920, displayHeight: 1080, close() {} }) } as unknown as VideoFrame
+  const offer = async (next: number) => {
+    shade = next
+    recorder.offer(frame)
+    for (let i = 0; i < 4; i++) await new Promise(resolve => setTimeout(resolve, 0))
+  }
+  return { recorder, uploads, offer }
+}
+
+it('tells a changed screen from a still one', () => {
+  const still = new Uint8Array(64 * 36).fill(80)
+  const cursor = still.slice(); cursor[5] = 200
+  const popup = still.slice(); popup.fill(200, 0, 40)
+  expect(screenChanged(null, still)).toBe(true)
+  expect(screenChanged(still, still.slice())).toBe(false)
+  expect(screenChanged(still, cursor)).toBe(false)
+  expect(screenChanged(still, popup)).toBe(true)
+})
+
+it('discards the frame group of an action that was read', async () => {
+  const { recorder, uploads, offer } = recorderHarness()
+  recorder.begin('popup:1')
+  await offer(40); await offer(80)
+  recorder.end('popup:1', null)
+  for (const shade of [120, 160, 200, 240]) await offer(shade)
+  expect(uploads).toEqual([])
+  vi.unstubAllGlobals(); vi.restoreAllMocks()
+})
+
+it('uploads the whole group of a failed action with the frames just before and after it', async () => {
+  const { recorder, uploads, offer } = recorderHarness()
+  await offer(40)
+  recorder.begin('fusion')
+  await offer(80); await offer(80); await offer(120)
+  recorder.end('fusion', { reason: 'fusion-materials', candidates: ['9108'] })
+  await offer(160); await offer(200)
+  expect(uploads).toEqual([])
+  await offer(240)
+  expect(uploads).toEqual([{ reason: 'fusion-materials', frames: ['frame40', 'frame80', 'frame120', 'frame160', 'frame200', 'frame240'] }])
+  vi.unstubAllGlobals(); vi.restoreAllMocks()
 })

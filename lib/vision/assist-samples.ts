@@ -1,33 +1,37 @@
 /**
- * Opt-in recognition samples: when Assist is unsure, the 5 frames before and 5 after are sent (JPEG, 1280 px wide) so
- * the recognizer can be retrained on real hard cases. A fusion is kept as one folder instead (its latest wheel states,
- * the confirmation dialog and the result) and sent only if its materials could not all be read. Off unless the user chose it;
- * never tied to an account.
+ * Opt-in recognition samples. Assist keeps the frames of each action it reads (one fusion, one acquisition popup, one
+ * sale) as a group in this browser: only frames where the screen changed, JPEG, 1280 px wide. A group read in full is
+ * discarded; a group whose read failed is uploaded whole, with a few frames after it, so the recognizer can be retrained
+ * on real hard cases. Off unless the user chose it; never tied to an account.
  */
 import { DETECTION_KINDS, type DetectionSettings } from './detection-settings'
 
-export const SAMPLES_STORAGE_KEY = 'limbus-assist-samples'
+// v2: groups replaced "5 frames before and after"; everyone who opted in before is asked again.
+export const SAMPLES_STORAGE_KEY = 'limbus-assist-samples-v2'
 export const SAMPLES_DAILY_KEY = 'limbus-assist-samples-daily'
 export const SAMPLE_REASONS = ['popup-unresolved', 'fusion-materials', 'fusion-dialogless', 'sale-unresolved'] as const
 export type SampleReason = typeof SAMPLE_REASONS[number]
-export const SAMPLE_FRAMES_EACH_SIDE = 5
-/** Frames per sample: 5 + 5 around a popup, or a fusion folder's scenes plus the frames after it (privacy policy: about 5 each). */
-export const SAMPLE_MAX_FRAMES = SAMPLE_FRAMES_EACH_SIDE * 2
-// 합성 폴더에 남기는 장면 수(가장 최근 것부터). 뒤에 붙는 3장과 합쳐 9장이다
-const FOLDER_SCENES = 6
+/** Frames kept per group (latest first) plus the frames after it. */
+export const SAMPLE_GROUP_FRAMES = 45
+export const SAMPLE_AFTER_FRAMES = 3
+export const SAMPLE_MAX_FRAMES = SAMPLE_GROUP_FRAMES + SAMPLE_AFTER_FRAMES
 export const SAMPLE_MAX_FRAME_BYTES = 400 * 1024
-export const SAMPLE_MAX_TOTAL_BYTES = 3 * 1024 * 1024
-export const SAMPLE_DAILY_LIMIT = 30
-// 판정은 팝업이 닫힌 뒤에야 끝나는 일이 많다: 5장 × 300 ms로 직전 약 1.5초를 담는다(100 ms일 때는 0.5초라 팝업이 빠졌다)
+export const SAMPLE_BUCKET = 'assist-samples'
+export const SAMPLE_DAILY_LIMIT = 15
+// 300 ms마다 한 장을 보고, 화면이 바뀐 장면만 담는다
 const SAMPLE_INTERVAL_MS = 300
 const SAMPLE_COOLDOWN_MS = 20_000
-// 이름판 글자를 학습에 쓸 만한 폭(960 px는 작은 글자가 뭉개졌다). JPEG 한 장 약 135 KB로 장당·샘플당 제한 안이다.
+// 이름판 글자를 학습에 쓸 만한 폭(960 px는 작은 글자가 뭉개졌다). JPEG 한 장 약 135 KB.
 const SAMPLE_WIDTH = 1280
-// 합성 폴더: 합성 화면을 이만큼 보지 못하면 합성하지 않고 나간 것으로 보고 버린다
-const FOLDER_IDLE_MS = 20_000
-// 폴더를 보낼 때 결과 창이 담기도록 뒤에 붙이는 장수
-const FOLDER_AFTER_FRAMES = 3
-const FOLDER_MARK_GAP_MS = 1500
+// 동작이 시작되기 직전 장면(팝업이 뜬 순간 등)으로 그룹 앞에 붙는 장수
+const PREROLL_FRAMES = 3
+// 이만큼 다시 보지 못한 그룹은 끝난 것으로 보고 버린다(합성하지 않고 나감, 판매 취소)
+const GROUP_IDLE_MS = 20_000
+// 변화 판정용 축소 화면: 64×36 회색조에서 16 이상 달라진 칸이 2개 이상이면 바뀐 장면이다
+const THUMB_WIDTH = 64
+const THUMB_HEIGHT = 36
+const CHANGED_LEVEL = 16
+const CHANGED_CELLS = 2
 
 /** true/false once chosen in this browser, null while never asked. */
 export function readSampleConsent(storage: Pick<Storage, 'getItem'> | null | undefined): boolean | null {
@@ -107,22 +111,41 @@ export function parseSampleMeta(raw: unknown): SampleMeta | null {
 
 export type SampleContext = Omit<SampleMeta, 'reason' | 'width' | 'height' | 'candidates' | 'clientAt'>
 
+/** Grayscale thumbnail used only to tell whether the screen changed. */
+export function frameThumb(pixels: Uint8ClampedArray): Uint8Array {
+  const out = new Uint8Array(pixels.length / 4)
+  for (let i = 0; i < out.length; i++) out[i] = (pixels[i * 4] * 77 + pixels[i * 4 + 1] * 150 + pixels[i * 4 + 2] * 29) >> 8
+  return out
+}
+
+export function screenChanged(previous: Uint8Array | null, next: Uint8Array): boolean {
+  if (!previous || previous.length !== next.length) return true
+  let cells = 0
+  for (let i = 0; i < next.length; i++) if (Math.abs(next[i] - previous[i]) >= CHANGED_LEVEL && ++cells >= CHANGED_CELLS) return true
+  return false
+}
+
+type Group = { frames: Blob[]; touchedAt: number }
+type Outgoing = { reason: SampleReason; candidates: string[]; frames: Blob[]; after: number }
+
 /**
- * Browser side: offered every captured frame, keeps the last 5 (one per 300 ms, 1280 px wide). A trigger takes those
- * plus the next 5 and posts them as JPEG. Every failure is silent and recognition never waits on it.
+ * Browser side: offered every captured frame (one per 300 ms is looked at). Changed frames are encoded once and shared by
+ * every open group. A group is opened (or kept alive) by begin(key) and settled by end(key, failure). Every failure is
+ * silent and recognition never waits on it.
  */
 export class AssistSampleRecorder {
-  private ring: ImageBitmap[] = []
-  private pending: { reason: SampleReason; candidates: string[]; frames: ImageBitmap[]; want: number } | null = null
-  /** The fusion being watched: its key scenes, kept in this browser until the fusion is read. */
-  private folder: { frames: ImageBitmap[]; touchedAt: number; takeNext: boolean; markedAt: number } | null = null
+  private preroll: Blob[] = []
+  private groups = new Map<string, Group>()
+  private outgoing: Outgoing[] = []
+  private lastThumb: Uint8Array | null = null
+  private thumbCanvas: OffscreenCanvas | null = null
   private lastFrameAt = 0
   private lastSampleAt = -Infinity
   private busy = false
   private closed = false
   private width = 0
   private height = 0
-  constructor(private context: () => SampleContext) {}
+  constructor(private context: () => SampleContext, private upload: (meta: SampleMeta, frames: Blob[]) => Promise<void> = uploadSample) {}
 
   offer(frame: VideoFrame) {
     const now = performance.now()
@@ -131,134 +154,93 @@ export class AssistSampleRecorder {
     this.busy = true
     this.width = frame.displayWidth
     this.height = frame.displayHeight
-    const width = Math.min(SAMPLE_WIDTH, frame.displayWidth)
     const copy = frame.clone()
-    createImageBitmap(copy, { resizeWidth: width, resizeHeight: Math.max(1, Math.round(frame.displayHeight * width / frame.displayWidth)) })
-      .then(bitmap => {
-        const pending = this.pending
-        if (this.closed) bitmap.close()
-        else {
-          this.fileNext(bitmap, now)
-          if (pending) {
-          pending.frames.push(bitmap)
-          if (pending.frames.length < pending.want) return
-          this.pending = null
-          void this.send(pending)
-          } else {
-          this.ring.push(bitmap)
-          while (this.ring.length > SAMPLE_FRAMES_EACH_SIDE) this.ring.shift()!.close()
-          }
-        }
-      })
-      .catch(() => {})
-      .finally(() => { copy.close(); this.busy = false })
+    void this.look(copy, now).catch(() => {}).finally(() => { copy.close(); this.busy = false })
+  }
+
+  /** Opens the group of an action, or keeps it open. It starts with the frames just before. */
+  begin(key: string) {
+    if (this.closed) return
+    const group = this.groups.get(key)
+    if (group) group.touchedAt = performance.now()
+    else this.groups.set(key, { frames: [...this.preroll], touchedAt: performance.now() })
+  }
+
+  /**
+   * The action was read. Read in full (null): its group is discarded. Otherwise the group (or, if none was open, the
+   * frames just before) is uploaded with the next few changed frames.
+   */
+  end(key: string, failure: { reason: SampleReason; candidates?: readonly string[] } | null) {
+    const group = this.groups.get(key)
+    this.groups.delete(key)
+    if (!failure || this.closed) return
+    const frames = group?.frames ?? [...this.preroll]
+    if (!frames.length || !this.allow()) return
+    this.outgoing.push({ reason: failure.reason, candidates: (failure.candidates ?? []).slice(0, 20).map(String), frames, after: SAMPLE_AFTER_FRAMES })
+  }
+
+  close() {
+    this.closed = true
+    this.groups.clear()
+    this.outgoing = []
+    this.preroll = []
   }
 
   /** At most one sample per 20 s and SAMPLE_DAILY_LIMIT per browser per day; takes the slot when allowed. */
   private allow(): boolean {
     const now = performance.now()
-    if (this.closed || this.pending || now - this.lastSampleAt < SAMPLE_COOLDOWN_MS) return false
+    if (now - this.lastSampleAt < SAMPLE_COOLDOWN_MS) return false
     try { if (!takeDailySample(window.localStorage, new Date())) return false } catch { return false }
     this.lastSampleAt = now
     return true
   }
 
-  trigger(reason: SampleReason, candidates: readonly string[] = []) {
-    if (!this.ring.length || !this.allow()) return
-    const frames = this.ring.splice(0)
-    this.pending = { reason, candidates: candidates.slice(0, 20).map(String), frames, want: frames.length + SAMPLE_FRAMES_EACH_SIDE }
-  }
-
-  /** The fusion screen is up: opens its folder, or keeps the open one alive. */
-  openFolder() {
-    if (this.closed) return
-    const now = performance.now()
-    if (this.folder && now - this.folder.touchedAt > FOLDER_IDLE_MS) this.discardFolder()
-    if (this.folder) this.folder.touchedAt = now
-    else this.folder = { frames: [], touchedAt: now, takeNext: false, markedAt: -Infinity }
-  }
-
-  /** Files a scene the reader just saw (a new wheel state). The source stays owned by the caller. */
-  async keepFrame(source: ImageBitmapSource, width: number, height: number) {
-    this.openFolder()
-    const folder = this.folder
-    if (!folder || !width) return
-    const w = Math.min(SAMPLE_WIDTH, width)
-    const bitmap = await createImageBitmap(source, { resizeWidth: w, resizeHeight: Math.max(1, Math.round(height * w / width)) }).catch(() => null)
-    if (bitmap) this.addToFolder(folder, bitmap)
-  }
-
-  /** Files the next captured frame (a confirmation dialog or result popup the reader just saw). */
-  markNext() {
-    this.openFolder()
-    const folder = this.folder
-    // A dialog stays up across many reads: one scene per sighting is enough.
-    if (!folder || folder.touchedAt - folder.markedAt < FOLDER_MARK_GAP_MS) return
-    folder.markedAt = folder.touchedAt
-    folder.takeNext = true
-  }
-
-  /**
-   * The fusion was read. Read in full (null): the folder is discarded. Otherwise it is sent, with the next few frames
-   * so the result popup is included.
-   */
-  closeFolder(failure: { reason: SampleReason; candidates: readonly string[] } | null) {
-    const folder = this.folder
-    this.folder = null
-    if (!folder) return
-    if (!failure || !folder.frames.length || !this.allow()) {
-      for (const bitmap of folder.frames) bitmap.close()
-      return
+  private async look(frame: VideoFrame, now: number) {
+    for (const [key, group] of this.groups) if (now - group.touchedAt > GROUP_IDLE_MS) this.groups.delete(key)
+    // Nothing would keep the frame: skip the work (the preroll still needs the latest changes).
+    const canvas = this.thumbCanvas ??= new OffscreenCanvas(THUMB_WIDTH, THUMB_HEIGHT)
+    const context = canvas.getContext('2d', { willReadFrequently: true })
+    if (!context) return
+    context.drawImage(frame, 0, 0, THUMB_WIDTH, THUMB_HEIGHT)
+    const thumb = frameThumb(context.getImageData(0, 0, THUMB_WIDTH, THUMB_HEIGHT).data)
+    const changed = screenChanged(this.lastThumb, thumb)
+    let blob: Blob | null = null
+    if (changed) {
+      this.lastThumb = thumb
+      const width = Math.min(SAMPLE_WIDTH, frame.displayWidth)
+      const height = Math.max(1, Math.round(frame.displayHeight * width / frame.displayWidth))
+      const bitmap = await createImageBitmap(frame, { resizeWidth: width, resizeHeight: height })
+      const jpeg = new OffscreenCanvas(width, height)
+      jpeg.getContext('bitmaprenderer')!.transferFromImageBitmap(bitmap)
+      blob = await jpeg.convertToBlob({ type: 'image/jpeg', quality: 0.8 })
+      if (this.closed) return
+      if (blob.size > SAMPLE_MAX_FRAME_BYTES) blob = null
     }
-    const frames = folder.frames.splice(0)
-    this.pending = { reason: failure.reason, candidates: failure.candidates.slice(0, 20).map(String), frames, want: frames.length + FOLDER_AFTER_FRAMES }
-  }
-
-  private fileNext(bitmap: ImageBitmap, now: number) {
-    const folder = this.folder
-    if (!folder) return
-    if (now - folder.touchedAt > FOLDER_IDLE_MS) return this.discardFolder()
-    if (!folder.takeNext) return
-    folder.takeNext = false
-    createImageBitmap(bitmap).then(copy => this.addToFolder(folder, copy)).catch(() => {})
-  }
-
-  private addToFolder(folder: NonNullable<AssistSampleRecorder['folder']>, bitmap: ImageBitmap) {
-    if (this.closed || this.folder !== folder) return bitmap.close()
-    folder.frames.push(bitmap)
-    while (folder.frames.length > FOLDER_SCENES) folder.frames.shift()!.close()
-  }
-
-  private discardFolder() {
-    for (const bitmap of this.folder?.frames ?? []) bitmap.close()
-    this.folder = null
-  }
-
-  close() {
-    this.closed = true
-    for (const bitmap of [...this.ring, ...(this.pending?.frames ?? [])]) bitmap.close()
-    this.discardFolder()
-    this.ring = []
-    this.pending = null
-  }
-
-  private async send({ reason, candidates, frames }: { reason: SampleReason; candidates: string[]; frames: ImageBitmap[] }) {
-    try {
-      const meta: SampleMeta = { ...this.context(), reason, candidates, width: this.width, height: this.height, clientAt: Date.now() }
-      const body = new FormData()
-      body.append('meta', JSON.stringify(meta))
-      let total = 0
-      for (const [index, bitmap] of frames.entries()) {
-        const canvas = new OffscreenCanvas(bitmap.width, bitmap.height)
-        canvas.getContext('bitmaprenderer')!.transferFromImageBitmap(bitmap)
-        const blob = await canvas.convertToBlob({ type: 'image/jpeg', quality: 0.8 })
-        if (blob.size > SAMPLE_MAX_FRAME_BYTES || total + blob.size > SAMPLE_MAX_TOTAL_BYTES) continue
-        total += blob.size
-        body.append('frame', blob, `${index}.jpg`)
+    if (blob) {
+      this.preroll = [...this.preroll, blob].slice(-PREROLL_FRAMES)
+      for (const group of this.groups.values()) {
+        group.frames.push(blob)
+        if (group.frames.length > SAMPLE_GROUP_FRAMES) group.frames.shift()
       }
-      if (total) await fetch('/api/assist/samples', { method: 'POST', body })
-    } catch { /* Samples are best effort. */ } finally {
-      for (const bitmap of frames) bitmap.close()
+    }
+    // Uploads wait for the next few frames (changed ones are added), so the result on screen is included.
+    for (const item of this.outgoing.splice(0)) {
+      if (blob) item.frames.push(blob)
+      if (--item.after > 0) { this.outgoing.push(item); continue }
+      const meta: SampleMeta = { ...this.context(), reason: item.reason, candidates: item.candidates, width: this.width, height: this.height, clientAt: Date.now() }
+      void this.upload(meta, item.frames).catch(() => {})
     }
   }
+}
+
+/** Asks the server for one signed upload per frame, then sends the frames straight to storage. */
+async function uploadSample(meta: SampleMeta, frames: Blob[]) {
+  const response = await fetch('/api/assist/samples', { method: 'POST', headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ meta, sizes: frames.map(frame => frame.size) }) })
+  if (!response.ok) return
+  const { uploads } = await response.json() as { uploads: { path: string; token: string }[] }
+  const { createClient } = await import('@/lib/supabase/client')
+  const bucket = createClient().storage.from(SAMPLE_BUCKET)
+  await Promise.all(uploads.slice(0, frames.length).map((upload, index) =>
+    bucket.uploadToSignedUrl(upload.path, upload.token, frames[index], { contentType: 'image/jpeg' })))
 }
