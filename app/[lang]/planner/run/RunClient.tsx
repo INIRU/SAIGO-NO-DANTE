@@ -106,6 +106,12 @@ export default function RunClient({ themes, gifts, recipes, identities, sinners,
     language: locale === 'en' || locale === 'ja' ? locale : 'ko', floor: state.phase === 'playing' ? state.currentFloor : null })
   const { visualCandidates, ocrCandidates, eventChoiceEvidence } =
     captureEvidence(capture, state.phase === 'playing' ? state.currentFloor : null, Date.now())
+  const { reportInventoryChange } = capture
+  // Inventory edits during a run feed the opt-in recognition report (a no-op unless capturing with consent).
+  useEffect(() => useRunStore.subscribe((next, previous) => {
+    if (next.phase === 'playing' && previous.phase === 'playing' && next.giftInventory !== previous.giftInventory)
+      reportInventoryChange(previous.giftInventory, next.giftInventory)
+  }), [reportInventoryChange])
   // The stable scene switches a capture or two after a battle starts; frames already classified as combat never
   // promote gifts, so the order stays frozen from the first battle frame.
   const combatFrame = ['battle', 'battle_setup', 'loading'].includes(capture.prediction?.label ?? '')

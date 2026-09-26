@@ -5,6 +5,7 @@
  * on real hard cases. Off unless the user chose it; never tied to an account.
  */
 import { DETECTION_KINDS, type DetectionSettings } from './detection-settings'
+import { isSessionId } from './assist-report'
 
 // v2: groups replaced "5 frames before and after"; everyone who opted in before is asked again.
 export const SAMPLES_STORAGE_KEY = 'limbus-assist-samples-v2'
@@ -68,6 +69,8 @@ export interface SampleMeta {
   floor: number | null
   candidates: string[]
   clientAt: number
+  /** The capture's report session (lib/vision/assist-report.ts), linking the sample to hand corrections. */
+  session?: string
 }
 
 const text = (value: unknown, max: number): value is string => typeof value === 'string' && value.length <= max
@@ -89,14 +92,14 @@ export function parseSampleMeta(raw: unknown): SampleMeta | null {
   const detection = record(meta.detection)
   const inference = pair(meta.inference, 'provider', 'adapter')
   const ocr = pair(meta.ocr, 'engine', 'adapter')
-  const { candidates } = meta
+  const { candidates, session } = meta
   if ((meta.scene !== null && !(scene && text(scene.label, 40) && num(scene.confidence, 0, 1))) ||
     !text(meta.mode, 20) || !detection || !DETECTION_KINDS.every(kind => typeof detection[kind] === 'boolean') ||
     (meta.inference !== null && !inference) || (meta.ocr !== null && !ocr) ||
     !int(meta.width, 1, 16384) || !int(meta.height, 1, 16384) || !num(meta.dpr, 0, 16) || !text(meta.userAgent, 400) ||
     !(meta.build === null || text(meta.build, 64)) || !(meta.floor === null || int(meta.floor, 0, 99)) ||
     !Array.isArray(candidates) || candidates.length > 20 || !candidates.every(id => text(id, 20)) ||
-    !num(meta.clientAt, 0, 8.64e15)) return null
+    !num(meta.clientAt, 0, 8.64e15) || !(session === undefined || session === null || isSessionId(session))) return null
   return {
     reason: meta.reason as SampleReason,
     scene: scene ? { label: scene.label as string, confidence: scene.confidence as number } : null,
@@ -106,6 +109,7 @@ export function parseSampleMeta(raw: unknown): SampleMeta | null {
     ocr: ocr ? { engine: ocr.engine as string, adapter: ocr.adapter as string } : null,
     width: meta.width, height: meta.height, dpr: meta.dpr, userAgent: meta.userAgent,
     build: meta.build as string | null, floor: meta.floor as number | null, candidates: candidates as string[], clientAt: meta.clientAt,
+    ...(isSessionId(session) ? { session } : {}),
   }
 }
 

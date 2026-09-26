@@ -11,6 +11,7 @@ import { isMobileDevice } from '@/lib/vision/device'
 import { RECOGNITION_PROFILES, type RecognitionMode } from '@/lib/vision/recognition-profile'
 import { DEFAULT_DETECTION, type DetectionSettings } from '@/lib/vision/detection-settings'
 import { AssistSampleRecorder } from '@/lib/vision/assist-samples'
+import { AssistReportTally, sendAssistReport, type ReportAction } from '@/lib/vision/assist-report'
 import { EMPTY_SALE_STATE, isSellWindow, readSaleStep, sellCost, sellGiftId } from '@/lib/vision/sell-evidence'
 import { readSkillExchange, type SkillExchangeRead } from '@/lib/vision/skill-exchange'
 import { acquisitionSeq, acquisitionsToRelease, continuesFusionDialog, dialogForResult, dialoglessFusionResult, fusionAnchors,
@@ -293,6 +294,8 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
   currentFloor.current = floor
   // Opt-in samples: the recorder follows the switch from the frame reader; its metadata is read when a sample is sent.
   const sampleRecorder = useRef<AssistSampleRecorder | null>(null)
+  // With the same consent: read/held counts per action and the user's inventory edits, one random session per capture.
+  const reportTally = useRef<AssistReportTally | null>(null)
   const samplesRef = useRef(samples)
   samplesRef.current = samples
   const sampleState = useRef({ prediction, mode, detection, inference, ocrEngine, floor })
@@ -301,7 +304,19 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
     const { prediction, mode, detection, inference, ocrEngine, floor } = sampleState.current
     return { scene: prediction && { label: prediction.label.slice(0, 40), confidence: prediction.confidence }, mode, detection, inference,
       ocr: ocrEngine && { engine: ocrEngine.engine, adapter: ocrEngine.adapter.slice(0, 80) }, dpr: window.devicePixelRatio,
-      userAgent: navigator.userAgent.slice(0, 400), build: process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA ?? null, floor }
+      userAgent: navigator.userAgent.slice(0, 400), build: process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA ?? null, floor,
+      session: reportTally.current?.session }
+  }
+  const readReportContext = () => ({ build: process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA ?? null, mode: sampleState.current.mode,
+    ocr: sampleState.current.ocrEngine?.engine.slice(0, 20) ?? null })
+  /** An action Assist finished reading: counted for the report, and its sample group kept (failure) or discarded. */
+  const settleSample = (key: string, action: ReportAction, failure: Parameters<AssistSampleRecorder['end']>[1]) => {
+    reportTally.current?.settle(action, !failure)
+    sampleRecorder.current?.end(key, failure)
+  }
+  const flushReport = () => {
+    const report = reportTally.current?.take()
+    if (report) sendAssistReport(report)
   }
   const generation = useRef(0)
   const stream = useRef<MediaStream | null>(null)
@@ -394,6 +409,8 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
     latestFrame.current = null
     sampleRecorder.current?.close()
     sampleRecorder.current = null
+    flushReport()
+    reportTally.current = null
     for (const item of wheelFrames.current) item.frame.close()
     wheelFrames.current = []
     wheelRequest.current = null
@@ -661,7 +678,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
           dialog.published = true
           const materials = fusionMaterials(dialog.reads, dialog.count, dialog.capacity)
           // The fusion's frame group is uploaded only when its materials could not all be read.
-          sampleRecorder.current?.end('fusion', materials.length < dialog.count ? { reason: dialog.dialogless ? 'fusion-dialogless' : 'fusion-materials', candidates: materials } : null)
+          settleSample('fusion', 'fusion', materials.length < dialog.count ? { reason: dialog.dialogless ? 'fusion-dialogless' : 'fusion-materials', candidates: materials } : null)
           // Dated by the dialog's own first frame: wheel reads come from before it, possibly before the previous result.
           if (materials.length) publishFusion({ materials, observedAt: dialog.firstAt, lastSeenAt: dialog.lastSeenAt,
             closedAt: dialog.closedAt, token: dialog.token })
@@ -752,10 +769,10 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
           if (popupHeaderEvidence(header) &&
             ![...popupPending.current.values()].some(other => other.episode === pending.episode) &&
             (last?.episode !== pending.episode || last.attempts >= profileRef.current.popupAttempts))
-            sampleRecorder.current?.end('popup:' + pending.episode, { reason: 'popup-unresolved', candidates: [...icons, ...effects] })
+            settleSample('popup:' + pending.episode, 'popup', { reason: 'popup-unresolved', candidates: [...icons, ...effects] })
           return
         }
-        sampleRecorder.current?.end('popup:' + pending.episode, null)
+        settleSample('popup:' + pending.episode, 'popup', null)
         popupEvidence.current.delete(pending.episode)
         for (const queue of [popupQueue, popupVisionQueue]) {
           queue.current = queue.current.filter(item => {
@@ -1513,8 +1530,10 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
                     try {
                       latestFrame.current?.close()
                       latestFrame.current = value.clone()
-                      if (samplesRef.current) (sampleRecorder.current ??= new AssistSampleRecorder(readSampleContext)).offer(value)
-                      else if (sampleRecorder.current) { sampleRecorder.current.close(); sampleRecorder.current = null }
+                      if (samplesRef.current) {
+                        reportTally.current ??= new AssistReportTally(readReportContext)
+                        ;(sampleRecorder.current ??= new AssistSampleRecorder(readSampleContext)).offer(value)
+                      } else if (sampleRecorder.current) { sampleRecorder.current.close(); sampleRecorder.current = null; reportTally.current = null }
                       const now = performance.now()
                       if (now - lastSample >= 33) { lastSample = now; await samplePopup(value) }
                       frameTasks.current = frameTasks.current.filter(task => task.live())
@@ -1648,15 +1667,26 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
     saleState.current = step.state
     // One sale is one sample group: settled by a sale, uploaded when its dialog could not be read.
     if (step.state.dialog || isSellWindow(text)) sampleRecorder.current?.begin('sale')
-    if (step.sold.length) sampleRecorder.current?.end('sale', null)
-    else if (!step.state.dialog && text.replace(/\s+/g, '').includes('판매하시겠')) sampleRecorder.current?.end('sale', { reason: 'sale-unresolved' })
+    if (step.sold.length) settleSample('sale', 'sale', null)
+    else if (!step.state.dialog && text.replace(/\s+/g, '').includes('판매하시겠')) settleSample('sale', 'sale', { reason: 'sale-unresolved' })
     if (step.sold.length) setGiftSales(items => [...items, ...step.sold.map(sale =>
       ({ giftId: sale.giftId, token: `sell:${sale.at}:${sale.giftId}`, capturedAt: sale.at }))].slice(-8))
   }
 
+  // Reports also leave with the page and every 15 minutes of a long capture.
+  useEffect(() => {
+    const interval = setInterval(flushReport, 15 * 60_000)
+    window.addEventListener('pagehide', flushReport)
+    return () => { clearInterval(interval); window.removeEventListener('pagehide', flushReport) }
+  }, [])
+  /** The run's inventory changed; edits by hand (not inside CompanionPanel's automatic records) become report labels. */
+  const reportInventoryChange = useCallback((before: readonly string[], after: readonly string[]) => {
+    reportTally.current?.inventoryChanged(before, after)
+  }, [])
+
   return { supported, status, error, prediction, visualCandidates, ocrCandidates, ocrStatus,
     popupAcquisitions, floorThemeObservation, observedFloor, scene, themeSelectionFloor, queueStatus, mobile, inference, ocrEngine,
-    ocrWorkers, fusionEvidence, giftSales, skillExchange, start, stop }
+    ocrWorkers, fusionEvidence, giftSales, skillExchange, start, stop, reportInventoryChange }
 }
 
 /**
