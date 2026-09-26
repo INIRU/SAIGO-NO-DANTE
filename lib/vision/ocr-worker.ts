@@ -56,8 +56,9 @@ let paddleFailed = false
 type LexiconRead = { id: string; name: string; margin: number; gap: number }
 // Plate lines are also decoded against the gift names (lexicon CTC). Measured on 36 acquisition popups of the 2026-09-25/26
 // samples: right names led the runner-up by 10.6+ nats and fell short of the greedy path by at most 9.7 (two misread
-// glyphs); the one wrong best name led by 7.6 and fell short by 30. A wrong read is still only one more name read, so a
-// disagreeing icon or name makes the popup abstain.
+// glyphs); the one best name below the bar (회중시계 : 타입 E, three misread glyphs) led by 7.6 and fell short by 30. A
+// wrong read is still only one more name read, so a disagreeing icon or name makes the popup abstain. The best name is
+// always returned; below the bar the app uses it only to pick a recipe result on the fusion screen.
 const LEXICON_MARGIN = 9
 const LEXICON_GAP = 12
 let giftNames: { id: string; name: string }[] = []

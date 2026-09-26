@@ -76,13 +76,15 @@ export function acquiredGiftFromPopup({ header, labels, iconGiftId, effectGiftId
 
 /**
  * Every gift a popup's evidence points at, however weak or conflicting, for resolving it with other knowledge: exact
- * name reads of any confidence (`named`), and near names, icons and effect owners (`others`). Empty without the header.
+ * name reads of any confidence (`named`), and near names, icons, effect owners and lexicon-decoded names below the
+ * acceptance bar (`others`). Empty without the header.
  */
-export function popupCandidateIds({ header, labels, iconGiftIds, effectGiftIds, gifts }: {
+export function popupCandidateIds({ header, labels, iconGiftIds, effectGiftIds, lexiconGiftIds = [], gifts }: {
   header: string
   labels: PopupLabelRead[]
   iconGiftIds: string[]
   effectGiftIds: string[]
+  lexiconGiftIds?: string[]
   gifts: OcrReference[]
 }): { named: string[]; others: string[] } {
   const named = new Set<string>(), others = new Set<string>()
@@ -94,7 +96,7 @@ export function popupCandidateIds({ header, labels, iconGiftIds, effectGiftIds, 
     const near = nearestGiftName(read.text, gifts)
     if (near) others.add(near)
   }
-  for (const id of [...iconGiftIds, ...effectGiftIds]) if (gifts.some(gift => gift.id === id)) others.add(id)
+  for (const id of [...iconGiftIds, ...effectGiftIds, ...lexiconGiftIds]) if (gifts.some(gift => gift.id === id)) others.add(id)
   return { named: [...named], others: [...others].filter(id => !named.has(id)) }
 }
 
