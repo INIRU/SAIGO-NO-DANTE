@@ -569,7 +569,7 @@ button.note-gift-label:hover{text-decoration-color:currentColor}
   .note-block-actions button:active{background:#2e2417}
   .note-block-actions .note-block-delete{margin-left:.25rem;color:#ef8a7a}
 }
-/* Phones: four cards (three E.G.O) to a row, so a row of picks reads as one row instead of wrapping like a new line. */
+/* Phones: four cards (three E.G.O, drawn at 70%) to a row, so a row of picks reads as one row instead of wrapping like a new line. */
 @media(max-width:40rem){
   /* Viewer: the card sits in the text. Editor: each card is wrapped by its node view, so the wrapper takes the width. */
   .note-block-document .note-asset-view--identity,.note-block-document .note-asset-view--theme,.note-block-document .note-asset-view--gift,
@@ -578,4 +578,5 @@ button.note-gift-label:hover{text-decoration-color:currentColor}
   .note-document-content .node-noteAsset[data-kind] > .note-asset-node{width:100%;margin-right:0}
   .note-empty-slot,.note-empty-slot--theme,.note-empty-slot--identity{width:100%}
   .note-asset-caption{font-size:.6875rem}
+  .note-asset-replace{min-height:1.5rem;margin-top:.125rem;font-size:.6875rem}
 }
