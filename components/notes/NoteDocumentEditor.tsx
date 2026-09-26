@@ -154,7 +154,8 @@ export default function NoteDocumentEditor({
       NoteInput.configure({lang}),
       Placeholder.configure({
         includeChildren: true,
-        showOnlyCurrent: false,
+        // Only the line being typed on shows the hint (every empty line showed it before).
+        showOnlyCurrent: true,
         placeholder: ({node}) => notePlaceholder(lang, node.type.name),
       }),
     ],
