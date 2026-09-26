@@ -177,3 +177,72 @@ export function recAlphabet(dictionary: unknown): string[] {
   }
   return ['', ...dictionary, ' ']
 }
+
+export interface LexiconEntry { id: string; name: string; labels: number[] }
+
+/** Names as alphabet indices for lexicon decoding; a name with a character the model cannot output is left out. */
+export function lexiconEntries(names: { id: string; name: string }[], alphabet: string[]): LexiconEntry[] {
+  const index = new Map<string, number>()
+  alphabet.forEach((character, position) => { if (position > 0 && !index.has(character)) index.set(character, position) })
+  return names.flatMap(({ id, name }) => {
+    const text = name.normalize('NFKC').trim()
+    const labels = [...text].map(character => index.get(character) ?? -1)
+    return text && labels.every(label => label > 0) ? [{ id, name: text, labels }] : []
+  })
+}
+
+const logAdd = (left: number, right: number) => {
+  if (left === -Infinity) return right
+  if (right === -Infinity) return left
+  const high = Math.max(left, right)
+  return high + Math.log1p(Math.exp(-Math.abs(left - right)))
+}
+
+/** CTC log-likelihood of one label sequence (forward algorithm over the blank-extended sequence). */
+function ctcLogLikelihood(logp: Float64Array, steps: number, classes: number, labels: number[]): number {
+  const size = labels.length * 2 + 1
+  let previous = new Float64Array(size).fill(-Infinity)
+  let current = new Float64Array(size)
+  previous[0] = logp[0]
+  if (size > 1) previous[1] = logp[labels[0]]
+  for (let step = 1; step < steps; step++) {
+    const row = step * classes
+    for (let state = 0; state < size; state++) {
+      const label = state % 2 ? labels[(state - 1) / 2] : 0
+      let value = previous[state]
+      if (state > 0) value = logAdd(value, previous[state - 1])
+      if (state > 1 && state % 2 && label !== labels[(state - 3) / 2]) value = logAdd(value, previous[state - 2])
+      current[state] = value + logp[row + label]
+    }
+    ;[previous, current] = [current, previous]
+  }
+  return size > 1 ? logAdd(previous[size - 1], previous[size - 2]) : previous[0]
+}
+
+/**
+ * The lexicon name one recognized line most likely spells: CTC probability of each whole name (lexicon-based
+ * transcription, Shi et al., CRNN, TPAMI 2017). `margin` is its lead over the runner-up and `gap` its shortfall from the
+ * greedy path, both in natural-log units; a line that is no lexicon name has a large gap.
+ */
+export function ctcLexiconBest(probabilities: Float32Array, index: number, steps: number, classes: number, entries: LexiconEntry[]) {
+  const logp = new Float64Array(steps * classes)
+  let greedy = 0
+  for (let step = 0; step < steps; step++) {
+    const offset = (index * steps + step) * classes
+    let high = -Infinity
+    for (let item = 0; item < classes; item++) {
+      const value = Math.log(Math.max(probabilities[offset + item], 1e-12))
+      logp[step * classes + item] = value
+      if (value > high) high = value
+    }
+    greedy += high
+  }
+  let best: { entry: LexiconEntry; score: number } | null = null
+  let second = -Infinity
+  for (const entry of entries) {
+    const score = ctcLogLikelihood(logp, steps, classes, entry.labels)
+    if (!best || score > best.score) { second = best?.score ?? -Infinity; best = { entry, score } }
+    else if (score > second) second = score
+  }
+  return best ? { id: best.entry.id, name: best.entry.name, margin: best.score - second, gap: greedy - best.score } : null
+}

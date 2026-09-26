@@ -88,6 +88,22 @@ export function popupIconBox(label: PopupLabelBox): PopupLabelBox {
   }
 }
 
+/**
+ * A colored plate where the acquisition popup's name plate sits in the 1920×1080 game view (scaled and centred). Other
+ * plates (skill-exchange cards, boss banners, card labels) are dropped before any read: in the 2026-09-25/26 samples
+ * they were 91% of detections, while all 51 acquisition plates (8 capture sizes, window title bars included) centred
+ * within 36 px of POPUP_PLATE at 236–280 px wide.
+ */
+export function acquisitionPlate(label: PopupLabelBox, width: number, height: number): boolean {
+  const scale = Math.min(width / 1920, height / 1080)
+  if (!(scale > 0) || !(label.height > 0)) return false
+  const x = (label.x + label.width / 2 - (width - 1920 * scale) / 2) / scale
+  const y = (label.y + label.height / 2 - (height - 1080 * scale) / 2) / scale
+  const plateWidth = label.width / scale, ratio = label.width / label.height
+  return ratio >= 1.8 && ratio <= 2.45 && plateWidth >= 170 && plateWidth <= 330 &&
+    Math.abs(x - (POPUP_PLATE.x + POPUP_PLATE.width / 2)) <= 110 && Math.abs(y - (POPUP_PLATE.y + POPUP_PLATE.height / 2)) <= 110
+}
+
 /** Plates measured 2.17 wide per height; saturated glow can inflate the height but not the width. */
 export function popupPlateUnit(label: PopupLabelBox): number {
   return Math.min(label.height, label.width / 2.17)
