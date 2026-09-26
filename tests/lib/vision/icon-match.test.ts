@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest'
-import { acceptedIcon, iconTemplate, plateShaped, popupArtworkRegion, rankIcons, templateScore } from '../../../lib/vision/icon-match'
+import { acceptedIcon, iconTemplate, plateShaped, popupArtworkRegion, rankIcons, rankIconsInRegion, templateScore } from '../../../lib/vision/icon-match'
 
 function icon(size: number, paint: (x: number, y: number) => [number, number, number] | null) {
   const data = new Uint8ClampedArray(size * size * 4)
@@ -43,13 +43,41 @@ it('finds the drawn icon above a plate and accepts it only with a clear lead', (
   expect(acceptedIcon([])).toBeNull()
 })
 
+it('REQ-ASSIST-046 tells plain white icons apart by their outline on the dark slot, and keeps dark icons by their colors', () => {
+  // Like the white leaves 9750, which the inside-only correlation left out of the shortlist in a 2026-09-26 sample.
+  const disc = (size: number) => icon(size, (x, y) => Math.hypot(x - size / 2 + 0.5, y - size / 2 + 0.5) < size * 0.35 ? [235, 235, 235] : null)
+  const square = (size: number) => icon(size, (x, y) => Math.abs(x - size / 2 + 0.5) < size * 0.3 && Math.abs(y - size / 2 + 0.5) < size * 0.3 ? [235, 235, 235] : null)
+  // The game draws the icon over its black slot.
+  const onSlot = (drawn: Uint8ClampedArray) => drawn.map((value, index) => index % 4 === 3 ? 255 : value)
+  const template = iconTemplate('disc', disc(24), 24)
+  expect(templateScore(template, onSlot(disc(24)), 24, 0, 0)).toBeGreaterThan(0.95)
+  expect(templateScore(template, onSlot(square(24)), 24, 0, 0)).toBeLessThan(0.8)
+  // A dark icon whose outline barely stands out still matches on its colors, and not another dark icon.
+  const darkStripes = stripes(24).map((value, index) => index % 4 === 3 ? value : value * 0.15)
+  const darkRings = rings(24).map((value, index) => index % 4 === 3 ? value : value * 0.15)
+  const dark = iconTemplate('dark', new Uint8ClampedArray(darkStripes), 24)
+  expect(templateScore(dark, onSlot(new Uint8ClampedArray(darkStripes)), 24, 0, 0)).toBeGreaterThan(0.95)
+  expect(templateScore(dark, onSlot(new Uint8ClampedArray(darkRings)), 24, 0, 0)).toBeLessThan(0.6)
+})
+
+it('REQ-ASSIST-046 never lets the small first pass drop a held gift from the ranking', () => {
+  const coarse = [iconTemplate('stripes', stripes(24), 24), iconTemplate('rings', rings(24), 24)]
+  const fine = new Map([['stripes', iconTemplate('stripes', stripes(48), 48)], ['rings', iconTemplate('rings', rings(48), 48)]])
+  // A small pass that prefers the wrong icon (as a 16 px copy can) and keeps only one.
+  const tiny = [iconTemplate('stripes', rings(16), 16), iconTemplate('rings', stripes(16), 16)]
+  const sample = (_x: number, _y: number, _span: number, size: number) => icon(size, (x, y) => (x + y) % 6 < 3 ? [220, 40, 40] : [30, 30, 200])
+  const art = { x: 0, y: 0, size: 24 }
+  expect(rankIconsInRegion(sample, art, coarse, fine, tiny, 1)[0].id).toBe('rings')
+  expect(rankIconsInRegion(sample, art, coarse, fine, tiny, 1, new Set(['stripes']))[0].id).toBe('stripes')
+})
+
 it('matches only acquisition-plate proportions', () => {
   expect(plateShaped({ x: 0, y: 0, width: 260, height: 120 })).toBe(true)
   expect(plateShaped({ x: 0, y: 0, width: 260, height: 88 })).toBe(false)
   expect(plateShaped({ x: 0, y: 0, width: 150, height: 120 })).toBe(false)
 })
 
-it('scores exactly as the plain masked correlation at every query size (precomputed pixel offsets)', () => {
+it('scores exactly as the better plain masked correlation (outline or inner) at every query size (precomputed pixel offsets)', () => {
   let seed = 11
   const random = () => { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff }
   const image = (size: number, transparent: number) => {
@@ -60,18 +88,19 @@ it('scores exactly as the plain masked correlation at every query size (precompu
     return data
   }
   const plain = (template: ReturnType<typeof iconTemplate>, query: Uint8ClampedArray, querySize: number, left: number, top: number) => {
-    let dot = 0, sum = 0, squares = 0, index = 0
-    for (let y = 0; y < template.size; y++) for (let x = 0; x < template.size; x++) {
-      if (!template.mask[y * template.size + x]) continue
-      for (let channel = 0; channel < 3; channel++) {
-        const value = query[((top + y) * querySize + left + x) * 4 + channel]
-        dot += template.vector[index++] * value
+    const correlation = (weights: Float32Array, count: number) => {
+      let dot = 0, sum = 0, squares = 0
+      for (let index = 0; index < count; index++) {
+        const pixel = template.pixels[Math.floor(index / 3)], x = pixel % template.size, y = Math.floor(pixel / template.size)
+        const value = query[((top + y) * querySize + left + x) * 4 + index % 3]
+        dot += weights[index] * value
         sum += value
         squares += value * value
       }
+      const variance = squares - sum * sum / count
+      return variance > 1e-6 ? dot / Math.sqrt(variance) : 0
     }
-    const variance = squares - sum * sum / template.count
-    return variance > 1e-6 ? dot / Math.sqrt(variance) : 0
+    return Math.max(correlation(template.vector, template.count), correlation(template.inner, template.innerCount))
   }
   for (const [size, querySize] of [[24, 36], [48, 67]]) {
     const template = iconTemplate('t', image(size, 0.3), size)
