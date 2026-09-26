@@ -18,10 +18,10 @@ test('identity analysis updates source, period, EGO filters, and linked decks', 
     await route.fulfill({ json: data })
   })
   await page.goto('/ko/meta')
-  await expect(page.getByText('유효 편성 8건', { exact: false })).toBeVisible()
+  await expect(page.locator('[data-sample-count]')).toHaveText('8')
   await expect(page.getByRole('region', { name: '함께 편성된 인격' })).toContainText('50.0%')
   await page.getByRole('tab', { name: '거던 플래너', exact: true }).click()
-  await expect(page.getByText('유효 편성 3건', { exact: false })).toBeVisible()
+  await expect(page.locator('[data-sample-count]')).toHaveText('3')
   await expect(page.getByRole('region', { name: '함께 편성된 인격' })).toContainText('66.7%')
   await expect(page.getByRole('region', { name: '함께 편성된 인격' })).toContainText('3건 중 2건')
   const companions = page.getByRole('region', { name: '함께 편성된 인격' })
@@ -65,7 +65,7 @@ test('a failed source request exposes retry instead of an endless skeleton', asy
   await expect(page.getByRole('status', { name: '통계 불러오는 중' })).toHaveCount(0)
   fails = false
   await page.getByRole('button', { name: '다시 시도' }).click()
-  await expect(page.getByText('유효 편성 0건', { exact: false })).toBeVisible()
+  await expect(page.locator('[data-sample-count]')).toHaveText('0')
   await expect(page.getByRole('alert').filter({ hasText: '통계를 불러오지 못했습니다' })).toHaveCount(0)
 })
 
