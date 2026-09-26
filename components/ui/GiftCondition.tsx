@@ -31,17 +31,20 @@ function subjectIcon(status: GiftConditionStatus): string | null {
 }
 
 /**
- * Inside the gift art (a size container): the deployed count against the requirement, with the condition's icon.
- * Unmet also dims the art. Sizes follow the card through cqw.
+ * Inside the gift art (a size container): a band across the middle, like the game's SELECTED banner, naming the
+ * condition (icon and keyword or affiliation) and the deployed count against the requirement. Unmet also dims the art.
+ * Sizes follow the card through cqw.
  */
 export function GiftConditionMark({ status }: { status: GiftConditionStatus }) {
   const text = useGiftConditionText()(status)
   const icon = subjectIcon(status)
   return (
     <span className={styles.mark} data-level={status.level} title={text.title}>
-      <span className={styles.pill}>
+      <span className={styles.band}>
         {icon && <Image src={icon} alt="" width={24} height={24} className={styles.icon} />}
-        <b>{status.formation}</b><i>/{status.need}</i>
+        {/* The band is narrow: "The Ring" reads as "Ring" (the full name stays in the title). */}
+        <span className={styles.subject}>{text.subject.replace(/(^|\/)The /g, '$1')}</span>
+        <span className={styles.count}><b>{status.formation}</b><i>/{status.need}</i></span>
       </span>
     </span>
   )
