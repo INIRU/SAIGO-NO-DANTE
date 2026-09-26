@@ -138,7 +138,25 @@ npx tsx scripts/sync/prepare-extracted-assets.ts \
 
 이미지는 바로 덮어쓰지 않는다. 새 `_profile`은 256×256 얼굴 이미지이고 현재 카드의 `_info` 세로 이미지와 다르다. 새 묶음에는 `_info`와 UI 아틀라스가 없으므로 기존 자료를 유지하며, 이름만 바꿔 대체하지 않는다. 새 인격 `10416`, `10816`의 원본과 정적 데이터는 있지만 카드용 이미지 연결은 별도 확인이 필요하다. 키워드는 기존 영문 표시명 slug와 새 내부 ID가 달라 원문 `iconId` 관계를 확인해야 한다.
 
-기존 `identity-data.ts` 등의 파서는 준비된 `complete-data`를 입력으로 사용할 수 있다. 그러나 `appearance`는 게임 내부 이름이고 현재 이미지 폴더명과 다를 수 있으므로, 준비 성공만으로 `--fix`를 실행하지 않는다. 이미지 경로·누락·데이터 차이를 검토한 뒤 DB/Storage 적용 범위를 정한다. 이 준비 스크립트는 WebP 변환, 업로드, DB 변경을 수행하지 않는다.
+기존 `identity-data.ts` 등의 파서는 준비된 `complete-data`를 입력으로 사용할 수 있다. `appearance`는 게임 내부 이름이고 현재 이미지 폴더명과 다를 수 있으므로, 기존 인격의 이미지 경로는 자동으로 바꾸지 않는다(새 인격 이미지만 DB의 `folder_name`으로 올린다). 데이터 적용은 아래 자동 반영의 단계별 dry-run·백업을 거친다. 이 준비 스크립트 자체는 WebP 변환, 업로드, DB 변경을 수행하지 않는다.
+
+### Windows 추출 도구에서 자동 반영 (2026-09-27)
+
+
+```bash
+# 번들: apply-extraction, identity-data, mirror-dungeon-data, rebuild-mirror-events, sync-extracted-identities + Windows용 sharp
+node scripts/sync/build-site-sync.mjs "<림버스 에셋>/tools/site-sync" --win
+# 옆에 NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SECRET_KEY, REVALIDATION_SECRET, NEXT_PUBLIC_SITE_URL만 담은 .env.local을 둔다.
+
+# 저장소에서 같은 흐름을 직접 실행(기본은 dry-run, --fix가 적용)
+node --import tsx scripts/sync/apply-extraction.ts --zip <LimbusAssets_*.zip> --work <빈 작업 폴더> [--fix]
+```
+
+`apply-extraction`은 `prepareExtractedAssets`로 ZIP 전체를 검사한 뒤 identity → mirror(기프트·테마팩·레시피) → events 순서로 단계마다 dry-run 후 `--fix`를 실행한다. 첫 적용 전에 `identities`, `skills`, `passives`, `ego`, `ego_skills`, `ego_gifts`, `keyword_meta`, `ego_gift_themes`, `ego_gift_recipes`를 작업 폴더 `backup/`에 저장하고, 이벤트 단계는 자체적으로 `md_events`/`md_event_choices`를 백업한 뒤 읽기 검증한다. 실패하면 그 단계에서 멈춘다. 새 인격은 같은 ZIP에서 `sync-extracted-identities`로 이미지를 올린다. 새 E.G.O는 Drive 아트 폴더가 필요한 `bootstrap-data.ts`의 영역이라 `report.json`의 `newEgoNeedsManualAdd`에만 남긴다(숨김·각성 스킬 없는 스토리 전용 E.G.O는 제외). 이벤트 재구성은 복구 폴더가 없으면 선택지 템플릿을 추출본의 `KR/EN/JP_ChoiceEvent*.txt`에서, 이벤트 그림 유무를 Storage `icons/events/` 목록에서 읽는다.
+
+획득 경로는 이미 기록된 뽑기 배너(`gacha_id`, `gacha_name*`)를 유지한다. 최신 추출본에는 지난 픽업 파일이 없고, 수감자별 "특정 추출" 재개 배너가 옛 인격도 목록에 담기 때문이다. 이 규칙 전에는 9/24 추출본 dry-run이 142개 인격 중 141개의 배너 이름을 지우거나 재개 배너로 바꾸려 했다. 배너가 없는 인격만 원본 픽업을 쓴다.
+
+2026-09-27에 9/24 ZIP으로 번들을 Mac에서 `--fix`까지 실행했다(52초). 실제 변경은 10715의 동기화 III에 없는 스킬 빈 행 1개 삭제와 10515의 픽업 배너 1건이었고, 이벤트 339·선택지 754개는 같은 내용으로 다시 쓰여 읽기 검증을 통과했다. 이후 `npm run audit:data` 문제 없음. Windows 실행(`ExtractToDirectory`, win32 sharp)은 아직 실제 PC에서 확인하지 않았다.
 
 ### 테마팩 합성 재사용
 

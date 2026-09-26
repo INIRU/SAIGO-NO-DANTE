@@ -342,7 +342,8 @@ function parseArgs(argv: string[]) {
   return { source, output, prepare, previousArtwork }
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+// Matched by name: inside the apply-extraction bundle import.meta.url is the bundle, not this file.
+if (/prepare-extracted-assets\.[cm]?[jt]s$/.test(process.argv[1] ?? '')) {
   prepareExtractedAssets(parseArgs(process.argv.slice(2))).then(report => {
     console.log(JSON.stringify(report, null, 2))
     process.exitCode = report.ok ? 0 : 1
