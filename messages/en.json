@@ -1235,7 +1235,16 @@
         "uptieGroup": "Uptie tier",
         "resetLcb": "Back to LCB identity",
         "resetOrder": "Reset order",
-        "resetOrderDone": "Formation order reset"
+        "resetOrderDone": "Formation order reset",
+        "codeLabel": "Formation code",
+        "codePlaceholder": "Paste a formation code",
+        "codeApply": "Load",
+        "codeInvalid": "That isn't a valid formation code",
+        "codeApplied": "Formation code loaded",
+        "codeReplaceTitle": "Replace the formation?",
+        "codeReplaceMessage": "Your current Identities and E.G.O will be replaced with the code's formation.",
+        "codeReplaceConfirm": "Replace",
+        "codeCancel": "Cancel"
       },
       "ego": {
         "modalTitle": "Select E.G.O",

@@ -112,6 +112,7 @@ export function PlannerIdentityBoard({
   onOpenIdentityModal,
   onFormationToggle,
   onResetOrder,
+  onApplyCode,
   onLongPress,
   getSinnerName,
 }: {
@@ -121,6 +122,8 @@ export function PlannerIdentityBoard({
   onFormationToggle: (sinnerId: string) => void
   /** Clears every formation number (all back to the bench). */
   onResetOrder?: () => void
+  /** Loads a pasted formation code; false when it is not a valid code (the field then shows the error). */
+  onApplyCode?: (code: string) => boolean
   /** Hold a view tile (500ms) to open identity details. */
   onLongPress?: (sinnerId: string) => void
   getSinnerName?: (sinner: PlannerDeckSinner) => string
@@ -129,6 +132,13 @@ export function PlannerIdentityBoard({
   const locale = useLocale() as SupportedLang
   const sinnerNameOf = useSinnerName(locale, getSinnerName)
   const [editing, setEditing] = useState(false)
+  const [code, setCode] = useState('')
+  const [codeInvalid, setCodeInvalid] = useState(false)
+  const applyCode = () => {
+    if (!onApplyCode || !code.trim()) return
+    if (onApplyCode(code.trim())) setCode('')
+    else setCodeInvalid(true)
+  }
   const press = useRef<{ timer?: ReturnType<typeof setTimeout>; fired: boolean }>({ fired: false })
   // Tiles are memoized; handlers read the latest callbacks through a ref so a formation click
   // re-renders only the tiles whose number changed.
@@ -179,12 +189,23 @@ export function PlannerIdentityBoard({
 
   return (
     <section className="fboard" data-editing={editing}>
-      {onResetOrder && (
+      {(onResetOrder || onApplyCode) && (
         <div className="fboard__tools" inert={editing}>
-          <button type="button" className="fboard__reset" disabled={!hasOrder} onClick={() => { onResetOrder(); showSuccess(t('resetOrderDone')) }}>
-            <RotateCcw aria-hidden="true" />
-            {t('resetOrder')}
-          </button>
+          {onApplyCode && (
+            <form className="fboard__code" onSubmit={event => { event.preventDefault(); applyCode() }}>
+              <input value={code} onChange={event => { setCode(event.target.value); setCodeInvalid(false) }} placeholder={t('codePlaceholder')}
+                aria-label={t('codeLabel')} aria-invalid={codeInvalid} aria-describedby={codeInvalid ? 'fboard-code-error' : undefined}
+                autoComplete="off" spellCheck={false} />
+              <button type="submit" disabled={!code.trim()}>{t('codeApply')}</button>
+              {codeInvalid && <span id="fboard-code-error" role="alert" className="fboard__code-error">{t('codeInvalid')}</span>}
+            </form>
+          )}
+          {onResetOrder && (
+            <button type="button" className="fboard__reset" disabled={!hasOrder} onClick={() => { onResetOrder(); showSuccess(t('resetOrderDone')) }}>
+              <RotateCcw aria-hidden="true" />
+              {t('resetOrder')}
+            </button>
+          )}
         </div>
       )}
       <button type="button" className="fboard__bar" aria-expanded={editing} onClick={() => setEditing(open => !open)}>
@@ -229,13 +250,31 @@ export function PlannerIdentityBoard({
         .fboard__bar svg { width: 1.125rem; height: 1.125rem; }
         .fboard__tools {
           position: absolute; left: 0; right: 0; top: 0; max-width: 62rem; height: var(--bar); margin-inline: auto;
-          display: flex; align-items: center; justify-content: flex-end;
+          display: flex; align-items: center; justify-content: flex-end; gap: 0.5rem;
           transition: opacity 180ms ease, visibility 0s linear 0s;
         }
+        .fboard__code { position: relative; display: flex; min-width: 0; flex: 1 1 auto; max-width: 24rem; margin-right: auto; }
+        .fboard__code input {
+          min-width: 0; flex: 1 1 auto; height: 2.25rem; padding: 0 0.625rem; border: 1px solid #3a2c18; border-right: 0;
+          border-radius: 0.25rem 0 0 0.25rem; background: #140f09; color: #e8dcc8; font-family: var(--font-mono); font-size: 0.8125rem;
+          outline: none; transition: border-color 0.15s ease;
+        }
+        .fboard__code input::placeholder { color: #6a6058; font-family: var(--font-sans); }
+        .fboard__code input:focus-visible { border-color: #c8900a; }
+        .fboard__code input[aria-invalid='true'] { border-color: #9b2c23; }
+        .fboard__code button {
+          flex: 0 0 auto; height: 2.25rem; padding: 0 0.875rem; border: 1px solid #c8900a; border-radius: 0 0.25rem 0.25rem 0;
+          background: rgba(200, 144, 10, 0.14); color: #e8b030; cursor: pointer; font-size: 0.875rem; white-space: nowrap;
+          transition: background-color 0.15s ease, opacity 0.15s ease;
+        }
+        .fboard__code button:hover:not(:disabled) { background: rgba(200, 144, 10, 0.26); }
+        .fboard__code button:disabled { cursor: default; opacity: 0.4; }
+        .fboard__code button:focus-visible { outline: 2px solid #e8b030; outline-offset: 2px; }
+        .fboard__code-error { position: absolute; left: 0; top: calc(100% + 0.125rem); color: #d4675c; font-size: 0.75rem; white-space: nowrap; }
         .fboard[data-editing='true'] .fboard__tools { opacity: 0; visibility: hidden; transition-delay: 0s, 180ms; }
         .fboard__reset {
           display: inline-flex; min-height: 2.75rem; align-items: center; gap: 0.375rem; padding: 0 0.5rem;
-          border-radius: 0.25rem; color: #9c8b73; cursor: pointer; font-size: 0.875rem; transition: color 0.15s ease;
+          flex: 0 0 auto; border-radius: 0.25rem; color: #9c8b73; cursor: pointer; font-size: 0.875rem; white-space: nowrap; transition: color 0.15s ease;
         }
         .fboard__reset svg { width: 0.875rem; height: 0.875rem; }
         .fboard__reset:hover:not(:disabled) { color: #e8b030; }

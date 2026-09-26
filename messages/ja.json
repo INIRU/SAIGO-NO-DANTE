@@ -1235,7 +1235,16 @@
         "uptieGroup": "同期化段階",
         "resetLcb": "LCB人格に戻す",
         "resetOrder": "編成順リセット",
-        "resetOrderDone": "編成順をリセットしました"
+        "resetOrderDone": "編成順をリセットしました",
+        "codeLabel": "編成コード",
+        "codePlaceholder": "編成コードを貼り付け",
+        "codeApply": "読み込む",
+        "codeInvalid": "正しい編成コードではありません",
+        "codeApplied": "編成コードを読み込みました",
+        "codeReplaceTitle": "編成を置き換えますか？",
+        "codeReplaceMessage": "現在の人格とE.G.Oをコードの編成に置き換えます。",
+        "codeReplaceConfirm": "置き換える",
+        "codeCancel": "キャンセル"
       },
       "ego": {
         "modalTitle": "E.G.O選択",
