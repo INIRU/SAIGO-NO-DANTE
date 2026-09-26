@@ -41,6 +41,19 @@ describe('identity-data sync helpers', () => {
     expect(deriveIdentityAcquisition(identity, { ...source, season: 9109, walpurgisType: 'LOR' }, new Map(), new Map(), true).acquisition_info)
       .toMatchObject({ type: 'walpurgis', release_season: 0, gacha: 'walpurgis', walpurgis_edition: 9 })
   })
+  it('REQ-DATA-SYNC-018 keeps the launch banner an identity already has when the source drops that pickup or lists it in a later banner', () => {
+    const identity = { id: 'test', game_id: '10816', sinner_id: 'ryoshu', name_kr: 'test', rarity: 3,
+      acquisition: '신규 인격 특정 추출', acquisition_info: { type: 'standard' as const, release_season: 7, fragment_cost: 400, gacha: 'seasonal' as const, gacha_from_season: 7,
+        gacha_id: 280, gacha_name: '신규 인격 특정 추출', gacha_name_en: 'New Identity Target Extraction', gacha_name_jp: '新規人格特定抽出' } }
+    const result = deriveIdentityAcquisition(identity, { id: 10816, characterId: 8, rank: 3, season: 7 }, new Map(), new Map(), true)
+    expect(result.acquisition_info).toMatchObject({ gacha_id: 280, gacha_name: '신규 인격 특정 추출', gacha_name_en: 'New Identity Target Extraction', gacha_name_jp: '新規人格特定抽出' })
+    const rerun = { file: 'gacha-293.txt', gachaId: 293, bannerType: 'TEMPORARY_MAIN', walpurgisType: null, category: null, festival: false, startDate: null, endDate: null,
+      gachaName: '특정 추출 료슈', gachaNameEn: 'Target Extraction: Ryōshū', gachaNameJp: '特定抽出良秀' }
+    const later = deriveIdentityAcquisition(identity, { id: 10816, characterId: 8, rank: 3, season: 7 }, new Map(), new Map([['10816', [rerun]]]), true)
+    expect(later.acquisition_info).toMatchObject({ gacha_id: 280, gacha_name: '신규 인격 특정 추출' })
+    const fresh = deriveIdentityAcquisition({ ...identity, acquisition_info: null }, { id: 10816, characterId: 8, rank: 3, season: 7 }, new Map(), new Map([['10816', [rerun]]]), true)
+    expect(fresh.acquisition_info).toMatchObject({ gacha_id: 293, gacha_name: '특정 추출 료슈' })
+  })
   it('Unity rich text tags are stripped before locale text is normalized', () => {
     const source = '자신에게 <style="highlight"><b><i><u><s>중지</s></u></i></b></style> - 원한 문신 [<s>큰 누님</s>] <color=#ff00ff><link="x"><size=80%><mark=#fff>강화</mark></size></link></color><sprite name="x" />'
 

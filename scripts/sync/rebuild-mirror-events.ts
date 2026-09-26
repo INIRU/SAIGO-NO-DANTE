@@ -13,6 +13,10 @@ const langs = { ko: 'KR', en: 'EN', ja: 'JP' } as const
 const recovery = resolve(process.env.LIMBUS_RECOVERY_DIR || '../assets/recovery-2026-09-10')
 const dataDir = resolve(process.env.LIMBUS_DATA_DIR || join(recovery, 'complete-data'))
 const templateDir = join(recovery, 'event-text-originals')
+// Prepared extracts (apply-extraction.ts) keep locales in KR/EN/JP and carry the choice templates there.
+const localeDir = (prefix: string) => existsSync(join(dataDir, prefix)) ? join(dataDir, prefix) : dataDir
+const templateFile = (prefix: string, name: string) => existsSync(join(templateDir, `${prefix}_${name}.json`))
+  ? join(templateDir, `${prefix}_${name}.json`) : join(localeDir(prefix), `${prefix}_${name}.txt`)
 const provenance: { file: string; sha256: string }[] = []
 function read<T>(path: string): T {
   const bytes = readFileSync(path)
@@ -46,19 +50,20 @@ export async function rebuildMirrorEvents(apply = process.argv.includes('--fix')
   const targets = {} as typeof effects, keywords = {} as typeof effects
   for (const [lang, prefix] of Object.entries(langs) as [Locale, string][]) {
     texts[lang] = new Map()
-    unitLabels[lang] = Object.assign({}, ...readdirSync(dataDir).filter(f => f.startsWith(`${prefix}_UnitKeyword`) && f.endsWith('.txt')).sort().map(f => bank(join(dataDir, f))))
-    characterLabels[lang] = Object.fromEntries(read<{dataList: {id: number; name: string}[]}>(join(dataDir, `${prefix}_Characters.txt`)).dataList.map(x => [x.id, x.name]))
-    for (const file of readdirSync(dataDir).filter(f => new RegExp(`^${prefix}_(ActionEvents|AbEvents)(?!ResultLog).*\\.txt$`).test(f)).sort()) {
-      for (const text of (read<{ dataList?: Text[] }>(join(dataDir, file)).dataList ?? [])) {
+    const dir = localeDir(prefix)
+    unitLabels[lang] = Object.assign({}, ...readdirSync(dir).filter(f => f.startsWith(`${prefix}_UnitKeyword`) && f.endsWith('.txt')).sort().map(f => bank(join(dir, f))))
+    characterLabels[lang] = Object.fromEntries(read<{dataList: {id: number; name: string}[]}>(join(dir, `${prefix}_Characters.txt`)).dataList.map(x => [x.id, x.name]))
+    for (const file of readdirSync(dir).filter(f => new RegExp(`^${prefix}_(ActionEvents|AbEvents)(?!ResultLog).*\\.txt$`).test(f)).sort()) {
+      for (const text of (read<{ dataList?: Text[] }>(join(dir, file)).dataList ?? [])) {
         if (!nodes.has(text.id)) continue
         const previous = texts[lang].get(text.id)
         if (previous && JSON.stringify(previous.text) !== JSON.stringify(text)) throw Error(`Conflicting ${lang} source text: ${text.id}`)
         texts[lang].set(text.id, { text, file })
       }
     }
-    effects[lang] = bank(join(templateDir, `${prefix}_ChoiceEventEffect.json`))
-    targets[lang] = bank(join(templateDir, `${prefix}_ChoiceEventTarget.json`))
-    keywords[lang] = bank(join(templateDir, `${prefix}_ChoiceEventKeyword.json`))
+    effects[lang] = bank(templateFile(prefix, 'ChoiceEventEffect'))
+    targets[lang] = bank(templateFile(prefix, 'ChoiceEventTarget'))
+    keywords[lang] = bank(templateFile(prefix, 'ChoiceEventKeyword'))
   }
   const entries = new Set<number>(), themeByEntry = new Map<number, Set<number>>()
   function addEntry(id: number, theme: number) {
@@ -83,8 +88,21 @@ export async function rebuildMirrorEvents(apply = process.argv.includes('--fix')
     }
   }
   const graph = walkEventGraph(nodes, entries)
-  const receipts = read<{ target: string }[]>(join(recovery, 'mirror-assets-upload.json'))
-  const imageIds = new Set(receipts.flatMap(r => /^icons\/events\/(\d+)\.webp$/.exec(r.target)?.[1] ?? []).map(Number))
+  const imageIds = new Set<number>()
+  if (existsSync(join(recovery, 'mirror-assets-upload.json'))) {
+    for (const r of read<{ target: string }[]>(join(recovery, 'mirror-assets-upload.json'))) {
+      const id = /^icons\/events\/(\d+)\.webp$/.exec(r.target)?.[1]
+      if (id) imageIds.add(Number(id))
+    }
+  } else {
+    // Without an upload receipt, the bucket itself says which event art exists.
+    for (let offset = 0; ; offset += 1000) {
+      const { data: files, error: listError } = await client.storage.from('limbus-assets').list('icons/events', { limit: 1000, offset })
+      if (listError) throw listError
+      for (const file of files) if (/^\d+\.webp$/.test(file.name)) imageIds.add(Number(file.name.slice(0, -5)))
+      if (files.length < 1000) break
+    }
+  }
   const assetBase = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/limbus-assets`
   const missingTemplates = new Set<string>(), missingGifts = new Set<number>()
   function effectText(form: SourceForm, lang: Locale) {
@@ -246,4 +264,4 @@ export async function rebuildMirrorEvents(apply = process.argv.includes('--fix')
     } else console.warn('Graph verified; set SITE_URL and REVALIDATION_SECRET to invalidate the serving site cache')
   }
 }
-if (process.argv[1]?.endsWith('rebuild-mirror-events.ts')) rebuildMirrorEvents().catch(error => { console.error(error instanceof Error ? error.message : error); process.exitCode = 1 })
+if (/rebuild-mirror-events\.(ts|mjs)$/.test(process.argv[1] ?? '')) rebuildMirrorEvents().catch(error => { console.error(error instanceof Error ? error.message : error); process.exitCode = 1 })
