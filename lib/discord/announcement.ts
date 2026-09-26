@@ -1,9 +1,22 @@
 import type { RichNode } from '@/lib/announcements'
 import { SITE_URL } from '@/lib/utils/og-image'
 
-const LIMIT = 2000
+// Components V2 limits: 40 components per message (the container counts), 4000 characters of text in total.
+const MAX_COMPONENTS = 40
+const MAX_CHARS = 4000
+const IS_COMPONENTS_V2 = 1 << 15
+// The site's --gold, as the container's left accent bar.
+const ACCENT = 0xc8900a
 
-export type DiscordMessage = { content?: string; embeds?: { image: { url: string } }[]; allowed_mentions: { parse: string[] } }
+type Child =
+  | { type: 10; content: string }
+  | { type: 12; items: { media: { url: string } }[] }
+  | { type: 14; divider: true; spacing: 1 }
+export type DiscordMessage = {
+  flags: number
+  components: [{ type: 17; accent_color: number; components: Child[] }]
+  allowed_mentions: { parse: string[] }
+}
 
 function inline(node: RichNode): string {
   if (node.type === 'hardBreak') return '\n'
@@ -47,11 +60,11 @@ function parts(node: RichNode, prefix = '', out: Part[] = []): Part[] {
   return out
 }
 
-function chunks(text: string): string[] {
+function chunks(text: string, limit = MAX_CHARS): string[] {
   const result: string[] = []
   let rest = text.trim()
-  while (rest.length > LIMIT) {
-    const cut = Math.max(rest.lastIndexOf('\n', LIMIT), LIMIT / 2)
+  while (rest.length > limit) {
+    const cut = Math.max(rest.lastIndexOf('\n', limit), limit / 2)
     result.push(rest.slice(0, cut).trimEnd())
     rest = rest.slice(cut).trimStart()
   }
@@ -60,40 +73,47 @@ function chunks(text: string): string[] {
 }
 
 /**
- * Discord webhook payloads for an announcement: markdown text, split into separate messages around each image
- * (Discord cannot place an image in the middle of a message) and at the 2000 character limit.
+ * Discord webhook payloads for an announcement, laid out like the site: one gold-accented container holding the title,
+ * markdown text and each image in document order. A new message starts only when the Components V2 limits would be passed.
  */
 export function announcementDiscordMessages(input: { title: string; doc?: RichNode | null; content?: string; url?: string; everyone?: boolean }): DiscordMessage[] {
   const body: Part[] = input.doc ? parts(input.doc) : [{ text: input.content ?? '' }]
   const groups: Part[] = []
-  for (const part of [{ text: `# ${input.title}` } as Part, ...body]) {
+  const title = (input.everyone ? '@everyone\n' : '') + `# ${input.title}`
+  for (const part of [{ text: title } as Part, ...body]) {
     const last = groups[groups.length - 1]
     if ('text' in part && last && 'text' in last) last.text += '\n' + part.text
     else groups.push({ ...part })
   }
-  if (input.url) {
-    const last = groups[groups.length - 1]
-    const link = `\n\n<${input.url}>`
-    if (last && 'text' in last) last.text += link
-    else groups.push({ text: link })
+  const children: Child[] = groups.flatMap((group): Child[] => 'image' in group
+    ? [{ type: 12, items: [{ media: { url: group.image } }] }]
+    : chunks(group.text.replace(/\n{3,}/g, '\n\n')).map(content => ({ type: 10, content })))
+  if (input.url) children.push({ type: 14, divider: true, spacing: 1 }, { type: 10, content: `-# [사이트에서 보기](${input.url})` })
+
+  const messages: DiscordMessage[] = []
+  let chars = Infinity
+  for (const child of children) {
+    const size = 'content' in child ? child.content.length : 0
+    const current = messages[messages.length - 1]?.components[0].components
+    if (!current || current.length + 2 > MAX_COMPONENTS || chars + size > MAX_CHARS) {
+      messages.push({ flags: IS_COMPONENTS_V2, components: [{ type: 17, accent_color: ACCENT, components: [child] }], allowed_mentions: { parse: [] } })
+      chars = size
+    } else {
+      current.push(child)
+      chars += size
+    }
   }
-  const messages: DiscordMessage[] = groups.flatMap((group): DiscordMessage[] => 'image' in group
-    ? [{ embeds: [{ image: { url: group.image } }], allowed_mentions: { parse: [] } }]
-    : chunks(group.text.replace(/\n{3,}/g, '\n\n')).map(content => ({ content, allowed_mentions: { parse: [] as string[] } })))
-  if (input.everyone && messages[0]) {
-    const first = messages[0]
-    if (first.content && first.content.length + 11 <= LIMIT) first.content = `@everyone\n${first.content}`
-    else messages.unshift({ content: '@everyone', allowed_mentions: { parse: [] } })
-    messages[0].allowed_mentions = { parse: ['everyone'] }
-  }
+  if (input.everyone && messages[0]) messages[0].allowed_mentions = { parse: ['everyone'] }
   return messages
 }
 
-/** Posts the messages in order. Returns false when any post fails. */
+/** Posts the messages in order; webhooks ignore components unless asked. Returns false when any post fails. */
 export async function sendAnnouncementToDiscord(webhook: string, messages: DiscordMessage[]): Promise<boolean> {
   if (messages.length === 0) return false
+  const url = new URL(webhook)
+  url.searchParams.set('with_components', 'true')
   for (const message of messages) {
-    const response = await fetch(webhook, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(message) }).catch(() => null)
+    const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(message) }).catch(() => null)
     if (!response?.ok) return false
   }
   return true
