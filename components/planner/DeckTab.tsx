@@ -29,6 +29,9 @@ import { useKeywordData } from '@/components/providers/KeywordProvider'
 import { useLocale, useTranslations } from 'next-intl'
 import type { SupportedLang } from '@/lib/i18n/types'
 import SkillExchangePanel from './SkillExchangePanel'
+import ConfirmModal from '@/components/ui/ConfirmModal'
+import { showSuccess } from '@/lib/toast'
+import { planSlotsFromTeamCode } from '@/lib/planner/team-code-import'
 import {
   PLANNER_EGO_GRADE_ORDER,
   PlannerEgoBoard,
@@ -123,6 +126,19 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
   const skills = useMemo(() => rowsAtUptie(allSkills, slotUpties), [allSkills, slotUpties])
   const passives = useMemo(() => rowsAtUptie(allPassives, slotUpties), [allPassives, slotUpties])
   const tDeck = useTranslations('planner.deckTab')
+  // A pasted formation code waiting for the user to confirm replacing the current formation.
+  const [pendingCode, setPendingCode] = useState<NonNullable<ReturnType<typeof planSlotsFromTeamCode>> | null>(null)
+  const applyCodeSlots = (slots: NonNullable<ReturnType<typeof planSlotsFromTeamCode>>) => {
+    dispatch({ type: 'LOAD_PLAN', state: slots })
+    showSuccess(tDeck('identity.codeApplied'))
+  }
+  const handleApplyCode = (code: string) => {
+    const slots = planSlotsFromTeamCode(code, sinners, identities, egos)
+    if (!slots) return false
+    if (state.identitySlots.length) setPendingCode(slots)
+    else applyCodeSlots(slots)
+    return true
+  }
   const tSinner = useTranslations('sinner')
   const locale = useLocale() as SupportedLang
   const { getIconUrl, keywords: keywordInfo } = useKeywordData()
@@ -553,8 +569,20 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
           onOpenIdentityModal={setIdentityModalSinner}
           onFormationToggle={handleFormationToggle}
           onResetOrder={() => dispatch({ type: 'LOAD_PLAN', state: { identitySlots: state.identitySlots.map(slot => ({ ...slot, slot_order: 99 })) } })}
+          onApplyCode={handleApplyCode}
         />
       )}
+
+      <ConfirmModal
+        open={pendingCode !== null}
+        title={tDeck('identity.codeReplaceTitle')}
+        message={tDeck('identity.codeReplaceMessage')}
+        confirmLabel={tDeck('identity.codeReplaceConfirm')}
+        cancelLabel={tDeck('identity.codeCancel')}
+        variant="warning"
+        onConfirm={() => { if (pendingCode) applyCodeSlots(pendingCode); setPendingCode(null) }}
+        onCancel={() => setPendingCode(null)}
+      />
 
       {/* ── 인격 선택 모달 ── */}
       <PlannerIdentitySelectModal
