@@ -17,7 +17,7 @@ export const communityCopy = {
     rulesIntro:
       "덱을 나누고, 좋은 편성을 응원하고, 더 정확한 도감을 만들어주세요.",
     deckRule: "인격이 포함된 덱을 게시하면 20점 · 하루 3회",
-    planRule: "인격이 포함된 플랜을 게시하면 20점 · 하루 3회",
+    planRule: "인격이 포함된 플랜을 게시하면 40점 · 하루 3회",
     likeRule: "다른 사람의 덱이나 플랜에 좋아요를 누르면 2점 · 하루 5회",
     contributionRule: "문의로 제안한 DB 수정이 관리자에게 승인되면 50점",
     ruleNote:
@@ -98,7 +98,7 @@ export const communityCopy = {
     rulesIntro:
       "Share a deck, support a good team, or help keep the archive accurate.",
     deckRule: "Publish a deck with identities: 20 points · 3 per day",
-    planRule: "Publish a plan with identities: 20 points · 3 per day",
+    planRule: "Publish a plan with identities: 40 points · 3 per day",
     likeRule: "Like another manager’s deck or plan: 2 points · 5 per day",
     contributionRule:
       "An administrator approves your data correction: 50 points",
@@ -181,7 +181,7 @@ export const communityCopy = {
     rulesIntro:
       "デッキを共有し、良い編成を応援し、図鑑の正確さを高めましょう。",
     deckRule: "人格を含むデッキの投稿で20ポイント · 1日3回",
-    planRule: "人格を含むプランの投稿で20ポイント · 1日3回",
+    planRule: "人格を含むプランの投稿で40ポイント · 1日3回",
     likeRule: "他の管理者のデッキやプランにいいねで2ポイント · 1日5回",
     contributionRule:
       "お問い合わせで提案したデータ修正が管理者に承認されると50ポイント",

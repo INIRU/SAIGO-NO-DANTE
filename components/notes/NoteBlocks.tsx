@@ -6,7 +6,7 @@ import { Plugin, PluginKey } from '@tiptap/pm/state'
 import { useLocale } from 'next-intl'
 import useSWR from 'swr'
 import { toast } from 'sonner'
-import { Plus, ChevronDown, X, Search, GripVertical } from 'lucide-react'
+import { Plus, ChevronDown, ChevronLeft, ChevronRight, X, Search, GripVertical } from 'lucide-react'
 import NoteAssetPicker from './NoteAssetPicker'
 import NoteCharacterPicker from './NoteCharacterPicker'
 import BaseModal from '@/components/ui/BaseModal'
@@ -14,7 +14,7 @@ import Dropdown from '@/components/ui/Dropdown'
 import { BLOCK_LABELS, isAssetKind, blockLabel, newBlock, youtubeId, type BlockKind, type AssetKind } from '@/lib/notes/blocks'
 import { assetName, type NoteAssetData } from '@/lib/notes/assets'
 import { isNoteImageUrl, pendingNoteUploads } from '@/lib/notes/images'
-import { NoteAssetView, NoteAssetArtwork, NoteKeywordLabel, NoteVideo, fetchNoteAssets } from './NoteBlockViewer'
+import { NoteAssetView, NoteAssetArtwork, NoteKeywordLabel, NoteGiftLabel, NoteVideo, fetchNoteAssets } from './NoteBlockViewer'
 
 const tr = (lang:string,ko:string,ja:string,en:string)=>lang==='ja'?ja:lang==='en'?en:ko
 const pickTitle = (kind:BlockKind,lang:string)=>{const label=blockLabel(kind,lang);return tr(lang,`${label} 선택`,`${label}を選択`,`Choose ${kind==='ego'||kind==='youtube'?label:label.toLowerCase()}`)}
@@ -46,11 +46,36 @@ function LegacyAssetPicker({kind,onSelect,onClose}:{kind:AssetKind;onSelect:(ass
   </BaseModal>
 }
 function AssetPicker(props: {kind:AssetKind;onSelect:(asset:NoteAssetData)=>void;onClose:()=>void}) { return props.kind==='identity' || props.kind==='ego' ? <NoteCharacterPicker {...props} kind={props.kind}/> : props.kind==='skill' || props.kind==='gift' ? <NoteAssetPicker {...props} kind={props.kind}/> : <LegacyAssetPicker {...props}/> }
-function AssetNodeView({node,updateAttributes,deleteNode,selected}:NodeViewProps) {
+/**
+ * Swaps a block with its previous (-1) or next (+1) sibling. Touch screens cannot drag atom nodes reliably (a failed
+ * drop removed the block), so blocks move with buttons.
+ */
+export function moveNoteBlock(editor:Editor,getPos:NodeViewProps['getPos'],direction:-1|1) {
+  const pos=getPos()
+  if (typeof pos!=='number') return
+  const {state}=editor, node=state.doc.nodeAt(pos), $pos=state.doc.resolve(pos)
+  const index=$pos.index(), parent=$pos.parent, target=index+direction
+  if (!node || target<0 || target>=parent.childCount) return
+  const sibling=parent.child(target)
+  const tr=direction<0
+    ? state.tr.delete(pos,pos+node.nodeSize).insert(pos-sibling.nodeSize,node)
+    : state.tr.insert(pos+node.nodeSize+sibling.nodeSize,node).delete(pos,pos+node.nodeSize)
+  editor.view.dispatch(tr.scrollIntoView())
+}
+function BlockActions({editor,getPos,onDelete}:{editor:Editor;getPos:NodeViewProps['getPos'];onDelete:()=>void}) {
+  const lang=useLocale()
+  return <div className="note-block-actions">
+    <span data-drag-handle aria-hidden="true" className="note-block-drag"><GripVertical size={14}/></span>
+    <button type="button" onClick={()=>moveNoteBlock(editor,getPos,-1)} aria-label={tr(lang,'앞으로 이동','前へ移動','Move back')}><ChevronLeft size={16}/></button>
+    <button type="button" onClick={()=>moveNoteBlock(editor,getPos,1)} aria-label={tr(lang,'뒤로 이동','後ろへ移動','Move forward')}><ChevronRight size={16}/></button>
+    <button type="button" className="note-block-delete" onClick={onDelete} aria-label={tr(lang,'블록 삭제','ブロック削除','Delete block')}><X size={14}/></button>
+  </div>
+}
+function AssetNodeView({node,updateAttributes,deleteNode,selected,editor,getPos}:NodeViewProps) {
   const lang=useLocale(),[picking,setPicking]=useState(false),kind=node.attrs.kind as AssetKind
   const title=pickTitle(kind,lang)
   return <NodeViewWrapper className={`note-asset-node note-asset-node--${kind}`} data-selected={selected || undefined} contentEditable={false}>
-    <div className="note-block-actions"><span data-drag-handle aria-hidden="true"><GripVertical size={14}/></span><button type="button" onClick={deleteNode} aria-label={tr(lang,'블록 삭제','ブロック削除','Delete block')}><X size={14}/></button></div>
+    <BlockActions editor={editor} getPos={getPos} onDelete={deleteNode}/>
     {node.attrs.id ? <><NoteAssetView kind={kind} id={node.attrs.id}/><button className="note-asset-replace" type="button" onClick={()=>setPicking(true)}>{tr(lang,'변경','変更','Change')}</button></> : <button type="button" className={`note-empty-slot note-empty-slot--${kind}`} onClick={()=>setPicking(true)} aria-label={title}><Plus size={25}/><span>{title}</span></button>}
     {picking && <AssetPicker kind={kind} onClose={()=>setPicking(false)} onSelect={a=>{updateAttributes({id:a.id});setPicking(false)}}/>}
   </NodeViewWrapper>
@@ -62,6 +87,17 @@ function KeywordNodeView({node,updateAttributes}:NodeViewProps) {
     {picking && <AssetPicker kind="keyword" onClose={()=>setPicking(false)} onSelect={asset=>{updateAttributes({id:asset.id});setPicking(false)}}/>}
   </NodeViewWrapper>
 }
+function GiftInlineNodeView({node}:NodeViewProps) {
+  return <NodeViewWrapper as="span" className="note-gift-inline-node" contentEditable={false}><NoteGiftLabel id={node.attrs.id} name={node.attrs.name}/></NodeViewWrapper>
+}
+/** A gift inside a sentence, like a keyword: small art and its name. Stores the name too for plain text and search. */
+export const NoteGift = Node.create({name:'noteGift',group:'inline',inline:true,atom:true,
+  addAttributes(){return {id:{default:''},name:{default:''}}},
+  parseHTML(){return [{tag:'span[data-note-gift]',getAttrs:el=>({id:(el.getAttribute('data-note-gift') ?? '').slice(0,150),name:(el.textContent ?? '').slice(0,100)})}]},
+  renderHTML({node}){return ['span',{'data-note-gift':node.attrs.id},node.attrs.name]},
+  renderText({node}){return node.attrs.name},
+  addNodeView(){return ReactNodeViewRenderer(GiftInlineNodeView)},
+})
 export const NoteKeyword = Node.create({name:'noteKeyword',group:'inline',inline:true,atom:true,
   addAttributes(){return {id:{default:''}}},
   parseHTML(){return [{tag:'span[data-note-keyword]',getAttrs:el=>({id:(el.getAttribute('data-note-keyword') ?? '').slice(0,150)})}]},
@@ -92,7 +128,8 @@ export function insertNoteBlock(editor:Editor,kind:BlockKind,range?:{from:number
 export const NoteAsset = Node.create({name:'noteAsset',group:'block',atom:true,draggable:true,
   addAttributes(){return {kind:{default:'gift'},id:{default:''}}},
   parseHTML(){return [{tag:'div[data-note-asset]',getAttrs:el=>{const kind=el.getAttribute('data-note-asset'),id=el.getAttribute('data-asset-id') ?? '';return isAssetKind(kind)&&id.length<=150?{kind,id}:false}}]}, renderHTML({node}){return ['div',{'data-note-asset':node.attrs.kind,'data-asset-id':node.attrs.id}]},
-  addNodeView(){return ReactNodeViewRenderer(AssetNodeView)},
+  // The wrapper carries the kind so phone widths can size it (a percentage on the card itself resolves against it).
+  addNodeView(){return ReactNodeViewRenderer(AssetNodeView,{attrs:({node})=>({'data-kind':String(node.attrs.kind)})})},
 })
 export const NoteAccordion = Node.create({name:'noteAccordion',group:'block',content:'noteTitle noteBody',defining:true,isolating:true,
   parseHTML(){return [{tag:'section[data-note-accordion]'}]},renderHTML(){return ['section',{'data-note-accordion':''},0]},addNodeView(){return ReactNodeViewRenderer(AccordionNodeView)},
@@ -152,7 +189,7 @@ export const NoteInput = Extension.create<{lang:string}>({name:'noteInput',addOp
       event.preventDefault();editor.chain().insertContent([{type:'noteVideo',attrs:{videoId:id}},{type:'paragraph'}]).run();return true},
   }})]},
 })
-export const noteBlockExtensions = [NoteAsset,NoteKeyword,NoteAccordion,NoteTitle,NoteBody,NoteVideoNode,NoteUpload]
+export const noteBlockExtensions = [NoteAsset,NoteKeyword,NoteGift,NoteAccordion,NoteTitle,NoteBody,NoteVideoNode,NoteUpload]
 export function notePlaceholder(lang:string,nodeType:string) {
   return nodeType==='noteTitle'?tr(lang,'아코디언 제목을 입력하세요','アコーディオンの見出し','Accordion title') : tr(lang,'여기에 글을 입력하거나 /로 블록을 추가하세요','文章を入力、または / でブロックを追加','Write here or type / to add a block')
 }
@@ -187,7 +224,6 @@ export function NoteBlockMenu({editor}:{editor:Editor|null}) {
   },[editor,slash,kinds,index])
   useEffect(()=>{if(!open)return;const close=(e:KeyboardEvent)=>{if(e.key==='Escape')setOpen(false)};document.addEventListener('keydown',close);return()=>document.removeEventListener('keydown',close)},[open])
   return <div className="note-block-menu">
-    {(['skill','gift'] as const).map(kind=><button type="button" key={kind} disabled={!editor} className="note-insert-button" onMouseDown={e=>e.preventDefault()} onClick={()=>choose(kind)}>{tr(lang,`${blockLabel(kind,lang)} 추가`,`${blockLabel(kind,lang)}追加`,`Add ${kind}`)}</button>)}
     {picking && <NoteAssetPicker kind={picking} onClose={()=>setPicking(null)} onSelect={asset=>{
       if(!editor || !insertion.current)return
       editor.commands.insertContentAt(insertion.current,[{type:'noteAsset',attrs:{kind:picking,id:asset.id}},{type:'paragraph'}])

@@ -13,6 +13,7 @@ import EgoDisplayCard from '@/components/sinners/EgoDisplayCard'
 import { KeywordWithTooltip, useKeywords } from '@/components/providers/KeywordProvider'
 import { getLocalizedKeywordName, type SupportedLang } from '@/lib/i18n'
 import { isNoteImageUrl } from '@/lib/notes/images'
+import { GIFT_KEYWORD_COLORS } from '@/lib/constants/gift'
 
 export async function fetchNoteAssets(url: string): Promise<NoteAssetData[]> {
   const r = await fetch(url)
@@ -37,6 +38,17 @@ export function NoteKeywordLabel({id}:{id:string}) {
   const keywords=useKeywords(), lang=useLocale()
   const name=keywords[id] ? getLocalizedKeywordName(id,keywords[id],lang as SupportedLang) : id
   return <span className="note-keyword-label"><KeywordWithTooltip keyword={name} krKey={id} inline><strong>{name}</strong></KeywordWithTooltip></span>
+}
+/** A gift written inside a sentence: its art at text height and its name in the keyword's colour; opens the gift. */
+export function NoteGiftLabel({id,name}:{id:string;name?:string}) {
+  const lang=useLocale(), {data}=useContext(AssetContext), onGiftClick=useContext(NoteGiftClickContext)
+  const asset=data.get('gift:'+id)
+  const label=asset ? assetName(asset,lang) : name || id
+  const style={'--gift-color':GIFT_KEYWORD_COLORS[asset?.keyword ?? ''] ?? '#c8b898'} as React.CSSProperties
+  const body=<>{asset?.image_url && <img src={asset.image_url} alt="" loading="lazy" decoding="async"/>}<strong>{label}</strong></>
+  return onGiftClick && asset
+    ? <button type="button" className="note-gift-label" style={style} onClick={()=>onGiftClick(id)}>{body}</button>
+    : <span className="note-gift-label" style={style}>{body}</span>
 }
 export function NoteAssetArtwork({asset, compact=false}:{asset:NoteAssetData; compact?:boolean}) {
   const lang=useLocale(), name=assetName(asset,lang)
@@ -93,6 +105,7 @@ export default function NoteBlockViewer({doc,renderText}:{doc:JSONContent;render
     switch(n.type) {
       case 'noteAccordion': return <NoteAccordionView key={key} title={n.content?.[0]?.content?.map((c,i)=>render(c,`${key}-title-${i}`)) || '…'}>{n.content?.[1]?.content?.map((c,i)=>render(c,`${key}-body-${i}`))}</NoteAccordionView>
       case 'noteKeyword': return <NoteKeywordLabel key={key} id={n.attrs!.id}/>
+      case 'noteGift': return <NoteGiftLabel key={key} id={n.attrs!.id} name={n.attrs?.name}/>
       case 'noteAsset': return <NoteAssetView key={key} kind={n.attrs!.kind} id={n.attrs!.id}/>
       case 'noteVideo': return <NoteVideo key={key} id={n.attrs!.videoId}/>
       case 'image': return isNoteImageUrl(n.attrs?.src) ? <img key={key} className="note-document-image" src={n.attrs!.src} alt={n.attrs?.alt ?? ''} loading="lazy"/> : null
