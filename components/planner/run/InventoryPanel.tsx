@@ -7,7 +7,7 @@ import { X, Beaker } from 'lucide-react'
 import type { RunState, RunAction } from '@/lib/planner/run-types'
 import type { GiftData, RecipeData } from '@/lib/planner/types'
 import { findAvailableFusions, computeKeywordDistribution } from '@/lib/planner/fusion'
-import { getGiftActivationConditionStatus, getGiftConditionCountsForSlots, getIdentityGiftConditionKeywords } from '@/lib/planner/gift-condition-status'
+import { getGiftActivationConditionStatus, getGiftConditionCountsForSlots, getIdentityGiftConditionKeywords, type GiftConditionStatus } from '@/lib/planner/gift-condition-status'
 import KeywordChart from '@/components/planner/KeywordChart'
 import GiftArtwork from '@/components/ui/GiftArtwork'
 import GiftCatalog, { giftKeywordIcon, toCatalogGift } from '@/components/gifts/GiftCatalog'
@@ -55,7 +55,7 @@ export default function InventoryPanel({ state, dispatch, giftMap, recipes }: Pr
     [state.identitySlots],
   )
 
-  function getConditionStatus(gift: GiftData): { level: 'warn' | 'unmet'; text: string } | null {
+  function getConditionStatus(gift: GiftData): GiftConditionStatus | null {
     return getGiftActivationConditionStatus({ gift, ...conditionCounts })
   }
 

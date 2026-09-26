@@ -204,7 +204,7 @@ export interface GiftCatalogCardProps {
   disabled?: boolean
   title?: string
   ariaLabel?: string
-  conditionStatus?: { level: 'warn' | 'unmet'; text: string } | null
+  conditionStatus?: import('@/lib/planner/gift-condition-status').GiftConditionStatus | null
   conditionDetail?: boolean
   onRemove?: () => void
 }
