@@ -79,8 +79,11 @@ const episodes = results.map((episode, index) => {
   const labelsRead = read.flatMap(f => f.read.labels)
   const icons = [...new Set(episode.frames.flatMap(f => f.icon?.gifts?.[0] ? [f.icon.gifts[0].id] : []))]
   const effects = [...new Set(read.flatMap(f => effectGiftIds(f.read.body, catalog)))]
+  // As the app on the fusion screen: the lexicon best name, even below its bar, is a weak candidate for recipe results.
+  const lexicon = [...new Set(read.flatMap(f => f.read.lexicon?.id ? [f.read.lexicon.id] : []))]
   const verdict = icons.length > 1 ? null : acquiredGiftFromPopup({ header, labels: labelsRead, iconGiftId: icons[0] ?? null, effectGiftIds: effects, gifts: catalog.gifts })
-  const candidates = popupCandidateIds({ header, labels: labelsRead, iconGiftIds: icons, effectGiftIds: effects, gifts: catalog.gifts })
+  const candidates = popupCandidateIds({ header, labels: labelsRead, iconGiftIds: icons, effectGiftIds: effects,
+    lexiconGiftIds: episode.scene === 'fusion' ? lexicon : [], gifts: catalog.gifts })
   const best = episode.frames.reduce((a, b) => (b.quality > a.quality ? b : a))
   const key = episode.path.slice(11, 19) + '_' + best.index
   writeFileSync(path.join(path.dirname(outFile), 'crops', key + '.jpg'), Buffer.from(best.crop.split(',')[1], 'base64'))

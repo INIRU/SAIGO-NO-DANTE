@@ -11,7 +11,7 @@ from PIL import Image, ImageChops, ImageDraw, ImageFont
 
 
 WORK_DIR = Path(os.environ.get("THEME_PACK_WORK_DIR", Path(__file__).resolve().parents[3] / "assets" / "theme-pack-build"))
-DATA_DIR = Path(os.environ.get("LIMBUS_DATA_DIR", "/Users/iniru/Documents/Limbus/assets/data/Json (Text)"))
+DATA_DIR = Path(os.environ.get("LIMBUS_DATA_DIR", Path(__file__).resolve().parents[3] / "assets" / "data" / "Json (Text)"))
 ASSET_ROOT = Path(os.environ.get("LIMBUS_THEME_ASSET_ROOT", "/Users/iniru/Downloads/Mirror Dungeon"))
 EXTRACTED_ASSET_ROOT = os.environ.get("LIMBUS_EXTRACTED_ASSET_ROOT")
 OUTPUT_DIR = WORK_DIR / "output"
