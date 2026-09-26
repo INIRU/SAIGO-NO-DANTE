@@ -1,9 +1,9 @@
 import { createClient } from '@supabase/supabase-js'
 import { cacheLife, cacheTag } from 'next/cache'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
-import { aggregateMeta, metaPeriodStart } from '@/lib/meta/aggregate'
+import { aggregateMeta, metaPeriodStart, planGiftIds, planThemeIds } from '@/lib/meta/aggregate'
 import { readAllMetaRows } from '@/lib/meta/pagination'
-import { DEFAULT_META_PERIOD, DEFAULT_META_SOURCE, type MetaData, type MetaIdentity, type MetaEGO, type MetaPost, type MetaSource, type MetaPeriod } from '@/lib/meta/types'
+import { DEFAULT_META_PERIOD, DEFAULT_META_SOURCE, type MetaData, type MetaIdentity, type MetaEGO, type MetaGift, type MetaPost, type MetaSource, type MetaPeriod, type MetaTheme } from '@/lib/meta/types'
 
 function publicClient() {
   // Aggregated results are shared publicly: never derive them from a user's session
@@ -30,7 +30,7 @@ async function getMetaCatalog() {
 }
 
 type DeckRow = { title: string; main_keywords: string[] | null; content_type: string | null; id: string; created_at: string; deck_identities: unknown; deck_egos: unknown }
-type PlanRow = { title: string; tags: string[] | null; id: string; created_at: string; deck: unknown; egos: unknown }
+type PlanRow = { title: string; tags: string[] | null; id: string; created_at: string; deck: unknown; egos: unknown; difficulty: string | null; floor_plan: unknown; gift_inventory: unknown }
 
 async function getSourcePosts(source: Exclude<MetaSource, 'all'>, period: MetaPeriod): Promise<MetaPost[]> {
   'use cache'
@@ -49,12 +49,27 @@ async function getSourcePosts(source: Exclude<MetaSource, 'all'>, period: MetaPe
     return rows.map(row => ({ id: row.id, source, created_at: row.created_at, title: row.title, keywords: row.main_keywords, content_type: row.content_type, identities: row.deck_identities, egos: row.deck_egos }))
   }
   const rows = await readAllMetaRows<PlanRow>((from, to) => {
-    let query = db.from('md_plans').select('id, title, tags, created_at, deck, egos')
+    let query = db.from('md_plans').select('id, title, tags, created_at, deck, egos, difficulty, floor_plan, gift_inventory')
       .order('id').lte('created_at', new Date(now).toISOString())
     if (since) query = query.gte('created_at', since)
     return query.range(from, to)
   })
-  return rows.map(row => ({ id: row.id, source, created_at: row.created_at, title: row.title, keywords: row.tags, identities: row.deck, egos: row.egos }))
+  return rows.map(row => ({ id: row.id, source, created_at: row.created_at, title: row.title, keywords: row.tags, identities: row.deck, egos: row.egos,
+    difficulty: row.difficulty, gifts: planGiftIds(row.gift_inventory), themes: planThemeIds(row.floor_plan) }))
+}
+
+async function getPlanCatalog(giftIds: string[], themeIds: string[]) {
+  const db = publicClient()
+  const [gifts, themes] = await Promise.all([
+    giftIds.length ? db.from('ego_gifts').select('game_id, name, name_en, name_jp, grade, keyword, image_url').in('game_id', giftIds.map(Number)) : Promise.resolve({ data: [], error: null }),
+    themeIds.length ? db.from('ego_gift_themes').select('id, name, name_en, name_jp, image_url').in('id', themeIds.map(Number)) : Promise.resolve({ data: [], error: null }),
+  ])
+  if (gifts.error) throw new Error('Could not load gifts for meta: ' + gifts.error.message)
+  if (themes.error) throw new Error('Could not load theme packs for meta: ' + themes.error.message)
+  return {
+    giftCatalog: Object.fromEntries(((gifts.data ?? []) as MetaGift[]).map(gift => [String(gift.game_id), gift])),
+    themeCatalog: Object.fromEntries(((themes.data ?? []) as MetaTheme[]).map(theme => [String(theme.id), theme])),
+  }
 }
 
 export async function getMetaData(source: MetaSource = DEFAULT_META_SOURCE, period: MetaPeriod = DEFAULT_META_PERIOD): Promise<MetaData> {
@@ -68,5 +83,9 @@ export async function getMetaData(source: MetaSource = DEFAULT_META_SOURCE, peri
   ])
   const keywordSinMap: Record<string, string> = {}
   for (const keyword of catalog.keywords) if (keyword.sin_affinity) keywordSinMap[keyword.name] = keyword.sin_affinity
-  return aggregateMeta({ posts: [...decks, ...plans], identities: catalog.identities, egos: catalog.egos, keywordSinMap, source, period, now: Date.now() })
+  const data = aggregateMeta({ posts: [...decks, ...plans], identities: catalog.identities, egos: catalog.egos, keywordSinMap, source, period, now: Date.now() })
+  const summaries = [data.planStats, ...Object.values(data.identityInsights).flatMap(insight => insight.plan ? [insight.plan] : [])]
+  const giftIds = [...new Set(summaries.flatMap(summary => summary.gifts.map(row => row.key)))]
+  const themeIds = [...new Set(summaries.flatMap(summary => summary.themes.map(row => row.key)))]
+  return { ...data, ...await getPlanCatalog(giftIds, themeIds) }
 }

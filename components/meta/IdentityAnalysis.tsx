@@ -20,6 +20,7 @@ import { Toggle } from '@/components/tools/LunacyControls'
 import IdentityInterest from './IdentityInterest'
 import KeywordBadge from './KeywordBadge'
 import DonutChart, { ComboLabel, comboColors, usageColor, type DonutSegment } from './DonutChart'
+import { EgoLeaders, PairLeaders, PlanInsights, SinnerLeaders } from './MetaSections'
 
 function countBy(posts: MetaInsightPost[], key: (post: MetaInsightPost) => string): CountStat[] {
   const counts = new Map<string, number>()
@@ -58,6 +59,7 @@ export default function IdentityAnalysis({ data, summary }: { data: MetaData; su
   const [comboFilter, setComboFilter] = useState<string | null>(null)
   const [overviewUsage, setOverviewUsage] = useState<string | null>(null)
   const [overviewCombo, setOverviewCombo] = useState<string | null>(null)
+  const [rankingBench, setRankingBench] = useState(false)
   const identityId = data.battleIdentityStats.some(row => row.identity_id === selected) ? selected : data.battleIdentityStats[0]?.identity_id ?? ''
   const insight = data.identityInsights?.[identityId]
   const name = (row: { name_kr: string; name_en?: string | null; name_jp?: string | null }) => (locale === 'en' ? row.name_en : locale === 'ja' ? row.name_jp : row.name_kr) || row.name_kr
@@ -66,6 +68,12 @@ export default function IdentityAnalysis({ data, summary }: { data: MetaData; su
     ? { key: OTHER, count: row.count, colors: ['#3a2a15'], label: t('others', { count: rows.length - LEGEND_LIMIT }) }
     : { key: row.key, count: row.count, colors: comboColors(row.key), label: <ComboLabel combo={row.key} /> })
   const selectIdentity = (id: string) => { setSelected(id); setUsageFilter(null); setComboFilter(null); setAllCompanions(false) }
+  const focusIdentity = (id: string) => {
+    selectIdentity(id)
+    document.querySelector('[data-analysis-subject]')?.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' })
+  }
+  const fielded = new Set(data.battleIdentityStats.map(row => row.identity_id))
+  const rankingRows = (rankingBench ? data.supportIdentityStats : data.battleIdentityStats).slice(0, 6)
   const portrait = (row: { sinner_id: string; folder_name: string | null; game_id: string | null }, size: number, className: string) => row.game_id && row.folder_name
     ? <Image src={getIdentityPortraitUrl(row.sinner_id, row.folder_name, row.game_id, false)} alt="" width={size} height={size} className={className} />
     : <span className={className} aria-hidden="true" />
@@ -77,18 +85,30 @@ export default function IdentityAnalysis({ data, summary }: { data: MetaData; su
         <DonutChart label={t('usageTitle')} segments={usageSegments(data.usageStats ?? [])} active={overviewUsage} onSelect={setOverviewUsage} /></div>
       <div className={styles.chartBlock}><h3>{t('comboTitle')}</h3><p className={styles.hint}>{t('comboHint')}</p>
         <DonutChart label={t('comboTitle')} segments={comboSegments(data.comboStats ?? [])} active={overviewCombo} onSelect={setOverviewCombo} /></div>
-      <div className={styles.chartBlock}><h3>{t('topIdentities')}</h3>
-        <ol className={styles.ranking}>{data.battleIdentityStats.slice(0, 6).map((row, i) => <li key={row.identity_id}>
-          <button type="button" aria-pressed={row.identity_id === identityId} onClick={() => { selectIdentity(row.identity_id); document.querySelector('[data-analysis-subject]')?.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' }) }}>
+      <div className={styles.chartBlock}>
+        <div className={styles.rankingHead}><h3>{t('topIdentities')}</h3>
+          <div className={styles.segmented} role="group" aria-label={t('topIdentities')}>
+            <button type="button" aria-pressed={!rankingBench} onClick={() => setRankingBench(false)}>{t('rankingFielded')}</button>
+            <button type="button" aria-pressed={rankingBench} onClick={() => setRankingBench(true)}>{t('rankingBench')}</button>
+          </div>
+        </div>
+        <ol className={styles.ranking}>{rankingRows.map((row, i) => <li key={row.identity_id}>
+          <button type="button" aria-pressed={!rankingBench && row.identity_id === identityId} disabled={!fielded.has(row.identity_id)} onClick={() => focusIdentity(row.identity_id)}>
             <span className={styles.rank}>{i + 1}</span>
             {portrait(row, 40, styles.rankPortrait)}
             <span className={styles.rankName}>{name(row)}<small>{rootT('sinner.' + row.sinner_id)}</small></span>
             <Share value={row.count / data.sampleCount * 100} />
             <span className={styles.legendCount}>{t('count', { count: row.count })}</span>
           </button>
-        </li>)}</ol></div>
+        </li>)}</ol>
+        {!rankingRows.length && <p className={styles.empty}>{t('empty')}</p>}</div>
     </div>}
   </section>
+  const overall = data.sampleCount > 0 && <>
+    <SinnerLeaders data={data} onSelect={focusIdentity} />
+    <div className={styles.pairRow}><EgoLeaders data={data} /><PairLeaders data={data} onSelect={focusIdentity} /></div>
+    <PlanInsights summary={data.planStats} data={data} headingId="plans-heading" />
+  </>
   if (!data.battleIdentityStats.length) return <section className={styles.analysis}>{overview}<div className={styles.panel}><p className={styles.empty}>{t('empty')}</p></div></section>
 
   const identity = data.battleIdentityStats.find(row => row.identity_id === identityId)!
@@ -117,6 +137,7 @@ export default function IdentityAnalysis({ data, summary }: { data: MetaData; su
 
   return <section className={styles.analysis} data-identity-analysis>
     {overview}
+    {overall}
     <div className={styles.subject} data-analysis-subject>
       {art && <Image key={art} src={art} alt="" fill sizes="(max-width: 639px) 100vw, 48rem" className={styles.subjectArt} />}
       <div className={styles.subjectCard}><IdentityCard identity={cardIdentity(identity)} compact board showName={false} disableHoverEffects /></div>
@@ -131,6 +152,7 @@ export default function IdentityAnalysis({ data, summary }: { data: MetaData; su
         <div className={styles.subjectActions}>
           <button type="button" onClick={() => { setSearch(''); setSinner(''); setVisibleCount(36); setPickerOpen(true) }} aria-haspopup="dialog" className={styles.changeButton}>{t('change')}<ChevronsUpDown size={15} /></button>
           <Link href={'/sinners/' + identity.sinner_id + '/identities/' + identityId} className={styles.detailLink}>{t('detail')}<ArrowUpRight size={14} /></Link>
+          {insight?.plan && <Link href={'/planner/community?ids=' + identityId} className={styles.detailLink}>{t('plansWith')}<ArrowUpRight size={14} /></Link>}
         </div>
       </div>
       <IdentityInterest id={identityId} />
@@ -181,6 +203,7 @@ export default function IdentityAnalysis({ data, summary }: { data: MetaData; su
           </div> : <p className={styles.empty}>{t('empty')}</p>}
         </section>
       </div>
+      <PlanInsights summary={insight.plan} data={data} identityId={identityId} headingId="identity-plans-heading" />
       <section className={styles.panel} aria-labelledby="companion-heading" data-meta-companions>
         <div className={styles.sectionHead}><h3 id="companion-heading">{t('companions')}</h3><span>{basis}</span></div>
         {companions.length ? <ul className={styles.companions}>

@@ -2,7 +2,7 @@ import { resolvePlannerIdentity, resolvePlannerEgo } from '@/lib/planner/catalog
 import { computeKeywordDeckCombo } from '@/lib/decks/keyword-rules'
 import { normalizeThemeKeyword } from '@/lib/constants/keywords'
 import { normalizeSin } from '@/lib/constants/sin'
-import type { IdentityStat, EGOStat, MetaData, MetaIdentity, MetaEGO, MetaPost, MetaSource, MetaPeriod, MetaUsage, MetaInsightPost } from './types'
+import type { IdentityStat, EGOStat, MetaData, MetaIdentity, MetaEGO, MetaPost, MetaSource, MetaPeriod, MetaUsage, MetaInsightPost, MetaPlanSummary, CountStat } from './types'
 
 const USAGE_BY_CONTENT_TYPE: Record<string, MetaUsage> = {
   '스토리': 'story', '경험치 던전': 'expDungeon', '끈 던전': 'threadDungeon',
@@ -12,6 +12,48 @@ const USAGE_BY_CONTENT_TYPE: Record<string, MetaUsage> = {
 
 export function metaPostUsage(post: Pick<MetaPost, 'source' | 'content_type'>): MetaUsage {
   return post.source === 'planner' ? 'mirrorDungeon' : USAGE_BY_CONTENT_TYPE[post.content_type ?? ''] ?? 'none'
+}
+
+/** Final inventory entries look like 'final_9765', 'start_9029', 'observe_9191'; blessings are not gifts. */
+export function planGiftIds(inventory: unknown): string[] {
+  if (!Array.isArray(inventory)) return []
+  return [...new Set(inventory.flatMap(entry => {
+    const match = typeof entry === 'string' ? /^(?:final|start|observe)_(\d+)$/.exec(entry) : null
+    return match ? [match[1]] : []
+  }))]
+}
+
+export function planThemeIds(floorPlan: unknown): string[] {
+  if (!Array.isArray(floorPlan)) return []
+  return [...new Set(floorPlan.flatMap(floor => {
+    const id = floor && typeof floor === 'object' ? (floor as { theme_id?: unknown }).theme_id : null
+    return (typeof id === 'string' || typeof id === 'number') && String(id) ? [String(id)] : []
+  }))]
+}
+
+const PLAN_DIFFICULTIES = new Set(['normal', 'hard', 'extreme'])
+
+function byCount<K extends string>(counts: Map<K, number>, limit = Infinity): CountStat<K>[] {
+  return [...counts].map(([key, count]) => ({ key, count }))
+    .sort((a, b) => b.count - a.count || a.key.localeCompare(b.key)).slice(0, limit)
+}
+
+/** Running tally of plan choices; summary() keeps the top gifts and packs only. */
+function planTally() {
+  let count = 0
+  const difficulty = new Map<string, number>(), gifts = new Map<string, number>(), themes = new Map<string, number>()
+  const bump = (map: Map<string, number>, keys: Iterable<string>) => { for (const key of keys) map.set(key, (map.get(key) ?? 0) + 1) }
+  return {
+    add(post: MetaPost) {
+      count++
+      if (post.difficulty && PLAN_DIFFICULTIES.has(post.difficulty)) bump(difficulty, [post.difficulty])
+      bump(gifts, new Set(post.gifts ?? []))
+      bump(themes, new Set(post.themes ?? []))
+    },
+    summary(giftLimit: number, themeLimit: number): MetaPlanSummary {
+      return { count, difficulty: byCount(difficulty), gifts: byCount(gifts, giftLimit), themes: byCount(themes, themeLimit) }
+    },
+  }
 }
 
 function objectRows(value: unknown): Record<string, unknown>[] {
@@ -44,6 +86,8 @@ export function aggregateMeta({ posts, identities, egos, keywordSinMap, source, 
   const usageCounts = new Map<MetaUsage, number>()
   const comboCounts = new Map<string, number>()
   const benchPosts = new Map<string, MetaInsightPost[]>()
+  const planTotals = planTally()
+  const identityPlans = new Map<string, ReturnType<typeof planTally>>()
   const pairCounts = new Map<string, number>()
   const usageBySinner: Record<string, number> = {}
   const usageBySin: Record<string, number> = {}
@@ -97,6 +141,14 @@ export function aggregateMeta({ posts, identities, egos, keywordSinMap, source, 
     usageCounts.set(usage, (usageCounts.get(usage) ?? 0) + 1)
     comboCounts.set(combo.join('+'), (comboCounts.get(combo.join('+')) ?? 0) + 1)
     const summary: MetaInsightPost = { id: post.id, source: post.source, title: post.title ?? post.id, usage, combo }
+    if (post.source === 'planner') {
+      planTotals.add(post)
+      for (const { identity } of battleSlots) {
+        const tally = identityPlans.get(identity.id) ?? planTally()
+        tally.add(post)
+        identityPlans.set(identity.id, tally)
+      }
+    }
     for (const { identity, order } of uniqueSlots) {
       if (order < 99) continue
       const list = benchPosts.get(identity.id) ?? []
@@ -162,11 +214,11 @@ export function aggregateMeta({ posts, identities, egos, keywordSinMap, source, 
 
   for (const [id, insight] of Object.entries(identityInsights)) {
     insight.posts.push(...benchPosts.get(id) ?? [])
+    const plans = identityPlans.get(id)
+    if (plans) insight.plan = plans.summary(10, 6)
     insight.companions.sort((a, b) => b.count - a.count || a.identity_id.localeCompare(b.identity_id))
     insight.egos.sort((a, b) => b.count - a.count || a.ego_id.localeCompare(b.ego_id))
   }
-  const byCount = <K extends string>(counts: Map<K, number>) => [...counts].map(([key, count]) => ({ key, count }))
-    .sort((a, b) => b.count - a.count || a.key.localeCompare(b.key))
   return {
     identityInsights,
     sampleCount: sourceCounts.decks + sourceCounts.planner,
@@ -178,6 +230,9 @@ export function aggregateMeta({ posts, identities, egos, keywordSinMap, source, 
     keywordUsage: [...keywordCounts].map(([keyword, count]) => ({ keyword, count })).sort((a, b) => b.count - a.count || a.keyword.localeCompare(b.keyword)),
     usageStats: byCount(usageCounts),
     comboStats: byCount(comboCounts),
+    planStats: planTotals.summary(10, 6),
+    giftCatalog: {},
+    themeCatalog: {},
     synergies: [...pairCounts].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).slice(0, 20).map(([key, count]) => {
       const [aId, bId] = JSON.parse(key) as [string, string]
       const a = identityCatalog.get(aId)!
