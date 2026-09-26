@@ -39,6 +39,27 @@ export function sinnerCharacterId(key: string): number {
   if (!id) throw Error(`Unknown sinner key ${key}`)
   return id
 }
+/**
+ * Events the game repeats under another ID with nothing else different (every source field and every localized text):
+ * each copy → the lowest ID of its group. 971070–971072 (가시춘 학생의 수업 복습) let one fixed floor hold the event up to
+ * three times; the site shows it once. Anything that differs, including a continuation, is a separate event.
+ */
+export function identicalEventCopies(events: readonly SourceEvent[], textOf: (id: number) => string): Map<number, number> {
+  const canonical = (value: unknown): unknown => Array.isArray(value) ? value.map(canonical)
+    : value && typeof value === 'object' ? Object.fromEntries(Object.keys(value).sort().map(key => [key, canonical((value as Record<string, unknown>)[key])])) : value
+  const lowest = new Map<string, number>()
+  const keyOf = (event: SourceEvent) => { const { id: _id, ...rest } = event; return JSON.stringify(canonical(rest)) + '\u0000' + textOf(event.id) }
+  for (const event of events) {
+    const key = keyOf(event), seen = lowest.get(key)
+    if (seen === undefined || event.id < seen) lowest.set(key, event.id)
+  }
+  const copies = new Map<number, number>()
+  for (const event of events) {
+    const first = lowest.get(keyOf(event))!
+    if (first !== event.id) copies.set(event.id, first)
+  }
+  return copies
+}
 export function walkEventGraph(events: ReadonlyMap<number, SourceEvent>, entries: ReadonlySet<number>) {
   const reachable = new Set<number>(), edges: [number, number][] = []
   const queue = [...entries]

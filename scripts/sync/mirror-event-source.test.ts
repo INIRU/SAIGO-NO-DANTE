@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest'
-import { sequenceEventIds, sinnerCharacterId, sourceResultText, sourceResults, walkEventGraph, type SourceEvent } from './mirror-event-source'
+import { identicalEventCopies, sequenceEventIds, sinnerCharacterId, sourceResultText, sourceResults, walkEventGraph, type SourceEvent } from './mirror-event-source'
 
 it('traverses grandchildren, cross-links and retries without turning them into entries', () => {
   const nodes: SourceEvent[] = [
@@ -40,4 +40,14 @@ it('REQ-DATA-SYNC-016 names every sinner a judgment correction can name, and ref
   expect(['Yisang', 'Faust', 'Donquixote', 'Ryosyu', 'Meursault', 'Honglu', 'Heathcliff', 'Ishmael', 'Rodion', 'Sinclair', 'Outis', 'Gregor']
     .map(sinnerCharacterId)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12])
   expect(() => sinnerCharacterId('Dante')).toThrow('Unknown sinner key Dante')
+})
+it('REQ-DATA-SYNC-017 marks exact copies of one event, and nothing that differs in any field or text', () => {
+  // 가시춘 학생의 수업 복습 (2026-09-24): 971070–971072 differ only in their ID, in the source graph and in all three languages.
+  const node = (id: number, gift = 9822, next = -1): SourceEvent => ({ id, eventType: 'EVENT',
+    actionEvent: { eachOptionList: [{ index: 0, resultList: [{ resultIndex: 0, nextEventID: next, eventResultDataList: [{ resultForm: { itemReward: { type: 'EGO_GIFT', rewardId: gift } } }] }] }] } })
+  const text = (id: number) => id === 971074 ? 'another story' : '가시춘 학생의 수업 복습'
+  const copies = identicalEventCopies([node(971071), node(971070), node(971072), node(971073, 9823), node(971074)], text)
+  expect(copies).toEqual(new Map([[971071, 971070], [971072, 971070]]))
+  // A different continuation is a different event.
+  expect(identicalEventCopies([node(1, 9822, 5), node(2, 9822, 6)], () => 'same')).toEqual(new Map())
 })

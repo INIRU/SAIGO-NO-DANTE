@@ -8,6 +8,13 @@ export function getRootEvents<T extends { id: number; variant_of: number | null;
     for (const choice of choices) if (choice.next_event_id != null) children.add(choice.next_event_id)
   }
   const ids = new Set(events.map(event => event.id))
-  return events.filter(event => event.category === 'entry' || (event.category !== 'continuation' && event.variant_of == null && !children.has(event.id)
-    && !(String(event.id).length === 8 && ids.has(Math.floor(event.id / 100)))))
+  // A variant (an exact copy of another event) is never a root, even as an entry.
+  return events.filter(event => event.variant_of == null && (event.category === 'entry' || (event.category !== 'continuation' && !children.has(event.id)
+    && !(String(event.id).length === 8 && ids.has(Math.floor(event.id / 100))))))
+}
+
+/** Events and choices Assist may recognize: copies of another event would make its text match several events at once. */
+export function recognizableEvents<E extends { id: number; variant_of: number | null }, C extends { event_id: number }>(events: readonly E[], choices: readonly C[]) {
+  const copies = new Set(events.filter(event => event.variant_of != null).map(event => event.id))
+  return { events: events.filter(event => !copies.has(event.id)), choices: choices.filter(choice => !copies.has(choice.event_id)) }
 }
