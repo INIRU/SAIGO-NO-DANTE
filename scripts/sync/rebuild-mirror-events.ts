@@ -5,7 +5,7 @@ import { createHash } from 'node:crypto'
 import { createClient } from '@supabase/supabase-js'
 import { config } from 'dotenv'
 import { eventImageId } from '../assets/event-image-source'
-import { sequenceEventIds, sinnerCharacterId, sourceResults, sourceResultText, walkEventGraph, type SourceEvent, type SourceForm } from './mirror-event-source'
+import { identicalEventCopies, sequenceEventIds, sinnerCharacterId, sourceResults, sourceResultText, walkEventGraph, type SourceEvent, type SourceForm } from './mirror-event-source'
 config({ path: '.env.local', quiet: true })
 type Locale = 'ko' | 'en' | 'ja'
 type Text = { id: number; name?: string; title?: string; desc?: string; behaveDesc?: string; prevDesc?: string; eventDesc?: string; successDesc?: string[]; failureDesc?: string[]; options?: { message?: string; messageDesc?: string; result?: string[] }[] }
@@ -197,7 +197,16 @@ export async function rebuildMirrorEvents(apply = process.argv.includes('--fix')
       })
     }
   }
-  const audit = { inputs: provenance, nodes: rows.length, choices: choices.length, entries: entries.size, edges: graph.edges,
+  // Exact copies of one event (source and all three languages) point at the lowest ID and show its art.
+  const copies = identicalEventCopies([...graph.reachable].map(id => nodes.get(id)!),
+    id => JSON.stringify((Object.keys(langs) as Locale[]).map(lang => { const { id: _id, ...text } = texts[lang].get(id)?.text ?? { id }; return text })))
+  const rowById = new Map(rows.map(row => [row.id as number, row]))
+  for (const [id, first] of copies) {
+    const row = rowById.get(id)!
+    row.variant_of = first
+    row.image_url ??= rowById.get(first)!.image_url
+  }
+  const audit = { inputs: provenance, nodes: rows.length, choices: choices.length, entries: entries.size, edges: graph.edges, copies: Object.fromEntries(copies),
     missingKorean, missingTemplates: [...missingTemplates], missingGifts: [...missingGifts],
     missingEntryImages: rows.filter(r => r.category === 'entry' && !r.image_url).map(r => r.id) }
   const output = join(recovery, 'event-graph-rebuild'); mkdirSync(output, { recursive: true })
