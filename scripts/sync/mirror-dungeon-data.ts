@@ -499,6 +499,13 @@ async function syncGifts(): Promise<void> {
   for (const file of globFiles(DATA_DIR, /^mirror-dungeon-(action|personality)-choice-event\.txt$/)) {
     for (const id of extractGiftsRecursive(loadJson(join(DATA_DIR, file)))) eventGiftIds.add(id)
   }
+  // Theme packs draw some gifts from story files too (경험기억's 오랏줄 and N사 고정팀 가방 live in story-exme).
+  for (const file of [...globFiles(DATA_DIR, /^mirrordungeon-theme-floor-t\d+\.txt$/), ...globFiles(DATA_DIR, /^mirrordungeon-theme-floor-hidden\.txt$/)]) {
+    for (const item of extractList(loadJson(join(DATA_DIR, file)))) {
+      const pool = (item as { egoGiftPool?: unknown }).egoGiftPool
+      if (Array.isArray(pool)) for (const id of pool) if (typeof id === 'number') eventGiftIds.add(id)
+    }
+  }
   let recipeRefGiftCount = 0
   for (const f of globFiles(DATA_DIR, GIFT_PATTERN).filter(f => SKIP_PATTERN.test(f))) {
     const data = loadJson(join(DATA_DIR, f))
@@ -511,7 +518,7 @@ async function syncGifts(): Promise<void> {
     }
   }
   if (recipeRefGiftCount > 0) {
-    console.log(`  레시피/이벤트 참조 기프트 보강: ${recipeRefGiftCount}종`)
+    console.log(`  레시피/이벤트/테마팩 참조 기프트 보강: ${recipeRefGiftCount}종`)
   }
 
   // Hidden boss gift IDs
