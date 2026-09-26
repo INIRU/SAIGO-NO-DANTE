@@ -397,3 +397,11 @@ E.G.O 상세의 메인 이미지는 256×256 `_awaken_profile` 확대 대신 새
 - 스킬 재구축은 이제 같은 `skill_order/uptie_level/variant_order/name`의 기존 행 ID를 유지한다. 노트 스킬 블럭이 `skills.id`를 참조하기 때문이다. 이 규칙이 생기기 전에 바뀐 1,016개 ID는 원래 값으로 되돌렸다(`skill-id-restore-map.json`).
 - `keyword_meta`는 `--rebuild-keyword-meta`로 10개를 추가했다. 새 키워드 아이콘은 태그 이름 대신 버프 데이터의 `iconId`로 원본을 찾는다(예: `NoirScissorAlly` → `ScissorsMark`). 기존 키워드 15개의 수정 이미지는 화살표가 겹친 변형이라 확인 전까지 기존 아이콘을 유지한다.
 - 거울 던전 기프트·테마팩·레시피는 변경이 없었고, 수감자와 무관한 적 스킬 이미지는 대상에서 제외했다.
+
+## 데이터 무결성 점검
+
+`npm run audit:data`(`scripts/audit/data-integrity.ts`)가 운영 DB를 공개 키로 읽어 검사한다. 테마팩의 `ego_gift_ids`·`specific_ego_gift_ids`·`fixed_reward_gift_ids`, 기프트 `convert_to`, 조합식 재료·결과, 이벤트의 기프트·테마팩 참조가 실제 행을 가리키는지 본다. 기프트·테마팩·이벤트·인격·E.G.O의 모든 이미지 URL은 HEAD 200이어야 하고, 기프트·테마팩·인격·E.G.O 이름은 en/ja가 있어야 하며, 인격 소속은 `AFFILIATION_MAP`에 번역이 있어야 한다. 이벤트는 이름 칸을 쓰지 않아 이름 검사에서 제외한다.
+
+`.github/workflows/data-integrity.yml`이 매일 06:00 KST, 수동 실행, 동기화·점검 스크립트를 바꾼 PR에서 이를 실행한다. 문제가 하나라도 있으면 목록을 출력하고 실패한다.
+
+게임 원본과의 대조는 원본이 로컬에만 있어 CI에서 돌리지 않는다. 새 추출본을 받으면 기프트 이미지를 원본과 축소 비교해 다른 그림이 올라간 항목을 찾는다(2026-09-26에 9818 남겨진 차원 건틀릿이 이 방법으로 발견됐다). 테마팩 `egoGiftPool`에만 있는 기프트는 `mirror-dungeon-data.ts`가 `story-*` 파일을 건너뛰어도 포함된다(오랏줄, N사 고정팀 가방, 떼구름, 소흥주가 이렇게 누락됐었다).
