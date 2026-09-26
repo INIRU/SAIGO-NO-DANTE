@@ -27,6 +27,8 @@ let provider: 'webgpu' | 'wasm' = 'wasm'
 let adapterName = ''
 // Catalog icons as templates for the popup artwork; built in the background after the models are ready.
 const coarseTemplates: IconTemplate[] = []
+// Every icon at 16 px: a one-scale pass that keeps the best 40 for the coarse pass (rankIconsInRegion `tiny`).
+const tinyTemplates: IconTemplate[] = []
 const fineTemplates = new Map<string, IconTemplate>()
 
 async function gpuAdapter(): Promise<boolean> {
@@ -81,10 +83,12 @@ async function runModel(kind: 'scene' | 'visual', input: Float32Array) {
 }
 
 async function loadTemplates(references: VisualReference[]) {
+  const tiny = new OffscreenCanvas(16, 16).getContext('2d', { willReadFrequently: true })
   const coarse = new OffscreenCanvas(24, 24).getContext('2d', { willReadFrequently: true })
   const fine = new OffscreenCanvas(48, 48).getContext('2d', { willReadFrequently: true })
-  if (!coarse || !fine) return
+  if (!tiny || !coarse || !fine) return
   // Downscaling detailed art without high-quality smoothing aliases it enough to drop the right icon from the shortlist.
+  tiny.imageSmoothingQuality = 'high'
   coarse.imageSmoothingQuality = 'high'
   fine.imageSmoothingQuality = 'high'
   const started = performance.now()
@@ -104,11 +108,12 @@ async function loadTemplates(references: VisualReference[]) {
         const response = await load(reference.imageUrl!)
         if (!response.ok) continue
         const image = await createImageBitmap(await response.blob())
-        for (const [target, size] of [[coarse, 24], [fine, 48]] as const) {
+        for (const [target, size] of [[tiny, 16], [coarse, 24], [fine, 48]] as const) {
           target.clearRect(0, 0, size, size)
           target.drawImage(image, 0, 0, size, size)
           const template = iconTemplate(reference.id, target.getImageData(0, 0, size, size).data, size)
-          if (size === 24) coarseTemplates.push(template)
+          if (size === 16) tinyTemplates.push(template)
+          else if (size === 24) coarseTemplates.push(template)
           else fineTemplates.set(reference.id, template)
         }
         image.close()
@@ -160,12 +165,12 @@ function rememberSlot(signature: Float32Array, size: number, pool: string, read:
   slotCache.length = Math.min(slotCache.length, SLOT_CACHE_SIZE)
 }
 // Templates of the gifts a fusion can use (held gifts and vestiges), rebuilt when that list changes.
-let heldPool: { key: string; loaded: number; templates: IconTemplate[] } = { key: '', loaded: 0, templates: [] }
+let heldPool: { key: string; loaded: number; ids: Set<string>; templates: IconTemplate[] } = { key: '', loaded: 0, ids: new Set(), templates: [] }
 function heldTemplates(candidates: string[] | undefined) {
   const key = Array.isArray(candidates) ? [...new Set(candidates.filter(id => typeof id === 'string'))].sort().join() : ''
   if (key !== heldPool.key || heldPool.loaded !== coarseTemplates.length) {
-    const ids = new Set(key.split(','))
-    heldPool = { key, loaded: coarseTemplates.length, templates: key ? coarseTemplates.filter(template => ids.has(template.id)) : [] }
+    const ids = new Set(key ? key.split(',') : [])
+    heldPool = { key, loaded: coarseTemplates.length, ids, templates: coarseTemplates.filter(template => ids.has(template.id)) }
   }
   return heldPool
 }
@@ -268,7 +273,7 @@ self.onmessage = async (event: MessageEvent<Request>) => {
         const signature = slotSignature(sample, region)
         const cached = cachedSlot(signature, region.size, held.key)
         if (cached !== undefined) return cached
-        const read = heldSlotRead(mergeRankedGroups(rankIconsInRegion(sample, region, coarseTemplates, fineTemplates), vestigeGroup),
+        const read = heldSlotRead(mergeRankedGroups(rankIconsInRegion(sample, region, coarseTemplates, fineTemplates, tinyTemplates, 40, held.ids), vestigeGroup),
           held.templates.length ? mergeRankedGroups(rankIconsInRegion(sample, region, held.templates, fineTemplates), vestigeGroup) : [])
         rememberSlot(signature, region.size, held.key, read)
         return read
@@ -291,7 +296,7 @@ self.onmessage = async (event: MessageEvent<Request>) => {
         icon.width / frame.width, icon.height / frame.height]
       const embedded = matchGiftEmbedding(await embed(frame, region), giftReferences, embeddingIndex)
       // Catalog-icon templates recognise small popup art far better than the embedding; the two must not disagree.
-      const matched = plateShaped(box) && coarseTemplates.length ? acceptedIcon(rankIcons(sampler(frame), box, coarseTemplates, fineTemplates)) : null
+      const matched = plateShaped(box) && coarseTemplates.length ? acceptedIcon(rankIcons(sampler(frame), box, coarseTemplates, fineTemplates, tinyTemplates)) : null
       const gifts = matched ? (embedded[0] && embedded[0].id !== matched.id ? [] : [matched]) : embedded
       respond({ type: 'popup-icon', requestId, gifts })
       return
