@@ -68,9 +68,15 @@ export default function MetaClient({ initialData }: { initialData: MetaData | nu
         </div>
       )}
         <IdentityAnalysis data={data} summary={<>
-          <p className={styles.sample} aria-live="polite">{t('sample', { count: data.sampleCount, decks: data.sourceCounts.decks, planner: data.sourceCounts.planner, excluded: data.excludedSamples })}</p>
-          {data.sampleCount < 20 && <p className={styles.caution}>{t('smallSample')}</p>}
-          <details className={styles.methodology}><summary>{t('methodologyLabel')}</summary><p>{t('methodology')}</p></details>
+          <dl className={styles.sampleStats} aria-live="polite">
+            <div><dt>{t('sampleValid')}</dt><dd data-sample-count>{data.sampleCount}</dd></div>
+            <div><dt>{t('sampleDecks')}</dt><dd>{data.sourceCounts.decks}</dd></div>
+            <div><dt>{t('samplePlanner')}</dt><dd>{data.sourceCounts.planner}</dd></div>
+          </dl>
+          <div className={styles.overviewNotes}>
+            {data.sampleCount < 20 && <p className={styles.caution}>{t('smallSample')}</p>}
+            <details className={styles.methodology}><summary>{t('methodologyLabel')}</summary><p>{t('methodology')}</p>{data.excludedSamples > 0 && <p>{t('excluded', { count: data.excludedSamples })}</p>}</details>
+          </div>
         </>} />
       </>}
     </div>

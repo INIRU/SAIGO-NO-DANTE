@@ -1928,7 +1928,6 @@
       "90": "直近90日",
       "all": "全期間"
     },
-    "sample": "有効編成 {count}件 · デッキ {decks}件 · プラン {planner}件 · 空の編成 {excluded}件を除外",
     "methodologyLabel": "集計基準",
     "methodology": "公開投稿1件を同じ比重で集計します。人格・E.G.O・キーワードは編成ごとに1回だけ数え、同時編成とデッキ用途は編成順のある人格のみを対象にします。プランナーはすべて鏡ダンジョンとして数えます。採用率であり、性能や勝率ではありません。",
     "smallSample": "標本が20件未満です。少数の投稿の影響を大きく受ける可能性があります。",
@@ -1937,12 +1936,10 @@
     "loading": "統計を読み込み中",
     "analysis": {
       "companions": "一緒に編成された人格",
-      "companionsHint": "この人格を戦闘編成した{count}件が対象です。待機枠は除外します。複数の人格を同時に編成するため、割合の合計は100%を超える場合があります。",
       "companionCount": "{total}件中{count}件",
       "noCompanions": "一緒に戦闘編成された人格はいません。",
       "identity": "分析する人格",
       "empty": "集計できる公開編成がありません。",
-      "method": "この人格を戦闘編成した公開投稿{count}件が対象です。EGOは同じ囚人に装備されたものを集計します。",
       "order": "編成順序",
       "position": "{order}番",
       "purpose": "よく使われるデッキ用途",
@@ -1980,8 +1977,30 @@
         "reflectrial": "射影戦闘",
         "none": "未指定"
       },
-      "others": "その他{count}種"
-    }
+      "others": "その他{count}種",
+      "statFielded": "編成",
+      "statRate": "採用率",
+      "statOrder": "主な編成順",
+      "basis": "編成{count}件",
+      "less": "閉じる",
+      "moreCount": "あと{count}人",
+      "sourceTag": {
+        "decks": "デッキ",
+        "planner": "プラン"
+      },
+      "interest": {
+        "title": "閲覧",
+        "week": "7日",
+        "month": "30日",
+        "all": "全期間",
+        "hint": "期間内の重複を除いたブラウザ数",
+        "error": "閲覧数を読み込めませんでした。"
+      }
+    },
+    "sampleValid": "有効な編成",
+    "sampleDecks": "デッキ",
+    "samplePlanner": "プランナー",
+    "excluded": "編成が空の投稿{count}件は除外しています。"
   },
   "experience": {
     "title": "経験値計算機",

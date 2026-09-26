@@ -1928,7 +1928,6 @@
       "90": "최근 90일",
       "all": "전체 기간"
     },
-    "sample": "유효 편성 {count}건 · 덱 {decks}건 · 플래너 {planner}건 · 빈 편성 제외 {excluded}건",
     "methodologyLabel": "집계 기준",
     "methodology": "공개 게시물 1건을 같은 비중으로 집계합니다. 인격·EGO·키워드는 편성당 한 번만 계산하며, 동시 편성과 덱 용도는 편성 순서가 있는 인격 기준입니다. 플래너는 모두 거울 던전으로 셉니다. 채용 빈도이며 성능이나 승률을 뜻하지 않습니다.",
     "smallSample": "표본이 20건 미만입니다. 소수 게시물의 영향을 크게 받을 수 있습니다.",
@@ -1937,12 +1936,10 @@
     "loading": "통계 불러오는 중",
     "analysis": {
       "companions": "함께 편성된 인격",
-      "companionsHint": "이 인격을 전투 편성한 {count}건 기준입니다. 대기는 제외하며, 여러 인격을 함께 편성하므로 비율의 합계는 100%를 넘을 수 있습니다.",
       "companionCount": "{total}건 중 {count}건",
       "noCompanions": "함께 전투 편성된 인격이 없습니다.",
       "identity": "분석할 인격",
       "empty": "집계할 공개 편성이 없습니다.",
-      "method": "이 인격을 전투 편성한 공개 게시물 {count}개 기준입니다. EGO 비율은 이 인격과 같은 수감자에 편성된 EGO를 셉니다.",
       "order": "편성 순서",
       "position": "{order}번",
       "purpose": "주로 사용된 덱 용도",
@@ -1980,8 +1977,30 @@
         "reflectrial": "사영 전투",
         "none": "미지정"
       },
-      "others": "그 외 {count}종"
-    }
+      "others": "그 외 {count}종",
+      "statFielded": "편성",
+      "statRate": "채용률",
+      "statOrder": "주 편성 순서",
+      "basis": "편성 {count}건 기준",
+      "less": "접기",
+      "moreCount": "{count}명 더 보기",
+      "sourceTag": {
+        "decks": "덱",
+        "planner": "플랜"
+      },
+      "interest": {
+        "title": "조회",
+        "week": "7일",
+        "month": "30일",
+        "all": "전체",
+        "hint": "기간 내 중복을 뺀 방문 브라우저 수",
+        "error": "조회 수를 불러오지 못했습니다."
+      }
+    },
+    "sampleValid": "유효 편성",
+    "sampleDecks": "덱",
+    "samplePlanner": "플래너",
+    "excluded": "편성이 비어 있는 게시물 {count}건은 제외했습니다."
   },
   "experience": {
     "title": "경험치 계산기",

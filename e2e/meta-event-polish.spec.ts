@@ -25,14 +25,14 @@ for (const width of [1440, 390]) {
     await Promise.all([page.waitForEvent('load'), cdp.send('Page.reload', { ignoreCache: true })])
     for (let visit = 0; visit < 2; visit++) {
       await expect(page.getByRole('button', { name: '전체 기간', exact: true })).toHaveAttribute('aria-pressed', 'true')
-      await expect(page.getByText(`유효 편성 ${data.sampleCount}건`, { exact: false })).toBeVisible()
+      await expect(page.locator('[data-sample-count]')).toHaveText(String(data.sampleCount))
       expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBeLessThanOrEqual(1)
       if (!visit) { await page.goto('/ko'); await page.goto('/ko/meta') }
     }
     await page.getByRole('button', { name: '최근 30일', exact: true }).click()
     await expect(page.getByRole('button', { name: '전체 기간 보기', exact: true })).toBeVisible()
     await page.getByRole('button', { name: '전체 기간 보기', exact: true }).click()
-    await expect(page.getByText(`유효 편성 ${data.sampleCount}건`, { exact: false })).toBeVisible()
+    await expect(page.locator('[data-sample-count]')).toHaveText(String(data.sampleCount))
   })
 
   test(`event artwork and choice navigator survive hard refresh and revisit (${width})`, async ({ page }, info) => {
