@@ -1302,8 +1302,10 @@
       "conditionStatus": {
         "unmetLabel": "Unmet",
         "warnLabel": "Warning",
-        "unmetTitle": "Condition unmet: {text} - not enough even with all identities",
-        "warnTitle": "Condition warning: {text} - needs bench identities"
+        "unmetTitle": "Condition unmet: {text}",
+        "warnTitle": "Condition warning: {text}",
+        "formation": "Deployed {have}/{need}",
+        "withBench": "With reserves {have}/{need}"
       },
       "keywords": {
         "all": "All",

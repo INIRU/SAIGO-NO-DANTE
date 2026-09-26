@@ -5,7 +5,7 @@ import { useLocale, useTranslations } from 'next-intl'
 import { Search } from 'lucide-react'
 import type { RunState, RunAction } from '@/lib/planner/run-types'
 import type { ThemeData, GiftData } from '@/lib/planner/types'
-import { getGiftActivationConditionStatus, getGiftConditionCountsForSlots } from '@/lib/planner/gift-condition-status'
+import { getGiftActivationConditionStatus, getGiftConditionCountsForSlots, type GiftConditionStatus } from '@/lib/planner/gift-condition-status'
 import { getGiftsFromThemes, themeExclusiveGiftIds } from '@/lib/planner/fusion'
 import FloorGiftPickerModal from '@/components/planner/FloorGiftPickerModal'
 import GiftCard from '@/components/ui/GiftCard'
@@ -38,7 +38,7 @@ export default function GiftCheckSection({ state, dispatch, gifts, giftMap, them
   )
 
   // 조건 상태 체크 (GiftPlanTab 패턴)
-  function getConditionStatus(gift: GiftData): { level: 'warn' | 'unmet'; text: string } | null {
+  function getConditionStatus(gift: GiftData): GiftConditionStatus | null {
     return getGiftActivationConditionStatus({ gift, ...conditionCounts })
   }
 

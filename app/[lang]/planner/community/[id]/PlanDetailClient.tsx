@@ -38,11 +38,10 @@ import GiftCard from '@/components/ui/GiftCard'
 import KeywordIcon from '@/components/ui/KeywordIcon'
 import { localizeDeckKeyword } from '@/components/decks/decks-types'
 import { STORAGE_BASE } from '@/lib/constants/game'
-import { normalizeThemeKeyword } from '@/lib/constants/keywords'
 import { DEFAULT_AVATAR_URL } from '@/lib/constants/game'
 import { getLocalizedName } from '@/lib/i18n/localize'
 import type { SupportedLang } from '@/lib/i18n/types'
-import { getGiftConditionCountsForSlots } from '@/lib/planner/gift-condition-status'
+import { getGiftActivationConditionStatus, getGiftConditionCountsForSlots, type GiftConditionStatus } from '@/lib/planner/gift-condition-status'
 import {
   getSelectedBlessingCost,
   getSelectedBlessingLevels,
@@ -291,7 +290,7 @@ function Section({ id, children }: { id: string; children: ReactNode }) {
 
 function GiftGrid({ gifts, getCondition, onGiftClick, locale }: {
   gifts: { gift: GiftData; enhance: number }[]
-  getCondition?: (gift: GiftData) => { level: 'warn' | 'unmet'; text: string } | null
+  getCondition?: (gift: GiftData) => GiftConditionStatus | null
   onGiftClick?: (gift: GiftData, enhance: number) => void
   locale: SupportedLang
 }) {
@@ -474,7 +473,7 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
   }, [finalGifts])
 
   // Condition checks for final gifts
-  const { formationKeywordCounts: formationKwCounts, allKeywordCounts: allKwCounts } = useMemo(() => {
+  const conditionCounts = useMemo(() => {
     const conditionSlots: PlannerIdentitySlot[] = deck
       .filter(slot => slot.identity_id && slot.sinner_id)
       .map(slot => ({
@@ -491,23 +490,9 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
     return getGiftConditionCountsForSlots(conditionSlots, identities)
   }, [deck, identities])
 
-  function getConditionStatus(gift: GiftData): { level: 'warn' | 'unmet'; text: string } | null {
-    const cond = gift.activation_condition
-    if (!cond || !cond.count) return null
-    let fHave = 0, aHave = 0, label = ''
-    if (cond.type === 'keyword' && cond.keyword) {
-      const keyword = normalizeThemeKeyword(cond.keyword)
-      fHave = formationKwCounts[keyword] ?? 0
-      aHave = allKwCounts[keyword] ?? 0
-      label = cond.keyword
-    } else if (cond.type === 'multi_keyword' && cond.keywords) {
-      fHave = cond.keywords.reduce((s, kw) => s + (formationKwCounts[normalizeThemeKeyword(kw)] ?? 0), 0)
-      aHave = cond.keywords.reduce((s, kw) => s + (allKwCounts[normalizeThemeKeyword(kw)] ?? 0), 0)
-      label = cond.keywords.join('+')
-    } else { return null }
-    if (fHave >= cond.count) return null
-    if (aHave >= cond.count) return { level: 'warn', text: `${label} ${fHave}/${cond.count}` }
-    return { level: 'unmet', text: `${label} ${aHave}/${cond.count}` }
+  // Same check as the planner: keyword and affiliation conditions against the deployed slots and the bench.
+  function getConditionStatus(gift: GiftData): GiftConditionStatus | null {
+    return getGiftActivationConditionStatus({ gift, ...conditionCounts })
   }
 
   // 조회수 증가 (페이지 로드 시 1회)
