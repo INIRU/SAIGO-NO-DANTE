@@ -2011,7 +2011,8 @@
       "plannedThemes": "よく選ばれるテーマパック",
       "plansWith": "この人格のプラン",
       "rankingFielded": "編成",
-      "rankingBench": "待機"
+      "rankingBench": "待機",
+      "sinnerLeadersBasisAll": "待機を含む、その囚人が入った投稿のうちの割合"
     },
     "sampleValid": "有効な編成",
     "sampleDecks": "デッキ",
