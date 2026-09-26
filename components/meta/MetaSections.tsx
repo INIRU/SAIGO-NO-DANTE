@@ -13,6 +13,7 @@ import type { SupportedLang } from '@/lib/i18n/types'
 import GiftCard from '@/components/ui/GiftCard'
 import ThemePackCard from '@/components/ui/ThemePackCard'
 import EgoDisplayCard from '@/components/sinners/EgoDisplayCard'
+import { Toggle } from '@/components/tools/LunacyControls'
 import DonutChart from './DonutChart'
 import styles from '@/styles/components/MetaAnalysis.module.css'
 
@@ -36,23 +37,31 @@ function Share({ value }: { value: number }) {
   return <span className={styles.share}>{value.toFixed(1)}<small>%</small></span>
 }
 
-/** Each sinner's most fielded identity, as a share of the posts that field that sinner. */
+/** Each sinner's most used identity, as a share of the posts that field that sinner (bench included on request). */
 export function SinnerLeaders({ data, onSelect }: { data: MetaData; onSelect: (identityId: string) => void }) {
   const t = useTranslations('meta.analysis')
   const rootT = useTranslations()
   const name = useName()
+  const [formationOnly, setFormationOnly] = useState(true)
+  const fielded = new Set(data.battleIdentityStats.map(row => row.identity_id))
+  const merged = new Map<string, IdentityStat>(data.battleIdentityStats.map(row => [row.identity_id, row]))
+  if (!formationOnly) for (const row of data.supportIdentityStats) {
+    const existing = merged.get(row.identity_id)
+    merged.set(row.identity_id, existing ? { ...existing, count: existing.count + row.count } : row)
+  }
   const bySinner = new Map<string, IdentityStat[]>()
-  for (const row of data.battleIdentityStats) bySinner.set(row.sinner_id, [...bySinner.get(row.sinner_id) ?? [], row])
+  for (const row of [...merged.values()].sort((a, b) => b.count - a.count || a.identity_id.localeCompare(b.identity_id))) bySinner.set(row.sinner_id, [...bySinner.get(row.sinner_id) ?? [], row])
   const sinners = SINNER_SLUGS.filter(slug => bySinner.has(slug))
   if (!sinners.length) return null
   return <section className={styles.panel} aria-labelledby="sinner-leaders-heading" data-meta-sinners>
-    <div className={styles.sectionHead}><h3 id="sinner-leaders-heading">{t('sinnerLeaders')}</h3><span>{t('sinnerLeadersBasis')}</span></div>
+    <div className={styles.sectionHead}><h3 id="sinner-leaders-heading">{t('sinnerLeaders')}</h3><span>{t(formationOnly ? 'sinnerLeadersBasis' : 'sinnerLeadersBasisAll')}</span>
+      <Toggle label={t('formationOnly')} checked={formationOnly} onChange={setFormationOnly} showState /></div>
     <ul className={styles.sinnerGrid}>{sinners.map(slug => {
       const rows = bySinner.get(slug)!
       const total = rows.reduce((sum, row) => sum + row.count, 0)
       const [top, ...rest] = rows
       return <li key={slug}>
-        <button type="button" className={styles.sinnerCell} onClick={() => onSelect(top.identity_id)} aria-label={rootT('sinner.' + slug) + ' ' + name(top) + ' ' + (top.count / total * 100).toFixed(1) + '%'}>
+        <button type="button" className={styles.sinnerCell} disabled={!fielded.has(top.identity_id)} onClick={() => onSelect(top.identity_id)} aria-label={rootT('sinner.' + slug) + ' ' + name(top) + ' ' + (top.count / total * 100).toFixed(1) + '%'}>
           <span className={styles.sinnerHead}><Image src={getSinnerLogoUrl(slug)} alt="" width={20} height={20} className={styles.sinnerLogo} />{rootT('sinner.' + slug)}<em>{t('count', { count: total })}</em></span>
           <span className={styles.sinnerTop}>
             <Portrait row={top} size={64} className={styles.sinnerPortrait} />
