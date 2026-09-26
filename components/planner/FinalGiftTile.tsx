@@ -1,5 +1,6 @@
 'use client'
 
+import { giftConditionKey } from '@/lib/planner/gift-condition-status'
 import { memo, useRef } from 'react'
 import Image from 'next/image'
 import { X } from 'lucide-react'
@@ -24,7 +25,7 @@ const LEVELS = [
 type Props = {
   gift: GiftData
   entry: FinalGift
-  conditionStatus?: { level: 'warn' | 'unmet'; text: string } | null
+  conditionStatus?: import('@/lib/planner/gift-condition-status').GiftConditionStatus | null
   onEnhance: (entry: FinalGift, level: number) => void
   onRemove: (giftId: number) => void
 }
@@ -136,5 +137,5 @@ export default memo(function FinalGiftTile({ gift, entry, conditionStatus, onEnh
     </li>
   )
 }, (prev, next) => prev.onEnhance === next.onEnhance && prev.onRemove === next.onRemove &&
-  prev.conditionStatus?.level === next.conditionStatus?.level && prev.conditionStatus?.text === next.conditionStatus?.text &&
+  giftConditionKey(prev.conditionStatus) === giftConditionKey(next.conditionStatus) &&
   sameFields(prev.gift, next.gift) && sameFields(prev.entry, next.entry))

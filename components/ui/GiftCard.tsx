@@ -8,6 +8,8 @@ import styles from './GiftCard.module.css'
 import { useLocale, useTranslations } from 'next-intl'
 import { X } from 'lucide-react'
 import { getGameUiAsset } from '@/lib/utils/game-ui'
+import type { GiftConditionStatus } from '@/lib/planner/gift-condition-status'
+import { GiftConditionLine, GiftConditionMark } from './GiftCondition'
 
 // ── Props ────────────────────────────────────────────────────────────────────
 
@@ -34,7 +36,7 @@ interface GiftCardProps {
   onRemove?: () => void
   // ── Condition status ──
   warning?: string
-  conditionStatus?: { level: 'warn' | 'unmet'; text: string } | null
+  conditionStatus?: GiftConditionStatus | null
   /** 조건 덮개 아래 설명 줄. 촘촘한 격자에서는 꺼서 줄 높이를 맞춘다(설명은 덮개 title에 남는다). */
   conditionDetail?: boolean
 }
@@ -141,7 +143,6 @@ const GiftCard = memo(function GiftCard({
   warning,
 }: GiftCardProps) {
   const locale = useLocale()
-  const t = useTranslations('planner.giftTab.conditionStatus')
   const isInsert = variant === 'insert'
   const displayName = locale === 'en'
     ? gift.name_en || gift.name
@@ -213,29 +214,7 @@ const GiftCard = memo(function GiftCard({
           </div>
         )}
 
-        {/* Condition overlay */}
-        {!isInsert && conditionStatus && (
-          <div
-            title={conditionStatus.level === 'unmet'
-              ? t('unmetTitle', { text: conditionStatus.text })
-              : t('warnTitle', { text: conditionStatus.text })}
-            style={{
-              position: 'absolute', inset: 0, zIndex: 18,
-              background: conditionStatus.level === 'unmet' ? 'rgba(0,0,0,0.55)' : 'rgba(0,0,0,0.3)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              pointerEvents: 'auto', cursor: 'help',
-            }}
-          >
-            <span style={{
-              fontSize: '0.5rem', fontWeight: 700,
-              color: conditionStatus.level === 'unmet' ? '#ef4444' : '#e8b030',
-              textShadow: '0 0 0.25rem rgba(0,0,0,0.9)',
-              textAlign: 'center', lineHeight: 1.3, padding: '0 0.125rem',
-            }}>
-              {conditionStatus.level === 'unmet' ? t('unmetLabel') : t('warnLabel')}
-            </span>
-          </div>
-        )}
+        {!isInsert && conditionStatus && <GiftConditionMark status={conditionStatus} />}
 
         {/* Hover glow */}
         <div className={styles.glow} style={{
@@ -269,11 +248,7 @@ const GiftCard = memo(function GiftCard({
           {displayName}
         </p>
       )}
-      {!isInsert && conditionStatus && conditionDetail && (
-        <p style={{ fontSize: '0.5rem', color: conditionStatus.level === 'unmet' ? '#ef4444' : '#e8b030', textAlign: 'center', lineHeight: 1.2, marginTop: '0.0625rem' }}>
-          {conditionStatus.text}
-        </p>
-      )}
+      {!isInsert && conditionStatus && conditionDetail && <GiftConditionLine status={conditionStatus} />}
     </button>
   )
 })

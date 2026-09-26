@@ -1302,8 +1302,10 @@
       "conditionStatus": {
         "unmetLabel": "조건 미달",
         "warnLabel": "조건 주의",
-        "unmetTitle": "조건 미달: {text} - 편성+대기 포함해도 부족",
-        "warnTitle": "조건 주의: {text} - 편성(1-7)만으로는 부족, 대기 포함 시 충족"
+        "unmetTitle": "조건 미달: {text}",
+        "warnTitle": "조건 주의: {text}",
+        "formation": "편성 {have}/{need}",
+        "withBench": "대기 포함 {have}/{need}"
       },
       "keywords": {
         "all": "전체",

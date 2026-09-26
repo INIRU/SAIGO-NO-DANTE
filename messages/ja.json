@@ -1302,8 +1302,10 @@
       "conditionStatus": {
         "unmetLabel": "条件未達",
         "warnLabel": "条件注意",
-        "unmetTitle": "条件未達: {text} - 全人格でも不足",
-        "warnTitle": "条件注意: {text} - 編成(1-7)のみでは不足、控え込みで達成"
+        "unmetTitle": "条件未達: {text}",
+        "warnTitle": "条件注意: {text}",
+        "formation": "編成 {have}/{need}",
+        "withBench": "待機込み {have}/{need}"
       },
       "keywords": {
         "all": "全て",
