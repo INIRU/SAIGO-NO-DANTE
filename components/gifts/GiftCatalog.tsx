@@ -204,7 +204,7 @@ export interface GiftCatalogCardProps {
   disabled?: boolean
   title?: string
   ariaLabel?: string
-  conditionStatus?: { level: 'warn' | 'unmet'; text: string } | null
+  conditionStatus?: import('@/lib/planner/gift-condition-status').GiftConditionStatus | null
   conditionDetail?: boolean
   onRemove?: () => void
 }
@@ -707,8 +707,8 @@ export default function GiftCatalog({
                   className={compact ? 'gift-grid [&_.gift-card:hover]:[transform:none]!' : 'gift-grid'}
                   style={{
                     display: 'grid',
-                    gridTemplateColumns: `repeat(auto-fill, minmax(${compact ? '3rem' : '3.625rem'}, 1fr))`,
-                    gap: compact ? '0.25rem' : '0.5rem 0.375rem',
+                    gridTemplateColumns: `repeat(auto-fill, minmax(${compact ? '4.5rem' : '3.625rem'}, 1fr))`,
+                    gap: '0.5rem 0.375rem',
                   }}
                 >
                   <GiftGrid onSelect={selectGift} lang={lang} compact={compact} markedLabel={markedLabel}

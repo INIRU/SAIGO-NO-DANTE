@@ -437,7 +437,8 @@ function extractActivationCondition(effect: string | null, keyword: string): Gif
     return {
       type: 'affiliation',
       count: Number(affiliationMatch[2]),
-      affiliation: affiliationMatch[1].trim(),
+      // The lazy group can start at a bullet or clause before the name ("- 턴 시작 시 중지 소속 인격이 3인 이상").
+      affiliation: affiliationMatch[1].replace(/^[-·\s]+/, '').replace(/^.*\s시\s+/, '').trim(),
     }
   }
 

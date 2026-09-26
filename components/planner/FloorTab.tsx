@@ -46,8 +46,7 @@ import NoteDocumentEditor from '@/components/notes/NoteDocumentEditor'
 import type { NoteFormationMember } from '@/lib/notes/assets'
 import { getLocalizedName } from '@/lib/i18n/localize'
 import type { SupportedLang } from '@/lib/i18n/types'
-import { normalizeThemeKeyword } from '@/lib/constants/keywords'
-import { getGiftActivationConditionStatus, getGiftConditionCountsForSlots } from '@/lib/planner/gift-condition-status'
+import { getGiftActivationConditionStatus, getGiftConditionCountsForSlots, giftConditionKey } from '@/lib/planner/gift-condition-status'
 
 // The descent rail: its colour marks which stretch of the dungeon a floor belongs to.
 const LADDER_SEGMENTS = [
@@ -276,8 +275,7 @@ export default function FloorTab({ state, dispatch, themes, gifts, recipes, gift
   const conditionOf = useCallback((gift: GiftData | undefined) => gift ? getGiftActivationConditionStatus({
     gift,
     ...conditionCounts,
-    formatKeywordLabel: keyword => giftKeywordLabel(normalizeThemeKeyword(keyword), locale),
-  }) : null, [conditionCounts, locale])
+  }) : null, [conditionCounts])
 
   const finalFloorGifts = useMemo(() => {
     return finalEntries
@@ -401,7 +399,7 @@ export default function FloorTab({ state, dispatch, themes, gifts, recipes, gift
     const blocked = blockedFinalMaterialIds.has(id)
     const source = finalEntryById.get(id)?.source
     const conditionStatus = blocked ? null : conditionOf(giftMap.get(id))
-    const key = `${id}|${blocked ? blockedBy.get(id) ?? '' : '-'}|${source ?? ''}|${conditionStatus?.level ?? ''}${conditionStatus?.text ?? ''}`
+    const key = `${id}|${blocked ? blockedBy.get(id) ?? '' : '-'}|${source ?? ''}|${giftConditionKey(conditionStatus)}`
     const cached = cardPropsCache.get(key)
     if (cached) return cached
     const name = getLocalizedName({ name_kr: gift.name, name_en: gift.name_en, name_jp: gift.name_jp }, locale)

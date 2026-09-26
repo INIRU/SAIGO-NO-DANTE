@@ -7,38 +7,18 @@ import { useTranslations } from 'next-intl'
 import BaseModal from '@/components/ui/BaseModal'
 import GiftArtwork, { type GiftArtworkGift } from '@/components/ui/GiftArtwork'
 import GiftCard, { GiftEnhanceMark, GiftEnhancePicker } from '@/components/ui/GiftCard'
+import { useGiftConditionText as useConditionStatusText } from '@/components/ui/GiftCondition'
 import ImageWithFallback from '@/components/ui/ImageWithFallback'
 import KeywordChip from '@/components/ui/KeywordChip'
 import { useFormatSkillDesc } from '@/components/sinners/KeywordTooltip'
 import { getGiftKeywordColor } from '@/lib/constants/gift'
 import { getThemePackCompositeImageUrl, getThemePackVisualConfig } from '@/lib/data/theme-pack-visuals'
-import { getLocalizedAffiliation, getLocalizedName } from '@/lib/i18n/localize'
-import { translations } from '@/lib/i18n/translations'
+import { getLocalizedAffiliation, getLocalizedName, localizeGiftKeyword } from '@/lib/i18n/localize'
 import type { SupportedLang } from '@/lib/i18n/types'
 import type { GiftConditionStatus } from '@/lib/planner/gift-condition-status'
 import { createGiftRefSplitter, type GiftRefTarget } from '@/lib/mirror-dungeon/gift-refs'
 
-const KEYWORD_TRANSLATION_KEYS: Record<string, keyof typeof translations> = {
-  '화상': 'mirrorDungeon.filter.combustion',
-  '출혈': 'mirrorDungeon.filter.laceration',
-  '진동': 'mirrorDungeon.filter.vibration',
-  '파열': 'mirrorDungeon.filter.burst',
-  '침잠': 'mirrorDungeon.filter.sinking',
-  '호흡': 'mirrorDungeon.filter.breath',
-  '충전': 'mirrorDungeon.filter.charge',
-  '참격': 'mirrorDungeon.filter.slash',
-  '관통': 'mirrorDungeon.filter.pierce',
-  '타격': 'mirrorDungeon.filter.blunt',
-  '공통': 'mirrorDungeon.filter.common',
-}
-
-/** Gift keyword ('화상', '공통', ...) in the page language. */
-export function localizeGiftKeyword(keyword: string, lang: SupportedLang): string {
-  // DB rows use variants such as '공통 ' or '공통(…)'; the catalog groups them all under 공통.
-  const key = KEYWORD_TRANSLATION_KEYS[keyword.startsWith('공통') ? '공통' : keyword.trim()]
-  const entry = key ? (translations[key] as Record<string, string>) : null
-  return entry?.[lang] ?? keyword
-}
+export { localizeGiftKeyword }
 
 export function localizedGiftText(lang: SupportedLang, ko: string | null | undefined, en?: string | null, ja?: string | null): string | null {
   if (lang === 'en' && en) return en
@@ -217,6 +197,7 @@ export default function GiftDetailModal({ gift, lang, onClose, initialLevel = 0,
   const effectColor = level === 2 ? '#e8b030' : level === 1 ? '#d8b878' : '#c8b898'
   const kwColor = getGiftKeywordColor(gift.keyword ?? null)
   const status = gift.conditionStatus
+  const conditionText = useConditionStatusText()
   const statusColor = status?.level === 'unmet' ? '#ef4444' : '#e8b030'
   // Reward and exclusive packs come first; a long pool list shows six chips and a "+N" that expands.
   const [showAllThemes, setShowAllThemes] = useState(false)
@@ -305,7 +286,7 @@ export default function GiftDetailModal({ gift, lang, onClose, initialLevel = 0,
               {status && (
                 <div className="mt-2 rounded-sm border-l-2 px-3 py-2" style={{ borderColor: statusColor, background: status.level === 'unmet' ? 'rgba(239,68,68,0.08)' : 'rgba(232,176,48,0.08)' }}>
                   <p style={{ fontSize: '0.8125rem', color: statusColor }}>
-                    {status.level === 'unmet' ? t('conditionUnmet') : t('conditionWarn')}: {status.text}
+                    {status.level === 'unmet' ? t('conditionUnmet') : t('conditionWarn')}: {conditionText(status).summary}
                   </p>
                   <p className="mt-0.5" style={{ fontSize: '0.75rem', color: '#9c8b73' }}>
                     {status.level === 'unmet' ? t('unmetHint') : t('warnHint')}

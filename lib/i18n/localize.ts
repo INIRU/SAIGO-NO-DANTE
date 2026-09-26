@@ -1,4 +1,5 @@
 import type { SupportedLang } from './types'
+import { translations } from './translations'
 
 interface LocalizableEntity {
   name_kr: string
@@ -15,6 +16,13 @@ export function getLocalizedName(entity: LocalizableEntity, lang: SupportedLang)
 /* ── Affiliation localization ── */
 
 const AFFILIATION_MAP: Record<string, { en: string; ja: string }> = {
+  // Names from the game's UnitKeyword localization (LimbusAssets, 2026-09-24).
+  '시지프': { en: 'Sisyphe', ja: 'シーシュポス' },
+  '르누아르': { en: 'Le Noir', ja: 'ル・ノワール' },
+  '르루주': { en: 'Le Rouge', ja: 'ル・ルージュ' },
+  '7대 패밀리': { en: 'Le Sette Famiglie', ja: '七大ファミリー' },
+  'S사': { en: 'S Corp.', ja: 'S社' },
+  'LCD': { en: 'LCD', ja: 'LCD' },
   '해결사': { en: 'Fixer', ja: 'フィクサー' },
   '가씨 가문': { en: 'Jia Family', ja: 'ジア家' },
   '갈고리 사무소': { en: 'Hook Office', ja: '鈎事務所' },
@@ -87,8 +95,8 @@ const AFFILIATION_MAP: Record<string, { en: string; ja: string }> = {
   'R사': { en: 'R Corp.', ja: 'R社' },
   'T사': { en: 'T Corp.', ja: 'T社' },
   'W사': { en: 'W Corp.', ja: 'W社' },
-  '구 G사': { en: 'Former G Corp.', ja: '旧G社' },
-  '구 L사': { en: 'Former L Corp.', ja: '旧L社' },
+  '구 G사': { en: 'Old G Corp.', ja: '旧G社' },
+  '구 L사': { en: 'Old L Corp.', ja: '旧L社' },
 }
 
 export function getLocalizedAffiliation(affiliation: string, lang: SupportedLang): string {
@@ -125,4 +133,28 @@ export function getLocalizedKeywordDesc(koreanDesc: string, info: LocalizableKey
   if (lang === 'en' && info.descEn) return info.descEn
   if (lang === 'ja' && info.descJp) return info.descJp
   return koreanDesc
+}
+
+/* ── Gift keyword localization ── */
+
+const KEYWORD_TRANSLATION_KEYS: Record<string, keyof typeof translations> = {
+  '화상': 'mirrorDungeon.filter.combustion',
+  '출혈': 'mirrorDungeon.filter.laceration',
+  '진동': 'mirrorDungeon.filter.vibration',
+  '파열': 'mirrorDungeon.filter.burst',
+  '침잠': 'mirrorDungeon.filter.sinking',
+  '호흡': 'mirrorDungeon.filter.breath',
+  '충전': 'mirrorDungeon.filter.charge',
+  '참격': 'mirrorDungeon.filter.slash',
+  '관통': 'mirrorDungeon.filter.pierce',
+  '타격': 'mirrorDungeon.filter.blunt',
+  '공통': 'mirrorDungeon.filter.common',
+}
+
+/** Gift keyword ('화상', '공통', ...) in the page language. */
+export function localizeGiftKeyword(keyword: string, lang: SupportedLang): string {
+  // DB rows use variants such as '공통 ' or '공통(…)'; the catalog groups them all under 공통.
+  const key = KEYWORD_TRANSLATION_KEYS[keyword.startsWith('공통') ? '공통' : keyword.trim()]
+  const entry = key ? (translations[key] as Record<string, string>) : null
+  return entry?.[lang] ?? keyword
 }
