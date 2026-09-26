@@ -1235,7 +1235,16 @@
         "uptieGroup": "동기화 단계",
         "resetLcb": "LCB 인격으로 되돌리기",
         "resetOrder": "편성 순서 초기화",
-        "resetOrderDone": "편성 순서를 초기화했어요"
+        "resetOrderDone": "편성 순서를 초기화했어요",
+        "codeLabel": "편성 코드",
+        "codePlaceholder": "편성 코드 붙여넣기",
+        "codeApply": "불러오기",
+        "codeInvalid": "올바른 편성 코드가 아니에요",
+        "codeApplied": "편성 코드를 불러왔어요",
+        "codeReplaceTitle": "편성을 바꿀까요?",
+        "codeReplaceMessage": "지금 편성한 인격과 E.G.O를 코드의 편성으로 바꿔요.",
+        "codeReplaceConfirm": "바꾸기",
+        "codeCancel": "취소"
       },
       "ego": {
         "modalTitle": "E.G.O 선택",

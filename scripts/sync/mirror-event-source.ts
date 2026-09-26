@@ -23,6 +23,43 @@ export function sourceResults(event: SourceEvent) {
   return (event.personalityEvent?.eventResults ?? []).flatMap((outcome, index) =>
     (outcome.eventResultDataList ?? []).map(result => ({ optionIndex: index, outcome: outcome.eventResult.toLowerCase(), result })))
 }
+/** Theme map steps whose numbers are event IDs: a fixed floor's own events, and the curse events that replace random ones. */
+const EVENT_STEPS = new Set(['FILL_EMPTY_EVENT', 'OVERRIDE_RANDOM_EVENT_BY_CURSE_EVENT'])
+export function sequenceEventIds(sequence: unknown): number[] {
+  if (!Array.isArray(sequence)) return []
+  return sequence.flatMap(step => step && typeof step === 'object' && EVENT_STEPS.has((step as { type?: unknown }).type as string) &&
+    Array.isArray((step as { numberList?: unknown }).numberList)
+    ? (step as { numberList: unknown[] }).numberList.filter((id): id is number => Number.isInteger(id) && (id as number) > 0) : [])
+}
+/** Unit keys of "SpecificUnit_*" judgment corrections (game spelling) → character IDs in *_Characters. */
+const SINNER_UNITS: Record<string, number> = { Yisang: 1, Faust: 2, Donquixote: 3, Ryosyu: 4, Meursault: 5, Honglu: 6,
+  Heathcliff: 7, Ishmael: 8, Rodion: 9, Sinclair: 10, Outis: 11, Gregor: 12 }
+export function sinnerCharacterId(key: string): number {
+  const id = SINNER_UNITS[key]
+  if (!id) throw Error(`Unknown sinner key ${key}`)
+  return id
+}
+/**
+ * Events the game repeats under another ID with nothing else different (every source field and every localized text):
+ * each copy → the lowest ID of its group. 971070–971072 (가시춘 학생의 수업 복습) let one fixed floor hold the event up to
+ * three times; the site shows it once. Anything that differs, including a continuation, is a separate event.
+ */
+export function identicalEventCopies(events: readonly SourceEvent[], textOf: (id: number) => string): Map<number, number> {
+  const canonical = (value: unknown): unknown => Array.isArray(value) ? value.map(canonical)
+    : value && typeof value === 'object' ? Object.fromEntries(Object.keys(value).sort().map(key => [key, canonical((value as Record<string, unknown>)[key])])) : value
+  const lowest = new Map<string, number>()
+  const keyOf = (event: SourceEvent) => { const { id: _id, ...rest } = event; return JSON.stringify(canonical(rest)) + '\u0000' + textOf(event.id) }
+  for (const event of events) {
+    const key = keyOf(event), seen = lowest.get(key)
+    if (seen === undefined || event.id < seen) lowest.set(key, event.id)
+  }
+  const copies = new Map<number, number>()
+  for (const event of events) {
+    const first = lowest.get(keyOf(event))!
+    if (first !== event.id) copies.set(event.id, first)
+  }
+  return copies
+}
 export function walkEventGraph(events: ReadonlyMap<number, SourceEvent>, entries: ReadonlySet<number>) {
   const reachable = new Set<number>(), edges: [number, number][] = []
   const queue = [...entries]
