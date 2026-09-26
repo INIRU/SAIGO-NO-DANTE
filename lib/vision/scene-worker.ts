@@ -2,8 +2,8 @@ import * as ort from 'onnxruntime-web/webgpu'
 import { SCENE_SIZE, sceneFrameToTensor } from './preprocess'
 import { decodeEmbeddingIndex, matchEventEmbedding, matchGiftEmbedding, type EmbeddingIndex, type VisualMatch, type VisualReference } from './embedding-match'
 import { popupIconBox, type PopupLabelBox } from './popup-detect'
-import { acceptedIcon, heldSlotRead, iconTemplate, plateShaped, rankIcons, rankIconsInRegion, type IconTemplate } from './icon-match'
-import { fusionSlotRegions, fusionSlotRegionsFromAnchors, fusionWheelRegions, type FusionAnchors, type FusionSlotRead, type WheelAnchors } from './fusion-evidence'
+import { acceptedIcon, heldSlotRead, iconTemplate, mergeRankedGroups, plateShaped, rankIcons, rankIconsInRegion, type IconTemplate } from './icon-match'
+import { fusionSlotRegions, fusionSlotRegionsFromAnchors, fusionWheelRegions, vestigeGroup, type FusionAnchors, type FusionSlotRead, type WheelAnchors } from './fusion-evidence'
 
 type Request = { type: 'init'; giftReferences?: VisualReference[]; eventReferences?: VisualReference[] } |
   { type: 'infer'; frame: ImageBitmap } | { type: 'popup-icon'; requestId: number; frame: ImageBitmap; box: PopupLabelBox } |
@@ -268,8 +268,8 @@ self.onmessage = async (event: MessageEvent<Request>) => {
         const signature = slotSignature(sample, region)
         const cached = cachedSlot(signature, region.size, held.key)
         if (cached !== undefined) return cached
-        const read = heldSlotRead(rankIconsInRegion(sample, region, coarseTemplates, fineTemplates),
-          held.templates.length ? rankIconsInRegion(sample, region, held.templates, fineTemplates) : [])
+        const read = heldSlotRead(mergeRankedGroups(rankIconsInRegion(sample, region, coarseTemplates, fineTemplates), vestigeGroup),
+          held.templates.length ? mergeRankedGroups(rankIconsInRegion(sample, region, held.templates, fineTemplates), vestigeGroup) : [])
         rememberSlot(signature, region.size, held.key, read)
         return read
       })

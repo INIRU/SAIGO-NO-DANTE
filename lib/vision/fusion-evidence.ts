@@ -3,6 +3,7 @@
  * shows the chosen materials in a fixed row of M slots: 3 in a normal shop, 5 in a special shop. Only materials
  * identified in those slots are ever removed.
  */
+import { AUTO_ACQUIRE_EXCLUDED_GIFT_IDS } from './popup-evidence'
 
 const normalized = (text: string) => text.normalize('NFKC').replace(/\s+/g, '')
 
@@ -211,6 +212,14 @@ export type FusionSlotRead = { id: string; score: number; margin: number } | { b
 export interface FusionRead { view: 'dialog' | 'wheel'; slots: FusionSlotRead[]; observedAt: number }
 
 const identified = (slot: FusionSlotRead): slot is { id: string; score: number; margin: number } => !!slot && 'id' in slot
+
+/**
+ * The five vestiges (어두운·아스라한·빛나는·찬란한·달의 잔영) share one bottle and differ only by grade, so a slot never tells
+ * them apart (0.04–0.07 leads in the 2026-09-26 samples). They are never recorded in the inventory, so a fusion only needs
+ * to know that a slot holds a vestige: all five read as FUSION_VESTIGE_ID, and one fusion may use several.
+ */
+export const FUSION_VESTIGE_ID = '9991'
+export const vestigeGroup = (id: string) => AUTO_ACQUIRE_EXCLUDED_GIFT_IDS.has(id) ? FUSION_VESTIGE_ID : id
 /** One read is enough when the icon is well above acceptance, or far ahead of every other icon (0 wrong on labelled frames). */
 const strongRead = (slot: { score: number; margin: number }) =>
   (slot.score >= 0.85 && slot.margin >= 0.25) || (slot.score >= 0.75 && slot.margin >= 0.3)
@@ -275,8 +284,9 @@ function weaklySeen(reads: FusionRead[]): Map<string, number> {
  */
 export function fusionMaterials(reads: FusionRead[], count: number, capacity: number): string[] {
   // A gift is selected once: a read naming one gift in two slots is of something else (a texture read as the same icon).
+  // Vestiges are the exception: a player holds several and fuses them together.
   const plausible = reads.filter(read => {
-    const ids = read.slots.filter(identified).filter(weakRead).map(slot => slot.id)
+    const ids = read.slots.filter(identified).filter(weakRead).map(slot => slot.id).filter(id => id !== FUSION_VESTIGE_ID)
     return new Set(ids).size === ids.length
   })
   const wheelReads = plausible.filter(read => read.view === 'wheel'), dialogReads = plausible.filter(read => read.view === 'dialog')

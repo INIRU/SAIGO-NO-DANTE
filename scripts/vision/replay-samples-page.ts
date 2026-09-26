@@ -73,3 +73,23 @@ async function frame(url: string) {
 }
 
 Object.assign(globalThis, { replay: { init, frame, setGate: (on: boolean) => { (globalThis as { gate?: boolean }).gate = on } } })
+
+/** Full-frame OCR as the app's balanced mode requests it: text and word boxes in frame pixels. */
+async function recognize(url: string) {
+  const bitmap = await createImageBitmap(await (await fetch(url)).blob())
+  const size = { width: bitmap.width, height: bitmap.height }
+  const result = await call(ocr, { type: 'recognize', frame: bitmap, detSide: 1280, grid: 1, tileScale: 1 }, [bitmap]) as { text?: string; words?: unknown[] }
+  return { ...size, text: result.text ?? '', words: result.words ?? [] }
+}
+
+/** One fusion slot read (dialog slots or every wheel position) on the whole frame, as the scene worker answers the app. */
+async function fusion(url: string, request: Record<string, unknown>) {
+  const bitmap = await createImageBitmap(await (await fetch(url)).blob())
+  const message = request.type === 'fusion-wheel'
+    ? { ...request, frame: bitmap, origin: { x: 0, y: 0 }, scale: 1, frameSize: { width: bitmap.width, height: bitmap.height } }
+    : { ...request, frame: bitmap }
+  const result = await call(scene, message, [bitmap]) as { slots?: unknown[] }
+  return result.slots ?? []
+}
+
+Object.assign((globalThis as unknown as { replay: object }).replay, { recognize, fusion })
