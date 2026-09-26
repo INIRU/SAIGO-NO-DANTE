@@ -2,6 +2,8 @@
 
 현재 코드의 호스팅 설정은 Vercel, DB/Storage는 Supabase, 인증은 NextAuth Google OAuth다. 저장소가 있다고 서비스가 운영 중인 것은 아니다. 배포·도메인·DB 활성 상태를 각각 확인한다.
 
+Vercel은 `main` 브랜치만 자동 배포한다(`vercel.json`의 `git.deploymentEnabled`). PR 브랜치에는 미리보기 배포를 만들지 않으며, PR의 빌드·타입 검사는 GitHub Actions(`ci.yml`)가 맡는다. 화면 확인이 필요한 브랜치는 로컬 `npm run dev`나 `vercel deploy`로 따로 올린다.
+
 ## 환경
 
 로컬 .env.local과 배포 플랫폼에 현재 코드가 읽는 이름으로 설정한다. 실제 값은 Git에 넣지 않는다.
