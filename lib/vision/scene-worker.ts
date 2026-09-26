@@ -2,14 +2,14 @@ import * as ort from 'onnxruntime-web/webgpu'
 import { SCENE_SIZE, sceneFrameToTensor } from './preprocess'
 import { decodeEmbeddingIndex, matchEventEmbedding, matchGiftEmbedding, type EmbeddingIndex, type VisualMatch, type VisualReference } from './embedding-match'
 import { popupIconBox, type PopupLabelBox } from './popup-detect'
-import { acceptedIcon, iconTemplate, plateShaped, rankIcons, rankIconsInRegion, type IconTemplate } from './icon-match'
+import { acceptedIcon, heldSlotRead, iconTemplate, plateShaped, rankIcons, rankIconsInRegion, type IconTemplate } from './icon-match'
 import { fusionSlotRegions, fusionSlotRegionsFromAnchors, fusionWheelRegions, type FusionAnchors, type FusionSlotRead, type WheelAnchors } from './fusion-evidence'
 
 type Request = { type: 'init'; giftReferences?: VisualReference[]; eventReferences?: VisualReference[] } |
   { type: 'infer'; frame: ImageBitmap } | { type: 'popup-icon'; requestId: number; frame: ImageBitmap; box: PopupLabelBox } |
-  { type: 'fusion-slots'; requestId: number; frame: ImageBitmap; count: number; capacity: number; anchors?: FusionAnchors } |
+  { type: 'fusion-slots'; requestId: number; frame: ImageBitmap; count: number; capacity: number; anchors?: FusionAnchors; candidates?: string[] } |
   { type: 'fusion-wheel'; requestId: number; frame: ImageBitmap; capacity: number; origin: { x: number; y: number }; scale?: number;
-    frameSize: { width: number; height: number }; anchors?: WheelAnchors }
+    frameSize: { width: number; height: number }; anchors?: WheelAnchors; candidates?: string[] }
 type Response = { type: 'ready'; provider: 'webgpu' | 'wasm'; adapter: string } | { type: 'prediction'; label: string; confidence: number; gifts: VisualMatch[]; events: VisualMatch[] } |
   { type: 'popup-icon'; requestId: number; gifts: VisualMatch[] } |
   { type: 'fusion-slots'; requestId: number; slots: FusionSlotRead[] } | { type: 'icons'; count: number; ms: number } |
@@ -139,25 +139,35 @@ function sampler(frame: ImageBitmap) {
  * read, since the wheel changes one icon or only the cursor at a time. Bounded; the worker lives for one capture.
  */
 const SLOT_CACHE_SIZE = 48
-const slotCache: { signature: Float32Array; size: number; read: FusionSlotRead }[] = []
+const slotCache: { signature: Float32Array; size: number; pool: string; read: FusionSlotRead }[] = []
 function slotSignature(sample: ReturnType<typeof sampler>, region: { x: number; y: number; size: number }) {
   const pixels = sample(region.x, region.y, region.size * 1.5, 20)
   const values = new Float32Array(20 * 20 * 3)
   for (let index = 0; index < values.length; index++) values[index] = pixels[Math.floor(index / 3) * 4 + index % 3]
   return values
 }
-function cachedSlot(signature: Float32Array, size: number): FusionSlotRead | undefined {
+function cachedSlot(signature: Float32Array, size: number, pool: string): FusionSlotRead | undefined {
   for (const entry of slotCache) {
-    if (Math.abs(entry.size / size - 1) > 0.03) continue
+    if (entry.pool !== pool || Math.abs(entry.size / size - 1) > 0.03) continue
     let total = 0
     for (let index = 0; index < signature.length && total < 2 * signature.length; index++) total += Math.abs(entry.signature[index] - signature[index])
     if (total / signature.length < 2) return entry.read
   }
   return undefined
 }
-function rememberSlot(signature: Float32Array, size: number, read: FusionSlotRead) {
-  slotCache.unshift({ signature, size, read })
+function rememberSlot(signature: Float32Array, size: number, pool: string, read: FusionSlotRead) {
+  slotCache.unshift({ signature, size, pool, read })
   slotCache.length = Math.min(slotCache.length, SLOT_CACHE_SIZE)
+}
+// Templates of the gifts a fusion can use (held gifts and vestiges), rebuilt when that list changes.
+let heldPool: { key: string; loaded: number; templates: IconTemplate[] } = { key: '', loaded: 0, templates: [] }
+function heldTemplates(candidates: string[] | undefined) {
+  const key = Array.isArray(candidates) ? [...new Set(candidates.filter(id => typeof id === 'string'))].sort().join() : ''
+  if (key !== heldPool.key || heldPool.loaded !== coarseTemplates.length) {
+    const ids = new Set(key.split(','))
+    heldPool = { key, loaded: coarseTemplates.length, templates: key ? coarseTemplates.filter(template => ids.has(template.id)) : [] }
+  }
+  return heldPool
 }
 
 /**
@@ -251,15 +261,16 @@ self.onmessage = async (event: MessageEvent<Request>) => {
       }
       if (!Number.isSafeInteger(request.requestId) || !regions) throw new Error('Invalid fusion request')
       const sample = sampler(frame)
+      const held = heldTemplates(request.candidates)
       const slots = regions.map((region): FusionSlotRead => {
         if (blankSlot(sample, region)) return { blank: true }
         if (!coarseTemplates.length) return null
         const signature = slotSignature(sample, region)
-        const cached = cachedSlot(signature, region.size)
+        const cached = cachedSlot(signature, region.size, held.key)
         if (cached !== undefined) return cached
-        const [first, second] = rankIconsInRegion(sample, region, coarseTemplates, fineTemplates)
-        const read = first ? { id: first.id, score: first.score, margin: first.score - (second?.score ?? -1) } : null
-        rememberSlot(signature, region.size, read)
+        const read = heldSlotRead(rankIconsInRegion(sample, region, coarseTemplates, fineTemplates),
+          held.templates.length ? rankIconsInRegion(sample, region, held.templates, fineTemplates) : [])
+        rememberSlot(signature, region.size, held.key, read)
         return read
       })
       respond({ type: 'fusion-slots', requestId: request.requestId, slots })
