@@ -28,6 +28,22 @@
 - **런 시작 장면 라벨:** 장면 모델은 시작 기프트 화면을 `reward_choice`, 관측 화면을 `start_gift`, 확인 창 전반을 `sell`로 분류한다. 그래서 1층 시작 구간은 테마 선택 이후 장면(또는 0.8 이상의 `theme_select` 한 프레임)이 보일 때 끝난다.
 - **인식 개선 샘플:** 사용자가 설정에서 참여를 켠 경우만 보낸다(`lib/vision/assist-samples.ts`). 어시스트가 읽는 동작마다(합성 한 번 `fusion`, 기프트 획득 창 `popup:<에피소드>`, 판매 `sale`) 프레임 그룹을 브라우저에 둔다. 300ms마다 한 장을 보고 화면이 바뀐 장면만 JPEG(1280px)로 담으며, 동작 직전 3장이 앞에 붙고 그룹당 최근 45장까지 남긴다. 제대로 읽으면 그룹을 버리고, 실패하면 뒤 3장을 붙여 올린다. 20초 동안 다시 보지 못한 그룹은 버린다. 올릴 때는 `/api/assist/samples`가 장마다 서명된 업로드를 내주고 브라우저가 비공개 버킷에 직접 올린다(버킷은 JPEG 400KB까지만 받음). 참여 동의 키는 v2로 바뀌어 이전 참여자에게 다시 묻는다.
 - **획득 팝업 자리와 사전 해독 (2026-09-26):** 색 이름판은 1920×1080 게임 화면 기준 획득 팝업 자리(`POPUP_PLATE` 중심에서 110px 안, 폭 170~330px, 가로세로 1.8~2.45)에 있을 때만 읽는다(`acquisitionPlate`). 획득 팝업 샘플은 "기프트를 획득했습니다" 헤더를 읽었을 때만 올린다. GPU OCR은 이름판 줄을 기프트 이름 전체와 CTC 확률로 비교해(`ctcLexiconBest`, CRNN의 lexicon 해독) 1위가 2위보다 9 nat 이상 앞서고 greedy 경로보다 12 nat 이하로 모자라면 그 이름을 이름 읽기 하나로 더한다. 아이콘이나 다른 이름과 어긋나면 전처럼 판정을 보류한다.
+- **인식 보고 (2026-09-26):** 같은 참여 동의로, 캡처 한 번마다 무작위 세션 ID를 만들고 획득 팝업·합성·판매를 읽었는지(`read`) 보류했는지(`held`) 센다(`lib/vision/assist-report.ts`). 실행 중 컴패니언의 자동 기록 밖에서 인벤토리가 바뀌면 직접 고친 기록(`add`/`remove`, 자동으로 넣은 기프트를 지우면 `auto: true`)으로 남긴다. 캡처 종료·페이지 이탈·15분마다 `/api/assist/reports`가 `limbus.assist_reports`에 넣고 180일 뒤 지운다. 샘플 메타데이터의 `session`이 같은 세션을 가리키므로 고친 기록을 샘플 라벨로 쓴다. 조회:
+
+  ```sql
+  -- 동작별 인식률(최근 7일)
+  select a.key as action, sum((a.value->>'read')::int) as read, sum((a.value->>'held')::int) as held
+  from limbus.assist_reports r, jsonb_each(r.counts) a
+  where r.created_at > now() - interval '7 days' group by 1;
+  -- 직접 고친 기록: remove·auto=true는 오답, add는 누락
+  select c->>'op' as op, (c->>'auto')::boolean as auto, count(*)
+  from limbus.assist_reports r, jsonb_array_elements(r.corrections) c group by 1, 2;
+  -- 샘플 라벨: 같은 세션에서 샘플 직후 60초 안에 고친 기프트
+  select s.path, s.reason, c->>'op' as op, c->>'giftId' as gift
+  from limbus.assist_samples s join limbus.assist_reports r on r.session::text = s.meta->>'session',
+    jsonb_array_elements(r.corrections) c
+  where (c->>'clientAt')::bigint between (s.meta->>'clientAt')::bigint and (s.meta->>'clientAt')::bigint + 60000;
+  ```
 
 **평가 도구:**
 
