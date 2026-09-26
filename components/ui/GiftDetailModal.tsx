@@ -17,6 +17,18 @@ import { getLocalizedAffiliation, getLocalizedName, localizeGiftKeyword } from '
 import type { SupportedLang } from '@/lib/i18n/types'
 import type { GiftConditionStatus } from '@/lib/planner/gift-condition-status'
 import { createGiftRefSplitter, type GiftRefTarget } from '@/lib/mirror-dungeon/gift-refs'
+import { getGameUiAsset } from '@/lib/utils/game-ui'
+
+const CREDIT_ICON = getGameUiAsset('resources/md-credit')
+
+function Credits({ value }: { value: number }) {
+  return (
+    <dd className="inline-flex items-center gap-1 tabular-nums" style={{ color: '#e8dcc8', fontFamily: 'var(--font-title)', fontSize: '1.0625rem' }}>
+      <Image src={CREDIT_ICON} alt="" width={64} height={64} unoptimized className="size-[1.125rem] self-center" />
+      {value}
+    </dd>
+  )
+}
 
 export { localizeGiftKeyword }
 
@@ -257,10 +269,10 @@ export default function GiftDetailModal({ gift, lang, onClose, initialLevel = 0,
                   {gift.buyDisabled ? (
                     <div className="flex gap-1.5"><dt className="sr-only">{t('price')}</dt><dd style={{ color: '#e06a5a' }}>{t('notForSale')}</dd></div>
                   ) : gift.price != null && (
-                    <div className="flex items-baseline gap-1.5"><dt style={{ color: '#9c8b73' }}>{t('price')}</dt><dd className="tabular-nums" style={{ color: '#e8dcc8', fontFamily: 'var(--font-title)', fontSize: '1.0625rem' }}>{gift.price}</dd></div>
+                    <div className="flex items-center gap-1.5"><dt style={{ color: '#9c8b73' }}>{t('price')}</dt><Credits value={gift.price} /></div>
                   )}
                   {gift.sellPrice != null && (
-                    <div className="flex items-baseline gap-1.5"><dt style={{ color: '#9c8b73' }}>{t('sell')}</dt><dd className="tabular-nums" style={{ color: '#e8dcc8', fontFamily: 'var(--font-title)', fontSize: '1.0625rem' }}>{gift.sellPrice}</dd></div>
+                    <div className="flex items-center gap-1.5"><dt style={{ color: '#9c8b73' }}>{t('sell')}</dt><Credits value={gift.sellPrice} /></div>
                   )}
                 </dl>
               )}
