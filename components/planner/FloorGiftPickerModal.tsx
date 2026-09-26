@@ -55,9 +55,9 @@ export default function FloorGiftPickerModal({ open, title, floorGifts, allGifts
             <X size={18} />
           </button>
         </div>
-        {/* 위쪽 여백은 안쪽에: 기프트 목록의 고정 도구줄이 스크롤 상자 맨 위에 붙는다 */}
+        {/* 위쪽 여백은 안쪽에: 기프트 목록의 고정 도구줄이 스크롤 상자 맨 위에 붙는다(-1px: 소수점 위치에서 위로 목록이 한 줄 비치던 틈을 덮는다) */}
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pb-5">
-          <div className="pt-4" style={{ '--gift-catalog-bg': 'var(--bg-card)', '--gift-catalog-sticky-top': '0px', '--gift-catalog-min-h': '0px' } as React.CSSProperties}>
+          <div className="pt-4" style={{ '--gift-catalog-bg': 'var(--bg-card)', '--gift-catalog-sticky-top': '-1px', '--gift-catalog-min-h': '0px' } as React.CSSProperties}>
             <GiftCatalog compact gifts={catalog} getGiftKeywordIcon={giftKeywordIcon} filters={filters} selectedIds={selectedIds}
               toolbarEnd={toggle || undefined}
               onGiftClick={(gift: EgoGift) => { const data = byId.get(gift.id); if (data) onToggle(data) }} />
