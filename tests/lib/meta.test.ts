@@ -116,20 +116,34 @@ describe('meta pagination', () => {
 })
 
 
-it('attributes authored purposes, battle order and deduplicated equipped EGO to each identity', () => {
+it('attributes battle order, deck purpose and deduplicated equipped EGO to each identity', () => {
   const data = aggregate([
-    { ...post('one'), title: '화상 덱', keywords: ['화상', '화상', '출혈'] },
-    { ...post('two'), keywords: ['출혈'], identities: [{ identity_id: 'a', slot_order: 4 }] },
+    { ...post('one'), title: '화상 덱', content_type: '거굴철' },
+    { ...post('two'), identities: [{ identity_id: 'a', slot_order: 4 }] },
   ])
   const insight = data.identityInsights.a
   expect(insight.count).toBe(2)
   expect(insight.orders).toEqual({ '1': 1, '5': 1 })
-  expect(insight.keywords).toContainEqual({ keyword: '출혈', count: 2 })
-  expect(insight.keywords).toContainEqual({ keyword: '화상', count: 1 })
   expect(insight.egos).toHaveLength(1)
   expect(insight.egos[0]).toMatchObject({ ego_id: 'e1', count: 2 })
-  expect(insight.posts[0]).toMatchObject({ title: '화상 덱', keywords: ['화상', '출혈'] })
+  expect(insight.posts[0]).toMatchObject({ title: '화상 덱', usage: 'refractionRailway', combo: [] })
+  expect(insight.posts[1]).toMatchObject({ usage: 'none' })
   expect(data.identityInsights.c).toBeUndefined()
+})
+
+it('counts a keyword deck only from five deployed identities and keeps combos separate', () => {
+  const cast = Array.from({ length: 7 }, (_, i) => ({ ...identity('k' + i, 's' + i), skill_keyword_list: i < 5 ? ['화상', '진동'] : ['화상'] }))
+  const slots = (ids: string[], order = 0) => ids.map((identity_id, i) => ({ identity_id, slot_order: order + i }))
+  const both = { ...post('both', 'planner'), identities: slots(['k0', 'k1', 'k2', 'k3', 'k4']) }
+  const burnOnly = { ...post('burn'), content_type: '스토리', identities: [...slots(['k1', 'k2', 'k3', 'k5', 'k6']), { identity_id: 'k0', slot_order: 99 }] }
+  const reserve = { ...post('reserve'), content_type: '거던15층', identities: [...slots(['k0', 'k1', 'k2', 'k3']), ...slots(['k4'], 7)] }
+  const data = aggregateMeta({ posts: [both, burnOnly, reserve], identities: cast, egos: [], keywordSinMap: {}, source: 'all', period: 'all', now })
+  expect(data.comboStats).toEqual([{ key: '', count: 1 }, { key: '화상', count: 1 }, { key: '화상+진동', count: 1 }])
+  expect(data.usageStats).toEqual([{ key: 'mirrorDungeon', count: 2 }, { key: 'story', count: 1 }])
+  const k0 = data.identityInsights.k0
+  expect(k0.count).toBe(2)
+  expect(k0.posts.map(p => [p.id, p.support ?? false])).toEqual([['both', false], ['reserve', false], ['burn', true]])
+  expect(data.battleIdentityStats.find(row => row.identity_id === 'k0')).not.toHaveProperty('skill_keyword_list')
 })
 it('recognizes only the twelve base EGOs, without excluding other ZAYIN equipment', () => {
   for (let sinner = 201; sinner <= 212; sinner++) expect(isBaseEgo(`${sinner}01`)).toBe(true)

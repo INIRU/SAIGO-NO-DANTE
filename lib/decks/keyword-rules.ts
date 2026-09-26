@@ -107,6 +107,17 @@ export function computeDeckKeywordCounts(slots: readonly DeckKeywordSlot[]): Dec
   return computeKeywordCounts(slots, isFormationKeywordSlot)
 }
 
+/** Players call a formation a keyword deck once five deployed identities share that status keyword. */
+export const KEYWORD_DECK_MIN_IDENTITIES = 5
+
+/** Keywords that make this formation a keyword deck, in DECK_MAIN_KEYWORDS order. Empty = mixed. */
+export function computeKeywordDeckCombo(slots: readonly DeckKeywordSlot[]): string[] {
+  return Object.entries(computeDeckKeywordCounts(slots).counts)
+    .filter(([, count]) => count >= KEYWORD_DECK_MIN_IDENTITIES)
+    .map(([keyword]) => keyword)
+    .sort((a, b) => (DECK_MAIN_KEYWORD_ORDER.get(a) ?? 99) - (DECK_MAIN_KEYWORD_ORDER.get(b) ?? 99))
+}
+
 export function computeDeckMainKeywordsFromSlots(slots: readonly DeckKeywordSlot[], limit = MAX_DECK_MAIN_KEYWORDS): string[] {
   const { formationCount, counts } = computeDeckKeywordCounts(slots)
   if (formationCount === 0) return []

@@ -1,8 +1,18 @@
 import { resolvePlannerIdentity, resolvePlannerEgo } from '@/lib/planner/catalog-references'
-import { normalizeDeckMainKeyword } from '@/lib/decks/keyword-rules'
+import { computeKeywordDeckCombo } from '@/lib/decks/keyword-rules'
 import { normalizeThemeKeyword } from '@/lib/constants/keywords'
 import { normalizeSin } from '@/lib/constants/sin'
-import type { IdentityStat, EGOStat, MetaData, MetaIdentity, MetaEGO, MetaPost, MetaSource, MetaPeriod } from './types'
+import type { IdentityStat, EGOStat, MetaData, MetaIdentity, MetaEGO, MetaPost, MetaSource, MetaPeriod, MetaUsage, MetaInsightPost } from './types'
+
+const USAGE_BY_CONTENT_TYPE: Record<string, MetaUsage> = {
+  '스토리': 'story', '경험치 던전': 'expDungeon', '끈 던전': 'threadDungeon',
+  '거던5층': 'mirrorDungeon', '거던10층': 'mirrorDungeon', '거던15층': 'mirrorDungeon',
+  '거굴철': 'refractionRailway', '사영 전투': 'reflectrial',
+}
+
+export function metaPostUsage(post: Pick<MetaPost, 'source' | 'content_type'>): MetaUsage {
+  return post.source === 'planner' ? 'mirrorDungeon' : USAGE_BY_CONTENT_TYPE[post.content_type ?? ''] ?? 'none'
+}
 
 function objectRows(value: unknown): Record<string, unknown>[] {
   return Array.isArray(value)
@@ -31,6 +41,9 @@ export function aggregateMeta({ posts, identities, egos, keywordSinMap, source, 
   const support = new Map<string, IdentityStat>()
   const egoCounts = new Map<string, EGOStat>()
   const keywordCounts = new Map<string, number>()
+  const usageCounts = new Map<MetaUsage, number>()
+  const comboCounts = new Map<string, number>()
+  const benchPosts = new Map<string, MetaInsightPost[]>()
   const pairCounts = new Map<string, number>()
   const usageBySinner: Record<string, number> = {}
   const usageBySin: Record<string, number> = {}
@@ -74,28 +87,33 @@ export function aggregateMeta({ posts, identities, egos, keywordSinMap, source, 
       const existing = target.get(identity.id)
       if (existing) existing.count++
       else {
-        const { id, keywords, ...info } = identity
+        const { id, keywords, skill_keyword_list: _skills, ...info } = identity
         target.set(id, { ...info, identity_id: id, keywords: keywords ?? [], count: 1 })
       }
     }
 
-    const postKeywords = [...new Set((post.keywords ?? []).map(normalizeDeckMainKeyword).filter((key): key is string => key !== null))]
+    const usage = metaPostUsage(post)
+    const combo = computeKeywordDeckCombo(battleSlots.map(({ identity, order }) => ({ slot_order: order, skill_keyword_list: identity.skill_keyword_list ?? identity.keywords })))
+    usageCounts.set(usage, (usageCounts.get(usage) ?? 0) + 1)
+    comboCounts.set(combo.join('+'), (comboCounts.get(combo.join('+')) ?? 0) + 1)
+    const summary: MetaInsightPost = { id: post.id, source: post.source, title: post.title ?? post.id, usage, combo }
+    for (const { identity, order } of uniqueSlots) {
+      if (order < 99) continue
+      const list = benchPosts.get(identity.id) ?? []
+      list.push({ ...summary, support: true })
+      benchPosts.set(identity.id, list)
+    }
     for (const { identity, order } of battleSlots) {
-      const insight = identityInsights[identity.id] ??= { count: 0, orders: {}, keywords: [], egos: [], posts: [], companions: [] }
+      const insight = identityInsights[identity.id] ??= { count: 0, orders: {}, egos: [], posts: [], companions: [] }
       insight.count++
       insight.orders[String(order + 1)] = (insight.orders[String(order + 1)] ?? 0) + 1
-      for (const keyword of postKeywords) {
-        const existing = insight.keywords.find(row => row.keyword === keyword)
-        if (existing) existing.count++
-        else insight.keywords.push({ keyword, count: 1 })
-      }
       for (const { identity: companion } of battleSlots) {
         if (companion.sinner_id === identity.sinner_id) continue
         const existing = insight.companions.find(row => row.identity_id === companion.id)
         if (existing) existing.count++
         else insight.companions.push({ identity_id: companion.id, count: 1 })
       }
-      insight.posts.push({ id: post.id, source: post.source, title: post.title ?? post.id, keywords: postKeywords })
+      insight.posts.push(summary)
     }
 
     const battleSinners = new Set(battleSlots.map(slot => slot.identity.sinner_id))
@@ -142,11 +160,13 @@ export function aggregateMeta({ posts, identities, egos, keywordSinMap, source, 
     }
   }
 
-  for (const insight of Object.values(identityInsights)) {
+  for (const [id, insight] of Object.entries(identityInsights)) {
+    insight.posts.push(...benchPosts.get(id) ?? [])
     insight.companions.sort((a, b) => b.count - a.count || a.identity_id.localeCompare(b.identity_id))
-    insight.keywords.sort((a, b) => b.count - a.count || a.keyword.localeCompare(b.keyword))
     insight.egos.sort((a, b) => b.count - a.count || a.ego_id.localeCompare(b.ego_id))
   }
+  const byCount = <K extends string>(counts: Map<K, number>) => [...counts].map(([key, count]) => ({ key, count }))
+    .sort((a, b) => b.count - a.count || a.key.localeCompare(b.key))
   return {
     identityInsights,
     sampleCount: sourceCounts.decks + sourceCounts.planner,
@@ -156,6 +176,8 @@ export function aggregateMeta({ posts, identities, egos, keywordSinMap, source, 
     supportIdentityStats: [...support.values()].sort((a, b) => b.count - a.count || a.identity_id.localeCompare(b.identity_id)),
     egoStats: [...egoCounts.values()].sort((a, b) => b.count - a.count || a.ego_id.localeCompare(b.ego_id)),
     keywordUsage: [...keywordCounts].map(([keyword, count]) => ({ keyword, count })).sort((a, b) => b.count - a.count || a.keyword.localeCompare(b.keyword)),
+    usageStats: byCount(usageCounts),
+    comboStats: byCount(comboCounts),
     synergies: [...pairCounts].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).slice(0, 20).map(([key, count]) => {
       const [aId, bId] = JSON.parse(key) as [string, string]
       const a = identityCatalog.get(aId)!

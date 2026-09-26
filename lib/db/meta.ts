@@ -20,7 +20,7 @@ async function getMetaCatalog() {
   const db = publicClient()
   const [identities, egos, keywords] = await Promise.all([
     readAllMetaRows<MetaIdentity>((from, to) => db.from('identities')
-      .select('id, sinner_id, name_kr, name_en, name_jp, keywords, rarity, folder_name, game_id').order('id').range(from, to)),
+      .select('id, sinner_id, name_kr, name_en, name_jp, keywords, skill_keyword_list, rarity, folder_name, game_id').order('id').range(from, to)),
     readAllMetaRows<MetaEGO>((from, to) => db.from('ego')
       .select('id, sinner_id, name_kr, name_en, name_jp, grade, sin_affinity, image_url, game_id').order('id').range(from, to)),
     readAllMetaRows<{ name: string; sin_affinity: string | null }>((from, to) => db.from('keyword_meta')
@@ -29,7 +29,7 @@ async function getMetaCatalog() {
   return { identities, egos, keywords }
 }
 
-type DeckRow = { title: string; main_keywords: string[] | null; id: string; created_at: string; deck_identities: unknown; deck_egos: unknown }
+type DeckRow = { title: string; main_keywords: string[] | null; content_type: string | null; id: string; created_at: string; deck_identities: unknown; deck_egos: unknown }
 type PlanRow = { title: string; tags: string[] | null; id: string; created_at: string; deck: unknown; egos: unknown }
 
 async function getSourcePosts(source: Exclude<MetaSource, 'all'>, period: MetaPeriod): Promise<MetaPost[]> {
@@ -41,12 +41,12 @@ async function getSourcePosts(source: Exclude<MetaSource, 'all'>, period: MetaPe
   const since = metaPeriodStart(period, now)
   if (source === 'decks') {
     const rows = await readAllMetaRows<DeckRow>((from, to) => {
-      let query = db.from('decks').select('id, title, main_keywords, created_at, deck_identities(identity_id, slot_order), deck_egos(ego_id)')
+      let query = db.from('decks').select('id, title, main_keywords, content_type, created_at, deck_identities(identity_id, slot_order), deck_egos(ego_id)')
         .order('id').lte('created_at', new Date(now).toISOString())
       if (since) query = query.gte('created_at', since)
       return query.range(from, to)
     })
-    return rows.map(row => ({ id: row.id, source, created_at: row.created_at, title: row.title, keywords: row.main_keywords, identities: row.deck_identities, egos: row.deck_egos }))
+    return rows.map(row => ({ id: row.id, source, created_at: row.created_at, title: row.title, keywords: row.main_keywords, content_type: row.content_type, identities: row.deck_identities, egos: row.deck_egos }))
   }
   const rows = await readAllMetaRows<PlanRow>((from, to) => {
     let query = db.from('md_plans').select('id, title, tags, created_at, deck, egos')
