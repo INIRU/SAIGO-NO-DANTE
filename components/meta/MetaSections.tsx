@@ -60,15 +60,17 @@ export function SinnerLeaders({ data, onSelect }: { data: MetaData; onSelect: (i
       const rows = bySinner.get(slug)!
       const total = rows.reduce((sum, row) => sum + row.count, 0)
       const [top, ...rest] = rows
+      const tied = rest.filter(row => row.count === top.count).length
       return <li key={slug}>
         <button type="button" className={styles.sinnerCell} disabled={!fielded.has(top.identity_id)} onClick={() => onSelect(top.identity_id)} aria-label={rootT('sinner.' + slug) + ' ' + name(top) + ' ' + (top.count / total * 100).toFixed(1) + '%'}>
           <span className={styles.sinnerHead}><Image src={getSinnerLogoUrl(slug)} alt="" width={20} height={20} className={styles.sinnerLogo} />{rootT('sinner.' + slug)}<em>{t('count', { count: total })}</em></span>
           <span className={styles.sinnerTop}>
             <Portrait row={top} size={64} className={styles.sinnerPortrait} />
-            <span className={styles.sinnerTopText}><span className={styles.sinnerName}>{name(top)}</span><Share value={top.count / total * 100} /></span>
+            <span className={styles.sinnerTopText}><span className={styles.sinnerName}>{name(top)}</span>
+              <span className={styles.sinnerShare}><Share value={top.count / total * 100} />{tied > 0 && <em className={styles.tieTag}>{t('tiedFirst', { count: tied + 1 })}</em>}</span></span>
           </span>
           <span className={styles.sinnerRest}>{rest.slice(0, 3).map(row => <span key={row.identity_id} title={name(row)}>
-            <Portrait row={row} size={28} className={styles.sinnerRestPortrait} /><em>{Math.round(row.count / total * 100)}%</em>
+            <Portrait row={row} size={28} className={styles.sinnerRestPortrait} /><em data-tie={row.count === top.count ? '' : undefined}>{(row.count / total * 100).toFixed(1)}%</em>
           </span>)}</span>
         </button>
       </li>

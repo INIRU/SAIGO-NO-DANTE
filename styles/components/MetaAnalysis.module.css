@@ -253,3 +253,49 @@
 @media(min-width: 640px) and (max-width: 1023px) { .giftGrid { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
 @media(max-width: 639px) { .giftGrid { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: .75rem .375rem; } .giftGrid .share { font-size: .875rem; } .giftGrid .legendCount { display: none; } }
 .sinnerCell:disabled { cursor: default; }
+.sinnerShare { display: inline-flex; align-items: baseline; gap: .5rem; }
+.tieTag { font-style: normal; font-size: .6875rem; color: var(--text-muted); white-space: nowrap; }
+.sinnerRest em[data-tie] { color: var(--gold-light); }
+
+/* Identity picker */
+.picker { display: flex; flex-direction: column; max-height: min(46rem, 82dvh); overflow: hidden; background: var(--bg-card); border: 1px solid var(--border); border-radius: .625rem; box-shadow: 0 1.5rem 4rem rgba(0,0,0,.6); }
+.pickerHead { display: flex; align-items: center; gap: .875rem; padding: 1rem 1rem 0 1.5rem; }
+.pickerHead h2 { flex: 1; font-family: var(--font-heading); font-size: 1.125rem; font-weight: 700; color: var(--gold-light); }
+.pickerCount { font-size: .75rem; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+.pickerCount b { font-family: var(--font-title); font-size: 1.125rem; font-weight: 400; color: var(--text-primary); letter-spacing: .02em; }
+.pickerClose { display: grid; place-items: center; width: 2.5rem; height: 2.5rem; border-radius: .375rem; color: var(--text-muted); }
+.pickerClose:hover { color: var(--gold-light); background: rgba(255,255,255,.04); }
+.pickerTools { display: grid; gap: .75rem; padding: .875rem 1.5rem 1rem; border-bottom: 1px solid #2e2417; }
+.pickerSearch { display: flex; align-items: center; gap: .625rem; min-height: 2.75rem; padding: 0 .875rem; color: var(--gold-dim); background: var(--bg-deep); border: 1px solid #2e2417; border-radius: .375rem; transition: border-color 160ms ease; }
+.pickerSearch:focus-within { border-color: var(--gold-dim); }
+.pickerSearch input { flex: 1; min-width: 0; min-height: 2.625rem; background: transparent; font-size: .875rem; color: var(--text-primary); outline: none; }
+.pickerSearch input::placeholder { color: var(--text-muted); }
+.pickerSearch button { display: grid; place-items: center; width: 1.75rem; height: 1.75rem; border-radius: 50%; color: var(--text-muted); }
+.pickerSearch button:hover { color: var(--text-primary); background: rgba(255,255,255,.06); }
+.picker .pickerSearch input:focus-visible { outline: none; }
+.pickerRow { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .625rem 1rem; }
+.pickerSinners { display: flex; flex-wrap: wrap; gap: .25rem; }
+.pickerSinners button { display: grid; place-items: center; width: 2.375rem; height: 2.375rem; border-radius: .3125rem; opacity: .55; transition: background-color 160ms ease, opacity 160ms ease; }
+.pickerSinners button img { width: 1.5rem; height: 1.5rem; object-fit: contain; }
+.pickerSinners button:hover { opacity: 1; background: rgba(255,255,255,.04); }
+.pickerSinners button[aria-pressed=true] { opacity: 1; background: var(--bg-elevated); box-shadow: inset 0 -2px 0 var(--gold); }
+.pickerSinners .pickerAll { width: auto; padding: 0 .75rem; font-size: .75rem; color: var(--text-secondary); }
+.pickerResults { min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 1.25rem 1.5rem 1.5rem; scrollbar-width: thin; }
+.pickerGrid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 1rem .75rem; }
+.pickerCard { display: flex; flex-direction: column; gap: .5rem; width: 100%; text-align: left; transition: transform 160ms ease; }
+.pickerCard:hover { transform: translateY(-2px); }
+.pickerStat { display: flex; align-items: baseline; justify-content: space-between; padding: .375rem .125rem 0; border-top: 1px solid #2e2417; }
+.pickerStat .share { font-size: 1rem; }
+@media(max-width: 767px) { .pickerGrid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+@media(max-width: 639px) {
+  .picker { max-height: 82dvh; }
+  .pickerHead { padding: .75rem .75rem 0 1rem; }
+  .pickerTools { padding: .75rem 1rem .875rem; }
+  .pickerSinners { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); width: 100%; }
+  .pickerSinners button { width: 100%; }
+  .pickerSinners .pickerAll { padding: 0; }
+  .pickerResults { padding: 1rem; }
+  .pickerGrid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .75rem .5rem; }
+}
+@media(prefers-reduced-motion: reduce) { .pickerCard, .pickerSinners button, .pickerSearch { transition: none; } .pickerCard:hover { transform: none; } }
+@media(max-width: 639px) { .interest { padding: .75rem 1rem; gap: .5rem; } .interest p { display: none; } .subjectActions { margin-top: .875rem; } }

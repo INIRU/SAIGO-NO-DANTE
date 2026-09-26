@@ -1954,7 +1954,6 @@
       "sinner": "수감자",
       "close": "닫기",
       "noMatches": "검색 결과가 없습니다. 다른 이름으로 찾아보세요.",
-      "more": "더 보기",
       "overview": "전체 편성",
       "usageTitle": "콘텐츠",
       "comboTitle": "키워드 덱",
@@ -2012,7 +2011,12 @@
       "plansWith": "이 인격의 플랜",
       "rankingFielded": "편성",
       "rankingBench": "대기",
-      "sinnerLeadersBasisAll": "대기 포함, 그 수감자가 들어간 게시물 중 비율"
+      "sinnerLeadersBasisAll": "대기 포함, 그 수감자가 들어간 게시물 중 비율",
+      "tiedFirst": "공동 1위 {count}명",
+      "clearSearch": "검색어 지우기",
+      "sort": "정렬",
+      "sortUsage": "편성 많은 순",
+      "sortName": "이름순"
     },
     "sampleValid": "유효 편성",
     "sampleDecks": "덱",

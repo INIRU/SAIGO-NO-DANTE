@@ -1954,7 +1954,6 @@
       "sinner": "Sinner",
       "close": "Close",
       "noMatches": "No matches. Try another name.",
-      "more": "Show more",
       "overview": "All formations",
       "usageTitle": "Content",
       "comboTitle": "Keyword decks",
@@ -2012,7 +2011,12 @@
       "plansWith": "Plans with this identity",
       "rankingFielded": "Fielded",
       "rankingBench": "Bench",
-      "sinnerLeadersBasisAll": "Share of posts with the sinner, bench included"
+      "sinnerLeadersBasisAll": "Share of posts with the sinner, bench included",
+      "tiedFirst": "Tied, {count}",
+      "clearSearch": "Clear search",
+      "sort": "Sort",
+      "sortUsage": "Most fielded",
+      "sortName": "Name"
     },
     "sampleValid": "Formations",
     "sampleDecks": "Decks",
