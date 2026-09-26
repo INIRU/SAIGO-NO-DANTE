@@ -660,7 +660,8 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
         if (dialog && !dialog.published && run === generation.current) {
           dialog.published = true
           const materials = fusionMaterials(dialog.reads, dialog.count, dialog.capacity)
-          if (materials.length < dialog.count && !dialog.dialogless) sampleRecorder.current?.trigger('fusion-materials', materials)
+          // The fusion's frame group is uploaded only when its materials could not all be read.
+          sampleRecorder.current?.end('fusion', materials.length < dialog.count ? { reason: dialog.dialogless ? 'fusion-dialogless' : 'fusion-materials', candidates: materials } : null)
           // Dated by the dialog's own first frame: wheel reads come from before it, possibly before the previous result.
           if (materials.length) publishFusion({ materials, observedAt: dialog.firstAt, lastSeenAt: dialog.lastSeenAt,
             closedAt: dialog.closedAt, token: dialog.token })
@@ -747,9 +748,10 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
           if ((acquired || (icons.length && latestLabel.current !== 'battle' && !popupPurchaseHeader(header))) &&
             ![...popupPending.current.values()].some(other => other.episode === pending.episode) &&
             (last?.episode !== pending.episode || last.attempts >= profileRef.current.popupAttempts))
-            sampleRecorder.current?.trigger('popup-unresolved', [...icons, ...effects])
+            sampleRecorder.current?.end('popup:' + pending.episode, { reason: 'popup-unresolved', candidates: [...icons, ...effects] })
           return
         }
+        sampleRecorder.current?.end('popup:' + pending.episode, null)
         popupEvidence.current.delete(pending.episode)
         for (const queue of [popupQueue, popupVisionQueue]) {
           queue.current = queue.current.filter(item => {
@@ -935,6 +937,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
             const priority = popupPriority(label, retry)
             if (!makePopupRoom(priority, quality)) return
             const requestId = ++ocrRequestId.current
+            sampleRecorder.current?.begin('popup:' + state.episode)
             popupPending.current.set(requestId, { floor: floorAtCapture, capturedAt: now, episode: state.episode,
               quality, readyAt: state.firstAt + POPUP_SETTLE_MS, retry, priority })
             popupQueue.current.push({ frame, box, requestId, episode: state.episode })
@@ -1153,6 +1156,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
               const confirmation = fusionConfirmation(result.text)
               const fusionScreen = showsFusionTitle(result.text)
               if (fusionScreen) {
+                sampleRecorder.current?.begin('fusion')
                 fusionTitleAt.current = Math.max(fusionTitleAt.current, capture.at)
                 // The PiP and scene consumers follow the same fusion decision as the reader, whatever the classifier said.
                 setScene(current => current?.label === 'fusion' || current?.label === 'gift_acquired' ? current : { label: 'fusion', since: capture.at })
@@ -1185,7 +1189,6 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
                   lastSeenAt: Math.max(...wheel.map(item => item.lastAt)),
                   reads: [], wheel, published: false, dialogless: true, undecided: known === null }
                 takeWheelReads(fusionDialog.current)
-                sampleRecorder.current?.trigger('fusion-dialogless')
                 fusionWanted.current = { count: capacity, capacity, at: Date.now() }
                 lastDialogAt.current = Math.max(lastDialogAt.current, pending.capturedAt)
               }
@@ -1207,6 +1210,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
                 dialogBreakAt.current = Math.max(dialogBreakAt.current, capture.at)
               }
               if (confirmation) {
+                sampleRecorder.current?.begin('fusion')
                 // The shop capacity (3 normal, 5 special) picks the dialog's slot layout.
                 const { count, capacity } = confirmation
                 const found = fusionAnchors(result.words)
@@ -1406,6 +1410,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
             return
           }
           wheelFrames.current.push({ frame, at: now, lastAt: now, signature, band, origin: { x: crop.x, y: crop.y }, scale, frameSize, anchors, reads: {} })
+          sampleRecorder.current?.begin('fusion')
           while (wheelFrames.current.length > WHEEL_FRAMES) wheelFrames.current.shift()!.frame.close()
         } catch { /* A missed crop only thins the wheel history. */ } finally { source.release(); wheelBusy = false }
       }
@@ -1632,8 +1637,10 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
     const step = readSaleStep(saleState.current, { at: capture.at, text, cost,
       giftId: name => ocrReferences.current ? sellGiftId(name, ocrReferences.current.gifts) : null })
     saleState.current = step.state
-    // A sell dialog whose gift or cost could not be settled.
-    if (!step.state.dialog && text.replace(/\s+/g, '').includes('판매하시겠')) sampleRecorder.current?.trigger('sale-unresolved')
+    // One sale is one sample group: settled by a sale, uploaded when its dialog could not be read.
+    if (step.state.dialog || isSellWindow(text)) sampleRecorder.current?.begin('sale')
+    if (step.sold.length) sampleRecorder.current?.end('sale', null)
+    else if (!step.state.dialog && text.replace(/\s+/g, '').includes('판매하시겠')) sampleRecorder.current?.end('sale', { reason: 'sale-unresolved' })
     if (step.sold.length) setGiftSales(items => [...items, ...step.sold.map(sale =>
       ({ giftId: sale.giftId, token: `sell:${sale.at}:${sale.giftId}`, capturedAt: sale.at }))].slice(-8))
   }

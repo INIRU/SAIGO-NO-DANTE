@@ -37,6 +37,20 @@ export const LEGAL_KEY_POINTS: Record<LegalLang, { title: string; items: string[
 
 /** What each version changed, shown in the update modal. A version missing here shows the key points instead. */
 export const LEGAL_CHANGES: Record<string, Record<LegalLang, string[]>> = {
+  v5: {
+    ko: [
+      '어시스트 모드 **인식 개선 참여(선택)**를 켠 경우, 인식에 **실패한 동작**(합성 한 번, 기프트 획득 창, 판매)의 게임 화면을 **동작당 최대 48장** 보내요. 제대로 인식한 동작의 화면은 브라우저에서 바로 지우고 보내지 않아요.',
+      '이 내용으로 참여 여부를 **다시 물어봐요**. 계정과 연결하지 않고 **180일 뒤 삭제**하는 것은 그대로예요.',
+    ],
+    en: [
+      'If you turn on Assist mode\'s **recognition improvement (optional)**, game frames of **actions it failed to read** (one fusion, a gift popup, a sale) are sent, **up to 48 per action**. Frames of actions read correctly are deleted in your browser and never sent.',
+      'You will be **asked again** whether to take part. Samples are still not linked to your account and are **deleted after 180 days**.',
+    ],
+    ja: [
+      'アシストモードの**認識改善への参加（任意）**をオンにした場合、認識に**失敗した動作**（合成1回、ギフト獲得画面、売却）のゲーム画面を**動作ごとに最大48枚**送信します。正しく認識できた動作の画面はブラウザーですぐ削除し、送信しません。',
+      'この内容で参加するかどうかを**もう一度確認**します。アカウントと結び付けず、**180日後に削除**する点は変わりません。',
+    ],
+  },
   v4: {
     ko: [
       '로그인한 상태에서 본 **덱·플랜·인격 기록**을 계정에 저장해 추천에 써요. 계정을 삭제하면 함께 지워져요.',

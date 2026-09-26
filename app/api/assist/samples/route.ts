@@ -2,48 +2,41 @@ import { after, NextResponse } from 'next/server'
 import { randomUUID } from 'node:crypto'
 import { checkRequestRateLimit, rateLimitResponse } from '@/lib/rate-limit'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { parseSampleMeta, SAMPLE_FRAMES_EACH_SIDE, SAMPLE_MAX_FRAME_BYTES, SAMPLE_MAX_TOTAL_BYTES } from '@/lib/vision/assist-samples'
+import { parseSampleMeta, SAMPLE_BUCKET, SAMPLE_MAX_FRAMES, SAMPLE_MAX_FRAME_BYTES } from '@/lib/vision/assist-samples'
 
-const BUCKET = 'assist-samples'
 const KEEP_MS = 180 * 86_400_000
-/** All uploads together, per UTC day. At about 1.5 MB a sample this is ~1,300 samples a day; later ones are dropped for the day. */
+/** All uploads together, per UTC day; later samples are refused for the day. */
 const DAILY_BYTES = 2 * 1024 ** 3
 const bad = (error: string, status = 400) => NextResponse.json({ error }, { status })
 
-/** Opt-in recognition samples from Assist: no account, email or IP is stored with them. */
+/**
+ * Opt-in recognition samples from Assist: no account, email or IP is stored with them. The browser sends the metadata and
+ * frame sizes; it gets one signed upload per frame and sends the JPEGs straight to the private bucket, which only takes
+ * image/jpeg up to 400 KB.
+ */
 export async function POST(request: Request) {
   const limit = checkRequestRateLimit(request, { scope: 'assist-samples', bucket: 'sample' })
   if (!limit.allowed) return rateLimitResponse(limit)
-  if (Number(request.headers.get('content-length')) > SAMPLE_MAX_TOTAL_BYTES + 64 * 1024) return bad('too large', 413)
-  let form: FormData
-  try { form = await request.formData() } catch { return bad('invalid form') }
-  let meta = null
-  try { meta = parseSampleMeta(JSON.parse(String(form.get('meta')))) } catch { /* rejected below */ }
-  const frames = form.getAll('frame')
-  if (!meta || !frames.length || frames.length > SAMPLE_FRAMES_EACH_SIDE * 2) return bad('invalid sample')
-  if (frames.some(frame => !(frame instanceof File) || frame.type !== 'image/jpeg' || !frame.size || frame.size > SAMPLE_MAX_FRAME_BYTES) ||
-    frames.reduce((total, frame) => total + (frame as File).size, 0) > SAMPLE_MAX_TOTAL_BYTES) return bad('invalid frames')
-  const images = await Promise.all(frames.map(async frame => Buffer.from(await (frame as File).arrayBuffer())))
-  if (images.some(image => image[0] !== 0xff || image[1] !== 0xd8 || image[2] !== 0xff)) return bad('invalid frames')
+  let body: { meta?: unknown; sizes?: unknown }
+  try { body = await request.json() } catch { return bad('invalid body') }
+  const meta = parseSampleMeta(body?.meta)
+  const sizes = body?.sizes
+  if (!meta || !Array.isArray(sizes) || !sizes.length || sizes.length > SAMPLE_MAX_FRAMES ||
+    !sizes.every(size => Number.isInteger(size) && size > 0 && size <= SAMPLE_MAX_FRAME_BYTES)) return bad('invalid sample')
+  const size = (sizes as number[]).reduce((total, value) => total + value, 0)
 
   const admin = createAdminClient()
   const day = new Date().toISOString().slice(0, 10)
   const today = await admin.schema('limbus').rpc('assist_sample_bytes_since', { since: day })
-  const used = Number(today.data ?? 0)
-  const size = images.reduce((total, image) => total + image.length, 0)
-  if (today.error || used + size > DAILY_BYTES) return bad('daily limit', 429)
-  const bucket = admin.storage.from(BUCKET)
-  const path = `${day}/${randomUUID()}`
-  const files = images.map((_, index) => `${path}/${index}.jpg`)
-  const uploads = await Promise.all(images.map((image, index) => bucket.upload(files[index], image, { contentType: 'image/jpeg', upsert: false })))
-  const { error } = uploads.some(upload => upload.error) ? { error: true }
-    : await admin.schema('limbus').from('assist_samples').insert({ reason: meta.reason, meta, frame_count: images.length, bytes: size, path })
-  if (error) {
-    await bucket.remove(files)
-    return bad('not saved', 500)
-  }
+  if (today.error || Number(today.data ?? 0) + size > DAILY_BYTES) return bad('daily limit', 429)
+  const bucket = admin.storage.from(SAMPLE_BUCKET)
+  const path = day + '/' + randomUUID()
+  const signed = await Promise.all(sizes.map((_, index) => bucket.createSignedUploadUrl(path + '/' + index + '.jpg')))
+  if (signed.some(item => item.error || !item.data)) return bad('not saved', 500)
+  const { error } = await admin.schema('limbus').from('assist_samples').insert({ reason: meta.reason, meta, frame_count: sizes.length, bytes: size, path })
+  if (error) return bad('not saved', 500)
   after(purgeExpired)
-  return NextResponse.json({ ok: true }, { status: 201 })
+  return NextResponse.json({ uploads: signed.map(item => ({ path: item.data!.path, token: item.data!.token })) }, { status: 201 })
 }
 
 // lazy retention, at most 20 expired samples per POST; move to a scheduled job if volume outgrows it.
@@ -52,7 +45,7 @@ async function purgeExpired() {
   const { data, error } = await admin.schema('limbus').from('assist_samples').select('id, path, frame_count')
     .lt('created_at', new Date(Date.now() - KEEP_MS).toISOString()).order('created_at').limit(20)
   if (error || !data?.length) return
-  const files = data.flatMap(row => Array.from({ length: row.frame_count }, (_, index) => `${row.path}/${index}.jpg`))
-  const removed = await admin.storage.from(BUCKET).remove(files)
+  const files = data.flatMap(row => Array.from({ length: row.frame_count }, (_, index) => row.path + '/' + index + '.jpg'))
+  const removed = await admin.storage.from(SAMPLE_BUCKET).remove(files)
   if (!removed.error) await admin.schema('limbus').from('assist_samples').delete().in('id', data.map(row => row.id))
 }
