@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest'
-import { sequenceEventIds, sourceResultText, sourceResults, walkEventGraph, type SourceEvent } from './mirror-event-source'
+import { sequenceEventIds, sinnerCharacterId, sourceResultText, sourceResults, walkEventGraph, type SourceEvent } from './mirror-event-source'
 
 it('traverses grandchildren, cross-links and retries without turning them into entries', () => {
   const nodes: SourceEvent[] = [
@@ -33,4 +33,11 @@ it('REQ-DATA-SYNC-015 takes the events a fixed floor or a curse fills in from th
   ]
   expect(sequenceEventIds(sequence)).toEqual([971057, 971058, 971059, 971085, 971086])
   expect(sequenceEventIds(undefined)).toEqual([])
+})
+it('REQ-DATA-SYNC-016 names every sinner a judgment correction can name, and refuses an unknown one', () => {
+  // 971057 (2026-09-24) added "SpecificUnit_Donquixote"; the label fell back to the raw key "Donquixote +5".
+  expect(sinnerCharacterId('Donquixote')).toBe(3)
+  expect(['Yisang', 'Faust', 'Donquixote', 'Ryosyu', 'Meursault', 'Honglu', 'Heathcliff', 'Ishmael', 'Rodion', 'Sinclair', 'Outis', 'Gregor']
+    .map(sinnerCharacterId)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12])
+  expect(() => sinnerCharacterId('Dante')).toThrow('Unknown sinner key Dante')
 })

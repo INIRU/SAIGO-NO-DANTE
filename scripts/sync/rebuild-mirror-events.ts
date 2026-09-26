@@ -5,7 +5,7 @@ import { createHash } from 'node:crypto'
 import { createClient } from '@supabase/supabase-js'
 import { config } from 'dotenv'
 import { eventImageId } from '../assets/event-image-source'
-import { sequenceEventIds, sourceResults, sourceResultText, walkEventGraph, type SourceEvent, type SourceForm } from './mirror-event-source'
+import { sequenceEventIds, sinnerCharacterId, sourceResults, sourceResultText, walkEventGraph, type SourceEvent, type SourceForm } from './mirror-event-source'
 config({ path: '.env.local', quiet: true })
 type Locale = 'ko' | 'en' | 'ja'
 type Text = { id: number; name?: string; title?: string; desc?: string; behaveDesc?: string; prevDesc?: string; eventDesc?: string; successDesc?: string[]; failureDesc?: string[]; options?: { message?: string; messageDesc?: string; result?: string[] }[] }
@@ -149,12 +149,15 @@ export async function rebuildMirrorEvents(apply = process.argv.includes('--fix')
       return [lang, [text.prevDesc, text.eventDesc].filter(Boolean).join('\n\n')]
     }))
     const hasIntro = Object.values(intro).some(Boolean)
-    const namedUnits: Record<string, number> = { Yisang: 1, Rodion: 9, Ishmael: 8 }
     const corrections = ((judgment.adderInfo ?? []) as {correctionCase: string; adder: number}[]).map(correction => {
       const separator = correction.correctionCase.indexOf('_')
       const type = correction.correctionCase.slice(0, separator), keys = correction.correctionCase.slice(separator + 1).split(',')
       return { ...correction, labels: Object.fromEntries((Object.keys(langs) as Locale[]).map(lang => [lang, keys.map(key => {
-        if (type === 'SpecificUnit') return characterLabels[lang][namedUnits[key]] ?? key
+        if (type === 'SpecificUnit') {
+          const label = characterLabels[lang][sinnerCharacterId(key)]
+          if (!label) throw Error(`Missing sinner label ${lang}:${key}`)
+          return label
+        }
         if (type === 'SpecificPersonality') {
           const identity = identityById.get(Number(key))
           if (!identity) throw Error(`Missing judgment identity ${key}`)
