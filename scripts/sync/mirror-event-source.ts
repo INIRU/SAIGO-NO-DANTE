@@ -23,6 +23,14 @@ export function sourceResults(event: SourceEvent) {
   return (event.personalityEvent?.eventResults ?? []).flatMap((outcome, index) =>
     (outcome.eventResultDataList ?? []).map(result => ({ optionIndex: index, outcome: outcome.eventResult.toLowerCase(), result })))
 }
+/** Theme map steps whose numbers are event IDs: a fixed floor's own events, and the curse events that replace random ones. */
+const EVENT_STEPS = new Set(['FILL_EMPTY_EVENT', 'OVERRIDE_RANDOM_EVENT_BY_CURSE_EVENT'])
+export function sequenceEventIds(sequence: unknown): number[] {
+  if (!Array.isArray(sequence)) return []
+  return sequence.flatMap(step => step && typeof step === 'object' && EVENT_STEPS.has((step as { type?: unknown }).type as string) &&
+    Array.isArray((step as { numberList?: unknown }).numberList)
+    ? (step as { numberList: unknown[] }).numberList.filter((id): id is number => Number.isInteger(id) && (id as number) > 0) : [])
+}
 export function walkEventGraph(events: ReadonlyMap<number, SourceEvent>, entries: ReadonlySet<number>) {
   const reachable = new Set<number>(), edges: [number, number][] = []
   const queue = [...entries]

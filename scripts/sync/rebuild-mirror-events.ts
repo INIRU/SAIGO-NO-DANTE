@@ -5,7 +5,7 @@ import { createHash } from 'node:crypto'
 import { createClient } from '@supabase/supabase-js'
 import { config } from 'dotenv'
 import { eventImageId } from '../assets/event-image-source'
-import { sourceResults, sourceResultText, walkEventGraph, type SourceEvent, type SourceForm } from './mirror-event-source'
+import { sequenceEventIds, sourceResults, sourceResultText, walkEventGraph, type SourceEvent, type SourceForm } from './mirror-event-source'
 config({ path: '.env.local', quiet: true })
 type Locale = 'ko' | 'en' | 'ja'
 type Text = { id: number; name?: string; title?: string; desc?: string; behaveDesc?: string; prevDesc?: string; eventDesc?: string; successDesc?: string[]; failureDesc?: string[]; options?: { message?: string; messageDesc?: string; result?: string[] }[] }
@@ -79,6 +79,7 @@ export async function rebuildMirrorEvents(apply = process.argv.includes('--fix')
     for (const theme of source.list) {
       for (const id of [...(theme.mapGenOption?.eventPool ?? []), ...(theme.mapGenOption?.specialEventPool ?? [])]) addEntry(id, theme.id)
       fixedEntries(theme.mapGenSequence, theme.id)
+      for (const id of sequenceEventIds(theme.mapGenSequence)) addEntry(id, theme.id)
     }
   }
   const graph = walkEventGraph(nodes, entries)

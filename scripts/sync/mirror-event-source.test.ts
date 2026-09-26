@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest'
-import { sourceResultText, sourceResults, walkEventGraph, type SourceEvent } from './mirror-event-source'
+import { sequenceEventIds, sourceResultText, sourceResults, walkEventGraph, type SourceEvent } from './mirror-event-source'
 
 it('traverses grandchildren, cross-links and retries without turning them into entries', () => {
   const nodes: SourceEvent[] = [
@@ -21,4 +21,16 @@ it('keeps the actual option/result indices and selects a single matching narrati
 it('rejects a missing child rather than silently dropping the edge', () => {
   const node: SourceEvent = { id: 1, eventType: 'EVENT', actionEvent: { eachOptionList: [{ index: 0, resultList: [{ resultIndex: 0, nextEventID: 2 }] }] } }
   expect(() => walkEventGraph(new Map([[1, node]]), new Set([1]))).toThrow('Missing source event 2')
+})
+it('REQ-DATA-SYNC-015 takes the events a fixed floor or a curse fills in from the theme map sequence', () => {
+  // Theme 1118 (2026-09-24 data): its three events exist only in FILL_EMPTY_EVENT, so they were never synced.
+  const sequence = [
+    { type: 'CREATE_FIXED_FLOOR', numberList: [3, 3, 1], nodeList: [{ encounterType: 3, encounterId: 0 }] },
+    { type: 'FILL_EMPTY_EVENT', numberList: [971057, 971058, 971059] },
+    { type: 'FILL_EMPTY_BOSS', numberList: [2068131] },
+    { type: 'OVERRIDE_RANDOM_EVENT_BY_CURSE_EVENT', numberList: [971085, 971086] },
+    { type: 'CREATE_EMPTY_MD4_FLOOR', numberList: [4, 3, 1] },
+  ]
+  expect(sequenceEventIds(sequence)).toEqual([971057, 971058, 971059, 971085, 971086])
+  expect(sequenceEventIds(undefined)).toEqual([])
 })
