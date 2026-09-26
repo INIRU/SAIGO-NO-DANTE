@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { dialogForResult, dialoglessFusionResult, fusionAnchors, fusionConfirmation, fusionDialogClosed, fusionMaterials, fusionWheelAnchors, fusionWheelCrop, fusionWheelRegions,
-  isFusionSelectionScreen, wheelBandMatch, WHEEL_BAND_MIN, WHEEL_BAND_SIZE, fusionMaterialsToRemove, fusionResultFollows, fusionSlotRegions, fusionSlotRegionsFromAnchors,
+  isFusionSelectionScreen, wheelBandMatch, WHEEL_BAND_MIN, WHEEL_BAND_SIZE, fusionMaterialsToRemove, fusionResultFollows, fusionSlotRegions, fusionSlotRegionsFromAnchors, wheelSelectionSize,
   FUSION_TITLE_KEEP_MS, onFusionScreen, showsFusionTitle, type SeenDialog }
   from '../../../lib/vision/fusion-evidence'
 
@@ -119,6 +119,30 @@ describe('materials of one fusion from the selection wheel and the dialog', () =
     const stale = [wheel([strong('9001'), strong('9002'), strong('9003')], 900), dialog([strong('9004'), strong('9005')], 1200)]
     expect(fusionMaterials(stale, 2, 3)).toEqual(['9004', '9005'])
     expect(fusionMaterials([wheel([strong('9001'), strong('9002'), strong('9003')], 900)], 2, 3)).toEqual([])
+  })
+
+  it('REQ-ASSIST-047 takes the newest accepted material of a wheel position when the player swapped it, but never mixes dialog reads', () => {
+    // 2026-09-26 sample 8b74aa01: 9004 picked first, then replaced by 9061 before the dialog.
+    const swapped = [wheel([accepted('9004'), blank, strong('9097')], 1000), wheel([accepted('9004'), blank, strong('9097')], 1300),
+      wheel([strong('9061'), blank, strong('9097')], 2400), wheel([accepted('9061'), blank, strong('9097')], 2700)]
+    expect(fusionMaterials(swapped, 2, 3).sort()).toEqual(['9061', '9097'])
+    // An older accepted read after the newest one never brings the replaced material back.
+    expect(fusionMaterials([wheel([strong('9061')], 2400), wheel([accepted('9004')], 1000)], 1, 3)).toEqual(['9061'])
+    // Dialog slots do not change while it is up: two accepted materials there stay unknown.
+    expect(fusionMaterials([dialog([strong('9001')], 1000), dialog([strong('9004')], 1400)], 1, 3)).toEqual([])
+  })
+
+  it('REQ-ASSIST-045 takes a fusion without a seen dialog as the materials the fullest wheel state held, not the shop capacity', () => {
+    // 2026-09-26 sample e953322b (1684×948): a 2/5 special-shop fusion whose dialog no screen read caught.
+    const reads = [wheel([blank, blank, strong('9020'), blank, blank], 900), wheel([blank, blank, strong('9020'), blank, accepted('9061')], 1300),
+      wheel([blank, blank, strong('9020'), blank, accepted('9061')], 1700)]
+    expect(wheelSelectionSize(reads)).toBe(2)
+    const count = wheelSelectionSize(reads)
+    expect(fusionMaterials(reads, count, 5)).toEqual(['9020', '9061'])
+    // A slot that could not be read is still a selected material.
+    expect(wheelSelectionSize([wheel([strong('9001'), null, blank], 900)])).toBe(2)
+    // Dialog reads have their own count; no wheel state says nothing.
+    expect(wheelSelectionSize([dialog([strong('9001'), strong('9002')], 900)])).toBe(0)
   })
 })
 
