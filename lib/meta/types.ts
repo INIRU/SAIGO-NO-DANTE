@@ -13,6 +13,11 @@ export interface IdentityStat {
 
 export interface KeywordStat { keyword: string; count: number }
 
+/** Content a formation was built for. Plans are always Mirror Dungeon. */
+export const META_USAGES = ['mirrorDungeon', 'story', 'expDungeon', 'threadDungeon', 'refractionRailway', 'reflectrial', 'none'] as const
+export type MetaUsage = typeof META_USAGES[number]
+export interface CountStat<K extends string = string> { key: K; count: number }
+
 export interface Synergy {
   a_id: string; a_name: string; a_sinner_id: string; a_folder: string | null; a_game_id: string | null
   b_id: string; b_name: string; b_sinner_id: string; b_folder: string | null; b_game_id: string | null
@@ -45,6 +50,10 @@ export interface MetaData {
   usageBySinner: Record<string, number>
   usageBySin: Record<string, number>
   keywordUsage: KeywordStat[]
+  /** One entry per sample: which content it targets. */
+  usageStats: CountStat<MetaUsage>[]
+  /** One entry per sample: keyword deck combo ('화상+진동'), '' when no keyword reaches the threshold. */
+  comboStats: CountStat[]
   synergies: Synergy[]
   egoStats: EGOStat[]
 }
@@ -56,7 +65,7 @@ export type MetaPeriod = typeof META_PERIODS[number]
 export const DEFAULT_META_SOURCE: MetaSource = 'all'
 export const DEFAULT_META_PERIOD: MetaPeriod = 'all'
 
-export type MetaIdentity = Omit<IdentityStat, 'identity_id' | 'count' | 'keywords'> & { id: string; keywords: string[] | null }
+export type MetaIdentity = Omit<IdentityStat, 'identity_id' | 'count' | 'keywords'> & { id: string; keywords: string[] | null; skill_keyword_list?: string[] | null }
 export type MetaEGO = Omit<EGOStat, 'ego_id' | 'count'> & { id: string }
 export type MetaPost = {
   id: string
@@ -64,17 +73,30 @@ export type MetaPost = {
   created_at: string
   title?: string
   keywords?: string[] | null
+  content_type?: string | null
   identities: unknown
   egos: unknown
 }
 
+export type MetaInsightPost = {
+  id: string
+  source: Exclude<MetaSource, 'all'>
+  title: string
+  usage: MetaUsage
+  /** Keyword deck combo, sorted; empty when mixed. */
+  combo: string[]
+  /** The identity sat on the bench (no formation order) in this post. */
+  support?: true
+}
+
 export interface IdentityInsight {
   companions: { identity_id: string; count: number }[]
+  /** Posts where the identity has a formation order. */
   count: number
   orders: Record<string, number>
-  keywords: KeywordStat[]
   egos: EGOStat[]
-  posts: { id: string; source: Exclude<MetaSource, 'all'>; title: string; keywords: string[] }[]
+  /** Formation posts first, then bench-only posts marked support. */
+  posts: MetaInsightPost[]
 }
 
 export function isBaseEgo(gameId: string | null | undefined): boolean {

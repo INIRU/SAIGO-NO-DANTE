@@ -6,6 +6,7 @@ import UnderlineTabBar from '@/components/ui/UnderlineTabBar'
 import { META_SOURCES, META_PERIODS, DEFAULT_META_SOURCE, DEFAULT_META_PERIOD, type MetaSource, type MetaPeriod, type MetaData } from '@/lib/meta/types'
 import { useQueryState, parseAsString } from 'nuqs'
 import IdentityAnalysis from '@/components/meta/IdentityAnalysis'
+import { SkeletonCircle, SkeletonLine, SkeletonPage } from '@/components/ui/Skeleton'
 import styles from '@/styles/components/MetaAnalysis.module.css'
 
 async function fetchMeta(url: string): Promise<MetaData> {
@@ -45,9 +46,18 @@ export default function MetaClient({ initialData }: { initialData: MetaData | nu
           {t('loadError')}{' '}
           <button type="button" onClick={() => mutate()} className="underline underline-offset-2">{t('retry')}</button>
         </div>}
-      {isLoading && !data && <div className="space-y-3 mt-6" role="status" aria-label={t('loading')}>
-        {Array.from({ length: 3 }).map((_, i) => <div key={i} className="h-16 rounded-lg animate-pulse" style={{ background: 'var(--bg-elevated)', opacity: 1 - i * 0.08 }} />)}
-      </div>}
+      {isLoading && !data && <SkeletonPage className={styles.analysis}>
+        <div className={styles.overview}>
+          <div className={styles.overviewHead}><SkeletonLine w="6rem" h="1.25rem" /><SkeletonLine w="18rem" h="0.75rem" /></div>
+          <div className={styles.overviewGrid}>
+            {[0, 1].map(i => <div key={i} className={styles.chartBlock}><SkeletonLine w="5rem" h="0.9375rem" />
+              <div className={styles.donut}><SkeletonCircle size="8.75rem" raised /><div className={styles.legend}>{[0, 1, 2, 3].map(j => <SkeletonLine key={j} h="1.5rem" raised className="my-1" />)}</div></div>
+            </div>)}
+            <div className={styles.chartBlock}><SkeletonLine w="7rem" h="0.9375rem" />{[0, 1, 2, 3, 4, 5].map(j => <SkeletonLine key={j} h="2.5rem" raised className="my-0.5" />)}</div>
+          </div>
+        </div>
+        <div className={styles.subject}><SkeletonLine w="7rem" h="9rem" raised /><div className="flex-1 space-y-3"><SkeletonLine w="4rem" h="0.75rem" /><SkeletonLine w="14rem" h="1.5rem" /><SkeletonLine w="8rem" h="2.5rem" /></div></div>
+      </SkeletonPage>}
       {data && <>
       {data.sampleCount === 0 && period !== 'all' && (
         <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-[var(--border)] bg-[var(--bg-elevated)] p-4">
