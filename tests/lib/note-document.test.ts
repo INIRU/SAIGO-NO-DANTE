@@ -61,3 +61,12 @@ it('preserves keyword escapes while editing plain notes',()=>{
  const source='흑수 \\못 넣을시'
  expect(tiptapContentToMarkdown(markdownToTiptapContent(source))).toBe(source)
 })
+it('keeps a gift written inside a sentence, with its name for plain text and asset lookup',()=>{
+ const gift={type:'noteGift',attrs:{id:'9e10fce9-4275-4c8a-8eee-62604e16639b',name:'데스페라도'}}
+ const doc={type:'doc',content:[{type:'paragraph',content:[{type:'text',text:'기프트는 '},gift,{type:'text',text:'를 챙깁니다'}]}]}
+ const saved=tiptapContentToMarkdown(doc), loaded=parseBlockDocument(saved)!
+ expect(loaded.content![0].content![1]).toEqual(gift)
+ expect(notePlainText(saved)).toContain('데스페라도')
+ expect(JSON.parse(assetRefs(loaded))).toEqual([{kind:'gift',id:gift.attrs.id}])
+ expect(parseBlockDocument(tiptapContentToMarkdown({type:'doc',content:[{type:'paragraph',content:[{type:'noteGift',attrs:{id:'x'.repeat(400),name:1}}]}]}))!.content![0].content![0].attrs).toEqual({id:'x'.repeat(150),name:''})
+})
