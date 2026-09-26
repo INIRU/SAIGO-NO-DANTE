@@ -13,6 +13,7 @@ import EgoDisplayCard from '@/components/sinners/EgoDisplayCard'
 import { KeywordWithTooltip, useKeywords } from '@/components/providers/KeywordProvider'
 import { getLocalizedKeywordName, type SupportedLang } from '@/lib/i18n'
 import { isNoteImageUrl } from '@/lib/notes/images'
+import { GIFT_KEYWORD_COLORS } from '@/lib/constants/gift'
 
 export async function fetchNoteAssets(url: string): Promise<NoteAssetData[]> {
   const r = await fetch(url)
@@ -38,11 +39,23 @@ export function NoteKeywordLabel({id}:{id:string}) {
   const name=keywords[id] ? getLocalizedKeywordName(id,keywords[id],lang as SupportedLang) : id
   return <span className="note-keyword-label"><KeywordWithTooltip keyword={name} krKey={id} inline><strong>{name}</strong></KeywordWithTooltip></span>
 }
+/** A gift written inside a sentence: its art at text height and its name in the keyword's colour; opens the gift. */
+export function NoteGiftLabel({id,name}:{id:string;name?:string}) {
+  const lang=useLocale(), {data}=useContext(AssetContext), onGiftClick=useContext(NoteGiftClickContext)
+  const asset=data.get('gift:'+id)
+  const label=asset ? assetName(asset,lang) : name || id
+  const style={'--gift-color':GIFT_KEYWORD_COLORS[asset?.keyword ?? ''] ?? '#c8b898'} as React.CSSProperties
+  const body=<>{asset?.image_url && <img src={asset.image_url} alt="" loading="lazy" decoding="async"/>}<strong>{label}</strong></>
+  return onGiftClick && asset
+    ? <button type="button" className="note-gift-label" style={style} onClick={()=>onGiftClick(id)}>{body}</button>
+    : <span className="note-gift-label" style={style}>{body}</span>
+}
 export function NoteAssetArtwork({asset, compact=false}:{asset:NoteAssetData; compact?:boolean}) {
   const lang=useLocale(), name=assetName(asset,lang)
   if (asset.kind === 'gift') return <GiftArtwork gift={{...asset,keyword:asset.keyword ?? undefined}} displayName={name} sizes="96px" />
   if (asset.kind === 'identity' && asset.identity) return <IdentityCard identity={{...asset.identity,name_kr:name}} board compact disableHoverEffects />
-  if (asset.kind === 'ego' && asset.ego && asset.sinnerId) return <EgoDisplayCard ego={asset.ego} sinnerId={asset.sinnerId} name={name} lang={lang === 'en' || lang === 'ja' ? lang : 'ko'} displayOnly/>
+  // The E.G.O card is laid out in fixed rem (9.5rem); on phones it shrinks to its quarter-row slot.
+  if (asset.kind === 'ego' && asset.ego && asset.sinnerId) return <EgoDisplayCard ego={asset.ego} sinnerId={asset.sinnerId} name={name} lang={lang === 'en' || lang === 'ja' ? lang : 'ko'} displayOnly className="max-sm:[zoom:0.7]"/>
   if (asset.kind === 'skill' && asset.skill) return <IdentitySkillFrameCard skill={compact ? {...asset.skill,description:null,description_en:null,description_jp:null} : asset.skill} skills={asset.skills ?? [asset.skill]} identity={asset.identity} lang={lang} size={compact?'2.5rem':'3.5rem'} />
   return <span className={`note-asset-art note-asset-art--${asset.kind}`}>
     {/* Game URLs come only from the public, allowlisted asset endpoint. */}
@@ -93,6 +106,7 @@ export default function NoteBlockViewer({doc,renderText}:{doc:JSONContent;render
     switch(n.type) {
       case 'noteAccordion': return <NoteAccordionView key={key} title={n.content?.[0]?.content?.map((c,i)=>render(c,`${key}-title-${i}`)) || '…'}>{n.content?.[1]?.content?.map((c,i)=>render(c,`${key}-body-${i}`))}</NoteAccordionView>
       case 'noteKeyword': return <NoteKeywordLabel key={key} id={n.attrs!.id}/>
+      case 'noteGift': return <NoteGiftLabel key={key} id={n.attrs!.id} name={n.attrs?.name}/>
       case 'noteAsset': return <NoteAssetView key={key} kind={n.attrs!.kind} id={n.attrs!.id}/>
       case 'noteVideo': return <NoteVideo key={key} id={n.attrs!.videoId}/>
       case 'image': return isNoteImageUrl(n.attrs?.src) ? <img key={key} className="note-document-image" src={n.attrs!.src} alt={n.attrs?.alt ?? ''} loading="lazy"/> : null

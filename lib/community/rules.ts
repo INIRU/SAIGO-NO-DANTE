@@ -2,7 +2,8 @@ import { z } from "zod";
 
 export const ACTIVITY_RULES = {
   deck: { points: 20, dailyLimit: 3 },
-  plan: { points: 20, dailyLimit: 3 },
+  // A plan is much more work than a deck (floors, gifts, notes).
+  plan: { points: 40, dailyLimit: 3 },
   like: { points: 2, dailyLimit: 5 },
   contribution: { points: 50, dailyLimit: null },
 } as const;
