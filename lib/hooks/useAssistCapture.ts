@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { VisualCandidates, VisualMatch, VisualReference } from '@/lib/vision/embedding-match'
 import { corroboratedChoiceEvent, effectGiftIds, eventScreenEvidence, matchOcrCandidates, type EventScreenEvidence, type OcrCatalog, type OcrMatches,
   type OcrWord } from '@/lib/vision/ocr-match'
-import { acquiredGiftFromPopup, acquisitionFloor, popupCandidateIds, popupHeaderEvidence, popupPurchaseHeader, type PopupLabelRead } from '@/lib/vision/popup-evidence'
+import { acquiredGiftFromPopup, acquisitionFloor, popupCandidateIds, popupHeaderEvidence, type PopupLabelRead } from '@/lib/vision/popup-evidence'
 import type { RecipePopupEvidence } from '@/lib/planner/fusion'
 import type { StableScene } from '@/lib/vision/scene-state'
 import { isMobileDevice } from '@/lib/vision/device'
@@ -20,8 +20,8 @@ import { acquisitionSeq, acquisitionsToRelease, continuesFusionDialog, dialogFor
   type FusionSlotRead } from '@/lib/vision/fusion-evidence'
 import { confirmsExploration, explorationFloor, explorationThemeMatch, themeSelectionHeaderFloor, type ExplorationObservation,
   type ExplorationThemeReference } from '@/lib/vision/exploration-match'
-import { darkPopupPlate, detectGiftPopupLabel, popupCaptureAction, popupIconSignature, popupLabelColor, popupPriority, popupQuality, POPUP_SETTLE_MS,
-  samePopupEpisode, type PopupLabelBox, type PopupObservation } from '@/lib/vision/popup-detect'
+import { acquisitionPlate, darkPopupPlate, detectGiftPopupLabel, popupCaptureAction, popupIconSignature, popupLabelColor, popupPriority, popupQuality,
+  POPUP_SETTLE_MS, samePopupEpisode, type PopupLabelBox, type PopupObservation } from '@/lib/vision/popup-detect'
 
 type CaptureStatus = 'idle' | 'requesting' | 'loading' | 'running' | 'unsupported' | 'error'
 export interface ScenePrediction { label: string; confidence: number }
@@ -741,11 +741,11 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
             (fusionWanted.current !== null && Date.now() - fusionWanted.current.at < 20_000))
           : verdict
         if (!giftId) {
-          // Every frame of a real gift popup read and none named the gift: a hard case worth a sample. Without the
-          // "acquired" header read, only outside battle (skill panels there look like popups) and never a purchase dialog.
+          // Every frame of a real gift popup read and none named the gift: a hard case worth a sample. Only with the
+          // "acquired" header read: without it, 64 of 90 uploaded samples showed no acquisition at all (gift info and
+          // purchase dialogs, skill windows, boss banners).
           const last = lastPopup.current
-          const acquired = popupHeaderEvidence(header)
-          if ((acquired || (icons.length && latestLabel.current !== 'battle' && !popupPurchaseHeader(header))) &&
+          if (popupHeaderEvidence(header) &&
             ![...popupPending.current.values()].some(other => other.episode === pending.episode) &&
             (last?.episode !== pending.episode || last.attempts >= profileRef.current.popupAttempts))
             sampleRecorder.current?.end('popup:' + pending.episode, { reason: 'popup-unresolved', candidates: [...icons, ...effects] })
@@ -888,7 +888,9 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
           sampleCanvas.height = Math.max(60, Math.round(480 * sourceHeight / sourceWidth))
           sampleContext.drawImage(source, 0, 0, sampleCanvas.width, sampleCanvas.height)
           const pixels = sampleContext.getImageData(0, 0, sampleCanvas.width, sampleCanvas.height)
-          const label = detectGiftPopupLabel(pixels) ?? darkPopupPlate(pixels)
+          const found = detectGiftPopupLabel(pixels) ?? darkPopupPlate(pixels)
+          // Only the acquisition popup's place: other colored plates would spend OCR and icon reads for nothing.
+          const label = found && acquisitionPlate(found, sampleCanvas.width, sampleCanvas.height) ? found : null
           const now = Date.now()
           const previous = lastPopup.current
           if (!label) {
@@ -1311,7 +1313,9 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
         for (const lane of pool.lanes) {
           lane.worker.onmessage = handle(lane)
           lane.worker.onerror = () => ocrFail(lane)
-          lane.worker.postMessage({ type: 'init', language })
+          // Gift names let the GPU reader decode popup plates against the catalog (lexicon CTC).
+          lane.worker.postMessage({ type: 'init', language,
+            giftNames: (ocrReferences.current?.gifts ?? []).flatMap(gift => gift.texts[0] ? [{ id: gift.id, name: gift.texts[0] }] : []) })
         }
         /** Mode change while capturing: a new pool replaces this one; the screen share and scene worker are kept. */
         return () => {
