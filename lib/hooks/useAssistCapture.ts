@@ -154,7 +154,7 @@ interface PopupPending {
   priority: number
   /** Its popup was already confirmed from another frame; it no longer holds back later popups. */
   settled?: boolean
-  ocr?: { header: string; labels: PopupLabelRead[]; body: string }
+  ocr?: { header: string; labels: PopupLabelRead[]; body: string; lexiconId: string | null }
   icon?: VisualMatch[]
 }
 
@@ -356,7 +356,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
   const popupPending = useRef(new Map<number, PopupPending>())
   // Reads of earlier frames from the same popup; frames differ in which evidence OCR and the icon matcher recover.
   const popupEvidence = useRef(new Map<number, { floor: number; headers: string[]; labels: PopupLabelRead[];
-    icons: string[]; effects: string[] }>())
+    icons: string[]; effects: string[]; lexicon: string[] }>())
   // Per gift: capture time and popup episode of its latest confirmed acquisition and that acquisition's number in this
   // capture session; and the capture times of recent acquisitions of any gift.
   const acquisitionSeen = useRef(new Map<string, { at: number; seq: number; episode: number }>())
@@ -717,9 +717,10 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
         const catalog = ocrReferences.current
         if (!catalog) return
         const merged = popupEvidence.current.get(pending.episode) ??
-          { floor: pending.floor, headers: [], labels: [], icons: [], effects: [] }
+          { floor: pending.floor, headers: [], labels: [], icons: [], effects: [], lexicon: [] }
         merged.headers.push(pending.ocr.header)
         merged.labels.push(...pending.ocr.labels)
+        if (pending.ocr.lexiconId) merged.lexicon.push(pending.ocr.lexiconId)
         if (pending.icon[0]) merged.icons.push(pending.icon[0].id)
         merged.effects.push(...effectGiftIds(pending.ocr.body, catalog))
         popupEvidence.current.delete(pending.episode)
@@ -735,10 +736,13 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
         const verdict = icons.length > 1 ? null : acquiredGiftFromPopup({ header, labels: merged.labels, iconGiftId: icons[0] ?? null,
           effectGiftIds: effects, gifts: catalog.gifts })
         const resolve = resolvePopupRef.current
+        const inFusion = onFusionScreen(latestLabel.current, fusionTitleAt.current, Date.now()) ||
+          (fusionWanted.current !== null && Date.now() - fusionWanted.current.at < 20_000)
+        // Lexicon names below the acceptance bar only help pick a recipe result, and those come only from fusion.
         const giftId = resolve && popupHeaderEvidence(header)
-          ? resolve({ ...popupCandidateIds({ header, labels: merged.labels, iconGiftIds: icons, effectGiftIds: effects, gifts: catalog.gifts }),
-            materials: popupDialogMaterials(pending.capturedAt) }, verdict, onFusionScreen(latestLabel.current, fusionTitleAt.current, Date.now()) ||
-            (fusionWanted.current !== null && Date.now() - fusionWanted.current.at < 20_000))
+          ? resolve({ ...popupCandidateIds({ header, labels: merged.labels, iconGiftIds: icons, effectGiftIds: effects,
+            lexiconGiftIds: inFusion ? [...new Set(merged.lexicon)] : [], gifts: catalog.gifts }),
+            materials: popupDialogMaterials(pending.capturedAt) }, verdict, inFusion)
           : verdict
         if (!giftId) {
           // Every frame of a real gift popup read and none named the gift: a hard case worth a sample. Only with the
@@ -1112,7 +1116,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
         promptExplore = () => { void explore() }
         const handle = (lane: OcrLane) => (event: MessageEvent<{ type: string; requestId?: number; text?: string; words?: OcrWord[];
           floorText?: string; themeReads?: OcrWord[][]; engine?: string; adapter?: string; loading?: boolean; reason?: string;
-          header?: string; label?: string; labelWords?: OcrWord[]; labels?: PopupLabelRead[]; body?: string }>) => {
+          header?: string; label?: string; labelWords?: OcrWord[]; labels?: PopupLabelRead[]; body?: string; lexicon?: { id?: unknown } | null }>) => {
           if (!alive(lane)) return
           const result = event.data
           const mine = result.requestId === lane.activeRequest && lane.inFlight
@@ -1275,7 +1279,8 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
             const labels = Array.isArray(result.labels) && result.labels.every(read => typeof read?.text === 'string' &&
               Array.isArray(read.words)) ? result.labels : [{ text: result.label, words: result.labelWords }]
             const body = typeof result.body === 'string' ? result.body : ''
-            if (pending) { pending.ocr = { header: result.header, labels, body }; finishPopup(result.requestId!) }
+            const lexiconId = typeof result.lexicon?.id === 'string' ? result.lexicon.id : null
+            if (pending) { pending.ocr = { header: result.header, labels, body, lexiconId }; finishPopup(result.requestId!) }
             flushOcrPopup()
           } else if (result.type === 'exploreResult' && mine) {
             lane.inFlight = false
