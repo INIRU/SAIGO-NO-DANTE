@@ -232,16 +232,22 @@ const weakRead = (slot: { score: number; margin: number }) => slot.score >= 0.65
 
 /**
  * The material in each slot of one view, or null. Accepted reads must agree (a different accepted material leaves the
- * slot unknown); a slot confirms with one strong read, accepted reads in two frames, a weak read of a material the
- * other view also shows (`corroborated`), or, on the wheel only (`repeatedWeak`), the same weak read in two states.
+ * slot unknown, except on the wheel, where the player may swap a material: there the newest accepted material stands);
+ * a slot confirms with one strong read, accepted reads in two frames, a weak read of a material the other view also
+ * shows (`corroborated`), or, on the wheel only, the same weak read in two states.
  */
-function viewMaterials(reads: FusionRead[], size: number, corroborated: ReadonlyMap<string, number>, repeatedWeak: boolean): (string | null)[] {
+function viewMaterials(reads: FusionRead[], size: number, corroborated: ReadonlyMap<string, number>, wheel: boolean): (string | null)[] {
   return Array.from({ length: size }, (_, index) => {
     const seen = reads.map(read => ({ slot: read.slots[index], at: read.observedAt })).filter(item => identified(item.slot))
       .map(item => ({ slot: item.slot as { id: string; score: number; margin: number }, at: item.at }))
-    const accepted = seen.filter(item => acceptedRead(item.slot) || strongRead(item.slot))
+    let accepted = seen.filter(item => acceptedRead(item.slot) || strongRead(item.slot))
+    if (new Set(accepted.map(item => item.slot.id)).size > 1) {
+      if (!wheel) return null
+      // 2026-09-26 sample 8b74aa01: 9004 picked, then replaced by 9061; the older state named the old material.
+      const newest = accepted.reduce((latest, item) => item.at > latest.at ? item : latest).slot.id
+      accepted = accepted.filter(item => item.slot.id === newest)
+    }
     const ids = new Set(accepted.map(item => item.slot.id))
-    if (ids.size > 1) return null
     if (ids.size === 1) {
       const [id] = ids
       if (accepted.some(item => strongRead(item.slot)) || new Set(accepted.map(item => item.at)).size >= 2 || corroborated.has(id)) return id
@@ -258,7 +264,7 @@ function viewMaterials(reads: FusionRead[], size: number, corroborated: Readonly
     // Within the wheel, repeats share the same rendering and occlusion (the orb 9203 under the cursor read as 9769 at
     // 0.80 / 0.16 in consecutive states): the same weak icon must lead by REPEAT_MARGIN in two states ≥ 250 ms apart.
     const times = weakReads.filter(item => item.slot.margin >= REPEAT_MARGIN).map(item => item.at)
-    return repeatedWeak && times.length >= 2 && Math.max(...times) - Math.min(...times) >= 250 ? id : null
+    return wheel && times.length >= 2 && Math.max(...times) - Math.min(...times) >= 250 ? id : null
   })
 }
 
@@ -298,6 +304,15 @@ export function fusionMaterials(reads: FusionRead[], count: number, capacity: nu
     for (let index = 0; index < missing; index++) combined.push(id)
   }
   return combined.length <= count ? combined : dialog.length <= count ? dialog : []
+}
+
+/**
+ * How many materials a fusion without a seen dialog used: the most wheel positions filled in one state (an unread slot
+ * counts; blank ones do not). A special shop is often fused with two or three of its five positions, so the capacity alone
+ * would leave such a fusion forever incomplete. 0 without wheel reads.
+ */
+export function wheelSelectionSize(reads: FusionRead[]): number {
+  return Math.max(0, ...reads.filter(read => read.view === 'wheel').map(read => read.slots.filter(slot => !(slot && 'blank' in slot)).length))
 }
 
 /**

@@ -16,7 +16,7 @@ import { EMPTY_SALE_STATE, isSellWindow, readSaleStep, sellCost, sellGiftId } fr
 import { readSkillExchange, type SkillExchangeRead } from '@/lib/vision/skill-exchange'
 import { acquisitionSeq, acquisitionsToRelease, continuesFusionDialog, dialogForResult, dialoglessFusionResult, fusionAnchors,
   fusionConfirmation, fusionDialogClosed, fusionMaterials, onFusionScreen, showsFusionTitle,
-  fusionWheelAnchors, fusionWheelCrop, fusionWheelResultBox, isFusionSelectionScreen, wheelBandMatch, WHEEL_BAND_MIN, WHEEL_BAND_SIZE,
+  fusionWheelAnchors, fusionWheelCrop, fusionWheelResultBox, isFusionSelectionScreen, wheelBandMatch, wheelSelectionSize, WHEEL_BAND_MIN, WHEEL_BAND_SIZE,
   type FusionAnchors, type FusionDialogEvidence, type FusionRead, type SeenDialog, type WheelAnchors,
   type FusionSlotRead } from '@/lib/vision/fusion-evidence'
 import { confirmsExploration, explorationFloor, explorationThemeMatch, themeSelectionHeaderFloor, type ExplorationObservation,
@@ -660,6 +660,8 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
           item.frame.close()
           return false
         })
+        // Without a dialog, the fullest wheel state says how many of the capacity's positions this fusion used.
+        if (dialog.dialogless) dialog.count = Math.min(dialog.capacity, wheelSelectionSize(dialog.reads) || dialog.capacity)
         if (fusionMaterials(dialog.reads, dialog.count, dialog.capacity).length === dialog.count) finishFusionDialog()
       }
       /**
