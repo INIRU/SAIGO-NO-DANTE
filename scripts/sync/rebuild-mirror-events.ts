@@ -5,7 +5,7 @@ import { createHash } from 'node:crypto'
 import { createClient } from '@supabase/supabase-js'
 import { config } from 'dotenv'
 import { eventImageId } from '../assets/event-image-source'
-import { sourceResults, sourceResultText, walkEventGraph, type SourceEvent, type SourceForm } from './mirror-event-source'
+import { identicalEventCopies, sequenceEventIds, sinnerCharacterId, sourceResults, sourceResultText, walkEventGraph, type SourceEvent, type SourceForm } from './mirror-event-source'
 config({ path: '.env.local', quiet: true })
 type Locale = 'ko' | 'en' | 'ja'
 type Text = { id: number; name?: string; title?: string; desc?: string; behaveDesc?: string; prevDesc?: string; eventDesc?: string; successDesc?: string[]; failureDesc?: string[]; options?: { message?: string; messageDesc?: string; result?: string[] }[] }
@@ -79,6 +79,7 @@ export async function rebuildMirrorEvents(apply = process.argv.includes('--fix')
     for (const theme of source.list) {
       for (const id of [...(theme.mapGenOption?.eventPool ?? []), ...(theme.mapGenOption?.specialEventPool ?? [])]) addEntry(id, theme.id)
       fixedEntries(theme.mapGenSequence, theme.id)
+      for (const id of sequenceEventIds(theme.mapGenSequence)) addEntry(id, theme.id)
     }
   }
   const graph = walkEventGraph(nodes, entries)
@@ -148,12 +149,15 @@ export async function rebuildMirrorEvents(apply = process.argv.includes('--fix')
       return [lang, [text.prevDesc, text.eventDesc].filter(Boolean).join('\n\n')]
     }))
     const hasIntro = Object.values(intro).some(Boolean)
-    const namedUnits: Record<string, number> = { Yisang: 1, Rodion: 9, Ishmael: 8 }
     const corrections = ((judgment.adderInfo ?? []) as {correctionCase: string; adder: number}[]).map(correction => {
       const separator = correction.correctionCase.indexOf('_')
       const type = correction.correctionCase.slice(0, separator), keys = correction.correctionCase.slice(separator + 1).split(',')
       return { ...correction, labels: Object.fromEntries((Object.keys(langs) as Locale[]).map(lang => [lang, keys.map(key => {
-        if (type === 'SpecificUnit') return characterLabels[lang][namedUnits[key]] ?? key
+        if (type === 'SpecificUnit') {
+          const label = characterLabels[lang][sinnerCharacterId(key)]
+          if (!label) throw Error(`Missing sinner label ${lang}:${key}`)
+          return label
+        }
         if (type === 'SpecificPersonality') {
           const identity = identityById.get(Number(key))
           if (!identity) throw Error(`Missing judgment identity ${key}`)
@@ -193,7 +197,16 @@ export async function rebuildMirrorEvents(apply = process.argv.includes('--fix')
       })
     }
   }
-  const audit = { inputs: provenance, nodes: rows.length, choices: choices.length, entries: entries.size, edges: graph.edges,
+  // Exact copies of one event (source and all three languages) point at the lowest ID and show its art.
+  const copies = identicalEventCopies([...graph.reachable].map(id => nodes.get(id)!),
+    id => JSON.stringify((Object.keys(langs) as Locale[]).map(lang => { const { id: _id, ...text } = texts[lang].get(id)?.text ?? { id }; return text })))
+  const rowById = new Map(rows.map(row => [row.id as number, row]))
+  for (const [id, first] of copies) {
+    const row = rowById.get(id)!
+    row.variant_of = first
+    row.image_url ??= rowById.get(first)!.image_url
+  }
+  const audit = { inputs: provenance, nodes: rows.length, choices: choices.length, entries: entries.size, edges: graph.edges, copies: Object.fromEntries(copies),
     missingKorean, missingTemplates: [...missingTemplates], missingGifts: [...missingGifts],
     missingEntryImages: rows.filter(r => r.category === 'entry' && !r.image_url).map(r => r.id) }
   const output = join(recovery, 'event-graph-rebuild'); mkdirSync(output, { recursive: true })

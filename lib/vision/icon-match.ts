@@ -161,3 +161,13 @@ export function heldSlotRead(all: { id: string; score: number }[], held: { id: s
   if (best?.id === first.id) return { id: best.id, score: best.score, margin: best.score - (runnerUp?.score ?? -1) }
   return { id: first.id, score: first.score, margin: first.score - (second?.score ?? -1) }
 }
+
+/** A ranking (best first) with look-alike icons of one kind merged under one id, each group at its best score. */
+export function mergeRankedGroups(ranked: { id: string; score: number }[], group: (id: string) => string) {
+  const merged = new Map<string, number>()
+  for (const item of ranked) {
+    const id = group(item.id)
+    if (!merged.has(id)) merged.set(id, item.score)
+  }
+  return [...merged].map(([id, score]) => ({ id, score }))
+}

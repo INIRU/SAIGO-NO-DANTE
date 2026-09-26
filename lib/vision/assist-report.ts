@@ -10,8 +10,11 @@ export const REPORT_MAX_CORRECTIONS = 200
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 
 export interface AssistCorrection { op: 'add' | 'remove'; giftId: string; auto: boolean; clientAt: number }
-export interface ReportContext { build: string | null; mode: string; ocr: string | null }
+/** width/height: the shared capture's size when the report is taken (window captures carry title bars and odd ratios). */
+export interface ReportContext { build: string | null; mode: string; ocr: string | null; width?: number | null; height?: number | null }
 export interface AssistReport extends ReportContext {
+  width: number | null
+  height: number | null
   session: string
   counts: Record<ReportAction, { read: number; held: number }>
   corrections: AssistCorrection[]
@@ -55,7 +58,8 @@ export class AssistReportTally {
   take(): AssistReport | null {
     const empty = !this.corrections.length && REPORT_ACTIONS.every(action => !this.counts[action].read && !this.counts[action].held)
     if (empty) return null
-    const report = { session: this.session, ...this.context(), counts: this.counts, corrections: this.corrections }
+    const context = this.context()
+    const report = { session: this.session, ...context, width: context.width ?? null, height: context.height ?? null, counts: this.counts, corrections: this.corrections }
     this.counts = emptyCounts()
     this.corrections = []
     return report
@@ -68,11 +72,16 @@ export class AssistReportTally {
 
 const count = (value: unknown): value is number => Number.isInteger(value) && (value as number) >= 0 && (value as number) <= 100_000
 const text = (value: unknown, max: number): value is string => typeof value === 'string' && value.length <= max
+/** A capture side in pixels; absent in reports from before the size was sent. */
+const side = (value: unknown): number | null | false => value === undefined || value === null ? null
+  : Number.isInteger(value) && (value as number) >= 1 && (value as number) <= 16384 ? value as number : false
 
 /** Rebuilds a report from known fields only; anything malformed rejects it. */
 export function parseAssistReport(raw: unknown): AssistReport | null {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null
   const { session, build, mode, ocr, counts, corrections } = raw as Record<string, unknown>
+  const width = side((raw as Record<string, unknown>).width), height = side((raw as Record<string, unknown>).height)
+  if (width === false || height === false) return null
   if (!isSessionId(session) || !(build === null || text(build, 64)) || !text(mode, 20) || !(ocr === null || text(ocr, 20)) ||
     !counts || typeof counts !== 'object' || !Array.isArray(corrections) || corrections.length > REPORT_MAX_CORRECTIONS) return null
   const parsedCounts = emptyCounts()
@@ -87,7 +96,7 @@ export function parseAssistReport(raw: unknown): AssistReport | null {
       !(typeof item.clientAt === 'number' && Number.isFinite(item.clientAt) && item.clientAt >= 0 && item.clientAt <= 8.64e15)) return null
     parsedCorrections.push({ op: item.op, giftId: item.giftId, auto: item.auto, clientAt: item.clientAt })
   }
-  return { session, build, mode, ocr, counts: parsedCounts, corrections: parsedCorrections }
+  return { session, build, mode, ocr, width, height, counts: parsedCounts, corrections: parsedCorrections }
 }
 
 /** Best effort; survives page unload. */

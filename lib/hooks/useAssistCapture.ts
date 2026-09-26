@@ -314,8 +314,11 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
       userAgent: navigator.userAgent.slice(0, 400), build: process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA ?? null, floor,
       session: reportTally.current?.session }
   }
-  const readReportContext = () => ({ build: process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA ?? null, mode: sampleState.current.mode,
-    ocr: sampleState.current.ocrEngine?.engine.slice(0, 20) ?? null })
+  const readReportContext = () => {
+    const size = stream.current?.getVideoTracks()[0]?.getSettings()
+    return { build: process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA ?? null, mode: sampleState.current.mode,
+      ocr: sampleState.current.ocrEngine?.engine.slice(0, 20) ?? null, width: size?.width ?? null, height: size?.height ?? null }
+  }
   /** An action Assist finished reading: counted for the report, and its sample group kept (failure) or discarded. */
   const settleSample = (key: string, action: ReportAction, failure: Parameters<AssistSampleRecorder['end']>[1]) => {
     reportTally.current?.settle(action, !failure)

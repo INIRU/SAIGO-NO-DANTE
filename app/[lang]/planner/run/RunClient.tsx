@@ -28,6 +28,7 @@ import { readSampleConsent, SAMPLES_STORAGE_KEY } from '@/lib/vision/assist-samp
 import { readRecognitionMode, RECOGNITION_MODE_STORAGE_KEY, type RecognitionMode } from '@/lib/vision/recognition-profile'
 import ConfirmModal from '@/components/ui/ConfirmModal'
 import { captureEvidence, useAssistCapture } from '@/lib/hooks/useAssistCapture'
+import { recognizableEvents } from '@/lib/utils/event-catalog'
 
 /** Assist temporary saves: five slots of whole runs in this browser. */
 const RUN_DRAFTS_KEY = 'md-run-temp-slots'
@@ -61,7 +62,9 @@ export default function RunClient({ themes, gifts, recipes, identities, sinners,
   useEffect(() => { setRunSlots(loadTempSlots(RUN_DRAFTS_KEY, isRunState)) }, [])
   const [confirmReset, setConfirmReset] = useState(false)
   const giftReferences = useMemo(() => gifts.map(gift => ({ id: String(gift.game_id), imageUrl: gift.image_url })), [gifts])
-  const eventReferences = useMemo(() => events.map(event => ({ id: String(event.id), imageUrl: event.image_url })), [events])
+  // Recognition skips exact copies of another event (their text would name several events at once); lookups keep them.
+  const recognizable = useMemo(() => recognizableEvents(events, eventChoices), [events, eventChoices])
+  const eventReferences = useMemo(() => recognizable.events.map(event => ({ id: String(event.id), imageUrl: event.image_url })), [recognizable])
   const ocrCatalog = useMemo(() => ({
     gifts: gifts.map(gift => ({
       id: String(gift.game_id),
@@ -71,10 +74,10 @@ export default function RunClient({ themes, gifts, recipes, identities, sinners,
         gift.effect_plusplus, gift.effect_plusplus_en, gift.effect_plusplus_jp]
         .filter((value): value is string => Boolean(value)),
     })),
-    events: events.map(event => ({ id: String(event.id), texts: [event.name, event.desc_text, event.name_en, event.desc_text_en, event.name_jp, event.desc_text_jp].filter((value): value is string => Boolean(value)) })),
-    choices: eventChoices.map(choice => ({ id: String(choice.id), eventId: String(choice.event_id), texts: [choice.message, choice.message_en, choice.message_jp].filter((value): value is string => Boolean(value)),
+    events: recognizable.events.map(event => ({ id: String(event.id), texts: [event.name, event.desc_text, event.name_en, event.desc_text_en, event.name_jp, event.desc_text_jp].filter((value): value is string => Boolean(value)) })),
+    choices: recognizable.choices.map(choice => ({ id: String(choice.id), eventId: String(choice.event_id), texts: [choice.message, choice.message_en, choice.message_jp].filter((value): value is string => Boolean(value)),
       resultTexts: [choice.result_text, choice.result_text_en, choice.result_text_jp].filter((value): value is string => Boolean(value)) })),
-  }), [gifts, events, eventChoices])
+  }), [gifts, recognizable])
   const themeCatalog = useMemo(() => themes.map(theme => ({ id: String(theme.id),
     texts: [theme.name, theme.name_en, theme.name_jp].filter((value): value is string => Boolean(value)) })), [themes])
   // Balanced unless the user chose another mode in this browser; read after mount (the server cannot see storage).
