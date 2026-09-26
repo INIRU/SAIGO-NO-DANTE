@@ -1310,8 +1310,14 @@ function loadAcquisitionGachaPickupHits(gachaTitles: ReturnType<typeof loadAcqui
 }
 
 function acquisitionGachaFields(identity: AcquisitionIdentityRow, hit: GachaPickupHit | null, enrichGacha: boolean): Partial<AcquisitionInfo> {
-  if (!hit) return {}
   const existing = identity.acquisition_info
+  // Past pickups leave the newest extract and later re-run banners (e.g. "Target Extraction: Ryōshū") list old identities too,
+  // so a recorded launch banner stays; only an identity without one takes the source pickup.
+  if (!hit || existing?.gacha_id != null) {
+    if (!existing) return {}
+    const { gacha_id, gacha_name, gacha_name_en, gacha_name_jp } = existing
+    return Object.fromEntries(Object.entries({ gacha_id, gacha_name, gacha_name_en, gacha_name_jp }).filter(([, value]) => value != null))
+  }
   const shouldInclude = enrichGacha
     || existing == null
     || existing.gacha_id != null
