@@ -2,7 +2,7 @@ import { after, NextResponse } from 'next/server'
 import { randomUUID } from 'node:crypto'
 import { checkRequestRateLimit, rateLimitResponse } from '@/lib/rate-limit'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { parseSampleMeta, SAMPLE_FRAMES_EACH_SIDE, SAMPLE_MAX_FRAME_BYTES, SAMPLE_MAX_TOTAL_BYTES } from '@/lib/vision/assist-samples'
+import { parseSampleMeta, SAMPLE_MAX_FRAMES, SAMPLE_MAX_FRAME_BYTES, SAMPLE_MAX_TOTAL_BYTES } from '@/lib/vision/assist-samples'
 
 const BUCKET = 'assist-samples'
 const KEEP_MS = 180 * 86_400_000
@@ -20,7 +20,7 @@ export async function POST(request: Request) {
   let meta = null
   try { meta = parseSampleMeta(JSON.parse(String(form.get('meta')))) } catch { /* rejected below */ }
   const frames = form.getAll('frame')
-  if (!meta || !frames.length || frames.length > SAMPLE_FRAMES_EACH_SIDE * 2) return bad('invalid sample')
+  if (!meta || !frames.length || frames.length > SAMPLE_MAX_FRAMES) return bad('invalid sample')
   if (frames.some(frame => !(frame instanceof File) || frame.type !== 'image/jpeg' || !frame.size || frame.size > SAMPLE_MAX_FRAME_BYTES) ||
     frames.reduce((total, frame) => total + (frame as File).size, 0) > SAMPLE_MAX_TOTAL_BYTES) return bad('invalid frames')
   const images = await Promise.all(frames.map(async frame => Buffer.from(await (frame as File).arrayBuffer())))

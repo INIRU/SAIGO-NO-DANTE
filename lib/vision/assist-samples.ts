@@ -1,6 +1,8 @@
 /**
  * Opt-in recognition samples: when Assist is unsure, the 5 frames before and 5 after are sent (JPEG, 1280 px wide) so
- * the recognizer can be retrained on real hard cases. Off unless the user chose it; never tied to an account.
+ * the recognizer can be retrained on real hard cases. A fusion is kept as one folder instead (its latest wheel states,
+ * the confirmation dialog and the result) and sent only if its materials could not all be read. Off unless the user chose it;
+ * never tied to an account.
  */
 import { DETECTION_KINDS, type DetectionSettings } from './detection-settings'
 
@@ -9,6 +11,10 @@ export const SAMPLES_DAILY_KEY = 'limbus-assist-samples-daily'
 export const SAMPLE_REASONS = ['popup-unresolved', 'fusion-materials', 'fusion-dialogless', 'sale-unresolved'] as const
 export type SampleReason = typeof SAMPLE_REASONS[number]
 export const SAMPLE_FRAMES_EACH_SIDE = 5
+/** Frames per sample: 5 + 5 around a popup, or a fusion folder's scenes plus the frames after it (privacy policy: about 5 each). */
+export const SAMPLE_MAX_FRAMES = SAMPLE_FRAMES_EACH_SIDE * 2
+// 합성 폴더에 남기는 장면 수(가장 최근 것부터). 뒤에 붙는 3장과 합쳐 9장이다
+const FOLDER_SCENES = 6
 export const SAMPLE_MAX_FRAME_BYTES = 400 * 1024
 export const SAMPLE_MAX_TOTAL_BYTES = 3 * 1024 * 1024
 export const SAMPLE_DAILY_LIMIT = 30
@@ -17,6 +23,11 @@ const SAMPLE_INTERVAL_MS = 300
 const SAMPLE_COOLDOWN_MS = 20_000
 // 이름판 글자를 학습에 쓸 만한 폭(960 px는 작은 글자가 뭉개졌다). JPEG 한 장 약 135 KB로 장당·샘플당 제한 안이다.
 const SAMPLE_WIDTH = 1280
+// 합성 폴더: 합성 화면을 이만큼 보지 못하면 합성하지 않고 나간 것으로 보고 버린다
+const FOLDER_IDLE_MS = 20_000
+// 폴더를 보낼 때 결과 창이 담기도록 뒤에 붙이는 장수
+const FOLDER_AFTER_FRAMES = 3
+const FOLDER_MARK_GAP_MS = 1500
 
 /** true/false once chosen in this browser, null while never asked. */
 export function readSampleConsent(storage: Pick<Storage, 'getItem'> | null | undefined): boolean | null {
@@ -103,6 +114,8 @@ export type SampleContext = Omit<SampleMeta, 'reason' | 'width' | 'height' | 'ca
 export class AssistSampleRecorder {
   private ring: ImageBitmap[] = []
   private pending: { reason: SampleReason; candidates: string[]; frames: ImageBitmap[]; want: number } | null = null
+  /** The fusion being watched: its key scenes, kept in this browser until the fusion is read. */
+  private folder: { frames: ImageBitmap[]; touchedAt: number; takeNext: boolean; markedAt: number } | null = null
   private lastFrameAt = 0
   private lastSampleAt = -Infinity
   private busy = false
@@ -124,33 +137,107 @@ export class AssistSampleRecorder {
       .then(bitmap => {
         const pending = this.pending
         if (this.closed) bitmap.close()
-        else if (pending) {
+        else {
+          this.fileNext(bitmap, now)
+          if (pending) {
           pending.frames.push(bitmap)
           if (pending.frames.length < pending.want) return
           this.pending = null
           void this.send(pending)
-        } else {
+          } else {
           this.ring.push(bitmap)
           while (this.ring.length > SAMPLE_FRAMES_EACH_SIDE) this.ring.shift()!.close()
+          }
         }
       })
       .catch(() => {})
       .finally(() => { copy.close(); this.busy = false })
   }
 
-  /** At most one sample per 20 s and SAMPLE_DAILY_LIMIT per browser per day. */
-  trigger(reason: SampleReason, candidates: readonly string[] = []) {
+  /** At most one sample per 20 s and SAMPLE_DAILY_LIMIT per browser per day; takes the slot when allowed. */
+  private allow(): boolean {
     const now = performance.now()
-    if (this.closed || this.pending || now - this.lastSampleAt < SAMPLE_COOLDOWN_MS || !this.ring.length) return
-    try { if (!takeDailySample(window.localStorage, new Date())) return } catch { return }
+    if (this.closed || this.pending || now - this.lastSampleAt < SAMPLE_COOLDOWN_MS) return false
+    try { if (!takeDailySample(window.localStorage, new Date())) return false } catch { return false }
     this.lastSampleAt = now
+    return true
+  }
+
+  trigger(reason: SampleReason, candidates: readonly string[] = []) {
+    if (!this.ring.length || !this.allow()) return
     const frames = this.ring.splice(0)
     this.pending = { reason, candidates: candidates.slice(0, 20).map(String), frames, want: frames.length + SAMPLE_FRAMES_EACH_SIDE }
+  }
+
+  /** The fusion screen is up: opens its folder, or keeps the open one alive. */
+  openFolder() {
+    if (this.closed) return
+    const now = performance.now()
+    if (this.folder && now - this.folder.touchedAt > FOLDER_IDLE_MS) this.discardFolder()
+    if (this.folder) this.folder.touchedAt = now
+    else this.folder = { frames: [], touchedAt: now, takeNext: false, markedAt: -Infinity }
+  }
+
+  /** Files a scene the reader just saw (a new wheel state). The source stays owned by the caller. */
+  async keepFrame(source: ImageBitmapSource, width: number, height: number) {
+    this.openFolder()
+    const folder = this.folder
+    if (!folder || !width) return
+    const w = Math.min(SAMPLE_WIDTH, width)
+    const bitmap = await createImageBitmap(source, { resizeWidth: w, resizeHeight: Math.max(1, Math.round(height * w / width)) }).catch(() => null)
+    if (bitmap) this.addToFolder(folder, bitmap)
+  }
+
+  /** Files the next captured frame (a confirmation dialog or result popup the reader just saw). */
+  markNext() {
+    this.openFolder()
+    const folder = this.folder
+    // A dialog stays up across many reads: one scene per sighting is enough.
+    if (!folder || folder.touchedAt - folder.markedAt < FOLDER_MARK_GAP_MS) return
+    folder.markedAt = folder.touchedAt
+    folder.takeNext = true
+  }
+
+  /**
+   * The fusion was read. Read in full (null): the folder is discarded. Otherwise it is sent, with the next few frames
+   * so the result popup is included.
+   */
+  closeFolder(failure: { reason: SampleReason; candidates: readonly string[] } | null) {
+    const folder = this.folder
+    this.folder = null
+    if (!folder) return
+    if (!failure || !folder.frames.length || !this.allow()) {
+      for (const bitmap of folder.frames) bitmap.close()
+      return
+    }
+    const frames = folder.frames.splice(0)
+    this.pending = { reason: failure.reason, candidates: failure.candidates.slice(0, 20).map(String), frames, want: frames.length + FOLDER_AFTER_FRAMES }
+  }
+
+  private fileNext(bitmap: ImageBitmap, now: number) {
+    const folder = this.folder
+    if (!folder) return
+    if (now - folder.touchedAt > FOLDER_IDLE_MS) return this.discardFolder()
+    if (!folder.takeNext) return
+    folder.takeNext = false
+    createImageBitmap(bitmap).then(copy => this.addToFolder(folder, copy)).catch(() => {})
+  }
+
+  private addToFolder(folder: NonNullable<AssistSampleRecorder['folder']>, bitmap: ImageBitmap) {
+    if (this.closed || this.folder !== folder) return bitmap.close()
+    folder.frames.push(bitmap)
+    while (folder.frames.length > FOLDER_SCENES) folder.frames.shift()!.close()
+  }
+
+  private discardFolder() {
+    for (const bitmap of this.folder?.frames ?? []) bitmap.close()
+    this.folder = null
   }
 
   close() {
     this.closed = true
     for (const bitmap of [...this.ring, ...(this.pending?.frames ?? [])]) bitmap.close()
+    this.discardFolder()
     this.ring = []
     this.pending = null
   }
