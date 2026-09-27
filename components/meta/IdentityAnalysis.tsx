@@ -3,13 +3,13 @@
 import Image from 'next/image'
 import { motion, useReducedMotion } from 'motion/react'
 import { smoothTransition } from '@/lib/animations'
-import { getIdentityPortraitUrl, getIdentityProfileUrl } from '@/lib/utils/images'
-import { useState, type ReactNode } from 'react'
+import { getIdentityProfileUrl } from '@/lib/utils/images'
+import { useMemo, useState } from 'react'
 import styles from '@/styles/components/MetaAnalysis.module.css'
 import { useLocale, useTranslations } from 'next-intl'
-import { ArrowUpRight, Layers3, X, ChevronsUpDown } from 'lucide-react'
+import { ArrowUpRight, Layers3, X, ChevronsUpDown, Search } from 'lucide-react'
 import { Link } from '@/lib/i18n/navigation'
-import { isBaseEgo, type CountStat, type MetaData, type MetaInsightPost, type MetaUsage } from '@/lib/meta/types'
+import { isBaseEgo, type CountStat, type IdentityStat, type MetaData, type MetaInsightPost } from '@/lib/meta/types'
 import type { Identity } from '@/lib/types'
 import type { SupportedLang } from '@/lib/i18n/types'
 import IdentityCard from '@/components/sinners/IdentityCard'
@@ -18,8 +18,8 @@ import { Toggle } from '@/components/tools/LunacyControls'
 import IdentityInterest from './IdentityInterest'
 import IdentityPickerModal from './IdentityPickerModal'
 import KeywordBadge from './KeywordBadge'
-import DonutChart, { ComboLabel, comboColors, usageColor, type DonutSegment } from './DonutChart'
-import { EgoLeaders, PairLeaders, PlanInsights, SinnerLeaders } from './MetaSections'
+import DonutChart, { OTHER, collapse, useSegments, usageColor } from './DonutChart'
+import { PlanInsights, Portrait } from './MetaSections'
 import SkillExchangeInsight from './SkillExchangeInsight'
 
 function countBy(posts: MetaInsightPost[], key: (post: MetaInsightPost) => string): CountStat[] {
@@ -28,25 +28,43 @@ function countBy(posts: MetaInsightPost[], key: (post: MetaInsightPost) => strin
   return [...counts].map(([k, count]) => ({ key: k, count })).sort((a, b) => b.count - a.count || a.key.localeCompare(b.key))
 }
 const comboKey = (post: MetaInsightPost) => post.combo.join('+')
-const OTHER = '__other'
-const LEGEND_LIMIT = 6
 const COMPANION_LIMIT = 8
 const ORDER_SLOTS = 12
-/** Keeps the largest slices readable; the rest share one slice. */
-function collapse(rows: CountStat[]): CountStat[] {
-  if (rows.length <= LEGEND_LIMIT + 1) return rows
-  return [...rows.slice(0, LEGEND_LIMIT), { key: OTHER, count: rows.slice(LEGEND_LIMIT).reduce((sum, row) => sum + row.count, 0) }]
-}
 
 function Share({ value, digits = 1 }: { value: number; digits?: number }) {
   return <span className={styles.share}>{value.toFixed(digits)}<small>%</small></span>
 }
 
-export default function IdentityAnalysis({ data, summary }: { data: MetaData; summary: ReactNode }) {
+/** Desktop list of fielded identities; phones use the picker modal instead. */
+function IdentityList({ rows, sampleCount, selectedId, onSelect, name }: { rows: IdentityStat[]; sampleCount: number; selectedId: string; onSelect: (id: string) => void; name: (row: IdentityStat) => string }) {
+  const t = useTranslations('meta.analysis')
+  const rootT = useTranslations()
+  const locale = useLocale() as SupportedLang
+  const [search, setSearch] = useState('')
+  const shown = useMemo(() => {
+    const query = search.trim().toLocaleLowerCase(locale)
+    return query ? rows.filter(row => (name(row) + ' ' + rootT('sinner.' + row.sinner_id)).toLocaleLowerCase(locale).includes(query)) : rows
+  }, [rows, search, locale, name, rootT])
+  return <aside className={styles.identityList} aria-label={t('identity')} data-identity-list>
+    <label className={styles.pickerSearch}>
+      <Search size={16} aria-hidden="true" />
+      <input aria-label={t('search')} placeholder={t('search')} value={search} onChange={event => setSearch(event.target.value)} />
+      {search && <button type="button" onClick={() => setSearch('')} aria-label={t('clearSearch')}><X size={14} /></button>}
+    </label>
+    {shown.length ? <ol>{shown.map(row => <li key={row.identity_id}>
+      <button type="button" aria-pressed={row.identity_id === selectedId} onClick={() => onSelect(row.identity_id)}>
+        <Portrait row={row} size={40} className={styles.rankPortrait} />
+        <span className={styles.rankName}>{name(row)}<small>{rootT('sinner.' + row.sinner_id)}</small></span>
+        <span className={styles.share}>{(row.count / (sampleCount || 1) * 100).toFixed(1)}<small>%</small></span>
+      </button>
+    </li>)}</ol> : <p className={styles.empty}>{t('noMatches')}</p>}
+  </aside>
+}
+
+export default function IdentityAnalysis({ data, selectedId, onSelect }: { data: MetaData; selectedId: string; onSelect: (identityId: string) => void }) {
   const t = useTranslations('meta.analysis')
   const reduceMotion = useReducedMotion()
   const locale = useLocale() as SupportedLang
-  const [selected, setSelected] = useState('')
   const [pickerOpen, setPickerOpen] = useState(false)
   const rootT = useTranslations()
   const [excludeBase, setExcludeBase] = useState(true)
@@ -54,59 +72,18 @@ export default function IdentityAnalysis({ data, summary }: { data: MetaData; su
   const [allCompanions, setAllCompanions] = useState(false)
   const [usageFilter, setUsageFilter] = useState<string | null>(null)
   const [comboFilter, setComboFilter] = useState<string | null>(null)
-  const [overviewUsage, setOverviewUsage] = useState<string | null>(null)
-  const [overviewCombo, setOverviewCombo] = useState<string | null>(null)
-  const [rankingBench, setRankingBench] = useState(false)
-  const identityId = data.battleIdentityStats.some(row => row.identity_id === selected) ? selected : data.battleIdentityStats[0]?.identity_id ?? ''
+  const identityId = data.battleIdentityStats.some(row => row.identity_id === selectedId) ? selectedId : data.battleIdentityStats[0]?.identity_id ?? ''
   const insight = data.identityInsights?.[identityId]
-  const name = (row: { name_kr: string; name_en?: string | null; name_jp?: string | null }) => (locale === 'en' ? row.name_en : locale === 'ja' ? row.name_jp : row.name_kr) || row.name_kr
-  const usageSegments = (rows: CountStat[]): DonutSegment[] => rows.map(row => ({ key: row.key, count: row.count, colors: [usageColor(row.key as MetaUsage)], label: t('usage.' + row.key) }))
-  const comboSegments = (rows: CountStat[]): DonutSegment[] => collapse(rows).map(row => row.key === OTHER
-    ? { key: OTHER, count: row.count, colors: ['#3a2a15'], label: t('others', { count: rows.length - LEGEND_LIMIT }) }
-    : { key: row.key, count: row.count, colors: comboColors(row.key), label: <ComboLabel combo={row.key} /> })
-  const selectIdentity = (id: string) => { setSelected(id); setUsageFilter(null); setComboFilter(null); setAllCompanions(false) }
-  const focusIdentity = (id: string) => {
-    selectIdentity(id)
-    document.querySelector('[data-analysis-subject]')?.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' })
+  const name = useMemo(() => (row: { name_kr: string; name_en?: string | null; name_jp?: string | null }) => (locale === 'en' ? row.name_en : locale === 'ja' ? row.name_jp : row.name_kr) || row.name_kr, [locale])
+  const segments = useSegments()
+  const selectIdentity = (id: string) => {
+    onSelect(id); setUsageFilter(null); setComboFilter(null); setAllCompanions(false)
+    // Bring the new identity's header into view when the list was used from further down the page.
+    const subject = document.querySelector('[data-analysis-subject]')
+    if (subject && subject.getBoundingClientRect().top < 0) subject.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' })
   }
-  const fielded = new Set(data.battleIdentityStats.map(row => row.identity_id))
-  const rankingRows = (rankingBench ? data.supportIdentityStats : data.battleIdentityStats).slice(0, 6)
-  const portrait = (row: { sinner_id: string; folder_name: string | null; game_id: string | null }, size: number, className: string) => row.game_id && row.folder_name
-    ? <Image src={getIdentityPortraitUrl(row.sinner_id, row.folder_name, row.game_id, false)} alt="" width={size} height={size} className={className} />
-    : <span className={className} aria-hidden="true" />
-
-  const overview = <section className={styles.overview} aria-labelledby="meta-overview-heading" data-meta-overview>
-    <div className={styles.overviewHead}><h2 id="meta-overview-heading">{t('overview')}</h2>{summary}</div>
-    {data.sampleCount > 0 && <div className={styles.overviewGrid}>
-      <div className={styles.chartBlock}><h3>{t('usageTitle')}</h3>
-        <DonutChart label={t('usageTitle')} segments={usageSegments(data.usageStats ?? [])} active={overviewUsage} onSelect={setOverviewUsage} /></div>
-      <div className={styles.chartBlock}><h3>{t('comboTitle')}</h3><p className={styles.hint}>{t('comboHint')}</p>
-        <DonutChart label={t('comboTitle')} segments={comboSegments(data.comboStats ?? [])} active={overviewCombo} onSelect={setOverviewCombo} /></div>
-      <div className={styles.chartBlock}>
-        <div className={styles.rankingHead}><h3>{t('topIdentities')}</h3>
-          <div className={styles.segmented} role="group" aria-label={t('topIdentities')}>
-            <button type="button" aria-pressed={!rankingBench} onClick={() => setRankingBench(false)}>{t('rankingFielded')}</button>
-            <button type="button" aria-pressed={rankingBench} onClick={() => setRankingBench(true)}>{t('rankingBench')}</button>
-          </div>
-        </div>
-        <ol className={styles.ranking}>{rankingRows.map((row, i) => <li key={row.identity_id}>
-          <button type="button" aria-pressed={!rankingBench && row.identity_id === identityId} disabled={!fielded.has(row.identity_id)} onClick={() => focusIdentity(row.identity_id)}>
-            <span className={styles.rank}>{i + 1}</span>
-            {portrait(row, 40, styles.rankPortrait)}
-            <span className={styles.rankName}>{name(row)}<small>{rootT('sinner.' + row.sinner_id)}</small></span>
-            <Share value={row.count / data.sampleCount * 100} />
-            <span className={styles.legendCount}>{t('count', { count: row.count })}</span>
-          </button>
-        </li>)}</ol>
-        {!rankingRows.length && <p className={styles.empty}>{t('empty')}</p>}</div>
-    </div>}
-  </section>
-  const overall = data.sampleCount > 0 && <>
-    <SinnerLeaders data={data} onSelect={focusIdentity} />
-    <div className={styles.pairRow}><EgoLeaders data={data} /><PairLeaders data={data} onSelect={focusIdentity} /></div>
-    <PlanInsights summary={data.planStats} data={data} headingId="plans-heading" />
-  </>
-  if (!data.battleIdentityStats.length) return <section className={styles.analysis}>{overview}<div className={styles.panel}><p className={styles.empty}>{t('empty')}</p></div></section>
+  const portrait = (row: { sinner_id: string; folder_name: string | null; game_id: string | null }, size: number, className: string) => <Portrait row={row} size={size} className={className} />
+  if (!data.battleIdentityStats.length) return <div className={styles.panel}><p className={styles.empty}>{t('empty')}</p></div>
 
   const identity = data.battleIdentityStats.find(row => row.identity_id === identityId)!
   const egos = insight?.egos.filter(ego => !excludeBase || !isBaseEgo(ego.game_id)) ?? []
@@ -131,9 +108,9 @@ export default function IdentityAnalysis({ data, summary }: { data: MetaData; su
   const art = getIdentityProfileUrl(cardIdentity(identity), true)
   const basis = t('basis', { count: insight?.count ?? 0 })
 
-  return <section className={styles.analysis} data-identity-analysis>
-    {overview}
-    {overall}
+  return <div className={styles.identityLayout}>
+    <IdentityList rows={data.battleIdentityStats} sampleCount={data.sampleCount} selectedId={identityId} onSelect={selectIdentity} name={name} />
+    <section className={styles.analysis} data-identity-analysis>
     <div className={styles.subject} data-analysis-subject>
       {art && <Image key={art} src={art} alt="" fill sizes="(max-width: 639px) 100vw, 48rem" className={styles.subjectArt} />}
       <div className={styles.subjectCard}><IdentityCard identity={cardIdentity(identity)} compact board showName={false} disableHoverEffects /></div>
@@ -159,7 +136,7 @@ export default function IdentityAnalysis({ data, summary }: { data: MetaData; su
         <section className={styles.panel} aria-labelledby="order-heading">
           <div className={styles.sectionHead}><h3 id="order-heading">{t('order')}</h3><span>{basis}</span></div>
           <ol className={styles.orderChart}>{orders.map((count, i) => <li key={i} data-top={count > 0 && count === topOrderCount ? '' : undefined} aria-label={t('position', { order: i + 1 }) + ' ' + percent(count).toFixed(1) + '%'}>
-            <span className={styles.orderShare} aria-hidden="true">{count ? percent(count).toFixed(1) + '%' : ''}</span>
+            <span className={styles.orderShare} aria-hidden="true">{count > 0 && <><span className={styles.orderWhole}>{percent(count).toFixed(1)}</span><span className={styles.orderRounded}>{Math.round(percent(count))}</span><small>%</small></>}</span>
             <span className={styles.orderTrack} aria-hidden="true">
               {count > 0 && <motion.span className={styles.orderBar} style={{ height: (count / topOrderCount * 100) + '%' }} initial={reduceMotion ? false : { scaleY: 0 }} animate={{ scaleY: 1 }} transition={reduceMotion ? { duration: 0 } : { duration: .55, delay: i * .03, ease: [0.22, 1, 0.36, 1] }} />}
             </span>
@@ -173,8 +150,8 @@ export default function IdentityAnalysis({ data, summary }: { data: MetaData; su
             <Toggle label={t('formationOnly')} checked={formationOnly} onChange={setFormationOnly} showState />
           </div>
           {scoped.length ? <div className={styles.purposeCharts}>
-            <div className={styles.chartBlock}><h4>{t('usageTitle')}</h4><DonutChart label={t('usageTitle')} segments={usageSegments(scopedUsage)} active={activeUsage} onSelect={setUsageFilter} /></div>
-            <div className={styles.chartBlock}><h4>{t('comboTitle')}</h4><DonutChart label={t('comboTitle')} segments={comboSegments(scopedCombo)} active={activeCombo} onSelect={setComboFilter} /></div>
+            <div className={styles.chartBlock}><h4>{t('usageTitle')}</h4><DonutChart label={t('usageTitle')} segments={segments.usage(scopedUsage)} active={activeUsage} onSelect={setUsageFilter} /></div>
+            <div className={styles.chartBlock}><h4>{t('comboTitle')}</h4><DonutChart label={t('comboTitle')} segments={segments.combo(scopedCombo)} active={activeCombo} onSelect={setComboFilter} /></div>
           </div> : <p className={styles.empty}>{t('empty')}</p>}
         </section>
       </div>
@@ -219,4 +196,5 @@ export default function IdentityAnalysis({ data, summary }: { data: MetaData; su
       </section>
     </motion.div>}
   </section>
+  </div>
 }

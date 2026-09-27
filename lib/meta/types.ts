@@ -67,6 +67,25 @@ export interface MetaData {
   egoStats: EGOStat[]
   /** S1–S3 of each fielded identity (highest uptie), for the skill exchange icons. */
   skillCatalog: Record<string, MetaSkill[]>
+  /** Skill exchange of every fielded slot: key 'S1-S2-S3', most used first. */
+  skillSplits: CountStat[]
+  /** Floor-by-floor choices of the plans in scope. */
+  dungeon: MetaDungeon
+}
+
+/** Keys are theme pack ids, gift game ids and constraint card ids; every count is a number of plans. */
+export interface MetaDungeon {
+  plans: number
+  /** Floors 1–15 that some plan gave a theme pack, with its top packs. */
+  floors: { floor: number; plans: number; themes: CountStat[] }[]
+  /** Gifts planned on a floor, with the floors they are planned on most. */
+  routes: { key: string; count: number; floors: CountStat[] }[]
+  start: CountStat[]
+  observe: CountStat[]
+  /** Final gifts planned enhanced. */
+  enhanced: { key: string; plus: number; plusplus: number }[]
+  /** Floors 11–15: plans that set cards there, and how many of them pick each card. */
+  constraints: { floor: number; plans: number; cards: CountStat[] }[]
 }
 
 export interface MetaSkill { order: 1 | 2 | 3; name: string; name_en?: string | null; name_jp?: string | null; sin_affinity: string | null; image_id?: string | null }
@@ -92,6 +111,9 @@ export type MetaPost = {
   gifts?: string[]
   /** Theme pack ids chosen across the plan's floors. */
   themes?: string[]
+  /** Raw planner floor_plan and gift_inventory, for the Mirror Dungeon breakdown. */
+  floorPlan?: unknown
+  inventory?: unknown
   identities: unknown
   egos: unknown
 }

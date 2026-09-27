@@ -12,12 +12,13 @@ import styles from '@/styles/components/MetaAnalysis.module.css'
 const SHOWN = 5
 const DEFAULT_SPLIT = '3-2-1'
 
-/** How the formations fielding one identity spread its six skill slots over S1–S3: averages, then the most used splits. */
-export default function SkillExchangeInsight({ splits, skills, identity, basis }: {
+/** How formations spread six skill slots over S1–S3: averages, then the most used splits. Without an identity the icons read S1–S3. */
+export default function SkillExchangeInsight({ splits, skills = [], identity, basis, title }: {
   splits: CountStat[]
-  skills: MetaSkill[]
-  identity: { sinner_id: string; game_id: string | null }
+  skills?: MetaSkill[]
+  identity?: { sinner_id: string; game_id: string | null }
   basis: string
+  title?: string
 }) {
   const t = useTranslations('meta.analysis')
   const locale = useLocale() as SupportedLang
@@ -33,7 +34,7 @@ export default function SkillExchangeInsight({ splits, skills, identity, basis }
   const icon = (order: 1 | 2 | 3, dim = false) => {
     const skill = skills.find(row => row.order === order)
     const name = skill && ((locale === 'en' ? skill.name_en : locale === 'ja' ? skill.name_jp : null) || skill.name)
-    const src = identity.game_id ? getSkillIconUrl(identity, order, skill ?? undefined) : ''
+    const src = identity?.game_id ? getSkillIconUrl(identity, order, skill ?? undefined) : ''
     const color = SIN_COLORS[normalizeSin(skill?.sin_affinity ?? null) ?? 'wrath']
     return <span className={styles.skillIcon} data-dim={dim || undefined} style={{ borderBottomColor: skill ? color : 'var(--border)' }} title={name ? `S${order} ${name}` : `S${order}`}>
       {src ? <ImageWithFallback src={src} alt={name ? `S${order} ${name}` : `S${order}`} width={32} height={32} fallbackType="skill" /> : <span>S{order}</span>}
@@ -41,7 +42,7 @@ export default function SkillExchangeInsight({ splits, skills, identity, basis }
   }
 
   return <section className={styles.panel} aria-labelledby="skill-heading" data-meta-skills>
-    <div className={styles.sectionHead}><h3 id="skill-heading">{t('skills')}</h3><span>{basis}</span></div>
+    <div className={styles.sectionHead}><h3 id="skill-heading">{title ?? t('skills')}</h3><span>{basis}</span></div>
     <div className={styles.skillSummary}>
       {([1, 2, 3] as const).map(order => <div key={order} className={styles.skillAverage}>
         {icon(order)}

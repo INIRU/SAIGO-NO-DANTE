@@ -55,7 +55,7 @@ async function getSourcePosts(source: Exclude<MetaSource, 'all'>, period: MetaPe
     return query.range(from, to)
   })
   return rows.map(row => ({ id: row.id, source, created_at: row.created_at, title: row.title, keywords: row.tags, identities: row.deck, egos: row.egos,
-    difficulty: row.difficulty, gifts: planGiftIds(row.gift_inventory), themes: planThemeIds(row.floor_plan) }))
+    difficulty: row.difficulty, gifts: planGiftIds(row.gift_inventory), themes: planThemeIds(row.floor_plan), floorPlan: row.floor_plan, inventory: row.gift_inventory }))
 }
 
 type SkillRow = { identity_id: string; skill_order: number; uptie_level: number | null; variant_order: number | null; name: string; name_en: string | null; name_jp: string | null; sin_affinity: string | null; image_id: string | null }
@@ -104,8 +104,9 @@ export async function getMetaData(source: MetaSource = DEFAULT_META_SOURCE, peri
   for (const keyword of catalog.keywords) if (keyword.sin_affinity) keywordSinMap[keyword.name] = keyword.sin_affinity
   const data = aggregateMeta({ posts: [...decks, ...plans], identities: catalog.identities, egos: catalog.egos, keywordSinMap, source, period, now: Date.now() })
   const summaries = [data.planStats, ...Object.values(data.identityInsights).flatMap(insight => insight.plan ? [insight.plan] : [])]
-  const giftIds = [...new Set(summaries.flatMap(summary => summary.gifts.map(row => row.key)))]
-  const themeIds = [...new Set(summaries.flatMap(summary => summary.themes.map(row => row.key)))]
+  const { dungeon } = data
+  const giftIds = [...new Set([...summaries.flatMap(summary => summary.gifts), ...dungeon.routes, ...dungeon.start, ...dungeon.observe, ...dungeon.enhanced].map(row => row.key))]
+  const themeIds = [...new Set([...summaries.flatMap(summary => summary.themes), ...dungeon.floors.flatMap(floor => floor.themes)].map(row => row.key))]
   const [planCatalog, skillCatalog] = await Promise.all([getPlanCatalog(giftIds, themeIds), getSkillCatalog(Object.keys(data.identityInsights))])
   return { ...data, ...planCatalog, skillCatalog }
 }
