@@ -244,8 +244,9 @@ export interface GiftCatalogProps {
   toolbarEnd?: ReactNode
   /** Shown instead of the grid until a keyword, grade or search narrows the list. */
   idleHint?: ReactNode
-  /** Listed first under their own heading with the red warning mark (e.g. gifts only this floor gives). */
-  pinned?: { ids: ReadonlySet<string>; label: string }
+  /** Groups listed first, in this order, each under its own heading; a gift sits in the first group that has it.
+   *  `warning` draws the red mark (e.g. gifts only this floor gives). */
+  pinned?: { ids: ReadonlySet<string>; label: string; warning?: boolean }[]
 }
 
 type GiftItemProps = {
@@ -421,7 +422,9 @@ export default function GiftCatalog({
     }
 
     if (sortDesc) result.reverse()
-    return pinned ? [...result.filter(g => pinned.ids.has(g.id)), ...result.filter(g => !pinned.ids.has(g.id))] : result
+    if (!pinned?.length) return result
+    const rank = (g: EgoGift) => { const index = pinned.findIndex(group => group.ids.has(g.id)); return index < 0 ? pinned.length : index }
+    return result.map((g, i) => [g, rank(g), i] as const).sort((a, b) => a[1] - b[1] || a[2] - b[2]).map(([g]) => g)
   }, [gifts, keywords, grades, tiers, query, sortBy, sortDesc, themeGiftNames, slotFilter, giftSlotMap, pinned])
 
   const deferredFiltered = useDeferredValue(filtered)
@@ -463,7 +466,8 @@ export default function GiftCatalog({
   const groupCounts = useMemo(() => {
     const map = new Map<string, number>()
     for (const g of deferredFiltered) {
-      const key = pinned?.ids.has(g.id) ? PINNED_GROUP : groupBy === 'keyword' ? g.keyword : groupBy === 'grade' ? g.grade : ''
+      const pin = pinned?.findIndex(group => group.ids.has(g.id)) ?? -1
+      const key = pin >= 0 ? PINNED_GROUP + pin : groupBy === 'keyword' ? g.keyword : groupBy === 'grade' ? g.grade : ''
       map.set(key, (map.get(key) ?? 0) + 1)
     }
     return map
@@ -471,7 +475,8 @@ export default function GiftCatalog({
   const groups = useMemo(() => {
     const out: { key: string; gifts: EgoGift[] }[] = []
     for (const g of visibleGifts) {
-      const key = pinned?.ids.has(g.id) ? PINNED_GROUP : groupBy === 'keyword' ? g.keyword : groupBy === 'grade' ? g.grade : ''
+      const pin = pinned?.findIndex(group => group.ids.has(g.id)) ?? -1
+      const key = pin >= 0 ? PINNED_GROUP + pin : groupBy === 'keyword' ? g.keyword : groupBy === 'grade' ? g.grade : ''
       const last = out[out.length - 1]
       if (last && last.key === key) last.gifts.push(g)
       else out.push({ key, gifts: [g] })
@@ -701,15 +706,16 @@ export default function GiftCatalog({
         <div className="mt-4" style={{ minHeight: compact ? 'var(--gift-catalog-min-h)' : undefined, opacity: isStale ? 0.7 : 1, transition: 'opacity 0.1s ease' }}>
           {groups.map((group, gi) => {
             const iconUrl = groupBy === 'keyword' ? getGiftKeywordIcon(group.key) : null
-            const isPinned = pinned !== undefined && group.key === PINNED_GROUP
+            const pin = group.key.startsWith(PINNED_GROUP) ? pinned?.[Number(group.key.slice(PINNED_GROUP.length))] : undefined
+            const isPinned = pin !== undefined
             return (
-              <section key={`${group.key}-${gi}`} className="mb-5" aria-label={isPinned ? pinned.label : groupBy ? (groupBy === 'keyword' ? keywordLabels[group.key] ?? group.key : `${t('mirrorDungeon.filter.grade')} ${GRADE_LABELS[group.key] ?? group.key}`) : undefined}>
+              <section key={`${group.key}-${gi}`} className="mb-5" aria-label={pin ? pin.label : groupBy ? (groupBy === 'keyword' ? keywordLabels[group.key] ?? group.key : `${t('mirrorDungeon.filter.grade')} ${GRADE_LABELS[group.key] ?? group.key}`) : undefined}>
                 {(groupBy || isPinned) && (
-                  <h2 className="mb-2 flex items-center gap-2" style={{ borderBottom: isPinned ? '1px solid rgba(189,36,48,0.45)' : '1px solid #2e2417', paddingBottom: '0.375rem' }}>
-                    {isPinned ? (
+                  <h2 className="mb-2 flex items-center gap-2" style={{ borderBottom: pin?.warning ? '1px solid rgba(189,36,48,0.45)' : pin ? '1px solid rgba(200,144,10,0.35)' : '1px solid #2e2417', paddingBottom: '0.375rem' }}>
+                    {pin ? (
                       <>
-                        <span className="relative inline-block h-[1.125rem] w-[1.125rem] shrink-0"><GiftWarningMark label={pinned.label} className="inset-0 h-full w-full" /></span>
-                        <span style={{ color: '#ff9c9c', fontFamily: 'var(--font-heading)', fontSize: '1rem' }}>{pinned.label}</span>
+                        {pin.warning && <span className="relative inline-block h-[1.125rem] w-[1.125rem] shrink-0"><GiftWarningMark label={pin.label} className="inset-0 h-full w-full" /></span>}
+                        <span style={{ color: pin.warning ? '#ff9c9c' : 'var(--gold-light)', fontFamily: 'var(--font-heading)', fontSize: '1rem' }}>{pin.label}</span>
                       </>
                     ) : groupBy === 'keyword' ? (
                       <>
