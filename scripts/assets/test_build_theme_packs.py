@@ -38,6 +38,18 @@ class ThemeCompositionTests(unittest.TestCase):
             finally:
                 composer.EXTRACTED_ASSET_ROOT = previous
 
+    def test_reads_the_extraction_snapshot_json_theme_floors(self):
+        with tempfile.TemporaryDirectory() as root:
+            for name in ("mirrordungeon-theme-floor-t2.json", "mirrordungeon-theme-floor-t1.json", "mirrordungeon-theme-floor-hidden.json"):
+                (Path(root) / name).write_text("{}", encoding="utf-8")
+            previous = composer.DATA_DIR
+            composer.DATA_DIR = Path(root)
+            try:
+                self.assertEqual([path.name for path in composer.theme_floor_files()], [
+                    "mirrordungeon-theme-floor-t1.json", "mirrordungeon-theme-floor-t2.json", "mirrordungeon-theme-floor-hidden.json"])
+            finally:
+                composer.DATA_DIR = previous
+
     def test_selects_only_the_requested_theme_ids(self):
         """REQ-DATA-SYNC-020"""
         items = [composer.ThemeItem("t1", theme_id, "", f"pack{theme_id}", None, False, False, False, False, None) for theme_id in (1001, 1002)]

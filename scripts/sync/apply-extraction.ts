@@ -4,8 +4,8 @@
  * Default: verify the ZIP and dry-run every sync. --fix: back up, then apply step by step and stop at the first failure.
  *
  *   node --import tsx scripts/sync/apply-extraction.ts (--zip <LimbusAssets_*.zip> | --source <unpacked LimbusAssets>) --work <dir> [--fix]
- * Theme packs without an image in Storage are composed by build-theme-packs.py (the bundle's portable Python on Windows,
- * python3 elsewhere; LIMBUS_PYTHON overrides) and uploaded with --fix. Existing images are never replaced.
+ * Theme pack cards the extraction tool composed into the ZIP are uploaded (as WebP) only when Storage lacks them; existing
+ * images are never replaced.
  */
 import { spawnSync } from 'node:child_process'
 import { existsSync, mkdirSync, openSync, closeSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
@@ -14,7 +14,8 @@ import { fileURLToPath } from 'node:url'
 import { createClient } from '@supabase/supabase-js'
 import { config } from 'dotenv'
 import { prepareExtractedAssets } from './prepare-extracted-assets'
-import { missingThemeImages } from './theme-images'
+import sharp from 'sharp'
+import { missingThemeImages, themeImageSource } from './theme-images'
 
 config({ path: '.env.local', quiet: true })
 const args = process.argv.slice(2)
@@ -39,8 +40,6 @@ const STEPS: Step[] = [
 const client = () => createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY!)
 const db = () => client().schema('limbus')
 const THEME_IMAGE_DIR = 'icons/theme-packs'
-const bundled = (file: string, fallback: string) => BUNDLE_DIR ? join(BUNDLE_DIR, file) : fallback
-const PYTHON = process.env.LIMBUS_PYTHON ?? (BUNDLE_DIR && process.platform === 'win32' ? join(BUNDLE_DIR, 'python', 'python.exe') : 'python3')
 
 async function all(table: string, columns = '*') {
   const rows: Record<string, unknown>[] = []
@@ -52,10 +51,10 @@ async function all(table: string, columns = '*') {
   }
 }
 
-function run(work: string, label: string, command: string[], env: NodeJS.ProcessEnv, executable = process.execPath) {
+function run(work: string, label: string, command: string[], env: NodeJS.ProcessEnv) {
   const log = join(work, 'logs', `${label}.log`)
   const fd = openSync(log, 'w')
-  const result = spawnSync(executable, command, { cwd: process.cwd(), env, stdio: ['ignore', fd, fd] })
+  const result = spawnSync(process.execPath, command, { cwd: process.cwd(), env, stdio: ['ignore', fd, fd] })
   closeSync(fd)
   const ok = result.status === 0
   console.log(`${ok ? 'ok  ' : 'FAIL'} ${label}`)
@@ -123,23 +122,22 @@ async function main() {
       ;(report.steps as string[]).push('identity-images')
     }
 
-    // New theme packs: compose the pack (and boss) images the game data names but Storage lacks, and upload them with --fix.
-    const themeImages = missingThemeImages(data, { packs: await storedNames(THEME_IMAGE_DIR), bosses: await storedNames(`${THEME_IMAGE_DIR}/boss`) })
-    report.newThemeImages = themeImages.files
-    if (themeImages.ids.length) {
-      const out = join(work, 'theme-packs')
-      run(work, 'theme-images-compose', [bundled('build-theme-packs.py', 'scripts/assets/build-theme-packs.py')], {
-        ...env, PYTHONUTF8: '1', LIMBUS_EXTRACTED_ASSET_ROOT: source, THEME_PACK_WORK_DIR: out, LIMBUS_THEME_IDS: themeImages.ids.join(','),
-        LIMBUS_COMPOSITION_ASSET_DIR: process.env.LIMBUS_COMPOSITION_ASSET_DIR ?? bundled('theme-composition', '../assets/recovery-2026-09-10/theme-composition'),
-        ...(BUNDLE_DIR ? { LIMBUS_CHAIN_FONT: join(BUNDLE_DIR, 'SCDream5.woff2') } : {}),
-      }, PYTHON)
+    // New theme packs: the extraction tool composes every pack card into the ZIP (kind '합성 테마팩'); upload the ones Storage lacks.
+    const themeFiles = missingThemeImages(data, { packs: await storedNames(THEME_IMAGE_DIR), bosses: await storedNames(`${THEME_IMAGE_DIR}/boss`) })
+    report.newThemeImages = themeFiles
+    if (themeFiles.length) {
+      const images = JSON.parse(readFileSync(join(source, 'Reports', 'manifest.json'), 'utf8').replace(/^\uFEFF/, ''))
+      const sources = themeFiles.map(file => ({ file, path: themeImageSource(file, images) }))
+      const unsourced = sources.filter(item => !item.path).map(item => item.file)
+      if (unsourced.length) throw Error(`the ZIP has no composed image for ${unsourced.join(', ')}; update the extraction tool and extract again`)
       if (FIX) {
         const bucket = client().storage.from('limbus-assets')
-        for (const file of themeImages.files) {
-          const { error } = await bucket.upload(`${THEME_IMAGE_DIR}/${file}`, readFileSync(join(out, 'output', file)), { contentType: 'image/webp', cacheControl: '3600', upsert: false })
+        for (const { file, path } of sources) {
+          const webp = await sharp(readFileSync(join(source, 'Images', path!))).webp({ quality: 95, effort: 6 }).toBuffer()
+          const { error } = await bucket.upload(`${THEME_IMAGE_DIR}/${file}`, webp, { contentType: 'image/webp', cacheControl: '3600', upsert: false })
           if (error) throw Error(`upload ${THEME_IMAGE_DIR}/${file}: ${error.message}`)
         }
-        console.log(`ok   theme-images (${themeImages.files.length} uploaded)`)
+        console.log(`ok   theme-images (${sources.length} uploaded)`)
         ;(report.steps as string[]).push('theme-images')
       }
     }
