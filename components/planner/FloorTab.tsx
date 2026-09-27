@@ -33,7 +33,7 @@ import {
   themeExclusiveGiftIds,
   withThemeRewards,
 } from '@/lib/planner/fusion'
-import { deriveFinalGifts, finalEnhanceEdit, type FinalGift } from '@/lib/planner/final-gifts'
+import { deriveFinalGifts, finalEnhanceEdit, finalKeyForFloorPick, type FinalGift } from '@/lib/planner/final-gifts'
 import { isAllowedFloorDifficulty, isFloorDifficulty } from '@/lib/planner/floor-difficulty'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
 import {
@@ -252,10 +252,11 @@ export default function FloorTab({ state, dispatch, themes, gifts, recipes, gift
   // Stored picks (final_<id>[_plus|_plusplus]) versus the derived final set, which also holds start/observed gifts
   // and drops whatever a fusion result in it consumed.
   const storedFinalIds = useMemo(() => parseFinalGiftIds(state.giftInventory), [state.giftInventory])
-  const { gifts: finalEntries, consumed: blockedFinalMaterialIds } = useMemo(
+  const derivedFinal = useMemo(
     () => deriveFinalGifts(state.giftInventory, recipes, giftMap),
     [giftMap, recipes, state.giftInventory],
   )
+  const { gifts: finalEntries, consumed: blockedFinalMaterialIds } = derivedFinal
   const finalEntryById = useMemo(() => new Map(finalEntries.map(entry => [entry.id, entry])), [finalEntries])
   const finalGiftIds = useMemo(() => new Set(finalEntryById.keys()), [finalEntryById])
 
@@ -464,13 +465,13 @@ export default function FloorTab({ state, dispatch, themes, gifts, recipes, gift
       }
     } else {
       const gid = parseInt(giftGameId, 10)
-      if (Number.isNaN(gid) || blockedFinalMaterialIds.has(gid)) return
+      if (Number.isNaN(gid)) return
+      // 층 계획은 최종 조합이 소비하는 재료도 고를 수 있다. 최종 기프트에는 넣지 않는다(REQ-PLANNER-018).
       dispatch({ type: 'SET_FLOOR_GIFTS', floor: activeEntry.floor, giftIds: [...currentIds, giftGameId] })
-      if (!finalGiftIds.has(gid)) {
-        dispatch({ type: 'ADD_GIFT', giftId: `final_${gid}` })
-      }
+      const finalKey = finalKeyForFloorPick(gid, derivedFinal)
+      if (finalKey) dispatch({ type: 'ADD_GIFT', giftId: finalKey })
     }
-  }, [activeEntry, blockedFinalMaterialIds, dispatch, finalGiftIds, state.floorPlan])
+  }, [activeEntry, derivedFinal, dispatch, state.floorPlan])
 
   function getThemeAvailableGifts(theme: ThemeData): GiftData[] {
     return (theme.ego_gift_ids ?? [])
