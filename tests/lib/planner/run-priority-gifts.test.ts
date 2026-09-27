@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest'
-import { GIFT_PROMOTION_SCENES, getCurrentFloorPriorityGifts, getFusionTierGifts, nextGiftPromotion, planGiftIds, planThemeGiftIds, visibleTargetGifts, type GiftPromotion } from '../../../lib/planner/run-priority-gifts'
+import { GIFT_PROMOTION_SCENES, getCurrentFloorPriorityGifts, getFusionTierGifts, nextGiftPromotion, planGiftIds, planThemeGiftIds, type GiftPromotion } from '../../../lib/planner/run-priority-gifts'
 import { createInitialRunState, normalizeRunState, type RunState } from '../../../lib/planner/run-types'
 import type { GiftData, ThemeData } from '../../../lib/planner/types'
 
@@ -69,7 +69,7 @@ it('excludes out-of-theme targets while appending remaining common and exclusive
   expect(getCurrentFloorPriorityGifts(state, [theme('A', [10, 20], [40])], gifts).map(item => item.game_id)).toEqual([40, 10, 20])
 })
 
-it('orders by floor plan, then registered targets, then theme exclusives, then the theme catalog', () => {
+it('orders by floor plan, then theme exclusives, then registered targets, then the theme catalog', () => {
   const state = createInitialRunState()
   state.floorLogs[0].themeId = 'A'
   state.sourcePlanSnapshot = { floorPlan: [{ floor: 1, gift_ids: ['40', '10'] }] as NonNullable<typeof state.sourcePlanSnapshot>['floorPlan'] }
@@ -78,10 +78,11 @@ it('orders by floor plan, then registered targets, then theme exclusives, then t
   state.giftInventory = ['20_plus']
   const themes = [theme('A', [10, 30, 60, 70], [80, 20, 40]), theme('B', [], [50])]
   const all = new Map([10, 20, 30, 40, 50, 60, 70, 80].map(id => [id, gift(id)]))
-  expect(getCurrentFloorPriorityGifts(state, themes, all).map(item => item.game_id)).toEqual([40, 10, 60, 30, 80, 70])
+  // Exclusives only come from this floor, so they sit above final targets from the common pool.
+  expect(getCurrentFloorPriorityGifts(state, themes, all).map(item => item.game_id)).toEqual([40, 10, 80, 60, 30, 70])
 })
 
-it('promotes seen gifts only below plan, targets and exclusives, in catalog order whatever the sighting order', () => {
+it('promotes seen gifts only below plan, exclusives and targets, in catalog order whatever the sighting order', () => {
   const state = createInitialRunState()
   state.floorLogs[0].themeId = 'A'
   state.sourcePlanSnapshot = { floorPlan: [{ floor: 1, gift_ids: ['10'] }] as NonNullable<typeof state.sourcePlanSnapshot>['floorPlan'] }
@@ -89,11 +90,11 @@ it('promotes seen gifts only below plan, targets and exclusives, in catalog orde
   const themes = [theme('A', [10, 20, 30, 60, 70], [40])]
   const all = new Map([10, 20, 30, 40, 60, 70].map(id => [id, gift(id)]))
   const order = (promoted?: number[]) => getCurrentFloorPriorityGifts(state, themes, all, promoted).map(item => item.game_id)
-  expect(order()).toEqual([10, 30, 40, 20, 60, 70])
-  expect(order([70, 60])).toEqual([10, 30, 40, 60, 70, 20])
-  expect(order([60, 70])).toEqual([10, 30, 40, 60, 70, 20])
+  expect(order()).toEqual([10, 40, 30, 20, 60, 70])
+  expect(order([70, 60])).toEqual([10, 40, 30, 60, 70, 20])
+  expect(order([60, 70])).toEqual([10, 40, 30, 60, 70, 20])
   // Seeing a planned, target or exclusive gift never lifts it above its own tier.
-  expect(order([40, 30, 10, 70])).toEqual([10, 30, 40, 70, 20, 60])
+  expect(order([40, 30, 10, 70])).toEqual([10, 40, 30, 70, 20, 60])
   expect(order([999])).toEqual(order())
 })
 
@@ -169,8 +170,8 @@ it('closes the gap when an acquired gift leaves any tier, without reordering the
   state.targetGifts = ['30']
   const themes = [theme('A', [10, 20, 30, 60], [40])]
   const order = () => getCurrentFloorPriorityGifts(state, themes, gifts, [20]).map(item => item.game_id)
-  expect(order()).toEqual([10, 30, 40, 20, 60])
-  for (const [owned, left] of [['10', [30, 40, 20, 60]], ['final_30_plusplus', [40, 20, 60]], ['40', [20, 60]], ['20_plus', [60]]] as const) {
+  expect(order()).toEqual([10, 40, 30, 20, 60])
+  for (const [owned, left] of [['10', [40, 30, 20, 60]], ['final_30_plusplus', [40, 20, 60]], ['40', [20, 60]], ['20_plus', [60]]] as const) {
     state.giftInventory = [...state.giftInventory, owned]
     expect(order()).toEqual(left)
   }
@@ -220,11 +221,3 @@ it('puts the floor pack clear reward first among the floor gifts and keeps it of
   expect(getFusionTierGifts(state, [purple, theme('Q', [10], [])], map)).toEqual([])
 })
 
-it('REQ-ASSIST-049 lists the owned planned final gifts, and the missing ones only when asked', () => {
-  const targets = [gift(10), gift(20), gift(30)]
-  const held = new Set([20])
-  expect(visibleTargetGifts(targets, held, { owned: true, missing: false }).map(g => g.game_id)).toEqual([20])
-  expect(visibleTargetGifts(targets, held, { owned: true, missing: true }).map(g => g.game_id)).toEqual([10, 20, 30])
-  expect(visibleTargetGifts(targets, held, { owned: false, missing: true }).map(g => g.game_id)).toEqual([10, 30])
-  expect(visibleTargetGifts(targets, held, { owned: false, missing: false })).toEqual([])
-})

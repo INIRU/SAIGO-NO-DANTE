@@ -70,3 +70,12 @@ it('keeps a gift written inside a sentence, with its name for plain text and ass
  expect(JSON.parse(assetRefs(loaded))).toEqual([{kind:'gift',id:gift.attrs.id}])
  expect(parseBlockDocument(tiptapContentToMarkdown({type:'doc',content:[{type:'paragraph',content:[{type:'noteGift',attrs:{id:'x'.repeat(400),name:1}}]}]}))!.content![0].content![0].attrs).toEqual({id:'x'.repeat(150),name:''})
 })
+
+import { notePreviewText } from '@/lib/notes/blocks'
+it('keeps gifts as tokens in card previews so the preview can draw their icons', () => {
+  const saved = tiptapContentToMarkdown({ type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: '먼저 ' }, { type: 'noteGift', attrs: { id: '9772', name: '점화 장갑' } }, { type: 'text', text: ' 챙기기' }] }] })
+  expect(notePreviewText(saved)).toContain('[g:점화 장갑]')
+  expect(notePlainText(saved)).toContain('점화 장갑')
+  expect(notePlainText(saved)).not.toContain('[g:')
+  expect(notePreviewText('평문 [g:블러디 가젯] 메모')).toBe('평문 [g:블러디 가젯] 메모')
+})
