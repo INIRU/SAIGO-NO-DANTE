@@ -21,6 +21,8 @@ BOSS_OUTPUT_DIR = OUTPUT_DIR / "boss"
 BOSS_LAYER_OUTPUT_DIR = LAYER_OUTPUT_DIR / "boss"
 DIAG_DIR = WORK_DIR / "diagnostics"
 COMPOSITION_ASSET_DIR = Path(os.environ.get("LIMBUS_COMPOSITION_ASSET_DIR", WORK_DIR / "reference" / "composition_assets"))
+# "png": only the site cards, lossless (the extraction tool's gallery). WebP encoding is almost all of the run time.
+PNG_CARDS_ONLY = os.environ.get("THEME_PACK_FORMAT", "webp") == "png"
 
 FOLDER_ORDER = [
     "Mirror of Names and Spiders",
@@ -69,10 +71,13 @@ def build_image_index() -> dict[str, Path]:
     index: dict[str, Path] = {}
     if EXTRACTED_ASSET_ROOT:
         extracted_root = Path(EXTRACTED_ASSET_ROOT)
+        # Upload ZIP: Reports/manifest.json + Images/<path>. Extraction snapshot (the gallery): manifest.json + <path>.
         manifest_path = extracted_root / "Reports" / "manifest.json"
+        images_root = (extracted_root / "Images").resolve()
+        if not manifest_path.is_file() and (extracted_root / "manifest.json").is_file():
+            manifest_path, images_root = extracted_root / "manifest.json", extracted_root.resolve()
         if not manifest_path.is_file():
             raise FileNotFoundError(f"No extracted image manifest at {manifest_path}")
-        images_root = (extracted_root / "Images").resolve()
         for entry in read_json(manifest_path):
             if entry.get("kind") not in {"테마팩", "테마팩보스"}:
                 continue
@@ -100,12 +105,18 @@ def build_image_index() -> dict[str, Path]:
     return index
 
 
+def theme_floor_files() -> list[Path]:
+    """t1..tN then hidden; .txt in prepared data, .json in the extraction snapshot."""
+    for suffix in (".txt", ".json"):
+        paths = sorted(DATA_DIR.glob(f"mirrordungeon-theme-floor-t*{suffix}"))
+        if paths:
+            return paths + [DATA_DIR / f"mirrordungeon-theme-floor-hidden{suffix}"]
+    raise FileNotFoundError(f"No theme floor data under {DATA_DIR}")
+
+
 def load_theme_items() -> list[ThemeItem]:
     items: list[ThemeItem] = []
-    paths = sorted(DATA_DIR.glob("mirrordungeon-theme-floor-t*.txt"))
-    if not paths:
-        raise FileNotFoundError(f"No theme floor data under {DATA_DIR}")
-    paths.append(DATA_DIR / "mirrordungeon-theme-floor-hidden.txt")
+    paths = theme_floor_files()
 
     for path in paths:
         tier = path.stem.rsplit("-", 1)[-1]
@@ -133,6 +144,17 @@ def load_theme_items() -> list[ThemeItem]:
 
 def rgba(path: Path) -> Image.Image:
     return Image.open(path).convert("RGBA")
+
+
+def select_items(items: list[ThemeItem], ids_text: str) -> list[ThemeItem]:
+    """Only the listed theme ids (comma separated); every id must be in the data. Empty text keeps them all."""
+    wanted = {int(part) for part in ids_text.split(",") if part.strip()}
+    if not wanted:
+        return items
+    unknown = wanted - {item.theme_id for item in items}
+    if unknown:
+        raise ValueError(f"Theme ids not in the theme floor data: {sorted(unknown)}")
+    return [item for item in items if item.theme_id in wanted]
 
 
 def sha256(path: Path) -> str:
@@ -268,6 +290,12 @@ def compose_normal_card(
     return clipped, boss_layer
 
 
+def save_webp(image: Image.Image, path: Path) -> None:
+    """Layers, bases and bosses for Storage; skipped when only the gallery's PNG cards are wanted."""
+    if not PNG_CARDS_ONLY:
+        image.save(path, "WEBP", quality=95, method=6)
+
+
 def compose_layers(base: Image.Image, layers: list[Image.Image | None]) -> Image.Image:
     card = base.copy()
     for layer in layers:
@@ -289,7 +317,7 @@ def main() -> None:
     BOSS_LAYER_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
     index = build_image_index()
-    items = load_theme_items()
+    items = select_items(load_theme_items(), os.environ.get("LIMBUS_THEME_IDS", ""))
     vinyl_visual, vinyl_mask, warning, limbus_logo, baton = load_normal_assets()
     extreme_frame = load_extreme_frame()
     layer_vinyl = layer_canvas(vinyl_visual, NORMAL_PACK_OFFSET)
@@ -298,11 +326,11 @@ def main() -> None:
     layer_baton = draw_chain_label(layer_canvas(baton, (-18, 82)))
     layer_extreme_frame = layer_canvas(extreme_frame, EXTREME_FRAME_OFFSET)
 
-    layer_vinyl.save(LAYER_OUTPUT_DIR / "vinyl.webp", "WEBP", quality=95, method=6)
-    layer_warning.save(LAYER_OUTPUT_DIR / "warning.webp", "WEBP", quality=95, method=6)
-    layer_logo.save(LAYER_OUTPUT_DIR / "limbus-logo.webp", "WEBP", quality=95, method=6)
-    layer_baton.save(LAYER_OUTPUT_DIR / "baton.webp", "WEBP", quality=95, method=6)
-    layer_extreme_frame.save(LAYER_OUTPUT_DIR / "extreme-frame.webp", "WEBP", quality=95, method=6)
+    save_webp(layer_vinyl, LAYER_OUTPUT_DIR / "vinyl.webp")
+    save_webp(layer_warning, LAYER_OUTPUT_DIR / "warning.webp")
+    save_webp(layer_logo, LAYER_OUTPUT_DIR / "limbus-logo.webp")
+    save_webp(layer_baton, LAYER_OUTPUT_DIR / "baton.webp")
+    save_webp(layer_extreme_frame, LAYER_OUTPUT_DIR / "extreme-frame.webp")
 
     manifest = []
     text_colors = {}
@@ -361,14 +389,18 @@ def main() -> None:
             )
             if item.boss_sprite_id and boss_path is not None and boss_layer is not None:
                 boss_sources[item.boss_sprite_id] = boss_path
-                boss_layer.save(BOSS_LAYER_OUTPUT_DIR / f"{item.boss_sprite_id}.webp", "WEBP", quality=95, method=6)
+                save_webp(boss_layer, BOSS_LAYER_OUTPUT_DIR / f"{item.boss_sprite_id}.webp")
 
         if item.theme_id != 3001:
-            base.save(BASE_OUTPUT_DIR / f"{item.theme_id}.webp", "WEBP", quality=95, method=6)
+            save_webp(base, BASE_OUTPUT_DIR / f"{item.theme_id}.webp")
         site_asset = to_site_asset(composed)
-        site_asset.save(out_path, "WEBP", quality=95, method=6)
+        if PNG_CARDS_ONLY:
+            out_path = out_path.with_suffix(".png")
+            site_asset.save(out_path, "PNG")
+        else:
+            save_webp(site_asset, out_path)
         if item.theme_id == 3001:
-            site_asset.save(OUTPUT_DIR / "HiddenTheme.webp", "WEBP", quality=95, method=6)
+            save_webp(site_asset, OUTPUT_DIR / "HiddenTheme.webp")
         manifest.append(
             {
                 "id": item.theme_id,
@@ -390,7 +422,7 @@ def main() -> None:
         )
 
     for boss_id, boss_path in sorted(boss_sources.items()):
-        rgba(boss_path).save(BOSS_OUTPUT_DIR / f"{boss_id}.webp", "WEBP", quality=95, method=6)
+        save_webp(rgba(boss_path), BOSS_OUTPUT_DIR / f"{boss_id}.webp")
 
     (DIAG_DIR / "manifest.json").write_text(
         json.dumps(manifest, ensure_ascii=False, indent=2),
@@ -406,7 +438,7 @@ def main() -> None:
     )
     shared_sources = [COMPOSITION_ASSET_DIR / name for name in (
         "MainUI_MirrorDungeon4_4.png", "MainUI_MirrorDungeon6_17.png", "Baton.png"
-    )] + [CHAIN_LABEL_FONT, Path(__file__)] + sorted(DATA_DIR.glob("mirrordungeon-theme-floor-*.txt"))
+    )] + [CHAIN_LABEL_FONT, Path(__file__)] + theme_floor_files()
     (DIAG_DIR / "sources.json").write_text(json.dumps(
         [{"path": str(path), "sha256": sha256(path)} for path in shared_sources], indent=2
     ), encoding="utf-8")

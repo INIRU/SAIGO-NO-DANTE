@@ -762,6 +762,7 @@
       "completeRun": "記録完了",
       "nextFloor": "次の階",
       "targetGifts": "計画した最終ギフト",
+      "floorGifts": "この階のギフト",
       "floorPriorityGifts": "この階の優先ギフト",
       "currentThemeGiftsCount": "この階で入手可能なギフト（{count}個）",
       "priorityGiftsFirst": "計画・目標ギフトを先頭に表示します。",
@@ -798,14 +799,11 @@
       "themeCleared": "{floor}階のテーマパック選択を解除しました。",
       "noAvailableThemes": "この階と難易度で利用できるテーマはありません。",
       "themeExclusiveGifts": "専用ギフト（{count}個）",
-      "themeGiftsCount": "テーマギフト（{count}個）",
       "scrollForMoreGifts": "全{count}個 · スクロールして続きを表示できます。",
       "giftListEnd": "全{count}個を表示しました。",
       "giftSearchCount": "検索結果 {count}件",
       "addGiftIdleHint": "キーワードか等級を選ぶか、名前で検索してください。押すと所持ギフトに追加し、もう一度押すと外します。",
-      "themeGiftsHint": "テーマを選ぶと専用ギフトが表示されます。",
       "shopPurchase": "ショップで購入",
-      "addFinalGift": "獲得ギフトを追加",
       "finalGiftSearch": "最終ギフトを検索...",
       "giftGrade": "グレード{grade}",
       "owned": "所持",
@@ -847,9 +845,7 @@
       "setupPlanPick": "プランを選ぶ",
       "setupPlanChange": "別のプランを選ぶ",
       "setupPlanUntitled": "無題のプラン",
-      "setupRecognitionTitle": "画面認識の設定",
-      "floorGiftPickerTitle": "{floor}階の獲得ギフト",
-      "addGiftButton": "追加"
+      "setupRecognitionTitle": "画面認識の設定"
     },
     "community": "コミュニティプラン",
     "detail": {

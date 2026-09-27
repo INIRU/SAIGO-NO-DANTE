@@ -132,7 +132,8 @@ export default function FloorPanel({ state, dispatch, themes, gifts, giftMap, re
               {log?.deckChanges.map((change, index) => <li key={`deck-${index}`} className="flex gap-3 py-3"><span className="min-w-16 text-[var(--gold-light)]">{t('deck')}</span><span className="min-w-0 break-words">{change.detail}</span></li>)}
             </ul>}
         </div>}
-        {tab === 'gift' && <div className="space-y-5"><GiftCheckSection state={state} dispatch={dispatch} gifts={gifts} giftMap={giftMap} themes={themes} onChooseTheme={() => chooseTab('theme')} /><InventoryPanel state={state} dispatch={dispatch} gifts={gifts} giftMap={giftMap} recipes={recipes} /></div>}
+        {tab === 'gift' && <GiftCheckSection state={state} dispatch={dispatch} gifts={gifts} giftMap={giftMap} themes={themes} onChooseTheme={() => chooseTab('theme')}
+          aside={<InventoryPanel state={state} dispatch={dispatch} giftMap={giftMap} recipes={recipes} />} />}
         {tab === 'deck' && <DeckSection state={state} dispatch={dispatch} identities={identities} sinners={sinners} skills={skills} passives={passives} egos={egos} giftMap={giftMap} />}
         {tab === 'theme' && <ThemeSection state={state} themes={themes} onSelect={selectTheme} onClear={clearTheme} onClose={returnToGiftLog} />}
         {tab === 'event' && <EventSection state={state} dispatch={dispatch} events={events} choices={eventChoices} giftMap={giftMap} themes={themes} observedEventIds={observedEventIds} />}
