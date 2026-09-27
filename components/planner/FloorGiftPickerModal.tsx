@@ -36,7 +36,7 @@ export default function FloorGiftPickerModal({ open, title, floorGifts, allGifts
   const catalog = useMemo(() => source.map(toCatalogGift), [source])
   const exclusiveKey = exclusiveIds.join(',')
   const onlyHere = t('onlyThisFloor')
-  const pinned = useMemo(() => exclusiveKey ? { ids: new Set(exclusiveKey.split(',')), label: onlyHere } : undefined, [exclusiveKey, onlyHere])
+  const pinned = useMemo(() => exclusiveKey ? [{ ids: new Set(exclusiveKey.split(',')), label: onlyHere, warning: true }] : undefined, [exclusiveKey, onlyHere])
   const exclusiveCard = useMemo<GiftCatalogCardProps>(() => ({ warning: onlyHere }), [onlyHere])
 
   const toggle = floorGifts !== null && (
@@ -67,7 +67,7 @@ export default function FloorGiftPickerModal({ open, title, floorGifts, allGifts
           <div className="pt-4" style={{ '--gift-catalog-bg': 'var(--bg-card)', '--gift-catalog-sticky-top': '-1px', '--gift-catalog-min-h': '0px' } as React.CSSProperties}>
             <GiftCatalog compact gifts={catalog} getGiftKeywordIcon={giftKeywordIcon} filters={filters} selectedIds={selectedIds}
               toolbarEnd={toggle || undefined} pinned={pinned}
-              cardProps={gift => pinned?.ids.has(gift.id) ? exclusiveCard : undefined}
+              cardProps={gift => pinned?.[0].ids.has(gift.id) ? exclusiveCard : undefined}
               onGiftClick={(gift: EgoGift) => { const data = byId.get(gift.id); if (data) onToggle(data) }} />
             {catalog.length === 0 && <p className="py-10 text-center text-[0.9375rem] text-[#9c8b73]">{t('empty')}</p>}
           </div>

@@ -1,6 +1,6 @@
 'use client'
 
-import { notePlainText } from '@/lib/notes/blocks'
+import { notePreviewText } from '@/lib/notes/blocks'
 
 import FormationThumbnail from '@/components/ui/FormationThumbnail'
 import { memo, useMemo } from 'react'
@@ -9,7 +9,7 @@ import Image from 'next/image'
 import { Heart, Eye, MessageCircle } from 'lucide-react'
 import { useLocale, useTranslations } from 'next-intl'
 import { useKeywordData, useKeywords } from '@/components/providers/KeywordProvider'
-import { NoteRenderer } from '@/components/decks/NoteChips'
+import { NoteRenderer, useNoteGiftLookup } from '@/components/decks/NoteChips'
 import { CONTENT_TYPE_COLORS } from '@/lib/constants/deck-tokens'
 import { contentTypeMessageKey, localizeDeckKeyword } from '@/components/decks/decks-types'
 import type { SupportedLang } from '@/lib/i18n'
@@ -64,6 +64,8 @@ interface DeckCardProps {
 function DeckCard({ deck, onTagClick }: DeckCardProps) {
   const locale = useLocale() as SupportedLang
   const t = useTranslations('decks')
+  const preview = deck.description ? notePreviewText(deck.description) : ''
+  const giftLookup = useNoteGiftLookup(preview)
   const { getIconUrl } = useKeywordData()
   const keywords = useKeywords()
   const date = useMemo(() => {
@@ -136,12 +138,13 @@ function DeckCard({ deck, onTagClick }: DeckCardProps) {
               }}
             >
               <NoteRenderer
-                text={notePlainText(deck.description)}
+                text={preview}
                 skillLookup={EMPTY_NOTE_LOOKUP}
                 passiveLookup={EMPTY_NOTE_LOOKUP}
                 egoLookup={EMPTY_NOTE_LOOKUP}
                 identityLookup={EMPTY_NOTE_LOOKUP}
-                egoGiftLookup={EMPTY_NOTE_LOOKUP}
+                egoGiftLookup={giftLookup}
+                giftLabel
                 inline
               />
             </div>

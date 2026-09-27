@@ -70,8 +70,9 @@ export function nextGiftPromotion(previous: GiftPromotion | null, { state, runni
 }
 
 /**
- * All unowned gifts from the floor's actual theme: this floor's planned gifts and registered targets in registration
- * order, theme exclusives, promoted (seen) gifts, then the rest; exclusives, seen and the rest keep theme catalog order,
+ * All unowned gifts from the floor's actual theme: this floor's planned gifts, theme exclusives (only this floor gives
+ * them, so they sit above the many final targets from the common pool), registered targets in registration order,
+ * promoted (seen) gifts, then the rest; exclusives, seen and the rest keep theme catalog order,
  * so the order of sightings never matters. Pass `nextGiftPromotion(...).ids`, not raw per-frame observations.
  */
 export function getCurrentFloorPriorityGifts(state: RunState, themes: ThemeData[], giftMap: Map<number, GiftData>,
@@ -95,17 +96,17 @@ export function getCurrentFloorPriorityGifts(state: RunState, themes: ThemeData[
     result.push(gift)
   }
   // The pack's clear rewards count as planned for the floor that has it.
-  for (const key of [...withThemeRewards(planned?.gift_ids ?? [], theme), ...state.targetGifts]) {
-    const id = giftGameId(key)
-    if (id !== null && available.has(id)) add(giftMap.get(id))
+  const addKeys = (keys: string[]) => {
+    for (const key of keys) {
+      const id = giftGameId(key)
+      if (id !== null && available.has(id)) add(giftMap.get(id))
+    }
   }
+  addKeys(withThemeRewards(planned?.gift_ids ?? [], theme))
   for (const gift of themeGifts) if (exclusiveIds.has(gift.game_id)) add(gift)
+  addKeys(state.targetGifts)
   for (const gift of themeGifts) if (promoted.has(gift.game_id)) add(gift)
   for (const gift of themeGifts) add(gift)
   return result
 }
 
-/** The planned final gifts the run screen lists: owned ones when `owned` is on, missing ones when `missing` is on. */
-export function visibleTargetGifts<T extends { game_id: number }>(targets: T[], held: ReadonlySet<number>, show: { owned: boolean; missing: boolean }): T[] {
-  return targets.filter(gift => held.has(gift.game_id) ? show.owned : show.missing)
-}

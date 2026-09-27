@@ -2,7 +2,8 @@
 
 import { GIFT_KEYWORD_COLORS } from '@/lib/constants/gift'
 
-import { useState, useRef, useEffect, useCallback, useContext } from 'react'
+import { useState, useRef, useEffect, useCallback, useContext, useMemo } from 'react'
+import useSWR from 'swr'
 import { createPortal } from 'react-dom'
 import Image from 'next/image'
 import NoteBlockViewer, { NoteGiftClickContext } from '@/components/notes/NoteBlockViewer'
@@ -557,7 +558,8 @@ export function KeywordChip({ keyword }: { keyword: string }) {
 // ── EgoGiftChip ─────────────────────────────────────────────────────────
 const EGO_GIFT_KW_COLORS = GIFT_KEYWORD_COLORS
 
-export function EgoGiftChip({ entry }: { entry: NoteEgoGiftEntry }) {
+/** `label`: icon then name, no chip box (one-line card previews). */
+export function EgoGiftChip({ entry, label = false }: { entry: NoteEgoGiftEntry; label?: boolean }) {
   const locale = useLocale()
   const keywords = useKeywords()
   const formatSkillDesc = useFormatSkillDesc()
@@ -570,12 +572,12 @@ export function EgoGiftChip({ entry }: { entry: NoteEgoGiftEntry }) {
       onMouseEnter={show}
       onMouseLeave={scheduleHide}
       onClick={toggle}
-      style={chipStyle(sc)}
+      style={label ? { display: 'inline-flex', alignItems: 'center', gap: 3, verticalAlign: 'middle', margin: '0 0.125rem', cursor: 'default' } : chipStyle(sc)}
     >
       {entry.image_url && (
         <Image src={entry.image_url} alt="" width={16} height={16} style={{ objectFit: 'contain', flexShrink: 0 }} />
       )}
-      <span style={{ color: sc, fontSize: '0.75rem', fontWeight: 600 }}>{entry.name}</span>
+      <span style={{ color: sc, fontSize: label ? 'inherit' : '0.75rem', fontWeight: 600 }}>{entry.name}</span>
 
       {rect && createPortal(
         <TooltipPopup rect={rect} onMouseEnter={cancelHide} onMouseLeave={scheduleHide}>
@@ -639,6 +641,7 @@ export function NoteRenderer({
   egoGiftLookup = {},
   egoGiftConditionLookup = {},
   inline,
+  giftLabel = false,
   allowedKeywords,
   textScale = 'default',
 }: {
@@ -650,6 +653,8 @@ export function NoteRenderer({
   egoGiftLookup?: Record<string, NoteEgoGiftEntry>
   egoGiftConditionLookup?: Record<string, GiftConditionStatus | null>
   inline?: boolean
+  /** Gifts as icon + name labels instead of chips (card previews). */
+  giftLabel?: boolean
   allowedKeywords?: Set<string>
   textScale?: 'default' | 'comfortable'
 }) {
@@ -766,7 +771,7 @@ export function NoteRenderer({
       } else if (m[6]) {
         const e = egoGiftLookup[m[6]]
         elements.push(e
-          ? <EgoGiftChip key={`${keyPrefix}-g${m.index}`} entry={e} />
+          ? <EgoGiftChip key={`${keyPrefix}-g${m.index}`} entry={e} label={giftLabel} />
           : <FallbackChip key={`${keyPrefix}-g${m.index}`} type="g" tokenKey={m[6]} />
         )
       }
@@ -1008,4 +1013,12 @@ export function NoteRenderer({
       {blocks}
     </div>
   )
+}
+
+const fetchNoteGifts = (url: string): Promise<NoteEgoGiftEntry[]> => fetch(url).then(response => { if (!response.ok) throw new Error('gifts'); return response.json() })
+
+/** Gift lookup for one-line previews (cards). Loads the cached gift list once, only when the text mentions a gift. */
+export function useNoteGiftLookup(text: string): Record<string, NoteEgoGiftEntry> {
+  const { data } = useSWR(text.includes('[g:') ? '/api/ego-gifts' : null, fetchNoteGifts, { revalidateOnFocus: false, revalidateIfStale: false })
+  return useMemo(() => Object.fromEntries((data ?? []).filter(gift => gift.name && gift.keyword).map(gift => [gift.name, { ...gift, grade: gift.grade ?? '1' }])), [data])
 }
