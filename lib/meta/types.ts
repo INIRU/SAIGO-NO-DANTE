@@ -65,7 +65,11 @@ export interface MetaData {
   themeCatalog: Record<string, MetaTheme>
   synergies: Synergy[]
   egoStats: EGOStat[]
+  /** S1–S3 of each fielded identity (highest uptie), for the skill exchange icons. */
+  skillCatalog: Record<string, MetaSkill[]>
 }
+
+export interface MetaSkill { order: 1 | 2 | 3; name: string; name_en?: string | null; name_jp?: string | null; sin_affinity: string | null; image_id?: string | null }
 
 export const META_SOURCES = ['all', 'decks', 'planner'] as const
 export const META_PERIODS = ['7', '30', '90', 'all'] as const
@@ -113,6 +117,8 @@ export interface IdentityInsight {
   posts: MetaInsightPost[]
   /** Plans that field this identity. Absent when none do. */
   plan?: MetaPlanSummary
+  /** Skill exchange of the formations fielding it: key 'S1-S2-S3' counts (e.g. '3-2-1'), most used first. */
+  skills: CountStat[]
 }
 
 export function isBaseEgo(gameId: string | null | undefined): boolean {

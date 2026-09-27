@@ -183,3 +183,15 @@ it('tallies plan difficulty, final gifts and theme packs overall and for each fi
   expect(data.identityInsights.a.plan?.count).toBe(2)
   expect(data.identityInsights.b.plan).toMatchObject({ count: 1, gifts: [{ key: '1', count: 1 }] })
 })
+
+it('REQ-META-003 tallies each fielded identity skill exchange, most used first, counting a slot without counts as 3-2-1', () => {
+  const withSkills = (id: string, s: [number, number, number] | null, supportSkills: [number, number, number] = [0, 0, 6]): MetaPost => ({ ...post(id), identities: [
+    { identity_id: 'a', slot_order: 0, ...(s ? { s1_count: s[0], s2_count: s[1], s3_count: s[2] } : {}) },
+    { identity_id: 'b', slot_order: 1, s1_count: 1, s2_count: 0, s3_count: 5 },
+    { identity_id: 'c', slot_order: 99, s1_count: supportSkills[0], s2_count: supportSkills[1], s3_count: supportSkills[2] },
+  ] })
+  const data = aggregate([withSkills('p1', [0, 1, 5]), withSkills('p2', [0, 1, 5]), withSkills('p3', null), withSkills('p4', [3, 2, 1])])
+  expect(data.identityInsights.a.skills).toEqual([{ key: '3-2-1', count: 2 }, { key: '0-1-5', count: 2 }].sort((x, y) => y.count - x.count || x.key.localeCompare(y.key)))
+  expect(data.identityInsights.b.skills).toEqual([{ key: '1-0-5', count: 4 }])
+  expect(data.identityInsights.c).toBeUndefined()
+})

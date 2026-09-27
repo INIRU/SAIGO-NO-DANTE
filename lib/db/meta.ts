@@ -3,7 +3,7 @@ import { cacheLife, cacheTag } from 'next/cache'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import { aggregateMeta, metaPeriodStart, planGiftIds, planThemeIds } from '@/lib/meta/aggregate'
 import { readAllMetaRows } from '@/lib/meta/pagination'
-import { DEFAULT_META_PERIOD, DEFAULT_META_SOURCE, type MetaData, type MetaIdentity, type MetaEGO, type MetaGift, type MetaPost, type MetaSource, type MetaPeriod, type MetaTheme } from '@/lib/meta/types'
+import { DEFAULT_META_PERIOD, DEFAULT_META_SOURCE, type MetaData, type MetaIdentity, type MetaEGO, type MetaGift, type MetaPost, type MetaSkill, type MetaSource, type MetaPeriod, type MetaTheme } from '@/lib/meta/types'
 
 function publicClient() {
   // Aggregated results are shared publicly: never derive them from a user's session
@@ -41,7 +41,7 @@ async function getSourcePosts(source: Exclude<MetaSource, 'all'>, period: MetaPe
   const since = metaPeriodStart(period, now)
   if (source === 'decks') {
     const rows = await readAllMetaRows<DeckRow>((from, to) => {
-      let query = db.from('decks').select('id, title, main_keywords, content_type, created_at, deck_identities(identity_id, slot_order), deck_egos(ego_id)')
+      let query = db.from('decks').select('id, title, main_keywords, content_type, created_at, deck_identities(identity_id, slot_order, s1_count, s2_count, s3_count), deck_egos(ego_id)')
         .order('id').lte('created_at', new Date(now).toISOString())
       if (since) query = query.gte('created_at', since)
       return query.range(from, to)
@@ -56,6 +56,25 @@ async function getSourcePosts(source: Exclude<MetaSource, 'all'>, period: MetaPe
   })
   return rows.map(row => ({ id: row.id, source, created_at: row.created_at, title: row.title, keywords: row.tags, identities: row.deck, egos: row.egos,
     difficulty: row.difficulty, gifts: planGiftIds(row.gift_inventory), themes: planThemeIds(row.floor_plan) }))
+}
+
+type SkillRow = { identity_id: string; skill_order: number; uptie_level: number | null; variant_order: number | null; name: string; name_en: string | null; name_jp: string | null; sin_affinity: string | null; image_id: string | null }
+
+/** S1–S3 of each identity at its highest uptie (the first variant), for the skill exchange icons. */
+async function getSkillCatalog(identityIds: string[]): Promise<Record<string, MetaSkill[]>> {
+  if (!identityIds.length) return {}
+  const db = publicClient()
+  const rows = await readAllMetaRows<SkillRow>((from, to) => db.from('skills')
+    .select('identity_id, skill_order, uptie_level, variant_order, name, name_en, name_jp, sin_affinity, image_id')
+    .in('identity_id', identityIds).in('skill_order', [1, 2, 3])
+    .order('identity_id').order('skill_order').order('uptie_level', { ascending: false }).order('variant_order').order('id').range(from, to))
+  const catalog: Record<string, MetaSkill[]> = {}
+  for (const row of rows) {
+    const skills = catalog[row.identity_id] ??= []
+    if (skills.some(skill => skill.order === row.skill_order)) continue
+    skills.push({ order: row.skill_order as MetaSkill['order'], name: row.name, name_en: row.name_en, name_jp: row.name_jp, sin_affinity: row.sin_affinity, image_id: row.image_id })
+  }
+  return catalog
 }
 
 async function getPlanCatalog(giftIds: string[], themeIds: string[]) {
@@ -87,5 +106,6 @@ export async function getMetaData(source: MetaSource = DEFAULT_META_SOURCE, peri
   const summaries = [data.planStats, ...Object.values(data.identityInsights).flatMap(insight => insight.plan ? [insight.plan] : [])]
   const giftIds = [...new Set(summaries.flatMap(summary => summary.gifts.map(row => row.key)))]
   const themeIds = [...new Set(summaries.flatMap(summary => summary.themes.map(row => row.key)))]
-  return { ...data, ...await getPlanCatalog(giftIds, themeIds) }
+  const [planCatalog, skillCatalog] = await Promise.all([getPlanCatalog(giftIds, themeIds), getSkillCatalog(Object.keys(data.identityInsights))])
+  return { ...data, ...planCatalog, skillCatalog }
 }

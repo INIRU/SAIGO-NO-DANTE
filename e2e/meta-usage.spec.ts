@@ -10,10 +10,10 @@ test('identity analysis updates source, period, EGO filters, and linked decks', 
     const period = url.searchParams.get('period') as MetaData['period']
     const count = source === 'planner' ? 3 : 8
     const data: MetaData = {
-      source, period, generatedAt: new Date().toISOString(), identityInsights: { fixture: { companions: [{ identity_id: 'companion', count: source === 'planner' ? 2 : 4 }, { identity_id: 'companion-variant', count: 1 }], count, orders: { '1': count }, egos: [{ ego_id: 'base', game_id: '20101', sinner_id: 'yi-sang', name_kr: '기본 검증 EGO', grade: 'ZAYIN', sin_affinity: null, image_url: null, count }, { ego_id: 'other', game_id: '20102', sinner_id: 'yi-sang', name_kr: '추가 검증 EGO', grade: 'ZAYIN', sin_affinity: null, image_url: null, count }], posts: [{ id: 'sample', source: 'decks', title: '검증 화상 덱', usage: 'mirrorDungeon', combo: ['화상'] }, { id: 'bench', source: 'planner', title: '검증 대기 플랜', usage: 'mirrorDungeon', combo: [], support: true }] } }, sampleCount: count, excludedSamples: 0,
+      source, period, generatedAt: new Date().toISOString(), identityInsights: { fixture: { companions: [{ identity_id: 'companion', count: source === 'planner' ? 2 : 4 }, { identity_id: 'companion-variant', count: 1 }], count, orders: { '1': count }, egos: [{ ego_id: 'base', game_id: '20101', sinner_id: 'yi-sang', name_kr: '기본 검증 EGO', grade: 'ZAYIN', sin_affinity: null, image_url: null, count }, { ego_id: 'other', game_id: '20102', sinner_id: 'yi-sang', name_kr: '추가 검증 EGO', grade: 'ZAYIN', sin_affinity: null, image_url: null, count }], posts: [{ id: 'sample', source: 'decks', title: '검증 화상 덱', usage: 'mirrorDungeon', combo: ['화상'] }, { id: 'bench', source: 'planner', title: '검증 대기 플랜', usage: 'mirrorDungeon', combo: [], support: true }], skills: [{ key: '3-2-1', count }] } }, sampleCount: count, excludedSamples: 0,
       sourceCounts: { decks: source === 'planner' ? 0 : 5, planner: 3 },
       battleIdentityStats: [{ identity_id: 'fixture', sinner_id: 'yi-sang', name_kr: '검증 인격', keywords: [], rarity: 3, folder_name: null, game_id: null, count }, { identity_id: 'companion', sinner_id: 'faust', name_kr: 'LCB 수감자', name_en: 'LCB Sinner', keywords: [], rarity: 1, folder_name: 'LCB Sinner', game_id: '10201', count: 4 }, { identity_id: 'companion-variant', sinner_id: 'faust', name_kr: '같은 수감자의 다른 인격', keywords: [], rarity: 1, folder_name: 'LCB Sinner', game_id: '10201', count: 1 }],
-      supportIdentityStats: [], usageBySinner: {}, usageBySin: {}, keywordUsage: [], usageStats: [], comboStats: [], planStats: { count: 0, difficulty: [], gifts: [], themes: [] }, giftCatalog: {}, themeCatalog: {}, synergies: [], egoStats: [],
+      supportIdentityStats: [], usageBySinner: {}, usageBySin: {}, keywordUsage: [], usageStats: [], comboStats: [], planStats: { count: 0, difficulty: [], gifts: [], themes: [] }, giftCatalog: {}, themeCatalog: {}, skillCatalog: {}, synergies: [], egoStats: [],
     }
     await route.fulfill({ json: data })
   })
@@ -73,7 +73,7 @@ test('500 identities stay in a bounded searchable picker on desktop and mobile',
   const rows = Array.from({ length: 500 }, (_, i) => ({ identity_id: `large-${i}`, sinner_id: 'yi-sang', name_kr: `확장 인격 ${i}`, keywords: [], rarity: 3, folder_name: null, game_id: null, count: 1 }))
   await page.route('**/api/meta/usage?**', route => route.fulfill({ json: {
     source: 'all', period: 'all', generatedAt: new Date().toISOString(), sampleCount: 500, excludedSamples: 0, sourceCounts: { decks: 500, planner: 0 },
-    battleIdentityStats: rows, supportIdentityStats: [], usageBySinner: {}, usageBySin: {}, keywordUsage: [], usageStats: [], comboStats: [], planStats: { count: 0, difficulty: [], gifts: [], themes: [] }, giftCatalog: {}, themeCatalog: {}, synergies: [], egoStats: [],
+    battleIdentityStats: rows, supportIdentityStats: [], usageBySinner: {}, usageBySin: {}, keywordUsage: [], usageStats: [], comboStats: [], planStats: { count: 0, difficulty: [], gifts: [], themes: [] }, giftCatalog: {}, themeCatalog: {}, skillCatalog: {}, synergies: [], egoStats: [],
     identityInsights: Object.fromEntries(rows.map(row => [row.identity_id, { count: 1, orders: { '1': 1 }, egos: [], posts: [], companions: [] }])),
   } }))
   for (const width of [1440, 390]) {

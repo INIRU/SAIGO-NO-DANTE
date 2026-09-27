@@ -20,6 +20,7 @@ import IdentityPickerModal from './IdentityPickerModal'
 import KeywordBadge from './KeywordBadge'
 import DonutChart, { ComboLabel, comboColors, usageColor, type DonutSegment } from './DonutChart'
 import { EgoLeaders, PairLeaders, PlanInsights, SinnerLeaders } from './MetaSections'
+import SkillExchangeInsight from './SkillExchangeInsight'
 
 function countBy(posts: MetaInsightPost[], key: (post: MetaInsightPost) => string): CountStat[] {
   const counts = new Map<string, number>()
@@ -177,6 +178,7 @@ export default function IdentityAnalysis({ data, summary }: { data: MetaData; su
           </div> : <p className={styles.empty}>{t('empty')}</p>}
         </section>
       </div>
+      <SkillExchangeInsight splits={insight.skills ?? []} skills={data.skillCatalog?.[identityId] ?? []} identity={identity} basis={basis} />
       <PlanInsights summary={insight.plan} data={data} identityId={identityId} headingId="identity-plans-heading" />
       <section className={styles.panel} aria-labelledby="companion-heading" data-meta-companions>
         <div className={styles.sectionHead}><h3 id="companion-heading">{t('companions')}</h3><span>{basis}</span></div>

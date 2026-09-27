@@ -2028,7 +2028,11 @@
       "clearSearch": "検索語を消す",
       "sort": "並び順",
       "sortUsage": "編成が多い順",
-      "sortName": "名前順"
+      "sortName": "名前順",
+      "skills": "スキル交換",
+      "skillAverage": "平均",
+      "skillCustom": "基本3-2-1以外",
+      "skillDefault": "基本"
     },
     "sampleValid": "有効な編成",
     "sampleDecks": "デッキ",

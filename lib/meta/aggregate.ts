@@ -2,6 +2,7 @@ import { resolvePlannerIdentity, resolvePlannerEgo } from '@/lib/planner/catalog
 import { computeKeywordDeckCombo } from '@/lib/decks/keyword-rules'
 import { normalizeThemeKeyword } from '@/lib/constants/keywords'
 import { normalizeSin } from '@/lib/constants/sin'
+import { getIdentitySkillDistribution } from '@/lib/planner/types'
 import type { IdentityStat, EGOStat, MetaData, MetaIdentity, MetaEGO, MetaPost, MetaSource, MetaPeriod, MetaUsage, MetaInsightPost, MetaPlanSummary, CountStat } from './types'
 
 const USAGE_BY_CONTENT_TYPE: Record<string, MetaUsage> = {
@@ -112,7 +113,7 @@ export function aggregateMeta({ posts, identities, egos, keywordSinMap, source, 
       if (!identity) return []
       const order = typeof slot.slot_order === 'number' && Number.isInteger(slot.slot_order) && slot.slot_order >= 0 && slot.slot_order < 99
         ? slot.slot_order : 99
-      return [{ identity, order }]
+      return [{ identity, order, skills: getIdentitySkillDistribution(slot as Parameters<typeof getIdentitySkillDistribution>[0]).join('-') }]
     }).sort((a, b) => a.order - b.order || a.identity.id.localeCompare(b.identity.id))
     const seenSinners = new Set<string>()
     const uniqueSlots = slots.filter(({ identity }) => {
@@ -155,10 +156,13 @@ export function aggregateMeta({ posts, identities, egos, keywordSinMap, source, 
       list.push({ ...summary, support: true })
       benchPosts.set(identity.id, list)
     }
-    for (const { identity, order } of battleSlots) {
-      const insight = identityInsights[identity.id] ??= { count: 0, orders: {}, egos: [], posts: [], companions: [] }
+    for (const { identity, order, skills } of battleSlots) {
+      const insight = identityInsights[identity.id] ??= { count: 0, orders: {}, egos: [], posts: [], companions: [], skills: [] }
       insight.count++
       insight.orders[String(order + 1)] = (insight.orders[String(order + 1)] ?? 0) + 1
+      const split = insight.skills.find(row => row.key === skills)
+      if (split) split.count++
+      else insight.skills.push({ key: skills, count: 1 })
       for (const { identity: companion } of battleSlots) {
         if (companion.sinner_id === identity.sinner_id) continue
         const existing = insight.companions.find(row => row.identity_id === companion.id)
@@ -218,6 +222,7 @@ export function aggregateMeta({ posts, identities, egos, keywordSinMap, source, 
     if (plans) insight.plan = plans.summary(10, 6)
     insight.companions.sort((a, b) => b.count - a.count || a.identity_id.localeCompare(b.identity_id))
     insight.egos.sort((a, b) => b.count - a.count || a.ego_id.localeCompare(b.ego_id))
+    insight.skills.sort((a, b) => b.count - a.count || a.key.localeCompare(b.key))
   }
   return {
     identityInsights,
@@ -233,6 +238,7 @@ export function aggregateMeta({ posts, identities, egos, keywordSinMap, source, 
     planStats: planTotals.summary(10, 6),
     giftCatalog: {},
     themeCatalog: {},
+    skillCatalog: {},
     synergies: [...pairCounts].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).slice(0, 20).map(([key, count]) => {
       const [aId, bId] = JSON.parse(key) as [string, string]
       const a = identityCatalog.get(aId)!
