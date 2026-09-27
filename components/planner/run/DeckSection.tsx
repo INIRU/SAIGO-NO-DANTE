@@ -13,6 +13,9 @@ const IdentityDetailModal = dynamic(() => import('@/components/ui/IdentityDetail
 import type { RunState, RunAction } from '@/lib/planner/run-types'
 import { getIdentitySkillDistribution, type IdentityData, type SinnerData, type SkillSummary, type EgoData, type PassiveData, type GiftData } from '@/lib/planner/types'
 import DeckStatsPanel from '@/components/planner/DeckStatsPanel'
+import KeywordChart from '@/components/planner/KeywordChart'
+import { computeKeywordDistribution } from '@/lib/planner/fusion'
+import { getIdentityGiftConditionKeywords } from '@/lib/planner/gift-condition-status'
 import { rowsAtUptie } from '@/lib/decks/deck-identity-uptie'
 import { PlannerIdentityBoard, PlannerIdentitySelectModal } from '@/components/planner/deck/PlannerDeckSelection'
 import SkillExchangePanel, { type SkillExchangeSkill } from '@/components/planner/SkillExchangePanel'
@@ -48,6 +51,7 @@ export default function DeckSection({ state, dispatch, identities, sinners, skil
   const passives = useMemo(() => rowsAtUptie(allPassives, slotUpties), [allPassives, slotUpties])
   const t = useTranslations('planner.run')
   const tSinner = useTranslations('sinner')
+  const keywordDist = useMemo(() => computeKeywordDistribution(state.identitySlots.map(getIdentityGiftConditionKeywords)), [state.identitySlots])
   const locale = useLocale()
   const [subTab, setSubTab] = useState<DeckSubTab>('identity')
   const [swapSinner, setSwapSinner] = useState<string | null>(null)
@@ -205,6 +209,13 @@ export default function DeckSection({ state, dispatch, identities, sinners, skil
           onFormationToggle={handleToggleFormation}
           onLongPress={sinnerId => { const slot = getSelected(sinnerId); if (slot) setDetailIdentityId(slot.identity_id) }}
         />
+
+        {keywordDist.length > 0 && (
+          <section aria-labelledby="run-keyword-distribution" className="mt-5">
+            <h3 id="run-keyword-distribution" className="mb-2 font-[family-name:var(--font-heading)] text-sm text-[var(--gold)]">{t('keywordDistribution')}</h3>
+            <KeywordChart distribution={keywordDist} />
+          </section>
+        )}
 
         {/* 공격 유형 + 죄악 자원 + 패시브 */}
         {state.identitySlots.length > 0 && (() => {

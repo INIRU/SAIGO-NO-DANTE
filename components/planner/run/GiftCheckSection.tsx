@@ -1,14 +1,15 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
-import { Search } from 'lucide-react'
+import { Check, Search } from 'lucide-react'
 import type { RunState, RunAction } from '@/lib/planner/run-types'
 import type { ThemeData, GiftData } from '@/lib/planner/types'
-import { getGiftActivationConditionStatus, getGiftConditionCountsForSlots, type GiftConditionStatus } from '@/lib/planner/gift-condition-status'
+import { getGiftActivationConditionStatus, getGiftConditionCountsForSlots } from '@/lib/planner/gift-condition-status'
 import { getGiftsFromThemes, themeExclusiveGiftIds } from '@/lib/planner/fusion'
 import { visibleTargetGifts } from '@/lib/planner/run-priority-gifts'
-import FloorGiftPickerModal from '@/components/planner/FloorGiftPickerModal'
+import GiftCatalog, { giftKeywordIcon, toCatalogGift, useGiftCatalogFilters, type GiftCatalogCardProps } from '@/components/gifts/GiftCatalog'
+import type { EgoGift } from '@/components/mirror-dungeon/types'
 import GiftCard from '@/components/ui/GiftCard'
 import GiftArtwork from '@/components/ui/GiftArtwork'
 import { getLocalizedName } from '@/lib/i18n/localize'
@@ -21,61 +22,49 @@ interface Props {
   giftMap: Map<number, GiftData>
   themes: ThemeData[]
   onChooseTheme: () => void
+  /** Held gifts and fusions, under the planned final gifts in the side column. */
+  aside?: ReactNode
 }
 
-export default function GiftCheckSection({ state, dispatch, gifts, giftMap, themes, onChooseTheme }: Props) {
+export const runSectionTitle = 'font-[family-name:var(--font-heading)] text-base text-[var(--gold-light)]'
+
+/**
+ * The run's gift tab: this floor's gifts as the shared catalog on the wide side (click records or removes an acquisition),
+ * and the plan's final gifts with held gifts on the narrow side.
+ */
+export default function GiftCheckSection({ state, dispatch, gifts, giftMap, themes, onChooseTheme, aside }: Props) {
   const t = useTranslations('planner.run')
+  const tPicker = useTranslations('floorGiftPicker')
   const locale = useLocale() as SupportedLang
-  const giftName = (gift: GiftData) => getLocalizedName({ name_kr: gift.name, name_en: gift.name_en, name_jp: gift.name_jp }, locale)
+  const localized = (item: { name: string; name_en?: string | null; name_jp?: string | null }) => getLocalizedName({ name_kr: item.name, name_en: item.name_en, name_jp: item.name_jp }, locale)
   const currentLog = state.floorLogs[state.currentFloor - 1]
-  const [targetSearch, setTargetSearch] = useState('')
+  const currentTheme = currentLog?.themeId ? themes.find(theme => String(theme.id) === String(currentLog.themeId)) ?? null : null
 
   const ownedSet = useMemo(() => new Set(state.giftInventory.map(Number)), [state.giftInventory])
   const ownedIds = useMemo(() => new Set(state.giftInventory.map(String)), [state.giftInventory])
+  const conditionCounts = useMemo(() => getGiftConditionCountsForSlots(state.identitySlots), [state.identitySlots])
 
-  const conditionCounts = useMemo(
-    () => getGiftConditionCountsForSlots(state.identitySlots),
-    [state.identitySlots],
-  )
-
-  // 조건 상태 체크 (GiftPlanTab 패턴)
-  function getConditionStatus(gift: GiftData): GiftConditionStatus | null {
-    return getGiftActivationConditionStatus({ gift, ...conditionCounts })
-  }
-
-  const [pickerOpen, setPickerOpen] = useState(false)
-  const currentTheme = currentLog?.themeId ? themes.find(theme => String(theme.id) === String(currentLog.themeId)) ?? null : null
-  // 이번 층에서 얻을 수 있는 전체: 다른 테마팩 전용 기프트만 뺀다(합성·조합식 결과는 포함)
+  // 이번 층 목록: 기본은 이 테마팩 기프트, 끄면 합성·조합식까지 이 층에서 얻을 수 있는 전체(다른 팩 전용 제외)
+  const [onlyFloor, setOnlyFloor] = useState(true)
+  const themeGifts = useMemo(() => currentTheme ? getGiftsFromThemes([String(currentTheme.id)], themes, giftMap) : [], [currentTheme, themes, giftMap])
   const reachableGifts = useMemo(() => {
     const own = new Set(currentTheme ? themeExclusiveGiftIds(currentTheme) : [])
     const others = new Set(themes.flatMap(theme => themeExclusiveGiftIds(theme)).filter(id => !own.has(id)))
     return gifts.filter(gift => !others.has(gift.game_id))
   }, [currentTheme, gifts, themes])
+  const source = currentTheme && onlyFloor ? themeGifts : reachableGifts
+  const catalog = useMemo(() => source.map(toCatalogGift), [source])
+  const filters = useGiftCatalogFilters()
+  // 칸마다 같은 객체를 돌려줘야 누를 때 격자 전체가 다시 그려지지 않는다
+  const conditionProps = useMemo(() => new Map(source.map(gift => [String(gift.game_id), { conditionStatus: getGiftActivationConditionStatus({ gift, ...conditionCounts }), conditionDetail: false } satisfies GiftCatalogCardProps])), [source, conditionCounts])
+  const toggleOwned = (gift: EgoGift) => dispatch({ type: ownedIds.has(gift.id) ? 'REMOVE_GIFT' : 'ACQUIRE_GIFT', giftId: gift.id })
 
-  // 현재 테마에서 얻을 수 있는 기프트
-  const themeGifts = useMemo(() => {
-    const theme = currentTheme
-    if (!theme) return []
-    const list = getGiftsFromThemes([String(theme.id)], themes, giftMap)
-    // 체크된건 하단 정렬
-    return list.sort((a, b) => {
-      const aOwned = ownedSet.has(a.game_id) ? 1 : 0
-      const bOwned = ownedSet.has(b.game_id) ? 1 : 0
-      return aOwned - bOwned
-    })
-  }, [currentTheme, themes, giftMap, ownedSet])
-
-  // 최종 기프트 (플래너에서 선정한 목표 기프트) — 먹은건 하단
+  // 계획된 최종 기프트: 보유는 켜고 미보유는 꺼 둔 채 시작한다. 필요할 때 사용자가 미보유를 켠다.
   const targetSet = useMemo(() => new Set((state.targetGifts ?? []).map(Number)), [state.targetGifts])
   const targetGiftList = useMemo(() => {
     const list = (state.targetGifts ?? []).map(id => giftMap.get(Number(id))).filter(Boolean) as GiftData[]
-    return list.sort((a, b) => {
-      const aOwned = ownedSet.has(a.game_id) ? 1 : 0
-      const bOwned = ownedSet.has(b.game_id) ? 1 : 0
-      return aOwned - bOwned
-    })
+    return list.sort((a, b) => Number(ownedSet.has(a.game_id)) - Number(ownedSet.has(b.game_id)))
   }, [state.targetGifts, giftMap, ownedSet])
-  // 보유는 켜고 미보유는 꺼 둔 채 시작한다. 필요할 때 사용자가 미보유를 켠다.
   const [showOwned, setShowOwned] = useState(true)
   const [showMissing, setShowMissing] = useState(false)
   const ownedTargetCount = targetGiftList.filter(gift => ownedSet.has(gift.game_id)).length
@@ -83,152 +72,128 @@ export default function GiftCheckSection({ state, dispatch, gifts, giftMap, them
   const [showAllTargets, setShowAllTargets] = useState(false)
   const shownTargets = showAllTargets ? filteredTargets : filteredTargets.slice(0, 12)
   const hiddenTargetCount = filteredTargets.length - shownTargets.length
-  const filterButton = (pressed: boolean, onClick: () => void, label: string) => (
+
+  const [targetSearch, setTargetSearch] = useState('')
+  const targetSearchResults = useMemo(() => {
+    const needle = targetSearch.trim().toLocaleLowerCase()
+    if (!needle) return []
+    return gifts.filter(gift => localized(gift).toLocaleLowerCase().includes(needle))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [targetSearch, gifts, locale])
+
+  const toggleButton = (pressed: boolean, onClick: () => void, label: string) => (
     <button type="button" aria-pressed={pressed} onClick={onClick}
       className={`min-h-8 rounded-md border px-2.5 text-xs font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-[var(--gold-light)] ${pressed ? 'border-[var(--gold)] bg-[rgba(200,144,10,0.18)] text-[var(--gold-light)]' : 'border-[var(--border)] text-[var(--text-tertiary)] hover:text-[var(--text-primary)]'}`}>
       {label}
     </button>
   )
 
-  // 목표 기프트 검색
-  const targetSearchResults = useMemo(() => {
-    if (!targetSearch.trim()) return []
-    return gifts.filter(g => giftName(g).toLocaleLowerCase().includes(targetSearch.trim().toLocaleLowerCase()))
-  }, [targetSearch, gifts, locale])
+  const onlyFloorToggle = currentTheme && (
+    <label className="ml-auto inline-flex min-h-10 cursor-pointer select-none items-center gap-2 text-sm text-[var(--text-primary)]">
+      <input type="checkbox" checked={onlyFloor} onChange={event => setOnlyFloor(event.target.checked)} className="peer sr-only" />
+      <span aria-hidden="true" className="grid h-[1.125rem] w-[1.125rem] place-items-center rounded-[0.25rem] border border-[#5a4526] bg-[#0d0b08] text-transparent transition-colors peer-checked:border-[#c8900a] peer-checked:bg-[#c8900a] peer-checked:text-[#0d0b08] peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-[#e8b030]">
+        <Check size={13} strokeWidth={3} />
+      </span>
+      {tPicker('onlyFloor')}
+    </label>
+  )
 
   return (
-    <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_18rem]">
-      <style jsx global>{`.run-gift-grid .gift-card > p { font-size: 0.6875rem !important; line-height: 1.35 !important; }`}</style>
-      {/* 테마팩 기프트 — GiftCard 컴포넌트 사용 */}
-      {themeGifts.length > 0 && (
-        <section className="min-w-0 lg:col-start-1">
-          <h3 style={{ fontSize: '0.8125rem', fontWeight: 600, marginBottom: '0.75rem', color: '#999' }}>
-            {t('themeGiftsCount', { count: themeGifts.length })}
-          </h3>
-          <div role="region" aria-label={t('themeGiftsCount', { count: themeGifts.length })} className="run-gift-grid flex flex-wrap content-start gap-2 sm:gap-3" style={{ position: 'relative', zIndex: 0 }}>
-            {themeGifts.map(gift => {
-              const owned = ownedSet.has(gift.game_id)
-              return (
-                <GiftCard
-                  key={gift.game_id}
-                  gift={gift}
-                  size="4.75rem"
-                  isSelected={owned}
-                  onClick={() => dispatch({ type: owned ? 'REMOVE_GIFT' : 'ACQUIRE_GIFT', giftId: String(gift.game_id) })}
-                  conditionStatus={!owned ? getConditionStatus(gift) : null}
-                />
-              )
-            })}
+    <div className="grid items-start gap-x-6 gap-y-8 lg:grid-cols-[minmax(0,1fr)_20rem] xl:grid-cols-[minmax(0,1fr)_23rem]">
+      <section className="min-w-0" aria-labelledby="run-floor-gifts">
+        <div className="mb-2 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+          <h3 id="run-floor-gifts" className={runSectionTitle}>{t('floorGifts')}</h3>
+          {currentTheme && <span className="text-sm text-[var(--text-secondary)]">{localized(currentTheme)}</span>}
+        </div>
+        {!currentTheme && (
+          <div className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-md border border-dashed border-[var(--border)] px-4 py-3">
+            <p className="min-w-0 flex-1 basis-48 text-sm text-[var(--text-secondary)]">{t('chooseThemeHint')}</p>
+            <button type="button" onClick={onChooseTheme} className="min-h-10 rounded-md border border-[var(--border-gold)] px-4 text-sm font-semibold text-[var(--gold-light)] hover:bg-[var(--bg-elevated)] focus-visible:outline-2 focus-visible:outline-[var(--gold-light)]">{t('chooseThemeAction')}</button>
+          </div>
+        )}
+        <GiftCatalog compact gifts={catalog} getGiftKeywordIcon={giftKeywordIcon} filters={filters}
+          markedIds={ownedIds} markedLabel={t('acquired')} onGiftClick={toggleOwned}
+          cardProps={gift => ownedIds.has(gift.id) ? undefined : conditionProps.get(gift.id)}
+          toolbarEnd={onlyFloorToggle || undefined} />
+      </section>
+
+      <div className="order-first flex min-w-0 flex-col gap-8 lg:order-none lg:border-l lg:border-[var(--border)] lg:pl-6">
+        <section className="min-w-0" aria-labelledby="run-target-gifts">
+          <div className="mb-3 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+            <h3 id="run-target-gifts" className={runSectionTitle}>{t('targetGifts')}</h3>
+            {targetGiftList.length > 0 && (
+              <span className="text-xs tabular-nums text-[var(--text-secondary)]">
+                {t('targetProgress', { acquired: ownedTargetCount, total: targetGiftList.length })}
+              </span>
+            )}
+          </div>
+          {targetGiftList.length > 0 && (
+            <>
+              <div aria-hidden="true" className="mb-3 h-1 overflow-hidden rounded-full bg-[var(--bg-elevated)]">
+                <div className="h-full rounded-full bg-[var(--gold)] transition-[width] duration-300" style={{ width: `${(ownedTargetCount / targetGiftList.length) * 100}%` }} />
+              </div>
+              <div className="mb-3 flex gap-2">
+                {toggleButton(showOwned, () => setShowOwned(value => !value), t('targetShowOwned', { count: ownedTargetCount }))}
+                {toggleButton(showMissing, () => setShowMissing(value => !value), t('targetShowMissing', { count: targetGiftList.length - ownedTargetCount }))}
+              </div>
+            </>
+          )}
+
+          <div role="region" aria-label={t('targetGifts')}>
+            {targetGiftList.length === 0 ? (
+              <p className="text-xs leading-5 text-[var(--text-tertiary)]">{t('noTargetsHint')}</p>
+            ) : filteredTargets.length === 0 ? (
+              <p className="text-xs leading-5 text-[var(--text-tertiary)]">{t('targetFilterEmpty')}</p>
+            ) : (
+              <>
+                <div className="flex flex-wrap content-start gap-2">
+                  {shownTargets.map(gift => {
+                    const owned = ownedSet.has(gift.game_id)
+                    return (
+                      <GiftCard key={gift.game_id} gift={gift} size="4rem" isSelected={owned}
+                        onClick={() => dispatch({ type: owned ? 'REMOVE_GIFT' : 'ACQUIRE_GIFT', giftId: String(gift.game_id) })}
+                        onRemove={() => dispatch({ type: 'REMOVE_TARGET_GIFT', giftId: String(gift.game_id) })}
+                        conditionStatus={owned ? null : getGiftActivationConditionStatus({ gift, ...conditionCounts })} conditionDetail={false} />
+                    )
+                  })}
+                </div>
+                {hiddenTargetCount > 0 && (
+                  <button type="button" onClick={() => setShowAllTargets(true)} className="mt-2 min-h-9 w-full rounded-md border border-[var(--border)] text-xs text-[var(--text-secondary)] hover:text-[var(--gold-light)] focus-visible:outline-2 focus-visible:outline-[var(--gold-light)]">
+                    {t('showAllTargets', { count: hiddenTargetCount })}
+                  </button>
+                )}
+              </>
+            )}
+          </div>
+
+          <div className="relative mt-3">
+            <Search aria-hidden="true" size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
+            <input aria-label={t('addTargetGift')} value={targetSearch} onChange={event => setTargetSearch(event.target.value)} placeholder={t('addTargetGift')}
+              className="min-h-10 w-full rounded-md border border-[var(--border)] bg-[var(--bg-panel)] pl-8 pr-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus-visible:border-[var(--gold)] focus-visible:outline-none" />
+            {targetSearch.trim() && <p role="status" className="sr-only">{t('giftSearchCount', { count: targetSearchResults.length })}</p>}
+            {targetSearchResults.length > 0 && (
+              <ul className="absolute inset-x-0 top-full z-30 mt-1 max-h-60 overflow-y-auto rounded-md border border-[var(--border)] bg-[var(--bg-card)] shadow-[0_0.5rem_1.5rem_rgba(0,0,0,0.5)]">
+                {targetSearchResults.map(gift => {
+                  const isTarget = targetSet.has(gift.game_id)
+                  return (
+                    <li key={gift.game_id}>
+                      <button type="button" disabled={isTarget}
+                        onClick={() => { dispatch({ type: 'ADD_TARGET_GIFT', giftId: String(gift.game_id) }); setTargetSearch('') }}
+                        className="flex min-h-11 w-full items-center gap-2 px-3 text-left text-sm text-[var(--text-primary)] hover:bg-[rgba(200,144,10,0.1)] disabled:opacity-50">
+                        <span className="w-8 shrink-0"><GiftArtwork gift={gift} displayName={localized(gift)} sizes="32px" /></span>
+                        <span className="min-w-0 flex-1 truncate">{localized(gift)}</span>
+                        {isTarget && <span className="text-xs text-[var(--gold)]">{t('added')}</span>}
+                      </button>
+                    </li>
+                  )
+                })}
+              </ul>
+            )}
           </div>
         </section>
-      )}
 
-      {!currentLog?.themeId && <button type="button" onClick={onChooseTheme} className="min-h-10 rounded-md border border-[var(--border-gold)] px-3 text-xs font-bold text-[var(--gold-light)] hover:bg-[var(--bg-elevated)] focus-visible:outline-2 focus-visible:outline-[var(--gold-light)]">{t('chooseThemeAction')}</button>}
-      {currentLog?.themeId && themeGifts.length === 0 && <p style={{ color: '#888', fontSize: '0.8125rem' }}>{t('themeGiftsHint')}</p>}
-
-      {/* 최종 기프트 (목표 기프트 — 항상 표시) */}
-      {/* 탭 영역 하나만 스크롤한다: 목표 기프트는 오른쪽에 붙어 따라오고, 못 얻은 것부터 12개까지 보여 준다 */}
-      <section className="min-w-0 border-t border-[var(--border)] pt-3 lg:sticky lg:top-0 lg:col-start-2 lg:row-span-4 lg:row-start-1 lg:self-start lg:border-t-0 lg:pt-0">
-        <h3 style={{ fontSize: '0.8125rem', fontWeight: 600, marginBottom: '0.75rem', color: '#c8900a' }}>
-          {t('targetGifts')}
-          {targetGiftList.length > 0 && (
-            <span style={{ color: '#888', fontWeight: 400, marginLeft: '0.5rem', fontSize: '0.6875rem' }}>
-              {t('targetProgress', { acquired: ownedTargetCount, total: targetGiftList.length })}
-            </span>
-          )}
-        </h3>
-        {targetGiftList.length > 0 && (
-          <div className="mb-3 flex gap-2">
-            {filterButton(showOwned, () => setShowOwned(value => !value), t('targetShowOwned', { count: ownedTargetCount }))}
-            {filterButton(showMissing, () => setShowMissing(value => !value), t('targetShowMissing', { count: targetGiftList.length - ownedTargetCount }))}
-          </div>
-        )}
-
-        {/* 목표 기프트 추가 검색 */}
-        <div className="relative" style={{ marginBottom: '0.75rem', zIndex: 10 }}>
-          <div className="relative">
-            <Search className="absolute" style={{ left: '0.75rem', top: '50%', transform: 'translateY(-50%)', width: '0.875rem', height: '0.875rem', color: '#555' }} />
-            <input
-              aria-label={t('addTargetGift')}
-              value={targetSearch}
-              onChange={e => setTargetSearch(e.target.value)}
-              placeholder={t('addTargetGift')}
-              className="w-full rounded-lg focus-visible:ring-2 focus-visible:ring-[var(--gold)]"
-              style={{ padding: '0.5rem 0.75rem 0.5rem 2.25rem', background: '#1a1510', border: '1px solid #2a2015', color: '#e8e0d0', fontSize: '0.8125rem', outline: 'none', minHeight: '2.75rem' }}
-            />
-          </div>
-          {targetSearch.trim() && <p role="status" className="mt-1 text-xs text-[var(--text-tertiary)]">{t('giftSearchCount', { count: targetSearchResults.length })}</p>}
-          {targetSearchResults.length > 0 && (
-            <div className="absolute left-0 right-0 z-30 rounded-lg overflow-hidden" style={{ top: '100%', marginTop: '0.25rem', background: '#1a1510', border: '1px solid #2a2015', maxHeight: '12rem', overflowY: 'auto', boxShadow: '0 0.5rem 1.5rem rgba(0,0,0,0.5)' }}>
-              {targetSearchResults.map(gift => {
-                const isTarget = targetSet.has(gift.game_id)
-                return (
-                  <button key={gift.id} onClick={() => { dispatch({ type: 'ADD_TARGET_GIFT', giftId: String(gift.game_id) }); setTargetSearch('') }}
-                    disabled={isTarget}
-                    className="w-full flex items-center gap-2 transition-colors text-left"
-                    style={{ padding: '0.5rem 0.75rem', fontSize: '0.6875rem', minHeight: '2.75rem', color: isTarget ? '#555' : '#ccc', borderBottom: '1px solid #1a1208', opacity: isTarget ? 0.5 : 1 }}
-                    onMouseEnter={e => { if (!isTarget) e.currentTarget.style.background = 'rgba(200,144,10,0.1)' }}
-                    onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
-                  >
-                    <span className="w-8 shrink-0"><GiftArtwork gift={gift} displayName={giftName(gift)} sizes="32px" /></span>
-                    <span className="flex-1 truncate">{giftName(gift)}</span>
-                    {gift.keyword && <span style={{ color: '#555', fontSize: '0.5625rem' }}>{gift.keyword}</span>}
-                    {isTarget && <span style={{ color: '#c8900a', fontSize: '0.5625rem' }}>{t('added')}</span>}
-                  </button>
-                )
-              })}
-            </div>
-          )}
-        </div>
-
-        {/* 목표 기프트 그리드 */}
-        <div role="region" aria-label={t('targetGifts')}>
-        {targetGiftList.length > 0 ? (
-          filteredTargets.length === 0 ? <p className="text-xs leading-5 text-[var(--text-tertiary)]">{t('targetFilterEmpty')}</p> :
-          <>
-          <div className="run-gift-grid flex flex-wrap content-start gap-2" style={{ position: 'relative', zIndex: 0 }}>
-            {shownTargets.map(gift => {
-              const owned = ownedSet.has(gift.game_id)
-              return (
-                <GiftCard
-                  key={`target-${gift.game_id}`}
-                  gift={gift}
-                  size="4.75rem"
-                  isSelected={owned}
-                  onClick={() => dispatch({ type: owned ? 'REMOVE_GIFT' : 'ACQUIRE_GIFT', giftId: String(gift.game_id) })}
-                  onRemove={() => dispatch({ type: 'REMOVE_TARGET_GIFT', giftId: String(gift.game_id) })}
-                  conditionStatus={!owned ? getConditionStatus(gift) : null}
-                />
-              )
-            })}
-          </div>
-          {hiddenTargetCount > 0 && (
-            <button type="button" onClick={() => setShowAllTargets(true)} className="mt-2 min-h-9 w-full rounded-md border border-[var(--border)] text-xs text-[var(--text-secondary)] hover:text-[var(--gold-light)] focus-visible:outline-2 focus-visible:outline-[var(--gold-light)]">
-              {t('showAllTargets', { count: hiddenTargetCount })}
-            </button>
-          )}
-          </>
-        ) : (
-          <p style={{ color: '#555', fontSize: '0.75rem' }}>{t('noTargetsHint')}</p>
-        )}
-        </div>
-      </section>
-
-      {/* 기프트 추가: 플래너 층별 계획과 같은 선택 창. 기본은 이번 층 테마팩 기프트, 체크를 끄면 합성·조합식까지 전체 */}
-      <section className="min-w-0 lg:col-start-1" aria-labelledby="run-add-gift-title">
-        <h3 id="run-add-gift-title" style={{ fontSize: '0.8125rem', fontWeight: 600, marginBottom: '0.5rem', color: '#999' }}>{t('addFinalGift')}</h3>
-        <GiftCard gift={{ name: t('addGiftButton') }} variant="insert" size="4.75rem" showName ariaLabel={t('addFinalGift')} onClick={() => setPickerOpen(true)} />
-        <FloorGiftPickerModal
-          open={pickerOpen}
-          title={t('floorGiftPickerTitle', { floor: state.currentFloor })}
-          floorGifts={currentTheme ? themeGifts : null}
-          allGifts={reachableGifts}
-          selectedIds={ownedIds}
-          onToggle={gift => dispatch({ type: ownedIds.has(String(gift.game_id)) ? 'REMOVE_GIFT' : 'ACQUIRE_GIFT', giftId: String(gift.game_id) })}
-          onClose={() => setPickerOpen(false)}
-        />
-      </section>
-
+        {aside}
+      </div>
     </div>
   )
 }

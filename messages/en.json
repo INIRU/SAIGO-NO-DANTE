@@ -762,6 +762,7 @@
       "completeRun": "Complete run",
       "nextFloor": "Next floor",
       "targetGifts": "Planned final gifts",
+      "floorGifts": "Gifts on this floor",
       "floorPriorityGifts": "Priority gifts this floor",
       "currentThemeGiftsCount": "Gifts available this floor ({count})",
       "priorityGiftsFirst": "Planned and target gifts appear first.",
@@ -798,14 +799,11 @@
       "themeCleared": "Cleared the floor {floor} theme pack.",
       "noAvailableThemes": "No themes are available for this floor and difficulty.",
       "themeExclusiveGifts": "Exclusive gifts ({count})",
-      "themeGiftsCount": "Theme gifts ({count})",
       "scrollForMoreGifts": "{count} gifts total · scroll the list to see more.",
       "giftListEnd": "All {count} gifts shown.",
       "giftSearchCount": "{count} search results",
       "addGiftIdleHint": "Pick a keyword or grade, or search by name. Tap a gift to add it to your held gifts; tap again to remove it.",
-      "themeGiftsHint": "Select a theme to view its gifts.",
       "shopPurchase": "Shop purchase",
-      "addFinalGift": "Add acquired gift",
       "finalGiftSearch": "Search final gifts...",
       "giftGrade": "Grade {grade}",
       "owned": "Held",
@@ -847,9 +845,7 @@
       "setupPlanPick": "Choose a plan",
       "setupPlanChange": "Choose another plan",
       "setupPlanUntitled": "Untitled plan",
-      "setupRecognitionTitle": "Screen recognition",
-      "floorGiftPickerTitle": "Floor {floor} gifts",
-      "addGiftButton": "Add"
+      "setupRecognitionTitle": "Screen recognition"
     },
     "community": "Community Plans",
     "detail": {

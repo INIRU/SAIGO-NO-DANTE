@@ -762,6 +762,7 @@
       "completeRun": "기록 완료",
       "nextFloor": "다음 층",
       "targetGifts": "계획된 최종 기프트",
+      "floorGifts": "이번 층 기프트",
       "floorPriorityGifts": "이번 층 우선 기프트",
       "currentThemeGiftsCount": "이번 층 획득 가능 기프트 ({count}개)",
       "priorityGiftsFirst": "계획·목표 기프트부터 표시합니다.",
@@ -798,14 +799,11 @@
       "themeCleared": "{floor}층 테마팩 선택을 해제했습니다.",
       "noAvailableThemes": "이 층과 난이도에 사용 가능한 테마팩이 없습니다.",
       "themeExclusiveGifts": "전용 기프트 ({count}개)",
-      "themeGiftsCount": "테마팩 기프트 ({count}개)",
       "scrollForMoreGifts": "전체 {count}개 · 목록을 스크롤해 더 볼 수 있습니다.",
       "giftListEnd": "전체 {count}개를 모두 표시했습니다.",
       "giftSearchCount": "검색 결과 {count}개",
       "addGiftIdleHint": "키워드나 등급을 고르거나 이름을 검색하세요. 누르면 보유 기프트에 넣고, 다시 누르면 뺍니다.",
-      "themeGiftsHint": "테마팩을 선택하면 전용 기프트가 표시됩니다.",
       "shopPurchase": "상점 구매",
-      "addFinalGift": "획득 기프트 추가",
       "finalGiftSearch": "최종 기프트 검색...",
       "giftGrade": "{grade}등급",
       "owned": "보유",
@@ -847,9 +845,7 @@
       "setupPlanPick": "플랜 고르기",
       "setupPlanChange": "다른 플랜 고르기",
       "setupPlanUntitled": "제목 없는 플랜",
-      "setupRecognitionTitle": "화면 인식 설정",
-      "floorGiftPickerTitle": "{floor}층 획득 기프트",
-      "addGiftButton": "추가"
+      "setupRecognitionTitle": "화면 인식 설정"
     },
     "community": "커뮤니티 플랜",
     "detail": {
