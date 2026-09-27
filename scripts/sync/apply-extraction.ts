@@ -4,6 +4,8 @@
  * Default: verify the ZIP and dry-run every sync. --fix: back up, then apply step by step and stop at the first failure.
  *
  *   node --import tsx scripts/sync/apply-extraction.ts (--zip <LimbusAssets_*.zip> | --source <unpacked LimbusAssets>) --work <dir> [--fix]
+ * Theme packs without an image in Storage are composed by build-theme-packs.py (the bundle's portable Python on Windows,
+ * python3 elsewhere; LIMBUS_PYTHON overrides) and uploaded with --fix. Existing images are never replaced.
  */
 import { spawnSync } from 'node:child_process'
 import { existsSync, mkdirSync, openSync, closeSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
@@ -12,6 +14,7 @@ import { fileURLToPath } from 'node:url'
 import { createClient } from '@supabase/supabase-js'
 import { config } from 'dotenv'
 import { prepareExtractedAssets } from './prepare-extracted-assets'
+import { missingThemeImages } from './theme-images'
 
 config({ path: '.env.local', quiet: true })
 const args = process.argv.slice(2)
@@ -33,7 +36,11 @@ const STEPS: Step[] = [
   { name: 'events', script: 'scripts/sync/rebuild-mirror-events.ts', args: [] },
 ]
 
-const db = () => createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY!).schema('limbus')
+const client = () => createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY!)
+const db = () => client().schema('limbus')
+const THEME_IMAGE_DIR = 'icons/theme-packs'
+const bundled = (file: string, fallback: string) => BUNDLE_DIR ? join(BUNDLE_DIR, file) : fallback
+const PYTHON = process.env.LIMBUS_PYTHON ?? (BUNDLE_DIR && process.platform === 'win32' ? join(BUNDLE_DIR, 'python', 'python.exe') : 'python3')
 
 async function all(table: string, columns = '*') {
   const rows: Record<string, unknown>[] = []
@@ -45,14 +52,21 @@ async function all(table: string, columns = '*') {
   }
 }
 
-function run(work: string, label: string, command: string[], env: NodeJS.ProcessEnv) {
+function run(work: string, label: string, command: string[], env: NodeJS.ProcessEnv, executable = process.execPath) {
   const log = join(work, 'logs', `${label}.log`)
   const fd = openSync(log, 'w')
-  const result = spawnSync(process.execPath, command, { cwd: process.cwd(), env, stdio: ['ignore', fd, fd] })
+  const result = spawnSync(executable, command, { cwd: process.cwd(), env, stdio: ['ignore', fd, fd] })
   closeSync(fd)
   const ok = result.status === 0
   console.log(`${ok ? 'ok  ' : 'FAIL'} ${label}`)
   if (!ok) throw Error(`${label} failed (see ${log}):\n${readFileSync(log, 'utf8').slice(-2000)}`)
+}
+
+async function storedNames(dir: string) {
+  const { data, error } = await client().storage.from('limbus-assets').list(dir, { limit: 1000 })
+  if (error) throw Error(`Storage ${dir}: ${error.message}`)
+  if (data.length === 1000) throw Error(`Storage ${dir} has 1000+ entries; list with paging before trusting it`)
+  return new Set(data.map(item => item.name))
 }
 
 async function main() {
@@ -107,6 +121,27 @@ async function main() {
     if (newIdentities.length) {
       run(work, 'identity-images', command('scripts/assets/sync-extracted-identities.cjs', ['--ids', newIdentities.join(','), '--source', source, '--output', join(work, 'identity-images'), '--fix']), env)
       ;(report.steps as string[]).push('identity-images')
+    }
+
+    // New theme packs: compose the pack (and boss) images the game data names but Storage lacks, and upload them with --fix.
+    const themeImages = missingThemeImages(data, { packs: await storedNames(THEME_IMAGE_DIR), bosses: await storedNames(`${THEME_IMAGE_DIR}/boss`) })
+    report.newThemeImages = themeImages.files
+    if (themeImages.ids.length) {
+      const out = join(work, 'theme-packs')
+      run(work, 'theme-images-compose', [bundled('build-theme-packs.py', 'scripts/assets/build-theme-packs.py')], {
+        ...env, PYTHONUTF8: '1', LIMBUS_EXTRACTED_ASSET_ROOT: source, THEME_PACK_WORK_DIR: out, LIMBUS_THEME_IDS: themeImages.ids.join(','),
+        LIMBUS_COMPOSITION_ASSET_DIR: process.env.LIMBUS_COMPOSITION_ASSET_DIR ?? bundled('theme-composition', '../assets/recovery-2026-09-10/theme-composition'),
+        ...(BUNDLE_DIR ? { LIMBUS_CHAIN_FONT: join(BUNDLE_DIR, 'SCDream5.woff2') } : {}),
+      }, PYTHON)
+      if (FIX) {
+        const bucket = client().storage.from('limbus-assets')
+        for (const file of themeImages.files) {
+          const { error } = await bucket.upload(`${THEME_IMAGE_DIR}/${file}`, readFileSync(join(out, 'output', file)), { contentType: 'image/webp', cacheControl: '3600', upsert: false })
+          if (error) throw Error(`upload ${THEME_IMAGE_DIR}/${file}: ${error.message}`)
+        }
+        console.log(`ok   theme-images (${themeImages.files.length} uploaded)`)
+        ;(report.steps as string[]).push('theme-images')
+      }
     }
     report.ok = true
   } catch (error) {

@@ -135,6 +135,17 @@ def rgba(path: Path) -> Image.Image:
     return Image.open(path).convert("RGBA")
 
 
+def select_items(items: list[ThemeItem], ids_text: str) -> list[ThemeItem]:
+    """Only the listed theme ids (comma separated); every id must be in the data. Empty text keeps them all."""
+    wanted = {int(part) for part in ids_text.split(",") if part.strip()}
+    if not wanted:
+        return items
+    unknown = wanted - {item.theme_id for item in items}
+    if unknown:
+        raise ValueError(f"Theme ids not in the theme floor data: {sorted(unknown)}")
+    return [item for item in items if item.theme_id in wanted]
+
+
 def sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
@@ -289,7 +300,7 @@ def main() -> None:
     BOSS_LAYER_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
     index = build_image_index()
-    items = load_theme_items()
+    items = select_items(load_theme_items(), os.environ.get("LIMBUS_THEME_IDS", ""))
     vinyl_visual, vinyl_mask, warning, limbus_logo, baton = load_normal_assets()
     extreme_frame = load_extreme_frame()
     layer_vinyl = layer_canvas(vinyl_visual, NORMAL_PACK_OFFSET)
