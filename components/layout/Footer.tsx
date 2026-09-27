@@ -41,7 +41,7 @@ export default async function Footer({ lang }: { lang: string }) {
             <Link
               key={href}
               href={`/${lang}${href}`}
-              className="text-xs tracking-widest transition-colors duration-200 hover:text-[var(--gold-dim)]"
+              className="hit-target text-xs tracking-widest transition-colors duration-200 hover:text-[var(--gold-dim)]"
               style={{ color: 'var(--text-tertiary)' }}
             >
               {tNav(labelKey as Parameters<typeof tNav>[0])}
@@ -62,13 +62,13 @@ export default async function Footer({ lang }: { lang: string }) {
         {/* 약관 링크 */}
         <div className="flex items-center gap-4">
           <Link href={`/${lang}/terms`}
-            className="transition-colors hover:text-yellow-300"
+            className="hit-target transition-colors hover:text-yellow-300"
             style={{ color: 'var(--text-tertiary)', fontSize: 'var(--text-xs)' }}>
             {tCommon('terms')}
           </Link>
           <span style={{ color: 'var(--text-muted)' }}>·</span>
           <Link href={`/${lang}/privacy`}
-            className="transition-colors hover:text-yellow-300"
+            className="hit-target transition-colors hover:text-yellow-300"
             style={{ color: 'var(--text-tertiary)', fontSize: 'var(--text-xs)' }}>
             {tCommon('privacy')}
           </Link>

@@ -279,7 +279,8 @@ export default function NoteDocumentEditor({
         } catch { setLinkError(true); }
       }}><input autoFocus type="url" value={linkUrl} onChange={e=>setLinkUrl(e.target.value)} aria-label={label("링크 주소", "リンクURL", "Link URL")} placeholder="https://"/><button type="submit">{label("적용", "適用", "Apply")}</button><button type="button" onClick={()=>setLinkOpen(false)} aria-label={label("닫기", "閉じる", "Close")}><X size={16}/></button>{linkError && <span role="alert">{label("올바른 웹 주소를 입력하세요", "有効なURLを入力してください", "Enter a valid web URL")}</span>}</form>}
       {preview && <div className="note-editor-preview">{previewContent}</div>}
-      <div hidden={preview}><NoteAssetsProvider doc={markdownToTiptapContent(value)}><EditorContent
+      <div hidden={preview}><NoteAssetsProvider doc={markdownToTiptapContent(value)}>{/* 편집기는 브라우저에서 만들어진다: 그 전에는 같은 클래스의 빈 칸으로 높이를 잡아 아래 내용이 밀리지 않게 한다 */}
+      {!editor && <div aria-hidden="true"><div className="tiptap ProseMirror note-document-content" /></div>}<EditorContent
         editor={editor}
         onBlur={() => setSuggestions([])}
         onKeyDownCapture={(event) => {
