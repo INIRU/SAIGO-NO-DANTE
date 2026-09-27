@@ -2,8 +2,8 @@
 /**
  *   node scripts/sync/build-site-sync.mjs <out-dir> [--win]
  * <out-dir> gets apply-extraction.mjs, the three sync bundles, sync-extracted-identities.cjs and sharp (win32-x64 with --win),
- * plus the theme pack composer (build-theme-packs.py, its overlay sources and font). --win adds a portable CPython with Pillow
- * in python/, since the extraction PC has no Python; elsewhere apply-extraction uses python3.
+ * plus the theme pack composer the extraction tool runs while extracting (build-theme-packs.py, its overlay sources and font).
+ * --win adds a portable CPython with Pillow in python/, since the extraction PC has no Python.
  * Overlay sources: LIMBUS_COMPOSITION_ASSET_DIR, default ../assets/recovery-2026-09-10/theme-composition.
  * Put a .env.local with NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SECRET_KEY, REVALIDATION_SECRET and NEXT_PUBLIC_SITE_URL beside them.
  */
