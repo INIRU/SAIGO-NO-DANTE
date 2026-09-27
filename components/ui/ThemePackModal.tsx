@@ -3,8 +3,8 @@
 import BaseModal from '@/components/ui/BaseModal'
 import ImageWithFallback from '@/components/ui/ImageWithFallback'
 import ThemePackCard from '@/components/ui/ThemePackCard'
-import { X } from 'lucide-react'
-import type { ReactNode } from 'react'
+import { Search, X } from 'lucide-react'
+import { useState, type ReactNode } from 'react'
 import type { SupportedLang } from '@/lib/i18n/types'
 
 interface ThemePackModalShellProps {
@@ -266,59 +266,86 @@ interface ThemePackPickerModalProps<TTheme extends ThemePackPickerTheme> {
   title: string
   closeLabel: string
   emptyLabel: string
+  searchLabel: string
+  noResultsLabel: string
+  countLabel: (count: number) => string
   themes: TTheme[]
   selectedThemeId?: string | number | null
   onClose: () => void
   onSelectTheme: (theme: TTheme) => void
   lang?: SupportedLang
   meta?: ReactNode
+  /** Text the search matches; defaults to the pack's names. */
+  searchText?: (theme: TTheme) => string
 }
 
+/** Picks a theme pack: a compact header, a search over the packs, and the pack posters. */
 export function ThemePackPickerModal<TTheme extends ThemePackPickerTheme>({
   title,
   closeLabel,
   emptyLabel,
+  searchLabel,
+  noResultsLabel,
+  countLabel,
   themes,
   selectedThemeId,
   onClose,
   onSelectTheme,
   lang,
   meta,
+  searchText = theme => [theme.name, theme.name_en, theme.name_jp].join(' '),
 }: ThemePackPickerModalProps<TTheme>) {
+  const [query, setQuery] = useState('')
+  const needle = query.trim().toLocaleLowerCase()
+  const shown = needle ? themes.filter(theme => searchText(theme).toLocaleLowerCase().includes(needle)) : themes
 
   return (
-    <ThemePackModalShell
-      title={title}
-      closeLabel={closeLabel}
-      onClose={onClose}
-      maxWidth="56rem"
-      meta={meta}
-    >
-      <div className="mt-4">
-        {themes.length === 0 ? (
-          <ThemePackModalEmpty>{emptyLabel}</ThemePackModalEmpty>
-        ) : (
-          <div
-            className="grid gap-2"
-            style={{
-              alignItems: 'start',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 8.5rem), 1fr))',
-            }}
-          >
-            {themes.map(theme => (
-              <ThemePackCard
-                key={String(theme.id)}
-                theme={theme}
-                onClick={() => onSelectTheme(theme)}
-                isSelected={selectedThemeId != null && String(selectedThemeId) === String(theme.id)}
-                showGiftCount
-                imageSurface="bare"
-                lang={lang}
-              />
-            ))}
+    <BaseModal open={true} onClose={onClose} maxWidth="60rem" title={title} sheet>
+      <div className="flex h-[min(86dvh,56rem)] flex-col overflow-hidden rounded-t-xl border border-[rgba(200,144,10,0.22)] bg-[#17120c] shadow-[0_1.5rem_3rem_rgba(0,0,0,0.55)] sm:rounded-xl">
+        <div className="flex shrink-0 items-center gap-2.5 border-b border-[#2e2417] py-3 pl-5 pr-3">
+          <h2 className="min-w-0 truncate font-[family-name:var(--font-heading)] text-[1.125rem] text-[#e8dcc8]">{title}</h2>
+          {meta}
+          <button type="button" onClick={onClose} aria-label={closeLabel}
+            className="ml-auto grid h-10 w-10 shrink-0 place-items-center rounded text-[#9c8b73] transition-colors hover:bg-white/5 hover:text-[#e8dcc8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold)]">
+            <X size={18} aria-hidden="true" />
+          </button>
+        </div>
+        {themes.length > 0 && (
+          <div className="flex shrink-0 items-center gap-3 px-5 pb-3 pt-4">
+            <label className="relative min-w-0 flex-1 sm:max-w-[22rem]">
+              <span className="sr-only">{searchLabel}</span>
+              <Search size={16} aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#6a6058]" />
+              <input type="text" enterKeyHint="search" value={query} onChange={event => setQuery(event.target.value)} placeholder={searchLabel}
+                className="min-h-10 w-full rounded-md border border-[#2e2417] bg-[#0d0b08] pl-9 pr-3 text-[0.9375rem] text-[#e8dcc8] placeholder:text-[#6a6058] focus-visible:border-[var(--gold)] focus-visible:outline-none" />
+            </label>
+            <span className="shrink-0 text-sm tabular-nums text-[#9c8b73]">{countLabel(shown.length)}</span>
           </div>
         )}
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pb-5">
+          {themes.length === 0 ? (
+            <div className="pt-4"><ThemePackModalEmpty>{emptyLabel}</ThemePackModalEmpty></div>
+          ) : shown.length === 0 ? (
+            <p className="py-12 text-center text-[0.9375rem] text-[#9c8b73]">{noResultsLabel}</p>
+          ) : (
+            <div
+              className="grid gap-3"
+              style={{ alignItems: 'start', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 8.5rem), 1fr))' }}
+            >
+              {shown.map(theme => (
+                <ThemePackCard
+                  key={String(theme.id)}
+                  theme={theme}
+                  onClick={() => onSelectTheme(theme)}
+                  isSelected={selectedThemeId != null && String(selectedThemeId) === String(theme.id)}
+                  showGiftCount
+                  imageSurface="bare"
+                  lang={lang}
+                />
+              ))}
+            </div>
+          )}
+        </div>
       </div>
-    </ThemePackModalShell>
+    </BaseModal>
   )
 }

@@ -7,7 +7,7 @@ import FloorGuidance from './FloorGuidance'
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useReducedMotion } from 'motion/react'
-import { ChevronUp, Package, Plus, X } from 'lucide-react'
+import { ChevronUp, Plus, X } from 'lucide-react'
 import { useLocale, useTranslations } from 'next-intl'
 import GiftCard from '@/components/ui/GiftCard'
 import GiftCatalog, { GiftGradeChip, GiftKeywordTab, giftKeywordIcon, giftKeywordLabel, toCatalogGift, useGiftCatalogFilters, type GiftCatalogCardProps } from '@/components/gifts/GiftCatalog'
@@ -33,7 +33,7 @@ import {
   themeExclusiveGiftIds,
   withThemeRewards,
 } from '@/lib/planner/fusion'
-import { deriveFinalGifts, finalEnhanceEdit, type FinalGift } from '@/lib/planner/final-gifts'
+import { deriveFinalGifts, finalEnhanceEdit, finalKeyForFloorPick, type FinalGift } from '@/lib/planner/final-gifts'
 import { isAllowedFloorDifficulty, isFloorDifficulty } from '@/lib/planner/floor-difficulty'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
 import {
@@ -252,10 +252,11 @@ export default function FloorTab({ state, dispatch, themes, gifts, recipes, gift
   // Stored picks (final_<id>[_plus|_plusplus]) versus the derived final set, which also holds start/observed gifts
   // and drops whatever a fusion result in it consumed.
   const storedFinalIds = useMemo(() => parseFinalGiftIds(state.giftInventory), [state.giftInventory])
-  const { gifts: finalEntries, consumed: blockedFinalMaterialIds } = useMemo(
+  const derivedFinal = useMemo(
     () => deriveFinalGifts(state.giftInventory, recipes, giftMap),
     [giftMap, recipes, state.giftInventory],
   )
+  const { gifts: finalEntries, consumed: blockedFinalMaterialIds } = derivedFinal
   const finalEntryById = useMemo(() => new Map(finalEntries.map(entry => [entry.id, entry])), [finalEntries])
   const finalGiftIds = useMemo(() => new Set(finalEntryById.keys()), [finalEntryById])
 
@@ -464,13 +465,13 @@ export default function FloorTab({ state, dispatch, themes, gifts, recipes, gift
       }
     } else {
       const gid = parseInt(giftGameId, 10)
-      if (Number.isNaN(gid) || blockedFinalMaterialIds.has(gid)) return
+      if (Number.isNaN(gid)) return
+      // 층 계획은 최종 조합이 소비하는 재료도 고를 수 있다. 최종 기프트에는 넣지 않는다(REQ-PLANNER-018).
       dispatch({ type: 'SET_FLOOR_GIFTS', floor: activeEntry.floor, giftIds: [...currentIds, giftGameId] })
-      if (!finalGiftIds.has(gid)) {
-        dispatch({ type: 'ADD_GIFT', giftId: `final_${gid}` })
-      }
+      const finalKey = finalKeyForFloorPick(gid, derivedFinal)
+      if (finalKey) dispatch({ type: 'ADD_GIFT', giftId: finalKey })
     }
-  }, [activeEntry, blockedFinalMaterialIds, dispatch, finalGiftIds, state.floorPlan])
+  }, [activeEntry, derivedFinal, dispatch, state.floorPlan])
 
   function getThemeAvailableGifts(theme: ThemeData): GiftData[] {
     return (theme.ego_gift_ids ?? [])
@@ -535,15 +536,14 @@ export default function FloorTab({ state, dispatch, themes, gifts, recipes, gift
 
   const themeName = (theme: ThemeData) => getLocalizedName({ name_kr: theme.name, name_en: theme.name_en, name_jp: theme.name_jp }, locale)
   const activeThemeName = selectedTheme ? themeName(selectedTheme) : null
-  const availableGifts = selectedTheme
-    ? getThemeAvailableGifts(selectedTheme).filter(gift => !blockedFinalMaterialIds.has(gift.game_id))
-    : []
-  // 이 층에서 얻을 수 있는 전체: 다른 테마팩 전용 기프트와 합성 재료로 막힌 기프트만 뺀다(합성·조합식 결과는 포함)
+  // 최종 조합이 소비하는 재료도 층에서 얻는 기프트라 목록에 둔다(REQ-PLANNER-018)
+  const availableGifts = selectedTheme ? getThemeAvailableGifts(selectedTheme) : []
+  // 이 층에서 얻을 수 있는 전체: 다른 테마팩 전용 기프트만 뺀다(합성·조합식 결과는 포함)
   const reachableGifts = useMemo(() => {
     const ownExclusive = new Set(selectedTheme ? themeExclusiveGiftIds(selectedTheme) : [])
     const otherExclusive = new Set(themes.flatMap(theme => themeExclusiveGiftIds(theme)).filter(id => !ownExclusive.has(id)))
-    return gifts.filter(gift => !otherExclusive.has(gift.game_id) && !blockedFinalMaterialIds.has(gift.game_id))
-  }, [blockedFinalMaterialIds, gifts, selectedTheme, themes])
+    return gifts.filter(gift => !otherExclusive.has(gift.game_id))
+  }, [gifts, selectedTheme, themes])
   const exclusiveLabel = t('ladder.packExclusive')
   const configuredCount = state.floorPlan.filter(isConfiguredFloor).length
   const segments = LADDER_SEGMENTS
@@ -563,51 +563,9 @@ export default function FloorTab({ state, dispatch, themes, gifts, recipes, gift
         className="rounded-sm border p-3 sm:p-4"
         style={{ background: '#17120c', borderColor: '#2e2417' }}
       >
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-          {entry.floor <= 5 ? (
-            <div
-              role="group"
-              className="flex rounded-md border p-1"
-              style={{ background: '#0d0b08', borderColor: '#2e2417' }}
-              aria-label={t('difficultySelectorLabel', { floor: entry.floor })}
-            >
-              {(['normal', 'hard'] as const).map(difficulty => {
-                const selected = activeDifficulty === difficulty
-                return (
-                  <button
-                    key={difficulty}
-                    type="button"
-                    onClick={() => setDifficulty(difficulty)}
-                    aria-pressed={selected}
-                    className={`min-h-[2.75rem] rounded px-4 text-[0.9375rem] font-semibold transition-colors ${focusRing}`}
-                    style={{
-                      background: selected ? 'rgba(200,144,10,0.2)' : 'transparent',
-                      color: selected ? '#e8b030' : '#9c8b73',
-                    }}
-                  >
-                    {t(`difficulty.${difficulty}`)}
-                  </button>
-                )
-              })}
-            </div>
-          ) : (
-            <ThemePackModalPill tone={activeDifficulty === 'extreme' ? 'red' : 'gold'}>
-              {t('fixedDifficulty')}: {t(`difficulty.${activeDifficulty}`)}
-            </ThemePackModalPill>
-          )}
-          <button
-            type="button"
-            onClick={() => toggleFloor(entry.floor)}
-            className={`inline-flex min-h-[2.75rem] items-center gap-1.5 rounded-md px-3 text-[0.9375rem] transition-colors hover:bg-white/5 ${focusRing}`}
-            style={{ color: '#9c8b73' }}
-          >
-            <ChevronUp size={16} aria-hidden="true" />
-            {t('ladder.collapseShort')}
-          </button>
-        </div>
-
-        <div className="grid grid-cols-[6.5rem_minmax(0,1fr)] gap-4 sm:grid-cols-[9rem_minmax(0,1fr)]">
-          <div className="min-w-0">
+        {/* 포스터 옆에 테마팩 이름·난이도·접기·버튼과 획득 기프트를 모은다. 모바일에서는 기프트가 전체 폭으로 내려간다. */}
+        <div className="grid grid-cols-[6.5rem_minmax(0,1fr)] gap-x-4 gap-y-4 sm:grid-cols-[9rem_minmax(0,1fr)] sm:grid-rows-[auto_1fr]">
+          <div className="min-w-0 sm:row-span-2">
             {selectedTheme ? (
               <ThemePackCard
                 theme={selectedTheme}
@@ -621,28 +579,73 @@ export default function FloorTab({ state, dispatch, themes, gifts, recipes, gift
                 type="button"
                 onClick={() => setThemeModalOpen(true)}
                 disabled={pickerThemes.length === 0}
-                className={`flex aspect-[416/684] w-full flex-col items-center justify-center rounded-sm border border-dashed p-2 text-center transition-colors hover:border-[var(--gold)] disabled:cursor-not-allowed disabled:opacity-60 ${focusRing}`}
-                style={{ borderColor: '#4a3b28', background: '#0d0b08', color: '#9c8b73' }}
+                aria-label={t('selectTheme')}
+                className={`flex aspect-[416/684] w-full items-center justify-center rounded-sm border border-dashed transition-colors hover:border-[var(--gold)] hover:text-[var(--gold-light)] disabled:cursor-not-allowed disabled:opacity-60 ${focusRing}`}
+                style={{ borderColor: '#4a3b28', background: '#120e09', color: '#6a6058' }}
               >
-                <Package size={26} aria-hidden="true" />
-                <span className="mt-2 text-sm">{pickerThemes.length > 0 ? t('selectTheme') : t('emptyThemes')}</span>
+                <Plus size={28} aria-hidden="true" />
               </button>
             )}
           </div>
 
           <div className="flex min-w-0 flex-col gap-3">
-            <div>
-              <h4
-                className="text-[1.125rem] leading-snug"
-                style={{ fontFamily: 'var(--font-heading)', color: activeThemeName ? '#e8b030' : '#9c8b73' }}
-              >
-                {activeThemeName ?? (pickerThemes.length > 0 ? t('noThemeWithCount', { count: pickerThemes.length }) : t('noFloorThemes'))}
-              </h4>
-              {selectedTheme && (
-                <p className="mt-1 text-sm" style={{ color: '#9c8b73' }}>
-                  {t('themeGiftCount', { count: getThemeGiftCount(selectedTheme) })}
+            <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-2">
+              <div className="min-w-0 flex-1 basis-40">
+                <h4
+                  className="text-[1.25rem] leading-snug"
+                  style={{ fontFamily: 'var(--font-heading)', color: activeThemeName ? '#e8b030' : '#9c8b73' }}
+                >
+                  {activeThemeName ?? t('noTheme')}
+                </h4>
+                <p className="mt-0.5 text-sm" style={{ color: '#9c8b73' }}>
+                  {selectedTheme
+                    ? t('themeGiftCount', { count: getThemeGiftCount(selectedTheme) })
+                    : pickerThemes.length > 0 ? t('availableThemeCount', { count: pickerThemes.length }) : t('emptyThemes')}
                 </p>
-              )}
+              </div>
+              <div className="flex items-center gap-1">
+                {entry.floor <= 5 ? (
+                  <div
+                    role="group"
+                    className="flex rounded-md border p-0.5"
+                    style={{ background: '#0d0b08', borderColor: '#2e2417' }}
+                    aria-label={t('difficultySelectorLabel', { floor: entry.floor })}
+                  >
+                    {(['normal', 'hard'] as const).map(difficulty => {
+                      const selected = activeDifficulty === difficulty
+                      return (
+                        <button
+                          key={difficulty}
+                          type="button"
+                          onClick={() => setDifficulty(difficulty)}
+                          aria-pressed={selected}
+                          className={`min-h-[2.5rem] rounded px-3.5 text-sm font-semibold transition-colors ${focusRing}`}
+                          style={{
+                            background: selected ? 'rgba(200,144,10,0.2)' : 'transparent',
+                            color: selected ? '#e8b030' : '#9c8b73',
+                          }}
+                        >
+                          {t(`difficulty.${difficulty}`)}
+                        </button>
+                      )
+                    })}
+                  </div>
+                ) : (
+                  <ThemePackModalPill tone={activeDifficulty === 'extreme' ? 'red' : 'gold'}>
+                    {t(`difficulty.${activeDifficulty}`)}
+                  </ThemePackModalPill>
+                )}
+                <button
+                  type="button"
+                  onClick={() => toggleFloor(entry.floor)}
+                  aria-label={t('ladder.collapse', { floor: entry.floor })}
+                  title={t('ladder.collapseShort')}
+                  className={`grid h-[2.75rem] w-[2.75rem] place-items-center rounded-md transition-colors hover:bg-white/5 hover:text-[#e8dcc8] ${focusRing}`}
+                  style={{ color: '#9c8b73' }}
+                >
+                  <ChevronUp size={18} aria-hidden="true" />
+                </button>
+              </div>
             </div>
             <div className="flex flex-wrap gap-2">
               <button
@@ -652,7 +655,7 @@ export default function FloorTab({ state, dispatch, themes, gifts, recipes, gift
                 className={`min-h-[2.75rem] rounded-md border px-4 text-[0.9375rem] font-semibold transition-colors hover:bg-[rgba(200,144,10,0.2)] disabled:cursor-not-allowed disabled:opacity-60 ${focusRing}`}
                 style={{ borderColor: 'rgba(200,144,10,0.4)', background: 'rgba(200,144,10,0.12)', color: '#e8b030' }}
               >
-                {selectedTheme ? t('changeTheme') : t('selectThemeWithCount', { count: pickerThemes.length })}
+                {selectedTheme ? t('changeTheme') : t('selectTheme')}
               </button>
               {selectedTheme && (
                 <button
@@ -666,13 +669,12 @@ export default function FloorTab({ state, dispatch, themes, gifts, recipes, gift
               )}
             </div>
           </div>
-        </div>
 
-        <div className="mt-5">
-          <h5 className="mb-2 text-[0.9375rem]" style={{ fontFamily: 'var(--font-heading)', color: '#e8dcc8' }}>
-            {t('acquiredGiftCount', { count: entry.gift_ids.length })}
-          </h5>
-          {selectedTheme ? (
+          <div className="col-span-2 min-w-0 sm:col-span-1 sm:col-start-2">
+            <h5 className="mb-2 text-[0.9375rem]" style={{ fontFamily: 'var(--font-heading)', color: '#e8dcc8' }}>
+              {t('acquiredGiftCount', { count: entry.gift_ids.length })}
+            </h5>
+            {selectedTheme ? (
             <div className="flex flex-wrap items-start gap-2">
               {floorGifts.map(gift => {
                 const warning = themeExclusiveGiftIds(selectedTheme).includes(gift.game_id) ? exclusiveLabel : undefined
@@ -714,10 +716,9 @@ export default function FloorTab({ state, dispatch, themes, gifts, recipes, gift
               />
             </div>
           ) : (
-            <p className="rounded-sm border border-dashed px-4 py-5 text-center text-[0.9375rem]" style={{ borderColor: '#2e2417', color: '#9c8b73' }}>
-              {t('selectThemeFirst')}
-            </p>
+            <p className="text-sm" style={{ color: '#6a6058' }}>{t('selectThemeFirst')}</p>
           )}
+          </div>
 
           <FloorGiftPickerModal
             open={giftPickerOpen && Boolean(selectedTheme)}
@@ -1072,24 +1073,23 @@ export default function FloorTab({ state, dispatch, themes, gifts, recipes, gift
 
       {themeModalOpen && activeEntry && (
         <ThemePackPickerModal
-          title={t('themeModalTitle', {
-            floor: activeEntry.floor,
-            difficulty: t(`difficulty.${activeDifficulty}`),
-          })}
+          title={t('themeModalTitle', { floor: activeEntry.floor })}
           closeLabel={t('close')}
           emptyLabel={t('emptyThemes')}
+          searchLabel={t('themeSearch')}
+          noResultsLabel={t('themeSearchEmpty')}
+          countLabel={count => t('themeResultCount', { count })}
+          searchText={theme => [theme.name, theme.name_en, theme.name_jp, ...[...(theme.ego_gift_ids ?? []), ...(theme.specific_ego_gift_ids ?? [])]
+            .flatMap(id => { const gift = giftMap.get(id); return gift ? [gift.name, gift.name_en, gift.name_jp] : [] })].join(' ')}
           themes={pickerThemes}
           selectedThemeId={activeEntry.theme_id}
           lang={locale}
           onClose={() => setThemeModalOpen(false)}
           onSelectTheme={theme => selectTheme(String(theme.id))}
           meta={
-            <>
-              <ThemePackModalPill tone={activeDifficulty === 'extreme' ? 'red' : activeDifficulty === 'overlap' ? 'purple' : activeDifficulty === 'hard' ? 'gold' : 'neutral'}>
-                {t(`difficulty.${activeDifficulty}`)}
-              </ThemePackModalPill>
-              <ThemePackModalPill>{t('availableThemeCount', { count: pickerThemes.length })}</ThemePackModalPill>
-            </>
+            <ThemePackModalPill tone={activeDifficulty === 'extreme' ? 'red' : activeDifficulty === 'overlap' ? 'purple' : activeDifficulty === 'hard' ? 'gold' : 'neutral'}>
+              {t(`difficulty.${activeDifficulty}`)}
+            </ThemePackModalPill>
           }
         />
       )}
