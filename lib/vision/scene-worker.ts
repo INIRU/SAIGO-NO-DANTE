@@ -4,6 +4,7 @@ import { decodeEmbeddingIndex, matchEventEmbedding, matchGiftEmbedding, type Emb
 import { popupIconBox, type PopupLabelBox } from './popup-detect'
 import { acceptedIcon, heldSlotRead, iconTemplate, mergeRankedGroups, plateShaped, rankIcons, rankIconsInRegion, type IconTemplate } from './icon-match'
 import { fusionSlotRegions, fusionSlotRegionsFromAnchors, fusionWheelRegions, vestigeGroup, type FusionAnchors, type FusionSlotRead, type WheelAnchors } from './fusion-evidence'
+import { classifierKnowsHeld, classifierSlotRead, heldLabels, iconTensor, ICON_CROP, ICON_INPUT } from './icon-classifier'
 
 type Request = { type: 'init'; giftReferences?: VisualReference[]; eventReferences?: VisualReference[] } |
   { type: 'infer'; frame: ImageBitmap } | { type: 'popup-icon'; requestId: number; frame: ImageBitmap; box: PopupLabelBox } |
@@ -18,6 +19,9 @@ type Response = { type: 'ready'; provider: 'webgpu' | 'wasm'; adapter: string } 
 const ASSET_ROOT = '/models/assist-scene/'
 let session: ort.InferenceSession | null = null
 let visualSession: ort.InferenceSession | null = null
+// The gift-icon classifier for fusion slots; until it loads (or if it fails) template matching reads them.
+let iconSession: ort.InferenceSession | null = null
+let iconLabels: string[] = []
 let embeddingIndex: EmbeddingIndex | null = null
 let labels: string[] = []
 let giftReferences: VisualReference[] = []
@@ -59,27 +63,71 @@ async function createSessions(withVisual: boolean) {
 }
 
 async function releaseSessions() {
-  await Promise.allSettled([session?.release(), visualSession?.release()])
+  await Promise.allSettled([session?.release(), visualSession?.release(), iconSession?.release()])
   session = null
   visualSession = null
+  iconSession = null
+}
+
+/**
+ * Model calls one at a time: a session created on WebGPU while another ran its first pass once left the scene model
+ * without a single answer (replay 2026-09-27), and message handlers interleave at every await.
+ */
+let modelQueue: Promise<unknown> = Promise.resolve()
+function exclusive<T>(task: () => Promise<T>): Promise<T> {
+  const run = modelQueue.then(task, task)
+  modelQueue = run.catch(() => undefined)
+  return run
+}
+
+/** The gift-icon classifier session, created after the other sessions (never beside a run); without it templates read slots. */
+async function loadIconClassifier() {
+  try {
+    const response = await fetch(`${ASSET_ROOT}icon-labels.json`)
+    if (!response.ok) return
+    const decoded: unknown = await response.json()
+    if (!Array.isArray(decoded) || !decoded.every(label => typeof label === 'string')) return
+    iconSession = await ort.InferenceSession.create(`${ASSET_ROOT}icon-classifier.onnx`, { executionProviders: [provider] })
+    iconLabels = decoded
+  } catch { iconSession = null }
+}
+
+/** Classifier reads for the given slots in one batch, or null to fall back to template matching. */
+async function classifySlots(sample: ReturnType<typeof sampler>, regions: { x: number; y: number; size: number }[], held: ReadonlySet<string>) {
+  if (!iconSession || !regions.length || !classifierKnowsHeld(iconLabels, held)) return null
+  try {
+    const input = iconTensor(regions.map(region => sample(region.x, region.y, region.size * ICON_CROP, ICON_INPUT)))
+    const icons = iconSession
+    const output = await exclusive(() => icons.run({ [icons.inputNames[0]]: new ort.Tensor('float32', input, [regions.length, 3, ICON_INPUT, ICON_INPUT]) }))
+    const logits = output[icons.outputNames[0]].data as Float32Array
+    if (logits.length !== regions.length * iconLabels.length) return null
+    return regions.map((_, index) => classifierSlotRead(logits.subarray(index * iconLabels.length, (index + 1) * iconLabels.length), iconLabels, held))
+  } catch {
+    // A failing session (device lost) leaves the templates in charge for the rest of the capture.
+    iconSession = null
+    return null
+  }
 }
 
 /** Runs a model; a WebGPU device or runtime failure is retried once after moving to WASM. */
 async function runModel(kind: 'scene' | 'visual', input: Float32Array) {
-  const current = kind === 'scene' ? session : visualSession
-  if (!current) throw new Error('Model not ready')
-  const feeds = { [current.inputNames[0]]: new ort.Tensor('float32', input, [1, 3, SCENE_SIZE, SCENE_SIZE]) }
-  try {
-    return (await current.run(feeds))[current.outputNames[0]].data
-  } catch (error) {
-    if (provider === 'wasm') throw error
-    const withVisual = visualSession !== null
-    await releaseSessions()
-    provider = 'wasm'
-    await createSessions(withVisual)
-    const retry = kind === 'scene' ? session! : visualSession!
-    return (await retry.run({ [retry.inputNames[0]]: feeds[current.inputNames[0]] }))[retry.outputNames[0]].data
-  }
+  return exclusive(async () => {
+    const current = kind === 'scene' ? session : visualSession
+    if (!current) throw new Error('Model not ready')
+    const feeds = { [current.inputNames[0]]: new ort.Tensor('float32', input, [1, 3, SCENE_SIZE, SCENE_SIZE]) }
+    try {
+      return (await current.run(feeds))[current.outputNames[0]].data
+    } catch (error) {
+      if (provider === 'wasm') throw error
+      const withVisual = visualSession !== null
+      await releaseSessions()
+      provider = 'wasm'
+      await createSessions(withVisual)
+      await loadIconClassifier()
+      const retry = kind === 'scene' ? session! : visualSession!
+      return (await retry.run({ [retry.inputNames[0]]: feeds[current.inputNames[0]] }))[retry.outputNames[0]].data
+    }
+  })
 }
 
 async function loadTemplates(references: VisualReference[]) {
@@ -238,6 +286,7 @@ self.onmessage = async (event: MessageEvent<Request>) => {
       }
       provider = await gpuAdapter() ? 'webgpu' : 'wasm'
       await createSessions(withVisual)
+      await loadIconClassifier()
       respond({ type: 'ready', provider, adapter: provider === 'webgpu' ? adapterName : '' })
       void loadTemplates(giftReferences)
     } catch (error) {
@@ -267,8 +316,12 @@ self.onmessage = async (event: MessageEvent<Request>) => {
       if (!Number.isSafeInteger(request.requestId) || !regions) throw new Error('Invalid fusion request')
       const sample = sampler(frame)
       const held = heldTemplates(request.candidates)
-      const slots = regions.map((region): FusionSlotRead => {
-        if (blankSlot(sample, region)) return { blank: true }
+      const blanks = regions.map(region => blankSlot(sample, region))
+      const filled = regions.filter((_, index) => !blanks[index])
+      const classified = await classifySlots(sample, filled, heldLabels(request.candidates))
+      const slots = regions.map((region, index): FusionSlotRead => {
+        if (blanks[index]) return { blank: true }
+        if (classified) return classified[filled.indexOf(region)]
         if (!coarseTemplates.length) return null
         const signature = slotSignature(sample, region)
         const cached = cachedSlot(signature, region.size, held.key)

@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest'
-import { deriveFinalGifts, finalEnhanceEdit, nextEnhanceLevel } from '@/lib/planner/final-gifts'
+import { deriveFinalGifts, finalEnhanceEdit, finalKeyForFloorPick, nextEnhanceLevel } from '@/lib/planner/final-gifts'
 import { deriveBlockedFinalFusionMaterialIds } from '@/lib/planner/fusion'
 import type { GiftData, RecipeData } from '@/lib/planner/types'
 
@@ -25,6 +25,15 @@ it('drops every ingredient a recipe result in the set consumes, auto-included on
 
 it('keeps the fragments of 달의 기억', () => {
   expect(derive(['observe_8', 'final_9', 'final_7']).map(gift => gift.id)).toEqual([8, 9, 7])
+})
+
+it('REQ-PLANNER-018 lets a floor plan a material the final fusion result consumes, without making it a final gift', () => {
+  const final = deriveFinalGifts(['final_6', 'final_10'], recipes, giftMap)
+  // 억류된 찬송(1) and 녹슨 입마개(5) feed 피안개(6): planned on a floor, never a final gift.
+  expect(finalKeyForFloorPick(1, final)).toBeNull()
+  expect(finalKeyForFloorPick(5, final)).toBeNull()
+  expect(finalKeyForFloorPick(10, final)).toBeNull()
+  expect(finalKeyForFloorPick(7, final)).toBe('final_7')
 })
 
 it('edits the stored final_ key for enhancement, adding one only for auto-included gifts', () => {

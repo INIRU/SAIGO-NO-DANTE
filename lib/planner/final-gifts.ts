@@ -29,6 +29,14 @@ export function deriveFinalGifts(inventory: readonly string[], recipes: RecipeDa
 }
 
 /**
+ * The final key a floor pick adds to the inventory, or null. A floor may always plan any gift; a material a final
+ * fusion result consumes is planned on its floor but never becomes a final gift itself.
+ */
+export function finalKeyForFloorPick(id: number, final: { gifts: FinalGift[]; consumed: Set<number> }): string | null {
+  return final.consumed.has(id) || final.gifts.some(gift => gift.id === id) ? null : `final_${id}`
+}
+
+/**
  * Inventory edit that sets a final gift's enhancement: swap its stored final_ key, or for a start/observe gift with none,
  * add one (and drop it again at level 0). Apply as REPLACE (both), ADD (newId only) or REMOVE (oldId only).
  */
