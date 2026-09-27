@@ -204,7 +204,8 @@ npx tsx scripts/sync/prepare-extracted-assets.ts \
 
 
 ```bash
-# 번들: apply-extraction, identity-data, mirror-dungeon-data, rebuild-mirror-events, sync-extracted-identities + Windows용 sharp
+# 번들: apply-extraction, identity-data, mirror-dungeon-data, rebuild-mirror-events, sync-extracted-identities + Windows용 sharp,
+# 테마팩 합성(build-theme-packs.py, theme-composition/ 오버레이 원본 3개, SCDream5.woff2) + Windows용 휴대용 Python(python/)
 node scripts/sync/build-site-sync.mjs "<림버스 에셋>/tools/site-sync" --win
 # 옆에 NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SECRET_KEY, REVALIDATION_SECRET, NEXT_PUBLIC_SITE_URL만 담은 .env.local을 둔다.
 
@@ -219,6 +220,8 @@ node --import tsx scripts/sync/apply-extraction.ts --zip <LimbusAssets_*.zip> --
 2026-09-27에 9/24 ZIP으로 번들을 Mac에서 `--fix`까지 실행했다(52초). 실제 변경은 10715의 동기화 III에 없는 스킬 빈 행 1개 삭제와 10515의 픽업 배너 1건이었고, 이벤트 339·선택지 754개는 같은 내용으로 다시 쓰여 읽기 검증을 통과했다. 이후 `npm run audit:data` 문제 없음. Windows 실행(`ExtractToDirectory`, win32 sharp)은 아직 실제 PC에서 확인하지 않았다.
 
 ### 테마팩 합성 재사용
+
+자동 반영의 마지막 단계는 새 테마팩 이미지다(2026-09-27). 추출본의 `mirrordungeon-theme-floor-t*.txt`·`hidden.txt`에서 `packSpriteId`가 있는 테마팩 중 Storage `icons/theme-packs/<id>.webp` 또는 `boss/<bossSpriteId>.webp`가 없는 것만 `LIMBUS_THEME_IDS`로 `build-theme-packs.py`에 넘겨 합성하고(`scripts/sync/theme-images.ts`), `--fix`일 때 없는 파일만 올린다(`upsert: false`, 기존 이미지는 바꾸지 않는다). 결과는 `report.json`의 `newThemeImages`에 남는다. Windows PC에는 Python이 없어서 번들에 공식 CPython 3.12.10 embeddable과 Pillow 11.3.0 wheel(cp312 win_amd64)을 SHA-256 확인 후 풀어 넣는다. embeddable의 `._pth`가 자기 폴더를 경로에 넣으므로 pip 없이 `PIL`을 불러온다. 다른 OS는 `python3`를 쓰고 `LIMBUS_PYTHON`으로 바꿀 수 있다. 9/24 추출본으로 1010·1305(보스·경고)·1402·1514(익스트림·배턴)·3001을 합성하니 현재 Storage 이미지와 픽셀 차이가 0이었고, 번들 안 파일만으로 만든 결과도 바이트 단위로 같았다. Mac 번들의 전체 dry-run도 통과했다(새 테마팩 이미지 0건). Windows 휴대용 Python 실행은 실제 PC에서 아직 확인하지 않았다.
 
 사용자가 지정한 iCloud `My Project/무제 폴더/theme-pack-image-work/`는 기존 테마팩 합성 작업 자료다. 저장소의 `scripts/assets/build-theme-packs.py`가 이미 사용하는 비닐·로고·보스·경고·배턴·극한 테두리 합성은 유지한다. `LIMBUS_EXTRACTED_ASSET_ROOT`를 지정하면 새 manifest의 원래 `name`과 `path`로 테마팩/보스 원본을 찾아 합성한다. 이름이 중복되거나 파일이 없으면 중단하며 한국어 폴더명을 추정하지 않는다.
 
