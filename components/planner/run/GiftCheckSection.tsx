@@ -7,6 +7,7 @@ import type { RunState, RunAction } from '@/lib/planner/run-types'
 import type { ThemeData, GiftData } from '@/lib/planner/types'
 import { getGiftActivationConditionStatus, getGiftConditionCountsForSlots, type GiftConditionStatus } from '@/lib/planner/gift-condition-status'
 import { getGiftsFromThemes, themeExclusiveGiftIds } from '@/lib/planner/fusion'
+import { visibleTargetGifts } from '@/lib/planner/run-priority-gifts'
 import FloorGiftPickerModal from '@/components/planner/FloorGiftPickerModal'
 import GiftCard from '@/components/ui/GiftCard'
 import GiftArtwork from '@/components/ui/GiftArtwork'
@@ -74,9 +75,20 @@ export default function GiftCheckSection({ state, dispatch, gifts, giftMap, them
       return aOwned - bOwned
     })
   }, [state.targetGifts, giftMap, ownedSet])
+  // 보유는 켜고 미보유는 꺼 둔 채 시작한다. 필요할 때 사용자가 미보유를 켠다.
+  const [showOwned, setShowOwned] = useState(true)
+  const [showMissing, setShowMissing] = useState(false)
+  const ownedTargetCount = targetGiftList.filter(gift => ownedSet.has(gift.game_id)).length
+  const filteredTargets = visibleTargetGifts(targetGiftList, ownedSet, { owned: showOwned, missing: showMissing })
   const [showAllTargets, setShowAllTargets] = useState(false)
-  const shownTargets = showAllTargets ? targetGiftList : targetGiftList.slice(0, 12)
-  const hiddenTargetCount = targetGiftList.length - shownTargets.length
+  const shownTargets = showAllTargets ? filteredTargets : filteredTargets.slice(0, 12)
+  const hiddenTargetCount = filteredTargets.length - shownTargets.length
+  const filterButton = (pressed: boolean, onClick: () => void, label: string) => (
+    <button type="button" aria-pressed={pressed} onClick={onClick}
+      className={`min-h-8 rounded-md border px-2.5 text-xs font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-[var(--gold-light)] ${pressed ? 'border-[var(--gold)] bg-[rgba(200,144,10,0.18)] text-[var(--gold-light)]' : 'border-[var(--border)] text-[var(--text-tertiary)] hover:text-[var(--text-primary)]'}`}>
+      {label}
+    </button>
+  )
 
   // 목표 기프트 검색
   const targetSearchResults = useMemo(() => {
@@ -121,10 +133,16 @@ export default function GiftCheckSection({ state, dispatch, gifts, giftMap, them
           {t('targetGifts')}
           {targetGiftList.length > 0 && (
             <span style={{ color: '#888', fontWeight: 400, marginLeft: '0.5rem', fontSize: '0.6875rem' }}>
-              {t('targetProgress', { acquired: targetGiftList.filter(g => ownedSet.has(g.game_id)).length, total: targetGiftList.length })}
+              {t('targetProgress', { acquired: ownedTargetCount, total: targetGiftList.length })}
             </span>
           )}
         </h3>
+        {targetGiftList.length > 0 && (
+          <div className="mb-3 flex gap-2">
+            {filterButton(showOwned, () => setShowOwned(value => !value), t('targetShowOwned', { count: ownedTargetCount }))}
+            {filterButton(showMissing, () => setShowMissing(value => !value), t('targetShowMissing', { count: targetGiftList.length - ownedTargetCount }))}
+          </div>
+        )}
 
         {/* 목표 기프트 추가 검색 */}
         <div className="relative" style={{ marginBottom: '0.75rem', zIndex: 10 }}>
@@ -166,6 +184,7 @@ export default function GiftCheckSection({ state, dispatch, gifts, giftMap, them
         {/* 목표 기프트 그리드 */}
         <div role="region" aria-label={t('targetGifts')}>
         {targetGiftList.length > 0 ? (
+          filteredTargets.length === 0 ? <p className="text-xs leading-5 text-[var(--text-tertiary)]">{t('targetFilterEmpty')}</p> :
           <>
           <div className="run-gift-grid flex flex-wrap content-start gap-2" style={{ position: 'relative', zIndex: 0 }}>
             {shownTargets.map(gift => {
