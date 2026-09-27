@@ -82,23 +82,14 @@
     "apiLimitTitle": "API 추가 한도 요청"
   },
   "maintenance": {
-    "eyebrow": "ARCHIVE MAINTENANCE",
-    "statusLabel": "STATUS HOLD",
-    "title": "기록 보관소 점검 중",
-    "description": "현재 기록 보관소 데이터를 정비하는 동안 이 경로의 접근을 잠시 멈췄습니다. 정비가 끝나면 같은 경로로 다시 입장할 수 있습니다.",
-    "terminalLine": "메피스토펠레스 접근이 일시 중단되었습니다. 관리자 정비가 끝날 때까지 대기하세요.",
-    "detailTitle": "접근 제한 정보",
-    "detailCaption": "ACCESS REPORT",
-    "defaultMessage": "관리자 정비가 끝날 때까지 기록 보관소 요청을 보류합니다.",
-    "unknownReason": "관리자 정비",
-    "unknownEnd": "미정",
-    "currentRoute": "현재 경로",
-    "home": "초기 화면으로 돌아가기",
-    "labels": {
-      "reason": "사유",
-      "endsAt": "재개 예정",
-      "route": "요청 경로"
-    }
+    "title": "점검 중입니다",
+    "ended": "점검이 끝났습니다",
+    "remaining": "재개까지",
+    "resumesAt": "{time} 재개 예정",
+    "defaultMessage": "사이트를 정비하고 있습니다. 끝나면 같은 주소로 다시 들어올 수 있습니다.",
+    "unknownEnd": "재개 시각은 아직 정해지지 않았습니다.",
+    "retry": "다시 들어가기",
+    "home": "홈으로"
   },
   "common": {
     "search": "검색",
