@@ -2028,7 +2028,11 @@
       "clearSearch": "검색어 지우기",
       "sort": "정렬",
       "sortUsage": "편성 많은 순",
-      "sortName": "이름순"
+      "sortName": "이름순",
+      "skills": "스킬 교체",
+      "skillAverage": "평균",
+      "skillCustom": "기본 3-2-1 외",
+      "skillDefault": "기본"
     },
     "sampleValid": "유효 편성",
     "sampleDecks": "덱",

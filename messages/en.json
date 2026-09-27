@@ -2028,7 +2028,11 @@
       "clearSearch": "Clear search",
       "sort": "Sort",
       "sortUsage": "Most fielded",
-      "sortName": "Name"
+      "sortName": "Name",
+      "skills": "Skill exchange",
+      "skillAverage": "Avg.",
+      "skillCustom": "Not the default 3-2-1",
+      "skillDefault": "Default"
     },
     "sampleValid": "Formations",
     "sampleDecks": "Decks",
