@@ -415,7 +415,8 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
               <ArrowLeft style={{ width: '0.75rem', height: '0.75rem' }} /> {tPlanner('community')}
             </BackLink>
           </div>
-          <div className="flex items-center gap-2 flex-wrap sm:justify-end">
+          {/* 휴대폰은 같은 폭 2열(한 버튼만 다음 줄에 남지 않게), 넓은 화면은 한 줄 */}
+          <div className="grid grid-cols-2 gap-2 [&>button]:min-h-10 [&>button]:justify-center [&>div>button]:min-h-10 [&>div>button]:w-full [&>div>button]:justify-center sm:flex sm:flex-wrap sm:items-center sm:justify-end sm:[&>button]:min-h-9 sm:[&>div>button]:w-auto">
             {assistAvailable(locale) && <button
               onClick={() => { savePlanForRun({ ...giftConditionState, title: state.title, description: state.description }); window.location.href = '/planner/run?from-plan=1' }}
               style={{
@@ -459,8 +460,9 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
                   ? (editId ? tPlanner('actions.updateComplete') : tPlanner('actions.uploadComplete'))
                   : (editId ? tPlanner('actions.update') : tPlanner('actions.upload'))}
             </button>
-            {session.status === 'unauthenticated' && (
-              <p className="w-full text-[0.8125rem] text-[#6a6058] sm:text-right">
+            {/* 로그인 확인 전에도 줄 자리를 잡아 둔다: 늦게 끼어들면 아래 편성판 전체가 한 줄 밀린다 */}
+            {session.status !== 'authenticated' && (
+              <p className="col-span-2 w-full text-[0.8125rem] text-[#6a6058] sm:text-right" style={session.status === 'loading' ? { visibility: 'hidden' } : undefined}>
                 {getGuestCopy(locale).saveHint}{' '}
                 <Link href="/guest" className="text-[#e8b030] underline-offset-4 hover:underline">{getGuestCopy(locale).manage}</Link>
               </p>

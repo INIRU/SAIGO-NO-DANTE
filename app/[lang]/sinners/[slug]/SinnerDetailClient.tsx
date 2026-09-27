@@ -716,8 +716,8 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                   </div>
 
                   <div className={styles.controls}>
-                    {/* 보유 필터 드롭다운 */}
-                    {ownedIds !== null && (
+                    {/* 보유 필터 드롭다운: 보유 정보가 늦게 와도 줄이 밀리지 않게 처음부터 둔다(고른 값은 도착하면 적용) */}
+                    {(
                       <Dropdown
                         value={ownershipFilter}
                         defaultValue="all"
@@ -794,7 +794,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                   </button>
 
                   {/* 보유 필터 드롭다운 */}
-                  {ownedIds !== null && (
+                  {(
                     <Dropdown
                       value={ownershipFilter}
                       defaultValue="all"
