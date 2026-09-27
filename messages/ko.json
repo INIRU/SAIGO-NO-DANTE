@@ -2032,12 +2032,34 @@
       "skills": "스킬 교체",
       "skillAverage": "평균",
       "skillCustom": "기본 3-2-1 외",
-      "skillDefault": "기본"
+      "skillDefault": "기본",
+      "skillsOverall": "전체 스킬 교체",
+      "skillsOverallBasis": "편성된 인격 {count}칸 기준",
+      "moreItems": "{count}개 더 보기",
+      "dungeonEmpty": "집계할 거울 던전 플랜이 없습니다.",
+      "dungeonSmallSample": "플랜이 {count}건뿐이라 비율이 크게 흔들릴 수 있습니다.",
+      "floorThemes": "층별 테마팩",
+      "floorThemesBasis": "그 층에 테마팩을 정한 플랜 중 비율",
+      "floorLabel": "{floor}층",
+      "giftRoutes": "층 계획에 넣은 기프트",
+      "giftRoutesBasis": "플랜 {count}건 중 층 계획에 넣은 비율",
+      "mostlyOn": "주로 {floors}층",
+      "startGifts": "시작 기프트",
+      "observeGifts": "관측 기프트",
+      "enhanced": "강화해서 챙긴 기프트",
+      "constraints": "층별 제약 카드",
+      "constraintsBasis": "그 층에 제약 카드를 정한 플랜 중 고른 비율 · 흐린 카드가 자주 빼는 카드",
+      "constraintScore": "{score}점"
     },
     "sampleValid": "유효 편성",
     "sampleDecks": "덱",
     "samplePlanner": "플래너",
-    "excluded": "편성이 비어 있는 게시물 {count}건은 제외했습니다."
+    "excluded": "편성이 비어 있는 게시물 {count}건은 제외했습니다.",
+    "views": {
+      "overall": "전체 메타",
+      "identity": "인격 분석",
+      "dungeon": "거울 던전"
+    }
   },
   "experience": {
     "title": "경험치 계산기",

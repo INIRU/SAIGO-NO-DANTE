@@ -8,10 +8,29 @@ import { useKeywordData, useKeywords } from '@/components/providers/KeywordProvi
 import { localizeDeckKeyword } from '@/components/decks/decks-types'
 import { CONTENT_TYPE_COLORS } from '@/lib/constants/deck-tokens'
 import { GIFT_KEYWORD_COLORS } from '@/lib/constants/gift'
-import type { MetaUsage } from '@/lib/meta/types'
+import type { CountStat, MetaUsage } from '@/lib/meta/types'
 import styles from '@/styles/components/MetaAnalysis.module.css'
 
 export type DonutSegment = { key: string; label: ReactNode; colors: string[]; count: number }
+
+export const OTHER = '__other'
+const LEGEND_LIMIT = 6
+/** Keeps the largest slices readable; the rest share one slice. */
+export function collapse(rows: CountStat[]): CountStat[] {
+  if (rows.length <= LEGEND_LIMIT + 1) return rows
+  return [...rows.slice(0, LEGEND_LIMIT), { key: OTHER, count: rows.slice(LEGEND_LIMIT).reduce((sum, row) => sum + row.count, 0) }]
+}
+
+/** Content and keyword deck donut slices. */
+export function useSegments() {
+  const t = useTranslations('meta.analysis')
+  return {
+    usage: (rows: CountStat[]): DonutSegment[] => rows.map(row => ({ key: row.key, count: row.count, colors: [usageColor(row.key as MetaUsage)], label: t('usage.' + row.key) })),
+    combo: (rows: CountStat[]): DonutSegment[] => collapse(rows).map(row => row.key === OTHER
+      ? { key: OTHER, count: row.count, colors: ['#3a2a15'], label: t('others', { count: rows.length - LEGEND_LIMIT }) }
+      : { key: row.key, count: row.count, colors: comboColors(row.key), label: <ComboLabel combo={row.key} /> }),
+  }
+}
 
 const RADIUS = 40
 const GAP = 0.008

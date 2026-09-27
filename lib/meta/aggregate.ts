@@ -3,7 +3,7 @@ import { computeKeywordDeckCombo } from '@/lib/decks/keyword-rules'
 import { normalizeThemeKeyword } from '@/lib/constants/keywords'
 import { normalizeSin } from '@/lib/constants/sin'
 import { getIdentitySkillDistribution } from '@/lib/planner/types'
-import type { IdentityStat, EGOStat, MetaData, MetaIdentity, MetaEGO, MetaPost, MetaSource, MetaPeriod, MetaUsage, MetaInsightPost, MetaPlanSummary, CountStat } from './types'
+import type { IdentityStat, EGOStat, MetaData, MetaDungeon, MetaIdentity, MetaEGO, MetaPost, MetaSource, MetaPeriod, MetaUsage, MetaInsightPost, MetaPlanSummary, CountStat } from './types'
 
 const USAGE_BY_CONTENT_TYPE: Record<string, MetaUsage> = {
   '스토리': 'story', '경험치 던전': 'expDungeon', '끈 던전': 'threadDungeon',
@@ -37,6 +37,73 @@ const PLAN_DIFFICULTIES = new Set(['normal', 'hard', 'extreme'])
 function byCount<K extends string>(counts: Map<K, number>, limit = Infinity): CountStat<K>[] {
   return [...counts].map(([key, count]) => ({ key, count }))
     .sort((a, b) => b.count - a.count || a.key.localeCompare(b.key)).slice(0, limit)
+}
+
+function bump<K>(map: Map<K, number>, key: K) { map.set(key, (map.get(key) ?? 0) + 1) }
+
+const INVENTORY_ENTRY = /^(start|observe|final)_(\d+)(?:_(plus|plusplus))?$/
+
+/** Each plan counts once per floor, gift, inventory entry and card. */
+export function aggregateDungeon(plans: Pick<MetaPost, 'floorPlan' | 'inventory'>[]): MetaDungeon {
+  const floors = new Map<number, { plans: number; themes: Map<string, number> }>()
+  const routes = new Map<string, { count: number; floors: Map<string, number> }>()
+  const start = new Map<string, number>(), observe = new Map<string, number>()
+  const cardFloors = new Map<number, { plans: number; cards: Map<string, number> }>()
+  const enhanced = new Map<string, { plus: number; plusplus: number }>()
+  for (const plan of plans) {
+    const giftFloors = new Map<string, Set<string>>()
+    const seenFloors = new Set<number>()
+    for (const row of objectRows(plan.floorPlan)) {
+      const floor = Number(row.floor)
+      if (!Number.isInteger(floor) || floor < 1 || floor > 15 || seenFloors.has(floor)) continue
+      seenFloors.add(floor)
+      const theme = typeof row.theme_id === 'string' || typeof row.theme_id === 'number' ? String(row.theme_id) : ''
+      if (theme) {
+        const entry = floors.get(floor) ?? { plans: 0, themes: new Map() }
+        entry.plans++
+        bump(entry.themes, theme)
+        floors.set(floor, entry)
+      }
+      for (const id of Array.isArray(row.gift_ids) ? row.gift_ids.map(String) : []) {
+        if (/^\d+$/.test(id)) giftFloors.set(id, (giftFloors.get(id) ?? new Set()).add(String(floor)))
+      }
+      const floorCards = new Set(floor >= 11 && Array.isArray(row.constraints) ? row.constraints.map(String) : [])
+      if (floorCards.size) {
+        const entry = cardFloors.get(floor) ?? { plans: 0, cards: new Map() }
+        entry.plans++
+        for (const card of floorCards) bump(entry.cards, card)
+        cardFloors.set(floor, entry)
+      }
+    }
+    for (const [gift, giftFloorSet] of giftFloors) {
+      const route = routes.get(gift) ?? { count: 0, floors: new Map() }
+      route.count++
+      for (const floor of giftFloorSet) bump(route.floors, floor)
+      routes.set(gift, route)
+    }
+    const entries = new Set(Array.isArray(plan.inventory) ? plan.inventory.filter((entry): entry is string => typeof entry === 'string') : [])
+    for (const entry of entries) {
+      const [, kind, gift, level] = INVENTORY_ENTRY.exec(entry) ?? []
+      if (kind === 'start') bump(start, gift)
+      else if (kind === 'observe') bump(observe, gift)
+      else if (level === 'plus' || level === 'plusplus') {
+        const row = enhanced.get(gift) ?? { plus: 0, plusplus: 0 }
+        row[level]++
+        enhanced.set(gift, row)
+      }
+    }
+  }
+  return {
+    plans: plans.length,
+    floors: [...floors].sort((a, b) => a[0] - b[0]).map(([floor, entry]) => ({ floor, plans: entry.plans, themes: byCount(entry.themes, 4) })),
+    routes: [...routes].map(([key, route]) => ({ key, count: route.count, floors: byCount(route.floors, 3) }))
+      .sort((a, b) => b.count - a.count || a.key.localeCompare(b.key)).slice(0, 60),
+    start: byCount(start, 12),
+    observe: byCount(observe, 12),
+    enhanced: [...enhanced].map(([key, row]) => ({ key, ...row }))
+      .sort((a, b) => b.plus + b.plusplus - a.plus - a.plusplus || b.plusplus - a.plusplus || a.key.localeCompare(b.key)).slice(0, 15),
+    constraints: [...cardFloors].sort((a, b) => a[0] - b[0]).map(([floor, entry]) => ({ floor, plans: entry.plans, cards: byCount(entry.cards) })),
+  }
 }
 
 /** Running tally of plan choices; summary() keeps the top gifts and packs only. */
@@ -88,6 +155,8 @@ export function aggregateMeta({ posts, identities, egos, keywordSinMap, source, 
   const comboCounts = new Map<string, number>()
   const benchPosts = new Map<string, MetaInsightPost[]>()
   const planTotals = planTally()
+  const planPosts: MetaPost[] = []
+  const skillSplits = new Map<string, number>()
   const identityPlans = new Map<string, ReturnType<typeof planTally>>()
   const pairCounts = new Map<string, number>()
   const usageBySinner: Record<string, number> = {}
@@ -144,6 +213,7 @@ export function aggregateMeta({ posts, identities, egos, keywordSinMap, source, 
     const summary: MetaInsightPost = { id: post.id, source: post.source, title: post.title ?? post.id, usage, combo }
     if (post.source === 'planner') {
       planTotals.add(post)
+      planPosts.push(post)
       for (const { identity } of battleSlots) {
         const tally = identityPlans.get(identity.id) ?? planTally()
         tally.add(post)
@@ -159,6 +229,7 @@ export function aggregateMeta({ posts, identities, egos, keywordSinMap, source, 
     for (const { identity, order, skills } of battleSlots) {
       const insight = identityInsights[identity.id] ??= { count: 0, orders: {}, egos: [], posts: [], companions: [], skills: [] }
       insight.count++
+      bump(skillSplits, skills)
       insight.orders[String(order + 1)] = (insight.orders[String(order + 1)] ?? 0) + 1
       const split = insight.skills.find(row => row.key === skills)
       if (split) split.count++
@@ -239,6 +310,8 @@ export function aggregateMeta({ posts, identities, egos, keywordSinMap, source, 
     giftCatalog: {},
     themeCatalog: {},
     skillCatalog: {},
+    skillSplits: byCount(skillSplits),
+    dungeon: aggregateDungeon(planPosts),
     synergies: [...pairCounts].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).slice(0, 20).map(([key, count]) => {
       const [aId, bId] = JSON.parse(key) as [string, string]
       const a = identityCatalog.get(aId)!

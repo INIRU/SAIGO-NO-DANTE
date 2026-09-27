@@ -2032,12 +2032,34 @@
       "skills": "スキル交換",
       "skillAverage": "平均",
       "skillCustom": "基本3-2-1以外",
-      "skillDefault": "基本"
+      "skillDefault": "基本",
+      "skillsOverall": "全体のスキル入れ替え",
+      "skillsOverallBasis": "編成された人格{count}枠基準",
+      "moreItems": "さらに{count}件表示",
+      "dungeonEmpty": "集計できる鏡ダンジョンのプランがありません。",
+      "dungeonSmallSample": "プランが{count}件のみのため、比率が大きく変わる可能性があります。",
+      "floorThemes": "階層別テーマパック",
+      "floorThemesBasis": "その階でテーマパックを決めたプランのうちの比率",
+      "floorLabel": "{floor}階",
+      "giftRoutes": "階層計画に入れたギフト",
+      "giftRoutesBasis": "プラン{count}件のうち階層計画に入れた比率",
+      "mostlyOn": "主に{floors}階",
+      "startGifts": "開始ギフト",
+      "observeGifts": "観測ギフト",
+      "enhanced": "強化して揃えたギフト",
+      "constraints": "階層別制約カード",
+      "constraintsBasis": "その階で制約カードを決めたプランのうち選んだ比率・薄いカードがよく外されるカード",
+      "constraintScore": "{score}点"
     },
     "sampleValid": "有効な編成",
     "sampleDecks": "デッキ",
     "samplePlanner": "プランナー",
-    "excluded": "編成が空の投稿{count}件は除外しています。"
+    "excluded": "編成が空の投稿{count}件は除外しています。",
+    "views": {
+      "overall": "全体メタ",
+      "identity": "人格分析",
+      "dungeon": "鏡ダンジョン"
+    }
   },
   "experience": {
     "title": "経験値計算機",
