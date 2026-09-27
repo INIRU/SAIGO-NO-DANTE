@@ -1,7 +1,7 @@
 'use client'
 
-import { notePlainText } from '@/lib/notes/blocks'
-import { NoteRenderer } from '@/components/decks/NoteChips'
+import { notePreviewText } from '@/lib/notes/blocks'
+import { NoteRenderer, useNoteGiftLookup } from '@/components/decks/NoteChips'
 
 import FormationThumbnail from '@/components/ui/FormationThumbnail'
 import RelativeTime from '@/components/ui/RelativeTime'
@@ -77,6 +77,8 @@ function PlanCard({
   const diffStyle = DIFFICULTY_STYLE[plan.difficulty]
   const username = plan.profiles?.username ?? guestAuthorName(plan.guest_tag, locale) ?? t('anonymous')
   const avatarUrl = plan.profiles?.avatar_url ?? DEFAULT_AVATAR_URL
+  const preview = plan.description ? notePreviewText(plan.description) : ''
+  const giftLookup = useNoteGiftLookup(preview)
 
   // 자동 키워드 태그: API에서 서버사이드로 계산된 값 우선 사용
   const topKeywords = normalizePlannerListKeywords((plan.selected_keywords && plan.selected_keywords.length > 0)
@@ -104,7 +106,7 @@ function PlanCard({
           {/* 설명 */}
           {plan.description ? (
             <p className="mb-3 line-clamp-2 flex-1" style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', lineHeight: 1.6, overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              <NoteRenderer text={notePlainText(plan.description)} inline />
+              <NoteRenderer text={preview} egoGiftLookup={giftLookup} giftLabel inline />
             </p>
           ) : <div className="flex-1" />}
 
