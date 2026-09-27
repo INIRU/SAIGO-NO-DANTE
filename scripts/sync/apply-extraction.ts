@@ -4,6 +4,8 @@
  * Default: verify the ZIP and dry-run every sync. --fix: back up, then apply step by step and stop at the first failure.
  *
  *   node --import tsx scripts/sync/apply-extraction.ts (--zip <LimbusAssets_*.zip> | --source <unpacked LimbusAssets>) --work <dir> [--fix]
+ * Theme pack cards the extraction tool composed into the ZIP are uploaded (as WebP) only when Storage lacks them; existing
+ * images are never replaced.
  */
 import { spawnSync } from 'node:child_process'
 import { existsSync, mkdirSync, openSync, closeSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
@@ -12,6 +14,8 @@ import { fileURLToPath } from 'node:url'
 import { createClient } from '@supabase/supabase-js'
 import { config } from 'dotenv'
 import { prepareExtractedAssets } from './prepare-extracted-assets'
+import sharp from 'sharp'
+import { missingThemeImages, themeImageSource } from './theme-images'
 
 config({ path: '.env.local', quiet: true })
 const args = process.argv.slice(2)
@@ -33,7 +37,9 @@ const STEPS: Step[] = [
   { name: 'events', script: 'scripts/sync/rebuild-mirror-events.ts', args: [] },
 ]
 
-const db = () => createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY!).schema('limbus')
+const client = () => createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY!)
+const db = () => client().schema('limbus')
+const THEME_IMAGE_DIR = 'icons/theme-packs'
 
 async function all(table: string, columns = '*') {
   const rows: Record<string, unknown>[] = []
@@ -53,6 +59,13 @@ function run(work: string, label: string, command: string[], env: NodeJS.Process
   const ok = result.status === 0
   console.log(`${ok ? 'ok  ' : 'FAIL'} ${label}`)
   if (!ok) throw Error(`${label} failed (see ${log}):\n${readFileSync(log, 'utf8').slice(-2000)}`)
+}
+
+async function storedNames(dir: string) {
+  const { data, error } = await client().storage.from('limbus-assets').list(dir, { limit: 1000 })
+  if (error) throw Error(`Storage ${dir}: ${error.message}`)
+  if (data.length === 1000) throw Error(`Storage ${dir} has 1000+ entries; list with paging before trusting it`)
+  return new Set(data.map(item => item.name))
 }
 
 async function main() {
@@ -107,6 +120,26 @@ async function main() {
     if (newIdentities.length) {
       run(work, 'identity-images', command('scripts/assets/sync-extracted-identities.cjs', ['--ids', newIdentities.join(','), '--source', source, '--output', join(work, 'identity-images'), '--fix']), env)
       ;(report.steps as string[]).push('identity-images')
+    }
+
+    // New theme packs: the extraction tool composes every pack card into the ZIP (kind '합성 테마팩'); upload the ones Storage lacks.
+    const themeFiles = missingThemeImages(data, { packs: await storedNames(THEME_IMAGE_DIR), bosses: await storedNames(`${THEME_IMAGE_DIR}/boss`) })
+    report.newThemeImages = themeFiles
+    if (themeFiles.length) {
+      const images = JSON.parse(readFileSync(join(source, 'Reports', 'manifest.json'), 'utf8').replace(/^\uFEFF/, ''))
+      const sources = themeFiles.map(file => ({ file, path: themeImageSource(file, images) }))
+      const unsourced = sources.filter(item => !item.path).map(item => item.file)
+      if (unsourced.length) throw Error(`the ZIP has no composed image for ${unsourced.join(', ')}; update the extraction tool and extract again`)
+      if (FIX) {
+        const bucket = client().storage.from('limbus-assets')
+        for (const { file, path } of sources) {
+          const webp = await sharp(readFileSync(join(source, 'Images', path!))).webp({ quality: 95, effort: 6 }).toBuffer()
+          const { error } = await bucket.upload(`${THEME_IMAGE_DIR}/${file}`, webp, { contentType: 'image/webp', cacheControl: '3600', upsert: false })
+          if (error) throw Error(`upload ${THEME_IMAGE_DIR}/${file}: ${error.message}`)
+        }
+        console.log(`ok   theme-images (${sources.length} uploaded)`)
+        ;(report.steps as string[]).push('theme-images')
+      }
     }
     report.ok = true
   } catch (error) {
