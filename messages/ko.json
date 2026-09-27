@@ -1245,7 +1245,8 @@
         "codeReplaceTitle": "편성을 바꿀까요?",
         "codeReplaceMessage": "지금 편성한 인격과 E.G.O를 코드의 편성으로 바꿔요.",
         "codeReplaceConfirm": "바꾸기",
-        "codeCancel": "취소"
+        "codeCancel": "취소",
+        "codePasteHint": "복사한 편성 코드를 바로 불러와요"
       },
       "ego": {
         "modalTitle": "E.G.O 선택",
