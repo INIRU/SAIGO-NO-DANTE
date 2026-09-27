@@ -29,6 +29,7 @@ import AprilFoolsWrapper from '@/components/events/AprilFoolsWrapper'
 import { KeywordProvider } from '@/components/providers/KeywordProvider'
 import { getKeywordData, localizeKeywordCatalog } from '@/lib/keywords/server-data'
 import { fontVariables } from '../fonts'
+import { ROOT_OMITTED_MESSAGES, omitMessages } from '@/lib/i18n/client-messages'
 
 const SITE_NAME: Record<SupportedLang, string> = { ko: '최애의 관리자', en: 'SAIGO NO DANTE', ja: 'SAIGO NO DANTE' }
 const OG_LOCALE: Record<SupportedLang, string> = { ko: 'ko_KR', en: 'en_US', ja: 'ja_JP' }
@@ -152,7 +153,8 @@ export default async function LangLayout({
           <SessionProvider>
             <SWRProvider>
               <MotionConfig reducedMotion="user">
-                <IntlClientProvider locale={validLang} messages={messages} timeZone="Asia/Seoul">
+                {/* Section-only messages (planner, meta, …) are added by their layouts, not sent with every page. */}
+                <IntlClientProvider locale={validLang} messages={omitMessages(messages, ROOT_OMITTED_MESSAGES)} timeZone="Asia/Seoul">
                   <KeywordProvider keywords={keywords}>
                     <SkipNav lang={validLang} />
                     <AprilFoolsWrapper />
