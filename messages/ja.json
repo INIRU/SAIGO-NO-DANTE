@@ -1245,7 +1245,8 @@
         "codeReplaceTitle": "編成を置き換えますか？",
         "codeReplaceMessage": "現在の人格とE.G.Oをコードの編成に置き換えます。",
         "codeReplaceConfirm": "置き換える",
-        "codeCancel": "キャンセル"
+        "codeCancel": "キャンセル",
+        "codePasteHint": "コピーした編成コードをそのまま読み込みます"
       },
       "ego": {
         "modalTitle": "E.G.O選択",
