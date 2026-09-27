@@ -157,6 +157,11 @@ html { scroll-behavior: smooth; font-size: 17px !important; background-color: va
   html { font-size: 15px !important; }
 }
 
+/* iOS Safari zooms into fields under 16px on focus and keeps that zoom after in-app navigation. */
+@supports (-webkit-touch-callout: none) {
+  input:not([type='checkbox'], [type='radio'], [type='range']), textarea, select { font-size: max(16px, 1em) !important; }
+}
+
 body {
   background-color: var(--bg-deep);
   color: #e8dcc8;
@@ -327,8 +332,12 @@ span.inline img[src*="bladetrail-afterimage"] + span {
 /* The rendered browse panel controls both server-rendered board headers. */
 .community-board .board-header { padding-top: 5.5rem; padding-bottom: 1.25rem; }
 .community-board .board-header-back { display: none; }
-.community-board:has([data-board-browse]) { height: 100dvh; min-height: 0; overflow: hidden; }
-html.board-browse, html.board-browse body { overflow: hidden; }
+/* Desktop browse is a workspace: the page stays still and only the list scrolls. Phones scroll the page itself,
+   because a fixed-height list left an empty band under Safari's collapsing toolbar. */
+@media (min-width: 64rem) {
+  .community-board:has([data-board-browse]) { height: 100dvh; min-height: 0; overflow: hidden; }
+  html.board-browse, html.board-browse body { overflow: hidden; }
+}
 html.board-browse body :is(footer, [data-floating-font-control]) { display: none !important; }
 .community-board:has([data-board-browse]) .board-header { padding-top: 5.25rem; padding-bottom: 1.75rem; }
 .community-board:has([data-board-browse]) .board-header-overview { display: none; }
