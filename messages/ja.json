@@ -82,23 +82,14 @@
     "apiLimitTitle": "API制限の引き上げ依頼"
   },
   "maintenance": {
-    "eyebrow": "ARCHIVE MAINTENANCE",
-    "statusLabel": "STATUS HOLD",
-    "title": "アーカイブ整備中",
-    "description": "記録保管庫のデータ整備中のため、この経路へのアクセスを一時停止しています。整備が完了すると同じ経路から再入場できます。",
-    "terminalLine": "メフィストフェレスへのアクセスは一時停止中です。管理者の整備が完了するまでお待ちください。",
-    "detailTitle": "アクセス制限情報",
-    "detailCaption": "ACCESS REPORT",
-    "defaultMessage": "管理者の整備が完了するまで、記録保管庫への要求を保留しています。",
-    "unknownReason": "管理者整備",
-    "unknownEnd": "未定",
-    "currentRoute": "現在の経路",
-    "home": "入口へ戻る",
-    "labels": {
-      "reason": "理由",
-      "endsAt": "再開予定",
-      "route": "要求経路"
-    }
+    "title": "メンテナンス中です",
+    "ended": "メンテナンスが終了しました",
+    "remaining": "再開まで",
+    "resumesAt": "{time} 再開予定",
+    "defaultMessage": "サイトを整備しています。終了後、同じアドレスから再びアクセスできます。",
+    "unknownEnd": "再開時刻はまだ決まっていません。",
+    "retry": "もう一度アクセス",
+    "home": "ホームへ"
   },
   "common": {
     "search": "検索",

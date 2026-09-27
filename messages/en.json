@@ -82,23 +82,14 @@
     "apiLimitTitle": "API limit increase request"
   },
   "maintenance": {
-    "eyebrow": "ARCHIVE MAINTENANCE",
-    "statusLabel": "STATUS HOLD",
-    "title": "Archive Under Maintenance",
-    "description": "Access to this route is paused while archive data is being serviced. You can return through the same route once maintenance is complete.",
-    "terminalLine": "Mephistopheles access is temporarily paused. Please stand by until maintenance is complete.",
-    "detailTitle": "Access restriction details",
-    "detailCaption": "ACCESS REPORT",
-    "defaultMessage": "Archive requests are on hold until administrator maintenance is complete.",
-    "unknownReason": "Administrator maintenance",
-    "unknownEnd": "Not scheduled",
-    "currentRoute": "Current route",
-    "home": "Return to the entrance",
-    "labels": {
-      "reason": "Reason",
-      "endsAt": "Resumes",
-      "route": "Requested route"
-    }
+    "title": "Under maintenance",
+    "ended": "Maintenance is over",
+    "remaining": "Back in",
+    "resumesAt": "Resumes {time}",
+    "defaultMessage": "We are working on the site. You can come back to the same address once we are done.",
+    "unknownEnd": "The resume time has not been set yet.",
+    "retry": "Try again",
+    "home": "Home"
   },
   "common": {
     "search": "Search",
