@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { getToken } from 'next-auth/jwt'
+import { getToken, type JWT } from 'next-auth/jwt'
 import { checkRateLimit } from '@/lib/rate-limit'
 import createMiddleware from 'next-intl/middleware'
 import { routing } from './lib/i18n/routing'
 import { isAllowedRequestOrigin } from './lib/request-origin'
 import { PRIMARY_LOCALE } from './lib/seo/metadata'
+import { isMaintenanceOpen, maintenanceEdgeReadUrl, type MaintenanceEntry } from './lib/maintenance'
 
 const intlMiddleware = createMiddleware(routing)
 
@@ -93,12 +94,48 @@ function matchesMaintenancePath(routePathname: string, maintenancePath: string):
     || routePathname.startsWith(`${maintenanceRoutePathname}/`)
 }
 
+// 점검 목록은 요청마다 묻지 않고 인스턴스에서 잠시 재사용한다(모든 페이지 이동·미리 불러오기가 여기를 지난다).
+// Edge Config가 연결되어 있으면 거기서 읽고(관리자 저장 즉시 갱신), 아니면 Supabase를 읽는다.
+// 켜고 끈 점검은 인스턴스마다 최대 15초 늦게 반영된다. 읽기 요금과 맞바꾼 값이다.
+const MAINTENANCE_TTL_MS = 15_000
+const MAINTENANCE_EDGE_URL = maintenanceEdgeReadUrl()
+let maintenanceCache: { at: number; entries: MaintenanceEntry[] } | null = null
+
+async function fetchMaintenance(): Promise<MaintenanceEntry[] | null> {
+  if (MAINTENANCE_EDGE_URL) {
+    const res = await fetch(MAINTENANCE_EDGE_URL)
+    if (res.ok) return await res.json()
+    // 항목이 아직 없거나 Edge Config 장애: Supabase로 넘어간다
+  }
+  const res = await fetch(
+    `${SUPABASE_URL}/rest/v1/site_maintenance?is_active=eq.true&select=path,message,reason,starts_at,ends_at`,
+    { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, 'Accept-Profile': 'limbus' } },
+  )
+  return res.ok ? await res.json() : null
+}
+
+async function activeMaintenance(): Promise<MaintenanceEntry[]> {
+  if (maintenanceCache && Date.now() - maintenanceCache.at < MAINTENANCE_TTL_MS) return maintenanceCache.entries
+  try {
+    const entries = await fetchMaintenance()
+    if (!entries) return maintenanceCache?.entries ?? []
+    maintenanceCache = { at: Date.now(), entries }
+    return maintenanceCache.entries
+  } catch {
+    // 조회 실패 시 차단하지 않음 (fail-open)
+    return maintenanceCache?.entries ?? []
+  }
+}
+
 // 빈 403 응답 (봇에게 최소 정보 노출)
 const FORBIDDEN_RESPONSE = new Response(null, { status: 403 })
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
   const { locale, routePathname } = getLocalizedPathInfo(pathname)
+  // 한 요청 안에서 로그인 토큰은 한 번만 읽는다
+  let tokenPromise: Promise<JWT | null> | undefined
+  const readToken = () => (tokenPromise ??= getToken({ req: request }))
 
   // ── 1. 봇/스캐너 프로빙 즉시 차단 ──
   if (isBlockedPath(pathname)) {
@@ -107,7 +144,7 @@ export async function proxy(request: NextRequest) {
 
   // ── 2. Admin 경로 proxy 레벨 보호 ──
   if (hasPathPrefix(routePathname, '/admin')) {
-    const token = await getToken({ req: request })
+    const token = await readToken()
     if (!(token as Record<string, unknown>)?.isAdmin) {
       // 비인증 사용자에게 admin 존재 자체를 숨김 (404)
       return new Response(null, { status: 404 })
@@ -125,7 +162,7 @@ export async function proxy(request: NextRequest) {
   // Anyone can write decks and plans (guests anonymously, with a browser key); suspended accounts cannot.
   const isCreationPage = routePathname === '/decks/new' || routePathname === '/planner'
   if (isCreationPage) {
-    const token = await getToken({ req: request })
+    const token = await readToken()
     if (token?.isSuspended) {
       const url = request.nextUrl.clone()
       url.pathname = locale ? `/${locale}/login` : '/login'
@@ -138,43 +175,24 @@ export async function proxy(request: NextRequest) {
 
   // ── 3. 점검 모드 체크 (페이지 요청만) ──
   if (!MAINTENANCE_SKIP.some(p => hasPathPrefix(routePathname, p)) && pathname !== '/favicon.ico') {
-    try {
-      const res = await fetch(
-        `${SUPABASE_URL}/rest/v1/site_maintenance?is_active=eq.true&select=path,message,reason,ends_at`,
-        {
-          headers: {
-            apikey: SUPABASE_KEY,
-            Authorization: `Bearer ${SUPABASE_KEY}`,
-            'Accept-Profile': 'limbus',
-          },
-        },
-      )
+    const entries = await activeMaintenance()
+    const now = new Date()
+    // 시작 전·종료 후 항목은 무시한다(예약 점검)
+    const matched = entries.find(e => isMaintenanceOpen(e, now) && matchesMaintenancePath(routePathname, e.path))
 
-      if (res.ok) {
-        const now = new Date()
-        const entries: { path: string; message: string; reason: string; ends_at: string | null }[] = await res.json()
-        const matched = entries.find(e => {
-          // 종료 시간이 지난 항목은 무시
-          if (e.ends_at && new Date(e.ends_at) < now) return false
-          return matchesMaintenancePath(routePathname, e.path)
-        })
-
-        if (matched) {
-          // 관리자는 점검 우회
-          const token = await getToken({ req: request })
-          if (!(token as Record<string, unknown>)?.isAdmin) {
-            const url = request.nextUrl.clone()
-            url.pathname = locale ? `/${locale}/maintenance` : '/maintenance'
-            url.searchParams.set('from', pathname)
-            if (matched.message) url.searchParams.set('message', matched.message)
-            if (matched.reason) url.searchParams.set('reason', matched.reason)
-            if (matched.ends_at) url.searchParams.set('ends_at', matched.ends_at)
-            return NextResponse.rewrite(url)
-          }
-        }
+    if (matched) {
+      // 관리자는 점검 우회
+      const token = await readToken()
+      if (!(token as Record<string, unknown>)?.isAdmin) {
+        const url = request.nextUrl.clone()
+        url.pathname = locale ? `/${locale}/maintenance` : '/maintenance'
+        url.searchParams.set('from', pathname)
+        if (matched.message) url.searchParams.set('message', matched.message)
+        if (matched.reason) url.searchParams.set('reason', matched.reason)
+        if (matched.starts_at) url.searchParams.set('starts_at', matched.starts_at)
+        if (matched.ends_at) url.searchParams.set('ends_at', matched.ends_at)
+        return NextResponse.rewrite(url)
       }
-    } catch {
-      // 조회 실패 시 차단하지 않음 (fail-open)
     }
   }
 
@@ -185,7 +203,7 @@ export async function proxy(request: NextRequest) {
   const isSuspendedPage = ['/decks/new', '/mypage'].some(p => hasPathPrefix(routePathname, p))
 
   if (isWriteApi || isSuspendedPage) {
-    const token = await getToken({ req: request })
+    const token = await readToken()
     if ((token as Record<string, unknown>)?.isSuspended) {
       if (isWriteApi) {
         return NextResponse.json(

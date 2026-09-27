@@ -63,8 +63,6 @@ const nextConfig: NextConfig = {
       'sonner',
       'motion',
       '@radix-ui/react-dialog',
-      '@radix-ui/react-dropdown-menu',
-      '@radix-ui/react-tooltip',
       'nuqs',
     ],
   },
