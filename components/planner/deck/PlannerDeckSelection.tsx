@@ -223,7 +223,7 @@ export function PlannerIdentityBoard({
         .fboard { --bar: 3rem; --gap: 0.5rem; position: relative; width: 100%; min-width: 0; padding-block: calc(var(--bar) + var(--gap)); }
         .fboard__stage { position: relative; overflow: hidden; }
         .fboard__grid {
-          display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.625rem 0.5rem;
+          display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.625rem 0.375rem;
           width: 100%; max-width: 62rem; margin: 0 auto; padding: 0.75rem 0.25rem; list-style: none;
         }
         .fboard__grid > li { min-width: 0; }
@@ -293,8 +293,9 @@ export function PlannerIdentityBoard({
           border: 1px dashed #3a2c18; border-radius: 0.25rem; color: #9c8b73; font-size: 0.8125rem;
         }
         .fboard__empty img { width: 2rem; height: 2rem; opacity: 0.4; }
-        @media (min-width: 40rem) { .fboard__grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.75rem 0.75rem; } }
-        @media (min-width: 64rem) { .fboard__grid { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 0.875rem 1rem; } }
+        /* Six across from tablets up, each card capped so the twelve fit in about one screen with the page around them. */
+        @media (min-width: 40rem) { .fboard__grid { grid-template-columns: repeat(6, minmax(0, 7.75rem)); justify-content: center; gap: 0.75rem; } }
+        @media (min-width: 64rem) { .fboard__grid { gap: 0.875rem 1rem; } }
         @media (prefers-reduced-motion: reduce) { .fboard__sheet, .fboard__tile, .fboard__bar, .fboard__hint, .fboard__tools, .fboard__reset { transition: none; } }
       `}</style>
     </section>

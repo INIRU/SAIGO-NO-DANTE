@@ -527,8 +527,9 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
                 >
                   {saving ? builderT('actions.saving') : editMode ? builderT('actions.save') : builderT('actions.upload')}
                 </CompactButton>
-                {authStatus === 'unauthenticated' && (
-                  <p className="w-full text-right text-[0.8125rem] text-[var(--text-muted)]">
+                {/* 로그인 확인 전에도 줄 자리를 잡아 둔다(늦게 끼어들면 아래 편성판이 밀린다) */}
+                {authStatus !== 'authenticated' && (
+                  <p className="w-full text-right text-[0.8125rem] text-[var(--text-muted)]" style={authStatus === 'loading' ? { visibility: 'hidden' } : undefined}>
                     {getGuestCopy(locale).saveHint}{' '}
                     <Link href="/guest" className="text-[var(--gold-light)] underline-offset-4 hover:underline">{getGuestCopy(locale).manage}</Link>
                   </p>

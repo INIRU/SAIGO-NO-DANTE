@@ -263,7 +263,7 @@ function DeckCard({ deck, onTagClick }: DeckCardProps) {
             >
               {deck.username ? (
                 <>
-                  {deck.user_id ? <Link href={`/users/${deck.user_id}`} className="relative z-10 hover:text-[var(--gold)] hover:underline">{deck.username}</Link> : <span>{deck.username}</span>}
+                  {deck.user_id ? <Link href={`/users/${deck.user_id}`} className="hit-target relative z-10 hover:text-[var(--gold)] hover:underline">{deck.username}</Link> : <span>{deck.username}</span>}
                   <span style={{ color: 'var(--text-tertiary)' }}>·</span>
                 </>
               ) : deck.guest_tag ? (

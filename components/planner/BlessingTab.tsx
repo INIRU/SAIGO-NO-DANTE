@@ -605,7 +605,7 @@ function BlessingCard({
               }}
               aria-label={`${blessing.name} ${levelLabel}`}
               aria-pressed={isActive}
-              className="planner-blessing-upgrade-button group relative flex min-w-0 flex-1 items-center justify-center overflow-visible text-center transition-[filter,transform] hover:brightness-110 active:translate-y-px focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f3cf35] focus-visible:ring-offset-2 focus-visible:ring-offset-[#130806]"
+              className="planner-blessing-upgrade-button hit-target group relative flex min-w-0 flex-1 items-center justify-center overflow-visible text-center transition-[filter,transform] hover:brightness-110 active:translate-y-px focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f3cf35] focus-visible:ring-offset-2 focus-visible:ring-offset-[#130806]"
               style={getUpgradeSlotStyle()}
             >
               {buttonContent}

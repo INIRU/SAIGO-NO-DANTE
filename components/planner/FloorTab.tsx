@@ -29,6 +29,7 @@ import {
   findAvailableFusions,
   getAvailableThemes,
   getFinalGiftVariantIds,
+  getGiftsFromThemes,
   parseFinalGiftIds,
   themeExclusiveGiftIds,
   withThemeRewards,
@@ -474,10 +475,8 @@ export default function FloorTab({ state, dispatch, themes, gifts, recipes, gift
   }, [activeEntry, derivedFinal, dispatch, state.floorPlan])
 
   function getThemeAvailableGifts(theme: ThemeData): GiftData[] {
-    return (theme.ego_gift_ids ?? [])
-      .map(gid => giftMap.get(gid))
-      .filter(Boolean)
-      .map(gift => localizedGift(gift as GiftData))
+    // 일반 풀 + 전용 풀·보스 보상(어시스트와 같은 규칙). 보스 러시류(1511~1520)는 보상 기프트가 일반 풀에 없어 빠졌었다.
+    return getGiftsFromThemes([theme.id], [theme], giftMap).map(localizedGift)
   }
 
   const shouldReduceScroll = shouldReduceMotion
@@ -725,6 +724,7 @@ export default function FloorTab({ state, dispatch, themes, gifts, recipes, gift
             title={t('floorGiftPickerTitle', { floor: entry.floor })}
             floorGifts={availableGifts}
             allGifts={reachableGifts}
+            exclusiveIds={selectedTheme ? themeExclusiveGiftIds(selectedTheme) : []}
             selectedIds={plannedIds}
             onToggle={gift => toggleGiftId(String(gift.game_id), entry.gift_ids)}
             onClose={() => setGiftPickerOpen(false)}

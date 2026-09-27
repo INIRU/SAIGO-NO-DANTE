@@ -32,7 +32,7 @@ export default function AnnouncementBanner({ announcement }: { announcement: Ann
             <strong>{announcement.title}</strong>
           </button>
           <button className="home-announcement-expand" onClick={() => setOpen(!open)} aria-label={announcement.title} aria-expanded={open}><ChevronDown size={18} style={{ transform: open ? 'rotate(180deg)' : undefined }} /></button>
-          <Link href="/announcements" className="home-announcement-all">{t('viewAll')}<ArrowUpRight size={16} /></Link>
+          <Link href="/announcements" className="home-announcement-all hit-target">{t('viewAll')}<ArrowUpRight size={16} /></Link>
         </div>
         {open && <div id="home-announcement-body" className="home-announcement-body"><AnnouncementBody doc={announcement.content_doc} text={announcement.content} /></div>}
       </div>
