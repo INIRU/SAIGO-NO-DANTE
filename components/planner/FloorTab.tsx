@@ -536,15 +536,14 @@ export default function FloorTab({ state, dispatch, themes, gifts, recipes, gift
 
   const themeName = (theme: ThemeData) => getLocalizedName({ name_kr: theme.name, name_en: theme.name_en, name_jp: theme.name_jp }, locale)
   const activeThemeName = selectedTheme ? themeName(selectedTheme) : null
-  const availableGifts = selectedTheme
-    ? getThemeAvailableGifts(selectedTheme).filter(gift => !blockedFinalMaterialIds.has(gift.game_id))
-    : []
-  // 이 층에서 얻을 수 있는 전체: 다른 테마팩 전용 기프트와 합성 재료로 막힌 기프트만 뺀다(합성·조합식 결과는 포함)
+  // 최종 조합이 소비하는 재료도 층에서 얻는 기프트라 목록에 둔다(REQ-PLANNER-018)
+  const availableGifts = selectedTheme ? getThemeAvailableGifts(selectedTheme) : []
+  // 이 층에서 얻을 수 있는 전체: 다른 테마팩 전용 기프트만 뺀다(합성·조합식 결과는 포함)
   const reachableGifts = useMemo(() => {
     const ownExclusive = new Set(selectedTheme ? themeExclusiveGiftIds(selectedTheme) : [])
     const otherExclusive = new Set(themes.flatMap(theme => themeExclusiveGiftIds(theme)).filter(id => !ownExclusive.has(id)))
-    return gifts.filter(gift => !otherExclusive.has(gift.game_id) && !blockedFinalMaterialIds.has(gift.game_id))
-  }, [blockedFinalMaterialIds, gifts, selectedTheme, themes])
+    return gifts.filter(gift => !otherExclusive.has(gift.game_id))
+  }, [gifts, selectedTheme, themes])
   const exclusiveLabel = t('ladder.packExclusive')
   const configuredCount = state.floorPlan.filter(isConfiguredFloor).length
   const segments = LADDER_SEGMENTS
