@@ -110,7 +110,3 @@ export function getCurrentFloorPriorityGifts(state: RunState, themes: ThemeData[
   return result
 }
 
-/** The planned final gifts the run screen lists: owned ones when `owned` is on, missing ones when `missing` is on. */
-export function visibleTargetGifts<T extends { game_id: number }>(targets: T[], held: ReadonlySet<number>, show: { owned: boolean; missing: boolean }): T[] {
-  return targets.filter(gift => held.has(gift.game_id) ? show.owned : show.missing)
-}
