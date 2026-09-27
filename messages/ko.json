@@ -845,7 +845,8 @@
       "setupPlanPick": "플랜 고르기",
       "setupPlanChange": "다른 플랜 고르기",
       "setupPlanUntitled": "제목 없는 플랜",
-      "setupRecognitionTitle": "화면 인식 설정"
+      "setupRecognitionTitle": "화면 인식 설정",
+      "pipFloorOnly": "이 층에서만 얻을 수 있음"
     },
     "community": "커뮤니티 플랜",
     "detail": {

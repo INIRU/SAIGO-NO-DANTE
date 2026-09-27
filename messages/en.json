@@ -845,7 +845,8 @@
       "setupPlanPick": "Choose a plan",
       "setupPlanChange": "Choose another plan",
       "setupPlanUntitled": "Untitled plan",
-      "setupRecognitionTitle": "Screen recognition"
+      "setupRecognitionTitle": "Screen recognition",
+      "pipFloorOnly": "Only on this floor"
     },
     "community": "Community Plans",
     "detail": {

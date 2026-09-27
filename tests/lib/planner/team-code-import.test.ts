@@ -1,6 +1,6 @@
 import { expect, it } from 'vitest'
 import { encodeTeamCode } from '@/lib/decks/team-code'
-import { planSlotsFromTeamCode } from '@/lib/planner/team-code-import'
+import { planSlotsFromTeamCode, teamCodeFromPlanSlots } from '@/lib/planner/team-code-import'
 import type { EgoData, IdentityData } from '@/lib/planner/types'
 
 const ids = ['yi-sang', 'faust', 'don-quixote', 'ryoshu', 'meursault', 'hong-lu', 'heathcliff', 'ishmael', 'rodion', 'sinclair', 'outis', 'gregor']
@@ -35,4 +35,16 @@ it('REQ-PLANNER-017 loads a formation code into the plan: every identity, its fo
 
 it('REQ-PLANNER-017 rejects anything that is not a formation code', () => {
   for (const code of ['', 'hello', '!!!', 'H4sIAAAAAAAACg==']) expect(planSlotsFromTeamCode(code, sinners, identities, egos)).toBeNull()
+})
+
+it('REQ-PLANNER-017 copies every identity into the plan\'s formation code, including sinners without a formation number', () => {
+  // Bench-only plan: no formation order at all. The code must still carry each chosen identity, not fall back to LCB.
+  const deck = ids.map((id, index) => ({ identity_id: 'i-' + (index + 1) + '-5', sinner_id: id, slot_order: index === 0 ? 0 : 99 }))
+  const egoSlots = [{ ego_id: 'e-2-3', sinner_id: 'faust', grade: 'TETH' }]
+  const code = teamCodeFromPlanSlots(deck, egoSlots, sinners, identities, egos)
+  const plan = planSlotsFromTeamCode(code, sinners, identities, egos)!
+  expect(plan.identitySlots.map(slot => slot.identity_id)).toEqual(ids.map((_, index) => 'i-' + (index + 1) + '-5'))
+  expect(plan.identitySlots.find(slot => slot.sinner_id === 'yi-sang')?.slot_order).toBe(0)
+  expect(plan.identitySlots.filter(slot => slot.slot_order === 99)).toHaveLength(11)
+  expect(plan.egoSlots).toContainEqual(expect.objectContaining({ ego_id: 'e-2-3', sinner_id: 'faust', grade: 'TETH' }))
 })
