@@ -117,9 +117,16 @@ export function assetRefs(doc: JSONContent): string {
   visit(doc)
   return JSON.stringify([...refs.values()].sort((a,b) => `${a.kind}:${a.id}`.localeCompare(`${b.kind}:${b.id}`)))
 }
-export function notePlainText(value: string): string {
+function flattenNote(value: string, gift: (name: string) => string): string {
   const doc = parseBlockDocument(value)
   if (!doc) return value.startsWith(NOTE_PREFIX) ? '' : value
-  function text(n: JSONContent): string { return (n.type === 'noteKeyword' ? n.attrs?.id : n.type === 'noteGift' ? n.attrs?.name : n.text) ?? (n.content ?? []).map(text).join(' ') }
+  function text(n: JSONContent): string { return (n.type === 'noteKeyword' ? n.attrs?.id : n.type === 'noteGift' ? (n.attrs?.name ? gift(n.attrs.name) : undefined) : n.text) ?? (n.content ?? []).map(text).join(' ') }
   return text(doc).trim()
+}
+export function notePlainText(value: string): string {
+  return flattenNote(value, name => name)
+}
+/** One-line card preview: plain text, but gifts stay `[g:name]` tokens so NoteRenderer can draw them with their icon. */
+export function notePreviewText(value: string): string {
+  return flattenNote(value, name => '[g:' + name + ']')
 }
