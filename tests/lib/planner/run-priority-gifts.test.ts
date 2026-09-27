@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest'
-import { GIFT_PROMOTION_SCENES, getCurrentFloorPriorityGifts, getFusionTierGifts, nextGiftPromotion, planGiftIds, planThemeGiftIds, type GiftPromotion } from '../../../lib/planner/run-priority-gifts'
+import { GIFT_PROMOTION_SCENES, getCurrentFloorPriorityGifts, getFusionTierGifts, nextGiftPromotion, planGiftIds, planThemeGiftIds, visibleTargetGifts, type GiftPromotion } from '../../../lib/planner/run-priority-gifts'
 import { createInitialRunState, normalizeRunState, type RunState } from '../../../lib/planner/run-types'
 import type { GiftData, ThemeData } from '../../../lib/planner/types'
 
@@ -218,4 +218,13 @@ it('puts the floor pack clear reward first among the floor gifts and keeps it of
   expect(getFusionTierGifts(state, [purple], map).map(item => item.game_id)).toEqual([9250])
   state.floorLogs[0].themeId = 'Q'
   expect(getFusionTierGifts(state, [purple, theme('Q', [10], [])], map)).toEqual([])
+})
+
+it('REQ-ASSIST-049 lists the owned planned final gifts, and the missing ones only when asked', () => {
+  const targets = [gift(10), gift(20), gift(30)]
+  const held = new Set([20])
+  expect(visibleTargetGifts(targets, held, { owned: true, missing: false }).map(g => g.game_id)).toEqual([20])
+  expect(visibleTargetGifts(targets, held, { owned: true, missing: true }).map(g => g.game_id)).toEqual([10, 20, 30])
+  expect(visibleTargetGifts(targets, held, { owned: false, missing: true }).map(g => g.game_id)).toEqual([10, 30])
+  expect(visibleTargetGifts(targets, held, { owned: false, missing: false })).toEqual([])
 })
