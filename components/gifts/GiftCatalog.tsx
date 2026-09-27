@@ -111,6 +111,15 @@ const KeywordImage = memo(function KeywordImage({ src, size, dim = false }: { sr
   return <Image src={src} alt="" width={size} height={size} style={{ opacity: dim ? 0.55 : 1, width: `${size / 16}rem`, height: `${size / 16}rem` }} />
 })
 
+// 목록을 품은 가장 가까운 세로 스크롤 상자(내용이 넘치는 것만). 없으면 null = 창.
+function scrollParent(el: HTMLElement): HTMLElement | null {
+  for (let p = el.parentElement; p; p = p.parentElement) {
+    const overflow = getComputedStyle(p).overflowY
+    if ((overflow === 'auto' || overflow === 'scroll') && p.scrollHeight > p.clientHeight) return p
+  }
+  return null
+}
+
 /** 미선택이면 필터 이름만, 선택하면 값과 지우기(×)를 보여 주는 칩. */
 function FilterChip({ label, clearLabel, value, options, onChange, minWidth }: {
   label: string; clearLabel: string; value: string | null; options: { value: string; label: string }[]; onChange: (value: string | null) => void; minWidth: number
@@ -424,7 +433,7 @@ export default function GiftCatalog({
   const visibleGifts = useMemo(() => deferredFiltered.slice(0, visibleCount), [deferredFiltered, visibleCount])
 
   // 도구줄이 붙어 있을 만큼 내려간 상태에서 필터를 바꾸면 결과 첫 줄을 도구줄 바로 아래에 둔다(목록이 줄며 페이지가 튀지 않게).
-  // compact는 --gift-catalog-sticky-top을 준 페이지 흐름 배치에서만(따로 스크롤되는 상자 안에서는 창을 움직이지 않는다).
+  // 따로 스크롤되는 상자 안이면 그 상자를, 아니면 창을 움직인다(compact는 --gift-catalog-sticky-top을 준 페이지 흐름 배치일 때만 창).
   const rootRef = useRef<HTMLDivElement>(null)
   const toolbarRef = useRef<HTMLDivElement>(null)
   // 기프트 선택으로 gifts가 바뀔 때는 움직이지 않도록 필터 값에만 반응한다.
@@ -434,10 +443,11 @@ export default function GiftCatalog({
     const root = rootRef.current
     const toolbar = toolbarRef.current
     if (!root || !toolbar) return
-    if (compact && !getComputedStyle(root).getPropertyValue('--gift-catalog-sticky-top')) return
+    const scroller = compact ? scrollParent(root) : null
+    if (compact && !scroller && !getComputedStyle(root).getPropertyValue('--gift-catalog-sticky-top')) return
     const stuckTop = parseFloat(getComputedStyle(toolbar).top) || 0
-    const rootTop = root.getBoundingClientRect().top
-    if (rootTop < stuckTop - 1) window.scrollBy(0, rootTop - stuckTop)
+    const rootTop = root.getBoundingClientRect().top - (scroller?.getBoundingClientRect().top ?? 0)
+    if (rootTop < stuckTop - 1) (scroller ?? window).scrollBy(0, rootTop - stuckTop)
   }, [compact, keywords, grades, tiers, query, sortBy, sortDesc, slotFilter, themeGiftNames])
 
   // 기본 정렬 = 키워드별, 등급 정렬 = 등급별 묶음. 이름 정렬은 한 덩어리.

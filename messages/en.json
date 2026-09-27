@@ -2028,12 +2028,38 @@
       "clearSearch": "Clear search",
       "sort": "Sort",
       "sortUsage": "Most fielded",
-      "sortName": "Name"
+      "sortName": "Name",
+      "skills": "Skill exchange",
+      "skillAverage": "Avg.",
+      "skillCustom": "Not the default 3-2-1",
+      "skillDefault": "Default",
+      "skillsOverall": "Skill exchange overall",
+      "skillsOverallBasis": "Across {count} fielded slots",
+      "moreItems": "Show {count} more",
+      "dungeonEmpty": "No Mirror Dungeon plans to aggregate.",
+      "dungeonSmallSample": "Only {count} plans, so shares can swing widely.",
+      "floorThemes": "Theme packs by floor",
+      "floorThemesBasis": "Share of plans that set a pack on that floor",
+      "floorLabel": "Floor {floor}",
+      "giftRoutes": "Gifts planned by floor",
+      "giftRoutesBasis": "Share of {count} plans that plan the gift on a floor",
+      "mostlyOn": "Mostly F{floors}",
+      "startGifts": "Starting gifts",
+      "observeGifts": "Observed gifts",
+      "enhanced": "Gifts planned enhanced",
+      "constraints": "Constraint cards by floor",
+      "constraintsBasis": "Share of plans with cards on that floor that pick each card · dimmed cards are the ones left out",
+      "constraintScore": "{score} pt"
     },
     "sampleValid": "Formations",
     "sampleDecks": "Decks",
     "samplePlanner": "Plans",
-    "excluded": "{count} posts with an empty formation are excluded."
+    "excluded": "{count} posts with an empty formation are excluded.",
+    "views": {
+      "overall": "Overall",
+      "identity": "Identities",
+      "dungeon": "Mirror Dungeon"
+    }
   },
   "experience": {
     "title": "EXP calculator",

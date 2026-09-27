@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { aggregateMeta, planGiftIds, planThemeIds } from '@/lib/meta/aggregate'
+import { aggregateDungeon, aggregateMeta, planGiftIds, planThemeIds } from '@/lib/meta/aggregate'
 import { readAllMetaRows } from '@/lib/meta/pagination'
 import { isBaseEgo, type MetaIdentity, type MetaPost } from '@/lib/meta/types'
 
@@ -182,4 +182,58 @@ it('tallies plan difficulty, final gifts and theme packs overall and for each fi
   expect(data.planStats).toEqual({ count: 2, difficulty: [{ key: 'extreme', count: 1 }, { key: 'hard', count: 1 }], gifts: [{ key: '1', count: 2 }, { key: '2', count: 1 }], themes: [{ key: 't1', count: 2 }, { key: 't2', count: 1 }] })
   expect(data.identityInsights.a.plan?.count).toBe(2)
   expect(data.identityInsights.b.plan).toMatchObject({ count: 1, gifts: [{ key: '1', count: 1 }] })
+})
+
+it('REQ-META-003 tallies each fielded identity skill exchange, most used first, counting a slot without counts as 3-2-1', () => {
+  const withSkills = (id: string, s: [number, number, number] | null, supportSkills: [number, number, number] = [0, 0, 6]): MetaPost => ({ ...post(id), identities: [
+    { identity_id: 'a', slot_order: 0, ...(s ? { s1_count: s[0], s2_count: s[1], s3_count: s[2] } : {}) },
+    { identity_id: 'b', slot_order: 1, s1_count: 1, s2_count: 0, s3_count: 5 },
+    { identity_id: 'c', slot_order: 99, s1_count: supportSkills[0], s2_count: supportSkills[1], s3_count: supportSkills[2] },
+  ] })
+  const data = aggregate([withSkills('p1', [0, 1, 5]), withSkills('p2', [0, 1, 5]), withSkills('p3', null), withSkills('p4', [3, 2, 1])])
+  expect(data.identityInsights.a.skills).toEqual([{ key: '3-2-1', count: 2 }, { key: '0-1-5', count: 2 }].sort((x, y) => y.count - x.count || x.key.localeCompare(y.key)))
+  expect(data.identityInsights.b.skills).toEqual([{ key: '1-0-5', count: 4 }])
+  expect(data.identityInsights.c).toBeUndefined()
+})
+
+it('REQ-META-003 ranks the skill exchange of every fielded slot', () => {
+  const data = aggregate([{ ...post('p1'), identities: [
+    { identity_id: 'a', slot_order: 0, s1_count: 0, s2_count: 1, s3_count: 5 },
+    { identity_id: 'b', slot_order: 1 },
+    { identity_id: 'c', slot_order: 99, s1_count: 0, s2_count: 0, s3_count: 6 },
+  ] }, { ...post('p2'), identities: [{ identity_id: 'a', slot_order: 0, s1_count: 0, s2_count: 1, s3_count: 5 }] }])
+  expect(data.skillSplits).toEqual([{ key: '0-1-5', count: 2 }, { key: '3-2-1', count: 1 }])
+})
+
+it('REQ-META-004 counts each plan once per floor pack, gift, inventory entry and floor 11–15 card', () => {
+  const floorPlan = [
+    { floor: 1, theme_id: '1007', gift_ids: ['9414'], constraints: [] },
+    { floor: 1, theme_id: '9999', gift_ids: ['1'] },
+    { floor: 2, theme_id: 1101, gift_ids: ['9414', 'x'] },
+    { floor: 11, theme_id: '', gift_ids: [], constraints: [995011, 995012] },
+    { floor: 12, theme_id: '1110', constraints: [995011] },
+    { floor: 16, theme_id: '1' },
+  ]
+  const inventory = ['start_9005', 'observe_9191', 'final_9035_plusplus', 'final_9035_plusplus', 'final_9010_plus', 'final_9414', 'blessing_100_3']
+  const dungeon = aggregateDungeon([{ floorPlan, inventory }, { floorPlan: [{ floor: 1, theme_id: '1007', gift_ids: ['9414'] }], inventory: ['start_9005', 'final_9035_plus'] }, { floorPlan: null, inventory: null }])
+  expect(dungeon.plans).toBe(3)
+  expect(dungeon.floors).toEqual([
+    { floor: 1, plans: 2, themes: [{ key: '1007', count: 2 }] },
+    { floor: 2, plans: 1, themes: [{ key: '1101', count: 1 }] },
+    { floor: 12, plans: 1, themes: [{ key: '1110', count: 1 }] },
+  ])
+  expect(dungeon.routes).toEqual([{ key: '9414', count: 2, floors: [{ key: '1', count: 2 }, { key: '2', count: 1 }] }])
+  expect(dungeon.start).toEqual([{ key: '9005', count: 2 }])
+  expect(dungeon.observe).toEqual([{ key: '9191', count: 1 }])
+  expect(dungeon.enhanced).toEqual([{ key: '9035', plus: 1, plusplus: 1 }, { key: '9010', plus: 1, plusplus: 0 }])
+  expect(dungeon.constraints).toEqual([
+    { floor: 11, plans: 1, cards: [{ key: '995011', count: 1 }, { key: '995012', count: 1 }] },
+    { floor: 12, plans: 1, cards: [{ key: '995011', count: 1 }] },
+  ])
+})
+
+it('REQ-META-004 feeds only plans in scope into the Mirror Dungeon breakdown', () => {
+  const plan = { ...post('p1', 'planner'), identities: [{ identity_id: 'a', slot_order: 0 }], floorPlan: [{ floor: 1, theme_id: '1007' }], inventory: ['start_9005'] }
+  expect(aggregate([plan, post('deck')]).dungeon).toMatchObject({ plans: 1, start: [{ key: '9005', count: 1 }] })
+  expect(aggregate([plan], 'decks').dungeon.plans).toBe(0)
 })
