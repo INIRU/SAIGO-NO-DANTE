@@ -1613,7 +1613,8 @@
   "floorGiftPicker": {
     "onlyFloor": "Only gifts from this floor",
     "close": "Close",
-    "empty": "No gifts to choose from"
+    "empty": "No gifts to choose from",
+    "onlyThisFloor": "Only on this floor"
   },
   "mypage": {
     "title": "My Page"

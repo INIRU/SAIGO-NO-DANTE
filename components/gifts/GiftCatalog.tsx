@@ -9,6 +9,7 @@ import type { SupportedLang } from '@/lib/i18n/types'
 import { getLocalizedName } from '@/lib/i18n/localize'
 import Dropdown from '@/components/ui/Dropdown'
 import GiftCard from '@/components/mirror-dungeon/GiftCard'
+import { GiftWarningMark } from '@/components/ui/GiftCard'
 import type { EgoGift, EgoGiftTheme } from '@/components/mirror-dungeon/types'
 import { KEYWORD_COLORS, GRADE_LABELS, GRADES } from '@/components/mirror-dungeon/types'
 import type { GiftData } from '@/lib/planner/types'
@@ -37,6 +38,7 @@ const keywordRank = (keyword: string | null | undefined) => {
 
 const GRADE_ORDER: Record<string, number> = { '1': 1, '2': 2, '3': 3, '4': 4, '5': 5, 'EX': 6 }
 const PAGE_SIZE = 40
+const PINNED_GROUP = '__pinned'
 
 /** '난이도:' 같은 기존 접두어 번역에서 콜론을 떼어 칩 이름으로 쓴다. */
 const filterName = (prefix: string) => prefix.replace(/\s*[:：]\s*$/, '')
@@ -215,6 +217,8 @@ export interface GiftCatalogCardProps {
   ariaLabel?: string
   conditionStatus?: import('@/lib/planner/gift-condition-status').GiftConditionStatus | null
   conditionDetail?: boolean
+  /** Red warning mark with this reason (e.g. only obtainable on this floor). */
+  warning?: string
   onRemove?: () => void
 }
 
@@ -240,6 +244,8 @@ export interface GiftCatalogProps {
   toolbarEnd?: ReactNode
   /** Shown instead of the grid until a keyword, grade or search narrows the list. */
   idleHint?: ReactNode
+  /** Listed first under their own heading with the red warning mark (e.g. gifts only this floor gives). */
+  pinned?: { ids: ReadonlySet<string>; label: string }
 }
 
 type GiftItemProps = {
@@ -334,6 +340,7 @@ export default function GiftCatalog({
   cardProps,
   toolbarEnd,
   idleHint,
+  pinned,
 }: GiftCatalogProps) {
   const {
     search, keywords, grades, tiers, sortBy, sortDesc, slotFilter, themeGiftNames, giftSlotMap, inputValue,
@@ -414,8 +421,8 @@ export default function GiftCatalog({
     }
 
     if (sortDesc) result.reverse()
-    return result
-  }, [gifts, keywords, grades, tiers, query, sortBy, sortDesc, themeGiftNames, slotFilter, giftSlotMap])
+    return pinned ? [...result.filter(g => pinned.ids.has(g.id)), ...result.filter(g => !pinned.ids.has(g.id))] : result
+  }, [gifts, keywords, grades, tiers, query, sortBy, sortDesc, themeGiftNames, slotFilter, giftSlotMap, pinned])
 
   const deferredFiltered = useDeferredValue(filtered)
   const isStale = deferredFiltered !== filtered
@@ -424,11 +431,12 @@ export default function GiftCatalog({
   const sentinelRef = useRef<HTMLDivElement>(null)
   const loadingRef = useRef(false)
 
-  // Reset pagination when filters change
+  // Back to the first page only when the user changes a filter. Parents often rebuild the gifts array on every
+  // render (picking a gift re-renders them); resetting then shortened the list and threw the scroll back up.
   useEffect(() => {
     setVisibleCount(PAGE_SIZE)
     loadingRef.current = false
-  }, [deferredFiltered])
+  }, [keywords, grades, tiers, query, sortBy, sortDesc, themeGiftNames, slotFilter])
 
   const visibleGifts = useMemo(() => deferredFiltered.slice(0, visibleCount), [deferredFiltered, visibleCount])
 
@@ -454,24 +462,22 @@ export default function GiftCatalog({
   const groupBy: 'keyword' | 'grade' | null = sortBy === 'default' ? 'keyword' : sortBy === 'grade' ? 'grade' : null
   const groupCounts = useMemo(() => {
     const map = new Map<string, number>()
-    if (!groupBy) return map
     for (const g of deferredFiltered) {
-      const key = groupBy === 'keyword' ? g.keyword : g.grade
+      const key = pinned?.ids.has(g.id) ? PINNED_GROUP : groupBy === 'keyword' ? g.keyword : groupBy === 'grade' ? g.grade : ''
       map.set(key, (map.get(key) ?? 0) + 1)
     }
     return map
-  }, [deferredFiltered, groupBy])
+  }, [deferredFiltered, groupBy, pinned])
   const groups = useMemo(() => {
-    if (!groupBy) return [{ key: '', gifts: visibleGifts }]
     const out: { key: string; gifts: EgoGift[] }[] = []
     for (const g of visibleGifts) {
-      const key = groupBy === 'keyword' ? g.keyword : g.grade
+      const key = pinned?.ids.has(g.id) ? PINNED_GROUP : groupBy === 'keyword' ? g.keyword : groupBy === 'grade' ? g.grade : ''
       const last = out[out.length - 1]
       if (last && last.key === key) last.gifts.push(g)
       else out.push({ key, gifts: [g] })
     }
     return out
-  }, [visibleGifts, groupBy])
+  }, [visibleGifts, groupBy, pinned])
 
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false)
   // 모바일 '필터' 버튼 숫자: 시트 안에 접힌 등급·난이도·편성·테마팩 중 켜진 수
@@ -695,11 +701,17 @@ export default function GiftCatalog({
         <div className="mt-4" style={{ minHeight: compact ? 'var(--gift-catalog-min-h)' : undefined, opacity: isStale ? 0.7 : 1, transition: 'opacity 0.1s ease' }}>
           {groups.map((group, gi) => {
             const iconUrl = groupBy === 'keyword' ? getGiftKeywordIcon(group.key) : null
+            const isPinned = pinned !== undefined && group.key === PINNED_GROUP
             return (
-              <section key={`${group.key}-${gi}`} className="mb-5" aria-label={groupBy ? (groupBy === 'keyword' ? keywordLabels[group.key] ?? group.key : `${t('mirrorDungeon.filter.grade')} ${GRADE_LABELS[group.key] ?? group.key}`) : undefined}>
-                {groupBy && (
-                  <h2 className="mb-2 flex items-center gap-2" style={{ borderBottom: '1px solid #2e2417', paddingBottom: '0.375rem' }}>
-                    {groupBy === 'keyword' ? (
+              <section key={`${group.key}-${gi}`} className="mb-5" aria-label={isPinned ? pinned.label : groupBy ? (groupBy === 'keyword' ? keywordLabels[group.key] ?? group.key : `${t('mirrorDungeon.filter.grade')} ${GRADE_LABELS[group.key] ?? group.key}`) : undefined}>
+                {(groupBy || isPinned) && (
+                  <h2 className="mb-2 flex items-center gap-2" style={{ borderBottom: isPinned ? '1px solid rgba(189,36,48,0.45)' : '1px solid #2e2417', paddingBottom: '0.375rem' }}>
+                    {isPinned ? (
+                      <>
+                        <span className="relative inline-block h-[1.125rem] w-[1.125rem] shrink-0"><GiftWarningMark label={pinned.label} className="inset-0 h-full w-full" /></span>
+                        <span style={{ color: '#ff9c9c', fontFamily: 'var(--font-heading)', fontSize: '1rem' }}>{pinned.label}</span>
+                      </>
+                    ) : groupBy === 'keyword' ? (
                       <>
                         {iconUrl && <KeywordImage src={iconUrl} size={18} />}
                         <span style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-heading)', fontSize: '1rem' }}>{keywordLabels[group.key] ?? group.key}</span>

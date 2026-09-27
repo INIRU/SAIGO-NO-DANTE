@@ -1613,7 +1613,8 @@
   "floorGiftPicker": {
     "onlyFloor": "この階で入手できるギフトのみ",
     "close": "閉じる",
-    "empty": "選べるギフトがありません"
+    "empty": "選べるギフトがありません",
+    "onlyThisFloor": "この階でのみ入手可能"
   },
   "mypage": {
     "title": "マイページ"
