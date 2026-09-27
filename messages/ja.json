@@ -845,7 +845,8 @@
       "setupPlanPick": "プランを選ぶ",
       "setupPlanChange": "別のプランを選ぶ",
       "setupPlanUntitled": "無題のプラン",
-      "setupRecognitionTitle": "画面認識の設定"
+      "setupRecognitionTitle": "画面認識の設定",
+      "pipFloorOnly": "この階でのみ入手可能"
     },
     "community": "コミュニティプラン",
     "detail": {

@@ -14,15 +14,15 @@ vi.mock('@/lib/hooks/useCompanionWindow', () => ({
 vi.mock('@/components/ui/GiftArtwork', () => ({ default: () => <span data-test-artwork /> }))
 vi.mock('@/components/ui/ImageWithFallback', () => ({ default: () => <span data-test-poster /> }))
 
-const theme = (id: string, gifts: number[]): ThemeData =>
-  ({ id, name: `pack-${id}`, floor_info: { '하드': [1] }, dungeon_id: null, ego_gift_ids: gifts, specific_ego_gift_ids: [], image_url: `https://example.test/${id}.webp`, difficulty: null })
+const theme = (id: string, gifts: number[], exclusive: number[] = []): ThemeData =>
+  ({ id, name: `pack-${id}`, floor_info: { '하드': [1] }, dungeon_id: null, ego_gift_ids: gifts, specific_ego_gift_ids: exclusive, image_url: `https://example.test/${id}.webp`, difficulty: null })
 const gift = (game_id: number) => ({ id: String(game_id), game_id, name: `gift-${game_id}`, keyword: null, grade: null, image_url: null, effect_base: null, effect_plus: null }) as GiftData
 const giftMap = new Map([10, 20, 30].map(id => [id, gift(id)]))
 for (const [id, grade] of [[40, '4'], [50, '5'], [60, '3']] as const) giftMap.set(id, { ...gift(id), grade })
 
-function render(state: RunState, skillExchange: { sinner: number; current: [number, number, number] | null } | null = null, scene = 'exploration') {
+function render(state: RunState, skillExchange: { sinner: number; current: [number, number, number] | null } | null = null, scene = 'exploration', exclusive: number[] = []) {
   return renderToStaticMarkup(<NextIntlClientProvider locale="ko" messages={messages} timeZone="Asia/Seoul">
-    <CompanionPanel state={state} dispatch={() => {}} themes={[theme('A', [10, 20, 30])]} giftMap={giftMap} captureRunning scene={{ label: scene, since: 1 }} skillExchange={skillExchange} />
+    <CompanionPanel state={state} dispatch={() => {}} themes={[theme('A', [10, 20, 30], exclusive)]} giftMap={giftMap} captureRunning scene={{ label: scene, since: 1 }} skillExchange={skillExchange} />
   </NextIntlClientProvider>)
 }
 const started = () => ({ ...runReducer(createInitialRunState('hard'), { type: 'START_RUN' }),
@@ -46,16 +46,23 @@ it('shows only the planned pack, its poster beside the plan gifts for it, dimmin
   expect(list).not.toContain('gift-10')
 })
 
-it('REQ-ASSIST-042 outlines the plan gifts among this floor available gifts with the game neon, never the exclusive triangle', () => {
+it('REQ-ASSIST-042 outlines the plan gifts among this floor available gifts with the game neon, and marks every floor-only gift with the red warning', () => {
   const html = render(runReducer(started(), { type: 'SET_FLOOR_THEME', themeId: 'A' }))
   expect(html).toContain('data-gift-grid')
   const button = (id: number) => html.match(new RegExp(`<button[^>]*data-gift-id="${id}".*?</button>`))?.[0] ?? ''
   for (const id of [20, 30]) {
     expect(button(id)).toContain('data-plan-gift="true"')
     expect(button(id)).toMatch(/<img src="\/assets\/game-ui\/gift\/plan-glow\.webp\?v=[^"]+"[^>]*data-plan-glow/)
-    // The red triangle means "pack exclusive, obtain on this floor" in the planner; the PiP no longer reuses it.
     expect(button(id)).not.toContain('data-gift-warning')
   }
+  // As in the planner, the red mark means "only this floor's pack gives it", planned or not; plan gifts keep the neon too.
+  const exclusiveHtml = render(runReducer(started(), { type: 'SET_FLOOR_THEME', themeId: 'A' }), null, 'exploration', [10, 30])
+  const exclusiveButton = (id: number) => exclusiveHtml.match(new RegExp(`<button[^>]*data-gift-id="${id}".*?</button>`))?.[0] ?? ''
+  expect(exclusiveButton(30)).toContain('data-gift-warning')
+  expect(exclusiveButton(30)).toContain(messages.planner.run.pipFloorOnly)
+  expect(exclusiveButton(10)).toContain('data-gift-warning')
+  expect(exclusiveButton(10)).not.toContain('data-plan-glow')
+  expect(exclusiveButton(20)).not.toContain('data-gift-warning')
   expect(button(10)).not.toContain('data-plan-glow')
   expect(render(runReducer({ ...started(), sourcePlanSnapshot: undefined }, { type: 'SET_FLOOR_THEME', themeId: 'A' }))).not.toContain('data-plan-glow')
 })
