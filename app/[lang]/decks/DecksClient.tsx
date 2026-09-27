@@ -822,7 +822,7 @@ export default function DecksClient({
   if (browse !== 'all' && !(hasAnyFilter)) return <DiscoveryShelf kind="deck" onBrowse={() => setBrowse('all', { history: 'push' })} />
 
   return (
-    <div data-board-browse className="relative min-h-0 flex-1 overflow-hidden px-4 pb-4 md:px-6">
+    <div data-board-browse className="relative min-h-0 flex-1 px-4 pb-4 md:px-6 lg:overflow-hidden">
       <BoardBrowseLock />
 
       <div className="relative z-[1] mx-auto flex h-full min-h-0 w-full max-w-7xl gap-5">
@@ -903,7 +903,7 @@ export default function DecksClient({
         <FacetPickerModal kind={facetModal} facets={facetData} selected={facetModal ? facetSelections[facetModal] : []}
           onToggle={id => { if (facetModal) toggleFacet(facetModal, id) }} onClose={() => setFacetModal(null)} />
 
-        <div ref={scrollRootRef} className="min-h-0 flex-1 overflow-y-auto pb-16 pr-1 scrollbar-thin">
+        <div ref={scrollRootRef} className="min-h-0 flex-1 pb-16 scrollbar-thin lg:overflow-y-auto lg:pr-1">
           {/* ── 결과 수 ── */}
           {!loading && (
             <div
