@@ -23,9 +23,9 @@ export function NavigationTracker() {
  * A back link: returns to the previous page when it was a page of this site in this tab, otherwise opens `href`
  * (the page's natural parent), e.g. after arriving from a search result or a shared link.
  */
-export default function BackLink({ href, onClick, ...props }: ComponentProps<typeof Link>) {
+export default function BackLink({ href, onClick, className, ...props }: ComponentProps<typeof Link>) {
   const router = useRouter()
-  return <Link href={href} {...props} onClick={event => {
+  return <Link href={href} {...props} className={className ? 'hit-target ' + className : 'hit-target'} onClick={event => {
     onClick?.(event)
     if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.shiftKey || event.button !== 0) return
     if (read().length >= 2) { event.preventDefault(); router.back() }

@@ -580,3 +580,6 @@ button.note-gift-label:hover{text-decoration-color:currentColor}
   .note-asset-caption{font-size:.6875rem}
   .note-asset-replace{min-height:1.5rem;margin-top:.125rem;font-size:.6875rem}
 }
+
+/* Small text links and slots: a transparent margin around the element makes the touch target at least about 28px without moving the layout. */
+.hit-target{position:relative}.hit-target::after{content:"";position:absolute;inset:-.375rem -.25rem}
