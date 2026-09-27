@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, usePathname } from '@/lib/i18n/navigation'
 import { useLocale, useTranslations } from 'next-intl'
-import { MessageSquare, Megaphone, Users, ArrowUpRight, Menu, X, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
+import { MessageSquare, Megaphone, Users, Construction, ArrowUpRight, Menu, X, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 import './admin.css'
 const STORAGE_KEY = 'admin-nav-collapsed'
 export default function AdminNavigation() {
@@ -39,7 +39,13 @@ export default function AdminNavigation() {
     },
     {
       label: t('groupAccounts'),
-      items: [{ href: '/admin/users', label: ko ? '유저 관리' : ja ? 'ユーザー管理' : 'Users', icon: Users }],
+      items: [
+        { href: '/admin/users', label: ko ? '유저 관리' : ja ? 'ユーザー管理' : 'Users', icon: Users },
+      ],
+    },
+    {
+      label: ko ? '사이트' : ja ? 'サイト' : 'Site',
+      items: [{ href: '/admin/maintenance', label: ko ? '점검 관리' : ja ? 'メンテナンス' : 'Maintenance', icon: Construction }],
     },
   ]
   function toggleCollapsed() {
