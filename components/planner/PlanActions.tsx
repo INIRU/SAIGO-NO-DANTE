@@ -6,14 +6,13 @@ import { useLocale, useTranslations } from 'next-intl'
 import { assistAvailable } from '@/lib/assist/availability'
 import { Copy, GitFork, Pencil, Trash2, Check, Play } from 'lucide-react'
 import { saveDraftToLocal, savePlanForRun } from '@/lib/planner/encoder'
-import { encodeDeckCode } from '@/components/deck-builder/deckCodeUtils'
+import { teamCodeFromPlanSlots } from '@/lib/planner/team-code-import'
 import { showSuccess, showError } from '@/lib/toast'
 import { guestHeaders } from '@/lib/guest/key'
 import { getGuestCopy } from '@/lib/guest/copy'
 import ConfirmModal from '@/components/ui/ConfirmModal'
 import type { Difficulty, FloorDifficulty, IdentitySlot as PlannerIdentitySlot, EgoSlot as PlannerEgoSlot, FloorEntry as PlannerFloorEntry } from '@/lib/planner/types'
 import { getLegacyPlanFloorDifficulty, isAllowedFloorDifficulty, isFloorDifficulty } from '@/lib/planner/floor-difficulty'
-import type { Sinner as CanonicalSinner, Identity as CanonicalIdentity, EGO as CanonicalEGO } from '@/lib/types'
 
 type IdentitySlot = {
   identity_id?: string
@@ -115,39 +114,8 @@ export default function PlanActions({
 
   const handleCopyCode = async () => {
     try {
-      const deckSlots: Record<string, typeof identities[0] | undefined> = {}
-      const egoSlotsMap: Record<string, Record<string, typeof egos[0]>> = {}
-      const formationOrder: string[] = []
-
-      const formed = deck
-        .filter(s => (s.slot_order ?? 99) < 99)
-        .sort((a, b) => (a.slot_order ?? 99) - (b.slot_order ?? 99))
-      for (const slot of formed) {
-        if (!slot.sinner_id) continue
-        formationOrder.push(slot.sinner_id)
-
-        if (!slot.identity_id) continue
-        const ident = identities.find(i => i.id === slot.identity_id)
-        if (ident) deckSlots[slot.sinner_id] = ident
-      }
-
-      for (const slot of egoSlots) {
-        if (!slot.sinner_id || !slot.ego_id || !slot.grade) continue
-        const ego = egos.find(e => e.id === slot.ego_id)
-        if (ego) {
-          if (!egoSlotsMap[slot.sinner_id]) egoSlotsMap[slot.sinner_id] = {}
-          egoSlotsMap[slot.sinner_id][slot.grade] = ego
-        }
-      }
-
-      const code = await encodeDeckCode(
-        sinners as unknown as CanonicalSinner[],
-        identities as unknown as CanonicalIdentity[],
-        egos as unknown as CanonicalEGO[],
-        deckSlots as Record<string, CanonicalIdentity | undefined>,
-        egoSlotsMap as Record<string, Record<string, CanonicalEGO>>,
-        formationOrder,
-      )
+      // 편성하지 않은 수감자의 인격도 넣는다(빠지면 코드가 그 칸을 LCB 인격으로 채운다)
+      const code = teamCodeFromPlanSlots(deck, egoSlots, sinners, identities, egos)
       await navigator.clipboard.writeText(code)
       setCodeCopied(true)
       setTimeout(() => setCodeCopied(false), 2000)

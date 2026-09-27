@@ -1,5 +1,26 @@
-import { decodeTeamCode } from '@/lib/decks/team-code'
+import { decodeTeamCode, encodeTeamCode } from '@/lib/decks/team-code'
 import type { EgoData, EgoSlot, IdentityData, IdentitySlot } from './types'
+
+/**
+ * The plan's slots as a formation code. Every chosen identity goes in, bench included: a sinner without a formation
+ * number keeps its identity (the code's slot would otherwise default to the LCB identity).
+ */
+export function teamCodeFromPlanSlots(deck: { identity_id?: string | null; sinner_id?: string | null; slot_order?: number | null }[],
+  egoSlots: { ego_id?: string | null; sinner_id?: string | null; grade?: string | null }[], sinners: { id: string; order_num: number }[],
+  identities: IdentityData[], egos: (EgoData & { game_id?: string | null })[]): string {
+  const identityById = new Map(identities.map(identity => [identity.id, identity]))
+  const egoById = new Map(egos.map(ego => [ego.id, ego]))
+  const deckSlots: Record<string, IdentityData | undefined> = {}
+  for (const slot of deck) if (slot.sinner_id && slot.identity_id) deckSlots[slot.sinner_id] = identityById.get(slot.identity_id) ?? deckSlots[slot.sinner_id]
+  const formationOrder = deck.filter(slot => slot.sinner_id && (slot.slot_order ?? 99) < 99)
+    .sort((a, b) => (a.slot_order ?? 99) - (b.slot_order ?? 99)).map(slot => slot.sinner_id as string)
+  const egoSlotsBySinner: Record<string, Record<string, EgoData & { game_id?: string | null }>> = {}
+  for (const slot of egoSlots) {
+    const ego = slot.sinner_id && slot.grade && slot.ego_id ? egoById.get(slot.ego_id) : undefined
+    if (ego) (egoSlotsBySinner[slot.sinner_id!] ??= {})[slot.grade!] = ego
+  }
+  return encodeTeamCode({ sinners, deckSlots, egoSlots: egoSlotsBySinner, formationOrder })
+}
 
 /**
  * A formation code (the deck builder's and the planner's "편성 코드") as the plan's identity and E.G.O slots: every
