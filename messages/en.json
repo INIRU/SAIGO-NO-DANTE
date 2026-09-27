@@ -1245,7 +1245,8 @@
         "codeReplaceTitle": "Replace the formation?",
         "codeReplaceMessage": "Your current Identities and E.G.O will be replaced with the code's formation.",
         "codeReplaceConfirm": "Replace",
-        "codeCancel": "Cancel"
+        "codeCancel": "Cancel",
+        "codePasteHint": "Loads the formation code you copied"
       },
       "ego": {
         "modalTitle": "Select E.G.O",

@@ -3,7 +3,7 @@
 import { memo, useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react'
 import IdentityFrameCard, { getFormationOverlay } from '@/components/ui/IdentityFrameCard'
 import Image from 'next/image'
-import { ChevronDown, ChevronUp, RotateCcw, X } from 'lucide-react'
+import { ChevronDown, ChevronUp, ClipboardPaste, RotateCcw, X } from 'lucide-react'
 import { motion, useReducedMotion } from 'motion/react'
 import { showSuccess } from '@/lib/toast'
 import BaseModal from '@/components/ui/BaseModal'
@@ -134,10 +134,20 @@ export function PlannerIdentityBoard({
   const [editing, setEditing] = useState(false)
   const [code, setCode] = useState('')
   const [codeInvalid, setCodeInvalid] = useState(false)
+  // 평소에는 버튼 하나: 클립보드의 코드를 바로 불러오고, 읽을 수 없거나 코드가 아니면 그때 입력창을 연다.
+  const [codeOpen, setCodeOpen] = useState(false)
   const applyCode = () => {
     if (!onApplyCode || !code.trim()) return
-    if (onApplyCode(code.trim())) setCode('')
+    if (onApplyCode(code.trim())) { setCode(''); setCodeOpen(false) }
     else setCodeInvalid(true)
+  }
+  const pasteCode = async () => {
+    if (!onApplyCode) return
+    const text = await navigator.clipboard?.readText().catch(() => '') ?? ''
+    if (text.trim() && onApplyCode(text.trim())) return
+    setCode(text.trim())
+    setCodeInvalid(Boolean(text.trim()))
+    setCodeOpen(true)
   }
   const press = useRef<{ timer?: ReturnType<typeof setTimeout>; fired: boolean }>({ fired: false })
   // Tiles are memoized; handlers read the latest callbacks through a ref so a formation click
@@ -191,12 +201,20 @@ export function PlannerIdentityBoard({
     <section className="fboard" data-editing={editing}>
       {(onResetOrder || onApplyCode) && (
         <div className="fboard__tools" inert={editing}>
-          {onApplyCode && (
+          {onApplyCode && !codeOpen && (
+            <button type="button" className="fboard__paste" onClick={pasteCode} title={t('codePasteHint')}>
+              <ClipboardPaste aria-hidden="true" />
+              {t('codePlaceholder')}
+            </button>
+          )}
+          {onApplyCode && codeOpen && (
             <form className="fboard__code" onSubmit={event => { event.preventDefault(); applyCode() }}>
-              <input value={code} onChange={event => { setCode(event.target.value); setCodeInvalid(false) }} placeholder={t('codePlaceholder')}
+              <input autoFocus value={code} onChange={event => { setCode(event.target.value); setCodeInvalid(false) }} placeholder={t('codePlaceholder')}
                 aria-label={t('codeLabel')} aria-invalid={codeInvalid} aria-describedby={codeInvalid ? 'fboard-code-error' : undefined}
+                onKeyDown={event => { if (event.key === 'Escape') { setCodeOpen(false); setCodeInvalid(false) } }}
                 autoComplete="off" spellCheck={false} />
               <button type="submit" disabled={!code.trim()}>{t('codeApply')}</button>
+              <button type="button" className="fboard__code-close" aria-label={t('codeCancel')} onClick={() => { setCodeOpen(false); setCodeInvalid(false) }}><X aria-hidden="true" /></button>
               {codeInvalid && <span id="fboard-code-error" role="alert" className="fboard__code-error">{t('codeInvalid')}</span>}
             </form>
           )}
@@ -220,11 +238,12 @@ export function PlannerIdentityBoard({
       </div>
       <p className="fboard__hint" aria-hidden={!editing}>{t('editHint')}</p>
       <style jsx global>{`
-        .fboard { --bar: 3rem; --gap: 0.5rem; position: relative; width: 100%; min-width: 0; padding-block: calc(var(--bar) + var(--gap)); }
+        /* One card width drives the grid and the tools row above it, so both share the same edges. */
+        .fboard { --bar: 3rem; --gap: 0.5rem; --fboard-w: 100%; position: relative; width: 100%; min-width: 0; padding-block: calc(var(--bar) + var(--gap)); }
         .fboard__stage { position: relative; overflow: hidden; }
         .fboard__grid {
           display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.625rem 0.375rem;
-          width: 100%; max-width: 62rem; margin: 0 auto; padding: 0.75rem 0.25rem; list-style: none;
+          width: 100%; max-width: var(--fboard-w); margin: 0 auto; padding: 0.75rem 0; list-style: none;
         }
         .fboard__grid > li { min-width: 0; }
         .fboard__sheet {
@@ -249,11 +268,21 @@ export function PlannerIdentityBoard({
         .fboard[data-editing='true'] .fboard__hint { opacity: 1; transition-delay: 150ms; }
         .fboard__bar svg { width: 1.125rem; height: 1.125rem; }
         .fboard__tools {
-          position: absolute; left: 0; right: 0; top: 0; max-width: 62rem; height: var(--bar); margin-inline: auto;
+          position: absolute; left: 0; right: 0; top: 0; max-width: var(--fboard-w); height: var(--bar); margin-inline: auto;
           display: flex; align-items: center; justify-content: flex-end; gap: 0.5rem;
           transition: opacity 180ms ease, visibility 0s linear 0s;
         }
         .fboard__code { position: relative; display: flex; min-width: 0; flex: 1 1 auto; max-width: 24rem; margin-right: auto; }
+        .fboard__paste {
+          display: inline-flex; min-height: 2.25rem; align-items: center; gap: 0.4375rem; margin-right: auto; padding: 0 0.875rem;
+          border: 1px solid #3a2c18; border-radius: 0.25rem; background: #140f09; color: #cbb994; cursor: pointer; font-size: 0.875rem; white-space: nowrap;
+          transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease;
+        }
+        .fboard__paste svg { width: 0.9375rem; height: 0.9375rem; color: #c8900a; }
+        .fboard__paste:hover { border-color: #c8900a; color: #e8b030; background: #1d160d; }
+        .fboard__paste:focus-visible { outline: 2px solid #e8b030; outline-offset: 2px; }
+        .fboard__code .fboard__code-close { width: 2.25rem; padding: 0; margin-left: 0.375rem; display: grid; place-items: center; border: 1px solid #3a2c18; border-radius: 0.25rem; background: transparent; color: #9c8b73; }
+        .fboard__code .fboard__code-close svg { width: 1rem; height: 1rem; }
         .fboard__code input {
           min-width: 0; flex: 1 1 auto; height: 2.25rem; padding: 0 0.625rem; border: 1px solid #3a2c18; border-right: 0;
           border-radius: 0.25rem 0 0 0.25rem; background: #140f09; color: #e8dcc8; font-family: var(--font-mono); font-size: 0.8125rem;
@@ -293,9 +322,12 @@ export function PlannerIdentityBoard({
           border: 1px dashed #3a2c18; border-radius: 0.25rem; color: #9c8b73; font-size: 0.8125rem;
         }
         .fboard__empty img { width: 2rem; height: 2rem; opacity: 0.4; }
-        /* Six across from tablets up, each card capped so the twelve fit in about one screen with the page around them. */
-        @media (min-width: 40rem) { .fboard__grid { grid-template-columns: repeat(6, minmax(0, 7.75rem)); justify-content: center; gap: 0.75rem; } }
-        @media (min-width: 64rem) { .fboard__grid { gap: 0.875rem 1rem; } }
+        /* Six across from tablets up. Half-width windows keep cards small; wide screens match the deck detail board. */
+        @media (min-width: 40rem) {
+          .fboard { --fboard-card: 7.75rem; --fboard-col-gap: 0.75rem; --fboard-w: calc(6 * var(--fboard-card) + 5 * var(--fboard-col-gap)); }
+          .fboard__grid { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 0.75rem var(--fboard-col-gap); }
+        }
+        @media (min-width: 64rem) { .fboard { --fboard-card: 8.75rem; --fboard-col-gap: 1rem; } .fboard__grid { row-gap: 0.875rem; } }
         @media (prefers-reduced-motion: reduce) { .fboard__sheet, .fboard__tile, .fboard__bar, .fboard__hint, .fboard__tools, .fboard__reset { transition: none; } }
       `}</style>
     </section>
