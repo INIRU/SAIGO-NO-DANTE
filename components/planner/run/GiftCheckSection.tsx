@@ -99,7 +99,8 @@ export default function GiftCheckSection({ state, dispatch, gifts, giftMap, them
   )
 
   return (
-    <div className="grid items-start gap-x-6 gap-y-8 lg:grid-cols-[minmax(0,1fr)_20rem] xl:grid-cols-[minmax(0,1fr)_23rem]">
+    <div className="grid items-start gap-x-6 gap-y-8 pt-3 sm:pt-4 lg:grid-cols-[minmax(0,1fr)_20rem] xl:grid-cols-[minmax(0,1fr)_23rem]"
+      style={{ '--gift-catalog-bg': 'var(--bg-card)' } as React.CSSProperties}>
       <section className="min-w-0" aria-labelledby="run-floor-gifts">
         <div className="mb-2 flex flex-wrap items-baseline gap-x-3 gap-y-1">
           <h3 id="run-floor-gifts" className={runSectionTitle}>{t('floorGifts')}</h3>

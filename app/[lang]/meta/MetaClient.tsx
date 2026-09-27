@@ -4,10 +4,14 @@ import useSWR from 'swr'
 import { useTranslations } from 'next-intl'
 import UnderlineTabBar from '@/components/ui/UnderlineTabBar'
 import { META_SOURCES, META_PERIODS, DEFAULT_META_SOURCE, DEFAULT_META_PERIOD, type MetaSource, type MetaPeriod, type MetaData } from '@/lib/meta/types'
-import { useQueryState, parseAsString } from 'nuqs'
+import { useQueryState, useQueryStates, parseAsString, parseAsStringLiteral } from 'nuqs'
 import IdentityAnalysis from '@/components/meta/IdentityAnalysis'
+import MetaOverview from '@/components/meta/MetaOverview'
+import DungeonAnalysis from '@/components/meta/DungeonAnalysis'
 import { SkeletonCircle, SkeletonLine, SkeletonPage } from '@/components/ui/Skeleton'
 import styles from '@/styles/components/MetaAnalysis.module.css'
+
+const VIEWS = ['overall', 'identity', 'dungeon'] as const
 
 async function fetchMeta(url: string): Promise<MetaData> {
   const response = await fetch(url)
@@ -21,10 +25,19 @@ export default function MetaClient({ initialData }: { initialData: MetaData | nu
   const [periodParam, setPeriod] = useQueryState('period', parseAsString.withDefault(DEFAULT_META_PERIOD))
   const source = META_SOURCES.includes(sourceParam as MetaSource) ? sourceParam as MetaSource : DEFAULT_META_SOURCE
   const period = META_PERIODS.includes(periodParam as MetaPeriod) ? periodParam as MetaPeriod : DEFAULT_META_PERIOD
+  // Tab switches push history so back returns to the previous tab; picking another identity replaces it.
+  const [view, setView] = useQueryStates({ tab: parseAsStringLiteral(VIEWS).withDefault('overall'), id: parseAsString.withDefault('') })
+  const showTab = (tab: typeof VIEWS[number], id?: string) => {
+    setView(id === undefined ? { tab } : { tab, id }, { history: 'push' })
+    const tabs = document.querySelector('[data-meta-views]')
+    if (tabs && tabs.getBoundingClientRect().top < 0) tabs.scrollIntoView({ block: 'start' })
+  }
   const fallbackData = initialData?.source === source && initialData.period === period ? initialData : undefined
   const { data, error, isLoading, mutate } = useSWR<MetaData>(`/api/meta/usage?source=${source}&period=${period}`, fetchMeta, {
-    fallbackData, keepPreviousData: false, revalidateOnFocus: false,
+    fallbackData, keepPreviousData: true, revalidateOnFocus: false,
   })
+  // Keep the previous result on screen (dimmed) while another source or period loads, so the page does not collapse and jump.
+  const stale = Boolean(data && (data.source !== source || data.period !== period))
   return <div>
       <div className={styles.toolbar}>
         <UnderlineTabBar
@@ -59,7 +72,6 @@ export default function MetaClient({ initialData }: { initialData: MetaData | nu
         <div className={styles.panel}><div className={styles.sectionHead}><SkeletonLine w="9rem" h="1rem" /></div>
           <div className={styles.sinnerGrid}>{Array.from({ length: 12 }, (_, i) => <SkeletonLine key={i} h="9.5rem" raised />)}</div>
         </div>
-        <div className={styles.subject}><SkeletonLine w="7rem" h="9rem" raised /><div className="flex-1 space-y-3"><SkeletonLine w="4rem" h="0.75rem" /><SkeletonLine w="14rem" h="1.5rem" /><SkeletonLine w="8rem" h="2.5rem" /></div></div>
       </SkeletonPage>}
       {data && <>
       {data.sampleCount === 0 && period !== 'all' && (
@@ -70,7 +82,7 @@ export default function MetaClient({ initialData }: { initialData: MetaData | nu
           </button>
         </div>
       )}
-        <IdentityAnalysis data={data} summary={<>
+        <div className={styles.summaryBar + (stale ? " " + styles.stale : "")}>
           <dl className={styles.sampleStats} aria-live="polite">
             <div><dt>{t('sampleValid')}</dt><dd data-sample-count>{data.sampleCount}</dd></div>
             <div><dt>{t('sampleDecks')}</dt><dd>{data.sourceCounts.decks}</dd></div>
@@ -80,7 +92,15 @@ export default function MetaClient({ initialData }: { initialData: MetaData | nu
             {data.sampleCount < 20 && <p className={styles.caution}>{t('smallSample')}</p>}
             <details className={styles.methodology}><summary>{t('methodologyLabel')}</summary><p>{t('methodology')}</p>{data.excludedSamples > 0 && <p>{t('excluded', { count: data.excludedSamples })}</p>}</details>
           </div>
-        </>} />
+        </div>
+        <div className={styles.views} data-meta-views>
+          <UnderlineTabBar tabs={VIEWS.map(key => ({ key, label: t('views.' + key) }))} activeKey={view.tab} onTabChange={key => showTab(key as typeof VIEWS[number])} />
+        </div>
+        <div role="tabpanel" aria-label={t('views.' + view.tab)} aria-busy={stale || undefined} className={stale ? styles.stale : undefined}>
+          {view.tab === 'overall' && <MetaOverview data={data} onSelect={id => showTab('identity', id)} />}
+          {view.tab === 'identity' && <IdentityAnalysis data={data} selectedId={view.id} onSelect={id => setView({ id })} />}
+          {view.tab === 'dungeon' && <DungeonAnalysis data={data} />}
+        </div>
       </>}
     </div>
 }
