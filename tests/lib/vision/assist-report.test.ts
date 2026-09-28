@@ -37,6 +37,12 @@ it('REQ-ASSIST-039 rejects malformed reports and links samples to their session'
     { corrections: [{ op: 'swap', giftId: '1', auto: false, clientAt: 1 }] }, { corrections: Array(201).fill({ op: 'add', giftId: '1', auto: false, clientAt: 1 }) },
     { mode: 'x'.repeat(21) }]) expect(parseAssistReport({ ...report, ...change })).toBeNull()
   expect(parseAssistReport({ ...report, email: 'x@y.z' })).toEqual(report)
+  // The game language separates English and Japanese clients' read rates; anything else rejects the report.
+  const english = new AssistReportTally(() => ({ ...context, language: 'en' as const }))
+  english.settle('popup', true)
+  expect(parseAssistReport(JSON.parse(JSON.stringify(english.take())))?.language).toBe('en')
+  expect(parseAssistReport({ ...report, language: 'fr' })).toBeNull()
+  expect(report.language).toBeNull()
   const meta = { reason: 'sale-unresolved', scene: null, mode: 'balanced', detection: { gifts: true, themes: true, events: true }, inference: null,
     ocr: null, width: 1920, height: 1080, dpr: 1, userAgent: 'Chrome', build: null, floor: 1, candidates: [], clientAt: 1 }
   expect(parseSampleMeta({ ...meta, session: report.session })?.session).toBe(report.session)

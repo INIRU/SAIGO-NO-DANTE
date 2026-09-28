@@ -322,7 +322,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
   const readReportContext = () => {
     const size = stream.current?.getVideoTracks()[0]?.getSettings()
     return { build: process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA ?? null, mode: sampleState.current.mode,
-      ocr: sampleState.current.ocrEngine?.engine.slice(0, 20) ?? null, width: size?.width ?? null, height: size?.height ?? null }
+      ocr: sampleState.current.ocrEngine?.engine.slice(0, 20) ?? null, width: size?.width ?? null, height: size?.height ?? null, language }
   }
   /** An action Assist finished reading: counted for the report, and its sample group kept (failure) or discarded. */
   const settleSample = (key: string, action: ReportAction, failure: Parameters<AssistSampleRecorder['end']>[1]) => {
@@ -1122,8 +1122,8 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
             ocrFail(lane)
           }
         }
-        // The exploration banner is Korean; other OCR languages cannot read it. Right after a banner was read it is read
-        // again sooner while that map screen is still up.
+        // The exploration banner, read in the game language. Right after a banner was read it is read again sooner while
+        // that map screen is still up.
         const explore = async () => {
           const lane = pool.screen
           const now = Date.now()
