@@ -16,6 +16,10 @@ const fix = process.argv.includes('--fix')
 const option = (name: string) => { const at = process.argv.indexOf(name); return at === -1 ? null : process.argv[at + 1] ?? null }
 // --ego-ids adds new EGO rows to an existing DB without rewriting sinners or other EGO.
 const onlyEgoIds = option('--ego-ids')?.split(',') ?? null
+// --replace (with --ego-ids) rebuilds existing EGO from the extraction: their old stage skills and passives are deleted
+// first and keywords come from the source only, so rows copied from another EGO do not survive.
+const replace = process.argv.includes('--replace')
+if (replace && !onlyEgoIds) throw new Error('--replace requires --ego-ids')
 const outputDir = resolve(option('--output') ?? root)
 if (onlyEgoIds && outputDir === root) throw new Error('--ego-ids requires --output outside the recovery root')
 const client = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY!, { db: { schema: 'limbus' } })
@@ -97,7 +101,7 @@ async function main() {
     const kr = egoNames.KR.get(definition.id), en = egoNames.EN.get(definition.id), jp = egoNames.JP.get(definition.id)
     // Drive art predates new EGO; their folders follow the existing English-name convention.
     // An existing EGO keeps its folder (its images are already there); a new one gets its English name.
-    const folder = folderById.get(gameId) ?? existingByGameId.get(gameId)?.folder_name ?? (onlyEgoIds && en?.name ? egoStorageFolder(en.name) : undefined)
+    const folder = existingByGameId.get(gameId)?.folder_name ?? folderById.get(gameId) ?? (onlyEgoIds && en?.name ? egoStorageFolder(en.name) : undefined)
     if (!sinner || !kr?.name || !en?.name || !jp?.name || !folder) throw new Error(`Missing EGO source/name/art mapping: ${gameId}`)
     const id = existingByGameId.get(gameId)?.id ?? uuid(`ego:${gameId}`)
     const asset = `${STORAGE_BASE}/sinners/${sinner}/ego/${encodeURIComponent(folder)}/${gameId}`
@@ -129,9 +133,11 @@ async function main() {
       passives.push(row)
     }
     egos.push({ id, sinner_id: sinner, game_id: gameId, name: kr.name, name_kr: kr.name, name_en: en.name, name_jp: jp.name,
-      keywords: [...new Set([...(existingByGameId.get(gameId)?.keywords ?? []), ...(keywordSources.get(gameId)?.keywords ?? [])])],
-      grade: definition.egoType, sin_affinity: sin(firstStage.attributeType!), folder_name: folder, image_url: `${asset}_awaken_profile.webp`,
-      cor_image_url: definition.corrosionSkillId ? `${asset}_erosion_profile.webp` : null,
+      keywords: [...new Set([...(replace ? [] : existingByGameId.get(gameId)?.keywords ?? []), ...(keywordSources.get(gameId)?.keywords ?? [])])],
+      // Image URLs point at what Storage holds (e.g. 21210 uses its CG art): an existing EGO keeps its own.
+      grade: definition.egoType, sin_affinity: sin(firstStage.attributeType!), folder_name: folder,
+      image_url: existingByGameId.get(gameId)?.image_url ?? `${asset}_awaken_profile.webp`,
+      cor_image_url: existingByGameId.has(gameId) ? existingByGameId.get(gameId)!.cor_image_url : definition.corrosionSkillId ? `${asset}_erosion_profile.webp` : null,
       cost: sinCodes.map(code => definition.requirementList?.find((r: Row) => r.attributeType === code)?.num ?? 0),
       resistance: sinCodes.map(code => { const value = definition.attributeResistList?.find((r: Row) => r.type === code)?.value; if (resistance[String(value)] == null) throw new Error(`Unknown EGO resistance ${gameId}: ${value}`); return resistance[String(value)] }),
       passive_name: passiveText('kr', 'name'), passive_content: passiveText('kr', 'desc'), passive_name_en: passiveText('en', 'name'), passive_content_en: passiveText('en', 'desc'), passive_name_jp: passiveText('jp', 'name'), passive_content_jp: passiveText('jp', 'desc'),
@@ -170,6 +176,10 @@ async function main() {
     const file = join(backup, `${table}.json`)
     // Never overwrite the original recovery point on retry.
     try { writeFileSync(file, JSON.stringify(await all(table), null, 2), { flag: 'wx' }) } catch (error: any) { if (error.code !== 'EEXIST') throw error }
+  }
+  if (replace) for (const table of ['ego_skills', 'ego_passives']) {
+    const { error } = await client.from(table).delete().in('ego_id', egos.map(row => row.id))
+    if (error) throw error
   }
   for (const [table, rows] of ([['sinners', sinners], ['ego', egos], ['ego_skills', skills], ['ego_passives', passives]] as const).filter(([table]) => (tables as readonly string[]).includes(table))) {
     for (let offset = 0; offset < rows.length; offset += 100) {
