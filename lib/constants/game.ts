@@ -1,6 +1,11 @@
 // ── Supabase Storage 기본 URL ─────────────────────────────────────────────
 export const STORAGE_BASE = 'https://lpgqcleszdlldneiwgep.supabase.co/storage/v1/object/public/limbus-assets'
 
+/** Current identity level cap. Raise it here when the game raises it (and extend LEVEL_COSTS in lib/tools/experience.ts). */
+export const MAX_IDENTITY_LEVEL = 65
+/** Synced defense and offense levels are stored at level 60 (60 + the game's correction). */
+export const IDENTITY_STAT_BASE_LEVEL = 60
+
 // ── 기본 아바타 (LCB 이상 각성 프로필) ────────────────────────────────────────
 export const DEFAULT_AVATAR_URL = `${STORAGE_BASE}/sinners/yi-sang/identities/LCB%20Sinner/10101_gacksung_profile.webp`
 
