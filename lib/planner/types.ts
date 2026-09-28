@@ -330,7 +330,6 @@ export interface ThemeData {
   name: string
   name_en?: string | null
   name_jp?: string | null
-  dungeon_id: string | null
   ego_gift_ids: number[] | null
   specific_ego_gift_ids: number[] | null
   /** Gifts the pack always gives when its boss is cleared (extreme packs). */

@@ -13,7 +13,7 @@ vi.mock('@/components/ui/GiftArtwork', () => ({ default: () => <span data-test-a
 vi.mock('@/components/ui/ImageWithFallback', () => ({ default: () => <span data-test-poster /> }))
 
 const theme = (id: string, floorInfo: ThemeData['floor_info']): ThemeData =>
-  ({ id, name: `pack-${id}`, floor_info: floorInfo, dungeon_id: null, ego_gift_ids: [], specific_ego_gift_ids: [], image_url: `https://example.test/${id}.webp`, difficulty: null })
+  ({ id, name: `pack-${id}`, floor_info: floorInfo, ego_gift_ids: [], specific_ego_gift_ids: [], image_url: `https://example.test/${id}.webp`, difficulty: null })
 const themes = [theme('1003', { '하드': [1] }), theme('1101', { '하드': [2] }), theme('1102', { '하드': [2, 3] })]
 
 function render(observedFloor: number | null, scene: { label: string; since: number } | null, withPlan = true) {

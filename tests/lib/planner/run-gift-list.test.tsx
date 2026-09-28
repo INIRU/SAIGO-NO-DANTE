@@ -11,7 +11,7 @@ vi.mock('@/components/ui/GiftArtwork', () => ({ default: () => <span data-test-a
 const gift = (game_id: number, keyword = '화상') => ({ id: String(game_id), game_id, name: 'gift-' + game_id, keyword, grade: '1', image_url: null, effect_base: null, effect_plus: null }) as GiftData
 const all = [10, 20, 30, 40, 50, 60].map(id => gift(id))
 const giftMap = new Map(all.map(item => [item.game_id, item]))
-const themes = [{ id: 'A', name: 'pack-A', floor_info: { '하드': [1] }, dungeon_id: null, ego_gift_ids: [10, 20, 30, 60], specific_ego_gift_ids: [40], image_url: null, difficulty: null }] as unknown as ThemeData[]
+const themes = [{ id: 'A', name: 'pack-A', floor_info: { '하드': [1] }, ego_gift_ids: [10, 20, 30, 60], specific_ego_gift_ids: [40], image_url: null, difficulty: null }] as unknown as ThemeData[]
 
 function state(): RunState {
   const started = { ...runReducer(createInitialRunState('hard'), { type: 'START_RUN' }),

@@ -518,7 +518,6 @@ export const translations = {
   'mirrorDungeon.gift.effectPlus': { ko: '효과+', en: 'Effect+', ja: '効果+' },
   'mirrorDungeon.gift.effectPlusPlus': { ko: '효과++', en: 'Effect++', ja: '効果++' },
   'mirrorDungeon.gift.price': { ko: '가격', en: 'Price', ja: '価格' },
-  'mirrorDungeon.gift.sellPrice': { ko: '판매가', en: 'Sell Price', ja: '売値' },
   'mirrorDungeon.gift.recipe': { ko: '조합 레시피', en: 'Recipe', ja: '合成レシピ' },
   'mirrorDungeon.gift.condition': { ko: '발동 조건', en: 'Activation Condition', ja: '発動条件' },
   'mirrorDungeon.gift.enhancement': { ko: '강화 가능', en: 'Enhanceable', ja: '強化可能' },

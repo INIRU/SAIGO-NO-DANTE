@@ -86,9 +86,9 @@ export default async function MirrorDungeonPage({ params }: { params: Promise<{ 
     { data: events, error: eventsError },
     { data: choices, error: choicesError },
   ] = await Promise.all([
-    supabase.schema('limbus').from('ego_gifts').select('id, game_id, name, name_en, name_jp, keyword, grade, enhancement, price, sell_price, buy_disabled, effect_base, effect_base_en, effect_base_jp, effect_plus, effect_plus_en, effect_plus_jp, effect_plusplus, effect_plusplus_en, effect_plusplus_jp, activation_condition, is_synthesis, related, image_url, acquisition, difficulty, convert_to').order('keyword').order('grade'),
+    supabase.schema('limbus').from('ego_gifts').select('id, game_id, name, name_en, name_jp, keyword, grade, enhancement, price, buy_disabled, effect_base, effect_base_en, effect_base_jp, effect_plus, effect_plus_en, effect_plus_jp, effect_plusplus, effect_plusplus_en, effect_plusplus_jp, activation_condition, is_synthesis, related, image_url, acquisition, difficulty, convert_to').order('keyword').order('grade'),
     supabase.schema('limbus').from('ego_gift_recipes').select('id, result_name, keyword, ingredients, final_result'),
-    supabase.schema('limbus').from('ego_gift_themes').select('id, name, name_en, name_jp, dungeon_id, ego_gift_ids, specific_ego_gift_ids, image_url, difficulty, floor_info, is_hidden, hidden_rate, fixed_reward_gift_ids').order('id'),
+    supabase.schema('limbus').from('ego_gift_themes').select('id, name, name_en, name_jp, ego_gift_ids, specific_ego_gift_ids, image_url, difficulty, floor_info, is_hidden, hidden_rate, fixed_reward_gift_ids').order('id'),
     supabase
       .schema('limbus')
       .from('md_events')

@@ -28,6 +28,7 @@ import { gameDataPaths } from './source-paths'
 import { identityMetadata } from './identity-metadata'
 import { getKeywordCategory } from '../../lib/keywords/category'
 import { IDENTITY_STAT_BASE_LEVEL } from '../../lib/constants/game'
+import { failOnLoggedErrors, printSyncSummary } from './sync-result'
 import { pathToFileURL } from 'url'
 import { z } from 'zod'
 import { config } from 'dotenv'
@@ -53,6 +54,7 @@ const REBUILD_KEYWORD_META = args.includes('--rebuild-keyword-meta')
 const isDirectRun = process.argv[1]
   ? import.meta.url === pathToFileURL(resolve(process.argv[1])).href && /identity-data\.[cm]?[jt]s$/.test(process.argv[1])
   : false
+if (isDirectRun) failOnLoggedErrors()
 
 // 실제 키워드가 아닌 placeholder 값들 — ego_gifts.keyword 기본값으로 쓰임
 // DB 스키마는 nullable이 아니라 '공통'이 기본값으로 들어가므로, keyword_meta 재구축 시 반드시 필터링
@@ -468,7 +470,6 @@ interface SkillRow {
 
 type DbSkillRow = Partial<SkillRow> & {
   id?: string
-  defense_level?: number | null
 }
 
 const SKILL_COMPARE_FIELDS = [
@@ -484,7 +485,6 @@ const SKILL_COMPARE_FIELDS = [
   'coins',
   'atk_weight',
   'offense_level',
-  'defense_level',
   'description',
   'flavor',
   'name_en',
@@ -518,7 +518,7 @@ function comparePrimitive(a: string | number | null, b: string | number | null):
   return String(a) < String(b) ? -1 : 1
 }
 
-function comparableSkill(row: Partial<SkillRow> & { defense_level?: number | null }): SkillComparable {
+function comparableSkill(row: Partial<SkillRow>): SkillComparable {
   return SKILL_COMPARE_FIELDS.reduce((acc, field) => {
     acc[field] = normalizeSkillCompareValue(row[field])
     return acc
@@ -538,7 +538,7 @@ function sortComparableSkills(rows: SkillComparable[]): SkillComparable[] {
 
 export function areSkillRowsDifferent(
   generatedRows: Array<Partial<SkillRow>>,
-  dbRows: Array<Partial<SkillRow> & { id?: string; defense_level?: number | null }>,
+  dbRows: Array<Partial<SkillRow> & { id?: string }>,
 ): boolean {
   if (generatedRows.length !== dbRows.length) return true
 
@@ -1014,6 +1014,18 @@ function loadKeywordEffectTypesFromSource(): Map<string, KeywordEffectType> {
       const effectType = normalizeKeywordEffectType(item.buffType)
       if (!idValue || !effectType || map.has(idValue)) continue
       map.set(idValue, effectType)
+    }
+  }
+  return map
+}
+
+/** Buff tag → maxStack from the static buff lists (e.g. BurstPoison 5); most basic keywords have none. */
+function loadKeywordMaxStacksFromSource(): Map<string, number> {
+  const map = new Map<string, number>()
+  for (const file of globFiles(DATA_DIR, /buff.*\.txt$/i)) {
+    for (const item of extractRecordList(readTxt(join(DATA_DIR, file)))) {
+      const id = toStringValue(item.id), maxStack = toNumberValue(item.maxStack)
+      if (id && maxStack != null && !map.has(id)) map.set(id, maxStack)
     }
   }
   return map
@@ -2931,7 +2943,7 @@ function isMissingKeywordEffectTypeColumnError(error: { code?: string; message?:
 }
 
 async function loadExistingKeywordMetaRows(): Promise<ExistingKeywordMetaRow[]> {
-  const baseSelect = 'name, description, name_en, name_jp, description_en, description_jp, icon_slug'
+  const baseSelect = 'name, description, name_en, name_jp, description_en, description_jp, icon_slug, category, max_stack'
   const withEffectType = `${baseSelect}, effect_type`
   const { data, error } = await supabase
     .from('keyword_meta')
@@ -3451,6 +3463,7 @@ async function rebuildKeywordMeta(): Promise<void> {
   const krKeywords = loadKrKeywordDescriptions()
   console.log(`  KR 키워드/버프 데이터: ${krKeywords.size}개`)
   const keywordEffectTypes = loadKeywordEffectTypesFromSource()
+  const keywordMaxStacks = loadKeywordMaxStacksFromSource()
   console.log(`  키워드 effect_type 소스: ${keywordEffectTypes.size}개`)
 
   // Fetch actually used keywords from DB (identities, ego, ego_gifts)
@@ -3568,6 +3581,7 @@ async function rebuildKeywordMeta(): Promise<void> {
     description_jp: string | null
     icon_slug: string | null
     effect_type: KeywordEffectType | null
+    max_stack: number | null
     tag: string | null
     in_db: boolean
     in_source: boolean
@@ -3609,6 +3623,7 @@ async function rebuildKeywordMeta(): Promise<void> {
         sourceHit,
         effectTypesByTag: keywordEffectTypes,
       }),
+      max_stack: tag ? keywordMaxStacks.get(tag) ?? null : null,
       tag: tag ?? null,
       in_db: dbUsedKeywords.has(name),
       in_source: sourceKeywords.has(name),
@@ -3623,6 +3638,16 @@ async function rebuildKeywordMeta(): Promise<void> {
   )
 
   console.log(`  삽입 예정: ${rows.length}개\n`)
+  // Rows that differ from the DB in any written field; the verify pass after --fix must find none.
+  const metaFields = ['description', 'name_en', 'name_jp', 'description_en', 'description_jp', 'icon_slug', 'effect_type', 'max_stack', 'category'] as const
+  let metaNew = 0, metaChanged = staleRichTextKeywordMetaNames.length
+  for (const row of rows) {
+    const existing = existingMetaMap.get(row.name) as Record<string, unknown> | undefined
+    const next: Record<string, unknown> = { ...row, category: getKeywordCategory(row) }
+    if (!existing) metaNew++
+    else if (metaFields.some(field => (next[field] ?? null) !== (existing[field] ?? null))) metaChanged++
+  }
+  printSyncSummary({ keywordMeta: { new: metaNew, changed: metaChanged, missingFromSource: 0 } })
 
   if (DRY_RUN) {
     console.log(`  raw tag keyword_meta 삭제 후보: ${staleRichTextKeywordMetaNames.length}개`)
@@ -3701,6 +3726,7 @@ async function rebuildKeywordMeta(): Promise<void> {
       description_jp: row.description_jp,
       icon_slug: row.icon_slug,
       effect_type: row.effect_type,
+      max_stack: row.max_stack,
       category: getKeywordCategory(row),
     }))
     const { error } = await supabase
@@ -3848,6 +3874,7 @@ async function main(): Promise<void> {
 
   // Counters
   let totalNew = 0, totalChanged = 0, totalUnchanged = 0, totalSkipped = 0
+  const syncCounts = { keywordDiffs: 0, egoSkillUpdates: 0, egoPassiveUpdates: 0 }
   let totalSkillsInserted = 0
   let totalSkillDiffs = 0, totalSkillsDeleted = 0, totalSkillsRebuiltInserted = 0
   const missingQuoteSourceCases: Array<{ gameId: string; name: string }> = []
@@ -4131,6 +4158,7 @@ async function main(): Promise<void> {
     }
   }
 
+    syncCounts.keywordDiffs = kwDiffCount
     if (kwDiffCount === 0) {
       console.log(GRAY(`  키워드 diff 없음 (${keywordContexts.size}개 인격)`))
     } else {
@@ -4233,6 +4261,7 @@ async function main(): Promise<void> {
       ? GREEN(`  ✓ ego_skills ${DRY_RUN ? '업데이트 대상' : '업데이트'}: ${egoSkillUpdated}개`)
       : GRAY(`  ego_skills: 변경 없음`)
     )
+    syncCounts.egoSkillUpdates = egoSkillUpdated
   }
 
   // ── EGO passive locale sync ──
@@ -4281,6 +4310,7 @@ async function main(): Promise<void> {
       ? GREEN(`  ✓ ego passive ${DRY_RUN ? '업데이트 대상' : '업데이트'}: ${passiveUpdated}개`)
       : GRAY(`  ego passive: 변경 없음`)
     )
+    syncCounts.egoPassiveUpdates = passiveUpdated
   }
 
   // ── Identity acquisition sync ─────────────────────────────────────────────
@@ -4322,6 +4352,10 @@ async function main(): Promise<void> {
   } else {
     console.log(CYAN('\n  DB 반영 완료'))
   }
+  // Identities are never removed from the game: one in the DB but not in this extraction means the extraction is incomplete.
+  const missingFromSource = SINNER_FILTER ? [] : [...dbIdentityMap.keys()].filter(gameId => !gamePersonMap.has(gameId))
+  printSyncSummary({ new: totalNew, changed: totalChanged, skillDiffs: totalSkillDiffs, passiveDiffs, ...syncCounts,
+    acquisition: DRY_RUN ? acquisitionChanged : 0, missingFromSource })
 
   if (missingQuoteSourceCases.length > 0) {
     console.log(YELLOW('\n  [quote 소스 확인 필요]'))

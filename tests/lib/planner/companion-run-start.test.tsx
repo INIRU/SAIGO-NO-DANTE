@@ -10,7 +10,7 @@ import type { GiftData, ThemeData } from '@/lib/planner/types'
 vi.mock('@/components/ui/GiftArtwork', () => ({ default: () => <span data-test-artwork /> }))
 
 const themes: ThemeData[] = [['A', [1, 2]], ['B', [1, 2]]].map(([id, floors]) =>
-  ({ id, name: id, floor_info: { '하드': floors }, dungeon_id: null, ego_gift_ids: [], specific_ego_gift_ids: [], image_url: null, difficulty: null }) as ThemeData)
+  ({ id, name: id, floor_info: { '하드': floors }, ego_gift_ids: [], specific_ego_gift_ids: [], image_url: null, difficulty: null }) as ThemeData)
 
 function playing(): RunState {
   const state = runReducer(createInitialRunState('hard'), { type: 'START_RUN' })

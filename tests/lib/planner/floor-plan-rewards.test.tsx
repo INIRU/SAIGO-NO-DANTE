@@ -10,7 +10,7 @@ vi.mock('@/components/ui/ImageWithFallback', () => ({ default: () => <span data-
 vi.mock('@/components/planner/FloorGuidance', () => ({ default: () => null }))
 vi.mock('@/components/planner/FloorConstraints', () => ({ default: () => null }))
 
-const pack = (id: string, rewards: number[] | null): ThemeData => ({ id, name: `pack-${id}`, dungeon_id: null, ego_gift_ids: [10], specific_ego_gift_ids: [],
+const pack = (id: string, rewards: number[] | null): ThemeData => ({ id, name: `pack-${id}`, ego_gift_ids: [10], specific_ego_gift_ids: [],
   fixed_reward_gift_ids: rewards, image_url: null, difficulty: 'extreme', floor_info: null })
 const gift = (game_id: number) => ({ id: String(game_id), game_id, name: `gift-${game_id}`, keyword: null, grade: '4', image_url: null,
   effect_base: null, effect_plus: null, effect_plusplus: null, theme_ids: null, activation_condition: null }) as GiftData
