@@ -18,6 +18,7 @@ import { prepareExtractedAssets } from './prepare-extracted-assets'
 import sharp from 'sharp'
 import { missingThemeImages, themeImageSource } from './theme-images'
 import { RESTORE_TABLES } from './extraction-restore'
+import { egoDrift } from './ego-drift'
 import { eventImageIdFromFilename } from '../assets/event-image-source'
 
 config({ path: '.env.local', quiet: true })
@@ -34,7 +35,8 @@ const BACKUP_TABLES = RESTORE_TABLES.map(item => item.table)
 
 type Step = { name: string; script: string; args: string[] }
 const STEPS: Step[] = [
-  { name: 'identity', script: 'scripts/sync/identity-data.ts', args: [] },
+  // --keywords: identity keywords follow the extraction like every other field.
+  { name: 'identity', script: 'scripts/sync/identity-data.ts', args: ['--keywords'] },
   // Events come from rebuild-mirror-events; the legacy event section of this script is skipped.
   { name: 'mirror', script: 'scripts/sync/mirror-dungeon-data.ts', args: ['--gifts-only', '--themes-only', '--recipes-only'] },
   { name: 'events', script: 'scripts/sync/rebuild-mirror-events.ts', args: [] },
@@ -228,6 +230,30 @@ async function main() {
         await revalidateGameData()
         ;(report.steps as string[]).push('new-ego')
       }
+    }
+
+    // Existing EGO whose grade, sin, cost, resistance, passives or stage skill stats differ from this ZIP are rebuilt from it
+    // (rows copied from another EGO, missing stage passives, balance patches). Text-only differences stay with the identity step.
+    const existingEgos = [...egoIds].filter(id => knownEgo.has(id)).sort()
+    if (existingEgos.length) {
+      const checkDir = join(work, 'existing-ego')
+      run(work, 'existing-ego-check', command('scripts/sync/bootstrap-data.ts', ['--ego-ids', existingEgos.join(','), '--output', checkDir]), env)
+      const plan = JSON.parse(readFileSync(join(checkDir, 'bootstrap-plan.json'), 'utf8')) as { egos: Record<string, unknown>[]; skills: Record<string, unknown>[]; passives: Record<string, unknown>[] }
+      const [egoRows, skillRows, passiveRows] = await Promise.all([all('ego'), all('ego_skills'), all('ego_passives')])
+      const changed = plan.egos.flatMap(ego => {
+        const current = egoRows.find(row => row.id === ego.id)
+        if (!current) return []
+        const of = (rows: Record<string, unknown>[]) => rows.filter(row => row.ego_id === ego.id)
+        const fields = egoDrift({ ego, skills: of(plan.skills), passives: of(plan.passives) }, { ego: current, skills: of(skillRows), passives: of(passiveRows) })
+        return fields.length ? [{ gameId: String(ego.game_id), name: String(ego.name_kr), fields }] : []
+      })
+      report.changedEgos = changed
+      if (FIX && changed.length) {
+        run(work, 'existing-ego-fix', command('scripts/sync/bootstrap-data.ts', ['--ego-ids', changed.map(item => item.gameId).join(','), '--output', join(work, 'existing-ego-fix'), '--replace', '--fix']), env)
+        await revalidateGameData()
+        ;(report.steps as string[]).push('existing-ego')
+      }
+      console.log(`ok   existing-ego (${changed.length} ${FIX ? 'rebuilt' : 'differ'})`)
     }
 
     // New theme packs: the extraction tool composes every pack card into the ZIP (kind '합성 테마팩'); upload the ones Storage lacks.
