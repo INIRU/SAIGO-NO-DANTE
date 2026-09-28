@@ -17,6 +17,7 @@ import { config } from 'dotenv'
 import { prepareExtractedAssets } from './prepare-extracted-assets'
 import sharp from 'sharp'
 import { missingThemeImages, themeImageSource } from './theme-images'
+import { RESTORE_TABLES } from './extraction-restore'
 
 config({ path: '.env.local', quiet: true })
 const args = process.argv.slice(2)
@@ -27,8 +28,8 @@ const BUNDLE_DIR = import.meta.url.endsWith('.mjs') ? dirname(fileURLToPath(impo
 const command = (script: string, rest: string[]) => BUNDLE_DIR
   ? [join(BUNDLE_DIR, basename(script).replace(/\.ts$/, '.mjs')), ...rest]
   : [...(script.endsWith('.ts') ? ['--import', 'tsx'] : []), script, ...rest]
-// Every table the identity and mirror steps write; the event step backs up md_events and md_event_choices itself.
-const BACKUP_TABLES = ['identities', 'skills', 'passives', 'ego', 'ego_skills', 'ego_gifts', 'keyword_meta', 'ego_gift_themes', 'ego_gift_recipes']
+// Every table any step writes, saved before the first write; extraction-restore.ts puts them back.
+const BACKUP_TABLES = RESTORE_TABLES.map(item => item.table)
 
 type Step = { name: string; script: string; args: string[] }
 const STEPS: Step[] = [
@@ -44,8 +45,11 @@ const THEME_IMAGE_DIR = 'icons/theme-packs'
 
 async function all(table: string, columns = '*') {
   const rows: Record<string, unknown>[] = []
+  const order = RESTORE_TABLES.find(item => item.table === table)?.key ?? ['id']
   for (let offset = 0; ; offset += 1000) {
-    const { data, error } = await db().from(table).select(columns).order(table === 'keyword_meta' ? 'name' : 'id').range(offset, offset + 999)
+    let query = db().from(table).select(columns)
+    for (const column of order) query = query.order(column)
+    const { data, error } = await query.range(offset, offset + 999)
     if (error) throw Error(`${table}: ${error.message}`)
     rows.push(...(data as unknown as Record<string, unknown>[]))
     if (data.length < 1000) return rows
@@ -72,8 +76,11 @@ async function storedNames(dir: string) {
 /** Images of an EGO in the ZIP, stored as <game id>_<suffix>.webp in its folder; the awakening profile is required. */
 const EGO_IMAGES = ['awaken_profile', 'erosion_profile', 'cg', 'e_cg', 'profile_summary'] as const
 
+/** Objects this apply uploaded; none replaced an existing one (before: null), so a restore removes them. */
+type Upload = { key: string; before: null }
+
 /** New EGO images from the verified ZIP at the paths their rows point to; existing objects are never replaced. */
-async function uploadEgoImages(source: string, gameIds: string[]) {
+async function uploadEgoImages(source: string, gameIds: string[], uploads: Upload[]) {
   const manifest = JSON.parse(readFileSync(join(source, 'Reports', 'manifest.json'), 'utf8').replace(/^\uFEFF/, '')) as { kind: string; name: string; path: string; sha256: string }[]
   const { data: egos, error } = await db().from('ego').select('game_id, sinner_id, folder_name').in('game_id', gameIds)
   if (error) throw Error(`ego: ${error.message}`)
@@ -88,6 +95,7 @@ async function uploadEgoImages(source: string, gameIds: string[]) {
     const key = `sinners/${ego.sinner_id}/ego/${ego.folder_name}/${entry.name}.webp`
     const { error: uploadError } = await bucket.upload(key, await sharp(bytes).webp({ quality: 90 }).toBuffer(), { contentType: 'image/webp', cacheControl: '3600', upsert: false })
     if (uploadError) throw Error(`upload ${key}: ${uploadError.message}`)
+    uploads.push({ key, before: null })
     uploaded++
   }
   return uploaded
@@ -109,7 +117,8 @@ async function main() {
   const work = resolve(option('--work')!)
   if (existsSync(work) && readdirSync(work).length) throw Error(`work directory is not empty: ${work}`)
   mkdirSync(join(work, 'logs'), { recursive: true })
-  const report: Record<string, unknown> = { input: resolve(input), fix: FIX, startedAt: new Date().toISOString(), steps: [] as string[] }
+  const uploads: Upload[] = []
+  const report: Record<string, unknown> = { input: resolve(input), fix: FIX, startedAt: new Date().toISOString(), steps: [] as string[], uploads }
   const save = () => writeFileSync(join(work, 'report.json'), JSON.stringify(report, null, 2))
   try {
     // 1. Unpack and verify every hash, size, parse and locale before anything reads the DB.
@@ -162,7 +171,7 @@ async function main() {
       run(work, 'new-ego-dry-run', command('scripts/sync/bootstrap-data.ts', egoArgs), env)
       if (FIX) {
         run(work, 'new-ego-fix', command('scripts/sync/bootstrap-data.ts', [...egoArgs, '--fix']), env)
-        console.log(`ok   new-ego-images (${await uploadEgoImages(source, newEgos)} uploaded)`)
+        console.log(`ok   new-ego-images (${await uploadEgoImages(source, newEgos, uploads)} uploaded)`)
         await revalidateGameData()
         ;(report.steps as string[]).push('new-ego')
       }
@@ -182,6 +191,7 @@ async function main() {
           const webp = await sharp(readFileSync(join(source, 'Images', path!))).webp({ quality: 95, effort: 6 }).toBuffer()
           const { error } = await bucket.upload(`${THEME_IMAGE_DIR}/${file}`, webp, { contentType: 'image/webp', cacheControl: '3600', upsert: false })
           if (error) throw Error(`upload ${THEME_IMAGE_DIR}/${file}: ${error.message}`)
+          uploads.push({ key: `${THEME_IMAGE_DIR}/${file}`, before: null })
         }
         console.log(`ok   theme-images (${sources.length} uploaded)`)
         ;(report.steps as string[]).push('theme-images')
