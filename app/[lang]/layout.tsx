@@ -24,6 +24,7 @@ import { SITE_URL, localeUrl } from '@/lib/seo/metadata'
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
 import PageNavigation from '@/components/ui/PageNavigation'
+import AnnouncementPopup from '@/components/announcements/AnnouncementPopup'
 import SkipNav from '@/components/a11y/SkipNav'
 import AprilFoolsWrapper from '@/components/events/AprilFoolsWrapper'
 import { KeywordProvider } from '@/components/providers/KeywordProvider'
@@ -167,6 +168,7 @@ export default async function LangLayout({
                     <main id="main-content"><Suspense fallback={null}>{children}</Suspense></main>
                     <Footer lang={validLang} />
                     <Suspense fallback={null}><PageNavigation /></Suspense>
+                    <Suspense fallback={null}><AnnouncementPopup lang={validLang} /></Suspense>
                   </KeywordProvider>
                 </IntlClientProvider>
               </MotionConfig>
