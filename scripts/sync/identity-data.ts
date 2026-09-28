@@ -225,6 +225,8 @@ const CONDITION_TAG_MAP: Record<string, string> = {
 
 // TAG_MAP is built at runtime from KR_BattleKeywords — merged with CONDITION_TAG_MAP
 let TAG_MAP: Record<string, string> = { ...CONDITION_TAG_MAP }
+/** Tag IDs whose name came only from KR_SkillTag: used to translate text, never counted as keywords. */
+const SECTION_ONLY_TAGS = new Set<string>()
 
 const TAG_PATTERN = /\[([A-Za-z_][A-Za-z0-9_]*)\]/g
 const EXCLUDED_TAGS = new Set(['Target', 'Result', 'Damage', 'Attack', 'Return', 'Recover', 'Shield'])
@@ -830,6 +832,7 @@ export const resolvePersonalityDisplayName = normalizeKrPersonalityDisplayName
 
 function loadKrTagMap(): Record<string, string> {
   const map: Record<string, string> = { ...CONDITION_TAG_MAP }
+  SECTION_ONLY_TAGS.clear()
 
   // Latest first: kr/ (.json files) — 최신 패치 데이터 우선
   if (existsSync(KR_LATEST_DIR)) {
@@ -841,6 +844,7 @@ function loadKrTagMap(): Record<string, string> {
         const parsed = z.object({ id: z.string(), name: z.string() }).safeParse(item)
         if (parsed.success && !map[parsed.data.id]) {
           map[parsed.data.id] = cleanLocaleContent(parsed.data.name)
+          if (/^KR_SkillTag/i.test(f)) SECTION_ONLY_TAGS.add(parsed.data.id)
         }
       }
     }
@@ -856,6 +860,7 @@ function loadKrTagMap(): Record<string, string> {
         const parsed = z.object({ id: z.string(), name: z.string() }).safeParse(item)
         if (parsed.success && !map[parsed.data.id]) {
           map[parsed.data.id] = cleanLocaleContent(parsed.data.name)
+          if (/^KR_SkillTag/i.test(f)) SECTION_ONLY_TAGS.add(parsed.data.id)
         }
       }
     }
@@ -2482,6 +2487,8 @@ function recordSourceKeywordTag(sourceTags: Map<string, Set<string>> | undefined
 }
 
 function addMappedKeyword(keywords: Set<string>, tag: string, sourceTags?: Map<string, Set<string>>): void {
+  // SkillTag names ([CRIMSON] → 빨간색, section titles) translate text; they are not battle keywords.
+  if (SECTION_ONLY_TAGS.has(tag)) return
   const keyword = TAG_MAP[tag] ?? UNIT_KEYWORD_MAP[tag]
   if (keyword && !KEYWORD_PLACEHOLDERS.has(keyword)) {
     keywords.add(keyword)
@@ -2518,6 +2525,15 @@ function collectBracketKeywords(rawTexts: string[], keywords: Set<string>, sourc
     if (EXCLUDED_TAGS.has(tag)) continue
     addMappedKeyword(keywords, tag, sourceTags)
   }
+}
+
+/** Bracket-tag keywords of raw texts with a given tag map; tags named only by KR_SkillTag must not count. */
+export function bracketKeywordsForSyncTest(rawTexts: string[], tags: Record<string, string>, skillTagOnly: string[]): string[] {
+  const savedMap = TAG_MAP, savedSection = [...SECTION_ONLY_TAGS]
+  TAG_MAP = { ...CONDITION_TAG_MAP, ...tags }
+  SECTION_ONLY_TAGS.clear(); for (const tag of skillTagOnly) SECTION_ONLY_TAGS.add(tag)
+  try { const keywords = new Set<string>(); collectBracketKeywords(rawTexts, keywords); return [...keywords].sort() }
+  finally { TAG_MAP = savedMap; SECTION_ONLY_TAGS.clear(); for (const tag of savedSection) SECTION_ONLY_TAGS.add(tag) }
 }
 
 function collectKrDescriptions(target: string[], krText: KrSkill | KrPassive | null | undefined): void {
@@ -3975,9 +3991,12 @@ async function main(): Promise<void> {
       // ── Existing identity: stat diff ──────────────────────────────────────
       if (NEW_ONLY) continue
 
-      const changes = diffIdentity(computed, dbRow)
+      const changes: Record<string, { from: unknown; to: unknown }> = diffIdentity(computed, dbRow)
+      // Names follow the game in every language, like the stats (a title rename reaches the site on the next extraction).
+      const sourceNames = { name: computed.name_kr, name_kr: computed.name_kr, name_en: enPersonNameMap.get(gameId) ?? null, name_jp: jpPersonNameMap.get(gameId) ?? null }
+      for (const [field, value] of Object.entries(sourceNames)) if (value && value !== dbRow[field]) changes[field] = { from: dbRow[field], to: value }
       const changeCount = Object.keys(changes).length
-      const dbTyped = dbRow as { id: string; name_en?: string | null; name_jp?: string | null }
+      const dbTyped = dbRow as { id: string }
       const generatedSkillRows = buildSkillRows(p, gameSkillMap, krSkillMap, dbTyped.id, enLocale, jpLocale, enTagMap, jpTagMap)
       const skillSync = await syncExistingIdentitySkills(dbTyped.id, displayName, gameId, generatedSkillRows)
       if (skillSync.changed) totalSkillDiffs++
@@ -3986,21 +4005,6 @@ async function main(): Promise<void> {
 
       if (changeCount === 0) {
         totalUnchanged++
-        // Backfill EN/JP identity names if missing
-        if (!DRY_RUN) {
-          const identityNameUpdate: Record<string, string> = {}
-          const enName = enPersonNameMap.get(gameId)
-          const jpName = jpPersonNameMap.get(gameId)
-          if (enName && !dbTyped.name_en) identityNameUpdate.name_en = enName
-          if (jpName && !dbTyped.name_jp) identityNameUpdate.name_jp = jpName
-          if (Object.keys(identityNameUpdate).length > 0) {
-            const { error: nameErr } = await supabase
-              .from('identities')
-              .update(identityNameUpdate)
-              .eq('id', dbTyped.id)
-            if (nameErr) console.error(RED(`  [ERR] identity name backfill: ${nameErr.message}`))
-          }
-        }
         if (VERBOSE) console.log(GRAY(`  [${i + 1}/${sinnerPersonalities.length}] [OK] ${displayName} (변경 없음)`))
         continue
       }
