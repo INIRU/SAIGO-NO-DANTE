@@ -92,4 +92,18 @@ async function fusion(url: string, request: Record<string, unknown>) {
   return result.slots ?? []
 }
 
-Object.assign((globalThis as unknown as { replay: object }).replay, { recognize, fusion })
+/** The scene classifier's label for one frame, as the app's per-frame 'infer' request gets it. */
+async function classify(url: string) {
+  const bitmap = await createImageBitmap(await (await fetch(url)).blob())
+  return new Promise<{ label: string; confidence: number }>(resolve => {
+    const on = (event: MessageEvent) => {
+      if (event.data?.type !== 'prediction') return
+      scene.removeEventListener('message', on)
+      resolve({ label: event.data.label, confidence: event.data.confidence })
+    }
+    scene.addEventListener('message', on)
+    scene.postMessage({ type: 'infer', frame: bitmap }, [bitmap])
+  })
+}
+
+Object.assign((globalThis as unknown as { replay: object }).replay, { recognize, fusion, classify })
