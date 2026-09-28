@@ -1403,7 +1403,7 @@ export default function CommunityClient({ initialPlans, initialTotal }: Communit
   if (browse !== 'all' && !(search || keywordQuery || identityIdsQuery)) return <DiscoveryShelf kind="planner" onBrowse={() => setBrowse('all', { history: 'push' })} />
 
   return (
-    <div data-board-browse className="relative min-h-0 flex-1 overflow-hidden px-4 pb-4 md:px-6">
+    <div data-board-browse className="relative min-h-0 flex-1 px-4 pb-4 md:px-6 lg:overflow-hidden">
       <BoardBrowseLock />
       <div className="relative z-[1] mx-auto flex h-full min-h-0 w-full max-w-7xl gap-5">
         <aside
@@ -1414,7 +1414,7 @@ export default function CommunityClient({ initialPlans, initialTotal }: Communit
           {filterSurface}
         </aside>
 
-        <div ref={scrollRootRef} className="min-h-0 flex-1 overflow-y-auto pb-16 pr-1 scrollbar-thin">
+        <div ref={scrollRootRef} className="min-h-0 flex-1 pb-16 scrollbar-thin lg:overflow-y-auto lg:pr-1">
           {!loading && (
             <div
               className="mb-4 flex min-h-11 items-center gap-2 rounded-sm"
