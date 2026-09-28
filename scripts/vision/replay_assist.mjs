@@ -35,6 +35,11 @@ const mask = arg('mask') ? arg('mask').split(';').map(part => part.split(',').ma
 const recolor = arg('recolor', null)
 /** --scene-miss: every 'fusion' scene prediction reaches the app as 'enhance', as if the classifier failed on an unseen UI theme. */
 const sceneMiss = flag('scene-miss')
+/**
+ * --slow ocr=1200,scene=200: each worker answer reaches the app that many ms late, as on a slower GPU. The app waits for an
+ * answer before asking again, so this lowers the read rate the way a slow machine does (e.g. 2560x1440 on a mid GPU).
+ */
+const slow = Object.fromEntries((arg('slow', '') || '').split(',').filter(Boolean).map(part => part.split('=')).map(([k, v]) => [k, Number(v)]))
 /** --detect gifts[,events,themes]: only these detection kinds are on (default: all). */
 const detect = arg('detect', null)
 /**
@@ -137,11 +142,11 @@ void main(){
       R.recolorCanvas = canvas
       return canvas.captureStream(60)
     }
-    if (!cfg.mask) return video.captureStream()
-    // Masked replay: every frame is drawn to a canvas with the given rectangles painted black (e.g. a recorded PiP window).
+    // Every frame is relayed through a canvas (with any mask rectangles painted black, e.g. a recorded PiP window). A direct
+    // video.captureStream() stalls the video decoder once the app holds its latest frame and a few read copies (2026-09-28).
     const canvas = document.createElement('canvas'); canvas.width = video.videoWidth; canvas.height = video.videoHeight
     const context = canvas.getContext('2d')
-    const draw = () => { context.drawImage(video, 0, 0); context.fillStyle = '#000'; for (const [x, y, w, h] of cfg.mask) context.fillRect(x, y, w, h); video.requestVideoFrameCallback(draw) }
+    const draw = () => { context.drawImage(video, 0, 0); context.fillStyle = '#000'; for (const [x, y, w, h] of cfg.mask ?? []) context.fillRect(x, y, w, h); video.requestVideoFrameCallback(draw) }
     video.requestVideoFrameCallback(draw)
     return canvas.captureStream(60)
   }
@@ -150,12 +155,16 @@ void main(){
   window.Worker = function (url, options) {
     const worker = new NativeWorker(url, options)
     const name = String(url).includes('ocr') ? 'ocr' : 'scene'
-    if (cfg.sceneMiss && name === 'scene') {
+    const delay = cfg.slow?.[name] ?? 0
+    if ((cfg.sceneMiss && name === 'scene') || delay > 0) {
       let handler = null
       Object.defineProperty(worker, 'onmessage', { get: () => handler, set: value => { handler = value } })
       worker.addEventListener('message', event => {
-        const data = event.data?.type === 'prediction' && event.data.label === 'fusion' ? { ...event.data, label: 'enhance' } : event.data
-        handler?.call(worker, data === event.data ? event : new MessageEvent('message', { data }))
+        const data = cfg.sceneMiss && event.data?.type === 'prediction' && event.data.label === 'fusion' ? { ...event.data, label: 'enhance' } : event.data
+        const deliver = () => handler?.call(worker, data === event.data ? event : new MessageEvent('message', { data }))
+        // Answers to requests are late; setup messages (ready, backend, icons) are not.
+        if (delay > 0 && ['result', 'popupResult', 'exploreResult', 'fusion-slots', 'popup-icon', 'prediction'].includes(event.data?.type)) setTimeout(deliver, delay)
+        else deliver()
       })
     }
     const id = name + ':' + Math.random().toString(36).slice(2, 6)
@@ -409,7 +418,7 @@ async function main() {
     const { server, url } = await serveFile(truth.video)
     const warmupStart = Math.max(0, truth.start - Number(arg('warmup', 4)))
     const { page, hmr } = await openPage(browser, { runState: runState(truth.seed, truth.floor ?? 1), mode, videoUrl: url, start: truth.start, warmupStart, mask,
-      recolor, recolorKeep: RECOLOR_KEEP, sceneMiss, detect, throttle })
+      recolor, recolorKeep: RECOLOR_KEEP, sceneMiss, detect, throttle, slow })
     const button = page.locator('header button:has(svg.lucide-monitor-up)')
     await button.waitFor({ timeout: 180000 })
     hmr.frozen = true
@@ -430,6 +439,12 @@ async function main() {
     await page.evaluate(start => { const R = window.__replay; R.started = true; R.startedAt = Date.now(); R.video.currentTime = start }, truth.start)
     // Real time: wait for the segment to play out, then hold its last frame while late reads finish.
     await page.waitForFunction(end => window.__replay.video.currentTime >= end, truth.end, { timeout: (truth.end - truth.start + 60) * 1000, polling: 100 })
+      .catch(async error => {
+        console.error('video stalled', JSON.stringify(await page.evaluate(async () => { const v = window.__replay.video
+          const s = { t: v.currentTime, ready: v.readyState, network: v.networkState, paused: v.paused, seeking: v.seeking, rate: v.playbackRate, ended: v.ended, error: v.error?.message ?? v.error?.code, buffered: [...Array(v.buffered.length)].map((_, i) => [v.buffered.start(i), v.buffered.end(i)]) }
+          await v.play().catch(e => { s.play = e.message }); await new Promise(ok => setTimeout(ok, 2000)); s.after = v.currentTime; return s })))
+        throw error
+      })
     await page.evaluate(() => window.__replay.video.pause())
     await page.waitForTimeout(tailSec * 1000)
     const record = await page.evaluate(() => {
@@ -440,7 +455,7 @@ async function main() {
     // Capture/observation timestamps to video time.
     for (const row of record.log) for (const key of ['capturedAt', 'observedAt', 'lastSeenAt', 'closedAt']) if (row[key] !== undefined) row[key + 'Vt'] = toVideoTime(record.clock, row[key])
     const evaluation = evaluate(truth, record)
-    const result = { case: truth.id, mode, mask, recolor, sceneMiss, detect, throttle, headless: !headed, video: path.basename(truth.video), start: truth.start, end: truth.end, readyMs, playback: record.playback,
+    const result = { case: truth.id, mode, mask, recolor, sceneMiss, detect, throttle, slow, headless: !headed, video: path.basename(truth.video), start: truth.start, end: truth.end, readyMs, playback: record.playback,
       appFiles: appFileHashes(), stopped: record.log.filter(row => row.kind === 'captureState' && row.at >= record.startedAt && row.state !== 'running').map(row => ({ vt: row.vt, state: row.state })),
       ocrEngines: record.ocrEngines, evaluation, events: record.log.filter(row => row.at >= record.startedAt - 500), worker: record.worker.filter(row => row.at >= record.startedAt - 500 && row.type !== 'infer'),
       raw: { initialInventory: record.initialInventory, startedAt: record.startedAt, log: record.log.filter(row => row.kind !== 'toast') } }
