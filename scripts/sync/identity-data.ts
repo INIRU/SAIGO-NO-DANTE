@@ -47,8 +47,10 @@ const REWRITE_ACQUISITION_TEXT = args.includes('--rewrite-acquisition-text')
 const ENRICH_ACQUISITION_GACHA = !args.includes('--no-enrich-gacha')
 const UPDATE_KEYWORDS = args.includes('--keywords')
 const REBUILD_KEYWORD_META = args.includes('--rebuild-keyword-meta')
+// The file name check matters in the site-sync bundle: bootstrap-data.mjs inlines this module, so import.meta.url there
+// is bootstrap-data's own URL and would start this sync too.
 const isDirectRun = process.argv[1]
-  ? import.meta.url === pathToFileURL(resolve(process.argv[1])).href
+  ? import.meta.url === pathToFileURL(resolve(process.argv[1])).href && /identity-data\.[cm]?[jt]s$/.test(process.argv[1])
   : false
 
 // 실제 키워드가 아닌 placeholder 값들 — ego_gifts.keyword 기본값으로 쓰임
