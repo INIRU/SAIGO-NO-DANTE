@@ -13,6 +13,16 @@ export type AnalysisSkill = {
   variant_order?: number | null
 }
 
+export type AnalysisEgoSkill = {
+  skill_type?: string | null
+  atkType?: string | null
+  attack_type?: string | null
+  category?: string | null
+  construe_level?: number | null
+  construeLevel?: number | null
+  skill_order?: number | null
+}
+
 export const ATTACK_TYPES = ['slash', 'pierce', 'blunt'] as const
 export const DEFENSE_TYPES = ['evade', 'defense', 'counter'] as const
 export type AttackType = (typeof ATTACK_TYPES)[number]
@@ -29,20 +39,6 @@ function toAttackType(value: string | null | undefined): AttackType | null {
 
 const pickHigherUptie = <T extends AnalysisSkill>(a: T | undefined, b: T) => (!a || (b.uptie_level ?? 0) > (a.uptie_level ?? 0) ? b : a)
 
-/** S1–S4 of one identity: base variant (a second form's skills are left out), highest uptie among the given rows. */
-function baseSkills(skills: AnalysisSkill[]): Map<number, AnalysisSkill> {
-  const best = new Map<number, AnalysisSkill>()
-  for (const skill of skills) {
-    if (skill.skill_order < 1 || skill.skill_order > 4) continue
-    const current = best.get(skill.skill_order)
-    const variant = skill.variant_order ?? 0
-    const currentVariant = current?.variant_order ?? 0
-    if (!current || variant < currentVariant) best.set(skill.skill_order, skill)
-    else if (variant === currentVariant) best.set(skill.skill_order, pickHigherUptie(current, skill))
-  }
-  return best
-}
-
 /**
  * Sin resources a deck produces: per identity, S1–S3 (base variant, highest uptie) × that slot's skill distribution.
  * Keys are normalized English sins so passive conditions match regardless of the data's language.
@@ -51,8 +47,16 @@ export function computeSinProduction(entries: { skills: AnalysisSkill[]; distrib
   const counts = Object.fromEntries(SIN_ORDER.map(sin => [sin, 0])) as Record<SinType, number>
   for (const { skills, distribution } of entries) {
     const weights = distribution ?? BASE_SKILL_DISTRIBUTION
-    for (const [order, skill] of baseSkills(skills)) {
-      if (order > 3) continue
+    const best = new Map<number, AnalysisSkill>()
+    for (const skill of skills) {
+      if (skill.skill_order < 1 || skill.skill_order > 3) continue
+      const current = best.get(skill.skill_order)
+      const variant = skill.variant_order ?? 0
+      const currentVariant = current?.variant_order ?? 0
+      if (!current || variant < currentVariant) best.set(skill.skill_order, skill)
+      else if (variant === currentVariant) best.set(skill.skill_order, pickHigherUptie(current, skill))
+    }
+    for (const [order, skill] of best) {
       const sin = normalizeSin(skill.sin_affinity)
       if (sin) counts[sin] += weights[order - 1] ?? 0
     }
@@ -60,23 +64,36 @@ export function computeSinProduction(entries: { skills: AnalysisSkill[]; distrib
   return counts
 }
 
-/**
- * Per identity, the attack type of S1–S3 and the type of its defense skill (S4), counted once each like the sin
- * resources: base variant at the given uptie. Uptie rows, second forms and EGO skills are not counted: a deck may list
- * four EGOs per sinner, which outnumbered the identity skills (2026-09-28: 67/36/31 for 12 identities).
- */
-export function computeAttackTypeCounts(identitySkills: AnalysisSkill[][]) {
+/** Attack types over every identity skill with an attack type (counters included) plus EGO skills; defense types over defensive skills. */
+export function computeAttackTypeCounts(identitySkills: AnalysisSkill[][], egoSkills: (AnalysisEgoSkill[] | null | undefined)[] = []) {
   const attack: Record<AttackType, number> = { slash: 0, pierce: 0, blunt: 0 }
   const defense: Record<DefenseType, number> = { evade: 0, defense: 0, counter: 0 }
   for (const skills of identitySkills) {
-    for (const [order, skill] of baseSkills(skills)) {
-      if (order === 4) {
-        if ((DEFENSE_TYPES as readonly string[]).includes(skill.skill_type)) defense[skill.skill_type as DefenseType]++
-        continue
-      }
+    const best = new Map<string, AnalysisSkill>()
+    for (const skill of skills) {
+      const key = `${skill.skill_order}:${skill.variant_order ?? 0}`
+      best.set(key, pickHigherUptie(best.get(key), skill))
+    }
+    for (const skill of best.values()) {
+      if ((DEFENSE_TYPES as readonly string[]).includes(skill.skill_type)) defense[skill.skill_type as DefenseType]++
       const type = toAttackType(skill.atk_type ?? skill.skill_type)
       if (type) attack[type]++
     }
+  }
+  const construe = (skill?: AnalysisEgoSkill) => skill?.construe_level ?? skill?.construeLevel ?? 0
+  for (const skills of egoSkills) {
+    const unique = new Map<string, AttackType>()
+    const levels = new Map<string, number>()
+    ;(skills ?? []).forEach((skill, index) => {
+      const type = toAttackType(skill.skill_type ?? skill.atkType ?? skill.attack_type)
+      if (!type) return
+      const key = `${skill.category ?? 'awakening'}:${skill.skill_order ?? index}:${type}`
+      if (!unique.has(key) || construe(skill) > (levels.get(key) ?? 0)) {
+        unique.set(key, type)
+        levels.set(key, construe(skill))
+      }
+    })
+    for (const type of unique.values()) attack[type]++
   }
   return { attack, defense }
 }
