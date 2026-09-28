@@ -5,23 +5,29 @@ export interface ExplorationThemeReference { id: string; texts: string[] }
 const normalized = (text: string) => text.normalize('NFKC').toLocaleLowerCase().replace(/[^\p{L}\p{N}]/gu, '')
 
 /**
- * Floor from the exploration banner ("N층 탐사 중"). Tesseract often reads 층 as 증 and 탐 as 람, but the digits and
- * the following 사 must be present; theme selection lists never show this banner.
+ * Floor from the exploration banner ("N층 탐사 중" / "Exploring Floor N" / "N階層 探査中"). Tesseract often reads 층 as 증
+ * and 탐 as 람, but the digits and the following 사 must be present; theme selection lists never show this banner. The
+ * Japanese 査 is often read as its simplified 查.
  */
 export function explorationFloor(text: string): number | null {
-  const match = /(?:^|[^0-9])([1-9][0-9]?)[층증충][탐람담]사/u.exec(text.normalize('NFKC').replace(/\s+/g, ''))
+  const flat = text.normalize('NFKC').replace(/\s+/g, '')
+  const match = /(?:^|[^0-9])([1-9][0-9]?)[층증충][탐람담]사/u.exec(flat) ?? /explor[il1]ngf[l1i]oor([1-9][0-9]?)(?![0-9])/iu.exec(flat) ??
+    /(?:^|[^0-9])([1-9][0-9]?)階層?探[査查]/u.exec(flat)
   if (!match) return null
   const floor = Number(match[1])
   return floor <= 15 ? floor : null
 }
 
 /**
- * Floor named by a pack selection header ("N층 테마팩 선택"), read line by line: digits of a neighbouring line (a timer
- * such as "9:02" above it) must not join the floor number, so the number needs a non-digit before it.
+ * Floor named by a pack selection header ("N층 테마팩 선택" / "SELECT FLOOR N THEME PACK" / "N階層テーマパック選択"), read
+ * line by line: digits of a neighbouring line (a timer such as "9:02" above it) must not join the floor number, so the
+ * number needs a non-digit before it.
  */
 export function themeSelectionHeaderFloor(text: string): number | null {
   for (const line of text.normalize('NFKC').split(/\r?\n/)) {
-    const match = /(?:^|[^0-9])([1-9][0-9]?)[층증]테마팩선택/u.exec(line.replace(/\s+/g, ''))
+    const flat = line.replace(/\s+/g, '')
+    const match = /(?:^|[^0-9])([1-9][0-9]?)[층증]테마팩선택/u.exec(flat) ?? /selectf[l1i]oor([1-9][0-9]?)themepack/iu.exec(flat) ??
+      /(?:^|[^0-9])([1-9][0-9]?)階層テーマ[パバ]ック選択/u.exec(flat)
     if (match && Number(match[1]) <= 15) return Number(match[1])
   }
   return null

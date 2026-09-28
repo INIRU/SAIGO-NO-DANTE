@@ -40,9 +40,12 @@ let reader: Awaited<ReturnType<typeof createWorker>> | null = null
 let busy = false
 let disposed = false
 
-// Korean PP-OCRv5 mobile det+rec on a real WebGPU adapter. Any load or run failure releases it for this worker's life
-// and the same request is read by Tesseract, which stays loaded as the fallback.
+// PP-OCR det (language-free) + the game language's rec model on a real WebGPU adapter. Any load or run failure releases
+// it for this worker's life and the same request is read by Tesseract, which stays loaded as the fallback.
 const PADDLE_ROOT = `${ROOT}/paddle`
+/** Recognition model and its character dictionary per game language (see paddle/PROVENANCE.md). */
+const REC_ROOTS: Record<Language, string> = { ko: PADDLE_ROOT, ja: `${PADDLE_ROOT}/ja`, en: `${PADDLE_ROOT}/en` }
+let language: Language = 'ko'
 // ONNX Runtime's WebGPU build ships its runtime with the scene worker assets.
 const ORT_ROOT = '/models/assist-scene/'
 const PADDLE_TIMEOUT_MS = 8000
@@ -102,8 +105,11 @@ function inkFromChannel(canvas: OffscreenCanvas, channel: 'min' | 'max') {
 
 // Last banner position that re-read as "N층 탐사", as frame fractions; the game UI does not move within a session.
 let bannerHint: { left: number; right: number; top: number; unit: number } | null = null
+/** A banner read naming its floor ("N층" / "Floor N" / "N階"), and the glyphs that locate the banner in each client. */
+const BANNER_FLOOR: Record<Language, RegExp> = { ko: /[1-9][층증충]/u, en: /f[l1i]oor[1-9]/iu, ja: /[1-9]階/u }
+const BANNER_SEED: Record<Language, RegExp> = { ko: /[탐람]/u, en: /explor/iu, ja: /[探査查]/u }
 
-/** Exploration banner ("N층 탐사 중") and the theme line below it, located by text rather than fixed pixels. */
+/** Exploration banner ("N층 탐사 중" / "Exploring Floor N" / "N階層 探査中") and the theme line below it, located by text. */
 async function readExploration(frame: ImageBitmap) {
   if (!reader) throw new Error('OCR not ready')
   const region = { x: 0, y: frame.height * 0.05, width: frame.width * 0.45, height: frame.height * 0.37 }
@@ -142,7 +148,7 @@ async function readExploration(frame: ImageBitmap) {
       top: bannerHint.top * frame.height, unit: bannerHint.unit * frame.height }
     await reader.setParameters({ tessedit_pageseg_mode: PSM.SINGLE_LINE })
     const floorText = await readBanner(hint.left, hint.right, hint.top, hint.unit)
-    if (/[1-9][층증충]/u.test(floorText.replace(/\s+/g, ''))) {
+    if (BANNER_FLOOR[language].test(floorText.replace(/\s+/g, ''))) {
       return { floorText, themeReads: await readTheme(hint.left, hint.top, hint.unit) }
     }
   }
@@ -152,9 +158,9 @@ async function readExploration(frame: ImageBitmap) {
     .filter(word => word.height >= 6)
   const sameRow = (word: OcrWord, other: OcrWord) =>
     Math.abs(other.top + other.height / 2 - word.top - word.height / 2) < word.height / 2
-  // Hangul is split into glyph boxes; prefer the row holding 탐(or 람), otherwise try the tallest rows because the
-  // banner is sometimes read as Latin letters. Every candidate must still re-read as "N층 탐사" below.
-  const hangul = words.filter(word => /[탐람]/u.test(word.text))
+  // Hangul is split into glyph boxes; prefer the row holding 탐(or 람) (Exploring, 探), otherwise try the tallest rows
+  // because the banner is sometimes misread. Every candidate must still re-read as a floor banner below.
+  const hangul = words.filter(word => BANNER_SEED[language].test(word.text))
   const tallest = [...words].sort((left, right) => right.height - left.height)
   const seeds = [...hangul, ...tallest].filter((word, index, all) =>
     all.findIndex(other => sameRow(other, word)) === index).slice(0, 3)
@@ -168,7 +174,7 @@ async function readExploration(frame: ImageBitmap) {
     const top = overview.top + (seed.top - 16) / scale
     const floorText = await readBanner(left, right, top, unit)
     if (!/[1-9]/.test(floorText)) continue
-    if (/[1-9][층증충]/u.test(floorText.replace(/\s+/g, ''))) {
+    if (BANNER_FLOOR[language].test(floorText.replace(/\s+/g, ''))) {
       bannerHint = { left: left / frame.width, right: right / frame.width, top: top / frame.height, unit: unit / frame.height }
     }
     const themeLine = await readTheme(left, top, unit)
@@ -222,12 +228,12 @@ async function loadPaddle() {
   try {
     ort.env.wasm.numThreads = 1
     ort.env.wasm.wasmPaths = ORT_ROOT
-    const response = await fetch(`${PADDLE_ROOT}/dict.json`)
+    const response = await fetch(`${REC_ROOTS[language]}/dict.json`)
     if (!response.ok) throw new Error('OCR dictionary unavailable')
     const alphabet = recAlphabet(await response.json())
     const options: ort.InferenceSession.SessionOptions = { executionProviders: ['webgpu'], graphOptimizationLevel: 'all' }
     det = await withTimeout(ort.InferenceSession.create(`${PADDLE_ROOT}/det.onnx`, options), 30000)
-    rec = await withTimeout(ort.InferenceSession.create(`${PADDLE_ROOT}/rec.onnx`, options), 30000)
+    rec = await withTimeout(ort.InferenceSession.create(`${REC_ROOTS[language]}/rec.onnx`, options), 30000)
     // The first run compiles shaders; it is paid here rather than on the first popup.
     await runModel(det, new Float32Array(3 * 544 * 960), [1, 3, 544, 960])
     if (alphabet.length !== (await runModel(rec, new Float32Array(3 * REC_HEIGHT * 320), [1, 3, REC_HEIGHT, 320])).dims[2]) {
@@ -470,10 +476,9 @@ self.onmessage = async (event: MessageEvent<Request>) => {
         return
       }
       reader = created
+      language = request.language
       respond({ type: 'ready' })
-      // The Korean model only serves Korean screens; other languages keep their Tesseract data.
-      if (request.language === 'ko') void loadPaddle()
-      else respond({ type: 'backend', engine: 'tesseract', adapter: '', loading: false, reason: 'language' })
+      void loadPaddle()
     } catch (error) {
       respond({ type: 'error', message: error instanceof Error ? error.message : 'OCR unavailable' })
     }

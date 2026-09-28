@@ -17,7 +17,7 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
   return {
     title: t('run.metaTitle'),
     description: t('run.metaDescription'),
-    alternates: { canonical: localeUrl('ko', '/planner/run') },
+    alternates: { canonical: localeUrl(lang, '/planner/run') },
   }
 }
 

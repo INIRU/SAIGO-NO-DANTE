@@ -48,3 +48,18 @@ export function readRecognitionMode(storage: Pick<Storage, 'getItem'> | null | u
     return 'balanced'
   }
 }
+
+/** The game client's language: it picks the OCR model and the gift names read first. It may differ from the site's. */
+export type GameLanguage = 'ko' | 'en' | 'ja'
+export const GAME_LANGUAGES: readonly GameLanguage[] = ['ko', 'en', 'ja']
+export const GAME_LANGUAGE_STORAGE_KEY = 'limbus-assist-game-language'
+
+/** Stored game language, or the site's language when nothing (or something invalid) is stored. */
+export function readGameLanguage(storage: Pick<Storage, 'getItem'> | null | undefined, fallback: GameLanguage): GameLanguage {
+  try {
+    const value = storage?.getItem(GAME_LANGUAGE_STORAGE_KEY)
+    return GAME_LANGUAGES.includes(value as GameLanguage) ? value as GameLanguage : fallback
+  } catch {
+    return fallback
+  }
+}

@@ -189,7 +189,7 @@ describe('selection wheel geometry', () => {
     // The starlight prompt over the selection screen.
     expect(isFusionSelectionScreen(`${screen} 별빛을 5 소모하여 합성 확률을 증가시키겠습니까? 취소 확인`)).toBe(false)
     expect(isFusionSelectionScreen('상점 새로고침 키워드')).toBe(false)
-    expect(fusionWheelAnchors([title, { text: '조합식', left: 966, top: 226, width: 74, height: 30 }, wish])).toEqual({ title, wish })
+    expect(fusionWheelAnchors([title, { text: '조합식', left: 966, top: 226, width: 74, height: 30 }, wish])).toEqual({ title, wish, titleWidth: 422 })
     expect(fusionWheelAnchors([title])).toBeNull()
   })
 
