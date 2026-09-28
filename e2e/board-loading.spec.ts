@@ -18,3 +18,13 @@ for (const kind of ['deck', 'planner']) test(`${kind} shelf shows a card skeleto
   await expect(shelf.locator('[data-discovery-empty]')).toBeVisible()
   expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBeLessThanOrEqual(1)
 })
+for (const kind of ['decks', 'planner/community']) test(`${kind} browse scrolls the page on phones and only the list on desktop`, async ({ page }) => {
+  test.setTimeout(90000)
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto(`/ko/${kind}?browse=all`)
+  await expect(page.locator('[data-board-browse]')).toBeVisible()
+  await expect.poll(() => page.evaluate(() => document.scrollingElement!.scrollHeight - innerHeight)).toBeGreaterThan(400)
+  expect(await page.evaluate(() => getComputedStyle(document.documentElement).overflowY)).not.toBe('hidden')
+  await page.setViewportSize({ width: 1440, height: 900 })
+  expect(await page.evaluate(() => getComputedStyle(document.documentElement).overflowY)).toBe('hidden')
+})
