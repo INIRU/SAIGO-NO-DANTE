@@ -9,6 +9,7 @@ import SkillDescription from '@/components/skill/SkillDescription'
 import { getDetailStatIconUrl } from '@/lib/utils/images'
 import { getGameUiAsset } from '@/lib/utils/game-ui'
 import { useTranslations } from 'next-intl'
+import { offenseLevelDisplay } from '@/lib/identity/level'
 
 const ATTACK_TYPE_MAP: Record<string, 'slash' | 'pierce' | 'blunt'> = {
   slash: 'slash',
@@ -47,8 +48,8 @@ export interface SkillFrameBlockProps {
   coins: number
   /** Attack type: 'slash' | 'pierce' | 'blunt' | null */
   atkType?: string | null
-  /** Offense level (raw value, displayed as-is) */
-  offenseLevel?: number | string | null
+  /** Stored offense level (level-60 baseline); shown at level 65 with its correction. */
+  offenseLevel?: number | null
   /** Attack weight (default 1) */
   atkWeight?: number
   /** Whether this is a defense skill */
@@ -87,6 +88,7 @@ export default function SkillFrameBlock({
   mentalConsume,
 }: SkillFrameBlockProps) {
   const t = useTranslations()
+  const offense = offenseLevel != null ? offenseLevelDisplay(offenseLevel) : null
 
   const atkTypeKey = normalizeAttackType(atkType)
   const showAtkWeight = Boolean(atkTypeKey) && atkWeight > 0
@@ -186,7 +188,7 @@ export default function SkillFrameBlock({
 
           {/* Offense level + attack weight */}
           <div className="flex items-center gap-x-3 gap-y-1 flex-wrap">
-            {offenseLevel != null && (
+            {offense && (
               <div className="flex items-center gap-0.5">
                 <Image
                   src={getDetailStatIconUrl(isDefense ? 'defense' : 'offense')}
@@ -201,8 +203,9 @@ export default function SkillFrameBlock({
                   textUnderlineOffset: '2px',
                   textDecorationColor: '#e8dcc8',
                 }}>
-                  {offenseLevel}
+                  {offense.level}
                 </span>
+                {offense.correction && <span style={{ fontFamily: 'var(--font-excelsior), sans-serif', color: '#888', fontSize: '0.875rem' }}>{offense.correction}</span>}
               </div>
             )}
             {showAtkWeight && (

@@ -18,6 +18,7 @@ import { UptieChangePanel, type StatChange } from '@/components/identity/UptieCh
 import { getDetailStatIconUrl } from '@/lib/utils/images'
 import { diffDescriptionLines, type SkillDiff } from '@/lib/utils/uptie-diff'
 import { useTranslations, useLocale } from 'next-intl'
+import { IDENTITY_STAT_BASE_LEVEL, offenseLevelDisplay } from '@/lib/identity/level'
 
 const ATTACK_TYPE_MAP: Record<string, 'slash' | 'pierce' | 'blunt'> = {
   slash: 'slash',
@@ -120,8 +121,7 @@ export default function IdentitySkillsTab({
           const v = variantMap[skill.id]
           const baseOrder = v?.baseOrder ?? (skill.skill_order >= 5 ? 3 : skill.skill_order)
           const diff = skillDiffs?.get(skill.id)
-          const offCorr = skill.offense_level != null ? skill.offense_level - level : null
-          const offCorrStr = offCorr === null ? '' : offCorr === 0 ? '' : offCorr > 0 ? `(+${offCorr})` : `(${offCorr})`
+          const offCorrStr = skill.offense_level != null ? offenseLevelDisplay(skill.offense_level - level + IDENTITY_STAT_BASE_LEVEL).correction : ''
           const isAttackSkill = baseOrder !== 4
           const isDefense = baseOrder === 4
           const skillLabel = isDefense

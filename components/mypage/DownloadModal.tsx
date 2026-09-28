@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { Download, X, ImageIcon } from 'lucide-react'
 import Dropdown from '@/components/ui/Dropdown'
 
@@ -15,6 +16,7 @@ interface DownloadModalProps {
 }
 
 export default function DownloadModal({ open, onClose, onConfirm, generating }: DownloadModalProps) {
+  const t = useTranslations('collectionPage')
   const [include, setInclude] = useState<Set<IncludeType>>(new Set(['identity', 'ego']))
   const [groupBy, setGroupBy] = useState<GroupBy>('sinner')
 
@@ -50,9 +52,9 @@ export default function DownloadModal({ open, onClose, onConfirm, generating }: 
         <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid #2a2015' }}>
           <div className="flex items-center gap-2">
             <ImageIcon size={16} style={{ color: '#c8900a' }} />
-            <span style={{ color: '#e8dcc8', fontSize: '0.875rem', fontWeight: 600 }}>이미지 다운로드</span>
+            <span style={{ color: '#e8dcc8', fontSize: '0.875rem', fontWeight: 600 }}>{t('downloadTitle')}</span>
           </div>
-          <button onClick={onClose} aria-label="닫기" style={{ color: '#666', cursor: 'pointer' }}>
+          <button onClick={onClose} aria-label={t('close')} style={{ color: '#666', cursor: 'pointer' }}>
             <X size={16} />
           </button>
         </div>
@@ -61,16 +63,16 @@ export default function DownloadModal({ open, onClose, onConfirm, generating }: 
         <div className="px-5 py-4 space-y-4">
           {/* 설명 */}
           <p style={{ color: '#888', fontSize: '0.75rem', lineHeight: 1.6 }}>
-            보유 현황을 이미지로 저장합니다. 포함할 항목과 분류 방식을 선택하세요.
+            {t('downloadDesc')}
           </p>
 
           {/* 포함 항목 */}
           <div>
             <span style={{ color: '#aaa', fontSize: '0.6875rem', fontWeight: 600, letterSpacing: '0.05em', display: 'block', marginBottom: '0.5rem' }}>
-              포함 항목
+              {t('include')}
             </span>
             <div className="flex gap-2">
-              {([['identity', '인격'], ['ego', 'E.G.O']] as [IncludeType, string][]).map(([type, label]) => {
+              {([['identity', t('identities')], ['ego', 'E.G.O']] as [IncludeType, string][]).map(([type, label]) => {
                 const active = include.has(type)
                 return (
                   <button
@@ -94,16 +96,16 @@ export default function DownloadModal({ open, onClose, onConfirm, generating }: 
           {/* 분류 옵션 */}
           <div>
             <span style={{ color: '#aaa', fontSize: '0.6875rem', fontWeight: 600, letterSpacing: '0.05em', display: 'block', marginBottom: '0.5rem' }}>
-              분류
+              {t('groupBy')}
             </span>
             <Dropdown
               value={groupBy}
               options={[
-                { value: 'sinner' as GroupBy, label: '수감자별' },
-                { value: 'keyword' as GroupBy, label: '키워드별' },
+                { value: 'sinner' as GroupBy, label: t('groupBySinner') },
+                { value: 'keyword' as GroupBy, label: t('groupByKeyword') },
               ]}
               onChange={setGroupBy}
-              prefix="분류:"
+              prefix={`${t('groupBy')}:`}
             />
           </div>
         </div>
@@ -120,7 +122,7 @@ export default function DownloadModal({ open, onClose, onConfirm, generating }: 
               cursor: 'pointer',
             }}
           >
-            취소
+            {t('cancel')}
           </button>
           <button
             onClick={() => onConfirm({ include, groupBy })}
@@ -134,7 +136,7 @@ export default function DownloadModal({ open, onClose, onConfirm, generating }: 
             }}
           >
             <Download size={12} />
-            {generating ? '생성 중...' : '다운로드'}
+            {generating ? t('generatingImage') : t('download')}
           </button>
         </div>
       </div>

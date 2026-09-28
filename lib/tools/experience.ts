@@ -1,3 +1,5 @@
+import { MAX_IDENTITY_LEVEL } from '@/lib/constants/game'
+
 /** Level costs: LimbusAssets-2/Data/static-data/common-data/common-data-a1c10.json
  * personalityLevelTable.expTable, extracted 2026-09-19 (61–65: 9792 each).
  * Reward bundles and ticket values: exp-dungeon-*.json (groupid = stage; stage 10 from
@@ -12,7 +14,9 @@ export const LEVEL_COSTS = [0, 0, 10, 12, 15, 20, 27, 40, 59, 88, 125,
   3047, 3456, 3899, 4378, 4899, 3899, 4378, 4899, 5468, 6075, 4899, 5468, 6075,
   6722, 7413, 6075, 6722, 7413, 8156, 8953, 7413, 7413, 7413, 7413, 7413,
   8156, 8156, 8156, 8156, 8156, 8953, 8953, 8953, 8953, 8953, 9792, 9792, 9792, 9792, 9792] as const
-export const MAX_EXPERIENCE_LEVEL = LEVEL_COSTS.length - 1
+// The table must reach the global level cap; a raised cap without new costs fails loudly.
+if (LEVEL_COSTS.length - 1 !== MAX_IDENTITY_LEVEL) throw new Error('LEVEL_COSTS does not match MAX_IDENTITY_LEVEL')
+export const MAX_EXPERIENCE_LEVEL = MAX_IDENTITY_LEVEL
 const MAX_EXPERIENCE = LEVEL_COSTS.reduce<number>((sum, cost) => sum + cost, 0)
 export const LUXCAVATIONS: { stage: number; modules: number; tickets: Tickets }[] = [
   [6, 7, 0, 0], [0, 3, 3, 0], [0, 4, 4, 0], [0, 0, 4, 2], [0, 1, 6, 2],

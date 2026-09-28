@@ -5,6 +5,7 @@ import { useEffect, useState, useCallback, useRef, forwardRef } from 'react'
 import Image from 'next/image'
 import { useCollectionModel } from '@/components/collection/useCollectionModel'
 import { useSearchParams } from 'next/navigation'
+import { useLocale, useTranslations } from 'next-intl'
 import { useQueryState, parseAsString } from 'nuqs'
 import { STORAGE_BASE, GRADE_COLORS, SIN_COLORS, normalizeSin, type SinType } from '@/lib/data/sinners'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
@@ -13,6 +14,8 @@ import DownloadModal from './DownloadModal'
 import CollectionBoard, { COLLECTION_ALL } from '@/components/collection/CollectionBoard'
 import Skeleton from '@/components/ui/Skeleton'
 import { normalizeThemeKeyword, THEME_KEYWORDS } from '@/lib/constants/keywords'
+import { getLocalizedKeywordName, getLocalizedName } from '@/lib/i18n/localize'
+import type { SupportedLang } from '@/lib/i18n/types'
 import { decodeCollectionAsync, BITS_IDENTITY, BITS_EGO, BITS_PER_SINNER } from '@/lib/collection'
 import type { SinnerInfo, IdentityInfo, EGOInfo, CollectionData } from '@/lib/collection'
 
@@ -68,20 +71,6 @@ function sinnerLogoUrl(sinnerId: string): string {
   return `${STORAGE_BASE}/icons/Sinners/${sinnerId}.webp`
 }
 
-// ── 키워드 필터 ─────────────────────────────────────────────────────────────
-const MAIN_KEYWORDS: { keyword: string; sin: SinType }[] = [
-  { keyword: '출혈', sin: 'wrath' },
-  { keyword: '화상', sin: 'lust' },
-  { keyword: '침잠', sin: 'gloom' },
-  { keyword: '파열', sin: 'gluttony' },
-  { keyword: '호흡', sin: 'pride' },
-  { keyword: '충전', sin: 'envy' },
-  { keyword: '진동', sin: 'sloth' },
-]
-
-// ── 등급 정렬 순서 ──────────────────────────────────────────────────────────
-const GRADE_ORDER = ['ZAYIN', 'TETH', 'HE', 'WAW', 'ALEPH']
-
 // ── 컴포넌트 ────────────────────────────────────────────────────────────────
 const LOCAL_STORAGE_KEY = 'limbus-collection'
 
@@ -93,6 +82,7 @@ interface CollectionSectionProps {
 }
 
 export default function CollectionSection({ savedCode, persistMode = 'db', titleAs: Title = 'h2' }: CollectionSectionProps) {
+  const t = useTranslations('collectionPage')
   const searchParams = useSearchParams()
 
   const [data, setData] = useState<CollectionData | null>(null)
@@ -110,7 +100,6 @@ export default function CollectionSection({ savedCode, persistMode = 'db', title
   const [generating, setGenerating] = useState(false)
   const [showDownloadModal, setShowDownloadModal] = useState(false)
   const [downloadOptions, setDownloadOptions] = useState<{ include: Set<'identity' | 'ego'>; groupBy: 'sinner' | 'keyword' }>({ include: new Set(['identity', 'ego']), groupBy: 'sinner' })
-  const { getIconUrl } = useKeywordData()
   const downloadRef = useRef<HTMLDivElement>(null)
 
   // 데이터 로드
@@ -202,18 +191,17 @@ export default function CollectionSection({ savedCode, persistMode = 'db', title
           setSaved(true)
           setTimeout(() => setSaved(false), 2000)
         } else {
-          const err = await res.json().catch(() => ({}))
-          setSaveError(err.error ?? `저장 실패 (${res.status})`)
+          setSaveError(t('saveFailed', { status: res.status }))
           setTimeout(() => setSaveError(null), 4000)
         }
       }
-    } catch (e) {
-      setSaveError('네트워크 오류로 저장에 실패했습니다.')
+    } catch {
+      setSaveError(t('networkError'))
       setTimeout(() => setSaveError(null), 4000)
     } finally {
       setSaving(false)
     }
-  }, [data, owned, persistMode])
+  }, [data, owned, persistMode, t])
 
   // local 모드: dirty 변경 시 debounce 자동 저장 + 로그인 시 DB 동기화
   useEffect(() => {
@@ -306,9 +294,9 @@ export default function CollectionSection({ savedCode, persistMode = 'db', title
   return (
     <section>
       <div className="mb-4 flex min-h-11 flex-wrap items-center justify-between gap-x-6 gap-y-2">
-        <Title className={Title === 'h1' ? 'text-[1.375rem] md:text-[1.75rem]' : 'text-[1.25rem]'} style={{ color: Title === 'h1' ? 'var(--gold)' : '#f0e6d2', fontFamily: 'var(--font-heading)' }}>보유 현황</Title>
+        <Title className={Title === 'h1' ? 'text-[1.375rem] md:text-[1.75rem]' : 'text-[1.25rem]'} style={{ color: Title === 'h1' ? 'var(--gold)' : '#f0e6d2', fontFamily: 'var(--font-heading)' }}>{t('title')}</Title>
         <dl className="flex gap-6">
-          {([['인격', stats.ownedIdentities, stats.totalIdentities], ['E.G.O', stats.ownedEgos, stats.totalEgos]] as const).map(([label, have, all]) => (
+          {([[t('identities'), stats.ownedIdentities, stats.totalIdentities], ['E.G.O', stats.ownedEgos, stats.totalEgos]] as const).map(([label, have, all]) => (
             <div key={label} className="grid min-w-[8rem] grid-cols-[1fr_auto] items-baseline gap-x-3 gap-y-1">
               <dt className="text-[0.8125rem] text-[#9c8b73]">{label}</dt>
               <dd style={{ color: 'var(--gold-light)', fontFamily: 'var(--font-title)', fontSize: '1.125rem', letterSpacing: '0.02em' }}>{have}<span style={{ color: '#8a7d69' }}>/{all}</span></dd>
@@ -330,18 +318,18 @@ export default function CollectionSection({ savedCode, persistMode = 'db', title
         onShowUnowned={show => setShowUnowned(show ? 'true' : 'false')}
         onToggle={toggle}
         actions={<>
-          <button type="button" onClick={() => setMany(visibleIds, true)} className={actionButton}><CheckSquare size={16} aria-hidden="true" />보이는 항목 모두 보유</button>
-          <button type="button" onClick={() => setMany(visibleIds, false)} className={actionButton}><Square size={16} aria-hidden="true" />모두 해제</button>
+          <button type="button" onClick={() => setMany(visibleIds, true)} className={actionButton}><CheckSquare size={16} aria-hidden="true" />{t('selectVisible')}</button>
+          <button type="button" onClick={() => setMany(visibleIds, false)} className={actionButton}><Square size={16} aria-hidden="true" />{t('clearAll')}</button>
           <span className="flex-1" />
-          {persistMode === 'db' && saved && <span className="flex items-center gap-1 text-[0.8125rem] text-[#6fcf97]"><Check size={14} aria-hidden="true" />저장했습니다</span>}
-          {persistMode === 'local' && autoSaved && <span className="flex items-center gap-1 text-[0.8125rem] text-[#6fcf97]"><Check size={14} aria-hidden="true" />자동 저장됨</span>}
+          {persistMode === 'db' && saved && <span className="flex items-center gap-1 text-[0.8125rem] text-[#6fcf97]"><Check size={14} aria-hidden="true" />{t('saved')}</span>}
+          {persistMode === 'local' && autoSaved && <span className="flex items-center gap-1 text-[0.8125rem] text-[#6fcf97]"><Check size={14} aria-hidden="true" />{t('autoSaved')}</span>}
           {saveError && <span className="text-[0.8125rem] text-[#e8a08a]" role="alert">{saveError}</span>}
-          <button type="button" onClick={copyShareLink} className={actionButton}>{copied ? <Check size={16} aria-hidden="true" /> : <Link2 size={16} aria-hidden="true" />}{copied ? '복사했습니다' : '공유 링크 복사'}</button>
-          <button type="button" onClick={() => setShowDownloadModal(true)} disabled={generating} className={actionButton}><Download size={16} aria-hidden="true" />{generating ? '이미지 만드는 중' : '이미지 저장'}</button>
+          <button type="button" onClick={copyShareLink} className={actionButton}>{copied ? <Check size={16} aria-hidden="true" /> : <Link2 size={16} aria-hidden="true" />}{copied ? t('copied') : t('copyLink')}</button>
+          <button type="button" onClick={() => setShowDownloadModal(true)} disabled={generating} className={actionButton}><Download size={16} aria-hidden="true" />{generating ? t('generatingImage') : t('saveImage')}</button>
           {persistMode === 'db' && (
             <button type="button" onClick={saveCollection} disabled={saving || !dirty}
               className="inline-flex min-h-10 items-center gap-1.5 rounded-lg bg-[var(--gold)] px-4 text-[0.875rem] font-bold text-[#0d0b08] transition-[filter,opacity] hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--gold-light)] disabled:cursor-default disabled:opacity-40 disabled:hover:brightness-100">
-              {saving ? '저장 중' : '저장'}
+              {saving ? t('saving') : t('save')}
             </button>
           )}
         </>}
@@ -396,6 +384,10 @@ const DownloadContainer = forwardRef<HTMLDivElement, {
   sinnerLogoUrl: (sid: string) => string
   identityProfileUrl: (i: IdentityInfo) => string
 }>(function DownloadContainer({ data, owned, stats, downloadOptions, sinnerLogoUrl, identityProfileUrl }, ref) {
+  const t = useTranslations('collectionPage')
+  const lang = useLocale() as SupportedLang
+  const { keywords } = useKeywordData()
+  const groupLabel = (kw: string) => kw === '기타' ? t('other') : getLocalizedKeywordName(kw, keywords[kw], lang)
   const showIdentity = downloadOptions.include.has('identity')
   const showEgo = downloadOptions.include.has('ego')
   const groupBy = downloadOptions.groupBy
@@ -433,17 +425,18 @@ const DownloadContainer = forwardRef<HTMLDivElement, {
 
   const renderIdentityGrid = (ids: IdentityInfo[]) => (
     <div style={{ marginBottom: '12px' }}>
-      <p style={{ color: 'var(--text-tertiary)', fontSize: '0.75rem', marginBottom: '10px' }}>인격</p>
+      <p style={{ color: 'var(--text-tertiary)', fontSize: '0.75rem', marginBottom: '10px' }}>{t('identities')}</p>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(8, 1fr)', gap: '8px' }}>
         {ids.map(identity => {
           const url = identityProfileUrl(identity)
+          const name = getLocalizedName(identity, lang)
           return (
             <div key={identity.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
               <div style={{ position: 'relative', width: '100%', aspectRatio: '3/4', borderRadius: '4px', overflow: 'hidden', border: '2px solid #8a6010', background: '#0a0806' }}>
                 {/* eslint-disable-next-line @next/next/no-img-element -- crossOrigin required for canvas image download */}
-                {url && <img src={url} alt={identity.name_kr} crossOrigin="anonymous" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top' }} />}
+                {url && <img src={url} alt={name} crossOrigin="anonymous" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top' }} />}
               </div>
-              <p style={{ fontSize: '0.75rem', color: '#c8a450', textAlign: 'center', lineHeight: 1.3, marginTop: '4px', wordBreak: 'keep-all' }}>{identity.name_kr}</p>
+              <p style={{ fontSize: '0.75rem', color: '#c8a450', textAlign: 'center', lineHeight: 1.3, marginTop: '4px', wordBreak: 'keep-all' }}>{name}</p>
             </div>
           )
         })}
@@ -458,13 +451,14 @@ const DownloadContainer = forwardRef<HTMLDivElement, {
         {egoList.map(ego => {
           const sinType = normalizeSin(ego.sin_affinity)
           const egoColor = sinType ? SIN_COLORS[sinType] : '#8a6010'
+          const name = getLocalizedName({ ...ego, name_kr: ego.name_kr ?? '' }, lang)
           return (
             <div key={ego.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
               <div style={{ position: 'relative', width: '100%', aspectRatio: '1', borderRadius: '4px', overflow: 'hidden', border: `2px solid ${egoColor}`, background: '#0a0806' }}>
                 {/* eslint-disable-next-line @next/next/no-img-element -- crossOrigin required for canvas image download */}
-                {ego.image_url && <img src={ego.image_url} alt={ego.name_kr ?? ''} crossOrigin="anonymous" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />}
+                {ego.image_url && <img src={ego.image_url} alt={name} crossOrigin="anonymous" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />}
               </div>
-              <p style={{ fontSize: '0.75rem', color: '#c8a450', textAlign: 'center', lineHeight: 1.3, marginTop: '3px', wordBreak: 'keep-all' }}>{ego.name_kr}</p>
+              <p style={{ fontSize: '0.75rem', color: '#c8a450', textAlign: 'center', lineHeight: 1.3, marginTop: '3px', wordBreak: 'keep-all' }}>{name}</p>
             </div>
           )
         })}
@@ -478,10 +472,10 @@ const DownloadContainer = forwardRef<HTMLDivElement, {
       <div style={{ textAlign: 'center', marginBottom: '32px', paddingBottom: '20px', borderBottom: '1px solid #2a2015' }}>
         <p style={{ color: 'var(--text-tertiary)', fontFamily: 'var(--font-perfect-dos), monospace', fontSize: '0.6875rem', letterSpacing: '0.2em', marginBottom: '8px' }}>SAIGO NO DANTE</p>
         <p style={{ color: '#c8900a', fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '8px' }}>
-          보유 현황{showIdentity && !showEgo ? ' — 인격' : !showIdentity && showEgo ? ' — E.G.O' : ''}
+          {t('title')}{showIdentity && !showEgo ? ` — ${t('identities')}` : !showIdentity && showEgo ? ' — E.G.O' : ''}
         </p>
         <p style={{ color: '#555', fontFamily: 'var(--font-perfect-dos), monospace', fontSize: '0.8125rem' }}>
-          {showIdentity && <>인격 {stats.ownedIdentities}/{stats.totalIdentities}</>}
+          {showIdentity && <>{t('identities')} {stats.ownedIdentities}/{stats.totalIdentities}</>}
           {showIdentity && showEgo && <span style={{ fontFamily: 'sans-serif' }}>{' · '}</span>}
           {showEgo && <>EGO {stats.ownedEgos}/{stats.totalEgos}</>}
         </p>
@@ -499,7 +493,7 @@ const DownloadContainer = forwardRef<HTMLDivElement, {
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px', paddingBottom: '8px', borderBottom: '1px solid #1a1510' }}>
                 {/* eslint-disable-next-line @next/next/no-img-element -- crossOrigin required for canvas image download */}
                 <img src={sinnerLogoUrl(sinner.id)} alt="" crossOrigin="anonymous" style={{ width: '1.75rem', height: '1.75rem' }} />
-                <span style={{ color: '#c8900a', fontSize: '1rem', fontWeight: 'bold' }}>{sinner.name_kr}</span>
+                <span style={{ color: '#c8900a', fontSize: '1rem', fontWeight: 'bold' }}>{getLocalizedName(sinner, lang)}</span>
                 <span style={{ color: '#555', fontFamily: 'var(--font-perfect-dos), monospace', fontSize: '0.6875rem' }}>{ids.length + egoList.length}/{allIds.length + allEgos.length}</span>
               </div>
               {ids.length > 0 && renderIdentityGrid(ids)}
@@ -517,7 +511,7 @@ const DownloadContainer = forwardRef<HTMLDivElement, {
           return (
             <div key={themeKw} style={{ marginBottom: '28px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px', paddingBottom: '8px', borderBottom: '1px solid #1a1510' }}>
-                <span style={{ color: '#c8900a', fontSize: '1rem', fontWeight: 'bold' }}>{themeKw}</span>
+                <span style={{ color: '#c8900a', fontSize: '1rem', fontWeight: 'bold' }}>{groupLabel(themeKw)}</span>
                 <span style={{ color: '#555', fontFamily: 'var(--font-perfect-dos), monospace', fontSize: '0.6875rem' }}>{ids.length + egoList.length}</span>
               </div>
               {ids.length > 0 && renderIdentityGrid(ids)}

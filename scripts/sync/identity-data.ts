@@ -27,6 +27,7 @@ import { join, resolve } from 'path'
 import { gameDataPaths } from './source-paths'
 import { identityMetadata } from './identity-metadata'
 import { getKeywordCategory } from '../../lib/keywords/category'
+import { IDENTITY_STAT_BASE_LEVEL } from '../../lib/constants/game'
 import { pathToFileURL } from 'url'
 import { z } from 'zod'
 import { config } from 'dotenv'
@@ -2124,7 +2125,7 @@ function calcIdentityStats(
   const hp_per_level = p.hp?.incrementByLevel ?? null
   const speed_min = p.minSpeedList?.[3] ?? null
   const speed_max = p.maxSpeedList?.[3] ?? null
-  const def_level = p.defCorrection != null ? 60 + p.defCorrection : null
+  const def_level = p.defCorrection != null ? IDENTITY_STAT_BASE_LEVEL + p.defCorrection : null
   const rarity = p.rank ?? null
   const slash_res = getResistance(p, 'SLASH')
   const pierce_res = getResistance(p, 'PENETRATE')
@@ -2315,7 +2316,7 @@ export function buildSkillRows(
           ? (coinList[0].operatorType === 'SUB' ? -(coinList[0].scale ?? 0) : (coinList[0].scale ?? null))
           : null,
         coins: coinList.length || 1,
-        offense_level: r.skillLevelCorrection != null ? 60 + r.skillLevelCorrection : null,
+        offense_level: r.skillLevelCorrection != null ? IDENTITY_STAT_BASE_LEVEL + r.skillLevelCorrection : null,
         description,
         flavor: nullableLocaleContent(best?.flavor),
         description_en: enSkillLvl ? buildDescriptionLang(enSkillLvl, enTagMap!, CONDITION_TAG_EN, 'en') || null : null,
@@ -2362,7 +2363,7 @@ export function buildSkillRows(
           ? (coinList[0].operatorType === 'SUB' ? -(coinList[0].scale ?? 0) : (coinList[0].scale ?? null))
           : null,
         coins: coinList.length || 1,
-        offense_level: r.skillLevelCorrection != null ? 60 + r.skillLevelCorrection : null,
+        offense_level: r.skillLevelCorrection != null ? IDENTITY_STAT_BASE_LEVEL + r.skillLevelCorrection : null,
         description,
         flavor: nullableLocaleContent(best?.flavor),
         description_en: enDefLvl ? buildDescriptionLang(enDefLvl, enTagMap!, CONDITION_TAG_EN, 'en') || null : null,
