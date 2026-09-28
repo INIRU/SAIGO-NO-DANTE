@@ -4,7 +4,7 @@ import { existsSync, readFileSync, readdirSync, mkdirSync, writeFileSync } from 
 import { join, resolve } from 'node:path'
 import { createHash } from 'node:crypto'
 import { createClient } from '@supabase/supabase-js'
-import { SINNER_SLUGS, STORAGE_BASE } from '../../lib/constants/game'
+import { IDENTITY_STAT_BASE_LEVEL, SINNER_SLUGS, STORAGE_BASE } from '../../lib/constants/game'
 import { loadEgoSyncContext, loadSourceEgoKeywords, cleanLocaleContent } from './identity-data'
 import { resolveEgoStages, type RawEgoStage } from './ego-stages'
 import { passiveStageRange } from './ego-passives'
@@ -153,7 +153,7 @@ async function main() {
           name: krSkill.name, name_en: enSkill.name, name_jp: jpSkill.name, description: context.formatSkill(krSkill, 'kr'), description_en: context.formatSkill(enSkill, 'en'), description_jp: context.formatSkill(jpSkill, 'jp'),
           skill_type: attack[stage.atkType!], sin_affinity: sin(stage.attributeType!), base_power: stage.defaultValue,
           coin_power: (coins[0].operatorType === 'SUB' ? -1 : 1) * coins[0].scale, coins: coins.length, atk_weight: stage.targetNum, mental_consume: stage.mpUsage, skill_order: category === 'awakening' ? 1 : 2,
-          offense_level: stage.skillLevelCorrection == null ? null : 60 + stage.skillLevelCorrection,
+          offense_level: stage.skillLevelCorrection == null ? null : IDENTITY_STAT_BASE_LEVEL + stage.skillLevelCorrection,
         })
       }
     }
