@@ -840,7 +840,12 @@
       "filterPlanned": "計画ギフトのみ",
       "filterHideOwned": "所持を隠す",
       "groupFloorPlan": "この階の計画",
-      "groupTargets": "最終目標"
+      "groupTargets": "最終ギフト",
+      "gameLanguageLabel": "ゲーム言語",
+      "gameLanguageHint": "Limbus Company内で設定している言語を選んでください。その言語の文字認識モデルを読み込みます。",
+      "gameLanguageLiveNote": "変更した言語は画面を再接続すると適用されます。",
+      "gameLanguageLoadFailed": "ゲーム言語の認識用テキストを読み込めませんでした。イベント認識の精度が下がる場合があります。",
+      "pipGroupOthers": "その他のギフト"
     },
     "community": "コミュニティプラン",
     "detail": {

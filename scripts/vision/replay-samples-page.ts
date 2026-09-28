@@ -12,7 +12,7 @@ function call(worker: Worker, message: Record<string, unknown>, transfer: Transf
 }
 const settle = (event: MessageEvent) => { const done = waiting.get(event.data?.requestId); if (done) { waiting.delete(event.data.requestId); done(event.data) } }
 
-async function init(giftReferences: { id: string; imageUrl: string }[], giftNames: { id: string; name: string }[]) {
+async function init(giftReferences: { id: string; imageUrl: string }[], giftNames: { id: string; name: string }[], language: 'ko' | 'en' | 'ja' = 'ko') {
   ocr = new Worker('/models/assist-ocr/ocr-worker.js', { type: 'module' })
   scene = new Worker('/models/assist-scene/scene-worker.js', { type: 'module' })
   const ocrReady = new Promise<string>((resolve, reject) => {
@@ -33,7 +33,7 @@ async function init(giftReferences: { id: string; imageUrl: string }[], giftName
   })
   ocr.addEventListener('message', settle)
   scene.addEventListener('message', settle)
-  ocr.postMessage({ type: 'init', language: 'ko', giftNames })
+  ocr.postMessage({ type: 'init', language, giftNames })
   scene.postMessage({ type: 'init', giftReferences, eventReferences: [] })
   return { ocr: await ocrReady, scene: await sceneReady }
 }

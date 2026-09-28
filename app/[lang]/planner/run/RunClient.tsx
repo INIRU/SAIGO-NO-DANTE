@@ -25,7 +25,8 @@ import RecognitionModeControl from '@/components/planner/run/RecognitionModeCont
 import DetectionToggles, { ToggleSwitch } from '@/components/planner/run/DetectionToggles'
 import { DETECTION_STORAGE_KEY, DEFAULT_DETECTION, readDetectionSettings, type DetectionSettings } from '@/lib/vision/detection-settings'
 import { readSampleConsent, SAMPLES_STORAGE_KEY } from '@/lib/vision/assist-samples'
-import { readRecognitionMode, RECOGNITION_MODE_STORAGE_KEY, type RecognitionMode } from '@/lib/vision/recognition-profile'
+import { GAME_LANGUAGE_STORAGE_KEY, GAME_LANGUAGES, readGameLanguage, readRecognitionMode, RECOGNITION_MODE_STORAGE_KEY, type GameLanguage,
+  type RecognitionMode } from '@/lib/vision/recognition-profile'
 import ConfirmModal from '@/components/ui/ConfirmModal'
 import { captureEvidence, useAssistCapture } from '@/lib/hooks/useAssistCapture'
 import { recognizableEvents } from '@/lib/utils/event-catalog'
@@ -65,19 +66,48 @@ export default function RunClient({ themes, gifts, recipes, identities, sinners,
   // Recognition skips exact copies of another event (their text would name several events at once); lookups keep them.
   const recognizable = useMemo(() => recognizableEvents(events, eventChoices), [events, eventChoices])
   const eventReferences = useMemo(() => recognizable.events.map(event => ({ id: String(event.id), imageUrl: event.image_url })), [recognizable])
-  const ocrCatalog = useMemo(() => ({
+  // The game client's language (the site's until chosen): it picks the OCR model, and its gift names go first.
+  const siteLanguage: GameLanguage = locale === 'en' || locale === 'ja' ? locale : 'ko'
+  const [gameLanguage, setGameLanguage] = useState<GameLanguage>(siteLanguage)
+  useEffect(() => { setGameLanguage(readGameLanguage(window.localStorage, siteLanguage)) }, [siteLanguage])
+  const changeGameLanguage = (next: GameLanguage) => {
+    setGameLanguage(next)
+    try { window.localStorage.setItem(GAME_LANGUAGE_STORAGE_KEY, next) } catch { /* applies to this session */ }
+  }
+  // The page carries the site language's long texts only; another game language's are loaded once they are needed.
+  type ExtraTexts = { gifts: { id: string; texts: string[] }[]; events: { id: string; texts: string[] }[];
+    choices: { id: string; texts: string[]; resultTexts: string[] }[] }
+  const [extraTexts, setExtraTexts] = useState<{ language: GameLanguage; data: ExtraTexts } | null>(null)
+  useEffect(() => {
+    if (gameLanguage === siteLanguage || extraTexts?.language === gameLanguage) return
+    let live = true
+    fetch(`/api/assist/texts/${gameLanguage}`).then(response => response.ok ? response.json() : null)
+      .then((data: ExtraTexts | null) => { if (live && data) setExtraTexts({ language: gameLanguage, data }) })
+      .catch(() => { if (live) toast.error(t('gameLanguageLoadFailed')) })
+    return () => { live = false }
+  }, [gameLanguage, siteLanguage, extraTexts?.language, t])
+  const ocrCatalog = useMemo(() => {
+    const extra = extraTexts && extraTexts.language === gameLanguage && gameLanguage !== siteLanguage ? extraTexts.data : null
+    const more = <T extends { id: string },>(rows: T[] | undefined) => new Map((rows ?? []).map(row => [row.id, row]))
+    const giftMore = more(extra?.gifts), eventMore = more(extra?.events), choiceMore = more(extra?.choices)
+    return {
     gifts: gifts.map(gift => ({
       id: String(gift.game_id),
-      texts: [gift.name, gift.name_en, gift.name_jp].filter((value): value is string => Boolean(value)),
-      effectTexts: [gift.effect_base, gift.effect_base_en, gift.effect_base_jp,
+      texts: (gameLanguage === 'en' ? [gift.name_en, gift.name, gift.name_jp] : gameLanguage === 'ja' ? [gift.name_jp, gift.name, gift.name_en]
+        : [gift.name, gift.name_en, gift.name_jp]).filter((value): value is string => Boolean(value)),
+      effectTexts: [...giftMore.get(String(gift.game_id))?.texts ?? [], gift.effect_base, gift.effect_base_en, gift.effect_base_jp,
         gift.effect_plus, gift.effect_plus_en, gift.effect_plus_jp,
         gift.effect_plusplus, gift.effect_plusplus_en, gift.effect_plusplus_jp]
         .filter((value): value is string => Boolean(value)),
     })),
-    events: recognizable.events.map(event => ({ id: String(event.id), texts: [event.name, event.desc_text, event.name_en, event.desc_text_en, event.name_jp, event.desc_text_jp].filter((value): value is string => Boolean(value)) })),
-    choices: recognizable.choices.map(choice => ({ id: String(choice.id), eventId: String(choice.event_id), texts: [choice.message, choice.message_en, choice.message_jp].filter((value): value is string => Boolean(value)),
-      resultTexts: [choice.result_text, choice.result_text_en, choice.result_text_jp].filter((value): value is string => Boolean(value)) })),
-  }), [gifts, recognizable])
+    events: recognizable.events.map(event => ({ id: String(event.id), texts: [event.name, event.desc_text, event.name_en, event.desc_text_en, event.name_jp, event.desc_text_jp,
+      ...eventMore.get(String(event.id))?.texts ?? []].filter((value): value is string => Boolean(value)) })),
+    choices: recognizable.choices.map(choice => ({ id: String(choice.id), eventId: String(choice.event_id),
+      texts: [choice.message, choice.message_en, choice.message_jp, ...choiceMore.get(String(choice.id))?.texts ?? []].filter((value): value is string => Boolean(value)),
+      resultTexts: [choice.result_text, choice.result_text_en, choice.result_text_jp, ...choiceMore.get(String(choice.id))?.resultTexts ?? []]
+        .filter((value): value is string => Boolean(value)) })),
+    }
+  }, [gifts, recognizable, gameLanguage, siteLanguage, extraTexts])
   const themeCatalog = useMemo(() => themes.map(theme => ({ id: String(theme.id),
     texts: [theme.name, theme.name_en, theme.name_jp].filter((value): value is string => Boolean(value)) })), [themes])
   // Balanced unless the user chose another mode in this browser; read after mount (the server cannot see storage).
@@ -107,7 +137,7 @@ export default function RunClient({ themes, gifts, recipes, identities, sinners,
     settleResultPopup(evidence, verdict, useRunStore.getState().giftInventory, recipes, giftMap, inFusion), [recipes, giftMap])
   const capture = useAssistCapture({ giftReferences, eventReferences, ocrCatalog, themeCatalog, mode: recognitionMode, detection, resolvePopup, samples: samples === true,
     heldGiftIds: state.giftInventory,
-    language: locale === 'en' || locale === 'ja' ? locale : 'ko', floor: state.phase === 'playing' ? state.currentFloor : null })
+    language: gameLanguage, floor: state.phase === 'playing' ? state.currentFloor : null })
   const { visualCandidates, ocrCandidates, eventChoiceEvidence } =
     captureEvidence(capture, state.phase === 'playing' ? state.currentFloor : null, Date.now())
   const { reportInventoryChange } = capture
@@ -190,6 +220,16 @@ export default function RunClient({ themes, gifts, recipes, identities, sinners,
   }, [])
 
   const recognitionControls = <div className="space-y-3" data-recognition-mode-control>
+    <fieldset className="min-w-0" data-game-language>
+      <legend className="mb-1.5 text-xs font-bold text-[var(--gold-light)]">{t('gameLanguageLabel')}</legend>
+      <div className="grid grid-cols-3 gap-1.5">
+        {GAME_LANGUAGES.map(language => <label key={language} className={`flex min-h-10 cursor-pointer items-center justify-center rounded-md border px-2 text-sm font-bold has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-[var(--gold-light)] ${gameLanguage === language ? 'border-[var(--gold)] bg-[var(--deck-filter-surface-active)] text-[var(--gold-light)]' : 'border-[var(--border)] bg-[var(--bg-panel)] text-[var(--text-primary)] hover:border-[var(--border-hover)]'}`}>
+          <input type="radio" name="assist-game-language" value={language} checked={gameLanguage === language} onChange={() => changeGameLanguage(language)} className="sr-only" />
+          {{ ko: '한국어', en: 'English', ja: '日本語' }[language]}
+        </label>)}
+      </div>
+      <p className="mt-1.5 break-keep text-[0.6875rem] leading-4 text-[var(--text-secondary)]">{t(capture.status === 'running' ? 'gameLanguageLiveNote' : 'gameLanguageHint')}</p>
+    </fieldset>
     <RecognitionModeControl value={recognitionMode} onChange={changeRecognitionMode} label={t('recognitionModeLabel')}
       note={capture.status === 'running' ? t('recognitionModeLiveNote') : undefined}
       options={{ fastest: { label: t('recognitionModeFastest'), description: t('recognitionModeFastestHint') },

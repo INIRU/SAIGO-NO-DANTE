@@ -1,18 +1,31 @@
 import type { OcrReference, OcrWord } from './ocr-match'
 
 const normalized = (text: string) => text.normalize('NFKC').toLocaleLowerCase().replace(/[^\p{L}\p{N}]/gu, '')
-const ACQUIRED_HEADER = '기프트를획득했습니다'
+/**
+ * The acquisition popup's header in each client ("E.G.O 기프트를 획득했습니다." / "E.G.O Gift GET!" /
+ * "E.G.Oギフトを獲得しました。"), normalized, with the glyph edits a misread may add. The short English one allows one.
+ */
+const ACQUIRED_HEADERS: [string, number][] = [['기프트를획득했습니다', 2], ['egogiftget', 1], ['ギフトを獲得しました', 2]]
 
-/** The shop's "E.G.O 기프트 구매" confirmation: not an acquisition yet. */
+/** The shop's "E.G.O 기프트 구매" / "Purchase E.G.O Gifts" / "E.G.Oギフト購入" confirmation: not an acquisition yet. */
 export function popupPurchaseHeader(value: string): boolean {
-  return normalized(value).includes('기프트구매')
+  const text = normalized(value)
+  return text.includes('기프트구매') || text.includes('purchaseegogift') || text.includes('ギフト購入')
 }
 
 export function popupHeaderEvidence(value: string): boolean {
   const text = normalized(value)
-  if (text.includes(ACQUIRED_HEADER)) return true
-  const target = [...ACQUIRED_HEADER]
-  const characters = [...text]
+  return ACQUIRED_HEADERS.some(([header, edits]) => text.includes(header) || nearHeader([...text], [...header], edits))
+}
+
+/** Whether a full-frame read shows an acquisition popup's own sentence (not the companion's "획득" notices). */
+export function showsAcquiredHeader(value: string): boolean {
+  const text = normalized(value)
+  return ACQUIRED_HEADERS.some(([header]) => text.includes(header))
+}
+
+/** Some window of `characters` within `edits` of `target` (±2 glyphs long). */
+function nearHeader(characters: string[], target: string[], edits: number): boolean {
   for (let start = 0; start < characters.length; start++) for (let length = target.length - 2; length <= target.length + 2; length++) {
     if (start + length > characters.length) continue
     const source = characters.slice(start, start + length)
@@ -24,7 +37,7 @@ export function popupHeaderEvidence(value: string): boolean {
         previous[column - 1] + (source[row - 1] === target[column - 1] ? 0 : 1))
       previous = current
     }
-    if (previous[target.length] <= 2) return true
+    if (previous[target.length] <= edits) return true
   }
   return false
 }

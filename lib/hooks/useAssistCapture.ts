@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { VisualCandidates, VisualMatch, VisualReference } from '@/lib/vision/embedding-match'
 import { corroboratedChoiceEvent, effectGiftIds, eventScreenEvidence, matchOcrCandidates, type EventScreenEvidence, type OcrCatalog, type OcrMatches,
   type OcrWord } from '@/lib/vision/ocr-match'
-import { acquiredGiftFromPopup, acquisitionFloor, AUTO_ACQUIRE_EXCLUDED_GIFT_IDS, popupCandidateIds, popupHeaderEvidence, type PopupLabelRead } from '@/lib/vision/popup-evidence'
+import { acquiredGiftFromPopup, acquisitionFloor, AUTO_ACQUIRE_EXCLUDED_GIFT_IDS, popupCandidateIds, popupHeaderEvidence, showsAcquiredHeader, type PopupLabelRead } from '@/lib/vision/popup-evidence'
 import type { RecipePopupEvidence } from '@/lib/planner/fusion'
 import type { StableScene } from '@/lib/vision/scene-state'
 import { isMobileDevice } from '@/lib/vision/device'
@@ -12,7 +12,7 @@ import { RECOGNITION_PROFILES, type RecognitionMode } from '@/lib/vision/recogni
 import { DEFAULT_DETECTION, type DetectionSettings } from '@/lib/vision/detection-settings'
 import { AssistSampleRecorder } from '@/lib/vision/assist-samples'
 import { AssistReportTally, sendAssistReport, type ReportAction } from '@/lib/vision/assist-report'
-import { EMPTY_SALE_STATE, isSellWindow, readSaleStep, sellCost, sellGiftId } from '@/lib/vision/sell-evidence'
+import { EMPTY_SALE_STATE, isSellWindow, readSaleStep, sellCost, sellGiftId, sellQuestion } from '@/lib/vision/sell-evidence'
 import { readSkillExchange, type SkillExchangeRead } from '@/lib/vision/skill-exchange'
 import { acquisitionSeq, acquisitionsToRelease, continuesFusionDialog, dialogForResult, dialoglessFusionResult, fusionAnchors,
   fusionConfirmation, fusionDialogClosed, fusionMaterials, onFusionScreen, showsFusionTitle,
@@ -1133,7 +1133,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
           const shopScreen = latestLabel.current === 'shop' || onFusionScreen(latestLabel.current, fusionTitleAt.current, now) ||
             now - sellWindowAt.current < 3000 || now - skillWindowAt.current < 3000
           // With one shared worker, popups go first, but a steady stream of detections must not starve the banner.
-          if (!alive(lane) || shopScreen || !detectionRef.current.themes || language !== 'ko' || !themeReferences.current?.length || lane.inFlight || !lane.ready || now - exploredAt < delay ||
+          if (!alive(lane) || shopScreen || !detectionRef.current.themes || !themeReferences.current?.length || lane.inFlight || !lane.ready || now - exploredAt < delay ||
             (shared && popupQueue.current.length && delay >= profile.exploreMs.idle && now - exploredAt < delay * 2) ||
             !hasFrame()) return
           exploredAt = now
@@ -1252,7 +1252,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
                 lastDialogAt.current = Math.max(lastDialogAt.current, pending.capturedAt)
               }
               // The selection screen or an acquisition popup without the dialog: a dialog read after it is a new fusion.
-              if (!confirmation && (isFusionSelectionScreen(result.text) || /획득했습니다/.test(result.text.normalize('NFKC').replace(/\s+/g, '')))) {
+              if (!confirmation && (isFusionSelectionScreen(result.text) || showsAcquiredHeader(result.text))) {
                 dialogBreakAt.current = Math.max(dialogBreakAt.current, capture.at)
               }
               if (confirmation) {
@@ -1692,7 +1692,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
     // One sale is one sample group: settled by a sale, uploaded when its dialog could not be read.
     if (step.state.dialog || isSellWindow(text)) sampleRecorder.current?.begin('sale')
     if (step.sold.length) settleSample('sale', 'sale', null)
-    else if (!step.state.dialog && text.replace(/\s+/g, '').includes('판매하시겠')) settleSample('sale', 'sale', { reason: 'sale-unresolved' })
+    else if (!step.state.dialog && sellQuestion(text)) settleSample('sale', 'sale', { reason: 'sale-unresolved' })
     if (step.sold.length) setGiftSales(items => [...items, ...step.sold.map(sale =>
       ({ giftId: sale.giftId, token: `sell:${sale.at}:${sale.giftId}`, capturedAt: sale.at }))].slice(-8))
   }

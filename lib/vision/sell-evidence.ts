@@ -1,5 +1,5 @@
 /**
- * Gift sales in the shop's "E.G.O 기프트 판매" window (Korean client). A sale shows no acquisition popup: the only
+ * Gift sales in the shop's "E.G.O 기프트 판매" window (Korean, English and Japanese clients). A sale shows no acquisition popup: the only
  * evidence is the confirmation dialog "[이름]을(를) 코스트 N에 판매하시겠습니까?" (about 0.5-0.7 s) and the cost in the top
  * right, "current ▸ after sale" while a gift is selected. Cancel and confirm both close the dialog, so a sale counts only
  * once the cost afterwards starts with the cost before plus the price (video review 2026-09-24, 13 sales).
@@ -17,18 +17,41 @@ export const SALE_CONFIRM_MS = 5000
 const key = (value: string) => value.normalize('NFKC').replace(/[\s[\]()「」『』【】·.,:;!?'"~\-|]/g, '').toLowerCase()
 const compact = (text: string) => text.normalize('NFKC').replace(/\s+/g, '')
 
+/**
+ * The confirmation question in each client: "[이름]을(를) 코스트 N에 판매하시겠습니까?" / "Sell [name] for N Cost?" /
+ * "[名前]をコストNで売却しますか？" (the game's localization strings).
+ */
+export function sellQuestion(text: string): boolean {
+  const flat = compact(text)
+  return flat.includes('판매하시겠') || /sell.{0,80}?for\d{1,4}cost/i.test(flat) || /で売却しますか/.test(flat)
+}
+
 /** Gift name and price from a full-frame read that shows the sell confirmation dialog, in any line order. */
 export function sellDialog(text: string): SellDialog | null {
   const flat = compact(text)
-  if (!flat.includes('판매하시겠')) return null
-  const name = flat.match(/\[?([^[\]()|]{1,40}?)[\])]을[([]를/)?.[1]
-  const price = flat.match(/트(\d{1,4})에/)?.[1]
+  let name: string | undefined, price: string | undefined
+  if (flat.includes('판매하시겠')) {
+    name = flat.match(/\[?([^[\]()|]{1,40}?)[\])]을[([]를/)?.[1]
+    price = flat.match(/트(\d{1,4})에/)?.[1]
+  } else if (/sell.{0,80}?for\d{1,4}cost/i.test(flat)) {
+    // Spaces are gone, so the name reads "CigaretteHolder"; gift names are matched without spaces anyway.
+    // The window title "Sell E.G.O Gift" precedes the question: the name starts after the last "Sell".
+    const match = flat.match(/sell\[?((?:(?!sell)[^[\]|]){1,60}?)\]?for(\d{1,4})cost/i)
+    name = match?.[1]; price = match?.[2]
+  } else if (/で売却しますか/.test(flat)) {
+    const match = flat.match(/\[?([^[\]|]{1,40}?)\]?をコスト(\d{1,4})で売却/)
+    name = match?.[1]; price = match?.[2]
+  }
   return name && price ? { name, price: Number(price) } : null
 }
 
-/** Whether a read is the sell window (its title), where the top-right cost belongs to selling. */
+/**
+ * Whether a read is the sell window (its title "E.G.O 기프트 판매" / "Sell E.G.O Gift" / "E.G.Oギフト売却"), where the
+ * top-right cost belongs to selling. The shop's own "Sell Gifts" button has no E.G.O in it.
+ */
 export function isSellWindow(text: string): boolean {
-  return compact(text).includes('기프트판매')
+  const flat = compact(text)
+  return flat.includes('기프트판매') || /sellE\.?G\.?[O0]\.?gift/i.test(flat) || flat.includes('ギフト売却')
 }
 
 /** Digit groups of the top-right cost display, in reading order: ["129229"], ["683", "783"] or ["683"]. */
