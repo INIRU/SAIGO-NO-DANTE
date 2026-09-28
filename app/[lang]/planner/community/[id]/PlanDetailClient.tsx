@@ -127,7 +127,6 @@ type ThemeData = {
   name: string
   name_en?: string | null
   name_jp?: string | null
-  dungeon_id: string | null
   ego_gift_ids: number[] | null
   specific_ego_gift_ids: number[] | null
   fixed_reward_gift_ids?: number[] | null

@@ -123,7 +123,6 @@ const RawGiftSchema = z.object({
   keyword: z.string().optional(),
   tag: z.array(z.string()).optional(),
   price: z.number().optional(),
-  sellPrice: z.number().optional(),
   lockType: z.boolean().optional(),
   upgradeDataList: z.array(GiftUpgradeSchema).optional(),
   convertDataList: z.array(z.number()).optional(),
@@ -143,6 +142,7 @@ const LocalizedGiftSchema = z.object({
 const ThemeRawSchema = z.object({
   id: z.number(),
   desc: z.string().optional(),
+  hiddenThemeRate: z.number().optional(),
   egoGiftPool: z.array(z.number()).optional(),
   specificEgoGiftPool: z.array(z.number()).optional(),
   uiConfigs: z.object({
@@ -374,7 +374,6 @@ interface GiftRow {
   keyword: string
   grade: string
   price: number | null
-  sell_price: number | null
   buy_disabled: boolean
   enhancement: boolean
   effect_base: string | null
@@ -702,7 +701,6 @@ async function syncGifts(): Promise<void> {
       keyword,
       grade: parseGrade(item.tag),
       price: item.price ?? null,
-      sell_price: item.sellPrice ?? null,
       buy_disabled: isBuyDisabled(item.tag),
       enhancement: upgrades.length > 1,
       effect_base: effectBase,
@@ -808,7 +806,7 @@ async function syncGifts(): Promise<void> {
   const { data: existingGifts, error: fetchErr } = await supabase
     .schema('limbus')
     .from('ego_gifts')
-    .select('id, game_id, name, name_en, name_jp, keyword, grade, effect_base, effect_base_en, effect_base_jp, effect_plus, effect_plus_en, effect_plus_jp, effect_plusplus, effect_plusplus_en, effect_plusplus_jp, price, sell_price, buy_disabled, enhancement, is_synthesis, convert_to, difficulty, image_url, activation_condition')
+    .select('id, game_id, name, name_en, name_jp, keyword, grade, effect_base, effect_base_en, effect_base_jp, effect_plus, effect_plus_en, effect_plus_jp, effect_plusplus, effect_plusplus_en, effect_plusplus_jp, price, buy_disabled, enhancement, is_synthesis, convert_to, difficulty, image_url, activation_condition')
 
   if (fetchErr) throw new Error(`ego_gifts fetch 실패: ${fetchErr.message}`)
 
@@ -848,7 +846,6 @@ async function syncGifts(): Promise<void> {
       if ((existing.effect_plusplus_en ?? null) !== (gift.effect_plusplus_en ?? null)) changes.push('effect_plusplus_en 변경')
       if ((existing.effect_plusplus_jp ?? null) !== (gift.effect_plusplus_jp ?? null)) changes.push('effect_plusplus_jp 변경')
       if ((existing.price ?? null) !== gift.price) changes.push(`price: ${existing.price} → ${gift.price}`)
-      if ((existing.sell_price ?? null) !== gift.sell_price) changes.push(`sell_price: ${existing.sell_price} → ${gift.sell_price}`)
       if (existing.buy_disabled !== gift.buy_disabled) changes.push(`buy_disabled: ${existing.buy_disabled} → ${gift.buy_disabled}`)
       if (existing.enhancement !== gift.enhancement) changes.push(`enhancement: ${existing.enhancement} → ${gift.enhancement}`)
       if ((existing.convert_to ?? null) !== (gift.convert_to ?? null)) changes.push(`convert_to: ${existing.convert_to} → ${gift.convert_to}`)
@@ -938,7 +935,6 @@ interface ThemeRow {
   name: string
   name_en?: string | null
   name_jp?: string | null
-  dungeon_id: null
   unlock_code: number | null
   ego_gift_ids: number[]
   specific_ego_gift_ids: number[]
@@ -947,6 +943,8 @@ interface ThemeRow {
   difficulty?: string | null
   floor_info?: Record<string, number[] | string> | null
   is_hidden?: boolean
+  /** Appearance rate of a hidden pack (mirrordungeon-theme-floor-hidden hiddenThemeRate, e.g. 0.0002). */
+  hidden_rate: number | null
   /** Gifts a pack always gives when its boss is cleared (extreme packs), from the boss stages' rewards. */
   fixed_reward_gift_ids: number[]
 }
@@ -1085,7 +1083,6 @@ async function syncThemes(): Promise<void> {
         name,
         name_en: themeNameEnMap.get(t.id) ?? null,
         name_jp: themeNameJpMap.get(t.id) ?? null,
-        dungeon_id: null,
         unlock_code: t.unlockCondition?.unlockCode ?? null,
         ego_gift_ids: t.egoGiftPool ?? [],
         specific_ego_gift_ids: t.specificEgoGiftPool ?? [],
@@ -1094,6 +1091,7 @@ async function syncThemes(): Promise<void> {
         difficulty,
         floor_info: Object.keys(floorInfo).length > 0 ? floorInfo : null,
         is_hidden: isHiddenFile,
+        hidden_rate: isHiddenFile ? t.hiddenThemeRate ?? null : null,
         fixed_reward_gift_ids: [...new Set((t.mapGenOption?.bossPool ?? []).flatMap(stage => {
           const gift = stageRewards.get(stage)
           return gift !== undefined && giftIds.has(gift) ? [gift] : []
@@ -1107,7 +1105,7 @@ async function syncThemes(): Promise<void> {
   const { data: existingThemes, error: fetchErr } = await supabase
     .schema('limbus')
     .from('ego_gift_themes')
-    .select('id, name, name_en, name_jp, unlock_code, ego_gift_ids, specific_ego_gift_ids, image_url, boss_image_url, difficulty, floor_info, is_hidden, fixed_reward_gift_ids')
+    .select('id, name, name_en, name_jp, unlock_code, ego_gift_ids, specific_ego_gift_ids, image_url, boss_image_url, difficulty, floor_info, is_hidden, hidden_rate, fixed_reward_gift_ids')
 
   if (fetchErr) throw new Error(`ego_gift_themes fetch 실패: ${fetchErr.message}`)
 
@@ -1141,6 +1139,7 @@ async function syncThemes(): Promise<void> {
       if ((existing as Record<string, unknown>).unlock_code !== theme.unlock_code) changes.push(`unlock_code: ${(existing as Record<string, unknown>).unlock_code} → ${theme.unlock_code}`)
       if ((existing as Record<string, unknown>).is_hidden !== theme.is_hidden) changes.push(`is_hidden: ${(existing as Record<string, unknown>).is_hidden} → ${theme.is_hidden}`)
       if (!stableJsonEqual(existing.floor_info ?? null, theme.floor_info ?? null)) changes.push(`floor_info 변경`)
+      if (((existing as Record<string, unknown>).hidden_rate ?? null) !== theme.hidden_rate) changes.push(`hidden_rate: ${(existing as Record<string, unknown>).hidden_rate} → ${theme.hidden_rate}`)
 
       if (changes.length > 0) {
         updateCount++

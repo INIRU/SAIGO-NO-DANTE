@@ -412,7 +412,6 @@ describe('identity-data sync helpers', () => {
           name_jp: null,
           description_en: null,
           description_jp: null,
-          defense_level: null,
         },
         {
           id: 'db-skill-1',
@@ -421,7 +420,6 @@ describe('identity-data sync helpers', () => {
           name_jp: undefined,
           description_en: undefined,
           description_jp: undefined,
-          defense_level: undefined,
         },
       ],
     )).toBe(false)

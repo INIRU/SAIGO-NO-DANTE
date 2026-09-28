@@ -12,7 +12,7 @@ vi.mock('next-intl', () => ({
 vi.mock('@/components/ui/ThemePackCard', () => ({ default: ({ theme }: { theme: ThemeData }) => <button type="button" data-card={theme.id} /> }))
 
 const theme = (id: string, name: string, floorInfo: ThemeData['floor_info']): ThemeData =>
-  ({ id, name, floor_info: floorInfo, dungeon_id: null, ego_gift_ids: [], specific_ego_gift_ids: [], image_url: null, difficulty: null })
+  ({ id, name, floor_info: floorInfo, ego_gift_ids: [], specific_ego_gift_ids: [], image_url: null, difficulty: null })
 const themes = [theme('1003', '밤을 헤매는 자들', { '노말': [1, 2], '하드': [1] }), theme('1102', '거미의 방', { '노말': [2], '하드': [2, 3] })]
 
 /** Floor 2 with a recorded pack, gifts on both floors and a source plan, as a run looks mid-way. */

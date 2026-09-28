@@ -513,7 +513,6 @@
     "close": "閉じる",
     "effect": "効果",
     "price": "購入",
-    "sell": "売却",
     "notForSale": "ショップ購入不可",
     "condition": "発動条件",
     "conditionIdentity": "{keywords}人格{count}人以上",

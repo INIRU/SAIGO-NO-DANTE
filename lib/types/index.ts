@@ -99,7 +99,6 @@ export type Skill = {
   skill_order: number
   atk_weight?: number
   offense_level?: number
-  quantity?: number
   uptie_level?: number
   variant_order?: number
   name_en?: string | null
@@ -240,7 +239,6 @@ export type EgoGiftNote = {
 export type EgoGiftTheme = {
   id: number
   name: string
-  dungeon_id: number | null
   ego_gift_ids: number[]
   specific_ego_gift_ids: number[]
 }

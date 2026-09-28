@@ -15,7 +15,7 @@ vi.mock('@/components/ui/GiftArtwork', () => ({ default: () => <span data-test-a
 vi.mock('@/components/ui/ImageWithFallback', () => ({ default: () => <span data-test-poster /> }))
 
 const theme = (id: string, gifts: number[], exclusive: number[] = []): ThemeData =>
-  ({ id, name: `pack-${id}`, floor_info: { '하드': [1] }, dungeon_id: null, ego_gift_ids: gifts, specific_ego_gift_ids: exclusive, image_url: `https://example.test/${id}.webp`, difficulty: null })
+  ({ id, name: `pack-${id}`, floor_info: { '하드': [1] }, ego_gift_ids: gifts, specific_ego_gift_ids: exclusive, image_url: `https://example.test/${id}.webp`, difficulty: null })
 const gift = (game_id: number) => ({ id: String(game_id), game_id, name: `gift-${game_id}`, keyword: null, grade: null, image_url: null, effect_base: null, effect_plus: null }) as GiftData
 const giftMap = new Map([10, 20, 30].map(id => [id, gift(id)]))
 for (const [id, grade] of [[40, '4'], [50, '5'], [60, '3']] as const) giftMap.set(id, { ...gift(id), grade })
