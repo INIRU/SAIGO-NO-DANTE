@@ -4,6 +4,7 @@ import { memo } from 'react'
 import Image from 'next/image'
 import { STORAGE_BASE } from '@/lib/constants/game'
 import { SIN_COLORS, SIN_KR_TO_EN, SIN_ORDER, getSinIconUrl } from '@/lib/constants/sin'
+import { computeAttackTypeCounts } from '@/lib/decks/deck-analysis'
 import PlannerPassivePanel from '@/components/passive/PassivePanel'
 
 const S = STORAGE_BASE
@@ -69,13 +70,8 @@ function DeckStatsPanel({
   const slotIds = new Set(identitySlots.map(s => s.identity_id).filter(Boolean))
   const selectedSkills = skills.filter(sk => slotIds.has(sk.identity_id))
 
-  // ── 공격 유형 집계 ──
-  const atkCount: Record<string, number> = { slash: 0, pierce: 0, blunt: 0 }
-  const defCount: Record<string, number> = { evade: 0, defense: 0, counter: 0 }
-  for (const sk of selectedSkills) {
-    if (sk.skill_order <= 3 && sk.skill_type in atkCount) atkCount[sk.skill_type]++
-    if (sk.skill_order === 4 && sk.skill_type in defCount) defCount[sk.skill_type]++
-  }
+  // ── 공격 유형 집계: 인격마다 S1–S3·수비 스킬을 한 번씩(동기화 단계 행을 모두 세지 않는다) ──
+  const { attack: atkCount, defense: defCount } = computeAttackTypeCounts(identitySlots.map(slot => selectedSkills.filter(skill => skill.identity_id === slot.identity_id)))
   const atkTotal = Object.values(atkCount).reduce((a, b) => a + b, 0) || 1
 
   const ATK_LABELS: Record<string, string> = { slash: '참격', pierce: '관통', blunt: '타격' }

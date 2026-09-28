@@ -69,15 +69,7 @@ type EgoSlot = {
     folder_name: string | null
     image_url: string | null
     cost: number[] | null
-    ego_skills?: EgoAttackSkill[] | null
   } | null
-}
-
-type EgoAttackSkill = {
-  skill_type: string | null
-  category: string | null
-  construe_level: number | null
-  skill_order: number | null
 }
 
 type DeckRecommendationIdentity = {
@@ -291,52 +283,7 @@ function getRecommendationContentType(contentType: string | null | undefined): s
   return normalized && normalized !== '없음' ? normalized : null
 }
 
-function getSelectedEgoIds(deckEgos: Array<{ ego: { id?: string | null } | { id?: string | null }[] | null }> | null | undefined): string[] {
-  const egoIds = new Set<string>()
-  for (const row of deckEgos ?? []) {
-    const ego = unwrapOne(row.ego)
-    if (ego?.id) egoIds.add(ego.id)
-  }
-  return [...egoIds]
-}
 
-async function fetchEgoAttackSkillsByEgoId(
-  supabase: ReturnType<typeof createDeckReadClient>,
-  egoIds: string[],
-  deckId: string,
-): Promise<Map<string, EgoAttackSkill[]>> {
-  const skillsByEgoId = new Map<string, EgoAttackSkill[]>()
-  if (egoIds.length === 0) return skillsByEgoId
-
-  const { data, error } = await supabase
-    .schema('limbus')
-    .from('ego_skills')
-    .select('ego_id, skill_type, category, construe_level, skill_order')
-    .in('ego_id', egoIds)
-
-  if (error) {
-    Sentry.captureException(error, {
-      tags: { location: 'decks/[id]/page:fetchEgoAttackSkillsByEgoId' },
-      extra: { deckId, msg: 'Failed to fetch selected E.G.O skill attack types' },
-    })
-    return skillsByEgoId
-  }
-
-  for (const row of data ?? []) {
-    if (typeof row.ego_id !== 'string') continue
-    const skill = {
-      skill_type: row.skill_type ?? null,
-      category: row.category ?? null,
-      construe_level: row.construe_level ?? null,
-      skill_order: row.skill_order ?? null,
-    }
-    const skills = skillsByEgoId.get(row.ego_id) ?? []
-    skills.push(skill)
-    skillsByEgoId.set(row.ego_id, skills)
-  }
-
-  return skillsByEgoId
-}
 
 async function fetchDeckRecommendations(
   supabase: ReturnType<typeof createDeckReadClient>,
@@ -620,11 +567,6 @@ async function getCachedDeckDetailPayload(lang: 'ko' | 'en' | 'ja', id: string) 
         lang,
         data as unknown as CurrentDeckForRecommendations
       )
-      const egoSkillsByEgoId = await fetchEgoAttackSkillsByEgoId(
-        supabase,
-        getSelectedEgoIds(data.deck_egos as Array<{ ego: { id?: string | null } | { id?: string | null }[] | null }> | null),
-        id,
-      )
 
       const sortedIdentities = (data.deck_identities ?? [])
         .map((slot) => ({
@@ -655,7 +597,7 @@ async function getCachedDeckDetailPayload(lang: 'ko' | 'en' | 'ja', id: string) 
             : (es.ego as EgoSlot['ego'])
           return {
             ...es,
-            ego: ego ? { ...ego, ego_skills: egoSkillsByEgoId.get(ego.id) ?? [] } : null,
+            ego,
           }
         }) as EgoSlot[],
         profiles: Array.isArray(data.profiles) ? (data.profiles[0] ?? null) : data.profiles,
