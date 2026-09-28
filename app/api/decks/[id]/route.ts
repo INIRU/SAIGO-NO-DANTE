@@ -12,6 +12,13 @@ import { encodeTeamCode } from '@/lib/decks/team-code'
 import { insertDeckIdentities, normalizeUptie } from '@/lib/decks/deck-identity-uptie'
 
 
+type EgoAttackSkill = {
+  skill_type: string | null
+  category: string | null
+  construe_level: number | null
+  skill_order: number | null
+}
+
 // ── GET ────────────────────────────────────────────────────────────────────
 export async function GET(
   _request: NextRequest,
@@ -65,15 +72,40 @@ export async function GET(
     ),
   ]
 
-  type DeckEgoRow = { grade: string; ego: { id: string; sinner_id: string; grade: string; name_kr: string | null; sin_affinity: string | null; folder_name: string | null; image_url: string | null; cost: number[] | null; game_id: string | null } | null }
+  type DeckEgoRow = { grade: string; ego: { id: string; sinner_id: string; grade: string; name_kr: string | null; sin_affinity: string | null; folder_name: string | null; image_url: string | null; cost: number[] | null; game_id: string | null; ego_skills?: EgoAttackSkill[] | null } | null }
   const deckEgoRows = (deck.deck_egos ?? []) as unknown as DeckEgoRow[]
   const egoSinnerIds = [
     ...new Set(deckEgoRows.map(r => r.ego?.sinner_id).filter((x): x is string => Boolean(x))),
   ]
   const allSinnerIds = [...new Set([...sinnerIds, ...egoSinnerIds])]
-  const egoRes = allSinnerIds.length > 0
-    ? await supabase.schema('limbus').from('ego').select('id, sinner_id, grade, name_kr, sin_affinity, image_url, game_id').in('sinner_id', allSinnerIds).order('game_id')
-    : { data: [] }
+  const selectedEgoIds = [
+    ...new Set(deckEgoRows.map(r => r.ego?.id).filter((x): x is string => Boolean(x))),
+  ]
+
+  const [egoRes, egoSkillsRes] = await Promise.all([
+    allSinnerIds.length > 0
+      ? supabase.schema('limbus').from('ego').select('id, sinner_id, grade, name_kr, sin_affinity, image_url, game_id').in('sinner_id', allSinnerIds).order('game_id')
+      : Promise.resolve({ data: [] }),
+    selectedEgoIds.length > 0
+      ? supabase.schema('limbus').from('ego_skills').select('ego_id, skill_type, category, construe_level, skill_order').in('ego_id', selectedEgoIds)
+      : Promise.resolve({ data: [], error: null }),
+  ])
+
+  if (egoSkillsRes.error) {
+    return NextResponse.json({ error: egoSkillsRes.error.message }, { status: 500 })
+  }
+  const egoSkillsByEgoId = new Map<string, EgoAttackSkill[]>()
+  for (const row of egoSkillsRes.data ?? []) {
+    if (typeof row.ego_id !== 'string') continue
+    const skills = egoSkillsByEgoId.get(row.ego_id) ?? []
+    skills.push({
+      skill_type: row.skill_type ?? null,
+      category: row.category ?? null,
+      construe_level: row.construe_level ?? null,
+      skill_order: row.skill_order ?? null,
+    })
+    egoSkillsByEgoId.set(row.ego_id, skills)
+  }
 
   // 인격 슬롯 맵
   const deckSlots: Record<string, { id: string; sinner_id: string; game_id: string | null } | undefined> = {}
@@ -128,7 +160,7 @@ export async function GET(
 
   const deckEgosWithSkills = deckEgoRows.map(row => ({
     ...row,
-    ego: row.ego,
+    ego: row.ego ? { ...row.ego, ego_skills: egoSkillsByEgoId.get(row.ego.id) ?? [] } : null,
   }))
 
   return NextResponse.json({ ...deck, deck_egos: deckEgosWithSkills, deck_code: deckCode, is_owner: isOwner, is_admin: isAdmin, all_sinner_egos: allSinnerEgos })

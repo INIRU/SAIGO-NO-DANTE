@@ -77,7 +77,15 @@ type EgoSlot = {
     folder_name: string | null
     image_url: string | null
     cost: number[] | null
+    ego_skills?: EgoAttackSkill[] | null
   } | null
+}
+
+type EgoAttackSkill = {
+  skill_type: string | null
+  category?: string | null
+  construe_level?: number | null
+  skill_order?: number | null
 }
 
 type SinnerEgo = {
@@ -724,7 +732,7 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
       baseSinCounts: computeSinProduction(insightSlots.map(({ skills }) => ({ skills }))),
       summary: (
         <DeckResourceSummary
-          {...computeAttackTypeCounts(insightSlots.map(({ skills }) => skills))}
+          {...computeAttackTypeCounts(insightSlots.map(({ skills }) => skills), egos.map(ego => ego.ego_skills))}
           production={sinCounts}
           egoCost={computeEgoCostTotals(egos.map(ego => ego.cost))}
         />

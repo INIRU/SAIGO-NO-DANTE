@@ -258,7 +258,7 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
       baseSinCounts: computeSinProduction(placed.map(({ identity }) => ({ skills: skillsOf(identity) }))),
       summary: (
         <DeckResourceSummary
-          {...computeAttackTypeCounts(placed.map(({ identity }) => skillsOf(identity)))}
+          {...computeAttackTypeCounts(placed.map(({ identity }) => skillsOf(identity)), selectedEgos.map(ego => ego.ego_skills))}
           production={sinCounts}
           egoCost={computeEgoCostTotals(selectedEgos.map(ego => ego.cost))}
         />
