@@ -21,6 +21,7 @@ import { createHash } from 'crypto'
 import { readFileSync, readdirSync, writeFileSync } from 'fs'
 import { join, resolve } from 'path'
 import { gameDataPaths } from './source-paths'
+import { failOnLoggedErrors, printSyncSummary } from './sync-result'
 import { z } from 'zod'
 import { config } from 'dotenv'
 
@@ -464,6 +465,12 @@ function extractActivationCondition(effect: string | null, keyword: string): Gif
   }
 }
 
+/** Per section: new and changed rows, and DB rows the extraction lacks (an extraction gap; rows are never deleted). */
+const syncSections: Record<string, { new: number; changed: number; missingFromSource: number }> = {}
+function recordSection(name: string, created: number, changed: number, missingFromSource: number) {
+  syncSections[name] = { new: created, changed, missingFromSource }
+}
+
 async function syncGifts(): Promise<void> {
   console.log(BOLD('\n[1/4] EGO 기프트 동기화'))
 
@@ -877,6 +884,8 @@ async function syncGifts(): Promise<void> {
   }
 
   console.log(`\n  신규: ${newCount}, 변경: ${updateCount}, 변경없음: ${matchCount}`)
+  const giftIds = new Set(gifts.map(gift => gift.game_id)), giftNames = new Set(gifts.map(gift => gift.name))
+  recordSection('gifts', newCount, updateCount, (existingGifts ?? []).filter(row => !(row.game_id && giftIds.has(row.game_id)) && !giftNames.has(row.name)).length)
 
   if (FIX && toUpsert.length > 0) {
     console.log('  DB 업데이트 중...')
@@ -1150,6 +1159,8 @@ async function syncThemes(): Promise<void> {
   }
 
   console.log(`\n  신규: ${newCount}, 변경: ${updateCount}, 변경없음: ${matchCount}`)
+  const themeIds = new Set(themes.map(theme => theme.id))
+  recordSection('themes', newCount, updateCount, (existingThemes ?? []).filter(row => !themeIds.has(row.id)).length)
 
   if (FIX && toUpsert.length > 0) {
     const { error } = await supabase.schema('limbus').from('ego_gift_themes')
@@ -1314,6 +1325,8 @@ async function syncRecipes(): Promise<void> {
   }
 
   console.log(`\n  신규: ${newCount}, 변경: ${updateCount}, 변경없음: ${matchCount}`)
+  const recipeKeys = new Set(recipes.map(recipe => recipeKey(recipe.result_name, recipe.ingredients)))
+  recordSection('recipes', newCount, updateCount, (existingRecipes ?? []).filter(row => !recipeKeys.has(recipeKey(row.result_name, row.ingredients))).length)
 
   if (FIX) {
     if (toInsert.length > 0) {
@@ -1385,6 +1398,7 @@ async function main(): Promise<void> {
   }
 
   console.log(BOLD('\n동기화 완료.'))
+  printSyncSummary(syncSections)
   if (!FIX) {
     console.log('(--fix 옵션으로 실제 DB에 반영하세요)')
   }
@@ -1395,4 +1409,5 @@ async function main(): Promise<void> {
   }
 }
 
+failOnLoggedErrors()
 main()

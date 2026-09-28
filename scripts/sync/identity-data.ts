@@ -28,6 +28,7 @@ import { gameDataPaths } from './source-paths'
 import { identityMetadata } from './identity-metadata'
 import { getKeywordCategory } from '../../lib/keywords/category'
 import { IDENTITY_STAT_BASE_LEVEL } from '../../lib/constants/game'
+import { failOnLoggedErrors, printSyncSummary } from './sync-result'
 import { pathToFileURL } from 'url'
 import { z } from 'zod'
 import { config } from 'dotenv'
@@ -53,6 +54,7 @@ const REBUILD_KEYWORD_META = args.includes('--rebuild-keyword-meta')
 const isDirectRun = process.argv[1]
   ? import.meta.url === pathToFileURL(resolve(process.argv[1])).href && /identity-data\.[cm]?[jt]s$/.test(process.argv[1])
   : false
+if (isDirectRun) failOnLoggedErrors()
 
 // 실제 키워드가 아닌 placeholder 값들 — ego_gifts.keyword 기본값으로 쓰임
 // DB 스키마는 nullable이 아니라 '공통'이 기본값으로 들어가므로, keyword_meta 재구축 시 반드시 필터링
@@ -3848,6 +3850,7 @@ async function main(): Promise<void> {
 
   // Counters
   let totalNew = 0, totalChanged = 0, totalUnchanged = 0, totalSkipped = 0
+  const syncCounts = { keywordDiffs: 0, egoSkillUpdates: 0, egoPassiveUpdates: 0 }
   let totalSkillsInserted = 0
   let totalSkillDiffs = 0, totalSkillsDeleted = 0, totalSkillsRebuiltInserted = 0
   const missingQuoteSourceCases: Array<{ gameId: string; name: string }> = []
@@ -4131,6 +4134,7 @@ async function main(): Promise<void> {
     }
   }
 
+    syncCounts.keywordDiffs = kwDiffCount
     if (kwDiffCount === 0) {
       console.log(GRAY(`  키워드 diff 없음 (${keywordContexts.size}개 인격)`))
     } else {
@@ -4233,6 +4237,7 @@ async function main(): Promise<void> {
       ? GREEN(`  ✓ ego_skills ${DRY_RUN ? '업데이트 대상' : '업데이트'}: ${egoSkillUpdated}개`)
       : GRAY(`  ego_skills: 변경 없음`)
     )
+    syncCounts.egoSkillUpdates = egoSkillUpdated
   }
 
   // ── EGO passive locale sync ──
@@ -4281,6 +4286,7 @@ async function main(): Promise<void> {
       ? GREEN(`  ✓ ego passive ${DRY_RUN ? '업데이트 대상' : '업데이트'}: ${passiveUpdated}개`)
       : GRAY(`  ego passive: 변경 없음`)
     )
+    syncCounts.egoPassiveUpdates = passiveUpdated
   }
 
   // ── Identity acquisition sync ─────────────────────────────────────────────
@@ -4322,6 +4328,10 @@ async function main(): Promise<void> {
   } else {
     console.log(CYAN('\n  DB 반영 완료'))
   }
+  // Identities are never removed from the game: one in the DB but not in this extraction means the extraction is incomplete.
+  const missingFromSource = SINNER_FILTER ? [] : [...dbIdentityMap.keys()].filter(gameId => !gamePersonMap.has(gameId))
+  printSyncSummary({ new: totalNew, changed: totalChanged, skillDiffs: totalSkillDiffs, passiveDiffs, ...syncCounts,
+    acquisition: DRY_RUN ? acquisitionChanged : 0, missingFromSource })
 
   if (missingQuoteSourceCases.length > 0) {
     console.log(YELLOW('\n  [quote 소스 확인 필요]'))
