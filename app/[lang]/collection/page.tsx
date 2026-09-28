@@ -26,7 +26,7 @@ async function fetchCollectionData(): Promise<CollectionData> {
 
   const [sinnersRes, identitiesRes, egosRes] = await Promise.all([
     supabase.schema('limbus').from('sinners').select('id, name_kr, name_en, name_jp, order_num').order('order_num'),
-    supabase.schema('limbus').from('identities').select('id, sinner_id, name_kr, game_id, folder_name, rarity, keywords').order('game_id'),
+    supabase.schema('limbus').from('identities').select('id, sinner_id, name_kr, name_en, name_jp, game_id, folder_name, rarity, keywords').order('game_id'),
     supabase.schema('limbus').from('ego').select('id, sinner_id, name_kr, name_en, name_jp, grade, sin_affinity, folder_name, image_url').order('grade').order('name_kr'),
   ])
 
