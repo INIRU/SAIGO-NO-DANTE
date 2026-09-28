@@ -1,6 +1,5 @@
 import { BoardShelfSkeleton } from '@/components/discovery/BoardSkeleton'
 import type { Metadata } from 'next'
-import { assistAvailable } from '@/lib/assist/availability'
 import { localeAlternates } from '@/lib/seo/metadata'
 import { Suspense } from 'react'
 import { cacheLife, cacheTag } from 'next/cache'
@@ -70,7 +69,7 @@ export default async function CommunityPage({ params }: { params: Promise<{ lang
 
   return (
     <div className="community-board flex min-h-screen flex-col" style={{ background: 'var(--bg-deep)' }}>
-      <BoardHeader kind="planner" lang={lang} title={t('title')} subtitle={t('subtitle')} action={t('newPlan')} assist={assistAvailable(lang) ? tActions('triggerMode') : undefined} />
+      <BoardHeader kind="planner" lang={lang} title={t('title')} subtitle={t('subtitle')} action={t('newPlan')} assist={tActions('triggerMode')} />
       <Suspense fallback={<BoardShelfSkeleton kind="planner" />}>
         <CommunityClient initialPlans={initialPlans} initialTotal={initialTotal} />
       </Suspense>

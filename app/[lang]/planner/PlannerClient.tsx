@@ -1,7 +1,6 @@
 'use client'
 
 import BackLink from '@/components/navigation/BackLink'
-import { assistAvailable } from '@/lib/assist/availability'
 import { pendingNoteUploads, noteUploadInProgressMessage } from '@/lib/notes/images'
 
 import { memo, useMemo, useEffect, useLayoutEffect, useRef, useState } from 'react'
@@ -417,7 +416,7 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
           </div>
           {/* 휴대폰은 같은 폭 2열(한 버튼만 다음 줄에 남지 않게), 넓은 화면은 한 줄 */}
           <div className="grid grid-cols-2 gap-2 [&>button]:min-h-10 [&>button]:justify-center [&>div>button]:min-h-10 [&>div>button]:w-full [&>div>button]:justify-center sm:flex sm:flex-wrap sm:items-center sm:justify-end sm:[&>button]:min-h-9 sm:[&>div>button]:w-auto">
-            {assistAvailable(locale) && <button
+            {<button
               onClick={() => { savePlanForRun({ ...giftConditionState, title: state.title, description: state.description }); window.location.href = '/planner/run?from-plan=1' }}
               style={{
                 display: 'flex', alignItems: 'center', gap: '0.25rem', padding: '0.375rem 0.625rem',
