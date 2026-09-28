@@ -18,6 +18,7 @@ import { prepareExtractedAssets } from './prepare-extracted-assets'
 import sharp from 'sharp'
 import { missingThemeImages, themeImageSource } from './theme-images'
 import { RESTORE_TABLES } from './extraction-restore'
+import { eventImageIdFromFilename } from '../assets/event-image-source'
 
 config({ path: '.env.local', quiet: true })
 const args = process.argv.slice(2)
@@ -67,10 +68,56 @@ function run(work: string, label: string, command: string[], env: NodeJS.Process
 }
 
 async function storedNames(dir: string) {
-  const { data, error } = await client().storage.from('limbus-assets').list(dir, { limit: 1000 })
-  if (error) throw Error(`Storage ${dir}: ${error.message}`)
-  if (data.length === 1000) throw Error(`Storage ${dir} has 1000+ entries; list with paging before trusting it`)
-  return new Set(data.map(item => item.name))
+  const names = new Set<string>()
+  for (let offset = 0; ; offset += 1000) {
+    const { data, error } = await client().storage.from('limbus-assets').list(dir, { limit: 1000, offset })
+    if (error) throw Error(`Storage ${dir}: ${error.message}`)
+    for (const item of data) names.add(item.name)
+    if (data.length < 1000) return names
+  }
+}
+
+type ManifestEntry = { kind: string; name: string; path: string; sha256: string }
+const readManifest = (source: string) => JSON.parse(readFileSync(join(source, 'Reports', 'manifest.json'), 'utf8').replace(/^\uFEFF/, '')) as ManifestEntry[]
+
+/** A ZIP image as WebP after its hash is checked against the manifest. */
+async function zipImage(source: string, entry: ManifestEntry, quality = 90) {
+  const bytes = readFileSync(join(source, 'Images', entry.path))
+  if (createHash('sha256').update(bytes).digest('hex') !== entry.sha256.toLowerCase()) throw Error(`image hash mismatch: ${entry.path}`)
+  return sharp(bytes).webp({ quality }).toBuffer()
+}
+
+/**
+ * Icons of gifts whose image_url has no object yet (gifts the mirror step just added), from the ZIP's
+ * EgoGiftIcon/<game id>.png. Gifts without an icon in the ZIP are listed, not guessed.
+ */
+async function uploadMissingGiftIcons(source: string, uploads: Upload[]) {
+  const manifest = readManifest(source), stored = await storedNames('ego-gifts'), missing: string[] = []
+  const bucket = client().storage.from('limbus-assets')
+  for (const gift of await all('ego_gifts', 'id,game_id,image_url')) {
+    const key = String(gift.image_url ?? '').split('/limbus-assets/')[1]
+    if (!key?.startsWith('ego-gifts/') || stored.has(key.slice('ego-gifts/'.length))) continue
+    const entry = manifest.find(item => item.kind === '기프트' && item.name === String(gift.game_id))
+    if (!entry) { missing.push(String(gift.game_id)); continue }
+    const { error } = await bucket.upload(key, await zipImage(source, entry, 95), { contentType: 'image/webp', cacheControl: '3600', upsert: false })
+    if (error) throw Error(`upload ${key}: ${error.message}`)
+    uploads.push({ key, before: null })
+    stored.add(key.slice('ego-gifts/'.length))
+  }
+  return missing
+}
+
+/** Event illustrations Storage lacks (icons/events/<event id>.webp), before the event step links images it finds there. */
+async function uploadMissingEventImages(source: string, uploads: Upload[]) {
+  const stored = await storedNames('icons/events'), bucket = client().storage.from('limbus-assets')
+  for (const entry of readManifest(source).filter(item => item.kind === '이벤트선택지')) {
+    const id = eventImageIdFromFilename(entry.name), file = `${id}.webp`
+    if (!id || stored.has(file)) continue
+    const { error } = await bucket.upload(`icons/events/${file}`, await zipImage(source, entry), { contentType: 'image/webp', cacheControl: '3600', upsert: false })
+    if (error) throw Error(`upload icons/events/${file}: ${error.message}`)
+    uploads.push({ key: `icons/events/${file}`, before: null })
+    stored.add(file)
+  }
 }
 
 /** Images of an EGO in the ZIP, stored as <game id>_<suffix>.webp in its folder; the awakening profile is required. */
@@ -81,7 +128,7 @@ type Upload = { key: string; before: null }
 
 /** New EGO images from the verified ZIP at the paths their rows point to; existing objects are never replaced. */
 async function uploadEgoImages(source: string, gameIds: string[], uploads: Upload[]) {
-  const manifest = JSON.parse(readFileSync(join(source, 'Reports', 'manifest.json'), 'utf8').replace(/^\uFEFF/, '')) as { kind: string; name: string; path: string; sha256: string }[]
+  const manifest = readManifest(source)
   const { data: egos, error } = await db().from('ego').select('game_id, sinner_id, folder_name').in('game_id', gameIds)
   if (error) throw Error(`ego: ${error.message}`)
   if (egos.length !== gameIds.length) throw Error('some new EGO rows are missing after bootstrap')
@@ -90,10 +137,8 @@ async function uploadEgoImages(source: string, gameIds: string[], uploads: Uploa
   for (const ego of egos) for (const suffix of EGO_IMAGES) {
     const entry = manifest.find(item => item.kind === 'EGO' && item.name === `${ego.game_id}_${suffix}`)
     if (!entry) { if (suffix === 'awaken_profile') throw Error(`the ZIP has no ${ego.game_id}_awaken_profile`); continue }
-    const bytes = readFileSync(join(source, 'Images', entry.path))
-    if (createHash('sha256').update(bytes).digest('hex') !== entry.sha256.toLowerCase()) throw Error(`image hash mismatch: ${entry.path}`)
     const key = `sinners/${ego.sinner_id}/ego/${ego.folder_name}/${entry.name}.webp`
-    const { error: uploadError } = await bucket.upload(key, await sharp(bytes).webp({ quality: 90 }).toBuffer(), { contentType: 'image/webp', cacheControl: '3600', upsert: false })
+    const { error: uploadError } = await bucket.upload(key, await zipImage(source, entry), { contentType: 'image/webp', cacheControl: '3600', upsert: false })
     if (uploadError) throw Error(`upload ${key}: ${uploadError.message}`)
     uploads.push({ key, before: null })
     uploaded++
@@ -146,6 +191,10 @@ async function main() {
     const identitiesBefore = new Set((await all('identities', 'id,game_id')).map(row => String(row.game_id)))
 
     for (const step of STEPS) {
+      if (FIX && step.name === 'events') {
+        await uploadMissingEventImages(source, uploads)
+        console.log('ok   event-images')
+      }
       run(work, `${step.name}-dry-run`, command(step.script, step.args), env)
       if (!FIX) continue
       if (!existsSync(join(work, 'backup'))) {
@@ -155,6 +204,10 @@ async function main() {
       }
       run(work, `${step.name}-fix`, command(step.script, [...step.args, '--fix']), env)
       ;(report.steps as string[]).push(step.name)
+      if (step.name === 'mirror') {
+        report.giftsWithoutIcon = await uploadMissingGiftIcons(source, uploads)
+        console.log('ok   gift-icons')
+      }
     }
 
     // New identities: illustrations, portraits, avatar profiles and skill icons from the same verified ZIP.

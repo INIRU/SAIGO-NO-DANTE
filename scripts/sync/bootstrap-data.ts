@@ -96,7 +96,8 @@ async function main() {
     if (definition.hidden || !definition.awakeningSkillId) { skipped.push({ gameId, reason: definition.hidden ? 'hidden story-only EGO' : 'no awakening skill' }); continue }
     const kr = egoNames.KR.get(definition.id), en = egoNames.EN.get(definition.id), jp = egoNames.JP.get(definition.id)
     // Drive art predates new EGO; their folders follow the existing English-name convention.
-    const folder = folderById.get(gameId) ?? (onlyEgoIds && en?.name ? egoStorageFolder(en.name) : undefined)
+    // An existing EGO keeps its folder (its images are already there); a new one gets its English name.
+    const folder = folderById.get(gameId) ?? existingByGameId.get(gameId)?.folder_name ?? (onlyEgoIds && en?.name ? egoStorageFolder(en.name) : undefined)
     if (!sinner || !kr?.name || !en?.name || !jp?.name || !folder) throw new Error(`Missing EGO source/name/art mapping: ${gameId}`)
     const id = existingByGameId.get(gameId)?.id ?? uuid(`ego:${gameId}`)
     const asset = `${STORAGE_BASE}/sinners/${sinner}/ego/${encodeURIComponent(folder)}/${gameId}`
