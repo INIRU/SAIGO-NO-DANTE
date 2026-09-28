@@ -44,13 +44,22 @@ function uuid(value: string): string {
 }
 async function all(table: string): Promise<Row[]> {
   const rows: Row[] = []
+  // ego_passives has no id; its key is (ego_id, game_passive_id).
+  const order = table === 'ego_passives' ? ['ego_id', 'game_passive_id'] : ['id']
   for (let offset = 0;;) {
-    const { data, error } = await client.from(table).select('*').order('id').range(offset, offset + 499)
+    let query = client.from(table).select('*')
+    for (const column of order) query = query.order(column)
+    const { data, error } = await query.range(offset, offset + 499)
     if (error) throw error
     if (!data.length) return rows
     rows.push(...data); offset += data.length
   }
 }
+/**
+ * Storage folder of an EGO without Drive art (new EGO from an extraction): its English name, with characters outside
+ * plain ASCII written as _uXXXX_ like the Drive export's folders (e.g. "[" → "_u5b_").
+ */
+const egoStorageFolder = (name: string) => name.replace(/[^A-Za-z0-9 ._'()!,-]/g, char => `_u${char.codePointAt(0)!.toString(16)}_`)
 async function main() {
   // Prepared extracts keep locales in KR/EN/JP; the original recovery input kept them at the root.
   const localeDir = (lang: string) => existsSync(join(source!, lang)) ? join(source!, lang) : source!
@@ -68,7 +77,9 @@ async function main() {
   const egoNames = Object.fromEntries(['KR', 'EN', 'JP'].map(lang => [lang, load(new RegExp(`^${lang}_Egos(?:[-_].*)?\\.txt$`, 'i'), localeDir(lang))]))
   const context = loadEgoSyncContext()
   const keywordSources = loadSourceEgoKeywords()
-  const art: Row[] = JSON.parse(readFileSync(join(root, 'drive-complete-art.json'), 'utf8')).files
+  // The Drive art list exists on the Mac recovery root only; the Windows extraction adds new EGO under English-name folders.
+  const artFile = join(root, 'drive-complete-art.json')
+  const art: Row[] = existsSync(artFile) ? JSON.parse(readFileSync(artFile, 'utf8')).files : []
   const folderById = new Map<string, string>()
   for (const file of art) {
     const gameId = file.name.match(/^(\d{5})_/)?.[1]
@@ -77,7 +88,7 @@ async function main() {
   const existing = await all('ego')
   const existingByGameId = new Map(existing.map(row => [String(row.game_id), row]))
   if (existingByGameId.size !== existing.length) throw new Error('Duplicate EGO game IDs in target database')
-  const egos: Row[] = [], skills: Row[] = [], skipped: Row[] = []
+  const egos: Row[] = [], skills: Row[] = [], passives: Row[] = [], skipped: Row[] = []
   for (const definition of definitions.values()) {
     const gameId = String(definition.id), sinner = SINNER_SLUGS[definition.characterId - 1]
     if (onlyEgoIds && !onlyEgoIds.includes(gameId)) continue
@@ -85,7 +96,7 @@ async function main() {
     if (definition.hidden || !definition.awakeningSkillId) { skipped.push({ gameId, reason: definition.hidden ? 'hidden story-only EGO' : 'no awakening skill' }); continue }
     const kr = egoNames.KR.get(definition.id), en = egoNames.EN.get(definition.id), jp = egoNames.JP.get(definition.id)
     // Drive art predates new EGO; their folders follow the existing English-name convention.
-    const folder = folderById.get(gameId) ?? (onlyEgoIds ? en?.name : undefined)
+    const folder = folderById.get(gameId) ?? (onlyEgoIds && en?.name ? egoStorageFolder(en.name) : undefined)
     if (!sinner || !kr?.name || !en?.name || !jp?.name || !folder) throw new Error(`Missing EGO source/name/art mapping: ${gameId}`)
     const id = existingByGameId.get(gameId)?.id ?? uuid(`ego:${gameId}`)
     const asset = `${STORAGE_BASE}/sinners/${sinner}/ego/${encodeURIComponent(folder)}/${gameId}`
@@ -104,6 +115,18 @@ async function main() {
       const p = context.passives[lang].get(pid)
       return field === 'name' ? cleanLocaleContent(p?.name ?? '') : context.formatText(p?.desc, lang)
     }).filter(Boolean).join('\n\n') || null
+    // Stage-aware passive rows (as restore-ego-passives.ts), so a new EGO's detail page has its passives per stage.
+    for (const pid of new Set(passiveIds)) {
+      const row: Row = { ego_id: id, game_passive_id: pid, ...passiveStageRange(passiveDefinitions.get(pid)!.requireIDList ?? []) }
+      for (const lang of ['kr', 'en', 'jp'] as const) {
+        const localized = context.passives[lang].get(pid)
+        if (!localized?.name || !localized.desc) throw new Error(`Missing ${lang} passive ${pid}`)
+        const suffix = lang === 'kr' ? '' : `_${lang}`
+        row[`name${suffix}`] = cleanLocaleContent(localized.name)
+        row[`description${suffix}`] = context.formatText(localized.desc, lang)
+      }
+      passives.push(row)
+    }
     egos.push({ id, sinner_id: sinner, game_id: gameId, name: kr.name, name_kr: kr.name, name_en: en.name, name_jp: jp.name,
       keywords: [...new Set([...(existingByGameId.get(gameId)?.keywords ?? []), ...(keywordSources.get(gameId)?.keywords ?? [])])],
       grade: definition.egoType, sin_affinity: sin(firstStage.attributeType!), folder_name: folder, image_url: `${asset}_awaken_profile.webp`,
@@ -135,21 +158,21 @@ async function main() {
     }
   }
   if (onlyEgoIds && egos.length !== onlyEgoIds.length) throw new Error(`Requested EGO not found: ${onlyEgoIds.filter(id => !egos.some(row => row.game_id === id)).join(',')}`)
-  const report = { source: resolve(source!), sinners, egos, skills, skipped }
+  const report = { source: resolve(source!), sinners, egos, skills, passives, skipped }
   mkdirSync(outputDir, { recursive: true })
   writeFileSync(join(outputDir, 'bootstrap-plan.json'), JSON.stringify(report, null, 2))
-  console.log(JSON.stringify({ sinners: sinners.length, egos: egos.length, skills: skills.length, fifthStageSkills: skills.filter(row => row.construe_level === 5).length, skipped, fix }))
+  console.log(JSON.stringify({ sinners: sinners.length, egos: egos.length, skills: skills.length, passives: passives.length, fifthStageSkills: skills.filter(row => row.construe_level === 5).length, skipped, fix }))
   if (!fix) return
-  const tables = onlyEgoIds ? ['ego', 'ego_skills'] as const : ['sinners', 'ego', 'ego_skills'] as const
+  const tables = onlyEgoIds ? ['ego', 'ego_skills', 'ego_passives'] as const : ['sinners', 'ego', 'ego_skills', 'ego_passives'] as const
   const backup = join(outputDir, 'before-bootstrap'); mkdirSync(backup, { recursive: true })
   for (const table of tables) {
     const file = join(backup, `${table}.json`)
     // Never overwrite the original recovery point on retry.
     try { writeFileSync(file, JSON.stringify(await all(table), null, 2), { flag: 'wx' }) } catch (error: any) { if (error.code !== 'EEXIST') throw error }
   }
-  for (const [table, rows] of ([['sinners', sinners], ['ego', egos], ['ego_skills', skills]] as const).filter(([table]) => (tables as readonly string[]).includes(table))) {
+  for (const [table, rows] of ([['sinners', sinners], ['ego', egos], ['ego_skills', skills], ['ego_passives', passives]] as const).filter(([table]) => (tables as readonly string[]).includes(table))) {
     for (let offset = 0; offset < rows.length; offset += 100) {
-      const { error } = await client.from(table).upsert(rows.slice(offset, offset + 100), { onConflict: 'id' })
+      const { error } = await client.from(table).upsert(rows.slice(offset, offset + 100), { onConflict: table === 'ego_passives' ? 'ego_id,game_passive_id' : 'id' })
       if (error) throw error
     }
     console.log(`${table}: ${rows.length} restored`)

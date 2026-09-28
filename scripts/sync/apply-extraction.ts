@@ -8,6 +8,7 @@
  * images are never replaced.
  */
 import { spawnSync } from 'node:child_process'
+import { createHash } from 'node:crypto'
 import { existsSync, mkdirSync, openSync, closeSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { basename, dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -68,6 +69,38 @@ async function storedNames(dir: string) {
   return new Set(data.map(item => item.name))
 }
 
+/** Images of an EGO in the ZIP, stored as <game id>_<suffix>.webp in its folder; the awakening profile is required. */
+const EGO_IMAGES = ['awaken_profile', 'erosion_profile', 'cg', 'e_cg', 'profile_summary'] as const
+
+/** New EGO images from the verified ZIP at the paths their rows point to; existing objects are never replaced. */
+async function uploadEgoImages(source: string, gameIds: string[]) {
+  const manifest = JSON.parse(readFileSync(join(source, 'Reports', 'manifest.json'), 'utf8').replace(/^\uFEFF/, '')) as { kind: string; name: string; path: string; sha256: string }[]
+  const { data: egos, error } = await db().from('ego').select('game_id, sinner_id, folder_name').in('game_id', gameIds)
+  if (error) throw Error(`ego: ${error.message}`)
+  if (egos.length !== gameIds.length) throw Error('some new EGO rows are missing after bootstrap')
+  const bucket = client().storage.from('limbus-assets')
+  let uploaded = 0
+  for (const ego of egos) for (const suffix of EGO_IMAGES) {
+    const entry = manifest.find(item => item.kind === 'EGO' && item.name === `${ego.game_id}_${suffix}`)
+    if (!entry) { if (suffix === 'awaken_profile') throw Error(`the ZIP has no ${ego.game_id}_awaken_profile`); continue }
+    const bytes = readFileSync(join(source, 'Images', entry.path))
+    if (createHash('sha256').update(bytes).digest('hex') !== entry.sha256.toLowerCase()) throw Error(`image hash mismatch: ${entry.path}`)
+    const key = `sinners/${ego.sinner_id}/ego/${ego.folder_name}/${entry.name}.webp`
+    const { error: uploadError } = await bucket.upload(key, await sharp(bytes).webp({ quality: 90 }).toBuffer(), { contentType: 'image/webp', cacheControl: '3600', upsert: false })
+    if (uploadError) throw Error(`upload ${key}: ${uploadError.message}`)
+    uploaded++
+  }
+  return uploaded
+}
+
+/** The steps revalidate before new EGO are added; invalidate once more so their pages appear. */
+async function revalidateGameData() {
+  const site = process.env.SITE_URL || process.env.NEXT_PUBLIC_SITE_URL, secret = process.env.REVALIDATION_SECRET
+  if (!site || !secret) return console.warn('SITE_URL or REVALIDATION_SECRET not set: the site shows new EGO after its cache expires')
+  const response = await fetch(`${site}/api/revalidate`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-revalidation-secret': secret }, body: JSON.stringify({ scope: 'all-game-data' }) })
+  if (!response.ok) console.warn(`revalidate failed: ${response.status}`)
+}
+
 async function main() {
   const zip = option('--zip')
   const unpackedSource = option('--source')
@@ -92,14 +125,15 @@ async function main() {
     const data = join(work, 'prepared', 'complete-data')
     const env = { ...process.env, LIMBUS_DATA_DIR: data, LIMBUS_RECOVERY_DIR: work, SITE_URL: process.env.SITE_URL || process.env.NEXT_PUBLIC_SITE_URL }
 
-    // New EGO rows need Drive art folders (bootstrap-data.ts), so they are reported, not added. Story-only EGO stay out, as there.
+    // New EGO (story-only ones stay out) are added after the steps below: rows, stage skills and passives, then images.
     const egoIds = new Set<string>()
     for (const file of readdirSync(data).filter(f => /^ego-(?:\d+|a\d+c\d+p\d+)\.txt$/i.test(f))) {
       const value = JSON.parse(readFileSync(join(data, file), 'utf8'))
       for (const row of value.list ?? value.dataList ?? []) if (Number.isInteger(row.id) && !row.hidden && row.awakeningSkillId) egoIds.add(String(row.id))
     }
     const knownEgo = new Set((await all('ego', 'id,game_id')).map(row => String(row.game_id)))
-    report.newEgoNeedsManualAdd = [...egoIds].filter(id => !knownEgo.has(id)).sort()
+    const newEgos = [...egoIds].filter(id => !knownEgo.has(id)).sort()
+    report.newEgos = newEgos
     const identitiesBefore = new Set((await all('identities', 'id,game_id')).map(row => String(row.game_id)))
 
     for (const step of STEPS) {
@@ -120,6 +154,18 @@ async function main() {
     if (newIdentities.length) {
       run(work, 'identity-images', command('scripts/assets/sync-extracted-identities.cjs', ['--ids', newIdentities.join(','), '--source', source, '--output', join(work, 'identity-images'), '--fix']), env)
       ;(report.steps as string[]).push('identity-images')
+    }
+
+    // New EGO: bootstrap-data.ts writes their rows, stage skills and passives (with SkillTag section names) from this ZIP.
+    if (newEgos.length) {
+      const egoArgs = ['--ego-ids', newEgos.join(','), '--output', join(work, 'new-ego')]
+      run(work, 'new-ego-dry-run', command('scripts/sync/bootstrap-data.ts', egoArgs), env)
+      if (FIX) {
+        run(work, 'new-ego-fix', command('scripts/sync/bootstrap-data.ts', [...egoArgs, '--fix']), env)
+        console.log(`ok   new-ego-images (${await uploadEgoImages(source, newEgos)} uploaded)`)
+        await revalidateGameData()
+        ;(report.steps as string[]).push('new-ego')
+      }
     }
 
     // New theme packs: the extraction tool composes every pack card into the ZIP (kind '합성 테마팩'); upload the ones Storage lacks.
