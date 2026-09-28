@@ -830,7 +830,7 @@ function loadKrTagMap(): Record<string, string> {
 
   // Latest first: kr/ (.json files) — 최신 패치 데이터 우선
   if (existsSync(KR_LATEST_DIR)) {
-    const latestFiles = globFiles(KR_LATEST_DIR, /^KR_(BattleKeywords|Bufs|BuffAbilities)/i)
+    const latestFiles = globFiles(KR_LATEST_DIR, /^KR_(BattleKeywords|Bufs|BuffAbilities|SkillTag)/i)
       .filter(f => f.endsWith('.json'))
     for (const f of latestFiles) {
       const data = readTxt(join(KR_LATEST_DIR, f))
@@ -845,7 +845,7 @@ function loadKrTagMap(): Record<string, string> {
 
   // Fallback: Json (Text)/KR/ (.txt files) — 구버전, 최신에 없는 것만
   if (existsSync(KR_DIR)) {
-    const kwFiles = globFiles(KR_DIR, /^KR_(BattleKeywords|Bufs|BuffAbilities)/i)
+    const kwFiles = globFiles(KR_DIR, /^KR_(BattleKeywords|Bufs|BuffAbilities|SkillTag)/i)
       .filter(f => f.endsWith('.txt'))
     for (const f of kwFiles) {
       const data = readTxt(join(KR_DIR, f))
@@ -1771,7 +1771,7 @@ function loadLangTagMap(lang: 'en' | 'jp'): Record<string, string> {
 
   // Latest dir (.json files)
   if (existsSync(latestDir)) {
-    const latestFiles = globFiles(latestDir, new RegExp(`^${prefix}_(BattleKeywords|Bufs|BuffAbilities)`, 'i'))
+    const latestFiles = globFiles(latestDir, new RegExp(`^${prefix}_(BattleKeywords|Bufs|BuffAbilities|SkillTag)`, 'i'))
       .filter(f => f.endsWith('.json'))
     for (const f of latestFiles) {
       const data = readTxt(join(latestDir, f))
@@ -1785,7 +1785,7 @@ function loadLangTagMap(lang: 'en' | 'jp'): Record<string, string> {
 
   // Fallback dir (.txt files)
   if (existsSync(fallbackDir)) {
-    const fallbackFiles = globFiles(fallbackDir, new RegExp(`^${prefix}_(BattleKeywords|Bufs|BuffAbilities)`, 'i'))
+    const fallbackFiles = globFiles(fallbackDir, new RegExp(`^${prefix}_(BattleKeywords|Bufs|BuffAbilities|SkillTag)`, 'i'))
       .filter(f => f.endsWith('.txt'))
     for (const f of fallbackFiles) {
       const data = readTxt(join(fallbackDir, f))

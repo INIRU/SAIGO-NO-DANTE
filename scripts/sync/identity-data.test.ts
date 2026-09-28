@@ -65,6 +65,14 @@ describe('identity-data sync helpers', () => {
     )).toBe('중지 - 원한 문신 큰 누님')
   })
 
+  it('names the EGO passive section tags from SkillTag, which already carry their brackets', () => {
+    // KR_SkillTag (2026-09 extraction): section headers of an EGO passive's always-on and on-use effects.
+    expect(translateDescriptionForSyncTest(
+      '[AlwaysUseEGOPassive2010911]\n\n기본 스킬의 공격 적중 시 대상에게 진동 2 부여\n\n[WhenUseEGOPassive]',
+      { AlwaysUseEGOPassive2010911: '[로보토미 E.G.O::엄숙한 애도 이상 전용 상시 효과]', WhenUseEGOPassive: '[사용 효과]' },
+    )).toBe('[로보토미 E.G.O::엄숙한 애도 이상 전용 상시 효과]\n\n기본 스킬의 공격 적중 시 대상에게 진동 2 부여\n\n[사용 효과]')
+  })
+
   it('finds stale keyword_meta names that still contain raw rich text tags', () => {
     expect(findStaleRichTextKeywordMetaNames([
       '중지 - 원한 문신 [<s>큰 누님</s>]',
