@@ -19,7 +19,7 @@ import { acquisitionSeq, acquisitionsToRelease, continuesFusionDialog, dialogFor
   fusionWheelAnchors, fusionWheelCrop, fusionWheelResultBox, isFusionSelectionScreen, wheelBandMatch, wheelSelectionSize, WHEEL_BAND_MIN, WHEEL_BAND_SIZE,
   type FusionAnchors, type FusionDialogEvidence, type FusionRead, type SeenDialog, type WheelAnchors,
   type FusionSlotRead } from '@/lib/vision/fusion-evidence'
-import { confirmsExploration, explorationFloor, explorationThemeMatch, themeSelectionHeaderFloor, type ExplorationObservation,
+import { confirmsExploration, explorationFloor, explorationThemeReads, themeSelectionHeaderFloor, type ExplorationObservation,
   type ExplorationThemeReference } from '@/lib/vision/exploration-match'
 import { acquisitionPlate, darkPopupPlate, detectGiftPopupLabel, popupCaptureAction, popupIconSignature, popupLabelColor, popupPriority, popupQuality,
   POPUP_SETTLE_MS, samePopupEpisode, type PopupLabelBox, type PopupObservation } from '@/lib/vision/popup-detect'
@@ -144,7 +144,10 @@ export interface PopupAcquisition { giftId: string; token: string; floor: number
 export interface GiftSale { giftId: string; token: string; capturedAt: number }
 /** Shop skill replacement window on screen: its sinner and current skill counts. */
 export type SkillExchangeView = SkillExchangeRead & { seenAt: number }
-/** Exploration banner seen twice with the same floor and pack; only a candidate until the run state validates it. */
+/**
+ * Exploration banner seen twice with the same floor and pack, or once with an exact pack name under the current or next
+ * floor; only a candidate until the run state validates it.
+ */
 export interface FloorThemeObservation extends ExplorationObservation { token: string }
 interface PopupFrame { frame: ImageBitmap; box: PopupLabelBox; requestId: number; episode: number }
 interface PopupPending {
@@ -1330,17 +1333,23 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
             bannerRecent = floorSeen !== null
             const reads = Array.isArray(result.themeReads) ? result.themeReads.filter(Array.isArray).map(read =>
               read.filter(word => typeof word?.text === 'string')) : []
-            const themeIds = themeReferences.current ? explorationThemeMatch(reads, themeReferences.current) : []
+            const { ids: themeIds, certain } = themeReferences.current ? explorationThemeReads(reads, themeReferences.current) : { ids: [], certain: false }
+            // A single exact pack read may confirm, but only under a floor number that is the current or next floor, or
+            // that an earlier capture also read: one misread digit must not jump the run ahead.
+            let floorAgreed = false
             if (capture && capture.requestId === result.requestId && floorSeen !== null) {
               const previous = lastFloorRead.current
               const elapsed = previous ? capture.at - previous.at : -1
+              const runFloor = currentFloor.current
+              floorAgreed = (runFloor !== null && (floorSeen === runFloor || floorSeen === runFloor + 1)) ||
+                (previous?.floor === floorSeen && elapsed > 0 && elapsed <= 180000)
               if (previous?.floor === floorSeen && elapsed >= 1000 && elapsed <= 60000) setObservedFloor(floorSeen)
               if (!previous || capture.at > previous.at) lastFloorRead.current = { floor: floorSeen, at: capture.at }
             }
             // Unreadable captures neither confirm nor break the chain; a different readable scene restarts it.
             if (capture && capture.requestId === result.requestId && floorSeen !== null && themeIds.length &&
               (!lastExploration.current || capture.at > lastExploration.current.observedAt)) {
-              const observation = { floor: floorSeen, themeIds, observedAt: capture.at }
+              const observation = { floor: floorSeen, themeIds, observedAt: capture.at, certain: certain && floorAgreed }
               if (confirmsExploration(lastExploration.current, observation)) {
                 setFloorThemeObservation({ ...observation, token: `${floorSeen}:${themeIds.join('|')}` })
               }
