@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import {
   buildSkillRows,
+  bracketKeywordsForSyncTest,
   areSkillRowsDifferent,
   withStableSkillIds,
   cleanLocaleContent,
@@ -16,6 +17,10 @@ import {
 } from './identity-data'
 
 describe('identity-data sync helpers', () => {
+  it('does not count KR_SkillTag names such as sin colours as identity keywords', () => {
+    // [CRIMSON] → 빨간색 translates skill text; it became a keyword once SkillTag joined the tag map.
+    expect(bracketKeywordsForSyncTest(['[CRIMSON] 공명 시 [Combustion] 부여'], { CRIMSON: '빨간색', Combustion: '화상' }, ['CRIMSON'])).toEqual(['화상'])
+  })
   it('keeps the historical launch season of a permanent identity without seasonal restrictions', () => {
     const identity = { id: 'test', game_id: '10305', sinner_id: 'don-quixote', name_kr: 'test', rarity: 3,
       acquisition: '추출(상시)', acquisition_info: { type: 'standard' as const, release_season: 2, fragment_cost: 400, gacha: 'always' as const } }
