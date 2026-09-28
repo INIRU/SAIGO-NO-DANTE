@@ -513,7 +513,6 @@
     "close": "닫기",
     "effect": "효과",
     "price": "구매",
-    "sell": "판매",
     "notForSale": "상점 구매 불가",
     "condition": "발동 조건",
     "conditionIdentity": "{keywords} 인격 {count}인 이상",

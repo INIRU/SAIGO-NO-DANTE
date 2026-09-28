@@ -513,7 +513,6 @@
     "close": "Close",
     "effect": "Effect",
     "price": "Buy",
-    "sell": "Sell",
     "notForSale": "Not sold in shops",
     "condition": "Activation condition",
     "conditionIdentity": "{count}+ {keywords} Identities",

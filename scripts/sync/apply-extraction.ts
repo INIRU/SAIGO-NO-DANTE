@@ -38,6 +38,8 @@ type Step = { name: string; script: string; args: string[] }
 const STEPS: Step[] = [
   // --keywords: identity keywords follow the extraction like every other field.
   { name: 'identity', script: 'scripts/sync/identity-data.ts', args: ['--keywords'] },
+  // Keyword catalogue (names, descriptions, icons, max stack) for every keyword the identities, EGO and gifts use.
+  { name: 'keywords', script: 'scripts/sync/identity-data.ts', args: ['--rebuild-keyword-meta'] },
   // Events come from rebuild-mirror-events; the legacy event section of this script is skipped.
   { name: 'mirror', script: 'scripts/sync/mirror-dungeon-data.ts', args: ['--gifts-only', '--themes-only', '--recipes-only'] },
   { name: 'events', script: 'scripts/sync/rebuild-mirror-events.ts', args: [] },
@@ -72,6 +74,13 @@ function run(work: string, label: string, command: string[], env: NodeJS.Process
 
 const logOf = (work: string, label: string) => readFileSync(join(work, 'logs', `${label}.log`), 'utf8')
 
+/** Gift, theme, recipe and keyword catalogue sections of one pass (mirror and keyword steps), or null if either lacks a summary. */
+function catalogSummary(work: string, pass: 'dry-run' | 'verify') {
+  const label = (step: string) => pass === 'verify' ? `verify-${step}` : `${step}-dry-run`
+  const mirror = parseSyncSummary(logOf(work, label('mirror'))), keywords = parseSyncSummary(logOf(work, label('keywords')))
+  return mirror && keywords ? { ...mirror, ...keywords } : null
+}
+
 type EgoPlan = { egos: Record<string, unknown>[]; skills: Record<string, unknown>[]; passives: Record<string, unknown>[] }
 /** EGO whose DB rows differ from what bootstrap-data.ts builds from this ZIP (every produced field), or are missing. */
 async function egoDiffs(work: string, env: NodeJS.ProcessEnv, label: string, ids: string[]) {
@@ -91,7 +100,7 @@ async function egoDiffs(work: string, env: NodeJS.ProcessEnv, label: string, ids
 /** After --fix: each step's dry-run and the EGO check again; whatever they would still change is a mismatch. */
 async function leftoverDiffs(work: string, env: NodeJS.ProcessEnv, egoIds: string[]) {
   for (const step of STEPS.filter(item => item.name !== 'events')) run(work, `verify-${step.name}`, command(step.script, step.args), env)
-  const left = leftoverChanges(parseSyncSummary(logOf(work, 'verify-identity')), parseSyncSummary(logOf(work, 'verify-mirror')))
+  const left = leftoverChanges(parseSyncSummary(logOf(work, 'verify-identity')), catalogSummary(work, 'verify'))
   // Events: rebuild-mirror-events.ts reads its rows back and fails on any difference during --fix.
   for (const ego of await egoDiffs(work, env, 'verify-ego', egoIds)) left.push(`EGO ${ego.gameId} ${ego.fields.join(',')}`)
   return left
@@ -223,7 +232,7 @@ async function main() {
     // 2. Dry-run every step, then refuse an incomplete extraction before anything is written: the game never removes
     // identities, EGO, gifts, theme packs or recipes, so one the DB has and the ZIP lacks means files are missing.
     for (const step of STEPS) run(work, `${step.name}-dry-run`, command(step.script, step.args), env)
-    const gaps = findGaps(parseSyncSummary(logOf(work, 'identity-dry-run')), parseSyncSummary(logOf(work, 'mirror-dry-run')), [...knownEgo].filter(id => !egoIds.has(id)))
+    const gaps = findGaps(parseSyncSummary(logOf(work, 'identity-dry-run')), catalogSummary(work, 'dry-run'), [...knownEgo].filter(id => !egoIds.has(id)))
     if (gaps.length) throw Error(`the extraction is incomplete, nothing was written: ${gaps.join('; ')}`)
     console.log('ok   completeness')
     const existingEgos = [...egoIds].filter(id => knownEgo.has(id)).sort()

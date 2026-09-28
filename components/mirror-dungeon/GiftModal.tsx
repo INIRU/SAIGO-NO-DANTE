@@ -95,7 +95,6 @@ export default function GiftModal({
       localizedGiftText(lang, gift.effect_plusplus, gift.effect_plusplus_en, gift.effect_plusplus_jp),
     ],
     price: gift.price,
-    sellPrice: gift.sell_price,
     buyDisabled: gift.buy_disabled,
     condition: conditionText(gift.activation_condition),
     recipe: recipe && {
