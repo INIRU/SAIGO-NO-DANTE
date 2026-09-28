@@ -4,7 +4,7 @@ import { acquisitionAttributionFloor, clearedThemeFloors, floorThemeObservationA
 import type { ThemeData } from '../../../lib/planner/types'
 
 const theme = (id: string, floorInfo: ThemeData['floor_info']): ThemeData =>
-  ({ id, name: id, floor_info: floorInfo, dungeon_id: null, ego_gift_ids: [], specific_ego_gift_ids: [], image_url: null, difficulty: null })
+  ({ id, name: id, floor_info: floorInfo, ego_gift_ids: [], specific_ego_gift_ids: [], image_url: null, difficulty: null })
 const themes = [
   theme('1003', { '노말': [1, 2], '하드': [1] }),
   theme('1101', { '노말': [2], '하드': [2] }),

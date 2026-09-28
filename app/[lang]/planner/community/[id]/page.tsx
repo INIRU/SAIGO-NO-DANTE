@@ -64,7 +64,7 @@ async function fetchPlanDetailGameData() {
   cacheTag(CACHE_TAGS.gameData, CACHE_TAGS.mirrorDungeon, CACHE_TAGS.themes, CACHE_TAGS.egoGifts, CACHE_TAGS.identities, CACHE_TAGS.sinners, CACHE_TAGS.ego)
   const db = createAdminClient().schema('limbus')
   const [themes, gifts, recipes, identities, sinners, egos] = await Promise.all([
-    db.from('ego_gift_themes').select('id, name, name_en, name_jp, dungeon_id, ego_gift_ids, specific_ego_gift_ids, fixed_reward_gift_ids, image_url, difficulty, floor_info'),
+    db.from('ego_gift_themes').select('id, name, name_en, name_jp, ego_gift_ids, specific_ego_gift_ids, fixed_reward_gift_ids, image_url, difficulty, floor_info'),
     db.from('ego_gifts').select('*').order('keyword').order('grade'),
     db.from('ego_gift_recipes').select('*'),
     db.from('identities').select('id, sinner_id, name, name_kr, name_en, name_jp, tier, rarity, keywords, skill_keyword_list, affiliation, association_list, game_id, folder_name, hp, speed_min, speed_max, def_level, slash_res, pierce_res, blunt_res').order('rarity', { ascending: false }),

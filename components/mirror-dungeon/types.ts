@@ -5,7 +5,6 @@ export interface EgoGift {
   grade: string
   enhancement: boolean
   price: number | null
-  sell_price: number | null
   buy_disabled: boolean
   effect_base: string | null
   effect_plus: string | null
@@ -47,7 +46,6 @@ export interface Recipe {
 export interface EgoGiftTheme {
   id: number
   name: string
-  dungeon_id: number | null
   ego_gift_ids: number[]
   specific_ego_gift_ids: number[]
   image_url: string | null

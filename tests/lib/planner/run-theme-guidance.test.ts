@@ -3,7 +3,7 @@ import { createInitialRunState } from '../../../lib/planner/run-types'
 import { getRunThemeGuidance } from '../../../lib/planner/run-theme-guidance'
 import type { ThemeData } from '../../../lib/planner/types'
 
-const theme = (id: string, floors: number[], normalFloors: number[] = []): ThemeData => ({ id, name: id, floor_info: { '하드': floors, '노말': normalFloors }, dungeon_id: null, ego_gift_ids: [], specific_ego_gift_ids: [], image_url: null, difficulty: null })
+const theme = (id: string, floors: number[], normalFloors: number[] = []): ThemeData => ({ id, name: id, floor_info: { '하드': floors, '노말': normalFloors }, ego_gift_ids: [], specific_ego_gift_ids: [], image_url: null, difficulty: null })
 const plan = (ids: string[]) => ids.map((theme_id, index) => ({ floor: index + 1, theme_id })) as NonNullable<ReturnType<typeof createInitialRunState>['sourcePlanSnapshot']>['floorPlan']
 
 it('offers only the current planned pack, even when other planned packs could be swapped in', () => {

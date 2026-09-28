@@ -98,7 +98,6 @@ export interface GiftDetailData {
   /** Base, +, ++ effect text, already localized. */
   effects: [string | null, string | null, string | null]
   price?: number | null
-  sellPrice?: number | null
   buyDisabled?: boolean
   condition?: string | null
   conditionStatus?: GiftConditionStatus | null
@@ -264,15 +263,12 @@ export default function GiftDetailModal({ gift, lang, onClose, initialLevel = 0,
                   </span>
                 ))}
               </div>
-              {(gift.price != null || gift.sellPrice != null || gift.buyDisabled) && (
+              {(gift.price != null || gift.buyDisabled) && (
                 <dl className="mt-2.5 flex flex-wrap gap-x-4 gap-y-1" style={{ fontSize: '0.8125rem' }}>
                   {gift.buyDisabled ? (
                     <div className="flex gap-1.5"><dt className="sr-only">{t('price')}</dt><dd style={{ color: '#e06a5a' }}>{t('notForSale')}</dd></div>
                   ) : gift.price != null && (
                     <div className="flex items-center gap-1.5"><dt style={{ color: '#9c8b73' }}>{t('price')}</dt><Credits value={gift.price} /></div>
-                  )}
-                  {gift.sellPrice != null && (
-                    <div className="flex items-center gap-1.5"><dt style={{ color: '#9c8b73' }}>{t('sell')}</dt><Credits value={gift.sellPrice} /></div>
                   )}
                 </dl>
               )}
