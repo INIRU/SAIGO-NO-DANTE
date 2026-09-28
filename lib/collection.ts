@@ -1,7 +1,7 @@
 // ── 컬렉션 비트 인코딩/디코딩 공유 유틸리티 ─────────────────────────────────
 
 export type SinnerInfo = { id: string; name_kr: string; name_en?: string | null; name_jp?: string | null; order_num: number }
-export type IdentityInfo = { id: string; sinner_id: string; name_kr: string; game_id: string | null; folder_name: string | null; rarity: number; keywords: string[] | null }
+export type IdentityInfo = { id: string; sinner_id: string; name_kr: string; name_en?: string | null; name_jp?: string | null; game_id: string | null; folder_name: string | null; rarity: number; keywords: string[] | null }
 export type EGOInfo = { id: string; sinner_id: string; name_kr: string | null; name_en?: string | null; name_jp?: string | null; grade: string; sin_affinity: string | null; folder_name: string | null; image_url: string | null }
 
 export type CollectionData = {
@@ -75,4 +75,3 @@ export function withBaseIdentities(owned: Set<string>, identities: Record<string
 export function missingFormationCount(slots: readonly { id?: string | null; slot_order?: number | null }[], owned: ReadonlySet<string>): number {
   return slots.filter(slot => slot.id && (slot.slot_order ?? 99) < 99 && !owned.has(slot.id)).length
 }
-
