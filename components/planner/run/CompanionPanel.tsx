@@ -1,13 +1,13 @@
 'use client'
 
 import { createPortal } from 'react-dom'
-import { useEffect, useId, useMemo, useRef, useState, type MouseEvent } from 'react'
+import { useEffect, useId, useMemo, useRef, useState, type MouseEvent, type ReactNode } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { useLocale, useTranslations } from 'next-intl'
 import { toast } from 'sonner'
 import { PictureInPicture2, RotateCcw, RotateCw, Settings2 } from 'lucide-react'
 import { useCompanionWindow } from '@/lib/hooks/useCompanionWindow'
-import { getCurrentFloorPriorityGifts, getFusionTierGifts, nextGiftPromotion, planGiftIds, planThemeGiftIds, type GiftPromotion } from '@/lib/planner/run-priority-gifts'
+import { getCurrentFloorPriorityGifts, getFusionTierGifts, giftGameId, nextGiftPromotion, planGiftIds, planThemeGiftIds, type GiftPromotion } from '@/lib/planner/run-priority-gifts'
 import { acquisitionAttributionFloor, clearedThemeFloors, floorThemeObservationAction, getRunThemeGuidance, pendingThemeSelectionFloor, planStartGiftIds, runStartEnded } from '@/lib/planner/run-theme-guidance'
 import { EVENT_EXIT_SCENES, EVENT_IDLE_EXIT_MS, nextEventView, type StableScene } from '@/lib/vision/scene-state'
 import { normalizeRunState, runReducer, type RunAction, type RunState } from '@/lib/planner/run-types'
@@ -15,7 +15,6 @@ import type { ThemeData, GiftData, SkillSummary, RecipeData } from '@/lib/planne
 import { recipeIngredientsInInventory, recipeOwnedGiftIds, themeExclusiveGiftIds } from '@/lib/planner/fusion'
 import GiftArtwork from '@/components/ui/GiftArtwork'
 import { GiftWarningMark } from '@/components/ui/GiftCard'
-import { GIFT_PLAN_GLOW_BOX, GIFT_PLAN_GLOW_URL } from '@/lib/constants/gift'
 import { getLocalizedName } from '@/lib/i18n/localize'
 import type { SupportedLang } from '@/lib/i18n/types'
 import type { FloorThemeObservation, FusionEvidence, GiftSale, PopupAcquisition } from '@/lib/hooks/useAssistCapture'
@@ -388,10 +387,34 @@ export default function CompanionPanel({ state, dispatch, themes, giftMap, obser
   // Manual fallback when floor detection misses; PiP only, recorded through the same Undo history.
   const nextFloor = <CompanionNextFloorButton floor={state.currentFloor} maxFloors={state.maxFloors} label={t('nextFloor')}
     disabled={state.phase !== 'playing'} onAdvance={() => { record({ type: 'NEXT_FLOOR' }) }} />
+  const [settingsOpen, setSettingsOpen] = useState(false)
+  const iconButton = 'inline-flex h-8 w-8 items-center justify-center rounded border border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--border-hover)] hover:text-[var(--text-primary)] disabled:opacity-35 focus-visible:outline-2 focus-visible:outline-[var(--gold-light)]'
+  /**
+   * One header for every view: the floor, what the view is about, and the controls (Undo, Redo, next floor, window size).
+   * In the PiP it stays at the top while the gifts scroll under it.
+   */
+  const header = (inPip: boolean, title?: ReactNode, sub?: ReactNode, withRedo = false) => <header data-companion-header
+    className={inPip ? 'sticky top-0 z-20 -mx-3 -mt-3 mb-3 border-b border-[var(--border)] bg-[var(--bg-deep)] px-3 pb-2 pt-2.5' : 'mb-3 border-b border-[var(--border)] pb-2'}>
+    <div className="flex items-center gap-2.5">
+      <span className="font-[family-name:var(--font-title)] text-2xl leading-none text-[var(--gold-light)]" aria-label={t('currentFloor')}>{String(viewFloor).padStart(2, '0')}</span>
+      <div className="min-w-0 flex-1">
+        {title && <h2 data-theme-title tabIndex={-1} className="truncate font-[family-name:var(--font-heading)] text-sm leading-5 text-[var(--text-primary)]">{title}</h2>}
+        {sub && <p className="truncate text-[0.6875rem] leading-4 text-[var(--text-secondary)]">{sub}</p>}
+      </div>
+      <div className="flex shrink-0 items-center gap-1">
+        <button type="button" disabled={!canUndo} onClick={undo} aria-label={t('pipUndo')} title={t('pipUndo')} className={iconButton}><RotateCcw size={14} /></button>
+        {withRedo && <button type="button" disabled={!canRedo} onClick={redo} aria-label={t('pipRedo')} title={t('pipRedo')} className={iconButton}><RotateCw size={14} /></button>}
+        {inPip && nextFloor}
+        {inPip && <button type="button" aria-expanded={settingsOpen} onClick={() => setSettingsOpen(open => !open)} aria-label={t('pipSettings')} title={t('pipSettings')}
+          className={`${iconButton} ${settingsOpen ? 'border-[var(--gold-dim)] text-[var(--gold-light)]' : ''}`}><Settings2 size={14} /></button>}
+      </div>
+    </div>
+    {inPip && settingsOpen && <div className="mt-2 flex flex-wrap items-end gap-2 text-xs"><SizeInput label={t('pipWidth')} value={shownSize.width} min={320} max={900} onCommit={width => updateSize({ width, height: shownSize.height })} /><SizeInput label={t('pipHeight')} value={shownSize.height} min={280} max={900} onCommit={height => updateSize({ width: shownSize.width, height })} /></div>}
+  </header>
   const content = (inPip: boolean) => {
     // An event met while a pack is still pending shows its choices; the pending pack returns after it.
     if ((selectionFloor === null || scene?.label !== 'theme_select') && eventView?.floor === state.currentFloor && captureRunning) return <div data-companion-content={inPip ? 'pip' : 'inline'}>
-      {inPip && <div className="mb-2 flex justify-end">{nextFloor}</div>}
+      {header(inPip, t('pipEventMode'))}
       <CompanionEventChoices eventId={eventView.eventId} events={events} choices={eventChoices} giftMap={giftMap} />
     </div>
     const width = actualSize.width
@@ -402,15 +425,14 @@ export default function CompanionPanel({ state, dispatch, themes, giftMap, obser
     const artwork = Math.max(44, Math.min(64, cell - 8))
     // The skill replacement window takes the whole view until it closes; the gift list returns after it.
     if (skillExchange && state.sourcePlanSnapshot) return <div data-companion-content={inPip ? 'pip' : 'inline'}>
-      {inPip && <div className="mb-2 flex justify-end">{nextFloor}</div>}
+      {header(inPip)}
       <CompanionSkillExchange exchange={skillExchange} slots={state.sourcePlanSnapshot.identitySlots ?? []} skills={skills} />
     </div>
     if (startPhase) {
       const { start, observe } = planStartGiftIds(state)
       const gifts = (ids: number[]) => ids.flatMap(id => giftMap.get(id) ?? [])
-      return <div data-companion-content={inPip ? 'pip' : 'inline'} className="space-y-3">
-        <div className="text-center font-[family-name:var(--font-title)] text-xl text-[var(--gold-light)]" aria-label={t('currentFloor')}>{String(state.currentFloor).padStart(2, '0')}</div>
-        <div className="flex justify-end gap-1"><button type="button" disabled={!canUndo} onClick={undo} aria-label={t('pipUndo')} title={t('pipUndo')} className="inline-flex h-9 w-9 items-center justify-center rounded border border-[var(--border)] disabled:opacity-35 focus-visible:outline-2 focus-visible:outline-[var(--gold-light)]"><RotateCcw size={15} /></button>{inPip && nextFloor}</div>
+      return <div data-companion-content={inPip ? 'pip' : 'inline'}>
+        {header(inPip)}
         <CompanionStartGifts start={gifts(start)} observe={gifts(observe)} owned={ownedIds} width={availableWidth} onAcquire={(id, event) => acquire(id, event)} />
       </div>
     }
@@ -420,36 +442,49 @@ export default function CompanionPanel({ state, dispatch, themes, giftMap, obser
     const packGifts = pack ? planThemeGiftIds(state, themes, pack.theme.id).flatMap(id => giftMap.get(id) ?? []) : []
     const stacked = packGifts.length > 0 && availableWidth < 300
     const posterWidth = Math.max(96, Math.min(packGifts.length && !stacked ? 150 : 180, Math.floor(availableWidth * (packGifts.length && !stacked ? 0.42 : 0.6)),
-      Math.floor(((inPip ? actualSize.height : 448) - 112) * 416 / 684)))
+      Math.floor(((inPip ? actualSize.height : 448) - 132) * 416 / 684)))
     const posterHeight = Math.floor(posterWidth * 684 / 416)
-    const giftArea = { width: stacked ? availableWidth : availableWidth - posterWidth - 10, height: stacked ? Infinity : posterHeight }
+    const giftArea = { width: stacked ? availableWidth : availableWidth - posterWidth - 12, height: stacked ? Infinity : posterHeight - 20 }
     const giftLayout = [1, 2, 3, 4, 5, 6].map(columns => {
       const rows = Math.ceil(packGifts.length / columns)
       return { columns, size: Math.min(56, Math.floor((giftArea.width - (columns - 1) * 4) / columns), Math.floor((giftArea.height - (rows - 1) * 4) / rows)) }
     }).filter(option => option.size >= 28 && option.columns <= Math.max(1, packGifts.length))
       .sort((x, y) => y.size - x.size || y.columns - x.columns)[0] ?? { columns: Math.max(1, Math.floor((giftArea.width + 4) / 32)), size: 28 }
-    const packGiftList = packGifts.length > 0 && <ul aria-label={t('pipThemePlanGifts')} data-theme-plan-gifts={pack!.theme.id}
-      className="grid content-start justify-center gap-1 overflow-y-auto" style={{ gridTemplateColumns: `repeat(${Math.min(giftLayout.columns, packGifts.length)}, ${giftLayout.size}px)`,
-        maxHeight: stacked ? undefined : posterHeight }}>{packGifts.map(gift => {
+    const packGiftList = packGifts.length > 0 && <div className="min-w-0">
+      <p className="mb-1.5 text-[0.6875rem] font-bold text-[var(--gold-light)]">{t('pipThemePlanGifts')} <span className="font-[family-name:var(--font-title)] font-normal text-[var(--text-secondary)]">{packGifts.length}</span></p>
+      <ul aria-label={t('pipThemePlanGifts')} data-theme-plan-gifts={pack!.theme.id}
+      className="grid content-start gap-1 overflow-y-auto" style={{ gridTemplateColumns: `repeat(${Math.min(giftLayout.columns, packGifts.length)}, ${giftLayout.size}px)`,
+        maxHeight: stacked ? undefined : posterHeight - 20 }}>{packGifts.map(gift => {
         const have = ownedIds.has(gift.game_id)
         const label = have ? `${localized(gift)} · ${t('owned')}` : localized(gift)
         return <li key={gift.game_id} title={label} aria-label={label} data-owned={have || undefined} className={have ? 'opacity-40' : undefined}><GiftArtwork gift={gift} displayName={localized(gift)} sizes={`${giftLayout.size}px`} /></li>
-      })}</ul>
+      })}</ul></div>
     const plannedGiftIds = new Set(fusionView.current ? planGiftIds(state)
       : planThemeGiftIds(state, themes, state.floorLogs[state.currentFloor - 1]?.themeId ?? '', state.currentFloor))
-    // 이 층 테마팩에서만 나오는 기프트(전용·보스 보상)는 계획 여부와 상관없이 빨간 느낌표를 단다(계획 기프트는 노란 테두리도).
+    // 이 층 테마팩에서만 나오는 기프트(전용·보스 보상)는 계획 여부와 상관없이 빨간 느낌표를 단다.
     const floorOnlyIds = new Set(theme && !fusionView.current ? themeExclusiveGiftIds(theme) : [])
+    // Groups follow getCurrentFloorPriorityGifts' order: this floor's plan, final targets, then the rest led by
+    // floor-only gifts outside the plan. The headings replace the neon outline the plan gifts had.
+    const finalIds = new Set(state.targetGifts.map(giftGameId))
+    const groups = fusionView.current ? [] : [
+      { key: 'planned', label: t('groupFloorPlan'), list: availableGifts.filter(gift => plannedGiftIds.has(gift.game_id)) },
+      { key: 'final', label: t('groupTargets'), list: availableGifts.filter(gift => !plannedGiftIds.has(gift.game_id) && finalIds.has(gift.game_id)) },
+      { key: 'others', label: t('pipGroupOthers'), list: availableGifts.filter(gift => !plannedGiftIds.has(gift.game_id) && !finalIds.has(gift.game_id)) },
+    ].filter(group => group.list.length > 0)
+    const giftGrid = (list: typeof availableGifts, key: string) => <ul key={key} className="grid justify-center gap-[6px]" style={{ gridTemplateColumns: `repeat(${columns}, ${cell}px)` }} data-gift-grid={key}><AnimatePresence initial={false} mode="popLayout">{list.map(gift => <motion.li key={gift.game_id} layout={reducedMotion ? false : 'position'} initial={reducedMotion ? false : { opacity: 0, scale: 0.94 }} animate={{ opacity: 1, scale: 1 }} exit={reducedMotion ? { opacity: 1 } : { opacity: 0, scale: 0.94 }} transition={{ duration: reducedMotion ? 0 : 0.18 }} title={localized(gift)} className="min-w-0"><button type="button" data-gift-id={gift.game_id} onClick={event => acquire(gift.game_id, event)} title={localized(gift)} aria-label={[t('pipAcquireGift', { name: localized(gift) }), plannedGiftIds.has(gift.game_id) && t('pipPlanGift'), floorOnlyIds.has(gift.game_id) && t('pipFloorOnly')].filter(Boolean).join(' · ')} data-plan-gift={plannedGiftIds.has(gift.game_id) || undefined} className="w-full rounded-sm p-1 text-center hover:bg-[var(--bg-elevated)] focus-visible:outline-2 focus-visible:outline-[var(--gold-light)]"><span className="relative mx-auto block" style={{ width: artwork }}><GiftArtwork gift={gift} displayName={localized(gift)} sizes={`${artwork}px`} />{floorOnlyIds.has(gift.game_id) && <span aria-hidden="true" data-floor-only><GiftWarningMark label={t('pipFloorOnly')} className="-right-0.5 -top-1 z-40 h-4 w-4" /></span>}</span><span className="mt-1 block line-clamp-2 break-words text-[0.65rem] leading-4 text-[var(--text-secondary)]">{localized(gift)}</span></button></motion.li>)}</AnimatePresence></ul>
+    const groupTitle = (label: string, size: number) => <h3 className="mb-1.5 flex items-center gap-2 text-[0.6875rem] font-bold text-[var(--gold-light)]"><span>{label}</span><span className="font-[family-name:var(--font-title)] text-xs font-normal text-[var(--text-secondary)]">{size}</span><span aria-hidden="true" className="h-px flex-1 bg-[var(--border)]" /></h3>
+    const grouped = groups.length > 1
     return <div data-companion-content={inPip ? 'pip' : 'inline'}>
-      <motion.div key={theme?.id ?? 'unselected'} initial={reducedMotion ? false : { opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: reducedMotion ? 0 : 0.18, ease: 'easeOut' }} className="space-y-3">
-      {theme ? <div className="flex items-baseline gap-2 border-b border-[var(--border)] pb-2"><span className="font-[family-name:var(--font-title)] text-xl text-[var(--gold-light)]" aria-label={t('currentFloor')}>{String(state.currentFloor).padStart(2, '0')}</span><h2 data-theme-title tabIndex={-1} className="min-w-0 break-words font-[family-name:var(--font-heading)] text-sm text-[var(--text-primary)]">{localized(theme)}</h2></div> : <div className="text-center font-[family-name:var(--font-title)] text-xl text-[var(--gold-light)]" aria-label={t('currentFloor')}>{String(viewFloor).padStart(2, '0')}</div>}
-      {!theme ? <section aria-label={t('pipThemeGuidance')}>
-        <div className="mb-2 flex justify-end gap-1"><button type="button" disabled={!canUndo} onClick={undo} aria-label={t('pipUndo')} title={t('pipUndo')} className="inline-flex h-9 w-9 items-center justify-center rounded border border-[var(--border)] disabled:opacity-35 focus-visible:outline-2 focus-visible:outline-[var(--gold-light)]"><RotateCcw size={15} /></button>{inPip && nextFloor}</div>
-        {pack ? <div data-theme-choice={pack.theme.id} className={`flex justify-center gap-2.5 ${stacked ? 'flex-col items-center' : 'items-start'}`}><div className="shrink-0" style={{ width: posterWidth }}><ThemePackCard theme={pack.theme} imageSurface="bare" sizes={`${posterWidth}px`} ariaLabel={`${localized(pack.theme)} · ${t('pipThemePossible')} · ${t('pipThemeFloors', { floors: pack.availableFloors.join(', ') || '—' })}${pack.remainingOrder.length ? ` · ${t('pipThemeRemaining', { themes: pack.remainingOrder.map(next => `${next.floor}F ${localized(next.theme)}`).join(' · ') })}` : ''}`} title={`${localized(pack.theme)} · ${t('pipThemeFloors', { floors: pack.availableFloors.join(', ') || '—' })}`} onClick={event => { const owner = event.currentTarget.ownerDocument; const surface = event.currentTarget.closest('[data-companion-content]')?.getAttribute('data-companion-content'); chooseTheme(pack.theme.id); if (surface) owner.defaultView?.requestAnimationFrame(() => owner.querySelector<HTMLElement>(`[data-companion-content="${surface}"] [data-theme-title]`)?.focus({ preventScroll: true })); toast.success(t('themeSelected', { name: localized(pack.theme) })) }} /></div>{packGiftList}</div> : <p role="status" className="grid place-items-center px-2 text-center font-[family-name:var(--font-heading)] text-lg font-semibold text-[var(--gold-light)]" style={{ minHeight: inPip ? Math.max(160, actualSize.height - 130) : 180 }}>{t('pipChooseThemeBlank')}</p>}</section> : <section>
-        <div className={`flex items-center justify-between gap-1 ${inPip ? 'sticky top-0 z-10 border-b border-[var(--border)] bg-[var(--bg-deep)] py-1' : ''}`}><h3 className="text-xs font-bold text-[var(--gold-light)]">{t(fusionView.current ? 'fusionTierGiftsCount' : 'currentThemeGiftsCount', { count })}</h3><div className="flex gap-1"><button type="button" disabled={!canUndo} onClick={undo} aria-label={t('pipUndo')} title={t('pipUndo')} className="inline-flex h-9 w-9 items-center justify-center rounded border border-[var(--border)] disabled:opacity-35 focus-visible:outline-2 focus-visible:outline-[var(--gold-light)]"><RotateCcw size={15} /></button><button type="button" disabled={!canRedo} onClick={redo} aria-label={t('pipRedo')} title={t('pipRedo')} className="inline-flex h-9 w-9 items-center justify-center rounded border border-[var(--border)] disabled:opacity-35 focus-visible:outline-2 focus-visible:outline-[var(--gold-light)]"><RotateCw size={15} /></button>{inPip && nextFloor}</div></div>
-        {count ? <ul className="mt-2 grid justify-center gap-[6px]" style={{ gridTemplateColumns: `repeat(${columns}, ${cell}px)` }} data-gift-grid><AnimatePresence initial={false} mode="popLayout">{availableGifts.map(gift => <motion.li key={gift.game_id} layout={reducedMotion ? false : 'position'} initial={reducedMotion ? false : { opacity: 0, scale: 0.94 }} animate={{ opacity: 1, scale: 1 }} exit={reducedMotion ? { opacity: 1 } : { opacity: 0, scale: 0.94 }} transition={{ duration: reducedMotion ? 0 : 0.18 }} title={localized(gift)} className="min-w-0"><button type="button" data-gift-id={gift.game_id} onClick={event => acquire(gift.game_id, event)} title={localized(gift)} aria-label={[t('pipAcquireGift', { name: localized(gift) }), plannedGiftIds.has(gift.game_id) && t('pipPlanGift'), floorOnlyIds.has(gift.game_id) && t('pipFloorOnly')].filter(Boolean).join(' · ')} data-plan-gift={plannedGiftIds.has(gift.game_id) || undefined} className="w-full rounded-sm p-1 text-center hover:bg-[var(--bg-elevated)] focus-visible:outline-2 focus-visible:outline-[var(--gold-light)]"><span className="relative mx-auto block" style={{ width: artwork }}><GiftArtwork gift={gift} displayName={localized(gift)} sizes={`${artwork}px`} />{plannedGiftIds.has(gift.game_id) && <img src={GIFT_PLAN_GLOW_URL} alt="" aria-hidden="true" data-plan-glow className="pointer-events-none absolute z-30 max-w-none object-contain" style={GIFT_PLAN_GLOW_BOX} />}{floorOnlyIds.has(gift.game_id) && <span aria-hidden="true" data-floor-only><GiftWarningMark label={t('pipFloorOnly')} className="-right-0.5 -top-1 z-40 h-4 w-4" /></span>}</span><span className="mt-1 block line-clamp-2 break-words text-[0.65rem] leading-4 text-[var(--text-secondary)]">{localized(gift)}</span></button></motion.li>)}</AnimatePresence></ul> : <p className="mt-2 text-xs text-[var(--text-tertiary)]">{t(fusionView.current ? 'fusionTierGiftsOwned' : 'allThemeGiftsOwned')}</p>}
+      {theme ? header(inPip, localized(theme), t(fusionView.current ? 'fusionTierGiftsCount' : 'currentThemeGiftsCount', { count }), true)
+        : header(inPip, t('pipThemeGuidance'), pack ? t('pipThemeFloors', { floors: pack.availableFloors.join(', ') || '—' }) : undefined)}
+      <motion.div key={theme?.id ?? 'unselected'} initial={reducedMotion ? false : { opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: reducedMotion ? 0 : 0.18, ease: 'easeOut' }}>
+      {!theme ? <section aria-label={t('pipThemeGuidance')} className="grid place-items-center" style={{ minHeight: inPip ? Math.max(180, actualSize.height - 96) : 180 }}>
+        {pack ? <div data-theme-choice={pack.theme.id} className={`flex justify-center gap-3 ${stacked ? 'flex-col items-center' : 'items-start'}`}><div className="shrink-0" style={{ width: posterWidth }}><ThemePackCard theme={pack.theme} imageSurface="bare" sizes={`${posterWidth}px`} ariaLabel={`${localized(pack.theme)} · ${t('pipThemePossible')} · ${t('pipThemeFloors', { floors: pack.availableFloors.join(', ') || '—' })}${pack.remainingOrder.length ? ` · ${t('pipThemeRemaining', { themes: pack.remainingOrder.map(next => `${next.floor}F ${localized(next.theme)}`).join(' · ') })}` : ''}`} title={`${localized(pack.theme)} · ${t('pipThemeFloors', { floors: pack.availableFloors.join(', ') || '—' })}`} onClick={event => { const owner = event.currentTarget.ownerDocument; const surface = event.currentTarget.closest('[data-companion-content]')?.getAttribute('data-companion-content'); chooseTheme(pack.theme.id); if (surface) owner.defaultView?.requestAnimationFrame(() => owner.querySelector<HTMLElement>(`[data-companion-content="${surface}"] [data-theme-title]`)?.focus({ preventScroll: true })); toast.success(t('themeSelected', { name: localized(pack.theme) })) }} /></div>{packGiftList}</div> : <p role="status" className="px-2 text-center font-[family-name:var(--font-heading)] text-lg font-semibold text-[var(--gold-light)]">{t('pipChooseThemeBlank')}</p>}</section> : <section className="space-y-3">
+        {!count ? <p className="text-xs text-[var(--text-tertiary)]">{t(fusionView.current ? 'fusionTierGiftsOwned' : 'allThemeGiftsOwned')}</p>
+          : grouped ? groups.map(group => <div key={group.key}>{groupTitle(group.label, group.list.length)}{giftGrid(group.list, group.key)}</div>)
+          : giftGrid(availableGifts, 'all')}
       </section>}
       </motion.div>
-      {inPip && <details className="text-xs"><summary aria-label={t('pipSettings')} title={t('pipSettings')} className="ml-auto grid h-9 w-9 cursor-pointer list-none place-items-center text-[var(--text-secondary)] focus-visible:outline-2 focus-visible:outline-[var(--gold-light)] [&::-webkit-details-marker]:hidden"><Settings2 size={16} /><span className="sr-only">{t('pipSettings')}</span></summary><div className="mt-2 flex flex-wrap items-end gap-2"><SizeInput label={t('pipWidth')} value={shownSize.width} min={320} max={900} onCommit={width => updateSize({ width, height: shownSize.height })} /><SizeInput label={t('pipHeight')} value={shownSize.height} min={280} max={900} onCommit={height => updateSize({ width: shownSize.width, height })} /></div></details>}
     </div>
   }
 

@@ -151,14 +151,6 @@ export async function proxy(request: NextRequest) {
     }
   }
 
-  // Assist mode reads the Korean client only: other locales go to the planner board instead.
-  if (locale && locale !== 'ko' && hasPathPrefix(routePathname, '/planner/run')) {
-    const url = request.nextUrl.clone()
-    url.pathname = `/${locale}/planner/community`
-    url.search = ''
-    return NextResponse.redirect(url)
-  }
-
   // Anyone can write decks and plans (guests anonymously, with a browser key); suspended accounts cannot.
   const isCreationPage = routePathname === '/decks/new' || routePathname === '/planner'
   if (isCreationPage) {

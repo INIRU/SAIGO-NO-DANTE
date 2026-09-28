@@ -10,11 +10,17 @@ export const REPORT_MAX_CORRECTIONS = 200
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 
 export interface AssistCorrection { op: 'add' | 'remove'; giftId: string; auto: boolean; clientAt: number }
-/** width/height: the shared capture's size when the report is taken (window captures carry title bars and odd ratios). */
-export interface ReportContext { build: string | null; mode: string; ocr: string | null; width?: number | null; height?: number | null }
+/**
+ * width/height: the shared capture's size when the report is taken (window captures carry title bars and odd ratios).
+ * language: the game client's language chosen for recognition, so each client's read rate can be measured apart.
+ */
+export interface ReportContext { build: string | null; mode: string; ocr: string | null; width?: number | null; height?: number | null; language?: ReportLanguage | null }
+const REPORT_LANGUAGES = ['ko', 'en', 'ja'] as const
+type ReportLanguage = typeof REPORT_LANGUAGES[number]
 export interface AssistReport extends ReportContext {
   width: number | null
   height: number | null
+  language: ReportLanguage | null
   session: string
   counts: Record<ReportAction, { read: number; held: number }>
   corrections: AssistCorrection[]
@@ -59,7 +65,7 @@ export class AssistReportTally {
     const empty = !this.corrections.length && REPORT_ACTIONS.every(action => !this.counts[action].read && !this.counts[action].held)
     if (empty) return null
     const context = this.context()
-    const report = { session: this.session, ...context, width: context.width ?? null, height: context.height ?? null, counts: this.counts, corrections: this.corrections }
+    const report = { session: this.session, ...context, width: context.width ?? null, height: context.height ?? null, language: context.language ?? null, counts: this.counts, corrections: this.corrections }
     this.counts = emptyCounts()
     this.corrections = []
     return report
@@ -82,6 +88,9 @@ export function parseAssistReport(raw: unknown): AssistReport | null {
   const { session, build, mode, ocr, counts, corrections } = raw as Record<string, unknown>
   const width = side((raw as Record<string, unknown>).width), height = side((raw as Record<string, unknown>).height)
   if (width === false || height === false) return null
+  const rawLanguage = (raw as Record<string, unknown>).language
+  if (!(rawLanguage === undefined || rawLanguage === null || REPORT_LANGUAGES.includes(rawLanguage as ReportLanguage))) return null
+  const language = (rawLanguage ?? null) as ReportLanguage | null
   if (!isSessionId(session) || !(build === null || text(build, 64)) || !text(mode, 20) || !(ocr === null || text(ocr, 20)) ||
     !counts || typeof counts !== 'object' || !Array.isArray(corrections) || corrections.length > REPORT_MAX_CORRECTIONS) return null
   const parsedCounts = emptyCounts()
@@ -96,7 +105,7 @@ export function parseAssistReport(raw: unknown): AssistReport | null {
       !(typeof item.clientAt === 'number' && Number.isFinite(item.clientAt) && item.clientAt >= 0 && item.clientAt <= 8.64e15)) return null
     parsedCorrections.push({ op: item.op, giftId: item.giftId, auto: item.auto, clientAt: item.clientAt })
   }
-  return { session, build, mode, ocr, width, height, counts: parsedCounts, corrections: parsedCorrections }
+  return { session, build, mode, ocr, width, height, language, counts: parsedCounts, corrections: parsedCorrections }
 }
 
 /** Best effort; survives page unload. */

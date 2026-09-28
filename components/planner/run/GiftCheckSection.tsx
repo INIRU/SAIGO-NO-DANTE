@@ -11,7 +11,6 @@ import { planThemeGiftIds } from '@/lib/planner/run-priority-gifts'
 import GiftCatalog, { giftKeywordIcon, toCatalogGift, useGiftCatalogFilters, type GiftCatalogCardProps } from '@/components/gifts/GiftCatalog'
 import type { EgoGift } from '@/components/mirror-dungeon/types'
 import GiftArtwork from '@/components/ui/GiftArtwork'
-import { GIFT_PLAN_GLOW_BOX, GIFT_PLAN_GLOW_URL } from '@/lib/constants/gift'
 import { getLocalizedName } from '@/lib/i18n/localize'
 import type { SupportedLang } from '@/lib/i18n/types'
 
@@ -28,12 +27,10 @@ interface Props {
 
 export const runSectionTitle = 'font-[family-name:var(--font-heading)] text-base text-[var(--gold-light)]'
 
-const planGlow = <img src={GIFT_PLAN_GLOW_URL} alt="" aria-hidden="true" data-plan-glow className="pointer-events-none absolute z-30 max-w-none object-contain" style={GIFT_PLAN_GLOW_BOX} />
-
 /**
  * The run's gift tab: one list of this floor's gifts and the plan's final gifts, narrowed by check filters. Groups follow
- * the PiP: this floor's plan, gifts only this floor gives (red mark), final targets, then the rest by keyword. Plan gifts
- * wear the game neon. A click records or removes an acquisition. The side column keeps final gift progress, adding a
+ * the PiP: this floor's plan, final targets, then gifts only this floor gives outside the plan (red mark), then the rest
+ * by keyword. A click records or removes an acquisition. The side column keeps final gift progress, adding a
  * final gift, fusions and held gifts.
  */
 export default function GiftCheckSection({ state, dispatch, gifts, giftMap, themes, onChooseTheme, aside }: Props) {
@@ -71,10 +68,11 @@ export default function GiftCheckSection({ state, dispatch, gifts, giftMap, them
   const filters = useGiftCatalogFilters()
 
   const floorOnlyLabel = t('pipFloorOnly')
+  // A gift sits in the first group that has it, so floor-only gifts in the plan stay with the plan (still red-marked).
   const pinned = useMemo(() => [
     { ids: floorPlanIds, label: t('groupFloorPlan') },
-    { ids: floorOnlyIds, label: floorOnlyLabel, warning: true },
     { ids: targetIds, label: t('groupTargets') },
+    { ids: floorOnlyIds, label: floorOnlyLabel, warning: true },
   ], [floorPlanIds, floorOnlyIds, targetIds, floorOnlyLabel, t])
   // 칸마다 같은 객체를 돌려줘야 누를 때 격자 전체가 다시 그려지지 않는다
   const cardPropsById = useMemo(() => new Map(source.map(gift => {
@@ -135,7 +133,6 @@ export default function GiftCheckSection({ state, dispatch, gifts, giftMap, them
         <GiftCatalog compact gifts={catalog} getGiftKeywordIcon={giftKeywordIcon} filters={filters} pinned={pinned}
           markedIds={ownedIds} markedLabel={t('acquired')} onGiftClick={toggleOwned}
           cardProps={gift => cardPropsById.get(gift.id)}
-          renderBadge={gift => plannedIds.has(gift.id) ? planGlow : undefined}
           toolbarEnd={filterChecks} />
         {catalog.length === 0 && <p className="py-8 text-center text-sm text-[var(--text-tertiary)]">{t('targetFilterEmpty')}</p>}
       </section>

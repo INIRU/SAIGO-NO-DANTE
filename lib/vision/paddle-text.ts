@@ -246,3 +246,23 @@ export function ctcLexiconBest(probabilities: Float32Array, index: number, steps
   }
   return best ? { id: best.entry.id, name: best.entry.name, margin: best.score - second, gap: greedy - best.score } : null
 }
+
+/**
+ * Recognized lines on one row joined left to right, rows top to bottom. The detector often boxes words of a wide-spaced line apart, e.g. the
+ * English banner "Exploring" | "Floor 3" (2026-09-28 gameplay video), so a phrase is tested on the joined row.
+ */
+export function joinRowLines<T extends { text: string; rect: TextRect }>(lines: T[]): { text: string; rect: TextRect }[] {
+  const rows: { text: string; rect: TextRect }[] = []
+  for (const line of [...lines].sort((first, second) => first.rect.x - second.rect.x)) {
+    const middle = line.rect.y + line.rect.height / 2
+    const row = rows.find(item => Math.abs(item.rect.y + item.rect.height / 2 - middle) < Math.max(item.rect.height, line.rect.height) * 0.4 &&
+      line.rect.x - (item.rect.x + item.rect.width) < Math.max(item.rect.height, line.rect.height) * 1.5)
+    if (!row) { rows.push({ text: line.text, rect: { ...line.rect } }); continue }
+    const bottom = Math.max(row.rect.y + row.rect.height, line.rect.y + line.rect.height)
+    row.text = `${row.text} ${line.text}`
+    row.rect = { x: row.rect.x, y: Math.min(row.rect.y, line.rect.y), width: Math.max(row.rect.x + row.rect.width, line.rect.x + line.rect.width) - row.rect.x,
+      height: 0, score: Math.min(row.rect.score, line.rect.score) }
+    row.rect.height = bottom - row.rect.y
+  }
+  return rows.sort((first, second) => first.rect.y - second.rect.y)
+}
