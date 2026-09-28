@@ -70,9 +70,9 @@ export function nextGiftPromotion(previous: GiftPromotion | null, { state, runni
 }
 
 /**
- * All unowned gifts from the floor's actual theme: this floor's planned gifts, theme exclusives (only this floor gives
- * them, so they sit above the many final targets from the common pool), registered targets in registration order,
- * promoted (seen) gifts, then the rest; exclusives, seen and the rest keep theme catalog order,
+ * All unowned gifts from the floor's actual theme: this floor's planned gifts, registered targets in registration
+ * order, theme exclusives outside the plan (only this floor gives them, so they lead the unplanned gifts), promoted
+ * (seen) gifts, then the rest; exclusives, seen and the rest keep theme catalog order,
  * so the order of sightings never matters. Pass `nextGiftPromotion(...).ids`, not raw per-frame observations.
  */
 export function getCurrentFloorPriorityGifts(state: RunState, themes: ThemeData[], giftMap: Map<number, GiftData>,
@@ -103,10 +103,9 @@ export function getCurrentFloorPriorityGifts(state: RunState, themes: ThemeData[
     }
   }
   addKeys(withThemeRewards(planned?.gift_ids ?? [], theme))
-  for (const gift of themeGifts) if (exclusiveIds.has(gift.game_id)) add(gift)
   addKeys(state.targetGifts)
+  for (const gift of themeGifts) if (exclusiveIds.has(gift.game_id)) add(gift)
   for (const gift of themeGifts) if (promoted.has(gift.game_id)) add(gift)
   for (const gift of themeGifts) add(gift)
   return result
 }
-

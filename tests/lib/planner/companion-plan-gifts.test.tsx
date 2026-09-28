@@ -36,7 +36,7 @@ it('shows only the planned pack, its poster beside the plan gifts for it, dimmin
   expect(choice).toMatch(/aria-label="pack-A · [^"]*"/)
   expect(choice).toMatch(/>pack-A<\/div>/)
   // Beside the poster in a 360 px window, always visible, sized so every gift fits the poster's height.
-  expect(html).toMatch(/<div[^>]*data-theme-choice="A"[^>]*class="flex justify-center gap-2\.5 items-start"/)
+  expect(html).toMatch(/<div[^>]*data-theme-choice="A"[^>]*class="flex justify-center gap-3 items-start"/)
   const list = html.match(/<ul[^>]*data-theme-plan-gifts="A"[^>]*>.*?<\/ul>/)?.[0] ?? ''
   expect(list).toContain(`aria-label="${messages.planner.run.pipThemePlanGifts}"`)
   expect(list).not.toContain('opacity-0')
@@ -46,25 +46,33 @@ it('shows only the planned pack, its poster beside the plan gifts for it, dimmin
   expect(list).not.toContain('gift-10')
 })
 
-it('REQ-ASSIST-042 outlines the plan gifts among this floor available gifts with the game neon, and marks every floor-only gift with the red warning', () => {
+it('REQ-ASSIST-042 groups this floor plan gifts, final targets and the rest, and marks every floor-only gift with the red warning', () => {
   const html = render(runReducer(started(), { type: 'SET_FLOOR_THEME', themeId: 'A' }))
   expect(html).toContain('data-gift-grid')
+  // Headings mark the plan gifts, so no neon outline is drawn.
+  expect(html).not.toContain('data-plan-glow')
   const button = (id: number) => html.match(new RegExp(`<button[^>]*data-gift-id="${id}".*?</button>`))?.[0] ?? ''
   for (const id of [20, 30]) {
     expect(button(id)).toContain('data-plan-gift="true"')
-    expect(button(id)).toMatch(/<img src="\/assets\/game-ui\/gift\/plan-glow\.webp\?v=[^"]+"[^>]*data-plan-glow/)
     expect(button(id)).not.toContain('data-gift-warning')
   }
-  // As in the planner, the red mark means "only this floor's pack gives it", planned or not; plan gifts keep the neon too.
+  // As in the planner, the red mark means "only this floor's pack gives it", planned or not.
   const exclusiveHtml = render(runReducer(started(), { type: 'SET_FLOOR_THEME', themeId: 'A' }), null, 'exploration', [10, 30])
   const exclusiveButton = (id: number) => exclusiveHtml.match(new RegExp(`<button[^>]*data-gift-id="${id}".*?</button>`))?.[0] ?? ''
   expect(exclusiveButton(30)).toContain('data-gift-warning')
   expect(exclusiveButton(30)).toContain(messages.planner.run.pipFloorOnly)
   expect(exclusiveButton(10)).toContain('data-gift-warning')
-  expect(exclusiveButton(10)).not.toContain('data-plan-glow')
   expect(exclusiveButton(20)).not.toContain('data-gift-warning')
-  expect(button(10)).not.toContain('data-plan-glow')
-  expect(render(runReducer({ ...started(), sourcePlanSnapshot: undefined }, { type: 'SET_FLOOR_THEME', themeId: 'A' }))).not.toContain('data-plan-glow')
+  // A floor-only gift outside the plan leads the other gifts, below the plan and final groups.
+  const grids = (markup: string) => Object.fromEntries([...markup.matchAll(/data-gift-grid="(\w+)"(.*?)<\/ul>/g)]
+    .map(match => [match[1], [...match[2].matchAll(/data-gift-id="(\d+)"/g)].map(id => Number(id[1]))]))
+  const withFinal = render(runReducer({ ...started(), targetGifts: ['30'] }, { type: 'SET_FLOOR_THEME', themeId: 'A' }), null, 'exploration', [10])
+  expect(grids(withFinal)).toEqual({ planned: [20, 30], others: [10] })
+  const finalOnly = render(runReducer({ ...started(), targetGifts: ['40', '10'], sourcePlanSnapshot: { floorPlan: [{ floor: 1, theme_id: 'A', gift_ids: ['20'] }] } as RunState['sourcePlanSnapshot'] }, { type: 'SET_FLOOR_THEME', themeId: 'A' }), null, 'exploration', [30])
+  expect(grids(finalOnly)).toEqual({ planned: [20], final: [10], others: [30] })
+  expect(finalOnly).toContain(messages.planner.run.groupTargets)
+  // Without a plan or targets there is one list and no headings.
+  expect(grids(render(runReducer({ ...started(), sourcePlanSnapshot: undefined }, { type: 'SET_FLOOR_THEME', themeId: 'A' })))).toEqual({ all: [10, 20, 30] })
 })
 
 it('replaces the gift list with the planned skills and the replacements to buy while the skill window is open', () => {
@@ -93,7 +101,7 @@ it('switches the gift list to the plan tier IV+ gifts while the fusion screen is
   // Tier V gift 50 is not in the plan, so it is not listed.
   expect(fusion).toContain('합성으로 얻을 플랜 4등급 이상 기프트 (1개)')
   expect(grid(fusion)).toEqual([40])
-  expect(fusion.match(/<button[^>]*data-gift-id="40".*?<\/button>/)?.[0]).toContain('data-plan-glow')
+  expect(fusion).not.toContain('data-gift-grid="planned"')
   expect(grid(render(planned, null, 'shop'))).toEqual([20, 30, 10])
   // Without a plan the fusion screen keeps the floor list.
   expect(grid(render(runReducer({ ...started(), sourcePlanSnapshot: undefined }, { type: 'SET_FLOOR_THEME', themeId: 'A' }), null, 'fusion'))).toEqual([10, 20, 30])
