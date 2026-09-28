@@ -2,13 +2,13 @@
 
 import type { ReactNode } from 'react'
 import Image from 'next/image'
-import { useLocale } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import IdentityFrameCard from '@/components/ui/IdentityFrameCard'
 import EgoDisplayCard from '@/components/sinners/EgoDisplayCard'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
 import { SIN_COLORS } from '@/lib/constants/sin'
 import { getSinnerLogoUrl } from '@/lib/utils/images'
-import { getLocalizedName } from '@/lib/i18n/localize'
+import { getLocalizedKeywordName, getLocalizedName } from '@/lib/i18n/localize'
 import type { CollectionData, EGOInfo, IdentityInfo } from '@/lib/collection'
 import type { SupportedLang } from '@/lib/i18n/types'
 import styles from './CollectionBoard.module.css'
@@ -41,11 +41,11 @@ export default function CollectionBoard({ data, filtered, counts, owned, sinner,
   actions?: ReactNode
 }) {
   const lang = useLocale() as SupportedLang
-  const { sinMap, getIconUrl } = useKeywordData()
+  const t = useTranslations('collectionPage')
+  const { sinMap, getIconUrl, keywords } = useKeywordData()
   const shown = sinner === COLLECTION_ALL ? data.sinners : data.sinners.filter(s => s.id === sinner)
   const total = { owned: 0, total: 0 }
   for (const c of Object.values(counts)) { total.owned += c?.owned ?? 0; total.total += c?.total ?? 0 }
-  const label = { ko: { all: '전체', unowned: '미보유도 보기', identities: '인격', egos: 'E.G.O', empty: '조건에 맞는 인격·E.G.O가 없습니다' }, en: { all: 'All', unowned: 'Show unowned', identities: 'Identities', egos: 'E.G.O', empty: 'Nothing matches these filters' }, ja: { all: 'すべて', unowned: '未所持も表示', identities: '人格', egos: 'E.G.O', empty: '条件に合う人格・E.G.Oがありません' } }[lang] ?? { all: '전체', unowned: '미보유도 보기', identities: '인격', egos: 'E.G.O', empty: '' }
 
   const sinnerTile = (id: string, name: string, c: { owned: number; total: number }, logo?: string) => (
     <button key={id} type="button" className={styles.sinner} aria-pressed={sinner === id} onClick={() => onSinner(id)} data-complete={c.total > 0 && c.owned === c.total || undefined}>
@@ -78,15 +78,15 @@ export default function CollectionBoard({ data, filtered, counts, owned, sinner,
         )}
         {ids.length > 0 && (
           <>
-            <p className={styles.kind}>{label.identities}<b>{ids.filter(i => owned.has(i.id)).length}/{ids.length}</b></p>
+            <p className={styles.kind}>{t('identities')}<b>{ids.filter(i => owned.has(i.id)).length}/{ids.length}</b></p>
             <ul className={styles.identities}>
-              {ids.map(identity => item(identity.id, <IdentityFrameCard identity={identity} name={identity.name_kr} sizes="(max-width: 40rem) 30vw, 9rem" />))}
+              {ids.map(identity => item(identity.id, <IdentityFrameCard identity={identity} name={getLocalizedName(identity, lang)} sizes="(max-width: 40rem) 30vw, 9rem" />))}
             </ul>
           </>
         )}
         {egos.length > 0 && (
           <>
-            <p className={styles.kind}>{label.egos}<b>{egos.filter(e => owned.has(e.id)).length}/{egos.length}</b></p>
+            <p className={styles.kind}>E.G.O<b>{egos.filter(e => owned.has(e.id)).length}/{egos.length}</b></p>
             <ul className={styles.egos}>
               {GRADES.flatMap(grade => egos.filter(e => e.grade === grade)).map(ego => item(ego.id,
                 <EgoDisplayCard displayOnly ego={{ grade: ego.grade, image_url: ego.image_url, sin_affinity: ego.sin_affinity }} name={getLocalizedName({ ...ego, name_kr: ego.name_kr ?? '' }, lang)} sinnerId={ego.sinner_id} lang={lang} />,
@@ -101,30 +101,30 @@ export default function CollectionBoard({ data, filtered, counts, owned, sinner,
   return (
     <div className={styles.board}>
       <div className={styles.sinners}>
-        {sinnerTile(COLLECTION_ALL, label.all, total)}
+        {sinnerTile(COLLECTION_ALL, t('all'), total)}
         {data.sinners.map(s => sinnerTile(s.id, getLocalizedName(s, lang), counts[s.id] ?? { owned: 0, total: 0 }, getSinnerLogoUrl(s.id)))}
       </div>
       <div className={styles.filters}>
         <div className={styles.keywords}>
-          <button type="button" className={styles.chip} aria-pressed={!keyword} onClick={() => onKeyword(null)}>{label.all}</button>
+          <button type="button" className={styles.chip} aria-pressed={!keyword} onClick={() => onKeyword(null)}>{t('all')}</button>
           {KEYWORDS.map(kw => {
             const icon = getIconUrl(kw)
             const sin = sinMap[kw]
             return (
               <button key={kw} type="button" className={styles.chip} aria-pressed={keyword === kw} onClick={() => onKeyword(keyword === kw ? null : kw)}
                 style={sin ? { '--kw': SIN_COLORS[sin] } as React.CSSProperties : undefined}>
-                {icon && <Image src={icon} alt="" width={16} height={16} />}{kw}
+                {icon && <Image src={icon} alt="" width={16} height={16} />}{getLocalizedKeywordName(kw, keywords[kw], lang)}
               </button>
             )
           })}
         </div>
         <label className={styles.switchRow}>
-          {label.unowned}
+          {t('showUnowned')}
           <input type="checkbox" role="switch" className={styles.switch} checked={showUnowned} onChange={event => onShowUnowned(event.target.checked)} />
         </label>
       </div>
       {actions && <div className={styles.actions}>{actions}</div>}
-      {sections.length ? sections : <p className={styles.empty}>{label.empty}</p>}
+      {sections.length ? sections : <p className={styles.empty}>{t('empty')}</p>}
     </div>
   )
 }
