@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import { useRouter } from '@/lib/i18n/navigation'
 import { useLocale, useTranslations } from 'next-intl'
-import { assistAvailable } from '@/lib/assist/availability'
 import { Copy, GitFork, Pencil, Trash2, Check, Play } from 'lucide-react'
 import { saveDraftToLocal, savePlanForRun } from '@/lib/planner/encoder'
 import { teamCodeFromPlanSlots } from '@/lib/planner/team-code-import'
@@ -108,7 +107,6 @@ export default function PlanActions({
   const t = useTranslations('planner.detail')
   const tCommon = useTranslations('common')
   const locale = useLocale()
-  const showAssist = assistAvailable(locale)
   const [codeCopied, setCodeCopied] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
 
@@ -223,7 +221,7 @@ export default function PlanActions({
           {t('fork')}
         </button>
 
-        {showAssist && <button
+        {<button
           data-plan-action="assist"
           onClick={handleRunMode}
           className={`${primaryAction} min-[420px]:col-span-2`}

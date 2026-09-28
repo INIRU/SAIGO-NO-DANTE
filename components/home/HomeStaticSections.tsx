@@ -1,6 +1,5 @@
 import { Suspense } from 'react'
 import Image from 'next/image'
-import { assistAvailable } from '@/lib/assist/availability'
 import { getTranslations } from 'next-intl/server'
 import { ArrowUpRight, ExternalLink, Globe, XIcon } from 'lucide-react'
 import { Link } from '@/lib/i18n/navigation'
@@ -144,7 +143,7 @@ function Tools({ t, identities, lang }: { t: TFn; identities: IdentityWithSinner
     <section className={styles.section} data-home-reveal aria-labelledby="home-tools-heading">
       <Heading id="home-tools-heading" title={t('home.tools.title')} />
       <div className={styles.tools}>
-        {TOOLS.filter(tool => tool.key !== 'assist' || assistAvailable(lang)).map(tool => (
+        {TOOLS.map(tool => (
           <Link key={tool.key} href={tool.href} className={styles.tool}>
             <span className={styles.toolName}>{t(`home.tools.${tool.key}`)}</span>
             {tool.key === 'deckBuilder' ? (
