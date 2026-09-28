@@ -720,7 +720,9 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
           const dialog = dialogForResult(seenDialogs.current, evidence.capturedAt)
           if (dialog) dialog.resultAt = evidence.capturedAt
           else if (wheelFrames.current.some(item => item.at < evidence.capturedAt! && item.lastAt >= evidence.capturedAt! - DIALOGLESS_WHEEL_MS &&
-            showsWheel(item, wheelReference.current))) {
+            // Before the first read of the selection screen (a fusion within seconds of opening it on a slow GPU) the wheel's
+            // look is unknown: the result waits for it below instead of being dropped.
+            (!wheelReference.current || showsWheel(item, wheelReference.current)))) {
             dialoglessResults.current = [...dialoglessResults.current.slice(-3), { capturedAt: evidence.capturedAt }]
           }
         }
@@ -1203,11 +1205,27 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
                 setScene(current => current?.label === 'fusion' || current?.label === 'gift_acquired' ? current : { label: 'fusion', since: capture.at })
               }
               screenReads.current = [...screenReads.current.filter(item => capture.at - item.at < 10_000), { at: capture.at, fusion: fusionScreen }]
+              // OCR positions are on the reading canvas (at most 1920 px wide); the slot crops use full-size frames.
+              const factor = capture.width ? capture.width / Math.min(capture.width, 1920) : 1
+              const box = (rect: { left: number; top: number; width: number; height: number }) =>
+                ({ left: rect.left * factor, top: rect.top * factor, width: rect.width * factor, height: rect.height * factor })
+              // Read before the waiting results below, so a result that waited for the wheel's look is read with this one.
+              if (isFusionSelectionScreen(result.text)) {
+                // Where the wheel is on this capture (window title bar, scaling), for the crops kept from now on.
+                const found = fusionWheelAnchors(result.words)
+                if (found && (!wheelAnchors.current || capture.at >= wheelAnchors.current.at)) {
+                  wheelAnchors.current = { anchors: { title: box(found.title), wish: box(found.wish) }, at: capture.at }
+                }
+                const shown = wheelFrames.current.find(item => item.at <= capture.at + 100 && capture.at <= item.lastAt + 200)
+                if (shown?.band) wheelReference.current = shown.band
+              }
               // A result with no dialog seen (dialoglessFusionResult): its materials come from the wheel states before it,
               // read like a dialog's, with the capacity of this session's earlier dialog.
               for (const pending of dialoglessResults.current.filter(item => item.capturedAt < capture.at)) {
                 // A dialog still being read (an earlier fusion) finishes first; the result waits for a later screen read.
                 if (fusionDialog.current && !fusionDialog.current.published && capture.at - pending.capturedAt < 8000) continue
+                // The wheel's look is not known yet: wait for a read of the selection screen (the states are kept WHEEL_KEEP_MS).
+                if (!wheelReference.current && capture.at - pending.capturedAt < WHEEL_KEEP_MS - 1000) continue
                 dialoglessResults.current = dialoglessResults.current.filter(item => item !== pending)
                 const previous = screenReads.current.filter(item => item.at < pending.capturedAt).at(-1)
                 // A dialog seen only now (its read came late) may still explain the result.
@@ -1232,19 +1250,6 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
                 takeWheelReads(fusionDialog.current)
                 fusionWanted.current = { count: capacity, capacity, at: Date.now() }
                 lastDialogAt.current = Math.max(lastDialogAt.current, pending.capturedAt)
-              }
-              // OCR positions are on the reading canvas (at most 1920 px wide); the slot crops use full-size frames.
-              const factor = capture.width ? capture.width / Math.min(capture.width, 1920) : 1
-              const box = (rect: { left: number; top: number; width: number; height: number }) =>
-                ({ left: rect.left * factor, top: rect.top * factor, width: rect.width * factor, height: rect.height * factor })
-              if (isFusionSelectionScreen(result.text)) {
-                // Where the wheel is on this capture (window title bar, scaling), for the crops kept from now on.
-                const found = fusionWheelAnchors(result.words)
-                if (found && (!wheelAnchors.current || capture.at >= wheelAnchors.current.at)) {
-                  wheelAnchors.current = { anchors: { title: box(found.title), wish: box(found.wish) }, at: capture.at }
-                }
-                const shown = wheelFrames.current.find(item => item.at <= capture.at + 100 && capture.at <= item.lastAt + 200)
-                if (shown?.band) wheelReference.current = shown.band
               }
               // The selection screen or an acquisition popup without the dialog: a dialog read after it is a new fusion.
               if (!confirmation && (isFusionSelectionScreen(result.text) || /획득했습니다/.test(result.text.normalize('NFKC').replace(/\s+/g, '')))) {
