@@ -19,6 +19,7 @@ import sharp from 'sharp'
 import { missingThemeImages, themeImageSource } from './theme-images'
 import { RESTORE_TABLES } from './extraction-restore'
 import { egoDrift } from './ego-drift'
+import { extractionGaps as findGaps, leftoverChanges, parseSyncSummary, storageKeyOf } from './sync-result'
 import { eventImageIdFromFilename } from '../assets/event-image-source'
 
 config({ path: '.env.local', quiet: true })
@@ -69,6 +70,33 @@ function run(work: string, label: string, command: string[], env: NodeJS.Process
   if (!ok) throw Error(`${label} failed (see ${log}):\n${readFileSync(log, 'utf8').slice(-2000)}`)
 }
 
+const logOf = (work: string, label: string) => readFileSync(join(work, 'logs', `${label}.log`), 'utf8')
+
+type EgoPlan = { egos: Record<string, unknown>[]; skills: Record<string, unknown>[]; passives: Record<string, unknown>[] }
+/** EGO whose DB rows differ from what bootstrap-data.ts builds from this ZIP (every produced field), or are missing. */
+async function egoDiffs(work: string, env: NodeJS.ProcessEnv, label: string, ids: string[]) {
+  const dir = join(work, label)
+  run(work, label, command('scripts/sync/bootstrap-data.ts', ['--ego-ids', ids.join(','), '--output', dir]), env)
+  const plan = JSON.parse(readFileSync(join(dir, 'bootstrap-plan.json'), 'utf8')) as EgoPlan
+  const [egoRows, skillRows, passiveRows] = await Promise.all([all('ego'), all('ego_skills'), all('ego_passives')])
+  return plan.egos.flatMap(ego => {
+    const current = egoRows.find(row => row.id === ego.id)
+    if (!current) return [{ gameId: String(ego.game_id), name: String(ego.name_kr), fields: ['missing'] }]
+    const of = (rows: Record<string, unknown>[]) => rows.filter(row => row.ego_id === ego.id)
+    const fields = egoDrift({ ego, skills: of(plan.skills), passives: of(plan.passives) }, { ego: current, skills: of(skillRows), passives: of(passiveRows) })
+    return fields.length ? [{ gameId: String(ego.game_id), name: String(ego.name_kr), fields }] : []
+  })
+}
+
+/** After --fix: each step's dry-run and the EGO check again; whatever they would still change is a mismatch. */
+async function leftoverDiffs(work: string, env: NodeJS.ProcessEnv, egoIds: string[]) {
+  for (const step of STEPS.filter(item => item.name !== 'events')) run(work, `verify-${step.name}`, command(step.script, step.args), env)
+  const left = leftoverChanges(parseSyncSummary(logOf(work, 'verify-identity')), parseSyncSummary(logOf(work, 'verify-mirror')))
+  // Events: rebuild-mirror-events.ts reads its rows back and fails on any difference during --fix.
+  for (const ego of await egoDiffs(work, env, 'verify-ego', egoIds)) left.push(`EGO ${ego.gameId} ${ego.fields.join(',')}`)
+  return left
+}
+
 async function storedNames(dir: string) {
   const names = new Set<string>()
   for (let offset = 0; ; offset += 1000) {
@@ -97,7 +125,7 @@ async function uploadMissingGiftIcons(source: string, uploads: Upload[]) {
   const manifest = readManifest(source), stored = await storedNames('ego-gifts'), missing: string[] = []
   const bucket = client().storage.from('limbus-assets')
   for (const gift of await all('ego_gifts', 'id,game_id,image_url')) {
-    const key = String(gift.image_url ?? '').split('/limbus-assets/')[1]
+    const key = storageKeyOf(gift.image_url as string | null)
     if (!key?.startsWith('ego-gifts/') || stored.has(key.slice('ego-gifts/'.length))) continue
     const entry = manifest.find(item => item.kind === '기프트' && item.name === String(gift.game_id))
     if (!entry) { missing.push(String(gift.game_id)); continue }
@@ -192,90 +220,98 @@ async function main() {
     report.newEgos = newEgos
     const identitiesBefore = new Set((await all('identities', 'id,game_id')).map(row => String(row.game_id)))
 
-    for (const step of STEPS) {
-      if (FIX && step.name === 'events') {
-        await uploadMissingEventImages(source, uploads)
-        console.log('ok   event-images')
-      }
-      run(work, `${step.name}-dry-run`, command(step.script, step.args), env)
-      if (!FIX) continue
-      if (!existsSync(join(work, 'backup'))) {
-        mkdirSync(join(work, 'backup'))
-        for (const table of BACKUP_TABLES) writeFileSync(join(work, 'backup', `${table}.json`), JSON.stringify(await all(table)), { flag: 'wx' })
-        console.log('ok   backup')
-      }
-      run(work, `${step.name}-fix`, command(step.script, [...step.args, '--fix']), env)
-      ;(report.steps as string[]).push(step.name)
-      if (step.name === 'mirror') {
-        report.giftsWithoutIcon = await uploadMissingGiftIcons(source, uploads)
-        console.log('ok   gift-icons')
-      }
-    }
-
-    // New identities: illustrations, portraits, avatar profiles and skill icons from the same verified ZIP.
-    const newIdentities = FIX ? (await all('identities', 'id,game_id')).map(row => String(row.game_id)).filter(id => !identitiesBefore.has(id)) : []
-    report.newIdentities = newIdentities
-    if (newIdentities.length) {
-      run(work, 'identity-images', command('scripts/assets/sync-extracted-identities.cjs', ['--ids', newIdentities.join(','), '--source', source, '--output', join(work, 'identity-images'), '--fix']), env)
-      ;(report.steps as string[]).push('identity-images')
-    }
-
-    // New EGO: bootstrap-data.ts writes their rows, stage skills and passives (with SkillTag section names) from this ZIP.
-    if (newEgos.length) {
-      const egoArgs = ['--ego-ids', newEgos.join(','), '--output', join(work, 'new-ego')]
-      run(work, 'new-ego-dry-run', command('scripts/sync/bootstrap-data.ts', egoArgs), env)
-      if (FIX) {
-        run(work, 'new-ego-fix', command('scripts/sync/bootstrap-data.ts', [...egoArgs, '--fix']), env)
-        console.log(`ok   new-ego-images (${await uploadEgoImages(source, newEgos, uploads)} uploaded)`)
-        await revalidateGameData()
-        ;(report.steps as string[]).push('new-ego')
-      }
-    }
-
-    // Existing EGO whose grade, sin, cost, resistance, passives or stage skill stats differ from this ZIP are rebuilt from it
-    // (rows copied from another EGO, missing stage passives, balance patches). Text-only differences stay with the identity step.
+    // 2. Dry-run every step, then refuse an incomplete extraction before anything is written: the game never removes
+    // identities, EGO, gifts, theme packs or recipes, so one the DB has and the ZIP lacks means files are missing.
+    for (const step of STEPS) run(work, `${step.name}-dry-run`, command(step.script, step.args), env)
+    const gaps = findGaps(parseSyncSummary(logOf(work, 'identity-dry-run')), parseSyncSummary(logOf(work, 'mirror-dry-run')), [...knownEgo].filter(id => !egoIds.has(id)))
+    if (gaps.length) throw Error(`the extraction is incomplete, nothing was written: ${gaps.join('; ')}`)
+    console.log('ok   completeness')
     const existingEgos = [...egoIds].filter(id => knownEgo.has(id)).sort()
-    if (existingEgos.length) {
-      const checkDir = join(work, 'existing-ego')
-      run(work, 'existing-ego-check', command('scripts/sync/bootstrap-data.ts', ['--ego-ids', existingEgos.join(','), '--output', checkDir]), env)
-      const plan = JSON.parse(readFileSync(join(checkDir, 'bootstrap-plan.json'), 'utf8')) as { egos: Record<string, unknown>[]; skills: Record<string, unknown>[]; passives: Record<string, unknown>[] }
-      const [egoRows, skillRows, passiveRows] = await Promise.all([all('ego'), all('ego_skills'), all('ego_passives')])
-      const changed = plan.egos.flatMap(ego => {
-        const current = egoRows.find(row => row.id === ego.id)
-        if (!current) return []
-        const of = (rows: Record<string, unknown>[]) => rows.filter(row => row.ego_id === ego.id)
-        const fields = egoDrift({ ego, skills: of(plan.skills), passives: of(plan.passives) }, { ego: current, skills: of(skillRows), passives: of(passiveRows) })
-        return fields.length ? [{ gameId: String(ego.game_id), name: String(ego.name_kr), fields }] : []
-      })
-      report.changedEgos = changed
-      if (FIX && changed.length) {
-        run(work, 'existing-ego-fix', command('scripts/sync/bootstrap-data.ts', ['--ego-ids', changed.map(item => item.gameId).join(','), '--output', join(work, 'existing-ego-fix'), '--replace', '--fix']), env)
-        await revalidateGameData()
-        ;(report.steps as string[]).push('existing-ego')
-      }
-      console.log(`ok   existing-ego (${changed.length} ${FIX ? 'rebuilt' : 'differ'})`)
-    }
+    const changedEgos = existingEgos.length ? await egoDiffs(work, env, 'existing-ego', existingEgos) : []
+    report.changedEgos = changedEgos
+    console.log(`ok   existing-ego (${changedEgos.length} differ)`)
 
     // New theme packs: the extraction tool composes every pack card into the ZIP (kind '합성 테마팩'); upload the ones Storage lacks.
     const themeFiles = missingThemeImages(data, { packs: await storedNames(THEME_IMAGE_DIR), bosses: await storedNames(`${THEME_IMAGE_DIR}/boss`) })
     report.newThemeImages = themeFiles
-    if (themeFiles.length) {
-      const images = JSON.parse(readFileSync(join(source, 'Reports', 'manifest.json'), 'utf8').replace(/^\uFEFF/, ''))
-      const sources = themeFiles.map(file => ({ file, path: themeImageSource(file, images) }))
-      const unsourced = sources.filter(item => !item.path).map(item => item.file)
-      if (unsourced.length) throw Error(`the ZIP has no composed image for ${unsourced.join(', ')}; update the extraction tool and extract again`)
-      if (FIX) {
-        const bucket = client().storage.from('limbus-assets')
-        for (const { file, path } of sources) {
-          const webp = await sharp(readFileSync(join(source, 'Images', path!))).webp({ quality: 95, effort: 6 }).toBuffer()
-          const { error } = await bucket.upload(`${THEME_IMAGE_DIR}/${file}`, webp, { contentType: 'image/webp', cacheControl: '3600', upsert: false })
-          if (error) throw Error(`upload ${THEME_IMAGE_DIR}/${file}: ${error.message}`)
-          uploads.push({ key: `${THEME_IMAGE_DIR}/${file}`, before: null })
+    const themeImages = themeFiles.length ? JSON.parse(readFileSync(join(source, 'Reports', 'manifest.json'), 'utf8').replace(/^\uFEFF/, '')) : null
+    const themeSources = themeFiles.map(file => ({ file, path: themeImageSource(file, themeImages) }))
+    const unsourced = themeSources.filter(item => !item.path).map(item => item.file)
+    if (unsourced.length) throw Error(`the ZIP has no composed image for ${unsourced.join(', ')}; update the extraction tool and extract again`)
+
+    if (FIX) {
+      mkdirSync(join(work, 'backup'))
+      for (const table of BACKUP_TABLES) writeFileSync(join(work, 'backup', `${table}.json`), JSON.stringify(await all(table)), { flag: 'wx' })
+      console.log('ok   backup')
+      try {
+        // 3. Apply step by step.
+        for (const step of STEPS) {
+          if (step.name === 'events') {
+            await uploadMissingEventImages(source, uploads)
+            console.log('ok   event-images')
+          }
+          run(work, `${step.name}-fix`, command(step.script, [...step.args, '--fix']), env)
+          ;(report.steps as string[]).push(step.name)
+          if (step.name === 'mirror') {
+            report.giftsWithoutIcon = await uploadMissingGiftIcons(source, uploads)
+            console.log('ok   gift-icons')
+          }
         }
-        console.log(`ok   theme-images (${sources.length} uploaded)`)
-        ;(report.steps as string[]).push('theme-images')
+
+        // New identities: illustrations, portraits, avatar profiles and skill icons from the same verified ZIP.
+        const newIdentities = (await all('identities', 'id,game_id')).map(row => String(row.game_id)).filter(id => !identitiesBefore.has(id))
+        report.newIdentities = newIdentities
+        if (newIdentities.length) {
+          run(work, 'identity-images', command('scripts/assets/sync-extracted-identities.cjs', ['--ids', newIdentities.join(','), '--source', source, '--output', join(work, 'identity-images'), '--fix']), env)
+          ;(report.steps as string[]).push('identity-images')
+        }
+
+        // New EGO: bootstrap-data.ts writes their rows, stage skills and passives (with SkillTag section names) from this ZIP.
+        if (newEgos.length) {
+          run(work, 'new-ego-fix', command('scripts/sync/bootstrap-data.ts', ['--ego-ids', newEgos.join(','), '--output', join(work, 'new-ego'), '--fix']), env)
+          console.log(`ok   new-ego-images (${await uploadEgoImages(source, newEgos, uploads)} uploaded)`)
+          ;(report.steps as string[]).push('new-ego')
+        }
+
+        // Existing EGO that differ from this ZIP in any field it produces (rows copied from another EGO, missing stage
+        // passives, balance patches) are rebuilt from it; their image URLs and folders stay.
+        if (changedEgos.length) {
+          run(work, 'existing-ego-fix', command('scripts/sync/bootstrap-data.ts', ['--ego-ids', changedEgos.map(item => item.gameId).join(','), '--output', join(work, 'existing-ego-fix'), '--replace', '--fix']), env)
+          ;(report.steps as string[]).push('existing-ego')
+        }
+
+        if (themeSources.length) {
+          const bucket = client().storage.from('limbus-assets')
+          for (const { file, path } of themeSources) {
+            const webp = await sharp(readFileSync(join(source, 'Images', path!))).webp({ quality: 95, effort: 6 }).toBuffer()
+            const { error } = await bucket.upload(`${THEME_IMAGE_DIR}/${file}`, webp, { contentType: 'image/webp', cacheControl: '3600', upsert: false })
+            if (error) throw Error(`upload ${THEME_IMAGE_DIR}/${file}: ${error.message}`)
+            uploads.push({ key: `${THEME_IMAGE_DIR}/${file}`, before: null })
+          }
+          console.log(`ok   theme-images (${themeSources.length} uploaded)`)
+          ;(report.steps as string[]).push('theme-images')
+        }
+
+        // 4. Read everything back: a second dry-run of each step and the EGO check must find nothing left to change.
+        const left = await leftoverDiffs(work, env, [...egoIds].sort())
+        report.verify = { ok: !left.length, left }
+        if (left.length) throw Error(`the DB still differs from the extraction after applying: ${left.join('; ')}`)
+        console.log('ok   verify (DB equals the extraction)')
+        await revalidateGameData()
+      } catch (error) {
+        // Never leave a partial or mismatched apply: put every table and image back as it was before this run.
+        console.log('FAIL apply: restoring the backup')
+        save() // extraction-restore reads this run's uploads from report.json
+        const restore = spawnSync(process.execPath, command('scripts/sync/extraction-restore.ts', ['--work', work, '--fix']), { cwd: process.cwd(), env, encoding: 'utf8' })
+        writeFileSync(join(work, 'logs', 'auto-restore.log'), (restore.stdout ?? '') + (restore.stderr ?? ''))
+        report.autoRestored = restore.status === 0
+        const message = error instanceof Error ? error.message : String(error)
+        throw Error(restore.status === 0 ? `${message} — restored the backup automatically` : `${message} — AUTOMATIC RESTORE FAILED, restore this run from the tool (logs/auto-restore.log)`)
       }
+    } else {
+      report.newIdentities = []
     }
+
     report.ok = true
   } catch (error) {
     report.ok = false
