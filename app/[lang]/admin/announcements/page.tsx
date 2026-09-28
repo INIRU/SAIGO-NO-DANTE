@@ -1,7 +1,7 @@
 'use client'
 import { useCallback, useEffect, useState } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
-import { Plus, Eye, PenLine, Trash2, Pin } from 'lucide-react'
+import { Plus, Eye, PenLine, Trash2, Pin, Megaphone } from 'lucide-react'
 import { showError, showSuccess } from '@/lib/toast'
 import dynamic from 'next/dynamic'
 import ConfirmModal from '@/components/ui/ConfirmModal'
@@ -28,6 +28,7 @@ export default function AdminAnnouncements() {
     [doc, setDoc] = useState<RichNode>(plainAnnouncementDocument('')),
     [lang, setLang] = useState('ko'),
     [pinned, setPinned] = useState(false),
+    [popup, setPopup] = useState(false),
     [discordEveryone, setDiscordEveryone] = useState(false),
     [preview, setPreview] = useState(false),
     [busy, setBusy] = useState(false),
@@ -81,6 +82,7 @@ export default function AdminAnnouncements() {
     setDoc(row?.content_doc ?? plainAnnouncementDocument(row?.content ?? ''))
     setLang(row?.lang ?? 'ko')
     setPinned(row?.pinned ?? false)
+    setPopup(row?.popup ?? false)
     setDiscordEveryone(false)
     setPreview(false)
     setDirty(false)
@@ -101,6 +103,7 @@ export default function AdminAnnouncements() {
             content_doc: doc,
             lang,
             pinned,
+            popup,
             published,
             discord_everyone: discordEveryone,
           }),
@@ -211,6 +214,9 @@ export default function AdminAnnouncements() {
                       {i.pinned && (
                         <Pin size={12} aria-label={ko ? '메인 우선 표시' : ja ? 'ホームに優先表示' : 'Featured on home'} />
                       )}
+                      {i.popup && (
+                        <Megaphone size={12} aria-label={ko ? '팝업 공지' : ja ? 'ポップアップ' : 'Popup'} />
+                      )}
                       <time>{new Date(i.updated_at ?? i.created_at).toLocaleDateString(locale)}</time>
                     </span>
                   </button>
@@ -260,6 +266,18 @@ export default function AdminAnnouncements() {
                     }}
                   />
                   <span>{ko ? '메인 우선 표시' : ja ? 'ホームに優先表示' : 'Feature on home'}</span>
+                </label>
+                <label title={ko ? '게시하면 이 언어 사이트에 들어온 사람에게 한 번 팝업으로 띄웁니다' : ja ? '公開すると、この言語のサイト訪問者に一度だけ表示します' : 'Once published, shown once as a popup to visitors of this language'}>
+                  <input
+                    type="checkbox"
+                    className="admin-switch"
+                    checked={popup}
+                    onChange={(e) => {
+                      setPopup(e.target.checked)
+                      setDirty(true)
+                    }}
+                  />
+                  <span>{ko ? '팝업으로 띄우기' : ja ? 'ポップアップ表示' : 'Show as popup'}</span>
                 </label>
                 {lang === 'ko' && !editing?.published && (
                   <label title={ko ? '게시할 때 디스코드 공지에 @everyone을 붙입니다' : undefined}>

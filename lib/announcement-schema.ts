@@ -16,6 +16,8 @@ export const announcementSchema = z
     content_doc: announcementDocumentSchema,
     lang: z.enum(['ko', 'en', 'ja']).default('ko'),
     pinned: z.boolean().default(false),
+    // 게시된 공지를 그 언어 사이트에 한 번 팝업으로 띄운다
+    popup: z.boolean().default(false),
     published: z.boolean().default(false),
     // 저장하지 않는 전송 옵션: 게시되는 순간 디스코드 알림에 @everyone을 붙인다
     discord_everyone: z.boolean().default(false),
