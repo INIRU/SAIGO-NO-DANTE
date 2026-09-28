@@ -36,7 +36,7 @@ if (!out) throw Error('usage: node scripts/sync/build-site-sync.mjs <out-dir> [-
 const common = { bundle: true, platform: 'node', target: 'node22', external: ['sharp'], logLevel: 'warning' }
 await build({
   ...common, format: 'esm', outdir: out, outExtension: { '.js': '.mjs' },
-  entryPoints: Object.fromEntries(['apply-extraction', 'identity-data', 'mirror-dungeon-data', 'rebuild-mirror-events', 'bootstrap-data'].map(name => [name, `scripts/sync/${name}.ts`])),
+  entryPoints: Object.fromEntries(['apply-extraction', 'identity-data', 'mirror-dungeon-data', 'rebuild-mirror-events', 'bootstrap-data', 'extraction-restore'].map(name => [name, `scripts/sync/${name}.ts`])),
   // Bundled CommonJS dependencies still call require().
   banner: { js: "import { createRequire as __createRequire } from 'node:module'; const require = __createRequire(import.meta.url);" },
 })
