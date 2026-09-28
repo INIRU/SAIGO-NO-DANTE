@@ -3,7 +3,7 @@ import * as ort from 'onnxruntime-web/webgpu'
 import { popupEffectBox, popupHeaderBox, popupPlateUnit } from './popup-detect'
 import { popupHeaderEvidence } from './popup-evidence'
 import { explorationFloor } from './exploration-match'
-import { ctcDecode, ctcLexiconBest, detSize, detTensor, fillRecLine, lexiconEntries, mergeTileRects, recAlphabet, recBatchWidth,
+import { ctcDecode, ctcLexiconBest, detSize, detTensor, fillRecLine, joinRowLines, lexiconEntries, mergeTileRects, recAlphabet, recBatchWidth,
   recLineWidth, REC_HEIGHT, textRects, tileGrid, type LexiconEntry, type TextRect } from './paddle-text'
 
 type Language = 'ko' | 'en' | 'ja'
@@ -368,9 +368,9 @@ async function readPopupPaddle(frame: ImageBitmap, box: Extract<Request, { type:
 async function readExplorationPaddle(frame: ImageBitmap) {
   const region = clampRegion(frame, 0, frame.height * 0.05, frame.width * 0.45, frame.height * 0.37)
   const lines = await paddleLines(frame, region, { side: Math.round(1080 * 0.37), type: 'min' }, 16)
-  const banner = lines.find(line => explorationFloor(line.text) !== null)
+  const banner = joinRowLines(lines).find(line => explorationFloor(line.text) !== null)
   if (!banner) return { floorText: '', themeReads: [] }
-  const below = lines.filter(line => line !== banner && line.text.trim() &&
+  const below = lines.filter(line => line.text.trim() &&
     line.rect.y >= banner.rect.y + banner.rect.height * 0.5 && line.rect.y <= banner.rect.y + banner.rect.height * 2.2 &&
     Math.abs(line.rect.x - banner.rect.x) <= banner.rect.height * 1.5)
     .sort((first, second) => first.rect.y - second.rect.y)
