@@ -55,9 +55,11 @@ function parseFusionSlots(raw: unknown, size: number): FusionSlotRead[] | null {
       typeof read.margin === 'number' && Number.isFinite(read.margin) ? { id: read.id, score: read.score, margin: read.margin } : null
   })
 }
-// Distinct states kept (animations make many); crops at most WHEEL_CROP_WIDTH wide (about 1 MB each).
-const WHEEL_FRAMES = 16
-const WHEEL_KEEP_MS = 4000
+// Distinct states kept (animations make many); crops at most WHEEL_CROP_WIDTH wide (about 1 MB each). A slow GPU reads the
+// result popup 3-4 s after it was captured and the result animation adds new states meanwhile, so the states just before the
+// result must outlive both (16 states / 4 s dropped them before the result arrived, 2026-09-28 replays).
+const WHEEL_FRAMES = 40
+const WHEEL_KEEP_MS = 8000
 const WHEEL_CROP_WIDTH = 640
 /** Wheel states read per dialog and how long after an earlier dialog a crop may belong to a new one. */
 const WHEEL_READS = 6
@@ -1124,8 +1126,12 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
           const base = bannerRecent ? profile.exploreMs.recent : profile.exploreMs.idle
           const delay = now - explorationHintAt < 3000 ? Math.min(base, profile.exploreMs.recent) : base
           const shared = pool.popup === pool.screen
+          // The banner is on the map only. On the shop, fusion, sell and skill windows the screen lane belongs to the full-frame
+          // read: a fusion or sell dialog is up for about a second, and on a slow GPU one banner read took that whole window.
+          const shopScreen = latestLabel.current === 'shop' || onFusionScreen(latestLabel.current, fusionTitleAt.current, now) ||
+            now - sellWindowAt.current < 3000 || now - skillWindowAt.current < 3000
           // With one shared worker, popups go first, but a steady stream of detections must not starve the banner.
-          if (!alive(lane) || !detectionRef.current.themes || language !== 'ko' || !themeReferences.current?.length || lane.inFlight || !lane.ready || now - exploredAt < delay ||
+          if (!alive(lane) || shopScreen || !detectionRef.current.themes || language !== 'ko' || !themeReferences.current?.length || lane.inFlight || !lane.ready || now - exploredAt < delay ||
             (shared && popupQueue.current.length && delay >= profile.exploreMs.idle && now - exploredAt < delay * 2) ||
             !hasFrame()) return
           exploredAt = now
