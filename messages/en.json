@@ -840,7 +840,12 @@
       "filterPlanned": "Plan gifts only",
       "filterHideOwned": "Hide owned",
       "groupFloorPlan": "This floor's plan",
-      "groupTargets": "Final targets"
+      "groupTargets": "Final gifts",
+      "gameLanguageLabel": "Game language",
+      "gameLanguageHint": "Choose the language set in Limbus Company. Assist loads the text reader for that language.",
+      "gameLanguageLiveNote": "A new language applies after you reconnect the screen.",
+      "gameLanguageLoadFailed": "Could not load texts for the game language. Event recognition may be less accurate.",
+      "pipGroupOthers": "Other gifts"
     },
     "community": "Community Plans",
     "detail": {

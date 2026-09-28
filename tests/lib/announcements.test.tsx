@@ -10,6 +10,9 @@ import {
 } from '@/lib/announcements'
 import { inquirySchema, supportMessageSchema } from '@/lib/support'
 import AnnouncementBody from '@/components/announcements/AnnouncementBody'
+import AnnouncementPopupDialog from '@/components/announcements/AnnouncementPopupDialog'
+
+vi.mock('next/navigation', () => ({ usePathname: () => '/en' }))
 
 describe('announcement content boundary', () => {
   it('keeps new announcements as drafts and prevents empty publication', () => {
@@ -63,6 +66,15 @@ describe('announcement content boundary', () => {
         <AnnouncementBody text="<img src=x onerror=alert(1)>" />,
       ),
     ).toContain('&lt;img')
+  })
+  it('keeps popup off unless set, and opens a popup announcement only in the browser after its check', () => {
+    expect(announcementSchema.parse({ title: '초안' }).popup).toBe(false)
+    expect(announcementSchema.parse({ title: '공지', popup: true }).popup).toBe(true)
+    // Server markup stays closed: whether the visitor already closed it is read from localStorage after hydration.
+    const html = renderToStaticMarkup(
+      <AnnouncementPopupDialog lang="en" announcement={{ id: 'a', title: 'Assist', content: 'text', content_doc: null }} />,
+    )
+    expect(html).not.toContain('data-announcement-popup')
   })
 })
 describe('inquiry validation', () => {

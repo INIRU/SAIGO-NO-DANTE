@@ -15,9 +15,8 @@ it('opens creation routes to guests in every locale, and sends suspended account
     expect(target.searchParams.get('callbackUrl')).toBe(`/${locale}${path}`)
   }
 })
-it('keeps assist mode on the Korean site only', async () => {
-  expect((await proxy(new NextRequest('http://localhost:3001/ko/planner/run'))).status).toBe(200)
-  for (const locale of ['en','ja']) expect(new URL((await proxy(new NextRequest(`http://localhost:3001/${locale}/planner/run`))).headers.get('location')!).pathname).toBe(`/${locale}/planner/community`)
+it('opens assist mode on every locale site', async () => {
+  for (const locale of ['ko','en','ja']) expect((await proxy(new NextRequest(`http://localhost:3001/${locale}/planner/run`))).status).toBe(200)
 })
 it('preserves public viewing and allows active sessions, but rejects suspended sessions', async () => {
   for (const path of ['/ko/decks','/ko/decks/abc','/ko/planner/community','/ko/planner/community/abc']) expect((await proxy(new NextRequest(`http://localhost:3001${path}`))).status).toBe(200)

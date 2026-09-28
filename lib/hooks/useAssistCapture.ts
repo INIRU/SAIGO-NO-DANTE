@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { VisualCandidates, VisualMatch, VisualReference } from '@/lib/vision/embedding-match'
 import { corroboratedChoiceEvent, effectGiftIds, eventScreenEvidence, matchOcrCandidates, type EventScreenEvidence, type OcrCatalog, type OcrMatches,
   type OcrWord } from '@/lib/vision/ocr-match'
-import { acquiredGiftFromPopup, acquisitionFloor, AUTO_ACQUIRE_EXCLUDED_GIFT_IDS, popupCandidateIds, popupHeaderEvidence, type PopupLabelRead } from '@/lib/vision/popup-evidence'
+import { acquiredGiftFromPopup, acquisitionFloor, AUTO_ACQUIRE_EXCLUDED_GIFT_IDS, popupCandidateIds, popupHeaderEvidence, showsAcquiredHeader, type PopupLabelRead } from '@/lib/vision/popup-evidence'
 import type { RecipePopupEvidence } from '@/lib/planner/fusion'
 import type { StableScene } from '@/lib/vision/scene-state'
 import { isMobileDevice } from '@/lib/vision/device'
@@ -12,14 +12,14 @@ import { RECOGNITION_PROFILES, type RecognitionMode } from '@/lib/vision/recogni
 import { DEFAULT_DETECTION, type DetectionSettings } from '@/lib/vision/detection-settings'
 import { AssistSampleRecorder } from '@/lib/vision/assist-samples'
 import { AssistReportTally, sendAssistReport, type ReportAction } from '@/lib/vision/assist-report'
-import { EMPTY_SALE_STATE, isSellWindow, readSaleStep, sellCost, sellGiftId } from '@/lib/vision/sell-evidence'
+import { EMPTY_SALE_STATE, isSellWindow, readSaleStep, sellCost, sellGiftId, sellQuestion } from '@/lib/vision/sell-evidence'
 import { readSkillExchange, type SkillExchangeRead } from '@/lib/vision/skill-exchange'
 import { acquisitionSeq, acquisitionsToRelease, continuesFusionDialog, dialogForResult, dialoglessFusionResult, fusionAnchors,
   fusionConfirmation, fusionDialogClosed, fusionMaterials, onFusionScreen, showsFusionTitle,
   fusionWheelAnchors, fusionWheelCrop, fusionWheelResultBox, isFusionSelectionScreen, wheelBandMatch, wheelSelectionSize, WHEEL_BAND_MIN, WHEEL_BAND_SIZE,
   type FusionAnchors, type FusionDialogEvidence, type FusionRead, type SeenDialog, type WheelAnchors,
   type FusionSlotRead } from '@/lib/vision/fusion-evidence'
-import { confirmsExploration, explorationFloor, explorationThemeMatch, themeSelectionHeaderFloor, type ExplorationObservation,
+import { confirmsExploration, explorationFloor, explorationThemeReads, themeSelectionHeaderFloor, type ExplorationObservation,
   type ExplorationThemeReference } from '@/lib/vision/exploration-match'
 import { acquisitionPlate, darkPopupPlate, detectGiftPopupLabel, popupCaptureAction, popupIconSignature, popupLabelColor, popupPriority, popupQuality,
   POPUP_SETTLE_MS, samePopupEpisode, type PopupLabelBox, type PopupObservation } from '@/lib/vision/popup-detect'
@@ -144,7 +144,10 @@ export interface PopupAcquisition { giftId: string; token: string; floor: number
 export interface GiftSale { giftId: string; token: string; capturedAt: number }
 /** Shop skill replacement window on screen: its sinner and current skill counts. */
 export type SkillExchangeView = SkillExchangeRead & { seenAt: number }
-/** Exploration banner seen twice with the same floor and pack; only a candidate until the run state validates it. */
+/**
+ * Exploration banner seen twice with the same floor and pack, or once with an exact pack name under the current or next
+ * floor; only a candidate until the run state validates it.
+ */
 export interface FloorThemeObservation extends ExplorationObservation { token: string }
 interface PopupFrame { frame: ImageBitmap; box: PopupLabelBox; requestId: number; episode: number }
 interface PopupPending {
@@ -319,7 +322,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
   const readReportContext = () => {
     const size = stream.current?.getVideoTracks()[0]?.getSettings()
     return { build: process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA ?? null, mode: sampleState.current.mode,
-      ocr: sampleState.current.ocrEngine?.engine.slice(0, 20) ?? null, width: size?.width ?? null, height: size?.height ?? null }
+      ocr: sampleState.current.ocrEngine?.engine.slice(0, 20) ?? null, width: size?.width ?? null, height: size?.height ?? null, language }
   }
   /** An action Assist finished reading: counted for the report, and its sample group kept (failure) or discarded. */
   const settleSample = (key: string, action: ReportAction, failure: Parameters<AssistSampleRecorder['end']>[1]) => {
@@ -720,7 +723,9 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
           const dialog = dialogForResult(seenDialogs.current, evidence.capturedAt)
           if (dialog) dialog.resultAt = evidence.capturedAt
           else if (wheelFrames.current.some(item => item.at < evidence.capturedAt! && item.lastAt >= evidence.capturedAt! - DIALOGLESS_WHEEL_MS &&
-            showsWheel(item, wheelReference.current))) {
+            // Before the first read of the selection screen (a fusion within seconds of opening it on a slow GPU) the wheel's
+            // look is unknown: the result waits for it below instead of being dropped.
+            (!wheelReference.current || showsWheel(item, wheelReference.current)))) {
             dialoglessResults.current = [...dialoglessResults.current.slice(-3), { capturedAt: evidence.capturedAt }]
           }
         }
@@ -1117,8 +1122,8 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
             ocrFail(lane)
           }
         }
-        // The exploration banner is Korean; other OCR languages cannot read it. Right after a banner was read it is read
-        // again sooner while that map screen is still up.
+        // The exploration banner, read in the game language. Right after a banner was read it is read again sooner while
+        // that map screen is still up.
         const explore = async () => {
           const lane = pool.screen
           const now = Date.now()
@@ -1131,7 +1136,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
           const shopScreen = latestLabel.current === 'shop' || onFusionScreen(latestLabel.current, fusionTitleAt.current, now) ||
             now - sellWindowAt.current < 3000 || now - skillWindowAt.current < 3000
           // With one shared worker, popups go first, but a steady stream of detections must not starve the banner.
-          if (!alive(lane) || shopScreen || !detectionRef.current.themes || language !== 'ko' || !themeReferences.current?.length || lane.inFlight || !lane.ready || now - exploredAt < delay ||
+          if (!alive(lane) || shopScreen || !detectionRef.current.themes || !themeReferences.current?.length || lane.inFlight || !lane.ready || now - exploredAt < delay ||
             (shared && popupQueue.current.length && delay >= profile.exploreMs.idle && now - exploredAt < delay * 2) ||
             !hasFrame()) return
           exploredAt = now
@@ -1203,11 +1208,27 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
                 setScene(current => current?.label === 'fusion' || current?.label === 'gift_acquired' ? current : { label: 'fusion', since: capture.at })
               }
               screenReads.current = [...screenReads.current.filter(item => capture.at - item.at < 10_000), { at: capture.at, fusion: fusionScreen }]
+              // OCR positions are on the reading canvas (at most 1920 px wide); the slot crops use full-size frames.
+              const factor = capture.width ? capture.width / Math.min(capture.width, 1920) : 1
+              const box = (rect: { left: number; top: number; width: number; height: number }) =>
+                ({ left: rect.left * factor, top: rect.top * factor, width: rect.width * factor, height: rect.height * factor })
+              // Read before the waiting results below, so a result that waited for the wheel's look is read with this one.
+              if (isFusionSelectionScreen(result.text)) {
+                // Where the wheel is on this capture (window title bar, scaling), for the crops kept from now on.
+                const found = fusionWheelAnchors(result.words)
+                if (found && (!wheelAnchors.current || capture.at >= wheelAnchors.current.at)) {
+                  wheelAnchors.current = { anchors: { title: box(found.title), wish: box(found.wish) }, at: capture.at }
+                }
+                const shown = wheelFrames.current.find(item => item.at <= capture.at + 100 && capture.at <= item.lastAt + 200)
+                if (shown?.band) wheelReference.current = shown.band
+              }
               // A result with no dialog seen (dialoglessFusionResult): its materials come from the wheel states before it,
               // read like a dialog's, with the capacity of this session's earlier dialog.
               for (const pending of dialoglessResults.current.filter(item => item.capturedAt < capture.at)) {
                 // A dialog still being read (an earlier fusion) finishes first; the result waits for a later screen read.
                 if (fusionDialog.current && !fusionDialog.current.published && capture.at - pending.capturedAt < 8000) continue
+                // The wheel's look is not known yet: wait for a read of the selection screen (the states are kept WHEEL_KEEP_MS).
+                if (!wheelReference.current && capture.at - pending.capturedAt < WHEEL_KEEP_MS - 1000) continue
                 dialoglessResults.current = dialoglessResults.current.filter(item => item !== pending)
                 const previous = screenReads.current.filter(item => item.at < pending.capturedAt).at(-1)
                 // A dialog seen only now (its read came late) may still explain the result.
@@ -1233,21 +1254,8 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
                 fusionWanted.current = { count: capacity, capacity, at: Date.now() }
                 lastDialogAt.current = Math.max(lastDialogAt.current, pending.capturedAt)
               }
-              // OCR positions are on the reading canvas (at most 1920 px wide); the slot crops use full-size frames.
-              const factor = capture.width ? capture.width / Math.min(capture.width, 1920) : 1
-              const box = (rect: { left: number; top: number; width: number; height: number }) =>
-                ({ left: rect.left * factor, top: rect.top * factor, width: rect.width * factor, height: rect.height * factor })
-              if (isFusionSelectionScreen(result.text)) {
-                // Where the wheel is on this capture (window title bar, scaling), for the crops kept from now on.
-                const found = fusionWheelAnchors(result.words)
-                if (found && (!wheelAnchors.current || capture.at >= wheelAnchors.current.at)) {
-                  wheelAnchors.current = { anchors: { title: box(found.title), wish: box(found.wish) }, at: capture.at }
-                }
-                const shown = wheelFrames.current.find(item => item.at <= capture.at + 100 && capture.at <= item.lastAt + 200)
-                if (shown?.band) wheelReference.current = shown.band
-              }
               // The selection screen or an acquisition popup without the dialog: a dialog read after it is a new fusion.
-              if (!confirmation && (isFusionSelectionScreen(result.text) || /획득했습니다/.test(result.text.normalize('NFKC').replace(/\s+/g, '')))) {
+              if (!confirmation && (isFusionSelectionScreen(result.text) || showsAcquiredHeader(result.text))) {
                 dialogBreakAt.current = Math.max(dialogBreakAt.current, capture.at)
               }
               if (confirmation) {
@@ -1325,17 +1333,23 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
             bannerRecent = floorSeen !== null
             const reads = Array.isArray(result.themeReads) ? result.themeReads.filter(Array.isArray).map(read =>
               read.filter(word => typeof word?.text === 'string')) : []
-            const themeIds = themeReferences.current ? explorationThemeMatch(reads, themeReferences.current) : []
+            const { ids: themeIds, certain } = themeReferences.current ? explorationThemeReads(reads, themeReferences.current) : { ids: [], certain: false }
+            // A single exact pack read may confirm, but only under a floor number that is the current or next floor, or
+            // that an earlier capture also read: one misread digit must not jump the run ahead.
+            let floorAgreed = false
             if (capture && capture.requestId === result.requestId && floorSeen !== null) {
               const previous = lastFloorRead.current
               const elapsed = previous ? capture.at - previous.at : -1
+              const runFloor = currentFloor.current
+              floorAgreed = (runFloor !== null && (floorSeen === runFloor || floorSeen === runFloor + 1)) ||
+                (previous?.floor === floorSeen && elapsed > 0 && elapsed <= 180000)
               if (previous?.floor === floorSeen && elapsed >= 1000 && elapsed <= 60000) setObservedFloor(floorSeen)
               if (!previous || capture.at > previous.at) lastFloorRead.current = { floor: floorSeen, at: capture.at }
             }
             // Unreadable captures neither confirm nor break the chain; a different readable scene restarts it.
             if (capture && capture.requestId === result.requestId && floorSeen !== null && themeIds.length &&
               (!lastExploration.current || capture.at > lastExploration.current.observedAt)) {
-              const observation = { floor: floorSeen, themeIds, observedAt: capture.at }
+              const observation = { floor: floorSeen, themeIds, observedAt: capture.at, certain: certain && floorAgreed }
               if (confirmsExploration(lastExploration.current, observation)) {
                 setFloorThemeObservation({ ...observation, token: `${floorSeen}:${themeIds.join('|')}` })
               }
@@ -1687,7 +1701,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
     // One sale is one sample group: settled by a sale, uploaded when its dialog could not be read.
     if (step.state.dialog || isSellWindow(text)) sampleRecorder.current?.begin('sale')
     if (step.sold.length) settleSample('sale', 'sale', null)
-    else if (!step.state.dialog && text.replace(/\s+/g, '').includes('판매하시겠')) settleSample('sale', 'sale', { reason: 'sale-unresolved' })
+    else if (!step.state.dialog && sellQuestion(text)) settleSample('sale', 'sale', { reason: 'sale-unresolved' })
     if (step.sold.length) setGiftSales(items => [...items, ...step.sold.map(sale =>
       ({ giftId: sale.giftId, token: `sell:${sale.at}:${sale.giftId}`, capturedAt: sale.at }))].slice(-8))
   }

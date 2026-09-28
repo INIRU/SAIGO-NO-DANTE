@@ -114,6 +114,7 @@ export type Announcement = {
   content: string
   content_doc?: RichNode | null
   pinned: boolean
+  popup?: boolean
   published: boolean
   lang: 'ko' | 'en' | 'ja'
   created_at: string

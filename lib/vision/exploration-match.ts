@@ -2,26 +2,38 @@ import type { OcrWord } from './ocr-match'
 
 export interface ExplorationThemeReference { id: string; texts: string[] }
 
+/**
+ * Letters and digits only. Kana voicing marks and the long-vowel mark are dropped: Japanese OCR often swaps ブ/プ and
+ * loses ー on the dim banner line ("カジノブア" for カジノプアー).
+ */
 const normalized = (text: string) => text.normalize('NFKC').toLocaleLowerCase().replace(/[^\p{L}\p{N}]/gu, '')
+  .normalize('NFD').replace(/[\u3099\u309A\u30FC]/gu, '').normalize('NFC')
 
 /**
- * Floor from the exploration banner ("N층 탐사 중"). Tesseract often reads 층 as 증 and 탐 as 람, but the digits and
- * the following 사 must be present; theme selection lists never show this banner.
+ * Floor from the exploration banner ("N층 탐사 중" / "Exploring Floor N" / "N階層 探査中"). Tesseract often reads 층 as 증
+ * and 탐 as 람, but the digits and the following 사 must be present; theme selection lists never show this banner. The
+ * Japanese 査 is often read as its simplified 查.
  */
 export function explorationFloor(text: string): number | null {
-  const match = /(?:^|[^0-9])([1-9][0-9]?)[층증충][탐람담]사/u.exec(text.normalize('NFKC').replace(/\s+/g, ''))
+  // Punctuation goes too: OCR reads "Exploring, Floor 3" off the dim banner.
+  const flat = text.normalize('NFKC').replace(/[\s\p{P}]+/gu, '')
+  const match = /(?:^|[^0-9])([1-9][0-9]?)[층증충][탐람담]사/u.exec(flat) ?? /explor[il1]ngf[l1i]oor([1-9][0-9]?)(?![0-9])/iu.exec(flat) ??
+    /(?:^|[^0-9])([1-9][0-9]?)階層?探[査查]/u.exec(flat)
   if (!match) return null
   const floor = Number(match[1])
   return floor <= 15 ? floor : null
 }
 
 /**
- * Floor named by a pack selection header ("N층 테마팩 선택"), read line by line: digits of a neighbouring line (a timer
- * such as "9:02" above it) must not join the floor number, so the number needs a non-digit before it.
+ * Floor named by a pack selection header ("N층 테마팩 선택" / "SELECT FLOOR N THEME PACK" / "N階層テーマパック選択"), read
+ * line by line: digits of a neighbouring line (a timer such as "9:02" above it) must not join the floor number, so the
+ * number needs a non-digit before it.
  */
 export function themeSelectionHeaderFloor(text: string): number | null {
   for (const line of text.normalize('NFKC').split(/\r?\n/)) {
-    const match = /(?:^|[^0-9])([1-9][0-9]?)[층증]테마팩선택/u.exec(line.replace(/\s+/g, ''))
+    const flat = line.replace(/\s+/g, '')
+    const match = /(?:^|[^0-9])([1-9][0-9]?)[층증]테마팩선택/u.exec(flat) ?? /selectf[l1i]oor([1-9][0-9]?)themepack/iu.exec(flat) ??
+      /(?:^|[^0-9])([1-9][0-9]?)階層テーマ[パバ]ック選択/u.exec(flat)
     if (match && Number(match[1]) <= 15) return Number(match[1])
   }
   return null
@@ -32,9 +44,14 @@ export function themeSelectionHeaderFloor(text: string): number | null {
  * misreads match only when a single pack name is unambiguously one edit away.
  */
 export function explorationThemeIds(words: OcrWord[], themes: ExplorationThemeReference[]): string[] {
+  return themeRead(words, themes).ids
+}
+
+/** Pack ids for one banner line, and whether the line is exactly one pack's name with no other name within one edit. */
+function themeRead(words: OcrWord[], themes: ExplorationThemeReference[]): { ids: string[]; certain: boolean } {
   const readable = words.filter(word => /[\p{L}\p{N}]/u.test(word.text) && [word.left, word.width, word.height].every(Number.isFinite))
     .sort((left, right) => left.left - right.left)
-  if (!readable.length) return []
+  if (!readable.length) return { ids: [], certain: false }
   const height = Math.max(...readable.map(word => word.height))
   const group = [readable[0]]
   for (const word of readable.slice(1)) {
@@ -43,12 +60,17 @@ export function explorationThemeIds(words: OcrWord[], themes: ExplorationThemeRe
     group.push(word)
   }
   const name = normalized(group.map(word => word.text).join(''))
-  if ([...name].length < 2) return []
+  if ([...name].length < 2) return { ids: [], certain: false }
   const exact = themes.filter(theme => theme.texts.some(text => normalized(text) === name)).map(theme => theme.id)
-  if (exact.length) return exact
+  if (exact.length) {
+    // A digit misread turns "Line 2" into another pack's exact name, so names with a one-edit neighbour stay uncertain.
+    const certain = exact.length === 1 && !themes.some(theme => theme.id !== exact[0] &&
+      theme.texts.some(text => editDistance(name, normalized(text)) <= 1))
+    return { ids: exact, certain }
+  }
   // The dim line over a moving map is often one glyph off. Only names of 4+ glyphs within one edit qualify, and every
   // other pack name must stay 3+ edits away, so near-identical packs (e.g. numbered lines) never match this way.
-  if ([...name].length < 4) return []
+  if ([...name].length < 4) return { ids: [], certain: false }
   let best = Infinity, runnerUp = Infinity
   let bestText = ''
   for (const text of new Set(themes.flatMap(theme => theme.texts.map(normalized)))) {
@@ -57,8 +79,8 @@ export function explorationThemeIds(words: OcrWord[], themes: ExplorationThemeRe
     if (distance < best) { runnerUp = best; best = distance; bestText = text }
     else if (distance < runnerUp) runnerUp = distance
   }
-  if (best > 1 || runnerUp < 3) return []
-  return themes.filter(theme => theme.texts.some(text => normalized(text) === bestText)).map(theme => theme.id)
+  if (best > 1 || runnerUp < 3) return { ids: [], certain: false }
+  return { ids: themes.filter(theme => theme.texts.some(text => normalized(text) === bestText)).map(theme => theme.id), certain: false }
 }
 
 function editDistance(left: string, right: string): number {
@@ -75,19 +97,28 @@ function editDistance(left: string, right: string): number {
 
 /** Independent reads of the same theme line must agree; one unreadable read does not veto the other. */
 export function explorationThemeMatch(reads: OcrWord[][], themes: ExplorationThemeReference[]): string[] {
-  const matches = reads.map(read => explorationThemeIds(read, themes).sort()).filter(ids => ids.length)
-  if (!matches.length) return []
-  const key = matches[0].join('|')
-  return matches.every(ids => ids.join('|') === key) ? matches[0] : []
+  return explorationThemeReads(reads, themes).ids
 }
 
-export interface ExplorationObservation { floor: number; themeIds: string[]; observedAt: number }
+/** Agreeing pack ids of the readable reads; certain when each of them is an exact, unambiguous pack name. */
+export function explorationThemeReads(reads: OcrWord[][], themes: ExplorationThemeReference[]): { ids: string[]; certain: boolean } {
+  const matches = reads.map(read => themeRead(read, themes)).filter(read => read.ids.length)
+  if (!matches.length) return { ids: [], certain: false }
+  const key = [...matches[0].ids].sort().join('|')
+  return matches.every(read => [...read.ids].sort().join('|') === key)
+    ? { ids: [...matches[0].ids].sort(), certain: matches.every(read => read.certain) } : { ids: [], certain: false }
+}
+
+/** `certain`: the pack name was read exactly (see explorationThemeReads). */
+export interface ExplorationObservation { floor: number; themeIds: string[]; observedAt: number; certain?: boolean }
 
 /**
- * Two separate readable captures within three minutes (one floor visit) agreeing on floor and theme confirm the banner;
- * pack reads are sparse on a moving map, and any disagreeing readable capture restarts the chain.
+ * An exact, unambiguous pack name confirms the banner at once: fast players leave the map within a second, so a floor
+ * may give one pack read (English speedrun, 2026-09-28). Otherwise two separate readable captures within three minutes
+ * (one floor visit) agreeing on floor and theme confirm it; any disagreeing readable capture restarts the chain.
  */
 export function confirmsExploration(previous: ExplorationObservation | null, current: ExplorationObservation): boolean {
+  if (current.certain && current.themeIds.length === 1) return true
   const elapsed = previous ? current.observedAt - previous.observedAt : -1
   return previous !== null && previous.floor === current.floor && current.themeIds.length > 0 &&
     previous.themeIds.join('|') === current.themeIds.join('|') && elapsed >= 1000 && elapsed <= 180000

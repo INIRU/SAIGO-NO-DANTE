@@ -2,16 +2,32 @@
  * Evidence for a completed E.G.O gift fusion. The game's confirmation dialog ("선택한 기프트 N/M … 조합하시겠습니까?")
  * shows the chosen materials in a fixed row of M slots: 3 in a normal shop, 5 in a special shop. Only materials
  * identified in those slots are ever removed.
+ * Korean, English and Japanese clients are read alike: every screen text below is matched in all three (the strings are
+ * the game's own, from its localization files; the player's game language may differ from the site's).
  */
 import { AUTO_ACQUIRE_EXCLUDED_GIFT_IDS } from './popup-evidence'
 
 const normalized = (text: string) => text.normalize('NFKC').replace(/\s+/g, '')
+const EGO = 'E\\.?G\\.?[O0]\\.?'
+/** "E.G.O 기프트 합성" / "Fuse E.G.O Gift" / "E.G.Oギフト合成". */
+const TITLE = new RegExp(`${EGO}(?:기프트합성|ギフト合成)|fuse${EGO}gift`, 'i')
+/** The dialog question: "선택한 E.G.O 기프트를 조합하시겠습니까?" / "Fuse the selected E.G.O Gifts?" / "選択したE.G.Oギフトを調合しますか？". */
+const QUESTION = /조합하시겠습니까|fusetheselected|調合しますか/i
+/** The dialog header before "N/M": "선택한 기프트" / "Selected E.G.O Gifts" / "選択したギフト". */
+const HEADER = `(?:선택한기프트|selected${EGO}gifts?|選択したギフト)`
+/** The selection screen's wish and forecast labels: "소원 빌기", "예상 결과" / "Wishmaking", "Forecasts" / "願いごと", "予想結果". */
+const WISH = /^(?:소원빌기|wishmaking|願いごと)/i
+const SELECTION_LABELS = /소원빌기|예상결과|wishmaking|forecasts|願いごと|予想結果/i
+/** A question or an acquisition over the screen (the dialog, the starlight prompt, the result popup). */
+const OVER_SCREEN = /겠습니까|획득했습니다|fusetheselected|starlight|giftget|ますか|獲得しました/i
+/** Any acquisition text (the popup header or its title): "획득" / "GET!", "Acquire" / "獲得". */
+const ACQUIRED = /획득|giftget|acquire|獲得/i
 
 /**
  * The fusion screen's "E.G.O 기프트 합성" title, also read under its dialog and result popups. The E.G.O prefix (OCR often
- * reads O as 0) keeps the shop's two-line "기프트 / 합성" button out.
+ * reads O as 0) keeps the shop's two-line "기프트 / 합성" (or "Fuse / Gifts") button out.
  */
-export const showsFusionTitle = (text: string) => /E\.?G\.?[O0]\.?기프트합성/i.test(normalized(text))
+export const showsFusionTitle = (text: string) => TITLE.test(normalized(text))
 
 /** How long a read of that title keeps the fusion screen on after the capture it came from. */
 export const FUSION_TITLE_KEEP_MS = 4000
@@ -33,9 +49,9 @@ export interface FusionConfirmation { count: number; capacity: FusionCapacity }
  */
 export function fusionConfirmation(text: string): FusionConfirmation | null {
   const screen = normalized(text)
-  if (!/조합하시겠습니까/.test(screen)) return null
+  if (!QUESTION.test(screen)) return null
   // GPU OCR orders lines by position, so the "N/M" line may come before or after "선택한 기프트".
-  const match = /선택한기프트(\d+)\/(\d+)/.exec(screen) ?? /(\d+)\/(\d+)선택한기프트/.exec(screen)
+  const match = new RegExp(`${HEADER}(\\d+)\\/(\\d+)`, 'i').exec(screen) ?? new RegExp(`(\\d+)\\/(\\d+)${HEADER}`, 'i').exec(screen)
   if (!match) return null
   const count = Number(match[1]), capacity = Number(match[2])
   if (capacity !== 3 && capacity !== 5) return null
@@ -64,20 +80,27 @@ export function fusionSlotRegions(width: number, height: number, count: number, 
 }
 
 export interface TextBox { left: number; top: number; width: number; height: number }
-export interface FusionAnchors { header: TextBox; question: TextBox }
+/** `questionWidth`: the question line's width at 1920×1080 in the client language read (Korean when absent). */
+export interface FusionAnchors { header: TextBox; question: TextBox; questionWidth?: number }
 
 /**
  * The dialog's own text lines, found by OCR: the "선택한 기프트" header and the "…조합하시겠습니까?" question.
  * Null unless both are single lines (GPU OCR); word-level reads use the frame layout instead.
  */
 export function fusionAnchors(words: { text: string; left: number; top: number; width: number; height: number }[]): FusionAnchors | null {
-  const header = words.find(word => { const text = normalized(word.text); return text.startsWith('선택한기프트') && !text.includes('조합') })
-  const question = words.find(word => normalized(word.text).includes('조합하시겠습니까'))
-  return header && question ? { header, question } : null
+  const header = words.find(word => { const text = normalized(word.text); return new RegExp(`^${HEADER}`, 'i').test(text) && !QUESTION.test(text) })
+  const question = words.find(word => QUESTION.test(normalized(word.text)))
+  if (!header || !question) return null
+  const text = normalized(question.text)
+  return { header, question, questionWidth: /fusetheselected/i.test(text) ? QUESTION_WIDTHS.en : /調合/.test(text) ? QUESTION_WIDTHS.ja : QUESTION_WIDTHS.ko }
 }
 
-/** Dialog text positions at 1920×1080: question line center x and width, header center y and its distance to the question. */
-const QUESTION_CENTER_X = 960, QUESTION_WIDTH = 704, HEADER_CENTER_Y = 284, HEADER_TO_QUESTION = 476
+/**
+ * Dialog text positions at 1920×1080: question line center x, header center y and its distance to the question (the same
+ * in every client), and the question's width per client (English and Japanese measured on 2026 YouTube recordings).
+ */
+const QUESTION_CENTER_X = 960, HEADER_CENTER_Y = 284, HEADER_TO_QUESTION = 476
+const QUESTION_WIDTHS = { ko: 704, en: 526, ja: 665 }
 
 /**
  * Slots placed from the dialog text, so a window title bar, scaling or an off-centre game view does not move the crops.
@@ -91,7 +114,7 @@ export function fusionSlotRegionsFromAnchors(anchors: FusionAnchors, count: numb
   const questionX = anchors.question.left + anchors.question.width / 2
   const questionY = anchors.question.top + anchors.question.height / 2
   const scale = (questionY - headerY) / HEADER_TO_QUESTION
-  const widthScale = anchors.question.width / QUESTION_WIDTH
+  const widthScale = anchors.question.width / (anchors.questionWidth ?? QUESTION_WIDTHS.ko)
   if (!(scale > 0.2) || Math.abs(scale - widthScale) > 0.2 * scale) return null
   return layout.centersX.slice(0, count).map(x => ({ x: questionX + (x - QUESTION_CENTER_X) * scale,
     y: headerY + (layout.centerY - HEADER_CENTER_Y) * scale, size: layout.side * scale }))
@@ -106,8 +129,9 @@ const WHEEL_LAYOUTS: Record<FusionCapacity, { centers: [number, number][]; side:
   3: { centers: [[544, 308], [337, 515], [751, 515]], side: 98 },
   5: { centers: [[554, 316], [357, 388], [746, 388], [357, 543], [746, 543]], side: 98 },
 }
-/** Screen text positions at 1920×1080: the "E.G.O 기프트 합성" title (center, width) and the "소원 빌기" label center. */
-const TITLE_CENTER_X = 959, TITLE_CENTER_Y = 158, TITLE_WIDTH = 422, WISH_CENTER_Y = 757.5
+/** Screen text positions at 1920×1080: the fusion title (center; width per client) and the wish label's center. */
+const TITLE_CENTER_X = 959, TITLE_CENTER_Y = 158, WISH_CENTER_Y = 757.5
+const TITLE_WIDTHS = { ko: 422, en: 352, ja: 365 }
 /** Part of the 1920×1080 game view that holds every wheel position of both layouts, with room for the icon search. */
 const WHEEL_BOX = { left: 250, top: 220, right: 840, bottom: 640 }
 
@@ -119,16 +143,19 @@ export function isFusionSelectionScreen(text: string): boolean {
   const screen = normalized(text)
   // Only the acquisition popup's own sentence excludes the screen: a shared full screen also shows the companion's
   // "이번 층 획득 가능 기프트" and "획득 …" notices, which must not hide the wheel (replay 2026-09-24: 1/30 materials).
-  return /기프트합성/.test(screen) && /소원빌기|예상결과/.test(screen) && !/겠습니까|획득했습니다/.test(screen)
+  return TITLE.test(screen) && SELECTION_LABELS.test(screen) && !OVER_SCREEN.test(screen)
 }
 
-export interface WheelAnchors { title: TextBox; wish: TextBox }
+/** `titleWidth`: the title's width at 1920×1080 in the client language read (Korean when absent). */
+export interface WheelAnchors { title: TextBox; wish: TextBox; titleWidth?: number }
 
 /** The selection screen's title and "소원 빌기" lines, found by OCR; null unless both are single lines. */
 export function fusionWheelAnchors(words: { text: string; left: number; top: number; width: number; height: number }[]): WheelAnchors | null {
-  const title = words.find(word => { const text = normalized(word.text); return text.includes('기프트합성') && text.length <= 12 })
-  const wish = words.find(word => normalized(word.text).startsWith('소원빌기'))
-  return title && wish ? { title, wish } : null
+  const title = words.find(word => { const text = normalized(word.text); return TITLE.test(text) && text.length <= 16 })
+  const wish = words.find(word => WISH.test(normalized(word.text)))
+  if (!title || !wish) return null
+  const text = normalized(title.text)
+  return { title, wish, titleWidth: /^fuse/i.test(text) ? TITLE_WIDTHS.en : /ギフト/.test(text) ? TITLE_WIDTHS.ja : TITLE_WIDTHS.ko }
 }
 
 /** Frame → game-view transform from the selection screen text, or the letterboxed 16:9 layout without it. */
@@ -136,7 +163,7 @@ function wheelTransform(width: number, height: number, anchors?: WheelAnchors | 
   if (anchors) {
     const titleX = anchors.title.left + anchors.title.width / 2, titleY = anchors.title.top + anchors.title.height / 2
     const scale = (anchors.wish.top + anchors.wish.height / 2 - titleY) / (WISH_CENTER_Y - TITLE_CENTER_Y)
-    if (scale > 0.2 && Math.abs(scale - anchors.title.width / TITLE_WIDTH) <= 0.2 * scale) {
+    if (scale > 0.2 && Math.abs(scale - anchors.title.width / (anchors.titleWidth ?? TITLE_WIDTHS.ko)) <= 0.2 * scale) {
       return (x: number, y: number) => ({ x: titleX + (x - TITLE_CENTER_X) * scale, y: titleY + (y - TITLE_CENTER_Y) * scale, scale })
     }
   }
@@ -330,7 +357,8 @@ export const FUSION_CLOSED_AFTER_MS = 800
  * seen, so a read 0.8 s later without the dialog or an acquisition popup cannot fall in that gap.
  */
 export function fusionDialogClosed(text: string, at: number, lastSeenAt: number): boolean {
-  return at - lastSeenAt >= FUSION_CLOSED_AFTER_MS && !/조합하시겠습니까|획득/.test(normalized(text))
+  const screen = normalized(text)
+  return at - lastSeenAt >= FUSION_CLOSED_AFTER_MS && !QUESTION.test(screen) && !ACQUIRED.test(screen)
 }
 
 /**

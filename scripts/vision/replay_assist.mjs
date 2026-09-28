@@ -197,6 +197,7 @@ void main(){
         }
       }
       if (m.type === 'popupResult') { row.header = m.header; row.label = m.label }
+      if (m.type === 'exploreResult') { row.floorText = m.floorText; row.themeReads = (m.themeReads || []).map(read => read.map(word => word.text).join(' ')) }
       if (m.type === 'popup-icon') row.gifts = (m.gifts || []).slice(0, 3).map(g => g.id + ':' + g.score.toFixed(2))
       if (m.type === 'fusion-slots') {
         row.view = requestTypes.get(m.requestId) === 'fusion-wheel' ? 'wheel' : 'dialog'; requestTypes.delete(m.requestId)
@@ -210,6 +211,7 @@ void main(){
   window.Worker.prototype = NativeWorker.prototype
   // Run inventory, CompanionPanel evidence props and toasts, polled.
   let lastInventory = null
+  let lastFloor = null
   let lastCapture = null
   const seen = new Set()
   const panelProps = () => {
@@ -223,9 +225,13 @@ void main(){
     const captureState = document.querySelector('[data-capture-state]')?.getAttribute('data-capture-state') ?? null
     if (captureState !== lastCapture) { push('captureState', { state: captureState }); lastCapture = captureState }
     try {
-      const inventory = JSON.parse(localStorage.getItem('md-run-draft') || '{}').state?.giftInventory ?? []
+      const state = JSON.parse(localStorage.getItem('md-run-draft') || '{}').state
+      const inventory = state?.giftInventory ?? []
       const text = JSON.stringify(inventory)
       if (text !== lastInventory) { if (lastInventory !== null) push('inventory', { inventory }); else R.initialInventory = inventory; lastInventory = text }
+      // Floor and theme recognition (exploration banner, pack selection), for clients whose screens have no fusion truth.
+      const floor = state && JSON.stringify([state.currentFloor, state.floorLogs?.[state.currentFloor - 1]?.themeId ?? null])
+      if (floor && floor !== lastFloor) { push('floor', { floor: state.currentFloor, themeId: state.floorLogs?.[state.currentFloor - 1]?.themeId ?? null }); lastFloor = floor }
     } catch {}
     const props = panelProps()
     for (const item of props?.fusionEvidence ?? []) {

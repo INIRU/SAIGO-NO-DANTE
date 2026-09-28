@@ -47,8 +47,10 @@ const REWRITE_ACQUISITION_TEXT = args.includes('--rewrite-acquisition-text')
 const ENRICH_ACQUISITION_GACHA = !args.includes('--no-enrich-gacha')
 const UPDATE_KEYWORDS = args.includes('--keywords')
 const REBUILD_KEYWORD_META = args.includes('--rebuild-keyword-meta')
+// The file name check matters in the site-sync bundle: bootstrap-data.mjs inlines this module, so import.meta.url there
+// is bootstrap-data's own URL and would start this sync too.
 const isDirectRun = process.argv[1]
-  ? import.meta.url === pathToFileURL(resolve(process.argv[1])).href
+  ? import.meta.url === pathToFileURL(resolve(process.argv[1])).href && /identity-data\.[cm]?[jt]s$/.test(process.argv[1])
   : false
 
 // 실제 키워드가 아닌 placeholder 값들 — ego_gifts.keyword 기본값으로 쓰임
@@ -830,7 +832,7 @@ function loadKrTagMap(): Record<string, string> {
 
   // Latest first: kr/ (.json files) — 최신 패치 데이터 우선
   if (existsSync(KR_LATEST_DIR)) {
-    const latestFiles = globFiles(KR_LATEST_DIR, /^KR_(BattleKeywords|Bufs|BuffAbilities)/i)
+    const latestFiles = globFiles(KR_LATEST_DIR, /^KR_(BattleKeywords|Bufs|BuffAbilities|SkillTag)/i)
       .filter(f => f.endsWith('.json'))
     for (const f of latestFiles) {
       const data = readTxt(join(KR_LATEST_DIR, f))
@@ -845,7 +847,7 @@ function loadKrTagMap(): Record<string, string> {
 
   // Fallback: Json (Text)/KR/ (.txt files) — 구버전, 최신에 없는 것만
   if (existsSync(KR_DIR)) {
-    const kwFiles = globFiles(KR_DIR, /^KR_(BattleKeywords|Bufs|BuffAbilities)/i)
+    const kwFiles = globFiles(KR_DIR, /^KR_(BattleKeywords|Bufs|BuffAbilities|SkillTag)/i)
       .filter(f => f.endsWith('.txt'))
     for (const f of kwFiles) {
       const data = readTxt(join(KR_DIR, f))
@@ -1771,7 +1773,7 @@ function loadLangTagMap(lang: 'en' | 'jp'): Record<string, string> {
 
   // Latest dir (.json files)
   if (existsSync(latestDir)) {
-    const latestFiles = globFiles(latestDir, new RegExp(`^${prefix}_(BattleKeywords|Bufs|BuffAbilities)`, 'i'))
+    const latestFiles = globFiles(latestDir, new RegExp(`^${prefix}_(BattleKeywords|Bufs|BuffAbilities|SkillTag)`, 'i'))
       .filter(f => f.endsWith('.json'))
     for (const f of latestFiles) {
       const data = readTxt(join(latestDir, f))
@@ -1785,7 +1787,7 @@ function loadLangTagMap(lang: 'en' | 'jp'): Record<string, string> {
 
   // Fallback dir (.txt files)
   if (existsSync(fallbackDir)) {
-    const fallbackFiles = globFiles(fallbackDir, new RegExp(`^${prefix}_(BattleKeywords|Bufs|BuffAbilities)`, 'i'))
+    const fallbackFiles = globFiles(fallbackDir, new RegExp(`^${prefix}_(BattleKeywords|Bufs|BuffAbilities|SkillTag)`, 'i'))
       .filter(f => f.endsWith('.txt'))
     for (const f of fallbackFiles) {
       const data = readTxt(join(fallbackDir, f))

@@ -72,9 +72,3 @@ export function getGiftKeywordColor(keyword: string | null): string {
 export const GIFT_BG_URL = getGameUiAsset('gift/background')
 /** Slot of a gift enhanced to + or ++: orange stripes and a yellow inner octagon. */
 export const GIFT_BG_ENHANCED_URL = getGameUiAsset('gift/background-enhanced')
-/**
- * The game's yellow neon gift highlight, redrawn on our slot's outline (scripts/assets/extract-gift-plan-glow.py). The
- * image is the slot plus 18/354 of its width on every side, so it is placed over the artwork by these offsets.
- */
-export const GIFT_PLAN_GLOW_URL = getGameUiAsset('gift/plan-glow')
-export const GIFT_PLAN_GLOW_BOX = { left: '-5.0847%', top: '-5.0847%', width: '110.1695%', height: '110.1695%' } as const

@@ -23,19 +23,16 @@ const render = (value: RunState) => renderToStaticMarkup(<NextIntlClientProvider
 </NextIntlClientProvider>)
 const cell = (html: string, id: number) => { const start = html.indexOf('aria-label="gift-' + id); const next = html.indexOf('aria-label="gift-', start + 1); return start < 0 ? '' : html.slice(start, next < 0 ? undefined : next) }
 
-it('REQ-ASSIST-050 lists this floor plan, floor-only gifts and final targets first in one list with the neon and the red mark', () => {
+it('REQ-ASSIST-050 lists this floor plan, final targets and floor-only gifts first in one list with the red mark and no neon', () => {
   const html = render(state())
   const run = messages.planner.run
-  const headings = [run.groupFloorPlan, run.pipFloorOnly, run.groupTargets].map(label => html.indexOf('>' + label + '<'))
+  const headings = [run.groupFloorPlan, run.groupTargets, run.pipFloorOnly].map(label => html.indexOf('>' + label + '<'))
   expect(headings.every(index => index > 0)).toBe(true)
   expect([...headings].sort((a, b) => a - b)).toEqual(headings)
   // This floor's gifts only by default: 50 is a final target from another pool and waits for the floor filter to be off.
   expect(html).not.toContain('gift-50')
-  expect(cell(html, 20)).toContain('data-plan-glow')
-  expect(cell(html, 30)).toContain('data-plan-glow')
+  expect(html).not.toContain('data-plan-glow')
   expect(cell(html, 40)).toContain('data-gift-warning')
-  expect(cell(html, 40)).not.toContain('data-plan-glow')
-  expect(cell(html, 60)).not.toContain('data-plan-glow')
   // Filters start as: this floor on, plan only off, hide owned off.
   expect(html).toMatch(new RegExp('<input type="checkbox"[^>]*checked=""[^>]*/>.*?' + run.filterFloor))
   expect(html).toContain('gift-10')

@@ -1,5 +1,16 @@
 import { expect, it } from 'vitest'
-import { ctcDecode, detSize, detTensor, fillRecLine, mergeTileRects, recAlphabet, recBatchWidth, recLineWidth, REC_HEIGHT, textRects, tileGrid } from '../../../lib/vision/paddle-text'
+import { ctcDecode, detSize, detTensor, fillRecLine, joinRowLines, mergeTileRects, recAlphabet, recBatchWidth, recLineWidth, REC_HEIGHT, textRects, tileGrid } from '../../../lib/vision/paddle-text'
+
+it('joins words the detector boxed apart on one row, keeping the next row separate', () => {
+  // Real GPU read of the English exploration banner (1080p crop, 2026-09-28).
+  const line = (text: string, x: number, y: number, width: number, height: number) => ({ text, rect: { x, y, width, height, score: 0.9 } })
+  const rows = joinRowLines([line('Floor 3', 256, 129, 146, 49), line('Exploring', 62, 131, 190, 51), line('Hatred and Despair', 59, 189, 185, 25)])
+  expect(rows.map(row => row.text)).toEqual(['Exploring Floor 3', 'Hatred and Despair'])
+  expect(rows[0].rect).toMatchObject({ x: 62, y: 129, width: 340, height: 53 })
+  expect(joinRowLines([line('Exploring,', 60, 129, 199, 51), line('Floor', 256, 130, 113, 46), line('3', 373, 138, 20, 29)])[0].text).toBe('Exploring, Floor 3')
+  // A far-off mark on the same row stays apart.
+  expect(joinRowLines([line('Exploring Floor 1', 61, 130, 330, 51), line('00D', 900, 140, 151, 52)])).toHaveLength(2)
+})
 
 it('slices a frame into overlapping tiles that cover every pixel', () => {
   const tiles = tileGrid(1920, 1080, 2)
