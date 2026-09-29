@@ -274,10 +274,23 @@ async function runModel(session: ort.InferenceSession, input: Float32Array, dims
   return result
 }
 
+// One CPU-backed canvas serves every resize: a full-frame read resizes the frame once and up to 80 lines, and making a
+// canvas (with willReadFrequently) per line was a large share of the read's CPU time.
+let scratch: { canvas: OffscreenCanvas; context: OffscreenCanvasRenderingContext2D } | null = null
+
 function pixels(source: CanvasImageSource, x: number, y: number, width: number, height: number, outWidth: number, outHeight: number) {
-  const canvas = new OffscreenCanvas(outWidth, outHeight)
-  const context = canvas.getContext('2d', { willReadFrequently: true })
-  if (!context) throw new Error('OCR canvas unavailable')
+  if (!scratch) {
+    const canvas = new OffscreenCanvas(outWidth, outHeight)
+    const context = canvas.getContext('2d', { willReadFrequently: true })
+    if (!context) throw new Error('OCR canvas unavailable')
+    scratch = { canvas, context }
+  }
+  const { canvas, context } = scratch
+  // Resizing clears the canvas and resets its drawing state, so smoothing is set after it.
+  if (canvas.width !== outWidth || canvas.height !== outHeight) {
+    canvas.width = outWidth
+    canvas.height = outHeight
+  } else context.clearRect(0, 0, outWidth, outHeight)
   context.imageSmoothingEnabled = true
   context.imageSmoothingQuality = 'low'
   context.drawImage(source, x, y, width, height, 0, 0, outWidth, outHeight)
