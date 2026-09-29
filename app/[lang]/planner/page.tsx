@@ -12,6 +12,7 @@ import PlannerClient from './PlannerClient'
 import PlannerSkeleton from '@/components/planner/PlannerSkeleton'
 import PageHeader from '@/components/ui/PageHeader'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
+import RequestTimeRoute from '@/components/layout/RequestTimeRoute'
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params
@@ -96,6 +97,8 @@ export default async function PlannerPage({ params }: { params: Promise<{ lang: 
           egos={egos ?? []}
         />
       </Suspense>
+      {/* Server-render PlannerClient for the requested query instead of leaving it to the browser. */}
+      <RequestTimeRoute />
     </>
   )
 }

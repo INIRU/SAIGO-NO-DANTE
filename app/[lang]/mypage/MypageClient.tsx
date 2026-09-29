@@ -50,7 +50,7 @@ async function fetcher(url: string) {
 }
 
 /** Same layout as the loaded page: rail card and menu on the left, a titled panel on the right. */
-function MypageSkeleton() {
+export function MypageSkeleton() {
   return (
     <div className={styles.page} role="status" aria-busy="true">
       <div className={`${styles.rail} sticky-under-nav`}>

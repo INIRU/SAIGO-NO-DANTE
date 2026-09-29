@@ -6,6 +6,7 @@ import { getMetaData } from '@/lib/db/meta'
 import MetaClient from './MetaClient'
 import styles from '@/styles/components/MetaAnalysis.module.css'
 import PageHeader from '@/components/ui/PageHeader'
+import { connection } from 'next/server'
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params
@@ -17,9 +18,17 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
   }
 }
 
-export default async function MetaPage() {
-  const t = await getTranslations('meta')
+// MetaClient reads its filters from the URL, so it is rendered per request. Its data is read then too: prerendered, the
+// whole meta result would be part of the resume state sent with every request.
+async function MetaContent() {
+  await connection()
   const initialData = await getMetaData().catch(() => null)
+  return <MetaClient initialData={initialData} />
+}
+
+export default async function MetaPage({ params }: { params: Promise<{ lang: string }> }) {
+  const { lang } = await params
+  const t = await getTranslations({ locale: lang, namespace: 'meta' })
 
   return (
     <div className={styles.page}>
@@ -41,7 +50,7 @@ export default async function MetaPage() {
 
       {/* Query-state controls require a Suspense boundary. */}
       <Suspense fallback={null}>
-        <MetaClient initialData={initialData} />
+        <MetaContent />
       </Suspense>
     </div>
   )

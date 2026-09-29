@@ -1,5 +1,5 @@
 import { Suspense } from 'react'
-import { NextIntlClientProvider } from 'next-intl'
+import IntlClientProvider from '@/components/providers/IntlClientProvider'
 import PageError from '@/components/ui/PageError'
 import { routing } from '@/lib/i18n/routing'
 import messages from '@/messages/en.json'
@@ -11,9 +11,11 @@ export default function NotFound() {
     <html lang={locale}>
       <body className="antialiased">
         <Suspense fallback={null}>
-          <NextIntlClientProvider locale={locale} messages={{ errorPage: messages.errorPage }}>
+          {/* This page is part of every route's RSC payload. next-intl's server provider would fill in the missing
+              now/timeZone/formats from the request config and read headers(), so every page rendered per request. */}
+          <IntlClientProvider locale={locale} messages={{ errorPage: messages.errorPage }} timeZone="Asia/Seoul">
             <PageError code="404" />
-          </NextIntlClientProvider>
+          </IntlClientProvider>
         </Suspense>
       </body>
     </html>
