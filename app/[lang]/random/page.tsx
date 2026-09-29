@@ -25,8 +25,9 @@ async function getRandomData() {
   return Promise.all([getSinners(), getIdentities(), getEGOs()])
 }
 
-export default async function RandomPage() {
-  const t = await getTranslations('randomPage')
+export default async function RandomPage({ params }: { params: Promise<{ lang: string }> }) {
+  const { lang } = await params
+  const t = await getTranslations({ locale: lang, namespace: 'randomPage' })
   const [sinners, identities, egos] = await getRandomData()
   return (
     <div className="mx-auto max-w-[80rem] px-4 pb-24 pt-[calc(64px+1.5rem)] md:pb-8">

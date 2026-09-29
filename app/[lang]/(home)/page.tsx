@@ -9,7 +9,7 @@ import { loadDiscovery } from '@/lib/discovery/feed'
 import type { DeckSummary } from '@/components/decks/DeckCard'
 import type { PlanSummary } from '@/components/planner/PlanCard'
 import JsonLd, { faqJsonLd } from '@/components/seo/JsonLd'
-import { getLocale, setRequestLocale } from 'next-intl/server'
+import { setRequestLocale } from 'next-intl/server'
 import type { SupportedLang } from '@/lib/i18n/types'
 import { translations } from '@/lib/i18n/translations'
 import { latestYoutubePreview, youtubeVideosFeedUrl, type YoutubeVideo } from '@/lib/utils/youtube'
@@ -165,10 +165,9 @@ async function getCachedLatestEgos() {
   return getLatestEGOs(2)
 }
 
-export default async function HomePage() {
-  // cookies() is dynamic — call outside 'use cache'
-  const locale = await getLocale()
-  const lang = (locale === 'en' || locale === 'ja' ? locale : 'ko') as SupportedLang
+export default async function HomePage({ params }: { params: Promise<{ lang: string }> }) {
+  const { lang: routeLang } = await params
+  const lang: SupportedLang = routeLang === 'en' || routeLang === 'ja' ? routeLang : 'ko'
   setRequestLocale(lang)
   const [{ latestIdentities, pinnedAnnouncement }, latestEgos] = await Promise.all([getCachedHomeData(lang), getCachedLatestEgos()])
 
