@@ -3,8 +3,8 @@ import * as ort from 'onnxruntime-web/webgpu'
 import { popupEffectBox, popupHeaderBox, popupPlateUnit } from './popup-detect'
 import { popupHeaderEvidence } from './popup-evidence'
 import { explorationFloor } from './exploration-match'
-import { ctcDecode, ctcLexiconBest, detSize, detTensor, fillRecLine, joinRowLines, lexiconEntries, mergeTileRects, recAlphabet, recBatchWidth,
-  recLineWidth, REC_HEIGHT, textRects, tileGrid, type LexiconEntry, type TextRect } from './paddle-text'
+import { ctcDecode, ctcLexiconBest, detSize, detTensor, fillRecLine, joinRowLines, lexiconEntries, mergeTileRects, paddleRetryDelay, recAlphabet,
+  recBatchWidth, recLineWidth, REC_HEIGHT, textRects, tileGrid, type LexiconEntry, type TextRect } from './paddle-text'
 
 type Language = 'ko' | 'en' | 'ja'
 type Request =
@@ -40,8 +40,9 @@ let reader: Awaited<ReturnType<typeof createWorker>> | null = null
 let busy = false
 let disposed = false
 
-// PP-OCR det (language-free) + the game language's rec model on a real WebGPU adapter. Any load or run failure releases
-// it for this worker's life and the same request is read by Tesseract, which stays loaded as the fallback.
+// PP-OCR det (language-free) + the game language's rec model on a real WebGPU adapter. A load or run failure releases it
+// and the same request is read by Tesseract, which stays loaded as the fallback; the GPU models are loaded again later
+// (PADDLE_RETRY_MS), since the game sharing the GPU can stall a run for seconds without the GPU being unusable.
 const PADDLE_ROOT = `${ROOT}/paddle`
 /** Recognition model and its character dictionary per game language (see paddle/PROVENANCE.md). */
 const REC_ROOTS: Record<Language, string> = { ko: PADDLE_ROOT, ja: `${PADDLE_ROOT}/ja`, en: `${PADDLE_ROOT}/en` }
@@ -53,8 +54,9 @@ const FULL_FRAME_LINES = 80
 const REC_BATCH = 6
 /** A popup box or crop outside the frame: that frame is unreadable by any engine, the GPU is not at fault. */
 class RegionError extends Error {}
-let paddle: { det: ort.InferenceSession; rec: ort.InferenceSession; alphabet: string[]; adapter: string } | null = null
-let paddleFailed = false
+let paddle: { det: ort.InferenceSession; rec: ort.InferenceSession; alphabet: string[]; adapter: string; loadedAt: number } | null = null
+let paddleRetries = 0
+let paddleRetry: ReturnType<typeof setTimeout> | null = null
 
 type LexiconRead = { id: string; name: string; margin: number; gap: number }
 // Plate lines are also decoded against the gift names (lexicon CTC). Measured on 36 acquisition popups of the 2026-09-25/26
@@ -205,12 +207,27 @@ function withTimeout<T>(promise: Promise<T>, ms = PADDLE_TIMEOUT_MS): Promise<T>
     .finally(() => clearTimeout(timeout))
 }
 
+/** Loads the GPU models again after the next wait (paddleRetryDelay); false once the retries are spent. */
+function schedulePaddleRetry(loadedAt: number | null = null): boolean {
+  if (disposed) return false
+  if (paddleRetry) return true
+  const plan = paddleRetryDelay(paddleRetries, loadedAt, Date.now())
+  paddleRetries = plan.spent
+  if (plan.delay === null) return false
+  paddleRetry = setTimeout(() => {
+    paddleRetry = null
+    if (!disposed && !paddle) void loadPaddle()
+  }, plan.delay)
+  return true
+}
+
 async function releasePaddle(reason: string) {
   const current = paddle
   paddle = null
-  paddleFailed = true
   if (current) await withTimeout(Promise.allSettled([current.det.release(), current.rec.release()]), 2000).catch(() => {})
-  if (!disposed) respond({ type: 'backend', engine: 'tesseract', adapter: '', loading: false, reason })
+  if (disposed) return
+  const retrying = schedulePaddleRetry(current?.loadedAt ?? null)
+  respond({ type: 'backend', engine: 'tesseract', adapter: '', loading: retrying, reason })
 }
 
 /** Loads the GPU models after Tesseract is ready, so capture never waits for them. */
@@ -218,7 +235,6 @@ async function loadPaddle() {
   const adapter = await webgpuAdapter()
   if (disposed) return
   if (!adapter) {
-    paddleFailed = true
     respond({ type: 'backend', engine: 'tesseract', adapter: '', loading: false, reason: 'webgpu-unavailable' })
     return
   }
@@ -240,13 +256,12 @@ async function loadPaddle() {
       throw new Error('OCR dictionary does not match the model')
     }
     if (disposed) throw new Error('Disposed')
-    paddle = { det, rec, alphabet, adapter }
+    paddle = { det, rec, alphabet, adapter, loadedAt: Date.now() }
     respond({ type: 'backend', engine: 'paddle', adapter, loading: false })
   } catch (error) {
     if (!disposed) console.warn('GPU OCR unavailable; using Tesseract', error)
     await Promise.allSettled([det?.release(), rec?.release()])
-    paddleFailed = true
-    if (!disposed) respond({ type: 'backend', engine: 'tesseract', adapter: '', loading: false, reason: 'gpu-ocr-init-failed' })
+    if (!disposed) respond({ type: 'backend', engine: 'tesseract', adapter: '', loading: schedulePaddleRetry(), reason: 'gpu-ocr-init-failed' })
   }
 }
 
@@ -447,6 +462,7 @@ self.onmessage = async (event: MessageEvent<Request>) => {
   const request = event.data
   if (request.type === 'dispose') {
     disposed = true
+    if (paddleRetry) clearTimeout(paddleRetry)
     const engine = paddle
     paddle = null
     await Promise.allSettled([reader?.terminate(), engine?.det.release(), engine?.rec.release()])
@@ -498,12 +514,12 @@ self.onmessage = async (event: MessageEvent<Request>) => {
     context.drawImage(frame, 0, 0, canvas.width, canvas.height)
     // GPU OCR first; a failure disables it and the same frame is read by Tesseract before any response.
     const viaPaddle = async <T>(read: () => Promise<T>): Promise<T | null> => {
-      if (!paddle || paddleFailed) return null
+      if (!paddle) return null
       try {
         return await read()
       } catch (error) {
         if (error instanceof RegionError) throw error
-        console.warn('GPU OCR disabled; using Tesseract', error)
+        console.warn('GPU OCR failed; using Tesseract until it reloads', error)
         await releasePaddle('gpu-ocr-runtime-failed')
         return null
       }
