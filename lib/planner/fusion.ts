@@ -268,24 +268,57 @@ const giftIdsByName = (giftMap: Map<number, GiftData>) => new Map([...giftMap.va
 /**
  * Inventory keys a fixed-recipe result consumes: the first recipe variant whose ingredients are all held, or null when the
  * gift has no fixed recipe or none is complete. Recipe results are obtainable only by fusing their ingredients.
+ * Variants that contain every material read on the fusion's dialog (`read`) are tried first: two variants of one result
+ * (피안개: 3 or 4 ingredients) can both be held.
  */
 export function recipeIngredientsInInventory(resultId: number, inventory: readonly string[], recipes: readonly RecipeData[],
-  giftMap: Map<number, GiftData>): string[] | null {
+  giftMap: Map<number, GiftData>, read: readonly string[] = []): string[] | null {
   const name = giftMap.get(resultId)?.name
   if (!name) return null
   const idByName = giftIdsByName(giftMap)
-  for (const recipe of recipes) {
-    if ((recipe.final_result ?? recipe.result_name) !== name) continue
-    const remaining = [...inventory]
-    const keys: string[] = []
-    for (const ingredient of recipe.ingredients) {
-      const index = remaining.findIndex(key => parseInt(key, 10) === idByName.get(ingredient))
-      if (index < 0) break
-      keys.push(...remaining.splice(index, 1))
-    }
-    if (keys.length === recipe.ingredients.length) return keys
+  const variants = recipes.filter(recipe => (recipe.final_result ?? recipe.result_name) === name)
+  const hasRead = (recipe: RecipeData) => read.every(id => recipe.ingredients.some(ingredient => idByName.get(ingredient) === parseInt(id, 10)))
+  for (const recipe of [...variants.filter(hasRead), ...variants.filter(recipe => !hasRead(recipe))]) {
+    const keys = heldIngredientKeys(recipe, inventory, idByName)
+    if (keys) return keys
   }
   return null
+}
+
+/** Inventory keys holding one recipe's ingredients (a key per ingredient), or null when one is not held. */
+function heldIngredientKeys(recipe: RecipeData, inventory: readonly string[], idByName: Map<string, number>): string[] | null {
+  const remaining = [...inventory]
+  const keys: string[] = []
+  for (const ingredient of recipe.ingredients) {
+    const index = remaining.findIndex(key => parseInt(key, 10) === idByName.get(ingredient))
+    if (index < 0) return null
+    keys.push(...remaining.splice(index, 1))
+  }
+  return keys
+}
+
+/**
+ * All materials of a fixed-recipe fusion whose dialog was only partly read (icons not yet drawn when it closed): the one
+ * recipe for `resultId` with `count` ingredients that contains every material read (vestiges aside) and is fully held.
+ * Null unless exactly one recipe fits, so a random fusion or an ambiguous read keeps what was read.
+ */
+export function recipeFusionMaterials(read: readonly string[], count: number, resultId: string, inventory: readonly string[],
+  recipes: readonly RecipeData[], giftMap: Map<number, GiftData>, excluded: ReadonlySet<string>): string[] | null {
+  const name = giftMap.get(Number(resultId))?.name
+  if (!name) return null
+  const idByName = giftIdsByName(giftMap)
+  const fits = new Map<string, string[]>()
+  for (const recipe of recipes) {
+    if ((recipe.final_result ?? recipe.result_name) !== name || recipe.ingredients.length !== count) continue
+    const left = recipe.ingredients.map(ingredient => idByName.get(ingredient))
+    const contains = read.filter(id => !excluded.has(id)).every(id => {
+      const index = left.indexOf(parseInt(id, 10))
+      return index >= 0 && left.splice(index, 1).length > 0
+    })
+    const keys = contains ? heldIngredientKeys(recipe, inventory, idByName) : null
+    if (keys) fits.set([...recipe.ingredients].sort().join('|'), keys)
+  }
+  return fits.size === 1 ? [...fits.values()][0] : null
 }
 
 /** Evidence of one result popup, split by strength, plus the materials read on the fusion that preceded it. */
