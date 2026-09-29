@@ -9,6 +9,7 @@ import JsonLd, { itemListJsonLd } from '@/components/seo/JsonLd'
 import { getTranslations } from 'next-intl/server'
 import { getLocalizedName } from '@/lib/i18n/localize'
 import type { SupportedLang } from '@/lib/i18n/types'
+import RequestTimeRoute from '@/components/layout/RequestTimeRoute'
 
 const TITLE = { ko: '림버스 컴퍼니 인격 도감 — 전체 인격 목록', en: 'Limbus Company Identity List', ja: 'リンバスカンパニー 人格一覧' }
 
@@ -26,7 +27,7 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
   }
 }
 
-export default async function IdentitiesPage({ params }: { params: Promise<{ lang: string }> }) {
+async function IdentitiesContent({ params }: { params: Promise<{ lang: string }> }) {
   'use cache'
   cacheLife('max')
   cacheTag(CACHE_TAGS.identities, CACHE_TAGS.gameData)
@@ -54,6 +55,16 @@ export default async function IdentitiesPage({ params }: { params: Promise<{ lan
       <Suspense fallback={null}>
         <IdentityBrowserClient identities={identities} sinners={sinners} />
       </Suspense>
+    </>
+  )
+}
+
+// IdentityBrowserClient reads its filters from the URL, so the route renders per request to server-render it for that query.
+export default function IdentitiesPage(props: { params: Promise<{ lang: string }> }) {
+  return (
+    <>
+      <IdentitiesContent {...props} />
+      <RequestTimeRoute />
     </>
   )
 }
