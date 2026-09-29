@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest'
-import { recipeFromMaterials, recipeIngredientsInInventory, resolveRecipeResult, settleResultPopup } from '@/lib/planner/fusion'
+import { recipeFromMaterials, recipeFusionMaterials, recipeIngredientsInInventory, resolveRecipeResult, settleResultPopup } from '@/lib/planner/fusion'
 import { popupCandidateIds } from '@/lib/vision/popup-evidence'
 import type { GiftData, RecipeData } from '@/lib/planner/types'
 
@@ -98,4 +98,28 @@ it('takes a fusion of exactly one recipe\'s ingredients as that recipe\'s result
   expect(settleResultPopup(ev([], ['9731']), '9731', caseOnly, recipes, giftMap, true)).toBe('9731')
   // A named recipe result stands even when its ingredients were never recorded.
   expect(settleResultPopup(ev(['9731']), '9731', caseOnly, recipes, giftMap, false)).toBe('9731')
+})
+
+// 2026-09-28 samples (build 87f428c): recipe fusions whose dialog closed before its icons showed.
+it('completes a partly read fixed-recipe fusion from its result, and only when one recipe fits', () => {
+  const map = new Map([...giftMap, ...([[9042, '연기와 철조망'], [9101, '녹슨 입마개'], [9102, '치성'], [9103, '억류된 찬송'], [9159, '밀라르카'], [9990, '피안개'], [9991, '어두운 잔영']] as [number, string][])
+    .map(([game_id, name]) => [game_id, { game_id, name } as GiftData] as const)])
+  const all = [...recipes, recipe('피안개', ['연기와 철조망', '녹슨 입마개', '치성']), recipe('피안개', ['연기와 철조망', '녹슨 입마개', '억류된 찬송', '밀라르카'])]
+  const vestiges = new Set(['9991'])
+  const inventory = ['9042', '9101', '9102', '9103', '9159', '9721', '9724']
+  // d37139e6: 3/3 dialog, only 연기와 철조망 read, result 피안개.
+  expect(recipeFusionMaterials(['9042'], 3, '9990', inventory, all, map, vestiges)).toEqual(['9042', '9101', '9102'])
+  expect(recipeFusionMaterials(['9042'], 4, '9990', inventory, all, map, vestiges)).toEqual(['9042', '9101', '9103', '9159'])
+  // b40f80dc: 2/5 dialog, 은빛 시계 케이스 read, 녹슨 시계침 too faint; result 회중시계 : 타입 E.
+  expect(recipeFusionMaterials(['9721'], 2, '9729', inventory, all, map, vestiges)).toEqual(['9721', '9724'])
+  // A read material outside the recipe, a missing ingredient, a random fusion's result or a wrong count: nothing added.
+  expect(recipeFusionMaterials(['9103'], 3, '9990', inventory, all, map, vestiges)).toBeNull()
+  expect(recipeFusionMaterials(['9042'], 3, '9990', ['9042', '9101'], all, map, vestiges)).toBeNull()
+  expect(recipeFusionMaterials(['9001'], 2, '9001', inventory, all, map, vestiges)).toBeNull()
+  expect(recipeFusionMaterials(['9042'], 5, '9990', inventory, all, map, vestiges)).toBeNull()
+  // A vestige read on the dialog is not a recipe ingredient and does not block it.
+  expect(recipeFusionMaterials(['9991', '9042'], 3, '9990', inventory, all, map, vestiges)).toEqual(['9042', '9101', '9102'])
+  // With both variants held, the one containing the read materials is consumed (the first listed otherwise).
+  expect(recipeIngredientsInInventory(9990, inventory, all, map, ['9159'])).toEqual(['9042', '9101', '9103', '9159'])
+  expect(recipeIngredientsInInventory(9990, inventory, all, map)).toEqual(['9042', '9101', '9102'])
 })

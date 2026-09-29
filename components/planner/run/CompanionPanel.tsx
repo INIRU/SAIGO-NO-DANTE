@@ -333,7 +333,7 @@ export default function CompanionPanel({ state, dispatch, themes, giftMap, obser
       // fusion (a material returned with its result) are plain acquisitions and never claim an older fusion.
       const fusion = fusionForResult(recentFusions.current, evidence.capturedAt)
       // A fixed-recipe result is only made by fusing its ingredients: they leave with it even when no dialog was read.
-      const recipe = recipeIngredientsInInventory(id, current.current.giftInventory, recipes, giftMap)
+      const recipe = recipeIngredientsInInventory(id, current.current.giftInventory, recipes, giftMap, fusion?.materials ?? [])
       if (recipe && !current.current.giftInventory.includes(evidence.giftId)) {
         const token = fusion && !consumedFusionTokens.current.has(fusion.token) ? fusion.token : `recipe:${evidence.token}`
         if (fusion) consumedFusionTokens.current.add(fusion.token)

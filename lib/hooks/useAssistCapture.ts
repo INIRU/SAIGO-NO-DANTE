@@ -191,7 +191,7 @@ export function runFrameTask(task: FrameTask, now = performance.now()): boolean 
 }
 
 export function useAssistCapture({ giftReferences = [], eventReferences = [], ocrCatalog, themeCatalog, language = 'ko', floor = null,
-  mode = 'balanced', detection = DEFAULT_DETECTION, resolvePopup, samples = false, heldGiftIds = [] }: {
+  mode = 'balanced', detection = DEFAULT_DETECTION, resolvePopup, completeFusion, samples = false, heldGiftIds = [] }: {
   giftReferences?: VisualReference[]
   eventReferences?: VisualReference[]
   ocrCatalog?: OcrCatalog
@@ -208,6 +208,11 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
    * Used for fixed-recipe fusions, whose result follows from their materials.
    */
   resolvePopup?: (evidence: RecipePopupEvidence, verdict: string | null, inFusion: boolean) => string | null
+  /**
+   * All materials of a fusion whose dialog was read only in part, from its result: the fixed recipe with that many
+   * ingredients containing the ones read, or null. Such a fusion counts as read and uploads no sample.
+   */
+  completeFusion?: (read: readonly string[], count: number, resultId: string) => string[] | null
   /** Opt-in recognition samples (lib/vision/assist-samples.ts); read live. */
   samples?: boolean
   /** The run's inventory: fusion material slots are measured against these gifts (and vestiges). Read live. */
@@ -292,6 +297,8 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
   const references = useRef({ giftReferences, eventReferences })
   const resolvePopupRef = useRef(resolvePopup)
   resolvePopupRef.current = resolvePopup
+  const completeFusionRef = useRef(completeFusion)
+  completeFusionRef.current = completeFusion
   references.current = { giftReferences, eventReferences }
   const ocrReferences = useRef(ocrCatalog)
   ocrReferences.current = ocrCatalog
@@ -317,7 +324,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
     return { scene: prediction && { label: prediction.label.slice(0, 40), confidence: prediction.confidence }, mode, detection, inference,
       ocr: ocrEngine && { engine: ocrEngine.engine, adapter: ocrEngine.adapter.slice(0, 80) }, dpr: window.devicePixelRatio,
       userAgent: navigator.userAgent.slice(0, 400), build: process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA ?? null, floor,
-      session: reportTally.current?.session }
+      session: reportTally.current?.session, language }
   }
   const readReportContext = () => {
     const size = stream.current?.getVideoTracks()[0]?.getSettings()
@@ -693,7 +700,10 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
         if (dialog && !dialog.published) decideCapacity(dialog, true)
         if (dialog && !dialog.published && run === generation.current) {
           dialog.published = true
-          const materials = fusionMaterials(dialog.reads, dialog.count, dialog.capacity)
+          let materials = fusionMaterials(dialog.reads, dialog.count, dialog.capacity)
+          // The result popup held for this dialog (captured after it opened) completes a fixed-recipe fusion.
+          const result = materials.length < dialog.count ? heldAcquisitions.current.find(item => (item.capturedAt ?? Infinity) >= dialog.firstAt) : undefined
+          materials = (result && completeFusionRef.current?.(materials, dialog.count, result.giftId)) || materials
           // The fusion's frame group is uploaded only when its materials could not all be read.
           settleSample('fusion', 'fusion', materials.length < dialog.count ? { reason: dialog.dialogless ? 'fusion-dialogless' : 'fusion-materials', candidates: materials } : null)
           // Dated by the dialog's own first frame: wheel reads come from before it, possibly before the previous result.

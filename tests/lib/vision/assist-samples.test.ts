@@ -30,8 +30,10 @@ const valid = { reason: 'popup-unresolved', scene: { label: 'gift_acquired', con
 it('keeps known metadata fields only and rejects malformed samples', () => {
   expect(parseSampleMeta({ ...valid, email: 'x@y.z', detection: { ...valid.detection, extra: true } })).toEqual(valid)
   expect(parseSampleMeta({ ...valid, scene: null, inference: null, floor: null })).toMatchObject({ scene: null, inference: null, floor: null })
+  // The game language tells English and Japanese samples apart (older samples have none).
+  expect(parseSampleMeta({ ...valid, language: 'ja' })).toEqual({ ...valid, language: 'ja' })
   for (const change of [{ reason: 'other' }, { width: 0 }, { width: 1.5 }, { dpr: Infinity }, { floor: '3' }, { scene: { label: 'x', confidence: 2 } },
-    { detection: { gifts: true } }, { candidates: Array(21).fill('1') }, { userAgent: 'x'.repeat(401) }, { ocr: { engine: 'paddle' } }])
+    { detection: { gifts: true } }, { candidates: Array(21).fill('1') }, { userAgent: 'x'.repeat(401) }, { ocr: { engine: 'paddle' } }, { language: 'fr' }])
     expect(parseSampleMeta({ ...valid, ...change })).toBeNull()
   expect(parseSampleMeta(null)).toBeNull()
   expect(parseSampleMeta([valid])).toBeNull()

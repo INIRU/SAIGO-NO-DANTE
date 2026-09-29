@@ -11,7 +11,8 @@ import { useLocale, useTranslations } from 'next-intl'
 import { toast } from 'sonner'
 import { ArrowLeft, RotateCcw, MonitorUp, ChevronDown } from 'lucide-react'
 import { Link, useRouter } from '@/lib/i18n/navigation'
-import { buildGiftMap, settleResultPopup, type RecipePopupEvidence } from '@/lib/planner/fusion'
+import { buildGiftMap, recipeFusionMaterials, settleResultPopup, type RecipePopupEvidence } from '@/lib/planner/fusion'
+import { AUTO_ACQUIRE_EXCLUDED_GIFT_IDS } from '@/lib/vision/popup-evidence'
 import { decodedPlanToPlannerState, decodePlan, loadPlanForRun, runStateToPlannerState, saveDraftToLocal } from '@/lib/planner/encoder'
 import { enrichIdentitySlotsForGiftConditions } from '@/lib/planner/gift-condition-status'
 import { useRunStore } from '@/lib/stores/run'
@@ -135,7 +136,10 @@ export default function RunClient({ themes, gifts, recipes, identities, sinners,
   // only recipe result the current inventory can make.
   const resolvePopup = useCallback((evidence: RecipePopupEvidence, verdict: string | null, inFusion: boolean) =>
     settleResultPopup(evidence, verdict, useRunStore.getState().giftInventory, recipes, giftMap, inFusion), [recipes, giftMap])
-  const capture = useAssistCapture({ giftReferences, eventReferences, ocrCatalog, themeCatalog, mode: recognitionMode, detection, resolvePopup, samples: samples === true,
+  // A fixed-recipe fusion whose dialog closed before its icons showed: the result names the rest of the materials.
+  const completeFusion = useCallback((read: readonly string[], count: number, resultId: string) =>
+    recipeFusionMaterials(read, count, resultId, useRunStore.getState().giftInventory, recipes, giftMap, AUTO_ACQUIRE_EXCLUDED_GIFT_IDS), [recipes, giftMap])
+  const capture = useAssistCapture({ giftReferences, eventReferences, ocrCatalog, themeCatalog, mode: recognitionMode, detection, resolvePopup, completeFusion, samples: samples === true,
     heldGiftIds: state.giftInventory,
     language: gameLanguage, floor: state.phase === 'playing' ? state.currentFloor : null })
   const { visualCandidates, ocrCandidates, eventChoiceEvidence } =
