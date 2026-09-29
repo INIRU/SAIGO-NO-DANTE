@@ -485,12 +485,15 @@ export function KeywordWithTooltip({
 function formatSkillDescInner(
   text: string,
   color: string,
-  allKeywords: string[],
+  catalogKeywords: string[],
   keywordInfo: Record<string, KeywordInfo>,
   skillNameColors?: Record<string, string>,
   localToKr?: Record<string, string>,
   options?: FormatSkillDescOptions,
 ) {
+  // Only keywords that occur somewhere in the text can match below (every match is a substring of it). Checking the
+  // ~420 catalog names once here, in their longest-first order, spares the scans below from repeating them per segment.
+  const allKeywords = catalogKeywords.filter(kw => text.includes(kw))
   const parts: {
     text: string
     type: 'normal' | 'bracket' | 'keyword' | 'number' | 'skillname'
