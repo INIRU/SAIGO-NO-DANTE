@@ -8,7 +8,7 @@ import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import DecksClient from './DecksClient'
 import type { DeckSummary } from '@/components/decks/DeckCard'
 import type { SupportedLang } from '@/lib/i18n/types'
-import { normalizeDeckLanguageFilter, type DeckLanguageFilter } from '@/components/decks/decks-types'
+import StaticQueryAdapter from '@/components/providers/StaticQueryAdapter'
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params
@@ -38,24 +38,6 @@ type DeckLangFilter = SupportedLang | 'all'
 
 function isSupportedDeckLang(value: string | undefined): value is SupportedLang {
   return value === 'ko' || value === 'en' || value === 'ja'
-}
-
-function normalizeDeckSort(sort: string | string[] | undefined): DeckSort {
-  const value = Array.isArray(sort) ? sort[0] : sort
-  return value === 'popular' ? 'popular' : 'latest'
-}
-
-function normalizeDeckLangFilter(routeLang: string, queryLang: string | string[] | undefined): DeckLangFilter {
-  const value = Array.isArray(queryLang) ? queryLang[0] : queryLang
-  if (value === 'all') return 'all'
-  if (isSupportedDeckLang(value)) return value
-  if (isSupportedDeckLang(routeLang)) return routeLang
-  return 'ko'
-}
-
-function normalizeDeckLangQuery(queryLang: string | string[] | undefined): DeckLanguageFilter {
-  const value = Array.isArray(queryLang) ? queryLang[0] : queryLang
-  return normalizeDeckLanguageFilter(value)
 }
 
 function isMissingDeckKeywordColumnError(error: { message?: string } | null) {
@@ -121,30 +103,23 @@ async function getCachedInitialDecks({
   })
 }
 
-export default async function DecksPage({
-  params,
-  searchParams,
-}: {
-  params: Promise<{ lang: string }>
-  searchParams: Promise<{ sort?: string | string[]; lang?: string | string[] }>
-}) {
-  const [{ lang: routeLang }, { sort, lang }] = await Promise.all([params, searchParams])
-  const initialSort = normalizeDeckSort(sort)
-  const initialLang = normalizeDeckLangFilter(routeLang, lang)
-  const initialLanguageFilter = normalizeDeckLangQuery(lang)
+export default async function DecksPage({ params }: { params: Promise<{ lang: string }> }) {
+  const { lang: routeLang } = await params
   const t = await getTranslations({ locale: routeLang, namespace: 'decks.header' })
   const headerCopy = {
     title: t('title'),
     subtitle: t('subtitle'),
     newDeck: t('newDeck'),
   }
-  const initialDecks = await getCachedInitialDecks({ initialSort, initialLang })
+  // Prerendered with the newest decks in the page language; ?sort and ?lang load their list after hydration.
+  const initialDecks = await getCachedInitialDecks({ initialSort: 'latest', initialLang: isSupportedDeckLang(routeLang) ? routeLang : 'ko' })
 
   return (
     <div className="community-board flex min-h-screen flex-col" style={{ background: 'var(--bg-deep)' }}>
       <BoardHeader kind="deck" lang={routeLang} title={headerCopy.title} subtitle={headerCopy.subtitle} action={headerCopy.newDeck} />
-      {/* The route loading boundary already covers the request-bound query state. */}
-      <DecksClient initialDecks={initialDecks} initialTotal={initialDecks.length} initialSort={initialSort} initialLanguageFilter={initialLanguageFilter} />
+      <StaticQueryAdapter>
+        <DecksClient initialDecks={initialDecks} initialTotal={initialDecks.length} initialSort="latest" initialLanguageFilter="mine" />
+      </StaticQueryAdapter>
     </div>
   )
 }
