@@ -143,8 +143,8 @@ export default async function LangLayout({
   return (
     <html lang={validLang} suppressHydrationWarning data-scroll-behavior="smooth" className={fontVariables}>
       <head>
+        {/* Game icons shown without the optimizer load from storage directly; avatars go through /_next/image. */}
         <link rel="preconnect" href="https://lpgqcleszdlldneiwgep.supabase.co" />
-        <link rel="preconnect" href="https://lh3.googleusercontent.com" crossOrigin="anonymous" />
         <JsonLd data={websiteJsonLd(validLang)} />
         <JsonLd data={organizationJsonLd(SITE_URL)} />
         <JsonLd data={videoGameJsonLd(validLang)} />
