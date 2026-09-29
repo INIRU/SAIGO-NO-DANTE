@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { cacheLife, cacheTag } from 'next/cache'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
+import { CATALOG_CACHE_CONTROL } from '@/lib/constants/http-cache'
 
 async function getCachedEgoGifts() {
   'use cache'
@@ -20,7 +21,7 @@ async function getCachedEgoGifts() {
 export async function GET() {
   try {
     const data = await getCachedEgoGifts()
-    return NextResponse.json(data)
+    return NextResponse.json(data, { headers: { 'Cache-Control': CATALOG_CACHE_CONTROL } })
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Internal Server Error'
     return NextResponse.json({ error: message }, { status: 500 })
