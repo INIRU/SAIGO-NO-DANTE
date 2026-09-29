@@ -5,6 +5,7 @@ import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import { STORAGE_BASE } from '@/lib/constants/game'
 import { isSubsequence, matchScore, matchesAllWords } from '@/lib/search/match'
 import { resolveKeywordIconUrl } from '@/lib/keywords/catalog'
+import { getIdentityImageUrl } from '@/lib/utils/images'
 
 export type SearchItemType = 'sinner' | 'identity' | 'ego' | 'keyword' | 'egoGift'
 export type SearchItem = {
@@ -76,7 +77,7 @@ export async function GET(request: NextRequest) {
       add({
         type: 'identity', label: pick(i, lang), sublabel: sinner ? pick(sinner, lang) : '',
         href: `/sinners/${i.sinner_id}/identities/${i.id}`,
-        icon: `${STORAGE_BASE}/sinners/${i.sinner_id}/identities/${i.folder_name}/${i.game_id}_normal.webp`,
+        icon: getIdentityImageUrl(i.sinner_id, i.folder_name, `${i.game_id}_normal`),
         rarity: i.rarity,
       }, score(allNames(i), sinnerNames(i.sinner_id)))
     }
@@ -111,7 +112,7 @@ export async function GET(request: NextRequest) {
       ...index.identities.filter(i => allNames(i).some(n => n && isSubsequence(n, q))).slice(0, 5).map(i => ({
         type: 'identity' as const, label: pick(i, lang), sublabel: pick(sinnerById.get(i.sinner_id) ?? { name_kr: '', name_en: '', name_jp: '' }, lang),
         href: `/sinners/${i.sinner_id}/identities/${i.id}`,
-        icon: `${STORAGE_BASE}/sinners/${i.sinner_id}/identities/${i.folder_name}/${i.game_id}_normal.webp`,
+        icon: getIdentityImageUrl(i.sinner_id, i.folder_name, `${i.game_id}_normal`),
         rarity: i.rarity,
       })),
     ]

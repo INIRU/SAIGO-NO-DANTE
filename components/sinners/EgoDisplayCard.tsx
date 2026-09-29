@@ -25,6 +25,8 @@ type EgoDisplayCardProps = {
   lang?: SupportedLang
   selected?: boolean
   displayOnly?: boolean
+  /** Load the artwork ahead of other images (cards in the first row of a page). */
+  preload?: boolean
 }
 
 const EGO_UI_BASE = '/assets/ego-ui'
@@ -424,7 +426,7 @@ function EgoCardName({ lang, name }: { lang: SupportedLang; name: string }) {
   )
 }
 
-function EgoDisplayCardBody({ ego, name, selected, sinnerId, lang }: Required<Pick<EgoDisplayCardProps, 'ego' | 'name' | 'selected' | 'sinnerId' | 'lang'>>) {
+function EgoDisplayCardBody({ ego, name, selected, sinnerId, lang, preload }: Required<Pick<EgoDisplayCardProps, 'ego' | 'name' | 'selected' | 'sinnerId' | 'lang' | 'preload'>>) {
   const stage = [1, 2, 3, 4, 5].includes(ego.max_construe_level ?? 4) ? (ego.max_construe_level ?? 4) : 4
   const gradeColor = GRADE_COLORS[ego.grade] ?? '#667788'
   const sinType = normalizeSin(ego.sin_affinity ?? null)
@@ -518,6 +520,7 @@ function EgoDisplayCardBody({ ego, name, selected, sinnerId, lang }: Required<Pi
                 fill
                 className="object-contain"
                 sizes="8.35rem"
+                preload={preload}
                 style={{
                   filter: selected ? 'brightness(0.58) saturate(0.86)' : 'none',
                   transition: 'filter 160ms ease-out',
@@ -576,7 +579,6 @@ function EgoDisplayCardBody({ ego, name, selected, sinnerId, lang }: Required<Pi
           fill
           className="pointer-events-none select-none object-contain"
           sizes="8.35rem"
-          priority={false}
         />
       </div>
 
@@ -705,13 +707,14 @@ export default function EgoDisplayCard({
   onClick,
   selected = false,
   sinnerId,
+  preload = false,
 }: EgoDisplayCardProps) {
   const rootClassName = [
     'group flex min-w-0 flex-col items-center focus:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black',
     className,
   ].filter(Boolean).join(' ')
   const rootStyle = { cursor: 'pointer', borderRadius: '0.875rem' }
-  const body = <EgoDisplayCardBody ego={ego} lang={lang} name={name} selected={selected} sinnerId={sinnerId} />
+  const body = <EgoDisplayCardBody ego={ego} lang={lang} name={name} selected={selected} sinnerId={sinnerId} preload={preload} />
 
   if (displayOnly) return <div className={rootClassName} aria-label={name}>{body}</div>
 
