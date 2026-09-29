@@ -12,7 +12,7 @@ import PlannerClient from './PlannerClient'
 import PlannerSkeleton from '@/components/planner/PlannerSkeleton'
 import PageHeader from '@/components/ui/PageHeader'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
-import RequestTimeRoute from '@/components/layout/RequestTimeRoute'
+import StaticQueryAdapter from '@/components/providers/StaticQueryAdapter'
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params
@@ -83,22 +83,21 @@ export default async function PlannerPage({ params }: { params: Promise<{ lang: 
       <div className="pt-[5.5rem] px-3 md:px-6 max-w-[90rem] mx-auto">
         <PageHeader title={t('title')} />
       </div>
-      {/* PlannerClient uses nuqs (useSearchParams internally), requiring Suspense
-          to prevent CSR bailout from de-opting the entire page to client rendering. */}
+      {/* Prerendered without a query; the URL's state applies after hydration (StaticQueryAdapter). */}
       <Suspense fallback={<PlannerSkeleton />}>
-        <PlannerClient
-          themes={themes ?? []}
-          gifts={gifts ?? []}
-          recipes={recipes ?? []}
-          identities={identities ?? []}
-          sinners={sinners ?? []}
-          passives={passives ?? []}
-          skills={skills ?? []}
-          egos={egos ?? []}
-        />
+        <StaticQueryAdapter>
+          <PlannerClient
+            themes={themes ?? []}
+            gifts={gifts ?? []}
+            recipes={recipes ?? []}
+            identities={identities ?? []}
+            sinners={sinners ?? []}
+            passives={passives ?? []}
+            skills={skills ?? []}
+            egos={egos ?? []}
+          />
+        </StaticQueryAdapter>
       </Suspense>
-      {/* Server-render PlannerClient for the requested query instead of leaving it to the browser. */}
-      <RequestTimeRoute />
     </>
   )
 }
