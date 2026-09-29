@@ -28,7 +28,7 @@ import AnnouncementPopup from '@/components/announcements/AnnouncementPopup'
 import SkipNav from '@/components/a11y/SkipNav'
 import AprilFoolsWrapper from '@/components/events/AprilFoolsWrapper'
 import { KeywordProvider } from '@/components/providers/KeywordProvider'
-import { getKeywordData, localizeKeywordCatalog } from '@/lib/keywords/server-data'
+import { getKeywordData, keywordCatalogWithoutDescriptions } from '@/lib/keywords/server-data'
 import { fontVariables } from '../fonts'
 import { ROOT_OMITTED_MESSAGES, omitMessages } from '@/lib/i18n/client-messages'
 
@@ -137,7 +137,8 @@ export default async function LangLayout({
     getKeywordData(),
     getTranslations({ locale: validLang }),
   ])
-  const keywords = localizeKeywordCatalog(keywordCatalog, validLang)
+  // Descriptions are left out of every page's payload; tooltips load them once from /api/keyword-descriptions.
+  const keywords = keywordCatalogWithoutDescriptions(keywordCatalog)
   const mainNavLabel = t('common.mainNav')
 
   return (

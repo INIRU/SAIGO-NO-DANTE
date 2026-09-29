@@ -4,6 +4,7 @@ import { cloneElement, createContext, isValidElement, useCallback, useContext, u
 import KeywordIcon from '@/components/ui/KeywordIcon'
 import { createPortal } from 'react-dom'
 import { useLocale, useTranslations } from 'next-intl'
+import useSWR, { preload } from 'swr'
 import { STORAGE_BASE } from '@/lib/constants/game'
 import { getKeywordIconUrl } from '@/lib/constants/keywords'
 import { getKeywordIndex, getLocalizedKeywordIndex, resolveKeywordIconUrl, type KeywordInfo } from '@/lib/keywords/catalog'
@@ -168,6 +169,30 @@ export function useKeywords() {
   return useContext(KeywordContext)
 }
 
+// The layout's catalog has no descriptions (they only show in tooltips); one cached request per language brings them.
+const descriptionsUrl = (locale: string) => `/api/keyword-descriptions/${locale}`
+const fetchDescriptions = (url: string): Promise<Record<string, string>> =>
+  fetch(url).then(response => { if (!response.ok) throw new Error(`${response.status}`); return response.json() })
+const DESCRIPTION_OPTIONS = { revalidateOnFocus: false, revalidateIfStale: false, revalidateOnReconnect: false } as const
+
+/** Starts loading the descriptions (e.g. when a keyword is hovered) so the tooltip usually opens with its text. */
+export function preloadKeywordDescriptions(locale: string) {
+  void preload(descriptionsUrl(locale), fetchDescriptions).catch(() => {})
+}
+
+/**
+ * Description of a keyword in the page language: from the catalog when it carries one (older snapshots), otherwise from
+ * the lazily loaded descriptions. `undefined` while loading; '' when the keyword has none.
+ */
+export function useKeywordDescription(keyword: string, info: KeywordInfo | undefined): string | undefined {
+  const locale = useLocale()
+  const inline = info ? getLocalizedKeywordDesc(info.desc, info, locale as SupportedLang) : ''
+  const { data, error } = useSWR(inline ? null : descriptionsUrl(locale), fetchDescriptions, DESCRIPTION_OPTIONS)
+  if (inline) return inline
+  if (data) return data[keyword] ?? ''
+  return error ? '' : undefined
+}
+
 type FormatSkillDescOptions = {
   /** Notes can opt in to a single backslash as a literal-keyword escape. */
   escapeKeywords?: boolean
@@ -248,7 +273,7 @@ function KwTooltipPopup({ id, rect, iconUrl, keyword, info, onMouseEnter, onMous
 
   const formatDescription = useFormatSkillDesc()
   const localName = getLocalizedKeywordName(keyword, info, locale as SupportedLang)
-  const localDesc = getLocalizedKeywordDesc(info.desc, info, locale as SupportedLang)
+  const localDesc = useKeywordDescription(keyword, info)
 
   const spaceAbove = rect.top
   const spaceBelow = window.innerHeight - rect.bottom
@@ -265,7 +290,7 @@ function KwTooltipPopup({ id, rect, iconUrl, keyword, info, onMouseEnter, onMous
   useEffect(() => {
     const el = contentRef.current
     if (el) setOverflowing(el.scrollHeight > el.clientHeight)
-  }, [])
+  }, [localDesc])
 
   return (
     <span
@@ -315,7 +340,9 @@ function KwTooltipPopup({ id, rect, iconUrl, keyword, info, onMouseEnter, onMous
           ) : null}
         </span>
         <span style={{ color: '#d0c7b8', fontSize: '0.875rem', lineHeight: 1.75, display: 'block', whiteSpace: 'pre-line' }}>
-          {formatDescription(localDesc, '#d0c7b8', undefined, undefined, { highlightValues: color })}
+          {localDesc === undefined
+            ? <span aria-hidden="true" style={{ display: 'block', height: '3.5em', borderRadius: '0.25rem', background: 'linear-gradient(90deg, #211a12, #2b2218, #211a12)' }} />
+            : formatDescription(localDesc, '#d0c7b8', undefined, undefined, { highlightValues: color })}
         </span>
       </div>
       {overflowing && (
@@ -360,13 +387,15 @@ export function KeywordWithTooltip({
   const [failedIconUrl, setFailedIconUrl] = useState<string | null>(null)
   const visibleIconUrl = failedIconUrl === iconUrl ? null : iconUrl
 
+  const locale = useLocale()
   const hide = useCallback(() => setRect(null), [])
   const show = useCallback(() => {
+    preloadKeywordDescriptions(locale)
     if (activeKwClose && activeKwClose !== hide) activeKwClose()
     clearTimeout(hideTimeout.current)
     setRect(ref.current?.getBoundingClientRect() ?? null)
     activeKwClose = hide
-  }, [hide])
+  }, [hide, locale])
   const scheduleHide = useCallback(() => {
     hideTimeout.current = setTimeout(() => { setRect(null); if (activeKwClose === hide) activeKwClose = null }, 120)
   }, [hide])
