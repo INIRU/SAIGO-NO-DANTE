@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState, useMemo, useCallback, type AnimationEvent, type CSSProperties } from 'react'
-import Image from 'next/image'
+import Image, { getImageProps } from 'next/image'
 
 import styles from '@/styles/components/HeroGlitch.module.css'
 import { type IdentityWithSinner, getIdentityProfileUrl, BLUR_PLACEHOLDER } from '@/lib/data/sinners'
@@ -11,6 +11,9 @@ import { useLocale, useTranslations } from 'next-intl'
 type HeroSlide = { url: string; identity: IdentityWithSinner; gacksung: boolean }
 type Layer = { key: number; slide: HeroSlide; dur: number }
 type ProbeImage = HTMLImageElement & { fetchPriority?: 'high' | 'low' | 'auto' }
+/** The artwork is shown at 50% opacity under gradients, where quality 90 only added bytes. */
+const HERO_QUALITY = 75
+const HERO_SIZES = '100vw'
 
 interface HeroGlitchSliderProps {
   identities: IdentityWithSinner[]
@@ -41,6 +44,8 @@ export default function HeroGlitchSlider({ identities, onSlideChange }: HeroGlit
   const [validGacksung, setValidGacksung] = useState<Set<string>>(new Set())
 
   // 각성 이미지 존재 여부 확인 (404 → 스킵). Idle 이후 한 장씩 확인해 홈 초기 네트워크를 막지 않는다.
+  // The probe requests the same optimized size the slide will show (not the full-size original), so a found image is
+  // already cached when its slide comes up.
   useEffect(() => {
     let cancelled = false
     let cleanupIdle: (() => void) | undefined
@@ -62,7 +67,12 @@ export default function HeroGlitchSlider({ identities, onSlideChange }: HeroGlit
           probeNext(index + 1)
         }
         img.onerror = () => probeNext(index + 1)
-        img.src = candidate.url
+        const { props } = getImageProps({ src: candidate.url, alt: '', fill: true, sizes: HERO_SIZES, quality: HERO_QUALITY })
+        if (props.srcSet) {
+          img.sizes = props.sizes ?? HERO_SIZES
+          img.srcset = props.srcSet
+        }
+        img.src = props.src
       })
     }
 
@@ -73,6 +83,7 @@ export default function HeroGlitchSlider({ identities, onSlideChange }: HeroGlit
       if (img) {
         img.onload = null
         img.onerror = null
+        img.srcset = ''
         img.src = ''
       }
     }
@@ -143,8 +154,8 @@ export default function HeroGlitchSlider({ identities, onSlideChange }: HeroGlit
       placeholder="blur"
       blurDataURL={getBlurDataURL(s.url) ?? BLUR_PLACEHOLDER}
       className="object-cover object-center"
-      sizes="100vw"
-      quality={90}
+      sizes={HERO_SIZES}
+      quality={HERO_QUALITY}
     />
   )
 

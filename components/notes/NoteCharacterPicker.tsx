@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Image from 'next/image'
 import { useLocale, useTranslations } from 'next-intl'
 import useSWR from 'swr'
 import { X } from 'lucide-react'
@@ -38,7 +39,7 @@ export default function NoteCharacterPicker({ kind, onSelect, onClose }: {
           if (!items.length) return null
           return <section key={id}><h3><img src={getSinnerLogoUrl(id)} alt="" width={28} height={28} />{t(id)}<small>{items.length}</small></h3>
             <div className="note-picker-grid">{items.map(a => <button type="button" key={a.id} className={`note-picker-item ${kind === 'ego' ? 'character-picker-ego-card' : ''}`} onClick={() => onSelect(a)} aria-label={assetName(a, lang)}>
-              {kind === 'identity' ? <><div className="note-character-portrait"><img src={a.image_url ?? ''} alt="" loading="lazy" /><small><img src={`${STORAGE_BASE}/icons/Rarity/${a.identity?.rarity ?? 1}star.webp`} alt={'0'.repeat(a.identity?.rarity ?? 1)} width={(a.identity?.rarity ?? 1) * 20} height={20} /></small></div><span>{assetName(a, lang)}</span></> : <NoteAssetArtwork asset={a} compact />}
+              {kind === 'identity' ? <><div className="note-character-portrait">{a.image_url ? <Image src={a.image_url} alt="" fill sizes="(max-width: 640px) 33vw, 9rem" /> : null}<small><img src={`${STORAGE_BASE}/icons/Rarity/${a.identity?.rarity ?? 1}star.webp`} alt={'0'.repeat(a.identity?.rarity ?? 1)} width={(a.identity?.rarity ?? 1) * 20} height={20} /></small></div><span>{assetName(a, lang)}</span></> : <NoteAssetArtwork asset={a} compact />}
             </button>)}</div>
           </section>
         })}
