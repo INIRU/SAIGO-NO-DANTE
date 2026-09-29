@@ -1,5 +1,5 @@
-import { expect, it } from 'vitest'
-import { ctcDecode, detSize, detTensor, fillRecLine, joinRowLines, mergeTileRects, recAlphabet, recBatchWidth, recLineWidth, REC_HEIGHT, textRects, tileGrid } from '../../../lib/vision/paddle-text'
+import { describe, expect, it } from 'vitest'
+import { ctcDecode, detSize, PADDLE_RETRY_MS, PADDLE_STABLE_MS, paddleRetryDelay, detTensor, fillRecLine, joinRowLines, mergeTileRects, recAlphabet, recBatchWidth, recLineWidth, REC_HEIGHT, textRects, tileGrid } from '../../../lib/vision/paddle-text'
 
 it('joins words the detector boxed apart on one row, keeping the next row separate', () => {
   // Real GPU read of the English exploration banner (1080p crop, 2026-09-28).
@@ -90,4 +90,18 @@ it('decodes CTC output: merges repeats, drops blanks, keeps a blank-separated re
   expect(ctcDecode(logits, 0, steps.length, 4, alphabet)).toEqual({ text: '가가나 나', score: expect.closeTo(0.9, 5) })
   expect(() => recAlphabet([])).toThrow()
   expect(() => recAlphabet([1])).toThrow()
+})
+
+describe('GPU OCR reload after a failure', () => {
+  it('reloads after growing waits, then leaves Tesseract, and starts over after a long healthy run', () => {
+    let spent = 0
+    const waits: (number | null)[] = []
+    for (let failure = 0; failure < 4; failure++) {
+      const plan = paddleRetryDelay(spent, failure === 0 ? null : 1000, 2000)
+      waits.push(plan.delay)
+      spent = plan.spent
+    }
+    expect(waits).toEqual([...PADDLE_RETRY_MS, null])
+    expect(paddleRetryDelay(spent, 0, PADDLE_STABLE_MS)).toEqual({ delay: PADDLE_RETRY_MS[0], spent: 1 })
+  })
 })
