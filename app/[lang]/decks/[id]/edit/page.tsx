@@ -3,12 +3,14 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { findOrCreateSupabaseUser } from '@/lib/supabase/findOrCreateUser'
-import { getSinners, getIdentities, getEGOs, getAllSkills, getAllPassives, getEgoGiftsForNotes } from '@/lib/db/queries'
+import { fetchDeckBuilderData } from '@/lib/decks/builder-data'
+import type { SupportedLang } from '@/lib/i18n/types'
 import EditWrapper from './EditWrapper'
 import { normalizeUptie } from '@/lib/decks/deck-identity-uptie'
 
-export default async function EditDeckPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params
+export default async function EditDeckPage({ params }: { params: Promise<{ lang: string; id: string }> }) {
+  const { lang: rawLang, id } = await params
+  const lang: SupportedLang = rawLang === 'en' || rawLang === 'ja' ? rawLang : 'ko'
 
   // 인증 확인. 익명 덱은 로그인 없이 열고, 저장할 때 브라우저의 익명 키로 소유를 확인한다.
   const session = await getServerSession(authOptions)
@@ -48,15 +50,10 @@ export default async function EditDeckPage({ params }: { params: Promise<{ id: s
     return result
   }
 
-  // 덱 데이터 + 게임 데이터 병렬 fetch
-  const [deckRes, sinners, identities, egos, skills, passives, egoGifts] = await Promise.all([
+  // 덱 데이터 + 게임 데이터 병렬 fetch (게임 데이터는 덱 빌더와 같은 캐시)
+  const [deckRes, { sinners, identities, egos, skills, passives, egoGifts }] = await Promise.all([
     loadDeck(),
-    getSinners(),
-    getIdentities(),
-    getEGOs(),
-    getAllSkills(),
-    getAllPassives(),
-    getEgoGiftsForNotes(),
+    fetchDeckBuilderData(lang),
   ])
 
   const deck = deckRes.data
