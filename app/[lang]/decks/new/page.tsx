@@ -1,22 +1,10 @@
-import { cacheLife, cacheTag } from 'next/cache'
 import type { Metadata } from 'next'
 import { getTranslations } from 'next-intl/server'
-import { getSinners, getIdentities, getEGOs, getAllSkills, getAllPassives, getEgoGiftsForNotes } from '@/lib/db/queries'
+import { fetchDeckBuilderData } from '@/lib/decks/builder-data'
 import { createAdminClient } from '@/lib/supabase/admin'
 import DeckBuilderWrapper from './DeckBuilderWrapper'
 import { normalizeUptie } from '@/lib/decks/deck-identity-uptie'
-import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import type { SupportedLang } from '@/lib/i18n/types'
-
-async function fetchDeckBuilderStaticData() {
-  'use cache'
-  cacheLife('max')
-  cacheTag(CACHE_TAGS.gameData, CACHE_TAGS.sinners, CACHE_TAGS.identities, CACHE_TAGS.ego, CACHE_TAGS.egoGifts)
-  const [sinners, identities, egos, skills, passives, egoGifts] = await Promise.all([
-    getSinners(), getIdentities(), getEGOs(), getAllSkills(), getAllPassives(), getEgoGiftsForNotes(),
-  ])
-  return { sinners, identities, egos, skills, passives, egoGifts }
-}
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: SupportedLang }> }): Promise<Metadata> {
   const { lang } = await params
@@ -28,9 +16,10 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: Sup
   }
 }
 
-export default async function NewDeckPage({ searchParams }: { searchParams: Promise<{ fork?: string }> }) {
-  const { fork: forkId } = await searchParams
-  const { sinners, identities, egos, skills, passives, egoGifts } = await fetchDeckBuilderStaticData()
+export default async function NewDeckPage({ params, searchParams }: { params: Promise<{ lang: string }>; searchParams: Promise<{ fork?: string }> }) {
+  const [{ lang: rawLang }, { fork: forkId }] = await Promise.all([params, searchParams])
+  const lang: SupportedLang = rawLang === 'en' || rawLang === 'ja' ? rawLang : 'ko'
+  const { sinners, identities, egos, skills, passives, egoGifts } = await fetchDeckBuilderData(lang)
 
   // 포크 모드: 원본 덱 데이터 로드
   if (forkId) {
