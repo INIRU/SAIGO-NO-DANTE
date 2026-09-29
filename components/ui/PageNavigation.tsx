@@ -15,21 +15,26 @@ export default function PageNavigation() {
     const main = document.getElementById('main-content')
     if (!main) return
     let frame = 0
+    // The page end moves only when the content or the window resizes; scrolling reads just scrollY, so animations
+    // running during a scroll are not forced into an extra layout every frame.
+    let mainBottom = 0
+    const measure = () => { mainBottom = main.getBoundingClientRect().bottom + window.scrollY }
     const update = () => {
       cancelAnimationFrame(frame)
       frame = requestAnimationFrame(() => {
-        const end = main.getBoundingClientRect().bottom + window.scrollY - window.innerHeight
+        const end = mainBottom - window.innerHeight
         const up = end > 2 && window.scrollY > Math.min(240, window.innerHeight / 4)
         const down = end > 2 && window.scrollY < end - 2
         setDirections(previous => previous.up === up && previous.down === down ? previous : { up, down })
       })
     }
-    const observer = new ResizeObserver(update)
+    const resized = () => { measure(); update() }
+    const observer = new ResizeObserver(resized)
     observer.observe(main)
-    window.addEventListener('resize', update)
+    window.addEventListener('resize', resized)
     window.addEventListener('scroll', update, { passive: true })
-    update()
-    return () => { observer.disconnect(); cancelAnimationFrame(frame); window.removeEventListener('resize', update); window.removeEventListener('scroll', update) }
+    resized()
+    return () => { observer.disconnect(); cancelAnimationFrame(frame); window.removeEventListener('resize', resized); window.removeEventListener('scroll', update) }
   }, [pathname])
 
   function move(direction: 'top' | 'bottom') {
