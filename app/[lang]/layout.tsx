@@ -28,7 +28,7 @@ import AnnouncementPopup from '@/components/announcements/AnnouncementPopup'
 import SkipNav from '@/components/a11y/SkipNav'
 import AprilFoolsWrapper from '@/components/events/AprilFoolsWrapper'
 import { KeywordProvider } from '@/components/providers/KeywordProvider'
-import { getKeywordData, keywordCatalogWithoutDescriptions } from '@/lib/keywords/server-data'
+import { getKeywordCatalog } from '@/lib/keywords/server-data'
 import { fontVariables } from '../fonts'
 import { ROOT_OMITTED_MESSAGES, omitMessages } from '@/lib/i18n/client-messages'
 
@@ -132,13 +132,12 @@ export default async function LangLayout({
   setRequestLocale(validLang)
 
   // Explicit locale: with Cache Components the shell (<html>) must not read the request locale from headers.
-  const [messages, keywordCatalog, t] = await Promise.all([
+  // Descriptions are left out of every page's payload; tooltips load them once from /api/keyword-descriptions.
+  const [messages, keywords, t] = await Promise.all([
     getMessages({ locale: validLang }),
-    getKeywordData(),
+    getKeywordCatalog(),
     getTranslations({ locale: validLang }),
   ])
-  // Descriptions are left out of every page's payload; tooltips load them once from /api/keyword-descriptions.
-  const keywords = keywordCatalogWithoutDescriptions(keywordCatalog)
   const mainNavLabel = t('common.mainNav')
 
   return (

@@ -31,11 +31,7 @@ function isMissingEffectTypeError(error: unknown): boolean {
   return candidate.code === '42703' || (text.includes('effect_type') && text.includes('column'))
 }
 
-export async function getKeywordData(): Promise<Record<string, KeywordInfo>> {
-  'use cache'
-  cacheLife('max')
-  cacheTag(CACHE_TAGS.keywords, CACHE_TAGS.gameData)
-
+async function loadKeywordData(): Promise<Record<string, KeywordInfo>> {
   const supabase = createAdminClient()
   const allData: any[] = []
 
@@ -87,6 +83,24 @@ export async function getKeywordData(): Promise<Record<string, KeywordInfo>> {
     }
   }
   return keywords
+}
+
+export async function getKeywordData(): Promise<Record<string, KeywordInfo>> {
+  'use cache'
+  cacheLife('max')
+  cacheTag(CACHE_TAGS.keywords, CACHE_TAGS.gameData)
+  return loadKeywordData()
+}
+
+/**
+ * keywordCatalogWithoutDescriptions, cached on its own for the layout. A page rendered per request is resumed with the
+ * cache entries its prerender read, sent with every request; this keeps the descriptions out of that state.
+ */
+export async function getKeywordCatalog(): Promise<Record<string, KeywordInfo>> {
+  'use cache'
+  cacheLife('max')
+  cacheTag(CACHE_TAGS.keywords, CACHE_TAGS.gameData)
+  return keywordCatalogWithoutDescriptions(await loadKeywordData())
 }
 
 /**
