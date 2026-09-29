@@ -1,3 +1,5 @@
+import { gameTextPieces, ocrNormalized } from './text-normalize'
+
 export interface OcrWord {
   text: string
   confidence: number
@@ -19,9 +21,8 @@ export interface OcrMatch { id: string; score: number }
 export interface OcrChoiceMatch extends OcrMatch { eventId: string }
 export interface OcrMatches { gifts: OcrMatch[]; events: OcrMatch[]; choices: OcrChoiceMatch[] }
 
-const normalized = (value: string) => value.normalize('NFKC').toLocaleLowerCase().replace(/[^\p{L}\p{N}]/gu, '')
+const normalized = ocrNormalized
 const contentLength = (value: string) => [...value].length
-const effectNormalized = (value: string) => normalized(value.replace(/<\/?color\b[^>]*>/gi, ''))
 const EFFECT_FRAGMENT = 7
 
 function effectOffsets(length: number): number[] {
@@ -40,7 +41,7 @@ function indexedEffects(catalog: OcrCatalog) {
   const owners = new Map<string, string | null>()
   const texts = new Map<string, string[]>()
   for (const gift of catalog.gifts) {
-    const effects = (gift.effectTexts ?? []).map(effectNormalized).filter(Boolean)
+    const effects = (gift.effectTexts ?? []).flatMap(gameTextPieces)
     texts.set(gift.id, effects)
     for (const effect of effects) {
       const characters = [...effect]
@@ -105,68 +106,124 @@ function fragments(value: string): string[] {
   return result
 }
 
+const add = (owners: Map<string, Set<string>>, key: string, id: string) => {
+  const ids = owners.get(key)
+  if (ids) ids.add(id)
+  else owners.set(key, new Set([id]))
+}
+
+/**
+ * Catalog texts as compared with the screen, built once per catalog (reads arrive every second or so): names, event and
+ * choice pieces with their owners.
+ */
+const catalogCache = new WeakMap<OcrCatalog, {
+  gifts: { id: string; names: string[] }[]; nameOwners: Map<string, Set<string>>
+  events: { id: string; pieces: string[] }[]; eventFragments: Map<string, Set<string>>
+  choices: { id: string; eventId: string; pieces: string[] }[]; choiceOwners: Map<string, Set<string>>
+  choiceIdsByEventText: Map<string, Set<string>>
+}>()
+
+function indexedCatalog(catalog: OcrCatalog) {
+  const cached = catalogCache.get(catalog)
+  if (cached) return cached
+  const nameOwners = new Map<string, Set<string>>()
+  const gifts = catalog.gifts.map(gift => {
+    const names = gift.texts.map(normalized).filter(Boolean)
+    for (const name of names) add(nameOwners, name, gift.id)
+    return { id: gift.id, names }
+  })
+  const eventFragments = new Map<string, Set<string>>()
+  const events = catalog.events.map(event => {
+    const pieces = event.texts.flatMap(gameTextPieces)
+    for (const piece of pieces) for (const fragment of fragments(piece)) add(eventFragments, fragment, event.id)
+    return { id: event.id, pieces }
+  })
+  const choiceOwners = new Map<string, Set<string>>()
+  const choiceIdsByEventText = new Map<string, Set<string>>()
+  const choices = catalog.choices.map(choice => {
+    const pieces = choice.texts.flatMap(gameTextPieces)
+    for (const piece of pieces) {
+      add(choiceOwners, piece, choice.eventId)
+      add(choiceIdsByEventText, `${choice.eventId}:${piece}`, choice.id)
+    }
+    return { id: choice.id, eventId: choice.eventId, pieces }
+  })
+  const index = { gifts, nameOwners, events, eventFragments, choices, choiceOwners, choiceIdsByEventText }
+  catalogCache.set(catalog, index)
+  return index
+}
+
+const finite = (word: OcrWord) => [word.left, word.top, word.width, word.height].every(Number.isFinite) && word.height > 0
+
+/**
+ * Text regrouped into its columns: words on one line are joined into rows, and rows sharing a left edge within a line
+ * height, each at most 2.5 lines below the last, form a passage read top to bottom. On a two-column screen (event text
+ * beside its choices) top-to-bottom order interleaves the columns line by line; here each passage stays whole. Passages
+ * are separated by "|", which no normalized catalog text contains.
+ */
+export function columnText(words: OcrWord[]): string {
+  const rows: { text: string; left: number; right: number; top: number; height: number }[] = []
+  for (const word of words.filter(word => finite(word) && word.text.trim()).sort((first, second) => first.left - second.left)) {
+    const middle = word.top + word.height / 2
+    const row = rows.find(item => Math.abs(item.top + item.height / 2 - middle) < Math.max(item.height, word.height) / 2 &&
+      word.left >= item.right - item.height / 2 && word.left - item.right < Math.max(item.height, word.height) * 1.5)
+    if (row) {
+      row.text += ` ${word.text}`
+      row.right = Math.max(row.right, word.left + word.width)
+    } else rows.push({ text: word.text, left: word.left, right: word.left + word.width, top: word.top, height: word.height })
+  }
+  rows.sort((first, second) => first.top - second.top || first.left - second.left)
+  const passages: { left: number; bottom: number; height: number; lines: string[] }[] = []
+  for (const row of rows) {
+    const passage = passages.find(item => Math.abs(item.left - row.left) <= Math.max(item.height, row.height) &&
+      row.top - item.bottom <= Math.max(item.height, row.height) * 2.5)
+    if (passage) {
+      passage.lines.push(row.text)
+      passage.bottom = row.top + row.height
+    } else passages.push({ left: row.left, bottom: row.top + row.height, height: row.height, lines: [row.text] })
+  }
+  return passages.map(passage => normalized(passage.lines.join(''))).filter(Boolean).join('|')
+}
+
+/** The read normalized as shown, then its passages column by column (see columnText); windows never span the "|". */
+function screenText(document: OcrDocument): string {
+  const screen = normalized(document.text.slice(0, 20000))
+  if (!screen) return ''
+  const columns = document.words.length ? columnText(document.words.slice(0, 1000)) : ''
+  return columns ? `${screen}|${columns}` : screen
+}
+
 /** Text evidence only: these candidates never imply acquisition or a clicked choice. */
 export function matchOcrCandidates(document: OcrDocument, catalog: OcrCatalog): OcrMatches {
-  const screen = normalized(document.text.slice(0, 20000))
-  if (!screen) return { gifts: [], events: [], choices: [] }
+  const text = normalized(document.text.slice(0, 20000))
+  if (!text) return { gifts: [], events: [], choices: [] }
+  const screen = screenText(document)
   const confidentWords = new Set(document.words
     .filter(word => Number.isFinite(word.confidence) && word.confidence >= 85)
     .map(word => normalized(word.text)))
   const effects = indexedEffects(catalog)
-  const giftNames = new Map<string, Set<string>>()
-  for (const gift of catalog.gifts) for (const name of gift.texts) {
-    const key = normalized(name)
-    if (!key) continue
-    const owners = giftNames.get(key) ?? new Set<string>()
-    owners.add(gift.id)
-    giftNames.set(key, owners)
-  }
-  const gifts = catalog.gifts.filter(gift => gift.texts.some(name => {
-    const value = normalized(name)
+  const index = indexedCatalog(catalog)
+  const gifts = index.gifts.filter(gift => gift.names.some(value => {
     const length = contentLength(value)
-    if (giftNames.get(value)?.size !== 1) return false
-    if (length >= 5) return screen.includes(value)
+    if (index.nameOwners.get(value)?.size !== 1) return false
+    if (length >= 5) return text.includes(value)
     // Short Latin UI words such as "Gift" occur as labels rather than item names.
     return length >= 3 && /^\p{Script=Hangul}+$/u.test(value) &&
       (confidentWords.has(value) || adjacentShortName(value, document.words))
-  }) || uniqueEffectEvidence(gift.id, screen, effects)).map(gift => ({ id: gift.id, score: 1 }))
+  }) || uniqueEffectEvidence(gift.id, text, effects)).map(gift => ({ id: gift.id, score: 1 }))
 
-  const eventFragments = new Map<string, Set<string>>()
-  for (const event of catalog.events) for (const text of event.texts) {
-    const value = normalized(text)
-    for (const fragment of fragments(value)) {
-      const owners = eventFragments.get(fragment) ?? new Set<string>()
-      owners.add(event.id)
-      eventFragments.set(fragment, owners)
-    }
-  }
-  const events = catalog.events.filter(event => event.texts.some(text => {
-    const value = normalized(text)
+  const events = index.events.filter(event => event.pieces.some(value => {
     if (contentLength(value) < 18) return false
     if (screen.includes(value)) return true
-    return fragments(value).some(fragment => eventFragments.get(fragment)?.size === 1 && screen.includes(fragment))
+    return fragments(value).some(fragment => index.eventFragments.get(fragment)?.size === 1 && screen.includes(fragment))
   }))
     .map(event => ({ id: event.id, score: 1 }))
   const matchedEventIds = new Set(events.map(event => event.id))
-  const choiceOwners = new Map<string, Set<string>>()
-  const choiceIdsByEventText = new Map<string, Set<string>>()
-  for (const choice of catalog.choices) for (const text of choice.texts) {
-    const value = normalized(text)
-    if (!value) continue
-    const owners = choiceOwners.get(value) ?? new Set<string>()
-    owners.add(choice.eventId)
-    choiceOwners.set(value, owners)
-    const eventText = `${choice.eventId}:${value}`
-    const ids = choiceIdsByEventText.get(eventText) ?? new Set<string>()
-    ids.add(choice.id)
-    choiceIdsByEventText.set(eventText, ids)
-  }
-  const choices = catalog.choices.filter(choice => choice.texts.some(text => {
-    const value = normalized(text)
+  const choices = index.choices.filter(choice => choice.pieces.some(value => {
     const length = contentLength(value)
     if (length < 4 || !screen.includes(value)) return false
-    if (length >= 8) return choiceOwners.get(value)?.size === 1 || matchedEventIds.has(choice.eventId)
-    return matchedEventIds.has(choice.eventId) && choiceIdsByEventText.get(`${choice.eventId}:${value}`)?.size === 1
+    if (length >= 8) return index.choiceOwners.get(value)?.size === 1 || matchedEventIds.has(choice.eventId)
+    return matchedEventIds.has(choice.eventId) && index.choiceIdsByEventText.get(`${choice.eventId}:${value}`)?.size === 1
   }))
     .map(choice => ({ id: choice.id, eventId: choice.eventId, score: 1 }))
   return { gifts, events, choices }
@@ -200,23 +257,21 @@ function indexedEventScreens(catalog: OcrCatalog) {
   const results = new Map<string, string[]>()
   const choiceOwners = new Map<string, string | null>()
   const bodyOwners = new Map<string, string | null>()
-  for (const event of catalog.events) for (const text of event.texts) {
-    const characters = [...normalized(text)]
+  for (const event of catalog.events) for (const piece of event.texts.flatMap(gameTextPieces)) {
+    const characters = [...piece]
     for (let offset = 0; offset + BODY_WINDOW <= characters.length; offset++) {
       own(bodyOwners, characters.slice(offset, offset + BODY_WINDOW).join(''), event.id)
     }
   }
   for (const choice of catalog.choices) {
-    for (const text of choice.texts) {
-      const value = normalized(text)
-      if (contentLength(value) >= 4) own(choiceOwners, value, choice.eventId)
-    }
+    const pieces = new Set(choice.texts.flatMap(gameTextPieces))
+    for (const value of pieces) if (contentLength(value) >= 4) own(choiceOwners, value, choice.eventId)
     const counts = short.get(choice.eventId) ?? new Map<string, number>()
-    for (const text of new Set(choice.texts.map(normalized))) counts.set(text, (counts.get(text) ?? 0) + 1)
+    for (const value of pieces) counts.set(value, (counts.get(value) ?? 0) + 1)
     short.set(choice.eventId, counts)
     const fragments = results.get(choice.eventId) ?? []
-    for (const text of choice.resultTexts ?? []) {
-      const characters = [...normalized(text)]
+    for (const piece of (choice.resultTexts ?? []).flatMap(gameTextPieces)) {
+      const characters = [...piece]
       if (characters.length >= 8 && characters.length < RESULT_FRAGMENT) fragments.push(characters.join(''))
       for (let offset = 0; offset + RESULT_FRAGMENT <= characters.length; offset += RESULT_FRAGMENT / 2) {
         fragments.push(characters.slice(offset, offset + RESULT_FRAGMENT).join(''))
@@ -231,11 +286,11 @@ function indexedEventScreens(catalog: OcrCatalog) {
 
 /** Evidence that needs an image- or text-identified event before it can name the event on screen. */
 export function eventScreenEvidence(document: OcrDocument, catalog: OcrCatalog): EventScreenEvidence {
-  const screen = normalized(document.text.slice(0, 20000))
+  const screen = screenText(document)
   if (!screen) return { scopedChoices: [], outcomeEventIds: [], choiceEventIds: [], bodyEventIds: [] }
   const index = indexedEventScreens(catalog)
-  const scopedChoices = catalog.choices.filter(choice => choice.texts.some(text => {
-    const value = normalized(text)
+  const catalogIndex = indexedCatalog(catalog)
+  const scopedChoices = catalogIndex.choices.filter(choice => choice.pieces.some(value => {
     const length = contentLength(value)
     return length >= 4 && length < 8 && screen.includes(value) && index.short.get(choice.eventId)?.get(value) === 1
   })).map(choice => ({ id: choice.id, eventId: choice.eventId, score: 1 }))
