@@ -33,6 +33,8 @@ SQL 변경 근거는 supabase/migrations와 기존 supabase/migration-*.sql이�
 
 되돌릴 때는 `supabase/rollback/retire_unused_features.sql`로 원래 스키마를 복원한다. 과거 마이그레이션, 사용자/덱/플래너 기록, Discord 봇 테이블, 기존 backup 테이블은 보존했다. 전체 DB 권한 정비를 완료한 것은 아니다. Supabase 검사에는 기존 `skills`, `deck_identities`, 일부 게임/백업 테이블의 RLS 미설정과 함수 search_path 경고가 남아 있다. 실제 접근 권한과 사용처를 확인해 별도 처리해야 한다.
 
+2026-09-29 `20260929095502_drop_discord_bot_tables.sql`로 서비스를 종료한 Discord 봇 테이블 5개(`feed_tracker`, `guild_settings`, `guild_feed_history`, `tickets`, `warnings`)를 삭제했다. 사이트 코드는 이 테이블을 쓰지 않았고, 참조하는 외래 키·뷰·트리거·함수·cron도 없었다. 삭제 직전 행은 `backups/2026-09-29/`에 있고, 스키마는 `supabase/rollback/drop_discord_bot_tables.sql`로 되살린다. 관리자 공지를 Discord로 보내는 웹훅은 봇과 별개라 유지한다.
+
 2026-09-10 `20260910071945_restore_ego_skill_source_fields.sql`을 적용했다. `ego_skills.game_skill_id`는 이름이 해석 단계에 따라 바뀌어도 같은 원본 스킬을 연결하며, `mental_consume`은 원본 정신력 소모다. 해석 I~V는 원본이 지원하는 최대 단계까지만 저장한다. 카드의 `max_construe_level`은 스킬 관계에서 계산하는 조회 값이며 중복 DB 컬럼을 추가하지 않는다.
 
 `identity_sanity_conditions`는 동기화 IV 기준 조건이다. 원본 템플릿과 매개변수를 분리하고 3개 언어에서 같은 매개변수를 치환한다. 동기화 단계별 조건 이력으로 사용하지 않는다. 현재 복구 건수와 누락 범위는 [동기화 문서](data-pipeline.md)를 따른다.
