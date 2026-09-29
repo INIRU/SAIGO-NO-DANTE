@@ -21,14 +21,20 @@ export async function getSinners(): Promise<Sinner[]> {
   return data ?? []
 }
 
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+/** Row ids are UUIDs; any other id in a URL names nothing (and would make the query itself fail). */
+export const isRowId = (id: string) => UUID.test(id)
+
+// Detail reads throw on a failed query and return null/[] only for data that is really absent, so a cached page never
+// keeps a transient error as "not found" or as missing skills.
 export async function getSinnerById(id: string): Promise<Sinner | null> {
   const { data, error } = await supabase()
     .schema('limbus')
     .from('sinners')
     .select('*')
     .eq('id', id)
-    .single()
-  if (error) return null
+    .maybeSingle()
+  if (error) throw error
   return data
 }
 
@@ -53,13 +59,14 @@ export async function getLatestIdentities(limit = 6): Promise<IdentityWithSinner
 }
 
 export async function getIdentityById(id: string): Promise<Identity | null> {
+  if (!isRowId(id)) return null
   const { data, error } = await supabase()
     .schema('limbus')
     .from('identities')
     .select('*')
     .eq('id', id)
-    .single()
-  if (error) return null
+    .maybeSingle()
+  if (error) throw error
   return data
 }
 
@@ -71,7 +78,8 @@ export async function getSanityConditions(identityId: string): Promise<SanityCon
     .eq('identity_id', identityId)
     .order('condition_type')
     .order('sort_order')
-  if (error || !data) return []
+  if (error) throw error
+  if (!data) return []
   return data.map((row: Record<string, unknown>) => {
     const tpl = row.mental_condition_templates as { add_text: string; min_text: string; add_text_en?: string | null; add_text_jp?: string | null; min_text_en?: string | null; min_text_jp?: string | null } | null
     const isIncrease = row.condition_type === 'increase'
@@ -99,8 +107,8 @@ export async function getPanicInfo(panicTypeId: number): Promise<PanicType | nul
     .from('panic_types')
     .select('id, name, name_en, name_jp, description, description_en, description_jp')
     .eq('id', panicTypeId)
-    .single()
-  if (error || !data) return null
+    .maybeSingle()
+  if (error) throw error
   return data
 }
 
@@ -133,7 +141,7 @@ export async function getSkills(identityId: string): Promise<Skill[]> {
     .order('uptie_level')
     .order('variant_order')
     .order('id')
-  if (error) return []
+  if (error) throw error
   return data ?? []
 }
 
@@ -162,7 +170,7 @@ export async function getPassives(identityId: string): Promise<Passive[]> {
     .eq('identity_id', identityId)
     .order('passive_order')
     .order('uptie_level')
-  if (error) return []
+  if (error) throw error
   return data ?? []
 }
 

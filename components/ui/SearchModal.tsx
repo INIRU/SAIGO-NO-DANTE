@@ -238,7 +238,7 @@ export default function SearchModal({ open, onClose }: Props) {
                       {item.type === 'keyword' && item.icon ? (
                         <KeywordIcon src={item.icon} alt="" width={28} height={28} unoptimized style={{ objectFit: 'contain', width: '100%', height: '100%' }} />
                       ) : item.icon ? (
-                        <Image src={item.icon} alt="" width={40} height={40} unoptimized style={{ objectFit: item.type === 'egoGift' ? 'contain' : 'cover', width: '100%', height: '100%' }} />
+                        <Image src={item.icon} alt="" width={40} height={40} style={{ objectFit: item.type === 'egoGift' ? 'contain' : 'cover', width: '100%', height: '100%' }} />
                       ) : (
                         <Icon size={16} aria-hidden="true" className="text-[var(--gold-dim)]" />
                       )}

@@ -68,6 +68,26 @@ export default function Navbar({ mainNavLabel }: NavbarProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [openGroup, setOpenGroup] = useState<string | null>(null)
   const [searchOpen, setSearchOpen] = useState(false)
+  // The search modal's chunk loads after the page is idle (or on the first hover/open) instead of with every page. It is
+  // mounted closed first and opened a frame later, so even the first open plays the enter animation.
+  const [searchMounted, setSearchMounted] = useState(false)
+  const [searchReady, setSearchReady] = useState(false)
+  if (searchOpen && !searchMounted) setSearchMounted(true)
+  const preloadSearch = () => setSearchMounted(true)
+  useEffect(() => {
+    if (searchMounted) return
+    const idle = window.requestIdleCallback?.(() => setSearchMounted(true), { timeout: 3000 })
+    const timer = idle === undefined ? window.setTimeout(() => setSearchMounted(true), 2000) : undefined
+    return () => { if (idle !== undefined) window.cancelIdleCallback(idle); else window.clearTimeout(timer) }
+  }, [searchMounted])
+  useEffect(() => {
+    if (!searchMounted) return
+    let frame = 0
+    void import('@/components/ui/SearchModal').then(() => {
+      frame = requestAnimationFrame(() => { frame = requestAnimationFrame(() => setSearchReady(true)) })
+    })
+    return () => cancelAnimationFrame(frame)
+  }, [searchMounted])
   const [isMac, setIsMac] = useState(false)
 
   useEffect(() => {
@@ -287,6 +307,8 @@ export default function Navbar({ mainNavLabel }: NavbarProps) {
             <button
               type="button"
               onClick={() => setSearchOpen(true)}
+              onPointerEnter={preloadSearch}
+              onFocus={preloadSearch}
               aria-label="검색 열기 (Ctrl+K)"
               title="검색 (Ctrl+K)"
               className={`mr-1.5 flex h-9 w-40 xl:w-52 cursor-pointer items-center gap-2 rounded-md border border-[var(--border)] bg-[var(--bg-panel)] pl-3 pr-2 text-[0.875rem] font-medium text-[var(--text-tertiary)] transition-colors duration-150 hover:border-[var(--border-hover)] hover:text-[var(--text-secondary)] ${searchOpen ? 'border-[var(--border-hover)]' : ''} ${focusRing}`}
@@ -451,7 +473,7 @@ export default function Navbar({ mainNavLabel }: NavbarProps) {
       <style>{'@keyframes nav-pop{from{opacity:0;transform:translateY(-0.25rem)}}.nav-pop{animation:nav-pop 140ms ease-out}@media (prefers-reduced-motion:reduce){.nav-pop{animation:none}}'}</style>
 
       {/* 전역 검색 모달 */}
-      <SearchModal open={searchOpen} onClose={() => setSearchOpen(false)} />
+      {searchMounted && <SearchModal open={searchOpen && searchReady} onClose={() => setSearchOpen(false)} />}
     </>
   )
 }

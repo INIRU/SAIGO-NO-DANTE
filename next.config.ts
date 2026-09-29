@@ -92,10 +92,20 @@ const nextConfig: NextConfig = {
     imageSizes: [64, 96, 128, 256, 384],
     qualities: [50, 60, 75, 90],
     minimumCacheTTL: 2592000, // 30일 — 게임 에셋 이미지는 거의 변경 없음
-    formats: ['image/avif', 'image/webp'],
+    // WebP only: sources are already WebP, and AVIF took about 50% longer to encode on every optimizer cache miss.
+    // With hundreds of distinct game images per page, cold misses (first view, new widths) were the slow loads.
+    formats: ['image/webp'],
   },
   async headers() {
     return [
+      {
+        // Public game UI sprites and icons (versioned with ?v= or file hashes when corrected): browsers reuse them for a
+        // day without a revalidation round trip per sprite, then revalidate in the background.
+        source: '/:dir(assets|icons|images|placeholders)/:path*',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=86400, stale-while-revalidate=2592000' },
+        ],
+      },
       {
         source: '/(.*)',
         headers: [

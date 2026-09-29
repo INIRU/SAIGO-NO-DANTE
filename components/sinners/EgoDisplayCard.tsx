@@ -25,6 +25,8 @@ type EgoDisplayCardProps = {
   lang?: SupportedLang
   selected?: boolean
   displayOnly?: boolean
+  /** Load the artwork ahead of other images (cards in the first row of a page). */
+  preload?: boolean
 }
 
 const EGO_UI_BASE = '/assets/ego-ui'
@@ -240,13 +242,61 @@ const scoreEgoNameCandidate = (lines: string[], widths: number[], maxWidth: numb
   return maxWidthRatio * 8 + balancePenalty + shortLinePenalty + semanticPenalty + badBreakPenalty
 }
 
+// The font variables are set once on <html>, so the resolved family is read once per page instead of per measurement.
+let resolvedEgoNameFontFamily: string | null = null
 const resolveEgoNameFontFamily = () => {
   if (typeof window === 'undefined') return EGO_NAME_FONT_FAMILY
 
+  if (resolvedEgoNameFontFamily) return resolvedEgoNameFontFamily
   const rootStyle = getComputedStyle(document.documentElement)
-  return EGO_NAME_FONT_FAMILY.replace(/var\(([^)]+)\)/g, (_, propertyName: string) => (
+  resolvedEgoNameFontFamily = EGO_NAME_FONT_FAMILY.replace(/var\(([^)]+)\)/g, (_, propertyName: string) => (
     rootStyle.getPropertyValue(propertyName).trim() || 'sans-serif'
   ))
+  return resolvedEgoNameFontFamily
+}
+
+/**
+ * One observer and one font listener shared by every card name on the page (a grid has a hundred or more), and the
+ * layouts they measure, keyed by name, language, width, root font size and the fonts loaded so far.
+ */
+const egoNameBoxes = new Map<Element, () => void>()
+let egoNameObserver: ResizeObserver | null = null
+let egoNameFontGeneration = 0
+let egoNameFontsWatched = false
+const egoNameLayouts = new Map<string, EgoNameLineLayout>()
+
+function watchEgoNameBox(box: Element, update: () => void) {
+  egoNameBoxes.set(box, update)
+  if (!egoNameObserver && typeof ResizeObserver !== 'undefined') {
+    egoNameObserver = new ResizeObserver(entries => { for (const entry of entries) egoNameBoxes.get(entry.target)?.() })
+  }
+  egoNameObserver?.observe(box)
+  if (!egoNameFontsWatched) {
+    egoNameFontsWatched = true
+    const refresh = () => {
+      egoNameFontGeneration += 1
+      egoNameLayouts.clear()
+      for (const updateBox of egoNameBoxes.values()) updateBox()
+    }
+    document.fonts.addEventListener('loadingdone', refresh)
+    void document.fonts.ready.then(refresh)
+  }
+  return () => {
+    egoNameBoxes.delete(box)
+    egoNameObserver?.unobserve(box)
+  }
+}
+
+function cachedEgoNameLayout(name: string, locale: SupportedLang, maxWidth: number, rootFontSize: number): EgoNameLineLayout {
+  const key = `${name}\u0001${locale}\u0001${maxWidth}\u0001${rootFontSize}\u0001${egoNameFontGeneration}`
+  let layout = egoNameLayouts.get(key)
+  if (!layout) {
+    layout = measureEgoNameLayout(name, locale, maxWidth, rootFontSize)
+    // Resizing the window measures every width it passes; keep the cache bounded.
+    if (egoNameLayouts.size >= 2000) egoNameLayouts.clear()
+    egoNameLayouts.set(key, layout)
+  }
+  return layout
 }
 
 const measureEgoNameLayout = (
@@ -346,7 +396,7 @@ function EgoCardName({ lang, name }: { lang: SupportedLang; name: string }) {
       if (width <= 0) return
 
       const rootFontSize = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16
-      const nextLayout = measureEgoNameLayout(name, lang, width, rootFontSize)
+      const nextLayout = cachedEgoNameLayout(name, lang, width, rootFontSize)
 
       setLayout(previous => {
         const sameLines = previous.lines.length === nextLayout.lines.length &&
@@ -364,21 +414,7 @@ function EgoCardName({ lang, name }: { lang: SupportedLang; name: string }) {
     }
 
     updateLayout()
-    let cancelled = false
-    const fontsReady = () => { if (!cancelled) updateLayout() }
-    void document.fonts.ready.then(fontsReady)
-    document.fonts.addEventListener('loadingdone', fontsReady)
-
-    const observer = typeof ResizeObserver !== 'undefined'
-      ? new ResizeObserver(updateLayout)
-      : null
-    observer?.observe(box)
-
-    return () => {
-      cancelled = true
-      observer?.disconnect()
-      document.fonts.removeEventListener('loadingdone', fontsReady)
-    }
+    return watchEgoNameBox(box, updateLayout)
   }, [lang, name])
 
   return (
@@ -424,7 +460,7 @@ function EgoCardName({ lang, name }: { lang: SupportedLang; name: string }) {
   )
 }
 
-function EgoDisplayCardBody({ ego, name, selected, sinnerId, lang }: Required<Pick<EgoDisplayCardProps, 'ego' | 'name' | 'selected' | 'sinnerId' | 'lang'>>) {
+function EgoDisplayCardBody({ ego, name, selected, sinnerId, lang, preload }: Required<Pick<EgoDisplayCardProps, 'ego' | 'name' | 'selected' | 'sinnerId' | 'lang' | 'preload'>>) {
   const stage = [1, 2, 3, 4, 5].includes(ego.max_construe_level ?? 4) ? (ego.max_construe_level ?? 4) : 4
   const gradeColor = GRADE_COLORS[ego.grade] ?? '#667788'
   const sinType = normalizeSin(ego.sin_affinity ?? null)
@@ -518,6 +554,7 @@ function EgoDisplayCardBody({ ego, name, selected, sinnerId, lang }: Required<Pi
                 fill
                 className="object-contain"
                 sizes="8.35rem"
+                preload={preload}
                 style={{
                   filter: selected ? 'brightness(0.58) saturate(0.86)' : 'none',
                   transition: 'filter 160ms ease-out',
@@ -576,7 +613,6 @@ function EgoDisplayCardBody({ ego, name, selected, sinnerId, lang }: Required<Pi
           fill
           className="pointer-events-none select-none object-contain"
           sizes="8.35rem"
-          priority={false}
         />
       </div>
 
@@ -705,13 +741,14 @@ export default function EgoDisplayCard({
   onClick,
   selected = false,
   sinnerId,
+  preload = false,
 }: EgoDisplayCardProps) {
   const rootClassName = [
     'group flex min-w-0 flex-col items-center focus:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black',
     className,
   ].filter(Boolean).join(' ')
   const rootStyle = { cursor: 'pointer', borderRadius: '0.875rem' }
-  const body = <EgoDisplayCardBody ego={ego} lang={lang} name={name} selected={selected} sinnerId={sinnerId} />
+  const body = <EgoDisplayCardBody ego={ego} lang={lang} name={name} selected={selected} sinnerId={sinnerId} preload={preload} />
 
   if (displayOnly) return <div className={rootClassName} aria-label={name}>{body}</div>
 

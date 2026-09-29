@@ -16,10 +16,17 @@ const PRECACHE_URLS = [
   '/icons/icon-512x512.webp',
 ]
 
-// Cache size limits
-const MAX_IMAGE_ENTRIES = 500
+// Cache size limits (a grid page alone shows a few hundred images; 500 entries thrashed between pages)
+const MAX_IMAGE_ENTRIES = 1500
 const MAX_PAGE_ENTRIES  = 50
 const MAX_STATIC_ENTRIES = 300
+// Caches are trimmed once per this many writes instead of listing every key on every response.
+const TRIM_EVERY = 40
+
+// A cached image is served at once and revalidated with the server in the background at most this often.
+// Refreshing on every hit re-downloaded and re-wrote every image of every page view, competing with the images still loading.
+const IMAGE_REFRESH_MS = 6 * 60 * 60 * 1000
+const CACHED_AT_HEADER = 'x-sw-cached-at'
 
 // Supabase Storage origin for image cache
 const SUPABASE_ORIGIN = 'https://lpgqcleszdlldneiwgep.supabase.co'
@@ -56,7 +63,7 @@ self.addEventListener('activate', (event) => {
           .filter((k) => k.startsWith('saigo-') && !keepCaches.has(k))
           .map((k) => caches.delete(k))
       )
-    )
+    ).then(() => trimCache(CACHE_IMAGES, MAX_IMAGE_ENTRIES))
   )
   // Take control of all existing clients immediately
   self.clients.claim()
@@ -76,6 +83,15 @@ async function trimCache(cacheName, maxEntries) {
     const toDelete = keys.slice(0, keys.length - maxEntries)
     await Promise.all(toDelete.map((k) => cache.delete(k)))
   }
+}
+
+const writesSinceTrim = {}
+/** Trims `cacheName` after every TRIM_EVERY writes (the count restarts with the worker, so activation also trims). */
+function trimSoon(cacheName, maxEntries) {
+  writesSinceTrim[cacheName] = (writesSinceTrim[cacheName] || 0) + 1
+  if (writesSinceTrim[cacheName] < TRIM_EVERY) return Promise.resolve()
+  writesSinceTrim[cacheName] = 0
+  return trimCache(cacheName, maxEntries)
 }
 
 /**
@@ -98,8 +114,9 @@ function classifyRequest(request) {
   // Never cache monitoring/sentry tunnel
   if (pathname.startsWith('/monitoring')) return 'skip'
 
-  // Mutable image URLs: refresh in the background so normal revisits see updates.
-  if (origin === SUPABASE_ORIGIN) return 'stale-while-revalidate'
+  // Mutable image URLs: served from cache, revalidated in the background so later visits see updates. A plain <img>
+  // loads them without CORS; such opaque responses cannot be cached here, so the browser fetches them directly.
+  if (origin === SUPABASE_ORIGIN) return request.mode === 'no-cors' ? 'skip' : 'stale-while-revalidate'
 
   // Only handle same-origin requests from here on
   if (origin !== self.location.origin) return 'skip'
@@ -132,8 +149,7 @@ async function networkFirst(request) {
     const response = await fetch(request)
     if (response.ok) {
       const cache = await caches.open(CACHE_PAGES)
-      cache.put(request, response.clone())
-      trimCache(CACHE_PAGES, MAX_PAGE_ENTRIES)
+      cache.put(request, response.clone()).then(() => trimSoon(CACHE_PAGES, MAX_PAGE_ENTRIES)).catch(() => {})
     }
     return response
   } catch {
@@ -153,8 +169,7 @@ async function cacheFirstStatic(request) {
     const response = await fetch(request)
     if (response.ok) {
       const cache = await caches.open(CACHE_STATIC)
-      cache.put(request, response.clone())
-      trimCache(CACHE_STATIC, MAX_STATIC_ENTRIES)
+      cache.put(request, response.clone()).then(() => trimSoon(CACHE_STATIC, MAX_STATIC_ENTRIES)).catch(() => {})
     }
     return response
   } catch {
@@ -162,19 +177,45 @@ async function cacheFirstStatic(request) {
   }
 }
 
+/** Stores an image response with the time it was fetched (read by isFreshImage). */
+async function storeImage(cache, request, response) {
+  const headers = new Headers(response.headers)
+  headers.set(CACHED_AT_HEADER, String(Date.now()))
+  const body = await response.blob()
+  await cache.put(request, new Response(body, { status: response.status, statusText: response.statusText, headers }))
+  await trimSoon(CACHE_IMAGES, MAX_IMAGE_ENTRIES)
+}
+
+function isFreshImage(cached, now) {
+  const at = Number(cached.headers.get(CACHED_AT_HEADER))
+  return at > 0 && now - at < IMAGE_REFRESH_MS
+}
+
+/**
+ * Cached images are answered at once; ones older than IMAGE_REFRESH_MS are revalidated with the server in the background
+ * (a conditional request, usually 304) so an updated image shows on a later visit. A miss is answered straight from the
+ * network and stored in the background: the page never waits for the cache write.
+ */
 async function staleWhileRevalidateImage(request, event) {
   const cache = await caches.open(CACHE_IMAGES)
-  const refresh = fetch(request).then(async (response) => {
-    if (response.ok) {
-      await cache.put(request, response.clone())
-      await trimCache(CACHE_IMAGES, MAX_IMAGE_ENTRIES)
-    }
-    return response
-  }).catch(() => null)
-  event.waitUntil(refresh)
   const cached = await cache.match(request)
-  if (cached) return cached
-  return (await refresh) || new Response('Image unavailable offline', { status: 503 })
+  if (cached) {
+    if (!isFreshImage(cached, Date.now())) {
+      event.waitUntil(
+        fetch(request, { cache: 'no-cache' })
+          .then((response) => (response.ok ? storeImage(cache, request, response) : undefined))
+          .catch(() => {})
+      )
+    }
+    return cached
+  }
+  try {
+    const response = await fetch(request)
+    if (response.ok) event.waitUntil(storeImage(cache, request, response.clone()).catch(() => {}))
+    return response
+  } catch {
+    return new Response('Image unavailable offline', { status: 503 })
+  }
 }
 
 // ============================================================

@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { localeAlternates } from '@/lib/seo/metadata'
 import { Suspense } from 'react'
 import { cacheLife, cacheTag } from 'next/cache'
-import { getSinnerById, getIdentityById, getSkills, getPassives, getSanityConditions, getPanicInfo } from '@/lib/db/queries'
+import { getSinnerById, getIdentityById, getSkills, getPassives, getSanityConditions, getPanicInfo, isRowId } from '@/lib/db/queries'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import { notFound } from 'next/navigation'
 import { createAdminClient } from '@/lib/supabase/admin'
@@ -68,6 +68,38 @@ export async function generateMetadata({
   }
 }
 
+/**
+ * Everything the page shows for one identity, cached until a game data sync (the tags) replaces it. Reads that do not
+ * depend on each other run together; only the panic type waits for the identity.
+ */
+async function getIdentityPageData(slug: string, id: string) {
+  'use cache'
+  cacheLife('max')
+  cacheTag(CACHE_TAGS.sinner(slug), CACHE_TAGS.identities, CACHE_TAGS.gameData)
+  if (!isRowId(id)) return null
+  const [sinner, identity, skills, passives, sanityConditions] = await Promise.all([
+    getSinnerById(slug),
+    getIdentityById(id),
+    getSkills(id),
+    getPassives(id),
+    getSanityConditions(id),
+  ])
+  if (!sinner || !identity) return null
+  const panicInfo = identity.panic_type ? await getPanicInfo(identity.panic_type) : null
+  return { sinner, identity, skills, passives, sanityConditions, panicInfo }
+}
+
+/** The season set in app_config (not game data, so it is re-read hourly rather than on sync). */
+async function getCurrentSeason(): Promise<number> {
+  'use cache'
+  cacheLife('page-1h')
+  const { data, error } = await createAdminClient()
+    .schema('limbus').from('app_config').select('value')
+    .eq('key', 'current_season').maybeSingle()
+  if (error) throw error
+  return data?.value?.season ?? 7
+}
+
 export default async function IdentityPage({
   params,
 }: {
@@ -75,29 +107,18 @@ export default async function IdentityPage({
 }) {
   const { lang: rawLang, slug, id } = await params
   const lang = (['ko', 'en', 'ja'].includes(rawLang) ? rawLang : 'ko') as SupportedLang
-  const [sinner, identity] = await Promise.all([
-    getSinnerById(slug),
-    getIdentityById(id),
-  ])
-  if (!sinner || !identity) notFound()
-
-  const [skills, passives, currentSeason, sanityConditions, panicInfo] = await Promise.all([
-    getSkills(identity.id),
-    getPassives(identity.id),
-    (async () => {
-      const supabase = createAdminClient()
-      const { data, error } = await supabase
-        .schema('limbus').from('app_config').select('value')
-        .eq('key', 'current_season').single()
-      if (error) console.error('Failed to fetch current season:', error)
-      return data?.value?.season ?? 7
-    })(),
-    getSanityConditions(identity.id),
-    identity.panic_type ? getPanicInfo(identity.panic_type) : Promise.resolve(null),
-  ])
-
   setRequestLocale(lang)
-  const t = await getTranslations()
+  const [data, currentSeason, t] = await Promise.all([
+    getIdentityPageData(slug, id),
+    getCurrentSeason().catch(error => {
+      console.error('Failed to fetch current season:', error)
+      return 7
+    }),
+    getTranslations({ locale: lang }),
+  ])
+  if (!data) notFound()
+  const { sinner, identity, skills, passives, sanityConditions, panicInfo } = data
+
   const canonical = `${SITE_URL}/${lang}/sinners/${slug}/identities/${id}`
   const identityImageUrl = getIdentityInfoUrl(identity) || getIdentityProfileUrl(identity)
   const sinnerName = getLocalizedName({ name_kr: sinner.name_kr, name_en: sinner.name, name_jp: sinner.name_jp }, lang)

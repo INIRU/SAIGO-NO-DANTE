@@ -90,20 +90,21 @@ export async function getKeywordData(): Promise<Record<string, KeywordInfo>> {
 }
 
 /**
- * Keep only the description the reader's locale shows (getLocalizedKeywordDesc falls
- * back to Korean only when the locale text is missing). Names stay in every locale
- * because keyword text matching uses them.
+ * The catalog every page carries (keyword names, icons, colours for skill text) without descriptions: those appear only
+ * in tooltips, which load them from /api/keyword-descriptions/[lang] (keywordDescriptions) when first needed.
  */
-export function localizeKeywordCatalog(keywords: Record<string, KeywordInfo>, lang: SupportedLang): Record<string, KeywordInfo> {
+export function keywordCatalogWithoutDescriptions(keywords: Record<string, KeywordInfo>): Record<string, KeywordInfo> {
   const out: Record<string, KeywordInfo> = {}
+  for (const [name, info] of Object.entries(keywords)) out[name] = { ...info, desc: '', descEn: null, descJp: null }
+  return out
+}
+
+/** Each keyword's description as the locale shows it (Korean when the locale text is missing). */
+export function keywordDescriptions(keywords: Record<string, KeywordInfo>, lang: SupportedLang): Record<string, string> {
+  const out: Record<string, string> = {}
   for (const [name, info] of Object.entries(keywords)) {
-    const local = lang === 'en' ? info.descEn : lang === 'ja' ? info.descJp : null
-    out[name] = {
-      ...info,
-      desc: local ? '' : info.desc,
-      descEn: lang === 'en' ? info.descEn : null,
-      descJp: lang === 'ja' ? info.descJp : null,
-    }
+    const text = (lang === 'en' ? info.descEn : lang === 'ja' ? info.descJp : null) || info.desc
+    if (text) out[name] = text
   }
   return out
 }

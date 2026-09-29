@@ -19,11 +19,9 @@ import {
   RARITY_ICON_MAP,
 } from '@/lib/data/sinners'
 
-// Heavy slider — dynamically imported for code splitting
-const HeroGlitchSlider = dynamic(
-  () => import('@/components/home/HeroGlitchSlider'),
-  { ssr: false }
-)
+// Split into its own chunk but server-rendered: the first slide's preloaded artwork (the page's largest image) is in the
+// HTML instead of waiting for this chunk and hydration. The slider touches the browser only inside effects.
+const HeroGlitchSlider = dynamic(() => import('@/components/home/HeroGlitchSlider'))
 
 const ACTION_BASE =
   'flex min-h-[3rem] min-w-0 items-center gap-2.5 rounded-md px-4 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold-light)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-deep)]'

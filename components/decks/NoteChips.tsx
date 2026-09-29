@@ -13,7 +13,7 @@ import IdentitySkillFrameCard from '@/components/identity/IdentitySkillFrameCard
 import { PassiveNoteRow } from '@/components/passive/PassiveEffect'
 import GiftCard from '@/components/ui/GiftCard'
 import type { GiftConditionStatus } from '@/lib/planner/gift-condition-status'
-import { useFormatSkillDesc, useKeywords, useKeywordData } from '@/components/sinners/KeywordTooltip'
+import { useFormatSkillDesc, useKeywords, useKeywordData, useKeywordDescription, type KeywordInfo } from '@/components/providers/KeywordProvider'
 import {
   SIN_COLORS,
   GRADE_COLORS, SIN_ICON_MAP, ATK_TYPE_ICON_MAP,
@@ -24,7 +24,6 @@ import {
   type ActivationCondition,
 } from '@/lib/data/sinners'
 import { useTranslations, useLocale } from 'next-intl'
-import { getLocalizedKeywordName, getLocalizedKeywordDesc } from '@/lib/i18n'
 import type { SupportedLang } from '@/lib/i18n/types'
 import { localizeDeckKeyword } from '@/components/decks/decks-types'
 
@@ -509,6 +508,11 @@ export function IdentityChip({ entry }: { entry: NoteIdentityEntry }) {
 }
 
 // ── KeywordChip ──────────────────────────────────────────────────────────
+/** The tooltip's description, loaded on first open (the page catalog carries none). */
+function KeywordChipDescription({ keyword, info }: { keyword: string; info: KeywordInfo }) {
+  return <>{useKeywordDescription(keyword, info) ?? '…'}</>
+}
+
 export function KeywordChip({ keyword }: { keyword: string }) {
   const t = useTranslations()
   const locale = useLocale()
@@ -540,7 +544,7 @@ export function KeywordChip({ keyword }: { keyword: string }) {
           </div>
           {info && (
             <div style={{ color: '#aaa', fontSize: '0.75rem', lineHeight: 1.55 }}>
-              {getLocalizedKeywordDesc(info.desc, info, locale as SupportedLang)}
+              <KeywordChipDescription keyword={keyword} info={info} />
               {info.maxStack != null && (
                 <span style={{ display: 'block', marginTop: 2, color: '#999', fontSize: '0.8125rem' }}>
                   {t('keyword.maxStack')} {info.maxStack}

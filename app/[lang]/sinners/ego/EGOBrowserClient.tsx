@@ -19,6 +19,11 @@ import ActiveFilterChips from '@/components/browser/ActiveFilterChips'
 import BrowserHeader from '@/components/browser/BrowserHeader'
 import EGOBrowserCard from '@/components/browser/EGOBrowserCard'
 import { staggerContainer, workbenchReveal, workbenchStaggerItem } from '@/lib/animations'
+import { useProgressiveRender } from '@/hooks/useProgressiveRender'
+
+/** Cards rendered per scroll step (each card draws about eight images), and cards whose artwork loads first. */
+const GRID_PAGE = 36
+const PRELOADED_CARDS = 6
 
 type Props = {
   egos: EGOBrowserItem[]
@@ -54,6 +59,7 @@ export default function EGOBrowserClient({ egos, sinners }: Props) {
   }, [filterResult, nameQuery])
 
   const filteredCount = nameQuery.trim() ? filtered.length : filterCount
+  const { visible, sentinelRef } = useProgressiveRender(filtered.length, GRID_PAGE)
 
   return (
     <div className="min-h-[100dvh] pt-[5.5rem] pb-16 px-4 md:px-6 max-w-7xl mx-auto">
@@ -143,7 +149,7 @@ export default function EGOBrowserClient({ egos, sinners }: Props) {
               viewport={shouldReduceMotion ? undefined : { once: true, margin: '-48px' }}
               variants={shouldReduceMotion ? undefined : staggerContainer(0.025)}
             >
-              {filtered.map(ego => (
+              {filtered.slice(0, visible).map((ego, index) => (
                 <motion.div
                   key={ego.id}
                   role="listitem"
@@ -152,11 +158,12 @@ export default function EGOBrowserClient({ egos, sinners }: Props) {
                   whileTap={shouldReduceMotion ? undefined : { scale: 0.99 }}
                   transition={{ type: 'spring', stiffness: 420, damping: 34, mass: 0.6 }}
                 >
-                  <EGOBrowserCard ego={ego} />
+                  <EGOBrowserCard ego={ego} preload={index < PRELOADED_CARDS} />
                 </motion.div>
               ))}
             </motion.div>
           )}
+          {visible < filtered.length && <div ref={sentinelRef} aria-hidden="true" />}
         </div>
       </div>
     </div>
