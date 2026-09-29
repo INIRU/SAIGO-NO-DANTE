@@ -157,11 +157,14 @@ export default function RunClient({ themes, gifts, recipes, identities, sinners,
     ...(visualCandidates?.gifts.map(item => Number(item.id)) ?? []),
     ...(ocrCandidates?.gifts.map(item => Number(item.id)) ?? []),
   ].filter(Number.isInteger))]
-  const observedEventIds = [...new Set([
+  const observedEventList = [...new Set([
     ...(visualCandidates?.events.map(item => Number(item.id)) ?? []),
     ...(ocrCandidates?.events.map(item => Number(item.id)) ?? []),
     ...(ocrCandidates?.choices.map(item => Number(item.eventId)) ?? []),
   ].filter(Number.isInteger))]
+  // Same ids keep the same array, so the memoized floor panel skips capture ticks that changed nothing it shows.
+  const observedEventKey = observedEventList.join(',')
+  const observedEventIds = useMemo(() => observedEventList, [observedEventKey])
   const giftConditionState = useMemo(() => ({
     ...state,
     identitySlots: enrichIdentitySlotsForGiftConditions(state.identitySlots, identities),

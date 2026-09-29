@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { memo, useState } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 import { ArrowDown, Pencil } from 'lucide-react'
 import { toast } from 'sonner'
@@ -38,7 +38,10 @@ interface Props {
 type Tab = 'progress' | FloorSubTab
 const tabs: Tab[] = ['progress', 'gift', 'deck', 'theme', 'event']
 
-export default function FloorPanel({ state, dispatch, themes, gifts, giftMap, recipes, identities, sinners, skills, passives, egos, events, eventChoices, observedEventIds }: Props) {
+/** Memoized: capture status ticks (scene, queue, candidates) re-render the run page several times a second. */
+export default memo(FloorPanel)
+
+function FloorPanel({ state, dispatch, themes, gifts, giftMap, recipes, identities, sinners, skills, passives, egos, events, eventChoices, observedEventIds }: Props) {
   const t = useTranslations('planner.run')
   const locale = useLocale() as SupportedLang
   const localized = (item: { name: string; name_en?: string | null; name_jp?: string | null }) => getLocalizedName({ name_kr: item.name, name_en: item.name_en, name_jp: item.name_jp }, locale)
