@@ -1,5 +1,6 @@
 'use client'
 
+import dynamic from 'next/dynamic'
 import { isConfiguredFloor } from '@/lib/planner/stripPlanForList'
 
 import FloorConstraints from './FloorConstraints'
@@ -43,11 +44,16 @@ import {
   type AutocompleteSuggestion,
 } from '@/components/notes/NoteAutocomplete'
 import { NoteRenderer, type NoteEgoGiftEntry } from '@/components/decks/NoteChips'
-import NoteDocumentEditor from '@/components/notes/NoteDocumentEditor'
 import type { NoteFormationMember } from '@/lib/notes/assets'
 import { getLocalizedName } from '@/lib/i18n/localize'
 import type { SupportedLang } from '@/lib/i18n/types'
 import { getGiftActivationConditionStatus, getGiftConditionCountsForSlots, giftConditionKey } from '@/lib/planner/gift-condition-status'
+
+// Tiptap and ProseMirror load when a floor memo is shown, not with the planner page. The shell holds its toolbar and 7rem body.
+const NoteDocumentEditor = dynamic(() => import('@/components/notes/NoteDocumentEditor'), {
+  ssr: false,
+  loading: () => <div className="note-editor-shell min-h-[10rem] rounded-md bg-[var(--bg-deep)]" aria-busy="true" />,
+})
 
 // The descent rail: its colour marks which stretch of the dungeon a floor belongs to.
 const LADDER_SEGMENTS = [
