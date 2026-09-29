@@ -67,6 +67,8 @@
   --envy:     #8058a8;
 
   /* 폰트 변수 (next/font/local CSS variables) */
+  /* Pretendard is split by unicode-range: core is preloaded, ext loads only for rare characters (app/pretendard.ts). */
+  --font-pretendard: var(--font-pretendard-core), var(--font-pretendard-ext);
   --font-logo:    var(--font-bebas-kai), var(--font-kotra-bold), sans-serif;
   --font-title:   var(--font-bebas-kai), sans-serif;
   --font-heading: var(--font-kotra-bold), var(--font-scdream), var(--font-pretendard), 'SCDream5 Fallback', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
