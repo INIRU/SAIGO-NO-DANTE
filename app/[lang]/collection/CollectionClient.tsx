@@ -28,7 +28,7 @@ function CollectionViewer({ data }: { data: CollectionData }) {
 
   const { stats, sinnerCounts, filtered } = useCollectionModel(data, owned, keyword)
 
-  if (!code) return <div className={PAGE}><CollectionSection persistMode="local" titleAs="h1" /></div>
+  if (!code) return <div className={PAGE}><CollectionSection persistMode="local" titleAs="h1" initialData={data} /></div>
 
   return (
     <div className={PAGE}>
