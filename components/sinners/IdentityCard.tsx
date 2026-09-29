@@ -30,6 +30,8 @@ interface IdentityCardProps {
     bannerUrl: string
   }
   giftBadgeUrls?: string[]
+  /** Load the portrait ahead of other images (cards in the first row of a page). */
+  preload?: boolean
 }
 
 type IdentityWithRepresentativeKeywords = Identity & {
@@ -69,6 +71,7 @@ export default function IdentityCard({
   disableHoverEffects = false,
   formationOverlay,
   giftBadgeUrls = [],
+  preload = false,
 }: IdentityCardProps) {
   const { sinMap: kwSinMap, getIconUrl } = useKeywordData()
   const t = useTranslations()
@@ -121,6 +124,7 @@ export default function IdentityCard({
               placeholder="blur"
               blurDataURL={getBlurDataURL(imgSrc) ?? BLUR_PLACEHOLDER}
               sizes="(max-width: 640px) 45vw, (max-width: 1024px) 25vw, 160px"
+              preload={preload}
               onError={() => setImgSrc(fallbackUrl && imgSrc !== fallbackUrl ? fallbackUrl : '')}
             />
           ) : (

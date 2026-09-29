@@ -79,9 +79,11 @@ interface CollectionSectionProps {
   persistMode?: 'db' | 'local'
   /** h1 when the section is the page (/collection). */
   titleAs?: 'h1' | 'h2'
+  /** The catalog when the page already rendered it on the server (skips /api/collection). */
+  initialData?: CollectionData
 }
 
-export default function CollectionSection({ savedCode, persistMode = 'db', titleAs: Title = 'h2' }: CollectionSectionProps) {
+export default function CollectionSection({ savedCode, persistMode = 'db', titleAs: Title = 'h2', initialData }: CollectionSectionProps) {
   const t = useTranslations('collectionPage')
   const searchParams = useSearchParams()
 
@@ -102,13 +104,14 @@ export default function CollectionSection({ savedCode, persistMode = 'db', title
   const [downloadOptions, setDownloadOptions] = useState<{ include: Set<'identity' | 'ego'>; groupBy: 'sinner' | 'keyword' }>({ include: new Set(['identity', 'ego']), groupBy: 'sinner' })
   const downloadRef = useRef<HTMLDivElement>(null)
 
-  // 데이터 로드
+  // 데이터 로드: a page that rendered the catalog on the server passes it in instead of fetching it again.
   useEffect(() => {
-    fetch('/api/collection')
+    const catalog: Promise<CollectionData> = initialData ? Promise.resolve(initialData) : fetch('/api/collection')
       .then(r => {
         if (!r.ok) throw new Error(`Collection API error: ${r.status}`)
         return r.json()
       })
+    catalog
       .then(async (d: CollectionData) => {
         setData(d)
         if (d.sinners.length > 0 && !activeSinner) setActiveSinner(d.sinners[0].id)
@@ -146,7 +149,7 @@ export default function CollectionSection({ savedCode, persistMode = 'db', title
         }
       })
       .finally(() => setLoading(false))
-  }, [searchParams, persistMode, savedCode])
+  }, [searchParams, persistMode, savedCode, initialData])
 
   // 토글
   const toggle = useCallback((id: string) => {

@@ -6,18 +6,19 @@ import { useLocale } from 'next-intl'
 import AnnouncementBody from '@/components/announcements/AnnouncementBody'
 import type { RichNode } from '@/lib/announcements'
 interface Announcement { content_doc?: RichNode | null; id: string; title: string; content: string; pinned: boolean; created_at: string }
-export default function AnnouncementsClient() {
+export default function AnnouncementsClient({ initialItems = null }: { initialItems?: Announcement[] | null }) {
   const locale = useLocale(), reduced = useReducedMotion()
   const label = (ko:string, ja:string, en:string) => locale === 'ko' ? ko : locale === 'ja' ? ja : en
-  const [items,setItems] = useState<Announcement[]>([])
-  const [loading,setLoading] = useState(true), [error,setError] = useState(false)
+  const [items,setItems] = useState<Announcement[]>(initialItems ?? [])
+  const [loading,setLoading] = useState(initialItems === null), [error,setError] = useState(false)
   const [selected,setSelected] = useState<string | null>(null)
   const article = useRef<HTMLElement>(null)
   function load() {
     setLoading(true); setError(false)
     fetch(`/api/announcements?lang=${encodeURIComponent(locale)}`).then(r => {if (!r.ok) throw Error(); return r.json()}).then(r => setItems(r.data ?? [])).catch(() => setError(true)).finally(() => setLoading(false))
   }
-  useEffect(() => { load() }, [locale])
+  // The server passes the list; only a page rendered without it loads it here.
+  useEffect(() => { if (initialItems === null) load() }, [locale, initialItems])
   if (loading) return <p role="status" className="flex items-center gap-2 py-8 text-sm text-[var(--text-muted)]"><Loader2 size={16} className="animate-spin motion-reduce:animate-none" />{label('불러오는 중…','読み込み中…','Loading…')}</p>
   if (error) return <div role="alert" className="py-8 text-sm"><p>{label('공지를 불러오지 못했습니다.','お知らせを読み込めません。','Could not load announcements.')}</p><button className="mt-3 min-h-11 text-[var(--gold)]" onClick={load}>{label('다시 시도','再試行','Retry')}</button></div>
   if (!items.length) return <div className="flex flex-col items-center gap-4 py-16 text-[var(--text-muted)]"><Megaphone size={28} /><p>{label('등록된 공지가 없습니다.','お知らせはありません。','No announcements yet.')}</p></div>

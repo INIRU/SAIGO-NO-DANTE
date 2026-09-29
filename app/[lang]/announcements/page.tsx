@@ -5,6 +5,7 @@ import { Loader2 } from 'lucide-react'
 import { cacheLife, cacheTag } from 'next/cache'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import AnnouncementsClient from './AnnouncementsClient'
+import { getAnnouncementsForLang } from '@/lib/db/announcements'
 import PageHeader from '@/components/ui/PageHeader'
 import { HtmlFlag } from '@/hooks/useHtmlFlag'
 
@@ -30,6 +31,9 @@ export default async function AnnouncementsPage({ params }: { params: Promise<{ 
   cacheTag(CACHE_TAGS.announcements)
   const { lang: rawLang } = await params
   const locale = rawLang === 'en' || rawLang === 'ja' ? rawLang : 'ko'
+  // Rendered into the cached page (invalidated with the announcements tag when one is saved) instead of fetched after
+  // hydration; a failed read leaves the list to the client, which fetches it and offers a retry.
+  const items = await getAnnouncementsForLang(locale).catch(() => null)
   const copy = locale === 'en'
     ? {
         title: 'Announcements',
@@ -56,7 +60,7 @@ export default async function AnnouncementsPage({ params }: { params: Promise<{ 
             <Loader2 size={14} className="animate-spin" /> {copy.loading}
           </div>
         }>
-          <AnnouncementsClient />
+          <AnnouncementsClient initialItems={items} />
         </Suspense>
       </div>
     </div>

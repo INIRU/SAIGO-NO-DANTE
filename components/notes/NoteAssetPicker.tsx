@@ -1,5 +1,6 @@
 'use client'
 import { createContext, useContext, useState } from 'react'
+import Image from 'next/image'
 import { useLocale } from 'next-intl'
 import useSWR from 'swr'
 import { Search, X } from 'lucide-react'
@@ -65,7 +66,7 @@ export default function NoteAssetPicker({kind,onSelect,onClose}: {kind:'gift'|'s
         />}
 
       </div>
-          {kind==='gift' ? <KeywordSidebar activeSlug={keyword} onSelect={setKeyword} giftCounts={counts}/> : <><button type="button" aria-pressed={!sinner} onClick={()=>setSinner('')}>{tr('전체','すべて','All')}</button>{formation.map(m=><button key={m.sinnerId} type="button" aria-pressed={sinner===m.sinnerId} onClick={()=>setSinner(m.sinnerId)}><img src={getSinnerProfileUrl(m.sinnerId)} alt="" width={28} height={28}/>{m.name}</button>)}</>}
+          {kind==='gift' ? <KeywordSidebar activeSlug={keyword} onSelect={setKeyword} giftCounts={counts}/> : <><button type="button" aria-pressed={!sinner} onClick={()=>setSinner('')}>{tr('전체','すべて','All')}</button>{formation.map(m=><button key={m.sinnerId} type="button" aria-pressed={sinner===m.sinnerId} onClick={()=>setSinner(m.sinnerId)}><Image src={getSinnerProfileUrl(m.sinnerId)} alt="" width={28} height={28}/>{m.name}</button>)}</>}
         </nav>
         <div className="note-picker-results">
           {isLoading && <p role="status">{tr('불러오는 중…','読み込み中…','Loading…')}</p>}

@@ -1,6 +1,9 @@
 import type { OcrReference, OcrWord } from './ocr-match'
+import { nearestName, ocrNormalized } from './text-normalize'
 
 const normalized = (text: string) => text.normalize('NFKC').toLocaleLowerCase().replace(/[^\p{L}\p{N}]/gu, '')
+/** Gift names compare with Japanese OCR swaps folded (ブ/プ, ッ/ツ, 口/ロ); headers keep their own edit tolerance. */
+const nameKey = ocrNormalized
 /**
  * The acquisition popup's header in each client ("E.G.O 기프트를 획득했습니다." / "E.G.O Gift GET!" /
  * "E.G.Oギフトを獲得しました。"), normalized, with the glyph edits a misread may add. The short English one allows one.
@@ -45,9 +48,9 @@ function nearHeader(characters: string[], target: string[], edits: number): bool
 export interface PopupLabelRead { text: string; words: OcrWord[] }
 
 function nameIds(read: PopupLabelRead, gifts: OcrReference[]): string[] | null {
-  const name = normalized(read.text)
+  const name = nameKey(read.text)
   if (!name) return []
-  const matches = gifts.filter(gift => gift.texts.some(text => normalized(text) === name))
+  const matches = gifts.filter(gift => gift.texts.some(text => nameKey(text) === name))
   if (matches.length > 1) return null
   // Tesseract under-reports confidence on Hangul; a whole long name cannot be a partial read, but a short one can.
   const sufficientlyRead = [...name].length >= 5 || (read.words.length > 0 && read.words.every(word =>
@@ -103,9 +106,9 @@ export function popupCandidateIds({ header, labels, iconGiftIds, effectGiftIds, 
   const named = new Set<string>(), others = new Set<string>()
   if (!popupHeaderEvidence(header)) return { named: [], others: [] }
   for (const read of labels) {
-    const name = normalized(read.text)
+    const name = nameKey(read.text)
     if (!name) continue
-    for (const gift of gifts) if (gift.texts.some(text => normalized(text) === name)) named.add(gift.id)
+    for (const gift of gifts) if (gift.texts.some(text => nameKey(text) === name)) named.add(gift.id)
     const near = nearestGiftName(read.text, gifts)
     if (near) others.add(near)
   }
@@ -124,42 +127,13 @@ export function acquisitionFloor(capturedFloor: number, bannerFloor: number | nu
 const nameCache = new WeakMap<OcrReference[], { id: string; name: string }[]>()
 
 function nearestGiftName(text: string, gifts: OcrReference[]): string | null {
-  const read = [...normalized(text)]
-  if (read.length < 6) return null
   let names = nameCache.get(gifts)
   if (!names) {
-    names = gifts.flatMap(gift => gift.texts.map(value => ({ id: gift.id, name: normalized(value) })))
+    names = gifts.flatMap(gift => gift.texts.map(value => ({ id: gift.id, name: nameKey(value) })))
       .filter(item => [...item.name].length >= 6)
     nameCache.set(gifts, names)
   }
-  let best: { id: string; distance: number } | null = null
-  let runnerUp = Infinity
-  for (const item of names) {
-    const distance = editDistance(read, [...item.name], 3)
-    if (!best || distance < best.distance) {
-      if (best && best.id !== item.id) runnerUp = Math.min(runnerUp, best.distance)
-      best = { id: item.id, distance }
-    } else if (item.id !== best.id) runnerUp = Math.min(runnerUp, distance)
-  }
-  return best && best.distance <= 1 && runnerUp >= 3 ? best.id : null
-}
-
-/** Levenshtein distance, stopping once it exceeds `limit`. */
-function editDistance(source: string[], target: string[], limit: number): number {
-  if (Math.abs(source.length - target.length) > limit) return limit + 1
-  let previous = Array.from({ length: target.length + 1 }, (_, index) => index)
-  for (let row = 1; row <= source.length; row++) {
-    const current = [row]
-    let smallest = row
-    for (let column = 1; column <= target.length; column++) {
-      current[column] = Math.min(previous[column] + 1, current[column - 1] + 1,
-        previous[column - 1] + (source[row - 1] === target[column - 1] ? 0 : 1))
-      smallest = Math.min(smallest, current[column])
-    }
-    if (smallest > limit) return limit + 1
-    previous = current
-  }
-  return previous[target.length]
+  return nearestName(nameKey(text), names)
 }
 
 /**

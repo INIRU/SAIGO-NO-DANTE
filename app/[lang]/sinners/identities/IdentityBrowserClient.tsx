@@ -26,6 +26,8 @@ import IdentityCard from '@/components/sinners/IdentityCard'
 import { staggerContainer, workbenchReveal, workbenchStaggerItem } from '@/lib/animations'
 
 const GRID_PAGE = 36
+/** Cards whose portrait loads first: the first row at the widest layout. */
+const PRELOADED_CARDS = 6
 
 type Props = {
   identities: IdentityBrowserItem[]
@@ -216,7 +218,7 @@ export default function IdentityBrowserClient({ identities, sinners }: Props) {
               viewport={shouldReduceMotion ? undefined : { once: true, margin: '-48px' }}
               variants={shouldReduceMotion ? undefined : staggerContainer(0.025)}
             >
-              {filtered.slice(0, shown).map(id => (
+              {filtered.slice(0, shown).map((id, index) => (
                 <motion.div
                   key={id.id}
                   role="listitem"
@@ -231,6 +233,7 @@ export default function IdentityBrowserClient({ identities, sinners }: Props) {
                         ...id,
                         tier: 0,
                       }}
+                      preload={index < PRELOADED_CARDS}
                     />
                   </Link>
                 </motion.div>

@@ -9,12 +9,14 @@
  * "683-783" / "356 506". Everything below is read with that in mind.
  */
 import type { OcrReference } from './ocr-match'
+import { nearestName, ocrNormalized } from './text-normalize'
 
 export interface SellDialog { name: string; price: number }
 export interface PendingSale extends SellDialog { giftId: string; at: number; costBefore: number }
 export const SALE_CONFIRM_MS = 5000
 
-const key = (value: string) => value.normalize('NFKC').replace(/[\s[\]()「」『』【】·.,:;!?'"~\-|]/g, '').toLowerCase()
+/** Names compare as letters and digits, with Japanese OCR swaps folded (text-normalize). */
+const key = ocrNormalized
 const compact = (text: string) => text.normalize('NFKC').replace(/\s+/g, '')
 
 /**
@@ -71,15 +73,26 @@ export function costBeforeSale(cost: readonly string[], price: number): number |
   return Number(digits)
 }
 
-/** The one gift whose name matches (spacing and brackets ignored), or that uniquely ends with a clipped read of it. */
+const sellNames = new WeakMap<readonly OcrReference[], { id: string; name: string }[]>()
+
+/**
+ * The one gift whose name matches (spacing and brackets ignored), that uniquely ends with a clipped read of it, or
+ * whose long name is one misread glyph away with every other name at least three away (as for acquisition popups).
+ */
 export function sellGiftId(name: string, gifts: readonly OcrReference[]): string | null {
   const wanted = key(name)
   if (wanted.length < 2) return null
+  let names = sellNames.get(gifts)
+  if (!names) {
+    names = gifts.flatMap(gift => gift.texts.map(text => ({ id: gift.id, name: key(text) })))
+    sellNames.set(gifts, names)
+  }
   const unique = (test: (text: string) => boolean) => {
-    const owners = new Set(gifts.filter(gift => gift.texts.some(text => test(key(text)))).map(gift => gift.id))
+    const owners = new Set(names.filter(item => test(item.name)).map(item => item.id))
     return owners.size === 1 ? [...owners][0] : null
   }
-  return unique(text => text === wanted) ?? (wanted.length >= 3 ? unique(text => text.length - wanted.length <= 2 && text.endsWith(wanted)) : null)
+  return unique(text => text === wanted) ?? (wanted.length >= 3 ? unique(text => text.length - wanted.length <= 2 && text.endsWith(wanted)) : null) ??
+    nearestName(wanted, names, 5)
 }
 
 /** A read after the dialog decides it: the cost starts with before + price (sold) or with before (cancelled). */

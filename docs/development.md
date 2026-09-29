@@ -26,7 +26,16 @@ Vitest는 순수 계산과 회귀 검증, Playwright는 실제 페이지 흐름�
 Cache Components는 next.config.ts에서 켜져 있다. cacheLife의 page-1m/5m/10m/1h/1d 프로필과 각 페이지의 cacheTag를 확인한다. 업데이트 후 lib/constants/cache-tags.ts와 app/api/revalidate/route.ts의 무효화 계약을 사용한다.
 
 브라우저의 서비스 워커는 별도 계층이다. components/pwa/ServiceWorkerRegister.tsx가 개발/localhost에서 서비스 워커와 saigo- 캐시를 정리한다. public/sw.js는 배포 환경의 오프라인/정적 리소스 정책이다.
-서비스 워커 v4는 변경 가능한 이미지에 stale-while-revalidate를 사용한다. 캐시를 즉시 표시하고 백그라운드에서 새 파일을 저장하므로 다음 방문부터 갱신된 이미지를 사용한다. 해시가 붙은 Next 정적 파일은 cache-first, API는 캐시 대상에서 제외한다. 공개 아이콘과 이미지 출력은 WebP로 통일했다.
+서비스 워커는 변경 가능한 이미지를 캐시에서 바로 보이고, 저장한 지 6시간이 지난 이미지만 백그라운드에서 서버에 재검증(`cache: 'no-cache'`, 보통 304)해 다음 방문부터 갱신된 이미지를 쓴다. 예전처럼 조회마다 다시 받고 캐시에 다시 쓰지 않는다. 캐시에 없는 이미지는 네트워크 응답을 바로 돌려주고 저장은 백그라운드에서 한다. 이미지 캐시는 1500장, 정리는 쓰기 40회마다 한다. CORS 없이 `<img>`로 받는 스토리지 이미지(불투명 응답)는 캐시할 수 없어 워커를 거치지 않는다. 해시가 붙은 Next 정적 파일은 cache-first, API는 캐시 대상에서 제외한다. 공개 아이콘과 이미지 출력은 WebP로 통일했다.
+
+## 이미지·렌더링 성능
+
+- **폰트:** Pretendard는 `scripts/assets/subset-pretendard.py`가 unicode-range로 나눈다. 라틴·기호·KS X 1001 2,350자(572KB)만 모든 페이지에서 선행 로드하고, 나머지 음절·가나 등(1.5MB)은 그 글자가 보일 때만 받는다. en/ja 굵은 제목은 라틴 부분집합(178KB)이다. `app/pretendard.ts`는 생성 파일이며 원본 `public/fonts/PretendardVariable.woff2`에서 다시 만든다.
+- **이미지:** next/image 출력은 WebP만 만든다(원본이 WebP이고 AVIF 인코딩이 캐시 미스마다 느렸다). `/assets`·`/icons`·`/images`·`/placeholders`는 1일 캐시 + 30일 백그라운드 재검증이다. 수정한 스프라이트는 `?v=`나 해시 파일명으로 바꾼다. 블러 자리표시자는 ThumbHash를 8px PNG(평균 0.44KB, 이전 4.6KB)로 그린다. 홈 히어로는 서버에서 렌더링해 첫 원화의 preload가 HTML에 들어가고, 인격·EGO 목록 첫 줄 6장은 원화를 먼저 받는다. EGO 목록은 36장씩 스크롤에 따라 렌더링한다.
+- **데이터:** 루트 레이아웃의 키워드 카탈로그에는 설명이 없다. 툴팁을 처음 열거나 키워드에 마우스를 올릴 때 `/api/keyword-descriptions/[lang]`에서 받는다. 인격 상세 페이지와 인격·EGO 모달 API, 컬렉션·공지 목록은 게임 데이터/공지 태그로 무효화되는 `'use cache'`를 쓴다. 공개 카탈로그 API는 `lib/constants/http-cache.ts`의 헤더(브라우저 5분, CDN 1시간)를 붙인다. 덱 빌더·수정은 `lib/decks/builder-data.ts`를 공유하며 페이지 언어와 한국어 외의 스킬·패시브 글자와 플레이버를 보내지 않는다.
+- **번들:** 플래너의 Tiptap 에디터, 로그인 사용자용 안내 모달, 검색 모달은 필요할 때 불러온다. 검색 모달은 닫힌 채 먼저 마운트한 뒤 열어 첫 열기에도 등장 애니메이션을 유지한다.
+
+검증: 타입 검사, 단위 테스트, `next build` 컴파일 단계. 이 작업 환경은 Supabase 접속이 막혀 프리렌더와 실제 Chrome 화면 검증을 하지 못했다. 배포 전 CI 빌드와 Chrome 하드 리프레시·재방문으로 홈·인격/EGO 목록·인격 상세·키워드 툴팁·덱 빌더를 확인한다.
 Chrome 검증 시작 시 Mac은 Cmd+Shift+R, Windows는 Ctrl+Shift+R로 하드 리프레시한다. 이후 일반 새로고침과 페이지 이동에서도 확인한다. 하드 리프레시는 서버 캐시 무효화를 대신하지 않는다.
 
 ## UI에서 지킬 동작
