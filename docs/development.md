@@ -28,6 +28,15 @@ Cache Components는 next.config.ts에서 켜져 있다. cacheLife의 page-1m/5m/
 브라우저의 서비스 워커는 별도 계층이다. components/pwa/ServiceWorkerRegister.tsx가 개발/localhost에서 서비스 워커와 saigo- 캐시를 정리한다. public/sw.js는 배포 환경의 오프라인/정적 리소스 정책이다.
 서비스 워커는 변경 가능한 이미지를 캐시에서 바로 보이고, 저장한 지 6시간이 지난 이미지만 백그라운드에서 서버에 재검증(`cache: 'no-cache'`, 보통 304)해 다음 방문부터 갱신된 이미지를 쓴다. 예전처럼 조회마다 다시 받고 캐시에 다시 쓰지 않는다. 캐시에 없는 이미지는 네트워크 응답을 바로 돌려주고 저장은 백그라운드에서 한다. 이미지 캐시는 1500장, 정리는 쓰기 40회마다 한다. CORS 없이 `<img>`로 받는 스토리지 이미지(불투명 응답)는 캐시할 수 없어 워커를 거치지 않는다. 해시가 붙은 Next 정적 파일은 cache-first, API는 캐시 대상에서 제외한다. 공개 아이콘과 이미지 출력은 WebP로 통일했다.
 
+## 정적 셸과 요청 시 렌더링
+
+빌드 후 `.next/server/app/<경로>.meta`에 `postponed`가 있으면 그 페이지는 조회마다 함수를 부른다(`4:null…`은 RSC만, `숫자:[…]`는 HTML 구멍까지). Vercel은 이때 postponed state(프리렌더가 읽은 `'use cache'` 값 포함)를 함수에 POST하고 함수가 나머지를 스트리밍한다. 둘 다 Fast Origin Transfer로 과금된다. `postponed`가 없으면 CDN이 HTML과 RSC를 바로 준다.
+
+- 루트 `app/not-found.tsx`는 모든 페이지의 RSC에 들어간다. 서버 컴포넌트에서 next-intl의 `NextIntlClientProvider`를 쓰면 빠진 now/timeZone/formats를 요청 설정에서 채우며 `headers()`를 읽어 전 페이지가 요청 시 렌더링된다. 클라이언트 모듈인 `components/providers/IntlClientProvider`를 쓴다.
+- 페이지는 레이아웃과 병렬로 렌더링된다. 페이지에서 locale 없이 부른 `getLocale()`·`getTranslations('ns')`는 레이아웃의 `setRequestLocale`보다 먼저 실행되면 `headers()`를 읽으므로 `params`의 lang을 넘긴다. 두 규칙은 `tests/app/intl-static-rendering.test.tsx`가 검사한다.
+- 정적 라우트에서 URL 쿼리(nuqs, `useSearchParams`)를 읽는 영역은 브라우저 렌더링으로 넘어간다(HTML의 `$RX("B:…","BAILOUT_TO_CLIENT_SIDE_RENDERING")`). 쿼리로 본문을 그리는 거울 던전, 플래너, 플래너 게시판, 키워드, 인격·EGO 목록, 메타, 컬렉션, 점검 페이지는 `components/layout/RequestTimeRoute`로 요청 시 서버 렌더링을 유지한다. 마이페이지는 세션을 브라우저에서 읽으므로 정적 HTML에 같은 스켈레톤을 둔다.
+- 요청 시 페이지의 postponed state에는 프리렌더가 읽은 캐시 값이 모두 실린다. 레이아웃은 설명을 뺀 `getKeywordCatalog()`를 따로 캐시한다(기본 크기 약 61KB→19KB). 메타 페이지는 쿼리 영역 안에서 데이터를 읽는다.
+
 ## 이미지·렌더링 성능
 
 - **폰트:** Pretendard는 `scripts/assets/subset-pretendard.py`가 unicode-range로 나눈다. 라틴·기호·KS X 1001 2,350자(572KB)만 모든 페이지에서 선행 로드하고, 나머지 음절·가나 등(1.5MB)은 그 글자가 보일 때만 받는다. en/ja 굵은 제목은 라틴 부분집합(178KB)이다. `app/pretendard.ts`는 생성 파일이며 원본 `public/fonts/PretendardVariable.woff2`에서 다시 만든다.
