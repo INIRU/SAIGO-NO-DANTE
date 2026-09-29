@@ -34,3 +34,40 @@ const PLACEHOLDER = /\{\d+\}/gu
 export function gameTextPieces(value: string): string[] {
   return value.replace(RICH_TEXT_TAG, '').split(PLACEHOLDER).map(ocrNormalized).filter(Boolean)
 }
+
+/** Levenshtein distance between glyph arrays, stopping once it exceeds `limit` (then `limit + 1`). */
+export function editDistance(source: readonly string[], target: readonly string[], limit: number): number {
+  if (Math.abs(source.length - target.length) > limit) return limit + 1
+  let previous = Array.from({ length: target.length + 1 }, (_, index) => index)
+  for (let row = 1; row <= source.length; row++) {
+    const current = [row]
+    let smallest = row
+    for (let column = 1; column <= target.length; column++) {
+      current[column] = Math.min(previous[column] + 1, current[column - 1] + 1,
+        previous[column - 1] + (source[row - 1] === target[column - 1] ? 0 : 1))
+      smallest = Math.min(smallest, current[column])
+    }
+    if (smallest > limit) return limit + 1
+    previous = current
+  }
+  return previous[target.length]
+}
+
+/**
+ * The one id whose name is within one glyph of `read` while every other id's names are at least three glyphs away
+ * (reads of at least `minLength` glyphs). A misread glyph then still names the item, and never one of two look-alikes.
+ */
+export function nearestName(read: string, names: readonly { id: string; name: string }[], minLength = 6): string | null {
+  const glyphs = [...read]
+  if (glyphs.length < minLength) return null
+  let best: { id: string; distance: number } | null = null
+  let runnerUp = Infinity
+  for (const item of names) {
+    const distance = editDistance(glyphs, [...item.name], 3)
+    if (!best || distance < best.distance) {
+      if (best && best.id !== item.id) runnerUp = Math.min(runnerUp, best.distance)
+      best = { id: item.id, distance }
+    } else if (item.id !== best.id) runnerUp = Math.min(runnerUp, distance)
+  }
+  return best && best.distance <= 1 && runnerUp >= 3 ? best.id : null
+}
