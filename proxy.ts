@@ -213,7 +213,7 @@ export async function proxy(request: NextRequest) {
 
   // ── 5. Rate Limiting ──
   // 공개 GET API (scraper 방어용 퍼미시브 제한)
-  const PUBLIC_GET_ROUTES = ['/api/search', '/api/keyword-meta', '/api/announcements']
+  const PUBLIC_GET_ROUTES = ['/api/search', '/api/keyword-meta', '/api/keyword-descriptions', '/api/announcements']
   const isPublicGetApi = method === 'GET' && PUBLIC_GET_ROUTES.some(r => pathname.startsWith(r))
 
   // SSR 내부 호출(origin/referer 없음)은 rate limit 제외
