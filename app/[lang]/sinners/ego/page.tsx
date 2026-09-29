@@ -9,7 +9,7 @@ import JsonLd, { itemListJsonLd } from '@/components/seo/JsonLd'
 import { getTranslations } from 'next-intl/server'
 import { getLocalizedName } from '@/lib/i18n/localize'
 import type { SupportedLang } from '@/lib/i18n/types'
-import RequestTimeRoute from '@/components/layout/RequestTimeRoute'
+import StaticQueryAdapter from '@/components/providers/StaticQueryAdapter'
 
 const TITLE = { ko: '림버스 컴퍼니 E.G.O 도감 — 전체 E.G.O 목록', en: 'Limbus Company E.G.O List', ja: 'リンバスカンパニー E.G.O一覧' }
 
@@ -27,7 +27,7 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
   }
 }
 
-async function EGOBrowseContent({ params }: { params: Promise<{ lang: string }> }) {
+export default async function EGOBrowsePage({ params }: { params: Promise<{ lang: string }> }) {
   'use cache'
   cacheLife('max')
   cacheTag(CACHE_TAGS.ego, CACHE_TAGS.gameData)
@@ -53,18 +53,10 @@ async function EGOBrowseContent({ params }: { params: Promise<{ lang: string }> 
     <>
       <JsonLd data={egoListLd} />
       <Suspense fallback={null}>
-        <EGOBrowserClient egos={egos} sinners={sinners} />
+        <StaticQueryAdapter>
+          <EGOBrowserClient egos={egos} sinners={sinners} />
+        </StaticQueryAdapter>
       </Suspense>
-    </>
-  )
-}
-
-// EGOBrowserClient reads its filters from the URL, so the route renders per request to server-render it for that query.
-export default function EGOBrowsePage(props: { params: Promise<{ lang: string }> }) {
-  return (
-    <>
-      <EGOBrowseContent {...props} />
-      <RequestTimeRoute />
     </>
   )
 }
