@@ -14,7 +14,7 @@ const SinnerDetailClient = dynamic(() => import('./SinnerDetailClient'))
 import JsonLd, { breadcrumbJsonLd, gameCharacterJsonLd } from '@/components/seo/JsonLd'
 import { getSinnerProfileUrl } from '@/lib/utils/images'
 import type { Identity, EGO } from '@/lib/types'
-import { getLocale, setRequestLocale } from 'next-intl/server'
+import { setRequestLocale } from 'next-intl/server'
 import type { SupportedLang } from '@/lib/i18n/types'
 
 export function generateStaticParams() {
@@ -98,9 +98,8 @@ async function getCachedSinnerData(slug: string) {
   return { sinner, identities, egos: (egosRes.data ?? []) as unknown as EGO[] }
 }
 
-export default async function SinnerPage({ params }: { params: Promise<{ slug: string }> }) {
-  const { slug } = await params
-  const locale = await getLocale()
+export default async function SinnerPage({ params }: { params: Promise<{ lang: string; slug: string }> }) {
+  const { lang: locale, slug } = await params
   setRequestLocale(locale)
   const lang = locale as SupportedLang
   const { sinner, identities, egos } = await getCachedSinnerData(slug)

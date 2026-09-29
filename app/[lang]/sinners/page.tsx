@@ -7,7 +7,7 @@ import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import SinnersInteractive from './SinnersInteractive'
 import SinnerCard from '@/components/sinners/SinnerCard'
 import JsonLd, { itemListJsonLd } from '@/components/seo/JsonLd'
-import { getLocale, setRequestLocale } from 'next-intl/server'
+import { setRequestLocale } from 'next-intl/server'
 import type { SupportedLang } from '@/lib/i18n/types'
 import { translations } from '@/lib/i18n/translations'
 
@@ -36,8 +36,8 @@ async function getCachedSinners() {
   return getSinners()
 }
 
-export default async function SinnersPage() {
-  const locale = await getLocale()
+export default async function SinnersPage({ params }: { params: Promise<{ lang: string }> }) {
+  const { lang: locale } = await params
   setRequestLocale(locale)
   const lang = locale as SupportedLang
   const sinners = await getCachedSinners()
