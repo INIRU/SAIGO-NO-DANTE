@@ -12,6 +12,7 @@ import MirrorDungeonClient from './MirrorDungeonClient'
 import MirrorDungeonSkeleton from '@/components/mirror-dungeon/MirrorDungeonSkeleton'
 import type { MdEvent, MdEventChoice } from '@/components/mirror-dungeon/types'
 import JsonLd, { faqJsonLd } from '@/components/seo/JsonLd'
+import RequestTimeRoute from '@/components/layout/RequestTimeRoute'
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params
@@ -72,7 +73,7 @@ const MIRROR_FAQ: Record<'ko' | 'en' | 'ja', { question: string; answer: string 
   },
 ] }
 
-export default async function MirrorDungeonPage({ params }: { params: Promise<{ lang: string }> }) {
+async function MirrorDungeonContent({ params }: { params: Promise<{ lang: string }> }) {
   'use cache'
   const { lang } = await params
   cacheLife('max')
@@ -117,6 +118,16 @@ export default async function MirrorDungeonPage({ params }: { params: Promise<{ 
           choices={(choices ?? []).map(choice => withoutOtherLocales(choice, lang, ['result_text', 'message', 'message_desc'], ['effects'])) as MdEventChoice[]}
         />
       </Suspense>
+    </>
+  )
+}
+
+// MirrorDungeonClient reads its filters from the URL, so the route renders per request to server-render it for that query.
+export default function MirrorDungeonPage(props: { params: Promise<{ lang: string }> }) {
+  return (
+    <>
+      <MirrorDungeonContent {...props} />
+      <RequestTimeRoute />
     </>
   )
 }

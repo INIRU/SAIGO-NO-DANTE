@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
 import { getCommunityCopy } from '@/lib/community/copy'
-import MypageClient from './MypageClient'
+import MypageClient, { MypageSkeleton } from './MypageClient'
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params
@@ -10,7 +10,8 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
 
 export default function MyPage() {
   return (
-    <Suspense fallback={null}>
+    // The page is prerendered; the session and URL tab are read in the browser, so the skeleton is the static HTML.
+    <Suspense fallback={<MypageSkeleton />}>
       <MypageClient />
     </Suspense>
   )
