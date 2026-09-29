@@ -1,5 +1,5 @@
 import type { OcrReference, OcrWord } from './ocr-match'
-import { ocrNormalized } from './text-normalize'
+import { nearestName, ocrNormalized } from './text-normalize'
 
 const normalized = (text: string) => text.normalize('NFKC').toLocaleLowerCase().replace(/[^\p{L}\p{N}]/gu, '')
 /** Gift names compare with Japanese OCR swaps folded (ブ/プ, ッ/ツ, 口/ロ); headers keep their own edit tolerance. */
@@ -127,42 +127,13 @@ export function acquisitionFloor(capturedFloor: number, bannerFloor: number | nu
 const nameCache = new WeakMap<OcrReference[], { id: string; name: string }[]>()
 
 function nearestGiftName(text: string, gifts: OcrReference[]): string | null {
-  const read = [...nameKey(text)]
-  if (read.length < 6) return null
   let names = nameCache.get(gifts)
   if (!names) {
     names = gifts.flatMap(gift => gift.texts.map(value => ({ id: gift.id, name: nameKey(value) })))
       .filter(item => [...item.name].length >= 6)
     nameCache.set(gifts, names)
   }
-  let best: { id: string; distance: number } | null = null
-  let runnerUp = Infinity
-  for (const item of names) {
-    const distance = editDistance(read, [...item.name], 3)
-    if (!best || distance < best.distance) {
-      if (best && best.id !== item.id) runnerUp = Math.min(runnerUp, best.distance)
-      best = { id: item.id, distance }
-    } else if (item.id !== best.id) runnerUp = Math.min(runnerUp, distance)
-  }
-  return best && best.distance <= 1 && runnerUp >= 3 ? best.id : null
-}
-
-/** Levenshtein distance, stopping once it exceeds `limit`. */
-function editDistance(source: string[], target: string[], limit: number): number {
-  if (Math.abs(source.length - target.length) > limit) return limit + 1
-  let previous = Array.from({ length: target.length + 1 }, (_, index) => index)
-  for (let row = 1; row <= source.length; row++) {
-    const current = [row]
-    let smallest = row
-    for (let column = 1; column <= target.length; column++) {
-      current[column] = Math.min(previous[column] + 1, current[column - 1] + 1,
-        previous[column - 1] + (source[row - 1] === target[column - 1] ? 0 : 1))
-      smallest = Math.min(smallest, current[column])
-    }
-    if (smallest > limit) return limit + 1
-    previous = current
-  }
-  return previous[target.length]
+  return nearestName(nameKey(text), names)
 }
 
 /**

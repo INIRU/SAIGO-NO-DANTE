@@ -84,3 +84,22 @@ it('replays recorded read sequences through one sale decision', () => {
   // A first dialog frame without any cost is retried on the next read of the same dialog.
   expect(run([[1500, dialog('칸타빌레', 156), []], [2000, dialog('칸타빌레', 156), ['167323']], [2500, window, ['323']]])).toEqual(['9172@2000'])
 })
+
+it('names a sold gift through one misread glyph only when no other gift is close', () => {
+  const gifts = [
+    { id: '9001', texts: ['녹슨 커터나이프', 'Rusty Utility Knife'] },
+    { id: '9002', texts: ['생체 맹독 바이알'] },
+    { id: '9003', texts: ['회중시계 : 타입 E'] },
+    { id: '9004', texts: ['회중시계 : 타입 Y'] },
+    { id: '9005', texts: ['ガラスのロッカー'] },
+  ]
+  expect(sellGiftId('녹슨커터나이브', gifts)).toBe('9001')
+  expect(sellGiftId('RustyUtilityKnite', gifts)).toBe('9001')
+  expect(sellGiftId('생체맹독바이일', gifts)).toBe('9002')
+  // One glyph from both pocket watches: no sale is named.
+  expect(sellGiftId('회중시계타입F', gifts)).toBeNull()
+  // Japanese OCR swaps (カ/ガ, 口/ロ, 一/ー) fold on both sides.
+  expect(sellGiftId('カラスの口ツカ一', gifts)).toBe('9005')
+  // Short reads keep the exact rule.
+  expect(sellGiftId('커터나이', gifts)).toBeNull()
+})
