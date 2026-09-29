@@ -7,6 +7,7 @@ import { translations } from '@/lib/i18n/translations'
 import type { SupportedLang } from '@/lib/i18n/types'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import KeywordsClient from './KeywordsClient'
+import RequestTimeRoute from '@/components/layout/RequestTimeRoute'
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params
@@ -42,7 +43,7 @@ async function fetchAllKeywords(supabase: ReturnType<typeof createAdminClient>) 
   return all
 }
 
-export default async function KeywordsPage() {
+async function KeywordsContent() {
   'use cache'
   cacheLife('max')
   cacheTag(CACHE_TAGS.keywords, CACHE_TAGS.gameData)
@@ -111,5 +112,15 @@ export default async function KeywordsPage() {
         egos={safeEgos}
       />
     </Suspense>
+  )
+}
+
+// KeywordsClient reads its filters from the URL, so the route renders per request to server-render it for that query.
+export default function KeywordsPage() {
+  return (
+    <>
+      <KeywordsContent />
+      <RequestTimeRoute />
+    </>
   )
 }
