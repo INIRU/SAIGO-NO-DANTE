@@ -1,4 +1,5 @@
 import localFont from 'next/font/local'
+import { pretendardCore, pretendardExt, pretendardHeadingLatin as headingLatin } from './pretendard'
 
 /* ── All fonts are self-hosted; licenses in public/fonts/licenses ── */
 
@@ -49,16 +50,6 @@ const scDream = localFont({
   fallback: ['Pretendard', 'Apple SD Gothic Neo', 'Malgun Gothic', 'sans-serif'],
 })
 
-const pretendard = localFont({
-  src: '../public/fonts/PretendardVariable.woff2',
-  weight: '45 920',
-  style: 'normal',
-  variable: '--font-pretendard',
-  display: 'swap',
-  preload: true,
-  fallback: ['Apple SD Gothic Neo', 'Malgun Gothic', 'sans-serif'],
-})
-
 const paperlogy = localFont({
   src: [
     { path: '../public/fonts/Paperlogy-Light.woff2', weight: '300', style: 'normal' },
@@ -93,17 +84,7 @@ const corporateLogo = localFont({
   fallback: ['Hiragino Kaku Gothic ProN', 'Yu Gothic', 'Meiryo', 'sans-serif'],
 })
 
-// en/ja headings are always bold, like KOTRA Bold on Korean pages (weight 400 in components still renders bold).
-// Pretendard variable clamped to 700; M PLUS 1p Bold declared for every weight.
-const headingLatin = localFont({
-  src: '../public/fonts/PretendardVariable.woff2',
-  weight: '700',
-  variable: '--font-heading-latin',
-  display: 'swap',
-  preload: false,
-  fallback: ['Segoe UI', 'sans-serif'],
-})
-
+// en/ja bold headings: Pretendard's Latin subset (headingLatin, app/pretendard.ts); M PLUS 1p Bold declared for every weight.
 const headingJapanese = localFont({
   src: '../public/fonts/MPLUS1p-Bold.woff2',
   weight: '100 900',
@@ -121,4 +102,5 @@ const notoSansMono = localFont({
   preload: false,
 })
 
-export const fontVariables = [excelsiorSans, mikodacs, bebasKai, kotraBold, scDream, pretendard, paperlogy, japaneseSans, corporateLogo, headingLatin, headingJapanese, notoSansMono].map(font => font.variable).join(' ')
+// Pretendard is split by unicode-range (scripts/assets/subset-pretendard.py); globals.css joins core and ext as --font-pretendard.
+export const fontVariables = [excelsiorSans, mikodacs, bebasKai, kotraBold, scDream, pretendardCore, pretendardExt, paperlogy, japaneseSans, corporateLogo, headingLatin, headingJapanese, notoSansMono].map(font => font.variable).join(' ')
