@@ -12,7 +12,7 @@ import MirrorDungeonClient from './MirrorDungeonClient'
 import MirrorDungeonSkeleton from '@/components/mirror-dungeon/MirrorDungeonSkeleton'
 import type { MdEvent, MdEventChoice } from '@/components/mirror-dungeon/types'
 import JsonLd, { faqJsonLd } from '@/components/seo/JsonLd'
-import RequestTimeRoute from '@/components/layout/RequestTimeRoute'
+import StaticQueryAdapter from '@/components/providers/StaticQueryAdapter'
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params
@@ -73,7 +73,7 @@ const MIRROR_FAQ: Record<'ko' | 'en' | 'ja', { question: string; answer: string 
   },
 ] }
 
-async function MirrorDungeonContent({ params }: { params: Promise<{ lang: string }> }) {
+export default async function MirrorDungeonPage({ params }: { params: Promise<{ lang: string }> }) {
   'use cache'
   const { lang } = await params
   cacheLife('max')
@@ -106,28 +106,19 @@ async function MirrorDungeonContent({ params }: { params: Promise<{ lang: string
   return (
     <>
       <JsonLd data={faqJsonLd(MIRROR_FAQ[lang === 'en' || lang === 'ja' ? lang : 'ko'])} />
-      {/* MirrorDungeonClient uses nuqs (useSearchParams internally), requiring Suspense
-          to prevent CSR bailout from de-opting the entire page to client rendering. */}
+      {/* Prerendered without filters; the URL's filters apply after hydration (StaticQueryAdapter). */}
       <Suspense fallback={<MirrorDungeonSkeleton />}>
-        <MirrorDungeonClient
-          lang={lang as SupportedLang}
-          gifts={(gifts ?? []).map(gift => withoutOtherLocales(gift, lang, ['effect_base', 'effect_plus', 'effect_plusplus']))}
-          recipes={recipes ?? []}
-          themes={themes ?? []}
-          events={(events ?? []).map(event => withoutOtherLocales(event, lang, ['desc_text'], ['judgment'])) as MdEvent[]}
-          choices={(choices ?? []).map(choice => withoutOtherLocales(choice, lang, ['result_text', 'message', 'message_desc'], ['effects'])) as MdEventChoice[]}
-        />
+        <StaticQueryAdapter>
+          <MirrorDungeonClient
+            lang={lang as SupportedLang}
+            gifts={(gifts ?? []).map(gift => withoutOtherLocales(gift, lang, ['effect_base', 'effect_plus', 'effect_plusplus']))}
+            recipes={recipes ?? []}
+            themes={themes ?? []}
+            events={(events ?? []).map(event => withoutOtherLocales(event, lang, ['desc_text'], ['judgment'])) as MdEvent[]}
+            choices={(choices ?? []).map(choice => withoutOtherLocales(choice, lang, ['result_text', 'message', 'message_desc'], ['effects'])) as MdEventChoice[]}
+          />
+        </StaticQueryAdapter>
       </Suspense>
-    </>
-  )
-}
-
-// MirrorDungeonClient reads its filters from the URL, so the route renders per request to server-render it for that query.
-export default function MirrorDungeonPage(props: { params: Promise<{ lang: string }> }) {
-  return (
-    <>
-      <MirrorDungeonContent {...props} />
-      <RequestTimeRoute />
     </>
   )
 }

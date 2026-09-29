@@ -1,0 +1,64 @@
+'use client'
+
+import { useRouter, useSearchParams } from 'next/navigation'
+import {
+  renderQueryString,
+  unstable_createAdapterProvider as createAdapterProvider,
+  type unstable_AdapterInterface as AdapterInterface,
+  type unstable_UpdateUrlFunction as UpdateUrlFunction,
+} from 'nuqs/adapters/custom'
+import { Fragment, startTransition, useCallback, useOptimistic, useState, useSyncExternalStore, type ReactNode } from 'react'
+
+const EMPTY = new URLSearchParams()
+const noop = () => {}
+const subscribe = () => noop
+// Fixed per environment, so each side always calls the same hooks in the same order.
+const onServer = typeof window === 'undefined'
+const SERVER_ADAPTER: AdapterInterface = { searchParams: EMPTY, updateUrl: noop }
+
+/** False on the server and while hydrating (the server snapshot), true afterwards and on client-side navigations. */
+function useHydrated() {
+  return useSyncExternalStore(subscribe, () => true, () => false)
+}
+
+/** nuqs's next/app adapter, except that the server and the hydrating render see no query. */
+function useStaticFirstAdapter(): AdapterInterface {
+  const hydrated = useHydrated()
+  if (onServer) return SERVER_ADAPTER
+  /* eslint-disable react-hooks/rules-of-hooks -- `onServer` is constant for the lifetime of the bundle */
+  const router = useRouter()
+  const [searchParams, setOptimisticSearchParams] = useOptimistic<URLSearchParams>(useSearchParams())
+  const updateUrl = useCallback<UpdateUrlFunction>((search, options) => {
+    startTransition(() => {
+      if (!options.shallow) setOptimisticSearchParams(search)
+      const url = location.origin + location.pathname + renderQueryString(search) + location.hash
+      ;(options.history === 'push' ? history.pushState : history.replaceState).call(history, null, '', url)
+      if (options.scroll) window.scrollTo(0, 0)
+      if (!options.shallow) router.replace(url, { scroll: false })
+    })
+  }, [router, setOptimisticSearchParams])
+  /* eslint-enable react-hooks/rules-of-hooks */
+  // rateLimitFactor as in nuqs's next/app adapter: each update is several history calls (browser rate limits).
+  return { searchParams: hydrated ? searchParams : EMPTY, updateUrl, rateLimitFactor: 3, autoResetQueueOnUpdate: true }
+}
+
+const Provider = createAdapterProvider(useStaticFirstAdapter)
+
+/**
+ * Lets a page whose client components keep their state in the URL (nuqs) be a static shell. useSearchParams() makes
+ * a page render per request; below this the server renders the default view (no query) into the HTML instead.
+ *
+ * A page opened with a query hydrates that default view, then its children mount again once, reading the URL from
+ * their first render, so no state copied from the query at mount (a search box's text) starts out empty. Without a
+ * query nothing mounts again, and client-side navigations read the query from their first render.
+ */
+export default function StaticQueryAdapter({ children }: { children: ReactNode }) {
+  const hydrated = useHydrated()
+  // Read once: later filter changes update the URL without mounting the page again.
+  const [openedWithQuery] = useState(() => !onServer && location.search.length > 1)
+  return (
+    <Provider>
+      <Fragment key={hydrated && openedWithQuery ? 'url' : 'shell'}>{children}</Fragment>
+    </Provider>
+  )
+}

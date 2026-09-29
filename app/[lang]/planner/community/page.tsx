@@ -10,7 +10,7 @@ import { stripPlanForList } from '@/lib/planner/stripPlanForList'
 import type { PlanSummary } from '@/components/planner/PlanCard'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import CommunityClient from './CommunityClient'
-import RequestTimeRoute from '@/components/layout/RequestTimeRoute'
+import StaticQueryAdapter from '@/components/providers/StaticQueryAdapter'
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params
@@ -72,10 +72,11 @@ export default async function CommunityPage({ params }: { params: Promise<{ lang
     <div className="community-board flex min-h-screen flex-col" style={{ background: 'var(--bg-deep)' }}>
       <BoardHeader kind="planner" lang={lang} title={t('title')} subtitle={t('subtitle')} action={t('newPlan')} assist={tActions('triggerMode')} />
       <Suspense fallback={<BoardShelfSkeleton kind="planner" />}>
-        <CommunityClient initialPlans={initialPlans} initialTotal={initialTotal} />
+        {/* Prerendered with the newest plans; URL filters load their list after hydration (StaticQueryAdapter). */}
+        <StaticQueryAdapter>
+          <CommunityClient initialPlans={initialPlans} initialTotal={initialTotal} />
+        </StaticQueryAdapter>
       </Suspense>
-      {/* Server-render CommunityClient (URL filters) for the requested query instead of leaving it to the browser. */}
-      <RequestTimeRoute />
     </div>
   )
 }

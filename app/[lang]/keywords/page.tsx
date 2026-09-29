@@ -7,7 +7,7 @@ import { translations } from '@/lib/i18n/translations'
 import type { SupportedLang } from '@/lib/i18n/types'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import KeywordsClient from './KeywordsClient'
-import RequestTimeRoute from '@/components/layout/RequestTimeRoute'
+import StaticQueryAdapter from '@/components/providers/StaticQueryAdapter'
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params
@@ -43,7 +43,7 @@ async function fetchAllKeywords(supabase: ReturnType<typeof createAdminClient>) 
   return all
 }
 
-async function KeywordsContent() {
+export default async function KeywordsPage() {
   'use cache'
   cacheLife('max')
   cacheTag(CACHE_TAGS.keywords, CACHE_TAGS.gameData)
@@ -101,26 +101,17 @@ async function KeywordsContent() {
   })
 
   return (
-    /* KeywordsClient uses nuqs (useSearchParams internally), requiring Suspense
-       to prevent CSR bailout from de-opting the entire page to client rendering. */
+    /* Prerendered without filters; the URL's filters apply after hydration (StaticQueryAdapter). */
     <Suspense fallback={null}>
-      <KeywordsClient
-        keywords={safeKeywords}
-        identities={safeIdentities}
-        sinners={sinners ?? []}
-        gifts={safeGifts}
-        egos={safeEgos}
-      />
+      <StaticQueryAdapter>
+        <KeywordsClient
+          keywords={safeKeywords}
+          identities={safeIdentities}
+          sinners={sinners ?? []}
+          gifts={safeGifts}
+          egos={safeEgos}
+        />
+      </StaticQueryAdapter>
     </Suspense>
-  )
-}
-
-// KeywordsClient reads its filters from the URL, so the route renders per request to server-render it for that query.
-export default function KeywordsPage() {
-  return (
-    <>
-      <KeywordsContent />
-      <RequestTimeRoute />
-    </>
   )
 }

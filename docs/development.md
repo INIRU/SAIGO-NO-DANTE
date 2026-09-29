@@ -34,8 +34,9 @@ Cache Components는 next.config.ts에서 켜져 있다. cacheLife의 page-1m/5m/
 
 - 루트 `app/not-found.tsx`는 모든 페이지의 RSC에 들어간다. 서버 컴포넌트에서 next-intl의 `NextIntlClientProvider`를 쓰면 빠진 now/timeZone/formats를 요청 설정에서 채우며 `headers()`를 읽어 전 페이지가 요청 시 렌더링된다. 클라이언트 모듈인 `components/providers/IntlClientProvider`를 쓴다.
 - 페이지는 레이아웃과 병렬로 렌더링된다. 페이지에서 locale 없이 부른 `getLocale()`·`getTranslations('ns')`는 레이아웃의 `setRequestLocale`보다 먼저 실행되면 `headers()`를 읽으므로 `params`의 lang을 넘긴다. 두 규칙은 `tests/app/intl-static-rendering.test.tsx`가 검사한다.
-- 정적 라우트에서 URL 쿼리(nuqs, `useSearchParams`)를 읽는 영역은 브라우저 렌더링으로 넘어간다(HTML의 `$RX("B:…","BAILOUT_TO_CLIENT_SIDE_RENDERING")`). 쿼리로 본문을 그리는 거울 던전, 플래너, 플래너 게시판, 키워드, 인격·EGO 목록, 메타, 컬렉션, 점검 페이지는 `components/layout/RequestTimeRoute`로 요청 시 서버 렌더링을 유지한다. 마이페이지는 세션을 브라우저에서 읽으므로 정적 HTML에 같은 스켈레톤을 둔다.
-- 요청 시 페이지의 postponed state에는 프리렌더가 읽은 캐시 값이 모두 실린다. 레이아웃은 설명을 뺀 `getKeywordCatalog()`를 따로 캐시한다(기본 크기 약 61KB→19KB). 메타 페이지는 쿼리 영역 안에서 데이터를 읽는다.
+- 정적 라우트에서 `useSearchParams`를 읽는 영역은 브라우저 렌더링으로 넘어간다(HTML의 `$RX("B:…","BAILOUT_TO_CLIENT_SIDE_RENDERING")`). nuqs로 필터를 URL에 두는 거울 던전, 플래너, 플래너·덱 게시판, 키워드, 인격·EGO 목록, 메타는 클라이언트 컴포넌트를 `components/providers/StaticQueryAdapter`로 감싼다. 서버는 쿼리 없는 기본 화면을 정적 HTML로 만들고, 쿼리가 붙은 주소는 하이드레이션 직후 그 영역을 한 번 다시 마운트해 URL 값으로 시작한다(필터 링크는 기본 화면이 잠깐 보인 뒤 바뀐다). 쿼리 없는 방문과 이후 필터 변경은 다시 마운트하지 않는다. 덱 게시판은 서버에서 `searchParams`를 읽지 않고 최신순·페이지 언어 목록을 내보내며, 다른 정렬·언어는 클라이언트가 불러온다.
+- 이 어댑터 아래 컴포넌트는 마운트 직후 URL에 쓰면 안 된다(다시 마운트되기 전 인스턴스의 쓰기가 URL을 덮어쓴다). 지금은 검색어 debounce(타이머, 다시 마운트 때 정리됨)뿐이다. 마운트 직후 `?sinner`를 쓰는 컬렉션 편집기와 쿼리로 안내문을 그리는 점검 페이지는 `components/layout/RequestTimeRoute`로 요청 시 서버 렌더링을 유지한다. 마이페이지는 세션을 브라우저에서 읽으므로 정적 HTML에 같은 스켈레톤을 둔다.
+- 요청 시 페이지의 postponed state에는 프리렌더가 읽은 캐시 값이 모두 실린다. 레이아웃은 설명을 뺀 `getKeywordCatalog()`를 따로 캐시한다(기본 크기 약 61KB→19KB).
 
 ## 이미지·렌더링 성능
 
