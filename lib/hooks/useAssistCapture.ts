@@ -33,7 +33,8 @@ export interface CaptureQueueStatus { analyzing: number; frames: number; text: n
 const IDLE_QUEUE: CaptureQueueStatus = { analyzing: 0, frames: 0, text: 0, image: 0 }
 /** Text reader actually serving capture: GPU PP-OCR once loaded, otherwise Tesseract (also while PP-OCR loads). */
 export interface OcrEngineStatus { engine: 'paddle' | 'tesseract'; adapter: string; loading: boolean; reason?: string }
-interface OcrLane { worker: Worker; ready: boolean; inFlight: boolean; activeRequest: number; engine: OcrEngineStatus | null }
+/** `failures`: reads in a row the worker answered with an error (a failed frame, not a dead worker). */
+interface OcrLane { worker: Worker; ready: boolean; inFlight: boolean; activeRequest: number; engine: OcrEngineStatus | null; failures: number }
 /** OCR workers of one capture: one lane object shared by popups and screen reads, or one worker per lane. */
 interface OcrPool { popup: OcrLane; screen: OcrLane; lanes: OcrLane[]; started: boolean }
 /** Materials confirmed in one fusion confirmation dialog (slot by slot; unconfirmed slots are left out). */
@@ -135,6 +136,22 @@ const sameWheel = (first: Uint8Array, second: Uint8Array) => {
 /** How long a result on the fusion screen waits for its dialog's evidence (1.5 s while one is read, 1 s otherwise). */
 const FUSION_HOLD_MS = 1500
 const SCREEN_HOLD_MS = 1000
+/**
+ * A worker that answers a read with an error keeps running; that frame is skipped. Only this many failed reads in a row
+ * (or a crashed worker) retire the lane. When no lane is left, OCR is rebuilt after each of these waits; it used to stay
+ * off for the rest of the capture after a single error.
+ */
+export const OCR_READ_FAILURES = 3
+/**
+ * Scene reads that may fail in a row (a GPU busy with the game, a frame closed mid-copy) before the capture stops with
+ * an error; a single failure used to end the whole screen share.
+ */
+export const SCENE_READ_FAILURES = 5
+export const OCR_REBUILD_MS = [5_000, 20_000, 60_000]
+/** What a worker's error answer to the read in flight does to its lane: skip the frame, or retire the lane once reads keep failing. */
+export function ocrErrorAction(failuresBefore: number): 'skip' | 'retire' {
+  return failuresBefore + 1 < OCR_READ_FAILURES ? 'skip' : 'retire'
+}
 /**
  * A confirmed acquisition; floor is null when the floor it was gained on is uncertain (inventory only). `capturedAt` is when
  * its frame was captured, `episode` the popup's number in order of appearance on screen.
@@ -287,6 +304,8 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
   const detectionRef = useRef(detection)
   detectionRef.current = detection
   const rebuildOcr = useRef<(() => void) | null>(null)
+  // Automatic rebuilds of the OCR workers after all of them failed, in this capture.
+  const ocrRebuilds = useRef(0)
   // Exploration floor read in two separate captures, even when its pack name could not be read.
   const [observedFloor, setObservedFloor] = useState<number | null>(null)
   // Classifier label held by two consecutive confident predictions; one-off misclassifications do not switch it.
@@ -561,6 +580,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
 
   const start = useCallback(async () => {
     cleanup()
+    ocrRebuilds.current = 0
     setPrediction(null)
     setVisualCandidates(null)
     setOcrCandidates(null)
@@ -613,6 +633,9 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
 
       setStatus('loading')
       const vision = new Worker('/models/assist-scene/scene-worker.js', { type: 'module' })
+      // Once the models are ready, a failed scene read skips that frame; only SCENE_READ_FAILURES in a row stop the capture.
+      let visionReady = false
+      let visionFailures = 0
       worker.current = vision
       const fail = (message: string) => {
         if (run !== generation.current) return
@@ -1013,7 +1036,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
       const buildOcrPool = () => {
         const profile = profileRef.current
         const makeLane = (): OcrLane => ({ worker: new Worker('/models/assist-ocr/ocr-worker.js', { type: 'module' }), ready: false,
-          inFlight: false, activeRequest: 0, engine: null })
+          inFlight: false, activeRequest: 0, engine: null, failures: 0 })
         const first = makeLane()
         const pool: OcrPool = profile.ocrWorkers === 2 ? (() => { const second = makeLane(); return { popup: first, screen: second, lanes: [first, second], started: false } })()
           : { popup: first, screen: first, lanes: [first], started: false }
@@ -1082,6 +1105,12 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
           setFusionEvidence([])
           setGiftSales([]); setSkillExchange(null)
           saleState.current = EMPTY_SALE_STATE
+          // Start over with new workers after a wait (the screen share and scene worker keep running meanwhile).
+          const wait = OCR_REBUILD_MS[ocrRebuilds.current]
+          if (wait !== undefined) {
+            ocrRebuilds.current += 1
+            setTimeout(() => { if (run === generation.current && !ocrPool.current) rebuildOcr.current?.() }, wait)
+          }
         }
         flushOcrPopup = () => {
           const lane = pool.popup
@@ -1170,6 +1199,18 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
           if (!alive(lane)) return
           const result = event.data
           const mine = result.requestId === lane.activeRequest && lane.inFlight
+          if (mine && (result.type === 'result' || result.type === 'popupResult' || result.type === 'exploreResult')) lane.failures = 0
+          if (result.type === 'error' && typeof result.requestId === 'number') {
+            // An answer to a read already given up on changes nothing.
+            if (!mine) return
+            if (ocrErrorAction(lane.failures) === 'skip') {
+              // One frame the worker could not read: drop it and let the timers ask again.
+              lane.failures += 1
+              dropInFlight(lane)
+              flushOcrPopup()
+              return
+            }
+          }
           if (result.type === 'backend') {
             lane.engine = { engine: result.engine === 'paddle' ? 'paddle' : 'tesseract',
               adapter: result.engine === 'paddle' && typeof result.adapter === 'string' ? result.adapter.slice(0, 60) : '',
@@ -1536,14 +1577,23 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
           visualCapture.current = { at: Date.now(), floor: currentFloor.current }
           worker.current.postMessage({ type: 'infer', frame }, [frame])
         } catch (reason) {
-          if (run === generation.current) fail(reason instanceof Error ? reason.message : 'Frame capture failed')
+          if (run === generation.current) sceneReadFailed(reason instanceof Error ? reason.message : 'Frame capture failed')
         }
+      }
+      const sceneReadFailed = (message: string) => {
+        if (visionReady && ++visionFailures < SCENE_READ_FAILURES) {
+          inFlight.current = false
+          visualCapture.current = null
+          return
+        }
+        fail(message)
       }
       vision.onmessage = (event: MessageEvent<{ type: string; label?: string; confidence?: number; gifts?: unknown;
         events?: unknown; requestId?: number; message?: string; provider?: string; adapter?: string }>) => {
         if (run !== generation.current) return
         const result = event.data
         if (result.type === 'ready') {
+          visionReady = true
           setInference({ provider: result.provider === 'webgpu' ? 'webgpu' : 'wasm',
             adapter: typeof result.adapter === 'string' ? result.adapter.slice(0, 60) : '' })
           setStatus('running')
@@ -1603,6 +1653,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
           typeof result.confidence === 'number' && Number.isFinite(result.confidence) &&
           result.confidence >= 0 && result.confidence <= 1 && validMatches(result.gifts) && validMatches(result.events)) {
           inFlight.current = false
+          visionFailures = 0
           latestLabel.current = result.confidence >= 0.5 ? result.label : latestLabel.current
           setPrediction({ label: result.label, confidence: result.confidence })
           const capture = visualCapture.current
@@ -1659,9 +1710,9 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
           if (pending) { pending.icon = result.gifts; finishPopup(result.requestId!) }
           flushVisionPopup()
         } else if (result.type === 'prediction') {
-          fail('Invalid scene prediction')
+          sceneReadFailed('Invalid scene prediction')
         } else if (result.type === 'error') {
-          fail(result.message ?? 'Scene classification failed')
+          sceneReadFailed(result.message ?? 'Scene classification failed')
         }
       }
       vision.onerror = () => fail('Scene worker failed')
