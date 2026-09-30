@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { cacheLife, cacheTag } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
+import { COMMUNITY_FEED_CACHE_CONTROL } from '@/lib/constants/http-cache'
 
 /**
  * Filter options for the deck and plan boards, drawn from the posts themselves: only affiliations, E.G.O, gifts and
@@ -85,7 +86,7 @@ export async function GET(request: Request) {
   const kind = new URL(request.url).searchParams.get('kind')
   if (kind !== 'deck' && kind !== 'planner') return NextResponse.json({ error: 'kind must be deck or planner' }, { status: 400 })
   try {
-    return NextResponse.json(await facets(kind))
+    return NextResponse.json(await facets(kind), { headers: { 'Cache-Control': COMMUNITY_FEED_CACHE_CONTROL } })
   } catch {
     return NextResponse.json({ error: 'Could not load filters' }, { status: 500 })
   }
