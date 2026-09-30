@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { existingGiftLookup, fixedRewardGiftIds, markLiveValues, richestEntry, sameStoredIds, themeExclusiveGifts, themeFixedRewards, themeGiftRefs, unreadThemeKeys } from './mirror-dungeon-rules'
+import { existingGiftLookup, fixedRewardGiftIds, richestEntry, sameStoredIds, themeExclusiveGifts, themeFixedRewards, themeGiftRefs, unreadThemeKeys } from './mirror-dungeon-rules'
 
 // Cases from the extraction audit of 2026-09-30 (complete-data of 2026-09-24).
 describe('theme rewards and exclusive gifts', () => {
@@ -87,19 +87,11 @@ it('never matches a source gift to another gift of the same name (story 20xx and
   expect(sync).not.toContain('existingByName')
 })
 
-it('marks the live values the game fills in during a run instead of a fixed 0 (봉이 인형 9242)', () => {
-  // The source texts carry {0} and {1}; the sync used to write "현재 0%".
-  expect(markLiveValues('- 보유한 기프트 개수 1개당, 피해량 0.5% 증가 (현재 {0}%. 최대 100%)\n- 보유한 기프트 개수 20개당, 턴 시작 시 위력 증가 1 얻음 (현재 {1} 얻음. 최대 10)', 'kr'))
-    .toBe('- 보유한 기프트 개수 1개당, 피해량 0.5% 증가 (게임 중 표시. 최대 100%)\n- 보유한 기프트 개수 20개당, 턴 시작 시 위력 증가 1 얻음 (게임 중 표시. 최대 10)')
-  expect(markLiveValues('Deal +0.5% damage for every E.G.O Gift owned (Current: +{0}%; max 100%)\n- Turn Start: Gain 1 Potency Up (Current Stack: {1}; max 10)', 'en'))
-    .toBe('Deal +0.5% damage for every E.G.O Gift owned (shown in game; max 100%)\n- Turn Start: Gain 1 Potency Up (shown in game; max 10)')
-  expect(markLiveValues('ダメージ量が0.5%増加 (現在{0}%, 最大100%)\n威力増加1を得る (現在{1}獲得、最大10)', 'jp'))
-    .toBe('ダメージ量が0.5%増加 (ゲーム中に表示, 最大100%)\n威力増加1を得る (ゲーム中に表示、最大10)')
-  // A decimal point is not a clause break, and a value outside parentheses is marked where it stands.
-  expect(markLiveValues('(피해량 0.5 x {0}%)', 'kr')).toBe('(게임 중 표시)')
-  expect(markLiveValues('피해량 +{0}% 증가', 'kr')).toBe('피해량 +(게임 중 표시)% 증가')
-  expect(markLiveValues('변화 없음 (최대 100%)', 'kr')).toBe('변화 없음 (최대 100%)')
+it('stores gift slots through placeholder-rules instead of a fixed 0 or a copied name (봉이 인형 9242, 귀기 서린 환도 9227)', () => {
+  // The texts themselves are covered in placeholder-rules.test.ts; here only that every effect column goes through it.
   const sync = readFileSync(join(__dirname, 'mirror-dungeon-data.ts'), 'utf8')
-  expect(sync).toContain('last[field] = markLiveValues(text, lang)')
+  expect(sync).toContain('giftPlaceholders(text, placeholderSource, placeholderReport)')
+  expect(sync.match(/tokens\(cleanDesc\(/g)?.length).toBe(9)
+  expect(sync).not.toContain('→ [${convertName}]')
   expect(sync).not.toContain(".replace(/\\{(\\d+)\\}/g, '0')")
 })

@@ -15,6 +15,8 @@ import { getLocalizedKeywordDesc, getLocalizedKeywordName } from '@/lib/i18n'
 import type { SupportedLang } from '@/lib/i18n'
 import { skillConditionColor } from '@/lib/identity/skill-condition-color'
 import type { SinType } from '@/lib/types'
+import PlaceholderLabel from '@/components/ui/PlaceholderLabel'
+import { leadingPlaceholder, type PlaceholderToken } from '@/lib/game-text/placeholders'
 
 const KeywordContext = createContext<Record<string, KeywordInfo>>({})
 
@@ -496,9 +498,10 @@ function formatSkillDescInner(
   const allKeywords = catalogKeywords.filter(kw => text.includes(kw))
   const parts: {
     text: string
-    type: 'normal' | 'bracket' | 'keyword' | 'number' | 'skillname'
+    type: 'normal' | 'bracket' | 'keyword' | 'number' | 'skillname' | 'placeholder'
     skillColor?: string
     krKey?: string
+    giftId?: number
   }[] = []
   let remaining = text
   let prevChar = ''
@@ -533,6 +536,15 @@ function formatSkillDescInner(
       remaining = remaining.slice(escapedKeyword.slashCount + escapedKeyword.keyword.length)
       continue
     }
+    // 0. {{live}} 같은 자리표시 토큰 (lib/game-text/placeholders.ts)
+    const token = remaining.startsWith('{{') ? leadingPlaceholder(remaining) : null
+    if (token) {
+      parts.push({ text: token.token, type: 'placeholder', giftId: token.giftId })
+      prevChar = '}'
+      remaining = remaining.slice(token.length)
+      continue
+    }
+
     // 1. [대괄호] / 【대괄호】 패턴
     const bracketMatch = remaining.match(/^(?:\[([^\]]+)\]|【([^】]+)】)/)
     if (bracketMatch) {
@@ -585,6 +597,8 @@ function formatSkillDescInner(
     if (bracketIdx > 0) nextIdx = Math.min(nextIdx, bracketIdx)
     const fwBracketIdx = remaining.indexOf('【')
     if (fwBracketIdx > 0) nextIdx = Math.min(nextIdx, fwBracketIdx)
+    const tokenIdx = remaining.indexOf('{{', 1)
+    if (tokenIdx > 0) nextIdx = Math.min(nextIdx, tokenIdx)
     if (escapedKeyword) nextIdx = Math.min(nextIdx, escapedKeyword.start)
     for (const kw of allKeywords) {
       let searchFrom = 0
@@ -636,6 +650,8 @@ function formatSkillDescInner(
         )
       case 'number':
         return <span key={i} style={{ color: '#e8b030', fontWeight: 700 }}>{p.text}</span>
+      case 'placeholder':
+        return <PlaceholderLabel key={i} token={p.text as PlaceholderToken} giftId={p.giftId} />
       case 'skillname':
         const resolvedSkillNameColor = resolveKeywordTextColor(p.text)
         return <span key={i} style={{ color: resolvedSkillNameColor === KEYWORD_DEFAULT_COLOR ? p.skillColor : resolvedSkillNameColor, fontWeight: 600 }}>{p.text}</span>
