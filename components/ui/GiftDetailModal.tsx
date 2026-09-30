@@ -18,6 +18,7 @@ import type { SupportedLang } from '@/lib/i18n/types'
 import type { GiftConditionStatus } from '@/lib/planner/gift-condition-status'
 import { createGiftRefSplitter, type GiftRefTarget } from '@/lib/mirror-dungeon/gift-refs'
 import { getGameUiAsset } from '@/lib/utils/game-ui'
+import { PlaceholderGiftProvider, type PlaceholderGift } from '@/components/ui/PlaceholderLabel'
 
 const CREDIT_ICON = getGameUiAsset('resources/md-credit')
 
@@ -86,6 +87,8 @@ export interface GiftDetailRecipePart {
 
 export interface GiftLinkTarget extends GiftRefTarget {
   image_url?: string | null
+  /** Game id, so a {{gift:<id>}} placeholder in the effect text shows this gift. */
+  gameId?: number | null
   onClick: () => void
 }
 
@@ -133,6 +136,12 @@ function Section({ title, aside, children }: { title: string; aside?: ReactNode;
 function EffectText({ text, color, links }: { text: string; color: string; links?: GiftDetailData['giftLinks'] }) {
   const formatSkillDesc = useFormatSkillDesc()
   const split = useMemo(() => links?.targets.length ? createGiftRefSplitter(links.targets, links) : null, [links])
+  // {{gift:<game id>}} (a convert_to gift's target) shows that gift as a link.
+  const giftById = useMemo(() => {
+    const byId = new Map<number, PlaceholderGift>()
+    for (const target of links?.targets ?? []) if (target.gameId != null) byId.set(target.gameId, target)
+    return byId.size ? (gameId: number) => byId.get(gameId) : null
+  }, [links])
   const lines = text.split('\n').map(l => l.trim()).filter(Boolean)
   const render = (line: string) => split
     ? split(line).map((part, i) => typeof part === 'string'
@@ -140,16 +149,18 @@ function EffectText({ text, color, links }: { text: string; color: string; links
       : <GiftLink key={i} target={part.gift as GiftLinkTarget} />)
     : formatSkillDesc(line, color)
   return (
-    <div style={{ color: '#d8ccb4', fontSize: '0.875rem', lineHeight: 1.75 }}>
-      {lines.map((line, i) => {
-        const isSub = /^-\s/.test(line)
-        return (
-          <p key={i} style={isSub ? { paddingLeft: '0.875rem', textIndent: '-0.625rem', marginTop: '0.125rem' } : { marginTop: i > 0 ? '0.5rem' : 0 }}>
-            {render(line)}
-          </p>
-        )
-      })}
-    </div>
+    <PlaceholderGiftProvider lookup={giftById}>
+      <div style={{ color: '#d8ccb4', fontSize: '0.875rem', lineHeight: 1.75 }}>
+        {lines.map((line, i) => {
+          const isSub = /^-\s/.test(line)
+          return (
+            <p key={i} style={isSub ? { paddingLeft: '0.875rem', textIndent: '-0.625rem', marginTop: '0.125rem' } : { marginTop: i > 0 ? '0.5rem' : 0 }}>
+              {render(line)}
+            </p>
+          )
+        })}
+      </div>
+    </PlaceholderGiftProvider>
   )
 }
 

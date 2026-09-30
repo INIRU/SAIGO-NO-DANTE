@@ -1,3 +1,4 @@
+import { eventPlaceholders } from './placeholder-rules'
 /** Source graph primitives. IDs and text similarity never establish parenthood. */
 export type SourceForm = {
   resultEffect?: string; resultDescId?: string; resultEffectTarget?: string
@@ -79,5 +80,8 @@ export function walkEventGraph(events: ReadonlyMap<number, SourceEvent>, entries
 export function sourceResultText(texts: string[] | undefined, index: number): string | null {
   if (!texts?.length) return null
   // A single source narrative is shared; indexed alternatives are never concatenated.
-  return texts[index] ?? (texts.length === 1 ? texts[0] : null)
+  return eventText(texts[index] ?? (texts.length === 1 ? texts[0] : null))
 }
+
+/** Event narrative with the sinner the player picked ({0}) stored as {{sinner}} (placeholder-rules.ts); the site draws it as a label. */
+export const eventText = eventPlaceholders

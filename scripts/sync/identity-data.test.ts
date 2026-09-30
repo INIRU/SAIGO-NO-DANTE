@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest'
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 
 import {
   buildSkillRows,
@@ -14,15 +16,14 @@ import {
   translateDescriptionForSyncTest,
   translateDesc,
   deriveIdentityAcquisition,
-  fillValuePlaceholders,
 } from './identity-data'
 
 describe('identity-data sync helpers', () => {
-  it('names the buff value placeholders in keyword descriptions instead of leaving {0}', () => {
-    expect(fillValuePlaceholders('이번 턴 동안 타격 속성 스킬의 최종 위력 -{0}', 'kr')).toBe('이번 턴 동안 타격 속성 스킬의 최종 위력 -(수치)')
-    expect(fillValuePlaceholders('Deal +{0}% damage for {1} turns', 'en')).toBe('Deal +(Potency)% damage for (Count) turns')
-    expect(fillValuePlaceholders('最終威力-{0}', 'jp')).toBe('最終威力-(威力)')
-    expect(fillValuePlaceholders(null, 'kr')).toBeNull()
+  it('stores keyword descriptions through placeholder-rules in every language', () => {
+    // The slot rules and real source strings are tested in placeholder-rules.test.ts.
+    const sync = readFileSync(join(__dirname, 'identity-data.ts'), 'utf8')
+    for (const source of ['KR_Bufs', 'EN_Bufs', 'JP_Bufs']) expect(sync).toContain(`placeholderReport, '${source}')`)
+    expect(sync).not.toContain('fillValuePlaceholders')
   })
   it('does not count KR_SkillTag names such as sin colours as identity keywords', () => {
     // [CRIMSON] → 빨간색 translates skill text; it became a keyword once SkillTag joined the tag map.

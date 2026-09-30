@@ -2281,5 +2281,23 @@
     "cancel": "Cancel",
     "download": "Download",
     "close": "Close"
+  },
+  "placeholder": {
+    "live": "Shown in game",
+    "potency": "Potency",
+    "count": "Count",
+    "value": "Value",
+    "sinner": "Sinner",
+    "target": "Target",
+    "gift": "E.G.O Gift",
+    "hint": {
+      "live": "The actual value appears in game during a run",
+      "potency": "The effect's Potency",
+      "count": "The effect's Count",
+      "value": "A value the game fills in",
+      "sinner": "The chosen Sinner's name",
+      "target": "The unit this effect is tied to",
+      "gift": "The E.G.O Gift this turns into"
+    }
   }
 }

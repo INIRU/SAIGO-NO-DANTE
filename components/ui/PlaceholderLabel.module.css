@@ -1,0 +1,109 @@
+/*
+ * Inline label for a value the game fills in while playing ({{live}}, {{potency}} … in DB text).
+ * Sized in em so it follows whatever text it sits in (skill lines, tooltips, event narration) and keeps the
+ * line height: no vertical padding, a line-height below the text's own, baseline alignment.
+ */
+.chip {
+  display: inline-block;
+  margin: 0 0.125em;
+  padding: 0 0.4em;
+  border: 1px solid var(--border);
+  border-radius: 0.25rem;
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 0.86em;
+  font-weight: 600;
+  line-height: 1.4;
+  letter-spacing: 0;
+  text-indent: 0;
+  vertical-align: baseline;
+  white-space: nowrap;
+}
+
+.icon {
+  display: inline-block;
+  width: 0.95em;
+  height: 0.95em;
+  margin-right: 0.25em;
+  vertical-align: -0.125em;
+  flex-shrink: 0;
+}
+
+/* Live value: gold outline with a pulse icon, the value is on the game screen. */
+.chip[data-placeholder='live'] {
+  border-color: rgba(232, 176, 48, 0.45);
+  background: rgba(232, 176, 48, 0.08);
+  color: var(--gold-light);
+}
+
+/* Potency: the buff's own number, filled gold like the numbers around it. */
+.chip[data-placeholder='potency'] {
+  border-color: rgba(200, 144, 10, 0.55);
+  background: rgba(200, 144, 10, 0.2);
+  color: #f4cf6a;
+}
+
+/* Count: same family, lighter, so potency and count read as a pair. */
+.chip[data-placeholder='count'] {
+  border-color: rgba(232, 220, 200, 0.28);
+  background: rgba(232, 220, 200, 0.07);
+  color: var(--text-primary);
+}
+
+/* Value without a rule: quiet dashed outline. */
+.chip[data-placeholder='value'] {
+  border-style: dashed;
+  border-color: #5a4526;
+  background: transparent;
+  color: var(--text-secondary);
+}
+
+.chip[data-placeholder='sinner'] {
+  border-color: #5a4526;
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+}
+
+/* Target: the enemy the buff is tied to, in the site's danger red. */
+.chip[data-placeholder='target'] {
+  border-color: rgba(155, 44, 35, 0.7);
+  background: rgba(155, 44, 35, 0.18);
+  color: #e8b4a8;
+}
+
+.chip[data-placeholder='gift'] {
+  border-color: rgba(200, 144, 10, 0.45);
+  background: rgba(200, 144, 10, 0.1);
+  color: var(--gold-light);
+}
+
+.giftImage {
+  display: inline-block;
+  width: 1.25em;
+  height: 1.25em;
+  margin: -0.15em 0.25em -0.15em -0.15em;
+  object-fit: contain;
+  vertical-align: middle;
+}
+
+button.chip {
+  cursor: pointer;
+  transition: background-color 150ms ease, border-color 150ms ease;
+}
+
+button.chip:hover {
+  border-color: var(--gold-light);
+  background: rgba(200, 144, 10, 0.2);
+}
+
+button.chip:focus-visible {
+  outline: 2px solid var(--gold-light);
+  outline-offset: 1px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  button.chip {
+    transition: none;
+  }
+}

@@ -13,6 +13,7 @@ import { getLocalizedName } from '@/lib/i18n/localize'
 import KeywordGrid from './KeywordGrid'
 import KeywordModal, { type KeywordEgo, type KeywordGift, type KeywordIdentity } from './KeywordModal'
 import { keywordDesc, keywordName, kt, type KeywordEntry } from './KeywordCard'
+import { placeholdersToPlainText } from '@/lib/game-text/placeholders'
 
 interface Sinner {
   id: string
@@ -118,7 +119,7 @@ export default function KeywordsClient({
     const usage = (name: string) => (identityCountMap[name] || 0) + (egoCountMap[name] || 0) + (giftCountMap[name] || 0)
     return keywords.filter(kw => {
       if (selectedCategories.size > 0 && !selectedCategories.has((kw.category || '기타') as KeywordCategory)) return false
-      if (query && !keywordName(kw, lang).toLowerCase().includes(query) && !keywordDesc(kw, lang).toLowerCase().includes(query)) return false
+      if (query && !keywordName(kw, lang).toLowerCase().includes(query) && !placeholdersToPlainText(keywordDesc(kw, lang), lang).toLowerCase().includes(query)) return false
       return true
     }).sort((a, b) => sort === 'name'
       ? keywordName(a, lang).localeCompare(keywordName(b, lang), lang)

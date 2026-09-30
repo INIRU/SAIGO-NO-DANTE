@@ -130,20 +130,3 @@ export function existingGiftLookup<T extends { game_id: number | null; name: str
     },
   }
 }
-
-const LIVE_VALUE: Record<'kr' | 'en' | 'jp', string> = { kr: '게임 중 표시', en: 'shown in game', jp: 'ゲーム中に表示' }
-// Clause breaks inside a parenthesis: '.', ';' or ',' before a space (not the '.' of 0.5), and '、'.
-const CLAUSE_BREAK = /((?:[.;,](?=\s)|、)\s*)/
-
-/**
- * Effect text with its live values ({0}, {1}: counts the game fills in during a run) marked as such instead of a fixed 0.
- * Inside parentheses the whole clause holding the value goes ("(현재 {0}%. 최대 100%)" → "(게임 중 표시. 최대 100%)",
- * "(Current: +{0}%; max 100%)" → "(shown in game; max 100%)"); elsewhere the value itself becomes "(게임 중 표시)".
- */
-export function markLiveValues(text: string, lang: 'kr' | 'en' | 'jp'): string {
-  const marker = LIVE_VALUE[lang]
-  return text
-    .replace(/\(([^()]*\{\d+\}[^()]*)\)/g, (_, inner: string) =>
-      `(${inner.split(CLAUSE_BREAK).map(part => /\{\d+\}/.test(part) ? marker : part).join('')})`)
-    .replace(/\{\d+\}/g, `(${marker})`)
-}

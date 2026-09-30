@@ -27,6 +27,7 @@ import { join, resolve } from 'path'
 import { gameDataPaths } from './source-paths'
 import { identityMetadata } from './identity-metadata'
 import { getKeywordCategory } from '../../lib/keywords/category'
+import { buffPlaceholders, PlaceholderReport } from './placeholder-rules'
 import { IDENTITY_STAT_BASE_LEVEL } from '../../lib/constants/game'
 import { failOnLoggedErrors, printSyncSummary } from './sync-result'
 import { pathToFileURL } from 'url'
@@ -1994,15 +1995,6 @@ function loadEgoPassiveLocale(lang: 'kr' | 'en' | 'jp'): Map<number, { name: str
   return map
 }
 
-const VALUE_PLACEHOLDERS = { kr: ['수치', '횟수'], en: ['Potency', 'Count'], jp: ['威力', '回数'] } as const
-
-/** Buff text shows the buff's own value as {0} (potency) and {1} (count); a keyword catalogue entry has no value, so it names them instead. */
-export function fillValuePlaceholders(text: string | null | undefined, lang: keyof typeof VALUE_PLACEHOLDERS): string | null {
-  if (text == null) return null
-  const [potency, count] = VALUE_PLACEHOLDERS[lang]
-  return text.replace(/\{0\}/g, `(${potency})`).replace(/\{1\}/g, `(${count})`)
-}
-
 function translateDescLang(
   desc: string | undefined,
   tagMap: Record<string, string>,
@@ -3580,6 +3572,7 @@ async function rebuildKeywordMeta(): Promise<void> {
     ]),
   )
 
+  const placeholderReport = new PlaceholderReport()
   // Build insert rows
   const rows: Array<{
     name: string
@@ -3621,11 +3614,11 @@ async function rebuildKeywordMeta(): Promise<void> {
     })
     rows.push({
       name,
-      description: KEYWORD_DESCRIPTION_OVERRIDES[name] ?? fillValuePlaceholders(krData?.description ?? existing?.description, 'kr'),
+      description: KEYWORD_DESCRIPTION_OVERRIDES[name] ?? buffPlaceholders(krData?.description ?? existing?.description, tag, placeholderReport, 'KR_Bufs'),
       name_en,
       name_jp,
-      description_en: fillValuePlaceholders(enData?.description ?? existing?.description_en, 'en'),
-      description_jp: fillValuePlaceholders(jpData?.description ?? existing?.description_jp, 'jp'),
+      description_en: buffPlaceholders(enData?.description ?? existing?.description_en, tag, placeholderReport, 'EN_Bufs'),
+      description_jp: buffPlaceholders(jpData?.description ?? existing?.description_jp, tag, placeholderReport, 'JP_Bufs'),
       icon_slug,
       effect_type: resolveKeywordEffectType({
         tag: tag ?? null,
@@ -3639,6 +3632,8 @@ async function rebuildKeywordMeta(): Promise<void> {
     })
   }
   rows.sort((a, b) => a.name.localeCompare(b.name, 'ko'))
+  // Slots no rule covers are stored as {{value}}; add them to BUFF_PLACEHOLDER_ROLES (placeholder-rules.ts).
+  placeholderReport.print(line => console.warn(YELLOW(`  ${line}`)))
   if (process.env.LIMBUS_KEYWORD_AUDIT) {
     writeFileSync(process.env.LIMBUS_KEYWORD_AUDIT, JSON.stringify(rows, null, 2) + '\n')
   }
