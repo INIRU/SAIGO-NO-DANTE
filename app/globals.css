@@ -594,3 +594,9 @@ button.note-gift-label:hover{text-decoration-color:currentColor}
 
 /* Small text links and slots: a transparent margin around the element makes the touch target at least about 28px without moving the layout. */
 .hit-target{position:relative}.hit-target::after{content:"";position:absolute;inset:-.375rem -.25rem}
+
+/* StaticQueryAdapter: a static page opened with a query shows its skeleton, not the unfiltered view, until hydrated. */
+[data-static-query] { display: contents; }
+[data-static-query-fallback] { display: none; }
+html[data-query-pending] [data-static-query] { display: none; }
+html[data-query-pending] [data-static-query-fallback] { display: contents; }
