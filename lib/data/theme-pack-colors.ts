@@ -1,6 +1,6 @@
 import type { SupportedLang } from '@/lib/i18n/types'
 
-// Theme pack name text colors (from game visual identity)
+// Theme pack name text colors: game theme data uiConfigs.textColor (mirrordungeon-theme-floor-*.txt)
 // 10xx: grouped by dungeon chapter, 11xx: unique per story, 12xx+: default beige
 
 export interface ThemePackNameSegment {
@@ -47,6 +47,7 @@ export const THEME_PACK_NAME_COLORS: Record<number, string> = {
   1125: '#990000',
   1126: '#BEBAF7',
   1127: '#625AFF',
+  1128: '#DADCE0',
 
   // 15xx exception
   1503: '#FF6600',
