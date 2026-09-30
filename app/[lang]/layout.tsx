@@ -31,6 +31,8 @@ import { KeywordProvider } from '@/components/providers/KeywordProvider'
 import { getKeywordCatalog } from '@/lib/keywords/server-data'
 import { fontVariables } from '../fonts'
 import { ROOT_OMITTED_MESSAGES, omitMessages } from '@/lib/i18n/client-messages'
+import { NAV_BOOT_SCRIPT } from '@/lib/constants/nav-boot'
+import NavbarFallback from '@/components/layout/NavbarFallback'
 
 const SITE_NAME: Record<SupportedLang, string> = { ko: '최애의 관리자', en: 'SAIGO NO DANTE', ja: 'SAIGO NO DANTE' }
 const OG_LOCALE: Record<SupportedLang, string> = { ko: 'ko_KR', en: 'en_US', ja: 'ja_JP' }
@@ -143,6 +145,8 @@ export default async function LangLayout({
   return (
     <html lang={validLang} suppressHydrationWarning data-scroll-behavior="smooth" className={fontVariables}>
       <head>
+        {/* Sets html[data-mac]/[data-auth-hint] before paint so the navbar never swaps its hint or login slot. */}
+        <script dangerouslySetInnerHTML={{ __html: NAV_BOOT_SCRIPT }} />
         {/* Game icons shown without the optimizer load from storage directly; avatars go through /_next/image. */}
         <link rel="preconnect" href="https://lpgqcleszdlldneiwgep.supabase.co" />
         <JsonLd data={websiteJsonLd(validLang)} />
@@ -160,7 +164,7 @@ export default async function LangLayout({
                     <SkipNav lang={validLang} />
                     <AprilFoolsWrapper />
                     {/* Navbar/PageNavigation read the pathname, which is request data on routes with unknown params (e.g. /decks/[id]). */}
-                    <div className="site-navigation"><Suspense fallback={null}><Navbar mainNavLabel={mainNavLabel} /></Suspense></div>
+                    <div className="site-navigation"><Suspense fallback={<NavbarFallback siteName={t('site.name')} />}><Navbar mainNavLabel={mainNavLabel} /></Suspense></div>
                     <Suspense fallback={null}><VisitTracker /></Suspense>
                     <Suspense fallback={null}><NavigationTracker /></Suspense>
                     <KonamiListener />
