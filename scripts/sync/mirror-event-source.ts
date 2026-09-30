@@ -1,3 +1,4 @@
+import { tokenizeGamePlaceholders } from '../../lib/game-text/placeholders'
 /** Source graph primitives. IDs and text similarity never establish parenthood. */
 export type SourceForm = {
   resultEffect?: string; resultDescId?: string; resultEffectTarget?: string
@@ -79,5 +80,14 @@ export function walkEventGraph(events: ReadonlyMap<number, SourceEvent>, entries
 export function sourceResultText(texts: string[] | undefined, index: number): string | null {
   if (!texts?.length) return null
   // A single source narrative is shared; indexed alternatives are never concatenated.
-  return texts[index] ?? (texts.length === 1 ? texts[0] : null)
+  return eventText(texts[index] ?? (texts.length === 1 ? texts[0] : null))
+}
+
+/** Event slots the rebuild had no role for, reported by the rebuild. */
+export const unknownEventPlaceholders = new Set<number>()
+
+/** Event narrative with the sinner the player picked ({0}) stored as {{sinner}}; the site draws it as a label. */
+export function eventText<T extends string | null | undefined>(text: T): T {
+  if (!text) return text
+  return tokenizeGamePlaceholders(text, index => index === 0 ? 'sinner' : undefined, index => unknownEventPlaceholders.add(index)) as T
 }

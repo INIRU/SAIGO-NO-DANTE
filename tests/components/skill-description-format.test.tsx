@@ -21,3 +21,10 @@ it('formats a description the same whatever unrelated keywords the catalog holds
   expect(html).toBe(render({ ...unrelated, ...used }, text))
   expect(html.match(/keyword-token/g)?.length).toBeGreaterThanOrEqual(4)
 })
+
+it('draws placeholder tokens as labels instead of showing the braces', () => {
+  const html = render({ 화상: { desc: '' } }, '화상 {{potency}} 부여 (현재 {{live}}%)')
+  expect(html).toContain('data-placeholder="potency"')
+  expect(html).toContain('>게임 중 표시<')
+  expect(html).not.toContain('{{')
+})
