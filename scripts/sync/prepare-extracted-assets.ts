@@ -10,9 +10,10 @@ const Sha = z.string().regex(/^[0-9a-f]{64}$/i)
 const DataFile = z.object({ path: z.string(), kind: z.string(), sha256: Sha, bytes: z.number().int().nonnegative() })
 const DataManifest = z.object({ schemaVersion: z.literal(1), counts: z.unknown(), files: z.array(DataFile) })
 const ImageEntry = z.object({
-  kind: z.string(), subtype: z.string().optional(), imageState: z.string().optional(), name: z.string(), label: z.string().nullable().optional(), path: z.string(), container: z.string(), pathId: z.string(), sha256: Sha,
-  width: z.number().int().positive(), height: z.number().int().positive(), sinner: z.string().optional().default(''),
-  dbLinked: z.boolean().optional(), entityName: z.string().optional(),
+  kind: z.string(), subtype: z.string().nullish(), imageState: z.string().nullish(), name: z.string(), label: z.string().nullish(), path: z.string(), container: z.string(), pathId: z.string(), sha256: Sha,
+  // PowerShell writes null for images without a sinner, entity or state (theme packs, keywords, events).
+  width: z.number().int().positive(), height: z.number().int().positive(), sinner: z.string().nullish().transform(value => value ?? ''),
+  dbLinked: z.boolean().nullish(), entityName: z.string().nullish(),
 }).passthrough()
 const ImageManifest = z.array(ImageEntry)
 const RunManifest = z.object({
