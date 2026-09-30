@@ -7,7 +7,7 @@ import { corroboratedChoiceEvent, effectGiftIds, eventScreenEvidence, matchOcrCa
 import { acquiredGiftFromPopup, acquisitionFloor, AUTO_ACQUIRE_EXCLUDED_GIFT_IDS, popupCandidateIds, popupHeaderEvidence, showsAcquiredHeader, type PopupLabelRead } from '@/lib/vision/popup-evidence'
 import type { RecipePopupEvidence } from '@/lib/planner/fusion'
 import type { StableScene } from '@/lib/vision/scene-state'
-import { isMobileDevice } from '@/lib/vision/device'
+import { cpuFallback, isMobileDevice, webgpuBlock, type GpuBlock } from '@/lib/vision/device'
 import { RECOGNITION_PROFILES, type RecognitionMode } from '@/lib/vision/recognition-profile'
 import { DEFAULT_DETECTION, type DetectionSettings } from '@/lib/vision/detection-settings'
 import { AssistSampleRecorder } from '@/lib/vision/assist-samples'
@@ -186,6 +186,12 @@ function mobileBlocked(): boolean {
   return typeof navigator !== 'undefined' && isMobileDevice(navigator as Parameters<typeof isMobileDevice>[0])
 }
 
+// Asked once per page: turning graphics acceleration on takes a browser restart, which loads the page again.
+let gpuCheck: Promise<GpuBlock | null> | null = null
+function gpuBlocked(): Promise<GpuBlock | null> {
+  return gpuCheck ??= webgpuBlock(navigator as Parameters<typeof webgpuBlock>[0])
+}
+
 function canCapture(): boolean {
   return !mobileBlocked() && typeof navigator !== 'undefined' && typeof Worker !== 'undefined' &&
     typeof OffscreenCanvas !== 'undefined' && typeof createImageBitmap !== 'undefined' &&
@@ -246,6 +252,8 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
   const [floorThemeObservation, setFloorThemeObservation] = useState<FloorThemeObservation | null>(null)
   const [queueStatus, setQueueStatus] = useState<CaptureQueueStatus>(IDLE_QUEUE)
   const [mobile, setMobile] = useState(false)
+  // Set when there is no WebGPU to recognize with; capture is refused rather than run on the CPU.
+  const [gpu, setGpu] = useState<GpuBlock | null>(null)
   // Image model backend the worker actually created (WebGPU only on a real adapter, otherwise WASM).
   const [inference, setInference] = useState<{ provider: 'webgpu' | 'wasm'; adapter: string } | null>(null)
   const [ocrEngine, setOcrEngine] = useState<OcrEngineStatus | null>(null)
@@ -541,7 +549,9 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
   useEffect(() => {
     setSupported(canCapture())
     setMobile(mobileBlocked())
-    return cleanup
+    let live = true
+    if (canCapture()) void gpuBlocked().then(block => { if (live && block) setGpu(block) })
+    return () => { live = false; cleanup() }
   }, [cleanup])
 
   // Closing, reloading or leaving the tab while the screen is connected asks first (the browser's own prompt):
@@ -604,6 +614,13 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
     }
     const run = generation.current
     setStatus('requesting')
+    const block = await gpuBlocked()
+    if (run !== generation.current) return
+    setGpu(block)
+    if (block) {
+      setStatus('idle')
+      return block
+    }
     let display: MediaStream
     try {
         display = await navigator.mediaDevices.getDisplayMedia({ video: { frameRate: { ideal: 60 } }, audio: false })
@@ -1219,8 +1236,9 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
             publishEngine()
           } else if (result.type === 'ready') {
             lane.ready = true
-            // Older worker bundles never report a backend; they only read with Tesseract.
-            lane.engine ??= { engine: 'tesseract', adapter: '', loading: false }
+            // The worker reports its backend just after this, once it has asked for a GPU adapter: until then its text
+            // is read by Tesseract while the GPU models may still load (so no CPU fallback is decided yet).
+            lane.engine ??= { engine: 'tesseract', adapter: '', loading: true }
             publishEngine()
             if (lane === pool.popup) { ocrReady.current = true; setOcrStatus('running'); flushOcrPopup() }
             if (lane === pool.screen && !pool.started) {
@@ -1773,13 +1791,20 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
     window.addEventListener('pagehide', flushReport)
     return () => { clearInterval(interval); window.removeEventListener('pagehide', flushReport) }
   }, [])
+  // The workers found no GPU to load their models on after all: the capture stops rather than read on the CPU.
+  const settledOnCpu = status === 'running' ? cpuFallback(ocrEngine, inference) : null
+  useEffect(() => {
+    if (!settledOnCpu) return
+    stop()
+    setGpu(settledOnCpu)
+  }, [settledOnCpu, stop])
   /** The run's inventory changed; edits by hand (not inside CompanionPanel's automatic records) become report labels. */
   const reportInventoryChange = useCallback((before: readonly string[], after: readonly string[]) => {
     reportTally.current?.inventoryChanged(before, after)
   }, [])
 
   return { supported, status, error, prediction, visualCandidates, ocrCandidates, ocrStatus,
-    popupAcquisitions, floorThemeObservation, observedFloor, scene, themeSelectionFloor, queueStatus, mobile, inference, ocrEngine,
+    popupAcquisitions, floorThemeObservation, observedFloor, scene, themeSelectionFloor, queueStatus, mobile, gpu, inference, ocrEngine,
     ocrWorkers, fusionEvidence, giftSales, skillExchange, start, stop, reportInventoryChange }
 }
 
