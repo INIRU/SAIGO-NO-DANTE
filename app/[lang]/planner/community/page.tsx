@@ -73,7 +73,7 @@ export default async function CommunityPage({ params }: { params: Promise<{ lang
       <BoardHeader kind="planner" lang={lang} title={t('title')} subtitle={t('subtitle')} action={t('newPlan')} assist={tActions('triggerMode')} />
       <Suspense fallback={<BoardShelfSkeleton kind="planner" />}>
         {/* Prerendered with the newest plans; URL filters load their list after hydration (StaticQueryAdapter). */}
-        <StaticQueryAdapter>
+        <StaticQueryAdapter fallback={<BoardShelfSkeleton kind="planner" />}>
           <CommunityClient initialPlans={initialPlans} initialTotal={initialTotal} />
         </StaticQueryAdapter>
       </Suspense>
