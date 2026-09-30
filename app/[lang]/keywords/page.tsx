@@ -8,6 +8,7 @@ import type { SupportedLang } from '@/lib/i18n/types'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import KeywordsClient from './KeywordsClient'
 import StaticQueryAdapter from '@/components/providers/StaticQueryAdapter'
+import KeywordsLoading from './loading'
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params
@@ -103,7 +104,7 @@ export default async function KeywordsPage() {
   return (
     /* Prerendered without filters; the URL's filters apply after hydration (StaticQueryAdapter). */
     <Suspense fallback={null}>
-      <StaticQueryAdapter>
+      <StaticQueryAdapter fallback={<KeywordsLoading />}>
         <KeywordsClient
           keywords={safeKeywords}
           identities={safeIdentities}

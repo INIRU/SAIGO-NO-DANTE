@@ -18,3 +18,10 @@ function Probe() {
 it('server-renders the default query state without reading the request', () => {
   expect(renderToString(<StaticQueryAdapter><Probe /></StaticQueryAdapter>)).toContain('data-tab="gifts"')
 })
+
+// A page opened with a query shows the skeleton, not that default view, until the filtered view has rendered.
+it('ships the skeleton hidden with a pre-paint switch for query links', () => {
+  const html = renderToString(<StaticQueryAdapter fallback={<i data-skeleton="" />}><Probe /></StaticQueryAdapter>)
+  expect(html).toMatch(/<script>if\(location\.search\.length>1\)document\.documentElement\.setAttribute\('data-query-pending',''\)<\/script>/)
+  expect(html).toMatch(/<div data-static-query-fallback="">[^]*data-skeleton[^]*<div data-static-query="">[^]*data-tab="gifts"/)
+})

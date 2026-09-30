@@ -108,7 +108,7 @@ export default async function MirrorDungeonPage({ params }: { params: Promise<{ 
       <JsonLd data={faqJsonLd(MIRROR_FAQ[lang === 'en' || lang === 'ja' ? lang : 'ko'])} />
       {/* Prerendered without filters; the URL's filters apply after hydration (StaticQueryAdapter). */}
       <Suspense fallback={<MirrorDungeonSkeleton />}>
-        <StaticQueryAdapter>
+        <StaticQueryAdapter fallback={<MirrorDungeonSkeleton />}>
           <MirrorDungeonClient
             lang={lang as SupportedLang}
             gifts={(gifts ?? []).map(gift => withoutOtherLocales(gift, lang, ['effect_base', 'effect_plus', 'effect_plusplus']))}

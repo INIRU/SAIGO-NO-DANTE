@@ -10,6 +10,7 @@ import { getTranslations } from 'next-intl/server'
 import { getLocalizedName } from '@/lib/i18n/localize'
 import type { SupportedLang } from '@/lib/i18n/types'
 import StaticQueryAdapter from '@/components/providers/StaticQueryAdapter'
+import BrowserSkeleton from '@/components/sinners/BrowserSkeleton'
 
 const TITLE = { ko: '림버스 컴퍼니 인격 도감 — 전체 인격 목록', en: 'Limbus Company Identity List', ja: 'リンバスカンパニー 人格一覧' }
 
@@ -53,7 +54,7 @@ export default async function IdentitiesPage({ params }: { params: Promise<{ lan
     <>
       <JsonLd data={identityListLd} />
       <Suspense fallback={null}>
-        <StaticQueryAdapter>
+        <StaticQueryAdapter fallback={<BrowserSkeleton />}>
           <IdentityBrowserClient identities={identities} sinners={sinners} />
         </StaticQueryAdapter>
       </Suspense>
