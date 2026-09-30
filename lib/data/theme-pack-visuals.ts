@@ -22,11 +22,22 @@ export interface ThemePackTitleBox {
   printedIn?: readonly SupportedLang[]
 }
 
-// Band under the Limbus logo where the game prints the pack name (the CANTO watermark band on base packs).
+// Name box in % of the 416x684 poster, measured from KR theme-pack selection captures (2026-09-21~25 runs, 40+ packs):
+// the game prints every name at one spot under the logo (ink centre 80.6%, ink height ~6%, longest names ~72% wide),
+// whatever the art. Only the attack-type/sin/keyword packs (12xx-14xx, boss badge posters) sit lower, at 82.9%.
+// The box is centred on the measured ink centre; ThemePackCard centres the glyphs in it.
 export const THEME_PACK_TITLE_BOX = {
-  normal: { top: 74.5667, height: 8.5, left: 13, right: 13 },
+  normal: { top: 76.35, height: 8.5, left: 10.5, right: 10.5 },
+  boss: { top: 78.65, height: 8.5, left: 10.5, right: 10.5 },
   extreme: { top: 81, height: 10, left: 16, right: 16 },
 } as const
+
+export type ThemePackTitleBoxKind = keyof typeof THEME_PACK_TITLE_BOX
+
+export function getThemePackTitleBoxKind(config: ThemePackVisualConfig | null): ThemePackTitleBoxKind {
+  if (config?.kind === 'extreme') return 'extreme'
+  return config?.bossSpriteId ? 'boss' : 'normal'
+}
 
 export const THEME_PACK_VISUALS: Record<number, ThemePackVisualConfig> = {
   1001: { kind: 'normal' },
@@ -56,35 +67,36 @@ export const THEME_PACK_VISUALS: Record<number, ThemePackVisualConfig> = {
   1025: { kind: 'normal', showWarning: true },
   1026: { kind: 'normal', showWarning: true },
   1027: { kind: 'normal', showWarning: true },
-  1101: { kind: 'normal', hideLogo: true, title: { top: 80.5 } },
-  1102: { kind: 'normal', hideLogo: true, title: { top: 83.5 } },
-  1103: { kind: 'normal', hideLogo: true, title: { top: 80 } },
-  1104: { kind: 'normal', hideLogo: true, title: { top: 75.3 } },
-  1105: { kind: 'normal', hideLogo: true, title: { top: 77 } },
-  1106: { kind: 'normal', hideLogo: true, title: { top: 76 } },
+  1101: { kind: 'normal', hideLogo: true },
+  1102: { kind: 'normal', hideLogo: true },
+  1103: { kind: 'normal', hideLogo: true },
+  1104: { kind: 'normal', hideLogo: true },
+  1105: { kind: 'normal', hideLogo: true },
+  1106: { kind: 'normal', hideLogo: true },
   1107: { kind: 'normal', hideLogo: true },
   1108: { kind: 'normal', showBaton: true, hideLogo: true },
-  1109: { kind: 'normal', showBaton: true, hideLogo: true, title: { top: 75.5 } },
-  1110: { kind: 'normal', showBaton: true, hideLogo: true, title: { top: 75.5 } },
+  1109: { kind: 'normal', showBaton: true, hideLogo: true },
+  1110: { kind: 'normal', showBaton: true, hideLogo: true },
   1111: { kind: 'normal', showBaton: true, hideLogo: true },
   1112: { kind: 'normal', showBaton: true, hideLogo: true },
-  1113: { kind: 'normal', showBaton: true, hideLogo: true, title: { top: 73, height: 7 } },
-  1114: { kind: 'normal', hideLogo: true, title: { top: 75.5 } },
-  1115: { kind: 'normal', hideLogo: true, title: { top: 79.5 } },
-  1116: { kind: 'normal', hideLogo: true, title: { top: 75.3 } },
-  1117: { kind: 'normal', hideLogo: true, title: { top: 75 } },
-  1118: { kind: 'normal', showBaton: true, hideLogo: true, title: { top: 82.5 } },
-  1119: { kind: 'normal', hideLogo: true, title: { top: 76 } },
-  1120: { kind: 'normal', hideLogo: true, title: { top: 78 } },
-  1121: { kind: 'normal', hideLogo: true, title: { top: 78.5 } },
+  1113: { kind: 'normal', showBaton: true, hideLogo: true },
+  1114: { kind: 'normal', hideLogo: true },
+  1115: { kind: 'normal', hideLogo: true },
+  1116: { kind: 'normal', hideLogo: true },
+  1117: { kind: 'normal', hideLogo: true },
+  1118: { kind: 'normal', showBaton: true, hideLogo: true },
+  1119: { kind: 'normal', hideLogo: true },
+  1120: { kind: 'normal', hideLogo: true },
+  1121: { kind: 'normal', hideLogo: true },
   1122: { kind: 'normal', hideLogo: true },
-  1123: { kind: 'normal', hideLogo: true, title: { top: 78.5 } },
-  1124: { kind: 'normal', hideLogo: true, title: { top: 77.5 } },
-  1125: { kind: 'normal', hideLogo: true, title: { top: 79.5 } },
-  1126: { kind: 'normal', hideLogo: true, title: { top: 78.5 } },
-  1127: { kind: 'normal', hideLogo: true, title: { top: 75.5 } },
-  1128: { kind: 'normal', hideLogo: true, title: { top: 77.5 } },
-  3001: { kind: 'normal', hideLogo: true, title: { top: 75.5, height: 7, left: 21, right: 19 } },
+  1123: { kind: 'normal', hideLogo: true },
+  1124: { kind: 'normal', hideLogo: true },
+  1125: { kind: 'normal', hideLogo: true },
+  1126: { kind: 'normal', hideLogo: true },
+  1127: { kind: 'normal', hideLogo: true },
+  1128: { kind: 'normal', hideLogo: true },
+  // The hidden pack prints a dark name band (rows 76.3%-85.9%, darkest 29%-73% across); the name sits in its middle.
+  3001: { kind: 'normal', hideLogo: true, title: { top: 76.85, height: 8.5, left: 25, right: 25 } },
   1201: { kind: 'normal', bossSpriteId: 'AttackTypeSlash_hard_boss' },
   1202: { kind: 'normal', bossSpriteId: 'AttackTypeSlash_effective_boss' },
   1203: { kind: 'normal', bossSpriteId: 'AttackTypePierce_hard_boss' },

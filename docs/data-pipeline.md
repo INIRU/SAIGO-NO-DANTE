@@ -586,14 +586,17 @@ E.G.O 상세의 메인 이미지는 256×256 `_awaken_profile` 확대 대신 새
 
 ### 자리표시 토큰
 
-게임 원문이 플레이 중에 채우는 번호 자리(`{0}`, `{1}`, `{0:F1}`)는 DB에 의미 토큰으로 저장하고, 화면이 라벨로 그린다(`lib/game-text/placeholders.ts`, `components/ui/PlaceholderLabel.tsx`). 라벨 문구와 모양은 사이트 코드에만 있어서 바꿔도 재동기화가 필요 없다. 게임의 `{0}`·`{amount}`와 겹치지 않게 이중 중괄호를 쓴다.
+게임 원문이 플레이 중에 채우는 번호 자리(`{0}`, `{1}`, `{0:F1}`)는 DB에 의미 토큰으로 저장하고, 화면이 라벨(칩)로 그린다. 토큰 문법은 `lib/game-text/placeholders.ts`, 동기화 규칙은 `scripts/sync/placeholder-rules.ts` 한 곳에 있다. 규칙은 원문 필드(버프 id, 기프트 `convertDataList`·`descType`, 이벤트 문구)로 정하고 글자를 보고 추측하지 않는다. 라벨 문구는 `messages/*.json`의 `placeholder.*`, 모양은 `components/ui/PlaceholderLabel.tsx`에만 있어서 바꿔도 재동기화가 필요 없다. 게임의 `{0}`·`{amount}`와 겹치지 않게 이중 중괄호를 쓴다.
 
-| 토큰 | 라벨(ko) | 어디서 |
-| --- | --- | --- |
-| `{{live}}` | 게임 중 표시 | 기프트 효과(`markLiveValues`), 충전 누적 소모량 같은 버프의 누적값 |
-| `{{potency}}` / `{{count}}` | 수치 / 횟수 | 키워드 설명의 버프 `{0}` / `{1}`(`fillValuePlaceholders`) |
-| `{{target}}` | 대상 | 포박처럼 대상 이름이 들어가는 버프(`BUFF_PLACEHOLDER_ROLES`) |
-| `{{sinner}}` | 수감자 이름 | 이벤트 지문·결과문의 `{0}`(`eventText`) |
-| `{{value}}` | 값 | 규칙이 없는 자리. 동기화 로그에 `⚠ 분류 안 된 자리표시`가 나오면 규칙표에 추가한다 |
+| 토큰 | 라벨(ko) | 칩 | 어디서 |
+| --- | --- | --- | --- |
+| `{{live}}` | 게임 중 표시 | 금색 테두리 + 맥박 아이콘 | `descType`이 있는 기프트의 나머지 자리, 충전 누적 소모량 같은 버프 누적값 |
+| `{{potency}}` / `{{count}}` | 수치 / 횟수 | 금색 채움 / 밝은 테두리 | 버프·키워드 설명의 `{0}`(`{0:F1}` 포함) / `{1}` |
+| `{{target}}` | 대상 | 붉은 톤 + 조준 아이콘 | 압송 채비(TiedWithRope)처럼 대상이 들어가는 버프(`BUFF_PLACEHOLDER_ROLES`) |
+| `{{sinner}}` | 수감자 이름 | 사람 아이콘 | 이벤트 지문·결과문의 번호 자리와 `{affectedTarget}` |
+| `{{gift:ID}}` | 기프트 이름 | 기프트 그림 + 이름, 누르면 그 기프트 | `convertDataList`가 있는 기프트의 `{0}`(9227 → `{{gift:9228}}`) |
+| `{{value}}` | 값 | 점선 테두리 | 규칙이 없는 자리. 동기화 로그에 `⚠ 분류 안 된 자리표시 {5} (KR_Bufs: XxxBuff)`가 나오면 규칙표에 추가한다 |
 
-일반 글자로만 보여 주는 곳(검색 부제, 이벤트 제목 대체)은 `placeholdersToPlainText`로 "(수치)"처럼 바꾼다. 어시스트 OCR 대조는 토큰 자리에서 원문을 나눈다.
+`apply-extraction.ts`는 적용 뒤 표시 열(`PLACEHOLDER_CHECK_COLUMNS`)에 `{0}`이나 `{name}`이 남은 행을 세어 경고하고 `report.json`의 `leftoverPlaceholders`에 남긴다. 버프의 "(위력)"·"(횟수)"처럼 게임이 직접 쓴 괄호 글자(산나비(위력), 차원 표류의 "(수치)%")는 자리표시가 아니므로 그대로 둔다.
+
+일반 글자로만 보여 주는 곳(검색 부제, 키워드 검색, 이벤트 제목 대체)은 `placeholdersToPlainText`로 "(수치)"처럼 바꾸고, 키워드 카드 미리보기는 `PlaceholderText`로 칩을 그린다. 어시스트 OCR 대조는 토큰 자리에서 원문을 나눈다.

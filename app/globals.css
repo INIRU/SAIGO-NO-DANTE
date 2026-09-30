@@ -554,6 +554,10 @@ html:is([data-with-assist-run], [data-assist-pip])::-webkit-scrollbar-thumb, htm
 .board-card:focus-within{border-color:#c8900a}
 .plan-intro .note-document-content{min-height:7rem}
 
+/* Navbar boot hints (lib/constants/nav-boot.ts): pick the shortcut label and the pending auth slot before hydration. */
+html[data-mac] .nav-kbd-other,html:not([data-mac]) .nav-kbd-mac{display:none}
+html[data-auth-hint] .nav-auth-guest,html:not([data-auth-hint]) .nav-auth-user{display:none}
+
 /* Sticky bars sit right under the fixed navbar and move with it (Navbar sets html[data-nav-hidden]). */
 :root{--nav-offset:4rem}
 html:is([data-nav-hidden],[data-with-admin-shell],[data-with-assist-run],[data-with-mypage]){--nav-offset:0rem}

@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { existingGiftLookup, fixedRewardGiftIds, markLiveValues, richestEntry, sameStoredIds, themeExclusiveGifts, themeFixedRewards, themeGiftRefs, unreadThemeKeys } from './mirror-dungeon-rules'
+import { existingGiftLookup, fixedRewardGiftIds, richestEntry, sameStoredIds, themeExclusiveGifts, themeFixedRewards, themeGiftRefs, unreadThemeKeys } from './mirror-dungeon-rules'
 
 // Cases from the extraction audit of 2026-09-30 (complete-data of 2026-09-24).
 describe('theme rewards and exclusive gifts', () => {
@@ -87,13 +87,11 @@ it('never matches a source gift to another gift of the same name (story 20xx and
   expect(sync).not.toContain('existingByName')
 })
 
-it('stores the live values the game fills in during a run as {{live}} instead of a fixed 0 (봉이 인형 9242)', () => {
-  // The source texts carry {0} and {1}; the sync used to write "현재 0%".
-  expect(markLiveValues('- 보유한 기프트 개수 1개당, 피해량 0.5% 증가 (현재 {0}%. 최대 100%)\n- 턴 시작 시 위력 증가 1 얻음 (현재 {1} 얻음. 최대 10)'))
-    .toBe('- 보유한 기프트 개수 1개당, 피해량 0.5% 증가 (현재 {{live}}%. 최대 100%)\n- 턴 시작 시 위력 증가 1 얻음 (현재 {{live}} 얻음. 최대 10)')
-  expect(markLiveValues('Deal +0.5% damage (Current: +{0}%; max 100%)')).toBe('Deal +0.5% damage (Current: +{{live}}%; max 100%)')
-  expect(markLiveValues('変化なし (最大100%)')).toBe('変化なし (最大100%)')
+it('stores gift slots through placeholder-rules instead of a fixed 0 or a copied name (봉이 인형 9242, 귀기 서린 환도 9227)', () => {
+  // The texts themselves are covered in placeholder-rules.test.ts; here only that every effect column goes through it.
   const sync = readFileSync(join(__dirname, 'mirror-dungeon-data.ts'), 'utf8')
-  expect(sync).toContain('last[field] = markLiveValues(text)')
+  expect(sync).toContain('giftPlaceholders(text, placeholderSource, placeholderReport)')
+  expect(sync.match(/tokens\(cleanDesc\(/g)?.length).toBe(9)
+  expect(sync).not.toContain('→ [${convertName}]')
   expect(sync).not.toContain(".replace(/\\{(\\d+)\\}/g, '0')")
 })

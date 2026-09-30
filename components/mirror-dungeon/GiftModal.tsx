@@ -65,6 +65,7 @@ export default function GiftModal({
       id: g.id,
       name: getLocalizedName({ name_kr: g.name, name_en: g.name_en, name_jp: g.name_jp }, lang),
       image_url: g.image_url,
+      gameId: g.game_id,
       onClick: () => { setPrevious(gift); onSelectGift?.(g) },
     })),
   } : null, [gifts, gift, lang, onSelectGift])

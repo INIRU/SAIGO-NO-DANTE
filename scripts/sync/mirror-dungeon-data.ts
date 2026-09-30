@@ -22,7 +22,8 @@ import { readFileSync, readdirSync, writeFileSync } from 'fs'
 import { join, resolve } from 'path'
 import { gameDataPaths, implicitDataDirWarning } from './source-paths'
 import { failOnLoggedErrors, printSyncSummary } from './sync-result'
-import { existingGiftLookup, markLiveValues, richestEntry, sameStoredIds, themeExclusiveGifts, themeFixedRewards, themeGiftRefs, unreadThemeKeys } from './mirror-dungeon-rules'
+import { giftPlaceholders, PlaceholderReport } from './placeholder-rules'
+import { existingGiftLookup, richestEntry, sameStoredIds, themeExclusiveGifts, themeFixedRewards, themeGiftRefs, unreadThemeKeys } from './mirror-dungeon-rules'
 import { z } from 'zod'
 import { config } from 'dotenv'
 
@@ -127,6 +128,8 @@ const RawGiftSchema = z.object({
   lockType: z.boolean().optional(),
   upgradeDataList: z.array(GiftUpgradeSchema).optional(),
   convertDataList: z.array(z.number()).optional(),
+  /** Set on gifts whose text the game fills with live numbers (ReportUseNumber, ReportBongy …). */
+  descType: z.string().optional(),
   subEgoGiftAbilityIDList: z.array(z.number()).optional(),
 })
 
@@ -658,6 +661,7 @@ async function syncGifts(): Promise<void> {
   // 1d. Transform
   const gifts: GiftRow[] = []
   let missingLocalize = 0
+  const placeholderReport = new PlaceholderReport()
 
   for (const [id, item] of giftMap) {
     const upgrades = item.upgradeDataList ?? []
@@ -691,12 +695,10 @@ async function syncGifts(): Promise<void> {
 
     const convertTo = item.convertDataList?.[0] ?? null
 
-    let effectBase = cleanDesc(baseLoc.desc)
-    if (effectBase && convertTo && effectBase.includes('{0}')) {
-      const convertLoc = localizeMap.get(convertTo)
-      const convertName = convertLoc?.name ?? `기프트 #${convertTo}`
-      effectBase = effectBase.replace('{0}', `→ [${convertName}]`)
-    }
+    // {0} of a convert_to gift → {{gift:<target>}}, slots of a descType gift → {{live}} (placeholder-rules.ts).
+    const placeholderSource = { id, convertTo, descType: item.descType ?? null }
+    const tokens = (text: string | null) => giftPlaceholders(text, placeholderSource, placeholderReport)
+    const effectBase = tokens(cleanDesc(baseLoc.desc))
 
     const activationCondition = extractActivationCondition(effectBase, keyword)
 
@@ -711,50 +713,23 @@ async function syncGifts(): Promise<void> {
       buy_disabled: isBuyDisabled(item.tag),
       enhancement: upgrades.length > 1,
       effect_base: effectBase,
-      effect_base_en: (() => {
-        let desc = cleanDesc(enLocalizeMap.get(baseLocalizeId)?.desc ?? enLocalizeMap.get(id)?.desc, 'en')
-        if (desc && convertTo && desc.includes('{0}')) {
-          const convertLocEn = enLocalizeMap.get(convertTo)
-          const convertName = convertLocEn?.name ?? localizeMap.get(convertTo)?.name ?? `Gift #${convertTo}`
-          desc = desc.replace('{0}', `→ [${convertName}]`)
-        }
-        return desc
-      })(),
-      effect_base_jp: (() => {
-        let desc = cleanDesc(jpLocalizeMap.get(baseLocalizeId)?.desc ?? jpLocalizeMap.get(id)?.desc, 'jp')
-        if (desc && convertTo && desc.includes('{0}')) {
-          const convertLocJp = jpLocalizeMap.get(convertTo)
-          const convertName = convertLocJp?.name ?? localizeMap.get(convertTo)?.name ?? `ギフト #${convertTo}`
-          desc = desc.replace('{0}', `→ [${convertName}]`)
-        }
-        return desc
-      })(),
-      effect_plus: plusLocalizeId ? cleanDesc(localizeMap.get(plusLocalizeId)?.desc) : null,
-      effect_plusplus: ppLocalizeId ? cleanDesc(localizeMap.get(ppLocalizeId)?.desc) : null,
-      effect_plus_en: plusLocalizeId ? cleanDesc(enLocalizeMap.get(plusLocalizeId)?.desc, 'en') : null,
-      effect_plus_jp: plusLocalizeId ? cleanDesc(jpLocalizeMap.get(plusLocalizeId)?.desc, 'jp') : null,
-      effect_plusplus_en: ppLocalizeId ? cleanDesc(enLocalizeMap.get(ppLocalizeId)?.desc, 'en') : null,
-      effect_plusplus_jp: ppLocalizeId ? cleanDesc(jpLocalizeMap.get(ppLocalizeId)?.desc, 'jp') : null,
+      effect_base_en: tokens(cleanDesc(enLocalizeMap.get(baseLocalizeId)?.desc ?? enLocalizeMap.get(id)?.desc, 'en')),
+      effect_base_jp: tokens(cleanDesc(jpLocalizeMap.get(baseLocalizeId)?.desc ?? jpLocalizeMap.get(id)?.desc, 'jp')),
+      effect_plus: plusLocalizeId ? tokens(cleanDesc(localizeMap.get(plusLocalizeId)?.desc)) : null,
+      effect_plusplus: ppLocalizeId ? tokens(cleanDesc(localizeMap.get(ppLocalizeId)?.desc)) : null,
+      effect_plus_en: plusLocalizeId ? tokens(cleanDesc(enLocalizeMap.get(plusLocalizeId)?.desc, 'en')) : null,
+      effect_plus_jp: plusLocalizeId ? tokens(cleanDesc(jpLocalizeMap.get(plusLocalizeId)?.desc, 'jp')) : null,
+      effect_plusplus_en: ppLocalizeId ? tokens(cleanDesc(enLocalizeMap.get(ppLocalizeId)?.desc, 'en')) : null,
+      effect_plusplus_jp: ppLocalizeId ? tokens(cleanDesc(jpLocalizeMap.get(ppLocalizeId)?.desc, 'jp')) : null,
       is_synthesis: false,
       convert_to: convertTo,
       image_url: getGiftImageUrl(baseLoc.name),
       activation_condition: activationCondition,
     })
 
-    // Live values ({0}, {1}) are filled in by the game during a run: store them as {{live}} instead of showing 0.
-    // A convert_to gift's {0} is the gift it turns into, filled with that name above.
-    if (!convertTo) {
-      const last = gifts[gifts.length - 1]
-      const fields = ['effect_base', 'effect_base_en', 'effect_base_jp', 'effect_plus', 'effect_plusplus', 'effect_plus_en',
-        'effect_plus_jp', 'effect_plusplus_en', 'effect_plusplus_jp'] as const
-      for (const field of fields) {
-        const text = last[field]
-        if (text) last[field] = markLiveValues(text)
-      }
-    }
-
   }
   console.log(`  변환 완료: ${gifts.length}종 (로컬라이즈 누락: ${missingLocalize})`)
+  placeholderReport.print(line => console.warn(YELLOW(`  ${line}`)))
 
   // 1d-2. Mark is_synthesis: load recipe result IDs from common data files
   const synthesisIds = new Set<number>()

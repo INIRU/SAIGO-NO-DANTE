@@ -1,5 +1,3 @@
-import { tokenizeGamePlaceholders } from '../../lib/game-text/placeholders'
-
 /**
  * Rules of the Mirror Dungeon sync (mirror-dungeon-data.ts) that need neither game files nor the database, so they are
  * tested on their own. The cases come from the extraction audit of 2026-09-30 (complete-data of 2026-09-24).
@@ -131,12 +129,4 @@ export function existingGiftLookup<T extends { game_id: number | null; name: str
       return rows.filter(row => row.game_id ? !ids.has(row.game_id) : !names.has(row.name)).length
     },
   }
-}
-
-/**
- * Effect text with its live values ({0}, {1}: counts the game fills in during a run, e.g. 봉이 인형 9242 "(현재 {0}%. 최대
- * 100%)") stored as {{live}} instead of a fixed 0. The site draws the token as a label.
- */
-export function markLiveValues(text: string): string {
-  return tokenizeGamePlaceholders(text, () => 'live')
 }

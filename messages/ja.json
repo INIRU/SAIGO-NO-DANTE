@@ -2281,5 +2281,23 @@
     "cancel": "キャンセル",
     "download": "ダウンロード",
     "close": "閉じる"
+  },
+  "placeholder": {
+    "live": "ゲーム中に表示",
+    "potency": "威力",
+    "count": "回数",
+    "value": "値",
+    "sinner": "囚人名",
+    "target": "対象",
+    "gift": "ギフト",
+    "hint": {
+      "live": "プレイ中にゲーム画面で実際の値が表示されます",
+      "potency": "効果の威力",
+      "count": "効果の回数",
+      "value": "ゲームが埋める値",
+      "sinner": "選んだ囚人の名前",
+      "target": "効果をかけた対象",
+      "gift": "変化後のE.G.Oギフト"
+    }
   }
 }

@@ -15,6 +15,7 @@ import DanteLogo from '@/components/brand/DanteLogo'
 import { useTranslations } from 'next-intl'
 import type { TranslationKey } from '@/lib/i18n/translations'
 import { useSupportUnread } from '@/hooks/useSupportUnread'
+import { NAV_AUTH_HINT_KEY } from '@/lib/constants/nav-boot'
 
 const NAV_GROUPS: { labelKey: string; items: { href: string; labelKey: string }[] }[] = [
   {
@@ -88,16 +89,21 @@ export default function Navbar({ mainNavLabel }: NavbarProps) {
     })
     return () => cancelAnimationFrame(frame)
   }, [searchMounted])
-  const [isMac, setIsMac] = useState(false)
-
-  useEffect(() => {
-    setIsMac(/Mac|iPhone/.test(navigator.userAgent))
-  }, [])
   const lastScrollY = useRef(0)
   const pathname = usePathname()
   const menuRef = useRef<HTMLDivElement>(null)
   const groupTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const { data: session } = useSession()
+  const { data: session, status: sessionStatus } = useSession()
+
+  // The server HTML never knows the session. Remember the last answer so the head script (AUTH_HINT_KEY in
+  // app/[lang]/layout.tsx) can reserve the avatar slot on the next load instead of flashing the login button.
+  useEffect(() => {
+    if (sessionStatus === 'loading') return
+    try {
+      if (sessionStatus === 'authenticated') localStorage.setItem(NAV_AUTH_HINT_KEY, '1')
+      else localStorage.removeItem(NAV_AUTH_HINT_KEY)
+    } catch {}
+  }, [sessionStatus])
 
   // 스크롤 숨김
   useEffect(() => {
@@ -189,15 +195,17 @@ export default function Navbar({ mainNavLabel }: NavbarProps) {
   const supportUnread = useSupportUnread(!!user?.email && !user.isSuspended)
   const [profileAvatar, setProfileAvatar] = useState<string | null>(null)
   const [profileName, setProfileName] = useState<string | null>(null)
+  const [profileLoaded, setProfileLoaded] = useState(false)
   const userEmail = user?.email
 
   // 프로필 아바타 가져오기
   useEffect(() => {
-    if (!userEmail) { setProfileAvatar(null); setProfileName(null); return }
+    if (!userEmail) { setProfileAvatar(null); setProfileName(null); setProfileLoaded(false); return }
     fetch('/api/profile/avatar')
       .then(r => r.json())
       .then(d => { setProfileAvatar(d.avatar_url); setProfileName(d.username ?? null) })
       .catch(() => {})
+      .finally(() => setProfileLoaded(true))
   }, [userEmail])
 
   // 마이페이지에서 아바타·닉네임 변경 시 동기화
@@ -211,7 +219,8 @@ export default function Navbar({ mainNavLabel }: NavbarProps) {
     return () => { window.removeEventListener('avatar-changed', handler); window.removeEventListener('username-changed', renamed) }
   }, [])
 
-  const avatarUrl = profileAvatar || DEFAULT_AVATAR_URL
+  // Until the profile answers, the circle stays empty rather than showing the default picture and swapping it.
+  const avatarUrl = profileAvatar || (profileLoaded ? DEFAULT_AVATAR_URL : null)
   const displayName = profileName ?? ''
 
   // Strip lang prefix from pathname so active-state checks work regardless of prefix
@@ -226,7 +235,7 @@ export default function Navbar({ mainNavLabel }: NavbarProps) {
 
   const avatar = (size: string) => (
     <span className="relative block shrink-0 overflow-hidden rounded-full border border-[var(--gold-dim)] bg-[var(--bg-card)]" style={{ width: size, height: size }}>
-      <Image src={avatarUrl} alt="" fill sizes="32px" style={{ objectFit: 'cover' }} />
+      {avatarUrl && <Image src={avatarUrl} alt="" fill sizes="32px" style={{ objectFit: 'cover' }} />}
     </span>
   )
 
@@ -316,7 +325,8 @@ export default function Navbar({ mainNavLabel }: NavbarProps) {
               <Search size={15} aria-hidden="true" className="text-[var(--gold)]" />
               <span className="flex-1 text-left">{t('common.search' as TranslationKey)}</span>
               <kbd aria-hidden="true" className="rounded px-1 text-[0.75rem] font-medium [font-family:var(--font-body)] text-[var(--text-tertiary)]">
-                {isMac ? '⌘K' : 'Ctrl K'}
+                {/* html[data-mac] is set by the head script before paint, so the hint never swaps after hydration. */}
+                <span className="nav-kbd-mac">⌘K</span><span className="nav-kbd-other">Ctrl K</span>
               </kbd>
             </button>
 
@@ -364,9 +374,14 @@ export default function Navbar({ mainNavLabel }: NavbarProps) {
                 )}
               </div>
             ) : (
-              <Link href="/login" className={`${navItem} ml-1.5 border border-[var(--border)] text-[var(--text-secondary)]`}>
-                {t('common.login' as TranslationKey)}
-              </Link>
+              <>
+                {sessionStatus === 'loading' && (
+                  <span aria-hidden="true" className="nav-auth-user ml-1.5 border-l border-[var(--border)] pl-3">{avatar('2.25rem')}</span>
+                )}
+                <Link href="/login" className={`${navItem} ml-1.5 border border-[var(--border)] text-[var(--text-secondary)] ${sessionStatus === 'loading' ? 'nav-auth-guest' : ''}`}>
+                  {t('common.login' as TranslationKey)}
+                </Link>
+              </>
             )}
           </div>
 
@@ -449,13 +464,16 @@ export default function Navbar({ mainNavLabel }: NavbarProps) {
                 {avatar('2rem')}
               </Link>
             ) : (
+              <>
+              {sessionStatus === 'loading' && <span aria-hidden="true" className="nav-auth-user flex min-h-11 items-center px-1.5">{avatar('2rem')}</span>}
               <Link
                 href="/login"
                 onClick={() => setMobileMenuOpen(false)}
-                className={`flex min-h-11 items-center rounded-md border border-[var(--border)] px-3 text-[0.9375rem] text-[var(--text-secondary)] ${focusRing}`}
+                className={`flex min-h-11 items-center rounded-md border border-[var(--border)] px-3 text-[0.9375rem] text-[var(--text-secondary)] ${focusRing} ${sessionStatus === 'loading' ? 'nav-auth-guest' : ''}`}
               >
                 {t('common.login' as TranslationKey)}
               </Link>
+              </>
             )}
           </div>
           {user?.isAdmin && (
