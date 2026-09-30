@@ -79,6 +79,16 @@ it('validates first, strips BOM, maps locales, and writes a provenance catalog',
   expect(prepared.plan.previousArtwork?.인격).toEqual({ matched: 1, unmatched: 0, ambiguous: 0 })
 })
 
+it('accepts the nulls PowerShell writes for images without a sinner, entity or state', async () => {
+  const f = await fixture()
+  const manifest = join(f.source, 'Reports/manifest.json')
+  const [entry] = JSON.parse(readFileSync(manifest, 'utf8'))
+  writeFileSync(manifest, JSON.stringify([{ ...entry, subtype: null, imageState: null, label: null, sinner: null, entityName: null, dbLinked: null }]))
+  const report = await prepareExtractedAssets({ source: f.source, output: f.output, repoRoot: f.repo, prepare: true })
+  expect(report).toMatchObject({ ok: true, prepared: true })
+  expect(JSON.parse(readFileSync(join(f.output, 'image-catalog.json'), 'utf8'))[0]).toMatchObject({ sinner: null, imageState: null, entityName: '' })
+})
+
 it('rejects changed hashes without creating partial prepared data', async () => {
   const f = await fixture()
   writeFileSync(join(f.source, 'Data/static-data/personality/personality-01.json'), '{"list":[1]}')

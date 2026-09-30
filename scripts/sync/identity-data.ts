@@ -1994,6 +1994,15 @@ function loadEgoPassiveLocale(lang: 'kr' | 'en' | 'jp'): Map<number, { name: str
   return map
 }
 
+const VALUE_PLACEHOLDERS = { kr: ['수치', '횟수'], en: ['Potency', 'Count'], jp: ['威力', '回数'] } as const
+
+/** Buff text shows the buff's own value as {0} (potency) and {1} (count); a keyword catalogue entry has no value, so it names them instead. */
+export function fillValuePlaceholders(text: string | null | undefined, lang: keyof typeof VALUE_PLACEHOLDERS): string | null {
+  if (text == null) return null
+  const [potency, count] = VALUE_PLACEHOLDERS[lang]
+  return text.replace(/\{0\}/g, `(${potency})`).replace(/\{1\}/g, `(${count})`)
+}
+
 function translateDescLang(
   desc: string | undefined,
   tagMap: Record<string, string>,
@@ -3612,11 +3621,11 @@ async function rebuildKeywordMeta(): Promise<void> {
     })
     rows.push({
       name,
-      description: KEYWORD_DESCRIPTION_OVERRIDES[name] ?? krData?.description ?? existing?.description ?? null,
+      description: KEYWORD_DESCRIPTION_OVERRIDES[name] ?? fillValuePlaceholders(krData?.description ?? existing?.description, 'kr'),
       name_en,
       name_jp,
-      description_en: enData?.description ?? existing?.description_en ?? null,
-      description_jp: jpData?.description ?? existing?.description_jp ?? null,
+      description_en: fillValuePlaceholders(enData?.description ?? existing?.description_en, 'en'),
+      description_jp: fillValuePlaceholders(jpData?.description ?? existing?.description_jp, 'jp'),
       icon_slug,
       effect_type: resolveKeywordEffectType({
         tag: tag ?? null,
