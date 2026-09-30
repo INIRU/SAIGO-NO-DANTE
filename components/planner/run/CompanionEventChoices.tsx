@@ -6,6 +6,7 @@ import type { GiftData } from '@/lib/planner/types'
 import type { SupportedLang } from '@/lib/i18n/types'
 import { getLocalizedName } from '@/lib/i18n/localize'
 import { groupEventChoices, eventResultCondition } from '@/lib/utils/event-flow'
+import { eventTitle } from '@/lib/utils/event-catalog'
 import { getEventOutcomes, type EventOutcomeKind } from '@/lib/utils/event-outcomes'
 import { SIN_COLORS } from '@/lib/constants/sin'
 import type { SinType } from '@/lib/types'
@@ -172,7 +173,7 @@ export default function CompanionEventChoices({ eventId, events, choices, giftMa
   const groups = groupEventChoices(choicesById.get(eventId) ?? [])
   if (!event || !groups.length) return null
   const localized = (gift: GiftData) => getLocalizedName({ name_kr: gift.name, name_en: gift.name_en, name_jp: gift.name_jp }, lang)
-  const eventName = event.name ? getLocalizedName({ name_kr: event.name, name_en: event.name_en, name_jp: event.name_jp }, lang) : ''
+  const eventName = eventTitle(event, lang) ?? ''
 
   /** One result of a choice: when it happens, then what it does. Follow-up choices nest under a single gold rule. */
   const renderBranch = (choice: MdEventChoice, kind: EventOutcomeKind, path: Set<number>, label: string, depth = 0) => {
