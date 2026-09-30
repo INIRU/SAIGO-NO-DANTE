@@ -6,7 +6,7 @@ import { getMetaData } from '@/lib/db/meta'
 import MetaClient from './MetaClient'
 import styles from '@/styles/components/MetaAnalysis.module.css'
 import PageHeader from '@/components/ui/PageHeader'
-import StaticQueryAdapter from '@/components/providers/StaticQueryAdapter'
+import { connection } from 'next/server'
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params
@@ -18,10 +18,17 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
   }
 }
 
+// MetaClient reads its filters from the URL, so it is rendered per request. Its data is read then too: prerendered, the
+// whole meta result would be part of the resume state sent with every request.
+async function MetaContent() {
+  await connection()
+  const initialData = await getMetaData().catch(() => null)
+  return <MetaClient initialData={initialData} />
+}
+
 export default async function MetaPage({ params }: { params: Promise<{ lang: string }> }) {
   const { lang } = await params
   const t = await getTranslations({ locale: lang, namespace: 'meta' })
-  const initialData = await getMetaData().catch(() => null)
 
   return (
     <div className={styles.page}>
@@ -41,11 +48,9 @@ export default async function MetaPage({ params }: { params: Promise<{ lang: str
       {/* Server-rendered header — always in HTML for LCP */}
       <PageHeader title={t('title')} description={t('description')} />
 
-      {/* Prerendered with the default tab; the URL's tab and filters apply after hydration (StaticQueryAdapter). */}
+      {/* Query-state controls require a Suspense boundary. */}
       <Suspense fallback={null}>
-        <StaticQueryAdapter>
-          <MetaClient initialData={initialData} />
-        </StaticQueryAdapter>
+        <MetaContent />
       </Suspense>
     </div>
   )
