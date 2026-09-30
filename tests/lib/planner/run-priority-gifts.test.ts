@@ -220,3 +220,24 @@ it('puts the floor pack clear reward first among the floor gifts and keeps it of
   state.floorLogs[0].themeId = 'Q'
   expect(getFusionTierGifts(state, [purple, theme('Q', [10], [])], map)).toEqual([])
 })
+
+it('keeps a clear reward that other packs also offer off the exclusive lists (뽕.황 rewards 믿음·인연 조각·달의 기억)', async () => {
+  const { themeExclusiveGiftIds } = await import('../../../lib/planner/fusion')
+  const tiered = (game_id: number, grade: string) => ({ game_id, name: String(game_id), grade }) as GiftData
+  // 3001 gives 9242 (봉이 인형, its exclusive) and 9081~9083, which sit in its regular pool as in 89 other packs.
+  const bbong = { ...theme('3001', [9001, 9081, 9082, 9083], [9242]), fixed_reward_gift_ids: [9242, 9083, 9082, 9081] }
+  const other = theme('1001', [9001, 9081, 9082, 9083], [])
+  const extreme = { ...theme('1511', [9001], []), fixed_reward_gift_ids: [9250] }
+  expect(themeExclusiveGiftIds(bbong)).toEqual([9242])
+  expect(themeExclusiveGiftIds(extreme)).toEqual([9250])
+  expect(themeExclusiveGiftIds(other)).toEqual([])
+  // On another pack's floor 달의 기억 stays in the fusion list; 봉이 인형 only on 뽕.황's floor.
+  const map = new Map([tiered(9083, '5'), tiered(9242, '4')].map(item => [item.game_id, item]))
+  const state = createInitialRunState()
+  state.targetGifts = ['9083', '9242']
+  state.sourcePlanSnapshot = { floorPlan: [] } as unknown as RunState['sourcePlanSnapshot']
+  state.floorLogs[0].themeId = '1001'
+  expect(getFusionTierGifts(state, [bbong, other, extreme], map).map(item => item.game_id)).toEqual([9083])
+  state.floorLogs[0].themeId = '3001'
+  expect(getFusionTierGifts(state, [bbong, other, extreme], map).map(item => item.game_id)).toEqual([9083, 9242])
+})

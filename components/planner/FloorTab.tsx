@@ -75,9 +75,10 @@ function getDifficultyTone(difficulty: FloorDifficulty) {
   return '#9c8b73'
 }
 
+/** Gifts a pack offers: its regular and exclusive pools and its clear rewards, each gift once. */
 function getThemeGiftCount(theme: ThemeData | null) {
   if (!theme) return 0
-  return (theme.ego_gift_ids ?? []).length + (theme.specific_ego_gift_ids ?? []).length
+  return new Set([...(theme.ego_gift_ids ?? []), ...(theme.specific_ego_gift_ids ?? []), ...(theme.fixed_reward_gift_ids ?? [])]).size
 }
 
 function getMemoPreview(memo: string) {
@@ -677,7 +678,7 @@ export default function FloorTab({ state, dispatch, themes, gifts, recipes, gift
 
           <div className="col-span-2 min-w-0 sm:col-span-1 sm:col-start-2">
             <h5 className="mb-2 text-[0.9375rem]" style={{ fontFamily: 'var(--font-heading)', color: '#e8dcc8' }}>
-              {t('acquiredGiftCount', { count: entry.gift_ids.length })}
+              {t('acquiredGiftCount', { count: floorGifts.length })}
             </h5>
             {selectedTheme ? (
             <div className="flex flex-wrap items-start gap-2">

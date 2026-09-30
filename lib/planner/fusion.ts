@@ -400,11 +400,16 @@ export function settleResultPopup(evidence: RecipePopupEvidence, verdict: string
   return resolveRecipeResult(evidence, inventory, recipes, giftMap, inFusion) ?? (inFusion ? verdict : null)
 }
 
-type ThemeGiftLists = { specific_ego_gift_ids?: number[] | null; fixed_reward_gift_ids?: number[] | null }
+type ThemeGiftLists = { ego_gift_ids?: number[] | null; specific_ego_gift_ids?: number[] | null; fixed_reward_gift_ids?: number[] | null }
 
-/** Gifts only this pack gives: its exclusive pool and its clear rewards. */
+/**
+ * Gifts only this pack gives: its exclusive pool and the clear rewards outside its regular pool. A reward in the regular
+ * pool is shared with other packs: 뽕.황 (3001) also rewards 믿음, 인연 조각 and 달의 기억 (9081~9083), which 89 other
+ * packs offer, while the extreme packs' rewards (9250~9255, 9827~9830) exist nowhere else.
+ */
 export function themeExclusiveGiftIds(theme: ThemeGiftLists | null | undefined): number[] {
-  return [...(theme?.specific_ego_gift_ids ?? []), ...(theme?.fixed_reward_gift_ids ?? [])]
+  const regular = new Set(theme?.ego_gift_ids ?? [])
+  return [...new Set([...(theme?.specific_ego_gift_ids ?? []), ...(theme?.fixed_reward_gift_ids ?? []).filter(id => !regular.has(id))])]
 }
 
 /** A floor's planned gift keys plus its pack's clear rewards, which a plan with that pack always obtains. */
