@@ -213,6 +213,8 @@ export default function RunClient({ themes, gifts, recipes, identities, sinners,
   }
   const card = 'rounded-lg border border-[var(--border)] bg-[var(--bg-card)]'
   const captureActive = capture.status === 'running' || capture.status === 'loading' || capture.status === 'requesting'
+  // A browser without WebGPU cannot connect; a GPU that failed mid-run may work on the next try.
+  const gpuRefused = capture.gpu === 'unsupported' || capture.gpu === 'unavailable'
   // 인식 설정 팝오버는 바깥을 누르거나 Esc로 닫는다
   const recognitionRef = useRef<HTMLDetailsElement>(null)
   useEffect(() => {
@@ -299,7 +301,7 @@ export default function RunClient({ themes, gifts, recipes, identities, sinners,
             fusionEvidence={capture.status === 'running' ? capture.fusionEvidence : null}
             />
           {/* Filled while idle: connecting the screen is the next thing a new run needs. */}
-          <button type="button" disabled={capture.mobile} title={capture.mobile ? t('captureMobileBlocked') : undefined} onClick={() => { if (captureActive) capture.stop(); else void capture.start() }} className={`inline-flex min-h-10 items-center gap-2 rounded-md border px-3 text-xs font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--gold-light)] disabled:border-[var(--border)] disabled:bg-transparent disabled:text-[var(--text-muted)] ${captureActive ? 'border-[var(--border-gold)] text-[var(--gold-light)] hover:bg-[var(--bg-elevated)]' : 'border-[var(--gold)] bg-[var(--gold)] text-[var(--bg-deep)] hover:bg-[var(--gold-light)]'}`}>
+          <button type="button" disabled={capture.mobile || gpuRefused} title={capture.mobile ? t('captureMobileBlocked') : undefined} onClick={() => { if (captureActive) capture.stop(); else void capture.start() }} className={`inline-flex min-h-10 items-center gap-2 rounded-md border px-3 text-xs font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--gold-light)] disabled:border-[var(--border)] disabled:bg-transparent disabled:text-[var(--text-muted)] ${captureActive ? 'border-[var(--border-gold)] text-[var(--gold-light)] hover:bg-[var(--bg-elevated)]' : 'border-[var(--gold)] bg-[var(--gold)] text-[var(--bg-deep)] hover:bg-[var(--gold-light)]'}`}>
             <MonitorUp size={16} aria-hidden="true" /> <span className="max-sm:sr-only">{t(captureActive ? 'stopScreenPreview' : 'screenPreview')}</span>
           </button>
           <button type="button" onClick={() => setConfirmReset(true)} className="inline-flex min-h-10 items-center gap-2 rounded-md border border-[var(--border)] px-3 text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] focus-visible:outline-2 focus-visible:outline-[var(--gold-light)]">
@@ -309,6 +311,12 @@ export default function RunClient({ themes, gifts, recipes, identities, sinners,
         </div>
       </header>
       {state.phase === 'playing' && capture.mobile && <p role="note" className="mb-3 shrink-0 rounded-md border border-[var(--border)] bg-[var(--bg-card)] px-3 py-2 text-xs text-[var(--text-secondary)]" data-capture-mobile>{t('captureMobileBlocked')}</p>}
+      {/* No WebGPU: capture is refused (or stopped) rather than run on the CPU, with the browser setting that usually fixes it. */}
+      {state.phase === 'playing' && !capture.mobile && capture.gpu && <div role="alert" data-capture-gpu={capture.gpu}
+        className="mb-3 shrink-0 break-keep rounded-md border border-[var(--warning)] bg-[var(--bg-card)] px-3 py-2 text-xs leading-5">
+        <p className="font-semibold text-[var(--warning)]">{t('captureGpuRequired')}</p>
+        <p className="text-[var(--text-secondary)]">{t(`captureGpu_${capture.gpu}`)}</p>
+      </div>}
       {state.phase === 'playing' && !capture.mobile && <div className="mb-2 flex shrink-0 flex-wrap items-center justify-between gap-x-6 gap-y-2">
       <div data-capture-state={capture.status} role={capture.status === 'error' ? 'alert' : 'status'} title={t(samples ? 'captureFramesPrivacySamples' : 'captureFramesPrivacy')}
         className="flex min-w-0 max-w-3xl flex-1 items-center gap-2">
@@ -340,7 +348,7 @@ export default function RunClient({ themes, gifts, recipes, identities, sinners,
       {dataError && <p role="alert" className="mb-5 shrink-0 rounded-md border border-[var(--error)] p-3 text-sm text-[var(--error)]">{t('dataError')}</p>}
       {loadingPlan ? <div role="status" className={`${card} animate-pulse p-8 text-center text-[var(--text-secondary)]`}>{t('loadingPlan')}</div> : state.phase === 'setup' ?
         <RunSetup state={state} dispatch={dispatch} gifts={gifts} giftMap={giftMap} identities={identities} sinners={sinners} egos={egos}
-          recognition={capture.mobile ? undefined : recognitionControls} recognitionSummary={recognitionSummary} /> : state.phase === 'completed' ?
+          recognition={capture.mobile || gpuRefused ? undefined : recognitionControls} recognitionSummary={recognitionSummary} /> : state.phase === 'completed' ?
         <section className={`${card} mx-auto max-w-xl p-8 text-center`}>
           <h2 className="font-[family-name:var(--font-heading)] text-2xl text-[var(--gold-light)]">{t('completed')}</h2>
           <p className="mt-4 text-[var(--text-secondary)]">{t('completedSummary', { floors: state.floorLogs.filter(log => log.completedAt).length, gifts: state.giftInventory.length })}</p>
