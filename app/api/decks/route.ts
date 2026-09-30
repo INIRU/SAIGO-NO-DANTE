@@ -602,11 +602,8 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    for (const locale of ['ko', 'en', 'ja'] as const) {
-      revalidatePath(`/${locale}/decks`)
-      revalidatePath(`/${locale}/decks/${deck.id}`)
-    }
-    revalidatePath('/decks')
+    // The board pages hold no list (the client loads it), so only the new deck's own page is revalidated here.
+    for (const locale of ['ko', 'en', 'ja'] as const) revalidatePath(`/${locale}/decks/${deck.id}`)
     revalidateTag(CACHE_TAGS.deck(deck.id), 'max')
     revalidateTag(CACHE_TAGS.decksList, 'max')
     return NextResponse.json(deck, { status: 201 })

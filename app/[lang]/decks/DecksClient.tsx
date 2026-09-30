@@ -507,8 +507,14 @@ export default function DecksClient({
   const [codeError, setCodeError] = useState(false)
   const collectionRequestRef = useRef<Promise<CollectionData | null> | null>(null)
 
+  const languageFilterCount = languageFilter === 'mine' ? 0 : 1
+  const hasAnyFilter = Boolean(inputValue || activeContentType || activeTags.size > 0 || activeKeywordTags.size > 0 || activeMainKeywords.size > 0 || formationCount !== null || minInfoScore !== null || selectedIdentityIds.size > 0 || filterOwnedIdentity || filterOwnedEgo || languageFilterCount || affiliationQuery || egoFacetQuery)
+  // Only browsing all or filtering shows the list; the default view is the discovery shelf, so nothing is loaded for it.
+  const listVisible = browse === 'all' || hasAnyFilter
+
   // ── Initial deck load (skip if server data present) ──
   useEffect(() => {
+    if (!listVisible) return
     if (!hasServerBackedFilters && initialDataKey.current === `${sort}:${languageFilter}`) {
       initialDataKey.current = null
       if (initialDecks && mergeDeckRows([], initialDecks).length < PAGE_SIZE) setHasMore(false)
@@ -551,7 +557,7 @@ export default function DecksClient({
         setRefreshing(false)
       })
     return () => controller.abort()
-  }, [sort, languageFilter, deckLanguageParam, serverQueryKey, hasServerBackedFilters, buildDeckSearchParams]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [listVisible, sort, languageFilter, deckLanguageParam, serverQueryKey, hasServerBackedFilters, buildDeckSearchParams]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Load more ──
   const loadMore = useCallback(() => {
@@ -815,11 +821,9 @@ export default function DecksClient({
     return list
   }, [decks, deckDerived, filterOwnedIdentity, filterOwnedEgo, effectiveOwned, affiliationQuery, egoFacetQuery, facetData]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const languageFilterCount = languageFilter === 'mine' ? 0 : 1
-  const hasAnyFilter = Boolean(inputValue || activeContentType || activeTags.size > 0 || activeKeywordTags.size > 0 || activeMainKeywords.size > 0 || formationCount !== null || minInfoScore !== null || selectedIdentityIds.size > 0 || filterOwnedIdentity || filterOwnedEgo || languageFilterCount || affiliationQuery || egoFacetQuery)
   const advancedFilterCount = activeTags.size + activeKeywordTags.size + activeMainKeywords.size + (formationCount !== null ? 1 : 0) + (minInfoScore !== null ? 1 : 0) + selectedIdentityIds.size + (filterOwnedIdentity ? 1 : 0) + (filterOwnedEgo ? 1 : 0) + languageFilterCount + facetSelections.affiliation.length + facetSelections.ego.length
 
-  if (browse !== 'all' && !(hasAnyFilter)) return <DiscoveryShelf kind="deck" onBrowse={() => setBrowse('all', { history: 'push' })} />
+  if (!listVisible) return <DiscoveryShelf kind="deck" onBrowse={() => setBrowse('all', { history: 'push' })} />
 
   return (
     <div data-board-browse className="relative min-h-0 flex-1 px-4 pb-4 md:px-6 lg:overflow-hidden">

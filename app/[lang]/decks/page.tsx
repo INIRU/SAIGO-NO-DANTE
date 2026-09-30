@@ -1,13 +1,8 @@
 import type { Metadata } from 'next'
 import { localeAlternates } from '@/lib/seo/metadata'
-import { cacheLife, cacheTag } from 'next/cache'
 import { getTranslations } from 'next-intl/server'
 import BoardHeader from '@/components/discovery/BoardHeader'
-import { createAdminClient } from '@/lib/supabase/admin'
-import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import DecksClient from './DecksClient'
-import type { DeckSummary } from '@/components/decks/DeckCard'
-import type { SupportedLang } from '@/lib/i18n/types'
 import StaticQueryAdapter from '@/components/providers/StaticQueryAdapter'
 import { BoardShelfSkeleton } from '@/components/discovery/BoardSkeleton'
 
@@ -21,89 +16,6 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
   }
 }
 
-const PAGE_SIZE = 12
-const DECK_LIST_SELECT_WITH_SKILL_KEYWORDS = `
-      id, user_id, title, description, tags, main_keywords, content_type, lang, vote_count, view_count, comment_count, created_at,
-      guest_tag, profiles!decks_user_id_fkey(username),
-      deck_identities(slot_order, gacksung, s1_count, s2_count, s3_count, identities(id, sinner_id, folder_name, game_id, keywords, skill_keyword_list, name_kr)),
-      deck_egos(ego_id, grade)
-    `
-const DECK_LIST_SELECT_LEGACY = `
-      id, user_id, title, description, tags, content_type, lang, vote_count, view_count, comment_count, created_at,
-      guest_tag, profiles!decks_user_id_fkey(username),
-      deck_identities(slot_order, gacksung, s1_count, s2_count, s3_count, identities(id, sinner_id, folder_name, game_id, keywords, name_kr)),
-      deck_egos(ego_id, grade)
-    `
-type DeckSort = 'latest' | 'popular'
-type DeckLangFilter = SupportedLang | 'all'
-
-function isSupportedDeckLang(value: string | undefined): value is SupportedLang {
-  return value === 'ko' || value === 'en' || value === 'ja'
-}
-
-function isMissingDeckKeywordColumnError(error: { message?: string } | null) {
-  return Boolean(
-    error?.message?.includes('skill_keyword_list') ||
-    error?.message?.includes('main_keywords')
-  )
-}
-
-async function getCachedInitialDecks({
-  initialSort,
-  initialLang,
-}: {
-  initialSort: DeckSort
-  initialLang: DeckLangFilter
-}): Promise<DeckSummary[]> {
-  'use cache'
-  cacheLife('max')
-  cacheTag(CACHE_TAGS.decksList)
-  const supabase = createAdminClient()
-
-  const buildQuery = (select: string) => {
-    let query = supabase
-      .schema('limbus')
-      .from('decks')
-      .select(select)
-
-    if (initialLang !== 'all') {
-      query = query.eq('lang', initialLang)
-    }
-
-    query = initialSort === 'popular'
-      ? query
-          .order('vote_count', { ascending: false })
-          .order('created_at', { ascending: false })
-          .order('id', { ascending: false })
-      : query
-          .order('created_at', { ascending: false })
-          .order('id', { ascending: false })
-
-    return query.range(0, PAGE_SIZE - 1)
-  }
-
-  let { data, error } = await buildQuery(DECK_LIST_SELECT_WITH_SKILL_KEYWORDS)
-  if (isMissingDeckKeywordColumnError(error)) {
-    const legacyResult = await buildQuery(DECK_LIST_SELECT_LEGACY)
-    data = legacyResult.data
-    error = legacyResult.error
-  }
-
-  if (error) {
-    console.error('[DecksPage] initial fetch error:', error)
-  }
-
-  const rows = (data ?? []) as unknown as Array<DeckSummary & { profiles?: { username?: string } | { username?: string }[] | null }>
-
-  return rows.map(d => {
-    const profiles = d.profiles as { username?: string } | { username?: string }[] | null
-    const username = Array.isArray(profiles)
-      ? (profiles[0]?.username ?? undefined)
-      : (profiles?.username ?? undefined)
-    return { ...d, profiles: undefined, username } as unknown as DeckSummary
-  })
-}
-
 export default async function DecksPage({ params }: { params: Promise<{ lang: string }> }) {
   const { lang: routeLang } = await params
   const t = await getTranslations({ locale: routeLang, namespace: 'decks.header' })
@@ -112,14 +24,14 @@ export default async function DecksPage({ params }: { params: Promise<{ lang: st
     subtitle: t('subtitle'),
     newDeck: t('newDeck'),
   }
-  // Prerendered with the newest decks in the page language; ?sort and ?lang load their list after hydration.
-  const initialDecks = await getCachedInitialDecks({ initialSort: 'latest', initialLang: isSupportedDeckLang(routeLang) ? routeLang : 'ko' })
 
   return (
     <div className="community-board flex min-h-screen flex-col" style={{ background: 'var(--bg-deep)' }}>
       <BoardHeader kind="deck" lang={routeLang} title={headerCopy.title} subtitle={headerCopy.subtitle} action={headerCopy.newDeck} />
       <StaticQueryAdapter fallback={<BoardShelfSkeleton kind="deck" />}>
-        <DecksClient initialDecks={initialDecks} initialTotal={initialDecks.length} initialSort="latest" initialLanguageFilter="mine" />
+        {/* No list is prerendered: the default view is the discovery shelf, and a list in the page would regenerate it on
+            every vote, comment and post (decksList tag). The client loads the list when browsing or filtering. */}
+        <DecksClient />
       </StaticQueryAdapter>
     </div>
   )
