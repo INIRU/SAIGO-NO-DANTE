@@ -314,7 +314,9 @@ bootstrap은 빈 DB의 수감자/EGO 기초 행과 해석별 스킬을 복구한
 
 identity-data는 인격 스킬·패시브를 동기화 I~IV 모두 생성한다. 원본에 해당 단계 이하 데이터가 없는 스킬(대부분 S3, 동기화 III 해금)은 그 단계에서 만들지 않는다. `variant_order`는 최고 단계 값을 모든 단계에서 공유한다. 화면은 `(skill_order, variant_order)`·`(passive_type, passive_order)`별 최고 단계 행으로 중복을 제거하기 때문이다.
 
-테마팩의 `fixed_reward_gift_ids`는 `mirror-dungeon-data.ts`가 채운다. 테마팩 `mapGenOption.bossPool` 스테이지(`mirrordungeon-(ab)battle*`)의 `rewardList`에 확정 기프트가 하나 있고, 그 id가 `ego_gifts`에 있으면 저장한다. 2026-09-24 기준으로 익스트림 1511~1520 팩이 보상 기프트를 하나씩 준다(9250~9255, 9827~9830). 플랜 상세, 플래너 요약, Assist는 이 기프트를 해당 팩이 있는 층의 기프트로 자동 포함하고 팩 전용으로 표시한다.
+테마팩의 `fixed_reward_gift_ids`는 `mirror-dungeon-data.ts`가 채운다. 테마팩 원본의 `fixedRewardEgoGifts`(뽕.황 3001: 9242, 9083, 9082, 9081)와, `mapGenOption.bossPool` 스테이지(`mirrordungeon-(ab)battle*`)의 `rewardList`에 확정 기프트가 하나 있는 경우 그 기프트를 모아, `ego_gifts`에 있는 id만 저장한다. 2026-09-24 기준으로 익스트림 1511~1520 팩이 보상 기프트를 하나씩 준다(9250~9255, 9827~9830). 플랜 상세, 플래너 요약, Assist는 이 기프트를 해당 팩이 있는 층의 기프트로 자동 포함하고 팩 전용으로 표시한다. DB의 NULL 목록은 원본 목록이 비어 있어도 `[]`로 다시 쓴다.
+
+`specific_ego_gift_ids`는 원본 `specificEgoGiftPool`에, 원본 id로 이어지지 않는 전용 기프트(`scripts/sync/mirror-dungeon-rules.ts`의 `THEME_EXTRA_EXCLUSIVE_GIFTS`)를 더한 값이다. 3001 뽕.황은 봉이 인형(9242), 1122 선의의 순례는 순례 스토리 던전(912014/912114) 이벤트 971074~971078의 9831~9835, 1124 호박색 어스름의 시련은 이벤트 971092의 아직 따뜻한 커피(9241)다. 테마팩 원본에 동기화가 읽지 않는 항목(예: `specificEgoGiftForUpegsProbs`, `isUnrecordable`, `uiConfigs.showBossIds`)이 있으면 항목과 팩 id를 경고로 출력한다. `LIMBUS_DATA_DIR` 없이 수동 실행하면 스크립트마다 기본 경로가 달라(기프트·테마팩은 옛 로컬 export, 이벤트는 2026-09-10 복구본) 경고를 출력한다.
 
 EGO 패시브는 KR_Passive_Ego를 포함한 세 언어에서 읽는다. CheckAwakenLevel2, CheckAwakenLevelBetween_2_4, CheckAwakenLevel5 조건을 ego_passives의 적용 구간으로 저장한다. 상세의 각성 탭에 맞춰 효과가 바뀌고 해석 I에서는 잠긴다. 기존 모달/API를 위한 EGO 테이블의 패시브 필드는 최대 해석 단계 요약으로 유지한다.
 
@@ -580,4 +582,4 @@ E.G.O 상세의 메인 이미지는 256×256 `_awaken_profile` 확대 대신 새
 
 `.github/workflows/data-integrity.yml`이 매일 06:00 KST, 수동 실행, 동기화·점검 스크립트를 바꾼 PR에서 이를 실행한다. 문제가 하나라도 있으면 목록을 출력하고 실패한다.
 
-게임 원본과의 대조는 원본이 로컬에만 있어 CI에서 돌리지 않는다. 새 추출본을 받으면 기프트 이미지를 원본과 축소 비교해 다른 그림이 올라간 항목을 찾는다(2026-09-26에 9818 남겨진 차원 건틀릿이 이 방법으로 발견됐다). 테마팩 `egoGiftPool`에만 있는 기프트는 `mirror-dungeon-data.ts`가 `story-*` 파일을 건너뛰어도 포함된다(오랏줄, N사 고정팀 가방, 떼구름, 소흥주가 이렇게 누락됐었다).
+게임 원본과의 대조는 원본이 로컬에만 있어 CI에서 돌리지 않는다. 새 추출본을 받으면 기프트 이미지를 원본과 축소 비교해 다른 그림이 올라간 항목을 찾는다(2026-09-26에 9818 남겨진 차원 건틀릿이 이 방법으로 발견됐다). 테마팩 `egoGiftPool`·`specificEgoGiftPool`·`fixedRewardEgoGifts`나 보스 스테이지 확정 보상에만 있는 기프트는 `mirror-dungeon-data.ts`가 `story-*` 파일을 건너뛰어도 포함된다(오랏줄, N사 고정팀 가방, 떼구름, 소흥주가 이렇게 누락됐었다). 같은 기프트가 건너뛴 파일 여러 곳에 있으면 내용이 가장 많은 항목을 쓴다. 원목 술잔(9781)은 `ego-gift-a1c7p3.txt`에 id만 있는 껍데기로, `ego-gift-story-ycgd-BokGak.txt`에 TIER_3·가격 250으로 들어 있다.

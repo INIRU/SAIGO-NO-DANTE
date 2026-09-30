@@ -5,6 +5,7 @@ import { createHash } from 'node:crypto'
 import { createClient } from '@supabase/supabase-js'
 import { config } from 'dotenv'
 import { eventImageId } from '../assets/event-image-source'
+import { implicitDataDirWarning } from './source-paths'
 import { identicalEventCopies, sequenceEventIds, sinnerCharacterId, sourceResults, sourceResultText, walkEventGraph, type SourceEvent, type SourceForm } from './mirror-event-source'
 config({ path: '.env.local', quiet: true })
 type Locale = 'ko' | 'en' | 'ja'
@@ -31,6 +32,8 @@ const attributes: Record<string, [string, string, string]> = {
 const localeIndex = { ko: 0, en: 1, ja: 2 }
 
 export async function rebuildMirrorEvents(apply = process.argv.includes('--fix')) {
+  const pathWarning = implicitDataDirWarning('이벤트', dataDir)
+  if (pathWarning) console.warn(pathWarning)
   const client = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY!)
   const db = client.schema('limbus')
   const { data: gifts, error } = await db.from('ego_gifts').select('game_id,name,name_en,name_jp')

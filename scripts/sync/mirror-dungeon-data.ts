@@ -20,8 +20,9 @@ import { createClient } from '@supabase/supabase-js'
 import { createHash } from 'crypto'
 import { readFileSync, readdirSync, writeFileSync } from 'fs'
 import { join, resolve } from 'path'
-import { gameDataPaths } from './source-paths'
+import { gameDataPaths, implicitDataDirWarning } from './source-paths'
 import { failOnLoggedErrors, printSyncSummary } from './sync-result'
+import { richestEntry, sameStoredIds, themeExclusiveGifts, themeFixedRewards, themeGiftRefs, unreadThemeKeys } from './mirror-dungeon-rules'
 import { z } from 'zod'
 import { config } from 'dotenv'
 
@@ -145,6 +146,8 @@ const ThemeRawSchema = z.object({
   hiddenThemeRate: z.number().optional(),
   egoGiftPool: z.array(z.number()).optional(),
   specificEgoGiftPool: z.array(z.number()).optional(),
+  // Shape varies (ids or entries holding one); read by fixedRewardGiftIds.
+  fixedRewardEgoGifts: z.unknown().optional(),
   uiConfigs: z.object({
     packSpriteId: z.string().optional(),
     bossSpriteId: z.string().optional(),
@@ -505,23 +508,27 @@ async function syncGifts(): Promise<void> {
   for (const file of globFiles(DATA_DIR, /^mirror-dungeon-(action|personality)-choice-event\.txt$/)) {
     for (const id of extractGiftsRecursive(loadJson(join(DATA_DIR, file)))) eventGiftIds.add(id)
   }
-  // Theme packs draw some gifts from story files too (경험기억's 오랏줄 and N사 고정팀 가방 live in story-exme).
+  // Theme packs draw some gifts from story files too (경험기억's 오랏줄 and N사 고정팀 가방 live in story-exme): their
+  // pools, exclusive pools and fixed rewards, and the guaranteed boss-stage rewards.
   for (const file of [...globFiles(DATA_DIR, /^mirrordungeon-theme-floor-t\d+\.txt$/), ...globFiles(DATA_DIR, /^mirrordungeon-theme-floor-hidden\.txt$/)]) {
-    for (const item of extractList(loadJson(join(DATA_DIR, file)))) {
-      const pool = (item as { egoGiftPool?: unknown }).egoGiftPool
-      if (Array.isArray(pool)) for (const id of pool) if (typeof id === 'number') eventGiftIds.add(id)
-    }
+    for (const item of extractList(loadJson(join(DATA_DIR, file)))) for (const id of themeGiftRefs(item)) eventGiftIds.add(id)
   }
-  let recipeRefGiftCount = 0
+  for (const id of loadStageGiftRewards().values()) eventGiftIds.add(id)
+  // A gift can sit in several skipped files, one of them a bare { id } stub: the entry with the most content wins.
+  const skippedEntries = new Map<number, z.infer<typeof RawGiftSchema>[]>()
   for (const f of globFiles(DATA_DIR, GIFT_PATTERN).filter(f => SKIP_PATTERN.test(f))) {
     const data = loadJson(join(DATA_DIR, f))
     for (const item of extractList(data)) {
       const parsed = RawGiftSchema.safeParse(item)
       if (!parsed.success) continue
       if ((!recipeGiftIds.has(parsed.data.id) && !eventGiftIds.has(parsed.data.id)) || giftMap.has(parsed.data.id)) continue
-      giftMap.set(parsed.data.id, parsed.data)
-      recipeRefGiftCount++
+      skippedEntries.set(parsed.data.id, [...(skippedEntries.get(parsed.data.id) ?? []), parsed.data])
     }
+  }
+  let recipeRefGiftCount = 0
+  for (const [id, entries] of skippedEntries) {
+    giftMap.set(id, richestEntry(entries)!)
+    recipeRefGiftCount++
   }
   if (recipeRefGiftCount > 0) {
     console.log(`  레시피/이벤트/테마팩 참조 기프트 보강: ${recipeRefGiftCount}종`)
@@ -980,10 +987,6 @@ function loadThemeNameMap(paths: string[]): Map<number, string> {
   return map
 }
 
-function sortedNumberArrayJson(values: number[] | null | undefined): string {
-  return JSON.stringify([...(values ?? [])].sort((a, b) => a - b))
-}
-
 function stableJsonValue(value: unknown): unknown {
   if (Array.isArray(value)) {
     return value.map(stableJsonValue)
@@ -1040,10 +1043,14 @@ async function syncThemes(): Promise<void> {
   const { data: giftRows, error: giftErr } = await supabase.schema('limbus').from('ego_gifts').select('game_id')
   if (giftErr) throw new Error(`ego_gifts fetch 실패: ${giftErr.message}`)
   const giftIds = new Set((giftRows ?? []).map(row => row.game_id as number))
+  // Source fields the sync does not read, with the packs that have them: a new field is noticed, not dropped unseen.
+  const unreadKeys = new Map<string, number[]>()
   for (const f of themeFiles) {
     const isHiddenFile = f.includes('hidden')
     const data = loadJson(join(DATA_DIR, f))
     for (const item of extractList(data)) {
+      const themeId = (item as { id?: unknown }).id
+      for (const key of unreadThemeKeys(item)) unreadKeys.set(key, [...(unreadKeys.get(key) ?? []), typeof themeId === 'number' ? themeId : -1])
       const parsed = ThemeRawSchema.safeParse(item)
       if (!parsed.success) {
         if (VERBOSE) console.warn(`  ⚠ 테마 파싱 실패 (${f}):`, parsed.error.issues[0])
@@ -1085,21 +1092,21 @@ async function syncThemes(): Promise<void> {
         name_jp: themeNameJpMap.get(t.id) ?? null,
         unlock_code: t.unlockCondition?.unlockCode ?? null,
         ego_gift_ids: t.egoGiftPool ?? [],
-        specific_ego_gift_ids: t.specificEgoGiftPool ?? [],
+        specific_ego_gift_ids: themeExclusiveGifts(t.id, t.specificEgoGiftPool),
         image_url: `${STORAGE_BASE}/icons/theme-packs/${t.id}.webp`,
         boss_image_url: bossSpriteId ? `${STORAGE_BASE}/icons/theme-packs/boss/${bossSpriteId}.webp` : null,
         difficulty,
         floor_info: Object.keys(floorInfo).length > 0 ? floorInfo : null,
         is_hidden: isHiddenFile,
         hidden_rate: isHiddenFile ? t.hiddenThemeRate ?? null : null,
-        fixed_reward_gift_ids: [...new Set((t.mapGenOption?.bossPool ?? []).flatMap(stage => {
-          const gift = stageRewards.get(stage)
-          return gift !== undefined && giftIds.has(gift) ? [gift] : []
-        }))],
+        fixed_reward_gift_ids: themeFixedRewards(t, stageRewards, giftIds),
       })
     }
   }
   console.log(`  테마팩 ${themes.length}종 로드`)
+  for (const [key, ids] of unreadKeys) {
+    console.warn(`  ⚠ 테마 원본의 읽지 않는 항목 ${key}: ${ids.length}종 (${ids.slice(0, 8).join(', ')}${ids.length > 8 ? ' …' : ''})`)
+  }
 
   // Compare with DB
   const { data: existingThemes, error: fetchErr } = await supabase
@@ -1126,14 +1133,10 @@ async function syncThemes(): Promise<void> {
       if (existing.name !== theme.name) changes.push(`name: ${existing.name} → ${theme.name}`)
       if ((existing.name_en ?? null) !== (theme.name_en ?? null)) changes.push('name_en 변경')
       if ((existing.name_jp ?? null) !== (theme.name_jp ?? null)) changes.push('name_jp 변경')
-      const existIds = sortedNumberArrayJson(existing.ego_gift_ids)
-      const newIds = sortedNumberArrayJson(theme.ego_gift_ids)
-      if (existIds !== newIds) changes.push(`ego_gift_ids 변경 (${(existing.ego_gift_ids ?? []).length} → ${theme.ego_gift_ids.length})`)
-      const existSpec = sortedNumberArrayJson(existing.specific_ego_gift_ids)
-      const newSpec = sortedNumberArrayJson(theme.specific_ego_gift_ids)
-      if (existSpec !== newSpec) changes.push('specific_ego_gift_ids 변경')
-      if (sortedNumberArrayJson(existing.fixed_reward_gift_ids) !== sortedNumberArrayJson(theme.fixed_reward_gift_ids)) {
-        changes.push(`fixed_reward_gift_ids: ${JSON.stringify(existing.fixed_reward_gift_ids ?? [])} → ${JSON.stringify(theme.fixed_reward_gift_ids)}`)
+      if (!sameStoredIds(existing.ego_gift_ids, theme.ego_gift_ids)) changes.push(`ego_gift_ids 변경 (${(existing.ego_gift_ids ?? []).length} → ${theme.ego_gift_ids.length})`)
+      if (!sameStoredIds(existing.specific_ego_gift_ids, theme.specific_ego_gift_ids)) changes.push(`specific_ego_gift_ids: ${JSON.stringify(existing.specific_ego_gift_ids ?? null)} → ${JSON.stringify(theme.specific_ego_gift_ids)}`)
+      if (!sameStoredIds(existing.fixed_reward_gift_ids, theme.fixed_reward_gift_ids)) {
+        changes.push(`fixed_reward_gift_ids: ${JSON.stringify(existing.fixed_reward_gift_ids ?? null)} → ${JSON.stringify(theme.fixed_reward_gift_ids)}`)
       }
       if (existing.difficulty !== theme.difficulty) changes.push(`difficulty: ${existing.difficulty} → ${theme.difficulty}`)
       if ((existing as Record<string, unknown>).unlock_code !== theme.unlock_code) changes.push(`unlock_code: ${(existing as Record<string, unknown>).unlock_code} → ${theme.unlock_code}`)
@@ -1377,6 +1380,8 @@ async function main(): Promise<void> {
   console.log(BOLD('거울 던전 데이터 동기화'))
   console.log(`모드: ${FIX ? '--fix (DB 수정)' : '--dry-run (비교만)'}`)
   console.log(`데이터: ${DATA_DIR}`)
+  const pathWarning = implicitDataDirWarning('기프트·테마팩·레시피', DATA_DIR)
+  if (pathWarning) console.warn(pathWarning)
 
   const sections = [
     DO_GIFTS && '기프트',
