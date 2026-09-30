@@ -1,3 +1,4 @@
+import { placeholdersToPlainText } from '@/lib/game-text/placeholders'
 /** Root encounters shown in the gallery; result/variant nodes are only for traversal. */
 export function getRootEvents<T extends { id: number; variant_of: number | null; category?: string | null }>(
   events: readonly T[],
@@ -34,7 +35,7 @@ export function eventTitle(event: TitledEvent, lang: 'ko' | 'en' | 'ja', max = 4
   const name = ((lang === 'en' ? event.name_en : lang === 'ja' ? event.name_jp : null) || event.name)?.trim()
   if (name) return name
   const text = (lang === 'en' ? event.desc_text_en : lang === 'ja' ? event.desc_text_jp : null) || event.desc_text
-  const line = text?.replace(/<[^>]*>/g, '').split('\n').map(part => part.trim()).find(Boolean)
+  const line = placeholdersToPlainText(text?.replace(/<[^>]*>/g, '').replace(/\{\d+\}/g, '{{sinner}}'), lang)?.split('\n').map(part => part.trim()).find(Boolean)
   if (!line) return null
   return line.length > max ? `${line.slice(0, max).trimEnd()}…` : line
 }

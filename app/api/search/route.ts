@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import { STORAGE_BASE } from '@/lib/constants/game'
 import { isSubsequence, matchScore, matchesAllWords } from '@/lib/search/match'
+import { placeholdersToPlainText } from '@/lib/game-text/placeholders'
 import { resolveKeywordIconUrl } from '@/lib/keywords/catalog'
 import { getIdentityImageUrl } from '@/lib/utils/images'
 
@@ -44,7 +45,7 @@ async function getSearchIndex() {
     sinners: sinners.data ?? [],
     identities: identities.data ?? [],
     ego: ego.data ?? [],
-    keywords: (keywords.data ?? []).map(k => ({ ...k, description: k.description?.slice(0, 80) ?? null })),
+    keywords: (keywords.data ?? []).map(k => ({ ...k, description: placeholdersToPlainText(k.description, 'ko')?.slice(0, 80) ?? null })),
     gifts: gifts.data ?? [],
   }
 }
