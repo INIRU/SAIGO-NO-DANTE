@@ -9,6 +9,7 @@ import DecksClient from './DecksClient'
 import type { DeckSummary } from '@/components/decks/DeckCard'
 import type { SupportedLang } from '@/lib/i18n/types'
 import StaticQueryAdapter from '@/components/providers/StaticQueryAdapter'
+import { BoardShelfSkeleton } from '@/components/discovery/BoardSkeleton'
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params
@@ -117,7 +118,7 @@ export default async function DecksPage({ params }: { params: Promise<{ lang: st
   return (
     <div className="community-board flex min-h-screen flex-col" style={{ background: 'var(--bg-deep)' }}>
       <BoardHeader kind="deck" lang={routeLang} title={headerCopy.title} subtitle={headerCopy.subtitle} action={headerCopy.newDeck} />
-      <StaticQueryAdapter>
+      <StaticQueryAdapter fallback={<BoardShelfSkeleton kind="deck" />}>
         <DecksClient initialDecks={initialDecks} initialTotal={initialDecks.length} initialSort="latest" initialLanguageFilter="mine" />
       </StaticQueryAdapter>
     </div>

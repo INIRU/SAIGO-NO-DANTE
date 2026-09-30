@@ -85,7 +85,7 @@ export default async function PlannerPage({ params }: { params: Promise<{ lang: 
       </div>
       {/* Prerendered without a query; the URL's state applies after hydration (StaticQueryAdapter). */}
       <Suspense fallback={<PlannerSkeleton />}>
-        <StaticQueryAdapter>
+        <StaticQueryAdapter fallback={<PlannerSkeleton />}>
           <PlannerClient
             themes={themes ?? []}
             gifts={gifts ?? []}

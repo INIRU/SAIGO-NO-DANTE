@@ -10,6 +10,7 @@ import { getTranslations } from 'next-intl/server'
 import { getLocalizedName } from '@/lib/i18n/localize'
 import type { SupportedLang } from '@/lib/i18n/types'
 import StaticQueryAdapter from '@/components/providers/StaticQueryAdapter'
+import BrowserSkeleton from '@/components/sinners/BrowserSkeleton'
 
 const TITLE = { ko: '림버스 컴퍼니 E.G.O 도감 — 전체 E.G.O 목록', en: 'Limbus Company E.G.O List', ja: 'リンバスカンパニー E.G.O一覧' }
 
@@ -53,7 +54,7 @@ export default async function EGOBrowsePage({ params }: { params: Promise<{ lang
     <>
       <JsonLd data={egoListLd} />
       <Suspense fallback={null}>
-        <StaticQueryAdapter>
+        <StaticQueryAdapter fallback={<BrowserSkeleton />}>
           <EGOBrowserClient egos={egos} sinners={sinners} />
         </StaticQueryAdapter>
       </Suspense>

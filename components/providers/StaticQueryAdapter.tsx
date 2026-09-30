@@ -7,7 +7,7 @@ import {
   type unstable_AdapterInterface as AdapterInterface,
   type unstable_UpdateUrlFunction as UpdateUrlFunction,
 } from 'nuqs/adapters/custom'
-import { Fragment, startTransition, useCallback, useOptimistic, useState, useSyncExternalStore, type ReactNode } from 'react'
+import { Fragment, startTransition, useCallback, useLayoutEffect, useOptimistic, useState, useSyncExternalStore, type ReactNode } from 'react'
 
 const EMPTY = new URLSearchParams()
 const noop = () => {}
@@ -44,21 +44,40 @@ function useStaticFirstAdapter(): AdapterInterface {
 
 const Provider = createAdapterProvider(useStaticFirstAdapter)
 
+// Runs as the HTML is parsed, before the content below paints: a page opened with a query shows `fallback` (via
+// globals.css) instead of the unfiltered view until the filtered one has rendered.
+const PENDING_SCRIPT = "if(location.search.length>1)document.documentElement.setAttribute('data-query-pending','')"
+
 /**
  * Lets a page whose client components keep their state in the URL (nuqs) be a static shell. useSearchParams() makes
  * a page render per request; below this the server renders the default view (no query) into the HTML instead.
  *
- * A page opened with a query hydrates that default view, then its children mount again once, reading the URL from
- * their first render, so no state copied from the query at mount (a search box's text) starts out empty. Without a
- * query nothing mounts again, and client-side navigations read the query from their first render.
+ * A page opened with a query shows `fallback` (the page's skeleton) rather than that unfiltered view. It hydrates the
+ * default view out of sight, then its children mount again once, reading the URL from their first render, so no state
+ * copied from the query at mount (a search box's text) starts out empty, and the filtered view replaces the skeleton
+ * in the same frame. Without a query nothing mounts again, and client-side navigations read the query from their
+ * first render.
  */
-export default function StaticQueryAdapter({ children }: { children: ReactNode }) {
+export default function StaticQueryAdapter({ children, fallback = null }: { children: ReactNode; fallback?: ReactNode }) {
   const hydrated = useHydrated()
   // Read once: later filter changes update the URL without mounting the page again.
   const [openedWithQuery] = useState(() => !onServer && location.search.length > 1)
+  useLayoutEffect(() => {
+    if (hydrated) document.documentElement.removeAttribute('data-query-pending')
+  }, [hydrated])
   return (
-    <Provider>
-      <Fragment key={hydrated && openedWithQuery ? 'url' : 'shell'}>{children}</Fragment>
-    </Provider>
+    <>
+      {!hydrated && (
+        <>
+          <script dangerouslySetInnerHTML={{ __html: PENDING_SCRIPT }} />
+          <div data-static-query-fallback="">{fallback}</div>
+        </>
+      )}
+      <div data-static-query="">
+        <Provider>
+          <Fragment key={hydrated && openedWithQuery ? 'url' : 'shell'}>{children}</Fragment>
+        </Provider>
+      </div>
+    </>
   )
 }
