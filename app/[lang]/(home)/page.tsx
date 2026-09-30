@@ -4,10 +4,7 @@ import { cacheLife, cacheTag } from 'next/cache'
 import { getLatestEGOs, getLatestIdentities } from '@/lib/db/queries'
 import { getPinnedAnnouncementForLang } from '@/lib/db/announcements'
 import HomeClient from './HomeClient'
-import HomeStaticSections, { type CommunityShelf } from '@/components/home/HomeStaticSections'
-import { loadDiscovery } from '@/lib/discovery/feed'
-import type { DeckSummary } from '@/components/decks/DeckCard'
-import type { PlanSummary } from '@/components/planner/PlanCard'
+import HomeStaticSections from '@/components/home/HomeStaticSections'
 import JsonLd, { faqJsonLd } from '@/components/seo/JsonLd'
 import { setRequestLocale } from 'next-intl/server'
 import type { SupportedLang } from '@/lib/i18n/types'
@@ -128,25 +125,6 @@ async function getLatestYoutubeVideo(): Promise<YoutubeVideo | null> {
 }
 
 
-type DiscoveryFeed = Awaited<ReturnType<typeof loadDiscovery>>
-
-/** 이번 주 방문이 많은 글 3개. 3개가 안 되면 최신 글로 채운다. */
-function pickShelf<T>(feed: DiscoveryFeed, kind: 'deck' | 'planner'): CommunityShelf<T> {
-  const visitors = new Map(feed.counts.filter(r => r.kind === kind).map(r => [r.entity_id, r.visitors]))
-  const popular = [...feed.popular].sort((x, y) => (visitors.get(String(y.id)) ?? 0) - (visitors.get(String(x.id)) ?? 0))
-  const posts = popular.length >= 3 ? popular : feed.recent
-  return { popular: popular.length >= 3, posts: posts.slice(0, 3) as unknown as T[] }
-}
-
-async function getCommunity() {
-  try {
-    const [plans, decks] = await Promise.all([loadDiscovery('planner', 7), loadDiscovery('deck', 7)])
-    return { plans: pickShelf<PlanSummary>(plans, 'planner'), decks: pickShelf<DeckSummary>(decks, 'deck') }
-  } catch {
-    return null
-  }
-}
-
 async function getCachedHomeData(lang: SupportedLang) {
   'use cache'
   cacheLife('max')
@@ -179,7 +157,6 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
         lang={lang}
         latestIdentities={latestIdentities}
         latestEgos={latestEgos}
-        community={getCommunity()}
         latestVideo={getLatestYoutubeVideo()}
       />
     </>
