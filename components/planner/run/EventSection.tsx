@@ -6,6 +6,7 @@ import type { RunState, RunAction } from '@/lib/planner/run-types'
 import type { MdEvent, MdEventChoice, EgoGift, EgoGiftTheme } from '@/components/mirror-dungeon/types'
 import type { GiftData, ThemeData } from '@/lib/planner/types'
 import type { SupportedLang } from '@/lib/i18n/types'
+import { eventTitle } from '@/lib/utils/event-catalog'
 import EventTab from '@/components/mirror-dungeon/EventTab'
 import EventModal from '@/components/mirror-dungeon/EventModal'
 import PlannerGiftModal from '@/components/planner/PlannerGiftModal'
@@ -53,7 +54,7 @@ export default function EventSection({ state, dispatch, events, choices, giftMap
     is_hidden: false, hidden_rate: null, fixed_reward_gift_ids: null,
   } as EgoGiftTheme)), [themes])
   const detected = observedEventIds.flatMap(id => eventById.get(id) ?? [])
-  const name = (event: MdEvent) => lang === 'en' ? event.name_en || event.name || `#${event.id}` : lang === 'ja' ? event.name_jp || event.name || `#${event.id}` : event.name || `#${event.id}`
+  const name = (event: MdEvent) => eventTitle(event, lang) ?? `#${event.id}`
 
   if (!themeId) return <p className="rounded-md border border-dashed border-[var(--border)] p-5 text-sm text-[var(--text-tertiary)]">{t('chooseThemeFirst')}</p>
   return <div className="space-y-3">
