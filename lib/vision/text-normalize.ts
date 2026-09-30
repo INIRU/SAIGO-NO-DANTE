@@ -24,8 +24,8 @@ export function ocrNormalized(value: string): string {
  * style the text and never show on screen, so they are removed before comparison instead of leaving "colorebcaa2".
  */
 const RICH_TEXT_TAG = /<\/?(?:color|size|b|i|u|s|sprite|style|link|nobr|material|font|mark|sup|sub|align|voffset|cspace|mspace|indent|line-height|pos|width|alpha|gradient|lowercase|uppercase|smallcaps|noparse)\b[^<>]*>/giu
-/** Placeholders such as {0} (a sinner's name) show other text on screen. */
-const PLACEHOLDER = /\{\d+\}/gu
+/** Placeholders such as {0} or the stored {{sinner}} token (a sinner's name) show other text on screen. */
+const PLACEHOLDER = /\{\{[a-z]+\}\}|\{\d+(?::[A-Za-z]\d*)?\}/gu
 
 /**
  * Game text as the pieces the screen shows, normalized: tags removed, split at placeholders (the name shown in their

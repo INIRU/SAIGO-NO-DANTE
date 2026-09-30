@@ -9,6 +9,8 @@ it('removes Unity rich-text tags and splits game text at placeholders', () => {
     .toEqual(['진동폭발'])
   // The name shown for {0} is unknown, so no window spans it.
   expect(gameTextPieces('{0}에게 낡은 열쇠를 건넨다. {1}은 고개를 끄덕였다.')).toEqual(['에게낡은열쇠를건넨다', '은고개를끄덕였다'])
+  // Stored tokens ({{sinner}}, {{live}}) hide screen text the same way.
+  expect(gameTextPieces('{{sinner}} 수감자가 걷는다. {{live}}번째')).toEqual(['수감자가걷는다', '번째'])
   // Unknown angle-bracket dialogue is text on screen too.
   expect(gameTextPieces('<살려줘>')).toEqual(['살려줘'])
 })

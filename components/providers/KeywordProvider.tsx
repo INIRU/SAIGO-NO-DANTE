@@ -15,6 +15,8 @@ import { getLocalizedKeywordDesc, getLocalizedKeywordName } from '@/lib/i18n'
 import type { SupportedLang } from '@/lib/i18n'
 import { skillConditionColor } from '@/lib/identity/skill-condition-color'
 import type { SinType } from '@/lib/types'
+import PlaceholderLabel from '@/components/ui/PlaceholderLabel'
+import type { PlaceholderToken } from '@/lib/game-text/placeholders'
 
 const KeywordContext = createContext<Record<string, KeywordInfo>>({})
 
@@ -215,9 +217,9 @@ export function useFormatSkillDesc() {
             return allowedKeywords.has(krName) || allowedKeywords.has(kw)
           })
         : localKeywords
-      return formatSkillDescInner(text, color, filtered, keywords, skillNameColors, localToKr, options)
+      return formatSkillDescInner(text, color, filtered, keywords, skillNameColors, localToKr, options, locale)
     },
-    [keywords, localKeywords, localToKr],
+    [keywords, localKeywords, localToKr, locale],
   )
 }
 
@@ -490,13 +492,14 @@ function formatSkillDescInner(
   skillNameColors?: Record<string, string>,
   localToKr?: Record<string, string>,
   options?: FormatSkillDescOptions,
+  locale = 'ko',
 ) {
   // Only keywords that occur somewhere in the text can match below (every match is a substring of it). Checking the
   // ~420 catalog names once here, in their longest-first order, spares the scans below from repeating them per segment.
   const allKeywords = catalogKeywords.filter(kw => text.includes(kw))
   const parts: {
     text: string
-    type: 'normal' | 'bracket' | 'keyword' | 'number' | 'skillname'
+    type: 'normal' | 'bracket' | 'keyword' | 'number' | 'skillname' | 'placeholder'
     skillColor?: string
     krKey?: string
   }[] = []
@@ -533,6 +536,15 @@ function formatSkillDescInner(
       remaining = remaining.slice(escapedKeyword.slashCount + escapedKeyword.keyword.length)
       continue
     }
+    // 0. {{live}} 같은 자리표시 토큰 (lib/game-text/placeholders.ts)
+    const tokenMatch = remaining.match(/^\{\{(live|potency|count|value|sinner|target)\}\}/)
+    if (tokenMatch) {
+      parts.push({ text: tokenMatch[1], type: 'placeholder' })
+      prevChar = '}'
+      remaining = remaining.slice(tokenMatch[0].length)
+      continue
+    }
+
     // 1. [대괄호] / 【대괄호】 패턴
     const bracketMatch = remaining.match(/^(?:\[([^\]]+)\]|【([^】]+)】)/)
     if (bracketMatch) {
@@ -585,6 +597,8 @@ function formatSkillDescInner(
     if (bracketIdx > 0) nextIdx = Math.min(nextIdx, bracketIdx)
     const fwBracketIdx = remaining.indexOf('【')
     if (fwBracketIdx > 0) nextIdx = Math.min(nextIdx, fwBracketIdx)
+    const tokenIdx = remaining.indexOf('{{')
+    if (tokenIdx > 0) nextIdx = Math.min(nextIdx, tokenIdx)
     if (escapedKeyword) nextIdx = Math.min(nextIdx, escapedKeyword.start)
     for (const kw of allKeywords) {
       let searchFrom = 0
@@ -636,6 +650,8 @@ function formatSkillDescInner(
         )
       case 'number':
         return <span key={i} style={{ color: '#e8b030', fontWeight: 700 }}>{p.text}</span>
+      case 'placeholder':
+        return <PlaceholderLabel key={i} token={p.text as PlaceholderToken} locale={locale} />
       case 'skillname':
         const resolvedSkillNameColor = resolveKeywordTextColor(p.text)
         return <span key={i} style={{ color: resolvedSkillNameColor === KEYWORD_DEFAULT_COLOR ? p.skillColor : resolvedSkillNameColor, fontWeight: 600 }}>{p.text}</span>
