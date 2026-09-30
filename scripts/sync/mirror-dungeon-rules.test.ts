@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { fixedRewardGiftIds, richestEntry, sameStoredIds, themeExclusiveGifts, themeFixedRewards, themeGiftRefs, unreadThemeKeys } from './mirror-dungeon-rules'
+import { existingGiftLookup, fixedRewardGiftIds, richestEntry, sameStoredIds, themeExclusiveGifts, themeFixedRewards, themeGiftRefs, unreadThemeKeys } from './mirror-dungeon-rules'
 
 // Cases from the extraction audit of 2026-09-30 (complete-data of 2026-09-24).
 describe('theme rewards and exclusive gifts', () => {
@@ -70,4 +70,19 @@ it('uses these rules in the sync itself', () => {
   expect(sync).toContain('!sameStoredIds(existing.fixed_reward_gift_ids, theme.fixed_reward_gift_ids)')
   expect(sync).toContain('giftMap.set(id, richestEntry(entries)!)')
   expect(sync).not.toContain('sortedNumberArrayJson')
+})
+
+it('never matches a source gift to another gift of the same name (story 20xx and Mirror Dungeon 97xx share 29 names)', () => {
+  const rows = [{ id: 'a', game_id: 9701, name: '같은 이름' }, { id: 'b', game_id: null, name: '옛 행' }]
+  const lookup = existingGiftLookup(rows)
+  expect(lookup.find(9701, '같은 이름')?.id).toBe('a')
+  // A new story gift with the same name is a new row, not an update of 9701.
+  expect(lookup.find(2001, '같은 이름')).toBeUndefined()
+  // A legacy row without a game_id is still found by name once.
+  expect(lookup.find(2002, '옛 행')?.id).toBe('b')
+  expect(lookup.missingFrom([{ game_id: 2001, name: '같은 이름' }])).toBe(2)
+  expect(lookup.missingFrom([{ game_id: 9701, name: 'x' }, { game_id: 5, name: '옛 행' }])).toBe(0)
+  const sync = readFileSync(join(__dirname, 'mirror-dungeon-data.ts'), 'utf8')
+  expect(sync).toContain('const existing = existingLookup.find(gift.game_id, gift.name)')
+  expect(sync).not.toContain('existingByName')
 })

@@ -108,3 +108,25 @@ export function themeGiftRefs(item: unknown): number[] {
   const pool = (value: unknown) => Array.isArray(value) ? value.filter((id): id is number => typeof id === 'number') : []
   return [...new Set([...pool(theme.egoGiftPool), ...pool(theme.specificEgoGiftPool), ...fixedRewardGiftIds(theme.fixedRewardEgoGifts)])]
 }
+
+/**
+ * The DB row a source gift updates: the one with its game_id, or by name only a legacy row that has no game_id yet.
+ * Story (20xx) and Mirror Dungeon (97xx) gifts share 29 names, so a name match against a row with a game_id would
+ * rewrite another gift's row.
+ */
+export function existingGiftLookup<T extends { game_id: number | null; name: string }>(rows: readonly T[]) {
+  const byGameId = new Map<number, T>()
+  const legacyByName = new Map<string, T>()
+  for (const row of rows) {
+    if (row.game_id) byGameId.set(row.game_id, row)
+    else legacyByName.set(row.name, row)
+  }
+  return {
+    find: (gameId: number, name: string): T | undefined => byGameId.get(gameId) ?? legacyByName.get(name),
+    /** Rows the source no longer has: by game_id, and legacy rows by name. */
+    missingFrom: (source: readonly { game_id: number; name: string }[]): number => {
+      const ids = new Set(source.map(gift => gift.game_id)), names = new Set(source.map(gift => gift.name))
+      return rows.filter(row => row.game_id ? !ids.has(row.game_id) : !names.has(row.name)).length
+    },
+  }
+}

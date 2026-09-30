@@ -22,7 +22,7 @@ import { readFileSync, readdirSync, writeFileSync } from 'fs'
 import { join, resolve } from 'path'
 import { gameDataPaths, implicitDataDirWarning } from './source-paths'
 import { failOnLoggedErrors, printSyncSummary } from './sync-result'
-import { richestEntry, sameStoredIds, themeExclusiveGifts, themeFixedRewards, themeGiftRefs, unreadThemeKeys } from './mirror-dungeon-rules'
+import { existingGiftLookup, richestEntry, sameStoredIds, themeExclusiveGifts, themeFixedRewards, themeGiftRefs, unreadThemeKeys } from './mirror-dungeon-rules'
 import { z } from 'zod'
 import { config } from 'dotenv'
 
@@ -817,18 +817,13 @@ async function syncGifts(): Promise<void> {
 
   if (fetchErr) throw new Error(`ego_gifts fetch 실패: ${fetchErr.message}`)
 
-  const existingByGameId = new Map<number, typeof existingGifts[0]>()
-  const existingByName = new Map<string, typeof existingGifts[0]>()
-  for (const g of existingGifts ?? []) {
-    if (g.game_id) existingByGameId.set(g.game_id, g)
-    existingByName.set(g.name, g)
-  }
+  const existingLookup = existingGiftLookup(existingGifts ?? [])
 
   let newCount = 0, updateCount = 0, matchCount = 0
   const toUpsert: GiftRow[] = []
 
   for (const gift of gifts) {
-    const existing = existingByGameId.get(gift.game_id) ?? existingByName.get(gift.name)
+    const existing = existingLookup.find(gift.game_id, gift.name)
 
     if (!existing) {
       newCount++
@@ -888,8 +883,7 @@ async function syncGifts(): Promise<void> {
   }
 
   console.log(`\n  신규: ${newCount}, 변경: ${updateCount}, 변경없음: ${matchCount}`)
-  const giftIds = new Set(gifts.map(gift => gift.game_id)), giftNames = new Set(gifts.map(gift => gift.name))
-  recordSection('gifts', newCount, updateCount, (existingGifts ?? []).filter(row => !(row.game_id && giftIds.has(row.game_id)) && !giftNames.has(row.name)).length)
+  recordSection('gifts', newCount, updateCount, existingLookup.missingFrom(gifts))
 
   if (FIX && toUpsert.length > 0) {
     console.log('  DB 업데이트 중...')
