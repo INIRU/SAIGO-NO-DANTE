@@ -14,9 +14,16 @@ import {
   translateDescriptionForSyncTest,
   translateDesc,
   deriveIdentityAcquisition,
+  fillValuePlaceholders,
 } from './identity-data'
 
 describe('identity-data sync helpers', () => {
+  it('names the buff value placeholders in keyword descriptions instead of leaving {0}', () => {
+    expect(fillValuePlaceholders('이번 턴 동안 타격 속성 스킬의 최종 위력 -{0}', 'kr')).toBe('이번 턴 동안 타격 속성 스킬의 최종 위력 -(수치)')
+    expect(fillValuePlaceholders('Deal +{0}% damage for {1} turns', 'en')).toBe('Deal +(Potency)% damage for (Count) turns')
+    expect(fillValuePlaceholders('最終威力-{0}', 'jp')).toBe('最終威力-(威力)')
+    expect(fillValuePlaceholders(null, 'kr')).toBeNull()
+  })
   it('does not count KR_SkillTag names such as sin colours as identity keywords', () => {
     // [CRIMSON] → 빨간색 translates skill text; it became a keyword once SkillTag joined the tag map.
     expect(bracketKeywordsForSyncTest(['[CRIMSON] 공명 시 [Combustion] 부여'], { CRIMSON: '빨간색', Combustion: '화상' }, ['CRIMSON'])).toEqual(['화상'])
