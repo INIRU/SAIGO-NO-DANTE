@@ -5,7 +5,7 @@ import { splitPlaceholders } from '@/lib/game-text/placeholders'
 
 /** Render only the formatting tags used by the original Unity text. Unknown
  * angle-bracket dialogue stays text; source strings never become HTML. */
-export function parseUnityColorTags(raw: string, locale = 'ko'): ReactNode {
+export function parseUnityColorTags(raw: string): ReactNode {
   type Frame = { tag: string; style: CSSProperties; children: ReactNode[] }
   const root: Frame = { tag: '', style: {}, children: [] }
   const stack = [root]
@@ -32,7 +32,7 @@ export function parseUnityColorTags(raw: string, locale = 'ko'): ReactNode {
     } else {
       // {{sinner}} and the other placeholder tokens become labels; plain text stays text.
       for (const part of splitPlaceholders(token)) {
-        stack[stack.length - 1].children.push(typeof part === 'string' ? part : <PlaceholderLabel key={key++} token={part.token} locale={locale} />)
+        stack[stack.length - 1].children.push(typeof part === 'string' ? part : <PlaceholderLabel key={key++} {...part} />)
       }
     }
   }
@@ -51,7 +51,10 @@ export function getAbEventEffects(eventId: number): { success: ReactNode[]; fail
 export function replaceEventPlaceholders(text: string | null | undefined): string {
   return (text ?? '').replace(/\{\d+\}/g, '{{sinner}}')
 }
-/** Preserve original colors and emphasis instead of guessing from Korean words. */
-export function colorizeEventText(text: string | null | undefined, lang: string = 'ko'): ReactNode {
-  return text ? parseUnityColorTags(replaceEventPlaceholders(text), lang) : null
+/**
+ * Preserve original colors and emphasis instead of guessing from Korean words. Placeholder labels take their wording
+ * from the page's messages, so `_lang` is only kept for existing callers.
+ */
+export function colorizeEventText(text: string | null | undefined, _lang?: string): ReactNode {
+  return text ? parseUnityColorTags(replaceEventPlaceholders(text)) : null
 }

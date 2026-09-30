@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest'
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 
 import {
   buildSkillRows,
@@ -14,21 +16,14 @@ import {
   translateDescriptionForSyncTest,
   translateDesc,
   deriveIdentityAcquisition,
-  fillValuePlaceholders,
-  unknownBuffPlaceholders,
 } from './identity-data'
 
 describe('identity-data sync helpers', () => {
-  it('stores buff value slots in keyword descriptions as tokens instead of leaving {0}', () => {
-    expect(fillValuePlaceholders('이번 턴 동안 타격 속성 스킬의 최종 위력 -{0}', 'HitPowerDown')).toBe('이번 턴 동안 타격 속성 스킬의 최종 위력 -{{potency}}')
-    expect(fillValuePlaceholders('Deal +{0}% damage for {1} turns', 'Combustion')).toBe('Deal +{{potency}}% damage for {{count}} turns')
-    expect(fillValuePlaceholders('대상의 참격 내성을 {0:F1} 감소', 'SlashResistUp')).toBe('대상의 참격 내성을 {{potency}} 감소')
-    // Source cases (complete-data 2026-09-24) where a slot is not potency or count.
-    expect(fillValuePlaceholders('횟수 누적 소모량: {2}', 'Charge')).toBe('횟수 누적 소모량: {{live}}')
-    expect(fillValuePlaceholders('- {0} 포박중', 'TiedWithRope')).toBe('- {{target}} 포박중')
-    expect(fillValuePlaceholders(null, 'Combustion')).toBeNull()
-    expect(fillValuePlaceholders('{5} 새 자리', 'NewBuff')).toBe('{{value}} 새 자리')
-    expect(unknownBuffPlaceholders.get('NewBuff')).toEqual(new Set([5]))
+  it('stores keyword descriptions through placeholder-rules in every language', () => {
+    // The slot rules and real source strings are tested in placeholder-rules.test.ts.
+    const sync = readFileSync(join(__dirname, 'identity-data.ts'), 'utf8')
+    for (const source of ['KR_Bufs', 'EN_Bufs', 'JP_Bufs']) expect(sync).toContain(`placeholderReport, '${source}')`)
+    expect(sync).not.toContain('fillValuePlaceholders')
   })
   it('does not count KR_SkillTag names such as sin colours as identity keywords', () => {
     // [CRIMSON] → 빨간색 translates skill text; it became a keyword once SkillTag joined the tag map.

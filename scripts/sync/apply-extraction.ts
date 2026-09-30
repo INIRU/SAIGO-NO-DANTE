@@ -21,6 +21,7 @@ import { RESTORE_TABLES } from './extraction-restore'
 import { egoDrift } from './ego-drift'
 import { extractionGaps as findGaps, leftoverChanges, parseSyncSummary, storageKeyOf } from './sync-result'
 import { eventImageIdFromFilename } from '../assets/event-image-source'
+import { PLACEHOLDER_CHECK_COLUMNS, rowsWithRawPlaceholders } from './placeholder-rules'
 
 config({ path: '.env.local', quiet: true })
 const args = process.argv.slice(2)
@@ -104,6 +105,20 @@ async function leftoverDiffs(work: string, env: NodeJS.ProcessEnv, egoIds: strin
   // Events: rebuild-mirror-events.ts reads its rows back and fails on any difference during --fix.
   for (const ego of await egoDiffs(work, env, 'verify-ego', egoIds)) left.push(`EGO ${ego.gameId} ${ego.fields.join(',')}`)
   return left
+}
+
+/**
+ * Display columns that still hold a bare game slot ({0}, {1:F1}) or a single-brace name ({amount}) after the apply.
+ * The syncs store tokens ({{live}} …) instead, so any row here is a rule placeholder-rules.ts is missing. Warns only.
+ */
+async function leftoverPlaceholders() {
+  const found: string[] = []
+  for (const [table, columns] of Object.entries(PLACEHOLDER_CHECK_COLUMNS)) {
+    const key = RESTORE_TABLES.find(item => item.table === table)?.key ?? ['id']
+    const rows = await all(table, [...new Set([...key, ...columns])].join(','))
+    for (const { row, columns: bad } of rowsWithRawPlaceholders(rows, columns)) found.push(`${table} ${key.map(column => row[column]).join('/')} ${bad.join(',')}`)
+  }
+  return found
 }
 
 async function storedNames(dir: string) {
@@ -306,6 +321,12 @@ async function main() {
         report.verify = { ok: !left.length, left }
         if (left.length) throw Error(`the DB still differs from the extraction after applying: ${left.join('; ')}`)
         console.log('ok   verify (DB equals the extraction)')
+        const placeholders = await leftoverPlaceholders()
+        report.leftoverPlaceholders = placeholders
+        if (placeholders.length) {
+          console.warn(`WARN placeholders: ${placeholders.length} rows still show a bare {0}/{name} — add a rule to scripts/sync/placeholder-rules.ts`)
+          for (const line of placeholders.slice(0, 20)) console.warn(`     ${line}`)
+        } else console.log('ok   placeholders (no bare {0} in display columns)')
         await revalidateGameData()
       } catch (error) {
         // Never leave a partial or mismatched apply: put every table and image back as it was before this run.

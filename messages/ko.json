@@ -2281,5 +2281,23 @@
     "cancel": "취소",
     "download": "다운로드",
     "close": "닫기"
+  },
+  "placeholder": {
+    "live": "게임 중 표시",
+    "potency": "수치",
+    "count": "횟수",
+    "value": "값",
+    "sinner": "수감자 이름",
+    "target": "대상",
+    "gift": "기프트",
+    "hint": {
+      "live": "플레이 중 게임 화면에 실제 값이 표시됩니다",
+      "potency": "효과의 위력",
+      "count": "효과의 횟수",
+      "value": "게임이 채우는 값",
+      "sinner": "선택한 수감자의 이름",
+      "target": "효과를 건 대상",
+      "gift": "변환되는 기프트"
+    }
   }
 }

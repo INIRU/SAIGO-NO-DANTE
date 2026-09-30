@@ -5,6 +5,7 @@ import { getThemePackNameColor, getThemePackNameSegments } from '@/lib/data/them
 import {
   THEME_PACK_TITLE_BOX,
   getThemePackCompositeImageUrl,
+  getThemePackTitleBoxKind,
   getThemePackVisualConfig,
 } from '@/lib/data/theme-pack-visuals'
 import { useAutoFontSize } from '@/lib/hooks/useAutoFontSize'
@@ -42,8 +43,9 @@ interface ThemePackCardProps {
 }
 
 const TITLE_MIN_FONT_REM = 0.32
-// The game's pack name is about 11.5% of the poster width; long names shrink to fit one line.
-const TITLE_FONT_RATIO = 0.115
+// Font size as a share of the poster width: at 0.105 the ink (with outline) is ~6% of the poster height, as in game
+// captures. Long names shrink to fit one line, like the game (its longest names fill ~72% of the width).
+const TITLE_FONT_RATIO = 0.105
 // 8-way hard outline in the page's darkest brown so any pack colour stays legible on busy art.
 const TITLE_OUTLINE = '0.07em 0 0 #0d0b08, -0.07em 0 0 #0d0b08, 0 0.07em 0 #0d0b08, 0 -0.07em 0 #0d0b08, 0.05em 0.05em 0 #0d0b08, -0.05em 0.05em 0 #0d0b08, 0.05em -0.05em 0 #0d0b08, -0.05em -0.05em 0 #0d0b08, 0 0.12em 0.25em rgba(0,0,0,0.85)'
 const THEME_CARD_ASPECT_RATIO = '416/684'
@@ -88,7 +90,7 @@ export default function ThemePackCard({
   const displayNameSegments = getThemePackNameSegments(numId, lang)
   const visualConfig = getThemePackVisualConfig(numId)
   const isExtreme = visualConfig?.kind === 'extreme'
-  const titleBox = { ...THEME_PACK_TITLE_BOX[isExtreme ? 'extreme' : 'normal'], ...visualConfig?.title }
+  const titleBox = { ...THEME_PACK_TITLE_BOX[getThemePackTitleBoxKind(visualConfig)], ...visualConfig?.title }
   const titleWidthRatio = (100 - titleBox.left - titleBox.right) / 100
   const showTitle = !visualConfig?.title?.printedIn?.includes(lang)
   const imageSrc = visualConfig ? getThemePackCompositeImageUrl(numId) : theme.image_url
@@ -206,7 +208,8 @@ export default function ThemePackCard({
                 lineHeight: 1,
                 letterSpacing: '-0.02em',
                 wordSpacing: '-0.05em',
-                transform: 'translateY(0.104em)',
+                // Centres the glyph ink on the box; Noto Sans JP sits lower than KOTRA/Mikodacs (JA captures: +0.6% of the poster).
+                transform: lang === 'ja' ? 'translateY(0.01em)' : 'translateY(0.104em)',
                 textShadow: TITLE_OUTLINE,
                 WebkitTextStroke: 0,
                 width: '100%',
