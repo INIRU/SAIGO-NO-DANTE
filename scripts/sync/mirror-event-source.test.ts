@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest'
-import { identicalEventCopies, sequenceEventIds, sinnerCharacterId, sourceResultText, sourceResults, walkEventGraph, type SourceEvent } from './mirror-event-source'
+import { eventText, identicalEventCopies, sequenceEventIds, sinnerCharacterId, sourceResultText, sourceResults, walkEventGraph, type SourceEvent } from './mirror-event-source'
 
 it('traverses grandchildren, cross-links and retries without turning them into entries', () => {
   const nodes: SourceEvent[] = [
@@ -50,4 +50,10 @@ it('REQ-DATA-SYNC-017 marks exact copies of one event, and nothing that differs 
   expect(copies).toEqual(new Map([[971071, 971070], [971072, 971070]]))
   // A different continuation is a different event.
   expect(identicalEventCopies([node(1, 9822, 5), node(2, 9822, 6)], () => 'same')).toEqual(new Map())
+})
+
+it('stores the sinner the player picked as {{sinner}} (97111202, 90101503)', () => {
+  expect(sourceResultText(['{0} 수감자가 앞서 걸어가면'], 0)).toBe('{{sinner}} 수감자가 앞서 걸어가면')
+  expect(eventText('[{0}] 수감자가 케이블을')).toBe('[{{sinner}}] 수감자가 케이블을')
+  expect(eventText(null)).toBeNull()
 })

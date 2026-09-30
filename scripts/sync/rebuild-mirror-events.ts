@@ -6,7 +6,7 @@ import { createClient } from '@supabase/supabase-js'
 import { config } from 'dotenv'
 import { eventImageId } from '../assets/event-image-source'
 import { implicitDataDirWarning } from './source-paths'
-import { identicalEventCopies, sequenceEventIds, sinnerCharacterId, sourceResults, sourceResultText, walkEventGraph, type SourceEvent, type SourceForm } from './mirror-event-source'
+import { eventText, identicalEventCopies, sequenceEventIds, sinnerCharacterId, sourceResults, sourceResultText, unknownEventPlaceholders, walkEventGraph, type SourceEvent, type SourceForm } from './mirror-event-source'
 config({ path: '.env.local', quiet: true })
 type Locale = 'ko' | 'en' | 'ja'
 type Text = { id: number; name?: string; title?: string; desc?: string; behaveDesc?: string; prevDesc?: string; eventDesc?: string; successDesc?: string[]; failureDesc?: string[]; options?: { message?: string; messageDesc?: string; result?: string[] }[] }
@@ -191,8 +191,8 @@ export async function rebuildMirrorEvents(apply = process.argv.includes('--fix')
     })
     rows.push({
       id, name: base.text.name ?? base.text.title ?? '', name_en: en?.text.name ?? en?.text.title ?? null, name_jp: ja?.text.name ?? ja?.text.title ?? null,
-      desc_text: (coin ? base.text.behaveDesc : base.text.desc) ?? '',
-      desc_text_en: (coin ? en?.text.behaveDesc : en?.text.desc) ?? null, desc_text_jp: (coin ? ja?.text.behaveDesc : ja?.text.desc) ?? null,
+      desc_text: eventText((coin ? base.text.behaveDesc : base.text.desc) ?? ''),
+      desc_text_en: eventText((coin ? en?.text.behaveDesc : en?.text.desc) ?? null), desc_text_jp: eventText((coin ? ja?.text.behaveDesc : ja?.text.desc) ?? null),
       event_type: coin ? 'ab' : 'action', category: entries.has(id) ? 'entry' : 'continuation',
       source: base.file, variant_of: null, theme_ids: [...(themeByEntry.get(id) ?? [])], gift_ids: [...giftIds].sort((a, b) => a - b),
       image_url: imageIds.has(imageId) ? `${assetBase}/icons/events/${imageId}.webp` : null,
@@ -234,6 +234,7 @@ export async function rebuildMirrorEvents(apply = process.argv.includes('--fix')
   writeFileSync(join(output, 'events.json'), JSON.stringify(rows, null, 2))
   writeFileSync(join(output, 'choices.json'), JSON.stringify(choices, null, 2))
   writeFileSync(join(output, 'audit.json'), JSON.stringify(audit, null, 2))
+  if (unknownEventPlaceholders.size) console.warn(`⚠ 분류 안 된 이벤트 자리표시 ${[...unknownEventPlaceholders].map(slot => `{${slot}}`).join(', ')} → {{value}}로 저장. mirror-event-source.ts eventText에 추가할 것`)
   console.log(JSON.stringify({ ...audit, inputs: provenance.length, edges: graph.edges.length }))
   if (missingTemplates.size || missingGifts.size) throw Error('Unresolved source references; inspect audit before replacement')
   if (apply) {

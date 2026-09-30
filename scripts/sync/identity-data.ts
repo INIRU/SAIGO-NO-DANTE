@@ -27,6 +27,7 @@ import { join, resolve } from 'path'
 import { gameDataPaths } from './source-paths'
 import { identityMetadata } from './identity-metadata'
 import { getKeywordCategory } from '../../lib/keywords/category'
+import { tokenizeGamePlaceholders, type PlaceholderToken } from '../../lib/game-text/placeholders'
 import { IDENTITY_STAT_BASE_LEVEL } from '../../lib/constants/game'
 import { failOnLoggedErrors, printSyncSummary } from './sync-result'
 import { pathToFileURL } from 'url'
@@ -1994,13 +1995,32 @@ function loadEgoPassiveLocale(lang: 'kr' | 'en' | 'jp'): Map<number, { name: str
   return map
 }
 
-const VALUE_PLACEHOLDERS = { kr: ['수치', '횟수'], en: ['Potency', 'Count'], jp: ['威力', '回数'] } as const
+/**
+ * What each numbered slot of a buff's text means, where it is not {0} = potency and {1} = count. Accumulated amounts
+ * the game tracks during a battle are live values; some buffs name the unit they are tied to instead of a number.
+ */
+const BUFF_PLACEHOLDER_ROLES: Record<string, Record<number, PlaceholderToken>> = {
+  Charge: { 2: 'live' }, ChargeBodyArt: { 2: 'live' }, ChargeNoir: { 2: 'live' }, ChargeNoirAlly: { 2: 'live' },
+  ChargeKhakiAlly: { 2: 'live' }, ThePowerOfLoveAndHate: { 2: 'live' },
+  SinkingWhite: { 2: 'live', 3: 'live' }, TimeSuspend: { 2: 'live', 3: 'live' },
+  TiedWithRope: { 0: 'target' }, TiedWithRopeID: { 0: 'target' },
+  BloomingRose: { 1: 'target', 2: 'target' }, EatingSin: { 1: 'target', 2: 'target' },
+}
 
-/** Buff text shows the buff's own value as {0} (potency) and {1} (count); a keyword catalogue entry has no value, so it names them instead. */
-export function fillValuePlaceholders(text: string | null | undefined, lang: keyof typeof VALUE_PLACEHOLDERS): string | null {
+/** Buff slots the sync had no role for, reported once at the end of the keyword step. */
+export const unknownBuffPlaceholders = new Map<string, Set<number>>()
+
+/**
+ * Buff text shows the buff's own value as {0} (potency) and {1} (count); a keyword catalogue entry has no value, so they
+ * are stored as {{potency}} / {{count}} tokens the site draws as labels (other slots: BUFF_PLACEHOLDER_ROLES).
+ */
+export function fillValuePlaceholders(text: string | null | undefined, tag?: string | null): string | null {
   if (text == null) return null
-  const [potency, count] = VALUE_PLACEHOLDERS[lang]
-  return text.replace(/\{0\}/g, `(${potency})`).replace(/\{1\}/g, `(${count})`)
+  const roles = (tag && BUFF_PLACEHOLDER_ROLES[tag]) || {}
+  return tokenizeGamePlaceholders(text, index => roles[index] ?? (index === 0 ? 'potency' : index === 1 ? 'count' : undefined), index => {
+    const key = tag ?? '(tag 없음)'
+    unknownBuffPlaceholders.set(key, (unknownBuffPlaceholders.get(key) ?? new Set()).add(index))
+  })
 }
 
 function translateDescLang(
@@ -3621,11 +3641,11 @@ async function rebuildKeywordMeta(): Promise<void> {
     })
     rows.push({
       name,
-      description: KEYWORD_DESCRIPTION_OVERRIDES[name] ?? fillValuePlaceholders(krData?.description ?? existing?.description, 'kr'),
+      description: KEYWORD_DESCRIPTION_OVERRIDES[name] ?? fillValuePlaceholders(krData?.description ?? existing?.description, tag),
       name_en,
       name_jp,
-      description_en: fillValuePlaceholders(enData?.description ?? existing?.description_en, 'en'),
-      description_jp: fillValuePlaceholders(jpData?.description ?? existing?.description_jp, 'jp'),
+      description_en: fillValuePlaceholders(enData?.description ?? existing?.description_en, tag),
+      description_jp: fillValuePlaceholders(jpData?.description ?? existing?.description_jp, tag),
       icon_slug,
       effect_type: resolveKeywordEffectType({
         tag: tag ?? null,
@@ -3639,6 +3659,9 @@ async function rebuildKeywordMeta(): Promise<void> {
     })
   }
   rows.sort((a, b) => a.name.localeCompare(b.name, 'ko'))
+  for (const [tag, slots] of unknownBuffPlaceholders) {
+    console.warn(YELLOW(`  ⚠ 분류 안 된 자리표시 ${[...slots].map(slot => `{${slot}}`).join(', ')} (${tag}) → {{value}}로 저장. BUFF_PLACEHOLDER_ROLES에 추가할 것`))
+  }
   if (process.env.LIMBUS_KEYWORD_AUDIT) {
     writeFileSync(process.env.LIMBUS_KEYWORD_AUDIT, JSON.stringify(rows, null, 2) + '\n')
   }

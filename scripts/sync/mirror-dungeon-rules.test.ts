@@ -87,19 +87,13 @@ it('never matches a source gift to another gift of the same name (story 20xx and
   expect(sync).not.toContain('existingByName')
 })
 
-it('marks the live values the game fills in during a run instead of a fixed 0 (봉이 인형 9242)', () => {
+it('stores the live values the game fills in during a run as {{live}} instead of a fixed 0 (봉이 인형 9242)', () => {
   // The source texts carry {0} and {1}; the sync used to write "현재 0%".
-  expect(markLiveValues('- 보유한 기프트 개수 1개당, 피해량 0.5% 증가 (현재 {0}%. 최대 100%)\n- 보유한 기프트 개수 20개당, 턴 시작 시 위력 증가 1 얻음 (현재 {1} 얻음. 최대 10)', 'kr'))
-    .toBe('- 보유한 기프트 개수 1개당, 피해량 0.5% 증가 (게임 중 표시. 최대 100%)\n- 보유한 기프트 개수 20개당, 턴 시작 시 위력 증가 1 얻음 (게임 중 표시. 최대 10)')
-  expect(markLiveValues('Deal +0.5% damage for every E.G.O Gift owned (Current: +{0}%; max 100%)\n- Turn Start: Gain 1 Potency Up (Current Stack: {1}; max 10)', 'en'))
-    .toBe('Deal +0.5% damage for every E.G.O Gift owned (shown in game; max 100%)\n- Turn Start: Gain 1 Potency Up (shown in game; max 10)')
-  expect(markLiveValues('ダメージ量が0.5%増加 (現在{0}%, 最大100%)\n威力増加1を得る (現在{1}獲得、最大10)', 'jp'))
-    .toBe('ダメージ量が0.5%増加 (ゲーム中に表示, 最大100%)\n威力増加1を得る (ゲーム中に表示、最大10)')
-  // A decimal point is not a clause break, and a value outside parentheses is marked where it stands.
-  expect(markLiveValues('(피해량 0.5 x {0}%)', 'kr')).toBe('(게임 중 표시)')
-  expect(markLiveValues('피해량 +{0}% 증가', 'kr')).toBe('피해량 +(게임 중 표시)% 증가')
-  expect(markLiveValues('변화 없음 (최대 100%)', 'kr')).toBe('변화 없음 (최대 100%)')
+  expect(markLiveValues('- 보유한 기프트 개수 1개당, 피해량 0.5% 증가 (현재 {0}%. 최대 100%)\n- 턴 시작 시 위력 증가 1 얻음 (현재 {1} 얻음. 최대 10)'))
+    .toBe('- 보유한 기프트 개수 1개당, 피해량 0.5% 증가 (현재 {{live}}%. 최대 100%)\n- 턴 시작 시 위력 증가 1 얻음 (현재 {{live}} 얻음. 최대 10)')
+  expect(markLiveValues('Deal +0.5% damage (Current: +{0}%; max 100%)')).toBe('Deal +0.5% damage (Current: +{{live}}%; max 100%)')
+  expect(markLiveValues('変化なし (最大100%)')).toBe('変化なし (最大100%)')
   const sync = readFileSync(join(__dirname, 'mirror-dungeon-data.ts'), 'utf8')
-  expect(sync).toContain('last[field] = markLiveValues(text, lang)')
+  expect(sync).toContain('last[field] = markLiveValues(text)')
   expect(sync).not.toContain(".replace(/\\{(\\d+)\\}/g, '0')")
 })
