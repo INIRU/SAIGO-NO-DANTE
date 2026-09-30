@@ -619,7 +619,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
     setGpu(block)
     if (block) {
       setStatus('idle')
-      return
+      return block
     }
     let display: MediaStream
     try {

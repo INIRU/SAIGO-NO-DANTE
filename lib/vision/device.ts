@@ -53,3 +53,8 @@ export function cpuFallback(ocr: { engine: 'paddle' | 'tesseract'; loading: bool
   if (ocr.reason === 'webgpu-unavailable') return 'unavailable'
   return 'failed'
 }
+
+/** The browser's own settings page with the graphics acceleration switch (Edge keeps it under edge://). */
+export function graphicsSettingsUrl(userAgent: string): string {
+  return /\bEdg\//.test(userAgent) ? 'edge://settings/system' : 'chrome://settings/system'
+}
