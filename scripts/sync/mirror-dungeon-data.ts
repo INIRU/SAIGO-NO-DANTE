@@ -22,7 +22,7 @@ import { readFileSync, readdirSync, writeFileSync } from 'fs'
 import { join, resolve } from 'path'
 import { gameDataPaths, implicitDataDirWarning } from './source-paths'
 import { failOnLoggedErrors, printSyncSummary } from './sync-result'
-import { existingGiftLookup, richestEntry, sameStoredIds, themeExclusiveGifts, themeFixedRewards, themeGiftRefs, unreadThemeKeys } from './mirror-dungeon-rules'
+import { existingGiftLookup, markLiveValues, richestEntry, sameStoredIds, themeExclusiveGifts, themeFixedRewards, themeGiftRefs, unreadThemeKeys } from './mirror-dungeon-rules'
 import { z } from 'zod'
 import { config } from 'dotenv'
 
@@ -741,19 +741,17 @@ async function syncGifts(): Promise<void> {
       activation_condition: activationCondition,
     })
 
-    // Replace runtime placeholders {0}, {1}, etc. with default value "0"
-    // (only for non-convert_to gifts — convert_to gifts are handled in frontend)
+    // Live values ({0}, {1}) are filled in by the game during a run: mark them instead of showing 0
+    // (only for non-convert_to gifts — convert_to gifts are handled in frontend).
     if (!convertTo) {
       const last = gifts[gifts.length - 1]
-      if (last.effect_base) last.effect_base = last.effect_base.replace(/\{(\d+)\}/g, '0')
-      if (last.effect_base_en) last.effect_base_en = last.effect_base_en.replace(/\{(\d+)\}/g, '0')
-      if (last.effect_base_jp) last.effect_base_jp = last.effect_base_jp.replace(/\{(\d+)\}/g, '0')
-      if (last.effect_plus) last.effect_plus = last.effect_plus.replace(/\{(\d+)\}/g, '0')
-      if (last.effect_plusplus) last.effect_plusplus = last.effect_plusplus.replace(/\{(\d+)\}/g, '0')
-      if (last.effect_plus_en) last.effect_plus_en = last.effect_plus_en.replace(/\{(\d+)\}/g, '0')
-      if (last.effect_plus_jp) last.effect_plus_jp = last.effect_plus_jp.replace(/\{(\d+)\}/g, '0')
-      if (last.effect_plusplus_en) last.effect_plusplus_en = last.effect_plusplus_en.replace(/\{(\d+)\}/g, '0')
-      if (last.effect_plusplus_jp) last.effect_plusplus_jp = last.effect_plusplus_jp.replace(/\{(\d+)\}/g, '0')
+      const fields = [['effect_base', 'kr'], ['effect_base_en', 'en'], ['effect_base_jp', 'jp'], ['effect_plus', 'kr'],
+        ['effect_plusplus', 'kr'], ['effect_plus_en', 'en'], ['effect_plus_jp', 'jp'], ['effect_plusplus_en', 'en'],
+        ['effect_plusplus_jp', 'jp']] as const
+      for (const [field, lang] of fields) {
+        const text = last[field]
+        if (text) last[field] = markLiveValues(text, lang)
+      }
     }
 
   }
