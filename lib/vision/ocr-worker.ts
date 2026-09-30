@@ -235,7 +235,9 @@ async function loadPaddle() {
   const adapter = await webgpuAdapter()
   if (disposed) return
   if (!adapter) {
-    respond({ type: 'backend', engine: 'tesseract', adapter: '', loading: false, reason: 'webgpu-unavailable' })
+    // No navigator.gpu: the browser lacks WebGPU. No adapter: most often graphics acceleration is off, or the GPU is blocked.
+    const reason = 'gpu' in self.navigator ? 'webgpu-unavailable' : 'webgpu-unsupported'
+    respond({ type: 'backend', engine: 'tesseract', adapter: '', loading: false, reason })
     return
   }
   respond({ type: 'backend', engine: 'tesseract', adapter: '', loading: true })
