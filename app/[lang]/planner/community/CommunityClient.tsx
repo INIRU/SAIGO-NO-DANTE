@@ -564,7 +564,11 @@ export default function CommunityClient({ initialPlans, initialTotal }: Communit
     return params
   }, [serverQueryKey])
 
+  // Only browsing all or searching shows the list; the default view is the discovery shelf, so nothing is loaded for it.
+  const listVisible = browse === 'all' || Boolean(search || keywordQuery || identityIdsQuery)
+
   useEffect(() => {
+    if (!listVisible) return
     latestRequestKeyRef.current = serverQueryKey
     if (initialDataKey.current === serverQueryKey && initialPlans !== undefined) {
       initialDataKey.current = null
@@ -605,7 +609,7 @@ export default function CommunityClient({ initialPlans, initialTotal }: Communit
       })
 
     return () => controller.abort()
-  }, [serverQueryKey, buildPlannerSearchParams, initialPlans, initialTotal]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [listVisible, serverQueryKey, buildPlannerSearchParams, initialPlans, initialTotal]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadMore = useCallback(() => {
     if (loading || loadingMore || !hasMore) return
@@ -1400,7 +1404,7 @@ export default function CommunityClient({ initialPlans, initialTotal }: Communit
     </div>
   )
 
-  if (browse !== 'all' && !(search || keywordQuery || identityIdsQuery)) return <DiscoveryShelf kind="planner" onBrowse={() => setBrowse('all', { history: 'push' })} />
+  if (!listVisible) return <DiscoveryShelf kind="planner" onBrowse={() => setBrowse('all', { history: 'push' })} />
 
   return (
     <div data-board-browse className="relative min-h-0 flex-1 px-4 pb-4 md:px-6 lg:overflow-hidden">

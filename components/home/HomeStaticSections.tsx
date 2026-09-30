@@ -9,18 +9,14 @@ import type { EGOWithSinner, IdentityWithSinner } from '@/lib/types'
 import type { SupportedLang } from '@/lib/i18n/types'
 import IdentityFrameCard from '@/components/ui/IdentityFrameCard'
 import EgoDisplayCard from '@/components/sinners/EgoDisplayCard'
-import DeckCard, { type DeckSummary } from '@/components/decks/DeckCard'
 import FaustPortrait from './FaustPortrait'
-import PlanCard, { type PlanSummary } from '@/components/planner/PlanCard'
-import { CardSkeleton } from '@/components/discovery/BoardSkeleton'
 import LiteYoutube from '@/components/ui/LiteYoutube'
 import Skeleton, { SkeletonLine, SkeletonPage } from '@/components/ui/Skeleton'
 import ScrollAnimations from './ScrollAnimations'
+import HomeCommunity from './HomeCommunity'
 import styles from './HomeStaticSections.module.css'
 
 type TFn = Awaited<ReturnType<typeof getTranslations>>
-export type CommunityShelf<T> = { popular: boolean; posts: T[] }
-type Community = { plans: CommunityShelf<PlanSummary>; decks: CommunityShelf<DeckSummary> } | null
 
 type Named = { name_kr?: string | null; name_en?: string | null; name_jp?: string | null }
 const localName = (row: Named | null | undefined, lang: SupportedLang) =>
@@ -93,38 +89,6 @@ function NewReleases({ identities, egos, lang, t }: { identities: IdentityWithSi
       )}
     </div>
   )
-}
-
-// ── 커뮤니티 ─────────────────────────────────────────────────────────────────
-
-const CARD_SLOT = ['', '', styles.third]
-
-async function CommunitySections({ community, t }: { community: Promise<Community>; t: TFn }) {
-  const data = await community
-  if (!data) return null
-  const shelves = [
-    { key: 'plans', title: t(data.plans.popular ? 'home.popularPlans' : 'home.newPlans'), href: '/planner/community', link: t('home.planBoard'), cards: data.plans.posts.map(plan => <PlanCard key={plan.id} plan={plan} />) },
-    { key: 'decks', title: t(data.decks.popular ? 'home.popularDecks' : 'home.newDecks'), href: '/decks', link: t('home.cta.decks'), cards: data.decks.posts.map(deck => <DeckCard key={deck.id} deck={deck} />) },
-  ].filter(shelf => shelf.cards.length > 0)
-  return shelves.map(shelf => (
-    <section key={shelf.key} className={styles.section} data-home-reveal aria-labelledby={`home-${shelf.key}-heading`}>
-      <Heading id={`home-${shelf.key}-heading`} title={shelf.title} href={shelf.href} link={shelf.link} />
-      <div className={styles.posts}>
-        {shelf.cards.map((card, i) => <div key={card.key} className={`min-w-0 ${CARD_SLOT[i]}`}>{card}</div>)}
-      </div>
-    </section>
-  ))
-}
-
-function CommunitySkeleton() {
-  return (['planner', 'deck'] as const).map(kind => (
-    <SkeletonPage key={kind} className={styles.section}>
-      <div className={styles.heading}><SkeletonLine w="10rem" h="1.5rem" /><SkeletonLine w="5rem" h="0.875rem" /></div>
-      <div className={styles.posts}>
-        {CARD_SLOT.map((slot, i) => <div key={i} className={`min-w-0 ${slot}`}><CardSkeleton kind={kind} /></div>)}
-      </div>
-    </SkeletonPage>
-  ))
 }
 
 // ── 도구 ─────────────────────────────────────────────────────────────────────
@@ -218,18 +182,20 @@ function OfficialSkeleton() {
 
 // ── Page body ────────────────────────────────────────────────────────────────
 
-export default async function HomeStaticSections({ lang, latestIdentities, latestEgos, community, latestVideo }: {
+export default async function HomeStaticSections({ lang, latestIdentities, latestEgos, latestVideo }: {
   lang: SupportedLang
   latestIdentities: IdentityWithSinner[]
   latestEgos: EGOWithSinner[]
-  community: Promise<Community>
   latestVideo: Promise<YoutubeVideo | null>
 }) {
   const t = await getTranslations()
   return (
     <div className={styles.content} data-home-content>
       <NewReleases identities={latestIdentities} egos={latestEgos} lang={lang} t={t} />
-      <Suspense fallback={<CommunitySkeleton />}><CommunitySections community={community} t={t} /></Suspense>
+      <HomeCommunity
+        plans={{ popular: t('home.popularPlans'), recent: t('home.newPlans'), link: t('home.planBoard') }}
+        decks={{ popular: t('home.popularDecks'), recent: t('home.newDecks'), link: t('home.cta.decks') }}
+      />
       <Tools t={t} identities={latestIdentities} lang={lang} />
       <Suspense fallback={<OfficialSkeleton />}><Official latestVideo={latestVideo} t={t} /></Suspense>
       <ScrollAnimations belowFold />

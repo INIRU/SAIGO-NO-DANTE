@@ -155,7 +155,6 @@ export async function POST(
       return NextResponse.json({ error: '투표 처리 중 오류가 발생했습니다.' }, { status: 500 })
     }
 
-    revalidatePath('/decks')
     revalidatePath(`/decks/${id}`)
     revalidateTag(CACHE_TAGS.decksList, 'max')
     revalidateTag(CACHE_TAGS.deck(id), 'max')
