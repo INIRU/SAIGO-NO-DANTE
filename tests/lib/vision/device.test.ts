@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest'
-import { cpuFallback, isMobileDevice, webgpuBlock } from '../../../lib/vision/device'
+import { cpuFallback, graphicsSettingsUrl, isMobileDevice, webgpuBlock } from '../../../lib/vision/device'
 
 it('blocks phones and tablets by the browser device report, not by window size', () => {
   expect(isMobileDevice({ userAgentData: { mobile: true } })).toBe(true)
@@ -40,4 +40,11 @@ it('stops a capture only once it settled on the CPU, never while the GPU text mo
   expect(cpuFallback({ engine: 'tesseract', loading: false, reason: 'webgpu-unavailable' }, wasm)).toBe('unavailable')
   expect(cpuFallback({ engine: 'tesseract', loading: false, reason: 'webgpu-unsupported' }, wasm)).toBe('unsupported')
   expect(cpuFallback({ engine: 'tesseract', loading: false, reason: 'gpu-ocr-init-failed' }, webgpu)).toBe('failed')
+})
+
+it('points to the browser settings page with the graphics acceleration switch', () => {
+  expect(graphicsSettingsUrl('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36'))
+    .toBe('chrome://settings/system')
+  expect(graphicsSettingsUrl('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36 Edg/154.0.0.0'))
+    .toBe('edge://settings/system')
 })
