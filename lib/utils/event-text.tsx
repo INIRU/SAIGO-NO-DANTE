@@ -1,9 +1,11 @@
 import type { CSSProperties, ReactNode } from 'react'
 import { ACTION_EVENT_EFFECTS, AB_EVENT_EFFECTS } from '@/lib/data/event-effects-map'
+import PlaceholderLabel from '@/components/ui/PlaceholderLabel'
+import { splitPlaceholders } from '@/lib/game-text/placeholders'
 
 /** Render only the formatting tags used by the original Unity text. Unknown
  * angle-bracket dialogue stays text; source strings never become HTML. */
-export function parseUnityColorTags(raw: string): ReactNode {
+export function parseUnityColorTags(raw: string, locale = 'ko'): ReactNode {
   type Frame = { tag: string; style: CSSProperties; children: ReactNode[] }
   const root: Frame = { tag: '', style: {}, children: [] }
   const stack = [root]
@@ -27,24 +29,29 @@ export function parseUnityColorTags(raw: string): ReactNode {
     } else if (closing) {
       const index = stack.findLastIndex(frame => frame.tag === closing[1])
       if (index > 0) while (stack.length > index) close()
-    } else stack[stack.length - 1].children.push(token)
+    } else {
+      // {{sinner}} and the other placeholder tokens become labels; plain text stays text.
+      for (const part of splitPlaceholders(token)) {
+        stack[stack.length - 1].children.push(typeof part === 'string' ? part : <PlaceholderLabel key={key++} token={part.token} locale={locale} />)
+      }
+    }
   }
   while (stack.length > 1) close()
   return root.children
 }
 
 export function getOptionEffects(eventId: number, optionIndex: number): ReactNode[] {
-  return (ACTION_EVENT_EFFECTS[eventId]?.[optionIndex] ?? []).map(parseUnityColorTags)
+  return (ACTION_EVENT_EFFECTS[eventId]?.[optionIndex] ?? []).map(text => parseUnityColorTags(text))
 }
 export function getAbEventEffects(eventId: number): { success: ReactNode[]; failure: ReactNode[] } {
   const data = AB_EVENT_EFFECTS[eventId]
-  return { success: (data?.success ?? []).map(parseUnityColorTags), failure: (data?.failure ?? []).map(parseUnityColorTags) }
+  return { success: (data?.success ?? []).map(text => parseUnityColorTags(text)), failure: (data?.failure ?? []).map(text => parseUnityColorTags(text)) }
 }
-export function replaceEventPlaceholders(text: string | null | undefined, lang: string = 'ko'): string {
-  const label = lang === 'en' ? 'Sinner name' : lang === 'ja' ? '囚人名' : '수감자 이름'
-  return (text ?? '').replace(/\{\d+\}/g, `{${label}}`)
+/** Event text from before the sync stored {{sinner}} (a bare {0}) reads the same as the token. */
+export function replaceEventPlaceholders(text: string | null | undefined): string {
+  return (text ?? '').replace(/\{\d+\}/g, '{{sinner}}')
 }
 /** Preserve original colors and emphasis instead of guessing from Korean words. */
 export function colorizeEventText(text: string | null | undefined, lang: string = 'ko'): ReactNode {
-  return text ? parseUnityColorTags(replaceEventPlaceholders(text, lang)) : null
+  return text ? parseUnityColorTags(replaceEventPlaceholders(text), lang) : null
 }

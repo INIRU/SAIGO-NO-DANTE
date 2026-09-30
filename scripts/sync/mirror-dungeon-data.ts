@@ -741,16 +741,15 @@ async function syncGifts(): Promise<void> {
       activation_condition: activationCondition,
     })
 
-    // Live values ({0}, {1}) are filled in by the game during a run: mark them instead of showing 0
-    // (only for non-convert_to gifts — convert_to gifts are handled in frontend).
+    // Live values ({0}, {1}) are filled in by the game during a run: store them as {{live}} instead of showing 0.
+    // A convert_to gift's {0} is the gift it turns into, filled with that name above.
     if (!convertTo) {
       const last = gifts[gifts.length - 1]
-      const fields = [['effect_base', 'kr'], ['effect_base_en', 'en'], ['effect_base_jp', 'jp'], ['effect_plus', 'kr'],
-        ['effect_plusplus', 'kr'], ['effect_plus_en', 'en'], ['effect_plus_jp', 'jp'], ['effect_plusplus_en', 'en'],
-        ['effect_plusplus_jp', 'jp']] as const
-      for (const [field, lang] of fields) {
+      const fields = ['effect_base', 'effect_base_en', 'effect_base_jp', 'effect_plus', 'effect_plusplus', 'effect_plus_en',
+        'effect_plus_jp', 'effect_plusplus_en', 'effect_plusplus_jp'] as const
+      for (const field of fields) {
         const text = last[field]
-        if (text) last[field] = markLiveValues(text, lang)
+        if (text) last[field] = markLiveValues(text)
       }
     }
 
