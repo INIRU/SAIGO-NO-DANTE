@@ -3616,7 +3616,7 @@ async function rebuildKeywordMeta(): Promise<void> {
   }
   console.log(`  keyword_meta.game_id 대표 참조: 설정 ${gameIdReport.set} (키워드 자기 태그 ${gameIdReport.byTag} / 같은 이름 하나 ${gameIdReport.only} / 가장 많이 쓰임 ${gameIdReport.mostUsed}), 모호 ${gameIdReport.ambiguous}, 없음 ${gameIdReport.none}`)
   if (gameIdReport.refNotInDb) console.log(YELLOW(`  [경고] 참조 표(game_text_refs)에 아직 없는 대표 id ${gameIdReport.refNotInDb}개는 기록하지 않습니다 (참조 표 단계를 먼저 실행)`))
-  if (gameIdReport.columnMissing) console.log(YELLOW('  [경고] keyword_meta.game_id 컬럼이 없습니다 (마이그레이션 20261001150000_keyword_meta_game_id.sql 미적용): 계산만 하고 기록하지 않습니다'))
+  if (gameIdReport.columnMissing) console.log(YELLOW('  [경고] keyword_meta.game_id 컬럼이 없습니다 (마이그레이션 20261001060026_keyword_meta_game_id.sql 미적용): 계산만 하고 기록하지 않습니다'))
   for (const [name, candidates] of [...gameIdPlan.ambiguous].slice(0, 40)) console.log(GRAY(`    모호: ${name} → ${candidates.join(', ')}`))
   if (gameIdPlan.ambiguous.size > 40) console.log(GRAY(`    ... 외 ${gameIdPlan.ambiguous.size - 40}개`))
   if (gameIdPlan.none.length) console.log(GRAY(`    없음: ${gameIdPlan.none.join(', ')}`))

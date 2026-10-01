@@ -192,7 +192,7 @@ describe('REQ-DATA-SYNC-038 what is stored', () => {
 })
 
 describe('REQ-DATA-SYNC-038 migration', () => {
-  const sql = readFileSync(resolve(__dirname, '../../supabase/migrations/20261001150000_keyword_meta_game_id.sql'), 'utf8')
+  const sql = readFileSync(resolve(__dirname, '../../supabase/migrations/20261001060026_keyword_meta_game_id.sql'), 'utf8')
 
   it('REQ-DATA-SYNC-038 adds a nullable game_id that references game_text_refs and drops nothing', () => {
     expect(sql).toMatch(/alter table limbus\.keyword_meta\s+add column if not exists game_id text references limbus\.game_text_refs\s*\(id\) on delete set null/i)
