@@ -13,10 +13,15 @@ export interface PlannerPassiveLike {
   passive_type: string
   sin_affinity: string | null
   sin_count: number | null
+  /** Every sin of the activation condition with its own count (sin_affinity/sin_count hold only the first). */
+  sin_requirements?: readonly PassiveSinRequirement[] | null
   active_cond: string | null
   description: string | null
   passive_order?: number | null
 }
+
+export type PassiveSinRequirement = { sin: string; count: number }
+export type PassiveRequirement = { sin: SinType; count: number }
 
 export interface PlannerPassiveSinnerLike {
   id: string
@@ -32,17 +37,36 @@ function normalizePassiveSins(sinAffinity: string | null): SinType[] {
     .filter((sin): sin is SinType => sin in SIN_COLORS)
 }
 
+/**
+ * Every sin a passive needs with its own count, in game order: sin_requirements when the row has them, else the one
+ * sin_count for each sin of sin_affinity (rows stored before the column existed).
+ */
+export function passiveRequirements(passive: Pick<PlannerPassiveLike, 'sin_affinity' | 'sin_count' | 'sin_requirements'>): PassiveRequirement[] {
+  const stored = (passive.sin_requirements ?? [])
+    .map(req => ({ sin: (SIN_KR_TO_EN[req.sin] ?? req.sin) as SinType, count: req.count }))
+    .filter(req => req.sin in SIN_COLORS && req.count > 0)
+  if (stored.length > 0) return stored
+  const count = passive.sin_count ?? 0
+  return count > 0 ? normalizePassiveSins(passive.sin_affinity).map(sin => ({ sin, count })) : []
+}
+
+/**
+ * Whether the deck meets a passive's condition: each sin needs its own count. `current`/`required` are the totals over
+ * the sins (the short "3/5" of the deck panels), `requirements` the per-sin state.
+ */
 export function getPassiveCondition(passive: PlannerPassiveLike, deckSinCounts: Record<string, number>) {
-  const sins = normalizePassiveSins(passive.sin_affinity)
-  const required = passive.sin_count ?? 0
-  const current = sins.length > 0
-    ? sins.reduce((sum, sin) => sum + (deckSinCounts[sin] ?? 0), 0)
-    : 0
-  const met = required === 0 || current >= required
+  const requirements = passiveRequirements(passive).map(req => {
+    const current = deckSinCounts[req.sin] ?? 0
+    return { ...req, current, met: current >= req.count }
+  })
+  const sins = requirements.map(req => req.sin)
+  const required = requirements.reduce((sum, req) => sum + req.count, 0)
+  const current = requirements.reduce((sum, req) => sum + Math.min(req.current, req.count), 0)
+  const met = requirements.every(req => req.met)
   const primarySin = sins[0] ?? null
   const color = primarySin ? (SIN_COLORS[primarySin as keyof typeof SIN_COLORS] ?? '#888') : '#888'
 
-  return { sins, current, required, met, primarySin, color }
+  return { sins, requirements, current, required, met, primarySin, color }
 }
 
 export function buildPassivePanelModel(

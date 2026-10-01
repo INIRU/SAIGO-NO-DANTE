@@ -3,9 +3,10 @@
 import { useCallback, useMemo, useState, type ReactNode } from 'react'
 import Image from 'next/image'
 import { useLocale, useTranslations } from 'next-intl'
-import { SIN_COLORS, getSinIconUrl, normalizeSin } from '@/lib/constants/sin'
+import { SIN_COLORS, getSinIconUrl } from '@/lib/constants/sin'
 import { normalizeThemeKeyword } from '@/lib/constants/keywords'
 import { computeKeywordDistribution } from '@/lib/planner/fusion'
+import { getPassiveCondition, type PlannerPassiveLike } from '@/lib/planner/passives'
 import KeywordChart, { type KeywordChartContributor } from '@/components/planner/KeywordChart'
 import SkillDescription from '@/components/skill/SkillDescription'
 import { localizeDeckKeyword } from '@/components/decks/decks-types'
@@ -20,6 +21,7 @@ export type DeckInsightPassive = {
   passive_type: string
   sin_affinity: string | null
   sin_count: number | null
+  sin_requirements?: { sin: string; count: number }[] | null
   active_cond: string | null
 }
 
@@ -44,7 +46,16 @@ type Props = {
   summary?: ReactNode
 }
 
-const sumSins = (sins: string[], counts: Record<string, number>) => sins.reduce((sum, sin) => sum + (counts[normalizeSin(sin) ?? sin] ?? 0), 0)
+const asConditionPassive = (passive: DeckInsightPassive): PlannerPassiveLike => ({
+  identity_id: '',
+  name: passive.name,
+  passive_type: passive.passive_type,
+  sin_affinity: passive.sin_affinity,
+  sin_count: passive.sin_count,
+  sin_requirements: passive.sin_requirements,
+  active_cond: passive.active_cond,
+  description: passive.description,
+})
 
 /** Planner deck analysis: keyword distribution with 1:1 profiles, and battle/support passives whose column matches the keyword column height. */
 export default function DeckInsights({ identities, sinCounts, baseSinCounts, summary }: Props) {
@@ -115,28 +126,26 @@ export default function DeckInsights({ identities, sinCounts, baseSinCounts, sum
                   </div>
                   <div className="deck-passives__body">
                     {list.map((passive, index) => {
-                      const sins = passive.sin_affinity ? passive.sin_affinity.split(',').map(sin => sin.trim()) : []
-                      const current = sumSins(sins, sinCounts)
-                      const required = passive.sin_count ?? 1
-                      const isMet = current >= required
+                      const conditionPassive = asConditionPassive(passive)
+                      const { requirements, met: isMet, primarySin } = getPassiveCondition(conditionPassive, sinCounts)
                       const isResonance = passive.active_cond === 'resonance'
                       // 기본 배분(3-2-1)에서는 충족하지만 현재 배분으로는 미충족이면 경고
-                      const distributionWarning = !!baseSinCounts && passive.active_cond != null && sumSins(sins, baseSinCounts) >= required && !isMet
-                      const primarySin = normalizeSin(sins[0] ?? null)
+                      const distributionWarning = !!baseSinCounts && passive.active_cond != null && !isMet && getPassiveCondition(conditionPassive, baseSinCounts).met
                       const accent = primarySin ? SIN_COLORS[primarySin] : '#888'
                       const condition = isResonance ? tDeck('stats.resonance') : tDeck('stats.stock')
                       return (
                         <div key={passive.id ?? index} className="deck-passive" data-unmet={!!passive.active_cond && !isMet}>
                           <div className="deck-passive__line">
                             <span className="deck-passive__name">{passive.name}</span>
-                            {sins.length > 0 && (
+                            {requirements.length > 0 && (
                               <span className="deck-passive__cost" data-met={passive.active_cond ? isMet : undefined} title={passive.active_cond ? condition : undefined}>
                                 {passive.active_cond && <span className="deck-passive__cond">{condition}</span>}
-                                {sins.map(sin => {
-                                  const normalized = normalizeSin(sin)
-                                  return normalized ? <Image key={sin} src={getSinIconUrl(normalized)} alt={sin} width={18} height={18} /> : null
-                                })}
-                                <span className="deck-passive__count">{passive.active_cond ? current + '/' + required : '×' + required}</span>
+                                {requirements.map(req => (
+                                  <span key={req.sin} className="deck-passive__req" data-met={passive.active_cond ? req.met : undefined}>
+                                    <Image src={getSinIconUrl(req.sin)} alt={req.sin} width={18} height={18} />
+                                    <span className="deck-passive__count">{passive.active_cond ? req.current + '/' + req.count : '×' + req.count}</span>
+                                  </span>
+                                ))}
                               </span>
                             )}
                             {distributionWarning && <span className="deck-passive__warn" title={tDeck('stats.passiveWarning')}>!</span>}
@@ -200,12 +209,14 @@ export default function DeckInsights({ identities, sinCounts, baseSinCounts, sum
           display: inline-flex; align-items: center; gap: 0.25rem; min-height: 1.5rem; padding: 0 0.5rem 0 0.3125rem;
           border: 1px solid #3a2c18; border-radius: 0.25rem; background: #120e08; color: #e8dcc8; font-size: 0.8125rem;
         }
+        .deck-passive__req { display: inline-flex; align-items: center; gap: 0.25rem; }
+        .deck-passive__req + .deck-passive__req { margin-left: 0.25rem; }
         .deck-passive__cost img { width: 1.125rem; height: 1.125rem; }
         .deck-passive__cost[data-met='false'] { border-color: rgba(155,44,35,0.7); background: rgba(155,44,35,0.12); }
-        .deck-passive__cost[data-met='false'] img { opacity: 0.55; filter: grayscale(0.6); }
+        .deck-passive__req[data-met='false'] img { opacity: 0.55; filter: grayscale(0.6); }
         .deck-passive__cond { margin-right: 0.125rem; color: #9c8b73; font-size: 0.75rem; }
         .deck-passive__count { font-variant-numeric: tabular-nums; }
-        .deck-passive__cost[data-met='false'] .deck-passive__count { color: #e07060; }
+        .deck-passive__req[data-met='false'] .deck-passive__count { color: #e07060; }
         .deck-passive__desc > div { color: #c9b99c !important; font-size: 0.875rem !important; line-height: 1.65 !important; }
         .deck-passive__warn { display: inline-flex; width: 1.25rem; height: 1.25rem; align-items: center; justify-content: center; border-radius: 999px; background: #9b2c23; color: #e8dcc8; font-size: 0.75rem; font-weight: 700; }
       `}</style>

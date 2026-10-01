@@ -7,6 +7,7 @@ import { useTranslations } from 'next-intl'
 import CoinBadge from './CoinBadge'
 import { parseSkillDescription, COIN_IMAGES, UNBREAKABLE_COIN_COLOR } from '@/lib/identity/skill-description'
 import { SKILL_DESC_STYLES, type SkillDescVariant } from './tokens'
+import { FLAVOR_COLOR } from '@/lib/game-text/flavor'
 
 interface SkillDescriptionProps {
   description: string
@@ -177,14 +178,14 @@ export default function SkillDescription({
         <div
           style={{
             marginTop: hasEffectLines ? '0.5rem' : 0,
-            color: '#9b6b43',
+            color: FLAVOR_COLOR,
             fontStyle: 'italic',
             fontSize: '0.95em',
             lineHeight: 1.55,
             whiteSpace: 'pre-line',
           }}
         >
-          {formatGameText(flavor, '#9b6b43')}
+          {formatGameText(flavor, FLAVOR_COLOR)}
         </div>
       )}
     </div>

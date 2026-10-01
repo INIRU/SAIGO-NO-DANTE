@@ -1,0 +1,54 @@
+.multiply {
+  width: 0.5em;
+  height: 0.5em;
+  flex-shrink: 0;
+  overflow: visible;
+}
+.multiply path {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+}
+
+.count {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.08em;
+  font-family: var(--font-title);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.count .multiply {
+  color: var(--gold-light);
+  margin-top: -0.06em;
+}
+
+.requirements {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.375rem 1.125rem;
+  margin-bottom: 0.875rem;
+}
+.requirement {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 1.75rem;
+  color: var(--text-primary);
+}
+.sinIcon {
+  width: 2rem;
+  height: 2rem;
+}
+.condition {
+  font-family: var(--font-heading);
+  font-size: 0.9375rem;
+  color: var(--text-secondary);
+}
+
+.nameLabel {
+  margin-bottom: 0.625rem;
+  font-weight: inherit;
+}

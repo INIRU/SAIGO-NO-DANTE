@@ -583,7 +583,7 @@ async function getCachedDeckDetailPayload(lang: 'ko' | 'en' | 'ja', id: string) 
               id, sinner_id, folder_name, game_id, keywords, skill_keyword_list, affiliation, association_list, name, name_kr, name_en, name_jp, tier, rarity,
               hp, speed_min, speed_max, def_level, slash_res, pierce_res, blunt_res,
               skills(id, image_id, name, name_en, name_jp, skill_type, atk_type, sin_affinity, coins, base_power, coin_power, skill_order, variant_order, atk_weight, offense_level, description, description_en, description_jp, uptie_level),
-              passives(name, name_en, name_jp, passive_type, sin_affinity, sin_count, active_cond, description, description_en, description_jp, passive_order, uptie_level)
+              passives(name, name_en, name_jp, passive_type, sin_affinity, sin_count, sin_requirements, active_cond, description, description_en, description_jp, passive_order, uptie_level)
             )
           ),
           deck_egos(

@@ -18,6 +18,14 @@ const MIN_SIZE_EM = 0.5
 const MAX_SIZE_EM = 2
 
 /** CSS font-size of a `<size=…>` value: `N%` as written, a bare number against the base, both kept within 0.5–2em. */
+/** A keyword of game text is underlined in its own colour: the word has a tooltip (the game marks its links the same way). */
+const KEYWORD_UNDERLINE = {
+  textDecorationLine: 'underline',
+  textDecorationColor: 'color-mix(in srgb, currentColor 55%, transparent)',
+  textDecorationThickness: '1px',
+  textUnderlineOffset: '0.2em',
+} as const
+
 function fontSizeOf(value: string): string | null {
   const amount = Number.parseFloat(value)
   if (!Number.isFinite(amount) || amount === 0) return null
@@ -127,7 +135,7 @@ export default function GameText({ nodes, accent, keywords, keywordRef: KeywordR
     const keywordColor = resolveKeywordTextColor(ref.n, ref.kw ? keywords[ref.kw] : undefined, ref.kw)
     return (
       <KeywordRef key={key} keyword={ref.n} krKey={ref.kw} refId={id} inline displayColor={keywordColor} plain={children !== undefined} nested={nested}>
-        {children ?? <span style={{ color: keywordColor, fontWeight: 600 }}>{ref.n}</span>}
+        {children ?? <span style={{ color: keywordColor, fontWeight: 600, ...KEYWORD_UNDERLINE }}>{ref.n}</span>}
       </KeywordRef>
     )
   }

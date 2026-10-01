@@ -116,6 +116,8 @@ export type Passive = {
   name: string
   sin_affinity: string | null
   sin_count: number | null
+  /** Every sin of the activation condition with its own count (sin_affinity/sin_count hold only the first). */
+  sin_requirements?: { sin: string; count: number }[] | null
   active_cond: string | null
   description: string
   flavor?: string | null
@@ -174,6 +176,9 @@ export interface EGOPassive {
   description_en?: string | null
   name_jp?: string | null
   description_jp?: string | null
+  flavor?: string | null
+  flavor_en?: string | null
+  flavor_jp?: string | null
 }
 
 export type EGO = {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildPassivePanelModel, getPassiveCondition, type PlannerPassiveLike } from '@/lib/planner/passives'
+import { buildPassivePanelModel, getPassiveCondition, passiveRequirements, type PlannerPassiveLike } from '@/lib/planner/passives'
 
 const passive = (name: string, overrides: Partial<PlannerPassiveLike> = {}): PlannerPassiveLike => ({
   identity_id: 'selected', name, passive_type: 'battle', sin_affinity: '분노',
@@ -31,9 +31,9 @@ describe('passive panel model', () => {
     expect(updated.slots[0].battle.map(row => row.passive.name)).toEqual(rows.map(row => row.name))
   })
 
-  it('adds multiple Korean or English sin conditions and ignores unknown tokens', () => {
-    const condition = getPassiveCondition(passive('복합', { sin_affinity: '우울, pride, unknown', sin_count: 4 }), { gloom: 2, pride: 3 })
-    expect(condition).toMatchObject({ sins: ['gloom', 'pride'], current: 5, required: 4, met: true, primarySin: 'gloom' })
+  it('reads Korean or English sins of an old row (one count each) and ignores unknown tokens', () => {
+    const condition = getPassiveCondition(passive('복합', { sin_affinity: '우울, pride, unknown', sin_count: 2 }), { gloom: 2, pride: 3 })
+    expect(condition).toMatchObject({ sins: ['gloom', 'pride'], current: 4, required: 4, met: true, primarySin: 'gloom' })
     expect(getPassiveCondition(passive('무조건', { sin_affinity: null, sin_count: null }), {})).toMatchObject({ current: 0, required: 0, met: true, primarySin: null })
   })
 
@@ -41,5 +41,22 @@ describe('passive panel model', () => {
     const model = buildPassivePanelModel([{}, { sinner_id: 'unknown' }], [], [], {})
     expect(model.counts).toEqual({ battle: 0, support: 0 })
     expect(model.slots.map(row => [row.sinnerName, row.battle.length, row.support.length])).toEqual([['', 0, 0], ['unknown', 0, 0]])
+  })
+
+  it('REQ-CATALOG-016 keeps every sin with its own count and meets the condition only when each sin is met', () => {
+    const p = passive('진형 보존', { sin_affinity: 'envy', sin_count: 2, active_cond: 'stock', sin_requirements: [{ sin: 'envy', count: 2 }, { sin: 'sloth', count: 3 }] })
+    expect(passiveRequirements(p)).toEqual([{ sin: 'envy', count: 2 }, { sin: 'sloth', count: 3 }])
+    const short = getPassiveCondition(p, { envy: 5, sloth: 2 })
+    expect(short).toMatchObject({ met: false, current: 4, required: 5 })
+    expect(short.requirements).toEqual([
+      { sin: 'envy', count: 2, current: 5, met: true },
+      { sin: 'sloth', count: 3, current: 2, met: false },
+    ])
+    expect(getPassiveCondition(p, { envy: 2, sloth: 3 }).met).toBe(true)
+  })
+
+  it('REQ-CATALOG-016 falls back to sin_affinity/sin_count when a row has no sin_requirements', () => {
+    expect(passiveRequirements(passive('옛 행', { sin_affinity: 'pride', sin_count: 1, sin_requirements: null }))).toEqual([{ sin: 'pride', count: 1 }])
+    expect(passiveRequirements(passive('조건 없음', { sin_affinity: null, sin_count: null }))).toEqual([])
   })
 })

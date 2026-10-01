@@ -15,8 +15,9 @@ import { getLocalizedKeywordDesc, getLocalizedKeywordName } from '@/lib/i18n'
 import type { SupportedLang } from '@/lib/i18n'
 import { PlaceholderText } from '@/components/ui/PlaceholderLabel'
 import { mayBeRawGameText, parseGameText } from '@/lib/game-text/rich-text'
-import { preloadGameTextRefDescriptions, useGameTextRefDescription, wantGameTextRefs } from '@/lib/hooks/useGameTextRefs'
+import { preloadGameTextRefDescriptions, preloadGameTextRefFlavors, useGameTextRefDescription, useKeywordFlavor, wantGameTextRefs } from '@/lib/hooks/useGameTextRefs'
 import GameText from '@/components/game-text/GameText'
+import { FLAVOR_COLOR } from '@/lib/game-text/flavor'
 
 const KeywordContext = createContext<Record<string, KeywordInfo>>({})
 
@@ -147,6 +148,9 @@ function KwTooltipPopup({ id, rect, iconUrl, keyword, info, refId, onMouseEnter,
   const metaDesc = useKeywordDescription(keyword, info, !!info)
   const refDesc = useGameTextRefDescription(refId ?? '', !info && !!refId)
   const localDesc = info ? metaDesc : refDesc
+  // The game's flavor line of the keyword (brown italic under the description, as under skills and passives).
+  const flavor = useKeywordFlavor({ refId, keyword: info ? keyword : null }, true)
+  const formatGameText = useFormatGameText()
 
   const spaceAbove = rect.top
   const spaceBelow = window.innerHeight - rect.bottom
@@ -163,7 +167,7 @@ function KwTooltipPopup({ id, rect, iconUrl, keyword, info, refId, onMouseEnter,
   useEffect(() => {
     const el = contentRef.current
     if (el) setOverflowing(el.scrollHeight > el.clientHeight)
-  }, [localDesc])
+  }, [localDesc, flavor])
 
   return (
     <span
@@ -219,6 +223,11 @@ function KwTooltipPopup({ id, rect, iconUrl, keyword, info, refId, onMouseEnter,
               ? formatDescription(localDesc, '#d0c7b8', undefined, undefined, { highlightValues: color })
               : <GameText nodes={parseGameText(localDesc)} accent="#d0c7b8" keywords={keywords} keywordRef={KeywordWithTooltip} nested />}
         </span>
+        {flavor && localDesc !== undefined && (
+          <span style={{ display: 'block', marginTop: '0.625rem', color: FLAVOR_COLOR, fontStyle: 'italic', fontSize: '0.8125rem', lineHeight: 1.6, whiteSpace: 'pre-line' }}>
+            {formatGameText(flavor, FLAVOR_COLOR, true)}
+          </span>
+        )}
       </div>
       {overflowing && (
         <div style={{
@@ -277,6 +286,7 @@ export function KeywordWithTooltip({
   const show = useCallback(() => {
     if (refId && !info) preloadGameTextRefDescriptions(locale)
     else preloadKeywordDescriptions(locale)
+    preloadGameTextRefFlavors(locale)
     if (activeKwClose && activeKwClose !== hide) activeKwClose()
     clearTimeout(hideTimeout.current)
     setRect(ref.current?.getBoundingClientRect() ?? null)
