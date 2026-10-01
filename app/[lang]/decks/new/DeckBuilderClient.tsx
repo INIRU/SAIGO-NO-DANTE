@@ -32,7 +32,7 @@ import UnderlineTabBar, { type TabItem } from '@/components/ui/UnderlineTabBar'
 import Dropdown from '@/components/ui/Dropdown'
 import CompactButton from '@/components/ui/CompactButton'
 import { CONTENT_TYPES } from '@/lib/constants/deck-tokens'
-import { LCB_IDS } from '@/lib/constants/game'
+import { LCB_IDS, isDeployedSlot } from '@/lib/constants/game'
 import { Users, Sparkles, SlidersHorizontal, FileText, ArrowLeft, Copy, Save, Upload, Check } from 'lucide-react'
 import { IdentityTab, EgoTab, SkillsetTab } from '@/components/deck-builder/DeckBuilderTabs'
 import { getIdentityImageUrl } from '@/lib/utils/images'
@@ -252,8 +252,10 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
         description: localizePassiveDescription(passive, locale) ?? null,
       })),
     }))
+    const deployedIds = new Set(placed.filter(({ sinner }) => isDeployedSlot(formationOrder.indexOf(sinner.id))).map(({ identity }) => identity.id))
     return {
       identities,
+      deployedIds,
       sinCounts,
       baseSinCounts: computeSinProduction(placed.map(({ identity }) => ({ skills: skillsOf(identity) }))),
       summary: (
@@ -264,7 +266,7 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
         />
       ),
     }
-  }, [deckSlots, egoSlots, locale, passivesByIdentityId, sinners, sinnerT, skillDistribution, skillsByIdentityId])
+  }, [deckSlots, egoSlots, formationOrder, locale, passivesByIdentityId, sinners, sinnerT, skillDistribution, skillsByIdentityId])
 
   const deckKeywordSlots = useMemo<DeckKeywordSlot[]>(() => (
     sinners
@@ -665,6 +667,7 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
         {tab !== 'note' && deckInsights.identities.length > 0 && (
           <DeckInsights
             identities={deckInsights.identities}
+            deployedIds={deckInsights.deployedIds}
             sinCounts={deckInsights.sinCounts}
             baseSinCounts={deckInsights.baseSinCounts}
             summary={deckInsights.summary}

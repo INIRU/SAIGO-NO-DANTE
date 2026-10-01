@@ -19,6 +19,7 @@ import SkillExchangePanel from './SkillExchangePanel'
 import { FormationEgoGrid, FormationTabs, type FormationEgo } from '@/components/decks/FormationEgoGrid'
 import { getLocalizedName } from '@/lib/i18n/localize'
 import type { SupportedLang } from '@/lib/i18n/types'
+import { isDeployedSlot } from '@/lib/constants/game'
 
 const IdentityDetailModal = dynamic(() => import('@/components/ui/IdentityDetailModal'), { ssr: false })
 const EgoDetailModal = dynamic(() => import('@/components/ui/EgoDetailModal'), { ssr: false })
@@ -284,6 +285,7 @@ export default function PlanDeckTabs({
   }, [egoSlots, egos, locale])
 
   // 키워드 분포·패시브·공격 유형·죄악 자원 (플래너 덱 탭과 같은 패널)
+  const deployedIdentityIds = useMemo(() => new Set(Object.values(slotBySinner).filter(slot => slot?.identity_id && isDeployedSlot(slot.slot_order)).map(slot => slot!.identity_id!)), [slotBySinner])
   const insightIdentities = useMemo<DeckInsightIdentity[]>(() => sinners.flatMap(sinner => {
     const slot = slotBySinner[sinner.id]
     if (!slot?.identity_id) return []
@@ -340,6 +342,7 @@ export default function PlanDeckTabs({
       {deckSubTab === 'identity' && deck.length > 0 && (
         <DeckInsights
           identities={insightIdentities}
+          deployedIds={deployedIdentityIds}
           sinCounts={deckAnalysis.sinCounts}
           baseSinCounts={deckAnalysis.baseSinCounts}
           summary={<DeckResourceSummary attack={deckAnalysis.attack} defense={deckAnalysis.defense} production={deckAnalysis.sinCounts} egoCost={deckAnalysis.egoCost} />}

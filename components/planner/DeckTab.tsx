@@ -42,6 +42,7 @@ import {
   type PlannerEgoBoardSlot,
   type PlannerIdentityBoardSlot,
 } from '@/components/planner/deck/PlannerDeckSelection'
+import { isDeployedSlot } from '@/lib/constants/game'
 import {
   DECK_MAIN_KEYWORDS,
   MAX_DECK_MAIN_KEYWORDS,
@@ -361,6 +362,8 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
   }, [])
 
   // 키워드 분포·패시브 패널 입력 (수감자 순서)
+  // Only this set follows formation clicks: the identity list above stays keyed on the roster.
+  const deployedIdentityIds = useMemo(() => new Set(state.identitySlots.filter(slot => isDeployedSlot(slot.slot_order)).map(slot => slot.identity_id)), [state.identitySlots])
   const insightIdentities = useMemo<DeckInsightIdentity[]>(() => sinners.flatMap(sinner => {
     const slot = rosterBySinner.get(sinner.id)
     if (!slot) return []
@@ -691,7 +694,7 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
       )}
 
       {/* ── 하단: 키워드 분포 + 패시브 ── */}
-      <DeckInsights identities={insightIdentities} sinCounts={deckSinCounts} baseSinCounts={deckSinCountsDefault} />
+      <DeckInsights identities={insightIdentities} sinCounts={deckSinCounts} baseSinCounts={deckSinCountsDefault} deployedIds={deployedIdentityIds} />
     </div>
   )
 }

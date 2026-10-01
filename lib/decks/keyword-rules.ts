@@ -1,4 +1,5 @@
 import { normalizeThemeKeyword } from '../constants/keywords'
+import { isDeployedSlot } from '@/lib/constants/game'
 
 export const DECK_MAIN_KEYWORDS = ['참격', '관통', '타격', '화상', '파열', '침잠', '호흡', '진동', '충전', '출혈'] as const
 export const MAX_DECK_MAIN_KEYWORDS = 5
@@ -63,7 +64,7 @@ export function parseDeckMainKeywordsInput(value: unknown): { value: string[] } 
 }
 
 export function isFormationKeywordSlot(slotOrder: number | null | undefined): boolean {
-  return typeof slotOrder === 'number' && slotOrder >= 0 && slotOrder <= 6
+  return isDeployedSlot(slotOrder)
 }
 
 export function isAssignedKeywordSlot(slotOrder: number | null | undefined): boolean {

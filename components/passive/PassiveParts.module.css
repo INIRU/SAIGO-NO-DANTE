@@ -7,21 +7,29 @@
   fill: currentColor;
 }
 
-/* As in the game's resource counts: a small brown × low, the number tall beside it. */
+/* A count with its × (resistance multipliers, E.G.O costs): centred on one line. */
 .count {
   display: inline-flex;
-  align-items: flex-end;
+  align-items: center;
   gap: 0.12em;
   /* The numeral face of the resistance multipliers (×2, ×0.5), so every count on the detail pages matches. */
   font-family: var(--font-excelsior), sans-serif;
-  line-height: 0.85;
+  line-height: 1;
   font-variant-numeric: tabular-nums;
 }
 .count .multiply {
   color: #a0703f;
+}
+
+/* Passive requirements, as the game's resource counts: a small brown × low, the number tall beside it. */
+.requirement .count {
+  align-items: flex-end;
+  line-height: 0.85;
+}
+.requirement .count .multiply {
   margin-bottom: 0.08em;
 }
-.count > span {
+.requirement .count > span {
   transform: translateY(-0.06em);
 }
 
