@@ -113,7 +113,8 @@
 - **움직임은 이 사이트의 특색이다.** 진입, hover, 탭 전환, 순차 등장, 홈 워드마크 같은 움직임은 보는 맛을 만든다. 정리나 최적화를 이유로 빼거나 단조롭게 만들지 않는다. 같은 모습을 더 싼 방법으로 구현한다.
 - 움직이는 속성은 `transform`과 `opacity`를 기본으로 한다. 폭·높이·`top`·`left`·여백을 전환하면 매 프레임 레이아웃을 다시 계산한다. 진행 막대는 `transform: scaleX()`, 펼침은 `grid-template-rows`나 `transform`으로 한다.
 - `transition-all`을 쓰지 않는다. 바뀌는 속성만 적는다(`transition-colors`, `transition-transform`, `transition-opacity`).
-- CSS로 되는 움직임은 CSS로 한다. `motion` 라이브러리는 CSS로 안 되는 것(레이아웃 애니메이션, 제스처, 나가는 애니메이션, 값에 따라 달라지는 순차 등장)에만 쓴다.
+- CSS로 되는 움직임은 CSS로 한다. `motion` 라이브러리는 CSS로 안 되는 것(나가는 애니메이션, 값에 따라 달라지는 순차 등장, 화면 진입 감지)에만 쓴다.
+- `motion` 라이브러리는 `m` 컴포넌트로 쓴다(`import * as m from 'motion/react-m'`, `<m.div>`). 기능은 루트의 `components/ui/MotionProvider.tsx`(`LazyMotion`, `domAnimation`)가 한 번 제공한다. 전체 `motion.div`를 쓰면 strict 모드가 오류를 던진다. 드래그나 레이아웃 애니메이션이 필요해지면 그 화면만 `domMax`를 따로 불러온다.
 - 화면 밖이거나 숨겨진 요소의 반복 애니메이션과 `requestAnimationFrame` 루프는 멈춘다.
 - 움직임을 바꿨으면 전후를 실제 화면으로 비교한다(캡처나 녹화). 숫자만 좋아지고 보는 맛이 줄면 실패다.
 - 짧고 조용하게(150~300ms). 요소가 "툭" 튀어나오지 않게 투명도와 약간의 이동을 함께 준다. 오른쪽 아래 스크롤 버튼처럼 나타났다 사라지는 요소도 부드럽게 전환한다.
