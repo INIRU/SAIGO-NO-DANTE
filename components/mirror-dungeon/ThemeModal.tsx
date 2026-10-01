@@ -1,9 +1,10 @@
 'use client'
 
 import Image from 'next/image'
+import QuietImage from '@/components/ui/QuietImage'
 import { useTranslations } from 'next-intl'
 import { useDeferredValue, type ReactNode } from 'react'
-import ImageWithFallback from '@/components/ui/ImageWithFallback'
+import { blurPlaceholder } from '@/lib/utils/thumbhash'
 import GiftCard from '@/components/mirror-dungeon/GiftCard'
 import { localizeGiftKeyword } from '@/components/ui/GiftDetailModal'
 import { ThemePackModalGrid, ThemePackModalPill, ThemePackModalShell } from '@/components/ui/ThemePackModal'
@@ -134,7 +135,7 @@ export default function ThemeModal({
       maxWidth="48rem"
       poster={posterSrc ? (
         <span className="relative block w-full" style={{ aspectRatio: '416/684', filter: 'drop-shadow(0 0.75rem 1.25rem rgba(0,0,0,0.6))' }}>
-          <ImageWithFallback src={posterSrc} alt="" fill fallbackType="theme" sizes="(max-width: 640px) 88px, 136px" className="object-contain" />
+          <QuietImage src={posterSrc} alt="" fill sizes="(max-width: 640px) 88px, 136px" className="object-contain" {...blurPlaceholder(posterSrc)} />
         </span>
       ) : undefined}
       eyebrow={isHidden ? <ThemePackModalPill tone="purple">{tp('hidden')}</ThemePackModalPill> : null}
@@ -214,7 +215,7 @@ export default function ThemeModal({
                   <li key={ev.id} className="flex items-center gap-2.5 rounded-sm border p-1.5" style={{ borderColor: '#2e2417', background: '#0d0b08' }}>
                     {ev.image_url && (
                       <span className="relative h-11 w-11 shrink-0 overflow-hidden rounded-sm">
-                        <ImageWithFallback src={ev.image_url} alt="" fill fallbackType="default" sizes="44px" className="object-cover" />
+                        <QuietImage src={ev.image_url} alt="" fill sizes="44px" className="object-cover" {...blurPlaceholder(ev.image_url)} />
                       </span>
                     )}
                     <span className="min-w-0">

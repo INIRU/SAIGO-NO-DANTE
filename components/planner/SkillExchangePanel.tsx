@@ -1,7 +1,7 @@
 'use client'
 
 import Image from 'next/image'
-import ImageWithFallback from '@/components/ui/ImageWithFallback'
+import QuietImage from '@/components/ui/QuietImage'
 
 export const SKILL_EXCHANGE_PRESETS: [number, number, number][] = [[3, 2, 1], [1, 0, 5], [0, 0, 6]]
 
@@ -74,7 +74,7 @@ export default function SkillExchangePanel({
             <div key={idx} className="skx__skill" title={label}>
               <span className="skx__icon" style={{ borderBottomColor: skill?.sinColor ?? '#2e2417' }}>
                 {skill?.iconSrc ? (
-                  <ImageWithFallback src={skill.iconSrc} alt={label} width={32} height={32} fallbackType="skill" />
+                  <QuietImage src={skill.iconSrc} alt="" width={32} height={32} />
                 ) : (
                   <span className="skx__slot">S{idx + 1}</span>
                 )}

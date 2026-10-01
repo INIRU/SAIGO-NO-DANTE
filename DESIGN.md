@@ -93,6 +93,7 @@
 | 페이지 머리말, 뒤로 가기 | `components/ui/PageHeader.tsx`, `components/navigation/BackLink.tsx` |
 | 모달, 확인창 | `components/ui/BaseModal.tsx`, `ConfirmModal.tsx`, 상세는 `GiftDetailModal`·`ThemePackModal`·`IdentityDetailModal`·`EgoDetailModal` |
 | 키워드 아이콘 | `components/ui/KeywordIcon.tsx` |
+| 실패하면 사라지는 이미지 (기프트·테마팩·이벤트 그림, 스킬 아이콘) | `components/ui/QuietImage.tsx` |
 | 스켈레톤 | `components/ui/Skeleton.tsx`, `DetailPageSkeleton.tsx` |
 
 기프트 목록의 키워드 순서는 공통 → 키워드(화상·출혈·진동·파열·침잠·호흡·충전) → 참격·관통·타격이다.
