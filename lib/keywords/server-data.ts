@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import type { KeywordInfo } from '@/lib/keywords/catalog'
+import { isMissingColumnError, keywordTextsFromRefs, loadKeywordRefTexts } from '@/lib/keywords/ref-text'
 import type { SupportedLang } from '@/lib/i18n/types'
 
 const KeywordRowSchema = z.object({
@@ -16,20 +17,16 @@ const KeywordRowSchema = z.object({
   name_jp: z.string().nullable().optional(),
   description_en: z.string().nullable().optional(),
   description_jp: z.string().nullable().optional(),
+  game_id: z.string().nullable().optional(),
 })
 const KeywordRowsSchema = z.array(KeywordRowSchema)
 const KEYWORD_META_BASE_SELECT = 'name, description, max_stack, icon_slug, sin_affinity, name_en, name_jp, description_en, description_jp'
-const KEYWORD_META_EFFECT_SELECT = `${KEYWORD_META_BASE_SELECT}, effect_type`
-
-function isMissingEffectTypeError(error: unknown): boolean {
-  if (!error || typeof error !== 'object') return false
-  const candidate = error as { code?: unknown; message?: unknown; details?: unknown; hint?: unknown }
-  const text = [candidate.message, candidate.details, candidate.hint]
-    .filter((value): value is string => typeof value === 'string')
-    .join(' ')
-    .toLowerCase()
-  return candidate.code === '42703' || (text.includes('effect_type') && text.includes('column'))
-}
+// Most complete first: a column whose migration is not applied yet (effect_type, game_id) falls back to the next set.
+const KEYWORD_META_SELECTS = [
+  `${KEYWORD_META_BASE_SELECT}, effect_type, game_id`,
+  `${KEYWORD_META_BASE_SELECT}, effect_type`,
+  KEYWORD_META_BASE_SELECT,
+]
 
 async function loadKeywordData(): Promise<Record<string, KeywordInfo>> {
   const supabase = createAdminClient()
@@ -53,12 +50,11 @@ async function loadKeywordData(): Promise<Record<string, KeywordInfo>> {
     return { rows, error: null }
   }
 
-  const effectResult = await fetchKeywordRows(KEYWORD_META_EFFECT_SELECT)
-  if (effectResult.error && isMissingEffectTypeError(effectResult.error)) {
-    const baseResult = await fetchKeywordRows(KEYWORD_META_BASE_SELECT)
-    allData.push(...baseResult.rows)
-  } else {
-    allData.push(...effectResult.rows)
+  for (const select of KEYWORD_META_SELECTS) {
+    const result = await fetchKeywordRows(select)
+    if (result.error && isMissingColumnError(result.error) && select !== KEYWORD_META_BASE_SELECT) continue
+    allData.push(...result.rows)
+    break
   }
 
   const keywords: Record<string, KeywordInfo> = {}
@@ -69,7 +65,9 @@ async function loadKeywordData(): Promise<Record<string, KeywordInfo>> {
     console.error('[layout] keyword_meta parse error:', parseErr)
     parsedRows = []
   }
-  for (const row of parsedRows) {
+  // Names and descriptions come from the game text references of rows with a game_id (keyword_meta's are the fallback).
+  const refs = parsedRows.some(row => row.game_id) ? await loadKeywordRefTexts(supabase) : null
+  for (const row of parsedRows.map(row => keywordTextsFromRefs(row, refs))) {
     keywords[row.name] = {
       desc: row.description ?? '',
       ...(row.max_stack != null ? { maxStack: row.max_stack } : {}),
