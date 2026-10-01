@@ -1,7 +1,8 @@
 'use client'
 
 import Image from 'next/image'
-import { motion, useReducedMotion } from 'motion/react'
+import { useReducedMotion } from 'motion/react'
+import * as m from 'motion/react-m'
 import { smoothTransition } from '@/lib/animations'
 import { getIdentityProfileUrl } from '@/lib/utils/images'
 import { useMemo, useState } from 'react'
@@ -131,14 +132,14 @@ export default function IdentityAnalysis({ data, selectedId, onSelect }: { data:
       <IdentityInterest id={identityId} />
     </div>
     <IdentityPickerModal open={pickerOpen} onClose={() => setPickerOpen(false)} rows={data.battleIdentityStats} sampleCount={data.sampleCount} selectedId={identityId} name={name} onSelect={id => { selectIdentity(id); setPickerOpen(false) }} />
-    {!insight ? <p className={styles.empty}>{t('empty')}</p> : <motion.div key={identityId} className={styles.analysis} initial={reduceMotion ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={smoothTransition}>
+    {!insight ? <p className={styles.empty}>{t('empty')}</p> : <m.div key={identityId} className={styles.analysis} initial={reduceMotion ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={smoothTransition}>
       <div className={styles.usageRow}>
         <section className={styles.panel} aria-labelledby="order-heading">
           <div className={styles.sectionHead}><h3 id="order-heading">{t('order')}</h3><span>{basis}</span></div>
           <ol className={styles.orderChart}>{orders.map((count, i) => <li key={i} data-top={count > 0 && count === topOrderCount ? '' : undefined} aria-label={t('position', { order: i + 1 }) + ' ' + percent(count).toFixed(1) + '%'}>
             <span className={styles.orderShare} aria-hidden="true">{count > 0 && <><span className={styles.orderWhole}>{percent(count).toFixed(1)}</span><span className={styles.orderRounded}>{Math.round(percent(count))}</span><small>%</small></>}</span>
             <span className={styles.orderTrack} aria-hidden="true">
-              {count > 0 && <motion.span className={styles.orderBar} style={{ height: (count / topOrderCount * 100) + '%' }} initial={reduceMotion ? false : { scaleY: 0 }} animate={{ scaleY: 1 }} transition={reduceMotion ? { duration: 0 } : { duration: .55, delay: i * .03, ease: [0.22, 1, 0.36, 1] }} />}
+              {count > 0 && <m.span className={styles.orderBar} style={{ height: (count / topOrderCount * 100) + '%' }} initial={reduceMotion ? false : { scaleY: 0 }} animate={{ scaleY: 1 }} transition={reduceMotion ? { duration: 0 } : { duration: .55, delay: i * .03, ease: [0.22, 1, 0.36, 1] }} />}
             </span>
             <span className={styles.orderNumber} aria-hidden="true">{i + 1}</span>
           </li>)}</ol>
@@ -194,7 +195,7 @@ export default function IdentityAnalysis({ data, selectedId, onSelect }: { data:
         </Link></li>)}</ul>
         {!posts.length && <p className={styles.empty}>{t('noPosts')}</p>}
       </section>
-    </motion.div>}
+    </m.div>}
   </section>
   </div>
 }

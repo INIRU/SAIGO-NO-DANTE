@@ -164,7 +164,7 @@ function FilterButton({
       onClick={onClick}
       aria-pressed={active}
       title={label}
-      className="flex flex-col items-center justify-center rounded transition-all duration-200"
+      className="flex flex-col items-center justify-center rounded transition duration-200"
       style={{
         minHeight: 'var(--deck-filter-touch-min)',
         padding: '0.25rem 0.1875rem',
@@ -220,7 +220,7 @@ function LanguageFilter({
               type="button"
               onClick={() => onChange(option)}
               aria-pressed={active}
-              className="rounded transition-all duration-200"
+              className="rounded transition duration-200"
               style={{
                 minHeight: 'var(--deck-filter-control-min)',
                 border: '1px solid transparent',
@@ -1060,7 +1060,7 @@ export default function CommunityClient({ initialPlans, initialTotal }: Communit
                 key={key}
                 onClick={() => setSort(key)}
                 aria-pressed={active}
-                className="rounded transition-all duration-200"
+                className="rounded transition duration-200"
                 style={{
                   minHeight: '2.25rem',
                   border: '1px solid transparent',
@@ -1085,7 +1085,7 @@ export default function CommunityClient({ initialPlans, initialTotal }: Communit
           <button
             onClick={() => setDifficulty(null)}
             aria-pressed={!difficulty}
-            className="rounded transition-all duration-200"
+            className="rounded transition duration-200"
             style={{
               minHeight: '2.25rem',
               border: '1px solid transparent',
@@ -1107,7 +1107,7 @@ export default function CommunityClient({ initialPlans, initialTotal }: Communit
                 key={key}
                 onClick={() => setDifficulty(active ? null : key)}
                 aria-pressed={active}
-                className="rounded transition-all duration-200"
+                className="rounded transition duration-200"
                 style={{
                   minHeight: '2.25rem',
                   border: '1px solid transparent',
@@ -1153,7 +1153,7 @@ export default function CommunityClient({ initialPlans, initialTotal }: Communit
           {activeKeywords.size >= 2 && (
             <button
               onClick={toggleKeywordMode}
-              className="rounded transition-all"
+              className="rounded transition"
               style={{
                 minHeight: '1.5rem',
                 padding: '0 0.4375rem',
@@ -1215,7 +1215,7 @@ export default function CommunityClient({ initialPlans, initialTotal }: Communit
             <button
               type="button"
               onClick={toggleIdentityMode}
-              className="rounded transition-all"
+              className="rounded transition"
               style={{
                 minHeight: '1.5rem',
                 padding: '0 0.4375rem',

@@ -1,7 +1,8 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
 import { Loader2, Pin, ArrowLeft, Megaphone } from 'lucide-react'
-import { motion, useReducedMotion } from 'motion/react'
+import { useReducedMotion } from 'motion/react'
+import * as m from 'motion/react-m'
 import { useLocale } from 'next-intl'
 import AnnouncementBody from '@/components/announcements/AnnouncementBody'
 import type { RichNode } from '@/lib/announcements'
@@ -30,12 +31,12 @@ export default function AnnouncementsClient({ initialItems = null }: { initialIt
         <span className="min-w-0"><span className="block break-words font-[family-name:var(--font-paperlogy)] text-sm font-bold leading-relaxed text-[var(--text-primary)]">{item.title}</span><time className="mt-1 block text-xs text-[var(--text-muted)]">{item.created_at.slice(0,10).replaceAll('-','.')}</time></span>
       </button>)}
     </nav>
-    {current ? <motion.article key={current.id} ref={article} tabIndex={-1} initial={reduced ? false : {opacity:0,y:5}} animate={{opacity:1,y:0}} transition={{duration:.2}} className="min-w-0 outline-none">
+    {current ? <m.article key={current.id} ref={article} tabIndex={-1} initial={reduced ? false : {opacity:0,y:5}} animate={{opacity:1,y:0}} transition={{duration:.2}} className="min-w-0 outline-none">
       <p className="mb-2 text-xs text-[var(--gold)]">{label('공지','お知らせ','Notice')}</p>
       <h2 className="break-words font-[family-name:var(--font-paperlogy)] text-xl font-bold leading-snug tracking-[-0.02em]">{current.title}</h2>
       <time className="mt-3 block text-xs text-[var(--text-muted)]">{current.created_at.slice(0,10).replaceAll('-','.')}</time>
       <div className="my-8 text-sm leading-8 text-[var(--text-secondary)]"><AnnouncementBody doc={current.content_doc} text={current.content} /></div>
       <button className="inline-flex min-h-11 items-center gap-2 rounded-md bg-white/[0.04] px-4 text-sm focus-visible:outline-2 focus-visible:outline-[var(--gold)]" onClick={()=>{setSelected(null);requestAnimationFrame(()=>document.querySelector<HTMLButtonElement>('[data-announcements] nav button')?.focus())}}><ArrowLeft size={16}/>{label('목록으로','一覧へ','Back to list')}</button>
-    </motion.article> : <div className="hidden rounded-lg bg-[var(--bg-panel)] px-8 py-14 text-center text-sm text-[var(--text-muted)] md:block">{label('읽을 공지를 선택해주세요.','お知らせを選択してください。','Select an announcement to read.')}</div>}
+    </m.article> : <div className="hidden rounded-lg bg-[var(--bg-panel)] px-8 py-14 text-center text-sm text-[var(--text-muted)] md:block">{label('읽을 공지를 선택해주세요.','お知らせを選択してください。','Select an announcement to read.')}</div>}
   </div>
 }

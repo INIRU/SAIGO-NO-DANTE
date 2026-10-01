@@ -44,7 +44,7 @@ export default function CompactButton({
       onClick={disabled ? undefined : onClick}
       disabled={disabled}
       title={title}
-      className={`inline-flex items-center gap-1 font-semibold transition-all ${className}`}
+      className={`inline-flex items-center gap-1 font-semibold transition ${className}`}
       style={{
         padding: s.padding,
         fontSize: s.fontSize,

@@ -1,7 +1,8 @@
 'use client'
 
 import Image from 'next/image'
-import { motion, useReducedMotion } from 'motion/react'
+import { useReducedMotion } from 'motion/react'
+import * as m from 'motion/react-m'
 import type { ReactNode } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 import { useKeywordData, useKeywords } from '@/components/providers/KeywordProvider'
@@ -92,7 +93,7 @@ export default function DonutChart({ segments, active, onSelect, label }: {
               ? [[RADIUS + 3.25, segment.colors[0], 6.5], [RADIUS - 3.25, segment.colors[1], 6.5]]
               : [[RADIUS, segment.colors[0], 13]]
             const dimmed = active !== null && focus?.key !== segment.key
-            return rings.map(([r, color, width], ring) => <motion.circle key={segment.key + ring} cx="50" cy="50" r={r} fill="none" stroke={color} strokeWidth={width}
+            return rings.map(([r, color, width], ring) => <m.circle key={segment.key + ring} cx="50" cy="50" r={r} fill="none" stroke={color} strokeWidth={width}
               initial={reduceMotion ? false : { pathLength: 0, pathOffset: offset }}
               animate={{ pathLength: length, pathOffset: offset, opacity: dimmed ? 0.28 : 1 }}
               transition={reduceMotion ? { duration: 0 } : { duration: 0.7, delay: i * 0.05, ease: [0.22, 1, 0.36, 1] }} />)

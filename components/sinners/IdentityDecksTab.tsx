@@ -183,7 +183,7 @@ export default function IdentityDecksTab({ identityId }: Props) {
             onChange={e => { setSearch(e.target.value); setShowSuggestions(true) }}
             onFocus={() => setShowSuggestions(true)}
             onKeyDown={handleSearchKeyDown}
-            className="w-full pl-10 pr-4 py-2.5 text-sm outline-none transition-all"
+            className="w-full pl-10 pr-4 py-2.5 text-sm outline-none transition"
             style={{
               background: '#120e09',
               border: '1px solid var(--border)',
@@ -252,7 +252,7 @@ export default function IdentityDecksTab({ identityId }: Props) {
             <button
               key={s}
               onClick={() => setSort(s)}
-              className="px-4 py-2.5 rounded text-sm font-medium transition-all duration-200"
+              className="px-4 py-2.5 rounded text-sm font-medium transition duration-200"
               style={{
                 background: sort === s ? 'var(--gold)' : 'transparent',
                 color: sort === s ? 'var(--bg-deep)' : '#aaaabb',

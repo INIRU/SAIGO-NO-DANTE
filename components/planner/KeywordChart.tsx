@@ -76,11 +76,11 @@ export default function KeywordChart({
               </span>
               <div className="relative min-w-0 rounded-full overflow-hidden" style={{ height: '0.5rem', background: '#222' }}>
                 {layered && (
-                  <div className="absolute inset-y-0 left-0 rounded-full transition-all" style={{ width: `${pct}%`, background: color, opacity: 0.32, minWidth: '0.25rem' }} />
+                  <div className="absolute inset-y-0 left-0 rounded-full transition-[width]" style={{ width: `${pct}%`, background: color, opacity: 0.32, minWidth: '0.25rem' }} />
                 )}
                 {(!layered || (d.deployed ?? 0) > 0) && (
                   <div
-                    className="relative h-full rounded-full transition-all"
+                    className="relative h-full rounded-full transition-[width]"
                     style={{ width: `${layered ? deployedPct : pct}%`, background: color, minWidth: '0.25rem' }}
                   />
                 )}

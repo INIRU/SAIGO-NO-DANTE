@@ -3,7 +3,8 @@
 import { memo, useMemo, useState, useCallback, useEffect, useLayoutEffect, useRef, type CSSProperties } from 'react'
 import Image from 'next/image'
 import { Users, Sparkles, SlidersHorizontal } from 'lucide-react'
-import { motion, useReducedMotion } from 'motion/react'
+import { useReducedMotion } from 'motion/react'
+import * as m from 'motion/react-m'
 import {
   getIdentitySkillDistribution,
   normalizeSkillDistribution,
@@ -488,7 +489,7 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
           const active = subTab === tab.key
           const Icon = tab.icon
           return (
-            <motion.button
+            <m.button
               key={tab.key}
               type="button"
               role="tab"
@@ -510,7 +511,7 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
             >
               <Icon style={{ width: '0.875rem', height: '0.875rem' }} />
               {tDeck(tab.labelKey)}
-            </motion.button>
+            </m.button>
           )
         })}
         <div className="ml-auto flex flex-shrink-0 items-center font-mono" style={{ fontSize: '0.875rem', color: '#666', paddingRight: '0.5rem' }}>
@@ -715,7 +716,7 @@ const MainKeywordChip = memo(function MainKeywordChip({ keyword, iconUrl, label,
   onToggle: (keyword: string) => void
 }) {
   return (
-    <motion.button
+    <m.button
       type="button"
       className="planner-main-keyword"
       data-selected={selected}
@@ -731,6 +732,6 @@ const MainKeywordChip = memo(function MainKeywordChip({ keyword, iconUrl, label,
       {iconUrl && <Image src={iconUrl} alt="" width={16} height={16} className="planner-main-keyword__icon" />}
       <span className="planner-main-keyword__label">{label}</span>
       {count != null && <span className="planner-main-keyword__count">{count}</span>}
-    </motion.button>
+    </m.button>
   )
 })

@@ -285,7 +285,7 @@ function SortControls({ sort, onSortChange }: { sort: string; onSortChange: (s: 
               key={s}
               onClick={() => onSortChange(s)}
               aria-pressed={active}
-              className="rounded transition-all duration-200"
+              className="rounded transition duration-200"
               style={{
                 minHeight: '2.25rem',
                 border: '1px solid transparent',
@@ -325,7 +325,7 @@ function LanguageFilter({
               type="button"
               onClick={() => onChange(option)}
               aria-pressed={active}
-              className="rounded transition-all duration-200"
+              className="rounded transition duration-200"
               style={{
                 minHeight: 'var(--deck-filter-control-min)',
                 border: '1px solid transparent',
@@ -364,7 +364,7 @@ function SquareToggle({
       aria-pressed={active}
       aria-label={ariaLabel ?? label}
       title={label}
-      className="flex flex-col items-center justify-center rounded transition-all duration-200"
+      className="flex flex-col items-center justify-center rounded transition duration-200"
       style={{
         minHeight: 'var(--deck-filter-touch-min)',
         padding: '0.25rem 0.1875rem',
@@ -424,7 +424,7 @@ function KeywordTagChip({
   return (
     <button
       onClick={onRemove}
-      className="flex max-w-full items-center gap-1 rounded transition-all duration-150 hover:bg-[rgba(200,144,10,0.11)] focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-2"
+      className="flex max-w-full items-center gap-1 rounded transition duration-150 hover:bg-[rgba(200,144,10,0.11)] focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-2"
       style={{
         minHeight: '1.625rem',
         padding: '0.125rem 0.25rem 0.125rem 0.375rem',
@@ -684,7 +684,7 @@ export default function DeckListFilters({
             <button
               type="button"
               onClick={onToggleIdentityMode}
-              className="rounded transition-all"
+              className="rounded transition"
               style={{
                 minHeight: '1.5rem',
                 padding: '0 0.4375rem',
@@ -899,7 +899,7 @@ export default function DeckListFilters({
                   {activeKeywordTags.size >= 2 && (
                     <button
                       onClick={onToggleKeywordTagMode}
-                      className="rounded transition-all"
+                      className="rounded transition"
                       style={{
                         minHeight: '1.5rem',
                         padding: '0 0.4375rem',
@@ -941,7 +941,7 @@ export default function DeckListFilters({
                 key={ct}
                 onClick={() => onContentTypeChange(active ? '' : ct)}
                 aria-pressed={active}
-                className="rounded transition-all duration-200"
+                className="rounded transition duration-200"
                 style={{
                   minHeight: '2.375rem',
                   padding: '0.25rem',
@@ -982,7 +982,7 @@ export default function DeckListFilters({
                     <button
                       key={tag}
                       onClick={() => onToggleTag(tag)}
-                      className="max-w-full rounded-full transition-all duration-150"
+                      className="max-w-full rounded-full transition duration-150"
                       style={{
                         minHeight: '1.875rem',
                         padding: '0.1875rem 0.5625rem',
@@ -1012,7 +1012,7 @@ export default function DeckListFilters({
                   {activeMainKeywords.size >= 2 && (
                     <button
                       onClick={onToggleMainKeywordMode}
-                      className="rounded transition-all"
+                      className="rounded transition"
                       style={{
                         minHeight: '1.5rem',
                         padding: '0 0.4375rem',
@@ -1077,7 +1077,7 @@ export default function DeckListFilters({
                 type="button"
                 onClick={() => onMinInfoScoreChange(active ? null : score)}
                 aria-pressed={active}
-                className="flex-1 rounded transition-all duration-200"
+                className="flex-1 rounded transition duration-200"
                 style={{
                   minHeight: '2.25rem',
                   border: '1px solid transparent',

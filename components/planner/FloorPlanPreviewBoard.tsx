@@ -9,7 +9,8 @@ import FloorConstraints from './FloorConstraints'
 import FloorGuidance from './FloorGuidance'
 
 import { useLocale, useTranslations } from 'next-intl'
-import { motion, useReducedMotion } from 'motion/react'
+import { useReducedMotion } from 'motion/react'
+import * as m from 'motion/react-m'
 import ImageWithFallback from '@/components/ui/ImageWithFallback'
 import GiftCard from '@/components/ui/GiftCard'
 import { getLegacyPlanFloorDifficulty, isAllowedFloorDifficulty, isFloorDifficulty } from '@/lib/planner/floor-difficulty'
@@ -122,7 +123,7 @@ export default function FloorPlanPreviewBoard({
   }
 
   return (
-    <motion.div
+    <m.div
       className="floor-preview space-y-6"
       variants={shouldReduceMotion ? undefined : staggerContainer(0.045)}
       initial={shouldReduceMotion ? false : 'initial'}
@@ -130,7 +131,7 @@ export default function FloorPlanPreviewBoard({
       viewport={shouldReduceMotion ? undefined : { once: true, margin: '-60px' }}
     >
       {segments.map(segment => (
-        <motion.section
+        <m.section
           key={segment.start}
           variants={shouldReduceMotion ? undefined : workbenchStaggerItem}
           className="space-y-3"
@@ -161,7 +162,7 @@ export default function FloorPlanPreviewBoard({
               const themeImageSrc = theme ? getThemeImageSrc(theme) : null
 
               return (
-                <motion.div
+                <m.div
                   key={entry.floor}
                   variants={shouldReduceMotion ? undefined : workbenchStaggerItem}
                   className="floor-preview-row"
@@ -251,12 +252,12 @@ export default function FloorPlanPreviewBoard({
                   </div>
                   <div className="floor-preview-guidance"><FloorGuidance entry={entry} entries={floorPlan} inventory={inventory} recipes={recipes} gifts={giftMap} onGiftClick={onGiftClick} events={events} onEventClick={onEventClick} onEventPrefetch={onEventPrefetch} /></div>
                   {entry.floor >= 11 && <div className="col-span-full"><FloorConstraints floor={entry.floor} entries={floorPlan} /></div>}
-                </motion.div>
+                </m.div>
               )
             })}
           </div>
-        </motion.section>
+        </m.section>
       ))}
-    </motion.div>
+    </m.div>
   )
 }

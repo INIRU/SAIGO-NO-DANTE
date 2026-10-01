@@ -422,7 +422,7 @@ export default function DeckIdentityCard({
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
-              className="flex-1 py-2 text-xs transition-all"
+              className="flex-1 py-2 text-xs transition"
               style={{
                 background: isActive ? `${primaryColor}12` : 'transparent',
                 color: isActive ? '#d0c8b8' : '#5a5070',
