@@ -339,10 +339,11 @@
 @media(min-width: 1024px) {
   .identityLayout { grid-template-columns: 17.5rem minmax(0, 1fr); }
   .identityList { position: sticky; top: calc(var(--nav-offset, 4rem) + 3.75rem); display: flex; flex-direction: column; gap: .625rem; max-height: calc(100dvh - var(--nav-offset, 4rem) - 5rem); padding: .75rem; transition: top 300ms cubic-bezier(0.4, 0, 0.2, 1), max-height 300ms cubic-bezier(0.4, 0, 0.2, 1); background: var(--bg-panel); border: 1px solid var(--border); border-radius: .625rem; }
+  /* Rows only (li > button): the search's clear button must keep its own size, or the input shrinks to nothing. */
   .identityList ol { min-height: 0; overflow-y: auto; overscroll-behavior: contain; display: grid; gap: .125rem; scrollbar-width: thin; }
-  .identityList button { display: grid; grid-template-columns: 2.5rem minmax(0, 1fr) auto; align-items: center; gap: .625rem; width: 100%; padding: .3125rem .5rem; border-radius: .25rem; text-align: left; transition: background-color 160ms ease; }
-  .identityList button:hover { background: rgba(255,255,255,.03); }
-  .identityList button[aria-pressed=true] { background: var(--bg-elevated); box-shadow: inset 2px 0 0 var(--gold); }
+  .identityList li > button { display: grid; grid-template-columns: 2.5rem minmax(0, 1fr) auto; align-items: center; gap: .625rem; width: 100%; padding: .3125rem .5rem; border-radius: .25rem; text-align: left; transition: background-color 160ms ease; }
+  .identityList li > button:hover { background: rgba(255,255,255,.03); }
+  .identityList li > button[aria-pressed=true] { background: var(--bg-elevated); box-shadow: inset 2px 0 0 var(--gold); }
   .identityList .share { font-size: 1rem; }
   .subjectActions .changeButton { display: none; }
 }
@@ -381,7 +382,7 @@
   .constraintFloorHead { flex-direction: row; align-items: baseline; gap: .5rem; }
   .constraintCards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
-@media(prefers-reduced-motion: reduce) { .identityList button, .identityList, .views, .stale { transition: none; } }
+@media(prefers-reduced-motion: reduce) { .identityList li > button, .identityList, .views, .stale { transition: none; } }
 
 /* Formation order labels: one decimal on wide screens, whole numbers where twelve columns get narrow */
 .orderRounded { display: none; }
