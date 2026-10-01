@@ -81,7 +81,7 @@ async function getPlanCatalog(giftIds: string[], themeIds: string[]) {
   const db = publicClient()
   const [gifts, themes] = await Promise.all([
     giftIds.length ? db.from('ego_gifts').select('game_id, name, name_en, name_jp, grade, keyword, image_url').in('game_id', giftIds.map(Number)) : Promise.resolve({ data: [], error: null }),
-    themeIds.length ? db.from('ego_gift_themes').select('id, name, name_en, name_jp, image_url').in('id', themeIds.map(Number)) : Promise.resolve({ data: [], error: null }),
+    themeIds.length ? db.from('ego_gift_themes').select('id, name, name_en, name_jp, image_url, name_color, name_segments').in('id', themeIds.map(Number)) : Promise.resolve({ data: [], error: null }),
   ])
   if (gifts.error) throw new Error('Could not load gifts for meta: ' + gifts.error.message)
   if (themes.error) throw new Error('Could not load theme packs for meta: ' + themes.error.message)

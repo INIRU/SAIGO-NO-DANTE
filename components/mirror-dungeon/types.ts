@@ -1,3 +1,4 @@
+import type { ThemePackNameStyle } from '@/lib/data/theme-pack-colors'
 export interface EgoGift {
   id: string
   name: string
@@ -56,6 +57,9 @@ export interface EgoGiftTheme {
   fixed_reward_gift_ids: number[] | null
   name_en?: string | null
   name_jp?: string | null
+  /** Title colour and multi-colour runs on the pack art (synced from uiConfigs.textColor / specialName). */
+  name_color?: string | null
+  name_segments?: ThemePackNameStyle['name_segments']
 }
 
 export interface EventRewardEffect {
