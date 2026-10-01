@@ -7,6 +7,7 @@ import { localizeIdentityName } from '@/components/deck-detail/DeckIdentityCard'
 import { getGiftActivationConditionStatus } from '@/lib/planner/gift-condition-status'
 import { getDeckIdentityAffiliations } from '@/lib/decks/keyword-rules'
 import type { SupportedLang } from '@/lib/i18n/types'
+import { DEPLOYED_SLOT_COUNT } from '@/lib/constants/game'
 function getNoteSkillBaseOrder(skill: Skill): number {
   if (['evade', 'defense', 'counter'].includes(skill.skill_type)) return 4
   if (skill.skill_order >= 5) return 3
@@ -151,7 +152,7 @@ export default function DeckNoteEditor({
   const egoGiftConditionLookup = useMemo(() => {
     const formationAffiliationCounts: Record<string, number> = {}
     const allAffiliationCounts: Record<string, number> = {}
-    const activeFormationIds = new Set(formationOrder.slice(0, 7))
+    const activeFormationIds = new Set(formationOrder.slice(0, DEPLOYED_SLOT_COUNT))
     const assignedIds = new Set(formationOrder)
 
     for (const [sinnerId, identity] of Object.entries(deckSlots)) {
