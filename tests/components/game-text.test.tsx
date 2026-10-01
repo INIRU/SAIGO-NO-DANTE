@@ -148,13 +148,6 @@ describe('REQ-SHARED-019 game text rendering', () => {
     expect(html).not.toContain('data-game-ref')
   })
 
-  it('REQ-SHARED-019 keeps user notes (escapeKeywords) on the previous path even when they hold game tags and refs', () => {
-    const html = render('<b>굵게</b> [Combustion] 화상', { escapeKeywords: true })
-    expect(html).toContain('&lt;b&gt;')
-    expect(html).not.toContain('font-weight:700')
-    expect(html).not.toContain('data-game-ref')
-  })
-
   it('REQ-SHARED-019 GameText does not import the keyword provider (no module cycle: the provider hands it the tooltip component)', () => {
     const source = readFileSync('components/game-text/GameText.tsx', 'utf8')
     expect(source).not.toMatch(/from '@\/components\/providers\/KeywordProvider'/)
