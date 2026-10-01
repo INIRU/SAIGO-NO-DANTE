@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { THEME_PACK_NAME_COLORS, getThemePackNameColor } from '@/lib/data/theme-pack-colors'
+import { THEME_PACK_DEFAULT_COLOR, getThemePackNameColor, getThemePackNameSegments } from '@/lib/data/theme-pack-colors'
 import { THEME_PACK_TITLE_BOX, THEME_PACK_VISUALS, getThemePackTitleBoxKind, getThemePackVisualConfig } from '@/lib/data/theme-pack-visuals'
 
 const centre = (box: { top: number; height: number }) => box.top + box.height / 2
@@ -26,10 +26,13 @@ describe('REQ-MIRROR-DUNGEON-009 theme pack name like the game selection screen'
     expect(centre(box)).toBeLessThan(81.7)
   })
 
-  it('REQ-MIRROR-DUNGEON-009 uses the game textColor for every pack that has one', () => {
-    // uiConfigs.textColor from the 2026-09-24 extraction (mirrordungeon-theme-floor-*.txt); spot checks incl. the newest pack.
-    const game: Record<number, string> = { 1001: 'af241c', 1013: '27c0c4', 1119: 'ee4893', 1127: '625aff', 1128: 'dadce0', 1503: 'ff6600' }
-    for (const [id, hex] of Object.entries(game)) expect(getThemePackNameColor(Number(id)).toLowerCase()).toBe(`#${hex}`)
-    expect(THEME_PACK_NAME_COLORS[1128]).toBeDefined()
+  it('REQ-MIRROR-DUNGEON-009 uses the game textColor the sync stores for the pack', () => {
+    // name_color comes from uiConfigs.textColor (scripts/sync/mirror-dungeon-rules.ts themeNameColor).
+    expect(getThemePackNameColor({ name_color: '#DADCE0' })).toBe('#DADCE0')
+    expect(getThemePackNameColor({ name_color: null })).toBe(THEME_PACK_DEFAULT_COLOR)
+    const segments = { ko: [{ text: '증오와', color: '#ee4893' }], en: [{ text: 'Hatred', color: '#ee4893' }] }
+    expect(getThemePackNameSegments({ name_segments: segments }, 'en')?.[0].text).toBe('Hatred')
+    expect(getThemePackNameSegments({ name_segments: segments }, 'ja')?.[0].text).toBe('증오와')
+    expect(getThemePackNameSegments({}, 'ko')).toBeNull()
   })
 })
