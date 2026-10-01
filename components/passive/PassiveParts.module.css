@@ -2,27 +2,26 @@
   width: 0.5em;
   height: 0.5em;
   flex-shrink: 0;
-  overflow: visible;
 }
-.multiply path {
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 3;
-  stroke-linecap: butt;
+.multiply rect {
+  fill: currentColor;
 }
 
+/* As in the game's resource counts: a small brown × low, the number tall beside it. */
 .count {
   display: inline-flex;
-  align-items: center;
-  gap: 0.08em;
+  align-items: flex-end;
+  gap: 0.12em;
   font-family: var(--font-title);
-  line-height: 1;
+  line-height: 0.85;
   font-variant-numeric: tabular-nums;
 }
 .count .multiply {
-  /* Brown like the passive plates: the × only joins the icon to its count, the number is what stands out. */
-  color: #b07a3a;
-  margin-top: -0.06em;
+  color: #a0703f;
+  margin-bottom: 0.08em;
+}
+.count > span {
+  transform: translateY(-0.18em);
 }
 
 .requirements {
