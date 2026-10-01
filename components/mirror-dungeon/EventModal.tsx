@@ -6,7 +6,8 @@ import styles from './EventModal.module.css'
 import { getEventOutcomes } from '@/lib/utils/event-outcomes'
 import BaseModal from '@/components/ui/BaseModal'
 import GiftCard from '@/components/ui/GiftCard'
-import ImageWithFallback from '@/components/ui/ImageWithFallback'
+import QuietImage from '@/components/ui/QuietImage'
+import { blurPlaceholder } from '@/lib/utils/thumbhash'
 import type {
   MdEvent,
   MdEventChoice,
@@ -256,7 +257,7 @@ export default function EventModal({ lang, event, eventById, choicesByEventId, g
             {event.image_url && (
               <a href={event.image_url} target="_blank" rel="noreferrer" className={styles.artwork}
                 aria-label={tEvent('mirrorDungeon.event.openArtwork', lang)}>
-                <ImageWithFallback src={event.image_url} alt={eventTitle} fill sizes="(max-width: 767px) 100vw, 36rem" className="object-contain" loading="eager" />
+                <QuietImage src={event.image_url} alt="" fill sizes="(max-width: 767px) 100vw, 36rem" className="object-contain" loading="eager" {...blurPlaceholder(event.image_url)} />
                 <span className={styles.artExpand}><ArrowUpRight size={17} aria-hidden="true" /></span>
               </a>
             )}

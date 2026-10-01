@@ -2,7 +2,7 @@
 
 import { useLocale, useTranslations } from 'next-intl'
 import { ArrowRight } from 'lucide-react'
-import ImageWithFallback from '@/components/ui/ImageWithFallback'
+import QuietImage from '@/components/ui/QuietImage'
 import { SINNER_SLUGS } from '@/lib/constants/game'
 import { SIN_COLORS, normalizeSin } from '@/lib/constants/sin'
 import { translations } from '@/lib/i18n/translations'
@@ -33,7 +33,7 @@ export default function CompanionSkillExchange({ exchange, slots, skills }: { ex
   const color = (order: number) => SIN_COLORS[normalizeSin(skill(order)?.sin_affinity ?? null) ?? 'wrath'] ?? '#888'
   const icon = (order: number, size: number) => slot?.game_id
     ? <span className="relative block shrink-0 overflow-hidden rounded-full border-2" style={{ width: size, height: size, borderColor: color(order) }}>
-      <ImageWithFallback src={getSkillIconUrl({ sinner_id: slug, game_id: slot.game_id }, order)} alt="" fill fallbackType="skill" sizes={`${size}px`} className="object-cover" />
+      <QuietImage src={getSkillIconUrl({ sinner_id: slug, game_id: slot.game_id }, order)} alt="" fill sizes={`${size}px`} className="object-cover" />
     </span>
     : <span className="grid shrink-0 place-items-center rounded-full border-2 text-xs font-bold" style={{ width: size, height: size, borderColor: color(order), color: color(order) }}>S{order}</span>
   return <section data-skill-exchange={exchange.sinner} role="status" className="space-y-2">

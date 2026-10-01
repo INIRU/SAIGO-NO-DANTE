@@ -119,8 +119,7 @@
       "top": "맨 위로",
       "bottom": "본문 맨 아래로"
     },
-    "confirm": "확인",
-    "imagePending": "이미지 제공 예정"
+    "confirm": "확인"
   },
   "globalSearch": {
     "ariaLabel": "전역 검색",

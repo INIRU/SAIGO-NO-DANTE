@@ -1,6 +1,6 @@
 import { expect, it } from 'vitest'
 import map from '../../../lib/data/thumbhash-map.json'
-import { getBlurDataURL, thumbHashPlaceholder } from '../../../lib/utils/thumbhash'
+import { blurPlaceholder, getBlurDataURL, thumbHashPlaceholder } from '../../../lib/utils/thumbhash'
 
 const png = (url: string) => {
   const bytes = Uint8Array.from(atob(url.slice('data:image/png;base64,'.length)), c => c.charCodeAt(0))
@@ -26,4 +26,12 @@ it('finds placeholders by Supabase URL or storage path and skips unknown images'
   expect(getBlurDataURL(url)).toBe(getBlurDataURL(path))
   expect(getBlurDataURL(url)).toMatch(/^data:image\/png;base64,/)
   expect(getBlurDataURL('https://example.com/unknown.webp')).toBeUndefined()
+})
+
+it('REQ-SHARED-030 gives next/image a blur placeholder only for images that have one', () => {
+  const [path] = Object.keys(map)
+  expect(blurPlaceholder(path)).toEqual({ placeholder: 'blur', blurDataURL: getBlurDataURL(path) })
+  // No entry (gift icons, skill icons) or no image at all: next/image keeps its plain loading.
+  expect(blurPlaceholder('https://example.com/unknown.webp')).toEqual({})
+  expect(blurPlaceholder(null)).toEqual({})
 })

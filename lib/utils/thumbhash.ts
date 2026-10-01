@@ -67,3 +67,9 @@ export function getBlurDataURL(imageUrl: string | null | undefined): string | un
   const hash = (thumbhashMap as Record<string, string>)[path]
   return hash ? thumbHashPlaceholder(hash) : undefined
 }
+
+/** next/image props for an image's blur placeholder, or none when it has no entry (next/image then loads plainly). */
+export function blurPlaceholder(imageUrl: string | null | undefined): { placeholder?: 'blur'; blurDataURL?: string } {
+  const blurDataURL = getBlurDataURL(imageUrl)
+  return blurDataURL ? { placeholder: 'blur', blurDataURL } : {}
+}

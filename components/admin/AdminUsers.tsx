@@ -7,7 +7,7 @@ import { Search, ArrowLeft, ArrowUpRight, ChevronLeft, ChevronRight, Users } fro
 import { Link } from '@/lib/i18n/navigation'
 import { useDebounce } from '@/hooks/useDebounce'
 import { DEFAULT_AVATAR_URL } from '@/lib/constants/game'
-import ImageWithFallback from '@/components/ui/ImageWithFallback'
+import QuietImage from '@/components/ui/QuietImage'
 import BaseModal from '@/components/ui/BaseModal'
 import { showError, showSuccess } from '@/lib/toast'
 import './admin-users.css'
@@ -38,7 +38,7 @@ async function fetcher(url: string) {
   return response.json()
 }
 function Avatar({ user, size = 36 }: { user: User; size?: number }) {
-  return <ImageWithFallback src={user.avatar_url || DEFAULT_AVATAR_URL} width={size} height={size} alt="" className="admin-users-avatar" />
+  return <QuietImage src={user.avatar_url || DEFAULT_AVATAR_URL} width={size} height={size} alt="" className="admin-users-avatar" />
 }
 function Status({ restricted, c }: { restricted: boolean; c: Copy }) {
   return <span className="admin-chip" data-tone={restricted ? 'danger' : 'ok'}>{restricted ? c.suspended : c.active}</span>

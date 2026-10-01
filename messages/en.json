@@ -119,8 +119,7 @@
       "top": "Back to top",
       "bottom": "End of content"
     },
-    "confirm": "Confirm",
-    "imagePending": "Image coming soon"
+    "confirm": "Confirm"
   },
   "globalSearch": {
     "ariaLabel": "Global search",

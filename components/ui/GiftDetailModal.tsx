@@ -2,13 +2,14 @@
 
 import { useMemo, useState, type ReactNode } from 'react'
 import Image from 'next/image'
+import QuietImage from '@/components/ui/QuietImage'
 import { X, ChevronLeft } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import BaseModal from '@/components/ui/BaseModal'
 import GiftArtwork, { type GiftArtworkGift } from '@/components/ui/GiftArtwork'
 import GiftCard, { GiftEnhanceMark, GiftEnhancePicker } from '@/components/ui/GiftCard'
 import { useGiftConditionText as useConditionStatusText } from '@/components/ui/GiftCondition'
-import ImageWithFallback from '@/components/ui/ImageWithFallback'
+import { blurPlaceholder } from '@/lib/utils/thumbhash'
 import KeywordChip from '@/components/ui/KeywordChip'
 import { useFormatSkillDesc } from '@/components/sinners/KeywordTooltip'
 import { getGiftKeywordColor } from '@/lib/constants/gift'
@@ -389,7 +390,7 @@ function ThemeChip({ theme, lang, tagLabel }: { theme: GiftDetailTheme; lang: Su
     <>
       {src && (
         <span className="relative h-6 shrink-0 overflow-hidden" style={{ aspectRatio: '416/684' }}>
-          <ImageWithFallback src={src} alt="" fill fallbackType="theme" sizes="16px" className="object-cover" />
+          <QuietImage src={src} alt="" fill sizes="16px" className="object-cover" {...blurPlaceholder(src)} />
         </span>
       )}
       <span className="truncate" style={{ color: '#d8ccb4' }}>{name}</span>

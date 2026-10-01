@@ -1,6 +1,7 @@
 'use client'
 
-import ImageWithFallback from '@/components/ui/ImageWithFallback'
+import QuietImage from '@/components/ui/QuietImage'
+import { blurPlaceholder } from '@/lib/utils/thumbhash'
 import { getThemePackNameColor, getThemePackNameSegments, type ThemePackNameStyle } from '@/lib/data/theme-pack-colors'
 import {
   getThemePackCompositeImageUrl,
@@ -175,14 +176,8 @@ export default function ThemePackCard({
             background: isBareImageSurface ? 'transparent' : '#0d0b08',
           }}
         >
-          <ImageWithFallback
-            src={imageSrc}
-            alt={displayName}
-            fill
-            fallbackType="theme"
-            sizes={sizes}
-            className="object-contain"
-          />
+          {/* The card names the pack itself (aria-label, title text): the art is decoration, and a failed load leaves the card face. */}
+          <QuietImage src={imageSrc} alt="" fill sizes={sizes} className="object-contain" {...blurPlaceholder(imageSrc)} />
           {!isBareImageSurface && (
             <div className="absolute" style={{ inset: '-0.0625rem', background: 'linear-gradient(to top, rgba(13,11,8,0.95) 0%, rgba(13,11,8,0.3) 35%, transparent 100%)' }} />
           )}

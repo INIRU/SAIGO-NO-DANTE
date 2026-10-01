@@ -119,8 +119,7 @@
       "top": "ページの先頭へ",
       "bottom": "本文の末尾へ"
     },
-    "confirm": "確認",
-    "imagePending": "画像準備中"
+    "confirm": "確認"
   },
   "globalSearch": {
     "ariaLabel": "グローバル検索",
