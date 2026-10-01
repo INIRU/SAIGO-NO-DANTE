@@ -23,6 +23,7 @@ import { useTranslations, useLocale } from 'next-intl'
 import type { SupportedLang } from '@/lib/i18n/types'
 import { KeywordWithTooltip } from '@/components/sinners/KeywordTooltip'
 import styles from './EGODetail.module.css'
+import { MultipliedCount, PassiveNameLabel } from '@/components/passive/PassiveParts'
 
 // ─── 상수 ────────────────────────────────────────────────────────────
 // Korean resistance value → translation key
@@ -335,6 +336,8 @@ export default function EGODetailClient({ sinner, ego }: Props) {
     : lang === 'ja' ? passive.passive_name_jp || passive.passive_name : passive.passive_name
   const passiveDescription = lang === 'en' ? passive.passive_content_en || passive.passive_content
     : lang === 'ja' ? passive.passive_content_jp || passive.passive_content : passive.passive_content
+  const stageFlavor = 'passive_flavor' in passive ? passive : null
+  const passiveFlavor = stageFlavor && (lang === 'en' ? stageFlavor.passive_flavor_en : lang === 'ja' ? stageFlavor.passive_flavor_jp : stageFlavor.passive_flavor)
 
   return (
     <div className={styles.page}>
@@ -376,7 +379,7 @@ export default function EGODetailClient({ sinner, ego }: Props) {
               const amount = ego.cost![index]
               return amount > 0 ? <div key={sin} className={styles.cost}>
                 <Image src={getSinIconUrl(sin)} alt={t(`sin.${sin}` as Parameters<typeof t>[0])} width={28} height={28} />
-                <span>{amount}</span>
+                <MultipliedCount value={amount} />
               </div> : null
             })}</div>
           </div>}
@@ -430,8 +433,8 @@ export default function EGODetailClient({ sinner, ego }: Props) {
         {passiveName && <section className={styles.passive} aria-labelledby="ego-passive">
           <header className={styles.sectionHeading}><h2 id="ego-passive">{t('ego.passive')}</h2></header>
           <div className={styles.passiveContent}>
-            <h3>{passiveName}</h3>
-            {passiveDescription && <SkillDescription description={passiveDescription} accentColor="#c8900a" variant="detail" />}
+            <PassiveNameLabel as="h3">{passiveName}</PassiveNameLabel>
+            {(passiveDescription || passiveFlavor) && <SkillDescription description={passiveDescription ?? ''} accentColor="#c8900a" variant="detail" flavorText={passiveFlavor} />}
           </div>
         </section>}
       </div>

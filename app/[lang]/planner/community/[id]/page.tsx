@@ -133,7 +133,7 @@ export default async function PlanDetailPage({ params }: Props) {
       .in('identity_id', memberIds)
       .gte('uptie_level', 3),
     supabase.schema('limbus').from('passives')
-      .select('id, identity_id, name, name_en, name_jp, passive_type, sin_affinity, sin_count, active_cond, description, description_en, description_jp, passive_order, uptie_level')
+      .select('id, identity_id, name, name_en, name_jp, passive_type, sin_affinity, sin_count, sin_requirements, active_cond, description, description_en, description_jp, passive_order, uptie_level')
       .in('identity_id', memberIds)
       .gte('uptie_level', 3),
     fetchPlanEvents(planGiftIds),

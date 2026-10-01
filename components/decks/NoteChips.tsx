@@ -13,6 +13,8 @@ import { noteBlockTokenPattern, noteInlineMarkdownPattern, noteTokenPattern } fr
 import { PlaceholderText } from '@/components/ui/PlaceholderLabel'
 import IdentitySkillFrameCard from '@/components/identity/IdentitySkillFrameCard'
 import { PassiveNoteRow } from '@/components/passive/PassiveEffect'
+import { MultipliedCount } from '@/components/passive/PassiveParts'
+import { passiveRequirements } from '@/lib/planner/passives'
 import GiftCard from '@/components/ui/GiftCard'
 import type { GiftConditionStatus } from '@/lib/planner/gift-condition-status'
 import { useFormatGameText, useFormatSkillDesc, useKeywords, useKeywordData, useKeywordDescription, type KeywordInfo } from '@/components/providers/KeywordProvider'
@@ -188,6 +190,7 @@ export type NotePassiveEntry = {
   name: string
   sin_affinity: string | null
   sin_count: number | null
+  sin_requirements?: { sin: string; count: number }[] | null
   active_cond: string | null
   description: string | null
   sinnerName: string
@@ -280,6 +283,7 @@ function PassiveBlockPlaceholder({ entry }: { entry: NotePassiveEntry }) {
           passive_type: 'battle',
           sin_affinity: entry.sin_affinity,
           sin_count: entry.sin_count,
+          sin_requirements: entry.sin_requirements,
           active_cond: entry.active_cond,
           description: entry.description,
         }}
@@ -371,9 +375,8 @@ export function PassiveChip({ entry, interactive = true }: { entry: NotePassiveE
   const t = useTranslations()
   const ref = useRef<HTMLSpanElement>(null)
   const { rect, show, scheduleHide, cancelHide, toggle } = useTooltip(ref)
-  const sinList = entry.sin_affinity
-    ? entry.sin_affinity.split(',').map(s => normalizeSin(s.trim())).filter(Boolean) as SinType[]
-    : []
+  const requirements = passiveRequirements(entry)
+  const sinList = requirements.map(req => req.sin)
   const sc = sinList[0] ? (SIN_COLORS[sinList[0]] ?? '#888888') : '#888888'
   return (
     <span
@@ -392,12 +395,19 @@ export function PassiveChip({ entry, interactive = true }: { entry: NotePassiveE
       {interactive && rect && createPortal(
         <TooltipPopup rect={rect} onMouseEnter={cancelHide} onMouseLeave={scheduleHide}>
           <div style={{ color: sc, fontSize: '0.8125rem', fontWeight: 700, marginBottom: 4 }}>{entry.name}</div>
-          {sinList.length > 0 && entry.sin_count && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 3, marginBottom: 4 }}>
-              {sinList.map((st, i) => <Image key={i} src={SIN_ICON_MAP[st]} alt="" width={14} height={14} />)}
-              <span style={{ color: sc, fontSize: '0.8125rem', fontFamily: 'var(--font-mono)' }}>
-                {entry.sin_count} {entry.active_cond ? t(`identity.passives.${entry.active_cond}` as Parameters<typeof t>[0]) : ''}
-              </span>
+          {requirements.length > 0 && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+              {requirements.map(req => (
+                <span key={req.sin} style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                  <Image src={SIN_ICON_MAP[req.sin]} alt="" width={14} height={14} />
+                  <MultipliedCount value={req.count} style={{ color: sc, fontSize: '0.8125rem', fontWeight: 700 }} />
+                </span>
+              ))}
+              {entry.active_cond && (
+                <span style={{ color: sc, fontSize: '0.8125rem' }}>
+                  {t(`identity.passives.${entry.active_cond}` as Parameters<typeof t>[0])}
+                </span>
+              )}
             </div>
           )}
           {entry.description && (

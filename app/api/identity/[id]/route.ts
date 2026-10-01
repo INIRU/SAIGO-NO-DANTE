@@ -30,7 +30,7 @@ async function getIdentityDetail(id: string): Promise<IdentityDetail | null> {
     supabase
       .schema('limbus')
       .from('passives')
-      .select('id, identity_id, name, name_en, name_jp, passive_type, sin_affinity, sin_count, active_cond, description, description_en, description_jp, flavor, flavor_en, flavor_jp, passive_order, uptie_level')
+      .select('id, identity_id, name, name_en, name_jp, passive_type, sin_affinity, sin_count, sin_requirements, active_cond, description, description_en, description_jp, flavor, flavor_en, flavor_jp, passive_order, uptie_level')
       .eq('identity_id', id)
       .order('passive_order'),
   ])
