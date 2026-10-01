@@ -64,13 +64,15 @@ export function themeFixedRewards(theme: { fixedRewardEgoGifts?: unknown; mapGen
 /**
  * Exclusive gifts that the pack's own specificEgoGiftPool does not list:
  * - 3001 뽕.황: 봉이 인형 (9242), its fixed reward.
- * - 1122 선의의 순례: 9831~9835. They come from the pilgrimage story dungeon (912014/912114, events 971074~971078); the
- *   pack shares only its name and background (Pilgrimage.prefab), has an empty event pool and no id links to them.
+ * - 1122 선의의 순례: 9831~9839. The pack ran from 2025-09-25 to 2025-10-23 and the game has since emptied its pools and
+ *   event pool, so no id in current data links to them. 9831~9835 come from its events (971074~971078, still in the
+ *   pilgrimage story dungeon); 9836~9839 (오래된 악보, 금속 구성체, 달을 담은 술잔, 고풍스러운 페이퍼 나이프) were its
+ *   other unique gifts (DB backup 2026-03-23, Limbus Company wiki).
  * - 1124 호박색 어스름의 시련: 아직 따뜻한 커피 (9241), given only by its event 971092.
  */
 export const THEME_EXTRA_EXCLUSIVE_GIFTS: ReadonlyMap<number, readonly number[]> = new Map([
   [3001, [9242]],
-  [1122, [9831, 9832, 9833, 9834, 9835]],
+  [1122, [9831, 9832, 9833, 9834, 9835, 9836, 9837, 9838, 9839]],
   [1124, [9241]],
 ])
 
@@ -103,12 +105,13 @@ export function richestEntry<T extends object>(entries: readonly T[]): T | undef
   return best
 }
 
-/** Gift ids a theme item points at: its pools and fixed rewards (used to recover gifts kept in story files). */
+/** Gift ids a theme item points at: its pools, fixed rewards and THEME_EXTRA_EXCLUSIVE_GIFTS (used to recover gifts kept in story files). */
 export function themeGiftRefs(item: unknown): number[] {
   if (!item || typeof item !== 'object') return []
-  const theme = item as { egoGiftPool?: unknown; specificEgoGiftPool?: unknown; fixedRewardEgoGifts?: unknown }
+  const theme = item as { id?: unknown; egoGiftPool?: unknown; specificEgoGiftPool?: unknown; fixedRewardEgoGifts?: unknown }
   const pool = (value: unknown) => Array.isArray(value) ? value.filter((id): id is number => typeof id === 'number') : []
-  return [...new Set([...pool(theme.egoGiftPool), ...pool(theme.specificEgoGiftPool), ...fixedRewardGiftIds(theme.fixedRewardEgoGifts)])]
+  const extra = typeof theme.id === 'number' ? THEME_EXTRA_EXCLUSIVE_GIFTS.get(theme.id) ?? [] : []
+  return [...new Set([...pool(theme.egoGiftPool), ...pool(theme.specificEgoGiftPool), ...fixedRewardGiftIds(theme.fixedRewardEgoGifts), ...extra])]
 }
 
 /**
