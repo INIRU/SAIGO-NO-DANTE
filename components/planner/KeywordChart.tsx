@@ -1,6 +1,8 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
 import { GIFT_KEYWORD_COLORS } from '@/lib/constants/gift'
+import { DEPLOYED_SLOT_COUNT, SINNER_SLUGS } from '@/lib/constants/game'
 
 import Image from 'next/image'
 import { getGiftKeywordIconUrl } from '@/lib/constants/gift'
@@ -17,7 +19,8 @@ const KEYWORD_SLUG: Record<string, string> = {
 const KEYWORD_COLOR = GIFT_KEYWORD_COLORS
 
 interface Props {
-  distribution: { keyword: string; count: number }[]
+  /** `deployed`: of `count`, the identities in SELECTED slots (computeKeywordDistribution with flags). */
+  distribution: { keyword: string; count: number; deployed?: number }[]
   getKeywordLabel?: (keyword: string) => string
   contributorsByKeyword?: Record<string, KeywordChartContributor[]>
   maxItems?: number
@@ -35,20 +38,30 @@ export default function KeywordChart({
   contributorsByKeyword,
   maxItems = 10,
 }: Props) {
+  const t = useTranslations('planner.deckTab.stats')
   const maxCount = Math.max(...distribution.map(d => d.count), 1)
+  // With deployment flags each bar has two layers: all 12 identities (dark, behind) and the deployed ones (bright).
+  const layered = distribution.some(d => d.deployed !== undefined)
 
   return (
     <div className="space-y-2">
+      {layered && (
+        <div className="flex justify-end gap-3 text-[0.75rem] text-[var(--text-secondary)]" aria-hidden="true">
+          <span className="inline-flex items-center gap-1.5"><span className="h-2 w-3 rounded-full bg-[#c8b898]" />{t('keywordDeployed', { count: DEPLOYED_SLOT_COUNT })}</span>
+          <span className="inline-flex items-center gap-1.5"><span className="h-2 w-3 rounded-full bg-[#c8b898]/35" />{t('keywordAll', { count: SINNER_SLUGS.length })}</span>
+        </div>
+      )}
       {distribution.slice(0, maxItems).map(d => {
         const slug = KEYWORD_SLUG[d.keyword]
         const iconUrl = slug ? getGiftKeywordIconUrl(slug) : null
         const color = KEYWORD_COLOR[d.keyword] ?? '#888'
         const pct = (d.count / maxCount) * 100
+        const deployedPct = ((d.deployed ?? d.count) / maxCount) * 100
         const contributors = contributorsByKeyword?.[d.keyword] ?? []
 
         return (
           <div key={d.keyword} className="space-y-1.5">
-            <div className="grid items-center gap-2" style={{ gridTemplateColumns: '1rem minmax(4rem, 5.5rem) minmax(0, 1fr) 1.75rem' }}>
+            <div className="grid items-center gap-2" style={{ gridTemplateColumns: `1rem minmax(4rem, 5.5rem) minmax(0, 1fr) ${layered ? '2.75rem' : '1.75rem'}` }}>
               {iconUrl ? (
                 <KeywordIcon
                   src={iconUrl}
@@ -61,14 +74,19 @@ export default function KeywordChart({
               <span className="min-w-0 truncate" style={{ fontSize: '0.875rem', color: '#b0a898' }}>
                 {getKeywordLabel ? getKeywordLabel(d.keyword) : d.keyword}
               </span>
-              <div className="min-w-0 rounded-full overflow-hidden" style={{ height: '0.5rem', background: '#222' }}>
-                <div
-                  className="h-full rounded-full transition-all"
-                  style={{ width: `${pct}%`, background: color, minWidth: '0.25rem' }}
-                />
+              <div className="relative min-w-0 rounded-full overflow-hidden" style={{ height: '0.5rem', background: '#222' }}>
+                {layered && (
+                  <div className="absolute inset-y-0 left-0 rounded-full transition-all" style={{ width: `${pct}%`, background: color, opacity: 0.32, minWidth: '0.25rem' }} />
+                )}
+                {(!layered || (d.deployed ?? 0) > 0) && (
+                  <div
+                    className="relative h-full rounded-full transition-all"
+                    style={{ width: `${layered ? deployedPct : pct}%`, background: color, minWidth: '0.25rem' }}
+                  />
+                )}
               </div>
-              <span style={{ textAlign: 'right', fontSize: '0.875rem', color: color, fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
-                {d.count}
+              <span style={{ textAlign: 'right', fontSize: '0.875rem', color: color, fontWeight: 600, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
+                {layered ? <>{d.deployed ?? 0}<span style={{ opacity: 0.5, fontWeight: 400 }}>/{d.count}</span></> : d.count}
               </span>
             </div>
             {contributors.length > 0 && (

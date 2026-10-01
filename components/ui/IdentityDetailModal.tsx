@@ -168,7 +168,7 @@ function LoadedContent({ data, uptie, egos, onEgoClick, onClose }: Omit<Identity
             return (
               <div key={res.key} className="flex items-center gap-1" title={`${res.label} ${label}`}>
                 <dt><Image src={RES_ICONS[res.key]} alt={res.label} width={18} height={18} className="h-4 w-4 sm:h-[1.125rem] sm:w-[1.125rem]" /></dt>
-                <dd className="flex items-baseline gap-1">
+                <dd className="flex items-center gap-1">
                   <MultipliedCount value={resist ? '0.5' : weak ? '2' : '1'} className="text-[1.0625rem] sm:text-[1.25rem]" style={{ fontFamily: 'var(--font-excelsior)', color: weak ? '#e69b86' : resist ? '#91beb4' : 'var(--text-primary)' }} />
                   <span className="hidden text-[0.75rem] text-[var(--text-secondary)] sm:inline">{label}</span>
                 </dd>

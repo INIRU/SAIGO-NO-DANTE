@@ -23,6 +23,7 @@ import type { SupportedLang } from '@/lib/i18n/types'
 import { getLocalizedName } from '@/lib/i18n/localize'
 import { DECK_MAIN_KEYWORDS } from '@/lib/decks/keyword-rules'
 import SkillExchangePanel from '@/components/planner/SkillExchangePanel'
+import { DEPLOYED_SLOT_COUNT } from '@/lib/constants/game'
 import {
   PlannerEgoBoard,
   PlannerEgoSelectModal,
@@ -292,7 +293,7 @@ export function OrderTab({
         const idx = formationOrder.indexOf(sinner.id)
         const position = idx === -1 ? 0 : idx + 1
         const isAssigned = position > 0
-        const isBattle = position <= 7
+        const isBattle = position <= DEPLOYED_SLOT_COUNT
         const color = isBattle ? '#c83020' : '#3870b0'
         const identity = deckSlots[sinner.id]
 

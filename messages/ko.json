@@ -905,7 +905,7 @@
       "emptyObserveGifts": "관측 기프트가 선택되지 않았습니다.",
       "emptyFinalGifts": "최종 기프트가 선택되지 않았습니다.",
       "conditionUnmet": "조건 미달 — 전체 인격으로도 부족",
-      "conditionWarn": "조건 주의 — 편성(1-7)만으로는 부족, 대기 포함 시 충족",
+      "conditionWarn": "조건 주의 — 편성(1-{deployed})만으로는 부족, 대기 포함 시 충족",
       "factDifficulty": "난이도",
       "factIdentities": "인격",
       "factFloors": "층",
@@ -1284,6 +1284,8 @@
       "stats": {
         "keywordDistribution": "키워드 분포",
         "keywordEmpty": "인격을 선택하면 키워드 분포가 표시됩니다.",
+        "keywordDeployed": "편성 {count}명",
+        "keywordAll": "전체 {count}명",
         "passives": "패시브",
         "battle": "배틀",
         "support": "서포트",

@@ -21,7 +21,7 @@ import { PlannerIdentityBoard, PlannerIdentitySelectModal } from '@/components/p
 import SkillExchangePanel, { type SkillExchangeSkill } from '@/components/planner/SkillExchangePanel'
 import { localizeIdentityName } from '@/components/deck-detail/DeckIdentityCard'
 import { getIdentityImageUrl, getSinnerLogoUrl, getSkillIconUrl } from '@/lib/utils/images'
-import { GRADE_COLORS } from '@/lib/constants/game'
+import { GRADE_COLORS, isDeployedSlot } from '@/lib/constants/game'
 import { SIN_COLORS, SIN_KR_TO_EN, getSinIconUrl, normalizeSin } from '@/lib/constants/sin'
 import { gameTextToPlain } from '@/lib/game-text/rich-text'
 
@@ -52,7 +52,10 @@ export default function DeckSection({ state, dispatch, identities, sinners, skil
   const passives = useMemo(() => rowsAtUptie(allPassives, slotUpties), [allPassives, slotUpties])
   const t = useTranslations('planner.run')
   const tSinner = useTranslations('sinner')
-  const keywordDist = useMemo(() => computeKeywordDistribution(state.identitySlots.map(getIdentityGiftConditionKeywords)), [state.identitySlots])
+  const keywordDist = useMemo(() => computeKeywordDistribution(
+    state.identitySlots.map(getIdentityGiftConditionKeywords),
+    state.identitySlots.map(slot => isDeployedSlot(slot.slot_order)),
+  ), [state.identitySlots])
   const locale = useLocale()
   const [subTab, setSubTab] = useState<DeckSubTab>('identity')
   const [swapSinner, setSwapSinner] = useState<string | null>(null)

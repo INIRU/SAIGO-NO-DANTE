@@ -179,21 +179,29 @@ const COMBAT_KEYWORDS = new Set([
 /**
  * 키워드 분포 계산 (전투 키워드만 필터링)
  */
+/**
+ * Combat keywords of a formation: how many identities carry each (once per identity). With `deployed` (one flag per
+ * identity, true for SELECTED slots 1–DEPLOYED_SLOT_COUNT) each row also counts the deployed ones; sorted by count.
+ */
 export function computeKeywordDistribution(
   keywords: string[][],
-): { keyword: string; count: number }[] {
-  const counts = new Map<string, number>()
-  for (const kws of keywords) {
+  deployed?: readonly boolean[],
+): { keyword: string; count: number; deployed?: number }[] {
+  const counts = new Map<string, { count: number; deployed: number }>()
+  keywords.forEach((kws, index) => {
     // 인격당 정규화 후 유니크 (중복 카운트 방지)
     const normalized = new Set(kws.map(normalizeThemeKeyword))
     for (const kw of normalized) {
       if (!COMBAT_KEYWORDS.has(kw)) continue
-      counts.set(kw, (counts.get(kw) ?? 0) + 1)
+      const row = counts.get(kw) ?? { count: 0, deployed: 0 }
+      row.count++
+      if (deployed?.[index]) row.deployed++
+      counts.set(kw, row)
     }
-  }
+  })
   return Array.from(counts.entries())
-    .map(([keyword, count]) => ({ keyword, count }))
-    .sort((a, b) => b.count - a.count)
+    .map(([keyword, row]) => (deployed ? { keyword, count: row.count, deployed: row.deployed } : { keyword, count: row.count }))
+    .sort((a, b) => b.count - a.count || (b.deployed ?? 0) - (a.deployed ?? 0))
 }
 
 /**

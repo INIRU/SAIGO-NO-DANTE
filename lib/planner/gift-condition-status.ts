@@ -1,6 +1,7 @@
 import { normalizeForStats, normalizeThemeKeyword } from '@/lib/constants/keywords'
 import { countGiftConditionAffiliations, normalizeGiftAffiliationLabel } from '@/lib/decks/keyword-rules'
 import type { GiftData, IdentityData, IdentitySlot } from '@/lib/planner/types'
+import { isDeployedSlot } from '@/lib/constants/game'
 
 /**
  * A gift whose activation condition the formation does not meet. warn: the deployed identities (slots 1-7) fall short
@@ -42,7 +43,7 @@ function hasOwnField<T extends object, K extends PropertyKey>(value: T, key: K):
 }
 
 function isFormationSlot(slotOrder: number | null | undefined): boolean {
-  return typeof slotOrder === 'number' && slotOrder >= 0 && slotOrder < 7
+  return isDeployedSlot(slotOrder)
 }
 
 function isAssignedSlot(slotOrder: number | null | undefined): boolean {
