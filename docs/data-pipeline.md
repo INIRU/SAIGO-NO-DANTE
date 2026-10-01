@@ -584,6 +584,10 @@ E.G.O 상세의 메인 이미지는 256×256 `_awaken_profile` 확대 대신 새
 
 게임 원본과의 대조는 원본이 로컬에만 있어 CI에서 돌리지 않는다. 새 추출본을 받으면 기프트 이미지를 원본과 축소 비교해 다른 그림이 올라간 항목을 찾는다(2026-09-26에 9818 남겨진 차원 건틀릿이 이 방법으로 발견됐다). 선의의 순례(1122)는 2025-10-23에 끝난 팩이라 현재 원본에서 풀과 이벤트가 비어 있다. 전용 기프트 9831~9839는 `THEME_EXTRA_EXCLUSIVE_GIFTS`로 넣고, 그중 9836~9839는 어디에서도 참조되지 않아 이 목록을 통해 `ego-gift-story-pilgrimage.txt`에서 가져온다. 테마팩 `egoGiftPool`·`specificEgoGiftPool`·`fixedRewardEgoGifts`나 보스 스테이지 확정 보상에만 있는 기프트는 `mirror-dungeon-data.ts`가 `story-*` 파일을 건너뛰어도 포함된다(오랏줄, N사 고정팀 가방, 떼구름, 소흥주가 이렇게 누락됐었다). 같은 기프트가 건너뛴 파일 여러 곳에 있으면 내용이 가장 많은 항목을 쓴다. 원목 술잔(9781)은 `ego-gift-a1c7p3.txt`에 id만 있는 껍데기로, `ego-gift-story-ycgd-BokGak.txt`에 TIER_3·가격 250으로 들어 있다. 기프트 효과 원문의 `{0}`, `{1}`은 게임이 플레이 중에 채우는 실시간 수치라 `{{live}}` 토큰으로 저장한다(봉이 인형 9242: "(현재 {0}%. 최대 100%)" → "(현재 {{live}}%. 최대 100%)"). 예전에는 0으로 채워 "현재 0%"로 보였다. `convert_to`가 있는 기프트의 `{0}`은 변환 대상 이름으로 채운다.
 
+### 테마팩 화면 설정
+
+`ego_gift_themes`의 `name_color`(이름 색, `uiConfigs.textColor`), `name_segments`(단어별 색, KR/EN/JP `specialName`), `attribute_type`·`attack_type`(팩 속성·공격 유형), `boss_unit_ids`(`uiConfigs.showBossIds`), `is_unrecordable`은 동기화가 원본에서 채운다(`themeNameColor`·`themeNameSegments`·`themeBossUnitIds`). 이름 색이 없는 팩은 기본 베이지(`THEME_PACK_DEFAULT_COLOR`)로 그린다. 원본 specialName에 없는 다색 이름(1126 타래 엮기)은 `THEME_NAME_SEGMENT_OVERRIDES`에 둔다. 예전에 손으로 적던 `lib/data/theme-pack-colors.ts`의 색 표는 없앴다.
+
 ### 자리표시 토큰
 
 게임 원문이 플레이 중에 채우는 번호 자리(`{0}`, `{1}`, `{0:F1}`)는 DB에 의미 토큰으로 저장하고, 화면이 라벨(칩)로 그린다. 토큰 문법은 `lib/game-text/placeholders.ts`, 동기화 규칙은 `scripts/sync/placeholder-rules.ts` 한 곳에 있다. 규칙은 원문 필드(버프 id, 기프트 `convertDataList`·`descType`, 이벤트 문구)로 정하고 글자를 보고 추측하지 않는다. 라벨 문구는 `messages/*.json`의 `placeholder.*`, 모양은 `components/ui/PlaceholderLabel.tsx`에만 있어서 바꿔도 재동기화가 필요 없다. 게임의 `{0}`·`{amount}`와 겹치지 않게 이중 중괄호를 쓴다.

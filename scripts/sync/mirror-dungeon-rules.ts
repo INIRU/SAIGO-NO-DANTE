@@ -6,9 +6,11 @@
 /** Theme source fields the sync reads. Anything else is reported by `unreadThemeKeys` instead of being dropped unseen. */
 export const READ_THEME_KEYS: ReadonlySet<string> = new Set([
   'id', 'desc', 'hiddenThemeRate', 'egoGiftPool', 'specificEgoGiftPool', 'fixedRewardEgoGifts', 'uiConfigs',
-  'unlockCondition', 'exceptionConditions', 'difficulty', 'mapGenSequence', 'mapGenOption',
+  'unlockCondition', 'exceptionConditions', 'difficulty', 'mapGenSequence', 'mapGenOption', 'isUnrecordable',
 ])
-const READ_UI_CONFIG_KEYS: ReadonlySet<string> = new Set(['packSpriteId', 'bossSpriteId'])
+const READ_UI_CONFIG_KEYS: ReadonlySet<string> = new Set([
+  'packSpriteId', 'bossSpriteId', 'textColor', 'attributeType', 'attackType', 'showBossIds',
+])
 
 /**
  * Keys of a theme source item that the sync does not read ("uiConfigs.showBossIds" for nested ones). The audit found
@@ -228,4 +230,49 @@ export function giftTiers(giftIds: Iterable<number>, src: GiftTierSources): Map<
   const result = new Map<number, GiftTier>()
   for (const gift of giftIds) result.set(gift, resolve(gift))
   return result
+}
+
+export type ThemeNameSegment = { text: string; color?: string }
+export type ThemeNameSegments = Record<'ko' | 'en' | 'ja', ThemeNameSegment[]>
+
+/** "#RRGGBB" from a theme's uiConfigs.textColor ("af241c"), or null when the pack has none. */
+export function themeNameColor(textColor: unknown): string | null {
+  return typeof textColor === 'string' && /^#?[0-9a-f]{6}$/i.test(textColor) ? `#${textColor.replace('#', '').toUpperCase()}` : null
+}
+
+/** A localized specialName ("<color=#ee4893>증오와</color> <color=#0060c5>절망</color>") as coloured runs. */
+export function parseNameSegments(specialName: string | null | undefined): ThemeNameSegment[] | null {
+  if (!specialName || !/<color=/i.test(specialName)) return null
+  const segments: ThemeNameSegment[] = []
+  for (const match of specialName.matchAll(/<color=(#[0-9a-f]{6})>(.*?)<\/color>|([^<]+)/gi)) {
+    if (match[2] !== undefined) segments.push({ text: match[2], color: match[1].toLowerCase() })
+    else if (match[3]) segments.push({ text: match[3] })
+  }
+  return segments.length ? segments : null
+}
+
+/**
+ * Multi-colour names the game draws on the pack art but leaves out of specialName. 1126 타래 엮기 matches the pack's
+ * title art (kept from the site's former hand-written table).
+ */
+export const THEME_NAME_SEGMENT_OVERRIDES: ReadonlyMap<number, ThemeNameSegments> = new Map([
+  [1126, {
+    ko: [{ text: '타래', color: '#d9dcff' }, { text: ' ' }, { text: '엮기', color: '#c65348' }],
+    en: [{ text: 'Twining', color: '#d9dcff' }, { text: ' ' }, { text: 'Threads', color: '#c65348' }],
+    ja: [{ text: '縒り', color: '#d9dcff' }, { text: '合せ', color: '#c65348' }],
+  }],
+])
+
+/** name_segments of a pack: its KR/EN/JP specialName (a language without one falls back to KR), or the override. */
+export function themeNameSegments(themeId: number, special: { ko?: string | null; en?: string | null; ja?: string | null }): ThemeNameSegments | null {
+  const override = THEME_NAME_SEGMENT_OVERRIDES.get(themeId)
+  if (override) return override
+  const ko = parseNameSegments(special.ko)
+  if (!ko) return null
+  return { ko, en: parseNameSegments(special.en) ?? ko, ja: parseNameSegments(special.ja) ?? ko }
+}
+
+/** Boss unit ids a pack shows (uiConfigs.showBossIds), numbers only. */
+export function themeBossUnitIds(value: unknown): number[] {
+  return Array.isArray(value) ? value.filter((id): id is number => Number.isInteger(id)) : []
 }
