@@ -5,11 +5,12 @@ import type { PassiveRequirement } from '@/lib/planner/passives'
 import SkillNameBanner from '@/components/skill/SkillNameBanner'
 import styles from './PassiveParts.module.css'
 
-/** The multiplication sign of counts (×3, ×0.5): drawn, so it keeps its weight and centre in every font. */
+/** The multiplication sign of counts (×3, ×0.5): two crossed bars, drawn so it keeps its weight and centre in every font. */
 export function MultiplyMark({ className }: { className?: string }) {
   return (
     <svg className={`${styles.multiply} ${className ?? ''}`} viewBox="0 0 12 12" aria-hidden="true" focusable="false">
-      <path d="M2.6 2.6 9.4 9.4M9.4 2.6 2.6 9.4" />
+      <rect x="-0.9" y="4.6" width="13.8" height="2.8" transform="rotate(45 6 6)" />
+      <rect x="-0.9" y="4.6" width="13.8" height="2.8" transform="rotate(-45 6 6)" />
     </svg>
   )
 }
