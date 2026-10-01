@@ -1,7 +1,7 @@
 'use client'
 
 import ImageWithFallback from '@/components/ui/ImageWithFallback'
-import { getThemePackNameColor, getThemePackNameSegments } from '@/lib/data/theme-pack-colors'
+import { getThemePackNameColor, getThemePackNameSegments, type ThemePackNameStyle } from '@/lib/data/theme-pack-colors'
 import {
   getThemePackCompositeImageUrl,
   getThemePackTitleLayout,
@@ -15,7 +15,7 @@ import { Check } from 'lucide-react'
 import { useLocale } from 'next-intl'
 import { useEffect, useRef, useState, type CSSProperties, type MouseEvent } from 'react'
 
-interface ThemePackCardTheme {
+interface ThemePackCardTheme extends ThemePackNameStyle {
   id: number | string
   name: string
   name_en?: string | null
@@ -80,13 +80,13 @@ export default function ThemePackCard({
     return entry[lang] ?? entry['ko'] ?? key
   }
   const numId = typeof theme.id === 'number' ? theme.id : parseInt(String(theme.id), 10) || 0
-  const nameColor = getThemePackNameColor(numId)
+  const nameColor = getThemePackNameColor(theme)
   const titleTrackRef = useRef<HTMLDivElement>(null)
   const [titleMeasureWidth, setTitleMeasureWidth] = useState(0)
   const [titleTrackHeight, setTitleTrackHeight] = useState(0)
   const [rootFontSize, setRootFontSize] = useState(16)
   const displayName = normalizeTitle(getLocalizedName({ name_kr: theme.name, name_en: theme.name_en, name_jp: theme.name_jp }, lang))
-  const displayNameSegments = getThemePackNameSegments(numId, lang)
+  const displayNameSegments = getThemePackNameSegments(theme, lang)
   const visualConfig = getThemePackVisualConfig(numId)
   const isExtreme = visualConfig?.kind === 'extreme'
   const titleBox = getThemePackTitleLayout(numId)
