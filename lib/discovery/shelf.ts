@@ -14,3 +14,9 @@ export function pickShelf<T extends { id: string | number }>(feed: DiscoveryFeed
   const posts = popular.length >= 3 ? popular : feed.recent
   return { popular: popular.length >= 3, posts: posts.slice(0, 3) }
 }
+
+/** Board shelves top to bottom: the personal shelf follows the new posts, or leads when there are none. */
+export function shelfOrder<K extends string>(sections: readonly K[]): (K | 'forYou')[] {
+  const after = sections[0] === 'recent' ? 1 : 0
+  return [...sections.slice(0, after), 'forYou', ...sections.slice(after)]
+}
