@@ -42,10 +42,16 @@
   width: 2rem;
   height: 2rem;
 }
+/* The condition word sits with the counts (as the game's "Owned"): heading face, cream, on their baseline. */
 .condition {
+  align-self: flex-end;
+  margin-bottom: 0.2rem;
   font-family: var(--font-heading);
-  font-size: 0.9375rem;
-  color: var(--text-secondary);
+  font-size: 1.125rem;
+  font-weight: 700;
+  line-height: 1;
+  color: #e8cfa4;
+  letter-spacing: 0.02em;
 }
 
 .nameLabel {
