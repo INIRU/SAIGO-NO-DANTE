@@ -107,6 +107,6 @@ describe('REQ-DATA-SYNC-033 post-apply leftover check', () => {
     ]
     const found = rowsWithRawPlaceholders(rows, PLACEHOLDER_CHECK_COLUMNS.ego_gifts)
     expect(found.map(item => [item.row.game_id, item.columns])).toEqual([[2, ['effect_base', 'effect_base_en']], [3, ['effect_base']]])
-    expect(Object.keys(PLACEHOLDER_CHECK_COLUMNS)).toEqual(['ego_gifts', 'keyword_meta', 'passives', 'md_events', 'md_event_choices'])
+    expect(Object.keys(PLACEHOLDER_CHECK_COLUMNS)).toEqual(['ego_gifts', 'keyword_meta', 'md_events', 'md_event_choices'])
   })
 })

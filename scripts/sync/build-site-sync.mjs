@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  *   node scripts/sync/build-site-sync.mjs <out-dir> [--win]
- * <out-dir> gets apply-extraction.mjs, the three sync bundles, sync-extracted-identities.cjs and sharp (win32-x64 with --win),
+ * <out-dir> gets apply-extraction.mjs, the sync bundles (game-text-refs, identity-data, mirror-dungeon-data, …), sync-extracted-identities.cjs and sharp (win32-x64 with --win),
  * plus the theme pack composer the extraction tool runs while extracting (build-theme-packs.py, its overlay sources and font).
  * --win adds a portable CPython with Pillow in python/, since the extraction PC has no Python.
  * Overlay sources: LIMBUS_COMPOSITION_ASSET_DIR, default ../assets/recovery-2026-09-10/theme-composition.
@@ -36,7 +36,7 @@ if (!out) throw Error('usage: node scripts/sync/build-site-sync.mjs <out-dir> [-
 const common = { bundle: true, platform: 'node', target: 'node22', external: ['sharp'], logLevel: 'warning' }
 await build({
   ...common, format: 'esm', outdir: out, outExtension: { '.js': '.mjs' },
-  entryPoints: Object.fromEntries(['apply-extraction', 'identity-data', 'mirror-dungeon-data', 'rebuild-mirror-events', 'bootstrap-data', 'extraction-restore'].map(name => [name, `scripts/sync/${name}.ts`])),
+  entryPoints: Object.fromEntries(['apply-extraction', 'game-text-refs', 'identity-data', 'mirror-dungeon-data', 'rebuild-mirror-events', 'bootstrap-data', 'extraction-restore'].map(name => [name, `scripts/sync/${name}.ts`])),
   // Bundled CommonJS dependencies still call require().
   banner: { js: "import { createRequire as __createRequire } from 'node:module'; const require = __createRequire(import.meta.url);" },
 })

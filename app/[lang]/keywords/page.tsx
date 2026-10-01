@@ -6,6 +6,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { translations } from '@/lib/i18n/translations'
 import type { SupportedLang } from '@/lib/i18n/types'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
+import { getGameTextRefNames } from '@/lib/db/game-text-refs'
 import KeywordsClient from './KeywordsClient'
 import StaticQueryAdapter from '@/components/providers/StaticQueryAdapter'
 import KeywordsLoading from './loading'
@@ -44,13 +45,25 @@ async function fetchAllKeywords(supabase: ReturnType<typeof createAdminClient>) 
   return all
 }
 
-export default async function KeywordsPage() {
+/** Game id → keyword_meta name, for finding the gifts whose raw effect text names a keyword by [Id]. Throws when the table cannot be read or is still empty. */
+async function getRefKeywords(): Promise<Record<string, string>> {
+  const names = await getGameTextRefNames('ko')
+  if (Object.keys(names).length === 0) throw new Error('game_text_refs is empty')
+  return Object.fromEntries(Object.entries(names).flatMap(([id, ref]) => (ref.kw ? [[id, ref.kw]] : [])))
+}
+
+/**
+ * The page, cached. With the reference table it is cached for good; a failed or empty table read throws before anything
+ * is stored, and KeywordsPage then builds the page without the table for a minute only, so a failure is never kept.
+ */
+async function renderKeywords(withRefs: boolean) {
   'use cache'
-  cacheLife('max')
-  cacheTag(CACHE_TAGS.keywords, CACHE_TAGS.gameData)
+  if (withRefs) cacheLife('max')
+  else cacheLife('page-1m')
+  cacheTag(CACHE_TAGS.keywords, CACHE_TAGS.gameData, CACHE_TAGS.gameTextRefs)
   const supabase = createAdminClient()
 
-  const keywords = await fetchAllKeywords(supabase)
+  const [keywords, refKeywords] = await Promise.all([fetchAllKeywords(supabase), withRefs ? getRefKeywords() : {}])
 
   const [
     { data: identities, error: identitiesError },
@@ -111,8 +124,18 @@ export default async function KeywordsPage() {
           sinners={sinners ?? []}
           gifts={safeGifts}
           egos={safeEgos}
+          refKeywords={refKeywords}
         />
       </StaticQueryAdapter>
     </Suspense>
   )
+}
+
+export default async function KeywordsPage() {
+  try {
+    return await renderKeywords(true)
+  } catch (error) {
+    console.error('Failed to build the keywords page with game text refs:', error)
+    return renderKeywords(false)
+  }
 }

@@ -19,3 +19,9 @@ it('lists parents before their children so upserts meet their foreign keys and d
   expect(order.indexOf('md_events')).toBeLessThan(order.indexOf('md_event_choices'))
   expect(order.indexOf('ego_gifts')).toBeLessThan(order.indexOf('ego_gift_recipes'))
 })
+
+it('REQ-DATA-SYNC-037 restores the game text reference table with the keyword catalogue it links to', () => {
+  const order = RESTORE_TABLES.map(item => item.table)
+  expect(RESTORE_TABLES.find(item => item.table === 'game_text_refs')).toEqual({ table: 'game_text_refs', key: ['id'] })
+  expect(order.indexOf('game_text_refs')).toBeGreaterThan(order.indexOf('keyword_meta'))
+})
