@@ -23,7 +23,7 @@ import { join, resolve } from 'path'
 import { gameDataPaths, implicitDataDirWarning } from './source-paths'
 import { failOnLoggedErrors, printSyncSummary } from './sync-result'
 import { giftPlaceholders, PlaceholderReport } from './placeholder-rules'
-import { existingGiftLookup, richestEntry, sameStoredIds, themeExclusiveGifts, themeFixedRewards, themeGiftRefs, unreadThemeKeys } from './mirror-dungeon-rules'
+import { existingGiftLookup, giftTiers, richestEntry, sameStoredIds, themeExclusiveGifts, type GiftTierTheme, themeFixedRewards, themeGiftRefs, unreadThemeKeys } from './mirror-dungeon-rules'
 import { z } from 'zod'
 import { config } from 'dotenv'
 
@@ -179,6 +179,7 @@ const RecipeRawSchema = z.object({
 })
 
 const DropPoolItemSchema = z.object({
+  egoGifts: z.array(z.number()).optional(),
   excludeEgoGifts: z.array(z.number()).optional(),
   globalExcludeEgoGifts: z.array(z.number()).optional(),
 })
@@ -762,19 +763,23 @@ async function syncGifts(): Promise<void> {
     const dpRaw = dpList ? dpList[0] : dpData
     const dp = DropPoolItemSchema.safeParse(dpRaw)
     if (dp.success) {
-      const normalExclude = new Set(dp.data.excludeEgoGifts ?? [])
-      const globalExclude = new Set(dp.data.globalExcludeEgoGifts ?? [])
-      let nCount = 0, hCount = 0, eCount = 0
+      // The first difficulty each gift can be obtained in (giftTiers in mirror-dungeon-rules.ts).
+      const tiers = giftTiers(gifts.map(g => g.game_id), {
+        dropPool: dp.data.egoGifts ?? [],
+        normalExclude: dp.data.excludeEgoGifts ?? [],
+        globalExclude: dp.data.globalExcludeEgoGifts ?? [],
+        themes: loadGiftTierThemes(new Set(gifts.map(g => g.game_id))),
+        eventGifts: loadEventGifts(),
+        recipes: recipeRefs.map(r => ({ result: r.resultEgoGiftId, materials: r.requiredEgoGiftIds })),
+        conversions: new Map(gifts.flatMap(g => (g.convert_to ? [[g.game_id, g.convert_to] as [number, number]] : []))),
+        hiddenBoss: hiddenBossIds,
+      })
+      const counts: Record<string, number> = { 노말: 0, 하드: 0, 익스트림: 0 }
       for (const gift of gifts) {
-        if (hiddenBossIds.has(gift.game_id)) {
-          gift.difficulty = '익스트림'; eCount++
-        } else if (normalExclude.has(gift.game_id) || globalExclude.has(gift.game_id)) {
-          gift.difficulty = '하드'; hCount++
-        } else {
-          gift.difficulty = '노말'; nCount++
-        }
+        gift.difficulty = tiers.get(gift.game_id) ?? '노말'
+        counts[gift.difficulty]++
       }
-      console.log(`  ${latestDroppool} 기준: 노말 ${nCount}, 하드 ${hCount}, 익스트림 ${eCount}`)
+      console.log(`  ${latestDroppool}·테마팩·이벤트 기준 첫 등장 난이도: 노말 ${counts.노말}, 하드 ${counts.하드}, 익스트림 ${counts.익스트림}`)
     }
   } else {
     for (const gift of gifts) gift.difficulty = '노말'
@@ -920,6 +925,40 @@ interface ThemeRow {
   hidden_rate: number | null
   /** Gifts a pack always gives when its boss is cleared (extreme packs), from the boss stages' rewards. */
   fixed_reward_gift_ids: number[]
+}
+
+/** Packs as gift sources for giftTiers: where each is offered and what it gives (exclusives, fixed rewards, pool, events). */
+function loadGiftTierThemes(giftIds: ReadonlySet<number>): GiftTierTheme[] {
+  const stageRewards = loadStageGiftRewards()
+  const themes: GiftTierTheme[] = []
+  for (const f of globFiles(DATA_DIR, /^mirrordungeon-theme-floor-(t\d+|hidden)\.txt$/)) {
+    for (const item of extractList(loadJson(join(DATA_DIR, f)))) {
+      const parsed = ThemeRawSchema.safeParse(item)
+      if (!parsed.success) continue
+      const t = parsed.data
+      const eventPool = (t.mapGenOption as { eventPool?: unknown } | undefined)?.eventPool
+      themes.push({
+        dungeonIdxs: (t.exceptionConditions ?? []).map(c => c.dungeonIdx),
+        exclusive: [...themeExclusiveGifts(t.id, t.specificEgoGiftPool), ...themeFixedRewards(t, stageRewards, giftIds)],
+        pool: t.egoGiftPool ?? [],
+        eventIds: Array.isArray(eventPool) ? eventPool.filter((id): id is number => typeof id === 'number') : [],
+      })
+    }
+  }
+  return themes
+}
+
+/** acquirable-egogifts-in-event*: event id → the gifts it can give. */
+function loadEventGifts(): Map<number, number[]> {
+  const events = new Map<number, number[]>()
+  for (const f of globFiles(DATA_DIR, /^acquirable-egogifts-in-event.*\.txt$/)) {
+    for (const item of extractList(loadJson(join(DATA_DIR, f)))) {
+      const e = item as { eventId?: unknown; egoGiftList?: unknown }
+      if (typeof e.eventId !== 'number' || !Array.isArray(e.egoGiftList)) continue
+      events.set(e.eventId, [...(events.get(e.eventId) ?? []), ...e.egoGiftList.filter((id): id is number => typeof id === 'number')])
+    }
+  }
+  return events
 }
 
 /** Stage id → its single guaranteed E.G.O gift reward. */
