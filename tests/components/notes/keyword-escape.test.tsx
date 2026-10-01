@@ -60,6 +60,10 @@ it('uses one backslash as the escape marker and keeps code literal', () => {
   expect(renderNote(codeBlock)).toContain('<code>\\못</code>')
 })
 
-it('keeps game-skill keyword formatting unchanged', () => {
-  expect(keywordCount(renderGameText('\\못'))).toBe(1)
+// REQ-SHARED-021: game text is drawn by the game text renderer, never searched for keywords; the backslash is no
+// escape marker there (it was only a note feature), so it shows as written.
+it('REQ-SHARED-021 draws game text without guessing keywords and keeps a backslash literal', () => {
+  const html = renderGameText('\\못 화상')
+  expect(keywordCount(html)).toBe(0)
+  expect(html).toContain('\\못 화상')
 })

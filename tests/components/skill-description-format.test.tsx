@@ -7,7 +7,8 @@ vi.mock('@/lib/i18n/navigation', () => ({ Link: 'a' }))
 
 function Formatter({ text }: { text: string }) {
   const format = useFormatSkillDesc()
-  return <>{format(text, '#fff', { '벼락치기': '#f00' })}</>
+  // The older keyword-guessing path is only for user notes now (REQ-SHARED-021); this test guards its speed shortcut.
+  return <>{format(text, '#fff', { '벼락치기': '#f00' }, undefined, { escapeKeywords: true })}</>
 }
 
 const render = (keywords: Record<string, KeywordInfo>, text: string) =>

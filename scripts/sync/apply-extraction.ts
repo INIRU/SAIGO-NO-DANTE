@@ -5,7 +5,11 @@
  *
  *   node --import tsx scripts/sync/apply-extraction.ts (--zip <LimbusAssets_*.zip> | --source <unpacked LimbusAssets>) --work <dir> [--fix]
  * Theme pack cards the extraction tool composed into the ZIP are uploaded (as WebP) only when Storage lacks them; existing
- * images are never replaced.
+ * images are never replaced. Keyword icons Storage lacks (icons/keywords/<slug>.webp) are uploaded as lossless WebP from the ZIP's
+ * keyword sprites right after the keyword catalogue step.
+ *
+ *   ... --keyword-icons-only [--fix]   verify the ZIP, then only plan (--fix: upload) the missing keyword icons for the keyword
+ *                                      rows the DB already has (catch-up for keywords an earlier apply added without icons)
  */
 import { spawnSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
@@ -23,11 +27,13 @@ import { extractionGaps as findGaps, leftoverChanges, parseSyncSummary, storageK
 import { eventImageIdFromFilename } from '../assets/event-image-source'
 import { PLACEHOLDER_CHECK_COLUMNS, rowsWithRawPlaceholders } from './placeholder-rules'
 import { STEPS, catalogSummaryOf, stepCommand, verifySteps } from './extraction-steps'
+import { KEYWORD_AUDIT_FILE, KEYWORD_ICON_DIR, readBuffIconIds, readKeywordAudit, uploadMissingKeywordIcons, type ManifestEntry } from './keyword-icons'
 
 config({ path: '.env.local', quiet: true })
 const args = process.argv.slice(2)
 const option = (name: string) => { const at = args.indexOf(name); return at === -1 ? undefined : args[at + 1] }
 const FIX = args.includes('--fix')
+const KEYWORD_ICONS_ONLY = args.includes('--keyword-icons-only')
 // Bundled next to the other sync bundles (no tsx or repository on the Windows PC).
 const BUNDLE_DIR = import.meta.url.endsWith('.mjs') ? dirname(fileURLToPath(import.meta.url)) : null
 const command = (script: string, rest: string[]) => stepCommand(script, rest, BUNDLE_DIR)
@@ -121,7 +127,6 @@ async function storedNames(dir: string) {
   }
 }
 
-type ManifestEntry = { kind: string; name: string; path: string; sha256: string }
 const readManifest = (source: string) => JSON.parse(readFileSync(join(source, 'Reports', 'manifest.json'), 'utf8').replace(/^\uFEFF/, '')) as ManifestEntry[]
 
 /** A ZIP image as WebP after its hash is checked against the manifest. */
@@ -149,6 +154,23 @@ async function uploadMissingGiftIcons(source: string, uploads: Upload[]) {
     stored.add(key.slice('ego-gifts/'.length))
   }
   return missing
+}
+
+/**
+ * Keyword icons Storage lacks, from the keyword sprites of the ZIP (see keyword-icons.ts). Run after the keywords sync and refs-link,
+ * so the new keyword rows and their reference ids exist. Without --fix it only reports what it would upload.
+ */
+async function uploadKeywordIcons(source: string, work: string, data: string, uploads: Upload[], report: Record<string, unknown>) {
+  const [keywords, refs, stored] = await Promise.all([all('keyword_meta', 'name,icon_slug'), all('game_text_refs', 'id,keyword_name'), storedNames(KEYWORD_ICON_DIR)])
+  const result = await uploadMissingKeywordIcons({
+    source, manifest: readManifest(source), uploads, fix: FIX, stored, bucket: client().storage.from('limbus-assets'),
+    keywords: keywords as { name: string; icon_slug: string | null }[], refs: refs as { id: string; keyword_name: string | null }[],
+    primaryTags: readKeywordAudit(join(work, KEYWORD_AUDIT_FILE)), iconIds: readBuffIconIds(data),
+  })
+  report.newKeywordIcons = result.newKeywordIcons
+  report.keywordsWithoutIcon = result.keywordsWithoutIcon
+  console.log(`ok   keyword-icons (${result.newKeywordIcons.length} ${FIX ? 'uploaded' : 'to upload'}, ${result.keywordsWithoutIcon.length} without a sprite)`)
+  for (const row of result.keywordsWithoutIcon) console.warn(`WARN keyword icon: ${row.name} (${row.slug}) ${row.reason}: tags ${row.tags.join(',') || '-'}`)
 }
 
 /** Event illustrations Storage lacks (icons/events/<event id>.webp), before the event step links images it finds there. */
@@ -202,7 +224,7 @@ async function main() {
   const zip = option('--zip')
   const unpackedSource = option('--source')
   const input = zip ?? unpackedSource
-  if (!input || !existsSync(input) || !option('--work')) throw Error('usage: (--zip <LimbusAssets_*.zip> | --source <LimbusAssets>) --work <dir> [--fix]')
+  if (!input || !existsSync(input) || !option('--work')) throw Error('usage: (--zip <LimbusAssets_*.zip> | --source <LimbusAssets>) --work <dir> [--fix] [--keyword-icons-only]')
   const work = resolve(option('--work')!)
   if (existsSync(work) && readdirSync(work).length) throw Error(`work directory is not empty: ${work}`)
   mkdirSync(join(work, 'logs'), { recursive: true })
@@ -222,6 +244,29 @@ async function main() {
     console.log('ok   verify extraction')
     const data = join(work, 'prepared', 'complete-data')
     const env = { ...process.env, LIMBUS_DATA_DIR: data, LIMBUS_RECOVERY_DIR: work, SITE_URL: process.env.SITE_URL || process.env.NEXT_PUBLIC_SITE_URL }
+    // The keywords sync writes its keyword rows (with their primary tags) to a file the keyword icon step reads.
+    const stepEnv = (name: string) => name === 'keywords' ? { ...env, LIMBUS_KEYWORD_AUDIT: join(work, KEYWORD_AUDIT_FILE) } : env
+    // Never leave a partial or mismatched apply: put every table and image back as it was before this run.
+    const restoreAndFail = (error: unknown): never => {
+      console.log('FAIL apply: restoring the backup')
+      save() // extraction-restore reads this run's uploads from report.json
+      const restore = spawnSync(process.execPath, command('scripts/sync/extraction-restore.ts', ['--work', work, '--fix']), { cwd: process.cwd(), env, encoding: 'utf8' })
+      writeFileSync(join(work, 'logs', 'auto-restore.log'), (restore.stdout ?? '') + (restore.stderr ?? ''))
+      report.autoRestored = restore.status === 0
+      const message = error instanceof Error ? error.message : String(error)
+      throw Error(restore.status === 0 ? `${message} — restored the backup automatically` : `${message} — AUTOMATIC RESTORE FAILED, restore this run from the tool (logs/auto-restore.log)`)
+    }
+
+    if (KEYWORD_ICONS_ONLY) {
+      // Only the keyword icons: the keyword rows are the DB's as they are, nothing but Storage objects is written (and recorded for a restore).
+      report.keywordIconsOnly = true
+      run(work, 'keywords-dry-run', command('scripts/sync/identity-data.ts', ['--rebuild-keyword-meta']), stepEnv('keywords'))
+      if (FIX) mkdirSync(join(work, 'backup')) // extraction-restore needs it to remove this run's uploads
+      try { await uploadKeywordIcons(source, work, data, uploads, report) } catch (error) { if (FIX) restoreAndFail(error); throw error }
+      if (FIX) await revalidateGameData()
+      report.ok = true
+      return
+    }
 
     // New EGO (story-only ones stay out) are added after the steps below: rows, stage skills and passives, then images.
     const egoIds = new Set<string>()
@@ -236,7 +281,7 @@ async function main() {
 
     // 2. Dry-run every step, then refuse an incomplete extraction before anything is written: the game never removes
     // identities, EGO, gifts, theme packs or recipes, so one the DB has and the ZIP lacks means files are missing.
-    for (const step of STEPS) run(work, `${step.name}-dry-run`, command(step.script, step.args), env)
+    for (const step of STEPS) run(work, `${step.name}-dry-run`, command(step.script, step.args), stepEnv(step.name))
     const gaps = findGaps(parseSyncSummary(logOf(work, 'identity-dry-run')), catalogSummary(work, 'dry-run'), [...knownEgo].filter(id => !egoIds.has(id)))
     if (gaps.length) throw Error(`the extraction is incomplete, nothing was written: ${gaps.join('; ')}`)
     console.log('ok   completeness')
@@ -264,8 +309,10 @@ async function main() {
             await uploadMissingEventImages(source, uploads)
             console.log('ok   event-images')
           }
-          run(work, `${step.name}-fix`, command(step.script, [...step.args, '--fix']), env)
+          run(work, `${step.name}-fix`, command(step.script, [...step.args, '--fix']), stepEnv(step.name))
           ;(report.steps as string[]).push(step.name)
+          // The catalogue step may add keywords and refs-link ties their reference ids to them: now their icons can be paired.
+          if (step.name === 'refs-link') await uploadKeywordIcons(source, work, data, uploads, report)
           if (step.name === 'mirror') {
             report.giftsWithoutIcon = await uploadMissingGiftIcons(source, uploads)
             console.log('ok   gift-icons')
@@ -319,14 +366,7 @@ async function main() {
         } else console.log('ok   placeholders (no bare {0} in display columns)')
         await revalidateGameData()
       } catch (error) {
-        // Never leave a partial or mismatched apply: put every table and image back as it was before this run.
-        console.log('FAIL apply: restoring the backup')
-        save() // extraction-restore reads this run's uploads from report.json
-        const restore = spawnSync(process.execPath, command('scripts/sync/extraction-restore.ts', ['--work', work, '--fix']), { cwd: process.cwd(), env, encoding: 'utf8' })
-        writeFileSync(join(work, 'logs', 'auto-restore.log'), (restore.stdout ?? '') + (restore.stderr ?? ''))
-        report.autoRestored = restore.status === 0
-        const message = error instanceof Error ? error.message : String(error)
-        throw Error(restore.status === 0 ? `${message} — restored the backup automatically` : `${message} — AUTOMATIC RESTORE FAILED, restore this run from the tool (logs/auto-restore.log)`)
+        restoreAndFail(error)
       }
     } else {
       report.newIdentities = []

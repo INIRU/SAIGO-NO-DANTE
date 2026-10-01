@@ -79,6 +79,19 @@ export async function getGameTextRefNames(lang: SupportedLang): Promise<GameText
   return gameTextRefNames(await loadRows(NAME_COLUMNS), lang)
 }
 
+/**
+ * For the [lang] layout, which hands the names to every page: a failed read or a still empty table gives null instead of
+ * an error, so the site keeps working and the browser requests the names itself (the first paint then shows raw ids once).
+ */
+export async function getGameTextRefNamesOrNull(lang: SupportedLang): Promise<GameTextRefNames | null> {
+  try {
+    const names = await getGameTextRefNames(lang)
+    return Object.keys(names).length > 0 ? names : null
+  } catch {
+    return null
+  }
+}
+
 export async function getGameTextRefDescriptions(lang: SupportedLang): Promise<GameTextRefDescriptions> {
   'use cache'
   cacheLife('max')
