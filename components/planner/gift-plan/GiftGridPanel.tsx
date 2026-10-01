@@ -1,11 +1,14 @@
 'use client'
 
-import { memo, useState, useMemo } from 'react'
-import { useTranslations } from 'next-intl'
+import { memo, useState, useMemo, useEffect } from 'react'
+import { useLocale, useTranslations } from 'next-intl'
 import type { GiftData } from '@/lib/planner/types'
 import { GRADE_COLORS, GRADE_ROMAN, getKeywordSlug } from './constants'
 import GiftCard from '@/components/ui/GiftCard'
 import KeywordSidebar from './KeywordSidebar'
+import { refNameLabels } from '@/lib/game-text/rich-text'
+import { giftSearchText } from '@/lib/planner/gift-search'
+import { useGameTextRefs, wantGameTextRefs } from '@/lib/hooks/useGameTextRefs'
 
 // ── Gift grid with grade groups ──────────────────────────────────────────────
 export default memo(function GiftGridPanel({
@@ -36,6 +39,11 @@ export default memo(function GiftGridPanel({
   const t = useTranslations('planner.giftTab')
   const [activeSlug, setActiveSlug] = useState<string | null>(null)
   const [query, setQuery] = useState('')
+  const locale = useLocale()
+  // Effects of raw game text hold [Id]s; the search reads them as the names the screen shows, once the table is loaded.
+  const { names } = useGameTextRefs({ lazy: true })
+  const labels = useMemo(() => (names ? refNameLabels(names) : undefined), [names])
+  useEffect(() => { if (query.trim()) wantGameTextRefs() }, [query])
 
   const filteredGifts = useMemo(() => {
     const normalizedQuery = query.trim().toLocaleLowerCase()
@@ -45,17 +53,11 @@ export default memo(function GiftGridPanel({
       if (!matchesKeyword) return false
       if (!normalizedQuery) return true
 
-      const searchableText = [
-        g.name,
-        g.name_en,
-        g.name_jp,
-        g.keyword,
-        g.effect_base,
-      ].filter(Boolean).join(' ').toLocaleLowerCase()
+      const searchableText = giftSearchText(g, { names: labels, locale })
 
       return searchableText.includes(normalizedQuery)
     })
-  }, [gifts, activeSlug, query])
+  }, [gifts, activeSlug, query, labels, locale])
 
   const giftCounts = useMemo(() => {
     const counts = new Map<string | null, number>()

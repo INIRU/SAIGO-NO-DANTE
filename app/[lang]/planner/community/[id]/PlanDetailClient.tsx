@@ -51,6 +51,7 @@ import {
 import { workbenchReveal } from '@/lib/animations'
 import styles from './PlanDetailHeader.module.css'
 import { observationCost } from '@/lib/planner/observation'
+import { gameTextToPlain } from '@/lib/game-text/rich-text'
 
 // ── 상수 ──────────────────────────────────────────────────────────────────────
 
@@ -59,7 +60,8 @@ const S = STORAGE_BASE
 // 편성 N번 전용 효과 슬롯 파싱
 function parseFormationSlots(text: string | null): number[] {
   if (!text) return []
-  const m = text.match(/\[편성[^\]]*전용\s*효과\]|\[\d[^\]]*편성\s*전용\s*효과\]/)
+  // Game text may put colour tags (digits and all) inside the bracket label; read the text as shown.
+  const m = gameTextToPlain(text).match(/\[편성[^\]]*전용\s*효과\]|\[\d[^\]]*편성\s*전용\s*효과\]/)
   if (!m) return []
   return [...m[0].matchAll(/(\d+)/g)].map(r => parseInt(r[1]))
 }

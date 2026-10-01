@@ -276,3 +276,78 @@ export function themeNameSegments(themeId: number, special: { ko?: string | null
 export function themeBossUnitIds(value: unknown): number[] {
   return Array.isArray(value) ? value.filter((id): id is number => Number.isInteger(id)) : []
 }
+
+// ── Gift effect text (REQ-DATA-SYNC-036) ─────────────────────────────────────────────────────────────────────────
+
+/** A gift effect as the game wrote it: unity tags and [Id] references stay, only surrounding whitespace goes. */
+export function rawGiftEffect(desc: string | undefined | null): string | null {
+  if (!desc) return null
+  return desc.trim()
+}
+
+/**
+ * The translated copy the activation condition is matched against: style/noparse/size/color tags removed and [Id]
+ * replaced by the Korean keyword name. It never reaches the database.
+ */
+export function translateGiftDescForCondition(desc: string | undefined | null, names: ReadonlyMap<string, string>): string | null {
+  if (!desc) return null
+  return desc
+    .replace(/<style="[^"]*">/g, '').replace(/<\/style>/g, '')
+    .replace(/<\/?noparse>/g, '')
+    .replace(/<size=[^>]*>/g, '').replace(/<\/size>/g, '')
+    .replace(/<color=[^>]*>/g, '').replace(/<\/color[^>]*>/g, '')
+    .replace(/\[([A-Za-z_]+)\]/g, (m, key) => names.get(key) ?? m)
+    .trim()
+}
+
+export type GiftActivationCondition = {
+  type: 'keyword' | 'multi_keyword' | 'affiliation' | 'skill'
+  keyword?: string
+  keywords?: string[]
+  affiliation?: string
+  affiliations?: string[]
+  skill_condition?: string
+  count: number
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+/** Reads the condition ("흑운회 소속 인격이 3인 이상", "출혈 … 스킬을 보유한 인격이 5인 이상") from the Korean text with names filled in. */
+export function extractActivationCondition(effect: string | null, keyword: string): GiftActivationCondition | undefined {
+  if (!effect) return undefined
+
+  const keywordTrimmed = keyword.trim()
+
+  const affiliationMatch = effect.match(/(?:편성된\s*)?(?:아래 효과는\s*)?(?:전투 내\s*)?([가-힣A-Za-z0-9 .·-]+?)\s*소속 인격이\s*(\d+)인 이상(?:\s*일 때|이면| 있다면)?/)
+  if (affiliationMatch) {
+    return {
+      type: 'affiliation',
+      count: Number(affiliationMatch[2]),
+      // The lazy group can start at a bullet or clause before the name ("- 턴 시작 시 중지 소속 인격이 3인 이상").
+      affiliation: affiliationMatch[1].replace(/^[-·\s]+/, '').replace(/^.*\s시\s+/, '').trim(),
+    }
+  }
+
+  const bloodfeastMatch = effect.match(/혈찬을 소모하는 스킬을 보유한 인격이\s*(\d+)인 이상/)
+  if (bloodfeastMatch) {
+    return {
+      type: 'skill',
+      count: Number(bloodfeastMatch[1]),
+      skill_condition: '혈찬 소모',
+    }
+  }
+
+  if (!keywordTrimmed || keywordTrimmed === '공통') return undefined
+
+  const keywordPattern = new RegExp(`${escapeRegExp(keywordTrimmed)}[^\\n]*?(?:공격\\s*)?스킬[^\\n]*?보유한 인격이\\s*(\\d+)인 이상`)
+  const keywordMatch = effect.match(keywordPattern)
+  if (!keywordMatch) return undefined
+
+  return {
+    type: 'keyword',
+    count: Number(keywordMatch[1]),
+    keyword: keywordTrimmed,
+  }
+}

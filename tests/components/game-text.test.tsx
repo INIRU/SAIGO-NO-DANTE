@@ -15,7 +15,17 @@ const REFS: GameTextRefNames = {
 }
 const DESCRIPTIONS: Record<string, string> = { CalcValue: '게임 설명' }
 
-vi.mock('next-intl', () => ({ useLocale: () => 'ko', useTranslations: () => (key: string) => key }))
+const MESSAGES: Record<string, { identity: { skills: { coin: string } } }> = {
+  ko: JSON.parse(readFileSync('messages/ko.json', 'utf8')),
+  en: JSON.parse(readFileSync('messages/en.json', 'utf8')),
+  ja: JSON.parse(readFileSync('messages/ja.json', 'utf8')),
+}
+let currentLocale = 'ko'
+vi.mock('next-intl', () => ({
+  useLocale: () => currentLocale,
+  useTranslations: () => (key: string) =>
+    key.split('.').reduce<unknown>((node, part) => (node as Record<string, unknown> | undefined)?.[part], MESSAGES[currentLocale]) ?? key,
+}))
 vi.mock('@/lib/i18n/navigation', () => ({ Link: 'a' }))
 const requestedKeys: (string | null)[] = []
 vi.mock('swr', () => ({
@@ -162,5 +172,38 @@ describe('REQ-SHARED-019 game text rendering', () => {
 
   it('REQ-SHARED-019 uses the base colour for text outside any style', () => {
     expect(render('<b>굵게</b> 일반')).toContain('color:#abcdef')
+  })
+
+  describe('<coin=N> blocks', () => {
+    const raw = '[OnSucceedAttack] 본문\n<coin=1>[Combustion] 3 부여</coin>\n<coin=2><b>둘째</b></coin>'
+
+    it('REQ-SHARED-019 draws each coin as a block with its own label in the accent colour and the children after it', () => {
+      currentLocale = 'ko'
+      const html = render(raw)
+      expect(html).toMatch(/<div[^>]*><span style="color:#abcdef;font-weight:600">\[코인 1\] <\/span>.*keyword-token.*<\/div>/)
+      expect(html).toContain('[코인 2]')
+      expect(html).toContain('font-weight:700')
+      expect(html.match(/<div/g)).toHaveLength(2)
+      // The line breaks around a block would only add empty lines, so they are not drawn.
+      expect(html).not.toMatch(/\n<div|<\/div>\n/)
+      expect(html).toContain('본문<div')
+      expect(html).not.toContain('&lt;coin')
+    })
+
+    it('REQ-SHARED-019 labels coins [Coin N] in English and [コイン N] in Japanese', () => {
+      currentLocale = 'en'
+      expect(render('<coin=1>a</coin>')).toContain('[Coin 1]')
+      currentLocale = 'ja'
+      expect(render('<coin=3>a</coin>')).toContain('[コイン 3]')
+      currentLocale = 'ko'
+    })
+
+    it('REQ-SHARED-019 keeps the main description before the coin blocks and draws the legacy [코인 N] form as before', () => {
+      currentLocale = 'ko'
+      const html = render(raw)
+      expect(html.indexOf('본문')).toBeLessThan(html.indexOf('[코인 1]'))
+      const legacy = render('[사용시] 화상 3 부여\n[코인 1] 폭발 1')
+      expect(legacy).not.toContain('<div')
+    })
   })
 })

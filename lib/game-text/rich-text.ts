@@ -12,11 +12,15 @@
  * dropped, not shown. <size=N%> (or <size=N>) becomes a `size` element whose value is kept as written; a zero size
  * hides its content, so that element keeps no children. <font=…> and <ruby=…> (and their closing tags) are removed
  * and their inner text stays.
+ *
+ * `<coin=N>…</coin>` is not a game tag but the site's own: the sync stores each skill coin's description after the
+ * skill's main description inside it (`[WhenUse] …\n<coin=1>[OnSucceedAttackHead] …</coin>\n<coin=2>…</coin>`), N being
+ * the 1-based coin number. It becomes a `coin` element whose value is N.
  */
 
-import { GAME_PLACEHOLDER_PATTERN, leadingPlaceholder } from './placeholders'
+import { GAME_PLACEHOLDER_PATTERN, leadingPlaceholder, placeholdersToPlainText } from './placeholders'
 
-export type GameTextElementTag = 'style' | 'color' | 'u' | 'b' | 'i' | 's' | 'mark' | 'link' | 'size'
+export type GameTextElementTag = 'style' | 'color' | 'u' | 'b' | 'i' | 's' | 'mark' | 'link' | 'size' | 'coin'
 
 export type GameTextNode =
   | { type: 'text'; text: string }
@@ -41,8 +45,9 @@ const STRIPPED_TAG = /<(?:font|ruby)(?:=[^<>]*)?>/iy
 const MARK_TAG = new RegExp(`<mark(?: color)?=${QUOTED}${HEX}${QUOTED}>`, 'iy')
 const LINK_TAG = new RegExp(`<link=${QUOTED}${VALUE}${QUOTED}>`, 'iy')
 const SPRITE_TAG = new RegExp(`<sprite name=${QUOTED}${VALUE}${QUOTED}>`, 'iy')
+const COIN_TAG = new RegExp(`<coin=${QUOTED}(\\d+)${QUOTED}>`, 'iy')
 const SIMPLE_TAG = /<([ubis])>/iy
-const CLOSE_TAG = /<\/(style|color|u|b|i|s|mark|link|size|font|ruby|noparse)(?:=[^<>]*)?>/iy
+const CLOSE_TAG = /<\/(style|color|u|b|i|s|mark|link|size|coin|font|ruby|noparse)(?:=[^<>]*)?>/iy
 const NOPARSE_OPEN = /<noparse>/iy
 const NOPARSE_CLOSE = '</noparse>'
 const REF = /\[([A-Za-z0-9_]+)\]/y
@@ -159,6 +164,7 @@ function parse(src: string): Parsed {
       else if ((m = matchAt(SIZE_TAG, src, i))) open('size', m[1])
       else if ((m = matchAt(MARK_TAG, src, i))) open('mark', m[1])
       else if ((m = matchAt(LINK_TAG, src, i))) open('link', m[1])
+      else if ((m = matchAt(COIN_TAG, src, i))) open('coin', String(Number(m[1])))
       else if ((m = matchAt(SIMPLE_TAG, src, i))) open(m[1].toLowerCase() as GameTextElementTag)
       if (m) {
         i += m[0].length
@@ -246,4 +252,183 @@ export function isRawGameText(raw: string, refIds: ReadonlySet<string>): boolean
   const { nodes, sawTag } = parse(raw)
   if (sawTag) return true
   return refIds.size > 0 && collectRefIds(nodes).some((id) => refIds.has(id))
+}
+
+export type GameTextPlainOptions = {
+  /** [Id] → plain name (a BattleKeywords / SkillTag name). An id missing here stays `[Id]`. */
+  names?: Readonly<Record<string, string>>
+  /** Label put in front of each `<coin=N>` block, e.g. `(n) => `[코인 ${n}]``. Without it a coin shows only its text. */
+  coinLabel?: (coinNumber: number) => string
+  /** Language of the `{{token}}` labels (`placeholdersToPlainText`): ko (default), en, ja. */
+  locale?: string
+  /** Leave `{{token}}` as written instead of its "(label)", for comparing with text where those slots hold other text. */
+  keepPlaceholders?: boolean
+}
+
+/**
+ * Game source text as one plain string, for search, subtitles and comparisons: tags are dropped but their inner text
+ * stays (a size 0 element has none, `<noparse>` content stays as written), `[Id]` becomes `names[id]` (or stays
+ * `[Id]`), sprites vanish, `{{token}}` becomes its "(label)" and numbered slots `{0}` stay as written. Each coin
+ * block starts on its own line (prefixed by `coinLabel(n)` plus a space, if given), and what follows it starts on a new line.
+ */
+export function gameTextToPlain(raw: string, options: GameTextPlainOptions = {}): string {
+  const { names, coinLabel, locale = 'ko', keepPlaceholders = false } = options
+  let out = ''
+  let breakNext = false
+  const write = (piece: string, block = false) => {
+    if (!piece) return
+    if ((block || breakNext) && out && !out.endsWith('\n') && !piece.startsWith('\n')) out += '\n'
+    breakNext = false
+    out += piece
+  }
+  const visit = (nodes: readonly GameTextNode[]) => {
+    for (const node of nodes) {
+      switch (node.type) {
+        case 'text':
+          write(node.text)
+          break
+        case 'ref':
+          write(names?.[node.id] ?? `[${node.id}]`)
+          break
+        case 'placeholder':
+          write(node.token && !keepPlaceholders ? placeholdersToPlainText(node.raw, locale) : node.raw)
+          break
+        case 'sprite':
+          break
+        case 'element':
+          if (node.tag === 'coin') {
+            const label = coinLabel?.(Number(node.value))
+            if (label) write(`${label} `, true)
+            else if (out && !out.endsWith('\n')) out += '\n'
+            breakNext = false
+            visit(node.children)
+            breakNext = true
+          } else visit(node.children)
+          break
+      }
+    }
+  }
+  visit(parseGameText(raw))
+  return out
+}
+
+/** `[Id]` → plain name, from the reference table's entries (`gameTextToPlain`'s `names`). */
+export function refNameLabels<T extends { n: string }>(names: Readonly<Record<string, T>>): Record<string, string> {
+  return Object.fromEntries(Object.entries(names).map(([id, ref]) => [id, ref.n]))
+}
+
+/**
+ * Game text as the screen shows it, for comparing with what OCR reads: tags gone, `[Id]` replaced by the name the screen
+ * shows, `{{token}}`/`{0}` kept (the screen shows other text there). Text that cannot be raw game text is returned as is.
+ */
+export function gameTextForScreen(raw: string, names?: Readonly<Record<string, string>>): string {
+  return mayBeRawGameText(raw) ? gameTextToPlain(raw, { names, keepPlaceholders: true }) : raw
+}
+
+const COIN_BLOCK = /<coin=(?:\\?")?(\d+)(?:\\?")?>([\s\S]*?)(?:<\/coin>|$)/gi
+
+/**
+ * A stored skill description split at its `<coin=N>…</coin>` blocks: the main text before the first one, and each block's
+ * text with its 1-based coin number. A block that is never closed runs to the end. Text without a block is all main text,
+ * unchanged (the older `[코인 N]` form is not split here).
+ */
+export function splitCoinBlocks(raw: string): { main: string; coins: { coinNum: number; text: string }[] } {
+  const coins: { coinNum: number; text: string }[] = []
+  let main = raw
+  for (const match of raw.matchAll(COIN_BLOCK)) {
+    if (coins.length === 0) main = raw.slice(0, match.index).trimEnd()
+    coins.push({ coinNum: Number(match[1]), text: match[2] })
+  }
+  return { main, coins }
+}
+
+/** True when drawing the text shows something: a character, an `[Id]`, a slot or a sprite (not only tags and blanks). */
+export const hasVisibleGameText = (text: string) => /<sprite\b/i.test(text) || gameTextToPlain(text).trim() !== ''
+
+type LineScan = { lines: string[]; open: string[]; inNoparse: boolean }
+
+/** Walks the text the way the parser does, tracking which elements are open at each line break and at the end. */
+function scanLines(raw: string): LineScan {
+  const lines: string[] = []
+  const open: { tag: string; source: string }[] = []
+  let inNoparse = false
+  let line = ''
+  const endLine = () => {
+    if (inNoparse) line += NOPARSE_CLOSE
+    lines.push(hasVisibleGameText(line) ? line : '')
+    line = open.map((element) => element.source).join('') + (inNoparse ? '<noparse>' : '')
+  }
+  const OPENERS: [RegExp, (m: RegExpExecArray) => string][] = [
+    [STYLE_TAG, () => 'style'], [COLOR_TAG, () => 'color'], [SIZE_TAG, () => 'size'], [MARK_TAG, () => 'mark'],
+    [LINK_TAG, () => 'link'], [COIN_TAG, () => 'coin'], [SIMPLE_TAG, (m) => m[1].toLowerCase()],
+  ]
+
+  let i = 0
+  while (i < raw.length) {
+    const ch = raw[i]
+    if (ch === '\n') {
+      endLine()
+      i++
+      continue
+    }
+    if (ch === '<') {
+      if (inNoparse) {
+        if (raw.slice(i, i + NOPARSE_CLOSE.length).toLowerCase() === NOPARSE_CLOSE) {
+          inNoparse = false
+          line += raw.slice(i, i + NOPARSE_CLOSE.length)
+          i += NOPARSE_CLOSE.length
+          continue
+        }
+      } else {
+        let m: RegExpExecArray | null
+        if ((m = matchAt(NOPARSE_OPEN, raw, i))) {
+          inNoparse = true
+        } else if ((m = matchAt(CLOSE_TAG, raw, i))) {
+          const name = m[1].toLowerCase()
+          for (let k = open.length - 1; k >= 0; k--) {
+            if (open[k].tag === name) {
+              open.splice(k, 1)
+              break
+            }
+          }
+        } else {
+          for (const [pattern, nameOf] of OPENERS) {
+            if ((m = matchAt(pattern, raw, i))) {
+              open.push({ tag: nameOf(m), source: m[0] })
+              break
+            }
+          }
+          if (!m) m = matchAt(STRIPPED_TAG, raw, i) ?? matchAt(SPRITE_TAG, raw, i)
+        }
+        if (m) {
+          line += m[0]
+          i += m[0].length
+          continue
+        }
+      }
+    }
+    line += ch
+    i++
+  }
+  endLine()
+  return { lines, open: open.map((element) => element.tag), inNoparse }
+}
+
+/**
+ * Splits at line breaks into lines that each parse on their own: a tag still open at a line break is closed by the
+ * parser at the end of that line and opened again at the start of the next, so a highlight spread over several lines
+ * (`<style="highlight">- a\n- b</style>`) keeps its look on every line. A line left with no visible content (blank, or
+ * only tags) becomes ''. Closing follows the parser: a closing tag ends the nearest open element of that name.
+ */
+export function splitGameTextLines(raw: string): string[] {
+  return scanLines(raw).lines
+}
+
+/**
+ * The text with its still-open tags closed, innermost first. The game closes tags at the end of each string, so a text
+ * that is put in front of another (passives of one stage joined with a blank line) must be closed before it.
+ */
+export function closeGameText(raw: string): string {
+  const { open, inNoparse } = scanLines(raw)
+  return raw + (inNoparse ? NOPARSE_CLOSE : '') + open.reverse().map((tag) => `</${tag}>`).join('')
 }

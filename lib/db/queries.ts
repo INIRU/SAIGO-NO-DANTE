@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import type { Sinner, Identity, IdentityWithSinner, Skill, Passive, EGO, EGOWithSinner, EgoGiftNote, SinType, SanityCondition, PanicType } from '@/lib/types'
 import type { IdentityBrowserItem, EGOBrowserItem } from '@/lib/types/browser'
+import { splitEgoSkillDescription } from '@/lib/identity/skill-description'
 
 // ── Supabase 클라이언트 (browser/server 공용 publishable key) ───────────────
 function supabase() {
@@ -243,25 +244,8 @@ export async function getEGOById(id: string): Promise<EGO | null> {
   if (relSkills && relSkills.length > 0) {
     const parseDescription = (desc: string | null | undefined, suffix: string) => {
       if (!desc) return {}
-      const lines = desc.split('\n')
-      let normalEffect = ''
-      const coinEffects: string[] = []
-      let lastCoinIdx = -1
-      // EN/JP uses [Coin N] format, KR uses [코인 N]
-      const coinRegex = /^\[(?:코인|Coin|コイン)\s*(\d+)\]\s*(.*)/
-      for (const line of lines) {
-        const coinMatch = line.match(coinRegex)
-        if (coinMatch) {
-          const idx = parseInt(coinMatch[1]) - 1
-          while (coinEffects.length <= idx) coinEffects.push('')
-          coinEffects[idx] = coinMatch[2].trim()
-          lastCoinIdx = idx
-        } else if (line.trim() && lastCoinIdx >= 0) {
-          coinEffects[lastCoinIdx] += '\n' + line.trim()
-        } else if (line.trim()) {
-          normalEffect += (normalEffect ? '\n' : '') + line.trim()
-        }
-      }
+      // Game text keeps each coin in a <coin=N> block; the older text starts a coin with "[코인 N]" ("[Coin N]" in EN/JP).
+      const { normalEffect, coinEffects } = splitEgoSkillDescription(desc)
       return {
         [`normalEffect_${suffix}`]: normalEffect || null,
         [`coin1Effect_${suffix}`]: coinEffects[0] || null,
@@ -273,7 +257,7 @@ export async function getEGOById(id: string): Promise<EGO | null> {
     }
 
     const toEGOSkill = (s: Record<string, unknown>) => {
-      // description 파싱: "[코인 1] effect\n후속효과\n[코인 2] effect" → 개별 필드
+      // description 파싱: "[코인 1] effect\n후속효과\n[코인 2] effect" 또는 "<coin=1>effect</coin>" → 개별 필드
       const krParsed = parseDescription(s.description as string, 'kr')
       return {
         name: s.name as string,

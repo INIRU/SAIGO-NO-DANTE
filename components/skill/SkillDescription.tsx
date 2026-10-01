@@ -2,7 +2,7 @@
 
 import Image from 'next/image'
 import { STORAGE_BASE } from '@/lib/constants/game'
-import { useFormatSkillDesc } from '@/components/providers/KeywordProvider'
+import { useFormatGameText, useFormatSkillDesc } from '@/components/providers/KeywordProvider'
 import { useTranslations } from 'next-intl'
 import CoinBadge from './CoinBadge'
 import { parseSkillDescription, COIN_IMAGES, UNBREAKABLE_COIN_COLOR } from '@/lib/identity/skill-description'
@@ -30,6 +30,7 @@ export default function SkillDescription({
   flavorText,
 }: SkillDescriptionProps) {
   const formatSkillDesc = useFormatSkillDesc()
+  const formatGameText = useFormatGameText()
   const t = useTranslations()
   const styles = SKILL_DESC_STYLES[variant]
   const showBadges = showCoinBadges ?? variant !== 'tooltip'
@@ -183,7 +184,7 @@ export default function SkillDescription({
             whiteSpace: 'pre-line',
           }}
         >
-          {flavor}
+          {formatGameText(flavor, '#9b6b43')}
         </div>
       )}
     </div>
