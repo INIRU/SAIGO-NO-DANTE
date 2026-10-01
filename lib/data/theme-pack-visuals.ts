@@ -73,6 +73,70 @@ export const THEME_PACK_TITLE_MEASURED: Readonly<Record<number, readonly [number
   1128: [80.5, null, 0.756],
 }
 
+/**
+ * Story (CANTO) and event packs: the centre of the empty dark band their poster leaves for the name, between the lowest
+ * printed art (LIMBUS logo, CANTO watermark, event logo and subtitle, line stripe) and the torn bottom strip, in % of the
+ * 416x684 poster. Measured on the composed posters (2026-10-01); it wins over the capture spot, whose size is kept.
+ * CANTO packs share one frame (band 82-89%); a new event pack needs its own value here.
+ */
+export const THEME_PACK_TITLE_BAND: Readonly<Record<number, number>> = {
+  1001: 85.5,
+  1002: 85.5,
+  1003: 85.5,
+  1004: 85.5,
+  1005: 85.5,
+  1006: 85.5,
+  1007: 85.5,
+  1008: 85.5,
+  1009: 85.5,
+  1010: 85.5,
+  1011: 85.5,
+  1012: 85.5,
+  1013: 85.5,
+  1014: 85.5,
+  1015: 85.5,
+  1016: 85.5,
+  1017: 85.5,
+  1018: 85.5,
+  1019: 85.5,
+  1020: 85.5,
+  1021: 85.5,
+  1022: 85.5,
+  1023: 85.5,
+  1024: 85.5,
+  1025: 85.5,
+  1026: 85.5,
+  1027: 85.5,
+  1101: 84,
+  1102: 85,
+  1103: 85,
+  1104: 82,
+  1105: 83,
+  1106: 83,
+  1107: 83.5,
+  1108: 81,
+  1109: 81,
+  1110: 80,
+  1111: 80.5,
+  1112: 80.5,
+  1113: 80.5,
+  1114: 82.5,
+  1115: 84,
+  1116: 82,
+  1117: 82.5,
+  1118: 82,
+  1119: 83.5,
+  1120: 83,
+  1121: 83.5,
+  1122: 81,
+  1123: 83,
+  1124: 83,
+  1125: 84.5,
+  1126: 83.5,
+  1127: 82.5,
+  1128: 83.5,
+}
+
 // Families for packs without captures. Attack-type/sin/keyword posters (boss badge, 12xx-14xx) all print a dark name
 // band at 75.3%-84.4%, darkest in the middle; the name is centred in it rather than on the game capture spot.
 const TITLE_FAMILY = {
@@ -112,7 +176,7 @@ export function getThemePackTitleLayout(id: number): ThemePackTitleLayout {
   if (kind === 'extreme') return { ...THEME_PACK_EXTREME_TITLE_BOX, scale: EXTREME_TITLE_SCALE, ...config?.title }
   const family = TITLE_FAMILY[kind]
   const measured = THEME_PACK_TITLE_MEASURED[id]
-  const cy = measured?.[0] ?? family.cy
+  const cy = THEME_PACK_TITLE_BAND[id] ?? measured?.[0] ?? family.cy
   const cx = measured?.[1] ?? family.cx
   const scale = TITLE_REFERENCE_SCALE / (measured?.[2] ?? family.scale)
   const half = (TITLE_FIT_WIDTH * scale) / 2
