@@ -26,7 +26,7 @@ import sharp from 'sharp'
 import { missingThemeImages, themeImageSource } from './theme-images'
 import { RESTORE_TABLES } from './extraction-restore'
 import { egoDrift } from './ego-drift'
-import { extractionGaps as findGaps, leftoverChanges, parseSyncSummary, storageKeyOf } from './sync-result'
+import { extractionGaps as findGaps, leftoverChanges, parseSyncSummary, pendingChanges, storageKeyOf } from './sync-result'
 import { eventImageIdFromFilename } from '../assets/event-image-source'
 import { PLACEHOLDER_CHECK_COLUMNS, rowsWithRawPlaceholders } from './placeholder-rules'
 import { STEPS, catalogSummaryOf, stepCommand, verifySteps } from './extraction-steps'
@@ -39,6 +39,8 @@ config({ path: '.env.local', quiet: true })
 const args = process.argv.slice(2)
 const option = (name: string) => { const at = args.indexOf(name); return at === -1 ? undefined : args[at + 1] }
 const FIX = args.includes('--fix')
+// A dry-run that must find nothing to change: the regression check for sync refactors (DB already equals the extraction).
+const EXPECT_CLEAN = args.includes('--expect-clean')
 const KEYWORD_ICONS_ONLY = args.includes('--keyword-icons-only') || args.includes('--icons-only')
 const SKILL_ICONS_ONLY = args.includes('--skill-icons-only') || args.includes('--icons-only')
 const ICONS_ONLY = KEYWORD_ICONS_ONLY || SKILL_ICONS_ONLY
@@ -280,7 +282,7 @@ async function main() {
   const zip = option('--zip')
   const unpackedSource = option('--source')
   const input = zip ?? unpackedSource
-  if (!input || !existsSync(input) || !option('--work')) throw Error('usage: (--zip <LimbusAssets_*.zip> | --source <LimbusAssets>) --work <dir> [--fix] [--keyword-icons-only | --skill-icons-only | --icons-only]')
+  if (!input || !existsSync(input) || !option('--work') || (FIX && EXPECT_CLEAN) || (ICONS_ONLY && EXPECT_CLEAN)) throw Error('usage: (--zip <LimbusAssets_*.zip> | --source <LimbusAssets>) --work <dir> [--fix | --expect-clean] [--keyword-icons-only | --skill-icons-only | --icons-only]')
   const work = resolve(option('--work')!)
   if (existsSync(work) && readdirSync(work).length) throw Error(`work directory is not empty: ${work}`)
   mkdirSync(join(work, 'logs'), { recursive: true })
@@ -358,6 +360,13 @@ async function main() {
     const themeSources = themeFiles.map(file => ({ file, path: themeImageSource(file, themeImages) }))
     const unsourced = themeSources.filter(item => !item.path).map(item => item.file)
     if (unsourced.length) throw Error(`the ZIP has no composed image for ${unsourced.join(', ')}; update the extraction tool and extract again`)
+
+    // What this extraction changes, from the dry-runs above: empty when the DB already equals it.
+    const pending = pendingChanges({
+      identity: parseSyncSummary(logOf(work, 'identity-dry-run')), catalog: catalogSummary(work, 'dry-run', true),
+      events: parseSyncSummary(logOf(work, 'events-dry-run')), newEgos, changedEgos, newThemeImages: themeFiles,
+    })
+    report.pendingChanges = pending
 
     if (FIX) {
       mkdirSync(join(work, 'backup'))
@@ -438,6 +447,11 @@ async function main() {
       }
     } else {
       report.newIdentities = []
+      if (pending.length) {
+        console.log(`PENDING ${pending.length} change(s) --fix would make:`)
+        for (const line of pending) console.log(`     ${line}`)
+        if (EXPECT_CLEAN) throw Error(`--expect-clean: the DB differs from the extraction in ${pending.length} place(s), see above`)
+      } else console.log('ok   dry-run (DB equals the extraction)')
     }
 
     report.ok = true

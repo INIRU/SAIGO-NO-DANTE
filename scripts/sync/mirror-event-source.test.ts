@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest'
-import { eventText, identicalEventCopies, sequenceEventIds, sinnerCharacterId, sourceResultText, sourceResults, walkEventGraph, type SourceEvent } from './mirror-event-source'
+import { eventText, identicalEventCopies, sequenceEventIds, sinnerCharacterId, sourceResultText, sourceResults, walkEventGraph, type SourceEvent, graphRowDiff } from './mirror-event-source'
 
 it('traverses grandchildren, cross-links and retries without turning them into entries', () => {
   const nodes: SourceEvent[] = [
@@ -56,4 +56,15 @@ it('stores the sinner the player picked as {{sinner}} (97111202, 90101503)', () 
   expect(sourceResultText(['{0} 수감자가 앞서 걸어가면'], 0)).toBe('{{sinner}} 수감자가 앞서 걸어가면')
   expect(eventText('[{0}] 수감자가 케이블을')).toBe('[{{sinner}}] 수감자가 케이블을')
   expect(eventText(null)).toBeNull()
+})
+
+it('REQ-DATA-SYNC-047 counts new, changed and DB-only rows by the columns the plan produces', () => {
+  const key = (row: Record<string, unknown>) => String(row.id)
+  const plan = [{ id: 1, name: 'a', judgment: { b: 2, a: 1 } }, { id: 2, name: 'b', judgment: null }, { id: 3, name: 'c', judgment: null }]
+  // The DB carries columns the plan does not write (created_at) and stores JSON keys in another order: neither is a change.
+  const same = [{ id: 1, name: 'a', judgment: { a: 1, b: 2 }, created_at: 'x' }, { id: 2, name: 'b', judgment: null, created_at: 'y' }, { id: 3, name: 'c', judgment: null, created_at: 'z' }]
+  expect(graphRowDiff(plan, same, key)).toEqual({ new: 0, changed: 0, removed: 0 })
+  const drifted = [{ id: 1, name: 'A', judgment: { a: 1, b: 2 } }, { id: 2, name: 'b', judgment: null }, { id: 9, name: 'gone', judgment: null }]
+  expect(graphRowDiff(plan, drifted, key)).toEqual({ new: 1, changed: 1, removed: 1 })
+  expect(graphRowDiff([], [], key)).toEqual({ new: 0, changed: 0, removed: 0 })
 })

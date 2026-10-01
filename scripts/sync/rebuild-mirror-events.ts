@@ -6,7 +6,9 @@ import { createClient } from '@supabase/supabase-js'
 import { config } from 'dotenv'
 import { eventImageId } from '../assets/event-image-source'
 import { implicitDataDirWarning } from './source-paths'
-import { eventText, identicalEventCopies, sequenceEventIds, sinnerCharacterId, sourceResults, sourceResultText, walkEventGraph, type SourceEvent, type SourceForm } from './mirror-event-source'
+import { canonicalJson, eventText, graphRowDiff, identicalEventCopies, sequenceEventIds, sinnerCharacterId, sourceResults, sourceResultText, walkEventGraph, type SourceEvent, type SourceForm } from './mirror-event-source'
+import { printSyncSummary } from './sync-result'
+import { readAllMetaRows } from '../../lib/meta/pagination'
 config({ path: '.env.local', quiet: true })
 type Locale = 'ko' | 'en' | 'ja'
 type Text = { id: number; name?: string; title?: string; desc?: string; behaveDesc?: string; prevDesc?: string; eventDesc?: string; successDesc?: string[]; failureDesc?: string[]; options?: { message?: string; messageDesc?: string; result?: string[] }[] }
@@ -236,6 +238,15 @@ export async function rebuildMirrorEvents(apply = process.argv.includes('--fix')
   writeFileSync(join(output, 'audit.json'), JSON.stringify(audit, null, 2))
   console.log(JSON.stringify({ ...audit, inputs: provenance.length, edges: graph.edges.length }))
   if (missingTemplates.size || missingGifts.size) throw Error('Unresolved source references; inspect audit before replacement')
+  // Every row of a table: one request returns at most 1000.
+  const stored = (table: string) => readAllMetaRows<Record<string, unknown>>((from, to) => db.from(table).select('*').order('id').range(from, to), 1000)
+  if (!apply) {
+    // What --fix would change, by the columns this plan produces (the readback below uses the same comparison).
+    printSyncSummary({
+      events: graphRowDiff(rows, await stored('md_events'), row => String(row.id)),
+      eventChoices: graphRowDiff(choices, await stored('md_event_choices'), row => `${row.event_id}/${row.sort_order}`),
+    })
+  }
   if (apply) {
     const backup = join(recovery, 'before-event-graph-rebuild'); mkdirSync(backup, { recursive: true })
     for (const table of ['md_events', 'md_event_choices']) {
@@ -246,13 +257,11 @@ export async function rebuildMirrorEvents(apply = process.argv.includes('--fix')
     const { data, error: replaceError } = await db.rpc('replace_md_event_graph', { p_events: rows, p_choices: choices })
     if (replaceError) throw replaceError
     console.log('Replaced graph atomically:', data)
-    const canonical = (value: unknown): string => JSON.stringify(value, (_key, item) => item && typeof item === 'object' && !Array.isArray(item) ? Object.fromEntries(Object.entries(item).sort(([a], [b]) => a.localeCompare(b))) : item)
     for (const [table, expected] of [['md_events', rows], ['md_event_choices', choices]] as const) {
-      const { data: actual, error: readbackError } = await db.from(table).select('*')
-      if (readbackError) throw readbackError
+      const actual = await stored(table)
       const fields = Object.keys(expected[0])
-      const normalize = (record: Record<string, unknown>) => canonical(Object.fromEntries(fields.map(field => [field, record[field]])))
-      if (canonical(expected.map(normalize).sort()) !== canonical(actual.map(normalize).sort())) throw Error(`Readback differs for ${table}`)
+      const normalize = (record: Record<string, unknown>) => canonicalJson(Object.fromEntries(fields.map(field => [field, record[field]])))
+      if (canonicalJson(expected.map(normalize).sort()) !== canonicalJson(actual.map(normalize).sort())) throw Error(`Readback differs for ${table}`)
       writeFileSync(join(output, `${table}-verified.json`), JSON.stringify(actual, null, 2))
     }
     writeFileSync(join(output, 'applied.json'), JSON.stringify({ verifiedAt: new Date().toISOString(), ...data }))
