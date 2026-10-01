@@ -6,10 +6,13 @@
  *   node --import tsx scripts/sync/apply-extraction.ts (--zip <LimbusAssets_*.zip> | --source <unpacked LimbusAssets>) --work <dir> [--fix]
  * Theme pack cards the extraction tool composed into the ZIP are uploaded (as WebP) only when Storage lacks them; existing
  * images are never replaced. Keyword icons Storage lacks (icons/keywords/<slug>.webp) are uploaded as lossless WebP from the ZIP's
- * keyword sprites right after the keyword catalogue step.
+ * keyword sprites right after the keyword catalogue step, and skill icons Storage lacks (icons/skills/<sinner>/<sprite>.webp) for the
+ * identities the DB already has are uploaded after the identity images. A read-only image audit closes every --fix.
  *
  *   ... --keyword-icons-only [--fix]   verify the ZIP, then only plan (--fix: upload) the missing keyword icons for the keyword
  *                                      rows the DB already has (catch-up for keywords an earlier apply added without icons)
+ *   ... --skill-icons-only [--fix]     the same for the skill icons of the identities the DB already has
+ *   ... --icons-only [--fix]           both, then the image audit
  */
 import { spawnSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
@@ -28,12 +31,16 @@ import { eventImageIdFromFilename } from '../assets/event-image-source'
 import { PLACEHOLDER_CHECK_COLUMNS, rowsWithRawPlaceholders } from './placeholder-rules'
 import { STEPS, catalogSummaryOf, stepCommand, verifySteps } from './extraction-steps'
 import { KEYWORD_AUDIT_FILE, KEYWORD_ICON_DIR, readBuffIconIds, readKeywordAudit, uploadMissingKeywordIcons, type ManifestEntry } from './keyword-icons'
+import { uploadMissingSkillIcons } from './skill-icons'
+import { auditImagesSafely, formatMissingImages, IMAGE_AUDIT_KINDS, supabaseAuditSource } from './image-audit'
 
 config({ path: '.env.local', quiet: true })
 const args = process.argv.slice(2)
 const option = (name: string) => { const at = args.indexOf(name); return at === -1 ? undefined : args[at + 1] }
 const FIX = args.includes('--fix')
-const KEYWORD_ICONS_ONLY = args.includes('--keyword-icons-only')
+const KEYWORD_ICONS_ONLY = args.includes('--keyword-icons-only') || args.includes('--icons-only')
+const SKILL_ICONS_ONLY = args.includes('--skill-icons-only') || args.includes('--icons-only')
+const ICONS_ONLY = KEYWORD_ICONS_ONLY || SKILL_ICONS_ONLY
 // Bundled next to the other sync bundles (no tsx or repository on the Windows PC).
 const BUNDLE_DIR = import.meta.url.endsWith('.mjs') ? dirname(fileURLToPath(import.meta.url)) : null
 const command = (script: string, rest: string[]) => stepCommand(script, rest, BUNDLE_DIR)
@@ -173,6 +180,33 @@ async function uploadKeywordIcons(source: string, work: string, data: string, up
   for (const row of result.keywordsWithoutIcon) console.warn(`WARN keyword icon: ${row.name} (${row.slug}) ${row.reason}: tags ${row.tags.join(',') || '-'}`)
 }
 
+/**
+ * Skill icons Storage lacks for the identities the DB has (the new-identity upload covers only new ones, so a skill an existing identity
+ * gained later has none), from the ZIP's skill sprites (see skill-icons.ts). Without --fix it only reports what it would upload.
+ */
+async function uploadSkillIcons(source: string, uploads: Upload[], report: Record<string, unknown>) {
+  const [identities, skills] = await Promise.all([all('identities', 'id,game_id,sinner_id'), all('skills', 'id,identity_id,image_id,skill_order,uptie_level')])
+  const result = await uploadMissingSkillIcons({
+    source, manifest: readManifest(source), uploads, fix: FIX, listDir: storedNames, bucket: client().storage.from('limbus-assets'),
+    identities: identities as never, skills: skills as never,
+  })
+  report.newSkillIcons = result.newSkillIcons
+  report.skillsWithoutIcon = result.skillsWithoutIcon
+  console.log(`ok   skill-icons (${result.newSkillIcons.length} ${FIX ? 'uploaded' : 'to upload'}, ${result.skillsWithoutIcon.length} without a sprite)`)
+  for (const row of result.skillsWithoutIcon) console.warn(`WARN skill icon: ${row.key} (identity ${row.identity}) ${row.reason}`)
+}
+
+/** Read-only: every image the DB references against Storage. Missing ones are reported (report.missingImages) and warned about, never fatal. */
+async function auditStoredImages(report: Record<string, unknown>) {
+  let result: Awaited<ReturnType<typeof auditImagesSafely>>
+  try { result = await auditImagesSafely(supabaseAuditSource(client())) } catch (error) { result = { error: error instanceof Error ? error.message : String(error) } }
+  report.missingImages = result
+  if ('error' in result) return console.warn(`WARN image audit could not run: ${result.error}`)
+  const missing = IMAGE_AUDIT_KINDS.reduce((sum, kind) => sum + result[kind].missing, 0)
+  console.log(`${missing ? 'WARN' : 'ok  '} images (${missing} referenced image(s) missing in Storage)`)
+  if (missing) for (const line of formatMissingImages(result)) console.warn(`     ${line}`)
+}
+
 /** Event illustrations Storage lacks (icons/events/<event id>.webp), before the event step links images it finds there. */
 async function uploadMissingEventImages(source: string, uploads: Upload[]) {
   const stored = await storedNames('icons/events'), bucket = client().storage.from('limbus-assets')
@@ -224,7 +258,7 @@ async function main() {
   const zip = option('--zip')
   const unpackedSource = option('--source')
   const input = zip ?? unpackedSource
-  if (!input || !existsSync(input) || !option('--work')) throw Error('usage: (--zip <LimbusAssets_*.zip> | --source <LimbusAssets>) --work <dir> [--fix] [--keyword-icons-only]')
+  if (!input || !existsSync(input) || !option('--work')) throw Error('usage: (--zip <LimbusAssets_*.zip> | --source <LimbusAssets>) --work <dir> [--fix] [--keyword-icons-only | --skill-icons-only | --icons-only]')
   const work = resolve(option('--work')!)
   if (existsSync(work) && readdirSync(work).length) throw Error(`work directory is not empty: ${work}`)
   mkdirSync(join(work, 'logs'), { recursive: true })
@@ -257,13 +291,18 @@ async function main() {
       throw Error(restore.status === 0 ? `${message} — restored the backup automatically` : `${message} — AUTOMATIC RESTORE FAILED, restore this run from the tool (logs/auto-restore.log)`)
     }
 
-    if (KEYWORD_ICONS_ONLY) {
-      // Only the keyword icons: the keyword rows are the DB's as they are, nothing but Storage objects is written (and recorded for a restore).
-      report.keywordIconsOnly = true
-      run(work, 'keywords-dry-run', command('scripts/sync/identity-data.ts', ['--rebuild-keyword-meta']), stepEnv('keywords'))
+    if (ICONS_ONLY) {
+      // Only icons: the rows are the DB's as they are, nothing but Storage objects is written (and recorded for a restore).
+      report.iconsOnly = [...KEYWORD_ICONS_ONLY ? ['keywords'] : [], ...SKILL_ICONS_ONLY ? ['skills'] : []]
+      // The keywords dry-run writes the audit file with each keyword's primary tag.
+      if (KEYWORD_ICONS_ONLY) run(work, 'keywords-dry-run', command('scripts/sync/identity-data.ts', ['--rebuild-keyword-meta']), stepEnv('keywords'))
       if (FIX) mkdirSync(join(work, 'backup')) // extraction-restore needs it to remove this run's uploads
-      try { await uploadKeywordIcons(source, work, data, uploads, report) } catch (error) { if (FIX) restoreAndFail(error); throw error }
+      try {
+        if (KEYWORD_ICONS_ONLY) await uploadKeywordIcons(source, work, data, uploads, report)
+        if (SKILL_ICONS_ONLY) await uploadSkillIcons(source, uploads, report)
+      } catch (error) { if (FIX) restoreAndFail(error); throw error }
       if (FIX) await revalidateGameData()
+      await auditStoredImages(report)
       report.ok = true
       return
     }
@@ -326,6 +365,8 @@ async function main() {
           run(work, 'identity-images', command('scripts/assets/sync-extracted-identities.cjs', ['--ids', newIdentities.join(','), '--source', source, '--output', join(work, 'identity-images'), '--fix']), env)
           ;(report.steps as string[]).push('identity-images')
         }
+        // Skill icons of identities the DB already had: the upload above covers only the new ones.
+        await uploadSkillIcons(source, uploads, report)
 
         // New EGO: bootstrap-data.ts writes their rows, stage skills and passives (with SkillTag section names) from this ZIP.
         if (newEgos.length) {
@@ -365,6 +406,7 @@ async function main() {
           for (const line of placeholders.slice(0, 20)) console.warn(`     ${line}`)
         } else console.log('ok   placeholders (no bare {0} in display columns)')
         await revalidateGameData()
+        await auditStoredImages(report)
       } catch (error) {
         restoreAndFail(error)
       }

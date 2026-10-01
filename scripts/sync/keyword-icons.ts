@@ -54,17 +54,32 @@ export function readKeywordAudit(file: string): Map<string, string> {
   return tags
 }
 
+/** Where the site draws a keyword's icon from: a Storage file (`own` when it is `<slug>.webp` itself) or one of its own assets. */
+export type KeywordIconSource = { kind: 'storage'; key: string; own: boolean } | { kind: 'local'; path: string } | null
+
 /**
- * Storage key the site reads this keyword's icon from, only when it is `icons/keywords/<its own slug>.webp`. Local assets (stat icons,
- * coins, atlas keywords) and slugs the site's alias/variant tables point at another file are not this step's to upload.
+ * The file the site really reads for this keyword (`getKeywordIconUrl`): its own slug file, the file an alias/variant of the slug points
+ * at, or a local asset (`/assets/game-ui/...`: stat icons, coins, atlas keywords). A slug can lack its own Storage file and still be drawn.
  */
-export function keywordIconKey(name: string, slug: string | null): string | null {
+export function keywordIconSource(name: string, slug: string | null): KeywordIconSource {
   if (!slug) return null
   const url = getKeywordIconUrl(name, slug)
+  if (!url) return null
   const prefix = `${STORAGE_BASE}/${KEYWORD_ICON_DIR}/`
-  if (!url?.startsWith(prefix)) return null
-  const file = decodeURIComponent(url.slice(prefix.length))
-  return file === `${slug}.webp` ? `${KEYWORD_ICON_DIR}/${file}` : null
+  if (url.startsWith(prefix)) {
+    const file = decodeURIComponent(url.slice(prefix.length).split(/[?#]/)[0])
+    return { kind: 'storage', key: `${KEYWORD_ICON_DIR}/${file}`, own: file === `${slug}.webp` }
+  }
+  return url.startsWith('/') ? { kind: 'local', path: url.split(/[?#]/)[0] } : null
+}
+
+/**
+ * Storage key to upload this keyword's icon to, only when the site reads `icons/keywords/<its own slug>.webp`. Local assets and slugs the
+ * site's alias/variant tables point at another file are drawn already and are not this step's to upload.
+ */
+export function keywordIconKey(name: string, slug: string | null): string | null {
+  const source = keywordIconSource(name, slug)
+  return source?.kind === 'storage' && source.own ? source.key : null
 }
 
 type Resolution = { entry: ManifestEntry; sprite: string } | { reason: 'no-sprite' | 'ambiguous'; sprites: string[] }

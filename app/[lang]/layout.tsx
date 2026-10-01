@@ -34,7 +34,6 @@ import { getKeywordCatalog } from '@/lib/keywords/server-data'
 import { fontVariables } from '../fonts'
 import { ROOT_OMITTED_MESSAGES, omitMessages } from '@/lib/i18n/client-messages'
 import { NAV_BOOT_SCRIPT } from '@/lib/constants/nav-boot'
-import NavbarFallback from '@/components/layout/NavbarFallback'
 
 const SITE_NAME: Record<SupportedLang, string> = { ko: '최애의 관리자', en: 'SAIGO NO DANTE', ja: 'SAIGO NO DANTE' }
 const OG_LOCALE: Record<SupportedLang, string> = { ko: 'ko_KR', en: 'en_US', ja: 'ja_JP' }
@@ -168,8 +167,8 @@ export default async function LangLayout({
                     <KeywordProvider keywords={keywords}>
                       <SkipNav lang={validLang} />
                       <AprilFoolsWrapper />
-                      {/* Navbar/PageNavigation read the pathname, which is request data on routes with unknown params (e.g. /decks/[id]). */}
-                      <div className="site-navigation"><Suspense fallback={<NavbarFallback siteName={t('site.name')} />}><Navbar mainNavLabel={mainNavLabel} /></Suspense></div>
+                      {/* The navbar body never reads the pathname (request data on routes with unknown params, e.g. /decks/[id]), so it is part of the static shell; its pathname-dependent marks are small Suspense islands inside. */}
+                      <div className="site-navigation"><Navbar mainNavLabel={mainNavLabel} /></div>
                       <Suspense fallback={null}><VisitTracker /></Suspense>
                       <Suspense fallback={null}><NavigationTracker /></Suspense>
                       <KonamiListener />
