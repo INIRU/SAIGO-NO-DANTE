@@ -391,18 +391,13 @@ export default function GiftCatalog({
 
   const query = search.trim().toLocaleLowerCase()
   const filtered = useMemo(() => {
-    const DIFF_ORDER = { '노말': 0, '하드': 1, '익스트림': 2 } as const
     const slotNum = slotFilter !== '전체' ? Number(slotFilter) : null
     const result = gifts.filter(g => {
       if (keywords.size > 0 && !keywords.has(g.keyword)) return false
       if (grades.size > 0 && !grades.has(g.grade)) return false
-      if (tiers.size > 0 && !g.is_synthesis) {
-        const selected = [...tiers][0] as keyof typeof DIFF_ORDER
-        const giftDiff = (g.difficulty || '노말') as keyof typeof DIFF_ORDER
-        const selectedIdx = DIFF_ORDER[selected] ?? 2
-        const giftIdx = DIFF_ORDER[giftDiff] ?? 0
-        if (giftIdx > selectedIdx) return false
-      }
+      // Difficulty = the first difficulty the gift can be obtained in (sync: giftTiers), so each option lists only the
+      // gifts that start there: 익스트림 shows the extreme-only gifts, not everything obtainable in extreme.
+      if (tiers.size > 0 && !tiers.has(g.difficulty || '노말')) return false
       if (slotNum !== null) {
         const slots = giftSlotMap.get(g.id)
         if (!slots || !slots.has(slotNum)) return false
