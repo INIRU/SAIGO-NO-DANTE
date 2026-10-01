@@ -5,9 +5,12 @@ import { STORAGE_BASE } from '@/lib/constants/game'
 import { useFormatGameText, useFormatSkillDesc } from '@/components/providers/KeywordProvider'
 import { useTranslations } from 'next-intl'
 import CoinBadge from './CoinBadge'
-import { parseSkillDescription, COIN_IMAGES, UNBREAKABLE_COIN_COLOR } from '@/lib/identity/skill-description'
+import { parseSkillDescription } from '@/lib/identity/skill-description'
 import { SKILL_DESC_STYLES, type SkillDescVariant } from './tokens'
 import { FLAVOR_COLOR } from '@/lib/game-text/flavor'
+
+/** The unbreakable-coin marker as game text: drawn as the [SuperCoin] keyword (icon, name, tooltip with its description). */
+const UNBREAKABLE_COIN_REF = '[SuperCoin]'
 
 interface SkillDescriptionProps {
   description: string
@@ -92,25 +95,11 @@ export default function SkillDescription({
           )}
 
           {showBadges ? (
-            <div className="flex items-start gap-2">
-              <CoinBadge
-                number={coin.coinNum}
-                accentColor={accentColor}
-                isUnbreakable={coin.isUnbreakable}
-              />
-              <div style={{ flex: 1, minWidth: 0 }}>
-                {coin.isUnbreakable && (
-                  <span className="inline-flex items-center gap-1" style={{ color: UNBREAKABLE_COIN_COLOR, fontSize: '0.625rem', fontWeight: 600 }}>
-                    <Image
-                      src={COIN_IMAGES.unbreakable}
-                      alt=""
-                      width={12}
-                      height={12}
-                      style={{ width: '0.75rem', height: '0.75rem', filter: `drop-shadow(0 0 2px ${accentColor}60)` }}
-                    />
-                    {t('identity.skills.unbreakableCoin')}
-                  </span>
-                )}
+            <div className="flex items-start gap-2.5">
+              <CoinBadge number={coin.coinNum} />
+              <div style={{ flex: 1, minWidth: 0, paddingTop: '0.125rem' }}>
+                {/* The game's own [SuperCoin] keyword: its icon, and its description in a tooltip. */}
+                {coin.isUnbreakable && <div>{formatSkillDesc(UNBREAKABLE_COIN_REF, accentColor)}</div>}
                 {coin.lines.map((line, li) => {
                   const coin4 = parsed4?.coinSections[ci]
                   const newLine = coin4?.lines[li]
@@ -145,9 +134,7 @@ export default function SkillDescription({
                   <div key={li}>
                     <div>
                       {li === 0 && <span style={{ color: accentColor, fontWeight: 600 }}>[{t('identity.skills.coin')} {coin.coinNum}] </span>}
-                      {coin.isUnbreakable && li === 0 && (
-                        <span style={{ fontWeight: 600 }}>{t('identity.skills.unbreakableCoin')} </span>
-                      )}
+                      {coin.isUnbreakable && li === 0 && <>{formatSkillDesc(UNBREAKABLE_COIN_REF, accentColor)} </>}
                       {formatSkillDesc(line, accentColor, skillNameColors, allowedKeywords)}
                     </div>
                     {hasDiff && (
@@ -166,7 +153,7 @@ export default function SkillDescription({
               {coin.lines.length === 0 && coin.isUnbreakable && (
                 <div>
                   <span style={{ color: accentColor, fontWeight: 600 }}>[{t('identity.skills.coin')} {coin.coinNum}] </span>
-                  <span style={{ fontWeight: 600 }}>{t('identity.skills.unbreakableCoin')}</span>
+                  {formatSkillDesc(UNBREAKABLE_COIN_REF, accentColor)}
                 </div>
               )}
             </>

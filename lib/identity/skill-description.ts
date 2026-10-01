@@ -145,4 +145,3 @@ export function unbreakableCoinIndices(description?: string | null): Set<number>
 }
 
 export const COIN_IMAGES = { normal: getGameUiAsset('coins/normal'), unbreakable: getGameUiAsset('coins/unbreakable') } as const
-export const UNBREAKABLE_COIN_COLOR = '#e52b2b'
