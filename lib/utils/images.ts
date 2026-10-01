@@ -128,8 +128,12 @@ export function getEGOImageUrl(sinnerId: string, egoFolderName: string): string 
   return `${STORAGE_BASE}/sinners/${sinnerId}/ego/${folder}/`
 }
 
-/** Verified full-resolution CGs; small profiles remain in cards and skill frames. */
-export function getEgoArtworkUrl(profileUrl: string): string {
+/**
+ * Full-resolution EGO art for the detail hero. The row's own `artwork_url` (set by the sync, `{id}_cg-{hash12}.webp`) wins; EGO
+ * synced before it existed fall back to the hand-kept verified map (lib/generated/ego-artwork.json), then to the small profile.
+ */
+export function getEgoArtworkUrl(profileUrl: string, artworkUrl?: string | null): string {
+  if (artworkUrl?.trim()) return artworkUrl.trim()
   const id = profileUrl.match(/\/(\d+)_awaken_profile\.webp/)?.[1]
   const version = id && egoArtwork[id as keyof typeof egoArtwork]
   return version ? profileUrl.replace(/\d+_awaken_profile\.webp(?:\?.*)?$/, `${id}_cg-${version}.webp`) : profileUrl

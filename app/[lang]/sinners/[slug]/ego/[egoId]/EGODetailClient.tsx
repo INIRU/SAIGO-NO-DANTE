@@ -351,7 +351,7 @@ export default function EGODetailClient({ sinner, ego }: Props) {
             <GradeImg grade={ego.grade} height={28} />
           </div>
           <div className={styles.artwork}>
-            {ego.image_url ? <Image src={getEgoArtworkUrl(ego.image_url)} alt={egoLocalName} fill priority sizes="(max-width: 767px) 85vw, 32rem" className={styles.artworkImage} />
+            {ego.image_url ? <Image src={getEgoArtworkUrl(ego.image_url, ego.artwork_url)} alt={egoLocalName} fill priority sizes="(max-width: 767px) 85vw, 32rem" className={styles.artworkImage} />
               : <span className={styles.artworkFallback}>{ego.grade}</span>}
           </div>
           <Link href={`/sinners/${sinner.id}#ego`} className={styles.backLink}>← {t('ego.backToEgoList')}</Link>
