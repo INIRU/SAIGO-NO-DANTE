@@ -5,7 +5,8 @@ import DeckDetailSkeleton from '@/components/decks/DeckDetailSkeleton'
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import dynamic from 'next/dynamic'
 import Image from 'next/image'
-import { motion, useReducedMotion } from 'motion/react'
+import { useReducedMotion } from 'motion/react'
+import * as m from 'motion/react-m'
 import { useLocale, useTranslations } from 'next-intl'
 import { Link, useRouter } from '@/lib/i18n/navigation'
 import { useSession } from 'next-auth/react'
@@ -853,7 +854,7 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
           {t('backToList')}
         </BackLink>
 
-        <motion.header
+        <m.header
           className={styles.hero}
           variants={shouldReduceMotion ? undefined : workbenchReveal}
           initial={shouldReduceMotion ? false : 'initial'}
@@ -961,7 +962,7 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
               {t('forkDeck')}
             </button>
           </div>
-        </motion.header>
+        </m.header>
 
         <nav aria-label={t('sectionNav')} className={`sticky-under-nav ${styles.sectionNav}`}>
           <ol ref={sectionNavRef}>

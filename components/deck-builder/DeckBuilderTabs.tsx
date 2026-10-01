@@ -2,7 +2,8 @@
 
 import { useState, type CSSProperties } from 'react'
 import Image from 'next/image'
-import { motion, useReducedMotion } from 'motion/react'
+import { useReducedMotion } from 'motion/react'
+import * as m from 'motion/react-m'
 import {
   Sinner,
   Identity,
@@ -156,7 +157,7 @@ export function IdentityTab({
         const keywordLabel = localizeDeckKeyword(keyword, keywordInfo[keyword], locale)
         const accessibleName = isManualAttackKeyword ? keywordLabel : `${keywordLabel} ${count}`
         return (
-          <motion.button
+          <m.button
             key={keyword}
             type="button"
             className="deck-builder-pinned-keyword"
@@ -183,7 +184,7 @@ export function IdentityTab({
             {!isManualAttackKeyword && (
               <span className="deck-builder-pinned-keyword__count">{count}</span>
             )}
-          </motion.button>
+          </m.button>
         )
       })}
     </div>

@@ -4,7 +4,8 @@
 import { useState, useMemo } from 'react'
 import { Search } from 'lucide-react'
 import { useTranslations } from 'next-intl'
-import { motion, useReducedMotion } from 'motion/react'
+import { useReducedMotion } from 'motion/react'
+import * as m from 'motion/react-m'
 import type { Sinner } from '@/lib/types'
 import type { EGOBrowserItem, SortOption } from '@/lib/types/browser'
 import type { DropdownOption } from '@/components/ui/Dropdown'
@@ -63,7 +64,7 @@ export default function EGOBrowserClient({ egos, sinners }: Props) {
 
   return (
     <div className="min-h-[100dvh] pt-[5.5rem] pb-16 px-4 md:px-6 max-w-7xl mx-auto">
-      <motion.div
+      <m.div
         initial={shouldReduceMotion ? false : 'initial'}
         animate="animate"
         variants={shouldReduceMotion ? undefined : workbenchReveal}
@@ -76,11 +77,11 @@ export default function EGOBrowserClient({ egos, sinners }: Props) {
           onSortChange={setSort}
           sortOptions={sortOptions}
         />
-      </motion.div>
+      </m.div>
 
       <div className="flex gap-6">
         {/* 사이드바 */}
-        <motion.div
+        <m.div
           className="shrink-0"
           initial={shouldReduceMotion ? false : 'initial'}
           animate="animate"
@@ -127,21 +128,21 @@ export default function EGOBrowserClient({ egos, sinners }: Props) {
             />
             <ActiveFilterChips activeCount={activeCount} onReset={resetAll} />
           </FilterSidebar>
-        </motion.div>
+        </m.div>
 
         {/* 카드 그리드 */}
         <div className="flex-1 min-w-0">
           {filteredCount === 0 ? (
-            <motion.div
+            <m.div
               className="flex items-center justify-center py-20"
               initial={shouldReduceMotion ? false : 'initial'}
               animate="animate"
               variants={shouldReduceMotion ? undefined : workbenchReveal}
             >
               <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>{t('emptyEgo')}</p>
-            </motion.div>
+            </m.div>
           ) : (
-            <motion.div
+            <m.div
               role="list"
               className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6 gap-x-3 gap-y-6 pt-2 [&>*]:mx-auto [&>*]:w-full [&>*]:max-w-[10rem]"
               initial={shouldReduceMotion ? false : 'initial'}
@@ -150,7 +151,7 @@ export default function EGOBrowserClient({ egos, sinners }: Props) {
               variants={shouldReduceMotion ? undefined : staggerContainer(0.025)}
             >
               {filtered.slice(0, visible).map((ego, index) => (
-                <motion.div
+                <m.div
                   key={ego.id}
                   role="listitem"
                   variants={shouldReduceMotion ? undefined : workbenchStaggerItem}
@@ -159,9 +160,9 @@ export default function EGOBrowserClient({ egos, sinners }: Props) {
                   transition={{ type: 'spring', stiffness: 420, damping: 34, mass: 0.6 }}
                 >
                   <EGOBrowserCard ego={ego} preload={index < PRELOADED_CARDS} />
-                </motion.div>
+                </m.div>
               ))}
-            </motion.div>
+            </m.div>
           )}
           {visible < filtered.length && <div ref={sentinelRef} aria-hidden="true" />}
         </div>

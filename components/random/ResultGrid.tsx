@@ -1,7 +1,8 @@
 'use client'
 
 import Image from 'next/image'
-import { motion, useReducedMotion } from 'motion/react'
+import { useReducedMotion } from 'motion/react'
+import * as m from 'motion/react-m'
 import { useLocale, useTranslations } from 'next-intl'
 import { RefreshCw } from 'lucide-react'
 import IdentityFrameCard from '@/components/ui/IdentityFrameCard'
@@ -61,13 +62,13 @@ export default function ResultGrid({ sinners, pools, result, view, rollId, rerol
                     return (
                       <li key={grade} className={styles.ego} data-empty={!ego || undefined} style={sin ? { '--sin': SIN_COLORS[sin] } as React.CSSProperties : undefined}>
                         {ego ? (
-                          <motion.span key={`${rollId}:${ego.id}`} className={styles.egoBody} title={egoName} {...enter(delay, { x: -6 })}>
+                          <m.span key={`${rollId}:${ego.id}`} className={styles.egoBody} title={egoName} {...enter(delay, { x: -6 })}>
                             <span className={styles.thumb}>
                               {ego.image_url && <Image src={ego.image_url} alt="" width={64} height={64} className={styles.egoArt} />}
                               <Image src={getEgoGradeBannerUrl(grade)} alt={grade} width={48} height={22} unoptimized className={styles.grade} />
                             </span>
                             <span className={styles.egoName}>{egoName}</span>
-                          </motion.span>
+                          </m.span>
                         ) : (
                           <span className={styles.egoBody}>
                             <span className={styles.thumb}><Image src={getEgoGradeBannerUrl(grade)} alt={grade} width={48} height={22} unoptimized className={styles.grade} /></span>
@@ -87,11 +88,11 @@ export default function ResultGrid({ sinners, pools, result, view, rollId, rerol
         return (
           <li key={sinner.id} className={styles.cell}>
             {identity ? (
-              <motion.button key={`${rollId}:${identity.id}`} type="button" className={`${board.tile} ${styles.card}`} {...enter(delay, { rotateY: -75, y: 6 })}
+              <m.button key={`${rollId}:${identity.id}`} type="button" className={`${board.tile} ${styles.card}`} {...enter(delay, { rotateY: -75, y: 6 })}
                 onClick={() => onReroll(sinner.id)} disabled={!canReroll} aria-label={t('reroll', { name })} title={canReroll ? t('reroll', { name }) : name}>
                 <IdentityFrameCard identity={identity} name={name} sizes="(max-width: 40rem) 30vw, 9rem" />
                 {canReroll && <span className={styles.reroll} aria-hidden="true"><RefreshCw /></span>}
-              </motion.button>
+              </m.button>
             ) : (
               <span className={board.empty}><Image src={getSinnerLogoUrl(sinner.id)} alt={sinnerName} width={32} height={32} /></span>
             )}

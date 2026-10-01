@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import { identityAtLevel, skillsAtLevel, MAX_IDENTITY_LEVEL } from '@/lib/identity/level'
-import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
+import { AnimatePresence, useReducedMotion } from 'motion/react'
+import * as m from 'motion/react-m'
 import { Link } from '@/lib/i18n/navigation'
 import {
   Sinner,
@@ -90,7 +91,7 @@ export default function IdentityDetailClient({
 
 
   return (
-    <motion.div
+    <m.div
       className="identity-detail-page min-h-[100dvh] pt-24 pb-16"
       variants={shouldReduceMotion ? undefined : workbenchReveal}
       initial={shouldReduceMotion ? false : 'initial'}
@@ -98,7 +99,7 @@ export default function IdentityDetailClient({
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         {/* 브레드크럼 */}
-        <motion.div
+        <m.div
           className="mb-6 flex flex-wrap items-center gap-2 text-xs"
           style={{ color: 'var(--text-muted)' }}
           variants={shouldReduceMotion ? undefined : workbenchStaggerItem}
@@ -112,16 +113,16 @@ export default function IdentityDetailClient({
           </Link>
           <span aria-hidden style={{ color: '#4a3d2c' }}>›</span>
           <span style={{ color: 'var(--gold)' }}>{getLocalizedName(identity, lang) || identity.name}</span>
-        </motion.div>
+        </m.div>
 
-        <motion.div
+        <m.div
           className="space-y-6"
           variants={shouldReduceMotion ? undefined : staggerContainer(0.07, 0.06)}
           initial={shouldReduceMotion ? false : 'initial'}
           animate="animate"
         >
           {/* 상세 정보와 덱 */}
-          <motion.div
+          <m.div
             className="identity-detail-content min-w-0 space-y-6"
             variants={shouldReduceMotion ? undefined : staggerContainer(0.06, 0.08)}
           >
@@ -154,7 +155,7 @@ export default function IdentityDetailClient({
 
             <AnimatePresence mode="wait" initial={false}>
               {pageTab === 'decks' && (
-                <motion.div
+                <m.div
                   key="decks"
                   variants={shouldReduceMotion ? undefined : workbenchReveal}
                   initial={shouldReduceMotion ? false : 'initial'}
@@ -162,11 +163,11 @@ export default function IdentityDetailClient({
                   exit={shouldReduceMotion ? undefined : 'exit'}
                 >
                   <IdentityDecksTab identityId={identity.id} />
-                </motion.div>
+                </m.div>
               )}
 
               {pageTab === 'info' && (
-                <motion.div
+                <m.div
                   key="info"
                   className="space-y-8"
                   variants={shouldReduceMotion ? undefined : staggerContainer(0.05)}
@@ -176,7 +177,7 @@ export default function IdentityDetailClient({
                 >
               <div className="identity-detail-hero grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,.85fr)_minmax(0,1.15fr)] lg:gap-10">
           {/* 일러스트와 기본 정보 */}
-          <motion.div className="identity-detail-portrait min-w-0" variants={shouldReduceMotion ? undefined : workbenchStaggerItem}>
+          <m.div className="identity-detail-portrait min-w-0" variants={shouldReduceMotion ? undefined : workbenchStaggerItem}>
           <IdentityPortraitSection
             sinner={sinner}
             identity={identity}
@@ -189,16 +190,16 @@ export default function IdentityDetailClient({
             sinColor={sinColor}
             rarityNum={rarityNum}
           />
-          </motion.div>
+          </m.div>
 
                 <div className="identity-detail-summary min-w-0 space-y-6">
-              <motion.div variants={shouldReduceMotion ? undefined : workbenchStaggerItem}>
+              <m.div variants={shouldReduceMotion ? undefined : workbenchStaggerItem}>
                 <IdentityInfoCard identity={identity} sinColor={sinColor} currentSeason={currentSeason} />
-              </motion.div>
+              </m.div>
 
-              <motion.div variants={shouldReduceMotion ? undefined : workbenchStaggerItem}>
+              <m.div variants={shouldReduceMotion ? undefined : workbenchStaggerItem}>
                 <IdentityStatsCard identity={displayedIdentity} level={level} setLevel={setLevel} />
-              </motion.div>
+              </m.div>
 
                 </div>
               </div>
@@ -209,14 +210,14 @@ export default function IdentityDetailClient({
 
 
 
-              <motion.div variants={shouldReduceMotion ? undefined : workbenchStaggerItem}>
+              <m.div variants={shouldReduceMotion ? undefined : workbenchStaggerItem}>
                 <IdentitySanitySection sanityConditions={sanityConditions} panicInfo={panicInfo} />
-              </motion.div>
+              </m.div>
 
 
 
               {/* 수감자 페이지로 돌아가기 */}
-              <motion.div variants={shouldReduceMotion ? undefined : workbenchStaggerItem}>
+              <m.div variants={shouldReduceMotion ? undefined : workbenchStaggerItem}>
               <Link
                 href={`/sinners/${sinner.id}`}
                 className="inline-flex min-h-11 items-center text-sm transition-colors hover:text-[var(--gold)]"
@@ -224,15 +225,15 @@ export default function IdentityDetailClient({
               >
                 {t('identity.backToSinner')}
               </Link>
-              </motion.div>
-                </motion.div>
+              </m.div>
+                </m.div>
               )}
             </AnimatePresence>
-          </motion.div>
-        </motion.div>
+          </m.div>
+        </m.div>
       </div>
 
 
-    </motion.div>
+    </m.div>
   )
 }

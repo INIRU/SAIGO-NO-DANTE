@@ -126,7 +126,7 @@ export default function AvatarPicker({ open, currentUrl, onSelect, onReset, onCl
             <button
               key={s.id}
               onClick={() => setSelectedSinner(s.id)}
-              className="flex flex-shrink-0 items-center justify-center transition-all duration-150 focus-visible:outline-none focus-visible:ring-[0.125rem] focus-visible:ring-[var(--gold)] focus-visible:ring-offset-[0.125rem] focus-visible:ring-offset-[#1a1510]"
+              className="flex flex-shrink-0 items-center justify-center transition duration-150 focus-visible:outline-none focus-visible:ring-[0.125rem] focus-visible:ring-[var(--gold)] focus-visible:ring-offset-[0.125rem] focus-visible:ring-offset-[#1a1510]"
               title={s.name_kr}
               aria-pressed={selectedSinner === s.id}
               style={{
@@ -188,7 +188,7 @@ export default function AvatarPicker({ open, currentUrl, onSelect, onReset, onCl
                   <button
                     key={identity.game_id}
                     onClick={() => onSelect(url)}
-                    className="relative group transition-all duration-150"
+                    className="relative group transition duration-150"
                     style={{
                       aspectRatio: '1',
                       borderRadius: 8,

@@ -4,7 +4,8 @@ import BackLink from '@/components/navigation/BackLink'
 import { pendingNoteUploads, noteUploadInProgressMessage } from '@/lib/notes/images'
 
 import { memo, useMemo, useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { motion, useReducedMotion } from 'motion/react'
+import { useReducedMotion } from 'motion/react'
+import * as m from 'motion/react-m'
 import { Link, useRouter } from '@/lib/i18n/navigation'
 import { useSession } from 'next-auth/react'
 import { useLocale, useTranslations } from 'next-intl'
@@ -403,7 +404,7 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
     <div className="min-h-[100dvh] pb-16" style={{ background: '#0d0b08' }}>
       <div className="max-w-[90rem] mx-auto px-3 md:px-6">
         {/* 헤더는 server-rendered page.tsx에서 렌더링 — 여기서는 액션 버튼만 */}
-        <motion.div
+        <m.div
           className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4"
           variants={shouldReduceMotion ? undefined : workbenchReveal}
           initial={shouldReduceMotion ? false : 'initial'}
@@ -467,7 +468,7 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
               </p>
             )}
           </div>
-        </motion.div>
+        </m.div>
 
         {/* 구역 목차. 좁은 화면은 늘 가로 밑줄 탭. 넓은 화면은 왼쪽 레일이다가 최종 기프트부터 가로 막대로 바뀌어 본문이 전체 폭을 쓴다.
             넓은 화면의 nav는 높이 0의 sticky 틀이라 두 목록이 서로 겹쳐 전환돼도 본문 높이는 그대로다. --planner-bar-h는 아래 sticky 도구줄의 기준이다. */}

@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
-import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
+import { AnimatePresence, useReducedMotion } from 'motion/react'
+import * as m from 'motion/react-m'
 import { Link } from '@/lib/i18n/navigation'
 import StaggerReveal, { staggerItem } from '@/components/ui/StaggerReveal'
 import { useRouter, usePathname } from '@/lib/i18n/navigation'
@@ -402,7 +403,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
 
         <div className="grid grid-cols-1 lg:grid-cols-[15rem_minmax(0,1fr)] xl:grid-cols-[16rem_minmax(0,1fr)] gap-5 sm:gap-8">
           {/* 좌측: 캐릭터 정보 (sticky) */}
-          <motion.div
+          <m.div
             className={`${styles.profileCol} lg:self-start`}
             initial={shouldReduceMotion ? false : { y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -497,10 +498,10 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
               </div>
               </div>
             </div>
-          </motion.div>
+          </m.div>
 
           {/* 우측: 탭 콘텐츠 */}
-          <motion.div
+          <m.div
             className="min-w-0"
             initial={shouldReduceMotion ? false : { y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -683,7 +684,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
             {/* 인격 탭 */}
             <AnimatePresence mode="wait" initial={false}>
             {tab === 'identities' && (
-              <motion.div
+              <m.div
                 key="identities"
                 initial={shouldReduceMotion ? false : { opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -756,7 +757,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                 ) : (
                   <StaggerReveal key={filteredIdentities.map(i => i.id).join()} className={styles.identityGrid} staggerDelay={0.05}>
                     {filteredIdentities.map((identity) => (
-                      <motion.div
+                      <m.div
                         key={identity.id}
                         variants={staggerItem}
                         className="w-full"
@@ -769,16 +770,16 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                             router.push(`/sinners/${sinner.id}/identities/${identity.id}`)
                           }
                         />
-                      </motion.div>
+                      </m.div>
                     ))}
                   </StaggerReveal>
                 )}
-              </motion.div>
+              </m.div>
             )}
 
             {/* EGO 탭 */}
             {tab === 'ego' && (
-              <motion.div
+              <m.div
                 key="ego"
                 initial={shouldReduceMotion ? false : { opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -821,7 +822,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                       const egoName = getName(ego.name_kr, ego.name_en, ego.name_jp) || ego.name
 
                       return (
-                        <motion.div
+                        <m.div
                           key={ego.id}
                           variants={staggerItem}
                           whileHover={shouldReduceMotion ? undefined : { scale: 1.035 }}
@@ -833,15 +834,15 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                             onClick={() => router.push(`/sinners/${sinner.id}/ego/${ego.id}`)}
                             sinnerId={sinner.id}
                           />
-                        </motion.div>
+                        </m.div>
                       )
                     })}
                   </StaggerReveal>
                 )}
-              </motion.div>
+              </m.div>
             )}
             </AnimatePresence>
-          </motion.div>
+          </m.div>
         </div>
       </div>
     </div>
