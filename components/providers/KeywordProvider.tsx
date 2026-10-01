@@ -7,18 +7,16 @@ import { useLocale, useTranslations } from 'next-intl'
 import useSWR, { preload } from 'swr'
 import { STORAGE_BASE } from '@/lib/constants/game'
 import { getKeywordIconUrl } from '@/lib/constants/keywords'
-import { getKeywordIndex, getLocalizedKeywordIndex, resolveKeywordIconUrl, type KeywordInfo } from '@/lib/keywords/catalog'
+import { getKeywordIndex, resolveKeywordIconUrl, type KeywordInfo } from '@/lib/keywords/catalog'
 export { resolveKeywordIconUrl, type KeywordInfo } from '@/lib/keywords/catalog'
 import { KEYWORD_DEFAULT_COLOR, KEYWORD_NEGATIVE_COLOR, resolveKeywordTextColor } from '@/lib/keywords/text-color'
 import { GIFT_KEYWORD_COLORS } from '@/lib/constants/gift'
 import { getLocalizedKeywordDesc, getLocalizedKeywordName } from '@/lib/i18n'
 import type { SupportedLang } from '@/lib/i18n'
-import { skillConditionColor } from '@/lib/identity/skill-condition-color'
-import PlaceholderLabel, { PlaceholderText } from '@/components/ui/PlaceholderLabel'
-import { leadingPlaceholder, type PlaceholderToken } from '@/lib/game-text/placeholders'
+import { PlaceholderText } from '@/components/ui/PlaceholderLabel'
 import { mayBeRawGameText, parseGameText } from '@/lib/game-text/rich-text'
 import { preloadGameTextRefDescriptions, useGameTextRefDescription, wantGameTextRefs } from '@/lib/hooks/useGameTextRefs'
-import GameText, { highlightValues } from '@/components/game-text/GameText'
+import GameText from '@/components/game-text/GameText'
 
 const KeywordContext = createContext<Record<string, KeywordInfo>>({})
 
@@ -70,8 +68,6 @@ export function useKeywordDescription(keyword: string, info: KeywordInfo | undef
 }
 
 type FormatSkillDescOptions = {
-  /** Notes can opt in to a single backslash as a literal-keyword escape. */
-  escapeKeywords?: boolean
   /** Tooltips: numbers turn gold and Potency/Count terms take this colour. */
   highlightValues?: string
 }
@@ -81,41 +77,29 @@ type FormatSkillDescOptions = {
  *
  * Game text (skill, passive, E.G.O, gift and keyword descriptions) is always drawn by GameText, even when it holds no tag or
  * `[Id]`: it then shows as plain text, and words are never searched for keywords (the stored text is the game's own).
- * Only user notes (`escapeKeywords`) still take the older path that guesses keywords from plain words, which is also why
- * they never make the page load the reference table.
+ * Notes do not come through here: NoteRenderer shows a user memo's keywords only as explicit chips (`noteKeyword` nodes,
+ * `[k:이름]` tokens) and everything else as written.
  * Of the other arguments, `skillNameColors` and `highlightValues` are carried over to GameText (own skill names coloured
- * by sin; gold numbers in tooltips); `allowedKeywords` only restricted the guessing, so game text ignores it.
+ * by sin; gold numbers in tooltips); `allowedKeywords` only restricted a guess that no longer exists and is ignored.
  */
 export function useFormatSkillDesc() {
   const keywords = useKeywords()
-  const locale = useLocale()
-
-  const { localKeywords, localToKr } = getLocalizedKeywordIndex(keywords, locale)
 
   return useCallback(
-    (text: string, color: string, skillNameColors?: Record<string, string>, allowedKeywords?: Set<string>, options?: FormatSkillDescOptions) => {
-      if (!options?.escapeKeywords) {
-        if (mayBeRawGameText(text)) wantGameTextRefs()
-        return (
-          <GameText
-            nodes={parseGameText(text)}
-            accent={color}
-            keywords={keywords}
-            keywordRef={KeywordWithTooltip}
-            skillNameColors={skillNameColors}
-            highlightValues={options?.highlightValues}
-          />
-        )
-      }
-      const filtered = allowedKeywords
-        ? localKeywords.filter(kw => {
-            const krName = localToKr[kw] ?? kw
-            return allowedKeywords.has(krName) || allowedKeywords.has(kw)
-          })
-        : localKeywords
-      return formatSkillDescInner(text, color, filtered, keywords, skillNameColors, localToKr, options)
+    (text: string, color: string, skillNameColors?: Record<string, string>, _allowedKeywords?: Set<string>, options?: FormatSkillDescOptions) => {
+      if (mayBeRawGameText(text)) wantGameTextRefs()
+      return (
+        <GameText
+          nodes={parseGameText(text)}
+          accent={color}
+          keywords={keywords}
+          keywordRef={KeywordWithTooltip}
+          skillNameColors={skillNameColors}
+          highlightValues={options?.highlightValues}
+        />
+      )
     },
-    [keywords, localKeywords, localToKr],
+    [keywords],
   )
 }
 
@@ -142,27 +126,6 @@ export function useFormatGameText() {
  */
 export function useKeywordData() {
   return getKeywordIndex(useKeywords())
-}
-
-function isHangul(ch: string | undefined): boolean {
-  if (!ch) return false
-  const code = ch.charCodeAt(0)
-  return (code >= 0xAC00 && code <= 0xD7A3) || (code >= 0x3131 && code <= 0x318E)
-}
-
-/** 키워드 뒤에 올 수 있는 한국어 조사 — 이 글자가 오면 경계로 취급하지 않음 */
-const PARTICLES = new Set([
-  '이', '가', '을', '를', '의', '에', '은', '는',
-  '과', '와', '도', '로', '만', '야', '라', '며',
-  '든', '인', '및', '나', '란', '당', '때', '면',
-  '부', '까', '서', '보', '처', '한',
-])
-
-/** 키워드 뒤에 조사가 오는지 확인 — 조사면 경계가 아님 (키워드 매칭 허용) */
-function isParticleAfter(text: string, kwLen: number): boolean {
-  const nextCh = text[kwLen]
-  if (!nextCh) return false
-  return PARTICLES.has(nextCh)
 }
 
 /**
@@ -404,181 +367,4 @@ export function KeywordWithTooltip({
       )}
     </span>
   )
-}
-
-function formatSkillDescInner(
-  text: string,
-  color: string,
-  catalogKeywords: string[],
-  keywordInfo: Record<string, KeywordInfo>,
-  skillNameColors?: Record<string, string>,
-  localToKr?: Record<string, string>,
-  options?: FormatSkillDescOptions,
-) {
-  // Only keywords that occur somewhere in the text can match below (every match is a substring of it). Checking the
-  // ~420 catalog names once here, in their longest-first order, spares the scans below from repeating them per segment.
-  const allKeywords = catalogKeywords.filter(kw => text.includes(kw))
-  const parts: {
-    text: string
-    type: 'normal' | 'bracket' | 'keyword' | 'number' | 'skillname' | 'placeholder'
-    skillColor?: string
-    krKey?: string
-    giftId?: number
-  }[] = []
-  let remaining = text
-  let prevChar = ''
-
-  const skillNames = skillNameColors
-    ? Object.keys(skillNameColors).sort((a, b) => b.length - a.length)
-    : []
-
-  const escapedKeywordAt = (value: string) => {
-    if (!options?.escapeKeywords) return null
-    for (let start = value.indexOf('\\'); start >= 0; start = value.indexOf('\\', start + 1)) {
-      if (start > 0 && value[start - 1] === '\\') continue
-      let slashCount = 1
-      while (value[start + slashCount] === '\\') slashCount += 1
-      if (slashCount % 2 === 0) continue
-      const keywordStart = start + slashCount
-      const keyword = allKeywords.find(kw => {
-        const afterHangul = kw.length <= 2 && isHangul(value[keywordStart + kw.length])
-        return value.startsWith(kw, keywordStart) && !(afterHangul && !isParticleAfter(value.slice(keywordStart), kw.length))
-      })
-      if (keyword) return { start, slashCount, keyword }
-    }
-    return null
-  }
-
-  while (remaining.length > 0) {
-    const escapedKeyword = escapedKeywordAt(remaining)
-    if (escapedKeyword?.start === 0) {
-      if (escapedKeyword.slashCount > 1) parts.push({ text: '\\'.repeat(escapedKeyword.slashCount - 1), type: 'normal' })
-      parts.push({ text: escapedKeyword.keyword, type: 'normal' })
-      prevChar = escapedKeyword.keyword[escapedKeyword.keyword.length - 1]
-      remaining = remaining.slice(escapedKeyword.slashCount + escapedKeyword.keyword.length)
-      continue
-    }
-    // 0. {{live}} 같은 자리표시 토큰 (lib/game-text/placeholders.ts)
-    const token = remaining.startsWith('{{') ? leadingPlaceholder(remaining) : null
-    if (token) {
-      parts.push({ text: token.token, type: 'placeholder', giftId: token.giftId })
-      prevChar = '}'
-      remaining = remaining.slice(token.length)
-      continue
-    }
-
-    // 1. [대괄호] / 【대괄호】 패턴
-    const bracketMatch = remaining.match(/^(?:\[([^\]]+)\]|【([^】]+)】)/)
-    if (bracketMatch) {
-      const inner = bracketMatch[1] || bracketMatch[2]
-      const krKey = localToKr?.[inner] ?? (localToKr?.[bracketMatch[0]] ? localToKr[bracketMatch[0]] : undefined)
-      parts.push({ text: bracketMatch[0], type: 'bracket', krKey })
-      prevChar = bracketMatch[0][bracketMatch[0].length - 1]
-      remaining = remaining.slice(bracketMatch[0].length)
-      continue
-    }
-
-    // 2. 상태이상 키워드 (짧은 키워드 앞뒤에 한글이 이어지면 무시, 단 조사는 허용)
-    let foundKeyword = false
-    for (const kw of allKeywords) {
-      const afterHangul = kw.length <= 2 && isHangul(remaining[kw.length])
-      const afterBoundary = afterHangul && !isParticleAfter(remaining, kw.length)
-      const beforeBoundary = kw.length <= 2 && isHangul(prevChar)
-      if (remaining.startsWith(kw) && !afterBoundary && !beforeBoundary) {
-        parts.push({ text: kw, type: 'keyword', krKey: localToKr?.[kw] })
-        prevChar = kw[kw.length - 1]
-        remaining = remaining.slice(kw.length)
-        const numMatch = remaining.match(/^( 횟수)?( \d+)/)
-        if (numMatch) {
-          parts.push({ text: numMatch[0], type: 'number' })
-          prevChar = numMatch[0][numMatch[0].length - 1]
-          remaining = remaining.slice(numMatch[0].length)
-        }
-        foundKeyword = true
-        break
-      }
-    }
-    if (foundKeyword) continue
-
-    // 3. 스킬 이름 매칭
-    let foundSkillName = false
-    for (const name of skillNames) {
-      if (remaining.startsWith(name)) {
-        parts.push({ text: name, type: 'skillname', skillColor: skillNameColors![name] })
-        prevChar = name[name.length - 1]
-        remaining = remaining.slice(name.length)
-        foundSkillName = true
-        break
-      }
-    }
-    if (foundSkillName) continue
-
-    // 4. 일반 텍스트
-    let nextIdx = remaining.length
-    const bracketIdx = remaining.indexOf('[')
-    if (bracketIdx > 0) nextIdx = Math.min(nextIdx, bracketIdx)
-    const fwBracketIdx = remaining.indexOf('【')
-    if (fwBracketIdx > 0) nextIdx = Math.min(nextIdx, fwBracketIdx)
-    const tokenIdx = remaining.indexOf('{{', 1)
-    if (tokenIdx > 0) nextIdx = Math.min(nextIdx, tokenIdx)
-    if (escapedKeyword) nextIdx = Math.min(nextIdx, escapedKeyword.start)
-    for (const kw of allKeywords) {
-      let searchFrom = 0
-      while (searchFrom < remaining.length) {
-        const kwIdx = remaining.indexOf(kw, searchFrom)
-        if (kwIdx < 0) break
-        const afterH = kw.length <= 2 && isHangul(remaining[kwIdx + kw.length])
-        const afterBound = afterH && !isParticleAfter(remaining.slice(kwIdx), kw.length)
-        const beforeBound = kw.length <= 2 && kwIdx > 0 && isHangul(remaining[kwIdx - 1])
-        if (kwIdx > 0 && !afterBound && !beforeBound) { nextIdx = Math.min(nextIdx, kwIdx); break }
-        searchFrom = kwIdx + 1
-      }
-    }
-    for (const name of skillNames) {
-      const nameIdx = remaining.indexOf(name)
-      if (nameIdx > 0) nextIdx = Math.min(nextIdx, nameIdx)
-    }
-    const chunk = remaining.slice(0, nextIdx)
-    parts.push({ text: chunk, type: 'normal' })
-    prevChar = chunk[chunk.length - 1] ?? prevChar
-    remaining = remaining.slice(nextIdx)
-  }
-
-  return parts.map((p, i) => {
-    switch (p.type) {
-      case 'bracket':
-        if (p.krKey) {
-          const inner = p.text.replace(/^[\[【]|[\]】]$/g, '')
-          const resolvedColor = resolveKeywordTextColor(inner, keywordInfo[p.krKey], p.krKey)
-          return (
-            <KeywordWithTooltip key={i} keyword={inner} krKey={p.krKey} inline displayColor={resolvedColor}>
-              <span style={{ color: resolvedColor, fontWeight: 600 }}>{inner}</span>
-            </KeywordWithTooltip>
-          )
-        }
-        const resolvedBracketColor = skillConditionColor(p.text) ?? resolveKeywordTextColor(p.text)
-        return (
-          <span key={i} style={{ color: resolvedBracketColor === KEYWORD_DEFAULT_COLOR ? color : resolvedBracketColor, fontWeight: 600 }}>
-            {p.text}
-          </span>
-        )
-      case 'keyword':
-        const lookupKey = p.krKey ?? p.text
-        const resolvedKeywordColor = resolveKeywordTextColor(p.text, keywordInfo[lookupKey], lookupKey)
-        return (
-          <KeywordWithTooltip key={i} keyword={p.text} krKey={p.krKey} inline displayColor={resolvedKeywordColor}>
-            <span style={{ color: resolvedKeywordColor, fontWeight: 600 }}>{p.text}</span>
-          </KeywordWithTooltip>
-        )
-      case 'number':
-        return <span key={i} style={{ color: '#e8b030', fontWeight: 700 }}>{p.text}</span>
-      case 'placeholder':
-        return <PlaceholderLabel key={i} token={p.text as PlaceholderToken} giftId={p.giftId} />
-      case 'skillname':
-        const resolvedSkillNameColor = resolveKeywordTextColor(p.text)
-        return <span key={i} style={{ color: resolvedSkillNameColor === KEYWORD_DEFAULT_COLOR ? p.skillColor : resolvedSkillNameColor, fontWeight: 600 }}>{p.text}</span>
-      default:
-        return <span key={i}>{options?.highlightValues ? highlightValues(p.text, options.highlightValues) : p.text}</span>
-    }
-  })
 }

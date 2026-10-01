@@ -90,7 +90,8 @@ function NoteAccordionView({title,children}:{title:ReactNode;children:ReactNode}
 }
 export default function NoteBlockViewer({doc,renderText}:{doc:JSONContent;renderText:(text:string)=>ReactNode}) {
   function render(n:JSONContent,key:string):ReactNode {
-    if (!visibleNode(n) && !['horizontalRule','hardBreak'].includes(n.type ?? '')) return null
+    // A text node of only spaces is the gap between two chips (or a chip and a word): it stays, the paragraph around it decides whether anything shows.
+    if (!(n.type === 'text' && n.text) && !visibleNode(n) && !['horizontalRule','hardBreak'].includes(n.type ?? '')) return null
     const children=n.content?.map((c,i)=>render(c,`${key}-${i}`))
     if (n.type === 'text') {
       let result:ReactNode=renderText(n.text ?? '')

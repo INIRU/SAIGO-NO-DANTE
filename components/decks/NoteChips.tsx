@@ -9,6 +9,8 @@ import Image from 'next/image'
 import NoteBlockViewer, { NoteGiftClickContext } from '@/components/notes/NoteBlockViewer'
 import { parseBlockDocument, NOTE_PREFIX } from '@/lib/notes/blocks'
 import { parseNoteImage } from '@/lib/notes/images'
+import { noteBlockTokenPattern, noteInlineMarkdownPattern, noteTokenPattern } from '@/lib/notes/inline-tokens'
+import { PlaceholderText } from '@/components/ui/PlaceholderLabel'
 import IdentitySkillFrameCard from '@/components/identity/IdentitySkillFrameCard'
 import { PassiveNoteRow } from '@/components/passive/PassiveEffect'
 import GiftCard from '@/components/ui/GiftCard'
@@ -662,23 +664,22 @@ export function NoteRenderer({
   allowedKeywords?: Set<string>
   textScale?: 'default' | 'comfortable'
 }) {
-  const formatSkillDesc = useFormatSkillDesc()
   const locale = useLocale()
   if (!text.trim()) return null
   const doc = parseBlockDocument(text)
-  if (doc) return <NoteBlockViewer doc={doc} renderText={value => <NoteRenderer text={value} skillLookup={skillLookup} passiveLookup={passiveLookup} egoLookup={egoLookup} identityLookup={identityLookup} egoGiftLookup={egoGiftLookup} allowedKeywords={allowedKeywords} inline />} />
+  if (doc) return <NoteBlockViewer doc={doc} renderText={value => value.trim() ? <NoteRenderer text={value} skillLookup={skillLookup} passiveLookup={passiveLookup} egoLookup={egoLookup} identityLookup={identityLookup} egoGiftLookup={egoGiftLookup} allowedKeywords={allowedKeywords} inline /> : value} />
   if (text.startsWith(NOTE_PREFIX)) return null
 
   const renderMarkdownInline = (value: string, keyPrefix: string): React.ReactNode[] => {
     const nodes: React.ReactNode[] = []
-    const inlineRe = /(\[([^\]\n]+)\]\((https?:\/\/[^)\s]+)\)|\*\*[^*\n]+?\*\*|\*[^*\n]+?\*|_[^_\n]+?_|`[^`\n]+?`)/g
+    const inlineRe = noteInlineMarkdownPattern()
     let last = 0
     let m: RegExpExecArray | null
     while ((m = inlineRe.exec(value)) !== null) {
       if (m.index > last) {
         nodes.push(
           <span key={`${keyPrefix}-t${last}`}>
-            {formatSkillDesc(value.slice(last, m.index), '#b0a898', undefined, allowedKeywords, { escapeKeywords: true })}
+            <PlaceholderText text={value.slice(last, m.index)} />
           </span>
         )
       }
@@ -692,19 +693,19 @@ export function NoteRenderer({
             rel="noopener noreferrer"
             style={{ color: '#e8b030', textDecoration: 'underline', textUnderlineOffset: '0.1875rem' }}
           >
-            {formatSkillDesc(m[2], '#e8b030', undefined, allowedKeywords, { escapeKeywords: true })}
+            <PlaceholderText text={m[2]} />
           </a>
         )
       } else if (matched.startsWith('**')) {
         nodes.push(
           <strong key={`${keyPrefix}-b${m.index}`} style={{ color: '#d9d0bf', fontWeight: 700 }}>
-            {formatSkillDesc(matched.slice(2, -2), '#d9d0bf', undefined, allowedKeywords, { escapeKeywords: true })}
+            <PlaceholderText text={matched.slice(2, -2)} />
           </strong>
         )
       } else if (matched.startsWith('*') || matched.startsWith('_')) {
         nodes.push(
           <em key={`${keyPrefix}-i${m.index}`} style={{ color: '#d2c7b5', fontStyle: 'italic' }}>
-            {formatSkillDesc(matched.slice(1, -1), '#d2c7b5', undefined, allowedKeywords, { escapeKeywords: true })}
+            <PlaceholderText text={matched.slice(1, -1)} />
           </em>
         )
       } else {
@@ -730,7 +731,7 @@ export function NoteRenderer({
     if (last < value.length) {
       nodes.push(
         <span key={`${keyPrefix}-tend`}>
-          {formatSkillDesc(value.slice(last), '#b0a898', undefined, allowedKeywords, { escapeKeywords: true })}
+          <PlaceholderText text={value.slice(last)} />
         </span>
       )
     }
@@ -738,7 +739,7 @@ export function NoteRenderer({
   }
 
   const renderInline = (value: string, keyPrefix: string): React.ReactNode[] => {
-    const tokenRe = /\[s:((?:[^\[\]]|\[[^\]]*\])+?)\s*\]|\[p:((?:[^\[\]]|\[[^\]]*\])+?)\s*\]|\[e:((?:[^\[\]]|\[[^\]]*\])+?)\s*\]|\[k:((?:[^\[\]]|\[[^\]]*\])+?)\s*\]|\[i:((?:[^\[\]]|\[[^\]]*\])+?)\s*\]|\[g:((?:[^\[\]]|\[[^\]]*\])+?)\s*\]/g
+    const tokenRe = noteTokenPattern()
     const elements: React.ReactNode[] = []
     let last = 0
     let m: RegExpExecArray | null
@@ -827,7 +828,7 @@ export function NoteRenderer({
   }
 
   const renderMixedBlockLine = (value: string, keyPrefix: string): React.ReactNode[] | null => {
-    const blockTokenRe = /\{\{skill:[^{}\n]+:\d+(?::\d+)?\}\}|\{\{passive:[^{}\n]+\}\}|\{\{gift:[^{}\n:]+(?::true)?\}\}/g
+    const blockTokenRe = noteBlockTokenPattern()
     const nodes: React.ReactNode[] = []
     let last = 0
     let found = false
