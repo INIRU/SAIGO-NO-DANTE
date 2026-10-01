@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 import type { Sinner, Identity, IdentityWithSinner, Skill, Passive, EGO, EGOWithSinner, EgoGiftNote, SinType, SanityCondition, PanicType } from '@/lib/types'
 import type { IdentityBrowserItem, EGOBrowserItem } from '@/lib/types/browser'
 import { splitEgoSkillDescription } from '@/lib/identity/skill-description'
+import { readAllMetaRows } from '@/lib/meta/pagination'
 
 // ── Supabase 클라이언트 (browser/server 공용 publishable key) ───────────────
 function supabase() {
@@ -113,23 +114,17 @@ export async function getPanicInfo(panicTypeId: number): Promise<PanicType | nul
   return data
 }
 
+// Whole tables are read page by page: a failed page throws (never a partial list), and `id` is the last sort key so
+// rows with equal keys cannot move between pages.
 export async function getAllSkills(): Promise<Skill[]> {
-  const all: Skill[] = []
-  const BATCH = 1000
-  for (let offset = 0; ; offset += BATCH) {
-    const { data, error } = await supabase()
-      .schema('limbus')
-      .from('skills')
-      .select('*')
-      .order('skill_order')
-      .order('variant_order')
-      .order('id')
-      .range(offset, offset + BATCH - 1)
-    if (error || !data || data.length === 0) break
-    all.push(...data)
-    if (data.length < BATCH) break
-  }
-  return all
+  return readAllMetaRows<Skill>((from, to) => supabase()
+    .schema('limbus')
+    .from('skills')
+    .select('*')
+    .order('skill_order')
+    .order('variant_order')
+    .order('id')
+    .range(from, to), 1000)
 }
 
 export async function getSkills(identityId: string): Promise<Skill[]> {
@@ -147,20 +142,13 @@ export async function getSkills(identityId: string): Promise<Skill[]> {
 }
 
 export async function getAllPassives(): Promise<Passive[]> {
-  const all: Passive[] = []
-  const BATCH = 1000
-  for (let offset = 0; ; offset += BATCH) {
-    const { data, error } = await supabase()
-      .schema('limbus')
-      .from('passives')
-      .select('*')
-      .order('passive_order')
-      .range(offset, offset + BATCH - 1)
-    if (error || !data || data.length === 0) break
-    all.push(...data)
-    if (data.length < BATCH) break
-  }
-  return all
+  return readAllMetaRows<Passive>((from, to) => supabase()
+    .schema('limbus')
+    .from('passives')
+    .select('*')
+    .order('passive_order')
+    .order('id')
+    .range(from, to), 1000)
 }
 
 export async function getPassives(identityId: string): Promise<Passive[]> {

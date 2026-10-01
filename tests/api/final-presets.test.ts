@@ -3,12 +3,13 @@ import { NextRequest } from 'next/server'
 
 const calls: { op: string; args: unknown[] }[] = []
 let tableError: { message: string } | null = null
+let rpcError: { message: string } | null = null
 vi.mock('@/lib/auth', () => ({ requireActiveUser: async () => ({ error: false, session: { user: { email: 'a@b.c' } } }) }))
 vi.mock('@/lib/supabase/findOrCreateUser', () => ({ findOrCreateSupabaseUser: async () => 'user-1' }))
 vi.mock('@/lib/supabase/admin', () => ({
   createAdminClient: () => ({
     schema: () => ({
-      rpc: async () => ({ data: 'user-1', error: null }),
+      rpc: async () => ({ data: rpcError ? null : 'user-1', error: rpcError }),
       from: () => {
         const row = { slot: 2, name: '화상', gift_keys: ['final_9250_plus'], updated_at: 't' }
         const chain: Record<string, unknown> = {}
@@ -27,7 +28,7 @@ import { DELETE, GET, PUT } from '@/app/api/planner/final-presets/route'
 const req = (method: string, body?: unknown, query = '') =>
   new NextRequest('http://localhost/api/planner/final-presets' + query, { method, body: body === undefined ? undefined : JSON.stringify(body), headers: { origin: 'http://localhost' } })
 
-beforeEach(() => { calls.length = 0; tableError = null })
+beforeEach(() => { calls.length = 0; tableError = null; rpcError = null })
 
 it('lists the user presets', async () => {
   const res = await GET(req('GET'))
@@ -52,4 +53,10 @@ it('deletes by slot and reports a missing table as a plain error', async () => {
   expect(calls.filter(call => call.op === 'eq').map(call => call.args)).toEqual([['user_id', 'user-1'], ['slot', 3]])
   tableError = { message: 'relation does not exist' }
   expect((await GET(req('GET'))).status).toBe(503)
+})
+
+it('REQ-PLANNER-020 reports a failed account lookup as 503, not as an empty preset list', async () => {
+  rpcError = { message: 'function limbus.discovery_user_id(text) does not exist' }
+  const res = await GET(req('GET'))
+  expect(res.status).toBe(503)
 })

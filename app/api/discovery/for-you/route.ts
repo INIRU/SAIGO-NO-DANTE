@@ -3,6 +3,7 @@ import { cacheLife, cacheTag } from "next/cache";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { discoveryUserId } from "@/lib/discovery/user-id";
 import { CACHE_TAGS } from "@/lib/constants/cache-tags";
 import {
   DISCOVERY_COLUMNS,
@@ -48,13 +49,13 @@ export async function GET(request: Request) {
   if (!email) return NextResponse.json({ items: [] }, { headers });
   try {
     const db = createAdminClient().schema("limbus");
-    // An unknown account or a database without the user_id migration simply gets no personal shelf.
-    const user = await db.rpc("discovery_user_id", { user_email: email });
-    if (user.error || !user.data) return NextResponse.json({ items: [] }, { headers });
+    // An unknown account gets no personal shelf; a failed lookup throws and is logged below.
+    const userId = await discoveryUserId(db, email);
+    if (!userId) return NextResponse.json({ items: [] }, { headers });
     const visits = await db
       .from("discovery_visits")
       .select("kind,entity_id")
-      .eq("user_id", user.data)
+      .eq("user_id", userId)
       .order("day", { ascending: false })
       .limit(60);
     if (visits.error || !visits.data.length) return NextResponse.json({ items: [] }, { headers });
@@ -87,7 +88,8 @@ export async function GET(request: Request) {
       candidates.popularIds,
     );
     return NextResponse.json({ items }, { headers });
-  } catch {
+  } catch (error) {
+    console.error("[discovery/for-you]", error instanceof Error ? error.message : error);
     return NextResponse.json({ error: "Unavailable" }, { status: 503, headers });
   }
 }
