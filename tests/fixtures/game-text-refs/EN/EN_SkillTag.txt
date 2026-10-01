@@ -1,0 +1,16 @@
+{
+  "dataList": [
+    {
+      "id": "OnSucceedAttack",
+      "name": "[On Hit]"
+    },
+    {
+      "id": "WhenUse",
+      "name": "[On Use]"
+    },
+    {
+      "id": "nxPostLine",
+      "name": "[{n} in Front]"
+    }
+  ]
+}
