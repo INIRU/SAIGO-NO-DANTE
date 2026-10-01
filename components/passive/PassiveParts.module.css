@@ -12,7 +12,8 @@
   display: inline-flex;
   align-items: flex-end;
   gap: 0.12em;
-  font-family: var(--font-title);
+  /* The numeral face of the resistance multipliers (×2, ×0.5), so every count on the detail pages matches. */
+  font-family: var(--font-excelsior), sans-serif;
   line-height: 0.85;
   font-variant-numeric: tabular-nums;
 }
@@ -21,7 +22,7 @@
   margin-bottom: 0.08em;
 }
 .count > span {
-  transform: translateY(-0.18em);
+  transform: translateY(-0.06em);
 }
 
 .requirements {
@@ -35,7 +36,7 @@
   display: inline-flex;
   align-items: center;
   gap: 0.25rem;
-  font-size: 1.75rem;
+  font-size: 2rem;
   color: var(--text-primary);
 }
 .sinIcon {
