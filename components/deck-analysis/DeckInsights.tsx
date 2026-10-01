@@ -44,6 +44,8 @@ type Props = {
   baseSinCounts?: Record<string, number>
   /** Extra block under the keyword chart (attack types / sin resources). */
   summary?: ReactNode
+  /** Identities in SELECTED slots: the keyword chart then also shows the deployed count over all 12. */
+  deployedIds?: ReadonlySet<string>
 }
 
 const asConditionPassive = (passive: DeckInsightPassive): PlannerPassiveLike => ({
@@ -58,7 +60,7 @@ const asConditionPassive = (passive: DeckInsightPassive): PlannerPassiveLike => 
 })
 
 /** Planner deck analysis: keyword distribution with 1:1 profiles, and battle/support passives whose column matches the keyword column height. */
-export default function DeckInsights({ identities, sinCounts, baseSinCounts, summary }: Props) {
+export default function DeckInsights({ identities, sinCounts, baseSinCounts, summary, deployedIds }: Props) {
   const tDeck = useTranslations('planner.deckTab')
   const locale = useLocale() as SupportedLang
   const { keywords: keywordInfo } = useKeywordData()
@@ -68,7 +70,10 @@ export default function DeckInsights({ identities, sinCounts, baseSinCounts, sum
     (keyword: string) => localizeDeckKeyword(keyword, keywordInfo[keyword], locale),
     [keywordInfo, locale],
   )
-  const distribution = useMemo(() => computeKeywordDistribution(identities.map(identity => identity.keywords)), [identities])
+  const distribution = useMemo(() => computeKeywordDistribution(
+    identities.map(identity => identity.keywords),
+    deployedIds ? identities.map(identity => deployedIds.has(identity.id)) : undefined,
+  ), [identities, deployedIds])
   const contributors = useMemo(() => {
     const map: Record<string, KeywordChartContributor[]> = {}
     for (const identity of identities) {

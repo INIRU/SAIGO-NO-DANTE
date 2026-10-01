@@ -905,7 +905,7 @@
       "emptyObserveGifts": "観測ギフトは選択されていません。",
       "emptyFinalGifts": "最終ギフトは選択されていません。",
       "conditionUnmet": "条件未達 — 全人格でも不足",
-      "conditionWarn": "条件注意 — 編成(1-7)のみでは不足、控え込みで達成",
+      "conditionWarn": "条件注意 — 編成(1-{deployed})のみでは不足、控え込みで達成",
       "factDifficulty": "難易度",
       "factIdentities": "人格",
       "factFloors": "階",
@@ -1284,6 +1284,8 @@
       "stats": {
         "keywordDistribution": "キーワード分布",
         "keywordEmpty": "人格を選択するとキーワード分布が表示されます。",
+        "keywordDeployed": "編成 {count}人",
+        "keywordAll": "全体 {count}人",
         "passives": "パッシブ",
         "battle": "バトル",
         "support": "サポート",
