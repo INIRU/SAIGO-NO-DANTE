@@ -1,6 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { splitTitleInTwo } from '@/lib/mirror-dungeon/title-lines'
+import type { SupportedLang } from '@/lib/i18n/types'
 
 // One canvas for every card, the resolved font variables (set once on <html>), and the sizes already found.
 let measureContext: CanvasRenderingContext2D | null | undefined
@@ -90,4 +92,44 @@ export function useAutoFontSize(
   }, [text, maxRem, minRem, maxWidthPx, fontFamily, fontWeight])
 
   return fontSizeRem
+}
+
+/**
+ * Two-line layout for a title the one-line fit shrinks too far (below `wrapBelow` of `maxRem`): the most balanced
+ * break (lib/mirror-dungeon/title-lines.ts) at the largest size that fits, capped at `twoLineMax` of `maxRem`.
+ * Returns null while the one-line size is good enough or the title cannot break.
+ */
+export function useTwoLineTitle(
+  text: string,
+  lang: SupportedLang,
+  oneLineRem: number,
+  maxRem: number,
+  maxWidthPx: number,
+  fontFamily: string,
+  fontWeight: number | string,
+  { wrapBelow = 0.75, twoLineMax = 0.85 }: { wrapBelow?: number; twoLineMax?: number } = {},
+): { lines: [string, string]; fontSizeRem: number } | null {
+  const [layoutResult, setLayoutResult] = useState<{ lines: [string, string]; fontSizeRem: number } | null>(null)
+
+  useEffect(() => {
+    if (!text || maxWidthPx <= 0 || oneLineRem >= maxRem * wrapBelow) {
+      setLayoutResult(null)
+      return
+    }
+    const rootFontSize = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16
+    if (measureContext === undefined) measureContext = document.createElement('canvas').getContext('2d')
+    const context = measureContext
+    if (!context) return
+    const basePx = maxRem * rootFontSize
+    context.font = `${fontWeight} ${basePx}px ${resolveFamily(fontFamily)}`
+    const measure = (s: string) => context.measureText(s).width
+    const lines = splitTitleInTwo(text, lang, measure)
+    if (!lines) { setLayoutResult(null); return }
+    const widest = Math.max(measure(lines[0]), measure(lines[1]))
+    const sizeRem = Math.min(maxRem * twoLineMax, (maxRem * maxWidthPx) / widest)
+    // Wrap only when it clearly beats the one-line size.
+    setLayoutResult(sizeRem > oneLineRem * 1.1 ? { lines, fontSizeRem: sizeRem } : null)
+  }, [text, lang, oneLineRem, maxRem, maxWidthPx, fontFamily, fontWeight, wrapBelow, twoLineMax])
+
+  return layoutResult
 }

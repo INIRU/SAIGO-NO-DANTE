@@ -7,7 +7,7 @@ import {
   getThemePackTitleLayout,
   getThemePackVisualConfig,
 } from '@/lib/data/theme-pack-visuals'
-import { useAutoFontSize } from '@/lib/hooks/useAutoFontSize'
+import { useAutoFontSize, useTwoLineTitle } from '@/lib/hooks/useAutoFontSize'
 import { getLocalizedName } from '@/lib/i18n/localize'
 import { translations } from '@/lib/i18n/translations'
 import type { SupportedLang } from '@/lib/i18n/types'
@@ -104,6 +104,9 @@ export default function ThemePackCard({
     ? Math.max(TITLE_MIN_FONT_REM, Math.min(1.75, (titleMeasureWidth / titleWidthRatio) * TITLE_FONT_RATIO * titleBox.scale / rootFontSize, titleTrackHeight * 0.9 / rootFontSize))
     : 0.75
   const fontSize = useAutoFontSize(displayName, titleMaxFontRem, TITLE_MIN_FONT_REM, titleMeasureWidth, titleFontFamily, titleFontWeight)
+  // Long names (mostly EN/JA) wrap onto two balanced lines instead of shrinking to a sliver, as the game does.
+  // Multi-colour names (1119, 1126) are short and keep their one-line coloured segments.
+  const twoLineTitle = useTwoLineTitle(displayNameSegments ? '' : displayName, lang, fontSize, titleMaxFontRem, titleMeasureWidth, titleFontFamily, titleFontWeight)
   const giftCount = (theme.ego_gift_ids ?? []).length
   const giftCountLabel = lang === 'en'
     ? `${giftCount} ${t('mirrorDungeon.theme.gifts')}`
@@ -199,12 +202,12 @@ export default function ThemePackCard({
             <div
               className="text-center"
               style={{
-                '--theme-title-auto-size': `${fontSize}rem`,
+                '--theme-title-auto-size': `${twoLineTitle?.fontSizeRem ?? fontSize}rem`,
                 color: nameColor,
                 fontFamily: titleFontFamily,
                 fontSize: 'var(--theme-title-auto-size)',
                 fontWeight: titleFontWeight,
-                lineHeight: 1,
+                lineHeight: twoLineTitle ? 1.05 : 1,
                 letterSpacing: '-0.02em',
                 wordSpacing: '-0.05em',
                 // Centres the glyph ink on the box; Noto Sans JP sits lower than KOTRA/Mikodacs (JA captures: +0.6% of the poster).
@@ -222,7 +225,9 @@ export default function ThemePackCard({
                 display: 'block',
               } as CSSProperties}
             >
-              {displayNameSegments
+              {twoLineTitle
+                ? twoLineTitle.lines.map(line => <span key={line} style={{ display: 'block' }}>{line}</span>)
+                : displayNameSegments
                 ? displayNameSegments.map((segment, index) => (
                     <span key={`${segment.text}-${index}`} style={{ color: segment.color ?? nameColor }}>
                       {segment.text}
