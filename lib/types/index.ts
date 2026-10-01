@@ -213,6 +213,8 @@ export type EGO = {
   cor_image_url: string | null
   /** Full-size art URL (`{id}_cg-{hash12}.webp`) the sync stores; null/absent for rows that predate it (see getEgoArtworkUrl). */
   artwork_url?: string | null
+  /** Full corrosion art for the hero's corrosion tab (ego.corrosion_artwork_url). */
+  corrosion_artwork_url?: string | null
   game_id: string | null
   release_date?: string | null
 }

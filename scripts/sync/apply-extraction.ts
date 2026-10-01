@@ -32,7 +32,7 @@ import { PLACEHOLDER_CHECK_COLUMNS, rowsWithRawPlaceholders } from './placeholde
 import { STEPS, catalogSummaryOf, stepCommand, verifySteps } from './extraction-steps'
 import { KEYWORD_AUDIT_FILE, KEYWORD_ICON_DIR, readBuffIconIds, readKeywordAudit, uploadMissingKeywordIcons, type ManifestEntry } from './keyword-icons'
 import { uploadMissingSkillIcons } from './skill-icons'
-import { EGO_ARTWORK_QUALITY, egoFolderKey, uploadEgoArtworkCopy, type EgoArtworkUpload } from './ego-artwork'
+import { EGO_ARTWORK_QUALITY, egoArtworkPublicUrl, egoFolderKey, uploadEgoArtworkCopy, type EgoArtworkUpload } from './ego-artwork'
 import { auditImagesSafely, formatMissingImages, IMAGE_AUDIT_KINDS, supabaseAuditSource } from './image-audit'
 
 config({ path: '.env.local', quiet: true })
@@ -249,6 +249,11 @@ async function uploadEgoImages(source: string, gameIds: string[], uploads: Uploa
       if (uploadError) throw Error(`upload ${key}: ${uploadError.message}`)
       uploads.push({ key, before: null })
       uploaded++
+      // The corrosion art is the hero's corrosion tab (migration ego_corrosion_artwork_url); the ego table backup carries the column.
+      if (suffix === 'e_cg') {
+        const { error: corrosionError } = await db().from('ego').update({ corrosion_artwork_url: egoArtworkPublicUrl(key) }).eq('game_id', ego.game_id)
+        if (corrosionError) throw Error(`ego ${ego.game_id} corrosion_artwork_url: ${corrosionError.message} (is the ego_corrosion_artwork_url migration applied?)`)
+      }
     }
     const cg = manifest.find(item => item.kind === 'EGO' && item.name === `${ego.game_id}_cg`)
     if (!cg) { withoutArtwork.push(String(ego.game_id)); continue }
