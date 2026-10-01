@@ -1,0 +1,13 @@
+{
+  "list": [
+    {
+      "id": "NailPersonality",
+      "buffClass": "NonvolatileBuff"
+    },
+    {
+      "id": "GodokPanicType",
+      "iconID": "Godok_Panic",
+      "buffClass": "NonvolatileBuff"
+    }
+  ]
+}

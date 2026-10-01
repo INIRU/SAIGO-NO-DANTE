@@ -61,10 +61,12 @@ describe('REQ-MIRROR-DUNGEON-010 placeholder labels', () => {
 })
 
 describe('REQ-MIRROR-DUNGEON-010 text renderers', () => {
-  it('skill, passive, keyword and gift descriptions draw tokens next to keyword highlighting', () => {
+  // REQ-SHARED-021: the word 화상 is no longer guessed to be a keyword in game text; only tokens are drawn.
+  it('skill, passive, keyword and gift descriptions draw tokens as chips, without guessing keywords', () => {
     const html = formatted('{{count}}턴 동안 턴 종료 시 {{potency}}만큼 화상 피해 (현재 {{live}}%)')
     expect(html.match(/data-placeholder=/g)).toHaveLength(3)
-    expect(html).toContain('keyword-token')
+    expect(html).not.toContain('keyword-token')
+    expect(html).toContain('화상 피해')
     expect(html).not.toContain('{{')
     // A non-token {{ stays text and does not hide the token after it.
     expect(formatted('{{nope}}{{value}}')).toContain('{{nope}}')
