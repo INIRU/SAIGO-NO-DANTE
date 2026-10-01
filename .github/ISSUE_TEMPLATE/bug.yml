@@ -1,0 +1,35 @@
+name: 버그
+description: 화면이나 기능이 기대와 다르게 동작할 때
+labels: [bug]
+body:
+  - type: input
+    id: page
+    attributes:
+      label: 어느 화면인가요
+      placeholder: 예) /ko/decks/<id>, 플래너 3층 테마팩 선택
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: 무엇이 잘못됐나요
+      description: 본 것과 기대한 것을 적어 주세요. 캡처가 있으면 붙여 주세요.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: 다시 일으키는 순서
+      placeholder: |
+        1. …
+        2. …
+  - type: dropdown
+    id: lang
+    attributes:
+      label: 언어
+      options: [한국어, English, 日本語, 모두]
+  - type: input
+    id: device
+    attributes:
+      label: 기기와 브라우저
+      placeholder: 예) iPhone Safari, Windows Chrome

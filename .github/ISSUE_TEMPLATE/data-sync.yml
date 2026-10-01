@@ -1,0 +1,31 @@
+name: 데이터 동기화
+description: 게임 데이터나 이미지가 빠졌거나 게임과 다를 때
+labels: [data]
+body:
+  - type: dropdown
+    id: kind
+    attributes:
+      label: 무엇이 다른가요
+      options: [인격, E.G.O, 스킬·패시브, 키워드, 기프트, 테마팩, 이벤트, 이미지]
+    validations:
+      required: true
+  - type: input
+    id: target
+    attributes:
+      label: 대상
+      placeholder: 예) 인격 10315, E.G.O 구멍(파우스트), 키워드 공격 레벨+
+    validations:
+      required: true
+  - type: textarea
+    id: diff
+    attributes:
+      label: 사이트 값과 게임 값
+      description: 사이트에 보이는 값과 게임에서 본 값을 적어 주세요. 캡처가 있으면 붙여 주세요.
+    validations:
+      required: true
+  - type: input
+    id: extraction
+    attributes:
+      label: 추출본
+      description: 확인한 추출 ZIP의 날짜(알면)
+      placeholder: 예) LimbusAssets_2026-10-01
