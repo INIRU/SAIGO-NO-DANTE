@@ -130,3 +130,99 @@ export function existingGiftLookup<T extends { game_id: number | null; name: str
     },
   }
 }
+
+/** The difficulty a gift first appears in. 평행중첩 (dungeonIdx 2) is a hard-mode variant, so it counts as 하드. */
+export type GiftTier = '노말' | '하드' | '익스트림'
+const GIFT_TIER_ORDER: readonly GiftTier[] = ['노말', '하드', '익스트림']
+const DUNGEON_IDX_TIER: Readonly<Record<number, GiftTier>> = { 0: '노말', 1: '하드', 2: '하드', 3: '익스트림' }
+
+export interface GiftTierTheme {
+  /** exceptionConditions[].dungeonIdx: the difficulties the pack is offered in. */
+  dungeonIdxs: readonly number[]
+  /** specificEgoGiftPool + extra exclusives + fixed rewards: given in every difficulty the pack is offered in. */
+  exclusive: readonly number[]
+  /** egoGiftPool: the pack's drop pool, still subject to the droppool's normal-mode exclusions. */
+  pool: readonly number[]
+  /** mapGenOption.eventPool */
+  eventIds: readonly number[]
+}
+
+export interface GiftTierSources {
+  /** mirrordungeon-egogift-droppool: random drop pool and its exclusions. excludeEgoGifts applies to dungeonIdx 0. */
+  dropPool: readonly number[]
+  normalExclude: readonly number[]
+  globalExclude: readonly number[]
+  themes: readonly GiftTierTheme[]
+  /** acquirable-egogifts-in-event: event id → gifts it can give. */
+  eventGifts: ReadonlyMap<number, readonly number[]>
+  /** Combine recipes: the result needs every material. */
+  recipes: readonly { result: number; materials: readonly number[] }[]
+  /** Gift → the gift it turns into (convertDataList). */
+  conversions: ReadonlyMap<number, number>
+  /** Hidden-boss rewards (ego-gift-mirrordungeon*-hb), used only when nothing else places them. */
+  hiddenBoss: ReadonlySet<number>
+}
+
+const lowerTier = (a: GiftTier | undefined, b: GiftTier): GiftTier =>
+  a === undefined || GIFT_TIER_ORDER.indexOf(b) < GIFT_TIER_ORDER.indexOf(a) ? b : a
+const higherTier = (a: GiftTier, b: GiftTier): GiftTier => (GIFT_TIER_ORDER.indexOf(b) > GIFT_TIER_ORDER.indexOf(a) ? b : a)
+
+/**
+ * The lowest difficulty each gift can be obtained in, from the game's own sources: the random drop pool (minus the
+ * normal-mode exclusions), the packs it belongs to (their exceptionConditions), the events of those packs, then
+ * combine recipes (the hardest material decides) and conversions (the source gift decides). Gifts none of these reach
+ * keep the old rule: hidden-boss rewards 익스트림, gifts excluded from normal drops 하드, the rest 노말.
+ */
+export function giftTiers(giftIds: Iterable<number>, src: GiftTierSources): Map<number, GiftTier> {
+  const normalExclude = new Set(src.normalExclude)
+  const globalExclude = new Set(src.globalExclude)
+  const tiers = new Map<number, GiftTier>()
+  const offer = (gift: number, tier: GiftTier) => tiers.set(gift, lowerTier(tiers.get(gift), tier))
+
+  for (const gift of src.dropPool) {
+    if (globalExclude.has(gift)) continue
+    offer(gift, normalExclude.has(gift) ? '하드' : '노말')
+  }
+  for (const theme of src.themes) {
+    const packTiers = [...new Set(theme.dungeonIdxs.map(idx => DUNGEON_IDX_TIER[idx]).filter((t): t is GiftTier => t !== undefined))]
+    for (const tier of packTiers) {
+      for (const gift of theme.exclusive) offer(gift, tier)
+      for (const gift of theme.pool) if (!(tier === '노말' && normalExclude.has(gift))) offer(gift, tier)
+      for (const eventId of theme.eventIds) for (const gift of src.eventGifts.get(eventId) ?? []) offer(gift, tier)
+    }
+  }
+
+  // Recipes and conversions can chain, so settle them until nothing changes. Gifts with a direct source keep it; a
+  // result made by several recipes takes the easiest one.
+  const direct = new Set(tiers.keys())
+  for (let changed = true; changed;) {
+    changed = false
+    const derived = (gift: number, tier: GiftTier) => {
+      if (direct.has(gift)) return
+      const next = lowerTier(tiers.get(gift), tier)
+      if (next !== tiers.get(gift)) { tiers.set(gift, next); changed = true }
+    }
+    for (const recipe of src.recipes) {
+      const materialTiers = recipe.materials.map(id => tiers.get(id))
+      if (materialTiers.length === 0 || materialTiers.some(t => t === undefined)) continue
+      derived(recipe.result, (materialTiers as GiftTier[]).reduce(higherTier))
+    }
+    for (const [from, to] of src.conversions) {
+      const fromTier = tiers.get(from)
+      if (fromTier !== undefined) derived(to, fromTier)
+    }
+  }
+
+  // Unplaced gifts: a conversion target follows its source; otherwise the old rule.
+  const convertedFrom = new Map([...src.conversions].map(([from, to]) => [to, from]))
+  const resolve = (gift: number, seen = new Set<number>()): GiftTier => {
+    const known = tiers.get(gift)
+    if (known) return known
+    const from = convertedFrom.get(gift)
+    if (from !== undefined && !seen.has(from)) return resolve(from, seen.add(gift))
+    return src.hiddenBoss.has(gift) ? '익스트림' : normalExclude.has(gift) || globalExclude.has(gift) ? '하드' : '노말'
+  }
+  const result = new Map<number, GiftTier>()
+  for (const gift of giftIds) result.set(gift, resolve(gift))
+  return result
+}
