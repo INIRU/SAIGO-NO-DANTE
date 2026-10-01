@@ -123,12 +123,6 @@ def extract(base, output):
     records[-1].update({'driveId': entry['id'], 'drivePath': entry['path']})
     all_ui = json.loads((base / 'drive-complete-ui.json').read_text())['files']
     for name, atlas_name, box in [
-        ('navigation/sinners', 'MainUI_BottomMenu_1.png', (256, 1280, 512, 1536)),
-        ('navigation/formation', 'MainUI_BottomMenu_1.png', (512, 1280, 768, 1536)),
-        ('navigation/mirror', 'MainUI_BottomMenu_1.png', (512, 1024, 768, 1280)),
-        ('navigation/collection', 'MainUI_BottomMenu_1.png', (0, 1280, 256, 1536)),
-        ('navigation/extraction', 'MainUI_BottomMenu_1.png', (768, 1280, 1024, 1536)),
-        ('navigation/planner', 'MainUI_BottomMenu_1.png', (768, 1024, 1024, 1280)),
         ('gift/background', 'MainUI_BattleSelection_15.png', (846, 1, 1200, 352)),
         ('gift/grade-ex', 'MainUI_MirrorDungeon6_5.png', (1719, 1760, 1838, 1882)),
     ]:
