@@ -5,12 +5,10 @@ import { useTranslations } from 'next-intl'
 import Image, { type ImageProps } from 'next/image'
 import { getBlurDataURL } from '@/lib/utils/thumbhash'
 
-type FallbackType = 'identity' | 'skill' | 'ego' | 'gift' | 'theme' | 'default'
+type FallbackType = 'skill' | 'gift' | 'theme' | 'default'
 
 const FALLBACK_MAP: Record<FallbackType, string> = {
-  identity: '/placeholders/identity.svg',
   skill: '/placeholders/skill.svg',
-  ego: '/placeholders/ego.svg',
   gift: '/placeholders/gift.svg',
   theme: '/placeholders/default.svg',
   default: '/placeholders/default.svg',
