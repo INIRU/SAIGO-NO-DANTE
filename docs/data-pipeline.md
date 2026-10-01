@@ -256,6 +256,30 @@ node --import tsx scripts/sync/apply-extraction.ts --zip <LimbusAssets_*.zip> --
 
 2026-09-27에 9/24 ZIP으로 번들을 Mac에서 `--fix`까지 실행했다(52초). 실제 변경은 10715의 동기화 III에 없는 스킬 빈 행 1개 삭제와 10515의 픽업 배너 1건이었고, 이벤트 339·선택지 754개는 같은 내용으로 다시 쓰여 읽기 검증을 통과했다. 이후 `npm run audit:data` 문제 없음. Windows 실행(`ExtractToDirectory`, win32 sharp)은 아직 실제 PC에서 확인하지 않았다.
 
+
+### 추출 도구 번들 함께 갱신 (2026-10-01)
+
+추출과 사이트 작업은 이 저장소의 세션 하나에서 한다. 아래에 해당하는 변경은 사이트 PR이 병합된 뒤 같은 세션이 추출 도구(`INIRU/limbus-asset-extractor`)의 `tools/site-sync`도 갱신해야 끝난다. 하지 않으면 Windows 추출 도구는 이전 동기화 코드로 DB에 반영한다.
+
+언제:
+- 번들에 들어가는 코드가 바뀔 때: `scripts/sync/**`(테스트 제외), `scripts/assets/sync-extracted-identities.cjs`, `scripts/assets/event-image-source.ts`, `scripts/assets/build-theme-packs.py`, `public/fonts/SCDream5.woff2`, 그리고 번들이 가져오는 `lib/` 파일(현재 `lib/constants/game.ts`, `lib/game-text/placeholders.ts`, `lib/keywords/category.ts`). 정확한 목록은 빌드 결과의 `// <경로>` 주석으로 확인한다.
+- DB 스키마가 바뀌어 동기화가 쓰는 표·컬럼이 달라질 때. 추출 도구의 `scripts/site-db-diff.cjs`(비교할 표 목록 `TABLES`)와 `tests/site-db-diff.test.cjs`도 같이 본다.
+- 동기화가 새 원본 파일을 읽을 때. 추출 도구는 게임 데이터 전체를 ZIP의 `complete-data`에 넣으므로 보통 추출 쪽 수정은 없지만, 9/24 이후 추출본에 그 파일이 있는지 확인한다.
+
+어떻게(매니저가 하고, 병합은 사용자 승인):
+1. 추출 도구 저장소를 `git pull`해 최신으로 맞춘다. 다른 세션이 먼저 갱신했을 수 있다.
+2. 사이트 main에서 번들을 만든다. 워크트리에서는 합성 원본 경로를 지정한다.
+   ```bash
+   LIMBUS_COMPOSITION_ASSET_DIR=/Users/iniru/Documents/Project/Limbus/assets/recovery-2026-09-10/theme-composition \
+     node scripts/sync/build-site-sync.mjs ../limbus-asset-extractor/tools/site-sync --win
+   ```
+3. 바뀐 단계를 번들로 dry-run한다(예: `node --env-file=<사이트 .env.local> mirror-dungeon-data.mjs --gifts-only`, `LIMBUS_DATA_DIR`에 최신 추출본 `complete-data`). 사이트 코드로 돌린 dry-run과 결과가 같아야 한다.
+4. 스키마가 바뀌었으면 추출 도구의 Mac에서 도는 테스트를 돌린다: `node --test tests/data-diff.test.cjs tests/data-file-diff.test.cjs tests/game-data.test.cjs tests/manual-gallery.test.cjs tests/site-db-diff.test.cjs`. `gallery`·`package` 테스트는 Windows 산출물이 있어야 해서 Mac에서는 실패한다.
+5. 추출 도구 저장소에서 `chore/site-sync-<사이트 main 짧은 해시>` 브랜치에 번들 파일(`apply-extraction.mjs`, `bootstrap-data.mjs`, `extraction-restore.mjs`, `identity-data.mjs`, `mirror-dungeon-data.mjs`, `rebuild-mirror-events.mjs`, `sync-extracted-identities.cjs`, 바뀌었으면 `build-theme-packs.py`)를 명시해 커밋하고 PR을 연다. 본문에 사이트 커밋과 dry-run 결과를 적는다.
+6. 병합 뒤 사용자에게 Windows PC 갱신(README의 방법)을 알린다.
+
+같은 코드로 다시 빌드한 번들은 빌드한 폴더 경로 주석(`// ../../.../node_modules/...`)만 다르다. 그 줄을 빼고 비교하면 같아야 한다.
+
 ### 테마팩 합성 재사용
 
 테마팩 카드는 추출 도구가 추출할 때 합성한다(2026-09-27). 게임 데이터 수집 뒤 `scripts/compose-theme-packs.cjs`가 번들의 `build-theme-packs.py`를 `THEME_PACK_FORMAT=png`로 실행해 모든 테마팩 카드를 도감 스냅숏의 `거울던전/합성 테마팩/<id>.png`(kind `합성 테마팩`, name 테마 id, label 한국어 이름)로 넣고 도감을 다시 그린다. 그래서 `.env.local`이 없어도 도감과 업로드 ZIP에 합성본이 있다. PNG 모드는 사이트 카드만 무손실로 저장하며 117장에 약 5초다(webp 인코딩까지 하면 약 330초). Windows PC에는 Python이 없어서 `tools/site-sync/python/`에 공식 CPython 3.12.10 embeddable과 Pillow 11.3.0 wheel(cp312 win_amd64)을 SHA-256 확인 후 풀어 넣는다(`build-site-sync --win`). embeddable의 `._pth`가 자기 폴더를 경로에 넣으므로 pip 없이 `PIL`을 불러온다. 사이트 반영의 마지막 단계는 테마 층 데이터 중 Storage에 `icons/theme-packs/<id>.webp` 또는 `boss/<bossSpriteId>.webp`가 없는 것만 골라(`scripts/sync/theme-images.ts`) ZIP의 `합성 테마팩`·`테마팩보스` PNG를 sharp webp(품질 95)로 바꿔 `--fix`일 때 올린다(`upsert: false`, 기존 이미지는 바꾸지 않는다). ZIP에 필요한 합성본이 없으면 중단한다. 결과는 `report.json`의 `newThemeImages`에 남는다. 검증: 9/24 추출본의 PNG 카드는 기존 webp 설정으로 다시 압축하면 Storage 이미지와 바이트 동일했고, sharp webp로 바꾼 1305·1514·보스도 Storage 이미지와 픽셀 차이 0이었다. 합성본을 넣은 추출본의 검사와 Mac 번들 전체 dry-run도 통과했다. Windows에서의 실제 추출·휴대용 Python 실행은 아직 확인하지 않았다.
