@@ -3,7 +3,7 @@ import { STORAGE_BASE } from '../../lib/constants/game'
 
 /**
  * Full-size E.G.O art for the detail hero: `{game id}_cg-{hash12}.webp` next to the profile, hash12 = first 12 hex of the
- * SHA-256 of that WebP (the convention of lib/generated/ego-artwork.json, docs/data-pipeline.md), quality 95.
+ * SHA-256 of that WebP (the convention of lib/generated/ego-artwork.json, docs/data-sync/provenance.md), quality 95.
  * The hashed name never repeats for different bytes, so the URL can be cached for good and a changed picture gets a new URL.
  * The row's `ego.artwork_url` holds the public URL; getEgoArtworkUrl (lib/utils/images.ts) prefers it over the hand-kept map.
  */
