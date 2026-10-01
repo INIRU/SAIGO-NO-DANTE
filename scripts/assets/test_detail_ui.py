@@ -62,7 +62,7 @@ class DetailUI(unittest.TestCase):
             image = Image.open(path).convert('RGBA')
             self.assertEqual(image.size, (256,256))
             self.assertEqual(image.getpixel((0,0))[3], 0)
-        self.assertEqual(len(json.loads((ASSETS / 'source.json').read_text())['outputs']), 52)
+        self.assertEqual(len(json.loads((ASSETS / 'source.json').read_text())['outputs']), 53)
 
 
 if __name__ == '__main__':

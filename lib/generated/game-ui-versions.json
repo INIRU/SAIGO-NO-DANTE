@@ -18,12 +18,6 @@
   "keywords/shin-tiantui-star": "8f29003a29dc",
   "keywords/tiantui-star": "e1c86c9036be",
   "keywords/tremor-burst": "53ae5e5f3a31",
-  "navigation/collection": "cc0c1ecf0706",
-  "navigation/extraction": "da43e4b35d0b",
-  "navigation/formation": "2f9aafe5b7e6",
-  "navigation/mirror": "41a30c9e12a0",
-  "navigation/planner": "c1ec26c65cdb",
-  "navigation/sinners": "aa2b6609d5a8",
   "rarity/1": "c4adfbbc98c3",
   "rarity/2": "bd9096f1e1f2",
   "rarity/3": "84a1a35a9c1a",
@@ -100,10 +94,6 @@
   "gift/enhance-plusplus-idle": "c04ad9f5e0a1",
   "gift/enhance-plus": "883208f5601c",
   "gift/enhance-plusplus": "6449e7ba89f0",
-  "uptie/1": "e472d9f037ec",
-  "uptie/2": "12b5ae79aff5",
-  "uptie/3": "380c3c33015d",
-  "uptie/4": "fc61d7a9cff9",
   "gift/background-enhanced": "ff19b182b8ef",
   "resources/md-credit": "54f5651d92de"
 }
