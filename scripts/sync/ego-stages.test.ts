@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { resolveEgoStages } from './ego-stages'
+import { egoSkillSlots, resolveEgoStages } from './ego-stages'
 import { egoSkillsAtStage, egoStages } from '../../lib/ego/stages'
 import type { EGOSkill } from '../../lib/types'
 
@@ -22,5 +22,27 @@ describe('source EGO stages', () => {
     expect(egoStages(skills)).toEqual([3, 5])
     expect(egoSkillsAtStage(skills, 4).map(skill => skill.name)).toEqual(['Before'])
     expect(egoSkillsAtStage(skills, 1)).toEqual([])
+  })
+})
+
+describe('REQ-CATALOG-018 EGO skills of additionalList', () => {
+  it('REQ-CATALOG-018 adds the further awakening skill of additionalList after the main awakening and corrosion', () => {
+    // 20211 구멍 (2026-10-01): additionalList repeats the main corrosion 2021121.
+    expect(egoSkillSlots({
+      awakeningSkillId: 2021111, corrosionSkillId: 2021121,
+      additionalList: [{ level: 1, additionalList: [{ awakeningSkillId: 2021112, corrosionSkillId: 2021121, requirementList: [] }] }],
+    })).toEqual([
+      { category: 'awakening', skillId: 2021111, skillOrder: 1 },
+      { category: 'corrosion', skillId: 2021121, skillOrder: 2 },
+      { category: 'awakening', skillId: 2021112, skillOrder: 3 },
+    ])
+  })
+
+  it('REQ-CATALOG-018 keeps an EGO without additionalList or corrosion as before', () => {
+    expect(egoSkillSlots({ awakeningSkillId: 2010111, corrosionSkillId: 2010121 })).toEqual([
+      { category: 'awakening', skillId: 2010111, skillOrder: 1 },
+      { category: 'corrosion', skillId: 2010121, skillOrder: 2 },
+    ])
+    expect(egoSkillSlots({ awakeningSkillId: 2010111, corrosionSkillId: null })).toEqual([{ category: 'awakening', skillId: 2010111, skillOrder: 1 }])
   })
 })
