@@ -26,6 +26,8 @@ node scripts/sync/build-site-sync.mjs "<림버스 에셋>/tools/site-sync" --win
 
 # 저장소에서 같은 흐름을 직접 실행(기본은 dry-run, --fix가 적용)
 node --import tsx scripts/sync/apply-extraction.ts --zip <LimbusAssets_*.zip> --work <빈 작업 폴더> [--fix]
+# DB가 이미 이 추출본과 같아야 할 때: 반영하면 바뀔 것이 하나라도 있으면 종료 코드 1
+node --import tsx scripts/sync/apply-extraction.ts --zip <LimbusAssets_*.zip> --work <빈 작업 폴더> --expect-clean
 
 # 키워드 아이콘만(rules.md "키워드 아이콘"): ZIP을 같은 방식으로 검사한 뒤 아이콘 계획만 세운다. --fix가 올린다.
 node --import tsx scripts/sync/apply-extraction.ts --zip <LimbusAssets_*.zip> --work <빈 작업 폴더> --keyword-icons-only [--fix]
@@ -40,13 +42,15 @@ node --import tsx scripts/sync/audit-images.ts [--json <파일>] [--limit <종�
 
 `apply-extraction`은 `prepareExtractedAssets`로 ZIP 전체를 검사한 뒤 refs(게임 텍스트 참조 표, `game-text-refs.ts`) → identity → keywords → refs-link(같은 동기화를 한 번 더: keywords 단계가 새로 만든 `keyword_meta` 행을 `keyword_name`으로 잇는다. 이 연결이 없으면 적용 뒤 읽기 검증이 refs 변경을 남은 차이로 본다) → mirror(기프트·테마팩·레시피) → events 순서로 단계마다 dry-run 후 `--fix`를 실행한다. 첫 적용 전에 `identities`, `skills`, `passives`, `ego`, `ego_skills`, `ego_gifts`, `keyword_meta`, `game_text_refs`, `ego_gift_themes`, `ego_gift_recipes`를 작업 폴더 `backup/`에 저장하고, 이벤트 단계는 자체적으로 `md_events`/`md_event_choices`를 백업한 뒤 읽기 검증한다. 실패하면 그 단계에서 멈춘다. 새 인격은 같은 ZIP에서 `sync-extracted-identities`로 이미지를 올린다. 새 E.G.O(숨김·각성 스킬 없는 스토리 전용 E.G.O는 제외)는 단계들이 끝난 뒤 `bootstrap-data.ts --ego-ids`로 행·단계별 스킬·단계별 패시브(`ego_passives`, SkillTag 구획 제목 번역 포함)를 넣고, ZIP의 `<id>_awaken_profile`·`erosion_profile`·`cg`·`e_cg`·`profile_summary`를 `sinners/<수감자>/ego/<폴더>/`에 webp로 올린 뒤(기존 파일은 덮어쓰지 않음) 사이트 캐시를 갱신한다. Drive 아트 목록이 없는 Windows에서는 폴더를 영어 이름으로 정하고 ASCII 밖 글자는 `_uXXXX_`로 쓴다(Drive 폴더 규칙과 같음). 결과는 `report.json`의 `newEgos`에 남는다. 2026-09-28 검증: 9/24 추출본으로 엄숙한 애도(20109)·착영휘도(20509)를 새 E.G.O로 가정해 dry-run한 계획이 DB의 행·패시브·스킬 16개와 필드까지 같았다. 번들에서 `bootstrap-data.mjs`가 `identity-data`를 품으므로, `identity-data`는 파일 이름까지 확인해 직접 실행될 때만 동기화를 시작한다. 키워드 아이콘은 refs-link 직후 올린다(아래). 이벤트 재구성은 복구 폴더가 없으면 선택지 템플릿을 추출본의 `KR/EN/JP_ChoiceEvent*.txt`에서, 이벤트 그림 유무를 Storage `icons/events/` 목록에서 읽는다.
 
+dry-run은 반영하면 바뀔 것을 `report.json`의 `pendingChanges`에 목록으로 남기고 끝에 출력한다(단계별 new·changed·removed, 새 E.G.O, 바뀐 E.G.O, 새 테마팩 그림). 비어 있으면 DB가 추출본과 같다는 뜻이다. 요약을 출력하지 않은 단계가 있으면 그것도 한 건으로 센다. 아이콘·이미지 누락은 여기에 들어가지 않고 아래 이미지 감사가 본다.
+
 적용 도중 실패하거나 읽기 검증이 실패하면 `apply-extraction`은 `extraction-restore`를 스스로 실행해 백업 상태로 되돌리고 멈춘다(`report.autoRestored`, `logs/auto-restore.log`). 자동 되돌리기까지 실패하면 아래 "되돌리기"로 그 작업 폴더를 직접 되돌린다.
 
 ## 반영 뒤 확인
 
 1. `report.json`을 본다. 새로 생긴 것(`newEgos`, `newKeywordIcons`, `newSkillIcons`, `newThemeImages`, `egoArtwork`)과 못 채운 것(`keywordsWithoutIcon`, `skillsWithoutIcon`, `giftsWithoutIcon`, `egoWithoutArtwork`, `missingImages`, `leftoverPlaceholders`)이 종류별로 남는다.
 2. `--fix`는 끝에 사이트 캐시를 갱신한다(`/api/revalidate`의 `all-game-data`). 로컬 개발 서버는 따로 갱신해야 새 데이터가 보인다.
-3. 같은 ZIP으로 `--fix` 없이 한 번 더 실행해 차이가 0인지 본다.
+3. 같은 ZIP으로 `--expect-clean`을 붙여 한 번 더 실행한다. "DB equals the extraction"과 종료 코드 0이 나와야 한다.
 4. `npm run audit:data`를 실행한다.
 5. Chrome에서 하드 리프레시 후 새 인격·E.G.O·기프트 화면을 확인한다([개발과 검증](../development.md)).
 

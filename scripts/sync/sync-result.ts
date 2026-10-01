@@ -39,10 +39,27 @@ export function leftoverChanges(identity: Summary | null, mirror: Summary | null
   if (!identity || !mirror) return ['a verify step printed no SYNC_SUMMARY']
   const left = IDENTITY_COUNTS.filter(key => Number(identity[key] ?? 0) > 0).map(key => `identity.${key}=${identity[key]}`)
   for (const [section, value] of Object.entries(mirror)) {
-    const { new: created = 0, changed = 0 } = value as { new?: number; changed?: number }
-    if (created || changed) left.push(`${section}: new ${created}, changed ${changed}`)
+    const { new: created = 0, changed = 0, removed = 0 } = value as { new?: number; changed?: number; removed?: number }
+    if (created || changed || removed) left.push(`${section}: new ${created}, changed ${changed}${removed ? `, removed ${removed}` : ''}`)
   }
   return left
+}
+
+/**
+ * What applying this extraction would change, from the dry-run of every step: empty when the DB already equals it.
+ * apply-extraction.ts writes it to report.pendingChanges and --expect-clean fails on any entry.
+ */
+export function pendingChanges(input: {
+  identity: Summary | null; catalog: Summary | null; events: Summary | null
+  newEgos: string[]; changedEgos: { gameId: string; fields: string[] }[]; newThemeImages: string[]
+}): string[] {
+  if (!input.events) return ['the events step printed no SYNC_SUMMARY (site-sync bundle out of date?)']
+  return [
+    ...leftoverChanges(input.identity, input.catalog && { ...input.catalog, ...input.events }),
+    ...input.newEgos.map(id => `new EGO ${id}`),
+    ...input.changedEgos.map(ego => `EGO ${ego.gameId} ${ego.fields.join(',')}`),
+    ...input.newThemeImages.map(file => `theme image ${file}`),
+  ]
 }
 
 /** The SYNC_SUMMARY object a step logged, or null. */

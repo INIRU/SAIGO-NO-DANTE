@@ -85,3 +85,20 @@ export function sourceResultText(texts: string[] | undefined, index: number): st
 
 /** Event narrative with the sinner the player picked ({0}) stored as {{sinner}} (placeholder-rules.ts); the site draws it as a label. */
 export const eventText = eventPlaceholders
+
+/** JSON with object keys sorted, so two values that differ only in key order compare equal. */
+export const canonicalJson = (value: unknown): string => JSON.stringify(value, (_key, item) =>
+  item && typeof item === 'object' && !Array.isArray(item) ? Object.fromEntries(Object.entries(item).sort(([a], [b]) => a.localeCompare(b))) : item)
+
+/** Planned rows against the DB's by the columns the plan produces: rows to add, rows that differ, rows only the DB has. */
+export function graphRowDiff(planned: Record<string, unknown>[], stored: Record<string, unknown>[], key: (row: Record<string, unknown>) => string) {
+  const fields = Object.keys(planned[0] ?? {})
+  const produced = (row: Record<string, unknown>) => canonicalJson(Object.fromEntries(fields.map(field => [field, row[field]])))
+  const current = new Map(stored.map(row => [key(row), produced(row)]))
+  const plannedKeys = new Set(planned.map(key))
+  return {
+    new: planned.filter(row => !current.has(key(row))).length,
+    changed: planned.filter(row => current.has(key(row)) && current.get(key(row)) !== produced(row)).length,
+    removed: stored.filter(row => !plannedKeys.has(key(row))).length,
+  }
+}

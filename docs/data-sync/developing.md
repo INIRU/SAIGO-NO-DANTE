@@ -6,7 +6,7 @@
 
 2. **실패하는 테스트:** 판정 규칙은 DB를 모르는 순수 함수로 두고(`scripts/sync/*-rules.ts`, `ego-stages.ts`, `source-paths.ts` 등) 테스트한다. 테스트는 `scripts/sync/*.test.ts`와 `tests/sync/`에 있다.
 3. **구현.**
-4. **Mac dry-run:** 최신 추출본 ZIP으로 `apply-extraction`을 `--fix` 없이 돌린다([runbook.md](runbook.md) "명령"). 의도한 차이만 계획에 나와야 한다. 운영 DB를 읽기만 한다.
+4. **Mac dry-run:** 최신 추출본 ZIP으로 `apply-extraction`을 `--fix` 없이 돌린다([runbook.md](runbook.md) "명령"). 운영 DB를 읽기만 한다. 동작을 바꾸지 않는 수정(파일 분리, 이름 변경, 공유 모듈)은 `--expect-clean`으로 돌려 종료 코드 0이어야 하고, 동작을 바꾸는 수정은 `report.json`의 `pendingChanges`에 의도한 차이만 나와야 한다.
 5. **사이트 PR → CI → 병합 확인**(`gh pr view <번호> --json state`가 `MERGED`).
 6. **번들 갱신 PR**(아래).
 7. **운영 반영:** 다음 추출 때 도구가 자동으로 하거나, 사용자 승인을 받고 Mac에서 `--fix`로 한다. 끝나면 같은 입력의 dry-run이 차이 0인지 본다.
