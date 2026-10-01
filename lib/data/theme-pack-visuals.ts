@@ -71,27 +71,22 @@ export const THEME_PACK_TITLE_MEASURED: Readonly<Record<number, readonly [number
   1126: [80.4, null, 0.752],
   1127: [81.1, null, 0.756],
   1128: [80.5, null, 0.756],
-  1304: [83.1, 53.6, 0.693],
-  1307: [82.7, 54.3, 0.7],
-  1309: [82.5, 54.0, 0.7],
-  1310: [83.0, 54.7, 0.698],
-  1317: [82.9, 53.3, 0.696],
-  1405: [82.7, 54.0, 0.701],
-  1406: [83.1, 54.2, 0.69],
 }
 
-// Families for packs without captures: base/story packs, and attack-type/sin/keyword packs (boss badge posters).
+// Families for packs without captures. Attack-type/sin/keyword posters (boss badge, 12xx-14xx) all print a dark name
+// band at 75.3%-84.4%, darkest in the middle; the name is centred in it rather than on the game capture spot.
 const TITLE_FAMILY = {
   normal: { cy: 80.5, cx: 50.8, scale: 0.755 },
-  boss: { cy: 82.9, cx: 54.0, scale: 0.698 },
+  boss: { cy: 79.85, cx: 50, scale: 0.755 },
 } as const
 const TITLE_REFERENCE_SCALE = TITLE_FAMILY.normal.scale
 const TITLE_BOX_HEIGHT = 8.5
 // Fit width at the reference scale: the longest names fill ~72% of the poster; the auto-size keeps a margin.
 const TITLE_FIT_WIDTH = 79
 
-// Extreme posters print a dark panel under the bottom stripe for the name (no capture of extreme packs yet).
-export const THEME_PACK_EXTREME_TITLE_BOX = { top: 81, height: 10, left: 16, right: 16 } as const
+// Extreme posters print a black panel under the teal stripe for the name: rows 84.6%-91.5%, columns 12.6%-87.7%.
+export const THEME_PACK_EXTREME_TITLE_BOX = { top: 84.6, height: 6.9, left: 14, right: 14 } as const
+const EXTREME_TITLE_SCALE = 0.95
 
 export interface ThemePackTitleLayout {
   top: number
@@ -114,7 +109,7 @@ export function getThemePackTitleBoxKind(config: ThemePackVisualConfig | null): 
 export function getThemePackTitleLayout(id: number): ThemePackTitleLayout {
   const config = getThemePackVisualConfig(id)
   const kind = getThemePackTitleBoxKind(config)
-  if (kind === 'extreme') return { ...THEME_PACK_EXTREME_TITLE_BOX, scale: 1, ...config?.title }
+  if (kind === 'extreme') return { ...THEME_PACK_EXTREME_TITLE_BOX, scale: EXTREME_TITLE_SCALE, ...config?.title }
   const family = TITLE_FAMILY[kind]
   const measured = THEME_PACK_TITLE_MEASURED[id]
   const cy = measured?.[0] ?? family.cy
