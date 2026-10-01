@@ -4,9 +4,4 @@ export const SKILL_DESC_STYLES = {
   tooltip: { fontSize: '0.6875rem', color: '#999', lineHeight: 1.5, dividerOpacity: null },
 } as const
 
-export const COIN_BADGE_STYLES = {
-  normal: { bg: '18', border: '40' },
-  unbreakable: { bg: '30', border: '70' },
-} as const
-
 export type SkillDescVariant = keyof typeof SKILL_DESC_STYLES
