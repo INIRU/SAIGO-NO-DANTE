@@ -27,6 +27,8 @@ import { join, resolve } from 'path'
 import { gameDataPaths } from './source-paths'
 import { identityMetadata } from './identity-metadata'
 import { getKeywordCategory } from '../../lib/keywords/category'
+import { KEYWORD_DESCRIPTION_OVERRIDES } from '../../lib/keywords/description-overrides'
+import { planKeywordGameIds, resolveKeywordGameIds } from './game-text-refs-rules'
 import { closeGameText } from '../../lib/game-text/rich-text'
 import { buffPlaceholders, PlaceholderReport } from './placeholder-rules'
 import { IDENTITY_STAT_BASE_LEVEL } from '../../lib/constants/game'
@@ -90,10 +92,6 @@ const SOURCE_BACKED_KEYWORD_ICON_SLUG_OVERRIDES: Record<string, Record<string, s
   '지령 탐닉': {
     BlackNightmareYisang: 'indulgence-in-prescripts-2',
   },
-}
-const KEYWORD_DESCRIPTION_OVERRIDES: Record<string, string> = {
-  '원호 공격': '- 이 효과를 부여한 대상의 공격 스킬 종료 시, 부여 대상이 공격한 적을 스킬 1로 일방 공격 함.\n- 원호 공격 시 해당 캐릭터의 사용할 스킬 목록에 영향을 주지 않음.',
-  '원호 방어': '- 최댓값 : 3\n- 아군이 적에게 일방공격 당할 때, 수치를 1 소모하여 적의 공격 대상을 자신으로 변경하고, 원호 방어 전용 스킬 사용\n- 원호 방어를 보유한 아군이 여러 명이면, 가장 높은 수치를 가진 아군이 우선 발동\n- 수비 스킬을 장착한 아군에게는 발동하지 않음\n- 턴 종료시 소멸',
 }
 
 // ── Data dirs ─────────────────────────────────────────────────────────────────
@@ -2884,6 +2882,36 @@ async function loadExistingKeywordMetaRows(): Promise<ExistingKeywordMetaRow[]> 
   }))
 }
 
+/** keyword_meta.game_id by name; null when the column does not exist yet (the migration is applied by the manager). */
+async function loadExistingKeywordGameIds(): Promise<Map<string, string | null> | null> {
+  const ids = new Map<string, string | null>()
+  for (let from = 0; ; from += 1000) {
+    const { data, error } = await supabase.from('keyword_meta').select('name, game_id').order('name').range(from, from + 999)
+    if (error) {
+      if (error.code === '42703' || error.code === 'PGRST204' || /game_id/i.test(error.message ?? '')) return null
+      throw new Error(`keyword_meta.game_id 로드 실패: ${error.message}`)
+    }
+    for (const row of data ?? []) ids.set(String(row.name), (row.game_id as string | null) ?? null)
+    if (!data || data.length < 1000) break
+  }
+  return ids
+}
+
+/** Ids stored in game_text_refs (a game_id must point at one); null when the table does not exist yet. */
+async function loadGameTextRefIds(): Promise<Set<string> | null> {
+  const ids = new Set<string>()
+  for (let from = 0; ; from += 1000) {
+    const { data, error } = await supabase.from('game_text_refs').select('id').order('id').range(from, from + 999)
+    if (error) {
+      if (error.code === 'PGRST205' || error.code === '42P01' || /could not find the table|does not exist/i.test(error.message ?? '')) return null
+      throw new Error(`game_text_refs 로드 실패: ${error.message}`)
+    }
+    for (const row of data ?? []) ids.add(String(row.id))
+    if (!data || data.length < 1000) break
+  }
+  return ids
+}
+
 // ── Diff helpers ──────────────────────────────────────────────────────────────
 
 function valuesEqual(a: unknown, b: unknown): boolean {
@@ -3538,6 +3566,28 @@ async function rebuildKeywordMeta(): Promise<void> {
     })
   }
   rows.sort((a, b) => a.name.localeCompare(b.name, 'ko'))
+  // keyword_meta.game_id: the primary game_text_refs row of each keyword (the site reads names and descriptions from it).
+  // Every keyword_meta name gets one, also the DB rows no identity, E.G.O or gift uses now (they keep showing on the keywords page).
+  const gameIdNames = [...new Set([...rows.map(row => row.name), ...existingMetaMap.keys()])]
+  let gameIdPlan: ReturnType<typeof planKeywordGameIds>
+  try {
+    gameIdPlan = planKeywordGameIds({
+      dataDir: DATA_DIR,
+      metaNames: gameIdNames,
+      tags: new Map(rows.flatMap(row => (row.tag ? [[row.name, row.tag] as const] : []))),
+    })
+  } catch (error) {
+    // Without {KR,EN,JP}_BattleKeywords files (an old local export) the rest of the rebuild still runs; stored ids stay.
+    console.warn(YELLOW(`  [경고] 대표 참조 계산 실패 (${(error as Error).message}): keyword_meta.game_id를 갱신하지 않습니다`))
+    gameIdPlan = { chosen: new Map(), ambiguous: new Map(), none: [], tagNameDiffers: [], refs: [] }
+  }
+  const storedGameIds = await loadExistingKeywordGameIds()
+  const { ids: gameIds, report: gameIdReport } = resolveKeywordGameIds({
+    plan: gameIdPlan,
+    names: gameIdNames,
+    stored: storedGameIds,
+    dbRefIds: await loadGameTextRefIds(),
+  })
   // Slots no rule covers are stored as {{value}}; add them to BUFF_PLACEHOLDER_ROLES (placeholder-rules.ts).
   placeholderReport.print(line => console.warn(YELLOW(`  ${line}`)))
   if (process.env.LIMBUS_KEYWORD_AUDIT) {
@@ -3551,13 +3601,27 @@ async function rebuildKeywordMeta(): Promise<void> {
   // Rows that differ from the DB in any written field; the verify pass after --fix must find none.
   const metaFields = ['description', 'name_en', 'name_jp', 'description_en', 'description_jp', 'icon_slug', 'effect_type', 'max_stack', 'category'] as const
   let metaNew = 0, metaChanged = staleRichTextKeywordMetaNames.length
+  const rowNames = new Set(rows.map(row => row.name))
+  const gameIdChange = (name: string) => storedGameIds !== null && (gameIds.get(name) ?? null) !== (storedGameIds.get(name) ?? null)
+  // Names only the DB has: not upserted below, so their game_id is updated on its own.
+  const staleNames = new Set(staleRichTextKeywordMetaNames)
+  const gameIdOnlyUpdates = gameIdNames.filter(name => !rowNames.has(name) && !staleNames.has(name) && storedGameIds?.has(name) && gameIdChange(name))
+  metaChanged += gameIdOnlyUpdates.length
   for (const row of rows) {
     const existing = existingMetaMap.get(row.name) as Record<string, unknown> | undefined
     const next: Record<string, unknown> = { ...row, category: getKeywordCategory(row) }
+    // game_id counts only once the column exists: before the migration there is nothing to write or compare.
     if (!existing) metaNew++
-    else if (metaFields.some(field => (next[field] ?? null) !== (existing[field] ?? null))) metaChanged++
+    else if (gameIdChange(row.name) || metaFields.some(field => (next[field] ?? null) !== (existing[field] ?? null))) metaChanged++
   }
-  printSyncSummary({ keywordMeta: { new: metaNew, changed: metaChanged, missingFromSource: 0 } })
+  console.log(`  keyword_meta.game_id 대표 참조: 설정 ${gameIdReport.set} (키워드 자기 태그 ${gameIdReport.byTag} / 같은 이름 하나 ${gameIdReport.only} / 가장 많이 쓰임 ${gameIdReport.mostUsed}), 모호 ${gameIdReport.ambiguous}, 없음 ${gameIdReport.none}`)
+  if (gameIdReport.refNotInDb) console.log(YELLOW(`  [경고] 참조 표(game_text_refs)에 아직 없는 대표 id ${gameIdReport.refNotInDb}개는 기록하지 않습니다 (참조 표 단계를 먼저 실행)`))
+  if (gameIdReport.columnMissing) console.log(YELLOW('  [경고] keyword_meta.game_id 컬럼이 없습니다 (마이그레이션 20261001150000_keyword_meta_game_id.sql 미적용): 계산만 하고 기록하지 않습니다'))
+  for (const [name, candidates] of [...gameIdPlan.ambiguous].slice(0, 40)) console.log(GRAY(`    모호: ${name} → ${candidates.join(', ')}`))
+  if (gameIdPlan.ambiguous.size > 40) console.log(GRAY(`    ... 외 ${gameIdPlan.ambiguous.size - 40}개`))
+  if (gameIdPlan.none.length) console.log(GRAY(`    없음: ${gameIdPlan.none.join(', ')}`))
+  if (gameIdPlan.tagNameDiffers.length) console.log(GRAY(`    자기 태그의 참조 KR 이름이 다름 ${gameIdPlan.tagNameDiffers.length}개: ${gameIdPlan.tagNameDiffers.slice(0, 40).map(name => `${name} → ${gameIdPlan.chosen.get(name)?.id}`).join(', ')}`))
+  printSyncSummary({ keywordMeta: { new: metaNew, changed: metaChanged, missingFromSource: 0, gameId: gameIdReport } })
 
   if (DRY_RUN) {
     console.log(`  raw tag keyword_meta 삭제 후보: ${staleRichTextKeywordMetaNames.length}개`)
@@ -3638,6 +3702,8 @@ async function rebuildKeywordMeta(): Promise<void> {
       effect_type: row.effect_type,
       max_stack: row.max_stack,
       category: getKeywordCategory(row),
+      // Only once the column exists; a name the rules cannot decide keeps the id it has (resolveKeywordGameIds).
+      ...(storedGameIds ? { game_id: gameIds.get(row.name) ?? null } : {}),
     }))
     const { error } = await supabase
       .from('keyword_meta')
@@ -3650,6 +3716,11 @@ async function rebuildKeywordMeta(): Promise<void> {
       console.log(GREEN(`  ✓ Batch ${i + 1}-${i + batch.length} 삽입`))
     }
   }
+  for (const name of gameIdOnlyUpdates) {
+    const { error } = await supabase.from('keyword_meta').update({ game_id: gameIds.get(name) ?? null }).eq('name', name)
+    if (error) console.error(RED(`  [ERROR] keyword_meta.game_id ${name}: ${error.message}`))
+  }
+  if (gameIdOnlyUpdates.length) console.log(GREEN(`  keyword_meta.game_id 갱신 (사용되지 않는 행): ${gameIdOnlyUpdates.length}개`))
   if (staleRichTextKeywordMetaNames.length > 0) {
     let deleted = 0
     for (const name of staleRichTextKeywordMetaNames) {
