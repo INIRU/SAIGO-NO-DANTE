@@ -31,7 +31,7 @@ Vercel은 `main` 브랜치만 자동 배포한다(`vercel.json`의 `git.deployme
 
 이번 복구 작업본은 limbus-archive-restored다. 기존 limbus-archive는 중단된 rebase와 iCloud 파일을 보존하기 위해 그대로 두었다. 기준 원격 커밋은 e613824다. 기존 폴더를 삭제하기 전 별도의 미커밋/비추적 자료 확인이 필요하다.
 
-2026-09-10 게임 DB와 Storage 복구를 실행하고 읽기 검증했다. 건수·출처·백업·미확정 에셋은 [데이터 동기화](data-pipeline.md)에 기록했다. 삭제 기능 보관과 EGO 스킬 정규화 마이그레이션도 적용했다. 원격 push와 배포는 수행하지 않았다. 로컬 터널은 임시 미리보기이며 운영 배포나 OAuth 검증을 의미하지 않는다.
+2026-09-10 게임 DB와 Storage 복구를 실행하고 읽기 검증했다. 건수·출처·백업·미확정 에셋은 [출처와 복구 기록](data-sync/provenance.md)에 기록했다. 삭제 기능 보관과 EGO 스킬 정규화 마이그레이션도 적용했다. 원격 push와 배포는 수행하지 않았다. 로컬 터널은 임시 미리보기이며 운영 배포나 OAuth 검증을 의미하지 않는다.
 
 2026-09-12 AI 요약 기능을 제거하고 전용 `limbus-ollama` 컨테이너를 중지(자동 재시작 없음)했다. 전용 Nginx/Traefik 경로는 비활성화했으며 설정 백업은 `/opt/limbus-ai/disabled`, 모델 볼륨은 보존했다. Minecraft 서버는 중지 상태를 유지한다.
 

@@ -118,7 +118,7 @@ export function getKeywordIconUrl(keyword: string, iconSlug?: string): string | 
   if (statIconPath) return getGameUiAsset(statIconPath)
   if (!iconSlug) return null
   if (ATLAS_KEYWORD_SLUGS.has(iconSlug)) return getGameUiAsset(`keywords/${iconSlug}`)
-  // Drive source labels and visually verified shared icons; see docs/data-pipeline.md.
+  // Drive source labels and visually verified shared icons; see docs/data-sync/provenance.md.
   // Reuse the existing public asset rather than uploading a copy for every alias.
   const variants = sourceIconVariants as Record<string, string>
   // These nine weapon effects use the original artwork, including the greatsword spelling variant.
