@@ -7,7 +7,7 @@
 .multiply path {
   fill: none;
   stroke: currentColor;
-  stroke-width: 2.2;
+  stroke-width: 3;
   stroke-linecap: round;
 }
 
@@ -20,7 +20,8 @@
   font-variant-numeric: tabular-nums;
 }
 .count .multiply {
-  color: var(--gold-light);
+  /* Brown like the passive plates: the × only joins the icon to its count, the number is what stands out. */
+  color: #b07a3a;
   margin-top: -0.06em;
 }
 

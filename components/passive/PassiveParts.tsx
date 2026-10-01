@@ -9,7 +9,7 @@ import styles from './PassiveParts.module.css'
 export function MultiplyMark({ className }: { className?: string }) {
   return (
     <svg className={`${styles.multiply} ${className ?? ''}`} viewBox="0 0 12 12" aria-hidden="true" focusable="false">
-      <path d="M2.6 2.6 9.4 9.4M9.4 2.6 2.6 9.4" />
+      <path d="M3.4 3.4 8.6 8.6M8.6 3.4 3.4 8.6" />
     </svg>
   )
 }
