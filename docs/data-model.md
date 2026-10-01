@@ -1,25 +1,43 @@
 # 데이터 모델
 
-공지·문의 개편: `announcements`에 `lang`, `published`, `content_doc`을 추가했다. 기존 공지의 게시 상태는 보존하며 새 공지는 API에서 기본 초안으로 저장한다. 공개 조회는 요청 언어와 `published=true`를 모두 제한하고 변경 시 공지 캐시 태그를 만료시킨다.
+앱은 Supabase PostgreSQL의 `limbus` 스키마를 사용한다. 이 문서는 현재 표와 칸, 권한 경계를 설명한다. 문서는 마이그레이션 적용을 보증하지 않으므로 운영 스키마는 연결된 DB와 적용된 마이그레이션에서 확인한다. SQL 변경 근거는 `supabase/migrations`와 기존 `supabase/migration-*.sql`이다. 신규 변경은 날짜가 붙은 마이그레이션으로 추가하고 실제 적용 여부를 따로 확인한다. 칸을 추가하는 순서는 [필드 하나 추가하기](data-sync/adding-a-field.md)에 있다.
 
-`inquiries`에는 작성자 프로필 ID, 분류, 제목·본문, 접수/답변 완료/종료 상태, 관리자 답변·답변자·시간을 저장한다. 두 테이블은 RLS를 활성화하고 anon/authenticated 직접 접근을 차단한다. NextAuth 세션을 검증하는 서버 API만 service_role로 접근한다. 기존 사용자·덱·게임 데이터는 삭제하지 않는다. 프로필 트리거가 없는 복구 DB에서도 신규 계정의 프로필을 보완하며 기존 프로필은 덮어쓰지 않는다.
+## 현재 표
 
-공지 이미지 경로는 `limbus-assets/announcements/{uuid}.webp`다. 입력 PNG/JPEG/WebP 최대 8MB, 디코딩 4천만 픽셀, 출력 최대 1920px를 적용한다. 다른 공지에서 재사용할 수 있으므로 공지 삭제 시 이미지 파일을 즉시 삭제하지 않는다.
+2026-10-01 운영 DB 기준 48개다.
 
-앱은 Supabase PostgreSQL의 limbus 스키마를 사용한다. 운영 스키마는 연결된 DB와 적용된 마이그레이션을 확인해야 한다. 문서는 마이그레이션 적용 완료를 보증하지 않는다.
+| 영역 | 표 | 주요 코드 |
+|---|---|---|
+| 수감자·인격·E.G.O | `sinners`, `identities`, `skills`, `passives`, `ego`, `ego_skills`, `ego_passives` | `lib/db/queries.ts`, `lib/types/index.ts` |
+| 정신력·설정 | `identity_sanity_conditions`, `mental_condition_templates`, `panic_types`, `app_config` | `lib/db/queries.ts` |
+| 키워드와 게임 원문 참조 | `keyword_meta`, `game_text_refs` | `lib/keywords/`, `lib/game-text/` |
+| 거울 던전 | `ego_gifts`, `ego_gift_themes`, `ego_gift_recipes`, `md_events`, `md_event_choices` | `lib/planner/` |
+| 덱 | `decks`, `deck_identities`, `deck_egos`, `deck_votes`, `deck_comments`, `deck_bookmarks` | `app/api/decks/`, `lib/decks/` |
+| 플래너 | `md_plans`(편성과 층별 계획은 JSON), `md_plan_votes`, `md_plan_comments`, `final_gift_presets` | `app/api/planner/`, `lib/planner/` |
+| 계정·커뮤니티 | `profiles`, `follows`, `community_activity`, `guest_authorship`, `profile_easter_eggs`, `legal_docs`, `legal_acknowledgements`, `profile_access_signals`, `profile_duplicate_signal_events` | `app/api/community/`, `lib/community/`, `lib/auth.ts` |
+| 운영 | `announcements`, `inquiries`, `support_messages`, `site_maintenance`, `audit_logs` | `app/api/admin/` |
+| 발견·개발자 API | `discovery_visits`, `developer_keys`, `developer_usage` | `app/api/discovery/`, `lib/discovery/` |
+| 어시스트 | `assist_text_embeddings`, `assist_samples`, `assist_reports` | `app/api/assist/`, `lib/vision/` |
 
-| 도메인 | 주요 관계와 코드 |
-|---|---|
-| 수감자 | sinners → identities / ego, lib/db/queries.ts |
-| 전투 정보 | skills, passives, 정신력 조건 / 패닉 데이터, lib/types/index.ts |
-| 거울 던전 | ego_gifts, ego_gift_themes, 조합·이벤트 데이터, lib/planner |
-| 어시스트 텍스트 검색 | assist_text_embeddings: 게임 원문의 언어·필드·청크별 384차원 파생 벡터 |
-| 덱/플래너 | decks, deck_identities, deck_egos와 댓글·추천; md_plans의 deck/egos JSON, app/api |
-| 계정/운영 | profiles, 법률 동의, 감사 로그, 공지, site_maintenance |
+- 표 48개 모두 RLS가 켜져 있다(2026-10-01 확인). 공개 읽기 정책이 없는 표는 서버의 service_role만 접근한다.
+- 동기화가 쓰는 표는 14개다: `sinners`, `identities`, `skills`, `passives`, `ego`, `ego_skills`, `ego_passives`, `keyword_meta`, `game_text_refs`, `ego_gifts`, `ego_gift_themes`, `ego_gift_recipes`, `md_events`, `md_event_choices`. 반영 전에 백업하고 되돌리기가 복원하는 범위와 같다(`scripts/sync/extraction-restore.ts`의 `RESTORE_TABLES`).
+- 제거한 기능의 표는 비공개 스키마 `limbus_retired`에 있다.
 
-SQL 변경 근거는 supabase/migrations와 기존 supabase/migration-*.sql이다. 신규 변경은 dated migration으로 추가하고 실제 적용 여부를 따로 확인한다.
+### 2026-10-01에 추가된 칸과 함수
 
-`assist_text_embeddings`는 원본 게임 테이블을 보존하는 별도 파생 자료다. 모델 ID/revision·전처리 버전·종류·게임 ID·언어·필드·청크를 복합 키로 사용하고 원문/내용 해시와 벡터를 저장한다. RLS를 활성화하고 anon/authenticated 권한을 회수해 서버의 service_role만 접근한다. 따라서 공개 RLS 정책이 없는 것은 의도된 서버 전용 경계다. `match_assist_text_embeddings`는 같은 모델·전처리 버전·언어만 비교하는 security invoker 함수이며 결과는 최대 20개다. 갱신 도구는 해당 모델의 파생 행만 동기화하며 원본 기프트·이벤트·사용자 기록을 변경하지 않는다.
+- `game_text_refs`: 게임 원문의 `[Id]`가 가리키는 키워드·조건 라벨. 게임 id가 기본키이고 세 언어의 이름·설명·대사(`flavor`)와 `keyword_name`(같은 이름의 `keyword_meta` 행)을 가진다.
+- `keyword_meta.game_id`: 그 키워드의 대표 참조(`game_text_refs.id`, 지워지면 null).
+- `passives.sin_requirements`: 발동 조건의 죄악 전부(`[{sin, count}]`). `sin_affinity`/`sin_count`는 첫 죄악을 유지한다.
+- `ego_passives.flavor`, `flavor_en`, `flavor_jp`: E.G.O 패시브 대사.
+- `ego.artwork_url`, `ego.corrosion_artwork_url`: 상세 히어로의 각성·침식 원화 주소.
+- `ego_gift_themes.name_color`, `name_segments`, `attribute_type`, `attack_type`, `boss_unit_ids`, `is_unrecordable`: 테마팩 화면 설정(원본 `uiConfigs`).
+- 함수 `discovery_user_id(user_email)`: 이메일로 계정 id를 찾는다. service_role만 실행한다.
+- 인덱스 `skills(identity_id, skill_order)`, `deck_identities(identity_id)`.
+
+### 남은 정리
+
+
+## 공통 규칙
 
 - 쿼리는 .schema('limbus')를 지정하고 error를 처리한다.
 - Supabase 관리자 클라이언트는 서버 전용이다. 사용자별 쓰기는 세션·권한·입력을 검사한다.
@@ -29,17 +47,13 @@ SQL 변경 근거는 supabase/migrations와 기존 supabase/migration-*.sql이�
 - 기프트 효과는 강화 단계별 필드를 사용한다. 표시 등급/tier는 삭제한 커뮤니티 티어표와 다른 개념이다.
 - EGO 스킬은 `ego_skills` 관계형 테이블 하나에 저장한다. `EGO.ego_skills`/`ego_cor_skills`는 조회 시 만드는 화면용 배열이며 DB의 중복 JSONB 컬럼은 제거했다. 관계 조회 오류를 빈 스킬로 숨기지 않는다.
 
-2026-09-10 `20260910064305_retire_unused_features.sql`을 연결 프로젝트에 적용했다. 삭제 기능의 테이블 11개, 감성 추이 뷰, AI 요약 함수를 `limbus_retired`로 이동했다. 이 스키마는 anon/authenticated에 공개하지 않는다. 이동 전 11개 테이블과 중복 EGO 컬럼의 데이터가 모두 0건임을 확인했다. 값이 있는 다른 환경에서는 중복 컬럼 제거를 중단한다.
+## 게임 데이터
 
-되돌릴 때는 `supabase/rollback/retire_unused_features.sql`로 원래 스키마를 복원한다. 과거 마이그레이션, 사용자/덱/플래너 기록, Discord 봇 테이블, 기존 backup 테이블은 보존했다. 전체 DB 권한 정비를 완료한 것은 아니다. Supabase 검사에는 기존 `skills`, `deck_identities`, 일부 게임/백업 테이블의 RLS 미설정과 함수 search_path 경고가 남아 있다. 실제 접근 권한과 사용처를 확인해 별도 처리해야 한다.
-
-2026-09-29 `20260929095502_drop_discord_bot_tables.sql`로 서비스를 종료한 Discord 봇 테이블 5개(`feed_tracker`, `guild_settings`, `guild_feed_history`, `tickets`, `warnings`)를 삭제했다. 사이트 코드는 이 테이블을 쓰지 않았고, 참조하는 외래 키·뷰·트리거·함수·cron도 없었다. 삭제 직전 행은 `backups/2026-09-29/`에 있고, 스키마는 `supabase/rollback/drop_discord_bot_tables.sql`로 되살린다. 관리자 공지를 Discord로 보내는 웹훅은 봇과 별개라 유지한다.
-
-2026-09-10 `20260910071945_restore_ego_skill_source_fields.sql`을 적용했다. `ego_skills.game_skill_id`는 이름이 해석 단계에 따라 바뀌어도 같은 원본 스킬을 연결하며, `mental_consume`은 원본 정신력 소모다. 해석 I~V는 원본이 지원하는 최대 단계까지만 저장한다. 카드의 `max_construe_level`은 스킬 관계에서 계산하는 조회 값이며 중복 DB 컬럼을 추가하지 않는다.
-
-`identity_sanity_conditions`는 동기화 IV 기준 조건이다. 원본 템플릿과 매개변수를 분리하고 3개 언어에서 같은 매개변수를 치환한다. 동기화 단계별 조건 이력으로 사용하지 않는다. 현재 복구 건수와 누락 범위는 [동기화 문서](data-pipeline.md)를 따른다.
+`identity_sanity_conditions`는 동기화 IV 기준 조건이다. 원본 템플릿과 매개변수를 분리하고 3개 언어에서 같은 매개변수를 치환한다. 동기화 단계별 조건 이력으로 사용하지 않는다. 현재 복구 건수와 누락 범위는 [출처와 복구 기록](data-sync/provenance.md)를 따른다.
 
 20260910081730_restore_ego_passive_stage_variants.sql은 ego_passives를 추가했다. (ego_id, game_passive_id)가 원본 식별자이고 min_stage/max_stage가 적용 구간이다. RLS는 공개 읽기만 허용한다. 기존 모달/API 호환용 EGO 패시브 컬럼에는 최고 단계 요약을 남겨두었으며, 이 호환용 중복까지 제거한 상태는 아니다.
+
+`assist_text_embeddings`는 원본 게임 테이블을 보존하는 별도 파생 자료다. 모델 ID/revision·전처리 버전·종류·게임 ID·언어·필드·청크를 복합 키로 사용하고 원문/내용 해시와 벡터를 저장한다. RLS를 활성화하고 anon/authenticated 권한을 회수해 서버의 service_role만 접근한다. 따라서 공개 RLS 정책이 없는 것은 의도된 서버 전용 경계다. `match_assist_text_embeddings`는 같은 모델·전처리 버전·언어만 비교하는 security invoker 함수이며 결과는 최대 20개다. 갱신 도구는 해당 모델의 파생 행만 동기화하며 원본 기프트·이벤트·사용자 기록을 변경하지 않는다.
 
 ## 게임 기본 설정
 
@@ -59,9 +73,9 @@ SQL 변경 근거는 supabase/migrations와 기존 supabase/migration-*.sql이�
 
 ## 키워드 카탈로그와 사용 관계
 
-`keyword_meta`는 482개 이름의 원문·번역·아이콘 슬러그를 가진다. 인격/EGO의 `keywords`는 사용 관계이고, 기프트의 `keyword`는 대표 분류이므로 기프트 효과의 모든 키워드를 담는 필드가 아니다. 메타 재생성은 인격·EGO 스킬/패시브의 실제 태그와 기프트 강화 효과를 함께 읽는다. 패시브 제목과 키워드 이름이 같다는 이유만으로 연결하지 않는다.
+`keyword_meta`는 키워드 이름(기본키)마다 원문·번역·아이콘 슬러그·분류를 가진다(초기 복구 때 482개). 2026-10-01부터 `game_id`가 참조 표 `game_text_refs`의 대표 행을 가리키고, 사이트는 그 행의 언어별 이름·설명을 먼저 쓴다(두 표의 역할은 [동기화 규칙](data-sync/rules.md) "게임 원문 저장과 참조 표"). 인격/EGO의 `keywords`는 사용 관계이고, 기프트의 `keyword`는 대표 분류이므로 기프트 효과의 모든 키워드를 담는 필드가 아니다. 메타 재생성은 인격·EGO 스킬/패시브의 실제 태그와 기프트 강화 효과를 함께 읽는다. 패시브 제목과 키워드 이름이 같다는 이유만으로 연결하지 않는다.
 
-누락 메타 135개와 EGO 108개의 사용 배열을 복구했다. 기존 행과 원본에 키워드가 없는 EGO 4개는 유지했다. 이전 도감 백업은 현재 원문에서 이름이 확인되는 항목만 추가 근거로 사용했다. 동일 원본 이름에 2번 아이콘이 있으면 공통 URL 해석기가 2번을 우선하되, 사용자 확인을 받은 신력 단말기 무기 키워드 9종은 원본을 사용한다. `category`와 `effect_type`은 서로 다른 필드다. 현재 `기타` 분류를 지원하며 내용으로 임의 분류하지 않는다. 백업·재실행 명령·남은 미확정 그림은 [동기화 문서](data-pipeline.md)에 기록했다.
+누락 메타 135개와 EGO 108개의 사용 배열을 복구했다. 기존 행과 원본에 키워드가 없는 EGO 4개는 유지했다. 이전 도감 백업은 현재 원문에서 이름이 확인되는 항목만 추가 근거로 사용했다. 동일 원본 이름에 2번 아이콘이 있으면 공통 URL 해석기가 2번을 우선하되, 사용자 확인을 받은 신력 단말기 무기 키워드 9종은 원본을 사용한다. `category`와 `effect_type`은 서로 다른 필드다. 현재 `기타` 분류를 지원하며 내용으로 임의 분류하지 않는다. 백업·재실행 명령·남은 미확정 그림은 [출처와 복구 기록](data-sync/provenance.md)에 기록했다.
 
 ## 공개 편성 분석
 
@@ -69,14 +83,11 @@ SQL 변경 근거는 supabase/migrations와 기존 supabase/migration-*.sql이�
 
 플래너 JSON의 인격 UUID가 현재 도감에 없으면 `game_id`와 `sinner_id`가 일치하는 유일한 인격만 조회 시 연결한다. EGO는 저장된 수감자·등급·한국어 이름이 모두 일치하는 유일한 항목만 연결한다. 같은 이름이 둘 이상이거나 연결 근거가 부족하면 추측하지 않는다. 키워드·이미지·인격 정보는 현재 도감을 사용하며 저장된 플랜 JSON은 덮어쓰지 않는다. 현재 공개 편성 1건에서 배틀 7개·서포트 5개·EGO 7개가 집계된다.
 
-
 ## 거던 이벤트 연결
 
-`md_events.category`의 `entry`는 테마팩에 직접 등록된 진입점, `continuation`은 원본 연결로 도달하는 하위 노드다. 하나의 노드를 여러 부모가 공유하거나 자기 자신으로 돌아갈 수 있으므로 `variant_of` 단일 부모 모델로 그래프를 표현하지 않는다. 재구축 행의 `variant_of`는 NULL이며 목록은 명시적 category를 따른다.
+`md_events.category`의 `entry`는 테마팩에 직접 등록된 진입점, `continuation`은 원본 연결로 도달하는 하위 노드다. 하나의 노드를 여러 부모가 공유하거나 자기 자신으로 돌아갈 수 있으므로 `variant_of`로 부모 관계를 표현하지 않는다. `variant_of`는 원본 필드와 세 언어 문구가 ID 말고 모두 같은 사본이 대표 이벤트를 가리킬 때만 채운다(현재 971071·971072 → 971070). 목록은 명시적 category를 따르고 사본은 갤러리와 어시스트 인식에서 뺀다.
 
 `md_event_choices`의 `option_index`와 `result_index`가 원본 선택지와 결과를 구분한다. `outcome`은 성공/실패, `result_condition`은 확률·정신력·실패 횟수 조건, `selection_condition`은 선택에 필요한 기프트/코스트다. `effects`는 원본 resultForm과 세 언어의 효과 텍스트, 확인된 실제 gift_id를 보존한다. `md_events.judgment`는 판정 수치·죄악·인원·보정 조건을 담는다. 원본 연결은 `next_event_id` FK다.
-
-`20260910140000_rebuild_mirror_event_graph.sql`과 `20260910141000_scope_mirror_event_replacement.sql`을 적용했다. 두 번째는 서비스 역할에서 실행되는 safe-update 검사에 맞춰 교체 범위를 양의 게임 데이터 ID로 지정한다. 교체 전 두 테이블 백업과 원자적 롤백 시험을 수행했고, 적용된 330개 노드·736개 결과를 계획과 모든 필드 단위로 대조했다. 복원은 `before-event-graph-rebuild/` 백업으로 두 테이블을 같은 트랜잭션 안에서 복원해야 하며 코드 revert만으로 DB가 되돌아가지는 않는다.
 
 ## 커뮤니티 활동과 공개 프로필
 
@@ -91,7 +102,6 @@ SQL 변경 근거는 supabase/migrations와 기존 supabase/migration-*.sql이�
 광기 계획은 계정 DB 대신 브라우저 쿠키 `limbus_lunacy_v1`에 시작 월별로 저장한다. 압축한 값은 3,800자 이내로 제한하고 1년, SameSite=Lax, HTTPS에서는 Secure를 적용한다. 저장 실패 시 기존 쿠키를 보존하고 오류를 표시한다. 이전 localStorage 계획은 해당 기간을 열 때 검증 후 쿠키로 이전하며 원래 기록은 보존한다. 시작 월과 다음 월의 날짜별 구매·거던·기타 보상, 월초 무료/유료 잔액, 월정액 잔여 일수를 보관한다. 이전 계획의 초회 사용 여부와 다른 상품 구매는 호환성을 위해 복원한다. 서로 다른 기간은 독립된 시나리오다. `planSchema`로 복원 데이터를 검증한다.
 
 무료 광기, 유료 광기, KRW 결제 금액을 따로 집계한다. 추출 티켓은 입력·집계·광기 환산에서 제외한다. 구매 선택은 월간 광기(21, 9,900원)와 월간 광기 소형(22, 4,400원) 및 일반 광기 충전 6종이다. 잔액은 획득 계획이며 추출·엔케팔린 충전 소비는 차감하지 않는다. 패키지 구매 금액은 구매일에만, 월정액 일일 무상 보상은 수령일에만 기록한다. 월초 이전 월정액은 남은 일수, 첫 부분 주의 거던은 이미 쓴 보너스 횟수로 입력한다. 거던 주간 한도는 목요일 기준 두 달에 걸쳐 공유한다. 일반 광기 상품은 구매 일정별 초회 ON/OFF와 수량을 저장한다. 사용자는 앞선 구매와 관계없이 초회를 선택할 수 있다. 1~100회 중 초회 ON이면 1회분만 초회 보상이고 나머지는 일반 보상이다.
-
 
 ## 개발자 API와 관심도
 
@@ -114,3 +124,23 @@ SQL 변경 근거는 supabase/migrations와 기존 supabase/migration-*.sql이�
 `admin_list_users`와 `admin_moderate_user`는 service_role만 호출할 수 있다. 이메일 검색은 `auth.users` 직접 접근 권한을 넓히지 않고 고정된 검색 경로의 함수 안에서만 수행한다. 이용 제한과 감사 기록은 같은 트랜잭션에 저장한다. 본인·운영 계정 보호, 정지된 운영자 거부, 만료된 제한 판정, 이전 `suspended_at`을 이용한 동시 변경 검사를 적용한다. `audit_logs`는 비공개이며 공개·일반 로그인 클라이언트의 직접 접근을 허용하지 않는다.
 
 발견 목록의 ‘최근 수정’은 `updated_at` 대신 `deck_update`·`planner_update` 감사 기록으로 정한다. 최초 업로드와 조회·추천 집계는 편집으로 취급하지 않으며, 기존 게시물 중 편집 기록이 확인된 것만 표시한다. `discovery_recent_edits`는 서비스 전용이며 공개 API에는 게시물만 전달한다.
+
+## 공지와 문의
+
+공지·문의 개편: `announcements`에 `lang`, `published`, `content_doc`을 추가했다. 기존 공지의 게시 상태는 보존하며 새 공지는 API에서 기본 초안으로 저장한다. 공개 조회는 요청 언어와 `published=true`를 모두 제한하고 변경 시 공지 캐시 태그를 만료시킨다.
+
+`inquiries`에는 작성자 프로필 ID, 분류, 제목·본문, 접수/답변 완료/종료 상태, 관리자 답변·답변자·시간을 저장한다. 두 테이블은 RLS를 활성화하고 anon/authenticated 직접 접근을 차단한다. NextAuth 세션을 검증하는 서버 API만 service_role로 접근한다. 기존 사용자·덱·게임 데이터는 삭제하지 않는다. 프로필 트리거가 없는 복구 DB에서도 신규 계정의 프로필을 보완하며 기존 프로필은 덮어쓰지 않는다.
+
+공지 이미지 경로는 `limbus-assets/announcements/{uuid}.webp`다. 입력 PNG/JPEG/WebP 최대 8MB, 디코딩 4천만 픽셀, 출력 최대 1920px를 적용한다. 다른 공지에서 재사용할 수 있으므로 공지 삭제 시 이미지 파일을 즉시 삭제하지 않는다.
+
+## 스키마 변경 기록과 되돌리기
+
+2026-09-10 `20260910064305_retire_unused_features.sql`을 연결 프로젝트에 적용했다. 삭제 기능의 테이블 11개, 감성 추이 뷰, AI 요약 함수를 `limbus_retired`로 이동했다. 이 스키마는 anon/authenticated에 공개하지 않는다. 이동 전 11개 테이블과 중복 EGO 컬럼의 데이터가 모두 0건임을 확인했다. 값이 있는 다른 환경에서는 중복 컬럼 제거를 중단한다.
+
+되돌릴 때는 `supabase/rollback/retire_unused_features.sql`로 원래 스키마를 복원한다. 과거 마이그레이션, 사용자/덱/플래너 기록, Discord 봇 테이블, 기존 backup 테이블은 보존했다. 전체 DB 권한 정비를 완료한 것은 아니다. 당시 Supabase 검사에는 기존 `skills`, `deck_identities`, 일부 게임/백업 테이블의 RLS 미설정과 함수 search_path 경고가 남아 있었다. RLS는 이후 모든 표에 켜졌고(위 "현재 표") search_path는 5단계에 남아 있다.
+
+2026-09-29 `20260929095502_drop_discord_bot_tables.sql`로 서비스를 종료한 Discord 봇 테이블 5개(`feed_tracker`, `guild_settings`, `guild_feed_history`, `tickets`, `warnings`)를 삭제했다. 사이트 코드는 이 테이블을 쓰지 않았고, 참조하는 외래 키·뷰·트리거·함수·cron도 없었다. 삭제 직전 행은 `backups/2026-09-29/`에 있고, 스키마는 `supabase/rollback/drop_discord_bot_tables.sql`로 되살린다. 관리자 공지를 Discord로 보내는 웹훅은 봇과 별개라 유지한다.
+
+2026-09-10 `20260910071945_restore_ego_skill_source_fields.sql`을 적용했다. `ego_skills.game_skill_id`는 이름이 해석 단계에 따라 바뀌어도 같은 원본 스킬을 연결하며, `mental_consume`은 원본 정신력 소모다. 해석 I~V는 원본이 지원하는 최대 단계까지만 저장한다. 카드의 `max_construe_level`은 스킬 관계에서 계산하는 조회 값이며 중복 DB 컬럼을 추가하지 않는다.
+
+`20260910140000_rebuild_mirror_event_graph.sql`과 `20260910141000_scope_mirror_event_replacement.sql`을 적용했다. 두 번째는 서비스 역할에서 실행되는 safe-update 검사에 맞춰 교체 범위를 양의 게임 데이터 ID로 지정한다. 교체 전 두 테이블 백업과 원자적 롤백 시험을 수행했고, 적용된 330개 노드·736개 결과를 계획과 모든 필드 단위로 대조했다. 복원은 `before-event-graph-rebuild/` 백업으로 두 테이블을 같은 트랜잭션 안에서 복원해야 하며 코드 revert만으로 DB가 되돌아가지는 않는다.
