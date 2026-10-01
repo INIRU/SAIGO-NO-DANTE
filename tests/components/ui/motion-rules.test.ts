@@ -1,0 +1,38 @@
+import { describe, expect, it } from 'vitest'
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
+import { join, resolve } from 'node:path'
+
+const ROOT = resolve(__dirname, '../../..')
+
+function walk(dir: string): string[] {
+  return readdirSync(join(ROOT, dir)).flatMap(name => {
+    const path = join(dir, name)
+    return statSync(join(ROOT, path)).isDirectory() ? walk(path) : /\.(tsx?|css)$/.test(name) ? [path] : []
+  })
+}
+
+const SOURCES = ['app', 'components', 'lib', 'hooks'].flatMap(walk)
+const read = (file: string) => readFileSync(join(ROOT, file), 'utf8')
+
+describe('REQ-SHARED-029 light motion', () => {
+  it('REQ-SHARED-029 no file imports the full motion component', () => {
+    // `motion.div` bundles drag and layout animation, which the site does not use; `m.div` runs on the features LazyMotion provides.
+    const full = SOURCES.filter(file => /import\s*\{[^}]*\bmotion\b[^}]*\}\s*from\s*['"]motion\/react['"]/.test(read(file)))
+    expect(full).toEqual([])
+  })
+
+  it('REQ-SHARED-029 the root layout provides LazyMotion (strict, domAnimation) through MotionProvider', () => {
+    const provider = 'components/ui/MotionProvider.tsx'
+    expect(existsSync(join(ROOT, provider))).toBe(true)
+    const source = read(provider)
+    expect(source).toMatch(/^'use client'/)
+    expect(source).toMatch(/<LazyMotion features=\{domAnimation\} strict>/)
+    expect(source).toMatch(/<MotionConfig reducedMotion="user">/)
+    expect(read('app/[lang]/layout.tsx')).toMatch(/<MotionProvider>/)
+  })
+
+  it('REQ-SHARED-029 no transition-all', () => {
+    const all = SOURCES.filter(file => /transition-all|transition:\s*all\b/.test(read(file)))
+    expect(all).toEqual([])
+  })
+})

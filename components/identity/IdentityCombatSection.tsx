@@ -1,7 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
+import { AnimatePresence, useReducedMotion } from 'motion/react'
+import * as m from 'motion/react-m'
 import { useTranslations } from 'next-intl'
 import type { Identity } from '@/lib/types'
 import type { useIdentitySkillModel } from './useIdentitySkillModel'
@@ -25,7 +26,7 @@ export default function IdentityCombatSection({ identity, sinColor, allowedKeywo
   const t = useTranslations()
   const { uptieLevels, filteredSkills, filteredPassives, skillDiffResult, passiveDiffResult, variantMap, skillImgIdxMap, skillNameColors, uptieLevel, nextLevel, setUptieLevel, showDiff, setShowDiff } = model
   return (
-    <motion.div variants={shouldReduceMotion ? undefined : workbenchStaggerItem}>
+    <m.div variants={shouldReduceMotion ? undefined : workbenchStaggerItem}>
       {/* 탭 바 + 동기화 토글 */}
       <div className={styles.tabs} role="tablist">
           {[
@@ -76,7 +77,7 @@ export default function IdentityCombatSection({ identity, sinColor, allowedKeywo
 
       <AnimatePresence mode="wait" initial={false}>
         {activeTab === 'skills' && (
-          <motion.div
+          <m.div
             key="skills"
             variants={shouldReduceMotion ? undefined : workbenchReveal}
             initial={shouldReduceMotion ? false : 'initial'}
@@ -95,11 +96,11 @@ export default function IdentityCombatSection({ identity, sinColor, allowedKeywo
               newSkills={skillDiffResult?.newSkills}
               nextLevel={nextLevel}
             />
-          </motion.div>
+          </m.div>
         )}
 
         {activeTab === 'passives' && (
-          <motion.div
+          <m.div
             key="passives"
             variants={shouldReduceMotion ? undefined : workbenchReveal}
             initial={shouldReduceMotion ? false : 'initial'}
@@ -115,10 +116,10 @@ export default function IdentityCombatSection({ identity, sinColor, allowedKeywo
               newPassives={passiveDiffResult?.newPassives}
               nextLevel={nextLevel}
             />
-          </motion.div>
+          </m.div>
         )}
       </AnimatePresence>
-    </motion.div>
+    </m.div>
 
   )
 }

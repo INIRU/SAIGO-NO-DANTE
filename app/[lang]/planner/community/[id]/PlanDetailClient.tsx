@@ -10,7 +10,8 @@ import { getGameUiAsset } from '@/lib/utils/game-ui'
 import { useState, useEffect, useMemo, useRef } from 'react'
 import type { ReactNode } from 'react'
 import dynamic from 'next/dynamic'
-import { motion, useReducedMotion } from 'motion/react'
+import { useReducedMotion } from 'motion/react'
+import * as m from 'motion/react-m'
 import { Link } from '@/lib/i18n/navigation'
 import Image from 'next/image'
 import { useLocale, useTranslations } from 'next-intl'
@@ -61,9 +62,9 @@ const S = STORAGE_BASE
 function parseFormationSlots(text: string | null): number[] {
   if (!text) return []
   // Game text may put colour tags (digits and all) inside the bracket label; read the text as shown.
-  const m = gameTextToPlain(text).match(/\[편성[^\]]*전용\s*효과\]|\[\d[^\]]*편성\s*전용\s*효과\]/)
-  if (!m) return []
-  return [...m[0].matchAll(/(\d+)/g)].map(r => parseInt(r[1]))
+  const label = gameTextToPlain(text).match(/\[편성[^\]]*전용\s*효과\]|\[\d[^\]]*편성\s*전용\s*효과\]/)
+  if (!label) return []
+  return [...label[0].matchAll(/(\d+)/g)].map(r => parseInt(r[1]))
 }
 
 const DIFFICULTY_STYLE: Record<Difficulty, { bg: string; color: string; border: string }> = {
@@ -610,7 +611,7 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
           {tDetail('backToCommunity')}
         </BackLink>
 
-        <motion.header
+        <m.header
           className={styles.hero}
           variants={shouldReduceMotion ? undefined : workbenchReveal}
           initial={shouldReduceMotion ? false : 'initial'}
@@ -699,7 +700,7 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
               isAdmin={isAdmin}
             />
           </div>
-        </motion.header>
+        </m.header>
 
         <nav aria-label={tPlanner('sectionNav')} className={`sticky-under-nav ${styles.sectionNav}`}>
           <ol ref={sectionNavRef}>

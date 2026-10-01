@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
+import { AnimatePresence, useReducedMotion } from 'motion/react'
+import * as m from 'motion/react-m'
 import { Check, Shrink } from 'lucide-react'
 import GiftArtwork, { type GiftArtworkGift } from '@/components/ui/GiftArtwork'
 
@@ -124,19 +125,19 @@ export function AcquisitionStack({ items, label, consumedLabel, still }: { items
           'data-stack-depth': depth,
         }
         const enter = { opacity: 0, y: `${still ? y : y - 0.375}rem`, scale }
-        return item.kind === 'consumed' ? <motion.div key={item.token} data-consumed-overlay={item.token} {...shared} initial={enter}
+        return item.kind === 'consumed' ? <m.div key={item.token} data-consumed-overlay={item.token} {...shared} initial={enter}
           exit={{ opacity: 0, scale: still ? scale : scale * 0.97 }}
           className="absolute inset-x-0 top-0 flex min-h-[4.75rem] items-center gap-2.5 rounded-sm border border-[var(--border)] bg-[var(--bg-panel)] py-2 pl-2.5 pr-3 shadow-[var(--shadow-lg)]">
           {/* The materials are drawn in: each icon dims and contracts toward the middle of the row, one after another. */}
           <span className="flex min-w-0 shrink-0 items-center" data-consumed-materials>
             {item.materials.map((material, index) => {
               const toward = (item.materials.length - 1) / 2 - index
-              return <motion.span key={`${index}-${material.name}`} className="-ml-1.5 block w-9 first:ml-0"
+              return <m.span key={`${index}-${material.name}`} className="-ml-1.5 block w-9 first:ml-0"
                 initial={still ? false : { opacity: 1, scale: 1, x: 0, filter: 'saturate(1) brightness(1)' }}
                 animate={{ opacity: 0.55, scale: 0.8, x: still ? 0 : toward * 4, filter: 'saturate(0.35) brightness(0.8)' }}
                 transition={{ duration: still ? 0 : 0.5, delay: still ? 0 : 0.12 + index * 0.07, ease: [0.4, 0, 0.6, 1] }}>
                 <GiftArtwork gift={material.gift} displayName="" sizes="36px" />
-              </motion.span>
+              </m.span>
             })}
           </span>
           <span className="min-w-0 flex-1">
@@ -144,28 +145,28 @@ export function AcquisitionStack({ items, label, consumedLabel, still }: { items
             <span className="mt-0.5 block line-clamp-2 break-keep text-[0.8125rem] leading-[1.125rem] text-[var(--text-primary)]">{item.materials.map(material => material.name).join(' · ')}</span>
           </span>
           {depth === 0 && more}
-        </motion.div> : <motion.div key={item.token} data-acquisition-overlay={item.token} {...shared} initial={enter}
+        </m.div> : <m.div key={item.token} data-acquisition-overlay={item.token} {...shared} initial={enter}
           exit={{ opacity: 0, y: `${still ? y : y - 0.25}rem` }}
           className="absolute inset-x-0 top-0 flex min-h-[4.75rem] items-center gap-3 rounded-sm border border-[var(--border-gold)] bg-[var(--bg-panel)] py-2 pl-2 pr-3 shadow-[var(--shadow-lg)]">
           {/* The confirmation: the gift presses into place while an outline of its own frame closes onto it. */}
           <span className="relative block w-[3.25rem] shrink-0">
-            <motion.span className="block" initial={still ? false : { scale: 1.14, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+            <m.span className="block" initial={still ? false : { scale: 1.14, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
               transition={{ duration: 0.3, ease: [0.2, 0.9, 0.3, 1] }}>
               <GiftArtwork gift={item.gift} displayName="" sizes="52px" />
-            </motion.span>
-            {!still && <motion.svg aria-hidden="true" viewBox="0 0 100 100" preserveAspectRatio="none" data-acquisition-lock
+            </m.span>
+            {!still && <m.svg aria-hidden="true" viewBox="0 0 100 100" preserveAspectRatio="none" data-acquisition-lock
               className="absolute inset-0 h-full w-full overflow-visible"
               initial={{ scale: 1.4, opacity: 0 }} animate={{ scale: 1, opacity: [0, 1, 0] }}
               transition={{ scale: { duration: 0.34, ease: [0.3, 0.8, 0.3, 1] }, opacity: { duration: 0.6, times: [0, 0.4, 1] } }}>
               <polygon points="12,0 88,0 100,12 100,88 88,100 12,100 0,88 0,12" fill="none" stroke="var(--gold-light)" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
-            </motion.svg>}
+            </m.svg>}
           </span>
           <span className="min-w-0 flex-1">
             <span className="flex items-center gap-1 text-[0.6875rem] font-semibold leading-4 text-[var(--gold-light)]"><Check size={12} strokeWidth={3} aria-hidden="true" />{label}</span>
             <span className="mt-0.5 block line-clamp-2 break-keep font-[family-name:var(--font-heading)] text-[0.9375rem] leading-5 text-[var(--text-primary)]">{item.name}</span>
           </span>
           {depth === 0 && more}
-        </motion.div>
+        </m.div>
       })}
     </AnimatePresence>
   </div>

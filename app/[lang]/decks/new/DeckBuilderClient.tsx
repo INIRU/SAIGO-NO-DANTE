@@ -12,7 +12,8 @@ import TempSaveMenu from '@/components/ui/TempSaveMenu'
 
 import { useState, useMemo, useEffect } from 'react'
 import dynamic from 'next/dynamic'
-import { motion, useReducedMotion } from 'motion/react'
+import { useReducedMotion } from 'motion/react'
+import * as m from 'motion/react-m'
 import { useRouter } from '@/lib/i18n/navigation'
 import { useLocale, useTranslations } from 'next-intl'
 import { useSession } from 'next-auth/react'
@@ -583,7 +584,7 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
 
         {/* 탭 콘텐츠 */}
         {tab === 'identity' && (
-          <motion.section
+          <m.section
             key="identity"
             className="deck-builder-identity-section"
             initial={reduceMotion ? false : { opacity: 0, y: 8 }}
@@ -612,10 +613,10 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
               }}
             />
 
-          </motion.section>
+          </m.section>
         )}
         {tab === 'ego' && (
-          <motion.div
+          <m.div
             key="ego"
             initial={reduceMotion ? false : { opacity: 0, y: 8 }}
             animate={reduceMotion ? undefined : { opacity: 1, y: 0 }}
@@ -641,10 +642,10 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
                 })
               }}
             />
-          </motion.div>
+          </m.div>
         )}
         {tab === 'skillset' && (
-          <motion.div
+          <m.div
             key="skillset"
             initial={reduceMotion ? false : { opacity: 0, y: 8 }}
             animate={reduceMotion ? undefined : { opacity: 1, y: 0 }}
@@ -659,7 +660,7 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
                 setSkillDistribution(prev => ({ ...prev, [sinnerId]: dist }))
               }
             />
-          </motion.div>
+          </m.div>
         )}
         {/* 편성 순서 탭 → 인격 탭 40%/60% 호버로 통합 */}
 
@@ -676,7 +677,7 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
 
         {/* 덱 노트 */}
         {tab === 'note' && (
-          <motion.div
+          <m.div
             key="note"
             initial={reduceMotion ? false : { opacity: 0, y: 8 }}
             animate={reduceMotion ? undefined : { opacity: 1, y: 0 }}
@@ -699,7 +700,7 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
               descPreview={descPreview}
               setDescPreview={setDescPreview}
             />
-          </motion.div>
+          </m.div>
         )}
         </div>
 
