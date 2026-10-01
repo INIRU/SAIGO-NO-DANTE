@@ -524,15 +524,16 @@ html.board-browse body :is(footer, [data-floating-font-control]) { display: none
   .note-direct-picker--skill .note-direct-sidebar>button{display:inline-flex}
 }
 
-/* ── Page-scoped additions: other pages keep the site defaults above. ── */
-/* Plan detail: the page height changes a lot while loading (skeleton, data, images); keep the page scrollbar's space. */
-html[data-with-plan-detail] { scrollbar-gutter: stable; }
-/* Assist run page and its PiP window only. */
-html:is([data-with-assist-run], [data-assist-pip]) { scrollbar-gutter: stable; scrollbar-color: var(--gold-dim) var(--bg-deep); scrollbar-width: thin; }
-/* Radix keeps the body scroll-locked; the root gutter already reserves its width. */
+/* Every page keeps the scrollbar's space, so locking scroll for a modal (Radix, or body overflow:hidden) does not
+   shift the page or the fixed navbar sideways. The gutter already reserves the width, so drop Radix's compensation. */
+html { scrollbar-gutter: stable; }
 @supports (scrollbar-gutter: stable) {
-  html[data-with-assist-run] body[data-scroll-locked] { margin-right: 0 !important; }
+  body[data-scroll-locked] { margin-right: 0 !important; padding-right: 0 !important; }
 }
+
+/* ── Page-scoped additions: other pages keep the site defaults above. ── */
+/* Assist run page and its PiP window only. */
+html:is([data-with-assist-run], [data-assist-pip]) { scrollbar-color: var(--gold-dim) var(--bg-deep); scrollbar-width: thin; }
 html:is([data-with-assist-run], [data-assist-pip])::-webkit-scrollbar, html:is([data-with-assist-run], [data-assist-pip]) ::-webkit-scrollbar { width: 8px; height: 8px; }
 html:is([data-with-assist-run], [data-assist-pip])::-webkit-scrollbar-thumb, html:is([data-with-assist-run], [data-assist-pip]) ::-webkit-scrollbar-thumb { border: 2px solid var(--bg-deep); border-radius: 8px; }
 /* Preserve a visible keyboard cue even on borderless search fields. */

@@ -602,6 +602,10 @@ Drive의 `iap-lunacy`, `iap-membership`, `iap-package`, `pricetier`, `chance-iap
 
 E.G.O 상세의 메인 이미지는 256×256 `_awaken_profile` 확대 대신 새 추출본의 `_cg` 원본(1024×1024, 한 장은 1023×1024)을 사용한다. 2026-09-19 manifest SHA-256 대조 후 111장을 WebP 품질 95로 변환해 기존 EGO 폴더의 `{gameId}_cg-{hash12}.webp`에 추가 업로드하고 공개 다운로드 해시를 검증했다. 기존 프로필과 DB는 보존하며 `lib/generated/ego-artwork.json`에 검증된 ID와 해시만 기록한다. 원본·변환본·계획·영수증은 `/Users/iniru/Downloads/Limbus-ego-artwork-2026-09-19/`에 보관한다. 매핑이 없는 이미지 한 건은 기존 URL을 유지한다.
 
+2026-10-01부터 이 목록을 손으로 늘리지 않는다. `limbus.ego.artwork_url`(마이그레이션 `20261001064045_ego_artwork_url.sql`)에 `{gameId}_cg-{hash12}.webp`의 공개 주소를 저장하고, `getEgoArtworkUrl(profileUrl, artworkUrl)`이 이 값을 먼저 쓴다(없으면 `ego-artwork.json`, 그것도 없으면 프로필). `apply-extraction`은 새 E.G.O의 `_cg`를 품질 95 WebP로 한 번 더 인코딩해 SHA-256 앞 12자리로 이름 붙여 올리고(`upsert: false`, 이미 있으면 건너뜀, `uploads`에 기록해 되돌리기에서 지움) 그 주소를 `ego.artwork_url`에 쓴다. 결과는 `report.json`의 `egoArtwork`(`gameId`, `key`, `url`, `uploaded`)와 `egoWithoutArtwork`(ZIP에 `_cg`가 없는 E.G.O)에 남고, 코드는 `scripts/sync/ego-artwork.ts`다. `ego` 표를 백업·복원하므로 열도 함께 돌아간다. 기존 E.G.O 재구축(`--replace`)은 이 열을 건드리지 않는다. 마이그레이션이 없는 DB에서는 새 E.G.O 반영이 멈추고 자동으로 되돌린다.
+
+`scripts/sync/backfill-ego-artwork-url.ts`(dry-run 기본, `--fix`, `--out <영수증>`)는 이미 있는 E.G.O의 `artwork_url`을 채운다. `ego-artwork.json`에 있는 ID는 그 해시의 주소를(HEAD로 객체 존재 확인 후), 없는 ID는 Storage의 `{id}_cg.webp`가 있으면 그 바이트를 내려받아 SHA-256 앞 12자리 이름으로 그대로 복사해 올리고 연결한다(이 파일은 이미 품질 90 WebP라 95로 다시 인코딩하면 화질만 잃으므로 바이트를 바꾸지 않는다). `artwork_url`이 이미 있거나 프로필이 `_awaken_profile`이 아니거나(21210) `_cg.webp`가 없는 행은 건드리지 않아 다시 실행해도 안전하다.
+
 스킬 S3 단색 배경의 `Icon_skillFrame_Invert.png` 좌표는 장식과 다르다. 0부터 세는 셀 7 `(3,1)`에서 시작해 분노→색욕→나태→탐식→우울→오만→질투 순으로 이어진다. S1/S2는 `Invert_2`의 셀 0/8에서 시작한다. `extract-skill-frames.py`로 52개 무손실 WebP와 버전 해시를 재생성하며 `python3 scripts/assets/test_skill_frames.py`가 S3 죄악 매핑을 검증한다. 참고 원본: https://drive.google.com/drive/folders/1gVBj0xtrWDByf7P1-sgalIJnCL5aiKMr .
 
 ## 2026-09-24 추출본 반영
