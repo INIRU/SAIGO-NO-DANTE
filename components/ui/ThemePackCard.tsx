@@ -3,9 +3,8 @@
 import ImageWithFallback from '@/components/ui/ImageWithFallback'
 import { getThemePackNameColor, getThemePackNameSegments } from '@/lib/data/theme-pack-colors'
 import {
-  THEME_PACK_TITLE_BOX,
   getThemePackCompositeImageUrl,
-  getThemePackTitleBoxKind,
+  getThemePackTitleLayout,
   getThemePackVisualConfig,
 } from '@/lib/data/theme-pack-visuals'
 import { useAutoFontSize } from '@/lib/hooks/useAutoFontSize'
@@ -90,9 +89,9 @@ export default function ThemePackCard({
   const displayNameSegments = getThemePackNameSegments(numId, lang)
   const visualConfig = getThemePackVisualConfig(numId)
   const isExtreme = visualConfig?.kind === 'extreme'
-  const titleBox = { ...THEME_PACK_TITLE_BOX[getThemePackTitleBoxKind(visualConfig)], ...visualConfig?.title }
+  const titleBox = getThemePackTitleLayout(numId)
   const titleWidthRatio = (100 - titleBox.left - titleBox.right) / 100
-  const showTitle = !visualConfig?.title?.printedIn?.includes(lang)
+  const showTitle = !titleBox.printedIn?.includes(lang)
   const imageSrc = visualConfig ? getThemePackCompositeImageUrl(numId) : theme.image_url
   const isBareImageSurface = imageSurface === 'bare'
   const titleFontFamily = lang === 'en'
@@ -102,7 +101,7 @@ export default function ThemePackCard({
       : 'var(--font-kotra-bold), var(--font-scdream), sans-serif'
   const titleFontWeight = lang === 'en' ? 400 : 700
   const titleMaxFontRem = titleMeasureWidth && titleTrackHeight
-    ? Math.max(TITLE_MIN_FONT_REM, Math.min(1.75, (titleMeasureWidth / titleWidthRatio) * TITLE_FONT_RATIO / rootFontSize, titleTrackHeight * 0.9 / rootFontSize))
+    ? Math.max(TITLE_MIN_FONT_REM, Math.min(1.75, (titleMeasureWidth / titleWidthRatio) * TITLE_FONT_RATIO * titleBox.scale / rootFontSize, titleTrackHeight * 0.9 / rootFontSize))
     : 0.75
   const fontSize = useAutoFontSize(displayName, titleMaxFontRem, TITLE_MIN_FONT_REM, titleMeasureWidth, titleFontFamily, titleFontWeight)
   const giftCount = (theme.ego_gift_ids ?? []).length
