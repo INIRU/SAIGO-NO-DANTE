@@ -5,7 +5,7 @@ type Kind = 'deck' | 'planner'
 /** DeckCard / PlanCard와 같은 뼈대: 6×2 초상 격자 + 제목·메타·태그. */
 export function CardSkeleton({ kind }: { kind: Kind }) {
   return <div className="flex h-full flex-col overflow-hidden rounded-md border border-[#2e2417] bg-[var(--bg-card)]">
-    <div className="grid grid-cols-6 border-b border-[#2e2417]">{Array.from({ length: 12 }, (_, j) => <Skeleton key={j} raised className="!rounded-none" style={{ aspectRatio: '3 / 4', opacity: j % 3 === 0 ? 1 : 0.75 }} />)}</div>
+    <div className="grid grid-cols-6 gap-px border-b border-[#2e2417]">{Array.from({ length: 12 }, (_, j) => <Skeleton key={j} raised className="!rounded-none" style={{ aspectRatio: '3 / 4', opacity: j % 3 === 0 ? 1 : 0.75 }} />)}</div>
     {kind === 'deck'
       ? <div className="flex flex-1 flex-col" style={{ padding: '0.875rem' }}>
         <div className="mb-1.5 flex h-[1.375rem] items-center"><SkeletonLine w="45%" h="1rem" raised /></div>
@@ -16,6 +16,8 @@ export function CardSkeleton({ kind }: { kind: Kind }) {
       : <>
         <div className="flex flex-1 flex-col p-4">
           <div className="mb-1.5 flex h-[1.375rem] items-center"><SkeletonLine w="40%" h="1rem" raised /></div>
+          {/* PlanCard keeps two description lines (0.8125rem at 1.6) even when a plan has none: the row is as tall as its tallest card. */}
+          <div className="mb-3 flex flex-1 flex-col justify-around" style={{ minHeight: '2.6rem' }}><SkeletonLine w="92%" h="0.75rem" raised /><SkeletonLine w="64%" h="0.75rem" raised /></div>
           <div className="mt-auto flex items-center gap-1.5 border-t border-white/[0.04] pt-2"><SkeletonCircle size="1.125rem" raised /><SkeletonLine w="6rem" h="0.75rem" raised /><SkeletonLine w="3rem" h="0.75rem" raised className="ml-auto" /></div>
         </div>
         <div className="flex min-h-[2.75rem] items-center px-4 pb-3"><Skeleton raised className="h-6 w-14" /></div>

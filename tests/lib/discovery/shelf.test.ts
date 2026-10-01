@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest'
-import { pickShelf } from '@/lib/discovery/shelf'
+import { pickShelf, shelfOrder } from '@/lib/discovery/shelf'
 
 const post = (id: string) => ({ id })
 
@@ -15,4 +15,10 @@ it('orders the week\'s visited posts by visitors', () => {
 it('falls back to the newest posts when fewer than three were visited', () => {
   expect(pickShelf({ counts: [], popular: [post('a')], recent: [post('x'), post('y'), post('z'), post('w')] }, 'planner'))
     .toEqual({ popular: false, posts: [post('x'), post('y'), post('z')] })
+})
+
+it('REQ-COMMUNITY-012 puts the personal shelf after the new posts, or first when there are none', () => {
+  expect(shelfOrder(['recent', 'updated', 'popular'])).toEqual(['recent', 'forYou', 'updated', 'popular'])
+  expect(shelfOrder(['updated', 'popular'])).toEqual(['forYou', 'updated', 'popular'])
+  expect(shelfOrder([])).toEqual(['forYou'])
 })

@@ -5,7 +5,8 @@ import { useLocale } from "next-intl";
 import { Link } from "@/lib/i18n/navigation";
 import { ArrowUpRight, ChevronDown, ChevronUp, History, Layers3 } from "lucide-react";
 import BoardSkeleton from "./BoardSkeleton";
-import ForYou from "./ForYou";
+import ForYou, { OwnedLink } from "./ForYou";
+import { shelfOrder } from "@/lib/discovery/shelf";
 import DeckCard, { type DeckSummary } from "@/components/decks/DeckCard";
 import PlanCard, { type PlanSummary } from "@/components/planner/PlanCard";
 import IdentityCard from "@/components/sinners/IdentityCard";
@@ -70,6 +71,37 @@ export default function DiscoveryShelf({
     .slice(0, 8);
   const hasHistory = recentItems.length > 0 || history.queries.length > 0;
   const base = kind === "deck" ? "/decks" : "/planner/community";
+  const sections = data
+    ? (
+      [
+              [
+                "recent",
+                label(`새로 올라온 ${noun}`, `新着${noun}`, `New ${noun}`),
+                data.recent,
+              ],
+              [
+                "updated",
+                label(
+                  `최근 수정된 ${noun}`,
+                  `最近更新された${noun}`,
+                  `Recently updated ${noun}`,
+                ),
+                data.updated,
+              ],
+              [
+                "popular",
+                label(
+                  `관리자분들이 자주 찾는 ${noun}`,
+                  `よく読まれている${noun}`,
+                  `Frequently visited ${noun}`,
+                ),
+                [...data.popular].sort(
+                  (a, b) => (counts.get(b.id) ?? 0) - (counts.get(a.id) ?? 0),
+                ),
+              ],
+            ] as const
+    ).filter(([, , posts]) => posts.length > 0)
+    : [];
   return (
     <div
       className="px-4 pb-16 font-[family-name:var(--font-paperlogy)] md:px-6"
@@ -109,7 +141,7 @@ export default function DiscoveryShelf({
             <ArrowUpRight size={14} />
           </button>
         </div>
-        <ForYou kind={kind} base={base} personal={history.enabled} />
+        <OwnedLink kind={kind} base={base} />
         {error && (
           <button
             onClick={() => mutate()}
@@ -131,39 +163,11 @@ export default function DiscoveryShelf({
           </div>
         )}
         {data &&
-          (
-            [
-              [
-                "recent",
-                label(`새로 올라온 ${noun}`, `新着${noun}`, `New ${noun}`),
-                data.recent,
-              ],
-              [
-                "updated",
-                label(
-                  `최근 수정된 ${noun}`,
-                  `最近更新された${noun}`,
-                  `Recently updated ${noun}`,
-                ),
-                data.updated,
-              ],
-              [
-                "popular",
-                label(
-                  `관리자분들이 자주 찾는 ${noun}`,
-                  `よく読まれている${noun}`,
-                  `Frequently visited ${noun}`,
-                ),
-                [...data.popular].sort(
-                  (a, b) => (counts.get(b.id) ?? 0) - (counts.get(a.id) ?? 0),
-                ),
-              ],
-            ] as const
-          )
-            .filter(([, , posts]) => posts.length > 0)
-            .map(([key, title, posts]) => {
-              const isExpanded = expanded.has(key);
-              return <section key={key}>
+          shelfOrder(sections.map(([key]) => key)).map((shelf) => {
+            if (shelf === "forYou") return <ForYou key={shelf} kind={kind} personal={history.enabled} />;
+            const [key, title, posts] = sections.find(([name]) => name === shelf)!;
+            const isExpanded = expanded.has(key);
+            return <section key={key}>
                 <div className="mb-4 flex items-center justify-between">
                   <h2 className="font-[family-name:var(--font-paperlogy)] text-lg font-bold tracking-[-0.02em] leading-snug text-[var(--gold)]">
                     {title}
