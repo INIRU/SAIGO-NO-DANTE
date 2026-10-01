@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { existingGiftLookup, fixedRewardGiftIds, richestEntry, sameStoredIds, themeExclusiveGifts, themeFixedRewards, themeGiftRefs, unreadThemeKeys } from './mirror-dungeon-rules'
+import { existingGiftLookup, fixedRewardGiftIds, richestEntry, sameStoredIds, themeExclusiveGifts, themeFixedRewards, themeGiftRefs, unreadThemeKeys, themeNameColor, themeNameSegments, themeBossUnitIds } from './mirror-dungeon-rules'
 
 // Cases from the extraction audit of 2026-09-30 (complete-data of 2026-09-24).
 describe('theme rewards and exclusive gifts', () => {
@@ -59,7 +59,8 @@ it('reports theme source fields the sync does not read instead of dropping them 
     id: 3001, egoGiftPool: [], fixedRewardEgoGifts: [9242], uiConfigs: { packSpriteId: 'a', bossSpriteId: 'b', showBossIds: [1] },
     specificEgoGiftForUpegsProbs: [], excludeSpecificEgoGiftFromUpEgs: [], isUnrecordable: true, type: 'EXTREME',
   }
-  expect(unreadThemeKeys(item).sort()).toEqual(['excludeSpecificEgoGiftFromUpEgs', 'isUnrecordable', 'specificEgoGiftForUpegsProbs', 'type', 'uiConfigs.showBossIds'])
+  // isUnrecordable and uiConfigs.showBossIds are read since the pack UI config columns (2026-10-01).
+  expect(unreadThemeKeys(item).sort()).toEqual(['excludeSpecificEgoGiftFromUpEgs', 'specificEgoGiftForUpegsProbs', 'type'])
   expect(unreadThemeKeys({ id: 1, desc: 'x', mapGenOption: { bossPool: [] } })).toEqual([])
   expect(unreadThemeKeys([1])).toEqual([])
 })
@@ -96,4 +97,25 @@ it('stores gift slots through placeholder-rules instead of a fixed 0 or a copied
   expect(sync.match(/tokens\(cleanDesc\(/g)?.length).toBe(9)
   expect(sync).not.toContain('→ [${convertName}]')
   expect(sync).not.toContain(".replace(/\\{(\\d+)\\}/g, '0')")
+})
+
+describe('theme pack UI config', () => {
+  it('reads the title colour, multi-colour names and boss units the pack art uses', () => {
+    expect(themeNameColor('af241c')).toBe('#AF241C')
+    expect(themeNameColor(undefined)).toBeNull()
+    expect(themeNameColor('nope')).toBeNull()
+    // 1119 증오와 절망 (KR/EN/JP_MirrorDungeonTheme-1 specialName).
+    expect(themeNameSegments(1119, {
+      ko: '<color=#ee4893>증오와</color> <color=#0060c5>절망</color>',
+      en: '<color=#ee4893>Hatred</color> and <color=#0060c5>Despair</color>',
+    })).toEqual({
+      ko: [{ text: '증오와', color: '#ee4893' }, { text: ' ' }, { text: '절망', color: '#0060c5' }],
+      en: [{ text: 'Hatred', color: '#ee4893' }, { text: ' and ' }, { text: 'Despair', color: '#0060c5' }],
+      ja: [{ text: '증오와', color: '#ee4893' }, { text: ' ' }, { text: '절망', color: '#0060c5' }],
+    })
+    expect(themeNameSegments(1001, { ko: '잊혀진 자들' })).toBeNull()
+    expect(themeNameSegments(1126, {})?.ko[2]).toEqual({ text: '엮기', color: '#c65348' })
+    expect(themeBossUnitIds([8141, 8096, 'x'])).toEqual([8141, 8096])
+    expect(unreadThemeKeys({ id: 1, isUnrecordable: true, uiConfigs: { textColor: 'ffffff', showBossIds: [1], attackType: 'HIT' } })).toEqual([])
+  })
 })

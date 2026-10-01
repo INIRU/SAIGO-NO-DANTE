@@ -23,7 +23,7 @@ import { join, resolve } from 'path'
 import { gameDataPaths, implicitDataDirWarning } from './source-paths'
 import { failOnLoggedErrors, printSyncSummary } from './sync-result'
 import { giftPlaceholders, PlaceholderReport } from './placeholder-rules'
-import { existingGiftLookup, giftTiers, richestEntry, sameStoredIds, themeExclusiveGifts, type GiftTierTheme, themeFixedRewards, themeGiftRefs, unreadThemeKeys } from './mirror-dungeon-rules'
+import { existingGiftLookup, giftTiers, richestEntry, sameStoredIds, themeExclusiveGifts, type GiftTierTheme, themeBossUnitIds, themeFixedRewards, themeGiftRefs, themeNameColor, themeNameSegments, type ThemeNameSegments, unreadThemeKeys } from './mirror-dungeon-rules'
 import { z } from 'zod'
 import { config } from 'dotenv'
 
@@ -154,7 +154,12 @@ const ThemeRawSchema = z.object({
   uiConfigs: z.object({
     packSpriteId: z.string().optional(),
     bossSpriteId: z.string().optional(),
+    textColor: z.string().optional(),
+    attributeType: z.string().optional(),
+    attackType: z.string().optional(),
+    showBossIds: z.array(z.number()).optional(),
   }).optional(),
+  isUnrecordable: z.boolean().optional(),
   unlockCondition: z.object({ unlockCode: z.number().optional() }).optional(),
   exceptionConditions: z.array(z.object({
     dungeonIdx: z.number(),
@@ -168,6 +173,7 @@ const ThemeRawSchema = z.object({
 const ThemeLocaleSchema = z.object({
   id: z.number(),
   name: z.string(),
+  specialName: z.string().optional(),
 })
 
 const RecipeRawSchema = z.object({
@@ -925,6 +931,17 @@ interface ThemeRow {
   hidden_rate: number | null
   /** Gifts a pack always gives when its boss is cleared (extreme packs), from the boss stages' rewards. */
   fixed_reward_gift_ids: number[]
+  /** Title colour on the pack art (uiConfigs.textColor), "#RRGGBB"; null draws the default beige. */
+  name_color: string | null
+  /** Multi-colour title runs per language (specialName), e.g. 1119 증오와 절망. */
+  name_segments: ThemeNameSegments | null
+  /** Sin affinity / attack type the pack is built around (uiConfigs.attributeType, attackType). */
+  attribute_type: string | null
+  attack_type: string | null
+  /** Boss units the pack shows (uiConfigs.showBossIds). */
+  boss_unit_ids: number[]
+  /** Runs through this pack are not recorded (isUnrecordable: 1122, 3001). */
+  is_unrecordable: boolean
 }
 
 /** Packs as gift sources for giftTiers: where each is offered and what it gives (exclusives, fixed rewards, pool, events). */
@@ -976,7 +993,7 @@ function loadStageGiftRewards(): Map<number, number> {
   return rewards
 }
 
-function loadThemeNameMap(paths: string[]): Map<number, string> {
+function loadThemeNameMap(paths: string[], field: 'name' | 'specialName' = 'name'): Map<number, string> {
   const map = new Map<number, string>()
   for (const path of paths) {
     const data = safeLoadJson(path)
@@ -984,8 +1001,9 @@ function loadThemeNameMap(paths: string[]): Map<number, string> {
     const list = Array.isArray(data) ? data : extractList(data)
     for (const item of list) {
       const parsed = ThemeLocaleSchema.safeParse(item)
-      if (parsed.success && !map.has(parsed.data.id)) {
-        map.set(parsed.data.id, parsed.data.name)
+      const value = parsed.success ? parsed.data[field] : undefined
+      if (parsed.success && value && !map.has(parsed.data.id)) {
+        map.set(parsed.data.id, value)
       }
     }
   }
@@ -1027,6 +1045,10 @@ async function syncThemes(): Promise<void> {
     join(JP_LATEST_DIR, 'JP_MirrorDungeonTheme-1.json'),
   ])
   console.log(`  테마 로컬라이즈: KR ${themeNameMap.size}개, EN ${themeNameEnMap.size}개, JP ${themeNameJpMap.size}개`)
+  const specialNames = (prefix: 'KR' | 'EN' | 'JP', dir: string, latest: string) =>
+    loadThemeNameMap([join(dir, `${prefix}_MirrorDungeonTheme-1.txt`), join(latest, `${prefix}_MirrorDungeonTheme-1.json`)], 'specialName')
+  const specialKr = specialNames('KR', KR_DIR, KR_LATEST_DIR), specialEn = specialNames('EN', EN_DIR, EN_LATEST_DIR)
+  const specialJp = specialNames('JP', JP_DIR, JP_LATEST_DIR)
 
   // Load all theme floor files: t1~t6 + hidden
   const themeFiles = [
@@ -1105,6 +1127,12 @@ async function syncThemes(): Promise<void> {
         is_hidden: isHiddenFile,
         hidden_rate: isHiddenFile ? t.hiddenThemeRate ?? null : null,
         fixed_reward_gift_ids: themeFixedRewards(t, stageRewards, giftIds),
+        name_color: themeNameColor(t.uiConfigs?.textColor),
+        name_segments: themeNameSegments(t.id, { ko: specialKr.get(t.id), en: specialEn.get(t.id), ja: specialJp.get(t.id) }),
+        attribute_type: t.uiConfigs?.attributeType ?? null,
+        attack_type: t.uiConfigs?.attackType ?? null,
+        boss_unit_ids: themeBossUnitIds(t.uiConfigs?.showBossIds),
+        is_unrecordable: t.isUnrecordable ?? false,
       })
     }
   }
@@ -1117,7 +1145,7 @@ async function syncThemes(): Promise<void> {
   const { data: existingThemes, error: fetchErr } = await supabase
     .schema('limbus')
     .from('ego_gift_themes')
-    .select('id, name, name_en, name_jp, unlock_code, ego_gift_ids, specific_ego_gift_ids, image_url, boss_image_url, difficulty, floor_info, is_hidden, hidden_rate, fixed_reward_gift_ids')
+    .select('id, name, name_en, name_jp, unlock_code, ego_gift_ids, specific_ego_gift_ids, image_url, boss_image_url, difficulty, floor_info, is_hidden, hidden_rate, fixed_reward_gift_ids, name_color, name_segments, attribute_type, attack_type, boss_unit_ids, is_unrecordable')
 
   if (fetchErr) throw new Error(`ego_gift_themes fetch 실패: ${fetchErr.message}`)
 
@@ -1148,6 +1176,12 @@ async function syncThemes(): Promise<void> {
       if ((existing as Record<string, unknown>).is_hidden !== theme.is_hidden) changes.push(`is_hidden: ${(existing as Record<string, unknown>).is_hidden} → ${theme.is_hidden}`)
       if (!stableJsonEqual(existing.floor_info ?? null, theme.floor_info ?? null)) changes.push(`floor_info 변경`)
       if (((existing as Record<string, unknown>).hidden_rate ?? null) !== theme.hidden_rate) changes.push(`hidden_rate: ${(existing as Record<string, unknown>).hidden_rate} → ${theme.hidden_rate}`)
+      if ((existing.name_color ?? null) !== theme.name_color) changes.push(`name_color: ${existing.name_color} → ${theme.name_color}`)
+      if (!stableJsonEqual(existing.name_segments ?? null, theme.name_segments)) changes.push('name_segments 변경')
+      if ((existing.attribute_type ?? null) !== theme.attribute_type) changes.push(`attribute_type: ${existing.attribute_type} → ${theme.attribute_type}`)
+      if ((existing.attack_type ?? null) !== theme.attack_type) changes.push(`attack_type: ${existing.attack_type} → ${theme.attack_type}`)
+      if (!stableJsonEqual(existing.boss_unit_ids ?? null, theme.boss_unit_ids)) changes.push(`boss_unit_ids: ${JSON.stringify(existing.boss_unit_ids ?? null)} → ${JSON.stringify(theme.boss_unit_ids)}`)
+      if ((existing.is_unrecordable ?? false) !== theme.is_unrecordable) changes.push(`is_unrecordable: ${existing.is_unrecordable} → ${theme.is_unrecordable}`)
 
       if (changes.length > 0) {
         updateCount++
