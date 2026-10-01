@@ -1,3 +1,4 @@
+import type { ThemePackNameStyle } from '@/lib/data/theme-pack-colors'
 import { normalizeConstraints } from './constraints'
 // 거울 던전 플래너 상태 타입
 import {
@@ -337,6 +338,9 @@ export interface ThemeData {
   image_url: string | null
   difficulty: string | null
   floor_info: Record<string, number[] | string> | null
+  /** Title colour and multi-colour runs on the pack art (synced from uiConfigs.textColor / specialName). */
+  name_color?: string | null
+  name_segments?: ThemePackNameStyle['name_segments']
 }
 
 export interface GiftActivationCondition {
