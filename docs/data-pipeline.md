@@ -633,6 +633,7 @@ E.G.O 상세의 메인 이미지는 256×256 `_awaken_profile` 확대 대신 새
 - 새 칸은 추출본으로 먼저 채웠다(패시브 958행, 키워드 대사 275개). 조건이 비어 있던 30행의 이전 값은 저장소 밖 `Limbus/backups/passives-condition-before-2026-10-01.json`에 있다.
 - E.G.O 침식 원화: `ego.corrosion_artwork_url`(마이그레이션 `20261001074122`)에 `{id}_e_cg.webp`(옛 이름 `{id}_cg_e.webp`, 20603 등 2개)의 공개 주소를 둔다. 상세 히어로의 침식 탭이 이 그림을 쓴다. `apply-extraction`은 새 E.G.O의 `e_cg`를 올릴 때 기록하고, 기존 104개는 `backfill-ego-artwork-url.ts --fix`가 채웠다(침식이 없는 기본 x01 E.G.O 12개는 비어 있음).
 - `keyword_meta.game_id`(493건)는 이 반영에서 처음 채워졌다. 참조가 없던 행은 사용자 확인 후 정리했다(2026-10-01): 천퇴성[天退星]의 옛 이름 행 「강기 [剛氣]」「강기-신 [剛氣-心]」과 어디에도 쓰이지 않는 Bufs 전용 「○○ 위력 감소」 10개를 지웠고(백업 `Limbus/backups/keyword-meta-unlinked-before-2026-10-01.json`), 참조가 둘인 「분홍 리본」은 `PinkRibbon`에 연결했다. 남은 참조 없는 행은 기프트 키워드 분류로 쓰이는 참격·관통·타격 3개뿐이다.
+- 「공격 레벨+」(`AttackLevelAdder`, `offense-level`)는 9월~10월 모든 추출본에 전용 그림이 없다(버프 데이터에 `iconId`도 없음). 같은 효과를 그린 「공격 레벨 강화 I」(MD511, 공격 레벨 칼에 "+")을 쓰도록 `keyword-icons.ts`의 `KEYWORD_SPRITE_FALLBACKS`에 두고 `--keyword-icons-only --fix`로 올렸다. 이후 이미지 감사 누락 0.
 
 ## 데이터 무결성 점검
 

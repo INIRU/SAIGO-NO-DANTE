@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import sharp from 'sharp'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import { KEYWORD_AUDIT_FILE, keywordIconKey, readBuffIconIds, readKeywordAudit, uploadMissingKeywordIcons, type ManifestEntry, type Upload } from '@/scripts/sync/keyword-icons'
+import { KEYWORD_AUDIT_FILE, keywordIconKey, readBuffIconIds, readKeywordAudit, spriteOfTag, uploadMissingKeywordIcons, type ManifestEntry, type Upload } from '@/scripts/sync/keyword-icons'
 
 const FIXTURES = resolve(__dirname, '../fixtures/keyword-icons/complete-data')
 const sha = (bytes: Buffer) => createHash('sha256').update(bytes).digest('hex').toUpperCase()
@@ -175,5 +175,14 @@ describe('REQ-DATA-SYNC-039 what is left alone', () => {
     const hashed = run({ keywords, primaryTags, manifest: tampered })
     await expect(hashed.done).rejects.toThrow('image hash mismatch')
     expect(hashed.bucket.uploads).toEqual([])
+  })
+})
+
+describe('REQ-DATA-SYNC-046 keyword tags without their own art', () => {
+  it('REQ-DATA-SYNC-046 gives 공격 레벨+ (AttackLevelAdder) the Offense Level sword with a plus (MD511); iconId and the tag itself still come first', () => {
+    expect(spriteOfTag('AttackLevelAdder', new Map())).toBe('MD511')
+    expect(spriteOfTag('AttackLevelAdder', new Map([['AttackLevelAdder', 'SomethingElse']]))).toBe('SomethingElse')
+    expect(spriteOfTag('NoirNail', new Map([['NoirNail', 'NoirNailBoss']]))).toBe('NoirNailBoss')
+    expect(spriteOfTag('Combustion', new Map())).toBe('Combustion')
   })
 })
