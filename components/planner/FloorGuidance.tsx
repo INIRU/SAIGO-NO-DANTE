@@ -3,7 +3,8 @@ import useSWR from "swr";
 import { useLocale } from "next-intl";
 import { Link } from "@/lib/i18n/navigation";
 import { MapPin } from "lucide-react";
-import ImageWithFallback from "@/components/ui/ImageWithFallback";
+import QuietImage from "@/components/ui/QuietImage";
+import { blurPlaceholder } from "@/lib/utils/thumbhash"
 import GiftCard from "@/components/ui/GiftCard";
 import GiftArtwork from "@/components/ui/GiftArtwork";
 import { craftableAtFloor } from "@/lib/planner/floor-guidance";
@@ -83,7 +84,7 @@ export default function FloorGuidance({
             const rewards = entry.gift_ids.map(id => gifts.get(Number(id))).filter((gift): gift is GiftData => !!gift && !!event.gift_ids?.includes(gift.game_id));
             const body = <>
                 <span className="relative block aspect-square overflow-hidden rounded-md bg-[#0d0b08] transition-opacity group-hover:opacity-80">
-                  {event.image_url ? <ImageWithFallback src={event.image_url} alt="" fill sizes="64px" className="object-cover" /> : <MapPin className="absolute inset-0 m-auto text-[var(--gold-dim)]" size={20} />}
+                  {event.image_url ? <QuietImage src={event.image_url} alt="" fill sizes="64px" className="object-cover" {...blurPlaceholder(event.image_url)} /> : <MapPin className="absolute inset-0 m-auto text-[var(--gold-dim)]" size={20} />}
                 </span>
                 <span className="mt-1 block truncate text-[0.625rem] text-[var(--text-secondary)]">{title}</span>
             </>;

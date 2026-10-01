@@ -8,7 +8,8 @@ import { Search, X, ArrowUpRight } from 'lucide-react'
 import styles from './EventTab.module.css'
 import GiftArtwork from '@/components/ui/GiftArtwork'
 import Dropdown from '@/components/ui/Dropdown'
-import ImageWithFallback from '@/components/ui/ImageWithFallback'
+import QuietImage from '@/components/ui/QuietImage'
+import { blurPlaceholder } from '@/lib/utils/thumbhash'
 import type { EgoGift, EgoGiftTheme, MdEvent, MdEventChoice } from '@/components/mirror-dungeon/types'
 import { translations } from '@/lib/i18n/translations'
 import type { SupportedLang } from '@/lib/i18n/types'
@@ -122,7 +123,7 @@ export default function EventTab({
           return (
             <button type="button" key={event.id} className={`ev-card ${styles.card}`} onClick={() => onSelectEvent(event)} data-event-id={event.id}>
               {event.image_url ? <div className={styles.image}>
-                <ImageWithFallback src={event.image_url} alt="" fill sizes="(max-width: 639px) 100vw, (max-width: 1023px) 50vw, 33vw" className="object-contain" loading={index < 6 ? 'eager' : 'lazy'} />
+                <QuietImage src={event.image_url} alt="" fill sizes="(max-width: 639px) 100vw, (max-width: 1023px) 50vw, 33vw" className="object-contain" loading={index < 6 ? 'eager' : 'lazy'} {...blurPlaceholder(event.image_url)} />
               </div> : <div className={styles.unillustrated}><span>{t('mirrorDungeon.event.fallbackTitle')}</span><span>#{event.id}</span></div>}
               <div className={styles.caption}>
                 <div className={styles.cardMeta}><span>#{event.id}</span><span>{t('mirrorDungeon.event.choicesLabel')} {count}</span></div>
