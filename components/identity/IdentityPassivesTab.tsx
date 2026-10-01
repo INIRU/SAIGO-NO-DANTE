@@ -1,7 +1,8 @@
 'use client'
 
-import Image from 'next/image'
-import { Passive, SIN_COLORS, SIN_KR_TO_EN, getSinIconUrl } from '@/lib/data/sinners'
+import { Passive, SIN_COLORS } from '@/lib/data/sinners'
+import { passiveRequirements } from '@/lib/planner/passives'
+import { PassiveNameLabel, PassiveRequirements } from '@/components/passive/PassiveParts'
 import SkillDescription from '@/components/skill/SkillDescription'
 import { UptieChangePanel } from '@/components/identity/UptieChanges'
 import { diffDescriptionLines, type PassiveDiff } from '@/lib/utils/uptie-diff'
@@ -56,63 +57,20 @@ export default function IdentityPassivesTab({ filteredPassives, sinColor, skillN
   const supportPassives = filteredPassives.filter(p => p.passive_type === 'support')
 
   const renderPassive = (p: Passive) => {
-    const sinNames = p.sin_affinity ? p.sin_affinity.split(', ').map(s => s.trim()) : []
-    const sinTypes = sinNames.map(s => SIN_KR_TO_EN[s] ?? (SIN_COLORS[s as keyof typeof SIN_COLORS] ? s : null)).filter(Boolean) as Array<keyof typeof SIN_COLORS>
-    const primaryColor = sinTypes[0] ? SIN_COLORS[sinTypes[0]] : '#cccccc'
+    const requirements = passiveRequirements(p)
+    const primaryColor = requirements[0] ? SIN_COLORS[requirements[0].sin] : '#cccccc'
     const passiveDescription = localPassiveDesc(p)
     const passiveFlavor = localPassiveFlavor(p, locale)
     const diff = passiveDiffs?.get(p.id)
 
     return (
       <div key={p.id} className="py-2">
-        {/* 패시브 이름 배너 */}
-        <div className="overflow-hidden mb-3" style={{ width: 'fit-content', maxWidth: '100%' }}>
-          <div style={{
-            color: '#e8dcc8',
-            backgroundImage: `linear-gradient(255deg, transparent 2em, ${primaryColor}30 2em)`,
-          }}>
-            <div style={{
-              padding: '0.3em 0 0.3em 0.5em',
-              backgroundImage: `linear-gradient(290deg, transparent 3em, ${primaryColor}35 3em, ${primaryColor}35 3.2em, transparent 3.2em, transparent 3.4em, ${primaryColor}35 3.4em, ${primaryColor}35 3.6em, transparent 3.6em, transparent 3.8em, ${primaryColor}35 3.8em, ${primaryColor}35 4em, transparent 4em, transparent 4.2em, ${primaryColor}35 4.2em)`,
-              textShadow: '1px 1px 3px rgba(0,0,0,0.7)',
-            }}>
-              <span className="font-bold whitespace-nowrap" style={{
-                fontSize: '1.0625rem', fontFamily: 'var(--font-heading)', fontWeight: 800,
-                paddingRight: '5.5em',
-              }}>
-                {localPassiveName(p)}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* 발동 조건 */}
-        {(sinTypes.length > 0 || p.active_cond) && (
-          <div className="flex items-center gap-2 mb-3">
-            {sinTypes.map((st, i) => (
-              <Image
-                key={i}
-                src={getSinIconUrl(st)}
-                alt=""
-                width={28}
-                height={28}
-              />
-            ))}
-            {p.sin_count != null && p.sin_count > 0 && (
-              <span className="font-bold" style={{ color: '#e8dcc8', fontSize: '0.9375rem', fontFamily: 'var(--font-heading)' }}>
-                x{p.sin_count}
-              </span>
-            )}
-            {p.active_cond && (
-              <span
-                className="font-bold"
-                style={{ color: '#e8dcc8', fontSize: '0.9375rem', fontFamily: 'var(--font-heading)' }}
-              >
-                {p.active_cond === 'resonance' ? t('identity.passives.resonance') : p.active_cond === 'stock' ? t('identity.passives.stock') : p.active_cond}
-              </span>
-            )}
-          </div>
-        )}
+        <PassiveNameLabel>{localPassiveName(p)}</PassiveNameLabel>
+        <PassiveRequirements
+          requirements={requirements}
+          condition={p.active_cond === 'resonance' ? t('identity.passives.resonance') : p.active_cond === 'stock' ? t('identity.passives.stock') : null}
+          sinLabel={sin => t(`sin.${sin}` as Parameters<typeof t>[0])}
+        />
 
         {/* 설명 */}
         {(passiveDescription || passiveFlavor) && (

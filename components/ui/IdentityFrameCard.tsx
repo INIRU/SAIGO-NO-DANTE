@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Image from 'next/image'
 import { useLocale } from 'next-intl'
-import { RARITY_ICON_MAP } from '@/lib/constants/game'
+import { RARITY_ICON_MAP, isDeployedSlot } from '@/lib/constants/game'
 import { getFormationBannerUrl, getIdentityCardFrameUrl, getIdentityPortraitUrl, getSinnerBadgeRingUrl, getSinnerLogoUrl } from '@/lib/utils/images'
 import { identityCardFrame } from '@/lib/decks/identity-card-frame'
 import { identityNameLines } from '@/lib/decks/identity-name-lines'
@@ -18,14 +18,13 @@ export type IdentityFrameCardIdentity = {
   folder_name?: string | null
 }
 
-const FRONTLINE_SLOT_COUNT = 7
 const SELECTED_BANNER_URL = getFormationBannerUrl('selected')
 const BACKUP_BANNER_URL = getFormationBannerUrl('backup')
 
-/** 0-based slot_order → SELECTED (1–7) / BACKUP (8–12) banner; 99 or null = not deployed. */
+/** 0-based slot_order → SELECTED (1–DEPLOYED_SLOT_COUNT) / BACKUP (the rest of the 12) banner; 99 or null = not deployed. */
 export function getFormationOverlay(slotOrder: number | null) {
   if (slotOrder == null || slotOrder < 0 || slotOrder >= 99) return undefined
-  const isFrontline = slotOrder < FRONTLINE_SLOT_COUNT
+  const isFrontline = isDeployedSlot(slotOrder)
   return {
     kind: isFrontline ? 'selected' as const : 'backup' as const,
     order: slotOrder + 1,

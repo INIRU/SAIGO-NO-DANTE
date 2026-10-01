@@ -1,4 +1,5 @@
 import type { Skill, Passive } from '@/lib/types'
+import { splitCoinBlocks, splitGameTextLines } from '@/lib/game-text/rich-text'
 
 export type NumDiff = { from: number; to: number }
 /** A description line that differs between two uptie levels. coin 0 = not inside a coin section. */
@@ -29,15 +30,28 @@ const descChanged = (a: Described, b: Described) =>
 
 const COIN_PREFIX = /^\[(?:코인|Coin|コイン)\s?(\d+)\]\s*/
 
-/** Non-empty lines tagged with their coin; the "[코인 N]" prefix moves into the tag. */
+/**
+ * Non-empty lines tagged with their coin. The older "[코인 N]" prefix moves into the tag; game text's `<coin=N>` blocks
+ * give their lines that coin. Lines come from `splitGameTextLines`, so each is balanced on its own and can be drawn as
+ * one line (a highlight spread over several lines is reopened on each).
+ */
 function taggedLines(description: string) {
+  const { main, coins } = splitCoinBlocks(description)
   let coin = 0
-  return description.split('\n').flatMap(raw => {
+  const tagged: { coin: number; text: string }[] = []
+  for (const raw of splitGameTextLines(main)) {
     const match = raw.match(COIN_PREFIX)
     if (match) coin = Number(match[1])
     const text = raw.replace(COIN_PREFIX, '').trim()
-    return text ? [{ coin, text }] : []
-  })
+    if (text) tagged.push({ coin, text })
+  }
+  for (const block of coins) {
+    for (const raw of splitGameTextLines(block.text)) {
+      const text = raw.trim()
+      if (text) tagged.push({ coin: block.coinNum, text })
+    }
+  }
+  return tagged
 }
 
 /**

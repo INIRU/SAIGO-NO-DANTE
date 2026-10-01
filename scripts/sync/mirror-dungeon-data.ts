@@ -23,7 +23,7 @@ import { join, resolve } from 'path'
 import { gameDataPaths, implicitDataDirWarning } from './source-paths'
 import { failOnLoggedErrors, printSyncSummary } from './sync-result'
 import { giftPlaceholders, PlaceholderReport } from './placeholder-rules'
-import { existingGiftLookup, giftTiers, richestEntry, sameStoredIds, themeExclusiveGifts, type GiftTierTheme, themeBossUnitIds, themeFixedRewards, themeGiftRefs, themeNameColor, themeNameSegments, type ThemeNameSegments, unreadThemeKeys } from './mirror-dungeon-rules'
+import { existingGiftLookup, extractActivationCondition, giftTiers, type GiftActivationCondition, rawGiftEffect, translateGiftDescForCondition, richestEntry, sameStoredIds, themeExclusiveGifts, type GiftTierTheme, themeBossUnitIds, themeFixedRewards, themeGiftRefs, themeNameColor, themeNameSegments, type ThemeNameSegments, unreadThemeKeys, recipeCommonFiles } from './mirror-dungeon-rules'
 import { z } from 'zod'
 import { config } from 'dotenv'
 
@@ -237,20 +237,13 @@ function globFiles(dir: string, pattern: RegExp): string[] {
   }
 }
 
-const RECIPE_COMMON_FILES = [
-  'mirror-dungeon-common-data-md7.txt',
-  'mirror-dungeon-common-data-md7-nextupdate.txt',
-  'mirror-dungeon-common-data-md6.txt',
-  'mirror-dungeon-common-data.txt',
-]
-
 type LoadedRecipeData = {
   sourceFile: string | null
   recipes: z.infer<typeof RecipeRawSchema>[]
 }
 
 function loadLatestRecipeData(): LoadedRecipeData {
-  for (const fn of RECIPE_COMMON_FILES) {
+  for (const fn of recipeCommonFiles(globFiles(DATA_DIR, /^mirror-dungeon-common-data.*\.txt$/))) {
     const data = safeLoadJson(join(DATA_DIR, fn))
     if (!data) continue
     const table = (data as Record<string, unknown>).egoGiftCombineFixedTable as Record<string, unknown> | undefined
@@ -289,60 +282,15 @@ function parseGrade(tags: string[] | undefined): string {
   return '1'
 }
 
-const KEYWORD_FALLBACK_EN: Record<string, string> = {
-  Combustion: 'Burn', Laceration: 'Bleed', Vibration: 'Tremor',
-  Burst: 'Rupture', Sinking: 'Sinking', Breath: 'Poise', Charge: 'Charge',
-  Random: 'Random', Slash: 'Slash', Penetrate: 'Pierce', Hit: 'Blunt',
-  None: 'Common', Common: 'Common',
-  Burn: 'Burn', Bleed: 'Bleed', Rupture: 'Rupture', Poise: 'Poise',
-  VibrationExplosion: 'Tremor Burst', Switch_Vibration: 'Tremor Conversion',
-  FusionVibration: 'Composite Tremor', VibrationDistribution: 'Tremor-Distribution',
-  Binding: 'Bind', DefenseDown: 'Def Level Down', AttackUp: 'Atk Level Up',
-  Enhancement: 'Potency Up', Vulnerable: 'Fragile', Fragile: 'Fragile',
-  Blunt: 'Blunt',
-}
+let _krKeywordMap: Map<string, string> | null = null
 
-const KEYWORD_FALLBACK_JP: Record<string, string> = {
-  Combustion: '火傷', Laceration: '出血', Vibration: '振動',
-  Burst: '破裂', Sinking: '沈潜', Breath: '呼吸', Charge: '充電',
-  Random: 'ランダム', Slash: '斬撃', Penetrate: '貫通', Hit: '打撃',
-  None: '共通', Common: '共通',
-  Burn: '火傷', Bleed: '出血', Rupture: '破裂', Poise: '呼吸',
-  VibrationExplosion: '振動爆発', Switch_Vibration: '振動転換',
-  FusionVibration: '合成振動', VibrationDistribution: '振動-分配',
-  Binding: '束縛', DefenseDown: '防御レベル減少', AttackUp: '攻撃レベル増加',
-  Enhancement: '威力増加', Vulnerable: '脆弱', Fragile: '脆弱',
-  Blunt: '打撃',
-}
+/** BattleKeywords id → Korean name: the condition of a gift is read from a Korean copy of its effect (the stored effect is raw). */
+function getKrKeywordMap(): Map<string, string> {
+  if (_krKeywordMap) return _krKeywordMap
 
-type Lang = 'kr' | 'en' | 'jp'
-
-const _keywordMaps: Record<Lang, Map<string, string> | null> = { kr: null, en: null, jp: null }
-
-function getKeywordMapForLang(lang: Lang): Map<string, string> {
-  if (_keywordMaps[lang]) return _keywordMaps[lang]!
-
-  let fallback: Record<string, string>
-  let dir: string
-  let filePattern: RegExp
-
-  if (lang === 'en') {
-    fallback = KEYWORD_FALLBACK_EN
-    dir = EN_DIR
-    filePattern = /^EN_BattleKeywords.*\.txt$/
-  } else if (lang === 'jp') {
-    fallback = KEYWORD_FALLBACK_JP
-    dir = JP_DIR
-    filePattern = /^JP_BattleKeywords.*\.txt$/
-  } else {
-    fallback = KEYWORD_FALLBACK_KR
-    dir = KR_DIR
-    filePattern = /^KR_BattleKeywords.*\.txt$/
-  }
-
-  const map = new Map(Object.entries(fallback))
-  for (const f of globFiles(dir, filePattern)) {
-    const data = safeLoadJson(join(dir, f))
+  const map = new Map(Object.entries(KEYWORD_FALLBACK_KR))
+  for (const f of globFiles(KR_DIR, /^KR_BattleKeywords.*\.txt$/)) {
+    const data = safeLoadJson(join(KR_DIR, f))
     for (const item of extractList(data)) {
       const parsed = z.object({ id: z.string(), name: z.string() }).safeParse(item)
       if (parsed.success && !map.has(parsed.data.id)) {
@@ -351,21 +299,9 @@ function getKeywordMapForLang(lang: Lang): Map<string, string> {
     }
   }
 
-  _keywordMaps[lang] = map
-  if (VERBOSE) console.log(`  배틀 키워드 매핑 [${lang}]: ${map.size}종`)
+  _krKeywordMap = map
+  if (VERBOSE) console.log(`  배틀 키워드 매핑 [kr]: ${map.size}종`)
   return map
-}
-
-function cleanDesc(desc: string | undefined, lang: Lang = 'kr'): string | null {
-  if (!desc) return null
-  const map = getKeywordMapForLang(lang)
-  return desc
-    .replace(/<style="[^"]*">/g, '').replace(/<\/style>/g, '')
-    .replace(/<\/?noparse>/g, '')
-    .replace(/<size=[^>]*>/g, '').replace(/<\/size>/g, '')
-    .replace(/<color=[^>]*>/g, '').replace(/<\/color[^>]*>/g, '')
-    .replace(/\[([A-Za-z_]+)\]/g, (m, key) => map.get(key) ?? m)
-    .trim()
 }
 
 function isBuyDisabled(tags: string[] | undefined): boolean {
@@ -407,20 +343,6 @@ interface GiftRow {
   activation_condition?: GiftActivationCondition
 }
 
-type GiftActivationCondition = {
-  type: 'keyword' | 'multi_keyword' | 'affiliation' | 'skill'
-  keyword?: string
-  keywords?: string[]
-  affiliation?: string
-  affiliations?: string[]
-  skill_condition?: string
-  count: number
-}
-
-function escapeRegExp(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-}
-
 function stableJson(value: unknown): string {
   if (value === null || value === undefined) return JSON.stringify(value)
   if (Array.isArray(value)) return `[${value.map(stableJson).join(',')}]`
@@ -438,43 +360,6 @@ function sameJson(a: unknown, b: unknown): boolean {
 function getGiftImageUrl(name: string): string {
   const hash = createHash('md5').update(name).digest('hex').slice(0, 8)
   return `${STORAGE_BASE}/ego-gifts/ego-gift-${hash}.webp`
-}
-
-function extractActivationCondition(effect: string | null, keyword: string): GiftActivationCondition | undefined {
-  if (!effect) return undefined
-
-  const keywordTrimmed = keyword.trim()
-
-  const affiliationMatch = effect.match(/(?:편성된\s*)?(?:아래 효과는\s*)?(?:전투 내\s*)?([가-힣A-Za-z0-9 .·-]+?)\s*소속 인격이\s*(\d+)인 이상(?:\s*일 때|이면| 있다면)?/)
-  if (affiliationMatch) {
-    return {
-      type: 'affiliation',
-      count: Number(affiliationMatch[2]),
-      // The lazy group can start at a bullet or clause before the name ("- 턴 시작 시 중지 소속 인격이 3인 이상").
-      affiliation: affiliationMatch[1].replace(/^[-·\s]+/, '').replace(/^.*\s시\s+/, '').trim(),
-    }
-  }
-
-  const bloodfeastMatch = effect.match(/혈찬을 소모하는 스킬을 보유한 인격이\s*(\d+)인 이상/)
-  if (bloodfeastMatch) {
-    return {
-      type: 'skill',
-      count: Number(bloodfeastMatch[1]),
-      skill_condition: '혈찬 소모',
-    }
-  }
-
-  if (!keywordTrimmed || keywordTrimmed === '공통') return undefined
-
-  const keywordPattern = new RegExp(`${escapeRegExp(keywordTrimmed)}[^\\n]*?(?:공격\\s*)?스킬[^\\n]*?보유한 인격이\\s*(\\d+)인 이상`)
-  const keywordMatch = effect.match(keywordPattern)
-  if (!keywordMatch) return undefined
-
-  return {
-    type: 'keyword',
-    count: Number(keywordMatch[1]),
-    keyword: keywordTrimmed,
-  }
 }
 
 /** Per section: new and changed rows, and DB rows the extraction lacks (an extraction gap; rows are never deleted). */
@@ -705,9 +590,10 @@ async function syncGifts(): Promise<void> {
     // {0} of a convert_to gift → {{gift:<target>}}, slots of a descType gift → {{live}} (placeholder-rules.ts).
     const placeholderSource = { id, convertTo, descType: item.descType ?? null }
     const tokens = (text: string | null) => giftPlaceholders(text, placeholderSource, placeholderReport)
-    const effectBase = tokens(cleanDesc(baseLoc.desc))
-
-    const activationCondition = extractActivationCondition(effectBase, keyword)
+    // Effects are stored as the game wrote them (REQ-DATA-SYNC-036); only the activation condition, which is matched
+    // against Korean words, reads a translated copy.
+    const effectBase = tokens(rawGiftEffect(baseLoc.desc))
+    const activationCondition = extractActivationCondition(tokens(translateGiftDescForCondition(baseLoc.desc, getKrKeywordMap())), keyword)
 
     gifts.push({
       game_id: id,
@@ -720,14 +606,14 @@ async function syncGifts(): Promise<void> {
       buy_disabled: isBuyDisabled(item.tag),
       enhancement: upgrades.length > 1,
       effect_base: effectBase,
-      effect_base_en: tokens(cleanDesc(enLocalizeMap.get(baseLocalizeId)?.desc ?? enLocalizeMap.get(id)?.desc, 'en')),
-      effect_base_jp: tokens(cleanDesc(jpLocalizeMap.get(baseLocalizeId)?.desc ?? jpLocalizeMap.get(id)?.desc, 'jp')),
-      effect_plus: plusLocalizeId ? tokens(cleanDesc(localizeMap.get(plusLocalizeId)?.desc)) : null,
-      effect_plusplus: ppLocalizeId ? tokens(cleanDesc(localizeMap.get(ppLocalizeId)?.desc)) : null,
-      effect_plus_en: plusLocalizeId ? tokens(cleanDesc(enLocalizeMap.get(plusLocalizeId)?.desc, 'en')) : null,
-      effect_plus_jp: plusLocalizeId ? tokens(cleanDesc(jpLocalizeMap.get(plusLocalizeId)?.desc, 'jp')) : null,
-      effect_plusplus_en: ppLocalizeId ? tokens(cleanDesc(enLocalizeMap.get(ppLocalizeId)?.desc, 'en')) : null,
-      effect_plusplus_jp: ppLocalizeId ? tokens(cleanDesc(jpLocalizeMap.get(ppLocalizeId)?.desc, 'jp')) : null,
+      effect_base_en: tokens(rawGiftEffect(enLocalizeMap.get(baseLocalizeId)?.desc ?? enLocalizeMap.get(id)?.desc)),
+      effect_base_jp: tokens(rawGiftEffect(jpLocalizeMap.get(baseLocalizeId)?.desc ?? jpLocalizeMap.get(id)?.desc)),
+      effect_plus: plusLocalizeId ? tokens(rawGiftEffect(localizeMap.get(plusLocalizeId)?.desc)) : null,
+      effect_plusplus: ppLocalizeId ? tokens(rawGiftEffect(localizeMap.get(ppLocalizeId)?.desc)) : null,
+      effect_plus_en: plusLocalizeId ? tokens(rawGiftEffect(enLocalizeMap.get(plusLocalizeId)?.desc)) : null,
+      effect_plus_jp: plusLocalizeId ? tokens(rawGiftEffect(jpLocalizeMap.get(plusLocalizeId)?.desc)) : null,
+      effect_plusplus_en: ppLocalizeId ? tokens(rawGiftEffect(enLocalizeMap.get(ppLocalizeId)?.desc)) : null,
+      effect_plusplus_jp: ppLocalizeId ? tokens(rawGiftEffect(jpLocalizeMap.get(ppLocalizeId)?.desc)) : null,
       is_synthesis: false,
       convert_to: convertTo,
       image_url: getGiftImageUrl(baseLoc.name),
@@ -1226,7 +1112,7 @@ interface RecipeRow {
 async function syncRecipes(): Promise<void> {
   console.log(BOLD('\n[3/4] 레시피 동기화'))
 
-  // Load latest common data (md7 > md6 > base)
+  // Load the latest season's common data (highest md number, then base)
   const { sourceFile, recipes: rawRecipes } = loadLatestRecipeData()
   if (sourceFile) console.log(`  ${sourceFile}: ${rawRecipes.length}개 레시피 로드`)
 

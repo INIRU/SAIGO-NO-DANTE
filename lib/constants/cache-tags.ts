@@ -16,6 +16,7 @@ export const CACHE_TAGS = {
   egoGifts: 'ego-gifts',
   themes: 'themes',
   keywords: 'keywords',
+  gameTextRefs: 'game-text-refs',
   meta: 'meta',
   mirrorDungeon: 'mirror-dungeon',
 
@@ -42,6 +43,7 @@ export const ALL_GAME_DATA_TAGS: readonly string[] = [
   CACHE_TAGS.egoGifts,
   CACHE_TAGS.themes,
   CACHE_TAGS.keywords,
+  CACHE_TAGS.gameTextRefs,
   CACHE_TAGS.meta,
   CACHE_TAGS.mirrorDungeon,
 ] as const
@@ -56,6 +58,7 @@ export type GameDataTag = typeof CACHE_TAGS[
   | 'egoGifts'
   | 'themes'
   | 'keywords'
+  | 'gameTextRefs'
   | 'meta'
   | 'mirrorDungeon'
 ]

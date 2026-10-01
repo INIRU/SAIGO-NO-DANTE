@@ -16,12 +16,15 @@ import EgoStageTabs from '@/components/ego/EgoStageTabs'
 import { egoStages, egoSkillsAtStage, egoPassiveAtStage } from '@/lib/ego/stages'
 import SkillFrameBlock from '@/components/identity/SkillFrameBlock'
 import SkillDescription from '@/components/skill/SkillDescription'
+import { isUnbreakableCoinText } from '@/lib/identity/skill-description'
 import { useKeywords } from '@/components/providers/KeywordProvider'
 import { getLocalizedName, getLocalizedKeywordName } from '@/lib/i18n'
 import { useTranslations, useLocale } from 'next-intl'
 import type { SupportedLang } from '@/lib/i18n/types'
 import { KeywordWithTooltip } from '@/components/sinners/KeywordTooltip'
 import styles from './EGODetail.module.css'
+import { MultipliedCount, PassiveNameLabel } from '@/components/passive/PassiveParts'
+import portraitStyles from '@/styles/components/SinnerDetail.module.css'
 
 // ─── 상수 ────────────────────────────────────────────────────────────
 // Korean resistance value → translation key
@@ -74,7 +77,7 @@ function SkillFramePanel({
   // 파괴 불가 코인 감지 (0-based index)
   const unbreakableCoins = new Set<number>()
   coinEffects.forEach((effect, i) => {
-    if (effect && (effect.startsWith('파괴 불가 코인') || effect.startsWith('Unbreakable'))) unbreakableCoins.add(i)
+    if (isUnbreakableCoinText(effect)) unbreakableCoins.add(i)
   })
 
   // 스킬 이름 로컬라이즈
@@ -85,7 +88,6 @@ function SkillFramePanel({
     : skill.name
 
   // 스킬 설명 재조립 — 언어별 효과 텍스트 선택
-  const coinLabel = lang === 'ko' ? '코인' : 'Coin'
   const locCoinEffects = [
     lang === 'en' ? skill.coin1Effect_en : lang === 'ja' ? skill.coin1Effect_jp : null,
     lang === 'en' ? skill.coin2Effect_en : lang === 'ja' ? skill.coin2Effect_jp : null,
@@ -103,7 +105,9 @@ function SkillFramePanel({
   if (normalEffectLoc) descParts.push(normalEffectLoc)
   coinEffects.forEach((effect, i) => {
     const locEffect = locCoinEffects[i] ?? effect
-    if (locEffect) descParts.push(`[${coinLabel} ${i + 1}] ${locEffect}`)
+    // A <coin=N> block, not a "[코인 N]" line: a tag the main text leaves open must not run on into the coin, and a coin's
+    // lines stay together. The description reader (SkillDescription) draws the coin label for the page language.
+    if (locEffect) descParts.push(`<coin=${i + 1}>${locEffect}</coin>`)
   })
   const fullDesc = descParts.join('\n')
 
@@ -306,6 +310,8 @@ export default function EGODetailClient({ sinner, ego }: Props) {
   const sinColor = SIN_COLORS[ego.sin_affinity as SinType] ?? gradeColor
 
   const hasCor = corSkillList.length > 0
+  const corrosionArtwork = ego.corrosion_artwork_url?.trim() || null
+  const [heroArt, setHeroArt] = useState<'awakening' | 'corrosion'>('awakening')
 
   // EGO 아이콘 URL 계산
   const egoGameId = ego.image_url?.match(/\/(\d+)_awaken_profile/)?.[1] ?? ''
@@ -333,6 +339,8 @@ export default function EGODetailClient({ sinner, ego }: Props) {
     : lang === 'ja' ? passive.passive_name_jp || passive.passive_name : passive.passive_name
   const passiveDescription = lang === 'en' ? passive.passive_content_en || passive.passive_content
     : lang === 'ja' ? passive.passive_content_jp || passive.passive_content : passive.passive_content
+  const stageFlavor = 'passive_flavor' in passive ? passive : null
+  const passiveFlavor = stageFlavor && (lang === 'en' ? stageFlavor.passive_flavor_en : lang === 'ja' ? stageFlavor.passive_flavor_jp : stageFlavor.passive_flavor)
 
   return (
     <div className={styles.page}>
@@ -348,9 +356,19 @@ export default function EGODetailClient({ sinner, ego }: Props) {
             <div><h1 id="ego-title">{egoLocalName}</h1><Link href={`/sinners/${sinner.id}`}>{sinnerLocalName}</Link></div>
             <GradeImg grade={ego.grade} height={28} />
           </div>
+          {corrosionArtwork && <div className={`${portraitStyles.segment} ${portraitStyles.segmentFill} ${styles.artworkTabs}`} role="group" aria-label={egoLocalName}>
+            <button type="button" aria-pressed={heroArt === 'awakening'} onClick={() => setHeroArt('awakening')}>
+              {awakenIconUrl && <img src={awakenIconUrl} alt="" />}{t('ego.awakeningLabel')}
+            </button>
+            <button type="button" aria-pressed={heroArt === 'corrosion'} onClick={() => setHeroArt('corrosion')}>
+              {erosionIconUrl && <img src={erosionIconUrl} alt="" />}{t('ego.corrosionLabel')}
+            </button>
+          </div>}
           <div className={styles.artwork}>
-            {ego.image_url ? <Image src={getEgoArtworkUrl(ego.image_url)} alt={egoLocalName} fill priority sizes="(max-width: 767px) 85vw, 32rem" className={styles.artworkImage} />
+            {/* Both arts stay mounted (the second loads in the background): switching only fades, nothing reflows. */}
+            {ego.image_url ? <Image src={getEgoArtworkUrl(ego.image_url, ego.artwork_url)} alt={egoLocalName} fill priority sizes="(max-width: 767px) 85vw, 32rem" className={styles.artworkImage} data-hidden={heroArt === 'corrosion' || undefined} />
               : <span className={styles.artworkFallback}>{ego.grade}</span>}
+            {corrosionArtwork && <Image src={corrosionArtwork} alt={`${egoLocalName} ${t('ego.corrosionLabel')}`} fill sizes="(max-width: 767px) 85vw, 32rem" className={styles.artworkImage} data-hidden={heroArt !== 'corrosion' || undefined} />}
           </div>
           <Link href={`/sinners/${sinner.id}#ego`} className={styles.backLink}>← {t('ego.backToEgoList')}</Link>
         </section>
@@ -374,7 +392,7 @@ export default function EGODetailClient({ sinner, ego }: Props) {
               const amount = ego.cost![index]
               return amount > 0 ? <div key={sin} className={styles.cost}>
                 <Image src={getSinIconUrl(sin)} alt={t(`sin.${sin}` as Parameters<typeof t>[0])} width={28} height={28} />
-                <span>{amount}</span>
+                <MultipliedCount value={amount} />
               </div> : null
             })}</div>
           </div>}
@@ -428,8 +446,8 @@ export default function EGODetailClient({ sinner, ego }: Props) {
         {passiveName && <section className={styles.passive} aria-labelledby="ego-passive">
           <header className={styles.sectionHeading}><h2 id="ego-passive">{t('ego.passive')}</h2></header>
           <div className={styles.passiveContent}>
-            <h3>{passiveName}</h3>
-            {passiveDescription && <SkillDescription description={passiveDescription} accentColor="#c8900a" variant="detail" />}
+            <PassiveNameLabel as="h3">{passiveName}</PassiveNameLabel>
+            {(passiveDescription || passiveFlavor) && <SkillDescription description={passiveDescription ?? ''} accentColor="#c8900a" variant="detail" flavorText={passiveFlavor} />}
           </div>
         </section>}
       </div>

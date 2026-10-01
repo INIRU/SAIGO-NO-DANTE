@@ -21,8 +21,9 @@ import { PlannerIdentityBoard, PlannerIdentitySelectModal } from '@/components/p
 import SkillExchangePanel, { type SkillExchangeSkill } from '@/components/planner/SkillExchangePanel'
 import { localizeIdentityName } from '@/components/deck-detail/DeckIdentityCard'
 import { getIdentityImageUrl, getSinnerLogoUrl, getSkillIconUrl } from '@/lib/utils/images'
-import { GRADE_COLORS } from '@/lib/constants/game'
+import { GRADE_COLORS, isDeployedSlot } from '@/lib/constants/game'
 import { SIN_COLORS, SIN_KR_TO_EN, getSinIconUrl, normalizeSin } from '@/lib/constants/sin'
+import { gameTextToPlain } from '@/lib/game-text/rich-text'
 
 type DeckSubTab = 'identity' | 'ego' | 'skillset'
 const GRADE_ORDER = ['ZAYIN', 'TETH', 'HE', 'WAW', 'ALEPH']
@@ -51,7 +52,10 @@ export default function DeckSection({ state, dispatch, identities, sinners, skil
   const passives = useMemo(() => rowsAtUptie(allPassives, slotUpties), [allPassives, slotUpties])
   const t = useTranslations('planner.run')
   const tSinner = useTranslations('sinner')
-  const keywordDist = useMemo(() => computeKeywordDistribution(state.identitySlots.map(getIdentityGiftConditionKeywords)), [state.identitySlots])
+  const keywordDist = useMemo(() => computeKeywordDistribution(
+    state.identitySlots.map(getIdentityGiftConditionKeywords),
+    state.identitySlots.map(slot => isDeployedSlot(slot.slot_order)),
+  ), [state.identitySlots])
   const locale = useLocale()
   const [subTab, setSubTab] = useState<DeckSubTab>('identity')
   const [swapSinner, setSwapSinner] = useState<string | null>(null)
@@ -111,7 +115,8 @@ export default function DeckSection({ state, dispatch, identities, sinners, skil
     const invGifts = state.giftInventory.map(id => giftMap.get(Number(id))).filter(Boolean) as GiftData[]
     for (const gift of invGifts) {
       const txt = gift.effect_base ?? ''
-      const m = txt.match(/\[편성[^\]]*전용\s*효과\]|\[\d[^\]]*편성\s*전용\s*효과\]/)
+      // Game text may put colour tags (digits and all) inside the bracket label; read the text as shown.
+      const m = gameTextToPlain(txt).match(/\[편성[^\]]*전용\s*효과\]|\[\d[^\]]*편성\s*전용\s*효과\]/)
       if (!m || !gift.image_url) continue
       const slots = [...m[0].matchAll(/(\d+)/g)].map(r => parseInt(r[1]))
       for (const s of slots) {

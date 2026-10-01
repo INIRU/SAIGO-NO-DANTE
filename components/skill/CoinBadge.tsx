@@ -1,34 +1,24 @@
-import { UNBREAKABLE_COIN_COLOR } from '@/lib/identity/skill-description'
-import { COIN_BADGE_STYLES } from './tokens'
+import Image from 'next/image'
+import { useTranslations } from 'next-intl'
+import { getGameUiAsset } from '@/lib/utils/game-ui'
+import styles from './CoinBadge.module.css'
 
 interface CoinBadgeProps {
   number: number
-  accentColor: string
-  isUnbreakable?: boolean
+  /** Marker size; the numeral scales with it. */
+  size?: string
 }
 
-export default function CoinBadge({ number, accentColor, isUnbreakable = false }: CoinBadgeProps) {
-  const color = isUnbreakable ? UNBREAKABLE_COIN_COLOR : accentColor
-  const style = isUnbreakable ? COIN_BADGE_STYLES.unbreakable : COIN_BADGE_STYLES.normal
+/** The coin slot of a skill as the game marks it: its bronze octagon with the coin's Roman numeral (I..X). */
+export default function CoinBadge({ number, size = '1.75rem' }: CoinBadgeProps) {
+  const t = useTranslations()
+  const label = `${t('identity.skills.coin')} ${number}`
   return (
-    <div
-      style={{
-        flexShrink: 0,
-        width: '1rem',
-        height: '1rem',
-        borderRadius: '50%',
-        background: `${color}${style.bg}`,
-        border: `1px solid ${color}${style.border}`,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        color,
-        fontFamily: 'monospace',
-        fontSize: '0.5625rem',
-        fontWeight: 'bold',
-      }}
-    >
-      {number}
-    </div>
+    <span className={styles.coin} style={{ '--coin-size': size } as React.CSSProperties} role="img" aria-label={label} title={label}>
+      <Image src={getGameUiAsset('coins/frame')} alt="" width={227} height={222} className={styles.frame} />
+      {number >= 1 && number <= 10
+        ? <Image src={getGameUiAsset(`coins/numerals/${number}`)} alt="" width={64} height={122} className={styles.numeral} />
+        : <span className={styles.digits} aria-hidden="true">{number}</span>}
+    </span>
   )
 }
