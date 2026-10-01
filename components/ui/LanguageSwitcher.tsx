@@ -1,15 +1,42 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { Suspense, useState, useRef, useEffect } from 'react';
 import { Languages, ChevronDown, Check } from 'lucide-react';
 import { useLocale } from 'next-intl';
 import { useRouter, usePathname } from '@/lib/i18n/navigation';
 import { SUPPORTED_LANGS } from '@/lib/i18n/types';
 
-export default function LanguageSwitcher({ up = false }: { up?: boolean }) {
+/** The option list is the only part that needs the pathname (to stay on the same page in the other language). */
+function LanguageOptions({ up, onDone }: { up: boolean; onDone: () => void }) {
   const locale = useLocale();
   const router = useRouter();
   const pathname = usePathname();
+  return (
+    <div
+      role="listbox"
+      className={`absolute right-0 z-50 min-w-[9rem] rounded-lg border border-[var(--border)] bg-[var(--bg-card)] p-1 shadow-[var(--shadow-lg)] ${up ? 'bottom-full mb-2' : 'top-full mt-2'}`}
+    >
+      {SUPPORTED_LANGS.map(l => {
+        const isActive = l.value === locale;
+        return (
+          <button
+            key={l.value}
+            role="option"
+            aria-selected={isActive}
+            onClick={() => { router.replace(pathname, { locale: l.value }); onDone(); }}
+            className={`flex w-full cursor-pointer items-center gap-2.5 rounded-[0.3125rem] px-3 py-2 text-[0.875rem] transition-colors hover:bg-[rgba(200,144,10,0.06)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(232,176,48,0.55)] ${isActive ? 'text-[var(--gold-light)]' : 'text-[var(--text-secondary)] hover:text-[var(--gold-light)]'}`}
+          >
+            <span className="flex-1 text-left">{l.nativeLabel}</span>
+            {isActive && <Check size={14} style={{ color: 'var(--gold)' }} />}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+export default function LanguageSwitcher({ up = false }: { up?: boolean }) {
+  const locale = useLocale();
 
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -43,28 +70,7 @@ export default function LanguageSwitcher({ up = false }: { up?: boolean }) {
           }}
         />
       </button>
-      {open && (
-        <div
-          role="listbox"
-          className={`absolute right-0 z-50 min-w-[9rem] rounded-lg border border-[var(--border)] bg-[var(--bg-card)] p-1 shadow-[var(--shadow-lg)] ${up ? 'bottom-full mb-2' : 'top-full mt-2'}`}
-        >
-          {SUPPORTED_LANGS.map(l => {
-            const isActive = l.value === locale;
-            return (
-              <button
-                key={l.value}
-                role="option"
-                aria-selected={isActive}
-                onClick={() => { router.replace(pathname, { locale: l.value }); setOpen(false); }}
-                className={`flex w-full cursor-pointer items-center gap-2.5 rounded-[0.3125rem] px-3 py-2 text-[0.875rem] transition-colors hover:bg-[rgba(200,144,10,0.06)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(232,176,48,0.55)] ${isActive ? 'text-[var(--gold-light)]' : 'text-[var(--text-secondary)] hover:text-[var(--gold-light)]'}`}
-              >
-                <span className="flex-1 text-left">{l.nativeLabel}</span>
-                {isActive && <Check size={14} style={{ color: 'var(--gold)' }} />}
-              </button>
-            );
-          })}
-        </div>
-      )}
+      {open && <Suspense fallback={null}><LanguageOptions up={up} onDone={() => setOpen(false)} /></Suspense>}
     </div>
   );
 }
