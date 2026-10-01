@@ -6,7 +6,6 @@ import KeywordCard, { type KeywordEntry } from '@/app/[lang]/keywords/KeywordCar
 import { KeywordChipDescription } from '@/components/decks/NoteChips'
 import DeckIdentityCard, { PassiveDescriptionLines, type IdentitySlot } from '@/components/deck-detail/DeckIdentityCard'
 import { EffectText } from '@/components/ui/GiftDetailModal'
-import { GAME_TEXT_HIGHLIGHT } from '@/components/game-text/GameText'
 import type { GameTextRefNames } from '@/lib/db/game-text-refs'
 
 const REFS: GameTextRefNames = {
@@ -31,7 +30,8 @@ describe('REQ-SHARED-020 flavor text of raw game text', () => {
     const html = wrap(<SkillDescription description="" flavorText={'<i>속삭임</i> <color=#ff0000>붉은</color> 끝'} accentColor="#c2b79f" />)
     expect(html).not.toContain('&lt;')
     expect(html).toContain('붉은')
-    expect(html).toContain('color:#ff0000')
+    // REQ-SHARED-022: the colour tag is read, its colour is not applied.
+    expect(html).not.toContain('color:#ff0000')
     expect(html).toContain('font-style:italic')
   })
 
@@ -58,8 +58,9 @@ describe('REQ-SHARED-020 keyword descriptions with tags', () => {
     const html = wrap(<KeywordChipDescription keyword="화상" info={KEYWORDS['화상']} />)
     expect(html).not.toContain('&lt;')
     expect(html).not.toContain('[Combustion]')
-    expect(html).toContain(`color:${GAME_TEXT_HIGHLIGHT}`)
-    expect(html).toContain('color:#ff0000')
+    expect(html).toContain('끝')
+    expect(html).not.toContain('#f8c200')
+    expect(html).not.toContain('color:#ff0000')
   })
 
   it('REQ-SHARED-020 gives the deck identity theme keyword a plain-text title without tags', () => {
@@ -79,18 +80,19 @@ describe('REQ-SHARED-020 keyword descriptions with tags', () => {
 
 describe('REQ-SHARED-020 a tag that spans lines keeps applying on every line', () => {
   const SPAN = '<style="highlight">- 첫째\n- 둘째</style>'
-  const highlighted = (html: string) => html.match(new RegExp(`color:${GAME_TEXT_HIGHLIGHT}`, 'g'))?.length ?? 0
+  // The highlight colour is no longer drawn (REQ-SHARED-022): each line must still lose the tag and keep its text.
+  const both = (html: string) => html.includes('첫째') && html.includes('둘째') && !html.includes('#f8c200') && !html.includes('style=&quot;')
 
   it('REQ-SHARED-020 in the deck identity passive description', () => {
     const html = wrap(<PassiveDescriptionLines text={SPAN} color="#686050" />)
     expect(html).not.toContain('&lt;')
-    expect(highlighted(html)).toBe(2)
+    expect(both(html)).toBe(true)
   })
 
   it('REQ-SHARED-020 in the gift detail effect, keeping the bullet layout of a highlighted line', () => {
     const html = wrap(<EffectText text={SPAN} color="#c2b79f" />)
     expect(html).not.toContain('&lt;')
-    expect(highlighted(html)).toBe(2)
+    expect(both(html)).toBe(true)
     expect(html.match(/text-indent:-0\.625rem/g)?.length).toBe(2)
   })
 })
