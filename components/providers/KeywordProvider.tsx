@@ -9,144 +9,18 @@ import { STORAGE_BASE } from '@/lib/constants/game'
 import { getKeywordIconUrl } from '@/lib/constants/keywords'
 import { getKeywordIndex, getLocalizedKeywordIndex, resolveKeywordIconUrl, type KeywordInfo } from '@/lib/keywords/catalog'
 export { resolveKeywordIconUrl, type KeywordInfo } from '@/lib/keywords/catalog'
-import { SIN_COLORS } from '@/lib/constants/sin'
+import { KEYWORD_DEFAULT_COLOR, KEYWORD_NEGATIVE_COLOR, resolveKeywordTextColor } from '@/lib/keywords/text-color'
 import { GIFT_KEYWORD_COLORS } from '@/lib/constants/gift'
 import { getLocalizedKeywordDesc, getLocalizedKeywordName } from '@/lib/i18n'
 import type { SupportedLang } from '@/lib/i18n'
 import { skillConditionColor } from '@/lib/identity/skill-condition-color'
-import type { SinType } from '@/lib/types'
 import PlaceholderLabel from '@/components/ui/PlaceholderLabel'
 import { leadingPlaceholder, type PlaceholderToken } from '@/lib/game-text/placeholders'
+import { isRawGameText, mayBeRawGameText, parseGameText } from '@/lib/game-text/rich-text'
+import { preloadGameTextRefDescriptions, useGameTextRefDescription, useGameTextRefs, wantGameTextRefs } from '@/lib/hooks/useGameTextRefs'
+import GameText from '@/components/game-text/GameText'
 
 const KeywordContext = createContext<Record<string, KeywordInfo>>({})
-
-const KEYWORD_POSITIVE_COLOR = '#f8c200'
-const KEYWORD_NEGATIVE_COLOR = '#e30000'
-const KEYWORD_WARNING_COLOR = '#ff0000'
-const KEYWORD_DEFAULT_COLOR = '#e8dcc8'
-
-const WARNING_BRACKET_KEYWORDS = new Set([
-  'CantDuel',
-  'CannotDuel',
-  'Cannot Duel',
-  "Can't Duel",
-  'Unclashable',
-  '합 불가',
-  '합 불가능',
-  '일방 공격',
-])
-
-const POSITIVE_KEYWORD_FALLBACKS = new Set([
-  '도발치',
-  '신속',
-  '피해량 증가',
-  '공격 레벨 증가',
-  '위력 증가',
-  '우울 위력 증가',
-  '수비 위력 증가',
-  '공격 위력 증가',
-  '크리티컬 피해량 증가',
-  '타격 피해량 증가',
-  '타격 위력 증가',
-  '정신력 회복 효율',
-  '빼기 코인 강화',
-  '관통 피해량 증가',
-  '관통 위력 증가',
-  '더하기 코인 강화',
-  '보호',
-  '참격 피해량 증가',
-  '참격 위력 증가',
-  '체력 회복 증가',
-  '기본 위력 증가',
-  '분노 위력 증가',
-  '색욕 위력 증가',
-  '나태 위력 증가',
-  '탐식 위력 증가',
-  '오만 위력 증가',
-  '질투 위력 증가',
-  '호흡',
-  '충전',
-  '얽힘',
-  'Poise',
-  'Charge',
-  'Entanglement',
-  'Haste',
-  'Protection',
-  'Damage Up',
-  'Attack Level Up',
-  'Power Up',
-  'Coin Power Up',
-])
-
-const NEGATIVE_KEYWORD_FALLBACKS = new Set([
-  '공격 레벨 감소',
-  '속박',
-  '화상',
-  '방어 레벨 감소',
-  '연약',
-  '출혈',
-  '검흔[잔상]',
-  '검흔',
-  '잔상',
-  '신경 손상',
-  '마비',
-  '위력 감소',
-  '침잠',
-  '체력 회복 감소',
-  '진동',
-  '질투 취약',
-  '취약',
-  '파열',
-  'Burn',
-  'Bleed',
-  'Bladetrail [Afterimage]',
-  'Bladetrail',
-  'Afterimage',
-  'Tremor',
-  'Rupture',
-  'Sinking',
-  'Paralysis',
-  'Bind',
-  'Fragile',
-  'Vulnerable',
-  'Damage Down',
-  'Attack Down',
-  'Attack Level Down',
-])
-
-function normalizedKeywordToken(value: string): string {
-  const trimmed = value.trim()
-  const wrapperMatch = trimmed.match(/^(?:\[([^\]]+)\]|【([^】]+)】)$/)
-  return wrapperMatch ? (wrapperMatch[1] ?? wrapperMatch[2]).trim() : trimmed
-}
-
-function resolveKeywordTextColor(keyword: string, info?: KeywordInfo, fallbackKey?: string): string {
-  const token = normalizedKeywordToken(keyword)
-  const key = fallbackKey ? normalizedKeywordToken(fallbackKey) : token
-  if (WARNING_BRACKET_KEYWORDS.has(token) || WARNING_BRACKET_KEYWORDS.has(key)) return KEYWORD_WARNING_COLOR
-  const effectType = info?.effectType ?? info?.effect_type
-  if (effectType === 'negative') return KEYWORD_NEGATIVE_COLOR
-  if (effectType === 'positive') return KEYWORD_POSITIVE_COLOR
-  if (!effectType) {
-    if (NEGATIVE_KEYWORD_FALLBACKS.has(key) || NEGATIVE_KEYWORD_FALLBACKS.has(token)) return KEYWORD_NEGATIVE_COLOR
-    if (
-      token.includes('검흔') ||
-      token.includes('잔상') ||
-      token.includes('Bladetrail') ||
-      token.includes('Afterimage') ||
-      key.includes('검흔') ||
-      key.includes('잔상') ||
-      key.includes('Bladetrail') ||
-      key.includes('Afterimage')
-    ) return KEYWORD_NEGATIVE_COLOR
-    if (POSITIVE_KEYWORD_FALLBACKS.has(key) || POSITIVE_KEYWORD_FALLBACKS.has(token)) return KEYWORD_POSITIVE_COLOR
-  }
-
-  const sin = info?.sinAffinity
-  if (sin && sin in SIN_COLORS) return SIN_COLORS[sin as SinType]
-
-  return KEYWORD_DEFAULT_COLOR
-}
 
 /** Keyword name colour shared by the tooltip and the keyword archive. */
 export function keywordAccentColor(keyword: string, info?: KeywordInfo): string {
@@ -184,12 +58,12 @@ export function preloadKeywordDescriptions(locale: string) {
 
 /**
  * Description of a keyword in the page language: from the catalog when it carries one (older snapshots), otherwise from
- * the lazily loaded descriptions. `undefined` while loading; '' when the keyword has none.
+ * the lazily loaded descriptions (only when `enabled`). `undefined` while loading; '' when the keyword has none.
  */
-export function useKeywordDescription(keyword: string, info: KeywordInfo | undefined): string | undefined {
+export function useKeywordDescription(keyword: string, info: KeywordInfo | undefined, enabled = true): string | undefined {
   const locale = useLocale()
   const inline = info ? getLocalizedKeywordDesc(info.desc, info, locale as SupportedLang) : ''
-  const { data, error } = useSWR(inline ? null : descriptionsUrl(locale), fetchDescriptions, DESCRIPTION_OPTIONS)
+  const { data, error } = useSWR(inline || !enabled ? null : descriptionsUrl(locale), fetchDescriptions, DESCRIPTION_OPTIONS)
   if (inline) return inline
   if (data) return data[keyword] ?? ''
   return error ? '' : undefined
@@ -206,11 +80,18 @@ type FormatSkillDescOptions = {
 export function useFormatSkillDesc() {
   const keywords = useKeywords()
   const locale = useLocale()
+  const { refIds } = useGameTextRefs({ lazy: true })
 
   const { localKeywords, localToKr } = getLocalizedKeywordIndex(keywords, locale)
 
   return useCallback(
     (text: string, color: string, skillNameColors?: Record<string, string>, allowedKeywords?: Set<string>, options?: FormatSkillDescOptions) => {
+      // Game source text (Unity tags, [Id] refs) is drawn as the game wrote it; only older stored text is guessed at below.
+      // User notes (escapeKeywords) stay on the older path, which is also why they never make the page load the ref table.
+      if (!options?.escapeKeywords && mayBeRawGameText(text)) {
+        wantGameTextRefs()
+        if (isRawGameText(text, refIds)) return <GameText nodes={parseGameText(text)} color={color} keywords={keywords} keywordRef={KeywordWithTooltip} />
+      }
       const filtered = allowedKeywords
         ? localKeywords.filter(kw => {
             const krName = localToKr[kw] ?? kw
@@ -219,7 +100,7 @@ export function useFormatSkillDesc() {
         : localKeywords
       return formatSkillDescInner(text, color, filtered, keywords, skillNameColors, localToKr, options)
     },
-    [keywords, localKeywords, localToKr],
+    [keywords, localKeywords, localToKr, refIds],
   )
 }
 
@@ -264,8 +145,12 @@ function highlightValues(text: string, termColor: string) {
         : <span key={i} style={{ color: termColor, fontWeight: 600 }}>{part}</span>)
 }
 
-function KwTooltipPopup({ id, rect, iconUrl, keyword, info, onMouseEnter, onMouseLeave }: {
-  id: string; rect: DOMRect; iconUrl: string | null; keyword: string; info: KeywordInfo
+/**
+ * Tooltip of a keyword. `info` is its keyword_meta row; without one (a `[Id]` of game text that has no row) the popup
+ * shows the name as given and the game's own description of `refId`, drawn as game text.
+ */
+function KwTooltipPopup({ id, rect, iconUrl, keyword, info, refId, onMouseEnter, onMouseLeave }: {
+  id: string; rect: DOMRect; iconUrl: string | null; keyword: string; info?: KeywordInfo; refId?: string
   onMouseEnter: () => void; onMouseLeave: () => void
 }) {
   const contentRef = useRef<HTMLDivElement>(null)
@@ -274,8 +159,11 @@ function KwTooltipPopup({ id, rect, iconUrl, keyword, info, onMouseEnter, onMous
   const locale = useLocale()
 
   const formatDescription = useFormatSkillDesc()
+  const keywords = useKeywords()
   const localName = getLocalizedKeywordName(keyword, info, locale as SupportedLang)
-  const localDesc = useKeywordDescription(keyword, info)
+  const metaDesc = useKeywordDescription(keyword, info, !!info)
+  const refDesc = useGameTextRefDescription(refId ?? '', !info && !!refId)
+  const localDesc = info ? metaDesc : refDesc
 
   const spaceAbove = rect.top
   const spaceBelow = window.innerHeight - rect.bottom
@@ -335,7 +223,7 @@ function KwTooltipPopup({ id, rect, iconUrl, keyword, info, onMouseEnter, onMous
             <KeywordIcon src={iconUrl} alt="" width={16} height={16} unoptimized style={{ flexShrink: 0, width: '1.5rem', height: '1.5rem' }} />
           )}
           {localName}
-          {info.maxStack ? (
+          {info?.maxStack ? (
             <span style={{ marginLeft: 'auto', fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
               {t('keyword.maxStack')} <b style={{ color: '#e8b030' }}>{info.maxStack}</b>
             </span>
@@ -344,7 +232,9 @@ function KwTooltipPopup({ id, rect, iconUrl, keyword, info, onMouseEnter, onMous
         <span style={{ color: '#d0c7b8', fontSize: '0.875rem', lineHeight: 1.75, display: 'block', whiteSpace: 'pre-line' }}>
           {localDesc === undefined
             ? <span aria-hidden="true" style={{ display: 'block', height: '3.5em', borderRadius: '0.25rem', background: 'linear-gradient(90deg, #211a12, #2b2218, #211a12)' }} />
-            : formatDescription(localDesc, '#d0c7b8', undefined, undefined, { highlightValues: color })}
+            : info
+              ? formatDescription(localDesc, '#d0c7b8', undefined, undefined, { highlightValues: color })
+              : <GameText nodes={parseGameText(localDesc)} color="#d0c7b8" keywords={keywords} keywordRef={KeywordWithTooltip} nested />}
         </span>
       </div>
       {overflowing && (
@@ -370,6 +260,9 @@ export function KeywordWithTooltip({
   inline,
   children,
   displayColor,
+  plain,
+  refId,
+  nested,
 }: {
   keyword: string
   /** KR key for lookup when keyword is an EN/JP name */
@@ -377,6 +270,12 @@ export function KeywordWithTooltip({
   inline?: boolean
   children?: React.ReactNode
   displayColor?: string
+  /** Only the tooltip: no icon in front of the text and no keyword colour on it (a `<link>` in game text). */
+  plain?: boolean
+  /** A keyword `[Id]` of game text: when it has no keyword_meta row the tooltip shows the game's own description of it. */
+  refId?: string
+  /** Inside a tooltip: such a keyword without a keyword_meta row gets no tooltip of its own (it would close its parent). */
+  nested?: boolean
 }) {
   const ref = useRef<HTMLSpanElement>(null)
   const tooltipId = useId()
@@ -385,19 +284,21 @@ export function KeywordWithTooltip({
   const keywords = useKeywords()
   const lookupKey = krKey ?? keyword
   const info = keywords[lookupKey]
-  const iconUrl = getKeywordIconUrl(lookupKey, info?.iconSlug)
+  const hasTooltip = !!info || (!!refId && !nested)
+  const iconUrl = refId && !info ? null : getKeywordIconUrl(lookupKey, info?.iconSlug)
   const [failedIconUrl, setFailedIconUrl] = useState<string | null>(null)
   const visibleIconUrl = failedIconUrl === iconUrl ? null : iconUrl
 
   const locale = useLocale()
   const hide = useCallback(() => setRect(null), [])
   const show = useCallback(() => {
-    preloadKeywordDescriptions(locale)
+    if (refId && !info) preloadGameTextRefDescriptions(locale)
+    else preloadKeywordDescriptions(locale)
     if (activeKwClose && activeKwClose !== hide) activeKwClose()
     clearTimeout(hideTimeout.current)
     setRect(ref.current?.getBoundingClientRect() ?? null)
     activeKwClose = hide
-  }, [hide, locale])
+  }, [hide, locale, refId, info])
   const scheduleHide = useCallback(() => {
     hideTimeout.current = setTimeout(() => { setRect(null); if (activeKwClose === hide) activeKwClose = null }, 120)
   }, [hide])
@@ -436,29 +337,30 @@ export function KeywordWithTooltip({
     resolvedDisplayColor = resolveKeywordTextColor(keyword, info, lookupKey)
   }
 
-  const renderedChildren = resolvedDisplayColor !== KEYWORD_DEFAULT_COLOR
-    ? isValidElement<{ style?: React.CSSProperties }>(children)
+  const renderedChildren = plain || resolvedDisplayColor === KEYWORD_DEFAULT_COLOR
+    ? children
+    : isValidElement<{ style?: React.CSSProperties }>(children)
       ? cloneElement(children, { style: { ...children.props.style, color: resolvedDisplayColor } })
       : <span style={{ color: resolvedDisplayColor }}>{children}</span>
-    : children
 
-  if (!info && !iconUrl) return <>{renderedChildren}</>
+  if (plain ? !hasTooltip : !hasTooltip && !iconUrl) return <>{renderedChildren}</>
 
   return (
     <span
       ref={ref}
+      data-game-ref={refId}
       className="inline keyword-token rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--gold)]"
       onMouseEnter={show}
       onMouseLeave={scheduleHide}
       onFocus={show}
       onBlur={scheduleHide}
-      onKeyDown={info ? e => { if (e.key === 'Escape') hide() } : undefined}
+      onKeyDown={hasTooltip ? e => { if (e.key === 'Escape') hide() } : undefined}
       onClick={toggle}
-      tabIndex={info ? 0 : undefined}
-      aria-describedby={rect && info ? tooltipId : undefined}
-      style={{ cursor: info ? 'help' : 'default', position: 'relative' }}
+      tabIndex={hasTooltip ? 0 : undefined}
+      aria-describedby={rect && hasTooltip ? tooltipId : undefined}
+      style={{ cursor: hasTooltip ? 'help' : 'default', position: 'relative' }}
     >
-      {visibleIconUrl && (
+      {!plain && visibleIconUrl && (
         <KeywordIcon
           src={visibleIconUrl}
           onError={() => setFailedIconUrl(visibleIconUrl)}
@@ -476,8 +378,8 @@ export function KeywordWithTooltip({
         />
       )}
       {renderedChildren}
-      {rect && info && typeof document !== 'undefined' && createPortal(
-        <KwTooltipPopup id={tooltipId} rect={rect} iconUrl={visibleIconUrl} keyword={lookupKey} info={info} onMouseEnter={cancelHide} onMouseLeave={scheduleHide} />,
+      {rect && hasTooltip && typeof document !== 'undefined' && createPortal(
+        <KwTooltipPopup id={tooltipId} rect={rect} iconUrl={visibleIconUrl} keyword={info ? lookupKey : keyword} info={info} refId={refId} onMouseEnter={cancelHide} onMouseLeave={scheduleHide} />,
         document.body,
       )}
     </span>
