@@ -14,7 +14,7 @@ import { GIFT_KEYWORD_COLORS } from '@/lib/constants/gift'
 import { getLocalizedKeywordDesc, getLocalizedKeywordName } from '@/lib/i18n'
 import type { SupportedLang } from '@/lib/i18n'
 import { skillConditionColor } from '@/lib/identity/skill-condition-color'
-import PlaceholderLabel from '@/components/ui/PlaceholderLabel'
+import PlaceholderLabel, { PlaceholderText } from '@/components/ui/PlaceholderLabel'
 import { leadingPlaceholder, type PlaceholderToken } from '@/lib/game-text/placeholders'
 import { isRawGameText, mayBeRawGameText, parseGameText } from '@/lib/game-text/rich-text'
 import { preloadGameTextRefDescriptions, useGameTextRefDescription, useGameTextRefs, wantGameTextRefs } from '@/lib/hooks/useGameTextRefs'
@@ -102,6 +102,20 @@ export function useFormatSkillDesc() {
     },
     [keywords, localKeywords, localToKr, refIds],
   )
+}
+
+/**
+ * For stored text that is not a skill description (flavor, a keyword's own description): game source text is drawn as
+ * the game wrote it, anything else is shown as written, `{{token}}` as labels. Plain words are never searched for keywords.
+ * `nested` is for use inside a tooltip (see GameText).
+ */
+export function useFormatGameText() {
+  const keywords = useKeywords()
+  return useCallback((text: string, color: string, nested = false) => {
+    if (!mayBeRawGameText(text)) return <PlaceholderText text={text} />
+    wantGameTextRefs()
+    return <GameText nodes={parseGameText(text)} color={color} keywords={keywords} keywordRef={KeywordWithTooltip} nested={nested} />
+  }, [keywords])
 }
 
 // ─── 내부 구현 (KeywordTooltip.tsx에서 이동) ────────────────────────

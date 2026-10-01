@@ -16,6 +16,7 @@ import EgoStageTabs from '@/components/ego/EgoStageTabs'
 import { egoStages, egoSkillsAtStage, egoPassiveAtStage } from '@/lib/ego/stages'
 import SkillFrameBlock from '@/components/identity/SkillFrameBlock'
 import SkillDescription from '@/components/skill/SkillDescription'
+import { isUnbreakableCoinText } from '@/lib/identity/skill-description'
 import { useKeywords } from '@/components/providers/KeywordProvider'
 import { getLocalizedName, getLocalizedKeywordName } from '@/lib/i18n'
 import { useTranslations, useLocale } from 'next-intl'
@@ -74,7 +75,7 @@ function SkillFramePanel({
   // 파괴 불가 코인 감지 (0-based index)
   const unbreakableCoins = new Set<number>()
   coinEffects.forEach((effect, i) => {
-    if (effect && (effect.startsWith('파괴 불가 코인') || effect.startsWith('Unbreakable'))) unbreakableCoins.add(i)
+    if (isUnbreakableCoinText(effect)) unbreakableCoins.add(i)
   })
 
   // 스킬 이름 로컬라이즈
@@ -85,7 +86,6 @@ function SkillFramePanel({
     : skill.name
 
   // 스킬 설명 재조립 — 언어별 효과 텍스트 선택
-  const coinLabel = lang === 'ko' ? '코인' : 'Coin'
   const locCoinEffects = [
     lang === 'en' ? skill.coin1Effect_en : lang === 'ja' ? skill.coin1Effect_jp : null,
     lang === 'en' ? skill.coin2Effect_en : lang === 'ja' ? skill.coin2Effect_jp : null,
@@ -103,7 +103,9 @@ function SkillFramePanel({
   if (normalEffectLoc) descParts.push(normalEffectLoc)
   coinEffects.forEach((effect, i) => {
     const locEffect = locCoinEffects[i] ?? effect
-    if (locEffect) descParts.push(`[${coinLabel} ${i + 1}] ${locEffect}`)
+    // A <coin=N> block, not a "[코인 N]" line: a tag the main text leaves open must not run on into the coin, and a coin's
+    // lines stay together. The description reader (SkillDescription) draws the coin label for the page language.
+    if (locEffect) descParts.push(`<coin=${i + 1}>${locEffect}</coin>`)
   })
   const fullDesc = descParts.join('\n')
 

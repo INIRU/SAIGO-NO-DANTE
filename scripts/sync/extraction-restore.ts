@@ -21,6 +21,7 @@ export const RESTORE_TABLES: readonly { table: string; key: readonly string[]; p
   { table: 'identities', key: ['id'] },
   { table: 'ego', key: ['id'] },
   { table: 'keyword_meta', key: ['name'] },
+  { table: 'game_text_refs', key: ['id'] },
   { table: 'ego_gifts', key: ['id'] },
   { table: 'ego_gift_themes', key: ['id'] },
   { table: 'ego_gift_recipes', key: ['id'] },

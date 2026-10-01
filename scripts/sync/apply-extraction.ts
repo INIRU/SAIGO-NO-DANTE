@@ -10,7 +10,7 @@
 import { spawnSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import { existsSync, mkdirSync, openSync, closeSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
-import { basename, dirname, join, resolve } from 'node:path'
+import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { createClient } from '@supabase/supabase-js'
 import { config } from 'dotenv'
@@ -22,6 +22,7 @@ import { egoDrift } from './ego-drift'
 import { extractionGaps as findGaps, leftoverChanges, parseSyncSummary, storageKeyOf } from './sync-result'
 import { eventImageIdFromFilename } from '../assets/event-image-source'
 import { PLACEHOLDER_CHECK_COLUMNS, rowsWithRawPlaceholders } from './placeholder-rules'
+import { STEPS, catalogSummaryOf, stepCommand, verifySteps } from './extraction-steps'
 
 config({ path: '.env.local', quiet: true })
 const args = process.argv.slice(2)
@@ -29,22 +30,9 @@ const option = (name: string) => { const at = args.indexOf(name); return at === 
 const FIX = args.includes('--fix')
 // Bundled next to the other sync bundles (no tsx or repository on the Windows PC).
 const BUNDLE_DIR = import.meta.url.endsWith('.mjs') ? dirname(fileURLToPath(import.meta.url)) : null
-const command = (script: string, rest: string[]) => BUNDLE_DIR
-  ? [join(BUNDLE_DIR, basename(script).replace(/\.ts$/, '.mjs')), ...rest]
-  : [...(script.endsWith('.ts') ? ['--import', 'tsx'] : []), script, ...rest]
+const command = (script: string, rest: string[]) => stepCommand(script, rest, BUNDLE_DIR)
 // Every table any step writes, saved before the first write; extraction-restore.ts puts them back.
 const BACKUP_TABLES = RESTORE_TABLES.map(item => item.table)
-
-type Step = { name: string; script: string; args: string[] }
-const STEPS: Step[] = [
-  // --keywords: identity keywords follow the extraction like every other field.
-  { name: 'identity', script: 'scripts/sync/identity-data.ts', args: ['--keywords'] },
-  // Keyword catalogue (names, descriptions, icons, max stack) for every keyword the identities, EGO and gifts use.
-  { name: 'keywords', script: 'scripts/sync/identity-data.ts', args: ['--rebuild-keyword-meta'] },
-  // Events come from rebuild-mirror-events; the legacy event section of this script is skipped.
-  { name: 'mirror', script: 'scripts/sync/mirror-dungeon-data.ts', args: ['--gifts-only', '--themes-only', '--recipes-only'] },
-  { name: 'events', script: 'scripts/sync/rebuild-mirror-events.ts', args: [] },
-]
 
 const client = () => createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY!)
 const db = () => client().schema('limbus')
@@ -75,11 +63,13 @@ function run(work: string, label: string, command: string[], env: NodeJS.Process
 
 const logOf = (work: string, label: string) => readFileSync(join(work, 'logs', `${label}.log`), 'utf8')
 
-/** Gift, theme, recipe and keyword catalogue sections of one pass (mirror and keyword steps), or null if either lacks a summary. */
-function catalogSummary(work: string, pass: 'dry-run' | 'verify') {
+/**
+ * Gift, theme, recipe, keyword catalogue and (refs) reference table sections of one pass, or null if a step lacks a summary.
+ * The completeness check leaves refs out: reference rows the source lacks stay in the DB.
+ */
+function catalogSummary(work: string, pass: 'dry-run' | 'verify', refs = pass === 'verify') {
   const label = (step: string) => pass === 'verify' ? `verify-${step}` : `${step}-dry-run`
-  const mirror = parseSyncSummary(logOf(work, label('mirror'))), keywords = parseSyncSummary(logOf(work, label('keywords')))
-  return mirror && keywords ? { ...mirror, ...keywords } : null
+  return catalogSummaryOf(step => parseSyncSummary(logOf(work, label(step))), refs)
 }
 
 type EgoPlan = { egos: Record<string, unknown>[]; skills: Record<string, unknown>[]; passives: Record<string, unknown>[] }
@@ -100,7 +90,7 @@ async function egoDiffs(work: string, env: NodeJS.ProcessEnv, label: string, ids
 
 /** After --fix: each step's dry-run and the EGO check again; whatever they would still change is a mismatch. */
 async function leftoverDiffs(work: string, env: NodeJS.ProcessEnv, egoIds: string[]) {
-  for (const step of STEPS.filter(item => item.name !== 'events')) run(work, `verify-${step.name}`, command(step.script, step.args), env)
+  for (const step of verifySteps()) run(work, `verify-${step.name}`, command(step.script, step.args), env)
   const left = leftoverChanges(parseSyncSummary(logOf(work, 'verify-identity')), catalogSummary(work, 'verify'))
   // Events: rebuild-mirror-events.ts reads its rows back and fails on any difference during --fix.
   for (const ego of await egoDiffs(work, env, 'verify-ego', egoIds)) left.push(`EGO ${ego.gameId} ${ego.fields.join(',')}`)
@@ -108,8 +98,8 @@ async function leftoverDiffs(work: string, env: NodeJS.ProcessEnv, egoIds: strin
 }
 
 /**
- * Display columns that still hold a bare game slot ({0}, {1:F1}) or a single-brace name ({amount}) after the apply.
- * The syncs store tokens ({{live}} …) instead, so any row here is a rule placeholder-rules.ts is missing. Warns only.
+ * Columns whose sync tokenizes the game slots ({0}, {1:F1}, {amount}) that still hold a bare one after the apply, so any row
+ * here is a rule placeholder-rules.ts is missing. Skill, passive and EGO descriptions are stored raw and keep their {0}. Warns only.
  */
 async function leftoverPlaceholders() {
   const found: string[] = []

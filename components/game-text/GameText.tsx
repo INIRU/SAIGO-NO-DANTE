@@ -1,6 +1,7 @@
 'use client'
 
 import type { ComponentType, CSSProperties, ReactNode } from 'react'
+import { useTranslations } from 'next-intl'
 import KeywordIcon from '@/components/ui/KeywordIcon'
 import PlaceholderLabel from '@/components/ui/PlaceholderLabel'
 import { skillConditionColor } from '@/lib/identity/skill-condition-color'
@@ -40,6 +41,15 @@ const ELEMENT_STYLES: Record<'u' | 'b' | 'i' | 's', CSSProperties> = {
   s: { textDecoration: 'line-through' },
 }
 
+const isCoin = (node: GameTextNode | undefined) => node?.type === 'element' && node.tag === 'coin'
+
+function trimCoinBreaks(text: string, before: GameTextNode | undefined, after: GameTextNode | undefined): string {
+  let result = text
+  if (isCoin(before)) result = result.replace(/^\r?\n/, '')
+  if (isCoin(after)) result = result.replace(/\r?\n$/, '')
+  return result
+}
+
 /** What GameText hands the keyword component for a keyword `[Id]`: the localized name wrapped in its coloured label. */
 type GameTextKeywordProps = {
   keyword: string
@@ -70,6 +80,7 @@ export default function GameText({ nodes, color, keywords, keywordRef: KeywordRe
   nested?: boolean
 }) {
   const { names } = useGameTextRefs()
+  const t = useTranslations()
 
   const renderRef = (id: string, key: number, children?: ReactNode): ReactNode => {
     const ref: GameTextRefName | undefined = names?.[id]
@@ -90,8 +101,11 @@ export default function GameText({ nodes, color, keywords, keywordRef: KeywordRe
   const renderNodes = (list: readonly GameTextNode[]): ReactNode =>
     list.map((node, index): ReactNode => {
       switch (node.type) {
-        case 'text':
-          return node.text
+        case 'text': {
+          // A coin is a block: the line break that separates it from its neighbours would only add an empty line.
+          const text = trimCoinBreaks(node.text, list[index - 1], list[index + 1])
+          return text || null
+        }
         case 'ref':
           return renderRef(node.id, index)
         case 'sprite': {
@@ -123,6 +137,14 @@ export default function GameText({ nodes, color, keywords, keywordRef: KeywordRe
               const fontSize = fontSizeOf(node.value ?? '')
               return fontSize ? <span key={index} style={{ fontSize }}>{children}</span> : null
             }
+            case 'coin':
+              // Same label as the older `[코인 N]` lines of SkillDescription: accent colour, bold.
+              return (
+                <div key={index}>
+                  <span style={{ color, fontWeight: 600 }}>[{t('identity.skills.coin')} {node.value}] </span>
+                  {children}
+                </div>
+              )
             case 'link': {
               const ref = names?.[node.value ?? '']
               if (ref?.k !== 'keyword') return <span key={index}>{children}</span>

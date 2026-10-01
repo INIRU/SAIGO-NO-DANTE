@@ -22,6 +22,8 @@ import IdentitySkillFrameCard from '@/components/identity/IdentitySkillFrameCard
 import { useLocale, useTranslations } from 'next-intl'
 import { type SupportedLang } from '@/lib/i18n'
 import { localizeDeckKeyword } from '@/components/decks/decks-types'
+import { usePlainGameText } from '@/lib/hooks/usePlainGameText'
+import { splitGameTextLines } from '@/lib/game-text/rich-text'
 
 // ── 타입 ──────────────────────────────────────────────────────────────────
 export type SkillDetail = {
@@ -241,6 +243,16 @@ export function portraitUrl(
 }
 
 // ── 컴포넌트 ──────────────────────────────────────────────────────────────
+/** A passive's description, one block per line; a tag that spans lines (`<style="highlight">- a\n- b</style>`) keeps applying on each. */
+export function PassiveDescriptionLines({ text, color }: { text: string; color: string }) {
+  const formatSkillDesc = useFormatSkillDesc()
+  return splitGameTextLines(text).map((line, li) => (
+    <div key={li}>
+      <span style={{ color: '#686050', whiteSpace: 'pre-wrap' }}>{formatSkillDesc(line, color)}</span>
+    </div>
+  ))
+}
+
 export default function DeckIdentityCard({
   slot,
   egos,
@@ -255,7 +267,7 @@ export default function DeckIdentityCard({
   const lang = useLocale() as SupportedLang
   const detailT = useTranslations('decks.detail')
   const previewT = useTranslations('decks.identityPreview')
-  const formatSkillDesc = useFormatSkillDesc()
+  const plainText = usePlainGameText(lang)
   const { getIconUrl } = useKeywordData()
   const keywords = useKeywords()
   const id_ = slot.identities!
@@ -341,7 +353,8 @@ export default function DeckIdentityCard({
             <div className="flex flex-wrap gap-1 mb-2.5">
               {themeKws.map(kw => {
                 const iconUrl = getIconUrl(kw)
-                const desc = keywordMeta?.[kw]?.description
+                const rawDesc = keywordMeta?.[kw]?.description
+                const desc = rawDesc ? plainText(rawDesc, { keepPlaceholders: false }) : rawDesc
                 return (
                   <span key={kw} className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded" title={desc} style={{ background: 'rgba(120,76,28,0.12)', color: '#907040', border: '1px solid rgba(120,76,28,0.22)', fontFamily: 'var(--font-heading)', fontSize: '0.75rem', cursor: desc ? 'help' : 'default' }}>
                     {iconUrl && <Image src={iconUrl} alt="" width={14} height={14} />}
@@ -488,11 +501,7 @@ export default function DeckIdentityCard({
 
                 {passiveDescription && (
                   <div style={{ fontSize: '0.6875rem', lineHeight: 1.8 }}>
-                    {passiveDescription.split('\n').map((line, li) => (
-                      <div key={li}>
-                        <span style={{ color: '#686050', whiteSpace: 'pre-wrap' }}>{formatSkillDesc(line, pc)}</span>
-                      </div>
-                    ))}
+                    <PassiveDescriptionLines text={passiveDescription} color={pc} />
                   </div>
                 )}
               </div>
