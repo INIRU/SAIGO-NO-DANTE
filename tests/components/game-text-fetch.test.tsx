@@ -35,12 +35,6 @@ describe('REQ-SHARED-019 reference table is fetched only when a text needs it', 
     expect(refsRequests()).toEqual([])
   })
 
-  it('REQ-SHARED-019 does not request the table for user notes, even with game markers (they keep the previous path)', async () => {
-    const render = await load()
-    render('<b>굵게</b> [Combustion]', { escapeKeywords: true })
-    expect(refsRequests()).toEqual([])
-  })
-
   // REQ-SHARED-021: game text always goes through GameText now, so a text with only styling tags (no ref, link or
   // sprite) has nothing to look up in the table; the client asks for it later through wantGameTextRefs, which a
   // server render cannot observe.

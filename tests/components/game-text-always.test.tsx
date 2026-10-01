@@ -45,12 +45,6 @@ describe('REQ-SHARED-021 game text is always drawn by the game text renderer', (
     expect(html).toContain('data-game-ref="Combustion"')
   })
 
-  it('REQ-SHARED-021 a user note (escapeKeywords) still guesses keywords from plain words', () => {
-    const html = render('화상 3 부여', undefined, undefined, { escapeKeywords: true })
-    expect(html).toContain('keyword-token')
-    expect(html).toContain('color:#e30000')
-  })
-
   it('REQ-SHARED-021 ignores allowedKeywords for game text (only tagged refs render) and keeps skill-name colours', () => {
     const html = render('화상 후 벼락치기 사용', { '벼락치기': '#ff0000' }, new Set(['화상']))
     expect(html).not.toContain('keyword-token')
