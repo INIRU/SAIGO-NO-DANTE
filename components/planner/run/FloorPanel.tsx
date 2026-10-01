@@ -13,7 +13,8 @@ import ThemeSection from './ThemeSection'
 import EventSection from './EventSection'
 import GiftCheckSection from './GiftCheckSection'
 import InventoryPanel from './InventoryPanel'
-import ImageWithFallback from '@/components/ui/ImageWithFallback'
+import QuietImage from '@/components/ui/QuietImage'
+import { blurPlaceholder } from '@/lib/utils/thumbhash'
 import { getThemePackCompositeImageUrl, getThemePackVisualConfig } from '@/lib/data/theme-pack-visuals'
 import { getLocalizedName } from '@/lib/i18n/localize'
 import type { SupportedLang } from '@/lib/i18n/types'
@@ -106,7 +107,7 @@ function FloorPanel({ state, dispatch, themes, gifts, giftMap, recipes, identiti
           <span className="pb-0.5 text-lg leading-none text-[var(--text-muted)]">/ {String(state.maxFloors).padStart(2, '0')}</span>
         </p>
         <div className="flex min-w-0 flex-1 basis-48 items-center gap-2.5">
-          {themeImage && <span className="relative h-12 w-8 shrink-0 overflow-hidden rounded-sm"><ImageWithFallback src={themeImage} alt="" fill fallbackType="theme" sizes="32px" className="object-contain" /></span>}
+          {themeImage && <span className="relative h-12 w-8 shrink-0 overflow-hidden rounded-sm"><QuietImage src={themeImage} alt="" fill sizes="32px" className="object-contain" {...blurPlaceholder(themeImage)} /></span>}
           <div className="min-w-0"><p className="text-[0.6875rem] text-[var(--text-secondary)]">{t('currentFloor')}</p><h2 className={`truncate leading-tight ${theme ? 'font-[family-name:var(--font-heading)] text-base text-[var(--text-primary)] sm:text-lg' : 'text-sm text-[var(--text-muted)]'}`}>{theme ? localized(theme) : t('unselected')}</h2></div>
         </div>
         <button type="button" onClick={() => chooseTab('theme')} className="inline-flex min-h-9 items-center gap-1.5 rounded-md border border-[var(--border-gold)] px-2.5 text-xs text-[var(--gold-light)] hover:bg-[var(--bg-elevated)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--gold-light)]"><Pencil size={13} /> {t('editTheme')}</button>

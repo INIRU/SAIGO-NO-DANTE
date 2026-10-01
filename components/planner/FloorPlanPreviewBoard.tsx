@@ -11,7 +11,8 @@ import FloorGuidance from './FloorGuidance'
 import { useLocale, useTranslations } from 'next-intl'
 import { useReducedMotion } from 'motion/react'
 import * as m from 'motion/react-m'
-import ImageWithFallback from '@/components/ui/ImageWithFallback'
+import QuietImage from '@/components/ui/QuietImage'
+import { blurPlaceholder } from '@/lib/utils/thumbhash'
 import GiftCard from '@/components/ui/GiftCard'
 import { getLegacyPlanFloorDifficulty, isAllowedFloorDifficulty, isFloorDifficulty } from '@/lib/planner/floor-difficulty'
 import type { Difficulty, FloorDifficulty, GiftData, ThemeData, RecipeData } from '@/lib/planner/types'
@@ -181,11 +182,11 @@ export default function FloorPlanPreviewBoard({
                     >
                       <div className="relative aspect-[416/684] w-full overflow-hidden rounded-sm bg-[#151210]">
                         {themeImageSrc ? (
-                          <ImageWithFallback
+                          <QuietImage
                             src={themeImageSrc}
-                            alt={themeName}
+                            alt=""
                             fill
-                            fallbackType="theme"
+                            {...blurPlaceholder(themeImageSrc)}
                             sizes="(max-width: 640px) 80px, 112px"
                             className="object-cover saturate-[0.9]"
                           />

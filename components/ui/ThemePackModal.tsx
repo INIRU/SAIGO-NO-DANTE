@@ -1,7 +1,8 @@
 'use client'
 
 import BaseModal from '@/components/ui/BaseModal'
-import ImageWithFallback from '@/components/ui/ImageWithFallback'
+import QuietImage from '@/components/ui/QuietImage'
+import { blurPlaceholder } from '@/lib/utils/thumbhash'
 import ThemePackCard from '@/components/ui/ThemePackCard'
 import { Search, X } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
@@ -12,7 +13,6 @@ interface ThemePackModalShellProps {
   onClose: () => void
   children: ReactNode
   imageUrl?: string | null
-  imageAlt?: string
   eyebrow?: ReactNode
   meta?: ReactNode
   maxWidth?: string
@@ -26,7 +26,6 @@ export function ThemePackModalShell({
   onClose,
   children,
   imageUrl,
-  imageAlt,
   eyebrow,
   meta,
   maxWidth = '52rem',
@@ -78,11 +77,11 @@ export function ThemePackModalShell({
           <div className="relative overflow-hidden" style={{ minHeight: imageUrl ? '11rem' : '7.5rem' }}>
             {imageUrl ? (
               <>
-                <ImageWithFallback
+                <QuietImage
                   src={imageUrl}
-                  alt={imageAlt ?? title}
+                  alt=""
                   fill
-                  fallbackType="theme"
+                  {...blurPlaceholder(imageUrl)}
                   sizes="(max-width: 768px) 100vw, 52rem"
                   className="object-cover object-center"
                   style={{ opacity: 0.42 }}

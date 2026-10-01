@@ -2,9 +2,9 @@
 
 import type { ReactNode } from 'react'
 import Image from 'next/image'
+import QuietImage from '@/components/ui/QuietImage'
 import { FlaskConical } from 'lucide-react'
 import GiftGrade from './GiftGrade'
-import ImageWithFallback from './ImageWithFallback'
 import { OCTAGON_CLIP, GIFT_BG_URL, GIFT_BG_ENHANCED_URL, getGiftKeywordSlug, getGiftKeywordIconUrl } from '@/lib/constants/gift'
 
 export interface GiftArtworkGift {
@@ -98,8 +98,9 @@ export default function GiftArtwork({ gift, displayName, isInsert = false, isSel
               +
             </span>
           ) : gift.image_url ? (
-            <div className="relative w-full h-full">
-              <ImageWithFallback src={gift.image_url} alt={displayName} fill fallbackType="gift" className="object-contain" sizes={sizes} />
+            // The slot carries the gift's name; the art inside is decoration, so a failed load leaves the empty game slot.
+            <div className="relative w-full h-full" role="img" aria-label={displayName}>
+              <QuietImage src={gift.image_url} alt="" fill className="object-contain" sizes={sizes} />
             </div>
           ) : (
             <FlaskConical size="1.5rem" style={{ color: '#444' }} />

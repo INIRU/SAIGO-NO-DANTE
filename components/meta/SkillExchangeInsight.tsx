@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
-import ImageWithFallback from '@/components/ui/ImageWithFallback'
+import QuietImage from '@/components/ui/QuietImage'
 import { SIN_COLORS, normalizeSin } from '@/lib/constants/sin'
 import { getSkillIconUrl } from '@/lib/utils/images'
 import type { CountStat, MetaSkill } from '@/lib/meta/types'
@@ -37,7 +37,7 @@ export default function SkillExchangeInsight({ splits, skills = [], identity, ba
     const src = identity?.game_id ? getSkillIconUrl(identity, order, skill ?? undefined) : ''
     const color = SIN_COLORS[normalizeSin(skill?.sin_affinity ?? null) ?? 'wrath']
     return <span className={styles.skillIcon} data-dim={dim || undefined} style={{ borderBottomColor: skill ? color : 'var(--border)' }} title={name ? `S${order} ${name}` : `S${order}`}>
-      {src ? <ImageWithFallback src={src} alt={name ? `S${order} ${name}` : `S${order}`} width={32} height={32} fallbackType="skill" /> : <span>S{order}</span>}
+      {src ? <QuietImage src={src} alt="" width={32} height={32} /> : <span>S{order}</span>}
     </span>
   }
 
