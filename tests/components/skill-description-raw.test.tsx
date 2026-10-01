@@ -3,7 +3,6 @@ import { describe, expect, it, vi } from 'vitest'
 import { KeywordProvider, type KeywordInfo } from '@/components/providers/KeywordProvider'
 import SkillDescription from '@/components/skill/SkillDescription'
 import { UptieChangePanel } from '@/components/identity/UptieChanges'
-import { GAME_TEXT_HIGHLIGHT } from '@/components/game-text/GameText'
 import type { GameTextRefNames } from '@/lib/db/game-text-refs'
 
 const REFS: GameTextRefNames = {
@@ -38,9 +37,10 @@ describe('REQ-SHARED-020 SkillDescription of raw text', () => {
     }
   })
 
-  it('REQ-SHARED-020 keeps the highlight on every line of a tag that spans lines', () => {
+  it('REQ-SHARED-020 draws every line of a tag that spans lines without the tag or a highlight colour (REQ-SHARED-022)', () => {
     const html = wrap(<SkillDescription description={RAW} accentColor="#c2b79f" variant="detail" />)
-    expect(html.match(new RegExp(`color:${GAME_TEXT_HIGHLIGHT}`, 'g'))?.length).toBeGreaterThanOrEqual(2)
+    expect(html).not.toContain('#f8c200')
+    expect(html).not.toContain('style=&quot;')
     expect(html).toContain('둘째')
   })
 

@@ -2,7 +2,6 @@ import { readFileSync } from 'node:fs'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it, vi } from 'vitest'
 import { KeywordProvider, resolveKeywordIconUrl, useFormatSkillDesc, type KeywordInfo } from '@/components/providers/KeywordProvider'
-import { GAME_TEXT_HIGHLIGHT, GAME_TEXT_UPGRADE_HIGHLIGHT } from '@/components/game-text/GameText'
 import type { GameTextRefNames } from '@/lib/db/game-text-refs'
 
 const REFS: GameTextRefNames = {
@@ -49,22 +48,12 @@ const render = (text: string, options?: FormatOptions) =>
   renderToStaticMarkup(<KeywordProvider keywords={KEYWORDS}><Formatter text={text} options={options} /></KeywordProvider>)
 
 describe('REQ-SHARED-019 game text rendering', () => {
-  it('REQ-SHARED-019 draws the game highlight and upgrade highlight colours, not the tags', () => {
-    const html = render('<style="highlight">강조</style> <style="upgradeHighlight">강화</style>')
-    expect(html).toContain(`color:${GAME_TEXT_HIGHLIGHT}`)
-    expect(html).toContain(`color:${GAME_TEXT_UPGRADE_HIGHLIGHT}`)
-    expect(html).not.toContain('&lt;')
-    expect(html).not.toContain('style=&quot;')
-  })
-
-  it('REQ-SHARED-019 draws colour, underline, bold, italic, strikethrough and mark', () => {
-    const html = render('<color=#ff6000>색</color><u>밑줄</u><b>굵게</b><i>기울임</i><s>취소</s><mark=#ff000040>형광</mark>')
-    expect(html).toMatch(/<span style="color:#ff6000">색<\/span>/)
+  it('REQ-SHARED-019 draws underline, bold, italic and strikethrough from their tags, never the tags themselves', () => {
+    const html = render('<u>밑줄</u><b>굵게</b><i>기울임</i><s>취소</s>')
     expect(html).toContain('text-decoration:underline')
     expect(html).toContain('font-weight:700')
     expect(html).toContain('font-style:italic')
     expect(html).toContain('text-decoration:line-through')
-    expect(html).toContain('background-color:#ff000040')
     expect(html).not.toContain('&lt;')
   })
 
@@ -150,11 +139,12 @@ describe('REQ-SHARED-019 game text rendering', () => {
     expect(html).not.toContain('color:#e30000')
   })
 
-  it('REQ-SHARED-019 draws old-format text through the previous path (keywords guessed, brackets coloured)', () => {
+  // REQ-SHARED-021 replaces "old-format text is guessed": the stored text is the game's own now, so plain words are
+  // never turned into keywords (see tests/components/game-text-always.test.tsx); only user notes still guess.
+  it('REQ-SHARED-019 draws old-format text as plain text (no keyword guess, no condition colour)', () => {
     const html = render('[사용시] 화상 3 부여')
-    expect(html).toContain('keyword-token')
-    expect(html).toContain('color:#e30000')
-    expect(html).toContain('color:#26cfff')
+    expect(html).toContain('[사용시] 화상 3 부여')
+    expect(html).not.toContain('keyword-token')
     expect(html).not.toContain('data-game-ref')
   })
 
@@ -168,10 +158,6 @@ describe('REQ-SHARED-019 game text rendering', () => {
   it('REQ-SHARED-019 GameText does not import the keyword provider (no module cycle: the provider hands it the tooltip component)', () => {
     const source = readFileSync('components/game-text/GameText.tsx', 'utf8')
     expect(source).not.toMatch(/from '@\/components\/providers\/KeywordProvider'/)
-  })
-
-  it('REQ-SHARED-019 uses the base colour for text outside any style', () => {
-    expect(render('<b>굵게</b> 일반')).toContain('color:#abcdef')
   })
 
   describe('<coin=N> blocks', () => {

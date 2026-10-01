@@ -28,11 +28,12 @@ import AnnouncementPopup from '@/components/announcements/AnnouncementPopup'
 import SkipNav from '@/components/a11y/SkipNav'
 import AprilFoolsWrapper from '@/components/events/AprilFoolsWrapper'
 import { KeywordProvider } from '@/components/providers/KeywordProvider'
+import { GameTextRefsProvider } from '@/components/providers/GameTextRefsProvider'
+import { getGameTextRefNamesOrNull } from '@/lib/db/game-text-refs'
 import { getKeywordCatalog } from '@/lib/keywords/server-data'
 import { fontVariables } from '../fonts'
 import { ROOT_OMITTED_MESSAGES, omitMessages } from '@/lib/i18n/client-messages'
 import { NAV_BOOT_SCRIPT } from '@/lib/constants/nav-boot'
-import NavbarFallback from '@/components/layout/NavbarFallback'
 
 const SITE_NAME: Record<SupportedLang, string> = { ko: '최애의 관리자', en: 'SAIGO NO DANTE', ja: 'SAIGO NO DANTE' }
 const OG_LOCALE: Record<SupportedLang, string> = { ko: 'ko_KR', en: 'en_US', ja: 'ja_JP' }
@@ -135,9 +136,11 @@ export default async function LangLayout({
 
   // Explicit locale: with Cache Components the shell (<html>) must not read the request locale from headers.
   // Descriptions are left out of every page's payload; tooltips load them once from /api/keyword-descriptions.
-  const [messages, keywords, t] = await Promise.all([
+  // The names of `[Id]` references in game text go along with the page so the first paint is final (no raw ids swapping later).
+  const [messages, keywords, refNames, t] = await Promise.all([
     getMessages({ locale: validLang }),
     getKeywordCatalog(),
+    getGameTextRefNamesOrNull(validLang),
     getTranslations({ locale: validLang }),
   ])
   const mainNavLabel = t('common.mainNav')
@@ -160,20 +163,22 @@ export default async function LangLayout({
               <MotionConfig reducedMotion="user">
                 {/* Section-only messages (planner, meta, …) are added by their layouts, not sent with every page. */}
                 <IntlClientProvider locale={validLang} messages={omitMessages(messages, ROOT_OMITTED_MESSAGES)} timeZone="Asia/Seoul">
-                  <KeywordProvider keywords={keywords}>
-                    <SkipNav lang={validLang} />
-                    <AprilFoolsWrapper />
-                    {/* Navbar/PageNavigation read the pathname, which is request data on routes with unknown params (e.g. /decks/[id]). */}
-                    <div className="site-navigation"><Suspense fallback={<NavbarFallback siteName={t('site.name')} />}><Navbar mainNavLabel={mainNavLabel} /></Suspense></div>
-                    <Suspense fallback={null}><VisitTracker /></Suspense>
-                    <Suspense fallback={null}><NavigationTracker /></Suspense>
-                    <KonamiListener />
-                    {/* Catches page-level dynamic holes (formerly caught by app/loading.tsx above <html>); plain Suspense keeps the old page during navigations. */}
-                    <main id="main-content"><Suspense fallback={null}>{children}</Suspense></main>
-                    <Footer lang={validLang} />
-                    <Suspense fallback={null}><PageNavigation /></Suspense>
-                    <Suspense fallback={null}><AnnouncementPopup lang={validLang} /></Suspense>
-                  </KeywordProvider>
+                  <GameTextRefsProvider locale={validLang} names={refNames}>
+                    <KeywordProvider keywords={keywords}>
+                      <SkipNav lang={validLang} />
+                      <AprilFoolsWrapper />
+                      {/* The navbar body never reads the pathname (request data on routes with unknown params, e.g. /decks/[id]), so it is part of the static shell; its pathname-dependent marks are small Suspense islands inside. */}
+                      <div className="site-navigation"><Navbar mainNavLabel={mainNavLabel} /></div>
+                      <Suspense fallback={null}><VisitTracker /></Suspense>
+                      <Suspense fallback={null}><NavigationTracker /></Suspense>
+                      <KonamiListener />
+                      {/* Catches page-level dynamic holes (formerly caught by app/loading.tsx above <html>); plain Suspense keeps the old page during navigations. */}
+                      <main id="main-content"><Suspense fallback={null}>{children}</Suspense></main>
+                      <Footer lang={validLang} />
+                      <Suspense fallback={null}><PageNavigation /></Suspense>
+                      <Suspense fallback={null}><AnnouncementPopup lang={validLang} /></Suspense>
+                    </KeywordProvider>
+                  </GameTextRefsProvider>
                 </IntlClientProvider>
               </MotionConfig>
             </SWRProvider>

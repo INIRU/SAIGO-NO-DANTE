@@ -16,9 +16,9 @@ import type { SupportedLang } from '@/lib/i18n'
 import { skillConditionColor } from '@/lib/identity/skill-condition-color'
 import PlaceholderLabel, { PlaceholderText } from '@/components/ui/PlaceholderLabel'
 import { leadingPlaceholder, type PlaceholderToken } from '@/lib/game-text/placeholders'
-import { isRawGameText, mayBeRawGameText, parseGameText } from '@/lib/game-text/rich-text'
-import { preloadGameTextRefDescriptions, useGameTextRefDescription, useGameTextRefs, wantGameTextRefs } from '@/lib/hooks/useGameTextRefs'
-import GameText from '@/components/game-text/GameText'
+import { mayBeRawGameText, parseGameText } from '@/lib/game-text/rich-text'
+import { preloadGameTextRefDescriptions, useGameTextRefDescription, wantGameTextRefs } from '@/lib/hooks/useGameTextRefs'
+import GameText, { highlightValues } from '@/components/game-text/GameText'
 
 const KeywordContext = createContext<Record<string, KeywordInfo>>({})
 
@@ -76,21 +76,36 @@ type FormatSkillDescOptions = {
   highlightValues?: string
 }
 
-/** formatSkillDesc를 훅으로 제공 — 컴포넌트 최상위에서 호출 */
+/**
+ * formatSkillDesc를 훅으로 제공 — 컴포넌트 최상위에서 호출.
+ *
+ * Game text (skill, passive, E.G.O, gift and keyword descriptions) is always drawn by GameText, even when it holds no tag or
+ * `[Id]`: it then shows as plain text, and words are never searched for keywords (the stored text is the game's own).
+ * Only user notes (`escapeKeywords`) still take the older path that guesses keywords from plain words, which is also why
+ * they never make the page load the reference table.
+ * Of the other arguments, `skillNameColors` and `highlightValues` are carried over to GameText (own skill names coloured
+ * by sin; gold numbers in tooltips); `allowedKeywords` only restricted the guessing, so game text ignores it.
+ */
 export function useFormatSkillDesc() {
   const keywords = useKeywords()
   const locale = useLocale()
-  const { refIds } = useGameTextRefs({ lazy: true })
 
   const { localKeywords, localToKr } = getLocalizedKeywordIndex(keywords, locale)
 
   return useCallback(
     (text: string, color: string, skillNameColors?: Record<string, string>, allowedKeywords?: Set<string>, options?: FormatSkillDescOptions) => {
-      // Game source text (Unity tags, [Id] refs) is drawn as the game wrote it; only older stored text is guessed at below.
-      // User notes (escapeKeywords) stay on the older path, which is also why they never make the page load the ref table.
-      if (!options?.escapeKeywords && mayBeRawGameText(text)) {
-        wantGameTextRefs()
-        if (isRawGameText(text, refIds)) return <GameText nodes={parseGameText(text)} color={color} keywords={keywords} keywordRef={KeywordWithTooltip} />
+      if (!options?.escapeKeywords) {
+        if (mayBeRawGameText(text)) wantGameTextRefs()
+        return (
+          <GameText
+            nodes={parseGameText(text)}
+            accent={color}
+            keywords={keywords}
+            keywordRef={KeywordWithTooltip}
+            skillNameColors={skillNameColors}
+            highlightValues={options?.highlightValues}
+          />
+        )
       }
       const filtered = allowedKeywords
         ? localKeywords.filter(kw => {
@@ -100,7 +115,7 @@ export function useFormatSkillDesc() {
         : localKeywords
       return formatSkillDescInner(text, color, filtered, keywords, skillNameColors, localToKr, options)
     },
-    [keywords, localKeywords, localToKr, refIds],
+    [keywords, localKeywords, localToKr],
   )
 }
 
@@ -114,7 +129,7 @@ export function useFormatGameText() {
   return useCallback((text: string, color: string, nested = false) => {
     if (!mayBeRawGameText(text)) return <PlaceholderText text={text} />
     wantGameTextRefs()
-    return <GameText nodes={parseGameText(text)} color={color} keywords={keywords} keywordRef={KeywordWithTooltip} nested={nested} />
+    return <GameText nodes={parseGameText(text)} accent={color} keywords={keywords} keywordRef={KeywordWithTooltip} nested={nested} />
   }, [keywords])
 }
 
@@ -148,15 +163,6 @@ function isParticleAfter(text: string, kwLen: number): boolean {
   const nextCh = text[kwLen]
   if (!nextCh) return false
   return PARTICLES.has(nextCh)
-}
-
-const VALUE_PATTERN = /(효과 위력|위력|횟수|Potency|Count|威力|回数|[+-]?\d+(?:\.\d+)?%?)/
-
-function highlightValues(text: string, termColor: string) {
-  return text.split(VALUE_PATTERN).map((part, i) =>
-    i % 2 === 0 ? part
-      : /\d/.test(part) ? <b key={i} style={{ color: '#e8b030', fontWeight: 700 }}>{part}</b>
-        : <span key={i} style={{ color: termColor, fontWeight: 600 }}>{part}</span>)
 }
 
 /**
@@ -248,7 +254,7 @@ function KwTooltipPopup({ id, rect, iconUrl, keyword, info, refId, onMouseEnter,
             ? <span aria-hidden="true" style={{ display: 'block', height: '3.5em', borderRadius: '0.25rem', background: 'linear-gradient(90deg, #211a12, #2b2218, #211a12)' }} />
             : info
               ? formatDescription(localDesc, '#d0c7b8', undefined, undefined, { highlightValues: color })
-              : <GameText nodes={parseGameText(localDesc)} color="#d0c7b8" keywords={keywords} keywordRef={KeywordWithTooltip} nested />}
+              : <GameText nodes={parseGameText(localDesc)} accent="#d0c7b8" keywords={keywords} keywordRef={KeywordWithTooltip} nested />}
         </span>
       </div>
       {overflowing && (

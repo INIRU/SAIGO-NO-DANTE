@@ -41,9 +41,15 @@ describe('REQ-SHARED-019 reference table is fetched only when a text needs it', 
     expect(refsRequests()).toEqual([])
   })
 
-  it('REQ-SHARED-019 requests the table once a text holds a Unity tag', async () => {
+  // REQ-SHARED-021: game text always goes through GameText now, so a text with only styling tags (no ref, link or
+  // sprite) has nothing to look up in the table; the client asks for it later through wantGameTextRefs, which a
+  // server render cannot observe.
+  it('REQ-SHARED-019 requests the table once a text holds a ref, and not for plain or only styled text', async () => {
     const render = await load()
+    render('화상 3 부여')
     render('<b>굵게</b>')
+    expect(refsRequests()).toEqual([])
+    render('<b>굵게</b> [Combustion]')
     expect(refsRequests()).toContain('/api/game-text-refs/ko')
   })
 })
