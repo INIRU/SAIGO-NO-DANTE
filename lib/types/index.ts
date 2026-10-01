@@ -206,6 +206,8 @@ export type EGO = {
   keywords: string[] | null
   obtaining_method: string | null
   cor_image_url: string | null
+  /** Full-size art URL (`{id}_cg-{hash12}.webp`) the sync stores; null/absent for rows that predate it (see getEgoArtworkUrl). */
+  artwork_url?: string | null
   game_id: string | null
   release_date?: string | null
 }
