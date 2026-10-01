@@ -32,6 +32,7 @@ import { PLACEHOLDER_CHECK_COLUMNS, rowsWithRawPlaceholders } from './placeholde
 import { STEPS, catalogSummaryOf, stepCommand, verifySteps } from './extraction-steps'
 import { KEYWORD_AUDIT_FILE, KEYWORD_ICON_DIR, readBuffIconIds, readKeywordAudit, uploadMissingKeywordIcons, type ManifestEntry } from './keyword-icons'
 import { uploadMissingSkillIcons } from './skill-icons'
+import { EGO_ARTWORK_QUALITY, egoFolderKey, uploadEgoArtworkCopy, type EgoArtworkUpload } from './ego-artwork'
 import { auditImagesSafely, formatMissingImages, IMAGE_AUDIT_KINDS, supabaseAuditSource } from './image-audit'
 
 config({ path: '.env.local', quiet: true })
@@ -226,7 +227,11 @@ const EGO_IMAGES = ['awaken_profile', 'erosion_profile', 'cg', 'e_cg', 'profile_
 /** Objects this apply uploaded; none replaced an existing one (before: null), so a restore removes them. */
 type Upload = { key: string; before: null }
 
-/** New EGO images from the verified ZIP at the paths their rows point to; existing objects are never replaced. */
+/**
+ * New EGO images from the verified ZIP at the paths their rows point to; existing objects are never replaced. The `cg` of each EGO is
+ * also encoded at quality 95 and uploaded as `{id}_cg-{hash12}.webp` (ego-artwork.ts), and its public URL is stored in
+ * `ego.artwork_url`, which the detail hero shows instead of the 256px profile. An EGO whose ZIP has no `cg` keeps a null artwork_url.
+ */
 async function uploadEgoImages(source: string, gameIds: string[], uploads: Upload[]) {
   const manifest = readManifest(source)
   const { data: egos, error } = await db().from('ego').select('game_id, sinner_id, folder_name').in('game_id', gameIds)
@@ -234,16 +239,28 @@ async function uploadEgoImages(source: string, gameIds: string[], uploads: Uploa
   if (egos.length !== gameIds.length) throw Error('some new EGO rows are missing after bootstrap')
   const bucket = client().storage.from('limbus-assets')
   let uploaded = 0
-  for (const ego of egos) for (const suffix of EGO_IMAGES) {
-    const entry = manifest.find(item => item.kind === 'EGO' && item.name === `${ego.game_id}_${suffix}`)
-    if (!entry) { if (suffix === 'awaken_profile') throw Error(`the ZIP has no ${ego.game_id}_awaken_profile`); continue }
-    const key = `sinners/${ego.sinner_id}/ego/${ego.folder_name}/${entry.name}.webp`
-    const { error: uploadError } = await bucket.upload(key, await zipImage(source, entry), { contentType: 'image/webp', cacheControl: '3600', upsert: false })
-    if (uploadError) throw Error(`upload ${key}: ${uploadError.message}`)
-    uploads.push({ key, before: null })
-    uploaded++
+  const artwork: EgoArtworkUpload[] = [], withoutArtwork: string[] = []
+  for (const ego of egos) {
+    for (const suffix of EGO_IMAGES) {
+      const entry = manifest.find(item => item.kind === 'EGO' && item.name === `${ego.game_id}_${suffix}`)
+      if (!entry) { if (suffix === 'awaken_profile') throw Error(`the ZIP has no ${ego.game_id}_awaken_profile`); continue }
+      const key = `${egoFolderKey(ego.sinner_id, ego.folder_name)}/${entry.name}.webp`
+      const { error: uploadError } = await bucket.upload(key, await zipImage(source, entry), { contentType: 'image/webp', cacheControl: '3600', upsert: false })
+      if (uploadError) throw Error(`upload ${key}: ${uploadError.message}`)
+      uploads.push({ key, before: null })
+      uploaded++
+    }
+    const cg = manifest.find(item => item.kind === 'EGO' && item.name === `${ego.game_id}_cg`)
+    if (!cg) { withoutArtwork.push(String(ego.game_id)); continue }
+    const copy = await uploadEgoArtworkCopy({
+      ego, webp: await zipImage(source, cg, EGO_ARTWORK_QUALITY), stored: await storedNames(egoFolderKey(ego.sinner_id, ego.folder_name)), bucket, uploads, fix: true,
+    })
+    // artwork_url is a column of the ego table (migration ego_artwork_url): the backup and restore of the table carry it.
+    const { error: updateError } = await db().from('ego').update({ artwork_url: copy.url }).eq('game_id', ego.game_id)
+    if (updateError) throw Error(`ego ${ego.game_id} artwork_url: ${updateError.message} (is the ego_artwork_url migration applied?)`)
+    artwork.push(copy)
   }
-  return uploaded
+  return { uploaded, artwork, withoutArtwork }
 }
 
 /** The steps revalidate before new EGO are added; invalidate once more so their pages appear. */
@@ -371,7 +388,11 @@ async function main() {
         // New EGO: bootstrap-data.ts writes their rows, stage skills and passives (with SkillTag section names) from this ZIP.
         if (newEgos.length) {
           run(work, 'new-ego-fix', command('scripts/sync/bootstrap-data.ts', ['--ego-ids', newEgos.join(','), '--output', join(work, 'new-ego'), '--fix']), env)
-          console.log(`ok   new-ego-images (${await uploadEgoImages(source, newEgos, uploads)} uploaded)`)
+          const egoImages = await uploadEgoImages(source, newEgos, uploads)
+          report.egoArtwork = egoImages.artwork
+          report.egoWithoutArtwork = egoImages.withoutArtwork
+          console.log(`ok   new-ego-images (${egoImages.uploaded} uploaded, ${egoImages.artwork.length} artwork_url set)`)
+          for (const gameId of egoImages.withoutArtwork) console.warn(`WARN ego artwork: ${gameId} has no cg in the ZIP, the detail page shows its profile`)
           ;(report.steps as string[]).push('new-ego')
         }
 
