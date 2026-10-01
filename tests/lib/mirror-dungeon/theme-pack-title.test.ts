@@ -1,29 +1,41 @@
 import { describe, expect, it } from 'vitest'
 import { THEME_PACK_NAME_COLORS, getThemePackNameColor } from '@/lib/data/theme-pack-colors'
-import { THEME_PACK_TITLE_BOX, THEME_PACK_VISUALS, getThemePackTitleBoxKind, getThemePackVisualConfig } from '@/lib/data/theme-pack-visuals'
+import { THEME_PACK_TITLE_MEASURED, THEME_PACK_VISUALS, getThemePackTitleBoxKind, getThemePackTitleLayout, getThemePackVisualConfig } from '@/lib/data/theme-pack-visuals'
 
-const centre = (box: { top: number; height: number }) => box.top + box.height / 2
+const centreY = (box: { top: number; height: number }) => box.top + box.height / 2
+const centreX = (box: { left: number; right: number }) => (box.left + 100 - box.right) / 2
 
 describe('REQ-MIRROR-DUNGEON-009 theme pack name like the game selection screen', () => {
-  it('REQ-MIRROR-DUNGEON-009 centres names on the spots measured in game captures', () => {
-    expect(centre(THEME_PACK_TITLE_BOX.normal)).toBeCloseTo(80.6, 1)
-    expect(centre(THEME_PACK_TITLE_BOX.boss)).toBeCloseTo(82.9, 1)
-    // Longest names fill ~72% of the poster in game; the box leaves room for the fit-to-width margin.
-    expect(100 - THEME_PACK_TITLE_BOX.normal.left - THEME_PACK_TITLE_BOX.normal.right).toBeGreaterThanOrEqual(78)
+  it('REQ-MIRROR-DUNGEON-009 places each captured pack at its own measured spot', () => {
+    // Values from KR selection captures: names sit at one screen spot while each poster is drawn at its own size.
+    expect(centreY(getThemePackTitleLayout(1027))).toBeCloseTo(79.6, 1)
+    expect(centreY(getThemePackTitleLayout(1127))).toBeCloseTo(81.1, 1)
+    expect(centreY(getThemePackTitleLayout(1406))).toBeCloseTo(83.1, 1)
+    expect(centreX(getThemePackTitleLayout(1406))).toBeCloseTo(54.2, 1)
   })
 
-  it('REQ-MIRROR-DUNGEON-009 keeps story packs on the shared spot instead of per-pack guesses', () => {
-    const storyOverrides = Object.entries(THEME_PACK_VISUALS).filter(([id, config]) => Number(id) >= 1100 && Number(id) < 1200 && config.title)
-    expect(storyOverrides).toEqual([])
-    expect(getThemePackTitleBoxKind(getThemePackVisualConfig(1101))).toBe('normal')
-    expect(getThemePackTitleBoxKind(getThemePackVisualConfig(1309))).toBe('boss')
+  it('REQ-MIRROR-DUNGEON-009 sin/keyword posters are drawn smaller in game, so their names are larger on our poster', () => {
+    expect(getThemePackTitleLayout(1406).scale).toBeGreaterThan(1.07)
+    expect(getThemePackTitleLayout(1128).scale).toBeCloseTo(1, 1)
+  })
+
+  it('REQ-MIRROR-DUNGEON-009 packs without captures use their family default', () => {
+    expect(THEME_PACK_TITLE_MEASURED[1119]).toBeUndefined()
+    expect(centreY(getThemePackTitleLayout(1119))).toBeCloseTo(80.5, 1)
+    expect(THEME_PACK_TITLE_MEASURED[1201]).toBeUndefined()
+    expect(centreY(getThemePackTitleLayout(1201))).toBeCloseTo(82.9, 1)
     expect(getThemePackTitleBoxKind(getThemePackVisualConfig(1501))).toBe('extreme')
   })
 
+  it('REQ-MIRROR-DUNGEON-009 keeps story packs free of hand-tuned title boxes', () => {
+    const storyOverrides = Object.entries(THEME_PACK_VISUALS).filter(([id, config]) => Number(id) >= 1100 && Number(id) < 1200 && config.title)
+    expect(storyOverrides).toEqual([])
+  })
+
   it('REQ-MIRROR-DUNGEON-009 puts the hidden pack name inside its printed dark band (76.3%-85.9%)', () => {
-    const box = { ...THEME_PACK_TITLE_BOX.normal, ...getThemePackVisualConfig(3001)?.title }
-    expect(centre(box)).toBeGreaterThan(80.5)
-    expect(centre(box)).toBeLessThan(81.7)
+    const box = getThemePackTitleLayout(3001)
+    expect(centreY(box)).toBeGreaterThan(80.5)
+    expect(centreY(box)).toBeLessThan(81.7)
   })
 
   it('REQ-MIRROR-DUNGEON-009 uses the game textColor for every pack that has one', () => {
