@@ -1284,6 +1284,8 @@
       "stats": {
         "keywordDistribution": "Keyword distribution",
         "keywordEmpty": "Select identities to show keyword distribution.",
+        "keywordDeployed": "Deployed {count}",
+        "keywordAll": "All {count}",
         "passives": "Passives",
         "battle": "Battle",
         "support": "Support",

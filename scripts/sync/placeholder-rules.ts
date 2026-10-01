@@ -115,14 +115,18 @@ export function eventPlaceholders<T extends string | null | undefined>(text: T):
 
 // ── After an apply: display columns that still hold a bare slot ──────────────────────────────────────────────────
 
-/** Columns the site shows as text, per table; apply-extraction counts the rows among them that still hold {0} or {name}. */
+/**
+ * Columns whose sync tokenizes the slots (apply-extraction counts the rows among them that still hold {0} or {name}):
+ * gift effects (giftPlaceholders), keyword descriptions (buffPlaceholders), event narrative and results (eventText).
+ * Left out on purpose: skill, passive and EGO descriptions (stored raw, the site draws {0}) and event option messages
+ * (stored as written).
+ */
 export const PLACEHOLDER_CHECK_COLUMNS: Record<string, readonly string[]> = {
   ego_gifts: ['effect_base', 'effect_base_en', 'effect_base_jp', 'effect_plus', 'effect_plus_en', 'effect_plus_jp',
     'effect_plusplus', 'effect_plusplus_en', 'effect_plusplus_jp'],
   keyword_meta: ['description', 'description_en', 'description_jp'],
-  passives: ['description', 'description_en', 'description_jp'],
   md_events: ['desc_text', 'desc_text_en', 'desc_text_jp'],
-  md_event_choices: ['result_text', 'result_text_en', 'result_text_jp', 'message', 'message_en', 'message_jp'],
+  md_event_choices: ['result_text', 'result_text_en', 'result_text_jp'],
 }
 
 /** Rows whose display columns still hold a bare slot, with the offending columns. */

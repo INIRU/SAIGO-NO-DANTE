@@ -37,8 +37,7 @@ import FloorPlanPreviewBoard from '@/components/planner/FloorPlanPreviewBoard'
 import GiftCard from '@/components/ui/GiftCard'
 import KeywordIcon from '@/components/ui/KeywordIcon'
 import { localizeDeckKeyword } from '@/components/decks/decks-types'
-import { STORAGE_BASE } from '@/lib/constants/game'
-import { DEFAULT_AVATAR_URL } from '@/lib/constants/game'
+import { STORAGE_BASE, DEFAULT_AVATAR_URL, DEPLOYED_SLOT_COUNT } from '@/lib/constants/game'
 import { getLocalizedName } from '@/lib/i18n/localize'
 import type { SupportedLang } from '@/lib/i18n/types'
 import { getGiftActivationConditionStatus, getGiftConditionCountsForSlots, type GiftConditionStatus } from '@/lib/planner/gift-condition-status'
@@ -51,6 +50,7 @@ import {
 import { workbenchReveal } from '@/lib/animations'
 import styles from './PlanDetailHeader.module.css'
 import { observationCost } from '@/lib/planner/observation'
+import { gameTextToPlain } from '@/lib/game-text/rich-text'
 
 // ── 상수 ──────────────────────────────────────────────────────────────────────
 
@@ -59,7 +59,8 @@ const S = STORAGE_BASE
 // 편성 N번 전용 효과 슬롯 파싱
 function parseFormationSlots(text: string | null): number[] {
   if (!text) return []
-  const m = text.match(/\[편성[^\]]*전용\s*효과\]|\[\d[^\]]*편성\s*전용\s*효과\]/)
+  // Game text may put colour tags (digits and all) inside the bracket label; read the text as shown.
+  const m = gameTextToPlain(text).match(/\[편성[^\]]*전용\s*효과\]|\[\d[^\]]*편성\s*전용\s*효과\]/)
   if (!m) return []
   return [...m[0].matchAll(/(\d+)/g)].map(r => parseInt(r[1]))
 }
@@ -210,6 +211,7 @@ type PassiveSummary = {
   passive_type: string
   sin_affinity: string | null
   sin_count: number | null
+  sin_requirements?: { sin: string; count: number }[] | null
   active_cond: string | null
   description: string | null
   description_en?: string | null
@@ -813,7 +815,7 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
             {deck.length > 0 && finalGifts.length > 0 && (
               <ul className="mb-4 flex flex-wrap gap-x-6 gap-y-1.5 text-[0.875rem] leading-snug text-[#9c8b73]">
                 <li className="inline-flex items-center gap-2"><span className="h-2 w-2 shrink-0 rounded-full bg-[#ef4444]" aria-hidden="true" />{tDetail('conditionUnmet')}</li>
-                <li className="inline-flex items-center gap-2"><span className="h-2 w-2 shrink-0 rounded-full bg-[#e8b030]" aria-hidden="true" />{tDetail('conditionWarn')}</li>
+                <li className="inline-flex items-center gap-2"><span className="h-2 w-2 shrink-0 rounded-full bg-[#e8b030]" aria-hidden="true" />{tDetail('conditionWarn', { deployed: DEPLOYED_SLOT_COUNT })}</li>
               </ul>
             )}
             {finalGifts.length > 0 ? (

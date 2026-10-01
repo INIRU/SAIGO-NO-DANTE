@@ -19,6 +19,7 @@ import GiftTabView from '@/components/mirror-dungeon/GiftTab'
 import ThemeTabView from '@/components/mirror-dungeon/ThemeTab'
 import EventTab from '@/components/mirror-dungeon/EventTab'
 import PageHeader from '@/components/ui/PageHeader'
+import { gameTextToPlain } from '@/lib/game-text/rich-text'
 const ThemeModal = dynamic(() => import('@/components/mirror-dungeon/ThemeModal'), { ssr: false })
 const GiftModal = dynamic(() => import('@/components/mirror-dungeon/GiftModal'), { ssr: false })
 const EventModal = dynamic(() => import('@/components/mirror-dungeon/EventModal'), { ssr: false })
@@ -282,9 +283,11 @@ export default function MirrorDungeonClient({
       const slots = new Set<number>()
       for (const text of [g.effect_base, g.effect_plus, g.effect_plusplus]) {
         if (!text) continue
+        // Game text may put colour tags (digits and all) inside the bracket label; read the text as shown.
+        const plain = gameTextToPlain(text)
         regex.lastIndex = 0
         let m: RegExpExecArray | null
-        while ((m = regex.exec(text)) !== null) {
+        while ((m = regex.exec(plain)) !== null) {
           const nums = m[1].match(/\d+/g)
           if (nums) nums.forEach(n => slots.add(Number(n)))
         }

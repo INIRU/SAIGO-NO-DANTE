@@ -1,9 +1,12 @@
 'use client'
 
+import { useMemo } from 'react'
 import Image from 'next/image'
-import { useTranslations } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import { useFormatSkillDesc } from '@/components/providers/KeywordProvider'
 import CoinBadge from '@/components/skill/CoinBadge'
+import { gameTextToPlain, mayBeRawGameText, refNameLabels } from '@/lib/game-text/rich-text'
+import { useGameTextRefs, wantGameTextRefs } from '@/lib/hooks/useGameTextRefs'
 import type { LineChange, NumDiff } from '@/lib/utils/uptie-diff'
 
 export const UPTIE_NUMERALS = ['', 'I', 'II', 'III', 'IV'] as const
@@ -32,6 +35,15 @@ export function UptieChangePanel({ level, title, stats = [], lines, accentColor,
 }) {
   const t = useTranslations()
   const format = useFormatSkillDesc()
+  const locale = useLocale()
+  const { names } = useGameTextRefs({ lazy: true })
+  const labels = useMemo(() => (names ? refNameLabels(names) : undefined), [names])
+  // A removed line is struck-through plain text: game text loses its tags and shows names, older text stays as written.
+  const plain = (text: string) => {
+    if (!mayBeRawGameText(text)) return text
+    wantGameTextRefs()
+    return gameTextToPlain(text, { names: labels, locale })
+  }
   if (!title && stats.length === 0 && lines.length === 0) return null
   return (
     <section
@@ -63,11 +75,11 @@ export function UptieChangePanel({ level, title, stats = [], lines, accentColor,
               <span aria-hidden className="w-2.5 shrink-0 text-center font-bold" style={{ color: line.kind === 'added' ? '#e8b030' : '#6f6352' }}>
                 {line.kind === 'added' ? '+' : '−'}
               </span>
-              {line.coin > 0 && <span className="mt-[.2rem]"><CoinBadge number={line.coin} accentColor={accentColor} /></span>}
+              {line.coin > 0 && <span className="mt-[.2rem]"><CoinBadge number={line.coin} size="1.25rem" /></span>}
               <span className="sr-only">{t(line.kind === 'added' ? 'identity.uptie.added' : 'identity.uptie.removed')}: </span>
               {line.kind === 'added'
                 ? <span className="min-w-0 text-[#d8cfbf]">{format(line.text, accentColor, skillNameColors, allowedKeywords)}</span>
-                : <s className="min-w-0 text-[#8f8270] decoration-[#8f8270]">{line.text}</s>}
+                : <s className="min-w-0 text-[#8f8270] decoration-[#8f8270]">{plain(line.text)}</s>}
             </li>
           ))}
         </ul>

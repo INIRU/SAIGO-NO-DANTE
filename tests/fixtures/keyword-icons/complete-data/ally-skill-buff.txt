@@ -1,0 +1,25 @@
+{
+  "list": [
+    {
+      "id": "NailPersonality",
+      "iconId": "Nail",
+      "buffClass": "NonvolatileBuff",
+      "buffType": "Negative",
+      "canBeDespelled": true,
+      "categoryKeywordList": ["LACERATION"]
+    },
+    {
+      "id": "AssemblePersonality",
+      "iconId": "Assemble",
+      "buffClass": "VolatileBuff",
+      "buffType": "Positive",
+      "canBeDespelled": true
+    },
+    {
+      "id": "BulletHole",
+      "buffClass": "CountableBuff",
+      "buffType": "Negative",
+      "canBeDespelled": false
+    }
+  ]
+}

@@ -4,7 +4,8 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import { STORAGE_BASE } from '@/lib/constants/game'
 import { isSubsequence, matchScore, matchesAllWords } from '@/lib/search/match'
-import { placeholdersToPlainText } from '@/lib/game-text/placeholders'
+import { gameTextToPlain, refNameLabels } from '@/lib/game-text/rich-text'
+import { getGameTextRefNames } from '@/lib/db/game-text-refs'
 import { resolveKeywordIconUrl } from '@/lib/keywords/catalog'
 import { getIdentityImageUrl } from '@/lib/utils/images'
 
@@ -26,11 +27,20 @@ const pick = (row: Names, lang: Lang) => (lang === 'en' ? row.name_en : lang ===
 const allNames = (row: Names) => [row.name_kr, row.name_en, row.name_jp, row.name]
 
 // 이름 색인: 표가 작아(수백 행) 한 번 읽어 두고 메모리에서 찾는다. 게임 데이터 동기화 때 태그로 갱신된다.
-async function getSearchIndex() {
+// 부제의 [Id]는 참조 표(한국어)로 이름을 얻는다. 표를 못 읽었거나 아직 비었으면 그 색인은 오래 두면 안 된다:
+// 읽을 때 던져 캐시에 쓰이지 않게 하고, 호출하는 쪽(loadSearchIndex)이 [Id]를 그대로 둔 색인을 짧게만 캐시해 쓴다.
+async function getSearchIndex(withRefs: boolean) {
   'use cache'
-  cacheLife('max')
-  cacheTag(CACHE_TAGS.gameData, CACHE_TAGS.sinners, CACHE_TAGS.identities, CACHE_TAGS.ego, CACHE_TAGS.egoGifts, CACHE_TAGS.keywords)
+  if (withRefs) cacheLife('max')
+  else cacheLife('page-1m')
+  cacheTag(CACHE_TAGS.gameData, CACHE_TAGS.sinners, CACHE_TAGS.identities, CACHE_TAGS.ego, CACHE_TAGS.egoGifts, CACHE_TAGS.keywords, CACHE_TAGS.gameTextRefs)
 
+  let labels: Record<string, string> | undefined
+  if (withRefs) {
+    const names = await getGameTextRefNames('ko')
+    if (Object.keys(names).length === 0) throw new Error('game_text_refs is empty')
+    labels = refNameLabels(names)
+  }
   const db = createAdminClient().schema('limbus')
   const [sinners, identities, ego, keywords, gifts] = await Promise.all([
     db.from('sinners').select('id, name, name_kr, name_en, name_jp, order_num'),
@@ -45,8 +55,17 @@ async function getSearchIndex() {
     sinners: sinners.data ?? [],
     identities: identities.data ?? [],
     ego: ego.data ?? [],
-    keywords: (keywords.data ?? []).map(k => ({ ...k, description: placeholdersToPlainText(k.description, 'ko')?.slice(0, 80) ?? null })),
+    keywords: (keywords.data ?? []).map(k => ({ ...k, description: k.description ? gameTextToPlain(k.description, { names: labels }).slice(0, 80) : null })),
     gifts: gifts.data ?? [],
+  }
+}
+
+async function loadSearchIndex() {
+  try {
+    return await getSearchIndex(true)
+  } catch (error) {
+    console.error('Search index without game text names:', error)
+    return getSearchIndex(false)
   }
 }
 
@@ -59,7 +78,7 @@ export async function GET(request: NextRequest) {
     const lang: Lang = langParam === 'en' || langParam === 'ja' ? langParam : 'ko'
     if (!q) return NextResponse.json({ items: [], suggestions: [] })
 
-    const index = await getSearchIndex()
+    const index = await loadSearchIndex()
     const sinnerById = new Map(index.sinners.map(s => [s.id, s]))
     const sinnerNames = (id: string) => { const s = sinnerById.get(id); return s ? allNames(s) : [] }
 

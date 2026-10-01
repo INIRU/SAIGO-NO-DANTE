@@ -11,6 +11,7 @@ import IdentityCard from '@/components/sinners/IdentityCard'
 import IdentitySkillFrameCard from '@/components/identity/IdentitySkillFrameCard'
 import EgoDisplayCard from '@/components/sinners/EgoDisplayCard'
 import { KeywordWithTooltip, useKeywords } from '@/components/providers/KeywordProvider'
+import { resolveKeywordTextColor } from '@/lib/keywords/text-color'
 import { getLocalizedKeywordName, type SupportedLang } from '@/lib/i18n'
 import { isNoteImageUrl } from '@/lib/notes/images'
 import { GIFT_KEYWORD_COLORS } from '@/lib/constants/gift'
@@ -34,10 +35,13 @@ export function NoteAssetsProvider({doc, children}:{doc:JSONContent; children:Re
   const map=useMemo(()=>new Map((data ?? []).map(a=>[`${a.kind}:${a.id}`,a])),[data])
   return <AssetContext.Provider value={{data:map,loading:isLoading,error:Boolean(error),retry:()=>{void mutate()}}}>{children}</AssetContext.Provider>
 }
+/** A keyword written in a memo: icon and name in the keyword's colour with its tooltip, inline like game text (no chip box). */
 export function NoteKeywordLabel({id}:{id:string}) {
   const keywords=useKeywords(), lang=useLocale()
-  const name=keywords[id] ? getLocalizedKeywordName(id,keywords[id],lang as SupportedLang) : id
-  return <span className="note-keyword-label"><KeywordWithTooltip keyword={name} krKey={id} inline><strong>{name}</strong></KeywordWithTooltip></span>
+  const info=keywords[id]
+  const name=info ? getLocalizedKeywordName(id,info,lang as SupportedLang) : id
+  const color=resolveKeywordTextColor(name,info,id)
+  return <KeywordWithTooltip keyword={name} krKey={info ? id : undefined} inline displayColor={color}><span style={{color,fontWeight:600}}>{name}</span></KeywordWithTooltip>
 }
 /** A gift written inside a sentence: its art at text height and its name in the keyword's colour; opens the gift. */
 export function NoteGiftLabel({id,name}:{id:string;name?:string}) {
@@ -90,7 +94,8 @@ function NoteAccordionView({title,children}:{title:ReactNode;children:ReactNode}
 }
 export default function NoteBlockViewer({doc,renderText}:{doc:JSONContent;renderText:(text:string)=>ReactNode}) {
   function render(n:JSONContent,key:string):ReactNode {
-    if (!visibleNode(n) && !['horizontalRule','hardBreak'].includes(n.type ?? '')) return null
+    // A text node of only spaces is the gap between two chips (or a chip and a word): it stays, the paragraph around it decides whether anything shows.
+    if (!(n.type === 'text' && n.text) && !visibleNode(n) && !['horizontalRule','hardBreak'].includes(n.type ?? '')) return null
     const children=n.content?.map((c,i)=>render(c,`${key}-${i}`))
     if (n.type === 'text') {
       let result:ReactNode=renderText(n.text ?? '')

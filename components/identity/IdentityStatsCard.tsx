@@ -5,6 +5,7 @@ import { getDetailStatIconUrl } from '@/lib/utils/images'
 import type { Identity } from '@/lib/data/sinners'
 import { useTranslations } from 'next-intl'
 import { MAX_IDENTITY_LEVEL } from '@/lib/identity/level'
+import { MultipliedCount } from '@/components/passive/PassiveParts'
 
 export default function IdentityStatsCard({ identity, level, setLevel }: { identity: Identity; level: number; setLevel: (level: number) => void }) {
   const t = useTranslations()
@@ -68,7 +69,7 @@ export default function IdentityStatsCard({ identity, level, setLevel }: { ident
         ] as const).map(({ icon, label, resistance }) => (
           <div key={icon} className="text-center">
             <div className="flex items-center justify-center gap-1.5 text-xs text-[var(--text-secondary)]"><Image src={getDetailStatIconUrl(icon)} alt="" width={18} height={18} />{label}</div>
-            <div className="mt-2 text-3xl tabular-nums" style={{ fontFamily: 'var(--font-excelsior), sans-serif', color: resistance === '취약' ? '#e69b86' : resistance === '내성' ? '#91beb4' : 'var(--text-primary)' }}>×{resistance === '내성' ? '0.5' : resistance === '취약' ? '2' : '1'}</div>
+            <div className="mt-2 text-3xl"><MultipliedCount value={resistance === '내성' ? '0.5' : resistance === '취약' ? '2' : '1'} style={{ fontFamily: 'var(--font-excelsior), sans-serif', color: resistance === '취약' ? '#e69b86' : resistance === '내성' ? '#91beb4' : 'var(--text-primary)' }} /></div>
             <div className="mt-0.5 text-[.6875rem] text-[var(--text-secondary)]">{t(resistance === '취약' ? 'identity.resistance.weak' : resistance === '내성' ? 'identity.resistance.resistant' : 'identity.resistance.normal')}</div>
           </div>
         ))}

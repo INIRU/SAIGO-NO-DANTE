@@ -22,6 +22,34 @@ describe('diffDescriptionLines', () => {
   })
 })
 
+describe('diffDescriptionLines of raw descriptions (REQ-SHARED-020)', () => {
+  it('REQ-SHARED-020 tags the lines of each <coin=N> block with that coin', () => {
+    const from = '[WhenUse] 위력 +1\n<coin=1>[OnSucceedAttack] 파열 2\n- 추가</coin>\n<coin=2>[OnSucceedAttack] 침잠 1</coin>'
+    const to = '[WhenUse] 위력 +1\n<coin=1>[OnSucceedAttack] 파열 3\n- 추가</coin>\n<coin=2>[OnSucceedAttack] 침잠 1\n[OnSucceedAttack] 충전 1</coin>'
+    expect(diffDescriptionLines(from, to)).toEqual([
+      { kind: 'removed', coin: 1, text: '[OnSucceedAttack] 파열 2' },
+      { kind: 'added', coin: 1, text: '[OnSucceedAttack] 파열 3' },
+      { kind: 'added', coin: 2, text: '[OnSucceedAttack] 충전 1' },
+    ])
+  })
+
+  it('REQ-SHARED-020 sees the same coin text as unchanged whether it is written as a [코인 N] line or a block', () => {
+    expect(diffDescriptionLines('[코인 1] 효과', '<coin=1>효과</coin>')).toEqual([])
+  })
+
+  it('REQ-SHARED-020 returns lines that are balanced on their own, so each can be drawn separately', () => {
+    expect(diffDescriptionLines('', '<style="highlight">- 가\n\n- 나</style>\n끝')).toEqual([
+      { kind: 'added', coin: 0, text: '<style="highlight">- 가' },
+      { kind: 'added', coin: 0, text: '<style="highlight">- 나</style>' },
+      { kind: 'added', coin: 0, text: '끝' },
+    ])
+  })
+
+  it('REQ-SHARED-020 ignores a line left holding only tags', () => {
+    expect(diffDescriptionLines('<style="highlight">가', '<style="highlight">가\n</style>')).toEqual([])
+  })
+})
+
 const skill = (over: Partial<Skill>) => ({ id: 's', skill_order: 1, base_power: 3, coin_power: 2, coins: 2, description: 'a', ...over } as Skill)
 
 describe('computeSkillDiffs / computePassiveDiffs', () => {

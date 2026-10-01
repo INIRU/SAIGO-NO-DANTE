@@ -1,5 +1,6 @@
-import { describe, expect, it } from 'vitest'
-import { readFileSync } from 'node:fs'
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
 import {
@@ -13,10 +14,12 @@ import {
   normalizeKrPersonalityDisplayName,
   resolveKeywordEffectTypeForSyncTest,
   resolveKeywordMetaSourceForSyncTest,
-  translateDescriptionForSyncTest,
-  translateDesc,
+  composeRawSkillDescription,
+  rawGameText,
+  joinPassiveGameTexts,
   deriveIdentityAcquisition,
 } from './identity-data'
+import { buffPlaceholders } from './placeholder-rules'
 
 describe('identity-data sync helpers', () => {
   it('stores keyword descriptions through placeholder-rules in every language', () => {
@@ -67,23 +70,10 @@ describe('identity-data sync helpers', () => {
     const fresh = deriveIdentityAcquisition({ ...identity, acquisition_info: null }, { id: 10816, characterId: 8, rank: 3, season: 7 }, new Map(), new Map([['10816', [rerun]]]), true)
     expect(fresh.acquisition_info).toMatchObject({ gacha_id: 293, gacha_name: '특정 추출 료슈' })
   })
-  it('Unity rich text tags are stripped before locale text is normalized', () => {
+  it('Unity rich text tags are still stripped from names (titles), which are not rendered as rich text', () => {
     const source = '자신에게 <style="highlight"><b><i><u><s>중지</s></u></i></b></style> - 원한 문신 [<s>큰 누님</s>] <color=#ff00ff><link="x"><size=80%><mark=#fff>강화</mark></size></link></color><sprite name="x" />'
 
     expect(cleanLocaleContent(source)).toBe('자신에게 중지 - 원한 문신 [큰 누님] 강화')
-    expect(translateDesc(source)).toBe('자신에게 중지 - 원한 문신 [큰 누님] 강화')
-    expect(translateDescriptionForSyncTest(
-      '중지 - 원한 문신 [MiddleFatherTattoo]',
-      { MiddleFatherTattoo: '<s>큰 누님</s>' },
-    )).toBe('중지 - 원한 문신 큰 누님')
-  })
-
-  it('names the EGO passive section tags from SkillTag, which already carry their brackets', () => {
-    // KR_SkillTag (2026-09 extraction): section headers of an EGO passive's always-on and on-use effects.
-    expect(translateDescriptionForSyncTest(
-      '[AlwaysUseEGOPassive2010911]\n\n기본 스킬의 공격 적중 시 대상에게 진동 2 부여\n\n[WhenUseEGOPassive]',
-      { AlwaysUseEGOPassive2010911: '[로보토미 E.G.O::엄숙한 애도 이상 전용 상시 효과]', WhenUseEGOPassive: '[사용 효과]' },
-    )).toBe('[로보토미 E.G.O::엄숙한 애도 이상 전용 상시 효과]\n\n기본 스킬의 공격 적중 시 대상에게 진동 2 부여\n\n[사용 효과]')
   })
 
   it('finds stale keyword_meta names that still contain raw rich text tags', () => {
@@ -362,7 +352,7 @@ describe('identity-data sync helpers', () => {
     expect(rows.some(row => row.name === '스킬3')).toBe(false)
   })
 
-  it('includes unlocked tier-three counter variants with their level-specific descriptions', () => {
+  it('REQ-DATA-SYNC-035 includes unlocked tier-three counter variants with their level-specific raw descriptions', () => {
     const skill = {
       id: 1021607, skillTier: 3, isHiddenForUI: false, requireIDList: ['CheckAwakenLevel3'],
       skillData: [{ gaksungLevel: 3, defType: 'COUNTER', atkType: 'SLASH',
@@ -382,7 +372,8 @@ describe('identity-data sync helpers', () => {
     for (const row of rows) {
       expect(row).toMatchObject({ name: '정오의 해체', skill_order: 3, skill_type: 'counter' })
       expect(['1021607', '1021608']).toContain(row.image_id)
-      expect(row.description).toBe(`동기화 ${row.uptie_level} 설명\n[코인 1] [적중시] 코인 효과`)
+      // REQ-DATA-SYNC-035: the coin text stays raw inside <coin=N>, and the [Tag] is not translated or labelled.
+      expect(row.description).toBe(`동기화 ${row.uptie_level} 설명\n<coin=1>[OnSucceedAttack] 코인 효과</coin>`)
     }
   })
 
@@ -452,5 +443,211 @@ describe('identity-data sync helpers', () => {
     const a = { name: '도축 - 갈비뼈', skill_order: 1, uptie_level: 4, base_power: 3, coin_power: 4, variant_order: 1, image_id: '1021501' }
     const b = { ...a, variant_order: 4, image_id: '1021505' }
     expect(areSkillRowsDifferent([a, b], [b, a])).toBe(false)
+  })
+})
+
+// Raw strings copied from the 2026-09-24 extraction (complete-data). Only the "<b>화상</b>" keyword name and the
+// "<i>…</i>" flavor are made up, to pin that names are still cleaned and flavor text is kept raw.
+const KR_SKILL_1011001 = { id: 1011001, levelList: [{ level: 4, name: '떠난이에게 축하를', flavor: '<i>작별</i> 인사', desc: '<style="highlight">보유한 [BulletLament]가 10 이상이면, 합 위력 +1</style>\n대상의 [Sinking]과 모든 [SinkingWhite]의 합이 6 이상이면, 코인 위력 +1\n[WinDuel] [Sinking] 횟수 2 증가\n', coinlist: [
+  { coindescs: [{ desc: '[BulletLament] 1 소모' }, { desc: '[OnSucceedAttack] 소모한 [BulletLament]만큼 [SinkingWhite] 부여' }] },
+  { coindescs: [{ desc: '[BulletLament] 1 소모' }, { desc: '[OnSucceedAttack] 소모한 [BulletLament]만큼 [SinkingWhite] 부여' }] },
+  { coindescs: [] },
+] }] }
+const EN_SKILL_1011001 = { id: 1011001, levelList: [{ level: 4, name: 'Celebration for the Departed', desc: '<style="highlight">At 10+ [BulletLament], Clash Power +1</style>\nIf the sum of the target\'s [Sinking] and both [SinkingWhite] is 6 or higher, Coin Power +1\n[WinDuel] Inflict +2 [Sinking] Count', coinlist: [
+  { coindescs: [{ desc: 'Spend 1 [BulletLament]' }, { desc: '[OnSucceedAttack] Inflict [SinkingWhite] equal to [BulletLament] spent' }] },
+  { coindescs: [{ desc: 'Spend 1 [BulletLament]' }, { desc: '[OnSucceedAttack] Inflict [SinkingWhite] equal to [BulletLament] spent' }] },
+] }] }
+const JP_SKILL_1011001 = { id: 1011001, levelList: [{ level: 4, name: '往にし者へ祝辞を', desc: '<style="highlight">保有した[BulletLament]が10以上なら、マッチ威力 +1</style>\n[WinDuel] [Sinking]回数が2増加', coinlist: [
+  { coindescs: [{ desc: '[BulletLament]を1消耗' }, { desc: '[OnSucceedAttack] 消耗した[BulletLament]だけ[SinkingWhite]を付与' }] },
+] }] }
+const KR_PASSIVE_1020601 = { id: 1020601, name: '차가 식기 전에...', desc: '상대의 약점, 취약 속성(내성 1 초과) 으로 공격할 때, 공격 전 대상의 <sprite name="Burst"><color=#e30000><u><link="Burst">파열</color></link></u>만큼 <sprite name="Breath"><color=#f8c200><u><link="Breath">호흡</color></link></u>을 얻음 (턴 당 최대 20)', summary: '약점, 취약 속성으로 공격할 때, 공격 전 대상의 파열만큼 호흡을 얻음' }
+const EN_PASSIVE_1020601 = { id: 1020601, name: 'Before the Tea Cools...', desc: 'When attacking a target using a damage type the target is "Weak" or "Fatal" (Resistance>x1) to, gain [Breath] equal to [Burst] on target before the attack (max 20 per turn)' }
+const JP_PASSIVE_1020601 = { id: 1020601, name: 'お茶が冷める前に…', desc: '対象の弱点・脆弱属性(耐性1超過)で攻撃するとき、攻撃前対象の<sprite name="Burst"><color=#e30000><u><link="Burst">破裂</color></link></u>だけ<sprite name="Breath"><color=#f8c200><u><link="Breath">呼吸</color></link></u>を得る(1ターンにつき最大20)' }
+const EGO_SKILL_2010211 = {
+  kr: { id: 2010211, levelList: [{ level: 5, name: '4번째 성냥불', desc: '<style="highlight">[BeforeAttack] 모든 공격 대상의 [Combustion]의 합\n- 6당, 최종 위력 +1 (최대 4)\n- 1당, 피해량 +1% (최대 30%)</style>', coinlist: [{ coindescs: [{ desc: '[OnSucceedAttack] [Combustion] 4 부여<style="highlight"></style>' }, { desc: '[OnSucceedAttackHead] [Combustion] 6 부여<style="highlight"></style>' }] }] }] },
+  en: { id: 2010211, levelList: [{ level: 5, name: '4th Match Flame', desc: '<style="highlight">[BeforeAttack] Apply the following effects:\n- Final Power +1 for every 6 [Combustion] on all targets (max 4)</style>', coinlist: [{ coindescs: [{ desc: '[OnSucceedAttack] Inflict 4 [Combustion]<style="highlight"></style>' }] }] }] },
+  jp: { id: 2010211, levelList: [{ level: 5, name: '4本目のマッチの火', desc: '<style="highlight">[BeforeAttack] 全攻撃対象の[Combustion]の合計</style>', coinlist: [{ coindescs: [{ desc: '[OnSucceedAttack] [Combustion]4を付与<style="highlight"></style>' }] }] }] },
+}
+const EGO_PASSIVE_2030111 = { kr: '공격 적중 시 대상에게 [Laceration]이 있으면 체력 3 회복', jp: '攻撃的中時、対象に[Laceration]があるなら体力を3回復' }
+const BUFS = {
+  kr: [{ id: 'Combustion', name: '<b>화상</b>', desc: '{1}턴 동안 턴 종료 시 {0}만큼 고정 체력 피해를 입음' },
+    { id: 'Charge', name: '충전', desc: '소모 시 특정 스킬의 능력이 상승함. 횟수를 최대 20까지 얻을 수 있음. 턴 종료 시 횟수 1 감소.\n\n<color=#1aece7>횟수 누적 소모량: {2}</color>' }],
+  en: [{ id: 'Combustion', name: 'Burn', desc: 'Turn End: Take {0} fixed damage. Lasts {1} turn(s).' }],
+  jp: [{ id: 'Combustion', name: '火傷', desc: '{1}ターンの間、ターン終了時に{0}の固定ダメージを受ける' }],
+}
+
+describe('REQ-DATA-SYNC-035 identity and EGO text is stored as the game wrote it', () => {
+  type Sync = typeof import('./identity-data')
+  let dir = ''
+  let sync: Sync
+
+  beforeAll(async () => {
+    dir = mkdtempSync(join(tmpdir(), 'identity-raw-text-'))
+    const write = (lang: string, file: string, list: unknown[]) => {
+      mkdirSync(join(dir, lang), { recursive: true })
+      writeFileSync(join(dir, lang, file), JSON.stringify({ dataList: list }))
+    }
+    write('KR', 'KR_Skills_personality-01.txt', [KR_SKILL_1011001])
+    write('EN', 'EN_Skills_personality-01.txt', [EN_SKILL_1011001])
+    write('JP', 'JP_Skills_personality-01.txt', [JP_SKILL_1011001])
+    write('KR', 'KR_Passives.txt', [KR_PASSIVE_1020601])
+    write('EN', 'EN_Passives.txt', [EN_PASSIVE_1020601])
+    write('JP', 'JP_Passives.txt', [JP_PASSIVE_1020601])
+    write('KR', 'KR_Skills_Ego.txt', [EGO_SKILL_2010211.kr])
+    write('EN', 'EN_Skills_Ego.txt', [EGO_SKILL_2010211.en])
+    write('JP', 'JP_Skills_Ego.txt', [EGO_SKILL_2010211.jp])
+    write('KR', 'KR_Passive_Ego.txt', [{ id: 2030111, name: '과도한 열정', desc: EGO_PASSIVE_2030111.kr }, { id: 2021111, name: '르 트루 드 비당주', desc: '설명', flavor: ' 구멍은 <i>결여</i>로 인해 생기는 것. ' }])
+    write('EN', 'EN_Passive_Ego.txt', [])
+    write('JP', 'JP_Passive_Ego.txt', [{ id: 2030111, name: '過度な熱情', desc: EGO_PASSIVE_2030111.jp }])
+    for (const lang of ['kr', 'en', 'jp'] as const) write(lang.toUpperCase(), `${lang.toUpperCase()}_Bufs.txt`, BUFS[lang])
+    // Passive conditions: passive.txt and the per-chapter files next to it (newer identities live only in the latter).
+    writeFileSync(join(dir, 'passive.txt'), JSON.stringify({ list: [{ id: 1020601, attributeResonanceCondition: [{ type: 'CRIMSON', value: 3 }] }] }))
+    writeFileSync(join(dir, 'passive-a1c8p2.txt'), JSON.stringify({ list: [
+      { id: 1021201, attributeStockCondition: [{ type: 'SHAMROCK', value: 5 }] },
+      { id: 1031501, attributeStockCondition: [{ type: 'INDIGO', value: 1 }, { type: 'VIOLET', value: 1 }, { type: 'AMBER', value: 1 }] },
+    ] }))
+    // The paths are read when the module loads, so load a copy that sees the fixture directory.
+    vi.resetModules()
+    vi.stubEnv('LIMBUS_DATA_DIR', dir)
+    sync = await import('./identity-data')
+  })
+  afterAll(() => {
+    vi.unstubAllEnvs()
+    rmSync(dir, { recursive: true, force: true })
+  })
+
+  it('REQ-DATA-SYNC-035 rawGameText only trims the surrounding whitespace', () => {
+    expect(rawGameText('  <style="highlight">[Combustion]</style> {0}\n ')).toBe('<style="highlight">[Combustion]</style> {0}')
+    expect(rawGameText(undefined)).toBe('')
+  })
+
+  it('REQ-DATA-SYNC-035 closes each passive text before joining them, so a tag does not run into the next passive', () => {
+    expect(joinPassiveGameTexts(['<color=#ff6000>첫째 <u>밑줄', '둘째'])).toBe('<color=#ff6000>첫째 <u>밑줄</u></color>\n\n둘째')
+    expect(joinPassiveGameTexts(['<style="highlight">- a\n- b</style>', '둘째'])).toBe('<style="highlight">- a\n- b</style>\n\n둘째')
+  })
+
+  it('REQ-DATA-SYNC-035 skips empty passive texts and gives null when none is left', () => {
+    expect(joinPassiveGameTexts(['', undefined, '본문', null])).toBe('본문')
+    expect(joinPassiveGameTexts(['', undefined])).toBeNull()
+    expect(joinPassiveGameTexts([])).toBeNull()
+  })
+
+  it('REQ-DATA-SYNC-035 composes a skill description as the main text, then each coin that has descriptions inside <coin=N>', () => {
+    const level = KR_SKILL_1011001.levelList[0]
+    expect(composeRawSkillDescription(level)).toBe([
+      '<style="highlight">보유한 [BulletLament]가 10 이상이면, 합 위력 +1</style>',
+      '대상의 [Sinking]과 모든 [SinkingWhite]의 합이 6 이상이면, 코인 위력 +1',
+      '[WinDuel] [Sinking] 횟수 2 증가',
+      '<coin=1>[BulletLament] 1 소모\n[OnSucceedAttack] 소모한 [BulletLament]만큼 [SinkingWhite] 부여</coin>',
+      '<coin=2>[BulletLament] 1 소모\n[OnSucceedAttack] 소모한 [BulletLament]만큼 [SinkingWhite] 부여</coin>',
+    ].join('\n'))
+    // The coin number is the coin's position, so an empty coin 1 leaves coin 2 numbered 2; no main text means no leading newline.
+    expect(composeRawSkillDescription({ desc: '', coinlist: [{ coindescs: [] }, { coindescs: [{ desc: ' [OnSucceedAttack] 피해 ' }] }] })).toBe('<coin=2>[OnSucceedAttack] 피해</coin>')
+    expect(composeRawSkillDescription(undefined)).toBe('')
+  })
+
+  it('REQ-DATA-SYNC-035 stores identity skill rows raw in KR, EN and JP: tags, [Id] and the coin blocks stay; the name is cleaned', () => {
+    const sources = sync.loadSkillPassiveSources()
+    const gamePerson = { id: 10110, characterId: 1, attributeList: [{ skillId: 1011001 }] }
+    const skillMap = new Map([[1011001, { id: 1011001, skillTier: 1, skillData: [{ gaksungLevel: 4, atkType: 'HIT', defType: 'ATTACK', attributeType: 'VIOLET', defaultValue: 3, targetNum: 1, coinList: [{ operatorType: 'ADD', scale: 2 }, { operatorType: 'ADD', scale: 2 }] }] }]])
+    const rows = sync.buildSkillRows(gamePerson, skillMap, sources.krSkillMap, null, sources.enLocale, sources.jpLocale)
+    expect(rows).toHaveLength(1)
+    const [row] = rows
+    expect(row.description).toBe([
+      '<style="highlight">보유한 [BulletLament]가 10 이상이면, 합 위력 +1</style>',
+      '대상의 [Sinking]과 모든 [SinkingWhite]의 합이 6 이상이면, 코인 위력 +1',
+      '[WinDuel] [Sinking] 횟수 2 증가',
+      '<coin=1>[BulletLament] 1 소모\n[OnSucceedAttack] 소모한 [BulletLament]만큼 [SinkingWhite] 부여</coin>',
+      '<coin=2>[BulletLament] 1 소모\n[OnSucceedAttack] 소모한 [BulletLament]만큼 [SinkingWhite] 부여</coin>',
+    ].join('\n'))
+    expect(row.description_en).toBe([
+      '<style="highlight">At 10+ [BulletLament], Clash Power +1</style>',
+      "If the sum of the target's [Sinking] and both [SinkingWhite] is 6 or higher, Coin Power +1",
+      '[WinDuel] Inflict +2 [Sinking] Count',
+      '<coin=1>Spend 1 [BulletLament]\n[OnSucceedAttack] Inflict [SinkingWhite] equal to [BulletLament] spent</coin>',
+      '<coin=2>Spend 1 [BulletLament]\n[OnSucceedAttack] Inflict [SinkingWhite] equal to [BulletLament] spent</coin>',
+    ].join('\n'))
+    expect(row.description_jp).toBe([
+      '<style="highlight">保有した[BulletLament]が10以上なら、マッチ威力 +1</style>',
+      '[WinDuel] [Sinking]回数が2増加',
+      '<coin=1>[BulletLament]を1消耗\n[OnSucceedAttack] 消耗した[BulletLament]だけ[SinkingWhite]を付与</coin>',
+    ].join('\n'))
+    expect(row.flavor).toBe('<i>작별</i> 인사')
+    expect(row.name).toBe('떠난이에게 축하를')
+  })
+
+  it('REQ-CATALOG-018 translates an EGO skill row by its own game skill id, so a second awakening skill keeps its text', () => {
+    expect(sync.egoSkillGameId({ game_skill_id: 2021112, category: 'awakening' }, '20211')).toBe(2021112)
+    expect(sync.egoSkillGameId({ game_skill_id: null, category: 'awakening' }, '20211')).toBe(2021111)
+    expect(sync.egoSkillGameId({ category: 'corrosion' }, 20211)).toBe(2021121)
+  })
+
+  it('REQ-CATALOG-018 keeps the flavor line of an EGO passive raw', () => {
+    const context = sync.loadEgoSyncContext()
+    expect(context.passives.kr.get(2021111)?.flavor).toBe('구멍은 <i>결여</i>로 인해 생기는 것.')
+    expect(context.passives.kr.get(2030111)?.flavor).toBeUndefined()
+  })
+
+  it('REQ-CATALOG-016 reads the conditions of every passive file and keeps every sin with its own count', () => {
+    const sources = sync.loadSkillPassiveSources()
+    expect(sources.passiveDetailMap.get(1021201)?.attributeStockCondition).toEqual([{ type: 'SHAMROCK', value: 5 }])
+    expect(sync.passiveCondition(sources.passiveDetailMap.get(1031501))).toEqual({
+      sin_affinity: 'pride', sin_count: 1, active_cond: 'stock',
+      sin_requirements: [{ sin: 'pride', count: 1 }, { sin: 'envy', count: 1 }, { sin: 'sloth', count: 1 }],
+    })
+    expect(sync.passiveCondition(sources.passiveDetailMap.get(1020601))).toEqual({
+      sin_affinity: 'wrath', sin_count: 3, active_cond: 'resonance', sin_requirements: [{ sin: 'wrath', count: 3 }],
+    })
+    expect(sync.passiveCondition(undefined)).toEqual({ sin_affinity: null, sin_count: null, active_cond: null, sin_requirements: null })
+  })
+
+  it('REQ-CATALOG-016 sees a changed sin requirement list as a passive change', () => {
+    const row = { name: 'a', passive_type: 'battle' as const, passive_order: 1, uptie_level: 4, sin_affinity: 'envy', sin_count: 2 }
+    expect(sync.arePassiveRowsDifferent(
+      [{ ...row, sin_requirements: [{ sin: 'envy', count: 2 }, { sin: 'sloth', count: 2 }] }],
+      [{ ...row, sin_requirements: [{ count: 2, sin: 'envy' }, { count: 2, sin: 'sloth' }] as never }],
+    )).toBe(false)
+    expect(sync.arePassiveRowsDifferent([{ ...row, sin_requirements: [{ sin: 'envy', count: 2 }, { sin: 'sloth', count: 2 }] }], [{ ...row, sin_requirements: null }])).toBe(true)
+  })
+
+  it('REQ-DATA-SYNC-035 stores passive descriptions raw (sprite, color, link and [Id] stay; no {0} word)', () => {
+    const sources = sync.loadSkillPassiveSources()
+    const mapping = { personalityID: 10206, battlePassiveList: [{ level: 1, passiveIDList: [1020601] }], supporterPassiveList: [] }
+    const rows = sync.buildPassiveRows(mapping, 'identity-1', sources.krPassiveMap, new Map(), sources.enLocale, sources.jpLocale)
+    const krRaw = '상대의 약점, 취약 속성(내성 1 초과) 으로 공격할 때, 공격 전 대상의 <sprite name="Burst"><color=#e30000><u><link="Burst">파열</color></link></u>만큼 <sprite name="Breath"><color=#f8c200><u><link="Breath">호흡</color></link></u>을 얻음 (턴 당 최대 20)'
+    expect(rows.length).toBeGreaterThan(0)
+    for (const row of rows) {
+      expect(row.description).toBe(krRaw)
+      expect(row.description_en).toBe(EN_PASSIVE_1020601.desc)
+      expect(row.description_jp).toBe(JP_PASSIVE_1020601.desc)
+    }
+    expect(rows[0].name).toBe('차가 식기 전에...')
+  })
+
+  it('REQ-DATA-SYNC-035 loads EGO skill and passive text raw for the bootstrap rows, with the coin blocks', () => {
+    const context = sync.loadEgoSyncContext()
+    expect(sync.composeRawSkillDescription(context.skills.kr.get('2010211_5'))).toBe([
+      '<style="highlight">[BeforeAttack] 모든 공격 대상의 [Combustion]의 합\n- 6당, 최종 위력 +1 (최대 4)\n- 1당, 피해량 +1% (최대 30%)</style>',
+      '<coin=1>[OnSucceedAttack] [Combustion] 4 부여<style="highlight"></style>\n[OnSucceedAttackHead] [Combustion] 6 부여<style="highlight"></style></coin>',
+    ].join('\n'))
+    expect(sync.composeRawSkillDescription(context.skills.en.get('2010211_5'))).toContain('Inflict 4 [Combustion]<style="highlight"></style></coin>')
+    expect(context.skills.jp.get('2010211_5')?.name).toBe('4本目のマッチの火')
+    expect(context.passives.kr.get(2030111)?.desc).toBe(EGO_PASSIVE_2030111.kr)
+    expect(context.passives.jp.get(2030111)?.desc).toBe(EGO_PASSIVE_2030111.jp)
+  })
+
+  it('REQ-DATA-SYNC-035 reads keyword descriptions raw, keeps keyword names cleaned, and lets placeholder-rules tokenize the slots', () => {
+    const kr = sync.loadKrKeywordDescriptions()
+    // The made-up "<b>화상</b>" name is looked up by its cleaned form.
+    const combustion = kr.get('화상')?.[0]
+    expect(combustion?.id).toBe('Combustion')
+    expect(combustion?.description).toBe('{1}턴 동안 턴 종료 시 {0}만큼 고정 체력 피해를 입음')
+    expect(buffPlaceholders(combustion?.description, 'Combustion')).toBe('{{count}}턴 동안 턴 종료 시 {{potency}}만큼 고정 체력 피해를 입음')
+    // A tag around a slot survives; the slot becomes the live-value token (BUFF_PLACEHOLDER_ROLES.Charge).
+    const charge = kr.get('충전')?.[0]
+    expect(charge?.description).toContain('<color=#1aece7>횟수 누적 소모량: {2}</color>')
+    expect(buffPlaceholders(charge?.description, 'Charge')).toContain('<color=#1aece7>횟수 누적 소모량: {{live}}</color>')
+    expect(sync.loadLangKeywordDescriptions('en').get('Combustion')?.description).toBe('Turn End: Take {0} fixed damage. Lasts {1} turn(s).')
+    expect(sync.loadLangKeywordDescriptions('jp').get('Combustion')?.name).toBe('火傷')
   })
 })

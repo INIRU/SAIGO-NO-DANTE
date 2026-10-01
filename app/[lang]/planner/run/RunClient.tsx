@@ -32,6 +32,8 @@ import ConfirmModal from '@/components/ui/ConfirmModal'
 import GpuRequiredModal from '@/components/planner/run/GpuRequiredModal'
 import { captureEvidence, useAssistCapture } from '@/lib/hooks/useAssistCapture'
 import { recognizableEvents } from '@/lib/utils/event-catalog'
+import { gameTextForScreen, refNameLabels } from '@/lib/game-text/rich-text'
+import { useGameTextRefs } from '@/lib/hooks/useGameTextRefs'
 
 /** Assist temporary saves: five slots of whole runs in this browser. */
 const RUN_DRAFTS_KEY = 'md-run-temp-slots'
@@ -88,6 +90,9 @@ export default function RunClient({ themes, gifts, recipes, identities, sinners,
       .catch(() => { if (live) toast.error(t('gameLanguageLoadFailed')) })
     return () => { live = false }
   }, [gameLanguage, siteLanguage, extraTexts?.language, t])
+  // Gift effects are game text with [Id]s; the screen shows their names, so OCR is compared with the text carrying those.
+  const { names: refNames } = useGameTextRefs()
+  const refLabels = useMemo(() => (refNames ? refNameLabels(refNames) : undefined), [refNames])
   const ocrCatalog = useMemo(() => {
     const extra = extraTexts && extraTexts.language === gameLanguage && gameLanguage !== siteLanguage ? extraTexts.data : null
     const more = <T extends { id: string },>(rows: T[] | undefined) => new Map((rows ?? []).map(row => [row.id, row]))
@@ -100,7 +105,7 @@ export default function RunClient({ themes, gifts, recipes, identities, sinners,
       effectTexts: [...giftMore.get(String(gift.game_id))?.texts ?? [], gift.effect_base, gift.effect_base_en, gift.effect_base_jp,
         gift.effect_plus, gift.effect_plus_en, gift.effect_plus_jp,
         gift.effect_plusplus, gift.effect_plusplus_en, gift.effect_plusplus_jp]
-        .filter((value): value is string => Boolean(value)),
+        .filter((value): value is string => Boolean(value)).map(text => gameTextForScreen(text, refLabels)),
     })),
     events: recognizable.events.map(event => ({ id: String(event.id), texts: [event.name, event.desc_text, event.name_en, event.desc_text_en, event.name_jp, event.desc_text_jp,
       ...eventMore.get(String(event.id))?.texts ?? []].filter((value): value is string => Boolean(value)) })),
@@ -109,7 +114,7 @@ export default function RunClient({ themes, gifts, recipes, identities, sinners,
       resultTexts: [choice.result_text, choice.result_text_en, choice.result_text_jp, ...choiceMore.get(String(choice.id))?.resultTexts ?? []]
         .filter((value): value is string => Boolean(value)) })),
     }
-  }, [gifts, recognizable, gameLanguage, siteLanguage, extraTexts])
+  }, [gifts, recognizable, gameLanguage, siteLanguage, extraTexts, refLabels])
   const themeCatalog = useMemo(() => themes.map(theme => ({ id: String(theme.id),
     texts: [theme.name, theme.name_en, theme.name_jp].filter((value): value is string => Boolean(value)) })), [themes])
   // Balanced unless the user chose another mode in this browser; read after mount (the server cannot see storage).

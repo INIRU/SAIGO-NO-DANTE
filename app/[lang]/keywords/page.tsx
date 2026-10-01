@@ -6,6 +6,8 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { translations } from '@/lib/i18n/translations'
 import type { SupportedLang } from '@/lib/i18n/types'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
+import { getGameTextRefNames } from '@/lib/db/game-text-refs'
+import { isMissingColumnError, keywordTextsFromRefs, loadKeywordRefTexts } from '@/lib/keywords/ref-text'
 import KeywordsClient from './KeywordsClient'
 import StaticQueryAdapter from '@/components/providers/StaticQueryAdapter'
 import KeywordsLoading from './loading'
@@ -28,29 +30,57 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
 }
 
 
-async function fetchAllKeywords(supabase: ReturnType<typeof createAdminClient>) {
-  const all: any[] = []
-  let from = 0
-  while (true) {
-    const { data, error } = await supabase.schema('limbus').from('keyword_meta')
-      .select('name, description, max_stack, icon_slug, sin_affinity, category, name_en, name_jp, description_en, description_jp')
-      .order('name')
-      .range(from, from + 999)
-    if (error || !data || data.length === 0) break
-    all.push(...data)
-    if (data.length < 1000) break
-    from += 1000
+const KEYWORD_COLUMNS = 'name, description, max_stack, icon_slug, sin_affinity, category, name_en, name_jp, description_en, description_jp'
+
+/** keyword_meta rows with the names and descriptions of their game_text_refs row (keyword_meta's own where a row has no game_id). */
+async function fetchAllKeywords(supabase: ReturnType<typeof createAdminClient>, withRefs: boolean) {
+  // game_id first; a database without that column (migration not applied yet) answers with the plain columns.
+  for (const select of [`${KEYWORD_COLUMNS}, game_id`, KEYWORD_COLUMNS]) {
+    const all: any[] = []
+    let from = 0
+    let missingColumn = false
+    while (true) {
+      const { data, error } = await supabase.schema('limbus').from('keyword_meta')
+        .select(select)
+        .order('name')
+        .range(from, from + 999)
+      if (error && isMissingColumnError(error) && select !== KEYWORD_COLUMNS) { missingColumn = true; break }
+      if (error || !data || data.length === 0) break
+      all.push(...data)
+      if (data.length < 1000) break
+      from += 1000
+    }
+    if (missingColumn) continue
+    const refs = withRefs && all.some(row => row.game_id) ? await loadKeywordRefTexts(supabase) : null
+    // A failed read throws like the refs read below: the page is then built from keyword_meta and cached only briefly.
+    if (withRefs && refs === null && all.some(row => row.game_id)) throw new Error('game_text_refs: keyword texts could not be read')
+    return all.map(row => {
+      const { game_id: _gameId, ...keyword } = keywordTextsFromRefs(row, refs)
+      return keyword
+    })
   }
-  return all
+  return []
 }
 
-export default async function KeywordsPage() {
+/** Game id → keyword_meta name, for finding the gifts whose raw effect text names a keyword by [Id]. Throws when the table cannot be read or is still empty. */
+async function getRefKeywords(): Promise<Record<string, string>> {
+  const names = await getGameTextRefNames('ko')
+  if (Object.keys(names).length === 0) throw new Error('game_text_refs is empty')
+  return Object.fromEntries(Object.entries(names).flatMap(([id, ref]) => (ref.kw ? [[id, ref.kw]] : [])))
+}
+
+/**
+ * The page, cached. With the reference table it is cached for good; a failed or empty table read throws before anything
+ * is stored, and KeywordsPage then builds the page without the table for a minute only, so a failure is never kept.
+ */
+async function renderKeywords(withRefs: boolean) {
   'use cache'
-  cacheLife('max')
-  cacheTag(CACHE_TAGS.keywords, CACHE_TAGS.gameData)
+  if (withRefs) cacheLife('max')
+  else cacheLife('page-1m')
+  cacheTag(CACHE_TAGS.keywords, CACHE_TAGS.gameData, CACHE_TAGS.gameTextRefs)
   const supabase = createAdminClient()
 
-  const keywords = await fetchAllKeywords(supabase)
+  const [keywords, refKeywords] = await Promise.all([fetchAllKeywords(supabase, withRefs), withRefs ? getRefKeywords() : {}])
 
   const [
     { data: identities, error: identitiesError },
@@ -111,8 +141,18 @@ export default async function KeywordsPage() {
           sinners={sinners ?? []}
           gifts={safeGifts}
           egos={safeEgos}
+          refKeywords={refKeywords}
         />
       </StaticQueryAdapter>
     </Suspense>
   )
+}
+
+export default async function KeywordsPage() {
+  try {
+    return await renderKeywords(true)
+  } catch (error) {
+    console.error('Failed to build the keywords page with game text refs:', error)
+    return renderKeywords(false)
+  }
 }

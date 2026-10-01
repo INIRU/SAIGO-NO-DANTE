@@ -15,7 +15,7 @@ import ConfirmModal from '@/components/ui/ConfirmModal'
 import { useGuestPosts } from '@/hooks/useGuestPosts'
 import { guestHeaders } from '@/lib/guest/key'
 import { getGuestCopy, guestAuthorName } from '@/lib/guest/copy'
-import { DEFAULT_AVATAR_URL, STORAGE_BASE } from '@/lib/constants/game'
+import { DEFAULT_AVATAR_URL, STORAGE_BASE, isDeployedSlot } from '@/lib/constants/game'
 import { SIN_COLORS, SIN_KR_TO_EN, normalizeSin } from '@/lib/constants/sin'
 import { getIdentityImageUrl, getIdentityPortraitUrl, getSkillIconUrl, computeSkillImageIndices } from '@/lib/utils/images'
 import type { Identity, Skill } from '@/lib/types'
@@ -321,7 +321,7 @@ function buildNoteLookups(
     for (const pa of paBest.values()) {
       const entry = {
         name: localizePassiveName(pa, locale), sin_affinity: pa.sin_affinity,
-        sin_count: pa.sin_count, active_cond: pa.active_cond,
+        sin_count: pa.sin_count, sin_requirements: pa.sin_requirements, active_cond: pa.active_cond,
         description: localizePassiveDescription(pa, locale), sinnerName: localizedSinnerName,
         imageUrl: identityImageUrl,
       }
@@ -712,6 +712,7 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
       }
     })
   }, [filledSlots])
+  const deployedIdentityIds = useMemo(() => new Set(insightSlots.filter(({ slot }) => isDeployedSlot(slot.slot_order)).map(({ identity }) => identity.id)), [insightSlots])
   const insightIdentities = useMemo<DeckInsightIdentity[]>(() => insightSlots.map(({ identity, passives }) => ({
     id: identity.id,
     name: localizeIdentityName(identity, locale),
@@ -1007,7 +1008,7 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
                   })}
                 />
 
-                <DeckInsights identities={insightIdentities} sinCounts={deckAnalysis.sinCounts} baseSinCounts={deckAnalysis.baseSinCounts} summary={deckAnalysis.summary} />
+                <DeckInsights identities={insightIdentities} sinCounts={deckAnalysis.sinCounts} baseSinCounts={deckAnalysis.baseSinCounts} summary={deckAnalysis.summary} deployedIds={deployedIdentityIds} />
                 </>)}
               </>
             )}

@@ -13,6 +13,8 @@ import { chromium } from 'playwright'
 import { createClient } from '@supabase/supabase-js'
 import { acquiredGiftFromPopup, popupCandidateIds, popupHeaderEvidence, popupPurchaseHeader } from '../../lib/vision/popup-evidence'
 import { effectGiftIds } from '../../lib/vision/ocr-match'
+import { gameTextRefNames } from '../../lib/db/game-text-refs'
+import { gameTextForScreen, refNameLabels } from '../../lib/game-text/rich-text'
 import { samePopupEpisode } from '../../lib/vision/popup-detect'
 import { mkdirSync } from 'node:fs'
 
@@ -25,9 +27,19 @@ const env = Object.fromEntries(readFileSync('.env.local', 'utf8').split('\n').fi
 const db = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY, { auth: { persistSession: false } })
 const { data: gifts, error } = await db.schema('limbus').from('ego_gifts').select('*')
 if (error) throw error
+// Gift effects are raw game text now: the replay compares the text as the screen shows it (tags gone, [Id] as the shown
+// name), like /api/assist/texts. Without the reference table the ids stay as written.
+const refRows = []
+for (let from = 0; ; from += 1000) {
+  const { data, error: refError } = await db.schema('limbus').from('game_text_refs').select('id, kind, name, name_en, name_jp, keyword_name').order('id').range(from, from + 999)
+  if (refError) { console.warn('game_text_refs not read, [Id] stays as written:', refError.message); refRows.length = 0; break }
+  refRows.push(...data)
+  if (data.length < 1000) break
+}
+const labels = Object.fromEntries(['ko', 'en', 'ja'].map(lang => [lang, refRows.length ? refNameLabels(gameTextRefNames(refRows, lang)) : undefined]))
+const screenText = (gift, lang, suffix) => ['effect_base', 'effect_plus', 'effect_plusplus'].map(field => gift[field + suffix]).filter(Boolean).map(text => gameTextForScreen(text, labels[lang]))
 const catalog = { gifts: gifts.map(gift => ({ id: String(gift.game_id), texts: [gift.name, gift.name_en, gift.name_jp].filter(Boolean),
-  effectTexts: [gift.effect_base, gift.effect_base_en, gift.effect_base_jp, gift.effect_plus, gift.effect_plus_en, gift.effect_plus_jp,
-    gift.effect_plusplus, gift.effect_plusplus_en, gift.effect_plusplus_jp].filter(Boolean) })), events: [], choices: [] }
+  effectTexts: [...screenText(gift, 'ko', ''), ...screenText(gift, 'en', '_en'), ...screenText(gift, 'ja', '_jp')] })), events: [], choices: [] }
 // REPLAY_NO_TEMPLATES: icon templates never load (a first session or a slow network), leaving the embedding alone.
 const giftReferences = gifts.map(gift => ({ id: String(gift.game_id), imageUrl: process.env.REPLAY_NO_TEMPLATES ? 'none:' + gift.game_id : gift.image_url }))
 

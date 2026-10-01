@@ -82,7 +82,7 @@ export async function rebuildMirrorEvents(apply = process.argv.includes('--fix')
     if (node.encounterType === 3 && typeof node.encounterId === 'number') addEntry(node.encounterId, theme)
     Object.values(node).forEach(x => fixedEntries(x, theme))
   }
-  for (const file of readdirSync(dataDir).filter(f => /^mirrordungeon-theme-floor-(t[1-6]|hidden)\.txt$/.test(f))) {
+  for (const file of readdirSync(dataDir).filter(f => /^mirrordungeon-theme-floor-(t\d+|hidden)\.txt$/.test(f))) {
     const source = read<{ list: { id: number; mapGenOption?: { eventPool?: number[]; specialEventPool?: number[] }; mapGenSequence?: unknown }[] }>(join(dataDir, file))
     for (const theme of source.list) {
       for (const id of [...(theme.mapGenOption?.eventPool ?? []), ...(theme.mapGenOption?.specialEventPool ?? [])]) addEntry(id, theme.id)

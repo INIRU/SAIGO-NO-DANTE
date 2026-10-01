@@ -237,18 +237,34 @@ npx tsx scripts/sync/prepare-extracted-assets.ts \
 
 
 ```bash
-# 번들: apply-extraction, identity-data, mirror-dungeon-data, rebuild-mirror-events, sync-extracted-identities + Windows용 sharp,
+# 번들: apply-extraction, game-text-refs, identity-data, mirror-dungeon-data, rebuild-mirror-events, sync-extracted-identities + Windows용 sharp,
 # 추출 도구의 테마팩 합성용: build-theme-packs.py, theme-composition/ 오버레이 원본 3개, SCDream5.woff2, Windows용 휴대용 Python(python/)
 node scripts/sync/build-site-sync.mjs "<림버스 에셋>/tools/site-sync" --win
 # 옆에 NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SECRET_KEY, REVALIDATION_SECRET, NEXT_PUBLIC_SITE_URL만 담은 .env.local을 둔다.
 
 # 저장소에서 같은 흐름을 직접 실행(기본은 dry-run, --fix가 적용)
 node --import tsx scripts/sync/apply-extraction.ts --zip <LimbusAssets_*.zip> --work <빈 작업 폴더> [--fix]
+
+# 키워드 아이콘만(아래 "키워드 아이콘 업로드"): ZIP을 같은 방식으로 검사한 뒤 아이콘 계획만 세운다. --fix가 올린다.
+node --import tsx scripts/sync/apply-extraction.ts --zip <LimbusAssets_*.zip> --work <빈 작업 폴더> --keyword-icons-only [--fix]
+# 기존 인격의 스킬 아이콘만(--skill-icons-only), 둘 다(--icons-only): 모두 끝에 이미지 감사를 한다.
+node --import tsx scripts/sync/apply-extraction.ts --zip <LimbusAssets_*.zip> --work <빈 작업 폴더> --icons-only [--fix]
+
+# 운영 DB가 참조하는 이미지가 Storage에 있는지 읽기 전용으로 확인(아래 "이미지 누락 감사"): 아무것도 쓰지 않는다.
+node --import tsx scripts/sync/audit-images.ts [--json <파일>] [--limit <종류별 키 수>] [--strict]
 ```
 
-`apply-extraction`은 `prepareExtractedAssets`로 ZIP 전체를 검사한 뒤 identity → mirror(기프트·테마팩·레시피) → events 순서로 단계마다 dry-run 후 `--fix`를 실행한다. 첫 적용 전에 `identities`, `skills`, `passives`, `ego`, `ego_skills`, `ego_gifts`, `keyword_meta`, `ego_gift_themes`, `ego_gift_recipes`를 작업 폴더 `backup/`에 저장하고, 이벤트 단계는 자체적으로 `md_events`/`md_event_choices`를 백업한 뒤 읽기 검증한다. 실패하면 그 단계에서 멈춘다. 새 인격은 같은 ZIP에서 `sync-extracted-identities`로 이미지를 올린다. 새 E.G.O(숨김·각성 스킬 없는 스토리 전용 E.G.O는 제외)는 단계들이 끝난 뒤 `bootstrap-data.ts --ego-ids`로 행·단계별 스킬·단계별 패시브(`ego_passives`, SkillTag 구획 제목 번역 포함)를 넣고, ZIP의 `<id>_awaken_profile`·`erosion_profile`·`cg`·`e_cg`·`profile_summary`를 `sinners/<수감자>/ego/<폴더>/`에 webp로 올린 뒤(기존 파일은 덮어쓰지 않음) 사이트 캐시를 갱신한다. Drive 아트 목록이 없는 Windows에서는 폴더를 영어 이름으로 정하고 ASCII 밖 글자는 `_uXXXX_`로 쓴다(Drive 폴더 규칙과 같음). 결과는 `report.json`의 `newEgos`에 남는다. 2026-09-28 검증: 9/24 추출본으로 엄숙한 애도(20109)·착영휘도(20509)를 새 E.G.O로 가정해 dry-run한 계획이 DB의 행·패시브·스킬 16개와 필드까지 같았다. 번들에서 `bootstrap-data.mjs`가 `identity-data`를 품으므로, `identity-data`는 파일 이름까지 확인해 직접 실행될 때만 동기화를 시작한다. 이벤트 재구성은 복구 폴더가 없으면 선택지 템플릿을 추출본의 `KR/EN/JP_ChoiceEvent*.txt`에서, 이벤트 그림 유무를 Storage `icons/events/` 목록에서 읽는다.
+`apply-extraction`은 `prepareExtractedAssets`로 ZIP 전체를 검사한 뒤 refs(게임 텍스트 참조 표, `game-text-refs.ts`) → identity → keywords → refs-link(같은 동기화를 한 번 더: keywords 단계가 새로 만든 `keyword_meta` 행을 `keyword_name`으로 잇는다. 이 연결이 없으면 적용 뒤 읽기 검증이 refs 변경을 남은 차이로 본다) → mirror(기프트·테마팩·레시피) → events 순서로 단계마다 dry-run 후 `--fix`를 실행한다. 첫 적용 전에 `identities`, `skills`, `passives`, `ego`, `ego_skills`, `ego_gifts`, `keyword_meta`, `game_text_refs`, `ego_gift_themes`, `ego_gift_recipes`를 작업 폴더 `backup/`에 저장하고, 이벤트 단계는 자체적으로 `md_events`/`md_event_choices`를 백업한 뒤 읽기 검증한다. 실패하면 그 단계에서 멈춘다. 새 인격은 같은 ZIP에서 `sync-extracted-identities`로 이미지를 올린다. 새 E.G.O(숨김·각성 스킬 없는 스토리 전용 E.G.O는 제외)는 단계들이 끝난 뒤 `bootstrap-data.ts --ego-ids`로 행·단계별 스킬·단계별 패시브(`ego_passives`, SkillTag 구획 제목 번역 포함)를 넣고, ZIP의 `<id>_awaken_profile`·`erosion_profile`·`cg`·`e_cg`·`profile_summary`를 `sinners/<수감자>/ego/<폴더>/`에 webp로 올린 뒤(기존 파일은 덮어쓰지 않음) 사이트 캐시를 갱신한다. Drive 아트 목록이 없는 Windows에서는 폴더를 영어 이름으로 정하고 ASCII 밖 글자는 `_uXXXX_`로 쓴다(Drive 폴더 규칙과 같음). 결과는 `report.json`의 `newEgos`에 남는다. 2026-09-28 검증: 9/24 추출본으로 엄숙한 애도(20109)·착영휘도(20509)를 새 E.G.O로 가정해 dry-run한 계획이 DB의 행·패시브·스킬 16개와 필드까지 같았다. 번들에서 `bootstrap-data.mjs`가 `identity-data`를 품으므로, `identity-data`는 파일 이름까지 확인해 직접 실행될 때만 동기화를 시작한다. 키워드 아이콘은 refs-link 직후 올린다(아래). 이벤트 재구성은 복구 폴더가 없으면 선택지 템플릿을 추출본의 `KR/EN/JP_ChoiceEvent*.txt`에서, 이벤트 그림 유무를 Storage `icons/events/` 목록에서 읽는다.
 
-되돌리기(2026-09-28): `apply-extraction`은 반영 단계들이 쓸 수 있는 표 13개(`extraction-restore.ts`의 `RESTORE_TABLES`, 1000행 넘는 표도 끝까지)를 첫 적용 전에 `backup/`에 저장하고, 올린 테마팩·E.G.O 그림을 `report.json`의 `uploads`에 남긴다. `extraction-restore.ts --work <작업 폴더> [--fix]`는 표를 백업 상태로 되돌리고(바뀐 행은 다시 쓰고, 그 반영에서 생긴 행은 삭제), 새로 올린 그림은 지우고 덮어쓴 인격 그림(`identity-images/before`)은 원본으로 돌린 뒤 캐시를 갱신한다. `deck_identities`가 인격 삭제 시 함께 지워지므로, 덱·플랜이 쓰는 신규 인격·E.G.O와 그 스킬·패시브는 남긴다. `--fix`는 먼저 현재 상태를 `restores/<시각>/backup`에 저장해 되돌리기도 되돌릴 수 있다. Windows 도구의 반영 기록에서 미리 보기(dry-run) 후 실행하며, 자동 반영을 끄고 확인 후 반영할 수도 있다. 검증: 현재 DB를 백업으로 뜬 dry-run이 변경 0, 스킬 2행을 바꾸고 인격 1개를 뺀 백업은 스킬 2행 복원과 덱에서 쓰는 인격 유지로 계획됐고, Windows 번들의 `--fix`를 변경 0 백업으로 끝까지 실행했다.
+키워드 아이콘 업로드(2026-10-01): 반영이 이벤트 그림·기프트 아이콘·E.G.O 이미지·테마팩·인격 이미지는 올렸지만 키워드 아이콘은 올리지 않아, 키워드 행이 새로 생겨도 그림이 없었다(2026-10-01에 추가된 검은 날개·검은 신의 가호·보존 신역·약속된 못·잿빛 탄환·진동 - 보존). 이제 `--fix`가 keywords 단계와 refs-link 직후 `scripts/sync/keyword-icons.ts`의 `uploadMissingKeywordIcons`를 실행한다. `keyword_meta`의 `icon_slug`로 사이트가 읽을 Storage 키(`icons/keywords/<slug>.webp`, `getKeywordIconUrl`을 그대로 불러 별칭·변형·로컬 자산(`/assets/game-ui`)으로 가는 슬러그는 건너뜀)를 구하고, 폴더 목록(한 번)에 없는 것만 대상으로 한다. 그 키워드의 후보 태그는 keywords 단계가 쓴 감사 파일(`LIMBUS_KEYWORD_AUDIT`, 작업 폴더 `keyword-audit.json`)의 대표 태그와 `game_text_refs`에서 `keyword_name`이 그 키워드인 id 전부다. 각 태그의 스프라이트는 버프 데이터(`*buff*.txt`)의 `iconId`(없으면 태그 자신)이고, 매니페스트에서 `kind '키워드'`·`name`이 같은 이미지가 정확히 하나여야 한다(같은 이름에 해시가 다른 이미지가 둘이면 모호). 태그들이 서로 다른 스프라이트로 이어지면 대표 태그의 것을 쓰고 대표 태그가 없으면 모호로 건너뛴다. 해시를 확인한 뒤 `sharp(...).webp({ lossless: true })`(UI 아이콘은 무손실)로 바꿔 `upsert: false`로 올리고 `uploads`에 `before: null`로 남겨 되돌리기가 지운다. 짝을 못 찾은 키워드는 `report.keywordsWithoutIcon`(이름·슬러그·사유 `no-sprite`/`ambiguous`·태그·스프라이트)에, 올린 것은 `report.newKeywordIcons`(이름·키·스프라이트)에 남고 반영은 멈추지 않는다. `--keyword-icons-only`는 ZIP 검사와 keywords dry-run(감사 파일용, DB 쓰기 없음) 뒤 이 단계만 실행한다(`--fix` 없이는 계획만, `--fix`는 Storage에 올리고 사이트 캐시를 갱신하며 실패하면 올린 것을 되돌린다). 이미 키워드 행만 있고 아이콘이 없을 때(이전 반영이 만든 키워드) 쓴다. 검증: 9/24 추출본으로 dry-run하면 `blessing-of-the-obsidian-god`(NoirShieldUp)·`sanctum-of-conservation`(NoirField)·`promised-nail`(`iconId`로 NoirNailBoss)가 짝지어지고, 그 추출본에 스프라이트가 없는 검은 날개·잿빛 탄환·진동 - 보존과 원래 그림이 없던 `공격 레벨+`는 `no-sprite`로 보고됐다.
+
+키워드 아이콘 판정 기준(2026-10-01, `keywordIconSource`): `keyword_meta.icon_slug` 파일이 Storage에 없다는 것만으로는 누락이 아니다. 사이트는 `getKeywordIconUrl`로 슬러그를 자기 파일, 별칭·변형이 가리키는 다른 Storage 파일, 로컬 자산(`/assets/game-ui/...`: 능력치 아이콘·코인·아틀라스 키워드) 중 하나로 그린다. 사용자 감사의 "509개 중 38개 없음"을 풀어 보면 자기 슬러그 파일을 읽는데 없는 7개(검은 날개·검은 신의 가호·공격 레벨+·보존 신역·약속된 못·잿빛 탄환·진동 - 보존)만 실제로 비어 있고, 25개는 별칭·변형이 가리키는 Storage 파일이 있고(지령[단말기]·[쪽지] 8개는 사용자 지정에 따라 `prescript-2`, 신(心) 2개는 `shin-procuration` 등) 6개는 로컬 아틀라스 자산이다. 별칭·변형이 가리키는 파일을 데이터 스프라이트(`iconId`·태그)와 64x64 픽셀로 비교하면 25개 중 20개가 평균 차이 4 이내(손실 WebP 오차)로 같은 그림이고, 점혈 - 홍루(`nerve-strike-hong-lu-2`)와 지령[쪽지] I~IV(`prescript-2`)는 사용자가 고른 2번 원본이라 데이터 스프라이트와 다르다(건드리지 않는다). 이 단계는 자기 슬러그 파일만 올린다. 별칭 대상 파일이 없는 경우(현재 0건)는 올리지 않고 이미지 감사가 키로 알린다(여러 키워드가 한 파일을 쓰고 그림이 다를 수 있어 어느 스프라이트를 올릴지 정할 수 없다). 2026-09-24 추출본(`Downloads/LimbusAssets 2`)으로 실제 7개를 dry-run하면 3개(검은 신의 가호 NoirShieldUp, 보존 신역 NoirField, 약속된 못 NoirNailBoss)가 짝지어지고, 검은 날개(BlackWingHole)·잿빛 탄환(BulletHole)·진동 - 보존(VibrationFocusing)은 그 추출본의 데이터·이미지에 없는 2026-10-01 신규 키워드라 새 추출이 필요하다. 공격 레벨+(`AttackLevelAdder`)는 버프에 `iconId`가 없고 추출본에도 스프라이트가 없어 원본 그림이 없다(아래 "아직 출처 연결을 확정하지 못한 부분").
+
+스킬 아이콘 업로드(2026-10-01): 새 인격 이미지 업로드(`sync-extracted-identities`)는 새 인격의 스킬만 올려서, 기존 인격이 나중에 얻은 스킬(인격 10412 N사 E.G.O:: 경멸, 경외의 1041205 "경멸 밑으로 쏟아지는 경외의 시선")은 Storage에 없었다. `--fix`는 새 인격 이미지 직후, `--skill-icons-only`/`--icons-only`는 단독으로 `scripts/sync/skill-icons.ts`의 `uploadMissingSkillIcons`를 실행한다. DB의 모든 스킬 행에서 사이트가 읽는 키를 `getSkillIconUrl`·`computeSkillImageIndices`로 그대로 만들고(`image_id`가 있으면 그것, 없으면 인격 id + 번호, 소유 수감자 폴더는 스프라이트 번호 앞 3자리), 수감자 폴더 목록(폴더마다 한 번)에 없는 키만 대상으로 한다. 추출본 매니페스트에서 `kind '스킬'`·`name`이 스프라이트 번호와 같은 이미지가 정확히 하나여야 하고(같은 이름에 해시가 다른 이미지가 둘이면 모호), 해시를 확인한 뒤 무손실 WebP로 `upsert: false`로 올리며 `uploads`에 `before: null`로 남겨 되돌리기가 지운다. 못 올린 것은 `report.skillsWithoutIcon`(키·스프라이트·인격·사유 `no-sprite`/`ambiguous`), 올린 것은 `report.newSkillIcons`에 남고 반영은 멈추지 않는다. 검증: 2026-10-01 운영 DB의 스킬 2,930행은 키 980개이고 없는 것은 `icons/skills/ryoshu/1041205.webp` 1개이며, 9/24 추출본(`Downloads/LimbusAssets 2`)에 그 스프라이트가 있어 dry-run이 1개 업로드를 계획한다.
+
+이미지 누락 감사(2026-10-01): `--fix`의 마지막(읽기 검증·자리표시 검사·캐시 갱신 뒤)과 `--icons-only`류 실행의 끝에 `scripts/sync/image-audit.ts`의 `auditImages`가 DB가 참조하는 이미지 키를 모두 Storage 폴더 목록과 대조한다(읽기 전용, 폴더마다 목록 한 번). 키워드 아이콘은 `keywordIconSource`가 정한 파일(별칭·변형 포함, 로컬 자산은 `audit-images.ts`만 `public/`에서 확인), 인격 스킬 아이콘은 `expectedSkillIcons`, 기프트(`ego_gifts.image_url`)·테마팩(`ego_gift_themes.image_url`)·이벤트(`md_events.image_url`)는 `image_url`의 Storage 키다. 테마팩 보스 이미지(`boss_image_url`)는 대상이 아니다. 결과는 `report.missingImages`에 종류별 `{checked, missing, keys}`(키는 앞 20개)로 남고 누락이 있으면 경고를 낸다. 읽기에 실패해도 `{error}`를 남길 뿐 반영을 실패시키거나 되돌리지 않는다. `audit-images.ts`는 같은 검사를 Mac에서 운영 DB에 대해 단독으로 실행한다(`.env.local`의 키가 필요하고 아무것도 쓰지 않으며 `--json`으로 저장, `--strict`는 누락이 있으면 종료 코드 1). 2026-10-01 운영 결과: 키워드 491개 중 7개(위 7개)·스킬 980개 중 1개(1041205)가 없고 기프트 456·테마팩 117·이벤트 157은 전부 있다.
+
+되돌리기(2026-09-28): `apply-extraction`은 반영 단계들이 쓸 수 있는 표 14개(`game_text_refs` 포함)(`extraction-restore.ts`의 `RESTORE_TABLES`, 1000행 넘는 표도 끝까지)를 첫 적용 전에 `backup/`에 저장하고, 올린 테마팩·E.G.O 그림을 `report.json`의 `uploads`에 남긴다. `extraction-restore.ts --work <작업 폴더> [--fix]`는 표를 백업 상태로 되돌리고(바뀐 행은 다시 쓰고, 그 반영에서 생긴 행은 삭제), 새로 올린 그림은 지우고 덮어쓴 인격 그림(`identity-images/before`)은 원본으로 돌린 뒤 캐시를 갱신한다. `deck_identities`가 인격 삭제 시 함께 지워지므로, 덱·플랜이 쓰는 신규 인격·E.G.O와 그 스킬·패시브는 남긴다. `--fix`는 먼저 현재 상태를 `restores/<시각>/backup`에 저장해 되돌리기도 되돌릴 수 있다. Windows 도구의 반영 기록에서 미리 보기(dry-run) 후 실행하며, 자동 반영을 끄고 확인 후 반영할 수도 있다. 검증: 현재 DB를 백업으로 뜬 dry-run이 변경 0, 스킬 2행을 바꾸고 인격 1개를 뺀 백업은 스킬 2행 복원과 덱에서 쓰는 인격 유지로 계획됐고, Windows 번들의 `--fix`를 변경 0 백업으로 끝까지 실행했다.
 
 새 기프트·이벤트 그림(2026-09-28): mirror 단계 뒤 `ego_gifts.image_url`이 가리키는 `ego-gifts/` 객체가 없으면 ZIP의 `EgoGiftIcon/<게임 ID>.png`(kind `기프트`, name=게임 ID)를 webp로 올리고, ZIP에 아이콘이 없는 기프트는 `report.json`의 `giftsWithoutIcon`에 남긴다. events 단계 전에는 ZIP의 이벤트 삽화(kind `이벤트선택지`, 파일 이름 앞 이벤트 번호)를 `icons/events/<번호>.webp`에 없는 것만 올려, 이벤트 재구성이 원화를 연결하게 한다. 둘 다 기존 파일은 덮어쓰지 않고 `uploads`에 기록해 되돌리기로 지운다. 9/24 추출본 기준으로는 기프트 9818 아이콘 1개(현재 Storage에 없음)만 대상이고 이벤트 원화는 모두 있다. 기존 E.G.O 전체를 추출본으로 다시 쓰는 것은 보류했다: 전체 dry-run에서 2개가 죄악 속성·코스트·내성·패시브까지 DB와 달라 원인 확인이 먼저다(그림 폴더는 기존 값을 유지하도록 했다).
 
@@ -262,7 +278,7 @@ node --import tsx scripts/sync/apply-extraction.ts --zip <LimbusAssets_*.zip> --
 추출과 사이트 작업은 이 저장소의 세션 하나에서 한다. 아래에 해당하는 변경은 사이트 PR이 병합된 뒤 같은 세션이 추출 도구(`INIRU/limbus-asset-extractor`)의 `tools/site-sync`도 갱신해야 끝난다. 하지 않으면 Windows 추출 도구는 이전 동기화 코드로 DB에 반영한다.
 
 언제:
-- 번들에 들어가는 코드가 바뀔 때: `scripts/sync/**`(테스트 제외), `scripts/assets/sync-extracted-identities.cjs`, `scripts/assets/event-image-source.ts`, `scripts/assets/build-theme-packs.py`, `public/fonts/SCDream5.woff2`, 그리고 번들이 가져오는 `lib/` 파일(현재 `lib/constants/game.ts`, `lib/game-text/placeholders.ts`, `lib/keywords/category.ts`). 정확한 목록은 빌드 결과의 `// <경로>` 주석으로 확인한다.
+- 번들에 들어가는 코드가 바뀔 때: `scripts/sync/**`(테스트 제외), `scripts/assets/sync-extracted-identities.cjs`, `scripts/assets/event-image-source.ts`, `scripts/assets/build-theme-packs.py`, `public/fonts/SCDream5.woff2`, 그리고 번들이 가져오는 `lib/` 파일(현재 `lib/constants/game.ts`, `lib/game-text/placeholders.ts`, `lib/keywords/category.ts`, `lib/keywords/description-overrides.ts`, 키워드 아이콘 해석용 `lib/constants/keywords.ts`와 그것이 가져오는 `sin.ts`·`game-ui.ts`·`keyword-icon-aliases.json`·`keyword-icon-variants.json`·`lib/generated/game-ui-versions.json`, 스킬 아이콘 키 해석용 `lib/utils/images.ts`와 `lib/utils/game-ui.ts`). 정확한 목록은 빌드 결과의 `// <경로>` 주석으로 확인한다.
 - DB 스키마가 바뀌어 동기화가 쓰는 표·컬럼이 달라질 때. 추출 도구의 `scripts/site-db-diff.cjs`(비교할 표 목록 `TABLES`)와 `tests/site-db-diff.test.cjs`도 같이 본다.
 - 동기화가 새 원본 파일을 읽을 때. 추출 도구는 게임 데이터 전체를 ZIP의 `complete-data`에 넣으므로 보통 추출 쪽 수정은 없지만, 9/24 이후 추출본에 그 파일이 있는지 확인한다.
 
@@ -275,7 +291,7 @@ node --import tsx scripts/sync/apply-extraction.ts --zip <LimbusAssets_*.zip> --
    ```
 3. 바뀐 단계를 번들로 dry-run한다(예: `node --env-file=<사이트 .env.local> mirror-dungeon-data.mjs --gifts-only`, `LIMBUS_DATA_DIR`에 최신 추출본 `complete-data`). 사이트 코드로 돌린 dry-run과 결과가 같아야 한다.
 4. 스키마가 바뀌었으면 추출 도구의 Mac에서 도는 테스트를 돌린다: `node --test tests/data-diff.test.cjs tests/data-file-diff.test.cjs tests/game-data.test.cjs tests/manual-gallery.test.cjs tests/site-db-diff.test.cjs`. `gallery`·`package` 테스트는 Windows 산출물이 있어야 해서 Mac에서는 실패한다.
-5. 추출 도구 저장소에서 `chore/site-sync-<사이트 main 짧은 해시>` 브랜치에 번들 파일(`apply-extraction.mjs`, `bootstrap-data.mjs`, `extraction-restore.mjs`, `identity-data.mjs`, `mirror-dungeon-data.mjs`, `rebuild-mirror-events.mjs`, `sync-extracted-identities.cjs`, 바뀌었으면 `build-theme-packs.py`)를 명시해 커밋하고 PR을 연다. 본문에 사이트 커밋과 dry-run 결과를 적는다.
+5. 추출 도구 저장소에서 `chore/site-sync-<사이트 main 짧은 해시>` 브랜치에 번들 파일(`apply-extraction.mjs`, `bootstrap-data.mjs`, `extraction-restore.mjs`, `identity-data.mjs`, `mirror-dungeon-data.mjs`, `rebuild-mirror-events.mjs`, `sync-extracted-identities.cjs`, `game-text-refs.mjs`, 바뀌었으면 `build-theme-packs.py`)를 명시해 커밋하고 PR을 연다. 본문에 사이트 커밋과 dry-run 결과를 적는다.
 6. 병합 뒤 사용자에게 Windows PC 갱신(README의 방법)을 알린다.
 
 같은 코드로 다시 빌드한 번들은 빌드한 폴더 경로 주석(`// ../../.../node_modules/...`)만 다르다. 그 줄을 빼고 비교하면 같아야 한다.
@@ -466,7 +482,7 @@ Pillow가 필요하다. 출력 폴더가 비어 있지 않으면 중단하므로
 
 ## 백업과 재검증
 
-`before-bootstrap/`, `before-identity-sync/`, `before-mirror-restore/`, `before-sanity-restore/`, `before-artwork-link/`, `before-ego-passives/`를 보존한다. 코드 revert가 DB나 Storage를 자동 복원하지 않는다. 복원하려면 해당 백업의 대상 테이블·행·컬럼을 확인해야 한다.
+`before-bootstrap/`, `before-identity-sync/`, `before-mirror-restore/`, `before-sanity-restore/`, `before-artwork-link/`, `before-ego-passives-<실행 시각>/`(`--fix`를 돌릴 때마다 새로 만든다)를 보존한다. 코드 revert가 DB나 Storage를 자동 복원하지 않는다. 복원하려면 해당 백업의 대상 테이블·행·컬럼을 확인해야 한다.
 
 인격 메타데이터와 획득 JSON 수정 전 값은 `before-identity-metadata.json`, 적용 계획은 `identity-metadata-plan.json`에 보존한다. 기존 저장소의 2026-03-23 인격 백업 170개 행도 읽기 전용으로 대조했다. `restore-historical-metadata.ts --source=/path/to/identities.json`이 계획을 만들고 `--apply`가 수동 획득처와 누락 대사를 복구한다. 원본 파일 해시와 적용 계획은 `historical-metadata-plan.json`, 수정 직전 값은 `before-historical-metadata.json`이다. 전체 대사 복구 및 원본에서 빈 대표 키워드는 [데이터 모델](data-model.md)에 구분해 기록했다. 이후 일상 동기화에는 과거 복구 스크립트를 반복 적용하지 않고 `identity-data.ts`를 사용한다.
 
@@ -586,6 +602,10 @@ Drive의 `iap-lunacy`, `iap-membership`, `iap-package`, `pricetier`, `chance-iap
 
 E.G.O 상세의 메인 이미지는 256×256 `_awaken_profile` 확대 대신 새 추출본의 `_cg` 원본(1024×1024, 한 장은 1023×1024)을 사용한다. 2026-09-19 manifest SHA-256 대조 후 111장을 WebP 품질 95로 변환해 기존 EGO 폴더의 `{gameId}_cg-{hash12}.webp`에 추가 업로드하고 공개 다운로드 해시를 검증했다. 기존 프로필과 DB는 보존하며 `lib/generated/ego-artwork.json`에 검증된 ID와 해시만 기록한다. 원본·변환본·계획·영수증은 `/Users/iniru/Downloads/Limbus-ego-artwork-2026-09-19/`에 보관한다. 매핑이 없는 이미지 한 건은 기존 URL을 유지한다.
 
+2026-10-01부터 이 목록을 손으로 늘리지 않는다. `limbus.ego.artwork_url`(마이그레이션 `20261001064045_ego_artwork_url.sql`)에 `{gameId}_cg-{hash12}.webp`의 공개 주소를 저장하고, `getEgoArtworkUrl(profileUrl, artworkUrl)`이 이 값을 먼저 쓴다(없으면 `ego-artwork.json`, 그것도 없으면 프로필). `apply-extraction`은 새 E.G.O의 `_cg`를 품질 95 WebP로 한 번 더 인코딩해 SHA-256 앞 12자리로 이름 붙여 올리고(`upsert: false`, 이미 있으면 건너뜀, `uploads`에 기록해 되돌리기에서 지움) 그 주소를 `ego.artwork_url`에 쓴다. 결과는 `report.json`의 `egoArtwork`(`gameId`, `key`, `url`, `uploaded`)와 `egoWithoutArtwork`(ZIP에 `_cg`가 없는 E.G.O)에 남고, 코드는 `scripts/sync/ego-artwork.ts`다. `ego` 표를 백업·복원하므로 열도 함께 돌아간다. 기존 E.G.O 재구축(`--replace`)은 이 열을 건드리지 않는다. 마이그레이션이 없는 DB에서는 새 E.G.O 반영이 멈추고 자동으로 되돌린다.
+
+`scripts/sync/backfill-ego-artwork-url.ts`(dry-run 기본, `--fix`, `--out <영수증>`)는 이미 있는 E.G.O의 `artwork_url`을 채운다. `ego-artwork.json`에 있는 ID는 그 해시의 주소를(HEAD로 객체 존재 확인 후), 없는 ID는 Storage의 `{id}_cg.webp`가 있으면 그 바이트를 내려받아 SHA-256 앞 12자리 이름으로 그대로 복사해 올리고 연결한다(이 파일은 이미 품질 90 WebP라 95로 다시 인코딩하면 화질만 잃으므로 바이트를 바꾸지 않는다). `artwork_url`이 이미 있거나 프로필이 `_awaken_profile`이 아니거나(21210) `_cg.webp`가 없는 행은 건드리지 않아 다시 실행해도 안전하다.
+
 스킬 S3 단색 배경의 `Icon_skillFrame_Invert.png` 좌표는 장식과 다르다. 0부터 세는 셀 7 `(3,1)`에서 시작해 분노→색욕→나태→탐식→우울→오만→질투 순으로 이어진다. S1/S2는 `Invert_2`의 셀 0/8에서 시작한다. `extract-skill-frames.py`로 52개 무손실 WebP와 버전 해시를 재생성하며 `python3 scripts/assets/test_skill_frames.py`가 S3 죄악 매핑을 검증한다. 참고 원본: https://drive.google.com/drive/folders/1gVBj0xtrWDByf7P1-sgalIJnCL5aiKMr .
 
 ## 2026-09-24 추출본 반영
@@ -599,6 +619,21 @@ E.G.O 상세의 메인 이미지는 256×256 `_awaken_profile` 확대 대신 새
 - 스킬 재구축은 이제 같은 `skill_order/uptie_level/variant_order/name`의 기존 행 ID를 유지한다. 노트 스킬 블럭이 `skills.id`를 참조하기 때문이다. 이 규칙이 생기기 전에 바뀐 1,016개 ID는 원래 값으로 되돌렸다(`skill-id-restore-map.json`).
 - `keyword_meta`는 `--rebuild-keyword-meta`로 10개를 추가했다. 새 키워드 아이콘은 태그 이름 대신 버프 데이터의 `iconId`로 원본을 찾는다(예: `NoirScissorAlly` → `ScissorsMark`). 기존 키워드 15개의 수정 이미지는 화살표가 겹친 변형이라 확인 전까지 기존 아이콘을 유지한다.
 - 거울 던전 기프트·테마팩·레시피는 변경이 없었고, 수감자와 무관한 적 스킬 이미지는 대상에서 제외했다.
+
+## 2026-10-01 추출본 반영
+
+입력은 `~/Downloads/LimbusAssets_2026-10-01T03-42-03-488Z.zip`(풀어 둔 폴더 `~/Downloads/LimbusAssets-2026-10-01`)이다. 새 ZIP은 `Data/static-data/<분류>/*.json`·`Localize/{kr,en,jp}`·`Reports/` 구조이고, `apply-extraction`의 준비 단계가 `complete-data/*.txt`·`KR|EN|JP/`로 바꾼다. 그래서 이 폴더를 `LIMBUS_DATA_DIR`로 직접 주지 않고 항상 `--zip`으로 넣는다. macOS `unzip`은 한글 이름 때문에 실패하므로 손으로 풀 때는 `ditto -x -k`를 쓴다.
+
+9/24 대비: 파일 8,708 → 9,384(추가 676, 삭제·이름 변경 0, 내용 변경 286), 신규 인격 10315, E.G.O 20211·20510 갱신. 심층 비교에서 나온 동기화 개선:
+
+- 패시브 발동 조건은 `passive.txt`·`passive_check4.txt`만 읽어 `passive-a1c8p2` 같은 장별 파일의 조건(30행)을 놓쳤다. 이제 모든 `passive*.txt`를 읽고(`passive.txt` 우선) 죄악이 여럿인 조건(51개 패시브)을 `passives.sin_requirements`(`[{sin, count}]`, 마이그레이션 `20261001070034`)에 모두 저장한다. `sin_affinity`/`sin_count`는 첫 죄악을 유지한다.
+- BattleKeywords의 `flavor`(275개)를 `game_text_refs.flavor/_en/_jp`에, Passive_Ego의 `flavor`(2021111, 2051011)를 `ego_passives.flavor/_en/_jp`(마이그레이션 `20261001072328`)에 저장한다.
+- E.G.O 원본의 `additionalList`(전환 가능한 추가 각성 스킬: 20211 2021112 부셰, 20608 2060812 종[終], 21209 2120912 광휘)를 `ego_skills`에 skill_order 3부터 넣는다(`ego-stages.ts`의 `egoSkillSlots`). 기존 E.G.O는 `existing-ego` 단계가 차이를 보고 `--replace`로 다시 쓴다.
+- 레시피 공통 데이터는 파일 이름의 시즌 번호로 최신을 고르고(`recipeCommonFiles`, md7 고정 제거), 이벤트 재구성은 `theme-floor-t\d+` 전부를 읽는다(t1~t6 고정 제거).
+- 새 칸은 추출본으로 먼저 채웠다(패시브 958행, 키워드 대사 275개). 조건이 비어 있던 30행의 이전 값은 저장소 밖 `Limbus/backups/passives-condition-before-2026-10-01.json`에 있다.
+- E.G.O 침식 원화: `ego.corrosion_artwork_url`(마이그레이션 `20261001074122`)에 `{id}_e_cg.webp`(옛 이름 `{id}_cg_e.webp`, 20603 등 2개)의 공개 주소를 둔다. 상세 히어로의 침식 탭이 이 그림을 쓴다. `apply-extraction`은 새 E.G.O의 `e_cg`를 올릴 때 기록하고, 기존 104개는 `backfill-ego-artwork-url.ts --fix`가 채웠다(침식이 없는 기본 x01 E.G.O 12개는 비어 있음).
+- `keyword_meta.game_id`(493건)는 이 반영에서 처음 채워졌다. 참조가 없던 행은 사용자 확인 후 정리했다(2026-10-01): 천퇴성[天退星]의 옛 이름 행 「강기 [剛氣]」「강기-신 [剛氣-心]」과 어디에도 쓰이지 않는 Bufs 전용 「○○ 위력 감소」 10개를 지웠고(백업 `Limbus/backups/keyword-meta-unlinked-before-2026-10-01.json`), 참조가 둘인 「분홍 리본」은 `PinkRibbon`에 연결했다. 남은 참조 없는 행은 기프트 키워드 분류로 쓰이는 참격·관통·타격 3개뿐이다.
+- 「공격 레벨+」(`AttackLevelAdder`, `offense-level`)는 9월~10월 모든 추출본에 전용 그림이 없다(버프 데이터에 `iconId`도 없음). 같은 효과를 그린 「공격 레벨 강화 I」(MD511, 공격 레벨 칼에 "+")을 쓰도록 `keyword-icons.ts`의 `KEYWORD_SPRITE_FALLBACKS`에 두고 `--keyword-icons-only --fix`로 올렸다. 이후 이미지 감사 누락 0.
 
 ## 데이터 무결성 점검
 
@@ -625,6 +660,14 @@ E.G.O 상세의 메인 이미지는 256×256 `_awaken_profile` 확대 대신 새
 | `{{gift:ID}}` | 기프트 이름 | 기프트 그림 + 이름, 누르면 그 기프트 | `convertDataList`가 있는 기프트의 `{0}`(9227 → `{{gift:9228}}`) |
 | `{{value}}` | 값 | 점선 테두리 | 규칙이 없는 자리. 동기화 로그에 `⚠ 분류 안 된 자리표시 {5} (KR_Bufs: XxxBuff)`가 나오면 규칙표에 추가한다 |
 
-`apply-extraction.ts`는 적용 뒤 표시 열(`PLACEHOLDER_CHECK_COLUMNS`)에 `{0}`이나 `{name}`이 남은 행을 세어 경고하고 `report.json`의 `leftoverPlaceholders`에 남긴다. 버프의 "(위력)"·"(횟수)"처럼 게임이 직접 쓴 괄호 글자(산나비(위력), 차원 표류의 "(수치)%")는 자리표시가 아니므로 그대로 둔다.
+`apply-extraction.ts`는 적용 뒤 토큰을 쓰는 열(`PLACEHOLDER_CHECK_COLUMNS`: 기프트 효과, 키워드 설명, 이벤트 지문·결과문)에 `{0}`이나 `{name}`이 남은 행을 세어 경고하고 `report.json`의 `leftoverPlaceholders`에 남긴다. 버프의 "(위력)"·"(횟수)"처럼 게임이 직접 쓴 괄호 글자(산나비(위력), 차원 표류의 "(수치)%")는 자리표시가 아니므로 그대로 둔다. 스킬·패시브·E.G.O 설명은 아래 "게임 원문 저장"대로 원문이라 `{0}`가 남는 것이 정상이고, 이벤트 선택지 문구(`message`)는 토큰 규칙 없이 저장되므로 둘 다 검사하지 않는다.
 
 일반 글자로만 보여 주는 곳(검색 부제, 키워드 검색, 이벤트 제목 대체)은 `placeholdersToPlainText`로 "(수치)"처럼 바꾸고, 키워드 카드 미리보기는 `PlaceholderText`로 칩을 그린다. 어시스트 OCR 대조는 토큰 자리에서 원문을 나눈다.
+
+### 게임 원문 저장과 참조 표
+
+동기화는 스킬·패시브·E.G.O 스킬·패시브·flavor·키워드·기프트 효과를 유니티 태그(`<style>`, `<color>`, `<sprite>` 등)와 `[Id]` 참조를 지우거나 이름으로 바꾸지 않은 원문으로 저장하고, 사이트가 `GameText`(`lib/game-text/rich-text.ts`)로 그린다. 스킬 코인 설명은 본문 뒤에 `<coin=N>…</coin>` 묶음으로 붙는다. 번호 자리는 키워드·기프트·이벤트에서만 토큰이고(위 표), 스킬·패시브·E.G.O는 원문 `{0}` 그대로다. 발동 조건(`activation_condition`)만 내부에서 이름으로 바꾼 사본으로 계산한다.
+
+`[Id]`가 가리키는 키워드·조건 라벨(BattleKeywords, SkillTag의 KR/EN/JP 이름·설명)은 `limbus.game_text_refs`에 있고 `scripts/sync/game-text-refs.ts`(dry-run 기본, `--fix`)가 채운다. 이 표는 `apply-extraction`의 첫 단계(`refs`)이며 `keyword_meta`와 이름이 같은 행을 `keyword_name`으로 잇는다. 표가 없는 DB(마이그레이션 `20261001023933_game_text_refs.sql` 미적용)에서 `--fix`는 백업 단계에서 멈추므로 아무것도 쓰지 않는다. 표 행은 지우지 않는다(원문에 없는 DB 행은 완전성 검사의 누락으로 세지 않는다). 어시스트 OCR 대조와 검색 부제는 `gameTextForScreen`·`gameTextToPlain`으로 태그를 벗기고 `[Id]`를 이름으로 바꾼 글자를 쓴다.
+
+대표 참조(`keyword_meta.game_id`, 2026-10-01): 큐레이션 표 `keyword_meta`(이름이 기본키, 아이콘·분류·최대 중첩·효과 유형)와 참조 표 `game_text_refs`(게임 id가 기본키)는 이름·설명이 겹친다. `keyword_meta.game_id`(nullable, `game_text_refs(id)` 외래 키 `on delete set null`, 마이그레이션 `20261001060026_keyword_meta_game_id.sql`)가 키워드마다 대표 참조 한 행을 가리키고, 사이트는 그 행에서 언어별 이름·설명을 읽는다(`lib/keywords/ref-text.ts`; 언어별로 참조 값이 비어 있지 않을 때만, 아니면 `keyword_meta` 열). 표시의 출처는 참조 표이고, `keyword_meta`의 `name_en`·`name_jp`·`description*` 열은 대체 값이자 되돌리기 안전망이라 동기화가 계속 쓴다. 지우지 않는다(열·행 삭제는 별도 작업). 설정은 keywords 단계(`identity-data.ts --rebuild-keyword-meta`)가 한다: `game-text-refs-rules.ts`의 `selectPrimaryRefs`가 (1) keywords 단계가 그 키워드에 정한 자기 태그가 키워드 참조에 있으면 그 id, (2) 아니면 `keyword_name`이 그 이름인 참조가 하나뿐이면 그것, (3) 여럿이면 KR 인격·E.G.O 스킬·패시브·기프트 원문(`KR_Skills*`·`KR_Passive*`·`KR_EGOgift*`, 적·이상체·원호·튜토리얼 제외)에서 `[Id]`로 가장 많이 쓰인 것(공동 1등이면 정하지 않음)을 고르고, 못 고르면 비워 둔다(사이트는 `keyword_meta` 열을 쓴다). 이미 저장된 id는 규칙이 못 정한 이름에서 유지된다. 참조 표에 아직 없는 id는 쓰지 않고(외래 키), 컬럼이 없으면 계산·보고만 한다. 손으로 쓴 설명(`lib/keywords/description-overrides.ts`의 원호 공격·원호 방어)은 한국어에서 `keyword_meta.description`이 이기고, 참조 설명에 `{0}` 같은 날 자리표시가 남았는데 `keyword_meta`에 라벨 토큰판(`{{potency}}`)이 있으면 그것을 쓴다. 참조 이름에 유니티 태그(`[<s>큰 형님</s>]`)가 있으면 태그를 벗긴 글자를 쓴다. dry-run은 `SYNC_SUMMARY`의 `keywordMeta.gameId`(`set`·`byTag`·`only`·`mostUsed`·`ambiguous`·`none`·`refNotInDb`·`columnMissing`)와 모호·없음 목록을 출력한다. 2026-09-24 추출본 dry-run(컬럼 적용 전): 467개 중 설정 461(자기 태그 460, 같은 이름 하나 1, 가장 많이 쓰임 0), 모호 0, 없음 6(검은 날개·관통·잿빛 탄환·진동 - 보존·참격·타격).
