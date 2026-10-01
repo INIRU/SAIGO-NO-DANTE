@@ -542,7 +542,7 @@ export const translations = {
   'mirrorDungeon.filter.reset': { ko: '초기화', en: 'Reset', ja: 'リセット' },
   'mirrorDungeon.filter.loading': { ko: '불러오는 중...', en: 'Loading...', ja: '読込中...' },
   'mirrorDungeon.filter.results': { ko: '건', en: '', ja: '件' },
-  'mirrorDungeon.filter.difficulty': { ko: '난이도:', en: 'Difficulty:', ja: '難易度:' },
+  'mirrorDungeon.filter.difficulty': { ko: '등장 난이도:', en: 'First in:', ja: '登場難易度:' },
   'mirrorDungeon.filter.slotPrefix': { ko: '편성 전용:', en: 'Slot:', ja: '配置専用:' },
   'mirrorDungeon.filter.themePrefix': { ko: '테마팩:', en: 'Theme:', ja: 'テーマ:' },
   'mirrorDungeon.filter.selected': { ko: '개 선택', en: ' selected', ja: '個選択' },
