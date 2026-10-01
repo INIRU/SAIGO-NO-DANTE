@@ -142,3 +142,148 @@ export function diffGameTextRefs(stored: readonly GameTextRefRow[], next: readon
   }
   return { created, changed, unchanged }
 }
+
+// ── keyword_meta.game_id: the primary reference of a curated keyword ───────────────────────────────────────────────────
+
+/** Why a reference became the primary one: the keyword's own tag, the only same-name keyword reference, the most used of several. */
+export type PrimaryRefReason = 'tag' | 'only' | 'most-used'
+export type PrimaryRefPlan = {
+  chosen: Map<string, { id: string; reason: PrimaryRefReason }>
+  /** Several same-name references with equally many uses (also none at all): left unset, the candidates sorted. */
+  ambiguous: Map<string, string[]>
+  /** Names no keyword reference carries. */
+  none: string[]
+  /** Names whose tag-chosen reference has another KR name (informational: the tag still wins). */
+  tagNameDiffers: string[]
+}
+
+/**
+ * The reference each keyword_meta name displays its texts from, decided without guessing and independent of input order:
+ * 1. the tag the keywords step resolved for the name (the keyword's own buff tag), when it is a keyword reference;
+ * 2. else the single keyword reference whose keyword_name is the name;
+ * 3. else, among several, the one used most in skill, passive and gift texts (`usage`), when strictly more than the next;
+ * a tie is ambiguous and a name without any reference is none: both stay unset (the site then keeps the keyword_meta texts).
+ */
+export function selectPrimaryRefs(input: {
+  refs: readonly Pick<GameTextRefRow, 'id' | 'kind' | 'keyword_name'>[]
+  metaNames: readonly string[]
+  tags?: ReadonlyMap<string, string>
+  usage?: ReadonlyMap<string, number>
+}): PrimaryRefPlan {
+  const keywordIds = new Set(input.refs.filter(ref => ref.kind === 'keyword').map(ref => ref.id))
+  const byName = new Map<string, string[]>()
+  const keywordNameById = new Map(input.refs.filter(ref => ref.kind === 'keyword').map(ref => [ref.id, ref.keyword_name] as const))
+  for (const ref of input.refs) {
+    if (ref.kind !== 'keyword' || !ref.keyword_name) continue
+    byName.set(ref.keyword_name, [...(byName.get(ref.keyword_name) ?? []), ref.id])
+  }
+  const plan: PrimaryRefPlan = { chosen: new Map(), ambiguous: new Map(), none: [], tagNameDiffers: [] }
+  for (const name of [...new Set(input.metaNames)].sort()) {
+    const tag = input.tags?.get(name)
+    if (tag && keywordIds.has(tag)) {
+      plan.chosen.set(name, { id: tag, reason: 'tag' })
+      if (keywordNameById.get(tag) !== name) plan.tagNameDiffers.push(name)
+      continue
+    }
+    const candidates = [...(byName.get(name) ?? [])].sort()
+    if (!candidates.length) plan.none.push(name)
+    else if (candidates.length === 1) plan.chosen.set(name, { id: candidates[0], reason: 'only' })
+    else {
+      const used = candidates.map(id => ({ id, uses: input.usage?.get(id) ?? 0 })).sort((a, b) => b.uses - a.uses || (a.id < b.id ? -1 : 1))
+      if (used[0].uses > used[1].uses) plan.chosen.set(name, { id: used[0].id, reason: 'most-used' })
+      else plan.ambiguous.set(name, candidates)
+    }
+  }
+  return plan
+}
+
+/** The id to store: a found one wins, else the stored one stays (a hand-set id survives a name the rules cannot decide). */
+export function keepOrSetGameId(stored: string | null | undefined, found: string | null | undefined): string | null {
+  return found ?? stored ?? null
+}
+
+const BRACKET_ID = /\[([A-Za-z0-9_]+)\]/g
+
+/** Number of `[Id]` occurrences per id (only the `ids` given) over raw texts, wherever they stand (inside Unity tags too). */
+export function countRefUsage(texts: Iterable<string>, ids: ReadonlySet<string>): Map<string, number> {
+  const usage = new Map<string, number>()
+  for (const text of texts) {
+    for (const match of text.matchAll(BRACKET_ID)) {
+      if (ids.has(match[1])) usage.set(match[1], (usage.get(match[1]) ?? 0) + 1)
+    }
+  }
+  return usage
+}
+
+/** KR files with the skill, passive and gift texts players read: not enemy, abnormality, assist or tutorial ones. */
+const USAGE_FILE = /^KR_(Skills|Passive|Passives|EGOgift)\w*[-.\w]*\.txt$/
+const USAGE_SKIP = /Enemy|Abnormality|Assist|Tutorial/i
+
+/** `[Id]` uses in the extraction's personality/E.G.O skill, passive and gift texts (`<dataDir>/KR`). */
+export function readRefUsage(dataDir: string, ids: ReadonlySet<string>): Map<string, number> {
+  const dir = join(dataDir, FOLDER.kr)
+  const texts = readdirSync(dir)
+    .filter(file => USAGE_FILE.test(file) && !USAGE_SKIP.test(file))
+    .sort()
+    .map(file => readFileSync(join(dir, file), 'utf8'))
+  return countRefUsage(texts, ids)
+}
+
+/**
+ * The plan from the extraction: the references the sync stores, the same-name links, the usage. `metaNames` are all
+ * keyword_meta names (they decide keyword_name like the references sync does), `names` the ones to plan for (default: all).
+ */
+export function planKeywordGameIds(input: {
+  dataDir: string
+  metaNames: readonly string[]
+  names?: readonly string[]
+  /** keyword_meta name → the tag the keywords step resolved for it. */
+  tags?: ReadonlyMap<string, string>
+}): PrimaryRefPlan & { refs: GameTextRefRow[] } {
+  const refs = buildGameTextRefs({ ...readGameTextSources(input.dataDir), keywordMetaNames: input.metaNames })
+  const usage = readRefUsage(input.dataDir, new Set(refs.filter(ref => ref.kind === 'keyword').map(ref => ref.id)))
+  return { ...selectPrimaryRefs({ refs, metaNames: input.names ?? input.metaNames, tags: input.tags, usage }), refs }
+}
+
+export type GameIdReport = {
+  /** Names with a primary reference (byTag + only + mostUsed). */
+  set: number
+  byTag: number
+  only: number
+  mostUsed: number
+  ambiguous: number
+  none: number
+  /** Chosen ids that game_text_refs does not hold yet (refs step not run), so they cannot be written. */
+  refNotInDb: number
+  /** keyword_meta has no game_id column yet (migration not applied): the plan is computed and reported, nothing is written. */
+  columnMissing: boolean
+}
+
+/**
+ * What to store per name: the chosen reference when game_text_refs already holds it (the foreign key needs the row), else the
+ * id already stored. `stored` is null when the column does not exist, `dbRefIds` null when game_text_refs does not.
+ */
+export function resolveKeywordGameIds(input: {
+  plan: PrimaryRefPlan
+  names: readonly string[]
+  stored: ReadonlyMap<string, string | null> | null
+  dbRefIds: ReadonlySet<string> | null
+}): { ids: Map<string, string | null>; report: GameIdReport } {
+  const ids = new Map<string, string | null>()
+  let refNotInDb = 0
+  for (const name of input.names) {
+    const found = input.plan.chosen.get(name)?.id
+    const writable = found && input.dbRefIds?.has(found) ? found : null
+    if (found && !writable) refNotInDb++
+    ids.set(name, keepOrSetGameId(input.stored?.get(name), writable))
+  }
+  const reasons = [...input.plan.chosen.values()].map(chosen => chosen.reason)
+  const count = (reason: PrimaryRefReason) => reasons.filter(r => r === reason).length
+  return {
+    ids,
+    report: {
+      set: reasons.length, byTag: count('tag'), only: count('only'), mostUsed: count('most-used'),
+      ambiguous: input.plan.ambiguous.size, none: input.plan.none.length, refNotInDb, columnMissing: input.stored === null,
+    },
+  }
+}
