@@ -631,6 +631,7 @@ E.G.O 상세의 메인 이미지는 256×256 `_awaken_profile` 확대 대신 새
 - E.G.O 원본의 `additionalList`(전환 가능한 추가 각성 스킬: 20211 2021112 부셰, 20608 2060812 종[終], 21209 2120912 광휘)를 `ego_skills`에 skill_order 3부터 넣는다(`ego-stages.ts`의 `egoSkillSlots`). 기존 E.G.O는 `existing-ego` 단계가 차이를 보고 `--replace`로 다시 쓴다.
 - 레시피 공통 데이터는 파일 이름의 시즌 번호로 최신을 고르고(`recipeCommonFiles`, md7 고정 제거), 이벤트 재구성은 `theme-floor-t\d+` 전부를 읽는다(t1~t6 고정 제거).
 - 새 칸은 추출본으로 먼저 채웠다(패시브 958행, 키워드 대사 275개). 조건이 비어 있던 30행의 이전 값은 저장소 밖 `Limbus/backups/passives-condition-before-2026-10-01.json`에 있다.
+- E.G.O 침식 원화: `ego.corrosion_artwork_url`(마이그레이션 `20261001074122`)에 `{id}_e_cg.webp`(옛 이름 `{id}_cg_e.webp`, 20603 등 2개)의 공개 주소를 둔다. 상세 히어로의 침식 탭이 이 그림을 쓴다. `apply-extraction`은 새 E.G.O의 `e_cg`를 올릴 때 기록하고, 기존 104개는 `backfill-ego-artwork-url.ts --fix`가 채웠다(침식이 없는 기본 x01 E.G.O 12개는 비어 있음).
 - `keyword_meta.game_id`(493건)는 이 반영에서 처음 채워진다. 「분홍 리본」은 참조가 둘이라 비어 있고 참격·타격 등 15개는 참조가 없다.
 
 ## 데이터 무결성 점검

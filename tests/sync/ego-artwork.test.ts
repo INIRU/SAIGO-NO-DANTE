@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import { STORAGE_BASE } from '@/lib/constants/game'
 import {
-  EGO_ARTWORK_QUALITY, egoArtworkFile, egoArtworkHash, egoArtworkPublicUrl, planEgoArtworkBackfill, uploadEgoArtworkCopy,
+  EGO_ARTWORK_QUALITY, corrosionArtworkFile, egoArtworkFile, egoArtworkHash, egoArtworkPublicUrl, planEgoArtworkBackfill, uploadEgoArtworkCopy,
   type EgoArtworkRow,
 } from '@/scripts/sync/ego-artwork'
 
@@ -133,5 +133,13 @@ describe('REQ-DATA-SYNC-044 planEgoArtworkBackfill', () => {
   it('REQ-DATA-SYNC-044 plans nothing twice: a run on rows the backfill already filled plans only skips', () => {
     const filled = row({ game_id: '20205', artwork_url: `${STORAGE_BASE}/x/20205_cg-81c2d795203b.webp` })
     expect(planEgoArtworkBackfill({ rows: [filled], map, cgStored: new Set(['20205']) })).toEqual([{ kind: 'skip', gameId: '20205', id: 'id-20205', reason: 'has-artwork-url' }])
+  })
+})
+
+describe('REQ-CATALOG-019 corrosion artwork of an EGO', () => {
+  it('REQ-CATALOG-019 picks {id}_e_cg.webp, else the older {id}_cg_e.webp, else none', () => {
+    expect(corrosionArtworkFile('20211', new Set(['20211_cg.webp', '20211_e_cg.webp', '20211_cg_e.webp']))).toBe('20211_e_cg.webp')
+    expect(corrosionArtworkFile('20603', new Set(['20603_cg.webp', '20603_cg_e.webp']))).toBe('20603_cg_e.webp')
+    expect(corrosionArtworkFile('20201', new Set(['20201_cg.webp', '20201_awaken_profile.webp']))).toBeNull()
   })
 })

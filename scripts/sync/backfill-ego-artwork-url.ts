@@ -13,6 +13,8 @@
  *      (upsert: false, never replaced), then artwork_url points there. Re-encoding at quality 95 is not done: the stored `_cg.webp` is
  *      already a lossy WebP (quality 90), and encoding it again would only lose more, so the copy is byte-identical to it.
  * EGO whose profile is not an `_awaken_profile`, with no `_cg.webp`, or with artwork_url already set are left alone, so a rerun is safe.
+ * The same run fills `ego.corrosion_artwork_url` (the corrosion tab of the hero) of rows without one from the folder's
+ * `{id}_e_cg.webp` or older `{id}_cg_e.webp` (corrosionArtworkFile); nothing is uploaded for it.
  *
  * Needs NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SECRET_KEY in .env.local. --fix writes ego.artwork_url and uploads the copies; --out saves a
  * receipt (uploaded keys, updated rows) to undo it: `update limbus.ego set artwork_url = null where id in (...)` and remove the keys.
@@ -22,7 +24,7 @@ import { writeFileSync } from 'node:fs'
 import { createClient } from '@supabase/supabase-js'
 import { config } from 'dotenv'
 import egoArtwork from '../../lib/generated/ego-artwork.json'
-import { egoArtworkPublicUrl, egoFolderKey, planEgoArtworkBackfill, uploadEgoArtworkCopy, type EgoArtworkAction, type EgoArtworkRow, type Upload } from './ego-artwork'
+import { corrosionArtworkFile, egoArtworkPublicUrl, egoFolderKey, planEgoArtworkBackfill, uploadEgoArtworkCopy, type EgoArtworkAction, type EgoArtworkRow, type Upload } from './ego-artwork'
 
 config({ path: '.env.local', quiet: true })
 const args = process.argv.slice(2)
@@ -35,11 +37,11 @@ const db = () => supabase.schema('limbus')
 const bucket = supabase.storage.from('limbus-assets')
 
 async function egoRows() {
-  const rows: EgoArtworkRow[] = []
+  const rows: (EgoArtworkRow & { corrosion_artwork_url: string | null })[] = []
   for (let offset = 0; ; offset += 1000) {
-    const { data, error } = await db().from('ego').select('id, game_id, sinner_id, folder_name, image_url, artwork_url').order('game_id').range(offset, offset + 999)
+    const { data, error } = await db().from('ego').select('id, game_id, sinner_id, folder_name, image_url, artwork_url, corrosion_artwork_url').order('game_id').range(offset, offset + 999)
     if (error) throw Error(`ego: ${error.message}${/artwork_url/.test(error.message) ? ' (apply the ego_artwork_url migration first)' : ''}`)
-    rows.push(...(data as EgoArtworkRow[]))
+    rows.push(...(data as (EgoArtworkRow & { corrosion_artwork_url: string | null })[]))
     if (data.length < 1000) return rows
   }
 }
@@ -59,8 +61,35 @@ async function revalidate() {
   console.log(response.ok ? 'ok   revalidate' : `WARN revalidate failed: ${response.status}`)
 }
 
+async function folderNames(sinnerId: string, folder: string) {
+  const names = new Set<string>()
+  for (let offset = 0; ; offset += 1000) {
+    const { data, error } = await bucket.list(egoFolderKey(sinnerId, folder), { limit: 1000, offset })
+    if (error) throw Error(`Storage ${folder}: ${error.message}`)
+    for (const item of data) names.add(item.name)
+    if (data.length < 1000) return names
+  }
+}
+
+/** corrosion_artwork_url of rows without one: the corrosion art already in the EGO's folder (never uploads). */
+async function backfillCorrosion(rows: Awaited<ReturnType<typeof egoRows>>) {
+  const plan = (await inBatches(rows.filter(row => !row.corrosion_artwork_url && row.folder_name), 8, async row => {
+    const file = corrosionArtworkFile(row.game_id, await folderNames(row.sinner_id, row.folder_name!))
+    return file ? { row, url: egoArtworkPublicUrl(`${egoFolderKey(row.sinner_id, row.folder_name!)}/${file}`) } : null
+  })).filter(item => item !== null)
+  for (const { row, url } of plan) console.log(`plan corrosion ${row.game_id} -> ${url}`)
+  console.log(`corrosion art: ${plan.length} rows to set`)
+  if (!FIX) return []
+  for (const { row, url } of plan) {
+    const { error } = await db().from('ego').update({ corrosion_artwork_url: url }).eq('id', row.id).is('corrosion_artwork_url', null)
+    if (error) throw Error(`ego ${row.game_id} corrosion_artwork_url: ${error.message} (is the ego_corrosion_artwork_url migration applied?)`)
+  }
+  return plan.map(({ row, url }) => ({ id: row.id, gameId: row.game_id, corrosion_artwork_url: url }))
+}
+
 async function main() {
   const rows = await egoRows()
+  const corrosion = await backfillCorrosion(rows)
   const map = egoArtwork as Record<string, string>
   // (b) candidates: rows the map does not cover and that still lack artwork_url; ask Storage which have a plain _cg.webp.
   const candidates = rows.filter(row => !row.artwork_url && !Object.hasOwn(map, row.game_id) && row.image_url?.includes('_awaken_profile'))
@@ -79,6 +108,7 @@ async function main() {
   const count = (kind: string) => plan.filter(action => action.kind === kind).length
   console.log(`\n${rows.length} EGO rows: ${count('map') - missing.size} from the map, ${count('copy')} copies of {id}_cg.webp, ${count('skip')} skipped, ${missing.size} map entries without a Storage object`)
   if (!FIX) return console.log('dry-run: nothing written (--fix applies)')
+  if (corrosion.length) console.log(`set    corrosion art of ${corrosion.length} rows`)
 
   const uploads: Upload[] = [], updated: { id: string; gameId: string; artwork_url: string }[] = []
   for (const action of todo) {
@@ -107,7 +137,7 @@ async function main() {
     console.log(`set    ${action.gameId}`)
   }
   const out = option('--out')
-  if (out) writeFileSync(out, JSON.stringify({ at: new Date().toISOString(), uploads, updated, missingMapObjects: [...missing] }, null, 2) + '\n')
+  if (out) writeFileSync(out, JSON.stringify({ at: new Date().toISOString(), uploads, updated, corrosion, missingMapObjects: [...missing] }, null, 2) + '\n')
   console.log(`done: ${updated.length} rows set, ${uploads.length} objects uploaded${out ? `, receipt ${out}` : ''}`)
   await revalidate()
 }

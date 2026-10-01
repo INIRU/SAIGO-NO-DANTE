@@ -24,6 +24,7 @@ import type { SupportedLang } from '@/lib/i18n/types'
 import { KeywordWithTooltip } from '@/components/sinners/KeywordTooltip'
 import styles from './EGODetail.module.css'
 import { MultipliedCount, PassiveNameLabel } from '@/components/passive/PassiveParts'
+import portraitStyles from '@/styles/components/SinnerDetail.module.css'
 
 // ─── 상수 ────────────────────────────────────────────────────────────
 // Korean resistance value → translation key
@@ -309,6 +310,8 @@ export default function EGODetailClient({ sinner, ego }: Props) {
   const sinColor = SIN_COLORS[ego.sin_affinity as SinType] ?? gradeColor
 
   const hasCor = corSkillList.length > 0
+  const corrosionArtwork = ego.corrosion_artwork_url?.trim() || null
+  const [heroArt, setHeroArt] = useState<'awakening' | 'corrosion'>('awakening')
 
   // EGO 아이콘 URL 계산
   const egoGameId = ego.image_url?.match(/\/(\d+)_awaken_profile/)?.[1] ?? ''
@@ -353,9 +356,19 @@ export default function EGODetailClient({ sinner, ego }: Props) {
             <div><h1 id="ego-title">{egoLocalName}</h1><Link href={`/sinners/${sinner.id}`}>{sinnerLocalName}</Link></div>
             <GradeImg grade={ego.grade} height={28} />
           </div>
+          {corrosionArtwork && <div className={`${portraitStyles.segment} ${portraitStyles.segmentFill} ${styles.artworkTabs}`} role="group" aria-label={egoLocalName}>
+            <button type="button" aria-pressed={heroArt === 'awakening'} onClick={() => setHeroArt('awakening')}>
+              {awakenIconUrl && <img src={awakenIconUrl} alt="" />}{t('ego.awakeningLabel')}
+            </button>
+            <button type="button" aria-pressed={heroArt === 'corrosion'} onClick={() => setHeroArt('corrosion')}>
+              {erosionIconUrl && <img src={erosionIconUrl} alt="" />}{t('ego.corrosionLabel')}
+            </button>
+          </div>}
           <div className={styles.artwork}>
-            {ego.image_url ? <Image src={getEgoArtworkUrl(ego.image_url, ego.artwork_url)} alt={egoLocalName} fill priority sizes="(max-width: 767px) 85vw, 32rem" className={styles.artworkImage} />
+            {/* Both arts stay mounted (the second loads in the background): switching only fades, nothing reflows. */}
+            {ego.image_url ? <Image src={getEgoArtworkUrl(ego.image_url, ego.artwork_url)} alt={egoLocalName} fill priority sizes="(max-width: 767px) 85vw, 32rem" className={styles.artworkImage} data-hidden={heroArt === 'corrosion' || undefined} />
               : <span className={styles.artworkFallback}>{ego.grade}</span>}
+            {corrosionArtwork && <Image src={corrosionArtwork} alt={`${egoLocalName} ${t('ego.corrosionLabel')}`} fill sizes="(max-width: 767px) 85vw, 32rem" className={styles.artworkImage} data-hidden={heroArt !== 'corrosion' || undefined} />}
           </div>
           <Link href={`/sinners/${sinner.id}#ego`} className={styles.backLink}>← {t('ego.backToEgoList')}</Link>
         </section>

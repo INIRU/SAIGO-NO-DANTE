@@ -78,3 +78,12 @@ export function planEgoArtworkBackfill(input: { rows: readonly EgoArtworkRow[]; 
     return { kind: 'skip', ...base, reason: 'no-cg' }
   })
 }
+
+/**
+ * The corrosion (erosion) full art among the file names of an EGO's folder: `{id}_e_cg.webp` as apply-extraction uploads it,
+ * else the older `{id}_cg_e.webp` (20603 and one more); null when the EGO has none (the base x01 EGO have no corrosion).
+ */
+export function corrosionArtworkFile(gameId: string, stored: ReadonlySet<string>): string | null {
+  for (const file of [`${gameId}_e_cg.webp`, `${gameId}_cg_e.webp`]) if (stored.has(file)) return file
+  return null
+}
