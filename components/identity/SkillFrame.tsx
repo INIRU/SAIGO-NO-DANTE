@@ -14,6 +14,8 @@ interface SkillFrameProps {
   label: string
   /** rem 단위 전체 크기 (기본 3.5rem) */
   attackType?: 'slash' | 'pierce' | 'blunt' | null
+  /** Load the art at once (a skill list in view, e.g. an identity modal); lists of many frames keep lazy loading. */
+  eager?: boolean
   size?: string
 }
 
@@ -26,6 +28,7 @@ export default function SkillFrame({
   label,
   size = '3.5rem',
   attackType,
+  eager = false,
 }: SkillFrameProps) {
   const [iconSrc, setIconSrc] = useState(skillIconUrl)
   const [iconFailed, setIconFailed] = useState(false)
@@ -48,6 +51,7 @@ export default function SkillFrame({
       <Image
         src={getSkillFrameInnerUrl(sin, skillSlot, 'base')}
         alt="" width={128} height={128}
+        loading={eager ? 'eager' : undefined}
         className="absolute inset-0 z-0 pointer-events-none"
         style={{ width: '100%', height: '100%', objectFit: 'contain' }}
       />
@@ -74,6 +78,7 @@ export default function SkillFrame({
               alt=""
               width={64}
               height={64}
+              loading={eager ? 'eager' : undefined}
               style={{
                 width: '100%',
                 height: '100%',
@@ -93,7 +98,7 @@ export default function SkillFrame({
       </div>
 
       {/* Original frame shading and transparent edges, tinted to the sin. */}
-      <Image
+      <Image loading={eager ? 'eager' : undefined}
         src={innerUrl}
         alt=""
         width={128}
@@ -103,8 +108,8 @@ export default function SkillFrame({
       />
       {attackType && (
         <div className="absolute z-20 pointer-events-none" style={{ left: '50%', top: '69%', width: '23%', height: '23%', transform: 'translateX(-50%)' }}>
-          <Image src={getSkillFrameBadgeUrl(sin)} alt="" width={28} height={28} className="absolute inset-0" style={{ width: '100%', height: '100%' }} />
-          <Image src={getDetailStatIconUrl(attackType)} alt="" width={16} height={16} className="absolute inset-0 m-auto" style={{ width: '55%', height: '55%', objectFit: 'contain' }} />
+          <Image loading={eager ? 'eager' : undefined} src={getSkillFrameBadgeUrl(sin)} alt="" width={28} height={28} className="absolute inset-0" style={{ width: '100%', height: '100%' }} />
+          <Image loading={eager ? 'eager' : undefined} src={getDetailStatIconUrl(attackType)} alt="" width={16} height={16} className="absolute inset-0 m-auto" style={{ width: '55%', height: '55%', objectFit: 'contain' }} />
         </div>
       )}
     </div>

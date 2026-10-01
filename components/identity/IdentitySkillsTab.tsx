@@ -163,6 +163,7 @@ export default function IdentitySkillsTab({
                     sinColor={skillSinColor}
                     label={skillLabel}
                     size="100%"
+                    eager
                   />
                   {/* 기본 위력 (좌측) */}
                   <div className="absolute z-20" style={{ left: 0, top: '50%', transform: 'translateX(-40%) translateY(-75%)' }}>
