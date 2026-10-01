@@ -1,0 +1,19 @@
+{
+  "dataList": [
+    {
+      "id": "Combustion",
+      "name": "Burn",
+      "desc": "At the end of the turn, take fixed damage by the effect’s Potency.\nThen, reduce its Count by 1."
+    },
+    {
+      "id": "AttackDown",
+      "name": "Offense Level Down ",
+      "desc": "Offense level decreases based on the effect's Potency for one turn."
+    },
+    {
+      "id": "Vibration",
+      "name": "Tremor",
+      "desc": "When attacked by skills that trigger Tremor Burst, raise the Stagger Threshold by the effect’s Potency.\nAt the end of the turn, reduce the Count by 1."
+    }
+  ]
+}
