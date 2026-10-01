@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useState, useRef } from 'react'
-import { motion, AnimatePresence, useAnimate } from 'motion/react'
+import { AnimatePresence, useAnimate } from 'motion/react'
+import * as m from 'motion/react-m'
 import { X } from 'lucide-react'
 
 // ── Helpers ──────────────────────────────────────────────
@@ -134,7 +135,7 @@ function BsodScreen({ onAdvance }: { onAdvance: () => void }) {
             return (
               <AnimatePresence key={i}>
                 {showLines && (
-                  <motion.div
+                  <m.div
                     initial={{ opacity: 0, x: -6 }}
                     animate={
                       isPrompt
@@ -161,7 +162,7 @@ function BsodScreen({ onAdvance }: { onAdvance: () => void }) {
                     ) : (
                       line.text
                     )}
-                  </motion.div>
+                  </m.div>
                 )}
               </AnimatePresence>
             )

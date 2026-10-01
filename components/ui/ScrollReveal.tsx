@@ -1,6 +1,7 @@
 'use client'
 
-import { motion, useReducedMotion } from 'motion/react'
+import { useReducedMotion } from 'motion/react'
+import * as m from 'motion/react-m'
 import type { Variants, HTMLMotionProps } from 'motion/react'
 import { fadeInUp } from '@/lib/animations'
 
@@ -54,7 +55,7 @@ export default function ScrollReveal({
   style,
   ...rest
 }: ScrollRevealProps) {
-  const Tag = motion[as] as typeof motion.div
+  const Tag = m[as] as typeof m.div
   const shouldReduceMotion = useReducedMotion()
 
   // Merge a per-element delay into the animate transition without mutating

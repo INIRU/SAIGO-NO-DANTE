@@ -2,7 +2,7 @@ import '@/styles/globals/workspaces.css'
 import type { CSSProperties } from 'react'
 import { Analytics } from '@vercel/analytics/next'
 import { Toaster } from 'sonner'
-import { MotionConfig } from 'motion/react'
+import MotionProvider from '@/components/ui/MotionProvider'
 import { NuqsAdapter } from 'nuqs/adapters/next/app'
 import SessionProvider from '@/components/providers/SessionProvider'
 import SWRProvider from '@/components/providers/SWRProvider'
@@ -160,7 +160,7 @@ export default async function LangLayout({
         <NuqsAdapter>
           <SessionProvider>
             <SWRProvider>
-              <MotionConfig reducedMotion="user">
+              <MotionProvider>
                 {/* Section-only messages (planner, meta, …) are added by their layouts, not sent with every page. */}
                 <IntlClientProvider locale={validLang} messages={omitMessages(messages, ROOT_OMITTED_MESSAGES)} timeZone="Asia/Seoul">
                   <GameTextRefsProvider locale={validLang} names={refNames}>
@@ -180,7 +180,7 @@ export default async function LangLayout({
                     </KeywordProvider>
                   </GameTextRefsProvider>
                 </IntlClientProvider>
-              </MotionConfig>
+              </MotionProvider>
             </SWRProvider>
           </SessionProvider>
         </NuqsAdapter>

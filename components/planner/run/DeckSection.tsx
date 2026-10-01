@@ -184,7 +184,7 @@ export default function DeckSection({ state, dispatch, identities, sinners, skil
           const active = subTab === tab.key
           const Icon = tab.icon
           return (
-            <button key={tab.key} onClick={() => setSubTab(tab.key)} className="flex items-center gap-1 transition-all shrink-0"
+            <button key={tab.key} onClick={() => setSubTab(tab.key)} className="flex items-center gap-1 transition shrink-0"
               style={{ padding: '0.5rem 0.75rem', fontSize: '0.75rem', fontWeight: active ? 700 : 400, color: active ? '#e8dcc8' : '#555', borderBottom: `2px solid ${active ? '#c8900a' : 'transparent'}`, minHeight: '2.75rem' }}>
               <Icon style={{ width: '0.75rem', height: '0.75rem' }} /> {t(`deckTab_${tab.key}`)}
             </button>
@@ -417,7 +417,7 @@ export default function DeckSection({ state, dispatch, identities, sinners, skil
                           const egoSinEn = ego.sin_affinity ? (SIN_KR_TO_EN[ego.sin_affinity] ?? ego.sin_affinity) : null
                           const egoSc = egoSinEn ? (SIN_COLORS[egoSinEn as keyof typeof SIN_COLORS] ?? gc) : gc
                           return (
-                            <button key={ego.id} onClick={() => handleSelectEgo(ego)} className="text-left transition-all" style={{
+                            <button key={ego.id} onClick={() => handleSelectEgo(ego)} className="text-left transition" style={{
                               background: isSelected ? `linear-gradient(160deg, ${egoSc}22 0%, ${egoSc}0d 100%)` : 'linear-gradient(160deg, #1e1810 0%, #120e08 100%)',
                               border: `1px solid ${isSelected ? egoSc + 'aa' : egoSc + '20'}`,
                               borderRadius: '0.375rem', overflow: 'hidden', cursor: 'pointer',

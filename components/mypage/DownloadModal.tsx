@@ -78,7 +78,7 @@ export default function DownloadModal({ open, onClose, onConfirm, generating }: 
                   <button
                     key={type}
                     onClick={() => toggleInclude(type)}
-                    className="flex-1 py-2 rounded text-xs font-medium transition-all duration-150"
+                    className="flex-1 py-2 rounded text-xs font-medium transition duration-150"
                     style={{
                       background: active ? 'rgba(200,144,10,0.15)' : 'rgba(255,255,255,0.03)',
                       color: active ? '#e8b030' : '#666',
@@ -114,7 +114,7 @@ export default function DownloadModal({ open, onClose, onConfirm, generating }: 
         <div className="px-5 py-4 flex gap-2" style={{ borderTop: '1px solid #2a2015' }}>
           <button
             onClick={onClose}
-            className="flex-1 py-2.5 rounded text-xs font-medium transition-all duration-150"
+            className="flex-1 py-2.5 rounded text-xs font-medium transition duration-150"
             style={{
               background: 'rgba(255,255,255,0.05)',
               color: '#888',
@@ -127,7 +127,7 @@ export default function DownloadModal({ open, onClose, onConfirm, generating }: 
           <button
             onClick={() => onConfirm({ include, groupBy })}
             disabled={!canConfirm}
-            className="flex-1 py-2.5 rounded text-xs font-medium transition-all duration-150 flex items-center justify-center gap-1.5"
+            className="flex-1 py-2.5 rounded text-xs font-medium transition duration-150 flex items-center justify-center gap-1.5"
             style={{
               background: canConfirm ? 'rgba(200,144,10,0.2)' : 'rgba(200,144,10,0.05)',
               color: canConfirm ? '#e8b030' : '#666',

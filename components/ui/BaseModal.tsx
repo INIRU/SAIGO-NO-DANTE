@@ -2,7 +2,8 @@
 
 import { type ReactNode, useEffect, useRef } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
-import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
+import { AnimatePresence, useReducedMotion } from 'motion/react'
+import * as m from 'motion/react-m'
 import {
   modalOverlayVariants,
   modalPanelVariants,
@@ -74,7 +75,7 @@ export default function BaseModal({
         {open && (
           <Dialog.Portal forceMount>
             <Dialog.Overlay asChild forceMount>
-              <motion.div
+              <m.div
                 className="fixed inset-0"
                 style={{
                   zIndex,
@@ -95,7 +96,7 @@ export default function BaseModal({
               onEscapeKeyDown={() => onClose()}
               onOpenAutoFocus={initialFocus === 'dialog' ? event => { event.preventDefault(); (event.currentTarget as HTMLElement | null)?.focus({ preventScroll: true }) } : undefined}
             >
-              <motion.div
+              <m.div
                 className={sheet ? 'fixed inset-0 flex items-end justify-center sm:items-center sm:p-4' : 'fixed inset-0 flex items-center justify-center'}
                 style={{ zIndex: zIndex + 1, padding: sheet ? undefined : padding, pointerEvents: 'none' }}
                 variants={panelVariants}
@@ -111,7 +112,7 @@ export default function BaseModal({
                 >
                   {children}
                 </div>
-              </motion.div>
+              </m.div>
             </Dialog.Content>
           </Dialog.Portal>
         )}

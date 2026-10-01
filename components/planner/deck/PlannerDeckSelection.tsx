@@ -4,7 +4,8 @@ import { memo, useCallback, useEffect, useLayoutEffect, useRef, useState, type C
 import IdentityFrameCard, { getFormationOverlay } from '@/components/ui/IdentityFrameCard'
 import Image from 'next/image'
 import { ChevronDown, ChevronUp, ClipboardPaste, RotateCcw, X } from 'lucide-react'
-import { motion, useReducedMotion } from 'motion/react'
+import { useReducedMotion } from 'motion/react'
+import * as m from 'motion/react-m'
 import { showSuccess } from '@/lib/toast'
 import BaseModal from '@/components/ui/BaseModal'
 import CharacterPickerFilters from '@/components/ui/CharacterPickerFilters'
@@ -569,7 +570,7 @@ export function PlannerEgoBoard({
         const egosByGrade = slot?.egosByGrade ?? {}
         const sinnerName = getLocalizedSinnerName(sinner)
         return (
-          <motion.button
+          <m.button
             key={sinner.id}
             type="button"
             onClick={() => { if (enabled) onOpenEgoModal(sinner.id) }}
@@ -634,7 +635,7 @@ export function PlannerEgoBoard({
                 <span style={{ fontSize: '0.875rem', color: '#333' }}>{t('noIdentity')}</span>
               </div>
             )}
-          </motion.button>
+          </m.button>
         )
       })}
       <style jsx>{`
