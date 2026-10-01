@@ -321,7 +321,7 @@ function buildNoteLookups(
     for (const pa of paBest.values()) {
       const entry = {
         name: localizePassiveName(pa, locale), sin_affinity: pa.sin_affinity,
-        sin_count: pa.sin_count, active_cond: pa.active_cond,
+        sin_count: pa.sin_count, sin_requirements: pa.sin_requirements, active_cond: pa.active_cond,
         description: localizePassiveDescription(pa, locale), sinnerName: localizedSinnerName,
         imageUrl: identityImageUrl,
       }

@@ -24,6 +24,8 @@ import { type SupportedLang } from '@/lib/i18n'
 import { localizeDeckKeyword } from '@/components/decks/decks-types'
 import { usePlainGameText } from '@/lib/hooks/usePlainGameText'
 import { splitGameTextLines } from '@/lib/game-text/rich-text'
+import { passiveRequirements } from '@/lib/planner/passives'
+import { MultipliedCount } from '@/components/passive/PassiveParts'
 
 // ── 타입 ──────────────────────────────────────────────────────────────────
 export type SkillDetail = {
@@ -55,6 +57,7 @@ export type PassiveDetail = {
   passive_type: string
   sin_affinity: string | null
   sin_count: number | null
+  sin_requirements?: { sin: string; count: number }[] | null
   active_cond: string | null
   description: string
   description_en?: string | null
@@ -461,9 +464,8 @@ export default function DeckIdentityCard({
             <p style={{ color: '#8a8095', fontSize: '0.6875rem', fontStyle: 'italic', fontFamily: 'var(--font-body)' }}>{previewT('noPassives')}</p>
           ) : sortedPassives.map((passive, idx) => {
             const isBattle = passive.passive_type === 'battle'
-            const sinNames = passive.sin_affinity ? passive.sin_affinity.split(',').map(s => s.trim()) : []
-            const sinTypes = sinNames.map(s => SIN_KR_TO_EN[s]).filter(Boolean) as SinType[]
-            const pc = sinTypes[0] ? (SIN_COLORS[sinTypes[0]] ?? '#cccccc') : '#cccccc'
+            const requirements = passiveRequirements(passive)
+            const pc = requirements[0] ? (SIN_COLORS[requirements[0].sin] ?? '#cccccc') : '#cccccc'
             const passiveName = localizePassiveName(passive, lang)
             const passiveDescription = localizePassiveDescription(passive, lang)
             return (
@@ -483,14 +485,14 @@ export default function DeckIdentityCard({
                   <span className="font-semibold" style={{ color: pc, fontSize: '0.8125rem' }}>{passiveName}</span>
                 </div>
 
-                {(sinTypes.length > 0 || passive.active_cond) && (
+                {(requirements.length > 0 || passive.active_cond) && (
                   <div className="flex items-center gap-1.5 mb-2">
-                    {sinTypes.map((st, i) => (
-                      <Image key={i} src={sinIconUrl(st)} alt="" width={20} height={20} style={{ filter: `drop-shadow(0 0 2px ${SIN_COLORS[st] ?? pc}60)` }} />
+                    {requirements.map(req => (
+                      <span key={req.sin} className="inline-flex items-center gap-0.5" style={{ color: pc }}>
+                        <Image src={sinIconUrl(req.sin)} alt="" width={20} height={20} style={{ filter: `drop-shadow(0 0 2px ${SIN_COLORS[req.sin] ?? pc}60)` }} />
+                        <MultipliedCount value={req.count} style={{ fontSize: '0.8125rem', fontWeight: 700, color: pc }} />
+                      </span>
                     ))}
-                    {sinTypes.length > 0 && passive.sin_count != null && (
-                      <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.8125rem', fontWeight: 700, color: pc }}>x{passive.sin_count}</span>
-                    )}
                     {passive.active_cond && (
                       <span className="text-xs px-1.5 py-0.5 rounded" style={{ background: `${pc}18`, color: pc, border: `1px solid ${pc}35` }}>
                         {passive.active_cond === 'resonance' ? detailT('passiveResonance') : passive.active_cond === 'stock' ? detailT('passiveStock') : passive.active_cond}

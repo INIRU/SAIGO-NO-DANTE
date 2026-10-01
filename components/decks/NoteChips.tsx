@@ -6,13 +6,15 @@ import { useState, useRef, useEffect, useCallback, useContext, useMemo } from 'r
 import useSWR from 'swr'
 import { createPortal } from 'react-dom'
 import Image from 'next/image'
-import NoteBlockViewer, { NoteGiftClickContext } from '@/components/notes/NoteBlockViewer'
+import NoteBlockViewer, { NoteGiftClickContext, NoteKeywordLabel } from '@/components/notes/NoteBlockViewer'
 import { parseBlockDocument, NOTE_PREFIX } from '@/lib/notes/blocks'
 import { parseNoteImage } from '@/lib/notes/images'
 import { noteBlockTokenPattern, noteInlineMarkdownPattern, noteTokenPattern } from '@/lib/notes/inline-tokens'
 import { PlaceholderText } from '@/components/ui/PlaceholderLabel'
 import IdentitySkillFrameCard from '@/components/identity/IdentitySkillFrameCard'
 import { PassiveNoteRow } from '@/components/passive/PassiveEffect'
+import { MultipliedCount } from '@/components/passive/PassiveParts'
+import { passiveRequirements } from '@/lib/planner/passives'
 import GiftCard from '@/components/ui/GiftCard'
 import type { GiftConditionStatus } from '@/lib/planner/gift-condition-status'
 import { useFormatGameText, useFormatSkillDesc, useKeywords, useKeywordData, useKeywordDescription, type KeywordInfo } from '@/components/providers/KeywordProvider'
@@ -188,6 +190,7 @@ export type NotePassiveEntry = {
   name: string
   sin_affinity: string | null
   sin_count: number | null
+  sin_requirements?: { sin: string; count: number }[] | null
   active_cond: string | null
   description: string | null
   sinnerName: string
@@ -280,6 +283,7 @@ function PassiveBlockPlaceholder({ entry }: { entry: NotePassiveEntry }) {
           passive_type: 'battle',
           sin_affinity: entry.sin_affinity,
           sin_count: entry.sin_count,
+          sin_requirements: entry.sin_requirements,
           active_cond: entry.active_cond,
           description: entry.description,
         }}
@@ -371,9 +375,8 @@ export function PassiveChip({ entry, interactive = true }: { entry: NotePassiveE
   const t = useTranslations()
   const ref = useRef<HTMLSpanElement>(null)
   const { rect, show, scheduleHide, cancelHide, toggle } = useTooltip(ref)
-  const sinList = entry.sin_affinity
-    ? entry.sin_affinity.split(',').map(s => normalizeSin(s.trim())).filter(Boolean) as SinType[]
-    : []
+  const requirements = passiveRequirements(entry)
+  const sinList = requirements.map(req => req.sin)
   const sc = sinList[0] ? (SIN_COLORS[sinList[0]] ?? '#888888') : '#888888'
   return (
     <span
@@ -392,12 +395,19 @@ export function PassiveChip({ entry, interactive = true }: { entry: NotePassiveE
       {interactive && rect && createPortal(
         <TooltipPopup rect={rect} onMouseEnter={cancelHide} onMouseLeave={scheduleHide}>
           <div style={{ color: sc, fontSize: '0.8125rem', fontWeight: 700, marginBottom: 4 }}>{entry.name}</div>
-          {sinList.length > 0 && entry.sin_count && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 3, marginBottom: 4 }}>
-              {sinList.map((st, i) => <Image key={i} src={SIN_ICON_MAP[st]} alt="" width={14} height={14} />)}
-              <span style={{ color: sc, fontSize: '0.8125rem', fontFamily: 'var(--font-mono)' }}>
-                {entry.sin_count} {entry.active_cond ? t(`identity.passives.${entry.active_cond}` as Parameters<typeof t>[0]) : ''}
-              </span>
+          {requirements.length > 0 && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+              {requirements.map(req => (
+                <span key={req.sin} style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                  <Image src={SIN_ICON_MAP[req.sin]} alt="" width={14} height={14} />
+                  <MultipliedCount value={req.count} style={{ color: sc, fontSize: '0.8125rem', fontWeight: 700 }} />
+                </span>
+              ))}
+              {entry.active_cond && (
+                <span style={{ color: sc, fontSize: '0.8125rem' }}>
+                  {t(`identity.passives.${entry.active_cond}` as Parameters<typeof t>[0])}
+                </span>
+              )}
             </div>
           )}
           {entry.description && (
@@ -513,52 +523,6 @@ export function KeywordChipDescription({ keyword, info }: { keyword: string; inf
   const formatGameText = useFormatGameText()
   const description = useKeywordDescription(keyword, info)
   return <>{description === undefined ? '…' : formatGameText(description, '#aaa', true)}</>
-}
-
-export function KeywordChip({ keyword }: { keyword: string }) {
-  const t = useTranslations()
-  const locale = useLocale()
-  const keywords = useKeywords()
-  const { sinMap: kwSinMap, getIconUrl } = useKeywordData()
-  const ref = useRef<HTMLSpanElement>(null)
-  const { rect, show, scheduleHide, cancelHide, toggle } = useTooltip(ref)
-  const iconUrl = getIconUrl(keyword)
-  const sinType = kwSinMap[keyword]
-  const sc = sinType ? (SIN_COLORS[sinType] ?? '#c8900a') : '#c8900a'
-  const info = keywords[keyword]
-  const localName = localizeDeckKeyword(keyword, info, locale as SupportedLang)
-  return (
-    <span
-      ref={ref}
-      onMouseEnter={show}
-      onMouseLeave={scheduleHide}
-      onClick={toggle}
-      style={chipStyle(sc)}
-    >
-      {iconUrl && <Image src={iconUrl} alt="" width={16} height={16} />}
-      <span style={{ color: sc, fontSize: '0.75rem', fontWeight: 600 }}>{localName}</span>
-
-      {rect && createPortal(
-        <TooltipPopup rect={rect} onMouseEnter={cancelHide} onMouseLeave={scheduleHide}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: info ? 4 : 0 }}>
-            {iconUrl && <Image src={iconUrl} alt="" width={14} height={14} />}
-            <span style={{ color: sc, fontSize: '0.8125rem', fontWeight: 700 }}>{localName}</span>
-          </div>
-          {info && (
-            <div style={{ color: '#aaa', fontSize: '0.75rem', lineHeight: 1.55 }}>
-              <KeywordChipDescription keyword={keyword} info={info} />
-              {info.maxStack != null && (
-                <span style={{ display: 'block', marginTop: 2, color: '#999', fontSize: '0.8125rem' }}>
-                  {t('keyword.maxStack')} {info.maxStack}
-                </span>
-              )}
-            </div>
-          )}
-        </TooltipPopup>,
-        document.body,
-      )}
-    </span>
-  )
 }
 
 // ── EgoGiftChip ─────────────────────────────────────────────────────────
@@ -766,7 +730,8 @@ export function NoteRenderer({
           : <FallbackChip key={`${keyPrefix}-e${m.index}`} type="e" tokenKey={m[3]} />
         )
       } else if (m[4]) {
-        elements.push(<KeywordChip key={`${keyPrefix}-k${m.index}`} keyword={m[4]} />)
+        // Memo keywords read like game text: an inline label, not a chip box.
+        elements.push(<NoteKeywordLabel key={`${keyPrefix}-k${m.index}`} id={m[4]} />)
       } else if (m[5]) {
         const e = identityLookup[m[5]]
         elements.push(e

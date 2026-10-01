@@ -42,6 +42,9 @@ describe('REQ-DATA-SYNC-034 game text refs from the extraction files', () => {
       description: '턴 종료 시, 효과 위력만큼 고정 체력 피해를 받음\n턴 종료 후 횟수 1 감소',
       description_en: 'At the end of the turn, take fixed damage by the effect’s Potency.\nThen, reduce its Count by 1.',
       description_jp: expect.any(String),
+      flavor: null,
+      flavor_en: null,
+      flavor_jp: null,
       keyword_name: '화상',
     })
     expect(row(rows, 'Combustion').name_jp).not.toBe('')
@@ -128,7 +131,7 @@ describe('REQ-DATA-SYNC-034 same id in several files and kinds', () => {
 describe('REQ-DATA-SYNC-034 comparing with the stored rows', () => {
   const base: GameTextRefRow = {
     id: 'Combustion', kind: 'keyword', name: '화상', name_en: 'Burn', name_jp: '燃焼',
-    description: 'a', description_en: 'b', description_jp: 'c', keyword_name: '화상',
+    description: 'a', description_en: 'b', description_jp: 'c', flavor: null, flavor_en: null, flavor_jp: null, keyword_name: '화상',
   }
 
   it('REQ-DATA-SYNC-034 counts new, changed and unchanged rows (updated_at is ignored)', () => {
@@ -157,5 +160,31 @@ describe('REQ-DATA-SYNC-034 reading source files', () => {
     } finally {
       rmSync(dir, { recursive: true, force: true })
     }
+  })
+})
+
+describe('REQ-KEYWORDS-004 keyword flavor lines', () => {
+  const empty = { kr: [], en: [], jp: [] }
+  const sources = (over: Partial<GameTextSources>): GameTextSources => ({ keywords: empty, skillTags: empty, ...over })
+  it('REQ-KEYWORDS-004 keeps the flavor of a keyword per language, from another file when the richest entry has none', () => {
+    const rows = buildGameTextRefs({
+      ...sources({
+        keywords: {
+          kr: [{ id: 'TangleBlackYarn', name: '뒤엉킴', desc: '- 최댓값 : 30\n- 수치당 받는 피해량 +1%' }, { id: 'TangleBlackYarn', name: '뒤엉킴', flavor: '검은 물이 <i>검은 실</i>로 엉켜간다.' }],
+          en: [{ id: 'TangleBlackYarn', name: 'Tangle', desc: 'Max 30', flavor: 'Black yarn.' }],
+          jp: [],
+        },
+        skillTags: { kr: [{ id: 'OnSucceedAttack', name: '[적중시]', flavor: '없음' }], en: [], jp: [] },
+      }),
+      keywordMetaNames: [],
+    })
+    const tangle = rows.find(row => row.id === 'TangleBlackYarn')!
+    expect(tangle).toMatchObject({ flavor: '검은 물이 <i>검은 실</i>로 엉켜간다.', flavor_en: 'Black yarn.', flavor_jp: null })
+    expect(rows.find(row => row.id === 'OnSucceedAttack')).toMatchObject({ flavor: null })
+  })
+
+  it('REQ-KEYWORDS-004 counts a new flavor as a change of the stored row', () => {
+    const base = { id: 'X', kind: 'keyword', name: 'x', name_en: null, name_jp: null, description: null, description_en: null, description_jp: null, flavor: null, flavor_en: null, flavor_jp: null, keyword_name: null } as const
+    expect(diffGameTextRefs([base], [{ ...base, flavor: '대사' }]).changed).toHaveLength(1)
   })
 })

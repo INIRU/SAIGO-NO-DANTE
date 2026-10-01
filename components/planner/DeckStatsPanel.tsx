@@ -33,6 +33,7 @@ interface PassiveLike {
   passive_type: string
   sin_affinity: string | null
   sin_count: number | null
+  sin_requirements?: { sin: string; count: number }[] | null
   active_cond: string | null
   description: string | null
 }

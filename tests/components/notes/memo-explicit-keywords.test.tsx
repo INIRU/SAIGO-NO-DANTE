@@ -39,11 +39,11 @@ describe('REQ-DECKS-011 memos show keywords only as explicit chips', () => {
     expect(html).toContain('화상 못 ')
   })
 
-  it('REQ-DECKS-011 draws a [k:] token as the keyword chip, and only that', () => {
+  it('REQ-DECKS-011 draws a [k:] token as an inline keyword label (no chip box), and only that', () => {
     const html = renderNote('화상 [k:못] 박기')
-    expect(tokens(html)).toBe(0)
+    expect(tokens(html)).toBe(1)
     expect(html).toContain('화상 ')
-    expect(html.match(/clip-path/g)?.length).toBe(1)
+    expect(html).not.toMatch(/clip-path/)
   })
 
   it('REQ-DECKS-011 shows a stray backslash as text (it is no escape any more)', () => {
@@ -61,7 +61,9 @@ describe('REQ-DECKS-011 memos show keywords only as explicit chips', () => {
   it('REQ-DECKS-011 keeps a keyword chip of a block document in the one-line card preview as a token', () => {
     const saved = doc({ type: 'paragraph', content: [{ type: 'text', text: '먼저 ' }, { type: 'noteKeyword', attrs: { id: '화상' } }, { type: 'text', text: ' 챙기기' }] })
     expect(notePreviewText(saved)).toContain('[k:화상]')
-    expect(renderNote(notePreviewText(saved), { inline: true }).match(/clip-path/g)?.length).toBe(1)
+    const preview = renderNote(notePreviewText(saved), { inline: true })
+    expect(tokens(preview)).toBe(1)
+    expect(preview).not.toMatch(/clip-path/)
   })
 })
 

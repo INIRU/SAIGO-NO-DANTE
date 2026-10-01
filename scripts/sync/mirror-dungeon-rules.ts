@@ -351,3 +351,17 @@ export function extractActivationCondition(effect: string | null, keyword: strin
     keyword: keywordTrimmed,
   }
 }
+
+/**
+ * Common data files newest season first (md8 > md7 > md7-nextupdate > md6 > base): the season number is read from the
+ * name, so a new season's file is picked up without a code change.
+ */
+export function recipeCommonFiles(files: readonly string[]): string[] {
+  const version = (file: string) => {
+    const match = file.match(/^mirror-dungeon-common-data(?:-md(\d+))?(-nextupdate)?\.txt$/)
+    return match ? [Number(match[1] ?? 0), match[2] ? 1 : 0] as const : null
+  }
+  return files
+    .filter(file => version(file))
+    .sort((a, b) => version(b)![0] - version(a)![0] || version(a)![1] - version(b)![1])
+}

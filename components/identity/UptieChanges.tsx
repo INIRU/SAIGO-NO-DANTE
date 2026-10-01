@@ -75,7 +75,7 @@ export function UptieChangePanel({ level, title, stats = [], lines, accentColor,
               <span aria-hidden className="w-2.5 shrink-0 text-center font-bold" style={{ color: line.kind === 'added' ? '#e8b030' : '#6f6352' }}>
                 {line.kind === 'added' ? '+' : '−'}
               </span>
-              {line.coin > 0 && <span className="mt-[.2rem]"><CoinBadge number={line.coin} accentColor={accentColor} /></span>}
+              {line.coin > 0 && <span className="mt-[.2rem]"><CoinBadge number={line.coin} size="1.25rem" /></span>}
               <span className="sr-only">{t(line.kind === 'added' ? 'identity.uptie.added' : 'identity.uptie.removed')}: </span>
               {line.kind === 'added'
                 ? <span className="min-w-0 text-[#d8cfbf]">{format(line.text, accentColor, skillNameColors, allowedKeywords)}</span>

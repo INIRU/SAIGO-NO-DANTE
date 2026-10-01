@@ -6,7 +6,7 @@ import { createHash } from 'node:crypto'
 import { createClient } from '@supabase/supabase-js'
 import { IDENTITY_STAT_BASE_LEVEL, SINNER_SLUGS, STORAGE_BASE } from '../../lib/constants/game'
 import { loadEgoSyncContext, loadSourceEgoKeywords, cleanLocaleContent, composeRawSkillDescription, rawGameText, joinPassiveGameTexts } from './identity-data'
-import { resolveEgoStages, type RawEgoStage } from './ego-stages'
+import { egoSkillSlots, resolveEgoStages, type RawEgoStage } from './ego-stages'
 import { passiveStageRange } from './ego-passives'
 
 const root = resolve(process.env.LIMBUS_RECOVERY_ROOT ?? '../assets/recovery-2026-09-10')
@@ -128,6 +128,8 @@ async function main() {
         const suffix = lang === 'kr' ? '' : `_${lang}`
         row[`name${suffix}`] = cleanLocaleContent(localized.name)
         row[`description${suffix}`] = rawGameText(localized.desc)
+        // The game gives a few EGO passives a flavor line (2021111, 2051011 since 2026-10-01).
+        row[`flavor${suffix}`] = localized.flavor ? rawGameText(localized.flavor) : null
       }
       passives.push(row)
     }
@@ -141,8 +143,7 @@ async function main() {
       resistance: sinCodes.map(code => { const value = definition.attributeResistList?.find((r: Row) => r.type === code)?.value; if (resistance[String(value)] == null) throw new Error(`Unknown EGO resistance ${gameId}: ${value}`); return resistance[String(value)] }),
       passive_name: passiveText('kr', 'name'), passive_content: passiveText('kr', 'desc'), passive_name_en: passiveText('en', 'name'), passive_content_en: passiveText('en', 'desc'), passive_name_jp: passiveText('jp', 'name'), passive_content_jp: passiveText('jp', 'desc'),
     })
-    for (const [category, skillId] of [['awakening', definition.awakeningSkillId], ['corrosion', definition.corrosionSkillId]] as const) {
-      if (!skillId) continue
+    for (const { category, skillId, skillOrder } of egoSkillSlots(definition)) {
       const skill = skillDefinitions.get(skillId)
       if (!skill) throw new Error(`Missing skill ${skillId}`)
       for (const stage of resolveEgoStages(skill.skillData as RawEgoStage[])) {
@@ -157,7 +158,7 @@ async function main() {
         skills.push({ id: uuid(`ego-skill:${id}:${skillId}:${level}`), ego_id: id, game_skill_id: skillId, construe_level: level, category,
           name: krSkill.name, name_en: enSkill.name, name_jp: jpSkill.name, description: composeRawSkillDescription(krSkill), description_en: composeRawSkillDescription(enSkill), description_jp: composeRawSkillDescription(jpSkill),
           skill_type: attack[stage.atkType!], sin_affinity: sin(stage.attributeType!), base_power: stage.defaultValue,
-          coin_power: (coins[0].operatorType === 'SUB' ? -1 : 1) * coins[0].scale, coins: coins.length, atk_weight: stage.targetNum, mental_consume: stage.mpUsage, skill_order: category === 'awakening' ? 1 : 2,
+          coin_power: (coins[0].operatorType === 'SUB' ? -1 : 1) * coins[0].scale, coins: coins.length, atk_weight: stage.targetNum, mental_consume: stage.mpUsage, skill_order: skillOrder,
           offense_level: stage.skillLevelCorrection == null ? null : IDENTITY_STAT_BASE_LEVEL + stage.skillLevelCorrection,
         })
       }

@@ -3,11 +3,14 @@ import { z } from 'zod'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import type { SupportedLang } from '@/lib/i18n/types'
+import { flavorKeyOfKeyword } from '@/lib/game-text/flavor'
 
 /** What a `[Id]` of raw game text is, in one language: its kind, label and (keywords) the keyword_meta row it maps to. */
 export type GameTextRefName = { k: 'keyword' | 'skilltag'; n: string; kw?: string }
 export type GameTextRefNames = Record<string, GameTextRefName>
 export type GameTextRefDescriptions = Record<string, string>
+/** Flavor lines of the keywords by game id (raw game text), only for keywords that have one. */
+export type GameTextRefFlavors = Record<string, string>
 
 const RowSchema = z.object({
   id: z.string(),
@@ -18,12 +21,16 @@ const RowSchema = z.object({
   description: z.string().nullable().optional(),
   description_en: z.string().nullable().optional(),
   description_jp: z.string().nullable().optional(),
+  flavor: z.string().nullable().optional(),
+  flavor_en: z.string().nullable().optional(),
+  flavor_jp: z.string().nullable().optional(),
   keyword_name: z.string().nullable(),
 })
 export type GameTextRefRow = z.infer<typeof RowSchema>
 
 const NAME_COLUMNS = 'id, kind, name, name_en, name_jp, keyword_name'
 const ALL_COLUMNS = `${NAME_COLUMNS}, description, description_en, description_jp`
+const FLAVOR_COLUMNS = `${NAME_COLUMNS}, flavor, flavor_en, flavor_jp`
 const PAGE = 1000
 
 async function loadRows(columns: string): Promise<GameTextRefRow[]> {
@@ -72,6 +79,22 @@ export function gameTextRefDescriptions(rows: readonly GameTextRefRow[], lang: S
   return out
 }
 
+/**
+ * Flavor lines of the keywords as the locale shows them (raw game text; most keywords have none), by game id and, for
+ * a tooltip of a keyword_meta row, by `kw:<keyword_meta name>` (the first reference of that keyword with a flavor).
+ */
+export function gameTextRefFlavors(rows: readonly GameTextRefRow[], lang: SupportedLang): GameTextRefFlavors {
+  const out: GameTextRefFlavors = {}
+  for (const row of rows) {
+    if (row.kind !== 'keyword') continue
+    const text = pick(lang, row.flavor, row.flavor_en, row.flavor_jp).trim()
+    if (!text) continue
+    out[row.id] = text
+    if (row.keyword_name && !out[flavorKeyOfKeyword(row.keyword_name)]) out[flavorKeyOfKeyword(row.keyword_name)] = text
+  }
+  return out
+}
+
 export async function getGameTextRefNames(lang: SupportedLang): Promise<GameTextRefNames> {
   'use cache'
   cacheLife('max')
@@ -97,4 +120,11 @@ export async function getGameTextRefDescriptions(lang: SupportedLang): Promise<G
   cacheLife('max')
   cacheTag(CACHE_TAGS.gameTextRefs, CACHE_TAGS.gameData)
   return gameTextRefDescriptions(await loadRows(ALL_COLUMNS), lang)
+}
+
+export async function getGameTextRefFlavors(lang: SupportedLang): Promise<GameTextRefFlavors> {
+  'use cache'
+  cacheLife('max')
+  cacheTag(CACHE_TAGS.gameTextRefs, CACHE_TAGS.gameData)
+  return gameTextRefFlavors(await loadRows(FLAVOR_COLUMNS), lang)
 }

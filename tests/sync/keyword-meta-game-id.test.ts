@@ -17,7 +17,7 @@ import {
 const FIXTURES = resolve(__dirname, '../fixtures/game-text-refs')
 
 const ref = (id: string, name: string | null, keyword_name: string | null = name, kind: GameTextRefRow['kind'] = 'keyword'): GameTextRefRow => ({
-  id, kind, name, name_en: null, name_jp: null, description: null, description_en: null, description_jp: null, keyword_name,
+  id, kind, name, name_en: null, name_jp: null, description: null, description_en: null, description_jp: null, flavor: null, flavor_en: null, flavor_jp: null, keyword_name,
 })
 
 // 화상 has two ids in the game (Burn, Combustion), 가호 too; 호흡 has one.
