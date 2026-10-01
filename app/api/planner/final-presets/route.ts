@@ -6,6 +6,7 @@ import { findOrCreateSupabaseUser } from '@/lib/supabase/findOrCreateUser'
 import { checkRequestRateLimit, rateLimitResponse } from '@/lib/rate-limit'
 import { isAllowedRequestOrigin } from '@/lib/request-origin'
 import { MAX_PRESET_GIFTS, MAX_PRESET_NAME, USER_SLOTS, isFinalGiftKey } from '@/lib/planner/final-presets'
+import { discoveryUserId } from '@/lib/discovery/user-id'
 
 const headers = { 'Cache-Control': 'private, no-store' }
 const slotSchema = z.coerce.number().int().min(1).max(USER_SLOTS)
@@ -27,9 +28,16 @@ async function actor(request: NextRequest, create: boolean) {
   }
   const admin = createAdminClient()
   const email = auth.session.user.email!
-  const id = create
-    ? await findOrCreateSupabaseUser(admin, email, auth.session.user.name, auth.session.user.image)
-    : ((await admin.schema('limbus').rpc('discovery_user_id', { user_email: email })).data as string | null)
+  let id: string | null
+  try {
+    id = create
+      ? await findOrCreateSupabaseUser(admin, email, auth.session.user.name, auth.session.user.image)
+      : await discoveryUserId(admin.schema('limbus'), email)
+  } catch (error) {
+    // A failed lookup is not "no presets": the list would look empty although the presets are stored.
+    console.error('[final-presets] account lookup failed:', error instanceof Error ? error.message : error)
+    return fail('Presets unavailable', 503)
+  }
   return { db: admin.schema('limbus'), id } as const
 }
 
