@@ -21,7 +21,9 @@ describe('theme rewards and exclusive gifts', () => {
 
   it('links the exclusive gifts no pack pool names: 뽕.황, 선의의 순례 and 호박색 어스름의 시련', () => {
     expect(themeExclusiveGifts(3001, undefined)).toEqual([9242])
-    expect(themeExclusiveGifts(1122, [])).toEqual([9831, 9832, 9833, 9834, 9835])
+    expect(themeExclusiveGifts(1122, [])).toEqual([9831, 9832, 9833, 9834, 9835, 9836, 9837, 9838, 9839])
+    // 1122's pools are empty in current data, so its unique gifts are pulled out of ego-gift-story-pilgrimage through it.
+    expect(themeGiftRefs({ id: 1122, egoGiftPool: [], specificEgoGiftPool: [] })).toEqual([9831, 9832, 9833, 9834, 9835, 9836, 9837, 9838, 9839])
     expect(themeExclusiveGifts(1124, [9233, 9234, 9236, 9237, 9238, 9240])).toEqual([9233, 9234, 9236, 9237, 9238, 9240, 9241])
     expect(themeExclusiveGifts(1001, [9101])).toEqual([9101])
   })
