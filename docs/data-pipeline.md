@@ -620,6 +620,20 @@ E.G.O 상세의 메인 이미지는 256×256 `_awaken_profile` 확대 대신 새
 - `keyword_meta`는 `--rebuild-keyword-meta`로 10개를 추가했다. 새 키워드 아이콘은 태그 이름 대신 버프 데이터의 `iconId`로 원본을 찾는다(예: `NoirScissorAlly` → `ScissorsMark`). 기존 키워드 15개의 수정 이미지는 화살표가 겹친 변형이라 확인 전까지 기존 아이콘을 유지한다.
 - 거울 던전 기프트·테마팩·레시피는 변경이 없었고, 수감자와 무관한 적 스킬 이미지는 대상에서 제외했다.
 
+## 2026-10-01 추출본 반영
+
+입력은 `~/Downloads/LimbusAssets_2026-10-01T03-42-03-488Z.zip`(풀어 둔 폴더 `~/Downloads/LimbusAssets-2026-10-01`)이다. 새 ZIP은 `Data/static-data/<분류>/*.json`·`Localize/{kr,en,jp}`·`Reports/` 구조이고, `apply-extraction`의 준비 단계가 `complete-data/*.txt`·`KR|EN|JP/`로 바꾼다. 그래서 이 폴더를 `LIMBUS_DATA_DIR`로 직접 주지 않고 항상 `--zip`으로 넣는다. macOS `unzip`은 한글 이름 때문에 실패하므로 손으로 풀 때는 `ditto -x -k`를 쓴다.
+
+9/24 대비: 파일 8,708 → 9,384(추가 676, 삭제·이름 변경 0, 내용 변경 286), 신규 인격 10315, E.G.O 20211·20510 갱신. 심층 비교에서 나온 동기화 개선:
+
+- 패시브 발동 조건은 `passive.txt`·`passive_check4.txt`만 읽어 `passive-a1c8p2` 같은 장별 파일의 조건(30행)을 놓쳤다. 이제 모든 `passive*.txt`를 읽고(`passive.txt` 우선) 죄악이 여럿인 조건(51개 패시브)을 `passives.sin_requirements`(`[{sin, count}]`, 마이그레이션 `20261001070034`)에 모두 저장한다. `sin_affinity`/`sin_count`는 첫 죄악을 유지한다.
+- BattleKeywords의 `flavor`(275개)를 `game_text_refs.flavor/_en/_jp`에, Passive_Ego의 `flavor`(2021111, 2051011)를 `ego_passives.flavor/_en/_jp`(마이그레이션 `20261001072328`)에 저장한다.
+- E.G.O 원본의 `additionalList`(전환 가능한 추가 각성 스킬: 20211 2021112 부셰, 20608 2060812 종[終], 21209 2120912 광휘)를 `ego_skills`에 skill_order 3부터 넣는다(`ego-stages.ts`의 `egoSkillSlots`). 기존 E.G.O는 `existing-ego` 단계가 차이를 보고 `--replace`로 다시 쓴다.
+- 레시피 공통 데이터는 파일 이름의 시즌 번호로 최신을 고르고(`recipeCommonFiles`, md7 고정 제거), 이벤트 재구성은 `theme-floor-t\d+` 전부를 읽는다(t1~t6 고정 제거).
+- 새 칸은 추출본으로 먼저 채웠다(패시브 958행, 키워드 대사 275개). 조건이 비어 있던 30행의 이전 값은 저장소 밖 `Limbus/backups/passives-condition-before-2026-10-01.json`에 있다.
+- E.G.O 침식 원화: `ego.corrosion_artwork_url`(마이그레이션 `20261001074122`)에 `{id}_e_cg.webp`(옛 이름 `{id}_cg_e.webp`, 20603 등 2개)의 공개 주소를 둔다. 상세 히어로의 침식 탭이 이 그림을 쓴다. `apply-extraction`은 새 E.G.O의 `e_cg`를 올릴 때 기록하고, 기존 104개는 `backfill-ego-artwork-url.ts --fix`가 채웠다(침식이 없는 기본 x01 E.G.O 12개는 비어 있음).
+- `keyword_meta.game_id`(493건)는 이 반영에서 처음 채워진다. 「분홍 리본」은 참조가 둘이라 비어 있고 참격·타격 등 15개는 참조가 없다.
+
 ## 데이터 무결성 점검
 
 `npm run audit:data`(`scripts/audit/data-integrity.ts`)가 운영 DB를 공개 키로 읽어 검사한다. 테마팩의 `ego_gift_ids`·`specific_ego_gift_ids`·`fixed_reward_gift_ids`, 기프트 `convert_to`, 조합식 재료·결과, 이벤트의 기프트·테마팩 참조가 실제 행을 가리키는지 본다. 기프트·테마팩·이벤트·인격·E.G.O의 모든 이미지 URL은 HEAD 200이어야 하고, 기프트·테마팩·인격·E.G.O 이름은 en/ja가 있어야 하며, 인격 소속은 `AFFILIATION_MAP`에 번역이 있어야 한다. 이벤트는 이름 칸을 쓰지 않아 이름 검사에서 제외한다.

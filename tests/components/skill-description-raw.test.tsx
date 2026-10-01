@@ -26,14 +26,23 @@ const wrap = (node: React.ReactNode) => renderToStaticMarkup(<KeywordProvider ke
 const RAW = '[OnSucceedAttack] 본문\n<coin=1>[SuperCoin]\n<style="highlight">- [Combustion] 1\n- 둘째</style></coin>\n<coin=2>[OnSucceedAttack] 일반</coin>'
 
 describe('REQ-SHARED-020 SkillDescription of raw text', () => {
-  it('REQ-SHARED-020 draws the coin blocks as coin sections, the unbreakable marker as a label, and no tags or [SuperCoin]', () => {
+  it('REQ-SHARED-020 REQ-SHARED-025 draws the coin blocks as coin sections (octagon and numeral), the unbreakable marker as the SuperCoin keyword, and no raw tags', () => {
     for (const variant of ['detail', 'compact', 'tooltip'] as const) {
       const html = wrap(<SkillDescription description={RAW} accentColor="#c2b79f" variant={variant} />)
-      expect(html).toContain('identity.skills.unbreakableCoin')
+      // The unbreakable marker is the game's [SuperCoin] keyword (name from the reference table, with its tooltip).
+      expect(html).toContain('파괴 불가 코인')
+      expect(html).not.toContain('identity.skills.unbreakableCoin')
+      // With coin badges each coin is the game's octagon with its Roman numeral sprite.
+      if (variant !== 'tooltip') {
+        expect(html).toContain('coins%2Fframe')
+        expect(html).toContain('coins%2Fnumerals%2F1')
+        expect(html).toContain('coins%2Fnumerals%2F2')
+      }
       expect(html).toContain('화상')
       expect(html).toContain('일반')
       expect(html).not.toContain('&lt;')
-      expect(html).not.toContain('SuperCoin')
+      expect(html).not.toContain('[SuperCoin]')
+      expect(html).not.toContain('&lt;')
     }
   })
 
@@ -46,7 +55,7 @@ describe('REQ-SHARED-020 SkillDescription of raw text', () => {
 
   it('REQ-SHARED-020 draws the older [코인 N] text as before', () => {
     const html = wrap(<SkillDescription description={'본문\n[코인 1] 파괴 불가 코인\n화상 2 부여'} accentColor="#c2b79f" variant="compact" />)
-    expect(html).toContain('identity.skills.unbreakableCoin')
+    expect(html).toContain('파괴 불가 코인')
     expect(html).toContain('화상')
   })
 })

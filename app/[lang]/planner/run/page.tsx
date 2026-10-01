@@ -40,7 +40,7 @@ export default async function RunPage({ params }: { params: Promise<{ lang: stri
     supabase.schema('limbus').from('sinners').select('id, name_kr, order_num').order('order_num'),
     // Every uptie level (the deck picks each slot's level); more rows than one page.
     readAllRows((from, to) => supabase.schema('limbus').from('skills').select('identity_id, name, sin_affinity, skill_type, skill_order, uptie_level').order('id').range(from, to)),
-    readAllRows((from, to) => supabase.schema('limbus').from('passives').select('id, name, identity_id, passive_type, sin_affinity, sin_count, active_cond, description, uptie_level').order('id').range(from, to)),
+    readAllRows((from, to) => supabase.schema('limbus').from('passives').select('id, name, identity_id, passive_type, sin_affinity, sin_count, sin_requirements, active_cond, description, uptie_level').order('id').range(from, to)),
   ])
   if (e4 || e5 || e6 || e6b) console.error('[RunPage] query group 2:', e4?.message, e5?.message, e6?.message, e6b?.message)
 

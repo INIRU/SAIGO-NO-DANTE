@@ -88,6 +88,7 @@ export default function DeckNoteEditor({
           name: p.name,
           sin_affinity: p.sin_affinity,
           sin_count: p.sin_count,
+          sin_requirements: p.sin_requirements,
           active_cond: p.active_cond,
           description: p.description,
           sinnerName,

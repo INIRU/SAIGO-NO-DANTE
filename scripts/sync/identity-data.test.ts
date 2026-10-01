@@ -496,10 +496,16 @@ describe('REQ-DATA-SYNC-035 identity and EGO text is stored as the game wrote it
     write('KR', 'KR_Skills_Ego.txt', [EGO_SKILL_2010211.kr])
     write('EN', 'EN_Skills_Ego.txt', [EGO_SKILL_2010211.en])
     write('JP', 'JP_Skills_Ego.txt', [EGO_SKILL_2010211.jp])
-    write('KR', 'KR_Passive_Ego.txt', [{ id: 2030111, name: '과도한 열정', desc: EGO_PASSIVE_2030111.kr }])
+    write('KR', 'KR_Passive_Ego.txt', [{ id: 2030111, name: '과도한 열정', desc: EGO_PASSIVE_2030111.kr }, { id: 2021111, name: '르 트루 드 비당주', desc: '설명', flavor: ' 구멍은 <i>결여</i>로 인해 생기는 것. ' }])
     write('EN', 'EN_Passive_Ego.txt', [])
     write('JP', 'JP_Passive_Ego.txt', [{ id: 2030111, name: '過度な熱情', desc: EGO_PASSIVE_2030111.jp }])
     for (const lang of ['kr', 'en', 'jp'] as const) write(lang.toUpperCase(), `${lang.toUpperCase()}_Bufs.txt`, BUFS[lang])
+    // Passive conditions: passive.txt and the per-chapter files next to it (newer identities live only in the latter).
+    writeFileSync(join(dir, 'passive.txt'), JSON.stringify({ list: [{ id: 1020601, attributeResonanceCondition: [{ type: 'CRIMSON', value: 3 }] }] }))
+    writeFileSync(join(dir, 'passive-a1c8p2.txt'), JSON.stringify({ list: [
+      { id: 1021201, attributeStockCondition: [{ type: 'SHAMROCK', value: 5 }] },
+      { id: 1031501, attributeStockCondition: [{ type: 'INDIGO', value: 1 }, { type: 'VIOLET', value: 1 }, { type: 'AMBER', value: 1 }] },
+    ] }))
     // The paths are read when the module loads, so load a copy that sees the fixture directory.
     vi.resetModules()
     vi.stubEnv('LIMBUS_DATA_DIR', dir)
@@ -568,6 +574,40 @@ describe('REQ-DATA-SYNC-035 identity and EGO text is stored as the game wrote it
     ].join('\n'))
     expect(row.flavor).toBe('<i>작별</i> 인사')
     expect(row.name).toBe('떠난이에게 축하를')
+  })
+
+  it('REQ-CATALOG-018 translates an EGO skill row by its own game skill id, so a second awakening skill keeps its text', () => {
+    expect(sync.egoSkillGameId({ game_skill_id: 2021112, category: 'awakening' }, '20211')).toBe(2021112)
+    expect(sync.egoSkillGameId({ game_skill_id: null, category: 'awakening' }, '20211')).toBe(2021111)
+    expect(sync.egoSkillGameId({ category: 'corrosion' }, 20211)).toBe(2021121)
+  })
+
+  it('REQ-CATALOG-018 keeps the flavor line of an EGO passive raw', () => {
+    const context = sync.loadEgoSyncContext()
+    expect(context.passives.kr.get(2021111)?.flavor).toBe('구멍은 <i>결여</i>로 인해 생기는 것.')
+    expect(context.passives.kr.get(2030111)?.flavor).toBeUndefined()
+  })
+
+  it('REQ-CATALOG-016 reads the conditions of every passive file and keeps every sin with its own count', () => {
+    const sources = sync.loadSkillPassiveSources()
+    expect(sources.passiveDetailMap.get(1021201)?.attributeStockCondition).toEqual([{ type: 'SHAMROCK', value: 5 }])
+    expect(sync.passiveCondition(sources.passiveDetailMap.get(1031501))).toEqual({
+      sin_affinity: 'pride', sin_count: 1, active_cond: 'stock',
+      sin_requirements: [{ sin: 'pride', count: 1 }, { sin: 'envy', count: 1 }, { sin: 'sloth', count: 1 }],
+    })
+    expect(sync.passiveCondition(sources.passiveDetailMap.get(1020601))).toEqual({
+      sin_affinity: 'wrath', sin_count: 3, active_cond: 'resonance', sin_requirements: [{ sin: 'wrath', count: 3 }],
+    })
+    expect(sync.passiveCondition(undefined)).toEqual({ sin_affinity: null, sin_count: null, active_cond: null, sin_requirements: null })
+  })
+
+  it('REQ-CATALOG-016 sees a changed sin requirement list as a passive change', () => {
+    const row = { name: 'a', passive_type: 'battle' as const, passive_order: 1, uptie_level: 4, sin_affinity: 'envy', sin_count: 2 }
+    expect(sync.arePassiveRowsDifferent(
+      [{ ...row, sin_requirements: [{ sin: 'envy', count: 2 }, { sin: 'sloth', count: 2 }] }],
+      [{ ...row, sin_requirements: [{ count: 2, sin: 'envy' }, { count: 2, sin: 'sloth' }] as never }],
+    )).toBe(false)
+    expect(sync.arePassiveRowsDifferent([{ ...row, sin_requirements: [{ sin: 'envy', count: 2 }, { sin: 'sloth', count: 2 }] }], [{ ...row, sin_requirements: null }])).toBe(true)
   })
 
   it('REQ-DATA-SYNC-035 stores passive descriptions raw (sprite, color, link and [Id] stay; no {0} word)', () => {

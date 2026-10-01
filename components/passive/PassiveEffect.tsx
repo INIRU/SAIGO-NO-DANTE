@@ -3,7 +3,7 @@
 import { memo } from 'react'
 import Image from 'next/image'
 import { useTranslations } from 'next-intl'
-import { getSinIconUrl } from '@/lib/constants/sin'
+import { SIN_COLORS, getSinIconUrl } from '@/lib/constants/sin'
 import { getPassiveCondition, type PlannerPassiveLike } from '@/lib/planner/passives'
 import SkillDescription from '@/components/skill/SkillDescription'
 
@@ -18,12 +18,14 @@ export const PassiveEffect = memo(function PassiveEffect({ passive, condition, v
     <>
       <div className={note ? 'flex flex-wrap items-center gap-1.5' : 'flex items-center gap-1.5'} style={{ fontSize: note ? '0.875rem' : '0.75rem' }}>
         {condition.met && <span style={{ color: '#40a060', fontSize: note ? '0.625rem' : '0.5625rem', flexShrink: 0 }}>●</span>}
-        {condition.primarySin && <Image src={getSinIconUrl(condition.primarySin)} alt="" width={12} height={12} style={{ width: '0.75rem', height: '0.75rem' }} />}
-        {condition.required > 0 && condition.primarySin && (
-          <span style={{ color: condition.met ? '#40a060' : condition.color, fontFamily: 'var(--font-mono)', fontWeight: 700 }}>
-            {condition.current}/{condition.required}
+        {condition.requirements.map(req => (
+          <span key={req.sin} className="inline-flex items-center gap-1" data-met={req.met}>
+            <Image src={getSinIconUrl(req.sin)} alt="" width={12} height={12} style={{ width: '0.75rem', height: '0.75rem' }} />
+            <span style={{ color: req.met ? '#40a060' : SIN_COLORS[req.sin] ?? condition.color, fontFamily: 'var(--font-mono)', fontWeight: 700 }}>
+              {req.current}/{req.count}
+            </span>
           </span>
-        )}
+        ))}
         <span style={{ color: condition.color, fontWeight: 600 }}>
           {passive.active_cond === 'resonance' ? t('passiveResonance') : passive.active_cond === 'stock' ? t('passiveStock') : ''}
         </span>

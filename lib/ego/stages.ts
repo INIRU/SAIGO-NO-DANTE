@@ -34,5 +34,8 @@ export function egoPassiveAtStage(ego: EGO, stage: number) {
     passive_content_en: joined(current.map(p => p.description_en || p.description)),
     passive_name_jp: current.map(p => p.name_jp || p.name).join('\n\n'),
     passive_content_jp: joined(current.map(p => p.description_jp || p.description)),
+    passive_flavor: current.map(p => p.flavor).filter(Boolean).join('\n\n') || null,
+    passive_flavor_en: current.map(p => p.flavor_en || p.flavor).filter(Boolean).join('\n\n') || null,
+    passive_flavor_jp: current.map(p => p.flavor_jp || p.flavor).filter(Boolean).join('\n\n') || null,
   }
 }

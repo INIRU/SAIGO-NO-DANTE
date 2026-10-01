@@ -3,10 +3,12 @@
 import { createContext, useContext, useSyncExternalStore } from 'react'
 import { useLocale } from 'next-intl'
 import useSWR, { preload } from 'swr'
-import type { GameTextRefDescriptions, GameTextRefNames } from '@/lib/db/game-text-refs'
+import type { GameTextRefDescriptions, GameTextRefFlavors, GameTextRefNames } from '@/lib/db/game-text-refs'
+import { flavorKeyOfKeyword } from '@/lib/game-text/flavor'
 
 const namesUrl = (locale: string) => `/api/game-text-refs/${locale}`
 const descriptionsUrl = (locale: string) => `/api/game-text-refs/${locale}?part=descriptions`
+const flavorsUrl = (locale: string) => `/api/game-text-refs/${locale}?part=flavors`
 const fetchJson = <T,>(url: string): Promise<T> =>
   fetch(url).then(response => { if (!response.ok) throw new Error(`${response.status}`); return response.json() })
 // The tables only change with a game data sync: one request per language and page load is enough.
@@ -52,10 +54,26 @@ export function preloadGameTextRefDescriptions(locale: string) {
   void preload(descriptionsUrl(locale), fetchJson<GameTextRefDescriptions>).catch(() => {})
 }
 
+/** Starts loading the keywords' flavor lines with the descriptions (a tooltip shows both). */
+export function preloadGameTextRefFlavors(locale: string) {
+  void preload(flavorsUrl(locale), fetchJson<GameTextRefFlavors>).catch(() => {})
+}
+
 /** A keyword's game description in the page language: loaded when `enabled` (a tooltip is open); undefined while loading, '' when none. */
 export function useGameTextRefDescription(id: string, enabled: boolean): string | undefined {
   const locale = useLocale()
   const { data, error } = useSWR<GameTextRefDescriptions>(enabled ? descriptionsUrl(locale) : null, fetchJson, OPTIONS)
   if (data) return data[id] ?? ''
   return error ? '' : undefined
+}
+
+/**
+ * A keyword's flavor line in the page language, by its game id (`refId`) or else its keyword_meta name: loaded when
+ * `enabled` (a tooltip is open); '' when it has none, while loading or when the request failed.
+ */
+export function useKeywordFlavor({ refId, keyword }: { refId?: string | null; keyword?: string | null }, enabled: boolean): string {
+  const locale = useLocale()
+  const { data } = useSWR<GameTextRefFlavors>(enabled && (refId || keyword) ? flavorsUrl(locale) : null, fetchJson, OPTIONS)
+  if (!data) return ''
+  return (refId && data[refId]) || (keyword && data[flavorKeyOfKeyword(keyword)]) || ''
 }

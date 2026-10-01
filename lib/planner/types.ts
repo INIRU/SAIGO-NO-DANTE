@@ -437,6 +437,7 @@ export interface PassiveData {
   passive_type: string  // 'battle' | 'support'
   sin_affinity: string | null
   sin_count: number | null
+  sin_requirements?: { sin: string; count: number }[] | null
   active_cond: string | null  // 'resonance' | 'stock' | null
   description: string | null
   description_en?: string | null
