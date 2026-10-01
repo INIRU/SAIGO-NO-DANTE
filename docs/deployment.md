@@ -8,19 +8,7 @@ Vercel은 `main` 브랜치만 자동 배포한다(`vercel.json`의 `git.deployme
 
 로컬 .env.local과 배포 플랫폼에 현재 코드가 읽는 이름으로 설정한다. 실제 값은 Git에 넣지 않는다.
 
-```dotenv
-NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
-SUPABASE_SECRET_KEY=
-NEXTAUTH_URL=http://localhost:3000
-NEXTAUTH_SECRET=
-GOOGLE_CLIENT_ID=
-GOOGLE_CLIENT_SECRET=
-ADMIN_EMAILS=
-DISCORD_ANNOUNCEMENT_WEBHOOK_URL=
-EDGE_CONFIG=
-VERCEL_API_TOKEN=
-```
+이름 목록은 [`.env.example`](../.env.example)이 기준이다(Supabase, 로그인, 사이트, Vercel Edge Config, Sentry, 스크립트 전용). 새 환경 변수를 코드에 넣으면 그 파일에 이름을 추가한다. Vercel CLI에 로그인돼 있으면 `npm run env:pull`이 프로젝트 값으로 `.env.local`을 만든다.
 
 `DISCORD_ANNOUNCEMENT_WEBHOOK_URL`은 서버 전용이다. 한국어 공지가 게시되는 순간(새로 게시하거나 임시 저장을 게시로 바꿀 때) 디스코드로 한 번 보낸다. 본문 마크다운을 유지하고 이미지 앞뒤로 메시지를 나눈다. 값이 없으면 전송을 건너뛰고 관리자 화면에 실패를 알린다.
 
