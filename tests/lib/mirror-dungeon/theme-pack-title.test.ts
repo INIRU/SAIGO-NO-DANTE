@@ -10,20 +10,24 @@ describe('REQ-MIRROR-DUNGEON-009 theme pack name like the game selection screen'
     // Values from KR selection captures: names sit at one screen spot while each poster is drawn at its own size.
     expect(centreY(getThemePackTitleLayout(1027))).toBeCloseTo(79.6, 1)
     expect(centreY(getThemePackTitleLayout(1127))).toBeCloseTo(81.1, 1)
-    expect(centreY(getThemePackTitleLayout(1406))).toBeCloseTo(83.1, 1)
-    expect(centreX(getThemePackTitleLayout(1406))).toBeCloseTo(54.2, 1)
   })
 
-  it('REQ-MIRROR-DUNGEON-009 sin/keyword posters are drawn smaller in game, so their names are larger on our poster', () => {
-    expect(getThemePackTitleLayout(1406).scale).toBeGreaterThan(1.07)
-    expect(getThemePackTitleLayout(1128).scale).toBeCloseTo(1, 1)
+  it('REQ-MIRROR-DUNGEON-009 centres names in the dark band the poster prints for them', () => {
+    // Attack-type/sin/keyword posters: band 75.3%-84.4%; extreme posters: black panel 84.6%-91.5%.
+    for (const id of [1201, 1308, 1406]) {
+      const box = getThemePackTitleLayout(id)
+      expect(centreY(box)).toBeCloseTo(79.85, 1)
+      expect(centreX(box)).toBeCloseTo(50, 0)
+      expect(box.scale).toBeCloseTo(1, 2)
+    }
+    const extreme = getThemePackTitleLayout(1514)
+    expect(extreme.top).toBeGreaterThanOrEqual(84.6)
+    expect(extreme.top + extreme.height).toBeLessThanOrEqual(91.5)
   })
 
   it('REQ-MIRROR-DUNGEON-009 packs without captures use their family default', () => {
     expect(THEME_PACK_TITLE_MEASURED[1119]).toBeUndefined()
     expect(centreY(getThemePackTitleLayout(1119))).toBeCloseTo(80.5, 1)
-    expect(THEME_PACK_TITLE_MEASURED[1201]).toBeUndefined()
-    expect(centreY(getThemePackTitleLayout(1201))).toBeCloseTo(82.9, 1)
     expect(getThemePackTitleBoxKind(getThemePackVisualConfig(1501))).toBe('extreme')
   })
 
