@@ -5,6 +5,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { checkRequestRateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import { discoveryUserId } from "@/lib/discovery/user-id";
 const schema = z.object({
   kind: z.enum(["identity", "deck", "planner"]),
   id: z.string().uuid(),
@@ -43,10 +44,11 @@ export async function POST(request: NextRequest) {
     const hash = createHmac("sha256", secret)
       .update("discovery:" + visitor)
       .digest("hex");
-    // Logged-in visits also feed the personal shelf. Before the user_id migration the lookup fails and the visit stays anonymous.
+    // Logged-in visits also feed the personal shelf. A failed lookup is logged and the visit stays anonymous.
     const email = (await getServerSession(authOptions))?.user?.email;
-    const user = email ? await db.rpc("discovery_user_id", { user_email: email }) : null;
-    const userId = user && !user.error ? (user.data as string | null) : null;
+    const userId = email
+      ? await discoveryUserId(db, email).catch((error: Error) => { console.error("[discovery/visit]", error.message); return null; })
+      : null;
     const result = await db
       .from("discovery_visits")
       .upsert(

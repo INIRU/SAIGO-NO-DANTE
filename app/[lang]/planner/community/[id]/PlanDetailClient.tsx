@@ -19,6 +19,7 @@ import useSWR from 'swr'
 import { ArrowLeft, Heart, Share2 } from 'lucide-react'
 import { NoteRenderer, type NoteEgoGiftEntry } from '@/components/decks/NoteChips'
 import { NoteGiftClickContext } from '@/components/notes/NoteBlockViewer'
+import { findNoteGift } from '@/lib/notes/note-gift'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
 import { type Difficulty, type FloorDifficulty, type GiftActivationCondition, type IdentitySlot as PlannerIdentitySlot, type RecipeData } from '@/lib/planner/types'
 import { buildGiftMap } from '@/lib/planner/fusion'
@@ -359,7 +360,7 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
   const [selectedGift, setSelectedGift] = useState<{ gift: GiftData; enhance?: number } | null>(null)
   const [selectedEventId, setSelectedEventId] = useState<number | null>(null)
   const openNoteGift = (key: string) => {
-    const gift = gifts.find(g => g.id === key || g.name === key)
+    const gift = findNoteGift(gifts, key)
     if (gift) setSelectedGift({ gift, enhance: 0 })
   }
   const shouldReduceMotion = useReducedMotion()
