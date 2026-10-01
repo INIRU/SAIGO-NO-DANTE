@@ -13,7 +13,7 @@ import IdentitySkillFrameCard from '@/components/identity/IdentitySkillFrameCard
 import { PassiveNoteRow } from '@/components/passive/PassiveEffect'
 import GiftCard from '@/components/ui/GiftCard'
 import type { GiftConditionStatus } from '@/lib/planner/gift-condition-status'
-import { useFormatSkillDesc, useKeywords, useKeywordData, useKeywordDescription, type KeywordInfo } from '@/components/providers/KeywordProvider'
+import { useFormatGameText, useFormatSkillDesc, useKeywords, useKeywordData, useKeywordDescription, type KeywordInfo } from '@/components/providers/KeywordProvider'
 import {
   SIN_COLORS,
   GRADE_COLORS, SIN_ICON_MAP, ATK_TYPE_ICON_MAP,
@@ -26,6 +26,7 @@ import {
 import { useTranslations, useLocale } from 'next-intl'
 import type { SupportedLang } from '@/lib/i18n/types'
 import { localizeDeckKeyword } from '@/components/decks/decks-types'
+import { skillDescriptionBlocks } from '@/lib/identity/skill-description'
 
 function sinColorOf(sin: string | null): string {
   const en = normalizeSin(sin)
@@ -344,18 +345,15 @@ export function SkillChip({ entry, interactive = true }: { entry: NoteSkillEntry
             </div>
           )}
           {entry.description && (
-            <div style={{ color: '#aaa', fontSize: '0.75rem', lineHeight: 1.7 }}>
-              {entry.description.split('\n').map((line, li) => {
-                const isCoinStart = /^\[(코인|Coin|コイン)\s?\d/.test(line)
-                return (
-                  <div key={li}>
-                    {isCoinStart && li > 0 && (
-                      <div style={{ borderTop: `1px solid ${sc}25`, margin: '4px 0' }} />
-                    )}
-                    {formatSkillDesc(line, sc)}
-                  </div>
-                )
-              })}
+            <div style={{ color: '#aaa', fontSize: '0.75rem', lineHeight: 1.7, whiteSpace: 'pre-line' }}>
+              {skillDescriptionBlocks(entry.description).map(({ text, coinStart }, li) => (
+                <div key={li}>
+                  {coinStart && li > 0 && (
+                    <div style={{ borderTop: `1px solid ${sc}25`, margin: '4px 0' }} />
+                  )}
+                  {formatSkillDesc(text, sc)}
+                </div>
+              ))}
             </div>
           )}
         </TooltipPopup>,
@@ -509,8 +507,10 @@ export function IdentityChip({ entry }: { entry: NoteIdentityEntry }) {
 
 // ── KeywordChip ──────────────────────────────────────────────────────────
 /** The tooltip's description, loaded on first open (the page catalog carries none). */
-function KeywordChipDescription({ keyword, info }: { keyword: string; info: KeywordInfo }) {
-  return <>{useKeywordDescription(keyword, info) ?? '…'}</>
+export function KeywordChipDescription({ keyword, info }: { keyword: string; info: KeywordInfo }) {
+  const formatGameText = useFormatGameText()
+  const description = useKeywordDescription(keyword, info)
+  return <>{description === undefined ? '…' : formatGameText(description, '#aaa', true)}</>
 }
 
 export function KeywordChip({ keyword }: { keyword: string }) {

@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { collectRefIds, isRawGameText, mayBeRawGameText, parseGameText, type GameTextNode } from './rich-text'
+import {
+  closeGameText, collectRefIds, gameTextForScreen, gameTextToPlain, isRawGameText, mayBeRawGameText, parseGameText, refNameLabels, splitCoinBlocks,
+  splitGameTextLines, type GameTextNode,
+} from './rich-text'
 
 const text = (value: string): GameTextNode => ({ type: 'text', text: value })
 const ref = (id: string): GameTextNode => ({ type: 'ref', id })
@@ -297,5 +300,128 @@ describe('collectRefIds (REQ-SHARED-018)', () => {
 
   it('REQ-SHARED-018 returns an empty list when there are no refs', () => {
     expect(collectRefIds(parseGameText('피해량 +5% {0}'))).toEqual([])
+  })
+})
+
+describe('<coin=N> coin descriptions (REQ-SHARED-018)', () => {
+  const raw = '[WhenUse] 공격 시 [Sinking] 부여\n<coin=1>[OnSucceedAttackHead] 침잠 1 부여</coin>\n<coin=2><b>강조</b> 끝</coin>'
+
+  it('REQ-SHARED-018 reads <coin=N>…</coin> as a coin element with the number as its value and the main text around it', () => {
+    expect(parseGameText(raw)).toEqual([
+      ref('WhenUse'),
+      text(' 공격 시 '),
+      ref('Sinking'),
+      text(' 부여\n'),
+      el('coin', [ref('OnSucceedAttackHead'), text(' 침잠 1 부여')], '1'),
+      text('\n'),
+      el('coin', [el('b', [text('강조')]), text(' 끝')], '2'),
+    ])
+  })
+
+  it('REQ-SHARED-018 closes an unclosed <coin=N> at the end and drops a stray </coin>', () => {
+    expect(parseGameText('<coin=3>끝')).toEqual([el('coin', [text('끝')], '3')])
+    expect(parseGameText('가</coin>나')).toEqual([text('가나')])
+  })
+
+  it('REQ-SHARED-018 treats <coin= as raw game text even without refs, and a bare <coin> without a number as text', () => {
+    expect(isRawGameText('<coin=1>침잠 1 부여</coin>', new Set())).toBe(true)
+    expect(isRawGameText('<coin>침잠', new Set())).toBe(false)
+    expect(parseGameText('<coin>가')).toEqual([text('<coin>가')])
+  })
+})
+
+describe('gameTextToPlain (REQ-SHARED-018)', () => {
+  it('REQ-SHARED-018 drops tags and keeps their inner text, drops size 0 content and keeps noparse inner text', () => {
+    expect(gameTextToPlain('<style="highlight">강조</style> <color=#ff6000>색</color><u>밑줄</u> <link="Burst">폭발 링크</link>')).toBe('강조 색밑줄 폭발 링크')
+    expect(gameTextToPlain('가<size=0%>숨김</size>나<size=50%>작게</size>')).toBe('가나작게')
+    expect(gameTextToPlain('<noparse><b>[Sinking]</b></noparse>')).toBe('<b>[Sinking]</b>')
+    expect(gameTextToPlain('<sprite name="Burst">폭발')).toBe('폭발')
+  })
+
+  it('REQ-SHARED-018 turns [Id] into the given name, or leaves [Id] when unknown', () => {
+    expect(gameTextToPlain('[Sinking] 3 부여 [Unknown]', { names: { Sinking: '침잠' } })).toBe('침잠 3 부여 [Unknown]')
+    expect(gameTextToPlain('[Sinking] 3 부여')).toBe('[Sinking] 3 부여')
+  })
+
+  it('REQ-SHARED-018 turns {{token}} into its plain label with the locale and keeps numbered slots as written', () => {
+    expect(gameTextToPlain('{{potency}} 증가 {0}')).toBe('(수치) 증가 {0}')
+    expect(gameTextToPlain('{{potency}} up', { locale: 'en' })).toBe('(Potency) up')
+    expect(gameTextToPlain('{{live}}', { locale: 'ja' })).toBe('(ゲーム中に表示)')
+  })
+
+  it('REQ-SHARED-018 puts each coin on its own line, labelled only when coinLabel is given', () => {
+    const raw = '[WhenUse] 본문\n<coin=1>[OnSucceedAttackHead] 침잠 1 부여</coin>\n<coin=2>끝</coin>'
+    const names = { WhenUse: '[사용시]', OnSucceedAttackHead: '[적중시]', Sinking: '침잠' }
+    expect(gameTextToPlain(raw, { names })).toBe('[사용시] 본문\n[적중시] 침잠 1 부여\n끝')
+    expect(gameTextToPlain(raw, { names, coinLabel: (n) => `[코인 ${n}]` })).toBe(
+      '[사용시] 본문\n[코인 1] [적중시] 침잠 1 부여\n[코인 2] 끝',
+    )
+  })
+
+  it('REQ-SHARED-018 starts a coin on a new line even when the main text does not end with a line break', () => {
+    expect(gameTextToPlain('본문<coin=1>가</coin><coin=2>나</coin>다')).toBe('본문\n가\n나\n다')
+  })
+
+  it('REQ-SHARED-018 returns an empty string for empty text', () => {
+    expect(gameTextToPlain('')).toBe('')
+  })
+})
+
+describe('REQ-SHARED-020 helpers for the code that reads stored game text', () => {
+  it('REQ-SHARED-020 splits the main text from the <coin=N> blocks, and leaves old text whole', () => {
+    expect(splitCoinBlocks('[WhenUse] 본문\n<coin=1>가\n나</coin>\n<coin=3>다</coin>')).toEqual({
+      main: '[WhenUse] 본문',
+      coins: [{ coinNum: 1, text: '가\n나' }, { coinNum: 3, text: '다' }],
+    })
+    expect(splitCoinBlocks('[코인 1] 효과')).toEqual({ main: '[코인 1] 효과', coins: [] })
+    expect(splitCoinBlocks('<coin=2>닫히지 않음')).toEqual({ main: '', coins: [{ coinNum: 2, text: '닫히지 않음' }] })
+    expect(splitCoinBlocks('')).toEqual({ main: '', coins: [] })
+  })
+
+  it('REQ-SHARED-020 splits into lines that are each balanced: open tags reopen on the next line', () => {
+    expect(splitGameTextLines('a\nb')).toEqual(['a', 'b'])
+    expect(splitGameTextLines('<b>x</b>\ny')).toEqual(['<b>x</b>', 'y'])
+    expect(splitGameTextLines('<style="highlight">- 가\n\n- 나</style>\n끝')).toEqual([
+      '<style="highlight">- 가', '', '<style="highlight">- 나</style>', '끝',
+    ])
+    // Unity closes by name, not by nesting: only the colour is closed, the underline carries on.
+    expect(splitGameTextLines('<color=#ff0000><u>가</color>\n나</u>')).toEqual(['<color=#ff0000><u>가</color>', '<u>나</u>'])
+  })
+
+  it('REQ-SHARED-020 turns a line that only holds tags into an empty line', () => {
+    expect(splitGameTextLines('<style="highlight">가\n</style>\n나')).toEqual(['<style="highlight">가', '', '나'])
+  })
+
+  it('REQ-SHARED-020 keeps a noparse block literal on every line it spans', () => {
+    expect(splitGameTextLines('<noparse>가\n나</noparse>')).toEqual(['<noparse>가</noparse>', '<noparse>나</noparse>'])
+  })
+
+  it('REQ-SHARED-020 closes the tags a text leaves open, innermost first, so another text can follow it', () => {
+    expect(closeGameText('<style="highlight">가 <color=#ff0000><u>나')).toBe('<style="highlight">가 <color=#ff0000><u>나</u></color></style>')
+    expect(closeGameText('<b>가</b>')).toBe('<b>가</b>')
+    expect(closeGameText('<noparse>가')).toBe('<noparse>가</noparse>')
+    expect(closeGameText('화상 3 부여')).toBe('화상 3 부여')
+    expect(closeGameText('')).toBe('')
+  })
+
+  it('REQ-SHARED-020 maps reference names to plain labels', () => {
+    expect(refNameLabels({ Combustion: { k: 'keyword', n: '화상', kw: '화상' }, OnHit: { k: 'skilltag', n: '[적중시]' } }))
+      .toEqual({ Combustion: '화상', OnHit: '[적중시]' })
+  })
+
+  it('REQ-SHARED-020 keeps {{token}} and {0} as written when asked, for comparing with the screen', () => {
+    expect(gameTextToPlain('{{potency}} up {0}', { keepPlaceholders: true })).toBe('{{potency}} up {0}')
+    expect(gameTextToPlain('{{potency}} up {0}')).toBe('(수치) up {0}')
+  })
+
+  it('REQ-SHARED-020 shows raw game text as the screen does (names for [Id], tokens kept) and leaves old text alone', () => {
+    const labels = { Combustion: '화상' }
+    expect(gameTextForScreen('<style="highlight">[Combustion]</style> {{potency}} 부여', labels)).toBe('화상 {{potency}} 부여')
+    expect(gameTextForScreen('화상 {{potency}} 부여 [사용시]', labels)).toBe('화상 {{potency}} 부여 [사용시]')
+    expect(gameTextForScreen('[Combustion] 부여', undefined)).toBe('[Combustion] 부여')
+  })
+
+  it('REQ-SHARED-020 plain text of a formation label has no digits from colour tags', () => {
+    expect(gameTextToPlain('[편성 <color=#f8c200>6번</color> 인격 전용 효과]')).toBe('[편성 6번 인격 전용 효과]')
   })
 })

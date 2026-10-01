@@ -1,7 +1,8 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { existingGiftLookup, fixedRewardGiftIds, richestEntry, sameStoredIds, themeExclusiveGifts, themeFixedRewards, themeGiftRefs, unreadThemeKeys, themeNameColor, themeNameSegments, themeBossUnitIds } from './mirror-dungeon-rules'
+import { giftPlaceholders } from './placeholder-rules'
+import { extractActivationCondition, existingGiftLookup, fixedRewardGiftIds, rawGiftEffect, translateGiftDescForCondition, richestEntry, sameStoredIds, themeExclusiveGifts, themeFixedRewards, themeGiftRefs, unreadThemeKeys, themeNameColor, themeNameSegments, themeBossUnitIds } from './mirror-dungeon-rules'
 
 // Cases from the extraction audit of 2026-09-30 (complete-data of 2026-09-24).
 describe('theme rewards and exclusive gifts', () => {
@@ -94,7 +95,8 @@ it('stores gift slots through placeholder-rules instead of a fixed 0 or a copied
   // The texts themselves are covered in placeholder-rules.test.ts; here only that every effect column goes through it.
   const sync = readFileSync(join(__dirname, 'mirror-dungeon-data.ts'), 'utf8')
   expect(sync).toContain('giftPlaceholders(text, placeholderSource, placeholderReport)')
-  expect(sync.match(/tokens\(cleanDesc\(/g)?.length).toBe(9)
+  expect(sync.match(/tokens\(rawGiftEffect\(/g)?.length).toBe(9)
+  expect(sync).not.toContain('tokens(cleanDesc(')
   expect(sync).not.toContain('→ [${convertName}]')
   expect(sync).not.toContain(".replace(/\\{(\\d+)\\}/g, '0')")
 })
@@ -117,5 +119,70 @@ describe('theme pack UI config', () => {
     expect(themeNameSegments(1126, {})?.ko[2]).toEqual({ text: '엮기', color: '#c65348' })
     expect(themeBossUnitIds([8141, 8096, 'x'])).toEqual([8141, 8096])
     expect(unreadThemeKeys({ id: 1, isUnrecordable: true, uiConfigs: { textColor: 'ffffff', showBossIds: [1], attackType: 'HIT' } })).toEqual([])
+  })
+})
+
+// REQ-DATA-SYNC-036: gift effects are stored as the game's own text; only the activation condition reads a translated copy.
+// The strings are real KR_EGOgift* descs of the 2026-09-24 extraction.
+describe('REQ-DATA-SYNC-036 gift effects stored raw', () => {
+  const ORDER_MADE = '[편성 3번 인격 전용 효과]\n\n스테이지 시작 시, [Vibration] 횟수 3을 획득.\n\n턴 시작 시, [Protection] 1, [AttackDmgUp] 1, [ResultEnhancement] 1 얻음.'
+  const SWORD = '전투를 6회 승리할 시 해당 E.G.O 기프트가 변경됨\n{0}\n\n모든 아군이 받는 피해 20% 증가, 합위력 -1'
+  const BONGY = '층 클리어 시 보유한 코스트가 1.5배씩 늘어남\n\n- 보유한 기프트 개수 1개당, 피해량 0.5% 증가 (현재 {0}%. 최대 100%)\n- 보유한 기프트 개수 20개당, 턴 시작 시 [Enhancement] 1 얻음 (현재 {1} 얻음. 최대 10)'
+  const SNAKE_PLUS = '턴 시작시, 모든 아군이 [DefenseUp] <style="upgradeHighlight">4</style> 얻음.\n각 아군이 (자신의 [DefenseUp]/<style="upgradeHighlight">3</style>)만큼 공격 레벨이 증가함. (최대 10)'
+  const EN_CAP = 'After using a Skill that gains [Charge] Count or <noparse>Unique Charge</noparse>, gain [EmergencyChargeForceField] equal to the Count gained (max 7 per Identity)'
+  const BLOOD_FOG = '턴 시작 시, [Laceration] 위력, [Laceration] 횟수 또는 특수 출혈을 부여하는 공격 스킬을 보유한 인격이 5인 이상이면, 이번 전투 동안 발동 (E.G.O 스킬 제외. 대기 인원 제외)\n\n아군이 스킬 효과로 적에게 부여하는 [Laceration] 위력과 [Laceration] 횟수'
+  const SWORDSMEN = '턴 시작 시, 검계 소속 인격이 3인 이상일 때 발동 (출격 인원을 기준으로 함).\n\n아군이 가하는 참격 피해량 +50%'
+  const names = new Map([['Vibration', '진동'], ['Laceration', '출혈'], ['Enhancement', '위력 증가'], ['DefenseUp', '방어 레벨 증가']])
+
+  it('REQ-DATA-SYNC-036 keeps [Id] references and the 편성 라벨 line as the game wrote them (오더메이드 9407)', () => {
+    expect(rawGiftEffect(ORDER_MADE)).toBe(ORDER_MADE)
+    expect(rawGiftEffect(ORDER_MADE)).toContain('[Vibration] 횟수 3')
+    expect(rawGiftEffect(ORDER_MADE)).toContain('[편성 3번 인격 전용 효과]')
+  })
+
+  it('REQ-DATA-SYNC-036 keeps style, noparse and size tags instead of stripping them', () => {
+    expect(rawGiftEffect(SNAKE_PLUS)).toBe(SNAKE_PLUS)
+    expect(rawGiftEffect(EN_CAP)).toContain('<noparse>Unique Charge</noparse>')
+    expect(rawGiftEffect('<size=80%>작게</size> <color=#ff0000>빨강</color>')).toBe('<size=80%>작게</size> <color=#ff0000>빨강</color>')
+  })
+
+  it('REQ-DATA-SYNC-036 only trims surrounding whitespace, and an empty source stays NULL', () => {
+    expect(rawGiftEffect(' 홀수 턴이면, [AttackDmgUp] 1 얻음. \n')).toBe('홀수 턴이면, [AttackDmgUp] 1 얻음.')
+    expect(rawGiftEffect(undefined)).toBeNull()
+    expect(rawGiftEffect('')).toBeNull()
+  })
+
+  it('REQ-DATA-SYNC-036 still turns slots into tokens after the raw text: convert gift 9227 and descType gift 9242', () => {
+    const report = { add() {}, size: 0 } as never
+    expect(giftPlaceholders(rawGiftEffect(SWORD), { id: 9227, convertTo: 9228, descType: 'ReportUseNumber' }, report)).toBe(SWORD.replace('{0}', '{{gift:9228}}'))
+    expect(giftPlaceholders(rawGiftEffect(BONGY), { id: 9242, descType: 'ReportBongy' }, report)).toBe(BONGY.replace('{0}', '{{live}}').replace('{1}', '{{live}}'))
+    // The [Enhancement] reference of 9242 survives next to the tokens.
+    expect(giftPlaceholders(rawGiftEffect(BONGY), { id: 9242, descType: 'ReportBongy' }, report)).toContain('[Enhancement] 1 얻음')
+  })
+
+  it('REQ-DATA-SYNC-036 computes the activation condition from the translated copy, as before', () => {
+    // A bleed gift: the condition names the keyword only after [Laceration] became 출혈.
+    const translated = translateGiftDescForCondition(BLOOD_FOG, names)
+    expect(translated).toContain('출혈 위력, 출혈 횟수 또는 특수 출혈을 부여하는 공격 스킬을 보유한 인격이 5인 이상')
+    expect(extractActivationCondition(translated, '출혈')).toEqual({ type: 'keyword', keyword: '출혈', count: 5 })
+    // 복주머니 9098 names its keyword only as [Breath]: the raw text is not matched, which is why the translated copy exists.
+    const POUCH = '턴 시작 시, [Breath] 위력 또는 [Breath] 횟수를 부여하거나 획득하는 공격 스킬을 보유한 인격이 5인 이상이면, 이번 전투 동안 발동 (E.G.O 스킬 제외. 대기 인원 제외)'
+    expect(extractActivationCondition(rawGiftEffect(POUCH), '호흡')).toBeUndefined()
+    expect(extractActivationCondition(translateGiftDescForCondition(POUCH, new Map([['Breath', '호흡']])), '호흡')).toEqual({ type: 'keyword', keyword: '호흡', count: 5 })
+    // Affiliation conditions read the same either way.
+    expect(extractActivationCondition(translateGiftDescForCondition(SWORDSMEN, names), '참격')).toEqual({ type: 'affiliation', affiliation: '검계', count: 3 })
+    expect(extractActivationCondition(rawGiftEffect(SWORDSMEN), '참격')).toEqual({ type: 'affiliation', affiliation: '검계', count: 3 })
+  })
+
+  it('REQ-DATA-SYNC-036 translates tags and unknown ids the way the old cleanDesc did, for the internal copy only', () => {
+    expect(translateGiftDescForCondition('<style="upgradeHighlight">[Enhancement] 1</style> <color=#fff>얻음</color><noparse>x</noparse> [Unknown]', names))
+      .toBe('위력 증가 1 얻음x [Unknown]')
+  })
+
+  it('REQ-DATA-SYNC-036 stores the raw effect and feeds only the condition from the translated copy in the sync', () => {
+    const sync = readFileSync(join(__dirname, 'mirror-dungeon-data.ts'), 'utf8')
+    expect(sync).toContain('const effectBase = tokens(rawGiftEffect(baseLoc.desc))')
+    expect(sync).toContain('extractActivationCondition(tokens(translateGiftDescForCondition(baseLoc.desc, getKrKeywordMap())), keyword)')
+    expect(sync).not.toMatch(/effect_\w+(?:_en|_jp)?: .*cleanDesc/)
   })
 })

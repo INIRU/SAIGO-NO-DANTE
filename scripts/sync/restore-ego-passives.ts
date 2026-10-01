@@ -1,8 +1,8 @@
 /** Restore stage-aware EGO passive text, preserving the legacy latest-stage summary. */
-import { readFileSync, readdirSync, mkdirSync, writeFileSync, existsSync } from 'node:fs'
+import { readFileSync, readdirSync, mkdirSync, writeFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { createClient } from '@supabase/supabase-js'
-import { loadEgoSyncContext } from './identity-data'
+import { loadEgoSyncContext, rawGameText, joinPassiveGameTexts } from './identity-data'
 import { passiveStageRange } from './ego-passives'
 async function main() {
 const source = process.env.LIMBUS_DATA_DIR
@@ -32,19 +32,20 @@ for(const ego of egos || []) {
       const loc=context.passives[lang].get(id)
       if(!loc?.name || !loc.desc)throw Error(`Missing ${lang} passive ${id}`)
       const suffix=lang==='kr'?'':'_'+lang
-      row['name'+suffix]=loc.name;row['description'+suffix]=context.formatText(loc.desc,lang)
+      row['name'+suffix]=loc.name;row['description'+suffix]=rawGameText(loc.desc)
     }
     rows.push(row);if(maximum>=row.min_stage&&maximum<=row.max_stage)current.push(row)
   }
   const patch:any={}
-  for(const suffix of ['','_en','_jp']) {patch['passive_name'+suffix]=current.map(r=>r['name'+suffix]).join('\n\n')||null;patch['passive_content'+suffix]=current.map(r=>r['description'+suffix]).join('\n\n')||null}
+  for(const suffix of ['','_en','_jp']) {patch['passive_name'+suffix]=current.map(r=>r['name'+suffix]).join('\n\n')||null;patch['passive_content'+suffix]=joinPassiveGameTexts(current.map(r=>r['description'+suffix]))}
   updates.push({id:ego.id,patch})
 }
 writeFileSync(join(root,'ego-passive-plan.json'),JSON.stringify({rows,updates},null,2))
 console.log({egos:updates.length,passives:rows.length,apply:process.argv.includes('--fix')})
 if(process.argv.includes('--fix')) {
-  const backup=join(root,'before-ego-passives');mkdirSync(backup,{recursive:true})
-  for(const table of ['ego','ego_passives']) {const f=join(backup,table+'.json');if(existsSync(f))continue;const {data,error}=await db.from(table).select('*').limit(1000);if(error)throw error;writeFileSync(f,JSON.stringify(data),{flag:'wx'})}
+  // Every run backs up what is in the database right now, in its own folder: an earlier backup is never reused or overwritten.
+  const backup=join(root,'before-ego-passives-'+new Date().toISOString().replace(/[:.]/g,'-'));mkdirSync(backup,{recursive:true})
+  for(const table of ['ego','ego_passives']) {const {data,error}=await db.from(table).select('*').limit(1000);if(error)throw error;writeFileSync(join(backup,table+'.json'),JSON.stringify(data),{flag:'wx'})}
   for(let i=0;i<rows.length;i+=100){const {error}=await db.from('ego_passives').upsert(rows.slice(i,i+100));if(error)throw error}
   for(const {id,patch} of updates){const {error}=await db.from('ego').update(patch).eq('id',id);if(error)throw error}
   const {data,error}=await db.from('ego_passives').select('*').limit(1000);if(error)throw error

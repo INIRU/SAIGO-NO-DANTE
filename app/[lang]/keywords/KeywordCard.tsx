@@ -11,6 +11,7 @@ import { getLocalizedKeywordDesc } from '@/lib/i18n/localize'
 import { localizeDeckKeyword } from '@/components/decks/decks-types'
 import { keywordAccentColor, resolveKeywordIconUrl, useKeywords } from '@/components/providers/KeywordProvider'
 import { PlaceholderText } from '@/components/ui/PlaceholderLabel'
+import { usePlainGameText } from '@/lib/hooks/usePlainGameText'
 
 export interface KeywordEntry {
   name: string
@@ -56,6 +57,7 @@ export default function KeywordCard({ keyword: kw, counts, onClick, lang, compac
   const color = useKeywordColor(kw.name)
   const iconUrl = resolveKeywordIconUrl(kw.name, kw.icon_slug)
   const name = keywordName(kw, lang)
+  const plainText = usePlainGameText(lang)
 
   if (compact) {
     return (
@@ -92,7 +94,7 @@ export default function KeywordCard({ keyword: kw, counts, onClick, lang, compac
           ) : null}
         </span>
       </span>
-      <span className="mt-3 line-clamp-2 min-h-[2.6rem] w-full text-[0.8125rem] leading-[1.6] text-[#bfae92]"><PlaceholderText text={keywordDesc(kw, lang)} /></span>
+      <span className="mt-3 line-clamp-2 min-h-[2.6rem] w-full text-[0.8125rem] leading-[1.6] text-[#bfae92]"><PlaceholderText text={plainText(keywordDesc(kw, lang))} /></span>
       <span className="mt-auto grid w-full grid-cols-3 border-t border-[#2e2417] pt-2.5">
         {stats.map(s => (
           <span key={s.label} className="flex h-6 items-baseline gap-1.5">

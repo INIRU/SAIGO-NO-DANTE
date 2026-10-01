@@ -16,6 +16,7 @@ import { getThemePackCompositeImageUrl, getThemePackVisualConfig } from '@/lib/d
 import { getLocalizedAffiliation, getLocalizedName, localizeGiftKeyword } from '@/lib/i18n/localize'
 import type { SupportedLang } from '@/lib/i18n/types'
 import type { GiftConditionStatus } from '@/lib/planner/gift-condition-status'
+import { gameTextToPlain, splitGameTextLines } from '@/lib/game-text/rich-text'
 import { createGiftRefSplitter, type GiftRefTarget } from '@/lib/mirror-dungeon/gift-refs'
 import { getGameUiAsset } from '@/lib/utils/game-ui'
 import { PlaceholderGiftProvider, type PlaceholderGift } from '@/components/ui/PlaceholderLabel'
@@ -133,7 +134,7 @@ function Section({ title, aside, children }: { title: string; aside?: ReactNode;
   )
 }
 
-function EffectText({ text, color, links }: { text: string; color: string; links?: GiftDetailData['giftLinks'] }) {
+export function EffectText({ text, color, links }: { text: string; color: string; links?: GiftDetailData['giftLinks'] }) {
   const formatSkillDesc = useFormatSkillDesc()
   const split = useMemo(() => links?.targets.length ? createGiftRefSplitter(links.targets, links) : null, [links])
   // {{gift:<game id>}} (a convert_to gift's target) shows that gift as a link.
@@ -142,7 +143,8 @@ function EffectText({ text, color, links }: { text: string; color: string; links
     for (const target of links?.targets ?? []) if (target.gameId != null) byId.set(target.gameId, target)
     return byId.size ? (gameId: number) => byId.get(gameId) : null
   }, [links])
-  const lines = text.split('\n').map(l => l.trim()).filter(Boolean)
+  // Lines split so a tag spanning lines keeps applying; the bullet check reads the visible text, as a line may start with a tag.
+  const lines = splitGameTextLines(text).map(l => l.trim()).filter(Boolean)
   const render = (line: string) => split
     ? split(line).map((part, i) => typeof part === 'string'
       ? <span key={i}>{formatSkillDesc(part, color)}</span>
@@ -152,7 +154,7 @@ function EffectText({ text, color, links }: { text: string; color: string; links
     <PlaceholderGiftProvider lookup={giftById}>
       <div style={{ color: '#d8ccb4', fontSize: '0.875rem', lineHeight: 1.75 }}>
         {lines.map((line, i) => {
-          const isSub = /^-\s/.test(line)
+          const isSub = /^-\s/.test(gameTextToPlain(line))
           return (
             <p key={i} style={isSub ? { paddingLeft: '0.875rem', textIndent: '-0.625rem', marginTop: '0.125rem' } : { marginTop: i > 0 ? '0.5rem' : 0 }}>
               {render(line)}

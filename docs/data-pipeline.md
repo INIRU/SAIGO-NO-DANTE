@@ -237,7 +237,7 @@ npx tsx scripts/sync/prepare-extracted-assets.ts \
 
 
 ```bash
-# 번들: apply-extraction, identity-data, mirror-dungeon-data, rebuild-mirror-events, sync-extracted-identities + Windows용 sharp,
+# 번들: apply-extraction, game-text-refs, identity-data, mirror-dungeon-data, rebuild-mirror-events, sync-extracted-identities + Windows용 sharp,
 # 추출 도구의 테마팩 합성용: build-theme-packs.py, theme-composition/ 오버레이 원본 3개, SCDream5.woff2, Windows용 휴대용 Python(python/)
 node scripts/sync/build-site-sync.mjs "<림버스 에셋>/tools/site-sync" --win
 # 옆에 NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SECRET_KEY, REVALIDATION_SECRET, NEXT_PUBLIC_SITE_URL만 담은 .env.local을 둔다.
@@ -246,9 +246,9 @@ node scripts/sync/build-site-sync.mjs "<림버스 에셋>/tools/site-sync" --win
 node --import tsx scripts/sync/apply-extraction.ts --zip <LimbusAssets_*.zip> --work <빈 작업 폴더> [--fix]
 ```
 
-`apply-extraction`은 `prepareExtractedAssets`로 ZIP 전체를 검사한 뒤 identity → mirror(기프트·테마팩·레시피) → events 순서로 단계마다 dry-run 후 `--fix`를 실행한다. 첫 적용 전에 `identities`, `skills`, `passives`, `ego`, `ego_skills`, `ego_gifts`, `keyword_meta`, `ego_gift_themes`, `ego_gift_recipes`를 작업 폴더 `backup/`에 저장하고, 이벤트 단계는 자체적으로 `md_events`/`md_event_choices`를 백업한 뒤 읽기 검증한다. 실패하면 그 단계에서 멈춘다. 새 인격은 같은 ZIP에서 `sync-extracted-identities`로 이미지를 올린다. 새 E.G.O(숨김·각성 스킬 없는 스토리 전용 E.G.O는 제외)는 단계들이 끝난 뒤 `bootstrap-data.ts --ego-ids`로 행·단계별 스킬·단계별 패시브(`ego_passives`, SkillTag 구획 제목 번역 포함)를 넣고, ZIP의 `<id>_awaken_profile`·`erosion_profile`·`cg`·`e_cg`·`profile_summary`를 `sinners/<수감자>/ego/<폴더>/`에 webp로 올린 뒤(기존 파일은 덮어쓰지 않음) 사이트 캐시를 갱신한다. Drive 아트 목록이 없는 Windows에서는 폴더를 영어 이름으로 정하고 ASCII 밖 글자는 `_uXXXX_`로 쓴다(Drive 폴더 규칙과 같음). 결과는 `report.json`의 `newEgos`에 남는다. 2026-09-28 검증: 9/24 추출본으로 엄숙한 애도(20109)·착영휘도(20509)를 새 E.G.O로 가정해 dry-run한 계획이 DB의 행·패시브·스킬 16개와 필드까지 같았다. 번들에서 `bootstrap-data.mjs`가 `identity-data`를 품으므로, `identity-data`는 파일 이름까지 확인해 직접 실행될 때만 동기화를 시작한다. 이벤트 재구성은 복구 폴더가 없으면 선택지 템플릿을 추출본의 `KR/EN/JP_ChoiceEvent*.txt`에서, 이벤트 그림 유무를 Storage `icons/events/` 목록에서 읽는다.
+`apply-extraction`은 `prepareExtractedAssets`로 ZIP 전체를 검사한 뒤 refs(게임 텍스트 참조 표, `game-text-refs.ts`) → identity → keywords → refs-link(같은 동기화를 한 번 더: keywords 단계가 새로 만든 `keyword_meta` 행을 `keyword_name`으로 잇는다. 이 연결이 없으면 적용 뒤 읽기 검증이 refs 변경을 남은 차이로 본다) → mirror(기프트·테마팩·레시피) → events 순서로 단계마다 dry-run 후 `--fix`를 실행한다. 첫 적용 전에 `identities`, `skills`, `passives`, `ego`, `ego_skills`, `ego_gifts`, `keyword_meta`, `game_text_refs`, `ego_gift_themes`, `ego_gift_recipes`를 작업 폴더 `backup/`에 저장하고, 이벤트 단계는 자체적으로 `md_events`/`md_event_choices`를 백업한 뒤 읽기 검증한다. 실패하면 그 단계에서 멈춘다. 새 인격은 같은 ZIP에서 `sync-extracted-identities`로 이미지를 올린다. 새 E.G.O(숨김·각성 스킬 없는 스토리 전용 E.G.O는 제외)는 단계들이 끝난 뒤 `bootstrap-data.ts --ego-ids`로 행·단계별 스킬·단계별 패시브(`ego_passives`, SkillTag 구획 제목 번역 포함)를 넣고, ZIP의 `<id>_awaken_profile`·`erosion_profile`·`cg`·`e_cg`·`profile_summary`를 `sinners/<수감자>/ego/<폴더>/`에 webp로 올린 뒤(기존 파일은 덮어쓰지 않음) 사이트 캐시를 갱신한다. Drive 아트 목록이 없는 Windows에서는 폴더를 영어 이름으로 정하고 ASCII 밖 글자는 `_uXXXX_`로 쓴다(Drive 폴더 규칙과 같음). 결과는 `report.json`의 `newEgos`에 남는다. 2026-09-28 검증: 9/24 추출본으로 엄숙한 애도(20109)·착영휘도(20509)를 새 E.G.O로 가정해 dry-run한 계획이 DB의 행·패시브·스킬 16개와 필드까지 같았다. 번들에서 `bootstrap-data.mjs`가 `identity-data`를 품으므로, `identity-data`는 파일 이름까지 확인해 직접 실행될 때만 동기화를 시작한다. 이벤트 재구성은 복구 폴더가 없으면 선택지 템플릿을 추출본의 `KR/EN/JP_ChoiceEvent*.txt`에서, 이벤트 그림 유무를 Storage `icons/events/` 목록에서 읽는다.
 
-되돌리기(2026-09-28): `apply-extraction`은 반영 단계들이 쓸 수 있는 표 13개(`extraction-restore.ts`의 `RESTORE_TABLES`, 1000행 넘는 표도 끝까지)를 첫 적용 전에 `backup/`에 저장하고, 올린 테마팩·E.G.O 그림을 `report.json`의 `uploads`에 남긴다. `extraction-restore.ts --work <작업 폴더> [--fix]`는 표를 백업 상태로 되돌리고(바뀐 행은 다시 쓰고, 그 반영에서 생긴 행은 삭제), 새로 올린 그림은 지우고 덮어쓴 인격 그림(`identity-images/before`)은 원본으로 돌린 뒤 캐시를 갱신한다. `deck_identities`가 인격 삭제 시 함께 지워지므로, 덱·플랜이 쓰는 신규 인격·E.G.O와 그 스킬·패시브는 남긴다. `--fix`는 먼저 현재 상태를 `restores/<시각>/backup`에 저장해 되돌리기도 되돌릴 수 있다. Windows 도구의 반영 기록에서 미리 보기(dry-run) 후 실행하며, 자동 반영을 끄고 확인 후 반영할 수도 있다. 검증: 현재 DB를 백업으로 뜬 dry-run이 변경 0, 스킬 2행을 바꾸고 인격 1개를 뺀 백업은 스킬 2행 복원과 덱에서 쓰는 인격 유지로 계획됐고, Windows 번들의 `--fix`를 변경 0 백업으로 끝까지 실행했다.
+되돌리기(2026-09-28): `apply-extraction`은 반영 단계들이 쓸 수 있는 표 14개(`game_text_refs` 포함)(`extraction-restore.ts`의 `RESTORE_TABLES`, 1000행 넘는 표도 끝까지)를 첫 적용 전에 `backup/`에 저장하고, 올린 테마팩·E.G.O 그림을 `report.json`의 `uploads`에 남긴다. `extraction-restore.ts --work <작업 폴더> [--fix]`는 표를 백업 상태로 되돌리고(바뀐 행은 다시 쓰고, 그 반영에서 생긴 행은 삭제), 새로 올린 그림은 지우고 덮어쓴 인격 그림(`identity-images/before`)은 원본으로 돌린 뒤 캐시를 갱신한다. `deck_identities`가 인격 삭제 시 함께 지워지므로, 덱·플랜이 쓰는 신규 인격·E.G.O와 그 스킬·패시브는 남긴다. `--fix`는 먼저 현재 상태를 `restores/<시각>/backup`에 저장해 되돌리기도 되돌릴 수 있다. Windows 도구의 반영 기록에서 미리 보기(dry-run) 후 실행하며, 자동 반영을 끄고 확인 후 반영할 수도 있다. 검증: 현재 DB를 백업으로 뜬 dry-run이 변경 0, 스킬 2행을 바꾸고 인격 1개를 뺀 백업은 스킬 2행 복원과 덱에서 쓰는 인격 유지로 계획됐고, Windows 번들의 `--fix`를 변경 0 백업으로 끝까지 실행했다.
 
 새 기프트·이벤트 그림(2026-09-28): mirror 단계 뒤 `ego_gifts.image_url`이 가리키는 `ego-gifts/` 객체가 없으면 ZIP의 `EgoGiftIcon/<게임 ID>.png`(kind `기프트`, name=게임 ID)를 webp로 올리고, ZIP에 아이콘이 없는 기프트는 `report.json`의 `giftsWithoutIcon`에 남긴다. events 단계 전에는 ZIP의 이벤트 삽화(kind `이벤트선택지`, 파일 이름 앞 이벤트 번호)를 `icons/events/<번호>.webp`에 없는 것만 올려, 이벤트 재구성이 원화를 연결하게 한다. 둘 다 기존 파일은 덮어쓰지 않고 `uploads`에 기록해 되돌리기로 지운다. 9/24 추출본 기준으로는 기프트 9818 아이콘 1개(현재 Storage에 없음)만 대상이고 이벤트 원화는 모두 있다. 기존 E.G.O 전체를 추출본으로 다시 쓰는 것은 보류했다: 전체 dry-run에서 2개가 죄악 속성·코스트·내성·패시브까지 DB와 달라 원인 확인이 먼저다(그림 폴더는 기존 값을 유지하도록 했다).
 
@@ -275,7 +275,7 @@ node --import tsx scripts/sync/apply-extraction.ts --zip <LimbusAssets_*.zip> --
    ```
 3. 바뀐 단계를 번들로 dry-run한다(예: `node --env-file=<사이트 .env.local> mirror-dungeon-data.mjs --gifts-only`, `LIMBUS_DATA_DIR`에 최신 추출본 `complete-data`). 사이트 코드로 돌린 dry-run과 결과가 같아야 한다.
 4. 스키마가 바뀌었으면 추출 도구의 Mac에서 도는 테스트를 돌린다: `node --test tests/data-diff.test.cjs tests/data-file-diff.test.cjs tests/game-data.test.cjs tests/manual-gallery.test.cjs tests/site-db-diff.test.cjs`. `gallery`·`package` 테스트는 Windows 산출물이 있어야 해서 Mac에서는 실패한다.
-5. 추출 도구 저장소에서 `chore/site-sync-<사이트 main 짧은 해시>` 브랜치에 번들 파일(`apply-extraction.mjs`, `bootstrap-data.mjs`, `extraction-restore.mjs`, `identity-data.mjs`, `mirror-dungeon-data.mjs`, `rebuild-mirror-events.mjs`, `sync-extracted-identities.cjs`, 바뀌었으면 `build-theme-packs.py`)를 명시해 커밋하고 PR을 연다. 본문에 사이트 커밋과 dry-run 결과를 적는다.
+5. 추출 도구 저장소에서 `chore/site-sync-<사이트 main 짧은 해시>` 브랜치에 번들 파일(`apply-extraction.mjs`, `bootstrap-data.mjs`, `extraction-restore.mjs`, `identity-data.mjs`, `mirror-dungeon-data.mjs`, `rebuild-mirror-events.mjs`, `sync-extracted-identities.cjs`, `game-text-refs.mjs`, 바뀌었으면 `build-theme-packs.py`)를 명시해 커밋하고 PR을 연다. 본문에 사이트 커밋과 dry-run 결과를 적는다.
 6. 병합 뒤 사용자에게 Windows PC 갱신(README의 방법)을 알린다.
 
 같은 코드로 다시 빌드한 번들은 빌드한 폴더 경로 주석(`// ../../.../node_modules/...`)만 다르다. 그 줄을 빼고 비교하면 같아야 한다.
@@ -466,7 +466,7 @@ Pillow가 필요하다. 출력 폴더가 비어 있지 않으면 중단하므로
 
 ## 백업과 재검증
 
-`before-bootstrap/`, `before-identity-sync/`, `before-mirror-restore/`, `before-sanity-restore/`, `before-artwork-link/`, `before-ego-passives/`를 보존한다. 코드 revert가 DB나 Storage를 자동 복원하지 않는다. 복원하려면 해당 백업의 대상 테이블·행·컬럼을 확인해야 한다.
+`before-bootstrap/`, `before-identity-sync/`, `before-mirror-restore/`, `before-sanity-restore/`, `before-artwork-link/`, `before-ego-passives-<실행 시각>/`(`--fix`를 돌릴 때마다 새로 만든다)를 보존한다. 코드 revert가 DB나 Storage를 자동 복원하지 않는다. 복원하려면 해당 백업의 대상 테이블·행·컬럼을 확인해야 한다.
 
 인격 메타데이터와 획득 JSON 수정 전 값은 `before-identity-metadata.json`, 적용 계획은 `identity-metadata-plan.json`에 보존한다. 기존 저장소의 2026-03-23 인격 백업 170개 행도 읽기 전용으로 대조했다. `restore-historical-metadata.ts --source=/path/to/identities.json`이 계획을 만들고 `--apply`가 수동 획득처와 누락 대사를 복구한다. 원본 파일 해시와 적용 계획은 `historical-metadata-plan.json`, 수정 직전 값은 `before-historical-metadata.json`이다. 전체 대사 복구 및 원본에서 빈 대표 키워드는 [데이터 모델](data-model.md)에 구분해 기록했다. 이후 일상 동기화에는 과거 복구 스크립트를 반복 적용하지 않고 `identity-data.ts`를 사용한다.
 
@@ -625,6 +625,12 @@ E.G.O 상세의 메인 이미지는 256×256 `_awaken_profile` 확대 대신 새
 | `{{gift:ID}}` | 기프트 이름 | 기프트 그림 + 이름, 누르면 그 기프트 | `convertDataList`가 있는 기프트의 `{0}`(9227 → `{{gift:9228}}`) |
 | `{{value}}` | 값 | 점선 테두리 | 규칙이 없는 자리. 동기화 로그에 `⚠ 분류 안 된 자리표시 {5} (KR_Bufs: XxxBuff)`가 나오면 규칙표에 추가한다 |
 
-`apply-extraction.ts`는 적용 뒤 표시 열(`PLACEHOLDER_CHECK_COLUMNS`)에 `{0}`이나 `{name}`이 남은 행을 세어 경고하고 `report.json`의 `leftoverPlaceholders`에 남긴다. 버프의 "(위력)"·"(횟수)"처럼 게임이 직접 쓴 괄호 글자(산나비(위력), 차원 표류의 "(수치)%")는 자리표시가 아니므로 그대로 둔다.
+`apply-extraction.ts`는 적용 뒤 토큰을 쓰는 열(`PLACEHOLDER_CHECK_COLUMNS`: 기프트 효과, 키워드 설명, 이벤트 지문·결과문)에 `{0}`이나 `{name}`이 남은 행을 세어 경고하고 `report.json`의 `leftoverPlaceholders`에 남긴다. 버프의 "(위력)"·"(횟수)"처럼 게임이 직접 쓴 괄호 글자(산나비(위력), 차원 표류의 "(수치)%")는 자리표시가 아니므로 그대로 둔다. 스킬·패시브·E.G.O 설명은 아래 "게임 원문 저장"대로 원문이라 `{0}`가 남는 것이 정상이고, 이벤트 선택지 문구(`message`)는 토큰 규칙 없이 저장되므로 둘 다 검사하지 않는다.
 
 일반 글자로만 보여 주는 곳(검색 부제, 키워드 검색, 이벤트 제목 대체)은 `placeholdersToPlainText`로 "(수치)"처럼 바꾸고, 키워드 카드 미리보기는 `PlaceholderText`로 칩을 그린다. 어시스트 OCR 대조는 토큰 자리에서 원문을 나눈다.
+
+### 게임 원문 저장과 참조 표
+
+동기화는 스킬·패시브·E.G.O 스킬·패시브·flavor·키워드·기프트 효과를 유니티 태그(`<style>`, `<color>`, `<sprite>` 등)와 `[Id]` 참조를 지우거나 이름으로 바꾸지 않은 원문으로 저장하고, 사이트가 `GameText`(`lib/game-text/rich-text.ts`)로 그린다. 스킬 코인 설명은 본문 뒤에 `<coin=N>…</coin>` 묶음으로 붙는다. 번호 자리는 키워드·기프트·이벤트에서만 토큰이고(위 표), 스킬·패시브·E.G.O는 원문 `{0}` 그대로다. 발동 조건(`activation_condition`)만 내부에서 이름으로 바꾼 사본으로 계산한다.
+
+`[Id]`가 가리키는 키워드·조건 라벨(BattleKeywords, SkillTag의 KR/EN/JP 이름·설명)은 `limbus.game_text_refs`에 있고 `scripts/sync/game-text-refs.ts`(dry-run 기본, `--fix`)가 채운다. 이 표는 `apply-extraction`의 첫 단계(`refs`)이며 `keyword_meta`와 이름이 같은 행을 `keyword_name`으로 잇는다. 표가 없는 DB(마이그레이션 `20261001023933_game_text_refs.sql` 미적용)에서 `--fix`는 백업 단계에서 멈추므로 아무것도 쓰지 않는다. 표 행은 지우지 않는다(원문에 없는 DB 행은 완전성 검사의 누락으로 세지 않는다). 어시스트 OCR 대조와 검색 부제는 `gameTextForScreen`·`gameTextToPlain`으로 태그를 벗기고 `[Id]`를 이름으로 바꾼 글자를 쓴다.

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useCallback } from 'react'
+import { useState, useMemo, useCallback, useEffect } from 'react'
 import { useQueryState, parseAsString } from 'nuqs'
 import { Search, X, LayoutList, Grid3X3 } from 'lucide-react'
 import { useLocale } from 'next-intl'
@@ -13,7 +13,9 @@ import { getLocalizedName } from '@/lib/i18n/localize'
 import KeywordGrid from './KeywordGrid'
 import KeywordModal, { type KeywordEgo, type KeywordGift, type KeywordIdentity } from './KeywordModal'
 import { keywordDesc, keywordName, kt, type KeywordEntry } from './KeywordCard'
-import { placeholdersToPlainText } from '@/lib/game-text/placeholders'
+import { gameTextToPlain, refNameLabels } from '@/lib/game-text/rich-text'
+import { createGiftMentionMatcher } from '@/lib/keywords/gift-mentions'
+import { useGameTextRefs, wantGameTextRefs } from '@/lib/hooks/useGameTextRefs'
 
 interface Sinner {
   id: string
@@ -36,13 +38,15 @@ export const KEYWORD_CATEGORIES: { value: KeywordCategory; key: string }[] = [
 const FOCUS_RING = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold-light)]'
 
 export default function KeywordsClient({
-  keywords, identities, sinners, gifts, egos,
+  keywords, identities, sinners, gifts, egos, refKeywords,
 }: {
   keywords: KeywordEntry[]
   identities: KeywordIdentity[]
   sinners: Sinner[]
   gifts: KeywordGift[]
   egos: KeywordEgo[]
+  /** Game id (`[Id]` of raw game text) → keyword name, for finding the gifts that mention a keyword. */
+  refKeywords: Record<string, string>
 }) {
   const [selected, setSelected] = useState<KeywordEntry | null>(null)
   const [selectedGift, setSelectedGift] = useState<KeywordGift | null>(null)
@@ -93,19 +97,25 @@ export default function KeywordsClient({
     return map
   }, [egos])
 
+  // Descriptions of game text hold [Id]s: the search needs their names, which the reference table gives once it is loaded.
+  const { names: refNames } = useGameTextRefs({ lazy: true })
+  const refLabels = useMemo(() => (refNames ? refNameLabels(refNames) : undefined), [refNames])
+  useEffect(() => { if (search) wantGameTextRefs() }, [search])
+
+  // Keywords each gift's effects mention: by [Id] in game text, by written-out name in the older stored text.
+  const giftMentions = useMemo(() => {
+    const mentioned = createGiftMentionMatcher(keywords.map(k => k.name), refKeywords)
+    return new Map(gifts.map(g => [g, mentioned([g.effect_base, g.effect_plus, g.effect_plusplus])]))
+  }, [gifts, keywords, refKeywords])
+
   const giftCountMap = useMemo(() => {
     const map: Record<string, number> = {}
     gifts.forEach(g => { map[g.keyword] = (map[g.keyword] || 0) + 1 })
-    const kwNames = keywords.map(k => k.name)
-    gifts.forEach(g => {
-      const effectText = [g.effect_base, g.effect_plus, g.effect_plusplus].filter(Boolean).join(' ')
-      if (!effectText) return
-      for (const kwName of kwNames) {
-        if (effectText.includes(kwName) && kwName !== g.keyword) map[kwName] = (map[kwName] || 0) + 1
-      }
+    giftMentions.forEach((names, g) => {
+      names.forEach(name => { if (name !== g.keyword) map[name] = (map[name] || 0) + 1 })
     })
     return map
-  }, [gifts, keywords])
+  }, [gifts, giftMentions])
 
   const categoryCounts = useMemo(() => {
     const map: Record<string, number> = {}
@@ -119,12 +129,12 @@ export default function KeywordsClient({
     const usage = (name: string) => (identityCountMap[name] || 0) + (egoCountMap[name] || 0) + (giftCountMap[name] || 0)
     return keywords.filter(kw => {
       if (selectedCategories.size > 0 && !selectedCategories.has((kw.category || '기타') as KeywordCategory)) return false
-      if (query && !keywordName(kw, lang).toLowerCase().includes(query) && !placeholdersToPlainText(keywordDesc(kw, lang), lang).toLowerCase().includes(query)) return false
+      if (query && !keywordName(kw, lang).toLowerCase().includes(query) && !gameTextToPlain(keywordDesc(kw, lang), { names: refLabels, locale: lang }).toLowerCase().includes(query)) return false
       return true
     }).sort((a, b) => sort === 'name'
       ? keywordName(a, lang).localeCompare(keywordName(b, lang), lang)
       : usage(b.name) - usage(a.name))
-  }, [keywords, selectedCategories, search, sort, identityCountMap, egoCountMap, giftCountMap, lang])
+  }, [keywords, selectedCategories, search, sort, identityCountMap, egoCountMap, giftCountMap, lang, refLabels])
 
   /* ── 선택된 키워드의 관련 데이터 ── */
   const related = useMemo(() => {
@@ -132,10 +142,9 @@ export default function KeywordsClient({
     return {
       identities: identities.filter(id => (id.keywords ?? []).includes(selected.name)),
       egos: egos.filter(ego => (ego.keywords ?? []).includes(selected.name)),
-      gifts: gifts.filter(g => g.keyword === selected.name
-        || [g.effect_base, g.effect_plus, g.effect_plusplus].filter(Boolean).join(' ').includes(selected.name)),
+      gifts: gifts.filter(g => g.keyword === selected.name || giftMentions.get(g)?.has(selected.name)),
     }
-  }, [selected, identities, egos, gifts])
+  }, [selected, identities, egos, gifts, giftMentions])
 
   const closeAll = useCallback(() => { setSelectedGift(null); setSelected(null) }, [])
 
