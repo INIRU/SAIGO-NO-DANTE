@@ -28,6 +28,9 @@ import {
   type DeckKeywordSlot,
 } from '@/lib/decks/keyword-rules'
 import { NoteRenderer, type NoteSkillEntry, type NotePassiveEntry, type NoteEgoEntry, type NoteEgoGiftEntry, type NoteIdentityEntry } from '@/components/decks/NoteChips'
+import { NoteGiftClickContext } from '@/components/notes/NoteBlockViewer'
+import PlannerGiftModal from '@/components/planner/PlannerGiftModal'
+import type { GiftData } from '@/lib/planner/types'
 import KeywordIcon from '@/components/ui/KeywordIcon'
 import RelativeTime from '@/components/ui/RelativeTime'
 import DeckInsights, { type DeckInsightIdentity } from '@/components/deck-analysis/DeckInsights'
@@ -399,6 +402,14 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
 
   const [egoGiftLookup, setEgoGiftLookup] = useState<Record<string, NoteEgoGiftEntry>>({})
   const [egoModalId, setEgoModalId] = useState<string | null>(null)
+  // A gift label in the note: the list above is the light one, so the pressed gift is fetched whole for the modal.
+  const [noteGift, setNoteGift] = useState<GiftData | null>(null)
+  const openNoteGift = useCallback((key: string) => {
+    fetch(`/api/ego-gifts?key=${encodeURIComponent(key)}`)
+      .then(r => (r.ok ? r.json() : null))
+      .then((gift: GiftData | null) => { if (gift) setNoteGift({ ...gift, theme_ids: null }) })
+      .catch(() => {})
+  }, [])
 
   useEffect(() => {
     const viewKey = `deck-view:${id}`
@@ -830,6 +841,7 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
   }
 
   return (
+    <NoteGiftClickContext value={openNoteGift}>
     <div className="min-h-screen bg-[#0d0b08] pt-24 pb-20">
       <div className="mx-auto w-full max-w-7xl px-3 sm:px-6">
         <BackLink
@@ -1100,6 +1112,7 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
       {egoModalId && (
         <EgoDetailModal egoId={egoModalId} onClose={() => setEgoModalId(null)} />
       )}
+      {noteGift && <PlannerGiftModal gift={noteGift} onClose={() => setNoteGift(null)} />}
       <ConfirmModal
         open={confirmDelete}
         title={guestT.deleteDeckTitle}
@@ -1111,6 +1124,7 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
         onCancel={() => setConfirmDelete(false)}
       />
     </div>
+    </NoteGiftClickContext>
   )
 }
 
