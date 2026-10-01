@@ -558,6 +558,8 @@ export function withStableSkillIds<T extends Partial<SkillRow>>(generatedRows: T
   })
 }
 
+type PassiveSinRequirement = { sin: string; count: number }
+
 interface PassiveRow {
   identity_id: string
   name: string
@@ -566,6 +568,7 @@ interface PassiveRow {
   passive_type: 'battle' | 'support'
   sin_affinity: string | null
   sin_count: number | null
+  sin_requirements?: PassiveSinRequirement[] | null
   active_cond: 'stock' | 'resonance' | null
   description: string
   flavor?: string | null
@@ -588,6 +591,7 @@ const PASSIVE_COMPARE_FIELDS = [
   'passive_type',
   'sin_affinity',
   'sin_count',
+  'sin_requirements',
   'active_cond',
   'description',
   'flavor',
@@ -609,7 +613,10 @@ const PASSIVE_SELECT_FIELDS = [
 
 function comparablePassive(row: Partial<PassiveRow>): PassiveComparable {
   return PASSIVE_COMPARE_FIELDS.reduce((acc, field) => {
-    acc[field] = normalizeSkillCompareValue(row[field])
+    // jsonb comes back with its own key order: compare the requirements as "sin:count" lists.
+    acc[field] = field === 'sin_requirements'
+      ? (row.sin_requirements?.length ? row.sin_requirements.map(req => `${req.sin}:${req.count}`).join(',') : null)
+      : normalizeSkillCompareValue(row[field])
     return acc
   }, {} as PassiveComparable)
 }
@@ -1725,7 +1732,10 @@ function loadPassiveMappings(): PassiveMapping[] {
 
 function loadPassiveDetails(): Map<number, PassiveDetail> {
   const map = new Map<number, PassiveDetail>()
-  for (const txtFile of ['passive.txt', 'passive_check4.txt']) {
+  // passive.txt first, then every other passive file: newer identities' passives live in files such as passive-a1c8p2.txt.
+  const files = globFiles(DATA_DIR, /^passive[^/]*\.txt$/i)
+    .sort((a, b) => (a === 'passive.txt' ? -1 : b === 'passive.txt' ? 1 : a.localeCompare(b)))
+  for (const txtFile of files) {
     const data = readTxt(join(DATA_DIR, txtFile))
     if (!data) continue
     for (const item of extractList(data)) {
@@ -2003,12 +2013,12 @@ function loadEgoSkillLocale(lang: 'en' | 'jp'): Map<string, EgoSkillLocaleEntry>
   return map
 }
 
-function loadEgoPassiveLocale(lang: 'kr' | 'en' | 'jp'): Map<number, { name: string; desc: string }> {
+function loadEgoPassiveLocale(lang: 'kr' | 'en' | 'jp'): Map<number, { name: string; desc: string; flavor?: string }> {
   // Only ego passive files — exclude EN_Passive_Personalities-* etc.
   const prefix = lang.toUpperCase()
   const latestDir = lang === 'kr' ? KR_LATEST_DIR : lang === 'en' ? EN_LATEST_DIR : JP_LATEST_DIR
   const fallbackDir = lang === 'kr' ? KR_DIR : lang === 'en' ? EN_DIR : JP_DIR
-  const map = new Map<number, { name: string; desc: string }>()
+  const map = new Map<number, { name: string; desc: string; flavor?: string }>()
 
   for (const dir of [latestDir, fallbackDir]) {
     if (!existsSync(dir)) continue
@@ -2021,6 +2031,7 @@ function loadEgoPassiveLocale(lang: 'kr' | 'en' | 'jp'): Map<number, { name: str
         map.set(id, {
           name: cleanLocaleContent((item as any).name ?? ''),
           desc: rawGameText((item as any).desc),
+          ...((item as any).flavor ? { flavor: rawGameText((item as any).flavor) } : {}),
         })
       }
     }
@@ -2308,6 +2319,25 @@ export function buildSkillRows(
 
 // ── Passive building ──────────────────────────────────────────────────────────
 
+/**
+ * A passive's activation condition: every sin it needs with its count, in game order (some need two or three sins, each
+ * with its own count). sin_affinity/sin_count keep the first one for the readers that know only one.
+ */
+export function passiveCondition(detail: PassiveDetail | undefined): Pick<PassiveRow, 'sin_affinity' | 'sin_count' | 'sin_requirements' | 'active_cond'> {
+  const stock = detail?.attributeStockCondition ?? []
+  const resonance = detail?.attributeResonanceCondition ?? []
+  const conds = stock.length > 0 ? stock : resonance
+  const requirements = conds
+    .map(cond => ({ sin: SIN_MAP[cond.type ?? ''], count: cond.value ?? 0 }))
+    .filter((req): req is PassiveSinRequirement => !!req.sin && req.count > 0)
+  return {
+    sin_affinity: requirements[0]?.sin ?? null,
+    sin_count: requirements[0]?.count ?? null,
+    sin_requirements: requirements.length > 0 ? requirements : null,
+    active_cond: stock.length > 0 ? 'stock' : resonance.length > 0 ? 'resonance' : null,
+  }
+}
+
 export function buildPassiveRows(
   pm: PassiveMapping,
   identityId: string,
@@ -2331,19 +2361,17 @@ export function buildPassiveRows(
         const detail = passiveDetailMap.get(pid)
         // Skip placeholder passives with no KR name (game data incomplete)
         if (!kr?.name) continue
-        const hasStock = (detail?.attributeStockCondition?.length ?? 0) > 0
-        const hasResonance = (detail?.attributeResonanceCondition?.length ?? 0) > 0
-        const conds = detail?.attributeStockCondition ?? detail?.attributeResonanceCondition ?? []
-        const sinCond = conds[0]
+        const { sin_affinity, sin_count, sin_requirements, active_cond } = passiveCondition(detail)
         rows.push({
           identity_id: identityId,
           name: kr.name,
           name_en: enLocale?.passiveMap.get(pid)?.name ?? null,
           name_jp: jpLocale?.passiveMap.get(pid)?.name ?? null,
           passive_type: 'battle',
-          sin_affinity: sinCond ? (SIN_MAP[sinCond.type ?? ''] ?? null) : null,
-          sin_count: sinCond?.value ?? null,
-          active_cond: hasStock ? 'stock' : hasResonance ? 'resonance' : null,
+          sin_affinity,
+          sin_count,
+          sin_requirements,
+          active_cond,
           description: rawGameText(kr?.desc),
           flavor: nullableRawGameText(kr?.flavor),
           description_en: enLocale ? rawGameText(enLocale.passiveMap.get(pid)?.desc) || null : null,
@@ -2366,19 +2394,17 @@ export function buildPassiveRows(
         const detail = passiveDetailMap.get(pid)
         // Skip placeholder passives with no KR name (game data incomplete)
         if (!kr?.name) continue
-        const hasStock = (detail?.attributeStockCondition?.length ?? 0) > 0
-        const hasResonance = (detail?.attributeResonanceCondition?.length ?? 0) > 0
-        const conds = detail?.attributeStockCondition ?? detail?.attributeResonanceCondition ?? []
-        const sinCond = conds[0]
+        const { sin_affinity, sin_count, sin_requirements, active_cond } = passiveCondition(detail)
         rows.push({
           identity_id: identityId,
           name: kr.name,
           name_en: enLocale?.passiveMap.get(pid)?.name ?? null,
           name_jp: jpLocale?.passiveMap.get(pid)?.name ?? null,
           passive_type: 'support',
-          sin_affinity: sinCond ? (SIN_MAP[sinCond.type ?? ''] ?? null) : null,
-          sin_count: sinCond?.value ?? null,
-          active_cond: hasStock ? 'stock' : hasResonance ? 'resonance' : null,
+          sin_affinity,
+          sin_count,
+          sin_requirements,
+          active_cond,
           description: rawGameText(kr?.desc),
           flavor: nullableRawGameText(kr?.flavor),
           description_en: enLocale ? rawGameText(enLocale.passiveMap.get(pid)?.desc) || null : null,
@@ -3739,6 +3765,15 @@ async function rebuildKeywordMeta(): Promise<void> {
   console.log(GREEN(`\n  keyword_meta 재구축 완료: ${inserted}개 삽입`))
 }
 
+/**
+ * The game skill id of an ego_skills row: its own game_skill_id (an EGO can have several awakening skills, e.g. 20211's
+ * 2021111 and 2021112), else derived from the EGO for rows stored without one (awakening ×100+11, corrosion +21).
+ */
+export function egoSkillGameId(skill: { game_skill_id?: number | null; category?: string | null }, egoGameId: string | number): number {
+  if (skill.game_skill_id) return skill.game_skill_id
+  return Number(egoGameId) * 100 + (skill.category === 'corrosion' ? 21 : 11)
+}
+
 /** Game-data inputs for buildSkillRows/buildPassiveRows, for scripts that write only part of the rows. */
 export function loadSkillPassiveSources() {
   TAG_MAP = loadKrTagMap()
@@ -4172,11 +4207,18 @@ async function main(): Promise<void> {
   if (egoErr) console.error(RED(`  ego 로드 실패: ${egoErr.message}`))
 
   // Get ego_skills
-  const { data: egoSkillRows, error: esErr } = await supabase
-    .from('ego_skills')
-    .select('id, ego_id, name, category, construe_level, name_en, name_jp, description, description_en, description_jp')
-    .limit(2000)
-  if (esErr) console.error(RED(`  ego_skills 로드 실패: ${esErr.message}`))
+  // Read every page: the API returns at most 1000 rows per request.
+  let egoSkillRows: any[] | null = []
+  for (let from = 0; ; from += 1000) {
+    const { data, error: esErr } = await supabase
+      .from('ego_skills')
+      .select('id, ego_id, game_skill_id, name, category, construe_level, name_en, name_jp, description, description_en, description_jp')
+      .order('id')
+      .range(from, from + 999)
+    if (esErr) { console.error(RED(`  ego_skills 로드 실패: ${esErr.message}`)); egoSkillRows = null; break }
+    egoSkillRows.push(...(data ?? []))
+    if (!data || data.length < 1000) break
+  }
 
   if (egoRows && egoSkillRows) {
     // Build ego.id → game_id map
@@ -4190,9 +4232,7 @@ async function main(): Promise<void> {
       const egoGameId = egoGameIdMap.get(skill.ego_id)
       if (!egoGameId) continue
 
-      // Derive skill game_id: awakening = ego_game_id * 100 + 11, corrosion = + 21
-      const suffix = skill.category === 'corrosion' ? 21 : 11
-      const skillGameId = Number(egoGameId) * 100 + suffix
+      const skillGameId = egoSkillGameId(skill, egoGameId)
       const level = skill.construe_level ?? 3
       const key = `${skillGameId}_${level}`
       const fallbackKey = level === 4 ? `${skillGameId}_3` : key

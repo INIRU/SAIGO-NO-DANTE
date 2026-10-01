@@ -60,7 +60,7 @@ async function triggerRevalidation(options: { scope?: 'all-game-data' | 'announc
   }
 }
 
-const SELECT = 'id, kind, name, name_en, name_jp, description, description_en, description_jp, keyword_name'
+const SELECT = 'id, kind, name, name_en, name_jp, description, description_en, description_jp, flavor, flavor_en, flavor_jp, keyword_name'
 
 /** PostgREST / Postgres "table does not exist": the migration has not been applied yet. */
 const isMissingTable = (error: { code?: string; message?: string }) =>

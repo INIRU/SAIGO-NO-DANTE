@@ -8,7 +8,7 @@ import { richestEntry } from './mirror-dungeon-rules'
  * the game wrote them (Unity tags, `{n}` slots), so the site can draw them itself.
  */
 export type GameTextLang = 'kr' | 'en' | 'jp'
-export type GameTextEntry = { id: string; name?: string; desc?: string }
+export type GameTextEntry = { id: string; name?: string; desc?: string; flavor?: string }
 export type PerLang<T> = Record<GameTextLang, T>
 export type GameTextSources = { keywords: PerLang<GameTextEntry[]>; skillTags: PerLang<GameTextEntry[]> }
 export type GameTextRefInput = GameTextSources & { keywordMetaNames: readonly string[] }
@@ -22,6 +22,10 @@ export type GameTextRefRow = {
   description: string | null
   description_en: string | null
   description_jp: string | null
+  /** The keyword's flavor line (brown italic under the description in the game tooltip); keywords only. */
+  flavor: string | null
+  flavor_en: string | null
+  flavor_jp: string | null
   keyword_name: string | null
 }
 
@@ -48,12 +52,13 @@ function readEntries(path: string): GameTextEntry[] {
   const entries: GameTextEntry[] = []
   for (const item of list) {
     if (!item || typeof item !== 'object') continue
-    const { id, name, desc } = item as Record<string, unknown>
+    const { id, name, desc, flavor } = item as Record<string, unknown>
     if (typeof id !== 'string' || !id) continue
     entries.push({
       id,
       ...(typeof name === 'string' ? { name } : {}),
       ...(typeof desc === 'string' ? { desc } : {}),
+      ...(typeof flavor === 'string' ? { flavor } : {}),
     })
   }
   return entries
@@ -88,7 +93,7 @@ function matchKeywordMeta(krName: string | null, metaNames: readonly string[]): 
 /**
  * Rows of limbus.game_text_refs, sorted by id. An id in the SkillTag files is a 'skilltag' (also when a BattleKeywords
  * file has it); the rest are 'keyword'. Per id and language the richest entry of the files is kept (name/desc only are
- * scored, so an extra `flavor` field does not decide). Names lose trailing whitespace (the KR "공격 레벨 감소 " has one),
+ * scored, so an extra `flavor` field does not decide; the flavor is the richest entry's, else the first file's that has one). Names lose trailing whitespace (the KR "공격 레벨 감소 " has one),
  * descriptions stay verbatim. keyword_name is only set for keywords.
  */
 export function buildGameTextRefs(input: GameTextRefInput): GameTextRefRow[] {
@@ -97,7 +102,7 @@ export function buildGameTextRefs(input: GameTextRefInput): GameTextRefRow[] {
     for (const lang of LANGS) {
       for (const entry of lists[lang]) {
         const slot = byId.get(entry.id) ?? byId.set(entry.id, { kr: [], en: [], jp: [] }).get(entry.id)!
-        slot[lang].push({ id: entry.id, name: entry.name, desc: entry.desc })
+        slot[lang].push(entry)
       }
     }
     return byId
@@ -109,6 +114,8 @@ export function buildGameTextRefs(input: GameTextRefInput): GameTextRefRow[] {
     const best = Object.fromEntries(LANGS.map(lang => [lang, richestEntry(slot[lang])])) as PerLang<GameTextEntry | undefined>
     const name = (lang: GameTextLang) => orNull(best[lang]?.name?.trimEnd())
     const desc = (lang: GameTextLang) => (kind === 'keyword' ? orNull(best[lang]?.desc) : null)
+    const flavor = (lang: GameTextLang) =>
+      (kind === 'keyword' ? orNull(best[lang]?.flavor || slot[lang].find(entry => entry.flavor)?.flavor) : null)
     return {
       id,
       kind,
@@ -118,6 +125,9 @@ export function buildGameTextRefs(input: GameTextRefInput): GameTextRefRow[] {
       description: desc('kr'),
       description_en: desc('en'),
       description_jp: desc('jp'),
+      flavor: flavor('kr'),
+      flavor_en: flavor('en'),
+      flavor_jp: flavor('jp'),
       keyword_name: kind === 'keyword' ? matchKeywordMeta(name('kr'), input.keywordMetaNames) : null,
     }
   }
@@ -126,7 +136,7 @@ export function buildGameTextRefs(input: GameTextRefInput): GameTextRefRow[] {
   return rows.sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))
 }
 
-const COLUMNS = ['kind', 'name', 'name_en', 'name_jp', 'description', 'description_en', 'description_jp', 'keyword_name'] as const
+const COLUMNS = ['kind', 'name', 'name_en', 'name_jp', 'description', 'description_en', 'description_jp', 'flavor', 'flavor_en', 'flavor_jp', 'keyword_name'] as const
 
 /** Built rows against the stored ones (matched by id; extra stored columns such as updated_at are ignored). */
 export function diffGameTextRefs(stored: readonly GameTextRefRow[], next: readonly GameTextRefRow[]) {

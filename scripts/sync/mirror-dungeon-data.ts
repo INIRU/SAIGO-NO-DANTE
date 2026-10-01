@@ -23,7 +23,7 @@ import { join, resolve } from 'path'
 import { gameDataPaths, implicitDataDirWarning } from './source-paths'
 import { failOnLoggedErrors, printSyncSummary } from './sync-result'
 import { giftPlaceholders, PlaceholderReport } from './placeholder-rules'
-import { existingGiftLookup, extractActivationCondition, giftTiers, type GiftActivationCondition, rawGiftEffect, translateGiftDescForCondition, richestEntry, sameStoredIds, themeExclusiveGifts, type GiftTierTheme, themeBossUnitIds, themeFixedRewards, themeGiftRefs, themeNameColor, themeNameSegments, type ThemeNameSegments, unreadThemeKeys } from './mirror-dungeon-rules'
+import { existingGiftLookup, extractActivationCondition, giftTiers, type GiftActivationCondition, rawGiftEffect, translateGiftDescForCondition, richestEntry, sameStoredIds, themeExclusiveGifts, type GiftTierTheme, themeBossUnitIds, themeFixedRewards, themeGiftRefs, themeNameColor, themeNameSegments, type ThemeNameSegments, unreadThemeKeys, recipeCommonFiles } from './mirror-dungeon-rules'
 import { z } from 'zod'
 import { config } from 'dotenv'
 
@@ -237,20 +237,13 @@ function globFiles(dir: string, pattern: RegExp): string[] {
   }
 }
 
-const RECIPE_COMMON_FILES = [
-  'mirror-dungeon-common-data-md7.txt',
-  'mirror-dungeon-common-data-md7-nextupdate.txt',
-  'mirror-dungeon-common-data-md6.txt',
-  'mirror-dungeon-common-data.txt',
-]
-
 type LoadedRecipeData = {
   sourceFile: string | null
   recipes: z.infer<typeof RecipeRawSchema>[]
 }
 
 function loadLatestRecipeData(): LoadedRecipeData {
-  for (const fn of RECIPE_COMMON_FILES) {
+  for (const fn of recipeCommonFiles(globFiles(DATA_DIR, /^mirror-dungeon-common-data.*\.txt$/))) {
     const data = safeLoadJson(join(DATA_DIR, fn))
     if (!data) continue
     const table = (data as Record<string, unknown>).egoGiftCombineFixedTable as Record<string, unknown> | undefined
@@ -1119,7 +1112,7 @@ interface RecipeRow {
 async function syncRecipes(): Promise<void> {
   console.log(BOLD('\n[3/4] 레시피 동기화'))
 
-  // Load latest common data (md7 > md6 > base)
+  // Load the latest season's common data (highest md number, then base)
   const { sourceFile, recipes: rawRecipes } = loadLatestRecipeData()
   if (sourceFile) console.log(`  ${sourceFile}: ${rawRecipes.length}개 레시피 로드`)
 

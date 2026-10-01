@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { giftPlaceholders } from './placeholder-rules'
-import { extractActivationCondition, existingGiftLookup, fixedRewardGiftIds, rawGiftEffect, translateGiftDescForCondition, richestEntry, sameStoredIds, themeExclusiveGifts, themeFixedRewards, themeGiftRefs, unreadThemeKeys, themeNameColor, themeNameSegments, themeBossUnitIds } from './mirror-dungeon-rules'
+import { extractActivationCondition, existingGiftLookup, fixedRewardGiftIds, rawGiftEffect, translateGiftDescForCondition, richestEntry, sameStoredIds, themeExclusiveGifts, themeFixedRewards, themeGiftRefs, unreadThemeKeys, themeNameColor, themeNameSegments, themeBossUnitIds, recipeCommonFiles } from './mirror-dungeon-rules'
 
 // Cases from the extraction audit of 2026-09-30 (complete-data of 2026-09-24).
 describe('theme rewards and exclusive gifts', () => {
@@ -184,5 +184,17 @@ describe('REQ-DATA-SYNC-036 gift effects stored raw', () => {
     expect(sync).toContain('const effectBase = tokens(rawGiftEffect(baseLoc.desc))')
     expect(sync).toContain('extractActivationCondition(tokens(translateGiftDescForCondition(baseLoc.desc, getKrKeywordMap())), keyword)')
     expect(sync).not.toMatch(/effect_\w+(?:_en|_jp)?: .*cleanDesc/)
+  })
+})
+
+describe('REQ-DATA-SYNC-045 recipe common data of the newest season', () => {
+  it('REQ-DATA-SYNC-045 orders common data files by season number, a next-update file after its season, base last', () => {
+    expect(recipeCommonFiles([
+      'mirror-dungeon-common-data.txt', 'mirror-dungeon-common-data-md6.txt', 'mirror-dungeon-common-data-md7-nextupdate.txt',
+      'mirror-dungeon-common-data-md10.txt', 'mirror-dungeon-common-data-md7.txt', 'mirror-dungeon-common-data-md8.txt', 'unrelated.txt',
+    ])).toEqual([
+      'mirror-dungeon-common-data-md10.txt', 'mirror-dungeon-common-data-md8.txt', 'mirror-dungeon-common-data-md7.txt',
+      'mirror-dungeon-common-data-md7-nextupdate.txt', 'mirror-dungeon-common-data-md6.txt', 'mirror-dungeon-common-data.txt',
+    ])
   })
 })
