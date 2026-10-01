@@ -6,7 +6,7 @@ import { useState, useRef, useEffect, useCallback, useContext, useMemo } from 'r
 import useSWR from 'swr'
 import { createPortal } from 'react-dom'
 import Image from 'next/image'
-import NoteBlockViewer, { NoteGiftClickContext } from '@/components/notes/NoteBlockViewer'
+import NoteBlockViewer, { NoteGiftClickContext, NoteKeywordLabel } from '@/components/notes/NoteBlockViewer'
 import { parseBlockDocument, NOTE_PREFIX } from '@/lib/notes/blocks'
 import { parseNoteImage } from '@/lib/notes/images'
 import { noteBlockTokenPattern, noteInlineMarkdownPattern, noteTokenPattern } from '@/lib/notes/inline-tokens'
@@ -515,52 +515,6 @@ export function KeywordChipDescription({ keyword, info }: { keyword: string; inf
   return <>{description === undefined ? '…' : formatGameText(description, '#aaa', true)}</>
 }
 
-export function KeywordChip({ keyword }: { keyword: string }) {
-  const t = useTranslations()
-  const locale = useLocale()
-  const keywords = useKeywords()
-  const { sinMap: kwSinMap, getIconUrl } = useKeywordData()
-  const ref = useRef<HTMLSpanElement>(null)
-  const { rect, show, scheduleHide, cancelHide, toggle } = useTooltip(ref)
-  const iconUrl = getIconUrl(keyword)
-  const sinType = kwSinMap[keyword]
-  const sc = sinType ? (SIN_COLORS[sinType] ?? '#c8900a') : '#c8900a'
-  const info = keywords[keyword]
-  const localName = localizeDeckKeyword(keyword, info, locale as SupportedLang)
-  return (
-    <span
-      ref={ref}
-      onMouseEnter={show}
-      onMouseLeave={scheduleHide}
-      onClick={toggle}
-      style={chipStyle(sc)}
-    >
-      {iconUrl && <Image src={iconUrl} alt="" width={16} height={16} />}
-      <span style={{ color: sc, fontSize: '0.75rem', fontWeight: 600 }}>{localName}</span>
-
-      {rect && createPortal(
-        <TooltipPopup rect={rect} onMouseEnter={cancelHide} onMouseLeave={scheduleHide}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: info ? 4 : 0 }}>
-            {iconUrl && <Image src={iconUrl} alt="" width={14} height={14} />}
-            <span style={{ color: sc, fontSize: '0.8125rem', fontWeight: 700 }}>{localName}</span>
-          </div>
-          {info && (
-            <div style={{ color: '#aaa', fontSize: '0.75rem', lineHeight: 1.55 }}>
-              <KeywordChipDescription keyword={keyword} info={info} />
-              {info.maxStack != null && (
-                <span style={{ display: 'block', marginTop: 2, color: '#999', fontSize: '0.8125rem' }}>
-                  {t('keyword.maxStack')} {info.maxStack}
-                </span>
-              )}
-            </div>
-          )}
-        </TooltipPopup>,
-        document.body,
-      )}
-    </span>
-  )
-}
-
 // ── EgoGiftChip ─────────────────────────────────────────────────────────
 const EGO_GIFT_KW_COLORS = GIFT_KEYWORD_COLORS
 
@@ -766,7 +720,8 @@ export function NoteRenderer({
           : <FallbackChip key={`${keyPrefix}-e${m.index}`} type="e" tokenKey={m[3]} />
         )
       } else if (m[4]) {
-        elements.push(<KeywordChip key={`${keyPrefix}-k${m.index}`} keyword={m[4]} />)
+        // Memo keywords read like game text: an inline label, not a chip box.
+        elements.push(<NoteKeywordLabel key={`${keyPrefix}-k${m.index}`} id={m[4]} />)
       } else if (m[5]) {
         const e = identityLookup[m[5]]
         elements.push(e
