@@ -85,13 +85,22 @@ export function keywordIconKey(name: string, slug: string | null): string | null
 type Resolution = { entry: ManifestEntry; sprite: string } | { reason: 'no-sprite' | 'ambiguous'; sprites: string[] }
 
 /**
+ * Tags the game gives no sprite of their own (no `iconId`, no image of that name in any extraction) → the image that shows the
+ * same effect. AttackLevelAdder ("공격 레벨+", one turn of Offense Level) borrows MD511, the Offense Level sword with a "+".
+ */
+export const KEYWORD_SPRITE_FALLBACKS: Readonly<Record<string, string>> = { AttackLevelAdder: 'MD511' }
+
+/** The sprite name of a tag: the buff's `iconId`, else a fallback for tags without art, else the tag itself. */
+export const spriteOfTag = (tag: string, iconIds: ReadonlyMap<string, string>) => iconIds.get(tag) ?? KEYWORD_SPRITE_FALLBACKS[tag] ?? tag
+
+/**
  * The one sprite of a keyword: for each candidate tag the buff's `iconId` (else the tag) names the sprite, which must have exactly one image
  * in the manifest. Tags that lead to different sprites are settled by the primary tag; otherwise the keyword is reported, not guessed.
  */
 function resolveSprite(tags: string[], primaryTag: string | undefined, iconIds: ReadonlyMap<string, string>, manifest: readonly ManifestEntry[]): Resolution {
   const found = new Map<string, ManifestEntry>(), bySprite = new Map<string, string>(), ambiguous = new Set<string>()
   for (const tag of tags) {
-    const sprite = iconIds.get(tag) ?? tag
+    const sprite = spriteOfTag(tag, iconIds)
     bySprite.set(tag, sprite)
     const matches = manifest.filter(entry => entry.kind === KEYWORD_SPRITE_KIND && entry.name === sprite)
     if (!matches.length) continue
