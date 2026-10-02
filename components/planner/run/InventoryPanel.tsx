@@ -22,7 +22,7 @@ interface Props {
   recipes: RecipeData[]
 }
 
-/** Held gifts in the order they were recorded (click for details, × to remove), with the fusions they can make. */
+/** Held gifts in the order they were recorded (click for details, × to remove), then the fusions they can make. */
 export default function InventoryPanel({ state, dispatch, giftMap, recipes }: Props) {
   const t = useTranslations('planner.run')
   const locale = useLocale() as SupportedLang
@@ -47,11 +47,27 @@ export default function InventoryPanel({ state, dispatch, giftMap, recipes }: Pr
 
   return (
     <>
+      <section className="min-w-0" aria-labelledby="run-held-gifts">
+        <h2 id="run-held-gifts" className={`mb-3 ${runSectionTitle}`}>{t('heldGiftsCount', { count: inventoryGifts.length })}</h2>
+        {inventoryGifts.length === 0 ? (
+          <p className="text-xs text-[var(--text-tertiary)]">{t('noHeldGifts')}</p>
+        ) : (
+          <div className="flex flex-wrap content-start gap-2">
+            {inventoryGifts.map(gift => (
+              <GiftCard key={gift.game_id} gift={gift} size="3.5rem" showName={false} title={giftName(gift)} ariaLabel={giftName(gift)}
+                onClick={() => { modalTriggerRef.current = document.activeElement as HTMLElement | null; setModalGift(gift) }}
+                onRemove={() => dispatch({ type: 'REMOVE_GIFT', giftId: String(gift.game_id) })}
+                conditionStatus={conditionOf(gift)} conditionDetail={false} />
+            ))}
+          </div>
+        )}
+      </section>
+
       {craftable.length > 0 && (
         <section aria-labelledby="run-craftable" className="rounded-md border border-[rgba(200,144,10,0.3)] bg-[rgba(200,144,10,0.07)] p-3">
-          <h3 id="run-craftable" className="mb-2.5 flex items-center gap-1.5 text-sm font-semibold text-[var(--gold-light)]">
+          <h2 id="run-craftable" className="mb-2.5 flex items-center gap-1.5 text-sm font-semibold text-[var(--gold-light)]">
             <Beaker aria-hidden="true" size={14} /> {t('craftableCount', { count: craftable.length })}
-          </h3>
+          </h2>
           <ul className="space-y-2">
             {craftable.slice(0, 5).map(fusion => (
               <li key={fusion.recipe.id} className="flex items-center gap-1.5">
@@ -75,22 +91,6 @@ export default function InventoryPanel({ state, dispatch, giftMap, recipes }: Pr
           </ul>
         </section>
       )}
-
-      <section className="min-w-0" aria-labelledby="run-held-gifts">
-        <h3 id="run-held-gifts" className={`mb-3 ${runSectionTitle}`}>{t('heldGiftsCount', { count: inventoryGifts.length })}</h3>
-        {inventoryGifts.length === 0 ? (
-          <p className="text-xs text-[var(--text-tertiary)]">{t('noHeldGifts')}</p>
-        ) : (
-          <div className="flex flex-wrap content-start gap-2">
-            {inventoryGifts.map(gift => (
-              <GiftCard key={gift.game_id} gift={gift} size="3.5rem" showName={false} title={giftName(gift)} ariaLabel={giftName(gift)}
-                onClick={() => { modalTriggerRef.current = document.activeElement as HTMLElement | null; setModalGift(gift) }}
-                onRemove={() => dispatch({ type: 'REMOVE_GIFT', giftId: String(gift.game_id) })}
-                conditionStatus={conditionOf(gift)} conditionDetail={false} />
-            ))}
-          </div>
-        )}
-      </section>
 
       {modalGift && <PlannerGiftModal gift={modalGift} onClose={closeGiftModal} conditionStatus={conditionOf(modalGift)} />}
     </>

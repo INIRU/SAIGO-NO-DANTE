@@ -1,8 +1,8 @@
 'use client'
 
-import { useMemo, useState, type ReactNode } from 'react'
+import { useMemo, useState } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
-import { Check, Search } from 'lucide-react'
+import { Check } from 'lucide-react'
 import type { RunState, RunAction } from '@/lib/planner/run-types'
 import type { ThemeData, GiftData } from '@/lib/planner/types'
 import { getGiftActivationConditionStatus, getGiftConditionCountsForSlots } from '@/lib/planner/gift-condition-status'
@@ -10,7 +10,6 @@ import { getGiftsFromThemes, themeExclusiveGiftIds } from '@/lib/planner/fusion'
 import { planThemeGiftIds } from '@/lib/planner/run-priority-gifts'
 import GiftCatalog, { giftKeywordIcon, toCatalogGift, useGiftCatalogFilters, type GiftCatalogCardProps } from '@/components/gifts/GiftCatalog'
 import type { EgoGift } from '@/components/mirror-dungeon/types'
-import GiftArtwork from '@/components/ui/GiftArtwork'
 import { getLocalizedName } from '@/lib/i18n/localize'
 import type { SupportedLang } from '@/lib/i18n/types'
 
@@ -21,19 +20,17 @@ interface Props {
   giftMap: Map<number, GiftData>
   themes: ThemeData[]
   onChooseTheme: () => void
-  /** Held gifts and fusions, under the final gift progress in the side column. */
-  aside?: ReactNode
 }
 
 export const runSectionTitle = 'font-[family-name:var(--font-heading)] text-base text-[var(--gold-light)]'
 
 /**
- * The run's gift tab: one list of this floor's gifts and the plan's final gifts, narrowed by check filters. Groups follow
- * the PiP: this floor's plan, final targets, then gifts only this floor gives outside the plan (red mark), then the rest
- * by keyword. A click records or removes an acquisition. The side column keeps final gift progress, adding a
- * final gift, fusions and held gifts.
+ * The run page's gift record column: one list of this floor's gifts and the plan's final gifts, narrowed by check filters.
+ * Groups follow the PiP: this floor's plan, final targets, then gifts only this floor gives outside the plan (red mark),
+ * then the rest by keyword. A click records or removes an acquisition; it is how a wrong reading is corrected and how a
+ * run is recorded where the screen cannot be connected.
  */
-export default function GiftCheckSection({ state, dispatch, gifts, giftMap, themes, onChooseTheme, aside }: Props) {
+export default function GiftCheckSection({ state, dispatch, gifts, giftMap, themes, onChooseTheme }: Props) {
   const t = useTranslations('planner.run')
   const locale = useLocale() as SupportedLang
   const localized = (item: { name: string; name_en?: string | null; name_jp?: string | null }) => getLocalizedName({ name_kr: item.name, name_en: item.name_en, name_jp: item.name_jp }, locale)
@@ -105,81 +102,23 @@ export default function GiftCheckSection({ state, dispatch, gifts, giftMap, them
     </div>
   )
 
-  // 최종 기프트 진행과 추가: 목록을 누르면 획득 기록이라 목표에 넣는 입구는 따로 둔다
-  const targetGiftList = useMemo(() => [...targetIds].map(id => giftMap.get(Number(id))).filter(Boolean) as GiftData[], [targetIds, giftMap])
-  const ownedTargetCount = targetGiftList.filter(gift => ownedIds.has(String(gift.game_id))).length
-  const [targetSearch, setTargetSearch] = useState('')
-  const targetSearchResults = useMemo(() => {
-    const needle = targetSearch.trim().toLocaleLowerCase()
-    if (!needle) return []
-    return gifts.filter(gift => localized(gift).toLocaleLowerCase().includes(needle))
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [targetSearch, gifts, locale])
-
   return (
-    <div className="grid items-start gap-x-6 gap-y-8 pt-3 sm:pt-4 lg:grid-cols-[minmax(0,1fr)_18rem] xl:grid-cols-[minmax(0,1fr)_20rem]"
-      style={{ '--gift-catalog-bg': 'var(--bg-card)' } as React.CSSProperties}>
-      <section className="min-w-0" aria-labelledby="run-floor-gifts">
-        <div className="mb-2 flex flex-wrap items-baseline gap-x-3 gap-y-1">
-          <h3 id="run-floor-gifts" className={runSectionTitle}>{t('giftListTitle')}</h3>
-          {currentTheme && <span className="text-sm text-[var(--text-secondary)]">{localized(currentTheme)}</span>}
-        </div>
-        {!currentTheme && (
-          <div className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-md border border-dashed border-[var(--border)] px-4 py-3">
-            <p className="min-w-0 flex-1 basis-48 text-sm text-[var(--text-secondary)]">{t('chooseThemeHint')}</p>
-            <button type="button" onClick={onChooseTheme} className="min-h-10 rounded-md border border-[var(--border-gold)] px-4 text-sm font-semibold text-[var(--gold-light)] hover:bg-[var(--bg-elevated)] focus-visible:outline-2 focus-visible:outline-[var(--gold-light)]">{t('chooseThemeAction')}</button>
-          </div>
-        )}
-        <GiftCatalog compact gifts={catalog} getGiftKeywordIcon={giftKeywordIcon} filters={filters} pinned={pinned}
-          markedIds={ownedIds} markedLabel={t('acquired')} onGiftClick={toggleOwned}
-          cardProps={gift => cardPropsById.get(gift.id)}
-          toolbarEnd={filterChecks} />
-        {catalog.length === 0 && <p className="py-8 text-center text-sm text-[var(--text-tertiary)]">{t('targetFilterEmpty')}</p>}
-      </section>
-
-      <div className="order-first flex min-w-0 flex-col gap-8 lg:order-none lg:sticky lg:top-3 lg:border-l lg:border-[var(--border)] lg:pl-6">
-        <section className="min-w-0" aria-labelledby="run-target-gifts">
-          <div className="mb-2 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-            <h3 id="run-target-gifts" className={runSectionTitle}>{t('targetGifts')}</h3>
-            {targetGiftList.length > 0 && (
-              <span className="text-xs tabular-nums text-[var(--text-secondary)]">
-                {t('targetProgress', { acquired: ownedTargetCount, total: targetGiftList.length })}
-              </span>
-            )}
-          </div>
-          {targetGiftList.length > 0 ? (
-            <div aria-hidden="true" className="mb-3 h-1 overflow-hidden rounded-full bg-[var(--bg-elevated)]">
-              <div className="h-full rounded-full bg-[var(--gold)] transition-[width] duration-300" style={{ width: `${(ownedTargetCount / targetGiftList.length) * 100}%` }} />
-            </div>
-          ) : <p className="mb-3 text-xs leading-5 text-[var(--text-tertiary)]">{t('noTargetsHint')}</p>}
-          <div className="relative">
-            <Search aria-hidden="true" size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
-            <input aria-label={t('addTargetGift')} value={targetSearch} onChange={event => setTargetSearch(event.target.value)} placeholder={t('addTargetGift')}
-              className="min-h-10 w-full rounded-md border border-[var(--border)] bg-[var(--bg-panel)] pl-8 pr-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus-visible:border-[var(--gold)] focus-visible:outline-none" />
-            {targetSearch.trim() && <p role="status" className="sr-only">{t('giftSearchCount', { count: targetSearchResults.length })}</p>}
-            {targetSearchResults.length > 0 && (
-              <ul className="absolute inset-x-0 top-full z-30 mt-1 max-h-60 overflow-y-auto rounded-md border border-[var(--border)] bg-[var(--bg-card)] shadow-[0_0.5rem_1.5rem_rgba(0,0,0,0.5)]">
-                {targetSearchResults.map(gift => {
-                  const isTarget = targetIds.has(String(gift.game_id))
-                  return (
-                    <li key={gift.game_id}>
-                      <button type="button" disabled={isTarget}
-                        onClick={() => { dispatch({ type: 'ADD_TARGET_GIFT', giftId: String(gift.game_id) }); setTargetSearch('') }}
-                        className="flex min-h-11 w-full items-center gap-2 px-3 text-left text-sm text-[var(--text-primary)] hover:bg-[rgba(200,144,10,0.1)] disabled:opacity-50">
-                        <span className="w-8 shrink-0"><GiftArtwork gift={gift} displayName={localized(gift)} sizes="32px" /></span>
-                        <span className="min-w-0 flex-1 truncate">{localized(gift)}</span>
-                        {isTarget && <span className="text-xs text-[var(--gold)]">{t('added')}</span>}
-                      </button>
-                    </li>
-                  )
-                })}
-              </ul>
-            )}
-          </div>
-        </section>
-
-        {aside}
+    <section className="min-w-0" aria-labelledby="run-floor-gifts" style={{ '--gift-catalog-bg': 'var(--bg-deep)' } as React.CSSProperties}>
+      <div className="mb-2 flex flex-wrap items-baseline gap-x-2 gap-y-1">
+        <h2 id="run-floor-gifts" className={runSectionTitle}>{t('floorGiftRecord', { floor: state.currentFloor })}</h2>
+        {currentTheme && <span className="text-[0.8125rem] text-[var(--text-secondary)]">{localized(currentTheme)}</span>}
       </div>
-    </div>
+      {!currentTheme && (
+        <div className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-md border border-dashed border-[var(--border)] px-4 py-3">
+          <p className="min-w-0 flex-1 basis-48 text-sm text-[var(--text-secondary)]">{t('chooseThemeHint')}</p>
+          <button type="button" onClick={onChooseTheme} className="min-h-10 rounded-md border border-[var(--border-gold)] px-4 text-sm font-semibold text-[var(--gold-light)] hover:bg-[var(--bg-elevated)] focus-visible:outline-2 focus-visible:outline-[var(--gold-light)]">{t('chooseThemeAction')}</button>
+        </div>
+      )}
+      <GiftCatalog compact gifts={catalog} getGiftKeywordIcon={giftKeywordIcon} filters={filters} pinned={pinned}
+        markedIds={ownedIds} markedLabel={t('acquired')} onGiftClick={toggleOwned}
+        cardProps={gift => cardPropsById.get(gift.id)}
+        toolbarEnd={filterChecks} />
+      {catalog.length === 0 && <p className="py-8 text-center text-sm text-[var(--text-tertiary)]">{t('targetFilterEmpty')}</p>}
+    </section>
   )
 }
