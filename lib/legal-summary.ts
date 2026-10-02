@@ -37,6 +37,23 @@ export const LEGAL_KEY_POINTS: Record<LegalLang, { title: string; items: string[
 
 /** What each version changed, shown in the update modal. A version missing here shows the key points instead. */
 export const LEGAL_CHANGES: Record<string, Record<LegalLang, string[]>> = {
+  v6: {
+    ko: [
+      '어시스트 모드 **인식 개선 참여(선택)**로 보낸 게임 화면을 **인식 모델 학습에 사용**해요. 새로 보내는 화면에는 **삭제 기한을 두지 않아요**. 계정과 연결하지 않는 것은 그대로예요.',
+      '이 내용으로 참여 여부를 **다시 물어봐요**. 2026년 10월 2일 이전에 보낸 화면은 약속대로 **180일 뒤 삭제**해요.',
+      '**전체 화면**을 공유하면 화면에 보이는 다른 창이 함께 담길 수 있어요. 게임 창을 공유해 주세요.',
+    ],
+    en: [
+      'Game frames sent through Assist mode\'s **recognition improvement (optional)** are **used to train the recognition models**. Frames sent from now on have **no deletion date**. They are still not linked to your account.',
+      'You will be **asked again** whether to take part. Frames sent before October 2, 2026 are **deleted after 180 days**, as promised.',
+      'If you share your **entire screen**, other windows shown on it may be included. Please share the game window.',
+    ],
+    ja: [
+      'アシストモードの**認識改善への参加（任意）**で送信されたゲーム画面を**認識モデルの学習に使用**します。今後送信される画面には**削除期限を設けません**。アカウントと結び付けない点は変わりません。',
+      'この内容で参加するかどうかを**もう一度確認**します。2026年10月2日より前に送信された画面は、約束どおり**180日後に削除**します。',
+      '**画面全体**を共有すると、表示されている他のウィンドウが含まれることがあります。ゲームのウィンドウを共有してください。',
+    ],
+  },
   v5: {
     ko: [
       '어시스트 모드 **인식 개선 참여(선택)**를 켠 경우, 인식에 **실패한 동작**(합성 한 번, 기프트 획득 창, 판매)의 게임 화면을 **동작당 최대 48장** 보내요. 동작별로 읽었는지 여부의 횟수와 직접 추가하거나 지운 기프트 기록도 함께 보내요. 제대로 인식한 동작의 화면은 브라우저에서 바로 지우고 보내지 않아요.',
