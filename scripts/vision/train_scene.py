@@ -10,6 +10,12 @@ Manifest JSON schema:
  "frame_count":515679}}}
 Paths are resolved relative to --video-root. Optional sha256 is descriptive;
 the 21 GB source is not re-hashed on each training run.
+
+Image mode (--images, from scripts/vision/build_scene_dataset.py) trains on image files instead: each line names
+{root, file, label, split, source, shape}, and --roots gives each root's folder. --labels fixes the class order to the
+shipped labels.json, and --init-onnx starts from a shipped scene.onnx (its weights, batch norms already folded) instead of
+ImageNet, so screens the new frames barely cover are not forgotten. --view crop feeds the 16:9 game view in the middle of
+the capture instead of the whole frame stretched.
 """
 import argparse
 import json
@@ -147,6 +153,78 @@ class FrameDataset(Dataset):
         return self.transform(self.augment(image) if self.augment else image), label
 
 
+def game_view(image):
+    """The 16:9 view in the middle of a capture: the game lays its screens out in it, whatever the window's shape."""
+    width, height = image.size
+    if width * 9 < height * 16:
+        view = round(width * 9 / 16)
+        return image.crop((0, (height - view) // 2, width, (height - view) // 2 + view))
+    view = round(height * 16 / 9)
+    return image.crop(((width - view) // 2, 0, (width - view) // 2 + view, height))
+
+
+class ImageDataset(Dataset):
+    def __init__(self, rows, roots, labels, preprocessing, augment=None, view="squash"):
+        self.transform = preprocessing
+        self.augment = augment
+        self.items = []
+        for row in rows:
+            with Image.open(roots[row["root"]] / row["file"]) as image:
+                image = image.convert("RGB")
+                # Kept at 480x270 like the recording frames; --view decides what of the capture fills it.
+                self.items.append(((game_view(image) if view == "crop" else image).resize((480, 270), Image.BOX), labels[row["label"]]))
+
+    def __len__(self):
+        return len(self.items)
+
+    def __getitem__(self, index):
+        image, label = self.items[index]
+        return self.transform(self.augment(image) if self.augment else image), label
+
+
+def read_image_annotations(path, roots, labels):
+    rows = [json.loads(line) for line in Path(path).read_text().splitlines() if line.strip()]
+    for number, row in enumerate(rows, 1):
+        if row.get("root") not in roots or row.get("label") not in labels or row.get("split") not in ("train", "validation", "test"):
+            raise ValueError(f"image annotation line {number}: unknown root, label or split")
+        if not (roots[row["root"]] / row["file"]).is_file():
+            raise ValueError(f"image annotation line {number}: missing file {row['file']}")
+    return rows
+
+
+def from_onnx(path, classes):
+    """A MobileNetV3-small holding the weights of a model this folder exported (scene.onnx, icon-classifier.onnx). The
+    export folded every batch norm into its convolution, so the batch norms become identities and the convolutions take
+    the folded weights and biases."""
+    import onnx
+    from onnx import numpy_helper
+    graph = onnx.load(str(path)).graph
+    stored = {item.name: numpy_helper.to_array(item) for item in graph.initializer}
+    weights = {kind: [[stored[name] for name in node.input[1:]] for node in graph.node if node.op_type == kind] for kind in ("Conv", "Gemm")}
+    model = models.mobilenet_v3_small()
+    model.classifier[-1] = nn.Linear(model.classifier[-1].in_features, classes)
+    for module in list(model.modules()):
+        for name, child in list(module.named_children()):
+            if isinstance(child, nn.BatchNorm2d):
+                setattr(module, name, nn.Identity())
+    for kind, layers in (("Conv", [m for m in model.modules() if isinstance(m, nn.Conv2d)]), ("Gemm", [m for m in model.modules() if isinstance(m, nn.Linear)])):
+        if len(layers) != len(weights[kind]):
+            raise ValueError(f"{path}: {len(weights[kind])} {kind} nodes for {len(layers)} layers")
+        for layer, values in zip(layers, weights[kind]):
+            if tuple(layer.weight.shape) != values[0].shape:
+                raise ValueError(f"{path}: {kind} weight {values[0].shape} for a layer of {tuple(layer.weight.shape)}")
+            layer.weight = nn.Parameter(torch.from_numpy(values[0].copy()))
+            layer.bias = nn.Parameter(torch.from_numpy(values[1].copy())) if len(values) > 1 else None
+    model.eval()
+    side = graph.input[0].type.tensor_type.shape.dim[2].dim_value or 224
+    sample = torch.randn(1, 3, side, side)
+    expected = ort.InferenceSession(str(path), providers=["CPUExecutionProvider"]).run(None, {graph.input[0].name: sample.numpy()})[0]
+    with torch.inference_mode():
+        if not np.allclose(model(sample).numpy(), expected, atol=1e-3, rtol=1e-3):
+            raise ValueError(f"{path}: the rebuilt model does not reproduce the ONNX outputs")
+    return model
+
+
 def evaluate(model, loader, device, labels):
     model.eval()
     actual, predicted = [], []
@@ -236,18 +314,31 @@ def main():
     parser.add_argument("--epochs", type=int, default=20)
     parser.add_argument("--batch-size", type=int, default=16)
     parser.add_argument("--self-check", action="store_true")
+    parser.add_argument("--images", type=Path, help="annotations.jsonl of image files (build_scene_dataset.py)")
+    parser.add_argument("--roots", nargs="*", default=[], help="name=folder for each root the image annotations name")
+    parser.add_argument("--labels", type=Path, help="labels.json fixing the class order (image mode)")
+    parser.add_argument("--init-onnx", type=Path, help="start from this exported scene model instead of ImageNet")
+    parser.add_argument("--view", choices=("squash", "crop"), default="squash")
     args = parser.parse_args()
     if args.self_check:
         self_check()
         return
-    if not all((args.manifest, args.annotations, args.video_root, args.out)):
-        parser.error("--manifest, --annotations, --video-root, and --out are required")
     if args.epochs < 1 or args.batch_size < 1:
         parser.error("--epochs and --batch-size must be positive")
-    manifest = json.loads(args.manifest.read_text())
-    rows = read_annotations(args.annotations, manifest)
-    splits = split_scenes(rows)
-    labels = sorted({r["label"] for r in rows})
+    if args.images:
+        if not (args.out and args.labels and args.roots):
+            parser.error("--images needs --roots, --labels and --out")
+        roots = {name: Path(folder) for name, folder in (item.split("=", 1) for item in args.roots)}
+        labels = json.loads(args.labels.read_text())
+        rows = read_image_annotations(args.images, roots, labels)
+        splits = {name: [r for r in rows if r["split"] == name] for name in ("train", "validation", "test")}
+    else:
+        if not all((args.manifest, args.annotations, args.video_root, args.out)):
+            parser.error("--manifest, --annotations, --video-root, and --out are required")
+        manifest = json.loads(args.manifest.read_text())
+        rows = read_annotations(args.annotations, manifest)
+        splits = split_scenes(rows)
+        labels = sorted({r["label"] for r in rows})
     label_ids = {label: i for i, label in enumerate(labels)}
     random.seed(42)
     np.random.seed(42)
@@ -266,17 +357,22 @@ def main():
         transforms.ColorJitter(brightness=.25, contrast=.2, saturation=.2),
         transforms.RandomResizedCrop((270, 480), scale=(.85, 1), ratio=(1.7, 1.85)),
     ])
-    data = {name: FrameDataset(part, manifest, args.video_root, label_ids, preprocessing,
-                               augment if name == "train" else None)
+    data = {name: ImageDataset(part, roots, label_ids, preprocessing, augment if name == "train" else None, args.view) if args.images
+            else FrameDataset(part, manifest, args.video_root, label_ids, preprocessing, augment if name == "train" else None)
             for name, part in splits.items()}
     # Battle frames dominate recordings: sample every class about equally per epoch.
     counts = Counter(label for _, label in data["train"].items)
-    sample_weights = [1 / counts[label] for _, label in data["train"].items]
+    # In image mode a screen with a handful of frames is not repeated to a full share: the warm start already knows it.
+    floor = 50 if args.images else 1
+    sample_weights = [1 / max(counts[label], floor) for _, label in data["train"].items]
     sampler = torch.utils.data.WeightedRandomSampler(sample_weights, num_samples=len(sample_weights), replacement=True)
     loaders = {name: DataLoader(ds, batch_size=args.batch_size, sampler=sampler if name == "train" else None)
                for name, ds in data.items()}
-    model = models.mobilenet_v3_small(weights=weights)
-    model.classifier[-1] = nn.Linear(model.classifier[-1].in_features, len(labels))
+    if args.init_onnx:
+        model = from_onnx(args.init_onnx, len(labels))
+    else:
+        model = models.mobilenet_v3_small(weights=weights)
+        model.classifier[-1] = nn.Linear(model.classifier[-1].in_features, len(labels))
     for parameter in model.parameters():
         parameter.requires_grad = False
     # The last feature blocks and the classifier head learn; earlier ImageNet features stay fixed.
@@ -284,8 +380,10 @@ def main():
     for parameter in trainable:
         parameter.requires_grad = True
     model.to(device)
-    optimizer = torch.optim.AdamW([{"params": model.features[9:].parameters(), "lr": 3e-4},
-                                   {"params": model.classifier.parameters(), "lr": 1e-3}], weight_decay=1e-4)
+    # A model that already knows the screens is corrected with smaller steps than one starting from ImageNet.
+    rate = .2 if args.init_onnx else 1
+    optimizer = torch.optim.AdamW([{"params": model.features[9:].parameters(), "lr": 3e-4 * rate},
+                                   {"params": model.classifier.parameters(), "lr": 1e-3 * rate}], weight_decay=1e-4)
     loss_fn = nn.CrossEntropyLoss(label_smoothing=.05)
     for epoch in range(args.epochs):
         model.train()
@@ -313,7 +411,7 @@ def main():
         "color_order": "RGB",
         "input_layout": "NCHW",
         "input_size": [224, 224],
-        "resize": "full frame directly to 224x224; aspect ratio is stretched",
+        "resize": "the 16:9 game view in the middle of the capture to 224x224" if args.view == "crop" else "full frame directly to 224x224; aspect ratio is stretched",
         "interpolation": "bilinear with antialias",
         "scale": 0.00392156862745098,
         "mean": weights.transforms().mean,
@@ -329,10 +427,11 @@ def main():
         "onnx_max_abs_error": parity,
         "onnx_parity_input": "first actual held-out test frame",
         "preprocessing": preprocess_report,
-        "training": {"initialization": "MobileNet_V3_Small_Weights.DEFAULT", "trainable": "features[9:] and classifier",
+        "training": {"initialization": str(args.init_onnx) if args.init_onnx else "MobileNet_V3_Small_Weights.DEFAULT", "trainable": "features[9:] and classifier",
                      "augmentation": "black UI theme simulation (p=.3), color jitter, 85-100% crops", "sampling": "class-balanced",
                      "epochs": args.epochs, "seed": 42},
-        "limitations": [f"{len(rows)} reviewed frames from {len({r['video'] for r in rows})} recordings",
+        "limitations": [f"{len(rows)} frames, {sum(r.get('source') == 'model' for r in rows)} of them labelled by the earlier model" if args.images
+                        else f"{len(rows)} reviewed frames from {len({r['video'] for r in rows})} recordings",
                         "screen class is not proof of a committed transaction",
                         "battle includes victory screens", "shop includes purchase confirmations and skill changes"],
     }, indent=2))
