@@ -30,6 +30,12 @@ describe('REQ-COMMUNITY-012 personal shelf', () => {
     expect(count(html, 'data-card="true"')).toBe(0)
   })
 
+  it('REQ-COMMUNITY-012 the placeholder puts no block element inside a paragraph (browsers close such a <p>, which breaks hydration)', () => {
+    const html = render()
+    expect(html).toContain('data-skeleton')
+    expect(html).not.toMatch(/<p\b[^>]*>(?:(?!<\/p>)[\s\S])*<div\b/)
+  })
+
   it('REQ-COMMUNITY-012 shows cached picks at once without the reveal', () => {
     state.swr = { data: { items: [{ id: 'a' }, { id: 'b' }, { id: 'c' }, { id: 'd' }] } }
     const html = render()
