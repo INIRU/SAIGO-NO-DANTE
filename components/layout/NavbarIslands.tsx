@@ -1,12 +1,12 @@
 'use client'
 
 import { Suspense, useEffect, useRef, useState } from 'react'
-import { ChevronDown, MessageCircle } from 'lucide-react'
+import { ChevronDown } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { usePathname } from '@/lib/i18n/navigation'
 import type { TranslationKey } from '@/lib/i18n/translations'
 import PathnameBoundary from './PathnameBoundary'
-import { NavLink, groupItem, isActiveHref, menuRow, navItem, panel, useNavGroups } from './nav-shared'
+import { NavLink, groupItem, isActiveHref, menuRow, panel, useNavGroups } from './nav-shared'
 
 function Groups({ pathname }: { pathname: string | null }) {
   const groups = useNavGroups()
@@ -80,22 +80,6 @@ function Groups({ pathname }: { pathname: string | null }) {
 /** Desktop menu groups; the current group's underline and the dropdown's current page need the pathname. */
 export function NavbarGroups() {
   return <PathnameBoundary>{pathname => <Groups pathname={pathname} />}</PathnameBoundary>
-}
-
-function SupportLink({ pathname, unread }: { pathname: string | null; unread: boolean }) {
-  const t = useTranslations()
-  const active = isActiveHref(pathname, '/support')
-  return (
-    <NavLink href="/support" data-testid="nav-support" aria-current={active ? 'page' : undefined} className={`${navItem} ${active ? 'text-[var(--gold)]' : 'text-[var(--text-secondary)]'}`}>
-      <MessageCircle size={16} aria-hidden="true" />
-      {unread && <span className="-ml-2.5 -mt-3.5 h-2 w-2 shrink-0 rounded-full bg-[var(--error)] ring-2 ring-[var(--bg-deep)]" role="img" aria-label={t('supportDesk.unread' as TranslationKey)} />}
-      <span className="hidden xl:inline">{t('nav.support' as TranslationKey)}</span>
-    </NavLink>
-  )
-}
-
-export function NavbarSupportLink({ unread }: { unread: boolean }) {
-  return <PathnameBoundary>{pathname => <SupportLink pathname={pathname} unread={unread} />}</PathnameBoundary>
 }
 
 function RouteWatcher({ onRoute }: { onRoute: () => void }) {

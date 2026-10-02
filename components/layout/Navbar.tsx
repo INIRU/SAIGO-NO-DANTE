@@ -3,16 +3,20 @@
 import { Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import { useTapEgg } from '@/components/community/easterEggs'
 import { useSession, signOut } from 'next-auth/react'
-import { Menu, X, Search } from 'lucide-react'
+import { Bell, Menu, X, Search } from 'lucide-react'
 import { DEFAULT_AVATAR_URL } from '@/lib/constants/game'
 import LanguageSwitcher from '@/components/ui/LanguageSwitcher'
 import DanteLogo from '@/components/brand/DanteLogo'
 import { useTranslations } from 'next-intl'
 import type { TranslationKey } from '@/lib/i18n/translations'
+import { useNotifications } from '@/hooks/useNotifications'
 import { useSupportUnread } from '@/hooks/useSupportUnread'
+import type { Notification } from '@/lib/notifications'
+import { toast } from '@/lib/toast'
 import { NAV_AUTH_HINT_KEY } from '@/lib/constants/nav-boot'
 import { NavAvatar, NavLink, focusRing, menuRow, navItem, panel } from './nav-shared'
-import { NavbarGroups, NavbarRouteReset, NavbarSupportLink } from './NavbarIslands'
+import { NavbarGroups, NavbarRouteReset } from './NavbarIslands'
+import NavNotifications from './NavNotifications'
 import NavbarMobileSheet from './NavbarMobileSheet'
 import NavbarSearchModal from './NavbarSearchModal'
 
@@ -26,6 +30,7 @@ export default function Navbar({ mainNavLabel }: NavbarProps) {
   const [menuOpen, setMenuOpen] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
+  const [notifyOpen, setNotifyOpen] = useState(false)
   // Hover/focus on the search button starts loading the modal chunk early (NavbarSearchModal).
   const [searchPreload, setSearchPreload] = useState(false)
   const lastScrollY = useRef(0)
@@ -62,8 +67,8 @@ export default function Navbar({ mainNavLabel }: NavbarProps) {
 
   // 고정 목차·필터가 같은 타이밍에 따라오도록 숨김 상태를 <html>에 알린다 (--nav-offset, globals.css)
   useEffect(() => {
-    document.documentElement.toggleAttribute('data-nav-hidden', hidden && !mobileMenuOpen)
-  }, [hidden, mobileMenuOpen])
+    document.documentElement.toggleAttribute('data-nav-hidden', hidden && !mobileMenuOpen && !notifyOpen)
+  }, [hidden, mobileMenuOpen, notifyOpen])
 
 
   // 데스크탑 유저 메뉴 외부 클릭 닫기
@@ -93,6 +98,7 @@ export default function Navbar({ mainNavLabel }: NavbarProps) {
     lastScrollY.current = window.scrollY
     setMobileMenuOpen(false)
     setSearchOpen(false)
+    setNotifyOpen(false)
   }, [])
 
   // Cmd+K / Ctrl+K 검색 단축키, Esc로 메뉴 닫기
@@ -100,6 +106,7 @@ export default function Navbar({ mainNavLabel }: NavbarProps) {
     const handler = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         setMenuOpen(false)
+        setNotifyOpen(false)
         if (mobileMenuOpen) setMobileMenuOpen(false)
         return
       }
@@ -114,8 +121,37 @@ export default function Navbar({ mainNavLabel }: NavbarProps) {
   }, [mobileMenuOpen])
 
   const t = useTranslations()
+  const tNotify = useTranslations('notifications')
   const user = session?.user as { name?: string | null; email?: string | null; image?: string | null; isAdmin?: boolean; isWanjang?: boolean; isSuspended?: boolean } | undefined
   const supportUnread = useSupportUnread(!!user?.email && !user.isSuspended)
+  // Comments on the user's posts and replies to their comments: a count on the bell, read once the panel is shown.
+  // A new support reply counts as one more and leads the list until its thread is read.
+  // New ones are also announced with a toast whose button opens the panel.
+  const openNotifications = useRef(() => {})
+  const notifications = useNotifications(!!user?.email && !user.isSuspended, (fresh: Notification[]) => {
+    for (const item of [...fresh].reverse()) {
+      toast(tNotify(item.kind === 'reply' ? 'toastReply' : 'toastComment', { name: item.actor ?? tNotify('someone') }), {
+        id: `notify-${item.id}`, description: item.excerpt, duration: 8000, icon: <Bell size={16} aria-hidden="true" className="text-[var(--gold-light)]" />,
+        action: { label: tNotify('view'), onClick: () => openNotifications.current() },
+        actionButtonStyle: { background: 'var(--gold)', color: '#0d0b08', fontWeight: 600 },
+      })
+    }
+  })
+  const closeNotifications = useCallback(() => setNotifyOpen(false), [])
+  const toggleNotifications = () => {
+    if (!notifyOpen) {
+      void notifications.open()
+      setMenuOpen(false)
+      setMobileMenuOpen(false)
+      // The panel opens where the toasts are: they have said what the list now shows.
+      for (const item of notifications.items) toast.dismiss(`notify-${item.id}`)
+    }
+    setNotifyOpen(v => !v)
+  }
+  openNotifications.current = () => { if (!notifyOpen) toggleNotifications() }
+  const bell = (mobile: boolean) => (
+    <NavNotifications items={notifications.items} unread={notifications.unread + (supportUnread ? 1 : 0)} supportUnread={supportUnread} open={notifyOpen} onToggle={toggleNotifications} onClose={closeNotifications} mobile={mobile} />
+  )
   const [profileAvatar, setProfileAvatar] = useState<string | null>(null)
   const [profileName, setProfileName] = useState<string | null>(null)
   const [profileLoaded, setProfileLoaded] = useState(false)
@@ -156,7 +192,7 @@ export default function Navbar({ mainNavLabel }: NavbarProps) {
       <nav
         aria-label={mainNavLabel}
         className="fixed top-0 left-0 right-0 z-50 border-b border-[var(--border)] bg-[var(--bg-deep)] transition-transform duration-300 motion-reduce:transition-none"
-        style={{ transform: hidden && !mobileMenuOpen ? 'translateY(-100%)' : 'translateY(0)' }}
+        style={{ transform: hidden && !mobileMenuOpen && !notifyOpen ? 'translateY(-100%)' : 'translateY(0)' }}
       >
         <div className="max-w-7xl mx-auto h-16 px-4 md:px-6 flex items-center gap-6 xl:gap-10">
           <NavLink
@@ -190,11 +226,12 @@ export default function Navbar({ mainNavLabel }: NavbarProps) {
               </kbd>
             </button>
 
-            <NavbarSupportLink unread={supportUnread} />
-            <LanguageSwitcher />
+            <LanguageSwitcher compact />
 
             {user ? (
-              <div ref={menuRef} className="relative ml-1.5 border-l border-[var(--border)] pl-3">
+              <div className="ml-1.5 flex items-center gap-2 border-l border-[var(--border)] pl-2">
+              {bell(false)}
+              <div ref={menuRef} className="relative">
                 <button
                   type="button"
                   onClick={() => setMenuOpen(v => !v)}
@@ -214,6 +251,9 @@ export default function Navbar({ mainNavLabel }: NavbarProps) {
                     <NavLink href="/mypage" onClick={() => setMenuOpen(false)} className={`${menuRow} text-[var(--text-secondary)]`}>
                       {t('mypage.title' as TranslationKey)}
                     </NavLink>
+                    <NavLink href="/support" onClick={() => setMenuOpen(false)} className={`${menuRow} text-[var(--text-secondary)]`}>
+                      {t('nav.support' as TranslationKey)}
+                    </NavLink>
                     {user.isAdmin && (
                       <NavLink href="/admin" onClick={() => setMenuOpen(false)} className={`${menuRow} text-[var(--text-secondary)]`}>
                         관리
@@ -229,10 +269,14 @@ export default function Navbar({ mainNavLabel }: NavbarProps) {
                   </div>
                 )}
               </div>
+              </div>
             ) : (
               <>
                 {sessionStatus === 'loading' && (
-                  <span aria-hidden="true" className="nav-auth-user ml-1.5 border-l border-[var(--border)] pl-3">{<NavAvatar url={avatarUrl} size="2.25rem" />}</span>
+                  <span aria-hidden="true" className="nav-auth-user ml-1.5 flex items-center gap-2 border-l border-[var(--border)] pl-2">
+                    <span data-testid="nav-notify-slot" className="h-9 w-9" />
+                    <NavAvatar url={avatarUrl} size="2.25rem" />
+                  </span>
                 )}
                 <NavLink href="/login" className={`${navItem} ml-1.5 border border-[var(--border)] text-[var(--text-secondary)] ${sessionStatus === 'loading' ? 'nav-auth-guest' : ''}`}>
                   {t('common.login' as TranslationKey)}
@@ -251,16 +295,16 @@ export default function Navbar({ mainNavLabel }: NavbarProps) {
             >
               <Search size={20} aria-hidden="true" />
             </button>
+            {user ? bell(true) : sessionStatus === 'loading' && <span aria-hidden="true" data-testid="nav-notify-slot" className="nav-auth-user h-11 w-11" />}
             <button
               type="button"
-              className={`relative flex h-11 w-11 cursor-pointer items-center justify-center rounded-md text-[var(--gold-light)] ${focusRing}`}
-              onClick={() => setMobileMenuOpen(v => !v)}
+              className={`flex h-11 w-11 cursor-pointer items-center justify-center rounded-md text-[var(--gold-light)] ${focusRing}`}
+              onClick={() => { setNotifyOpen(false); setMobileMenuOpen(v => !v) }}
               aria-label={mobileMenuOpen ? '메뉴 닫기' : '메뉴 열기'}
               aria-expanded={mobileMenuOpen}
               aria-controls="mobile-navigation-menu"
             >
               {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
-              {supportUnread && !mobileMenuOpen && <span aria-hidden="true" className="absolute right-2 top-2 h-2 w-2 rounded-full bg-[var(--error)] ring-2 ring-[var(--bg-deep)]" />}
             </button>
           </div>
         </div>
@@ -270,7 +314,6 @@ export default function Navbar({ mainNavLabel }: NavbarProps) {
         <Suspense fallback={null}>
           <NavbarMobileSheet
             mainNavLabel={mainNavLabel}
-            supportUnread={supportUnread}
             sessionStatus={sessionStatus}
             avatarUrl={avatarUrl}
             isSignedIn={!!user}

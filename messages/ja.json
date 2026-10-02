@@ -81,6 +81,20 @@
     "contributionApproved": "データ修正への貢献が承認されました。活動ポイント +50",
     "apiLimitTitle": "API制限の引き上げ依頼"
   },
+  "notifications": {
+    "title": "通知",
+    "empty": "通知はまだありません",
+    "unread": "未読の通知 {count}件",
+    "new": "新着",
+    "comment": "コメント",
+    "reply": "あなたのコメントへの返信",
+    "someone": "匿名",
+    "toastComment": "{name}さんがコメントしました",
+    "toastReply": "{name}さんが返信しました",
+    "view": "見る",
+    "support": "お問い合わせ",
+    "supportReply": "お問い合わせに新しい返信があります"
+  },
   "maintenance": {
     "title": "メンテナンス中です",
     "ended": "メンテナンスが終了しました",
