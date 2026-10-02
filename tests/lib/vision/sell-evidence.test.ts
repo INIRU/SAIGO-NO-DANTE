@@ -103,3 +103,29 @@ it('names a sold gift through one misread glyph only when no other gift is close
   // Short reads keep the exact rule.
   expect(sellGiftId('커터나이', gifts)).toBeNull()
 })
+
+// Word boxes as the shipped OCR read them from sale samples (scripts/vision/replay_sale_samples.ts, 2026-10-02).
+it('REQ-ASSIST-061 reads the cost in the 16:9 game view centred in the capture, whatever the window\'s shape', () => {
+  const box = (text: string, left: number, top: number, width: number, height: number) => ({ text, left, top, width, height })
+  // A nearly square game window (1498x1516 shared, 1280x1295 frame): the sell window sits mid-screen, the cost at 32% of the height.
+  expect(sellCost([box('33233', 979, 393, 113, 37), box('E.G.O 기프트판매', 537, 408, 205, 31), box('등급순', 1035, 453, 53, 23),
+    box('250', 934, 602, 49, 22), box('④252', 1024, 602, 50, 22), box('[아스라한 잔영]을(를) 코스트200에', 472, 658, 336, 27), box('282', 303, 1235, 29, 20)], 1280, 1295))
+    .toEqual(['33233'])
+  expect(sellCost([box('224-274', 943, 435, 156, 38), box('E.G.O 기프트 판매', 538, 462, 202, 29), box('등급순', 1032, 495, 54, 22),
+    box('208', 931, 644, 49, 22), box('124', 1024, 645, 47, 21)], 1278, 1392)).toEqual(['224', '274'])
+  // A 16:9 game in a window with its title bar (1282x752 shared): the cost box ends just below the top fifth.
+  expect(sellCost([box('220520', 706, 86, 121, 27), box('E.G.O 기프트 판매', 403, 103, 152, 23), box('등급순', 777, 133, 39, 13),
+    box('④100', 701, 243, 36, 17)], 960, 563)).toEqual(['220520'])
+  // Full screen 16:9 reads as before.
+  expect(sellCost([box('12501450', 964, 83, 150, 39), box('E.G.O기프트판매', 535, 105, 208, 33), box('등급순', 1035, 145, 54, 21),
+    box('+100', 934, 294, 49, 21), box('④250', 1024, 294, 51, 21)], 1280, 720)).toEqual(['12501450'])
+  // The position does not depend on the client language, and numbers at the top of a square capture are not the cost.
+  expect(sellCost([box('683 783', 964, 393, 150, 39), box('Sell E.G.O Gift', 535, 405, 208, 33)], 1280, 1295)).toEqual(['683', '783'])
+  expect(sellCost([box('683 783', 964, 83, 150, 39), box('Sell E.G.O Gift', 535, 405, 208, 33)], 1280, 1295)).toEqual([])
+  // The title hangs on a chain and swings while the dialog opens and closes (here it dropped to the price list's row):
+  // the cost stays where it is, and the gift prices next to the swung title are not read as the cost.
+  expect(sellCost([box('E.G.O기프트판매', 535, 219, 208, 33), box('187', 1015, 83, 96, 39), box('201', 935, 239, 49, 23), box('200', 1024, 239, 48, 24)], 1280, 720))
+    .toEqual(['187'])
+  expect(sellCost([box('E.G.O 기프트판매', 537, 215, 204, 32), box('867', 1014, 394, 78, 37)], 1280, 1295)).toEqual(['867'])
+})
+
