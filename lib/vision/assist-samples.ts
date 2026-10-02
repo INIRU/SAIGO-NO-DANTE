@@ -7,8 +7,11 @@
 import { DETECTION_KINDS, type DetectionSettings } from './detection-settings'
 import { isSessionId } from './assist-report'
 
-// v2: groups replaced "5 frames before and after"; everyone who opted in before is asked again.
-export const SAMPLES_STORAGE_KEY = 'limbus-assist-samples-v2'
+// v3: the frames train the recognizer and are no longer deleted after 180 days; everyone who opted in before is asked again.
+export const SAMPLES_STORAGE_KEY = 'limbus-assist-samples-v3'
+/** The consent text a sample was sent under, in its metadata. Samples without it were promised deletion after 180 days. */
+export const SAMPLE_CONSENT = 3
+export const SAMPLE_KEEP_MS = 180 * 86_400_000
 export const SAMPLES_DAILY_KEY = 'limbus-assist-samples-daily'
 export const SAMPLE_REASONS = ['popup-unresolved', 'fusion-materials', 'fusion-dialogless', 'sale-unresolved'] as const
 export type SampleReason = typeof SAMPLE_REASONS[number]
@@ -73,6 +76,14 @@ export interface SampleMeta {
   session?: string
   /** Game client language the capture read (Assist setting); absent on samples before 2026-09-29. */
   language?: 'ko' | 'en' | 'ja'
+  /** SAMPLE_CONSENT when it was sent; absent on samples sent under the 180-day text. */
+  consent?: number
+}
+
+/** When a stored sample must be deleted (server and downloaded copies): 180 days after it was received, unless it was sent under the training consent. */
+export function sampleExpiresAt(row: { created_at: string; meta: { consent?: unknown } | null }): number | null {
+  const consent = row.meta?.consent
+  return typeof consent === 'number' && consent >= SAMPLE_CONSENT ? null : Date.parse(row.created_at) + SAMPLE_KEEP_MS
 }
 
 const text = (value: unknown, max: number): value is string => typeof value === 'string' && value.length <= max
@@ -94,7 +105,7 @@ export function parseSampleMeta(raw: unknown): SampleMeta | null {
   const detection = record(meta.detection)
   const inference = pair(meta.inference, 'provider', 'adapter')
   const ocr = pair(meta.ocr, 'engine', 'adapter')
-  const { candidates, session, language } = meta
+  const { candidates, session, language, consent } = meta
   if ((meta.scene !== null && !(scene && text(scene.label, 40) && num(scene.confidence, 0, 1))) ||
     !text(meta.mode, 20) || !detection || !DETECTION_KINDS.every(kind => typeof detection[kind] === 'boolean') ||
     (meta.inference !== null && !inference) || (meta.ocr !== null && !ocr) ||
@@ -102,7 +113,8 @@ export function parseSampleMeta(raw: unknown): SampleMeta | null {
     !(meta.build === null || text(meta.build, 64)) || !(meta.floor === null || int(meta.floor, 0, 99)) ||
     !Array.isArray(candidates) || candidates.length > 20 || !candidates.every(id => text(id, 20)) ||
     !num(meta.clientAt, 0, 8.64e15) || !(session === undefined || session === null || isSessionId(session)) ||
-    !(language === undefined || language === 'ko' || language === 'en' || language === 'ja')) return null
+    !(language === undefined || language === 'ko' || language === 'en' || language === 'ja') ||
+    !(consent === undefined || int(consent, 1, 99))) return null
   return {
     reason: meta.reason as SampleReason,
     scene: scene ? { label: scene.label as string, confidence: scene.confidence as number } : null,
@@ -114,10 +126,11 @@ export function parseSampleMeta(raw: unknown): SampleMeta | null {
     build: meta.build as string | null, floor: meta.floor as number | null, candidates: candidates as string[], clientAt: meta.clientAt,
     ...(isSessionId(session) ? { session } : {}),
     ...(language ? { language } : {}),
+    ...(consent === undefined ? {} : { consent }),
   }
 }
 
-export type SampleContext = Omit<SampleMeta, 'reason' | 'width' | 'height' | 'candidates' | 'clientAt'>
+export type SampleContext = Omit<SampleMeta, 'reason' | 'width' | 'height' | 'candidates' | 'clientAt' | 'consent'>
 
 /** Grayscale thumbnail used only to tell whether the screen changed. */
 export function frameThumb(pixels: Uint8ClampedArray): Uint8Array {
@@ -235,7 +248,7 @@ export class AssistSampleRecorder {
     for (const item of this.outgoing.splice(0)) {
       if (blob) item.frames.push(blob)
       if (--item.after > 0) { this.outgoing.push(item); continue }
-      const meta: SampleMeta = { ...this.context(), reason: item.reason, candidates: item.candidates, width: this.width, height: this.height, clientAt: Date.now() }
+      const meta: SampleMeta = { ...this.context(), consent: SAMPLE_CONSENT, reason: item.reason, candidates: item.candidates, width: this.width, height: this.height, clientAt: Date.now() }
       void this.upload(meta, item.frames).catch(() => {})
     }
   }

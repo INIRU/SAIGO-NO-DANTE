@@ -2,9 +2,8 @@ import { after, NextResponse } from 'next/server'
 import { randomUUID } from 'node:crypto'
 import { checkRequestRateLimit, rateLimitResponse } from '@/lib/rate-limit'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { parseSampleMeta, SAMPLE_BUCKET, SAMPLE_MAX_FRAMES, SAMPLE_MAX_FRAME_BYTES } from '@/lib/vision/assist-samples'
+import { parseSampleMeta, SAMPLE_BUCKET, SAMPLE_KEEP_MS, SAMPLE_MAX_FRAMES, SAMPLE_MAX_FRAME_BYTES } from '@/lib/vision/assist-samples'
 
-const KEEP_MS = 180 * 86_400_000
 /** All uploads together, per UTC day; later samples are refused for the day. */
 const DAILY_BYTES = 2 * 1024 ** 3
 const bad = (error: string, status = 400) => NextResponse.json({ error }, { status })
@@ -39,11 +38,13 @@ export async function POST(request: Request) {
   return NextResponse.json({ uploads: signed.map(item => ({ path: item.data!.path, token: item.data!.token })) }, { status: 201 })
 }
 
+// Samples sent before the training consent (no consent version in the metadata) were promised deletion after 180 days;
+// later ones are kept (sampleExpiresAt is the same rule for downloaded copies).
 // lazy retention, at most 20 expired samples per POST; move to a scheduled job if volume outgrows it.
 async function purgeExpired() {
   const admin = createAdminClient()
   const { data, error } = await admin.schema('limbus').from('assist_samples').select('id, path, frame_count')
-    .lt('created_at', new Date(Date.now() - KEEP_MS).toISOString()).order('created_at').limit(20)
+    .is('meta->consent', null).lt('created_at', new Date(Date.now() - SAMPLE_KEEP_MS).toISOString()).order('created_at').limit(20)
   if (error || !data?.length) return
   const files = data.flatMap(row => Array.from({ length: row.frame_count }, (_, index) => row.path + '/' + index + '.jpg'))
   const removed = await admin.storage.from(SAMPLE_BUCKET).remove(files)

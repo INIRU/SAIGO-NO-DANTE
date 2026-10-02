@@ -8,7 +8,7 @@ const MAX_BYTES = 64 * 1024
 
 /**
  * Opt-in Assist recognition reports (lib/vision/assist-report.ts): read/held counts and hand edits of one capture session.
- * No account, email or IP is stored; rows are removed after 180 days, like the samples.
+ * No account, email or IP is stored; rows are removed after 180 days.
  */
 export async function POST(request: Request) {
   const limit = checkRequestRateLimit(request, { scope: 'assist-reports', bucket: 'sample' })
