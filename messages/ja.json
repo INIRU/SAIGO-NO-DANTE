@@ -81,6 +81,18 @@
     "contributionApproved": "データ修正への貢献が承認されました。活動ポイント +50",
     "apiLimitTitle": "API制限の引き上げ依頼"
   },
+  "notifications": {
+    "title": "通知",
+    "newCount": "新着 {count}件",
+    "empty": "デッキやプランにコメントが付くと、ここに表示されます",
+    "unread": "未読の通知 {count}件",
+    "new": "新着",
+    "comment": "<b>{name}</b>さんが{title}にコメントしました",
+    "reply": "<b>{name}</b>さんがあなたのコメントに返信しました",
+    "supportReply": "<b>お問い合わせ</b>に新しい返信があります",
+    "someone": "匿名",
+    "close": "閉じる"
+  },
   "maintenance": {
     "title": "メンテナンス中です",
     "ended": "メンテナンスが終了しました",
