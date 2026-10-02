@@ -6,6 +6,10 @@ the region's size, its grade numeral and keyword badge, then degraded like a sha
 JPEG, brightness, blur and a cursor. The five vestiges are one class (the app never tells them apart) and "blank" is one.
 
   python3 scripts/vision/train_icons.py --data <dir with icons/, badges/, bg/, real/, real.json, gifts.json> --out <dir>
+      [--init-onnx <shipped icon-classifier.onnx> --init-labels <its icon-labels.json>]
+With --init-onnx the shipped model is kept and corrected with small steps: gifts added to the catalog since get a class,
+and the scores of the gifts it already knows stay as the app's thresholds expect. Each epoch also reports how sure the model
+is of another gift when the true one is taken away (an icon it does not know), at the app's logit scale.
 Writes <out>/icon-classifier.onnx, <out>/icon-labels.json and <out>/report.json. Assets: catalog icons of the site,
 public/assets/ego-stages (grade numerals) and the site's keyword icons; slot backgrounds are crops of the maintainer's
 captures and are not distributed.
@@ -152,6 +156,28 @@ def evaluate(model, device, real, classes, data):
     return rows
 
 
+LOGIT_SCALE = 1.5  # lib/vision/scene-worker.ts scales the logits by this before the softmax
+
+
+def calibration(model, device, real, classes, data):
+    """At the app's logit scale: slots it reads strongly (0.85, lead 0.25), and the top score left when the true class is removed."""
+    index = {name: i for i, name in enumerate(classes)}
+    rows = [row for row in real if group(row['id']) in index]
+    batch = torch.stack([to_tensor(Image.open(data / 'real' / row['file']).convert('RGB').resize((SIZE, SIZE))) for row in rows])
+    model.eval()
+    with torch.no_grad():
+        logits = model(batch.to(device)).cpu() * LOGIT_SCALE
+    model.train()
+    truth = torch.tensor([index[group(row['id'])] for row in rows])
+    top = torch.softmax(logits, 1).topk(2, 1)
+    strong = int(((top.indices[:, 0] == truth) & (top.values[:, 0] >= 0.85) & (top.values[:, 0] - top.values[:, 1] >= 0.25)).sum())
+    logits[torch.arange(len(rows)), truth] = -1e9
+    other = torch.softmax(logits, 1)
+    other[:, index['blank']] = 0
+    unknown = other.max(1).values
+    return {'strong': strong, 'unknownMax': round(float(unknown.max()), 3), 'unknownOver0.6': int((unknown >= 0.6).sum())}
+
+
 def summary(rows):
     out = {}
     for kind in sorted({row['kind'] for row in rows}):
@@ -170,18 +196,37 @@ def main():
     parser.add_argument('--per-epoch', type=int, default=48000)
     parser.add_argument('--batch', type=int, default=128)
     parser.add_argument('--workers', type=int, default=8)
+    parser.add_argument('--init-onnx', type=Path)
+    parser.add_argument('--init-labels', type=Path)
     args = parser.parse_args()
     torch.manual_seed(0)
     random.seed(0)
     assets = Assets(args.data, args.stages)
     real = json.load(open(args.data / 'real.json'))
     device = torch.device('mps' if torch.backends.mps.is_available() else 'cpu')
-    model = models.mobilenet_v3_small(weights=models.MobileNet_V3_Small_Weights.DEFAULT)
-    model.classifier[3] = nn.Linear(model.classifier[3].in_features, len(assets.classes))
+    if args.init_onnx:
+        from train_scene import from_onnx
+        known = json.load(open(args.init_labels))
+        model = from_onnx(args.init_onnx, len(known))
+        # Classes keep their rows; a gift the shipped model does not know starts from the average row.
+        old, head = model.classifier[3], nn.Linear(model.classifier[3].in_features, len(assets.classes))
+        with torch.no_grad():
+            head.weight.copy_(old.weight.mean(0, keepdim=True).expand_as(head.weight))
+            head.bias.fill_(float(old.bias.mean()))
+            for row, name in enumerate(assets.classes):
+                if name in known:
+                    head.weight[row] = old.weight[known.index(name)]
+                    head.bias[row] = old.bias[known.index(name)]
+        model.classifier[3] = head
+        model.train()
+        print('started from', args.init_onnx, '| new classes', [name for name in assets.classes if name not in known], flush=True)
+    else:
+        model = models.mobilenet_v3_small(weights=models.MobileNet_V3_Small_Weights.DEFAULT)
+        model.classifier[3] = nn.Linear(model.classifier[3].in_features, len(assets.classes))
     model.to(device)
     optimizer = torch.optim.AdamW(model.parameters(), lr=1e-3, weight_decay=1e-4)
     steps = args.epochs * math.ceil(args.per_epoch / args.batch)
-    scheduler = torch.optim.lr_scheduler.OneCycleLR(optimizer, max_lr=2e-3, total_steps=steps, pct_start=0.1)
+    scheduler = torch.optim.lr_scheduler.OneCycleLR(optimizer, max_lr=1e-4 if args.init_onnx else 2e-3, total_steps=steps, pct_start=0.1)
     loss_fn = nn.CrossEntropyLoss(label_smoothing=0.1)
     args.out.mkdir(parents=True, exist_ok=True)
     print('classes', len(assets.classes), 'backgrounds', len(assets.backgrounds), 'real', len(real), 'device', device, flush=True)
@@ -200,7 +245,8 @@ def main():
             total += loss.item() * len(labels)
         rows = evaluate(model, device, real, assets.classes, args.data)
         score = summary(rows)
-        history.append({'epoch': epoch, 'loss': total / args.per_epoch, 'real': score, 'seconds': round(time.time() - started)})
+        history.append({'epoch': epoch, 'loss': total / args.per_epoch, 'real': score, 'calibration': calibration(model, device, real, assets.classes, args.data),
+                        'seconds': round(time.time() - started)})
         print(json.dumps(history[-1], ensure_ascii=False), flush=True)
         # Chosen on the strong labels only; mid and video rows stay held out.
         if score.get('strong', {}).get('top1', 0) >= best:

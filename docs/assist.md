@@ -53,6 +53,8 @@
 - `scripts/vision/replay_assist.mjs`: 영상 구간을 실제 어시스트 페이지에 화면 공유처럼 재생해 인벤토리 변화를 정답과 비교한다. `--slow ocr=<ms>,scene=<ms>`로 느린 기기를 흉내 낸다.
 - `scripts/vision/bench_ocr_modes.ts`: 같은 프레임을 밸런스·품질로 읽어 앱 판정 함수로 채점한다.
 - `scripts/vision/pull_samples.ts [out] [--delete-uploaded]`: 인식 개선 샘플(프레임과 `assist_samples` 행)과 인식 보고를 샘플 보관함(iCloud Drive의 `Limbus/assist/samples`: `<path>/<n>.jpg`, `rows.json`, `reports.json`)으로 내려받는다. 이미 받은 프레임은 건너뛰고, 그룹마다 프레임 크기 합이 올릴 때 기록한 `bytes`와 같은지 대조한다. 보관함에 있던 행은 유지하므로 서버에서 지워진 샘플도 남는다. 이전 동의 샘플은 180일이 지나면 보관함에서 지운다. `--delete-uploaded`를 주면 보관함에 온전히 있는 샘플을 서버에서 지운다(주지 않으면 서버에서는 아무것도 지우지 않는다). 아래 재생 도구와 학습 도구가 이 폴더를 읽는다.
+- `scripts/vision/ocr_frames.ts <root> <list.json> <out.json>`: 이미지 파일을 앱과 같은 전체 화면 OCR로 읽는다. 화면의 글자로 프레임에 라벨을 붙일 때 쓴다(이어서 실행 가능).
+- `scripts/vision/extract_scene_frames.py`, `build_scene_dataset.py`, `compare_scene_models.py`: 녹화에서 프레임을 뽑고, 장면 모델의 학습 주석 파일을 만들고, 학습에 쓰지 않은 프레임으로 모델 둘을 비교한다(아래 "2026-10-02 재학습").
 - `scripts/vision/replay_sale_samples.ts <samples> <out.json>`: 판매 샘플을 앱과 같은 전체 화면 OCR, `sellCost`, `readSaleStep`으로 프레임 순서대로 다시 읽어 판매가 기록되는지 본다. `REPLAY_OCR_CACHE`로 OCR을 재사용하면 판매 규칙만 바꿔 몇 초 만에 다시 잰다.
 - `scripts/vision/replay_samples.ts`: 내려받은 인식 개선 샘플의 프레임을 앱과 같은 480px 이름판 검출, 실제 OCR·장면 Worker, 앱 팝업 판정으로 다시 읽는다. `REPLAY_GATE=0`은 자리 조건 없이, `REPLAY_NO_TEMPLATES=1`은 아이콘 템플릿 없이(첫 사용·느린 네트워크) 읽는다. 개발 서버 없이 빌드된 Worker와 `.env.local`만 쓴다.
 
@@ -219,3 +221,59 @@ python -m unittest discover -s scripts/embeddings -p 'test_*.py'
 | 보류: 그 밖 | 4 | 4 |
 
 이전에 기록되던 13건은 같은 기프트·같은 가격으로 기록됐다. 새로 기록된 10건은 정사각형 창 9건과 1282×752 창 1건이다. 남은 4건은 OCR이 이름을 틀린 2건("닿고닮은숫돌", "챗빛코트"), 확인 창 문구를 못 읽은 1건, 판매 후 코스트가 프레임에 없는 1건이다.
+
+**2026-10-02 재학습 (장면 모델, 아이콘 모델):** 샘플 보관함(322건, 5,607장)과 녹화 5편으로 두 모델을 다시 학습했다. 먼저 실패 원인을 나눴다.
+
+- **합성 실패 샘플 172건을 현재 코드로 재생:** 확인 창이 프레임에 있는 140건 중 111건은 모든 프레임을 읽으면 재료가 다 나온다. 실행 중에 놓친 것은 판독 차례(타이밍)였다. 나머지 29개 확인 창 중 23개는 아이콘이 나타나기 전 화면만 찍혔고, 아이콘 판독이 약했던 것은 6개다. 32건은 프레임에 확인 창이 없다. 모델로 줄일 수 있는 합성 실패는 172건 중 6건 안팎이다.
+- **장면 모델:** 화면의 글자로 화면 종류가 정해지는 샘플 프레임 3,329장으로 재 보니 16:9에서 판매 창의 23%를 강화 창으로 봤고(기프트를 고른 판매 창이 강화 창과 닮았다), 정사각형 창에서는 맞게 보고도 확신도가 0.5를 못 넘는 프레임이 37%였다.
+- **아이콘 모델:** 카탈로그에 추가된 기프트 4개(9836~9839)를 몰라, 그 기프트를 가진 합성은 템플릿 판독으로 돌아갔다.
+
+학습은 지금 모델의 가중치에서 시작한다(`--init-onnx`). 내보낸 ONNX는 배치 정규화가 합성곱에 합쳐져 있어서, 그 값을 그대로 가진 MobileNetV3-small을 만들고 같은 출력이 나오는지 확인한 뒤 작은 걸음으로 고친다. ImageNet에서 다시 시작하면 프레임이 몇 장뿐인 화면(런 종료, 런 준비, 시작 기프트)을 잊고, 아이콘 모델은 점수 분포가 달라진다. 처음부터 다시 학습한 아이콘 모델은 실제 칸 1,874/1,878을 맞혔지만, 정답 기프트를 지웠을 때 다른 기프트에 주는 점수가 최대 0.86까지 올라갔고(지금 모델 0.47), 반쯤 나타난 아이콘을 다른 기프트로 읽은 확인 창이 하나 생겨 쓰지 않았다.
+
+- **장면 데이터(5,866장):** 녹화 5편에서 3초마다 한 장(4,195장)과 샘플 프레임. 판매·강화·합성 창 제목, 획득 문구, 상점(구매·정보 창 포함), 테마팩 선택처럼 글자로 정해지는 3,569장은 글자로 라벨을 붙였다. 녹화의 나머지 화면은 이전 모델이 0.8 이상으로 본 라벨을 쓴다. 샘플 프레임은 글자 라벨이 있을 때만 써서, 이전 모델이 배우지 않은 창 모양의 라벨이 그 모델에서 나오지 않게 했다. 샘플 그룹(녹화는 30초) 단위로 학습·검증·시험을 나눈다. 입력은 그대로 전체 프레임을 224×224로 줄인 것이다. 가운데 16:9만 잘라 넣는 방식도 학습해 봤는데 결과가 같아, 워커를 바꾸지 않는 쪽을 골랐다.
+- **교체 기준:** 글자 라벨 프레임에서 나아지고, 다른 화면에서 이전 모델과 달라지지 않고, 영상 재생에서 잘못된 변경이 없을 때만 바꾼다.
+
+| 장면 모델, 학습에 안 쓴 프레임 | 이전 | 새 모델 |
+|---|---|---|
+| 글자 라벨 1,248장: 맞음 | 1,152 (92.3%) | **1,235 (99.0%)** |
+| 글자 라벨 1,248장: 맞고 0.5 이상 | 1,108 (88.8%) | **1,229 (98.5%)** |
+| 16:9 판매 창 157장 | 101 | **157** |
+| 16:9 강화 창 34장 | 26 | **34** |
+| 정사각형 창 66장: 맞고 0.5 이상 | 32 | **61** |
+| 다른 화면 935장: 이전 모델과 같은 라벨 | – | 935 |
+
+학습에도 라벨에도 쓰지 않은 획득 팝업 샘플 프레임 885장에서는, 이전 모델이 0.8 이상으로 본 679장 중 673장이 같은 라벨이었다. 달랐던 6장은 상점의 구매 창을 획득 화면으로 본 것이라, 구매 창을 상점으로 라벨해 다시 학습했다(위 표는 그 뒤의 모델). 같은 사용자의 다른 샘플 그룹이 학습에 들어 있으므로, 정사각형 창 수치(네 세션)는 새 사용자에게는 이보다 낮을 수 있다.
+
+| 아이콘 모델 | 이전 | 새 모델 |
+|---|---|---|
+| 아는 기프트 | 447 | **451** |
+| 실제 칸 1,878개 1위 | 1,876 | 1,876 |
+| 강한 판독(0.85, 격차 0.25) | 1,847 | 1,840 |
+| 정답을 지웠을 때 다른 기프트 최고 점수 | 0.47 | 0.43 |
+| 합성 샘플 확인 창 완성(151개) | 122 | 122 |
+| 강한 칸 판독 2,052개 중 기프트가 바뀐 것 | – | 0 |
+
+| 영상 재생 15구간(밸런스, 한 번씩) | 이전 모델 | 새 모델 |
+|---|---|---|
+| 합성 재료 | 104/108 | 105/108 |
+| 합성 결과 | 51/51 | 51/51 |
+| 판매 | 12/12 | 12/12 |
+| 잘못된 변경 | 0 | 0 |
+
+**재학습 절차:** 샘플을 내려받고(`pull_samples.ts`) 재생으로 OCR 캐시를 만든 뒤 아래를 실행한다. 데이터셋·체크포인트·평가 결과는 보관함(`Limbus/assist/{datasets,checkpoints,eval}`)에 두고, 체크포인트 목록은 `checkpoints/README.md`에 적는다.
+
+```bash
+# 장면: 녹화에서 3초마다 한 장을 뽑아 지금 모델의 라벨을 붙이고, 글자를 읽을 프레임을 OCR한 뒤, 샘플 OCR 캐시와 합쳐 주석을 만든다
+python3 scripts/vision/extract_scene_frames.py --videos <recording.mp4>... --out <work dir>
+npx tsx scripts/vision/ocr_frames.ts <work dir> <work dir>/ocr-list.json <work dir>/ocr.json
+python3 scripts/vision/build_scene_dataset.py --videos <work dir> --samples <samples> --caches <ocr cache>... --out <dataset>
+python3 scripts/vision/train_scene.py --images <dataset>/annotations.jsonl --roots videos=<work dir> samples=<samples> \
+  --labels public/models/assist-scene/labels.json --init-onnx public/models/assist-scene/scene.onnx --epochs 12 --out <checkpoint>
+python3 scripts/vision/compare_scene_models.py --images <dataset>/annotations.jsonl --roots videos=<work dir> samples=<samples> \
+  --labels public/models/assist-scene/labels.json --models shipped=public/models/assist-scene/scene.onnx new=<checkpoint>/scene-mobilenetv3-small.onnx
+# 아이콘: 지금 모델에서 시작해 새 기프트를 더한다. 단계마다 calibration(강한 판독 수, 정답을 지웠을 때 최고 점수)을 본다
+python3 scripts/vision/train_icons.py --data <icon dataset> --out <checkpoint> --epochs 3 \
+  --init-onnx public/models/assist-scene/icon-classifier.onnx --init-labels public/models/assist-scene/icon-labels.json
+```
+
+바꾼 뒤에는 `PROVENANCE.md`의 sha256과 `metadata.json`의 version을 함께 고친다(`tests/lib/vision/assist-models.test.ts`가 파일과 기록이 같은지 본다).
