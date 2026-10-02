@@ -99,11 +99,12 @@ export default function ForYou({ kind, personal }: { kind: Kind; personal: boole
           <img src={getGameUiAsset("start-buffs/starlight")} alt="" className={`${styles.spark} ${choosing ? styles.sparkActive : ""}`} />
           <span className={choosing ? styles.glint : undefined}>{t(kind === "deck" ? "decksTitle" : "plansTitle")}</span>
         </h2>
-        {/* The hint keeps its own box in both states (it wraps on phones), with a bone over it while choosing. */}
-        <p className="relative mb-4 mt-1 text-sm text-[var(--text-muted)]">
+        {/* The hint keeps its own box in both states (it wraps on phones), with a bone over it while choosing.
+            A div, not a p: the bone is a div, and a browser closes a <p> that contains one. */}
+        <div className="relative mb-4 mt-1 text-sm text-[var(--text-muted)]">
           <span data-hint className={choosing ? "invisible" : reveal} aria-hidden={choosing}>{t("hint")}</span>
           {choosing && <SkeletonLine w="17rem" h="0.75rem" className="absolute left-0 top-1/2 -translate-y-1/2" />}
-        </p>
+        </div>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3" data-reveal={hold === "idle" ? "instant" : "rise"}>
           {choosing
             ? Array.from({ length: 3 }, (_, index) => (
