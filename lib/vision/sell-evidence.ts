@@ -56,9 +56,20 @@ export function isSellWindow(text: string): boolean {
   return flat.includes('기프트판매') || /sellE\.?G\.?[O0]\.?gift/i.test(flat) || flat.includes('ギフト売却')
 }
 
-/** Digit groups of the top-right cost display, in reading order: ["129229"], ["683", "783"] or ["683"]. */
+/**
+ * The sell window's cost display at 1920×1080: where its row starts and the row's centre and half height. The window is
+ * laid out in a 16:9 game view centred in the capture (as the fusion dialog and the acquisition popup are), so a tall or
+ * square game window has it mid-screen, not in the top fifth. The half height leaves room for a window title bar,
+ * which moves the view down by half its height. The window's title is no anchor: it hangs on a chain and swings when
+ * the dialog opens and closes.
+ */
+const COST_LEFT = 1344, COST_CENTER_Y = 153, COST_ROW_HALF = 67
+
+/** Digit groups of the sell window's cost display, in reading order: ["129229"], ["683", "783"] or ["683"]. */
 export function sellCost(words: { text: string; left: number; top: number; width: number; height: number }[], width: number, height: number): string[] {
-  return words.filter(word => word.left >= width * 0.7 && word.top + word.height <= height * 0.2)
+  const scale = Math.min(width / 1920, height / 1080)
+  const left = (width - 1920 * scale) / 2 + COST_LEFT * scale, center = (height - 1080 * scale) / 2 + COST_CENTER_Y * scale
+  return words.filter(word => word.left >= left && Math.abs(word.top + word.height / 2 - center) <= COST_ROW_HALF * scale)
     .sort((first, second) => first.left - second.left)
     .flatMap(word => word.text.normalize('NFKC').match(/\d{2,8}/g) ?? [])
 }
