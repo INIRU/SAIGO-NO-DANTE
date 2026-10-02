@@ -1,5 +1,7 @@
 import { expect, it, vi } from 'vitest'
-import { AssistSampleRecorder, parseSampleMeta, readSampleConsent, SAMPLE_DAILY_LIMIT, SAMPLES_STORAGE_KEY, screenChanged, takeDailySample } from '@/lib/vision/assist-samples'
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
+import { AssistSampleRecorder, parseSampleMeta, readSampleConsent, SAMPLE_CONSENT, SAMPLE_DAILY_LIMIT, sampleExpiresAt, SAMPLES_STORAGE_KEY, screenChanged, takeDailySample, type SampleMeta } from '@/lib/vision/assist-samples'
 import { checkRateLimit } from '@/lib/rate-limit'
 
 const memory = () => {
@@ -57,8 +59,10 @@ function recorderHarness() {
     async convertToBlob() { return new Blob(['frame' + shade], { type: 'image/jpeg' }) }
   })
   const uploads: { reason: string; frames: string[] }[] = []
+  const metas: SampleMeta[] = []
   const recorder = new AssistSampleRecorder(() => ({ scene: null, mode: 'quality', detection: { gifts: true, themes: true, events: true },
     inference: null, ocr: null, dpr: 1, userAgent: 't', build: null, floor: 1 }), async (meta, frames) => {
+    metas.push(meta)
     uploads.push({ reason: meta.reason, frames: await Promise.all(frames.map(frame => frame.text())) })
   })
   const frame = { displayWidth: 1920, displayHeight: 1080, clone: () => ({ displayWidth: 1920, displayHeight: 1080, close() {} }) } as unknown as VideoFrame
@@ -67,7 +71,7 @@ function recorderHarness() {
     recorder.offer(frame)
     for (let i = 0; i < 4; i++) await new Promise(resolve => setTimeout(resolve, 0))
   }
-  return { recorder, uploads, offer }
+  return { recorder, uploads, metas, offer }
 }
 
 it('tells a changed screen from a still one', () => {
@@ -101,4 +105,43 @@ it('uploads the whole group of a failed action with the frames just before and a
   await offer(240)
   expect(uploads).toEqual([{ reason: 'fusion-materials', frames: ['frame40', 'frame80', 'frame120', 'frame160', 'frame200', 'frame240'] }])
   vi.unstubAllGlobals(); vi.restoreAllMocks()
+})
+
+const root = (file: string) => readFileSync(resolve(__dirname, '../../..', file), 'utf8')
+
+it('REQ-ASSIST-062 asks again under the training consent and marks the samples sent under it', async () => {
+  expect(SAMPLES_STORAGE_KEY).toBe('limbus-assist-samples-v3')
+  // A choice made under the earlier text (180 days, then deleted) does not carry over.
+  expect(readSampleConsent({ getItem: key => key === 'limbus-assist-samples-v2' ? 'on' : null })).toBeNull()
+  const { recorder, metas, offer } = recorderHarness()
+  await offer(40)
+  recorder.end('sale', { reason: 'sale-unresolved' })
+  await offer(80); await offer(120); await offer(160)
+  expect(metas.map(meta => meta.consent)).toEqual([SAMPLE_CONSENT])
+  expect(SAMPLE_CONSENT).toBe(3)
+  vi.unstubAllGlobals(); vi.restoreAllMocks()
+  expect(parseSampleMeta({ ...valid, consent: 3 })).toEqual({ ...valid, consent: 3 })
+  expect(parseSampleMeta(valid)).not.toHaveProperty('consent')
+  for (const consent of ['3', 0, 2.5, 1000]) expect(parseSampleMeta({ ...valid, consent })).toBeNull()
+})
+
+it('REQ-ASSIST-062 the consent text says the frames train the recognizer, warns about whole-screen sharing and promises no deletion date, in every language', () => {
+  const words = { ko: ['학습', '전체 화면'], en: ['train', 'entire screen'], ja: ['学習', '画面全体'] }
+  for (const [lang, expected] of Object.entries(words)) {
+    const hint: string = JSON.parse(root(`messages/${lang}.json`)).planner.run.samplesHint
+    for (const word of expected) expect(hint, lang).toContain(word)
+    expect(hint, lang).not.toMatch(/180/)
+  }
+})
+
+it('REQ-ASSIST-063 only samples from before the training consent expire, 180 days after they were received', () => {
+  const received = '2026-09-28T07:47:00.000Z'
+  expect(sampleExpiresAt({ created_at: received, meta: {} })).toBe(Date.parse('2027-03-27T07:47:00.000Z'))
+  expect(sampleExpiresAt({ created_at: received, meta: { consent: 2 } })).toBe(Date.parse('2027-03-27T07:47:00.000Z'))
+  expect(sampleExpiresAt({ created_at: received, meta: { consent: 3 } })).toBeNull()
+  expect(sampleExpiresAt({ created_at: received, meta: null })).toBe(Date.parse('2027-03-27T07:47:00.000Z'))
+  // The server picks the same rows: no consent version in the metadata, older than the same period.
+  const route = root('app/api/assist/samples/route.ts')
+  expect(route).toMatch(/\.is\('meta->consent', null\)/)
+  expect(route).toContain('SAMPLE_KEEP_MS')
 })
