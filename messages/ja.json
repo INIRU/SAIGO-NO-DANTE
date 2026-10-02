@@ -865,7 +865,7 @@
       "setupRecognitionTitle": "画面認識の設定",
       "pipFloorOnly": "この階でのみ入手可能",
       "giftFilters": "ギフトの絞り込み",
-      "filterFloor": "この階で入手可能",
+      "filterFloor": "この階のみ",
       "filterPlanned": "計画ギフトのみ",
       "filterHideOwned": "所持を隠す",
       "groupFloorPlan": "この階の計画",

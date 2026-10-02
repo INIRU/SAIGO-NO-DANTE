@@ -242,6 +242,13 @@ export interface GiftCatalogProps {
   cardProps?: (gift: EgoGift) => GiftCatalogCardProps | undefined
   /** Extra controls at the end of the toolbar. */
   toolbarEnd?: ReactNode
+  /** For a narrow column: the grades and `moreFilters` stay behind the filter button at every width (not only on phones),
+   *  and `toolbarEnd` sits on the search row. */
+  collapsed?: boolean
+  /** Extra controls inside what the filter button opens (with `collapsed`). */
+  moreFilters?: ReactNode
+  /** How many of `moreFilters` are on, added to the count on the filter button. */
+  moreFiltersActive?: number
   /** Shown instead of the grid until a keyword, grade or search narrows the list. */
   idleHint?: ReactNode
   /** Groups listed first, in this order, each under its own heading; a gift sits in the first group that has it.
@@ -340,6 +347,9 @@ export default function GiftCatalog({
   renderBadge,
   cardProps,
   toolbarEnd,
+  collapsed = false,
+  moreFilters,
+  moreFiltersActive = 0,
   idleHint,
   pinned,
 }: GiftCatalogProps) {
@@ -481,7 +491,7 @@ export default function GiftCatalog({
 
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false)
   // 모바일 '필터' 버튼 숫자: 시트 안에 접힌 등급·난이도·편성·테마팩 중 켜진 수
-  const mobileFilterCount = (grades.size > 0 ? 1 : 0) + (tiers.size > 0 ? 1 : 0) + (slotFilter !== '전체' ? 1 : 0) + (selectedThemeId !== null ? 1 : 0)
+  const mobileFilterCount = (grades.size > 0 ? 1 : 0) + (tiers.size > 0 ? 1 : 0) + (slotFilter !== '전체' ? 1 : 0) + (selectedThemeId !== null ? 1 : 0) + moreFiltersActive
   const hasActiveFilters = keywords.size > 0 || grades.size > 0 || tiers.size > 0 || slotFilter !== '전체' || selectedThemeId !== null
 
   const filteredLenRef = useRef(deferredFiltered.length)
@@ -540,7 +550,7 @@ export default function GiftCatalog({
 
         {/* 검색 · 등급 · 세부 필터 · 결과 수 · 정렬 — 한 줄. 모바일은 검색과 필터 버튼만 두고 나머지는 시트로 */}
         <div className="mt-2 flex flex-wrap items-center gap-2 sm:gap-x-3">
-          <div className="relative min-w-0 flex-1 sm:w-[13rem] sm:flex-none">
+          <div className={`relative min-w-0 flex-1 ${collapsed ? 'basis-32' : 'sm:w-[13rem] sm:flex-none'}`}>
             <Search size={14} aria-hidden className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-[#9c8b73]" />
             <input
               type="search"
@@ -565,12 +575,14 @@ export default function GiftCatalog({
             )}
           </div>
 
+          {collapsed && toolbarEnd && <div className="flex shrink-0 items-center gap-x-3">{toolbarEnd}</div>}
+
           <button
             type="button"
             aria-expanded={mobileFiltersOpen}
             aria-controls="md-gift-more-filters"
             onClick={() => setMobileFiltersOpen(v => !v)}
-            className={`flex h-9 shrink-0 items-center gap-1.5 rounded border px-3 text-[0.8125rem] sm:hidden ${focusRing}`}
+            className={`flex h-9 shrink-0 items-center gap-1.5 rounded border px-3 text-[0.8125rem] ${collapsed ? '' : 'sm:hidden'} ${focusRing}`}
             style={{
               fontFamily: 'var(--font-heading)',
               color: mobileFilterCount > 0 || mobileFiltersOpen ? 'var(--gold-light)' : '#9c8b73',
@@ -582,16 +594,16 @@ export default function GiftCatalog({
             {mobileFilterCount > 0 && <span className="tabular-nums">{mobileFilterCount}</span>}
           </button>
 
-          <p className="shrink-0 text-[0.8125rem] tabular-nums text-[#9c8b73] sm:order-1 sm:ml-auto" aria-live="polite">
+          <p className={`shrink-0 text-[0.8125rem] tabular-nums text-[#9c8b73] ${collapsed ? '' : 'sm:order-1 sm:ml-auto'}`} aria-live="polite">
             <span className="text-[var(--text-primary)]">{filtered.length}</span>{lang === 'en' ? ' ' : ''}{tp('giftUnit')}
           </p>
 
-          {/* 모바일에서는 접히는 시트, sm 이상에서는 display:contents로 같은 줄에 풀린다. */}
+          {/* 모바일에서는 접히는 시트, sm 이상에서는 display:contents로 같은 줄에 풀린다. collapsed면 어느 폭에서나 접힌다. */}
           <div
             id="md-gift-more-filters"
-            className={`${mobileFiltersOpen ? 'flex' : 'hidden'} basis-full flex-wrap items-center gap-2 rounded border border-[#2e2417] bg-[#17120c] p-2.5 sm:contents`}
+            className={`${mobileFiltersOpen ? 'flex' : 'hidden'} basis-full flex-wrap items-center gap-x-4 gap-y-2 rounded border border-[#2e2417] bg-[#17120c] p-2.5 ${collapsed ? '' : 'sm:contents'}`}
           >
-            <div role="group" aria-label={t('mirrorDungeon.filter.grade')} className="flex w-full items-center gap-0.5 sm:w-auto">
+            <div role="group" aria-label={t('mirrorDungeon.filter.grade')} className={`flex w-full items-center gap-0.5 ${collapsed ? '' : 'sm:w-auto'}`}>
               {GRADES.filter(g => g !== '전체').map(g => (
                 <GiftGradeChip
                   key={g}
@@ -602,6 +614,8 @@ export default function GiftCatalog({
                 />
               ))}
             </div>
+
+            {collapsed && moreFilters}
 
             {!compact && <>
             <span aria-hidden className="hidden h-5 w-px bg-[#2e2417] sm:block" />
@@ -685,7 +699,7 @@ export default function GiftCatalog({
               )}
             </div>}
           </div>
-          {toolbarEnd && <div className="flex basis-full flex-wrap items-center gap-x-3 gap-y-1 sm:order-3 sm:basis-auto">{toolbarEnd}</div>}
+          {!collapsed && toolbarEnd && <div className="flex basis-full flex-wrap items-center gap-x-3 gap-y-1 sm:order-3 sm:basis-auto">{toolbarEnd}</div>}
         </div>
       </div>}
 

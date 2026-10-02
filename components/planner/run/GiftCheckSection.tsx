@@ -86,7 +86,7 @@ export default function GiftCheckSection({ state, dispatch, gifts, giftMap, them
 
   const count = (list: GiftData[], test: (id: string) => boolean) => list.filter(gift => test(String(gift.game_id))).length
   const check = (checked: boolean, onChange: (value: boolean) => void, label: string, total: number) => (
-    <label className="inline-flex min-h-10 cursor-pointer select-none items-center gap-2 text-sm text-[var(--text-primary)]">
+    <label className="inline-flex min-h-9 cursor-pointer select-none items-center gap-2 whitespace-nowrap text-[0.8125rem] text-[var(--text-primary)]">
       <input type="checkbox" checked={checked} onChange={event => onChange(event.target.checked)} className="peer sr-only" />
       <span aria-hidden="true" className="grid h-[1.125rem] w-[1.125rem] place-items-center rounded-[0.25rem] border border-[#5a4526] bg-[#0d0b08] text-transparent transition-colors peer-checked:border-[#c8900a] peer-checked:bg-[#c8900a] peer-checked:text-[#0d0b08] peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-[#e8b030]">
         <Check size={13} strokeWidth={3} />
@@ -94,13 +94,13 @@ export default function GiftCheckSection({ state, dispatch, gifts, giftMap, them
       {label}<span className="tabular-nums text-xs text-[var(--text-tertiary)]">{total}</span>
     </label>
   )
-  const filterChecks = (
-    <div role="group" aria-label={t('giftFilters')} className="ml-auto flex flex-wrap items-center gap-x-4">
-      {currentTheme && check(onlyFloor, setOnlyFloor, t('filterFloor'), themeGifts.length)}
-      {check(onlyPlanned, setOnlyPlanned, t('filterPlanned'), count(base, id => plannedIds.has(id)))}
-      {check(hideOwned, setHideOwned, t('filterHideOwned'), count(base, id => ownedIds.has(id)))}
-    </div>
-  )
+  // "This floor only" is the filter changed most (a gift from a fusion or an event is not in the pack's list): it stays
+  // on the search row. The other two wait behind the filter button with the grades.
+  const floorCheck = currentTheme && <div role="group" aria-label={t('giftFilters')}>{check(onlyFloor, setOnlyFloor, t('filterFloor'), themeGifts.length)}</div>
+  const moreChecks = <>
+    {check(onlyPlanned, setOnlyPlanned, t('filterPlanned'), count(base, id => plannedIds.has(id)))}
+    {check(hideOwned, setHideOwned, t('filterHideOwned'), count(base, id => ownedIds.has(id)))}
+  </>
 
   return (
     <section className="min-w-0" aria-labelledby="run-floor-gifts" style={{ '--gift-catalog-bg': 'var(--bg-deep)' } as React.CSSProperties}>
@@ -117,7 +117,7 @@ export default function GiftCheckSection({ state, dispatch, gifts, giftMap, them
       <GiftCatalog compact gifts={catalog} getGiftKeywordIcon={giftKeywordIcon} filters={filters} pinned={pinned}
         markedIds={ownedIds} markedLabel={t('acquired')} onGiftClick={toggleOwned}
         cardProps={gift => cardPropsById.get(gift.id)}
-        toolbarEnd={filterChecks} />
+        collapsed toolbarEnd={floorCheck} moreFilters={moreChecks} moreFiltersActive={(onlyPlanned ? 1 : 0) + (hideOwned ? 1 : 0)} />
       {catalog.length === 0 && <p className="py-8 text-center text-sm text-[var(--text-tertiary)]">{t('targetFilterEmpty')}</p>}
     </section>
   )

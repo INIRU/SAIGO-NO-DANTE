@@ -37,3 +37,25 @@ it('REQ-ASSIST-050 lists this floor plan, final targets and floor-only gifts fir
   expect(html).toMatch(new RegExp('<input type="checkbox"[^>]*checked=""[^>]*/>.*?' + run.filterFloor))
   expect(html).toContain('gift-10')
 })
+
+it('REQ-ASSIST-050 the record column keeps two control rows: keyword tabs, then search, this floor only, the filter button and the count', () => {
+  const html = render(state())
+  const run = messages.planner.run
+  // The filter button is there at every width (no sm:hidden), and what it opens starts closed and never unfolds by width.
+  const button = html.match(/<button[^>]*aria-controls="md-gift-more-filters"[^>]*>/)![0]
+  expect(button).toContain('aria-expanded="false"')
+  expect(button).not.toContain('sm:hidden')
+  const sheetStart = html.indexOf('id="md-gift-more-filters"')
+  const sheetTag = html.slice(html.lastIndexOf('<div', sheetStart), html.indexOf('>', sheetStart))
+  expect(sheetTag).toContain('hidden')
+  expect(sheetTag).not.toContain('sm:contents')
+  // "This floor only" stays on the row; grades, plan-only and hide-owned wait behind the button.
+  expect(html.indexOf(run.filterFloor)).toBeLessThan(sheetStart)
+  expect(html.indexOf(run.filterFloor)).toBeGreaterThan(0)
+  for (const label of [run.filterPlanned, run.filterHideOwned]) expect(html.indexOf('>' + label)).toBeGreaterThan(sheetStart)
+  // The grade chips are the group inside what the button opens.
+  expect(html.indexOf('role="group"', sheetStart)).toBeGreaterThan(sheetStart)
+  expect(html.slice(sheetStart)).toMatch(/<button[^>]*aria-pressed="false"[^>]*min-w-\[2\.125rem\]/)
+  expect(html.slice(0, sheetStart)).not.toContain('min-w-[2.125rem]')
+  expect(run.filterFloor.length).toBeLessThanOrEqual(6)
+})
