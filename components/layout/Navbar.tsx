@@ -3,7 +3,7 @@
 import { Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import { useTapEgg } from '@/components/community/easterEggs'
 import { useSession, signOut } from 'next-auth/react'
-import { Bell, Menu, X, Search } from 'lucide-react'
+import { Menu, X, Search } from 'lucide-react'
 import { DEFAULT_AVATAR_URL } from '@/lib/constants/game'
 import LanguageSwitcher from '@/components/ui/LanguageSwitcher'
 import DanteLogo from '@/components/brand/DanteLogo'
@@ -16,7 +16,7 @@ import { toast } from '@/lib/toast'
 import { NAV_AUTH_HINT_KEY } from '@/lib/constants/nav-boot'
 import { NavAvatar, NavLink, focusRing, menuRow, navItem, panel } from './nav-shared'
 import { NavbarGroups, NavbarRouteReset } from './NavbarIslands'
-import NavNotifications from './NavNotifications'
+import NavNotifications, { NotificationToast, sentenceOf } from './NavNotifications'
 import NavbarMobileSheet from './NavbarMobileSheet'
 import NavbarSearchModal from './NavbarSearchModal'
 
@@ -126,15 +126,14 @@ export default function Navbar({ mainNavLabel }: NavbarProps) {
   const supportUnread = useSupportUnread(!!user?.email && !user.isSuspended)
   // Comments on the user's posts and replies to their comments: a count on the bell, read once the panel is shown.
   // A new support reply counts as one more and leads the list until its thread is read.
-  // New ones are also announced with a toast whose button opens the panel.
+  // New ones are also announced with a toast; pressing it opens the panel.
   const openNotifications = useRef(() => {})
   const notifications = useNotifications(!!user?.email && !user.isSuspended, (fresh: Notification[]) => {
     for (const item of [...fresh].reverse()) {
-      toast(tNotify(item.kind === 'reply' ? 'toastReply' : 'toastComment', { name: item.actor ?? tNotify('someone') }), {
-        id: `notify-${item.id}`, description: item.excerpt, duration: 8000, icon: <Bell size={16} aria-hidden="true" className="text-[var(--gold-light)]" />,
-        action: { label: tNotify('view'), onClick: () => openNotifications.current() },
-        actionButtonStyle: { background: 'var(--gold)', color: '#0d0b08', fontWeight: 600 },
-      })
+      const id = `notify-${item.id}`
+      toast.custom(() => (
+        <NotificationToast item={item} sentence={sentenceOf(item, tNotify)} closeLabel={tNotify('close')} onOpen={() => openNotifications.current()} onClose={() => toast.dismiss(id)} />
+      ), { id, duration: 8000 })
     }
   })
   const closeNotifications = useCallback(() => setNotifyOpen(false), [])

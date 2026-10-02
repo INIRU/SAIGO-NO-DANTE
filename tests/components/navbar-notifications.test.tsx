@@ -13,7 +13,11 @@ vi.mock('@/lib/i18n/navigation', async () => {
   return { usePathname: read, useRouter: () => { read(); return { replace: vi.fn() } } }
 })
 vi.mock('next-intl', () => ({
-  useTranslations: (namespace?: string) => (key: string, values?: Record<string, unknown>) => [namespace, key].filter(Boolean).join('.') + (values ? JSON.stringify(values) : ''),
+  // t('key', values) and t.rich('key', values) both print the key and the plain values (tag functions are left out).
+  useTranslations: (namespace?: string) => {
+    const t = (key: string, values?: Record<string, unknown>) => [namespace, key].filter(Boolean).join('.') + (values ? JSON.stringify(values) : '')
+    return Object.assign(t, { rich: t })
+  },
   useLocale: () => 'ko',
 }))
 vi.mock('next-auth/react', () => ({
@@ -47,7 +51,7 @@ describe('REQ-COMMUNITY-015 the navbar bell shows unread notifications and its p
     const html = renderToStaticMarkup(<NotificationList items={items} onNavigate={() => {}} />)
     expect(html).toContain('href="/ko/planner/community/p1#plan-comments-title"')
     expect(html).toContain('href="/ko/decks/d1#deck-comments-title"')
-    for (const text of ['료슈', 'notifications.someone', 'notifications.reply', 'notifications.comment', '화상 플랜', '출혈 덱', '답글 내용', '댓글 내용']) expect(html).toContain(text)
+    for (const text of ['료슈', 'notifications.someone', 'notifications.reply', 'notifications.comment', '출혈 덱', '답글 내용', '댓글 내용']) expect(html).toContain(text)
     expect(html.match(/notifications\.new</g)).toHaveLength(1)
   })
 
@@ -77,6 +81,17 @@ describe('REQ-COMMUNITY-015 the navbar bell shows unread notifications and its p
     const html = renderToStaticMarkup(<Navbar mainNavLabel="main" />)
     expect(html).not.toContain('nav-notify-bell')
     expect(html.match(/data-testid="nav-notify-slot"/g)).toHaveLength(2)
+  })
+})
+
+describe('REQ-COMMUNITY-016 a new notification is announced as a toast card', () => {
+  it('REQ-COMMUNITY-016 the card shows who did what and the comment, opens the panel when pressed and has a close button', async () => {
+    const { NotificationToast } = await import('@/components/layout/NavNotifications')
+    const html = renderToStaticMarkup(<NotificationToast item={items[0]} sentence={<><b>료슈</b> replied</>} closeLabel="닫기" onOpen={() => {}} onClose={() => {}} />)
+    expect(html).toContain('<b>료슈</b> replied')
+    expect(html).toContain('답글 내용')
+    expect(html.match(/<button/g)).toHaveLength(2)
+    expect(html).toContain('aria-label="닫기"')
   })
 })
 

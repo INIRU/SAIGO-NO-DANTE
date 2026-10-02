@@ -83,17 +83,15 @@
   },
   "notifications": {
     "title": "알림",
-    "empty": "아직 알림이 없어요",
+    "newCount": "새 알림 {count}",
+    "empty": "덱이나 플랜에 댓글이 달리면 여기에 보여요",
     "unread": "읽지 않은 알림 {count}개",
     "new": "새 알림",
-    "comment": "댓글",
-    "reply": "내 댓글에 답글",
+    "comment": "<b>{name}</b>님이 {title}에 댓글을 남겼어요",
+    "reply": "<b>{name}</b>님이 내 댓글에 답글을 남겼어요",
+    "supportReply": "<b>문의</b>에 새 답변이 도착했어요",
     "someone": "익명",
-    "toastComment": "{name}님이 댓글을 남겼어요",
-    "toastReply": "{name}님이 답글을 남겼어요",
-    "view": "보기",
-    "support": "문의",
-    "supportReply": "문의에 새 답변이 도착했어요"
+    "close": "닫기"
   },
   "maintenance": {
     "title": "점검 중입니다",
