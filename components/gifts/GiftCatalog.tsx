@@ -712,7 +712,9 @@ export default function GiftCatalog({
           <p className="text-sm" style={{ color: '#9c8b73' }}>{t('mirrorDungeon.empty.description')}</p>
         </div>
       ) : (
-        <div className="mt-4" style={{ minHeight: compact ? 'var(--gift-catalog-min-h)' : undefined, opacity: isStale ? 0.7 : 1, transition: 'opacity 0.1s ease' }}>
+        // isolate: cards raise themselves on hover (z-index 10) and carry marks up to z-30; kept inside this stacking
+        // context they scroll under the sticky filter row whatever its z-index is.
+        <div className="mt-4 isolate" style={{ minHeight: compact ? 'var(--gift-catalog-min-h)' : undefined, opacity: isStale ? 0.7 : 1, transition: 'opacity 0.1s ease' }}>
           {groups.map((group, gi) => {
             const iconUrl = groupBy === 'keyword' ? getGiftKeywordIcon(group.key) : null
             const pin = group.key.startsWith(PINNED_GROUP) ? pinned?.[Number(group.key.slice(PINNED_GROUP.length))] : undefined
