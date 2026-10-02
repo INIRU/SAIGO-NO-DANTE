@@ -1,0 +1,33 @@
+/* Notification bell and panel of the navbar. */
+.badge {
+  position: absolute; top: .125rem; right: .0625rem; min-width: 1.0625rem; height: 1.0625rem; padding: 0 .25rem; border-radius: 9999px;
+  background: var(--error); color: #fff; box-shadow: 0 0 0 .125rem var(--bg-deep); font-family: var(--font-title); font-size: .75rem; line-height: 1.125rem; text-align: center; letter-spacing: .02em;
+}
+/* The count rings out three times and the bell swings twice when something is unread. */
+.badge::after { content: ''; position: absolute; inset: 0; border-radius: inherit; background: var(--error); animation: ping 1.6s ease-out 3; pointer-events: none; }
+.swing { transform-origin: 50% 10%; animation: swing 900ms ease-in-out 2; }
+
+.panel {
+  position: absolute; z-index: 30; display: flex; flex-direction: column; overflow: hidden; border: 1px solid var(--border); background: var(--bg-card);
+  box-shadow: var(--shadow-lg); animation: pop 160ms ease-out;
+}
+/* The right edge lines up with the avatar's (2.25rem avatar + .5rem gap to the right of the bell). */
+.popover { right: -2.75rem; top: calc(100% + .625rem); width: 24rem; max-height: min(34rem, calc(100dvh - 5.5rem)); border-radius: .625rem; }
+/* Phones: a sheet under the whole navbar. */
+.sheet { left: 0; right: 0; top: 100%; max-height: calc(100dvh - 4rem); border-width: 1px 0; }
+.head { display: flex; align-items: center; gap: .5rem; padding: .875rem 1rem .75rem; border-bottom: 1px solid var(--border); font-family: var(--font-heading); font-size: 1rem; color: var(--text-primary); }
+.count { padding: 0 .4375rem; border-radius: 9999px; background: var(--error); color: #fff; font-family: var(--font-title); font-size: .8125rem; line-height: 1.25rem; letter-spacing: .02em; }
+.list { overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: #3a2a15 transparent; }
+.row { animation: arrive 240ms ease-out both; animation-delay: calc(var(--i) * 40ms); }
+.row + .row { border-top: 1px solid #241c14; }
+.item { position: relative; display: flex; gap: .75rem; padding: .875rem 1rem; transition: background-color 150ms ease; }
+.item:hover { background: rgba(200, 144, 10, .07); }
+.item[data-unread] { background: linear-gradient(90deg, rgba(200, 64, 64, .09), rgba(200, 64, 64, 0) 55%); }
+.item[data-unread]:hover { background: linear-gradient(90deg, rgba(200, 64, 64, .09), rgba(200, 64, 64, 0) 55%), rgba(200, 144, 10, .07); }
+.mark { position: absolute; top: -.0625rem; left: -.0625rem; width: .625rem; height: .625rem; border-radius: 9999px; background: var(--error); box-shadow: 0 0 0 .125rem var(--bg-card); }
+
+@keyframes ping { from { opacity: .7; transform: scale(1); } to { opacity: 0; transform: scale(2.4); } }
+@keyframes swing { 0%, 100% { transform: rotate(0); } 20% { transform: rotate(14deg); } 40% { transform: rotate(-12deg); } 60% { transform: rotate(8deg); } 80% { transform: rotate(-5deg); } }
+@keyframes pop { from { opacity: 0; transform: translateY(-.25rem); } }
+@keyframes arrive { from { opacity: 0; transform: translateY(.375rem); } }
+@media (prefers-reduced-motion: reduce) { .badge::after, .swing, .panel, .row { animation: none; } }

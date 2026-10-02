@@ -348,15 +348,12 @@ async function cleanup() {
     await p.setViewportSize({ width, height: 900 });
     await p.goto(base + "/ko");
     if (width >= 1024) {
-      await p.getByTestId("nav-support").waitFor();
-      await p.getByRole("button", { name: "커뮤니티", exact: true }).click();
-      assert.equal(
-        await p.getByRole("menuitem", { name: "문의", exact: true }).count(),
-        0,
-      );
+      // Support sits in the avatar menu (REQ-SHARED-031).
+      await p.getByRole("button", { name: "사용자 메뉴 열기", exact: true }).click();
+      await p.getByRole("link", { name: "문의", exact: true }).waitFor();
     } else {
       await p.getByRole("button", { name: "메뉴 열기", exact: true }).click();
-      await p.getByTestId("nav-support-mobile").waitFor();
+      await p.getByRole("link", { name: "문의", exact: true }).waitFor();
     }
     assert(
       await p.evaluate(

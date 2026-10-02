@@ -81,6 +81,20 @@
     "contributionApproved": "Data contribution approved. +50 activity points",
     "apiLimitTitle": "API limit increase request"
   },
+  "notifications": {
+    "title": "Notifications",
+    "empty": "No notifications yet",
+    "unread": "{count} unread notifications",
+    "new": "New",
+    "comment": "Comment",
+    "reply": "Reply to your comment",
+    "someone": "Anonymous",
+    "toastComment": "{name} commented on your post",
+    "toastReply": "{name} replied to your comment",
+    "view": "View",
+    "support": "Support",
+    "supportReply": "Your inquiry has a new reply"
+  },
   "maintenance": {
     "title": "Under maintenance",
     "ended": "Maintenance is over",
