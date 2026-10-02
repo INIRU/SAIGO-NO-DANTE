@@ -119,6 +119,10 @@
 
 `profiles.public_following`과 `public_followers`는 각각 기본 비공개다. 소유자만 비공개 목록과 인원수를 볼 수 있고, 다른 사람에게는 빈 목록과 null 인원수를 반환한다. 프로필 자체가 비공개이면 목록 공개 설정과 관계없이 외부 조회를 차단한다. 공개 목록은 페이지당 25명이며 공개 프로필만 표시한다. 응답에 이메일을 포함하지 않는다. `/api/community/profiles/[id]/follows`의 조회·생성·취소와 공개 범위 저장은 세션에서 사용자를 결정하며 응답을 캐시하지 않는다.
 
+### 댓글 알림
+
+`20261002124850_comment_notifications.sql`을 적용했다. 알림은 따로 저장하지 않는다. `limbus.user_notifications(이메일, 최대 행)`이 조회할 때 댓글 표(`deck_comments`, `md_plan_comments`)에서 내 덱·플랜에 다른 사람이 단 댓글과 내 댓글에 달린 답글을 최신순으로 뽑는다(기본 30개, 최대 50개). 댓글이 지워지면 알림도 같이 사라진다. 읽음은 `profiles.notifications_read_at` 한 칸이다. `limbus.mark_notifications_read(이메일)`이 그 칸을 지금으로 바꾸고, 그 뒤에 달린 것만 읽지 않음이다. 두 함수는 service_role만 실행하며 `/api/notifications`(GET 목록, POST 읽음)가 세션 이메일로만 부른다. 조회는 댓글 표 전체를 훑으므로 댓글이 크게 늘면 글·답글 갈래별 조회로 나눈다. 검사는 `tests/sql/community-notifications.sql`.
+
 ### 유저 관리와 최근 편집 집계
 
 `admin_list_users`와 `admin_moderate_user`는 service_role만 호출할 수 있다. 이메일 검색은 `auth.users` 직접 접근 권한을 넓히지 않고 고정된 검색 경로의 함수 안에서만 수행한다. 이용 제한과 감사 기록은 같은 트랜잭션에 저장한다. 본인·운영 계정 보호, 정지된 운영자 거부, 만료된 제한 판정, 이전 `suspended_at`을 이용한 동시 변경 검사를 적용한다. `audit_logs`는 비공개이며 공개·일반 로그인 클라이언트의 직접 접근을 허용하지 않는다.
