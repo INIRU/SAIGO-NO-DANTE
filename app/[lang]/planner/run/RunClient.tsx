@@ -9,7 +9,7 @@ import BackLink from '@/components/navigation/BackLink'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 import { toast } from 'sonner'
-import { ArrowLeft, RotateCcw, MonitorUp, ChevronDown } from 'lucide-react'
+import { ArrowLeft, RotateCcw, MonitorUp, MoreHorizontal } from 'lucide-react'
 import { Link, useRouter } from '@/lib/i18n/navigation'
 import { buildGiftMap, recipeFusionMaterials, settleResultPopup, type RecipePopupEvidence } from '@/lib/planner/fusion'
 import { AUTO_ACQUIRE_EXCLUDED_GIFT_IDS } from '@/lib/vision/popup-evidence'
@@ -19,8 +19,7 @@ import { useRunStore } from '@/lib/stores/run'
 import type { ThemeData, GiftData, RecipeData, IdentityData, SinnerData, SkillSummary, EgoData, PassiveData } from '@/lib/planner/types'
 import type { MdEvent, MdEventChoice } from '@/components/mirror-dungeon/types'
 import RunSetup from '@/components/planner/run/RunSetup'
-import FloorProgress from '@/components/planner/run/FloorProgress'
-import FloorPanel from '@/components/planner/run/FloorPanel'
+import FloorPanel, { type RunView } from '@/components/planner/run/FloorPanel'
 import CompanionPanel from '@/components/planner/run/CompanionPanel'
 import RecognitionModeControl from '@/components/planner/run/RecognitionModeControl'
 import DetectionToggles, { ToggleSwitch } from '@/components/planner/run/DetectionToggles'
@@ -38,6 +37,9 @@ import { useGameTextRefs } from '@/lib/hooks/useGameTextRefs'
 /** Assist temporary saves: five slots of whole runs in this browser. */
 const RUN_DRAFTS_KEY = 'md-run-temp-slots'
 const isRunState = (value: unknown): value is RunState => !!value && typeof value === 'object' && Array.isArray((value as RunState).floorLogs)
+/** The views the bar switches between; the pack picker is reached from the floor log instead. */
+const RUN_VIEWS = ['overview', 'deck', 'event'] as const
+const RUN_VIEW_LABEL = { overview: 'viewOverview', deck: 'tab_deck', event: 'tab_event' } as const
 const DIFFICULTY_NAMES: Record<string, string> = { normal: 'N', hard: 'H', overlap: 'P', extreme: 'EX' }
 const runSlotLabel = (state: RunState) => `${state.sourcePlanSnapshot?.title?.trim() || DIFFICULTY_NAMES[state.difficulty] || state.difficulty} · ${state.currentFloor}F · ${state.giftInventory.length}`
 
@@ -66,6 +68,9 @@ export default function RunClient({ themes, gifts, recipes, identities, sinners,
   const [runSlots, setRunSlots] = useState<TempSlot<RunState>[]>([])
   useEffect(() => { setRunSlots(loadTempSlots(RUN_DRAFTS_KEY, isRunState)) }, [])
   const [confirmReset, setConfirmReset] = useState(false)
+  const [view, setView] = useState<RunView>('overview')
+  // A run that ended or was reset starts again from the overview (the bar that switches views is hidden outside a run).
+  useEffect(() => { if (state.phase !== 'playing') setView('overview') }, [state.phase])
   const giftReferences = useMemo(() => gifts.map(gift => ({ id: String(gift.game_id), imageUrl: gift.image_url })), [gifts])
   // Recognition skips exact copies of another event (their text would name several events at once); lookups keep them.
   const recognizable = useMemo(() => recognizableEvents(events, eventChoices), [events, eventChoices])
@@ -228,7 +233,7 @@ export default function RunClient({ themes, gifts, recipes, identities, sinners,
     if (gpuRefused) { setGpuHelp(true); return }
     void capture.start().then(block => { if (block) setGpuHelp(true) })
   }
-  // 인식 설정 팝오버는 바깥을 누르거나 Esc로 닫는다
+  // 더보기 팝오버(인식 설정, 초기화)는 바깥을 누르거나 Esc로 닫는다
   const recognitionRef = useRef<HTMLDetailsElement>(null)
   useEffect(() => {
     const close = (event: Event) => {
@@ -277,6 +282,7 @@ export default function RunClient({ themes, gifts, recipes, identities, sinners,
     if (!slot.draft) return
     capture.stop()
     dispatch({ type: 'LOAD_RUN', state: normalizeRunState(slot.draft.state) })
+    setView('overview')
     toast.success(tTempSaves('loadedFromSlot', { slot: slot.slotNumber }))
   }
   const deleteRunSlot = (slot: TempSlot<RunState>) => {
@@ -290,14 +296,36 @@ export default function RunClient({ themes, gifts, recipes, identities, sinners,
   useHtmlFlag('with-assist-running', running)
   return <div data-assist-run data-assist-running={running || undefined} className={`bg-[var(--bg-deep)] text-[var(--text-primary)] ${running ? 'flex h-dvh flex-col overflow-hidden' : 'min-h-dvh lg:flex lg:h-dvh lg:flex-col lg:overflow-hidden'}`}>
     <div className={`mx-auto w-full max-w-[90rem] px-4 sm:px-6 lg:px-8 ${running ? 'flex min-h-0 flex-1 flex-col py-2 sm:py-3' : 'pb-12 pt-4 sm:pt-6 lg:flex lg:min-h-0 lg:flex-1 lg:flex-col lg:pb-6'}`}>
-      <header className={`flex shrink-0 items-center justify-between gap-x-3 gap-y-2 border-b border-[var(--border)] max-sm:flex-nowrap sm:flex-wrap ${running ? 'mb-3 pb-2' : 'mb-4 pb-3'}`}>
+      {/* One bar: where the page is, its views, then what a run needs once (connect, PiP) and the rest behind "more". */}
+      <header className={`flex shrink-0 flex-wrap items-center gap-x-3 gap-y-1 border-b border-[var(--border)] ${running ? 'mb-3 pb-2' : 'mb-4 pb-3'}`}>
         <div className="flex min-w-0 items-center gap-3">
           <BackLink href="/" aria-label={t('backToPlanner')} title={t('backToPlanner')} className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--gold-light)] focus-visible:outline-2 focus-visible:outline-[var(--gold-light)]"><ArrowLeft size={18} /></BackLink>
           <h1 className="truncate font-[family-name:var(--font-heading)] text-lg leading-tight text-[var(--gold-light)] sm:text-xl">{t('title')}</h1>
         </div>
-        <div className="flex shrink-0 items-center gap-1.5 sm:flex-wrap sm:gap-2">
-          <TempSaveMenu title={tTempSaves('runMenuLabel')} slots={runSlots} onSave={saveRunSlot} onLoad={loadRunSlot} onDelete={deleteRunSlot} />
+        {state.phase === 'playing' && <nav aria-label={t('sections')} data-run-views className="flex max-sm:order-last max-sm:w-full sm:ml-2">
+          {RUN_VIEWS.map(item => {
+            // The pack picker is opened from the overview's floor log and returns to it.
+            const current = view === item || (item === 'overview' && view === 'theme')
+            return <button key={item} type="button" aria-current={current ? 'true' : undefined} onClick={() => setView(item)}
+              className={`min-h-10 border-b-2 px-3 text-[0.8125rem] font-semibold focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[var(--gold-light)] ${current ? 'border-[var(--gold)] text-[var(--gold-light)]' : 'border-transparent text-[var(--text-tertiary)] hover:text-[var(--text-primary)]'}`}>{t(RUN_VIEW_LABEL[item])}</button>
+          })}
+        </nav>}
+        <div className="ml-auto flex shrink-0 items-center gap-1.5 sm:gap-2">
+        {state.phase === 'playing' && !capture.mobile && <div data-capture-state={capture.status} role={capture.status === 'error' ? 'alert' : 'status'} title={t(samples ? 'captureFramesPrivacySamples' : 'captureFramesPrivacy')}
+          className="flex min-w-0 items-center gap-2 md:mr-1">
+          {/* Static state dot: gold while connected, red on failure, muted otherwise. */}
+          <span aria-hidden="true" className={`h-2 w-2 shrink-0 rounded-full ${capture.status === 'running' ? 'bg-[var(--gold)] shadow-[0_0_0_3px_color-mix(in_srgb,var(--gold)_22%,transparent)]'
+            : capture.status === 'error' || capture.status === 'unsupported' ? 'bg-[var(--error)]' : 'bg-[var(--text-muted)]'}`} />
+          <p className="min-w-0 break-keep text-[0.8125rem] leading-5 max-sm:sr-only">
+            <span className={`font-semibold ${capture.status === 'error' || capture.status === 'unsupported' ? 'text-[var(--error)]' : 'text-[var(--text-secondary)]'}`}>{t(`capture_${capture.status}`)}</span>
+            <span className="sr-only"> {t(samples ? 'captureFramesPrivacySamples' : 'captureFramesPrivacy')}</span>
+          </p>
+        </div>}
         {state.phase === 'playing' && <>
+          {/* Filled while idle: connecting the screen is the next thing a new run needs. */}
+          <button type="button" disabled={capture.mobile} title={capture.mobile ? t('captureMobileBlocked') : undefined} onClick={() => { if (captureActive) capture.stop(); else connect() }} className={`inline-flex min-h-10 items-center gap-2 rounded-md border px-3 text-xs font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--gold-light)] disabled:border-[var(--border)] disabled:bg-transparent disabled:text-[var(--text-muted)] ${captureActive ? 'border-[var(--border-gold)] text-[var(--gold-light)] hover:bg-[var(--bg-elevated)]' : 'border-[var(--gold)] bg-[var(--gold)] text-[var(--bg-deep)] hover:bg-[var(--gold-light)]'}`}>
+            <MonitorUp size={16} aria-hidden="true" /> <span className="max-sm:sr-only">{t(captureActive ? 'stopScreenPreview' : 'screenPreview')}</span>
+          </button>
           {/* Owns the PiP window and every capture-driven record (acquisitions, packs, events, Undo); renders only its button here. */}
           <CompanionPanel state={state} dispatch={dispatch} themes={themes} giftMap={giftMap}
             observedGiftIds={observedGiftIds} popupAcquisitions={capture.status === 'running' ? capture.popupAcquisitions : []}
@@ -313,14 +341,24 @@ export default function RunClient({ themes, gifts, recipes, identities, sinners,
             observedFloor={capture.status === 'running' ? capture.observedFloor : null}
             fusionEvidence={capture.status === 'running' ? capture.fusionEvidence : null}
             />
-          {/* Filled while idle: connecting the screen is the next thing a new run needs. */}
-          <button type="button" disabled={capture.mobile} title={capture.mobile ? t('captureMobileBlocked') : undefined} onClick={() => { if (captureActive) capture.stop(); else connect() }} className={`inline-flex min-h-10 items-center gap-2 rounded-md border px-3 text-xs font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--gold-light)] disabled:border-[var(--border)] disabled:bg-transparent disabled:text-[var(--text-muted)] ${captureActive ? 'border-[var(--border-gold)] text-[var(--gold-light)] hover:bg-[var(--bg-elevated)]' : 'border-[var(--gold)] bg-[var(--gold)] text-[var(--bg-deep)] hover:bg-[var(--gold-light)]'}`}>
-            <MonitorUp size={16} aria-hidden="true" /> <span className="max-sm:sr-only">{t(captureActive ? 'stopScreenPreview' : 'screenPreview')}</span>
-          </button>
-          <button type="button" onClick={() => setConfirmReset(true)} className="inline-flex min-h-10 items-center gap-2 rounded-md border border-[var(--border)] px-3 text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] focus-visible:outline-2 focus-visible:outline-[var(--gold-light)]">
-            <RotateCcw size={15} aria-hidden="true" /> <span className="max-sm:sr-only">{t('reset')}</span>
-          </button>
         </>}
+          <TempSaveMenu title={tTempSaves('runMenuLabel')} slots={runSlots} onSave={saveRunSlot} onLoad={loadRunSlot} onDelete={deleteRunSlot} />
+        {/* 떠 있는 팝오버: 열어도 아래 화면을 밀지 않는다. 런 중에 자주 쓰지 않는 것(인식 설정, 초기화)을 모은다. */}
+        {state.phase === 'playing' && <details ref={recognitionRef} data-run-more className="group relative shrink-0">
+          <summary aria-label={t('more')} title={t('more')} className="flex min-h-10 cursor-pointer list-none items-center gap-1.5 rounded-md border border-[var(--border)] px-2.5 text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] focus-visible:outline-2 focus-visible:outline-[var(--gold-light)] group-open:border-[var(--border-gold)] group-open:text-[var(--gold-light)] [&::-webkit-details-marker]:hidden">
+            <MoreHorizontal aria-hidden="true" size={16} /><span className="max-lg:sr-only">{t('more')}</span>
+          </summary>
+          <div className="absolute right-0 top-[calc(100%+0.375rem)] z-40 max-h-[75dvh] w-[min(48rem,calc(100vw-2rem))] overflow-y-auto rounded-lg border border-[var(--border)] bg-[var(--bg-panel)] p-3 shadow-[0_1rem_2.5rem_rgba(0,0,0,0.55)]">
+            {!capture.mobile && <>
+              <h2 className="mb-3 flex items-baseline justify-between gap-3 text-sm font-bold text-[var(--text-primary)]">{t('setupRecognitionTitle')}<span className="text-xs font-normal text-[var(--gold-light)]">{recognitionSummary}</span></h2>
+              {recognitionControls}
+            </>}
+            {/* The menu closes first: the confirmation resets the run, which removes this menu. */}
+            <button type="button" onClick={() => { if (recognitionRef.current) recognitionRef.current.open = false; setConfirmReset(true) }} className={`inline-flex min-h-10 items-center gap-2 rounded-md border border-[var(--border)] px-3 text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] focus-visible:outline-2 focus-visible:outline-[var(--gold-light)] ${capture.mobile ? '' : 'mt-3'}`}>
+              <RotateCcw size={15} aria-hidden="true" /> {t('reset')}
+            </button>
+          </div>
+        </details>}
         </div>
       </header>
       {state.phase === 'playing' && capture.mobile && <p role="note" className="mb-3 shrink-0 rounded-md border border-[var(--border)] bg-[var(--bg-card)] px-3 py-2 text-xs text-[var(--text-secondary)]" data-capture-mobile>{t('captureMobileBlocked')}</p>}
@@ -332,32 +370,12 @@ export default function RunClient({ themes, gifts, recipes, identities, sinners,
       </div>}
       {capture.gpu && <GpuRequiredModal block={capture.gpu} open={gpuHelp} onClose={() => setGpuHelp(false)}
         onReconnect={() => { setGpuHelp(false); connect() }} />}
-      {state.phase === 'playing' && !capture.mobile && <div className="mb-2 flex shrink-0 flex-wrap items-center justify-between gap-x-6 gap-y-2">
-      <div data-capture-state={capture.status} role={capture.status === 'error' ? 'alert' : 'status'} title={t(samples ? 'captureFramesPrivacySamples' : 'captureFramesPrivacy')}
-        className="flex min-w-0 max-w-3xl flex-1 items-center gap-2">
-        {/* Static state dot: gold while connected, red on failure, muted otherwise. */}
-        <span aria-hidden="true" className={`h-2 w-2 shrink-0 rounded-full ${capture.status === 'running' ? 'bg-[var(--gold)] shadow-[0_0_0_3px_color-mix(in_srgb,var(--gold)_22%,transparent)]'
-          : capture.status === 'error' || capture.status === 'unsupported' ? 'bg-[var(--error)]' : 'bg-[var(--text-muted)]'}`} />
-        <p className="min-w-0 break-keep text-[0.8125rem] leading-5">
-          <span className={`font-semibold ${capture.status === 'error' || capture.status === 'unsupported' ? 'text-[var(--error)]' : 'text-[var(--gold-light)]'}`}>{t(`capture_${capture.status}`)}</span>
-          <span className="sr-only"> {t(samples ? 'captureFramesPrivacySamples' : 'captureFramesPrivacy')}</span>
-        </p>
-      </div>
-      {/* 떠 있는 팝오버: 열어도 아래 화면을 밀지 않는다 */}
-      <details ref={recognitionRef} className="group relative shrink-0">
-        <summary className="flex min-h-10 cursor-pointer list-none items-center justify-between gap-3 rounded-md border border-[var(--border)] bg-[var(--bg-panel)] px-3 text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] focus-visible:outline-2 focus-visible:outline-[var(--gold-light)] [&::-webkit-details-marker]:hidden">
-          <span>{t('setupRecognitionTitle')}</span>
-          <span className="flex items-center gap-2 font-normal text-[var(--gold-light)]">{recognitionSummary}<ChevronDown aria-hidden="true" size={15} className="transition-transform group-open:rotate-180 motion-reduce:transition-none" /></span>
-        </summary>
-        <div className="absolute right-0 top-[calc(100%+0.375rem)] z-40 max-h-[70dvh] w-[min(48rem,calc(100vw-2rem))] overflow-y-auto rounded-lg border border-[var(--border)] bg-[var(--bg-panel)] p-3 shadow-[0_1rem_2.5rem_rgba(0,0,0,0.55)]">{recognitionControls}</div>
-      </details>
       {/* Asked once, the first time the screen is connected; the switch in the recognition settings changes it later. */}
-      {captureActive && samples === null && <div role="group" aria-label={t('samplesLabel')} data-assist-samples-prompt
-        className="flex w-full flex-wrap items-center gap-2 rounded-md border border-[var(--border-gold)] bg-[var(--bg-card)] px-3 py-2 text-xs">
+      {state.phase === 'playing' && !capture.mobile && captureActive && samples === null && <div role="group" aria-label={t('samplesLabel')} data-assist-samples-prompt
+        className="mb-3 flex w-full shrink-0 flex-wrap items-center gap-2 rounded-md border border-[var(--border-gold)] bg-[var(--bg-card)] px-3 py-2 text-xs">
         <p className="min-w-0 flex-1 basis-64 break-keep leading-5 text-[var(--text-secondary)]"><span className="font-semibold text-[var(--gold-light)]">{t('samplesPrompt')}</span> {t('samplesHint')}</p>
         <button type="button" onClick={() => changeSamples(true)} className="min-h-9 rounded-md bg-[var(--gold)] px-3 font-semibold text-[var(--bg-deep)] hover:bg-[var(--gold-light)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--gold-light)]">{t('samplesYes')}</button>
         <button type="button" onClick={() => changeSamples(false)} className="min-h-9 rounded-md border border-[var(--border)] px-3 text-[var(--text-secondary)] hover:text-[var(--text-primary)] focus-visible:outline-2 focus-visible:outline-[var(--gold-light)]">{t('samplesNo')}</button>
-      </div>}
       </div>}
 
       {dataError && <p role="alert" className="mb-5 shrink-0 rounded-md border border-[var(--error)] p-3 text-sm text-[var(--error)]">{t('dataError')}</p>}
@@ -369,9 +387,8 @@ export default function RunClient({ themes, gifts, recipes, identities, sinners,
           <p className="mt-4 text-[var(--text-secondary)]">{t('completedSummary', { floors: state.floorLogs.filter(log => log.completedAt).length, gifts: state.giftInventory.length })}</p>
           <div className="mt-7 flex flex-wrap justify-center gap-3"><button onClick={reset} className="min-h-11 rounded-md border border-[var(--border-gold)] px-5 text-[var(--gold-light)]">{t('newRun')}</button><button onClick={reviewDraft} className="min-h-11 rounded-md bg-[var(--gold)] px-5 font-bold text-[var(--bg-deep)]">{t('reviewDraft')}</button></div>
         </section> : <>
-          <div className="shrink-0"><FloorProgress state={state} dispatch={dispatch} /></div>
-          <div className="mt-2 min-h-0 min-w-0 flex-1">
-            <FloorPanel state={giftConditionState} dispatch={dispatch} themes={themes} gifts={gifts} giftMap={giftMap} recipes={recipes} identities={identities} sinners={sinners} skills={skills} passives={passives} egos={egos} events={events} eventChoices={eventChoices} observedEventIds={observedEventIds} />
+          <div className="min-h-0 min-w-0 flex-1">
+            <FloorPanel state={giftConditionState} dispatch={dispatch} themes={themes} gifts={gifts} giftMap={giftMap} recipes={recipes} identities={identities} sinners={sinners} skills={skills} passives={passives} egos={egos} events={events} eventChoices={eventChoices} observedEventIds={observedEventIds} view={view} onView={setView} />
           </div>
         </>}
     </div>
