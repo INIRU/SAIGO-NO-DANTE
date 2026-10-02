@@ -59,3 +59,14 @@ it('REQ-ASSIST-050 the record column keeps two control rows: keyword tabs, then 
   expect(html.slice(0, sheetStart)).not.toContain('min-w-[2.125rem]')
   expect(run.filterFloor.length).toBeLessThanOrEqual(6)
 })
+
+it('REQ-MIRROR-DUNGEON-014 the gift grid is its own stacking context, so a hovered card (z-index 10) cannot cover the sticky filter row (z-10)', () => {
+  const html = render(state())
+  // The filter row sticks with z-10 ...
+  expect(html).toMatch(/<div role="search"[^>]*class="sticky z-10/)
+  // ... and everything after it (the groups of cards) is isolated below it.
+  const toolbarEnd = html.indexOf('id="md-gift-more-filters"')
+  const grid = html.slice(toolbarEnd).match(/<div class="([^"]*)"[^>]*><section/)
+  expect(grid).not.toBeNull()
+  expect(grid![1].split(' ')).toContain('isolate')
+})
