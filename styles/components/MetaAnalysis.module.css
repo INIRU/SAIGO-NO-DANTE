@@ -160,8 +160,8 @@
 @media(max-width: 639px) {
   .page { padding: 5.5rem 1rem 3rem; }
   .toolbar { gap: .5rem; }
-  .toolbar [role=tablist], .periods { width: 100%; }
-  .toolbar [role=tab], .period { flex: 1; }
+  .toolbar [role=tablist], .toolbar .boneTabs, .periods { width: 100%; }
+  .toolbar [role=tab], .toolbar .boneTabs > *, .period { flex: 1; }
   .period { padding-inline: .375rem; font-size: .75rem; }
   .panel, .overview { padding: 1.125rem; }
   .overviewHead { gap: .875rem 1.5rem; }
@@ -329,6 +329,18 @@
 .summaryBar { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 1rem 2.5rem; padding: 1rem 1.25rem; margin-bottom: .75rem; background: var(--bg-panel); border: 1px solid var(--border); border-radius: .5rem; }
 .views { position: sticky; top: var(--nav-offset, 4rem); z-index: 5; margin-bottom: 1rem; background: var(--bg-deep); scroll-margin-top: var(--nav-offset, 4rem); transition: top 300ms cubic-bezier(0.4, 0, 0.2, 1); }
 .stale { opacity: .55; transition: opacity 200ms ease; }
+/* Arrival: the summary, the tabs and the panel rise in order (--i) when the data lands, and the panel's content again on a tab switch. */
+.arrive { animation: arrive 280ms cubic-bezier(0.22, 1, 0.36, 1) backwards; animation-delay: calc(var(--i, 0) * 80ms); }
+@keyframes arrive { from { opacity: 0; transform: translateY(.5rem); } }
+/* Skeleton (MetaSkeleton.tsx): the same boxes as the tab bars and the sample counts. */
+.boneTabs { display: flex; align-items: center; gap: 1.5rem; min-height: 2.75rem; padding-inline: .75rem; }
+.boneViews { border-bottom: 1px solid var(--border); }
+.boneViews .boneTabs { min-height: calc(2.75rem - 1px); }
+.boneStats { display: flex; gap: 1.75rem; }
+/* A count over its label: the number, the gap and the label's line box (.6875rem at line-height 1.5). */
+.boneStats > div { display: flex; flex-direction: column; justify-content: space-between; height: calc(1.625rem + .25rem + .6875rem * 1.5); }
+/* The methodology line: .75rem at line-height 1.7, with its .25rem padding. */
+.boneNote { margin-block: calc(.75rem * .35 + .25rem); }
 .subject { scroll-margin-top: calc(var(--nav-offset, 4rem) + 4.25rem); }
 .views [role=tab] { flex: 1 1 0; justify-content: center; font-size: .9375rem; }
 @media(min-width: 640px) { .views [role=tab] { flex: 0 0 auto; padding-inline: 1.25rem; } }
@@ -382,7 +394,7 @@
   .constraintFloorHead { flex-direction: row; align-items: baseline; gap: .5rem; }
   .constraintCards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
-@media(prefers-reduced-motion: reduce) { .identityList li > button, .identityList, .views, .stale { transition: none; } }
+@media(prefers-reduced-motion: reduce) { .identityList li > button, .identityList, .views, .stale { transition: none; } .arrive { animation: none; } }
 
 /* Formation order labels: one decimal on wide screens, whole numbers where twelve columns get narrow */
 .orderRounded { display: none; }

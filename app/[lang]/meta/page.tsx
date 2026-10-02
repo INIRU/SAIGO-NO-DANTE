@@ -4,6 +4,7 @@ import { getTranslations } from 'next-intl/server'
 import { Suspense } from 'react'
 import { getMetaData } from '@/lib/db/meta'
 import MetaClient from './MetaClient'
+import MetaSkeleton from '@/components/meta/MetaSkeleton'
 import styles from '@/styles/components/MetaAnalysis.module.css'
 import PageHeader from '@/components/ui/PageHeader'
 import { connection } from 'next/server'
@@ -48,8 +49,8 @@ export default async function MetaPage({ params }: { params: Promise<{ lang: str
       {/* Server-rendered header — always in HTML for LCP */}
       <PageHeader title={t('title')} description={t('description')} />
 
-      {/* Query-state controls require a Suspense boundary. */}
-      <Suspense fallback={null}>
+      {/* Query-state controls require a Suspense boundary; the skeleton holds the page's place while the data is read. */}
+      <Suspense fallback={<MetaSkeleton />}>
         <MetaContent />
       </Suspense>
     </div>

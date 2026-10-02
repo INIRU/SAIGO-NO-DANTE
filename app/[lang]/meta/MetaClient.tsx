@@ -1,5 +1,6 @@
 'use client'
 
+import type { CSSProperties } from 'react'
 import useSWR from 'swr'
 import { useTranslations } from 'next-intl'
 import UnderlineTabBar from '@/components/ui/UnderlineTabBar'
@@ -8,10 +9,12 @@ import { useQueryState, useQueryStates, parseAsString, parseAsStringLiteral } fr
 import IdentityAnalysis from '@/components/meta/IdentityAnalysis'
 import MetaOverview from '@/components/meta/MetaOverview'
 import DungeonAnalysis from '@/components/meta/DungeonAnalysis'
-import { SkeletonCircle, SkeletonLine, SkeletonPage } from '@/components/ui/Skeleton'
+import { MetaBodySkeleton } from '@/components/meta/MetaSkeleton'
 import styles from '@/styles/components/MetaAnalysis.module.css'
 
 const VIEWS = ['overall', 'identity', 'dungeon'] as const
+/** A section's place in the arrival order (MetaAnalysis.module.css `.arrive`). */
+const order = (i: number) => ({ '--i': i }) as CSSProperties
 
 async function fetchMeta(url: string): Promise<MetaData> {
   const response = await fetch(url)
@@ -59,20 +62,7 @@ export default function MetaClient({ initialData }: { initialData: MetaData | nu
           {t('loadError')}{' '}
           <button type="button" onClick={() => mutate()} className="underline underline-offset-2">{t('retry')}</button>
         </div>}
-      {isLoading && !data && <SkeletonPage className={styles.analysis}>
-        <div className={styles.overview}>
-          <div className={styles.overviewHead}><SkeletonLine w="6rem" h="1.25rem" /><SkeletonLine w="18rem" h="0.75rem" /></div>
-          <div className={styles.overviewGrid}>
-            {[0, 1].map(i => <div key={i} className={styles.chartBlock}><SkeletonLine w="5rem" h="0.9375rem" />
-              <div className={styles.donut}><SkeletonCircle size="8.75rem" raised /><div className={styles.legend}>{[0, 1, 2, 3].map(j => <SkeletonLine key={j} h="1.5rem" raised className="my-1" />)}</div></div>
-            </div>)}
-            <div className={styles.chartBlock}><SkeletonLine w="7rem" h="0.9375rem" />{[0, 1, 2, 3, 4, 5].map(j => <SkeletonLine key={j} h="2.5rem" raised className="my-0.5" />)}</div>
-          </div>
-        </div>
-        <div className={styles.panel}><div className={styles.sectionHead}><SkeletonLine w="9rem" h="1rem" /></div>
-          <div className={styles.sinnerGrid}>{Array.from({ length: 12 }, (_, i) => <SkeletonLine key={i} h="9.5rem" raised />)}</div>
-        </div>
-      </SkeletonPage>}
+      {isLoading && !data && <MetaBodySkeleton />}
       {data && <>
       {data.sampleCount === 0 && period !== 'all' && (
         <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-[var(--border)] bg-[var(--bg-elevated)] p-4">
@@ -82,7 +72,7 @@ export default function MetaClient({ initialData }: { initialData: MetaData | nu
           </button>
         </div>
       )}
-        <div className={styles.summaryBar + (stale ? " " + styles.stale : "")}>
+        <div className={`${styles.summaryBar} ${styles.arrive}${stale ? " " + styles.stale : ""}`} style={order(0)}>
           <dl className={styles.sampleStats} aria-live="polite">
             <div><dt>{t('sampleValid')}</dt><dd data-sample-count>{data.sampleCount}</dd></div>
             <div><dt>{t('sampleDecks')}</dt><dd>{data.sourceCounts.decks}</dd></div>
@@ -93,13 +83,16 @@ export default function MetaClient({ initialData }: { initialData: MetaData | nu
             <details className={styles.methodology}><summary>{t('methodologyLabel')}</summary><p>{t('methodology')}</p>{data.excludedSamples > 0 && <p>{t('excluded', { count: data.excludedSamples })}</p>}</details>
           </div>
         </div>
-        <div className={styles.views} data-meta-views>
+        <div className={`${styles.views} ${styles.arrive}`} style={order(1)} data-meta-views>
           <UnderlineTabBar tabs={VIEWS.map(key => ({ key, label: t('views.' + key) }))} activeKey={view.tab} onTabChange={key => showTab(key as typeof VIEWS[number])} />
         </div>
-        <div role="tabpanel" aria-label={t('views.' + view.tab)} aria-busy={stale || undefined} className={stale ? styles.stale : undefined}>
-          {view.tab === 'overall' && <MetaOverview data={data} onSelect={id => showTab('identity', id)} />}
-          {view.tab === 'identity' && <IdentityAnalysis data={data} selectedId={view.id} onSelect={id => setView({ id })} />}
-          {view.tab === 'dungeon' && <DungeonAnalysis data={data} />}
+        <div role="tabpanel" aria-label={t('views.' + view.tab)} aria-busy={stale || undefined} className={`${styles.arrive}${stale ? " " + styles.stale : ""}`} style={order(2)}>
+          {/* Redrawn per tab, so a tab switch rises too, without the first arrival's wait. */}
+          <div key={view.tab} className={styles.arrive} data-meta-panel={view.tab}>
+            {view.tab === 'overall' && <MetaOverview data={data} onSelect={id => showTab('identity', id)} />}
+            {view.tab === 'identity' && <IdentityAnalysis data={data} selectedId={view.id} onSelect={id => setView({ id })} />}
+            {view.tab === 'dungeon' && <DungeonAnalysis data={data} />}
+          </div>
         </div>
       </>}
     </div>
