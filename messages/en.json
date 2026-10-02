@@ -83,17 +83,15 @@
   },
   "notifications": {
     "title": "Notifications",
-    "empty": "No notifications yet",
+    "newCount": "{count} new",
+    "empty": "Comments on your decks and plans show up here",
     "unread": "{count} unread notifications",
     "new": "New",
-    "comment": "Comment",
-    "reply": "Reply to your comment",
+    "comment": "<b>{name}</b> commented on {title}",
+    "reply": "<b>{name}</b> replied to your comment",
+    "supportReply": "Your <b>inquiry</b> has a new reply",
     "someone": "Anonymous",
-    "toastComment": "{name} commented on your post",
-    "toastReply": "{name} replied to your comment",
-    "view": "View",
-    "support": "Support",
-    "supportReply": "Your inquiry has a new reply"
+    "close": "Dismiss"
   },
   "maintenance": {
     "title": "Under maintenance",

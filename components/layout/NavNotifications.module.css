@@ -1,4 +1,5 @@
-/* Notification bell and panel of the navbar. */
+/* Notification bell, panel and toast of the navbar. The list is kept plain: one line saying who did what, one line of the
+   comment, the time; only unread rows carry a gold dot. */
 .badge {
   position: absolute; top: .125rem; right: .0625rem; min-width: 1.0625rem; height: 1.0625rem; padding: 0 .25rem; border-radius: 9999px;
   background: var(--error); color: #fff; box-shadow: 0 0 0 .125rem var(--bg-deep); font-family: var(--font-title); font-size: .75rem; line-height: 1.125rem; text-align: center; letter-spacing: .02em;
@@ -7,27 +8,45 @@
 .badge::after { content: ''; position: absolute; inset: 0; border-radius: inherit; background: var(--error); animation: ping 1.6s ease-out 3; pointer-events: none; }
 .swing { transform-origin: 50% 10%; animation: swing 900ms ease-in-out 2; }
 
+/* One card on every width. */
 .panel {
-  position: absolute; z-index: 30; display: flex; flex-direction: column; overflow: hidden; border: 1px solid var(--border); background: var(--bg-card);
-  box-shadow: var(--shadow-lg); animation: pop 160ms ease-out;
+  position: absolute; z-index: 30; top: calc(100% + .625rem); display: flex; flex-direction: column; width: min(24rem, calc(100vw - 1.5rem)); max-height: min(34rem, calc(100dvh - 5.5rem));
+  padding: .5rem; border: 1px solid #2e2417; border-radius: .75rem; background: #17120c; box-shadow: 0 1.5rem 4rem #0006; animation: pop 160ms ease-out;
 }
-/* The right edge lines up with the avatar's (2.25rem avatar + .5rem gap to the right of the bell). */
-.popover { right: -2.75rem; top: calc(100% + .625rem); width: 24rem; max-height: min(34rem, calc(100dvh - 5.5rem)); border-radius: .625rem; }
-/* Phones: a sheet under the whole navbar. */
-.sheet { left: 0; right: 0; top: 100%; max-height: calc(100dvh - 4rem); border-width: 1px 0; }
-.head { display: flex; align-items: center; gap: .5rem; padding: .875rem 1rem .75rem; border-bottom: 1px solid var(--border); font-family: var(--font-heading); font-size: 1rem; color: var(--text-primary); }
-.count { padding: 0 .4375rem; border-radius: 9999px; background: var(--error); color: #fff; font-family: var(--font-title); font-size: .8125rem; line-height: 1.25rem; letter-spacing: .02em; }
+/* Desktop: the right edge lines up with the avatar's (2.25rem avatar + .5rem gap to the right of the bell). */
+.popover { right: -2.75rem; }
+/* Phones and narrow windows: placed against the navbar itself, .75rem from the screen edge. */
+.floating { right: .75rem; top: calc(100% - .25rem); }
+.head { display: flex; align-items: baseline; padding: .625rem .75rem .5rem; font-size: 1rem; font-weight: 600; color: var(--text-primary); }
+.count { margin-left: auto; font-size: .75rem; font-weight: 400; color: var(--text-muted); }
 .list { overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: #3a2a15 transparent; }
 .row { animation: arrive 240ms ease-out both; animation-delay: calc(var(--i) * 40ms); }
-.row + .row { border-top: 1px solid #241c14; }
-.item { position: relative; display: flex; gap: .75rem; padding: .875rem 1rem; transition: background-color 150ms ease; }
-.item:hover { background: rgba(200, 144, 10, .07); }
-.item[data-unread] { background: linear-gradient(90deg, rgba(200, 64, 64, .09), rgba(200, 64, 64, 0) 55%); }
-.item[data-unread]:hover { background: linear-gradient(90deg, rgba(200, 64, 64, .09), rgba(200, 64, 64, 0) 55%), rgba(200, 144, 10, .07); }
-.mark { position: absolute; top: -.0625rem; left: -.0625rem; width: .625rem; height: .625rem; border-radius: 9999px; background: var(--error); box-shadow: 0 0 0 .125rem var(--bg-card); }
+.item { display: block; padding: .625rem .75rem; border-radius: .5rem; transition: background-color 150ms ease; }
+.item:hover { background: #ffffff08; }
+
+/* The row itself (panel rows and toasts). */
+.card { display: grid; grid-template-columns: 2.25rem minmax(0, 1fr) auto; column-gap: .75rem; align-items: center; text-align: left; }
+.support { display: grid; place-items: center; width: 2.25rem; height: 2.25rem; border: 1px solid var(--gold-dim); border-radius: 9999px; color: var(--gold-light); }
+.line { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .875rem; line-height: 1.35; color: var(--text-secondary); }
+.line b { font-weight: 600; color: var(--text-primary); }
+.words { margin-top: .125rem; font-size: .8125rem; color: var(--text-muted); }
+.card:not([data-unread]) .line b { font-weight: 500; color: var(--text-secondary); }
+.aside { display: flex; align-items: center; gap: .375rem; font-size: .6875rem; color: var(--text-muted); white-space: nowrap; }
+.dot { width: .5rem; height: .5rem; border-radius: 9999px; background: var(--gold-light); }
+
+/* A new notification announced as a toast: the same row on its own card, with a close button. */
+.toast {
+  position: relative; width: var(--width, 22.25rem); max-width: calc(100vw - 2rem); border: 1px solid #2e2417; border-radius: .75rem;
+  background: #17120c; box-shadow: 0 .5rem 1.5rem #0006; font-family: var(--font-body);
+}
+.toastOpen { display: block; width: 100%; padding: .75rem 2.5rem .75rem .75rem; border-radius: inherit; cursor: pointer; transition: background-color 150ms ease; }
+.toastOpen:hover { background: #ffffff08; }
+.toastClose { position: absolute; top: 50%; right: .375rem; translate: 0 -50%; display: grid; place-items: center; width: 2rem; height: 2rem; border-radius: .375rem; color: var(--text-muted); cursor: pointer; transition: color 150ms ease; }
+.toastClose:hover { color: var(--text-primary); }
+:is(.toastOpen, .toastClose):focus-visible { outline: 2px solid var(--gold); outline-offset: -2px; }
 
 @keyframes ping { from { opacity: .7; transform: scale(1); } to { opacity: 0; transform: scale(2.4); } }
 @keyframes swing { 0%, 100% { transform: rotate(0); } 20% { transform: rotate(14deg); } 40% { transform: rotate(-12deg); } 60% { transform: rotate(8deg); } 80% { transform: rotate(-5deg); } }
 @keyframes pop { from { opacity: 0; transform: translateY(-.25rem); } }
 @keyframes arrive { from { opacity: 0; transform: translateY(.375rem); } }
-@media (prefers-reduced-motion: reduce) { .badge::after, .swing, .panel, .row { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .badge::after, .swing, .panel, .row { animation: none; } .item, .toastOpen, .toastClose { transition: none; } }

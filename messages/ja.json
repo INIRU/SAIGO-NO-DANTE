@@ -83,17 +83,15 @@
   },
   "notifications": {
     "title": "通知",
-    "empty": "通知はまだありません",
+    "newCount": "新着 {count}件",
+    "empty": "デッキやプランにコメントが付くと、ここに表示されます",
     "unread": "未読の通知 {count}件",
     "new": "新着",
-    "comment": "コメント",
-    "reply": "あなたのコメントへの返信",
+    "comment": "<b>{name}</b>さんが{title}にコメントしました",
+    "reply": "<b>{name}</b>さんがあなたのコメントに返信しました",
+    "supportReply": "<b>お問い合わせ</b>に新しい返信があります",
     "someone": "匿名",
-    "toastComment": "{name}さんがコメントしました",
-    "toastReply": "{name}さんが返信しました",
-    "view": "見る",
-    "support": "お問い合わせ",
-    "supportReply": "お問い合わせに新しい返信があります"
+    "close": "閉じる"
   },
   "maintenance": {
     "title": "メンテナンス中です",

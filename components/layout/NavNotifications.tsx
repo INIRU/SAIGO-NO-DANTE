@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useRef, type CSSProperties } from 'react'
-import { Bell, CornerDownRight, MessageCircle } from 'lucide-react'
+import { useEffect, useRef, type CSSProperties, type ReactNode } from 'react'
+import { Bell, MessageCircle, X } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import RelativeTime from '@/components/ui/RelativeTime'
 import { DEFAULT_AVATAR_URL } from '@/lib/constants/game'
@@ -9,12 +9,50 @@ import type { Notification } from '@/lib/notifications'
 import { NavAvatar, NavLink, focusRing } from './nav-shared'
 import styles from './NavNotifications.module.css'
 
-/** The panel's list: who wrote, when, the comment's first lines, and whether it is a comment or a reply on which post. */
+interface CardProps {
+  /** The commenter's picture; null draws the support desk's mark instead. */
+  avatar: string | null
+  /** Who did what, with the name in <b>. */
+  sentence: ReactNode
+  /** The comment's first words. */
+  words?: string
+  unread: boolean
+  /** Screen-reader name of the unread dot. */
+  newLabel: string
+  time?: ReactNode
+}
+
+/**
+ * One notification row: picture, a line saying who did what, a line of the comment, the time and a dot while unread.
+ * It reads no translations itself, because a toast renders it outside the page's message provider.
+ */
+function NotificationCard({ avatar, sentence, words, unread, newLabel, time }: CardProps) {
+  return (
+    <span className={styles.card} data-unread={unread || undefined}>
+      {avatar ? <NavAvatar url={avatar} size="2.25rem" /> : <span className={styles.support}><MessageCircle size={17} aria-hidden="true" /></span>}
+      <span className="min-w-0">
+        <span className={styles.line}>{sentence}</span>
+        {words && <span className={`${styles.line} ${styles.words}`}>{words}</span>}
+      </span>
+      <span className={styles.aside}>
+        {unread && <span className={styles.dot}><span className="sr-only">{newLabel}</span></span>}
+        {time}
+      </span>
+    </span>
+  )
+}
+
+type Translate = ReturnType<typeof useTranslations>
+/** "<b>name</b> commented on title" in the reader's language. */
+export const sentenceOf = (item: Notification, t: Translate): ReactNode =>
+  t.rich(item.kind, { name: item.actor ?? t('someone'), title: item.title, b: chunks => <b>{chunks}</b> })
+
+/** The panel's list: a support reply first, then comments and replies, newest first. */
 export function NotificationList({ items, supportUnread = false, onNavigate }: { items: Notification[]; supportUnread?: boolean; onNavigate: () => void }) {
   const t = useTranslations('notifications')
   if (!items.length && !supportUnread) {
     return (
-      <p className="flex flex-col items-center gap-3 px-4 py-11 text-[0.875rem] text-[var(--text-muted)]">
+      <p className="flex flex-col items-center gap-3 px-6 py-10 text-center text-[0.875rem] leading-relaxed text-[var(--text-muted)]">
         <Bell size={24} aria-hidden="true" className="opacity-50" />
         {t('empty')}
       </p>
@@ -24,44 +62,35 @@ export function NotificationList({ items, supportUnread = false, onNavigate }: {
     <ul className={styles.list}>
       {supportUnread && (
         <li className={styles.row} style={{ '--i': 0 } as CSSProperties}>
-          <NavLink href="/support" onClick={onNavigate} data-unread className={`${styles.item} ${focusRing}`}>
-            <span className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[var(--gold-dim)] bg-[var(--bg-panel)] text-[var(--gold-light)]">
-              <MessageCircle size={18} aria-hidden="true" />
-              <span className={styles.mark}><span className="sr-only">{t('new')}</span></span>
-            </span>
-            <span className="min-w-0 flex-1 self-center">
-              <span className="block text-[0.875rem] font-semibold text-[var(--text-primary)]">{t('support')}</span>
-              <span className="mt-1 block text-[0.875rem] leading-[1.45] text-[var(--text-secondary)]">{t('supportReply')}</span>
-            </span>
+          <NavLink href="/support" onClick={onNavigate} className={`${styles.item} ${focusRing}`}>
+            <NotificationCard avatar={null} sentence={t.rich('supportReply', { b: chunks => <b>{chunks}</b> })} unread newLabel={t('new')} />
           </NavLink>
         </li>
       )}
-      {items.map((item, index) => {
-        const Kind = item.kind === 'reply' ? CornerDownRight : MessageCircle
-        return (
-          <li key={item.id} className={styles.row} style={{ '--i': Math.min(index, 8) } as CSSProperties}>
-            <NavLink href={item.href} onClick={onNavigate} data-unread={item.unread || undefined} className={`${styles.item} ${focusRing}`}>
-              <span className="relative h-10 shrink-0">
-                <NavAvatar url={item.avatar || DEFAULT_AVATAR_URL} size="2.5rem" />
-                {item.unread && <span className={styles.mark}><span className="sr-only">{t('new')}</span></span>}
-              </span>
-              <span className="min-w-0 flex-1">
-                <span className="flex items-baseline gap-2">
-                  <span className="truncate text-[0.875rem] font-semibold text-[var(--text-primary)]">{item.actor ?? t('someone')}</span>
-                  {item.at && <RelativeTime date={item.at} className="ml-auto shrink-0 text-[0.75rem] text-[var(--text-muted)]" />}
-                </span>
-                <span className="mt-1 line-clamp-2 break-words text-[0.875rem] leading-[1.45] text-[var(--text-secondary)]">{item.excerpt}</span>
-                <span className="mt-2 flex items-center gap-2 text-[0.75rem]">
-                  <span className="flex shrink-0 items-center gap-1 text-[var(--gold-light)]"><Kind size={12} aria-hidden="true" />{t(item.kind)}</span>
-                  <span aria-hidden="true" className="h-3 w-px shrink-0 bg-[#3a2a15]" />
-                  <span className="truncate text-[var(--text-tertiary)]">{item.title}</span>
-                </span>
-              </span>
-            </NavLink>
-          </li>
-        )
-      })}
+      {items.map((item, index) => (
+        <li key={item.id} className={styles.row} style={{ '--i': Math.min(index + (supportUnread ? 1 : 0), 8) } as CSSProperties}>
+          <NavLink href={item.href} onClick={onNavigate} className={`${styles.item} ${focusRing}`}>
+            <NotificationCard avatar={item.avatar || DEFAULT_AVATAR_URL} sentence={sentenceOf(item, t)} words={item.excerpt} unread={item.unread} newLabel={t('new')}
+              time={item.at && <RelativeTime date={item.at} />} />
+          </NavLink>
+        </li>
+      ))}
     </ul>
+  )
+}
+
+/**
+ * A new notification as a toast (sonner's `toast.custom`): the same row; pressing it opens the panel. `sentence` and
+ * `closeLabel` come translated, because the toaster sits outside the page's message provider.
+ */
+export function NotificationToast({ item, sentence, closeLabel, onOpen, onClose }: { item: Notification; sentence: ReactNode; closeLabel: string; onOpen: () => void; onClose: () => void }) {
+  return (
+    <div className={styles.toast}>
+      <button type="button" className={styles.toastOpen} onClick={onOpen}>
+        <NotificationCard avatar={item.avatar || DEFAULT_AVATAR_URL} sentence={sentence} words={item.excerpt} unread={false} newLabel="" />
+      </button>
+      <button type="button" className={styles.toastClose} aria-label={closeLabel} onClick={onClose}><X size={15} aria-hidden="true" /></button>
+    </div>
   )
 }
 
@@ -74,7 +103,7 @@ interface Props {
   open: boolean
   onToggle: () => void
   onClose: () => void
-  /** The phone navbar's bell: a larger button and a sheet under the navbar instead of a popover. */
+  /** The phone navbar's bell: a larger button, and the card is placed against the navbar's right edge. */
   mobile?: boolean
 }
 
@@ -107,10 +136,10 @@ export default function NavNotifications({ items, unread, supportUnread, open, o
         {unread > 0 && <span aria-hidden="true" data-testid="nav-notify-badge" className={styles.badge}>{unread > 9 ? '9+' : unread}</span>}
       </button>
       {open && (
-        <div role="dialog" aria-label={t('title')} className={`${styles.panel} ${mobile ? styles.sheet : styles.popover}`}>
+        <div role="dialog" aria-label={t('title')} className={`${styles.panel} ${mobile ? styles.floating : styles.popover}`}>
           <h2 className={styles.head}>
             {t('title')}
-            {fresh > 0 && <span className={styles.count} aria-hidden="true">{fresh}</span>}
+            {fresh > 0 && <span className={styles.count}>{t('newCount', { count: fresh })}</span>}
           </h2>
           <NotificationList items={items} supportUnread={supportUnread} onNavigate={onClose} />
         </div>
