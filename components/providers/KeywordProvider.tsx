@@ -174,8 +174,8 @@ function KwTooltipPopup({ id, rect, iconUrl, keyword, info, refId, onMouseEnter,
       id={id}
       className="z-[200] rounded text-left"
       role="tooltip"
-      onMouseEnter={onMouseEnter}
-      onMouseLeave={onMouseLeave}
+      onPointerEnter={event => { if (event.pointerType === 'mouse') onMouseEnter() }}
+      onPointerLeave={event => { if (event.pointerType === 'mouse') onMouseLeave() }}
       style={{
         position: 'fixed',
         left,
@@ -282,7 +282,13 @@ export function KeywordWithTooltip({
   const visibleIconUrl = failedIconUrl === iconUrl ? null : iconUrl
 
   const locale = useLocale()
+  // Whether the tooltip was open when the current press began: the click that follows turns it the other way.
+  // (A tap also focuses the keyword, which opens the tooltip before its click arrives.)
+  const pressedOpen = useRef(false)
+  // The last press landed inside the tooltip: the keyword then loses focus, which must not close it.
+  const pressedInPopup = useRef(false)
   const hide = useCallback(() => setRect(null), [])
+  const close = useCallback(() => { setRect(null); if (activeKwClose === hide) activeKwClose = null }, [hide])
   const show = useCallback(() => {
     if (refId && !info) preloadGameTextRefDescriptions(locale)
     else preloadKeywordDescriptions(locale)
@@ -293,28 +299,45 @@ export function KeywordWithTooltip({
     activeKwClose = hide
   }, [hide, locale, refId, info])
   const scheduleHide = useCallback(() => {
-    hideTimeout.current = setTimeout(() => { setRect(null); if (activeKwClose === hide) activeKwClose = null }, 120)
-  }, [hide])
+    hideTimeout.current = setTimeout(close, 120)
+  }, [close])
   const cancelHide = useCallback(() => {
     clearTimeout(hideTimeout.current)
   }, [])
-  const toggle = useCallback((e: React.MouseEvent) => {
-    e.preventDefault()
+  // The tooltip is a React child drawn in document.body, so its events bubble here too: only the keyword's own count.
+  const own = (e: React.SyntheticEvent) => e.currentTarget.contains(e.target as Node)
+  const toggle = (e: React.MouseEvent) => {
     e.stopPropagation()
-    setRect(prev => prev ? null : ref.current?.getBoundingClientRect() ?? null)
-  }, [])
+    if (!own(e)) return
+    e.preventDefault()
+    if (pressedOpen.current) close()
+    else show()
+  }
 
-  // 외부 탭 시 닫기
   useEffect(() => {
     if (!rect) return
-    const handler = (e: MouseEvent | TouchEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
-        setRect(null)
-      }
+    const popup = () => document.getElementById(tooltipId)
+    // A press outside the keyword and its tooltip closes it. Inside the tooltip it stays, so its text can be scrolled.
+    const press = (e: PointerEvent) => {
+      const target = e.target as Node
+      pressedInPopup.current = !!popup()?.contains(target)
+      if (!pressedInPopup.current && !ref.current?.contains(target)) close()
     }
-    document.addEventListener('pointerdown', handler)
-    return () => document.removeEventListener('pointerdown', handler)
-  }, [rect])
+    // The tooltip is fixed to the screen: once the keyword moves away under it (page or panel scroll), close it.
+    const scroll = (e: Event) => {
+      if (e.target instanceof Node && popup()?.contains(e.target)) return
+      const now = ref.current?.getBoundingClientRect()
+      if (!now || Math.abs(now.top - rect.top) > 1 || Math.abs(now.left - rect.left) > 1) close()
+    }
+    document.addEventListener('pointerdown', press)
+    window.addEventListener('scroll', scroll, { capture: true, passive: true })
+    window.addEventListener('resize', close)
+    return () => {
+      document.removeEventListener('pointerdown', press)
+      window.removeEventListener('scroll', scroll, { capture: true })
+      window.removeEventListener('resize', close)
+    }
+  }, [rect, tooltipId, close])
 
   const textColorHint = `${keyword} ${lookupKey}`
   const iconColorHint = `${info?.iconSlug ?? ''} ${iconUrl ?? ''}`.toLowerCase()
@@ -343,10 +366,15 @@ export function KeywordWithTooltip({
       ref={ref}
       data-game-ref={refId}
       className="inline keyword-token rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--gold)]"
-      onMouseEnter={show}
-      onMouseLeave={scheduleHide}
-      onFocus={show}
-      onBlur={scheduleHide}
+      onPointerEnter={e => { if (e.pointerType === 'mouse') show() }}
+      onPointerLeave={e => { if (e.pointerType === 'mouse') scheduleHide() }}
+      onPointerDown={e => { if (own(e)) pressedOpen.current = !!rect }}
+      onFocus={e => { if (own(e)) show() }}
+      onBlur={e => {
+        if (!own(e)) return
+        if (pressedInPopup.current) pressedInPopup.current = false
+        else scheduleHide()
+      }}
       onKeyDown={hasTooltip ? e => { if (e.key === 'Escape') hide() } : undefined}
       onClick={toggle}
       tabIndex={hasTooltip ? 0 : undefined}
