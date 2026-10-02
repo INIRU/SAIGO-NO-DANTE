@@ -35,7 +35,8 @@ function LanguageOptions({ up, onDone }: { up: boolean; onDone: () => void }) {
   );
 }
 
-export default function LanguageSwitcher({ up = false }: { up?: boolean }) {
+/** `compact`: the icon alone (the navbar's desktop tools); the current language is the button's accessible name. */
+export default function LanguageSwitcher({ up = false, compact = false }: { up?: boolean; compact?: boolean }) {
   const locale = useLocale();
 
   const [open, setOpen] = useState(false);
@@ -54,13 +55,15 @@ export default function LanguageSwitcher({ up = false }: { up?: boolean }) {
     <div ref={ref} className="relative" style={{ position: 'relative', zIndex: open ? 60 : 0 }}>
       <button
         onClick={() => setOpen(prev => !prev)}
-        className={`flex h-9 cursor-pointer items-center gap-1.5 rounded-md px-3 text-[0.875rem] font-medium whitespace-nowrap transition-colors duration-150 hover:bg-[rgba(200,144,10,0.06)] hover:text-[var(--gold-light)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(232,176,48,0.55)] ${open ? 'bg-[rgba(200,144,10,0.06)] text-[var(--gold-light)]' : 'text-[var(--text-secondary)]'}`}
+        aria-label={compact ? current?.nativeLabel : undefined}
+        title={compact ? current?.nativeLabel : undefined}
+        className={`flex h-9 cursor-pointer items-center gap-1.5 rounded-md ${compact ? 'w-9 justify-center' : 'px-3'} text-[0.875rem] font-medium whitespace-nowrap transition-colors duration-150 hover:bg-[rgba(200,144,10,0.06)] hover:text-[var(--gold-light)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(232,176,48,0.55)] ${open ? 'bg-[rgba(200,144,10,0.06)] text-[var(--gold-light)]' : 'text-[var(--text-secondary)]'}`}
         aria-haspopup="listbox"
         aria-expanded={open}
       >
-        <Languages size={16} aria-hidden="true" />
-        {current?.nativeLabel}
-        <ChevronDown
+        <Languages size={compact ? 17 : 16} aria-hidden="true" />
+        {!compact && current?.nativeLabel}
+        {!compact && <ChevronDown
           size={14}
           aria-hidden="true"
           style={{
@@ -68,7 +71,7 @@ export default function LanguageSwitcher({ up = false }: { up?: boolean }) {
             transform: open ? 'rotate(180deg)' : 'rotate(0deg)',
             transition: 'transform 0.15s',
           }}
-        />
+        />}
       </button>
       {open && <Suspense fallback={null}><LanguageOptions up={up} onDone={() => setOpen(false)} /></Suspense>}
     </div>

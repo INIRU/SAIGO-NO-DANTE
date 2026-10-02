@@ -81,6 +81,18 @@
     "contributionApproved": "Data contribution approved. +50 activity points",
     "apiLimitTitle": "API limit increase request"
   },
+  "notifications": {
+    "title": "Notifications",
+    "newCount": "{count} new",
+    "empty": "Comments on your decks and plans show up here",
+    "unread": "{count} unread notifications",
+    "new": "New",
+    "comment": "<b>{name}</b> commented on {title}",
+    "reply": "<b>{name}</b> replied to your comment",
+    "supportReply": "Your <b>inquiry</b> has a new reply",
+    "someone": "Anonymous",
+    "close": "Dismiss"
+  },
   "maintenance": {
     "title": "Under maintenance",
     "ended": "Maintenance is over",

@@ -9,7 +9,6 @@ import { NavAvatar, NavLink, focusRing, isActiveHref, useNavGroups } from './nav
 
 interface Props {
   mainNavLabel: string
-  supportUnread: boolean
   sessionStatus: 'loading' | 'authenticated' | 'unauthenticated'
   avatarUrl: string | null
   isSignedIn: boolean
@@ -18,7 +17,7 @@ interface Props {
 }
 
 /** The opened mobile menu. It only exists after a tap, so reading the pathname here never touches the static shell. */
-export default function NavbarMobileSheet({ mainNavLabel, supportUnread, sessionStatus, avatarUrl, isSignedIn, isAdmin, onClose }: Props) {
+export default function NavbarMobileSheet({ mainNavLabel, sessionStatus, avatarUrl, isSignedIn, isAdmin, onClose }: Props) {
   const t = useTranslations()
   const pathname = usePathname()
   const navGroups = useNavGroups()
@@ -54,16 +53,17 @@ export default function NavbarMobileSheet({ mainNavLabel, supportUnread, session
       </div>
 
       <div className="mt-auto flex items-center gap-2 border-t border-[var(--border)] px-4 py-3">
-        <NavLink
-          href="/support"
-          data-testid="nav-support-mobile"
-          onClick={onClose}
-          aria-current={isActiveHref(pathname, '/support') ? 'page' : undefined}
-          className={`flex min-h-11 items-center gap-2 rounded-md px-3 text-[0.9375rem] text-[var(--text-secondary)] ${focusRing}`}
-        >
-          <MessageCircle size={17} aria-hidden="true" />{t('nav.support' as TranslationKey)}
-          {supportUnread && <span className="h-2 w-2 shrink-0 rounded-full bg-[var(--error)] ring-2 ring-[var(--bg-deep)]" role="img" aria-label={t('supportDesk.unread' as TranslationKey)} />}
-        </NavLink>
+        {/* Support needs an account, so it sits with the account (the desktop avatar menu has it too). */}
+        {isSignedIn && (
+          <NavLink
+            href="/support"
+            onClick={onClose}
+            aria-current={isActiveHref(pathname, '/support') ? 'page' : undefined}
+            className={`flex min-h-11 items-center gap-2 rounded-md px-3 text-[0.9375rem] text-[var(--text-secondary)] ${focusRing}`}
+          >
+            <MessageCircle size={17} aria-hidden="true" />{t('nav.support' as TranslationKey)}
+          </NavLink>
+        )}
         <div className="ml-auto">
           <LanguageSwitcher up />
         </div>

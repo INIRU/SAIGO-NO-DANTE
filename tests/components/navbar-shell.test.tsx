@@ -38,7 +38,7 @@ describe('REQ-SHARED-024 the navbar body is part of the static shell on every ro
     expect(layout).toMatch(/<div className="site-navigation"><Navbar [^>]*\/><\/div>/)
   })
 
-  it('REQ-SHARED-024 logo, menu, search button, support link, language button and login slot render without reading the pathname', async () => {
+  it('REQ-SHARED-024 logo, menu, search button, language button and login slot render without reading the pathname', async () => {
     const { default: Navbar } = await import('@/components/layout/Navbar')
     // No Suspense above: if any part of the body needed the pathname, this render would hang instead of returning markup.
     const html = render(<Navbar mainNavLabel="main" />, null)
@@ -47,15 +47,14 @@ describe('REQ-SHARED-024 the navbar body is part of the static shell on every ro
     expect(html).toContain('aria-label="검색 열기 (Ctrl+K)"')
     expect(html).toContain('nav-kbd-mac')
     expect(html).toContain('nav-kbd-other')
-    expect(html).toMatch(/href="\/ko\/support"[^>]*>/)
     expect(html).toContain('한국어')
     expect(html).toMatch(/<a [^>]*(href="\/ko\/login"[^>]*nav-auth-guest|nav-auth-guest[^>]*href="\/ko\/login")/)
     expect(html).toContain('nav-auth-user')
   })
 
-  it('REQ-SHARED-024 the menu groups and the support link show the same bar before and after the pathname arrives', async () => {
-    const { NavbarGroups, NavbarSupportLink } = await import('@/components/layout/NavbarIslands')
-    for (const island of [<NavbarGroups key="g" />, <NavbarSupportLink key="s" unread={false} />, <NavbarSupportLink key="u" unread />]) {
+  it('REQ-SHARED-024 the menu groups show the same bar before and after the pathname arrives', async () => {
+    const { NavbarGroups } = await import('@/components/layout/NavbarIslands')
+    for (const island of [<NavbarGroups key="g" />]) {
       const pending = render(<Suspense fallback={null}>{island}</Suspense>, null)
       const resolvedElsewhere = render(<Suspense fallback={null}>{island}</Suspense>, '/nowhere')
       expect(pending.length).toBeGreaterThan(200)
@@ -63,15 +62,13 @@ describe('REQ-SHARED-024 the navbar body is part of the static shell on every ro
     }
   })
 
-  it('REQ-SHARED-024 only the pathname-dependent marks are filled in late: the current group underline and the support link state', async () => {
-    const { NavbarGroups, NavbarSupportLink } = await import('@/components/layout/NavbarIslands')
+  it('REQ-SHARED-024 only the pathname-dependent mark is filled in late: the current group underline', async () => {
+    const { NavbarGroups } = await import('@/components/layout/NavbarIslands')
     const groupsHere = render(<NavbarGroups />, '/sinners/yi-sang')
     const groupsElsewhere = render(<NavbarGroups />, '/nowhere')
     expect(groupsHere.match(/pointer-events-none absolute inset-x-3 bottom-0/g)).toHaveLength(1)
     expect(groupsElsewhere).not.toContain('pointer-events-none absolute inset-x-3 bottom-0')
     expect(groupsHere.length - groupsElsewhere.length).toBeLessThan(400)
-    expect(render(<NavbarSupportLink unread={false} />, '/support')).toContain('aria-current="page"')
-    expect(render(<NavbarSupportLink unread={false} />, '/nowhere')).not.toContain('aria-current')
   })
 
   it('REQ-SHARED-024 the language button shows its label without the pathname, only the option list reads it', async () => {
@@ -92,7 +89,7 @@ describe('REQ-SHARED-024 the navbar body is part of the static shell on every ro
     const { default: NavbarMobileSheet } = await import('@/components/layout/NavbarMobileSheet')
     expect(render(<Navbar mainNavLabel="main" />, null)).not.toContain('id="mobile-navigation-menu"')
     const sheet = render(
-      <NavbarMobileSheet mainNavLabel="main" supportUnread={false} sessionStatus="unauthenticated" avatarUrl={null} isSignedIn={false} isAdmin={false} onClose={() => {}} />,
+      <NavbarMobileSheet mainNavLabel="main" sessionStatus="unauthenticated" avatarUrl={null} isSignedIn={false} isAdmin={false} onClose={() => {}} />,
       '/decks/abc',
     )
     expect(sheet).toMatch(/href="\/ko\/decks"[^>]*aria-current="page"|aria-current="page"[^>]*href="\/ko\/decks"/)
