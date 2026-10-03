@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { freshForToast, toNotification, type Notification, type NotificationRow } from '@/lib/notifications'
+import { freshForToast, newestFirst, toNotification, type Notification, type NotificationRow } from '@/lib/notifications'
 
 const row: NotificationRow = {
   kind: 'comment', target_type: 'deck', target_id: 'deck-1', target_title: '화상 덱', comment_id: 'c-1',
@@ -24,6 +24,18 @@ describe('REQ-COMMUNITY-013 a notification row becomes what the list shows', () 
   it('REQ-COMMUNITY-013 a comment whose author is gone keeps an empty author, and missing text is empty', () => {
     expect(toNotification({ ...row, actor_name: null, actor_avatar: null, excerpt: null, target_title: null, unread: null }))
       .toMatchObject({ actor: null, avatar: null, excerpt: '', title: '', unread: false })
+  })
+})
+
+describe('REQ-COMMUNITY-017 an inquiry waiting for an answer is a notification for administrators', () => {
+  it('REQ-COMMUNITY-017 an inquiry row links to that inquiry in the admin inbox', () => {
+    expect(toNotification({ ...row, kind: 'inquiry', target_type: 'inquiry', target_id: 'q-1', target_title: '로그인 오류', comment_id: 'm-1' }))
+      .toMatchObject({ id: 'm-1', kind: 'inquiry', target: 'inquiry', href: '/admin/inquiries?id=q-1', title: '로그인 오류', actor: '돈키' })
+  })
+
+  it('REQ-COMMUNITY-017 comment and inquiry rows make one list, newest first, undated ones last', () => {
+    const item = (id: string, created_at: string | null) => toNotification({ ...row, comment_id: id, created_at })
+    expect(newestFirst([item('old', '2026-10-02T12:00:00Z'), item('none', null), item('new', '2026-10-03T09:00:00Z')]).map(entry => entry.id)).toEqual(['new', 'old', 'none'])
   })
 })
 
