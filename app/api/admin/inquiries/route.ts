@@ -1,14 +1,14 @@
 import { NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { INQUIRY_FIELDS, sortInbox, type Inquiry } from '@/lib/support'
+import { ADMIN_INQUIRY_FIELDS, sortInbox, type Inquiry } from '@/lib/support'
 export async function GET() {
   const auth = await requireAdmin()
   if (auth.error) return auth.response
   const { data, error } = await createAdminClient()
     .schema('limbus')
     .from('inquiries')
-    .select(INQUIRY_FIELDS)
+    .select(ADMIN_INQUIRY_FIELDS)
     .order('created_at', { ascending: false })
     .limit(200)
   return error

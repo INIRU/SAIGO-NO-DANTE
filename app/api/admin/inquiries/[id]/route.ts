@@ -4,7 +4,7 @@ import { requireAdmin } from '@/lib/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { findOrCreateSupabaseUser } from '@/lib/supabase/findOrCreateUser'
 import {
-  INQUIRY_FIELDS,
+  ADMIN_INQUIRY_FIELDS,
   inquiryAdminPatchSchema,
   sortMessages,
   statusAfterMessage,
@@ -20,7 +20,7 @@ async function adminThread({ params }: Params) {
   if (!z.string().uuid().safeParse(id).success)
     return { response: NextResponse.json({ error: '잘못된 문의입니다.' }, { status: 400 }) }
   const db = createAdminClient()
-  const { data, error } = await db.schema('limbus').from('inquiries').select(INQUIRY_FIELDS).eq('id', id).maybeSingle()
+  const { data, error } = await db.schema('limbus').from('inquiries').select(ADMIN_INQUIRY_FIELDS).eq('id', id).maybeSingle()
   if (error) return { response: NextResponse.json({ error: '문의를 불러오지 못했습니다.' }, { status: 500 }) }
   if (!data) return { response: NextResponse.json({ error: '문의를 찾을 수 없습니다.' }, { status: 404 }) }
   return { auth, db, thread: data as unknown as Inquiry }

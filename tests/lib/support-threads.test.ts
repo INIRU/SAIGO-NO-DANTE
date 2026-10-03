@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest'
-import { isUnread, sortInbox, statusAfterMessage, statusOnReopen } from '@/lib/support'
+import { inquirerName, isUnread, sortInbox, statusAfterMessage, statusOnReopen } from '@/lib/support'
 it('waits on the admin after a user message and on the user after an answer', () => {
   expect(statusAfterMessage('user')).toBe('open')
   expect(statusAfterMessage('admin')).toBe('answered')
@@ -34,4 +34,8 @@ it('puts unanswered threads first, newest activity next', () => {
     row('new-open', 'open', '2026-09-22T00:00:00Z'),
   ])
   expect(sorted.map((r) => r.id)).toEqual(['new-open', 'old-open', 'new-closed', 'old-answered'])
+})
+it('REQ-ADMIN-007 names the inquirer by their profile name, or not at all when the account has none', () => {
+  expect(inquirerName({ author: { username: ' 파우스트 ' } })).toBe('파우스트')
+  for (const author of [{ username: null }, { username: '  ' }, null, undefined]) expect(inquirerName({ author })).toBeNull()
 })
