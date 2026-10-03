@@ -90,6 +90,7 @@
     "comment": "<b>{name}</b>님이 {title}에 댓글을 남겼어요",
     "reply": "<b>{name}</b>님이 내 댓글에 답글을 남겼어요",
     "supportReply": "<b>문의</b>에 새 답변이 도착했어요",
+    "inquiry": "<b>{name}</b>님이 문의를 보냈어요: {title}",
     "someone": "익명",
     "close": "닫기"
   },

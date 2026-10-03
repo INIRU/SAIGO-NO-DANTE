@@ -171,6 +171,14 @@
 .desk-row-meta time {
   margin-left: auto;
 }
+.desk-row-who {
+  overflow: hidden;
+  max-width: 12rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .desk-status {
   padding: 0.1rem 0.4rem;
   border-radius: 0.2rem;

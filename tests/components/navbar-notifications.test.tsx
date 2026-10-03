@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { renderToStaticMarkup } from 'react-dom/server'
 import type { Notification } from '@/lib/notifications'
@@ -81,6 +83,31 @@ describe('REQ-COMMUNITY-015 the navbar bell shows unread notifications and its p
     const html = renderToStaticMarkup(<Navbar mainNavLabel="main" />)
     expect(html).not.toContain('nav-notify-bell')
     expect(html.match(/data-testid="nav-notify-slot"/g)).toHaveLength(2)
+  })
+})
+
+describe('REQ-COMMUNITY-017 an inquiry waiting for an answer is a row of an administrator\'s list', () => {
+  it('REQ-COMMUNITY-017 the row names the inquirer and the inquiry, shows its last words and links to it in the admin inbox', async () => {
+    const { NotificationList } = await import('@/components/layout/NavNotifications')
+    const inquiry: Notification = { id: 'm1', kind: 'inquiry', target: 'inquiry', href: '/admin/inquiries?id=q1', title: '로그인 오류', actor: '파우스트', avatar: null, excerpt: '문의 내용', at: '2026-10-03T09:00:00Z', unread: true }
+    const html = renderToStaticMarkup(<NotificationList items={[inquiry]} onNavigate={() => {}} />)
+    expect(html).toContain('href="/ko/admin/inquiries?id=q1"')
+    for (const text of ['notifications.inquiry', '파우스트', '로그인 오류', '문의 내용']) expect(html).toContain(text)
+    // The sentence exists in every public language, with the name in bold and the inquiry's title.
+    for (const locale of ['ko', 'en', 'ja']) {
+      const messages = JSON.parse(readFileSync(resolve(__dirname, `../../messages/${locale}.json`), 'utf8'))
+      expect(messages.notifications.inquiry).toMatch(/<b>\{name\}<\/b>.*\{title\}/)
+    }
+  })
+})
+
+describe('REQ-COMMUNITY-018 opening the panel does not flash a scrollbar', () => {
+  it('REQ-COMMUNITY-018 the rows of the scrolling list stay in place: the rise is on the card inside each row', () => {
+    const css = readFileSync(resolve(__dirname, '../../components/layout/NavNotifications.module.css'), 'utf8')
+    // A row moved below its place sticks out of the list, which then shows a scrollbar until the row lands.
+    expect(css).not.toMatch(/\.row \{[^}]*animation/)
+    expect(css).toMatch(/\.row \.card \{ animation: arrive 240ms ease-out both; animation-delay: calc\(var\(--i\) \* 40ms\); \}/)
+    expect(css).toMatch(/prefers-reduced-motion: reduce\) \{[^@]*\.row \.card \{ animation: none; \}/)
   })
 })
 

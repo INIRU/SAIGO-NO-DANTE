@@ -31,7 +31,7 @@ vi.mock('@/lib/rate-limit', () => ({
 import { GET, POST } from '@/app/api/inquiries/route'
 import { GET as adminGET } from '@/app/api/admin/inquiries/route'
 import { POST as followUp } from '@/app/api/inquiries/[id]/route'
-import { PATCH as adminPATCH, POST as adminReply } from '@/app/api/admin/inquiries/[id]/route'
+import { GET as adminThread, PATCH as adminPATCH, POST as adminReply } from '@/app/api/admin/inquiries/[id]/route'
 const id = '8a5b7a52-5f0f-4d0e-9f3c-0d2b2f4a1c11'
 const ctx = { params: Promise.resolve({ id }) }
 const json = (body: unknown) => new Request('http://localhost/api', { method: 'POST', body: JSON.stringify(body) })
@@ -95,6 +95,19 @@ describe('private support routes', () => {
     })
     expect((await adminGET()).status).toBe(403)
     expect(m.db).not.toHaveBeenCalled()
+  })
+  it('REQ-ADMIN-007 the admin inbox and thread carry the inquirer\'s profile name; the user\'s own reads do not', async () => {
+    const author = 'author:profiles!inquiries_user_id_fkey(username)'
+    m.admin.mockResolvedValue(active)
+    m.query.maybeSingle.mockResolvedValue(thread({ author: { username: '파우스트' } }))
+    expect((await adminGET()).status).toBe(200)
+    expect(m.query.select).toHaveBeenLastCalledWith(expect.stringContaining(author))
+    const one = await adminThread(json({}), ctx)
+    expect(m.query.select).toHaveBeenLastCalledWith(expect.stringContaining(author))
+    expect((await one.json()).author).toEqual({ username: '파우스트' })
+    m.query.select.mockClear()
+    await GET()
+    expect(m.query.select).toHaveBeenCalledWith(expect.not.stringContaining('profiles'))
   })
   it('only reads threads owned by the session user', async () => {
     m.query.maybeSingle.mockResolvedValue({ data: null, error: null })

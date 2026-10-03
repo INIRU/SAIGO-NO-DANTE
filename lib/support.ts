@@ -24,9 +24,15 @@ export type Inquiry = {
   contribution_accepted: boolean
   reply: string
   support_messages: SupportMessage[]
+  /** The inquirer's profile; only the admin routes select it. */
+  author?: { username: string | null } | null
 }
 export const INQUIRY_FIELDS =
   'id,title,category,status,created_at,last_message_at,last_admin_message_at,user_last_read_at,closed_at,contribution_accepted,reply,support_messages(id,author_role,body,created_at)'
+/** The admin inbox also names the inquirer (inquiries has two foreign keys to profiles: the key says which). */
+export const ADMIN_INQUIRY_FIELDS = INQUIRY_FIELDS + ',author:profiles!inquiries_user_id_fkey(username)'
+/** The inquirer's profile name; null when the account has none. */
+export const inquirerName = (t: Pick<Inquiry, 'author'>) => t.author?.username?.trim() || null
 const time = (v: string | null | undefined) => (v ? Date.parse(v) : 0)
 export const sortMessages = (messages: SupportMessage[]) =>
   [...messages].sort((a, b) => time(a.created_at) - time(b.created_at))

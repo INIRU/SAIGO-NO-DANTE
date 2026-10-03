@@ -90,6 +90,7 @@
     "comment": "<b>{name}</b> commented on {title}",
     "reply": "<b>{name}</b> replied to your comment",
     "supportReply": "Your <b>inquiry</b> has a new reply",
+    "inquiry": "<b>{name}</b> sent an inquiry: {title}",
     "someone": "Anonymous",
     "close": "Dismiss"
   },

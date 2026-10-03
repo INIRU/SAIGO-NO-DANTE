@@ -7,13 +7,14 @@ import { ArrowLeft, LockKeyhole, MessageSquare, Plus, Send } from 'lucide-react'
 import { Link } from '@/lib/i18n/navigation'
 import { useHtmlFlag } from '@/hooks/useHtmlFlag'
 import DanteLogo from '@/components/brand/DanteLogo'
-import { isUnread, lastActivity, sortMessages, type Inquiry } from '@/lib/support'
+import { inquirerName, isUnread, lastActivity, sortMessages, type Inquiry } from '@/lib/support'
 import './support.css'
 import { SupportRowsSkeleton } from './SupportSkeleton'
 import { SkeletonPage } from '@/components/ui/Skeleton'
 const CATEGORIES = ['bug', 'data', 'account', 'suggestion', 'other'] as const
 const FILTERS = ['all', 'open', 'answered', 'closed'] as const
-export default function SupportDesk({ admin = false, initialTopic }: { admin?: boolean; initialTopic?: 'api-limit' }) {
+/** `initialId` (admin inbox): the thread to start on. */
+export default function SupportDesk({ admin = false, initialTopic, initialId }: { admin?: boolean; initialTopic?: 'api-limit'; initialId?: string }) {
   const lang = useLocale()
   const t = useTranslations('supportDesk')
   const { status: sessionStatus } = useSession()
@@ -22,7 +23,7 @@ export default function SupportDesk({ admin = false, initialTopic }: { admin?: b
   const endpoint = admin ? '/api/admin/inquiries' : '/api/inquiries'
   const [items, setItems] = useState<Inquiry[]>([])
   const [loading, setLoading] = useState(true)
-  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [selectedId, setSelectedId] = useState<string | null>(initialId ?? null)
   const [creating, setCreating] = useState(!admin && initialTopic === 'api-limit')
   const [filter, setFilter] = useState<(typeof FILTERS)[number]>('all')
   const [search, setSearch] = useState('')
@@ -42,7 +43,9 @@ export default function SupportDesk({ admin = false, initialTopic }: { admin?: b
     try {
       const r = await fetch(endpoint, { cache: 'no-store' })
       if (!r.ok) throw Error()
-      setItems(await r.json())
+      const next: Inquiry[] = await r.json()
+      // A thread opened by its address may be older than the list reaches: it stays.
+      setItems((list) => [...list.filter((i) => !next.some((n) => n.id === i.id)), ...next])
     } catch {
       setError(t('error'))
     } finally {
@@ -72,6 +75,9 @@ export default function SupportDesk({ admin = false, initialTopic }: { admin?: b
     },
     [admin, endpoint, t],
   )
+  useEffect(() => {
+    if (initialId) void openThread(initialId)
+  }, [initialId, openThread])
   useEffect(() => {
     const pane = messagesRef.current
     if (pane) pane.scrollTop = pane.scrollHeight
@@ -121,6 +127,8 @@ export default function SupportDesk({ admin = false, initialTopic }: { admin?: b
   const day = (v: string) => new Date(v).toLocaleDateString(lang, { month: 'short', day: 'numeric' })
   const stamp = (v: string) =>
     new Date(v).toLocaleString(lang, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+  // The admin inbox names the inquirer; an account without a profile name is "the author".
+  const who = (i: Inquiry) => inquirerName(i) ?? t('author')
   const chip = (i: Inquiry) => <span className={'desk-status ' + i.status}>{t(i.status)}</span>
   const home = !admin && (
     <Link href="/" className="desk-home">
@@ -219,6 +227,7 @@ export default function SupportDesk({ admin = false, initialTopic }: { admin?: b
                         )}
                         <span className="desk-row-meta">
                           {chip(i)}
+                          {admin && <span className="desk-row-who">{who(i)}</span>}
                           <span>{t(i.category as (typeof CATEGORIES)[number])}</span>
                           <time dateTime={new Date(lastActivity(i)).toISOString()}>{day(new Date(lastActivity(i)).toISOString())}</time>
                         </span>
@@ -297,6 +306,7 @@ export default function SupportDesk({ admin = false, initialTopic }: { admin?: b
                 <h2>{selected.title}</h2>
                 <div className="desk-row-meta">
                   {chip(selected)}
+                  {admin && <span className="desk-row-who">{who(selected)}</span>}
                   <span>{t(selected.category as (typeof CATEGORIES)[number])}</span>
                   <time dateTime={selected.created_at}>{stamp(selected.created_at)}</time>
                 </div>
@@ -327,7 +337,7 @@ export default function SupportDesk({ admin = false, initialTopic }: { admin?: b
                   return (
                     <li key={m.id ?? n} className={'desk-msg ' + (mine ? 'mine' : 'theirs')}>
                       <span className="desk-msg-author">
-                        {m.author_role === 'admin' ? t('admin') : admin ? t('author') : t('me')}
+                        {m.author_role === 'admin' ? t('admin') : admin ? who(selected) : t('me')}
                       </span>
                       <p>{m.body}</p>
                       <time dateTime={m.created_at}>{stamp(m.created_at)}</time>
