@@ -123,7 +123,7 @@
 
 `20261002124850_comment_notifications.sql`을 적용했다. 알림은 따로 저장하지 않는다. `limbus.user_notifications(이메일, 최대 행)`이 조회할 때 댓글 표(`deck_comments`, `md_plan_comments`)에서 내 덱·플랜에 다른 사람이 단 댓글과 내 댓글에 달린 답글을 최신순으로 뽑는다(기본 30개, 최대 50개). 댓글이 지워지면 알림도 같이 사라진다. 읽음은 `profiles.notifications_read_at` 한 칸이다. `limbus.mark_notifications_read(이메일)`이 그 칸을 지금으로 바꾸고, 그 뒤에 달린 것만 읽지 않음이다. 두 함수는 service_role만 실행하며 `/api/notifications`(GET 목록, POST 읽음)가 세션 이메일로만 부른다. 조회는 댓글 표 전체를 훑으므로 댓글이 크게 늘면 글·답글 갈래별 조회로 나눈다. 검사는 `tests/sql/community-notifications.sql`.
 
-관리자에게는 답변을 기다리는 문의도 같은 목록에 보인다. `20261003120000_admin_inquiry_notifications.sql`의 `limbus.admin_inquiry_notifications(이메일, 최대 행)`이 다른 사람이 보낸 `open` 문의를 한 건에 한 줄씩, 마지막 유저 메시지를 기준으로 최신순으로 돌려준다(줄 모양과 읽음 칸은 댓글 알림과 같다). 저장하는 것은 없고, 관리자가 답해 상태가 바뀌면 줄이 사라진다. 누가 관리자인지는 `/api/notifications`가 세션으로 정하며, 이 함수 조회가 실패하면 댓글 알림만 돌려준다. 검사는 `tests/sql/admin-inquiry-notifications.sql`.
+관리자에게는 답변을 기다리는 문의도 같은 목록에 보인다. `20261003134642_admin_inquiry_notifications.sql`(적용함)의 `limbus.admin_inquiry_notifications(이메일, 최대 행)`이 다른 사람이 보낸 `open` 문의를 한 건에 한 줄씩, 마지막 유저 메시지를 기준으로 최신순으로 돌려준다(줄 모양과 읽음 칸은 댓글 알림과 같다). 저장하는 것은 없고, 관리자가 답해 상태가 바뀌면 줄이 사라진다. 누가 관리자인지는 `/api/notifications`가 세션으로 정하며, 이 함수 조회가 실패하면 댓글 알림만 돌려준다. 검사는 `tests/sql/admin-inquiry-notifications.sql`.
 
 ### 유저 관리와 최근 편집 집계
 
