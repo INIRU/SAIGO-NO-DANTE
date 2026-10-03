@@ -90,6 +90,7 @@
     "comment": "<b>{name}</b>さんが{title}にコメントしました",
     "reply": "<b>{name}</b>さんがあなたのコメントに返信しました",
     "supportReply": "<b>お問い合わせ</b>に新しい返信があります",
+    "inquiry": "<b>{name}</b>さんからお問い合わせ: {title}",
     "someone": "匿名",
     "close": "閉じる"
   },
