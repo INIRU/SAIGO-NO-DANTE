@@ -23,7 +23,7 @@ export const NAV_GROUPS: { labelKey: string; items: { href: string; labelKey: st
   },
   {
     labelKey: 'nav.tools.title',
-    items: [{ href: '/tools/experience', labelKey: 'nav.tools.experience' }, { href: '/tools/lunacy', labelKey: 'nav.tools.lunacy' }],
+    items: [{ href: '/tools/experience', labelKey: 'nav.tools.experience' }, { href: '/tools/lunacy', labelKey: 'nav.tools.lunacy' }, { href: '/tools/damage', labelKey: 'nav.tools.damage' }],
   },
   {
     labelKey: 'nav.other.title',
