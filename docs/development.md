@@ -4,6 +4,8 @@
 
 검증: 빌드·타입 검사, 단위 158개 통과(기존 HTTP 통합 11개 제외). 실제 Chrome에서 계산기 ko/en/ja × 1440px/390px의 하드 리프레시·재방문과 수량 변경, PC/모바일 도구 메뉴, 커스텀 메뉴 키보드 조작, 인격 획득 정보의 원본 파편을 검사했다. Chrome 10개 중 9개 통과 후, Next 스트리밍의 숨겨진 HTML을 검사하던 모바일 테스트를 가시 요소로 한정하고 해당 1개도 통과했다. 화면 기록은 `chrome-experience-tools/`와 `chrome-experience-tools-recheck/`에 보존했다. 공개 파편에는 사용자 결정에 따라 유리 오버레이가 없다.
 
+피해량 계산기는 `/[lang]/tools/damage`에서 사용한다. 계산은 `lib/tools/damage.ts`의 `coinDamage`가 하고 화면(`components/tools/DamageCalculator.tsx`)은 입력만 모은다. 보정 칸(`components/tools/DamageModifiers.tsx`)은 내 인격·기프트·대상·직접 입력으로 나뉘고, 키워드·기프트 후보는 +나 타일을 처음 누를 때 `/api/damage-sources/[lang]`에서 불러온다. 이 경로는 `ego_gifts`와 `keyword_meta`의 설명 문구를 `lib/tools/damage-sources.ts`로 해석하며 `egoGifts`·`keywords`·`gameData` 태그를 따른다(DB 칸이나 동기화 코드는 추가하지 않았다). 후보 칸과 편집 칸은 하나만 열리고, ✕는 닫기만 하며 삭제는 "삭제" 버튼이 한다. 숫자 칸(`components/tools/NumberInput.tsx`)은 입력 중인 글자를 그대로 두어 `-`나 `.`이 지워지지 않는다. 보정 항목만 localStorage `damage-calculator-modifiers`에 남고 나머지 입력은 저장하지 않는다. 모바일에서는 결과가 내비게이션 아래에 붙는 한 줄 막대로 바뀐다(`--nav-offset`). 공식과 수치의 근거는 `data-sync/provenance.md`의 "피해량 계산기 자료"에 있다. 개발 서버에서 이 API의 응답 형태를 바꾸면 `use cache` 응답이 남아 있으므로 서버를 다시 띄운다.
+
 이벤트 판정의 성공·실패 결과는 모든 화면 폭에서 한 열로 쌓는다. Chrome 회귀 검사는 세 언어에서 두 결과의 세로 순서·동일한 폭과 하드 리프레시·재방문을 확인한다. 해당 3개 검사와 빌드·타입 검사를 통과했다.
 
 공지·문의 개편 검증: 빌드와 타입 검사, 단위 153개 통과(기존 HTTP 통합 11개 제외). 실제 Chrome에서 임시 검증 계정으로 문의 소유자 분리, 비로그인·일반 사용자 관리자 접근 거부, 문의 답변, WebP 업로드, 초안 저장과 공개 목록 제외를 확인했다. 프로필 없는 신규 계정도 문의 작성에 성공했다. 1440px/390px에서 하드 리프레시와 다른 페이지를 경유한 재방문, 가로 넘침을 확인했다. 화면 기록은 `../assets/recovery-2026-09-10/chrome-support-admin/`에 있다. 검증용 계정·문의·공지 초안·이미지는 모두 정리했다. 실제 공개 공지 게시나 운영 도메인 배포는 하지 않았다.
