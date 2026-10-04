@@ -60,6 +60,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     entry('/random', null, 'monthly', 0.4),
     entry('/tools/experience', null, 'monthly', 0.4),
     entry('/tools/lunacy', null, 'monthly', 0.4),
+    entry('/tools/damage', null, 'monthly', 0.4),
     entry('/privacy', null, 'yearly', 0.2),
     entry('/terms', null, 'yearly', 0.2),
     ...SINNER_SLUGS.map(slug => entry(
