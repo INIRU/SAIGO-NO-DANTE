@@ -34,7 +34,7 @@ const SOURCES: Source[] = [
     params: [...PAGING, ONE],
     sample: json({ data: [{ id: "31f960cd-…", title: "거던 거검슈 1인 15층", lang: "ko", main_keywords: ["파열"], vote_count: 12, deck_identities: [{ identity_id: "29de8739-…", slot_order: 0 }], deck_egos: [{ ego_id: "4cf6d936-…", grade: "ZAYIN" }] }], offset: 0, limit: 20, nextOffset: 20 }),
     forPartner: {
-      summary: { ko: "공개 덱 목록입니다. id를 주면 편성 순서, 스킬별 공격 유형, 집계까지 받습니다.", en: "Public decks. With an id you also get the formation order, attack type per skill and the analysis.", ja: "公開デッキの一覧です。id を指定すると編成順、スキルごとの攻撃タイプ、集計まで取得できます。" },
+      summary: { ko: "공개 덱 목록입니다. id를 주면 편성 전원의 순서, 스킬별 공격 유형, 집계까지 받습니다. 아래 예시는 한 명만 적었습니다.", en: "Public decks. With an id you also get every slot of the formation in order, the attack type per skill and the analysis. The example below lists one slot.", ja: "公開デッキの一覧です。id を指定すると編成全員の順番、スキルごとの攻撃タイプ、集計まで取得できます。下の例は1人分だけです。" },
       params: [...PAGING, ONE, LANG],
       sample: json({ data: [{ id: "31f960cd-…", title: "거던 거검슈 1인 15층", url: "https://saigo-no-dante.com/ko/decks/31f960cd-…", card_url: "https://saigo-no-dante.com/ko/decks/31f960cd-…/opengraph-image", formation: [{ slot_order: 0, uptie: 4, skill_counts: [3, 2, 1], identity: { name: "거미집의 검", sinner_id: "ryoshu", rarity: 3 }, skills: [{ skill_order: 1, name: "삼연[三連]", atk_type: "slash", sin_affinity: "lust", coins: 3 }] }], egos: [{ grade: "ZAYIN", name: "오감도", sin_affinity: "sloth" }], analysis: { attack_types: { slash: 45, pierce: 6, blunt: 31 }, sin_production: { wrath: 6, lust: 17 } } }] }),
     },
@@ -48,7 +48,7 @@ const SOURCES: Source[] = [
     params: [...PAGING, ONE],
     sample: json({ data: [{ id: "7f2c0a11-…", title: "르누아르 진충덱", lang: "ko", difficulty: "hard", deck: [{ identity_id: "e7d2e403-…", slot_order: 0 }], floor_plan: [{ floor: 2, theme_id: "1003", gift_ids: ["9079"] }], gift_inventory: ["start_9043"], vote_count: 8 }], offset: 0, limit: 20, nextOffset: null }),
     forPartner: {
-      summary: { ko: "공개 플랜 목록입니다. id를 주면 편성과 층별 테마팩, 기프트를 이름까지 받습니다.", en: "Public plans. With an id you also get the formation and each floor's theme pack and gifts by name.", ja: "公開プランの一覧です。id を指定すると編成と階ごとのテーマパック、ギフトを名前付きで取得できます。" },
+      summary: { ko: "공개 플랜 목록입니다. id를 주면 편성 전원과 모든 층의 테마팩, 기프트를 이름까지 받습니다. 아래 예시는 일부만 적었습니다.", en: "Public plans. With an id you also get every slot of the formation and every floor's theme pack and gifts by name. The example below is shortened.", ja: "公開プランの一覧です。id を指定すると編成全員と全階のテーマパック、ギフトを名前付きで取得できます。下の例は一部だけです。" },
       params: [...PAGING, ONE, LANG],
       sample: json({ data: [{ id: "7f2c0a11-…", title: "르누아르 진충덱", difficulty: "hard", url: "https://saigo-no-dante.com/ko/planner/community/7f2c0a11-…", formation: [{ slot_order: 0, uptie: 4, identity: { name: "홍원 군주", sinner_id: "hong-lu" } }], floors: [{ floor: 2, theme: { id: 1003, name: "헬스치킨" }, gifts: [{ game_id: 9079, name: "…", keyword: "충전" }] }], gift_inventory: [{ source: "start", enhancement: 0, game_id: 9043, name: "사원증" }] }] }),
     },
@@ -57,10 +57,10 @@ const SOURCES: Source[] = [
     id: "identities",
     partnerOnly: true,
     name: { ko: "인격", en: "Identities", ja: "人格" },
-    query: "?lang=ko",
-    summary: { ko: "인격 전체입니다. id를 주면 스킬과 패시브를 포함합니다.", en: "Every identity. With an id the skills and passives are included.", ja: "すべての人格です。id を指定するとスキルとパッシブを含みます。" },
+    query: "?id=29de8739-…&lang=ko",
+    summary: { ko: "id 없이 부르면 인격 전체 목록입니다. id를 주면 동기화 1~4 단계의 스킬과 패시브를 모두 포함하고, 줄마다 uptie_level로 단계를 알려 줍니다.", en: "Without an id, the list of every identity. With an id, the skills and passives of all four uptie levels are included; uptie_level on each row tells the level.", ja: "id なしではすべての人格の一覧です。id を指定すると同期化1〜4段階のスキルとパッシブをすべて含み、各行の uptie_level で段階が分かります。" },
     params: [LANG, ONE],
-    sample: json({ data: [{ id: "29de8739-…", name: "거미집의 검", sinner_id: "ryoshu", rarity: 3, slash_res: "내성", pierce_res: "취약", blunt_res: "보통", keywords: ["호흡"], image_url: "https://…/10415_normal_info.webp", url: "https://saigo-no-dante.com/ko/sinners/ryoshu/identities/29de8739-…", card_url: "https://saigo-no-dante.com/ko/sinners/ryoshu/identities/29de8739-…/opengraph-image" }] }),
+    sample: json({ data: [{ id: "29de8739-…", name: "거미집의 검", sinner_id: "ryoshu", rarity: 3, slash_res: "내성", pierce_res: "취약", blunt_res: "보통", keywords: ["호흡"], skills: [{ uptie_level: 1, skill_order: 1, name: "삼연[三連]", atk_type: "slash", sin_affinity: "lust", coins: 3, base_power: 3, coin_power: 2, description: "…", icon_url: "https://…/1041501.webp" }, { uptie_level: 4, skill_order: 1, name: "삼연[三連]", atk_type: "slash", sin_affinity: "lust", coins: 3, base_power: 3, coin_power: 3, description: "…", icon_url: "https://…/1041501.webp" }], passives: [{ uptie_level: 3, passive_type: "…", name: "…", description: "…" }], image_url: "https://…/10415_normal_info.webp", url: "https://saigo-no-dante.com/ko/sinners/ryoshu/identities/29de8739-…", card_url: "https://saigo-no-dante.com/ko/sinners/ryoshu/identities/29de8739-…/opengraph-image" }] }),
   },
   {
     id: "egos",

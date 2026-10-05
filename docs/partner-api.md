@@ -18,7 +18,7 @@
 | 자원 | 대상 | 내용 |
 |---|---|---|
 | `decks`, `planners` | 모든 키 | 공개 덱·플랜 목록. `limit`(1–50), `offset`, `q`(제목 검색), `sort`(`recent` 기본, `popular`), `id` |
-| `identities` | 파트너 | 인격 전체. `id`를 주면 스킬·패시브 포함 |
+| `identities` | 파트너 | 인격 전체. `id`를 주면 동기화 1~4 단계의 스킬·패시브를 모두 포함(줄마다 `uptie_level`) |
 | `egos` | 파트너 | E.G.O 전체. `id`를 주면 스킬·패시브 포함 |
 | `ego-gifts` | 파트너 | 기프트 전체(효과 3단계 포함). `id`는 UUID나 게임 ID |
 | `theme-packs` | 파트너 | 테마팩 전체(층 정보, 기프트 ID 목록) |
@@ -67,8 +67,8 @@
 }
 ```
 
-- `formation`은 편성 순서(`slot_order` 오름차순)다. `99`는 순서를 정하지 않은 인격이다.
-- `skills`는 그 칸의 동기화 단계(`uptie`)에 해당하는 스킬만 담는다. `skill_order` 1–3이 스킬 1–3, 4가 수비 스킬이고 `variant_order`가 다른 줄은 변형 스킬이다. 스킬 설명은 `identities?id=`에서 받는다.
+- `formation`은 편성 전원을 편성 순서(`slot_order` 오름차순)대로 담는다. 위 예시는 한 명만 적었다. `99`는 순서를 정하지 않은 인격이다.
+- `skills`는 그 칸의 동기화 단계(`uptie`)에 해당하는 스킬만 담는다. `skill_order` 1–3이 스킬 1–3, 4가 수비 스킬이고 `variant_order`가 다른 줄은 변형 스킬이다. 스킬 설명과 다른 동기화 단계의 스킬은 `identities?id=`에서 받는다(1~4 단계 전부, `uptie_level`로 구분. 1·2단계에는 스킬 3이, 1단계에는 패시브가 없는 인격이 많다).
 - `skill_counts`는 스킬 1·2·3의 분배 개수다. `cost`와 `ego_cost`의 죄악 순서는 분노·색욕·나태·탐식·우울·오만·질투다.
 - `analysis`는 사이트의 덱·플랜 화면과 같은 계산(`lib/decks/deck-analysis.ts`)이다.
 
