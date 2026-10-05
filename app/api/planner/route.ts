@@ -6,7 +6,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { findOrCreateSupabaseUser } from '@/lib/supabase/findOrCreateUser'
-import { normalizePlannerListKeywords, storedPlanDifficulty, stripPlanForList } from '@/lib/planner/stripPlanForList'
+import { normalizePlannerListKeywords, planMatchesDifficulty, storedDifficultiesFor, storedPlanDifficulty, stripPlanForList } from '@/lib/planner/stripPlanForList'
 import { normalizeFloorPlanDifficulty, normalizePlanDifficulty } from '@/lib/planner/floor-difficulty'
 import { planFormationCount } from '@/lib/planner/plan-formation-count'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
@@ -285,7 +285,8 @@ export async function GET(req: NextRequest) {
     const { value: formationCount } = formationCountResult
     const identityIds = parseCsvParam(getParam(searchParams, 'identity_ids', 'ids'))
     const keywordTags = normalizePlannerListKeywords(parseCsvParam(getParam(searchParams, 'keyword_tags', 'kt')))
-    const hasAdvancedFilters = identityIds.length > 0 || keywordTags.length > 0 || formationCount !== null
+    // The normal filter also reads the plans stored as hard and keeps those with normal floors: that takes each plan's floors, like the filters above.
+    const hasAdvancedFilters = identityIds.length > 0 || keywordTags.length > 0 || formationCount !== null || difficulty === 'normal'
 
     // userId=me 또는 votedBy=me → 인증 필요
     let resolvedUserId: string | null = null
@@ -319,7 +320,7 @@ export async function GET(req: NextRequest) {
 
       if (userIdParam === 'me' && resolvedUserId) query = query.eq('user_id', resolvedUserId)
       if (votedPlanIds) query = query.in('id', votedPlanIds)
-      if (difficulty) query = query.eq('difficulty', difficulty)
+      if (difficulty) query = query.in('difficulty', storedDifficultiesFor(difficulty))
       if (tag) query = query.contains('tags', [tag])
       if (lang !== 'all') query = query.eq('lang', lang)
 
@@ -344,7 +345,8 @@ export async function GET(req: NextRequest) {
       const filteredPlans = enrichedRows
         .map(plan => ({ plan, summary: stripPlanForList(plan) }))
         .filter(({ plan, summary }) => {
-          return (formationCount === null || planFormationCount(plan.deck) === formationCount) &&
+          return (!difficulty || planMatchesDifficulty(summary.difficulty, summary.difficulty_summary, difficulty)) &&
+            (formationCount === null || planFormationCount(plan.deck) === formationCount) &&
             matchesIdentityFilters(plan, identityIds, identityMode) &&
             matchesKeywordFilters(summary, keywordTags, keywordTagMode)
         })
