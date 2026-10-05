@@ -52,6 +52,10 @@ describe('developer console', () => {
       for (const lang of ['ko', 'en', 'ja'] as const) expect(resource.name[lang] && resource.summary[lang]).toBeTruthy()
     }
     expect(resourcesFor(true)[0].sample).toContain('formation')
+    // The identity example is the one-item read, so the skills of more than one uptie level are visible.
+    const identity = JSON.parse(resourcesFor(true)[2].sample).data[0]
+    expect(new Set(identity.skills.map((skill: { uptie_level: number }) => skill.uptie_level)).size).toBeGreaterThan(1)
+    expect(identity.passives[0]).toHaveProperty('uptie_level')
   })
 
   it('REQ-ACCOUNT-017 shows requests per key and per recent day', () => {
