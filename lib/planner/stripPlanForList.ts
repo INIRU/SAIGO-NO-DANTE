@@ -260,7 +260,14 @@ export function planDifficultyBadge(difficulty: Difficulty, summary: PlanSummary
   return { key: difficulty, styleKey: difficulty, labelKeys: [difficulty] }
 }
 
-/** The difficulty stored on a plan, which the board filters by: the one it is shown with. Pass a floor plan whose floors carry their difficulty. */
+/** Whether a difficulty filter finds the plan: the difficulty is one it is shown with, so a "노말/하드" plan is found under both. */
+export const planMatchesDifficulty = (difficulty: Difficulty, summary: PlanSummary['difficulty_summary'], wanted: string) =>
+  planDifficultyBadge(difficulty, summary).labelKeys.includes(wanted as Difficulty)
+
+/** The stored difficulties a filter has to read: a plan shown as "노말/하드" is stored as hard, so the normal filter reads hard plans too (and keeps those that match). */
+export const storedDifficultiesFor = (wanted: string): string[] => wanted === 'normal' ? ['normal', 'hard'] : [wanted]
+
+/** The difficulty stored on a plan: the one its badge is coloured with (the harder of normal/hard). Pass a floor plan whose floors carry their difficulty. */
 export function storedPlanDifficulty(floorPlan: unknown, planDifficulty: Difficulty): Difficulty {
   return planDifficultyBadge(planDifficulty, computeDifficultySummary(floorPlan, planDifficulty)).styleKey
 }
