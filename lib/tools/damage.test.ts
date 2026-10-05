@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { clampModifierValue, coinDamage, coinPowers, GIFT_IMAGE_BASE, MAX_MODIFIER_NAME, MAX_MODIFIERS, parseNumberInput, parseSavedModifiers, toModifier, type DamageInput } from './damage'
+import { clampModifierValue, coinChoices, coinDamage, coinModifiers, coinPowers, GIFT_IMAGE_BASE, MAX_MODIFIER_NAME, MAX_MODIFIERS, parseNumberInput, parseSavedModifiers, toModifier, type DamageInput } from './damage'
 import ko from '../../messages/ko.json'
 import en from '../../messages/en.json'
 import ja from '../../messages/ja.json'
@@ -102,6 +102,29 @@ describe('damage calculator', () => {
     expect(parseSavedModifiers(JSON.stringify(Array.from({ length: 80 }, (_, id) => ({ id, name: '', value: 1, target: 'damage' }))))).toHaveLength(MAX_MODIFIERS)
     for (const raw of [null, '', '{', '{"a":1}', '"text"']) expect(parseSavedModifiers(raw)).toEqual([])
     expect(parseSavedModifiers(JSON.stringify([{ id: 2 ** 60, name: 'x', value: 1, target: 'damage' }, { id: 3, name: '참격 내성 약화 3', value: 0.3, target: 'physical' }]))).toEqual([{ id: 3, name: '참격 내성 약화 3', value: 0.3, target: 'physical' }])
+  })
+  it('REQ-TOOLS-013 applies a modifier set to one coin to that coin only', () => {
+    const saved = [
+      { id: 1, name: '피해량 증가', value: 50, target: 'damage' as const },
+      { id: 2, name: '마지막 코인', value: 100, target: 'damage' as const, coin: 3 },
+      { id: 3, name: '추가 피해', value: 1.5, target: 'final' as const, coin: 3 },
+    ]
+    expect(coinModifiers(saved, 1)).toEqual([{ target: 'damage', value: 0.5 }])
+    expect(coinModifiers(saved, 3)).toEqual([{ target: 'damage', value: 0.5 }, { target: 'damage', value: 1 }, { target: 'final', value: 1.5 }])
+    // 10 × 1.5 on the first two coins; 10 × 2.5 = 25, then × 1.5 and floored, on the third.
+    expect([1, 2, 3].map(coin => coinDamage({ ...base, modifiers: coinModifiers(saved, coin) }).damage)).toEqual([15, 15, 37])
+    // The coin is saved with the modifier; a coin that is not one of the ten is dropped, and the modifier is for every coin again.
+    expect(parseSavedModifiers(JSON.stringify(saved))).toEqual(saved)
+    for (const coin of [0, 11, 2.5, '3', null]) expect(parseSavedModifiers(JSON.stringify([{ ...saved[1], coin }]))).toEqual([{ id: 2, name: '마지막 코인', value: 100, target: 'damage' }])
+    // The choices are every coin (0) and the coins the skill has; a saved coin the skill no longer has stays as the last choice, without the ones between.
+    expect(coinChoices(3)).toEqual([0, 1, 2, 3])
+    expect(coinChoices(3, 2)).toEqual([0, 1, 2, 3])
+    expect(coinChoices(1, 3)).toEqual([0, 1, 3])
+    for (const copy of [ko, en, ja] as unknown as Array<{ damage: Record<string, string> }>) {
+      for (const key of ['customCoin', 'coinAll', 'coinMissing']) expect(copy.damage[key]).toBeTruthy()
+      // Two fields of one row are not called the same.
+      expect(copy.damage.customCoin).not.toBe(copy.damage.customTarget)
+    }
   })
   it('REQ-TOOLS-012 keeps where a picked modifier came from, and drops only the damaged parts of it', () => {
     const picked = [

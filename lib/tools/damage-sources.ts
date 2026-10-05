@@ -7,38 +7,43 @@ import { MAX_MODIFIER_OPTIONS, type SavedModifier } from './damage'
 
 // The first three are the attack types (physical resistance), the rest the sins.
 const ATTRIBUTES = ['참격', '관통', '타격', '분노', '색욕', '나태', '탐식', '우울', '오만', '질투']
-const FAMILIES = ['취약', '보호', '피해량 증가', '피해량 감소', '내성 약화']
-const STACK = new RegExp(`^(?:(${ATTRIBUTES.join('|')}) )?(${FAMILIES.join('|')})$`)
+// "한 턴 동안 관통 스킬로 받는 피해가 수치에 비례하여 증가 (최대 10)"; the general keyword names no attribute, a sin is "나태 속성 스킬로".
+const PROPORTIONAL = new RegExp(`(?:(${ATTRIBUTES.join('|')})(?: 속성)? )?스킬로 (받는|가하는) 피해가 수치에 비례하여 (증가|감소)(?:\\s*\\(최대 (\\d+)\\))?`)
+// "대상의 참격 내성을 (스택 * 0.1) 증가"; the game also writes "관통 속성 내성". Only a resistance it names: "모든 내성" is not one value to raise.
+const WEAKENING = new RegExp(`(${ATTRIBUTES.join('|')})(?: 속성)? 내성을 \\((?:스택|수치)\\s*[*xX×]\\s*(\\d+(?:\\.\\d+)?)\\)\\s*증가`)
+// "In proportion to the count" is 10% a stack in the game data (TakeAtkDamageMultiplierByStack / AtkDamageMultiplierByStack ±0.1); the text does not say it.
+const PROPORTION = 10
+export const MAX_STACKS = 10
 
 /** Who carries an effect: the attacker (damage dealt) or the target (damage taken, resistances). */
 export type Side = 'self' | 'target'
 /** perStack: percent for damage, a resistance value for physical and sin. */
 export type StackEffect = { target: 'damage' | 'physical' | 'sin'; perStack: number; max: number; side: Side }
 
-/** "참격 취약" → 참격, 취약. A weakening always names its resistance. */
-function stackParts(keyword: string) {
-  const [, attribute, family] = STACK.exec(keyword) ?? []
-  return family && (attribute || family !== '내성 약화') ? { attribute, family } : null
+// Listed by kind (Fragile, Protection, Damage Up, Damage Down, weakenings), and within a kind the general keyword first, then attack types, then sins.
+function readStack(text: string): { effect: StackEffect; rank: number } | null {
+  const proportional = PROPORTIONAL.exec(text)
+  if (proportional) {
+    const [, attribute, verb, word, max] = proportional
+    const taken = verb === '받는', more = word === '증가'
+    return {
+      effect: { target: 'damage', perStack: more ? PROPORTION : -PROPORTION, max: max ? Number(max) : MAX_STACKS, side: taken ? 'target' : 'self' },
+      rank: ((taken ? 0 : 2) + (more ? 0 : 1)) * 100 + ATTRIBUTES.indexOf(attribute) + 1,
+    }
+  }
+  const weakening = WEAKENING.exec(text)
+  if (!weakening) return null
+  const attribute = ATTRIBUTES.indexOf(weakening[1])
+  return { effect: { target: attribute < 3 ? 'physical' : 'sin', perStack: Number(weakening[2]), max: MAX_STACKS, side: 'target' }, rank: 400 + attribute + 1 }
 }
 
 /**
- * The keywords whose effect is their stack count: Protection, Fragile, Damage Up and Down (general, per attack type and
- * per sin) change damage by 10% a stack, and a resistance weakening raises that resistance by 0.1 a stack. The 10% is
- * the game data's own value (TakeAtkDamageMultiplierByStack / AtkDamageMultiplierByStack ±0.1, maxStack 10).
+ * The keywords whose effect is their stack count, known by the sentence of their Korean text, not by their name: damage
+ * dealt or taken "in proportion to the count" changes by 10% a stack (Protection, Fragile, Damage Up and Down, general,
+ * per attack type and per sin), and a weakening raises its resistance by the amount it states. A keyword the game adds
+ * with either sentence is a stack keyword without a change here.
  */
-export function stackEffect(keyword: string): StackEffect | null {
-  const parts = stackParts(keyword)
-  if (!parts) return null
-  const { attribute, family } = parts
-  if (family === '내성 약화') return { target: ATTRIBUTES.indexOf(attribute!) < 3 ? 'physical' : 'sin', perStack: 0.1, max: 10, side: 'target' }
-  return { target: 'damage', perStack: family === '취약' || family === '피해량 증가' ? 10 : -10, max: 10, side: family === '보호' || family === '취약' ? 'target' : 'self' }
-}
-
-// Listed by kind, and within a kind the general keyword first, then attack types, then sins.
-const stackRank = (keyword: string) => {
-  const parts = stackParts(keyword)
-  return parts ? FAMILIES.indexOf(parts.family) * 100 + ATTRIBUTES.indexOf(parts.attribute ?? '') + 1 : Infinity
-}
+export const stackEffect = (text: string): StackEffect | null => readStack(text)?.effect ?? null
 
 export const mentionsDamage = (text: string) => text.includes('피해')
 
@@ -138,12 +143,13 @@ export function buildDamageSources(
   gifts: readonly GiftSourceRow[],
   lang: SupportedLang,
 ): DamageSources {
-  const stackRows: DamageSources['keywords'] = []
+  const stackRows: (DamageSources['keywords'][number] & { rank: number })[] = []
   const keywordRows: DamageSources['keywords'] = []
   for (const [name, info] of Object.entries(keywords)) {
     const row = { name, label: inLanguage(lang, name, info.nameEn, info.nameJp), text: inLanguage(lang, info.desc, info.descEn, info.descJp) }
-    const stack = stackEffect(name)
-    if (stack) { stackRows.push({ ...row, values: [], stack, side: stack.side }); continue }
+    const stack = readStack(info.desc)
+    // a stack keyword is offered as its stacks only; were a text to hold the sentence and another damage percent, that percent would go unread. No keyword does (2026-10-05); offer both rows if one appears.
+    if (stack) { stackRows.push({ ...row, values: [], stack: stack.effect, side: stack.effect.side, rank: stack.rank }); continue }
     const changes = damageChanges(info.desc)
     for (const side of ['self', 'target'] as const) {
       const own = changes.filter(change => change.taken === (side === 'target'))
@@ -169,22 +175,25 @@ export function buildDamageSources(
       stages: stages.map(({ level, text, values }) => ({ level, text, values })),
     })
   }
-  return { keywords: [...stackRows.sort((a, b) => stackRank(a.name) - stackRank(b.name)), ...keywordRows], gifts: giftRows }
+  return { keywords: [...stackRows.sort((a, b) => a.rank - b.rank).map(({ rank: _, ...row }) => row), ...keywordRows], gifts: giftRows }
 }
 
 type NewModifier = Omit<SavedModifier, 'id'>
 
-/** A keyword as a modifier: a stack keyword starts at one stack (and knows its own side), any other at the first value its text offers (0 when it offers none). */
-export function keywordModifier(keyword: string, label: string, values: readonly number[] = [], side: Side = 'self'): NewModifier {
-  const stack = stackEffect(keyword)
+/** A keyword of the list as a modifier: a stack keyword starts at one stack (and its effect knows its own side), any other at the first value its text offers (0 when it offers none). */
+export function keywordModifier({ name, label, values, stack, side }: Omit<DamageSources['keywords'][number], 'text'>): NewModifier {
   return stack
-    ? { name: label, keyword, stacks: 1, value: stack.perStack, target: stack.target, side: stack.side }
-    : { name: label, keyword, value: values[0] ?? 0, options: values.slice(0, MAX_MODIFIER_OPTIONS), target: 'damage', side }
+    ? { name: label, keyword: name, stacks: 1, value: stack.perStack, target: stack.target, side: stack.side }
+    : { name: label, keyword: name, value: values[0] ?? 0, options: values.slice(0, MAX_MODIFIER_OPTIONS), target: 'damage', side }
 }
 
 export type DamageSuggestion = { key: string; kind: 'keyword' | 'gift'; label: string; modifier: NewModifier; /** A stack keyword's effect per stack. */ perStack?: number }
 
 export type SourceGroup = Side | 'gift'
+
+/** What a candidate of a picker already stands for among the applied modifiers: the same gift, or the same keyword on the same side. */
+export const findApplied = <T extends NewModifier>(modifiers: readonly T[], { gift, keyword, side }: NewModifier): T | undefined =>
+  modifiers.find(other => gift ? other.gift?.id === gift.id : !!keyword && !other.gift && other.keyword === keyword && (other.side ?? 'self') === (side ?? 'self'))
 
 /**
  * What a typed name may mean: keywords and gifts whose shown name contains it, names that start with it first. A gift
@@ -197,7 +206,7 @@ export function suggestDamageSources(sources: DamageSources, query: string, { gr
   const rows: DamageSuggestion[] = []
   for (const keyword of group === 'gift' ? [] : sources.keywords) {
     if (group && keyword.side !== group) continue
-    rows.push({ key: `k:${keyword.name}:${keyword.side}`, kind: 'keyword', label: keyword.label, modifier: keywordModifier(keyword.name, keyword.label, keyword.values, keyword.side), ...(keyword.stack ? { perStack: keyword.stack.perStack } : {}) })
+    rows.push({ key: `k:${keyword.name}:${keyword.side}`, kind: 'keyword', label: keyword.label, modifier: keywordModifier(keyword), ...(keyword.stack ? { perStack: keyword.stack.perStack } : {}) })
   }
   for (const gift of group && group !== 'gift' ? [] : sources.gifts) {
     const [stage] = gift.stages

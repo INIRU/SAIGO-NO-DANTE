@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import { useTranslations } from 'next-intl'
 import { RotateCcw } from 'lucide-react'
-import { coinDamage, coinPowers, parseSavedModifiers, STAGGER_RESIST, toModifier, type SavedModifier, type StaggerStage } from '@/lib/tools/damage'
+import { coinDamage, coinModifiers, coinPowers, MAX_COINS, parseSavedModifiers, STAGGER_RESIST, type SavedModifier, type StaggerStage } from '@/lib/tools/damage'
 import { COIN_IMAGES } from '@/lib/identity/skill-description'
 import Dropdown from '@/components/ui/Dropdown'
 import PageHeader from '@/components/ui/PageHeader'
@@ -13,7 +13,6 @@ import NumberInput from './NumberInput'
 import styles from './DamageCalculator.module.css'
 
 const STORAGE_KEY = 'damage-calculator-modifiers'
-const MAX_COINS = 10
 const DEFAULTS = {
   basePower: 4, coinPower: 4, coinCount: 3, offenseLevel: 55,
   defenseLevel: 55, physicalResist: 1, sinResist: 1, stagger: 0 as StaggerStage, observationLevel: 0,
@@ -47,9 +46,14 @@ export default function DamageCalculator() {
   const set = (patch: Partial<typeof DEFAULTS>) => setForm(current => ({ ...current, ...patch }))
   const staggerResist = STAGGER_RESIST[form.stagger]
   const powers = coinPowers(form.basePower, form.coinPower, heads.slice(0, form.coinCount))
-  const modifiers = custom.map(toModifier)
-  const results = powers.map(power => coinDamage({ ...form, power, modifiers }))
+  const results = powers.map((power, index) => coinDamage({ ...form, power, modifiers: coinModifiers(custom, index + 1) }))
   const total = results.reduce((sum, result) => sum + result.damage, 0)
+  // A modifier set to one coin makes the factors differ from coin to coin: each coin then shows its own.
+  const factors = (result: typeof results[number]) => [
+    [t('damageFactor'), result.damageFactor], [t('resistFactor'), result.resistFactor],
+    ...(result.finalMultiplier !== 1 ? [[t('finalMultiplier'), result.finalMultiplier]] : []),
+  ] as [string, number][]
+  const sameFactors = results.every(result => (['damageFactor', 'resistFactor', 'finalMultiplier'] as const).every(key => result[key] === results[0][key]))
 
   return <div className={styles.page}>
     <PageHeader title={t('title')} description={t('subtitle')} actions={
@@ -104,7 +108,7 @@ export default function DamageCalculator() {
             <label className={styles.check}><input type="checkbox" checked={form.critical} onChange={e => set({ critical: e.target.checked })} />{t('critical')}</label>
           </div>
           <h3>{t('custom')}</h3>
-          <DamageModifiers modifiers={custom} setModifiers={setCustom} />
+          <DamageModifiers modifiers={custom} setModifiers={setCustom} coinCount={form.coinCount} />
         </section>
       </div>
       <section className={`${styles.panel} ${styles.result}`} aria-labelledby="damage-result-heading">
@@ -113,13 +117,12 @@ export default function DamageCalculator() {
         <ol className={styles.coinResults}>
           {results.map((result, index) => <li key={index}>
             <span>{t('coin', { index: index + 1 })}</span><span>{t('power')} {powers[index]}</span><strong key={result.damage} data-testid={`damage-coin-${index + 1}`}>{result.damage}</strong>
+            {!sameFactors && <small className={styles.coinFactors} data-testid={`damage-coin-factors-${index + 1}`}>{factors(result).map(([name, value]) => `${name} ${factor(value)}`).join(' · ')}</small>}
           </li>)}
         </ol>
-        <dl className={styles.factors}>
-          <div><dt>{t('damageFactor')}</dt><dd>{factor(results[0].damageFactor)}</dd></div>
-          <div><dt>{t('resistFactor')}</dt><dd>{factor(results[0].resistFactor)}</dd></div>
-          {results[0].finalMultiplier !== 1 && <div><dt>{t('finalMultiplier')}</dt><dd>{factor(results[0].finalMultiplier)}</dd></div>}
-        </dl>
+        {sameFactors && <dl className={styles.factors}>
+          {factors(results[0]).map(([name, value]) => <div key={name}><dt>{name}</dt><dd>{factor(value)}</dd></div>)}
+        </dl>}
       </section>
     </div>
     <details className={styles.details}>
