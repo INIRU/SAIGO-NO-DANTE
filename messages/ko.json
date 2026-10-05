@@ -189,7 +189,6 @@
     },
     "search": {
       "label": "덱 검색",
-      "section": "검색",
       "placeholder": "인격, 키워드, 제목...",
       "clear": "검색어 지우기",
       "hint": "+ OR, * AND 검색",
@@ -411,7 +410,7 @@
       "title": "{sinner} 인격 선택",
       "fallbackTitle": "인격 선택",
       "description": "덱 목록 필터에 사용할 인격을 선택합니다.",
-      "heading": "{order} {sinner}",
+      "noResults": "조건에 맞는 인격이 없습니다.",
       "close": "인격 선택 모달 닫기",
       "add": "{identity} 필터에 추가",
       "remove": "{identity} 필터에서 제거",
@@ -1001,7 +1000,6 @@
       },
       "search": {
         "label": "플랜 검색",
-        "section": "검색",
         "placeholder": "인격, 키워드, 제목...",
         "clear": "검색어 지우기",
         "hint": "+ OR, * AND 검색",
