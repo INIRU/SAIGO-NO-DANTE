@@ -7,7 +7,7 @@ import {
   type unstable_AdapterInterface as AdapterInterface,
   type unstable_UpdateUrlFunction as UpdateUrlFunction,
 } from 'nuqs/adapters/custom'
-import { Fragment, startTransition, useCallback, useLayoutEffect, useOptimistic, useState, useSyncExternalStore, type ReactNode } from 'react'
+import { Fragment, startTransition, useCallback, useLayoutEffect, useOptimistic, useRef, useState, useSyncExternalStore, type ReactNode } from 'react'
 
 const EMPTY = new URLSearchParams()
 const noop = () => {}
@@ -27,8 +27,16 @@ function useStaticFirstAdapter(): AdapterInterface {
   if (onServer) return SERVER_ADAPTER
   /* eslint-disable react-hooks/rules-of-hooks -- `onServer` is constant for the lifetime of the bundle */
   const router = useRouter()
-  const [searchParams, setOptimisticSearchParams] = useOptimistic<URLSearchParams>(useSearchParams())
+  const current = useSearchParams()
+  const [searchParams, setOptimisticSearchParams] = useOptimistic<URLSearchParams>(current)
+  // A query written to the URL reaches useSearchParams() a render later (Next takes it from the history call in a
+  // transition), and nuqs has dropped its own pending value by then: without this the old query shows for a moment
+  // (a pressed filter goes off, then on again). The written query stands in until Next's own query changes.
+  const [written, setWritten] = useState<{ search: URLSearchParams; over: URLSearchParams } | null>(null)
+  const currentRef = useRef(current)
+  useLayoutEffect(() => { currentRef.current = current })
   const updateUrl = useCallback<UpdateUrlFunction>((search, options) => {
+    setWritten({ search, over: currentRef.current })
     startTransition(() => {
       if (!options.shallow) setOptimisticSearchParams(search)
       const url = location.origin + location.pathname + renderQueryString(search) + location.hash
@@ -39,7 +47,8 @@ function useStaticFirstAdapter(): AdapterInterface {
   }, [router, setOptimisticSearchParams])
   /* eslint-enable react-hooks/rules-of-hooks */
   // rateLimitFactor as in nuqs's next/app adapter: each update is several history calls (browser rate limits).
-  return { searchParams: hydrated ? searchParams : EMPTY, updateUrl, rateLimitFactor: 3, autoResetQueueOnUpdate: true }
+  const shown = written?.over === current ? written.search : searchParams
+  return { searchParams: hydrated ? shown : EMPTY, updateUrl, rateLimitFactor: 3, autoResetQueueOnUpdate: true }
 }
 
 const Provider = createAdapterProvider(useStaticFirstAdapter)
