@@ -126,7 +126,7 @@ BASE_URL=http://127.0.0.1:3001 LIMBUS_RESTORED_DATA=1 \
 
 본문·검색·메모는 Pretendard를 우선 사용하고 장식 제목은 기존 제목 폰트를 유지한다. SCDream5 원본에 빈 한글 윤곽을 가리키는 cmap 8,822개가 있어 `scripts/assets/repair-body-font.py --apply`로 제거했다. 매핑이 없는 글자는 대체 폰트로 표시한다. 원본은 복구 폴더 `font-originals/`에 보존한다. 인자 없이 실행하면 빈 한글 매핑이 다시 유입되는지 검사한다.
 
-`e2e/community-additions.spec.ts`는 설치된 Chrome의 PC·모바일 제약 선택, 메모 양식, 임시 저장·재열기, 목록과 전체 필터 전환을 검사한다. `node e2e/developer-api.acceptance.cjs`는 localhost:3000에서 격리된 테스트 계정으로 키 발급·조회·소유권·폐기·이미지 업로드를 검사한 후 계정과 이미지를 삭제한다. `tests/sql/developer-and-interest.sql`은 트랜잭션 롤백 안에서 요청 제한·RLS 권한·고유 방문 집계를 검사한다.
+`e2e/community-additions.spec.ts`는 설치된 Chrome의 PC·모바일 제약 선택, 메모 양식, 임시 저장·재열기, 목록과 전체 필터 전환을 검사한다. `e2e/board-filters.spec.ts`는 덱·플래너 전체 보기의 인격 필터 창(수감자 바꾸기, 고르면 바로 반영, 수감자마다 하나)을 검사한다. 두 게시판의 필터 칸은 `components/board/FilterControls.tsx`의 부품(구역 제목, 글자 선택 버튼, 아이콘 타일, 고른 항목 줄, 입력 칸)으로 만들고, 인격 고르는 창은 플래너 편집기와 같은 `CharacterPickerFilters`를 쓴다. `node e2e/developer-api.acceptance.cjs`는 localhost:3000에서 격리된 테스트 계정으로 키 발급·조회·소유권·폐기·이미지 업로드를 검사한 후 계정과 이미지를 삭제한다. `tests/sql/developer-and-interest.sql`은 트랜잭션 롤백 안에서 요청 제한·RLS 권한·고유 방문 집계를 검사한다.
 
 SEO의 공통 JSON-LD 출력은 next-seo `JsonLdScript`를 사용한다. App Router 제목·canonical·언어별 메타데이터는 기존 Metadata API를 유지한다. 근거: [next-seo custom components](https://github.com/garmeeh/next-seo/blob/main/CUSTOM_COMPONENTS.md).
 

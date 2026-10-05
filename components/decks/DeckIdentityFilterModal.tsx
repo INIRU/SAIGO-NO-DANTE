@@ -1,10 +1,15 @@
 'use client'
 
+import { useEffect, useMemo, useState } from 'react'
+import Image from 'next/image'
 import { X } from 'lucide-react'
 import { useLocale, useTranslations } from 'next-intl'
 import type { Identity } from '@/lib/data/sinners'
-import IdentityCard from '@/components/sinners/IdentityCard'
+import { getSinnerLogoUrl } from '@/lib/utils/images'
 import BaseModal from '@/components/ui/BaseModal'
+import CharacterPickerFilters from '@/components/ui/CharacterPickerFilters'
+import IdentityFrameCard from '@/components/ui/IdentityFrameCard'
+import { filterStyles } from '@/components/board/FilterControls'
 
 export type DeckFilterSinner = {
   id: string
@@ -16,115 +21,71 @@ export type DeckFilterIdentity = Identity & {
   sinner?: DeckFilterSinner | null
 }
 
-interface DeckIdentityFilterModalProps {
+/**
+ * The identity filter's picker of the deck and plan boards, built like the planner's identity picker: name search, grade
+ * and the sinners down the left, the cards on the right. Another sinner is one press away without closing it ('' is every
+ * sinner). A pressed card joins the filter and closes the window (the filter keeps one identity per sinner, so the pick
+ * is done); pressing the chosen card takes it off and leaves the window open.
+ */
+export default function DeckIdentityFilterModal({ open, sinnerId, sinners, identities, selectedIdentityIds, onToggleIdentity, onSinnerChange, onClose }: {
   open: boolean
-  sinner: DeckFilterSinner | null
-  identities: DeckFilterIdentity[]
-  selectedIdentityIds: Set<string>
+  sinnerId: string
+  sinners: readonly DeckFilterSinner[]
+  identities: readonly DeckFilterIdentity[]
+  selectedIdentityIds: ReadonlySet<string>
   onToggleIdentity: (identityId: string) => void
+  onSinnerChange: (sinnerId: string) => void
   onClose: () => void
-}
-
-export default function DeckIdentityFilterModal({
-  open,
-  sinner,
-  identities,
-  selectedIdentityIds,
-  onToggleIdentity,
-  onClose,
-}: DeckIdentityFilterModalProps) {
+}) {
   const locale = useLocale()
   const t = useTranslations('decks.identityFilter')
   const rootT = useTranslations()
-  const sinnerName = sinner ? rootT(`sinner.${sinner.id}` as Parameters<typeof rootT>[0]) : ''
-  const localizedIdentityName = (identity: DeckFilterIdentity) => {
-    if (locale === 'en' && identity.name_en) return identity.name_en
-    if (locale === 'ja' && identity.name_jp) return identity.name_jp
-    return identity.name_kr
-  }
+  const [query, setQuery] = useState(''), [grade, setGrade] = useState('')
+  useEffect(() => { if (open) { setQuery(''); setGrade('') } }, [open])
+  const sinnerName = (id: string) => rootT(`sinner.${id}` as Parameters<typeof rootT>[0])
+  const nameOf = (identity: DeckFilterIdentity) => (locale === 'en' ? identity.name_en : locale === 'ja' ? identity.name_jp : null) || identity.name_kr
+  const order = useMemo(() => new Map(sinners.map(sinner => [sinner.id, sinner.order_num])), [sinners])
+  const shown = useMemo(() => {
+    const needle = query.trim().toLocaleLowerCase()
+    return identities
+      .filter(identity => (!sinnerId || identity.sinner_id === sinnerId) && (!grade || String(identity.rarity) === grade)
+        && [identity.name_kr, identity.name_en, identity.name_jp].some(name => name?.toLocaleLowerCase().includes(needle)))
+      .sort((a, b) => (order.get(a.sinner_id) ?? 0) - (order.get(b.sinner_id) ?? 0) || b.rarity - a.rarity || a.name_kr.localeCompare(b.name_kr, 'ko'))
+  }, [identities, sinnerId, grade, query, order])
+  const title = sinnerId ? t('title', { sinner: sinnerName(sinnerId) }) : t('fallbackTitle')
 
   return (
-    <BaseModal
-      open={open}
-      onClose={onClose}
-      maxWidth="46rem"
-      padding="calc(env(safe-area-inset-top) + 0.75rem) calc(env(safe-area-inset-right) + 0.75rem) calc(env(safe-area-inset-bottom) + 0.75rem) calc(env(safe-area-inset-left) + 0.75rem)"
-      title={sinner ? t('title', { sinner: sinnerName }) : t('fallbackTitle')}
-      description={t('description')}
-    >
-      <div
-        className="max-h-[82dvh] overflow-hidden rounded-md"
-        style={{
-          background: 'var(--bg-panel)',
-          border: '1px solid rgba(200,144,10,0.18)',
-          boxShadow: '0 1rem 2rem rgba(0,0,0,0.34)',
-        }}
-      >
-        <div
-          className="flex items-center gap-3 px-3 py-2.5 sm:px-4"
-          style={{ borderBottom: '1px solid rgba(200,144,10,0.14)' }}
-        >
-          <div className="min-w-0 flex-1">
-            <p
-              style={{ color: 'var(--deck-filter-text-dim)', fontFamily: 'var(--font-heading)', fontSize: 'var(--deck-filter-control-text)', letterSpacing: '0.08em', lineHeight: 1.2 }}
-            >
-              IDENTITY FILTER
-            </p>
-            <h2
-              className="truncate"
-              style={{ color: 'var(--gold)', fontFamily: 'var(--font-heading)', fontSize: '1.125rem', fontWeight: 700, lineHeight: 1.35 }}
-            >
-              {sinner ? t('heading', { order: String(sinner.order_num).padStart(2, '0'), sinner: sinnerName }) : t('fallbackTitle')}
-            </h2>
-          </div>
-          <button
-            onClick={onClose}
-            className="flex shrink-0 items-center justify-center rounded transition-colors hover:bg-white/5 focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-2"
-            style={{ width: 'var(--deck-filter-touch-min)', height: 'var(--deck-filter-touch-min)', color: '#9a938a', cursor: 'pointer' }}
-            aria-label={t('close')}
-          >
-            <X size={20} aria-hidden="true" />
-          </button>
+    <BaseModal open={open} onClose={onClose} maxWidth="64rem" title={title} description={t('description')}>
+      <div className={filterStyles.picker}>
+        <div className={filterStyles.pickerHead}>
+          {sinnerId && <Image src={getSinnerLogoUrl(sinnerId)} alt="" width={24} height={24} />}
+          {/* The window's heading is the dialog title BaseModal already gives it; this is its visible copy. */}
+          <p>{title}{selectedIdentityIds.size > 0 && <b>{selectedIdentityIds.size}</b>}</p>
+          <button type="button" onClick={onClose} aria-label={t('close')}><X size={20} aria-hidden="true" /></button>
         </div>
-
-        <div className="max-h-[calc(82dvh-4.25rem)] overflow-x-hidden overflow-y-auto px-3 py-5 overscroll-contain scrollbar-thin sm:px-5 sm:py-6">
-          <style>{`
-            .deck-identity-filter-card{transform:translate3d(0,0,0);transition:transform 180ms cubic-bezier(.22,1,.36,1),filter 180ms cubic-bezier(.22,1,.36,1)}
-            .deck-identity-filter-card:is(:hover,:focus-visible){transform:translate3d(0,-0.1875rem,0);filter:brightness(1.08)}
-            .deck-identity-filter-card:active{transform:translate3d(0,-0.0625rem,0);filter:brightness(1.02)}
-            @media (prefers-reduced-motion:reduce){.deck-identity-filter-card{transition:filter 120ms ease}.deck-identity-filter-card:is(:hover,:focus-visible),.deck-identity-filter-card:active{transform:none}}
-          `}</style>
-          {identities.length > 0 ? (
-            <div
-              className="grid gap-x-3 gap-y-12 overflow-visible pb-10 sm:gap-x-5 sm:gap-y-14"
-              style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(var(--deck-identity-picker-cell-min, 6.25rem), 1fr))' }}
-            >
-              {identities.map(identity => {
-                const selected = selectedIdentityIds.has(identity.id)
-                return (
-                  <button
-                    key={identity.id}
-                    onClick={() => onToggleIdentity(identity.id)}
-                    className="deck-identity-filter-card relative overflow-visible p-0 focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-2"
-                    style={{
-                      minHeight: 'var(--deck-filter-touch-min)',
-                      background: 'transparent',
-                      border: '0',
-                      cursor: 'pointer',
-                    }}
-                    aria-pressed={selected}
-                    aria-label={selected ? t('remove', { identity: localizedIdentityName(identity) }) : t('add', { identity: localizedIdentityName(identity) })}
-                  >
-                    <IdentityCard identity={identity} compact selected={selected} disableHoverEffects />
-                  </button>
-                )
-              })}
-            </div>
-          ) : (
-            <p style={{ color: 'var(--deck-filter-text-soft)', fontSize: '0.9375rem', lineHeight: 1.5 }}>
-              {t('loadFailed')}
-            </p>
-          )}
+        <div className="character-picker-layout">
+          <CharacterPickerFilters query={query} onQuery={setQuery} grade={grade} onGrade={setGrade} count={shown.length}
+            grades={[3, 2, 1].map(n => ({ value: String(n), label: '0'.repeat(n) }))}
+            sinner={sinnerId} onSinner={onSinnerChange} sinners={sinners.map(sinner => ({ id: sinner.id, name: sinnerName(sinner.id) }))} />
+          <div className={filterStyles.pickerResults}>
+            {shown.length > 0 ? (
+              <ul className={filterStyles.pickerGrid}>
+                {shown.map(identity => {
+                  const selected = selectedIdentityIds.has(identity.id)
+                  const name = nameOf(identity)
+                  // With every sinner listed, identities of different sinners share names ("W사 3등급 정리 요원"): the sinner tells them apart.
+                  const spoken = sinnerId ? name : `${sinnerName(identity.sinner_id)} ${name}`
+                  return (
+                    <li key={identity.id}>
+                      <button type="button" aria-pressed={selected} aria-label={t(selected ? 'remove' : 'add', { identity: spoken })} onClick={() => { onToggleIdentity(identity.id); if (!selected) onClose() }}>
+                        <IdentityFrameCard identity={identity} name={name} selected={selected} sizes="(max-width: 40rem) 30vw, 10rem" />
+                      </button>
+                    </li>
+                  )
+                })}
+              </ul>
+            ) : <p className={filterStyles.pickerEmpty}>{identities.length ? t('noResults') : t('loadFailed')}</p>}
+          </div>
         </div>
       </div>
     </BaseModal>
