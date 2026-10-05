@@ -97,7 +97,13 @@ export type SavedModifier = {
   gift?: { id: string; level: number; image_url: string | null; grade: string | null; keyword: string | null }
   /** The values its text offered, to switch between. */
   options?: number[]
+  /** The one coin it applies to, counted from 1; every coin when absent. */
+  coin?: number
 }
+export const MAX_COINS = 10
+/** The coins a modifier may be set to, 0 for every coin: those the skill has, and after them the saved one while the skill has fewer (it then applies to no coin). */
+export const coinChoices = (coinCount: number, saved?: number): number[] =>
+  [0, ...Array.from({ length: coinCount }, (_, index) => index + 1), ...(saved && saved > coinCount ? [saved] : [])]
 export const MAX_MODIFIER_OPTIONS = 8
 /** Gift artwork is drawn only from the site's own storage. */
 export const GIFT_IMAGE_BASE = `${STORAGE_BASE}/`
@@ -112,6 +118,9 @@ export const toModifier = ({ target, value }: Pick<SavedModifier, 'target' | 'va
   const held = clampModifierValue(value, target)
   return { target, value: target === 'damage' || target === 'resist' ? held / 100 : held }
 }
+/** What applies to the `coin`th coin (from 1): the modifiers for every coin and those set to this one. */
+export const coinModifiers = (saved: readonly SavedModifier[], coin: number): Modifier[] =>
+  saved.filter(modifier => modifier.coin === undefined || modifier.coin === coin).map(toModifier)
 export const MAX_MODIFIERS = 30
 export const MAX_MODIFIER_NAME = 40
 export const MAX_MODIFIER_VALUE = 1000
@@ -141,8 +150,9 @@ const text = (value: unknown, max: number): value is string => typeof value === 
 const key = (value: unknown, max: number): value is string => text(value, max) && !(value in Object.prototype)
 
 /** The optional parts of a saved modifier. A part that is not what it should be is left out; the modifier itself stays. */
-function savedSource({ keyword, side, stacks, gift, options }: Record<string, unknown>, target: ModifierTarget): Partial<SavedModifier> {
+function savedSource({ keyword, side, stacks, gift, options, coin }: Record<string, unknown>, target: ModifierTarget): Partial<SavedModifier> {
   const source: Partial<SavedModifier> = {}
+  if (Number.isInteger(coin) && (coin as number) >= 1 && (coin as number) <= MAX_COINS) source.coin = coin as number
   if (key(keyword, 60)) source.keyword = keyword
   if (side === 'self' || side === 'target') source.side = side
   if (Number.isInteger(stacks) && (stacks as number) >= 1 && (stacks as number) <= 99) source.stacks = stacks as number
