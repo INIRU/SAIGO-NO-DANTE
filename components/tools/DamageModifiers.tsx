@@ -1,22 +1,25 @@
 'use client'
 
-import { useRef, useState, type Dispatch, type KeyboardEvent, type SetStateAction } from 'react'
+import { useEffect, useMemo, useRef, useState, type Dispatch, type KeyboardEvent, type SetStateAction } from 'react'
 import useSWR from 'swr'
 import { useLocale, useTranslations } from 'next-intl'
-import { Minus, Pencil, Plus, Search, Trash2, X } from 'lucide-react'
+import { Check, Minus, Pencil, Plus, Search, Trash2, X } from 'lucide-react'
+import BaseModal from '@/components/ui/BaseModal'
 import Dropdown from '@/components/ui/Dropdown'
 import GiftArtwork from '@/components/ui/GiftArtwork'
 import { GiftEnhanceMark, GiftEnhancePicker } from '@/components/ui/GiftCard'
 import { EffectText } from '@/components/ui/GiftDetailModal'
 import KeywordChip from '@/components/ui/KeywordChip'
 import KeywordIcon from '@/components/ui/KeywordIcon'
+import FloorGiftPickerModal from '@/components/planner/FloorGiftPickerModal'
 import { useKeywords } from '@/components/providers/KeywordProvider'
 import { getKeywordIconUrl } from '@/lib/constants/keywords'
 import { localizeGiftKeyword } from '@/lib/i18n/localize'
 import type { SupportedLang } from '@/lib/i18n/types'
+import type { GiftData } from '@/lib/planner/types'
 import { showWarning } from '@/lib/toast'
-import { clampModifierValue, MAX_MODIFIER_NAME, MAX_MODIFIER_OPTIONS, MAX_MODIFIERS, MAX_MODIFIER_VALUE, MODIFIER_TARGETS, type ModifierTarget, type SavedModifier } from '@/lib/tools/damage'
-import { stackEffect, suggestDamageSources, type DamageSources, type DamageSuggestion, type SourceGroup } from '@/lib/tools/damage-sources'
+import { clampModifierValue, coinChoices, MAX_MODIFIER_NAME, MAX_MODIFIER_OPTIONS, MAX_MODIFIERS, MAX_MODIFIER_VALUE, MODIFIER_TARGETS, type ModifierTarget, type SavedModifier } from '@/lib/tools/damage'
+import { findApplied, MAX_STACKS, suggestDamageSources, type DamageSources, type DamageSuggestion, type SourceGroup, type StackEffect } from '@/lib/tools/damage-sources'
 import NumberInput from './NumberInput'
 import styles from './DamageCalculator.module.css'
 
@@ -39,11 +42,12 @@ const fetchSources = async (url: string): Promise<DamageSources> => {
 }
 
 /**
- * The modifiers of the damage calculator. Keywords and gifts sit as icon tiles in the group that carries them; a
- * group's "+" opens its own candidates to search, and a pressed tile opens its text and its value below. Only one of
- * those two panels is open at a time, and an ✕ only ever closes a panel: removing is a button that says so.
+ * The modifiers of the damage calculator. Keywords and gifts sit as icon tiles in the group that carries them. A
+ * group's "+" opens its candidates in a picker window (gifts in the planner's own gift picker), where a press applies
+ * one and a second press takes it off again; a pressed tile opens its text and its value below. An ✕ only ever closes:
+ * removing is a button that says so.
  */
-export default function DamageModifiers({ modifiers, setModifiers }: { modifiers: SavedModifier[]; setModifiers: Dispatch<SetStateAction<SavedModifier[]>> }) {
+export default function DamageModifiers({ modifiers, setModifiers, coinCount }: { modifiers: SavedModifier[]; setModifiers: Dispatch<SetStateAction<SavedModifier[]>>; coinCount: number }) {
   const t = useTranslations('damage')
   const locale = useLocale() as SupportedLang
   const keywords = useKeywords()
@@ -57,7 +61,27 @@ export default function DamageModifiers({ modifiers, setModifiers }: { modifiers
   const tiles = useRef(new Map<number, HTMLButtonElement | null>())
   const { data, error, isLoading, mutate } = useSWR(wanted ? `/api/damage-sources/${locale}` : null, fetchSources, { revalidateOnFocus: false })
 
-  const candidates = data && adding ? suggestDamageSources(data, query, { group: adding }) : []
+  // A picker holds the focus until its closing animation ends: its "+" takes the focus back once the window is gone.
+  const opener = useRef<SourceGroup | null>(null)
+  useEffect(() => {
+    if (adding) { opener.current = adding; return }
+    const group = opener.current
+    if (!group) return
+    opener.current = null
+    let frame = requestAnimationFrame(function back() {
+      if (document.querySelector('[role=dialog]')) frame = requestAnimationFrame(back)
+      else slots.current[group]?.focus()
+    })
+    return () => cancelAnimationFrame(frame)
+  }, [adding])
+
+  const candidates = data && adding && adding !== 'gift' ? suggestDamageSources(data, query, { group: adding }) : []
+  // The gift picker is the planner's: it takes the gifts in the shape of the planner's own list.
+  const giftChoices = useMemo<GiftData[]>(() => (data?.gifts ?? []).map(gift => ({
+    id: gift.id, game_id: Number(gift.id), name: gift.name, name_en: locale === 'en' ? gift.label : null, name_jp: locale === 'ja' ? gift.label : null,
+    keyword: gift.keyword, grade: gift.grade, image_url: gift.image_url, effect_base: null, effect_plus: null, effect_plusplus: null, theme_ids: null, activation_condition: null,
+  })), [data, locale])
+  const appliedGifts = useMemo(() => new Set(modifiers.flatMap(modifier => modifier.gift ? [modifier.gift.id] : [])), [modifiers])
   const full = modifiers.length >= MAX_MODIFIERS
   const keywordLabel = (name: string) => (locale === 'en' ? keywords[name]?.nameEn : locale === 'ja' ? keywords[name]?.nameJp : null) || name
   // A gift's enhancement level is drawn on its artwork with the game's mark, so the "+" its name was saved with is not repeated.
@@ -66,8 +90,22 @@ export default function DamageModifiers({ modifiers, setModifiers }: { modifiers
     : modifier.gift ? data?.gifts.find(gift => gift.id === modifier.gift?.id)?.label ?? modifier.name.replace(/\++$/, '') : modifier.name || t('unnamed')
 
   const update = (id: number, patch: Partial<SavedModifier>) => setModifiers(list => list.map(modifier => modifier.id === id ? { ...modifier, ...patch } : modifier))
+  // A stack keyword's effect is the one the list read from its text. While the list is not there (still loading, or it
+  // failed), the saved tile says enough to keep its count adjustable: its value is its count times the effect of one.
+  const stackOf = (modifier: Pick<SavedModifier, 'keyword' | 'stacks' | 'value' | 'target'>): StackEffect | null => {
+    if (!modifier.stacks) return null
+    if (data) return data.keywords.find(keyword => keyword.name === modifier.keyword)?.stack ?? null
+    return modifier.target === 'damage' || modifier.target === 'physical' || modifier.target === 'sin'
+      ? { target: modifier.target, perStack: Math.round(modifier.value / modifier.stacks * 100) / 100, max: MAX_STACKS, side: 'self' } : null
+  }
+  // A saved count of a keyword that is no stack keyword (any more) is dropped once the list says so: its value stays, typed like any other.
+  useEffect(() => {
+    if (!data) return
+    const stale = (modifier: SavedModifier) => !!modifier.stacks && !data.keywords.some(keyword => keyword.name === modifier.keyword && keyword.stack)
+    setModifiers(list => list.some(stale) ? list.map(modifier => stale(modifier) ? { ...modifier, stacks: undefined } : modifier) : list)
+  }, [data, setModifiers])
   const setStacks = (modifier: SavedModifier, stacks: number) => {
-    const stack = stackEffect(modifier.keyword ?? '')
+    const stack = stackOf(modifier)
     if (!stack) return
     const count = Math.max(1, Math.min(stack.max, stacks))
     // 0.1 × 3 is 0.30000000000000004 in binary: kept to two places.
@@ -75,19 +113,17 @@ export default function DamageModifiers({ modifiers, setModifiers }: { modifiers
     update(modifier.id, { stacks: count, target: stack.target, value: Math.round(stack.perStack * count * 100) / 100 })
   }
   const add = (modifier: Omit<SavedModifier, 'id'>) => {
-    // A stack keyword already applied gains a stack instead of a second tile.
-    const applied = modifier.stacks ? modifiers.find(other => other.keyword === modifier.keyword && other.stacks) : undefined
-    if (applied) {
-      const max = stackEffect(applied.keyword ?? '')?.max ?? applied.stacks!
-      if (applied.stacks! >= max) showWarning(t('picker.maxStack', { max }))
-      else setStacks(applied, applied.stacks! + 1)
-      return
-    }
     if (full) { showWarning(t('full', { max: MAX_MODIFIERS })); return }
     setModifiers(list => list.length >= MAX_MODIFIERS ? list : [...list, { ...modifier, name: modifier.name.slice(0, MAX_MODIFIER_NAME), id: Math.max(0, ...list.map(other => other.id)) + 1 }])
   }
+  // In the picker a press applies, and a press on what is applied takes it off again. The picker stays open for the next one.
+  const toggle = (modifier: Omit<SavedModifier, 'id'>) => {
+    const applied = findApplied(modifiers, modifier)
+    if (applied) setModifiers(list => list.filter(other => other.id !== applied.id))
+    else add(modifier)
+  }
   const groupOfId = (id: number) => { const modifier = modifiers.find(other => other.id === id); return modifier ? groupOf(modifier) : 'manual' }
-  const closeAdder = (group: SourceGroup) => { setAdding(null); slots.current[group]?.focus() }
+  const closeAdder = () => setAdding(null)
   const closeEditor = (id: number) => { setSelected(null); tiles.current.get(id)?.focus() }
   // The tile is gone with its effect: the focus goes to its group's "+".
   const remove = (id: number) => {
@@ -95,12 +131,8 @@ export default function DamageModifiers({ modifiers, setModifiers }: { modifiers
     setModifiers(list => list.filter(other => other.id !== id))
     if (group !== 'manual') slots.current[group]?.focus()
   }
-  const open = (group: SourceGroup) => { setAdding(current => current === group ? null : group); setSelected(null); setQuery(''); setWanted(true) }
+  const open = (group: SourceGroup) => { setAdding(group); setSelected(null); setQuery(''); setWanted(true) }
   const edit = (id: number) => { setSelected(current => current === id ? null : id); setAdding(null); setWanted(true) }
-  // Enter adds the first match of what was typed; with nothing typed it adds nothing.
-  const onSearchKey = (event: KeyboardEvent<HTMLInputElement>) => {
-    if (event.key === 'Enter' && query.trim() && candidates.length) { event.preventDefault(); add(candidates[0].modifier) }
-  }
   // Escape closes a panel from anywhere inside it.
   const onEscape = (close: () => void) => (event: KeyboardEvent) => { if (event.key === 'Escape') { event.stopPropagation(); close() } }
   const giftSource = (modifier: SavedModifier) => data?.gifts.find(gift => gift.id === modifier.gift?.id)
@@ -131,13 +163,14 @@ export default function DamageModifiers({ modifiers, setModifiers }: { modifiers
     </span>
   )
   const manual = modifiers.filter(modifier => groupOf(modifier) === 'manual')
+  const pickedCount = adding ? modifiers.filter(modifier => groupOf(modifier) === adding).length : 0
 
   return <div className={styles.sides}>
     {GROUPS.map(group => {
       const groupName = t(`picker.group.${group}`)
       const applied = modifiers.filter(modifier => groupOf(modifier) === group)
       const chosen = applied.find(modifier => modifier.id === selected)
-      const stack = chosen?.stacks ? stackEffect(chosen.keyword ?? '') : null
+      const stack = chosen ? stackOf(chosen) : null
       return <section key={group} className={styles.side} aria-label={groupName}>
         <h4>{groupName}</h4>
         <div className={styles.tiles}>
@@ -149,30 +182,8 @@ export default function DamageModifiers({ modifiers, setModifiers }: { modifiers
               <b key={modifier.value}>{signed(modifier.value, modifier.target)}</b>
             </button>
           ))}
-          <button type="button" ref={node => { slots.current[group] = node }} className={styles.slot} aria-expanded={adding === group} aria-label={t('picker.addTo', { group: groupName })} onClick={() => open(group)}><Plus size={20} aria-hidden="true" /></button>
+          <button type="button" ref={node => { slots.current[group] = node }} className={styles.slot} aria-haspopup="dialog" aria-expanded={adding === group} aria-label={t('picker.addTo', { group: groupName })} onClick={() => open(group)}><Plus size={20} aria-hidden="true" /></button>
         </div>
-        {adding === group && <div className={styles.adder} onKeyDown={onEscape(() => closeAdder(group))}>
-          <div className={styles.adderHead}>
-            <label className={styles.search}>
-              <Search size={16} aria-hidden="true" />
-              {/* The "+" was just pressed to look for something: the search takes the focus. */}
-              <input type="text" autoFocus aria-label={t('picker.search')} placeholder={t('picker.search')} value={query} onChange={event => setQuery(event.target.value)} onKeyDown={onSearchKey} />
-            </label>
-            <button type="button" className={styles.remove} aria-label={t('picker.close')} onClick={() => closeAdder(group)}><X size={16} aria-hidden="true" /></button>
-          </div>
-          {isLoading && <p className={styles.hint} role="status">{t('picker.loading')}</p>}
-          {error && <p className={styles.hint} role="alert">{t('picker.loadError')} <button type="button" className={styles.retry} onClick={() => mutate()}>{t('picker.retry')}</button></p>}
-          {data && !candidates.length && <p className={styles.hint}>{t('picker.noResults')}</p>}
-          {candidates.length > 0 && <div className={styles.candidates}>
-            {candidates.map(candidate => (
-              <button key={candidate.key} type="button" className={styles.tile} onClick={() => add(candidate.modifier)}>
-                <span className={styles.tileArt}>{art(candidate.modifier)}</span>
-                <span className={styles.tileName}>{labelOf(candidate.modifier)}</span>
-                <small>{candidateValue(candidate)}</small>
-              </button>
-            ))}
-          </div>}
-        </div>}
         {chosen && (() => {
           const name = labelOf(chosen)
           const text = sourceText(chosen)
@@ -217,6 +228,37 @@ export default function DamageModifiers({ modifiers, setModifiers }: { modifiers
         })()}
       </section>
     })}
+    {/* Gifts are picked in the planner's gift picker, once the list is there; keywords, and the wait for the list, in a window of the same build. */}
+    <FloorGiftPickerModal open={adding === 'gift' && !!data} title={t('picker.group.gift')} floorGifts={null} allGifts={giftChoices} selectedIds={appliedGifts}
+      onToggle={gift => { const candidate = data && suggestDamageSources(data, '', { group: 'gift' }).find(row => row.key === `g:${gift.id}`); if (candidate) toggle(candidate.modifier) }}
+      onClose={closeAdder} />
+    <BaseModal open={!!adding && (adding !== 'gift' || !data)} onClose={closeAdder} title={adding ? t(`picker.group.${adding}`) : ''} maxWidth="48rem">
+      {adding && <div className={styles.picker}>
+        <div className={styles.pickerHead}>
+          <h2>{t(`picker.group.${adding}`)}{pickedCount > 0 && <span>{pickedCount}</span>}</h2>
+          <button type="button" className={styles.remove} aria-label={t('picker.close')} onClick={closeAdder}><X size={18} aria-hidden="true" /></button>
+        </div>
+        <div className={styles.pickerBody}>
+          {adding !== 'gift' && <label className={styles.search}>
+            <Search size={16} aria-hidden="true" />
+            <input type="text" autoFocus aria-label={t('picker.search')} placeholder={t('picker.search')} value={query} onChange={event => setQuery(event.target.value)} />
+          </label>}
+          {isLoading && <p className={styles.hint} role="status">{t('picker.loading')}</p>}
+          {error && <p className={styles.hint} role="alert">{t('picker.loadError')} <button type="button" className={styles.retry} onClick={() => mutate()}>{t('picker.retry')}</button></p>}
+          {data && adding !== 'gift' && !candidates.length && <p className={styles.hint}>{t('picker.noResults')}</p>}
+          {candidates.length > 0 && <div className={styles.candidates}>
+            {candidates.map(candidate => {
+              const picked = !!findApplied(modifiers, candidate.modifier)
+              return <button key={candidate.key} type="button" className={styles.tile} aria-pressed={picked} onClick={() => toggle(candidate.modifier)}>
+                <span className={styles.tileArt}>{art(candidate.modifier)}{picked && <span className={styles.picked}><Check size={12} strokeWidth={3} aria-hidden="true" /></span>}</span>
+                <span className={styles.tileName}>{labelOf(candidate.modifier)}</span>
+                <small>{candidateValue(candidate)}</small>
+              </button>
+            })}
+          </div>}
+        </div>
+      </div>}
+    </BaseModal>
     <section className={styles.side} aria-label={t('picker.group.manual')}>
       <h4>{t('picker.group.manual')}</h4>
       {manual.length > 0 && <ul className={styles.modifierList}>
@@ -226,6 +268,10 @@ export default function DamageModifiers({ modifiers, setModifiers }: { modifiers
             options={MODIFIER_TARGETS.map(target => ({ value: target, label: t(`targetOption.${target}`) }))}
             // A percent, a multiplier and a resistance value are different units: switching starts from the neutral value.
             onChange={target => update(modifier.id, { target, value: target === 'final' ? 1 : isPercent(target) === isPercent(modifier.target) && modifier.target !== 'final' ? modifier.value : 0 })} />
+          {/* A coin the skill no longer has stays listed while it is the saved choice, and says that it is not there: it applies to no coin until the count is raised again. */}
+          <Dropdown ariaLabel={t('customCoin')} buttonStyle={dropdownStyle} value={String(modifier.coin ?? 0)}
+            options={coinChoices(coinCount, modifier.coin).map(coin => ({ value: String(coin), label: !coin ? t('coinAll') : t(coin > coinCount ? 'coinMissing' : 'coin', { index: coin }) }))}
+            onChange={coin => update(modifier.id, { coin: Number(coin) || undefined })} />
           {numberInput(modifier, modifier.name || t('unnamed'))}
           <button type="button" className={`${styles.remove} ${styles.trash}`} aria-label={t('remove', { name: modifier.name || t('unnamed') })} onClick={() => remove(modifier.id)}><Trash2 size={16} aria-hidden="true" /></button>
         </li>)}

@@ -2176,6 +2176,9 @@
     "customName": "名前",
     "customValue": "数値",
     "customTarget": "適用先",
+    "customCoin": "適用コイン",
+    "coinAll": "すべてのコイン",
+    "coinMissing": "コイン{index}（なし）",
     "targetOption": {
       "damage": "ダメージ量増減 (%)",
       "resist": "耐性・レベル (%)",
@@ -2220,8 +2223,7 @@
       "noResults": "検索結果がありません。",
       "delete": "削除",
       "effect": "効果",
-      "value": "適用する数値",
-      "maxStack": "すでに最大値（{max}）です。"
+      "value": "適用する数値"
     }
   },
   "mirrorDungeonPage": {

@@ -2176,6 +2176,9 @@
     "customName": "이름",
     "customValue": "수치",
     "customTarget": "적용 위치",
+    "customCoin": "적용 코인",
+    "coinAll": "모든 코인",
+    "coinMissing": "코인 {index} (없음)",
     "targetOption": {
       "damage": "피해량 증감 (%)",
       "resist": "내성·레벨 (%)",
@@ -2220,8 +2223,7 @@
       "noResults": "검색 결과가 없습니다.",
       "delete": "삭제",
       "effect": "효과",
-      "value": "적용 수치",
-      "maxStack": "이미 최대 수치({max})입니다."
+      "value": "적용 수치"
     }
   },
   "mirrorDungeonPage": {
