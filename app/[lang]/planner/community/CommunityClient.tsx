@@ -1411,8 +1411,7 @@ export default function CommunityClient({ initialPlans, initialTotal }: Communit
       <BoardBrowseLock />
       <div className="relative z-[1] mx-auto flex h-full min-h-0 w-full max-w-7xl gap-5">
         <aside
-          className="hidden h-full w-64 shrink-0 overflow-y-auto pr-3 scrollbar-thin lg:block"
-
+          className="board-filters hidden h-full shrink-0 overflow-y-auto pr-3 scrollbar-thin lg:block"
           aria-label={t('filters.aside')}
         >
           {filterSurface}
