@@ -5,9 +5,8 @@ import { createPortal } from 'react-dom'
 import Image from 'next/image'
 import dynamic from 'next/dynamic'
 import { useLocale, useTranslations } from 'next-intl'
-import { ChevronDown, ChevronRight, Info, Link2, Search, SlidersHorizontal, User, X } from 'lucide-react'
+import { Info, Link2, Search, SlidersHorizontal, User, X } from 'lucide-react'
 import { CONTENT_TYPES, CONTENT_TYPE_COLORS } from '@/lib/constants/deck-tokens'
-import { getSinnerLogoUrl } from '@/lib/data/sinners'
 import { getIdentityInfoUrl } from '@/lib/utils/images'
 import { useKeywords } from '@/components/providers/KeywordProvider'
 import type { SupportedLang } from '@/lib/i18n'
@@ -20,6 +19,7 @@ import {
 } from './decks-types'
 import type { DeckFilterIdentity, DeckFilterSinner } from './DeckIdentityFilterModal'
 import FormationCountFilter from './FormationCountFilter'
+import { FilterChoice, FilterFieldHelp, FilterIconTile, FilterPicked, FilterSection, FilterSinnerTiles, FilterTextButton, filterStyles } from '@/components/board/FilterControls'
 
 // The closed BaseModal is SSR-safe; opting out here aborts the whole list's Suspense boundary.
 const DeckIdentityFilterModal = dynamic(() => import('./DeckIdentityFilterModal'), {
@@ -100,23 +100,7 @@ type SortKey = 'latest' | 'popular'
 const INFO_SCORE_OPTIONS = [1, 2, 3] as const
 
 
-function SectionLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <div
-      className="mb-2"
-      style={{
-        color: 'var(--deck-filter-text-dim)',
-        fontFamily: 'var(--font-body)',
-        fontSize: 'var(--deck-filter-label-text)',
-        fontWeight: 600,
-      }}
-    >
-      {children}
-    </div>
-  )
-}
-
-function InfoScoreLabel({ active }: { active: boolean }) {
+function InfoScoreLabel() {
   const t = useTranslations('decks')
   const tooltipId = useId()
   const triggerRef = useRef<HTMLButtonElement>(null)
@@ -165,17 +149,7 @@ function InfoScoreLabel({ active }: { active: boolean }) {
 
   return (
     <span className="relative inline-flex min-w-0 items-center gap-1.5">
-      <span
-        className="min-w-0 truncate"
-        style={{
-          color: active ? 'var(--gold)' : '#666',
-          fontFamily: 'var(--font-body)',
-          fontSize: '0.875rem',
-          fontWeight: 600,
-        }}
-      >
-        {t('filters.infoScore')}
-      </span>
+      <span className="min-w-0 truncate">{t('filters.infoScore')}</span>
       <button
         ref={triggerRef}
         type="button"
@@ -183,7 +157,7 @@ function InfoScoreLabel({ active }: { active: boolean }) {
         style={{
           width: '1.5rem',
           height: '1.5rem',
-          color: active ? 'var(--gold)' : 'var(--deck-filter-text-soft)',
+          color: 'var(--deck-filter-text-soft)',
           cursor: 'help',
         }}
         aria-label={t('filters.infoScoreHelpLabel')}
@@ -219,240 +193,6 @@ function InfoScoreLabel({ active }: { active: boolean }) {
         document.body,
       )}
     </span>
-  )
-}
-
-function SectionToggle({
-  label,
-  open,
-  active,
-  count,
-  onClick,
-}: {
-  label: string
-  open: boolean
-  active: boolean
-  count?: number
-  onClick: () => void
-}) {
-  const Icon = open ? ChevronDown : ChevronRight
-  return (
-    <button
-      onClick={onClick}
-      className="flex w-full items-center gap-2 text-left transition-colors hover:bg-white/[0.025]"
-      style={{
-        minHeight: 'var(--deck-filter-control-min)',
-        color: active ? 'var(--gold)' : '#666',
-        fontFamily: 'var(--font-body)',
-        fontSize: 'var(--deck-filter-label-text)',
-      }}
-      aria-expanded={open}
-    >
-      <Icon size={13} style={{ flexShrink: 0, opacity: 0.6 }} />
-      <span className="min-w-0 flex-1 truncate">{label}</span>
-      {!!count && (
-        <span
-          style={{
-            background: 'rgba(200,144,10,0.18)',
-            color: 'var(--gold)',
-            minWidth: '1.375rem',
-            padding: '0.0625rem 0.4375rem',
-            borderRadius: '999rem',
-            fontSize: 'var(--deck-filter-control-text)',
-            fontWeight: 400,
-            fontFamily: 'var(--font-body)',
-            lineHeight: 1.2,
-            textAlign: 'center',
-          }}
-        >
-          {count}
-        </span>
-      )}
-    </button>
-  )
-}
-
-function SortControls({ sort, onSortChange }: { sort: string; onSortChange: (s: string) => void }) {
-  const t = useTranslations('decks')
-  return (
-    <section>
-      <SectionLabel>{t('sort.label')}</SectionLabel>
-      <div className="grid grid-cols-2 gap-1.5">
-        {(['latest', 'popular'] as SortKey[]).map(s => {
-          const active = sort === s
-          return (
-            <button
-              key={s}
-              onClick={() => onSortChange(s)}
-              aria-pressed={active}
-              className="rounded transition duration-200"
-              style={{
-                minHeight: '2.25rem',
-                border: '1px solid transparent',
-                background: active ? 'var(--deck-filter-surface-active)' : 'var(--deck-filter-surface-muted)',
-                color: active ? 'var(--gold)' : 'var(--deck-filter-text-muted)',
-                fontFamily: 'var(--font-body)',
-                fontSize: 'var(--deck-filter-control-text)',
-                fontWeight: 600,
-              }}
-            >
-              {t(`sort.${s}`)}
-            </button>
-          )
-        })}
-      </div>
-    </section>
-  )
-}
-
-function LanguageFilter({
-  value,
-  onChange,
-}: {
-  value: DeckLanguageFilter
-  onChange: (value: DeckLanguageFilter) => void
-}) {
-  const t = useTranslations('decks')
-  return (
-    <section>
-      <SectionLabel>{t('languageFilter.label')}</SectionLabel>
-      <div className="grid grid-cols-2 gap-1.5">
-        {DECK_LANGUAGE_FILTERS.map(option => {
-          const active = value === option
-          return (
-            <button
-              key={option}
-              type="button"
-              onClick={() => onChange(option)}
-              aria-pressed={active}
-              className="rounded transition duration-200"
-              style={{
-                minHeight: 'var(--deck-filter-control-min)',
-                border: '1px solid transparent',
-                background: active ? 'var(--deck-filter-surface-active)' : 'var(--deck-filter-surface-muted)',
-                color: active ? 'var(--gold)' : 'var(--deck-filter-text-muted)',
-                fontFamily: 'var(--font-body)',
-                fontSize: 'var(--deck-filter-control-text)',
-                fontWeight: 600,
-              }}
-            >
-              {t(`languageFilter.${option === 'mine' ? 'current' : option}`)}
-            </button>
-          )
-        })}
-      </div>
-    </section>
-  )
-}
-
-function SquareToggle({
-  active,
-  label,
-  iconUrl,
-  onClick,
-  ariaLabel,
-}: {
-  active: boolean
-  label: string
-  iconUrl?: string | null
-  onClick: () => void
-  ariaLabel?: string
-}) {
-  return (
-    <button
-      onClick={onClick}
-      aria-pressed={active}
-      aria-label={ariaLabel ?? label}
-      title={label}
-      className="flex flex-col items-center justify-center rounded transition duration-200"
-      style={{
-        minHeight: 'var(--deck-filter-touch-min)',
-        padding: '0.25rem 0.1875rem',
-        cursor: 'pointer',
-        border: '1px solid transparent',
-        background: active ? 'var(--deck-filter-surface-active)' : 'var(--deck-filter-surface-muted)',
-        opacity: active ? 1 : 0.5,
-        filter: active ? 'none' : 'grayscale(0.5)',
-      }}
-    >
-      {iconUrl ? (
-        <Image
-          src={iconUrl}
-          alt=""
-          width={18}
-          height={18}
-          style={{ width: '1.125rem', height: '1.125rem', objectFit: 'contain' }}
-        />
-      ) : (
-        <span
-          className="text-center leading-tight"
-          style={{
-            color: active ? 'var(--gold)' : 'var(--deck-filter-text-muted)',
-            fontFamily: 'var(--font-body)',
-            fontSize: 'var(--deck-filter-control-text)',
-            fontWeight: 600,
-          }}
-        >
-          {label}
-        </span>
-      )}
-      {iconUrl && (
-        <span
-          className="mt-1 max-w-full truncate text-center leading-tight"
-          style={{ color: active ? 'var(--gold)' : '#666', fontSize: '0.75rem', width: '100%' }}
-        >
-          {label}
-        </span>
-      )}
-    </button>
-  )
-}
-
-function KeywordTagChip({
-  keyword,
-  iconUrl,
-  onRemove,
-}: {
-  keyword: string
-  iconUrl: string | null
-  onRemove: () => void
-}) {
-  const t = useTranslations('decks')
-  const locale = useLocale() as SupportedLang
-  const keywords = useKeywords()
-  const localKeyword = localizeDeckKeyword(keyword, keywords[keyword], locale)
-  return (
-    <button
-      onClick={onRemove}
-      className="flex max-w-full items-center gap-1 rounded transition duration-150 hover:bg-[rgba(200,144,10,0.11)] focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-2"
-      style={{
-        minHeight: '1.625rem',
-        padding: '0.125rem 0.25rem 0.125rem 0.375rem',
-        background: 'rgba(26,21,16,0.72)',
-        border: '1px solid rgba(200,144,10,0.22)',
-        borderLeftColor: 'rgba(200,144,10,0.55)',
-        color: '#d8b46a',
-        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
-        fontFamily: 'var(--font-body)',
-        fontSize: '0.8125rem',
-        fontWeight: 500,
-        lineHeight: 1.15,
-        cursor: 'pointer',
-      }}
-      aria-label={t('filters.removeKeywordTag', { keyword: localKeyword })}
-    >
-      {iconUrl && (
-        <Image
-          src={iconUrl}
-          alt=""
-          width={16}
-          height={16}
-          style={{ width: '0.75rem', height: '0.75rem', flexShrink: 0, objectFit: 'contain', opacity: 0.9 }}
-        />
-      )}
-      <span className="min-w-0 truncate">{localKeyword}</span>
-      <X size={10} strokeWidth={1.75} style={{ flexShrink: 0, color: '#8f8066' }} aria-hidden="true" />
-    </button>
   )
 }
 
@@ -493,19 +233,6 @@ export default function DeckListFilters({
   const panelRef = useRef<HTMLDivElement>(null)
   const collectionCount = (filterOwnedIdentity ? 1 : 0) + (filterOwnedEgo ? 1 : 0)
   const totalActiveCount = advancedFilterCount + (activeContentType ? 1 : 0) + (inputValue.trim() ? 1 : 0)
-  const identityModalSinner = useMemo(
-    () => identityFilterSinners.find(sinner => sinner.id === identityModalSinnerId) ?? null,
-    [identityFilterSinners, identityModalSinnerId],
-  )
-  const identityModalIdentities = useMemo(
-    () => identityFilterIdentities
-      .filter(identity => identity.sinner_id === identityModalSinnerId)
-      .sort((a, b) => {
-        if (b.rarity !== a.rarity) return b.rarity - a.rarity
-        return a.name_kr.localeCompare(b.name_kr, 'ko')
-      }),
-    [identityFilterIdentities, identityModalSinnerId],
-  )
   const selectedIdentitiesBySinner = useMemo(() => {
     const grouped = new Map<string, DeckFilterIdentity[]>()
     for (const identity of selectedIdentities) {
@@ -545,11 +272,6 @@ export default function DeckListFilters({
     setKeywordTagInput('')
   }
 
-  const handleModalToggleIdentity = (identityId: string) => {
-    const wasSelected = selectedIdentityIds.has(identityId)
-    onToggleSelectedIdentity(identityId)
-    if (!wasSelected) setIdentityModalSinnerId(null)
-  }
   const localizeSinnerName = (sinner: DeckFilterSinner) => (
     rootT(`sinner.${sinner.id}` as Parameters<typeof rootT>[0])
   )
@@ -570,38 +292,23 @@ export default function DeckListFilters({
   }, [mobileOpen])
 
   const filterSurface = (
-    <div className="flex flex-col gap-7">
+    <div className={filterStyles.surface}>
       <section>
-        <SectionLabel>{t('search.section')}</SectionLabel>
         <div className="relative" ref={searchRef}>
-          <Search size={14} className="absolute left-2 top-1/2 -translate-y-1/2" style={{ color: '#555', zIndex: 1 }} />
-          <input
-            type="text"
-            placeholder={t('search.placeholder')}
-            value={inputValue}
-            onChange={e => { onInputChange(e.target.value) }}
-            onFocus={onInputFocus}
-            onKeyDown={onSearchKeyDown}
-          className="w-full rounded pl-7 pr-8 py-1.5 text-xs outline-none"
-            style={{
-              minHeight: 'var(--deck-filter-control-min)',
-              background: 'var(--deck-filter-surface)',
-              border: '1px solid var(--deck-filter-border-strong)',
-              color: 'var(--deck-filter-text)',
-              fontSize: 'var(--deck-filter-control-text)',
-            }}
-            aria-label={t('search.label')}
-          />
-          {inputValue && (
-            <button
-              onClick={onSearchClear}
-              className="absolute right-1 top-1/2 flex -translate-y-1/2 items-center justify-center rounded transition-colors hover:bg-white/5"
-              style={{ width: '1.75rem', height: '1.75rem', color: 'var(--deck-filter-text-muted)', cursor: 'pointer', zIndex: 1 }}
-              aria-label={t('search.clear')}
-            >
-              <X size={14} />
-            </button>
-          )}
+          <label className={filterStyles.field}>
+            <Search size={16} aria-hidden="true" />
+            <input
+              type="text"
+              placeholder={t('search.placeholder')}
+              value={inputValue}
+              onChange={e => { onInputChange(e.target.value) }}
+              onFocus={onInputFocus}
+              onKeyDown={onSearchKeyDown}
+              className={filterStyles.fieldInput}
+              aria-label={t('search.label')}
+            />
+            {inputValue ? <button type="button" onClick={onSearchClear} aria-label={t('search.clear')}><X size={14} aria-hidden="true" /></button> : <FilterFieldHelp text={t('search.hint')} />}
+          </label>
           {showSuggestions && suggestions.length > 0 && (
             <div
               className="absolute left-0 right-0 z-50 mt-1 max-h-64 overflow-y-auto rounded"
@@ -648,197 +355,96 @@ export default function DeckListFilters({
             </div>
           )}
         </div>
-        <p className="mt-2" style={{ color: '#666', fontSize: '0.75rem', lineHeight: 1.35 }}>
-          {t('search.hint')}
-        </p>
       </section>
 
-
-      <SortControls sort={sort} onSortChange={onSortChange} />
-
-
-      <section>
-        <SectionToggle
-          label={t('filters.formationCount')}
-          open={showFormationFilter}
-          active={formationCount !== null}
-          count={formationCount !== null ? 1 : undefined}
-          onClick={() => setShowFormationFilter(v => !v)}
-        />
-        {showFormationFilter && <FormationCountFilter value={formationCount} onChange={onFormationCountChange} />}
-      </section>
-
-
-      <section>
-        <div className="flex items-center gap-1">
-          <div className="min-w-0 flex-1">
-            <SectionToggle
-              label={t('filters.identity')}
-              open={showIdentityFilter}
-              active={selectedIdentityIds.size > 0}
-              count={selectedIdentityIds.size}
-              onClick={() => setShowIdentityFilter(v => !v)}
-            />
-          </div>
-          {selectedIdentityIds.size > 0 && (
-            <button
-              type="button"
-              onClick={onToggleIdentityMode}
-              className="rounded transition"
-              style={{
-                minHeight: '1.5rem',
-                padding: '0 0.4375rem',
-                background: identityMode === 'and' ? 'rgba(200,144,10,0.12)' : 'transparent',
-                color: identityMode === 'and' ? 'var(--gold)' : '#888',
-                border: `1px solid ${identityMode === 'and' ? 'rgba(200,144,10,0.28)' : 'rgba(255,255,255,0.08)'}`,
-                fontFamily: 'var(--font-body)',
-                fontSize: '0.8125rem',
-                letterSpacing: '0.05em',
-                fontWeight: 400,
-                cursor: 'pointer',
-              }}
-              aria-label={t('filters.identityModeToggle')}
-              aria-pressed={identityMode === 'and'}
-            >
-              {identityMode === 'and' ? t('filters.and') : t('filters.or')}
-            </button>
-          )}
+      <FilterSection label={t('sort.label')}>
+        <div className={filterStyles.choices}>
+          {(['latest', 'popular'] as SortKey[]).map(key => <FilterChoice key={key} active={sort === key} onClick={() => onSortChange(key)}>{t(`sort.${key}`)}</FilterChoice>)}
         </div>
-        {showIdentityFilter && (
-          <div className="flex flex-col gap-2 pt-1">
-            <div
-              className="grid grid-cols-2 gap-1.5"
-              style={{
-                borderBottom: '1px solid rgba(255,255,255,0.06)',
-                padding: '0.25rem 0',
-              }}
-              aria-label={t('filters.identity')}
-            >
-              {identityFilterSinners.map(sinner => {
-                const selectedForSinner = selectedIdentitiesBySinner.get(sinner.id) ?? []
-                const representativeIdentity = selectedForSinner[0]
-                const representativeImageUrl = representativeIdentity ? getIdentityInfoUrl(representativeIdentity) : null
-                const sinnerName = localizeSinnerName(sinner)
-                return (
-                  <button
-                    key={sinner.id}
-                    onClick={() => setIdentityModalSinnerId(sinner.id)}
-                    className="group relative min-w-0 overflow-hidden rounded-sm transition-colors duration-200 hover:bg-[rgba(200,144,10,0.1)] focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-1"
-                    style={{
-                      minHeight: '3.25rem',
-                      padding: 0,
-                      background: selectedForSinner.length > 0 ? 'rgba(25,18,10,0.92)' : 'rgba(255,255,255,0.018)',
-                      boxShadow: selectedForSinner.length > 0 ? 'inset 0.1875rem 0 0 var(--gold)' : 'inset 0.0625rem 0 0 rgba(255,255,255,0.06)',
-                      color: selectedForSinner.length > 0 ? 'var(--gold)' : '#9a8460',
-                      cursor: 'pointer',
-                    }}
-                    aria-label={`${sinnerName} ${t('identityFilter.fallbackTitle')}${selectedForSinner.length > 0 ? `, ${selectedForSinner.length} ${t('filters.identitySelected')}` : ''}`}
-                  >
-                    {representativeImageUrl ? (
-                      <>
-                        <span className="pointer-events-none absolute inset-0" aria-hidden="true">
-                          <Image
-                            src={representativeImageUrl}
-                            alt=""
-                            fill
-                            sizes="8rem"
-                            style={{ objectFit: 'cover', objectPosition: 'center 14%' }}
-                          />
-                        </span>
-                        <span
-                          className="pointer-events-none absolute inset-0"
-                          style={{ background: 'linear-gradient(90deg, rgba(13,11,8,0.48) 0%, rgba(13,11,8,0.18) 52%, rgba(13,11,8,0.36) 100%)' }}
-                          aria-hidden="true"
-                        />
-                        <span
-                          className="pointer-events-none absolute inset-y-0 left-0"
-                          style={{ width: '0.1875rem', background: 'var(--gold)' }}
-                          aria-hidden="true"
-                        />
-                      </>
-                    ) : (
-                      <>
-                        <span
-                          className="pointer-events-none absolute inset-0 flex items-center justify-center"
-                          aria-hidden="true"
-                        >
-                          <Image
-                            src={getSinnerLogoUrl(sinner.id)}
-                            alt=""
-                            width={44}
-                            height={44}
-                            style={{
-                              width: '2.5rem',
-                              height: '2.5rem',
-                              objectFit: 'contain',
-                              opacity: 0.42,
-                              filter: 'sepia(0.35) saturate(0.85) brightness(0.86)',
-                            }}
-                          />
-                        </span>
-                      </>
-                    )}
-                  </button>
-                )
-              })}
-            </div>
-            {selectedIdentityIds.size > 0 && (
-              <div className="flex justify-end">
-                <button
-                  onClick={onClearSelectedIdentities}
-                  className="rounded transition-colors hover:bg-white/5 focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-2"
-                  style={{ minHeight: '1.75rem', padding: '0 0.5rem', color: '#888', border: '1px solid rgba(255,255,255,0.08)', fontSize: '0.75rem' }}
-                >
-                  {t('filters.clear')}
-                </button>
-              </div>
-            )}
+      </FilterSection>
+
+      <FilterSection label={t('filters.contentType')}>
+        <div className={filterStyles.choices}>
+          {CONTENT_TYPES.map(ct => {
+            const active = activeContentType === ct
+            const tone = CONTENT_TYPE_COLORS[ct]
+            return <FilterChoice key={ct} active={active} tone={tone?.color} onClick={() => onContentTypeChange(active ? '' : ct)}>{t(`contentTypes.${contentTypeMessageKey(ct)}`)}</FilterChoice>
+          })}
+        </div>
+      </FilterSection>
+
+      {availableKeywords.length > 0 && (
+        <FilterSection
+          label={t('filters.alwaysKeywords')}
+          count={activeMainKeywords.size}
+          end={<>
+            {activeMainKeywords.size >= 2 && <FilterTextButton onClick={onToggleMainKeywordMode} aria-pressed={mainKeywordMode === 'and'} aria-label={t('filters.mainKeywordModeToggle')}>{mainKeywordMode === 'and' ? t('filters.and') : t('filters.or')}</FilterTextButton>}
+            {activeMainKeywords.size > 0 && <FilterTextButton onClick={onClearMainKeywords}>{t('filters.clear')}</FilterTextButton>}
+          </>}
+        >
+          <div className={filterStyles.tiles}>
+            {availableKeywords.map(kw => <FilterIconTile key={kw} active={activeMainKeywords.has(kw)} label={localKeyword(kw)} iconUrl={getIconUrl(kw)} onClick={() => onToggleMainKeyword(kw)} />)}
           </div>
-        )}
-      </section>
+        </FilterSection>
+      )}
 
-
-      <section>
-        <SectionToggle
-          label={t('filters.keywordTags')}
-          open={showKeywordTagFilter}
-          active={activeKeywordTags.size > 0}
-          count={activeKeywordTags.size}
-          onClick={() => setShowKeywordTagFilter(v => !v)}
+      <FilterSection
+        label={t('filters.identity')}
+        count={selectedIdentityIds.size}
+        open={showIdentityFilter}
+        onToggle={() => setShowIdentityFilter(v => !v)}
+        end={<>
+          {selectedIdentityIds.size >= 2 && <FilterTextButton onClick={onToggleIdentityMode} aria-pressed={identityMode === 'and'} aria-label={t('filters.identityModeToggle')}>{identityMode === 'and' ? t('filters.and') : t('filters.or')}</FilterTextButton>}
+          {selectedIdentityIds.size > 0 && <FilterTextButton onClick={onClearSelectedIdentities}>{t('filters.clear')}</FilterTextButton>}
+        </>}
+      >
+        <FilterSinnerTiles
+          sinners={identityFilterSinners}
+          picked={selectedIdentitiesBySinner}
+          image={getIdentityInfoUrl}
+          groupLabel={t('filters.identity')}
+          label={(sinner, count) => `${localizeSinnerName(sinner)} ${t('identityFilter.fallbackTitle')}${count > 0 ? `, ${count} ${t('filters.identitySelected')}` : ''}`}
+          onOpen={setIdentityModalSinnerId}
         />
-        {showKeywordTagFilter && (
-          <div className="flex flex-col gap-2 pt-1">
-            <div className="relative">
-              <Search size={14} className="absolute left-2 top-1/2 -translate-y-1/2" style={{ color: '#555', zIndex: 1 }} />
-              <input
-                type="text"
-                name="deck-keyword-tag"
-                value={keywordTagInput}
-                onChange={e => setKeywordTagInput(e.target.value)}
-                onKeyDown={e => {
-                  if (e.nativeEvent.isComposing) return
-                  if (e.key === 'Enter') {
-                    e.preventDefault()
-                    addKeywordTag()
-                  } else if (e.key === 'Escape') {
-                    setKeywordTagInput('')
-                  }
-                }}
-                placeholder={t('filters.keywordTagPlaceholder')}
-                className="w-full rounded py-1.5 pl-7 pr-3 outline-none"
-                style={{
-                  minHeight: '2.25rem',
-                  background: 'rgba(255,255,255,0.04)',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  color: '#ccc',
-                  fontSize: '0.8125rem',
-                }}
-                role="combobox"
-                aria-expanded={keywordTagSuggestions.length > 0}
-                aria-label={t('filters.keywordTagInput')}
-                autoComplete="off"
-              />
-            </div>
+      </FilterSection>
+
+      {facetSections}
+
+      <FilterSection
+        label={t('filters.keywordTags')}
+        count={activeKeywordTags.size}
+        open={showKeywordTagFilter}
+        onToggle={() => setShowKeywordTagFilter(v => !v)}
+        end={<>
+          {activeKeywordTags.size >= 2 && <FilterTextButton onClick={onToggleKeywordTagMode} aria-pressed={keywordTagMode === 'and'} aria-label={t('filters.keywordTagModeToggle')}>{keywordTagMode === 'and' ? t('filters.and') : t('filters.or')}</FilterTextButton>}
+          {activeKeywordTags.size > 0 && <FilterTextButton onClick={onClearKeywordTags}>{t('filters.clear')}</FilterTextButton>}
+        </>}
+      >
+        <div className="flex flex-col gap-2">
+          <label className={filterStyles.field}>
+            <Search size={16} aria-hidden="true" />
+            <input
+              type="text"
+              name="deck-keyword-tag"
+              value={keywordTagInput}
+              onChange={e => setKeywordTagInput(e.target.value)}
+              onKeyDown={e => {
+                if (e.nativeEvent.isComposing) return
+                if (e.key === 'Enter') {
+                  e.preventDefault()
+                  addKeywordTag()
+                } else if (e.key === 'Escape') {
+                  setKeywordTagInput('')
+                }
+              }}
+              placeholder={t('filters.keywordTagPlaceholder')}
+              className={filterStyles.fieldInput}
+              role="combobox"
+              aria-expanded={keywordTagSuggestions.length > 0}
+              aria-label={t('filters.keywordTagInput')}
+              autoComplete="off"
+            />
+          </label>
             {keywordTagSuggestions.length > 0 && (
               <div
                 className="max-h-56 overflow-y-auto rounded"
@@ -883,318 +489,79 @@ export default function DeckListFilters({
                 })}
               </div>
             )}
-            {activeKeywordTags.size > 0 && (
-              <div className="flex items-start justify-between gap-2">
-                <div className="flex min-w-0 flex-wrap gap-1.5">
-                  {[...activeKeywordTags].map(kw => (
-                  <KeywordTagChip
-                    key={kw}
-                    keyword={kw}
-                    iconUrl={getIconUrl(kw)}
-                    onRemove={() => onToggleKeywordTag(kw)}
-                  />
-                ))}
-                </div>
-                <div className="flex shrink-0 items-center gap-1">
-                  {activeKeywordTags.size >= 2 && (
-                    <button
-                      onClick={onToggleKeywordTagMode}
-                      className="rounded transition"
-                      style={{
-                        minHeight: '1.5rem',
-                        padding: '0 0.4375rem',
-                        background: keywordTagMode === 'and' ? 'rgba(200,144,10,0.12)' : 'transparent',
-                        color: keywordTagMode === 'and' ? 'var(--gold)' : '#888',
-                        border: `1px solid ${keywordTagMode === 'and' ? 'rgba(200,144,10,0.28)' : 'rgba(255,255,255,0.08)'}`,
-                        fontFamily: 'var(--font-body)',
-                        fontSize: '0.8125rem',
-                        letterSpacing: '0.05em',
-                        fontWeight: 400,
-                      }}
-                      aria-label={t('filters.keywordTagModeToggle')}
-                    >
-                      {keywordTagMode === 'and' ? t('filters.and') : t('filters.or')}
-                    </button>
-                  )}
-                  <button
-                    onClick={onClearKeywordTags}
-                    className="rounded transition-colors hover:bg-white/5"
-                    style={{ minHeight: '1.5rem', padding: '0 0.4375rem', color: '#888', border: '1px solid rgba(255,255,255,0.08)', fontSize: '0.625rem' }}
-                  >
-                    {t('filters.clear')}
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-      </section>
-
-      <section>
-        <SectionLabel>{t('filters.contentType')}</SectionLabel>
-        <div className="grid grid-cols-2 gap-1.5">
-          {CONTENT_TYPES.map(ct => {
-            const active = activeContentType === ct
-            const colors = CONTENT_TYPE_COLORS[ct]
-            return (
-              <button
-                key={ct}
-                onClick={() => onContentTypeChange(active ? '' : ct)}
-                aria-pressed={active}
-                className="rounded transition duration-200"
-                style={{
-                  minHeight: '2.375rem',
-                  padding: '0.25rem',
-                  border: '1px solid transparent',
-                  background: active ? colors.bg : 'rgba(255,255,255,0.02)',
-                  color: active ? colors.color : '#777',
-                  opacity: active ? 1 : 0.55,
-                  fontFamily: 'var(--font-body)',
-                  fontSize: '0.8125rem',
-                  fontWeight: 600,
-                }}
-              >
-                <span className="block truncate">{t(`contentTypes.${contentTypeMessageKey(ct)}`)}</span>
-              </button>
-            )
-          })}
+          {activeKeywordTags.size > 0 && <div className={filterStyles.pickedList}>
+            {[...activeKeywordTags].map(kw => {
+              const label = localKeyword(kw)
+              return <FilterPicked key={kw} label={label} removeLabel={t('filters.removeKeywordTag', { keyword: label })} image={getIconUrl(kw)} imageClassName="object-contain" onRemove={() => onToggleKeywordTag(kw)} />
+            })}
+          </div>}
         </div>
-      </section>
+      </FilterSection>
 
       {allTags.length > 0 && (
-        <>
-              <section>
-            <SectionToggle label={t('filters.tags')} open={showTagFilter} active={activeTags.size > 0} count={activeTags.size} onClick={onToggleTagFilter} />
-            {showTagFilter && (
-              <div className="flex flex-wrap gap-1.5 pt-1">
-                {activeTags.size > 0 && (
-                  <button
-                    onClick={onClearTags}
-                    className="rounded-full transition-colors hover:bg-white/5"
-                    style={{ minHeight: '1.875rem', padding: '0.1875rem 0.5625rem', color: '#888', border: '1px solid rgba(255,255,255,0.08)', fontSize: '0.75rem' }}
-                  >
-                    {t('filters.clear')}
-                  </button>
-                )}
-                {allTags.map(tag => {
-                  const active = activeTags.has(tag)
-                  return (
-                    <button
-                      key={tag}
-                      onClick={() => onToggleTag(tag)}
-                      className="max-w-full rounded-full transition duration-150"
-                      style={{
-                        minHeight: '1.875rem',
-                        padding: '0.1875rem 0.5625rem',
-                        background: active ? 'rgba(200,144,10,0.14)' : 'transparent',
-                        color: active ? 'var(--gold)' : '#666',
-                        border: '1px solid transparent',
-                        fontSize: '0.75rem',
-                      }}
-                    >
-                      <span className="block max-w-full truncate">#{tag}</span>
-                    </button>
-                  )
-                })}
-              </div>
-            )}
-          </section>
-        </>
+        <FilterSection label={t('filters.tags')} count={activeTags.size} open={showTagFilter} onToggle={onToggleTagFilter}
+          end={activeTags.size > 0 && <FilterTextButton onClick={onClearTags}>{t('filters.clear')}</FilterTextButton>}>
+          <div className={filterStyles.choices}>
+            {allTags.map(tag => <FilterChoice key={tag} active={activeTags.has(tag)} onClick={() => onToggleTag(tag)}>#{tag}</FilterChoice>)}
+          </div>
+        </FilterSection>
       )}
 
-      {availableKeywords.length > 0 && (
-        <>
-              <section>
-            <div className="flex items-start justify-between gap-2">
-              <SectionLabel>{t('filters.alwaysKeywords')}</SectionLabel>
-              {activeMainKeywords.size > 0 && (
-                <div className="flex items-center gap-1">
-                  {activeMainKeywords.size >= 2 && (
-                    <button
-                      onClick={onToggleMainKeywordMode}
-                      className="rounded transition"
-                      style={{
-                        minHeight: '1.5rem',
-                        padding: '0 0.4375rem',
-                        background: mainKeywordMode === 'and' ? 'rgba(200,144,10,0.12)' : 'transparent',
-                        color: mainKeywordMode === 'and' ? 'var(--gold)' : '#888',
-                        border: `1px solid ${mainKeywordMode === 'and' ? 'rgba(200,144,10,0.28)' : 'rgba(255,255,255,0.08)'}`,
-                        fontFamily: 'var(--font-body)',
-                        fontSize: '0.8125rem',
-                        letterSpacing: '0.05em',
-                        fontWeight: 400,
-                      }}
-                      aria-label={t('filters.mainKeywordModeToggle')}
-                    >
-                      {mainKeywordMode === 'and' ? t('filters.and') : t('filters.or')}
-                    </button>
-                  )}
-                  <button
-                    onClick={onClearMainKeywords}
-                    className="rounded transition-colors hover:bg-white/5"
-                    style={{ minHeight: '1.5rem', padding: '0 0.4375rem', color: '#888', border: '1px solid rgba(255,255,255,0.08)', fontSize: '0.625rem' }}
-                  >
-                    {t('filters.clear')}
-                  </button>
-                </div>
-              )}
-            </div>
-            <div className="grid grid-cols-4 gap-1.5">
-              {availableKeywords.map(kw => (
-                <SquareToggle
-                  key={kw}
-                  active={activeMainKeywords.has(kw)}
-                  label={localKeyword(kw)}
-                  iconUrl={getIconUrl(kw)}
-                  onClick={() => onToggleMainKeyword(kw)}
-                />
-              ))}
-            </div>
-          </section>
-        </>
-      )}
-
-
-      <section>
-        <div className="mb-2 flex items-center justify-between gap-2">
-          <InfoScoreLabel active={minInfoScore !== null} />
-          {minInfoScore !== null && (
-            <button
-              onClick={() => onMinInfoScoreChange(null)}
-              className="rounded transition-colors hover:bg-white/5"
-              style={{ minHeight: '1.5rem', padding: '0 0.4375rem', color: '#888', border: '1px solid rgba(255,255,255,0.08)', fontSize: '0.625rem' }}
-            >
-              {t('filters.clear')}
-            </button>
-          )}
-        </div>
-        <div className="flex gap-1.5" role="group" aria-label={t('filters.infoScoreMin')}>
+      <FilterSection label={<InfoScoreLabel />} count={minInfoScore !== null ? 1 : 0}
+        end={minInfoScore !== null && <FilterTextButton onClick={() => onMinInfoScoreChange(null)}>{t('filters.clear')}</FilterTextButton>}>
+        <div className={filterStyles.choices} role="group" aria-label={t('filters.infoScoreMin')}>
           {INFO_SCORE_OPTIONS.map(score => {
             const active = minInfoScore === score
-            return (
-              <button
-                key={score}
-                type="button"
-                onClick={() => onMinInfoScoreChange(active ? null : score)}
-                aria-pressed={active}
-                className="flex-1 rounded transition duration-200"
-                style={{
-                  minHeight: '2.25rem',
-                  border: '1px solid transparent',
-                  background: active ? 'rgba(200,144,10,0.12)' : 'rgba(255,255,255,0.02)',
-                  color: active ? 'var(--gold)' : '#777',
-                  fontFamily: 'var(--font-body)',
-                  fontSize: '0.875rem',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                }}
-              >
-                {score === 3 ? '3' : `${score}+`}
-              </button>
-            )
+            return <FilterChoice key={score} active={active} onClick={() => onMinInfoScoreChange(active ? null : score)}>{score === 3 ? '3' : `${score}+`}</FilterChoice>
           })}
         </div>
-        <div className="mt-2 flex flex-wrap gap-1">
-          {[
-            t('filters.infoScoreFormation'),
-            t('filters.infoScoreEgo'),
-            t('filters.infoScoreMemo'),
-          ].map(label => (
-            <span
-              key={label}
-              className="rounded-sm"
-              style={{
-                minHeight: '1.375rem',
-                padding: '0.125rem 0.375rem',
-                background: 'rgba(255,255,255,0.025)',
-                border: '1px solid rgba(255,255,255,0.06)',
-                color: '#777',
-                fontSize: '0.75rem',
-                lineHeight: 1.35,
-              }}
-            >
-              {label}
-            </span>
+        <p className={`${filterStyles.hint} flex flex-wrap gap-x-3`}>
+          {[t('filters.infoScoreFormation'), t('filters.infoScoreEgo'), t('filters.infoScoreMemo')].map(label => <span key={label}>{label}</span>)}
+        </p>
+      </FilterSection>
+
+      <FilterSection label={t('filters.formationCount')} count={formationCount !== null ? 1 : 0} open={showFormationFilter} onToggle={() => setShowFormationFilter(v => !v)}>
+        <FormationCountFilter value={formationCount} onChange={onFormationCountChange} />
+      </FilterSection>
+
+      <FilterSection label={t('languageFilter.label')}>
+        <div className={filterStyles.choices}>
+          {DECK_LANGUAGE_FILTERS.map(option => (
+            <FilterChoice key={option} active={languageFilter === option} onClick={() => onLanguageFilterChange(option)}>{t(`languageFilter.${option === 'mine' ? 'current' : option}`)}</FilterChoice>
           ))}
         </div>
-      </section>
+      </FilterSection>
 
-
-      {facetSections}
-
-      <section>
-        <SectionToggle label={t('filters.collection')} open={showCollectionFilter} active={collectionCount > 0} count={collectionCount} onClick={onToggleCollectionFilter} />
-        {showCollectionFilter && (
-          <div className="flex flex-col gap-2 pt-1">
-            {collectionLoading ? (
-              <span style={{ color: 'var(--text-tertiary)', fontFamily: 'var(--font-body)', fontSize: '0.875rem' }}>
-                {t('filters.collectionLoading')}
-              </span>
-            ) : hasCollection ? (
-              <div className="grid grid-cols-2 gap-1.5">
-                <SquareToggle active={filterOwnedIdentity} label={t('filters.collectionIdentity')} onClick={onToggleFilterOwnedIdentity} ariaLabel={t('filters.ownedIdentityDeck')} />
-                <SquareToggle active={filterOwnedEgo} label={t('filters.collectionEgo')} onClick={onToggleFilterOwnedEgo} ariaLabel={t('filters.ownedEgoDeck')} />
-                <button
-                  onClick={onClearCollection}
-                  className="col-span-2 rounded transition-colors hover:bg-white/5"
-                  style={{ minHeight: '2rem', color: '#888', border: '1px solid rgba(255,255,255,0.08)', fontSize: '0.75rem' }}
-                >
-                  {t('filters.clear')}
-                </button>
-              </div>
-            ) : (
-              <>
-                <div className="flex items-center gap-2">
-                  <Link2 size={13} style={{ color: '#777', flexShrink: 0 }} />
-                  <input
-                    type="text"
-                    value={codeInput}
-                    onChange={e => { onCodeInputChange(e.target.value) }}
-                    onKeyDown={e => { if (e.key === 'Enter') onApplyCode() }}
-                    placeholder={t('filters.collectionCodePlaceholder')}
-                    className="min-w-0 flex-1 rounded px-2 py-1.5 outline-none"
-                    style={{
-                      minHeight: '2.25rem',
-                      background: 'rgba(255,255,255,0.04)',
-                      border: `1px solid ${codeError ? 'rgba(200,80,80,0.5)' : 'rgba(255,255,255,0.1)'}`,
-                      color: '#ccc',
-                      fontFamily: 'var(--font-body)',
-                      fontSize: '0.875rem',
-                    }}
-                    aria-label={t('filters.collectionCodeLabel')}
-                  />
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={onApplyCode}
-                    className="rounded transition-colors hover:bg-white/5"
-                    style={{
-                      minHeight: '2rem',
-                      padding: '0 0.75rem',
-                      background: 'rgba(200,144,10,0.1)',
-                      color: 'var(--gold)',
-                      border: '1px solid rgba(200,144,10,0.28)',
-                      fontFamily: 'var(--font-body)',
-                      fontSize: '0.8125rem',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    {t('filters.apply')}
-                  </button>
-                  {codeError && (
-                    <span style={{ color: '#c85050', fontFamily: 'var(--font-body)', fontSize: '0.875rem' }}>
-                      {t('filters.invalidCode')}
-                    </span>
-                  )}
-                </div>
-              </>
-            )}
+      <FilterSection label={t('filters.collection')} count={collectionCount} open={showCollectionFilter} onToggle={onToggleCollectionFilter}
+        end={hasCollection && !collectionLoading && <FilterTextButton onClick={onClearCollection}>{t('filters.clear')}</FilterTextButton>}>
+        {collectionLoading ? (
+          <p className={filterStyles.hint} role="status" style={{ marginTop: 0 }}>{t('filters.collectionLoading')}</p>
+        ) : hasCollection ? (
+          <div className={filterStyles.choices}>
+            <FilterChoice active={filterOwnedIdentity} aria-label={t('filters.ownedIdentityDeck')} onClick={onToggleFilterOwnedIdentity}>{t('filters.collectionIdentity')}</FilterChoice>
+            <FilterChoice active={filterOwnedEgo} aria-label={t('filters.ownedEgoDeck')} onClick={onToggleFilterOwnedEgo}>{t('filters.collectionEgo')}</FilterChoice>
           </div>
+        ) : (
+          <>
+            <div className="flex items-center gap-2">
+              <label className={`${filterStyles.field} min-w-0 flex-1`} data-invalid={codeError || undefined}>
+                <Link2 size={15} aria-hidden="true" />
+                <input
+                  type="text"
+                  value={codeInput}
+                  onChange={e => { onCodeInputChange(e.target.value) }}
+                  onKeyDown={e => { if (e.key === 'Enter') onApplyCode() }}
+                  placeholder={t('filters.collectionCodePlaceholder')}
+                  className={filterStyles.fieldInput}
+                  aria-label={t('filters.collectionCodeLabel')}
+                />
+              </label>
+              <button type="button" className={filterStyles.action} onClick={onApplyCode}>{t('filters.apply')}</button>
+            </div>
+            {codeError && <p className={filterStyles.hint} role="alert" style={{ color: '#c85050' }}>{t('filters.invalidCode')}</p>}
+          </>
         )}
-      </section>
-
-
-      <LanguageFilter value={languageFilter} onChange={onLanguageFilterChange} />
+      </FilterSection>
     </div>
   )
 
@@ -1255,9 +622,7 @@ export default function DeckListFilters({
                 zIndex: 1,
               }}
             >
-              <span style={{ color: 'var(--gold)', fontFamily: 'var(--font-body)', letterSpacing: '0.1em', fontSize: '0.875rem' }}>
-                {t('filters.button').toUpperCase()}
-              </span>
+              <span style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-heading)', fontSize: '1rem' }}>{t('filters.button')}</span>
               <button
                 onClick={() => setMobileOpen(false)}
                 className="flex items-center justify-center rounded transition-colors hover:bg-white/5"
@@ -1275,11 +640,13 @@ export default function DeckListFilters({
       )}
 
       <DeckIdentityFilterModal
-        open={!!identityModalSinnerId}
-        sinner={identityModalSinner}
-        identities={identityModalIdentities}
+        open={identityModalSinnerId !== null}
+        sinnerId={identityModalSinnerId ?? ''}
+        sinners={identityFilterSinners}
+        identities={identityFilterIdentities}
         selectedIdentityIds={selectedIdentityIds}
-        onToggleIdentity={handleModalToggleIdentity}
+        onToggleIdentity={onToggleSelectedIdentity}
+        onSinnerChange={setIdentityModalSinnerId}
         onClose={() => setIdentityModalSinnerId(null)}
       />
 
