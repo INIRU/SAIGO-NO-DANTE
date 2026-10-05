@@ -4,7 +4,7 @@ require('@next/env').loadEnvConfig(process.cwd());
 const {encode}=require('next-auth/jwt');const {createClient}=require('@supabase/supabase-js');
 (async()=>{
  const db=createClient(process.env.NEXT_PUBLIC_SUPABASE_URL,process.env.SUPABASE_SECRET_KEY,{auth:{persistSession:false}}), emails=[],paths=[];
- const base='http://localhost:3000';
+ const base=process.env.BASE_URL||'http://localhost:3000';
  async function account(){const email=`qa-${randomUUID()}@example.invalid`;emails.push(email);return 'next-auth.session-token='+await encode({secret:process.env.NEXTAUTH_SECRET,token:{email,name:'QA'}})}
  try{
   assert.equal((await fetch(base+'/api/developer/keys')).status,401)
@@ -15,6 +15,12 @@ const {encode}=require('next-auth/jwt');const {createClient}=require('@supabase/
   const listing=await (await fetch(base+'/api/developer/keys',{headers:{cookie}})).json();const row=listing.keys[0];assert(!('key_hash' in row));assert(!JSON.stringify(listing).includes(key))
   const api=await fetch(base+'/api/v1/planners?limit=1',{headers:{authorization:`Bearer ${key}`}});assert.equal(api.status,200);const publicData=await api.json();assert(Array.isArray(publicData.data));assert(!JSON.stringify(publicData).includes('user_id'))
   const decks=await fetch(base+'/api/v1/decks?limit=1',{headers:{authorization:`Bearer ${key}`}});assert.equal(decks.status,200)
+  assert.equal((await fetch(base+'/api/v1/identities',{headers:{authorization:`Bearer ${key}`}})).status,403)
+  const owner=(await db.schema('limbus').from('developer_keys').select('user_id').eq('id',row.id).single()).data.user_id
+  await db.schema('limbus').from('profiles').update({partner:'discord_bot'}).eq('id',owner)
+  const catalog=await fetch(base+'/api/v1/identities?lang=en',{headers:{authorization:`Bearer ${key}`}});assert.equal(catalog.status,200);assert.equal(catalog.headers.get('x-ratelimit-remaining'),null)
+  const identity=(await catalog.json()).data[0];assert(identity.url.includes('/en/sinners/'));assert(!('name_kr' in identity))
+  assert.equal((await (await fetch(base+'/api/developer/keys',{headers:{cookie}})).json()).partner,'discord_bot')
   await fetch(base+'/api/developer/keys',{method:'DELETE',headers:{...headers,cookie:other},body:JSON.stringify({id:row.id})})
   assert.equal((await fetch(base+'/api/v1/planners',{headers:{authorization:`Bearer ${key}`}})).status,200)
   await fetch(base+'/api/developer/keys',{method:'DELETE',headers,body:JSON.stringify({id:row.id})})
@@ -36,7 +42,7 @@ const {encode}=require('next-auth/jwt');const {createClient}=require('@supabase/
   assert.equal((await fetch(followUrl,{method:'DELETE',headers:{cookie,origin:base}})).status,200);
   follows=await (await fetch(followUrl+'?kind=followers')).json();assert.equal(follows.follower_count,0);
   console.log('PASS: follow auth/origin, idempotence, private list/count, separate visibility, unfollow');
-  console.log('PASS: sign-in gate, one-time key, read API, owner-only revoke, CSRF, image upload')
+  console.log('PASS: sign-in gate, one-time key, read API, partner gate, owner-only revoke, CSRF, image upload')
  }finally{
   if(paths.length){const {error}=await db.storage.from('limbus-assets').remove(paths);assert.ifError(error)}
   const {data,error}=await db.auth.admin.listUsers({perPage:1000});assert.ifError(error);for(const u of data.users){if(emails.includes(u.email)){const r=await db.auth.admin.deleteUser(u.id);assert.ifError(r.error)}}

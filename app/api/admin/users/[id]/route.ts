@@ -4,7 +4,8 @@ import { requireAdmin } from '@/lib/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
 
 const uuid = z.uuid()
-const mutation = z.discriminatedUnion('suspended', [
+const mutation = z.union([
+  z.object({ partner: z.literal('discord_bot').nullable() }).strict(),
   z.object({ suspended: z.literal(true), reason: z.string().trim().min(1).max(1000), durationDays: z.union([z.literal(7), z.literal(30), z.null()]), expectedSuspendedAt: z.iso.datetime({ offset: true }).nullable() }).strict(),
   z.object({ suspended: z.literal(false), expectedSuspendedAt: z.iso.datetime({ offset: true }).nullable() }).strict(),
 ])
@@ -18,7 +19,7 @@ export async function GET(_request: Request, context: Context) {
   if (!uuid.safeParse(id).success) return NextResponse.json({ error: 'invalid' }, { status: 400 })
   const admin = createAdminClient()
   const db = admin.schema('limbus')
-  const profile = await db.from('profiles').select('id,username,avatar_url,created_at,last_seen_at,role,suspended,suspension_reason,suspended_at,suspended_until').eq('id', id).maybeSingle()
+  const profile = await db.from('profiles').select('id,username,avatar_url,created_at,last_seen_at,role,partner,suspended,suspension_reason,suspended_at,suspended_until').eq('id', id).maybeSingle()
   if (profile.error) return NextResponse.json({ error: 'unavailable' }, { status: 500 })
   if (!profile.data) return NextResponse.json({ error: 'not_found' }, { status: 404 })
   const [account, decks, plans, history] = await Promise.all([
@@ -44,11 +45,14 @@ export async function PATCH(request: Request, context: Context) {
   const body = mutation.safeParse(await request.json().catch(() => null))
   if (!uuid.safeParse(id).success || !body.success) return NextResponse.json({ error: 'invalid' }, { status: 400 })
   const value = body.data
-  const { data, error } = await createAdminClient().schema('limbus').rpc('admin_moderate_user', {
-    p_actor_email: auth.session.user.email, p_target_id: id, p_suspend: value.suspended,
-    p_reason: value.suspended ? value.reason : null, p_days: value.suspended ? value.durationDays : null,
-    p_expected_suspended_at: value.expectedSuspendedAt, p_admin_emails: adminEmails(),
-  })
+  const db = createAdminClient().schema('limbus')
+  const { data, error } = 'partner' in value
+    ? await db.rpc('admin_set_partner', { p_actor_email: auth.session.user.email, p_target_id: id, p_partner: value.partner, p_admin_emails: adminEmails() })
+    : await db.rpc('admin_moderate_user', {
+      p_actor_email: auth.session.user.email, p_target_id: id, p_suspend: value.suspended,
+      p_reason: value.suspended ? value.reason : null, p_days: value.suspended ? value.durationDays : null,
+      p_expected_suspended_at: value.expectedSuspendedAt, p_admin_emails: adminEmails(),
+    })
   if (error || !data) return NextResponse.json({ error: 'unavailable' }, { status: 500 })
   if (data.error) {
     const status = ({ forbidden: 403, protected: 403, not_found: 404, conflict: 409, invalid: 400 } as Record<string, number>)[data.error] ?? 500

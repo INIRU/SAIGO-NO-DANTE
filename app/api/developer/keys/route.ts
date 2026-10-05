@@ -46,7 +46,17 @@ async function handle(request: Request) {
         .eq("user_id", userId)
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return NextResponse.json({ keys: data }, { headers });
+      const profile = await db
+        .schema("limbus")
+        .from("profiles")
+        .select("partner")
+        .eq("id", userId)
+        .maybeSingle();
+      if (profile.error) throw profile.error;
+      return NextResponse.json(
+        { keys: data, partner: profile.data?.partner ?? null },
+        { headers },
+      );
     }
     const body = await request.json();
     if (request.method === "DELETE") {
