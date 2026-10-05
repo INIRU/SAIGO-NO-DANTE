@@ -3,8 +3,9 @@
 import { useMemo, useState, type ReactNode } from 'react'
 import Image from 'next/image'
 import { useLocale, useTranslations } from 'next-intl'
-import { ChevronDown, ChevronRight, Plus, Search, X } from 'lucide-react'
+import { Plus, Search, X } from 'lucide-react'
 import BaseModal from '@/components/ui/BaseModal'
+import { FilterPicked, FilterSection, FilterTextButton, filterStyles } from './FilterControls'
 import ThemePackCard from '@/components/ui/ThemePackCard'
 import EgoDisplayCard from '@/components/sinners/EgoDisplayCard'
 import GiftCatalog, { giftKeywordIcon, toCatalogGift, useGiftCatalogFilters } from '@/components/gifts/GiftCatalog'
@@ -39,10 +40,9 @@ function Count({ value }: { value: number }) {
 
 function NameSearch({ value, onChange, placeholder }: { value: string; onChange: (value: string) => void; placeholder: string }) {
   return (
-    <label className="relative mb-4 block max-w-[24rem]">
-      <Search size={14} aria-hidden="true" className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#7f7364]" />
-      <input type="search" value={value} onChange={event => onChange(event.target.value)} placeholder={placeholder} aria-label={placeholder}
-        className="min-h-10 w-full rounded border border-[#2e2417] bg-[#0d0b08] pl-8 pr-3 text-[0.9375rem] text-[#e8dcc8] outline-none placeholder:text-[#6a6058] focus:border-[#5a4526]" />
+    <label className={`${filterStyles.field} mb-4 max-w-[24rem]`}>
+      <Search size={16} aria-hidden="true" />
+      <input type="search" value={value} onChange={event => onChange(event.target.value)} placeholder={placeholder} aria-label={placeholder} className={filterStyles.fieldInput} />
     </label>
   )
 }
@@ -76,19 +76,15 @@ export function FacetPickerModal({ kind, facets, selected, onToggle, onClose }: 
   if (kind === 'affiliation') body = (
     <>
       <NameSearch value={query} onChange={setQuery} placeholder={t('searchAffiliation')} />
-      <div className="flex flex-wrap gap-1.5">
-        {(facets?.affiliations ?? []).filter(item => match(item.key, getLocalizedAffiliation(item.key, lang))).map(item => {
-          const active = selectedSet.has(item.key)
-          return (
-            <button key={item.key} type="button" aria-pressed={active} onClick={() => onToggle(item.key)}
-              className="flex min-h-10 items-center gap-2 rounded px-3 text-[0.9375rem] font-semibold transition-colors"
-              style={{ background: active ? 'var(--deck-filter-surface-active)' : 'var(--deck-filter-surface-muted)', color: active ? 'var(--gold)' : 'var(--deck-filter-text-muted)' }}>
-              {getAffiliationIconUrl(item.key) && <Image src={getAffiliationIconUrl(item.key)!} alt="" width={24} height={24} className="h-6 w-6 shrink-0" />}
-              {getLocalizedAffiliation(item.key, lang)}
-              <span className="font-[family-name:var(--font-title)] text-[1rem] font-normal leading-none opacity-70">{item.count}</span>
-            </button>
-          )
-        })}
+      <div className={filterStyles.options}>
+        {(facets?.affiliations ?? []).filter(item => match(item.key, getLocalizedAffiliation(item.key, lang))).map(item => (
+          <button key={item.key} type="button" aria-pressed={selectedSet.has(item.key)} onClick={() => onToggle(item.key)} className={filterStyles.option} title={getLocalizedAffiliation(item.key, lang)}>
+            {/* The icon's place is kept for the few affiliations without one, so every name starts on the same line. */}
+            <i>{getAffiliationIconUrl(item.key) && <Image src={getAffiliationIconUrl(item.key)!} alt="" width={28} height={28} />}</i>
+            <span>{getLocalizedAffiliation(item.key, lang)}</span>
+            <b>{item.count}</b>
+          </button>
+        ))}
       </div>
     </>
   )
@@ -159,43 +155,7 @@ export function FacetPickerModal({ kind, facets, selected, onToggle, onClose }: 
   )
 }
 
-/** Sidebar section body: what is picked (click to remove) and a button that opens the picker. */
-export function FacetSelection({ kind, facets, selected, onRemove, onOpen }: {
-  kind: FacetKind
-  facets: BoardFacets | undefined
-  selected: readonly string[]
-  onRemove: (id: string) => void
-  onOpen: () => void
-}) {
-  const t = useTranslations('boardFacets')
-  const lang = useLocale() as SupportedLang
-  return (
-    <div className="flex flex-col gap-1.5 pt-1">
-      {selected.map(id => {
-        const { label, image } = facetOption(kind, id, facets, lang)
-        return (
-          <button key={id} type="button" onClick={() => onRemove(id)} aria-label={t('remove', { label })}
-            className="flex min-h-9 items-center gap-2 rounded px-2 text-left transition-colors hover:bg-white/5"
-            style={{ background: 'var(--deck-filter-surface-active)', color: 'var(--gold)', fontSize: 'var(--deck-filter-control-text)' }}>
-            {image && <span className={`relative h-6 w-6 shrink-0 overflow-hidden ${kind === 'ego' ? 'rounded-full' : kind === 'theme' ? 'rounded-sm' : ''}`}>
-              <Image src={image} alt="" fill sizes="24px" className={kind === 'gift' || kind === 'affiliation' ? 'object-contain' : 'object-cover'} />
-            </span>}
-            <span className="min-w-0 flex-1 truncate font-semibold">{label}</span>
-            <X size={13} aria-hidden="true" className="shrink-0 opacity-70" />
-          </button>
-        )
-      })}
-      <button type="button" onClick={onOpen}
-        className="flex min-h-9 items-center justify-center gap-1.5 rounded transition-colors hover:bg-white/5"
-        style={{ background: 'var(--deck-filter-surface-muted)', color: 'var(--deck-filter-text-muted)', fontSize: 'var(--deck-filter-control-text)', fontWeight: 600 }}>
-        <Plus size={14} aria-hidden="true" />{t(selected.length ? 'pickMore' : 'pick')}
-      </button>
-    </div>
-  )
-}
-
-
-/** The facet sections of a board sidebar, styled like its other collapsible sections; each opens FacetPickerModal. */
+/** The facet sections of a board's filter column: each names its picker at the end of its rule, and lists what is picked (press to take off). */
 export function FacetSections({ kinds, facets, selections, onRemove, onOpen }: {
   kinds: readonly FacetKind[]
   facets: BoardFacets | undefined
@@ -204,25 +164,22 @@ export function FacetSections({ kinds, facets, selections, onRemove, onOpen }: {
   onOpen: (kind: FacetKind) => void
 }) {
   const t = useTranslations('boardFacets')
-  const [closed, setClosed] = useState<Set<FacetKind>>(() => new Set())
-  return <>
+  const lang = useLocale() as SupportedLang
+  return <div className={filterStyles.group}>
     {kinds.map(kind => {
-      const open = !closed.has(kind)
-      const count = selections[kind].length
-      const Icon = open ? ChevronDown : ChevronRight
+      const selected = selections[kind]
       return (
-        <section key={kind}>
-          <button type="button" aria-expanded={open}
-            onClick={() => setClosed(current => { const next = new Set(current); if (next.has(kind)) next.delete(kind); else next.add(kind); return next })}
-            className="flex w-full items-center gap-2 text-left transition-colors hover:bg-white/[0.025]"
-            style={{ minHeight: 'var(--deck-filter-control-min)', color: count ? 'var(--gold)' : '#666', fontFamily: 'var(--font-body)', fontSize: 'var(--deck-filter-label-text)' }}>
-            <Icon size={13} style={{ flexShrink: 0, opacity: 0.6 }} />
-            <span className="min-w-0 flex-1 truncate">{t(kind)}</span>
-            {count > 0 && <span style={{ background: 'rgba(200,144,10,0.18)', color: 'var(--gold)', minWidth: '1.375rem', padding: '0.0625rem 0.4375rem', borderRadius: '999rem', fontSize: 'var(--deck-filter-control-text)', lineHeight: 1.2, textAlign: 'center' }}>{count}</span>}
-          </button>
-          {open && <FacetSelection kind={kind} facets={facets} selected={selections[kind]} onRemove={id => onRemove(kind, id)} onOpen={() => onOpen(kind)} />}
-        </section>
+        <FilterSection key={kind} label={t(kind)} count={selected.length}
+          end={<FilterTextButton accent aria-haspopup="dialog" aria-label={`${t(kind)} ${t(selected.length ? 'pickMore' : 'pick')}`} onClick={() => onOpen(kind)}><Plus size={14} aria-hidden="true" /><span>{t(selected.length ? 'pickMore' : 'pick')}</span></FilterTextButton>}>
+          {selected.length > 0 && <div className={filterStyles.pickedList}>
+            {selected.map(id => {
+              const { label, image } = facetOption(kind, id, facets, lang)
+              return <FilterPicked key={id} label={label} removeLabel={t('remove', { label })} image={image} onRemove={() => onRemove(kind, id)}
+                thumbClassName={kind === 'ego' ? 'rounded-full' : kind === 'theme' ? 'rounded-sm' : ''} imageClassName={kind === 'gift' || kind === 'affiliation' ? 'object-contain' : 'object-cover'} />
+            })}
+          </div>}
+        </FilterSection>
       )
     })}
-  </>
+  </div>
 }
