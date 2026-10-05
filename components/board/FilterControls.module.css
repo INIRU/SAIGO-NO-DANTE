@@ -1,0 +1,63 @@
+/* The filter column of the deck and plan boards, in the build of the planner's pickers: a title over a thin rule, choices
+   as plain text that only take a tint once chosen, game icons in tiles of one size. Gold marks what is chosen, nothing else. */
+.surface{display:flex;flex-direction:column;gap:1.5rem}
+/* The search field is the column's first row, as tall as the list's result count beside it; the first section then starts where the list's cards start (the list's row gap is 1rem). */
+.surface>:first-child{margin-bottom:-.5rem}
+/* Sections that are one line each until something is picked (the pickers) stand closer together. */
+.group{display:flex;flex-direction:column;gap:.5rem}
+.head{display:flex;align-items:center;gap:.6rem;height:2rem;padding-bottom:.55rem;border-bottom:1px solid #2e2417}
+.title{display:flex;flex:1;align-items:center;gap:.45rem;min-width:0;margin:0;color:var(--text-primary);font:.9375rem/1.3 var(--font-heading)}
+/* A folding section's title is a button inside the heading; what can be pressed is the whole height of the head, not just the letters. */
+.title>button{position:relative;display:flex;align-items:center;gap:.45rem;min-width:0;font:inherit;color:inherit;text-align:left;cursor:pointer}.title>button::after{content:'';position:absolute;inset:-.55rem -.25rem -.65rem 0}
+/* The number changes in place, without an entrance: it changes on every press, and a number that fades in each time reads as flicker. */
+.count{color:var(--gold-light);font:1.05rem/1 var(--font-title);font-weight:400}
+.chevron{flex-shrink:0;color:#7f7364;transition:transform .2s cubic-bezier(.2,.8,.2,1)}[aria-expanded=false]>.chevron{transform:rotate(-90deg)}
+.body{padding-top:.7rem;animation:tick .2s cubic-bezier(.2,.8,.2,1)}
+.textButton{position:relative;display:inline-flex;flex-shrink:0;align-items:center;gap:.25rem;min-height:1.75rem;color:#9c8b73;font-size:.8125rem;cursor:pointer;transition:color .16s}.textButton::after{content:'';position:absolute;inset:-.5rem -.3rem}.textButton:hover{color:var(--text-primary)}.textButton[aria-pressed=true],.textButton[data-accent]{color:var(--gold-light)}
+/* Choices are plain text flush with the section's title, so every left edge of the column is one line; the chosen one takes the colour and a rule under it (the planner's tabs). No box and no weight change: nothing moves when the choice changes. */
+.choices{display:flex;flex-wrap:wrap;gap:.35rem 1.15rem}
+.choice{position:relative;display:inline-flex;align-items:center;min-width:1.5rem;max-width:100%;margin-bottom:.2rem;padding:.3rem 0 .25rem;border-bottom:2px solid transparent;color:var(--text-secondary);font-size:.875rem;cursor:pointer;transition:color .16s,border-color .16s}
+/* The text is the visible button; what can be pressed reaches a little past it. */
+.choice::after{content:'';position:absolute;inset:-.4rem -.55rem}
+.choice:hover{color:var(--text-primary)}.choice[aria-pressed=true]{color:var(--gold-light);border-bottom-color:currentColor}.choice>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* The one action of the column that is a button in its own right (apply a collection code). */
+.action{flex-shrink:0;min-height:2.75rem;padding:0 .9rem;border:1px solid var(--border);border-radius:.35rem;color:var(--gold-light);font-size:.875rem;cursor:pointer;transition:border-color .16s,background-color .16s}.action:hover{border-color:var(--gold);background:rgba(200,144,10,.08)}.action:disabled{opacity:.5;cursor:wait}
+.tiles{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:.25rem}
+.tile{display:flex;flex-direction:column;align-items:center;gap:.3rem;min-width:0;padding:.55rem 0 .45rem;border:1px solid transparent;border-radius:.3rem;color:var(--text-secondary);font-size:.7rem;line-height:1.2;cursor:pointer;transition:color .16s,background-color .16s,border-color .16s,transform .12s}
+.tile img{width:1.5rem;height:1.5rem;object-fit:contain;opacity:.6;transition:opacity .16s}.tile>span{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tile:hover{color:var(--text-primary)}.tile:hover img{opacity:.9}.tile:active{transform:scale(.95)}.tile[aria-pressed=true]{color:var(--gold-light);border-color:var(--border);background:rgba(200,144,10,.12)}.tile[aria-pressed=true] img{opacity:1}
+/* One sinner each: the logo, or the identity chosen for that sinner. */
+.sinners{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:.25rem}
+.sinner{position:relative;display:grid;place-items:center;aspect-ratio:1;border:1px solid transparent;border-radius:.3rem;cursor:pointer;transition:background-color .16s,border-color .16s,transform .12s}
+.sinner:hover{background:rgba(232,220,200,.05)}.sinner:active{transform:scale(.95)}.sinner[data-picked]{border-color:var(--border);background:rgba(200,144,10,.12)}
+.sinnerLogo{width:70%;height:70%;object-fit:contain;opacity:.55;transition:opacity .16s}.sinner:hover .sinnerLogo{opacity:.95}
+.sinnerPortrait{position:absolute;inset:.15rem;overflow:hidden;border-radius:.2rem}.sinnerPortrait img{object-fit:cover;object-position:center 14%}
+.pickedList{display:flex;flex-direction:column;gap:.1rem}
+.picked{display:flex;align-items:center;gap:.6rem;width:100%;min-height:2.3rem;padding:0 .3rem;border-radius:.3rem;color:var(--text-primary);font-size:.875rem;text-align:left;cursor:pointer;transition:background-color .16s}
+.picked:hover{background:rgba(232,220,200,.05)}.picked>span:nth-last-child(2){flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.picked>svg{flex-shrink:0;color:#7f7364}.picked:hover>svg{color:var(--text-primary)}
+.thumb{position:relative;flex-shrink:0;width:1.6rem;height:1.6rem;overflow:hidden}
+.field{display:flex;align-items:center;gap:.5rem;min-height:2.75rem;padding:0 .7rem;border:1px solid var(--border);border-radius:.35rem;background:var(--bg-card);color:var(--text-secondary);transition:border-color .16s}.field:focus-within{border-color:var(--gold)}.field[data-invalid]{border-color:rgba(200,80,80,.6)}
+.field input.fieldInput{flex:1;width:100%;min-width:0;min-height:1.5rem;background:none;outline:none;color:var(--text-primary);font-size:.875rem;text-overflow:ellipsis}.field input.fieldInput::placeholder{color:#7f7364;text-overflow:ellipsis}
+.field>button{display:grid;flex-shrink:0;place-items:center;width:1.75rem;height:1.75rem;margin-right:-.35rem;border-radius:.25rem;color:#9c8b73;cursor:pointer}.field>button:hover{color:var(--text-primary)}
+.field{position:relative}
+.field>button.help{cursor:help}.help>span{position:absolute;top:calc(100% + .4rem);right:0;z-index:20;display:none;padding:.45rem .65rem;border:1px solid var(--border);border-radius:.3rem;background:var(--bg-elevated);box-shadow:0 .5rem 1.25rem rgba(0,0,0,.5);color:var(--text-primary);font-size:.8125rem;line-height:1.4;white-space:nowrap}
+.help:hover>span,.help:focus>span{display:block}
+.hint{margin:.5rem 0 0;color:#9c8b73;font-size:.75rem;line-height:1.4}
+@keyframes tick{from{opacity:.35;transform:translateY(.2rem)}}
+@media(prefers-reduced-motion:reduce){.body{animation:none}.chevron,.choice,.tile,.sinner,.action{transition:none}}
+/* The identity filter's picker window: the planner identity picker's box (title bar, filters down the left, cards on the right). */
+.picker{display:flex;flex-direction:column;height:86dvh;max-height:52rem;overflow:hidden;border:1px solid #2e2417;border-radius:.5rem;background:#17120c;box-shadow:0 1rem 3rem rgba(0,0,0,.8)}
+.pickerHead{display:flex;flex-shrink:0;align-items:center;gap:.75rem;padding:.5rem .75rem .5rem 1.25rem;border-bottom:1px solid #2e2417}.pickerHead img{width:1.5rem;height:1.5rem;opacity:.75}
+.pickerHead p{flex:1;min-width:0;margin:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text-primary);font:1.0625rem/1.4 var(--font-heading)}.pickerHead p b{margin-left:.5rem;color:var(--gold-light);font:1.125rem/1 var(--font-title);font-weight:400}
+.pickerHead button{display:grid;flex-shrink:0;place-items:center;width:2.75rem;height:2.75rem;color:#9c8b73;cursor:pointer}.pickerHead button:hover{color:var(--text-primary)}
+.pickerResults{min-height:0;overflow-y:auto;overscroll-behavior:contain}
+.pickerGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(8.5rem,1fr));gap:1.25rem 1rem;margin:0;padding:1.25rem;list-style:none}.pickerGrid li{min-width:0}
+.pickerGrid button{display:block;width:100%;padding:0;cursor:pointer;transition:filter .15s ease,transform .18s cubic-bezier(.22,1,.36,1)}.pickerGrid button:hover{filter:brightness(1.1);transform:translateY(-.15rem)}.pickerGrid button:focus-visible{outline:2px solid var(--gold-light);outline-offset:3px}
+.pickerEmpty{padding:2rem 1rem;text-align:center;color:#9c8b73;font-size:.9375rem}
+/* Named options of one size (affiliations): icon, name, how many posts use it. */
+.options{display:grid;grid-template-columns:repeat(auto-fill,minmax(11rem,1fr));gap:.3rem}
+.option{display:flex;align-items:center;gap:.6rem;min-width:0;min-height:2.75rem;padding:0 .75rem;border:1px solid transparent;border-radius:.3rem;color:var(--text-secondary);font-size:.9375rem;text-align:left;cursor:pointer;transition:color .16s,background-color .16s,border-color .16s,transform .12s}
+.option>i{flex-shrink:0;display:grid;place-items:center;width:1.6rem;height:1.6rem}.option img{max-width:100%;max-height:100%;object-fit:contain}.option>span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.option>b{color:#7f7364;font:1rem/1 var(--font-title);font-weight:400}
+.option:hover{color:var(--text-primary);background:rgba(232,220,200,.04)}.option:active{transform:scale(.98)}.option[aria-pressed=true]{color:var(--gold-light);border-color:var(--border);background:rgba(200,144,10,.12)}.option[aria-pressed=true]>b{color:var(--gold-light)}
+@media(max-width:39.9375rem){.pickerGrid{grid-template-columns:repeat(3,minmax(0,1fr));gap:1.25rem .5rem;padding:1rem .75rem}.pickerHead{padding-left:.875rem}}
+@media(prefers-reduced-motion:reduce){.pickerGrid button,.option{transition:none}.pickerGrid button:hover{transform:none}}

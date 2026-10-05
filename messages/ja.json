@@ -189,7 +189,6 @@
     },
     "search": {
       "label": "デッキ検索",
-      "section": "検索",
       "placeholder": "人格、キーワード、タイトル...",
       "clear": "検索語をクリア",
       "hint": "+ は OR、* は AND 検索",
@@ -411,7 +410,7 @@
       "title": "{sinner} 人格選択",
       "fallbackTitle": "人格選択",
       "description": "デッキ一覧のフィルターに使う人格を選択します。",
-      "heading": "{order} {sinner}",
+      "noResults": "条件に合う人格がありません。",
       "close": "人格選択モーダルを閉じる",
       "add": "{identity}をフィルターに追加",
       "remove": "{identity}をフィルターから削除",
@@ -1001,7 +1000,6 @@
       },
       "search": {
         "label": "プラン検索",
-        "section": "検索",
         "placeholder": "人格、キーワード、タイトル...",
         "clear": "検索語をクリア",
         "hint": "+ は OR、* は AND 検索",
