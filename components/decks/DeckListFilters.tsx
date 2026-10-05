@@ -1201,10 +1201,7 @@ export default function DeckListFilters({
   return (
     <>
       <aside
-        className="decks-filters hidden h-full shrink-0 overflow-y-auto pr-3 scrollbar-thin lg:block"
-        style={{
-          width: '16rem',
-        }}
+        className="decks-filters board-filters hidden h-full shrink-0 overflow-y-auto pr-3 scrollbar-thin lg:block"
         aria-label={t('filters.aside')}
       >
         {filterSurface}

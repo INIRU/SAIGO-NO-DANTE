@@ -2176,6 +2176,9 @@
     "customName": "Name",
     "customValue": "Value",
     "customTarget": "Applies to",
+    "customCoin": "Coin",
+    "coinAll": "All coins",
+    "coinMissing": "Coin {index} (none)",
     "targetOption": {
       "damage": "Damage modifiers (%)",
       "resist": "Resistance and level (%)",
@@ -2220,8 +2223,7 @@
       "noResults": "No results.",
       "delete": "Remove",
       "effect": "Effect",
-      "value": "Applied value",
-      "maxStack": "Already at the maximum ({max})."
+      "value": "Applied value"
     }
   },
   "mirrorDungeonPage": {

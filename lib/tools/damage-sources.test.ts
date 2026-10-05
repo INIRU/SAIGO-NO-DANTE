@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildDamageSources, damageChanges, damageValues, keywordModifier, mentionsDamage, stackEffect, suggestDamageSources, type DamageSources, type GiftSourceRow } from './damage-sources'
+import { buildDamageSources, damageChanges, damageValues, findApplied, keywordModifier, mentionsDamage, stackEffect, suggestDamageSources, type DamageSources, type GiftSourceRow } from './damage-sources'
 
 // Effect texts as the game writes them (ego_gifts.effect_base, keyword_meta.description, 2026-10-04).
 const GIFTS = {
@@ -23,6 +23,13 @@ const KEYWORDS = {
   traumaShield: '- 적에게 받는 정신력 피해 80% 감소\n- 침잠 피해 80% 감소\n- 턴 종료시 수치 1 감소',
   grudge: "- ‘육참’, ‘골단’의 마지막 코인 적중 시 (수치 / 10)%만큼 피해량이 증가하고, 이 효과 소멸",
   protection: '한 턴 동안 스킬로 받는 피해가 수치에 비례하여 감소 (최대 10)',
+}
+// The sentences that make a stack keyword (keyword_meta.description, 2026-10-05).
+const STACK = {
+  fragile: '한 턴 동안 스킬로 받는 피해가 수치에 비례하여 증가 (최대 10)',
+  pierceFragile: '한 턴 동안 관통 스킬로 받는 피해가 수치에 비례하여 증가 (최대 10)',
+  damageUp: '한 턴 동안 스킬로 가하는 피해가 수치에 비례하여 증가 (최대 10)',
+  slashWeak: '대상의 참격 내성을 (스택 * 0.1) 증가',
 }
 
 describe('damage sources', () => {
@@ -92,22 +99,30 @@ describe('damage sources', () => {
     expect(mentionsDamage(KEYWORDS.protection)).toBe(true)
     expect(mentionsDamage('턴 종료 시 다음 턴에 신속 1 얻음')).toBe(false)
   })
-  it('REQ-TOOLS-011 gives the stacking damage keywords their per-stack effect and the side that carries them', () => {
+  it('REQ-TOOLS-011 knows a stack keyword by the sentence of its text, whatever it is called', () => {
     const taken = (perStack: number) => ({ target: 'damage', perStack, max: 10, side: 'target' })
     const dealt = (perStack: number) => ({ target: 'damage', perStack, max: 10, side: 'self' })
-    expect(stackEffect('보호')).toEqual(taken(-10))
-    expect(stackEffect('취약')).toEqual(taken(10))
-    expect(stackEffect('피해량 증가')).toEqual(dealt(10))
-    expect(stackEffect('피해량 감소')).toEqual(dealt(-10))
-    for (const type of ['참격', '관통', '타격', '분노', '색욕', '나태', '탐식', '우울', '오만', '질투']) {
-      expect(stackEffect(`${type} 취약`)).toEqual(taken(10))
-      expect(stackEffect(`${type} 보호`)).toEqual(taken(-10))
-      expect(stackEffect(`${type} 피해량 증가`)).toEqual(dealt(10))
-      expect(stackEffect(`${type} 피해량 감소`)).toEqual(dealt(-10))
-    }
-    expect(stackEffect('참격 내성 약화')).toEqual({ target: 'physical', perStack: 0.1, max: 10, side: 'target' })
-    expect(stackEffect('질투 내성 약화')).toEqual({ target: 'sin', perStack: 0.1, max: 10, side: 'target' })
-    for (const name of ['파열 보호', '크리티컬 피해량 증가', '호흡', '보호막', '취약 부여']) expect(stackEffect(name)).toBeNull()
+    expect(stackEffect(KEYWORDS.protection)).toEqual(taken(-10))
+    expect(stackEffect(STACK.fragile)).toEqual(taken(10))
+    expect(stackEffect(STACK.damageUp)).toEqual(dealt(10))
+    expect(stackEffect('한 턴 동안 스킬로 가하는 피해가 수치에 비례하여 감소 (최대 10)')).toEqual(dealt(-10))
+    // Per attack type and per sin: "관통 스킬로", "나태 속성 스킬로".
+    expect(stackEffect(STACK.pierceFragile)).toEqual(taken(10))
+    expect(stackEffect('한 턴 동안 나태 속성 스킬로 가하는 피해가 수치에 비례하여 감소 (최대 10)')).toEqual(dealt(-10))
+    // The most stacks are the stated maximum, 10 where none is stated.
+    expect(stackEffect('한 턴 동안 스킬로 받는 피해가 수치에 비례하여 증가 (최대 5)')?.max).toBe(5)
+    expect(stackEffect('한 턴 동안 스킬로 받는 피해가 수치에 비례하여 증가')?.max).toBe(10)
+    // A weakening states its own amount, and its resistance tells physical from sin.
+    expect(stackEffect(STACK.slashWeak)).toEqual({ target: 'physical', perStack: 0.1, max: 10, side: 'target' })
+    expect(stackEffect('대상의 질투 내성을 (스택 * 0.1) 증가')).toEqual({ target: 'sin', perStack: 0.1, max: 10, side: 'target' })
+    expect(stackEffect('대상의 타격 내성을 (수치 x 0.2) 증가')?.perStack).toBe(0.2)
+    expect(stackEffect('대상의 관통 속성 내성을 (스택 * 0.1) 증가')?.target).toBe('physical')
+    expect(stackEffect('대상의 모든 내성을 (스택 * 0.1) 증가')).toBeNull()
+    for (const text of ['한 턴 동안 파열 효과로 받는 피해 수치당 1 감소', KEYWORDS.dokkaebi, KEYWORDS.gaze, '한 턴 동안 속도가 수치만큼 증가', '']) expect(stackEffect(text)).toBeNull()
+    // The name decides nothing: a keyword the game adds later with the same sentence is a stack keyword, and "취약" with another text is not.
+    const row = (desc: string) => ({ desc, nameEn: null, nameJp: null, descEn: null, descJp: null })
+    const { keywords } = buildDamageSources({ '취약': row(KEYWORDS.gaze), '낙인': row(STACK.fragile) }, [], 'ko')
+    expect(keywords.map(keyword => [keyword.name, keyword.stack?.perStack ?? null, keyword.side])).toEqual([['낙인', 10, 'target'], ['취약', null, 'target']])
   })
   it('REQ-TOOLS-012 lists the keywords and gifts that change damage, in the language asked for', () => {
     const keywords = {
@@ -161,17 +176,41 @@ describe('damage sources', () => {
     expect(buildDamageSources(keywords, gifts, 'ko').gifts.map(row => row.label)).toEqual(['미적 감각', '시큼한 주향', '표식'])
   })
   it('REQ-TOOLS-012 lists the stack keywords by kind, the general one first, then attack types, then sins', () => {
-    const names = ['오만 취약', '참격 내성 약화', '보호', '분노 보호', '취약', '참격 취약', '피해량 증가', '관통 취약', '주시']
-    const keywords = Object.fromEntries(names.map(name => [name, { desc: name === '주시' ? KEYWORDS.gaze : '', nameEn: null, nameJp: null, descEn: null, descJp: null }]))
+    const texts: Record<string, string> = {
+      '오만 취약': '한 턴 동안 오만 속성 스킬로 받는 피해가 수치에 비례하여 증가 (최대 10)', '참격 내성 약화': STACK.slashWeak, '보호': KEYWORDS.protection,
+      '분노 보호': '한 턴 동안 분노 속성 스킬로 받는 피해가 수치에 비례하여 감소 (최대 10)', '취약': STACK.fragile,
+      '참격 취약': '한 턴 동안 참격 스킬로 받는 피해가 수치에 비례하여 증가 (최대 10)', '피해량 증가': STACK.damageUp, '관통 취약': STACK.pierceFragile, '주시': KEYWORDS.gaze,
+    }
+    const keywords = Object.fromEntries(Object.entries(texts).map(([name, desc]) => [name, { desc, nameEn: null, nameJp: null, descEn: null, descJp: null }]))
     expect(buildDamageSources(keywords, [], 'ko').keywords.map(row => row.name)).toEqual(['취약', '참격 취약', '관통 취약', '오만 취약', '보호', '분노 보호', '피해량 증가', '참격 내성 약화', '주시'])
   })
   it('REQ-TOOLS-012 turns a keyword into a modifier: a stack keyword starts at 1, the others at their first value', () => {
-    expect(keywordModifier('취약', 'Fragile')).toEqual({ name: 'Fragile', keyword: '취약', stacks: 1, value: 10, target: 'damage', side: 'target' })
-    expect(keywordModifier('피해량 증가', '피해량 증가', [], 'target').side).toBe('self')
-    expect(keywordModifier('참격 내성 약화', '참격 내성 약화')).toEqual({ name: '참격 내성 약화', keyword: '참격 내성 약화', stacks: 1, value: 0.1, target: 'physical', side: 'target' })
-    expect(keywordModifier('일곱번째 마탄', 'The Seventh Magic Bullet', [200, 50])).toEqual({ name: 'The Seventh Magic Bullet', keyword: '일곱번째 마탄', value: 200, options: [200, 50], target: 'damage', side: 'self' })
-    expect(keywordModifier('도깨비팔', '도깨비팔', [-15], 'target')).toEqual({ name: '도깨비팔', keyword: '도깨비팔', value: -15, options: [-15], target: 'damage', side: 'target' })
-    expect(keywordModifier('맺혀가는 응어리', '맺혀가는 응어리')).toEqual({ name: '맺혀가는 응어리', keyword: '맺혀가는 응어리', value: 0, options: [], target: 'damage', side: 'self' })
+    const row = { text: '', values: [] as number[], stack: null, side: 'self' as const }
+    const fragile = { target: 'damage' as const, perStack: 10, max: 10, side: 'target' as const }
+    // The stack effect is the one the list read from the text; the side is the effect's own.
+    expect(keywordModifier({ ...row, name: '낙인', label: 'Brand', stack: fragile })).toEqual({ name: 'Brand', keyword: '낙인', stacks: 1, value: 10, target: 'damage', side: 'target' })
+    expect(keywordModifier({ ...row, name: '참격 내성 약화', label: '참격 내성 약화', stack: { target: 'physical', perStack: 0.1, max: 10, side: 'target' } })).toEqual({ name: '참격 내성 약화', keyword: '참격 내성 약화', stacks: 1, value: 0.1, target: 'physical', side: 'target' })
+    // A name alone makes no stack keyword.
+    expect(keywordModifier({ ...row, name: '취약', label: '취약', values: [20], side: 'target' })).toEqual({ name: '취약', keyword: '취약', value: 20, options: [20], target: 'damage', side: 'target' })
+    expect(keywordModifier({ ...row, name: '일곱번째 마탄', label: 'The Seventh Magic Bullet', values: [200, 50] })).toEqual({ name: 'The Seventh Magic Bullet', keyword: '일곱번째 마탄', value: 200, options: [200, 50], target: 'damage', side: 'self' })
+    expect(keywordModifier({ ...row, name: '맺혀가는 응어리', label: '맺혀가는 응어리' })).toEqual({ name: '맺혀가는 응어리', keyword: '맺혀가는 응어리', value: 0, options: [], target: 'damage', side: 'self' })
+  })
+  it('REQ-TOOLS-012 knows what a picked candidate already stands for: the same gift, or the same keyword on the same side', () => {
+    const gift = { id: '9065', level: 0, image_url: null, grade: null, keyword: null }
+    const applied = [
+      { id: 1, name: '책임감', value: 20, target: 'damage' as const, keyword: '책임감', side: 'target' as const },
+      { id: 2, name: '미적 감각++', value: 50, target: 'damage' as const, gift: { ...gift, level: 2 } },
+      { id: 3, name: '직접 입력', value: 10, target: 'damage' as const },
+      { id: 4, name: '영감', value: 10, target: 'damage' as const, keyword: '영감' },
+    ]
+    // A keyword offered on both sides is applied on each side by itself.
+    expect(findApplied(applied, { name: '책임감', value: 20, target: 'damage', keyword: '책임감', side: 'target' })?.id).toBe(1)
+    expect(findApplied(applied, { name: '책임감', value: 20, target: 'damage', keyword: '책임감', side: 'self' })).toBeUndefined()
+    // A gift is the same gift at any enhancement level; a side that was not saved is the attacker's.
+    expect(findApplied(applied, { name: '미적 감각', value: 35, target: 'damage', gift })?.id).toBe(2)
+    expect(findApplied(applied, { name: '영감', value: 10, target: 'damage', keyword: '영감', side: 'self' })?.id).toBe(4)
+    // A typed modifier stands for no candidate, whatever it is called.
+    expect(findApplied(applied, { name: '직접 입력', value: 10, target: 'damage' })).toBeUndefined()
   })
   it('REQ-TOOLS-012 suggests keywords and gifts by name, the closest names first', () => {
     const stack = { target: 'damage' as const, perStack: 10, max: 10, side: 'target' as const }
