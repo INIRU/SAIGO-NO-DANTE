@@ -5,7 +5,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 
 const uuid = z.uuid()
 const mutation = z.union([
-  z.object({ partner: z.literal('discord_bot').nullable() }).strict(),
+  z.object({ partner: z.string().regex(/^[a-z][a-z0-9_]{1,30}$/).nullable() }).strict(),
   z.object({ suspended: z.literal(true), reason: z.string().trim().min(1).max(1000), durationDays: z.union([z.literal(7), z.literal(30), z.null()]), expectedSuspendedAt: z.iso.datetime({ offset: true }).nullable() }).strict(),
   z.object({ suspended: z.literal(false), expectedSuspendedAt: z.iso.datetime({ offset: true }).nullable() }).strict(),
 ])
@@ -22,19 +22,20 @@ export async function GET(_request: Request, context: Context) {
   const profile = await db.from('profiles').select('id,username,avatar_url,created_at,last_seen_at,role,partner,suspended,suspension_reason,suspended_at,suspended_until').eq('id', id).maybeSingle()
   if (profile.error) return NextResponse.json({ error: 'unavailable' }, { status: 500 })
   if (!profile.data) return NextResponse.json({ error: 'not_found' }, { status: 404 })
-  const [account, decks, plans, history] = await Promise.all([
+  const [account, decks, plans, history, partners] = await Promise.all([
     admin.auth.admin.getUserById(id),
     db.from('decks').select('id,title,created_at', { count: 'exact' }).eq('user_id', id).order('created_at', { ascending: false }).limit(5),
     db.from('md_plans').select('id,title,created_at', { count: 'exact' }).eq('user_id', id).order('created_at', { ascending: false }).limit(5),
     db.from('audit_logs').select('id,action,created_at,details').eq('target_type', 'user').eq('target_id', id).in('action', ['suspend', 'unsuspend', 'suspension_expired']).order('created_at', { ascending: false }).limit(5),
+    db.from('partners').select('code,name').order('code'),
   ])
-  if (account.error || decks.error || plans.error || history.error) return NextResponse.json({ error: 'unavailable' }, { status: 500 })
+  if (account.error || decks.error || plans.error || history.error || partners.error) return NextResponse.json({ error: 'unavailable' }, { status: 500 })
   const p = profile.data
   return NextResponse.json({
     ...p,
     restricted: p.suspended === true && (!p.suspended_until || new Date(p.suspended_until).getTime() > Date.now()),
     protected: (p.role ?? 'user') !== 'user' || account.data.user.email === auth.session.user?.email || adminEmails().includes(account.data.user.email ?? ''),
-    decks: decks.data, deckCount: decks.count ?? 0, plans: plans.data, planCount: plans.count ?? 0, history: history.data,
+    decks: decks.data, deckCount: decks.count ?? 0, plans: plans.data, planCount: plans.count ?? 0, history: history.data, partners: partners.data,
   }, { headers: { 'Cache-Control': 'private, no-store' } })
 }
 export async function PATCH(request: Request, context: Context) {

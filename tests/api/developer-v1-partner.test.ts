@@ -35,7 +35,7 @@ const get = (resource: string, query = '') => GET(
   { params: Promise.resolve({ resource }) },
 )
 const standard = () => m.rpc.mockResolvedValue({ data: { status: 200, remaining: 9000, partner: null }, error: null })
-const partner = () => m.rpc.mockResolvedValue({ data: { status: 200, remaining: null, partner: 'discord_bot' }, error: null })
+const partner = (scopes = ['catalog:read', 'news:write']) => m.rpc.mockResolvedValue({ data: { status: 200, remaining: null, partner: 'limpi', scopes }, error: null })
 const called = (method: string) => m.calls.filter(call => call[0] === method)
 
 beforeEach(() => {
@@ -113,16 +113,38 @@ describe('partner resources on the developer API', () => {
     expect((await get('decks', `?q=${'a'.repeat(101)}`)).status).toBe(400)
   })
 
-  it('REQ-ACCOUNT-014 returns the account partner tier with the key list', async () => {
+  it('REQ-ACCOUNT-018 gives game data only to a partner whose scopes include catalog:read', async () => {
+    partner(['news:write'])
+    expect((await get('ego-gifts')).status).toBe(403)
+    expect(m.loadCatalog).not.toHaveBeenCalled()
+    // Without the scope a deck id is answered like a standard key: the list shape, no formation.
+    const response = await get('decks', `?id=${ID}`)
+    expect(response.status).toBe(200)
+    expect((await response.json()).data).toEqual([{ id: ID, title: '덱' }])
+    expect(m.loadDeckDetail).not.toHaveBeenCalled()
+    partner(['catalog:read'])
+    expect((await get('ego-gifts')).status).toBe(200)
+  })
+
+  it('REQ-ACCOUNT-022 lets an administrator key read game data without being a partner', async () => {
+    m.rpc.mockResolvedValue({ data: { status: 200, remaining: 9000, partner: null, scopes: [], admin: true }, error: null })
+    const response = await get('ego-gifts')
+    expect(response.status).toBe(200)
+    expect(response.headers.get('x-ratelimit-remaining')).toBe('9000')
+    await get('decks', `?id=${ID}`)
+    expect(m.loadDeckDetail).toHaveBeenCalledWith(ID)
+  })
+
+  it('REQ-ACCOUNT-014 returns the account partner code, name and scopes with the key list', async () => {
     m.auth.mockResolvedValue({ error: false, session: { user: { email: 'dev@example.invalid', name: 'Dev', image: null } } })
     m.keys.mockImplementation((table: string) => {
       const chain: Record<string, unknown> = {}
       for (const method of ['select', 'eq', 'order']) chain[method] = () => chain
-      chain.maybeSingle = async () => ({ data: { partner: 'discord_bot' }, error: null })
+      chain.maybeSingle = async () => ({ data: { partner: { code: 'limpi', name: '림피', scopes: ['catalog:read', 'news:write'] } }, error: null })
       chain.then = (resolve: (value: unknown) => void) => resolve({ data: table === 'developer_keys' ? [{ id: 'k1', name: 'bot' }] : null, error: null })
       return chain
     })
     const body = await (await listKeys(new Request('http://localhost/api/developer/keys'))).json()
-    expect(body).toEqual({ keys: [{ id: 'k1', name: 'bot' }], partner: 'discord_bot' })
+    expect(body).toEqual({ keys: [{ id: 'k1', name: 'bot' }], partner: { code: 'limpi', name: '림피', scopes: ['catalog:read', 'news:write'] }, admin: false })
   })
 })
