@@ -10,7 +10,7 @@ import Skeleton from '@/components/ui/Skeleton'
 import { NEWS_EXAMPLES } from '../developers/api-reference'
 
 const TITLE = { ko: '소식 캘린더', en: 'News calendar', ja: 'ニュースカレンダー' }
-type Query = Promise<{ month?: string; date?: string; feed?: string; sample?: string; v?: string }>
+type Query = Promise<{ month?: string; date?: string; feed?: string; sample?: string }>
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params
@@ -40,14 +40,14 @@ async function Calendar({ searchParams }: { searchParams: Query }) {
     ? sampleItems(month)
     : await loadNewsMonth(month).catch(() => null)
   const feed = NEWS_FEEDS.find(name => name === query.feed) ?? 'all'
-  return <NewsCalendar month={month} today={today} date={date} feed={feed} items={items} variant={query.v === '1' || query.v === '2' ? query.v : '3'} />
+  return <NewsCalendar month={month} today={today} date={date} feed={feed} items={items} />
 }
 
 export default function CalendarPage({ searchParams }: { searchParams: Query }) {
   return (
     <Suspense fallback={
       <div className="mx-auto max-w-7xl px-4 pb-16 pt-[5.5rem] sm:px-6">
-        <PageHeaderSkeleton titleWidth="9rem" description={false} />
+        <PageHeaderSkeleton titleWidth="9rem" />
         <Skeleton className="h-[28rem] w-full rounded-lg" />
       </div>
     }>

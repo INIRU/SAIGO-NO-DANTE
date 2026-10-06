@@ -35,26 +35,52 @@ const items = [
 ]
 const render = (props: Partial<Parameters<typeof NewsCalendar>[0]> = {}) => renderToStaticMarkup(<NewsCalendar month="2026-10" today="2026-10-06" date={null} feed="all" items={items} {...props} />)
 
+// The markup holds both layouts: the phone's date strip and day list, and the desktop's grid and dialog.
+const part = (html: string, name: 'strip' | 'grid' | 'day' | 'dialog') => {
+  const marks = { strip: 'data-news-strip', grid: 'data-news-grid', day: 'data-news-day', dialog: 'role="dialog"' }
+  const order = ['strip', 'grid', 'day', 'dialog'] as const
+  const start = html.indexOf(marks[name])
+  if (start < 0) return ''
+  const ends = order.slice(order.indexOf(name) + 1).map(next => html.indexOf(marks[next])).filter(index => index > start)
+  return html.slice(start, ends.length ? Math.min(...ends) : undefined)
+}
+
 beforeEach(() => { m.lang = 'ko'; m.admin = false })
 
 describe('news calendar', () => {
-  it('REQ-NEWS-009 opens on the month with today marked and the days that have news, nothing opened', () => {
+  it('REQ-NEWS-009 shows the month with today marked and a slip per item on the days that have news, nothing opened', () => {
     const html = render()
     for (const shown of ['소식 캘린더', '2026년 10월', '림피가 전한 소식', '/assets/limpi/runner.png', '/assets/news/feed-limbus.png', '/assets/news/feed-hampang.png']) expect(html).toContain(shown)
-    expect(html).toMatch(/<button[^>]*aria-pressed="false"[^>]*aria-current="date"[^>]*aria-label="10월 6일 화요일, 3건"/)
-    expect(html).toMatch(/<button[^>]*aria-label="10월 4일 일요일, 1건"/)
+    const grid = part(html, 'grid')
+    expect(grid).toMatch(/<button[^>]*aria-pressed="false"[^>]*aria-current="date"[^>]*aria-label="10월 6일 화요일, 3건"/)
+    expect(grid).toMatch(/<button[^>]*aria-label="10월 4일 일요일, 1건"/)
     // A day without news is not a button, and each day lists its titles.
-    expect(html).not.toContain('aria-label="10월 7일 수요일')
-    for (const title of ['정기 점검 안내', '신메뉴 영상', '굿즈 예약 안내']) expect(html).toContain(`>${title}</span>`)
+    expect(grid).not.toContain('aria-label="10월 7일 수요일')
+    for (const title of ['정기 점검 안내', '신메뉴 영상', '굿즈 예약 안내']) expect(grid).toContain(`>${title}</span>`)
     expect(html).not.toContain('role="dialog"')
-    expect(html).not.toContain('원문 보기')
+    expect(html).not.toContain('>오늘<')
+  })
+
+  it('REQ-NEWS-009 gives a phone a strip of every date and the news of today on the page', () => {
+    const html = render()
+    const strip = part(html, 'strip')
+    expect(strip.match(/<button/g)).toHaveLength(31)
+    expect(strip).toMatch(/aria-pressed="true"[^>]*aria-current="date"[^>]*aria-label="10월 6일 화요일, 3건"/)
+    expect(strip).toMatch(/aria-pressed="false"[^>]*aria-label="10월 7일 수요일"/)
+    const day = part(html, 'day')
+    for (const shown of ['10월 6일 화요일', '정기 점검 안내</h3>', '신메뉴 영상</h3>', '신규 인격 PV</h3>', '원문 보기']) expect(day).toContain(shown)
+    expect(day).not.toContain('굿즈 예약 안내')
+    // Another day picked, or a month without today: that day, or the latest day with news.
+    expect(part(render({ date: '2026-10-04' }), 'day')).toContain('굿즈 예약 안내</h3>')
+    expect(part(render({ today: '2026-11-02' }), 'strip')).toMatch(/aria-pressed="true"[^>]*aria-label="10월 6일 화요일, 3건"/)
+    expect(part(render({ date: '2026-10-07' }), 'day')).toContain('소식 없음')
   })
 
   it('REQ-NEWS-009 shows a day in full when it is opened: title, body, author, source, time, media and the original', () => {
     const html = render({ date: '2026-10-06' })
-    expect(html).toMatch(/<button[^>]*aria-pressed="true"[^>]*aria-label="10월 6일 화요일, 3건"/)
-    const dialog = html.slice(html.indexOf('role="dialog"'))
-    for (const shown of ['10월 6일 화요일', '정기 점검 안내</h3>', '첫 줄\n둘째 줄', '신메뉴 영상</h3>', '햄햄팡팡', '@Ham_PangPang', '>Steam<', '>YouTube<', '>업데이트<', '>18:00<', '>09:00<', '원문 보기'])
+    expect(part(html, 'grid')).toMatch(/<button[^>]*aria-pressed="true"[^>]*aria-label="10월 6일 화요일, 3건"/)
+    const dialog = part(html, 'dialog')
+    for (const shown of ['10월 6일 화요일', '정기 점검 안내</h3>', '첫 줄\n둘째 줄', '신메뉴 영상</h3>', '햄햄팡팡', '@Ham_PangPang', 'Steam</span>', 'YouTube</span>', '>업데이트<', '>18:00<', '>09:00<', '원문 보기'])
       expect(dialog).toContain(shown)
     expect(dialog).toContain('href="https://store.steampowered.com/news/1"')
     expect(dialog).toContain('src="https://clan.fastly.steamstatic.com/images/1/a.png"')
@@ -62,17 +88,16 @@ describe('news calendar', () => {
     expect(dialog).not.toContain('굿즈 예약 안내')
     expect(dialog).not.toContain('>삭제<')
     m.admin = true
-    expect(render({ date: '2026-10-06' })).toContain('>삭제<')
+    expect(part(render({ date: '2026-10-06' }), 'dialog')).toContain('>삭제<')
   })
 
   it('REQ-NEWS-009 handles a day with nothing, a day of another month and a failed read', () => {
-    const empty = render({ date: '2026-10-07' })
-    expect(empty.slice(empty.indexOf('role="dialog"'))).toContain('소식 없음')
+    expect(part(render({ date: '2026-10-07' }), 'dialog')).toContain('소식 없음')
     expect(render({ date: '2026-09-30' })).not.toContain('role="dialog"')
     expect(render({ items: null })).toContain('소식을 불러오지 못했습니다.')
-    // Away from the current month, a button leads back to today.
-    expect(render()).not.toContain('>오늘<')
+    // Away from today, a button leads back to it.
     expect(render({ today: '2026-11-02' })).toContain('>오늘<')
+    expect(render({ date: '2026-10-04' })).toContain('>오늘<')
   })
 
   it('REQ-NEWS-009 writes its own text in ko, en and ja and marks a machine translation', () => {
@@ -89,8 +114,9 @@ describe('news calendar', () => {
   it('REQ-NEWS-010 keeps only the chosen feed on the calendar and in the opened day', () => {
     const html = render({ feed: 'hampang', date: '2026-10-06' })
     expect(html).toMatch(/aria-pressed="true"[^>]*>(<img[^>]*>)?햄햄팡팡</)
-    expect(html).toContain('aria-label="10월 6일 화요일, 1건"')
-    expect(html).not.toContain('aria-label="10월 4일 일요일')
+    expect(part(html, 'grid')).toContain('aria-label="10월 6일 화요일, 1건"')
+    expect(part(html, 'grid')).not.toContain('aria-label="10월 4일 일요일')
+    expect(part(html, 'strip')).toContain('aria-label="10월 4일 일요일"')
     expect(html).toContain('신메뉴 영상')
     expect(html).not.toContain('정기 점검 안내')
     expect(render()).toMatch(/aria-pressed="true"[^>]*>전체</)
