@@ -568,6 +568,7 @@
       "pipGiftAcquired": "{name}の獲得を記録",
       "popupGiftAutoAcquired": "獲得ポップアップから{name}を自動記録しました · 補助パネルで取り消せます",
       "fusionAutoApplied": "合成を反映: {name}を獲得、素材{count}個を削除",
+      "fusionMaterialsApplied": "合成を反映: {name}を合成、素材{count}個を削除",
       "floorThemeObserved": "探索画面から{floor}階・{name}を記録しました · 補助パネルで取り消せます",
       "pipEventMode": "イベント選択肢の予想結果",
       "pipEventSuccess": "成功",
@@ -1653,6 +1654,11 @@
   },
   "home": {
     "fanArchive": "ファンアーカイブ",
+    "limpi": {
+      "name": "Limpi",
+      "kind": "Discordボット",
+      "open": "LimpiのDiscordボットサイトを開く(新しいウィンドウ)"
+    },
     "cta": {
       "sinners": "囚人一覧",
       "decks": "デッキ掲示板",

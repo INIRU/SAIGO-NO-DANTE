@@ -6,10 +6,10 @@ import Skeleton from '@/components/ui/Skeleton'
  */
 export default function HomeLoading() {
   return (
-    <div role="status" aria-busy="true" className="flex min-h-dvh flex-col" style={{ background: 'var(--bg-deep)' }}>
+    <div role="status" aria-busy="true" className="flex min-h-svh flex-col" style={{ background: 'var(--bg-deep)' }}>
       <div className="relative flex flex-1 overflow-hidden">
         <div className="absolute inset-y-0 right-0 hidden w-[62%] md:block" style={{ background: 'linear-gradient(100deg, transparent, rgba(200,144,10,0.05))' }} />
-        <div className="relative z-10 flex w-full flex-col justify-end px-5 pb-8 pt-[30dvh] sm:px-6 md:max-w-[40rem] md:justify-center md:px-16 md:pb-[clamp(3rem,7dvh,6rem)] md:pt-[clamp(5rem,10dvh,6rem)] lg:max-w-[46rem] lg:px-24">
+        <div className="relative z-10 flex w-full flex-col justify-end px-5 pb-8 pt-[30svh] sm:px-6 md:max-w-[40rem] md:justify-center md:px-16 md:pb-[clamp(3rem,7svh,6rem)] md:pt-[clamp(5rem,10svh,6rem)] lg:max-w-[46rem] lg:px-24">
           <div className="max-w-[32rem]">
             <div className="flex items-center gap-3 md:gap-5">
               <Skeleton className="h-[2.75rem] w-[2.75rem] shrink-0 !rounded-full md:h-[4.5rem] md:w-[4.5rem]" />
