@@ -1,6 +1,6 @@
 'use client'
 
-import { MessageCircle } from 'lucide-react'
+import { MessageCircle, CalendarDays } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { usePathname } from '@/lib/i18n/navigation'
 import type { TranslationKey } from '@/lib/i18n/translations'
@@ -64,7 +64,16 @@ export default function NavbarMobileSheet({ mainNavLabel, sessionStatus, avatarU
             <MessageCircle size={17} aria-hidden="true" />{t('nav.support' as TranslationKey)}
           </NavLink>
         )}
-        <div className="ml-auto">
+        <div className="ml-auto flex items-center gap-1">
+          <NavLink
+            href="/calendar"
+            onClick={onClose}
+            aria-label={t('nav.other.calendar' as TranslationKey)}
+            aria-current={isActiveHref(pathname, '/calendar') ? 'page' : undefined}
+            className={`flex h-11 w-11 items-center justify-center rounded-md text-[var(--text-secondary)] aria-[current=page]:text-[var(--gold-light)] ${focusRing}`}
+          >
+            <CalendarDays size={19} aria-hidden="true" />
+          </NavLink>
           <LanguageSwitcher up />
         </div>
         {isSignedIn ? (

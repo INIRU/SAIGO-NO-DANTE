@@ -49,12 +49,12 @@ async function handle(request: Request) {
       const profile = await db
         .schema("limbus")
         .from("profiles")
-        .select("partner")
+        .select("partner:partners(code,name,scopes)")
         .eq("id", userId)
         .maybeSingle();
       if (profile.error) throw profile.error;
       return NextResponse.json(
-        { keys: data, partner: profile.data?.partner ?? null },
+        { keys: data, partner: profile.data?.partner ?? null, admin: user.isAdmin === true },
         { headers },
       );
     }

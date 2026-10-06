@@ -10,7 +10,8 @@ const contentSecurityPolicyDirectives = [
   "default-src 'self'",
   `script-src 'self' 'unsafe-inline'${isProduction ? " 'wasm-unsafe-eval'" : " 'unsafe-eval'"} https://va.vercel-scripts.com`,
   "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: blob: https://lpgqcleszdlldneiwgep.supabase.co https://lh3.googleusercontent.com https://i.ytimg.com",
+  // The last five hosts serve news images partners post for the calendar (NEWS_MEDIA_HOSTS in lib/news/payload.ts).
+  "img-src 'self' data: blob: https://lpgqcleszdlldneiwgep.supabase.co https://lh3.googleusercontent.com https://i.ytimg.com https://*.steamstatic.com https://*.twimg.com https://*.ytimg.com https://*.pstatic.net https://livecloud-thumb.akamaized.net",
   "font-src 'self'",
   "connect-src 'self' https://lpgqcleszdlldneiwgep.supabase.co https://va.vercel-scripts.com",
   "worker-src 'self' blob:",

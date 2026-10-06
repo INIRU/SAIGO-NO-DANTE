@@ -28,7 +28,8 @@
       "title": "その他",
       "meta": "分析",
       "random": "ランダム編成",
-      "developers": "開発者ツール"
+      "developers": "開発者ツール",
+      "calendar": "ニュースカレンダー"
     },
     "tools": {
       "title": "ツール",
@@ -2402,5 +2403,46 @@
       "target": "効果をかけた対象",
       "gift": "変化後のE.G.Oギフト"
     }
+  },
+  "calendar": {
+    "title": "ニュースカレンダー",
+    "from": "リンピが届けたニュース",
+    "today": "今日",
+    "prevMonth": "前の月",
+    "nextMonth": "次の月",
+    "empty": "ニュースなし",
+    "loadFailed": "ニュースを読み込めませんでした。",
+    "count": "{count}件",
+    "feed": {
+      "all": "すべて",
+      "limbus": "リンバス",
+      "project_moon": "プロムン",
+      "hampang": "ハムハムパンパン"
+    },
+    "platform": {
+      "steam": "Steam",
+      "x": "X",
+      "youtube": "YouTube",
+      "chzzk": "CHZZK",
+      "partner": "リンピ"
+    },
+    "category": {
+      "notice": "お知らせ",
+      "update": "アップデート",
+      "maintenance": "メンテナンス",
+      "event": "イベント",
+      "video": "動画",
+      "live": "配信"
+    },
+    "translated": "機械翻訳",
+    "spoiler": "ネタバレを表示",
+    "original": "原文を開く",
+    "more": "もっと見る",
+    "less": "閉じる",
+    "watch": "動画を見る",
+    "delete": "削除",
+    "deleteConfirm": "このニュースをカレンダーから削除しますか?",
+    "deleted": "ニュースを削除しました。",
+    "deleteFailed": "削除できませんでした。もう一度お試しください。"
   }
 }
