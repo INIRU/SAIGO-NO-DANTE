@@ -568,6 +568,7 @@
       "pipGiftAcquired": "Recorded {name}",
       "popupGiftAutoAcquired": "Recorded {name} from an acquisition popup · Undo in the companion panel",
       "fusionAutoApplied": "Fusion recorded: got {name}, removed {count} materials",
+      "fusionMaterialsApplied": "Fusion recorded: made {name}, removed {count} materials",
       "floorThemeObserved": "Recorded floor {floor} · {name} from the exploration screen · Undo in the companion panel",
       "pipEventMode": "Possible event choice outcomes",
       "pipEventSuccess": "Success",
