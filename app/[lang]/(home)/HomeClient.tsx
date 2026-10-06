@@ -9,6 +9,7 @@ import { useTranslations, useLocale } from 'next-intl'
 import { useRoutePrefetch } from '@/lib/hooks/useRoutePrefetch'
 import type { SupportedLang } from '@/lib/i18n/types'
 import HeroWordmark from '@/components/home/HeroWordmark'
+import LimpiLink from '@/components/home/LimpiLink'
 import DanteLogo from '@/components/brand/DanteLogo'
 import { SinnerRosterIcon, DeckBoardIcon, MirrorDungeonIcon } from '@/components/brand/icons'
 import AnnouncementBanner, { type AnnouncementData } from '@/components/home/AnnouncementBanner'
@@ -154,7 +155,7 @@ export default function HomeClient({ latestIdentities, pinnedAnnouncement }: Hom
         }
       `}</style>
 
-      <div className="home-first-viewport flex min-h-dvh flex-col">
+      <div className="home-first-viewport flex min-h-svh flex-col">
       {/* ── 히어로 ─────────────────────────────────────────────── */}
       <section
         ref={sectionRef}
@@ -221,7 +222,7 @@ export default function HomeClient({ latestIdentities, pinnedAnnouncement }: Hom
         )}
 
         {/* 텍스트 콘텐츠 */}
-        <div className="relative z-10 flex w-full flex-col justify-end px-5 pb-8 pt-[30dvh] sm:px-6 md:max-w-[40rem] md:justify-center md:px-16 md:pb-[clamp(3rem,7dvh,6rem)] md:pt-[clamp(5rem,10dvh,6rem)] lg:max-w-[46rem] lg:px-24">
+        <div className="relative z-10 flex w-full flex-col justify-end px-5 pb-8 pt-[30svh] sm:px-6 md:max-w-[40rem] md:justify-center md:px-16 md:pb-[clamp(3rem,7svh,6rem)] md:pt-[clamp(5rem,10svh,6rem)] lg:max-w-[46rem] lg:px-24">
           <div className="home-command-surface max-w-[32rem] opacity-0">
             <div className="flex items-center gap-3 md:gap-5">
               <DanteLogo size="2.75rem" className="home-logo-mark shrink-0 text-[var(--gold-light)] opacity-0 md:h-[4.5rem] md:w-[4.5rem]" />
@@ -267,6 +268,7 @@ export default function HomeClient({ latestIdentities, pinnedAnnouncement }: Hom
               <CommandUtilityLink href="/planner/community" icon={<MirrorDungeonIcon size="1.25rem" />}>
                 {t('home.cta.planner')}
               </CommandUtilityLink>
+              <LimpiLink />
             </div>
           </div>
         </div>

@@ -1653,6 +1653,11 @@
   },
   "home": {
     "fanArchive": "ファンアーカイブ",
+    "limpi": {
+      "name": "Limpi",
+      "kind": "Discordボット",
+      "open": "LimpiのDiscordボットサイトを開く(新しいウィンドウ)"
+    },
     "cta": {
       "sinners": "囚人一覧",
       "decks": "デッキ掲示板",

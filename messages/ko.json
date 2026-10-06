@@ -1653,6 +1653,11 @@
   },
   "home": {
     "fanArchive": "팬 아카이브",
+    "limpi": {
+      "name": "림피",
+      "kind": "Discord 봇",
+      "open": "림피 Discord 봇 사이트 열기 (새 창)"
+    },
     "cta": {
       "sinners": "수감자 목록",
       "decks": "덱 게시판",

@@ -1653,6 +1653,11 @@
   },
   "home": {
     "fanArchive": "Fan Archive",
+    "limpi": {
+      "name": "Limpi",
+      "kind": "Discord bot",
+      "open": "Open the Limpi Discord bot site (new window)"
+    },
     "cta": {
       "sinners": "Sinner List",
       "decks": "Deck Board",
