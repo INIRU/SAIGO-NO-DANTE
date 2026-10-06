@@ -173,3 +173,14 @@ it('converts decoded plans without dropping goals, notes, constraints, or skill 
   expect(restored.floorPlan[0]).toMatchObject({ theme_id: '1013', gift_ids: ['9273'], memo: 'Keep this gift', constraints: [1] })
   expect(runReducer(createInitialRunState(), { type: 'LOAD_FROM_PLAN', planState: restored }).sourcePlanSnapshot).toEqual(restored)
 })
+
+it('REQ-ASSIST-068 a fusion whose result is not recorded (a vestige) only removes its materials', () => {
+  let run = createInitialRunState()
+  for (const giftId of ['1', '2', '3']) run = runReducer(run, { type: 'ACQUIRE_GIFT', giftId })
+  const fused = runReducer(run, { type: 'CRAFT_FUSION', materialIds: ['1', '2'], resultId: null })
+  expect(fused.giftInventory).toEqual(['3'])
+  expect(fused.floorLogs[0].removedGifts).toEqual(['1', '2'])
+  expect(fused.floorLogs[0].acquiredGifts).toEqual(['1', '2', '3'])
+  expect(runReducer(run, { type: 'CRAFT_FUSION', materialIds: [], resultId: null })).toBe(run)
+  expect(runReducer(run, { type: 'CRAFT_FUSION', materialIds: ['9'], resultId: null })).toBe(run)
+})
