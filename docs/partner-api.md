@@ -164,4 +164,6 @@
 | 한도, 권한, 파트너 지정 함수, 소식 표 | `supabase/migrations/20261006120000_partners_and_news.sql` |
 | 검사 | `tests/lib/developer-partner-api.test.ts`, `tests/api/developer-v1-partner.test.ts`, `tests/api/developer-v1-news.test.ts`, `tests/lib/news-payload.test.ts`, `tests/sql/developer-partner.sql`, `tests/sql/partners-and-news.sql`, `e2e/developer-api.acceptance.cjs` |
 
+키 확인과 한도 차감은 DB 함수 `consume_developer_key`가 한다. 이전 이름 `consume_developer_request(text)`는 이 변경 전에 배포된 코드가 부르던 것이라 남겨 두었고, 그 코드를 쓰는 배포가 없어지면 따로 지운다.
+
 자원을 더할 때는 `partner-api.ts`의 `RESOURCES`와 `partner-data.ts`의 `CATALOGS`에 한 줄씩 넣고, 개발자 도구에 보이도록 `api-reference.ts`의 `SOURCES`에도 넣는다. 소식 양식의 칸을 바꾸면 `payload.ts`와 `api-reference.ts`의 `NEWS_BODY`를 함께 고친다(테스트가 두 목록을 비교한다).

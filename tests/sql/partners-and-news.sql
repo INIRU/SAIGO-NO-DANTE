@@ -10,24 +10,24 @@ begin
   select id into owner_id from limbus.profiles where partner is null and coalesce(role,'user')='user' limit 1;
   assert owner_id is not null, 'A profile is needed for the FK test';
   insert into limbus.developer_keys(user_id,name,key_hash,prefix) values(owner_id,'qa-scopes','qa-scopes-hash','qa');
-  result:=limbus.consume_developer_request('qa-scopes-hash');
+  result:=limbus.consume_developer_key('qa-scopes-hash',array[]::text[]);
   assert result->>'partner' is null and result->'scopes'='[]'::jsonb and result->'admin'='false'::jsonb, 'a standard key has no scopes';
   -- An administrator is known by role or by an address the route passes from ADMIN_EMAILS.
   select u.email into actor_email from auth.users u where u.id=owner_id;
-  assert limbus.consume_developer_request('qa-scopes-hash',array[actor_email])->'admin'='true'::jsonb;
-  assert limbus.consume_developer_request('qa-scopes-hash',array['nobody@example.invalid'])->'admin'='false'::jsonb;
+  assert limbus.consume_developer_key('qa-scopes-hash',array[actor_email])->'admin'='true'::jsonb;
+  assert limbus.consume_developer_key('qa-scopes-hash',array['nobody@example.invalid'])->'admin'='false'::jsonb;
   update limbus.profiles set role='admin' where id=owner_id;
-  assert limbus.consume_developer_request('qa-scopes-hash')->'admin'='true'::jsonb;
+  assert limbus.consume_developer_key('qa-scopes-hash',array[]::text[])->'admin'='true'::jsonb;
   update limbus.profiles set role='user' where id=owner_id;
-  assert not has_function_privilege('anon','limbus.consume_developer_request(text,text[])','execute');
+  assert not has_function_privilege('anon','limbus.consume_developer_key(text,text[])','execute');
 
   -- A partner of another kind: its keys carry only its own scopes.
   insert into limbus.partners(code,name,scopes) values('qa_reader','QA',array['catalog:read']);
   update limbus.profiles set partner='qa_reader' where id=owner_id;
-  result:=limbus.consume_developer_request('qa-scopes-hash');
+  result:=limbus.consume_developer_key('qa-scopes-hash',array[]::text[]);
   assert result->>'partner'='qa_reader' and result->'scopes'='["catalog:read"]'::jsonb and result->'remaining'='null'::jsonb;
   update limbus.profiles set partner='limpi' where id=owner_id;
-  assert limbus.consume_developer_request('qa-scopes-hash')->'scopes'='["catalog:read","news:write"]'::jsonb;
+  assert limbus.consume_developer_key('qa-scopes-hash',array[]::text[])->'scopes'='["catalog:read","news:write"]'::jsonb;
   begin
     update limbus.profiles set partner='discord_bot' where id=owner_id;
     assert false, 'unregistered codes are rejected';

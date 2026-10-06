@@ -12,7 +12,7 @@ export async function consumeApiKey(authorization: string | null): Promise<{ acc
   if (!token) return { refusal: { status: 401, error: "Bearer API key required" } };
   const { data, error } = await createAdminClient()
     .schema("limbus")
-    .rpc("consume_developer_request", {
+    .rpc("consume_developer_key", {
       token_hash: hashApiKey(token),
       p_admin_emails: (process.env.ADMIN_EMAILS ?? "").split(",").map((email) => email.trim()).filter(Boolean),
     });
