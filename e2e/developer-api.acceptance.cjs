@@ -17,10 +17,10 @@ const {encode}=require('next-auth/jwt');const {createClient}=require('@supabase/
   const decks=await fetch(base+'/api/v1/decks?limit=1',{headers:{authorization:`Bearer ${key}`}});assert.equal(decks.status,200)
   assert.equal((await fetch(base+'/api/v1/identities',{headers:{authorization:`Bearer ${key}`}})).status,403)
   const owner=(await db.schema('limbus').from('developer_keys').select('user_id').eq('id',row.id).single()).data.user_id
-  await db.schema('limbus').from('profiles').update({partner:'discord_bot'}).eq('id',owner)
+  await db.schema('limbus').from('profiles').update({partner:'limpi'}).eq('id',owner)
   const catalog=await fetch(base+'/api/v1/identities?lang=en',{headers:{authorization:`Bearer ${key}`}});assert.equal(catalog.status,200);assert.equal(catalog.headers.get('x-ratelimit-remaining'),null)
   const identity=(await catalog.json()).data[0];assert(identity.url.includes('/en/sinners/'));assert(!('name_kr' in identity))
-  assert.equal((await (await fetch(base+'/api/developer/keys',{headers:{cookie}})).json()).partner,'discord_bot')
+  assert.equal((await (await fetch(base+'/api/developer/keys',{headers:{cookie}})).json()).partner.code,'limpi')
   await fetch(base+'/api/developer/keys',{method:'DELETE',headers:{...headers,cookie:other},body:JSON.stringify({id:row.id})})
   assert.equal((await fetch(base+'/api/v1/planners',{headers:{authorization:`Bearer ${key}`}})).status,200)
   await fetch(base+'/api/developer/keys',{method:'DELETE',headers,body:JSON.stringify({id:row.id})})

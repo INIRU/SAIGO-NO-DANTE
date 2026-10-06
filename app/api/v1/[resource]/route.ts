@@ -1,8 +1,7 @@
 import { z } from "zod";
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { createAdminClient } from "@/lib/supabase/admin";
-import { hashApiKey, readApiKey } from "@/lib/developer/keys";
+import { allows, consumeApiKey } from "@/lib/developer/access";
 import {
   RESOURCES,
   parseLang,
@@ -36,20 +35,18 @@ export async function GET(
   const { resource } = await params;
   const definition = RESOURCES[resource];
   if (!definition) return fail("Not found", 404);
-  const token = readApiKey(request.headers.get("authorization"));
-  if (!token) return fail("Bearer API key required", 401);
   try {
-    const { data: quota, error: quotaError } = await createAdminClient()
-      .schema("limbus")
-      .rpc("consume_developer_request", { token_hash: hashApiKey(token) });
-    if (quotaError) throw quotaError;
-    if (quota.status !== 200)
+    const key = await consumeApiKey(request.headers.get("authorization"));
+    if (key.refusal)
       return fail(
-        quota.status === 429 ? "Rate limit exceeded" : "Key unavailable",
-        quota.status,
-        { ...cors, "Retry-After": String(quota.retry ?? 60) },
+        key.refusal.error,
+        key.refusal.status,
+        key.refusal.retry ? { ...cors, "Retry-After": String(key.refusal.retry) } : cors,
       );
-    if (definition.partner && !quota.partner)
+    const quota = key.access;
+    // Game data and the formation detail of a deck or plan need the catalog scope.
+    const catalog = allows(quota, "catalog:read");
+    if (definition.partner && !catalog)
       return fail("Partner access required", 403);
     const url = new URL(request.url);
     const lang = parseLang(url.searchParams.get("lang"));
@@ -83,7 +80,7 @@ export async function GET(
       );
     }
     if (id && !isUuid) return fail("Invalid id", 400);
-    if (id && quota.partner) {
+    if (id && catalog) {
       let data: unknown[] = [];
       if (resource === "decks") {
         const deck = await loadDeckDetail(id);
@@ -152,7 +149,7 @@ export async function GET(
     const rows = data as unknown as Record<string, unknown>[];
     return NextResponse.json(
       {
-        data: quota.partner
+        data: catalog
           ? rows.map((row) =>
               withLinks(resource as "decks" | "planners", row, lang),
             )
