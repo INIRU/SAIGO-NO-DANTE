@@ -1,8 +1,7 @@
 -- Partners become rows with a code and scopes, so a partner of another kind can join later (REQ-ACCOUNT-018, REQ-ADMIN-009).
 -- The Limpi Discord bot is 'limpi'. News a partner posts is kept in news_items for the calendar (REQ-NEWS-003).
--- Rollback: drop table limbus.news_items; drop function limbus.consume_developer_request(text,text[]); restore
--- consume_developer_request(text) and admin_set_partner from 20261005150000_developer_partner.sql (and its grants from
--- 20260912103513_developer_api_and_interest.sql); alter table limbus.profiles drop constraint profiles_partner_fkey;
+-- Rollback: drop table limbus.news_items; drop function limbus.consume_developer_key(text,text[]); restore
+-- admin_set_partner from 20261005150000_developer_partner.sql; alter table limbus.profiles drop constraint profiles_partner_fkey;
 -- update limbus.profiles set partner='discord_bot' where partner='limpi';
 -- alter table limbus.profiles add constraint profiles_partner_check check (partner in ('discord_bot')); drop table limbus.partners.
 
@@ -25,11 +24,12 @@ update limbus.profiles set partner = 'limpi' where partner = 'discord_bot';
 alter table limbus.profiles add constraint profiles_partner_fkey foreign key (partner) references limbus.partners(code) on update cascade;
 create index idx_profiles_partner on limbus.profiles (partner) where partner is not null;
 
--- As before, plus what the key may do: the partner's scopes, and whether the owner is an administrator (role, or an
--- address in ADMIN_EMAILS passed by the route). Administrators may read every resource and dry-run writes, to check the
--- developer tools. Definer because the email lives in auth.users; only the service role may execute it.
-drop function limbus.consume_developer_request(text);
-create function limbus.consume_developer_request(token_hash text, p_admin_emails text[] default array[]::text[]) returns jsonb language plpgsql security definer set search_path='' as $$
+-- consume_developer_request(text) with what the key may do added: the partner's scopes, and whether the owner is an
+-- administrator (role, or an address in ADMIN_EMAILS passed by the route). Administrators may read every resource and
+-- dry-run writes, to check the developer tools. Definer because the email lives in auth.users; only the service role may
+-- execute it. A new name, so the old function keeps serving the code deployed before this; it can be removed once no
+-- deployment calls it.
+create function limbus.consume_developer_key(token_hash text, p_admin_emails text[]) returns jsonb language plpgsql security definer set search_path='' as $$
 declare k limbus.developer_keys; owner limbus.profiles; used integer; today date := (now() at time zone 'UTC')::date; per_minute integer;
 begin
  select * into k from limbus.developer_keys where key_hash=token_hash and revoked_at is null for update;
@@ -46,8 +46,8 @@ begin
   'scopes',coalesce((select to_jsonb(p.scopes) from limbus.partners p where p.code=owner.partner),'[]'::jsonb),
   'admin',coalesce(owner.role,'user')='admin' or exists(select 1 from auth.users u where u.id=owner.id and u.email=any(coalesce(p_admin_emails,array[]::text[]))));
 end $$;
-revoke all on function limbus.consume_developer_request(text,text[]) from public,anon,authenticated;
-grant execute on function limbus.consume_developer_request(text,text[]) to service_role;
+revoke all on function limbus.consume_developer_key(text,text[]) from public,anon,authenticated;
+grant execute on function limbus.consume_developer_key(text,text[]) to service_role;
 
 -- As before, but any registered partner code is accepted.
 create or replace function limbus.admin_set_partner(p_actor_email text, p_target_id uuid, p_partner text, p_admin_emails text[]) returns jsonb language plpgsql security definer set search_path='' as $$

@@ -122,7 +122,7 @@ describe('news on the developer API', () => {
     expect(await response.json()).toEqual({ error: 'Storing news needs a partner account; an administrator key can only dry-run' })
     expect((await remove('?id=steam:1')).status).toBe(403)
     expect(m.calls).toEqual([])
-    expect(m.rpc).toHaveBeenLastCalledWith('consume_developer_request', { token_hash: expect.any(String), p_admin_emails: ['owner@example.invalid'] })
+    expect(m.rpc).toHaveBeenLastCalledWith('consume_developer_key', { token_hash: expect.any(String), p_admin_emails: ['owner@example.invalid'] })
   })
 
   it('REQ-NEWS-006 deletes only the key partner item and refreshes the calendar', async () => {

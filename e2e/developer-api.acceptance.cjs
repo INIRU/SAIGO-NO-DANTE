@@ -5,6 +5,10 @@ const {encode}=require('next-auth/jwt');const {createClient}=require('@supabase/
 (async()=>{
  const db=createClient(process.env.NEXT_PUBLIC_SUPABASE_URL,process.env.SUPABASE_SECRET_KEY,{auth:{persistSession:false}}), emails=[],paths=[];
  const base=process.env.BASE_URL||'http://localhost:3000';
+ // A news item only this run posts. Its day is today, so the calendar address the API answers with shows it.
+ const news={id:`qa:${randomUUID()}`,feed:'limbus',platform:'partner',category:'maintenance',published_at:new Date().toISOString(),content:{ko:{title:`QA 소식 ${randomUUID()}`,body:'첫 줄\n둘째 줄'},en:{title:'QA news'},ja:{title:'QAニュース'}}};
+ const newsRows=async()=>(await db.schema('limbus').from('news_items').select('id,partner,content').eq('external_id',news.id)).data;
+ const postNews=(key,query='',body=news)=>fetch(base+'/api/v1/news'+query,{method:'POST',headers:{authorization:`Bearer ${key}`,'content-type':'application/json'},body:JSON.stringify(body)});
  async function account(){const email=`qa-${randomUUID()}@example.invalid`;emails.push(email);return 'next-auth.session-token='+await encode({secret:process.env.NEXTAUTH_SECRET,token:{email,name:'QA'}})}
  try{
   assert.equal((await fetch(base+'/api/developer/keys')).status,401)
@@ -16,11 +20,24 @@ const {encode}=require('next-auth/jwt');const {createClient}=require('@supabase/
   const api=await fetch(base+'/api/v1/planners?limit=1',{headers:{authorization:`Bearer ${key}`}});assert.equal(api.status,200);const publicData=await api.json();assert(Array.isArray(publicData.data));assert(!JSON.stringify(publicData).includes('user_id'))
   const decks=await fetch(base+'/api/v1/decks?limit=1',{headers:{authorization:`Bearer ${key}`}});assert.equal(decks.status,200)
   assert.equal((await fetch(base+'/api/v1/identities',{headers:{authorization:`Bearer ${key}`}})).status,403)
+  assert.equal((await postNews(key)).status,403)
   const owner=(await db.schema('limbus').from('developer_keys').select('user_id').eq('id',row.id).single()).data.user_id
   await db.schema('limbus').from('profiles').update({partner:'limpi'}).eq('id',owner)
   const catalog=await fetch(base+'/api/v1/identities?lang=en',{headers:{authorization:`Bearer ${key}`}});assert.equal(catalog.status,200);assert.equal(catalog.headers.get('x-ratelimit-remaining'),null)
   const identity=(await catalog.json()).data[0];assert(identity.url.includes('/en/sinners/'));assert(!('name_kr' in identity))
   assert.equal((await (await fetch(base+'/api/developer/keys',{headers:{cookie}})).json()).partner.code,'limpi')
+  // News: a wrong body names its fields, a dry run stores nothing, the same id replaces, the calendar shows it, delete removes it.
+  const wrong=await postNews(key,'',{...news,feed:'steam',content:{jp:{title:'x'}}});assert.equal(wrong.status,400);{const paths=(await wrong.json()).issues.map(issue=>issue.path);assert(paths.includes('feed')&&paths.includes('content'))}
+  const dry=await postNews(key,'?dry_run=1');assert.equal(dry.status,200);assert.equal((await dry.json()).data.dry_run,true);assert.equal((await newsRows()).length,0)
+  const stored=await postNews(key);assert.equal(stored.status,201);const saved=(await stored.json()).data;assert.equal(saved.created,true)
+  const again=await postNews(key,'',{...news,content:{...news.content,ko:{...news.content.ko,body:'고친 본문'}}});assert.equal(again.status,200);assert.equal((await again.json()).data.created,false)
+  let rows=await newsRows();assert.equal(rows.length,1);assert.equal(rows[0].partner,'limpi');assert.equal(rows[0].content.ko.body,'고친 본문');assert.deepEqual(Object.keys(rows[0].content).sort(),['en','ja','ko'])
+  const calendar=new URL(saved.url);let shown=false
+  // The cached month is refreshed in the background, so the first read after a post may still be the old one.
+  for(let attempt=0;attempt<8&&!shown;attempt++){shown=(await (await fetch(base+calendar.pathname+calendar.search)).text()).includes(news.content.ko.title);if(!shown)await new Promise(resolve=>setTimeout(resolve,750))}
+  assert(shown,'the posted item is on the calendar page')
+  const removed=await fetch(base+'/api/v1/news?id='+encodeURIComponent(news.id),{method:'DELETE',headers:{authorization:`Bearer ${key}`}});assert.equal(removed.status,200);assert.equal((await removed.json()).data.deleted,true);assert.equal((await newsRows()).length,0)
+  console.log('PASS: news scope gate, field errors, dry run, create and replace, calendar page, delete')
   await fetch(base+'/api/developer/keys',{method:'DELETE',headers:{...headers,cookie:other},body:JSON.stringify({id:row.id})})
   assert.equal((await fetch(base+'/api/v1/planners',{headers:{authorization:`Bearer ${key}`}})).status,200)
   await fetch(base+'/api/developer/keys',{method:'DELETE',headers,body:JSON.stringify({id:row.id})})
@@ -44,6 +61,7 @@ const {encode}=require('next-auth/jwt');const {createClient}=require('@supabase/
   console.log('PASS: follow auth/origin, idempotence, private list/count, separate visibility, unfollow');
   console.log('PASS: sign-in gate, one-time key, read API, partner gate, owner-only revoke, CSRF, image upload')
  }finally{
+  {const {error}=await db.schema('limbus').from('news_items').delete().eq('external_id',news.id);assert.ifError(error)}
   if(paths.length){const {error}=await db.storage.from('limbus-assets').remove(paths);assert.ifError(error)}
   const {data,error}=await db.auth.admin.listUsers({perPage:1000});assert.ifError(error);for(const u of data.users){if(emails.includes(u.email)){const r=await db.auth.admin.deleteUser(u.id);assert.ifError(r.error)}}
  }
