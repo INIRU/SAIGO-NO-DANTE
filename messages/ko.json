@@ -568,6 +568,7 @@
       "pipGiftAcquired": "{name} 획득 기록",
       "popupGiftAutoAcquired": "획득 팝업에서 {name} 자동 기록 · 보조창에서 되돌릴 수 있습니다",
       "fusionAutoApplied": "합성 반영: {name} 획득, 재료 {count}개 제거",
+      "fusionMaterialsApplied": "합성 반영: {name} 합성, 재료 {count}개 제거",
       "floorThemeObserved": "{floor}층 {name} 진입을 화면에서 확인해 기록했습니다 · 보조창에서 되돌릴 수 있습니다",
       "pipEventMode": "이벤트 선택지 예상 결과",
       "pipEventSuccess": "성공",
@@ -1653,6 +1654,11 @@
   },
   "home": {
     "fanArchive": "팬 아카이브",
+    "limpi": {
+      "name": "림피",
+      "kind": "Discord 봇",
+      "open": "림피 Discord 봇 사이트 열기 (새 창)"
+    },
     "cta": {
       "sinners": "수감자 목록",
       "decks": "덱 게시판",

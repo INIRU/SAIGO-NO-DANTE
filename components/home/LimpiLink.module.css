@@ -1,0 +1,56 @@
+/*
+ * Link to the Limpi Discord bot's site in the home hero: a slip of the news paper its runner carries, laid under the
+ * buttons. The runner and papers are pixel art, scaled without smoothing.
+ */
+.link {
+  position: relative;
+  display: flex;
+  align-items: center;
+  grid-column: span 2;
+  min-width: 0;
+  min-height: 3.5rem;
+  margin-top: 0.5rem;
+  gap: 0.875rem;
+  padding: 0.5rem 4.5rem 0.5rem 1.125rem;
+  border-radius: 0.125rem;
+  background: #e6e2d8;
+  color: #1b1611;
+  text-decoration: none;
+  outline: none;
+  rotate: -1.2deg;
+  box-shadow: 0 0.5rem 1.25rem rgba(0, 0, 0, 0.45);
+  clip-path: polygon(0 0, calc(100% - 1.1rem) 0, 100% 1.1rem, 100% 100%, 0 100%);
+  transition: rotate 220ms ease, translate 220ms ease;
+}
+.link:hover, .link:focus-visible { rotate: 0deg; translate: 0 -2px; }
+/* The slip is clipped, so focus is shown inside it. */
+.link:focus-visible { box-shadow: inset 0 0 0 3px var(--gold); }
+.link::before { content: ''; align-self: stretch; width: 3px; background: #1b1611; opacity: 0.8; }
+
+.text { display: flex; min-width: 0; flex-direction: column; line-height: 1.15; }
+.text strong { font-family: var(--font-heading); font-size: 1.0625rem; font-weight: 700; }
+.text small { font-size: 0.75rem; color: #5a5148; }
+.arrow { position: absolute; right: 0.5rem; bottom: 0.45rem; transition: transform 200ms ease; }
+.link:hover .arrow { transform: translate(2px, -2px); }
+
+/* The runner hops in place at the slip's right end; while the link is hovered or focused, papers slip out behind it. */
+.stage { position: absolute; right: 1.5rem; bottom: 0; width: 3.5rem; height: 100%; }
+.runner, .paper { image-rendering: pixelated; width: auto; user-select: none; pointer-events: none; }
+.runner { position: absolute; right: 0; bottom: 0.15rem; height: 4.1rem; transform-origin: 50% 100%; animation: limpi-hop 520ms ease-in-out infinite; }
+.papers { position: absolute; inset: 0; }
+.paper { position: absolute; right: -0.5rem; opacity: 0; }
+.paper:nth-child(1) { height: 34%; top: 30%; }
+.paper:nth-child(2) { height: 40%; top: 12%; }
+.link:hover .paper, .link:focus-visible .paper { animation: limpi-paper 1100ms ease-out infinite; }
+.link:hover .paper:nth-child(2), .link:focus-visible .paper:nth-child(2) { animation-delay: 420ms; animation-duration: 1300ms; }
+@keyframes limpi-hop { 0%, 100% { transform: translateY(0) } 50% { transform: translateY(-5%) } }
+@keyframes limpi-paper {
+  0% { opacity: 0; transform: translate(0, 0) rotate(0deg) }
+  15% { opacity: 1 }
+  100% { opacity: 0; transform: translate(2.5rem, -1.1rem) rotate(70deg) }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .runner, .link:hover .paper, .link:focus-visible .paper { animation: none; }
+  .link, .arrow { transition: none; }
+}

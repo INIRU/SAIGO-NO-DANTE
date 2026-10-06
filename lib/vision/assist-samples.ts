@@ -7,6 +7,8 @@
 import { DETECTION_KINDS, type DetectionSettings } from './detection-settings'
 import { isSessionId } from './assist-report'
 
+/** Longest read diagnosis a sample carries (fusionDiagnosis); the server refuses more. */
+export const SAMPLE_DIAGNOSIS_MAX = 600
 // v3: the frames train the recognizer and are no longer deleted after 180 days; everyone who opted in before is asked again.
 export const SAMPLES_STORAGE_KEY = 'limbus-assist-samples-v3'
 /** The consent text a sample was sent under, in its metadata. Samples without it were promised deletion after 180 days. */
@@ -71,6 +73,8 @@ export interface SampleMeta {
   build: string | null
   floor: number | null
   candidates: string[]
+  /** What the reader saw of a fusion it could not complete (fusionDiagnosis); recognition internals only. */
+  diagnosis?: string
   clientAt: number
   /** The capture's report session (lib/vision/assist-report.ts), linking the sample to hand corrections. */
   session?: string
@@ -105,7 +109,7 @@ export function parseSampleMeta(raw: unknown): SampleMeta | null {
   const detection = record(meta.detection)
   const inference = pair(meta.inference, 'provider', 'adapter')
   const ocr = pair(meta.ocr, 'engine', 'adapter')
-  const { candidates, session, language, consent } = meta
+  const { candidates, session, language, consent, diagnosis } = meta
   if ((meta.scene !== null && !(scene && text(scene.label, 40) && num(scene.confidence, 0, 1))) ||
     !text(meta.mode, 20) || !detection || !DETECTION_KINDS.every(kind => typeof detection[kind] === 'boolean') ||
     (meta.inference !== null && !inference) || (meta.ocr !== null && !ocr) ||
@@ -114,7 +118,7 @@ export function parseSampleMeta(raw: unknown): SampleMeta | null {
     !Array.isArray(candidates) || candidates.length > 20 || !candidates.every(id => text(id, 20)) ||
     !num(meta.clientAt, 0, 8.64e15) || !(session === undefined || session === null || isSessionId(session)) ||
     !(language === undefined || language === 'ko' || language === 'en' || language === 'ja') ||
-    !(consent === undefined || int(consent, 1, 99))) return null
+    !(consent === undefined || int(consent, 1, 99)) || !(diagnosis === undefined || text(diagnosis, SAMPLE_DIAGNOSIS_MAX))) return null
   return {
     reason: meta.reason as SampleReason,
     scene: scene ? { label: scene.label as string, confidence: scene.confidence as number } : null,
@@ -127,10 +131,11 @@ export function parseSampleMeta(raw: unknown): SampleMeta | null {
     ...(isSessionId(session) ? { session } : {}),
     ...(language ? { language } : {}),
     ...(consent === undefined ? {} : { consent }),
+    ...(diagnosis === undefined ? {} : { diagnosis: diagnosis as string }),
   }
 }
 
-export type SampleContext = Omit<SampleMeta, 'reason' | 'width' | 'height' | 'candidates' | 'clientAt' | 'consent'>
+export type SampleContext = Omit<SampleMeta, 'reason' | 'width' | 'height' | 'candidates' | 'clientAt' | 'consent' | 'diagnosis'>
 
 /** Grayscale thumbnail used only to tell whether the screen changed. */
 export function frameThumb(pixels: Uint8ClampedArray): Uint8Array {
@@ -147,7 +152,7 @@ export function screenChanged(previous: Uint8Array | null, next: Uint8Array): bo
 }
 
 type Group = { frames: Blob[]; touchedAt: number }
-type Outgoing = { reason: SampleReason; candidates: string[]; frames: Blob[]; after: number }
+type Outgoing = { reason: SampleReason; candidates: string[]; diagnosis?: string; frames: Blob[]; after: number }
 
 /**
  * Browser side: offered every captured frame (one per 300 ms is looked at). Changed frames are encoded once and shared by
@@ -191,13 +196,14 @@ export class AssistSampleRecorder {
    * The action was read. Read in full (null): its group is discarded. Otherwise the group (or, if none was open, the
    * frames just before) is uploaded with the next few changed frames.
    */
-  end(key: string, failure: { reason: SampleReason; candidates?: readonly string[] } | null) {
+  end(key: string, failure: { reason: SampleReason; candidates?: readonly string[]; diagnosis?: string } | null) {
     const group = this.groups.get(key)
     this.groups.delete(key)
     if (!failure || this.closed) return
     const frames = group?.frames ?? [...this.preroll]
     if (!frames.length || !this.allow()) return
-    this.outgoing.push({ reason: failure.reason, candidates: (failure.candidates ?? []).slice(0, 20).map(String), frames, after: SAMPLE_AFTER_FRAMES })
+    this.outgoing.push({ reason: failure.reason, candidates: (failure.candidates ?? []).slice(0, 20).map(String),
+      ...(failure.diagnosis ? { diagnosis: failure.diagnosis.slice(0, SAMPLE_DIAGNOSIS_MAX) } : {}), frames, after: SAMPLE_AFTER_FRAMES })
   }
 
   close() {
@@ -248,7 +254,8 @@ export class AssistSampleRecorder {
     for (const item of this.outgoing.splice(0)) {
       if (blob) item.frames.push(blob)
       if (--item.after > 0) { this.outgoing.push(item); continue }
-      const meta: SampleMeta = { ...this.context(), consent: SAMPLE_CONSENT, reason: item.reason, candidates: item.candidates, width: this.width, height: this.height, clientAt: Date.now() }
+      const meta: SampleMeta = { ...this.context(), consent: SAMPLE_CONSENT, reason: item.reason, candidates: item.candidates,
+        ...(item.diagnosis ? { diagnosis: item.diagnosis } : {}), width: this.width, height: this.height, clientAt: Date.now() }
       void this.upload(meta, item.frames).catch(() => {})
     }
   }

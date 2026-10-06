@@ -69,7 +69,8 @@ export type RunAction =
   // floor: omitted = current floor; null = inventory only, when the floor it was gained on is not known.
   | { type: 'ACQUIRE_GIFT'; giftId: string; floor?: number | null }
   | { type: 'REMOVE_GIFT'; giftId: string }
-  | { type: 'CRAFT_FUSION'; materialIds: string[]; resultId: string }
+  /** `resultId` null: the result is not recorded (a vestige); the materials still leave. */
+  | { type: 'CRAFT_FUSION'; materialIds: string[]; resultId: string | null }
 
   | { type: 'SELECT_EVENT_OPTION'; eventId: number; optionIndex: number; rewardGiftIds?: string[] }
 
@@ -510,23 +511,24 @@ export function runReducer(state: RunState, action: RunAction): RunState {
     }
 
     case 'CRAFT_FUSION': {
-      if (!action.materialIds.length || !action.resultId) return state
+      if (!action.materialIds.length || action.resultId === '') return state
       const remaining = [...state.giftInventory]
       for (const matId of action.materialIds) {
         const idx = remaining.indexOf(matId)
         if (idx === -1) return state
         remaining.splice(idx, 1)
       }
-      // A result already held (a gift is never owned twice) is not added again; the materials still leave.
-      const owned = remaining.includes(action.resultId)
-      if (!owned) remaining.push(action.resultId)
+      // A result already held (a gift is never owned twice) or not recorded is not added; the materials still leave.
+      const result = action.resultId
+      const owned = result === null || remaining.includes(result)
+      if (!owned) remaining.push(result)
       return {
         ...state,
         giftInventory: remaining,
         floorLogs: markRewardsUncertain(updateCurrentLog(state, log => ({
           ...log,
           removedGifts: [...log.removedGifts, ...action.materialIds],
-          acquiredGifts: owned ? log.acquiredGifts : [...log.acquiredGifts, action.resultId],
+          acquiredGifts: owned ? log.acquiredGifts : [...log.acquiredGifts, result],
         })), action.materialIds),
       }
     }
