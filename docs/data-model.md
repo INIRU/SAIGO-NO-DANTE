@@ -107,6 +107,8 @@
 
 `developer_keys`는 원문 대신 SHA-256 해시, 소유자, 표시용 앞부분, 폐기·최근 사용 시각을 보관한다. `developer_usage`는 키별 UTC 날짜와 요청 수를 저장한다. 키 원문은 발급 응답에서 한 번만 제공한다. 로그인·정지 여부·소유권을 확인하는 서버 API로만 키를 관리하며, 공개 조회 API는 Bearer 키와 분당 60회·하루 10,000회 제한을 적용한다. `profiles.partner`(`discord_bot` 또는 null)가 있는 계정의 키는 하루 제한 없이 분당 600회까지 쓰고 파트너 전용 자원을 읽는다. 이 칸은 관리자 전용 함수 `admin_set_partner`로만 바꾸며 변경마다 `audit_logs`에 `set_partner`를 남긴다. 자원과 응답 형식은 [개발자 API와 협업 파트너](partner-api.md)에 있다. 요청 소비 함수의 행 잠금으로 동시 요청도 합산한다. 데이터 응답은 공개 읽기 RLS와 명시적 필드 목록을 사용한다.
 
+`partners`는 협업 파트너의 코드, 이름, 권한 목록(`catalog:read`, `news:write`)이고 `profiles.partner`가 그 코드를 가리킨다. `news_items`는 파트너가 `POST /api/v1/news`로 보낸 소식 한 건이 한 줄이다. `(partner, external_id)`가 고유해서 같은 `id`를 다시 보내면 그 줄을 덮어쓴다. `feed`·`platform`·`category`와 `author`·`content`(언어별 jsonb)의 모양은 유일한 작성자인 API가 검증한다(`lib/news/payload.ts`). 두 표 모두 RLS를 켜고 정책을 두지 않아 서비스 역할로만 읽고 쓴다. 양식과 권한은 [개발자 API와 협업 파트너](partner-api.md)에 있다.
+
 `discovery_visits`는 HMAC 처리한 브라우저 식별자, 대상 종류/ID, UTC 날짜만 보관한다. 원문 검색어나 IP는 이 테이블에 저장하지 않는다. 기간별 고유 브라우저 수이며 실제 사람 수·전투 사용률이 아니다. 공개 API는 집계만 반환하고 원시 방문 기록·개발자 키 테이블은 service_role만 접근한다. 최근 열람·검색어는 브라우저 localStorage에 각각 최대 20개를 저장한다. 게시판 화면에는 기록 관리 버튼을 표시하지 않는다.
 
 층별 계획 JSON의 `constraints`는 11~15층 제약 ID 배열이다. 앞 층의 선택을 바꾸면 뒤 층의 교체 규칙을 다시 적용한다. 플랜 코드 v3는 제약·층별 기프트·메모도 함께 저장하며 이전 코드를 읽을 수 있다.
