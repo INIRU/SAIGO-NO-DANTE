@@ -28,7 +28,8 @@
       "title": "기타",
       "meta": "분석",
       "random": "랜덤 편성",
-      "developers": "개발자 도구"
+      "developers": "개발자 도구",
+      "calendar": "소식 캘린더"
     },
     "tools": {
       "title": "도구",
@@ -2402,5 +2403,46 @@
       "target": "효과를 건 대상",
       "gift": "변환되는 기프트"
     }
+  },
+  "calendar": {
+    "title": "소식 캘린더",
+    "from": "림피가 전한 소식",
+    "today": "오늘",
+    "prevMonth": "이전 달",
+    "nextMonth": "다음 달",
+    "empty": "소식 없음",
+    "loadFailed": "소식을 불러오지 못했습니다.",
+    "count": "{count}건",
+    "feed": {
+      "all": "전체",
+      "limbus": "림버스",
+      "project_moon": "프문 소식",
+      "hampang": "햄햄팡팡"
+    },
+    "platform": {
+      "steam": "Steam",
+      "x": "X",
+      "youtube": "YouTube",
+      "chzzk": "치지직",
+      "partner": "림피"
+    },
+    "category": {
+      "notice": "공지",
+      "update": "업데이트",
+      "maintenance": "점검",
+      "event": "이벤트",
+      "video": "영상",
+      "live": "방송"
+    },
+    "translated": "기계 번역",
+    "spoiler": "스포일러 보기",
+    "original": "원문 보기",
+    "more": "더 보기",
+    "less": "접기",
+    "watch": "영상 보기",
+    "delete": "삭제",
+    "deleteConfirm": "이 소식을 캘린더에서 지울까요?",
+    "deleted": "소식을 지웠습니다.",
+    "deleteFailed": "지우지 못했습니다. 다시 시도해주세요."
   }
 }

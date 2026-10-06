@@ -28,7 +28,8 @@
       "title": "More",
       "meta": "Analysis",
       "random": "Random",
-      "developers": "Developer tools"
+      "developers": "Developer tools",
+      "calendar": "News calendar"
     },
     "tools": {
       "title": "Tools",
@@ -2402,5 +2403,46 @@
       "target": "The unit this effect is tied to",
       "gift": "The E.G.O Gift this turns into"
     }
+  },
+  "calendar": {
+    "title": "News calendar",
+    "from": "News from Limpi",
+    "today": "Today",
+    "prevMonth": "Previous month",
+    "nextMonth": "Next month",
+    "empty": "No news",
+    "loadFailed": "Could not load the news.",
+    "count": "{count} news",
+    "feed": {
+      "all": "All",
+      "limbus": "Limbus",
+      "project_moon": "Project Moon",
+      "hampang": "HamHamPangPang"
+    },
+    "platform": {
+      "steam": "Steam",
+      "x": "X",
+      "youtube": "YouTube",
+      "chzzk": "CHZZK",
+      "partner": "Limpi"
+    },
+    "category": {
+      "notice": "Notice",
+      "update": "Update",
+      "maintenance": "Maintenance",
+      "event": "Event",
+      "video": "Video",
+      "live": "Live"
+    },
+    "translated": "Machine translated",
+    "spoiler": "Show spoiler",
+    "original": "Open original",
+    "more": "Show more",
+    "less": "Show less",
+    "watch": "Watch video",
+    "delete": "Delete",
+    "deleteConfirm": "Delete this news item from the calendar?",
+    "deleted": "News item deleted.",
+    "deleteFailed": "Could not delete it. Please try again."
   }
 }

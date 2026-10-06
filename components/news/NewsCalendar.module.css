@@ -1,0 +1,31 @@
+/*
+ * The news calendar's Limpi pieces: the paper slip that heads a day's news (the same slip as the home hero link) and the
+ * runner that carries it. The runner is pixel art, scaled without smoothing.
+ */
+.slipWrap { position: relative; }
+.slip {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  min-height: 3.5rem;
+  padding: 0.5rem 5.5rem 0.5rem 1.125rem;
+  border-radius: 0.125rem;
+  background: #e6e2d8;
+  color: #1b1611;
+  box-shadow: 0 0.5rem 1.25rem rgba(0, 0, 0, 0.45);
+  clip-path: polygon(0 0, calc(100% - 1.1rem) 0, 100% 1.1rem, 100% 100%, 0 100%);
+}
+.slip::before { content: ''; align-self: stretch; width: 3px; background: #1b1611; opacity: 0.8; }
+.slipText { display: flex; min-width: 0; flex-direction: column; line-height: 1.2; }
+.slipText strong { font-family: var(--font-heading); font-size: 1.0625rem; font-weight: 700; }
+.slipText small { font-size: 0.75rem; color: #5a5148; }
+.slipCount { margin-left: auto; font-family: var(--font-title); font-size: 1.5rem; line-height: 1; letter-spacing: 0.02em; }
+
+.runner { width: auto; image-rendering: pixelated; user-select: none; pointer-events: none; transform-origin: 50% 100%; animation: limpi-news-hop 520ms ease-in-out infinite; }
+/* Outside the clipped slip, so the head may rise above its edge. */
+.slipWrap > .runner { position: absolute; right: 1.5rem; bottom: 0.15rem; height: 4.4rem; }
+@keyframes limpi-news-hop { 0%, 100% { transform: translateY(0) } 50% { transform: translateY(-5%) } }
+
+@media (prefers-reduced-motion: reduce) {
+  .runner { animation: none; }
+}

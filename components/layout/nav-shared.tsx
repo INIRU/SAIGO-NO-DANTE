@@ -28,6 +28,7 @@ export const NAV_GROUPS: { labelKey: string; items: { href: string; labelKey: st
   {
     labelKey: 'nav.other.title',
     items: [
+      { href: '/calendar',   labelKey: 'nav.other.calendar' },
       { href: '/developers', labelKey: 'nav.other.developers' },
       { href: '/meta',       labelKey: 'nav.other.meta' },
       { href: '/random',     labelKey: 'nav.other.random' },
