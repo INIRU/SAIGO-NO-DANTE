@@ -517,12 +517,13 @@ html.board-browse body :is(footer, [data-floating-font-control]) { display: none
   .note-direct-picker--skill .note-direct-sidebar>button{display:inline-flex}
 }
 
-/* Every page keeps the scrollbar's space, so locking scroll for a modal (Radix, or body overflow:hidden) does not
-   shift the page or the fixed navbar sideways. The gutter already reserves the width, so drop Radix's compensation. */
+/* Every page keeps the scrollbar's space, so the page and the fixed navbar do not shift sideways when a modal locks
+   scrolling. Under Radix's lock the page scrollbar itself stays (wheel and touch outside the dialog are still blocked):
+   with this site's custom scrollbar Chrome drops the reserved gutter once body is overflow:hidden, and the navbar grew by
+   the scrollbar's width. Radix's own margin compensation would then shift the page a second time, so it is dropped.
+   `html body` outranks the rule Radix injects later. */
 html { scrollbar-gutter: stable; }
-@supports (scrollbar-gutter: stable) {
-  body[data-scroll-locked] { margin-right: 0 !important; padding-right: 0 !important; }
-}
+html body[data-scroll-locked] { overflow-y: scroll !important; margin-right: 0 !important; padding-right: 0 !important; }
 
 /* ── Page-scoped additions: other pages keep the site defaults above. ── */
 /* Assist run page and its PiP window only. */

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useEffect, useRef, useState, useSyncExternalStore, useTransition, type CSSProperties } from 'react'
 import Image from 'next/image'
 import { useLocale, useTranslations } from 'next-intl'
 import { useSession } from 'next-auth/react'
@@ -13,7 +13,7 @@ import LiteYoutube from '@/components/ui/LiteYoutube'
 import ConfirmModal from '@/components/ui/ConfirmModal'
 import { showError, showSuccess } from '@/lib/toast'
 import { groupByDay, monthGrid, pickContent, shiftMonth } from '@/lib/news/calendar'
-import { NEWS_FEEDS, type NewsItem, type NewsLang, type NewsMedia, type NewsText } from '@/lib/news/payload'
+import { NEWS_FEEDS, type NewsItem, type NewsLang, type NewsMedia } from '@/lib/news/payload'
 import { FeedLogo, PlatformIcon } from './news-marks'
 import styles from './NewsCalendar.module.css'
 
@@ -30,16 +30,6 @@ const digits = 'font-[family-name:var(--font-title)] tabular-nums leading-none t
 const chip = (active: boolean) =>
   `inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-md px-3 text-sm transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-[var(--gold)] ${active ? 'bg-[var(--gold)]/12 text-[var(--gold-light)]' : 'text-[var(--text-secondary)] hover:bg-white/[0.04] hover:text-[var(--text-primary)]'}`
 const iconButton = 'grid h-9 w-9 place-items-center rounded-md text-[var(--text-secondary)] transition-colors duration-200 hover:bg-white/[0.06] hover:text-[var(--text-primary)] focus-visible:outline-2 focus-visible:outline-[var(--gold)]'
-
-/** The still that stands for an item on the calendar: its first image, or the still of its first video. */
-function stillOf(text: NewsText) {
-  for (const media of text.media) {
-    if (media.type === 'image') return media.url
-    if (media.type === 'youtube') return `https://i.ytimg.com/vi/${media.id}/hqdefault.jpg`
-    if (media.thumbnail) return media.thumbnail
-  }
-  return null
-}
 
 function Runner({ className = '' }: { className?: string }) {
   // Pixel art from the Limpi site: never resampled, so it is served as it is.
@@ -103,25 +93,44 @@ function NewsCard({ item, lang, t, onDelete }: { item: NewsItem; lang: NewsLang;
   )
 }
 
+// The desktop layout (calendar grid, day in a dialog) starts at Tailwind's lg; below it the day is shown in the page.
+const WIDE = '(min-width: 1024px)'
+const watchWide = (onChange: () => void) => {
+  const query = window.matchMedia(WIDE)
+  query.addEventListener('change', onChange)
+  return () => query.removeEventListener('change', onChange)
+}
+
 /**
- * The news partners posted, by Korean day: a month calendar, and the news of a day in a dialog when that day is opened.
+ * The news partners posted, by Korean day. On a desktop it is a month calendar with a slip of paper per item, and a day
+ * opens in a dialog. On a phone a strip of dates picks the day and its news is on the page, starting from today.
  * `items` is one month, already loaded; null when it could not be read. `date` and `feed` come from the address.
  */
-export default function NewsCalendar({ month, today, date, feed: startFeed, items, variant = '3' }: { month: string; today: string; date: string | null; feed: Feed | 'all'; items: NewsItem[] | null; variant?: '1' | '2' | '3' }) {
+export default function NewsCalendar({ month, today, date, feed: startFeed, items }: { month: string; today: string; date: string | null; feed: Feed | 'all'; items: NewsItem[] | null }) {
   const t = useTranslations('calendar')
   const tc = useTranslations('common')
   const lang = useLocale() as NewsLang
   const router = useRouter()
   const admin = !!(useSession().data?.user as { isAdmin?: boolean } | undefined)?.isAdmin
+  const wide = useSyncExternalStore(watchWide, () => window.matchMedia(WIDE).matches, () => true)
   const [moving, startMove] = useTransition()
   const [feed, setFeed] = useState(startFeed)
   const [picked, setPicked] = useState(date)
   const [removing, setRemoving] = useState<NewsItem | null>(null)
+  const strip = useRef<HTMLDivElement>(null)
 
   const byDay = groupByDay((items ?? []).filter(item => feed === 'all' || item.feed === feed))
   // A day from another month no longer applies once the month changes.
   const opened = picked?.startsWith(month) ? picked : null
-  const dayItems = opened ? byDay[opened] ?? [] : []
+  // The day a phone shows: the one picked, else today, else the latest day with news.
+  const selected = opened ?? (today.startsWith(month) ? today : Object.keys(byDay).sort().at(-1) ?? `${month}-01`)
+  const days = monthGrid(month)
+
+  // Keep the selected date in view on the strip, without moving the page.
+  useEffect(() => {
+    const row = strip.current, pill = row?.querySelector<HTMLElement>('[aria-pressed="true"]')
+    if (row && pill) row.scrollTo({ left: pill.offsetLeft - (row.clientWidth - pill.clientWidth) / 2 })
+  }, [selected])
 
   // The address keeps the day, month and feed, so a link opens the same view. Nothing here needs loading.
   const address = (change: Record<string, string | null>) => {
@@ -137,9 +146,9 @@ export default function NewsCalendar({ month, today, date, feed: startFeed, item
     setFeed(next)
     window.history.replaceState(null, '', address({ feed: next === 'all' ? null : next }))
   }
-  const goMonth = (next: string) => {
-    setPicked(null)
-    startMove(() => router.push(`/calendar?month=${next}${feed === 'all' ? '' : `&feed=${feed}`}`, { scroll: false }))
+  const goMonth = (next: string, day: string | null = null) => {
+    setPicked(day)
+    startMove(() => router.push(`/calendar?${day ? `date=${day}` : `month=${next}`}${feed === 'all' ? '' : `&feed=${feed}`}`, { scroll: false }))
   }
   async function remove(item: NewsItem) {
     setRemoving(null)
@@ -154,11 +163,33 @@ export default function NewsCalendar({ month, today, date, feed: startFeed, item
   }
 
   const fullDay = (day: string) => ofDay(lang, day, { month: 'long', day: 'numeric', weekday: 'long' })
+  const label = (day: string) => `${fullDay(day)}${byDay[day] ? `, ${t('count', { count: byDay[day].length })}` : ''}`
   const weekdays = Array.from({ length: 7 }, (_, index) => new Intl.DateTimeFormat(lang, { timeZone: 'UTC', weekday: 'short' }).format(new Date(Date.UTC(2023, 0, 1 + index))))
+  /** A day's news under its slip of paper: the heading of both the dialog and the phone's list. */
+  const dayNews = (day: string, close?: () => void) => {
+    const news = byDay[day] ?? []
+    return (
+      <>
+        <div className="flex items-center gap-2">
+          <div className={`${styles.slipWrap} min-w-0 flex-1`}>
+            <div className={styles.slip}>
+              <span className={styles.slipText}><strong>{fullDay(day)}</strong><small>{t('from')}</small></span>
+              <span className={styles.slipCount}>{news.length}</span>
+            </div>
+            <Runner />
+          </div>
+          {close && <button type="button" onClick={close} aria-label={tc('close')} className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-white/60 transition-colors hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold)]"><X size={18} aria-hidden="true" /></button>}
+        </div>
+        {news.length
+          ? <ul className="mt-4 space-y-3">{news.map(item => <li key={item.id}><NewsCard item={item} lang={lang} t={t} onDelete={admin ? () => setRemoving(item) : undefined} /></li>)}</ul>
+          : <p className="py-10 text-center text-sm text-[var(--text-muted)]">{t('empty')}</p>}
+      </>
+    )
+  }
 
   return (
-    <div className="mx-auto max-w-7xl px-4 pb-16 pt-[5.5rem] text-[var(--text-primary)] sm:px-6" data-news-calendar={variant}>
-      <PageHeader title={t('title')} actions={
+    <div className="mx-auto max-w-7xl px-4 pb-16 pt-[5.5rem] text-[var(--text-primary)] sm:px-6" data-news-calendar>
+      <PageHeader title={t('title')} description={t('from')} actions={
         <div className="-mx-1 flex gap-1 overflow-x-auto px-1" role="group" aria-label={t('title')}>
           {(['all', ...NEWS_FEEDS] as const).map(key => <button key={key} type="button" aria-pressed={feed === key} onClick={() => pickFeed(key)} className={chip(feed === key)}>{key !== 'all' && <FeedLogo feed={key} size="1.125rem" />}{t(`feed.${key}`)}</button>)}
         </div>
@@ -169,61 +200,64 @@ export default function NewsCalendar({ month, today, date, feed: startFeed, item
           <button type="button" className={iconButton} aria-label={t('prevMonth')} onClick={() => goMonth(shiftMonth(month, -1))}><ChevronLeft size={18} aria-hidden="true" /></button>
           <h2 className="min-w-[9rem] text-center font-[family-name:var(--font-heading)] text-[1.25rem] text-[var(--gold-light)]">{ofDay(lang, `${month}-01`, { year: 'numeric', month: 'long' })}</h2>
           <button type="button" className={iconButton} aria-label={t('nextMonth')} onClick={() => goMonth(shiftMonth(month, 1))}><ChevronRight size={18} aria-hidden="true" /></button>
-          {!today.startsWith(month) && <button type="button" className={chip(false)} onClick={() => goMonth(today.slice(0, 7))}>{t('today')}</button>}
-          <p className="ml-auto flex items-end gap-2 text-xs text-[var(--text-secondary)]"><span className="pb-1">{t('from')}</span><Runner className="h-11" /></p>
+          {(!today.startsWith(month) || (opened !== null && opened !== today)) && (
+            <button type="button" className={`${chip(false)} ml-auto`} onClick={() => (today.startsWith(month) ? open(today) : goMonth(today.slice(0, 7), today))}>{t('today')}</button>
+          )}
         </div>
 
-        {/* Lines come from the gap over a line-coloured ground, so every cell keeps the same size. */}
-        <div className={`mt-3 overflow-hidden rounded-md bg-[#2e2417] p-px transition-opacity duration-200 motion-reduce:transition-none ${moving ? 'opacity-50' : ''}`} aria-busy={moving}>
+        {/* Phone: a strip of dates, with a sheet of paper for each item of the day. */}
+        <div ref={strip} data-news-strip className={`-mx-1 mt-2 flex gap-1 overflow-x-auto px-1 pb-1 transition-opacity duration-200 motion-reduce:transition-none lg:hidden ${moving ? 'opacity-50' : ''}`}>
+          {days.map((day, index) => {
+            if (!day) return null
+            const count = byDay[day]?.length ?? 0, active = day === selected
+            return (
+              <button key={day} type="button" aria-pressed={active} aria-current={day === today ? 'date' : undefined} aria-label={label(day)} onClick={() => open(day)}
+                className={`flex w-11 shrink-0 flex-col items-center gap-1 rounded-md pb-1.5 pt-2 transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-[var(--gold)] ${active ? 'bg-[var(--gold)] text-[var(--bg-deep)]' : day === today ? 'text-[var(--gold-light)] ring-1 ring-inset ring-[var(--gold)]' : count ? 'text-[var(--text-primary)]' : 'text-[var(--text-muted)]'}`}>
+                <span className={`text-[0.6875rem] ${!active && index % 7 === 0 ? 'text-[#cf8076]' : ''}`}>{weekdays[index % 7]}</span>
+                <span className={`${digits} text-[1.375rem]`}>{Number(day.slice(8))}</span>
+                <span className="flex h-3.5 items-center gap-px" aria-hidden="true">{Array.from({ length: Math.min(count, 3) }, (_, order) => <span key={order} className={styles.sheet} />)}</span>
+              </button>
+            )
+          })}
+        </div>
+
+        {/* Desktop: the month. Lines come from the gap over a line-coloured ground, so every cell keeps the same size. */}
+        <div data-news-grid className={`mt-3 hidden overflow-hidden rounded-md bg-[#2e2417] p-px transition-opacity duration-200 motion-reduce:transition-none lg:block ${moving ? 'opacity-50' : ''}`} aria-busy={moving}>
           <div className="grid grid-cols-7 gap-px text-center text-xs" aria-hidden="true">
             {weekdays.map((name, index) => <span key={name} className={`bg-[var(--bg-card)] py-2 ${index === 0 ? 'text-[#cf8076]' : 'text-[var(--text-secondary)]'}`}>{name}</span>)}
           </div>
           <div className="mt-px grid grid-cols-7 gap-px">
-            {monthGrid(month).map((day, index) => {
-              const cell = 'relative flex min-h-[3.75rem] flex-col gap-1 overflow-hidden bg-[var(--bg-panel)] p-1.5 text-left lg:min-h-[8.25rem] lg:p-2'
+            {days.map((day, index) => {
+              const cell = 'flex min-h-[8.5rem] flex-col gap-1.5 bg-[var(--bg-panel)] p-2 text-left'
               if (!day) return <span key={index} className={`${cell} bg-[#0f0c08]`} />
-              const news = byDay[day] ?? [], active = day === opened, sunday = index % 7 === 0
-              const number = (
-                <span className={`${digits} relative grid h-6 min-w-6 place-items-center rounded-full px-1 text-[1.0625rem] ${active ? 'bg-[var(--gold)] text-[var(--bg-deep)]' : day === today ? 'bg-[var(--gold)]/18 text-[var(--gold-light)] ring-1 ring-[var(--gold)]' : sunday ? 'text-[#cf8076]' : news.length ? 'text-[var(--text-primary)]' : 'text-[var(--text-muted)]'}`}>{Number(day.slice(8))}</span>
+              const news = byDay[day] ?? [], active = day === opened, isToday = day === today
+              // The date, and on today the runner who brought the news.
+              const head = (
+                <>
+                  <span className={`${digits} grid h-7 min-w-7 place-items-center rounded-full px-1 text-xl ${active ? 'bg-[var(--gold)] text-[var(--bg-deep)]' : isToday ? 'text-[var(--gold-light)] ring-1 ring-[var(--gold)]' : index % 7 === 0 ? 'text-[#cf8076]' : news.length ? 'text-[var(--text-primary)]' : 'text-[var(--text-muted)]'}`}>{Number(day.slice(8))}</span>
+                  {isToday && <Runner className="-my-1 h-9" />}
+                </>
               )
               // A day without news has nothing to open.
-              if (!news.length) return <div key={day} className={cell} aria-current={day === today ? 'date' : undefined}>{number}{variant === '2' && day === today && <Runner className="absolute bottom-1 right-1 h-10" />}</div>
-              const texts = news.map(item => ({ id: item.id, item, text: pickContent(item.content, lang) }))
-              const still = variant === '1' ? texts.map(entry => stillOf(entry.text)).find(Boolean) : null
-              // Whose news the day has, then how many when there is more than one.
-              const count = (
-                <span className="relative ml-auto flex items-center gap-1">
-                  <span className="flex -space-x-1.5">{[...new Set(news.map(item => item.feed))].map(name => <FeedLogo key={name} feed={name} size="1.125rem" />)}</span>
-                  {news.length > 1 && <span className={`${digits} text-sm text-[var(--gold-light)]`}>{news.length}</span>}
-                </span>
-              )
+              if (!news.length) return <div key={day} className={cell} aria-current={isToday ? 'date' : undefined}><span className="flex items-end gap-1">{head}</span></div>
               return (
-                <button key={day} type="button" aria-pressed={active} aria-current={day === today ? 'date' : undefined} aria-label={`${fullDay(day)}, ${t('count', { count: news.length })}`} onClick={() => open(day)}
-                  className={`${cell} group transition-colors duration-200 focus-visible:z-10 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[var(--gold)] ${active ? 'bg-[#2a1f0c]' : 'hover:bg-[var(--bg-elevated)]'}`}>
-                  {still && <>
-                    <QuietImage src={still} alt="" fill unoptimized sizes="12rem" className="object-cover opacity-60 transition-[opacity,transform] duration-300 group-hover:scale-[1.03] group-hover:opacity-85 motion-reduce:transition-none" />
-                    <span className="absolute inset-0 bg-gradient-to-t from-[rgba(13,11,8,0.92)] via-[rgba(13,11,8,0.25)] to-[rgba(13,11,8,0.55)]" />
-                  </>}
-                  <span className="flex w-full items-center">{number}{count}</span>
-                  {variant === '1' && <span className="relative mt-auto hidden w-full text-xs font-medium leading-snug text-[var(--text-primary)] lg:line-clamp-2">{texts[0].text.title}</span>}
-                  {variant === '2' && <>
-                    {texts.slice(0, 3).map((entry, order) => (
-                      <span key={entry.id} className="hidden w-full items-center gap-1.5 rounded-[2px] bg-[#e6e2d8] px-1.5 py-1 text-[0.6875rem] font-medium leading-tight text-[#1b1611] shadow-[0_2px_6px_rgba(0,0,0,0.45)] lg:flex" style={{ rotate: `${[-1.2, 0.9, -0.6][order]}deg` }}>
-                        <PlatformIcon platform={entry.item.platform} size="0.75rem" /><span className="truncate">{entry.text.title}</span>
-                      </span>
-                    ))}
-                    {news.length > 3 && <span className="hidden text-[0.6875rem] text-[var(--text-muted)] lg:block">+{news.length - 3}</span>}
-                    {day === today && <Runner className="absolute bottom-1 right-1 hidden h-10 lg:block" />}
-                  </>}
-                  {variant === '3' && <>
-                    {texts.slice(0, 3).map(entry => (
-                      <span key={entry.id} className="hidden w-full items-baseline gap-1.5 border-l-2 border-[var(--gold)] bg-white/[0.045] py-0.5 pl-1.5 pr-1 text-[0.6875rem] leading-tight lg:flex">
-                        <PlatformIcon platform={entry.item.platform} size="0.75rem" className="self-center text-[var(--text-secondary)]" />
-                        <span className="truncate text-[var(--text-primary)]">{entry.text.title}</span>
-                      </span>
-                    ))}
-                    {news.length > 3 && <span className="hidden text-[0.6875rem] text-[var(--text-muted)] lg:block">+{news.length - 3}</span>}
-                  </>}
+                <button key={day} type="button" aria-pressed={active} aria-current={isToday ? 'date' : undefined} aria-label={label(day)} onClick={() => open(day)}
+                  className={`${cell} ${styles.day} transition-colors duration-200 focus-visible:z-10 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[var(--gold)] ${active ? 'bg-[#2a1f0c]' : 'hover:bg-[var(--bg-elevated)]'}`}>
+                  <span className="flex w-full items-end gap-1">
+                    {head}
+                    {/* Whose news the day has, then how many when there is more than one. */}
+                    <span className="ml-auto flex items-center gap-1 self-center">
+                      <span className="flex -space-x-1.5">{[...new Set(news.map(item => item.feed))].map(name => <FeedLogo key={name} feed={name} size="1.125rem" />)}</span>
+                      {news.length > 1 && <span className={`${digits} text-sm text-[var(--gold-light)]`}>{news.length}</span>}
+                    </span>
+                  </span>
+                  {/* One slip of paper per item: three at most, the rest shown as sheets under the last. */}
+                  {news.slice(0, 3).map((item, order) => (
+                    <span key={item.id} className={`${styles.note} ${order === 2 && news.length > 3 ? styles.noteStack : ''}`} style={{ '--tilt': `${[-1.2, 0.9, -0.6][order]}deg` } as CSSProperties}>
+                      <PlatformIcon platform={item.platform} size="0.75rem" />
+                      <span className={styles.noteText}>{pickContent(item.content, lang).title}</span>
+                    </span>
+                  ))}
                 </button>
               )
             })}
@@ -232,24 +266,14 @@ export default function NewsCalendar({ month, today, date, feed: startFeed, item
         {items === null && <p role="alert" className="py-6 text-center text-sm text-[#cf8076]">{t('loadFailed')}</p>}
       </section>
 
-      <BaseModal open={!!opened} onClose={() => open(null)} title={opened ? fullDay(opened) : t('title')} maxWidth="44rem" sheet initialFocus="dialog">
+      {/* Phone: the selected day, on the page. */}
+      <section data-news-day className="mt-5 lg:hidden" aria-live="polite">{dayNews(selected)}</section>
+
+      {/* Desktop: the opened day, in a dialog. */}
+      <BaseModal open={wide && !!opened} onClose={() => open(null)} title={opened ? fullDay(opened) : t('title')} maxWidth="44rem" sheet initialFocus="dialog">
         {opened && (
           <div className="relative w-full overflow-hidden rounded-t-xl border border-[#2e2417] bg-[#17120c] shadow-[0_1.5rem_4rem_rgba(0,0,0,0.6)] sm:rounded-xl">
-            <div className="max-h-[88dvh] overflow-y-auto overscroll-contain p-4 sm:p-5">
-              <div className="flex items-center gap-2">
-                <div className={`${styles.slipWrap} min-w-0 flex-1`}>
-                  <div className={styles.slip}>
-                    <span className={styles.slipText}><strong>{fullDay(opened)}</strong><small>{t('from')}</small></span>
-                    <span className={styles.slipCount}>{dayItems.length}</span>
-                  </div>
-                  <Runner />
-                </div>
-                <button type="button" onClick={() => open(null)} aria-label={tc('close')} className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-white/60 transition-colors hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold)]"><X size={18} aria-hidden="true" /></button>
-              </div>
-              {dayItems.length
-                ? <ul className="mt-4 space-y-3">{dayItems.map(item => <li key={item.id}><NewsCard item={item} lang={lang} t={t} onDelete={admin ? () => setRemoving(item) : undefined} /></li>)}</ul>
-                : <p className="py-10 text-center text-sm text-[var(--text-muted)]">{t('empty')}</p>}
-            </div>
+            <div className="max-h-[88dvh] overflow-y-auto overscroll-contain p-4 sm:p-5">{dayNews(opened, () => open(null))}</div>
           </div>
         )}
       </BaseModal>
