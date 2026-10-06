@@ -1,6 +1,6 @@
 # 개발자 API와 협업 파트너
 
-`/api/v1`의 자원, 한도, 응답 형식과 협업 파트너(Discord 봇) 연동 방법이다. 표와 권한은 [데이터 모델](data-model.md)의 "개발자 API와 관심도"에 있다.
+`/api/v1`의 자원, 한도, 응답 형식, 파트너 권한, 소식 보내기 양식이다. 개발자가 보는 설명과 요청 테스트는 개발자 도구(`/developers`)에 있다. 표와 권한은 [데이터 모델](data-model.md)의 "개발자 API와 관심도"에 있다.
 
 ## 인증과 한도
 
@@ -11,21 +11,32 @@
 | 일반 | 60회 | 10,000회 | 하루 남은 횟수 |
 | 파트너 | 600회(폭주 방지용 상한) | 제한 없음 | 없음 |
 
-한도를 넘으면 429와 `Retry-After`(초)를 준다. 파트너 등급은 키가 아니라 계정에 붙는다. 관리자 화면의 유저 관리에서 지정하고, 키를 재발급해도 유지된다. 파트너 요청도 `developer_usage`에 집계한다.
+한도를 넘으면 429와 `Retry-After`(초)를 준다. 파트너 요청도 `developer_usage`에 집계한다.
+
+## 파트너와 권한
+
+파트너는 `limbus.partners`의 한 줄이다(코드, 이름, 권한 목록). 계정의 `profiles.partner`가 그 코드를 가리키므로 키를 재발급해도 유지된다. 관리자 화면의 유저 상세에서 목록에서 골라 지정한다. 파트너를 새로 만들거나 권한을 바꾸는 화면은 없고 마이그레이션으로 넣는다.
+
+| 권한 | 할 수 있는 것 |
+|---|---|
+| `catalog:read` | 게임 데이터 자원, 덱·플랜 상세 |
+| `news:write` | 소식 보내기와 지우기 |
+
+림피(Discord 봇)는 코드 `limpi`이고 두 권한을 모두 가진다. 관리자 계정(역할 또는 `ADMIN_EMAILS`)의 키는 개발자 도구를 확인할 수 있도록 게임 데이터 조회와 소식 시험 전송까지 된다. 소식을 실제로 저장하거나 지우는 것은 파트너 계정의 키만 한다.
 
 ## 자원
 
 | 자원 | 대상 | 내용 |
 |---|---|---|
 | `decks`, `planners` | 모든 키 | 공개 덱·플랜 목록. `limit`(1–50), `offset`, `q`(제목 검색), `sort`(`recent` 기본, `popular`), `id` |
-| `identities` | 파트너 | 인격 전체. `id`를 주면 동기화 1~4 단계의 스킬·패시브를 모두 포함(줄마다 `uptie_level`) |
-| `egos` | 파트너 | E.G.O 전체. `id`를 주면 스킬·패시브 포함 |
-| `ego-gifts` | 파트너 | 기프트 전체(효과 3단계 포함). `id`는 UUID나 게임 ID |
-| `theme-packs` | 파트너 | 테마팩 전체(층 정보, 기프트 ID 목록) |
-| `md-events` | 파트너 | 거울 던전 이벤트 전체. 선택지는 `choices` |
-| `keywords` | 파트너 | 키워드 전체. `key`가 다른 자원의 `keywords`·`keyword` 값과 맞는 한국어 이름 |
+| `identities` | `catalog:read` | 인격 전체. `id`를 주면 동기화 1~4 단계의 스킬·패시브를 모두 포함(줄마다 `uptie_level`) |
+| `egos` | `catalog:read` | E.G.O 전체. `id`를 주면 스킬·패시브 포함 |
+| `ego-gifts` | `catalog:read` | 기프트 전체(효과 3단계 포함). `id`는 UUID나 게임 ID |
+| `theme-packs` | `catalog:read` | 테마팩 전체(층 정보, 기프트 ID 목록) |
+| `md-events` | `catalog:read` | 거울 던전 이벤트 전체. 선택지는 `choices` |
+| `keywords` | `catalog:read` | 키워드 전체. `key`가 다른 자원의 `keywords`·`keyword` 값과 맞는 한국어 이름 |
 
-일반 키가 파트너 자원을 요청하면 403 `Partner access required`다.
+`catalog:read`가 없는 키가 이 자원을 요청하면 403 `Partner access required`다.
 
 공통 규칙:
 
@@ -37,7 +48,7 @@
 
 ## 파트너 덱·플랜 상세
 
-파트너 키로 `decks?id=<uuid>`나 `planners?id=<uuid>`를 요청하면 목록 형식 대신 아래 형식을 준다. 목록(`id` 없음)에는 `url`과 `card_url`만 더 붙는다.
+`catalog:read`가 있는 키로 `decks?id=<uuid>`나 `planners?id=<uuid>`를 요청하면 목록 형식 대신 아래 형식을 준다. 목록(`id` 없음)에는 `url`과 `card_url`만 더 붙는다.
 
 ```json
 {
@@ -78,6 +89,60 @@
 - `gift_inventory`: 보유 기프트. `source`는 `start`(시작), `observe`(관측), `final`(최종)이고 옛 플랜은 `null`이다. `enhancement`는 0–2.
 - `blessings`: 가호의 `id`와 `level`.
 
+## 소식 보내기
+
+`news:write`가 있는 키로 `POST /api/v1/news`를 보내면 캘린더(`/calendar`)에 소식이 올라간다. 한 요청에 ko·en·ja 내용을 함께 담는다.
+
+```json
+{
+  "id": "x:1975411111111111111",
+  "feed": "hampang",
+  "platform": "x",
+  "category": "notice",
+  "published_at": "2026-10-06T10:00:00+09:00",
+  "starts_at": null,
+  "ends_at": null,
+  "spoiler": false,
+  "author": { "name": "햄햄팡팡", "handle": "Ham_PangPang" },
+  "content": {
+    "ko": {
+      "title": "…", "body": "…", "url": "https://x.com/Ham_PangPang/status/…",
+      "media": [
+        { "type": "image", "url": "https://pbs.twimg.com/media/….jpg" },
+        { "type": "youtube", "id": "dQw4w9WgXcQ" },
+        { "type": "video", "url": "https://x.com/…/video/1", "thumbnail": "https://pbs.twimg.com/….jpg" }
+      ]
+    },
+    "en": { "title": "…", "translated": true }
+  }
+}
+```
+
+| 칸 | 규칙 |
+|---|---|
+| `id` | 필수, 1–120자. 파트너 안에서 고유. 같은 `id`를 다시 보내면 통째로 덮어쓴다. 언어를 뺀 값: `steam:{gid}`, `x:{tweet_id}`, `youtube:{video_id}` |
+| `feed` | 필수. `limbus`, `project_moon`, `hampang` |
+| `platform` | 필수. `steam`, `x`, `youtube`, `chzzk`, `partner`(봇이 직접 만든 알림) |
+| `category` | 기본 `notice`. `update`, `maintenance`, `event`, `video`, `live` |
+| `published_at` | 필수. 시간대가 붙은 ISO 8601. 캘린더 날짜는 한국 시간으로 나눈다 |
+| `starts_at`, `ends_at` | 선택. 방송은 끝난 뒤 같은 `id`에 `ends_at`을 채워 다시 보낸다 |
+| `spoiler` | 기본 `false`. `true`면 매체를 가린다 |
+| `author` | 선택. `name`(필수), `handle`, `url` |
+| `content` | 필수. `ko`, `en`, `ja` 중 하나 이상. 없는 언어는 ko, en, ja 순으로 대신 보여 준다 |
+| `content.*.title` | 필수, 1–200자 |
+| `content.*.body` | 4,000자 이하 일반 텍스트 |
+| `content.*.url` | 선택. 원문 주소(https) |
+| `content.*.media` | 10개 이하. `image`(주소), `youtube`(영상 ID 11자), `video`(원문 주소와 선택 `thumbnail`) |
+| `content.*.translated` | 기본 `false`. 기계 번역이면 `true` |
+
+- 이미지와 `thumbnail`은 https이고 `steamstatic.com`, `twimg.com`, `ytimg.com`, `pstatic.net`, `livecloud-thumb.akamaized.net`(하위 도메인 포함)만 받는다. 사이트는 원본 주소를 그대로 보여 주며 복사하지 않는다. 호스트를 더하면 `lib/news/payload.ts`의 `NEWS_MEDIA_HOSTS`와 `next.config.ts`의 `img-src`를 함께 고친다.
+- 정해지지 않은 칸은 거부한다(`content.jp` 등).
+- 새 `id`는 201, 덮어쓰면 200이다. 응답은 `{ "data": { "id", "created", "day", "url" } }`이고 `url`은 그 날짜의 캘린더 주소다.
+- `?dry_run=1`은 검증만 하고 저장하지 않는다. 저장됐을 때의 값을 `item`으로 돌려준다.
+- `DELETE /api/v1/news?id=`는 그 파트너가 보낸 소식만 지운다. 응답은 `{ "data": { "id", "deleted" } }`.
+- 오류: 400(`issues`에 칸 경로와 이유), 401, 403(`Partner scope news:write required`), 413(본문 64KB 초과), 429, 503.
+- 소식 종류별 예시(Steam, X, 프문 소식, 햄햄팡팡, YouTube, 라이브, 점검)는 개발자 도구의 파트너 탭에 있고, 테스트(`tests/lib/developer-api-reference.test.ts`)가 모두 실제 검증을 통과하는지 확인한다.
+
 ## Discord 응답 구성
 
 - 카드 이미지는 사이트가 그린다. 봇은 `card_url`을 Embed의 `image.url`에 넣는다. Discord가 인증 없이 받아 가서 캐시한다.
@@ -89,10 +154,14 @@
 
 | 역할 | 파일 |
 |---|---|
-| 라우트(인증, 한도, 분기) | `app/api/v1/[resource]/route.ts` |
+| 라우트(한도, 분기) | `app/api/v1/[resource]/route.ts` |
+| 키 확인과 권한 | `lib/developer/access.ts` |
+| 소식 라우트, 양식 검증, 날짜 계산, 달 단위 조회 | `app/api/v1/news/route.ts`, `lib/news/payload.ts`, `lib/news/calendar.ts`, `lib/news/data.ts` |
+| 캘린더 화면, 관리자 삭제 | `app/[lang]/calendar/page.tsx`, `components/news/NewsCalendar.tsx`, `app/api/admin/news/route.ts` |
+| 개발자 도구(문서 데이터, 탭) | `app/[lang]/developers/api-reference.ts`, `components/developers/` |
 | 응답 구성(언어 선택, 주소, 편성·집계) | `lib/developer/partner-api.ts` |
 | 조회(게임 자원은 `'use cache'`, 게임 데이터 태그로 무효화) | `lib/developer/partner-data.ts` |
-| 한도와 파트너 지정 함수 | `supabase/migrations/20261005150000_developer_partner.sql` |
-| 검사 | `tests/lib/developer-partner-api.test.ts`, `tests/api/developer-v1-partner.test.ts`, `tests/sql/developer-partner.sql`, `e2e/developer-api.acceptance.cjs` |
+| 한도, 권한, 파트너 지정 함수, 소식 표 | `supabase/migrations/20261006120000_partners_and_news.sql` |
+| 검사 | `tests/lib/developer-partner-api.test.ts`, `tests/api/developer-v1-partner.test.ts`, `tests/api/developer-v1-news.test.ts`, `tests/lib/news-payload.test.ts`, `tests/sql/developer-partner.sql`, `tests/sql/partners-and-news.sql`, `e2e/developer-api.acceptance.cjs` |
 
-자원을 더할 때는 `partner-api.ts`의 `RESOURCES`와 `partner-data.ts`의 `CATALOGS`에 한 줄씩 넣는다.
+자원을 더할 때는 `partner-api.ts`의 `RESOURCES`와 `partner-data.ts`의 `CATALOGS`에 한 줄씩 넣고, 개발자 도구에 보이도록 `api-reference.ts`의 `SOURCES`에도 넣는다. 소식 양식의 칸을 바꾸면 `payload.ts`와 `api-reference.ts`의 `NEWS_BODY`를 함께 고친다(테스트가 두 목록을 비교한다).
