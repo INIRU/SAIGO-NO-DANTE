@@ -38,6 +38,9 @@ it('keeps known metadata fields only and rejects malformed samples', () => {
     { detection: { gifts: true } }, { candidates: Array(21).fill('1') }, { userAgent: 'x'.repeat(401) }, { ocr: { engine: 'paddle' } }, { language: 'fr' }])
     expect(parseSampleMeta({ ...valid, ...change })).toBeNull()
   expect(parseSampleMeta(null)).toBeNull()
+  // REQ-ASSIST-069: the read diagnosis of a failed fusion is a short string or absent.
+  expect(parseSampleMeta({ ...valid, diagnosis: 'v1;d=1' })).toEqual({ ...valid, diagnosis: 'v1;d=1' })
+  for (const diagnosis of ['x'.repeat(601), 5, null, { v: 1 }]) expect(parseSampleMeta({ ...valid, diagnosis })).toBeNull()
   expect(parseSampleMeta([valid])).toBeNull()
 })
 
@@ -95,14 +98,16 @@ it('discards the frame group of an action that was read', async () => {
 })
 
 it('uploads the whole group of a failed action with the frames just before and after it', async () => {
-  const { recorder, uploads, offer } = recorderHarness()
+  const { recorder, uploads, offer, metas } = recorderHarness()
   await offer(40)
   recorder.begin('fusion')
   await offer(80); await offer(80); await offer(120)
-  recorder.end('fusion', { reason: 'fusion-materials', candidates: ['9108'] })
+  recorder.end('fusion', { reason: 'fusion-materials', candidates: ['9108'], diagnosis: 'v1;d=0;n=2/3' })
   await offer(160); await offer(200)
   expect(uploads).toEqual([])
   await offer(240)
+  // REQ-ASSIST-069: the diagnosis given with the failure travels in the sample's metadata.
+  expect(metas.at(-1)).toMatchObject({ reason: 'fusion-materials', candidates: ['9108'], diagnosis: 'v1;d=0;n=2/3' })
   expect(uploads).toEqual([{ reason: 'fusion-materials', frames: ['frame40', 'frame80', 'frame120', 'frame160', 'frame200', 'frame240'] }])
   vi.unstubAllGlobals(); vi.restoreAllMocks()
 })

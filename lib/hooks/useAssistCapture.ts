@@ -15,7 +15,7 @@ import { AssistReportTally, sendAssistReport, type ReportAction } from '@/lib/vi
 import { EMPTY_SALE_STATE, isSellWindow, readSaleStep, sellCost, sellGiftId, sellQuestion } from '@/lib/vision/sell-evidence'
 import { readSkillExchange, type SkillExchangeRead } from '@/lib/vision/skill-exchange'
 import { acquisitionSeq, acquisitionsToRelease, continuesFusionDialog, dialogForResult, dialoglessFusionResult, fusionAnchors,
-  fusionConfirmation, fusionDialogClosed, fusionMaterials, onFusionScreen, showsFusionTitle,
+  fusionConfirmation, fusionDiagnosis, fusionDialogClosed, fusionMaterials, onFusionScreen, showsFusionTitle,
   fusionWheelAnchors, fusionWheelCrop, fusionWheelResultBox, isFusionSelectionScreen, wheelBandMatch, wheelSelectionSize, WHEEL_BAND_MIN, WHEEL_BAND_SIZE,
   type FusionAnchors, type FusionDialogEvidence, type FusionRead, type SeenDialog, type WheelAnchors,
   type FusionSlotRead } from '@/lib/vision/fusion-evidence'
@@ -275,7 +275,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
   // `undecided`: its shop capacity is not known yet (no dialog seen this session), decided once both layouts are read.
   // `firstAt`: capture time of its first frame (the dialog read, or the earliest wheel state of a dialog-less result).
   const fusionDialog = useRef<{ token: string; count: number; capacity: number; firstAt: number; lastSeenAt: number; closedAt?: number; reads: FusionRead[];
-    wheel: WheelFrame[]; published: boolean; dialogless?: boolean; undecided?: boolean; seen?: SeenDialog } | null>(null)
+    wheel: WheelFrame[]; published: boolean; dialogless?: boolean; undecided?: boolean; seen?: SeenDialog; resultAt?: number } | null>(null)
   const fusionRequest = useRef<{ requestId: number; at: number; count: number; token: string; view: FusionRead['view'] } | null>(null)
   // The selection wheel stays up while materials are picked but may be complete for only ~0.3 s before the dialog opens:
   // on the fusion screen small crops of it are kept every 150 ms (at most WHEEL_FRAMES, none older than WHEEL_KEEP_MS)
@@ -745,7 +745,10 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
           const result = materials.length < dialog.count ? heldAcquisitions.current.find(item => (item.capturedAt ?? Infinity) >= dialog.firstAt) : undefined
           materials = (result && completeFusionRef.current?.(materials, dialog.count, result.giftId)) || materials
           // The fusion's frame group is uploaded only when its materials could not all be read.
-          settleSample('fusion', 'fusion', materials.length < dialog.count ? { reason: dialog.dialogless ? 'fusion-dialogless' : 'fusion-materials', candidates: materials } : null)
+          // With what was read of it (times, slots, wheel history), to find why a fusion that replays well was missed live.
+          settleSample('fusion', 'fusion', materials.length < dialog.count ? { reason: dialog.dialogless ? 'fusion-dialogless' : 'fusion-materials', candidates: materials,
+            diagnosis: fusionDiagnosis({ ...dialog, resultAt: dialog.resultAt ?? dialog.seen?.resultAt, wheelKnown: !!wheelReference.current,
+              wheelKept: wheelFrames.current.length + dialog.wheel.length }) } : null)
           // Dated by the dialog's own first frame: wheel reads come from before it, possibly before the previous result.
           if (materials.length) publishFusion({ materials, observedAt: dialog.firstAt, lastSeenAt: dialog.lastSeenAt,
             closedAt: dialog.closedAt, token: dialog.token })
@@ -1318,7 +1321,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
                 for (const item of fusionDialog.current?.wheel.splice(0) ?? []) item.frame.close()
                 fusionDialog.current = { token: `${run}:fusion:${pending.capturedAt}`, count: capacity, capacity, firstAt: Math.min(...wheel.map(item => item.at)),
                   lastSeenAt: Math.max(...wheel.map(item => item.lastAt)),
-                  reads: [], wheel, published: false, dialogless: true, undecided: known === null }
+                  reads: [], wheel, published: false, dialogless: true, undecided: known === null, resultAt: pending.capturedAt }
                 takeWheelReads(fusionDialog.current)
                 fusionWanted.current = { count: capacity, capacity, at: Date.now() }
                 lastDialogAt.current = Math.max(lastDialogAt.current, pending.capturedAt)

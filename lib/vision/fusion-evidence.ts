@@ -6,6 +6,7 @@
  * the game's own, from its localization files; the player's game language may differ from the site's).
  */
 import { AUTO_ACQUIRE_EXCLUDED_GIFT_IDS } from './popup-evidence'
+import { SAMPLE_DIAGNOSIS_MAX } from './assist-samples'
 
 const normalized = (text: string) => text.normalize('NFKC').replace(/\s+/g, '')
 const EGO = 'E\\.?G\\.?[O0]\\.?'
@@ -239,6 +240,26 @@ export type FusionSlotRead = { id: string; score: number; margin: number } | { b
 export interface FusionRead { view: 'dialog' | 'wheel'; slots: FusionSlotRead[]; observedAt: number }
 
 const identified = (slot: FusionSlotRead): slot is { id: string; score: number; margin: number } => !!slot && 'id' in slot
+
+/**
+ * What the reader saw of a fusion whose materials were not all read, for its uploaded sample: `d` whether it was built
+ * without a seen dialog, `n` N/M, `u` capacity undecided, `ref` whether the wheel's look was known, `kept` wheel states
+ * held, `res` ms from its first frame to its result popup (when known), then every read in time order as
+ * `<w|d><ms from first frame>:<slot>,…` with a slot as `id@score/margin`, `_` (blank) or `-` (unread). Reads that do not
+ * fit are left out, whole.
+ */
+export function fusionDiagnosis(fusion: { dialogless?: boolean; undecided?: boolean; count: number; capacity: number; firstAt: number; resultAt?: number;
+  wheelKnown: boolean; wheelKept: number; reads: readonly FusionRead[] }): string {
+  const slot = (read: FusionSlotRead) => !read ? '-' : 'blank' in read ? '_' : `${read.id}@${read.score.toFixed(2)}/${read.margin.toFixed(2)}`
+  let text = `v1;d=${fusion.dialogless ? 1 : 0};n=${fusion.count}/${fusion.capacity};u=${fusion.undecided ? 1 : 0};ref=${fusion.wheelKnown ? 1 : 0};kept=${fusion.wheelKept};` +
+    `res=${fusion.resultAt === undefined ? '-' : Math.round(fusion.resultAt - fusion.firstAt)}`
+  for (const read of [...fusion.reads].sort((first, second) => first.observedAt - second.observedAt)) {
+    const part = `|${read.view[0]}${Math.round(read.observedAt - fusion.firstAt)}:${read.slots.map(slot).join(',')}`
+    if (text.length + part.length > SAMPLE_DIAGNOSIS_MAX) break
+    text += part
+  }
+  return text
+}
 
 /**
  * The five vestiges (어두운·아스라한·빛나는·찬란한·달의 잔영) share one bottle and differ only by grade, so a slot never tells

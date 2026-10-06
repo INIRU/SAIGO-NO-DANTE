@@ -289,13 +289,16 @@ export default function CompanionPanel({ state, dispatch, themes, giftMap, obser
   /**
    * A recognized fusion: materials removed and the result added as one Undo step, announced from that step's own
    * inventory change (consumed materials, then the result if it was added). Only recognition reaches here.
+   * A vestige result is never recorded (several can be held): only the materials leave.
    */
   function fuse(resultId: number, materials: string[], token: string): boolean {
     const before = current.current.giftInventory
-    if (!record({ type: 'CRAFT_FUSION', materialIds: materials, resultId: String(resultId) }, true)) return false
+    const recorded = !AUTO_ACQUIRE_EXCLUDED_GIFT_IDS.has(String(resultId))
+    if (!record({ type: 'CRAFT_FUSION', materialIds: materials, resultId: recorded ? String(resultId) : null }, true)) return false
     announce(fusionFeedback(token, Date.now(), before, current.current.giftInventory, String(resultId), describeGift))
     const gift = giftMap.get(resultId)!
-    toast.success(t('fusionAutoApplied', { name: localized(gift), count: materials.length }))
+    toast.success(recorded ? t('fusionAutoApplied', { name: localized(gift), count: materials.length })
+      : t('fusionMaterialsApplied', { name: localized(gift), count: materials.length }))
     return true
   }
   useEffect(() => {
@@ -328,11 +331,21 @@ export default function CompanionPanel({ state, dispatch, themes, giftMap, obser
       if (consumedPopupTokens.current.has(evidence.token) || Date.now() - evidence.observedAt > 8000) continue
       consumedPopupTokens.current.add(evidence.token)
       const id = Number(evidence.giftId)
-      if (!Number.isInteger(id) || !giftMap.has(id) || AUTO_ACQUIRE_EXCLUDED_GIFT_IDS.has(evidence.giftId)) continue
+      if (!Number.isInteger(id) || !giftMap.has(id)) continue
       // The result popup of a confirmed fusion: the identified materials leave the inventory in the same step, even when
       // the result is already listed (an earlier fusion's materials were not all seen). Further popups of an applied
       // fusion (a material returned with its result) are plain acquisitions and never claim an older fusion.
       const fusion = fusionForResult(recentFusions.current, evidence.capturedAt)
+      // A vestige is never recorded, bought or fused. As a fusion's result, the gifts it was made from still leave; when
+      // the fusion's evidence comes after this popup, the effect above removes them.
+      if (AUTO_ACQUIRE_EXCLUDED_GIFT_IDS.has(evidence.giftId)) {
+        if (fusion && !consumedFusionTokens.current.has(fusion.token)) {
+          consumedFusionTokens.current.add(fusion.token)
+          const materials = fusionMaterialsToRemove(fusion.materials, current.current.giftInventory, AUTO_ACQUIRE_EXCLUDED_GIFT_IDS)
+          if (materials?.length) fuse(id, materials, fusion.token)
+        } else if (!fusion) lastResultPopup.current = { giftId: evidence.giftId, capturedAt: evidence.capturedAt, listedKey: keyOf(current.current) }
+        continue
+      }
       // A fixed-recipe result is only made by fusing its ingredients: they leave with it even when no dialog was read.
       const recipe = recipeIngredientsInInventory(id, current.current.giftInventory, recipes, giftMap, fusion?.materials ?? [])
       if (recipe && !current.current.giftInventory.includes(evidence.giftId)) {
