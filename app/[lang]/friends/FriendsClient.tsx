@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 import { parseAsStringLiteral, useQueryState } from 'nuqs'
 import useSWR from 'swr'
-import { CircleHelp, Copy, Flag, Search, X } from 'lucide-react'
+import { Check, CircleHelp, Copy, Flag, Search, X } from 'lucide-react'
 import SupportStrips, { sinnerNumber, type SupportSlot } from '@/components/friends/SupportStrips'
 import SupportSlotPicker from '@/components/friends/SupportSlotPicker'
 import FriendGuide from '@/components/friends/FriendGuide'
@@ -50,6 +50,8 @@ export default function FriendsClient() {
   }
   const openExchange = (id: string) => { setCode(lists.support.data?.own?.code ?? lists.want.data?.own?.code ?? readOwnCode()); setExchanging(id) }
   const exchange = () => { const id = exchanging; setExchanging(null); if (id) void run(async () => { await api.send(`/api/friend-codes/${id}/exchange`, 'POST', { code }); rememberOwnCode(code) }) }
+  const ask = (id: string) => run(async () => { await api.send(`/api/friend-codes/${id}/request`, 'POST'); showSuccess(t('requested')) })
+  const decide = (id: string, request: string, decision: 'approved' | 'declined') => run(async () => { await api.send(`/api/friend-codes/${id}/request`, 'PATCH', { request, decision }) })
   const report = (id: string) => run(async () => { await api.send(`/api/friend-codes/${id}/report`, 'POST'); showSuccess(t('reported')) })
   const copy = (text: string) => navigator.clipboard.writeText(text).then(() => showSuccess(t('copied')), () => showError(t('copyFailed')))
   const ago = (iso: string) => {
@@ -63,8 +65,21 @@ export default function FriendsClient() {
     ? <><b className={styles.code}>{post.code}</b>{copyButton(post.code)}</>
     : post.visibility === 'exchange'
       ? <button type="button" className={styles.primary} disabled={busy} onClick={() => openExchange(post.id)}>{t('exchange')}</button>
-      : <span className={styles.tag}>{t('membersOnly')}</span>
-  const received = (post: Post) => post.received && post.received.length > 0 && <ul className={styles.received}>
+      : post.visibility === 'approval'
+        ? post.request === 'pending' || post.request === 'declined'
+          ? <span className={styles.tag}>{t(`request.${post.request}`)}</span>
+          : <button type="button" className={styles.primary} disabled={busy} onClick={() => ask(post.id)}>{t('requestCode')}</button>
+        : <span className={styles.tag}>{t('membersOnly')}</span>
+  // Requests on the viewer's own approval post: each can be approved or declined, and the answer changed later.
+  const requests = (post: Post) => post.requests && post.requests.length > 0 && <ul className={styles.requests} aria-label={t('request.title')}>
+    {post.requests.map(item => <li key={item.id}>
+      <strong>{item.name ?? t('guest', { tag: item.guestTag ?? '' })}</strong>
+      {item.status !== 'pending' && <span className={styles.tag}>{t(`request.${item.status}`)}</span>}
+      {item.status !== 'approved' && <button type="button" className={styles.icon} disabled={busy} onClick={() => decide(post.id, item.id, 'approved')} aria-label={t('request.approve')} title={t('request.approve')}><Check size={17} aria-hidden="true" /></button>}
+      {item.status !== 'declined' && <button type="button" className={styles.icon} disabled={busy} onClick={() => decide(post.id, item.id, 'declined')} aria-label={t('request.decline')} title={t('request.decline')}><X size={17} aria-hidden="true" /></button>}
+    </li>)}
+  </ul>
+  const received =(post: Post) => post.received && post.received.length > 0 && <ul className={styles.received}>
     {post.received.map(value => <li key={value}><b className={styles.code}>{value}</b>{copyButton(value)}</li>)}
   </ul>
   const who = (post: Post) => <>
@@ -120,6 +135,7 @@ export default function FriendsClient() {
           <header>{who(post)}<span className={styles.codeBox}>{codeBox(post)}</span></header>
           <SupportStrips slots={catalog.supportSlots(post.slots)} />
           {received(post)}
+          {requests(post)}
         </article>)}
       </section>
       : <section className={styles.wants}>
@@ -131,6 +147,7 @@ export default function FriendsClient() {
               {post.expiresAt && <span className={styles.left} title={t('timeLeft', { time: left(post.expiresAt) })}>{left(post.expiresAt)}</span>}
               <span className={styles.codeBox}>{codeBox(post)}</span>
               {received(post)}
+              {requests(post)}
               <p className={styles.who}>{who(post)}</p>
             </div>
           </article>
