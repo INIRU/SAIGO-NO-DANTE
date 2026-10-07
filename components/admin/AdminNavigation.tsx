@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, usePathname } from '@/lib/i18n/navigation'
 import { useLocale, useTranslations } from 'next-intl'
-import { MessageSquare, Megaphone, Users, Construction, ArrowUpRight, Menu, X, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
+import { Flag, MessageSquare, Megaphone, Users, Construction, ArrowUpRight, Menu, X, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 import './admin.css'
 const STORAGE_KEY = 'admin-nav-collapsed'
 export default function AdminNavigation() {
@@ -35,6 +35,7 @@ export default function AdminNavigation() {
       items: [
         { href: '/admin/inquiries', label: ko ? '문의함' : ja ? 'お問い合わせ' : 'Inbox', icon: MessageSquare },
         { href: '/admin/announcements', label: ko ? '공지 관리' : ja ? 'お知らせ管理' : 'Announcements', icon: Megaphone },
+        { href: '/admin/friends', label: ko ? '친구 코드 신고' : ja ? 'フレンドコード通報' : 'Friend code reports', icon: Flag },
       ],
     },
     {

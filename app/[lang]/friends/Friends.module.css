@@ -1,0 +1,118 @@
+/* Friend code board. The game's support strips are the one loud element; everything around them stays flat and quiet. */
+.page { max-width: 78rem; margin: 0 auto; padding: 5.5rem 1.25rem 4rem; color: var(--text-primary); }
+.actions { display: flex; align-items: center; gap: 0.5rem; }
+.primary, .ghost { display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem; height: 2.5rem; padding: 0 1.1rem; border: 1px solid var(--gold);
+  font-size: 0.9rem; font-weight: 700; white-space: nowrap; cursor: pointer; text-decoration: none; transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease; }
+.primary { background: var(--gold); color: #140e02; }
+.primary:hover:not(:disabled) { background: var(--gold-light); border-color: var(--gold-light); }
+.ghost { background: none; border-color: #5a4526; color: var(--text-primary); }
+.ghost:hover { border-color: var(--gold); color: var(--gold-light); }
+.primary:disabled, .ghost:disabled { opacity: 0.4; cursor: default; }
+.primary:focus-visible, .ghost:focus-visible, .icon:focus-visible, .plate:focus-visible, .segments button:focus-visible { outline: 2px solid var(--gold-light); outline-offset: 0.15rem; }
+/* Icon-only actions (copy, report, delete, clear): named for screen readers and on hover. */
+.icon { display: inline-grid; place-items: center; width: 2.1rem; height: 2.1rem; padding: 0; border: 0; background: none; color: var(--text-secondary); cursor: pointer; transition: color 0.15s ease; }
+.icon:hover:not(:disabled) { color: var(--gold-light); }
+.icon:disabled { opacity: 0.4; cursor: default; }
+.icon.boxed { width: 2.5rem; height: 2.5rem; border: 1px solid #5a4526; }
+.back { display: inline-flex; align-items: center; gap: 0.35rem; margin-bottom: 0.9rem; font-size: 0.85rem; color: var(--text-secondary); text-decoration: none; }
+.back:hover { color: var(--gold-light); }
+.code { font: 400 1.5rem/1 var(--font-mikodacs), Impact, sans-serif; letter-spacing: 0.06em; color: var(--gold-light); }
+.warning { margin: 1rem 0 0; font-size: 0.85rem; color: #e0857c; }
+.tag { padding: 0.15rem 0.5rem; border: 1px solid #5a4526; font-size: 0.72rem; font-weight: 700; color: var(--text-secondary); white-space: nowrap; }
+.seen { font-size: 0.8rem; color: var(--text-secondary); }
+
+/* Most wanted identities: slanted plates with the identity's portrait, its rank and how many asked. A plate filters the list. */
+.rank { margin-bottom: 1.5rem; }
+.rank h2 { margin: 0 0 0.6rem; font-size: 0.95rem; font-weight: 700; color: var(--text-secondary); }
+.plates { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0.9rem; padding: 0 0.5rem; }
+.plate { position: relative; height: 5.4rem; padding: 0; border: 0; transform: skewX(-9deg); overflow: hidden; background: #070604; outline: 1px solid #5a4526; color: inherit; cursor: pointer; text-align: left; }
+.plate:hover { outline-color: var(--gold); }
+.pic { position: absolute; inset: 0 -1.2rem; transform: skewX(9deg); background: 50% 13% / cover no-repeat; }
+.plate::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(7, 6, 4, 0.92) 0, rgba(7, 6, 4, 0.55) 38%, rgba(7, 6, 4, 0.1) 70%, rgba(7, 6, 4, 0.75) 100%); }
+.plateIn { position: absolute; inset: 0; z-index: 2; transform: skewX(9deg); display: flex; align-items: center; gap: 0.7rem; padding: 0 1rem 0 1.1rem; }
+.rankNo { font: 400 2.6rem/1 var(--font-mikodacs), Impact, sans-serif; color: #8f1310; text-shadow: 0 2px 0 rgba(0, 0, 0, 0.6); }
+.plateIn b { flex: 1; min-width: 0; font-size: 0.9rem; font-weight: 700; color: #f8c000; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.count { font: 400 1.5rem/1 var(--font-mikodacs), Impact, sans-serif; color: var(--text-primary); }
+.count small { margin-left: 0.15rem; font: 600 0.72rem var(--font-body), sans-serif; color: var(--text-secondary); }
+
+/* Kind tabs on the left, the identity filter on the right. */
+.bar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.6rem; padding-bottom: 0.7rem; border-bottom: 1px solid #2e2417; }
+.segments { display: flex; }
+.segments button { position: relative; display: inline-flex; align-items: center; gap: 0.45rem; height: 2.5rem; margin-left: -1px; padding: 0 0.95rem; border: 1px solid var(--border); background: none;
+  font-size: 0.85rem; font-weight: 700; color: var(--text-secondary); cursor: pointer; }
+.segments button:first-child { margin-left: 0; }
+.segments button[aria-pressed='true'], .segments button[aria-selected='true'] { z-index: 1; border-color: var(--gold); color: var(--gold-light); }
+.segments small { font: 400 1rem/1 var(--font-mikodacs), Impact, sans-serif; color: inherit; opacity: 0.75; }
+.chip { display: inline-flex; align-items: center; gap: 0.5rem; height: 2.5rem; padding-left: 0.8rem; border: 1px solid var(--gold); font-size: 0.85rem; font-weight: 700; color: #f8c000; }
+.chip i { font: 400 1.25rem/1 var(--font-mikodacs), Impact, sans-serif; font-style: normal; color: #8f1310; }
+.state { display: flex; align-items: center; gap: 0.8rem; margin: 2.5rem 0; font-size: 0.9rem; color: var(--text-secondary); }
+
+/* Support posts: two to a row on a wide screen, one on a narrow one. */
+.list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 2.25rem; }
+.post { padding: 1.4rem 0 1.6rem; border-bottom: 1px solid #241c14; }
+.post.mine, .want.mine { border-bottom-color: var(--gold); }
+.post header { display: flex; align-items: center; flex-wrap: wrap; gap: 0.6rem; margin-bottom: 0.4rem; }
+.post header strong, .post header .author { font-size: 1rem; }
+.author { font-weight: 700; color: var(--text-primary); text-decoration: none; }
+.author:hover { color: var(--gold-light); text-decoration: underline; }
+.codeBox { display: flex; align-items: center; gap: 0.6rem; margin-left: auto; }
+.codeBox .primary { height: 2.1rem; padding: 0 0.9rem; font-size: 0.8rem; }
+.received { display: flex; flex-wrap: wrap; gap: 0.5rem 1.25rem; margin: 1rem 0 0; padding: 0; list-style: none; }
+.received li { display: flex; align-items: center; gap: 0.3rem; }
+.received .code { font-size: 1.15rem; color: var(--text-primary); }
+
+/* Want posts: a short row of strips, then the time left, the names, the code and the author. */
+.wants { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.5rem 1.25rem; margin-top: 1.5rem; }
+.want { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 1rem; padding-bottom: 1.5rem; border-bottom: 1px solid #241c14; }
+.info { display: flex; flex-direction: column; min-width: 0; padding-top: 0.9rem; }
+.left { font: 400 1.6rem/1 var(--font-mikodacs), Impact, sans-serif; letter-spacing: 0.03em; color: var(--gold-light); }
+.names { display: flex; flex-direction: column; gap: 0.45rem; margin: 0.9rem 0 0; padding: 0; list-style: none; font-size: 0.85rem; }
+.info .codeBox { margin: auto 0 0; padding-top: 0.9rem; flex-wrap: wrap; }
+.info .code { font-size: 1.35rem; white-space: nowrap; }
+.who { display: flex; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin: 0.6rem 0 0; font-size: 0.78rem; color: var(--text-secondary); }
+.who strong { font-weight: 700; color: var(--text-primary); }
+
+/* Writing page. */
+.editor { padding: 1.25rem 1.25rem 1.4rem; background: #120e09; border: 1px solid #5a4526; }
+.fields { display: flex; align-items: flex-end; flex-wrap: wrap; gap: 1.25rem; margin-bottom: 1.2rem; }
+.fields > label, .fields > div { display: flex; flex-direction: column; gap: 0.35rem; font-size: 0.78rem; font-weight: 600; color: var(--text-secondary); }
+input.code { height: 2.5rem; width: 15rem; max-width: 100%; padding: 0 0.8rem; background: #070604; border: 1px solid #5a4526; outline: none; }
+input.code:focus-visible { border-color: var(--gold); }
+
+/* The window that takes the viewer's own code for an exchange. */
+.exchange { display: flex; flex-direction: column; gap: 0.9rem; padding: 1.25rem; background: #120e09; border: 1px solid #5a4526; }
+.exchange h2 { margin: 0; font-family: var(--font-heading); font-size: 1.1rem; }
+.exchange input.code { width: 100%; }
+.exchange .warning { margin: 0; }
+.exchange .actions { justify-content: flex-end; }
+
+@media (max-width: 64rem) {
+  .list { grid-template-columns: 1fr; }
+  .plates { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .plate:nth-child(n + 4) { display: none; }
+  .wants { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 40rem) {
+  .page { padding: 4.75rem 0.9rem 3rem; }
+  .plates { grid-template-columns: 1fr 1fr; gap: 0.6rem; padding: 0 0.3rem; }
+  .plate { height: 4.2rem; }
+  .plate:nth-child(n + 3) { display: none; }
+  .rankNo { font-size: 1.9rem; }
+  .count { font-size: 1.2rem; }
+  .wants { grid-template-columns: 1fr; gap: 1.1rem; }
+  .codeBox { margin-left: 0; width: 100%; }
+  .primary, .ghost { padding: 0 0.8rem; font-size: 0.82rem; }
+}
+
+/* Writing page as an editor screen (html[data-with-friend-compose] hides the site navigation and footer): on desktop the
+   page is exactly one viewport tall and the line-up takes what is left, sized by height as well as width. */
+.compose { padding-top: 1.25rem; }
+.stage { min-width: 0; }
+@media (min-width: 64rem) {
+  .compose { display: flex; flex-direction: column; height: 100dvh; padding-bottom: 1.25rem; }
+  .compose > .editor { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+  .compose .fields, .compose .warning { flex: 0 0 auto; }
+  .stage { flex: 1; min-height: 0; container-type: size; display: flex; justify-content: center; }
+  /* Twelve strips 197:982 with 0.3rem gaps and 0.9rem above for the numbers: as wide as the height allows, never wider than the stage. */
+  .stage > div:not([class*='few']) { width: min(100cqw, calc((100cqh - 0.9rem) * 12 * 197 / 982 + 3.3rem)); }
+}

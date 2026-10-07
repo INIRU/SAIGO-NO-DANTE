@@ -17,7 +17,8 @@
     "community": {
       "title": "Community",
       "planner": "MD Planner",
-      "collection": "Collection"
+      "collection": "Collection",
+      "friends": "Friend Codes"
     },
     "db": {
       "title": "DB",
@@ -2444,5 +2445,92 @@
     "deleteConfirm": "Delete this news item from the calendar?",
     "deleted": "News item deleted.",
     "deleteFailed": "Could not delete it. Please try again."
+  },
+  "friends": {
+    "compose": {
+      "support": "Post my code",
+      "want": "Ask for identities"
+    },
+    "rank": "Most wanted identities",
+    "rankUnit": "",
+    "timeLeft": "{time} left",
+    "title": "Friend Codes",
+    "tabs": {
+      "support": "Support Identities",
+      "want": "Identities Wanted"
+    },
+    "myCode": "My friend code",
+    "visibility": {
+      "label": "Who can see the code",
+      "public": "Anyone",
+      "members": "Signed-in users",
+      "exchange": "Code exchange"
+    },
+    "post": "Post",
+    "edit": "Update",
+    "delete": "Delete",
+    "copy": "Copy",
+    "copied": "Copied.",
+    "copyFailed": "Could not copy.",
+    "posted": "Posted.",
+    "updated": "Updated.",
+    "deleted": "Deleted.",
+    "warning": "Posting someone else's friend code or a fake one gets you suspended.",
+    "wanted": "Identities wanted",
+    "exchange": "Exchange codes",
+    "exchangeTitle": "Enter your friend code",
+    "cancel": "Cancel",
+    "back": "Friend Codes",
+    "membersOnly": "Signed-in users",
+    "mine": "Mine",
+    "guest": "Guest #{tag}",
+    "seen": "Online {time}",
+    "now": "just now",
+    "addIdentity": "Add identity",
+    "empty": "No posts yet.",
+    "loadFailed": "Could not load the list.",
+    "retry": "Retry",
+    "picker": {
+      "support": "Support identity",
+      "want": "Identity wanted",
+      "find": "Identity to find",
+      "clear": "Clear",
+      "apply": "Apply"
+    },
+    "filter": {
+      "find": "Find by identity",
+      "clear": "Clear filter"
+    },
+    "report": "Report",
+    "reported": "Reported.",
+    "reportConfirm": {
+      "title": "Report this post?",
+      "message": "Report a post that looks like someone else's code or a fake one."
+    },
+    "errors": {
+      "failed": "The request failed.",
+      "invalid_request": "Invalid request.",
+      "invalid_code": "A friend code is one capital letter and nine digits.",
+      "invalid_visibility": "Invalid visibility.",
+      "need_slots": "Add 1 to 12 support identities.",
+      "invalid_slot": "Invalid support slot.",
+      "unknown_identity": "Unknown identity.",
+      "bad_ego": "That E.G.O cannot go on this identity.",
+      "need_wanted": "Add 1 to 3 identities you want.",
+      "duplicate_code": "This friend code is already posted.",
+      "own_code": "Enter your own friend code.",
+      "not_exchange": "This is not a code exchange post.",
+      "blocked": "You are suspended from the friend code board.",
+      "not_found": "Post not found."
+    },
+    "admin": {
+      "title": "Friend code reports",
+      "reports": "{count} reports",
+      "remove": "Remove post",
+      "removeAndBlock": "Remove and block author",
+      "dismiss": "Dismiss reports",
+      "empty": "No reported posts.",
+      "done": "Done."
+    }
   }
 }
