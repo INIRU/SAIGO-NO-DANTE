@@ -25,7 +25,7 @@ export default function SupportSlotPicker({ index, value, onDone, onClose }: {
   const identities = useSWR('/api/notes/assets?kind=identity&catalog=1', fetchNoteAssets, { revalidateOnFocus: false })
   const egos = useSWR('/api/notes/assets?kind=ego&catalog=1', fetchNoteAssets, { revalidateOnFocus: false })
   const list = (identities.data ?? []).filter(asset => asset.identity?.sinner_id === sinner)
-    .sort((a, b) => compareReleaseDate(a.identity ?? a, b.identity ?? b)).reverse()
+    .sort((a, b) => compareReleaseDate(b.identity ?? b, a.identity ?? a))
   const chosenSinner = slot?.identity.sinner_id ?? sinner
   const number = SUPPORT_SLOT_NUMBERS[index]
   return <BaseModal open onClose={onClose} title={`${number} 지원 인격`} maxWidth="70rem" padding="0">
@@ -50,7 +50,10 @@ export default function SupportSlotPicker({ index, value, onDone, onClose }: {
             {EGO_GRADES.map(grade => {
               const options = (egos.data ?? []).filter(asset => asset.sinnerId === chosenSinner && asset.ego?.grade?.toUpperCase() === grade)
               return <section key={grade} className={styles.egoRow} data-grade={grade}>
-                <span className={styles.grade}>{grade}</span>
+                <span className={styles.grade}>
+                  {/* eslint-disable-next-line @next/next/no-img-element -- the game's own grade mark, fixed height */}
+                  <img src={`/assets/ego-ui/grade-symbols/grade-${grade.toLowerCase()}-symbol.webp`} alt={grade} />
+                </span>
                 {options.length ? <div>{options.map(asset => asset.ego && <button type="button" key={asset.id} disabled={!slot} title={assetName(asset, lang)}
                   aria-label={assetName(asset, lang)} aria-pressed={slot?.egos[grade] === asset.id} style={{ backgroundImage: asset.ego.image_url ? `url("${asset.ego.image_url}")` : undefined }}
                   onClick={() => slot && setSlot({ ...slot, egos: toggled(slot.egos, grade, asset.id) })} />)}</div> : <p>없음</p>}
