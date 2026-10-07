@@ -103,3 +103,16 @@ input.code:focus-visible { border-color: var(--gold); }
   .codeBox { margin-left: 0; width: 100%; }
   .primary, .ghost { padding: 0 0.8rem; font-size: 0.82rem; }
 }
+
+/* Writing page as an editor screen (html[data-with-friend-compose] hides the site navigation and footer): on desktop the
+   page is exactly one viewport tall and the line-up takes what is left, sized by height as well as width. */
+.compose { padding-top: 1.25rem; }
+.stage { min-width: 0; }
+@media (min-width: 64rem) {
+  .compose { display: flex; flex-direction: column; height: 100dvh; padding-bottom: 1.25rem; }
+  .compose > .editor { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+  .compose .fields, .compose .warning { flex: 0 0 auto; }
+  .stage { flex: 1; min-height: 0; container-type: size; display: flex; justify-content: center; }
+  /* Twelve strips 197:982 with 0.3rem gaps and 0.9rem above for the numbers: as wide as the height allows, never wider than the stage. */
+  .stage > div:not([class*='few']) { width: min(100cqw, calc((100cqh - 0.9rem) * 12 * 197 / 982 + 3.3rem)); }
+}
