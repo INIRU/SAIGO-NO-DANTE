@@ -4,7 +4,7 @@ import { useState } from 'react'
 import SupportStrips, { type SupportSlot } from '@/components/friends/SupportStrips'
 import SupportSlotPicker from '@/components/friends/SupportSlotPicker'
 
-const VISIBILITY = [['public', '누구나'], ['members', '로그인한 사람'], ['exchange', '코드를 준 사람']] as const
+const VISIBILITY = [['public', '누구나'], ['members', '로그인한 사람'], ['exchange', '코드 교환']] as const
 
 /** Screen prototype: the line-up is edited in the browser only; saving and the list come with the API. */
 export default function FriendsClient() {

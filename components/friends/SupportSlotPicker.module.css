@@ -4,7 +4,7 @@
 .head h2 { margin: 0; flex: 1; font-size: 1.05rem; font-weight: 700; }
 .sinners { flex: 0 0 auto; display: flex; gap: 0.15rem; padding: 0.35rem 1.25rem 0; border-bottom: 1px solid var(--border); overflow-x: auto; }
 .sinners button { flex: 1 0 auto; display: flex; flex-direction: column; align-items: center; gap: 0.3rem; padding: 0.5rem 0.55rem 0.45rem; border: 0; border-bottom: 2px solid transparent; background: none; font-size: 0.78rem; font-weight: 600; color: var(--text-muted); white-space: nowrap; cursor: pointer; transition: color 0.15s ease; }
-.sinners button img { width: 1.75rem; height: 1.75rem; opacity: 0.55; transition: opacity 0.15s ease; }
+.sinners button img { width: 1.9rem; height: 1.9rem; object-fit: contain; opacity: 0.55; transition: opacity 0.15s ease; }
 .sinners button:hover { color: var(--text-secondary); }
 .sinners button:hover img { opacity: 0.85; }
 .sinners button[aria-pressed='true'] { border-bottom-color: var(--gold-light); color: var(--gold-light); }
@@ -17,12 +17,10 @@
 .side { display: grid; grid-template-columns: 6rem minmax(0, 1fr); gap: 1.1rem; padding: 1.1rem 1.25rem; border-left: 1px solid var(--border); background: rgba(7, 6, 4, 0.35); overflow: auto; align-content: start; }
 .egos { display: flex; flex-direction: column; gap: 0.75rem; padding-top: 0.6rem; }
 .egoRow { display: grid; grid-template-columns: 3.6rem minmax(0, 1fr); align-items: center; gap: 0.5rem; min-height: 3.1rem; }
-.egoRow .grade { margin: 0; font: 400 0.95rem/1 var(--font-mikodacs), Impact, sans-serif; letter-spacing: 0.03em; }
-.egoRow[data-grade='ZAYIN'] .grade { color: #d2b24a; }
-.egoRow[data-grade='TETH'] .grade { color: #c8762f; }
-.egoRow[data-grade='HE'] .grade { color: #b33a32; }
-.egoRow[data-grade='WAW'] .grade { color: #8b5fd0; }
-.egoRow[data-grade='ALEPH'] .grade { color: #e8dcc8; }
+.egoRow .grade { display: grid; place-items: center; }
+.egoRow .grade img { display: block; height: 2.2rem; width: auto; }
+/* A thin rule between grades keeps the five fixed rows apart. */
+.egoRow + .egoRow { border-top: 1px solid #2e2417; padding-top: 0.75rem; }
 .egoRow div { display: flex; flex-wrap: wrap; gap: 0.4rem; }
 .egoRow div button { width: 3.1rem; height: 3.1rem; background: #070604 center / cover no-repeat; outline: 1px solid var(--border); opacity: 0.6; transition: opacity 0.15s ease; }
 .egoRow div button:hover:not(:disabled) { opacity: 0.9; }
