@@ -1,0 +1,32 @@
+/* The support line-up of the game's Company tab: twelve slanted strips numbered 01–09, 11–13. */
+.strips { display: flex; gap: 0.45rem; padding-top: 0.6rem; }
+.strip { position: relative; flex: 1 1 0; min-width: 0; aspect-ratio: 197 / 660; padding: 0; border: 0; background: none; color: inherit;
+  filter: drop-shadow(1px 0 0 #6b4a2a) drop-shadow(-1px 0 0 #6b4a2a) drop-shadow(0 -1px 0 #6b4a2a) drop-shadow(0 1px 0 #6b4a2a); }
+button.strip { cursor: pointer; }
+button.strip:focus-visible { outline: 2px solid var(--gold-light); outline-offset: 0.2rem; }
+/* The art keeps the game's own slanted top; the box trims the bottom along the same slope. */
+.cut { position: absolute; inset: 0; overflow: hidden; clip-path: polygon(0 0, 100% 0, 100% 88%, 0 100%); }
+.cut img { display: block; width: 100%; height: auto; }
+.cut::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to bottom, transparent 55%, rgba(7, 6, 4, 0.95) 96%); }
+/* Newer identities have no support strip yet: their portrait, cut to the same shape. */
+.fallback { position: absolute; inset: 0; background: center 8% / cover no-repeat; clip-path: polygon(0 7.4%, 100% 0, 100% 100%, 0 100%); }
+.empty .cut { background: #1a140d; clip-path: polygon(0 7.4%, 100% 0, 100% 88%, 0 100%); }
+.empty .cut::after { display: none; }
+.add::after { content: '+'; position: absolute; inset: 0; z-index: 3; display: grid; place-items: center; font-size: 1.5rem; color: #5a4526; }
+.no { position: absolute; left: -0.05rem; top: -0.15rem; z-index: 2; font: 400 2.5rem/1 var(--font-mikodacs), Impact, sans-serif; letter-spacing: -0.02em;
+  color: #8e1512; text-shadow: 0 2px 0 rgba(0, 0, 0, 0.55); }
+.empty .no { color: #5a1a14; }
+/* Five fixed places, ZAYIN to ALEPH: a grade without an E.G.O keeps its place empty. */
+.ego { position: absolute; left: 0.5rem; right: 0.5rem; bottom: 16%; z-index: 2; display: grid; grid-template-columns: repeat(5, 1fr); gap: 2px; max-width: 4.2rem; }
+.ego i { display: block; height: 0.3rem; background: rgba(46, 36, 23, 0.85); }
+.ego i[data-on='ZAYIN'] { background: #d2b24a; }
+.ego i[data-on='TETH'] { background: #c8762f; }
+.ego i[data-on='HE'] { background: #b33a32; }
+.ego i[data-on='WAW'] { background: #8b5fd0; }
+.ego i[data-on='ALEPH'] { background: #e8dcc8; }
+@media (max-width: 51.25rem) {
+  .strips { display: grid; grid-template-columns: repeat(6, 1fr); gap: 0.5rem 0.3rem; }
+  .no { font-size: 1.5rem; }
+  .ego { left: 0.3rem; right: 0.3rem; gap: 1px; }
+  .ego i { height: 0.22rem; }
+}
