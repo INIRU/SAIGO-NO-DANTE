@@ -2,12 +2,12 @@
 
 import { useState } from 'react'
 import { useTranslations } from 'next-intl'
-import { SINNER_SLUGS } from '@/lib/constants/game'
+import { SINNER_NUMBERS, sinnerNumber } from '@/lib/friends/codes'
 import { getIdentityImageUrl } from '@/lib/utils/images'
 import styles from './SupportStrips.module.css'
 
-/** The game's sinner numbers (there is no 10), in sinner order. */
-export const SUPPORT_SLOT_NUMBERS = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '11', '12', '13'] as const
+export { sinnerNumber }
+export const SUPPORT_SLOT_NUMBERS = SINNER_NUMBERS
 export const EGO_GRADES = ['ZAYIN', 'TETH', 'HE', 'WAW', 'ALEPH'] as const
 export type EgoGrade = typeof EGO_GRADES[number]
 export type SupportIdentity = { sinner_id: string; rarity: number; folder_name?: string | null; game_id?: string | null }
@@ -27,9 +27,6 @@ export function SupportStripArt({ identity }: { identity: SupportIdentity }) {
     <img src={getIdentityImageUrl(identity.sinner_id, identity.folder_name, `${identity.game_id}_gacksung_profile_support_personality`)} alt="" onError={() => setMissing(true)} />
   </span>
 }
-
-/** The game's number of a sinner (01 Yi Sang … 09 Rodion, 11 Sinclair, 12 Outis, 13 Gregor): the number on a filled strip. */
-export const sinnerNumber = (sinnerId: string): string | null => SUPPORT_SLOT_NUMBERS[SINNER_SLUGS.indexOf(sinnerId)] ?? null
 
 /** The strip art's own outline in its 197x982 box (measured on the game images): a line drawn on it fits the art exactly. */
 const FRAME_POINTS = '0.5,49.5 196.5,0.5 196.5,932.5 0.5,981.5'

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { authorRateKey, resolveAuthor, type Author } from '@/lib/guest/server'
 import { checkRequestRateLimit, rateLimitResponse } from '@/lib/rate-limit'
-import { codeForViewer, fail, newlyWanted, nextBumpedAt, parseSupportPost, parseWantPost, slotAssetIds, wantExpiresAt, wantIdentityIds } from '@/lib/friends/codes'
+import { codeForViewer, fail, newlyWanted, seenIsStale, nextBumpedAt, parseSupportPost, parseWantPost, slotAssetIds, wantExpiresAt, wantIdentityIds } from '@/lib/friends/codes'
 import { isAuthorOf, isBlocked, ownerFilter, viewerOf, type FriendPostRow } from '@/lib/friends/server'
 
 const COLUMNS = 'id,code,visibility,slots,identity_ids,user_id,key_hash,guest_tag,created_at,bumped_at,seen_at'
@@ -14,7 +14,6 @@ const kindOf = (value: unknown) => value === 'want' ? 'want' : 'support'
 
 /** Want posts live one day (REQ-COMMUNITY-022): the expired ones are deleted whenever want posts are read or written. */
 const dropExpiredWants = (db: Db) => db.from('friend_posts').delete().eq('kind', 'want').lt('created_at', new Date(Date.now() - WANT_LIFE_MS).toISOString())
-const SEEN_INTERVAL_MS = 10 * 60 * 1000
 const UUID_RE = /^[0-9a-f-]{36}$/i
 
 /**
@@ -71,7 +70,7 @@ export async function GET(request: NextRequest) {
 
     // The author is here: their post shows it, written at most every 10 minutes (REQ-COMMUNITY-023).
     const now = Date.now()
-    if (ownRow && now - new Date(ownRow.seen_at).getTime() > SEEN_INTERVAL_MS) {
+    if (ownRow && seenIsStale(ownRow.seen_at, now)) {
       const seenAt = new Date(now).toISOString()
       const touched = await db.from('friend_posts').update({ seen_at: seenAt }).eq('id', ownRow.id)
       if (!touched.error) ownRow.seen_at = seenAt

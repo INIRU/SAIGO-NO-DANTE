@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { codeForViewer, newlyWanted, nextBumpedAt, parseSupportPost, parseWantPost, slotAssetIds, wantExpiresAt, wantIdentityIds } from '@/lib/friends/codes'
+import { FRIEND_CODE_RE, FRIEND_ERRORS, VISIBILITIES, codeForViewer, fail, newlyWanted, nextBumpedAt, parseSupportPost, parseWantPost, seenIsStale, sinnerNumber, slotAssetIds, wantExpiresAt, wantIdentityIds } from '@/lib/friends/codes'
+import ko from '@/messages/ko.json'
+import en from '@/messages/en.json'
+import ja from '@/messages/ja.json'
 
 const I1 = '11111111-1111-4111-8111-111111111111', I2 = '22222222-2222-4222-8222-222222222222'
 const E1 = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', E2 = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'
@@ -86,5 +89,51 @@ describe('REQ-COMMUNITY-022 want post lifetime and request counts', () => {
     expect(newlyWanted([], [I1, I2])).toEqual([I1, I2])
     expect(newlyWanted([I1], [I1, I2])).toEqual([I2])
     expect(newlyWanted([I1, I2], [I2])).toEqual([])
+  })
+})
+
+describe('REQ-COMMUNITY-021 code exchange', () => {
+  it('takes only a well-formed code from the viewer, and shows the author\'s code to those who gave one', () => {
+    for (const code of ['Q111111111', 'A000000000']) expect(FRIEND_CODE_RE.test(code)).toBe(true)
+    for (const code of ['q111111111', 'Q11111111', 'Q1111111111', '1111111111', 'Q11111111a', '']) expect(FRIEND_CODE_RE.test(code)).toBe(false)
+    const post = { code: 'A123456789', visibility: 'exchange' }
+    expect(codeForViewer(post, { signedIn: true, mine: false, exchanged: false })).toBeNull()
+    expect(codeForViewer(post, { signedIn: false, mine: false, exchanged: true })).toBe('A123456789')
+    // The refusals an exchange can answer with have a message key.
+    for (const code of ['own_code', 'not_exchange', 'blocked'] as const) expect(fail(code)).toEqual({ code, error: FRIEND_ERRORS[code] })
+  })
+})
+
+describe('REQ-COMMUNITY-023 last time on the site', () => {
+  it('is written again only after ten minutes', () => {
+    const now = Date.parse('2026-10-08T12:00:00Z')
+    expect(seenIsStale('2026-10-08T11:49:59Z', now)).toBe(true)
+    expect(seenIsStale('2026-10-08T11:50:00Z', now)).toBe(false)
+    expect(seenIsStale('2026-10-08T11:59:00Z', now)).toBe(false)
+  })
+})
+
+describe('REQ-COMMUNITY-024 strips and the three languages', () => {
+  it('numbers a strip by its identity\'s sinner, as the game does (no 10), and has no number for an unknown one', () => {
+    expect(['yi-sang', 'rodion', 'sinclair', 'outis', 'gregor'].map(sinnerNumber)).toEqual(['01', '09', '11', '12', '13'])
+    expect(sinnerNumber('nobody')).toBeNull()
+  })
+  it('has every board text in ko, en and ja', () => {
+    const keys = (node: object, prefix = ''): string[] => Object.entries(node).flatMap(([key, value]) => typeof value === 'object' ? keys(value, `${prefix}${key}.`) : [`${prefix}${key}`])
+    expect(keys(en.friends)).toEqual(keys(ko.friends))
+    expect(keys(ja.friends)).toEqual(keys(ko.friends))
+    for (const value of VISIBILITIES) for (const messages of [ko, en, ja]) expect(messages.friends.visibility[value]).toBeTruthy()
+  })
+})
+
+describe('REQ-COMMUNITY-025 warning, reports and barred authors', () => {
+  it('warns about other people\'s and fake codes in the three languages, and names a report and its outcome', () => {
+    for (const messages of [ko, en, ja]) for (const key of ['warning', 'report', 'reported'] as const) expect(messages.friends[key]).toBeTruthy()
+    expect(ko.friends.warning).toContain('정지')
+  })
+  it('has a message in every language for each refusal, the bar from the board included', () => {
+    for (const code of Object.keys(FRIEND_ERRORS)) for (const messages of [ko, en, ja]) expect((messages.friends.errors as Record<string, string>)[code], code).toBeTruthy()
+    expect(ko.friends.errors.blocked).toBe(FRIEND_ERRORS.blocked)
+    for (const action of ['remove', 'removeAndBlock', 'dismiss'] as const) expect(ko.friends.admin[action]).toBeTruthy()
   })
 })
