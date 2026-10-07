@@ -18,8 +18,8 @@ export const NAV_GROUPS: { labelKey: string; items: { href: string; labelKey: st
     items: [
       { href: '/decks',               labelKey: 'nav.decks' },
       { href: '/planner/community',   labelKey: 'nav.community.planner' },
-      { href: '/collection',          labelKey: 'nav.community.collection' },
       { href: '/friends',             labelKey: 'nav.community.friends' },
+      { href: '/collection',          labelKey: 'nav.community.collection' },
     ],
   },
   {

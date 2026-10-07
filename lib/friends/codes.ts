@@ -8,6 +8,17 @@ type Grade = typeof FRIEND_EGO_GRADES[number]
 export type StoredSlot = { slot: number; identity: string; egos: Partial<Record<Grade, string>> }
 export type SupportPostInput = { code: string; visibility: Visibility; slots: StoredSlot[]; identityIds: string[] }
 
+/** Why a request was refused: code is the key of the message in messages/*.json (friends.errors), error its Korean text. */
+export const FRIEND_ERRORS = {
+  invalid_request: '잘못된 요청입니다.', invalid_code: '친구 코드는 영문 대문자 1자와 숫자 9자입니다.', invalid_visibility: '공개 범위가 올바르지 않습니다.',
+  need_slots: '지원 인격을 1~12개 넣어 주세요.', invalid_slot: '지원 칸이 올바르지 않습니다.', unknown_identity: '없는 인격입니다.',
+  bad_ego: '그 인격에 넣을 수 없는 E.G.O입니다.', need_wanted: '구하는 인격을 1~3개 넣어 주세요.', duplicate_code: '이미 올라와 있는 친구 코드입니다.',
+  own_code: '자기 친구 코드를 넣어 주세요.', not_exchange: '코드 교환 글이 아닙니다.', blocked: '친구 코드 게시판 이용이 정지되었습니다.', not_found: '글을 찾을 수 없습니다.',
+} as const
+export type FriendErrorCode = keyof typeof FRIEND_ERRORS
+export type FriendError = { error: string; code: FriendErrorCode }
+export const fail = (code: FriendErrorCode): FriendError => ({ error: FRIEND_ERRORS[code], code })
+
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null && !Array.isArray(value)
 
@@ -24,22 +35,22 @@ export function slotAssetIds(body: unknown): { identities: string[]; egos: strin
  */
 export function parseSupportPost(
   body: unknown, identities: ReadonlyMap<string, string>, egos: ReadonlyMap<string, { sinner: string; grade: string }>,
-): SupportPostInput | { error: string } {
-  if (!isRecord(body)) return { error: '잘못된 요청입니다.' }
+): SupportPostInput | FriendError {
+  if (!isRecord(body)) return fail('invalid_request')
   const { code, visibility } = body
-  if (typeof code !== 'string' || !FRIEND_CODE_RE.test(code)) return { error: '친구 코드는 영문 대문자 1자와 숫자 9자입니다.' }
-  if (!VISIBILITIES.includes(visibility as Visibility)) return { error: '공개 범위가 올바르지 않습니다.' }
-  if (!Array.isArray(body.slots) || body.slots.length < 1 || body.slots.length > 12) return { error: '지원 인격을 1~12개 넣어 주세요.' }
+  if (typeof code !== 'string' || !FRIEND_CODE_RE.test(code)) return fail('invalid_code')
+  if (!VISIBILITIES.includes(visibility as Visibility)) return fail('invalid_visibility')
+  if (!Array.isArray(body.slots) || body.slots.length < 1 || body.slots.length > 12) return fail('need_slots')
   const slots: StoredSlot[] = [], used = new Set<number>()
   for (const item of body.slots) {
-    if (!isRecord(item) || !Number.isInteger(item.slot) || (item.slot as number) < 0 || (item.slot as number) > 11 || used.has(item.slot as number)) return { error: '지원 칸이 올바르지 않습니다.' }
+    if (!isRecord(item) || !Number.isInteger(item.slot) || (item.slot as number) < 0 || (item.slot as number) > 11 || used.has(item.slot as number)) return fail('invalid_slot')
     used.add(item.slot as number)
     const sinner = typeof item.identity === 'string' ? identities.get(item.identity) : undefined
-    if (!sinner) return { error: '없는 인격입니다.' }
+    if (!sinner) return fail('unknown_identity')
     const chosen: StoredSlot['egos'] = {}
     for (const [grade, id] of Object.entries(isRecord(item.egos) ? item.egos : {})) {
       const ego = typeof id === 'string' ? egos.get(id) : undefined
-      if (!FRIEND_EGO_GRADES.includes(grade as Grade) || !ego || ego.sinner !== sinner || ego.grade.toUpperCase() !== grade) return { error: '그 인격에 넣을 수 없는 E.G.O입니다.' }
+      if (!FRIEND_EGO_GRADES.includes(grade as Grade) || !ego || ego.sinner !== sinner || ego.grade.toUpperCase() !== grade) return fail('bad_ego')
       chosen[grade as Grade] = id as string
     }
     slots.push({ slot: item.slot as number, identity: item.identity as string, egos: chosen })
@@ -72,15 +83,15 @@ export function wantIdentityIds(body: unknown): string[] {
 }
 
 /** A "wanted identity" post: the author's own code, the visibility and one to three identities the catalogue has. Nothing else is read. */
-export function parseWantPost(body: unknown, identities: ReadonlyMap<string, string>): WantPostInput | { error: string } {
-  if (!isRecord(body)) return { error: '잘못된 요청입니다.' }
+export function parseWantPost(body: unknown, identities: ReadonlyMap<string, string>): WantPostInput | FriendError {
+  if (!isRecord(body)) return fail('invalid_request')
   const { code, visibility } = body
-  if (typeof code !== 'string' || !FRIEND_CODE_RE.test(code)) return { error: '친구 코드는 영문 대문자 1자와 숫자 9자입니다.' }
-  if (!VISIBILITIES.includes(visibility as Visibility)) return { error: '공개 범위가 올바르지 않습니다.' }
-  if (!Array.isArray(body.identities)) return { error: '구하는 인격을 1~3개 넣어 주세요.' }
+  if (typeof code !== 'string' || !FRIEND_CODE_RE.test(code)) return fail('invalid_code')
+  if (!VISIBILITIES.includes(visibility as Visibility)) return fail('invalid_visibility')
+  if (!Array.isArray(body.identities)) return fail('need_wanted')
   const identityIds = [...new Set(body.identities as unknown[])]
-  if (identityIds.length < 1 || identityIds.length > WANT_LIMIT) return { error: '구하는 인격을 1~3개 넣어 주세요.' }
-  if (identityIds.some(id => typeof id !== 'string' || !identities.has(id))) return { error: '없는 인격입니다.' }
+  if (identityIds.length < 1 || identityIds.length > WANT_LIMIT) return fail('need_wanted')
+  if (identityIds.some(id => typeof id !== 'string' || !identities.has(id))) return fail('unknown_identity')
   return { code, visibility: visibility as Visibility, identityIds: identityIds as string[] }
 }
 

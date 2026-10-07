@@ -1,163 +1,131 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { useLocale } from 'next-intl'
-import { useSession } from 'next-auth/react'
+import { useState } from 'react'
+import { useLocale, useTranslations } from 'next-intl'
+import { useSearchParams } from 'next/navigation'
 import useSWR from 'swr'
-import { Copy, Trash2 } from 'lucide-react'
-import SupportStrips, { EGO_GRADES, type SupportSlot } from '@/components/friends/SupportStrips'
+import { Copy, Flag, Search, X } from 'lucide-react'
+import SupportStrips, { sinnerNumber, type SupportSlot } from '@/components/friends/SupportStrips'
 import SupportSlotPicker from '@/components/friends/SupportSlotPicker'
-import UnderlineTabBar from '@/components/ui/UnderlineTabBar'
-import { fetchNoteAssets } from '@/components/notes/NoteBlockViewer'
-import { assetName, type NoteAssetData } from '@/lib/notes/assets'
-import { GUEST_KEY_HEADER, guestHeaders, readGuestKey } from '@/lib/guest/key'
-import { FRIEND_CODE_RE, WANT_LIMIT, type StoredSlot, type Visibility } from '@/lib/friends/codes'
+import { KINDS, readOwnCode, rememberOwnCode, useFriendApi, useFriendCatalog, type Kind, type Post } from '@/components/friends/board'
+import { PostsSkeleton } from '@/components/friends/FriendsSkeleton'
+import BaseModal from '@/components/ui/BaseModal'
+import ConfirmModal from '@/components/ui/ConfirmModal'
+import PageHeader from '@/components/ui/PageHeader'
+import { Link } from '@/lib/i18n/navigation'
+import { FRIEND_CODE_RE, WANT_LIMIT } from '@/lib/friends/codes'
+import { getIdentityImageUrl } from '@/lib/utils/images'
 import { showError, showSuccess } from '@/lib/toast'
 import styles from './Friends.module.css'
 
-const VISIBILITY = [['public', '누구나'], ['members', '로그인한 사람'], ['exchange', '코드 교환']] as const
-const TABS = [{ key: 'support', label: '지원 인격' }, { key: 'want', label: '인격 구해요' }]
-type Kind = 'support' | 'want'
-type Post = {
-  id: string; visibility: Visibility; slots: StoredSlot[]; identityIds: string[]; mine: boolean; bumpedAt: string; seenAt: string
-  author: string | null; guestTag: string | null; code: string | null; received?: string[]; expiresAt?: string
-}
-type Slots = (SupportSlot | null)[]
-const empty = (count: number): Slots => Array(count).fill(null)
-
-/** "방금", "3시간 전": how long ago the author was last on the site. */
-function ago(iso: string, lang: string) {
-  const minutes = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000))
-  if (minutes < 1) return lang === 'en' ? 'now' : lang === 'ja' ? 'たった今' : '방금'
-  const format = new Intl.RelativeTimeFormat(lang, { numeric: 'always' })
-  return minutes < 60 ? format.format(-minutes, 'minute') : minutes < 1440 ? format.format(-Math.round(minutes / 60), 'hour') : format.format(-Math.round(minutes / 1440), 'day')
-}
 /** "23:14": hours and minutes until a want post is deleted. */
 function left(iso: string) {
   const minutes = Math.max(0, Math.floor((new Date(iso).getTime() - Date.now()) / 60000))
   return `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`
 }
-/** What a save would send, in a fixed order: equal strings mean nothing changed since the saved post. */
-const supportBody = (slots: Slots) => slots.flatMap((slot, index) => slot
-  ? [{ slot: index, identity: slot.identityId, egos: Object.fromEntries(EGO_GRADES.flatMap(grade => slot.egos[grade] ? [[grade, slot.egos[grade]]] : [])) }] : [])
-const wantBody = (slots: Slots) => [...new Set(slots.flatMap(slot => slot ? [slot.identityId] : []))]
 
+/** The board: what others posted, by kind, optionally only posts with one identity. Writing is on its own page (new/). */
 export default function FriendsClient() {
-  const lang = useLocale(), signedIn = useSession().status === 'authenticated'
-  const [tab, setTab] = useState<Kind>('support')
-  const [slots, setSlots] = useState<Record<Kind, Slots>>({ support: empty(12), want: empty(WANT_LIMIT) })
-  const [picking, setPicking] = useState<number | null>(null)
-  const [code, setCode] = useState('')
-  const [visibility, setVisibility] = useState<Visibility>('public')
+  const lang = useLocale(), t = useTranslations('friends'), api = useFriendApi(), catalog = useFriendCatalog()
+  const [tab, setTab] = useState<Kind>(useSearchParams().get('tab') === 'want' ? 'want' : 'support')
+  const [filter, setFilter] = useState<SupportSlot | null>(null)
+  const [finding, setFinding] = useState(false)
   const [busy, setBusy] = useState(false)
-  const [filled, setFilled] = useState<Record<Kind, boolean>>({ support: false, want: false })
-  const codeInput = useRef<HTMLInputElement>(null)
+  const [reporting, setReporting] = useState<string | null>(null)
+  // Giving a code for an exchange post: the post, and the viewer's own code being typed.
+  const [exchanging, setExchanging] = useState<string | null>(null)
+  const [code, setCode] = useState('')
 
-  const identities = useSWR('/api/notes/assets?kind=identity&catalog=1', fetchNoteAssets, { revalidateOnFocus: false })
-  // Readers send the guest key only if this browser already has one: looking at the list does not create it.
-  const list = useSWR([`/api/friend-codes?kind=${tab}`, signedIn], async ([url]) => {
-    const guest = signedIn ? null : readGuestKey()
-    const response = await fetch(url, { headers: guest ? { [GUEST_KEY_HEADER]: guest } : {} })
-    if (!response.ok) throw Error('list')
-    return (await response.json()).posts as Post[]
-  })
-  const byId = useMemo(() => new Map((identities.data ?? []).map(asset => [asset.id, asset] as [string, NoteAssetData])), [identities.data])
-  const slotOf = (id: string, egos: SupportSlot['egos'] = {}): SupportSlot | null => {
-    const asset = byId.get(id)
-    return asset?.identity ? { identityId: asset.id, identity: asset.identity, name: assetName(asset, lang), egos } : null
-  }
-  const supportSlots = (stored: StoredSlot[]) => { const next = empty(12); for (const item of stored) next[item.slot] = slotOf(item.identity, item.egos); return next }
-  const wantSlots = (ids: string[]) => Array.from({ length: WANT_LIMIT }, (_, index) => ids[index] ? slotOf(ids[index]) : null)
-
-  // The author's saved post goes into the editor once, so saving again edits it.
-  const mine = list.data?.find(post => post.mine)
-  useEffect(() => {
-    if (filled[tab] || !mine || !byId.size) return
-    setSlots(current => ({ ...current, [tab]: tab === 'support' ? supportSlots(mine.slots) : wantSlots(mine.identityIds) }))
-    setVisibility(mine.visibility); if (mine.code) setCode(mine.code)
-    setFilled(current => ({ ...current, [tab]: true }))
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- runs once per tab when its list and the catalogue are in
-  }, [filled, mine, byId, tab])
-
-  const send = async (url: string, method: string, body?: unknown) => {
-    const response = await fetch(url, { method, headers: { 'Content-Type': 'application/json', ...guestHeaders(signedIn) }, body: body === undefined ? undefined : JSON.stringify(body) })
-    const data = await response.json().catch(() => ({}))
-    if (!response.ok) throw Error(data.error || '요청에 실패했습니다.')
-    return data
+  const query = filter ? `&identity=${filter.identityId}` : ''
+  const lists = {
+    support: useSWR([`/api/friend-codes?kind=support${query}`, api.signedIn], ([url]) => api.load(url), { keepPreviousData: true }),
+    want: useSWR([`/api/friend-codes?kind=want${query}`, api.signedIn], ([url]) => api.load(url), { keepPreviousData: true }),
   }
   const run = async (work: () => Promise<void>) => {
     setBusy(true)
-    try { await work(); await list.mutate() } catch (error) { showError(error instanceof Error ? error.message : '요청에 실패했습니다.') } finally { setBusy(false) }
+    try { await work(); await Promise.all([lists.support.mutate(), lists.want.mutate()]) } catch (error) { showError(error instanceof Error ? error.message : t('errors.failed')) } finally { setBusy(false) }
   }
-  const current = slots[tab], codeOk = FRIEND_CODE_RE.test(code), chosen = current.filter(Boolean).length
-  const draft = tab === 'support' ? { kind: tab, code, visibility, slots: supportBody(current) } : { kind: tab, code, visibility, identities: wantBody(current) }
-  // The saved post in the same shape: when it equals the draft there is nothing to save.
-  const saved = !mine ? null : tab === 'support'
-    ? { kind: tab, code: mine.code, visibility: mine.visibility, slots: supportBody(supportSlots(mine.slots)) }
-    : { kind: tab, code: mine.code, visibility: mine.visibility, identities: mine.identityIds }
-  const changed = JSON.stringify(draft) !== JSON.stringify(saved)
-  const save = () => run(async () => { await send('/api/friend-codes', 'POST', draft); showSuccess(mine ? '수정했습니다.' : '올렸습니다.') })
-  const remove = () => run(async () => {
-    await send(`/api/friend-codes?kind=${tab}`, 'DELETE')
-    setSlots(all => ({ ...all, [tab]: empty(all[tab].length) })); showSuccess('지웠습니다.')
-  })
-  // Exchanging needs the viewer's own code: without it the button points at the code field instead of doing nothing.
-  const exchange = (id: string) => {
-    if (codeOk) return void run(async () => { await send(`/api/friend-codes/${id}/exchange`, 'POST', { code }) })
-    codeInput.current?.scrollIntoView({ block: 'center', behavior: 'smooth' })
-    codeInput.current?.focus({ preventScroll: true })
+  const openExchange = (id: string) => { setCode(lists.support.data?.own?.code ?? lists.want.data?.own?.code ?? readOwnCode()); setExchanging(id) }
+  const exchange = () => { const id = exchanging; setExchanging(null); if (id) void run(async () => { await api.send(`/api/friend-codes/${id}/exchange`, 'POST', { code }); rememberOwnCode(code) }) }
+  const report = (id: string) => run(async () => { await api.send(`/api/friend-codes/${id}/report`, 'POST'); showSuccess(t('reported')) })
+  const copy = (text: string) => navigator.clipboard.writeText(text).then(() => showSuccess(t('copied')), () => showError(t('copyFailed')))
+  const ago = (iso: string) => {
+    const minutes = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000))
+    if (minutes < 1) return t('now')
+    const format = new Intl.RelativeTimeFormat(lang, { numeric: 'always' })
+    return minutes < 60 ? format.format(-minutes, 'minute') : minutes < 1440 ? format.format(-Math.round(minutes / 60), 'hour') : format.format(-Math.round(minutes / 1440), 'day')
   }
-  const copy = (text: string) => navigator.clipboard.writeText(text).then(() => showSuccess('복사했습니다.'), () => showError('복사하지 못했습니다.'))
+  const copyButton = (text: string) => <button type="button" className={styles.icon} onClick={() => copy(text)} aria-label={t('copy')} title={t('copy')}><Copy size={16} aria-hidden="true" /></button>
   const codeBox = (post: Post) => post.code
-    ? <><b className={styles.code}>{post.code}</b><button type="button" className={styles.icon} onClick={() => copy(post.code!)} aria-label="복사" title="복사"><Copy size={16} aria-hidden="true" /></button></>
+    ? <><b className={styles.code}>{post.code}</b>{copyButton(post.code)}</>
     : post.visibility === 'exchange'
-      ? <button type="button" className={styles.primary} disabled={busy} aria-disabled={!codeOk} data-tip={codeOk ? undefined : '위에 내 친구 코드를 적으면 교환할 수 있습니다'} onClick={() => exchange(post.id)}>코드 교환</button>
-      : <span className={styles.tag}>로그인한 사람</span>
+      ? <button type="button" className={styles.primary} disabled={busy} onClick={() => openExchange(post.id)}>{t('exchange')}</button>
+      : <span className={styles.tag}>{t('membersOnly')}</span>
   const received = (post: Post) => post.received && post.received.length > 0 && <ul className={styles.received}>
-    {post.received.map(value => <li key={value}><b className={styles.code}>{value}</b><button type="button" className={styles.icon} onClick={() => copy(value)} aria-label="복사" title="복사"><Copy size={16} aria-hidden="true" /></button></li>)}
+    {post.received.map(value => <li key={value}><b className={styles.code}>{value}</b>{copyButton(value)}</li>)}
   </ul>
-  const who = (post: Post) => <><strong>{post.author ?? `익명 #${post.guestTag}`}</strong>{post.mine && <span className={styles.tag}>내 글</span>}<span className={styles.seen}>접속 {ago(post.seenAt, lang)}</span></>
+  const who = (post: Post) => <>
+    {post.author && post.authorId
+      ? <Link href={`/users/${post.authorId}`} className={styles.author}>{post.author}</Link>
+      : <strong>{post.author ?? t('guest', { tag: post.guestTag ?? '' })}</strong>}
+    {post.mine && <span className={styles.tag}>{t('mine')}</span>}
+    <span className={styles.seen}>{t('seen', { time: ago(post.seenAt) })}</span>
+    {!post.mine && <button type="button" className={styles.icon} disabled={busy} onClick={() => setReporting(post.id)} aria-label={t('report')} title={t('report')}><Flag size={15} aria-hidden="true" /></button>}
+  </>
+  const list = lists[tab], posts = list.data?.posts ?? []
+  const wanted = (lists.want.data?.wanted ?? []).flatMap(item => { const slot = catalog.slotOf(item.identityId); return slot ? [{ ...item, slot }] : [] })
 
   return <main className={styles.page}>
-    <h1>친구 코드</h1>
-    <UnderlineTabBar className={styles.tabs} tabs={TABS} activeKey={tab} onTabChange={next => { setTab(next as Kind); setPicking(null) }} />
-    <section className={styles.editor}>
-      <div className={styles.fields}>
-        <label>내 친구 코드
-          <input ref={codeInput} className={styles.code} value={code} onChange={event => setCode(event.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 10))} placeholder="A000000000" autoComplete="off" />
-        </label>
-        <div>코드를 볼 수 있는 사람
-          <div className={styles.segments}>
-            {VISIBILITY.map(([value, label]) => <button type="button" key={value} aria-pressed={visibility === value} onClick={() => setVisibility(value)}>{label}</button>)}
-          </div>
-        </div>
-        <div className={styles.actions}>
-          {mine && <button type="button" className={`${styles.icon} ${styles.boxed}`} disabled={busy} onClick={remove} aria-label="지우기" title="지우기"><Trash2 size={18} aria-hidden="true" /></button>}
-          <button type="button" className={styles.primary} disabled={busy || !codeOk || !chosen || !changed} onClick={save}>{mine ? '수정' : '올리기'}</button>
-        </div>
-      </div>
-      {tab === 'support'
-        ? <SupportStrips slots={current} onPick={setPicking} />
-        : <div className={styles.wantEdit}><span>구하는 인격</span><SupportStrips slots={current} count={WANT_LIMIT} onPick={setPicking} /></div>}
-      <p className={styles.warning}>다른 사람의 친구 코드나 가짜 코드를 올리면 이용이 정지됩니다.</p>
-    </section>
+    <PageHeader title={t('title')} actions={<div className={styles.actions}>
+      <Link href="/friends/new?kind=want" className={styles.ghost}>{t('compose.want')}</Link>
+      <Link href="/friends/new" className={styles.primary}>{t('compose.support')}</Link>
+    </div>} />
 
+    {wanted.length > 0 && <section className={styles.rank}>
+      <h2>{t('rank')}</h2>
+      <div className={styles.plates}>
+        {wanted.map((item, index) => <button type="button" key={item.identityId} className={styles.plate} onClick={() => { setFilter(item.slot); setTab('support') }}>
+          <span className={styles.pic} style={{ backgroundImage: ['gacksung', 'normal'].map(state => `url("${getIdentityImageUrl(item.slot.identity.sinner_id, item.slot.identity.folder_name ?? '', `${item.slot.identity.game_id}_${state}_info`)}")`).join(', ') }} />
+          <span className={styles.plateIn}>
+            <span className={styles.rankNo}>{index + 1}</span>
+            <b>{item.slot.name}</b>
+            <span className={styles.count}>{item.count}<small>{t('rankUnit')}</small></span>
+          </span>
+        </button>)}
+      </div>
+    </section>}
+
+    <div className={styles.bar}>
+      <div className={styles.segments} role="tablist">
+        {KINDS.map(value => <button type="button" role="tab" key={value} aria-selected={tab === value} onClick={() => setTab(value)}>
+          {t(`tabs.${value}`)}{lists[value].data && <small>{lists[value].data!.posts.length}</small>}
+        </button>)}
+      </div>
+      {filter
+        ? <span className={styles.chip}><i>{sinnerNumber(filter.identity.sinner_id)}</i>{filter.name}
+          <button type="button" className={styles.icon} onClick={() => setFilter(null)} aria-label={t('filter.clear')} title={t('filter.clear')}><X size={15} aria-hidden="true" /></button></span>
+        : <button type="button" className={styles.ghost} onClick={() => setFinding(true)}><Search size={15} aria-hidden="true" />{t('filter.find')}</button>}
+    </div>
+
+    {list.error
+      ? <p className={styles.state}>{t('loadFailed')}<button type="button" className={styles.ghost} onClick={() => void list.mutate()}>{t('retry')}</button></p>
+      : !list.data ? <PostsSkeleton kind={tab} /> : !posts.length && <p className={styles.state}>{t('empty')}</p>}
     {tab === 'support'
       ? <section className={styles.list}>
-        {(list.data ?? []).map(post => <article key={post.id} className={styles.post}>
+        {posts.map(post => <article key={post.id} className={`${styles.post} ${post.mine ? styles.mine : ''}`}>
           <header>{who(post)}<span className={styles.codeBox}>{codeBox(post)}</span></header>
-          <SupportStrips slots={supportSlots(post.slots)} />
+          <SupportStrips slots={catalog.supportSlots(post.slots)} />
           {received(post)}
         </article>)}
       </section>
       : <section className={styles.wants}>
-        {(list.data ?? []).map(post => {
-          const wanted = wantSlots(post.identityIds)
+        {posts.map(post => {
+          const asked = catalog.wantSlots(post.identityIds)
           return <article key={post.id} className={`${styles.want} ${post.mine ? styles.mine : ''}`}>
-            <SupportStrips slots={wanted} count={WANT_LIMIT} />
+            <SupportStrips slots={asked} count={WANT_LIMIT} />
             <div className={styles.info}>
-              {post.expiresAt && <span className={styles.left}>{left(post.expiresAt)}</span>}
-              <ul className={styles.names}>{wanted.map(slot => slot && <li key={slot.identityId}>{slot.name}</li>)}</ul>
+              {post.expiresAt && <span className={styles.left} title={t('timeLeft', { time: left(post.expiresAt) })}>{left(post.expiresAt)}</span>}
+              <ul className={styles.names}>{asked.map(slot => slot && <li key={slot.identityId}>{slot.name}</li>)}</ul>
               <span className={styles.codeBox}>{codeBox(post)}</span>
               {received(post)}
               <p className={styles.who}>{who(post)}</p>
@@ -166,8 +134,19 @@ export default function FriendsClient() {
         })}
       </section>}
 
-    {picking !== null && <SupportSlotPicker key={`${tab}-${picking}`} index={picking} value={current[picking]} onClose={() => setPicking(null)}
-      title={tab === 'support' ? '지원 인격' : '구하는 인격'} identityOnly={tab === 'want'}
-      onChange={slot => setSlots(all => ({ ...all, [tab]: all[tab].map((item, at) => at === picking ? slot : item) }))} />}
+    {finding && <SupportSlotPicker index={0} value={filter} onClose={() => setFinding(false)} title={t('picker.find')} identityOnly onChange={setFilter} />}
+    <BaseModal open={exchanging !== null} onClose={() => setExchanging(null)} title={t('exchangeTitle')} maxWidth="26rem">
+      <form className={styles.exchange} onSubmit={event => { event.preventDefault(); if (FRIEND_CODE_RE.test(code)) exchange() }}>
+        <h2>{t('exchangeTitle')}</h2>
+        <input className={styles.code} value={code} autoFocus onChange={event => setCode(event.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 10))} placeholder="A000000000" autoComplete="off" aria-label={t('myCode')} />
+        <p className={styles.warning}>{t('warning')}</p>
+        <div className={styles.actions}>
+          <button type="button" className={styles.ghost} onClick={() => setExchanging(null)}>{t('cancel')}</button>
+          <button type="submit" className={styles.primary} disabled={!FRIEND_CODE_RE.test(code)}>{t('exchange')}</button>
+        </div>
+      </form>
+    </BaseModal>
+    <ConfirmModal open={reporting !== null} title={t('reportConfirm.title')} message={t('reportConfirm.message')} confirmLabel={t('report')} variant="danger"
+      onCancel={() => setReporting(null)} onConfirm={() => { const id = reporting; setReporting(null); if (id) void report(id) }} />
   </main>
 }

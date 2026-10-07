@@ -2445,5 +2445,92 @@
     "deleteConfirm": "このニュースをカレンダーから削除しますか?",
     "deleted": "ニュースを削除しました。",
     "deleteFailed": "削除できませんでした。もう一度お試しください。"
+  },
+  "friends": {
+    "compose": {
+      "support": "コードを投稿",
+      "want": "人格を募集"
+    },
+    "rank": "募集の多い人格",
+    "rankUnit": "人",
+    "timeLeft": "残り {time}",
+    "title": "フレンドコード",
+    "tabs": {
+      "support": "サポート人格",
+      "want": "人格募集"
+    },
+    "myCode": "自分のフレンドコード",
+    "visibility": {
+      "label": "コードを見られる人",
+      "public": "誰でも",
+      "members": "ログインした人",
+      "exchange": "コード交換"
+    },
+    "post": "投稿",
+    "edit": "更新",
+    "delete": "削除",
+    "copy": "コピー",
+    "copied": "コピーしました。",
+    "copyFailed": "コピーできませんでした。",
+    "posted": "投稿しました。",
+    "updated": "更新しました。",
+    "deleted": "削除しました。",
+    "warning": "他人のフレンドコードや偽のコードを投稿すると利用停止になります。",
+    "wanted": "募集する人格",
+    "exchange": "コード交換",
+    "exchangeTitle": "自分のフレンドコードを入力",
+    "cancel": "キャンセル",
+    "back": "フレンドコード",
+    "membersOnly": "ログインした人",
+    "mine": "自分の投稿",
+    "guest": "匿名 #{tag}",
+    "seen": "接続 {time}",
+    "now": "たった今",
+    "addIdentity": "人格を入れる",
+    "empty": "投稿がありません。",
+    "loadFailed": "一覧を読み込めませんでした。",
+    "retry": "再試行",
+    "picker": {
+      "support": "サポート人格",
+      "want": "募集する人格",
+      "find": "探す人格",
+      "clear": "空にする",
+      "apply": "適用"
+    },
+    "filter": {
+      "find": "人格で探す",
+      "clear": "フィルター解除"
+    },
+    "report": "通報",
+    "reported": "通報しました。",
+    "reportConfirm": {
+      "title": "この投稿を通報しますか？",
+      "message": "他人のコードや偽のコードと思われる投稿を通報します。"
+    },
+    "errors": {
+      "failed": "リクエストに失敗しました。",
+      "invalid_request": "不正なリクエストです。",
+      "invalid_code": "フレンドコードは英大文字1字と数字9字です。",
+      "invalid_visibility": "公開範囲が正しくありません。",
+      "need_slots": "サポート人格を1〜12体入れてください。",
+      "invalid_slot": "サポート枠が正しくありません。",
+      "unknown_identity": "存在しない人格です。",
+      "bad_ego": "その人格には付けられないE.G.Oです。",
+      "need_wanted": "募集する人格を1〜3体入れてください。",
+      "duplicate_code": "すでに投稿されているフレンドコードです。",
+      "own_code": "自分のフレンドコードを入力してください。",
+      "not_exchange": "コード交換の投稿ではありません。",
+      "blocked": "フレンドコード掲示板の利用が停止されています。",
+      "not_found": "投稿が見つかりません。"
+    },
+    "admin": {
+      "title": "フレンドコード通報",
+      "reports": "通報 {count}",
+      "remove": "投稿を削除",
+      "removeAndBlock": "削除して投稿を禁止",
+      "dismiss": "通報を取り消す",
+      "empty": "通報された投稿はありません。",
+      "done": "処理しました。"
+    }
   }
 }
