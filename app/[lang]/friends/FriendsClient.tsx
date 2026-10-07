@@ -20,10 +20,11 @@ type Post = {
 }
 const EMPTY: (SupportSlot | null)[] = Array(12).fill(null)
 
-/** "3시간 전": how long ago the author was last on the site. */
+/** "방금", "3시간 전": how long ago the author was last on the site. */
 function ago(iso: string, lang: string) {
   const minutes = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000))
-  const format = new Intl.RelativeTimeFormat(lang, { numeric: 'auto' })
+  if (minutes < 1) return lang === 'en' ? 'now' : lang === 'ja' ? 'たった今' : '방금'
+  const format = new Intl.RelativeTimeFormat(lang, { numeric: 'always' })
   return minutes < 60 ? format.format(-minutes, 'minute') : minutes < 1440 ? format.format(-Math.round(minutes / 60), 'hour') : format.format(-Math.round(minutes / 1440), 'day')
 }
 
