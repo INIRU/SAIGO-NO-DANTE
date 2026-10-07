@@ -2,11 +2,12 @@
 
 import { useState } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
-import { useSearchParams } from 'next/navigation'
+import { parseAsStringLiteral, useQueryState } from 'nuqs'
 import useSWR from 'swr'
-import { Copy, Flag, Search, X } from 'lucide-react'
+import { CircleHelp, Copy, Flag, Search, X } from 'lucide-react'
 import SupportStrips, { sinnerNumber, type SupportSlot } from '@/components/friends/SupportStrips'
 import SupportSlotPicker from '@/components/friends/SupportSlotPicker'
+import FriendGuide from '@/components/friends/FriendGuide'
 import { KINDS, readOwnCode, rememberOwnCode, useFriendApi, useFriendCatalog, type Kind, type Post } from '@/components/friends/board'
 import { PostsSkeleton } from '@/components/friends/FriendsSkeleton'
 import BaseModal from '@/components/ui/BaseModal'
@@ -27,9 +28,11 @@ function left(iso: string) {
 /** The board: what others posted, by kind, optionally only posts with one identity. Writing is on its own page (new/). */
 export default function FriendsClient() {
   const lang = useLocale(), t = useTranslations('friends'), api = useFriendApi(), catalog = useFriendCatalog()
-  const [tab, setTab] = useState<Kind>(useSearchParams().get('tab') === 'want' ? 'want' : 'support')
+  // The tab lives in the address (?tab=want; none for the default), so switching, reloading and sharing agree.
+  const [tab, setTab] = useQueryState('tab', parseAsStringLiteral(KINDS).withDefault('support'))
   const [filter, setFilter] = useState<SupportSlot | null>(null)
   const [finding, setFinding] = useState(false)
+  const [guide, setGuide] = useState(false)
   const [busy, setBusy] = useState(false)
   const [reporting, setReporting] = useState<string | null>(null)
   // Giving a code for an exchange post: the post, and the viewer's own code being typed.
@@ -77,6 +80,7 @@ export default function FriendsClient() {
 
   return <main className={styles.page}>
     <PageHeader title={t('title')} actions={<div className={styles.actions}>
+      <button type="button" className={styles.ghost} onClick={() => setGuide(true)}><CircleHelp size={16} aria-hidden="true" />{t('guide.open')}</button>
       <Link href="/friends/new?kind=want" className={styles.ghost}>{t('compose.want')}</Link>
       <Link href="/friends/new" className={styles.primary}>{t('compose.support')}</Link>
     </div>} />
@@ -125,7 +129,6 @@ export default function FriendsClient() {
             <SupportStrips slots={asked} count={WANT_LIMIT} />
             <div className={styles.info}>
               {post.expiresAt && <span className={styles.left} title={t('timeLeft', { time: left(post.expiresAt) })}>{left(post.expiresAt)}</span>}
-              <ul className={styles.names}>{asked.map(slot => slot && <li key={slot.identityId}>{slot.name}</li>)}</ul>
               <span className={styles.codeBox}>{codeBox(post)}</span>
               {received(post)}
               <p className={styles.who}>{who(post)}</p>
@@ -134,6 +137,7 @@ export default function FriendsClient() {
         })}
       </section>}
 
+    {guide && <FriendGuide onClose={() => setGuide(false)} />}
     {finding && <SupportSlotPicker index={0} value={filter} onClose={() => setFinding(false)} title={t('picker.find')} identityOnly onChange={setFilter} />}
     <BaseModal open={exchanging !== null} onClose={() => setExchanging(null)} title={t('exchangeTitle')} maxWidth="26rem">
       <form className={styles.exchange} onSubmit={event => { event.preventDefault(); if (FRIEND_CODE_RE.test(code)) exchange() }}>

@@ -2454,6 +2454,21 @@
     "rank": "Most wanted identities",
     "rankUnit": "",
     "timeLeft": "{time} left",
+    "guide": {
+      "open": "How it works",
+      "title": "How friend codes work",
+      "steps": {
+        "code": "Your friend code is the text after NO. on the ticket at the top left of the lobby.",
+        "copy": "Tap the ticket, then the copy button next to the code.",
+        "friends": "Open the Friends tab and press the add friend button.",
+        "add": "Enter the other player's code in the search field to send a friend request.",
+        "company": "The identities you set in the Company tab are what friends see as your support identities."
+      },
+      "imageAlt": "Game screen: {step}",
+      "prev": "Previous",
+      "next": "Next",
+      "close": "Close"
+    },
     "title": "Friend Codes",
     "tabs": {
       "support": "Support Identities",
