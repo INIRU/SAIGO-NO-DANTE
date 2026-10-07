@@ -1,0 +1,36 @@
+/* The strip picker sits in the site's character picker frame (global .note-character-picker, .character-picker-layout):
+   only what that frame lacks is here: the header's two icon actions, the card grid and the E.G.O side. */
+.picker { border: 1px solid var(--border); }
+.actions { display: flex; gap: 0.25rem; }
+.actions button:hover { color: var(--gold-light); }
+.actions button:disabled { opacity: 0.3; cursor: default; }
+.withSide { grid-template-columns: 11rem minmax(0, 1fr) 23rem; }
+.results { overflow-y: auto; }
+.identities { display: grid; grid-template-columns: repeat(auto-fill, minmax(6.5rem, 1fr)); gap: 0.8rem; }
+.identities button { display: block; padding: 0; border: 0; background: none; color: inherit; text-align: left; cursor: pointer; }
+.egoRow button { display: block; padding: 0; border: 0; cursor: pointer; }
+.identities button:focus-visible, .egoRow button:focus-visible { outline: 2px solid var(--gold-light); outline-offset: 0.15rem; }
+.side { display: grid; grid-template-columns: 6rem minmax(0, 1fr); gap: 1.1rem; padding: 1rem; border-left: 1px solid var(--border); overflow: auto; align-content: start; }
+.egos { display: flex; flex-direction: column; gap: 0.75rem; padding-top: 0.6rem; }
+.egoRow { display: grid; grid-template-columns: 4.6rem minmax(0, 1fr); align-items: center; gap: 0.5rem; min-height: 3.1rem; }
+.egoRow .grade { position: relative; align-self: stretch; }
+.egoRow .grade img { position: absolute; left: 0; display: block; width: 4.6rem; height: auto; }
+/* A thin rule between grades keeps the five fixed rows apart. */
+.egoRow + .egoRow { border-top: 1px solid #2e2417; padding-top: 0.75rem; }
+.egoRow div { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.egoRow div button { width: 3.1rem; height: 3.1rem; background: #070604 center / cover no-repeat; outline: 1px solid var(--border); opacity: 0.6; transition: opacity 0.15s ease; }
+.egoRow div button:hover { opacity: 0.9; }
+.egoRow div button[aria-pressed='true'] { outline: 2px solid var(--gold-light); opacity: 1; }
+.dim { opacity: 0.5; }
+@media (max-width: 64rem) {
+  .withSide { grid-template-columns: 11rem minmax(0, 1fr) 17rem; }
+  .side { grid-template-columns: 1fr; }
+  .side > :first-child { display: none; }
+}
+@media (max-width: 40rem) {
+  .identities { grid-template-columns: repeat(4, 1fr); gap: 0.5rem; }
+  .side { border-left: 0; border-top: 1px solid var(--border); padding: 0.75rem; overflow: visible; flex: 0 0 auto; max-height: 40dvh; overflow-y: auto; }
+}
+/* The choice is already applied; this closes the window and reads as confirming it. */
+.actions .apply { display: inline-flex; align-items: center; gap: 0.4rem; min-height: 2.5rem; padding: 0 1rem; border-radius: 0; background: var(--gold); color: #140e02; font-size: 0.9rem; font-weight: 700; }
+.actions .apply:hover { background: var(--gold-light); color: #140e02; }

@@ -1,0 +1,42 @@
+/* Support strips of the game's Company tab: slanted art, a frame on its outline, the sinner number under the frame line. */
+.strips { display: flex; gap: 0.3rem; padding-top: 0.9rem; }
+.strip { position: relative; flex: 1 1 0; min-width: 0; aspect-ratio: 197 / 982; padding: 0; border: 0; background: none; color: inherit; container-type: inline-size; }
+button.strip { cursor: pointer; }
+button.strip:focus-visible { outline: 2px solid var(--gold-light); outline-offset: 0.2rem; }
+/* The game's support art at its full height: it is already cut to the slanted shape. */
+.cut { position: absolute; inset: 0; }
+.cut img { display: block; width: 100%; height: 100%; }
+/* Newer identities have no support strip yet: their portrait, cut to the same shape. */
+.fallback { position: absolute; inset: 0; background: center 8% / cover no-repeat; clip-path: polygon(0 5%, 100% 0, 100% 95%, 0 100%); }
+.empty .cut { background: #1a140d; clip-path: polygon(0 5%, 100% 0, 100% 95%, 0 100%); }
+/* The art darkens toward the top and the bottom, as in the game. */
+.shade { position: absolute; inset: 0; z-index: 1; clip-path: polygon(0 5%, 100% 0, 100% 95%, 0 100%); pointer-events: none;
+  background: linear-gradient(180deg, #000 0, rgba(0, 0, 0, 0.92) 6%, rgba(0, 0, 0, 0.35) 12%, transparent 18%, transparent 74%, rgba(0, 0, 0, 0.55) 82%, rgba(0, 0, 0, 0.95) 90%, #000 100%); }
+.add::after { content: '+'; position: absolute; inset: 0; z-index: 4; display: grid; place-items: center; font-size: 1.5rem; color: #5a4526; }
+/* The sinner number, measured on the game screen: on the top left corner, partly above the strip, about half the strip wide;
+   the frame line runs over it (the frame is drawn after it). */
+.no { position: absolute; left: 1cqw; top: -2.2%; z-index: 2; font: 400 54cqw/0.9 var(--font-mikodacs), Impact, sans-serif; letter-spacing: -0.03em;
+  color: #8f1310; text-shadow: 0 0.06em 0 rgba(0, 0, 0, 0.6); }
+/* The frame: the art's outline exactly (points in the art's 197x982 box), one device-independent line whatever the strip's size. */
+.frame { position: absolute; inset: 0; z-index: 3; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+.frame polygon { fill: none; stroke: #6e5733; stroke-width: 1.5; vector-effect: non-scaling-stroke; stroke-linejoin: miter; }
+.empty .frame polygon { stroke: #3d3020; }
+button.strip:hover .frame polygon { stroke: var(--gold-light); }
+/* Five fixed places, ZAYIN to ALEPH: a grade without an E.G.O keeps its place empty. */
+.ego { position: absolute; left: 0.5rem; right: 0.5rem; bottom: 8%; z-index: 4; display: grid; grid-template-columns: repeat(5, 1fr); gap: 2px; max-width: 4.2rem; }
+.ego i { display: block; height: 0.3rem; background: rgba(46, 36, 23, 0.85); }
+.ego i[data-on='ZAYIN'] { background: #d2b24a; }
+.ego i[data-on='TETH'] { background: #c8762f; }
+.ego i[data-on='HE'] { background: #b33a32; }
+.ego i[data-on='WAW'] { background: #8b5fd0; }
+.ego i[data-on='ALEPH'] { background: #e8dcc8; }
+/* A short row (wanted identities): fixed-width strips, no E.G.O places. */
+.few { gap: 0.35rem; padding-top: 0; }
+.few .strip { flex: 0 0 3.6rem; }
+.few .ego { display: none; }
+@media (max-width: 51.25rem) {
+  .strips:not(.few) { display: grid; grid-template-columns: repeat(6, 1fr); gap: 0.5rem 0.3rem; }
+  .ego { left: 0.3rem; right: 0.3rem; gap: 1px; }
+  .ego i { height: 0.22rem; }
+  .few .strip { flex-basis: 3rem; }
+}
