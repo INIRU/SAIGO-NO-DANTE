@@ -17,7 +17,8 @@
     "community": {
       "title": "Community",
       "planner": "MD Planner",
-      "collection": "Collection"
+      "collection": "Collection",
+      "friends": "Friend Codes"
     },
     "db": {
       "title": "DB",
