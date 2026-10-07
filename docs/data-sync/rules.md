@@ -60,6 +60,13 @@ EGO 패시브는 KR_Passive_Ego를 포함한 세 언어에서 읽는다. CheckAw
 
 스킬 아이콘 업로드(2026-10-01): 새 인격 이미지 업로드(`sync-extracted-identities`)는 새 인격의 스킬만 올려서, 기존 인격이 나중에 얻은 스킬(인격 10412 N사 E.G.O:: 경멸, 경외의 1041205 "경멸 밑으로 쏟아지는 경외의 시선")은 Storage에 없었다. `--fix`는 새 인격 이미지 직후, `--skill-icons-only`/`--icons-only`는 단독으로 `scripts/sync/skill-icons.ts`의 `uploadMissingSkillIcons`를 실행한다. DB의 모든 스킬 행에서 사이트가 읽는 키를 `getSkillIconUrl`·`computeSkillImageIndices`로 그대로 만들고(`image_id`가 있으면 그것, 없으면 인격 id + 번호, 소유 수감자 폴더는 스프라이트 번호 앞 3자리), 수감자 폴더 목록(폴더마다 한 번)에 없는 키만 대상으로 한다. 추출본 매니페스트에서 `kind '스킬'`·`name`이 스프라이트 번호와 같은 이미지가 정확히 하나여야 하고(같은 이름에 해시가 다른 이미지가 둘이면 모호), 해시를 확인한 뒤 무손실 WebP로 `upsert: false`로 올리며 `uploads`에 `before: null`로 남겨 되돌리기가 지운다. 못 올린 것은 `report.skillsWithoutIcon`(키·스프라이트·인격·사유 `no-sprite`/`ambiguous`), 올린 것은 `report.newSkillIcons`에 남고 반영은 멈추지 않는다. 검증: 2026-10-01 운영 DB의 스킬 2,930행은 키 980개이고 없는 것은 `icons/skills/ryoshu/1041205.webp` 1개이며, 9/24 추출본(`Downloads/LimbusAssets 2`)에 그 스프라이트가 있어 dry-run이 1개 업로드를 계획한다.
 
+지원 띠 그림(2026-10-07): 게임의 지원 인격 화면이 쓰는 기울어진 세로 띠 그림(`<ID>_normal_profile_support_personality`, `<ID>_gacksung_profile_support_personality`, 197×982)은 추출 목록에 `인격`으로 들어 있는데 `selectEntries`가 `_info`·`_profile`까지만 받아 올리지 않았다. 그래서 예전에 올린 인격에만 있고 추출 반영으로 들어온 최신 21종에는 없었다(로컬 에셋 폴더 기준 189종 중 168종 보유). 이제 새 인격 이미지 반영이 띠 그림도 같은 폴더에 `<이름>.webp`로 올린다. 띠 그림은 한쪽 상태만 있는 인격이 있어 없다고 실패하지 않는다. 이미 반영된 인격은 `--support-only`로 띠 그림만 채운다:
+
+```bash
+node scripts/assets/sync-extracted-identities.cjs --ids 10917,10315 --source <추출본 폴더> --output <작업 폴더> --support-only        # 계획만
+node scripts/assets/sync-extracted-identities.cjs --ids 10917,10315 --source <추출본 폴더> --output <작업 폴더> --support-only --fix  # 올리고 검증
+```
+
 ## 기프트와 이벤트 그림
 
 새 기프트·이벤트 그림(2026-09-28): mirror 단계 뒤 `ego_gifts.image_url`이 가리키는 `ego-gifts/` 객체가 없으면 ZIP의 `EgoGiftIcon/<게임 ID>.png`(kind `기프트`, name=게임 ID)를 webp로 올리고, ZIP에 아이콘이 없는 기프트는 `report.json`의 `giftsWithoutIcon`에 남긴다. events 단계 전에는 ZIP의 이벤트 삽화(kind `이벤트선택지`, 파일 이름 앞 이벤트 번호)를 `icons/events/<번호>.webp`에 없는 것만 올려, 이벤트 재구성이 원화를 연결하게 한다. 둘 다 기존 파일은 덮어쓰지 않고 `uploads`에 기록해 되돌리기로 지운다. 9/24 추출본 기준으로는 기프트 9818 아이콘 1개(현재 Storage에 없음)만 대상이고 이벤트 원화는 모두 있다. 기존 E.G.O 전체를 추출본으로 다시 쓰는 것은 보류했다: 전체 dry-run에서 2개가 죄악 속성·코스트·내성·패시브까지 DB와 달라 원인 확인이 먼저다(그림 폴더는 기존 값을 유지하도록 했다).
