@@ -7,7 +7,7 @@ import BaseModal from '@/components/ui/BaseModal'
 import IdentityFrameCard from '@/components/ui/IdentityFrameCard'
 import { fetchNoteAssets } from '@/components/notes/NoteBlockViewer'
 import { SINNER_SLUGS } from '@/lib/constants/game'
-import { getSinnerLogoUrl } from '@/lib/utils/images'
+import { getEgoGradeBannerUrl, getSinnerLogoUrl } from '@/lib/utils/images'
 import { assetName } from '@/lib/notes/assets'
 import { compareReleaseDate } from '@/lib/utils/release-order'
 import type { SupportedLang } from '@/lib/i18n/types'
@@ -51,8 +51,8 @@ export default function SupportSlotPicker({ index, value, onDone, onClose }: {
               const options = (egos.data ?? []).filter(asset => asset.sinnerId === chosenSinner && asset.ego?.grade?.toUpperCase() === grade)
               return <section key={grade} className={styles.egoRow} data-grade={grade}>
                 <span className={styles.grade}>
-                  {/* eslint-disable-next-line @next/next/no-img-element -- the game's own grade mark, fixed height */}
-                  <img src={`/assets/ego-ui/grade-symbols/grade-${grade.toLowerCase()}-symbol.webp`} alt={grade} />
+                  {/* eslint-disable-next-line @next/next/no-img-element -- the game's own rank banner, fixed width */}
+                  <img src={getEgoGradeBannerUrl(grade)} alt={grade} style={{ top: `calc(50% - ${BANNER_CENTRE[grade] / 185 * BANNER_WIDTH_REM}rem)` }} />
                 </span>
                 {options.length ? <div>{options.map(asset => asset.ego && <button type="button" key={asset.id} disabled={!slot} title={assetName(asset, lang)}
                   aria-label={assetName(asset, lang)} aria-pressed={slot?.egos[grade] === asset.id} style={{ backgroundImage: asset.ego.image_url ? `url("${asset.ego.image_url}")` : undefined }}
@@ -70,6 +70,13 @@ export default function SupportSlotPicker({ index, value, onDone, onClose }: {
     </div>
   </BaseModal>
 }
+
+/**
+ * Where the banner sits inside each 185 px wide rank-banner image (rows from the top): the images differ in height and
+ * padding, so they are lined up by the banner itself, not by the image box.
+ */
+const BANNER_CENTRE: Record<EgoGrade, number> = { ZAYIN: 38.5, TETH: 38, HE: 41, WAW: 48.5, ALEPH: 39.5 }
+const BANNER_WIDTH_REM = 4.6
 
 /** One E.G.O per grade: choosing the set one again takes it off. */
 const toggled = (egos: SupportSlot['egos'], grade: EgoGrade, id: string): SupportSlot['egos'] => {
