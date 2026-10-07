@@ -7,11 +7,11 @@ const dir = resolve(__dirname, '../../../public/models/assist-scene')
 const text = (file: string) => readFileSync(resolve(dir, file), 'utf8')
 const sha = (file: string) => createHash('sha256').update(readFileSync(resolve(dir, file))).digest('hex')
 
-it('REQ-ASSIST-064 the shipped scene and icon models are the ones their provenance describes', () => {
+it('REQ-ASSIST-064 REQ-ASSIST-072 the shipped scene and icon models are the ones their provenance describes', () => {
   // A model file swapped without its record (or a record updated without the file) fails here.
   const provenance = text('PROVENANCE.md')
   for (const file of ['scene.onnx', 'icon-classifier.onnx']) expect(provenance, file).toContain('sha256 `' + sha(file).slice(0, 16))
-  expect(JSON.parse(text('metadata.json')).version).toBe('2026-10-02')
+  expect(JSON.parse(text('metadata.json')).version).toBe('2026-10-07')
   // The scene labels and their order are what the app's rules name; a retrained model keeps them.
   expect(JSON.parse(text('labels.json'))).toEqual(['battle', 'battle_setup', 'enhance', 'event', 'exploration', 'fusion', 'gift_acquired', 'loading',
     'reward_choice', 'run_end', 'run_setup', 'sell', 'shop', 'start_gift', 'theme_select'])
