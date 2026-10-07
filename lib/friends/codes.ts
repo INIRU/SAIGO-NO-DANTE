@@ -1,7 +1,7 @@
 /** Friend code board rules: what a post may hold and who sees its code. No database access. */
 import { SINNER_SLUGS } from '@/lib/constants/game'
 export const FRIEND_CODE_RE = /^[A-Z][0-9]{9}$/
-export const VISIBILITIES = ['public', 'members', 'exchange'] as const
+export const VISIBILITIES = ['public', 'members', 'exchange', 'approval'] as const
 export type Visibility = typeof VISIBILITIES[number]
 export const FRIEND_EGO_GRADES = ['ZAYIN', 'TETH', 'HE', 'WAW', 'ALEPH'] as const
 type Grade = typeof FRIEND_EGO_GRADES[number]
@@ -14,7 +14,7 @@ export const FRIEND_ERRORS = {
   invalid_request: '잘못된 요청입니다.', invalid_code: '친구 코드는 영문 대문자 1자와 숫자 9자입니다.', invalid_visibility: '공개 범위가 올바르지 않습니다.',
   need_slots: '지원 인격을 1~12개 넣어 주세요.', invalid_slot: '지원 칸이 올바르지 않습니다.', unknown_identity: '없는 인격입니다.',
   bad_ego: '그 인격에 넣을 수 없는 E.G.O입니다.', need_wanted: '구하는 인격을 1~3개 넣어 주세요.', duplicate_code: '이미 올라와 있는 친구 코드입니다.',
-  own_code: '자기 친구 코드를 넣어 주세요.', not_exchange: '코드 교환 글이 아닙니다.', blocked: '친구 코드 게시판 이용이 정지되었습니다.', not_found: '글을 찾을 수 없습니다.',
+  own_code: '자기 친구 코드를 넣어 주세요.', not_exchange: '코드 교환 글이 아닙니다.', not_approval: '승인 후 공개 글이 아닙니다.', blocked: '친구 코드 게시판 이용이 정지되었습니다.', not_found: '글을 찾을 수 없습니다.',
 } as const
 export type FriendErrorCode = keyof typeof FRIEND_ERRORS
 export type FriendError = { error: string; code: FriendErrorCode }
@@ -60,12 +60,21 @@ export function parseSupportPost(
   return { code, visibility: visibility as Visibility, slots, identityIds: [...new Set(slots.map(slot => slot.identity))] }
 }
 
-/** The post's code if this viewer may see it: everyone, signed-in viewers, or viewers who gave their own code; the author always. */
-export function codeForViewer(post: { code: string; visibility: string }, viewer: { signedIn: boolean; mine: boolean; exchanged: boolean }): string | null {
+/**
+ * The post's code if this viewer may see it: everyone, signed-in viewers, viewers who gave their own code, or viewers the
+ * author approved; the author always.
+ */
+export function codeForViewer(post: { code: string; visibility: string }, viewer: { signedIn: boolean; mine: boolean; exchanged: boolean; approved?: boolean }): string | null {
   if (viewer.mine || post.visibility === 'public') return post.code
   if (post.visibility === 'members') return viewer.signedIn ? post.code : null
+  if (post.visibility === 'approval') return viewer.approved ? post.code : null
   return viewer.exchanged ? post.code : null
 }
+
+export const REQUEST_DECISIONS = ['approved', 'declined'] as const
+export type RequestStatus = 'pending' | typeof REQUEST_DECISIONS[number]
+/** An author's answer to a code request: approved or declined, nothing else. */
+export const isRequestDecision = (value: unknown): value is typeof REQUEST_DECISIONS[number] => REQUEST_DECISIONS.includes(value as never)
 
 const BUMP_INTERVAL_MS = 12 * 60 * 60 * 1000
 /** The list position after the author saves again: moved to now at most every 12 hours. */
