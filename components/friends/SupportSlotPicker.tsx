@@ -25,7 +25,7 @@ export default function SupportSlotPicker({ index, value, onDone, onClose }: {
   const identities = useSWR('/api/notes/assets?kind=identity&catalog=1', fetchNoteAssets, { revalidateOnFocus: false })
   const egos = useSWR('/api/notes/assets?kind=ego&catalog=1', fetchNoteAssets, { revalidateOnFocus: false })
   const list = (identities.data ?? []).filter(asset => asset.identity?.sinner_id === sinner)
-    .sort((a, b) => compareReleaseDate(b.identity ?? b, a.identity ?? a))
+    .sort((a, b) => compareReleaseDate(a.identity ?? a, b.identity ?? b))
   const chosenSinner = slot?.identity.sinner_id ?? sinner
   const number = SUPPORT_SLOT_NUMBERS[index]
   return <BaseModal open onClose={onClose} title={`${number} 지원 인격`} maxWidth="70rem" padding="0">
