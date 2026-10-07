@@ -16,7 +16,7 @@ import { EMPTY_SALE_STATE, isSellWindow, readSaleStep, sellCost, sellGiftId, sel
 import { readSkillExchange, type SkillExchangeRead } from '@/lib/vision/skill-exchange'
 import { acquisitionSeq, acquisitionsToRelease, continuesFusionDialog, dialogForResult, dialoglessFusionResult, fusionAnchors,
   fusionConfirmation, fusionDiagnosis, fusionDialogClosed, fusionMaterials, onFusionScreen, showsFusionTitle,
-  fusionWheelAnchors, fusionWheelCrop, fusionWheelResultBox, isFusionSelectionScreen, wheelBandMatch, wheelSelectionSize, emptyWheelResult, popupEndBefore, WHEEL_BAND_MIN, WHEEL_BAND_SIZE,
+  fusionWheelAnchors, fusionWheelCrop, fusionWheelResultBox, isFusionSelectionScreen, wheelBandMatch, wheelSelectionSize, emptyWheelResult, popupEndBefore, sameWheelSignature, WHEEL_BAND_MIN, WHEEL_BAND_SIZE,
   type FusionAnchors, type FusionDialogEvidence, type FusionRead, type SeenDialog, type WheelAnchors,
   type FusionSlotRead } from '@/lib/vision/fusion-evidence'
 import { confirmsExploration, explorationFloor, explorationThemeReads, themeSelectionHeaderFloor, type ExplorationObservation,
@@ -126,12 +126,6 @@ const sameAnchors = (first?: WheelAnchors, second?: WheelAnchors) => {
     const [ax, ay] = center(a), [bx, by] = center(b)
     return Math.abs(ax - bx) <= 6 && Math.abs(ay - by) <= 6
   })
-}
-const sameWheel = (first: Uint8Array, second: Uint8Array) => {
-  if (!first.length || first.length !== second.length) return false
-  let total = 0
-  for (let index = 0; index < first.length; index++) total += Math.abs(first[index] - second[index])
-  return total / first.length < 3
 }
 /** How long a result on the fusion screen waits for its dialog's evidence (1.5 s while one is read, 1 s otherwise). */
 const FUSION_HOLD_MS = 1500
@@ -1552,7 +1546,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
           const box = fusionWheelResultBox(frameSize.width, frameSize.height, anchors)
           const band = resultBoxBand(frame, (box.x - box.size / 2 - crop.x) * scale, (box.y - box.size / 2 - crop.y) * scale, box.size * scale)
           const last = wheelFrames.current.at(-1)
-          if (last && sameWheel(last.signature, signature) && last.origin.x === crop.x && last.origin.y === crop.y && sameAnchors(last.anchors, anchors)) {
+          if (last && sameWheelSignature(last.signature, signature) && last.origin.x === crop.x && last.origin.y === crop.y && sameAnchors(last.anchors, anchors)) {
             last.lastAt = now
             frame.close()
             return
@@ -1729,6 +1723,8 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
           const slots = parseFusionSlots((result as { slots?: unknown }).slots, capacity)
           state.reads[capacity] = { view: 'wheel', slots: slots ?? [], observedAt: state.at }
           flushVisionPopup()
+          // A fusion waiting for its wheel states reads the next one now, not at the next tick (a read takes ~10 ms).
+          if (fusionWanted.current && !inFlight.current) void capture()
         } else if (result.type === 'fusion-slots' && fusionRequest.current?.requestId === result.requestId) {
           inFlight.current = false
           const request = fusionRequest.current!
