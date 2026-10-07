@@ -13,7 +13,7 @@ export default function FriendsClient() {
   const [code, setCode] = useState('')
   const [visibility, setVisibility] = useState<typeof VISIBILITY[number][0]>('public')
   const mono = { font: '400 1.5rem/1 var(--font-mikodacs), Impact, sans-serif', letterSpacing: '0.06em' } as const
-  return <main style={{ maxWidth: '78rem', margin: '0 auto', padding: '1.75rem 1.25rem 4rem', color: 'var(--text-primary)' }}>
+  return <main style={{ maxWidth: '78rem', margin: '0 auto', padding: '5.5rem 1.25rem 4rem', color: 'var(--text-primary)' }}>
     <h1 style={{ margin: 0, fontSize: '2rem', fontWeight: 800 }}>친구 코드</h1>
     <section style={{ marginTop: '1.6rem', padding: '1.25rem 1.25rem 1.4rem', background: '#120e09', border: '1px solid #5a4526' }}>
       <div style={{ display: 'flex', alignItems: 'flex-end', gap: '1.25rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
