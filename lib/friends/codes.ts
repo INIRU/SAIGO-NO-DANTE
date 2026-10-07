@@ -1,4 +1,5 @@
 /** Friend code board rules: what a post may hold and who sees its code. No database access. */
+import { SINNER_SLUGS } from '@/lib/constants/game'
 export const FRIEND_CODE_RE = /^[A-Z][0-9]{9}$/
 export const VISIBILITIES = ['public', 'members', 'exchange'] as const
 export type Visibility = typeof VISIBILITIES[number]
@@ -100,3 +101,11 @@ export const wantExpiresAt = (createdAt: string) => new Date(new Date(createdAt)
 
 /** Identities to count as asked for: the ones this save adds to the post. */
 export const newlyWanted = (previous: readonly string[], next: readonly string[]) => next.filter(id => !previous.includes(id))
+
+/** The game's sinner numbers in sinner order (there is no 10): the number on a strip is its identity's sinner. */
+export const SINNER_NUMBERS = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '11', '12', '13'] as const
+export const sinnerNumber = (sinnerId: string): string | null => SINNER_NUMBERS[SINNER_SLUGS.indexOf(sinnerId)] ?? null
+
+const SEEN_INTERVAL_MS = 10 * 60 * 1000
+/** Whether the author's "last on the site" time is old enough to write again: at most once every 10 minutes. */
+export const seenIsStale = (seenAt: string, now: number) => now - new Date(seenAt).getTime() > SEEN_INTERVAL_MS
