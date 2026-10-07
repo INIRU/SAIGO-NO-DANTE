@@ -18,3 +18,6 @@ html[data-with-tool-screen] .site-footer { display: none; }
 @media (min-width: 64rem) and (min-height: 45rem) { html[data-with-tool-screen], html[data-with-tool-screen] body { overflow: hidden; } }
 /* My page: its rail carries the way back, so neither the navbar nor the footer is needed. */
 html[data-with-mypage] :is(.site-navigation, .site-footer) { display: none; }
+/* Friend code writing page: an editor with its own way back; on desktop the whole line-up fits the viewport without scrolling. */
+html[data-with-friend-compose] :is(.site-navigation, .site-footer) { display: none; }
+@media (min-width: 64rem) { html[data-with-friend-compose], html[data-with-friend-compose] body { overflow: hidden; } }

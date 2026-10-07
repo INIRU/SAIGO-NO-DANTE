@@ -9,6 +9,7 @@ import SupportSlotPicker from '@/components/friends/SupportSlotPicker'
 import { emptySlots, readOwnCode, rememberOwnCode, supportBody, useFriendApi, useFriendCatalog, wantBody, type Kind, type Slots } from '@/components/friends/board'
 import BackLink from '@/components/navigation/BackLink'
 import PageHeader from '@/components/ui/PageHeader'
+import { useHtmlFlag } from '@/hooks/useHtmlFlag'
 import { useRouter } from '@/lib/i18n/navigation'
 import { FRIEND_CODE_RE, VISIBILITIES, WANT_LIMIT, type Visibility } from '@/lib/friends/codes'
 import { showError, showSuccess } from '@/lib/toast'
@@ -16,6 +17,8 @@ import styles from '../Friends.module.css'
 
 /** Writes or edits the viewer's post of one kind: their friend code, who may see it, and the identities. */
 export default function ComposeClient({ kind }: { kind: Kind }) {
+  // An editor screen: no site navigation or footer, the whole line-up inside the viewport (DESIGN.md 7).
+  useHtmlFlag('with-friend-compose')
   const t = useTranslations('friends'), api = useFriendApi(), catalog = useFriendCatalog(), router = useRouter()
   const [slots, setSlots] = useState<Slots>(() => emptySlots(kind))
   const [picking, setPicking] = useState<number | null>(null)
@@ -50,7 +53,7 @@ export default function ComposeClient({ kind }: { kind: Kind }) {
   const save = () => run(async () => { await api.send('/api/friend-codes', 'POST', draft); rememberOwnCode(code); showSuccess(t(mine ? 'updated' : 'posted')) })
   const remove = () => run(async () => { await api.send(`/api/friend-codes?kind=${kind}`, 'DELETE'); showSuccess(t('deleted')) })
 
-  return <main className={styles.page}>
+  return <main className={`${styles.page} ${styles.compose}`}>
     <BackLink href={back} className={styles.back}><ArrowLeft size={16} aria-hidden="true" />{t('back')}</BackLink>
     <PageHeader title={t(`compose.${kind}`)} actions={<div className={styles.actions}>
       {mine && <button type="button" className={`${styles.icon} ${styles.boxed}`} disabled={busy} onClick={remove} aria-label={t('delete')} title={t('delete')}><Trash2 size={18} aria-hidden="true" /></button>}
@@ -67,7 +70,7 @@ export default function ComposeClient({ kind }: { kind: Kind }) {
           </div>
         </div>
       </div>
-      <SupportStrips slots={slots} count={kind === 'support' ? 12 : WANT_LIMIT} onPick={setPicking} />
+      <div className={styles.stage}><SupportStrips slots={slots} count={kind === 'support' ? 12 : WANT_LIMIT} onPick={setPicking} /></div>
       <p className={styles.warning}>{t('warning')}</p>
     </section>
     {picking !== null && <SupportSlotPicker key={picking} index={picking} value={slots[picking]} onClose={() => setPicking(null)}
