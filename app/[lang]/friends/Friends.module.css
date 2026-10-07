@@ -1,0 +1,31 @@
+/* Friend code board: the editor (own code, who sees it, the support line-up) and the posts under it. */
+.page { max-width: 78rem; margin: 0 auto; padding: 5.5rem 1.25rem 4rem; color: var(--text-primary); }
+.page h1 { margin: 0; font-size: 2rem; font-weight: 800; }
+.editor, .post { margin-top: 1.6rem; padding: 1.25rem 1.25rem 1.4rem; background: #120e09; border: 1px solid #5a4526; }
+.fields { display: flex; align-items: flex-end; flex-wrap: wrap; gap: 1.25rem; margin-bottom: 1rem; }
+.fields > label, .fields > div { display: flex; flex-direction: column; gap: 0.35rem; font-size: 0.78rem; font-weight: 600; color: var(--text-secondary); }
+.code { font: 400 1.5rem/1 var(--font-mikodacs), Impact, sans-serif; letter-spacing: 0.06em; color: var(--gold-light); }
+input.code { height: 2.75rem; width: 15rem; padding: 0 0.8rem; background: #070604; border: 1px solid #5a4526; }
+.segments { display: flex; }
+.segments button { position: relative; height: 2.75rem; margin-left: -1px; padding: 0 0.9rem; border: 1px solid var(--border); background: none; font-size: 0.85rem; font-weight: 700; color: var(--text-secondary); cursor: pointer; }
+.segments button[aria-pressed='true'] { z-index: 1; border-color: var(--gold); color: var(--gold-light); }
+.fields > .actions { flex-direction: row; gap: 0.5rem; margin-left: auto; }
+.primary, .ghost { height: 2.75rem; padding: 0 1.4rem; border: 1px solid var(--gold); font-size: 0.9rem; font-weight: 800; cursor: pointer; }
+.primary { background: var(--gold); color: #120e09; }
+.ghost { background: none; border-color: #5a4526; color: var(--text-secondary); }
+.primary:disabled, .ghost:disabled { opacity: 0.4; cursor: default; }
+.warning { margin: 1rem 0 0; font-size: 0.85rem; color: #e0857c; }
+.post header { display: flex; align-items: center; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 0.9rem; }
+.post header strong { font-size: 1rem; }
+.tag { padding: 0.15rem 0.5rem; border: 1px solid #5a4526; font-size: 0.72rem; font-weight: 700; color: var(--text-secondary); }
+.seen { font-size: 0.8rem; color: var(--text-secondary); }
+.codeBox { display: flex; align-items: center; gap: 0.6rem; margin-left: auto; }
+.codeBox .ghost, .codeBox .primary, .received .ghost { height: 2.1rem; padding: 0 0.8rem; font-size: 0.8rem; }
+.received { display: flex; flex-wrap: wrap; gap: 0.5rem 1.25rem; margin: 1rem 0 0; padding: 0; list-style: none; }
+.received li { display: flex; align-items: center; gap: 0.5rem; }
+.received .code { font-size: 1.15rem; }
+@media (max-width: 51.25rem) {
+  .fields > .actions { margin-left: 0; width: 100%; }
+  .actions .primary { flex: 1; }
+  .codeBox { margin-left: 0; width: 100%; }
+}
