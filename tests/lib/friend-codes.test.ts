@@ -3,6 +3,8 @@ import { FRIEND_CODE_RE, FRIEND_ERRORS, VISIBILITIES, codeForViewer, fail, newly
 import ko from '@/messages/ko.json'
 import en from '@/messages/en.json'
 import ja from '@/messages/ja.json'
+import { existsSync } from 'node:fs'
+import { FRIEND_GUIDE_STEPS } from '@/lib/friends/guide'
 
 const I1 = '11111111-1111-4111-8111-111111111111', I2 = '22222222-2222-4222-8222-222222222222'
 const E1 = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', E2 = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'
@@ -135,5 +137,27 @@ describe('REQ-COMMUNITY-025 warning, reports and barred authors', () => {
     for (const code of Object.keys(FRIEND_ERRORS)) for (const messages of [ko, en, ja]) expect((messages.friends.errors as Record<string, string>)[code], code).toBeTruthy()
     expect(ko.friends.errors.blocked).toBe(FRIEND_ERRORS.blocked)
     for (const action of ['remove', 'removeAndBlock', 'dismiss'] as const) expect(ko.friends.admin[action]).toBeTruthy()
+  })
+})
+
+describe('REQ-COMMUNITY-026 friend code guide', () => {
+  it('has five steps, each with its game screen, a text in ko, en and ja, and marks inside the picture', () => {
+    expect(FRIEND_GUIDE_STEPS.map(step => step.key)).toEqual(['code', 'copy', 'friends', 'add', 'company'])
+    for (const step of FRIEND_GUIDE_STEPS) {
+      expect(existsSync(`public/assets/guides/friend-codes/${step.key}.webp`), step.key).toBe(true)
+      for (const messages of [ko, en, ja]) expect(messages.friends.guide.steps[step.key], step.key).toBeTruthy()
+      expect(step.spots.length).toBeGreaterThan(0)
+      for (const spot of step.spots) {
+        expect(spot.left).toBeGreaterThanOrEqual(0); expect(spot.top).toBeGreaterThanOrEqual(0)
+        expect(spot.left + spot.width).toBeLessThanOrEqual(100); expect(spot.top + spot.height).toBeLessThanOrEqual(100)
+      }
+    }
+  })
+})
+
+describe('REQ-COMMUNITY-027 list tab in the address', () => {
+  it('names the two tabs the address can carry: none for support, want for wanted identities', () => {
+    // FriendsClient binds the tab to ?tab= with nuqs (parseAsStringLiteral over these kinds, default support).
+    for (const messages of [ko, en, ja]) expect(Object.keys(messages.friends.tabs)).toEqual(['support', 'want'])
   })
 })
