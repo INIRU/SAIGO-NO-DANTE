@@ -36,7 +36,9 @@ const FRAME_POINTS = '0.5,49.5 196.5,0.5 196.5,932.5 0.5,981.5'
  * outline and the sinner number sits under that frame line. A filled strip carries its identity's sinner number; an empty
  * one has no number. count: 12 for a line-up, fewer for a short row (wanted identities), which also hides the E.G.O places.
  */
-export default function SupportStrips({ slots, onPick, count = 12 }: { slots: readonly (SupportSlot | null)[]; onPick?: (index: number) => void; count?: number }) {
+export default function SupportStrips({ slots, onPick, onOpen, count = 12 }: {
+  slots: readonly (SupportSlot | null)[]; onPick?: (index: number) => void; onOpen?: (index: number) => void; count?: number
+}) {
   const t = useTranslations('friends')
   return <div className={`${styles.strips} ${count < 12 ? styles.few : ''}`}>
     {Array.from({ length: count }, (_, index) => {
@@ -50,8 +52,10 @@ export default function SupportStrips({ slots, onPick, count = 12 }: { slots: re
         <svg className={styles.frame} viewBox="0 0 197 982" preserveAspectRatio="none" aria-hidden="true"><polygon points={FRAME_POINTS} /></svg>
         {slot && <span className={styles.ego}>{EGO_GRADES.map(grade => <i key={grade} data-on={slot.egos[grade] ? grade : undefined} />)}</span>}
       </>
-      return onPick
-        ? <button type="button" key={index} className={className} onClick={() => onPick(index)} aria-label={slot ? `${number} ${slot.name}` : t('addIdentity')}>{content}</button>
+      // An editor's strips are all buttons (onPick); a post's filled strips open their details (onOpen).
+      const press = onPick ?? (slot ? onOpen : undefined)
+      return press
+        ? <button type="button" key={index} className={className} onClick={() => press(index)} aria-label={slot ? `${number} ${slot.name}` : t('addIdentity')} title={onPick ? undefined : slot?.name}>{content}</button>
         : <div key={index} className={className} title={slot?.name}>{content}</div>
     })}
   </div>
