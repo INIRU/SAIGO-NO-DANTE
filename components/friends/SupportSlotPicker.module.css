@@ -16,9 +16,9 @@
 .identities button:focus-visible, .egoRow button:focus-visible { outline: 2px solid var(--gold-light); outline-offset: 0.15rem; }
 .side { display: grid; grid-template-columns: 6rem minmax(0, 1fr); gap: 1.1rem; padding: 1.1rem 1.25rem; border-left: 1px solid var(--border); background: rgba(7, 6, 4, 0.35); overflow: auto; align-content: start; }
 .egos { display: flex; flex-direction: column; gap: 0.75rem; padding-top: 0.6rem; }
-.egoRow { display: grid; grid-template-columns: 3.6rem minmax(0, 1fr); align-items: center; gap: 0.5rem; min-height: 3.1rem; }
-.egoRow .grade { display: grid; place-items: center; }
-.egoRow .grade img { display: block; height: 2.2rem; width: auto; }
+.egoRow { display: grid; grid-template-columns: 4.6rem minmax(0, 1fr); align-items: center; gap: 0.5rem; min-height: 3.1rem; }
+.egoRow .grade { position: relative; align-self: stretch; }
+.egoRow .grade img { position: absolute; left: 0; display: block; width: 4.6rem; height: auto; }
 /* A thin rule between grades keeps the five fixed rows apart. */
 .egoRow + .egoRow { border-top: 1px solid #2e2417; padding-top: 0.75rem; }
 .egoRow div { display: flex; flex-wrap: wrap; gap: 0.4rem; }
