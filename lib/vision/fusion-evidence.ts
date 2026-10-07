@@ -363,6 +363,48 @@ export function wheelSelectionSize(reads: FusionRead[]): number {
   return Math.max(0, ...reads.filter(read => read.view === 'wheel').map(read => read.slots.filter(slot => !(slot && 'blank' in slot)).length))
 }
 
+/** A signature cell that differs by this much changed; a still wheel stays under 4 in every cell (2026-10-07, 501 frame pairs). */
+const WHEEL_CELL_CHANGE = 12
+/** A wheel position covers 4–12 signature cells; the pointer touches fewer. */
+const WHEEL_CHANGED_CELLS = 4
+
+/**
+ * Whether two 16×9 grey signatures of the wheel crop show the same wheel state: little difference over the whole crop and
+ * no position's worth of changed cells. A dark material added to one position moves the crop's mean by under 3 but its own
+ * cells by 16 or more, and the state kept must be the one that has it.
+ */
+export function sameWheelSignature(first: ArrayLike<number>, second: ArrayLike<number>): boolean {
+  if (!first.length || first.length !== second.length) return false
+  let total = 0, changed = 0
+  for (let index = 0; index < first.length; index++) {
+    const difference = Math.abs(first[index] - second[index])
+    total += difference
+    if (difference >= WHEEL_CELL_CHANGE) changed++
+  }
+  return total / first.length < 3 && changed < WHEEL_CHANGED_CELLS
+}
+
+/** Fewest gifts a fusion takes. */
+const FUSION_MIN_MATERIALS = 2
+
+/**
+ * Whether the wheel states read for a result without a seen dialog show that nothing was fused: some were read, none had
+ * two positions filled and no material was read. The bonus gift a fusion can grant (Star Blessing) pops up right after the
+ * fusion's own result, over the wheel it emptied. False without a wheel read, which says nothing.
+ */
+export function emptyWheelResult(reads: FusionRead[], capacity: number): boolean {
+  const size = wheelSelectionSize(reads)
+  return reads.some(read => read.view === 'wheel') && size < FUSION_MIN_MATERIALS && !fusionMaterials(reads, size, capacity).length
+}
+
+/**
+ * When the acquisition popup before the one captured at `capturedAt` was last on screen (0 without one), from the times
+ * popups ended: a wheel state first seen before that was under it and is not the selection of a later fusion.
+ */
+export function popupEndBefore(ends: readonly number[], capturedAt: number): number {
+  return Math.max(0, ...ends.filter(at => at < capturedAt))
+}
+
 /**
  * Evidence of one confirmation dialog: the confirmed materials, first read, last time the dialog was on screen and, if
  * seen, when it had closed without a result (a later screen showing neither the dialog nor an acquisition popup).
