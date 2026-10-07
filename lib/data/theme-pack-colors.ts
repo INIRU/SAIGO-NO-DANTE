@@ -1,7 +1,7 @@
 import type { SupportedLang } from '@/lib/i18n/types'
 
 // Theme pack title colours come from the DB (ego_gift_themes.name_color / name_segments), which the sync fills from the
-// game's uiConfigs.textColor and specialName (scripts/sync/mirror-dungeon-rules.ts).
+// game's uiConfigs.textColor and specialName (limbus-asset-extractor/site-sync/scripts/sync/mirror-dungeon-rules.ts).
 
 export interface ThemePackNameSegment {
   text: string
