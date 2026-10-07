@@ -115,4 +115,7 @@ input.code:focus-visible { border-color: var(--gold); }
   .stage { flex: 1; min-height: 0; container-type: size; display: flex; justify-content: center; }
   /* Twelve strips 197:982 with 0.3rem gaps and 0.9rem above for the numbers: as wide as the height allows, never wider than the stage. */
   .stage > div:not([class*='few']) { width: min(100cqw, calc((100cqh - 0.9rem) * 12 * 197 / 982 + 3.3rem)); }
+  /* Wanted identities (three strips): sized by the stage's height too, up to a line-up strip's size, and never stretched. */
+  .stage > div[class*='few'] { align-self: flex-start; }
+  .stage > div[class*='few'] > * { flex: 0 0 calc(min(100cqh, 30rem) * 197 / 982); }
 }
