@@ -26,7 +26,7 @@ export function PostsSkeleton({ kind }: { kind: 'support' | 'want' }) {
     : <section className={page.wants}>
       {Array.from({ length: 3 }, (_, index) => <article key={index} className={page.want}>
         <StripsSkeleton count={3} />
-        <div className={page.info}><SkeletonLine w="4.5rem" h="1.6rem" /><div className={page.names}><SkeletonLine w="9rem" h="0.85rem" /><SkeletonLine w="7rem" h="0.85rem" /></div></div>
+        <div className={page.info}><SkeletonLine w="4.5rem" h="1.6rem" /></div>
       </article>)}
     </section>
 }
