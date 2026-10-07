@@ -1,7 +1,7 @@
 /**
  * Values the game fills in while playing ({0}, {1}, {0:F1} in the source text) are stored as named tokens such as
  * {{live}} or {{potency}}, and the site draws each token as a label. The sync decides what each number means from the
- * source fields (scripts/sync/placeholder-rules.ts); the wording and look of the labels live only in messages/*.json
+ * source fields (limbus-asset-extractor/site-sync/scripts/sync/placeholder-rules.ts); the wording and look of the labels live only in messages/*.json
  * (`placeholder.*`) and components/ui/PlaceholderLabel.tsx, so changing them never needs a re-sync. Double braces keep
  * the tokens apart from the game's own {0} and {amount}.
  *

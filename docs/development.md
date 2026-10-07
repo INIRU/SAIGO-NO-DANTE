@@ -39,7 +39,7 @@ Cache Components는 next.config.ts에서 켜져 있다. cacheLife의 page-1m/5m/
 - 정적 라우트에서 `useSearchParams`를 읽는 영역은 브라우저 렌더링으로 넘어간다(HTML의 `$RX("B:…","BAILOUT_TO_CLIENT_SIDE_RENDERING")`). nuqs로 필터를 URL에 두는 거울 던전, 플래너, 플래너·덱 게시판, 키워드, 인격·EGO 목록은 클라이언트 컴포넌트를 `components/providers/StaticQueryAdapter`로 감싼다. 서버는 쿼리 없는 기본 화면을 정적 HTML로 만들고, 쿼리가 붙은 주소는 첫 페인트 전 인라인 스크립트가 `html[data-query-pending]`을 붙여 기본 화면 대신 페이지 스켈레톤(`fallback`)을 보이고(globals.css), 하이드레이션 직후 그 영역을 한 번 다시 마운트해 URL 값으로 시작하며 같은 프레임에 스켈레톤을 치운다. 쿼리 없는 방문과 이후 필터 변경은 다시 마운트하지 않는다. 덱·플래너 게시판은 목록을 프리렌더하지 않는다. 기본 화면은 추천 선반이고, 전체 보기·필터를 켤 때 클라이언트가 목록을 불러온다.
 - 이 어댑터 아래 컴포넌트는 마운트 직후 URL에 쓰면 안 된다(다시 마운트되기 전 인스턴스의 쓰기가 URL을 덮어쓴다). 지금은 검색어 debounce(타이머, 다시 마운트 때 정리됨)뿐이다. 마운트 직후 `?sinner`를 쓰는 컬렉션 편집기와 쿼리로 안내문을 그리는 점검 페이지는 `components/layout/RequestTimeRoute`로 요청 시 서버 렌더링을 유지한다. 마이페이지는 세션을 브라우저에서 읽으므로 정적 HTML에 같은 스켈레톤을 둔다.
 - 정적 페이지가 다시 생성되면 HTML·RSC·세그먼트 전체가 ISR에 다시 쓰인다(ISR Writes, 8KB 단위, 바이트당 Fast Origin Transfer보다 비싸다). 그래서 투표·댓글·새 글마다 무효화되는 데이터(`decksList`/`plansList` 태그)나 `cacheLife('minutes')` 데이터는 정적 페이지에 넣지 않는다. 홈 커뮤니티 선반은 `components/home/HomeCommunity`가 `/api/discovery`(CDN 60초)에서 불러오고, 메타 페이지는 요청 시 렌더링한다. `tests/app/static-pages-activity-tags.test.ts`가 홈·게시판을 검사한다. 빌드 후 `.next/prerender-manifest.json`의 `initialRevalidateSeconds`와 `.meta`의 `x-next-cache-tags`로 재생성 주기와 태그를 확인한다.
-- 동기화 스크립트(`scripts/sync/*`)는 실행할 때마다 게임 데이터 태그 전체를 무효화해 방문되는 모든 페이지를 다시 쓴다. 패치 때는 스크립트를 이어서 돌린 뒤 한 번만 반영되도록 묶는 편이 ISR 쓰기가 적다.
+- 동기화 스크립트(`limbus-asset-extractor/site-sync/scripts/sync/*`)는 실행할 때마다 게임 데이터 태그 전체를 무효화해 방문되는 모든 페이지를 다시 쓴다. 패치 때는 스크립트를 이어서 돌린 뒤 한 번만 반영되도록 묶는 편이 ISR 쓰기가 적다.
 - 요청 시 페이지의 postponed state에는 프리렌더가 읽은 캐시 값이 모두 실린다. 레이아웃은 설명을 뺀 `getKeywordCatalog()`를 따로 캐시한다(기본 크기 약 61KB→19KB).
 
 ## 이미지·렌더링 성능
@@ -101,7 +101,7 @@ BASE_URL=http://127.0.0.1:3001 LIMBUS_RESTORED_DATA=1 \
 
 덱 목록은 기존 route `loading.tsx` 경계를 사용한다. 내부의 중복 Suspense 경계와 닫힌 모달의 불필요한 SSR 제외가 초기 렌더링을 중단시키던 부분을 정리했다. 최종 배치·카드 애니메이션은 유지한다. 오프라인/점검 화면은 공통 레이아웃의 `main`을 사용해 중첩된 본문 landmark를 제거했다.
 
-2026-09-10 에셋 복구 당시 확인: 빌드·타입 검사 통과, 단위 117개 통과(HTTP 통합 11개는 기본 실행에서 건너뜀), 원본 에셋 Python 검사 8개 통과, Chrome 79개 통과. 수감자 목록의 명시적 다른 페이지 경유 재방문 2개와 상호작용·다국어 19개도 추가 통과했다. PC/모바일 60개 화면 기록에서 실패한 이미지 응답은 0건이다. 스크린샷·실제 URL 목록·검사 로그는 `../assets/recovery-2026-09-10/chrome-artwork-audit/`에 보존했다. 이는 전체 복구 완료 판정이 아니며 미확정 원본은 [출처와 복구 기록](data-sync/provenance.md)에 남겨 둔다.
+2026-09-10 에셋 복구 당시 확인: 빌드·타입 검사 통과, 단위 117개 통과(HTTP 통합 11개는 기본 실행에서 건너뜀), 원본 에셋 Python 검사 8개 통과, Chrome 79개 통과. 수감자 목록의 명시적 다른 페이지 경유 재방문 2개와 상호작용·다국어 19개도 추가 통과했다. PC/모바일 60개 화면 기록에서 실패한 이미지 응답은 0건이다. 스크린샷·실제 URL 목록·검사 로그는 `../assets/recovery-2026-09-10/chrome-artwork-audit/`에 보존했다. 이는 전체 복구 완료 판정이 아니며 미확정 원본은 [출처와 복구 기록](https://github.com/INIRU/limbus-asset-extractor/blob/main/site-sync/docs/provenance.md)에 남겨 둔다.
 
 이벤트 원화 ID 연결 보완 후 타입 검사, 관련 단위 5개, Chrome 3개(PC/모바일의 7개 원화 하드 리프레시·재방문과 전체 갤러리 로딩)를 통과했다. `event-image-source-review/chrome-verified/`에 화면을 보존했다. 동기화 스크립트와 이미지 데이터 변경으로 앱 빌드는 다시 실행하지 않았다.
 

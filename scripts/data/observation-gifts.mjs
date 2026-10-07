@@ -2,7 +2,7 @@
 /**
  * Writes lib/data/observation-gifts.json from the game's Mirror Dungeon observation data: the only gifts the start
  * observation can offer, and the starlight cost for observing 1, 2 or 3 of them.
- *   LIMBUS_DATA_DIR=<complete-data> node scripts/sync/observation-gifts.mjs
+ *   LIMBUS_DATA_DIR=<complete-data> node scripts/data/observation-gifts.mjs
  */
 import { readFileSync, readdirSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
