@@ -17,7 +17,8 @@
     "community": {
       "title": "커뮤니티",
       "planner": "거던 플래너",
-      "collection": "보유 현황"
+      "collection": "보유 현황",
+      "friends": "친구 코드"
     },
     "db": {
       "title": "DB",

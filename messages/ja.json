@@ -17,7 +17,8 @@
     "community": {
       "title": "コミュニティ",
       "planner": "ミラダンプランナー",
-      "collection": "コレクション"
+      "collection": "コレクション",
+      "friends": "フレンドコード"
     },
     "db": {
       "title": "DB",
