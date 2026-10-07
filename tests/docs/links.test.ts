@@ -38,16 +38,16 @@ describe('REQ-SHARED-028 guide documents', () => {
     expect(broken).toEqual([])
   })
 
-  it('REQ-SHARED-028 docs/README.md starts new work and links every data-sync document and the assist document', () => {
+  it('REQ-SHARED-028 docs/README.md starts new work, links the assist document and sends sync work to the extraction tool', () => {
     const readme = readFileSync(join(ROOT, 'docs/README.md'), 'utf8')
     expect(readme).toContain('## 새 작업 시작하기')
-    const linked = new Set(relativeLinks('docs/README.md'))
-    const wanted = [...walk('docs/data-sync', isMarkdown), 'docs/assist.md'].map(file => relative('docs', file))
-    expect(wanted).toEqual(expect.arrayContaining([
-      'data-sync/runbook.md', 'data-sync/developing.md', 'data-sync/rules.md',
-      'data-sync/adding-a-field.md', 'data-sync/provenance.md', 'assist.md',
-    ]))
-    expect(wanted.filter(file => !linked.has(file))).toEqual([])
+    expect(relativeLinks('docs/README.md')).toContain('assist.md')
+    // The sync code and its documents live in the extraction tool repository since 2026-10-07.
+    for (const name of ['runbook', 'developing', 'rules', 'adding-a-field', 'provenance']) {
+      expect(readme).toContain(`https://github.com/INIRU/limbus-asset-extractor/blob/main/site-sync/docs/${name}.md`)
+    }
+    expect(existsSync(join(ROOT, 'docs/data-sync'))).toBe(false)
+    expect(existsSync(join(ROOT, 'scripts/sync'))).toBe(false)
   })
 
   it('REQ-SHARED-028 nothing points at the removed docs/data-pipeline.md', () => {
