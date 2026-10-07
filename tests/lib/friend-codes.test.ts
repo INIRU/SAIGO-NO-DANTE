@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { FRIEND_CODE_RE, FRIEND_ERRORS, VISIBILITIES, codeForViewer, fail, newlyWanted, nextBumpedAt, parseSupportPost, parseWantPost, seenIsStale, sinnerNumber, slotAssetIds, wantExpiresAt, wantIdentityIds } from '@/lib/friends/codes'
+import { FRIEND_CODE_RE, FRIEND_ERRORS, VISIBILITIES, codeForViewer, fail, isRequestDecision, newlyWanted, nextBumpedAt, parseSupportPost, parseWantPost, seenIsStale, sinnerNumber, slotAssetIds, wantExpiresAt, wantIdentityIds } from '@/lib/friends/codes'
 import ko from '@/messages/ko.json'
 import en from '@/messages/en.json'
 import ja from '@/messages/ja.json'
@@ -159,5 +159,25 @@ describe('REQ-COMMUNITY-027 list tab in the address', () => {
   it('names the two tabs the address can carry: none for support, want for wanted identities', () => {
     // FriendsClient binds the tab to ?tab= with nuqs (parseAsStringLiteral over these kinds, default support).
     for (const messages of [ko, en, ja]) expect(Object.keys(messages.friends.tabs)).toEqual(['support', 'want'])
+  })
+})
+
+describe('REQ-COMMUNITY-028 code shown after the author approves', () => {
+  const post = { code: 'A123456789', visibility: 'approval' }
+  const viewer = { signedIn: true, mine: false, exchanged: true }
+  it('hides the code until this viewer\'s request is approved; signing in or exchanging does not open it', () => {
+    expect(codeForViewer(post, viewer)).toBeNull()
+    expect(codeForViewer(post, { ...viewer, approved: false })).toBeNull()
+    expect(codeForViewer(post, { ...viewer, signedIn: false, exchanged: false, approved: true })).toBe('A123456789')
+    expect(codeForViewer(post, { ...viewer, mine: true })).toBe('A123456789')
+    // An approval elsewhere does not open posts of the other visibilities.
+    expect(codeForViewer({ ...post, visibility: 'exchange' }, { signedIn: false, mine: false, exchanged: false, approved: true })).toBeNull()
+  })
+  it('is a visibility a post can choose, and the author answers a request with approved or declined only', () => {
+    expect(VISIBILITIES).toContain('approval')
+    expect(parseSupportPost(body([{ slot: 0, identity: I1, egos: {} }], { visibility: 'approval' }), identities, egos)).toHaveProperty('visibility', 'approval')
+    expect(['approved', 'declined'].map(isRequestDecision)).toEqual([true, true])
+    expect(['pending', 'yes', '', null, undefined, 1].map(isRequestDecision)).toEqual([false, false, false, false, false, false])
+    for (const messages of [ko, en, ja]) for (const key of ['pending', 'declined', 'approved', 'approve', 'decline'] as const) expect(messages.friends.request[key]).toBeTruthy()
   })
 })

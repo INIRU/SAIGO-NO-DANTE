@@ -118,3 +118,7 @@ input.code:focus-visible { border-color: var(--gold); }
   .stage > div[class*='few'] { align-self: flex-start; }
   .stage > div[class*='few'] > * { flex: 0 0 calc(min(100cqh, 30rem) * 197 / 982); }
 }
+/* Code requests on the author's own approval post: who asked, then approve / decline. */
+.requests { display: flex; flex-wrap: wrap; gap: 0.4rem 1.1rem; margin: 1rem 0 0; padding: 0; list-style: none; }
+.requests li { display: flex; align-items: center; gap: 0.35rem; font-size: 0.85rem; }
+.requests strong { font-weight: 700; }

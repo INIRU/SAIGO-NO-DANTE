@@ -7,7 +7,7 @@ import useSWR from 'swr'
 import { fetchNoteAssets } from '@/components/notes/NoteBlockViewer'
 import { assetName, type NoteAssetData } from '@/lib/notes/assets'
 import { GUEST_KEY_HEADER, guestHeaders, readGuestKey } from '@/lib/guest/key'
-import { WANT_LIMIT, type StoredSlot, type Visibility } from '@/lib/friends/codes'
+import { WANT_LIMIT, type RequestStatus, type StoredSlot, type Visibility } from '@/lib/friends/codes'
 import { EGO_GRADES, type SupportSlot } from './SupportStrips'
 
 /** What the friend code screens share: the API's shapes, the catalogue lookups and the requests. */
@@ -16,6 +16,8 @@ export const KINDS: Kind[] = ['support', 'want']
 export type Post = {
   id: string; visibility: Visibility; slots: StoredSlot[]; identityIds: string[]; mine: boolean; bumpedAt: string; seenAt: string
   author: string | null; authorId: string | null; guestTag: string | null; code: string | null; received?: string[]; expiresAt?: string
+  /** approval posts: the viewer's own request (others' posts), or everyone's requests (the viewer's own post). */
+  request?: RequestStatus | null; requests?: { id: string; name: string | null; userId: string | null; guestTag: string | null; status: RequestStatus; createdAt: string }[]
 }
 export type Listing = { posts: Post[]; own: Post | null; wanted?: { identityId: string; count: number }[] }
 export type Slots = (SupportSlot | null)[]

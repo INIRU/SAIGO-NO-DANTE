@@ -14,7 +14,7 @@
 | 거울 던전 | `ego_gifts`, `ego_gift_themes`, `ego_gift_recipes`, `md_events`, `md_event_choices` | `lib/planner/` |
 | 덱 | `decks`, `deck_identities`, `deck_egos`, `deck_votes`, `deck_comments`, `deck_bookmarks` | `app/api/decks/`, `lib/decks/` |
 | 플래너 | `md_plans`(편성과 층별 계획은 JSON), `md_plan_votes`, `md_plan_comments`, `final_gift_presets` | `app/api/planner/`, `lib/planner/` |
-| 친구 코드 게시판 | `friend_posts`(지원 인격·인격 구해요 글), `friend_exchanges`(코드 교환), `friend_want_stats`(인격별 요청 수), `friend_reports`, `friend_blocks` | `app/api/friend-codes/`, `lib/friends/` |
+| 친구 코드 게시판 | `friend_posts`(지원 인격·인격 구해요 글), `friend_exchanges`(코드 교환), `friend_want_stats`(인격별 요청 수), `friend_requests`(승인 후 공개 글의 코드 요청), `friend_reports`, `friend_blocks` | `app/api/friend-codes/`, `lib/friends/` |
 | 계정·커뮤니티 | `profiles`, `follows`, `community_activity`, `guest_authorship`, `profile_easter_eggs`, `legal_docs`, `legal_acknowledgements`, `profile_access_signals`, `profile_duplicate_signal_events` | `app/api/community/`, `lib/community/`, `lib/auth.ts` |
 | 운영 | `announcements`, `inquiries`, `support_messages`, `site_maintenance`, `audit_logs` | `app/api/admin/` |
 | 발견·개발자 API | `discovery_visits`, `developer_keys`, `developer_usage` | `app/api/discovery/`, `lib/discovery/` |
@@ -110,7 +110,7 @@
 
 `partners`는 협업 파트너의 코드, 이름, 권한 목록(`catalog:read`, `news:write`)이고 `profiles.partner`가 그 코드를 가리킨다. `news_items`는 파트너가 `POST /api/v1/news`로 보낸 소식 한 건이 한 줄이다. `(partner, external_id)`가 고유해서 같은 `id`를 다시 보내면 그 줄을 덮어쓴다. `feed`·`platform`·`category`와 `author`·`content`(언어별 jsonb)의 모양은 유일한 작성자인 API가 검증한다(`lib/news/payload.ts`). 두 표 모두 RLS를 켜고 정책을 두지 않아 서비스 역할로만 읽고 쓴다. 양식과 권한은 [개발자 API와 협업 파트너](partner-api.md)에 있다.
 
-친구 코드 게시판의 표 다섯 개는 서비스 키로만 읽고 쓴다(RLS 켬, 공개 역할 권한 없음). 친구 코드는 글의 공개 범위(누구나, 로그인한 사람, 코드 교환)에 맞는 사람에게만 API가 내려 준다. `friend_posts.slots`는 `[{ slot, identity, egos }]`(인격·E.G.O의 id)이고, 구해요 글은 올린 지 하루 뒤 읽거나 쓸 때 지워지며 `friend_want_stats`의 일별 요청 수는 남는다. 글쓴이는 계정(`user_id`) 또는 익명 키의 HMAC(`key_hash`)이고, `friend_blocks`에 있는 글쓴이는 올리기와 교환이 막힌다.
+친구 코드 게시판의 표 여섯 개는 서비스 키로만 읽고 쓴다(RLS 켬, 공개 역할 권한 없음). 친구 코드는 글의 공개 범위(누구나, 로그인한 사람, 코드 교환, 승인 후 공개)에 맞는 사람에게만 API가 내려 준다. 승인 후 공개 글은 `friend_requests`에서 글쓴이가 `approved`로 바꾼 사람에게만 보인다. `friend_posts.slots`는 `[{ slot, identity, egos }]`(인격·E.G.O의 id)이고, 구해요 글은 올린 지 하루 뒤 읽거나 쓸 때 지워지며 `friend_want_stats`의 일별 요청 수는 남는다. 글쓴이는 계정(`user_id`) 또는 익명 키의 HMAC(`key_hash`)이고, `friend_blocks`에 있는 글쓴이는 올리기와 교환이 막힌다.
 
 `discovery_visits`는 HMAC 처리한 브라우저 식별자, 대상 종류/ID, UTC 날짜만 보관한다. 원문 검색어나 IP는 이 테이블에 저장하지 않는다. 기간별 고유 브라우저 수이며 실제 사람 수·전투 사용률이 아니다. 공개 API는 집계만 반환하고 원시 방문 기록·개발자 키 테이블은 service_role만 접근한다. 최근 열람·검색어는 브라우저 localStorage에 각각 최대 20개를 저장한다. 게시판 화면에는 기록 관리 버튼을 표시하지 않는다.
 

@@ -2469,18 +2469,46 @@
       "next": "Next",
       "close": "Close"
     },
+    "visibility": {
+      "approval": "After approval",
+      "label": "Who can see the code",
+      "public": "Anyone",
+      "members": "Signed-in users",
+      "exchange": "Code exchange"
+    },
+    "requestCode": "Request code",
+    "requested": "Requested.",
+    "request": {
+      "title": "Code requests",
+      "pending": "Awaiting approval",
+      "declined": "Declined",
+      "approved": "Approved",
+      "approve": "Approve",
+      "decline": "Decline"
+    },
+    "errors": {
+      "not_approval": "This post does not take code requests.",
+      "failed": "The request failed.",
+      "invalid_request": "Invalid request.",
+      "invalid_code": "A friend code is one capital letter and nine digits.",
+      "invalid_visibility": "Invalid visibility.",
+      "need_slots": "Add 1 to 12 support identities.",
+      "invalid_slot": "Invalid support slot.",
+      "unknown_identity": "Unknown identity.",
+      "bad_ego": "That E.G.O cannot go on this identity.",
+      "need_wanted": "Add 1 to 3 identities you want.",
+      "duplicate_code": "This friend code is already posted.",
+      "own_code": "Enter your own friend code.",
+      "not_exchange": "This is not a code exchange post.",
+      "blocked": "You are suspended from the friend code board.",
+      "not_found": "Post not found."
+    },
     "title": "Friend Codes",
     "tabs": {
       "support": "Support Identities",
       "want": "Identities Wanted"
     },
     "myCode": "My friend code",
-    "visibility": {
-      "label": "Who can see the code",
-      "public": "Anyone",
-      "members": "Signed-in users",
-      "exchange": "Code exchange"
-    },
     "post": "Post",
     "edit": "Update",
     "delete": "Delete",
@@ -2521,22 +2549,6 @@
     "reportConfirm": {
       "title": "Report this post?",
       "message": "Report a post that looks like someone else's code or a fake one."
-    },
-    "errors": {
-      "failed": "The request failed.",
-      "invalid_request": "Invalid request.",
-      "invalid_code": "A friend code is one capital letter and nine digits.",
-      "invalid_visibility": "Invalid visibility.",
-      "need_slots": "Add 1 to 12 support identities.",
-      "invalid_slot": "Invalid support slot.",
-      "unknown_identity": "Unknown identity.",
-      "bad_ego": "That E.G.O cannot go on this identity.",
-      "need_wanted": "Add 1 to 3 identities you want.",
-      "duplicate_code": "This friend code is already posted.",
-      "own_code": "Enter your own friend code.",
-      "not_exchange": "This is not a code exchange post.",
-      "blocked": "You are suspended from the friend code board.",
-      "not_found": "Post not found."
     },
     "admin": {
       "title": "Friend code reports",
