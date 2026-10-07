@@ -1,9 +1,0 @@
-{
-  "dataList": [
-    {
-      "id": "FavorBuffTwth1stPhaseForUI",
-      "name": "사영 [루주]",
-      "desc": "- 인격의 스킬 중 <color=#f8c200>출혈 또는 특수 출혈</color>을 부여하거나 <color=#f8c200>색욕</color> 속성에 해당하는 공격 스킬의 피해량 +25% (E.G.O 스킬일 경우, 대신 피해량 +100%)\n- 적이 <color=#f8c200>출혈</color>로 받는 피해량이 1.5배로 증가 (소수점 버림)\n- <color=#f8c200>완전 공명</color> 시, 해당 속성의 E.G.O 자원 1개, 가장 적은 무작위 E.G.O 자원 1개 획득 (턴당 2회)"
-    }
-  ]
-}

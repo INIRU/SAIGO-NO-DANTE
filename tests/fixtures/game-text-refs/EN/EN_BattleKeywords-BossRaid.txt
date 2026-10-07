@@ -1,9 +1,0 @@
-{
-  "dataList": [
-    {
-      "id": "FavorBuffTwth1stPhaseForUI",
-      "name": "Shade of Reflection [Rouge]",
-      "desc": "- The Identities' Attack Skills that are <color=#f8c200>Lust Skills</color> or <color=#f8c200>Skills that inflict Bleed or 'Unique Bleed'</color> deal +25% damage (for E.G.O Skills, deal +100% damage instead)\n- Enemies take x1.5 damage from <color=#f8c200>Bleed</color> (rounded down)\n- Upon <color=#f8c200>A-Reson.</color>, gain 1 random least-owned E.G.O resource and 1 E.G.O resource of the Affinity used for A-Reson. (2 times per turn)"
-    }
-  ]
-}
