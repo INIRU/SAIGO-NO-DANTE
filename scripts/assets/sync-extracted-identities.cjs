@@ -7,9 +7,15 @@ const { createClient } = require('@supabase/supabase-js')
 require('dotenv').config({ path: '.env.local', quiet: true })
 const args = process.argv.slice(2)
 const option = name => args[args.indexOf(name) + 1]
-/** only: 'info' or 'profile' for just that portrait; null for illustrations, portraits, avatar profiles and skills. */
+/** Name endings of an identity's images after `<id>_(normal|gacksung)`: tall portrait, 256 px avatar, support line-up strip. */
+const IMAGE_SUFFIX = { info: '_info', profile: '_profile', support: '_profile_support_personality' }
+const ANY_SUFFIX = `(${Object.values(IMAGE_SUFFIX).join('|')})?`
+/**
+ * only: 'info', 'profile' or 'support' for just that image; null for illustrations, portraits, avatar profiles, support
+ * strips and skills.
+ */
 function selectEntries(manifest, id, only, variantsOnly = false) {
-  const suffix = only ? `_${only}` : '(_info|_profile)?'
+  const suffix = only ? IMAGE_SUFFIX[only] : ANY_SUFFIX
   return manifest.filter(entry => entry.kind === '인격'
     ? !variantsOnly && new RegExp(`^${id}_(normal|gacksung)${suffix}$`).test(entry.name)
     : !only && entry.kind === '스킬' && entry.name.startsWith(id) && (variantsOnly ? /^\d+_\d+$/ : /^\d+(?:_\d+)?$/).test(entry.name))
@@ -27,15 +33,15 @@ async function main() {
   const manifest = JSON.parse(fs.readFileSync(path.join(source, 'Reports/manifest.json')))
   // --skill-variants: only uptie icons such as 1010104_4; existing illustrations stay untouched.
   const variantsOnly = args.includes('--skill-variants')
-  // --info-only / --profile-only: only the tall portraits or the 256 px avatar profiles.
-  const only = args.includes('--info-only') ? 'info' : args.includes('--profile-only') ? 'profile' : null
+  // --info-only / --profile-only / --support-only: only the tall portraits, the 256 px avatar profiles or the support strips.
+  const only = args.includes('--info-only') ? 'info' : args.includes('--profile-only') ? 'profile' : args.includes('--support-only') ? 'support' : null
   const plan = []
   for (const identity of identities) {
     const id = identity.game_id
     for (const entry of selectEntries(manifest, id, only, variantsOnly)) {
       let key
       if (entry.kind === '스킬' && /^\d+(?:_\d+)?$/.test(entry.name)) key = `icons/skills/${identity.sinner_id}/${entry.name}.webp`
-      else if (entry.kind === '인격' && new RegExp(`^${id}_(normal|gacksung)(_info|_profile)?$`).test(entry.name)) key = `sinners/${identity.sinner_id}/identities/${identity.folder_name}/${entry.name}.webp`
+      else if (entry.kind === '인격' && new RegExp(`^${id}_(normal|gacksung)${ANY_SUFFIX}$`).test(entry.name)) key = `sinners/${identity.sinner_id}/identities/${identity.folder_name}/${entry.name}.webp`
       else continue
       const local = path.resolve(source, 'Images', entry.path)
       if (!local.startsWith(path.join(source, 'Images') + path.sep)) throw Error('Invalid source path')
@@ -46,7 +52,8 @@ async function main() {
       plan.push({ key, source: entry.path, sourceHash: hash, bytes: webp })
 
     }
-    if (!variantsOnly) for (const state of ['normal', 'gacksung']) if (!plan.some(row => row.key.endsWith(`/${id}_${state}${only ? '_' + only : ''}.webp`))) throw Error(`Missing illustration: ${id} ${state}`)
+    // Support strips are optional: some identities (LCB Sinner) have one state only.
+    if (!variantsOnly && only !== 'support') for (const state of ['normal', 'gacksung']) if (!plan.some(row => row.key.endsWith(`/${id}_${state}${only ? IMAGE_SUFFIX[only] : ''}.webp`))) throw Error(`Missing illustration: ${id} ${state}`)
   }
   if (new Set(plan.map(row => row.key)).size !== plan.length) throw Error('Ambiguous source image names')
   fs.mkdirSync(output, { recursive: true })
