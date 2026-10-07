@@ -1,6 +1,6 @@
 import observation from '@/lib/data/observation-gifts.json'
 
-/** Gifts the Mirror Dungeon start observation can offer (game observation data; regenerate with scripts/sync/observation-gifts.mjs). */
+/** Gifts the Mirror Dungeon start observation can offer (game observation data; regenerate with scripts/data/observation-gifts.mjs). */
 export const OBSERVATION_GIFT_IDS: ReadonlySet<number> = new Set(observation.giftIds)
 export const MAX_OBSERVED_GIFTS = Math.max(...observation.costs.map(cost => cost.count))
 

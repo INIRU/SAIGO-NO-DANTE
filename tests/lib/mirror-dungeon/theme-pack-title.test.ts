@@ -35,7 +35,7 @@ describe('REQ-MIRROR-DUNGEON-009 theme pack name like the game selection screen'
   })
 
   it('REQ-MIRROR-DUNGEON-009 uses the game textColor the sync stores for the pack', () => {
-    // name_color comes from uiConfigs.textColor (scripts/sync/mirror-dungeon-rules.ts themeNameColor).
+    // name_color comes from uiConfigs.textColor (limbus-asset-extractor/site-sync/scripts/sync/mirror-dungeon-rules.ts themeNameColor).
     expect(getThemePackNameColor({ name_color: '#DADCE0' })).toBe('#DADCE0')
     expect(getThemePackNameColor({ name_color: null })).toBe(THEME_PACK_DEFAULT_COLOR)
     const segments = { ko: [{ text: '증오와', color: '#ee4893' }], en: [{ text: 'Hatred', color: '#ee4893' }] }
