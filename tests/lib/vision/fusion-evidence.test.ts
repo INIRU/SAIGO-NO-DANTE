@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { dialogForResult, dialoglessFusionResult, fusionAnchors, fusionConfirmation, fusionDialogClosed, fusionMaterials, fusionWheelAnchors, fusionWheelCrop, fusionWheelRegions,
-  isFusionSelectionScreen, wheelBandMatch, WHEEL_BAND_MIN, WHEEL_BAND_SIZE, fusionMaterialsToRemove, fusionResultFollows, fusionSlotRegions, fusionSlotRegionsFromAnchors, wheelSelectionSize,
+  isFusionSelectionScreen, wheelBandMatch, WHEEL_BAND_MIN, WHEEL_BAND_SIZE, fusionMaterialsToRemove, fusionResultFollows, fusionSlotRegions, fusionSlotRegionsFromAnchors, wheelSelectionSize, emptyWheelResult, popupEndBefore,
   FUSION_TITLE_KEEP_MS, onFusionScreen, showsFusionTitle, type SeenDialog }
   from '../../../lib/vision/fusion-evidence'
 
@@ -143,6 +143,29 @@ describe('materials of one fusion from the selection wheel and the dialog', () =
     expect(wheelSelectionSize([wheel([strong('9001'), null, blank], 900)])).toBe(2)
     // Dialog reads have their own count; no wheel state says nothing.
     expect(wheelSelectionSize([dialog([strong('9001'), strong('9002')], 900)])).toBe(0)
+  })
+
+  it('REQ-ASSIST-070 does not take the bonus popup after a fusion (Star Blessing) for a second fusion', () => {
+    // Diagnoses of 2026-10-06 samples (2560x1440): the only wheel state between the fusion's result and the bonus popup is empty.
+    expect(emptyWheelResult([wheel([blank, blank, blank, blank, blank], 0)], 5)).toBe(true)
+    expect(emptyWheelResult([wheel([blank, blank, blank, blank, null], 0)], 5)).toBe(true)
+    // Two filled positions in any state are a selection, read or not: a fusion whose dialog was missed.
+    expect(emptyWheelResult([wheel([blank, blank, blank], 0), wheel([null, blank, weak('9020')], 300)], 3)).toBe(false)
+    expect(emptyWheelResult([wheel([strong('9001'), strong('9002'), blank], 0)], 3)).toBe(false)
+    // One material read (the last one was picked within a wheel sample of confirming): it is still taken as before.
+    expect(emptyWheelResult([wheel([strong('9001'), blank, blank], 0)], 3)).toBe(false)
+    // No wheel state read at all says nothing: such a result stays a held fusion.
+    expect(emptyWheelResult([], 5)).toBe(false)
+    expect(emptyWheelResult([dialog([blank, blank, blank], 0)], 3)).toBe(false)
+  })
+
+  it('REQ-ASSIST-070 leaves out wheel states first seen under the popup before the result', () => {
+    // 1600x920 sample: result popup until 9,700, bonus popup captured at 10,000; the state of 8,727 was under the first popup.
+    expect(popupEndBefore([4_000, 9_700], 10_000)).toBe(9_700)
+    // The result's own popup ends after its capture and does not count; without an earlier popup every state qualifies.
+    expect(popupEndBefore([9_700, 10_900], 10_000)).toBe(9_700)
+    expect(popupEndBefore([10_900], 10_000)).toBe(0)
+    expect(popupEndBefore([], 10_000)).toBe(0)
   })
 })
 

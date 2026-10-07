@@ -16,7 +16,7 @@ import { EMPTY_SALE_STATE, isSellWindow, readSaleStep, sellCost, sellGiftId, sel
 import { readSkillExchange, type SkillExchangeRead } from '@/lib/vision/skill-exchange'
 import { acquisitionSeq, acquisitionsToRelease, continuesFusionDialog, dialogForResult, dialoglessFusionResult, fusionAnchors,
   fusionConfirmation, fusionDiagnosis, fusionDialogClosed, fusionMaterials, onFusionScreen, showsFusionTitle,
-  fusionWheelAnchors, fusionWheelCrop, fusionWheelResultBox, isFusionSelectionScreen, wheelBandMatch, wheelSelectionSize, WHEEL_BAND_MIN, WHEEL_BAND_SIZE,
+  fusionWheelAnchors, fusionWheelCrop, fusionWheelResultBox, isFusionSelectionScreen, wheelBandMatch, wheelSelectionSize, emptyWheelResult, popupEndBefore, WHEEL_BAND_MIN, WHEEL_BAND_SIZE,
   type FusionAnchors, type FusionDialogEvidence, type FusionRead, type SeenDialog, type WheelAnchors,
   type FusionSlotRead } from '@/lib/vision/fusion-evidence'
 import { confirmsExploration, explorationFloor, explorationThemeReads, themeSelectionHeaderFloor, type ExplorationObservation,
@@ -425,6 +425,8 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
   // capture session; and the capture times of recent acquisitions of any gift.
   const acquisitionSeen = useRef(new Map<string, { at: number; seq: number; episode: number }>())
   const acquisitionCaptures = useRef<{ giftId: string; at: number }[]>([])
+  // When each of the latest acquisition popups was last on screen: the wheel under a popup is not a fusion's selection.
+  const popupEnds = useRef<number[]>([])
   const lastPopup = useRef<(PopupObservation & { episode: number; floor: number; firstAt: number; attempts: number;
     capturedQuality: number; capturedAt: number }) | null>(null)
   const popupReadyTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -493,6 +495,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
     popupEvidence.current.clear()
     acquisitionSeen.current.clear()
     acquisitionCaptures.current = []
+    popupEnds.current = []
     lastPopup.current = null
     nextEpisode.current = 0
     ocrReady.current = false
@@ -714,6 +717,14 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
         })
         // Without a dialog, the fullest wheel state says how many of the capacity's positions this fusion used.
         if (dialog.dialogless) dialog.count = Math.min(dialog.capacity, wheelSelectionSize(dialog.reads) || dialog.capacity)
+        // Every state read and none held a selection: not a fusion (the bonus gift popup after one). Nothing is tallied,
+        // published or uploaded, and the popup is released as a plain acquisition.
+        if (dialog.dialogless && !dialog.published && !dialog.wheel.length && emptyWheelResult(dialog.reads, dialog.capacity)) {
+          dialog.published = true
+          sampleRecorder.current?.end('fusion', null)
+          finishFusionDialog()
+          return
+        }
         if (fusionMaterials(dialog.reads, dialog.count, dialog.capacity).length === dialog.count) finishFusionDialog()
       }
       /**
@@ -930,6 +941,10 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
           if (run === generation.current) flushPopups()
         }, next - now)
       }
+      /** Notes when a popup that stayed past its fade-in was last on screen (a shorter one is a fragment of the next). */
+      const endPopup = (popup: { firstAt: number; at: number }) => {
+        if (popup.at - popup.firstAt > POPUP_SETTLE_MS) popupEnds.current = [...popupEnds.current.slice(-7), popup.at]
+      }
       /** A popup that ended or was replaced will not produce a sharper frame, so its pending frame is sent now. */
       const releasePopupEpisode = (episode: number) => {
         const now = Date.now()
@@ -989,14 +1004,14 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
           if (!label) {
             if (previous) {
               releasePopupEpisode(previous.episode)
-              if (now - previous.at > 400) lastPopup.current = null
+              if (now - previous.at > 400) { endPopup(previous); lastPopup.current = null }
             }
             return
           }
           const observation: PopupObservation = { signature: popupIconSignature(pixels, label),
             color: popupLabelColor(pixels, label), box: label, at: now }
           const same = previous && samePopupEpisode(previous, observation) ? previous : null
-          if (previous && !same) releasePopupEpisode(previous.episode)
+          if (previous && !same) { releasePopupEpisode(previous.episode); endPopup(previous) }
           const state = same ? Object.assign(same, observation) : { ...observation, episode: ++nextEpisode.current,
             floor: floorAtCapture, firstAt: now, attempts: 0, capturedQuality: 0, capturedAt: 0 }
           lastPopup.current = state
@@ -1311,7 +1326,9 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
                 if (fusionDialog.current && !fusionDialog.current.published) continue
                 if (!dialoglessFusionResult(pending.capturedAt, previous, next, false)) continue
                 const after = lastDialogAt.current + WHEEL_AFTER_DIALOG_MS
-                const wheel = wheelReadOrder(wheelFrames.current.filter(item => item.at < pending.capturedAt && item.lastAt > after &&
+                // States first seen under the popup before this one (a fusion's own result before its bonus gift) are left out.
+                const uncovered = popupEndBefore(popupEnds.current, pending.capturedAt)
+                const wheel = wheelReadOrder(wheelFrames.current.filter(item => item.at < pending.capturedAt && item.at > uncovered && item.lastAt > after &&
                   item.lastAt >= pending.capturedAt - DIALOGLESS_WHEEL_MS && showsWheel(item, wheelReference.current)), pending.capturedAt, 600)
                 if (!wheel.length) continue
                 // The session's shop capacity; before any dialog was seen, decided after reading the states in both layouts.
@@ -1323,7 +1340,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
                   lastSeenAt: Math.max(...wheel.map(item => item.lastAt)),
                   reads: [], wheel, published: false, dialogless: true, undecided: known === null, resultAt: pending.capturedAt }
                 takeWheelReads(fusionDialog.current)
-                fusionWanted.current = { count: capacity, capacity, at: Date.now() }
+                if (!fusionDialog.current.published) fusionWanted.current = { count: capacity, capacity, at: Date.now() }
                 lastDialogAt.current = Math.max(lastDialogAt.current, pending.capturedAt)
               }
               // The selection screen or an acquisition popup without the dialog: a dialog read after it is a new fusion.
