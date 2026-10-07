@@ -1,7 +1,6 @@
 /* The support line-up of the game's Company tab: twelve slanted strips numbered 01–09, 11–13. */
 .strips { display: flex; gap: 0.45rem; padding-top: 0.6rem; }
-.strip { position: relative; flex: 1 1 0; min-width: 0; aspect-ratio: 197 / 982; padding: 0; border: 0; background: none; color: inherit;
-  filter: drop-shadow(1px 0 0 #6b4a2a) drop-shadow(-1px 0 0 #6b4a2a) drop-shadow(0 -1px 0 #6b4a2a) drop-shadow(0 1px 0 #6b4a2a); }
+.strip { position: relative; flex: 1 1 0; min-width: 0; aspect-ratio: 197 / 982; padding: 0; border: 0; background: none; color: inherit; }
 button.strip { cursor: pointer; }
 button.strip:focus-visible { outline: 2px solid var(--gold-light); outline-offset: 0.2rem; }
 /* The game's support art at its full height: it is already cut to the slanted shape. */
