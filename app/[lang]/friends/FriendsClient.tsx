@@ -8,6 +8,7 @@ import { Check, CircleHelp, Copy, Flag, Search, X } from 'lucide-react'
 import SupportStrips, { sinnerNumber, type SupportSlot } from '@/components/friends/SupportStrips'
 import SupportSlotPicker from '@/components/friends/SupportSlotPicker'
 import FriendGuide from '@/components/friends/FriendGuide'
+import SupportSlotDetail from '@/components/friends/SupportSlotDetail'
 import { KINDS, readOwnCode, rememberOwnCode, useFriendApi, useFriendCatalog, type Kind, type Post } from '@/components/friends/board'
 import { PostsSkeleton } from '@/components/friends/FriendsSkeleton'
 import BaseModal from '@/components/ui/BaseModal'
@@ -33,6 +34,8 @@ export default function FriendsClient() {
   const [filter, setFilter] = useState<SupportSlot | null>(null)
   const [finding, setFinding] = useState(false)
   const [guide, setGuide] = useState(false)
+  // A support strip of a post opened to see its E.G.O.
+  const [viewing, setViewing] = useState<SupportSlot | null>(null)
   const [busy, setBusy] = useState(false)
   const [reporting, setReporting] = useState<string | null>(null)
   // Giving a code for an exchange post: the post, and the viewer's own code being typed.
@@ -133,7 +136,7 @@ export default function FriendsClient() {
       ? <section className={styles.list}>
         {posts.map(post => <article key={post.id} className={`${styles.post} ${post.mine ? styles.mine : ''}`}>
           <header>{who(post)}<span className={styles.codeBox}>{codeBox(post)}</span></header>
-          <SupportStrips slots={catalog.supportSlots(post.slots)} />
+          <SupportStrips slots={catalog.supportSlots(post.slots)} onOpen={index => setViewing(catalog.supportSlots(post.slots)[index])} />
           {received(post)}
           {requests(post)}
         </article>)}
@@ -155,6 +158,7 @@ export default function FriendsClient() {
       </section>}
 
     {guide && <FriendGuide onClose={() => setGuide(false)} />}
+    {viewing && <SupportSlotDetail slot={viewing} onClose={() => setViewing(null)} />}
     {finding && <SupportSlotPicker index={0} value={filter} onClose={() => setFinding(false)} title={t('picker.find')} identityOnly onChange={setFilter} />}
     <BaseModal open={exchanging !== null} onClose={() => setExchanging(null)} title={t('exchangeTitle')} maxWidth="26rem">
       <form className={styles.exchange} onSubmit={event => { event.preventDefault(); if (FRIEND_CODE_RE.test(code)) exchange() }}>

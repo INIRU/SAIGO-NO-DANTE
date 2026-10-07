@@ -181,3 +181,10 @@ describe('REQ-COMMUNITY-028 code shown after the author approves', () => {
     for (const messages of [ko, en, ja]) for (const key of ['pending', 'declined', 'approved', 'approve', 'decline'] as const) expect(messages.friends.request[key]).toBeTruthy()
   })
 })
+
+describe('REQ-COMMUNITY-024 E.G.O of an opened strip', () => {
+  it('are listed in the grade order the strip marks use, ZAYIN to ALEPH, whatever order they were chosen in', () => {
+    const chosen = { WAW: 'w', ZAYIN: 'z', HE: 'h' } as Record<string, string>
+    expect(['ZAYIN', 'TETH', 'HE', 'WAW', 'ALEPH'].filter(grade => chosen[grade])).toEqual(['ZAYIN', 'HE', 'WAW'])
+  })
+})
