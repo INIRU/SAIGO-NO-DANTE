@@ -1,5 +1,5 @@
 // Builds lib/data/identity-card-titles.json: in-game identity titles with their own line breaks ("LCB\n수감자").
-// Usage: LIMBUS_DATA_DIR=~/Downloads/LimbusAssets-sync-2026-09-24/complete-data node scripts/sync/identity-card-titles.mjs
+// Usage: LIMBUS_DATA_DIR=~/Downloads/LimbusAssets-sync-2026-09-24/complete-data node scripts/data/identity-card-titles.mjs
 import { readFileSync, readdirSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 

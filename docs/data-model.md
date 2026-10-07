@@ -1,6 +1,6 @@
 # 데이터 모델
 
-앱은 Supabase PostgreSQL의 `limbus` 스키마를 사용한다. 이 문서는 현재 표와 칸, 권한 경계를 설명한다. 문서는 마이그레이션 적용을 보증하지 않으므로 운영 스키마는 연결된 DB와 적용된 마이그레이션에서 확인한다. SQL 변경 근거는 `supabase/migrations`와 기존 `supabase/migration-*.sql`이다. 신규 변경은 날짜가 붙은 마이그레이션으로 추가하고 실제 적용 여부를 따로 확인한다. 칸을 추가하는 순서는 [필드 하나 추가하기](data-sync/adding-a-field.md)에 있다.
+앱은 Supabase PostgreSQL의 `limbus` 스키마를 사용한다. 이 문서는 현재 표와 칸, 권한 경계를 설명한다. 문서는 마이그레이션 적용을 보증하지 않으므로 운영 스키마는 연결된 DB와 적용된 마이그레이션에서 확인한다. SQL 변경 근거는 `supabase/migrations`와 기존 `supabase/migration-*.sql`이다. 신규 변경은 날짜가 붙은 마이그레이션으로 추가하고 실제 적용 여부를 따로 확인한다. 칸을 추가하는 순서는 [필드 하나 추가하기](https://github.com/INIRU/limbus-asset-extractor/blob/main/site-sync/docs/adding-a-field.md)에 있다.
 
 ## 현재 표
 
@@ -20,7 +20,7 @@
 | 어시스트 | `assist_text_embeddings`, `assist_samples`, `assist_reports` | `app/api/assist/`, `lib/vision/` |
 
 - 표 48개 모두 RLS가 켜져 있다(2026-10-01 확인). 공개 읽기 정책이 없는 표는 서버의 service_role만 접근한다.
-- 동기화가 쓰는 표는 14개다: `sinners`, `identities`, `skills`, `passives`, `ego`, `ego_skills`, `ego_passives`, `keyword_meta`, `game_text_refs`, `ego_gifts`, `ego_gift_themes`, `ego_gift_recipes`, `md_events`, `md_event_choices`. 반영 전에 백업하고 되돌리기가 복원하는 범위와 같다(`scripts/sync/extraction-restore.ts`의 `RESTORE_TABLES`).
+- 동기화가 쓰는 표는 14개다: `sinners`, `identities`, `skills`, `passives`, `ego`, `ego_skills`, `ego_passives`, `keyword_meta`, `game_text_refs`, `ego_gifts`, `ego_gift_themes`, `ego_gift_recipes`, `md_events`, `md_event_choices`. 반영 전에 백업하고 되돌리기가 복원하는 범위와 같다(`limbus-asset-extractor/site-sync/scripts/sync/extraction-restore.ts`의 `RESTORE_TABLES`).
 - 제거한 기능의 표는 비공개 스키마 `limbus_retired`에 있다.
 
 ### 2026-10-01에 추가된 칸과 함수
@@ -49,7 +49,7 @@
 
 ## 게임 데이터
 
-`identity_sanity_conditions`는 동기화 IV 기준 조건이다. 원본 템플릿과 매개변수를 분리하고 3개 언어에서 같은 매개변수를 치환한다. 동기화 단계별 조건 이력으로 사용하지 않는다. 현재 복구 건수와 누락 범위는 [출처와 복구 기록](data-sync/provenance.md)를 따른다.
+`identity_sanity_conditions`는 동기화 IV 기준 조건이다. 원본 템플릿과 매개변수를 분리하고 3개 언어에서 같은 매개변수를 치환한다. 동기화 단계별 조건 이력으로 사용하지 않는다. 현재 복구 건수와 누락 범위는 [출처와 복구 기록](https://github.com/INIRU/limbus-asset-extractor/blob/main/site-sync/docs/provenance.md)를 따른다.
 
 20260910081730_restore_ego_passive_stage_variants.sql은 ego_passives를 추가했다. (ego_id, game_passive_id)가 원본 식별자이고 min_stage/max_stage가 적용 구간이다. RLS는 공개 읽기만 허용한다. 기존 모달/API 호환용 EGO 패시브 컬럼에는 최고 단계 요약을 남겨두었으며, 이 호환용 중복까지 제거한 상태는 아니다.
 
@@ -59,7 +59,7 @@
 
 `app_config.current_season`은 인격 상세의 파편 교환 시즌 판정에 사용한다. `walpurgis_night`의 `edition`은 최신 확인 회차이고 `active`는 현재 개최 여부다. 회차가 최신이라고 진행 중인 것으로 판단하지 않는다. 발푸르기스 설정은 현재 공개 UI에서 읽지 않는다.
 
-`scripts/sync/seed-game-config.sql`은 기존 설정을 덮어쓰지 않고 빈 키만 초기화한다. 2026-09-12 기준 사용자 `Localize.zip`의 `KR_SeasonTitle`·`KR_GachaTitle`에서 시즌 7·발푸르기스 9회를 확인했다. 개최 기간은 7월 9~23일이므로 비활성으로 설정한다([이벤트 일정](https://limbuscompany.wiki.gg/wiki/Event)). 이 날짜의 복구 기본값이며 이후 시즌·행사 변경 시 별도 갱신해야 한다.
+`limbus-asset-extractor/site-sync/scripts/sync/seed-game-config.sql`은 기존 설정을 덮어쓰지 않고 빈 키만 초기화한다. 2026-09-12 기준 사용자 `Localize.zip`의 `KR_SeasonTitle`·`KR_GachaTitle`에서 시즌 7·발푸르기스 9회를 확인했다. 개최 기간은 7월 9~23일이므로 비활성으로 설정한다([이벤트 일정](https://limbuscompany.wiki.gg/wiki/Event)). 이 날짜의 복구 기본값이며 이후 시즌·행사 변경 시 별도 갱신해야 한다.
 
 ## 인격 메타데이터
 
@@ -73,9 +73,9 @@
 
 ## 키워드 카탈로그와 사용 관계
 
-`keyword_meta`는 키워드 이름(기본키)마다 원문·번역·아이콘 슬러그·분류를 가진다(초기 복구 때 482개). 2026-10-01부터 `game_id`가 참조 표 `game_text_refs`의 대표 행을 가리키고, 사이트는 그 행의 언어별 이름·설명을 먼저 쓴다(두 표의 역할은 [동기화 규칙](data-sync/rules.md) "게임 원문 저장과 참조 표"). 인격/EGO의 `keywords`는 사용 관계이고, 기프트의 `keyword`는 대표 분류이므로 기프트 효과의 모든 키워드를 담는 필드가 아니다. 메타 재생성은 인격·EGO 스킬/패시브의 실제 태그와 기프트 강화 효과를 함께 읽는다. 패시브 제목과 키워드 이름이 같다는 이유만으로 연결하지 않는다.
+`keyword_meta`는 키워드 이름(기본키)마다 원문·번역·아이콘 슬러그·분류를 가진다(초기 복구 때 482개). 2026-10-01부터 `game_id`가 참조 표 `game_text_refs`의 대표 행을 가리키고, 사이트는 그 행의 언어별 이름·설명을 먼저 쓴다(두 표의 역할은 [동기화 규칙](https://github.com/INIRU/limbus-asset-extractor/blob/main/site-sync/docs/rules.md) "게임 원문 저장과 참조 표"). 인격/EGO의 `keywords`는 사용 관계이고, 기프트의 `keyword`는 대표 분류이므로 기프트 효과의 모든 키워드를 담는 필드가 아니다. 메타 재생성은 인격·EGO 스킬/패시브의 실제 태그와 기프트 강화 효과를 함께 읽는다. 패시브 제목과 키워드 이름이 같다는 이유만으로 연결하지 않는다.
 
-누락 메타 135개와 EGO 108개의 사용 배열을 복구했다. 기존 행과 원본에 키워드가 없는 EGO 4개는 유지했다. 이전 도감 백업은 현재 원문에서 이름이 확인되는 항목만 추가 근거로 사용했다. 동일 원본 이름에 2번 아이콘이 있으면 공통 URL 해석기가 2번을 우선하되, 사용자 확인을 받은 신력 단말기 무기 키워드 9종은 원본을 사용한다. `category`와 `effect_type`은 서로 다른 필드다. 현재 `기타` 분류를 지원하며 내용으로 임의 분류하지 않는다. 백업·재실행 명령·남은 미확정 그림은 [출처와 복구 기록](data-sync/provenance.md)에 기록했다.
+누락 메타 135개와 EGO 108개의 사용 배열을 복구했다. 기존 행과 원본에 키워드가 없는 EGO 4개는 유지했다. 이전 도감 백업은 현재 원문에서 이름이 확인되는 항목만 추가 근거로 사용했다. 동일 원본 이름에 2번 아이콘이 있으면 공통 URL 해석기가 2번을 우선하되, 사용자 확인을 받은 신력 단말기 무기 키워드 9종은 원본을 사용한다. `category`와 `effect_type`은 서로 다른 필드다. 현재 `기타` 분류를 지원하며 내용으로 임의 분류하지 않는다. 백업·재실행 명령·남은 미확정 그림은 [출처와 복구 기록](https://github.com/INIRU/limbus-asset-extractor/blob/main/site-sync/docs/provenance.md)에 기록했다.
 
 ## 공개 편성 분석
 

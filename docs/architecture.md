@@ -15,7 +15,7 @@ Next.js 16 App Router + React 19 + TypeScript. 공개 페이지는 app/[lang]에
 | app/api, lib/schemas | 요청·인증·입력 검증 |
 | lib/db, lib/supabase | DB 조회와 권한별 클라이언트 |
 | lib/i18n, messages | 번역과 데이터 이름의 지역화 |
-| scripts/sync, supabase | 동기화와 스키마 이력 |
+| supabase | 스키마 이력. 동기화 코드는 추출 도구 저장소(`limbus-asset-extractor/site-sync`)에 있다 |
 
 인격 상세의 경계:
 - IdentityDetailClient: 페이지 탭, 초상화, 각 영역 조합.

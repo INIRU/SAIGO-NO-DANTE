@@ -7,10 +7,10 @@
 | 하려는 일 | 먼저 읽을 문서 |
 |---|---|
 | 화면이나 컴포넌트를 고친다 | [디자인 기준](../DESIGN.md), [구조](architecture.md), [개발과 검증](development.md) |
-| 새 추출본을 반영한다, 반영을 되돌린다 | [추출본 반영](data-sync/runbook.md) |
-| 동기화 코드를 고친다, 추출 도구 번들을 갱신한다 | [동기화 코드를 고칠 때](data-sync/developing.md), [동기화 규칙](data-sync/rules.md) |
-| 게임 원본의 값을 새로 보여 준다(칸 추가) | [필드 하나 추가하기](data-sync/adding-a-field.md), [데이터 모델](data-model.md) |
-| 이미지·아이콘의 원본 위치, 과거 백업과 반영 기록을 찾는다 | [출처와 복구 기록](data-sync/provenance.md) |
+| 새 추출본을 반영한다, 반영을 되돌린다 | [추출본 반영](https://github.com/INIRU/limbus-asset-extractor/blob/main/site-sync/docs/runbook.md) |
+| 동기화 코드를 고친다(코드는 추출 도구 저장소 `site-sync/`에 있다) | [동기화 코드를 고칠 때](https://github.com/INIRU/limbus-asset-extractor/blob/main/site-sync/docs/developing.md), [동기화 규칙](https://github.com/INIRU/limbus-asset-extractor/blob/main/site-sync/docs/rules.md) |
+| 게임 원본의 값을 새로 보여 준다(칸 추가) | [필드 하나 추가하기](https://github.com/INIRU/limbus-asset-extractor/blob/main/site-sync/docs/adding-a-field.md), [데이터 모델](data-model.md) |
+| 이미지·아이콘의 원본 위치, 과거 백업과 반영 기록을 찾는다 | [출처와 복구 기록](https://github.com/INIRU/limbus-asset-extractor/blob/main/site-sync/docs/provenance.md) |
 | 어시스트의 화면 인식을 고치거나 평가한다 | [어시스트 화면 인식](assist.md) |
 | 표나 칸을 바꾼다, 권한을 확인한다 | [데이터 모델](data-model.md) |
 | 개발자 API에 자원을 더한다, 파트너 봇 연동을 본다 | [개발자 API와 협업 파트너](partner-api.md) |
@@ -23,7 +23,7 @@
 - [개발과 검증](development.md): 실행, 테스트, 캐시, 알려진 UI 주의점.
 - [데이터 모델](data-model.md): 현재 표와 칸, 권한, 스키마 변경 기록.
 - [개발자 API와 협업 파트너](partner-api.md): `/api/v1` 자원, 한도, 파트너 권한, 소식 보내기 양식, Discord 봇 연동.
-- 데이터 동기화: [실행](data-sync/runbook.md), [코드 수정](data-sync/developing.md), [규칙](data-sync/rules.md), [필드 추가](data-sync/adding-a-field.md), [출처와 기록](data-sync/provenance.md).
+- 데이터 동기화: [실행](https://github.com/INIRU/limbus-asset-extractor/blob/main/site-sync/docs/runbook.md), [코드 수정](https://github.com/INIRU/limbus-asset-extractor/blob/main/site-sync/docs/developing.md), [규칙](https://github.com/INIRU/limbus-asset-extractor/blob/main/site-sync/docs/rules.md), [필드 추가](https://github.com/INIRU/limbus-asset-extractor/blob/main/site-sync/docs/adding-a-field.md), [출처와 기록](https://github.com/INIRU/limbus-asset-extractor/blob/main/site-sync/docs/provenance.md).
 - [어시스트 화면 인식](assist.md): 인식 방법, 설정, 평가 도구와 측정 기록.
 - [배포와 복구](deployment.md): 환경 변수, 외부 서비스 점검, 롤백.
 - [디자인 기준](../DESIGN.md): 색, 글꼴, 게임 에셋, 공용 컴포넌트, 레이아웃·움직임·스켈레톤 규칙.

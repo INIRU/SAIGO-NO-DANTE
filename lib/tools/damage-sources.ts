@@ -1,5 +1,5 @@
 // What the game's own effect texts say about skill damage, read from the Korean source text (ego_gifts.effect_base,
-// keyword_meta.description). Gifts carry their numbers nowhere else in the extracted data (docs/data-sync/provenance.md).
+// keyword_meta.description). Gifts carry their numbers nowhere else in the extracted data (limbus-asset-extractor/site-sync/docs/provenance.md).
 
 import type { SupportedLang } from '@/lib/i18n/types'
 import type { KeywordInfo } from '@/lib/keywords/catalog'

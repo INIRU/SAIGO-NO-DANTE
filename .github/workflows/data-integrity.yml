@@ -9,7 +9,6 @@ on:
   pull_request:
     branches: [main]
     paths:
-      - 'scripts/sync/**'
       - 'scripts/audit/**'
       - 'lib/i18n/localize.ts'
 
