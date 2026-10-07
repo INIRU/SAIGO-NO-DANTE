@@ -2445,5 +2445,92 @@
     "deleteConfirm": "이 소식을 캘린더에서 지울까요?",
     "deleted": "소식을 지웠습니다.",
     "deleteFailed": "지우지 못했습니다. 다시 시도해주세요."
+  },
+  "friends": {
+    "compose": {
+      "support": "내 코드 올리기",
+      "want": "인격 구하기"
+    },
+    "rank": "많이 구하는 인격",
+    "rankUnit": "명",
+    "timeLeft": "남은 시간 {time}",
+    "title": "친구 코드",
+    "tabs": {
+      "support": "지원 인격",
+      "want": "인격 구해요"
+    },
+    "myCode": "내 친구 코드",
+    "visibility": {
+      "label": "코드를 볼 수 있는 사람",
+      "public": "누구나",
+      "members": "로그인한 사람",
+      "exchange": "코드 교환"
+    },
+    "post": "올리기",
+    "edit": "수정",
+    "delete": "지우기",
+    "copy": "복사",
+    "copied": "복사했습니다.",
+    "copyFailed": "복사하지 못했습니다.",
+    "posted": "올렸습니다.",
+    "updated": "수정했습니다.",
+    "deleted": "지웠습니다.",
+    "warning": "다른 사람의 친구 코드나 가짜 코드를 올리면 이용이 정지됩니다.",
+    "wanted": "구하는 인격",
+    "exchange": "코드 교환",
+    "exchangeTitle": "내 친구 코드를 적어 주세요",
+    "cancel": "취소",
+    "back": "친구 코드",
+    "membersOnly": "로그인한 사람",
+    "mine": "내 글",
+    "guest": "익명 #{tag}",
+    "seen": "접속 {time}",
+    "now": "방금",
+    "addIdentity": "인격 넣기",
+    "empty": "올라온 글이 없습니다.",
+    "loadFailed": "목록을 불러오지 못했습니다.",
+    "retry": "다시 시도",
+    "picker": {
+      "support": "지원 인격",
+      "want": "구하는 인격",
+      "find": "찾을 인격",
+      "clear": "비우기",
+      "apply": "적용"
+    },
+    "filter": {
+      "find": "인격으로 찾기",
+      "clear": "필터 지우기"
+    },
+    "report": "신고",
+    "reported": "신고했습니다.",
+    "reportConfirm": {
+      "title": "이 글을 신고할까요?",
+      "message": "다른 사람의 코드나 가짜 코드로 보이는 글을 신고합니다."
+    },
+    "errors": {
+      "failed": "요청에 실패했습니다.",
+      "invalid_request": "잘못된 요청입니다.",
+      "invalid_code": "친구 코드는 영문 대문자 1자와 숫자 9자입니다.",
+      "invalid_visibility": "공개 범위가 올바르지 않습니다.",
+      "need_slots": "지원 인격을 1~12개 넣어 주세요.",
+      "invalid_slot": "지원 칸이 올바르지 않습니다.",
+      "unknown_identity": "없는 인격입니다.",
+      "bad_ego": "그 인격에 넣을 수 없는 E.G.O입니다.",
+      "need_wanted": "구하는 인격을 1~3개 넣어 주세요.",
+      "duplicate_code": "이미 올라와 있는 친구 코드입니다.",
+      "own_code": "자기 친구 코드를 넣어 주세요.",
+      "not_exchange": "코드 교환 글이 아닙니다.",
+      "blocked": "친구 코드 게시판 이용이 정지되었습니다.",
+      "not_found": "글을 찾을 수 없습니다."
+    },
+    "admin": {
+      "title": "친구 코드 신고",
+      "reports": "신고 {count}",
+      "remove": "글 내리기",
+      "removeAndBlock": "내리고 글쓰기 막기",
+      "dismiss": "신고 지우기",
+      "empty": "신고된 글이 없습니다.",
+      "done": "처리했습니다."
+    }
   }
 }

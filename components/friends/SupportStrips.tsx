@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { SINNER_SLUGS } from '@/lib/constants/game'
 import { getIdentityImageUrl } from '@/lib/utils/images'
 import styles from './SupportStrips.module.css'
@@ -39,6 +40,7 @@ const FRAME_POINTS = '0.5,49.5 196.5,0.5 196.5,932.5 0.5,981.5'
  * one has no number. count: 12 for a line-up, fewer for a short row (wanted identities), which also hides the E.G.O places.
  */
 export default function SupportStrips({ slots, onPick, count = 12 }: { slots: readonly (SupportSlot | null)[]; onPick?: (index: number) => void; count?: number }) {
+  const t = useTranslations('friends')
   return <div className={`${styles.strips} ${count < 12 ? styles.few : ''}`}>
     {Array.from({ length: count }, (_, index) => {
       const slot = slots[index] ?? null
@@ -52,7 +54,7 @@ export default function SupportStrips({ slots, onPick, count = 12 }: { slots: re
         {slot && <span className={styles.ego}>{EGO_GRADES.map(grade => <i key={grade} data-on={slot.egos[grade] ? grade : undefined} />)}</span>}
       </>
       return onPick
-        ? <button type="button" key={index} className={className} onClick={() => onPick(index)} aria-label={slot ? `${number} ${slot.name}` : '인격 넣기'}>{content}</button>
+        ? <button type="button" key={index} className={className} onClick={() => onPick(index)} aria-label={slot ? `${number} ${slot.name}` : t('addIdentity')}>{content}</button>
         : <div key={index} className={className} title={slot?.name}>{content}</div>
     })}
   </div>

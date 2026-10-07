@@ -19,3 +19,13 @@ export const isAuthorOf = (row: Pick<FriendPostRow, 'user_id' | 'key_hash'>, vie
 /** The filter that finds a viewer's own rows in a table with (user column, key hash column). */
 export const ownerFilter = (viewer: Author, userColumn = 'user_id', keyColumn = 'key_hash') =>
   viewer.kind === 'user' ? { column: userColumn, value: viewer.userId } : { column: keyColumn, value: viewer.keyHash }
+
+/** Whether an admin barred this author from the board (REQ-COMMUNITY-025). */
+export async function isBlocked(admin: Admin, author: Author): Promise<boolean> {
+  const owner = ownerFilter(author)
+  const { data, error } = await admin.schema('limbus').from('friend_blocks').select('created_at').eq(owner.column, owner.value).limit(1)
+  // The table comes with a later migration than the board itself: until it is applied nobody is barred.
+  if (error?.code === '42P01' || error?.code === 'PGRST205') return false
+  if (error) throw error
+  return data.length > 0
+}

@@ -23,11 +23,11 @@ const RARITIES = [3, 2, 1].map(n => ({ value: String(n), label: '0'.repeat(n) })
  * character picker (header, the shared filters on the left, identities grouped by sinner); every choice is applied at once,
  * so closing the window any way keeps it.
  */
-export default function SupportSlotPicker({ index, value, onChange, onClose, title = '지원 인격', identityOnly = false }: {
+export default function SupportSlotPicker({ index, value, onChange, onClose, title, identityOnly = false }: {
   index: number; value: SupportSlot | null; onChange: (slot: SupportSlot | null) => void; onClose: () => void
-  title?: string; identityOnly?: boolean
+  title: string; identityOnly?: boolean
 }) {
-  const lang = useLocale() as SupportedLang, t = useTranslations('sinner')
+  const lang = useLocale() as SupportedLang, t = useTranslations('sinner'), tf = useTranslations('friends')
   const [query, setQuery] = useState(''), [grade, setGrade] = useState(''), [sinner, setSinner] = useState(value?.identity.sinner_id ?? '')
   const [slot, setLocal] = useState<SupportSlot | null>(value)
   const setSlot = (next: SupportSlot | null) => { setLocal(next); onChange(next) }
@@ -42,8 +42,8 @@ export default function SupportSlotPicker({ index, value, onChange, onClose, tit
       <header className="note-picker-header">
         <h2>{title}</h2>
         <div className={styles.actions}>
-          <button type="button" disabled={!slot} onClick={() => setSlot(null)} aria-label="비우기" title="비우기"><Trash2 size={19} aria-hidden="true" /></button>
-          <button type="button" className={styles.apply} onClick={onClose}><Check size={18} strokeWidth={3} aria-hidden="true" />적용</button>
+          <button type="button" disabled={!slot} onClick={() => setSlot(null)} aria-label={tf('picker.clear')} title={tf('picker.clear')}><Trash2 size={19} aria-hidden="true" /></button>
+          <button type="button" className={styles.apply} onClick={onClose}><Check size={18} strokeWidth={3} aria-hidden="true" />{tf('picker.apply')}</button>
         </div>
       </header>
       <div className={`character-picker-layout ${identityOnly ? '' : styles.withSide}`}>
