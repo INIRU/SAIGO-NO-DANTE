@@ -68,6 +68,30 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // Approval posts (REQ-COMMUNITY-028): this viewer's request on each, and everyone's requests on the viewer's own post.
+    // The table comes with a later migration than the board: until it is applied there are simply no requests.
+    const requestOf = new Map<string, string>()
+    let requests: { id: string; name: string | null; userId: string | null; guestTag: string | null; status: string; createdAt: string }[] = []
+    const approvalIds = all.filter(row => row.visibility === 'approval').map(row => row.id)
+    const noTable = (error: { code?: string } | null) => error?.code === '42P01' || error?.code === 'PGRST205'
+    if (viewer && approvalIds.length) {
+      const owner = ownerFilter(viewer, 'viewer_user_id', 'viewer_key_hash')
+      const asked = await db.from('friend_requests').select('post_id,status').in('post_id', approvalIds).eq(owner.column, owner.value)
+      if (asked.error && !noTable(asked.error)) throw asked.error
+      for (const row of asked.data ?? []) requestOf.set(row.post_id, row.status)
+      if (ownRow?.visibility === 'approval') {
+        const got = await db.from('friend_requests').select('id,viewer_user_id,viewer_tag,status,created_at').eq('post_id', ownRow.id).order('created_at', { ascending: false }).limit(200)
+        if (got.error && !noTable(got.error)) throw got.error
+        const askers = [...new Set((got.data ?? []).map(row => row.viewer_user_id).filter((id): id is string => !!id && !names.has(id)))]
+        if (askers.length) {
+          const profiles = await db.from('profiles').select('id,username').in('id', askers)
+          if (profiles.error) throw profiles.error
+          for (const profile of profiles.data) names.set(profile.id, profile.username)
+        }
+        requests = (got.data ?? []).map(row => ({ id: row.id, name: row.viewer_user_id ? names.get(row.viewer_user_id) ?? null : null, userId: row.viewer_user_id, guestTag: row.viewer_tag, status: row.status, createdAt: row.created_at }))
+      }
+    }
+
     // The author is here: their post shows it, written at most every 10 minutes (REQ-COMMUNITY-023).
     const now = Date.now()
     if (ownRow && seenIsStale(ownRow.seen_at, now)) {
@@ -93,8 +117,9 @@ export async function GET(request: NextRequest) {
         ...(kind === 'want' ? { expiresAt: wantExpiresAt(row.created_at) } : {}),
         // authorId opens the public profile (/users/<id>), as on the deck board.
         author: row.user_id ? names.get(row.user_id) ?? null : null, authorId: row.user_id, guestTag: row.guest_tag,
-        code: codeForViewer(row, { signedIn: viewer?.kind === 'user', mine, exchanged: exchanged.has(row.id) }),
+        code: codeForViewer(row, { signedIn: viewer?.kind === 'user', mine, exchanged: exchanged.has(row.id), approved: requestOf.get(row.id) === 'approved' }),
         ...(mine && row.visibility === 'exchange' ? { received: received.get(row.id) ?? [] } : {}),
+        ...(row.visibility === 'approval' ? mine ? { requests } : { request: requestOf.get(row.id) ?? null } : {}),
       }
     }
     return NextResponse.json({ signedIn: viewer?.kind === 'user', posts: rows.map(view), own: ownRow ? view(ownRow) : null, ...(wanted ? { wanted } : {}) })

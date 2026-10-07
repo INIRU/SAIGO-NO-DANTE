@@ -2469,18 +2469,46 @@
       "next": "次へ",
       "close": "閉じる"
     },
+    "visibility": {
+      "approval": "承認後に公開",
+      "label": "コードを見られる人",
+      "public": "誰でも",
+      "members": "ログインした人",
+      "exchange": "コード交換"
+    },
+    "requestCode": "コードをリクエスト",
+    "requested": "リクエストしました。",
+    "request": {
+      "title": "コードのリクエスト",
+      "pending": "承認待ち",
+      "declined": "拒否されました",
+      "approved": "承認済み",
+      "approve": "承認",
+      "decline": "拒否"
+    },
+    "errors": {
+      "not_approval": "コードのリクエストを受け付けていない投稿です。",
+      "failed": "リクエストに失敗しました。",
+      "invalid_request": "不正なリクエストです。",
+      "invalid_code": "フレンドコードは英大文字1字と数字9字です。",
+      "invalid_visibility": "公開範囲が正しくありません。",
+      "need_slots": "サポート人格を1〜12体入れてください。",
+      "invalid_slot": "サポート枠が正しくありません。",
+      "unknown_identity": "存在しない人格です。",
+      "bad_ego": "その人格には付けられないE.G.Oです。",
+      "need_wanted": "募集する人格を1〜3体入れてください。",
+      "duplicate_code": "すでに投稿されているフレンドコードです。",
+      "own_code": "自分のフレンドコードを入力してください。",
+      "not_exchange": "コード交換の投稿ではありません。",
+      "blocked": "フレンドコード掲示板の利用が停止されています。",
+      "not_found": "投稿が見つかりません。"
+    },
     "title": "フレンドコード",
     "tabs": {
       "support": "サポート人格",
       "want": "人格募集"
     },
     "myCode": "自分のフレンドコード",
-    "visibility": {
-      "label": "コードを見られる人",
-      "public": "誰でも",
-      "members": "ログインした人",
-      "exchange": "コード交換"
-    },
     "post": "投稿",
     "edit": "更新",
     "delete": "削除",
@@ -2521,22 +2549,6 @@
     "reportConfirm": {
       "title": "この投稿を通報しますか？",
       "message": "他人のコードや偽のコードと思われる投稿を通報します。"
-    },
-    "errors": {
-      "failed": "リクエストに失敗しました。",
-      "invalid_request": "不正なリクエストです。",
-      "invalid_code": "フレンドコードは英大文字1字と数字9字です。",
-      "invalid_visibility": "公開範囲が正しくありません。",
-      "need_slots": "サポート人格を1〜12体入れてください。",
-      "invalid_slot": "サポート枠が正しくありません。",
-      "unknown_identity": "存在しない人格です。",
-      "bad_ego": "その人格には付けられないE.G.Oです。",
-      "need_wanted": "募集する人格を1〜3体入れてください。",
-      "duplicate_code": "すでに投稿されているフレンドコードです。",
-      "own_code": "自分のフレンドコードを入力してください。",
-      "not_exchange": "コード交換の投稿ではありません。",
-      "blocked": "フレンドコード掲示板の利用が停止されています。",
-      "not_found": "投稿が見つかりません。"
     },
     "admin": {
       "title": "フレンドコード通報",
