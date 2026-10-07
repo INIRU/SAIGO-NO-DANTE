@@ -10,9 +10,9 @@ create table limbus.friend_posts (
   -- The game's friend code: one capital letter and nine digits.
   code text not null check (code ~ '^[A-Z][0-9]{9}$'),
   visibility text not null default 'public' check (visibility in ('public', 'members', 'exchange')),
-  -- support: [{ "slot": 0-11, "identity": "<game id>", "egos": { "ZAYIN": "<game id>", ... } }]; want: [].
+  -- support: [{ "slot": 0-11, "identity": "<identities.id>", "egos": { "ZAYIN": "<ego.id>", ... } }]; want: [].
   slots jsonb not null default '[]'::jsonb check (jsonb_typeof(slots) = 'array' and jsonb_array_length(slots) <= 12),
-  -- Identity game ids of the post (the slots' identities, or the wanted ones), for "posts with this identity".
+  -- identities.id of the post (the slots' identities, or the wanted ones), for "posts with this identity".
   identity_ids text[] not null default '{}' check (cardinality(identity_ids) between 1 and 12),
   user_id uuid references limbus.profiles(id) on delete cascade,
   -- Guests: the HMAC of the browser's key (lib/guest/server.ts) and its 4-hex tag shown as "익명 #1a2b".
