@@ -60,3 +60,32 @@ const BUMP_INTERVAL_MS = 12 * 60 * 60 * 1000
 export function nextBumpedAt(previous: string, now: Date): string {
   return now.getTime() - new Date(previous).getTime() >= BUMP_INTERVAL_MS ? now.toISOString() : previous
 }
+
+export const WANT_LIMIT = 3
+const WANT_LIFE_MS = 24 * 60 * 60 * 1000
+export type WantPostInput = { code: string; visibility: Visibility; identityIds: string[] }
+
+/** Identity ids a want request names, to look up before parseWantPost. */
+export function wantIdentityIds(body: unknown): string[] {
+  const list = isRecord(body) && Array.isArray(body.identities) ? body.identities : []
+  return [...new Set(list.filter((value): value is string => typeof value === 'string' && UUID_RE.test(value)))]
+}
+
+/** A "wanted identity" post: the author's own code, the visibility and one to three identities the catalogue has. Nothing else is read. */
+export function parseWantPost(body: unknown, identities: ReadonlyMap<string, string>): WantPostInput | { error: string } {
+  if (!isRecord(body)) return { error: '잘못된 요청입니다.' }
+  const { code, visibility } = body
+  if (typeof code !== 'string' || !FRIEND_CODE_RE.test(code)) return { error: '친구 코드는 영문 대문자 1자와 숫자 9자입니다.' }
+  if (!VISIBILITIES.includes(visibility as Visibility)) return { error: '공개 범위가 올바르지 않습니다.' }
+  if (!Array.isArray(body.identities)) return { error: '구하는 인격을 1~3개 넣어 주세요.' }
+  const identityIds = [...new Set(body.identities as unknown[])]
+  if (identityIds.length < 1 || identityIds.length > WANT_LIMIT) return { error: '구하는 인격을 1~3개 넣어 주세요.' }
+  if (identityIds.some(id => typeof id !== 'string' || !identities.has(id))) return { error: '없는 인격입니다.' }
+  return { code, visibility: visibility as Visibility, identityIds: identityIds as string[] }
+}
+
+/** A want post is gone one day after it was written; saving it again does not extend it. */
+export const wantExpiresAt = (createdAt: string) => new Date(new Date(createdAt).getTime() + WANT_LIFE_MS).toISOString()
+
+/** Identities to count as asked for: the ones this save adds to the post. */
+export const newlyWanted = (previous: readonly string[], next: readonly string[]) => next.filter(id => !previous.includes(id))

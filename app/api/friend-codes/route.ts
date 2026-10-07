@@ -1,13 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { authorRateKey, resolveAuthor } from '@/lib/guest/server'
+import { authorRateKey, resolveAuthor, type Author } from '@/lib/guest/server'
 import { checkRequestRateLimit, rateLimitResponse } from '@/lib/rate-limit'
-import { codeForViewer, nextBumpedAt, parseSupportPost, slotAssetIds } from '@/lib/friends/codes'
+import { codeForViewer, newlyWanted, nextBumpedAt, parseSupportPost, parseWantPost, slotAssetIds, wantExpiresAt, wantIdentityIds } from '@/lib/friends/codes'
 import { isAuthorOf, ownerFilter, viewerOf, type FriendPostRow } from '@/lib/friends/server'
 
-const COLUMNS = 'id,code,visibility,slots,identity_ids,user_id,key_hash,guest_tag,bumped_at,seen_at'
+const COLUMNS = 'id,code,visibility,slots,identity_ids,user_id,key_hash,guest_tag,created_at,bumped_at,seen_at'
 const LIST_LIMIT = 60
 const HIDE_AFTER_MS = 30 * 24 * 60 * 60 * 1000
+const WANT_LIFE_MS = 24 * 60 * 60 * 1000
+type Db = ReturnType<ReturnType<typeof createAdminClient>['schema']>
+const kindOf = (value: unknown) => value === 'want' ? 'want' : 'support'
+
+/** Want posts live one day (REQ-COMMUNITY-022): the expired ones are deleted whenever want posts are read or written. */
+const dropExpiredWants = (db: Db) => db.from('friend_posts').delete().eq('kind', 'want').lt('created_at', new Date(Date.now() - WANT_LIFE_MS).toISOString())
 const SEEN_INTERVAL_MS = 10 * 60 * 1000
 const UUID_RE = /^[0-9a-f-]{36}$/i
 
@@ -18,8 +24,10 @@ export async function GET(request: NextRequest) {
     const viewer = await viewerOf(request, admin)
     const identity = request.nextUrl.searchParams.get('identity')
     if (identity && !UUID_RE.test(identity)) return NextResponse.json({ error: '잘못된 요청입니다.' }, { status: 400 })
-    let query = db.from('friend_posts').select(COLUMNS).eq('kind', 'support')
-      .gte('bumped_at', new Date(Date.now() - HIDE_AFTER_MS).toISOString()).order('bumped_at', { ascending: false }).limit(LIST_LIMIT)
+    const kind = kindOf(request.nextUrl.searchParams.get('kind'))
+    if (kind === 'want') await dropExpiredWants(db)
+    let query = db.from('friend_posts').select(COLUMNS).eq('kind', kind).order('bumped_at', { ascending: false }).limit(LIST_LIMIT)
+    query = kind === 'want' ? query.gte('created_at', new Date(Date.now() - WANT_LIFE_MS).toISOString()) : query.gte('bumped_at', new Date(Date.now() - HIDE_AFTER_MS).toISOString())
     if (identity) query = query.contains('identity_ids', [identity])
     const { data, error } = await query
     if (error) throw error
@@ -63,7 +71,7 @@ export async function GET(request: NextRequest) {
       posts: rows.map(row => {
         const mine = isAuthorOf(row, viewer)
         return {
-          id: row.id, visibility: row.visibility, slots: row.slots, mine, bumpedAt: row.bumped_at, seenAt: row.seen_at,
+          id: row.id, visibility: row.visibility, slots: row.slots, identityIds: row.identity_ids, mine, ...(kind === 'want' ? { expiresAt: wantExpiresAt(row.created_at) } : {}), bumpedAt: row.bumped_at, seenAt: row.seen_at,
           author: row.user_id ? names.get(row.user_id) ?? null : null, guestTag: row.guest_tag,
           code: codeForViewer(row, { signedIn: viewer?.kind === 'user', mine, exchanged: exchanged.has(row.id) }),
           ...(mine && row.visibility === 'exchange' ? { received: received.get(row.id) ?? [] } : {}),
@@ -87,6 +95,7 @@ export async function POST(request: NextRequest) {
     if (!rateLimit.allowed) return rateLimitResponse(rateLimit)
 
     const body = await request.json().catch(() => null)
+    if (kindOf(body?.kind) === 'want') return await saveWant(db, author, body)
     const ids = slotAssetIds(body)
     const [identityRows, egoRows] = await Promise.all([
       ids.identities.length ? db.from('identities').select('id,sinner_id').in('id', ids.identities) : { data: [], error: null },
@@ -117,14 +126,51 @@ export async function POST(request: NextRequest) {
   }
 }
 
-/** Removes the author's own support post. */
+/**
+ * Saves the author's "wanted identity" post. It keeps the time it was first written, so saving again does not extend its
+ * day; identities a save adds are counted in friend_want_stats, which outlives the post (REQ-COMMUNITY-022).
+ */
+async function saveWant(db: Db, author: Author, body: unknown) {
+  const ids = wantIdentityIds(body)
+  const identityRows = ids.length ? await db.from('identities').select('id,sinner_id').in('id', ids) : { data: [], error: null }
+  if (identityRows.error) throw identityRows.error
+  const post = parseWantPost(body, new Map((identityRows.data ?? []).map(row => [row.id as string, row.sinner_id as string])))
+  if ('error' in post) return NextResponse.json({ error: post.error }, { status: 400 })
+
+  const expired = await dropExpiredWants(db)
+  if (expired.error) throw expired.error
+  const owner = ownerFilter(author)
+  const existing = await db.from('friend_posts').select('id,identity_ids').eq('kind', 'want').eq(owner.column, owner.value).maybeSingle()
+  if (existing.error) throw existing.error
+  const values = { code: post.code, visibility: post.visibility, identity_ids: post.identityIds, seen_at: new Date().toISOString() }
+  const saved = existing.data
+    ? await db.from('friend_posts').update(values).eq('id', existing.data.id).select('id').single()
+    : await db.from('friend_posts').insert({ ...values, kind: 'want', slots: [],
+        ...(author.kind === 'user' ? { user_id: author.userId } : { key_hash: author.keyHash, guest_tag: author.tag }) }).select('id').single()
+  if (saved.error?.code === '23505') return NextResponse.json({ error: '이미 올라와 있는 친구 코드입니다.' }, { status: 409 })
+  if (saved.error) throw saved.error
+
+  // read-then-write, so two saves in the same instant can lose a count; use an SQL function if the numbers must be exact.
+  const added = newlyWanted(existing.data?.identity_ids ?? [], post.identityIds)
+  if (added.length) {
+    const day = new Date().toISOString().slice(0, 10)
+    const counts = await db.from('friend_want_stats').select('identity_id,count').eq('day', day).in('identity_id', added)
+    const before = new Map((counts.data ?? []).map(row => [row.identity_id as string, row.count as number]))
+    const counted = counts.error ? counts : await db.from('friend_want_stats').upsert(added.map(id => ({ day, identity_id: id, count: (before.get(id) ?? 0) + 1 })), { onConflict: 'day,identity_id' })
+    // The post is saved; a failed count is logged, not shown to the author.
+    if (counted.error) console.error('friend-codes want stats', counted.error)
+  }
+  return NextResponse.json({ id: saved.data.id }, { status: existing.data ? 200 : 201 })
+}
+
+/** Removes the author's own post of a kind (?kind=want, support by default). */
 export async function DELETE(request: NextRequest) {
   try {
     const admin = createAdminClient()
     const resolved = await resolveAuthor(request, admin)
     if ('response' in resolved) return resolved.response
     const owner = ownerFilter(resolved.author)
-    const { error } = await admin.schema('limbus').from('friend_posts').delete().eq('kind', 'support').eq(owner.column, owner.value)
+    const { error } = await admin.schema('limbus').from('friend_posts').delete().eq('kind', kindOf(request.nextUrl.searchParams.get('kind'))).eq(owner.column, owner.value)
     if (error) throw error
     return NextResponse.json({ ok: true })
   } catch (error) {

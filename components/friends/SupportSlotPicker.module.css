@@ -1,20 +1,16 @@
-.picker { display: flex; flex-direction: column; height: min(88dvh, 50rem); background: linear-gradient(180deg, #17120c, #100c08 9rem); border: 1px solid #5a4526; box-shadow: 0 1.5rem 4rem rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(232, 176, 48, 0.12); color: var(--text-primary); }
-.head { flex: 0 0 auto; display: flex; align-items: center; gap: 1rem; padding: 0.9rem 1.25rem; border-bottom: 1px solid var(--border); }
-.head span { font: 400 2.4rem/1 var(--font-mikodacs), Impact, sans-serif; color: #a01a16; text-shadow: 0 2px 0 rgba(0, 0, 0, 0.5); }
-.head h2 { margin: 0; flex: 1; font-size: 1.05rem; font-weight: 700; }
-.sinners { flex: 0 0 auto; display: flex; gap: 0.15rem; padding: 0.35rem 1.25rem 0; border-bottom: 1px solid var(--border); overflow-x: auto; }
-.sinners button { flex: 1 0 auto; display: flex; flex-direction: column; align-items: center; gap: 0.3rem; padding: 0.5rem 0.55rem 0.45rem; border: 0; border-bottom: 2px solid transparent; background: none; font-size: 0.78rem; font-weight: 600; color: var(--text-muted); white-space: nowrap; cursor: pointer; transition: color 0.15s ease; }
-.sinners button img { width: 1.9rem; height: 1.9rem; object-fit: contain; opacity: 0.55; transition: opacity 0.15s ease; }
-.sinners button:hover { color: var(--text-secondary); }
-.sinners button:hover img { opacity: 0.85; }
-.sinners button[aria-pressed='true'] { border-bottom-color: var(--gold-light); color: var(--gold-light); }
-.sinners button[aria-pressed='true'] img { opacity: 1; }
-.body { display: grid; grid-template-columns: minmax(0, 1fr) 23rem; min-height: 0; flex: 1; }
-.identities { display: grid; grid-template-columns: repeat(auto-fill, minmax(6.5rem, 1fr)); gap: 0.8rem; padding: 1.1rem 1.25rem; overflow: auto; align-content: start; }
+/* The strip picker sits in the site's character picker frame (global .note-character-picker, .character-picker-layout):
+   only what that frame lacks is here: the header's two icon actions, the card grid and the E.G.O side. */
+.picker { border: 1px solid var(--border); }
+.actions { display: flex; gap: 0.25rem; }
+.actions button:hover { color: var(--gold-light); }
+.actions button:disabled { opacity: 0.3; cursor: default; }
+.withSide { grid-template-columns: 11rem minmax(0, 1fr) 23rem; }
+.results { overflow-y: auto; }
+.identities { display: grid; grid-template-columns: repeat(auto-fill, minmax(6.5rem, 1fr)); gap: 0.8rem; }
 .identities button { display: block; padding: 0; border: 0; background: none; color: inherit; text-align: left; cursor: pointer; }
 .egoRow button { display: block; padding: 0; border: 0; cursor: pointer; }
 .identities button:focus-visible, .egoRow button:focus-visible { outline: 2px solid var(--gold-light); outline-offset: 0.15rem; }
-.side { display: grid; grid-template-columns: 6rem minmax(0, 1fr); gap: 1.1rem; padding: 1.1rem 1.25rem; border-left: 1px solid var(--border); background: rgba(7, 6, 4, 0.35); overflow: auto; align-content: start; }
+.side { display: grid; grid-template-columns: 6rem minmax(0, 1fr); gap: 1.1rem; padding: 1rem; border-left: 1px solid var(--border); overflow: auto; align-content: start; }
 .egos { display: flex; flex-direction: column; gap: 0.75rem; padding-top: 0.6rem; }
 .egoRow { display: grid; grid-template-columns: 4.6rem minmax(0, 1fr); align-items: center; gap: 0.5rem; min-height: 3.1rem; }
 .egoRow .grade { position: relative; align-self: stretch; }
@@ -23,20 +19,18 @@
 .egoRow + .egoRow { border-top: 1px solid #2e2417; padding-top: 0.75rem; }
 .egoRow div { display: flex; flex-wrap: wrap; gap: 0.4rem; }
 .egoRow div button { width: 3.1rem; height: 3.1rem; background: #070604 center / cover no-repeat; outline: 1px solid var(--border); opacity: 0.6; transition: opacity 0.15s ease; }
-.egoRow div button:hover:not(:disabled) { opacity: 0.9; }
+.egoRow div button:hover { opacity: 0.9; }
 .egoRow div button[aria-pressed='true'] { outline: 2px solid var(--gold-light); opacity: 1; }
-.egoRow p { margin: 0; font-size: 0.8rem; color: var(--text-muted); }
 .dim { opacity: 0.5; }
-.foot { flex: 0 0 auto; display: flex; align-items: center; gap: 0.6rem; padding: 0.85rem 1.25rem; border-top: 1px solid var(--border); }
-.foot strong { flex: 1; min-width: 0; font-size: 0.9rem; color: #f8c000; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.btn { height: 2.5rem; padding: 0 1.1rem; border: 1px solid #5a4526; background: transparent; color: var(--text-primary); font-weight: 700; font-size: 0.9rem; cursor: pointer; }
-.btn:disabled { opacity: 0.4; cursor: default; }
-.primary { background: var(--gold); border-color: var(--gold); color: #140e02; }
-@media (max-width: 51.25rem) {
-  .picker { max-height: 100dvh; height: 100dvh; border: 0; }
-  .body { grid-template-columns: 1fr; overflow: auto; }
-  .identities { grid-template-columns: repeat(4, 1fr); gap: 0.5rem; padding: 0.8rem 0.9rem; overflow: visible; }
-  .side { grid-template-columns: 1fr; border-left: 0; border-top: 1px solid var(--border); padding: 0.9rem; overflow: visible; }
+@media (max-width: 64rem) {
+  .withSide { grid-template-columns: 11rem minmax(0, 1fr) 17rem; }
+  .side { grid-template-columns: 1fr; }
   .side > :first-child { display: none; }
-  .head, .sinners, .foot { padding-left: 0.9rem; padding-right: 0.9rem; }
 }
+@media (max-width: 40rem) {
+  .identities { grid-template-columns: repeat(4, 1fr); gap: 0.5rem; }
+  .side { border-left: 0; border-top: 1px solid var(--border); padding: 0.75rem; overflow: visible; flex: 0 0 auto; max-height: 40dvh; overflow-y: auto; }
+}
+/* The choice is already applied; this closes the window and reads as confirming it. */
+.actions .apply { display: inline-flex; align-items: center; gap: 0.4rem; min-height: 2.5rem; padding: 0 1rem; border-radius: 0; background: var(--gold); color: #140e02; font-size: 0.9rem; font-weight: 700; }
+.actions .apply:hover { background: var(--gold-light); color: #140e02; }

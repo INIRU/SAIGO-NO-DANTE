@@ -5,7 +5,7 @@ import { checkRequestRateLimit, rateLimitResponse } from '@/lib/rate-limit'
 import { FRIEND_CODE_RE } from '@/lib/friends/codes'
 import { isAuthorOf } from '@/lib/friends/server'
 
-/** A viewer gives their own friend code to an 'exchange' post and gets the author's code back (REQ-COMMUNITY-021). */
+/** A viewer gives their own friend code to an 'exchange' post (support or want) and gets the author's code back (REQ-COMMUNITY-021). */
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
@@ -21,7 +21,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const body = await request.json().catch(() => null)
     const code = typeof body?.code === 'string' ? body.code : ''
     if (!FRIEND_CODE_RE.test(code)) return NextResponse.json({ error: '친구 코드는 영문 대문자 1자와 숫자 9자입니다.' }, { status: 400 })
-    const post = await db.from('friend_posts').select('id,code,visibility,user_id,key_hash').eq('id', id).eq('kind', 'support').maybeSingle()
+    const post = await db.from('friend_posts').select('id,code,visibility,user_id,key_hash').eq('id', id).maybeSingle()
     if (post.error) throw post.error
     if (!post.data || post.data.visibility !== 'exchange') return NextResponse.json({ error: '코드 교환 글이 아닙니다.' }, { status: 404 })
     if (isAuthorOf(post.data, author)) return NextResponse.json({ code: post.data.code })

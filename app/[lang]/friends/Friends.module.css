@@ -29,3 +29,50 @@ input.code { height: 2.75rem; width: 15rem; padding: 0 0.8rem; background: #0706
   .actions .primary { flex: 1; }
   .codeBox { margin-left: 0; width: 100%; }
 }
+.tabs { margin-top: 1.25rem; }
+/* The exchange button without the viewer's code: looks off, and says what it needs on hover, focus and tap. */
+.primary[aria-disabled='true'] { position: relative; opacity: 0.45; }
+.primary[data-tip]:hover::after, .primary[data-tip]:focus-visible::after {
+  content: attr(data-tip); position: absolute; right: 0; bottom: calc(100% + 0.4rem); z-index: 5; width: max-content; max-width: 16rem; padding: 0.45rem 0.65rem;
+  background: #070604; border: 1px solid #5a4526; color: var(--text-primary); font-size: 0.78rem; font-weight: 600; line-height: 1.4; white-space: normal; text-align: left; }
+/* Wanted identities in the editor. */
+.wantEdit { display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.78rem; font-weight: 600; color: var(--text-secondary); }
+/* Want posts: a short row of strips, then the time left, the names, the code and the author. */
+.wants { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.5rem 1.25rem; margin-top: 1.6rem; }
+.want { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 1rem; padding-bottom: 1.5rem; border-bottom: 1px solid #241c14; }
+.want.mine { border-bottom-color: var(--gold); }
+.info { display: flex; flex-direction: column; min-width: 0; padding-top: 0.9rem; }
+.left { font: 400 1.6rem/1 var(--font-mikodacs), Impact, sans-serif; letter-spacing: 0.03em; color: var(--gold-light); }
+.names { display: flex; flex-direction: column; gap: 0.45rem; margin: 0.9rem 0 0; padding: 0; list-style: none; font-size: 0.85rem; }
+.info .codeBox { margin: auto 0 0; padding-top: 0.9rem; width: auto; flex-wrap: wrap; }
+.info .code { font-size: 1.35rem; white-space: nowrap; }
+.who { display: flex; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin: 0.6rem 0 0; font-size: 0.78rem; color: var(--text-secondary); }
+.who strong { font-weight: 700; color: var(--text-primary); }
+@media (max-width: 64rem) { .wants { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 40rem) { .wants { grid-template-columns: 1fr; gap: 1.1rem; } }
+.tabs { margin-top: 1.25rem; }
+/* The exchange button without the viewer's code: looks off, and says what it needs on hover, focus and tap. */
+.primary[aria-disabled='true'] { position: relative; opacity: 0.45; }
+.primary[data-tip]:hover::after, .primary[data-tip]:focus-visible::after {
+  content: attr(data-tip); position: absolute; right: 0; bottom: calc(100% + 0.4rem); z-index: 5; width: max-content; max-width: 16rem; padding: 0.45rem 0.65rem;
+  background: #070604; border: 1px solid #5a4526; color: var(--text-primary); font-size: 0.78rem; font-weight: 600; line-height: 1.4; white-space: normal; text-align: left; }
+/* Wanted identities in the editor. */
+.wantEdit { display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.78rem; font-weight: 600; color: var(--text-secondary); }
+/* Want posts: a short row of strips, then the time left, the names, the code and the author. */
+.wants { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.5rem 1.25rem; margin-top: 1.6rem; }
+.want { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 1rem; padding-bottom: 1.5rem; border-bottom: 1px solid #241c14; }
+.want.mine { border-bottom-color: var(--gold); }
+.info { display: flex; flex-direction: column; min-width: 0; padding-top: 0.9rem; }
+.left { font: 400 1.6rem/1 var(--font-mikodacs), Impact, sans-serif; letter-spacing: 0.03em; color: var(--gold-light); }
+.names { display: flex; flex-direction: column; gap: 0.45rem; margin: 0.9rem 0 0; padding: 0; list-style: none; font-size: 0.85rem; }
+.info .codeBox { margin: auto 0 0; padding-top: 0.9rem; width: auto; flex-wrap: wrap; }
+.info .code { font-size: 1.35rem; white-space: nowrap; }
+.who { display: flex; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin: 0.6rem 0 0; font-size: 0.78rem; color: var(--text-secondary); }
+.who strong { font-weight: 700; color: var(--text-primary); }
+@media (max-width: 64rem) { .wants { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 40rem) { .wants { grid-template-columns: 1fr; gap: 1.1rem; } }
+/* Icon-only actions (copy, delete): named for screen readers and on hover. */
+.icon { display: grid; place-items: center; width: 2.1rem; height: 2.1rem; padding: 0; border: 0; background: none; color: var(--text-secondary); cursor: pointer; transition: color 0.15s ease; }
+.icon:hover { color: var(--gold-light); }
+.icon:disabled { opacity: 0.4; cursor: default; }
+.icon.boxed { width: 2.75rem; height: 2.75rem; border: 1px solid #5a4526; }
