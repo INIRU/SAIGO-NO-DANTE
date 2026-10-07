@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { dialogForResult, dialoglessFusionResult, fusionAnchors, fusionConfirmation, fusionDialogClosed, fusionMaterials, fusionWheelAnchors, fusionWheelCrop, fusionWheelRegions,
-  isFusionSelectionScreen, wheelBandMatch, WHEEL_BAND_MIN, WHEEL_BAND_SIZE, fusionMaterialsToRemove, fusionResultFollows, fusionSlotRegions, fusionSlotRegionsFromAnchors, wheelSelectionSize, emptyWheelResult, popupEndBefore,
+  isFusionSelectionScreen, wheelBandMatch, WHEEL_BAND_MIN, WHEEL_BAND_SIZE, fusionMaterialsToRemove, fusionResultFollows, fusionSlotRegions, fusionSlotRegionsFromAnchors, wheelSelectionSize, emptyWheelResult, popupEndBefore, sameWheelSignature,
   FUSION_TITLE_KEEP_MS, onFusionScreen, showsFusionTitle, type SeenDialog }
   from '../../../lib/vision/fusion-evidence'
 
@@ -359,4 +359,20 @@ describe('slots placed from the dialog text', () => {
     expect(fusionAnchors([{ ...header, text: '선택한' }, { ...header, text: '기프트' }, question])).toBeNull()
     expect(fusionAnchors([header])).toBeNull()
   })
+})
+
+it('REQ-ASSIST-071 keeps a wheel state apart when one position changed, however little the whole crop did', () => {
+  // 16x9 grey signatures of the wheel crop. Measured on 501 sample frame pairs: a still wheel differs by under 4 in every cell,
+  // a material added or removed by 16-110 in the 4-12 cells of its position (mean 0.4-2.9 over the crop for a dark icon).
+  const still = Uint8Array.from({ length: 144 }, (_, index) => 30 + index % 7)
+  const noisy = still.map((value, index) => value + (index % 3) - 1)
+  const withMaterial = still.map((value, index) => [52, 53, 54, 68, 69, 70].includes(index) ? value + 40 : value)
+  const withCursor = still.map((value, index) => index === 20 || index === 21 ? value + 30 : value)
+  expect(sameWheelSignature(still, noisy)).toBe(true)
+  expect(sameWheelSignature(still, withMaterial)).toBe(false)
+  // The pointer over the wheel touches fewer cells than a position does.
+  expect(sameWheelSignature(still, withCursor)).toBe(true)
+  // The whole crop changed (a dialog or popup over it), or there is nothing to compare.
+  expect(sameWheelSignature(still, still.map(value => value + 5))).toBe(false)
+  expect(sameWheelSignature(still, new Uint8Array(0))).toBe(false)
 })
