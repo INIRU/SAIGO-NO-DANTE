@@ -4,7 +4,7 @@ import { resolveAuthor, type Author } from '@/lib/guest/server'
 type Admin = ReturnType<typeof createAdminClient>
 export type FriendPostRow = {
   id: string; code: string; visibility: string; slots: unknown; identity_ids: string[]
-  user_id: string | null; key_hash: string | null; guest_tag: string | null; bumped_at: string; seen_at: string
+  user_id: string | null; key_hash: string | null; guest_tag: string | null; created_at: string; bumped_at: string; seen_at: string
 }
 
 /** Who is looking: a signed-in user, a guest with a key, or nobody (null). Never an error response. */

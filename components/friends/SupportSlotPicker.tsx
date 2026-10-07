@@ -3,7 +3,9 @@
 import { useState } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 import useSWR from 'swr'
+import { Check, Trash2 } from 'lucide-react'
 import BaseModal from '@/components/ui/BaseModal'
+import CharacterPickerFilters from '@/components/ui/CharacterPickerFilters'
 import IdentityFrameCard from '@/components/ui/IdentityFrameCard'
 import { fetchNoteAssets } from '@/components/notes/NoteBlockViewer'
 import { SINNER_SLUGS } from '@/lib/constants/game'
@@ -11,62 +13,76 @@ import { getEgoGradeBannerUrl, getSinnerLogoUrl } from '@/lib/utils/images'
 import { assetName } from '@/lib/notes/assets'
 import { compareReleaseDate } from '@/lib/utils/release-order'
 import type { SupportedLang } from '@/lib/i18n/types'
-import SupportStrips, { EGO_GRADES, SUPPORT_SLOT_NUMBERS, type EgoGrade, type SupportSlot } from './SupportStrips'
+import SupportStrips, { EGO_GRADES, type EgoGrade, type SupportSlot } from './SupportStrips'
 import styles from './SupportSlotPicker.module.css'
 
-/** Picks the identity of one support slot and the E.G.O set on it (one per grade), with the site's own identity and E.G.O cards. */
-export default function SupportSlotPicker({ index, value, onDone, onClose }: {
-  index: number; value: SupportSlot | null; onDone: (slot: SupportSlot | null) => void; onClose: () => void
+const RARITIES = [3, 2, 1].map(n => ({ value: String(n), label: '0'.repeat(n) }))
+
+/**
+ * Picks the identity of one strip and, unless identityOnly, the E.G.O set on it (one per grade). The frame is the site's
+ * character picker (header, the shared filters on the left, identities grouped by sinner); every choice is applied at once,
+ * so closing the window any way keeps it.
+ */
+export default function SupportSlotPicker({ index, value, onChange, onClose, title = '지원 인격', identityOnly = false }: {
+  index: number; value: SupportSlot | null; onChange: (slot: SupportSlot | null) => void; onClose: () => void
+  title?: string; identityOnly?: boolean
 }) {
   const lang = useLocale() as SupportedLang, t = useTranslations('sinner')
-  // The slot's number names a sinner in the game's order; any sinner may be put there.
-  const [sinner, setSinner] = useState<string>(value?.identity.sinner_id ?? SINNER_SLUGS[index] ?? SINNER_SLUGS[0])
-  const [slot, setSlot] = useState<SupportSlot | null>(value)
+  const [query, setQuery] = useState(''), [grade, setGrade] = useState(''), [sinner, setSinner] = useState(value?.identity.sinner_id ?? '')
+  const [slot, setLocal] = useState<SupportSlot | null>(value)
+  const setSlot = (next: SupportSlot | null) => { setLocal(next); onChange(next) }
   const identities = useSWR('/api/notes/assets?kind=identity&catalog=1', fetchNoteAssets, { revalidateOnFocus: false })
   const egos = useSWR('/api/notes/assets?kind=ego&catalog=1', fetchNoteAssets, { revalidateOnFocus: false })
-  const list = (identities.data ?? []).filter(asset => asset.identity?.sinner_id === sinner)
+  const needle = query.trim().toLocaleLowerCase()
+  const list = (identities.data ?? []).filter(asset => asset.identity && (!sinner || asset.identity.sinner_id === sinner) && (!grade || String(asset.identity.rarity) === grade)
+    && [asset.name, asset.name_en, asset.name_jp].some(name => name?.toLocaleLowerCase().includes(needle)))
     .sort((a, b) => compareReleaseDate(a.identity ?? a, b.identity ?? b))
-  const chosenSinner = slot?.identity.sinner_id ?? sinner
-  const number = SUPPORT_SLOT_NUMBERS[index]
-  return <BaseModal open onClose={onClose} title={`${number} 지원 인격`} maxWidth="70rem" padding="0">
-    <div className={styles.picker}>
-      <header className={styles.head}><span>{number}</span><h2>지원 인격</h2><button type="button" className={styles.btn} onClick={onClose}>닫기</button></header>
-      <div className={styles.sinners}>
-        {SINNER_SLUGS.map(id => <button type="button" key={id} aria-pressed={sinner === id} onClick={() => setSinner(id)}>
-          {/* eslint-disable-next-line @next/next/no-img-element -- small fixed-size game icon */}
-          <img src={getSinnerLogoUrl(id)} alt="" width={28} height={28} />{t(id)}
-        </button>)}
-      </div>
-      <div className={styles.body}>
-        <div className={styles.identities}>
-          {list.map(asset => asset.identity && <button type="button" key={asset.id}
-            onClick={() => setSlot({ identityId: asset.id, identity: asset.identity!, name: assetName(asset, lang), egos: slot?.identity.sinner_id === asset.identity!.sinner_id ? slot.egos : {} })}>
-            <IdentityFrameCard identity={asset.identity} name={assetName(asset, lang)} selected={slot?.identityId === asset.id} sizes="7rem" />
-          </button>)}
+  return <BaseModal open onClose={onClose} title={title} maxWidth="74rem" padding="0">
+    <div className={`note-picker note-character-picker ${styles.picker}`}>
+      <header className="note-picker-header">
+        <h2>{title}</h2>
+        <div className={styles.actions}>
+          <button type="button" disabled={!slot} onClick={() => setSlot(null)} aria-label="비우기" title="비우기"><Trash2 size={19} aria-hidden="true" /></button>
+          <button type="button" className={styles.apply} onClick={onClose}><Check size={18} strokeWidth={3} aria-hidden="true" />적용</button>
         </div>
-        <div className={styles.side}>
+      </header>
+      <div className={`character-picker-layout ${identityOnly ? '' : styles.withSide}`}>
+        <CharacterPickerFilters query={query} onQuery={setQuery} grade={grade} onGrade={setGrade} grades={RARITIES} count={list.length}
+          sinner={sinner} onSinner={setSinner} sinners={SINNER_SLUGS.map(id => ({ id, name: t(id) }))} />
+        <div className={`note-picker-results ${styles.results}`}>
+          {SINNER_SLUGS.map(id => {
+            const items = list.filter(asset => asset.identity!.sinner_id === id)
+            if (!items.length) return null
+            return <section key={id}>
+              {/* eslint-disable-next-line @next/next/no-img-element -- small fixed-size game icon */}
+              <h3><img src={getSinnerLogoUrl(id)} alt="" width={28} height={28} />{t(id)}<small>{items.length}</small></h3>
+              <div className={styles.identities}>
+                {items.map(asset => <button type="button" key={asset.id} aria-pressed={slot?.identityId === asset.id}
+                  onClick={() => setSlot({ identityId: asset.id, identity: asset.identity!, name: assetName(asset, lang), egos: slot?.identity.sinner_id === asset.identity!.sinner_id ? slot.egos : {} })}>
+                  <IdentityFrameCard identity={asset.identity!} name={assetName(asset, lang)} selected={slot?.identityId === asset.id} sizes="7rem" />
+                </button>)}
+              </div>
+            </section>
+          })}
+        </div>
+        {!identityOnly && <div className={styles.side}>
           <SupportPreview slot={slot} index={index} />
           <div className={`${styles.egos} ${slot ? '' : styles.dim}`}>
-            {EGO_GRADES.map(grade => {
-              const options = (egos.data ?? []).filter(asset => asset.sinnerId === chosenSinner && asset.ego?.grade?.toUpperCase() === grade)
-              return <section key={grade} className={styles.egoRow} data-grade={grade}>
+            {EGO_GRADES.map(egoGrade => {
+              const options = slot ? (egos.data ?? []).filter(asset => asset.sinnerId === slot.identity.sinner_id && asset.ego?.grade?.toUpperCase() === egoGrade) : []
+              return <section key={egoGrade} className={styles.egoRow} data-grade={egoGrade}>
                 <span className={styles.grade}>
                   {/* eslint-disable-next-line @next/next/no-img-element -- the game's own rank banner, fixed width */}
-                  <img src={getEgoGradeBannerUrl(grade)} alt={grade} style={{ top: `calc(50% - ${BANNER_CENTRE[grade] / 185 * BANNER_WIDTH_REM}rem)` }} />
+                  <img src={getEgoGradeBannerUrl(egoGrade)} alt={egoGrade} style={{ top: `calc(50% - ${BANNER_CENTRE[egoGrade] / 185 * BANNER_WIDTH_REM}rem)` }} />
                 </span>
-                {options.length ? <div>{options.map(asset => asset.ego && <button type="button" key={asset.id} disabled={!slot} title={assetName(asset, lang)}
-                  aria-label={assetName(asset, lang)} aria-pressed={slot?.egos[grade] === asset.id} style={{ backgroundImage: asset.ego.image_url ? `url("${asset.ego.image_url}")` : undefined }}
-                  onClick={() => slot && setSlot({ ...slot, egos: toggled(slot.egos, grade, asset.id) })} />)}</div> : <p>없음</p>}
+                <div>{options.map(asset => asset.ego && <button type="button" key={asset.id} title={assetName(asset, lang)}
+                  aria-label={assetName(asset, lang)} aria-pressed={slot?.egos[egoGrade] === asset.id} style={{ backgroundImage: asset.ego.image_url ? `url("${asset.ego.image_url}")` : undefined }}
+                  onClick={() => slot && setSlot({ ...slot, egos: toggled(slot.egos, egoGrade, asset.id) })} />)}</div>
               </section>
             })}
           </div>
-        </div>
+        </div>}
       </div>
-      <footer className={styles.foot}>
-        <strong>{slot?.name}</strong>
-        <button type="button" className={styles.btn} onClick={() => onDone(null)}>칸 비우기</button>
-        <button type="button" className={`${styles.btn} ${styles.primary}`} disabled={!slot} onClick={() => onDone(slot)}>넣기</button>
-      </footer>
     </div>
   </BaseModal>
 }
