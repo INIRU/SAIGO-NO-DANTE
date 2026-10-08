@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
 import createNextIntlPlugin from 'next-intl/plugin';
+import { HTML_LIMITED_BOTS } from './lib/seo/html-limited-bots';
 
 const withNextIntl = createNextIntlPlugin('./lib/i18n/request.ts');
 const isVercelDeployment = process.env.VERCEL === '1';
@@ -47,6 +48,9 @@ const nextConfig: NextConfig = {
 
   // Cache Components (includes PPR): enables `"use cache"` directive and Partial Prerendering
   cacheComponents: true,
+
+  // Googlebot and the other listed crawlers get metadata in <head> instead of the cached shell (lib/seo/html-limited-bots.ts)
+  htmlLimitedBots: HTML_LIMITED_BOTS,
 
   // Custom cacheLife profiles matching previous revalidate values
   cacheLife: {

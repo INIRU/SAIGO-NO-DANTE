@@ -527,7 +527,8 @@ async function getCachedDeckMetadata(lang: 'ko' | 'en' | 'ja', id: string): Prom
   if (error) Sentry.captureException(error, { tags: { location: 'decks/[id]/page:generateMetadata' }, extra: { msg: 'Failed to fetch deck metadata' } })
 
   if (!data) {
-    return { title: { ko: '덱을 찾을 수 없습니다', en: 'Deck not found', ja: 'デッキが見つかりません' }[lang] }
+    // The page still answers 200 (the shell is already sent), so the "not found" screen must stay out of the index.
+    return { title: { ko: '덱을 찾을 수 없습니다', en: 'Deck not found', ja: 'デッキが見つかりません' }[lang], robots: { index: false } }
   }
 
   const title = data.title
