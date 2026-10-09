@@ -4,6 +4,12 @@
 
 Vercel은 `main` 브랜치만 자동 배포한다(`vercel.json`의 `git.deploymentEnabled`). 패턴은 minimatch라 `*`는 `feat/...`처럼 `/`가 있는 브랜치를 막지 못해 `**`를 쓴다. PR 브랜치에는 미리보기 배포를 만들지 않으며, PR의 빌드·타입 검사는 GitHub Actions(`ci.yml`)가 맡는다. 화면 확인이 필요한 브랜치는 로컬 `npm run dev`나 `vercel deploy`로 따로 올린다.
 
+## 검색 로봇이 받는 HTML
+
+Vercel은 캐시된 셸을 먼저 보내고 나머지를 이어 붙인다. Next.js는 로봇 요청에 메타데이터를 본문으로 흘려보내지 않으므로, 셸을 건너뛰지 않는 로봇은 요청마다 메타데이터를 만드는 페이지(덱·인격·E.G.O·플랜 상세)에서 제목·canonical·robots가 없는 HTML을 받는다. 셸을 건너뛰는 로봇 목록은 `next.config.ts`의 `htmlLimitedBots`(`lib/seo/html-limited-bots.ts`: Next.js 기본 목록에 Googlebot과 Daum을 더한 값)다. 이 설정은 기본 목록을 대체하므로 기본 목록을 빼지 않는다.
+
+확인은 `curl -A '<로봇 사용자 에이전트>' <주소>`로 받은 HTML의 `<head>`에 `<title>`과 `rel="canonical"`이 있는지 본다. Search Console의 실시간 테스트(Google-InspectionTool)는 Next.js 기본 목록에 들어 있어 항상 head에 담긴 HTML을 받으므로, Googlebot이 받는 HTML과 다를 수 있다. 로컬 `next start`는 셸과 이어 붙이기를 나누지 않아 이 문제가 재현되지 않는다.
+
 ## 환경
 
 로컬 .env.local과 배포 플랫폼에 현재 코드가 읽는 이름으로 설정한다. 실제 값은 Git에 넣지 않는다.
