@@ -42,7 +42,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const tDetail = await getTranslations({ locale: lang, namespace: 'planner.detail' })
   const tDifficulty = await getTranslations({ locale: lang, namespace: 'planner.communityBoard.difficulty' })
   const plan = await fetchFullPlan(id)
-  if (!plan) return { title: tDetail('notFoundTitle') }
+  if (!plan) return { title: tDetail('notFoundTitle'), robots: { index: false } }
 
   const diff = tDifficulty(plan.difficulty)
 
