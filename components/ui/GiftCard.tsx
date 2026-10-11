@@ -43,16 +43,22 @@ interface GiftCardProps {
 
 // ── Component ────────────────────────────────────────────────────────────────
 
-/** Red warning triangle for a gift the plan asks to obtain. The parent must be positioned. */
-export function GiftWarningMark({ label, className = 'right-0 -top-0.5 h-3.5 w-3.5' }: { label: string; className?: string }) {
+const WARNING_TONES = {
+  red: { glow: 'drop-shadow-[0_0_1px_#b81924]', fill: '#60151c', edge: '#bd2430', line: '#ff8b8b', mark: '#ffaaaa' },
+  yellow: { glow: 'drop-shadow-[0_0_1px_#c8900a]', fill: '#4a3605', edge: '#c8900a', line: '#e8b030', mark: '#ffe08a' },
+}
+
+/** Warning triangle: red for a gift the plan asks to obtain, yellow for a fusion gift. The parent must be positioned. */
+export function GiftWarningMark({ label, className = 'right-0 -top-0.5 h-3.5 w-3.5', tone = 'red' }: { label: string; className?: string; tone?: keyof typeof WARNING_TONES }) {
+  const { glow, fill, edge, line, mark } = WARNING_TONES[tone]
   return (
     <svg viewBox="0 0 32 32" role="img" aria-label={label} data-gift-warning
-      className={`pointer-events-none absolute z-30 drop-shadow-[0_0_1px_#b81924] ${className}`}>
+      className={`pointer-events-none absolute z-30 ${glow} ${className}`}>
       <title>{label}</title>
-      <path d="M16 3 30 28H2Z" fill="#60151c" stroke="#bd2430" strokeWidth="4" strokeLinejoin="round" />
-      <path d="M16 3 30 28H2Z" fill="none" stroke="#ff8b8b" strokeWidth="2.5" />
-      <path d="M16 11v8" stroke="#ffaaaa" strokeWidth="3" />
-      <circle cx="16" cy="23" r="1.7" fill="#ffaaaa" />
+      <path d="M16 3 30 28H2Z" fill={fill} stroke={edge} strokeWidth="4" strokeLinejoin="round" />
+      <path d="M16 3 30 28H2Z" fill="none" stroke={line} strokeWidth="2.5" />
+      <path d="M16 11v8" stroke={mark} strokeWidth="3" />
+      <circle cx="16" cy="23" r="1.7" fill={mark} />
     </svg>
   )
 }
