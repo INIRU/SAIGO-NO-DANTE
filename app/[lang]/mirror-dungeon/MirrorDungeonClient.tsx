@@ -19,6 +19,7 @@ import GiftTabView from '@/components/mirror-dungeon/GiftTab'
 import ThemeTabView from '@/components/mirror-dungeon/ThemeTab'
 import EventTab from '@/components/mirror-dungeon/EventTab'
 import PageHeader from '@/components/ui/PageHeader'
+import { useHtmlFlag } from '@/hooks/useHtmlFlag'
 import { gameTextToPlain } from '@/lib/game-text/rich-text'
 const ThemeModal = dynamic(() => import('@/components/mirror-dungeon/ThemeModal'), { ssr: false })
 const GiftModal = dynamic(() => import('@/components/mirror-dungeon/GiftModal'), { ssr: false })
@@ -71,6 +72,7 @@ export default function MirrorDungeonClient({
   const [eventThemeParam, setEventThemeParam] = useQueryState('etheme', parseAsString.withDefault(''))
 
   const [themeIdParam, setThemeIdParam] = useQueryState('theme', parseAsString.withDefault(''))
+  const [checkParam, setCheckParam] = useQueryState('check', parseAsString.withDefault(''))
 
   // URL 파라미터 → 파생 상태
   const keywords = useMemo(() => new Set(kwParam.split(',').filter(Boolean)), [kwParam])
@@ -85,6 +87,10 @@ export default function MirrorDungeonClient({
   const slotFilter = slotFilterParam
   const eventSearch = eventSearchParam
   const selectedThemeId = themeIdParam ? Number(themeIdParam) : null
+  // Gift check mode: the gift list alone, without navigation, header or tabs.
+  const checkMode = activeTab === 'gifts' && checkParam === '1'
+  const setCheckMode = useCallback((on: boolean) => setCheckParam(on ? '1' : null), [setCheckParam])
+  useHtmlFlag('with-gift-check', checkMode)
 
   // Set 상태 래퍼
   const setKeywords = useCallback((fn: Set<string> | ((prev: Set<string>) => Set<string>)) => {
@@ -310,9 +316,9 @@ export default function MirrorDungeonClient({
   }))
 
   return (
-    <div className="min-h-screen pt-[5.5rem] pb-16 px-4 md:px-6 max-w-7xl mx-auto">
+    <div className={`min-h-screen px-4 pb-16 md:px-6 ${checkMode ? 'pt-1' : 'mx-auto max-w-7xl pt-[5.5rem]'}`}>
       {/* 헤더 + 탭 */}
-      <div className="mb-2">
+      <div className={checkMode ? 'hidden' : 'mb-2'}>
         <PageHeader title={lang === 'ko' ? '거울 던전' : lang === 'ja' ? 'ミラーダンジョン' : 'Mirror Dungeon'} description={tp('intro')} />
 
         {themes.length > 0 && (
@@ -372,9 +378,10 @@ export default function MirrorDungeonClient({
             setSlotFilter={setSlotFilter}
             setSelectedThemeId={setSelectedThemeId}
             getGiftKeywordIcon={getGiftKeywordIcon}
-            recipeMap={recipeMap}
-            giftImageMap={giftImageMap}
+            recipes={recipes}
             onSelectGift={setSelected}
+            checkMode={checkMode}
+            onCheckModeChange={setCheckMode}
           />
       )}
 
