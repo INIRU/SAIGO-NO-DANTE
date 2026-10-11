@@ -15,6 +15,7 @@ import { showSuccess, showError } from '@/lib/toast'
 import ConfirmModal from '@/components/ui/ConfirmModal'
 import { useGuestPosts } from '@/hooks/useGuestPosts'
 import { guestHeaders } from '@/lib/guest/key'
+import GuestPinRecover from '@/components/guest/GuestPinRecover'
 import { getGuestCopy, guestAuthorName } from '@/lib/guest/copy'
 import { DEFAULT_AVATAR_URL, STORAGE_BASE, isDeployedSlot } from '@/lib/constants/game'
 import { SIN_COLORS, SIN_KR_TO_EN, normalizeSin } from '@/lib/constants/sin'
@@ -385,8 +386,10 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
   const [deck, setDeck] = useState<DeckDetail | null>(initialDeck ?? null)
   const [loading, setLoading] = useState(!initialDeck)
   // Signed-out visitors own a guest deck when this browser's key wrote it.
-  const guestPosts = useGuestPosts(authStatus === 'unauthenticated' && !deck?.user_id).posts
+  const guest = useGuestPosts(authStatus === 'unauthenticated' && !deck?.user_id), guestPosts = guest.posts
   const guestOwner = authStatus === 'unauthenticated' && !!guestPosts.data?.decks.some(post => post.id === id)
+  // A guest deck this browser has no key for: its author takes it back with the deck's password (REQ-COMMUNITY-031).
+  const canRecover = authStatus === 'unauthenticated' && !!deck?.guest_tag && guest.keyRead && !guestPosts.isLoading && !guestOwner
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [voted, setVoted] = useState(false)
   const [voteCount, setVoteCount] = useState(0)
@@ -957,6 +960,7 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
                 {rootT('common.delete')}
               </button>
             )}
+            {canRecover && <GuestPinRecover kind="deck" id={id} onRecovered={() => { guest.reloadKey(); void guestPosts.mutate() }} />}
             <button type="button" onClick={handleFork} data-primary>
               <GitFork className="h-4 w-4" aria-hidden="true" />
               {t('forkDeck')}

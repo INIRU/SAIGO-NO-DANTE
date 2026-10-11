@@ -353,8 +353,10 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
   const { data: session, status: authStatus } = useSession()
   const viewer = useSWR<{ id?: string }>(authStatus === 'authenticated' ? '/api/profile/avatar' : null, (url: string) => fetch(url).then(res => res.json())).data
   // Signed-out visitors own a guest plan when this browser's key wrote it.
-  const guestPosts = useGuestPosts(authStatus === 'unauthenticated' && !plan.user_id).posts
+  const guest = useGuestPosts(authStatus === 'unauthenticated' && !plan.user_id), guestPosts = guest.posts
   const guestOwner = authStatus === 'unauthenticated' && !!guestPosts.data?.plans.some(post => post.id === plan.id)
+  // A guest plan this browser has no key for: its author takes it back with the plan's password (REQ-COMMUNITY-031).
+  const canRecover = authStatus === 'unauthenticated' && !!plan.guest_tag && guest.keyRead && !guestPosts.isLoading && !guestOwner
   const [voted, setVoted] = useState(false)
   const [voteCount, setVoteCount] = useState(plan.vote_count)
   const [voteLoading, setVoteLoading] = useState(false)
@@ -697,6 +699,7 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
               egos={egos}
               isOwner={(!!viewer?.id && viewer.id === plan.user_id) || guestOwner}
               guestOwner={guestOwner}
+              onGuestRecovered={canRecover ? () => { guest.reloadKey(); void guestPosts.mutate() } : undefined}
               isAdmin={isAdmin}
             />
           </div>
