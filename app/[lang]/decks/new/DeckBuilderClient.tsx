@@ -5,7 +5,8 @@ import { pendingNoteUploads, noteUploadInProgressMessage } from '@/lib/notes/ima
 
 import { showError, showSuccess } from '@/lib/toast'
 import { guestHeaders } from '@/lib/guest/key'
-import { getGuestCopy } from '@/lib/guest/copy'
+import GuestPinInput from '@/components/guest/GuestPinInput'
+import { getGuestCopy, guestPinProblem } from '@/lib/guest/copy'
 import { deleteTempSlot, saveTempSlot, type TempSlot } from '@/lib/drafts/temp-slots'
 import { DECK_DRAFTS_KEY, isDeckDraft, loadDeckDraftSlots, type DeckDraft } from '@/lib/drafts/deck-drafts'
 import TempSaveMenu from '@/components/ui/TempSaveMenu'
@@ -177,6 +178,7 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
   const [selectedMainKeywords, setSelectedMainKeywords] = useState<string[]>(() => sanitizeDeckMainKeywords(initData?.mainKeywords))
   const [mainKeywordsManual, setMainKeywordsManual] = useState(() => Array.isArray(initData?.mainKeywords))
   const [saving, setSaving] = useState(false)
+  const [pin, setPin] = useState('')
   // toast는 Sonner가 글로벌로 처리 (showError from lib/toast)
   const [descPreview, setDescPreview] = useState(false)
   const [gacksungSlots, setGacksungSlots] = useState<Record<string, boolean>>(initData?.gacksungSlots ?? {})
@@ -334,9 +336,14 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
     })
   }
 
+  // A new guest deck takes a password, asked for when the browser's key is gone (REQ-COMMUNITY-031).
+  const needsPin = authStatus === 'unauthenticated' && !editMode
+
   const handleSave = async () => {
     if (pendingNoteUploads.size) { showError(noteUploadInProgressMessage(locale)); return }
     if (!title.trim() || identityCount < 12 || !contentType) return
+    const pinProblem = needsPin ? guestPinProblem(pin, locale) : null
+    if (pinProblem) { showError(pinProblem); return }
     setSaving(true)
     const identitySlots = sinners
       .filter(s => deckSlots[s.id])
@@ -361,7 +368,7 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
     const res = await fetch(url, {
       method,
       headers: { 'Content-Type': 'application/json', ...guestHeaders(signedIn) },
-      body: JSON.stringify({ title, description, tags: [], main_keywords: effectiveMainKeywords, content_type: contentType, identitySlots, egoSlots: egoRows }),
+      body: JSON.stringify({ title, description, tags: [], main_keywords: effectiveMainKeywords, content_type: contentType, identitySlots, egoSlots: egoRows, ...(needsPin ? { pin } : {}) }),
     })
     setSaving(false)
     if (res.ok) {
@@ -532,10 +539,19 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
                 </CompactButton>
                 {/* 로그인 확인 전에도 줄 자리를 잡아 둔다(늦게 끼어들면 아래 편성판이 밀린다) */}
                 {authStatus !== 'authenticated' && (
-                  <p className="w-full text-right text-[0.8125rem] text-[var(--text-muted)]" style={authStatus === 'loading' ? { visibility: 'hidden' } : undefined}>
-                    {getGuestCopy(locale).saveHint}{' '}
-                    <Link href="/guest" className="text-[var(--gold-light)] underline-offset-4 hover:underline">{getGuestCopy(locale).manage}</Link>
-                  </p>
+                  <div className="flex w-full flex-wrap items-center justify-end gap-x-4 gap-y-2 text-[0.8125rem] text-[var(--text-muted)]" style={authStatus === 'loading' ? { visibility: 'hidden' } : undefined}>
+                    <p>
+                      {getGuestCopy(locale).saveHint}{' '}
+                      <Link href="/guest" className="text-[var(--gold-light)] underline-offset-4 hover:underline">{getGuestCopy(locale).manage}</Link>
+                    </p>
+                    {!editMode && (
+                      <label className="flex items-center gap-2 font-semibold text-[var(--text-secondary)]">
+                        {getGuestCopy(locale).pin}
+                        <GuestPinInput value={pin} onChange={setPin} locale={locale} className="h-8 w-32 rounded px-3 outline-none"
+                          style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)', color: 'var(--text-primary)', fontSize: '0.875rem' }} />
+                      </label>
+                    )}
+                  </div>
                 )}
               </div>
             </div>

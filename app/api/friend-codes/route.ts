@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { authorRateKey, resolveAuthor, type Author } from '@/lib/guest/server'
+import { authorRateKey, guestPinOf, resolveAuthor, type Author } from '@/lib/guest/server'
 import { checkRequestRateLimit, rateLimitResponse } from '@/lib/rate-limit'
 import { codeForViewer, fail, newlyWanted, seenIsStale, nextBumpedAt, parseSupportPost, parseWantPost, slotAssetIds, wantExpiresAt, wantIdentityIds } from '@/lib/friends/codes'
-import { isAuthorOf, isBlocked, ownerFilter, viewerOf, type FriendPostRow } from '@/lib/friends/server'
+import { friendAuthorColumns, isAuthorOf, isBlocked, ownerFilter, viewerOf, type FriendPostRow } from '@/lib/friends/server'
 
 const COLUMNS = 'id,code,visibility,slots,identity_ids,user_id,key_hash,guest_tag,created_at,bumped_at,seen_at'
 const LIST_LIMIT = 60
@@ -141,7 +141,10 @@ export async function POST(request: NextRequest) {
     if (await isBlocked(admin, author)) return NextResponse.json(fail('blocked'), { status: 403 })
 
     const body = await request.json().catch(() => null)
-    if (kindOf(body?.kind) === 'want') return await saveWant(db, author, body)
+    // A guest's password for a new post (REQ-COMMUNITY-029); screens from before it existed send none.
+    const pin = author.kind === 'guest' ? guestPinOf(body?.pin) : null
+    if (pin === false) return NextResponse.json(fail('invalid_request'), { status: 400 })
+    if (kindOf(body?.kind) === 'want') return await saveWant(db, author, body, pin)
     const ids = slotAssetIds(body)
     const [identityRows, egoRows] = await Promise.all([
       ids.identities.length ? db.from('identities').select('id,sinner_id').in('id', ids.identities) : { data: [], error: null },
@@ -160,8 +163,7 @@ export async function POST(request: NextRequest) {
     const values = { code: post.code, visibility: post.visibility, slots: post.slots, identity_ids: post.identityIds, seen_at: now.toISOString() }
     const saved = existing.data
       ? await db.from('friend_posts').update({ ...values, bumped_at: nextBumpedAt(existing.data.bumped_at, now) }).eq('id', existing.data.id).select('id').single()
-      : await db.from('friend_posts').insert({ ...values, kind: 'support',
-          ...(author.kind === 'user' ? { user_id: author.userId } : { key_hash: author.keyHash, guest_tag: author.tag }) }).select('id').single()
+      : await db.from('friend_posts').insert({ ...values, kind: 'support', ...friendAuthorColumns(author, pin) }).select('id').single()
     // The same code on another post: someone else's code, or the author's own post under another login.
     if (saved.error?.code === '23505') return NextResponse.json(fail('duplicate_code'), { status: 409 })
     if (saved.error) throw saved.error
@@ -176,7 +178,7 @@ export async function POST(request: NextRequest) {
  * Saves the author's "wanted identity" post. It keeps the time it was first written, so saving again does not extend its
  * day; identities a save adds are counted in friend_want_stats, which outlives the post (REQ-COMMUNITY-022).
  */
-async function saveWant(db: Db, author: Author, body: unknown) {
+async function saveWant(db: Db, author: Author, body: unknown, pin: string | null) {
   const ids = wantIdentityIds(body)
   const identityRows = ids.length ? await db.from('identities').select('id,sinner_id').in('id', ids) : { data: [], error: null }
   if (identityRows.error) throw identityRows.error
@@ -191,8 +193,7 @@ async function saveWant(db: Db, author: Author, body: unknown) {
   const values = { code: post.code, visibility: post.visibility, identity_ids: post.identityIds, seen_at: new Date().toISOString() }
   const saved = existing.data
     ? await db.from('friend_posts').update(values).eq('id', existing.data.id).select('id').single()
-    : await db.from('friend_posts').insert({ ...values, kind: 'want', slots: [],
-        ...(author.kind === 'user' ? { user_id: author.userId } : { key_hash: author.keyHash, guest_tag: author.tag }) }).select('id').single()
+    : await db.from('friend_posts').insert({ ...values, kind: 'want', slots: [], ...friendAuthorColumns(author, pin) }).select('id').single()
   if (saved.error?.code === '23505') return NextResponse.json(fail('duplicate_code'), { status: 409 })
   if (saved.error) throw saved.error
 
