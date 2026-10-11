@@ -14,25 +14,10 @@ import type { EgoGift, EgoGiftTheme } from '@/components/mirror-dungeon/types'
 import { KEYWORD_COLORS, GRADE_LABELS, GRADES } from '@/components/mirror-dungeon/types'
 import type { GiftData } from '@/lib/planner/types'
 import { getGiftKeywordIconUrl, getGiftKeywordSlug } from '@/lib/constants/gift'
+import { GIFT_KEYWORD_ORDER } from '@/lib/mirror-dungeon/gift-check'
 
-const KEYWORDS = [
-  { key: '전체', label: '전체' },
-  { key: '공통', label: '공통' },
-  { key: '화상', label: '화상' },
-  { key: '출혈', label: '출혈' },
-  { key: '진동', label: '진동' },
-  { key: '파열', label: '파열' },
-  { key: '침잠', label: '침잠' },
-  { key: '호흡', label: '호흡' },
-  { key: '충전', label: '충전' },
-  { key: '참격', label: '참격' },
-  { key: '관통', label: '관통' },
-  { key: '타격', label: '타격' },
-]
-
-const keywordRank = (keyword: string | null | undefined) => {
-  if (!keyword || keyword.startsWith('공통')) return 0
-  const index = KEYWORDS.findIndex(kw => kw.key === keyword)
+const keywordRank = (keyword: string | null | undefined, order: readonly string[]) => {
+  const index = order.indexOf(!keyword || keyword.startsWith('공통') ? '공통' : keyword)
   return index < 0 ? 99 : index
 }
 
@@ -123,7 +108,7 @@ function scrollParent(el: HTMLElement): HTMLElement | null {
 }
 
 /** 미선택이면 필터 이름만, 선택하면 값과 지우기(×)를 보여 주는 칩. */
-function FilterChip({ label, clearLabel, value, options, onChange, minWidth }: {
+export function FilterChip({ label, clearLabel, value, options, onChange, minWidth }: {
   label: string; clearLabel: string; value: string | null; options: { value: string; label: string }[]; onChange: (value: string | null) => void; minWidth: number
 }) {
   const set = value !== null
@@ -240,7 +225,14 @@ export interface GiftCatalogProps {
   /** Overlay drawn above each card, outside its button (e.g. an info button). */
   renderBadge?: (gift: EgoGift) => ReactNode
   cardProps?: (gift: EgoGift) => GiftCatalogCardProps | undefined
-  /** Extra controls at the end of the toolbar. */
+  /** Keyword tab and keyword group order; the default is GIFT_KEYWORD_ORDER. */
+  keywordOrder?: readonly string[]
+  /** Group by keyword and keep the order of `gifts` inside each group (no grade sorting, no sort control). */
+  keepOrder?: boolean
+  /** Control pinned to the end of the keyword tab row (e.g. the keyword order button). */
+  keywordsEnd?: ReactNode
+  /** Extra controls at the end of the toolbar. On phones a compact catalog gives them a row of their own; otherwise
+   *  they share the search row while they fit. */
   toolbarEnd?: ReactNode
   /** For a narrow column: the grades and `moreFilters` stay behind the filter button at every width (not only on phones),
    *  and `toolbarEnd` sits on the search row. */
@@ -346,6 +338,9 @@ export default function GiftCatalog({
   markedLabel,
   renderBadge,
   cardProps,
+  keywordOrder = GIFT_KEYWORD_ORDER,
+  keepOrder = false,
+  keywordsEnd,
   toolbarEnd,
   collapsed = false,
   moreFilters,
@@ -371,7 +366,7 @@ export default function GiftCatalog({
     return (entry as Record<string, string>)[lang] ?? (entry as Record<string, string>)['ko'] ?? key
   }
 
-  const keywordLabels = useMemo(() => Object.fromEntries(KEYWORDS.map(kw => [kw.key, giftKeywordLabel(kw.key, lang)])), [lang])
+  const keywordLabels = useMemo(() => Object.fromEntries(['전체', ...GIFT_KEYWORD_ORDER].map(key => [key, giftKeywordLabel(key, lang)])), [lang])
 
   const toggleKeyword = useCallback(
     (key: string) => {
@@ -417,20 +412,22 @@ export default function GiftCatalog({
       return true
     })
 
+    // The sort is stable: inside a keyword the gifts stay in the order given.
+    if (keepOrder) return result.sort((a, b) => keywordRank(a.keyword, keywordOrder) - keywordRank(b.keyword, keywordOrder))
     if (sortBy === 'name') {
       result.sort((a, b) => a.name.localeCompare(b.name, 'ko'))
     } else if (sortBy === 'grade') {
       result.sort((a, b) => (GRADE_ORDER[a.grade] ?? 0) - (GRADE_ORDER[b.grade] ?? 0))
     } else {
       // 키워드별: 공통 → 키워드 → 참격·관통·타격, 같은 키워드는 등급순
-      result.sort((a, b) => keywordRank(a.keyword) - keywordRank(b.keyword) || (GRADE_ORDER[a.grade] ?? 0) - (GRADE_ORDER[b.grade] ?? 0))
+      result.sort((a, b) => keywordRank(a.keyword, keywordOrder) - keywordRank(b.keyword, keywordOrder) || (GRADE_ORDER[a.grade] ?? 0) - (GRADE_ORDER[b.grade] ?? 0))
     }
 
     if (sortDesc) result.reverse()
     if (!pinned?.length) return result
     const rank = (g: EgoGift) => { const index = pinned.findIndex(group => group.ids.has(g.id)); return index < 0 ? pinned.length : index }
     return result.map((g, i) => [g, rank(g), i] as const).sort((a, b) => a[1] - b[1] || a[2] - b[2]).map(([g]) => g)
-  }, [gifts, keywords, grades, tiers, query, sortBy, sortDesc, themeGiftNames, slotFilter, giftSlotMap, pinned])
+  }, [gifts, keywords, grades, tiers, query, sortBy, sortDesc, themeGiftNames, slotFilter, giftSlotMap, pinned, keywordOrder, keepOrder])
 
   const deferredFiltered = useDeferredValue(filtered)
   const isStale = deferredFiltered !== filtered
@@ -467,7 +464,7 @@ export default function GiftCatalog({
   }, [compact, keywords, grades, tiers, query, sortBy, sortDesc, slotFilter, themeGiftNames])
 
   // 기본 정렬 = 키워드별, 등급 정렬 = 등급별 묶음. 이름 정렬은 한 덩어리.
-  const groupBy: 'keyword' | 'grade' | null = sortBy === 'default' ? 'keyword' : sortBy === 'grade' ? 'grade' : null
+  const groupBy: 'keyword' | 'grade' | null = keepOrder || sortBy === 'default' ? 'keyword' : sortBy === 'grade' ? 'grade' : null
   const groupCounts = useMemo(() => {
     const map = new Map<string, number>()
     for (const g of deferredFiltered) {
@@ -532,25 +529,30 @@ export default function GiftCatalog({
         style={{ top: compact ? 'var(--gift-catalog-sticky-top, 0px)' : undefined, background: compact ? 'var(--gift-catalog-bg, #0d0b08)' : '#0d0b08', borderBottom: '1px solid #2e2417' }}
       >
         {/* 키워드 */}
-        <div className={`flex overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${compact ? '' : '-mx-4 px-4 md:mx-0 md:px-0'}`} style={{ borderBottom: '1px solid #2e2417' }}>
-          {KEYWORDS.map(kw => {
-            const isAll = kw.key === '전체'
+        <div className={`flex ${compact ? '' : '-mx-4 md:mx-0'}`} style={{ borderBottom: '1px solid #2e2417' }}>
+          <div className={`flex min-w-0 flex-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${compact ? '' : 'px-4 md:px-0'}`}>
+          {['전체', ...keywordOrder].map(key => {
+            const isAll = key === '전체'
             return (
               <GiftKeywordTab
-                key={kw.key}
-                label={keywordLabels[kw.key] ?? kw.key}
-                iconUrl={isAll ? null : getGiftKeywordIcon(kw.key)}
-                color={isAll ? undefined : KEYWORD_COLORS[kw.key] ?? '#9c8b73'}
-                active={isAll ? keywords.size === 0 : keywords.has(kw.key)}
-                onClick={() => toggleKeyword(kw.key)}
+                key={key}
+                label={keywordLabels[key] ?? key}
+                iconUrl={isAll ? null : getGiftKeywordIcon(key)}
+                color={isAll ? undefined : KEYWORD_COLORS[key] ?? '#9c8b73'}
+                active={isAll ? keywords.size === 0 : keywords.has(key)}
+                onClick={() => toggleKeyword(key)}
               />
             )
           })}
+          </div>
+          {/* Outside the scrolling tabs, so it stays at the row's right edge. */}
+          {keywordsEnd && <div className={`flex shrink-0 items-center ${compact ? '' : 'pr-2 md:pr-0'}`}>{keywordsEnd}</div>}
         </div>
 
         {/* 검색 · 등급 · 세부 필터 · 결과 수 · 정렬 — 한 줄. 모바일은 검색과 필터 버튼만 두고 나머지는 시트로 */}
         <div className="mt-2 flex flex-wrap items-center gap-2 sm:gap-x-3">
-          <div className={`relative min-w-0 flex-1 ${collapsed ? 'basis-32' : 'sm:w-[13rem] sm:flex-none'}`}>
+          {/* The phone basis is what lets a wide toolbarEnd wrap to its own row instead of squeezing the search box. */}
+          <div className={`relative min-w-0 flex-1 ${collapsed ? 'basis-32' : `${compact ? '' : 'basis-24 '}sm:w-[13rem] sm:flex-none`}`}>
             <Search size={14} aria-hidden className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-[#9c8b73]" />
             <input
               type="search"
@@ -601,7 +603,7 @@ export default function GiftCatalog({
           {/* 모바일에서는 접히는 시트, sm 이상에서는 display:contents로 같은 줄에 풀린다. collapsed면 어느 폭에서나 접힌다. */}
           <div
             id="md-gift-more-filters"
-            className={`${mobileFiltersOpen ? 'flex' : 'hidden'} basis-full flex-wrap items-center gap-x-4 gap-y-2 rounded border border-[#2e2417] bg-[#17120c] p-2.5 ${collapsed ? '' : 'sm:contents'}`}
+            className={`${mobileFiltersOpen ? 'flex' : 'hidden'} basis-full flex-wrap items-center gap-x-4 gap-y-2 rounded border border-[#2e2417] bg-[#17120c] p-2.5 ${collapsed ? '' : `${compact ? '' : 'max-sm:order-1 '}sm:contents`}`}
           >
             <div role="group" aria-label={t('mirrorDungeon.filter.grade')} className={`flex w-full items-center gap-0.5 ${collapsed ? '' : 'sm:w-auto'}`}>
               {GRADES.filter(g => g !== '전체').map(g => (
@@ -669,7 +671,7 @@ export default function GiftCatalog({
             )}
 
             {/* 정렬: 조용한 드롭다운. 이름·등급 정렬만 방향을 뒤집을 수 있다. */}
-            {!compact && <div className="ml-auto flex items-center sm:order-2 sm:ml-0">
+            {!compact && !keepOrder && <div className="ml-auto flex items-center sm:order-2 sm:ml-0">
               <Dropdown
                 ariaLabel={tp('sort')}
                 value={sortBy}
@@ -699,7 +701,7 @@ export default function GiftCatalog({
               )}
             </div>}
           </div>
-          {!collapsed && toolbarEnd && <div className="flex basis-full flex-wrap items-center gap-x-3 gap-y-1 sm:order-3 sm:basis-auto">{toolbarEnd}</div>}
+          {!collapsed && toolbarEnd && <div className={`flex ${compact ? 'basis-full' : 'ml-auto'} flex-wrap items-center gap-x-3 gap-y-1 sm:order-3 sm:ml-0 sm:basis-auto`}>{toolbarEnd}</div>}
         </div>
       </div>}
 
