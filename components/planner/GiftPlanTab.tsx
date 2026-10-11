@@ -10,6 +10,7 @@ import { useCallback, useMemo, useState } from 'react'
 import Image from 'next/image'
 import { useLocale, useTranslations } from 'next-intl'
 import type { PlannerState, PlannerAction, GiftData } from '@/lib/planner/types'
+import { START_GIFT_IDS } from '@/lib/planner/start-gifts'
 import {
   GRADE_ROMAN,
   GRADE_ORDER,
@@ -226,20 +227,6 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap }: Props) 
 
       {/* ── Start tab ───────────────────────────────────────────────────── */}
       {subTab === 'start' && (() => {
-        // 시작 기프트 풀 (game_id 기준)
-        const START_GIFT_IDS = new Set([
-          9009, 9001, 9103, // 화상: 작열우모, 지옥나비의 꿈, 울화통
-          9005, 9029, 9108, // 출혈: 상처붙이, 작고 나쁠 인형, 경외심
-          9113, 9086, 9044, // 진동: 시큼한 주향, 잔향, 진동형 팔찌
-          9117, 9169, 9047, // 파열: 유연 화약, 가시오랏줄, 가시 올가미
-          9041, 9054, 9124, // 침잠: 적색 지령, 녹아내린 시계태엽, 장엄
-          9051, 9046, 9129, // 호흡: 돌무덤, 물부리, 낡은 목각 인형
-          9134, 9043, 9052, // 충전: 순찰용 손전등, 사원증, 휴대용 전지 소켓
-          9032, 9194, 9140, // 참격: 꿈을 꾸는 전기양, 짧은 케인 소드, 결의
-          9198, 9145, 9030, // 관통: 증명의 깃털, 찢어진 밴돌리어, 수집하는 해골
-          9012, 9202, 9150, // 타격: 오늘의 표정, 포켓 암기 노트, 시간 굴레
-        ])
-
         // 가호에서 시작 기프트 추가 선택 수 계산
         // baseId 103(쏟아지는 유성우), 109(완전한 가능성)가 ADDITIONAL_START_EGO_GIFT_SELECT +1
         const BLESSING_START_GIFT_IDS = [103, 109]

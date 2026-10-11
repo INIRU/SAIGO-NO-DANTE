@@ -1,0 +1,86 @@
+{
+ "source": "mirror-dungeon-common-data-md7.json",
+ "mirrorDungeonId": 7,
+ "pools": [
+  {
+   "keyword": "Combustion",
+   "giftIds": [
+    9001,
+    9009,
+    9103
+   ]
+  },
+  {
+   "keyword": "Laceration",
+   "giftIds": [
+    9005,
+    9029,
+    9108
+   ]
+  },
+  {
+   "keyword": "Vibration",
+   "giftIds": [
+    9044,
+    9086,
+    9113
+   ]
+  },
+  {
+   "keyword": "Burst",
+   "giftIds": [
+    9047,
+    9093,
+    9117
+   ]
+  },
+  {
+   "keyword": "Sinking",
+   "giftIds": [
+    9041,
+    9054,
+    9124
+   ]
+  },
+  {
+   "keyword": "Breath",
+   "giftIds": [
+    9046,
+    9051,
+    9129
+   ]
+  },
+  {
+   "keyword": "Charge",
+   "giftIds": [
+    9043,
+    9052,
+    9134
+   ]
+  },
+  {
+   "keyword": "Slash",
+   "giftIds": [
+    9032,
+    9140,
+    9194
+   ]
+  },
+  {
+   "keyword": "Penetrate",
+   "giftIds": [
+    9030,
+    9145,
+    9198
+   ]
+  },
+  {
+   "keyword": "Hit",
+   "giftIds": [
+    9012,
+    9150,
+    9202
+   ]
+  }
+ ]
+}
