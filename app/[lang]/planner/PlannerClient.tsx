@@ -19,7 +19,8 @@ import { withLcbIdentitySlots } from '@/lib/planner/lcb'
 import { usePlannerStore } from '@/lib/stores/planner'
 import { showSuccess, showError } from '@/lib/toast'
 import { guestHeaders } from '@/lib/guest/key'
-import { getGuestCopy } from '@/lib/guest/copy'
+import GuestPinInput from '@/components/guest/GuestPinInput'
+import { getGuestCopy, guestPinProblem } from '@/lib/guest/copy'
 import DeckTab from '@/components/planner/DeckTab'
 import FloorTab from '@/components/planner/FloorTab'
 import PlanIntroEditor from '@/components/planner/PlanIntroEditor'
@@ -114,6 +115,7 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
   const session = useSession()
   const [uploading, setUploading] = useState(false)
   const [uploaded, setUploaded] = useState(false)
+  const [pin, setPin] = useState('')
   const [editId, setEditId] = useState<string | null>(null)
   const [tempSlots, setTempSlots] = useState<PlannerTempSlot[]>([])
 
@@ -218,6 +220,10 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
     if (pendingNoteUploads.size) { showError(noteUploadInProgressMessage(locale)); return }
     if (uploading) return
     if (!state.title.trim()) { showError(tPlanner('actions.titleRequired')); return }
+    // A new guest plan takes a password, asked for when the browser's key is gone (REQ-COMMUNITY-031).
+    const needsPin = session.status === 'unauthenticated' && !editId
+    const pinProblem = needsPin ? guestPinProblem(pin, locale) : null
+    if (pinProblem) { showError(pinProblem); return }
     setUploading(true)
     try {
       const planBody = {
@@ -236,7 +242,7 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json', ...guestHeaders(signedIn) },
-        body: JSON.stringify(planBody),
+        body: JSON.stringify(needsPin ? { ...planBody, pin } : planBody),
       })
       if (res.ok) {
         const result = await res.json()
@@ -462,10 +468,19 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
             </button>
             {/* 로그인 확인 전에도 줄 자리를 잡아 둔다: 늦게 끼어들면 아래 편성판 전체가 한 줄 밀린다 */}
             {session.status !== 'authenticated' && (
-              <p className="col-span-2 w-full text-[0.8125rem] text-[#6a6058] sm:text-right" style={session.status === 'loading' ? { visibility: 'hidden' } : undefined}>
-                {getGuestCopy(locale).saveHint}{' '}
-                <Link href="/guest" className="text-[#e8b030] underline-offset-4 hover:underline">{getGuestCopy(locale).manage}</Link>
-              </p>
+              <div className="col-span-2 flex w-full flex-wrap items-center gap-x-4 gap-y-2 text-[0.8125rem] text-[#6a6058] sm:justify-end" style={session.status === 'loading' ? { visibility: 'hidden' } : undefined}>
+                <p>
+                  {getGuestCopy(locale).saveHint}{' '}
+                  <Link href="/guest" className="text-[#e8b030] underline-offset-4 hover:underline">{getGuestCopy(locale).manage}</Link>
+                </p>
+                {!editId && (
+                  <label className="flex items-center gap-2 font-semibold text-[#b9a47f]">
+                    {getGuestCopy(locale).pin}
+                    <GuestPinInput value={pin} onChange={setPin} locale={locale}
+                      className="h-8 w-32 rounded-md border border-[rgba(200,144,10,0.3)] bg-[#0d0b08] px-3 text-[0.875rem] text-[#e8dcc8] outline-none focus-visible:border-[#e8b030]" />
+                  </label>
+                )}
+              </div>
             )}
           </div>
         </m.div>

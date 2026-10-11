@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import useSWR from 'swr'
-import { GUEST_KEY_HEADER, GUEST_KEY_STORAGE, readGuestKey } from '@/lib/guest/key'
+import { GUEST_KEY_HEADER, GUEST_KEY_STORAGE, guestHeaders, readGuestKey } from '@/lib/guest/key'
 
 export type GuestPost = { id: string; title: string; created_at: string }
 export type GuestPosts = { decks: GuestPost[]; plans: GuestPost[] }
@@ -24,6 +24,17 @@ export function useGuestPosts(enabled = true) {
   const posts = useSWR(enabled && key ? (['guest-posts', key] as const) : null, fetchGuestPosts, { revalidateOnFocus: false })
   const reloadKey = useCallback(() => setKey(readGuestKey()), [])
   return { key, keyRead, reloadKey, posts }
+}
+
+export type GuestRecoverTarget = { kind: 'deck' | 'plan'; id: string } | { kind: 'support' | 'want'; code: string }
+
+/**
+ * Proves a guest post is this visitor's with its password; this browser's key (made if there is none) owns it afterwards.
+ * Throws an Error whose message is the server's refusal code (guestRecoverMessage in lib/guest/copy.ts names it).
+ */
+export async function recoverGuestPost(target: GuestRecoverTarget, pin: string) {
+  const res = await fetch('/api/guest/recover', { method: 'POST', headers: { 'Content-Type': 'application/json', ...guestHeaders(false) }, body: JSON.stringify({ ...target, pin }) })
+  if (!res.ok) throw new Error((await res.json().catch(() => null))?.code ?? 'failed')
 }
 
 /** Moves every post of the key to the signed-in account; the key is dropped from this browser afterwards. */

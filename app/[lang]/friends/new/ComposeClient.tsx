@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useTranslations } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
+import { useSession } from 'next-auth/react'
 import useSWR, { useSWRConfig } from 'swr'
 import { ArrowLeft, Trash2 } from 'lucide-react'
 import SupportStrips from '@/components/friends/SupportStrips'
@@ -9,7 +10,11 @@ import SupportSlotPicker from '@/components/friends/SupportSlotPicker'
 import { emptySlots, readOwnCode, rememberOwnCode, supportBody, useFriendApi, useFriendCatalog, wantBody, type Kind, type Slots } from '@/components/friends/board'
 import BackLink from '@/components/navigation/BackLink'
 import PageHeader from '@/components/ui/PageHeader'
+import GuestPinInput from '@/components/guest/GuestPinInput'
+import { recoverGuestPost } from '@/hooks/useGuestPosts'
 import { useHtmlFlag } from '@/hooks/useHtmlFlag'
+import { getGuestCopy, guestPinProblem, guestRecoverMessage } from '@/lib/guest/copy'
+import { isGuestPin } from '@/lib/guest/key'
 import { useRouter } from '@/lib/i18n/navigation'
 import { FRIEND_CODE_RE, VISIBILITIES, WANT_LIMIT, type Visibility } from '@/lib/friends/codes'
 import { showError, showSuccess } from '@/lib/toast'
@@ -26,9 +31,13 @@ export default function ComposeClient({ kind }: { kind: Kind }) {
   const [visibility, setVisibility] = useState<Visibility>('public')
   const [busy, setBusy] = useState(false)
   const [filled, setFilled] = useState(false)
+  const [pin, setPin] = useState('')
+  const locale = useLocale(), guestT = getGuestCopy(locale), guest = useSession().status === 'unauthenticated'
   const { mutate } = useSWRConfig()
   const own = useSWR([`/api/friend-codes?kind=${kind}`, api.signedIn], ([url]) => api.load(url), { revalidateOnFocus: false })
   const mine = own.data?.own ?? null
+  // A guest without a post here: a new one takes a password, and one written with a lost key comes back by its code and password (REQ-COMMUNITY-031).
+  const needsPin = guest && !!own.data && !mine
 
   // The saved post goes into the editor once, so saving again edits it; without one the code last used here is offered.
   useEffect(() => {
@@ -50,7 +59,23 @@ export default function ComposeClient({ kind }: { kind: Kind }) {
     // Every cached list of the board is stale after a save or a delete: the list page must not show the old one.
     try { await work(); await mutate(key => Array.isArray(key) && String(key[0]).startsWith('/api/friend-codes'), undefined, { revalidate: false }); router.push(back) } catch (error) { showError(error instanceof Error ? error.message : t('errors.failed')); setBusy(false) }
   }
-  const save = () => run(async () => { await api.send('/api/friend-codes', 'POST', draft); rememberOwnCode(code); showSuccess(t(mine ? 'updated' : 'posted')) })
+  const save = () => {
+    const pinProblem = needsPin ? guestPinProblem(pin, locale) : null
+    if (pinProblem) { showError(pinProblem); return }
+    void run(async () => { await api.send('/api/friend-codes', 'POST', needsPin ? { ...draft, pin } : draft); rememberOwnCode(code); showSuccess(t(mine ? 'updated' : 'posted')) })
+  }
+  // The post goes to this browser's key; once it is read again as the viewer's own, the editor fills with it as with any saved post.
+  const loadMine = async () => {
+    setBusy(true)
+    try {
+      await recoverGuestPost({ kind, code }, pin)
+      // Not read back: the editor would stay blank, ready to post over the post it just took.
+      if (!(await own.mutate())?.own) throw Error('failed')
+      showSuccess(guestT.recovered); setPin(''); setFilled(false)
+    }
+    catch (error) { showError(guestRecoverMessage(error instanceof Error ? error.message : undefined, locale)) }
+    finally { setBusy(false) }
+  }
   const remove = () => run(async () => { await api.send(`/api/friend-codes?kind=${kind}`, 'DELETE'); showSuccess(t('deleted')) })
 
   return <main className={`${styles.page} ${styles.compose}`}>
@@ -69,6 +94,13 @@ export default function ComposeClient({ kind }: { kind: Kind }) {
             {VISIBILITIES.map(value => <button type="button" key={value} aria-pressed={visibility === value} onClick={() => setVisibility(value)}>{t(`visibility.${value}`)}</button>)}
           </div>
         </div>
+        {/* Last in the row: known only once the viewer's own post is read, and nothing before it moves when it comes in. */}
+        {needsPin && <>
+          <label>{guestT.pin}
+            <GuestPinInput className={`${styles.code} ${styles.pin}`} value={pin} onChange={setPin} locale={locale} />
+          </label>
+          <button type="button" className={styles.ghost} disabled={busy || !codeOk || !isGuestPin(pin)} onClick={loadMine}>{guestT.loadMine}</button>
+        </>}
       </div>
       <div className={styles.stage}><SupportStrips slots={slots} count={kind === 'support' ? 12 : WANT_LIMIT} onPick={setPicking} /></div>
       <p className={styles.warning}>{t('warning')}</p>

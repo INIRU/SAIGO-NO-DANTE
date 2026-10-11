@@ -77,6 +77,9 @@
 .fields > label, .fields > div { display: flex; flex-direction: column; gap: 0.35rem; font-size: 0.78rem; font-weight: 600; color: var(--text-secondary); }
 input.code { height: 2.5rem; width: 15rem; max-width: 100%; padding: 0 0.8rem; background: #070604; border: 1px solid #5a4526; outline: none; }
 input.code:focus-visible { border-color: var(--gold); }
+/* A guest's password for the post: up to six digits; its hint is set in the body font. */
+input.pin { width: 9.5rem; }
+input.pin::placeholder { font: 400 0.85rem/1 var(--font-body); letter-spacing: 0; }
 
 /* The window that takes the viewer's own code for an exchange. */
 .exchange { display: flex; flex-direction: column; gap: 0.9rem; padding: 1.25rem; background: #120e09; border: 1px solid #5a4526; }

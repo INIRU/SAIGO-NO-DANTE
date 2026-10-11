@@ -1,5 +1,6 @@
+import { randomUUID } from 'node:crypto'
 import type { createAdminClient } from '@/lib/supabase/admin'
-import { resolveAuthor, type Author } from '@/lib/guest/server'
+import { guestPinHash, resolveAuthor, type Author } from '@/lib/guest/server'
 
 type Admin = ReturnType<typeof createAdminClient>
 export type FriendPostRow = {
@@ -19,6 +20,18 @@ export const isAuthorOf = (row: Pick<FriendPostRow, 'user_id' | 'key_hash'>, vie
 /** The filter that finds a viewer's own rows in a table with (user column, key hash column). */
 export const ownerFilter = (viewer: Author, userColumn = 'user_id', keyColumn = 'key_hash') =>
   viewer.kind === 'user' ? { column: userColumn, value: viewer.userId } : { column: keyColumn, value: viewer.keyHash }
+
+/**
+ * Author columns of a new post. A guest's password is hashed with the post's id (REQ-COMMUNITY-029), so that id is made
+ * here instead of by the database.
+ */
+export function friendAuthorColumns(author: Author, pin: string | null) {
+  if (author.kind === 'user') return { user_id: author.userId }
+  const owner = { key_hash: author.keyHash, guest_tag: author.tag }
+  if (!pin) return owner
+  const id = randomUUID()
+  return { id, ...owner, pin_hash: guestPinHash('friend', id, pin) }
+}
 
 /** Whether an admin barred this author from the board (REQ-COMMUNITY-025). */
 export async function isBlocked(admin: Admin, author: Author): Promise<boolean> {

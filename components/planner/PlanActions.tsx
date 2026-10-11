@@ -10,6 +10,7 @@ import { showSuccess, showError } from '@/lib/toast'
 import { guestHeaders } from '@/lib/guest/key'
 import { getGuestCopy } from '@/lib/guest/copy'
 import ConfirmModal from '@/components/ui/ConfirmModal'
+import GuestPinRecover from '@/components/guest/GuestPinRecover'
 import type { Difficulty, FloorDifficulty, IdentitySlot as PlannerIdentitySlot, EgoSlot as PlannerEgoSlot, FloorEntry as PlannerFloorEntry } from '@/lib/planner/types'
 import { getLegacyPlanFloorDifficulty, isAllowedFloorDifficulty, isFloorDifficulty } from '@/lib/planner/floor-difficulty'
 
@@ -84,6 +85,8 @@ interface Props {
   isAdmin: boolean
   /** Signed-out visitor whose browser key wrote this plan: writes send the key. */
   guestOwner?: boolean
+  /** Set on a guest plan this browser has no key for: shows "edit with password", called once the plan is this browser's. */
+  onGuestRecovered?: () => void
 }
 
 export default function PlanActions({
@@ -102,6 +105,7 @@ export default function PlanActions({
   isOwner,
   isAdmin,
   guestOwner = false,
+  onGuestRecovered,
 }: Props) {
   const router = useRouter()
   const t = useTranslations('planner.detail')
@@ -250,6 +254,7 @@ export default function PlanActions({
             </button>
           </>
         )}
+        {onGuestRecovered && <GuestPinRecover kind="plan" id={planId} onRecovered={onGuestRecovered} className={`${actionBase} border-[#6f5115] bg-[#15100b] text-[#c8900a] min-[420px]:col-span-2`} />}
       </div>
 
       <ConfirmModal

@@ -1,3 +1,5 @@
+import { isGuestPin, isWeakGuestPin } from './key'
+
 /** Guest (anonymous) posting copy. Kept here instead of messages/*.json. */
 const copy = {
   ko: {
@@ -37,6 +39,18 @@ const copy = {
     claimFailed: '옮기지 못했어요.',
     signInToClaim: '로그인하면 내 계정으로 옮길 수 있어요.',
     login: '로그인',
+    pin: '비밀번호',
+    pinPlaceholder: '숫자 4~6자리',
+    pinRequired: '비밀번호를 숫자 4~6자리로 넣어 주세요.',
+    pinWeak: '너무 쉬운 비밀번호예요. 같은 숫자나 이어지는 숫자는 피해 주세요.',
+    recover: '비밀번호로 수정',
+    loadMine: '내 글 불러오기',
+    recovered: '내 글로 불러왔어요.',
+    wrongPin: '비밀번호가 맞지 않아요.',
+    pinLocked: '5번 틀려서 24시간 동안 잠겼어요.',
+    noPin: '비밀번호가 없는 글이에요.',
+    noPost: '그 코드로 올린 익명 글이 없어요.',
+    recoverFailed: '불러오지 못했어요.',
     claimed: (decks: number, plans: number) => `덱 ${decks}개, 플랜 ${plans}개를 옮겼어요.`,
     notice: (decks: number, plans: number) => `이 브라우저에 익명으로 올린 덱 ${decks}개, 플랜 ${plans}개가 있어요.`,
   },
@@ -77,6 +91,18 @@ const copy = {
     claimFailed: 'Could not move the posts.',
     signInToClaim: 'Sign in to move them to your account.',
     login: 'Sign in',
+    pin: 'Password',
+    pinPlaceholder: '4–6 digits',
+    pinRequired: 'Enter a password of 4 to 6 digits.',
+    pinWeak: 'That password is too easy to guess. Avoid repeated or consecutive digits.',
+    recover: 'Edit with password',
+    loadMine: 'Load my post',
+    recovered: 'Loaded as your post.',
+    wrongPin: 'Wrong password.',
+    pinLocked: 'Locked for 24 hours after 5 wrong tries.',
+    noPin: 'This post has no password.',
+    noPost: 'No anonymous post has that code.',
+    recoverFailed: 'Could not load it.',
     claimed: (decks: number, plans: number) => `Moved ${decks} ${decks === 1 ? 'deck' : 'decks'} and ${plans} ${plans === 1 ? 'plan' : 'plans'}.`,
     notice: (decks: number, plans: number) => `This browser has ${decks} anonymous ${decks === 1 ? 'deck' : 'decks'} and ${plans} ${plans === 1 ? 'plan' : 'plans'}.`,
   },
@@ -117,6 +143,18 @@ const copy = {
     claimFailed: '移せませんでした。',
     signInToClaim: 'ログインするとアカウントに移せます。',
     login: 'ログイン',
+    pin: 'パスワード',
+    pinPlaceholder: '数字4〜6桁',
+    pinRequired: 'パスワードを数字4〜6桁で入力してください。',
+    pinWeak: '推測されやすいパスワードです。同じ数字や連番は避けてください。',
+    recover: 'パスワードで編集',
+    loadMine: '自分の投稿を読み込む',
+    recovered: '自分の投稿として読み込みました。',
+    wrongPin: 'パスワードが違います。',
+    pinLocked: '5回間違えたため、24時間ロックされました。',
+    noPin: 'パスワードのない投稿です。',
+    noPost: 'そのコードの匿名投稿はありません。',
+    recoverFailed: '読み込めませんでした。',
     claimed: (decks: number, plans: number) => `デッキ${decks}件、プラン${plans}件を移しました。`,
     notice: (decks: number, plans: number) => `このブラウザに匿名のデッキ${decks}件、プラン${plans}件があります。`,
   },
@@ -128,3 +166,15 @@ export const getGuestCopy = (locale: string): GuestCopy => copy[locale as keyof 
 /** Board label for a guest author: "익명 #1a2b". Null without a tag. */
 export const guestAuthorName = (tag: string | null | undefined, locale: string) =>
   tag ? `${getGuestCopy(locale).anonymous} #${tag}` : null
+
+/** Why a new guest post cannot go up with this password, or null when it can (REQ-COMMUNITY-031). */
+export function guestPinProblem(pin: string, locale: string) {
+  const t = getGuestCopy(locale)
+  return !isGuestPin(pin) ? t.pinRequired : isWeakGuestPin(pin) ? t.pinWeak : null
+}
+
+/** Toast for a refused password recovery, by the code /api/guest/recover answers with. */
+export function guestRecoverMessage(code: string | undefined, locale: string) {
+  const t = getGuestCopy(locale)
+  return ({ wrong_pin: t.wrongPin, pin_locked: t.pinLocked, no_pin: t.noPin, not_found: t.noPost } as Record<string, string>)[code ?? ''] ?? t.recoverFailed
+}
