@@ -112,6 +112,8 @@
 
 친구 코드 게시판의 표 여섯 개는 서비스 키로만 읽고 쓴다(RLS 켬, 공개 역할 권한 없음). 친구 코드는 글의 공개 범위(누구나, 로그인한 사람, 코드 교환, 승인 후 공개)에 맞는 사람에게만 API가 내려 준다. 승인 후 공개 글은 `friend_requests`에서 글쓴이가 `approved`로 바꾼 사람에게만 보인다. `friend_posts.slots`는 `[{ slot, identity, egos }]`(인격·E.G.O의 id)이고, 구해요 글은 올린 지 하루 뒤 읽거나 쓸 때 지워지며 `friend_want_stats`의 일별 요청 수는 남는다. 글쓴이는 계정(`user_id`) 또는 익명 키의 HMAC(`key_hash`)이고, `friend_blocks`에 있는 글쓴이는 올리기와 교환이 막힌다.
 
+익명 글의 비밀번호(`20261011120000_guest_pin.sql`, 2026-10-11 적용): 새 익명 덱·플랜은 `guest_authorship`에, 익명 친구 코드 글은 `friend_posts`에 `pin_hash`·`pin_fails`·`pin_failed_at`을 둔다. `pin_hash`는 숫자 4~6자리 비밀번호를 서버 비밀값·글 종류·글 id와 섞은 HMAC이고(`lib/guest/server.ts`의 `guestPinHash`) 평문은 저장하지 않는다. 게스트 키를 잃은 글쓴이는 `limbus.guest_pin_recover(종류, 글 id, pin_hash, 새 key_hash)`로 글을 되찾는다: 맞으면 글의 `key_hash`가 요청한 브라우저의 키로 바뀐다. 이 함수가 시도 차감과 비교를 한 번에 처리하며, 한 글에서 5회 틀리면 마지막 시도부터 24시간 동안 맞는 비밀번호도 거절한다. 서비스 역할만 실행한다(`app/api/guest/recover/route.ts`). 비밀번호가 없는 글(이 기능 전의 글)은 키로만 수정된다.
+
 `discovery_visits`는 HMAC 처리한 브라우저 식별자, 대상 종류/ID, UTC 날짜만 보관한다. 원문 검색어나 IP는 이 테이블에 저장하지 않는다. 기간별 고유 브라우저 수이며 실제 사람 수·전투 사용률이 아니다. 공개 API는 집계만 반환하고 원시 방문 기록·개발자 키 테이블은 service_role만 접근한다. 최근 열람·검색어는 브라우저 localStorage에 각각 최대 20개를 저장한다. 게시판 화면에는 기록 관리 버튼을 표시하지 않는다.
 
 층별 계획 JSON의 `constraints`는 11~15층 제약 ID 배열이다. 앞 층의 선택을 바꾸면 뒤 층의 교체 규칙을 다시 적용한다. 플랜 코드 v3는 제약·층별 기프트·메모도 함께 저장하며 이전 코드를 읽을 수 있다.

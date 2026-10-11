@@ -1,6 +1,6 @@
 
 import { notePlainText } from '@/lib/notes/blocks'
-import { authorColumns, authorRateKey, recordGuestAuthorship, resolveAuthor } from '@/lib/guest/server'
+import { authorColumns, authorRateKey, guestPinOf, recordGuestAuthorship, resolveAuthor } from '@/lib/guest/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { revalidatePath, revalidateTag } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
@@ -515,6 +515,9 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json()
     const { title, description, tags, identitySlots, egoSlots, content_type } = body
+    // A guest's password for the deck (REQ-COMMUNITY-029); screens from before it existed send none.
+    const pin = author.kind === 'guest' ? guestPinOf(body?.pin) : null
+    if (pin === false) return NextResponse.json({ error: '비밀번호는 숫자 4~6자리입니다.' }, { status: 400 })
     const mainKeywordsResult = parseDeckMainKeywordsInput(body?.main_keywords)
     if ('error' in mainKeywordsResult) {
       return NextResponse.json({ error: mainKeywordsResult.error }, { status: 400 })
@@ -582,7 +585,7 @@ export async function POST(request: NextRequest) {
     // Guests earn no activity points; their key is recorded instead (points follow when the deck moves to an account).
     const { error: activityError } = userId
       ? await admin.schema('limbus').rpc('community_record_deck', { p_deck_id: deck.id, p_user_id: userId })
-      : { error: await recordGuestAuthorship(admin, author, 'deck', deck.id) }
+      : { error: await recordGuestAuthorship(admin, author, 'deck', deck.id, pin) }
     if (activityError) {
       await admin.schema('limbus').from('decks').delete().eq('id', deck.id)
       return NextResponse.json({ error: '덱을 저장하지 못했습니다. 다시 시도해주세요.' }, { status: 500 })

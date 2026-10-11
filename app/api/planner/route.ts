@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { revalidateTag } from 'next/cache'
-import { authorColumns, authorRateKey, recordGuestAuthorship, resolveAuthor } from '@/lib/guest/server'
+import { authorColumns, authorRateKey, guestPinOf, recordGuestAuthorship, resolveAuthor } from '@/lib/guest/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getServerSession } from 'next-auth'
@@ -382,6 +382,9 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json()
     const { title, description, difficulty, deck, egos, floor_plan, gift_inventory, tags } = body
+    // A guest's password for the plan (REQ-COMMUNITY-029); screens from before it existed send none.
+    const pin = author.kind === 'guest' ? guestPinOf(body?.pin) : null
+    if (pin === false) return NextResponse.json({ error: '비밀번호는 숫자 4~6자리입니다.' }, { status: 400 })
     const normalizedFloorPlan = normalizeFloorPlanDifficulty(floor_plan ?? [], normalizePlanDifficulty(difficulty)).floorPlan
     const planDifficulty = storedPlanDifficulty(normalizedFloorPlan, normalizePlanDifficulty(difficulty))
     const lang = parsePlannerMutationLang(body?.lang, body?.locale)
@@ -410,7 +413,7 @@ export async function POST(req: NextRequest) {
 
     const { error: activityError } = userId
       ? await admin.schema('limbus').rpc('community_record_plan', { p_plan_id: data.id, p_user_id: userId })
-      : { error: await recordGuestAuthorship(admin, author, 'plan', data.id) }
+      : { error: await recordGuestAuthorship(admin, author, 'plan', data.id, pin) }
     if (activityError) {
       await admin.schema('limbus').from('md_plans').delete().eq('id', data.id)
       return NextResponse.json({ error: '플랜을 저장하지 못했습니다. 다시 시도해주세요.' }, { status: 500 })
