@@ -98,6 +98,9 @@
 | 키워드 아이콘 | `components/ui/KeywordIcon.tsx` |
 | 실패하면 사라지는 이미지 (기프트·테마팩·이벤트 그림, 스킬 아이콘) | `components/ui/QuietImage.tsx` |
 | 스켈레톤 | `components/ui/Skeleton.tsx`, `DetailPageSkeleton.tsx` |
+| Spine 재생(SD, 풀 일러스트) | `components/spine/SpineStage.tsx` |
+| SD 뷰어, 풀 일러스트 창 | `components/identity/SdViewer.tsx`, `IllustViewer.tsx` |
+| PNG·GIF·동영상 저장 버튼 | `components/spine/StageSaveButtons.tsx` |
 
 기프트 목록의 키워드 순서는 공통 → 키워드(화상·출혈·진동·파열·침잠·호흡·충전) → 참격·관통·타격이다. 거울 던전 기프트 탭은 사용자가 키워드 순서 창에서 바꾼 순서(브라우저 저장)를 따른다.
 
@@ -125,6 +128,7 @@
 - 연결된 요소는 같은 타이밍으로 움직인다. 내비게이션과 그 아래 고정 목차가 따로 움직이면 사이가 벌어진다.
 - 알림은 사이트 토스트처럼 여러 개가 겹쳐 쌓여 동시에 보이게 한다.
 - `prefers-reduced-motion`을 존중한다. 움직임을 끄더라도 정보는 그대로 보인다.
+- Spine(SD, 풀 일러스트)은 초당 30장으로 그리고, 화면 밖이거나 탭이 숨겨지면 멈춘다. 풀 일러스트는 눌러서 크게 볼 때만 불러온다. 움직임 줄이기 설정이면 SD는 첫 장면에서 멈추고 풀 일러스트는 정지 그림을 유지한다.
 - 홈의 HOSHI ↔ SAIGO 워드마크는 계속 반복되는 애니메이션이다(개발자가 뒤틀려서 최애 HOSHI가 SAIGO가 됐다는 사이트 콘셉트).
 
 ## 9. 스켈레톤

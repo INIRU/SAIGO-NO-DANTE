@@ -21,6 +21,9 @@ Next.js 16 App Router + React 19 + TypeScript. 공개 페이지는 app/[lang]에
 - IdentityDetailClient: 페이지 탭, 초상화, 각 영역 조합.
 - useIdentitySkillModel: 동기화 단계와 비교 상태, 메모이제이션.
 - lib/identity/skill-model: 단계별 행 선택, 스킬 정렬과 변형 번호.
+- lib/spine/pack: Storage의 Spine 묶음(`limbus-assets/spine/`, 추출 도구가 올림) 형식과, 한 인격의 폼·스킨 묶음·동작·탭 이름 계산. 페이지 서버 코드가 묶음을 읽어 그 인격 몫만 잘라 넘긴다.
+- components/spine/SpineStage: Spine 4.0 런타임으로 SD와 풀 일러스트를 그린다. 파일은 Storage 주소에서 바로 읽는다. 런타임은 4.0에 고정한다(4.1 이상은 이 뼈대를 읽지 못함).
+- lib/spine/save: 그려진 장면을 PNG·GIF·동영상으로 저장한다.
 - IdentityCombatSection: 스킬/패시브 탭과 동기화 조작.
 - useIdentityGuideData: 기존 운영법 토큰의 한/영/일 별칭과 자동완성.
 - IdentityGuideSection: 사람이 작성한 운영법. AI 생성 경로는 없다.

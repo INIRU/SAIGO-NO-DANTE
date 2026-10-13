@@ -15,7 +15,10 @@ export default function Loading() {
           <SkeletonLine w="2rem" h="0.7rem" className="ml-10 mt-2" />
           <div className="mt-4 grid grid-cols-2 border border-[#2e2417]"><div className="flex h-9 items-center justify-center border-b-2 border-[var(--gold)] bg-[rgba(200,144,10,0.12)]"><SkeletonLine w="3rem" h="0.75rem" /></div><div className="flex h-9 items-center justify-center"><SkeletonLine w="5rem" h="0.75rem" /></div></div>
           <Skeleton className="mx-auto mt-2 w-full max-w-[25rem]" style={{ aspectRatio: '2 / 3' }} />
-          <SkeletonLine w="80%" h="0.8rem" className="mx-auto mt-5" />
+          <div className="mt-4 flex flex-col items-center gap-3 border-t border-white/10 pt-4">
+            <Skeleton className="h-[9rem] w-[6.3rem] sm:h-[11rem] sm:w-[7.7rem]" />
+            <SkeletonLine w="80%" h="0.8rem" />
+          </div>
         </div>
         <div className="min-w-0 space-y-5">
           <div className="flex items-center justify-between"><Skeleton className="h-7 w-[6rem]" /><Skeleton className="h-6 w-[2.5rem]" /></div>
