@@ -1922,9 +1922,38 @@
     "portrait": {
       "illustration": "일러스트",
       "uptieIllustration": "동기화 일러스트",
-      "artTipTitle": "이미지를 탭하면",
-      "artTipDesc": "풀 일러스트를 볼 수 있어요"
+      "viewFull": "풀 일러스트 보기",
+      "animated": "움직이는 일러스트"
+    },
+    "sd": {
+      "label": "{name} SD",
+      "enlarge": "{name} SD 크게 보기",
+      "forms": "폼",
+      "skins": "스킨",
+      "motions": "동작",
+      "noSkin": "스킨 없음",
+      "zoom": "확대",
+      "zoomIn": "확대",
+      "zoomOut": "축소",
+      "fit": "화면에 맞춤",
+      "backdrop": "배경",
+      "backdrops": {
+        "dark": "어두운 배경",
+        "black": "검은 배경",
+        "white": "흰 배경",
+        "clear": "투명 배경"
+      }
+    },
+    "viewer": {
+      "save": "저장",
+      "video": "동영상",
+      "play": "재생",
+      "pause": "일시 정지",
+      "saved": "저장했습니다",
+      "saveFailed": "저장하지 못했습니다"
     }
+
+
   },
   "ego": {
     "resistance": "죄악 내성",

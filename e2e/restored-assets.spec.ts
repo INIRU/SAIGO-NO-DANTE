@@ -33,7 +33,6 @@ test('IV-only EGO never exposes V and catalogue cards use the actual maximum', a
 
 test('identity metadata, unframed art and source UI survive a cached revisit on mobile', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
-  await page.addInitScript(() => localStorage.setItem('art-tip-seen', '1'))
   const route = '/ko/sinners/gregor/identities/2935368e-296f-4738-9fc6-f50c64655647'
   await page.goto(route)
   const cdp = await page.context().newCDPSession(page)

@@ -1,0 +1,22 @@
+/* SD viewer (components/identity/SdViewer.tsx). Phones: title, a square stage, then the controls, in one scroll.
+   From 48rem: the stage on the left, the title and controls in a column beside it. */
+.viewer { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-areas: "head" "stage" "panel"; max-height: 92dvh; overflow-y: auto; }
+.head { grid-area: head; }
+.stage { grid-area: stage; position: relative; aspect-ratio: 1; overflow: hidden; touch-action: none; cursor: grab; border-block: 1px solid #2e2417; }
+.stage:active { cursor: grabbing; }
+.stage[data-backdrop='dark'], .swatch[data-backdrop='dark'] { background: #120e09; }
+.stage[data-backdrop='black'], .swatch[data-backdrop='black'] { background: #000; }
+.stage[data-backdrop='white'], .swatch[data-backdrop='white'] { background: #fff; }
+.stage[data-backdrop='clear'] { background: repeating-conic-gradient(#2a2118 0% 25%, #15110b 0% 50%) 0 0 / 1.25rem 1.25rem; }
+.swatch[data-backdrop='clear'] { background: repeating-conic-gradient(#5a4526 0% 25%, #15110b 0% 50%) 0 0 / 0.5rem 0.5rem; }
+.panel { grid-area: panel; display: flex; flex-direction: column; gap: 1.25rem; min-width: 0; padding: 1rem 1.25rem 1.25rem; }
+.group { display: flex; flex-direction: column; align-items: flex-start; gap: 0.5rem; min-width: 0; }
+.groupTitle { font-size: 0.75rem; color: var(--text-muted); }
+.tools { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.percent { min-width: 4rem; font-family: var(--font-title); font-size: 1.0625rem; }
+.swatch { display: block; width: 1.125rem; height: 1.125rem; border: 1px solid #5a4526; border-radius: 0.125rem; }
+@media (min-width: 48rem) {
+  .viewer { grid-template-columns: minmax(0, 1fr) 18rem; grid-template-rows: auto minmax(0, 1fr); grid-template-areas: "stage head" "stage panel"; overflow: hidden; }
+  .stage { border-block: 0; border-right: 1px solid #2e2417; }
+  .panel { overflow-y: auto; padding-top: 0.5rem; }
+}
