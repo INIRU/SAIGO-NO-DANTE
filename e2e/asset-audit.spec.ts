@@ -66,7 +66,6 @@ for (const width of [1440, 390]) {
     test(`${width}px /ko${route || '/'} artwork after hard refresh and revisit`, async ({ page }, info) => {
       test.setTimeout(120_000)
       await page.setViewportSize({ width, height: 900 })
-      await page.addInitScript(() => localStorage.setItem('art-tip-seen', '1'))
       const errors: string[] = []
       const failedImages = new Set<string>()
       page.on('response', response => {
