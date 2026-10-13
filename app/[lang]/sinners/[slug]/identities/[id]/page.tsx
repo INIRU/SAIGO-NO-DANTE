@@ -4,6 +4,8 @@ import { Suspense } from 'react'
 import { cacheLife, cacheTag } from 'next/cache'
 import { getSinnerById, getIdentityById, getSkills, getPassives, getSanityConditions, getPanicInfo, isRowId } from '@/lib/db/queries'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
+import { STORAGE_BASE } from '@/lib/constants/game'
+import { identitySpine, type IdentitySpine, type SpineManifest, type SpinePack, type SpinePackKind } from '@/lib/spine/pack'
 import { notFound } from 'next/navigation'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getIdentityInfoUrl, getIdentityProfileUrl } from '@/lib/utils/images'
@@ -89,6 +91,31 @@ async function getIdentityPageData(slug: string, id: string) {
   return { sinner, identity, skills, passives, sanityConditions, panicInfo }
 }
 
+/**
+ * One Spine pack from Storage. spine/manifest.json names the current pack file; the extractor replaces it after an
+ * upload and clears the game data tag. A failed read throws, so it is not cached.
+ */
+async function getSpinePack(kind: SpinePackKind): Promise<SpinePack | null> {
+  'use cache'
+  cacheLife('max')
+  cacheTag(CACHE_TAGS.gameData)
+  const read = async <T,>(path: string): Promise<T> => {
+    const response = await fetch(`${STORAGE_BASE}/spine/${path}`)
+    if (!response.ok) throw new Error(`spine/${path}: ${response.status}`)
+    return response.json()
+  }
+  const file = (await read<SpineManifest>('manifest.json')).packs[kind]
+  return file ? read<SpinePack>(file) : null
+}
+
+/** What one identity has in a pack (its SD figure, or its uptie illustration), cut out so the page does not carry the whole pack. */
+async function getIdentitySpine(kind: SpinePackKind, gameId: string | null | undefined): Promise<IdentitySpine | null> {
+  'use cache'
+  cacheLife('max')
+  cacheTag(CACHE_TAGS.gameData)
+  return identitySpine(await getSpinePack(kind), gameId)
+}
+
 /** The season set in app_config (not game data, so it is re-read hourly rather than on sync). */
 async function getCurrentSeason(): Promise<number> {
   'use cache'
@@ -118,6 +145,11 @@ export default async function IdentityPage({
   ])
   if (!data) notFound()
   const { sinner, identity, skills, passives, sanityConditions, panicInfo } = data
+  // The skeletons are extras: when Storage cannot be read the page still renders, without them.
+  const [sd, illust] = await Promise.all((['idle', 'illust'] as const).map(kind => getIdentitySpine(kind, identity.game_id).catch(error => {
+    console.error(`Failed to fetch ${kind} spine:`, error)
+    return null
+  })))
 
   const canonical = `${SITE_URL}/${lang}/sinners/${slug}/identities/${id}`
   const identityImageUrl = getIdentityInfoUrl(identity) || getIdentityProfileUrl(identity)
@@ -150,6 +182,8 @@ export default async function IdentityPage({
           sanityConditions={sanityConditions}
           panicInfo={panicInfo}
           currentSeason={currentSeason}
+          sd={sd}
+          illust={illust}
         />
       </Suspense>
     </>

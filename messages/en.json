@@ -1922,9 +1922,38 @@
     "portrait": {
       "illustration": "Illustration",
       "uptieIllustration": "Uptie Illustration",
-      "artTipTitle": "Tap the image",
-      "artTipDesc": "to view full illustration"
+      "viewFull": "View full illustration",
+      "animated": "Animated illustration"
+    },
+    "sd": {
+      "label": "{name} SD",
+      "enlarge": "Enlarge {name} SD",
+      "forms": "Form",
+      "skins": "Skin",
+      "motions": "Animation",
+      "noSkin": "No skin",
+      "zoom": "Zoom",
+      "zoomIn": "Zoom in",
+      "zoomOut": "Zoom out",
+      "fit": "Fit to view",
+      "backdrop": "Background",
+      "backdrops": {
+        "dark": "Dark background",
+        "black": "Black background",
+        "white": "White background",
+        "clear": "Transparent background"
+      }
+    },
+    "viewer": {
+      "save": "Save",
+      "video": "Video",
+      "play": "Play",
+      "pause": "Pause",
+      "saved": "Saved",
+      "saveFailed": "Could not save"
     }
+
+
   },
   "ego": {
     "resistance": "Sin Resistance",
