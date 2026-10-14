@@ -364,8 +364,6 @@ export const translations = {
   // Identity Portrait Section
   'identity.portrait.illustration': { ko: '일러스트', en: 'Illustration', ja: 'イラスト' },
   'identity.portrait.uptieIllustration': { ko: '동기화 일러스트', en: 'Uptie Illustration', ja: '同期イラスト' },
-  'identity.portrait.artTipTitle': { ko: '이미지를 탭하면', en: 'Tap the image', ja: '画像をタップすると' },
-  'identity.portrait.artTipDesc': { ko: '풀 일러스트를 볼 수 있어요', en: 'to view full illustration', ja: 'フルイラストを見ることができます' },
 
   // Identity Guide Section
 
