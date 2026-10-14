@@ -26,6 +26,8 @@
 .tile{display:flex;flex-direction:column;align-items:center;gap:.3rem;min-width:0;padding:.55rem 0 .45rem;border:1px solid transparent;border-radius:.3rem;color:var(--text-secondary);font-size:.7rem;line-height:1.2;cursor:pointer;transition:color .16s,background-color .16s,border-color .16s,transform .12s}
 .tile img{width:1.5rem;height:1.5rem;object-fit:contain;opacity:.6;transition:opacity .16s}.tile>span{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .tile:hover{color:var(--text-primary)}.tile:hover img{opacity:.9}.tile:active{transform:scale(.95)}.tile[aria-pressed=true]{color:var(--gold-light);border-color:var(--border);background:rgba(200,144,10,.12)}.tile[aria-pressed=true] img{opacity:1}
+/* A choice that would match nothing stays in its place, dimmed, and cannot be pressed. */
+.choice:disabled,.tile:disabled{opacity:.35;pointer-events:none}
 /* One sinner each: the logo, or the identity chosen for that sinner. */
 .sinners{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:.25rem}
 .sinner{position:relative;display:grid;place-items:center;aspect-ratio:1;border:1px solid transparent;border-radius:.3rem;cursor:pointer;transition:background-color .16s,border-color .16s,transform .12s}

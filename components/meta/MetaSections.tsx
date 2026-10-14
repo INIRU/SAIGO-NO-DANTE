@@ -20,7 +20,7 @@ import styles from '@/styles/components/MetaAnalysis.module.css'
 type Named = { name_kr: string; name_en?: string | null; name_jp?: string | null }
 type Pictured = { sinner_id: string; folder_name: string | null; game_id: string | null }
 
-const DIFFICULTY_COLORS: Record<string, string> = { normal: '#9c8b73', hard: '#c8900a', extreme: '#9b2c23' }
+export const DIFFICULTY_COLORS: Record<string, string> = { normal: '#9c8b73', hard: '#c8900a', extreme: '#9b2c23' }
 
 function useName() {
   const locale = useLocale() as SupportedLang

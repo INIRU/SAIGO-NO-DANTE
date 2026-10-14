@@ -1,18 +1,25 @@
 'use client'
 
-import type { CSSProperties } from 'react'
+import { useState, type CSSProperties } from 'react'
 import useSWR from 'swr'
 import { useTranslations } from 'next-intl'
+import { SlidersHorizontal } from 'lucide-react'
 import UnderlineTabBar from '@/components/ui/UnderlineTabBar'
-import { META_SOURCES, META_PERIODS, DEFAULT_META_SOURCE, DEFAULT_META_PERIOD, type MetaSource, type MetaPeriod, type MetaData } from '@/lib/meta/types'
-import { useQueryState, useQueryStates, parseAsString, parseAsStringLiteral } from 'nuqs'
+import { FilterTextButton } from '@/components/board/FilterControls'
+import { META_SOURCES, META_PERIODS, META_FILTER_KEYS, META_FILTER_MODES, DEFAULT_META_SOURCE, DEFAULT_META_PERIOD, parseMetaFilters, type IdentityStat, type MetaFilterMode, type MetaSource, type MetaPeriod, type MetaData } from '@/lib/meta/types'
+import { useQueryState, useQueryStates, parseAsArrayOf, parseAsString, parseAsStringLiteral } from 'nuqs'
 import IdentityAnalysis from '@/components/meta/IdentityAnalysis'
 import MetaOverview from '@/components/meta/MetaOverview'
 import DungeonAnalysis from '@/components/meta/DungeonAnalysis'
+import MetaFilters from '@/components/meta/MetaFilters'
 import { MetaBodySkeleton } from '@/components/meta/MetaSkeleton'
 import styles from '@/styles/components/MetaAnalysis.module.css'
 
 const VIEWS = ['overall', 'identity', 'dungeon'] as const
+const FILTER_MODES = Object.keys(META_FILTER_MODES) as MetaFilterMode[]
+const list = parseAsArrayOf(parseAsString).withDefault([])
+const FILTER_PARAMS = { usage: list, keyword: list, difficulty: list, sinner: list, rarity: list, keywordMode: parseAsString.withDefault(''), sinnerMode: parseAsString.withDefault('') }
+const NO_FILTERS = { usage: null, keyword: null, difficulty: null, sinner: null, rarity: null, keywordMode: null, sinnerMode: null }
 /** A section's place in the arrival order (MetaAnalysis.module.css `.arrive`). */
 const order = (i: number) => ({ '--i': i }) as CSSProperties
 
@@ -28,6 +35,16 @@ export default function MetaClient({ initialData }: { initialData: MetaData | nu
   const [periodParam, setPeriod] = useQueryState('period', parseAsString.withDefault(DEFAULT_META_PERIOD))
   const source = META_SOURCES.includes(sourceParam as MetaSource) ? sourceParam as MetaSource : DEFAULT_META_SOURCE
   const period = META_PERIODS.includes(periodParam as MetaPeriod) ? periodParam as MetaPeriod : DEFAULT_META_PERIOD
+  const [filterParams, setFilterParams] = useQueryStates(FILTER_PARAMS)
+  // An unknown value in the address is no filter. A difficulty is a plan's: the deck board has none to narrow by.
+  const { filters } = parseMetaFilters(key => key === 'difficulty' && source === 'decks' ? null : filterParams[key])
+  const filterCount = META_FILTER_KEYS.reduce((sum, key) => sum + (filters[key]?.length ?? 0), 0)
+  // An address that carries filters opens with them in view.
+  const [filtersOpen, setFiltersOpen] = useState(filterCount > 0)
+  // A sinner or rarity keeps the formations that field such an identity; the identity lists then show those identities.
+  const shows = (row: IdentityStat) => (!filters.sinner || filters.sinner.includes(row.sinner_id)) && (!filters.rarity || (filters.rarity as string[]).includes(String(row.rarity)))
+  const query = new URLSearchParams({ source, period })
+  for (const key of [...META_FILTER_KEYS, ...FILTER_MODES]) if (filters[key]) query.set(key, String(filters[key]))
   // Tab switches push history so back returns to the previous tab; picking another identity replaces it.
   const [view, setView] = useQueryStates({ tab: parseAsStringLiteral(VIEWS).withDefault('overall'), id: parseAsString.withDefault('') })
   const showTab = (tab: typeof VIEWS[number], id?: string) => {
@@ -35,12 +52,12 @@ export default function MetaClient({ initialData }: { initialData: MetaData | nu
     const tabs = document.querySelector('[data-meta-views]')
     if (tabs && tabs.getBoundingClientRect().top < 0) tabs.scrollIntoView({ block: 'start' })
   }
-  const fallbackData = initialData?.source === source && initialData.period === period ? initialData : undefined
-  const { data, error, isLoading, mutate } = useSWR<MetaData>(`/api/meta/usage?source=${source}&period=${period}`, fetchMeta, {
+  const fallbackData = initialData?.source === source && initialData.period === period && !filterCount ? initialData : undefined
+  const { data, error, isLoading, mutate } = useSWR<MetaData>(`/api/meta/usage?${query}`, fetchMeta, {
     fallbackData, keepPreviousData: true, revalidateOnFocus: false,
   })
-  // Keep the previous result on screen (dimmed) while another source or period loads, so the page does not collapse and jump.
-  const stale = Boolean(data && (data.source !== source || data.period !== period))
+  // Keep the previous result on screen (dimmed) while another scope loads, so the page does not collapse and jump.
+  const stale = Boolean(data && (data.source !== source || data.period !== period || JSON.stringify(data.filters ?? {}) !== JSON.stringify(filters)))
   return <div>
       <div className={styles.toolbar}>
         <UnderlineTabBar
@@ -48,15 +65,24 @@ export default function MetaClient({ initialData }: { initialData: MetaData | nu
           activeKey={source}
           onTabChange={setSource}
         />
-        <div className={styles.periods} role="group" aria-label={t('periodLabel')}>
-          {META_PERIODS.map(value => (
-            <button key={value} type="button" onClick={() => setPeriod(value)} aria-pressed={period === value}
-              className={styles.period}
-              style={{ background: period === value ? 'var(--gold)' : 'rgba(255,255,255,0.05)', color: period === value ? 'var(--bg-deep)' : 'var(--text-secondary)' }}>
-              {t(`period.${value}`)}
+        <div className={styles.toolbarEnd}>
+          <div className={styles.periods} role="group" aria-label={t('periodLabel')}>
+            {META_PERIODS.map(value => (
+              <button key={value} type="button" onClick={() => setPeriod(value)} aria-pressed={period === value}
+                className={styles.period}
+                style={{ background: period === value ? 'var(--gold)' : 'rgba(255,255,255,0.05)', color: period === value ? 'var(--bg-deep)' : 'var(--text-secondary)' }}>
+                {t(`period.${value}`)}
+              </button>
+            ))}
+          </div>
+          <div className={styles.filterTools}>
+            {filterCount > 0 && <FilterTextButton onClick={() => { setFilterParams(NO_FILTERS) }}>{t('filters.clear')}</FilterTextButton>}
+            <button type="button" className={styles.filterToggle} aria-expanded={filtersOpen} aria-controls={filtersOpen ? 'meta-filters' : undefined} onClick={() => setFiltersOpen(open => !open)}>
+              <SlidersHorizontal size={15} aria-hidden="true" />{t('filters.button')}{filterCount > 0 && <b>{filterCount}</b>}
             </button>
-          ))}
+          </div>
         </div>
+        {filtersOpen && <MetaFilters id="meta-filters" value={filters} facets={data?.facets} showDifficulty={source !== 'decks'} onChange={patch => { setFilterParams(patch) }} />}
       </div>
         {error && <div role="alert" className="text-sm" style={{ color: 'var(--gold)' }}>
           {t('loadError')}{' '}
@@ -64,11 +90,11 @@ export default function MetaClient({ initialData }: { initialData: MetaData | nu
         </div>}
       {isLoading && !data && <MetaBodySkeleton />}
       {data && <>
-      {data.sampleCount === 0 && period !== 'all' && (
+      {data.sampleCount === 0 && (filterCount > 0 || period !== 'all') && (
         <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-[var(--border)] bg-[var(--bg-elevated)] p-4">
-          <p className="text-sm text-[var(--text-secondary)]">{t('emptyPeriod')}</p>
-          <button type="button" onClick={() => setPeriod('all')} className="rounded px-3 py-2 text-sm text-[var(--gold)] hover:bg-white/5 focus-visible:outline-2 focus-visible:outline-[var(--gold)]">
-            {t('showAllTime')}
+          <p className="text-sm text-[var(--text-secondary)]">{t(filterCount ? 'filters.empty' : 'emptyPeriod')}</p>
+          <button type="button" onClick={() => { if (filterCount) setFilterParams(NO_FILTERS); else setPeriod('all') }} className="rounded px-3 py-2 text-sm text-[var(--gold)] hover:bg-white/5 focus-visible:outline-2 focus-visible:outline-[var(--gold)]">
+            {t(filterCount ? 'filters.clear' : 'showAllTime')}
           </button>
         </div>
       )}
@@ -89,8 +115,8 @@ export default function MetaClient({ initialData }: { initialData: MetaData | nu
         <div role="tabpanel" aria-label={t('views.' + view.tab)} aria-busy={stale || undefined} className={`${styles.arrive}${stale ? " " + styles.stale : ""}`} style={order(2)}>
           {/* Redrawn per tab, so a tab switch rises too, without the first arrival's wait. */}
           <div key={view.tab} className={styles.arrive} data-meta-panel={view.tab}>
-            {view.tab === 'overall' && <MetaOverview data={data} onSelect={id => showTab('identity', id)} />}
-            {view.tab === 'identity' && <IdentityAnalysis data={data} selectedId={view.id} onSelect={id => setView({ id })} />}
+            {view.tab === 'overall' && <MetaOverview data={data} shows={shows} onSelect={id => showTab('identity', id)} />}
+            {view.tab === 'identity' && <IdentityAnalysis data={data} shows={shows} selectedId={view.id} onSelect={id => setView({ id })} />}
             {view.tab === 'dungeon' && <DungeonAnalysis data={data} />}
           </div>
         </div>

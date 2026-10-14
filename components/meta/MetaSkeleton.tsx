@@ -30,7 +30,10 @@ export default function MetaSkeleton() {
   return <SkeletonPage>
     <div className={styles.toolbar} data-meta-skeleton="toolbar">
       <div className={styles.boneTabs}>{META_SOURCES.map(key => <SkeletonLine key={key} w="3.5rem" h="0.9375rem" raised />)}</div>
-      <div className={styles.periods}>{META_PERIODS.map(key => <Skeleton key={key} className={styles.period} style={{ width: '4rem' }} raised />)}</div>
+      <div className={styles.toolbarEnd}>
+        <div className={styles.periods}>{META_PERIODS.map(key => <Skeleton key={key} className={styles.period} style={{ width: '4rem' }} raised />)}</div>
+        <div className={styles.filterTools}><Skeleton className={styles.filterToggle} style={{ width: '4.75rem' }} raised /></div>
+      </div>
     </div>
     <div className={styles.summaryBar} data-meta-skeleton="summary">
       <div className={styles.boneStats}>{[0, 1, 2].map(i => <div key={i}><SkeletonLine w="2.5rem" h="1.625rem" raised /><SkeletonLine w="2.5rem" h="0.6875rem" raised /></div>)}</div>

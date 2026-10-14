@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { aggregateDungeon, aggregateMeta, planGiftIds, planThemeIds } from '@/lib/meta/aggregate'
 import { readAllMetaRows } from '@/lib/meta/pagination'
-import { isBaseEgo, type MetaIdentity, type MetaPost } from '@/lib/meta/types'
+import { isBaseEgo, parseMetaFilters, type MetaFilters, type MetaIdentity, type MetaPost } from '@/lib/meta/types'
 
 const now = Date.parse('2026-09-10T12:00:00Z')
 const identity = (id: string, sinner_id: string): MetaIdentity => ({ id, sinner_id, name_kr: id, keywords: ['화상'], rarity: 3, folder_name: null, game_id: null })
@@ -230,6 +230,98 @@ it('REQ-META-004 counts each plan once per floor pack, gift, inventory entry and
     { floor: 11, plans: 1, cards: [{ key: '995011', count: 1 }, { key: '995012', count: 1 }] },
     { floor: 12, plans: 1, cards: [{ key: '995011', count: 1 }] },
   ])
+})
+
+describe('sample filters', () => {
+  const SINNERS = ['1', '2', '3', '4', '5']
+  const keyed = (prefix: string, keywords: string[], rarity = 3): MetaIdentity[] => SINNERS.map(sinner_id => ({ ...identity(prefix + sinner_id, sinner_id), keywords, skill_keyword_list: keywords, rarity }))
+  // Five deployed identities sharing a status keyword make a keyword deck.
+  const formation = (prefix: string) => SINNERS.map((sinner_id, slot_order) => ({ identity_id: prefix + sinner_id, slot_order }))
+  const sample = (id: string, prefix: string, extra: Partial<MetaPost>): MetaPost => ({ id, source: 'decks', created_at: new Date(now - 86_400_000).toISOString(), identities: formation(prefix), egos: [], ...extra })
+  const posts = [
+    sample('burn-railway', 'burn', { content_type: '거굴철' }),
+    sample('burn-dungeon', 'burn', { content_type: '거던15층' }),
+    sample('tremor-dungeon', 'tremor', { content_type: '거던15층' }),
+    sample('tremor-hard', 'tremor', { source: 'planner', difficulty: 'hard' }),
+    sample('burn-normal', 'burn', { source: 'planner', difficulty: 'normal' }),
+    sample('dual-dungeon', 'dual', { content_type: '거던15층' }),
+    // Sinners 1 to 3 only: too few for a keyword deck.
+    sample('trio-story', 'burn', { content_type: '스토리', identities: formation('burn').slice(0, 3) }),
+  ]
+  const catalog = [...keyed('burn', ['화상']), ...keyed('tremor', ['진동'], 2), ...keyed('dual', ['화상', '진동'])]
+  const filtered = (filters: MetaFilters = {}) => aggregateMeta({ posts, identities: catalog, egos: [], keywordSinMap: {}, source: 'all', period: 'all', now, filters })
+  const count = (filters: object) => filtered(filters as MetaFilters).sampleCount
+
+  it('REQ-META-009 counts only the formations every filter matches', () => {
+    expect(count({})).toBe(7)
+    const railway = filtered({ usage: ['refractionRailway'] })
+    expect(railway).toMatchObject({ sampleCount: 1, filters: { usage: ['refractionRailway'] }, sourceCounts: { decks: 1, planner: 0 } })
+    expect(railway.battleIdentityStats.map(row => row.identity_id)).toEqual(['burn1', 'burn2', 'burn3', 'burn4', 'burn5'])
+    // Several values of one filter keep a formation that has any of them.
+    expect(count({ usage: ['refractionRailway', 'story'] })).toBe(2)
+    // A difficulty is a plan's: decks never match one.
+    expect(filtered({ difficulty: ['hard'] })).toMatchObject({ sampleCount: 1, sourceCounts: { decks: 0, planner: 1 } })
+    expect(count({ difficulty: ['hard', 'normal'] })).toBe(2)
+    expect(count({ usage: ['mirrorDungeon'], keyword: ['화상'] })).toBe(3)
+    expect(count({ usage: ['refractionRailway'], keyword: ['진동'] })).toBe(0)
+  })
+
+  it('REQ-META-009 keeps the decks of every chosen keyword (a dual deck), or of any one on request', () => {
+    expect(count({ keyword: ['진동'] })).toBe(3)
+    expect(count({ keyword: ['화상', '진동'] })).toBe(1)
+    expect(count({ keyword: ['화상', '진동'], keywordMode: 'or' })).toBe(6)
+  })
+
+  it('REQ-META-009 keeps the formations that field an identity of the chosen sinners and rarity', () => {
+    // The trio fields sinners 1 to 3 only.
+    expect(count({ sinner: ['4'] })).toBe(6)
+    expect(count({ sinner: ['1', '4'] })).toBe(6)
+    expect(count({ sinner: ['1', '4'], sinnerMode: 'or' })).toBe(7)
+    expect(count({ rarity: ['2'] })).toBe(2)
+    expect(count({ rarity: ['2', '3'] })).toBe(7)
+    // Both at once: that sinner's identity of that rarity.
+    expect(count({ sinner: ['1'], rarity: ['2'] })).toBe(2)
+  })
+
+  it('REQ-META-009 counts each filter option over the formations the other filters keep', () => {
+    expect(filtered().facets).toEqual({
+      usage: { mirrorDungeon: 5, refractionRailway: 1, story: 1 },
+      keyword: { '화상': 4, '진동': 3 },
+      difficulty: { hard: 1, normal: 1 },
+    })
+    // The chosen filter does not narrow its own options, so another one can be picked.
+    expect(filtered({ usage: ['refractionRailway'] }).facets).toEqual({
+      usage: { mirrorDungeon: 5, refractionRailway: 1, story: 1 },
+      keyword: { '화상': 1 },
+      difficulty: {},
+    })
+    // A keyword's count is what choosing it too would keep: one dual deck has tremor beside burn.
+    expect(filtered({ keyword: ['화상'] }).facets).toEqual({
+      usage: { mirrorDungeon: 3, refractionRailway: 1 },
+      keyword: { '화상': 4, '진동': 1 },
+      difficulty: { normal: 1 },
+    })
+    expect(filtered({ keyword: ['화상', '진동'], keywordMode: 'or' }).facets.keyword).toEqual({ '화상': 4, '진동': 3 })
+    expect(filtered({ rarity: ['2'] }).facets).toEqual({ usage: { mirrorDungeon: 2 }, keyword: { '진동': 2 }, difficulty: { hard: 1 } })
+  })
+
+  it('REQ-META-010 reads known filter values in one order and flags the rest', () => {
+    const read = (params: Record<string, string>) => parseMetaFilters(key => params[key] ?? null)
+    expect(read({ usage: 'story,mirrorDungeon', keyword: '진동,화상', difficulty: 'hard', sinner: 'faust,yi-sang', rarity: '3' })).toEqual({
+      filters: { usage: ['mirrorDungeon', 'story'], keyword: ['화상', '진동'], difficulty: ['hard'], sinner: ['yi-sang', 'faust'], rarity: ['3'] }, invalid: false,
+    })
+    // The page hands over the lists it read from the address.
+    expect(parseMetaFilters(key => key === 'usage' ? ['story', 'story'] : null)).toEqual({ filters: { usage: ['story'] }, invalid: false })
+    expect(read({})).toEqual({ filters: {}, invalid: false })
+    expect(read({ usage: '' })).toEqual({ filters: {}, invalid: false })
+    // Any-of only means something from two values on.
+    expect(read({ keyword: '화상,진동', keywordMode: 'or' }).filters).toEqual({ keyword: ['화상', '진동'], keywordMode: 'or' })
+    expect(read({ keyword: '화상', keywordMode: 'or', sinnerMode: 'and' })).toEqual({ filters: { keyword: ['화상'] }, invalid: false })
+    expect(read({ usage: 'raid' })).toEqual({ filters: {}, invalid: true })
+    expect(read({ keyword: '참격' })).toEqual({ filters: {}, invalid: true })
+    expect(read({ usage: 'story,raid' })).toEqual({ filters: { usage: ['story'] }, invalid: true })
+    expect(read({ keywordMode: 'xor' })).toEqual({ filters: {}, invalid: true })
+  })
 })
 
 it('REQ-META-004 feeds only plans in scope into the Mirror Dungeon breakdown', () => {

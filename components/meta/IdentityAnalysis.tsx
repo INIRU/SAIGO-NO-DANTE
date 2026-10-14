@@ -62,7 +62,11 @@ function IdentityList({ rows, sampleCount, selectedId, onSelect, name }: { rows:
   </aside>
 }
 
-export default function IdentityAnalysis({ data, selectedId, onSelect }: { data: MetaData; selectedId: string; onSelect: (identityId: string) => void }) {
+export default function IdentityAnalysis({ data, selectedId, onSelect, shows = () => true }: {
+  data: MetaData; selectedId: string; onSelect: (identityId: string) => void
+  /** Which identities the list and the picker offer (the page's rarity and sinner filters). */
+  shows?: (row: IdentityStat) => boolean
+}) {
   const t = useTranslations('meta.analysis')
   const reduceMotion = useReducedMotion()
   const locale = useLocale() as SupportedLang
@@ -73,7 +77,9 @@ export default function IdentityAnalysis({ data, selectedId, onSelect }: { data:
   const [allCompanions, setAllCompanions] = useState(false)
   const [usageFilter, setUsageFilter] = useState<string | null>(null)
   const [comboFilter, setComboFilter] = useState<string | null>(null)
-  const identityId = data.battleIdentityStats.some(row => row.identity_id === selectedId) ? selectedId : data.battleIdentityStats[0]?.identity_id ?? ''
+  const listed = data.battleIdentityStats.filter(shows)
+  // An identity picked before the list was narrowed stays the subject; without a pick, the first one listed is.
+  const identityId = data.battleIdentityStats.some(row => row.identity_id === selectedId) ? selectedId : (listed[0] ?? data.battleIdentityStats[0])?.identity_id ?? ''
   const insight = data.identityInsights?.[identityId]
   const name = useMemo(() => (row: { name_kr: string; name_en?: string | null; name_jp?: string | null }) => (locale === 'en' ? row.name_en : locale === 'ja' ? row.name_jp : row.name_kr) || row.name_kr, [locale])
   const segments = useSegments()
@@ -110,7 +116,7 @@ export default function IdentityAnalysis({ data, selectedId, onSelect }: { data:
   const basis = t('basis', { count: insight?.count ?? 0 })
 
   return <div className={styles.identityLayout}>
-    <IdentityList rows={data.battleIdentityStats} sampleCount={data.sampleCount} selectedId={identityId} onSelect={selectIdentity} name={name} />
+    <IdentityList rows={listed} sampleCount={data.sampleCount} selectedId={identityId} onSelect={selectIdentity} name={name} />
     <section className={styles.analysis} data-identity-analysis>
     <div className={styles.subject} data-analysis-subject>
       {art && <Image key={art} src={art} alt="" fill sizes="(max-width: 639px) 100vw, 48rem" className={styles.subjectArt} />}
@@ -131,7 +137,7 @@ export default function IdentityAnalysis({ data, selectedId, onSelect }: { data:
       </div>
       <IdentityInterest id={identityId} />
     </div>
-    <IdentityPickerModal open={pickerOpen} onClose={() => setPickerOpen(false)} rows={data.battleIdentityStats} sampleCount={data.sampleCount} selectedId={identityId} name={name} onSelect={id => { selectIdentity(id); setPickerOpen(false) }} />
+    <IdentityPickerModal open={pickerOpen} onClose={() => setPickerOpen(false)} rows={listed} sampleCount={data.sampleCount} selectedId={identityId} name={name} onSelect={id => { selectIdentity(id); setPickerOpen(false) }} />
     {!insight ? <p className={styles.empty}>{t('empty')}</p> : <m.div key={identityId} className={styles.analysis} initial={reduceMotion ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={smoothTransition}>
       <div className={styles.usageRow}>
         <section className={styles.panel} aria-labelledby="order-heading">

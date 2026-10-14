@@ -27,13 +27,13 @@
     },
     "other": {
       "title": "기타",
-      "meta": "분석",
       "random": "랜덤 편성",
       "developers": "개발자 도구",
       "calendar": "소식 캘린더"
     },
     "tools": {
       "title": "도구",
+      "meta": "분석",
       "experience": "경험치 계산기",
       "lunacy": "월간 광기 계산기",
       "damage": "피해량 계산기"
@@ -1974,6 +1974,16 @@
     },
     "emptyPeriod": "선택한 기간에 집계할 편성이 없습니다.",
     "showAllTime": "전체 기간 보기",
+    "filters": {
+      "button": "필터",
+      "clear": "지우기",
+      "difficulty": "난이도",
+      "rarity": "등급",
+      "sinner": "수감자",
+      "matchMode": "AND/OR 조건 전환",
+      "rarityValue": "{count}성",
+      "empty": "조건에 맞는 편성이 없습니다."
+    },
     "periodLabel": "집계 기간",
     "period": {
       "7": "최근 7일",

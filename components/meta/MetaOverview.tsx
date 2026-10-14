@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
-import type { MetaData } from '@/lib/meta/types'
+import type { IdentityStat, MetaData } from '@/lib/meta/types'
 import type { SupportedLang } from '@/lib/i18n/types'
 import styles from '@/styles/components/MetaAnalysis.module.css'
 import DonutChart, { useSegments } from './DonutChart'
@@ -10,7 +10,11 @@ import { EgoLeaders, PairLeaders, Portrait, SinnerLeaders } from './MetaSections
 import SkillExchangeInsight from './SkillExchangeInsight'
 
 /** The whole scope at a glance; every identity opens the identity tab. */
-export default function MetaOverview({ data, onSelect }: { data: MetaData; onSelect: (identityId: string) => void }) {
+export default function MetaOverview({ data, onSelect, shows = () => true }: {
+  data: MetaData; onSelect: (identityId: string) => void
+  /** Which identities the ranking lists (the page's rarity and sinner filters). */
+  shows?: (row: IdentityStat) => boolean
+}) {
   const t = useTranslations('meta.analysis')
   const rootT = useTranslations()
   const locale = useLocale() as SupportedLang
@@ -20,7 +24,7 @@ export default function MetaOverview({ data, onSelect }: { data: MetaData; onSel
   const [bench, setBench] = useState(false)
   const name = (row: { name_kr: string; name_en?: string | null; name_jp?: string | null }) => (locale === 'en' ? row.name_en : locale === 'ja' ? row.name_jp : row.name_kr) || row.name_kr
   const fielded = new Set(data.battleIdentityStats.map(row => row.identity_id))
-  const rankingRows = (bench ? data.supportIdentityStats : data.battleIdentityStats).slice(0, 6)
+  const rankingRows = (bench ? data.supportIdentityStats : data.battleIdentityStats).filter(shows).slice(0, 6)
   const slots = (data.skillSplits ?? []).reduce((sum, row) => sum + row.count, 0)
 
   return <div className={styles.analysis} data-meta-overview-tab>
