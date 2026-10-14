@@ -142,7 +142,8 @@ it('counts a keyword deck only from five deployed identities and keeps combos se
   expect(data.usageStats).toEqual([{ key: 'mirrorDungeon', count: 2 }, { key: 'story', count: 1 }])
   const k0 = data.identityInsights.k0
   expect(k0.count).toBe(2)
-  expect(k0.posts.map(p => [p.id, p.support ?? false])).toEqual([['both', false], ['reserve', false], ['burn', true]])
+  // Equally received posts of one day are listed by id, bench posts among the rest (REQ-META-012).
+  expect(k0.posts.map(p => [p.id, p.support ?? false])).toEqual([['both', false], ['burn', true], ['reserve', false]])
   expect(data.battleIdentityStats.find(row => row.identity_id === 'k0')).not.toHaveProperty('skill_keyword_list')
 })
 it('recognizes only the twelve base EGOs, without excluding other ZAYIN equipment', () => {
@@ -338,6 +339,47 @@ describe('sample filters', () => {
     expect(read({ keyword: '참격' })).toEqual({ filters: {}, invalid: true })
     expect(read({ usage: 'story,raid' })).toEqual({ filters: { usage: ['story'] }, invalid: true })
     expect(read({ keywordMode: 'xor' })).toEqual({ filters: {}, invalid: true })
+  })
+})
+
+describe('popular posts', () => {
+  const rated = (id: string, source: MetaPost['source'], votes: number, views: number, age = 1): MetaPost => ({ ...post(id, source, age), votes, views })
+
+  it('REQ-META-012 carries votes, views and comments and lists an identity\'s posts most recommended first, then most viewed, newest and by id', () => {
+    const posts = aggregate([
+      rated('z-old', 'decks', 1, 5, 9),
+      rated('viewed', 'decks', 1, 9, 9),
+      rated('b-new', 'planner', 1, 5, 2),
+      rated('a-new', 'decks', 1, 5, 2),
+      { ...rated('top', 'planner', 7, 0), comments: 3 },
+      post('unrated'),
+      { ...rated('bench', 'decks', 5, 0), identities: [{ identity_id: 'b', slot_order: 0 }, { identity_id: 'a', slot_order: 99 }] },
+    ]).identityInsights.a.posts
+    expect(posts.map(row => row.id)).toEqual(['top', 'bench', 'viewed', 'a-new', 'b-new', 'z-old', 'unrated'])
+    expect(posts[0]).toMatchObject({ votes: 7, views: 0, comments: 3 })
+    expect(posts[1]).toMatchObject({ support: true, votes: 5 })
+    expect(posts.at(-1)).toMatchObject({ votes: 0, views: 0, comments: 0 })
+  })
+
+  it('REQ-META-013 returns the six most popular decks and plans that the source, period and filters keep', () => {
+    const posts = [
+      ...Array.from({ length: 8 }, (_, i) => rated('d' + i, 'decks', i, 0)),
+      ...Array.from({ length: 3 }, (_, i) => rated('p' + i, 'planner', 0, i)),
+      { ...rated('story', 'decks', 50, 4), content_type: '스토리', comments: 2 },
+      // Outside the period, and without a formation: neither is a sample.
+      rated('old', 'decks', 99, 0, 60),
+      { ...rated('empty', 'planner', 99, 0), identities: [] },
+    ]
+    const top = aggregate(posts).topPosts
+    expect(top.decks.map(row => row.id)).toEqual(['story', 'd7', 'd6', 'd5', 'd4', 'd3'])
+    expect(top.planner.map(row => row.id)).toEqual(['p2', 'p1', 'p0'])
+    // A row carries what it shows and nothing else.
+    expect(top.decks[0]).toEqual({ id: 'story', source: 'decks', title: 'story', usage: 'story', combo: [], votes: 50, views: 4, comments: 2 })
+    expect(aggregate(posts, 'planner').topPosts).toMatchObject({ decks: [], planner: [{ id: 'p2' }, { id: 'p1' }, { id: 'p0' }] })
+    const stories = aggregateMeta({ posts, identities, egos: [], keywordSinMap: {}, source: 'all', period: '30', now, filters: { usage: ['story'] } }).topPosts
+    expect(stories).toMatchObject({ decks: [{ id: 'story' }], planner: [] })
+    expect(stories.decks).toHaveLength(1)
+    expect(aggregate([]).topPosts).toEqual({ decks: [], planner: [] })
   })
 })
 

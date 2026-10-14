@@ -2079,6 +2079,10 @@
         "decks": "デッキ",
         "planner": "プラン"
       },
+      "popular": {
+        "decks": "人気デッキ",
+        "planner": "人気プラン"
+      },
       "interest": {
         "title": "閲覧",
         "week": "7日",

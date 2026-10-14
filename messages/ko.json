@@ -2079,6 +2079,10 @@
         "decks": "덱",
         "planner": "플랜"
       },
+      "popular": {
+        "decks": "인기 덱",
+        "planner": "인기 플랜"
+      },
       "interest": {
         "title": "조회",
         "week": "7일",

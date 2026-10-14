@@ -6,7 +6,7 @@ import type { IdentityStat, MetaData } from '@/lib/meta/types'
 import type { SupportedLang } from '@/lib/i18n/types'
 import styles from '@/styles/components/MetaAnalysis.module.css'
 import DonutChart, { useSegments } from './DonutChart'
-import { EgoLeaders, PairLeaders, Portrait, SinnerLeaders } from './MetaSections'
+import { EgoLeaders, PairLeaders, PopularPosts, Portrait, SinnerLeaders } from './MetaSections'
 import SkillExchangeInsight from './SkillExchangeInsight'
 
 /** The whole scope at a glance; every identity opens the identity tab. */
@@ -60,6 +60,7 @@ export default function MetaOverview({ data, onSelect, shows = () => true }: {
       <SinnerLeaders data={data} onSelect={onSelect} />
       <div className={styles.pairRow}><EgoLeaders data={data} /><PairLeaders data={data} onSelect={onSelect} /></div>
       <SkillExchangeInsight splits={data.skillSplits ?? []} basis={t('skillsOverallBasis', { count: slots })} title={t('skillsOverall')} />
+      <PopularPosts data={data} />
     </>}
   </div>
 }

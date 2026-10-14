@@ -76,6 +76,8 @@ export interface MetaData {
   skillSplits: CountStat[]
   /** Floor-by-floor choices of the plans in scope. */
   dungeon: MetaDungeon
+  /** The most popular samples of each board, at most six. */
+  topPosts: Record<Exclude<MetaSource, 'all'>, MetaInsightPost[]>
 }
 
 /** Keys are theme pack ids, gift game ids and constraint card ids; every count is a number of plans. */
@@ -165,6 +167,9 @@ export type MetaPost = {
   title?: string
   keywords?: string[] | null
   content_type?: string | null
+  votes?: number | null
+  views?: number | null
+  comments?: number | null
   difficulty?: string | null
   /** Gift game ids in the plan's final inventory (start and observation gifts included). */
   gifts?: string[]
@@ -184,6 +189,9 @@ export type MetaInsightPost = {
   usage: MetaUsage
   /** Keyword deck combo, sorted; empty when mixed. */
   combo: string[]
+  votes: number
+  views: number
+  comments: number
   /** The identity sat on the bench (no formation order) in this post. */
   support?: true
 }
@@ -194,7 +202,7 @@ export interface IdentityInsight {
   count: number
   orders: Record<string, number>
   egos: EGOStat[]
-  /** Formation posts first, then bench-only posts marked support. */
+  /** Most popular first; bench-only posts are marked support. */
   posts: MetaInsightPost[]
   /** Plans that field this identity. Absent when none do. */
   plan?: MetaPlanSummary
