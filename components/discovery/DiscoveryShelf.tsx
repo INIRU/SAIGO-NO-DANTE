@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import useSWR from "swr";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Link } from "@/lib/i18n/navigation";
 import { ArrowUpRight, ChevronDown, ChevronUp, History, Layers3 } from "lucide-react";
 import BoardSkeleton from "./BoardSkeleton";
@@ -21,7 +21,6 @@ type Data = {
   updated: Post[];
   popular: Post[];
   identities: Identity[];
-  counts: { kind: string; entity_id: string; visitors: number }[];
 };
 export default function DiscoveryShelf({
   kind,
@@ -30,6 +29,7 @@ export default function DiscoveryShelf({
   kind: "deck" | "planner";
   onBrowse: () => void;
 }) {
+  const t = useTranslations("discoveryShelf");
   const lang = useLocale(),
     label = (k: string, j: string, e: string) =>
       lang === "ko" ? k : lang === "ja" ? j : e;
@@ -53,11 +53,8 @@ export default function DiscoveryShelf({
       if (!r.ok) throw Error();
       return r.json();
     },
-  );
-  const counts = new Map(
-    data?.counts
-      .filter((r) => r.kind === kind)
-      .map((r) => [r.entity_id, r.visitors]),
+    // A period tab changes the key: the shelves stay as they are until the new period arrives.
+    { keepPreviousData: true },
   );
   const noun =
     kind === "deck"
@@ -71,37 +68,41 @@ export default function DiscoveryShelf({
     .slice(0, 8);
   const hasHistory = recentItems.length > 0 || history.queries.length > 0;
   const base = kind === "deck" ? "/decks" : "/planner/community";
+  const plural = kind === "deck" ? "Decks" : "Plans";
+  // The popular shelf keeps its head (and the period tabs in it) on any board with posts, even when this period has none.
   const sections = data
     ? (
       [
-              [
-                "recent",
-                label(`새로 올라온 ${noun}`, `新着${noun}`, `New ${noun}`),
-                data.recent,
-              ],
-              [
-                "updated",
-                label(
-                  `최근 수정된 ${noun}`,
-                  `最近更新された${noun}`,
-                  `Recently updated ${noun}`,
-                ),
-                data.updated,
-              ],
-              [
-                "popular",
-                label(
-                  `관리자분들이 자주 찾는 ${noun}`,
-                  `よく読まれている${noun}`,
-                  `Frequently visited ${noun}`,
-                ),
-                [...data.popular].sort(
-                  (a, b) => (counts.get(b.id) ?? 0) - (counts.get(a.id) ?? 0),
-                ),
-              ],
-            ] as const
-    ).filter(([, , posts]) => posts.length > 0)
+        ["recent", t(`recent${plural}`), data.recent],
+        ["updated", t(`updated${plural}`), data.updated],
+        // Ranked by the server (rankPopular).
+        ["popular", t(`popular${plural}`), data.popular],
+      ] as const
+    ).filter(([key, , posts]) => posts.length > 0 || (key === "popular" && hasPosts))
     : [];
+  // The tabs change only the two "frequently visited" shelves, so they sit in the head of the first one.
+  const periodTabs = (
+    <div
+      role="group"
+      data-period-tabs
+      className="order-last flex w-full gap-1 md:order-none md:w-auto"
+    >
+      {[7, 30, 0].map((d) => (
+        <button
+          key={d}
+          aria-pressed={d === days}
+          onClick={() => setDays(d)}
+          className={`min-h-10 rounded-full px-4 text-sm transition-colors ${d === days ? "bg-[var(--gold)]/10 text-[var(--gold)]" : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"}`}
+        >
+          {d === 7
+            ? label("주간", "週間", "Weekly")
+            : d === 30
+              ? label("월간", "月間", "Monthly")
+              : label("전체 기간", "全期間", "All time")}
+        </button>
+      ))}
+    </div>
+  );
   return (
     <div
       className="px-4 pb-16 font-[family-name:var(--font-paperlogy)] md:px-6"
@@ -109,26 +110,6 @@ export default function DiscoveryShelf({
     >
       <div className="mx-auto max-w-7xl space-y-9">
         <div className="flex flex-wrap items-center justify-between gap-3 py-1">
-          <div className="flex gap-1">
-            {hasPosts && (
-              <>
-                {[7, 30, 0].map((d) => (
-                  <button
-                    key={d}
-                    aria-pressed={d === days}
-                    onClick={() => setDays(d)}
-                    className={`min-h-10 rounded-full px-4 text-sm transition-colors ${d === days ? "bg-[var(--gold)]/10 text-[var(--gold)]" : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"}`}
-                  >
-                    {d === 7
-                      ? label("주간", "週間", "Weekly")
-                      : d === 30
-                        ? label("월간", "月間", "Monthly")
-                        : label("전체 기간", "全期間", "All time")}
-                  </button>
-                ))}
-              </>
-            )}
-          </div>
           <button
             onClick={onBrowse}
             className="ml-auto flex min-h-12 items-center gap-1.5 px-1 text-[1rem] font-semibold text-[var(--gold-light)] transition-colors hover:text-[var(--text-primary)]"
@@ -167,11 +148,13 @@ export default function DiscoveryShelf({
             if (shelf === "forYou") return <ForYou key={shelf} kind={kind} personal={history.enabled} />;
             const [key, title, posts] = sections.find(([name]) => name === shelf)!;
             const isExpanded = expanded.has(key);
-            return <section key={key}>
-                <div className="mb-4 flex items-center justify-between">
-                  <h2 className="font-[family-name:var(--font-paperlogy)] text-lg font-bold tracking-[-0.02em] leading-snug text-[var(--gold)]">
+            return <section key={key} data-shelf={key}>
+                <div className={`mb-4 flex items-center ${key === "popular" ? "flex-wrap md:gap-x-3" : "justify-between"}`}>
+                  {/* Phones: the title shares its line with the button and the tabs take the next line. */}
+                  <h2 className={`font-[family-name:var(--font-paperlogy)] text-lg font-bold tracking-[-0.02em] leading-snug text-[var(--gold)] ${key === "popular" ? "min-w-0 flex-1 md:flex-none" : ""}`}>
                     {title}
                   </h2>
+                  {key === "popular" && periodTabs}
                   <button
                     onClick={() => {
                       if (posts.length <= 3) return onBrowse();
@@ -183,7 +166,7 @@ export default function DiscoveryShelf({
                       });
                     }}
                     aria-expanded={posts.length > 3 ? isExpanded : undefined}
-                    className="flex min-h-12 shrink-0 items-center gap-1 px-1 text-[1rem] font-semibold text-[var(--gold-light)] transition-colors hover:text-[var(--text-primary)]"
+                    className="ml-auto flex min-h-12 shrink-0 items-center gap-1 px-1 text-[1rem] font-semibold text-[var(--gold-light)] transition-colors hover:text-[var(--text-primary)]"
                   >
                     {posts.length > 3
                       ? isExpanded
@@ -251,13 +234,9 @@ export default function DiscoveryShelf({
             </section>
           )}
         {!!data?.identities.length && (
-          <section>
+          <section data-shelf="identities">
             <h2 className="mb-4 font-[family-name:var(--font-paperlogy)] text-lg font-bold tracking-[-0.02em] leading-snug text-[var(--gold)]">
-              {label(
-                "관리자분들이 자주 찾는 인격",
-                "管理人たちがよく探す人格",
-                "Identities managers frequently view",
-              )}
+              {t("popularIdentities")}
             </h2>
             <div className="grid grid-cols-3 items-start gap-4 py-2 max-[22rem]:grid-cols-2 sm:grid-cols-4 sm:gap-6 sm:px-4 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-9">
               {data.identities.map((i, index) => (

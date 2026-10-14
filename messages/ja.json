@@ -1628,6 +1628,15 @@
     "ownedDecks": "所持人格で組めるデッキだけ見る",
     "ownedPlans": "所持人格で組めるプランだけ見る"
   },
+  "discoveryShelf": {
+    "recentDecks": "新着デッキ",
+    "recentPlans": "新着プラン",
+    "updatedDecks": "最近更新されたデッキ",
+    "updatedPlans": "最近更新されたプラン",
+    "popularDecks": "よく読まれているデッキ",
+    "popularPlans": "よく読まれているプラン",
+    "popularIdentities": "よく見られている人格"
+  },
   "ownedBadge": {
     "owned": "所持",
     "missing": "{count}人格不足"

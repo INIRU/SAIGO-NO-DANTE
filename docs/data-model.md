@@ -138,6 +138,8 @@
 
 발견 목록의 ‘최근 수정’은 `updated_at` 대신 `deck_update`·`planner_update` 감사 기록으로 정한다. 최초 업로드와 조회·추천 집계는 편집으로 취급하지 않으며, 기존 게시물 중 편집 기록이 확인된 것만 표시한다. `discovery_recent_edits`는 서비스 전용이며 공개 API에는 게시물만 전달한다.
 
+발견 목록의 ‘자주 찾는’ 덱·플랜은 `discovery_counts`가 준 종류별 상위 12개 가운데 실제로 있는 글을 방문자 수 → 추천 수 → 최신 → id 순으로 정렬해 6개를 싣고, 같은 작성자(`user_id`, 익명은 `guest_tag`)의 글은 2개까지만 싣는다(`lib/discovery/shelf.ts`의 `rankPopular`). 게시판 선반과 홈 선반은 서버가 내려 준 순서를 그대로 쓴다.
+
 ## 공지와 문의
 
 공지·문의 개편: `announcements`에 `lang`, `published`, `content_doc`을 추가했다. 기존 공지의 게시 상태는 보존하며 새 공지는 API에서 기본 초안으로 저장한다. 공개 조회는 요청 언어와 `published=true`를 모두 제한하고 변경 시 공지 캐시 태그를 만료시킨다.
