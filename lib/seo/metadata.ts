@@ -6,6 +6,8 @@ import type { SupportedLang } from '@/lib/i18n/types'
 export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://saigo-no-dante.com'
 /** Korean players are the primary audience: x-default, crawler redirects and the sitemap use /ko. */
 export const PRIMARY_LOCALE = 'ko'
+/** The AdSense publisher of public/ads.txt; the account meta tag lets AdSense confirm the site without the ads.txt crawl. */
+export const ADSENSE_ACCOUNT = 'ca-pub-4615018820773123'
 export const SITE_NAME: Record<SupportedLang, string> = { ko: '최애의 관리자', en: 'SAIGO NO DANTE', ja: 'SAIGO NO DANTE' }
 export const OG_LOCALE: Record<SupportedLang, string> = { ko: 'ko_KR', en: 'en_US', ja: 'ja_JP' }
 
