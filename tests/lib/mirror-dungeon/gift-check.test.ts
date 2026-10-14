@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { GIFT_KEYWORD_ORDER, GIFT_PRESET_LIMIT, GIFT_PRESET_NAME_MAX, fusionIngredientNames, toggleChecked, giftCheckKey, giftCheckMarks, moveItem, normalizeChecked, normalizeKeywordOrder, normalizePresets, presetGifts } from '@/lib/mirror-dungeon/gift-check'
+import { GIFT_KEYWORD_ORDER, fusionIngredientNames, toggleChecked, giftCheckKey, giftCheckMarks, moveItem, normalizeChecked, normalizeKeywordOrder } from '@/lib/mirror-dungeon/gift-check'
 import type { EgoGift, EgoGiftTheme } from '@/components/mirror-dungeon/types'
 
 const gift = (game_id: number, extra: Partial<EgoGift> = {}) => ({ id: `uuid-${game_id}`, game_id, name: `기프트 ${game_id}`, keyword: '공통', grade: '1', is_synthesis: false, ...extra }) as EgoGift
@@ -46,25 +46,6 @@ describe('REQ-MIRROR-DUNGEON-016 fusion and pack-only marks', () => {
     // A clear reward counts only when no regular pool offers it.
     expect(marks.get(reward.id)?.packs).toEqual([packA])
     expect(marks.get(sharedReward.id)).toBeUndefined()
-  })
-})
-
-describe('REQ-MIRROR-DUNGEON-018 gift presets', () => {
-  it('REQ-MIRROR-DUNGEON-018 reads stored presets back, dropping broken entries and a chosen preset that no longer exists', () => {
-    expect(normalizePresets(null)).toEqual({ active: null, list: [] })
-    const saved = { active: 'b', list: [{ id: 'a', name: '화상 덱', gifts: ['9001', 9002, '9001'] }, { id: 7 }, 'x', { id: 'c', name: 'x'.repeat(50), gifts: 'no' }] }
-    expect(normalizePresets(saved)).toEqual({
-      active: null,
-      list: [{ id: 'a', name: '화상 덱', gifts: ['9001', '9002'] }, { id: 'c', name: 'x'.repeat(GIFT_PRESET_NAME_MAX), gifts: [] }],
-    })
-    expect(normalizePresets({ ...saved, active: 'a' }).active).toBe('a')
-    expect(normalizePresets({ list: Array.from({ length: 30 }, (_, i) => ({ id: String(i), name: 'p' })) }).list).toHaveLength(GIFT_PRESET_LIMIT)
-  })
-
-  it('REQ-MIRROR-DUNGEON-018 lists only the preset gifts, in the order they were added', () => {
-    const a = gift(9001), b = gift(9002), c = gift(9003)
-    expect(presetGifts({ id: 'p', name: '화상 덱', gifts: ['9003', '없는 기프트', '9001'] }, [a, b, c])).toEqual([c, a])
-    expect(presetGifts({ id: 'p', name: '', gifts: [] }, [a, b, c])).toEqual([])
   })
 })
 

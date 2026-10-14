@@ -30,7 +30,11 @@ export default function MirrorDungeonSkeleton() {
         {['4rem', '5rem', '4rem'].map((w, i) => <Skeleton key={i} line className="hidden h-9 sm:block" style={{ width: w }} />)}
         <SkeletonLine w="2.5rem" h="0.8125rem" className="shrink-0 sm:ml-auto" />
         <SkeletonLine w="4rem" h="0.8125rem" className="hidden sm:block" />
-        <Skeleton line className="h-9 w-9 shrink-0 sm:w-[6.5rem]" />
+        {/* 프리셋, 체크 모드 */}
+        <div className="flex shrink-0 gap-1.5">
+          <Skeleton line className="h-9 w-[2.375rem] sm:w-[5rem]" />
+          <Skeleton line className="h-9 w-[2.375rem] sm:w-[6rem]" />
+        </div>
       </div>
     </div>
     <div className="mt-4">
