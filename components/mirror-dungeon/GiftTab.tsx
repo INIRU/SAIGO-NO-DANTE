@@ -1,10 +1,12 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 import { useLocale, useTranslations } from 'next-intl'
-import { ListChecks, Pencil, RotateCcw, Settings, X } from 'lucide-react'
+import { Bookmark, ListChecks, PictureInPicture2, RotateCcw, Settings, X } from 'lucide-react'
 import GiftCatalog, { FilterChip, type GiftCatalogCardProps, type GiftCatalogFilters } from '@/components/gifts/GiftCatalog'
 import GiftPresetModal from '@/components/mirror-dungeon/GiftPresetModal'
+import GiftCheckWindow from '@/components/mirror-dungeon/GiftCheckWindow'
 import { GiftWarningMark } from '@/components/ui/GiftCard'
 import QuietImage from '@/components/ui/QuietImage'
 import ConfirmModal from '@/components/ui/ConfirmModal'
@@ -15,10 +17,13 @@ import { getLocalizedName } from '@/lib/i18n/localize'
 import { translations } from '@/lib/i18n/translations'
 import type { SupportedLang } from '@/lib/i18n/types'
 import {
-  GIFT_CHECK_STORAGE, GIFT_KEYWORD_ORDER_STORAGE, GIFT_PRESET_LIMIT, GIFT_PRESET_STORAGE, fusionIngredientNames, giftCheckKey, giftCheckMarks,
-  normalizeChecked, normalizeKeywordOrder, normalizePresets, presetGifts, toggleChecked, type GiftPreset,
+  GIFT_CHECK_STORAGE, GIFT_KEYWORD_ORDER_STORAGE, fusionIngredientNames, giftCheckKey, giftCheckMarks, normalizeChecked, normalizeKeywordOrder, toggleChecked,
 } from '@/lib/mirror-dungeon/gift-check'
-import { showSuccess } from '@/lib/toast'
+import { createPreset, presetSections } from '@/lib/mirror-dungeon/gift-presets'
+import { useGiftPresets } from '@/hooks/useGiftPresets'
+import { useStored } from '@/hooks/useStored'
+import { useCompanionWindow } from '@/lib/hooks/useCompanionWindow'
+import { showError, showSuccess } from '@/lib/toast'
 
 interface GiftTabProps extends GiftCatalogFilters {
   gifts: EgoGift[]
@@ -28,19 +33,6 @@ interface GiftTabProps extends GiftCatalogFilters {
   onSelectGift: (gift: EgoGift) => void
   checkMode: boolean
   onCheckModeChange: (on: boolean) => void
-}
-
-/** A JSON value kept in localStorage. It is read after mount, so the prerendered list hydrates unchanged. */
-function useStored<T>(key: string, parse: (saved: unknown) => T): [T, (next: T) => void] {
-  const [value, setValue] = useState(() => parse(null))
-  useEffect(() => {
-    try { setValue(parse(JSON.parse(localStorage.getItem(key) ?? 'null'))) } catch { /* unreadable: keep the default */ }
-  }, [key, parse])
-  const save = useCallback((next: T) => {
-    setValue(next)
-    try { localStorage.setItem(key, JSON.stringify(next)) } catch { /* private mode: kept for this page only */ }
-  }, [key])
-  return [value, save]
 }
 
 const localized = (item: { name: string; name_en?: string | null; name_jp?: string | null }, lang: SupportedLang) =>
@@ -64,8 +56,7 @@ function PackMark({ packs, label }: { packs: EgoGiftTheme[]; label: string }) {
   )
 }
 
-const NEW_PRESET = '__new'
-const TOOL ='flex h-9 shrink-0 items-center justify-center gap-1.5 rounded border border-[#2e2417] text-[0.8125rem] text-[#9c8b73] transition-colors hover:text-[var(--text-primary)] disabled:pointer-events-none disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold-light)] focus-visible:ring-offset-1 focus-visible:ring-offset-[#0d0b08]'
+const TOOL = 'flex h-9 shrink-0 items-center justify-center gap-1.5 rounded border border-[#2e2417] text-[0.8125rem] text-[#9c8b73] transition-colors hover:text-[var(--text-primary)] disabled:pointer-events-none disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold-light)] focus-visible:ring-offset-1 focus-visible:ring-offset-[#0d0b08]'
 
 /** Mirror Dungeon gift list. A click opens the gift detail; in check mode it records the gift as obtained. */
 export default function GiftTab({ gifts, themes, recipes, getGiftKeywordIcon, onSelectGift, checkMode, onCheckModeChange, ...filters }: GiftTabProps) {
@@ -73,26 +64,44 @@ export default function GiftTab({ gifts, themes, recipes, getGiftKeywordIcon, on
   const lang = useLocale() as SupportedLang
   const [order, saveOrder] = useStored(GIFT_KEYWORD_ORDER_STORAGE, normalizeKeywordOrder)
   const [checked, saveChecked] = useStored(GIFT_CHECK_STORAGE, normalizeChecked)
-  const [presets, savePresets] = useStored(GIFT_PRESET_STORAGE, normalizePresets)
+  const [presets, savePresets] = useGiftPresets({ loadFailed: t('presetLoadFailed'), saveFailed: t('presetSaveFailed') })
   const [orderOpen, setOrderOpen] = useState(false)
   const [resetOpen, setResetOpen] = useState(false)
-  const [presetOpen, setPresetOpen] = useState(false)
-  const [deleteOpen, setDeleteOpen] = useState(false)
+  // null until the editor is first opened: it is not mounted before that.
+  const [presetOpen, setPresetOpen] = useState<boolean | null>(null)
 
   const checkedIds = useMemo(() => {
     const keys = new Set(checked)
     return new Set(gifts.filter(gift => keys.has(giftCheckKey(gift))).map(gift => gift.id))
   }, [checked, gifts])
 
-  // With a preset chosen, check mode lists that preset's gifts alone: by keyword, each keyword in the order they were added.
+  // With a preset chosen, check mode lists that preset's gifts alone: group by group, each in the order its gifts were
+  // placed, the memo under the group's name. A preset without gifts filters nothing.
   const preset = presets.list.find(item => item.id === presets.active) ?? null
-  const presetList = useMemo(() => checkMode && preset ? presetGifts(preset, gifts) : null, [checkMode, preset, gifts])
-  const presetName = preset ? preset.name.trim() || t('preset') : ''
-  const savePreset = (next: GiftPreset) => savePresets({ ...presets, list: presets.list.map(item => item.id === next.id ? next : item) })
-  const choosePreset = (id: string | null) => {
-    if (id !== NEW_PRESET) return savePresets({ ...presets, active: id })
-    const created = { id: Date.now().toString(36), name: t('presetNumbered', { number: presets.list.length + 1 }), gifts: [] }
-    savePresets({ active: created.id, list: [...presets.list, created] })
+  const view = useMemo(() => {
+    if (!checkMode || !preset) return null
+    const sections = presetSections(preset, gifts)
+      .map((section, index) => ({ ...section, label: section.name.trim() || t('presetGroupNumbered', { number: index + 1 }) }))
+      .filter(section => section.gifts.length > 0)
+    if (!sections.length) return null
+    const shown = sections.map(section => ({ label: section.label, note: section.memo.trim() || undefined, gifts: section.gifts }))
+    return {
+      gifts: shown.flatMap(section => section.gifts),
+      sections: shown,
+      pinned: shown.map(section => ({ ids: new Set(section.gifts.map(gift => gift.id)), label: section.label, note: section.note })),
+    }
+  }, [checkMode, preset, gifts, t])
+  // The chosen preset in a window that stays above the game (the assist companion's window). It closes when check mode
+  // ends or no preset is chosen. it shares the companion's stored size; give it its own key if they diverge.
+  const { container: pip, open: openPip, close: closePip } = useCompanionWindow()
+  const [pipSupported, setPipSupported] = useState(true)
+  useEffect(() => { setPipSupported('documentPictureInPicture' in window) }, [])
+  const hasView = view !== null
+  useEffect(() => { if (!hasView) closePip() }, [hasView]) // eslint-disable-line react-hooks/exhaustive-deps
+  // The editor always has a preset to show: the first press makes one, without choosing it for check mode.
+  const openPresets = () => {
+    const made = presets.list.length ? null : createPreset(presets, t('presetNumbered', { number: 1 }))
+    if (made) savePresets({ ...made, active: presets.active })
     setPresetOpen(true)
   }
 
@@ -120,20 +129,30 @@ export default function GiftTab({ gifts, themes, recipes, getGiftKeywordIcon, on
     saveChecked(toggleChecked(checked, giftCheckKey(gift), gifts.filter(other => parts.includes(other.name)).map(giftCheckKey)))
   }
 
+  const presetButton = (
+    <button type="button" title={t('preset')} onClick={openPresets} className={`${TOOL} min-w-9 px-2.5`} style={{ fontFamily: 'var(--font-heading)' }}>
+      <Bookmark size={15} aria-hidden /><span className={checkMode ? 'sr-only' : 'max-sm:sr-only'}>{t('preset')}</span>
+    </button>
+  )
   const tools = checkMode ? (
     <>
       <div className="flex items-center gap-1.5">
-        <FilterChip label={t('preset')} clearLabel={t('presetClear')} value={preset?.id ?? null} onChange={choosePreset} minWidth={160}
-          options={[...presets.list.map(item => ({ value: item.id, label: item.name.trim() || t('preset') })), ...(presets.list.length < GIFT_PRESET_LIMIT ? [{ value: NEW_PRESET, label: t('presetNew') }] : [])]} />
-        {preset && (
-          <button type="button" aria-label={t('presetEdit')} title={t('presetEdit')} onClick={() => setPresetOpen(true)} className={`${TOOL} w-9`}>
-            <Pencil size={14} aria-hidden />
+        {presets.list.length > 0 && (
+          <FilterChip label={t('preset')} clearLabel={t('presetClear')} value={preset?.id ?? null} onChange={id => savePresets({ ...presets, active: id })} minWidth={160}
+            options={presets.list.map(item => ({ value: item.id, label: item.name.trim() || t('preset') }))} />
+        )}
+        {presetButton}
+        {view && (
+          <button type="button" aria-pressed={!!pip} aria-label={t('checkPip')} title={t(pipSupported ? 'checkPip' : 'checkPipUnsupported')} disabled={!pipSupported}
+            onClick={() => { if (pip) closePip(); else void openPip().catch(() => showError(t('checkPipFailed'))) }}
+            className={`${TOOL} w-9 max-sm:hidden ${pip ? 'border-[var(--gold)]! text-[var(--gold-light)]!' : ''}`}>
+            <PictureInPicture2 size={15} aria-hidden />
           </button>
         )}
       </div>
       <p className="text-[0.8125rem] text-[#9c8b73]">
         {t('checked')} <span className="tabular-nums text-[var(--gold-light)]" style={{ fontFamily: 'var(--font-title)', fontSize: '1.125rem', lineHeight: 1 }}>
-          {presetList ? `${presetList.filter(gift => checkedIds.has(gift.id)).length} / ${presetList.length}` : checkedIds.size}
+          {view ? `${view.gifts.filter(gift => checkedIds.has(gift.id)).length} / ${view.gifts.length}` : checkedIds.size}
         </span>
       </p>
       <div className="flex items-center gap-1.5">
@@ -146,16 +165,20 @@ export default function GiftTab({ gifts, themes, recipes, getGiftKeywordIcon, on
       </div>
     </>
   ) : (
-    <button type="button" onClick={() => onCheckModeChange(true)} className={`${TOOL} min-w-9 px-2.5`} style={{ fontFamily: 'var(--font-heading)' }}>
-      <ListChecks size={15} aria-hidden /><span className="max-sm:sr-only">{t('checkMode')}</span>
-    </button>
+    <div className="flex items-center gap-1.5">
+      {presetButton}
+      <button type="button" onClick={() => onCheckModeChange(true)} className={`${TOOL} min-w-9 px-2.5`} style={{ fontFamily: 'var(--font-heading)' }}>
+        <ListChecks size={15} aria-hidden /><span className="max-sm:sr-only">{t('checkMode')}</span>
+      </button>
+    </div>
   )
 
   return (
     <>
       <GiftCatalog
-        gifts={presetList ?? gifts}
-        keepOrder={presetList !== null}
+        gifts={view?.gifts ?? gifts}
+        keepOrder={view !== null}
+        pinned={view?.pinned}
         themes={themes}
         getGiftKeywordIcon={getGiftKeywordIcon}
         filters={filters}
@@ -174,18 +197,14 @@ export default function GiftTab({ gifts, themes, recipes, getGiftKeywordIcon, on
         renderBadge={checkMode ? gift => checkedIds.has(gift.id) ? undefined : marks.get(gift.id)?.badge : undefined}
       />
       <KeywordOrderModal open={orderOpen} order={order} onChange={saveOrder} onClose={() => setOrderOpen(false)} getGiftKeywordIcon={getGiftKeywordIcon} />
-      {preset && (
-        <GiftPresetModal open={presetOpen} preset={preset} gifts={gifts} keywordOrder={order} getGiftKeywordIcon={getGiftKeywordIcon}
-          onChange={savePreset} onDelete={() => setDeleteOpen(true)} onClose={() => setPresetOpen(false)} />
+      {presetOpen !== null && (
+        <GiftPresetModal open={presetOpen} presets={presets} gifts={gifts} keywordOrder={order} getGiftKeywordIcon={getGiftKeywordIcon}
+          onChange={savePresets} onClose={() => setPresetOpen(false)} />
       )}
-      <ConfirmModal open={deleteOpen} message={t('presetDeleteConfirm', { name: presetName })} confirmLabel={t('presetDelete')} variant="danger"
-        onCancel={() => setDeleteOpen(false)}
-        onConfirm={() => {
-          savePresets({ active: null, list: presets.list.filter(item => item.id !== presets.active) })
-          setDeleteOpen(false)
-          setPresetOpen(false)
-          showSuccess(t('presetDeleted'))
-        }} />
+      {pip && view && createPortal(
+        <GiftCheckWindow title={preset?.name.trim() || t('preset')} sections={view.sections} checkedIds={checkedIds} checkedLabel={t('checked')} onCheck={check} marks={marks} />,
+        pip,
+      )}
       <ConfirmModal open={resetOpen} message={t('checkResetConfirm')} confirmLabel={t('checkReset')} variant="danger"
         onCancel={() => setResetOpen(false)}
         onConfirm={() => { saveChecked([]); setResetOpen(false); showSuccess(t('checkResetDone')) }} />

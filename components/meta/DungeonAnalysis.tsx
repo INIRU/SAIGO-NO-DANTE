@@ -9,7 +9,7 @@ import type { SupportedLang } from '@/lib/i18n/types'
 import type { CountStat, MetaData, MetaGift } from '@/lib/meta/types'
 import GiftCard from '@/components/ui/GiftCard'
 import ThemePackCard from '@/components/ui/ThemePackCard'
-import { PlanInsights } from './MetaSections'
+import { PlanInsights, PopularPosts } from './MetaSections'
 import styles from '@/styles/components/MetaAnalysis.module.css'
 
 const ROUTES_SHOWN = 20
@@ -119,5 +119,6 @@ export default function DungeonAnalysis({ data }: { data: MetaData }) {
         })}</ul>
       </li>)}</ol>
     </section>}
+    <PopularPosts data={data} sources={['planner']} />
   </div>
 }

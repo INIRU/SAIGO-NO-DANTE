@@ -1,5 +1,6 @@
 'use client'
 
+import type { ReactNode } from 'react'
 import { useTranslations } from 'next-intl'
 import { GIFT_KEYWORD_COLORS } from '@/lib/constants/gift'
 import { DEPLOYED_SLOT_COUNT, SINNER_SLUGS } from '@/lib/constants/game'
@@ -19,8 +20,12 @@ const KEYWORD_SLUG: Record<string, string> = {
 const KEYWORD_COLOR = GIFT_KEYWORD_COLORS
 
 interface Props {
-  /** `deployed`: of `count`, the identities in SELECTED slots (computeKeywordDistribution with flags). */
-  distribution: { keyword: string; count: number; deployed?: number }[]
+  /**
+   * `deployed`: of `count`, the identities in SELECTED slots (computeKeywordDistribution with flags).
+   * A row that is not a keyword (an attack type, a sin) brings its own `iconUrl` and `color`; `extra` is drawn at the
+   * end of the row.
+   */
+  distribution: { keyword: string; count: number; deployed?: number; iconUrl?: string | null; color?: string; extra?: ReactNode }[]
   getKeywordLabel?: (keyword: string) => string
   contributorsByKeyword?: Record<string, KeywordChartContributor[]>
   maxItems?: number
@@ -42,6 +47,7 @@ export default function KeywordChart({
   const maxCount = Math.max(...distribution.map(d => d.count), 1)
   // With deployment flags each bar has two layers: all 12 identities (dark, behind) and the deployed ones (bright).
   const layered = distribution.some(d => d.deployed !== undefined)
+  const hasExtra = distribution.some(d => d.extra !== undefined)
 
   return (
     <div className="space-y-2">
@@ -53,15 +59,15 @@ export default function KeywordChart({
       )}
       {distribution.slice(0, maxItems).map(d => {
         const slug = KEYWORD_SLUG[d.keyword]
-        const iconUrl = slug ? getGiftKeywordIconUrl(slug) : null
-        const color = KEYWORD_COLOR[d.keyword] ?? '#888'
+        const iconUrl = d.iconUrl !== undefined ? d.iconUrl : slug ? getGiftKeywordIconUrl(slug) : null
+        const color = d.color ?? KEYWORD_COLOR[d.keyword] ?? '#888'
         const pct = (d.count / maxCount) * 100
         const deployedPct = ((d.deployed ?? d.count) / maxCount) * 100
         const contributors = contributorsByKeyword?.[d.keyword] ?? []
 
         return (
           <div key={d.keyword} className="space-y-1.5">
-            <div className="grid items-center gap-2" style={{ gridTemplateColumns: `1rem minmax(4rem, 5.5rem) minmax(0, 1fr) ${layered ? '2.75rem' : '1.75rem'}` }}>
+            <div className="grid items-center gap-2" style={{ gridTemplateColumns: `1rem minmax(4rem, 5.5rem) minmax(0, 1fr) ${layered ? '2.75rem' : '1.75rem'}${hasExtra ? (layered ? ' 2.75rem' : ' 1.75rem') : ''}` }}>
               {iconUrl ? (
                 <KeywordIcon
                   src={iconUrl}
@@ -88,6 +94,7 @@ export default function KeywordChart({
               <span style={{ textAlign: 'right', fontSize: '0.875rem', color: color, fontWeight: 600, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
                 {layered ? <>{d.deployed ?? 0}<span style={{ opacity: 0.5, fontWeight: 400 }}>/{d.count}</span></> : d.count}
               </span>
+              {hasExtra && <span style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>{d.extra}</span>}
             </div>
             {contributors.length > 0 && (
               <div className="flex flex-wrap gap-1 pl-6 sm:pl-[6.5rem]">

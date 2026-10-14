@@ -11,7 +11,7 @@
 | 수감자·인격·E.G.O | `sinners`, `identities`, `skills`, `passives`, `ego`, `ego_skills`, `ego_passives` | `lib/db/queries.ts`, `lib/types/index.ts` |
 | 정신력·설정 | `identity_sanity_conditions`, `mental_condition_templates`, `panic_types`, `app_config` | `lib/db/queries.ts` |
 | 키워드와 게임 원문 참조 | `keyword_meta`, `game_text_refs` | `lib/keywords/`, `lib/game-text/` |
-| 거울 던전 | `ego_gifts`, `ego_gift_themes`, `ego_gift_recipes`, `md_events`, `md_event_choices` | `lib/planner/` |
+| 거울 던전 | `ego_gifts`, `ego_gift_themes`, `ego_gift_recipes`, `md_events`, `md_event_choices`, `gift_presets`(로그인 사용자의 기프트 프리셋) | `lib/planner/`, `lib/mirror-dungeon/` |
 | 덱 | `decks`, `deck_identities`, `deck_egos`, `deck_votes`, `deck_comments`, `deck_bookmarks` | `app/api/decks/`, `lib/decks/` |
 | 플래너 | `md_plans`(편성과 층별 계획은 JSON), `md_plan_votes`, `md_plan_comments`, `final_gift_presets` | `app/api/planner/`, `lib/planner/` |
 | 친구 코드 게시판 | `friend_posts`(지원 인격·인격 구해요 글), `friend_exchanges`(코드 교환), `friend_want_stats`(인격별 요청 수), `friend_requests`(승인 후 공개 글의 코드 요청), `friend_reports`, `friend_blocks` | `app/api/friend-codes/`, `lib/friends/` |
@@ -20,7 +20,7 @@
 | 발견·개발자 API | `discovery_visits`, `developer_keys`, `developer_usage` | `app/api/discovery/`, `lib/discovery/` |
 | 어시스트 | `assist_text_embeddings`, `assist_samples`, `assist_reports` | `app/api/assist/`, `lib/vision/` |
 
-- 표 48개 모두 RLS가 켜져 있다(2026-10-01 확인). 공개 읽기 정책이 없는 표는 서버의 service_role만 접근한다.
+- 표 57개 모두 RLS가 켜져 있다(2026-10-14 확인). 공개 읽기 정책이 없는 표는 서버의 service_role만 접근한다.
 - 동기화가 쓰는 표는 14개다: `sinners`, `identities`, `skills`, `passives`, `ego`, `ego_skills`, `ego_passives`, `keyword_meta`, `game_text_refs`, `ego_gifts`, `ego_gift_themes`, `ego_gift_recipes`, `md_events`, `md_event_choices`. 반영 전에 백업하고 되돌리기가 복원하는 범위와 같다(`limbus-asset-extractor/site-sync/scripts/sync/extraction-restore.ts`의 `RESTORE_TABLES`).
 - 제거한 기능의 표는 비공개 스키마 `limbus_retired`에 있다.
 
@@ -120,6 +120,12 @@
 
 덱과 플래너 상세 설명은 기존 Markdown 문자열을 유지한다. 편집기는 제목·목록·인용·빈 단락 양식과 이미지 첨부를 제공한다. 이미지 주소는 자체 Storage의 `notes/UUID.webp`만 렌더링하며 로그인 사용자만 업로드할 수 있다. PNG/JPEG/WebP 8MB 이하·4천만 픽셀 이하를 검사하고 EXIF 제거 후 최대 1920px WebP로 저장한다.
 
+## 거울 던전 기프트 프리셋
+
+`20261014032217_gift_presets.sql`을 적용했다(2026-10-14). `limbus.gift_presets`는 로그인 사용자의 거울 던전 기프트 프리셋으로, 사용자(`user_id` → `profiles.id`, 계정이 지워지면 함께 삭제)마다 칸(`slot`) 1~5에 하나씩 둔다. `name`은 20자까지이고 비어 있을 수 있다. `groups`는 묶음 1~6개의 JSON 배열 `[{ name, gifts, memo }]`이다. `gifts`는 `ego_gifts.game_id`를 문자열로 적은 목록(프리셋 전체 60개까지, 한 기프트는 한 묶음에만), `name`은 20자, `memo`는 100자까지다. 표는 배열 여부·묶음 수·전체 크기(8,192바이트)만 막고, 묶음 안의 형식은 `/api/mirror-dungeon/gift-presets`(GET·PUT·DELETE)가 `lib/mirror-dungeon/gift-preset-code.ts`의 `giftPresetBodySchema`로 확인한다. RLS를 켜고 공개 역할 권한을 뺐으며 서비스 역할만 읽고 쓴다. API는 세션 이메일의 프로필 것만 다루고, 읽기는 계정을 만들지 않는다. 동기화(추출 도구)는 이 표를 읽거나 쓰지 않는다. 검사는 `tests/sql/gift-presets.sql`.
+
+비로그인 사용자의 프리셋은 브라우저 localStorage `snd-gift-presets`에 같은 모양(`{ active, list: [{ id, name, groups }] }`)으로 남는다. 예전 모양(`{ id, name, gifts }`, 최대 10개)은 묶음 1개짜리로 읽는다. 로그인 사용자의 브라우저에는 계정 프리셋의 사본(`snd-gift-presets-account`)이 있고 서버 응답이 오면 서버 것으로 바뀐다. 표가 없거나 API가 실패하면 로그인 사용자도 브라우저 프리셋을 쓴다. 공유 코드는 `{ v: 1, n, g: [[이름, 메모, 기프트]] }`를 deflate한 base64url 문자열이고 8,000자를 넘거나 형식이 다르면 읽지 않는다.
+
 ## 팔로우와 목록 공개 범위
 
 `follows`는 팔로워·대상 프로필의 조합을 기본 키로 사용한다. 본인 팔로우와 중복 관계는 DB에서 차단한다. 정지 계정은 관계를 추가할 수 없고, 비공개 프로필에는 새 팔로우를 만들 수 없다. 기존 팔로우 취소는 대상이 비공개로 바뀐 뒤에도 가능하다. 관계와 조회 RPC는 service_role만 접근한다.
@@ -137,6 +143,8 @@
 `admin_list_users`와 `admin_moderate_user`는 service_role만 호출할 수 있다. 이메일 검색은 `auth.users` 직접 접근 권한을 넓히지 않고 고정된 검색 경로의 함수 안에서만 수행한다. 이용 제한과 감사 기록은 같은 트랜잭션에 저장한다. 본인·운영 계정 보호, 정지된 운영자 거부, 만료된 제한 판정, 이전 `suspended_at`을 이용한 동시 변경 검사를 적용한다. `audit_logs`는 비공개이며 공개·일반 로그인 클라이언트의 직접 접근을 허용하지 않는다.
 
 발견 목록의 ‘최근 수정’은 `updated_at` 대신 `deck_update`·`planner_update` 감사 기록으로 정한다. 최초 업로드와 조회·추천 집계는 편집으로 취급하지 않으며, 기존 게시물 중 편집 기록이 확인된 것만 표시한다. `discovery_recent_edits`는 서비스 전용이며 공개 API에는 게시물만 전달한다.
+
+발견 목록의 ‘자주 찾는’ 덱·플랜은 `discovery_counts`가 준 종류별 상위 12개 가운데 실제로 있는 글을 방문자 수 → 추천 수 → 최신 → id 순으로 정렬해 6개를 싣고, 같은 작성자(`user_id`, 익명은 `guest_tag`)의 글은 2개까지만 싣는다(`lib/discovery/shelf.ts`의 `rankPopular`). 게시판 선반과 홈 선반은 서버가 내려 준 순서를 그대로 쓴다.
 
 ## 공지와 문의
 

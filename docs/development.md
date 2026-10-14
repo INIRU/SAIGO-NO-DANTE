@@ -130,6 +130,14 @@ BASE_URL=http://127.0.0.1:3001 LIMBUS_RESTORED_DATA=1 \
 
 SEO의 공통 JSON-LD 출력은 next-seo `JsonLdScript`를 사용한다. App Router 제목·canonical·언어별 메타데이터는 기존 Metadata API를 유지한다. 근거: [next-seo custom components](https://github.com/garmeeh/next-seo/blob/main/CUSTOM_COMPONENTS.md).
 
+페이지 메타데이터 규칙:
+
+- 색인 대상 페이지 – `generateMetadata`에서 `lib/seo/metadata.ts`의 `pageMetadata({ lang, path, title, description })`를 돌려준다. canonical·hreflang, Open Graph, Twitter 카드가 그 페이지 값으로 채워진다. 페이지가 `openGraph`를 직접 쓰면 레이아웃의 값(url, type, 사이트 이름, 이미지)이 통째로 사라진다.
+- 제목 – 사이트 이름과 `|`를 넣지 않는다(레이아웃 템플릿이 붙인다). 바뀌는 개수(기프트 수 등)를 적지 않는다.
+- 색인에서 빼는 화면(로그인, 마이페이지, 글쓰기·수정, 관리자, 점검) – `robots: { index: false, follow: false }`. `robots.txt`는 모든 경로를 허용하므로 페이지가 직접 밝혀야 한다.
+- 새 공개 페이지 – `app/sitemap.ts`에 추가한다. `tests/app/page-metadata.test.ts`의 목록에도 넣는다.
+- 점검 기록 – [SEO 점검 보고(2026-10-14)](seo-audit-2026-10-14.md).
+
 문의·공지·마이페이지는 상단 메뉴와 약관·저작권만 남긴 작은 푸터를 사용한다. 상단 메뉴 오른쪽에는 검색·언어(아이콘)·알림 종·아바타만 두고, 문의는 아바타 메뉴 항목이다(모바일은 메뉴 시트 아래 줄, 로그인한 경우만). 댓글 알림과 문의 답변은 알림 종의 수와 패널로 보여 준다. 관리자 화면은 전용 탐색 메뉴와 사이트로 돌아가기 링크를 사용하며 일반 메뉴·푸터를 숨긴다. 마이페이지와 공개 프로필은 소개·활동 점수·팔로우를 같은 상단 패널에 배치한다. 마이페이지의 설정은 패널 아래 탭으로 나누며 팔로우 탭과 각각의 목록 공개 스위치를 제공한다.
 
 `npx playwright test e2e/workspace-design.spec.ts --project=chromium`은 PC·모바일에서 공개 범위 스위치, 팔로워 탭 이동, 문의 입력, 개발자 패널 높이·복사, 공지 목록 복귀를 검증한다. 권한은 모의 UI 세션과 별도로 `tests/sql/community-follows.sql`의 롤백 검사와 `node e2e/developer-api.acceptance.cjs`의 격리 계정 HTTP 검사로 확인한다.

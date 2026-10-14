@@ -1,10 +1,8 @@
 import type { Metadata } from 'next'
-import { localeAlternates } from '@/lib/seo/metadata'
+import { metaText, pageMetadata } from '@/lib/seo/metadata'
 import { Suspense } from 'react'
 import { cacheLife, cacheTag } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { translations } from '@/lib/i18n/translations'
-import type { SupportedLang } from '@/lib/i18n/types'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import { getGameTextRefNames } from '@/lib/db/game-text-refs'
 import { isMissingColumnError, keywordTextsFromRefs, loadKeywordRefTexts } from '@/lib/keywords/ref-text'
@@ -14,19 +12,13 @@ import KeywordsLoading from './loading'
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params
-  const t = (key: string) => {
-    const entry = translations[key as keyof typeof translations]
-    if (!entry) return key
-    return entry[lang as SupportedLang] ?? entry['ko'] ?? key
-  }
-  return {
-    title: t('keyword.meta.title'),
-    description: t('keyword.meta.description'),
-    alternates: localeAlternates(lang, '/keywords'),
-    openGraph: {
-      title: `${t('keyword.title')} | SAIGO NO DANTE`,
-    },
-  }
+  return pageMetadata({
+    lang,
+    path: '/keywords',
+    title: metaText('keyword.meta.title', lang),
+    description: metaText('keyword.meta.description', lang),
+    ogTitle: `${metaText('keyword.title', lang)} | SAIGO NO DANTE`,
+  })
 }
 
 

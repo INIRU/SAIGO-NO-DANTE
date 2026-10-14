@@ -1,10 +1,8 @@
-import { getTranslations } from 'next-intl/server'
 import DamageCalculator from '@/components/tools/DamageCalculator'
-import { localeAlternates } from '@/lib/seo/metadata'
+import { metaText, pageMetadata } from '@/lib/seo/metadata'
 export async function generateMetadata({ params }: { params: Promise<{lang: string}> }) {
   const { lang } = await params
-  const t = await getTranslations({ locale: lang, namespace: 'damage' })
-  return { title: t('title'), description: t('subtitle'), alternates: localeAlternates(lang, '/tools/damage') }
+  return pageMetadata({ lang, path: '/tools/damage', title: metaText('damage.meta.title', lang), description: metaText('damage.meta.description', lang) })
 }
 export default function DamagePage() {
   return <DamageCalculator />

@@ -22,6 +22,8 @@ interface GiftCardProps {
   variant?: 'default' | 'insert'
   ariaLabel?: string
   title?: string
+  /** Written as `data-gift-id`, so a list can tell which gift a pointer event started on without a handler per card. */
+  giftId?: string
   /** Fixed card width */
   size?: string
   /** Show name text below card (default: true) */
@@ -137,6 +139,7 @@ const GiftCard = memo(function GiftCard({
   variant = 'default',
   ariaLabel,
   title,
+  giftId,
   size,
   showName = true,
   disabled,
@@ -161,6 +164,7 @@ const GiftCard = memo(function GiftCard({
       className={`gift-card ${styles.card}${className ? ` ${className}` : ''}`}
       aria-label={warning ? `${ariaLabel ?? displayName} · ${warning}` : ariaLabel ?? displayName}
       title={title ?? displayName}
+      data-gift-id={giftId}
       onClick={onClick}
       disabled={disabled}
       style={{

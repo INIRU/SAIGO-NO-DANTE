@@ -3,24 +3,25 @@
 import Image from 'next/image'
 import { useLocale, useTranslations } from 'next-intl'
 import { useState } from 'react'
-import { ArrowUpRight } from 'lucide-react'
+import { ArrowUpRight, Eye, Heart, MessageCircle } from 'lucide-react'
 import { Link, useRouter } from '@/lib/i18n/navigation'
 import { getIdentityPortraitUrl, getSinnerLogoUrl } from '@/lib/utils/images'
 import { SINNER_SLUGS } from '@/lib/constants/game'
-import { isBaseEgo, type IdentityStat, type MetaData, type MetaPlanSummary } from '@/lib/meta/types'
+import { isBaseEgo, type IdentityStat, type MetaData, type MetaInsightPost, type MetaPlanSummary } from '@/lib/meta/types'
 import { getLocalizedName } from '@/lib/i18n/localize'
 import type { SupportedLang } from '@/lib/i18n/types'
 import GiftCard from '@/components/ui/GiftCard'
 import ThemePackCard from '@/components/ui/ThemePackCard'
 import EgoDisplayCard from '@/components/sinners/EgoDisplayCard'
 import { Toggle } from '@/components/tools/LunacyControls'
-import DonutChart from './DonutChart'
+import DonutChart, { usageColor } from './DonutChart'
+import KeywordBadge from './KeywordBadge'
 import styles from '@/styles/components/MetaAnalysis.module.css'
 
 type Named = { name_kr: string; name_en?: string | null; name_jp?: string | null }
 type Pictured = { sinner_id: string; folder_name: string | null; game_id: string | null }
 
-const DIFFICULTY_COLORS: Record<string, string> = { normal: '#9c8b73', hard: '#c8900a', extreme: '#9b2c23' }
+export const DIFFICULTY_COLORS: Record<string, string> = { normal: '#9c8b73', hard: '#c8900a', extreme: '#9b2c23' }
 
 function useName() {
   const locale = useLocale() as SupportedLang
@@ -117,6 +118,35 @@ export function PairLeaders({ data, onSelect }: { data: MetaData; onSelect: (ide
       </button>
     </li>)}</ol> : <p className={styles.empty}>{t('empty')}</p>}
   </section>
+}
+
+/** A deck or plan as a row: its board, title, what it is for and how it was received (the board cards' icons). Opens the post. */
+export function PostRow({ post }: { post: MetaInsightPost }) {
+  const t = useTranslations('meta.analysis')
+  const rootT = useTranslations()
+  return <Link className={styles.post} href={post.source === 'decks' ? '/decks/' + post.id : '/planner/community/' + post.id}>
+    <span className={styles.postSource}>{t('sourceTag.' + post.source)}</span>
+    <span className={styles.postBody}><span className={styles.postTitle}>{post.title}</span><span className={styles.postTags}>
+      <span className={styles.usageTag}><i style={{ background: usageColor(post.usage) }} />{t('usage.' + post.usage)}</span>
+      {post.combo.map(key => <KeywordBadge key={key} keyword={key} />)}
+      {post.support && <span className={styles.benchTag}>{t('bench')}</span>}
+    </span><span className={styles.postStats}>
+      <span><Heart fill="currentColor" stroke="none" aria-hidden="true" /><span className="sr-only">{rootT('deck.votes')}</span>{post.votes}</span>
+      <span><Eye aria-hidden="true" /><span className="sr-only">{rootT('deck.views')}</span>{post.views}</span>
+      {post.comments > 0 && <span><MessageCircle aria-hidden="true" /><span className="sr-only">{rootT('deck.comments')}</span>{post.comments}</span>}
+    </span></span>
+    <ArrowUpRight className={styles.postArrow} size={18} />
+  </Link>
+}
+
+/** The most popular decks and plans in scope, side by side. A board with none is left out. */
+export function PopularPosts({ data, sources = ['decks', 'planner'] }: { data: MetaData; sources?: MetaInsightPost['source'][] }) {
+  const t = useTranslations('meta.analysis')
+  const panels = sources.filter(source => data.topPosts?.[source]?.length).map(source => <section key={source} className={styles.panel} aria-labelledby={'popular-' + source + '-heading'} data-meta-popular={source}>
+    <div className={styles.sectionHead}><h3 id={'popular-' + source + '-heading'}>{t('popular.' + source)}</h3></div>
+    <ul className={styles.posts}>{data.topPosts[source].map(post => <li key={post.id}><PostRow post={post} /></li>)}</ul>
+  </section>)
+  return panels.length > 1 ? <div className={styles.halfRow}>{panels}</div> : panels[0] ?? null
 }
 
 /** Difficulty, planned gifts and theme packs of the plans in scope. Gifts and packs open the plan board filtered to them. */

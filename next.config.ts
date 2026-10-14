@@ -27,7 +27,8 @@ const contentSecurityPolicyDirectives = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
-  allowedDevOrigins: ['127.0.0.1'],
+  // The tunnel host is for looking at the dev server from another machine (cloudflared quick tunnel).
+  allowedDevOrigins: ['127.0.0.1', '*.trycloudflare.com'],
 
   // NOTE: turbopack.root intentionally unset — worktree node_modules symlink to parent
   //       repo breaks Turbopack when root is forced to __dirname. The "multiple lockfiles"
@@ -110,6 +111,11 @@ const nextConfig: NextConfig = {
         headers: [
           { key: 'Cache-Control', value: 'public, max-age=86400, stale-while-revalidate=2592000' },
         ],
+      },
+      {
+        // robots.txt lets crawlers fetch the API (a rendered page reads from it); the responses themselves stay out of the index.
+        source: '/api/:path*',
+        headers: [{ key: 'X-Robots-Tag', value: 'noindex' }],
       },
       {
         source: '/(.*)',

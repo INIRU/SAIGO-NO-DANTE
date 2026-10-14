@@ -2,7 +2,8 @@ import { notePlainText } from '@/lib/notes/blocks'
 import { resolvePlannerIdentity } from '@/lib/planner/catalog-references'
 import { selectUptieRows } from '@/lib/identity/skill-model'
 import type { Metadata } from 'next'
-import { localeAlternates } from '@/lib/seo/metadata'
+import { localeUrl, metaText, pageMetadata } from '@/lib/seo/metadata'
+import JsonLd, { breadcrumbJsonLd } from '@/components/seo/JsonLd'
 import { absoluteUrl } from '@/lib/utils/og-image'
 import { Suspense } from 'react'
 import { notFound } from 'next/navigation'
@@ -45,16 +46,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!plan) return { title: tDetail('notFoundTitle'), robots: { index: false } }
 
   const diff = tDifficulty(plan.difficulty)
+  const path = `/planner/community/${id}`
 
-  return {
+  return pageMetadata({
+    lang,
+    path,
     title: tDetail('metaTitle', { title: plan.title }),
-    alternates: localeAlternates(lang, `/planner/community/${id}`),
-    openGraph: { images: [{ url: absoluteUrl(`/${lang}/planner/community/${id}/opengraph-image`), width: 1200, height: 630, alt: plan.title }] },
-    twitter: { card: 'summary_large_image', images: [absoluteUrl(`/${lang}/planner/community/${id}/opengraph-image`)] },
     description: plan.description
       ? tDetail('metaDescriptionWithDescription', { difficulty: diff, description: notePlainText(plan.description).slice(0,160) })
       : tDetail('metaDescription', { difficulty: diff }),
-  }
+    image: { url: absoluteUrl(`/${lang}${path}/opengraph-image`), width: 1200, height: 630, alt: plan.title },
+  })
 }
 
 // 모든 플랜이 같이 쓰는 게임 데이터는 캐시한다(플랜마다 DB를 다시 읽지 않게)
@@ -142,6 +144,12 @@ export default async function PlanDetailPage({ params }: Props) {
   if (passivesError) console.error('Failed to fetch passives:', passivesError)
 
   return (
+    <>
+    <JsonLd data={breadcrumbJsonLd([
+      { name: metaText('nav.home', lang), url: localeUrl(lang) },
+      { name: metaText('nav.community.planner', lang), url: localeUrl(lang, '/planner/community') },
+      { name: plan.title, url: localeUrl(lang, `/planner/community/${id}`) },
+    ])} />
     <Suspense fallback={<PlanDetailSkeleton />}>
       <PlanDetailClient
         plan={plan as any}
@@ -162,5 +170,6 @@ export default async function PlanDetailPage({ params }: Props) {
         })) as unknown as MdEventChoice[]}
       />
     </Suspense>
+    </>
   )
 }

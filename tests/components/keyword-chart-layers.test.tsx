@@ -13,6 +13,14 @@ describe('REQ-DECKS-013 keyword chart layers', () => {
     expect(html).toMatch(/3<span[^>]*>\/4<\/span>/)
   })
 
+  it('REQ-DECKS-018 draws rows that are not keywords: their own icon and colour, and something at the end of the row', () => {
+    const html = renderToStaticMarkup(<KeywordChart distribution={[{ keyword: 'wrath', count: 6, iconUrl: '/sin-wrath.webp', color: '#ff0000', extra: <b>cost</b> }]} />)
+    expect(html).toContain('sin-wrath.webp')
+    expect(html).toContain('background:#ff0000')
+    expect(html).toContain('>6<')
+    expect(html).toContain('<b>cost</b>')
+  })
+
   it('REQ-DECKS-013 keeps one bar and one count without deployment flags', () => {
     const html = renderToStaticMarkup(<KeywordChart distribution={[{ keyword: '화상', count: 4 }]} />)
     expect(html).not.toContain('keywordDeployed')

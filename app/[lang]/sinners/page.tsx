@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { localeAlternates, localeUrl } from '@/lib/seo/metadata'
+import { localeUrl, metaText, pageMetadata } from '@/lib/seo/metadata'
 import { Suspense } from 'react'
 import { cacheLife, cacheTag } from 'next/cache'
 import { getSinners } from '@/lib/db/queries'
@@ -13,20 +13,14 @@ import { translations } from '@/lib/i18n/translations'
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params
-  const t = (key: string) => {
-    const entry = translations[key as keyof typeof translations]
-    if (!entry) return key
-    return entry[lang as SupportedLang] ?? entry['ko'] ?? key
-  }
-  return {
-    title: t('sinners.meta.title'),
-    description: t('sinners.meta.description'),
-    alternates: localeAlternates(lang, '/sinners'),
-    openGraph: {
-      title: t('sinners.meta.ogTitle'),
-      description: t('sinners.meta.ogDescription'),
-    },
-  }
+  return pageMetadata({
+    lang,
+    path: '/sinners',
+    title: metaText('sinners.meta.title', lang),
+    description: metaText('sinners.meta.description', lang),
+    ogTitle: metaText('sinners.meta.ogTitle', lang),
+    ogDescription: metaText('sinners.meta.ogDescription', lang),
+  })
 }
 
 async function getCachedSinners() {
