@@ -1628,6 +1628,15 @@
     "ownedDecks": "보유 인격으로 편성할 수 있는 덱만 보기",
     "ownedPlans": "보유 인격으로 편성할 수 있는 플랜만 보기"
   },
+  "discoveryShelf": {
+    "recentDecks": "새로 올라온 덱",
+    "recentPlans": "새로 올라온 플랜",
+    "updatedDecks": "최근 수정된 덱",
+    "updatedPlans": "최근 수정된 플랜",
+    "popularDecks": "관리자분들이 자주 찾는 덱",
+    "popularPlans": "관리자분들이 자주 찾는 플랜",
+    "popularIdentities": "관리자분들이 자주 찾는 인격"
+  },
   "ownedBadge": {
     "owned": "보유",
     "missing": "{count}인격 부족"

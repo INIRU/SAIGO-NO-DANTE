@@ -40,12 +40,11 @@ export default function BoardSkeleton(props: { kind?: Kind; shelf?: boolean; cou
   return <SkeletonPage className="w-full min-w-0"><BoardCards {...props} /></SkeletonPage>
 }
 
-/** DiscoveryShelf 첫 화면: 기간 칩 + 전체보기, 흐름 두 줄, 선반 두 개. */
+/** DiscoveryShelf 첫 화면: 전체보기, 흐름 두 줄, 선반 두 개. 기간 탭은 아래쪽 "자주 찾는" 선반 머리에 있어 여기 없다. */
 export function BoardShelfSkeleton({ kind }: { kind: Kind }) {
   return <SkeletonPage className="px-4 pb-16 md:px-6">
     <div className="mx-auto max-w-7xl space-y-9">
-      <div className="flex items-center justify-between gap-3 py-1">
-        <div className="flex gap-1">{['1.6rem', '1.6rem', '3rem'].map((w, i) => <div key={i} className="flex h-10 items-center rounded-full px-4" style={{ background: i === 0 ? 'rgba(200,144,10,0.1)' : undefined }}><SkeletonLine w={w} h="0.8rem" /></div>)}</div>
+      <div className="flex items-center justify-end gap-3 py-1">
         <div className="flex min-h-12 items-center"><SkeletonLine w="7.5rem" h="1rem" /></div>
       </div>
       <div className="-mt-5 space-y-1.5 border-l border-[#2e2417] pl-3">

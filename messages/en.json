@@ -1628,6 +1628,15 @@
     "ownedDecks": "Only decks I can field with my collection",
     "ownedPlans": "Only plans I can field with my collection"
   },
+  "discoveryShelf": {
+    "recentDecks": "New decks",
+    "recentPlans": "New plans",
+    "updatedDecks": "Recently updated decks",
+    "updatedPlans": "Recently updated plans",
+    "popularDecks": "Frequently visited decks",
+    "popularPlans": "Frequently visited plans",
+    "popularIdentities": "Frequently visited identities"
+  },
   "ownedBadge": {
     "owned": "Owned",
     "missing": "{count} missing"
