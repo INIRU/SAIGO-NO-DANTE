@@ -3,14 +3,9 @@ import { SITE_URL } from '@/lib/seo/metadata'
 
 export default function robots(): MetadataRoute.Robots {
   return {
-    rules: [
-      {
-        userAgent: '*',
-        allow: '/',
-        // Pages live under /{lang}/, so each private path is listed with a locale wildcard too.
-        disallow: ['/admin/', '/*/admin', '/api/', '/mypage', '/*/mypage', '/*/login?callbackUrl='],
-      },
-    ],
+    // Every crawler, every path: the private pages answer a visitor without a session with the login page, and a crawler
+    // that renders a page may fetch the API it reads from.
+    rules: [{ userAgent: '*', allow: '/' }],
     sitemap: `${SITE_URL}/sitemap.xml`,
   }
 }

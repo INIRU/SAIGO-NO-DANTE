@@ -226,7 +226,7 @@ export default function HomeClient({ latestIdentities, pinnedAnnouncement }: Hom
           <div className="home-command-surface max-w-[32rem] opacity-0">
             <div className="flex items-center gap-3 md:gap-5">
               <DanteLogo size="2.75rem" className="home-logo-mark shrink-0 text-[var(--gold-light)] opacity-0 md:h-[4.5rem] md:w-[4.5rem]" />
-              <HeroWordmark className="home-brand-title text-[length:clamp(2.75rem,11vw,3.5rem)] opacity-0 md:text-[4.75rem]" />
+              <HeroWordmark label={t('home.heading')} className="home-brand-title text-[length:clamp(2.75rem,11vw,3.5rem)] opacity-0 md:text-[4.75rem]" />
             </div>
 
             <p className="home-subtitle mt-3 text-[0.9375rem] leading-snug text-[var(--text-secondary)] opacity-0 md:mt-4 md:text-[1.0625rem]">

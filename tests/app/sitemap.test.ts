@@ -30,7 +30,6 @@ describe('sitemap', () => {
     for (const url of urls) expect(url).toMatch(/^https:\/\/saigo-no-dante\.com\/ko(\/|$)/)
     expect(urls).toContain('https://saigo-no-dante.com/ko')
     expect(urls).toContain('https://saigo-no-dante.com/ko/planner/community/p1')
-    expect(urls).not.toContain('https://saigo-no-dante.com/ko/planner')
 
     const identity = entries.find(entry => entry.url.endsWith('/sinners/yisang/identities/10101'))
     expect(identity?.alternates?.languages).toMatchObject({
@@ -40,5 +39,18 @@ describe('sitemap', () => {
     })
     expect(identity?.lastModified).toEqual(new Date('2026-09-10'))
     expect(entries.find(entry => entry.url.endsWith('/ko/terms'))?.lastModified).toBeUndefined()
+  })
+
+  it('REQ-SHARED-038 lists the planner, the news calendar and the friend code board, without changefreq or priority', async () => {
+    const { default: sitemap } = await import('@/app/sitemap')
+    const entries = await sitemap()
+    const urls = entries.map(entry => entry.url)
+
+    for (const path of ['/planner', '/calendar', '/friends']) expect(urls).toContain(`https://saigo-no-dante.com/ko${path}`)
+    expect(new Set(urls).size).toBe(urls.length)
+    for (const entry of entries) {
+      expect(entry).not.toHaveProperty('changeFrequency')
+      expect(entry).not.toHaveProperty('priority')
+    }
   })
 })

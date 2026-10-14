@@ -70,7 +70,7 @@ export const translations = {
   'nav.tools.lunacy': { ko: '월간 광기 계산기', en: 'Monthly Lunacy planner', ja: '月間狂気計算機' },
   'nav.tools.experience': { ko: '경험치 계산기', en: 'EXP calculator', ja: '経験値計算機' },
   'nav.other.title': { ko: '기타', en: 'More', ja: 'その他' },
-  'nav.other.meta': { ko: '분석', en: 'Analysis', ja: '分析' },
+  'nav.tools.meta': { ko: '분석', en: 'Analysis', ja: '分析' },
   'nav.other.random': { ko: '랜덤 편성', en: 'Random', ja: 'ランダム編成' },
 
   // Mypage
@@ -226,7 +226,7 @@ export const translations = {
   'identity.skillType.blunt': { ko: '타격', en: 'Blunt', ja: '打撃' },
   'identity.skillType.defense': { ko: '방어', en: 'Defense', ja: '防御' },
   'identity.skillType.evade': { ko: '회피', en: 'Evade', ja: '回避' },
-  'identity.skillType.counter': { ko: '카운터', en: 'Counter', ja: 'カウンター' },
+  'identity.skillType.counter': { ko: '반격', en: 'Counter', ja: 'カウンター' },
 
   // EGO Detail Modal
   'ego.resistance': { ko: '죄악 내성', en: 'Sin Resistance', ja: '罪悪耐性' },
@@ -400,8 +400,27 @@ export const translations = {
   'mirrorDungeon.tab.events': { ko: '이벤트', en: 'Events', ja: 'イベント' },
 
   // Mirror Dungeon — Page metadata
-  'mirrorDungeon.meta.title': { ko: '거울 던전 — E.G.O 기프트 도감 | 림버스 컴퍼니', en: 'Mirror Dungeon — E.G.O Gift Encyclopedia | Limbus Company', ja: 'ミラーダンジョン — E.G.Oギフト図鑑 | リンバスカンパニー' },
-  'mirrorDungeon.meta.description': { ko: '림버스 컴퍼니 거울 던전 E.G.O 기프트 408종 도감. 키워드별 필터, 등급별 검색, 조합 레시피, 테마팩, 이벤트 정보까지 한 곳에서.', en: 'Limbus Company Mirror Dungeon E.G.O Gift encyclopedia with 408 gifts. Filter by keyword, grade, recipes, theme packs, and events.', ja: 'リンバスカンパニー ミラーダンジョン E.G.Oギフト408種図鑑。キーワード別フィルター、等級別検索、合成レシピ、テーマパック、イベント情報。' },
+  // Titles go through the layout template, which appends " | site name": no pipe here. No gift count either (it changes with every update).
+  'mirrorDungeon.meta.title': { ko: '림버스 거울 던전 E.G.O 기프트 도감 — 조합식·테마팩', en: 'Limbus Company Mirror Dungeon E.G.O Gift Encyclopedia — Recipes & Theme Packs', ja: 'リンバスカンパニー ミラーダンジョン E.G.Oギフト図鑑 — 合成レシピ・テーマパック' },
+  'mirrorDungeon.meta.description': { ko: '림버스 컴퍼니 거울 던전 E.G.O 기프트 도감입니다. 키워드와 등급별 검색, 기프트 조합식, 테마팩, 이벤트 선택지를 한 곳에서 확인하세요.', en: 'Limbus Company Mirror Dungeon E.G.O Gift encyclopedia. Filter by keyword and grade, check fusion recipes, Theme Packs and event choices.', ja: 'リンバスカンパニーのミラーダンジョンE.G.Oギフト図鑑。キーワード・等級で絞り込み、合成レシピ、テーマパック、イベント選択肢を確認できます。' },
+
+  // Tools, boards and notices — Page metadata (search result title and description; the page headings keep their short names)
+  'experience.meta.title': { ko: '림버스 경험치 계산기 — 인격 레벨업 EXP·티켓', en: 'Limbus Company EXP Calculator — Identity Level-Up Tickets', ja: 'リンバスカンパニー 経験値計算機 — 人格レベル上げのEXP・チケット' },
+  'experience.meta.description': { ko: '림버스 컴퍼니 인격 레벨업에 필요한 EXP와 학습 티켓, 경험치 채광 횟수를 계산합니다. 보유 티켓부터 입력하세요.', en: 'Calculate the EXP, Identity Training Tickets and EXP Luxcavation runs needed to level an Identity in Limbus Company.', ja: 'リンバスカンパニーの人格レベル上げに必要なEXP・人格学習チケット・経験値採光の回数を計算します。' },
+  'lunacy.meta.title': { ko: '림버스 광기 계산기 — 월간 광기 수급·결제 금액', en: 'Limbus Company Lunacy Calculator — Monthly Planner', ja: 'リンバスカンパニー 狂気計算機 — 月間プランナー' },
+  'lunacy.meta.description': { ko: '림버스 컴퍼니 월간 광기를 계산합니다. 무료·유료 광기, 월정액, 주간 보상, 패키지로 월말 잔액과 예상 결제 금액을 확인하세요.', en: 'Plan monthly Lunacy in Limbus Company: free and paid Lunacy, membership, weekly rewards and packages, with expected month-end balance and spend.', ja: 'リンバスカンパニーの月間狂気を計算します。無償・有償狂気、月額、週間報酬、パッケージから月末の残高と購入金額を確認できます。' },
+  'damage.meta.title': { ko: '림버스 피해량 계산기 — 스킬 코인별 데미지', en: 'Limbus Company Damage Calculator — Per-Coin Skill Damage', ja: 'リンバスカンパニー ダメージ計算機 — コインごとのスキルダメージ' },
+  'damage.meta.description': { ko: '림버스 컴퍼니 스킬의 기본 위력, 코인 위력, 코인 수와 대상 조건으로 코인별 피해량을 예상합니다.', en: "Estimate per-coin damage in Limbus Company from a skill's base power, coin power and coin count plus target conditions.", ja: 'リンバスカンパニーのスキルの基礎威力・コイン威力・コイン数と対象の条件から、コインごとのダメージを予想します。' },
+  'random.meta.title': { ko: '림버스 랜덤 편성 — 인격·E.G.O 뽑기', en: 'Limbus Company Random Formation — Identity & E.G.O Draw', ja: 'リンバスカンパニー ランダム編成 — 人格・E.G.O抽選' },
+  'collection.meta.title': { ko: '림버스 인격·E.G.O 보유 현황 체크', en: 'Limbus Company Identity & E.G.O Collection Tracker', ja: 'リンバスカンパニー 人格・E.G.O所持状況チェック' },
+  'calendar.meta.title': { ko: '림버스 소식 캘린더 — 이벤트·업데이트 일정', en: 'Limbus Company News Calendar — Events & Updates', ja: 'リンバスカンパニー ニュースカレンダー — イベント・アップデート' },
+  'calendar.meta.description': { ko: '림버스 컴퍼니 공식 소식과 이벤트, 업데이트 일정을 월별 캘린더로 확인하세요.', en: 'Check Limbus Company news, events and update schedules on a monthly calendar.', ja: 'リンバスカンパニーの公式ニュース・イベント・アップデート予定を月間カレンダーで確認できます。' },
+  'friends.meta.title': { ko: '림버스 친구 코드 게시판 — 서포트 편성·구인', en: 'Limbus Company Friend Codes — Support Line-ups', ja: 'リンバスカンパニー フレンドコード掲示板' },
+  'friends.meta.description': { ko: '림버스 컴퍼니 친구 코드를 공유하고 서포트 편성과 원하는 인격 요청을 올리는 게시판입니다.', en: 'Share friend codes and post support line-ups or wanted Identities for Limbus Company.', ja: 'リンバスカンパニーのフレンドコードを共有し、サポート編成や欲しい人格の募集ができます。' },
+  'support.meta.description': { ko: '최애의 관리자 문의 창구입니다. 오류 제보와 건의를 남기고 답변을 확인하세요.', en: 'Contact SAIGO NO DANTE: report a problem or send a suggestion, and read the reply.', ja: 'SAIGO NO DANTEのお問い合わせ窓口です。不具合の報告や要望を送り、返信を確認できます。' },
+  'developers.meta.description': { ko: '최애의 관리자 개발자 API의 시작 방법, 문서, 테스트, 키와 사용량을 확인하는 개발자 도구입니다.', en: 'Developer tools for the SAIGO NO DANTE API: getting started, API reference, test requests, keys and usage.', ja: 'SAIGO NO DANTE APIの開発者ツール。はじめ方、APIドキュメント、テスト、キーと使用量を確認できます。' },
+  'legal.terms.meta.description': { ko: '림버스 컴퍼니 팬 사이트 최애의 관리자의 이용약관입니다.', en: 'Terms of Service for SAIGO NO DANTE, a Limbus Company fan site.', ja: 'リンバスカンパニーのファンサイト SAIGO NO DANTE の利用規約です。' },
+  'legal.privacy.meta.description': { ko: '림버스 컴퍼니 팬 사이트 최애의 관리자의 개인정보 처리방침입니다.', en: 'Privacy Policy for SAIGO NO DANTE, a Limbus Company fan site.', ja: 'リンバスカンパニーのファンサイト SAIGO NO DANTE のプライバシーポリシーです。' },
 
   // Home — Page metadata
   'home.meta.title': { ko: '림버스 컴퍼니 정보·도감 | 최애의 관리자', en: 'SAIGO NO DANTE | Limbus Company Fan Archive', ja: 'SAIGO NO DANTE | リンバスカンパニー情報サイト' },

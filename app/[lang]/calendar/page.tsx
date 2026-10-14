@@ -1,6 +1,6 @@
 import { Suspense } from 'react'
 import type { Metadata } from 'next'
-import { localeAlternates } from '@/lib/seo/metadata'
+import { metaText, pageMetadata } from '@/lib/seo/metadata'
 import { isMonth, kstDay } from '@/lib/news/calendar'
 import { loadNewsMonth } from '@/lib/news/data'
 import { NEWS_FEEDS } from '@/lib/news/payload'
@@ -8,12 +8,11 @@ import NewsCalendar from '@/components/news/NewsCalendar'
 import { PageHeaderSkeleton } from '@/components/ui/PageHeader'
 import Skeleton from '@/components/ui/Skeleton'
 
-const TITLE = { ko: '소식 캘린더', en: 'News calendar', ja: 'ニュースカレンダー' }
 type Query = Promise<{ month?: string; date?: string; feed?: string }>
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params
-  return { title: TITLE[lang as keyof typeof TITLE] ?? TITLE.ko, alternates: localeAlternates(lang, '/calendar') }
+  return pageMetadata({ lang, path: '/calendar', title: metaText('calendar.meta.title', lang), description: metaText('calendar.meta.description', lang) })
 }
 
 // The address picks the view: ?date= opens a day (and its month), ?month= a month, ?feed= one kind of news.

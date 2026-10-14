@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { localeAlternates } from '@/lib/seo/metadata'
+import { pageMetadata } from '@/lib/seo/metadata'
 import { Suspense } from 'react'
 import { cacheLife, cacheTag } from 'next/cache'
 import { getSinnerById, getIdentityById, getSkills, getPassives, getSanityConditions, getPanicInfo, isRowId } from '@/lib/db/queries'
@@ -46,28 +46,16 @@ export async function generateMetadata({
   const keywordsStr = identity.keywords?.length ? identity.keywords.slice(0, 3).map(kw => getLocalizedKeywordName(kw, keywordData[kw], lang)).join(', ') : ''
   const descSuffix = t('identity.meta.description')
   const description = `${sinnerName} ${identityName} — ${rarityStr}${keywordsStr ? `, ${keywordsStr}` : ''}. ${descSuffix}.`
-  const canonical = `${SITE_URL}/${lang}/sinners/${slug}/identities/${id}`
-  const ogImage = absoluteUrl(`/${lang}/sinners/${slug}/identities/${id}/opengraph-image`)
-  const pageTitle = lang === 'ko' ? `${identityName} ${sinnerName} 인격 정보` : `${identityName} — ${sinnerName}`
+  const path = `/sinners/${slug}/identities/${id}`
 
-  return {
-    title: pageTitle,
+  return pageMetadata({
+    lang,
+    path,
+    title: `${identityName} ${sinnerName} — ${{ ko: '림버스 컴퍼니 인격 스킬·패시브', en: 'Limbus Company Identity Skills & Passives', ja: 'リンバスカンパニー 人格スキル・パッシブ' }[lang]}`,
     description,
-    alternates: localeAlternates(lang, `/sinners/${slug}/identities/${id}`),
-    openGraph: {
-      title: pageTitle,
-      description,
-      url: canonical,
-      type: 'article',
-      images: [{ url: ogImage, width: 1200, height: 630, alt: `${identityName} — ${sinnerName}` }],
-    },
-    twitter: {
-      card: 'summary_large_image',
-      title: pageTitle,
-      description,
-      images: [ogImage],
-    },
-  }
+    type: 'article',
+    image: { url: absoluteUrl(`/${lang}${path}/opengraph-image`), width: 1200, height: 630, alt: `${identityName} — ${sinnerName}` },
+  })
 }
 
 /**

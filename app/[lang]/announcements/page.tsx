@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { localeAlternates } from '@/lib/seo/metadata'
+import { pageMetadata } from '@/lib/seo/metadata'
 import { Suspense } from 'react'
 import { Loader2 } from 'lucide-react'
 import { cacheLife, cacheTag } from 'next/cache'
@@ -18,11 +18,7 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
     : lang === 'ja'
       ? 'サイトの更新とお知らせを確認できます。'
       : '사이트 업데이트 및 안내사항을 확인하세요.'
-  return {
-    title,
-    description,
-    alternates: localeAlternates(lang, '/announcements'),
-  }
+  return pageMetadata({ lang, path: '/announcements', title, description })
 }
 
 export default async function AnnouncementsPage({ params }: { params: Promise<{ lang: string }> }) {

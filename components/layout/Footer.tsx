@@ -2,20 +2,20 @@
 import Link from 'next/link'
 import { getTranslations } from 'next-intl/server'
 import DanteLogo from '@/components/brand/DanteLogo'
+import { NAV_GROUPS } from './nav-shared'
 
-const NAV_LINKS = [
-  { href: '/sinners', labelKey: 'sinners' },
-  { href: '/decks', labelKey: 'decks' },
-  { href: '/meta', labelKey: 'other.meta' },
-] as const
+// The menu's DB, community and tools groups. The navbar builds its dropdowns only while one is open, so these are the
+// links every page's HTML carries to those pages.
+const FOOTER_GROUPS = NAV_GROUPS.filter(group => group.labelKey !== 'nav.other.title')
 
 /** Explicit locale: rendered in the static layout shell, where the request locale is unavailable. */
 export default async function Footer({ lang }: { lang: string }) {
-  const [tCommon, tNav, tSite] = await Promise.all([
+  const [tCommon, t, tSite] = await Promise.all([
     getTranslations({ locale: lang, namespace: 'common' }),
-    getTranslations({ locale: lang, namespace: 'nav' }),
+    getTranslations({ locale: lang }),
     getTranslations({ locale: lang, namespace: 'site' }),
   ])
+  const label = (key: string) => t(key as Parameters<typeof t>[0])
   return (
     <footer className="site-footer mt-24">
       {/* 장식선 */}
@@ -36,16 +36,25 @@ export default async function Footer({ lang }: { lang: string }) {
         </div>
 
         {/* 네비게이션 */}
-        <nav aria-label={tCommon('footerNav')} className="flex items-center gap-6">
-          {NAV_LINKS.map(({ href, labelKey }) => (
-            <Link
-              key={href}
-              href={`/${lang}${href}`}
-              className="hit-target text-xs tracking-widest transition-colors duration-200 hover:text-[var(--gold-dim)]"
-              style={{ color: 'var(--text-tertiary)' }}
-            >
-              {tNav(labelKey as Parameters<typeof tNav>[0])}
-            </Link>
+        {/* One row per group: the group name in its own column, so the rows line up and long rows wrap under their links. */}
+        <nav aria-label={tCommon('footerNav')} className="grid max-w-full grid-cols-[auto_minmax(0,1fr)] gap-x-5 gap-y-3 text-xs tracking-widest">
+          {FOOTER_GROUPS.map(group => (
+            <div key={group.labelKey} className="contents">
+              <p className="text-right" style={{ color: 'var(--gold-dim)' }}>{label(group.labelKey)}</p>
+              <ul aria-label={label(group.labelKey)} className="flex flex-wrap gap-x-5 gap-y-3">
+                {group.items.map(item => (
+                  <li key={item.href}>
+                    <Link
+                      href={`/${lang}${item.href}`}
+                      className="hit-target transition-colors duration-200 hover:text-[var(--gold-dim)]"
+                      style={{ color: 'var(--text-tertiary)' }}
+                    >
+                      {label(item.labelKey)}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
           ))}
         </nav>
 

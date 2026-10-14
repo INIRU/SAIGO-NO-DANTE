@@ -40,7 +40,7 @@ import { IdentityTab, EgoTab, SkillsetTab } from '@/components/deck-builder/Deck
 import { getIdentityImageUrl } from '@/lib/utils/images'
 import DeckInsights, { type DeckInsightIdentity } from '@/components/deck-analysis/DeckInsights'
 import DeckResourceSummary from '@/components/deck-analysis/DeckResourceSummary'
-import { computeAttackTypeCounts, computeEgoCostTotals, computeSinProduction } from '@/lib/decks/deck-analysis'
+import { computeDeckResources, computeSinProduction, fieldedEntries } from '@/lib/decks/deck-analysis'
 import { contentTypeMessageKey } from '@/components/decks/decks-types'
 import {
   localizeIdentityName,
@@ -240,9 +240,14 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
   // Planner deck panels: keyword distribution, passives, attack types and sin resources.
   const deckInsights = useMemo(() => {
     const placed = sinners.flatMap(sinner => deckSlots[sinner.id] ? [{ sinner, identity: deckSlots[sinner.id]! }] : [])
-    const selectedEgos = Object.values(egoSlots).flatMap(gradeMap => Object.values(gradeMap))
     const skillsOf = (identity: Identity) => skillsByIdentityId[identity.id] ?? []
-    const sinCounts = computeSinProduction(placed.map(({ sinner, identity }) => ({ skills: skillsOf(identity), distribution: skillDistribution[sinner.id] })))
+    const entries = placed.map(({ sinner, identity }) => ({
+      skills: skillsOf(identity),
+      distribution: skillDistribution[sinner.id],
+      deployed: isDeployedSlot(formationOrder.indexOf(sinner.id)),
+      egos: Object.values(egoSlots[sinner.id] ?? {}).map(ego => ({ skills: ego.ego_skills, cost: ego.cost })),
+    }))
+    const resources = computeDeckResources(entries)
     const identities: DeckInsightIdentity[] = placed.map(({ sinner, identity }) => ({
       id: identity.id,
       name: localizeIdentityName(identity, locale),
@@ -259,15 +264,9 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
     return {
       identities,
       deployedIds,
-      sinCounts,
-      baseSinCounts: computeSinProduction(placed.map(({ identity }) => ({ skills: skillsOf(identity) }))),
-      summary: (
-        <DeckResourceSummary
-          {...computeAttackTypeCounts(placed.map(({ identity }) => skillsOf(identity)), selectedEgos.map(ego => ego.ego_skills))}
-          production={sinCounts}
-          egoCost={computeEgoCostTotals(selectedEgos.map(ego => ego.cost))}
-        />
-      ),
+      sinCounts: resources.production,
+      baseSinCounts: computeSinProduction(fieldedEntries(entries).map(({ skills }) => ({ skills }))),
+      summary: <DeckResourceSummary resources={resources} />,
     }
   }, [deckSlots, egoSlots, formationOrder, locale, passivesByIdentityId, sinners, sinnerT, skillDistribution, skillsByIdentityId])
 

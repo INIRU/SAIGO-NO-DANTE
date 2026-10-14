@@ -8,7 +8,9 @@ const DECK_MAIN_KEYWORD_SET = new Set<string>(DECK_MAIN_KEYWORDS)
 const DECK_MAIN_KEYWORD_ORDER = new Map<string, number>(
   DECK_MAIN_KEYWORDS.map((keyword, index) => [keyword, index]),
 )
-const STATUS_KEYWORDS = new Set(['화상', '파열', '침잠', '호흡', '진동', '충전', '출혈'])
+/** Status keywords: the ones a formation can be a keyword deck of. */
+export const KEYWORD_DECK_KEYWORDS = ['화상', '파열', '침잠', '호흡', '진동', '충전', '출혈'] as const
+const STATUS_KEYWORDS = new Set<string>(KEYWORD_DECK_KEYWORDS)
 
 export type DeckKeywordSkill = {
   atk_type?: string | null

@@ -25,7 +25,7 @@ function Shelf<T extends { id: string | number }>({ kind, id, href, copy, card }
 }) {
   // Same request as the board's discovery shelf, so the CDN copy and the SWR cache are shared.
   const { data, error } = useSWR(`/api/discovery?kind=${kind}&days=7`, fetchFeed<T>)
-  const shelf = data && pickShelf(data, kind)
+  const shelf = data && pickShelf(data)
   if (error || shelf?.posts.length === 0) return null
   const headingId = `home-${id}-heading`
   // The section is there from the first render, so the scroll reveal (ScrollAnimations) still observes it.

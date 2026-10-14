@@ -5,7 +5,7 @@ import MypageClient, { MypageSkeleton } from './MypageClient'
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params
-  return { title: getCommunityCopy(lang).mypage }
+  return { title: getCommunityCopy(lang).mypage, robots: { index: false, follow: false } }
 }
 
 export default function MyPage() {

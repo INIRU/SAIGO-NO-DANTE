@@ -90,7 +90,11 @@
 .control:hover { color: var(--text-primary); border-color: #4a3a22; }
 
 .identityGrid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 1.75rem 1.25rem; padding: 0.75rem 0.75rem 0; }
-.identityGrid [role='button'] { max-width: none; }
+/* Each card is a link that fills its cell. Keyboard focus draws the page's link ring (.page a) at the distance the card's
+   own ring had (IdentityCard .hoverable). */
+.identityGrid a { display: block; }
+.identityGrid a > div { max-width: none; }
+.identityGrid a:focus-visible { outline-offset: 0.5rem; }
 @media (max-width: 1279px) { .identityGrid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 @media (max-width: 639px) {
   .identityGrid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.25rem 0.875rem; padding: 0.5rem 0.5rem 0; }

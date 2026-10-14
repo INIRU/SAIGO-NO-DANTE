@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { getTranslations } from 'next-intl/server'
+import { pageMetadata } from '@/lib/seo/metadata'
 import { fetchDeckBuilderData } from '@/lib/decks/builder-data'
 import { createAdminClient } from '@/lib/supabase/admin'
 import DeckBuilderWrapper from './DeckBuilderWrapper'
@@ -10,10 +11,8 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: Sup
   const { lang } = await params
   const builderT = await getTranslations({ locale: lang, namespace: 'decks.builder.metadata' })
 
-  return {
-    title: builderT('title'),
-    description: builderT('description'),
-  }
+  // The canonical has no query, so /decks/new?fork=… counts as this page.
+  return pageMetadata({ lang, path: '/decks/new', title: builderT('title'), description: builderT('description') })
 }
 
 export default async function NewDeckPage({ params, searchParams }: { params: Promise<{ lang: string }>; searchParams: Promise<{ fork?: string }> }) {

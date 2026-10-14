@@ -20,7 +20,7 @@ import { notFound } from 'next/navigation'
 import { routing } from '@/lib/i18n/routing'
 import type { SupportedLang } from '@/lib/i18n/types'
 import { translations } from '@/lib/i18n/translations'
-import { SITE_URL, localeUrl } from '@/lib/seo/metadata'
+import { OG_LOCALE, SITE_NAME, SITE_URL, localeUrl } from '@/lib/seo/metadata'
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
 import PageNavigation from '@/components/ui/PageNavigation'
@@ -35,8 +35,6 @@ import { fontVariables } from '../fonts'
 import { ROOT_OMITTED_MESSAGES, omitMessages } from '@/lib/i18n/client-messages'
 import { NAV_BOOT_SCRIPT } from '@/lib/constants/nav-boot'
 
-const SITE_NAME: Record<SupportedLang, string> = { ko: '최애의 관리자', en: 'SAIGO NO DANTE', ja: 'SAIGO NO DANTE' }
-const OG_LOCALE: Record<SupportedLang, string> = { ko: 'ko_KR', en: 'en_US', ja: 'ja_JP' }
 const shouldRenderAnalytics = process.env.VERCEL === '1'
 const toastPositionStyle = {
   '--toast-close-button-start': 'unset',

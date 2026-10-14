@@ -18,9 +18,8 @@ import EgoDisplayCard from '@/components/sinners/EgoDisplayCard'
 import { Toggle } from '@/components/tools/LunacyControls'
 import IdentityInterest from './IdentityInterest'
 import IdentityPickerModal from './IdentityPickerModal'
-import KeywordBadge from './KeywordBadge'
-import DonutChart, { OTHER, collapse, useSegments, usageColor } from './DonutChart'
-import { PlanInsights, Portrait } from './MetaSections'
+import DonutChart, { OTHER, collapse, useSegments } from './DonutChart'
+import { PlanInsights, Portrait, PostRow } from './MetaSections'
 import SkillExchangeInsight from './SkillExchangeInsight'
 
 function countBy(posts: MetaInsightPost[], key: (post: MetaInsightPost) => string): CountStat[] {
@@ -30,6 +29,7 @@ function countBy(posts: MetaInsightPost[], key: (post: MetaInsightPost) => strin
 }
 const comboKey = (post: MetaInsightPost) => post.combo.join('+')
 const COMPANION_LIMIT = 8
+const POST_LIMIT = 10
 const ORDER_SLOTS = 12
 
 function Share({ value, digits = 1 }: { value: number; digits?: number }) {
@@ -62,7 +62,11 @@ function IdentityList({ rows, sampleCount, selectedId, onSelect, name }: { rows:
   </aside>
 }
 
-export default function IdentityAnalysis({ data, selectedId, onSelect }: { data: MetaData; selectedId: string; onSelect: (identityId: string) => void }) {
+export default function IdentityAnalysis({ data, selectedId, onSelect, shows = () => true }: {
+  data: MetaData; selectedId: string; onSelect: (identityId: string) => void
+  /** Which identities the list and the picker offer (the page's rarity and sinner filters). */
+  shows?: (row: IdentityStat) => boolean
+}) {
   const t = useTranslations('meta.analysis')
   const reduceMotion = useReducedMotion()
   const locale = useLocale() as SupportedLang
@@ -71,14 +75,17 @@ export default function IdentityAnalysis({ data, selectedId, onSelect }: { data:
   const [excludeBase, setExcludeBase] = useState(true)
   const [formationOnly, setFormationOnly] = useState(true)
   const [allCompanions, setAllCompanions] = useState(false)
+  const [allPosts, setAllPosts] = useState(false)
   const [usageFilter, setUsageFilter] = useState<string | null>(null)
   const [comboFilter, setComboFilter] = useState<string | null>(null)
-  const identityId = data.battleIdentityStats.some(row => row.identity_id === selectedId) ? selectedId : data.battleIdentityStats[0]?.identity_id ?? ''
+  const listed = data.battleIdentityStats.filter(shows)
+  // An identity picked before the list was narrowed stays the subject; without a pick, the first one listed is.
+  const identityId = data.battleIdentityStats.some(row => row.identity_id === selectedId) ? selectedId : (listed[0] ?? data.battleIdentityStats[0])?.identity_id ?? ''
   const insight = data.identityInsights?.[identityId]
   const name = useMemo(() => (row: { name_kr: string; name_en?: string | null; name_jp?: string | null }) => (locale === 'en' ? row.name_en : locale === 'ja' ? row.name_jp : row.name_kr) || row.name_kr, [locale])
   const segments = useSegments()
   const selectIdentity = (id: string) => {
-    onSelect(id); setUsageFilter(null); setComboFilter(null); setAllCompanions(false)
+    onSelect(id); setUsageFilter(null); setComboFilter(null); setAllCompanions(false); setAllPosts(false)
     // Bring the new identity's header into view when the list was used from further down the page.
     const subject = document.querySelector('[data-analysis-subject]')
     if (subject && subject.getBoundingClientRect().top < 0) subject.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' })
@@ -110,7 +117,7 @@ export default function IdentityAnalysis({ data, selectedId, onSelect }: { data:
   const basis = t('basis', { count: insight?.count ?? 0 })
 
   return <div className={styles.identityLayout}>
-    <IdentityList rows={data.battleIdentityStats} sampleCount={data.sampleCount} selectedId={identityId} onSelect={selectIdentity} name={name} />
+    <IdentityList rows={listed} sampleCount={data.sampleCount} selectedId={identityId} onSelect={selectIdentity} name={name} />
     <section className={styles.analysis} data-identity-analysis>
     <div className={styles.subject} data-analysis-subject>
       {art && <Image key={art} src={art} alt="" fill sizes="(max-width: 639px) 100vw, 48rem" className={styles.subjectArt} />}
@@ -131,7 +138,7 @@ export default function IdentityAnalysis({ data, selectedId, onSelect }: { data:
       </div>
       <IdentityInterest id={identityId} />
     </div>
-    <IdentityPickerModal open={pickerOpen} onClose={() => setPickerOpen(false)} rows={data.battleIdentityStats} sampleCount={data.sampleCount} selectedId={identityId} name={name} onSelect={id => { selectIdentity(id); setPickerOpen(false) }} />
+    <IdentityPickerModal open={pickerOpen} onClose={() => setPickerOpen(false)} rows={listed} sampleCount={data.sampleCount} selectedId={identityId} name={name} onSelect={id => { selectIdentity(id); setPickerOpen(false) }} />
     {!insight ? <p className={styles.empty}>{t('empty')}</p> : <m.div key={identityId} className={styles.analysis} initial={reduceMotion ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={smoothTransition}>
       <div className={styles.usageRow}>
         <section className={styles.panel} aria-labelledby="order-heading">
@@ -184,16 +191,9 @@ export default function IdentityAnalysis({ data, selectedId, onSelect }: { data:
         <div className={styles.sectionHead}><h3 id="posts-heading">{t('decks')}</h3><span>{t('count', { count: posts.length })}</span>
           {(activeUsage !== null || activeCombo !== null) && <button type="button" onClick={() => { setUsageFilter(null); setComboFilter(null) }} className={styles.clearFilter}>{t('clearFilter')}<X size={14} /></button>}
         </div>
-        <ul className={styles.posts}>{posts.map(post => <li key={post.source + ':' + post.id}><Link className={styles.post} href={post.source === 'decks' ? '/decks/' + post.id : '/planner/community/' + post.id}>
-          <span className={styles.postSource}>{t('sourceTag.' + post.source)}</span>
-          <span className={styles.postBody}><span className={styles.postTitle}>{post.title}</span><span className={styles.postTags}>
-            <span className={styles.usageTag}><i style={{ background: usageColor(post.usage) }} />{t('usage.' + post.usage)}</span>
-            {post.combo.map(key => <KeywordBadge key={key} keyword={key} />)}
-            {post.support && <span className={styles.benchTag}>{t('bench')}</span>}
-          </span></span>
-          <ArrowUpRight className={styles.postArrow} size={18} />
-        </Link></li>)}</ul>
+        <ul className={styles.posts}>{(allPosts ? posts : posts.slice(0, POST_LIMIT)).map(post => <li key={post.source + ':' + post.id}><PostRow post={post} /></li>)}</ul>
         {!posts.length && <p className={styles.empty}>{t('noPosts')}</p>}
+        {posts.length > POST_LIMIT && <button type="button" onClick={() => setAllPosts(v => !v)} className={styles.moreButton}>{allPosts ? t('less') : t('moreItems', { count: posts.length - POST_LIMIT })}</button>}
       </section>
     </m.div>}
   </section>

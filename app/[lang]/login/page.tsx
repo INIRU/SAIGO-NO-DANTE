@@ -11,7 +11,8 @@ import LoginClient from './LoginClient'
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params
   const t = await getTranslations({ locale: lang, namespace: 'loginPage' })
-  return { title: t('title'), alternates: localeAlternates(lang, '/login') }
+  // Not indexed (robots.txt lets crawlers in, so the page says so itself); links on it may still be followed.
+  return { title: t('title'), description: t('lead'), alternates: localeAlternates(lang, '/login'), robots: { index: false, follow: true } }
 }
 
 async function loginDocs(lang: string): Promise<LegalDoc[]> {

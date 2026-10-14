@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { localeAlternates, localeUrl } from '@/lib/seo/metadata'
+import { localeUrl, pageMetadata, seoLang } from '@/lib/seo/metadata'
 import { Suspense } from 'react'
 import { cacheLife, cacheTag } from 'next/cache'
 import { getAllEGOsForBrowser, getSinners } from '@/lib/db/queries'
@@ -12,20 +12,19 @@ import type { SupportedLang } from '@/lib/i18n/types'
 import StaticQueryAdapter from '@/components/providers/StaticQueryAdapter'
 import BrowserSkeleton from '@/components/sinners/BrowserSkeleton'
 
-const TITLE = { ko: '림버스 컴퍼니 E.G.O 도감 — 전체 E.G.O 목록', en: 'Limbus Company E.G.O List', ja: 'リンバスカンパニー E.G.O一覧' }
+const TITLE = { ko: '림버스 E.G.O 도감 — 등급·죄악별 전체 목록', en: 'Limbus Company E.G.O List — Grades & Sin Affinities', ja: 'リンバスカンパニー E.G.O一覧 — 等級・罪悪属性別' }
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params
   const t = await getTranslations({ locale: lang, namespace: 'browser.meta' })
-  return {
-    title: TITLE[lang as keyof typeof TITLE] ?? TITLE.ko,
+  return pageMetadata({
+    lang,
+    path: '/sinners/ego',
+    title: TITLE[seoLang(lang)],
     description: t('egoDescription'),
-    alternates: localeAlternates(lang, '/sinners/ego'),
-    openGraph: {
-      title: t('egoOgTitle'),
-      description: t('egoOgDescription'),
-    },
-  }
+    ogTitle: t('egoOgTitle'),
+    ogDescription: t('egoOgDescription'),
+  })
 }
 
 export default async function EGOBrowsePage({ params }: { params: Promise<{ lang: string }> }) {

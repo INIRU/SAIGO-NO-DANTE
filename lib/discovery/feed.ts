@@ -2,6 +2,7 @@ import { cacheLife, cacheTag } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { CACHE_TAGS } from "@/lib/constants/cache-tags";
 import { DISCOVERY_COLUMNS, DISCOVERY_TABLE, formatDiscoveryPosts } from "@/lib/discovery/recommend";
+import { rankPopular } from "@/lib/discovery/shelf";
 
 // Shared by /api/discovery and the home page community shelves.
 export async function loadDiscovery(kind: "deck" | "planner", days: number) {
@@ -26,10 +27,9 @@ export async function loadDiscovery(kind: "deck" | "planner", days: number) {
     entity_id: string;
     visitors: number;
   }[];
-  const ids = metrics
-    .filter((r) => r.kind === kind)
-    .slice(0, 6)
-    .map((r) => r.entity_id);
+  // Every ranked id (the DB function returns up to twelve per kind), so deleted posts leave no hole in the six.
+  const visitors = new Map(metrics.filter((r) => r.kind === kind).map((r) => [r.entity_id, r.visitors]));
+  const ids = [...visitors.keys()];
   const identityRank = metrics
     .filter((r) => r.kind === "identity")
     .sort((a, b) => b.visitors - a.visitors || a.entity_id.localeCompare(b.entity_id))
@@ -61,7 +61,7 @@ export async function loadDiscovery(kind: "deck" | "planner", days: number) {
   return {
     recent: formatPosts(recent.data ?? []),
     updated: formatPosts([...((updated.data ?? []) as unknown as { id: string }[])].sort((a, b) => editedIds.indexOf(a.id) - editedIds.indexOf(b.id))),
-    popular: formatPosts(popular.data ?? []),
+    popular: formatPosts(rankPopular((popular.data ?? []) as unknown as { id: string }[], visitors)),
     identities: orderedIdentities,
     counts: metrics,
   };

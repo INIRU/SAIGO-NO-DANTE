@@ -1,3 +1,6 @@
+import { KEYWORD_DECK_KEYWORDS } from '@/lib/decks/keyword-rules'
+import { SINNER_SLUGS } from '@/lib/constants/game'
+
 export interface IdentityStat {
   identity_id: string
   sinner_id: string
@@ -49,6 +52,8 @@ export interface MetaData {
   excludedSamples: number
   source: MetaSource
   period: MetaPeriod
+  filters: MetaFilters
+  facets: MetaFacets
   generatedAt: string
   battleIdentityStats: IdentityStat[]
   supportIdentityStats: IdentityStat[]
@@ -71,6 +76,8 @@ export interface MetaData {
   skillSplits: CountStat[]
   /** Floor-by-floor choices of the plans in scope. */
   dungeon: MetaDungeon
+  /** The most popular samples of each board, at most six. */
+  topPosts: Record<Exclude<MetaSource, 'all'>, MetaInsightPost[]>
 }
 
 /** Keys are theme pack ids, gift game ids and constraint card ids; every count is a number of plans. */
@@ -97,6 +104,60 @@ export type MetaPeriod = typeof META_PERIODS[number]
 export const DEFAULT_META_SOURCE: MetaSource = 'all'
 export const DEFAULT_META_PERIOD: MetaPeriod = 'all'
 
+export const META_DIFFICULTIES = ['normal', 'hard', 'extreme'] as const
+export type MetaDifficulty = typeof META_DIFFICULTIES[number]
+export const META_RARITIES = ['1', '2', '3'] as const
+/**
+ * Narrow which formations are counted. Several values of one filter keep a formation that has any of them, except
+ * keywords and sinners, which a formation has several of: there every value must be present (a dual keyword deck, two
+ * sinners fielded together) unless that filter's mode is 'or'.
+ * A keyword keeps the keyword decks it is part of, a difficulty that difficulty's plans, and a sinner or rarity the
+ * formations that field such an identity (that sinner's identity of that rarity when both are chosen).
+ */
+export interface MetaFilters {
+  usage?: MetaUsage[]
+  keyword?: (typeof KEYWORD_DECK_KEYWORDS[number])[]
+  difficulty?: MetaDifficulty[]
+  sinner?: string[]
+  rarity?: (typeof META_RARITIES[number])[]
+  keywordMode?: 'or'
+  sinnerMode?: 'or'
+}
+/** How many formations each option of a filter keeps, with the other filters applied. Options that keep none are absent. */
+export type MetaFacets = Record<'usage' | 'keyword' | 'difficulty', Record<string, number>>
+
+const META_FILTER_VALUES = { usage: META_USAGES, keyword: KEYWORD_DECK_KEYWORDS, difficulty: META_DIFFICULTIES, sinner: SINNER_SLUGS, rarity: META_RARITIES } as const
+export const META_FILTER_KEYS = Object.keys(META_FILTER_VALUES) as MetaFilterKey[]
+export type MetaFilterKey = keyof typeof META_FILTER_VALUES
+/** The filters whose values can all be asked for at once, by the name of their mode. */
+export const META_FILTER_MODES = { keywordMode: 'keyword', sinnerMode: 'sinner' } as const
+export type MetaFilterMode = keyof typeof META_FILTER_MODES
+
+/**
+ * Reads the filters of a query: comma-separated values, or the lists the page already split. Values come out in one
+ * order (one selection, one spelling, one cache entry). Unknown ones are left out and reported: the API refuses them,
+ * the page ignores them.
+ */
+export function parseMetaFilters(get: (key: MetaFilterKey | MetaFilterMode) => string | readonly string[] | null | undefined): { filters: MetaFilters; invalid: boolean } {
+  const filters: Record<string, unknown> = {}
+  let invalid = false
+  for (const key of META_FILTER_KEYS) {
+    const raw = get(key)
+    const chosen = new Set(typeof raw === 'string' ? raw.split(',').filter(Boolean) : raw ?? [])
+    const kept = (META_FILTER_VALUES[key] as readonly string[]).filter(value => chosen.delete(value))
+    if (chosen.size) invalid = true
+    if (kept.length) filters[key] = kept
+  }
+  for (const mode of Object.keys(META_FILTER_MODES) as MetaFilterMode[]) {
+    const raw = get(mode)
+    if (!raw) continue
+    if (raw !== 'or' && raw !== 'and') invalid = true
+    // Any-of only means something from two values on.
+    else if (raw === 'or' && ((filters[META_FILTER_MODES[mode]] as unknown[] | undefined)?.length ?? 0) >= 2) filters[mode] = 'or'
+  }
+  return { filters: filters as MetaFilters, invalid }
+}
+
 export type MetaIdentity = Omit<IdentityStat, 'identity_id' | 'count' | 'keywords'> & { id: string; keywords: string[] | null; skill_keyword_list?: string[] | null }
 export type MetaEGO = Omit<EGOStat, 'ego_id' | 'count'> & { id: string }
 export type MetaPost = {
@@ -106,6 +167,9 @@ export type MetaPost = {
   title?: string
   keywords?: string[] | null
   content_type?: string | null
+  votes?: number | null
+  views?: number | null
+  comments?: number | null
   difficulty?: string | null
   /** Gift game ids in the plan's final inventory (start and observation gifts included). */
   gifts?: string[]
@@ -125,6 +189,9 @@ export type MetaInsightPost = {
   usage: MetaUsage
   /** Keyword deck combo, sorted; empty when mixed. */
   combo: string[]
+  votes: number
+  views: number
+  comments: number
   /** The identity sat on the bench (no formation order) in this post. */
   support?: true
 }
@@ -135,7 +202,7 @@ export interface IdentityInsight {
   count: number
   orders: Record<string, number>
   egos: EGOStat[]
-  /** Formation posts first, then bench-only posts marked support. */
+  /** Most popular first; bench-only posts are marked support. */
   posts: MetaInsightPost[]
   /** Plans that field this identity. Absent when none do. */
   plan?: MetaPlanSummary

@@ -1,4 +1,6 @@
+import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
+import { getTranslations } from 'next-intl/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
@@ -7,6 +9,12 @@ import { fetchDeckBuilderData } from '@/lib/decks/builder-data'
 import type { SupportedLang } from '@/lib/i18n/types'
 import EditWrapper from './EditWrapper'
 import { normalizeUptie } from '@/lib/decks/deck-identity-uptie'
+
+export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
+  const { lang } = await params
+  const t = await getTranslations({ locale: lang, namespace: 'decks.builder.metadata' })
+  return { title: t('title'), robots: { index: false, follow: false } }
+}
 
 export default async function EditDeckPage({ params }: { params: Promise<{ lang: string; id: string }> }) {
   const { lang: rawLang, id } = await params
