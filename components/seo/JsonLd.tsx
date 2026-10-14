@@ -1,5 +1,5 @@
 import { JsonLdScript } from 'next-seo'
-import { localeUrl } from '@/lib/seo/metadata'
+import { SITE_NAME, SITE_URL, localeUrl, metaText } from '@/lib/seo/metadata'
 
 type JsonLdProps = {
   data: Record<string, unknown>
@@ -9,15 +9,18 @@ export default function JsonLd({ data }: JsonLdProps) {
   return <JsonLdScript data={data} scriptKey={String(data['@type'] ?? 'structured-data')} />
 }
 
-/** No SearchAction: site search has no URL form (the old /sinners?q= target ignored the query). */
+/**
+ * The site name search engines show: one short name, with the other names as alternates (Google's site name guidance).
+ * No SearchAction: site search has no URL form (the old /sinners?q= target ignored the query).
+ */
 export function websiteJsonLd(lang: string) {
   return {
     '@context': 'https://schema.org',
     '@type': 'WebSite',
-    name: '최애의 관리자 | SAIGO NO DANTE',
-    alternateName: 'SAIGO NO DANTE',
+    name: SITE_NAME.ko,
+    alternateName: [SITE_NAME.en, new URL(SITE_URL).hostname],
     url: localeUrl(lang),
-    description: 'Limbus Company 팬 아카이브 — 수감자 DB, 덱 빌더, 덱 공유',
+    description: metaText('home.meta.description', lang),
     inLanguage: lang,
   }
 }

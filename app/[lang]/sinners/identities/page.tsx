@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { localeAlternates, localeUrl } from '@/lib/seo/metadata'
+import { localeUrl, pageMetadata, seoLang } from '@/lib/seo/metadata'
 import { Suspense } from 'react'
 import { cacheLife, cacheTag } from 'next/cache'
 import { getAllIdentitiesForBrowser, getSinners } from '@/lib/db/queries'
@@ -12,20 +12,19 @@ import type { SupportedLang } from '@/lib/i18n/types'
 import StaticQueryAdapter from '@/components/providers/StaticQueryAdapter'
 import BrowserSkeleton from '@/components/sinners/BrowserSkeleton'
 
-const TITLE = { ko: '림버스 컴퍼니 인격 도감 — 전체 인격 목록', en: 'Limbus Company Identity List', ja: 'リンバスカンパニー 人格一覧' }
+const TITLE = { ko: '림버스 인격 도감 — 전체 인격 목록·스킬·키워드', en: 'Limbus Company Identity List — Skills & Keywords', ja: 'リンバスカンパニー 人格一覧 — スキル・キーワード' }
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params
   const t = await getTranslations({ locale: lang, namespace: 'browser.meta' })
-  return {
-    title: TITLE[lang as keyof typeof TITLE] ?? TITLE.ko,
+  return pageMetadata({
+    lang,
+    path: '/sinners/identities',
+    title: TITLE[seoLang(lang)],
     description: t('identitiesDescription'),
-    alternates: localeAlternates(lang, '/sinners/identities'),
-    openGraph: {
-      title: t('identitiesOgTitle'),
-      description: t('identitiesOgDescription'),
-    },
-  }
+    ogTitle: t('identitiesOgTitle'),
+    ogDescription: t('identitiesOgDescription'),
+  })
 }
 
 export default async function IdentitiesPage({ params }: { params: Promise<{ lang: string }> }) {

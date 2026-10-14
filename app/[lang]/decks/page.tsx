@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { localeAlternates } from '@/lib/seo/metadata'
+import { pageMetadata } from '@/lib/seo/metadata'
 import { getTranslations } from 'next-intl/server'
 import BoardHeader from '@/components/discovery/BoardHeader'
 import DecksClient from './DecksClient'
@@ -9,11 +9,7 @@ import { BoardShelfSkeleton } from '@/components/discovery/BoardSkeleton'
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params
   const t = await getTranslations({ locale: lang, namespace: 'decks.meta' })
-  return {
-    title: t('title'),
-    description: t('description'),
-    alternates: localeAlternates(lang, '/decks'),
-  }
+  return pageMetadata({ lang, path: '/decks', title: t('title'), description: t('description') })
 }
 
 export default async function DecksPage({ params }: { params: Promise<{ lang: string }> }) {

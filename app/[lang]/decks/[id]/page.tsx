@@ -2,7 +2,9 @@ import { notePlainText } from '@/lib/notes/blocks'
 import * as Sentry from '@sentry/nextjs'
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import type { Metadata } from 'next'
-import { localeAlternates } from '@/lib/seo/metadata'
+import { localeUrl, pageMetadata } from '@/lib/seo/metadata'
+import { translations } from '@/lib/i18n/translations'
+import JsonLd, { breadcrumbJsonLd } from '@/components/seo/JsonLd'
 import { connection } from 'next/server'
 import { Suspense } from 'react'
 import { cacheLife, cacheTag } from 'next/cache'
@@ -535,27 +537,17 @@ async function getCachedDeckMetadata(lang: 'ko' | 'en' | 'ja', id: string): Prom
   const description = data.description
     ? notePlainText(data.description).slice(0, 160)
     : `${data.title} — ${{ ko: '림버스 컴퍼니 덱 빌드', en: 'Limbus Company deck build', ja: 'リンバスカンパニー デッキ構築' }[lang]}`
-  const canonical = absoluteUrl(`/${lang}/decks/${id}`)
-  const ogImage = absoluteUrl(`/${lang}/decks/${id}/opengraph-image`)
   const boardName = { ko: '덱 게시판', en: 'Deck Board', ja: 'デッキ掲示板' }[lang]
 
-  return {
-    title,
+  return pageMetadata({
+    lang,
+    path: `/decks/${id}`,
+    // The author's title alone says nothing about the game in a search result.
+    title: `${title} — ${{ ko: '림버스 컴퍼니 덱', en: 'Limbus Company Deck', ja: 'リンバスカンパニー デッキ' }[lang]}`,
     description,
-    alternates: localeAlternates(lang, `/decks/${id}`),
-    openGraph: {
-      title: `${title} | ${boardName}`,
-      description,
-      url: canonical,
-      images: [{ url: ogImage, width: 1200, height: 630, alt: `${title} | SAIGO NO DANTE` }],
-    },
-    twitter: {
-      card: 'summary_large_image',
-      title: `${title} | ${boardName}`,
-      description,
-      images: [ogImage],
-    },
-  }
+    ogTitle: `${title} | ${boardName}`,
+    image: { url: absoluteUrl(`/${lang}/decks/${id}/opengraph-image`), width: 1200, height: 630, alt: `${title} | SAIGO NO DANTE` },
+  })
 }
 
 async function getCachedDeckDetailPayload(lang: 'ko' | 'en' | 'ja', id: string) {
@@ -716,6 +708,13 @@ async function DeckDetailRuntime({ params }: Props) {
 
   return (
     <>
+      {initialDeck && (
+        <JsonLd data={breadcrumbJsonLd([
+          { name: translations['nav.home'][lang], url: localeUrl(lang) },
+          { name: translations['nav.decks'][lang], url: localeUrl(lang, '/decks') },
+          { name: initialDeck.title, url: localeUrl(lang, `/decks/${id}`) },
+        ])} />
+      )}
       <Suspense fallback={<DeckDetailSkeleton />}>
         <DeckDetailClient
           id={id}

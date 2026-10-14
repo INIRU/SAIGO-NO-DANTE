@@ -180,8 +180,8 @@
   },
   "decks": {
     "meta": {
-      "title": "デッキ掲示板",
-      "description": "リンバスカンパニーのデッキ、人格編成、E.G.O構成、運用メモを共有できます。"
+      "title": "リンバスカンパニー デッキ掲示板 — 編成・おすすめデッキ",
+      "description": "リンバスカンパニーのデッキ構築・人格編成・E.G.O構成を共有。人気デッキと新着デッキを探せます。"
     },
     "header": {
       "eyebrow": "DECK BOARD",
@@ -565,7 +565,8 @@
   },
   "planner": {
     "title": "ミラーダンジョンプランナー",
-    "metaTitle": "ミラーダンジョンプランナー",
+    "metaTitle": "リンバスカンパニー ミラーダンジョンプランナー — 階層計画・ギフト",
+    "metaDescription": "リンバスカンパニーのミラーダンジョンプランナー。テーマパック・階層ごとのE.G.Oギフト・編成・キーワードシナジーをまとめて計画し、共有できます。",
     "run": {
       "pipGiftAcquired": "{name}の獲得を記録",
       "popupGiftAutoAcquired": "獲得ポップアップから{name}を自動記録しました · 補助パネルで取り消せます",
@@ -641,7 +642,7 @@
       "unselected": "未指定",
       "limited": "途中参加：開始前の記録は復元できません。",
       "start": "アシストモード開始",
-      "metaTitle": "ミラーダンジョン — アシストモード",
+      "metaTitle": "リンバスカンパニー ミラーダンジョン アシストモード — 進行記録",
       "metaDescription": "ミラーダンジョンのテーマ、ギフト、編成、イベント、階ごとの進行を手動で記録するアシストモードです。",
       "title": "アシストモード",
       "backToPlanner": "戻る",
@@ -883,7 +884,7 @@
     "community": "コミュニティプラン",
     "detail": {
       "notFoundTitle": "プランが見つかりません",
-      "metaTitle": "{title} | コミュニティプラン",
+      "metaTitle": "{title} — リンバスカンパニー ミラーダンジョンプラン",
       "metaDescription": "リンバスカンパニー ミラーダンジョン {difficulty} プラン",
       "metaDescriptionWithDescription": "{difficulty}難易度 — {description}",
       "backToCommunity": "コミュニティプラン",
@@ -992,8 +993,8 @@
     },
     "communityBoard": {
       "meta": {
-        "title": "コミュニティプラン | ミラーダンジョンプランナー",
-        "description": "リンバスカンパニーのミラーダンジョン計画を閲覧し、投票できます。"
+        "title": "リンバスカンパニー ミラーダンジョン攻略プラン — コミュニティ",
+        "description": "コミュニティが投稿したミラーダンジョンのプランを難易度・テーマパック別に閲覧して評価できます。"
       },
       "header": {
         "eyebrow": "MIRROR DUNGEON PLANS",
@@ -1665,6 +1666,7 @@
     "title": "マイページ"
   },
   "home": {
+    "heading": "SAIGO NO DANTE — リンバスカンパニー情報サイト",
     "fanArchive": "ファンアーカイブ",
     "limpi": {
       "name": "Limpi",
@@ -2433,9 +2435,9 @@
     "emptyIdentity": "条件に合う人格がありません",
     "emptyEgo": "条件に合うE.G.Oがありません",
     "meta": {
-      "identitiesDescription": "リンバスカンパニー12人の囚人の全人格を検索・絞り込み。キーワード、罪悪属性、攻撃タイプ、レアリティで絞り込めます。",
+      "identitiesDescription": "リンバスカンパニー全人格をキーワード・罪悪属性・攻撃タイプ・レアリティで検索できます。",
       "identitiesOgTitle": "全人格一覧 | SAIGO NO DANTE",
-      "identitiesOgDescription": "200以上の人格をキーワード・罪悪属性・攻撃タイプで絞り込み。",
+      "identitiesOgDescription": "全人格をキーワード・罪悪属性・攻撃タイプで絞り込み。",
       "identitiesListName": "リンバスカンパニー 人格一覧",
       "egoDescription": "リンバスカンパニー12人の囚人の全E.G.Oを検索・絞り込み。等級、罪悪属性、キーワードで絞り込めます。",
       "egoOgTitle": "全E.G.O一覧 | SAIGO NO DANTE",

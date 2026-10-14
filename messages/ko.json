@@ -180,8 +180,8 @@
   },
   "decks": {
     "meta": {
-      "title": "림버스 덱 게시판 — 인격 편성 공유",
-      "description": "림버스 컴퍼니 덱 공유 게시판 - 인격 편성, E.G.O 조합, 운영법을 공유하세요."
+      "title": "림버스 덱 추천·편성 공유 게시판",
+      "description": "림버스 컴퍼니 덱 추천과 인격 편성, E.G.O 조합, 운영 팁을 공유하는 덱 게시판입니다. 인기 덱과 최신 덱을 둘러보세요."
     },
     "header": {
       "eyebrow": "DECK BOARD",
@@ -565,7 +565,8 @@
   },
   "planner": {
     "title": "거울 던전 플래너",
-    "metaTitle": "거울 던전 플래너",
+    "metaTitle": "림버스 거울 던전 플래너 — 거던 플랜 짜기",
+    "metaDescription": "림버스 컴퍼니 거울 던전(거던) 플래너입니다. 테마팩, 층별 기프트, 덱 편성, 키워드 시너지를 한 번에 계획하고 플랜을 공유하세요.",
     "run": {
       "pipGiftAcquired": "{name} 획득 기록",
       "popupGiftAutoAcquired": "획득 팝업에서 {name} 자동 기록 · 보조창에서 되돌릴 수 있습니다",
@@ -641,7 +642,7 @@
       "unselected": "미지정",
       "limited": "중도 시작: 시작 전 기록은 복구되지 않습니다.",
       "start": "어시스트 모드 시작",
-      "metaTitle": "거울 던전 어시스트 모드",
+      "metaTitle": "림버스 거울 던전 어시스트 모드 — 진행 기록",
       "metaDescription": "거울 던전의 테마, 기프트, 편성, 이벤트와 층별 진행을 수동으로 기록하는 어시스트 모드입니다.",
       "title": "어시스트 모드",
       "backToPlanner": "뒤로 가기",
@@ -883,7 +884,7 @@
     "community": "커뮤니티 플랜",
     "detail": {
       "notFoundTitle": "플랜을 찾을 수 없습니다",
-      "metaTitle": "{title} | 커뮤니티 플랜",
+      "metaTitle": "{title} — 림버스 거울 던전 플랜",
       "metaDescription": "림버스 컴퍼니 거울 던전 {difficulty} 플랜",
       "metaDescriptionWithDescription": "{difficulty} 난이도 — {description}",
       "backToCommunity": "커뮤니티 플랜",
@@ -992,8 +993,8 @@
     },
     "communityBoard": {
       "meta": {
-        "title": "커뮤니티 플랜 | 거울 던전 플래너",
-        "description": "림버스 컴퍼니 거울 던전 플래너 — 다른 유저들의 플랜을 둘러보고 추천하세요."
+        "title": "림버스 거던 플랜 모음 — 커뮤니티 공략 공유",
+        "description": "다른 유저가 올린 림버스 컴퍼니 거울 던전 플랜을 난이도와 테마팩별로 둘러보고 추천하세요."
       },
       "header": {
         "eyebrow": "MIRROR DUNGEON PLANS",
@@ -1665,6 +1666,7 @@
     "title": "마이 페이지"
   },
   "home": {
+    "heading": "최애의 관리자 — 림버스 컴퍼니 정보·도감",
     "fanArchive": "팬 아카이브",
     "limpi": {
       "name": "림피",
@@ -2433,11 +2435,11 @@
     "emptyIdentity": "조건에 맞는 인격이 없습니다",
     "emptyEgo": "조건에 맞는 E.G.O가 없습니다",
     "meta": {
-      "identitiesDescription": "림버스 컴퍼니 12인 수감자의 모든 인격을 한 곳에서 검색하고 필터링하세요. 키워드, 죄악, 공격유형, 등급별 필터 지원.",
+      "identitiesDescription": "림버스 컴퍼니 12인 수감자의 모든 인격을 키워드·죄악·공격 유형·등급으로 검색하세요. 스킬과 패시브까지 확인할 수 있습니다.",
       "identitiesOgTitle": "인격 전체 목록 | 최애의 관리자",
-      "identitiesOgDescription": "200+ 인격을 키워드, 죄악, 공격유형으로 크로스 필터링하세요.",
+      "identitiesOgDescription": "모든 인격을 키워드, 죄악, 공격유형으로 크로스 필터링하세요.",
       "identitiesListName": "림버스 컴퍼니 인격 전체 목록",
-      "egoDescription": "림버스 컴퍼니 12인 수감자의 모든 E.G.O를 한 곳에서 검색하고 필터링하세요. 등급, 죄악, 키워드별 필터 지원.",
+      "egoDescription": "림버스 컴퍼니 모든 E.G.O를 등급, 죄악 속성, 키워드로 검색하세요. 스킬과 패시브, 내성 정보를 볼 수 있습니다.",
       "egoOgTitle": "E.G.O 전체 목록 | 최애의 관리자",
       "egoOgDescription": "모든 E.G.O를 등급, 죄악 속성으로 크로스 필터링하세요.",
       "egoListName": "림버스 컴퍼니 E.G.O 전체 목록"

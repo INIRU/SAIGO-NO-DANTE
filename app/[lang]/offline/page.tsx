@@ -5,6 +5,7 @@ import { cacheLife } from 'next/cache'
 export const metadata: Metadata = {
   title: '오프라인',
   description: '인터넷 연결을 확인해 주세요.',
+  robots: { index: false, follow: false },
 }
 
 export default async function OfflinePage() {

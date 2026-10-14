@@ -1,15 +1,13 @@
 import { Suspense } from "react";
 import LunacyCalendar from "@/components/tools/LunacyCalendar";
-import { copy } from "@/lib/tools/lunacy/copy";
-import { localeAlternates } from '@/lib/seo/metadata'
+import { metaText, pageMetadata } from '@/lib/seo/metadata'
 export async function generateMetadata({
   params,
 }: {
   params: Promise<{ lang: string }>;
 }) {
   const { lang } = await params;
-  const t = copy[lang as keyof typeof copy] || copy.ko;
-  return { title: t.title, description: t.intro, alternates: localeAlternates(lang, "/tools/lunacy") };
+  return pageMetadata({ lang, path: "/tools/lunacy", title: metaText('lunacy.meta.title', lang), description: metaText('lunacy.meta.description', lang) });
 }
 export default function Page() {
   return (

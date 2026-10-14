@@ -113,6 +113,11 @@ const nextConfig: NextConfig = {
         ],
       },
       {
+        // robots.txt lets crawlers fetch the API (a rendered page reads from it); the responses themselves stay out of the index.
+        source: '/api/:path*',
+        headers: [{ key: 'X-Robots-Tag', value: 'noindex' }],
+      },
+      {
         source: '/(.*)',
         headers: [
           {
