@@ -2079,6 +2079,10 @@
         "decks": "Deck",
         "planner": "Plan"
       },
+      "popular": {
+        "decks": "Popular decks",
+        "planner": "Popular plans"
+      },
       "interest": {
         "title": "Views",
         "week": "7 days",

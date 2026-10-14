@@ -18,9 +18,8 @@ import EgoDisplayCard from '@/components/sinners/EgoDisplayCard'
 import { Toggle } from '@/components/tools/LunacyControls'
 import IdentityInterest from './IdentityInterest'
 import IdentityPickerModal from './IdentityPickerModal'
-import KeywordBadge from './KeywordBadge'
-import DonutChart, { OTHER, collapse, useSegments, usageColor } from './DonutChart'
-import { PlanInsights, Portrait } from './MetaSections'
+import DonutChart, { OTHER, collapse, useSegments } from './DonutChart'
+import { PlanInsights, Portrait, PostRow } from './MetaSections'
 import SkillExchangeInsight from './SkillExchangeInsight'
 
 function countBy(posts: MetaInsightPost[], key: (post: MetaInsightPost) => string): CountStat[] {
@@ -30,6 +29,7 @@ function countBy(posts: MetaInsightPost[], key: (post: MetaInsightPost) => strin
 }
 const comboKey = (post: MetaInsightPost) => post.combo.join('+')
 const COMPANION_LIMIT = 8
+const POST_LIMIT = 10
 const ORDER_SLOTS = 12
 
 function Share({ value, digits = 1 }: { value: number; digits?: number }) {
@@ -75,6 +75,7 @@ export default function IdentityAnalysis({ data, selectedId, onSelect, shows = (
   const [excludeBase, setExcludeBase] = useState(true)
   const [formationOnly, setFormationOnly] = useState(true)
   const [allCompanions, setAllCompanions] = useState(false)
+  const [allPosts, setAllPosts] = useState(false)
   const [usageFilter, setUsageFilter] = useState<string | null>(null)
   const [comboFilter, setComboFilter] = useState<string | null>(null)
   const listed = data.battleIdentityStats.filter(shows)
@@ -84,7 +85,7 @@ export default function IdentityAnalysis({ data, selectedId, onSelect, shows = (
   const name = useMemo(() => (row: { name_kr: string; name_en?: string | null; name_jp?: string | null }) => (locale === 'en' ? row.name_en : locale === 'ja' ? row.name_jp : row.name_kr) || row.name_kr, [locale])
   const segments = useSegments()
   const selectIdentity = (id: string) => {
-    onSelect(id); setUsageFilter(null); setComboFilter(null); setAllCompanions(false)
+    onSelect(id); setUsageFilter(null); setComboFilter(null); setAllCompanions(false); setAllPosts(false)
     // Bring the new identity's header into view when the list was used from further down the page.
     const subject = document.querySelector('[data-analysis-subject]')
     if (subject && subject.getBoundingClientRect().top < 0) subject.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' })
@@ -190,16 +191,9 @@ export default function IdentityAnalysis({ data, selectedId, onSelect, shows = (
         <div className={styles.sectionHead}><h3 id="posts-heading">{t('decks')}</h3><span>{t('count', { count: posts.length })}</span>
           {(activeUsage !== null || activeCombo !== null) && <button type="button" onClick={() => { setUsageFilter(null); setComboFilter(null) }} className={styles.clearFilter}>{t('clearFilter')}<X size={14} /></button>}
         </div>
-        <ul className={styles.posts}>{posts.map(post => <li key={post.source + ':' + post.id}><Link className={styles.post} href={post.source === 'decks' ? '/decks/' + post.id : '/planner/community/' + post.id}>
-          <span className={styles.postSource}>{t('sourceTag.' + post.source)}</span>
-          <span className={styles.postBody}><span className={styles.postTitle}>{post.title}</span><span className={styles.postTags}>
-            <span className={styles.usageTag}><i style={{ background: usageColor(post.usage) }} />{t('usage.' + post.usage)}</span>
-            {post.combo.map(key => <KeywordBadge key={key} keyword={key} />)}
-            {post.support && <span className={styles.benchTag}>{t('bench')}</span>}
-          </span></span>
-          <ArrowUpRight className={styles.postArrow} size={18} />
-        </Link></li>)}</ul>
+        <ul className={styles.posts}>{(allPosts ? posts : posts.slice(0, POST_LIMIT)).map(post => <li key={post.source + ':' + post.id}><PostRow post={post} /></li>)}</ul>
         {!posts.length && <p className={styles.empty}>{t('noPosts')}</p>}
+        {posts.length > POST_LIMIT && <button type="button" onClick={() => setAllPosts(v => !v)} className={styles.moreButton}>{allPosts ? t('less') : t('moreItems', { count: posts.length - POST_LIMIT })}</button>}
       </section>
     </m.div>}
   </section>

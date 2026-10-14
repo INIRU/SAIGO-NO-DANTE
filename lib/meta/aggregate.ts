@@ -139,6 +139,13 @@ export function metaPeriodStart(period: MetaPeriod, now: number): string | null 
   return period === 'all' ? null : new Date(now - Number(period) * 86_400_000).toISOString()
 }
 
+const TOP_POSTS = 6
+
+/** Most recommended first, then most viewed, newest, and by id. */
+function byPopularity(a: MetaPost, b: MetaPost): number {
+  return (b.votes ?? 0) - (a.votes ?? 0) || (b.views ?? 0) - (a.views ?? 0) || Date.parse(b.created_at) - Date.parse(a.created_at) || a.id.localeCompare(b.id)
+}
+
 /** One published, nonempty formation is one sample, regardless of its source. */
 export function aggregateMeta({ posts, identities, egos, keywordSinMap, source, period, now, filters = {} }: {
   posts: MetaPost[]
@@ -163,7 +170,8 @@ export function aggregateMeta({ posts, identities, egos, keywordSinMap, source, 
   const keywordCounts = new Map<string, number>()
   const usageCounts = new Map<MetaUsage, number>()
   const comboCounts = new Map<string, number>()
-  const benchPosts = new Map<string, MetaInsightPost[]>()
+  const identityPosts = new Map<string, MetaInsightPost[]>()
+  const topPosts: MetaData['topPosts'] = { decks: [], planner: [] }
   const planTotals = planTally()
   const planPosts: MetaPost[] = []
   const skillSplits = new Map<string, number>()
@@ -176,7 +184,8 @@ export function aggregateMeta({ posts, identities, egos, keywordSinMap, source, 
   const seenPosts = new Set<string>()
   const since = metaPeriodStart(period, now)
 
-  for (const post of posts) {
+  // Read in popularity order, so every list of posts built below is in it.
+  for (const post of [...posts].sort(byPopularity)) {
     if (source !== 'all' && post.source !== source) continue
     const createdAt = Date.parse(post.created_at)
     if (!Number.isFinite(createdAt) || createdAt > now || (since && createdAt < Date.parse(since))) continue
@@ -237,7 +246,8 @@ export function aggregateMeta({ posts, identities, egos, keywordSinMap, source, 
 
     usageCounts.set(usage, (usageCounts.get(usage) ?? 0) + 1)
     comboCounts.set(combo.join('+'), (comboCounts.get(combo.join('+')) ?? 0) + 1)
-    const summary: MetaInsightPost = { id: post.id, source: post.source, title: post.title ?? post.id, usage, combo }
+    const summary: MetaInsightPost = { id: post.id, source: post.source, title: post.title ?? post.id, usage, combo, votes: post.votes ?? 0, views: post.views ?? 0, comments: post.comments ?? 0 }
+    if (topPosts[post.source].length < TOP_POSTS) topPosts[post.source].push(summary)
     if (post.source === 'planner') {
       planTotals.add(post)
       planPosts.push(post)
@@ -248,10 +258,9 @@ export function aggregateMeta({ posts, identities, egos, keywordSinMap, source, 
       }
     }
     for (const { identity, order } of uniqueSlots) {
-      if (order < 99) continue
-      const list = benchPosts.get(identity.id) ?? []
-      list.push({ ...summary, support: true })
-      benchPosts.set(identity.id, list)
+      const list = identityPosts.get(identity.id) ?? []
+      list.push(order < 99 ? summary : { ...summary, support: true })
+      identityPosts.set(identity.id, list)
     }
     for (const { identity, order, skills } of battleSlots) {
       const insight = identityInsights[identity.id] ??= { count: 0, orders: {}, egos: [], posts: [], companions: [], skills: [] }
@@ -267,7 +276,6 @@ export function aggregateMeta({ posts, identities, egos, keywordSinMap, source, 
         if (existing) existing.count++
         else insight.companions.push({ identity_id: companion.id, count: 1 })
       }
-      insight.posts.push(summary)
     }
 
     const battleSinners = new Set(battleSlots.map(slot => slot.identity.sinner_id))
@@ -315,7 +323,8 @@ export function aggregateMeta({ posts, identities, egos, keywordSinMap, source, 
   }
 
   for (const [id, insight] of Object.entries(identityInsights)) {
-    insight.posts.push(...benchPosts.get(id) ?? [])
+    // Bench posts too, for an identity that some post fields.
+    insight.posts = identityPosts.get(id) ?? []
     const plans = identityPlans.get(id)
     if (plans) insight.plan = plans.summary(10, 6)
     insight.companions.sort((a, b) => b.count - a.count || a.identity_id.localeCompare(b.identity_id))
@@ -339,6 +348,7 @@ export function aggregateMeta({ posts, identities, egos, keywordSinMap, source, 
     skillCatalog: {},
     skillSplits: byCount(skillSplits),
     dungeon: aggregateDungeon(planPosts),
+    topPosts,
     synergies: [...pairCounts].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).slice(0, 20).map(([key, count]) => {
       const [aId, bId] = JSON.parse(key) as [string, string]
       const a = identityCatalog.get(aId)!

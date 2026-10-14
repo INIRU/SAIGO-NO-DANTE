@@ -29,8 +29,10 @@ async function getMetaCatalog() {
   return { identities, egos, keywords }
 }
 
-type DeckRow = { title: string; main_keywords: string[] | null; content_type: string | null; id: string; created_at: string; deck_identities: unknown; deck_egos: unknown }
-type PlanRow = { title: string; tags: string[] | null; id: string; created_at: string; deck: unknown; egos: unknown; difficulty: string | null; floor_plan: unknown; gift_inventory: unknown }
+type Reception = { vote_count: number | null; view_count: number | null; comment_count: number | null }
+type DeckRow = Reception & { title: string; main_keywords: string[] | null; content_type: string | null; id: string; created_at: string; deck_identities: unknown; deck_egos: unknown }
+type PlanRow = Reception & { title: string; tags: string[] | null; id: string; created_at: string; deck: unknown; egos: unknown; difficulty: string | null; floor_plan: unknown; gift_inventory: unknown }
+const reception = (row: Reception) => ({ votes: row.vote_count, views: row.view_count, comments: row.comment_count })
 
 async function getSourcePosts(source: Exclude<MetaSource, 'all'>, period: MetaPeriod): Promise<MetaPost[]> {
   'use cache'
@@ -41,20 +43,20 @@ async function getSourcePosts(source: Exclude<MetaSource, 'all'>, period: MetaPe
   const since = metaPeriodStart(period, now)
   if (source === 'decks') {
     const rows = await readAllMetaRows<DeckRow>((from, to) => {
-      let query = db.from('decks').select('id, title, main_keywords, content_type, created_at, deck_identities(identity_id, slot_order, s1_count, s2_count, s3_count), deck_egos(ego_id)')
+      let query = db.from('decks').select('id, title, main_keywords, content_type, created_at, vote_count, view_count, comment_count, deck_identities(identity_id, slot_order, s1_count, s2_count, s3_count), deck_egos(ego_id)')
         .order('id').lte('created_at', new Date(now).toISOString())
       if (since) query = query.gte('created_at', since)
       return query.range(from, to)
     })
-    return rows.map(row => ({ id: row.id, source, created_at: row.created_at, title: row.title, keywords: row.main_keywords, content_type: row.content_type, identities: row.deck_identities, egos: row.deck_egos }))
+    return rows.map(row => ({ id: row.id, source, created_at: row.created_at, title: row.title, keywords: row.main_keywords, content_type: row.content_type, ...reception(row), identities: row.deck_identities, egos: row.deck_egos }))
   }
   const rows = await readAllMetaRows<PlanRow>((from, to) => {
-    let query = db.from('md_plans').select('id, title, tags, created_at, deck, egos, difficulty, floor_plan, gift_inventory')
+    let query = db.from('md_plans').select('id, title, tags, created_at, vote_count, view_count, comment_count, deck, egos, difficulty, floor_plan, gift_inventory')
       .order('id').lte('created_at', new Date(now).toISOString())
     if (since) query = query.gte('created_at', since)
     return query.range(from, to)
   })
-  return rows.map(row => ({ id: row.id, source, created_at: row.created_at, title: row.title, keywords: row.tags, identities: row.deck, egos: row.egos,
+  return rows.map(row => ({ id: row.id, source, created_at: row.created_at, title: row.title, keywords: row.tags, ...reception(row), identities: row.deck, egos: row.egos,
     difficulty: row.difficulty, gifts: planGiftIds(row.gift_inventory), themes: planThemeIds(row.floor_plan), floorPlan: row.floor_plan, inventory: row.gift_inventory }))
 }
 
