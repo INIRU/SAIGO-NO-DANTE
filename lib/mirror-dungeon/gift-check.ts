@@ -54,30 +54,6 @@ export function fusionIngredientNames(resultName: string, recipes: readonly Pick
   return [...names]
 }
 
-/** A named list of gifts to obtain in a run; `gifts` holds giftCheckKey values. */
-export interface GiftPreset { id: string; name: string; gifts: string[] }
-export interface GiftPresets { active: string | null; list: GiftPreset[] }
-
-export const GIFT_PRESET_STORAGE = 'snd-gift-presets'
-export const GIFT_PRESET_LIMIT = 10
-export const GIFT_PRESET_NAME_MAX = 20
-
-/** The stored presets, without broken entries; a chosen preset that no longer exists is dropped. */
-export function normalizePresets(saved: unknown): GiftPresets {
-  const raw = (saved && typeof saved === 'object' ? saved : {}) as { active?: unknown; list?: unknown }
-  const list = (Array.isArray(raw.list) ? raw.list : [])
-    .filter((preset): preset is GiftPreset => !!preset && typeof preset.id === 'string' && typeof preset.name === 'string')
-    .slice(0, GIFT_PRESET_LIMIT)
-    .map(preset => ({ id: preset.id, name: preset.name.slice(0, GIFT_PRESET_NAME_MAX), gifts: normalizeChecked(preset.gifts) }))
-  return { active: list.some(preset => preset.id === raw.active) ? raw.active as string : null, list }
-}
-
-/** The preset's gifts in the order they were added; keys the catalog no longer has are skipped. */
-export function presetGifts(preset: GiftPreset, gifts: EgoGift[]): EgoGift[] {
-  const byKey = new Map(gifts.map(gift => [giftCheckKey(gift), gift]))
-  return preset.gifts.flatMap(key => byKey.get(key) ?? [])
-}
-
 export interface GiftCheckMark {
   fusion: boolean
   /** Packs this gift is only found in (see themeExclusiveGiftIds), in theme order. */

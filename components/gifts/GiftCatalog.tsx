@@ -227,7 +227,8 @@ export interface GiftCatalogProps {
   cardProps?: (gift: EgoGift) => GiftCatalogCardProps | undefined
   /** Keyword tab and keyword group order; the default is GIFT_KEYWORD_ORDER. */
   keywordOrder?: readonly string[]
-  /** Group by keyword and keep the order of `gifts` inside each group (no grade sorting, no sort control). */
+  /** Group by keyword (or by `pinned`, when given) and keep the order of `gifts` inside each group (no grade sorting,
+   *  no sort control). */
   keepOrder?: boolean
   /** Control pinned to the end of the keyword tab row (e.g. the keyword order button). */
   keywordsEnd?: ReactNode
@@ -244,8 +245,8 @@ export interface GiftCatalogProps {
   /** Shown instead of the grid until a keyword, grade or search narrows the list. */
   idleHint?: ReactNode
   /** Groups listed first, in this order, each under its own heading; a gift sits in the first group that has it.
-   *  `warning` draws the red mark (e.g. gifts only this floor gives). */
-  pinned?: { ids: ReadonlySet<string>; label: string; warning?: boolean }[]
+   *  `warning` draws the red mark (e.g. gifts only this floor gives); `note` is a line of the user's own under the heading. */
+  pinned?: { ids: ReadonlySet<string>; label: string; warning?: boolean; note?: string }[]
 }
 
 type GiftItemProps = {
@@ -288,7 +289,7 @@ const MemoGiftItem = memo(function MemoGiftItem({
     name: getLocalizedName({ name_kr: gift.name, name_en: gift.name_en, name_jp: gift.name_jp }, lang),
   }), [gift, lang])
   const handleClick = useCallback(() => onSelect(gift), [gift, onSelect])
-  const card = <GiftCard gift={localizedGift} onClick={handleClick} showName={!compact} isSelected={isSelected}
+  const card = <GiftCard gift={localizedGift} giftId={gift.id} onClick={handleClick} showName={!compact} isSelected={isSelected}
     ariaLabel={isMarked && markedLabel ? `${localizedGift.name}, ${markedLabel}` : undefined} {...extra} />
   if (!isMarked && !badge) return card
   return (
@@ -306,6 +307,8 @@ const MemoGiftItem = memo(function MemoGiftItem({
     </div>
   )
 }, sameGiftItem)
+/** One catalog cell, for a list drawn outside the catalog (the check window). */
+export { MemoGiftItem as GiftCatalogItem }
 
 type GiftCell = Omit<GiftItemProps, 'onSelect' | 'lang' | 'compact' | 'markedLabel'>
 type GiftGridProps = Pick<GiftItemProps, 'onSelect' | 'lang' | 'compact' | 'markedLabel'> & { cells: GiftCell[] }
@@ -412,9 +415,10 @@ export default function GiftCatalog({
       return true
     })
 
-    // The sort is stable: inside a keyword the gifts stay in the order given.
-    if (keepOrder) return result.sort((a, b) => keywordRank(a.keyword, keywordOrder) - keywordRank(b.keyword, keywordOrder))
-    if (sortBy === 'name') {
+    if (keepOrder) {
+      // The sort is stable: inside a keyword the gifts stay in the order given. Pinned groups keep that order as it is.
+      if (!pinned?.length) return result.sort((a, b) => keywordRank(a.keyword, keywordOrder) - keywordRank(b.keyword, keywordOrder))
+    } else if (sortBy === 'name') {
       result.sort((a, b) => a.name.localeCompare(b.name, 'ko'))
     } else if (sortBy === 'grade') {
       result.sort((a, b) => (GRADE_ORDER[a.grade] ?? 0) - (GRADE_ORDER[b.grade] ?? 0))
@@ -423,7 +427,7 @@ export default function GiftCatalog({
       result.sort((a, b) => keywordRank(a.keyword, keywordOrder) - keywordRank(b.keyword, keywordOrder) || (GRADE_ORDER[a.grade] ?? 0) - (GRADE_ORDER[b.grade] ?? 0))
     }
 
-    if (sortDesc) result.reverse()
+    if (sortDesc && !keepOrder) result.reverse()
     if (!pinned?.length) return result
     const rank = (g: EgoGift) => { const index = pinned.findIndex(group => group.ids.has(g.id)); return index < 0 ? pinned.length : index }
     return result.map((g, i) => [g, rank(g), i] as const).sort((a, b) => a[1] - b[1] || a[2] - b[2]).map(([g]) => g)
@@ -744,11 +748,12 @@ export default function GiftCatalog({
                     <span className="tabular-nums" style={{ color: '#9c8b73', fontFamily: 'var(--font-title)', fontSize: '1.125rem', lineHeight: 1 }}>{groupCounts.get(group.key) ?? group.gifts.length}</span>
                   </h2>
                 )}
+                {pin?.note && <p className="mb-2 whitespace-pre-wrap break-words text-[0.8125rem] leading-[1.5] text-[#b0a890]">{pin.note}</p>}
                 <div
                   className={compact ? 'gift-grid [&_.gift-card:hover]:[transform:none]!' : 'gift-grid'}
                   style={{
                     display: 'grid',
-                    gridTemplateColumns: `repeat(auto-fill, minmax(${compact ? '4.5rem' : '3.625rem'}, 1fr))`,
+                    gridTemplateColumns: `repeat(auto-fill, minmax(${compact ? 'var(--gift-catalog-cell, 4.5rem)' : '3.625rem'}, 1fr))`,
                     gap: '0.5rem 0.375rem',
                   }}
                 >
