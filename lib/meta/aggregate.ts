@@ -150,8 +150,10 @@ export function aggregateMeta({ posts, identities, egos, keywordSinMap, source, 
   now: number
   filters?: MetaFilters
 }): MetaData {
+  // A difficulty is a plan's: asked of the deck board alone it would only empty the sample, so it does not apply there.
+  if (source === 'decks' && filters.difficulty) filters = { ...filters, difficulty: undefined }
   const facets: MetaFacets = { usage: {}, keyword: {}, difficulty: {} }
-  const tally = (counts: Record<string, number>, key: string) => { counts[key] = (counts[key] ?? 0) + 1 }
+  const countOption = (counts: Record<string, number>, key: string) => { counts[key] = (counts[key] ?? 0) + 1 }
   const identityCatalog = new Map(identities.map(identity => [identity.id, identity]))
   const egoCatalog = new Map(egos.map(ego => [ego.id, ego]))
   const identityInsights: MetaData["identityInsights"] = {}
@@ -216,10 +218,10 @@ export function aggregateMeta({ posts, identities, egos, keywordSinMap, source, 
     }
     // A filter's options are counted over what the other filters keep, so a chosen filter can still be changed.
     if (keeps.identity) {
-      if (keeps.keyword && keeps.difficulty) tally(facets.usage, usage)
+      if (keeps.keyword && keeps.difficulty) countOption(facets.usage, usage)
       // A keyword's count is what choosing it too would keep: beside every chosen keyword, or on its own when any one is enough.
-      if (keeps.usage && keeps.difficulty && (keeps.keyword || filters.keywordMode === 'or')) for (const keyword of combo) tally(facets.keyword, keyword)
-      if (keeps.usage && keeps.keyword && difficulty) tally(facets.difficulty, difficulty)
+      if (keeps.usage && keeps.difficulty && (keeps.keyword || filters.keywordMode === 'or')) for (const keyword of combo) countOption(facets.keyword, keyword)
+      if (keeps.usage && keeps.keyword && difficulty) countOption(facets.difficulty, difficulty)
     }
     if (!keeps.usage || !keeps.keyword || !keeps.difficulty || !keeps.identity) continue
     sourceCounts[post.source]++

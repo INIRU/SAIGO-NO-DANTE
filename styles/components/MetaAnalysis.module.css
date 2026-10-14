@@ -10,16 +10,20 @@
 
 /* Filters: a button at the end of the toolbar opens a row of the boards' filter sections under it. */
 .toolbarEnd { display: flex; flex-wrap: wrap; align-items: center; gap: .375rem .75rem; }
-.filterTools { display: flex; align-items: center; gap: .75rem; }
 .filterToggle { display: inline-flex; align-items: center; gap: .4rem; min-height: 2.75rem; padding: .5rem .875rem; border: 1px solid var(--border); border-radius: .375rem; font-size: .8125rem; font-weight: 500; color: var(--text-secondary); cursor: pointer; transition: color 180ms ease, border-color 180ms ease, background-color 180ms ease; }
 .filterToggle:hover { color: var(--text-primary); }
 .filterToggle[aria-expanded=true] { color: var(--gold-light); border-color: var(--gold-dim); background: rgba(200,144,10,.08); }
-/* The number changes in place, without an entrance (it changes on every press). */
-.filterToggle b { color: var(--gold-light); font: 1.05rem/1 var(--font-title); font-weight: 400; }
+/* How many are chosen, as a badge on the button's corner: the button keeps its width, so nothing beside it moves. No entrance either (it changes on every press). */
+.filterToggle { position: relative; }
+.filterToggle b { position: absolute; top: -.375rem; right: -.375rem; display: grid; place-items: center; min-width: 1.25rem; height: 1.25rem; padding: 0 .3125rem; border-radius: 999px; background: var(--gold); color: var(--bg-deep); font: .875rem/1 var(--font-title); font-weight: 400; }
 .filters { display: flex; flex-wrap: wrap; gap: 1.25rem 2rem; flex-basis: 100%; padding: 1rem .75rem .625rem; margin-top: .375rem; border-top: 1px solid var(--border); animation: filtersIn .2s cubic-bezier(.2,.8,.2,1); }
 .filterWide { flex: 2 1 15rem; min-width: 0; }
 .filterNarrow { flex: 1 1 9rem; min-width: 0; }
-.filters .filterKeywords { grid-template-columns: repeat(7, minmax(0, 1fr)); }
+/* The boards' tile and logo sizes: a section that wraps onto a row of its own does not stretch them. */
+.filters .filterKeywords { max-width: 20rem; }
+.filterSinners { max-width: 17rem; }
+/* Clearing sits at the end of the panel, on a row that is there whether or not anything is chosen (nothing moves when the first filter is). */
+.filterEnd { display: flex; flex-basis: 100%; justify-content: flex-end; min-height: 1.75rem; margin-top: -.5rem; }
 .filterRarity { display: block; width: auto; height: 1.25rem; opacity: .55; transition: opacity .16s; }
 .filters button:hover .filterRarity, .filters [aria-pressed=true] .filterRarity, .filterSinners [aria-pressed=true] img { opacity: 1; }
 @keyframes filtersIn { from { opacity: 0; transform: translateY(-.25rem); } }
@@ -178,7 +182,7 @@
   .page { padding: 5.5rem 1rem 3rem; }
   .toolbar { gap: .5rem; }
   .toolbar [role=tablist], .toolbar .boneTabs, .toolbarEnd, .periods { width: 100%; }
-  .filterTools { margin-left: auto; }
+  .filterToggle { margin-left: auto; }
   .toolbar [role=tab], .toolbar .boneTabs > *, .period { flex: 1; }
   .period { padding-inline: .375rem; font-size: .75rem; }
   .panel, .overview { padding: 1.125rem; }

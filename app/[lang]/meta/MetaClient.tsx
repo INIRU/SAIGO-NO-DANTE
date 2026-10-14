@@ -5,7 +5,6 @@ import useSWR from 'swr'
 import { useTranslations } from 'next-intl'
 import { SlidersHorizontal } from 'lucide-react'
 import UnderlineTabBar from '@/components/ui/UnderlineTabBar'
-import { FilterTextButton } from '@/components/board/FilterControls'
 import { META_SOURCES, META_PERIODS, META_FILTER_KEYS, META_FILTER_MODES, DEFAULT_META_SOURCE, DEFAULT_META_PERIOD, parseMetaFilters, type IdentityStat, type MetaFilterMode, type MetaSource, type MetaPeriod, type MetaData } from '@/lib/meta/types'
 import { useQueryState, useQueryStates, parseAsArrayOf, parseAsString, parseAsStringLiteral } from 'nuqs'
 import IdentityAnalysis from '@/components/meta/IdentityAnalysis'
@@ -63,7 +62,11 @@ export default function MetaClient({ initialData }: { initialData: MetaData | nu
         <UnderlineTabBar
           tabs={META_SOURCES.map(key => ({ key, label: t(`source.${key}`) }))}
           activeKey={source}
-          onTabChange={setSource}
+          onTabChange={key => {
+            setSource(key)
+            // The deck board has no difficulty: a chosen one would stay in the address with nothing to take it off.
+            if (key === 'decks' && filterParams.difficulty.length) setFilterParams({ difficulty: null })
+          }}
         />
         <div className={styles.toolbarEnd}>
           <div className={styles.periods} role="group" aria-label={t('periodLabel')}>
@@ -75,14 +78,11 @@ export default function MetaClient({ initialData }: { initialData: MetaData | nu
               </button>
             ))}
           </div>
-          <div className={styles.filterTools}>
-            {filterCount > 0 && <FilterTextButton onClick={() => { setFilterParams(NO_FILTERS) }}>{t('filters.clear')}</FilterTextButton>}
-            <button type="button" className={styles.filterToggle} aria-expanded={filtersOpen} aria-controls={filtersOpen ? 'meta-filters' : undefined} onClick={() => setFiltersOpen(open => !open)}>
-              <SlidersHorizontal size={15} aria-hidden="true" />{t('filters.button')}{filterCount > 0 && <b>{filterCount}</b>}
-            </button>
-          </div>
+          <button type="button" className={styles.filterToggle} aria-expanded={filtersOpen} aria-controls={filtersOpen ? 'meta-filters' : undefined} onClick={() => setFiltersOpen(open => !open)}>
+            <SlidersHorizontal size={15} aria-hidden="true" />{t('filters.button')}{filterCount > 0 && <b>{filterCount}</b>}
+          </button>
         </div>
-        {filtersOpen && <MetaFilters id="meta-filters" value={filters} facets={data?.facets} showDifficulty={source !== 'decks'} onChange={patch => { setFilterParams(patch) }} />}
+        {filtersOpen && <MetaFilters id="meta-filters" value={filters} facets={data?.facets} showDifficulty={source !== 'decks'} onChange={patch => { setFilterParams(patch) }} onClear={() => { setFilterParams(NO_FILTERS) }} />}
       </div>
         {error && <div role="alert" className="text-sm" style={{ color: 'var(--gold)' }}>
           {t('loadError')}{' '}
@@ -90,11 +90,11 @@ export default function MetaClient({ initialData }: { initialData: MetaData | nu
         </div>}
       {isLoading && !data && <MetaBodySkeleton />}
       {data && <>
-      {data.sampleCount === 0 && (filterCount > 0 || period !== 'all') && (
+      {data.sampleCount === 0 && period !== 'all' && (
         <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-[var(--border)] bg-[var(--bg-elevated)] p-4">
-          <p className="text-sm text-[var(--text-secondary)]">{t(filterCount ? 'filters.empty' : 'emptyPeriod')}</p>
-          <button type="button" onClick={() => { if (filterCount) setFilterParams(NO_FILTERS); else setPeriod('all') }} className="rounded px-3 py-2 text-sm text-[var(--gold)] hover:bg-white/5 focus-visible:outline-2 focus-visible:outline-[var(--gold)]">
-            {t(filterCount ? 'filters.clear' : 'showAllTime')}
+          <p className="text-sm text-[var(--text-secondary)]">{t('emptyPeriod')}</p>
+          <button type="button" onClick={() => setPeriod('all')} className="rounded px-3 py-2 text-sm text-[var(--gold)] hover:bg-white/5 focus-visible:outline-2 focus-visible:outline-[var(--gold)]">
+            {t('showAllTime')}
           </button>
         </div>
       )}
