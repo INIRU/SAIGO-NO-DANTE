@@ -6,7 +6,7 @@ import { useLocale, useTranslations } from 'next-intl'
 import { translations } from '@/lib/i18n/translations'
 import DeckInsights, { type DeckInsightIdentity } from '@/components/deck-analysis/DeckInsights'
 import DeckResourceSummary from '@/components/deck-analysis/DeckResourceSummary'
-import { computeAttackTypeCounts, computeEgoCostTotals, computeSinProduction } from '@/lib/decks/deck-analysis'
+import { computeDeckResources, computeSinProduction, fieldedEntries } from '@/lib/decks/deck-analysis'
 import FormationBoard, { type FormationBoardSlot } from '@/components/decks/FormationBoard'
 import { localizeIdentityName, localizePassiveDescription, localizePassiveName } from '@/components/deck-detail/DeckIdentityCard'
 import type { EgoEntry } from '@/components/deck-detail/DeckIdentityCard'
@@ -307,13 +307,15 @@ export default function PlanDeckTabs({
 
   const deckAnalysis = useMemo(() => {
     const skillsOf = (slot: IdentitySlot) => skills.filter(skill => skill.identity_id === slot.identity_id)
-    const selectedEgoIds = new Set(egoSlots.map(slot => slot.ego_id).filter(Boolean))
-    return {
-      sinCounts: computeSinProduction(deck.map(slot => ({ skills: skillsOf(slot), distribution: getIdentitySkillDistribution(slot) }))),
-      baseSinCounts: computeSinProduction(deck.map(slot => ({ skills: skillsOf(slot) }))),
-      ...computeAttackTypeCounts(deck.map(skillsOf)),
-      egoCost: computeEgoCostTotals(egos.filter(ego => selectedEgoIds.has(ego.id)).map(ego => ego.cost)),
-    }
+    const egoById = new Map(egos.map(ego => [ego.id, ego]))
+    const entries = deck.map(slot => ({
+      skills: skillsOf(slot),
+      distribution: getIdentitySkillDistribution(slot),
+      deployed: isDeployedSlot(slot.slot_order),
+      egos: egoSlots.flatMap(ego => ego.sinner_id === slot.sinner_id && ego.ego_id ? [{ cost: egoById.get(ego.ego_id)?.cost }] : []),
+    }))
+    const resources = computeDeckResources(entries)
+    return { resources, sinCounts: resources.production, baseSinCounts: computeSinProduction(fieldedEntries(entries).map(({ skills }) => ({ skills }))) }
   }, [deck, egoSlots, egos, skills])
 
   const tabs = [
@@ -345,7 +347,7 @@ export default function PlanDeckTabs({
           deployedIds={deployedIdentityIds}
           sinCounts={deckAnalysis.sinCounts}
           baseSinCounts={deckAnalysis.baseSinCounts}
-          summary={<DeckResourceSummary attack={deckAnalysis.attack} defense={deckAnalysis.defense} production={deckAnalysis.sinCounts} egoCost={deckAnalysis.egoCost} />}
+          summary={<DeckResourceSummary resources={deckAnalysis.resources} />}
         />
       )}
 

@@ -38,7 +38,7 @@ import RelativeTime from '@/components/ui/RelativeTime'
 import DeckInsights, { type DeckInsightIdentity } from '@/components/deck-analysis/DeckInsights'
 import DeckResourceSummary from '@/components/deck-analysis/DeckResourceSummary'
 import SkillExchangePanel from '@/components/planner/SkillExchangePanel'
-import { computeAttackTypeCounts, computeEgoCostTotals, computeSinProduction } from '@/lib/decks/deck-analysis'
+import { computeDeckResources, computeSinProduction, fieldedEntries } from '@/lib/decks/deck-analysis'
 import { rowsAtUptie } from '@/lib/decks/deck-identity-uptie'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
 import { contentTypeMessageKey, localizeDeckKeyword } from '@/components/decks/decks-types'
@@ -742,17 +742,17 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
   })), [insightSlots, locale, rootT])
   const deckAnalysis = useMemo(() => {
     const egos = (deck?.deck_egos ?? []).flatMap(row => row.ego ? [row.ego] : [])
-    const sinCounts = computeSinProduction(insightSlots.map(({ slot, skills }) => ({ skills, distribution: [slot.s1_count ?? 3, slot.s2_count ?? 2, slot.s3_count ?? 1] as const })))
+    const entries = insightSlots.map(({ slot, identity, skills }) => ({
+      skills,
+      distribution: [slot.s1_count ?? 3, slot.s2_count ?? 2, slot.s3_count ?? 1] as const,
+      deployed: isDeployedSlot(slot.slot_order),
+      egos: egos.filter(ego => ego.sinner_id === identity.sinner_id).map(ego => ({ skills: ego.ego_skills, cost: ego.cost })),
+    }))
+    const resources = computeDeckResources(entries)
     return {
-      sinCounts,
-      baseSinCounts: computeSinProduction(insightSlots.map(({ skills }) => ({ skills }))),
-      summary: (
-        <DeckResourceSummary
-          {...computeAttackTypeCounts(insightSlots.map(({ skills }) => skills), egos.map(ego => ego.ego_skills))}
-          production={sinCounts}
-          egoCost={computeEgoCostTotals(egos.map(ego => ego.cost))}
-        />
-      ),
+      sinCounts: resources.production,
+      baseSinCounts: computeSinProduction(fieldedEntries(entries).map(({ skills }) => ({ skills }))),
+      summary: <DeckResourceSummary resources={resources} />,
     }
   }, [deck?.deck_egos, insightSlots])
 

@@ -1307,9 +1307,10 @@
         "resonance": "공명",
         "stock": "보유",
         "passiveWarning": "스킬 배분 변경으로 인해 조건이 미충족됩니다",
+        "defenseSkills": "수비 스킬",
         "attackTypes": "공격 유형",
         "sinResources": "죄악 자원",
-        "sinResourcesHint": "생성 / EGO 코스트"
+        "egoCost": "E.G.O 코스트"
       },
       "mainKeywords": {
         "label": "플랜 대표 키워드",
@@ -1912,7 +1913,7 @@
       "blunt": "타격",
       "defense": "방어",
       "evade": "회피",
-      "counter": "카운터"
+      "counter": "반격"
     },
     "resistance": {
       "weak": "취약",
