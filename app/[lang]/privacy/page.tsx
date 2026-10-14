@@ -1,19 +1,12 @@
 import type { Metadata } from 'next'
-import { localeAlternates } from '@/lib/seo/metadata'
+import { metaText, pageMetadata } from '@/lib/seo/metadata'
 import { cacheLife } from 'next/cache'
 import { getLegalDoc } from '@/lib/data/legal'
-import { translations } from '@/lib/i18n/translations'
-import type { SupportedLang } from '@/lib/i18n/types'
 import LegalDocument from '@/components/legal/LegalDocument'
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params
-  const t = (key: string) => {
-    const entry = translations[key as keyof typeof translations]
-    if (!entry) return key
-    return entry[lang as SupportedLang] ?? entry['ko'] ?? key
-  }
-  return { title: t('legal.privacy.title'), alternates: localeAlternates(lang, '/privacy') }
+  return pageMetadata({ lang, path: '/privacy', title: metaText('legal.privacy.title', lang), description: metaText('legal.privacy.meta.description', lang) })
 }
 
 export default async function PrivacyPage({ params }: { params: Promise<{ lang: string }> }) {

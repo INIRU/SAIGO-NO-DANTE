@@ -2,7 +2,7 @@ import { withoutOtherLocales } from '@/lib/i18n/strip-locales'
 import { withEgoStage } from '@/lib/db/queries'
 import * as Sentry from '@sentry/nextjs'
 import type { Metadata } from 'next'
-import { localeAlternates } from '@/lib/seo/metadata'
+import { pageMetadata } from '@/lib/seo/metadata'
 import { Suspense } from 'react'
 import { cacheLife, cacheTag } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
@@ -17,11 +17,7 @@ import StaticQueryAdapter from '@/components/providers/StaticQueryAdapter'
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params
   const t = await getTranslations({ locale: lang, namespace: 'planner' })
-  return {
-    title: t('metaTitle'),
-    description: '림버스 컴퍼니 거울 던전 플래너 — 층별 테마팩 시뮬레이션, 덱 편성, 기프트 조합식, 키워드 시너지를 한번에 계획하세요.',
-    alternates: localeAlternates(lang, '/planner'),
-  }
+  return pageMetadata({ lang, path: '/planner', title: t('metaTitle'), description: t('metaDescription') })
 }
 
 async function fetchPlannerStaticData() {

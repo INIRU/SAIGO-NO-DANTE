@@ -180,8 +180,8 @@
   },
   "decks": {
     "meta": {
-      "title": "Deck Board",
-      "description": "Share Limbus Company deck builds, identity formations, E.G.O setups, and play notes."
+      "title": "Limbus Company Deck Board — Team Builds & Formations",
+      "description": "Share and browse Limbus Company deck builds, Identity formations and E.G.O setups. Find popular and recent decks."
     },
     "header": {
       "eyebrow": "DECK BOARD",
@@ -565,7 +565,8 @@
   },
   "planner": {
     "title": "Mirror Dungeon Planner",
-    "metaTitle": "Mirror Dungeon Planner",
+    "metaTitle": "Limbus Company Mirror Dungeon Planner — Floor Plans & Gifts",
+    "metaDescription": "Mirror Dungeon planner for Limbus Company: plan Theme Packs, floor-by-floor E.G.O Gifts, formations and keyword synergy, then share the plan.",
     "run": {
       "pipGiftAcquired": "Recorded {name}",
       "popupGiftAutoAcquired": "Recorded {name} from an acquisition popup · Undo in the companion panel",
@@ -641,7 +642,7 @@
       "unselected": "Not specified",
       "limited": "Joined mid-run: earlier activity cannot be recovered.",
       "start": "Start Assist Mode",
-      "metaTitle": "Mirror Dungeon — Assist Mode",
+      "metaTitle": "Limbus Company Mirror Dungeon Assist Mode — Run Tracker",
       "metaDescription": "Record Mirror Dungeon themes, gifts, formation, events, and floor progress in Assist Mode.",
       "title": "Assist Mode",
       "backToPlanner": "Back",
@@ -883,7 +884,7 @@
     "community": "Community Plans",
     "detail": {
       "notFoundTitle": "Plan not found",
-      "metaTitle": "{title} | Community Plan",
+      "metaTitle": "{title} — Limbus Company Mirror Dungeon Plan",
       "metaDescription": "Limbus Company Mirror Dungeon {difficulty} plan",
       "metaDescriptionWithDescription": "{difficulty} difficulty — {description}",
       "backToCommunity": "Community Plans",
@@ -992,8 +993,8 @@
     },
     "communityBoard": {
       "meta": {
-        "title": "Community Plans | Mirror Dungeon Planner",
-        "description": "Browse and vote on community Mirror Dungeon plans for Limbus Company."
+        "title": "Limbus Company Mirror Dungeon Plans from the Community",
+        "description": "Browse and vote on community Mirror Dungeon plans for Limbus Company by difficulty and Theme Pack."
       },
       "header": {
         "eyebrow": "MIRROR DUNGEON PLANS",
@@ -1665,6 +1666,7 @@
     "title": "My Page"
   },
   "home": {
+    "heading": "SAIGO NO DANTE — Limbus Company Fan Archive",
     "fanArchive": "Fan Archive",
     "limpi": {
       "name": "Limpi",
@@ -2433,9 +2435,9 @@
     "emptyIdentity": "No identities match these filters",
     "emptyEgo": "No E.G.O match these filters",
     "meta": {
-      "identitiesDescription": "Search and filter every Limbus Company Identity for all 12 Sinners by keyword, sin affinity, attack type and rarity.",
+      "identitiesDescription": "Search and filter every Limbus Company Identity by keyword, sin affinity, attack type and rarity.",
       "identitiesOgTitle": "All Identities | SAIGO NO DANTE",
-      "identitiesOgDescription": "Cross-filter 200+ Identities by keyword, sin affinity and attack type.",
+      "identitiesOgDescription": "Cross-filter every Identity by keyword, sin affinity and attack type.",
       "identitiesListName": "Limbus Company Identity List",
       "egoDescription": "Search and filter every Limbus Company E.G.O for all 12 Sinners by grade, sin affinity and keyword.",
       "egoOgTitle": "All E.G.O | SAIGO NO DANTE",

@@ -1,6 +1,6 @@
 import { BoardShelfSkeleton } from '@/components/discovery/BoardSkeleton'
 import type { Metadata } from 'next'
-import { localeAlternates } from '@/lib/seo/metadata'
+import { pageMetadata } from '@/lib/seo/metadata'
 import { Suspense } from 'react'
 import { getTranslations } from 'next-intl/server'
 import BoardHeader from '@/components/discovery/BoardHeader'
@@ -10,11 +10,7 @@ import StaticQueryAdapter from '@/components/providers/StaticQueryAdapter'
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params
   const t = await getTranslations({ locale: lang, namespace: 'planner.communityBoard.meta' })
-  return {
-    title: t('title'),
-    description: t('description'),
-    alternates: localeAlternates(lang, '/planner/community'),
-  }
+  return pageMetadata({ lang, path: '/planner/community', title: t('title'), description: t('description') })
 }
 
 export default async function CommunityPage({ params }: { params: Promise<{ lang: string }> }) {

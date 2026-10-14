@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { localeAlternates, localeUrl } from '@/lib/seo/metadata'
+import { localeUrl, pageMetadata } from '@/lib/seo/metadata'
 import { getLocalizedName } from '@/lib/i18n/localize'
 import { translations } from '@/lib/i18n/translations'
 import { Suspense } from 'react'
@@ -51,15 +51,7 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
       ogDescription: `${name}の人格、E.G.O、スキルデータ。`,
     },
   }[lang]
-  return {
-    title: copy.title,
-    description: copy.description,
-    alternates: localeAlternates(lang, `/sinners/${slug}`),
-    openGraph: {
-      title: copy.ogTitle,
-      description: copy.ogDescription,
-    },
-  }
+  return pageMetadata({ lang, path: `/sinners/${slug}`, ...copy })
 }
 
 async function getCachedSinnerData(slug: string) {

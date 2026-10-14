@@ -3,19 +3,14 @@ import { getTranslations } from 'next-intl/server'
 import type { Metadata } from 'next'
 import { getSinners, getIdentities, getEGOs } from '@/lib/db/queries'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
-import { localeAlternates } from '@/lib/seo/metadata'
+import { metaText, pageMetadata } from '@/lib/seo/metadata'
 import PageHeader from '@/components/ui/PageHeader'
 import RandomClient from './RandomClient'
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params
   const t = await getTranslations({ locale: lang, namespace: 'randomPage' })
-  return {
-    title: t('title'),
-    description: t('metaDescription'),
-    alternates: localeAlternates(lang, '/random'),
-    openGraph: { title: t('title'), description: t('metaDescription') },
-  }
+  return pageMetadata({ lang, path: '/random', title: metaText('random.meta.title', lang), description: t('metaDescription') })
 }
 
 async function getRandomData() {

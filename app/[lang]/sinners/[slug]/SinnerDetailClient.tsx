@@ -762,14 +762,13 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                         variants={staggerItem}
                         className="w-full"
                       >
-                        <IdentityCard
-                          identity={identity}
-                          gacksung={gacksung}
-                          compact
-                          onClick={() =>
-                            router.push(`/sinners/${sinner.id}/identities/${identity.id}`)
-                          }
-                        />
+                        {/* A real link (crawlers and new-tab clicks follow it); the card keeps its own hover and size. */}
+                        <Link
+                          href={`/sinners/${sinner.id}/identities/${identity.id}`}
+                          aria-label={getName(identity.name_kr, identity.name_en, identity.name_jp)}
+                        >
+                          <IdentityCard identity={identity} gacksung={gacksung} compact />
+                        </Link>
                       </m.div>
                     ))}
                   </StaggerReveal>
@@ -831,7 +830,9 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                             ego={ego}
                             lang={lang}
                             name={egoName}
-                            onClick={() => router.push(`/sinners/${sinner.id}/ego/${ego.id}`)}
+                            href={`/sinners/${sinner.id}/ego/${ego.id}`}
+                            // A link is as wide as its cell where the button it replaced was as wide as the card.
+                            className="w-fit"
                             sinnerId={sinner.id}
                           />
                         </m.div>

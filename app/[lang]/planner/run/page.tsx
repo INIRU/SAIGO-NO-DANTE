@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { localeUrl } from '@/lib/seo/metadata'
+import { pageMetadata } from '@/lib/seo/metadata'
 import { cacheLife, cacheTag } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { readAllRows } from '@/lib/meta/pagination'
@@ -14,11 +14,7 @@ import { dropRepeatedTopUptie } from '@/lib/identity/skill-model'
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params
   const t = await getTranslations({ locale: lang, namespace: 'planner' })
-  return {
-    title: t('run.metaTitle'),
-    description: t('run.metaDescription'),
-    alternates: { canonical: localeUrl(lang, '/planner/run') },
-  }
+  return pageMetadata({ lang, path: '/planner/run', title: t('run.metaTitle'), description: t('run.metaDescription') })
 }
 
 export default async function RunPage({ params }: { params: Promise<{ lang: string }> }) {

@@ -14,6 +14,9 @@ describe('REQ-SHARED-034 crawlers that get metadata in <head>', () => {
     'Twitterbot/1.0',
     'facebookexternalhit/1.1; kakaotalk-scrap/1.0',
     'Mozilla/5.0 (compatible; Discordbot/2.0; +https://discordapp.com)',
+    // Link preview crawlers of the messengers the site is shared on; neither is in Next's list.
+    'kakaotalk-scrap/1.0; +https://devtalk.kakao.com/t/scrap/33984',
+    'TelegramBot/1.0',
   ])('REQ-SHARED-034 renders the whole page for %s', userAgent => {
     expect(HTML_LIMITED_BOTS.test(userAgent)).toBe(true)
   })

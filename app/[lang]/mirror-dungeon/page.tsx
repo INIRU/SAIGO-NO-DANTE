@@ -1,11 +1,10 @@
 import { withoutOtherLocales } from '@/lib/i18n/strip-locales'
 import * as Sentry from '@sentry/nextjs'
 import type { Metadata } from 'next'
-import { localeAlternates } from '@/lib/seo/metadata'
+import { metaText, pageMetadata } from '@/lib/seo/metadata'
 import { Suspense } from 'react'
 import { cacheLife, cacheTag } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { translations } from '@/lib/i18n/translations'
 import type { SupportedLang } from '@/lib/i18n/types'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import MirrorDungeonClient from './MirrorDungeonClient'
@@ -16,20 +15,7 @@ import StaticQueryAdapter from '@/components/providers/StaticQueryAdapter'
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params
-  const t = (key: string) => {
-    const entry = translations[key as keyof typeof translations]
-    if (!entry) return key
-    return entry[lang as SupportedLang] ?? entry['ko'] ?? key
-  }
-  return {
-    title: t('mirrorDungeon.meta.title'),
-    description: t('mirrorDungeon.meta.description'),
-    alternates: localeAlternates(lang, '/mirror-dungeon'),
-    openGraph: {
-      title: t('mirrorDungeon.meta.title'),
-      description: t('mirrorDungeon.meta.description'),
-    },
-  }
+  return pageMetadata({ lang, path: '/mirror-dungeon', title: metaText('mirrorDungeon.meta.title', lang), description: metaText('mirrorDungeon.meta.description', lang) })
 }
 
 const MIRROR_FAQ: Record<'ko' | 'en' | 'ja', { question: string; answer: string }[]> = { ko: [

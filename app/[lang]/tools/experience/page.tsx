@@ -1,10 +1,8 @@
-import { getTranslations } from 'next-intl/server'
 import ExperienceCalculator from '@/components/tools/ExperienceCalculator'
-import { localeAlternates } from '@/lib/seo/metadata'
+import { metaText, pageMetadata } from '@/lib/seo/metadata'
 export async function generateMetadata({ params }: { params: Promise<{lang: string}> }) {
   const { lang } = await params
-  const t = await getTranslations({ locale: lang, namespace: 'experience' })
-  return { title: t('title'), description: t('subtitle'), alternates: localeAlternates(lang, '/tools/experience') }
+  return pageMetadata({ lang, path: '/tools/experience', title: metaText('experience.meta.title', lang), description: metaText('experience.meta.description', lang) })
 }
 export default function ExperiencePage() {
   return <ExperienceCalculator />

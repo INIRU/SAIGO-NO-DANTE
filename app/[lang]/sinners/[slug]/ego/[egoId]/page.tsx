@@ -1,6 +1,8 @@
 import type { Metadata } from 'next'
-import { localeAlternates } from '@/lib/seo/metadata'
+import { localeUrl, pageMetadata } from '@/lib/seo/metadata'
 import { getLocalizedName } from '@/lib/i18n/localize'
+import { translations } from '@/lib/i18n/translations'
+import JsonLd, { breadcrumbJsonLd } from '@/components/seo/JsonLd'
 import { Suspense } from 'react'
 import { cacheLife, cacheTag } from 'next/cache'
 import { getSinnerById, getEGOById } from '@/lib/db/queries'
@@ -34,8 +36,7 @@ export async function generateMetadata({
   const [sinner, ego] = await Promise.all([getSinnerById(slug), getEGOById(egoId)])
   if (!sinner || !ego) return { title: notFoundTitle, robots: { index: false } }
 
-  const canonical = absoluteUrl(`/${lang}/sinners/${slug}/ego/${egoId}`)
-  const ogImage = absoluteUrl(`/${lang}/sinners/${slug}/ego/${egoId}/opengraph-image`)
+  const path = `/sinners/${slug}/ego/${egoId}`
   const egoName = getLocalizedName({ ...ego, name_kr: ego.name_kr ?? ego.name }, lang)
   const sinnerName = getLocalizedName({ name_kr: sinner.name_kr, name_en: sinner.name, name_jp: sinner.name_jp }, lang)
   const sinStr = ego.sin_affinity ?? ''
@@ -46,36 +47,36 @@ export async function generateMetadata({
   }[lang]
   const ogTitle = lang === 'ko' ? `${ego.name_kr ?? ego.name} — ${sinner.name_kr} | 최애의 관리자` : `${egoName} — ${sinnerName} | SAIGO NO DANTE`
 
-  return {
-    title: `${egoName} — ${sinnerName} E.G.O`,
+  return pageMetadata({
+    lang,
+    path,
+    title: `${egoName} ${sinnerName} E.G.O — ${{ ko: '림버스 컴퍼니 스킬·내성', en: 'Limbus Company Skills & Resistances', ja: 'リンバスカンパニー スキル・耐性' }[lang]}`,
     description,
-    alternates: localeAlternates(lang, `/sinners/${slug}/ego/${egoId}`),
-    openGraph: {
-      title: ogTitle,
-      description,
-      url: canonical,
-      images: [{ url: ogImage, width: 1200, height: 630, alt: `${egoName} — ${sinnerName}` }],
-    },
-    twitter: {
-      card: 'summary_large_image',
-      title: ogTitle,
-      description,
-      images: [ogImage],
-    },
-  }
+    ogTitle,
+    image: { url: absoluteUrl(`/${lang}${path}/opengraph-image`), width: 1200, height: 630, alt: `${egoName} — ${sinnerName}` },
+  })
 }
 
-export default async function EGODetailPage({ params }: { params: Promise<{ slug: string; egoId: string }> }) {
+export default async function EGODetailPage({ params }: { params: Promise<{ lang: string; slug: string; egoId: string }> }) {
   'use cache'
   cacheLife('max')
-  const { slug, egoId } = await params
+  const { lang: rawLang, slug, egoId } = await params
+  const lang = isSupportedLang(rawLang) ? rawLang : 'ko'
   cacheTag(CACHE_TAGS.egoEntry(egoId), CACHE_TAGS.ego, CACHE_TAGS.gameData)
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(egoId)) notFound()
   const [sinner, ego] = await Promise.all([getSinnerById(slug), getEGOById(egoId)])
   if (!sinner || !ego) notFound()
   return (
-    <Suspense fallback={null}>
-      <EGODetailClient sinner={sinner} ego={ego} />
-    </Suspense>
+    <>
+      <JsonLd data={breadcrumbJsonLd([
+        { name: translations['nav.home'][lang], url: localeUrl(lang) },
+        { name: translations['nav.sinners'][lang], url: localeUrl(lang, '/sinners') },
+        { name: getLocalizedName({ name_kr: sinner.name_kr, name_en: sinner.name, name_jp: sinner.name_jp }, lang), url: localeUrl(lang, `/sinners/${slug}`) },
+        { name: getLocalizedName({ ...ego, name_kr: ego.name_kr ?? ego.name }, lang), url: localeUrl(lang, `/sinners/${slug}/ego/${egoId}`) },
+      ])} />
+      <Suspense fallback={null}>
+        <EGODetailClient sinner={sinner} ego={ego} />
+      </Suspense>
+    </>
   )
 }
