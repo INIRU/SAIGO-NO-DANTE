@@ -55,9 +55,9 @@ export function FilterFieldHelp({ text }: { text: string }) {
 }
 
 /** A keyword as a tile: its icon over its name. Five to a row, all one size. */
-export function FilterIconTile({ active, label, iconUrl, onClick }: { active: boolean; label: string; iconUrl?: string | null; onClick: () => void }) {
+export function FilterIconTile({ active, label, iconUrl, onClick, disabled }: { active: boolean; label: string; iconUrl?: string | null; onClick: () => void; disabled?: boolean }) {
   return (
-    <button type="button" aria-pressed={active} title={label} className={styles.tile} onClick={onClick}>
+    <button type="button" aria-pressed={active} title={label} className={styles.tile} onClick={onClick} disabled={disabled}>
       {iconUrl && <Image src={iconUrl} alt="" width={24} height={24} />}
       <span>{label}</span>
     </button>

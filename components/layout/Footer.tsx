@@ -6,7 +6,7 @@ import DanteLogo from '@/components/brand/DanteLogo'
 const NAV_LINKS = [
   { href: '/sinners', labelKey: 'sinners' },
   { href: '/decks', labelKey: 'decks' },
-  { href: '/meta', labelKey: 'other.meta' },
+  { href: '/meta', labelKey: 'tools.meta' },
 ] as const
 
 /** Explicit locale: rendered in the static layout shell, where the request locale is unavailable. */

@@ -27,13 +27,13 @@
     },
     "other": {
       "title": "その他",
-      "meta": "分析",
       "random": "ランダム編成",
       "developers": "開発者ツール",
       "calendar": "ニュースカレンダー"
     },
     "tools": {
       "title": "ツール",
+      "meta": "分析",
       "experience": "経験値計算機",
       "lunacy": "月間狂気計算機",
       "damage": "ダメージ計算機"
@@ -1974,6 +1974,16 @@
     },
     "emptyPeriod": "選択した期間に集計対象の編成がありません。",
     "showAllTime": "全期間を表示",
+    "filters": {
+      "button": "フィルター",
+      "clear": "クリア",
+      "difficulty": "難易度",
+      "rarity": "レアリティ",
+      "sinner": "囚人",
+      "matchMode": "AND/OR条件の切り替え",
+      "rarityValue": "★{count}",
+      "empty": "条件に合う編成がありません。"
+    },
     "periodLabel": "集計期間",
     "period": {
       "7": "過去7日",

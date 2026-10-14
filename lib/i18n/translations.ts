@@ -70,7 +70,7 @@ export const translations = {
   'nav.tools.lunacy': { ko: '월간 광기 계산기', en: 'Monthly Lunacy planner', ja: '月間狂気計算機' },
   'nav.tools.experience': { ko: '경험치 계산기', en: 'EXP calculator', ja: '経験値計算機' },
   'nav.other.title': { ko: '기타', en: 'More', ja: 'その他' },
-  'nav.other.meta': { ko: '분석', en: 'Analysis', ja: '分析' },
+  'nav.tools.meta': { ko: '분석', en: 'Analysis', ja: '分析' },
   'nav.other.random': { ko: '랜덤 편성', en: 'Random', ja: 'ランダム編成' },
 
   // Mypage

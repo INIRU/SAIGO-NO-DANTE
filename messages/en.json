@@ -27,13 +27,13 @@
     },
     "other": {
       "title": "More",
-      "meta": "Analysis",
       "random": "Random",
       "developers": "Developer tools",
       "calendar": "News calendar"
     },
     "tools": {
       "title": "Tools",
+      "meta": "Analysis",
       "experience": "EXP calculator",
       "lunacy": "Monthly Lunacy planner",
       "damage": "Damage calculator"
@@ -1974,6 +1974,16 @@
     },
     "emptyPeriod": "No formations were published in this period.",
     "showAllTime": "View all time",
+    "filters": {
+      "button": "Filters",
+      "clear": "Clear",
+      "difficulty": "Difficulty",
+      "rarity": "Rarity",
+      "sinner": "Sinner",
+      "matchMode": "Switch between AND and OR",
+      "rarityValue": "{count}-star",
+      "empty": "No formations match these filters."
+    },
     "periodLabel": "Time range",
     "period": {
       "7": "Last 7 days",

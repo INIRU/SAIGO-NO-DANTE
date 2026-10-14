@@ -10,6 +10,7 @@ vi.mock('next-intl', () => ({ useTranslations: () => (key: string) => key, useLo
 // The URL holds the defaults, and the request has not answered: the page shows what the server handed it.
 vi.mock('nuqs', () => ({
   parseAsString: { withDefault: (value: string) => value },
+  parseAsArrayOf: () => ({ withDefault: (value: string[]) => value }),
   parseAsStringLiteral: () => ({ withDefault: (value: string) => value }),
   useQueryState: (_key: string, value: string) => [value, () => {}],
   useQueryStates: (values: object) => [values, () => {}],
@@ -18,6 +19,7 @@ vi.mock('swr', () => ({ default: (_key: string, _fetch: unknown, options: { fall
 vi.mock('@/components/meta/MetaOverview', () => ({ default: () => <div data-overview /> }))
 vi.mock('@/components/meta/IdentityAnalysis', () => ({ default: () => null }))
 vi.mock('@/components/meta/DungeonAnalysis', () => ({ default: () => null }))
+vi.mock('@/components/meta/MetaFilters', () => ({ default: () => null }))
 
 const read = (file: string) => readFileSync(resolve(__dirname, '../..', file), 'utf8')
 const PARTS = ['toolbar', 'summary', 'views', 'body']

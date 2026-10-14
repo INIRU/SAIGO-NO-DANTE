@@ -8,6 +8,23 @@
 .periods { display: flex; flex-wrap: wrap; gap: .375rem; }
 .period { min-height: 2.75rem; padding: .5rem .875rem; border-radius: .375rem; font-size: .8125rem; font-weight: 500; transition: background-color 180ms ease, color 180ms ease; }
 
+/* Filters: a button at the end of the toolbar opens a row of the boards' filter sections under it. */
+.toolbarEnd { display: flex; flex-wrap: wrap; align-items: center; gap: .375rem .75rem; }
+.filterTools { display: flex; align-items: center; gap: .75rem; }
+.filterToggle { display: inline-flex; align-items: center; gap: .4rem; min-height: 2.75rem; padding: .5rem .875rem; border: 1px solid var(--border); border-radius: .375rem; font-size: .8125rem; font-weight: 500; color: var(--text-secondary); cursor: pointer; transition: color 180ms ease, border-color 180ms ease, background-color 180ms ease; }
+.filterToggle:hover { color: var(--text-primary); }
+.filterToggle[aria-expanded=true] { color: var(--gold-light); border-color: var(--gold-dim); background: rgba(200,144,10,.08); }
+/* The number changes in place, without an entrance (it changes on every press). */
+.filterToggle b { color: var(--gold-light); font: 1.05rem/1 var(--font-title); font-weight: 400; }
+.filters { display: flex; flex-wrap: wrap; gap: 1.25rem 2rem; flex-basis: 100%; padding: 1rem .75rem .625rem; margin-top: .375rem; border-top: 1px solid var(--border); animation: filtersIn .2s cubic-bezier(.2,.8,.2,1); }
+.filterWide { flex: 2 1 15rem; min-width: 0; }
+.filterNarrow { flex: 1 1 9rem; min-width: 0; }
+.filters .filterKeywords { grid-template-columns: repeat(7, minmax(0, 1fr)); }
+.filterRarity { display: block; width: auto; height: 1.25rem; opacity: .55; transition: opacity .16s; }
+.filters button:hover .filterRarity, .filters [aria-pressed=true] .filterRarity, .filterSinners [aria-pressed=true] img { opacity: 1; }
+@keyframes filtersIn { from { opacity: 0; transform: translateY(-.25rem); } }
+@media(prefers-reduced-motion: reduce) { .filters { animation: none; } .filterToggle, .filterRarity { transition: none; } }
+
 /* Shared surfaces */
 .analysis { display: grid; gap: 1rem; min-width: 0; }
 .panel, .overview { position: relative; min-width: 0; padding: 1.5rem; background: linear-gradient(160deg, #17120c, var(--bg-deep) 70%); border: 1px solid var(--border); border-radius: .625rem; }
@@ -160,7 +177,8 @@
 @media(max-width: 639px) {
   .page { padding: 5.5rem 1rem 3rem; }
   .toolbar { gap: .5rem; }
-  .toolbar [role=tablist], .toolbar .boneTabs, .periods { width: 100%; }
+  .toolbar [role=tablist], .toolbar .boneTabs, .toolbarEnd, .periods { width: 100%; }
+  .filterTools { margin-left: auto; }
   .toolbar [role=tab], .toolbar .boneTabs > *, .period { flex: 1; }
   .period { padding-inline: .375rem; font-size: .75rem; }
   .panel, .overview { padding: 1.125rem; }

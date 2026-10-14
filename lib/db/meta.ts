@@ -3,7 +3,7 @@ import { cacheLife, cacheTag } from 'next/cache'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import { aggregateMeta, metaPeriodStart, planGiftIds, planThemeIds } from '@/lib/meta/aggregate'
 import { readAllMetaRows } from '@/lib/meta/pagination'
-import { DEFAULT_META_PERIOD, DEFAULT_META_SOURCE, type MetaData, type MetaIdentity, type MetaEGO, type MetaGift, type MetaPost, type MetaSkill, type MetaSource, type MetaPeriod, type MetaTheme } from '@/lib/meta/types'
+import { DEFAULT_META_PERIOD, DEFAULT_META_SOURCE, type MetaData, type MetaFilters, type MetaIdentity, type MetaEGO, type MetaGift, type MetaPost, type MetaSkill, type MetaSource, type MetaPeriod, type MetaTheme } from '@/lib/meta/types'
 
 function publicClient() {
   // Aggregated results are shared publicly: never derive them from a user's session
@@ -91,7 +91,7 @@ async function getPlanCatalog(giftIds: string[], themeIds: string[]) {
   }
 }
 
-export async function getMetaData(source: MetaSource = DEFAULT_META_SOURCE, period: MetaPeriod = DEFAULT_META_PERIOD): Promise<MetaData> {
+export async function getMetaData(source: MetaSource = DEFAULT_META_SOURCE, period: MetaPeriod = DEFAULT_META_PERIOD, filters: MetaFilters = {}): Promise<MetaData> {
   'use cache'
   cacheLife('page-5m')
   cacheTag(CACHE_TAGS.meta, CACHE_TAGS.gameData, CACHE_TAGS.decksList, CACHE_TAGS.plansList)
@@ -102,7 +102,7 @@ export async function getMetaData(source: MetaSource = DEFAULT_META_SOURCE, peri
   ])
   const keywordSinMap: Record<string, string> = {}
   for (const keyword of catalog.keywords) if (keyword.sin_affinity) keywordSinMap[keyword.name] = keyword.sin_affinity
-  const data = aggregateMeta({ posts: [...decks, ...plans], identities: catalog.identities, egos: catalog.egos, keywordSinMap, source, period, now: Date.now() })
+  const data = aggregateMeta({ posts: [...decks, ...plans], identities: catalog.identities, egos: catalog.egos, keywordSinMap, source, period, filters, now: Date.now() })
   const summaries = [data.planStats, ...Object.values(data.identityInsights).flatMap(insight => insight.plan ? [insight.plan] : [])]
   const { dungeon } = data
   const giftIds = [...new Set([...summaries.flatMap(summary => summary.gifts), ...dungeon.routes, ...dungeon.start, ...dungeon.observe, ...dungeon.enhanced].map(row => row.key))]

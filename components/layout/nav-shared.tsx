@@ -24,13 +24,17 @@ export const NAV_GROUPS: { labelKey: string; items: { href: string; labelKey: st
   },
   {
     labelKey: 'nav.tools.title',
-    items: [{ href: '/tools/experience', labelKey: 'nav.tools.experience' }, { href: '/tools/lunacy', labelKey: 'nav.tools.lunacy' }, { href: '/tools/damage', labelKey: 'nav.tools.damage' }],
+    items: [
+      { href: '/meta',             labelKey: 'nav.tools.meta' },
+      { href: '/tools/experience', labelKey: 'nav.tools.experience' },
+      { href: '/tools/lunacy',     labelKey: 'nav.tools.lunacy' },
+      { href: '/tools/damage',     labelKey: 'nav.tools.damage' },
+    ],
   },
   {
     labelKey: 'nav.other.title',
     items: [
       { href: '/developers', labelKey: 'nav.other.developers' },
-      { href: '/meta',       labelKey: 'nav.other.meta' },
       { href: '/random',     labelKey: 'nav.other.random' },
     ],
   },
