@@ -27,7 +27,8 @@ const contentSecurityPolicyDirectives = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
-  allowedDevOrigins: ['127.0.0.1'],
+  // The tunnel host is for looking at the dev server from another machine (cloudflared quick tunnel).
+  allowedDevOrigins: ['127.0.0.1', '*.trycloudflare.com'],
 
   // NOTE: turbopack.root intentionally unset — worktree node_modules symlink to parent
   //       repo breaks Turbopack when root is forced to __dirname. The "multiple lockfiles"
