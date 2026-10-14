@@ -20,6 +20,7 @@ import IdentityCombatSection from '@/components/identity/IdentityCombatSection'
 import IdentityStatsCard from '@/components/identity/IdentityStatsCard'
 import IdentitySanitySection from '@/components/identity/IdentitySanitySection'
 import type { SanityCondition, PanicType } from '@/lib/types'
+import type { IdentitySpine } from '@/lib/spine/pack'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
 import { useTranslations, useLocale } from 'next-intl'
 import type { SupportedLang } from '@/lib/i18n/types'
@@ -35,6 +36,8 @@ interface Props {
   sanityConditions?: SanityCondition[]
   panicInfo?: PanicType | null
   currentSeason?: number
+  sd?: IdentitySpine | null
+  illust?: IdentitySpine | null
 }
 
 export default function IdentityDetailClient({
@@ -45,13 +48,14 @@ export default function IdentityDetailClient({
   sanityConditions = [],
   panicInfo,
   currentSeason = 7,
+  sd,
+  illust,
 }: Props) {
   const [level, setLevel] = useState(MAX_IDENTITY_LEVEL)
   const displayedIdentity = useMemo(() => identityAtLevel(identity, level), [identity, level])
   const displayedSkills = useMemo(() => skillsAtLevel(skills, level), [skills, level])
   const [gacksung, setGacksung] = useState(false)
   const [showFullArt, setShowFullArt] = useState(false)
-  const [showArtTip, setShowArtTip] = useState(false)
   const [pageTab, setPageTab] = useState<'info' | 'decks'>('info')
   useEffect(() => {
     if (window.location.hash === '#decks') setPageTab('decks')
@@ -79,13 +83,6 @@ export default function IdentityDetailClient({
     return () => window.removeEventListener('popstate', onPopState)
   }, [])
 
-
-  // 풀 일러스트 클릭 안내 (첫 방문 시만)
-  useEffect(() => {
-    if (localStorage.getItem('art-tip-seen')) return
-    const timer = setTimeout(() => setShowArtTip(true), 1500)
-    return () => clearTimeout(timer)
-  }, [])
 
   const skillModel = useIdentitySkillModel(displayedSkills, passives)
 
@@ -185,10 +182,10 @@ export default function IdentityDetailClient({
             setGacksung={setGacksung}
             showFullArt={showFullArt}
             setShowFullArt={setShowFullArt}
-            showArtTip={showArtTip}
-            setShowArtTip={setShowArtTip}
             sinColor={sinColor}
             rarityNum={rarityNum}
+            sd={sd}
+            illust={illust}
           />
           </m.div>
 

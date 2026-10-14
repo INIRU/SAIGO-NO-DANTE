@@ -1922,9 +1922,38 @@
     "portrait": {
       "illustration": "イラスト",
       "uptieIllustration": "同期イラスト",
-      "artTipTitle": "画像をタップすると",
-      "artTipDesc": "フルイラストを見ることができます"
+      "viewFull": "フルイラストを見る",
+      "animated": "動くイラスト"
+    },
+    "sd": {
+      "label": "{name} SD",
+      "enlarge": "{name} SDを拡大",
+      "forms": "フォーム",
+      "skins": "スキン",
+      "motions": "モーション",
+      "noSkin": "スキンなし",
+      "zoom": "ズーム",
+      "zoomIn": "拡大",
+      "zoomOut": "縮小",
+      "fit": "画面に合わせる",
+      "backdrop": "背景",
+      "backdrops": {
+        "dark": "暗い背景",
+        "black": "黒い背景",
+        "white": "白い背景",
+        "clear": "透明な背景"
+      }
+    },
+    "viewer": {
+      "save": "保存",
+      "video": "動画",
+      "play": "再生",
+      "pause": "一時停止",
+      "saved": "保存しました",
+      "saveFailed": "保存できませんでした"
     }
+
+
   },
   "ego": {
     "resistance": "罪悪耐性",

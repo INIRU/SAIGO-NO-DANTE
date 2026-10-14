@@ -3,9 +3,9 @@
 import { getSinnerBadgeRingUrl } from '@/lib/utils/images'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { createPortal } from 'react-dom'
 import Image from 'next/image'
-import { X } from 'lucide-react'
+import { Maximize2, Play } from 'lucide-react'
+import { useReducedMotion } from 'motion/react'
 import {
   Identity,
   Sinner,
@@ -20,6 +20,9 @@ import type { SupportedLang } from '@/lib/i18n'
 import { useAutoFontSize } from '@/lib/hooks/useAutoFontSize'
 import { getLocalizedName } from '@/lib/i18n/localize'
 import styles from '@/styles/components/SinnerDetail.module.css'
+import IdentitySdStage from '@/components/identity/IdentitySdStage'
+import IllustViewer from '@/components/identity/IllustViewer'
+import type { IdentitySpine } from '@/lib/spine/pack'
 
 interface IdentityPortraitSectionProps {
   sinner: Sinner
@@ -28,10 +31,12 @@ interface IdentityPortraitSectionProps {
   setGacksung: (v: boolean) => void
   showFullArt: boolean
   setShowFullArt: (v: boolean) => void
-  showArtTip: boolean
-  setShowArtTip: (v: boolean) => void
   sinColor: string
   rarityNum: number
+  /** The identity's SD figure, when the Spine pack in Storage holds one. */
+  sd?: IdentitySpine | null
+  /** The uptie illustration as a skeleton, when the Spine pack holds one: the full view plays it. */
+  illust?: IdentitySpine | null
 }
 
 export default function IdentityPortraitSection({
@@ -41,14 +46,15 @@ export default function IdentityPortraitSection({
   setGacksung,
   showFullArt,
   setShowFullArt,
-  showArtTip,
-  setShowArtTip,
   sinColor,
   rarityNum,
+  sd,
+  illust,
 }: IdentityPortraitSectionProps) {
   const t = useTranslations()
   const locale = useLocale()
   const localizedName = getLocalizedName(identity, locale as SupportedLang)
+  const quote = identity.quote?.trim()
   const titleRef = useRef<HTMLHeadingElement>(null)
   const [titleWidth, setTitleWidth] = useState(0)
   const titleSize = useAutoFontSize(localizedName, 2.25, 0.625, titleWidth)
@@ -78,56 +84,29 @@ export default function IdentityPortraitSection({
 
   const fullArtSrc = gacksung && !gacksungArtFailed ? fullArtGacksung : fullArtNormal
 
-  // 전체화면 모달: body 스크롤 잠금 + ESC 닫기
-  const closeFullArt = useCallback(() => setShowFullArt(false), [setShowFullArt])
+  // Only the uptie illustration has a skeleton. It plays in the full view; with reduced motion the still stays.
+  const animated = !!illust?.forms.length
+  const reduceMotion = useReducedMotion()
+  const [liveFailed, setLiveFailed] = useState(false)
+  const live = gacksung && animated && !reduceMotion && !liveFailed
 
-  useEffect(() => {
-    if (!showFullArt) return
-    document.body.style.overflow = 'hidden'
-    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') closeFullArt() }
-    window.addEventListener('keydown', handler)
-    return () => {
-      document.body.style.overflow = ''
-      window.removeEventListener('keydown', handler)
-    }
-  }, [showFullArt, closeFullArt])
+  const closeFullArt = useCallback(() => setShowFullArt(false), [setShowFullArt])
 
   return (
     <>
-      {/* 풀 일러스트 오버레이 (GSAP transform 우회를 위해 body에 portal) */}
-      {showFullArt && fullArtSrc && createPortal(
-        <div
-          className="fixed inset-0 z-[110] flex items-center justify-center cursor-pointer"
-          style={{ background: 'rgba(0,0,0,0.92)' }}
-          onClick={closeFullArt}
-        >
-          {/* 닫기 버튼 */}
-          <button
-            className="absolute top-4 right-4 z-10 p-2 rounded-full transition-colors hover:bg-white/10"
-            style={{ color: '#aaa', cursor: 'pointer' }}
-            onClick={closeFullArt}
-            aria-label={t('common.close')}
-          >
-            <X size={24} />
-          </button>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            key={fullArtSrc}
-            src={fullArtSrc}
-            alt={localizedName}
-            className="max-w-full max-h-[90vh] object-contain"
-            style={{ opacity: 0, transition: 'opacity 0.3s ease' }}
-            onLoad={(ev) => { (ev.target as HTMLImageElement).style.opacity = '1' }}
-            onError={() => {
-              if (gacksung && !gacksungArtFailed) {
-                setGacksungArtFailed(true)
-              } else {
-                closeFullArt()
-              }
-            }}
-          />
-        </div>,
-        document.body
+      {/* 풀 일러스트: 동기화 일러스트에 뼈대가 있으면 그 자리에서 재생한다 */}
+      {showFullArt && fullArtSrc && (
+        <IllustViewer
+          onClose={closeFullArt}
+          name={localizedName}
+          src={fullArtSrc}
+          illust={live ? illust : null}
+          onImageError={() => {
+            if (gacksung && !gacksungArtFailed) setGacksungArtFailed(true)
+            else closeFullArt()
+          }}
+          onStageError={() => setLiveFailed(true)}
+        />
       )}
 
       <div className="space-y-4">
@@ -167,6 +146,11 @@ export default function IdentityPortraitSection({
             {t('identity.portrait.illustration')}
           </button>
           <button type="button" aria-pressed={gacksung} onClick={() => setGacksung(true)}>
+            {animated && (
+              <span role="img" aria-label={t('identity.portrait.animated')} className="mr-1.5 inline-flex">
+                <Play size={11} fill="currentColor" aria-hidden />
+              </span>
+            )}
             {t('identity.portrait.uptieIllustration')}
           </button>
         </div>
@@ -176,16 +160,8 @@ export default function IdentityPortraitSection({
           <button
             type="button"
             className={`w-full game-card rarity-${rarityNum} ${gacksung ? 'gacksung' : ''} overflow-hidden cursor-pointer`}
-            onClick={() => {
-              if (infoSrc) {
-                setShowFullArt(true)
-                if (showArtTip) {
-                  setShowArtTip(false)
-                  localStorage.setItem('art-tip-seen', '1')
-                }
-              }
-            }}
-            title={infoSrc ? `${t('identity.portrait.artTipTitle')} ${t('identity.portrait.artTipDesc')}` : undefined}
+            onClick={() => { if (infoSrc) setShowFullArt(true) }}
+            title={infoSrc ? t('identity.portrait.viewFull') : undefined}
           >
             {infoSrc ? (
               <Image
@@ -223,35 +199,32 @@ export default function IdentityPortraitSection({
             )}
           </button>
 
-          {/* 첫 방문 안내: 풀 일러스트 (그림을 가리지 않게 모서리에) */}
-          {showArtTip && (
-            <button
-              type="button"
-              onClick={() => {
-                setShowArtTip(false)
-                localStorage.setItem('art-tip-seen', '1')
-                setShowFullArt(true)
-              }}
-              className="absolute bottom-3 right-3 max-w-[calc(100%-1.5rem)] rounded px-3 py-2 text-left"
-              style={{ background: 'rgba(13,11,8,0.88)', border: '1px solid #4a3a22' }}
-            >
-              <span className="block text-xs" style={{ color: 'var(--gold)' }}>{t('identity.portrait.artTipTitle')}</span>
-              <span className="block text-[0.6875rem]" style={{ color: 'var(--text-secondary)' }}>{t('identity.portrait.artTipDesc')}</span>
+          {/* 풀 일러스트로 가는 길은 늘 보인다 (동기화 일러스트에 뼈대가 있으면 재생 표시) */}
+          {fullArtSrc && (
+            <button type="button" className={styles.artOpen} onClick={() => setShowFullArt(true)}>
+              {live ? <Play size={11} fill="currentColor" aria-hidden /> : <Maximize2 size={13} aria-hidden />}
+              {t('identity.portrait.viewFull')}
             </button>
           )}
         </div>
 
-        {/* 인격 대사 */}
-        {/* Quotes exist only in Korean; hide them on en/ja pages. */}
-        {identity.quote && locale === 'ko' && (
-          <blockquote
-            className="mx-auto max-w-[42ch] border-t border-white/10 px-2 pt-4 text-[.8125rem] italic leading-[1.85] break-words"
-            style={{
-              color: 'var(--text-secondary)',
-            }}
-          >
-            &ldquo;{identity.quote}&rdquo;
-          </blockquote>
+        {/* SD와 인격 대사 */}
+        {(sd || quote) && (
+          <div className="flex flex-col items-center gap-3 border-t border-white/10 pt-4">
+            {sd && <IdentitySdStage sd={sd} name={localizedName} className="[--sd-height:9rem] sm:[--sd-height:11rem]" />}
+            {/* The game is voiced in Korean only, so the quote is Korean on every page. */}
+            {quote && (
+              <blockquote
+                lang="ko"
+                className="max-w-[42ch] px-2 text-[.8125rem] italic leading-[1.85] break-words"
+                style={{
+                  color: 'var(--text-secondary)',
+                }}
+              >
+                &ldquo;{quote}&rdquo;
+              </blockquote>
+            )}
+          </div>
         )}
       </div>
     </>
