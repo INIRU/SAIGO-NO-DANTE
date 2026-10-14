@@ -23,7 +23,8 @@ import { rowsAtUptie } from '@/lib/decks/deck-identity-uptie'
 import { getIdentityImageUrl, getSkillIconUrl } from '@/lib/utils/images'
 import { SIN_COLORS } from '@/lib/constants/sin'
 import DeckInsights, { type DeckInsightIdentity } from '@/components/deck-analysis/DeckInsights'
-import { computeSinProduction } from '@/lib/decks/deck-analysis'
+import DeckResourceSummary from '@/components/deck-analysis/DeckResourceSummary'
+import { computeDeckResources, computeSinProduction, fieldedEntries } from '@/lib/decks/deck-analysis'
 import { localizeIdentityName, localizePassiveDescription, localizePassiveName } from '@/components/deck-detail/DeckIdentityCard'
 import { localizeDeckKeyword } from '@/components/decks/decks-types'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
@@ -346,16 +347,6 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
     dispatch({ type: 'LOAD_PLAN', state: { egoSlots: [...state.egoSlots, ...missingDefaults] } })
   }, [defaultEgoSlots, dispatch, state.egoSlots])
 
-  // 선택된 인격들의 스킬 죄악 카운트 (공명/보유 조건 계산용, 스킬 배분 가중치 적용)
-  // 선택된 인격들의 스킬 죄악 생성량 (현재 스킬 배분 / 기본 3-2-1 배분)
-  const deckSinCounts = useMemo(() => computeSinProduction(roster.map(slot => ({
-    skills: skillsByIdentity.get(slot.identity_id) ?? [],
-    distribution: getIdentitySkillDistribution(slot),
-  }))), [roster, skillsByIdentity])
-  const deckSinCountsDefault = useMemo(() => computeSinProduction(roster.map(slot => ({
-    skills: skillsByIdentity.get(slot.identity_id) ?? [],
-  }))), [roster, skillsByIdentity])
-
   // 인격 이미지 URL (info 이미지)
   const getIdentityInfoImageUrl = useCallback((ident: Pick<IdentityData, 'sinner_id' | 'game_id' | 'folder_name'>) => {
     if (!ident.game_id || !ident.folder_name) return ''
@@ -365,6 +356,17 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
   // 키워드 분포·패시브 패널 입력 (수감자 순서)
   // Only this set follows formation clicks: the identity list above stays keyed on the roster.
   const deployedIdentityIds = useMemo(() => new Set(state.identitySlots.filter(slot => isDeployedSlot(slot.slot_order)).map(slot => slot.identity_id)), [state.identitySlots])
+  // Attack types and sin resources under the keyword chart, split the way the chart is: deployed over the whole roster.
+  const deckAnalysis = useMemo(() => {
+    const deployedSinners = new Set(state.identitySlots.filter(slot => isDeployedSlot(slot.slot_order)).map(slot => slot.sinner_id))
+    const entries = roster.map(slot => ({
+      skills: skillsByIdentity.get(slot.identity_id) ?? [],
+      distribution: getIdentitySkillDistribution(slot),
+      deployed: deployedSinners.has(slot.sinner_id),
+      egos: state.egoSlots.filter(ego => ego.sinner_id === slot.sinner_id).map(ego => ({ cost: egoById.get(ego.ego_id)?.cost })),
+    }))
+    return { resources: computeDeckResources(entries), baseSinCounts: computeSinProduction(fieldedEntries(entries).map(({ skills }) => ({ skills }))) }
+  }, [egoById, roster, skillsByIdentity, state.egoSlots, state.identitySlots])
   const insightIdentities = useMemo<DeckInsightIdentity[]>(() => sinners.flatMap(sinner => {
     const slot = rosterBySinner.get(sinner.id)
     if (!slot) return []
@@ -695,7 +697,7 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
       )}
 
       {/* ── 하단: 키워드 분포 + 패시브 ── */}
-      <DeckInsights identities={insightIdentities} sinCounts={deckSinCounts} baseSinCounts={deckSinCountsDefault} deployedIds={deployedIdentityIds} />
+      <DeckInsights identities={insightIdentities} sinCounts={deckAnalysis.resources.production} baseSinCounts={deckAnalysis.baseSinCounts} deployedIds={deployedIdentityIds} summary={<DeckResourceSummary resources={deckAnalysis.resources} />} />
     </div>
   )
 }

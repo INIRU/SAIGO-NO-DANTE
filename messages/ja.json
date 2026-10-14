@@ -1307,9 +1307,10 @@
         "resonance": "共鳴",
         "stock": "保有",
         "passiveWarning": "スキル配分の変更により条件を満たしていません",
+        "defenseSkills": "防御スキル",
         "attackTypes": "攻撃タイプ",
         "sinResources": "罪悪資源",
-        "sinResourcesHint": "生成 / E.G.Oコスト"
+        "egoCost": "E.G.Oコスト"
       },
       "mainKeywords": {
         "label": "プラン代表キーワード",

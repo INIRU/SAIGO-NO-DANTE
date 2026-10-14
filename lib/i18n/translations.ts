@@ -226,7 +226,7 @@ export const translations = {
   'identity.skillType.blunt': { ko: '타격', en: 'Blunt', ja: '打撃' },
   'identity.skillType.defense': { ko: '방어', en: 'Defense', ja: '防御' },
   'identity.skillType.evade': { ko: '회피', en: 'Evade', ja: '回避' },
-  'identity.skillType.counter': { ko: '카운터', en: 'Counter', ja: 'カウンター' },
+  'identity.skillType.counter': { ko: '반격', en: 'Counter', ja: 'カウンター' },
 
   // EGO Detail Modal
   'ego.resistance': { ko: '죄악 내성', en: 'Sin Resistance', ja: '罪悪耐性' },
