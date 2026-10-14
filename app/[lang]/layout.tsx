@@ -20,7 +20,7 @@ import { notFound } from 'next/navigation'
 import { routing } from '@/lib/i18n/routing'
 import type { SupportedLang } from '@/lib/i18n/types'
 import { translations } from '@/lib/i18n/translations'
-import { OG_LOCALE, SITE_NAME, SITE_URL, localeUrl } from '@/lib/seo/metadata'
+import { ADSENSE_ACCOUNT, OG_LOCALE, SITE_NAME, SITE_URL, localeUrl } from '@/lib/seo/metadata'
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
 import PageNavigation from '@/components/ui/PageNavigation'
@@ -113,6 +113,7 @@ export async function generateMetadata({
     },
     other: {
       'mobile-web-app-capable': 'yes',
+      'google-adsense-account': ADSENSE_ACCOUNT,
     },
   }
 }
