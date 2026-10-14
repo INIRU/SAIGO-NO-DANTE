@@ -24,7 +24,8 @@ export default function MetaOverview({ data, onSelect, shows = () => true }: {
   const [bench, setBench] = useState(false)
   const name = (row: { name_kr: string; name_en?: string | null; name_jp?: string | null }) => (locale === 'en' ? row.name_en : locale === 'ja' ? row.name_jp : row.name_kr) || row.name_kr
   const fielded = new Set(data.battleIdentityStats.map(row => row.identity_id))
-  const rankingRows = (bench ? data.supportIdentityStats : data.battleIdentityStats).filter(shows).slice(0, 6)
+  // A chosen sinner is never on the bench of a formation that fields them, so the bench ranking is not narrowed.
+  const rankingRows = (bench ? data.supportIdentityStats : data.battleIdentityStats.filter(shows)).slice(0, 6)
   const slots = (data.skillSplits ?? []).reduce((sum, row) => sum + row.count, 0)
 
   return <div className={styles.analysis} data-meta-overview-tab>

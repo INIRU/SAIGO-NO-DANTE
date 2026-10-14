@@ -2010,9 +2010,8 @@
       "difficulty": "난이도",
       "rarity": "등급",
       "sinner": "수감자",
-      "matchMode": "AND/OR 조건 전환",
-      "rarityValue": "{count}성",
-      "empty": "조건에 맞는 편성이 없습니다."
+      "matchMode": "{filter} AND/OR 조건 전환",
+      "rarityValue": "{count}성"
     },
     "periodLabel": "집계 기간",
     "period": {

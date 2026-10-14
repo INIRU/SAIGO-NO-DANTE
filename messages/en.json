@@ -2010,9 +2010,8 @@
       "difficulty": "Difficulty",
       "rarity": "Rarity",
       "sinner": "Sinner",
-      "matchMode": "Switch between AND and OR",
-      "rarityValue": "{count}-star",
-      "empty": "No formations match these filters."
+      "matchMode": "Switch {filter} between AND and OR",
+      "rarityValue": "{count}-star"
     },
     "periodLabel": "Time range",
     "period": {

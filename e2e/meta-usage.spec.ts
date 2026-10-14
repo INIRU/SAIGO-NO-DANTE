@@ -95,11 +95,11 @@ test('REQ-META-011 the filter panel takes several values per filter, narrows the
   await expect(option('진동')).toBeDisabled()
   // Two keywords are a dual deck: both at once, or any one after the switch.
   await option('화상').click()
-  await expect(panel.getByRole('button', { name: 'AND/OR 조건 전환' })).toHaveCount(0)
+  await expect(panel.getByRole('button', { name: '키워드 덱 AND/OR 조건 전환' })).toHaveCount(0)
   await option('침잠').click()
   await expect.poll(address).toContain('keyword=화상,침잠')
   expect(requests.at(-1)!.get('keywordMode')).toBeNull()
-  await panel.getByRole('button', { name: 'AND/OR 조건 전환' }).click()
+  await panel.getByRole('button', { name: '키워드 덱 AND/OR 조건 전환' }).click()
   await expect(page).toHaveURL(/keywordMode=or/)
   await expect.poll(() => requests.at(-1)!.get('keywordMode')).toBe('or')
   // Rarity and sinner narrow the sample too, and the ranking lists those identities.

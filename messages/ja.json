@@ -2010,9 +2010,8 @@
       "difficulty": "難易度",
       "rarity": "レアリティ",
       "sinner": "囚人",
-      "matchMode": "AND/OR条件の切り替え",
-      "rarityValue": "★{count}",
-      "empty": "条件に合う編成がありません。"
+      "matchMode": "{filter}のAND/OR条件を切り替え",
+      "rarityValue": "★{count}"
     },
     "periodLabel": "集計期間",
     "period": {

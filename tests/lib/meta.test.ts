@@ -283,6 +283,23 @@ describe('sample filters', () => {
     expect(count({ sinner: ['1'], rarity: ['2'] })).toBe(2)
   })
 
+  it('REQ-META-009 ties a sinner to a rarity: that sinner\'s identity of that rarity, on the field', () => {
+    // Sinner 1 fields a rarity-2 identity and sinner 4 a rarity-3 one; sinner 5 sits on the bench.
+    const mixed = sample('mixed', 'burn', { identities: [{ identity_id: 'tremor1', slot_order: 0 }, { identity_id: 'burn4', slot_order: 1 }, { identity_id: 'burn5', slot_order: 99 }] })
+    const run = (filters: object) => aggregateMeta({ posts: [mixed], identities: catalog, egos: [], keywordSinMap: {}, source: 'all', period: 'all', now, filters: filters as MetaFilters }).sampleCount
+    expect(run({ sinner: ['1'], rarity: ['2'] })).toBe(1)
+    expect(run({ sinner: ['4'], rarity: ['2'] })).toBe(0)
+    expect(run({ sinner: ['1', '4'], rarity: ['3'] })).toBe(0)
+    expect(run({ sinner: ['1', '4'], rarity: ['3'], sinnerMode: 'or' })).toBe(1)
+    expect(run({ sinner: ['5'] })).toBe(0)
+  })
+
+  it('REQ-META-009 does not apply a difficulty to the deck board, which has none', () => {
+    const decksOnly = aggregateMeta({ posts, identities: catalog, egos: [], keywordSinMap: {}, source: 'decks', period: 'all', now, filters: { difficulty: ['hard'], usage: ['mirrorDungeon'] } })
+    expect(decksOnly.sampleCount).toBe(3)
+    expect(JSON.stringify(decksOnly.filters)).toBe('{"usage":["mirrorDungeon"]}')
+  })
+
   it('REQ-META-009 counts each filter option over the formations the other filters keep', () => {
     expect(filtered().facets).toEqual({
       usage: { mirrorDungeon: 5, refractionRailway: 1, story: 1 },
