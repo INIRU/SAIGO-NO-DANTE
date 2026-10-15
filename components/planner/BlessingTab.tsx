@@ -4,8 +4,9 @@ import { getGameUiAsset } from '@/lib/utils/game-ui'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { CSSProperties, Dispatch, RefObject } from 'react'
 import Image from 'next/image'
-import { useTranslations } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import { type PlannerState, type PlannerAction } from '@/lib/planner/types'
+import { blessingEffectSegments } from '@/lib/planner/blessing-effects'
 import { STORAGE_BASE } from '@/lib/constants/game'
 
 const S = STORAGE_BASE
@@ -27,15 +28,15 @@ const CARD_IMAGE_HEIGHT = '304px'
 const CARD_SELECTED_WIDTH = '277px'
 const CARD_SELECTED_HEIGHT = '328px'
 const CARD_UPGRADE_LEVELS = [2, 3] as const
-const TITLE_MAX_FONT_PX = 22
+// Sizes and places on the card are measured on the game screen (the card drawn 0.742x there, 0.6947x here: game px × 0.936).
+const TITLE_MAX_FONT_PX = 25
 const TITLE_MIN_FONT_PX = 11
-const TITLE_LETTER_SPACING = '0.05em'
-const TITLE_LINE_HEIGHT = 1.5
-const TITLE_COLOR = '#e5d7d7'
+const TITLE_LETTER_SPACING = '0'
+const TITLE_LINE_HEIGHT = 1.2
+const TITLE_COLOR = '#e2e2e2'
 const TITLE_TEXT_SHADOW = '0.125rem 0.125rem 0.0625rem rgba(7, 4, 2, 0.96)'
-const GAME_TERM_PATTERN = /(코스트|테마팩|상점|기프트|인격 레벨|레벨|속도 최댓값|합 위력|피해량|보호|키워드|새로고침|전투 보상|별빛|등급|합성|잔영)/g
-const NUMERIC_DIFF_PATTERN = /([+-]?\d+(?:\/\d+)*(?:~\d+)?%?(?:층|회|개|등급)?)/g
-const NUMERIC_TOKEN_PATTERN = /[+-]?\d+(?:\/\d+)*(?:~\d+)?%?(?:층|회|개|등급)?/g
+// Game colours: terms (<k>…</k> in the messages) and values that went up with the level.
+const EFFECT_COLORS = { normal: undefined, term: '#627eff', diff: '#f8c200' } as const
 
 // 가호 데이터 (게임 추출 기반)
 export interface Blessing {
@@ -57,18 +58,6 @@ export const BLESSING_CONFIGS: Array<Pick<Blessing, 'baseId' | 'costs'>> = [
   { baseId: 108, costs: [50, 100, 150] },
   { baseId: 109, costs: [60, 120, 180] },
 ]
-
-type EffectSegment = {
-  text: string
-  changed: boolean
-}
-
-type EffectTone = 'normal' | 'term' | 'diff'
-
-type StyledEffectSegment = {
-  text: string
-  tone: EffectTone
-}
 
 export const LEVEL_LABELS = ['', '+', '++'] as const
 const CJK_PATTERN = /[가-힣ぁ-んァ-ヶ一-龯]/
@@ -121,7 +110,7 @@ export function getBlessingDisplayName(blessing: Blessing, selectedLevel: number
 
 function getBlessingTitleFontFamily(title: string) {
   return CJK_PATTERN.test(title)
-    ? 'var(--font-kotra-bold), var(--font-noto-jp), var(--font-pretendard), sans-serif'
+    ? 'var(--font-heading)'
     : 'var(--font-mikodacs), Mikodacs, sans-serif'
 }
 
@@ -135,13 +124,13 @@ type UpgradeGlyph = {
 function getUpgradeSlotStyle(): CSSProperties {
   return {
     width: '100%',
-    height: '28px',
-    minHeight: '28px',
+    height: '37px',
+    minHeight: '37px',
     position: 'relative',
     overflow: 'visible',
     padding: 0,
     borderStyle: 'solid',
-    borderWidth: '6px',
+    borderWidth: '7.5px',
     borderColor: 'transparent',
     borderImageSource: `url("${BLESSING_BUTTON}")`,
     borderImageSlice: '14 fill',
@@ -181,7 +170,7 @@ function getUpgradeGlyphStyle(active: boolean): CSSProperties {
 function getUpgradePressedOverlayStyle(active: boolean): CSSProperties {
   return {
     position: 'absolute',
-    inset: '-3px -4px',
+    inset: '-4.5px -5.5px',
     zIndex: 20,
     pointerEvents: 'none',
     opacity: active ? 1 : 0,
@@ -199,86 +188,6 @@ function getUpgradePressedOverlayStyle(active: boolean): CSSProperties {
     mixBlendMode: 'normal',
     transition: 'opacity 160ms ease',
   }
-}
-
-function findChangedSegments(current: string, previous: string | undefined, isDiffLevel: boolean): EffectSegment[] {
-  if (!isDiffLevel) return [{ text: current, changed: false }]
-  if (!previous) return [{ text: current, changed: true }]
-  if (current === previous) return [{ text: current, changed: false }]
-
-  let prefixLength = 0
-  const maxPrefix = Math.min(current.length, previous.length)
-  while (prefixLength < maxPrefix && current[prefixLength] === previous[prefixLength]) {
-    prefixLength += 1
-  }
-
-  let suffixLength = 0
-  const maxSuffix = Math.min(current.length - prefixLength, previous.length - prefixLength)
-  while (
-    suffixLength < maxSuffix
-    && current[current.length - 1 - suffixLength] === previous[previous.length - 1 - suffixLength]
-  ) {
-    suffixLength += 1
-  }
-
-  let changedStart = prefixLength
-  let changedEnd = current.length - suffixLength
-
-  NUMERIC_TOKEN_PATTERN.lastIndex = 0
-  for (const match of current.matchAll(NUMERIC_TOKEN_PATTERN)) {
-    const tokenStart = match.index ?? 0
-    const tokenEnd = tokenStart + match[0].length
-    if (tokenStart < changedEnd && tokenEnd > changedStart) {
-      changedStart = Math.min(changedStart, tokenStart)
-      changedEnd = Math.max(changedEnd, tokenEnd)
-    }
-  }
-
-  const before = current.slice(0, changedStart)
-  const changed = current.slice(changedStart, changedEnd)
-  const after = current.slice(changedEnd)
-
-  return [
-    before ? { text: before, changed: false } : null,
-    changed ? { text: changed, changed: true } : null,
-    after ? { text: after, changed: false } : null,
-  ].filter((segment): segment is EffectSegment => Boolean(segment))
-}
-
-function getEffectDiffSegments(blessing: Blessing, selectedLevel: number, effect: string, index: number) {
-  if (selectedLevel <= 1) return [{ text: effect, changed: false }]
-  const previousEffects = blessing.effectsByLevel[selectedLevel - 2] ?? []
-  if (previousEffects.includes(effect)) return [{ text: effect, changed: false }]
-  return findChangedSegments(effect, previousEffects[index], true)
-}
-
-function splitTextByPattern(text: string, pattern: RegExp, tone: EffectTone): StyledEffectSegment[] {
-  const segments: StyledEffectSegment[] = []
-  let lastIndex = 0
-
-  pattern.lastIndex = 0
-  for (const match of text.matchAll(pattern)) {
-    const index = match.index ?? 0
-    if (index > lastIndex) segments.push({ text: text.slice(lastIndex, index), tone: 'normal' })
-    segments.push({ text: match[0], tone })
-    lastIndex = index + match[0].length
-  }
-
-  if (lastIndex < text.length) segments.push({ text: text.slice(lastIndex), tone: 'normal' })
-  return segments
-}
-
-function getStyledEffectSegments(segments: EffectSegment[]): StyledEffectSegment[] {
-  return segments.flatMap(segment => {
-    if (segment.changed) {
-      const numericParts = splitTextByPattern(segment.text, NUMERIC_DIFF_PATTERN, 'diff')
-      return numericParts.some(part => part.tone === 'diff')
-        ? numericParts
-        : [{ text: segment.text, tone: 'diff' }]
-    }
-
-    return splitTextByPattern(segment.text, GAME_TERM_PATTERN, 'term')
-  })
 }
 
 interface BlessingTitleProps {
@@ -324,10 +233,13 @@ function BlessingTitle({ title }: BlessingTitleProps) {
     const observer = new ResizeObserver(measure)
     observer.observe(container)
     window.addEventListener('resize', measure)
+    // The title fonts load on demand; a title measured in the fallback font is refitted once they arrive.
+    document.fonts.addEventListener('loadingdone', measure)
 
     return () => {
       observer.disconnect()
       window.removeEventListener('resize', measure)
+      document.fonts.removeEventListener('loadingdone', measure)
     }
   }, [fontFamily, title])
 
@@ -417,11 +329,9 @@ function BlessingCard({
   const currentCost = level > 0 ? blessing.costs[level - 1] : blessing.costs[0]
   const selectedLevel = Math.max(1, level)
   const currentEffects = blessing.effectsByLevel[selectedLevel - 1] ?? blessing.effectsByLevel[0]
+  const previousEffects = selectedLevel > 1 ? blessing.effectsByLevel[selectedLevel - 2] : undefined
+  const locale = useLocale()
   const displayName = getBlessingDisplayName(blessing, level)
-  const costTextColor = isSelected ? '#f4c84a' : 'rgba(248, 250, 252, 0.72)'
-  const costTextShadow = isSelected
-    ? '0 0.125rem 0.125rem rgba(7, 4, 2, 0.96)'
-    : '0 0.0625rem 0.125rem rgba(7, 4, 2, 0.8)'
 
   const cardContent = (
     <>
@@ -467,7 +377,7 @@ function BlessingCard({
         />
       </div>
 
-      <div className="pointer-events-none absolute min-w-0" style={{ left: '38px', top: '40px', width: '46px', aspectRatio: '1 / 1', zIndex: 4 }}>
+      <div className="pointer-events-none absolute min-w-0" style={{ left: '27px', top: '28px', width: '67px', height: '60px', zIndex: 4 }}>
         <Image
           src={getGameUiAsset(`start-buffs/${blessing.baseId}`)}
           alt=""
@@ -476,14 +386,14 @@ function BlessingCard({
           style={{ objectFit: 'contain', opacity: isSelected ? 1 : 0.86 }}
         />
       </div>
-      <div className="pointer-events-none absolute min-w-0 overflow-hidden" style={{ left: '108px', top: '42px', width: '138px', height: '44px', display: 'flex', flexDirection: 'column', justifyContent: 'center', zIndex: 4 }}>
+      <div className="pointer-events-none absolute min-w-0 overflow-hidden" style={{ left: '105px', top: '37px', width: '140px', height: '44px', display: 'flex', flexDirection: 'column', justifyContent: 'center', zIndex: 4 }}>
         <BlessingTitle title={displayName} />
       </div>
       <div
         className="pointer-events-none absolute flex items-center justify-end gap-1"
         style={{
-          top: '6px',
-          right: '27px',
+          top: '3px',
+          right: '43px',
           width: '76px',
           height: '27px',
           padding: 0,
@@ -493,69 +403,53 @@ function BlessingCard({
         <Image
           src={getGameUiAsset('start-buffs/starlight')}
           alt=""
-          width={24}
-          height={24}
-          style={{
-            width: '24px',
-            height: '24px',
-            filter: isSelected ? 'none' : 'grayscale(1) brightness(2.05) contrast(1.08) saturate(0)',
-            opacity: isSelected ? 1 : 0.88,
-          }}
+          width={26}
+          height={26}
+          style={{ width: '26px', height: '26px' }}
         />
-        <span style={{ color: costTextColor, fontSize: '1.625rem', fontWeight: 400, lineHeight: 1, fontFamily: 'var(--font-mikodacs), var(--font-mono)', textShadow: costTextShadow }}>{currentCost}</span>
+        <span style={{ color: isSelected ? '#f4c84a' : '#e8d3a2', fontSize: '27px', fontWeight: 400, lineHeight: 1, fontFamily: 'var(--font-title)', textShadow: '0 0.125rem 0.125rem rgba(7, 4, 2, 0.96)' }}>{currentCost}</span>
       </div>
 
       <div
         className="planner-blessing-effects absolute overflow-y-auto overflow-x-hidden pr-1"
         style={{
-          left: '18px',
-          top: '95px',
-          width: '228px',
-          height: '150px',
+          left: '25px',
+          top: '99px',
+          width: '213px',
+          height: '151px',
           zIndex: 4,
+          color: '#d8d8d8',
+          fontFamily: 'var(--font-game-text)',
+          fontSize: '16.7px',
+          lineHeight: 1.23,
+          textShadow: '0 0.0625rem 0.25rem rgba(0,0,0,0.95)',
+          // Like the game: the bullet is part of the line, Korean words do not split, wrapped lines start under the bullet.
+          wordBreak: locale === 'ko' ? 'keep-all' : 'normal',
+          overflowWrap: 'anywhere',
           pointerEvents: 'auto',
           overscrollBehavior: 'contain',
           scrollbarWidth: 'thin',
           scrollbarColor: 'rgba(111, 140, 255, 0.44) rgba(9, 12, 25, 0.34)',
         }}
       >
-        <div className="space-y-0.5">
-          {currentEffects.map((eff: string, i: number) => {
-            const segments = getStyledEffectSegments(getEffectDiffSegments(blessing, selectedLevel, eff, i))
-            return (
-              <div key={`${i}-${eff}`} className="flex min-w-0 items-start gap-1.5" style={{ color: '#ded5c7', fontSize: '0.9375rem', lineHeight: 1.16, fontWeight: 500, textShadow: '0 0.0625rem 0.25rem rgba(0,0,0,0.95)' }}>
-                <span aria-hidden="true" style={{ color: '#c4cbe0', lineHeight: 1.25 }}>•</span>
-                <span className="min-w-0 break-words">
-                  {segments.map((segment, segmentIndex) => (
-                    <span
-                      key={segmentIndex}
-                      style={{
-                        color: segment.tone === 'diff'
-                          ? '#eac335'
-                          : segment.tone === 'term'
-                            ? '#627eff'
-                            : '#ded5c7',
-                        fontWeight: segment.tone === 'normal' ? 500 : 700,
-                      }}
-                    >
-                      {segment.text}
-                    </span>
-                  ))}
-                </span>
-              </div>
-            )
-          })}
-        </div>
+        {currentEffects.map((effect: string, i: number) => (
+          <p key={`${i}-${effect}`}>
+            <span aria-hidden="true" style={{ display: 'inline-block', width: '4px', height: '4px', margin: '0 6.5px 0.15em 0', borderRadius: '50%', background: 'currentColor', verticalAlign: 'middle' }} />
+            {blessingEffectSegments(effect, previousEffects, i).map((segment, segmentIndex) => (
+              <span key={segmentIndex} style={{ color: EFFECT_COLORS[segment.tone] }}>{segment.text}</span>
+            ))}
+          </p>
+        ))}
       </div>
 
       <div
         className="absolute flex overflow-visible"
         style={{
-          left: '16px',
-          right: '23px',
-          top: '251px',
-          gap: '10px',
-          height: '28px',
+          left: '22px',
+          width: '221px',
+          top: '252px',
+          gap: '4.5px',
+          height: '37px',
           zIndex: 5,
         }}
       >
