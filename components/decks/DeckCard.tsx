@@ -16,6 +16,7 @@ import type { SupportedLang } from '@/lib/i18n'
 import { guestAuthorName } from '@/lib/guest/copy'
 import { computeDeckMainKeywordsFromSlots, normalizeDeckMainKeyword } from '@/lib/decks/keyword-rules'
 import OwnedBadge, { useMissingSinners } from '@/components/collection/OwnedBadge'
+import { DEFAULT_AVATAR_URL } from '@/lib/constants/game'
 const EMPTY_NOTE_LOOKUP: Record<string, never> = Object.freeze({})
 
 type IdentityPreview = {
@@ -50,6 +51,9 @@ export type DeckSummary = {
   comment_count?: number
   created_at: string
   username?: string
+  avatar_url?: string | null
+  /** False when the author keeps their profile page private: the name is shown without a link to it. */
+  profile_public?: boolean
   guest_tag?: string | null
   main_keywords?: string[] | null
   deck_identities?: IdentityPreview[]
@@ -264,17 +268,18 @@ function DeckCard({ deck, onTagClick }: DeckCardProps) {
               className="flex min-w-0 items-center"
               style={{ gap: '0.25rem', fontSize: '0.75rem', color: 'var(--text-tertiary)' }}
             >
-              {deck.username ? (
+              {(deck.username || deck.guest_tag) && (
                 <>
-                  {deck.user_id ? <Link href={`/users/${deck.user_id}`} className="hit-target relative z-10 hover:text-[var(--gold)] hover:underline">{deck.username}</Link> : <span>{deck.username}</span>}
+                  {/* The author's avatar, as the plan cards show it. */}
+                  <span className="relative shrink-0 overflow-hidden rounded-full" style={{ width: '1.125rem', height: '1.125rem', marginRight: '0.125rem', border: '1px solid rgba(200,144,10,0.2)' }}>
+                    <Image src={deck.avatar_url || DEFAULT_AVATAR_URL} alt="" width={18} height={18} style={{ width: '1.125rem', height: '1.125rem', objectFit: 'cover' }} />
+                  </span>
+                  {deck.username && deck.user_id && deck.profile_public !== false
+                    ? <Link href={`/users/${deck.user_id}`} className="hit-target relative z-10 hover:text-[var(--gold)] hover:underline">{deck.username}</Link>
+                    : <span>{deck.username ?? guestAuthorName(deck.guest_tag, locale)}</span>}
                   <span style={{ color: 'var(--text-tertiary)' }}>·</span>
                 </>
-              ) : deck.guest_tag ? (
-                <>
-                  <span>{guestAuthorName(deck.guest_tag, locale)}</span>
-                  <span style={{ color: 'var(--text-tertiary)' }}>·</span>
-                </>
-              ) : null}
+              )}
               <span style={{ color: 'var(--text-tertiary)' }}>{date}</span>
             </div>
 
