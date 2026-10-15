@@ -37,10 +37,10 @@ export default function FloorConstraints({
   return (
     <section className="my-4 min-w-0" data-floor-constraints={floor}>
       <div className="mb-2 flex items-center justify-between gap-3">
-        <h4 className="font-[family-name:var(--font-paperlogy)] font-bold text-base text-[#beb3ef]">
+        <h4 className="font-[family-name:var(--font-paperlogy)] font-bold text-base text-[#f2a7b8]">
           {floor}F · {label("제약 설정", "制約設定", "Constraints")}
         </h4>
-        <div className="relative aspect-[323/197] w-24 shrink-0">
+        <div className="relative aspect-[407/214] w-28 shrink-0">
           <Image
             src={getConstraintAssetUrl("total")}
             alt=""
@@ -48,14 +48,14 @@ export default function FloorConstraints({
             sizes="96px"
             className="object-fill"
           />
-          <span className="absolute inset-x-[10%] top-[16%] text-center font-[family-name:var(--font-body)] text-[0.5625rem] leading-none text-[#c6b9d7]">
+          <span className="absolute inset-x-[16%] top-[14%] text-center font-[family-name:var(--font-body)] text-[0.5625rem] leading-none text-[#e7b9c3]">
             {label(
               "누적 제약 점수",
               "累積制約スコア",
               "Total constraint score",
             )}
           </span>
-          <strong className="absolute inset-x-[10%] top-[45%] text-center font-[family-name:var(--font-bebas-kai)] font-normal text-[1.375rem] leading-none tabular-nums text-[#dfd5b4]">
+          <strong className="absolute inset-x-[16%] top-[44%] text-center font-[family-name:var(--font-bebas-kai)] font-normal text-[1.375rem] leading-none tabular-nums text-[#dfd5b4]">
             {points}
           </strong>
         </div>
@@ -69,11 +69,11 @@ export default function FloorConstraints({
               <li
                 key={c.id}
                 title={c.descriptions[lang].replace(/\n{2,}/g, "\n")}
-                className={`inline-flex min-h-8 items-center gap-1.5 rounded-md border px-2 text-[0.8125rem] ${active ? "border-[#8f7fd6] bg-[rgba(143,127,214,0.16)] text-[#e2dafb]" : "border-[#2e2417] text-[#8a7d69]"}`}
+                className={`inline-flex min-h-8 items-center gap-1.5 rounded-md border px-2 text-[0.8125rem] ${active ? "border-[#d0506a] bg-[rgba(208,80,106,0.16)] text-[#ffdbe2]" : "border-[#2e2417] text-[#8a7d69]"}`}
               >
                 <span className="font-[family-name:var(--font-bebas-kai)] text-[1rem] leading-none tabular-nums">{c.score}</span>
                 <span className={active ? "font-semibold" : ""}>{c.names[lang]}</span>
-                {active && <span aria-label={label("선택됨", "選択済み", "Selected")} className="text-[#c3b3ff]">✓</span>}
+                {active && <span aria-label={label("선택됨", "選択済み", "Selected")} className="text-[#ff8aa0]">✓</span>}
               </li>
             );
           })}
@@ -92,8 +92,8 @@ export default function FloorConstraints({
                 className="pointer-events-none object-fill"
               />
               <span
-                className={`pointer-events-none absolute transition-opacity duration-300 motion-reduce:transition-none ${active ? "opacity-35" : "opacity-0 group-hover:opacity-15"}`}
-                style={{ left: "1%", top: "0%", width: "98%", height: "100%" }}
+                className={`pointer-events-none absolute transition-opacity duration-300 motion-reduce:transition-none ${active ? "opacity-100" : "opacity-0 group-hover:opacity-40"}`}
+                style={{ left: "0%", top: "0%", width: "100%", height: "100.64%" }}
               >
                 <Image
                   src={getConstraintAssetUrl("selected")}
@@ -107,40 +107,34 @@ export default function FloorConstraints({
               <Image
                 src={getConstraintAssetUrl(`score-${c.score}`)}
                 alt={label(`${c.score}점`, `${c.score}点`, `${c.score} points`)}
-                width={50}
-                height={60}
-                className="absolute left-1/2 top-[1%] z-10 h-9 w-9 -translate-x-1/2 object-contain"
+                width={231}
+                height={197}
+                className="absolute left-1/2 top-[1%] z-10 h-auto w-[27%] -translate-x-1/2 object-contain"
               />
-              <strong className="absolute inset-x-[10%] top-[21%] -translate-y-1/2 text-center font-bold font-[family-name:var(--font-paperlogy)] text-[0.875rem] tracking-[-0.02em] leading-tight text-[#d8cdf3]">
+              <strong className="absolute inset-x-[10%] top-[29%] -translate-y-1/2 text-center font-bold font-[family-name:var(--font-paperlogy)] text-[0.875rem] tracking-[-0.02em] leading-tight text-[#ff7a92]">
                 {c.names[lang]}
               </strong>
               <span
                 style={{ wordBreak: lang === "ko" ? "keep-all" : "normal", fontSize: lang === "ko" ? "0.75rem" : "0.6875rem" }}
-                className="absolute inset-x-[10%] top-[29%] whitespace-pre-line text-left font-[family-name:var(--font-body)] font-normal leading-[1.35] text-[#d4bfc4]"
+                className="absolute inset-x-[10%] top-[36%] whitespace-pre-line text-left font-[family-name:var(--font-body)] font-normal leading-[1.35] text-[#d4bfc4]"
               >
                 {c.descriptions[lang].replace(/\n{2,}/g, "\n")}
               </span>
-              <span className="absolute inset-x-[14%] top-[75%] text-center text-[0.5625rem] text-[#bd9a99]">
+              <span className="absolute inset-x-[14%] top-[77%] text-center text-[0.5625rem] text-[#bd9a99]">
                 {label("제약 보상", "制約報酬", "Constraint rewards")}
               </span>
-              <div className="absolute inset-x-[14%] top-[81%] flex justify-around gap-2 text-[#dfd5b4]">
+              <div className="absolute inset-x-[14%] top-[82%] flex justify-center gap-2 text-[#dfd5b4]">
                 <span className="flex items-center gap-1">
                   <Image src={getGameUiAsset("start-buffs/starlight")} alt={label("별빛", "星明かり", "Starlight")} width={32} height={32} className="h-6 w-6 object-contain" />
                   <strong className="font-[family-name:var(--font-bebas-kai)] font-normal text-[1.25rem] tabular-nums">
                     {c.score * constraintSource.rewardMultiplier.starlight}
                   </strong>
                 </span>
-                <span className="flex items-center gap-1">
-                  <Image src={getGameUiAsset("resources/md-pass")} alt={label("거던 패스", "鏡パス", "MD pass")} width={32} height={32} className="h-6 w-6 object-contain" />
-                  <strong className="font-[family-name:var(--font-bebas-kai)] font-normal text-[1.25rem] tabular-nums">
-                    {c.score * constraintSource.rewardMultiplier.mdpass}
-                  </strong>
-                </span>
               </div>
             </>
           );
           const className =
-            "group relative block aspect-[486/690] w-full max-w-[12.5rem] bg-transparent transition-transform duration-200 motion-reduce:transition-none";
+            "group relative block aspect-[347/469] w-full max-w-[12.5rem] bg-transparent transition-transform duration-200 motion-reduce:transition-none";
           return onChange ? (
             <button
               key={c.id}
@@ -154,7 +148,7 @@ export default function FloorConstraints({
                     : [...selected, c.id],
                 )
               }
-              className={`${className} hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-[#c3b3ff]`}
+              className={`${className} hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-[#ff8aa0]`}
             >
               {content}
             </button>

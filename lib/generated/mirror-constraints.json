@@ -1,8 +1,7 @@
 {
-  "dungeonId": 7,
+  "dungeonId": 8,
   "rewardMultiplier": {
-    "starlight": 15,
-    "mdpass": 15
+    "starlight": 15
   },
   "replacementRules": [
     {
