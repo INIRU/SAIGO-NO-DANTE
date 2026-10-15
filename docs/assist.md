@@ -11,7 +11,13 @@
 
 ## 화면 전체 OCR 보조 인식
 
-이미지 인식과 별도로 Tesseract.js Worker가 3초 간격으로 화면 전체의 글자를 읽는다. 실행 중에는 프레임을 추가로 쌓지 않으며, 언어별 모델·WASM·Worker는 `/models/assist-ocr/`에서 같은 출처로 제공한다. `npm run build:assist-ocr`로 번들과 언어 파일을 준비하며 일반 빌드에도 포함된다. 화면·OCR 원문을 서버로 보내거나 기록하지 않는다.
+이미지 인식과 별도로 Tesseract.js Worker가 3초 간격으로 화면 전체의 글자를 읽는다. 실행 중에는 프레임을 추가로 쌓지 않는다. 파일을 받는 곳은 다음과 같다(`lib/vision/model-assets.ts`).
+- Worker 스크립트: 같은 출처(`/models/assist-*/…`). `npm run build:assist-ocr`·`build:assist-worker`가 만들고 일반 빌드에도 포함된다.
+- 런타임(ONNX Runtime wasm, Tesseract 코어·언어 데이터): jsDelivr의 설치된 버전.
+- 인식 모델(`public/models`의 `.onnx`·`.json`)
+  - 배포된 사이트는 Supabase Storage `limbus-assets/models/<버전>/`에서 받는다.
+  - 로컬 개발 서버(localhost)는 `public/models`를 읽는다.
+  - 배포에서는 `.vercelignore`로 모델 파일을 뺀다. 화면·OCR 원문을 서버로 보내거나 기록하지 않는다.
 
 읽은 글자는 기프트 이름, 이벤트 지문과 선택지 문구의 후보를 찾는 데만 사용한다. 짧은 일반 문구와 다른 이벤트가 공유하는 선택지는 보수적으로 제외한다. OCR 후보는 6초 후 만료되며 이미지 후보와 합치되 두 점수를 직접 비교하지 않는다. 획득과 선택 기록은 자동으로 변경하지 않는다. OCR 초기화에 실패해도 기존 이미지 인식은 계속된다.
 
@@ -305,7 +311,7 @@ python3 scripts/vision/train_icons.py --data <icon dataset> --out <checkpoint> -
   --init-onnx public/models/assist-scene/icon-classifier.onnx --init-labels public/models/assist-scene/icon-labels.json
 ```
 
-바꾼 뒤에는 `PROVENANCE.md`의 sha256과 `metadata.json`의 version을 함께 고친다(`tests/lib/vision/assist-models.test.ts`가 파일과 기록이 같은지 본다).
+바꾼 뒤에는 `PROVENANCE.md`의 sha256과 `metadata.json`의 version을 함께 고친다(`tests/lib/vision/assist-models.test.ts`가 파일과 기록이 같은지 본다). 그다음 `npm run upload:assist-models`로 Storage에 올린다. 이 명령이 새 버전 폴더에 올리고 `lib/vision/model-assets.ts`의 버전을 바꾼다. 올리지 않으면 `tests/lib/vision/assist-model-assets.test.ts`가 실패한다.
 
 **2026-10-05 재학습 이후 인식 보고와 합성 누락 조사 (수정 없음):** 10/2~10/5 인식 보고(49세션)는 획득 팝업 2559/4(99.8%), 판매 136/6(95.8%, 이전 83.0%), 합성 330/108(75.3%, 이전 67.8%)이다. 창 모드(16:9가 아닌 캡처)의 판매는 61/1로, 정사각형 창에서 한 건도 못 읽던 문제는 풀렸다. 합성이 여전히 가장 약하고 기기마다 20~35%씩 고르게 놓친다.
 
