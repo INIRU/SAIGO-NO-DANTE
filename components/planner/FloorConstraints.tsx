@@ -9,6 +9,10 @@ import {
 import { getConstraintAssetUrl } from "@/lib/utils/images";
 import { getGameUiAsset } from "@/lib/utils/game-ui";
 
+// description length (characters) past which the text steps down a size to stay above the reward panel;
+// measure the rendered height if a longer description ever overflows.
+const DENSE_DESCRIPTION = { ko: 50, ja: 60, en: 140 };
+
 export default function FloorConstraints({
   floor,
   entries,
@@ -48,14 +52,14 @@ export default function FloorConstraints({
             sizes="96px"
             className="object-fill"
           />
-          <span className="absolute inset-x-[16%] top-[14%] text-center font-[family-name:var(--font-body)] text-[0.5625rem] leading-none text-[#e7b9c3]">
+          <span className={`absolute inset-x-[6%] top-[14%] whitespace-nowrap text-center font-[family-name:var(--font-body)] leading-none text-[#e7b9c3] ${lang === "en" ? "text-[0.5rem]" : "text-[0.5625rem]"}`}>
             {label(
               "누적 제약 점수",
               "累積制約スコア",
               "Total constraint score",
             )}
           </span>
-          <strong className="absolute inset-x-[16%] top-[44%] text-center font-[family-name:var(--font-bebas-kai)] font-normal text-[1.375rem] leading-none tabular-nums text-[#dfd5b4]">
+          <strong className={`absolute inset-x-[16%] top-[34%] text-center font-[family-name:var(--font-title)] font-normal text-[1.875rem] leading-none tabular-nums ${points > 0 ? "text-[#ffd23f]" : "text-[#f2ece0]"}`}>
             {points}
           </strong>
         </div>
@@ -111,22 +115,23 @@ export default function FloorConstraints({
                 height={197}
                 className="absolute left-1/2 top-[1%] z-10 h-auto w-[27%] -translate-x-1/2 object-contain"
               />
-              <strong className="absolute inset-x-[10%] top-[29%] -translate-y-1/2 text-center font-bold font-[family-name:var(--font-paperlogy)] text-[0.875rem] tracking-[-0.02em] leading-tight text-[#ff7a92]">
+              {/* Sizes in cqw (share of the card's width) follow the game's earlier constraint card. */}
+              <strong className={`absolute inset-x-[12%] top-[29%] -translate-y-1/2 text-center font-[family-name:var(--font-heading)] font-bold leading-tight text-[#ff9aae] [text-shadow:0_0.1em_0.2em_rgba(0,0,0,0.9)] ${lang === "ko" ? "text-[9.3cqw]" : "text-[7.5cqw]"}`}>
                 {c.names[lang]}
               </strong>
               <span
-                style={{ wordBreak: lang === "ko" ? "keep-all" : "normal", fontSize: lang === "ko" ? "0.75rem" : "0.6875rem" }}
-                className="absolute inset-x-[10%] top-[36%] whitespace-pre-line text-left font-[family-name:var(--font-body)] font-normal leading-[1.35] text-[#d4bfc4]"
+                style={{ wordBreak: lang === "ko" ? "keep-all" : "normal" }}
+                className={`absolute inset-x-[14%] top-[36%] whitespace-pre-line text-left font-[family-name:var(--font-game-text)] font-normal leading-[1.3] text-[#efe6e8] [text-shadow:0_0.05em_0.2em_rgba(0,0,0,0.9)] ${(c.descriptions[lang].length > DENSE_DESCRIPTION[lang] ? { ko: "text-[5.8cqw]", ja: "text-[5.4cqw]", en: "text-[4.8cqw]" } : { ko: "text-[6.6cqw]", ja: "text-[6cqw]", en: "text-[5.2cqw]" })[lang]}`}
               >
                 {c.descriptions[lang].replace(/\n{2,}/g, "\n")}
               </span>
-              <span className="absolute inset-x-[14%] top-[77%] text-center text-[0.5625rem] text-[#bd9a99]">
+              <span className="absolute inset-x-[14%] top-[75.5%] text-center font-[family-name:var(--font-game-text)] text-[5.2cqw] leading-none text-[#f0dfe2]">
                 {label("제약 보상", "制約報酬", "Constraint rewards")}
               </span>
-              <div className="absolute inset-x-[14%] top-[82%] flex justify-center gap-2 text-[#dfd5b4]">
-                <span className="flex items-center gap-1">
-                  <Image src={getGameUiAsset("start-buffs/starlight")} alt={label("별빛", "星明かり", "Starlight")} width={32} height={32} className="h-6 w-6 object-contain" />
-                  <strong className="font-[family-name:var(--font-bebas-kai)] font-normal text-[1.25rem] tabular-nums">
+              <div className="absolute inset-x-[14%] top-[80%] flex justify-center text-[#f1e2c6]">
+                <span className="flex items-center gap-[2cqw]">
+                  <Image src={getGameUiAsset("start-buffs/starlight")} alt={label("별빛", "星明かり", "Starlight")} width={32} height={32} className="h-[13cqw] w-[13cqw] object-contain" />
+                  <strong className="font-[family-name:var(--font-title)] font-normal text-[12.5cqw] leading-none tabular-nums">
                     {c.score * constraintSource.rewardMultiplier.starlight}
                   </strong>
                 </span>
@@ -134,7 +139,7 @@ export default function FloorConstraints({
             </>
           );
           const className =
-            "group relative block aspect-[347/469] w-full max-w-[12.5rem] bg-transparent transition-transform duration-200 motion-reduce:transition-none";
+            "group relative block aspect-[347/469] w-full max-w-[12.5rem] bg-transparent [container-type:inline-size] transition-transform duration-200 motion-reduce:transition-none";
           return onChange ? (
             <button
               key={c.id}

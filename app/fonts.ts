@@ -20,14 +20,15 @@ const mikodacs = localFont({
   fallback: ['Pretendard', 'Segoe UI', 'sans-serif'],
 })
 
-// decorative — display:optional prevents FOUT
+// numbers — display:optional prevents FOUT; preloaded (17KB) so it is ready by first paint instead of leaving the
+// numbers in the fallback font for the whole first visit
 const bebasKai = localFont({
   src: [
     { path: '../public/fonts/BebasKai.woff2', style: 'normal' },
   ],
   variable: '--font-bebas-kai',
   display: 'optional',
-  preload: false,
+  preload: true,
 })
 
 // heading font — keep swap but specify fallback with similar metrics to reduce shift

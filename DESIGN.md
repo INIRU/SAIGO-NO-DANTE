@@ -45,8 +45,10 @@
 | 숫자, 로고 워드마크 | Bebas Kai | `--font-title`, `--font-logo` |
 | 제목, 섹션 이름 | KOTRA Bold | `--font-heading` |
 | 본문, 버튼, 입력 | Pretendard | `--font-body` |
+| 게임 카드 설명(가호·제약) | S-Core Dream (en/ja는 본문 글꼴) | `--font-game-text` |
 
-- Bebas는 숫자(층, 비용, 편성 번호, 수치)와 로고에만 쓴다. 한글 제목에 쓰지 않는다.
+- Bebas는 숫자(층, 비용, 편성 번호, 수치)와 로고에만 쓴다. 한글 제목에 쓰지 않는다. `display: optional`이라 미리 받는다(`preload: true`). 안 받으면 첫 방문 내내 대체 글꼴로 남는다.
+- 게임 화면을 옮긴 카드는 게임 글꼴을 따른다: 제목 KOTRA Bold, 설명 S-Core Dream, 숫자 Bebas Kai. 강조 단어는 게임 원문의 색 표시를 쓴다(가호: `scripts/assets/mark-blessing-terms.py`).
 - 영어(`html[lang=en]`)는 제목·본문 모두 Pretendard를 쓴다. 인격 카드 이름은 Mikodacs.
 - 일본어(`html[lang=ja]`)는 제목·본문 모두 M PLUS 1p(`--font-noto-jp` 변수), 인격 카드 이름은 Corporate Logo Bold를 쓴다.
 - 모든 글꼴은 `public/fonts`에 직접 올려 `next/font/local`로 불러온다(Google Fonts 사용 안 함). 라이선스는 `public/fonts/licenses/`.
