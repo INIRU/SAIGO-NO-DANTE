@@ -9,10 +9,6 @@ import {
 import { getConstraintAssetUrl } from "@/lib/utils/images";
 import { getGameUiAsset } from "@/lib/utils/game-ui";
 
-// description length (characters) past which the text steps down a size to stay above the reward panel;
-// measure the rendered height if a longer description ever overflows.
-const DENSE_DESCRIPTION = { ko: 50, ja: 60, en: 140 };
-
 export default function FloorConstraints({
   floor,
   entries,
@@ -44,7 +40,7 @@ export default function FloorConstraints({
         <h4 className="font-[family-name:var(--font-paperlogy)] font-bold text-base text-[#f2a7b8]">
           {floor}F · {label("제약 설정", "制約設定", "Constraints")}
         </h4>
-        <div className="relative aspect-[407/214] w-28 shrink-0">
+        <div className="relative aspect-[407/214] w-32 shrink-0">
           <Image
             src={getConstraintAssetUrl("total")}
             alt=""
@@ -52,7 +48,7 @@ export default function FloorConstraints({
             sizes="96px"
             className="object-fill"
           />
-          <span className={`absolute inset-x-[6%] top-[14%] whitespace-nowrap text-center font-[family-name:var(--font-body)] leading-none text-[#e7b9c3] ${lang === "en" ? "text-[0.5rem]" : "text-[0.5625rem]"}`}>
+          <span className={`absolute inset-x-[6%] top-[14%] whitespace-nowrap text-center font-[family-name:var(--font-body)] leading-none text-[#e7b9c3] text-[0.5625rem]`}>
             {label(
               "누적 제약 점수",
               "累積制約スコア",
@@ -115,13 +111,14 @@ export default function FloorConstraints({
                 height={197}
                 className="absolute left-1/2 top-[1%] z-10 h-auto w-[27%] -translate-x-1/2 object-contain"
               />
-              {/* Sizes in cqw (share of the card's width) follow the game's earlier constraint card. */}
+              {/* Sizes in cqw (share of the card's width) follow the game's earlier constraint card, never under 0.6875rem;
+                  a description longer than its panel scrolls there, like the game's long card texts. */}
               <strong className={`absolute inset-x-[12%] top-[29%] -translate-y-1/2 text-center font-[family-name:var(--font-heading)] font-bold leading-tight text-[#ff9aae] [text-shadow:0_0.1em_0.2em_rgba(0,0,0,0.9)] ${lang === "ko" ? "text-[9.3cqw]" : "text-[7.5cqw]"}`}>
                 {c.names[lang]}
               </strong>
               <span
                 style={{ wordBreak: lang === "ko" ? "keep-all" : "normal" }}
-                className={`absolute inset-x-[14%] top-[36%] whitespace-pre-line text-left font-[family-name:var(--font-game-text)] font-normal leading-[1.3] text-[#efe6e8] [text-shadow:0_0.05em_0.2em_rgba(0,0,0,0.9)] ${(c.descriptions[lang].length > DENSE_DESCRIPTION[lang] ? { ko: "text-[5.8cqw]", ja: "text-[5.4cqw]", en: "text-[4.8cqw]" } : { ko: "text-[6.6cqw]", ja: "text-[6cqw]", en: "text-[5.2cqw]" })[lang]}`}
+                className={`absolute inset-x-[14%] top-[36%] bottom-[27%] overflow-y-auto overscroll-contain whitespace-pre-line text-left font-[family-name:var(--font-game-text)] font-normal leading-[1.3] text-[#efe6e8] [scrollbar-color:rgba(255,154,174,0.45)_transparent] [scrollbar-width:thin] [text-shadow:0_0.05em_0.2em_rgba(0,0,0,0.9)] ${{ ko: "text-[max(0.6875rem,6.6cqw)]", ja: "text-[max(0.6875rem,6cqw)]", en: "text-[max(0.6875rem,5.2cqw)]" }[lang]}`}
               >
                 {c.descriptions[lang].replace(/\n{2,}/g, "\n")}
               </span>
