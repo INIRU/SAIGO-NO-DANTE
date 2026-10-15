@@ -120,7 +120,7 @@ type DeckDetail = {
   is_admin?: boolean
   user_id: string
   guest_tag?: string | null
-  profiles: { username: string; avatar_url?: string | null } | null
+  profiles: { username: string; avatar_url?: string | null; public_profile?: boolean } | null
   deck_identities: IdentitySlot[]
   deck_egos?: EgoSlot[]
   all_sinner_egos?: SinnerEgo[]
@@ -883,10 +883,10 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
           <div className={styles.author}>
             <Image src={deck.profiles?.avatar_url || DEFAULT_AVATAR_URL} alt="" width={44} height={44} className="h-11 w-11 shrink-0 rounded-full bg-[#17120c] object-cover ring-1 ring-[#6b4c12]" />
             <div className="min-w-0">
-              {deck.profiles?.username ? (
+              {deck.profiles?.username && deck.profiles.public_profile !== false ? (
                 <Link href={`/users/${deck.user_id}`} className="block truncate text-[1rem] font-semibold leading-snug text-[#e8dcc8] hover:text-[#e8b030]">{deck.profiles.username}</Link>
               ) : (
-                <p className="text-[1rem] font-semibold leading-snug text-[#e8dcc8]">{guestAuthorName(deck.guest_tag, locale) ?? commentsT('anonymous')}</p>
+                <p className="text-[1rem] font-semibold leading-snug text-[#e8dcc8]">{deck.profiles?.username ?? guestAuthorName(deck.guest_tag, locale) ?? commentsT('anonymous')}</p>
               )}
               <RelativeTime date={deck.created_at} className="text-[0.875rem] text-[#9c8b73]" />
             </div>

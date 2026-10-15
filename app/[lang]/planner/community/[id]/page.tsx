@@ -10,6 +10,7 @@ import { notFound } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { withPostAuthors } from '@/lib/community/post-authors'
 import { cacheLife, cacheTag } from 'next/cache'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import { withoutOtherLocales } from '@/lib/i18n/strip-locales'
@@ -35,7 +36,7 @@ async function fetchFullPlan(id: string) {
     .select('id, title, description, difficulty, tags, deck, egos, floor_plan, gift_inventory, vote_count, view_count, comment_count, created_at, user_id, guest_tag, profiles:user_id(username, avatar_url)')
     .eq('id', id)
     .maybeSingle()
-  return data
+  return data ? (await withPostAuthors([data]))[0] : data
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {

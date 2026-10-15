@@ -5,6 +5,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { revalidatePath, revalidateTag } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { withPostAuthors } from '@/lib/community/post-authors'
 import { insertDeckIdentities, normalizeUptie } from '@/lib/decks/deck-identity-uptie'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import { checkRequestRateLimit, rateLimitResponse } from '@/lib/rate-limit'
@@ -465,7 +466,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    const rows = (data ?? []) as unknown as DeckListRow[]
+    // Authors first: the name search below matches them.
+    const rows = await withPostAuthors((data ?? []) as unknown as DeckListRow[])
     if (!hasAdvancedFilters) {
       return NextResponse.json(rows)
     }
@@ -489,7 +491,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: fullResult.error.message }, { status: 500 })
     }
 
-    const fullRows = (fullResult.data ?? []) as unknown as DeckListRow[]
+    const fullRows = await withPostAuthors((fullResult.data ?? []) as unknown as DeckListRow[])
     const fullRowsById = new Map(fullRows.map(deck => [deck.id, deck]))
     return NextResponse.json(pageIds.map(id => fullRowsById.get(id)).filter(Boolean))
   } catch (err: unknown) {
