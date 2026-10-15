@@ -75,6 +75,8 @@
   --font-body:    var(--font-pretendard), var(--font-scdream), 'SCDream5 Fallback', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
   --font-mono:    var(--font-noto-sans-mono), var(--font-pretendard), 'SCDream5 Fallback', 'Apple SD Gothic Neo', 'Malgun Gothic', monospace;
   --font-perfect-dos: var(--font-mono);
+  /* Text on in-game cards (blessing effects, constraints): S-Core Dream like the game. en/ja keep their body font. */
+  --font-game-text: var(--font-scdream), var(--font-pretendard), 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
 
   /* ── 텍스트 위계 ─────────────────────────────── */
   --text-primary:   #e8dcc8;
@@ -130,6 +132,7 @@ html[lang="ja"] {
   --font-body: var(--font-noto-jp), 'Hiragino Kaku Gothic ProN', 'Yu Gothic', 'Meiryo', sans-serif;
   --font-heading: var(--font-heading-jp), 'Hiragino Kaku Gothic ProN', 'Yu Gothic', 'Meiryo', sans-serif;
   --font-serif: var(--font-heading-jp), 'Hiragino Kaku Gothic ProN', 'Yu Gothic', 'Meiryo', sans-serif;
+  --font-game-text: var(--font-body);
 }
 
 /* English: Pretendard for body and headings, like Dante's Planner */
@@ -137,6 +140,7 @@ html[lang="en"] {
   --font-body: var(--font-pretendard), 'Segoe UI', sans-serif;
   --font-heading: var(--font-heading-latin), var(--font-pretendard), 'Segoe UI', sans-serif;
   --font-serif: var(--font-heading-latin), var(--font-pretendard), 'Segoe UI', sans-serif;
+  --font-game-text: var(--font-body);
 }
 
 * {
