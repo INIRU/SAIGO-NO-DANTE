@@ -46,6 +46,7 @@ type IdentityNameEntry = {
   folder_name: string | null
   game_id: string | null
   rarity: number
+  release_date?: string | null
   keywords: string[] | null
   skill_keyword_list?: string[] | null
   hp: number | null
@@ -71,8 +72,8 @@ type PlanFilterIndex = {
 const PAGE_SIZE = 20
 const QUERY_OPTIONS = { history: 'replace', shallow: true, scroll: false } as const
 const COMBAT_KEYWORDS = ['참격', '관통', '타격'] as const
-const IDENTITY_FILTER_SELECT_WITH_SKILL_KEYWORDS = 'id, sinner_id, name, name_kr, name_en, name_jp, rarity, keywords, skill_keyword_list, folder_name, game_id, hp, speed_min, speed_max, def_level, sinner:sinners(id, name_kr, order_num)'
-const IDENTITY_FILTER_SELECT_LEGACY = 'id, sinner_id, name, name_kr, name_en, name_jp, rarity, keywords, folder_name, game_id, hp, speed_min, speed_max, def_level, sinner:sinners(id, name_kr, order_num)'
+const IDENTITY_FILTER_SELECT_WITH_SKILL_KEYWORDS = 'id, sinner_id, name, name_kr, name_en, name_jp, rarity, release_date, keywords, skill_keyword_list, folder_name, game_id, hp, speed_min, speed_max, def_level, sinner:sinners(id, name_kr, order_num)'
+const IDENTITY_FILTER_SELECT_LEGACY = 'id, sinner_id, name, name_kr, name_en, name_jp, rarity, release_date, keywords, folder_name, game_id, hp, speed_min, speed_max, def_level, sinner:sinners(id, name_kr, order_num)'
 
 const DIFFICULTY_COLOR: Record<string, string> = { normal: '#4a9868', hard: '#e8b030', overlap: '#48b0c0', extreme: '#e05050' }
 
@@ -96,6 +97,7 @@ function toDeckFilterIdentity(identity: IdentityNameEntry): DeckFilterIdentity {
     name_en: identity.name_en,
     name_jp: identity.name_jp,
     rarity: identity.rarity,
+    release_date: identity.release_date ?? undefined,
     keywords: identity.keywords ?? [],
     skill_keyword_list: identity.skill_keyword_list ?? identity.keywords ?? [],
     folder_name: identity.folder_name,
@@ -1108,6 +1110,7 @@ export default function CommunityClient({ initialPlans, initialTotal }: Communit
         identities={filterIdentities}
         selectedIdentityIds={selectedIdentityIds}
         onToggleIdentity={toggleSelectedIdentity}
+        onClearIdentities={() => { void setIdentityIdsQuery(null, QUERY_OPTIONS) }}
         onSinnerChange={setIdentityModalSinnerId}
         onClose={() => setIdentityModalSinnerId(null)}
       />

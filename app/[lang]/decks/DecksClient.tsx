@@ -36,8 +36,8 @@ const PAGE_SIZE = 12
 const THEME_KEYWORD_SET = new Set<string>(THEME_KEYWORDS)
 const PINNED_DECK_KEYWORDS = [...DECK_MAIN_KEYWORDS]
 const QUERY_OPTIONS = { history: 'replace', shallow: true, scroll: false } as const
-const IDENTITY_FILTER_SELECT_WITH_SKILL_KEYWORDS = 'id, sinner_id, name, name_kr, name_en, name_jp, rarity, keywords, skill_keyword_list, folder_name, game_id, hp, speed_min, speed_max, def_level, sinner:sinners(id, name_kr, order_num)'
-const IDENTITY_FILTER_SELECT_LEGACY = 'id, sinner_id, name, name_kr, name_en, name_jp, rarity, keywords, folder_name, game_id, hp, speed_min, speed_max, def_level, sinner:sinners(id, name_kr, order_num)'
+const IDENTITY_FILTER_SELECT_WITH_SKILL_KEYWORDS = 'id, sinner_id, name, name_kr, name_en, name_jp, rarity, release_date, keywords, skill_keyword_list, folder_name, game_id, hp, speed_min, speed_max, def_level, sinner:sinners(id, name_kr, order_num)'
+const IDENTITY_FILTER_SELECT_LEGACY = 'id, sinner_id, name, name_kr, name_en, name_jp, rarity, release_date, keywords, folder_name, game_id, hp, speed_min, speed_max, def_level, sinner:sinners(id, name_kr, order_num)'
 
 type SortKey = 'latest' | 'popular'
 type IdentityNameEntry = {
@@ -50,6 +50,7 @@ type IdentityNameEntry = {
   folder_name: string | null
   game_id: string | null
   rarity: number
+  release_date?: string | null
   keywords: string[] | null
   skill_keyword_list?: string[] | null
   hp: number | null
@@ -154,6 +155,7 @@ function toDeckFilterIdentity(identity: IdentityNameEntry): DeckFilterIdentity {
     name_en: identity.name_en,
     name_jp: identity.name_jp,
     rarity: identity.rarity,
+    release_date: identity.release_date ?? undefined,
     keywords: identity.keywords ?? [],
     skill_keyword_list: identity.skill_keyword_list ?? [],
     folder_name: identity.folder_name,
