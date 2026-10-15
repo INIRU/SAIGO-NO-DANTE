@@ -13,6 +13,7 @@ import { THEME_KEYWORDS, normalizeThemeKeyword } from '@/lib/constants/keywords'
 import DeckDetailClient from './DeckDetailClient'
 import DeckDetailSkeleton from '@/components/decks/DeckDetailSkeleton'
 import { isAwakenedUptie } from '@/lib/decks/deck-identity-uptie'
+import { withPostAuthors } from '@/lib/community/post-authors'
 import type { IdentitySlot, IdentityDetail } from '@/components/deck-detail/DeckIdentityCard'
 import type { DeckRecommendationSummary, DeckRecommendationsData } from '@/components/deck-detail/DeckRecommendations'
 
@@ -112,6 +113,7 @@ type RecommendationSourceDeck = {
   view_count: number | null
   comment_count: number | null
   created_at: string
+  user_id?: string | null
   profiles: { username: string | null } | { username: string | null }[] | null
   guest_tag?: string | null
   deck_identities: Array<{
@@ -446,7 +448,7 @@ async function fetchDeckRecommendations(
       .schema('limbus')
       .from('decks')
       .select(`
-        id, lang, title, description, tags, main_keywords, content_type, vote_count, view_count, comment_count, created_at,
+        id, lang, user_id, title, description, tags, main_keywords, content_type, vote_count, view_count, comment_count, created_at,
         guest_tag, profiles!decks_user_id_fkey(username),
         deck_identities(
           slot_order, gacksung, uptie,
@@ -460,7 +462,7 @@ async function fetchDeckRecommendations(
 
     if (candidateError) throw candidateError
 
-    const candidates = ((candidateRows ?? []) as unknown as RecommendationSourceDeck[])
+    const candidates = (await withPostAuthors((candidateRows ?? []) as unknown as RecommendationSourceDeck[]))
       .map(toRecommendationCandidate)
       .filter((candidate): candidate is RecommendationCandidate => {
         if (!candidate) return false
@@ -651,7 +653,7 @@ async function getCachedDeckDetailPayload(lang: 'ko' | 'en' | 'ja', id: string) 
             ego: ego ? { ...ego, ego_skills: egoSkillsByEgoId.get(ego.id) ?? [] } : null,
           }
         }) as EgoSlot[],
-        profiles: Array.isArray(data.profiles) ? (data.profiles[0] ?? null) : data.profiles,
+        profiles: (await withPostAuthors([data]))[0].profiles,
         all_sinner_egos: [],
         is_owner: false,
         is_admin: false,

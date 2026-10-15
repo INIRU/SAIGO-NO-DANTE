@@ -3,6 +3,7 @@ import { revalidateTag } from 'next/cache'
 import { authorColumns, authorRateKey, guestPinOf, recordGuestAuthorship, resolveAuthor } from '@/lib/guest/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { withPostAuthors } from '@/lib/community/post-authors'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { findOrCreateSupabaseUser } from '@/lib/supabase/findOrCreateUser'
@@ -336,7 +337,7 @@ export async function GET(req: NextRequest) {
     const { data, count, error } = await buildQuery(rangeStart, rangeEnd)
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-    const rows = (data ?? []) as Record<string, unknown>[]
+    const rows = (await withPostAuthors((data ?? []) as { user_id?: string | null; profiles?: unknown }[])) as Record<string, unknown>[]
     const skillTypeResult = await fetchPlannerSkillTypeMap(supabase, getFormationIdentityIds(rows))
     if ('error' in skillTypeResult) return NextResponse.json({ error: skillTypeResult.error }, { status: 500 })
 
