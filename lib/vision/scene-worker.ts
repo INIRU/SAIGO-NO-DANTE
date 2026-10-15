@@ -4,6 +4,7 @@ import { decodeEmbeddingIndex, matchEventEmbedding, matchGiftEmbedding, type Emb
 import { popupIconBox, type PopupLabelBox } from './popup-detect'
 import { acceptedIcon, heldSlotRead, iconTemplate, mergeRankedGroups, plateShaped, rankIcons, rankIconsInRegion, type IconTemplate } from './icon-match'
 import { fusionSlotRegions, fusionSlotRegionsFromAnchors, fusionWheelRegions, vestigeGroup, type FusionAnchors, type FusionSlotRead, type WheelAnchors } from './fusion-evidence'
+import { assistModelRoot, ortRuntimeRoot } from './model-assets'
 import { classifierKnowsHeld, classifierSlotRead, heldLabels, iconTensor, ICON_CROP, ICON_INPUT } from './icon-classifier'
 
 type Request = { type: 'init'; giftReferences?: VisualReference[]; eventReferences?: VisualReference[] } |
@@ -16,7 +17,7 @@ type Response = { type: 'ready'; provider: 'webgpu' | 'wasm'; adapter: string } 
   { type: 'fusion-slots'; requestId: number; slots: FusionSlotRead[] } | { type: 'icons'; count: number; ms: number } |
   { type: 'error'; message: string }
 
-const ASSET_ROOT = '/models/assist-scene/'
+const ASSET_ROOT = `${assistModelRoot(self.location.hostname)}/assist-scene/`
 let session: ort.InferenceSession | null = null
 let visualSession: ort.InferenceSession | null = null
 // The gift-icon classifier for fusion slots; until it loads (or if it fails) template matching reads them.
@@ -269,7 +270,7 @@ self.onmessage = async (event: MessageEvent<Request>) => {
     try {
       if (!context) throw new Error('Canvas unavailable')
       ort.env.wasm.numThreads = 1
-      ort.env.wasm.wasmPaths = ASSET_ROOT
+      ort.env.wasm.wasmPaths = ortRuntimeRoot(ort.env.versions.web ?? ort.env.versions.common)
       const response = await fetch(`${ASSET_ROOT}labels.json`)
       if (!response.ok) throw new Error('Labels unavailable')
       const decoded: unknown = await response.json()

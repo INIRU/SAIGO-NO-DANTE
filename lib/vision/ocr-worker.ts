@@ -1,6 +1,7 @@
 import { createWorker, PSM } from 'tesseract.js'
 import * as ort from 'onnxruntime-web/webgpu'
 import { popupEffectBox, popupHeaderBox, popupPlateUnit } from './popup-detect'
+import { assistModelRoot, ortRuntimeRoot } from './model-assets'
 import { popupHeaderEvidence } from './popup-evidence'
 import { explorationFloor } from './exploration-match'
 import { ctcDecode, ctcLexiconBest, detSize, detTensor, fillRecLine, joinRowLines, lexiconEntries, mergeTileRects, paddleRetryDelay, recAlphabet,
@@ -34,6 +35,8 @@ type Response =
   | { type: 'disposed' }
   | { type: 'backend'; engine: 'paddle' | 'tesseract'; adapter: string; loading: boolean; reason?: string }
 
+// The Tesseract worker script stays on this origin (a worker must); its core and language data come from jsDelivr
+// (tesseract.js defaults), the PaddleOCR models from model-assets.
 const ROOT = '/models/assist-ocr'
 const LANGUAGES: Record<Language, string> = { ko: 'kor+eng', en: 'eng', ja: 'jpn+eng' }
 let reader: Awaited<ReturnType<typeof createWorker>> | null = null
@@ -43,12 +46,10 @@ let disposed = false
 // PP-OCR det (language-free) + the game language's rec model on a real WebGPU adapter. A load or run failure releases it
 // and the same request is read by Tesseract, which stays loaded as the fallback; the GPU models are loaded again later
 // (PADDLE_RETRY_MS), since the game sharing the GPU can stall a run for seconds without the GPU being unusable.
-const PADDLE_ROOT = `${ROOT}/paddle`
+const PADDLE_ROOT = `${assistModelRoot(self.location.hostname)}/assist-ocr/paddle`
 /** Recognition model and its character dictionary per game language (see paddle/PROVENANCE.md). */
 const REC_ROOTS: Record<Language, string> = { ko: PADDLE_ROOT, ja: `${PADDLE_ROOT}/ja`, en: `${PADDLE_ROOT}/en` }
 let language: Language = 'ko'
-// ONNX Runtime's WebGPU build ships its runtime with the scene worker assets.
-const ORT_ROOT = '/models/assist-scene/'
 const PADDLE_TIMEOUT_MS = 8000
 const FULL_FRAME_LINES = 80
 const REC_BATCH = 6
@@ -245,7 +246,7 @@ async function loadPaddle() {
   let rec: ort.InferenceSession | null = null
   try {
     ort.env.wasm.numThreads = 1
-    ort.env.wasm.wasmPaths = ORT_ROOT
+    ort.env.wasm.wasmPaths = ortRuntimeRoot(ort.env.versions.web ?? ort.env.versions.common)
     const response = await fetch(`${REC_ROOTS[language]}/dict.json`)
     if (!response.ok) throw new Error('OCR dictionary unavailable')
     const alphabet = recAlphabet(await response.json())
@@ -497,8 +498,6 @@ self.onmessage = async (event: MessageEvent<Request>) => {
     try {
       const created = await createWorker(LANGUAGES[request.language], 1, {
         workerPath: `${ROOT}/tesseract-worker.min.js`,
-        corePath: `${ROOT}/core`,
-        langPath: `${ROOT}/lang`,
         workerBlobURL: false,
         cacheMethod: 'none',
       })
