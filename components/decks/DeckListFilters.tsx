@@ -646,6 +646,7 @@ export default function DeckListFilters({
         identities={identityFilterIdentities}
         selectedIdentityIds={selectedIdentityIds}
         onToggleIdentity={onToggleSelectedIdentity}
+        onClearIdentities={onClearSelectedIdentities}
         onSinnerChange={setIdentityModalSinnerId}
         onClose={() => setIdentityModalSinnerId(null)}
       />

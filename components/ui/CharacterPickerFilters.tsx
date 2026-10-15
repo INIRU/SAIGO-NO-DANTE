@@ -6,12 +6,14 @@ import { Search, RotateCcw, SlidersHorizontal } from 'lucide-react'
 import { getSinnerLogoUrl, getEgoGradeBannerUrl } from '@/lib/utils/images'
 import { STORAGE_BASE } from '@/lib/constants/game'
 
-export default function CharacterPickerFilters({ query, onQuery, grade, onGrade, grades, count, sinner = '', onSinner, sinners = [] }: {
+export default function CharacterPickerFilters({ query, onQuery, grade, onGrade, grades, count, sinner = '', onSinner, sinners = [], onReset, canReset }: {
   query: string; onQuery: (value: string) => void
   grade: string; onGrade: (value: string) => void
   grades: { value: string; label: string }[]; count: number
   sinner?: string; onSinner?: (value: string) => void
   sinners?: { id: string; name: string }[]
+  /** Replaces what reset clears (by default the search, the grade and the sinner); `canReset` then says when it is on. */
+  onReset?: () => void; canReset?: boolean
 }) {
   const lang = useLocale(), [expanded, setExpanded] = useState(false)
   const tr = (ko: string, ja: string, en: string) => lang === 'ja' ? ja : lang === 'en' ? en : ko
@@ -29,6 +31,6 @@ export default function CharacterPickerFilters({ query, onQuery, grade, onGrade,
         {sinners.map(s => <button key={s.id} type="button" aria-pressed={sinner === s.id} onClick={() => onSinner(s.id)}><img src={getSinnerLogoUrl(s.id)} alt="" width={24} height={24} />{s.name}</button>)}
       </div>
     </>}
-    <div className="character-picker-result-count"><span role="status" aria-live="polite">{tr(`${count}개`, `${count}件`, `${count} results`)}</span><button type="button" disabled={!query && !grade && !sinner} onClick={() => { onQuery(''); onGrade(''); onSinner?.('') }}><RotateCcw size={14} aria-hidden="true" />{tr('초기화', 'リセット', 'Reset')}</button></div>
+    <div className="character-picker-result-count"><span role="status" aria-live="polite">{tr(`${count}개`, `${count}件`, `${count} results`)}</span><button type="button" disabled={onReset ? !canReset : !query && !grade && !sinner} onClick={onReset ?? (() => { onQuery(''); onGrade(''); onSinner?.('') })}><RotateCcw size={14} aria-hidden="true" />{tr('초기화', 'リセット', 'Reset')}</button></div>
   </div>
 }
