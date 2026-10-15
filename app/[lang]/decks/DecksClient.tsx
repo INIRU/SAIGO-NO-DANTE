@@ -169,8 +169,8 @@ function toDeckFilterIdentity(identity: IdentityNameEntry): DeckFilterIdentity {
   }
 }
 
-function mapDeck(d: { profiles?: { username?: string } } & DeckSummary): DeckSummary {
-  return { ...d, username: d.profiles?.username ?? undefined }
+function mapDeck(d: { profiles?: { username?: string; avatar_url?: string | null; public_profile?: boolean } | null } & DeckSummary): DeckSummary {
+  return { ...d, username: d.profiles?.username ?? undefined, avatar_url: d.profiles?.avatar_url ?? null, profile_public: d.profiles?.public_profile }
 }
 
 function mergeDeckRows(existing: DeckSummary[], incoming: DeckSummary[]) {

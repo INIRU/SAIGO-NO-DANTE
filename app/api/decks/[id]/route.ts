@@ -3,6 +3,7 @@ import { revalidateTag } from 'next/cache'
 import { ownsPost, resolveAuthor } from '@/lib/guest/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { withPostAuthors } from '@/lib/community/post-authors'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { writeAuditLog } from '@/lib/audit'
@@ -57,7 +58,7 @@ export async function GET(
   if (deckRes.error) {
     return NextResponse.json({ error: deckRes.error.message }, { status: 404 })
   }
-  const deck = deckRes.data
+  const [deck] = await withPostAuthors([deckRes.data])
   const sinners = sinnersRes.data ?? []
 
   type SlotIdentity = { id: string; sinner_id: string; game_id: string | null } | null
