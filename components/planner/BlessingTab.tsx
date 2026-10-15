@@ -10,21 +10,22 @@ import { STORAGE_BASE } from '@/lib/constants/game'
 
 const S = STORAGE_BASE
 const BLESSING_UI_ASSET_BASE = '/assets/planner/blessing-ui'
-const BLESSING_CARD_BASE = `${BLESSING_UI_ASSET_BASE}/blessing-card-dante-base.webp`
-const BLESSING_CARD_SELECTED_OVERLAY = `${BLESSING_UI_ASSET_BASE}/blessing-card-dante-selected-overlay.webp`
-const BLESSING_BUTTON_DANTE_RED = `${BLESSING_UI_ASSET_BASE}/blessing-button-dante-red.webp`
-const BLESSING_BUTTON_DANTE_SELECTED_OVERLAY = `${BLESSING_UI_ASSET_BASE}/blessing-button-dante-selected-overlay.webp`
+// Mirror Dungeon 8 "시지프 별의 가호" card (game sprites MainUI_MirrorDungeon8_2_2 / 2_4 / 2_9 / 2_10).
+const BLESSING_CARD_BASE = `${BLESSING_UI_ASSET_BASE}/blessing-card-sisyphus-base.webp`
+const BLESSING_CARD_SELECTED_OVERLAY = `${BLESSING_UI_ASSET_BASE}/blessing-card-sisyphus-selected-overlay.webp`
+const BLESSING_BUTTON = `${BLESSING_UI_ASSET_BASE}/blessing-button-sisyphus.webp`
+const BLESSING_BUTTON_SELECTED_OVERLAY = `${BLESSING_UI_ASSET_BASE}/blessing-button-sisyphus-selected-overlay.webp`
 const BLESSING_PLUS_DANTE_NORMAL = `${BLESSING_UI_ASSET_BASE}/blessing-plus-dante.webp`
 const BLESSING_PLUS_DANTE_SELECTED = `${BLESSING_UI_ASSET_BASE}/blessing-plus-dante-normal.webp`
 const BLESSING_PLUSPLUS_DANTE_SELECTED = `${BLESSING_UI_ASSET_BASE}/blessing-plusplus-dante-normal.webp`
 const CARD_WRAPPER_WIDTH = '272px'
-const CARD_WRAPPER_HEIGHT = '320px'
+const CARD_WRAPPER_HEIGHT = '312px'
 const CARD_WRAPPER_WIDTH_NUMBER = 272
-const CARD_WRAPPER_HEIGHT_NUMBER = 320
+const CARD_WRAPPER_HEIGHT_NUMBER = 312
 const CARD_IMAGE_WIDTH = '264px'
-const CARD_IMAGE_HEIGHT = '320px'
-const CARD_SELECTED_WIDTH = '270px'
-const CARD_SELECTED_HEIGHT = '324px'
+const CARD_IMAGE_HEIGHT = '304px'
+const CARD_SELECTED_WIDTH = '277px'
+const CARD_SELECTED_HEIGHT = '328px'
 const CARD_UPGRADE_LEVELS = [2, 3] as const
 const TITLE_MAX_FONT_PX = 22
 const TITLE_MIN_FONT_PX = 11
@@ -142,8 +143,8 @@ function getUpgradeSlotStyle(): CSSProperties {
     borderStyle: 'solid',
     borderWidth: '6px',
     borderColor: 'transparent',
-    borderImageSource: `url("${BLESSING_BUTTON_DANTE_RED}")`,
-    borderImageSlice: '8 fill',
+    borderImageSource: `url("${BLESSING_BUTTON}")`,
+    borderImageSlice: '14 fill',
     borderImageOutset: 0,
     borderImageRepeat: 'stretch',
     borderRadius: 0,
@@ -180,17 +181,17 @@ function getUpgradeGlyphStyle(active: boolean): CSSProperties {
 function getUpgradePressedOverlayStyle(active: boolean): CSSProperties {
   return {
     position: 'absolute',
-    inset: '-9px -12px',
+    inset: '-3px -4px',
     zIndex: 20,
     pointerEvents: 'none',
     opacity: active ? 1 : 0,
     overflow: 'visible',
     transform: 'translate(-0.5px, -0.5px)',
     borderStyle: 'solid',
-    borderWidth: '8px',
+    borderWidth: '6px',
     borderColor: 'transparent',
-    borderImageSource: `url("${BLESSING_BUTTON_DANTE_SELECTED_OVERLAY}")`,
-    borderImageSlice: '16 fill',
+    borderImageSource: `url("${BLESSING_BUTTON_SELECTED_OVERLAY}")`,
+    borderImageSlice: '14 fill',
     borderImageOutset: 0,
     borderImageRepeat: 'stretch',
     background: 'transparent',
@@ -432,9 +433,9 @@ function BlessingCard({
           className="absolute focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f3cf35]"
           style={{
             left: '4.5%',
-            top: '4.5%',
-            right: '4.5%',
-            bottom: '13.5%',
+            top: '3.5%',
+            right: '9.5%',
+            bottom: '21%',
             zIndex: 3,
             border: 0,
             padding: 0,
@@ -466,7 +467,7 @@ function BlessingCard({
         />
       </div>
 
-      <div className="pointer-events-none absolute min-w-0" style={{ left: '1.625rem', top: '2.8125rem', width: '4.25rem', aspectRatio: '1 / 1', zIndex: 4 }}>
+      <div className="pointer-events-none absolute min-w-0" style={{ left: '38px', top: '40px', width: '46px', aspectRatio: '1 / 1', zIndex: 4 }}>
         <Image
           src={getGameUiAsset(`start-buffs/${blessing.baseId}`)}
           alt=""
@@ -475,16 +476,16 @@ function BlessingCard({
           style={{ objectFit: 'contain', opacity: isSelected ? 1 : 0.86 }}
         />
       </div>
-      <div className="pointer-events-none absolute min-w-0 overflow-hidden" style={{ left: '5.5rem', top: '3.125rem', width: '10rem', zIndex: 4 }}>
+      <div className="pointer-events-none absolute min-w-0 overflow-hidden" style={{ left: '108px', top: '42px', width: '138px', height: '44px', display: 'flex', flexDirection: 'column', justifyContent: 'center', zIndex: 4 }}>
         <BlessingTitle title={displayName} />
       </div>
       <div
         className="pointer-events-none absolute flex items-center justify-end gap-1"
         style={{
-          top: '1.7%',
-          right: '1.875rem',
-          width: '4.25rem',
-          height: '2.8125rem',
+          top: '6px',
+          right: '27px',
+          width: '76px',
+          height: '27px',
           padding: 0,
           zIndex: 4,
         }}
@@ -495,8 +496,8 @@ function BlessingCard({
           width={24}
           height={24}
           style={{
-            width: '1.5rem',
-            height: '1.5rem',
+            width: '24px',
+            height: '24px',
             filter: isSelected ? 'none' : 'grayscale(1) brightness(2.05) contrast(1.08) saturate(0)',
             opacity: isSelected ? 1 : 0.88,
           }}
@@ -507,15 +508,15 @@ function BlessingCard({
       <div
         className="planner-blessing-effects absolute overflow-y-auto overflow-x-hidden pr-1"
         style={{
-          left: '1.5rem',
-          top: '7.1875rem',
-          width: '13.875rem',
-          height: '7.25rem',
+          left: '18px',
+          top: '95px',
+          width: '228px',
+          height: '150px',
           zIndex: 4,
           pointerEvents: 'auto',
           overscrollBehavior: 'contain',
           scrollbarWidth: 'thin',
-          scrollbarColor: 'rgba(232, 176, 48, 0.44) rgba(25, 13, 9, 0.34)',
+          scrollbarColor: 'rgba(111, 140, 255, 0.44) rgba(9, 12, 25, 0.34)',
         }}
       >
         <div className="space-y-0.5">
@@ -523,7 +524,7 @@ function BlessingCard({
             const segments = getStyledEffectSegments(getEffectDiffSegments(blessing, selectedLevel, eff, i))
             return (
               <div key={`${i}-${eff}`} className="flex min-w-0 items-start gap-1.5" style={{ color: '#ded5c7', fontSize: '0.9375rem', lineHeight: 1.16, fontWeight: 500, textShadow: '0 0.0625rem 0.25rem rgba(0,0,0,0.95)' }}>
-                <span aria-hidden="true" style={{ color: '#d7c2aa', lineHeight: 1.25 }}>•</span>
+                <span aria-hidden="true" style={{ color: '#c4cbe0', lineHeight: 1.25 }}>•</span>
                 <span className="min-w-0 break-words">
                   {segments.map((segment, segmentIndex) => (
                     <span
@@ -532,7 +533,7 @@ function BlessingCard({
                         color: segment.tone === 'diff'
                           ? '#eac335'
                           : segment.tone === 'term'
-                            ? '#f12d22'
+                            ? '#627eff'
                             : '#ded5c7',
                         fontWeight: segment.tone === 'normal' ? 500 : 700,
                       }}
@@ -550,9 +551,9 @@ function BlessingCard({
       <div
         className="absolute flex overflow-visible"
         style={{
-          left: '22px',
-          right: '30px',
-          bottom: '20px',
+          left: '16px',
+          right: '23px',
+          top: '251px',
           gap: '10px',
           height: '28px',
           zIndex: 5,
@@ -626,8 +627,8 @@ function BlessingCard({
         aria-hidden="true"
         className={`planner-blessing-selected-overlay pointer-events-none absolute overflow-visible opacity-0 transition-opacity duration-200${interactive ? ' group-hover:opacity-100' : ''}`}
         style={{
-          left: '-0.125rem',
-          top: '-0.0625rem',
+          left: '-7px',
+          top: '-14px',
           width: CARD_SELECTED_WIDTH,
           height: CARD_SELECTED_HEIGHT,
           opacity: isSelected ? 1 : undefined,
@@ -651,8 +652,8 @@ function BlessingCard({
     <div
       className="relative min-w-0 overflow-visible"
       style={{
-        width: `${CARD_WRAPPER_WIDTH_NUMBER * cardScale}px`,
-        height: `${CARD_WRAPPER_HEIGHT_NUMBER * cardScale}px`,
+        width: `${Math.floor(CARD_WRAPPER_WIDTH_NUMBER * cardScale)}px`,
+        height: `${Math.floor(CARD_WRAPPER_HEIGHT_NUMBER * cardScale)}px`,
         justifySelf: 'center',
       }}
     >
@@ -744,7 +745,7 @@ export function ReadOnlyBlessingGrid({ blessings, selectedBlessings, emptyText }
       className="planner-blessing-grid relative z-10 hidden grid-cols-1 overflow-visible sm:grid sm:grid-cols-2 lg:grid-cols-5"
       style={{
         gap: cardColumnCount >= 5 ? '8px' : '6px',
-        gridTemplateColumns: `repeat(${cardColumnCount}, minmax(0, ${CARD_WRAPPER_WIDTH_NUMBER * cardScale}px))`,
+        gridTemplateColumns: `repeat(${cardColumnCount}, minmax(0, ${Math.floor(CARD_WRAPPER_WIDTH_NUMBER * cardScale)}px))`,
         justifyContent: 'center',
         padding: '0.75rem 0 0',
       }}
@@ -917,7 +918,7 @@ export default function BlessingTab({ state, dispatch }: Props) {
         className="planner-blessing-grid relative z-10 grid grid-cols-1 overflow-visible sm:grid-cols-2 lg:grid-cols-5"
         style={{
           gap: cardColumnCount >= 5 ? '8px' : '6px',
-          gridTemplateColumns: `repeat(${cardColumnCount}, minmax(0, ${CARD_WRAPPER_WIDTH_NUMBER * cardScale}px))`,
+          gridTemplateColumns: `repeat(${cardColumnCount}, minmax(0, ${Math.floor(CARD_WRAPPER_WIDTH_NUMBER * cardScale)}px))`,
           justifyContent: 'center',
           padding: '1rem 0 0',
         }}

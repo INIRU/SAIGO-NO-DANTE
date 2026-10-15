@@ -168,7 +168,7 @@ export function getFormationBannerUrl(kind: 'selected' | 'backup'): string {
   }[kind]
 }
 
-/** Original mirror-dungeon constraint card layers, preserving atlas alpha. */
+/** Original mirror-dungeon constraint card layers (season 8 atlases), preserving atlas alpha. */
 export function getConstraintAssetUrl(layer: string): string {
-  return `/assets/planner/constraint-ui/md7-${layer}.webp`
+  return `/assets/planner/constraint-ui/md8-${layer}.webp`
 }
