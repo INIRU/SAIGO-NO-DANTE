@@ -47,6 +47,37 @@ for (const [board, path] of [['deck', '/ko/decks?browse=all'], ['plan', '/ko/pla
 }
 
 for (const [board, path] of [['deck', '/ko/decks?browse=all'], ['plan', '/ko/planner/community?browse=all']] as const) {
+  test(`REQ-DECKS-019 ${board} board: the picker's reset takes the pick off and keeps the sinner`, async ({ page }) => {
+    await page.goto(path)
+    const aside = page.locator('aside').first()
+    const tile = (sinner: string) => aside.locator(`button[aria-label^="${sinner} 인격 선택"]`)
+    const section = aside.getByRole('button', { name: /^인격( 필터)?$/ })
+    await expect(section).toBeVisible()
+    if (await section.getAttribute('aria-expanded') === 'false') await section.click()
+
+    // Pick an identity of Sinclair, then open the window again and narrow it by grade.
+    await tile('싱클레어').click()
+    const dialog = page.getByRole('dialog')
+    await dialog.locator('ul button[aria-pressed]').first().click()
+    await expect(dialog).toHaveCount(0)
+    await expect(tile('싱클레어')).toHaveAttribute('data-picked', 'true')
+    await tile('싱클레어').click()
+    await dialog.getByRole('button', { name: '000', exact: true }).click()
+    const reset = dialog.getByRole('button', { name: '초기화' })
+    await expect(reset).toBeEnabled()
+
+    await reset.click()
+    // Still Sinclair's window, every grade, nothing picked.
+    await expect(dialog.getByRole('heading', { name: '싱클레어 인격 선택', exact: true })).toHaveCount(1)
+    await expect(dialog.getByRole('button', { name: '전체', exact: true }).first()).toHaveAttribute('aria-pressed', 'true')
+    await expect(dialog.locator('ul button[aria-pressed=true]')).toHaveCount(0)
+    await expect(reset).toBeDisabled()
+    await page.keyboard.press('Escape')
+    await expect(aside.locator('button[data-picked]')).toHaveCount(0)
+  })
+}
+
+for (const [board, path] of [['deck', '/ko/decks?browse=all'], ['plan', '/ko/planner/community?browse=all']] as const) {
   // A filter written to the URL reached the page a render late: the pressed keyword showed as not pressed for a moment, then pressed again.
   test(`REQ-DECKS-016 ${board} board: a pressed keyword stays pressed while the URL catches up`, async ({ page }) => {
     await page.goto(path)

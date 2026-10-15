@@ -10,6 +10,7 @@ import BaseModal from '@/components/ui/BaseModal'
 import CharacterPickerFilters from '@/components/ui/CharacterPickerFilters'
 import IdentityFrameCard from '@/components/ui/IdentityFrameCard'
 import { filterStyles } from '@/components/board/FilterControls'
+import { compareReleaseDate } from '@/lib/utils/release-order'
 
 export type DeckFilterSinner = {
   id: string
@@ -25,15 +26,18 @@ export type DeckFilterIdentity = Identity & {
  * The identity filter's picker of the deck and plan boards, built like the planner's identity picker: name search, grade
  * and the sinners down the left, the cards on the right. Another sinner is one press away without closing it ('' is every
  * sinner). A pressed card joins the filter and closes the window (the filter keeps one identity per sinner, so the pick
- * is done); pressing the chosen card takes it off and leaves the window open.
+ * is done); pressing the chosen card takes it off and leaves the window open. Newest identities come first, as in the
+ * planner's picker. Reset clears the search and the grade and takes off the picks in view, keeping the sinner.
  */
-export default function DeckIdentityFilterModal({ open, sinnerId, sinners, identities, selectedIdentityIds, onToggleIdentity, onSinnerChange, onClose }: {
+export default function DeckIdentityFilterModal({ open, sinnerId, sinners, identities, selectedIdentityIds, onToggleIdentity, onClearIdentities, onSinnerChange, onClose }: {
   open: boolean
   sinnerId: string
   sinners: readonly DeckFilterSinner[]
   identities: readonly DeckFilterIdentity[]
   selectedIdentityIds: ReadonlySet<string>
   onToggleIdentity: (identityId: string) => void
+  /** Takes every pick off the filter. */
+  onClearIdentities: () => void
   onSinnerChange: (sinnerId: string) => void
   onClose: () => void
 }) {
@@ -44,14 +48,23 @@ export default function DeckIdentityFilterModal({ open, sinnerId, sinners, ident
   useEffect(() => { if (open) { setQuery(''); setGrade('') } }, [open])
   const sinnerName = (id: string) => rootT(`sinner.${id}` as Parameters<typeof rootT>[0])
   const nameOf = (identity: DeckFilterIdentity) => (locale === 'en' ? identity.name_en : locale === 'ja' ? identity.name_jp : null) || identity.name_kr
-  const order = useMemo(() => new Map(sinners.map(sinner => [sinner.id, sinner.order_num])), [sinners])
   const shown = useMemo(() => {
     const needle = query.trim().toLocaleLowerCase()
     return identities
       .filter(identity => (!sinnerId || identity.sinner_id === sinnerId) && (!grade || String(identity.rarity) === grade)
         && [identity.name_kr, identity.name_en, identity.name_jp].some(name => name?.toLocaleLowerCase().includes(needle)))
-      .sort((a, b) => (order.get(a.sinner_id) ?? 0) - (order.get(b.sinner_id) ?? 0) || b.rarity - a.rarity || a.name_kr.localeCompare(b.name_kr, 'ko'))
-  }, [identities, sinnerId, grade, query, order])
+      .sort(compareReleaseDate)
+  }, [identities, sinnerId, grade, query])
+  // The picks in view: this sinner's, or all of them when every sinner is shown.
+  const picked = useMemo(() => identities.filter(identity => selectedIdentityIds.has(identity.id) && (!sinnerId || identity.sinner_id === sinnerId)).map(identity => identity.id),
+    [identities, selectedIdentityIds, sinnerId])
+  const reset = () => {
+    setQuery(''); setGrade('')
+    // the filter keeps one identity per sinner, so a sinner has one pick to toggle off; a hand-written URL with
+    // two would keep one of them (each toggle reads the same selection).
+    if (!sinnerId) onClearIdentities()
+    else picked.forEach(onToggleIdentity)
+  }
   const title = sinnerId ? t('title', { sinner: sinnerName(sinnerId) }) : t('fallbackTitle')
 
   return (
@@ -66,7 +79,8 @@ export default function DeckIdentityFilterModal({ open, sinnerId, sinners, ident
         <div className="character-picker-layout">
           <CharacterPickerFilters query={query} onQuery={setQuery} grade={grade} onGrade={setGrade} count={shown.length}
             grades={[3, 2, 1].map(n => ({ value: String(n), label: '0'.repeat(n) }))}
-            sinner={sinnerId} onSinner={onSinnerChange} sinners={sinners.map(sinner => ({ id: sinner.id, name: sinnerName(sinner.id) }))} />
+            sinner={sinnerId} onSinner={onSinnerChange} sinners={sinners.map(sinner => ({ id: sinner.id, name: sinnerName(sinner.id) }))}
+            onReset={reset} canReset={Boolean(query || grade || picked.length)} />
           <div className={filterStyles.pickerResults}>
             {shown.length > 0 ? (
               <ul className={filterStyles.pickerGrid}>
