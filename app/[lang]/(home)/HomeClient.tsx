@@ -10,6 +10,7 @@ import { useRoutePrefetch } from '@/lib/hooks/useRoutePrefetch'
 import type { SupportedLang } from '@/lib/i18n/types'
 import HeroWordmark from '@/components/home/HeroWordmark'
 import LimpiLink from '@/components/home/LimpiLink'
+import DiscordSupportLink from '@/components/home/DiscordSupportLink'
 import DanteLogo from '@/components/brand/DanteLogo'
 import { SinnerRosterIcon, DeckBoardIcon, MirrorDungeonIcon } from '@/components/brand/icons'
 import AnnouncementBanner, { type AnnouncementData } from '@/components/home/AnnouncementBanner'
@@ -269,6 +270,7 @@ export default function HomeClient({ latestIdentities, pinnedAnnouncement }: Hom
                 {t('home.cta.planner')}
               </CommandUtilityLink>
               <LimpiLink />
+              <DiscordSupportLink />
             </div>
           </div>
         </div>

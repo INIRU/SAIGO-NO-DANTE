@@ -1673,6 +1673,11 @@
       "kind": "Discordボット",
       "open": "LimpiのDiscordボットサイトを開く(新しいウィンドウ)"
     },
+    "support": {
+      "name": "SAIGO NO DANTE Discord",
+      "kind": "サポートサーバー",
+      "open": "SAIGO NO DANTEのサポートDiscordサーバーを開く(新しいウィンドウ)"
+    },
     "cta": {
       "sinners": "囚人一覧",
       "decks": "デッキ掲示板",
