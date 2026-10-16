@@ -36,8 +36,6 @@ interface ThemePackCardProps {
   sizes?: string
   isSelected?: boolean
   lang?: SupportedLang
-  /** Show gift count below name (default: false) */
-  showGiftCount?: boolean
   /** Use a bare image surface when the surrounding layout already provides the frame. */
   imageSurface?: 'default' | 'bare'
 }
@@ -67,7 +65,6 @@ export default function ThemePackCard({
   onClick,
   isSelected,
   lang: langProp,
-  showGiftCount,
   imageSurface = 'default',
   ariaLabel,
   title,
@@ -108,10 +105,6 @@ export default function ThemePackCard({
   // Long names (mostly EN/JA) wrap onto two balanced lines instead of shrinking to a sliver, as the game does.
   // Multi-colour names (1119, 1126) are short and keep their one-line coloured segments.
   const twoLineTitle = useTwoLineTitle(displayNameSegments ? '' : displayName, lang, fontSize, titleMaxFontRem, titleMeasureWidth, titleFontFamily, titleFontWeight)
-  const giftCount = (theme.ego_gift_ids ?? []).length
-  const giftCountLabel = lang === 'en'
-    ? `${giftCount} ${t('mirrorDungeon.theme.gifts')}`
-    : `${t('mirrorDungeon.theme.gifts')} ${giftCount}${t('mirrorDungeon.theme.giftCountSuffix')}`
 
   useEffect(() => {
     const element = titleTrackRef.current
@@ -232,15 +225,6 @@ export default function ThemePackCard({
             </div>
           </div>}
 
-          {/* Gift count */}
-          {showGiftCount && giftCount > 0 && (
-            <div className="absolute left-0 right-0 flex justify-center" style={{ bottom: '7%' }}>
-              <span style={{ color: '#c8900a', fontSize: '0.75rem', fontFamily: 'var(--font-mono)' }}>
-                {giftCountLabel}
-              </span>
-            </div>
-          )}
-
           {/* Selected: the in-game selection sprite traced around the poster outline; aria-pressed carries the state. */}
           {isSelected && (
             // eslint-disable-next-line @next/next/no-img-element
@@ -252,11 +236,6 @@ export default function ThemePackCard({
           <div className="font-serif font-bold leading-tight" style={{ color: nameColor, fontSize: '0.875rem' }}>
             {displayName}
           </div>
-          {showGiftCount && giftCount > 0 && (
-            <span style={{ color: '#c8900a', fontSize: '0.75rem', fontFamily: 'var(--font-mono)', marginTop: '0.25rem', display: 'block' }}>
-              {giftCountLabel}
-            </span>
-          )}
         </div>
       )}
     </button>
