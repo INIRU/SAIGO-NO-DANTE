@@ -1673,6 +1673,11 @@
       "kind": "Discord bot",
       "open": "Open the Limpi Discord bot site (new window)"
     },
+    "support": {
+      "name": "SAIGO NO DANTE Discord",
+      "kind": "Support server",
+      "open": "Open the SAIGO NO DANTE support Discord server (new window)"
+    },
     "cta": {
       "sinners": "Sinner List",
       "decks": "Deck Board",
