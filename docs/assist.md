@@ -13,7 +13,7 @@
 
 이미지 인식과 별도로 Tesseract.js Worker가 3초 간격으로 화면 전체의 글자를 읽는다. 실행 중에는 프레임을 추가로 쌓지 않는다. 파일을 받는 곳은 다음과 같다(`lib/vision/model-assets.ts`).
 - Worker 스크립트: 같은 출처(`/models/assist-*/…`). `npm run build:assist-ocr`·`build:assist-worker`가 만들고 일반 빌드에도 포함된다.
-- 런타임(ONNX Runtime wasm, Tesseract 코어·언어 데이터): jsDelivr의 설치된 버전.
+- 런타임(ONNX Runtime wasm·mjs, Tesseract 코어·언어 데이터): 같은 출처(`/models/assist-*/…`). 빌드가 `node_modules`에서 복사한다. 2026-10-16에 jsDelivr에서 받게 했다가 일부 브라우저에서 CSP가 그 스크립트를 막아 OCR이 시작되지 않아 되돌렸다.
 - 인식 모델(`public/models`의 `.onnx`·`.json`)
   - 배포된 사이트는 Supabase Storage `limbus-assets/models/<버전>/`에서 받는다.
   - 로컬 개발 서버(localhost)는 `public/models`를 읽는다.
