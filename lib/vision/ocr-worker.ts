@@ -1,7 +1,7 @@
 import { createWorker, PSM } from 'tesseract.js'
 import * as ort from 'onnxruntime-web/webgpu'
 import { popupEffectBox, popupHeaderBox, popupPlateUnit } from './popup-detect'
-import { assistModelRoot, ortRuntimeRoot } from './model-assets'
+import { ASSIST_RUNTIME_ROOT, assistModelRoot } from './model-assets'
 import { popupHeaderEvidence } from './popup-evidence'
 import { explorationFloor } from './exploration-match'
 import { ctcDecode, ctcLexiconBest, detSize, detTensor, fillRecLine, joinRowLines, lexiconEntries, mergeTileRects, paddleRetryDelay, recAlphabet,
@@ -35,9 +35,8 @@ type Response =
   | { type: 'disposed' }
   | { type: 'backend'; engine: 'paddle' | 'tesseract'; adapter: string; loading: boolean; reason?: string }
 
-// The Tesseract worker script stays on this origin (a worker must); its core and language data come from jsDelivr
-// (tesseract.js defaults), the PaddleOCR models from model-assets.
-const ROOT = '/models/assist-ocr'
+// Tesseract (worker script, core, language data) is served by the site itself; the PaddleOCR models come from model-assets.
+const ROOT = `${ASSIST_RUNTIME_ROOT}/assist-ocr`
 const LANGUAGES: Record<Language, string> = { ko: 'kor+eng', en: 'eng', ja: 'jpn+eng' }
 let reader: Awaited<ReturnType<typeof createWorker>> | null = null
 let busy = false
@@ -246,7 +245,8 @@ async function loadPaddle() {
   let rec: ort.InferenceSession | null = null
   try {
     ort.env.wasm.numThreads = 1
-    ort.env.wasm.wasmPaths = ortRuntimeRoot(ort.env.versions.web ?? ort.env.versions.common)
+    // ONNX Runtime's WebGPU build ships its runtime with the scene worker assets.
+    ort.env.wasm.wasmPaths = `${ASSIST_RUNTIME_ROOT}/assist-scene/`
     const response = await fetch(`${REC_ROOTS[language]}/dict.json`)
     if (!response.ok) throw new Error('OCR dictionary unavailable')
     const alphabet = recAlphabet(await response.json())
@@ -498,6 +498,8 @@ self.onmessage = async (event: MessageEvent<Request>) => {
     try {
       const created = await createWorker(LANGUAGES[request.language], 1, {
         workerPath: `${ROOT}/tesseract-worker.min.js`,
+        corePath: `${ROOT}/core`,
+        langPath: `${ROOT}/lang`,
         workerBlobURL: false,
         cacheMethod: 'none',
       })
