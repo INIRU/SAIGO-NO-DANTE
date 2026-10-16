@@ -4,6 +4,7 @@ import BaseModal from '@/components/ui/BaseModal'
 import QuietImage from '@/components/ui/QuietImage'
 import { blurPlaceholder } from '@/lib/utils/thumbhash'
 import ThemePackCard from '@/components/ui/ThemePackCard'
+import { filterStyles } from '@/components/board/FilterControls'
 import { Search, X } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
 import type { SupportedLang } from '@/lib/i18n/types'
@@ -278,7 +279,7 @@ interface ThemePackPickerModalProps<TTheme extends ThemePackPickerTheme> {
   searchText?: (theme: TTheme) => string
 }
 
-/** Picks a theme pack: a compact header, a search over the packs, and the pack posters. */
+/** Picks a theme pack in the shared picker frame (the identity pickers'): header, a search over the packs, the posters. */
 export function ThemePackPickerModal<TTheme extends ThemePackPickerTheme>({
   title,
   closeLabel,
@@ -300,17 +301,16 @@ export function ThemePackPickerModal<TTheme extends ThemePackPickerTheme>({
 
   return (
     <BaseModal open={true} onClose={onClose} maxWidth="60rem" title={title} sheet>
-      <div className="flex h-[min(86dvh,56rem)] flex-col overflow-hidden rounded-t-xl border border-[rgba(200,144,10,0.22)] bg-[#17120c] shadow-[0_1.5rem_3rem_rgba(0,0,0,0.55)] sm:rounded-xl">
-        <div className="flex shrink-0 items-center gap-2.5 border-b border-[#2e2417] py-3 pl-5 pr-3">
-          <h2 className="min-w-0 truncate font-[family-name:var(--font-heading)] text-[1.125rem] text-[#e8dcc8]">{title}</h2>
-          {meta}
-          <button type="button" onClick={onClose} aria-label={closeLabel}
-            className="ml-auto grid h-10 w-10 shrink-0 place-items-center rounded text-[#9c8b73] transition-colors hover:bg-white/5 hover:text-[#e8dcc8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold)]">
-            <X size={18} aria-hidden="true" />
+      <div className={filterStyles.picker}>
+        <div className={filterStyles.pickerHead}>
+          {/* The window's heading is the dialog title BaseModal already gives it; this is its visible copy. */}
+          <p>{title}{meta && <span className="ml-2.5 inline-flex align-middle">{meta}</span>}</p>
+          <button type="button" onClick={onClose} aria-label={closeLabel}>
+            <X size={20} aria-hidden="true" />
           </button>
         </div>
         {themes.length > 0 && (
-          <div className="flex shrink-0 items-center gap-3 px-5 pb-3 pt-4">
+          <div className="flex shrink-0 items-center gap-3 px-5 pt-4 max-sm:px-3">
             <label className="relative min-w-0 flex-1 sm:max-w-[22rem]">
               <span className="sr-only">{searchLabel}</span>
               <Search size={16} aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#6a6058]" />
@@ -320,28 +320,25 @@ export function ThemePackPickerModal<TTheme extends ThemePackPickerTheme>({
             <span className="shrink-0 text-sm tabular-nums text-[#9c8b73]">{countLabel(shown.length)}</span>
           </div>
         )}
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pb-5">
+        <div className={filterStyles.pickerResults}>
           {themes.length === 0 ? (
-            <div className="pt-4"><ThemePackModalEmpty>{emptyLabel}</ThemePackModalEmpty></div>
+            <div className="p-5"><ThemePackModalEmpty>{emptyLabel}</ThemePackModalEmpty></div>
           ) : shown.length === 0 ? (
             <p className="py-12 text-center text-[0.9375rem] text-[#9c8b73]">{noResultsLabel}</p>
           ) : (
-            <div
-              className="grid gap-3"
-              style={{ alignItems: 'start', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 8.5rem), 1fr))' }}
-            >
+            <ul className={filterStyles.pickerGrid}>
               {shown.map(theme => (
-                <ThemePackCard
-                  key={String(theme.id)}
-                  theme={theme}
-                  onClick={() => onSelectTheme(theme)}
-                  isSelected={selectedThemeId != null && String(selectedThemeId) === String(theme.id)}
-                  showGiftCount
-                  imageSurface="bare"
-                  lang={lang}
-                />
+                <li key={String(theme.id)}>
+                  <ThemePackCard
+                    theme={theme}
+                    onClick={() => onSelectTheme(theme)}
+                    isSelected={selectedThemeId != null && String(selectedThemeId) === String(theme.id)}
+                    imageSurface="bare"
+                    lang={lang}
+                  />
+                </li>
               ))}
-            </div>
+            </ul>
           )}
         </div>
       </div>

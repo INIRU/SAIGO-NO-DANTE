@@ -213,13 +213,13 @@ export function computeKeywordDistribution(
  */
 function getFloorKeys(difficultyKey: string, floor: number): Array<{ key: string; offset: number }> {
   if (difficultyKey === '익스트림' || difficultyKey === '평행중첩') {
-    if (floor <= 5) return [{ key: '노말', offset: 0 }, { key: '하드', offset: 0 }]
+    // Floors 1-5 of an overlap or extreme run are hard floors.
+    if (floor <= 5) return [{ key: '하드', offset: 0 }]
     if (floor <= 10) return [{ key: '평행중첩', offset: 5 }]
     return [{ key: '익스트림', offset: 10 }]
   }
-  if (difficultyKey === '하드') {
-    return [{ key: '노말', offset: 0 }, { key: '하드', offset: 0 }]
-  }
+  // A floor is normal or hard on its own (FloorEntry.difficulty), and every pack on a normal floor list also has a
+  // hard list, so each reads only its own list: 기어오는 심연 is normal 4-5 but hard 3-4.
   return [{ key: difficultyKey, offset: 0 }]
 }
 
