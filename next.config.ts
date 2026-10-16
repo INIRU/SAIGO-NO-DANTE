@@ -9,13 +9,12 @@ const isProduction = process.env.NODE_ENV === 'production';
 
 const contentSecurityPolicyDirectives = [
   "default-src 'self'",
-  // jsDelivr's npm path serves the assist workers' ONNX Runtime and Tesseract runtimes (lib/vision/model-assets.ts).
-  `script-src 'self' 'unsafe-inline'${isProduction ? " 'wasm-unsafe-eval'" : " 'unsafe-eval'"} https://va.vercel-scripts.com https://cdn.jsdelivr.net/npm/`,
+  `script-src 'self' 'unsafe-inline'${isProduction ? " 'wasm-unsafe-eval'" : " 'unsafe-eval'"} https://va.vercel-scripts.com`,
   "style-src 'self' 'unsafe-inline'",
   // The last five hosts serve news images partners post for the calendar (NEWS_MEDIA_HOSTS in lib/news/payload.ts).
   "img-src 'self' data: blob: https://lpgqcleszdlldneiwgep.supabase.co https://lh3.googleusercontent.com https://i.ytimg.com https://*.steamstatic.com https://*.twimg.com https://*.ytimg.com https://*.pstatic.net https://livecloud-thumb.akamaized.net",
   "font-src 'self'",
-  "connect-src 'self' https://lpgqcleszdlldneiwgep.supabase.co https://va.vercel-scripts.com https://cdn.jsdelivr.net/npm/",
+  "connect-src 'self' https://lpgqcleszdlldneiwgep.supabase.co https://va.vercel-scripts.com",
   "worker-src 'self' blob:",
   "frame-src https://www.youtube.com https://www.youtube-nocookie.com",
   "media-src 'self'",

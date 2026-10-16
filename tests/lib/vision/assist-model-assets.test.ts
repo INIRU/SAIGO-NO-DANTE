@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { STORAGE_BASE } from '@/lib/constants/game'
-import { ASSIST_MODEL_VERSION, assistModelRoot, ortRuntimeRoot } from '@/lib/vision/model-assets'
+import { ASSIST_MODEL_VERSION, ASSIST_RUNTIME_ROOT, assistModelRoot } from '@/lib/vision/model-assets'
 import { assistModelFiles, assistModelVersion } from '@/scripts/vision/assist-model-files'
 
 const root = resolve(__dirname, '../../..')
@@ -22,22 +22,28 @@ describe('REQ-ASSIST-073 where the recognition models are read', () => {
   })
 })
 
-describe('REQ-ASSIST-074 runtimes come from jsDelivr and stay out of the deployment', () => {
-  it('REQ-ASSIST-074 ONNX Runtime wasm comes from the bundled version on jsDelivr', () => {
-    expect(ortRuntimeRoot('1.30.0')).toBe('https://cdn.jsdelivr.net/npm/onnxruntime-web@1.30.0/dist/')
+describe('REQ-ASSIST-074 runtimes are served by the site itself', () => {
+  it('REQ-ASSIST-074 the workers read ONNX Runtime and Tesseract from this origin, never from a CDN', () => {
+    // A cross-origin script was blocked by CSP in some browsers (2026-10-16, OCR never started); 'self' always loads.
+    expect(ASSIST_RUNTIME_ROOT).toBe('/models')
+    for (const worker of ['lib/vision/ocr-worker.ts', 'lib/vision/scene-worker.ts', 'lib/vision/model-assets.ts']) expect(text(worker)).not.toMatch(/jsdelivr|unpkg/)
+    const ocr = text('lib/vision/ocr-worker.ts')
+    expect(ocr).toMatch(/corePath: `\$\{ROOT\}\/core`/)
+    expect(ocr).toMatch(/langPath: `\$\{ROOT\}\/lang`/)
   })
 
-  it('REQ-ASSIST-074 the build copies no runtime files and the deployment leaves out the models', () => {
+  it('REQ-ASSIST-074 the build copies the runtimes and the deployment leaves out only the models', () => {
     const scripts: Record<string, string> = JSON.parse(text('package.json')).scripts
-    expect(`${scripts['build:assist-worker']} ${scripts['build:assist-ocr']}`).not.toMatch(/ort-wasm|tesseract\.js-core|traineddata/)
+    expect(scripts['build:assist-worker']).toMatch(/ort-wasm-simd-threaded\.asyncify\.mjs .*ort-wasm-simd-threaded\.asyncify\.wasm public\/models\/assist-scene\//)
+    expect(scripts['build:assist-ocr']).toMatch(/tesseract\.js-core\/\*-lstm\.wasm\* public\/models\/assist-ocr\/core\//)
+    expect(scripts['build:assist-ocr']).toMatch(/kor\.traineddata\.gz .*public\/models\/assist-ocr\/lang\//)
     const ignored = text('.vercelignore')
     expect(ignored).toContain('public/models/**/*.onnx')
     expect(ignored).toContain('public/models/**/*.json')
+    expect(ignored).not.toMatch(/\.wasm|\.mjs|traineddata/)
   })
 
-  it('REQ-ASSIST-074 the CSP lets the workers load scripts and files from jsDelivr', () => {
-    const config = text('next.config.ts')
-    expect(config).toMatch(/script-src.*https:\/\/cdn\.jsdelivr\.net\/npm\//)
-    expect(config).toMatch(/connect-src.*https:\/\/cdn\.jsdelivr\.net\/npm\//)
+  it('REQ-ASSIST-074 the CSP adds no CDN for scripts', () => {
+    expect(text('next.config.ts')).not.toMatch(/jsdelivr/)
   })
 })
