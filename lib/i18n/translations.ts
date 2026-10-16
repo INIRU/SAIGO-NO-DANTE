@@ -476,7 +476,6 @@ export const translations = {
   // Mirror Dungeon — Theme tab
   'mirrorDungeon.theme.search': { ko: '테마팩 · 기프트 검색...', en: 'Search theme packs & gifts...', ja: 'テーマパック・ギフト検索...' },
   'mirrorDungeon.theme.difficulty': { ko: '난이도', en: 'Difficulty', ja: '難易度' },
-  'mirrorDungeon.theme.gifts': { ko: '기프트', en: 'Gifts', ja: 'ギフト' },
   'mirrorDungeon.theme.floor': { ko: '층', en: 'F', ja: '階' },
   'mirrorDungeon.theme.hidden': { ko: '히든 테마팩', en: 'Hidden Theme Packs', ja: 'ヒドゥンテーマパック' },
   'mirrorDungeon.theme.spoilerHide': { ko: '스포일러 숨기기', en: 'Hide Spoilers', ja: 'スポイラーを隠す' },
@@ -513,7 +512,6 @@ export const translations = {
   'mirrorDungeon.theme.appearanceRate': { ko: '출현 확률', en: 'Appearance Rate', ja: '出現確率' },
   'mirrorDungeon.theme.allFloors': { ko: '전층', en: 'All Floors', ja: '全階' },
   'mirrorDungeon.theme.choiceCount': { ko: '개 선택지', en: ' choices', ja: '個の選択肢' },
-  'mirrorDungeon.theme.giftCountSuffix': { ko: '종', en: '', ja: '種' },
   'mirrorDungeon.theme.exclusiveBadge': { ko: '전용', en: 'exclusive', ja: '専用' },
 
   // Mirror Dungeon — EventModal labels
