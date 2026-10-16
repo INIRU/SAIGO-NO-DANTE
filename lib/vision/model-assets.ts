@@ -12,7 +12,9 @@ export function assistModelRoot(hostname: string) {
   return hostname === 'localhost' || hostname === '127.0.0.1' ? '/models' : `${STORAGE_BASE}/models/${ASSIST_MODEL_VERSION}`
 }
 
-/** ONNX Runtime's wasm files on jsDelivr, at the version bundled into the worker (the two must match). */
-export function ortRuntimeRoot(version: string) {
-  return `https://cdn.jsdelivr.net/npm/onnxruntime-web@${version}/dist/`
-}
+/**
+ * Where the workers read ONNX Runtime (assist-scene/) and Tesseract (assist-ocr/core, lang): copies the build makes from
+ * node_modules, served by the site itself. A CDN was tried on 2026-10-16 and some browsers blocked its scripts by CSP,
+ * so OCR never started; a same-origin script always loads.
+ */
+export const ASSIST_RUNTIME_ROOT = '/models'
