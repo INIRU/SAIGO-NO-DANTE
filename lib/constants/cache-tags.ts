@@ -35,6 +35,7 @@ export const CACHE_TAGS = {
   egoEntry: (id: string) => `ego-${id}`,
   deck: (id: string) => `deck-${id}`,
   plan: (id: string) => `plan-${id}`,
+  series: (id: string) => `series-${id}`,
 } as const
 
 // 목요일 sync 완료 시 일괄 invalidate 대상

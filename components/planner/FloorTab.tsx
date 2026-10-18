@@ -16,6 +16,9 @@ import { GIFT_KEYWORD_COLORS } from '@/lib/constants/gift'
 import type { EgoGift } from '@/components/mirror-dungeon/types'
 import FinalGiftTile from './FinalGiftTile'
 import FloorGiftPickerModal from './FloorGiftPickerModal'
+import ConfirmModal from '@/components/ui/ConfirmModal'
+import { previousFloorGifts } from '@/lib/planner/floor-copy'
+import { showSuccess } from '@/lib/toast'
 import FinalGiftPresets from './FinalGiftPresets'
 import ThemePackCard from '@/components/ui/ThemePackCard'
 import {
@@ -153,6 +156,8 @@ export default function FloorTab({ state, dispatch, themes, gifts, recipes, gift
   const [activeFloor, setActiveFloor] = useState<number | null>(null)
   const [themeModalOpen, setThemeModalOpen] = useState(false)
   const [giftPickerOpen, setGiftPickerOpen] = useState(false)
+  const tCopy = useTranslations('planner.floorCopy')
+  const [copyConfirm, setCopyConfirm] = useState<{ floor: number; giftIds: string[] } | null>(null)
   const [finalGiftKeyword, setFinalGiftKeyword] = useState<string | null>(null)
   const [finalGiftGrade, setFinalGiftGrade] = useState<string | null>(null)
   const [dismissedFusionIds, setDismissedFusionIds] = useState<Set<string>>(() => new Set())
@@ -481,6 +486,16 @@ export default function FloorTab({ state, dispatch, themes, gifts, recipes, gift
     }
   }, [activeEntry, derivedFinal, dispatch, state.floorPlan])
 
+  const copyGifts = (floor: number, giftIds: string[]) => {
+    dispatch({ type: 'SET_FLOOR_GIFTS', floor, giftIds })
+    showSuccess(tCopy('copied', { floor: floor - 1 }))
+  }
+  const copyPreviousFloor = (entry: FloorEntry) => {
+    const giftIds = previousFloorGifts(state.floorPlan, entry.floor)
+    if (entry.gift_ids.length) setCopyConfirm({ floor: entry.floor, giftIds })
+    else copyGifts(entry.floor, giftIds)
+  }
+
   function getThemeAvailableGifts(theme: ThemeData): GiftData[] {
     // 일반 풀 + 전용 풀·보스 보상(어시스트와 같은 규칙). 보스 러시류(1511~1520)는 보상 기프트가 일반 풀에 없어 빠졌었다.
     return getGiftsFromThemes([theme.id], [theme], giftMap).map(localizedGift)
@@ -673,6 +688,16 @@ export default function FloorTab({ state, dispatch, themes, gifts, recipes, gift
                   {t('clearTheme')}
                 </button>
               )}
+              {selectedTheme && previousFloorGifts(state.floorPlan, entry.floor).length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => copyPreviousFloor(entry)}
+                  className={`min-h-[2.75rem] rounded-md border px-3 text-[0.9375rem] transition-colors hover:bg-white/5 ${focusRing}`}
+                  style={{ borderColor: '#2e2417', color: '#9c8b73' }}
+                >
+                  {tCopy('copyPrevious')}
+                </button>
+              )}
             </div>
           </div>
 
@@ -726,12 +751,22 @@ export default function FloorTab({ state, dispatch, themes, gifts, recipes, gift
           )}
           </div>
 
+          <ConfirmModal
+            open={copyConfirm !== null}
+            title={tCopy('replaceTitle')}
+            message={tCopy('copyPrevious')}
+            confirmLabel={tCopy('replaceConfirm')}
+            variant="warning"
+            onConfirm={() => { if (copyConfirm) copyGifts(copyConfirm.floor, copyConfirm.giftIds); setCopyConfirm(null) }}
+            onCancel={() => setCopyConfirm(null)}
+          />
           <FloorGiftPickerModal
             open={giftPickerOpen && Boolean(selectedTheme)}
             title={t('floorGiftPickerTitle', { floor: entry.floor })}
             floorGifts={availableGifts}
             allGifts={reachableGifts}
             exclusiveIds={selectedTheme ? themeExclusiveGiftIds(selectedTheme) : []}
+            showRecent
             selectedIds={plannedIds}
             onToggle={gift => toggleGiftId(String(gift.game_id), entry.gift_ids)}
             onClose={() => setGiftPickerOpen(false)}

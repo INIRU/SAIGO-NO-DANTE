@@ -107,7 +107,7 @@ function DeckCard({ deck, onTagClick }: DeckCardProps) {
   return (
     <div className="board-card group relative flex flex-col h-full overflow-hidden">
       <div className="relative flex flex-col flex-1">
-        <Link href={`/decks/${deck.id}`} locale={locale} aria-label={deck.title} className="absolute inset-0 z-[1]" />
+        <Link href={`/decks/${deck.id}`} prefetch={false} locale={locale} aria-label={deck.title} className="absolute inset-0 z-[1]" />
         <FormationThumbnail slots={thumbnailSlots} missing={missing} />
         <OwnedBadge missing={missing} />
 

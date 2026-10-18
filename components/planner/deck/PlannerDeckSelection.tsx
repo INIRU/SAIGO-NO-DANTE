@@ -3,7 +3,7 @@
 import { memo, useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react'
 import IdentityFrameCard, { getFormationOverlay } from '@/components/ui/IdentityFrameCard'
 import Image from 'next/image'
-import { ChevronDown, ChevronUp, ClipboardPaste, RotateCcw, X } from 'lucide-react'
+import { ChevronDown, ChevronUp, ClipboardPaste, Download, RotateCcw, X } from 'lucide-react'
 import { useReducedMotion } from 'motion/react'
 import * as m from 'motion/react-m'
 import { showSuccess } from '@/lib/toast'
@@ -114,6 +114,7 @@ export function PlannerIdentityBoard({
   onFormationToggle,
   onResetOrder,
   onApplyCode,
+  onImport,
   onLongPress,
   getSinnerName,
 }: {
@@ -125,6 +126,8 @@ export function PlannerIdentityBoard({
   onResetOrder?: () => void
   /** Loads a pasted formation code; false when it is not a valid code (the field then shows the error). */
   onApplyCode?: (code: string) => boolean
+  /** Opens the picker of my saved decks/plans to take a formation from. */
+  onImport?: { label: string; open: () => void }
   /** Hold a view tile (500ms) to open identity details. */
   onLongPress?: (sinnerId: string) => void
   getSinnerName?: (sinner: PlannerDeckSinner) => string
@@ -200,12 +203,18 @@ export function PlannerIdentityBoard({
 
   return (
     <section className="fboard" data-editing={editing}>
-      {(onResetOrder || onApplyCode) && (
+      {(onResetOrder || onApplyCode || onImport) && (
         <div className="fboard__tools" inert={editing}>
           {onApplyCode && !codeOpen && (
             <button type="button" className="fboard__paste" onClick={pasteCode} title={t('codePasteHint')}>
               <ClipboardPaste aria-hidden="true" />
               {t('codePlaceholder')}
+            </button>
+          )}
+          {onImport && !codeOpen && (
+            <button type="button" className="fboard__paste fboard__import" onClick={onImport.open} aria-label={onImport.label}>
+              <Download aria-hidden="true" />
+              <span className="max-sm:sr-only">{onImport.label}</span>
             </button>
           )}
           {onApplyCode && codeOpen && (
@@ -279,6 +288,8 @@ export function PlannerIdentityBoard({
           border: 1px solid #3a2c18; border-radius: 0.25rem; background: #140f09; color: #cbb994; cursor: pointer; font-size: 0.875rem; white-space: nowrap;
           transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease;
         }
+        .fboard__paste:has(+ .fboard__import) { margin-right: 0.5rem; }
+        .fboard__import { margin-right: auto; }
         .fboard__paste svg { width: 0.9375rem; height: 0.9375rem; color: #c8900a; }
         .fboard__paste:hover { border-color: #c8900a; color: #e8b030; background: #1d160d; }
         .fboard__paste:focus-visible { outline: 2px solid #e8b030; outline-offset: 2px; }

@@ -1,6 +1,9 @@
 'use client'
 
 import BackLink from '@/components/navigation/BackLink'
+import PostAuthorName from '@/components/community/PostAuthorName'
+import SeriesBox from '@/components/series/SeriesBox'
+import type { SeriesView } from '@/lib/series/order'
 import DeckDetailSkeleton from '@/components/decks/DeckDetailSkeleton'
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import dynamic from 'next/dynamic'
@@ -373,9 +376,10 @@ type DeckDetailClientProps = {
   initialDeck?: DeckDetail | null
   initialComments?: Comment[]
   initialRecommendations?: DeckRecommendationsData | null
+  initialSeries?: SeriesView | null
 }
 
-export default function DeckDetailClient({ id, initialDeck, initialComments, initialRecommendations }: DeckDetailClientProps) {
+export default function DeckDetailClient({ id, initialDeck, initialComments, initialRecommendations, initialSeries }: DeckDetailClientProps) {
   const router = useRouter()
   const locale = useLocale() as SupportedLang
   const t = useTranslations('decks.detail')
@@ -883,11 +887,12 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
           <div className={styles.author}>
             <Image src={deck.profiles?.avatar_url || DEFAULT_AVATAR_URL} alt="" width={44} height={44} className="h-11 w-11 shrink-0 rounded-full bg-[#17120c] object-cover ring-1 ring-[#6b4c12]" />
             <div className="min-w-0">
-              {deck.profiles?.username && deck.profiles.public_profile !== false ? (
-                <Link href={`/users/${deck.user_id}`} className="block truncate text-[1rem] font-semibold leading-snug text-[#e8dcc8] hover:text-[#e8b030]">{deck.profiles.username}</Link>
-              ) : (
-                <p className="text-[1rem] font-semibold leading-snug text-[#e8dcc8]">{deck.profiles?.username ?? guestAuthorName(deck.guest_tag, locale) ?? commentsT('anonymous')}</p>
-              )}
+              <PostAuthorName
+                userId={deck.profiles?.username ? deck.user_id : null}
+                username={deck.profiles?.username ?? guestAuthorName(deck.guest_tag, locale) ?? commentsT('anonymous')}
+                profilePublic={deck.profiles?.public_profile}
+                className="block truncate text-[1rem] font-semibold leading-snug text-[#e8dcc8] hover:text-[#e8b030]"
+              />
               <RelativeTime date={deck.created_at} className="text-[0.875rem] text-[#9c8b73]" />
             </div>
           </div>
@@ -967,6 +972,8 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
             </button>
           </div>
         </m.header>
+
+        {initialSeries && <SeriesBox series={initialSeries} kind="deck" postId={id} />}
 
         <nav aria-label={t('sectionNav')} className={`sticky-under-nav ${styles.sectionNav}`}>
           <ol ref={sectionNavRef}>

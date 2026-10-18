@@ -5,7 +5,7 @@ vi.mock('@/lib/supabase/admin', () => ({
   createAdminClient: () => ({
     schema: () => ({
       rpc: async (name: string) => ({
-        data: name === 'discovery_counts'
+        data: name === 'discovery_counts_since'
           ? [{ kind: 'deck', entity_id: 'deck-1', visitors: 1 }]
           : [{ entity_id: 'deck-1' }],
         error: null,

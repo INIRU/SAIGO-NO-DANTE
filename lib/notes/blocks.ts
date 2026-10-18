@@ -4,13 +4,18 @@ import { isNoteImageUrl } from './images'
 export const NOTE_PREFIX = '!limbus-note:v1\n'
 export const ASSET_KINDS = ['gift', 'theme', 'identity', 'ego', 'skill', 'sin', 'keyword'] as const
 export type AssetKind = typeof ASSET_KINDS[number]
-export type BlockKind = AssetKind | 'accordion' | 'youtube'
+export type BlockKind = AssetKind | 'accordion' | 'youtube' | 'callout' | 'table' | 'checklist' | 'divider' | 'card'
+export const CALLOUT_VARIANTS = ['tip', 'warning'] as const
+export const CARD_KINDS = ['deck', 'plan'] as const
+export const CARD_ID = /^[\w-]{1,64}$/
 export const BLOCK_LABELS: Record<BlockKind, [string, string, string]> = {
   gift: ['기프트', 'ギフト', 'Gift'], theme: ['테마팩', 'テーマパック', 'Theme pack'],
   identity: ['인격', '人格', 'Identity'], ego: ['E.G.O', 'E.G.O', 'E.G.O'],
   skill: ['스킬', 'スキル', 'Skill'], sin: ['죄악', '罪悪', 'Sin'],
   keyword: ['키워드', 'キーワード', 'Keyword'], accordion: ['아코디언', 'アコーディオン', 'Accordion'],
   youtube: ['유튜브', 'YouTube', 'YouTube'],
+  callout: ['콜아웃', 'コールアウト', 'Callout'], table: ['표', '表', 'Table'], checklist: ['체크리스트', 'チェックリスト', 'Checklist'],
+  divider: ['구분선', '区切り線', 'Divider'], card: ['덱·플랜 카드', 'デッキ・プランカード', 'Deck/Plan card'],
 }
 export function blockLabel(kind: BlockKind, lang: string) {
   return BLOCK_LABELS[kind][lang === 'ja' ? 1 : lang === 'en' ? 2 : 0]
@@ -35,12 +40,20 @@ export function newBlock(kind: BlockKind): JSONContent {
     { type: 'noteTitle' }, { type: 'noteBody', content: [{ type: 'paragraph' }] },
   ] }
   if (kind === 'keyword') return {type:'noteKeyword',attrs:{id:''}}
+  if (kind === 'callout') return {type:'noteCallout',attrs:{variant:'tip'},content:[{type:'paragraph'}]}
+  if (kind === 'checklist') return {type:'taskList',content:[{type:'taskItem',attrs:{checked:false},content:[{type:'paragraph'}]}]}
+  if (kind === 'divider') return {type:'horizontalRule'}
+  if (kind === 'card') return {type:'noteCard',attrs:{kind:'deck',id:''}}
+  if (kind === 'table') {
+    const row = (type: string) => ({type:'tableRow',content:[0,1,2].map(() => ({type,content:[{type:'paragraph'}]}))})
+    return {type:'table',content:[row('tableHeader'),row('tableCell'),row('tableCell')]}
+  }
   return kind === 'youtube' ? { type: 'noteVideo', attrs: { videoId: '' } }
     : { type: 'noteAsset', attrs: { kind, id: '' } }
 }
-const TYPES = new Set(['doc', 'paragraph', 'heading', 'text', 'hardBreak', 'blockquote', 'bulletList', 'orderedList', 'listItem', 'codeBlock', 'horizontalRule', 'image', 'noteAccordion', 'noteTitle', 'noteBody', 'noteAsset', 'noteVideo', 'noteKeyword', 'noteGift'])
+const TYPES = new Set(['doc', 'paragraph', 'heading', 'text', 'hardBreak', 'blockquote', 'bulletList', 'orderedList', 'listItem', 'codeBlock', 'horizontalRule', 'image', 'noteAccordion', 'noteTitle', 'noteBody', 'noteAsset', 'noteVideo', 'noteKeyword', 'noteGift', 'noteCallout', 'noteCard', 'table', 'tableRow', 'tableCell', 'tableHeader', 'taskList', 'taskItem'])
 const INLINE_TYPES = new Set(['text', 'hardBreak', 'noteKeyword', 'noteGift'])
-const BLOCK_TYPES = new Set(['paragraph', 'heading', 'blockquote', 'bulletList', 'orderedList', 'codeBlock', 'horizontalRule', 'image', 'noteAccordion', 'noteAsset', 'noteVideo'])
+const BLOCK_TYPES = new Set(['paragraph', 'heading', 'blockquote', 'bulletList', 'orderedList', 'codeBlock', 'horizontalRule', 'image', 'noteAccordion', 'noteAsset', 'noteVideo', 'noteCallout', 'noteCard', 'table', 'taskList'])
 // The same bounded allowlist is used for persisted documents and pasted editor nodes.
 export function normalizeDocument(value: unknown): JSONContent | null {
   let count = 0
@@ -70,22 +83,38 @@ export function normalizeDocument(value: unknown): JSONContent | null {
       if (!isAssetKind(n.attrs?.kind)) return null
       result.attrs = { kind: n.attrs!.kind, id: typeof n.attrs?.id === 'string' ? n.attrs.id.slice(0, 150) : '' }
     }
+    if (n.type === 'noteCallout') result.attrs = { variant: CALLOUT_VARIANTS.includes(n.attrs?.variant) ? n.attrs!.variant : 'tip' }
+    if (n.type === 'noteCard') {
+      if (!CARD_KINDS.includes(n.attrs?.kind)) return null
+      result.attrs = { kind: n.attrs!.kind, id: typeof n.attrs?.id === 'string' && CARD_ID.test(n.attrs.id) ? n.attrs.id : '' }
+    }
+    if (n.type === 'taskItem') result.attrs = { checked: n.attrs?.checked === true }
+    if (n.type === 'tableCell' || n.type === 'tableHeader') {
+      const span = (v: unknown) => Number.isInteger(v) && (v as number) >= 1 && (v as number) <= 20 ? v : 1
+      result.attrs = { colspan: span(n.attrs?.colspan), rowspan: span(n.attrs?.rowspan) }
+    }
     if (n.type === 'noteKeyword') result.attrs = {id:typeof n.attrs?.id === 'string' ? n.attrs.id.slice(0,150) : ''}
     if (n.type === 'noteGift') result.attrs = {id:typeof n.attrs?.id === 'string' ? n.attrs.id.slice(0,150) : '', name:typeof n.attrs?.name === 'string' ? n.attrs.name.slice(0,100) : ''}
     if (n.type === 'noteVideo') result.attrs = { videoId: /^[\w-]{11}$/.test(n.attrs?.videoId ?? '') ? n.attrs!.videoId : '' }
     if (Array.isArray(n.content)) result.content = n.content.flatMap(c => { const clean = node(c, depth + 1); return clean ? [clean] : [] })
     if (['paragraph', 'heading', 'noteTitle'].includes(n.type)) result.content = (result.content ?? []).filter(c => INLINE_TYPES.has(c.type!))
     if (n.type === 'codeBlock') result.content = (result.content ?? []).filter(c => c.type === 'text').map(c => ({type:'text',text:c.text}))
-    if (['doc', 'noteBody', 'blockquote', 'listItem'].includes(n.type)) {
-      result.content = (result.content ?? []).filter(c => BLOCK_TYPES.has(c.type!))
+    if (['doc', 'noteBody', 'blockquote', 'listItem', 'noteCallout', 'taskItem', 'tableCell', 'tableHeader'].includes(n.type)) {
+      const inCell = n.type === 'tableCell' || n.type === 'tableHeader'
+      result.content = (result.content ?? []).filter(c => BLOCK_TYPES.has(c.type!) && !(inCell && c.type === 'table'))
       if (!result.content.length) result.content = [{type:'paragraph'}]
-      if (n.type === 'listItem' && result.content[0].type !== 'paragraph') result.content.unshift({type:'paragraph'})
+      if ((n.type === 'listItem' || n.type === 'taskItem') && result.content[0].type !== 'paragraph') result.content.unshift({type:'paragraph'})
     }
     if (['bulletList','orderedList'].includes(n.type)) {
       result.content = (result.content ?? []).filter(c => c.type === 'listItem')
       if (!result.content.length) return null
     }
-    if (['text','hardBreak','horizontalRule','image','noteAsset','noteVideo','noteKeyword','noteGift'].includes(n.type)) delete result.content
+    if (n.type === 'taskList' || n.type === 'table' || n.type === 'tableRow') {
+      const child = { taskList: 'taskItem', table: 'tableRow', tableRow: 'tableCell' }[n.type]
+      result.content = (result.content ?? []).filter(c => c.type === child || (n.type === 'tableRow' && c.type === 'tableHeader'))
+      if (!result.content.length) return null
+    }
+    if (['text','hardBreak','horizontalRule','image','noteAsset','noteVideo','noteKeyword','noteGift','noteCard'].includes(n.type)) delete result.content
     if (n.type === 'noteAccordion') {
       result.content = [result.content?.find(c => c.type === 'noteTitle') ?? { type: 'noteTitle' }, result.content?.find(c => c.type === 'noteBody') ?? { type: 'noteBody', content: [{ type: 'paragraph' }] }]
     }
@@ -99,11 +128,12 @@ export function parseBlockDocument(value: string): JSONContent | null {
   try { return normalizeDocument(JSON.parse(value.slice(NOTE_PREFIX.length))) } catch { return null }
 }
 export function hasBlocks(node: JSONContent): boolean {
-  return node.type?.startsWith('note') === true || (node.content ?? []).some(hasBlocks)
+  return node.type?.startsWith('note') === true || node.type === 'table' || node.type === 'taskList' || (node.content ?? []).some(hasBlocks)
 }
 export function visibleNode(node: JSONContent): boolean {
   if (node.type === 'noteAsset' || node.type === 'noteKeyword' || node.type === 'noteGift') return Boolean(node.attrs?.id)
   if (node.type === 'noteVideo') return Boolean(node.attrs?.videoId)
+  if (node.type === 'noteCard') return Boolean(node.attrs?.id)
   if (node.type === 'image') return isNoteImageUrl(node.attrs?.src)
   return Boolean(node.text?.trim()) || (node.content ?? []).some(visibleNode)
 }

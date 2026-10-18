@@ -1,6 +1,9 @@
 'use client'
 
 import BackLink from '@/components/navigation/BackLink'
+import SeriesBox from '@/components/series/SeriesBox'
+import PostAuthorName from '@/components/community/PostAuthorName'
+import type { SeriesView } from '@/lib/series/order'
 import { useHtmlFlag } from '@/hooks/useHtmlFlag'
 import { useGuestPosts } from '@/hooks/useGuestPosts'
 import { guestAuthorName } from '@/lib/guest/copy'
@@ -238,7 +241,7 @@ type Plan = {
   created_at: string
   user_id: string
   guest_tag?: string | null
-  profiles: { username: string | null; avatar_url: string | null } | null
+  profiles: { username: string | null; avatar_url: string | null; public_profile?: boolean } | null
 }
 
 // ── Sub-components ────────────────────────────────────────────────────────────
@@ -337,11 +340,12 @@ interface Props {
   /** Events that award this plan's floor gifts, plus their follow-up events (for the in-place event modal). */
   events: MdEvent[]
   eventChoices: MdEventChoice[]
+  series?: SeriesView | null
 }
 
 // ── Main component ────────────────────────────────────────────────────────────
 
-export default function PlanDetailClient({ plan, themes, gifts, recipes, identities, sinners, skills, passives, egos, events, eventChoices }: Props) {
+export default function PlanDetailClient({ plan, themes, gifts, recipes, identities, sinners, skills, passives, egos, events, eventChoices, series }: Props) {
   useHtmlFlag('with-plan-detail')
   const locale = useLocale() as SupportedLang
   const tPlanner = useTranslations('planner')
@@ -641,7 +645,12 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
           <div className={`${styles.author} flex items-center gap-3`}>
             <Image src={avatarUrl} alt="" width={44} height={44} className="h-11 w-11 shrink-0 rounded-full bg-[#17120c] object-cover ring-1 ring-[#6b4c12]" />
             <div className="min-w-0">
-              <p className="truncate text-[1rem] font-semibold leading-snug text-[#e8dcc8]">{username}</p>
+              <PostAuthorName
+                userId={plan.profiles?.username ? plan.user_id : null}
+                username={username}
+                profilePublic={plan.profiles?.public_profile}
+                className="block truncate text-[1rem] font-semibold leading-snug text-[#e8dcc8] hover:text-[#e8b030]"
+              />
               <RelativeTime date={plan.created_at} className="text-[0.875rem] text-[#9c8b73]" />
             </div>
           </div>
@@ -704,6 +713,8 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
             />
           </div>
         </m.header>
+
+        {series && <SeriesBox series={series} kind="plan" postId={plan.id} />}
 
         <nav aria-label={tPlanner('sectionNav')} className={`sticky-under-nav ${styles.sectionNav}`}>
           <ol ref={sectionNavRef}>

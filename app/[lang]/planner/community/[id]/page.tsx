@@ -1,5 +1,6 @@
 import { notePlainText } from '@/lib/notes/blocks'
 import { resolvePlannerIdentity } from '@/lib/planner/catalog-references'
+import { trimPlanDetailCatalog } from '@/lib/planner/plan-detail-catalog'
 import { selectUptieRows } from '@/lib/identity/skill-model'
 import type { Metadata } from 'next'
 import { localeUrl, metaText, pageMetadata } from '@/lib/seo/metadata'
@@ -15,6 +16,7 @@ import { cacheLife, cacheTag } from 'next/cache'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import { withoutOtherLocales } from '@/lib/i18n/strip-locales'
 import type { MdEvent, MdEventChoice } from '@/components/mirror-dungeon/types'
+import { loadSeriesOfPost } from '@/lib/series/server'
 import PlanDetailClient from './PlanDetailClient'
 import PlanDetailSkeleton from './PlanDetailSkeleton'
 
@@ -117,13 +119,17 @@ export default async function PlanDetailPage({ params }: Props) {
   const supabase = await createClient()
 
   // 플랜과 캐시된 게임 데이터를 함께 읽고, 스킬·패시브만 편성 인격 기준으로 한 번 더 읽는다(DB 왕복 4번 → 2번)
-  const [plan, game] = await Promise.all([fetchFullPlan(id), fetchPlanDetailGameData()])
+  const [plan, game, series] = await Promise.all([
+    fetchFullPlan(id),
+    fetchPlanDetailGameData(),
+    loadSeriesOfPost(supabase, 'plan', id).catch(() => null),
+  ])
   if (!plan) notFound()
   const planGiftIds = [...new Set((Array.isArray(plan.floor_plan) ? plan.floor_plan : [])
     .flatMap((entry: { gift_ids?: unknown }) => Array.isArray(entry?.gift_ids) ? entry.gift_ids.map(Number) : [])
     .filter((giftId: number) => Number.isInteger(giftId) && giftId > 0))].sort((a, b) => a - b)
-  const { themes, recipes, identities, sinners, egos } = game
-  const gifts = game.gifts.map(gift => withoutOtherLocales(gift, lang, ['effect_base', 'effect_plus', 'effect_plusplus']))
+  const { themes, sinners } = game
+  const { identities } = game
 
   const memberIds = [...new Set((Array.isArray(plan.deck) ? plan.deck : []).flatMap(slot => {
     const identity = resolvePlannerIdentity(slot, identities)
@@ -141,6 +147,9 @@ export default async function PlanDetailPage({ params }: Props) {
       .gte('uptie_level', 3),
     fetchPlanEvents(planGiftIds),
   ])
+  // 플랜이 쓰는 기프트·레시피·인격·에고만 보낸다(전체 카탈로그는 flight 페이로드 1MB)
+  const used = trimPlanDetailCatalog({ plan, gifts: game.gifts, recipes: game.recipes, themes, identities, egos: game.egos, events: planEvents.events, eventChoices: planEvents.choices })
+  const gifts = used.gifts.map(gift => withoutOtherLocales(gift, lang, ['effect_base', 'effect_plus', 'effect_plusplus']))
   if (skillsError) console.error('Failed to fetch skills:', skillsError)
   if (passivesError) console.error('Failed to fetch passives:', passivesError)
 
@@ -154,14 +163,15 @@ export default async function PlanDetailPage({ params }: Props) {
     <Suspense fallback={<PlanDetailSkeleton />}>
       <PlanDetailClient
         plan={plan as any}
+        series={series}
         themes={themes}
         gifts={gifts}
-        recipes={recipes}
-        identities={identities}
+        recipes={used.recipes}
+        identities={used.identities}
         sinners={sinners}
         skills={memberIds.flatMap(id => selectUptieRows((skills ?? []).filter(row => row.identity_id === id), 4))}
         passives={memberIds.flatMap(id => selectUptieRows((passives ?? []).filter(row => row.identity_id === id), 4))}
-        egos={egos}
+        egos={used.egos}
         events={planEvents.events.map(event => withoutOtherLocales(event, lang, ['desc_text'], ['judgment'])) as unknown as MdEvent[]}
         eventChoices={planEvents.choices.map(choice => ({
           ...withoutOtherLocales(choice, lang, ['result_text', 'message', 'message_desc'], ['effects']),

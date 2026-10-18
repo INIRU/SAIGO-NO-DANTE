@@ -135,7 +135,12 @@
       "top": "Back to top",
       "bottom": "End of content"
     },
-    "confirm": "Confirm"
+    "confirm": "Confirm",
+    "autosave": {
+      "title": "Autosaved draft",
+      "restore": "Restore",
+      "discard": "Discard"
+    }
   },
   "globalSearch": {
     "ariaLabel": "Global search",
@@ -143,9 +148,7 @@
     "clear": "Clear search",
     "loading": "Searching",
     "emptyPromptTitle": "Type to search",
-    "emptyPromptDescription": "Part of a name works, and so do Korean and Japanese names.",
     "noResultsTitle": "No results found",
-    "noResultsDescription": "Try part of the name, or add the sinner, like \"LCB Yi Sang\".",
     "recentTitle": "Recent searches",
     "noResultsFor": "Nothing matches “{query}”",
     "error": "Search didn’t work. Please try again in a moment.",
@@ -1592,6 +1595,26 @@
           ]
         }
       }
+    },
+    "formationImport": {
+      "fromDeck": "Import from my deck",
+      "fromPlan": "Import from plan",
+      "decksTitle": "My decks",
+      "plansTitle": "My plans",
+      "empty": "Nothing to import",
+      "loginRequired": "Sign in required",
+      "close": "Close",
+      "loadFailed": "Failed to load",
+      "replaceTitle": "Replace formation?",
+      "replaceConfirm": "Replace",
+      "applied": "Formation imported",
+      "untitled": "Untitled"
+    },
+    "floorCopy": {
+      "copyPrevious": "Copy previous floor",
+      "copied": "Copied floor {floor} gifts",
+      "replaceTitle": "Replace gifts?",
+      "replaceConfirm": "Replace"
     }
   },
   "sinner": {
@@ -1660,7 +1683,8 @@
     "onlyFloor": "Only gifts from this floor",
     "close": "Close",
     "empty": "No gifts to choose from",
-    "onlyThisFloor": "Only on this floor"
+    "onlyThisFloor": "Only on this floor",
+    "recent": "Recently used"
   },
   "mypage": {
     "title": "My Page"
@@ -1969,8 +1993,6 @@
       "saved": "Saved",
       "saveFailed": "Could not save"
     }
-
-
   },
   "ego": {
     "resistance": "Sin Resistance",
@@ -2665,5 +2687,41 @@
       "empty": "No reported posts.",
       "done": "Done."
     }
+  },
+  "series": {
+    "back": "Back",
+    "title": "Series",
+    "deck": "Deck",
+    "plan": "Plan",
+    "prev": "Previous",
+    "next": "Next",
+    "viewAll": "View whole series",
+    "list": "List",
+    "none": "None",
+    "count": "{count}",
+    "picker": {
+      "label": "Series",
+      "choose": "Choose series",
+      "create": "New series",
+      "titlePlaceholder": "Series title",
+      "add": "Create",
+      "createFailed": "Could not create the series",
+      "loadFailed": "Could not load series"
+    },
+    "owner": {
+      "reorder": "Reorder",
+      "rename": "Rename",
+      "delete": "Delete series",
+      "deleteMessage": "Delete this series? The posts stay.",
+      "moveUp": "Move up",
+      "moveDown": "Move down",
+      "saved": "Saved",
+      "saveFailed": "Could not save",
+      "deleted": "Series deleted",
+      "deleteFailed": "Could not delete"
+    },
+    "empty": "No posts",
+    "metaTitle": "{title} | Series",
+    "notFound": "Series not found"
   }
 }

@@ -13,7 +13,7 @@ import { useQueryState, parseAsString } from 'nuqs'
 import { ArrowLeft, Copy, Upload, Check, Play } from 'lucide-react'
 import { createInitialState, type PlannerState, type PlannerTab, type ThemeData, type GiftData, type RecipeData, type IdentityData, type SinnerData, type PassiveData, type SkillSummary, type EgoData } from '@/lib/planner/types'
 import { buildGiftMap } from '@/lib/planner/fusion'
-import { encodePlan, savePlanForRun, loadDraftFromLocal, clearDraftFromLocal, loadPlannerTempSlots, savePlannerTempSlot, deletePlannerTempSlot, type PlannerTempSlot } from '@/lib/planner/encoder'
+import { encodePlan, isPlannerState, snapshotPlannerState, savePlanForRun, loadDraftFromLocal, clearDraftFromLocal, loadPlannerTempSlots, savePlannerTempSlot, deletePlannerTempSlot, type PlannerTempSlot } from '@/lib/planner/encoder'
 import { enrichIdentitySlotsForGiftConditions } from '@/lib/planner/gift-condition-status'
 import { withLcbIdentitySlots } from '@/lib/planner/lcb'
 import { usePlannerStore } from '@/lib/stores/planner'
@@ -27,6 +27,10 @@ import PlanIntroEditor from '@/components/planner/PlanIntroEditor'
 import BlessingTab from '@/components/planner/BlessingTab'
 import GiftPlanTab from '@/components/planner/GiftPlanTab'
 import TempSaveMenu from '@/components/ui/TempSaveMenu'
+import AutosaveRestoreModal from '@/components/ui/AutosaveRestoreModal'
+import { useAutosaveDraft } from '@/hooks/useAutosaveDraft'
+import { autosaveKey } from '@/lib/drafts/autosave'
+import SeriesPicker from '@/components/series/SeriesPicker'
 import { workbenchReveal } from '@/lib/animations'
 
 interface Props {
@@ -116,7 +120,11 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
   const [uploading, setUploading] = useState(false)
   const [uploaded, setUploaded] = useState(false)
   const [pin, setPin] = useState('')
+  // undefined: the author did not touch the series picker, so the plan's series stays as it is
+  const [seriesChoice, setSeriesChoice] = useState<string | null | undefined>(undefined)
   const [editId, setEditId] = useState<string | null>(null)
+  const [editResolved, setEditResolved] = useState(false)
+  const [autosaveEnabled, setAutosaveEnabled] = useState(true)
   const [tempSlots, setTempSlots] = useState<PlannerTempSlot[]>([])
 
   // 무거운 아래쪽 구역은 화면에 가까워지거나 목차로 이동할 때 처음 그린다(첫 화면에 이미지 수천 장을 한꺼번에 그리던 문제)
@@ -214,7 +222,16 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
     const params = new URLSearchParams(window.location.search)
     const eid = params.get('edit')
     if (eid) setEditId(eid)
+    setAutosaveEnabled(!(params.get('plan') ?? params.get('p')))
+    setEditResolved(true)
   }, [])
+
+  // 임시 저장 슬롯과 별개로, 편집 중인 내용을 자동으로 보관한다(새 플랜은 하나, 수정 중인 플랜은 id마다).
+  const autosaveState = useMemo(() => snapshotPlannerState(state), [state])
+  const autosave = useAutosaveDraft({
+    storageKey: autosaveKey('plan', editId), state: autosaveState, isState: isPlannerState, ready: editResolved, enabled: autosaveEnabled,
+    apply: saved => dispatch({ type: 'LOAD_PLAN', state: { ...saved, identitySlots: withLcbIdentitySlots(identities, saved.identitySlots ?? []) } }),
+  })
 
   const handleUpload = async () => {
     if (pendingNoteUploads.size) { showError(noteUploadInProgressMessage(locale)); return }
@@ -235,6 +252,7 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
         floor_plan: state.floorPlan,
         gift_inventory: state.giftInventory,
         tags: state.mainKeywords ?? [],
+        ...(seriesChoice !== undefined ? { series_id: seriesChoice } : {}),
       }
       const url = editId ? `/api/planner/${editId}` : '/api/planner'
       const method = editId ? 'PATCH' : 'POST'
@@ -247,6 +265,7 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
       if (res.ok) {
         const result = await res.json()
         setUploaded(true)
+        autosave.clear()
         showSuccess(editId ? tPlanner('actions.updated') : signedIn ? tPlanner('actions.uploaded') : getGuestCopy(locale).posted)
         const targetId = editId ?? result.id
         if (targetId) {
@@ -408,6 +427,7 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
 
   return (
     <div className="min-h-[100dvh] pb-16" style={{ background: '#0d0b08' }}>
+      <AutosaveRestoreModal savedAt={autosave.offer?.savedAt ?? null} onRestore={autosave.restore} onDiscard={autosave.discard} />
       <div className="max-w-[90rem] mx-auto px-3 md:px-6">
         {/* 헤더는 server-rendered page.tsx에서 렌더링 — 여기서는 액션 버튼만 */}
         <m.div
@@ -444,6 +464,7 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
               {copied ? <Check size={12} /> : <Copy size={12} />}
               {copied ? tPlanner('actions.copied') : tPlanner('actions.copyUrl')}
             </button>
+            <SeriesPicker kind="plan" postId={editId ?? undefined} onChange={setSeriesChoice} />
             <TempSaveMenu title={tTempSaves('menuLabel')} slots={tempSlots} onSave={handleSaveTempSlot} onLoad={handleLoadTempSlot} onDelete={handleDeleteTempSlot} />
             <button
               onClick={handleUpload}
