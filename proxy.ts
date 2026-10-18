@@ -96,8 +96,8 @@ function matchesMaintenancePath(routePathname: string, maintenancePath: string):
 
 // 점검 목록은 요청마다 묻지 않고 인스턴스에서 잠시 재사용한다(모든 페이지 이동·미리 불러오기가 여기를 지난다).
 // Edge Config가 연결되어 있으면 거기서 읽고(관리자 저장 즉시 갱신), 아니면 Supabase를 읽는다.
-// 켜고 끈 점검은 인스턴스마다 최대 15초 늦게 반영된다. 읽기 요금과 맞바꾼 값이다.
-const MAINTENANCE_TTL_MS = 15_000
+// 켜고 끈 점검은 인스턴스마다 최대 60초 늦게 반영된다. 읽기 요금과 맞바꾼 값이다.
+const MAINTENANCE_TTL_MS = 60_000
 const MAINTENANCE_EDGE_URL = maintenanceEdgeReadUrl()
 let maintenanceCache: { at: number; entries: MaintenanceEntry[] } | null = null
 

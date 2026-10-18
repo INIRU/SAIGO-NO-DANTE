@@ -18,7 +18,7 @@ Vercel은 캐시된 셸을 먼저 보내고 나머지를 이어 붙인다. Next.
 
 `DISCORD_ANNOUNCEMENT_WEBHOOK_URL`은 서버 전용이다. 한국어 공지가 게시되는 순간(새로 게시하거나 임시 저장을 게시로 바꿀 때) 디스코드로 한 번 보낸다. 본문 마크다운을 유지하고 이미지 앞뒤로 메시지를 나눈다. 값이 없으면 전송을 건너뛰고 관리자 화면에 실패를 알린다.
 
-점검(`/admin/maintenance`)은 Supabase `site_maintenance`에 저장한다. `EDGE_CONFIG`(Vercel Storage의 saigo-no-dante-edge-config 연결 문자열)와 `VERCEL_API_TOKEN`(Warin 팀 범위의 Vercel 액세스 토큰)이 모두 있으면 저장할 때마다 활성 점검 목록을 Edge Config `maintenance` 항목에 올리고, proxy도 Edge Config에서 읽는다. 둘 중 하나라도 없으면 proxy는 Supabase를 읽는다. 어느 쪽이든 인스턴스마다 15초 동안 목록을 재사용한다.
+점검(`/admin/maintenance`)은 Supabase `site_maintenance`에 저장한다. `EDGE_CONFIG`(Vercel Storage의 saigo-no-dante-edge-config 연결 문자열)와 `VERCEL_API_TOKEN`(Warin 팀 범위의 Vercel 액세스 토큰)이 모두 있으면 저장할 때마다 활성 점검 목록을 Edge Config `maintenance` 항목에 올리고, proxy도 Edge Config에서 읽는다. 둘 중 하나라도 없으면 proxy는 Supabase를 읽는다. 어느 쪽이든 인스턴스마다 60초 동안 목록을 재사용한다.
 
 일부 동기화 스크립트는 SUPABASE_SERVICE_ROLE_KEY도 받지만 앱의 현재 관리자 클라이언트는 SUPABASE_SECRET_KEY를 읽는다. 오래된 ANON_KEY 예시를 그대로 사용하지 않는다.
 선택 설정은 SENTRY_ORG/PROJECT/AUTH_TOKEN, 캐시 무효화용 REVALIDATION_SECRET, 공지 수집용 SITE_URL 등의 실제 호출자를 확인한다.
