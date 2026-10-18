@@ -10,7 +10,7 @@ import RandomClient from './RandomClient'
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params
   const t = await getTranslations({ locale: lang, namespace: 'randomPage' })
-  return pageMetadata({ lang, path: '/random', title: metaText('random.meta.title', lang), description: t('metaDescription') })
+  return pageMetadata({ lang, path: '/random', noindex: true, title: metaText('random.meta.title', lang), description: t('metaDescription') })
 }
 
 async function getRandomData() {
