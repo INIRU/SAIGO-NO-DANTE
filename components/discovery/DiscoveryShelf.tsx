@@ -33,7 +33,7 @@ export default function DiscoveryShelf({
   const lang = useLocale(),
     label = (k: string, j: string, e: string) =>
       lang === "ko" ? k : lang === "ja" ? j : e;
-  const [days, setDays] = useState(7),
+  const [days, setDays] = useState<"week" | "month" | "all">("week"),
     [expanded, setExpanded] = useState<Set<string>>(() => new Set()),
     [history, setHistory] = useState<{
       items: HistoryItem[];
@@ -47,7 +47,7 @@ export default function DiscoveryShelf({
     return () => window.removeEventListener("limbus-history-changed", load);
   }, []);
   const { data, error, mutate } = useSWR<Data>(
-    `/api/discovery?kind=${kind}&days=${days}`,
+    `/api/discovery?kind=${kind}&period=${days}`,
     async (u: string) => {
       const r = await fetch(u);
       if (!r.ok) throw Error();
@@ -87,17 +87,17 @@ export default function DiscoveryShelf({
       data-period-tabs
       className="order-last flex w-full gap-1 md:order-none md:w-auto"
     >
-      {[7, 30, 0].map((d) => (
+      {(["week", "month", "all"] as const).map((d) => (
         <button
           key={d}
           aria-pressed={d === days}
           onClick={() => setDays(d)}
           className={`min-h-10 rounded-full px-4 text-sm transition-colors ${d === days ? "bg-[var(--gold)]/10 text-[var(--gold)]" : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"}`}
         >
-          {d === 7
-            ? label("주간", "週間", "Weekly")
-            : d === 30
-              ? label("월간", "月間", "Monthly")
+          {d === "week"
+            ? label("이번 주", "今週", "This week")
+            : d === "month"
+              ? label("최근 4주", "直近4週", "Last 4 weeks")
               : label("전체 기간", "全期間", "All time")}
         </button>
       ))}
