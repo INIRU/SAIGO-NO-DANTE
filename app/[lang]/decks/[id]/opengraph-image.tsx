@@ -2,7 +2,6 @@ import { createClient } from '@supabase/supabase-js'
 import { renderOgPreview } from '@/components/ui/OgPreview'
 import { getIdentityPortraitUrl } from '@/lib/utils/images'
 import { OG_SIZE, OG_CONTENT_TYPE, isSupportedLang } from '@/lib/utils/og-image'
-export const runtime = 'nodejs'
 export const alt = '덱 공유 이미지'
 export const size = OG_SIZE
 export const contentType = OG_CONTENT_TYPE
