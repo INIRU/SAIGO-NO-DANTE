@@ -1,7 +1,8 @@
 "use client";
 import { useMemo } from "react";
 import useSWR from "swr";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
+import { Link } from "@/lib/i18n/navigation";
 import { Layers, Map as MapIcon } from "lucide-react";
 import ProfileRail from "./ProfileRail";
 import AchievementGrid from "./AchievementGrid";
@@ -24,7 +25,8 @@ async function fetcher(url: string): Promise<CommunityProfile> {
 /** Someone's profile: the same rail as my page, then the badges they earned and their latest decks and plans. */
 export default function PublicProfile({ id }: { id: string }) {
   const locale = useLocale(),
-    t = getCommunityCopy(locale);
+    t = getCommunityCopy(locale),
+    tSeries = useTranslations("series");
   useHtmlFlag("with-compact-footer");
   const { data, error, mutate } = useSWR(`/api/community/profiles/${id}`, fetcher, { shouldRetryOnError: false });
   // Hidden (easter egg) badges appear once found; unfound ones stay secret.
@@ -61,6 +63,23 @@ export default function PublicProfile({ id }: { id: string }) {
               <h2 className={styles.title}>{t.badges}<span className={styles.titleCount}>{earned.length}</span></h2>
             </div>
             <AchievementGrid items={earned} bare />
+          </section>
+        )}
+        {!!data.series?.length && (
+          <section className={styles.section}>
+            <div className={styles.head}>
+              <h2 className={styles.title}>{tSeries("title")}<span className={styles.titleCount}>{data.series.length}</span></h2>
+            </div>
+            <ul className={styles.list}>
+              {data.series.map((item) => (
+                <li key={item.id} className={styles.item}>
+                  <Link href={`/series/${item.id}`} className="flex items-center justify-between gap-3 rounded-lg border border-[var(--border)] bg-[var(--bg-panel)] px-4 py-3 transition-colors hover:border-[#8a6010]">
+                    <span className="min-w-0 truncate font-[family-name:var(--font-heading)] text-[1rem] text-[var(--text-primary)]">{item.title}</span>
+                    <span className="shrink-0 font-[family-name:var(--font-title)] text-[1.125rem] text-[var(--gold-light)]">{item.count}</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
           </section>
         )}
         <section className={styles.section}>

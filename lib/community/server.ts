@@ -2,6 +2,7 @@ import "server-only";
 import type { createAdminClient } from "@/lib/supabase/admin";
 import type { CommunityProfile } from "./rules";
 import { stripPlanForList } from "@/lib/planner/stripPlanForList";
+import { listUserSeries } from "@/lib/series/server";
 export async function loadCommunityProfile(
   db: ReturnType<typeof createAdminClient>,
   id: string,
@@ -16,7 +17,7 @@ export async function loadCommunityProfile(
   if (profileResult.error) throw new Error("Profile lookup failed");
   const row = profileResult.data;
   if (!row || (!owner && (!row.public_profile || row.suspended))) return null;
-  const [summary, decks, plans, eggs] = await Promise.all([
+  const [summary, decks, plans, eggs, series] = await Promise.all([
     db.schema("limbus").rpc("community_summary", { p_user_id: id }),
     db
       .schema("limbus")
@@ -33,6 +34,8 @@ export async function loadCommunityProfile(
       .order("created_at", { ascending: false })
       .limit(12),
     db.schema("limbus").from("profile_easter_eggs").select("egg").eq("user_id", id),
+    // The series list is an extra: a failed read must not hide the profile.
+    listUserSeries(db, id, { hideEmpty: true }).catch(() => []),
   ]);
   if (summary.error || decks.error || plans.error || eggs.error) throw new Error("Community lookup failed");
   // Never spread the database profile: IPs, device signals, email and account fields stay private.
@@ -48,6 +51,7 @@ export async function loadCommunityProfile(
     stats: summary.data,
     decks: (decks.data ?? []) as unknown as CommunityProfile["decks"],
     plans: (plans.data ?? []).map((plan) => stripPlanForList(plan as Record<string, unknown>)),
+    series,
     eggs: (eggs.data ?? []).map((egg) => egg.egg as CommunityProfile["eggs"][number]),
   };
 }

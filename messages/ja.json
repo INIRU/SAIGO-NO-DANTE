@@ -2687,5 +2687,40 @@
       "empty": "通報された投稿はありません。",
       "done": "処理しました。"
     }
+  },
+  "series": {
+    "title": "シリーズ",
+    "deck": "デッキ",
+    "plan": "プラン",
+    "prev": "前の投稿",
+    "next": "次の投稿",
+    "viewAll": "シリーズ全体を見る",
+    "list": "一覧",
+    "none": "なし",
+    "count": "{count}件",
+    "picker": {
+      "label": "シリーズ",
+      "choose": "シリーズを選択",
+      "create": "新しいシリーズ",
+      "titlePlaceholder": "シリーズ名",
+      "add": "作成",
+      "createFailed": "シリーズを作成できませんでした",
+      "loadFailed": "シリーズを読み込めませんでした"
+    },
+    "owner": {
+      "reorder": "順番を変更",
+      "rename": "名前を変更",
+      "delete": "シリーズを削除",
+      "deleteMessage": "シリーズを削除しますか？投稿は残ります。",
+      "moveUp": "上へ",
+      "moveDown": "下へ",
+      "saved": "保存しました",
+      "saveFailed": "保存できませんでした",
+      "deleted": "シリーズを削除しました",
+      "deleteFailed": "削除できませんでした"
+    },
+    "empty": "投稿がありません",
+    "metaTitle": "{title} | シリーズ",
+    "notFound": "シリーズが見つかりません"
   }
 }

@@ -2687,5 +2687,40 @@
       "empty": "신고된 글이 없습니다.",
       "done": "처리했습니다."
     }
+  },
+  "series": {
+    "title": "시리즈",
+    "deck": "덱",
+    "plan": "플랜",
+    "prev": "이전 글",
+    "next": "다음 글",
+    "viewAll": "시리즈 전체 보기",
+    "list": "목록",
+    "none": "없음",
+    "count": "{count}개",
+    "picker": {
+      "label": "시리즈",
+      "choose": "시리즈 선택",
+      "create": "새 시리즈",
+      "titlePlaceholder": "시리즈 제목",
+      "add": "만들기",
+      "createFailed": "시리즈를 만들지 못했습니다",
+      "loadFailed": "시리즈를 불러오지 못했습니다"
+    },
+    "owner": {
+      "reorder": "순서 변경",
+      "rename": "이름 변경",
+      "delete": "시리즈 삭제",
+      "deleteMessage": "시리즈를 삭제할까요? 글은 그대로 남습니다.",
+      "moveUp": "위로",
+      "moveDown": "아래로",
+      "saved": "저장했습니다",
+      "saveFailed": "저장하지 못했습니다",
+      "deleted": "시리즈를 삭제했습니다",
+      "deleteFailed": "삭제하지 못했습니다"
+    },
+    "empty": "글이 없습니다",
+    "metaTitle": "{title} | 시리즈",
+    "notFound": "시리즈를 찾을 수 없습니다"
   }
 }
