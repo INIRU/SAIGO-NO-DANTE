@@ -32,8 +32,11 @@ import { useLocale, useTranslations } from 'next-intl'
 import type { SupportedLang } from '@/lib/i18n/types'
 import SkillExchangePanel from './SkillExchangePanel'
 import ConfirmModal from '@/components/ui/ConfirmModal'
-import { showSuccess } from '@/lib/toast'
+import { showError, showSuccess } from '@/lib/toast'
 import { planSlotsFromTeamCode } from '@/lib/planner/team-code-import'
+import { withLcbIdentitySlots } from '@/lib/planner/lcb'
+import { planSlotsFromDeckRows } from '@/lib/planner/formation-transfer'
+import FormationSourceModal from './FormationSourceModal'
 import {
   PLANNER_EGO_GRADE_ORDER,
   PlannerEgoBoard,
@@ -141,6 +144,19 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
     if (state.identitySlots.length) setPendingCode(slots)
     else applyCodeSlots(slots)
     return true
+  }
+  // Import from one of my saved decks: asks first when the plan already has a formation.
+  const tImport = useTranslations('planner.formationImport')
+  const [importOpen, setImportOpen] = useState(false)
+  const [pendingImport, setPendingImport] = useState<{ slots: NonNullable<ReturnType<typeof planSlotsFromTeamCode>>; title: string } | null>(null)
+  const handleDeckLoaded = (record: Record<string, unknown>) => {
+    const loaded = planSlotsFromDeckRows((record.deck_identities as never[]) ?? [], (record.deck_egos as never[]) ?? [], identities, egos)
+    if (!loaded) { showError(tImport('loadFailed')); return }
+    const slots = { ...loaded, identitySlots: withLcbIdentitySlots(identities, loaded.identitySlots) }
+    setImportOpen(false)
+    const title = String(record.title ?? '')
+    if (state.identitySlots.some(slot => slot.slot_order < 99)) setPendingImport({ slots, title })
+    else { dispatch({ type: 'LOAD_PLAN', state: slots }); showSuccess(tImport('applied')) }
   }
   const tSinner = useTranslations('sinner')
   const locale = useLocale() as SupportedLang
@@ -576,6 +592,7 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
           onFormationToggle={handleFormationToggle}
           onResetOrder={() => dispatch({ type: 'LOAD_PLAN', state: { identitySlots: state.identitySlots.map(slot => ({ ...slot, slot_order: 99 })) } })}
           onApplyCode={handleApplyCode}
+          onImport={{ label: tImport('fromDeck'), open: () => setImportOpen(true) }}
         />
       )}
 
@@ -588,6 +605,18 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
         variant="warning"
         onConfirm={() => { if (pendingCode) applyCodeSlots(pendingCode); setPendingCode(null) }}
         onCancel={() => setPendingCode(null)}
+      />
+
+      <FormationSourceModal kind="deck" open={importOpen} onClose={() => setImportOpen(false)} onLoaded={handleDeckLoaded} />
+      <ConfirmModal
+        open={pendingImport !== null}
+        title={tImport('replaceTitle')}
+        message={pendingImport?.title || tImport('untitled')}
+        confirmLabel={tImport('replaceConfirm')}
+        cancelLabel={tDeck('identity.codeCancel')}
+        variant="warning"
+        onConfirm={() => { if (pendingImport) { dispatch({ type: 'LOAD_PLAN', state: pendingImport.slots }); showSuccess(tImport('applied')) } setPendingImport(null) }}
+        onCancel={() => setPendingImport(null)}
       />
 
       {/* ── 인격 선택 모달 ── */}
