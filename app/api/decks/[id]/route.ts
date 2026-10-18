@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { revalidateTag } from 'next/cache'
+import { revalidatePostSeries, saveSeriesChoice } from '@/lib/series/server'
 import { ownsPost, resolveAuthor } from '@/lib/guest/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
@@ -199,6 +200,7 @@ export async function DELETE(
       return NextResponse.json({ error: '삭제 권한이 없습니다.' }, { status: 403 })
     }
 
+    await revalidatePostSeries(admin, 'deck', id)
     // CASCADE로 deck_identities, deck_votes 자동 삭제
     const { error } = await admin
       .schema('limbus')
@@ -349,6 +351,9 @@ export async function PATCH(
         return NextResponse.json({ error: insEgosError.message }, { status: 500 })
       }
     }
+
+    const seriesError = await saveSeriesChoice(admin, { kind: 'deck', postId: id, userId: isOwner ? userId : null, body })
+    if (seriesError) return seriesError
 
     await writeAuditLog({
       actorId: userId,
