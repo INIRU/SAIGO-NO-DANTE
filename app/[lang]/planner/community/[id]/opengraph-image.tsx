@@ -3,7 +3,6 @@ import { renderOgPreview } from '@/components/ui/OgPreview'
 import { resolvePlannerIdentity } from '@/lib/planner/catalog-references'
 import { getIdentityPortraitUrl } from '@/lib/utils/images'
 import { OG_SIZE, OG_CONTENT_TYPE, isSupportedLang } from '@/lib/utils/og-image'
-export const runtime = 'nodejs'
 export const alt = '거울 던전 플랜 공유 이미지'
 export const size = OG_SIZE
 export const contentType = OG_CONTENT_TYPE
