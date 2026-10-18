@@ -38,7 +38,7 @@
 .scoreLabel { margin: 0; color: #9c8b73; font: 600 0.8125rem var(--font-body); }
 .points { display: block; margin-top: 0.25rem; color: var(--gold-light); font: 3rem/1 var(--font-title); letter-spacing: 0.02em; }
 .meter { height: 0.375rem; margin-top: 0.75rem; overflow: hidden; border-radius: 999px; background: #241c12; }
-.meter > span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #b88008, #e8b030); transition: width 400ms ease; }
+.meter > span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #b88008, #e8b030); transform-origin: left; transition: transform 400ms ease; }
 .next { margin: 0.375rem 0 0; color: #8a7d69; font-size: 0.75rem; }
 .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin: 1rem 0 0; }
 .stat { display: flex; min-width: 0; flex-direction: column; gap: 0.3125rem; padding: 0.625rem 0.75rem; border: 1px solid #241c14; border-radius: 0.5rem; background: #17120c; }

@@ -17,7 +17,7 @@
 .allMark { display: grid; width: 2rem; height: 2rem; place-items: center; color: var(--gold-light); font: 1rem/1 var(--font-title); letter-spacing: 0.02em; }
 .sinnerName { max-width: 100%; overflow: hidden; font: 0.8125rem/1.2 var(--font-heading), var(--font-body); text-overflow: ellipsis; white-space: nowrap; }
 .bar { width: 100%; height: 3px; overflow: hidden; border-radius: 999px; background: #2e2417; }
-.bar > span { display: block; height: 100%; border-radius: inherit; background: #8a6010; transition: width 300ms ease; }
+.bar > span { display: block; height: 100%; border-radius: inherit; background: #8a6010; transform-origin: left; transition: transform 300ms ease; }
 .sinner[data-complete] .bar > span { background: var(--gold-light); }
 .count { color: #8a7d69; font: 0.875rem/1 var(--font-title); letter-spacing: 0.02em; }
 .sinner[aria-pressed='true'] .count, .sinner[data-complete] .count { color: var(--gold-light); }
