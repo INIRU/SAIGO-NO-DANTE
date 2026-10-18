@@ -4,11 +4,10 @@ import { Node, Extension, type Editor, type JSONContent } from '@tiptap/core'
 import { NodeViewWrapper, NodeViewContent, ReactNodeViewRenderer, type NodeViewProps } from '@tiptap/react'
 import { Plugin, PluginKey } from '@tiptap/pm/state'
 import { Table, TableRow, TableCell, TableHeader } from '@tiptap/extension-table'
-import { TaskList, TaskItem } from '@tiptap/extension-list'
 import { useLocale } from 'next-intl'
 import useSWR from 'swr'
 import { toast } from 'sonner'
-import { Plus, ChevronDown, ChevronLeft, ChevronRight, X, Search, GripVertical } from 'lucide-react'
+import { Plus, ChevronDown, ChevronLeft, ChevronRight, X, Search, GripVertical, Trash2 } from 'lucide-react'
 import NoteAssetPicker from './NoteAssetPicker'
 import NoteCharacterPicker from './NoteCharacterPicker'
 import BaseModal from '@/components/ui/BaseModal'
@@ -123,12 +122,18 @@ function VideoNodeView({node,updateAttributes,deleteNode}:NodeViewProps) {
     {node.attrs.videoId ? <NoteVideo id={node.attrs.videoId}/> : <form noValidate className="note-video-input" onSubmit={e=>{e.preventDefault();const id=youtubeId(url);setError(!id);if(id)updateAttributes({videoId:id})}}><strong>YouTube</strong><input type="url" value={url} onChange={e=>setUrl(e.target.value)} placeholder="https://www.youtube.com/watch?v=…" aria-label={tr(lang,'유튜브 링크','YouTubeリンク','YouTube URL')}/><button type="submit">{tr(lang,'영상 넣기','動画を挿入','Insert video')}</button>{error && <span role="alert">{tr(lang,'올바른 유튜브 영상 링크를 입력하세요','有効なYouTube動画URLを入力してください','Enter a valid YouTube video URL')}</span>}</form>}
   </NodeViewWrapper>
 }
+/** Kind names of a callout; the head above the text shows it (and, in the editor, switches it). */
+export const calloutLabel=(variant:string,lang:string)=>variant==='warning'?tr(lang,'주의','注意','Warning'):tr(lang,'팁','ヒント','Tip')
 function CalloutNodeView({node,updateAttributes,deleteNode}:NodeViewProps) {
-  const lang=useLocale(), warning=node.attrs.variant==='warning'
-  return <NodeViewWrapper as="aside" className="note-callout" data-variant={warning?'warning':'tip'}>
-    <button type="button" className="note-callout-toggle" contentEditable={false} aria-label={tr(lang,'콜아웃 종류 바꾸기','コールアウトの種類を変更','Change callout type')} onClick={()=>updateAttributes({variant:warning?'tip':'warning'})}>{warning?tr(lang,'주의','注意','Warning'):tr(lang,'팁','ヒント','Tip')}</button>
-    <button type="button" className="note-accordion-delete" contentEditable={false} aria-label={tr(lang,'콜아웃 삭제','コールアウト削除','Delete callout')} onClick={deleteNode}><X size={14}/></button>
-    <NodeViewContent/>
+  const lang=useLocale(), variant=node.attrs.variant==='warning'?'warning':'tip'
+  return <NodeViewWrapper as="aside" className="note-callout" data-variant={variant}>
+    <div className="note-callout-head" contentEditable={false}>
+      <div className="note-callout-kinds" role="group" aria-label={tr(lang,'콜아웃 종류','コールアウトの種類','Callout type')}>
+        {(['tip','warning'] as const).map(v=><button key={v} type="button" data-kind={v} aria-pressed={variant===v} onClick={()=>updateAttributes({variant:v})}>{calloutLabel(v,lang)}</button>)}
+      </div>
+      <button type="button" className="note-callout-delete" aria-label={tr(lang,'콜아웃 삭제','コールアウト削除','Delete callout')} onClick={deleteNode}><Trash2 size={15}/></button>
+    </div>
+    <NodeViewContent className="note-callout-body"/>
   </NodeViewWrapper>
 }
 function CardNodeView({node,updateAttributes,deleteNode,selected,editor,getPos}:NodeViewProps) {
@@ -221,7 +226,7 @@ export const NoteInput = Extension.create<{lang:string}>({name:'noteInput',addOp
       event.preventDefault();editor.chain().insertContent([{type:'noteVideo',attrs:{videoId:id}},{type:'paragraph'}]).run();return true},
   }})]},
 })
-export const noteBlockExtensions = [NoteAsset,NoteKeyword,NoteGift,NoteAccordion,NoteTitle,NoteBody,NoteVideoNode,NoteUpload,NoteCallout,NoteCard,Table,TableRow,TableCell,TableHeader,TaskList,TaskItem.configure({nested:false})]
+export const noteBlockExtensions = [NoteAsset,NoteKeyword,NoteGift,NoteAccordion,NoteTitle,NoteBody,NoteVideoNode,NoteUpload,NoteCallout,NoteCard,Table,TableRow,TableCell,TableHeader]
 export function notePlaceholder(lang:string,nodeType:string) {
   return nodeType==='noteTitle'?tr(lang,'아코디언 제목을 입력하세요','アコーディオンの見出し','Accordion title') : tr(lang,'여기에 글을 입력하거나 /로 블록을 추가하세요','文章を入力、または / でブロックを追加','Write here or type / to add a block')
 }

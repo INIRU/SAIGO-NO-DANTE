@@ -612,29 +612,37 @@ html[data-query-pending] [data-static-query-fallback] { display: contents; }
 .note-block-document a[href]:not(.note-card a),.note-document-content a:not(.note-card a){color:var(--gold-light);text-decoration:underline;text-decoration-color:color-mix(in srgb,var(--gold-light) 45%,transparent);text-underline-offset:.2rem;transition:text-decoration-color .15s ease}
 .note-block-document a[href]:not(.note-card a):hover,.note-document-content a:not(.note-card a):hover{text-decoration-color:var(--gold-light)}
 
-/* Note blocks: callout, table, checklist, divider, deck/plan card. Shared by the editor and the viewer. */
-.note-callout{position:relative;margin:1rem 0;padding:.25rem 1rem .25rem 1.1rem;border:1px solid var(--border);border-left:3px solid var(--gold);border-radius:.4rem;background:var(--bg-card)}
-.note-callout[data-variant=warning]{border-left-color:#9b2c23;background:#9b2c231a}
-.note-callout-toggle{position:absolute;top:.4rem;right:3rem;z-index:2;padding:.25rem .6rem;border-radius:.25rem;background:var(--bg-deep);color:var(--text-secondary);font-size:.75rem}
+/* Note blocks: callout, table, divider, deck/plan card. Shared by the editor and the viewer. */
+/* Callout: a head row (kind name; in the editor the kind switch and delete) above the text, so buttons never sit on it. */
+.note-callout{--callout:var(--gold);--callout-bg:color-mix(in srgb,var(--gold) 7%,var(--bg-card));margin:1rem 0;border:1px solid var(--border);border-left:3px solid var(--callout);border-radius:.4rem;background:var(--callout-bg);overflow:hidden}
+.note-callout[data-variant=warning]{--callout:#c0453a;--callout-bg:color-mix(in srgb,#9b2c23 12%,var(--bg-card))}
+.note-callout-head{display:flex;align-items:center;gap:.5rem;min-height:2.25rem;padding:.35rem .5rem .35rem .9rem;border-bottom:1px solid color-mix(in srgb,var(--callout) 22%,transparent);user-select:none}
+.note-callout-head>strong{font-family:var(--font-heading);font-size:.875rem;color:var(--callout)}
+.note-callout-body{padding:.6rem .9rem .7rem}
+.note-callout-body>p:first-child{margin-top:0}.note-callout-body>p:last-child{margin-bottom:0}
+.note-callout-kinds{display:flex;gap:.25rem}
+.note-callout-kinds button{min-height:1.75rem;padding:0 .7rem;border-radius:.25rem;font-family:var(--font-heading);font-size:.8125rem;color:var(--text-muted);transition:background-color .15s ease,color .15s ease}
+.note-callout-kinds button[aria-pressed=true]{background:color-mix(in srgb,var(--callout) 18%,transparent);color:var(--callout)}
+@media (hover:hover){.note-callout-kinds button:not([aria-pressed=true]):hover{color:var(--text-secondary)}}
+.note-callout-delete{display:grid;place-items:center;width:1.75rem;height:1.75rem;margin-left:auto;border-radius:.25rem;color:var(--text-muted);transition:color .15s ease,background-color .15s ease}
+@media (hover:hover){.note-callout-delete:hover{color:#e06a5f;background:#9b2c2326}}
 .note-block-document table,.note-document-content table{width:100%;margin:1rem 0;border-collapse:collapse;table-layout:fixed;font-size:.9rem}
 .note-block-document :is(th,td),.note-document-content :is(th,td){position:relative;padding:.45rem .65rem;border:1px solid var(--border);vertical-align:top;text-align:left}
 .note-block-document th,.note-document-content th{background:var(--bg-elevated);color:var(--text-primary);font-weight:600}
 .note-block-document :is(td,th)>p,.note-document-content :is(td,th)>p{margin:0;min-height:0}
 .note-document-content .selectedCell::after{content:"";position:absolute;inset:0;background:#c8900a33;pointer-events:none}
 .note-document-content .tableWrapper,.note-block-table{overflow-x:auto}
-.note-block-document ul[data-type=taskList],.note-document-content ul[data-type=taskList]{list-style:none;padding-left:.25rem}
-.note-block-document li[data-type=taskItem],.note-document-content li[data-type=taskItem]{display:flex;gap:.55rem;align-items:flex-start}
-.note-block-document li[data-type=taskItem]>label,.note-document-content li[data-type=taskItem]>label{flex-shrink:0;margin-top:.2rem;user-select:none}
-.note-block-document li[data-type=taskItem]>div,.note-document-content li[data-type=taskItem]>div{flex:1;min-width:0}
-.note-block-document li[data-type=taskItem][data-checked=true]>div,.note-document-content li[data-type=taskItem][data-checked=true]>div{color:var(--text-muted);text-decoration:line-through}
-.note-block-document li[data-type=taskItem] input,.note-document-content li[data-type=taskItem] input{accent-color:var(--gold);width:1rem;height:1rem}
 .note-block-document hr,.note-document-content hr{margin:1.25rem 0;border:0;border-top:1px solid var(--border)}
 .note-card,.note-card-node.note-asset-node{position:relative;display:block;width:24rem;max-width:100%;margin:1rem 0}.note-card-node .note-card{width:100%;margin:0}
-.note-card-kind{display:flex;gap:.4rem;margin-bottom:.5rem}.note-card-results{margin-top:.75rem}
-.note-card-kind button,.note-card-pick{padding:.45rem .8rem;border:1px solid var(--border);border-radius:.3rem;color:var(--text-secondary);font-size:.85rem}
-.note-card-kind button[aria-pressed=true]{border-color:var(--gold);color:var(--gold-light)}
 .note-card-unavailable{padding:1rem;border:1px dashed var(--border);color:var(--text-muted);font-size:.85rem}
-.note-card-results{display:grid;grid-template-columns:repeat(auto-fill,minmax(14rem,1fr));gap:.75rem}
-.note-card-results>button{text-align:left;padding:.65rem .8rem;border:1px solid var(--border);border-radius:.4rem;background:var(--bg-card);color:var(--text-primary);font-size:.875rem;transition:border-color .15s ease}
-.note-card-results>button:hover{border-color:var(--gold)}
-.note-card-results small{display:block;color:var(--text-muted)}
+/* Card picker: the gift picker frame without the preview column; results are the board cards, picked by the button over each. */
+.note-direct-picker--card .note-direct-layout{grid-template-columns:9rem minmax(0,1fr)}
+.note-card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(17rem,1fr));gap:1rem;align-items:stretch}
+.note-card-option{position:relative;display:flex;flex-direction:column;min-width:0;border-radius:.5rem}
+.note-card-option-card{flex:1;display:flex;flex-direction:column;min-width:0;pointer-events:none}.note-card-option-card>:first-child{flex:1;min-width:0}
+.note-picker-search:focus-within{border-color:var(--gold-dim,var(--gold))}.note-picker-search input:focus-visible{outline:none}
+.note-card-option>button{position:absolute;inset:0;border-radius:.5rem;outline-offset:2px;transition:box-shadow .15s ease,background-color .15s ease}
+@media (hover:hover){.note-card-option>button:hover{box-shadow:inset 0 0 0 1px var(--gold);background:#c8900a12}}
+.note-card-option>button:focus-visible{box-shadow:inset 0 0 0 2px var(--gold)}
+.note-card-option--empty{aspect-ratio:17/16;background:var(--bg-card);border:1px solid var(--border)}
+@media(max-width:40rem){.note-direct-picker--card .note-direct-layout{grid-template-columns:1fr}.note-direct-picker--card .note-direct-sidebar>button{display:inline-flex}.note-card-grid{grid-template-columns:1fr}}
