@@ -4,7 +4,7 @@ import { isNoteImageUrl } from './images'
 export const NOTE_PREFIX = '!limbus-note:v1\n'
 export const ASSET_KINDS = ['gift', 'theme', 'identity', 'ego', 'skill', 'sin', 'keyword'] as const
 export type AssetKind = typeof ASSET_KINDS[number]
-export type BlockKind = AssetKind | 'accordion' | 'youtube' | 'callout' | 'table' | 'checklist' | 'divider' | 'card'
+export type BlockKind = AssetKind | 'accordion' | 'youtube' | 'callout' | 'table' | 'divider' | 'card'
 export const CALLOUT_VARIANTS = ['tip', 'warning'] as const
 export const CARD_KINDS = ['deck', 'plan'] as const
 export const CARD_ID = /^[\w-]{1,64}$/
@@ -14,7 +14,7 @@ export const BLOCK_LABELS: Record<BlockKind, [string, string, string]> = {
   skill: ['스킬', 'スキル', 'Skill'], sin: ['죄악', '罪悪', 'Sin'],
   keyword: ['키워드', 'キーワード', 'Keyword'], accordion: ['아코디언', 'アコーディオン', 'Accordion'],
   youtube: ['유튜브', 'YouTube', 'YouTube'],
-  callout: ['콜아웃', 'コールアウト', 'Callout'], table: ['표', '表', 'Table'], checklist: ['체크리스트', 'チェックリスト', 'Checklist'],
+  callout: ['콜아웃', 'コールアウト', 'Callout'], table: ['표', '表', 'Table'],
   divider: ['구분선', '区切り線', 'Divider'], card: ['덱·플랜 카드', 'デッキ・プランカード', 'Deck/Plan card'],
 }
 export function blockLabel(kind: BlockKind, lang: string) {
@@ -41,7 +41,6 @@ export function newBlock(kind: BlockKind): JSONContent {
   ] }
   if (kind === 'keyword') return {type:'noteKeyword',attrs:{id:''}}
   if (kind === 'callout') return {type:'noteCallout',attrs:{variant:'tip'},content:[{type:'paragraph'}]}
-  if (kind === 'checklist') return {type:'taskList',content:[{type:'taskItem',attrs:{checked:false},content:[{type:'paragraph'}]}]}
   if (kind === 'divider') return {type:'horizontalRule'}
   if (kind === 'card') return {type:'noteCard',attrs:{kind:'deck',id:''}}
   if (kind === 'table') {
@@ -51,9 +50,9 @@ export function newBlock(kind: BlockKind): JSONContent {
   return kind === 'youtube' ? { type: 'noteVideo', attrs: { videoId: '' } }
     : { type: 'noteAsset', attrs: { kind, id: '' } }
 }
-const TYPES = new Set(['doc', 'paragraph', 'heading', 'text', 'hardBreak', 'blockquote', 'bulletList', 'orderedList', 'listItem', 'codeBlock', 'horizontalRule', 'image', 'noteAccordion', 'noteTitle', 'noteBody', 'noteAsset', 'noteVideo', 'noteKeyword', 'noteGift', 'noteCallout', 'noteCard', 'table', 'tableRow', 'tableCell', 'tableHeader', 'taskList', 'taskItem'])
+const TYPES = new Set(['doc', 'paragraph', 'heading', 'text', 'hardBreak', 'blockquote', 'bulletList', 'orderedList', 'listItem', 'codeBlock', 'horizontalRule', 'image', 'noteAccordion', 'noteTitle', 'noteBody', 'noteAsset', 'noteVideo', 'noteKeyword', 'noteGift', 'noteCallout', 'noteCard', 'table', 'tableRow', 'tableCell', 'tableHeader'])
 const INLINE_TYPES = new Set(['text', 'hardBreak', 'noteKeyword', 'noteGift'])
-const BLOCK_TYPES = new Set(['paragraph', 'heading', 'blockquote', 'bulletList', 'orderedList', 'codeBlock', 'horizontalRule', 'image', 'noteAccordion', 'noteAsset', 'noteVideo', 'noteCallout', 'noteCard', 'table', 'taskList'])
+const BLOCK_TYPES = new Set(['paragraph', 'heading', 'blockquote', 'bulletList', 'orderedList', 'codeBlock', 'horizontalRule', 'image', 'noteAccordion', 'noteAsset', 'noteVideo', 'noteCallout', 'noteCard', 'table'])
 // The same bounded allowlist is used for persisted documents and pasted editor nodes.
 export function normalizeDocument(value: unknown): JSONContent | null {
   let count = 0
@@ -88,7 +87,6 @@ export function normalizeDocument(value: unknown): JSONContent | null {
       if (!CARD_KINDS.includes(n.attrs?.kind)) return null
       result.attrs = { kind: n.attrs!.kind, id: typeof n.attrs?.id === 'string' && CARD_ID.test(n.attrs.id) ? n.attrs.id : '' }
     }
-    if (n.type === 'taskItem') result.attrs = { checked: n.attrs?.checked === true }
     if (n.type === 'tableCell' || n.type === 'tableHeader') {
       const span = (v: unknown) => Number.isInteger(v) && (v as number) >= 1 && (v as number) <= 20 ? v : 1
       result.attrs = { colspan: span(n.attrs?.colspan), rowspan: span(n.attrs?.rowspan) }
@@ -99,18 +97,18 @@ export function normalizeDocument(value: unknown): JSONContent | null {
     if (Array.isArray(n.content)) result.content = n.content.flatMap(c => { const clean = node(c, depth + 1); return clean ? [clean] : [] })
     if (['paragraph', 'heading', 'noteTitle'].includes(n.type)) result.content = (result.content ?? []).filter(c => INLINE_TYPES.has(c.type!))
     if (n.type === 'codeBlock') result.content = (result.content ?? []).filter(c => c.type === 'text').map(c => ({type:'text',text:c.text}))
-    if (['doc', 'noteBody', 'blockquote', 'listItem', 'noteCallout', 'taskItem', 'tableCell', 'tableHeader'].includes(n.type)) {
+    if (['doc', 'noteBody', 'blockquote', 'listItem', 'noteCallout', 'tableCell', 'tableHeader'].includes(n.type)) {
       const inCell = n.type === 'tableCell' || n.type === 'tableHeader'
       result.content = (result.content ?? []).filter(c => BLOCK_TYPES.has(c.type!) && !(inCell && c.type === 'table'))
       if (!result.content.length) result.content = [{type:'paragraph'}]
-      if ((n.type === 'listItem' || n.type === 'taskItem') && result.content[0].type !== 'paragraph') result.content.unshift({type:'paragraph'})
+      if (n.type === 'listItem' && result.content[0].type !== 'paragraph') result.content.unshift({type:'paragraph'})
     }
     if (['bulletList','orderedList'].includes(n.type)) {
       result.content = (result.content ?? []).filter(c => c.type === 'listItem')
       if (!result.content.length) return null
     }
-    if (n.type === 'taskList' || n.type === 'table' || n.type === 'tableRow') {
-      const child = { taskList: 'taskItem', table: 'tableRow', tableRow: 'tableCell' }[n.type]
+    if (n.type === 'table' || n.type === 'tableRow') {
+      const child = { table: 'tableRow', tableRow: 'tableCell' }[n.type]
       result.content = (result.content ?? []).filter(c => c.type === child || (n.type === 'tableRow' && c.type === 'tableHeader'))
       if (!result.content.length) return null
     }
@@ -128,7 +126,7 @@ export function parseBlockDocument(value: string): JSONContent | null {
   try { return normalizeDocument(JSON.parse(value.slice(NOTE_PREFIX.length))) } catch { return null }
 }
 export function hasBlocks(node: JSONContent): boolean {
-  return node.type?.startsWith('note') === true || node.type === 'table' || node.type === 'taskList' || (node.content ?? []).some(hasBlocks)
+  return node.type?.startsWith('note') === true || node.type === 'table' || (node.content ?? []).some(hasBlocks)
 }
 export function visibleNode(node: JSONContent): boolean {
   if (node.type === 'noteAsset' || node.type === 'noteKeyword' || node.type === 'noteGift') return Boolean(node.attrs?.id)

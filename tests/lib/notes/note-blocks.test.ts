@@ -8,8 +8,8 @@ const doc = (...content: object[]) => ({ type: 'doc', content })
 const roundTrip = (d: object) => parseBlockDocument(tiptapContentToMarkdown(d as never))
 
 describe('REQ-COMMUNITY-037 new note blocks', () => {
-  it('menu offers the five new blocks with ko/ja/en labels', () => {
-    for (const kind of ['callout', 'table', 'checklist', 'divider', 'card'] as BlockKind[]) {
+  it('menu offers the new blocks with ko/ja/en labels', () => {
+    for (const kind of ['callout', 'table', 'divider', 'card'] as BlockKind[]) {
       expect(BLOCK_LABELS[kind]).toHaveLength(3)
       expect(newBlock(kind).type).toBeTruthy()
     }
@@ -30,17 +30,16 @@ describe('REQ-COMMUNITY-037 new note blocks', () => {
     expect(c.attrs?.colspan).toBe(1)
     expect(JSON.stringify(c.content)).not.toContain('"table"')
   })
-  it('round trips a checklist and coerces checked to a boolean', () => {
-    const d = doc({ type: 'taskList', content: [{ type: 'taskItem', attrs: { checked: true }, content: [p('완료')] }, { type: 'taskItem', attrs: { checked: false }, content: [p('대기')] }] })
-    expect(roundTrip(d)?.content?.[0]).toEqual(d.content[0])
-    const odd = normalizeDocument(doc({ type: 'taskList', content: [{ type: 'taskItem', attrs: { checked: 'yes' }, content: [p('a')] }, p('stray')] }))
-    expect(odd?.content?.[0].content).toEqual([{ type: 'taskItem', attrs: { checked: false }, content: [p('a')] }])
+  it('REQ-COMMUNITY-037 removed: there is no checklist block and saved checklists are dropped', () => {
+    expect(Object.keys(BLOCK_LABELS)).not.toContain('checklist')
+    const d = normalizeDocument(doc(p('a'), { type: 'taskList', content: [{ type: 'taskItem', attrs: { checked: true }, content: [p('x')] }] }))
+    expect(JSON.stringify(d)).not.toContain('task')
+    expect(hasBlocks(doc({ type: 'taskList', content: [] }))).toBe(false)
   })
   it('keeps the divider and serialises a doc of only new blocks as a block document', () => {
     const d = doc({ type: 'horizontalRule' }, { type: 'table', content: [{ type: 'tableRow', content: [{ type: 'tableCell', content: [p('a')] }] }] })
     expect(hasBlocks(d)).toBe(true)
     expect(tiptapContentToMarkdown(d as never).startsWith(NOTE_PREFIX)).toBe(true)
-    expect(hasBlocks(doc({ type: 'taskList', content: [] }))).toBe(true)
   })
   it('validates card attrs and hides a card with no deck/plan chosen', () => {
     const ok = normalizeDocument(doc({ type: 'noteCard', attrs: { kind: 'plan', id: 'abc-123' } }))
