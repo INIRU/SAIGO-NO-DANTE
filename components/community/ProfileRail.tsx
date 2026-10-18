@@ -64,7 +64,7 @@ export default function ProfileRail({ data, onEdit, onOpenFollows }: {
       <div className={styles.score}>
         <p className={styles.scoreLabel}>{t.points}</p>
         <strong className={styles.points} data-testid="activity-points">{stats.points.toLocaleString(locale)}</strong>
-        {next && <div className={styles.meter} aria-hidden="true"><span style={{ width: `${next.ratio * 100}%` }} /></div>}
+        {next && <div className={styles.meter} aria-hidden="true"><span style={{ transform: `scaleX(${next.ratio})` }} /></div>}
         <p className={styles.next}>{next ? badgeCopy.nextBadge.replace('{remaining}', next.remaining.toLocaleString(locale)) : badgeCopy.allBadges}</p>
         <dl className={styles.stats}>
           {STATS.map(({ key, icon: Icon }) => (

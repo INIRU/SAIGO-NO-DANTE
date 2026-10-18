@@ -31,7 +31,7 @@
 .text strong { font-family: var(--font-heading); font-size: 1.0625rem; font-weight: 700; }
 .text small { font-size: 0.75rem; color: #5a5148; }
 .arrow { position: absolute; right: 0.5rem; bottom: 0.45rem; transition: transform 200ms ease; }
-.link:hover .arrow { transform: translate(2px, -2px); }
+@media (hover: hover) { .link:hover .arrow { transform: translate(2px, -2px); } }
 
 /* The runner hops in place at the slip's right end; while the link is hovered or focused, papers slip out behind it. */
 .stage { position: absolute; right: 1.5rem; bottom: 0; width: 3.5rem; height: 100%; }
