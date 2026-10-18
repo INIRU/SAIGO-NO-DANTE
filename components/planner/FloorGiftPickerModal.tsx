@@ -1,12 +1,13 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { Check, X } from 'lucide-react'
 import BaseModal from '@/components/ui/BaseModal'
 import GiftCatalog, { giftKeywordIcon, toCatalogGift, useGiftCatalogFilters, type GiftCatalogCardProps } from '@/components/gifts/GiftCatalog'
 import type { EgoGift } from '@/components/mirror-dungeon/types'
 import type { GiftData } from '@/lib/planner/types'
+import { loadRecentGifts, rememberGift } from '@/lib/planner/recent-gifts'
 
 /**
  * Picks gifts for one floor (planner) or the current run (assist): the gift catalog with keyword tabs, grade and search.
@@ -14,7 +15,7 @@ import type { GiftData } from '@/lib/planner/types'
  * floor can still reach (fusions and recipes included), without other packs' exclusives. Choices apply as they are clicked.
  * Gifts only this floor's pack gives come first, under their own heading, with the red warning mark.
  */
-export default function FloorGiftPickerModal({ open, title, floorGifts, allGifts, exclusiveIds = [], selectedIds, onToggle, onClose }: {
+export default function FloorGiftPickerModal({ open, title, floorGifts, allGifts, exclusiveIds = [], showRecent = false, selectedIds, onToggle, onClose }: {
   open: boolean
   title: string
   /** The selected theme pack's gifts; null when no pack is known (the toggle is hidden). */
@@ -23,6 +24,8 @@ export default function FloorGiftPickerModal({ open, title, floorGifts, allGifts
   allGifts: GiftData[]
   /** Game ids only this floor's pack gives (its exclusive pool and clear rewards). */
   exclusiveIds?: number[]
+  /** Adds a "recently used" group (gifts picked in this browser lately) after the exclusive one. */
+  showRecent?: boolean
   selectedIds: ReadonlySet<string>
   onToggle: (gift: GiftData) => void
   onClose: () => void
@@ -36,8 +39,23 @@ export default function FloorGiftPickerModal({ open, title, floorGifts, allGifts
   const catalog = useMemo(() => source.map(toCatalogGift), [source])
   const exclusiveKey = exclusiveIds.join(',')
   const onlyHere = t('onlyThisFloor')
-  const pinned = useMemo(() => exclusiveKey ? [{ ids: new Set(exclusiveKey.split(',')), label: onlyHere, warning: true }] : undefined, [exclusiveKey, onlyHere])
+  const [recent, setRecent] = useState<string[]>([])
+  useEffect(() => { if (showRecent && open) setRecent(loadRecentGifts()) }, [showRecent, open])
+  const recentKey = showRecent ? recent.join(',') : ''
+  const recentLabel = t('recent')
+  // The exclusive group stays first (index 0 even when empty) so the card marks below keep reading pinned[0].
+  const pinned = useMemo(() => {
+    if (!exclusiveKey && !recentKey) return undefined
+    const groups = [{ ids: new Set<string>(exclusiveKey ? exclusiveKey.split(',') : []), label: onlyHere, warning: true }]
+    if (recentKey) groups.push({ ids: new Set(recentKey.split(',')), label: recentLabel, warning: false })
+    return groups
+  }, [exclusiveKey, onlyHere, recentKey, recentLabel])
   const exclusiveCard = useMemo<GiftCatalogCardProps>(() => ({ warning: onlyHere }), [onlyHere])
+  // The group is read when the window opens; a pick is stored for next time without reshuffling the grid under the cursor.
+  const handleToggle = (gift: GiftData) => {
+    if (showRecent && !selectedIds.has(String(gift.game_id))) rememberGift(String(gift.game_id))
+    onToggle(gift)
+  }
 
   const toggle = floorGifts !== null && (
     <label className="ml-auto inline-flex min-h-10 cursor-pointer select-none items-center gap-2 text-[0.9375rem] text-[#e8dcc8]">
@@ -68,7 +86,7 @@ export default function FloorGiftPickerModal({ open, title, floorGifts, allGifts
             <GiftCatalog compact gifts={catalog} getGiftKeywordIcon={giftKeywordIcon} filters={filters} selectedIds={selectedIds}
               toolbarEnd={toggle || undefined} pinned={pinned}
               cardProps={gift => pinned?.[0].ids.has(gift.id) ? exclusiveCard : undefined}
-              onGiftClick={(gift: EgoGift) => { const data = byId.get(gift.id); if (data) onToggle(data) }} />
+              onGiftClick={(gift: EgoGift) => { const data = byId.get(gift.id); if (data) handleToggle(data) }} />
             {catalog.length === 0 && <p className="py-10 text-center text-[0.9375rem] text-[#9c8b73]">{t('empty')}</p>}
           </div>
         </div>
