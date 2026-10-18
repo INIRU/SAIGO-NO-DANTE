@@ -22,12 +22,16 @@ type Data = {
   popular: Post[];
   identities: Identity[];
 };
+export type InitialShelf = Data;
 export default function DiscoveryShelf({
   kind,
   onBrowse,
+  initialData,
 }: {
   kind: "deck" | "planner";
   onBrowse: () => void;
+  /** The server-rendered "this week" shelves: shown at once (and in the HTML) until SWR revalidates. */
+  initialData?: InitialShelf;
 }) {
   const t = useTranslations("discoveryShelf");
   const lang = useLocale(),
@@ -54,7 +58,7 @@ export default function DiscoveryShelf({
       return r.json();
     },
     // A period tab changes the key: the shelves stay as they are until the new period arrives.
-    { keepPreviousData: true },
+    { keepPreviousData: true, fallbackData: days === "week" ? initialData : undefined },
   );
   const noun =
     kind === "deck"
