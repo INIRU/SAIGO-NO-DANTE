@@ -34,3 +34,14 @@ it('REQ-SHARED-041 the footer links every DB, community and tools page of the me
     expect(html.match(/<nav[^>]*>[\s\S]*<\/nav>/)![0]).toContain(`href="/${lang}/mirror-dungeon"`)
   }
 })
+
+it('REQ-SHARED-041 the footer lists the contact address as a mailto link labelled in the page language', async () => {
+  const { default: Footer } = await import('@/components/layout/Footer')
+  const labels: Record<string, string> = { ko: '문의', en: 'Contact', ja: 'お問い合わせ' }
+  for (const lang of ['ko', 'en', 'ja']) {
+    const html = renderToStaticMarkup(await Footer({ lang }))
+    expect(html).toContain('href="mailto:sellindev@icloud.com"')
+    expect(html).toContain(labels[lang])
+    expect(html).toContain('sellindev@icloud.com</a>')
+  }
+})
