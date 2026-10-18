@@ -135,7 +135,12 @@
       "top": "Back to top",
       "bottom": "End of content"
     },
-    "confirm": "Confirm"
+    "confirm": "Confirm",
+    "autosave": {
+      "title": "Autosaved draft",
+      "restore": "Restore",
+      "discard": "Discard"
+    }
   },
   "globalSearch": {
     "ariaLabel": "Global search",
@@ -1592,6 +1597,26 @@
           ]
         }
       }
+    },
+    "formationImport": {
+      "fromDeck": "Import from my deck",
+      "fromPlan": "Import from plan",
+      "decksTitle": "My decks",
+      "plansTitle": "My plans",
+      "empty": "Nothing to import",
+      "loginRequired": "Sign in required",
+      "close": "Close",
+      "loadFailed": "Failed to load",
+      "replaceTitle": "Replace formation?",
+      "replaceConfirm": "Replace",
+      "applied": "Formation imported",
+      "untitled": "Untitled"
+    },
+    "floorCopy": {
+      "copyPrevious": "Copy previous floor",
+      "copied": "Copied floor {floor} gifts",
+      "replaceTitle": "Replace gifts?",
+      "replaceConfirm": "Replace"
     }
   },
   "sinner": {
@@ -1660,7 +1685,8 @@
     "onlyFloor": "Only gifts from this floor",
     "close": "Close",
     "empty": "No gifts to choose from",
-    "onlyThisFloor": "Only on this floor"
+    "onlyThisFloor": "Only on this floor",
+    "recent": "Recently used"
   },
   "mypage": {
     "title": "My Page"
@@ -1969,8 +1995,6 @@
       "saved": "Saved",
       "saveFailed": "Could not save"
     }
-
-
   },
   "ego": {
     "resistance": "Sin Resistance",

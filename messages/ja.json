@@ -135,7 +135,12 @@
       "top": "ページの先頭へ",
       "bottom": "本文の末尾へ"
     },
-    "confirm": "確認"
+    "confirm": "確認",
+    "autosave": {
+      "title": "自動保存された編集内容",
+      "restore": "復元",
+      "discard": "削除"
+    }
   },
   "globalSearch": {
     "ariaLabel": "グローバル検索",
@@ -1592,6 +1597,26 @@
           ]
         }
       }
+    },
+    "formationImport": {
+      "fromDeck": "マイデッキから読み込む",
+      "fromPlan": "プランから読み込む",
+      "decksTitle": "マイデッキ",
+      "plansTitle": "マイプラン",
+      "empty": "読み込める項目がありません",
+      "loginRequired": "ログインが必要です",
+      "close": "閉じる",
+      "loadFailed": "読み込めませんでした",
+      "replaceTitle": "編成を置き換えますか?",
+      "replaceConfirm": "置き換える",
+      "applied": "編成を読み込みました",
+      "untitled": "無題"
+    },
+    "floorCopy": {
+      "copyPrevious": "前の階をコピー",
+      "copied": "{floor}階のギフトをコピーしました",
+      "replaceTitle": "ギフトを置き換えますか?",
+      "replaceConfirm": "置き換える"
     }
   },
   "sinner": {
@@ -1660,7 +1685,8 @@
     "onlyFloor": "この階で入手できるギフトのみ",
     "close": "閉じる",
     "empty": "選べるギフトがありません",
-    "onlyThisFloor": "この階でのみ入手可能"
+    "onlyThisFloor": "この階でのみ入手可能",
+    "recent": "最近使用"
   },
   "mypage": {
     "title": "マイページ"
@@ -1969,8 +1995,6 @@
       "saved": "保存しました",
       "saveFailed": "保存できませんでした"
     }
-
-
   },
   "ego": {
     "resistance": "罪悪耐性",
