@@ -10,6 +10,9 @@ import { getGuestCopy, guestPinProblem } from '@/lib/guest/copy'
 import { deleteTempSlot, saveTempSlot, type TempSlot } from '@/lib/drafts/temp-slots'
 import { DECK_DRAFTS_KEY, isDeckDraft, loadDeckDraftSlots, type DeckDraft } from '@/lib/drafts/deck-drafts'
 import TempSaveMenu from '@/components/ui/TempSaveMenu'
+import AutosaveRestoreModal from '@/components/ui/AutosaveRestoreModal'
+import { useAutosaveDraft } from '@/hooks/useAutosaveDraft'
+import { autosaveKey } from '@/lib/drafts/autosave'
 
 import { useState, useMemo, useEffect } from 'react'
 import dynamic from 'next/dynamic'
@@ -33,9 +36,13 @@ import { encodeDeckCode, decodeDeckCode } from '@/components/deck-builder/deckCo
 import UnderlineTabBar, { type TabItem } from '@/components/ui/UnderlineTabBar'
 import Dropdown from '@/components/ui/Dropdown'
 import CompactButton from '@/components/ui/CompactButton'
+import ConfirmModal from '@/components/ui/ConfirmModal'
+import FormationSourceModal from '@/components/planner/FormationSourceModal'
+import { deckFormationFromPlan } from '@/lib/planner/formation-transfer'
+import type { EgoSlot, IdentitySlot } from '@/lib/planner/types'
 import { CONTENT_TYPES } from '@/lib/constants/deck-tokens'
 import { LCB_IDS, isDeployedSlot } from '@/lib/constants/game'
-import { Users, Sparkles, SlidersHorizontal, FileText, ArrowLeft, Copy, Save, Upload, Check } from 'lucide-react'
+import { Users, Sparkles, SlidersHorizontal, FileText, ArrowLeft, Copy, Download, Save, Upload, Check } from 'lucide-react'
 import { IdentityTab, EgoTab, SkillsetTab } from '@/components/deck-builder/DeckBuilderTabs'
 import { getIdentityImageUrl } from '@/lib/utils/images'
 import DeckInsights, { type DeckInsightIdentity } from '@/components/deck-analysis/DeckInsights'
@@ -372,6 +379,7 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
     setSaving(false)
     if (res.ok) {
       if (!signedIn) showSuccess(editMode ? getGuestCopy(locale).updated : getGuestCopy(locale).posted)
+      autosave.clear()
       router.push(editMode ? `/decks/${editMode.deckId}` : '/decks', { locale: locale as SupportedLang })
     } else {
       const data = await res.json().catch(() => null)
@@ -379,37 +387,33 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
     }
   }
 
+  // savedAt stays 0 here so the same editor state always serializes the same (the autosave compares it with the opening state)
+  const draftState = useMemo<DeckDraft>(() => ({
+    title,
+    contentType,
+    description,
+    deckSlotIds: Object.fromEntries(Object.entries(deckSlots).filter(([, v]) => v).map(([k, v]) => [k, v!.id])),
+    egoSlotIds: Object.fromEntries(Object.entries(egoSlots).map(([k, v]) => [k, Object.fromEntries(Object.entries(v).map(([grade, ego]) => [grade, ego.id]))])),
+    formationOrder,
+    mainKeywords: effectiveMainKeywords,
+    mainKeywordsManual,
+    savedAt: 0,
+    gacksungSlots,
+    skillDistribution,
+    upties,
+  }), [title, contentType, description, deckSlots, egoSlots, formationOrder, effectiveMainKeywords, mainKeywordsManual, gacksungSlots, skillDistribution, upties])
+
   const handleSaveDraft = (slot: TempSlot<DeckDraft>) => {
     if (pendingNoteUploads.size) { showError(noteUploadInProgressMessage(locale)); return }
-    const draft: DeckDraft = {
-      title,
-      contentType,
-      description,
-      deckSlotIds: Object.fromEntries(
-        Object.entries(deckSlots).filter(([, v]) => v).map(([k, v]) => [k, v!.id])
-      ),
-      egoSlotIds: Object.fromEntries(
-        Object.entries(egoSlots).map(([k, v]) => [
-          k,
-          Object.fromEntries(Object.entries(v).map(([grade, ego]) => [grade, ego.id])),
-        ])
-      ),
-      formationOrder,
-      mainKeywords: effectiveMainKeywords,
-      mainKeywordsManual,
-      savedAt: Date.now(),
-    }
-    Object.assign(draft, { gacksungSlots, skillDistribution, upties })
+    const draft: DeckDraft = { ...draftState, savedAt: Date.now() }
     const slots = saveTempSlot(DECK_DRAFTS_KEY, slot.slotNumber, draft, title.trim() || tTempSaves('untitledDeck'), isDeckDraft)
     if (!slots) { showError(tTempSaves('saveFailed')); return }
     setDraftSlots(slots)
     showSuccess(tTempSaves(slot.draft ? 'overwritten' : 'savedToSlot', { slot: slot.slotNumber }))
   }
 
-  const handleLoadDraft = (slot: TempSlot<DeckDraft>) => {
+  const applyDraft = (draft: DeckDraft) => {
     try {
-      const draft = slot.draft?.state
-      if (!draft) return
       if (draft.title) setTitle(draft.title)
       if (draft.contentType) setContentType(draft.contentType)
       if (draft.description) setDescription(draft.description)
@@ -441,12 +445,49 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
       if (draft.gacksungSlots) setGacksungSlots(draft.gacksungSlots)
       setUpties(draft.upties ?? {})
       if (draft.skillDistribution) setSkillDistribution(draft.skillDistribution as typeof skillDistribution)
-      showSuccess(tTempSaves('loadedFromSlot', { slot: slot.slotNumber }))
-    } catch { /* ignore */ }
+      return true
+    } catch { return false }
   }
+  const handleLoadDraft = (slot: TempSlot<DeckDraft>) => {
+    if (slot.draft && applyDraft(slot.draft.state)) showSuccess(tTempSaves('loadedFromSlot', { slot: slot.slotNumber }))
+  }
+  const autosave = useAutosaveDraft({
+    storageKey: autosaveKey('deck', editMode?.deckId), state: draftState, isState: isDeckDraft, ready: true, apply: applyDraft,
+  })
   const handleDeleteDraft = (slot: TempSlot<DeckDraft>) => {
     setDraftSlots(deleteTempSlot(DECK_DRAFTS_KEY, slot.slotNumber, isDeckDraft))
     showSuccess(tTempSaves('deletedFromSlot', { slot: slot.slotNumber }))
+  }
+
+  // Import from one of my plans: asks first when a formation is already set.
+  const tImport = useTranslations('planner.formationImport')
+  const [importOpen, setImportOpen] = useState(false)
+  const [pendingImport, setPendingImport] = useState<{ formation: ReturnType<typeof deckFormationFromPlan>; title: string } | null>(null)
+  const applyImport = (formation: ReturnType<typeof deckFormationFromPlan>) => {
+    const slots: Record<string, Identity | undefined> = {}
+    for (const [sinnerId, identityId] of Object.entries(formation.deckSlotIds)) slots[sinnerId] = identities.find(i => i.id === identityId)
+    const nextEgos: Record<string, Record<string, EGO>> = {}
+    for (const [sinnerId, gradeMap] of Object.entries(formation.egoSlotIds)) {
+      for (const [grade, egoId] of Object.entries(gradeMap)) {
+        const ego = egos.find(e => e.id === egoId)
+        if (ego) (nextEgos[sinnerId] ??= {})[grade] = ego
+      }
+    }
+    setDeckSlots(withLcb(slots))
+    setEgoSlots(nextEgos)
+    setFormationOrder(formation.formationOrder)
+    setUpties(formation.upties)
+    setSkillDistribution(formation.skillDistribution)
+    setGacksungSlots({})
+    showSuccess(tImport('applied'))
+  }
+  const handlePlanLoaded = (record: Record<string, unknown>) => {
+    const planSlots = (Array.isArray(record.deck) ? record.deck : []) as IdentitySlot[]
+    if (!planSlots.length) { showError(tImport('loadFailed')); return }
+    const formation = deckFormationFromPlan(planSlots, (Array.isArray(record.egos) ? record.egos : []) as EgoSlot[])
+    setImportOpen(false)
+    if (formationOrder.length) setPendingImport({ formation, title: String(record.title ?? '') })
+    else applyImport(formation)
   }
 
   const handleApplyCode = async () => {
@@ -481,6 +522,11 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
 
   return (
     <div className="min-h-[100dvh] pt-24 pb-20 sm:pt-28" style={{ background: 'var(--bg-deep)' }}>
+      <FormationSourceModal kind="plan" open={importOpen} onClose={() => setImportOpen(false)} onLoaded={handlePlanLoaded} />
+      <ConfirmModal open={pendingImport !== null} title={tImport('replaceTitle')} message={pendingImport?.title || tImport('untitled')}
+        confirmLabel={tImport('replaceConfirm')} variant="warning"
+        onConfirm={() => { if (pendingImport) applyImport(pendingImport.formation); setPendingImport(null) }} onCancel={() => setPendingImport(null)} />
+      <AutosaveRestoreModal savedAt={autosave.offer?.savedAt ?? null} onRestore={autosave.restore} onDiscard={autosave.discard} />
       <div className="deck-workspace mx-auto max-w-6xl px-3 sm:px-6">
         <header
           className="mb-6"
@@ -517,6 +563,7 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
                   </CompactButton>
                   {codeError && <span role="alert" className="deck-workspace-code-error">{builderT('fields.codeError')}</span>}
                 </div>
+                <CompactButton icon={Download} onClick={() => setImportOpen(true)} variant="muted">{tImport('fromPlan')}</CompactButton>
                 <TempSaveMenu title={tTempSaves('deckMenuLabel')} slots={draftSlots} onSave={handleSaveDraft} onLoad={handleLoadDraft} onDelete={handleDeleteDraft} />
                 <CompactButton
                   icon={codeCopied ? Check : Copy}

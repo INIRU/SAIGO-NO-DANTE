@@ -188,7 +188,7 @@ const PLANNER_TEMP_DRAFTS_KEY = 'md-planner-temp-drafts'
 export type PlannerTempDraft = TempDraft<PlannerState>
 export type PlannerTempSlot = TempSlot<PlannerState>
 
-function snapshotPlannerState(state: PlannerState): PlannerState {
+export function snapshotPlannerState(state: PlannerState): PlannerState {
   return {
     difficulty: state.difficulty,
     identitySlots: state.identitySlots,
@@ -203,7 +203,7 @@ function snapshotPlannerState(state: PlannerState): PlannerState {
   }
 }
 
-function isPlannerState(value: unknown): value is PlannerState {
+export function isPlannerState(value: unknown): value is PlannerState {
   if (!value || typeof value !== 'object') return false
   const state = value as Partial<PlannerState>
   return (

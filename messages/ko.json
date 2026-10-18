@@ -135,7 +135,12 @@
       "top": "맨 위로",
       "bottom": "본문 맨 아래로"
     },
-    "confirm": "확인"
+    "confirm": "확인",
+    "autosave": {
+      "title": "자동 저장된 편집 내용",
+      "restore": "복구",
+      "discard": "삭제"
+    }
   },
   "globalSearch": {
     "ariaLabel": "전역 검색",
@@ -1590,6 +1595,26 @@
           ]
         }
       }
+    },
+    "formationImport": {
+      "fromDeck": "내 덱에서 불러오기",
+      "fromPlan": "플랜에서 불러오기",
+      "decksTitle": "내 덱",
+      "plansTitle": "내 플랜",
+      "empty": "불러올 항목이 없어요",
+      "loginRequired": "로그인이 필요해요",
+      "close": "닫기",
+      "loadFailed": "불러오지 못했어요",
+      "replaceTitle": "편성을 바꿀까요?",
+      "replaceConfirm": "바꾸기",
+      "applied": "편성을 불러왔어요",
+      "untitled": "제목 없음"
+    },
+    "floorCopy": {
+      "copyPrevious": "이전 층 복사",
+      "copied": "{floor}층 기프트를 복사했어요",
+      "replaceTitle": "기프트를 바꿀까요?",
+      "replaceConfirm": "바꾸기"
     }
   },
   "sinner": {
@@ -1658,7 +1683,8 @@
     "onlyFloor": "이 층에서 얻을 수 있는 기프트만",
     "close": "닫기",
     "empty": "고를 수 있는 기프트가 없어요",
-    "onlyThisFloor": "이 층에서만 얻을 수 있음"
+    "onlyThisFloor": "이 층에서만 얻을 수 있음",
+    "recent": "최근 사용"
   },
   "mypage": {
     "title": "마이 페이지"
@@ -1967,8 +1993,6 @@
       "saved": "저장했습니다",
       "saveFailed": "저장하지 못했습니다"
     }
-
-
   },
   "ego": {
     "resistance": "죄악 내성",
