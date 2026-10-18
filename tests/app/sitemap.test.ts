@@ -46,11 +46,19 @@ describe('sitemap', () => {
     const entries = await sitemap()
     const urls = entries.map(entry => entry.url)
 
-    for (const path of ['/planner', '/calendar', '/friends']) expect(urls).toContain(`https://saigo-no-dante.com/ko${path}`)
+    for (const path of ['/calendar', '/announcements']) expect(urls).toContain(`https://saigo-no-dante.com/ko${path}`)
     expect(new Set(urls).size).toBe(urls.length)
     for (const entry of entries) {
       expect(entry).not.toHaveProperty('changeFrequency')
       expect(entry).not.toHaveProperty('priority')
     }
+  })
+
+  it('REQ-SHARED-044 leaves out personal or empty pages while keeping the community board', async () => {
+    const { default: sitemap } = await import('@/app/sitemap')
+    const urls = (await sitemap()).map(entry => entry.url)
+
+    for (const path of ['/collection', '/friends', '/planner', '/planner/run', '/random', '/login']) expect(urls).not.toContain(`https://saigo-no-dante.com/ko${path}`)
+    expect(urls).toContain('https://saigo-no-dante.com/ko/planner/community')
   })
 })
