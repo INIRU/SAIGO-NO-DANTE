@@ -2,7 +2,7 @@
 
 import BoardSkeleton from '@/components/discovery/BoardSkeleton'
 import { useLoadMoreSentinel } from '@/hooks/useLoadMoreSentinel'
-import DiscoveryShelf from '@/components/discovery/DiscoveryShelf'
+import DiscoveryShelf, { type InitialShelf } from '@/components/discovery/DiscoveryShelf'
 import BoardBrowseLock from '@/components/discovery/BoardBrowseLock'
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
@@ -143,9 +143,10 @@ function getPlanFilterKeywords(plan: PlanSummary): string[] {
 type CommunityClientProps = {
   initialPlans?: PlanSummary[]
   initialTotal?: number
+  initialShelf?: InitialShelf
 }
 
-export default function CommunityClient({ initialPlans, initialTotal }: CommunityClientProps) {
+export default function CommunityClient({ initialPlans, initialTotal, initialShelf }: CommunityClientProps) {
   const locale = useLocale() as SupportedLang
   const t = useTranslations('planner.communityBoard')
   const rootT = useTranslations()
@@ -967,7 +968,7 @@ export default function CommunityClient({ initialPlans, initialTotal }: Communit
     </div>
   )
 
-  if (!listVisible) return <DiscoveryShelf kind="planner" onBrowse={() => setBrowse('all', { history: 'push' })} />
+  if (!listVisible) return <DiscoveryShelf kind="planner" initialData={initialShelf} onBrowse={() => setBrowse('all', { history: 'push' })} />
 
   return (
     <div data-board-browse className="relative min-h-0 flex-1 px-4 pb-4 md:px-6 lg:overflow-hidden">

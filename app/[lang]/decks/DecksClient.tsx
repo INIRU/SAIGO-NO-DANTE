@@ -3,7 +3,7 @@
 import { notePlainText } from '@/lib/notes/blocks'
 import { useLoadMoreSentinel } from '@/hooks/useLoadMoreSentinel'
 
-import DiscoveryShelf from '@/components/discovery/DiscoveryShelf'
+import DiscoveryShelf, { type InitialShelf } from '@/components/discovery/DiscoveryShelf'
 import BoardBrowseLock from '@/components/discovery/BoardBrowseLock'
 
 import { getIdentityPortraitUrl } from '@/lib/utils/images'
@@ -190,6 +190,7 @@ interface DecksClientProps {
   initialTotal?: number
   initialSort?: SortKey
   initialLanguageFilter?: DeckLanguageFilter
+  initialShelf?: InitialShelf
 }
 
 function normalizeSortKey(value: string): SortKey {
@@ -223,6 +224,7 @@ export default function DecksClient({
   initialDecks,
   initialSort = 'latest',
   initialLanguageFilter = 'mine',
+  initialShelf,
 }: DecksClientProps = {}) {
   const locale = useLocale()
   const t = useTranslations('decks')
@@ -825,7 +827,7 @@ export default function DecksClient({
 
   const advancedFilterCount = activeTags.size + activeKeywordTags.size + activeMainKeywords.size + (formationCount !== null ? 1 : 0) + (minInfoScore !== null ? 1 : 0) + selectedIdentityIds.size + (filterOwnedIdentity ? 1 : 0) + (filterOwnedEgo ? 1 : 0) + languageFilterCount + facetSelections.affiliation.length + facetSelections.ego.length
 
-  if (!listVisible) return <DiscoveryShelf kind="deck" onBrowse={() => setBrowse('all', { history: 'push' })} />
+  if (!listVisible) return <DiscoveryShelf kind="deck" initialData={initialShelf} onBrowse={() => setBrowse('all', { history: 'push' })} />
 
   return (
     <div data-board-browse className="relative min-h-0 flex-1 px-4 pb-4 md:px-6 lg:overflow-hidden">
