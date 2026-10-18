@@ -1,5 +1,6 @@
 import { notePlainText } from '@/lib/notes/blocks'
 import { resolvePlannerIdentity } from '@/lib/planner/catalog-references'
+import { trimPlanDetailCatalog } from '@/lib/planner/plan-detail-catalog'
 import { selectUptieRows } from '@/lib/identity/skill-model'
 import type { Metadata } from 'next'
 import { localeUrl, metaText, pageMetadata } from '@/lib/seo/metadata'
@@ -122,8 +123,8 @@ export default async function PlanDetailPage({ params }: Props) {
   const planGiftIds = [...new Set((Array.isArray(plan.floor_plan) ? plan.floor_plan : [])
     .flatMap((entry: { gift_ids?: unknown }) => Array.isArray(entry?.gift_ids) ? entry.gift_ids.map(Number) : [])
     .filter((giftId: number) => Number.isInteger(giftId) && giftId > 0))].sort((a, b) => a - b)
-  const { themes, recipes, identities, sinners, egos } = game
-  const gifts = game.gifts.map(gift => withoutOtherLocales(gift, lang, ['effect_base', 'effect_plus', 'effect_plusplus']))
+  const { themes, sinners } = game
+  const { identities } = game
 
   const memberIds = [...new Set((Array.isArray(plan.deck) ? plan.deck : []).flatMap(slot => {
     const identity = resolvePlannerIdentity(slot, identities)
@@ -141,6 +142,9 @@ export default async function PlanDetailPage({ params }: Props) {
       .gte('uptie_level', 3),
     fetchPlanEvents(planGiftIds),
   ])
+  // 플랜이 쓰는 기프트·레시피·인격·에고만 보낸다(전체 카탈로그는 flight 페이로드 1MB)
+  const used = trimPlanDetailCatalog({ plan, gifts: game.gifts, recipes: game.recipes, themes, identities, egos: game.egos, events: planEvents.events, eventChoices: planEvents.choices })
+  const gifts = used.gifts.map(gift => withoutOtherLocales(gift, lang, ['effect_base', 'effect_plus', 'effect_plusplus']))
   if (skillsError) console.error('Failed to fetch skills:', skillsError)
   if (passivesError) console.error('Failed to fetch passives:', passivesError)
 
@@ -156,12 +160,12 @@ export default async function PlanDetailPage({ params }: Props) {
         plan={plan as any}
         themes={themes}
         gifts={gifts}
-        recipes={recipes}
-        identities={identities}
+        recipes={used.recipes}
+        identities={used.identities}
         sinners={sinners}
         skills={memberIds.flatMap(id => selectUptieRows((skills ?? []).filter(row => row.identity_id === id), 4))}
         passives={memberIds.flatMap(id => selectUptieRows((passives ?? []).filter(row => row.identity_id === id), 4))}
-        egos={egos}
+        egos={used.egos}
         events={planEvents.events.map(event => withoutOtherLocales(event, lang, ['desc_text'], ['judgment'])) as unknown as MdEvent[]}
         eventChoices={planEvents.choices.map(choice => ({
           ...withoutOtherLocales(choice, lang, ['result_text', 'message', 'message_desc'], ['effects']),
