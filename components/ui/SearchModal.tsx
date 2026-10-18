@@ -11,6 +11,8 @@ import { STORAGE_BASE } from '@/lib/constants/game'
 import { getEgoGradeBannerUrl } from '@/lib/utils/images'
 import { readHistory, remember } from '@/lib/discovery/history'
 import { useDebounce } from '@/hooks/useDebounce'
+import { committedQuery, splitMatch } from '@/lib/utils/global-search'
+import Skeleton, { SkeletonPage } from '@/components/ui/Skeleton'
 import type { SearchItem, SearchItemType } from '@/app/api/search/route'
 
 const RARITY_ICONS: Record<number, string> = {
@@ -29,14 +31,23 @@ interface Props {
   onClose: () => void
 }
 
+function Highlight({ text, query }: { text: string; query: string }) {
+  const parts = splitMatch(text, query)
+  if (!parts) return text
+  return <>{parts[0]}<mark className="bg-transparent text-[var(--gold-light)]">{parts[1]}</mark>{parts[2]}</>
+}
+
 export default function SearchModal({ open, onClose }: Props) {
   const router = useRouter()
   const locale = useLocale()
   const t = useTranslations('globalSearch')
   const inputRef = useRef<HTMLInputElement>(null)
   const listRef = useRef<HTMLDivElement>(null)
+  // rawQuery는 입력창 값, committed는 IME 조합이 끝난 검색어. 조합 중에는 검색하지 않는다
   const [rawQuery, setRawQuery] = useState('')
-  const query = useDebounce(rawQuery.trim(), 200)
+  const [committed, setCommitted] = useState('')
+  const query = useDebounce(committed.trim(), 200)
+  const setText = (value: string) => { setRawQuery(value); setCommitted(value) }
   const [items, setItems] = useState<SearchItem[]>([])
   const [suggestions, setSuggestions] = useState<SearchItem[]>([])
   const [searchedFor, setSearchedFor] = useState('')
@@ -46,7 +57,7 @@ export default function SearchModal({ open, onClose }: Props) {
 
   useEffect(() => {
     if (!open) return
-    setRawQuery('')
+    setText('')
     setItems([])
     setSuggestions([])
     setSearchedFor('')
@@ -57,7 +68,7 @@ export default function SearchModal({ open, onClose }: Props) {
   }, [open])
 
   useEffect(() => {
-    if (!query) { setItems([]); setSuggestions([]); setSearchedFor(''); return }
+    if (!query) { setItems([]); setSuggestions([]); setSearchedFor(''); setFailed(false); return }
     const controller = new AbortController()
     fetch(`/api/search?q=${encodeURIComponent(query)}&lang=${locale}`, { signal: controller.signal })
       .then(res => res.ok ? res.json() : Promise.reject(new Error(String(res.status))))
@@ -71,13 +82,15 @@ export default function SearchModal({ open, onClose }: Props) {
       .catch(err => {
         if (controller.signal.aborted) return
         console.error('search failed', err)
+        setItems([])
+        setSuggestions([])
         setFailed(true)
         setSearchedFor(query)
       })
     return () => controller.abort()
   }, [query, locale])
 
-  const typing = rawQuery.trim()
+  const typing = committed.trim()
   const loading = !!typing && searchedFor !== typing
   const shown = items.length > 0 ? items : suggestions
   // 결과는 종류별로 묶어 보여 주고, 키보드 순서도 같은 순서를 따른다
@@ -88,7 +101,7 @@ export default function SearchModal({ open, onClose }: Props) {
 
   const choose = (row: Row) => {
     if (row.kind === 'recent') {
-      setRawQuery(row.query)
+      setText(row.query)
       inputRef.current?.focus()
       return
     }
@@ -104,7 +117,7 @@ export default function SearchModal({ open, onClose }: Props) {
       if (rows.length === 0) return
       const step = e.key === 'ArrowDown' ? 1 : -1
       setActiveIndex(i => (i + step + rows.length) % rows.length)
-    } else if (e.key === 'Enter' && rows[activeIndex]) {
+    } else if (e.key === 'Enter' && rows[activeIndex] && !loading) {
       e.preventDefault()
       choose(rows[activeIndex])
     }
@@ -131,7 +144,13 @@ export default function SearchModal({ open, onClose }: Props) {
             <input
               ref={inputRef}
               value={rawQuery}
-              onChange={e => { setRawQuery(e.target.value); setActiveIndex(0) }}
+              onChange={e => {
+                const value = e.target.value
+                setRawQuery(value)
+                setCommitted(prev => committedQuery(prev, value, (e.nativeEvent as InputEvent).isComposing))
+                setActiveIndex(0)
+              }}
+              onCompositionEnd={e => setCommitted(e.currentTarget.value)}
               onKeyDown={handleKeyDown}
               placeholder={t('placeholder')}
               role="combobox"
@@ -149,7 +168,7 @@ export default function SearchModal({ open, onClose }: Props) {
               <button
                 type="button"
                 aria-label={t('clear')}
-                onClick={() => { setRawQuery(''); inputRef.current?.focus() }}
+                onClick={() => { setText(''); inputRef.current?.focus() }}
                 className="grid h-9 w-9 shrink-0 cursor-pointer place-items-center rounded-md text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
               >
                 <X size={16} />
@@ -189,14 +208,21 @@ export default function SearchModal({ open, onClose }: Props) {
           )}
 
           {!typing && recent.length === 0 && (
-            <div className="px-4 py-10 text-center">
-              <p className="text-[0.9375rem] text-[var(--text-secondary)]">{t('emptyPromptTitle')}</p>
-              <p className="mx-auto mt-1.5 max-w-[26rem] text-[0.875rem] leading-relaxed text-[var(--text-tertiary)]">{t('emptyPromptDescription')}</p>
-            </div>
+            <p className="px-4 py-10 text-center text-[0.9375rem] text-[var(--text-secondary)]">{t('emptyPromptTitle')}</p>
           )}
 
           {typing && loading && shown.length === 0 && (
-            <p className="px-4 py-10 text-center text-[0.875rem] text-[var(--text-tertiary)]" aria-live="polite">{t('loading')}</p>
+            <SkeletonPage className="px-1 pt-3">
+              {[0, 1, 2, 3, 4].map(n => (
+                <div key={n} className="flex min-h-14 items-center gap-3 px-3 py-1.5">
+                  <Skeleton className="h-10 w-10 shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <Skeleton className="h-3.5" style={{ width: `${55 + (n % 3) * 12}%` }} />
+                    <Skeleton className="mt-1.5 h-3 w-1/3" />
+                  </div>
+                </div>
+              ))}
+            </SkeletonPage>
           )}
 
           {typing && !loading && failed && (
@@ -204,10 +230,7 @@ export default function SearchModal({ open, onClose }: Props) {
           )}
 
           {typing && !loading && !failed && shown.length === 0 && (
-            <div className="px-4 py-10 text-center" aria-live="polite">
-              <p className="text-[0.9375rem] text-[var(--text-secondary)]">{t('noResultsFor', { query: typing })}</p>
-              <p className="mx-auto mt-1.5 max-w-[26rem] text-[0.875rem] leading-relaxed text-[var(--text-tertiary)]">{t('noResultsDescription')}</p>
-            </div>
+            <p className="px-4 py-10 text-center text-[0.9375rem] text-[var(--text-secondary)]" aria-live="polite">{t('noResultsFor', { query: typing })}</p>
           )}
 
           {typing && items.length === 0 && suggestions.length > 0 && !loading && (
@@ -215,7 +238,7 @@ export default function SearchModal({ open, onClose }: Props) {
           )}
 
           {typing && grouped.map(group => (
-            <section key={group.type} className={loading ? 'opacity-60' : ''}>
+            <section key={group.type} className={`transition-opacity duration-150 ${loading ? 'opacity-60' : ''}`}>
               <h3 className="px-3 pt-3 pb-1 text-[0.8125rem] text-[var(--text-muted)]" style={{ fontFamily: 'var(--font-body)', fontWeight: 400 }}>{typeLabel(group.type)}</h3>
               {group.items.map(item => {
                 index += 1
@@ -245,7 +268,7 @@ export default function SearchModal({ open, onClose }: Props) {
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="flex min-w-0 items-center gap-2">
-                        <span className={`truncate text-[0.9375rem] ${active ? 'text-[var(--gold-light)]' : 'text-[var(--text-primary)]'}`}>{item.label}</span>
+                        <span className={`truncate text-[0.9375rem] ${active ? 'text-[var(--gold-light)]' : 'text-[var(--text-primary)]'}`}><Highlight text={item.label} query={typing} /></span>
                         {item.rarity && RARITY_ICONS[item.rarity] && (
                           <Image src={RARITY_ICONS[item.rarity]} alt={`${item.rarity}`} width={20} height={20} unoptimized style={{ height: '0.875rem', width: 'auto' }} />
                         )}
