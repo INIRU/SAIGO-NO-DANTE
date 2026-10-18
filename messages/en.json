@@ -2689,6 +2689,7 @@
     }
   },
   "series": {
+    "back": "Back",
     "title": "Series",
     "deck": "Deck",
     "plan": "Plan",
