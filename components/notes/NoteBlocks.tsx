@@ -3,6 +3,8 @@ import { useEffect, useState, useRef } from 'react'
 import { Node, Extension, type Editor, type JSONContent } from '@tiptap/core'
 import { NodeViewWrapper, NodeViewContent, ReactNodeViewRenderer, type NodeViewProps } from '@tiptap/react'
 import { Plugin, PluginKey } from '@tiptap/pm/state'
+import { Table, TableRow, TableCell, TableHeader } from '@tiptap/extension-table'
+import { TaskList, TaskItem } from '@tiptap/extension-list'
 import { useLocale } from 'next-intl'
 import useSWR from 'swr'
 import { toast } from 'sonner'
@@ -11,9 +13,10 @@ import NoteAssetPicker from './NoteAssetPicker'
 import NoteCharacterPicker from './NoteCharacterPicker'
 import BaseModal from '@/components/ui/BaseModal'
 import Dropdown from '@/components/ui/Dropdown'
-import { BLOCK_LABELS, isAssetKind, blockLabel, newBlock, youtubeId, type BlockKind, type AssetKind } from '@/lib/notes/blocks'
+import { BLOCK_LABELS, CALLOUT_VARIANTS, CARD_KINDS, CARD_ID, isAssetKind, blockLabel, newBlock, youtubeId, type BlockKind, type AssetKind } from '@/lib/notes/blocks'
 import { assetName, type NoteAssetData } from '@/lib/notes/assets'
 import { isNoteImageUrl, pendingNoteUploads } from '@/lib/notes/images'
+import { NoteCardView, NoteCardPicker, type NoteCardKind } from './NoteCardBlock'
 import { NoteAssetView, NoteAssetArtwork, NoteKeywordLabel, NoteGiftLabel, NoteVideo, fetchNoteAssets } from './NoteBlockViewer'
 
 const tr = (lang:string,ko:string,ja:string,en:string)=>lang==='ja'?ja:lang==='en'?en:ko
@@ -120,6 +123,35 @@ function VideoNodeView({node,updateAttributes,deleteNode}:NodeViewProps) {
     {node.attrs.videoId ? <NoteVideo id={node.attrs.videoId}/> : <form noValidate className="note-video-input" onSubmit={e=>{e.preventDefault();const id=youtubeId(url);setError(!id);if(id)updateAttributes({videoId:id})}}><strong>YouTube</strong><input type="url" value={url} onChange={e=>setUrl(e.target.value)} placeholder="https://www.youtube.com/watch?v=…" aria-label={tr(lang,'유튜브 링크','YouTubeリンク','YouTube URL')}/><button type="submit">{tr(lang,'영상 넣기','動画を挿入','Insert video')}</button>{error && <span role="alert">{tr(lang,'올바른 유튜브 영상 링크를 입력하세요','有効なYouTube動画URLを入力してください','Enter a valid YouTube video URL')}</span>}</form>}
   </NodeViewWrapper>
 }
+function CalloutNodeView({node,updateAttributes,deleteNode}:NodeViewProps) {
+  const lang=useLocale(), warning=node.attrs.variant==='warning'
+  return <NodeViewWrapper as="aside" className="note-callout" data-variant={warning?'warning':'tip'}>
+    <button type="button" className="note-callout-toggle" contentEditable={false} aria-label={tr(lang,'콜아웃 종류 바꾸기','コールアウトの種類を変更','Change callout type')} onClick={()=>updateAttributes({variant:warning?'tip':'warning'})}>{warning?tr(lang,'주의','注意','Warning'):tr(lang,'팁','ヒント','Tip')}</button>
+    <button type="button" className="note-accordion-delete" contentEditable={false} aria-label={tr(lang,'콜아웃 삭제','コールアウト削除','Delete callout')} onClick={deleteNode}><X size={14}/></button>
+    <NodeViewContent/>
+  </NodeViewWrapper>
+}
+function CardNodeView({node,updateAttributes,deleteNode,selected,editor,getPos}:NodeViewProps) {
+  const lang=useLocale(),[picking,setPicking]=useState(false),kind=node.attrs.kind as NoteCardKind,id=node.attrs.id as string
+  const title=tr(lang,'덱·플랜 선택','デッキ・プランを選択','Choose deck or plan')
+  return <NodeViewWrapper className="note-asset-node note-card-node" data-selected={selected || undefined} contentEditable={false}>
+    <BlockActions editor={editor} getPos={getPos} onDelete={deleteNode}/>
+    {id ? <><NoteCardView kind={kind} id={id}/><button className="note-asset-replace" type="button" onClick={()=>setPicking(true)}>{tr(lang,'변경','変更','Change')}</button></> : <button type="button" className="note-empty-slot" onClick={()=>setPicking(true)} aria-label={title}><Plus size={25}/><span>{title}</span></button>}
+    {picking && <NoteCardPicker kind={kind} onKind={k=>updateAttributes({kind:k})} onClose={()=>setPicking(false)} onSelect={(k,cardId)=>{updateAttributes({kind:k,id:cardId});setPicking(false)}}/>}
+  </NodeViewWrapper>
+}
+export const NoteCallout = Node.create({name:'noteCallout',group:'block',content:'block+',defining:true,isolating:true,
+  addAttributes(){return {variant:{default:'tip'}}},
+  parseHTML(){return [{tag:'aside[data-note-callout]',getAttrs:el=>({variant:CALLOUT_VARIANTS.find(v=>v===el.getAttribute('data-note-callout')) ?? 'tip'})}]},
+  renderHTML({node}){return ['aside',{'data-note-callout':node.attrs.variant},0]},
+  addNodeView(){return ReactNodeViewRenderer(CalloutNodeView)},
+})
+export const NoteCard = Node.create({name:'noteCard',group:'block',atom:true,draggable:true,
+  addAttributes(){return {kind:{default:'deck'},id:{default:''}}},
+  parseHTML(){return [{tag:'div[data-note-card]',getAttrs:el=>{const kind=el.getAttribute('data-note-card') as NoteCardKind,id=el.getAttribute('data-card-id') ?? '';return CARD_KINDS.includes(kind)&&(!id||CARD_ID.test(id))?{kind,id}:false}}]},
+  renderHTML({node}){return ['div',{'data-note-card':node.attrs.kind,'data-card-id':node.attrs.id}]},
+  addNodeView(){return ReactNodeViewRenderer(CardNodeView)},
+})
 export function insertNoteBlock(editor:Editor,kind:BlockKind,range?:{from:number;to:number}) {
   const chain=editor.chain().focus()
   if(range)chain.deleteRange(range)
@@ -189,7 +221,7 @@ export const NoteInput = Extension.create<{lang:string}>({name:'noteInput',addOp
       event.preventDefault();editor.chain().insertContent([{type:'noteVideo',attrs:{videoId:id}},{type:'paragraph'}]).run();return true},
   }})]},
 })
-export const noteBlockExtensions = [NoteAsset,NoteKeyword,NoteGift,NoteAccordion,NoteTitle,NoteBody,NoteVideoNode,NoteUpload]
+export const noteBlockExtensions = [NoteAsset,NoteKeyword,NoteGift,NoteAccordion,NoteTitle,NoteBody,NoteVideoNode,NoteUpload,NoteCallout,NoteCard,Table,TableRow,TableCell,TableHeader,TaskList,TaskItem.configure({nested:false})]
 export function notePlaceholder(lang:string,nodeType:string) {
   return nodeType==='noteTitle'?tr(lang,'아코디언 제목을 입력하세요','アコーディオンの見出し','Accordion title') : tr(lang,'여기에 글을 입력하거나 /로 블록을 추가하세요','文章を入力、または / でブロックを追加','Write here or type / to add a block')
 }
