@@ -4,7 +4,7 @@ import { NoteBlockMenu, uploadNoteFiles } from "./NoteBlocks";
 import { useRef, useState } from "react";
 import { useLocale } from "next-intl";
 import { ImagePlus, LayoutTemplate } from "lucide-react";
-import type { Editor } from "@tiptap/react";
+import { useEditorState, type Editor } from "@tiptap/react";
 export default function NoteDocumentTools({
   editor,
 }: {
@@ -15,6 +15,7 @@ export default function NoteDocumentTools({
       locale === "ja" ? ja : locale === "en" ? en : ko;
   const fileRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
+  const inTable = useEditorState({ editor, selector: (state) => Boolean(state.editor?.isActive("table")) });
   async function upload(file?: File) {
     if (!file || !editor) return;
     setBusy(true);
@@ -69,6 +70,29 @@ export default function NoteDocumentTools({
           ? label("첨부 중…", "添付中…", "Uploading…")
           : label("이미지", "画像", "Image")}
       </button>
+      {inTable && (
+        <>
+          {(
+            [
+              ["addRowAfter", label("행 추가", "行を追加", "Add row")],
+              ["addColumnAfter", label("열 추가", "列を追加", "Add column")],
+              ["deleteRow", label("행 삭제", "行を削除", "Delete row")],
+              ["deleteColumn", label("열 삭제", "列を削除", "Delete column")],
+              ["deleteTable", label("표 삭제", "表を削除", "Delete table")],
+            ] as const
+          ).map(([command, text]) => (
+            <button
+              key={command}
+              type="button"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => editor?.chain().focus()[command]().run()}
+              className="flex min-h-9 items-center px-2 text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-panel)] hover:text-[var(--text-primary)]"
+            >
+              {text}
+            </button>
+          ))}
+        </>
+      )}
       <NoteEditorGuide compact/>
       <input
         ref={fileRef}
