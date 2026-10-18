@@ -9,7 +9,7 @@ import { getTranslations } from 'next-intl/server'
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params
   const t = await getTranslations({ locale: lang, namespace: 'collectionPage' })
-  return pageMetadata({ lang, path: '/collection', title: metaText('collection.meta.title', lang), description: t('description') })
+  return pageMetadata({ lang, path: '/collection', noindex: true, title: metaText('collection.meta.title', lang), description: t('description') })
 }
 
 export default async function CollectionPage() {

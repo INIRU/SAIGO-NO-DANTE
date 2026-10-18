@@ -81,6 +81,12 @@ export default async function Footer({ lang }: { lang: string }) {
             style={{ color: 'var(--text-tertiary)', fontSize: 'var(--text-xs)' }}>
             {tCommon('privacy')}
           </Link>
+          <span style={{ color: 'var(--text-muted)' }}>·</span>
+          <a href="mailto:sellindev@icloud.com"
+            className="hit-target transition-colors hover:text-yellow-300"
+            style={{ color: 'var(--text-tertiary)', fontSize: 'var(--text-xs)' }}>
+            {tCommon('contact')} sellindev@icloud.com
+          </a>
         </div>
 
         {/* 디스클레이머 */}

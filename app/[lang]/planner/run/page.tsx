@@ -14,7 +14,7 @@ import { dropRepeatedTopUptie } from '@/lib/identity/skill-model'
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params
   const t = await getTranslations({ locale: lang, namespace: 'planner' })
-  return pageMetadata({ lang, path: '/planner/run', title: t('run.metaTitle'), description: t('run.metaDescription') })
+  return pageMetadata({ lang, path: '/planner/run', noindex: true, title: t('run.metaTitle'), description: t('run.metaDescription') })
 }
 
 export default async function RunPage({ params }: { params: Promise<{ lang: string }> }) {
