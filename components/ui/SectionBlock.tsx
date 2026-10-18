@@ -78,14 +78,15 @@ export default function SectionBlock({
       {/* 콘텐츠 */}
       <div
         style={{
-          overflow: 'hidden',
-          maxHeight: open ? '200rem' : '0',
+          display: 'grid',
+          gridTemplateRows: open ? '1fr' : '0fr',
           opacity: open ? 1 : 0,
-          transition: 'max-height 0.3s ease, opacity 0.2s ease',
-          paddingTop: open ? '1rem' : '0',
+          transition: 'grid-template-rows 0.3s ease, opacity 0.2s ease',
         }}
       >
-        {children}
+        <div style={{ minHeight: 0, overflow: 'hidden' }}>
+          <div style={{ paddingTop: '1rem' }}>{children}</div>
+        </div>
       </div>
     </div>
   )

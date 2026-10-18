@@ -224,6 +224,10 @@ textarea:focus-visible {
   animation: fade-in 0.4s ease-out;
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .animate-dropdown-in, .animate-fade-in, .animate-ghost-pulse, .animate-roll-glow, .card-shimmer::after, .skill-marquee-track { animation: none; }
+}
+
 /* ── 랜덤 편성 ──────────────────────────────────── */
 @keyframes ghost-pulse {
   0%, 100% { border-color: rgba(42,32,21,0.4); }
