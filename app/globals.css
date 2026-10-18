@@ -607,3 +607,34 @@ button.note-gift-label:hover{text-decoration-color:currentColor}
 [data-static-query-fallback] { display: none; }
 html[data-query-pending] [data-static-query] { display: none; }
 html[data-query-pending] [data-static-query-fallback] { display: contents; }
+
+/* Note links: accent colour and underline so they read as links in the viewer and the editor. */
+.note-block-document a[href]:not(.note-card a),.note-document-content a:not(.note-card a){color:var(--gold-light);text-decoration:underline;text-decoration-color:color-mix(in srgb,var(--gold-light) 45%,transparent);text-underline-offset:.2rem;transition:text-decoration-color .15s ease}
+.note-block-document a[href]:not(.note-card a):hover,.note-document-content a:not(.note-card a):hover{text-decoration-color:var(--gold-light)}
+
+/* Note blocks: callout, table, checklist, divider, deck/plan card. Shared by the editor and the viewer. */
+.note-callout{position:relative;margin:1rem 0;padding:.25rem 1rem .25rem 1.1rem;border:1px solid var(--border);border-left:3px solid var(--gold);border-radius:.4rem;background:var(--bg-card)}
+.note-callout[data-variant=warning]{border-left-color:#9b2c23;background:#9b2c231a}
+.note-callout-toggle{position:absolute;top:.4rem;right:3rem;z-index:2;padding:.25rem .6rem;border-radius:.25rem;background:var(--bg-deep);color:var(--text-secondary);font-size:.75rem}
+.note-block-document table,.note-document-content table{width:100%;margin:1rem 0;border-collapse:collapse;table-layout:fixed;font-size:.9rem}
+.note-block-document :is(th,td),.note-document-content :is(th,td){position:relative;padding:.45rem .65rem;border:1px solid var(--border);vertical-align:top;text-align:left}
+.note-block-document th,.note-document-content th{background:var(--bg-elevated);color:var(--text-primary);font-weight:600}
+.note-block-document :is(td,th)>p,.note-document-content :is(td,th)>p{margin:0;min-height:0}
+.note-document-content .selectedCell::after{content:"";position:absolute;inset:0;background:#c8900a33;pointer-events:none}
+.note-document-content .tableWrapper,.note-block-table{overflow-x:auto}
+.note-block-document ul[data-type=taskList],.note-document-content ul[data-type=taskList]{list-style:none;padding-left:.25rem}
+.note-block-document li[data-type=taskItem],.note-document-content li[data-type=taskItem]{display:flex;gap:.55rem;align-items:flex-start}
+.note-block-document li[data-type=taskItem]>label,.note-document-content li[data-type=taskItem]>label{flex-shrink:0;margin-top:.2rem;user-select:none}
+.note-block-document li[data-type=taskItem]>div,.note-document-content li[data-type=taskItem]>div{flex:1;min-width:0}
+.note-block-document li[data-type=taskItem][data-checked=true]>div,.note-document-content li[data-type=taskItem][data-checked=true]>div{color:var(--text-muted);text-decoration:line-through}
+.note-block-document li[data-type=taskItem] input,.note-document-content li[data-type=taskItem] input{accent-color:var(--gold);width:1rem;height:1rem}
+.note-block-document hr,.note-document-content hr{margin:1.25rem 0;border:0;border-top:1px solid var(--border)}
+.note-card,.note-card-node.note-asset-node{position:relative;display:block;width:24rem;max-width:100%;margin:1rem 0}.note-card-node .note-card{width:100%;margin:0}
+.note-card-kind{display:flex;gap:.4rem;margin-bottom:.5rem}.note-card-results{margin-top:.75rem}
+.note-card-kind button,.note-card-pick{padding:.45rem .8rem;border:1px solid var(--border);border-radius:.3rem;color:var(--text-secondary);font-size:.85rem}
+.note-card-kind button[aria-pressed=true]{border-color:var(--gold);color:var(--gold-light)}
+.note-card-unavailable{padding:1rem;border:1px dashed var(--border);color:var(--text-muted);font-size:.85rem}
+.note-card-results{display:grid;grid-template-columns:repeat(auto-fill,minmax(14rem,1fr));gap:.75rem}
+.note-card-results>button{text-align:left;padding:.65rem .8rem;border:1px solid var(--border);border-radius:.4rem;background:var(--bg-card);color:var(--text-primary);font-size:.875rem;transition:border-color .15s ease}
+.note-card-results>button:hover{border-color:var(--gold)}
+.note-card-results small{display:block;color:var(--text-muted)}
