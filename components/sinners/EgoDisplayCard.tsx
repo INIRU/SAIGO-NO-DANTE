@@ -756,6 +756,7 @@ export default function EgoDisplayCard({
     return (
       <Link
         href={href}
+        prefetch={false}
         className={rootClassName}
         style={rootStyle}
         aria-label={name}
