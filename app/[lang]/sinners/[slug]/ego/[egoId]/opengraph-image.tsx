@@ -2,7 +2,6 @@ import { getEGOById, getSinnerById } from '@/lib/db/queries'
 import { getLocalizedName } from '@/lib/i18n/localize'
 import { renderOgPreview } from '@/components/ui/OgPreview'
 import { OG_SIZE, OG_CONTENT_TYPE, isSupportedLang } from '@/lib/utils/og-image'
-export const runtime = 'nodejs'
 export const alt = 'E.G.O 공유 이미지'
 export const size = OG_SIZE
 export const contentType = OG_CONTENT_TYPE

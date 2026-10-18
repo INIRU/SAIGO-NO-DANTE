@@ -5,14 +5,15 @@ import { DISCOVERY_COLUMNS, DISCOVERY_TABLE, formatDiscoveryPosts } from "@/lib/
 import { rankPopular } from "@/lib/discovery/shelf";
 
 // Shared by /api/discovery and the home page community shelves.
-export async function loadDiscovery(kind: "deck" | "planner", days: number) {
+// `since` (popularSince) is an argument on purpose: it is part of the cache key, so a list never outlives its update week.
+export async function loadDiscovery(kind: "deck" | "planner", since: string | null) {
   "use cache";
   cacheLife("minutes");
   cacheTag(kind === "deck" ? CACHE_TAGS.decksList : CACHE_TAGS.plansList, CACHE_TAGS.gameData);
   const db = createAdminClient().schema("limbus");
   const columns = DISCOVERY_COLUMNS[kind], table = DISCOVERY_TABLE[kind];
   const [counts, recent, edits] = await Promise.all([
-    db.rpc("discovery_counts", { days }),
+    db.rpc("discovery_counts_since", { since }),
     db
       .from(table)
       .select(columns)

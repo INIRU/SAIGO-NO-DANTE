@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { revalidateTag } from 'next/cache'
+import { saveSeriesChoice } from '@/lib/series/server'
 import { authorColumns, authorRateKey, guestPinOf, recordGuestAuthorship, resolveAuthor } from '@/lib/guest/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
@@ -419,6 +420,9 @@ export async function POST(req: NextRequest) {
       await admin.schema('limbus').from('md_plans').delete().eq('id', data.id)
       return NextResponse.json({ error: '플랜을 저장하지 못했습니다. 다시 시도해주세요.' }, { status: 500 })
     }
+
+    const seriesError = await saveSeriesChoice(admin, { kind: 'plan', postId: data.id, userId, body })
+    if (seriesError) return seriesError
 
     await writeAuditLog({
       actorId: userId,

@@ -15,6 +15,7 @@ import { resolveKeywordTextColor } from '@/lib/keywords/text-color'
 import { getLocalizedKeywordName, type SupportedLang } from '@/lib/i18n'
 import { isNoteImageUrl } from '@/lib/notes/images'
 import { GIFT_KEYWORD_COLORS } from '@/lib/constants/gift'
+import { NoteCardView } from './NoteCardBlock'
 
 export async function fetchNoteAssets(url: string): Promise<NoteAssetData[]> {
   const r = await fetch(url)
@@ -95,7 +96,7 @@ function NoteAccordionView({title,children}:{title:ReactNode;children:ReactNode}
 export default function NoteBlockViewer({doc,renderText}:{doc:JSONContent;renderText:(text:string)=>ReactNode}) {
   function render(n:JSONContent,key:string):ReactNode {
     // A text node of only spaces is the gap between two chips (or a chip and a word): it stays, the paragraph around it decides whether anything shows.
-    if (!(n.type === 'text' && n.text) && !visibleNode(n) && !['horizontalRule','hardBreak'].includes(n.type ?? '')) return null
+    if (!(n.type === 'text' && n.text) && !visibleNode(n) && !['horizontalRule','hardBreak','tableRow','tableCell','tableHeader'].includes(n.type ?? '')) return null
     const children=n.content?.map((c,i)=>render(c,`${key}-${i}`))
     if (n.type === 'text') {
       let result:ReactNode=renderText(n.text ?? '')
@@ -110,6 +111,14 @@ export default function NoteBlockViewer({doc,renderText}:{doc:JSONContent;render
     }
     switch(n.type) {
       case 'noteAccordion': return <NoteAccordionView key={key} title={n.content?.[0]?.content?.map((c,i)=>render(c,`${key}-title-${i}`)) || '…'}>{n.content?.[1]?.content?.map((c,i)=>render(c,`${key}-body-${i}`))}</NoteAccordionView>
+      case 'noteCallout': return <aside key={key} className="note-callout" data-variant={n.attrs?.variant === 'warning' ? 'warning' : 'tip'}>{children}</aside>
+      case 'noteCard': return <NoteCardView key={key} kind={n.attrs!.kind} id={n.attrs!.id}/>
+      case 'table': return <div key={key} className="note-block-table"><table><tbody>{children}</tbody></table></div>
+      case 'tableRow': return <tr key={key}>{children}</tr>
+      case 'tableCell': return <td key={key} colSpan={n.attrs?.colspan} rowSpan={n.attrs?.rowspan}>{children}</td>
+      case 'tableHeader': return <th key={key} colSpan={n.attrs?.colspan} rowSpan={n.attrs?.rowspan}>{children}</th>
+      case 'taskList': return <ul key={key} data-type="taskList">{children}</ul>
+      case 'taskItem': return <li key={key} data-type="taskItem" data-checked={n.attrs?.checked === true}><label><input type="checkbox" checked={n.attrs?.checked === true} disabled readOnly/></label><div>{children}</div></li>
       case 'noteKeyword': return <NoteKeywordLabel key={key} id={n.attrs!.id}/>
       case 'noteGift': return <NoteGiftLabel key={key} id={n.attrs!.id} name={n.attrs?.name}/>
       case 'noteAsset': return <NoteAssetView key={key} kind={n.attrs!.kind} id={n.attrs!.id}/>

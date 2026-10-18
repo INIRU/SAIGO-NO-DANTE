@@ -51,7 +51,7 @@ export default function CollectionBoard({ data, filtered, counts, owned, sinner,
     <button key={id} type="button" className={styles.sinner} aria-pressed={sinner === id} onClick={() => onSinner(id)} data-complete={c.total > 0 && c.owned === c.total || undefined}>
       {logo ? <Image src={logo} alt="" width={32} height={32} /> : <span className={styles.allMark} aria-hidden="true">{c.total ? Math.round((c.owned / c.total) * 100) : 0}%</span>}
       <span className={styles.sinnerName}>{name}</span>
-      <span className={styles.bar}><span style={{ width: `${c.total ? (c.owned / c.total) * 100 : 0}%` }} /></span>
+      <span className={styles.bar}><span style={{ transform: `scaleX(${c.total ? c.owned / c.total : 0})` }} /></span>
       <span className={styles.count}>{c.owned}/{c.total}</span>
     </button>
   )

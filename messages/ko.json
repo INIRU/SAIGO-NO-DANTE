@@ -135,7 +135,12 @@
       "top": "맨 위로",
       "bottom": "본문 맨 아래로"
     },
-    "confirm": "확인"
+    "confirm": "확인",
+    "autosave": {
+      "title": "자동 저장된 편집 내용",
+      "restore": "복구",
+      "discard": "삭제"
+    }
   },
   "globalSearch": {
     "ariaLabel": "전역 검색",
@@ -143,9 +148,7 @@
     "clear": "검색어 지우기",
     "loading": "검색 중",
     "emptyPromptTitle": "검색어를 입력하세요",
-    "emptyPromptDescription": "이름 일부나 초성(ㄹㅈ), 영어·일본어 이름으로도 찾을 수 있어요.",
     "noResultsTitle": "검색 결과가 없습니다",
-    "noResultsDescription": "이름 일부나 초성으로 다시 찾아 보세요. \"이상 LCB\"처럼 수감자 이름을 함께 써도 됩니다.",
     "recentTitle": "최근 검색",
     "noResultsFor": "‘{query}’ 검색 결과가 없어요",
     "error": "검색하지 못했어요. 잠시 뒤 다시 시도해 주세요.",
@@ -1592,6 +1595,26 @@
           ]
         }
       }
+    },
+    "formationImport": {
+      "fromDeck": "내 덱에서 불러오기",
+      "fromPlan": "플랜에서 불러오기",
+      "decksTitle": "내 덱",
+      "plansTitle": "내 플랜",
+      "empty": "불러올 항목이 없어요",
+      "loginRequired": "로그인이 필요해요",
+      "close": "닫기",
+      "loadFailed": "불러오지 못했어요",
+      "replaceTitle": "편성을 바꿀까요?",
+      "replaceConfirm": "바꾸기",
+      "applied": "편성을 불러왔어요",
+      "untitled": "제목 없음"
+    },
+    "floorCopy": {
+      "copyPrevious": "이전 층 복사",
+      "copied": "{floor}층 기프트를 복사했어요",
+      "replaceTitle": "기프트를 바꿀까요?",
+      "replaceConfirm": "바꾸기"
     }
   },
   "sinner": {
@@ -1660,7 +1683,8 @@
     "onlyFloor": "이 층에서 얻을 수 있는 기프트만",
     "close": "닫기",
     "empty": "고를 수 있는 기프트가 없어요",
-    "onlyThisFloor": "이 층에서만 얻을 수 있음"
+    "onlyThisFloor": "이 층에서만 얻을 수 있음",
+    "recent": "최근 사용"
   },
   "mypage": {
     "title": "마이 페이지"
@@ -1969,8 +1993,6 @@
       "saved": "저장했습니다",
       "saveFailed": "저장하지 못했습니다"
     }
-
-
   },
   "ego": {
     "resistance": "죄악 내성",
@@ -2665,5 +2687,41 @@
       "empty": "신고된 글이 없습니다.",
       "done": "처리했습니다."
     }
+  },
+  "series": {
+    "back": "돌아가기",
+    "title": "시리즈",
+    "deck": "덱",
+    "plan": "플랜",
+    "prev": "이전 글",
+    "next": "다음 글",
+    "viewAll": "시리즈 전체 보기",
+    "list": "목록",
+    "none": "없음",
+    "count": "{count}개",
+    "picker": {
+      "label": "시리즈",
+      "choose": "시리즈 선택",
+      "create": "새 시리즈",
+      "titlePlaceholder": "시리즈 제목",
+      "add": "만들기",
+      "createFailed": "시리즈를 만들지 못했습니다",
+      "loadFailed": "시리즈를 불러오지 못했습니다"
+    },
+    "owner": {
+      "reorder": "순서 변경",
+      "rename": "이름 변경",
+      "delete": "시리즈 삭제",
+      "deleteMessage": "시리즈를 삭제할까요? 글은 그대로 남습니다.",
+      "moveUp": "위로",
+      "moveDown": "아래로",
+      "saved": "저장했습니다",
+      "saveFailed": "저장하지 못했습니다",
+      "deleted": "시리즈를 삭제했습니다",
+      "deleteFailed": "삭제하지 못했습니다"
+    },
+    "empty": "글이 없습니다",
+    "metaTitle": "{title} | 시리즈",
+    "notFound": "시리즈를 찾을 수 없습니다"
   }
 }

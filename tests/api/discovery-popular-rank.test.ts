@@ -25,7 +25,7 @@ vi.mock('next/cache', () => ({ cacheLife: vi.fn(), cacheTag: vi.fn() }))
 vi.mock('@/lib/supabase/admin', () => ({
   createAdminClient: () => ({
     schema: () => ({
-      rpc: async (name: string) => ({ data: name === 'discovery_counts' ? counts : [], error: null }),
+      rpc: async (name: string) => ({ data: name === 'discovery_counts_since' ? counts : [], error: null }),
       from: () => ({
         select: () => ({
           order: () => ({ limit: async () => ({ data: [], error: null }) }),

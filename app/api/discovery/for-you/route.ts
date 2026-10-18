@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { discoveryUserId } from "@/lib/discovery/user-id";
+import { popularSince } from "@/lib/discovery/update-window";
 import { CACHE_TAGS } from "@/lib/constants/cache-tags";
 import {
   DISCOVERY_COLUMNS,
@@ -18,15 +19,15 @@ import {
 const headers = { "Cache-Control": "private, no-store" };
 type Row = { id: string };
 
-// Shared candidate pool (no user data): latest posts plus the month's most visited ones.
-async function pool(kind: DiscoveryKind) {
+// Shared candidate pool (no user data): latest posts plus the last four update weeks' most visited ones.
+async function pool(kind: DiscoveryKind, since: string | null) {
   "use cache";
   cacheLife("minutes");
   cacheTag(kind === "deck" ? CACHE_TAGS.decksList : CACHE_TAGS.plansList);
   const db = createAdminClient().schema("limbus");
   const [latest, counts] = await Promise.all([
     db.from(DISCOVERY_TABLE[kind]).select(DISCOVERY_COLUMNS[kind]).order("created_at", { ascending: false }).limit(60),
-    db.rpc("discovery_counts", { days: 30 }),
+    db.rpc("discovery_counts_since", { since }),
   ]);
   if (latest.error || counts.error) throw Error("Pool unavailable");
   const popularIds = (counts.data as { kind: string; entity_id: string }[])
@@ -67,7 +68,7 @@ export async function GET(request: Request) {
       identityIds.length ? db.from("identities").select("id,sinner_id").in("id", identityIds) : none,
       deckIds.length ? db.from("decks").select(DISCOVERY_COLUMNS.deck).in("id", deckIds) : none,
       planIds.length ? db.from("md_plans").select(DISCOVERY_COLUMNS.planner).in("id", planIds) : none,
-      pool(kind),
+      pool(kind, popularSince("month")),
     ]);
     if (identities.error || decks.error || plans.error) throw Error("Unavailable");
     // Sinners count only from identity pages: every lineup covers most sinners, so post sinners would drown out real matches.

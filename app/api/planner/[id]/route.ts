@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { revalidateTag } from 'next/cache'
+import { revalidatePostSeries, saveSeriesChoice } from '@/lib/series/server'
 import { ownsPost, resolveAuthor } from '@/lib/guest/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
@@ -77,6 +78,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const { error } = await admin.schema('limbus').from('md_plans').update(updates).eq('id', id)
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
+    const seriesError = await saveSeriesChoice(admin, { kind: 'plan', postId: id, userId, body })
+    if (seriesError) return seriesError
+
     await writeAuditLog({
       actorId: userId,
       action: 'planner_update',
@@ -109,6 +113,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
     if (planError) return NextResponse.json({ error: planError.message }, { status: 500 })
     if (!plan || !(await ownsPost(admin, author, 'plan', plan))) return NextResponse.json({ error: '권한이 없습니다' }, { status: 403 })
 
+    await revalidatePostSeries(admin, 'plan', id)
     const { error } = await admin.schema('limbus').from('md_plans').delete().eq('id', id)
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 

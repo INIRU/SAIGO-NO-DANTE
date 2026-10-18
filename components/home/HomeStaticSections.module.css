@@ -6,7 +6,7 @@
 .textLink { display: inline-flex; flex-shrink: 0; align-items: center; gap: .375rem; min-height: 2.75rem; color: var(--gold); font-size: .875rem; font-weight: 500; }
 .textLink svg { transition: transform 200ms ease; }
 .textLink:hover { color: var(--gold-light); }
-.textLink:hover svg { transform: translate(.125rem, -.125rem); }
+@media (hover: hover) { .textLink:hover svg { transform: translate(.125rem, -.125rem); } }
 .content a:focus-visible { outline: 2px solid var(--gold); outline-offset: 4px; border-radius: .25rem; }
 
 /* 신규 인격·E.G.O */
@@ -15,7 +15,7 @@
 .egos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
 .release { display: flex; min-width: 0; flex-direction: column; align-items: center; }
 a.release { transition: transform 200ms ease; }
-a.release:hover { transform: translateY(-.1875rem); }
+@media (hover: hover) { a.release:hover { transform: translateY(-.1875rem); } }
 .sinnerName { margin-top: .625rem; font-size: .8125rem; color: var(--text-secondary); text-align: center; }
 
 /* 커뮤니티 */

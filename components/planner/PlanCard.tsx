@@ -92,7 +92,7 @@ function PlanCard({
     <article
       className="board-card group relative flex flex-col h-full overflow-hidden"
     >
-      <Link href={`/planner/community/${plan.id}`} className="flex flex-col flex-1">
+      <Link href={`/planner/community/${plan.id}`} prefetch={false} className="flex flex-col flex-1">
         <FormationThumbnail slots={Array.isArray(plan.deck) ? plan.deck : []} missing={missing} />
         <OwnedBadge missing={missing} />
 

@@ -1,7 +1,7 @@
 import { createWorker, PSM } from 'tesseract.js'
 import * as ort from 'onnxruntime-web/webgpu'
 import { popupEffectBox, popupHeaderBox, popupPlateUnit } from './popup-detect'
-import { ASSIST_RUNTIME_ROOT, assistModelRoot } from './model-assets'
+import { ASSIST_RUNTIME_ROOT, assistModelRoot, assistRuntimeDataRoot, ortWasmPaths } from './model-assets'
 import { popupHeaderEvidence } from './popup-evidence'
 import { explorationFloor } from './exploration-match'
 import { ctcDecode, ctcLexiconBest, detSize, detTensor, fillRecLine, joinRowLines, lexiconEntries, mergeTileRects, paddleRetryDelay, recAlphabet,
@@ -35,8 +35,10 @@ type Response =
   | { type: 'disposed' }
   | { type: 'backend'; engine: 'paddle' | 'tesseract'; adapter: string; loading: boolean; reason?: string }
 
-// Tesseract (worker script, core, language data) is served by the site itself; the PaddleOCR models come from model-assets.
+// Tesseract's scripts (worker, core) are served by the site itself, its language data comes from Storage on a deployed
+// site; the PaddleOCR models come from model-assets.
 const ROOT = `${ASSIST_RUNTIME_ROOT}/assist-ocr`
+const DATA_ROOT = assistRuntimeDataRoot(self.location.hostname)
 const LANGUAGES: Record<Language, string> = { ko: 'kor+eng', en: 'eng', ja: 'jpn+eng' }
 let reader: Awaited<ReturnType<typeof createWorker>> | null = null
 let busy = false
@@ -246,7 +248,7 @@ async function loadPaddle() {
   try {
     ort.env.wasm.numThreads = 1
     // ONNX Runtime's WebGPU build ships its runtime with the scene worker assets.
-    ort.env.wasm.wasmPaths = `${ASSIST_RUNTIME_ROOT}/assist-scene/`
+    ort.env.wasm.wasmPaths = ortWasmPaths(self.location.hostname)
     const response = await fetch(`${REC_ROOTS[language]}/dict.json`)
     if (!response.ok) throw new Error('OCR dictionary unavailable')
     const alphabet = recAlphabet(await response.json())
@@ -499,7 +501,7 @@ self.onmessage = async (event: MessageEvent<Request>) => {
       const created = await createWorker(LANGUAGES[request.language], 1, {
         workerPath: `${ROOT}/tesseract-worker.min.js`,
         corePath: `${ROOT}/core`,
-        langPath: `${ROOT}/lang`,
+        langPath: `${DATA_ROOT}/assist-ocr/lang`,
         workerBlobURL: false,
         cacheMethod: 'none',
       })

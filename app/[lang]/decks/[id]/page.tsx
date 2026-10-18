@@ -13,7 +13,10 @@ import { THEME_KEYWORDS, normalizeThemeKeyword } from '@/lib/constants/keywords'
 import DeckDetailClient from './DeckDetailClient'
 import DeckDetailSkeleton from '@/components/decks/DeckDetailSkeleton'
 import { isAwakenedUptie } from '@/lib/decks/deck-identity-uptie'
+import { trimDeckIdentity } from '@/lib/decks/trim-deck-identity'
 import { withPostAuthors } from '@/lib/community/post-authors'
+import { loadSeriesOfPost } from '@/lib/series/server'
+import type { SeriesView } from '@/lib/series/order'
 import type { IdentitySlot, IdentityDetail } from '@/components/deck-detail/DeckIdentityCard'
 import type { DeckRecommendationSummary, DeckRecommendationsData } from '@/components/deck-detail/DeckRecommendations'
 
@@ -89,6 +92,7 @@ type DeckRecommendationIdentity = {
   folder_name: string | null
   game_id: string | null
   keywords: string[] | null
+  skill_keyword_list?: string[] | null
   name: string | null
   name_kr: string | null
   name_en: string | null
@@ -232,6 +236,13 @@ function getUsername(profiles: RecommendationSourceDeck['profiles']): string | u
   return unwrapOne(profiles)?.username ?? undefined
 }
 
+/** DeckCard reads only these identity fields; the candidate query also loads affiliation/association lists. */
+function pickRecommendationIdentity(identity: DeckRecommendationIdentity | null): DeckRecommendationIdentity | null {
+  if (!identity) return null
+  const { id, sinner_id, folder_name, game_id, keywords, skill_keyword_list, name, name_kr, name_en, name_jp } = identity
+  return { id, sinner_id, folder_name, game_id, keywords, skill_keyword_list, name, name_kr, name_en, name_jp }
+}
+
 function toRecommendationSummary(deck: RecommendationSourceDeck): DeckRecommendationSummary {
   return {
     id: deck.id,
@@ -249,7 +260,7 @@ function toRecommendationSummary(deck: RecommendationSourceDeck): DeckRecommenda
     deck_identities: (deck.deck_identities ?? []).map((slot) => ({
       slot_order: slot.slot_order ?? 99,
       gacksung: slot.gacksung ?? false,
-      identities: unwrapOne(slot.identities),
+      identities: pickRecommendationIdentity(unwrapOne(slot.identities)),
     })),
     deck_egos: (deck.deck_egos ?? [])
       .filter((ego): ego is { ego_id: string } => typeof ego.ego_id === 'string')
@@ -561,6 +572,7 @@ async function getCachedDeckDetailPayload(lang: 'ko' | 'en' | 'ja', id: string) 
   let initialDeck = null
   let initialComments: Comment[] = []
   let initialRecommendations: DeckRecommendationsData = EMPTY_RECOMMENDATIONS
+  let initialSeries: SeriesView | null = null
 
   try {
     const supabase = createDeckReadClient()
@@ -610,6 +622,9 @@ async function getCachedDeckDetailPayload(lang: 'ko' | 'en' | 'ja', id: string) 
       })
     }
     if (data) {
+      // A series change revalidates its own tag (and the tag of each post it adds or drops), as does a member's new title.
+      initialSeries = await loadSeriesOfPost(supabase, 'deck', id).catch(() => null)
+      if (initialSeries) cacheTag(CACHE_TAGS.series(initialSeries.id))
       initialRecommendations = await fetchDeckRecommendations(
         supabase,
         lang,
@@ -626,9 +641,13 @@ async function getCachedDeckDetailPayload(lang: 'ko' | 'en' | 'ja', id: string) 
           ...slot,
           // Art follows uptie (III–IV awakened).
           gacksung: isAwakenedUptie(slot.uptie),
-          identities: Array.isArray(slot.identities)
-            ? ((slot.identities[0] as IdentityDetail | undefined) ?? null)
-            : (slot.identities as unknown as IdentityDetail | null),
+          identities: (() => {
+            const identity = Array.isArray(slot.identities)
+              ? ((slot.identities[0] as IdentityDetail | undefined) ?? null)
+              : (slot.identities as unknown as IdentityDetail | null)
+            // Only the skill/passive rows and the language this page renders go to the browser.
+            return identity ? trimDeckIdentity(identity, slot.uptie ?? 4, lang) : null
+          })(),
         })) as IdentitySlot[]
 
       sortedIdentities.sort((a, b) => {
@@ -688,6 +707,7 @@ async function getCachedDeckDetailPayload(lang: 'ko' | 'en' | 'ja', id: string) 
     initialDeck,
     initialComments,
     initialRecommendations,
+    initialSeries,
   }
 }
 
@@ -706,6 +726,7 @@ async function DeckDetailRuntime({ params }: Props) {
     initialDeck,
     initialComments,
     initialRecommendations,
+    initialSeries,
   } = await getCachedDeckDetailPayload(lang, id)
 
   return (
@@ -723,6 +744,7 @@ async function DeckDetailRuntime({ params }: Props) {
           initialDeck={initialDeck}
           initialComments={initialComments}
           initialRecommendations={initialRecommendations}
+          initialSeries={initialSeries}
         />
       </Suspense>
     </>
