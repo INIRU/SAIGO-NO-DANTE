@@ -2,6 +2,8 @@ import type { Metadata } from 'next'
 import { pageMetadata } from '@/lib/seo/metadata'
 import { getTranslations } from 'next-intl/server'
 import BoardHeader from '@/components/discovery/BoardHeader'
+import { loadInitialShelf } from '@/lib/discovery/initial-shelf'
+import type { InitialShelf } from '@/components/discovery/DiscoveryShelf'
 import DecksClient from './DecksClient'
 import StaticQueryAdapter from '@/components/providers/StaticQueryAdapter'
 import { BoardShelfSkeleton } from '@/components/discovery/BoardSkeleton'
@@ -21,13 +23,15 @@ export default async function DecksPage({ params }: { params: Promise<{ lang: st
     newDeck: t('newDeck'),
   }
 
+  const initialShelf = (await loadInitialShelf('deck')) as InitialShelf | undefined
+
   return (
     <div className="community-board flex min-h-screen flex-col" style={{ background: 'var(--bg-deep)' }}>
       <BoardHeader kind="deck" lang={routeLang} title={headerCopy.title} subtitle={headerCopy.subtitle} action={headerCopy.newDeck} />
       <StaticQueryAdapter fallback={<BoardShelfSkeleton kind="deck" />}>
-        {/* No list is prerendered: the default view is the discovery shelf, and a list in the page would regenerate it on
-            every vote, comment and post (decksList tag). The client loads the list when browsing or filtering. */}
-        <DecksClient />
+        {/* The default view is the discovery shelf: its first page is in the HTML (initialShelf, a minutes-long cache entry);
+            the full list is not prerendered, the client loads it when browsing or filtering. */}
+        <DecksClient initialShelf={initialShelf} />
       </StaticQueryAdapter>
     </div>
   )
