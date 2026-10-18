@@ -47,7 +47,7 @@ type ShareImage = { url: string; width?: number; height?: number; alt?: string }
  * `title` is the bare page title (the layout template appends the site name). The share title, description and image
  * default to the page's own and the site-wide image.
  */
-export function pageMetadata({ lang, path, title, description, ogTitle = title, ogDescription = description, image, type = 'website' }: {
+export function pageMetadata({ lang, path, title, description, ogTitle = title, ogDescription = description, image, type = 'website', noindex = false }: {
   lang: string
   /** Route without the locale, e.g. '/decks'. */
   path: string
@@ -57,6 +57,8 @@ export function pageMetadata({ lang, path, title, description, ogTitle = title, 
   ogDescription?: string
   image?: ShareImage
   type?: 'website' | 'article'
+  /** Personal or empty-for-crawlers screens: kept out of the index, links on them still followed. */
+  noindex?: boolean
 }): Metadata {
   const locale = seoLang(lang)
   const images = [image ?? { url: localeUrl(lang, '/opengraph-image'), width: 1200, height: 630 }]
@@ -64,6 +66,7 @@ export function pageMetadata({ lang, path, title, description, ogTitle = title, 
     title,
     description,
     alternates: localeAlternates(lang, path),
+    ...(noindex ? { robots: { index: false, follow: true } } : {}),
     openGraph: { type, locale: OG_LOCALE[locale], siteName: SITE_NAME[locale], url: localeUrl(lang, path), title: ogTitle, description: ogDescription, images },
     twitter: { card: 'summary_large_image', title: ogTitle, description: ogDescription, images: images.map(shared => shared.url) },
   }

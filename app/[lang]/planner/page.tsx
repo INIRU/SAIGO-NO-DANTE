@@ -17,7 +17,7 @@ import StaticQueryAdapter from '@/components/providers/StaticQueryAdapter'
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params
   const t = await getTranslations({ locale: lang, namespace: 'planner' })
-  return pageMetadata({ lang, path: '/planner', title: t('metaTitle'), description: t('metaDescription') })
+  return pageMetadata({ lang, path: '/planner', noindex: true, title: t('metaTitle'), description: t('metaDescription') })
 }
 
 async function fetchPlannerStaticData() {
