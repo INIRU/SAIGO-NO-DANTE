@@ -24,7 +24,7 @@ function Shelf<T extends { id: string | number }>({ kind, id, href, copy, card }
   kind: 'deck' | 'planner'; id: string; href: string; copy: ShelfCopy; card: (post: T) => React.ReactNode
 }) {
   // Same request as the board's discovery shelf, so the CDN copy and the SWR cache are shared.
-  const { data, error } = useSWR(`/api/discovery?kind=${kind}&days=7`, fetchFeed<T>)
+  const { data, error } = useSWR(`/api/discovery?kind=${kind}&period=week`, fetchFeed<T>)
   const shelf = data && pickShelf(data)
   if (error || shelf?.posts.length === 0) return null
   const headingId = `home-${id}-heading`
