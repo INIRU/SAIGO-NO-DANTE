@@ -14,6 +14,8 @@ import DeckDetailClient from './DeckDetailClient'
 import DeckDetailSkeleton from '@/components/decks/DeckDetailSkeleton'
 import { isAwakenedUptie } from '@/lib/decks/deck-identity-uptie'
 import { withPostAuthors } from '@/lib/community/post-authors'
+import { loadSeriesOfPost } from '@/lib/series/server'
+import type { SeriesView } from '@/lib/series/order'
 import type { IdentitySlot, IdentityDetail } from '@/components/deck-detail/DeckIdentityCard'
 import type { DeckRecommendationSummary, DeckRecommendationsData } from '@/components/deck-detail/DeckRecommendations'
 
@@ -561,6 +563,7 @@ async function getCachedDeckDetailPayload(lang: 'ko' | 'en' | 'ja', id: string) 
   let initialDeck = null
   let initialComments: Comment[] = []
   let initialRecommendations: DeckRecommendationsData = EMPTY_RECOMMENDATIONS
+  let initialSeries: SeriesView | null = null
 
   try {
     const supabase = createDeckReadClient()
@@ -610,6 +613,9 @@ async function getCachedDeckDetailPayload(lang: 'ko' | 'en' | 'ja', id: string) 
       })
     }
     if (data) {
+      // A series change revalidates its own tag (and the tag of each post it adds or drops), as does a member's new title.
+      initialSeries = await loadSeriesOfPost(supabase, 'deck', id).catch(() => null)
+      if (initialSeries) cacheTag(CACHE_TAGS.series(initialSeries.id))
       initialRecommendations = await fetchDeckRecommendations(
         supabase,
         lang,
@@ -688,6 +694,7 @@ async function getCachedDeckDetailPayload(lang: 'ko' | 'en' | 'ja', id: string) 
     initialDeck,
     initialComments,
     initialRecommendations,
+    initialSeries,
   }
 }
 
@@ -706,6 +713,7 @@ async function DeckDetailRuntime({ params }: Props) {
     initialDeck,
     initialComments,
     initialRecommendations,
+    initialSeries,
   } = await getCachedDeckDetailPayload(lang, id)
 
   return (
@@ -723,6 +731,7 @@ async function DeckDetailRuntime({ params }: Props) {
           initialDeck={initialDeck}
           initialComments={initialComments}
           initialRecommendations={initialRecommendations}
+          initialSeries={initialSeries}
         />
       </Suspense>
     </>

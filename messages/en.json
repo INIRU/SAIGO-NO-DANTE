@@ -1969,8 +1969,6 @@
       "saved": "Saved",
       "saveFailed": "Could not save"
     }
-
-
   },
   "ego": {
     "resistance": "Sin Resistance",
@@ -2665,5 +2663,40 @@
       "empty": "No reported posts.",
       "done": "Done."
     }
+  },
+  "series": {
+    "title": "Series",
+    "deck": "Deck",
+    "plan": "Plan",
+    "prev": "Previous",
+    "next": "Next",
+    "viewAll": "View whole series",
+    "list": "List",
+    "none": "None",
+    "count": "{count}",
+    "picker": {
+      "label": "Series",
+      "choose": "Choose series",
+      "create": "New series",
+      "titlePlaceholder": "Series title",
+      "add": "Create",
+      "createFailed": "Could not create the series",
+      "loadFailed": "Could not load series"
+    },
+    "owner": {
+      "reorder": "Reorder",
+      "rename": "Rename",
+      "delete": "Delete series",
+      "deleteMessage": "Delete this series? The posts stay.",
+      "moveUp": "Move up",
+      "moveDown": "Move down",
+      "saved": "Saved",
+      "saveFailed": "Could not save",
+      "deleted": "Series deleted",
+      "deleteFailed": "Could not delete"
+    },
+    "empty": "No posts",
+    "metaTitle": "{title} | Series",
+    "notFound": "Series not found"
   }
 }
