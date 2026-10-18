@@ -227,6 +227,7 @@ export default function IdentityBrowserClient({ identities, sinners }: Props) {
                 >
                   <Link
                     href={`/sinners/${id.sinner_slug}/identities/${id.id}`}
+                    prefetch={false}
                     aria-label={getLocalizedName({ name_kr: id.name_kr || id.name, name_en: id.name_en, name_jp: id.name_jp }, lang)}
                   >
                     <IdentityCard
