@@ -26,6 +26,8 @@ export type CommunityProfile = {
   decks: DeckSummary[];
   /** The latest plans, in the plan board's card shape. */
   plans: PlanSummary[];
+  /** Series with at least one post, newest first. */
+  series?: { id: string; title: string; count: number }[];
   /** Easter eggs found on the account (any browser). */
   eggs: EasterEgg[];
 };

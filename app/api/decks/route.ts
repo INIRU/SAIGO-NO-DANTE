@@ -3,6 +3,7 @@ import { notePlainText } from '@/lib/notes/blocks'
 import { authorColumns, authorRateKey, guestPinOf, recordGuestAuthorship, resolveAuthor } from '@/lib/guest/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { revalidatePath, revalidateTag } from 'next/cache'
+import { saveSeriesChoice } from '@/lib/series/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { withPostAuthors } from '@/lib/community/post-authors'
@@ -592,6 +593,9 @@ export async function POST(request: NextRequest) {
       await admin.schema('limbus').from('decks').delete().eq('id', deck.id)
       return NextResponse.json({ error: '덱을 저장하지 못했습니다. 다시 시도해주세요.' }, { status: 500 })
     }
+
+    const seriesError = await saveSeriesChoice(admin, { kind: 'deck', postId: deck.id, userId, body })
+    if (seriesError) return seriesError
 
     await writeAuditLog({
       actorId: userId,

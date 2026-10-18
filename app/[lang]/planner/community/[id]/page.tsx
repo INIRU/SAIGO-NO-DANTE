@@ -16,6 +16,7 @@ import { cacheLife, cacheTag } from 'next/cache'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import { withoutOtherLocales } from '@/lib/i18n/strip-locales'
 import type { MdEvent, MdEventChoice } from '@/components/mirror-dungeon/types'
+import { loadSeriesOfPost } from '@/lib/series/server'
 import PlanDetailClient from './PlanDetailClient'
 import PlanDetailSkeleton from './PlanDetailSkeleton'
 
@@ -118,7 +119,11 @@ export default async function PlanDetailPage({ params }: Props) {
   const supabase = await createClient()
 
   // 플랜과 캐시된 게임 데이터를 함께 읽고, 스킬·패시브만 편성 인격 기준으로 한 번 더 읽는다(DB 왕복 4번 → 2번)
-  const [plan, game] = await Promise.all([fetchFullPlan(id), fetchPlanDetailGameData()])
+  const [plan, game, series] = await Promise.all([
+    fetchFullPlan(id),
+    fetchPlanDetailGameData(),
+    loadSeriesOfPost(supabase, 'plan', id).catch(() => null),
+  ])
   if (!plan) notFound()
   const planGiftIds = [...new Set((Array.isArray(plan.floor_plan) ? plan.floor_plan : [])
     .flatMap((entry: { gift_ids?: unknown }) => Array.isArray(entry?.gift_ids) ? entry.gift_ids.map(Number) : [])
@@ -158,6 +163,7 @@ export default async function PlanDetailPage({ params }: Props) {
     <Suspense fallback={<PlanDetailSkeleton />}>
       <PlanDetailClient
         plan={plan as any}
+        series={series}
         themes={themes}
         gifts={gifts}
         recipes={used.recipes}

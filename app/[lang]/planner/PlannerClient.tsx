@@ -30,6 +30,7 @@ import TempSaveMenu from '@/components/ui/TempSaveMenu'
 import AutosaveRestoreModal from '@/components/ui/AutosaveRestoreModal'
 import { useAutosaveDraft } from '@/hooks/useAutosaveDraft'
 import { autosaveKey } from '@/lib/drafts/autosave'
+import SeriesPicker from '@/components/series/SeriesPicker'
 import { workbenchReveal } from '@/lib/animations'
 
 interface Props {
@@ -119,6 +120,8 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
   const [uploading, setUploading] = useState(false)
   const [uploaded, setUploaded] = useState(false)
   const [pin, setPin] = useState('')
+  // undefined: the author did not touch the series picker, so the plan's series stays as it is
+  const [seriesChoice, setSeriesChoice] = useState<string | null | undefined>(undefined)
   const [editId, setEditId] = useState<string | null>(null)
   const [editResolved, setEditResolved] = useState(false)
   const [autosaveEnabled, setAutosaveEnabled] = useState(true)
@@ -249,6 +252,7 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
         floor_plan: state.floorPlan,
         gift_inventory: state.giftInventory,
         tags: state.mainKeywords ?? [],
+        ...(seriesChoice !== undefined ? { series_id: seriesChoice } : {}),
       }
       const url = editId ? `/api/planner/${editId}` : '/api/planner'
       const method = editId ? 'PATCH' : 'POST'
@@ -460,6 +464,7 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
               {copied ? <Check size={12} /> : <Copy size={12} />}
               {copied ? tPlanner('actions.copied') : tPlanner('actions.copyUrl')}
             </button>
+            <SeriesPicker kind="plan" postId={editId ?? undefined} onChange={setSeriesChoice} />
             <TempSaveMenu title={tTempSaves('menuLabel')} slots={tempSlots} onSave={handleSaveTempSlot} onLoad={handleLoadTempSlot} onDelete={handleDeleteTempSlot} />
             <button
               onClick={handleUpload}

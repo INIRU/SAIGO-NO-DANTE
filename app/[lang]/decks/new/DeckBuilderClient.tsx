@@ -13,6 +13,7 @@ import TempSaveMenu from '@/components/ui/TempSaveMenu'
 import AutosaveRestoreModal from '@/components/ui/AutosaveRestoreModal'
 import { useAutosaveDraft } from '@/hooks/useAutosaveDraft'
 import { autosaveKey } from '@/lib/drafts/autosave'
+import SeriesPicker from '@/components/series/SeriesPicker'
 
 import { useState, useMemo, useEffect } from 'react'
 import dynamic from 'next/dynamic'
@@ -186,6 +187,8 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
   const [mainKeywordsManual, setMainKeywordsManual] = useState(() => Array.isArray(initData?.mainKeywords))
   const [saving, setSaving] = useState(false)
   const [pin, setPin] = useState('')
+  // undefined: the author did not touch the series picker, so the deck's series stays as it is
+  const [seriesChoice, setSeriesChoice] = useState<string | null | undefined>(undefined)
   // toast는 Sonner가 글로벌로 처리 (showError from lib/toast)
   const [descPreview, setDescPreview] = useState(false)
   const [gacksungSlots, setGacksungSlots] = useState<Record<string, boolean>>(initData?.gacksungSlots ?? {})
@@ -374,7 +377,7 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
     const res = await fetch(url, {
       method,
       headers: { 'Content-Type': 'application/json', ...guestHeaders(signedIn) },
-      body: JSON.stringify({ title, description, tags: [], main_keywords: effectiveMainKeywords, content_type: contentType, identitySlots, egoSlots: egoRows, ...(needsPin ? { pin } : {}) }),
+      body: JSON.stringify({ title, description, tags: [], main_keywords: effectiveMainKeywords, content_type: contentType, identitySlots, egoSlots: egoRows, ...(needsPin ? { pin } : {}), ...(seriesChoice !== undefined ? { series_id: seriesChoice } : {}) }),
     })
     setSaving(false)
     if (res.ok) {
@@ -564,6 +567,7 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
                   {codeError && <span role="alert" className="deck-workspace-code-error">{builderT('fields.codeError')}</span>}
                 </div>
                 <CompactButton icon={Download} onClick={() => setImportOpen(true)} variant="muted">{tImport('fromPlan')}</CompactButton>
+                <SeriesPicker kind="deck" postId={editMode?.deckId} onChange={setSeriesChoice} />
                 <TempSaveMenu title={tTempSaves('deckMenuLabel')} slots={draftSlots} onSave={handleSaveDraft} onLoad={handleLoadDraft} onDelete={handleDeleteDraft} />
                 <CompactButton
                   icon={codeCopied ? Check : Copy}
