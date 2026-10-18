@@ -15,6 +15,9 @@ vi.mock('@/app/[lang]/login/LoginClient', () => ({ default: () => null }))
 vi.mock('@/app/[lang]/mypage/MypageClient', () => ({ default: () => null, MypageSkeleton: () => null }))
 vi.mock('@/app/[lang]/decks/[id]/edit/EditWrapper', () => ({ default: () => null }))
 vi.mock('@/app/[lang]/friends/new/ComposeClient', () => ({ default: () => null }))
+vi.mock('@/app/[lang]/collection/CollectionClient', () => ({ default: () => null }))
+vi.mock('@/app/[lang]/friends/FriendsClient', () => ({ default: () => null }))
+vi.mock('@/app/[lang]/planner/PlannerClient', () => ({ default: () => null }))
 vi.mock('@/components/admin/AdminNavigation', () => ({ default: () => null }))
 vi.mock('@/components/providers/WithSectionMessages', () => ({ default: () => null }))
 vi.mock('@/components/layout/RequestTimeRoute', () => ({ default: () => null }))
@@ -37,6 +40,11 @@ describe('REQ-SHARED-037 screens kept out of the index', () => {
     ['admin', () => import('@/app/[lang]/admin/layout')],
     ['unknown address', () => import('@/app/[lang]/[...rest]/page')],
     ['404', () => import('@/app/[lang]/not-found')],
+    ['collection', () => import('@/app/[lang]/collection/page')],
+    ['friend code board', () => import('@/app/[lang]/friends/page')],
+    ['planner editor', () => import('@/app/[lang]/planner/page')],
+    ['planner run', () => import('@/app/[lang]/planner/run/page')],
+    ['random', () => import('@/app/[lang]/random/page')],
   ] as [string, () => Promise<RouteModule>][])('REQ-SHARED-037 %s answers with noindex and its own title', async (_name, load) => {
     const metadata = await metadataOf(await load())
     expect(metadata?.robots).toMatchObject({ index: false })

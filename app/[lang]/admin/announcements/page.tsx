@@ -217,7 +217,7 @@ export default function AdminAnnouncements() {
                       {i.popup && (
                         <Megaphone size={12} aria-label={ko ? '팝업 공지' : ja ? 'ポップアップ' : 'Popup'} />
                       )}
-                      <time>{new Date(i.updated_at ?? i.created_at).toLocaleDateString(locale)}</time>
+                      <time>{new Date(i.created_at).toLocaleDateString(locale)}</time>
                     </span>
                   </button>
                 </li>

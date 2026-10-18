@@ -44,8 +44,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const planRows: Row[] = plans ?? []
   const gameDataDate = latest([...identityRows, ...egoRows], 'release_date')
 
-  // Left out: pages kept out of the index (login, my page, writing and editing screens) and /decks/new, /developers,
-  // which are not decided yet. /planner is open to guests, so it is listed.
+  // Left out: pages kept out of the index (login, my page, writing and editing screens, and the personal or crawler-empty
+  // /collection, /friends, /planner editor, /planner/run, /random) and /decks/new, /developers, which are not decided yet.
   return [
     entry('/', gameDataDate),
     entry('/sinners', gameDataDate),
@@ -53,16 +53,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     entry('/sinners/ego', latest(egoRows, 'release_date')),
     entry('/decks', latest(deckRows, 'updated_at')),
     entry('/mirror-dungeon'),
-    entry('/planner'),
     entry('/planner/community', latest(planRows, 'updated_at')),
-    entry('/planner/run'),
     entry('/keywords'),
     entry('/meta'),
-    entry('/collection', gameDataDate),
-    entry('/friends'),
     entry('/calendar'),
     entry('/announcements'),
-    entry('/random'),
     entry('/tools/experience'),
     entry('/tools/lunacy'),
     entry('/tools/damage'),

@@ -13,7 +13,7 @@ export async function GET() {
     .schema('limbus')
     .from('announcements')
     .select('*')
-    .order('updated_at', { ascending: false })
+    .order('created_at', { ascending: false })
     .limit(200)
   return error
     ? NextResponse.json(
