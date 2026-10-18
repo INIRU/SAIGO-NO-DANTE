@@ -1,4 +1,6 @@
-import { Suspense } from 'react'
+import { Suspense, type CSSProperties } from 'react'
+import Image from 'next/image'
+import { ArrowLeft, Layers, Map as MapIcon } from 'lucide-react'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { cacheLife, cacheTag } from 'next/cache'
@@ -8,6 +10,9 @@ import { z } from 'zod'
 import DeckCard from '@/components/decks/DeckCard'
 import PlanCard from '@/components/planner/PlanCard'
 import PostAuthorName from '@/components/community/PostAuthorName'
+import BackLink from '@/components/navigation/BackLink'
+import styles from '@/components/series/SeriesPage.module.css'
+import { DEFAULT_AVATAR_URL } from '@/lib/constants/game'
 import SeriesOwnerTools from '@/components/series/SeriesOwnerTools'
 import SeriesPageSkeleton from '@/components/series/SeriesPageSkeleton'
 import { withPostAuthors } from '@/lib/community/post-authors'
@@ -48,30 +53,50 @@ async function SeriesContent({ params }: Props) {
   const page = await getCachedSeriesPage(id)
   if (!page) notFound()
   const { series, cards, owner } = page
+  const deckCount = cards.filter(card => card.kind === 'deck').length
   return (
     <div className="min-h-screen bg-[#0d0b08] pt-24 pb-20">
-      <div className="mx-auto grid w-full max-w-7xl gap-5 px-3 sm:px-6">
-        <header className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
+      <div className="mx-auto w-full max-w-7xl px-3 sm:px-6">
+        <BackLink
+          href={owner?.public_profile !== false ? `/users/${series.user_id}` : '/planner/community'}
+          className="mb-5 inline-flex min-h-[44px] items-center gap-2 rounded-sm px-1 text-[0.9375rem] font-medium text-[#9c8b73] transition-colors hover:text-[#e8b030] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#c8900a]"
+        >
+          <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+          {t('back')}
+        </BackLink>
+        <header className={styles.head}>
           <div className="min-w-0">
-            <h1 className="break-keep font-[family-name:var(--font-heading)] text-[1.375rem] leading-tight text-[var(--gold)] md:text-[1.75rem]">{series.title}</h1>
-            <div className="mt-1 flex min-w-0 items-center gap-2 text-[0.9375rem] text-[#9c8b73]">
-              {owner && <PostAuthorName userId={series.user_id} username={owner.username} profilePublic={owner.public_profile} className="truncate font-semibold text-[#e8dcc8] hover:text-[#e8b030]" />}
-              <span className="font-[family-name:var(--font-title)] text-[1.125rem] text-[var(--gold-light)]">{cards.length}</span>
-            </div>
+            <h1 className={styles.title}>{series.title}</h1>
+            {owner && (
+              <div className={styles.author}>
+                <Image src={owner.avatar_url ?? DEFAULT_AVATAR_URL} alt="" width={36} height={36} className={styles.avatar} />
+                <PostAuthorName userId={series.user_id} username={owner.username} profilePublic={owner.public_profile} className="truncate" />
+              </div>
+            )}
           </div>
-          <SeriesOwnerTools id={series.id} title={series.title} items={series.items} />
+          <div className={styles.side}>
+            <dl className={styles.facts}>
+              <div className={styles.fact}><dt>{t('deck')}</dt><dd>{deckCount}</dd></div>
+              <div className={styles.fact}><dt>{t('plan')}</dt><dd>{cards.length - deckCount}</dd></div>
+            </dl>
+            <SeriesOwnerTools id={series.id} title={series.title} items={series.items} />
+          </div>
         </header>
         {cards.length ? (
-          <ol className="grid list-none gap-4 p-0 [grid-template-columns:repeat(auto-fill,minmax(17rem,1fr))]">
+          <ol className={styles.list}>
             {cards.map((card, index) => (
-              <li key={`${card.kind}:${card.id}`} className="relative flex flex-col [&>:first-child]:flex-1">
+              <li key={`${card.kind}:${card.id}`} className={styles.item} style={{ '--i': index } as CSSProperties}>
+                <div className={styles.mark} aria-hidden="true">
+                  <span className={styles.number}>{String(index + 1).padStart(2, '0')}</span>
+                  <span className={styles.kind}>{card.kind === 'deck' ? <Layers size={14} /> : <MapIcon size={14} />}{t(card.kind)}</span>
+                  <span className={styles.rule} />
+                </div>
                 {card.kind === 'deck' ? <DeckCard deck={card.deck} /> : <PlanCard plan={card.plan} />}
-                <span className="pointer-events-none absolute left-2 top-2 grid h-7 min-w-7 place-items-center rounded bg-[#0d0b08]/85 px-1.5 font-[family-name:var(--font-title)] text-[1.0625rem] leading-none text-[var(--gold-light)]">{index + 1}</span>
               </li>
             ))}
           </ol>
         ) : (
-          <p className="text-[0.9375rem] text-[#9c8b73]">{t('empty')}</p>
+          <p className="mt-6 text-[0.9375rem] text-[#9c8b73]">{t('empty')}</p>
         )}
       </div>
     </div>

@@ -1,0 +1,140 @@
+/* Series page: plan-detail style head (title, author, Bebas facts) and the posts in order, each card under its number. */
+.head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 1rem 1.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid #2e2417;
+}
+
+.title {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-size: 2rem;
+  line-height: 1.15;
+  color: #e8dcc8;
+  word-break: keep-all;
+}
+
+.author {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  margin-top: 0.875rem;
+  min-width: 0;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #e8dcc8;
+}
+
+.author a { transition: color 150ms ease; }
+@media (hover: hover) { .author a:hover { color: #e8b030; } }
+
+.avatar {
+  width: 2.25rem;
+  height: 2.25rem;
+  flex-shrink: 0;
+  border-radius: 999px;
+  object-fit: cover;
+  background: #17120c;
+  box-shadow: 0 0 0 1px #6b4c12;
+}
+
+.side {
+  display: flex;
+  align-items: flex-end;
+  gap: 1.25rem;
+}
+
+.facts {
+  display: flex;
+  margin: 0;
+}
+
+.fact {
+  min-width: 3.5rem;
+  padding: 0 0.875rem;
+  border-left: 1px solid #2e2417;
+}
+
+.fact:first-child { padding-left: 0; border-left: 0; }
+
+.fact dt {
+  font-size: 0.8125rem;
+  color: #9c8b73;
+}
+
+.fact dd {
+  margin: 0.125rem 0 0;
+  font-family: var(--font-title);
+  font-size: 1.75rem;
+  line-height: 1;
+  color: #e8dcc8;
+  font-variant-numeric: tabular-nums;
+}
+
+.list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
+  gap: 1.75rem 1rem;
+  margin: 1.75rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  animation: series-rise 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: calc(min(var(--i), 12) * 45ms);
+}
+
+.item > :last-child { flex: 1; }
+
+/* Number, kind and a rule running to the next card: the order reads across the row. */
+.mark {
+  display: flex;
+  align-items: baseline;
+  gap: 0.625rem;
+}
+
+.number {
+  font-family: var(--font-title);
+  font-size: 2rem;
+  line-height: 0.8;
+  color: #e8b030;
+  font-variant-numeric: tabular-nums;
+}
+
+.kind {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3125rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #9c8b73;
+}
+
+.rule {
+  flex: 1;
+  align-self: center;
+  height: 1px;
+  background: linear-gradient(90deg, #5a4526, #2e2417 70%, transparent);
+}
+
+@keyframes series-rise {
+  from { opacity: 0; transform: translateY(0.5rem); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .item { animation: none; }
+}
+
+@media (max-width: 47.99rem) {
+  .head { grid-template-columns: minmax(0, 1fr); }
+  .title { font-size: 1.5rem; }
+  .side { justify-content: space-between; }
+}
