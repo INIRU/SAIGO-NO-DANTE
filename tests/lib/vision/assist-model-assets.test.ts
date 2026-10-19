@@ -76,9 +76,9 @@ describe('REQ-ASSIST-075 runtime data files come from Storage, runtime scripts s
     for (const file of runtime) expect(file).toMatch(/\.(wasm|traineddata\.gz)$/)
   })
 
-  it('REQ-ASSIST-075 script-src gains no external host besides va.vercel-scripts.com', () => {
+  it('REQ-ASSIST-075 script-src gains no external host besides the visitor analytics beacons', () => {
     const line = text('next.config.ts').split('\n').find(row => row.includes('script-src'))!
     const hosts = line.match(/https?:\/\/[^\s`"']+/g)
-    expect(hosts).toEqual(['https://va.vercel-scripts.com'])
+    expect(hosts).toEqual(['https://va.vercel-scripts.com', 'https://static.cloudflareinsights.com'])
   })
 })

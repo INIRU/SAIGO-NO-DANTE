@@ -1,6 +1,7 @@
 import { createHash, createHmac } from 'crypto'
 import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
+import { getClientIp } from '@/lib/request-meta'
 
 interface RateLimitEntry {
   timestamps: number[]
@@ -62,15 +63,8 @@ function stableHash(value: string): string {
   return hash.update(value).digest('hex')
 }
 
-function getFirstHeaderValue(value: string | null): string | null {
-  const first = value?.split(',')[0]?.trim()
-  if (!first || first.toLowerCase() === 'unknown') return null
-  return first
-}
-
 function getFallbackRequestIdentity(request: NextRequest | Request): string {
-  const ip = getFirstHeaderValue(request.headers.get('x-forwarded-for'))
-    ?? getFirstHeaderValue(request.headers.get('x-real-ip'))
+  const ip = getClientIp(request.headers)
   if (ip) return `ip:${stableHash(ip)}`
 
   const userAgent = request.headers.get('user-agent')?.trim()
