@@ -235,6 +235,22 @@ export function collectRefIds(nodes: readonly GameTextNode[]): string[] {
   return [...ids]
 }
 
+/** Every game id a text names as a keyword: `[Id]` and `<link="Id">`, once each, in order of first use. */
+export function collectKeywordIds(nodes: readonly GameTextNode[]): string[] {
+  const ids = new Set<string>()
+  const visit = (list: readonly GameTextNode[]) => {
+    for (const node of list) {
+      if (node.type === 'ref') ids.add(node.id)
+      else if (node.type === 'element') {
+        if (node.tag === 'link' && node.value) ids.add(node.value)
+        visit(node.children)
+      }
+    }
+  }
+  visit(nodes)
+  return [...ids]
+}
+
 /**
  * Cheap pre-check: true when the string holds a `<` or an ASCII `[Id]`-shaped bracket, the only things raw game text
  * has that older stored text ([사용시], [On Hit], 【…】) does not. Decides whether the reference table is worth fetching.

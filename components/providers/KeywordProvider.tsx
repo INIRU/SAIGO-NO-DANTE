@@ -71,23 +71,30 @@ export function useKeywordDescription(keyword: string, info: KeywordInfo | undef
 type FormatSkillDescOptions = {
   /** Tooltips: numbers turn gold and Potency/Count terms take this colour. */
   highlightValues?: string
+  /**
+   * Skill and passive text of an identity or E.G.O only: draw the keywords the 4th argument (`allowedKeywords`) names when
+   * the text writes them as plain words (older game text), see lib/keywords/plain-keywords.ts. Off everywhere else.
+   */
+  matchPlainKeywords?: boolean
 }
 
 /**
  * formatSkillDesc를 훅으로 제공 — 컴포넌트 최상위에서 호출.
  *
  * Game text (skill, passive, E.G.O, gift and keyword descriptions) is always drawn by GameText, even when it holds no tag or
- * `[Id]`: it then shows as plain text, and words are never searched for keywords (the stored text is the game's own).
+ * `[Id]`: it then shows as plain text, and words are not searched for keywords (the stored text is the game's own), except
+ * where `options.matchPlainKeywords` is set: the skill and passive text of an identity / E.G.O, with the keywords that
+ * identity / E.G.O owns as `allowedKeywords` (no set or an empty one: nothing is searched).
  * Notes do not come through here: NoteRenderer shows a user memo's keywords only as explicit chips (`noteKeyword` nodes,
  * `[k:이름]` tokens) and everything else as written.
  * Of the other arguments, `skillNameColors` and `highlightValues` are carried over to GameText (own skill names coloured
- * by sin; gold numbers in tooltips); `allowedKeywords` only restricted a guess that no longer exists and is ignored.
+ * by sin; gold numbers in tooltips).
  */
 export function useFormatSkillDesc() {
   const keywords = useKeywords()
 
   return useCallback(
-    (text: string, color: string, skillNameColors?: Record<string, string>, _allowedKeywords?: Set<string>, options?: FormatSkillDescOptions) => {
+    (text: string, color: string, skillNameColors?: Record<string, string>, allowedKeywords?: ReadonlySet<string>, options?: FormatSkillDescOptions) => {
       if (mayBeRawGameText(text)) wantGameTextRefs()
       return (
         <GameText
@@ -97,6 +104,8 @@ export function useFormatSkillDesc() {
           keywordRef={KeywordWithTooltip}
           skillNameColors={skillNameColors}
           highlightValues={options?.highlightValues}
+          matchPlainKeywords={options?.matchPlainKeywords}
+          allowedKeywords={allowedKeywords}
         />
       )
     },
