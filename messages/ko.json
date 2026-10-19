@@ -26,17 +26,19 @@
       "keywords": "키워드"
     },
     "other": {
-      "title": "기타",
-      "random": "랜덤 편성",
-      "developers": "개발자 도구",
       "calendar": "소식 캘린더"
+    },
+    "fun": {
+      "title": "재미",
+      "random": "랜덤 편성"
     },
     "tools": {
       "title": "도구",
       "meta": "분석",
       "experience": "경험치 계산기",
       "lunacy": "월간 광기 계산기",
-      "damage": "피해량 계산기"
+      "damage": "피해량 계산기",
+      "developers": "개발자 도구"
     },
     "support": "문의"
   },
@@ -2412,7 +2414,28 @@
     "keywordMax": "키워드는 2개까지 고를 수 있습니다",
     "keywordImpossible": "조건을 만족하는 인격이 부족합니다",
     "invalidCode": "컬렉션 코드가 올바르지 않습니다",
-    "decodeFailed": "컬렉션 코드를 읽지 못했습니다"
+    "decodeFailed": "컬렉션 코드를 읽지 못했습니다",
+    "lock": "{name} 고정",
+    "unlock": "{name} 고정 해제",
+    "order": "편성 순서",
+    "orderMin": "최소",
+    "orderMax": "최대",
+    "orderCount": "{count}명",
+    "skip": "건너뛰기",
+    "copyLink": "링크 복사",
+    "linkCopied": "링크를 복사했습니다",
+    "linkCopyFailed": "링크를 복사하지 못했습니다",
+    "summaryLabel": "결과 요약",
+    "recent": "최근 뽑기",
+    "clearRecent": "비우기",
+    "restoreRecent": "최근 뽑기 {index} 불러오기",
+    "toPlanner": "플래너로 보내기",
+    "toDeck": "덱 작성으로 보내기",
+    "sentToPlanner": "플래너에 편성을 채웠습니다",
+    "sendFailed": "편성을 보내지 못했습니다",
+    "saveImage": "이미지 저장",
+    "imageSaved": "이미지를 저장했습니다",
+    "imageFailed": "이미지를 만들지 못했습니다"
   },
   "browser": {
     "identitiesTitle": "인격 전체",
