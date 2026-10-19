@@ -4,17 +4,18 @@ import createNextIntlPlugin from 'next-intl/plugin';
 import { HTML_LIMITED_BOTS } from './lib/seo/html-limited-bots';
 
 const withNextIntl = createNextIntlPlugin('./lib/i18n/request.ts');
-const isVercelDeployment = process.env.VERCEL === '1';
+// Vercel and the self-hosted server (behind Cloudflare) are HTTPS-only; local `next start` stays on http.
+const isHttpsDeployment = process.env.VERCEL === '1' || process.env.SELF_HOSTED === '1';
 const isProduction = process.env.NODE_ENV === 'production';
 
 const contentSecurityPolicyDirectives = [
   "default-src 'self'",
-  `script-src 'self' 'unsafe-inline'${isProduction ? " 'wasm-unsafe-eval'" : " 'unsafe-eval'"} https://va.vercel-scripts.com`,
+  `script-src 'self' 'unsafe-inline'${isProduction ? " 'wasm-unsafe-eval'" : " 'unsafe-eval'"} https://va.vercel-scripts.com https://static.cloudflareinsights.com`,
   "style-src 'self' 'unsafe-inline'",
   // The last five hosts serve news images partners post for the calendar (NEWS_MEDIA_HOSTS in lib/news/payload.ts).
   "img-src 'self' data: blob: https://lpgqcleszdlldneiwgep.supabase.co https://lh3.googleusercontent.com https://i.ytimg.com https://*.steamstatic.com https://*.twimg.com https://*.ytimg.com https://*.pstatic.net https://livecloud-thumb.akamaized.net",
   "font-src 'self'",
-  "connect-src 'self' https://lpgqcleszdlldneiwgep.supabase.co https://va.vercel-scripts.com",
+  "connect-src 'self' https://lpgqcleszdlldneiwgep.supabase.co https://va.vercel-scripts.com https://cloudflareinsights.com",
   "worker-src 'self' blob:",
   "frame-src https://www.youtube.com https://www.youtube-nocookie.com",
   "media-src 'self'",
@@ -22,7 +23,7 @@ const contentSecurityPolicyDirectives = [
   "base-uri 'self'",
   "form-action 'self'",
   "frame-ancestors 'none'",
-  ...(isVercelDeployment ? ["upgrade-insecure-requests"] : []),
+  ...(isHttpsDeployment ? ["upgrade-insecure-requests"] : []),
 ];
 
 const nextConfig: NextConfig = {
