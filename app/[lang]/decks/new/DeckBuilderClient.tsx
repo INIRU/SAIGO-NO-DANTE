@@ -40,6 +40,7 @@ import CompactButton from '@/components/ui/CompactButton'
 import ConfirmModal from '@/components/ui/ConfirmModal'
 import FormationSourceModal from '@/components/planner/FormationSourceModal'
 import { deckFormationFromPlan } from '@/lib/planner/formation-transfer'
+import { deckInitFromTeamCode, formationParamFromSearch } from '@/lib/decks/formation-init'
 import type { EgoSlot, IdentitySlot } from '@/lib/planner/types'
 import { CONTENT_TYPES } from '@/lib/constants/deck-tokens'
 import { LCB_IDS, isDeployedSlot } from '@/lib/constants/game'
@@ -139,8 +140,21 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
   const builderT = useTranslations('decks.builder')
   const tTempSaves = useTranslations('planner.tempSaves')
   const router = useRouter()
-  const initData = editMode ?? forkMode
-  const lcbIdentity = (sinnerId: string) => identities.find(identity => identity.sinner_id === sinnerId && identity.game_id === LCB_IDS[sinnerId])
+  // A new deck can start from a formation code in ?formation= (sent from the random formation page). Edit and fork keep their own start.
+  // The builder is client-only (no SSR), so the address is readable on the first render; an unreadable code is ignored.
+  const [urlStart] = useState<Partial<EditMode> | undefined>(() => {
+    if (editMode || forkMode) return undefined
+    const code = formationParamFromSearch(window.location.search)
+    return (code ? deckInitFromTeamCode(code, sinners, identities, egos) : null) ?? undefined
+  })
+  useEffect(() => {
+    if (formationParamFromSearch(window.location.search) === null) return
+    const url = new URL(window.location.href)
+    url.searchParams.delete('formation')
+    window.history.replaceState(window.history.state, '', url)
+  }, [])
+  const initData: Partial<EditMode> | undefined = editMode ?? forkMode ?? urlStart
+  const lcbIdentity =(sinnerId: string) => identities.find(identity => identity.sinner_id === sinnerId && identity.game_id === LCB_IDS[sinnerId])
   // 12명 모두 항상 인격을 가진다: 비어 있는 수감자는 LCB 인격으로 채운다 (바꿀 수는 있어도 비울 수는 없다)
   const withLcb = (slots: Record<string, Identity | undefined>) => Object.fromEntries(sinners.map(sinner => [sinner.id, slots[sinner.id] ?? lcbIdentity(sinner.id)]))
   const [tabParam, setTab] = useQueryState('tab', parseAsString.withDefault('identity'))
