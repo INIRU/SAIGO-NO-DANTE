@@ -69,9 +69,10 @@ export const translations = {
   'nav.tools.title': { ko: '도구', en: 'Tools', ja: 'ツール' },
   'nav.tools.lunacy': { ko: '월간 광기 계산기', en: 'Monthly Lunacy planner', ja: '月間狂気計算機' },
   'nav.tools.experience': { ko: '경험치 계산기', en: 'EXP calculator', ja: '経験値計算機' },
-  'nav.other.title': { ko: '기타', en: 'More', ja: 'その他' },
+  'nav.fun.title': { ko: '재미', en: 'Fun', ja: 'お楽しみ' },
   'nav.tools.meta': { ko: '분석', en: 'Analysis', ja: '分析' },
-  'nav.other.random': { ko: '랜덤 편성', en: 'Random', ja: 'ランダム編成' },
+  'nav.fun.random': { ko: '랜덤 편성', en: 'Random', ja: 'ランダム編成' },
+  'nav.tools.developers': { ko: '개발자 도구', en: 'Developer tools', ja: '開発者ツール' },
 
   // Mypage
   'mypage.title': { ko: '마이 페이지', en: 'My Page', ja: 'マイページ' },

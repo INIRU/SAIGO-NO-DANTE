@@ -5,7 +5,7 @@ import Image from 'next/image'
 import { Check } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { RARITY_ICON_MAP } from '@/lib/constants/game'
-import type { KeywordCondition } from '@/lib/random/engine'
+import { MAX_DEPLOY, type KeywordCondition } from '@/lib/random/engine'
 import KeywordChips from './KeywordChips'
 import styles from './random.module.css'
 
@@ -17,6 +17,11 @@ type Props = {
   collectionDecoded: boolean
   keywords: KeywordCondition[]
   rarityFilter: Set<number> | null
+  orderEnabled: boolean
+  deployMin: number
+  deployMax: number
+  onOrderToggle: () => void
+  onDeployChange: (min: number, max: number) => void
   onIdentityToggle: () => void
   onEgoToggle: () => void
   onCollectionToggle: () => void
@@ -66,6 +71,29 @@ export default function OptionPanel(props: Props) {
       <section className={styles.group}>
         <h2 className={styles.label}>{t('keywords')}</h2>
         <KeywordChips keywords={props.keywords} onChange={props.onKeywordsChange} onMaxExceeded={props.onKeywordMaxExceeded} disabled={!props.identityEnabled} />
+      </section>
+
+      <section className={styles.group}>
+        <label className={styles.switchRow}>
+          <span className={styles.label}>{t('order')}</span>
+          <input type="checkbox" role="switch" className={styles.switch} checked={props.orderEnabled && props.identityEnabled} disabled={!props.identityEnabled} onChange={props.onOrderToggle} />
+        </label>
+        {props.orderEnabled && props.identityEnabled && (
+          <>
+            <label className={styles.slider}>
+              <span className={styles.sliderName}>{t('orderMin')}</span>
+              <input type="range" min={1} max={MAX_DEPLOY} value={props.deployMin} aria-label={t('orderMin')}
+                onChange={event => { const min = Number(event.target.value); props.onDeployChange(min, Math.max(min, props.deployMax)) }} />
+              <span className={styles.sliderValue}>{t('orderCount', { count: props.deployMin })}</span>
+            </label>
+            <label className={styles.slider}>
+              <span className={styles.sliderName}>{t('orderMax')}</span>
+              <input type="range" min={1} max={MAX_DEPLOY} value={props.deployMax} aria-label={t('orderMax')}
+                onChange={event => { const max = Number(event.target.value); props.onDeployChange(Math.min(max, props.deployMin), max) }} />
+              <span className={styles.sliderValue}>{t('orderCount', { count: props.deployMax })}</span>
+            </label>
+          </>
+        )}
       </section>
 
       <section className={styles.group}>

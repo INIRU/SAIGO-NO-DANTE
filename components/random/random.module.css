@@ -29,8 +29,8 @@
 .keywords .toggle { justify-content: flex-start; }
 
 .slider { display: grid; grid-template-columns: 3.5rem 1fr auto; align-items: center; gap: 0.5rem; margin-top: 0.5rem; }
-.slider input { width: 100%; accent-color: var(--kw); }
-.sliderName { overflow: hidden; color: var(--kw); font: 600 0.8125rem var(--font-body); text-overflow: ellipsis; white-space: nowrap; }
+.slider input { width: 100%; accent-color: var(--kw, var(--gold)); }
+.sliderName { overflow: hidden; color: var(--kw, #b0a890); font: 600 0.8125rem var(--font-body); text-overflow: ellipsis; white-space: nowrap; }
 .sliderValue { min-width: 3.5rem; color: #e8dcc8; font-size: 0.8125rem; font-variant-numeric: tabular-nums; text-align: right; }
 
 .switchRow { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; }
@@ -56,6 +56,15 @@
 .input:focus { border-color: var(--gold); outline: none; }
 
 .actions { display: none; }
+.rollRow { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0.5rem; }
+.skip {
+  display: grid; width: 3rem; min-height: 3rem; place-items: center; padding: 0; border: 1px solid #3a2a15; border-radius: 0.5rem;
+  background: transparent; color: var(--gold-light); cursor: pointer; transition: background-color 150ms, opacity 150ms;
+}
+.skip svg { width: 1.125rem; height: 1.125rem; }
+.skip:hover:not(:disabled) { background: #241c12; }
+.skip:disabled { cursor: default; opacity: 0.4; }
+.skip:focus-visible { outline: 2px solid var(--gold-light); outline-offset: 2px; }
 .roll {
   display: flex; min-height: 3rem; align-items: center; justify-content: center; gap: 0.5rem; padding: 0 1.25rem; border: 0; border-radius: 0.5rem;
   background: var(--gold); color: #0d0b08; font: 700 1rem var(--font-body); cursor: pointer; transition: filter 150ms;
@@ -92,8 +101,78 @@
 .tab:disabled { cursor: not-allowed; opacity: 0.4; }
 .tab:focus-visible { outline: 2px solid var(--gold-light); outline-offset: -2px; }
 
-.cell { min-width: 0; perspective: 50rem; }
+.cell { position: relative; min-width: 0; perspective: 50rem; }
+.slot { position: relative; isolation: isolate; transform-origin: 50% 50%; }
 .card { transform-origin: 50% 50%; }
+
+/* Lock: a round icon button beside the sinner badge. Gold and filled while the slot is kept through the next roll. */
+.lock, .lockSmall {
+  position: relative; display: grid; place-items: center; padding: 0; border: 1px solid #5a4526; border-radius: 50%;
+  background: rgba(13, 11, 8, 0.82); color: #c9b89f; cursor: pointer; touch-action: manipulation;
+  transition: opacity 150ms, background-color 150ms, color 150ms, border-color 150ms;
+}
+.lock {
+  position: absolute; top: 27%; right: 5%; z-index: 5; width: 1.75rem; height: 1.75rem; opacity: 0.62;
+}
+.lockSmall { flex-shrink: 0; width: 1.5rem; height: 1.5rem; margin-left: auto; }
+.lock svg, .lockSmall svg { width: 0.875rem; height: 0.875rem; }
+.lock::after, .lockSmall::after { content: ''; position: absolute; inset: -0.375rem; }
+.slot:hover .lock, .lock:focus-visible { opacity: 1; }
+.lock:hover, .lockSmall:hover { background: #241c12; color: var(--gold-light); }
+.lock[aria-pressed='true'], .lockSmall[aria-pressed='true'] { opacity: 1; border-color: var(--gold-light); background: var(--gold); color: #0d0b08; }
+.lock:focus-visible, .lockSmall:focus-visible { outline: 2px solid var(--gold-light); outline-offset: 2px; }
+
+/* Golden cards (3-star identities, ALEPH E.G.O): a soft glow behind them, and a ring that bursts out when they land. */
+.slot[data-rare]::before {
+  content: ''; position: absolute; inset: -9% -12%; z-index: -1; pointer-events: none;
+  background: radial-gradient(closest-side, rgba(232, 176, 48, 0.46), rgba(232, 176, 48, 0.16) 58%, transparent 78%);
+}
+.slot[data-rare]::after {
+  content: ''; position: absolute; top: 50%; left: 50%; z-index: 6; width: 190%; aspect-ratio: 1; border-radius: 50%; opacity: 0; pointer-events: none;
+  background: radial-gradient(closest-side, rgba(255, 224, 138, 0) 52%, rgba(255, 224, 138, 0.9) 70%, rgba(232, 176, 48, 0) 100%);
+  transform: translate(-50%, -50%) scale(0.3);
+}
+.ego[data-rare] { position: relative; background: color-mix(in srgb, var(--sin, #c8900a) 14%, #2a1d08); box-shadow: inset 0 0 0.75rem rgba(232, 176, 48, 0.34); }
+.ego[data-rare]::after {
+  content: ''; position: absolute; inset: 0; z-index: 2; border-radius: 0.1875rem; opacity: 0; pointer-events: none;
+  background: linear-gradient(90deg, rgba(255, 224, 138, 0.6), rgba(255, 224, 138, 0) 75%);
+}
+
+/* Reveal: only while the board is revealing, and only the cards the latest action drew (--rank = place in the sequence). */
+.board[data-reveal] .cell[data-fresh] :is(.slot, .egoCell) {
+  animation: reveal-card 640ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  animation-delay: calc(var(--rank, 0) * 80ms);
+}
+.board[data-reveal] .cell[data-fresh] .slot[data-rare]::after {
+  animation: reveal-burst 760ms ease-out backwards;
+  animation-delay: calc(var(--rank, 0) * 80ms + 380ms);
+}
+.board[data-reveal] .cell[data-fresh] .ego[data-rare]::after {
+  animation: reveal-flash 700ms ease-out backwards;
+  animation-delay: calc(var(--rank, 0) * 80ms + 260ms + var(--row, 0) * 45ms + 160ms);
+}
+.board[data-reveal] .cell[data-fresh] .slot[data-rare]::before {
+  animation: reveal-glow 900ms ease-out backwards;
+  animation-delay: calc(var(--rank, 0) * 80ms + 300ms);
+}
+.board[data-reveal] .cell[data-fresh] .egoBody {
+  animation: reveal-row 420ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  animation-delay: calc(var(--rank, 0) * 80ms + 260ms + var(--row, 0) * 45ms);
+}
+@keyframes reveal-card {
+  from { opacity: 0; transform: translateY(-0.75rem) rotateY(-86deg) scale(0.94); }
+  55% { opacity: 1; transform: translateY(0.25rem) rotateY(9deg) scale(1.02); }
+  78% { transform: rotateY(-3deg); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes reveal-burst {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.3); }
+  20% { opacity: 1; }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(1); }
+}
+@keyframes reveal-flash { 0%, 100% { opacity: 0; } 30% { opacity: 1; } }
+@keyframes reveal-glow { from { opacity: 0; transform: scale(0.7); } to { opacity: 1; transform: none; } }
+@keyframes reveal-row { from { opacity: 0; transform: translateX(-0.375rem); } to { opacity: 1; transform: none; } }
 .reroll {
   position: absolute; top: 42%; left: 50%; z-index: 4; display: grid; width: 2.25rem; height: 2.25rem; place-items: center;
   border: 1px solid #5a4526; border-radius: 50%; background: rgba(13, 11, 8, 0.82); color: var(--gold-light);
@@ -142,8 +221,60 @@
 @media (max-width: 40rem) {
   .egoHead { padding: 0.25rem 0.375rem; font-size: 0.6875rem; }
   .egoName { font-size: 0.625rem; -webkit-line-clamp: 1; }
+  .lock { width: 1.5rem; height: 1.5rem; }
+  .lock svg { width: 0.75rem; height: 0.75rem; }
+  .lockSmall { width: 1.25rem; height: 1.25rem; }
+  .lockSmall svg { width: 0.6875rem; height: 0.6875rem; }
+  .egoHead img { display: none; }
+  .egoHead span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+}
+@media (hover: none) {
+  .lock { opacity: 0.85; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .toggle, .switch, .switch::before, .roll, .copy, .reroll, .reroll svg, .tab { transition: none; }
+  .toggle, .switch, .switch::before, .roll, .copy, .skip, .reroll, .reroll svg, .tab, .lock, .lockSmall, .recentItem { transition: none; }
   .roll[data-busy] svg { animation: none; }
+  .board[data-reveal] .cell[data-fresh] :is(.slot, .egoCell, .egoBody),
+  .board[data-reveal] .cell[data-fresh] :is(.slot, .ego)[data-rare]::before,
+  .board[data-reveal] .cell[data-fresh] :is(.slot, .ego)[data-rare]::after { animation: none; }
+}
+
+/* Under the board: the count line, the result buttons and the recent rolls. */
+.summary {
+  display: flex; min-height: 3.25rem; flex-wrap: wrap; align-items: center; gap: 0.5rem 1.5rem; margin-top: 0.875rem; padding: 0.5rem 0.875rem;
+  border: 1px solid #2e2417; border-radius: 0.5rem; background: #120e09;
+}
+.sumGroup { display: flex; flex-wrap: wrap; align-items: center; gap: 0.375rem 1.125rem; margin: 0; padding: 0; list-style: none; }
+.sumGroup + .sumGroup { padding-left: 1.5rem; border-left: 1px solid #2e2417; }
+.sumItem { display: inline-flex; align-items: center; gap: 0.375rem; }
+.sumItem img { width: auto; height: 1.25rem; }
+.sumTimes { color: #6a6058; font: 0.875rem/1 var(--font-body); }
+.sumNum { min-width: 1.5rem; color: var(--gold-light); font: 1.5rem/1 var(--font-title); letter-spacing: 0.02em; font-variant-numeric: tabular-nums; }
+.sumItem[data-zero] img, .sumItem[data-zero] .sumNum { opacity: 0.38; }
+.toolbar { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.75rem; }
+.recent { margin-top: 1.5rem; }
+.recentHead { display: flex; min-height: 2rem; align-items: center; justify-content: space-between; gap: 0.75rem; margin-bottom: 0.5rem; }
+.recentHead .label { margin: 0; }
+.clear {
+  display: inline-flex; min-height: 2rem; align-items: center; gap: 0.25rem; padding: 0 0.5rem; border: 0; border-radius: 0.375rem; background: none;
+  color: #9c8b73; font: 600 0.8125rem var(--font-body); cursor: pointer; transition: color 150ms, background-color 150ms;
+}
+.clear svg { width: 0.875rem; height: 0.875rem; }
+.clear:hover { background: #241c12; color: #e8dcc8; }
+.clear:focus-visible { outline: 2px solid var(--gold-light); outline-offset: 2px; }
+.recentList { display: grid; grid-template-columns: repeat(auto-fill, minmax(7rem, 1fr)); gap: 0.5rem; margin: 0; padding: 0; list-style: none; }
+.recentItem {
+  display: block; width: 100%; padding: 0; overflow: hidden; border: 1px solid #2e2417; border-radius: 0.375rem; background: #120e09;
+  cursor: pointer; transition: border-color 150ms;
+}
+.recentItem:hover { border-color: var(--gold); }
+.recentItem[aria-current='true'] { border-color: var(--gold-light); }
+.recentItem:focus-visible { outline: 2px solid var(--gold-light); outline-offset: 2px; }
+@media (max-width: 40rem) {
+  /* Three columns: the 000/00/0 counts and the first three grades line up, the other two grades continue below. */
+  .summary { gap: 0.75rem; }
+  .sumGroup { display: grid; width: 100%; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.625rem 0.5rem; }
+  .sumGroup + .sumGroup { padding: 0.625rem 0 0; border-top: 1px solid #2e2417; border-left: 0; }
+  .toolbar { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .toolbar > button { justify-content: center; }
 }

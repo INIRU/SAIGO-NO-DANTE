@@ -1,9 +1,9 @@
 import { test, expect } from '@playwright/test'
 
 const labels = {
-  ko: {title:'경험치 계산기',current:'현재 레벨',target:'목표 레벨',ticket:'인격 학습 티켓 I',skip:'스킵',tools:'도구',other:'기타'},
-  en: {title:'EXP calculator',current:'Current level',target:'Target level',ticket:'Identity Training Ticket I',skip:'Skip',tools:'Tools',other:'More'},
-  ja: {title:'経験値計算機',current:'現在のレベル',target:'目標レベル',ticket:'人格学習チケット I',skip:'スキップ',tools:'ツール',other:'その他'},
+  ko: {title:'경험치 계산기',current:'현재 레벨',target:'목표 레벨',ticket:'인격 학습 티켓 I',skip:'스킵',tools:'도구',other:'재미'},
+  en: {title:'EXP calculator',current:'Current level',target:'Target level',ticket:'Identity Training Ticket I',skip:'Skip',tools:'Tools',other:'Fun'},
+  ja: {title:'経験値計算機',current:'現在のレベル',target:'目標レベル',ticket:'人格学習チケット I',skip:'スキップ',tools:'ツール',other:'お楽しみ'},
 }
 for (const locale of ['ko','en','ja'] as const) for(const width of [1440,390]) {
   test(`EXP calculator refresh, revisit and ticket plan ${locale} ${width}`, async({page},info)=>{
@@ -59,10 +59,10 @@ for (const locale of ['ko','en','ja'] as const) for(const width of [1440,390]) {
   })
 }
 
-test('tools menu sits before other menu and links to calculator',async({page})=>{
+test('tools menu sits before fun menu and links to calculator',async({page})=>{
   await page.setViewportSize({width:1440,height:900})
   await page.goto('/ko')
-  const tools=page.getByRole('button',{name:'도구',exact:true}), other=page.getByRole('button',{name:'기타',exact:true})
+  const tools=page.getByRole('button',{name:'도구',exact:true}), other=page.getByRole('button',{name:'재미',exact:true})
   const [a,b]=await Promise.all([tools.boundingBox(),other.boundingBox()])
   expect(a!.x).toBeLessThan(b!.x)
   await tools.hover()
