@@ -26,17 +26,19 @@
       "keywords": "キーワード"
     },
     "other": {
-      "title": "その他",
-      "random": "ランダム編成",
-      "developers": "開発者ツール",
       "calendar": "ニュースカレンダー"
+    },
+    "fun": {
+      "title": "お楽しみ",
+      "random": "ランダム編成"
     },
     "tools": {
       "title": "ツール",
       "meta": "分析",
       "experience": "経験値計算機",
       "lunacy": "月間狂気計算機",
-      "damage": "ダメージ計算機"
+      "damage": "ダメージ計算機",
+      "developers": "開発者ツール"
     },
     "support": "お問い合わせ"
   },

@@ -26,17 +26,19 @@
       "keywords": "키워드"
     },
     "other": {
-      "title": "기타",
-      "random": "랜덤 편성",
-      "developers": "개발자 도구",
       "calendar": "소식 캘린더"
+    },
+    "fun": {
+      "title": "재미",
+      "random": "랜덤 편성"
     },
     "tools": {
       "title": "도구",
       "meta": "분석",
       "experience": "경험치 계산기",
       "lunacy": "월간 광기 계산기",
-      "damage": "피해량 계산기"
+      "damage": "피해량 계산기",
+      "developers": "개발자 도구"
     },
     "support": "문의"
   },

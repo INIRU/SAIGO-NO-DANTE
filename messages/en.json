@@ -26,17 +26,19 @@
       "keywords": "Keywords"
     },
     "other": {
-      "title": "More",
-      "random": "Random",
-      "developers": "Developer tools",
       "calendar": "News calendar"
+    },
+    "fun": {
+      "title": "Fun",
+      "random": "Random"
     },
     "tools": {
       "title": "Tools",
       "meta": "Analysis",
       "experience": "EXP calculator",
       "lunacy": "Monthly Lunacy planner",
-      "damage": "Damage calculator"
+      "damage": "Damage calculator",
+      "developers": "Developer tools"
     },
     "support": "Support"
   },
