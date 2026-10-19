@@ -1,27 +1,84 @@
 # 배포와 복구
 
-현재 코드의 호스팅 설정은 Vercel, DB/Storage는 Supabase, 인증은 NextAuth Google OAuth다. 저장소가 있다고 서비스가 운영 중인 것은 아니다. 배포·도메인·DB 활성 상태를 각각 확인한다.
+2026-10-19부터 사이트는 AWS Lightsail 서울 서버(`saigo-web`, 2코어·4GB, Ubuntu 24.04)에서 `next start`로 돈다. 방문자는 Cloudflare를 거쳐 Cloudflare Tunnel로 서버에 닿는다. DB/Storage는 Supabase, 인증은 NextAuth Google OAuth다. Vercel 프로젝트는 일시 정지 상태로 남아 있다(되돌릴 때만 쓴다). 저장소가 있다고 서비스가 운영 중인 것은 아니다. 서버·도메인·DB 상태를 각각 확인한다.
 
-Vercel은 `main` 브랜치만 자동 배포한다(`vercel.json`의 `git.deploymentEnabled`). 패턴은 minimatch라 `*`는 `feat/...`처럼 `/`가 있는 브랜치를 막지 못해 `**`를 쓴다. PR 브랜치에는 미리보기 배포를 만들지 않으며, PR의 빌드·타입 검사는 GitHub Actions(`ci.yml`)가 맡는다. 화면 확인이 필요한 브랜치는 로컬 `npm run dev`나 `vercel deploy`로 따로 올린다.
+## 구성
+
+| 부분 | 위치 |
+|---|---|
+| 서버 접속 | `ssh -i ~/.ssh/saigo-web ubuntu@54.116.88.118` (비밀키는 사용자 Mac에만 있다) |
+| 앱 | `~/saigo/app` (`REVISION`에 배포된 커밋), systemd `saigo-web`이 `127.0.0.1:3000`에서 실행하고 죽으면 다시 켠다 |
+| 환경 변수 | `~/saigo/env.production`(권한 600). 앱의 `.env.production.local`이 이 파일을 가리킨다 |
+| 터널 | systemd `cloudflared`, 설정 `/etc/cloudflared/config.yml`(터널 `saigo-web`, 호스트 `saigo-no-dante.com`·`www`·`new`) |
+| DNS | Cloudflare. apex·`www`·`new`는 터널을 가리키는 프록시 CNAME이다 |
+| 열린 포트 | Lightsail 방화벽과 ufw 모두 22번(SSH)만. 웹 포트는 열지 않는다(터널이 서버에서 바깥으로 연결한다) |
+
+한국 방문자는 Cloudflare 무료 요금제라 LAX 같은 해외 거점으로 들어온다. 서버에 직접 붙는 것보다 첫 응답이 약 0.5초 늦지만, 공격 방어를 위해 Cloudflare 경유를 택했다(2026-10-19 결정).
+
+## 배포
+
+`main`이 움직이면 서버가 알아서 배포한다. `saigo-deploy.timer`가 2분마다 `~/saigo/auto-deploy.sh`를 돌려 `~/saigo/src`(읽기 전용 배포 키로 받은 main)를 확인하고, 새 커밋이면 `~/saigo/deploy.sh`에 넘긴다.
+
+`deploy.sh`는 `~/saigo/app-new`에서 `npm ci`와 빌드(약 4분, 최대 메모리 약 2.1GB)를 하고, 성공하면 앱 폴더를 바꿔 끼운 뒤 서비스를 다시 켠다(멈춤은 1초 안팎). 빌드가 실패하면 운영 앱은 건드리지 않는다. 바꿔 끼운 뒤 60초 안에 `/ko`가 응답하지 않으면 이전 폴더(`app-old`)로 되돌린다. 실패한 커밋은 `~/saigo/failed-rev`에 남고, main이 다시 움직일 때까지 재시도하지 않는다.
+
+- 배포 기록: `journalctl -u saigo-deploy`
+- 앱 로그: `journalctl -u saigo-web`
+- 지금 배포된 커밋: `cat ~/saigo/app/REVISION`
+
+PR 브랜치는 배포하지 않는다. PR의 빌드·타입 검사는 GitHub Actions(`ci.yml`)가 맡는다. 화면 확인이 필요한 브랜치는 로컬 `npm run dev`로 본다. 특정 커밋을 손으로 올릴 때는 Mac의 작업본에서 실행한다.
+
+```bash
+git archive --format=tar.gz <커밋> | ssh -i ~/.ssh/saigo-web ubuntu@54.116.88.118 "bash ~/saigo/deploy.sh $(git rev-parse <커밋>)"
+```
+
+## 되돌리기
+
+- 직전 배포로: 앱 폴더를 서로 바꾼다. `sudo systemctl stop saigo-web && mv ~/saigo/app ~/saigo/app-bad && mv ~/saigo/app-old ~/saigo/app && sudo systemctl start saigo-web`. 그다음 원인 커밋을 `git revert`해 main에 올린다. 그대로 두면 타이머가 main을 다시 배포한다.
+- Vercel로 운영 되돌리기(서버를 못 쓸 때): Vercel 프로젝트의 일시 정지를 풀고, Cloudflare DNS에서 apex·`www` 터널 CNAME을 지운 뒤 Vercel 프로젝트의 도메인 설정이 알려 주는 A 레코드를 DNS 전용(회색 구름)으로 넣는다. 2026-10-19 기준 값은 apex `216.150.1.193`·`216.150.16.129`, `www` `216.150.1.193`·`216.150.16.193`이다.
+
+## 집 IP가 바뀌어 서버에 접속이 안 될 때
+
+Lightsail 방화벽은 SSH(22번)를 사용자 집 IP 하나에서만 받는다. 인터넷 회선을 바꾸거나 공유기가 새 IP를 받으면 `ssh`가 시간 초과로 끝난다. 사이트는 영향을 받지 않는다(터널은 서버에서 바깥으로 연결한다).
+
+1. 지금 IP를 확인한다: `curl -s https://checkip.amazonaws.com`
+2. AWS 콘솔 → Lightsail → 인스턴스 `saigo-web` → 네트워킹 → IPv4 방화벽에서 SSH 규칙을 편집해, "IP 주소로 제한"의 값을 새 IP로 바꾸고 저장한다. 예전 IP는 지운다.
+3. 콘솔 대신 AWS CLI로도 된다: Lightsail `PutInstancePublicPorts`로 22번 규칙의 출처 IP를 바꾼다.
+
+밖에서 급히 들어가야 하면 같은 규칙을 그때의 IP로 잠시 바꾸고, 끝나면 집 IP로 돌려놓는다. SSH를 모든 IP(0.0.0.0/0)에 열지 않는다.
+
+## Cloudflare 설정
+
+- 이메일 주소 난독화: 끈다. 켜 두면 푸터의 문의 이메일을 바꿔 써서 React 하이드레이션 오류(#418)가 난다.
+- 캐시 규칙 `next-image`: `/_next/image`를 캐시 대상으로 둔다. 원본의 `Cache-Control`(30일)을 따른다. HTML은 캐시하지 않는다(`cf-cache-status: DYNAMIC`). 재검증해도 Cloudflare 캐시는 지워지지 않기 때문이다.
+- Web Analytics: 자동 설정으로 켰다. 비컨은 브라우저 사용자 에이전트에만 붙으므로 curl 기본 UA로 받은 HTML에는 없다. CSP는 `next.config.ts`가 허용한다.
+- 새 DNS 기록이 반영되지 않으면 먼저 https://www.cloudflarestatus.com 에서 DNS 장애가 있는지 본다(2026-10-19에 약 30분 지연이 있었다).
 
 ## 검색 로봇이 받는 HTML
 
-Vercel은 캐시된 셸을 먼저 보내고 나머지를 이어 붙인다. Next.js는 로봇 요청에 메타데이터를 본문으로 흘려보내지 않으므로, 셸을 건너뛰지 않는 로봇은 요청마다 메타데이터를 만드는 페이지(덱·인격·E.G.O·플랜 상세)에서 제목·canonical·robots가 없는 HTML을 받는다. 셸을 건너뛰는 로봇 목록은 `next.config.ts`의 `htmlLimitedBots`(`lib/seo/html-limited-bots.ts`: Next.js 기본 목록에 Googlebot과 Daum을 더한 값)다. 이 설정은 기본 목록을 대체하므로 기본 목록을 빼지 않는다.
+Next.js는 로봇 요청에 메타데이터를 본문으로 흘려보내지 않는다. 그래서 셸을 먼저 보내는 배포(예전 Vercel)에서 셸을 건너뛰지 않는 로봇은 요청마다 메타데이터를 만드는 페이지(덱·인격·E.G.O·플랜 상세)에서 제목·canonical·robots가 없는 HTML을 받았다. 셸을 건너뛰는 로봇 목록은 `next.config.ts`의 `htmlLimitedBots`(`lib/seo/html-limited-bots.ts`: Next.js 기본 목록에 Googlebot과 Daum을 더한 값)다. 이 설정은 기본 목록을 대체하므로 기본 목록을 빼지 않는다.
 
-확인은 `curl -A '<로봇 사용자 에이전트>' <주소>`로 받은 HTML의 `<head>`에 `<title>`과 `rel="canonical"`이 있는지 본다. Search Console의 실시간 테스트(Google-InspectionTool)는 Next.js 기본 목록에 들어 있어 항상 head에 담긴 HTML을 받으므로, Googlebot이 받는 HTML과 다를 수 있다. 로컬 `next start`는 셸과 이어 붙이기를 나누지 않아 이 문제가 재현되지 않는다.
+확인은 `curl -A '<로봇 사용자 에이전트>' <주소>`로 받은 HTML의 `<head>`에 `<title>`과 `rel="canonical"`이 있는지 본다. Search Console의 실시간 테스트(Google-InspectionTool)는 Next.js 기본 목록에 들어 있어 항상 head에 담긴 HTML을 받으므로, Googlebot이 받는 HTML과 다를 수 있다. 2026-10-19 서버 전환 때 Googlebot UA로 인격·E.G.O·덱 상세의 head 제목과 설명을 확인했다.
 
 ## 환경
 
-로컬 .env.local과 배포 플랫폼에 현재 코드가 읽는 이름으로 설정한다. 실제 값은 Git에 넣지 않는다.
+로컬 `.env.local`과 서버 `~/saigo/env.production`에 현재 코드가 읽는 이름으로 설정한다. 실제 값은 Git에 넣지 않는다.
 
-이름 목록은 [`.env.example`](../.env.example)이 기준이다(Supabase, 로그인, 사이트, Vercel Edge Config, Sentry, 스크립트 전용). 새 환경 변수를 코드에 넣으면 그 파일에 이름을 추가한다. Vercel CLI에 로그인돼 있으면 `npm run env:pull`이 프로젝트 값으로 `.env.local`을 만든다.
+이름 목록은 [`.env.example`](../.env.example)이 기준이다(Supabase, 로그인, 사이트, 자체 서버, Sentry, 스크립트 전용). 새 환경 변수를 코드에 넣으면 그 파일에 이름을 추가하고, 서버 파일에도 넣은 뒤 `sudo systemctl restart saigo-web`으로 다시 켠다. `NEXT_PUBLIC_*` 값은 빌드에 박히므로 바꾸면 다시 배포해야 한다(같은 커밋이면 `~/saigo/app/REVISION`을 지우면 타이머가 다시 빌드한다).
+
+- 서버 전용 값: `SELF_HOSTED=1`(CSP `upgrade-insecure-requests`, 방문자 IP를 `CF-Connecting-IP`에서 읽기), `NEXTAUTH_URL=https://saigo-no-dante.com`.
+- 서버에 넣지 않는 값: `EDGE_CONFIG`, `VERCEL_API_TOKEN`, `VERCEL_TEAM_ID`. 없으면 점검 목록을 Supabase에서 읽는다.
+- Vercel의 값은 대부분 sensitive라 다시 꺼낼 수 없다. `npm run env:pull`(Vercel CLI)로 받아도 그 값은 비어 있다. 서버 값은 사용자 Mac의 `.env.local`에서 코드가 쓰는 이름만 옮겼다.
 
 `DISCORD_ANNOUNCEMENT_WEBHOOK_URL`은 서버 전용이다. 한국어 공지가 게시되는 순간(새로 게시하거나 임시 저장을 게시로 바꿀 때) 디스코드로 한 번 보낸다. 본문 마크다운을 유지하고 이미지 앞뒤로 메시지를 나눈다. 값이 없으면 전송을 건너뛰고 관리자 화면에 실패를 알린다.
 
-점검(`/admin/maintenance`)은 Supabase `site_maintenance`에 저장한다. `EDGE_CONFIG`(Vercel Storage의 saigo-no-dante-edge-config 연결 문자열)와 `VERCEL_API_TOKEN`(Warin 팀 범위의 Vercel 액세스 토큰)이 모두 있으면 저장할 때마다 활성 점검 목록을 Edge Config `maintenance` 항목에 올리고, proxy도 Edge Config에서 읽는다. 둘 중 하나라도 없으면 proxy는 Supabase를 읽는다. 어느 쪽이든 인스턴스마다 60초 동안 목록을 재사용한다.
+점검(`/admin/maintenance`)은 Supabase `site_maintenance`에 저장한다. `EDGE_CONFIG`(Vercel Storage의 saigo-no-dante-edge-config 연결 문자열)와 `VERCEL_API_TOKEN`(Warin 팀 범위의 Vercel 액세스 토큰)이 모두 있으면 저장할 때마다 활성 점검 목록을 Edge Config `maintenance` 항목에 올리고, proxy도 Edge Config에서 읽는다. 둘 중 하나라도 없으면(지금 서버) proxy는 Supabase를 읽는다. 어느 쪽이든 인스턴스마다 60초 동안 목록을 재사용한다.
 
 일부 동기화 스크립트는 SUPABASE_SERVICE_ROLE_KEY도 받지만 앱의 현재 관리자 클라이언트는 SUPABASE_SECRET_KEY를 읽는다. 오래된 ANON_KEY 예시를 그대로 사용하지 않는다.
-선택 설정은 SENTRY_ORG/PROJECT/AUTH_TOKEN, 캐시 무효화용 REVALIDATION_SECRET, 공지 수집용 SITE_URL 등의 실제 호출자를 확인한다.
+선택 설정은 SENTRY_ORG/PROJECT/AUTH_TOKEN, 캐시 무효화용 REVALIDATION_SECRET(추출 도구의 `tools/site-sync/.env.local`과 같아야 한다), 공지 수집용 SITE_URL 등의 실제 호출자를 확인한다.
+
+## 요금 알림
+
+AWS 예산 `saigo-monthly`가 이번 달 실제 요금이 10달러를 넘을 때마다(10, 20, …, 100달러) 메일을 보낸다. 같은 알림이 SNS `saigo-budget-alerts`(us-east-1)와 Lambda `saigo-budget-discord`를 거쳐 디스코드로도 간다. 웹훅 주소는 Lambda 환경 변수 `DISCORD_WEBHOOK_URL`에 콘솔에서 직접 넣는다. 서버는 월 24달러 고정이고 전송량 4TB가 포함된다.
 
 ## 복구 순서
 
