@@ -4,7 +4,7 @@ import type { RandomResult } from './engine'
 
 /**
  * Convert random result into a deck code string.
- * Maps random EGO into its correct grade slot.
+ * Maps random EGO into its correct grade slot and carries the rolled formation order (count and numbers) as it is.
  */
 export async function encodeRandomResult(
   sinners: Sinner[],
@@ -27,7 +27,8 @@ export async function encodeRandomResult(
     egoSlots[sinnerId] = gradeMap
   }
 
-  const formationOrder = sinners
+  // A rolled order is the formation as it is (N numbered sinners); without one, all twelve go in sinner order.
+  const formationOrder = result.order ?? sinners
     .filter(s => deckSlots[s.id])
     .sort((a, b) => a.order_num - b.order_num)
     .map(s => s.id)
