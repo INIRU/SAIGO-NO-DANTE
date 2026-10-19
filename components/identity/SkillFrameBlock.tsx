@@ -61,7 +61,9 @@ export interface SkillFrameBlockProps {
   /** SkillDescription variant */
   descVariant?: 'compact' | 'detail'
   /** Allowed keywords for SkillDescription */
-  allowedKeywords?: Set<string>
+  allowedKeywords?: ReadonlySet<string>
+  /** The description is a skill of an identity / E.G.O: draw `allowedKeywords` written as plain words. */
+  matchPlainKeywords?: boolean
   /** Mental consume (shown only when non-zero) */
   mentalConsume?: number
 }
@@ -85,6 +87,7 @@ export default function SkillFrameBlock({
   unbreakableCoins = new Set(),
   descVariant = 'compact',
   allowedKeywords,
+  matchPlainKeywords,
   mentalConsume,
 }: SkillFrameBlockProps) {
   const t = useTranslations()
@@ -240,6 +243,7 @@ export default function SkillFrameBlock({
           accentColor={sinColor}
           variant={descVariant}
           allowedKeywords={allowedKeywords}
+          matchPlainKeywords={matchPlainKeywords}
         />
       )}
     </div>

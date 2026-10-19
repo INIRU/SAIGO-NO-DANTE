@@ -63,7 +63,7 @@ interface IdentitySkillsTabProps {
   skillNameColors: Record<string, string>
   skillImgIdxMap: Record<string, number>
   variantMap: Record<string, { baseOrder: number; idx: number; total: number }>
-  allowedKeywords?: Set<string>
+  allowedKeywords?: ReadonlySet<string>
   skillDiffs?: Map<string, SkillDiff>
   newSkills?: Skill[]
   /** Next uptie level with data; diffs above compare against it. */
@@ -246,6 +246,7 @@ export default function IdentitySkillsTab({
                   variant="detail"
                   skillNameColors={skillNameColors}
                   allowedKeywords={allowedKeywords}
+                  matchPlainKeywords
                   flavorText={skillFlavor}
                 />
                 {diff && nextLevel != null && (
@@ -256,6 +257,7 @@ export default function IdentitySkillsTab({
                     accentColor="#c2b79f"
                     skillNameColors={skillNameColors}
                     allowedKeywords={allowedKeywords}
+                    matchPlainKeywords
                   />
                 )}
                 </div>
@@ -280,6 +282,7 @@ export default function IdentitySkillsTab({
           accentColor="#c2b79f"
           skillNameColors={skillNameColors}
           allowedKeywords={allowedKeywords}
+          matchPlainKeywords
         />
       ))}
     </div>

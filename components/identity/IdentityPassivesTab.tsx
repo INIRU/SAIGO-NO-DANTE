@@ -12,7 +12,7 @@ interface IdentityPassivesTabProps {
   filteredPassives: Passive[]
   sinColor: string
   skillNameColors: Record<string, string>
-  allowedKeywords?: Set<string>
+  allowedKeywords?: ReadonlySet<string>
   passiveDiffs?: Map<string, PassiveDiff>
   newPassives?: Passive[]
   /** Next uptie level with data; diffs above compare against it. */
@@ -81,6 +81,7 @@ export default function IdentityPassivesTab({ filteredPassives, sinColor, skillN
             skillNameColors={skillNameColors}
             showCoinBadges={false}
             allowedKeywords={allowedKeywords}
+            matchPlainKeywords
             flavorText={passiveFlavor}
           />
         )}
@@ -92,6 +93,7 @@ export default function IdentityPassivesTab({ filteredPassives, sinColor, skillN
             accentColor={primaryColor}
             skillNameColors={skillNameColors}
             allowedKeywords={allowedKeywords}
+            matchPlainKeywords
           />
         )}
       </div>
@@ -139,6 +141,7 @@ export default function IdentityPassivesTab({ filteredPassives, sinColor, skillN
           accentColor={sinColor}
           skillNameColors={skillNameColors}
           allowedKeywords={allowedKeywords}
+          matchPlainKeywords
         />
       ))}
     </div>

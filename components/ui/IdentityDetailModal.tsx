@@ -17,6 +17,8 @@ import { Link } from '@/lib/i18n/navigation'
 import { getIdentitySinColor } from '@/lib/data/sinners'
 import { normalizeThemeKeyword, THEME_KEYWORDS } from '@/lib/constants/keywords'
 import { identityAtLevel, skillsAtLevel, MAX_IDENTITY_LEVEL } from '@/lib/identity/level'
+import { useOwnKeywords } from '@/lib/hooks/useOwnKeywords'
+import { descriptionTexts } from '@/lib/keywords/own-keywords'
 import { identityNameLines } from '@/lib/decks/identity-name-lines'
 import { getLocalizedName } from '@/lib/i18n/localize'
 import { getDetailStatIconUrl } from '@/lib/utils/images'
@@ -121,7 +123,8 @@ function LoadedContent({ data, uptie, egos, onEgoClick, onClose }: Omit<Identity
   const identity = useMemo(() => identityAtLevel(data.identity, MAX_IDENTITY_LEVEL), [data.identity])
   const skills = useMemo(() => skillsAtLevel(data.skills, MAX_IDENTITY_LEVEL), [data.skills])
   const model = useIdentitySkillModel(skills, data.passives, uptie)
-  const allowedKeywords = useMemo(() => new Set(identity.keywords ?? []), [identity.keywords])
+  const ownTexts = useMemo(() => descriptionTexts(data.skills, data.passives), [data.skills, data.passives])
+  const allowedKeywords = useOwnKeywords(identity.keywords, ownTexts)
   const sinColor = getIdentitySinColor(identity, sinMap)
 
   const nameLines = identityNameLines(getLocalizedName(identity, locale), identity.game_id, locale)

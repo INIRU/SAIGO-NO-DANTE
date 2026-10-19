@@ -7,10 +7,12 @@ import { SIN_COLORS, getSinIconUrl } from '@/lib/constants/sin'
 import { getPassiveCondition, type PlannerPassiveLike } from '@/lib/planner/passives'
 import SkillDescription from '@/components/skill/SkillDescription'
 
-export const PassiveEffect = memo(function PassiveEffect({ passive, condition, variant = 'panel' }: {
+export const PassiveEffect = memo(function PassiveEffect({ passive, condition, variant = 'panel', allowedKeywords }: {
   passive: PlannerPassiveLike
   condition: ReturnType<typeof getPassiveCondition>
   variant?: 'panel' | 'note'
+  /** The keywords of the identity this passive belongs to: plain words of older text are searched among them (notes pass none). */
+  allowedKeywords?: ReadonlySet<string>
 }) {
   const t = useTranslations('decks.detail')
   const note = variant === 'note'
@@ -33,7 +35,7 @@ export const PassiveEffect = memo(function PassiveEffect({ passive, condition, v
       </div>
       {passive.description && (
         <div style={note ? { marginTop: '0.25rem' } : { marginLeft: '0.75rem', marginTop: '0.125rem' }}>
-          <SkillDescription description={passive.description} accentColor={condition.color} variant="compact" />
+          <SkillDescription description={passive.description} accentColor={condition.color} variant="compact" allowedKeywords={allowedKeywords} matchPlainKeywords={!!allowedKeywords} />
         </div>
       )}
     </>
