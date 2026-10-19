@@ -15,6 +15,7 @@ interface IdentitySlotLike {
   identity_id?: string
   sinner_id?: string
   name_kr?: string
+  keywords?: readonly string[] | null
 }
 
 interface SkillLike {

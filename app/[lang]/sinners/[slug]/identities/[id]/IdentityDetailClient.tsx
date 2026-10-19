@@ -22,6 +22,8 @@ import IdentitySanitySection from '@/components/identity/IdentitySanitySection'
 import type { SanityCondition, PanicType } from '@/lib/types'
 import type { IdentitySpine } from '@/lib/spine/pack'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
+import { useOwnKeywords } from '@/lib/hooks/useOwnKeywords'
+import { descriptionTexts } from '@/lib/keywords/own-keywords'
 import { useTranslations, useLocale } from 'next-intl'
 import type { SupportedLang } from '@/lib/i18n/types'
 import { getLocalizedName } from '@/lib/i18n/localize'
@@ -68,11 +70,9 @@ export default function IdentityDetailClient({
   const sinColor = getIdentitySinColor(identity, kwSinMap)
   const rarityNum = identity.rarity
 
-  // 이 인격의 키워드만 허용 (화력/리듬 등 일반 단어가 키워드로 매칭되는 것 방지)
-  // 스킬 설명의 [대괄호] 키워드는 formatSkillDescInner의 bracket 패턴이 별도 처리
-  const allowedKeywords = useMemo(() => {
-    return new Set<string>(identity.keywords || [])
-  }, [identity.keywords])
+  // 이 인격의 키워드(키워드 목록 + 자기 스킬·패시브 글이 [Id]·<link>로 쓴 키워드)만 허용: 옛 글의 일반 단어가 키워드로 잡히는 것을 막는다
+  const ownTexts = useMemo(() => descriptionTexts(skills, passives), [skills, passives])
+  const allowedKeywords = useOwnKeywords(identity.keywords, ownTexts)
 
   // 뒤로가기/앞으로가기 시 탭 상태 동기화
   useEffect(() => {

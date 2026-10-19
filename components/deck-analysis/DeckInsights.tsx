@@ -11,6 +11,7 @@ import KeywordChart, { type KeywordChartContributor } from '@/components/planner
 import SkillDescription from '@/components/skill/SkillDescription'
 import { localizeDeckKeyword } from '@/components/decks/decks-types'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
+import { useOwnKeywordSets } from '@/lib/hooks/useOwnKeywords'
 import type { SupportedLang } from '@/lib/i18n/types'
 
 /** Name/description already localized by the caller. */
@@ -86,6 +87,10 @@ export default function DeckInsights({ identities, sinCounts, baseSinCounts, sum
     return map
   }, [identities])
 
+  // Per identity: its keywords and what its own passives reference; plain words of older passive text are searched among these.
+  const owners = useMemo(() => identities.map(identity => ({ id: identity.id, keywords: identity.keywords, texts: identity.passives.map(passive => passive.description) })), [identities])
+  const ownKeywords = useOwnKeywordSets(owners)
+
   const groups = identities.flatMap(identity => {
     const list = identity.passives.filter(passive => passive.passive_type === passiveType)
     return list.length ? [{ identity, list }] : []
@@ -157,7 +162,7 @@ export default function DeckInsights({ identities, sinCounts, baseSinCounts, sum
                           </div>
                           {passive.description && (
                             <div className="deck-passive__desc">
-                              <SkillDescription description={passive.description} accentColor={accent} variant="detail" showCoinBadges={false} />
+                              <SkillDescription description={passive.description} accentColor={accent} variant="detail" showCoinBadges={false} allowedKeywords={ownKeywords.get(identity.id)} matchPlainKeywords />
                             </div>
                           )}
                         </div>
