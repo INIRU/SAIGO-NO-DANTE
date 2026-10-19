@@ -14,7 +14,7 @@
 | 어시스트의 화면 인식을 고치거나 평가한다 | [어시스트 화면 인식](assist.md) |
 | 표나 칸을 바꾼다, 권한을 확인한다 | [데이터 모델](data-model.md) |
 | 개발자 API에 자원을 더한다, 파트너 봇 연동을 본다 | [개발자 API와 협업 파트너](partner-api.md) |
-| 배포, 환경 변수, 롤백 | [배포와 복구](deployment.md) |
+| 배포, 서버 접속, 환경 변수, 롤백 | [배포와 복구](deployment.md) |
 
 
 ## 문서 목록
@@ -25,7 +25,7 @@
 - [개발자 API와 협업 파트너](partner-api.md): `/api/v1` 자원, 한도, 파트너 권한, 소식 보내기 양식, Discord 봇 연동.
 - 데이터 동기화: [실행](https://github.com/INIRU/limbus-asset-extractor/blob/main/site-sync/docs/runbook.md), [코드 수정](https://github.com/INIRU/limbus-asset-extractor/blob/main/site-sync/docs/developing.md), [규칙](https://github.com/INIRU/limbus-asset-extractor/blob/main/site-sync/docs/rules.md), [필드 추가](https://github.com/INIRU/limbus-asset-extractor/blob/main/site-sync/docs/adding-a-field.md), [출처와 기록](https://github.com/INIRU/limbus-asset-extractor/blob/main/site-sync/docs/provenance.md).
 - [어시스트 화면 인식](assist.md): 인식 방법, 설정, 평가 도구와 측정 기록.
-- [배포와 복구](deployment.md): 환경 변수, 외부 서비스 점검, 롤백.
+- [배포와 복구](deployment.md): 서버·터널 구성, 자동 배포, 되돌리기, 집 IP가 바뀔 때 SSH 열기, Cloudflare 설정, 환경 변수, 요금 알림.
 - [디자인 기준](../DESIGN.md): 색, 글꼴, 게임 에셋, 공용 컴포넌트, 레이아웃·움직임·스켈레톤 규칙.
 
 ## 지원 화면
