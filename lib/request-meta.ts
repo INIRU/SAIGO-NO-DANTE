@@ -60,12 +60,18 @@ export function hashDeviceToken(token: string | null): string | null {
   return keyedHash(token)
 }
 
+/**
+ * The visitor address from the header the host overwrites: Cloudflare's on the self-hosted server (a client can prefix
+ * X-Forwarded-For there), X-Forwarded-For on Vercel (where anyone can send CF-Connecting-IP).
+ */
+export function getClientIp(headers: Headers): string | null {
+  if (process.env.SELF_HOSTED === '1') return getFirstHeaderValue(headers.get('cf-connecting-ip'))
+  return getFirstHeaderValue(headers.get('x-forwarded-for')) ?? getFirstHeaderValue(headers.get('x-real-ip'))
+}
+
 export function getRequestMetadata(request: NextRequest | Request): RequestMetadata {
   const headers = request.headers
-  const ip =
-    getFirstHeaderValue(headers.get('cf-connecting-ip')) ??
-    getFirstHeaderValue(headers.get('x-forwarded-for')) ??
-    getFirstHeaderValue(headers.get('x-real-ip'))
+  const ip = getClientIp(headers)
   const normalizedIp = ip ? stripPort(ip) : null
   const userAgent = headers.get('user-agent')?.trim() || null
 

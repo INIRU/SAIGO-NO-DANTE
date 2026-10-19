@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { getToken, type JWT } from 'next-auth/jwt'
 import { checkRateLimit } from '@/lib/rate-limit'
+import { getClientIp } from '@/lib/request-meta'
 import createMiddleware from 'next-intl/middleware'
 import { routing } from './lib/i18n/routing'
 import { isAllowedRequestOrigin } from './lib/request-origin'
@@ -223,9 +224,7 @@ export async function proxy(request: NextRequest) {
   const isInternalCall = !origin && !referer
 
   if ((isWriteApi || (isPublicGetApi && !isInternalCall))) {
-    const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
-      ?? request.headers.get('x-real-ip')
-      ?? 'unknown'
+    const ip = getClientIp(request.headers) ?? 'unknown'
     const bucket = isWriteApi ? 'write' : 'readonly'
     const { allowed, retryAfter } = checkRateLimit(ip, bucket)
     if (!allowed) {
