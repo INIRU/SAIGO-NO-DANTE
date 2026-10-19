@@ -96,6 +96,12 @@ export default function DeckSection({ state, dispatch, identities, sinners, skil
     return map
   }, [identities])
 
+  // The keywords go with each slot: plain keywords of an identity's passive texts are searched among that identity's own keywords.
+  const statSlots = useMemo(
+    () => state.identitySlots.map(slot => ({ ...slot, keywords: identityById.get(slot.identity_id)?.keywords })),
+    [state.identitySlots, identityById],
+  )
+
   const sinnerEgos = useMemo(() => {
     const map = new Map<string, EgoData[]>()
     for (const ego of egos) {
@@ -230,7 +236,7 @@ export default function DeckSection({ state, dispatch, identities, sinners, skil
           const selectedEgoSins = selectedEgoData.map(e => e.sin_affinity).filter(Boolean) as string[]
           return (
             <DeckStatsPanel
-              identitySlots={state.identitySlots}
+              identitySlots={statSlots}
               skills={skills}
               passives={passives}
               sinners={sinners}

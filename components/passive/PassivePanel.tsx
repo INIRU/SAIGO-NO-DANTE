@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl'
 import { getSinnerLogoUrl } from '@/lib/utils/images'
 import { buildPassivePanelModel, type PlannerPassiveIdentitySlot, type PlannerPassiveLike, type PlannerPassiveSinnerLike } from '@/lib/planner/passives'
 import { PassiveEffect } from './PassiveEffect'
+import { useOwnKeywordSets } from '@/lib/hooks/useOwnKeywords'
 
 interface PlannerPassivePanelProps {
   identitySlots: PlannerPassiveIdentitySlot[]
@@ -31,6 +32,13 @@ export default function PassivePanel({
     () => buildPassivePanelModel(identitySlots, passives, sinners, deckSinCounts),
     [identitySlots, passives, sinners, deckSinCounts],
   )
+  // Per identity: its keywords and what its own passives reference; plain words of older passive text are searched among these.
+  const owners = useMemo(() => identitySlots.flatMap(slot => slot.identity_id ? [{
+    id: slot.identity_id,
+    keywords: slot.keywords,
+    texts: passives.filter(passive => passive.identity_id === slot.identity_id).map(passive => passive.description),
+  }] : []), [identitySlots, passives])
+  const ownKeywords = useOwnKeywordSets(owners)
 
   return (
     <div className={className} style={{ flex: 1, background: '#120e09', border: '1px solid #221a0f', borderRadius: '0.375rem', overflow: 'hidden' }}>
@@ -73,7 +81,7 @@ export default function PassivePanel({
                 {slotP.map(({ passive: p, condition }, pi) => {
                   return (
                     <div key={`${p.passive_type}:${p.passive_order ?? pi}:${p.name}`} style={{ marginBottom: '0.375rem', opacity: condition.met ? 1 : 0.4 }}>
-                      <PassiveEffect passive={p} condition={condition} />
+                      <PassiveEffect passive={p} condition={condition} allowedKeywords={ownKeywords.get(p.identity_id)} />
                     </div>
                   )
                 })}

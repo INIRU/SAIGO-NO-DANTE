@@ -16,7 +16,7 @@ type Props = {
   level: number
   identity: Identity
   sinColor: string
-  allowedKeywords: Set<string>
+  allowedKeywords: ReadonlySet<string>
   model: ReturnType<typeof useIdentitySkillModel>
 }
 

@@ -4,7 +4,7 @@ import { getEgoGradeBannerUrl } from '@/lib/utils/images'
 
 
 import { getIdentityPortraitUrl, getDetailStatIconUrl } from '@/lib/utils/images'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import Image from 'next/image'
 import { Link } from '@/lib/i18n/navigation'
 import {
@@ -24,6 +24,8 @@ import { type SupportedLang } from '@/lib/i18n'
 import { localizeDeckKeyword } from '@/components/decks/decks-types'
 import { usePlainGameText } from '@/lib/hooks/usePlainGameText'
 import { splitGameTextLines } from '@/lib/game-text/rich-text'
+import { useOwnKeywords } from '@/lib/hooks/useOwnKeywords'
+import { descriptionTexts } from '@/lib/keywords/own-keywords'
 import { passiveRequirements } from '@/lib/planner/passives'
 import { MultipliedCount } from '@/components/passive/PassiveParts'
 
@@ -247,11 +249,11 @@ export function portraitUrl(
 
 // ── 컴포넌트 ──────────────────────────────────────────────────────────────
 /** A passive's description, one block per line; a tag that spans lines (`<style="highlight">- a\n- b</style>`) keeps applying on each. */
-export function PassiveDescriptionLines({ text, color }: { text: string; color: string }) {
+export function PassiveDescriptionLines({ text, color, allowedKeywords }: { text: string; color: string; allowedKeywords?: ReadonlySet<string> }) {
   const formatSkillDesc = useFormatSkillDesc()
   return splitGameTextLines(text).map((line, li) => (
     <div key={li}>
-      <span style={{ color: '#686050', whiteSpace: 'pre-wrap' }}>{formatSkillDesc(line, color)}</span>
+      <span style={{ color: '#686050', whiteSpace: 'pre-wrap' }}>{formatSkillDesc(line, color, undefined, allowedKeywords, allowedKeywords ? { matchPlainKeywords: true } : undefined)}</span>
     </div>
   ))
 }
@@ -274,6 +276,9 @@ export default function DeckIdentityCard({
   const { getIconUrl } = useKeywordData()
   const keywords = useKeywords()
   const id_ = slot.identities!
+  // The keywords of this identity (its keyword list and what its own skills and passives reference): plain words of older text are searched among these.
+  const ownTexts = useMemo(() => descriptionTexts(id_.skills, id_.passives), [id_.skills, id_.passives])
+  const allowedKeywords = useOwnKeywords(id_.keywords, ownTexts)
   const [activeTab, setActiveTab] = useState<'skills' | 'passives' | 'ego'>('skills')
   const identityName = localizeIdentityName(id_, lang)
 
@@ -452,6 +457,8 @@ export default function DeckIdentityCard({
               skills={sortedSkills}
               identity={id_}
               lang={lang}
+              allowedKeywords={allowedKeywords}
+              matchPlainKeywords
             />
           ))}
         </div>
@@ -503,7 +510,7 @@ export default function DeckIdentityCard({
 
                 {passiveDescription && (
                   <div style={{ fontSize: '0.6875rem', lineHeight: 1.8 }}>
-                    <PassiveDescriptionLines text={passiveDescription} color={pc} />
+                    <PassiveDescriptionLines text={passiveDescription} color={pc} allowedKeywords={allowedKeywords} />
                   </div>
                 )}
               </div>

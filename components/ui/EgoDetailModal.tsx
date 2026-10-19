@@ -2,13 +2,15 @@
 
 import { getEgoGradeBannerUrl } from '@/lib/utils/images'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import Image from 'next/image'
 import { X } from 'lucide-react'
 import BaseModal from '@/components/ui/BaseModal'
 import { STORAGE_BASE, GRADE_COLORS } from '@/lib/constants/game'
 import { SIN_COLORS, SIN_ORDER, getSinIconUrl, normalizeSin } from '@/lib/constants/sin'
 import SkillDescription from '@/components/skill/SkillDescription'
+import { useOwnKeywords } from '@/lib/hooks/useOwnKeywords'
+import { descriptionTexts } from '@/lib/keywords/own-keywords'
 import { useTranslations, useLocale } from 'next-intl'
 import { getLocalizedName } from '@/lib/i18n'
 import type { SupportedLang } from '@/lib/i18n/types'
@@ -193,6 +195,9 @@ function LoadingSkeleton() {
 // ── 모달 본문 ─────────────────────────────────────────────────────────────
 function ModalContent({ data, lang, t }: { data: ApiResponse; lang: SupportedLang; t: (key: TranslationKey) => string }) {
   const { ego, sinner, skills } = data
+  // The keywords of this E.G.O (its keyword list and what its own skills and passive reference): plain words of older text are searched among these.
+  const ownTexts = useMemo(() => [...descriptionTexts(skills), ...(ego.passive_content ? [ego.passive_content] : [])], [skills, ego.passive_content])
+  const allowedKeywords = useOwnKeywords(ego.keywords, ownTexts)
 
   const gradeColor = GRADE_COLORS[ego.grade] ?? '#667788'
   const sinType = normalizeSin(ego.sin_affinity)
@@ -329,7 +334,7 @@ function ModalContent({ data, lang, t }: { data: ApiResponse; lang: SupportedLan
             </div>
             {ego.passive_content && (
               <div style={{ marginTop: '0.25rem', borderTop: `1px solid ${egoSinColor}15`, paddingTop: '0.375rem' }}>
-                <SkillDescription description={ego.passive_content} accentColor={egoSinColor} variant="compact" />
+                <SkillDescription description={ego.passive_content} accentColor={egoSinColor} variant="compact" allowedKeywords={allowedKeywords} matchPlainKeywords />
               </div>
             )}
           </div>
@@ -341,7 +346,7 @@ function ModalContent({ data, lang, t }: { data: ApiResponse; lang: SupportedLan
         <Section title={t('ego.awakening')}>
           <div className="flex flex-col gap-2">
             {awakening.map(skill => (
-              <EgoSkillCard key={skill.id} skill={skill} gradeColor={egoSinColor} lang={lang} t={t} />
+              <EgoSkillCard key={skill.id} skill={skill} gradeColor={egoSinColor} lang={lang} t={t} allowedKeywords={allowedKeywords} />
             ))}
           </div>
         </Section>
@@ -352,7 +357,7 @@ function ModalContent({ data, lang, t }: { data: ApiResponse; lang: SupportedLan
         <Section title={t('ego.corrosion')}>
           <div className="flex flex-col gap-2">
             {corrosion.map(skill => (
-              <EgoSkillCard key={skill.id} skill={skill} gradeColor="#cc4444" isCorrosion lang={lang} t={t} />
+              <EgoSkillCard key={skill.id} skill={skill} gradeColor="#cc4444" isCorrosion lang={lang} t={t} allowedKeywords={allowedKeywords} />
             ))}
           </div>
         </Section>
@@ -374,7 +379,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 }
 
 // ── EgoSkillCard ──────────────────────────────────────────────────────────
-function EgoSkillCard({ skill, gradeColor, isCorrosion, lang, t }: { skill: EgoSkillData; gradeColor: string; isCorrosion?: boolean; lang: SupportedLang; t: (key: TranslationKey) => string }) {
+function EgoSkillCard({ skill, gradeColor, isCorrosion, lang, t, allowedKeywords }: { skill: EgoSkillData; gradeColor: string; isCorrosion?: boolean; lang: SupportedLang; t: (key: TranslationKey) => string; allowedKeywords: ReadonlySet<string> }) {
   const accentColor = isCorrosion ? '#cc4444' : gradeColor
   const coinPowerStr = skill.coin_power >= 0 ? `+${skill.coin_power}` : `${skill.coin_power}`
   const maxPower = skill.coin_power < 0 ? skill.base_power : skill.base_power + skill.coins * skill.coin_power
@@ -420,7 +425,7 @@ function EgoSkillCard({ skill, gradeColor, isCorrosion, lang, t }: { skill: EgoS
       {/* 스킬 설명 */}
       {localizedDesc && (
         <div style={{ marginTop: '0.375rem', borderTop: `1px solid ${accentColor}15`, paddingTop: '0.375rem' }}>
-          <SkillDescription description={localizedDesc} accentColor={accentColor} variant="compact" />
+          <SkillDescription description={localizedDesc} accentColor={accentColor} variant="compact" allowedKeywords={allowedKeywords} matchPlainKeywords />
         </div>
       )}
     </div>
