@@ -24,14 +24,16 @@ export type StatChange = { label: string; diff: NumDiff; signed?: boolean }
 const signed = (n: number) => (n > 0 ? `+${n}` : `${n}`)
 
 /** What changes at the next uptie: stat deltas, then removed (struck) and added (highlighted) lines. */
-export function UptieChangePanel({ level, title, stats = [], lines, accentColor, skillNameColors, allowedKeywords }: {
+export function UptieChangePanel({ level, title, stats = [], lines, accentColor, skillNameColors, allowedKeywords, matchPlainKeywords }: {
   level: number
   title?: React.ReactNode
   stats?: StatChange[]
   lines: LineChange[]
   accentColor: string
   skillNameColors?: Record<string, string>
-  allowedKeywords?: Set<string>
+  allowedKeywords?: ReadonlySet<string>
+  /** The text is a skill or passive of an identity / E.G.O: draw `allowedKeywords` written as plain words. */
+  matchPlainKeywords?: boolean
 }) {
   const t = useTranslations()
   const format = useFormatSkillDesc()
@@ -78,7 +80,7 @@ export function UptieChangePanel({ level, title, stats = [], lines, accentColor,
               {line.coin > 0 && <span className="mt-[.2rem]"><CoinBadge number={line.coin} size="1.25rem" /></span>}
               <span className="sr-only">{t(line.kind === 'added' ? 'identity.uptie.added' : 'identity.uptie.removed')}: </span>
               {line.kind === 'added'
-                ? <span className="min-w-0 text-[#d8cfbf]">{format(line.text, accentColor, skillNameColors, allowedKeywords)}</span>
+                ? <span className="min-w-0 text-[#d8cfbf]">{format(line.text, accentColor, skillNameColors, allowedKeywords, matchPlainKeywords ? { matchPlainKeywords } : undefined)}</span>
                 : <s className="min-w-0 text-[#8f8270] decoration-[#8f8270]">{plain(line.text)}</s>}
             </li>
           ))}

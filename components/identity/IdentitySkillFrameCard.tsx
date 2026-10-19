@@ -41,7 +41,9 @@ type IdentitySkillFrameCardProps = {
   identity?: SkillFrameIdentity | null
   lang?: string
   size?: string
-  allowedKeywords?: Set<string>
+  allowedKeywords?: ReadonlySet<string>
+  /** The card shows a skill of an identity: draw `allowedKeywords` written as plain words. */
+  matchPlainKeywords?: boolean
   className?: string
   style?: CSSProperties
 }
@@ -92,6 +94,7 @@ export default function IdentitySkillFrameCard({
   lang,
   size = '3.5rem',
   allowedKeywords,
+  matchPlainKeywords,
   className = 'p-2.5 rounded',
   style,
 }: IdentitySkillFrameCardProps) {
@@ -133,6 +136,7 @@ export default function IdentitySkillFrameCard({
         unbreakableCoins={unbreakableCoinIndices(skill.description)}
         descVariant="compact"
         allowedKeywords={allowedKeywords}
+        matchPlainKeywords={matchPlainKeywords}
       />
     </div>
   )

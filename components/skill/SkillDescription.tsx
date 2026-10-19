@@ -18,7 +18,10 @@ interface SkillDescriptionProps {
   variant?: SkillDescVariant
   skillNameColors?: Record<string, string>
   showCoinBadges?: boolean
-  allowedKeywords?: Set<string>
+  /** keyword_meta names the identity / E.G.O owns (the plain keywords of older text are searched among these). */
+  allowedKeywords?: ReadonlySet<string>
+  /** Skill or passive text of an identity / E.G.O: draw `allowedKeywords` written as plain words. */
+  matchPlainKeywords?: boolean
   level4Desc?: string
   flavorText?: string | null
 }
@@ -30,10 +33,14 @@ export default function SkillDescription({
   skillNameColors,
   showCoinBadges,
   allowedKeywords,
+  matchPlainKeywords,
   level4Desc,
   flavorText,
 }: SkillDescriptionProps) {
-  const formatSkillDesc = useFormatSkillDesc()
+  const formatSkillDescOf = useFormatSkillDesc()
+  const formatOptions = matchPlainKeywords ? { matchPlainKeywords } : undefined
+  const formatSkillDesc = (text: string, color: string, names?: Record<string, string>, allowed?: ReadonlySet<string>) =>
+    formatSkillDescOf(text, color, names, allowed, formatOptions)
   const formatGameText = useFormatGameText()
   const t = useTranslations()
   const styles = SKILL_DESC_STYLES[variant]

@@ -5,6 +5,8 @@ export interface PlannerPassiveIdentitySlot {
   identity_id?: string
   sinner_id?: string
   name_kr?: string
+  /** keyword_meta names of the identity (identities.keywords): the plain keywords of its passive texts are searched among these. */
+  keywords?: readonly string[] | null
 }
 
 export interface PlannerPassiveLike {

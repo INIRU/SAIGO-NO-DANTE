@@ -2,7 +2,7 @@
 
 import { getEgoGradeBannerUrl, getEgoArtworkUrl } from '@/lib/utils/images'
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Link } from '@/lib/i18n/navigation'
 import Image from 'next/image'
 import {
@@ -18,6 +18,8 @@ import SkillFrameBlock from '@/components/identity/SkillFrameBlock'
 import SkillDescription from '@/components/skill/SkillDescription'
 import { isUnbreakableCoinText } from '@/lib/identity/skill-description'
 import { useKeywords } from '@/components/providers/KeywordProvider'
+import { useOwnKeywords } from '@/lib/hooks/useOwnKeywords'
+import { egoTexts } from '@/lib/keywords/own-keywords'
 import { getLocalizedName, getLocalizedKeywordName } from '@/lib/i18n'
 import { useTranslations, useLocale } from 'next-intl'
 import type { SupportedLang } from '@/lib/i18n/types'
@@ -60,12 +62,13 @@ function getLocalizedObtainingMethod(ego: EGO, lang: SupportedLang) {
 
 // ─── EGO 스킬 프레임 패널 ────────────────────────────────────────────
 function SkillFramePanel({
-  skill, sinColor, skillIconUrl, lang,
+  skill, sinColor, skillIconUrl, lang, allowedKeywords,
 }: {
   skill: EGOSkill
   sinColor: string
   skillIconUrl: string
   lang: SupportedLang
+  allowedKeywords: ReadonlySet<string>
 }) {
   const skillSin: SinType | null = (SIN_KR_TO_EN[skill.resource] ?? (skill.resource in SIN_COLORS ? skill.resource as SinType : null))
   const skillSinColor = skillSin ? (SIN_COLORS[skillSin] ?? sinColor) : sinColor
@@ -133,6 +136,8 @@ function SkillFramePanel({
       unbreakableCoins={unbreakableCoins}
       descVariant="detail"
       mentalConsume={skill.mentalConsume}
+      allowedKeywords={allowedKeywords}
+      matchPlainKeywords
     />
   )
 }
@@ -301,6 +306,9 @@ export default function EGODetailClient({ sinner, ego }: Props) {
   const corSkillLevel = corrosionStages.includes(corrosionSelection) ? corrosionSelection : corrosionStages.at(-1) ?? 1
   const passive = egoPassiveAtStage(ego, skillLevel)
   const keywordData = useKeywords()
+  // The keywords of this E.G.O (its keyword list and what its own skills and passives reference): plain words of older text are searched among these.
+  const ownTexts = useMemo(() => egoTexts(ego), [ego])
+  const allowedKeywords = useOwnKeywords(ego.keywords, ownTexts)
   const t = useTranslations()
   const locale = useLocale()
   const lang = locale as SupportedLang
@@ -424,7 +432,7 @@ export default function EGODetailClient({ sinner, ego }: Props) {
           </header>
           <div className={styles.skillList}>{currentSkills.length ? currentSkills.map((skill, index) => (
             <div className={styles.skill} key={`${skill.gameSkillId ?? skill.name}-${index}`}>
-              <SkillFramePanel skill={skill} sinColor={sinColor} skillIconUrl={awakenIconUrl} lang={lang} />
+              <SkillFramePanel skill={skill} sinColor={sinColor} skillIconUrl={awakenIconUrl} lang={lang} allowedKeywords={allowedKeywords} />
             </div>
           )) : <p className={styles.empty}>{t('ego.noSkillData')}</p>}</div>
         </section>}
@@ -438,7 +446,7 @@ export default function EGODetailClient({ sinner, ego }: Props) {
           </header>
           <div className={styles.skillList}>{currentCorSkills.length ? currentCorSkills.map((skill, index) => (
             <div className={styles.skill} key={`${skill.gameSkillId ?? skill.name}-${index}`}>
-              <SkillFramePanel skill={skill} sinColor={sinColor} skillIconUrl={erosionIconUrl} lang={lang} />
+              <SkillFramePanel skill={skill} sinColor={sinColor} skillIconUrl={erosionIconUrl} lang={lang} allowedKeywords={allowedKeywords} />
             </div>
           )) : <p className={styles.empty}>{t('ego.noCorSkillData')}</p>}</div>
         </section>}
@@ -447,7 +455,7 @@ export default function EGODetailClient({ sinner, ego }: Props) {
           <header className={styles.sectionHeading}><h2 id="ego-passive">{t('ego.passive')}</h2></header>
           <div className={styles.passiveContent}>
             <PassiveNameLabel as="h3">{passiveName}</PassiveNameLabel>
-            {(passiveDescription || passiveFlavor) && <SkillDescription description={passiveDescription ?? ''} accentColor="#c8900a" variant="detail" flavorText={passiveFlavor} />}
+            {(passiveDescription || passiveFlavor) && <SkillDescription description={passiveDescription ?? ''} accentColor="#c8900a" variant="detail" allowedKeywords={allowedKeywords} matchPlainKeywords flavorText={passiveFlavor} />}
           </div>
         </section>}
       </div>
