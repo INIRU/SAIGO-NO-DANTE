@@ -4,9 +4,8 @@ import { getTranslations } from 'next-intl/server'
 import DanteLogo from '@/components/brand/DanteLogo'
 import { NAV_GROUPS } from './nav-shared'
 
-// The menu's DB, community and tools groups. The navbar builds its dropdowns only while one is open, so these are the
+// Every menu group (DB, community, tools, fun). The navbar builds its dropdowns only while one is open, so these are the
 // links every page's HTML carries to those pages.
-const FOOTER_GROUPS = NAV_GROUPS.filter(group => group.labelKey !== 'nav.other.title')
 
 /** Explicit locale: rendered in the static layout shell, where the request locale is unavailable. */
 export default async function Footer({ lang }: { lang: string }) {
@@ -38,7 +37,7 @@ export default async function Footer({ lang }: { lang: string }) {
         {/* 네비게이션 */}
         {/* One row per group: the group name in its own column, so the rows line up and long rows wrap under their links. */}
         <nav aria-label={tCommon('footerNav')} className="grid max-w-full grid-cols-[auto_minmax(0,1fr)] gap-x-5 gap-y-3 text-xs tracking-widest">
-          {FOOTER_GROUPS.map(group => (
+          {NAV_GROUPS.map(group => (
             <div key={group.labelKey} className="contents">
               <p className="text-right" style={{ color: 'var(--gold-dim)' }}>{label(group.labelKey)}</p>
               <ul aria-label={label(group.labelKey)} className="flex flex-wrap gap-x-5 gap-y-3">

@@ -16,10 +16,12 @@ vi.mock('next-intl/server', async () => {
   }
 })
 
-it('REQ-SHARED-041 the footer links every DB, community and tools page of the menu as a locale-prefixed anchor', async () => {
+it('REQ-SHARED-041 the footer links every DB, community, tools and fun page of the menu as a locale-prefixed anchor', async () => {
   const { default: Footer } = await import('@/components/layout/Footer')
-  const groups = NAV_GROUPS.filter(group => ['nav.db.title', 'nav.community.title', 'nav.tools.title'].includes(group.labelKey))
-  expect(groups).toHaveLength(3)
+  const groups = NAV_GROUPS.filter(group => ['nav.db.title', 'nav.community.title', 'nav.tools.title', 'nav.fun.title'].includes(group.labelKey))
+  expect(groups).toHaveLength(4)
+  expect(groups).toHaveLength(NAV_GROUPS.length)
+  const funTitles: Record<string, string> = { ko: '재미', en: 'Fun', ja: 'お楽しみ' }
 
   for (const lang of ['ko', 'en', 'ja']) {
     const html = renderToStaticMarkup(await Footer({ lang }))
@@ -27,6 +29,8 @@ it('REQ-SHARED-041 the footer links every DB, community and tools page of the me
 
     // The menu's dropdowns exist only while open, so these anchors are the links a crawler finds on every page.
     for (const item of groups.flatMap(group => group.items)) expect(hrefs).toContain(`/${lang}${item.href}`)
+    expect(hrefs).toEqual(expect.arrayContaining([`/${lang}/random`, `/${lang}/developers`]))
+    expect(html).toContain(`<p class="text-right" style="color:var(--gold-dim)">${funTitles[lang]}</p>`)
     expect(hrefs).toEqual(expect.arrayContaining([`/${lang}/terms`, `/${lang}/privacy`]))
     expect(new Set(hrefs).size).toBe(hrefs.length)
     // Every group and link is named in the page language, inside the footer's nav landmark.

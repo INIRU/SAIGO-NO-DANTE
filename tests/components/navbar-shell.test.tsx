@@ -43,7 +43,8 @@ describe('REQ-SHARED-024 the navbar body is part of the static shell on every ro
     // No Suspense above: if any part of the body needed the pathname, this render would hang instead of returning markup.
     const html = render(<Navbar mainNavLabel="main" />, null)
     expect(html).toMatch(/<a [^>]*href="\/ko"/)
-    for (const label of ['nav.db.title', 'nav.community.title', 'nav.tools.title', 'nav.other.title']) expect(html).toContain(label)
+    for (const label of ['nav.db.title', 'nav.community.title', 'nav.tools.title', 'nav.fun.title']) expect(html).toContain(label)
+    expect(html).not.toContain('nav.other.title')
     expect(html).toContain('aria-label="검색 열기 (Ctrl+K)"')
     expect(html).toContain('nav-kbd-mac')
     expect(html).toContain('nav-kbd-other')
