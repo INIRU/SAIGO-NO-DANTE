@@ -45,7 +45,7 @@ function PartnerFace({ identity, chosen }: { identity: PlannerDeckIdentity; chos
   return (
     <span className="idnote__face" data-partner-face data-chosen={chosen} data-open={open || undefined}>
       <button type="button" aria-label={name} aria-expanded={open} onClick={() => setOpen(value => !value)} onBlur={() => setOpen(false)}>
-        {art && <Image src={art} alt="" fill sizes="24px" quality={50} style={{ objectFit: 'cover', objectPosition: '50% 0', transform: 'scale(1.9)', transformOrigin: '50% 12%' }} />}
+        {art && <Image src={art} alt="" fill sizes="28px" quality={50} style={{ objectFit: 'cover', objectPosition: '50% 0', transform: 'scale(1.9)', transformOrigin: '50% 12%' }} />}
       </button>
       <span role="tooltip" className="idnote__name">{name}</span>
     </span>
@@ -72,11 +72,14 @@ export default function SuggestionNote({ suggestion, identityOf }: { suggestion:
       )}
       {reason && <p className="idnote__reason" title={reason}>{reason}</p>}
       <style jsx global>{`
-        .idnote { margin-top: 0.375rem; min-width: 0; }
-        .idnote__partners { display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem; }
-        .idnote__label { margin-right: 0.125rem; color: var(--text-muted); font-size: 0.6875rem; line-height: 1; white-space: nowrap; }
-        .idnote__face { position: relative; display: inline-flex; }
-        .idnote__face button { position: relative; width: 1.5rem; height: 1.5rem; padding: 0; overflow: hidden; border: 1px solid var(--border); border-radius: 999px; background: var(--bg-deep); cursor: pointer; }
+        .idnote { margin-top: 0.375rem; min-width: 0; container-type: inline-size; }
+        .idnote__partners { display: flex; flex-wrap: nowrap; align-items: center; min-width: 0; }
+        .idnote__label { margin-right: 0.375rem; color: var(--text-muted); font-size: 0.6875rem; line-height: 1; white-space: nowrap; }
+        .idnote__face { position: relative; display: inline-flex; flex: none; }
+        .idnote__face + .idnote__face { margin-left: -0.375rem; }
+        .idnote__face:hover, .idnote__face:focus-within, .idnote__face[data-open] { z-index: 2; }
+        @container (max-width: 8rem) { .idnote__label { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip-path: inset(50%); } }
+        .idnote__face button { position: relative; width: 1.75rem; height: 1.75rem; padding: 0; overflow: hidden; border: 1px solid var(--border); box-shadow: 0 0 0 2px var(--bg-deep); border-radius: 999px; background: var(--bg-deep); cursor: pointer; }
         .idnote__face[data-chosen='true'] button { border-color: var(--gold-light); }
         .idnote__face button:focus-visible { outline: 2px solid var(--gold-light); outline-offset: 1px; }
         .idnote__name {
