@@ -5,6 +5,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { Link } from "@/lib/i18n/navigation";
 import { ArrowUpRight, ChevronDown, ChevronUp, History, Layers3 } from "lucide-react";
 import BoardSkeleton from "./BoardSkeleton";
+import RisingShelf from "./RisingShelf";
 import ForYou, { OwnedLink } from "./ForYou";
 import { shelfOrder } from "@/lib/discovery/shelf";
 import DeckCard, { type DeckSummary } from "@/components/decks/DeckCard";
@@ -197,6 +198,7 @@ export default function DiscoveryShelf({
                 </div>
               </section>;
             })}
+        {data && <RisingShelf kind={kind} />}
         {data &&
           !data.recent.length &&
           !data.updated.length &&
