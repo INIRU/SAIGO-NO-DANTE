@@ -1049,6 +1049,7 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
                     egoGiftLookup={egoGiftLookup}
                     egoGiftConditionLookup={egoGiftConditionLookup}
                     textScale="comfortable"
+                    anchors
                   />
                 </div>
               )}

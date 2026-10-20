@@ -9,6 +9,8 @@ import Image from 'next/image'
 import NoteBlockViewer, { NoteGiftClickContext, NoteKeywordLabel } from '@/components/notes/NoteBlockViewer'
 import { parseBlockDocument, NOTE_PREFIX } from '@/lib/notes/blocks'
 import { parseNoteImage } from '@/lib/notes/images'
+import NoteTocLayout, { NoteHeadingLink } from '@/components/notes/NoteToc'
+import { NOTE_TOC_MIN, markdownHeadings } from '@/lib/notes/toc'
 import { noteBlockTokenPattern, noteInlineMarkdownPattern, noteTokenPattern } from '@/lib/notes/inline-tokens'
 import { PlaceholderText } from '@/components/ui/PlaceholderLabel'
 import IdentitySkillFrameCard from '@/components/identity/IdentitySkillFrameCard'
@@ -614,6 +616,7 @@ export function NoteRenderer({
   giftLabel = false,
   allowedKeywords,
   textScale = 'default',
+  anchors = false,
 }: {
   text: string
   skillLookup?: Record<string, NoteSkillEntry>
@@ -627,11 +630,13 @@ export function NoteRenderer({
   giftLabel?: boolean
   allowedKeywords?: Set<string>
   textScale?: 'default' | 'comfortable'
+  /** Headings get ids and a copy-link button, and a table of contents appears from three headings (detail pages, previews). */
+  anchors?: boolean
 }) {
   const locale = useLocale()
   if (!text.trim()) return null
   const doc = parseBlockDocument(text)
-  if (doc) return <NoteBlockViewer doc={doc} renderText={value => value.trim() ? <NoteRenderer text={value} skillLookup={skillLookup} passiveLookup={passiveLookup} egoLookup={egoLookup} identityLookup={identityLookup} egoGiftLookup={egoGiftLookup} allowedKeywords={allowedKeywords} inline /> : value} />
+  if (doc) return <NoteBlockViewer doc={doc} renderText={value => value.trim() ? <NoteRenderer text={value} skillLookup={skillLookup} passiveLookup={passiveLookup} egoLookup={egoLookup} identityLookup={identityLookup} egoGiftLookup={egoGiftLookup} allowedKeywords={allowedKeywords} inline /> : value} anchors={anchors} />
   if (text.startsWith(NOTE_PREFIX)) return null
 
   const renderMarkdownInline = (value: string, keyPrefix: string): React.ReactNode[] => {
@@ -828,6 +833,8 @@ export function NoteRenderer({
   if (inline) return <span style={{ fontSize: '0.875rem', color: 'var(--note-sin-text, #b0a898)', lineHeight: 1.65 }}>{elements}</span>
 
   const lines = text.replace(/\r\n/g, '\n').split('\n')
+  const headings = anchors ? markdownHeadings(text) : []
+  const headingAt = headings.length >= NOTE_TOC_MIN ? new Map(headings.map(heading => [heading.line, heading])) : null
   const blocks: React.ReactNode[] = []
   let i = 0
   while (i < lines.length) {
@@ -862,9 +869,12 @@ export function NoteRenderer({
     if (heading) {
       const level = heading[1].length
       const Tag = (level === 1 ? 'h3' : 'h4') as 'h3' | 'h4'
+      const anchor = headingAt?.get(i)
       blocks.push(
         <Tag
           key={`h-${i}`}
+          id={anchor?.id}
+          className={anchor ? 'note-heading' : undefined}
           style={{
             color: '#d9d0bf',
             fontSize: level === 1 ? '1rem' : '0.9375rem',
@@ -875,6 +885,7 @@ export function NoteRenderer({
           }}
         >
           {renderInline(heading[2], `h-${i}`)}
+          {anchor && <NoteHeadingLink id={anchor.id} text={anchor.text} />}
         </Tag>
       )
       i += 1
@@ -972,7 +983,7 @@ export function NoteRenderer({
     i = j
   }
 
-  return (
+  const body = (
     <div
       style={{
         fontSize: textScale === 'comfortable' ? '1rem' : '0.9375rem',
@@ -984,6 +995,7 @@ export function NoteRenderer({
       {blocks}
     </div>
   )
+  return headingAt ? <NoteTocLayout headings={headings}>{body}</NoteTocLayout> : body
 }
 
 const fetchNoteGifts = (url: string): Promise<NoteEgoGiftEntry[]> => fetch(url).then(response => { if (!response.ok) throw new Error('gifts'); return response.json() })

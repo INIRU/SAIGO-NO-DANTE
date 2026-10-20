@@ -17,6 +17,8 @@ import { isNoteImageUrl } from '@/lib/notes/images'
 import { mentionHref, type MentionKind } from '@/lib/notes/mention'
 import QuietImage from '@/components/ui/QuietImage'
 import { Link } from '@/lib/i18n/navigation'
+import NoteTocLayout, { NoteHeadingLink } from './NoteToc'
+import { NOTE_TOC_MIN, collectHeadings } from '@/lib/notes/toc'
 import { isNoteColorSin } from '@/lib/notes/text-style'
 import { GIFT_KEYWORD_COLORS } from '@/lib/constants/gift'
 import { NoteCardView } from './NoteCardBlock'
@@ -110,8 +112,10 @@ function NoteAccordionView({title,children}:{title:ReactNode;children:ReactNode}
     <div id={id} className="note-accordion-panel" inert={!open}><div><div className="note-accordion-body">{children}</div></div></div>
   </section>
 }
-export default function NoteBlockViewer({doc,renderText}:{doc:JSONContent;renderText:(text:string)=>ReactNode}) {
+export default function NoteBlockViewer({doc,renderText,anchors=false}:{doc:JSONContent;renderText:(text:string)=>ReactNode;/** Give the headings ids and a copy-link button, and a table of contents from three headings (detail pages, previews). */anchors?:boolean}) {
   const lang=useLocale(), tr=(ko:string,ja:string,en:string)=>lang==='ja'?ja:lang==='en'?en:ko
+  const headings=useMemo(()=>anchors?collectHeadings(doc):[],[anchors,doc])
+  const headingIds=useMemo(()=>headings.length>=NOTE_TOC_MIN?new Map(headings.map(h=>[h.node,h])):null,[headings])
   function render(n:JSONContent,key:string):ReactNode {
     // A text node of only spaces is the gap between two chips (or a chip and a word): it stays, the paragraph around it decides whether anything shows.
     if (!(n.type === 'text' && n.text) && !visibleNode(n) && !['horizontalRule','hardBreak','tableRow','tableCell','tableHeader'].includes(n.type ?? '')) return null
@@ -145,7 +149,10 @@ export default function NoteBlockViewer({doc,renderText}:{doc:JSONContent;render
       case 'noteAsset': return <NoteAssetView key={key} kind={n.attrs!.kind} id={n.attrs!.id}/>
       case 'noteVideo': return <NoteVideo key={key} id={n.attrs!.videoId}/>
       case 'image': return isNoteImageUrl(n.attrs?.src) ? <img key={key} className="note-document-image" src={n.attrs!.src} alt={n.attrs?.alt ?? ''} loading="lazy"/> : null
-      case 'heading': return n.attrs?.level===1?<h2 key={key}>{children}</h2>:<h3 key={key}>{children}</h3>
+      case 'heading': {
+        const anchor=headingIds?.get(n), Tag=n.attrs?.level===1?'h2':'h3'
+        return anchor ? <Tag key={key} id={anchor.id} className="note-heading">{children}<NoteHeadingLink id={anchor.id} text={anchor.text}/></Tag> : <Tag key={key}>{children}</Tag>
+      }
       case 'paragraph': return <p key={key}>{children}</p>
       case 'bulletList': return <ul key={key}>{children}</ul>
       case 'orderedList': return <ol key={key} start={n.attrs?.start}>{children}</ol>
@@ -157,5 +164,5 @@ export default function NoteBlockViewer({doc,renderText}:{doc:JSONContent;render
       default: return <div key={key}>{children}</div>
     }
   }
-  return <NoteAssetsProvider doc={doc}><div className="note-block-document">{doc.content?.map((n,i)=>render(n,String(i)))}</div></NoteAssetsProvider>
+  return <NoteAssetsProvider doc={doc}><NoteTocLayout headings={headings}><div className="note-block-document">{doc.content?.map((n,i)=>render(n,String(i)))}</div></NoteTocLayout></NoteAssetsProvider>
 }

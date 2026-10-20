@@ -184,5 +184,5 @@ export default function DeckNoteEditor({
   }, [allGiftKeywordCounts, deckSlots, egoGifts, formationGiftKeywordCounts, formationOrder])
 
   return <NoteDocumentEditor formation={sinners.flatMap(sinner => { const id = sinner.id; const identity = deckSlots[id]; return identity ? [{ identityId: identity.id, sinnerId: id, name: (locale === 'en' ? sinner?.name_en : locale === 'ja' ? sinner?.name_jp : sinner?.name_kr) || sinner?.name_kr || id }] : [] })} value={description} onChange={setDescription} preview={descPreview} onPreviewChange={setDescPreview}
-    previewContent={<NoteRenderer text={description} skillLookup={skillTokenLookup} passiveLookup={passiveTokenLookup} egoLookup={egoTokenLookup} identityLookup={identityLookup} egoGiftLookup={egoGiftLookup} egoGiftConditionLookup={egoGiftConditionLookup} />} />
+    previewContent={<NoteRenderer text={description} skillLookup={skillTokenLookup} passiveLookup={passiveTokenLookup} egoLookup={egoTokenLookup} identityLookup={identityLookup} egoGiftLookup={egoGiftLookup} egoGiftConditionLookup={egoGiftConditionLookup} anchors />} />
 }
