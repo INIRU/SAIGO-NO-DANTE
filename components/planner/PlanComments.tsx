@@ -2,14 +2,12 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import type { FormEvent } from 'react'
-import Image from 'next/image'
 import { Link } from '@/lib/i18n/navigation'
 import { useSession } from 'next-auth/react'
 import { useTranslations } from 'next-intl'
-import { Send, X } from 'lucide-react'
-import RelativeTime from '@/components/ui/RelativeTime'
+import { Send } from 'lucide-react'
 import { showError } from '@/lib/toast'
-import { DEFAULT_AVATAR_URL } from '@/lib/constants/game'
+import CommentThread, { CommentReplyForm, type ThreadItem } from '@/components/comments/CommentThread'
 
 type Comment = {
   id: string
@@ -25,37 +23,17 @@ interface Props {
   headingId?: string
 }
 
-function CommentBody({ comment, name, small, action }: { comment: Comment; name: string; small?: boolean; action?: React.ReactNode }) {
-  const size = small ? 28 : 36
-  return (
-    <div className="flex gap-3">
-      <Image
-        src={comment.profiles?.avatar_url ?? DEFAULT_AVATAR_URL} alt="" width={size} height={size}
-        className={`${small ? 'h-7 w-7' : 'h-9 w-9'} shrink-0 rounded-full bg-[#17120c] object-cover`}
-      />
-      <div className="min-w-0 flex-1">
-        <p className="flex flex-wrap items-baseline gap-x-2.5">
-          <span className="text-[0.9375rem] font-semibold text-[#e8dcc8]">{name}</span>
-          <RelativeTime date={comment.created_at} className="text-[0.8125rem] text-[#7f7364]" />
-        </p>
-        <p className="mt-1 whitespace-pre-wrap break-words text-[0.9375rem] leading-relaxed text-[#cfc2ad]">{comment.content}</p>
-        {action}
-      </div>
-    </div>
-  )
-}
-
 export default function PlanComments({ planId, headingId }: Props) {
   const t = useTranslations('decks.comments')
   const tDetail = useTranslations('planner.detail')
   const tGrid = useTranslations('decks.grid')
-  const tCommon = useTranslations('common')
   const { data: session } = useSession()
   const [comments, setComments] = useState<Comment[]>([])
   const [commentsLoading, setCommentsLoading] = useState(true)
   const [commentText, setCommentText] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [replyTo, setReplyTo] = useState<{ id: string; username: string } | null>(null)
+  const [replyText, setReplyText] = useState('')
 
   const fetchComments = useCallback(async () => {
     setCommentsLoading(true)
@@ -75,40 +53,35 @@ export default function PlanComments({ planId, headingId }: Props) {
     fetchComments()
   }, [fetchComments])
 
-  const handleCommentSubmit = async () => {
-    if (!session) { showError(t('loginRequired')); return }
-    const content = commentText.trim()
-    if (!content) return
+  const post = async (content: string, parentId: string | null) => {
+    if (!session) { showError(t('loginRequired')); return false }
+    if (!content.trim()) return false
     setSubmitting(true)
     try {
-      const body: Record<string, string> = { content }
-      if (replyTo) body.parent_id = replyTo.id
       const res = await fetch(`/api/planner/${planId}/comments`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
+        body: JSON.stringify(parentId ? { content: content.trim(), parent_id: parentId } : { content: content.trim() }),
       })
-      if (res.ok) {
-        setCommentText('')
-        setReplyTo(null)
-        fetchComments()
-      } else {
-        showError(replyTo ? t('replyFailed') : t('createFailed'))
-      }
+      if (!res.ok) { showError(parentId ? t('replyFailed') : t('createFailed')); return false }
+      fetchComments()
+      return true
     } catch {
-      showError(replyTo ? t('replyFailed') : t('createFailed'))
+      showError(parentId ? t('replyFailed') : t('createFailed'))
+      return false
     } finally {
       setSubmitting(false)
     }
   }
+  const handleCommentSubmit = async () => { if (await post(commentText, null)) setCommentText('') }
+  const handleReplySubmit = async () => { if (replyTo && await post(replyText, replyTo.id)) { setReplyText(''); setReplyTo(null) } }
 
   const onSubmit = (event: FormEvent) => {
     event.preventDefault()
     handleCommentSubmit()
   }
 
-  const topLevel = comments.filter(c => !c.parent_id)
-  const nameOf = (c: Comment) => c.profiles?.username ?? t('anonymous')
+  const items: ThreadItem[] = comments.map(c => ({ ...c, name: c.profiles?.username ?? t('anonymous'), avatar: c.profiles?.avatar_url ?? null }))
 
   return (
     <div>
@@ -119,24 +92,11 @@ export default function PlanComments({ planId, headingId }: Props) {
 
       {session ? (
         <form onSubmit={onSubmit} className="max-w-[52rem]">
-          {replyTo && (
-            <div className="mb-2 flex items-center justify-between gap-3 rounded border border-[#3a2c14] bg-[#17120c] py-1 pl-3 pr-1 text-[0.875rem] text-[#e8b030]">
-              <span className="min-w-0 truncate">@{replyTo.username}{t('replyingToSuffix')}</span>
-              <button
-                type="button"
-                onClick={() => setReplyTo(null)}
-                aria-label={tCommon('cancel')}
-                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded text-[#9c8b73] hover:text-[#e8dcc8]"
-              >
-                <X className="h-4 w-4" aria-hidden="true" />
-              </button>
-            </div>
-          )}
           <textarea
             value={commentText}
             onChange={e => setCommentText(e.target.value)}
-            aria-label={replyTo ? t('replyPlaceholder') : tDetail('commentPlaceholder')}
-            placeholder={replyTo ? t('replyPlaceholder') : tDetail('commentPlaceholder')}
+            aria-label={tDetail('commentPlaceholder')}
+            placeholder={tDetail('commentPlaceholder')}
             maxLength={500}
             rows={3}
             className="block w-full resize-y rounded-md border border-[#2e2417] bg-[#17120c] px-3.5 py-3 text-[0.9375rem] leading-relaxed text-[#e8dcc8] placeholder:text-[#7f7364] transition-colors focus:border-[#c8900a] focus:outline-none"
@@ -155,7 +115,7 @@ export default function PlanComments({ planId, headingId }: Props) {
               className="inline-flex min-h-11 items-center gap-2 rounded border border-[#8a6010] bg-[#2a1f0c] px-4 text-[0.9375rem] font-semibold text-[#e8b030] transition-colors hover:border-[#c8900a] hover:bg-[#35270e] disabled:cursor-not-allowed disabled:opacity-40"
             >
               <Send className="h-4 w-4" aria-hidden="true" />
-              {submitting ? t('submitting') : replyTo ? t('replySubmit') : t('submit')}
+              {submitting ? t('submitting') : t('submit')}
             </button>
           </div>
         </form>
@@ -167,38 +127,18 @@ export default function PlanComments({ planId, headingId }: Props) {
 
       {commentsLoading ? (
         <p className="mt-6 text-[0.9375rem] text-[#7f7364]" role="status">{tGrid('loadingMore')}</p>
-      ) : topLevel.length === 0 ? (
+      ) : items.length === 0 ? (
         <p className="mt-6 text-[0.9375rem] text-[#7f7364]">{t('empty')}</p>
       ) : (
-        <ol className="mt-6 max-w-[52rem] divide-y divide-[#241c14] border-t border-[#241c14]">
-          {topLevel.map(comment => {
-            const replies = comments.filter(c => c.parent_id === comment.id)
-            return (
-              <li key={comment.id} className="py-4">
-                <CommentBody
-                  comment={comment}
-                  name={nameOf(comment)}
-                  action={session && (
-                    <button
-                      type="button"
-                      onClick={() => setReplyTo({ id: comment.id, username: nameOf(comment) })}
-                      className="-ml-1 mt-1 inline-flex min-h-9 items-center rounded px-1 text-[0.8125rem] text-[#9c8b73] hover:text-[#e8b030]"
-                    >
-                      {t('reply')}
-                    </button>
-                  )}
-                />
-                {replies.length > 0 && (
-                  <ol className="ml-[3rem] mt-3 space-y-4 border-l border-[#2e2417] pl-4">
-                    {replies.map(reply => (
-                      <li key={reply.id}><CommentBody comment={reply} name={nameOf(reply)} small /></li>
-                    ))}
-                  </ol>
-                )}
-              </li>
-            )
-          })}
-        </ol>
+        <CommentThread
+          items={items}
+          canReply={Boolean(session)}
+          replyingTo={replyTo?.id ?? null}
+          onReply={item => { setReplyTo(replyTo?.id === item.id ? null : { id: item.id, username: item.name }); setReplyText('') }}
+          replyForm={replyTo && (
+            <CommentReplyForm targetName={replyTo.username} value={replyText} onChange={setReplyText} onSubmit={handleReplySubmit} onCancel={() => setReplyTo(null)} submitting={submitting} />
+          )}
+        />
       )}
     </div>
   )
