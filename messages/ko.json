@@ -1319,7 +1319,16 @@
         "defenseSkills": "수비 스킬",
         "attackTypes": "공격 유형",
         "sinResources": "죄악 자원",
-        "egoCost": "E.G.O 코스트"
+        "egoCost": "E.G.O 코스트",
+        "activation": {
+          "easy": "쉬움",
+          "medium": "보통",
+          "hard": "어려움",
+          "impossible": "불가"
+        },
+        "activationTurns": "{count}턴",
+        "activationTurnsOver": "{count}턴 이상",
+        "activationChance": "{percent}%"
       },
       "mainKeywords": {
         "label": "플랜 대표 키워드",

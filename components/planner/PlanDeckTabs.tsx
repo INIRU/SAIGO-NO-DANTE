@@ -302,8 +302,9 @@ export default function PlanDeckTabs({
       passives: passives
         .filter(passive => passive.identity_id === slot.identity_id)
         .map(passive => ({ ...passive, name: localizePassiveName(passive, locale), description: localizePassiveDescription(passive, locale) ?? null })),
+      deck: computeSinProduction([{ skills: skills.filter(skill => skill.identity_id === slot.identity_id), distribution: getIdentitySkillDistribution(slot) }]),
     }]
-  }), [identityMap, locale, passives, sinners, slotBySinner, tSinner])
+  }), [identityMap, locale, passives, sinners, skills, slotBySinner, tSinner])
 
   const deckAnalysis = useMemo(() => {
     const skillsOf = (slot: IdentitySlot) => skills.filter(skill => skill.identity_id === slot.identity_id)

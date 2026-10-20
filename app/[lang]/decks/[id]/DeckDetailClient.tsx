@@ -732,7 +732,7 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
     })
   }, [filledSlots])
   const deployedIdentityIds = useMemo(() => new Set(insightSlots.filter(({ slot }) => isDeployedSlot(slot.slot_order)).map(({ identity }) => identity.id)), [insightSlots])
-  const insightIdentities = useMemo<DeckInsightIdentity[]>(() => insightSlots.map(({ identity, passives }) => ({
+  const insightIdentities = useMemo<DeckInsightIdentity[]>(() => insightSlots.map(({ slot, identity, passives, skills }) => ({
     id: identity.id,
     name: localizeIdentityName(identity, locale),
     sinnerName: rootT(`sinner.${identity.sinner_id}`),
@@ -743,6 +743,7 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
       name: localizePassiveName(passive, locale),
       description: localizePassiveDescription(passive, locale) ?? passive.description,
     })),
+    deck: computeSinProduction([{ skills, distribution: [slot.s1_count ?? 3, slot.s2_count ?? 2, slot.s3_count ?? 1] as const }]),
   })), [insightSlots, locale, rootT])
   const deckAnalysis = useMemo(() => {
     const egos = (deck?.deck_egos ?? []).flatMap(row => row.ego ? [row.ego] : [])

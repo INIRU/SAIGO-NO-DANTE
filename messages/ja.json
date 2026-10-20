@@ -1319,7 +1319,16 @@
         "defenseSkills": "防御スキル",
         "attackTypes": "攻撃タイプ",
         "sinResources": "罪悪資源",
-        "egoCost": "E.G.Oコスト"
+        "egoCost": "E.G.Oコスト",
+        "activation": {
+          "easy": "簡単",
+          "medium": "普通",
+          "hard": "難しい",
+          "impossible": "不可"
+        },
+        "activationTurns": "{count}ターン",
+        "activationTurnsOver": "{count}ターン以上",
+        "activationChance": "{percent}%"
       },
       "mainKeywords": {
         "label": "プラン代表キーワード",
