@@ -16,6 +16,15 @@ export function parseAutosave<T>(raw: string | null, isState: (state: unknown) =
   } catch { return null }
 }
 
+/**
+ * Offer a stored draft back only when it differs from what the editor opened with and is newer than the last save on the
+ * server (`savedAt`, null when unknown): a draft older than a save made elsewhere would overwrite newer content.
+ */
+export function shouldOfferAutosave(stored: { savedAt: number; state: unknown } | null, baseline: string, savedAt: number | null | undefined): boolean {
+  if (!stored || JSON.stringify(stored.state) === baseline) return false
+  return savedAt == null || !Number.isFinite(savedAt) || stored.savedAt > savedAt
+}
+
 export function readAutosave<T>(key: string, isState: (state: unknown) => state is T) {
   try { return parseAutosave(localStorage.getItem(key), isState) } catch { return null }
 }

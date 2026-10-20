@@ -140,9 +140,11 @@
     },
     "confirm": "確認",
     "autosave": {
-      "title": "自動保存された編集内容",
-      "restore": "復元",
-      "discard": "削除"
+      "title": "保存された下書きがあります",
+      "restore": "読み込む",
+      "discard": "破棄",
+      "restored": "下書きを読み込みました",
+      "restoreFailed": "下書きを読み込めませんでした"
     }
   },
   "globalSearch": {
