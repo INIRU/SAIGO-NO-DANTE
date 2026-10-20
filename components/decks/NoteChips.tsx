@@ -9,6 +9,7 @@ import Image from 'next/image'
 import NoteBlockViewer, { NoteGiftClickContext, NoteKeywordLabel } from '@/components/notes/NoteBlockViewer'
 import { parseBlockDocument, NOTE_PREFIX } from '@/lib/notes/blocks'
 import { parseNoteImage } from '@/lib/notes/images'
+import NoteLightboxImage from '@/components/notes/NoteLightboxImage'
 import NoteTocLayout, { NoteHeadingLink } from '@/components/notes/NoteToc'
 import { NOTE_TOC_MIN, markdownHeadings } from '@/lib/notes/toc'
 import { noteBlockTokenPattern, noteInlineMarkdownPattern, noteTokenPattern } from '@/lib/notes/inline-tokens'
@@ -841,7 +842,7 @@ export function NoteRenderer({
     const line = lines[i]
     const image = parseNoteImage(line)
     if (image) {
-      blocks.push(<figure key={`image-${i}`} className="my-4"><Image src={image.src} alt={image.alt} width={1920} height={1920} unoptimized className="h-auto max-h-[70dvh] w-auto max-w-full rounded-sm object-contain" /></figure>)
+      blocks.push(<figure key={`image-${i}`} className="my-4"><NoteLightboxImage src={image.src} alt={image.alt} width={1920} height={1920} className="h-auto max-h-[70dvh] w-auto max-w-full rounded-sm object-contain" /></figure>)
       i += 1
       continue
     }

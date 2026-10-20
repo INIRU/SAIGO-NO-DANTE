@@ -17,6 +17,7 @@ import { isNoteImageUrl } from '@/lib/notes/images'
 import { mentionHref, type MentionKind } from '@/lib/notes/mention'
 import QuietImage from '@/components/ui/QuietImage'
 import { Link } from '@/lib/i18n/navigation'
+import NoteLightboxImage from './NoteLightboxImage'
 import NoteTocLayout, { NoteHeadingLink } from './NoteToc'
 import { NOTE_TOC_MIN, collectHeadings } from '@/lib/notes/toc'
 import { isNoteColorSin } from '@/lib/notes/text-style'
@@ -148,7 +149,7 @@ export default function NoteBlockViewer({doc,renderText,anchors=false}:{doc:JSON
       case 'noteMention': return <NoteMentionLabel key={key} kind={n.attrs!.kind} id={n.attrs!.id} name={n.attrs?.name}/>
       case 'noteAsset': return <NoteAssetView key={key} kind={n.attrs!.kind} id={n.attrs!.id}/>
       case 'noteVideo': return <NoteVideo key={key} id={n.attrs!.videoId}/>
-      case 'image': return isNoteImageUrl(n.attrs?.src) ? <img key={key} className="note-document-image" src={n.attrs!.src} alt={n.attrs?.alt ?? ''} loading="lazy"/> : null
+      case 'image': return isNoteImageUrl(n.attrs?.src) ? <NoteLightboxImage key={key} className="note-document-image" src={n.attrs!.src} alt={n.attrs?.alt ?? ''}/> : null
       case 'heading': {
         const anchor=headingIds?.get(n), Tag=n.attrs?.level===1?'h2':'h3'
         return anchor ? <Tag key={key} id={anchor.id} className="note-heading">{children}<NoteHeadingLink id={anchor.id} text={anchor.text}/></Tag> : <Tag key={key}>{children}</Tag>
