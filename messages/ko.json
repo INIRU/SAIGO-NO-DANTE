@@ -194,7 +194,6 @@
     "header": {
       "eyebrow": "DECK BOARD",
       "title": "덱 게시판",
-      "subtitle": "림버스 컴퍼니 커뮤니티 덱 빌드를 탐색하고 공유하세요.",
       "newDeck": "새 덱 만들기"
     },
     "search": {
@@ -1008,7 +1007,6 @@
       "header": {
         "eyebrow": "MIRROR DUNGEON PLANS",
         "title": "커뮤니티 플랜",
-        "subtitle": "관리자들의 거울 던전 전략 공유 공간",
         "newPlan": "새 플랜 만들기"
       },
       "search": {
@@ -1675,7 +1673,15 @@
     "popularDecks": "관리자분들이 자주 찾는 덱",
     "popularPlans": "관리자분들이 자주 찾는 플랜",
     "popularIdentities": "관리자분들이 자주 찾는 인격",
-    "rising": "지금 뜨는"
+    "rising": "지금 뜨는",
+    "more": "더보기",
+    "less": "접기",
+    "viewAll": "전체보기",
+    "viewAllDecks": "전체 덱 보기",
+    "viewAllPlans": "전체 플랜 보기",
+    "filters": "필터",
+    "clear": "지우기",
+    "back": "{title}으로"
   },
   "ownedBadge": {
     "owned": "보유",

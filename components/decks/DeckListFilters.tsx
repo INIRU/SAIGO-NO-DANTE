@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom'
 import Image from 'next/image'
 import dynamic from 'next/dynamic'
 import { useLocale, useTranslations } from 'next-intl'
-import { Info, Link2, Search, SlidersHorizontal, User, X } from 'lucide-react'
+import { Info, Link2, Search, User, X } from 'lucide-react'
 import { CONTENT_TYPES, CONTENT_TYPE_COLORS } from '@/lib/constants/deck-tokens'
 import { getIdentityInfoUrl } from '@/lib/utils/images'
 import { useKeywords } from '@/components/providers/KeywordProvider'
@@ -27,6 +27,8 @@ const DeckIdentityFilterModal = dynamic(() => import('./DeckIdentityFilterModal'
 })
 
 interface DeckListFiltersProps {
+  /** Counts up each time the list's own filters button asks for the filter drawer to open. */
+  openSignal?: number
   inputValue: string
   onInputChange: (value: string) => void
   onInputFocus: () => void
@@ -218,6 +220,7 @@ export default function DeckListFilters({
   identityMode,
   onToggleSelectedIdentity, onToggleIdentityMode, onClearSelectedIdentities,
   languageFilter, onLanguageFilterChange, facetSections,
+  openSignal,
 }: DeckListFiltersProps) {
   const t = useTranslations('decks')
   const rootT = useTranslations()
@@ -225,6 +228,7 @@ export default function DeckListFilters({
   const keywords = useKeywords()
   const localKeyword = (keyword: string) => localizeDeckKeyword(keyword, keywords[keyword], locale)
   const [mobileOpen, setMobileOpen] = useState(false)
+  useEffect(() => { if (openSignal) setMobileOpen(true) }, [openSignal])
   const [showKeywordTagFilter, setShowKeywordTagFilter] = useState(true)
   const [showFormationFilter, setShowFormationFilter] = useState(true)
   const [showIdentityFilter, setShowIdentityFilter] = useState(true)
@@ -573,24 +577,6 @@ export default function DeckListFilters({
       >
         {filterSurface}
       </aside>
-
-      <div className="fixed bottom-5 left-1/2 z-40 -translate-x-1/2 lg:hidden">
-        <button
-          onClick={() => setMobileOpen(true)}
-          className="flex items-center gap-2 rounded-full px-5 shadow-lg transition-transform active:scale-95"
-          style={{
-            minHeight: '3rem',
-            cursor: 'pointer',
-            background: 'var(--gold)',
-            color: '#0d0b08',
-            fontWeight: 600,
-            fontSize: '0.9375rem',
-          }}
-        >
-          <SlidersHorizontal size={17} />
-          {t('filters.button')}{totalActiveCount > 0 ? ` (${totalActiveCount})` : ''}
-        </button>
-      </div>
 
       {mobileOpen && (
         <div

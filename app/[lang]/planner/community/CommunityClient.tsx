@@ -1,6 +1,5 @@
 'use client'
 
-import BoardSkeleton from '@/components/discovery/BoardSkeleton'
 import { useLoadMoreSentinel } from '@/hooks/useLoadMoreSentinel'
 import DiscoveryShelf, { type InitialShelf } from '@/components/discovery/DiscoveryShelf'
 import BoardBrowseLock from '@/components/discovery/BoardBrowseLock'
@@ -10,8 +9,10 @@ import { useQueryState, parseAsBoolean, parseAsInteger, parseAsString } from 'nu
 import { Link } from '@/lib/i18n/navigation'
 import Image from 'next/image'
 import { useSession } from 'next-auth/react'
-import { Link2, PackageOpen, Search, SlidersHorizontal, User, X } from 'lucide-react'
-import PlanCard, { type PlanSummary } from '@/components/planner/PlanCard'
+import { Link2, Search, User, X } from 'lucide-react'
+import { type PlanSummary } from '@/components/planner/PlanCard'
+import { BoardResults, BrowseBar } from '@/components/board/Browse'
+import type { RowPost } from '@/components/board/parts'
 import { DIFFICULTY_CONFIG, type Difficulty } from '@/lib/planner/types'
 import { useKeywordData, useKeywords } from '@/components/providers/KeywordProvider'
 import DeckIdentityFilterModal, { type DeckFilterIdentity, type DeckFilterSinner } from '@/components/decks/DeckIdentityFilterModal'
@@ -760,10 +761,6 @@ export default function CommunityClient({ initialPlans, initialTotal, initialShe
     return list.map(({ plan }) => plan)
   }, [planIndexes, debouncedSearch, activeKeywordList, keywordMode, selectedIdentityIdList, identityMode, filterOwnedIdentity, filterOwnedEgo, effectiveOwned, affiliationQuery, egoQuery, giftQuery, themeQuery]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const renderedPlanCards = useMemo(() => filtered.map(plan => (
-    <PlanCard key={plan.id} plan={plan} onKeywordToggle={toggleKeyword} />
-  )), [filtered, toggleKeyword])
-
   const collectionFilterCount = (filterOwnedIdentity ? 1 : 0) + (filterOwnedEgo ? 1 : 0)
   const languageFilterCount = languageFilter === 'mine' ? 0 : 1
   const totalActiveCount = (inputValue.trim() ? 1 : 0) + (difficulty ? 1 : 0) + (formationCount !== null ? 1 : 0) + activeKeywords.size + selectedIdentityIds.size + languageFilterCount + collectionFilterCount + Object.values(facetSelections).reduce((sum, list) => sum + list.length, 0)
@@ -982,76 +979,21 @@ export default function CommunityClient({ initialPlans, initialTotal, initialShe
         </aside>
 
         <div ref={scrollRootRef} className="min-h-0 flex-1 pb-16 scrollbar-thin lg:overflow-y-auto lg:pr-1">
-          {!loading && (
-            <div
-              className="mb-4 flex min-h-11 items-center gap-2 rounded-sm"
-              role="status"
-              aria-live="polite"
-              style={{
-                padding: '0.35rem 0',
-                color: '#888',
-                fontFamily: 'var(--font-body)',
-                fontSize: '1rem',
-                lineHeight: 1.45,
-              }}
-            >
-                <span className="min-w-0">
-                  <span style={{ color: 'var(--text-secondary)', fontWeight: 500 }}>
-                  {hasAnyFilter || filtered.length !== total ? t('result.filtered', { filtered: filtered.length, total }) : t('result.total', { count: total })}
-                </span>
-                {hasAnyFilter && <span style={{ color: '#777' }}> {t('result.filterApplied')}</span>}
-              </span>
-            </div>
-          )}
+          <BrowseBar
+            search={{ value: inputValue, onChange: v => { setInputValue(v); setShowSuggestions(false) }, onClear: () => { setInputValue(''); setShowSuggestions(false); setAcIndex(-1) }, placeholder: t('search.placeholder'), label: t('search.label') }}
+            filterCount={totalActiveCount}
+            onOpenFilters={() => setMobileFiltersOpen(true)}
+            summary={loading ? '' : hasAnyFilter || filtered.length !== total ? t('result.filtered', { filtered: filtered.length, total }) : t('result.total', { count: total })}
+          />
 
-          {loading ? (
-            <BoardSkeleton kind="planner" />
-          ) : filtered.length === 0 ? (
-            <div className="flex flex-col items-center justify-center gap-3 py-20" style={{ color: '#444' }}>
-              <PackageOpen style={{ width: '2.5rem', height: '2.5rem', opacity: 0.4 }} />
-              <p style={{ fontSize: '0.875rem' }}>
-                {debouncedSearch.trim() ? t('grid.noSearchResults', { query: debouncedSearch }) : t('grid.empty')}
-              </p>
-              {!debouncedSearch.trim() && (
-                <Link href="/planner" style={{ color: '#c8900a', fontSize: '0.8125rem', marginTop: '0.5rem' }}>
-                  {t('grid.createFirst')}
-                </Link>
-              )}
-            </div>
-          ) : (
-            <>
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                {renderedPlanCards}
+          <BoardResults kind="planner" posts={filtered as unknown as RowPost[]} loading={loading} hasMore={hasMore} loadingMore={loadingMore} sentinelRef={sentinelRef}
+            empty={(
+              <div className="flex flex-col items-center gap-3 py-16 text-center">
+                <p className="text-[1rem] text-[var(--text-secondary)]">{debouncedSearch.trim() ? t('grid.noSearchResults', { query: debouncedSearch }) : t('grid.empty')}</p>
+                {!debouncedSearch.trim() && <Link href="/planner" className="min-h-11 content-center text-[0.9375rem] font-semibold text-[var(--gold-light)] underline-offset-4 hover:underline">{t('grid.createFirst')}</Link>}
               </div>
-
-              <div ref={sentinelRef} className="flex justify-center py-8" aria-hidden={!hasMore && !loadingMore}>
-                {loadingMore ? (
-                  <BoardSkeleton kind="planner" count={2} />
-                ) : hasMore ? (
-                  <span style={{ color: '#444', fontSize: '0.875rem' }}>{t('grid.scrollForMore')}</span>
-                ) : null}
-              </div>
-            </>
-          )}
+            )} />
         </div>
-      </div>
-
-      <div className="fixed bottom-5 left-1/2 z-40 -translate-x-1/2 lg:hidden">
-        <button
-          onClick={() => setMobileFiltersOpen(true)}
-          className="flex items-center gap-2 rounded-full px-5 shadow-lg transition-transform active:scale-95"
-          style={{
-            minHeight: '3rem',
-            cursor: 'pointer',
-            background: 'var(--gold)',
-            color: '#0d0b08',
-            fontWeight: 600,
-            fontSize: '0.9375rem',
-          }}
-        >
-          <SlidersHorizontal size={17} />
-          {t('filters.button')}{totalActiveCount > 0 ? ' (' + totalActiveCount + ')' : ''}
-        </button>
       </div>
 
       {mobileFiltersOpen && (
