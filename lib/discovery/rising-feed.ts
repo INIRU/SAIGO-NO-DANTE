@@ -8,6 +8,8 @@ import { DISCOVERY_COLUMNS, DISCOVERY_TABLE, formatDiscoveryPosts, type Discover
 
 // One row of the board: three post cards, nine identity cards.
 const POSTS = 3
+// Risers read past the row, so a deleted post's place goes to the next one instead of emptying the row.
+const POST_CANDIDATES = POSTS * 4
 const IDENTITIES = 9
 // A section needs this many to be shown at all.
 const MIN_SHOWN = 3
@@ -41,7 +43,7 @@ export async function loadRising(kind: DiscoveryKind): Promise<RisingFeed> {
   const failed = decks.error ?? plans.error ?? newPosts.error ?? newIdentities.error
   if (failed) throw failed
   const newPostIds = new Set((newPosts.data ?? []).map(row => String(row.id)))
-  const postRise = rising(((kind === 'deck' ? decks : plans).data as RisingRow[]).filter(row => !newPostIds.has(row.entity_id)), POSTS).sort(byRise)
+  const postRise = rising(((kind === 'deck' ? decks : plans).data as RisingRow[]).filter(row => !newPostIds.has(row.entity_id)), POST_CANDIDATES)
   const skip = new Set([
     ...catalog.identities.filter(identity => identity.game_id && LCB_GAME_IDS.has(identity.game_id)).map(identity => identity.id),
     ...(newIdentities.data ?? []).map(row => String(row.id)),
@@ -54,7 +56,8 @@ export async function loadRising(kind: DiscoveryKind): Promise<RisingFeed> {
   if (postRows.error || identityRows.error) throw postRows.error ?? identityRows.error
   const postById = new Map((formatDiscoveryPosts(kind, postRows.data ?? []) as (Record<string, unknown> & { id: string })[]).map(post => [post.id, post]))
   const identityById = new Map((identityRows.data as unknown as RisingIdentity[]).map(identity => [identity.id, identity]))
-  const posts = postRise.flatMap(item => { const post = postById.get(item.id); return post ? [{ post, rise: item.rise }] : [] })
+  const posts = postRise.flatMap(item => { const post = postById.get(item.id); return post ? [{ post, rise: item.rise, recent: item.recent, id: item.id }] : [] })
+    .slice(0, POSTS).sort(byRise).map(({ post, rise }) => ({ post, rise }))
   const identities = identityRise.flatMap(item => { const identity = identityById.get(item.id); return identity ? [{ identity, rise: item.rise }] : [] })
   return { posts: posts.length >= MIN_SHOWN ? posts : [], identities: identities.length >= MIN_SHOWN ? identities : [] }
 }
