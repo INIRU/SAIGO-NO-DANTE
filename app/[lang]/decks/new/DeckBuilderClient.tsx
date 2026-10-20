@@ -283,6 +283,7 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
         name: localizePassiveName(passive, locale),
         description: localizePassiveDescription(passive, locale) ?? null,
       })),
+      deck: computeSinProduction([{ skills: skillsOf(identity), distribution: skillDistribution[sinner.id] }]),
     }))
     const deployedIds = new Set(placed.filter(({ sinner }) => isDeployedSlot(formationOrder.indexOf(sinner.id))).map(({ identity }) => identity.id))
     return {
