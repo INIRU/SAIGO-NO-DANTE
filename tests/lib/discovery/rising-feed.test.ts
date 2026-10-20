@@ -102,10 +102,17 @@ describe('loadRising', () => {
     expect((await loadRising('deck')).posts).toEqual([])
   })
 
+  it('REQ-COMMUNITY-079 fills the place of a deleted riser with the next one instead of dropping the row', async () => {
+    // d4 rose the most but was deleted; d9 (×2.6 on ten visitors) is next in line and takes its place.
+    state.rows.deck = [row('d4', 20, 8), row('d2', 30, 40), row('d7', 12, 10), row('d9', 10, 8)]
+    state.gone = new Set(['d4'])
+    expect((await loadRising('deck')).posts.map(item => item.post.id)).toEqual(['d7', 'd9', 'd2'])
+  })
+
   it('REQ-COMMUNITY-074 reads plans from the plan table', async () => {
     const result = await loadRising('planner')
     expect(result.posts.map(item => item.post.id)).toEqual(['p1', 'p2', 'p3'])
-    expect(state.asked.md_plans).toEqual(['p1', 'p2', 'p3'])
+    expect(state.asked.md_plans).toEqual(expect.arrayContaining(['p1', 'p2', 'p3']))
   })
 
   it('REQ-COMMUNITY-076 ranks identities by the visitors of the formations that field them, not by their own page, and skips the LCB defaults', async () => {
