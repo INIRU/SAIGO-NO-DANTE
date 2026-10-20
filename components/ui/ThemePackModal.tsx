@@ -4,6 +4,9 @@ import BaseModal from '@/components/ui/BaseModal'
 import QuietImage from '@/components/ui/QuietImage'
 import { blurPlaceholder } from '@/lib/utils/thumbhash'
 import ThemePackCard from '@/components/ui/ThemePackCard'
+import SuggestionRibbon from '@/components/ui/SuggestionRibbon'
+import { SkeletonPage } from '@/components/ui/Skeleton'
+import { SuggestionTitleSkeleton, ThemeTileSkeleton } from '@/components/ui/SuggestionSkeleton'
 import { filterStyles } from '@/components/board/FilterControls'
 import { Search, X } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
@@ -252,6 +255,8 @@ export function ThemePackModalEmpty({ children }: ThemePackModalEmptyProps) {
   )
 }
 
+const SUGGESTED_LIMIT = 6
+
 interface ThemePackPickerTheme {
   id: number | string
   name: string
@@ -277,6 +282,10 @@ interface ThemePackPickerModalProps<TTheme extends ThemePackPickerTheme> {
   meta?: ReactNode
   /** Text the search matches; defaults to the pack's names. */
   searchText?: (theme: TTheme) => string
+  /** Packs to list first under the "추천" ribbon, most picked first, with how many plans picked each (the number on the card's corner). Hidden while searching. */
+  suggested?: { id: number | string; count: number }[] | null
+  /** The suggestions are still being read: the group's place is held with its loading shape. */
+  suggestionsLoading?: boolean
 }
 
 /** Picks a theme pack in the shared picker frame (the identity pickers'): header, a search over the packs, the posters. */
@@ -294,10 +303,26 @@ export function ThemePackPickerModal<TTheme extends ThemePackPickerTheme>({
   lang,
   meta,
   searchText = theme => [theme.name, theme.name_en, theme.name_jp].join(' '),
+  suggested,
+  suggestionsLoading = false,
 }: ThemePackPickerModalProps<TTheme>) {
   const [query, setQuery] = useState('')
   const needle = query.trim().toLocaleLowerCase()
   const shown = needle ? themes.filter(theme => searchText(theme).toLocaleLowerCase().includes(needle)) : themes
+  const themeById = new Map(themes.map(theme => [String(theme.id), theme]))
+  const picks = needle ? [] : (suggested ?? []).flatMap(row => themeById.has(String(row.id)) ? [{ theme: themeById.get(String(row.id))!, count: row.count }] : []).slice(0, SUGGESTED_LIMIT)
+  const holdPicks = suggestionsLoading && !needle
+  const picked = new Set(picks.map(row => String(row.theme.id)))
+  const rest = picks.length ? shown.filter(theme => !picked.has(String(theme.id))) : shown
+  const card = (theme: TTheme) => (
+    <ThemePackCard
+      theme={theme}
+      onClick={() => onSelectTheme(theme)}
+      isSelected={selectedThemeId != null && String(selectedThemeId) === String(theme.id)}
+      imageSurface="bare"
+      lang={lang}
+    />
+  )
 
   return (
     <BaseModal open={true} onClose={onClose} maxWidth="60rem" title={title} sheet>
@@ -326,19 +351,32 @@ export function ThemePackPickerModal<TTheme extends ThemePackPickerTheme>({
           ) : shown.length === 0 ? (
             <p className="py-12 text-center text-[0.9375rem] text-[#9c8b73]">{noResultsLabel}</p>
           ) : (
-            <ul className={filterStyles.pickerGrid}>
-              {shown.map(theme => (
-                <li key={String(theme.id)}>
-                  <ThemePackCard
-                    theme={theme}
-                    onClick={() => onSelectTheme(theme)}
-                    isSelected={selectedThemeId != null && String(selectedThemeId) === String(theme.id)}
-                    imageSurface="bare"
-                    lang={lang}
-                  />
-                </li>
-              ))}
-            </ul>
+            <>
+              {holdPicks && (
+                <SkeletonPage>
+                  <div className="px-5 pt-5 max-sm:px-3 max-sm:pt-4" data-suggestion-skeleton="theme"><SuggestionTitleSkeleton /></div>
+                  <ul className={filterStyles.pickerGrid} style={{ paddingTop: '0.75rem' }}>
+                    {Array.from({ length: SUGGESTED_LIMIT }, (_, index) => <li key={index}><ThemeTileSkeleton /></li>)}
+                  </ul>
+                </SkeletonPage>
+              )}
+              {picks.length > 0 && (
+                <>
+                  <div className="px-5 pt-5 max-sm:px-3 max-sm:pt-4"><SuggestionRibbon /></div>
+                  <ul className={filterStyles.pickerGrid} style={{ paddingTop: '0.75rem' }}>
+                    {picks.map(({ theme, count }) => (
+                      <li key={String(theme.id)} className="relative">
+                        {card(theme)}
+                        <span className="pointer-events-none absolute right-1.5 top-1.5 z-30 rounded bg-[rgba(13,11,8,0.82)] px-1.5 pt-0.5 font-[family-name:var(--font-title)] text-[1.25rem] leading-none text-[var(--gold-light)]">{count}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              )}
+              <ul className={filterStyles.pickerGrid} style={picks.length || holdPicks ? { borderTop: '1px solid #2e2417' } : undefined}>
+                {rest.map(theme => <li key={String(theme.id)}>{card(theme)}</li>)}
+              </ul>
+            </>
           )}
         </div>
       </div>

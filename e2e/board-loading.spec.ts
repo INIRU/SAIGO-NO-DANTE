@@ -1,20 +1,23 @@
 import { test, expect } from '@playwright/test'
 test.use({ channel: 'chrome' })
 test.skip(({ browserName }) => browserName !== 'chromium', 'Installed Chrome')
-for (const kind of ['deck', 'planner']) test(`${kind} shelf shows a card skeleton until the request resolves`, async ({ page }, info) => {
+// The first page is in the server HTML, so the shelf holds its place only for the feeds that load after it ("지금 뜨는").
+for (const kind of ['deck', 'planner']) test(`${kind} board holds the rising shelf with its loading shape until the feed resolves`, async ({ page }, info) => {
   test.setTimeout(90000)
   await page.setViewportSize({ width: 390, height: 844 })
   await page.emulateMedia({ reducedMotion: 'reduce' })
   let release!: () => void
   const gate = new Promise<void>(resolve => { release = resolve })
   await page.route('**/api/discovery?*', async r => { await gate; await r.fulfill({ json: { recent: [], updated: [], popular: [], identities: [], counts: [] } }) })
+  await page.route('**/api/discovery/rising*', async r => { await gate; await r.fulfill({ json: { posts: [], identities: [] } }) })
   await page.goto(kind === 'deck' ? '/ko/decks' : '/ko/planner/community')
   const shelf = page.locator('[data-discovery-shelf]')
-  await expect(shelf.locator('[data-board-skeleton]').first()).toBeVisible()
-  expect(await shelf.locator('[data-board-skeleton] [data-skeleton]').first().evaluate(e => getComputedStyle(e).animationName)).toBe('none')
+  const rising = shelf.locator('[data-shelf-skeleton="rising"]')
+  await expect(rising).toBeVisible()
+  expect(await rising.locator('[data-skeleton]').first().evaluate(e => getComputedStyle(e).animationName)).toBe('none')
   await page.screenshot({ path: info.outputPath(`${kind}-loading.png`), fullPage: true })
   release()
-  await expect(shelf.locator('[data-board-skeleton]')).toHaveCount(0)
+  await expect(rising).toHaveCount(0)
   await expect(shelf.locator('[data-discovery-empty]')).toBeVisible()
   expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBeLessThanOrEqual(1)
 })

@@ -1,13 +1,16 @@
 "use client";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { EditorContent, useEditor, type Editor } from "@tiptap/react";
+import { EditorContent, useEditor, useEditorState, type Editor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import useSWR from "swr";
 import { GIFT_KEYWORD_COLORS } from "@/lib/constants/gift";
 import { assetName } from "@/lib/notes/assets";
-import { Bold, Italic, Heading2, List, ListOrdered, Quote, Undo2, Redo2, Eye, Pencil, Link2, X } from "lucide-react";
+import { filterMentions, findMentionQuery } from "@/lib/notes/mention";
+import { formatNoteCount, noteCountState, noteTextLength } from "@/lib/notes/count";
+import { translations } from "@/lib/i18n/translations";
+import { AtSign, Bold, Italic, Heading2, List, ListOrdered, Quote, Undo2, Redo2, Copy, Eye, Pencil, Link2, X } from "lucide-react";
 import {
   NoteAutocompleteDropdown,
   buildKeywordPool,
@@ -16,17 +19,30 @@ import {
   type AutocompleteSuggestion,
   type CaretAnchor,
 } from "./NoteAutocomplete";
-import { noteBlockExtensions, NoteInput, notePlaceholder } from "./NoteBlocks";
+import { noteBlockExtensions, NoteBlockKeys, NoteInput, notePlaceholder, duplicateNoteBlock } from "./NoteBlocks";
 import { NoteAssetsProvider, fetchNoteAssets } from "./NoteBlockViewer";
 import { pendingNoteUploads } from "@/lib/notes/images";
 import { useKeywords } from '@/components/providers/KeywordProvider';
 import NoteImage from "./NoteImage";
 import { NoteFormationContext } from "./NoteAssetPicker";
 import NoteDocumentTools from "./NoteDocumentTools";
+import NoteMarkTools from "./NoteMarkTools";
+import { useNoteNew } from "./NoteNewDot";
+import { noteMarkExtensions } from "./NoteMarks";
 import {
   markdownToTiptapContent,
   tiptapContentToMarkdown,
 } from "@/lib/notes/document";
+/** A toolbar button; a tool that is new carries the gold dot until it has been used once. */
+function ToolButton({ Icon, title, feature, run, disabled }: { Icon: typeof Bold; title: string; feature?: string; run: () => void; disabled: boolean }) {
+  const news = useNoteNew(feature ?? "");
+  return (
+    <button type="button" aria-label={feature ? news.label(title) : title} disabled={disabled} onClick={() => { if (feature) news.used(); run(); }}
+      className="note-tool relative flex h-9 w-9 items-center justify-center text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-panel)]">
+      <Icon size={16} />{feature && news.dot}
+    </button>
+  );
+}
 export default function NoteDocumentEditor({
   formation = [],
   value,
@@ -56,6 +72,18 @@ export default function NoteDocumentEditor({
     label:assetName(gift,lang), type:'egogift', typeLabel:label('기프트','ギフト','Gift'), color:GIFT_KEYWORD_COLORS[gift.keyword ?? ''] ?? '#c8b898',
     imageUrl:gift.image_url ?? undefined, token:'[gift:'+gift.id+']', syntax:'inline',
   })),[giftCatalog,lang]);
+  // @ mentions: identities and E.G.O of the game, the same catalog requests the pickers use. Same-name entries are told apart by sinner.
+  const tSinner=useTranslations('sinner');
+  const {data:identityCatalog}=useSWR('/api/notes/assets?kind=identity&catalog=1',fetchNoteAssets,{revalidateOnFocus:false});
+  const {data:egoCatalog}=useSWR('/api/notes/assets?kind=ego&catalog=1',fetchNoteAssets,{revalidateOnFocus:false});
+  const mentionPool=useMemo<AutocompleteSuggestion[]>(()=>[...(identityCatalog ?? []),...(egoCatalog ?? [])].map(asset=>{
+    const kind=asset.kind==='ego'?'ego':'identity', sinnerId=asset.identity?.sinner_id ?? asset.sinnerId;
+    return {
+      label:assetName(asset,lang), type:kind, color:'var(--text-primary)', imageUrl:(kind==='identity'?asset.image_url:asset.ego?.image_url ?? asset.image_url) ?? undefined,
+      typeLabel:`${sinnerId ? tSinner(sinnerId)+' · ' : ''}${kind==='identity'?label('인격','人格','Identity'):'E.G.O'}`,
+      token:`[@${kind}:${asset.id}]`, syntax:'inline' as const, aliases:[asset.name,asset.name_en,asset.name_jp,...Object.values(translations[`sinner.${sinnerId}` as keyof typeof translations] ?? {})].filter((name): name is string => Boolean(name)),
+    };
+  }),[identityCatalog,egoCatalog,lang,tSinner]);
   const last = useRef(value),
     change = useRef(onChange);
   useEffect(() => {
@@ -94,6 +122,17 @@ export default function NoteDocumentEditor({
     }
     const selection = current.state.selection;
     const before = textBeforeCaret(current);
+    const mention=findMentionQuery(before);
+    if (mention) {
+      const found=filterMentions(mentionPool,mention.query,6);
+      setSuggestions(found);
+      setSelected(0);
+      if (found.length) {
+        const point = current.view.coordsAtPos(selection.from);
+        setAnchor({ left: point.left, top: point.bottom + 6, width: 340 });
+      }
+      return;
+    }
     const context=getNoteAutocompleteContext(before,before.length);
     const named=(item:AutocompleteSuggestion)=>nameEnd(before,item.label)>=0;
     // A name that is both a keyword and a gift (데스페라도) offers both; the keyword stays first.
@@ -124,6 +163,15 @@ export default function NoteDocumentEditor({
     }
     const selection = editor.state.selection;
     const before = textBeforeCaret(editor);
+    const mentioned = item.token.match(/^\[@(identity|ego):(.+)\]$/);
+    if (mentioned) {
+      const typed = findMentionQuery(before);
+      if (!typed) return;
+      editor.chain().focus(undefined, { scrollIntoView: false }).deleteRange({ from: selection.from - typed.length, to: selection.from })
+        .insertContent([{type:'noteMention',attrs:{kind:mentioned[1],id:mentioned[2],name:item.label}},{type:'text',text:' '}]).run();
+      setSuggestions([]);
+      return;
+    }
     const inline = item.type==='keyword' || item.token.startsWith('[gift:');
     const end = inline ? nameEnd(before, item.label) : -1;
     const context = getNoteAutocompleteContext(before, before.length);
@@ -150,8 +198,10 @@ export default function NoteDocumentEditor({
         link: { openOnClick: false },
       }),
       NoteImage,
+      ...noteMarkExtensions,
       ...noteBlockExtensions,
       NoteInput.configure({lang}),
+      NoteBlockKeys.configure({lang}),
       Placeholder.configure({
         includeChildren: true,
         // Only the line being typed on shows the hint (every empty line showed it before).
@@ -195,6 +245,8 @@ export default function NoteDocumentEditor({
     },
     onSelectionUpdate: ({ editor }) => refresh(editor),
   });
+  const characters = useEditorState({ editor, selector: ({ editor: current }) => noteTextLength(current?.getText({ blockSeparator: '' }) ?? '') }) ?? 0;
+  const countState = noteCountState(characters);
   const editorRef = useRef<Editor | null>(null);
   editorRef.current = editor;
   useEffect(() => {
@@ -229,27 +281,6 @@ export default function NoteDocumentEditor({
             run: () => editor?.chain().focus().toggleBold().run(),
           },
           { Icon: Italic, title: label("기울임", "斜体", "Italic"), run: () => editor?.chain().focus().toggleItalic().run() },
-          { Icon: ListOrdered, title: label("번호 목록", "番号リスト", "Numbered list"), run: () => editor?.chain().focus().toggleOrderedList().run() },
-          {
-            Icon: List,
-            title: label("목록", "リスト", "List"),
-            run: () => editor?.chain().focus().toggleBulletList().run(),
-          },
-          {
-            Icon: Quote,
-            title: label("인용", "引用", "Quote"),
-            run: () => editor?.chain().focus().toggleBlockquote().run(),
-          },
-          {
-            Icon: Undo2,
-            title: label("실행 취소", "元に戻す", "Undo"),
-            run: () => editor?.chain().focus().undo().run(),
-          },
-          {
-            Icon: Redo2,
-            title: label("다시 실행", "やり直し", "Redo"),
-            run: () => editor?.chain().focus().redo().run(),
-          },
         ].map(({ Icon, title, run }) => (
           <button
             type="button"
@@ -261,6 +292,34 @@ export default function NoteDocumentEditor({
           >
             <Icon size={16} />
           </button>
+        ))}
+        <NoteMarkTools editor={editor} disabled={preview} />
+        {[
+          { Icon: ListOrdered, title: label("번호 목록", "番号リスト", "Numbered list"), run: () => editor?.chain().focus().toggleOrderedList().run() },
+          {
+            Icon: List,
+            title: label("목록", "リスト", "List"),
+            run: () => editor?.chain().focus().toggleBulletList().run(),
+          },
+          {
+            Icon: Quote,
+            title: label("인용", "引用", "Quote"),
+            run: () => editor?.chain().focus().toggleBlockquote().run(),
+          },
+          { Icon: AtSign, title: label("인격·E.G.O 멘션", "人格・E.G.Oメンション", "Mention identity or E.G.O"), run: () => editor?.chain().focus().insertContent("@").run(), feature: "mention" },
+          { Icon: Copy, title: label("블록 복제", "ブロック複製", "Duplicate block"), run: () => { if (editor) duplicateNoteBlock(editor, lang) }, feature: "duplicate" },
+          {
+            Icon: Undo2,
+            title: label("실행 취소", "元に戻す", "Undo"),
+            run: () => editor?.chain().focus().undo().run(),
+          },
+          {
+            Icon: Redo2,
+            title: label("다시 실행", "やり直し", "Redo"),
+            run: () => editor?.chain().focus().redo().run(),
+          },
+        ].map(({ Icon, title, run, feature }: { Icon: typeof Bold; title: string; run: () => void; feature?: string }) => (
+          <ToolButton key={title} Icon={Icon} title={title} feature={feature} run={run} disabled={preview || !editor} />
         ))}
         <button type="button" disabled={preview || !editor} aria-label={label("링크", "リンク", "Link")} className="flex h-9 w-9 items-center justify-center text-[var(--text-primary)]" onClick={()=>{setLinkUrl(editor?.getAttributes('link').href ?? '');setLinkError(false);setLinkOpen(!linkOpen)}}><Link2 size={16}/></button>
         {onPreviewChange && <button type="button" className="note-preview-button" aria-pressed={preview} onClick={()=>onPreviewChange(!preview)}>{preview ? <Pencil size={16}/> : <Eye size={16}/>}{preview ? label("편집", "編集", "Edit") : label("미리보기", "プレビュー", "Preview")}</button>}
@@ -310,6 +369,12 @@ export default function NoteDocumentEditor({
         }}
       />
       </NoteAssetsProvider></div>
+      {!preview && <div className="note-editor-footer">
+        <span className="note-count" data-state={countState}>
+          <span className="sr-only">{label("글자 수", "文字数", "Characters")} </span><span aria-hidden="true">{formatNoteCount(characters, lang)}</span>
+          <span className="sr-only" role="status">{countState === "near" ? label("글자 수가 한도에 가까워요", "文字数が上限に近づいています", "Close to the character limit") : countState === "limit" ? label("글자 수가 한도에 닿았어요", "文字数が上限に達しました", "Character limit reached") : ""}</span>
+        </span>
+      </div>}
       <NoteAutocompleteDropdown
         suggestions={suggestions}
         selectedIdx={selected}

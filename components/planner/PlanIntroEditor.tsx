@@ -71,7 +71,7 @@ export default function PlanIntroEditor({ state, dispatch, themes, gifts, giftMa
         onChange={description => dispatch({ type: 'SET_DESCRIPTION', description })}
         preview={preview}
         onPreviewChange={setPreview}
-        previewContent={<NoteGiftClickContext value={openNoteGift}><NoteRenderer text={state.description} allowedKeywords={allowedKeywords} egoGiftLookup={egoGiftLookup} /></NoteGiftClickContext>}
+        previewContent={<NoteGiftClickContext value={openNoteGift}><NoteRenderer text={state.description} allowedKeywords={allowedKeywords} egoGiftLookup={egoGiftLookup} anchors /></NoteGiftClickContext>}
       />
       {selectedGift && <PlannerGiftModal gift={selectedGift} enhance={0} onClose={() => setSelectedGift(null)} themes={themes} conditionStatus={null} recipe={null} />}
     </div>

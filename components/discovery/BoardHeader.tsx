@@ -1,35 +1,37 @@
+import { ArrowLeft, Play, Plus, SlidersHorizontal } from 'lucide-react'
 import NoteEditorGuide from '@/components/notes/NoteEditorGuide'
-import { ArrowLeft, Play, Plus } from 'lucide-react'
 import { Link } from '@/lib/i18n/navigation'
 
-/** `assist` (planner board only) opens Assist Mode setup without a plan; an unfinished run resumes as usual. */
-export default function BoardHeader({ kind, lang, title, subtitle, action, assist }: {
-  kind: 'deck' | 'planner'; lang: string; title: string; subtitle: string; action: string; assist?: string
+const press = 'active:scale-[0.97] motion-reduce:active:scale-100 transition-[transform,background-color,filter] duration-150 [transition-timing-function:cubic-bezier(0.23,1,0.32,1)]'
+
+/**
+ * The deck and plan boards' header: the title with the all-posts and create buttons beside it (icons only on a phone).
+ * While the full list is open the all-posts button gives way to the way back to the shelves.
+ * `assist` (planner board only) opens Assist Mode setup without a plan; an unfinished run resumes as usual.
+ */
+export default function BoardHeader({ kind, title, action, viewAll, back, assist }: {
+  kind: 'deck' | 'planner'; title: string; action: string; viewAll: string; back: string; assist?: string
 }) {
-  const back = lang === 'ko' ? `${title}으로` : lang === 'ja' ? `${title}に戻る` : `Back to ${title}`
+  const board = kind === 'deck' ? '/decks' : '/planner/community'
   return (
-    <header className="board-header mx-auto w-full max-w-7xl shrink-0 px-4 font-[family-name:var(--font-paperlogy)] md:px-6">
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
-        <div className="board-header-overview min-w-0 flex-1 basis-[18rem]">
-          {/* PageHeader와 같은 크기. 이 헤더만 뒤로가기·작성 버튼 배치가 달라 따로 둔다. */}
-          <h1 className="break-keep font-[family-name:var(--font-heading)] text-[1.375rem] leading-tight text-[var(--gold)] md:text-[1.75rem]">{title}</h1>
-          <p className="mt-1 max-w-[60ch] text-[0.9375rem] leading-snug text-[#9c8b73]">{subtitle}</p>
-        </div>
-        <Link href={kind === 'deck' ? '/decks' : '/planner/community'} className="board-header-back group min-h-11 items-center gap-3 py-2 text-sm font-medium text-[var(--text-primary)] transition-colors hover:text-[var(--gold)]" data-board-back>
-          <ArrowLeft size={19} className="transition-transform duration-200 group-hover:-translate-x-1 motion-reduce:transform-none" />
-          {back}
+    <header className="board-header mx-auto w-full max-w-7xl shrink-0 px-4 pb-5 pt-[5.25rem] md:px-6 md:pb-7 md:pt-[6.5rem]">
+      <div className="flex items-center gap-2 md:gap-3">
+        <h1 className="min-w-0 flex-1 break-keep font-[family-name:var(--font-heading)] text-[1.625rem] leading-none text-[var(--gold)] md:text-[2.25rem]">{title}</h1>
+        <div className="hidden md:block"><NoteEditorGuide compact /></div>
+        {assist && (
+          <Link href="/planner/run?entry=board" data-board-assist aria-label={assist} className={`flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-2 rounded-md border border-[var(--border-gold)] px-3 text-[var(--gold-light)] hover:bg-[var(--bg-elevated)] ${press}`}>
+            <Play size={16} aria-hidden="true" /><span className="hidden whitespace-nowrap text-[1rem] font-semibold lg:inline">{assist}</span>
+          </Link>
+        )}
+        <Link href={`${board}?browse=all`} aria-label={viewAll} className={`[.community-board:has([data-board-browse])_&]:hidden flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-2 rounded-md border border-[#3a2a15] bg-[#17120c] px-3 text-[var(--text-primary)] [@media(hover:hover)]:hover:border-[#5a4526] ${press}`}>
+          <SlidersHorizontal size={17} aria-hidden="true" /><span className="hidden whitespace-nowrap text-[1rem] font-semibold md:inline">{viewAll}</span>
         </Link>
-        <div className="ml-auto flex max-w-full flex-wrap items-center justify-end gap-1 sm:gap-2">
-          <NoteEditorGuide compact />
-          <div className="flex items-center gap-1 sm:gap-2">
-            {assist && <Link href="/planner/run?entry=board" data-board-assist className="flex min-h-11 shrink-0 items-center gap-2 whitespace-nowrap rounded border border-[var(--border-gold)] px-3 text-sm font-semibold text-[var(--gold-light)] transition-colors hover:bg-[var(--bg-elevated)] sm:px-4 sm:text-[1rem]">
-              <Play size={15} aria-hidden="true" />{assist}
-            </Link>}
-            <Link href={kind === 'deck' ? '/decks/new' : '/planner'} className="flex min-h-11 shrink-0 items-center gap-2 whitespace-nowrap rounded bg-[var(--gold)] px-3 text-sm font-semibold text-[var(--bg-deep)] transition-colors hover:brightness-110 sm:px-4 sm:text-[1rem]">
-              <Plus size={15} />{action}
-            </Link>
-          </div>
-        </div>
+        <Link href={board} aria-label={back} data-board-back className={`hidden [.community-board:has([data-board-browse])_&]:flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-2 rounded-md border border-[#3a2a15] bg-[#17120c] px-3 text-[var(--text-primary)] [@media(hover:hover)]:hover:border-[#5a4526] ${press}`}>
+          <ArrowLeft size={17} aria-hidden="true" /><span className="hidden whitespace-nowrap text-[1rem] font-semibold md:inline">{back}</span>
+        </Link>
+        <Link href={kind === 'deck' ? '/decks/new' : '/planner'} aria-label={action} className={`flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-2 rounded-md bg-[var(--gold)] px-3 text-[var(--bg-deep)] [@media(hover:hover)]:hover:brightness-110 ${press}`}>
+          <Plus size={18} aria-hidden="true" /><span className="hidden whitespace-nowrap text-[1rem] font-semibold sm:inline">{action}</span>
+        </Link>
       </div>
     </header>
   )

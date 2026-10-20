@@ -15,6 +15,7 @@ import { KEYWORD_COLORS, GRADE_LABELS, GRADES } from '@/components/mirror-dungeo
 import type { GiftData } from '@/lib/planner/types'
 import { getGiftKeywordIconUrl, getGiftKeywordSlug } from '@/lib/constants/gift'
 import { GIFT_KEYWORD_ORDER } from '@/lib/mirror-dungeon/gift-check'
+import SuggestionRibbon from '@/components/ui/SuggestionRibbon'
 
 const keywordRank = (keyword: string | null | undefined, order: readonly string[]) => {
   const index = order.indexOf(!keyword || keyword.startsWith('공통') ? '공통' : keyword)
@@ -246,7 +247,9 @@ export interface GiftCatalogProps {
   idleHint?: ReactNode
   /** Groups listed first, in this order, each under its own heading; a gift sits in the first group that has it.
    *  `warning` draws the red mark (e.g. gifts only this floor gives); `note` is a line of the user's own under the heading. */
-  pinned?: { ids: ReadonlySet<string>; label: string; warning?: boolean; note?: string }[]
+  /** Shown above the groups while a pinned group is still being read (its loading shape). */
+  holdPlace?: ReactNode
+  pinned?: { ids: ReadonlySet<string>; label: string; warning?: boolean; note?: string; /** Heading as the gold "추천" ribbon instead of the label text. */ ribbon?: boolean }[]
 }
 
 type GiftItemProps = {
@@ -350,6 +353,7 @@ export default function GiftCatalog({
   moreFiltersActive = 0,
   idleHint,
   pinned,
+  holdPlace,
 }: GiftCatalogProps) {
   const {
     search, keywords, grades, tiers, sortBy, sortDesc, slotFilter, themeGiftNames, giftSlotMap, inputValue,
@@ -721,6 +725,7 @@ export default function GiftCatalog({
         // isolate: cards raise themselves on hover (z-index 10) and carry marks up to z-30; kept inside this stacking
         // context they scroll under the sticky filter row whatever its z-index is.
         <div className="mt-4 isolate" style={{ minHeight: compact ? 'var(--gift-catalog-min-h)' : undefined, opacity: isStale ? 0.7 : 1, transition: 'opacity 0.1s ease' }}>
+          {holdPlace}
           {groups.map((group, gi) => {
             const iconUrl = groupBy === 'keyword' ? getGiftKeywordIcon(group.key) : null
             const pin = group.key.startsWith(PINNED_GROUP) ? pinned?.[Number(group.key.slice(PINNED_GROUP.length))] : undefined
@@ -732,7 +737,7 @@ export default function GiftCatalog({
                     {pin ? (
                       <>
                         {pin.warning && <span className="relative inline-block h-[1.125rem] w-[1.125rem] shrink-0"><GiftWarningMark label={pin.label} className="inset-0 h-full w-full" /></span>}
-                        <span style={{ color: pin.warning ? '#ff9c9c' : 'var(--gold-light)', fontFamily: 'var(--font-heading)', fontSize: '1rem' }}>{pin.label}</span>
+                        {pin.ribbon ? <SuggestionRibbon /> : <span style={{ color: pin.warning ? '#ff9c9c' : 'var(--gold-light)', fontFamily: 'var(--font-heading)', fontSize: '1rem' }}>{pin.label}</span>}
                       </>
                     ) : groupBy === 'keyword' ? (
                       <>

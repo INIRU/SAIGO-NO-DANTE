@@ -341,11 +341,13 @@ interface Props {
   events: MdEvent[]
   eventChoices: MdEventChoice[]
   series?: SeriesView | null
+  /** The "함께 본 글" lane, streamed by the server; empty when there is nothing to show. */
+  coVisited?: ReactNode
 }
 
 // ── Main component ────────────────────────────────────────────────────────────
 
-export default function PlanDetailClient({ plan, themes, gifts, recipes, identities, sinners, skills, passives, egos, events, eventChoices, series }: Props) {
+export default function PlanDetailClient({ plan, themes, gifts, recipes, identities, sinners, skills, passives, egos, events, eventChoices, series, coVisited }: Props) {
   useHtmlFlag('with-plan-detail')
   const locale = useLocale() as SupportedLang
   const tPlanner = useTranslations('planner')
@@ -746,6 +748,7 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
                   allowedKeywords={allowedKeywords}
                   egoGiftLookup={egoGiftLookup}
                   textScale="comfortable"
+                  anchors
                 />
               </div>
             </Section>
@@ -840,6 +843,8 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
               <EmptyState text={tDetail('emptyFinalGifts')} />
             )}
           </Section>
+
+          <div className={`${styles.section} empty:hidden`}>{coVisited}</div>
 
           <Section id="plan-comments">
             <PlanComments planId={plan.id} headingId="plan-comments-title" />

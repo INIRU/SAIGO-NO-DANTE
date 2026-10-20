@@ -4,10 +4,13 @@ import { useEffect, useMemo, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { Check, X } from 'lucide-react'
 import BaseModal from '@/components/ui/BaseModal'
+import { GiftGroupSkeleton } from '@/components/ui/SuggestionSkeleton'
 import GiftCatalog, { giftKeywordIcon, toCatalogGift, useGiftCatalogFilters, type GiftCatalogCardProps } from '@/components/gifts/GiftCatalog'
 import type { EgoGift } from '@/components/mirror-dungeon/types'
 import type { GiftData } from '@/lib/planner/types'
 import { loadRecentGifts, rememberGift } from '@/lib/planner/recent-gifts'
+
+const SUGGESTED_GIFTS = 8
 
 /**
  * Picks gifts for one floor (planner) or the current run (assist): the gift catalog with keyword tabs, grade and search.
@@ -15,7 +18,7 @@ import { loadRecentGifts, rememberGift } from '@/lib/planner/recent-gifts'
  * floor can still reach (fusions and recipes included), without other packs' exclusives. Choices apply as they are clicked.
  * Gifts only this floor's pack gives come first, under their own heading, with the red warning mark.
  */
-export default function FloorGiftPickerModal({ open, title, floorGifts, allGifts, exclusiveIds = [], showRecent = false, selectedIds, onToggle, onClose }: {
+export default function FloorGiftPickerModal({ open, title, floorGifts, allGifts, exclusiveIds = [], showRecent = false, suggestedIds, suggestionsLoading = false, selectedIds, onToggle, onClose }: {
   open: boolean
   title: string
   /** The selected theme pack's gifts; null when no pack is known (the toggle is hidden). */
@@ -26,11 +29,16 @@ export default function FloorGiftPickerModal({ open, title, floorGifts, allGifts
   exclusiveIds?: number[]
   /** Adds a "recently used" group (gifts picked in this browser lately) after the exclusive one. */
   showRecent?: boolean
+  /** Game ids similar plans took on this floor, most taken first: a "추천" group before the others (only gifts the picker lists). */
+  suggestedIds?: readonly string[] | null
+  /** The suggestions are still being read: the group's place is held with its loading shape. */
+  suggestionsLoading?: boolean
   selectedIds: ReadonlySet<string>
   onToggle: (gift: GiftData) => void
   onClose: () => void
 }) {
   const t = useTranslations('floorGiftPicker')
+  const tSuggestions = useTranslations('suggestions')
   const [onlyFloor, setOnlyFloor] = useState(true)
   const filters = useGiftCatalogFilters()
   const narrowed = floorGifts !== null && onlyFloor
@@ -43,13 +51,19 @@ export default function FloorGiftPickerModal({ open, title, floorGifts, allGifts
   useEffect(() => { if (showRecent && open) setRecent(loadRecentGifts()) }, [showRecent, open])
   const recentKey = showRecent ? recent.join(',') : ''
   const recentLabel = t('recent')
-  // The exclusive group stays first (index 0 even when empty) so the card marks below keep reading pinned[0].
+  const suggestedLabel = tSuggestions('label')
+  const listed = useMemo(() => new Set(catalog.map(gift => gift.id)), [catalog])
+  const suggestedKey = (suggestedIds ?? []).filter(id => listed.has(id)).slice(0, SUGGESTED_GIFTS).join(',')
+  const exclusiveIdSet = useMemo(() => new Set<string>(exclusiveKey ? exclusiveKey.split(',') : []), [exclusiveKey])
+  // Groups in order: suggested, exclusive, recent. A gift sits in the first group that has it; its warning mark follows exclusiveIdSet.
   const pinned = useMemo(() => {
-    if (!exclusiveKey && !recentKey) return undefined
-    const groups = [{ ids: new Set<string>(exclusiveKey ? exclusiveKey.split(',') : []), label: onlyHere, warning: true }]
-    if (recentKey) groups.push({ ids: new Set(recentKey.split(',')), label: recentLabel, warning: false })
+    if (!suggestedKey && !exclusiveKey && !recentKey) return undefined
+    const groups: { ids: ReadonlySet<string>; label: string; warning?: boolean; ribbon?: boolean }[] = []
+    if (suggestedKey) groups.push({ ids: new Set(suggestedKey.split(',')), label: suggestedLabel, ribbon: true })
+    if (exclusiveKey) groups.push({ ids: exclusiveIdSet, label: onlyHere, warning: true })
+    if (recentKey) groups.push({ ids: new Set(recentKey.split(',')), label: recentLabel })
     return groups
-  }, [exclusiveKey, onlyHere, recentKey, recentLabel])
+  }, [suggestedKey, suggestedLabel, exclusiveKey, exclusiveIdSet, onlyHere, recentKey, recentLabel])
   const exclusiveCard = useMemo<GiftCatalogCardProps>(() => ({ warning: onlyHere }), [onlyHere])
   // The group is read when the window opens; a pick is stored for next time without reshuffling the grid under the cursor.
   const handleToggle = (gift: GiftData) => {
@@ -84,8 +98,8 @@ export default function FloorGiftPickerModal({ open, title, floorGifts, allGifts
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pb-5">
           <div className="pt-4" style={{ '--gift-catalog-bg': 'var(--bg-card)', '--gift-catalog-sticky-top': '-1px', '--gift-catalog-min-h': '0px' } as React.CSSProperties}>
             <GiftCatalog compact gifts={catalog} getGiftKeywordIcon={giftKeywordIcon} filters={filters} selectedIds={selectedIds}
-              toolbarEnd={toggle || undefined} pinned={pinned}
-              cardProps={gift => pinned?.[0].ids.has(gift.id) ? exclusiveCard : undefined}
+              toolbarEnd={toggle || undefined} pinned={pinned} holdPlace={suggestionsLoading ? <GiftGroupSkeleton count={SUGGESTED_GIFTS} /> : undefined}
+              cardProps={gift => exclusiveIdSet.has(gift.id) ? exclusiveCard : undefined}
               onGiftClick={(gift: EgoGift) => { const data = byId.get(gift.id); if (data) handleToggle(data) }} />
             {catalog.length === 0 && <p className="py-10 text-center text-[0.9375rem] text-[#9c8b73]">{t('empty')}</p>}
           </div>
