@@ -330,9 +330,6 @@ span.inline img[src*="bladetrail-afterimage"] + span {
 .note-document-content .is-empty::before { content: attr(data-placeholder); float: left; height: 0; color: var(--text-muted); pointer-events: none; }
 .note-document-image { display: block; height: auto; max-height: 36rem; max-width: 100%; object-fit: contain; margin: 1rem 0; }
 
-/* The rendered browse panel controls both server-rendered board headers. */
-.community-board .board-header { padding-top: 5.5rem; padding-bottom: 1.25rem; }
-.community-board .board-header-back { display: none; }
 /* Desktop browse is a workspace: the page stays still and only the list scrolls. Phones scroll the page itself,
    because a fixed-height list left an empty band under Safari's collapsing toolbar. */
 @media (min-width: 64rem) {
@@ -340,16 +337,9 @@ span.inline img[src*="bladetrail-afterimage"] + span {
   html.board-browse, html.board-browse body { overflow: hidden; }
 }
 html.board-browse body :is(footer, [data-floating-font-control]) { display: none !important; }
-.community-board:has([data-board-browse]) .board-header { padding-top: 5.25rem; padding-bottom: 1.75rem; }
-.community-board:has([data-board-browse]) .board-header-overview { display: none; }
-.community-board:has([data-board-browse]) .board-header-back { display: flex; }
 .community-board :is(button, a, input):focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
 /* The filter column scrolls, so it clips what sticks out of it: room on the left for the focus ring (2px + 3px offset), taken from the page margin so the column stays where it was. */
 .board-filters { width: calc(16rem + 0.375rem); margin-left: -0.375rem; padding-left: 0.375rem; }
-@media (max-width: 40rem) {
-  .community-board .board-header { padding-top: 5rem; padding-bottom: 1rem; }
-  .community-board:has([data-board-browse]) .board-header { padding-top: 4.75rem; padding-bottom: 1rem; }
-}
 
 /* Visual note blocks: shared by the editor and the lightweight document viewer. */
 .note-block-document{font-family:var(--font-body),sans-serif;font-size:1rem;line-height:1.75;color:var(--text-secondary);overflow-wrap:anywhere}

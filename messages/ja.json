@@ -194,7 +194,6 @@
     "header": {
       "eyebrow": "DECK BOARD",
       "title": "デッキ掲示板",
-      "subtitle": "リンバスカンパニーのコミュニティデッキを探して共有しましょう。",
       "newDeck": "デッキ作成"
     },
     "search": {
@@ -1008,7 +1007,6 @@
       "header": {
         "eyebrow": "MIRROR DUNGEON PLANS",
         "title": "コミュニティプラン",
-        "subtitle": "ミラーダンジョンのルートと攻略プランを共有する場所です。",
         "newPlan": "プラン作成"
       },
       "search": {
@@ -1675,7 +1673,15 @@
     "popularDecks": "よく読まれているデッキ",
     "popularPlans": "よく読まれているプラン",
     "popularIdentities": "よく見られている人格",
-    "rising": "今伸びている"
+    "rising": "今伸びている",
+    "more": "もっと見る",
+    "less": "閉じる",
+    "viewAll": "すべて見る",
+    "viewAllDecks": "すべてのデッキ",
+    "viewAllPlans": "すべてのプラン",
+    "filters": "絞り込み",
+    "clear": "消去",
+    "back": "{title}に戻る"
   },
   "ownedBadge": {
     "owned": "所持",

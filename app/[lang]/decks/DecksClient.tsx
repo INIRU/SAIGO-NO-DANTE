@@ -10,6 +10,7 @@ import { getIdentityPortraitUrl } from '@/lib/utils/images'
 import { useState, useEffect, useMemo, useCallback, useRef, useTransition } from 'react'
 import { parseAsBoolean, parseAsInteger, parseAsString, useQueryState, useQueryStates } from 'nuqs'
 import { useSession } from 'next-auth/react'
+import { Link } from '@/lib/i18n/navigation'
 import { type DeckSummary } from '@/components/decks/DeckCard'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
 import { decodeCollectionAsync, missingFormationCount, withBaseIdentities } from '@/lib/collection'
@@ -21,7 +22,8 @@ import { getActiveTerm } from '@/lib/utils/search'
 import { THEME_KEYWORDS, normalizeThemeKeyword } from '@/lib/constants/keywords'
 import { DECK_MAIN_KEYWORDS, computeDeckMainKeywordsFromSlots, normalizeDeckMainKeyword } from '@/lib/decks/keyword-rules'
 import DeckListFilters from '@/components/decks/DeckListFilters'
-import DeckGrid from '@/components/decks/DeckGrid'
+import { BoardResults, BrowseBar } from '@/components/board/Browse'
+import type { RowPost } from '@/components/board/parts'
 import {
   normalizeDeckLanguageFilter,
   resolveDeckLanguageParam,
@@ -243,6 +245,7 @@ export default function DecksClient({
   const scrollRootRef = useRef<HTMLDivElement>(null)
   const initialDataKey = useRef<string | null>(hasServerInitialDecks ? `${initialSort}:${initialLanguageFilter}` : null)
   const deckRequestId = useRef(0)
+  const [filterSignal, setFilterSignal] = useState(0)
   const loadMoreRequestId = useRef(0)
   const loadMoreAbortRef = useRef<AbortController | null>(null)
   const [, startTransition] = useTransition()
@@ -836,6 +839,7 @@ export default function DecksClient({
       <div className="relative z-[1] mx-auto flex h-full min-h-0 w-full max-w-7xl gap-5">
         {/* ── 필터 패널 ── */}
         <DeckListFilters
+          openSignal={filterSignal}
           inputValue={inputValue}
           onInputChange={v => { setInputValue(v); setShowSuggestions(true) }}
           onInputFocus={() => setShowSuggestions(true)}
@@ -912,47 +916,22 @@ export default function DecksClient({
           onToggle={id => { if (facetModal) toggleFacet(facetModal, id) }} onClose={() => setFacetModal(null)} />
 
         <div ref={scrollRootRef} className="min-h-0 flex-1 pb-16 scrollbar-thin lg:overflow-y-auto lg:pr-1">
-          {/* ── 결과 수 ── */}
-          {!loading && (
-            <div
-              className="mb-4 flex min-h-11 items-center gap-2 rounded-sm"
-              role="status"
-              aria-live="polite"
-              style={{
-                padding: '0.35rem 0',
-                color: '#888',
-                fontFamily: 'var(--font-body)',
-                fontSize: '1rem',
-                lineHeight: 1.45,
-              }}
-            >
-              {refreshing && (
-                <span
-                  className="shrink-0 rounded-full animate-spin"
-                  style={{ width: '0.875rem', height: '0.875rem', border: '1px solid rgba(200,144,10,0.28)', borderTopColor: 'var(--gold)' }}
-                  aria-hidden="true"
-                />
-              )}
-              <span className="min-w-0">
-                <span style={{ color: 'var(--text-secondary)', fontWeight: 500 }}>
-                  {hasMore ? t('result.countMore', { count: filtered.length }) : t('result.countExact', { count: filtered.length })}
-                </span>
-                {refreshing ? t('result.refreshing') : ''}
-                {hasAnyFilter && <span style={{ color: '#777' }}>{t('result.filtered')}</span>}
-              </span>
-            </div>
-          )}
+          <BrowseBar
+            search={{ value: inputValue, onChange: v => { setInputValue(v); setShowSuggestions(false) }, onClear: () => { setInputValue(''); void setSearch(null, QUERY_OPTIONS); setDebouncedSearch('') }, placeholder: t('search.placeholder'), label: t('search.label') }}
+            sort={{ value: sort, options: (['latest', 'popular'] as const).map(key => ({ key, label: t(`sort.${key}`) })), onChange: key => { void setSortQuery(key as SortKey, QUERY_OPTIONS) } }}
+            filterCount={advancedFilterCount + (inputValue.trim() ? 1 : 0)}
+            onOpenFilters={() => setFilterSignal(value => value + 1)}
+            summary={loading ? '' : `${hasMore ? t('result.countMore', { count: filtered.length }) : t('result.countExact', { count: filtered.length })}${refreshing ? t('result.refreshing') : ''}`}
+          />
 
           {/* ── 덱 목록 ── */}
-          <DeckGrid
-            filtered={filtered}
-            loading={loading}
-            hasMore={hasMore}
-            loadingMore={loadingMore}
-            hasAnyFilter={hasAnyFilter}
-            sentinelRef={sentinelRef}
-            onTagClick={toggleTag}
-          />
+          <BoardResults kind="deck" posts={filtered as unknown as RowPost[]} loading={loading} hasMore={hasMore} loadingMore={loadingMore} sentinelRef={sentinelRef}
+            empty={(
+              <div className="flex flex-col items-center gap-3 py-16 text-center">
+                <p className="text-[1rem] text-[var(--text-secondary)]">{hasAnyFilter ? t('grid.noResults') : t('grid.empty')}</p>
+                {!hasAnyFilter && <Link href="/decks/new" className="min-h-11 content-center text-[0.9375rem] font-semibold text-[var(--gold-light)] underline-offset-4 hover:underline">{t('grid.createFirst')}</Link>}
+              </div>
+            )} />
         </div>
       </div>
     </div>

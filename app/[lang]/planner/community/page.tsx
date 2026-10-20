@@ -1,4 +1,4 @@
-import { BoardShelfSkeleton } from '@/components/discovery/BoardSkeleton'
+import { BoardShelfSkeleton } from '@/components/board/BoardShelfSkeleton'
 import type { Metadata } from 'next'
 import { pageMetadata } from '@/lib/seo/metadata'
 import { Suspense } from 'react'
@@ -19,16 +19,17 @@ export default async function CommunityPage({ params }: { params: Promise<{ lang
   const { lang } = await params
   const t = await getTranslations({ locale: lang, namespace: 'planner.communityBoard.header' })
   const tActions = await getTranslations({ locale: lang, namespace: 'planner.actions' })
+  const tShelf = await getTranslations({ locale: lang, namespace: 'discoveryShelf' })
 
   const initialShelf = (await loadInitialShelf('planner')) as InitialShelf | undefined
 
   return (
     <div className="community-board flex min-h-screen flex-col" style={{ background: 'var(--bg-deep)' }}>
-      <BoardHeader kind="planner" lang={lang} title={t('title')} subtitle={t('subtitle')} action={t('newPlan')} assist={tActions('triggerMode')} />
-      <Suspense fallback={<BoardShelfSkeleton kind="planner" />}>
+      <BoardHeader kind="planner" title={t('title')} action={t('newPlan')} viewAll={tShelf('viewAllPlans')} back={tShelf('back', { title: t('title') })} assist={tActions('triggerMode')} />
+      <Suspense fallback={<BoardShelfSkeleton />}>
         {/* The default view is the discovery shelf, rendered with its first page (initialShelf, a minutes-long cache
             entry); the client loads the full list when browsing or searching. URL filters apply after hydration (StaticQueryAdapter). */}
-        <StaticQueryAdapter fallback={<BoardShelfSkeleton kind="planner" />}>
+        <StaticQueryAdapter fallback={<BoardShelfSkeleton />}>
           <CommunityClient initialShelf={initialShelf} />
         </StaticQueryAdapter>
       </Suspense>

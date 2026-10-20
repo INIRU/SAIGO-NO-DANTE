@@ -194,7 +194,6 @@
     "header": {
       "eyebrow": "DECK BOARD",
       "title": "Deck Board",
-      "subtitle": "Browse and share community deck builds for Limbus Company.",
       "newDeck": "Create Deck"
     },
     "search": {
@@ -1008,7 +1007,6 @@
       "header": {
         "eyebrow": "MIRROR DUNGEON PLANS",
         "title": "Community Plans",
-        "subtitle": "Shared Mirror Dungeon routes and strategy plans.",
         "newPlan": "Create Plan"
       },
       "search": {
@@ -1675,7 +1673,15 @@
     "popularDecks": "Frequently visited decks",
     "popularPlans": "Frequently visited plans",
     "popularIdentities": "Frequently visited identities",
-    "rising": "Rising now"
+    "rising": "Rising now",
+    "more": "Show more",
+    "less": "Show less",
+    "viewAll": "View all",
+    "viewAllDecks": "All decks",
+    "viewAllPlans": "All plans",
+    "filters": "Filters",
+    "clear": "Clear",
+    "back": "Back to {title}"
   },
   "ownedBadge": {
     "owned": "Owned",
