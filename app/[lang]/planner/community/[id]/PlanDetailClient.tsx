@@ -642,6 +642,7 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
               </ul>
             )}
             <h1 className={styles.title}>{plan.title}</h1>
+            {series && <SeriesBox series={series} kind="plan" postId={plan.id} />}
           </div>
 
           <div className={`${styles.author} flex items-center gap-3`}>
@@ -715,8 +716,6 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
             />
           </div>
         </m.header>
-
-        {series && <SeriesBox series={series} kind="plan" postId={plan.id} />}
 
         <nav aria-label={tPlanner('sectionNav')} className={`sticky-under-nav ${styles.sectionNav}`}>
           <ol ref={sectionNavRef}>

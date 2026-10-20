@@ -9,6 +9,15 @@ const tr = (lang: string, ko: string, ja: string, en: string) => lang === 'ja' ?
 /** The reader's line near the top of the screen (below the sticky navigation) that decides which heading is being read. */
 const READING_LINE = 120
 
+/** Scrolls to a heading and puts its id in the address without a new history entry, so Back leaves the page in one step. */
+export function jumpToHeading(id: string) {
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  document.getElementById(id)?.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' })
+  const url = new URL(window.location.href)
+  url.hash = id
+  window.history.replaceState(window.history.state, '', url.href)
+}
+
 /** A button after a heading that copies the page address with the heading's id. */
 export function NoteHeadingLink({ id, text }: { id: string; text: string }) {
   const lang = useLocale()
@@ -53,9 +62,10 @@ export default function NoteTocLayout({ headings, children }: { headings: NoteHe
   return <div className="note-toc-frame"><div className="note-toc-layout">
     <aside className="note-toc" data-open={open || undefined}>
       <button type="button" className="note-toc-toggle" aria-expanded={open} aria-controls={listId} onClick={() => setOpen(!open)}>{title}<ChevronDown size={16} aria-hidden="true" /></button>
+      <p className="note-toc-title" aria-hidden="true">{title}</p>
       <nav id={listId} aria-label={title}>
         <ol>{headings.map(heading => <li key={heading.id} data-level={heading.level}>
-          <a href={`#${heading.id}`} aria-current={heading.id === active ? 'location' : undefined} onClick={() => setOpen(false)}>{heading.text}</a>
+          <a href={`#${heading.id}`} title={heading.text} aria-current={heading.id === active ? 'location' : undefined} onClick={event => { event.preventDefault(); setOpen(false); setActive(heading.id); jumpToHeading(heading.id) }}>{heading.text}</a>
         </li>)}</ol>
       </nav>
     </aside>
