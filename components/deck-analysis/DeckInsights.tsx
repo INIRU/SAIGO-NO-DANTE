@@ -152,7 +152,7 @@ export default function DeckInsights({ identities, sinCounts, baseSinCounts, sum
               {groups.map(({ identity, list }) => (
                 <li key={identity.id} className="deck-passives__group">
                   <div className="deck-passives__head">
-                    <span className="deck-passives__thumb">{identity.imageUrl && <Image src={identity.imageUrl} alt="" fill sizes="2rem" />}</span>
+                    <span className="deck-passives__thumb relative block h-8 w-8 shrink-0 overflow-hidden">{identity.imageUrl && <Image src={identity.imageUrl} alt="" fill sizes="2rem" style={{ objectFit: 'cover', objectPosition: '50% 8%' }} />}</span>
                     <p className="deck-passives__who">
                       <span className="deck-passives__identity">{identity.name}</span>
                       <span className="deck-passives__sinner">{identity.sinnerName}</span>

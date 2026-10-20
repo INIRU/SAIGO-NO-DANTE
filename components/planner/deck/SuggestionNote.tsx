@@ -47,7 +47,7 @@ function PartnerFace({ identity, chosen }: { identity: PlannerDeckIdentity; chos
   const art = getIdentityPortraitUrl(identity.sinner_id, identity.folder_name ?? null, identity.game_id ?? null, true)
   return (
     <span className="idnote__face" data-partner-face data-chosen={chosen} data-open={open || undefined}>
-      <button type="button" aria-label={name} aria-expanded={open} onClick={() => setOpen(value => !value)} onBlur={() => setOpen(false)}>
+      <button type="button" className="relative h-7 w-7 overflow-hidden rounded-full" aria-label={name} aria-expanded={open} onClick={() => setOpen(value => !value)} onBlur={() => setOpen(false)}>
         {art && <Image src={art} alt="" fill sizes="28px" quality={50} style={{ objectFit: 'cover', objectPosition: '50% 0', transform: 'scale(1.9)', transformOrigin: '50% 12%' }} />}
       </button>
       <span role="tooltip" className="idnote__name">{name}</span>

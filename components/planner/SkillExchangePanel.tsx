@@ -44,8 +44,8 @@ export default function SkillExchangePanel({
   const mayIncrease = (idx: number) => canIncrease?.(idx) ?? total < 6
   const who = identity && (
     <>
-      <span className="skx__thumb">
-        {identity.imageUrl && <Image src={identity.imageUrl} alt="" fill sizes="2.75rem" />}
+      <span className="skx__thumb relative block h-11 w-11 shrink-0 overflow-hidden">
+        {identity.imageUrl && <Image src={identity.imageUrl} alt="" fill sizes="2.75rem" style={{ objectFit: 'cover', objectPosition: '50% 10%' }} />}
       </span>
       <span className="skx__names">
         {identity.sinnerName && <span className="skx__sinner">{identity.sinnerName}</span>}
