@@ -1,14 +1,8 @@
 import fs from 'node:fs'
 import path from 'node:path'
+import type { RawCatalog } from '@/lib/discovery/rec-catalog'
 
-/** The catalog rows the recommenders read, as exported (see export-snapshot.mjs). */
-export type RawCatalog = {
-  identities: { id: string; sinner_id: string; name_kr: string; rarity: number; release_date: string | null; keywords: string[] | null; skill_keyword_list: string[] | null; unit_keyword_list: string[] | null; association_list: string[] | null; affiliation: string | null; sin_affinity: string | null; game_id: string | null }[]
-  egos: { id: string; sinner_id: string; grade: string; sin_affinity: string | null; keywords: string[] | null; release_date: string | null; cost: number[] | null; game_id: string | null; name_kr: string }[]
-  skills: { identity_id: string; skill_order: number; sin_affinity: string | null; atk_type: string | null; skill_type: string | null; uptie_level: number | null; variant_order: number | null; coins: number | null; description: string | null }[]
-  passives: { identity_id: string; passive_type: string; passive_order: number; sin_affinity: string | null; sin_count: number | null; active_cond: string | null; uptie_level: number | null; sin_requirements: { sin: string; count: number }[] | null; description: string | null }[]
-  keywords: { name: string; category: string | null; sin_affinity: string | null; effect_type: string | null }[]
-}
+export type { RawCatalog }
 
 /** One public deck or plan as the evaluation sees it. */
 export type EvalFormation = {
@@ -16,6 +10,8 @@ export type EvalFormation = {
   kind: 'deck' | 'planner'
   id: string
   createdAt: number
+  votes: number
+  views: number
   /** Hashed author, only to keep one author's near-copies on the same side of a split. */
   author: string
   /** Fielded identities (slot_order < 99), one per sinner, in slot order. */
@@ -31,8 +27,6 @@ export type EvalFormation = {
 export type Snapshot = {
   catalog: RawCatalog
   formations: EvalFormation[]
-  themes: { id: number; name: string; difficulty: string | null; ego_gift_ids: number[] | null; specific_ego_gift_ids: number[] | null; floor_info: Record<string, number[] | string> | null }[]
-  gifts: { game_id: number; name: string; keyword: string | null; grade: string | null; difficulty: string | null }[]
   exportedAt: string
 }
 
@@ -44,7 +38,8 @@ type Row = Record<string, unknown>
 export function loadSnapshot(): Snapshot {
   if (!fs.existsSync(dir)) throw new Error('Run `node scripts/recommender/export-snapshot.mjs` first (it writes the git-ignored .recsys-snapshot/).')
   const identities = read<RawCatalog['identities']>('identities')
-  const sinnerOf = new Map(identities.map(identity => [identity.id, identity.sinner_id]))
+  // The LCB 수감자 every sinner starts with (rarity 1) fills a board slot but says nothing about the team: not a formation member.
+  const sinnerOf = new Map(identities.filter(identity => identity.rarity > 1).map(identity => [identity.id, identity.sinner_id]))
   const egos = read<RawCatalog['egos']>('egos')
   const egoSinner = new Map(egos.map(ego => [ego.id, ego.sinner_id]))
   const formations: EvalFormation[] = []
@@ -67,7 +62,7 @@ export function loadSnapshot(): Snapshot {
     const slots = fielded(deck.deck_identities as Row[])
     if (!slots.length) continue
     formations.push({
-      key: `deck:${deck.id}`, kind: 'deck', id: deck.id as string, createdAt: Date.parse(deck.created_at as string), author: deck.author as string,
+      key: `deck:${deck.id}`, kind: 'deck', id: deck.id as string, votes: Number(deck.vote_count ?? 0), views: Number(deck.view_count ?? 0), createdAt: Date.parse(deck.created_at as string), author: deck.author as string,
       identities: slots.map(slot => slot.id), distribution: Object.fromEntries(slots.map(slot => [slot.id, slot.dist])),
       egos: ((deck.deck_egos as Row[]) ?? []).flatMap(ego => egoSinner.has(ego.ego_id as string) ? [{ ego_id: ego.ego_id as string, sinner_id: egoSinner.get(ego.ego_id as string)!, grade: String(ego.grade) }] : []),
       mainKeywords: (deck.main_keywords as string[]) ?? [], floors: [],
@@ -86,7 +81,7 @@ export function loadSnapshot(): Snapshot {
       })
     }
     formations.push({
-      key: `planner:${plan.id}`, kind: 'planner', id: plan.id as string, createdAt: Date.parse(plan.created_at as string), author: plan.author as string,
+      key: `planner:${plan.id}`, kind: 'planner', id: plan.id as string, votes: Number(plan.vote_count ?? 0), views: Number(plan.view_count ?? 0), createdAt: Date.parse(plan.created_at as string), author: plan.author as string,
       identities: slots.map(slot => slot.id), distribution: Object.fromEntries(slots.map(slot => [slot.id, slot.dist])),
       egos: ((plan.egos as Row[]) ?? []).flatMap(ego => egoSinner.has(ego.ego_id as string) ? [{ ego_id: ego.ego_id as string, sinner_id: egoSinner.get(ego.ego_id as string)!, grade: String(ego.grade) }] : []),
       mainKeywords: (plan.tags as string[]) ?? [], floors,
@@ -97,11 +92,9 @@ export function loadSnapshot(): Snapshot {
   return {
     catalog: {
       identities, egos,
-      skills: read('skills'), passives: read('passives'), keywords: read('keywords'),
+      skills: read('skills'), passives: read('passives'), gifts: read('gifts'), themes: read('themes'),
     },
     formations,
-    themes: read('themes'),
-    gifts: read('gifts'),
     exportedAt: read<{ exported_at: string }>('meta').exported_at,
   }
 }

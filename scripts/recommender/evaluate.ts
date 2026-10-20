@@ -1,12 +1,15 @@
 /**
  * Offline evaluation of the discovery suggestions on the real public decks and plans.
  *   node scripts/recommender/export-snapshot.mjs          (once; SELECT only, writes the git-ignored .recsys-snapshot/)
- *   npx tsx scripts/recommender/evaluate.ts [--algo baseline|popularity] [--split author|formation|both] [--json out.json]
+ *   npx tsx scripts/recommender/evaluate.ts [--algo baseline|popularity|v2] [--set '{"identity":{"weights":{"fresh":0.5}}}'] [--split author|formation|both] [--json out.json]
  * Every query hides one item of a real formation/plan and ranks the slot's candidates from the other posts only.
  */
 import fs from 'node:fs'
 import { baselineRankers, popularityRankers, type Rankers } from './baseline'
 import { loadSnapshot, type Snapshot } from './load-snapshot'
+import { lookLike } from '@/lib/discovery/identity-recs'
+import { buildRecCatalog } from '@/lib/discovery/rec-catalog'
+import { v2Rankers } from './v2'
 import { jaccard, rankOf, rbo, summarize, type Summary } from './metrics'
 import { egoQueries, giftQueries, identityQueries, stabilityQueries, themeQueries, type Regime, type Split } from './queries'
 
@@ -59,11 +62,25 @@ export function mixedContext(snapshot: Snapshot, context: string[]): boolean {
   return Math.max(0, ...counts.values()) / context.length < 0.7
 }
 
+/** Mean dissimilarity (1 − likeness in keyword profile and affiliation) between the identities of a top-6, over the first-pick queries (board of three). */
+export function diversity(snapshot: Snapshot, rank: (query: ReturnType<typeof identityQueries>[number]) => string[]) {
+  const catalog = buildRecCatalog(snapshot.catalog)
+  let sum = 0, n = 0
+  for (const query of identityQueries(snapshot, 'author', 'three')) {
+    const top = rank(query).slice(0, 6).map(id => catalog.identities[id])
+    let pairs = 0, total = 0
+    for (let i = 0; i < top.length; i++) for (let j = i + 1; j < top.length; j++) { total += 1 - lookLike(top[i], top[j]); pairs++ }
+    if (pairs) { sum += total / pairs; n++ }
+  }
+  return n ? sum / n : 0
+}
+
 export function evaluateAll(rankers: Rankers, splits: Split[], label: string, snapshot = loadSnapshot()) {
   const rows: Row[] = []
   const stable: Record<string, ReturnType<typeof stability>> = {}
+  const diverse: Record<string, number> = {}
   for (const split of splits) {
-    for (const regime of ['full', 'half', 'three', 'one'] as Regime[]) {
+    for (const regime of ['full', 'half', 'three', 'one', 'zero'] as Regime[]) {
       rows.push(runTask(`identity (${regime} context)`, split, identityQueries(snapshot, split, regime), query => query.held, rankers.identity))
     }
     for (const regime of ['half', 'three'] as Regime[]) {
@@ -74,10 +91,11 @@ export function evaluateAll(rankers: Rankers, splits: Split[], label: string, sn
     rows.push(runTask('theme pack (by floor)', split, themes, query => query.held, rankers.theme))
     rows.push(runTask('gift (its pack, >=6 choices)', split, giftQueries(snapshot, split).filter(query => query.candidates.length >= 6), query => query.held, rankers.gift))
     stable[split] = stability(stabilityQueries(snapshot, split), rankers.identity)
+    diverse[split] = diversity(snapshot, rankers.identity)
   }
   console.log(`\n== ${label} (snapshot ${snapshot.exportedAt}, ${snapshot.formations.length} formations)`)
   printRows(rows)
-  for (const [split, value] of Object.entries(stable)) console.log(`stability[${split}]: top-6 RBO ${value.rbo.toFixed(3)}, Jaccard ${value.jaccard.toFixed(3)} over ${value.steps} steps (answered ${(value.coverage * 100).toFixed(0)}%)`)
+  for (const [split, value] of Object.entries(stable)) console.log(`stability[${split}]: top-6 RBO ${value.rbo.toFixed(3)}, Jaccard ${value.jaccard.toFixed(3)} over ${value.steps} steps (answered ${(value.coverage * 100).toFixed(0)}%); top-6 diversity ${diverse[split].toFixed(3)}`)
   return { rows, stable }
 }
 
@@ -87,7 +105,8 @@ if (process.argv[1]?.endsWith('recommender/evaluate.ts')) {
   const algo = option('--algo') ?? 'baseline'
   const split = option('--split') ?? 'both'
   const snapshot = loadSnapshot()
-  const rankers = algo === 'popularity' ? popularityRankers() : baselineRankers(snapshot)
+  const overrides = JSON.parse(option('--set') ?? '{}')
+  const rankers = algo === 'popularity' ? popularityRankers() : algo === 'v2' ? v2Rankers(snapshot, overrides) : baselineRankers(snapshot)
   const result = evaluateAll(rankers, split === 'both' ? ['author', 'formation'] : [split as Split], algo, snapshot)
   const out = option('--json')
   if (out) fs.writeFileSync(out, JSON.stringify(result, null, 2))
