@@ -1,5 +1,5 @@
 /** One public deck or plan reduced to its battle formation (one identity per sinner, slot order below 99). */
-export type Formation = { kind: 'deck' | 'planner'; id: string; identities: string[]; votes: number; views: number }
+export type Formation = { kind: 'deck' | 'planner'; id: string; identities: string[]; votes: number; views: number; created_at?: string }
 
 export type Companion = { identity_id: string; count: number; score: number }
 

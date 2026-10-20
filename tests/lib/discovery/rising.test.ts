@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { rising } from '@/lib/discovery/rising'
+import { rising, risingIdentities } from '@/lib/discovery/rising'
+import type { Formation } from '@/lib/discovery/co-occurrence'
 
 // A board with 500 recent and 2,000 base visitors (the windows' lengths do not matter: shares are per window).
 const row = (entity_id: string, recent: number, base: number, totals = { recent_total: 500, base_total: 2000 }) => ({ entity_id, recent, base, ...totals })
@@ -38,5 +39,61 @@ describe('rising', () => {
   it('REQ-COMMUNITY-068 gives nothing when a window has no traffic to compare with', () => {
     expect(rising([row('a', 30, 40, { recent_total: 500, base_total: 0 })])).toEqual([])
     expect(rising([row('a', 30, 40, { recent_total: 0, base_total: 2000 })])).toEqual([])
+  })
+})
+
+// Identities by the formations they are fielded in, weighted by each post's visitors.
+const NOW = Date.parse('2026-10-20T00:00:00Z')
+const OLD = '2026-06-01T00:00:00Z'
+const day = (ago: number) => new Date(NOW - ago * 86_400_000).toISOString()
+const formation = (id: string, identities: string[], created_at = OLD, kind: 'deck' | 'planner' = 'deck'): Formation => ({ kind, id, identities, votes: 0, views: 0, created_at })
+const seen = (entity_id: string, recent: number, base: number) => ({ entity_id, recent, base })
+const idsOf = (rows: { id: string }[]) => rows.map(row => row.id)
+
+describe('risingIdentities', () => {
+  const posts = [formation('p1', ['a', 'x']), formation('p2', ['a', 'y']), formation('p3', ['a', 'z']), formation('p4', ['x', 'y'])]
+  const visits = { deck: [seen('p1', 10, 10), seen('p2', 10, 10), seen('p3', 10, 10), seen('p4', 10, 90)], planner: [] }
+
+  it('REQ-COMMUNITY-071 weights an identity by the visitors of the posts that field it, as a share of all fielded visits', () => {
+    // a: 30 recent, 30 base. Recent total 4 posts × 10 × 2 = 80, base total 2 × (10 + 10 + 10 + 90) = 240: expected 30 × 80 / 240 = 10, so (30 + 3) / (10 + 3) = 2.5.
+    expect(risingIdentities({ formations: posts, visits, now: NOW })).toEqual([{ id: 'a', recent: 30, rise: 2.5 }])
+  })
+
+  it('REQ-COMMUNITY-071 reads decks and plans together, each post by its own kind', () => {
+    const mixed = [formation('p1', ['a', 'x'], OLD, 'deck'), formation('p1', ['a', 'y'], OLD, 'planner'), formation('p2', ['a', 'z']), formation('p4', ['x', 'y'])]
+    const both = { deck: [seen('p1', 10, 10), seen('p2', 10, 10), seen('p4', 10, 90)], planner: [seen('p1', 10, 10)] }
+    expect(idsOf(risingIdentities({ formations: mixed, visits: both, now: NOW }))).toEqual(['a'])
+  })
+
+  it('REQ-COMMUNITY-071 needs three posts with recent visitors', () => {
+    const two = [formation('p1', ['a', 'x']), formation('p2', ['a', 'y']), formation('p3', ['a', 'z']), formation('p4', ['x', 'y'])]
+    // The third post of "a" has no recent visitor: it does not count.
+    expect(risingIdentities({ formations: two, visits: { deck: [seen('p1', 10, 10), seen('p2', 10, 10), seen('p3', 0, 10), seen('p4', 10, 90)], planner: [] }, now: NOW })).toEqual([])
+  })
+
+  it('REQ-COMMUNITY-071 leaves out the identities it is told to skip, such as the LCB defaults', () => {
+    expect(risingIdentities({ formations: posts, visits, skip: new Set(['a']), now: NOW })).toEqual([])
+  })
+
+  it('REQ-COMMUNITY-071 ignores a post without visit counts and one that no formation fields', () => {
+    expect(risingIdentities({ formations: posts.slice(0, 3), visits: { deck: [seen('p1', 10, 10), seen('p2', 10, 10), seen('ghost', 99, 0)], planner: [] }, now: NOW })).toEqual([])
+  })
+
+  it('REQ-COMMUNITY-071 lets posts made in the last 14 days break ties, without lifting a weak riser over a strong one', () => {
+    // 'old' and 'fresh' share the same visits; only the posts of 'fresh' are new.
+    const tie = [
+      ...['o1', 'o2', 'o3'].map(id => formation(id, ['old', `${id}-partner`])),
+      ...['f1', 'f2', 'f3'].map(id => formation(id, ['fresh', `${id}-partner`], day(5))),
+      ...['b1', 'b2', 'b3'].map(id => formation(id, ['big', `${id}-partner`])),
+      formation('quiet', ['q1', 'q2']),
+    ]
+    // Nothing had a base visitor but the quiet post, which gives the board a base to compare with.
+    const tieVisits = { deck: [...['o1', 'o2', 'o3', 'f1', 'f2', 'f3'].map(id => seen(id, 10, 0)), ...['b1', 'b2', 'b3'].map(id => seen(id, 40, 0)), seen('quiet', 0, 100)], planner: [] }
+    expect(idsOf(risingIdentities({ formations: tie, visits: tieVisits, now: NOW }))).toEqual(['big', 'fresh', 'old'])
+  })
+
+  it('REQ-COMMUNITY-071 gives nothing when there is no traffic to compare with', () => {
+    expect(risingIdentities({ formations: posts, visits: { deck: [], planner: [] }, now: NOW })).toEqual([])
+    expect(risingIdentities({ formations: posts, visits: { deck: posts.slice(0, 3).map(post => seen(post.id, 10, 0)), planner: [] }, now: NOW })).toEqual([])
   })
 })

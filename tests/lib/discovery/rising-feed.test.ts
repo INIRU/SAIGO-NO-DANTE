@@ -6,6 +6,8 @@ const state = vi.hoisted(() => ({
   rpcError: null as null | { message: string },
   asked: {} as Record<string, string[]>,
   gone: new Set<string>(),
+  asks: [] as { post_kind: string; min_recent?: number; max_rows?: number }[],
+  formations: [] as { kind: 'deck' | 'planner'; id: string; identities: string[]; votes: number; views: number; created_at?: string }[],
   tags: [] as string[],
   life: [] as string[],
 }))
@@ -17,7 +19,7 @@ vi.mock('next/cache', () => ({
 vi.mock('@/lib/supabase/admin', () => ({
   createAdminClient: () => ({
     schema: () => ({
-      rpc: async (name: string, args: { post_kind: string }) => name !== 'discovery_rising_shares' ? { data: null, error: { message: 'unknown function' } } : ({ data: state.rpcError ? null : state.rows[args.post_kind] ?? [], error: state.rpcError }),
+      rpc: async (name: string, args: { post_kind: string; min_recent?: number; max_rows?: number }) => name !== 'discovery_rising_shares' ? { data: null, error: { message: 'unknown function' } } : (state.asks.push(args), { data: state.rpcError ? null : state.rows[args.post_kind] ?? [], error: state.rpcError }),
       from: (table: string) => ({
         select: () => ({
           in: async (_column: string, ids: string[]) => {
@@ -30,6 +32,11 @@ vi.mock('@/lib/supabase/admin', () => ({
   }),
 }))
 
+vi.mock('@/lib/db/meta', () => ({
+  getFormations: async () => state.formations,
+  getMetaCatalog: async () => ({ identities: [{ id: 'lcb-1', game_id: '10101' }, { id: 'i1', game_id: '10315' }], egos: [], keywords: [] }),
+}))
+
 import { loadRising } from '@/lib/discovery/rising-feed'
 
 const row = (entity_id: string, recent: number, base: number) => ({ entity_id, recent, base, recent_total: 500, base_total: 2000 })
@@ -37,9 +44,11 @@ const row = (entity_id: string, recent: number, base: number) => ({ entity_id, r
 beforeEach(() => {
   state.rows = {
     deck: [row('d1', 6, 14), row('d2', 30, 40), row('d3', 12, 100), row('d4', 20, 8), row('d5', 10, 0), row('d6', 6, 6), row('d7', 12, 10), row('d8', 5, 0)],
-    identity: [row('i1', 40, 20), row('i2', 8, 0)],
-    planner: [row('p1', 20, 4)],
+    planner: [row('p1', 20, 4), row('p2', 4, 0), row('p3', 4, 0), row('p4', 4, 20)],
   }
+  // i1 is fielded in three plans with recent visitors, i2 in one; lcb-1 is a default LCB identity fielded just like i1.
+  state.formations = ['p1', 'p2', 'p3'].map(id => ({ kind: 'planner' as const, id, identities: ['i1', 'lcb-1'], votes: 0, views: 0 })).concat([{ kind: 'planner' as const, id: 'p4', identities: ['i2'], votes: 0, views: 0 }])
+  state.asks = []
   state.rpcError = null
   state.asked = {}
   state.gone = new Set()
@@ -54,7 +63,7 @@ describe('loadRising', () => {
     // d1 and d3 did not rise by ×1.5; the rest are ranked by (rise − 1) × √recent and cut to the five shown.
     expect(result.posts.map(item => item.post.id)).toEqual(['d4', 'd5', 'd2', 'd7', 'd8'])
     expect(result.posts.map(item => item.rise)).toEqual([4.6, 4.3, 2.5, 2.7, 2.7])
-    expect(result.identities.map(item => item.identity.id)).toEqual(['i1', 'i2'])
+    expect(result.identities.map(item => item.identity.id)).toEqual(['i1'])
     expect(state.asked.decks).not.toContain('d3')
   })
 
@@ -62,7 +71,7 @@ describe('loadRising', () => {
     state.fresh = new Set(['d4', 'i1'])
     const result = await loadRising('deck')
     expect(result.posts.map(item => item.post.id)).toEqual(['d5', 'd2', 'd7', 'd8', 'd6'])
-    expect(result.identities.map(item => item.identity.id)).toEqual(['i2'])
+    expect(result.identities).toEqual([])
   })
 
   it('REQ-COMMUNITY-069 skips a post deleted since the count and takes the next riser', async () => {
@@ -74,6 +83,18 @@ describe('loadRising', () => {
     const result = await loadRising('planner')
     expect(result.posts.map(item => item.post.id)).toEqual(['p1'])
     expect(state.asked.md_plans).toEqual(['p1'])
+  })
+
+  it('REQ-COMMUNITY-071 ranks identities by the visitors of the formations that field them, not by their own page, and skips the LCB defaults', async () => {
+    const result = await loadRising('planner')
+    expect(result.identities.map(item => item.identity.id)).toEqual(['i1'])
+    expect(state.asked.identities).toEqual(['i1'])
+  })
+
+  it('REQ-COMMUNITY-071 asks for every deck and plan with a visitor, not only the busiest, and never for identity visits', async () => {
+    await loadRising('deck')
+    expect(state.asks.map(ask => ask.post_kind).sort()).toEqual(['deck', 'planner'])
+    expect(state.asks.every(ask => ask.min_recent === 0 && (ask.max_rows ?? 0) >= 1000)).toBe(true)
   })
 
   it('REQ-COMMUNITY-069 is cached under the board list tag', async () => {
