@@ -42,6 +42,10 @@ export type PostVisits = { entity_id: string; recent: number; base: number }
 const MIN_POSTS = 3
 /** How much of the ranking the formations made in the last 14 days may decide: a tie-breaker, not a second ranking. */
 const FRESH_WEIGHT = 0.2
+/** Identities that rise on the same posts (one team) are shown at most two at a time, and each is marked down by its overlap with the ones already shown. */
+const TEAM_OVERLAP = 0.6
+const MAX_TEAM = 2
+const OVERLAP_PENALTY = 0.7
 
 /**
  * Identities that are fielded in more of the board's traffic lately, read from the formations instead of the identity
@@ -58,7 +62,7 @@ export function risingIdentities({ formations, visits, skip = new Set(), now = D
   now?: number
 }, limit = 12): Rising[] {
   const seen = { deck: new Map(visits.deck.map(row => [row.entity_id, row])), planner: new Map(visits.planner.map(row => [row.entity_id, row])) }
-  const stats = new Map<string, { recent: number; base: number; posts: number; fresh: number }>()
+  const stats = new Map<string, { recent: number; base: number; posts: number; fresh: number; support: Set<string> }>()
   let recentTotal = 0
   let baseTotal = 0
   for (const post of formations) {
@@ -67,10 +71,10 @@ export function risingIdentities({ formations, visits, skip = new Set(), now = D
     const fresh = post.created_at !== undefined && now - Date.parse(post.created_at) < BASE_DAYS * 86_400_000
     for (const id of post.identities) {
       if (skip.has(id)) continue
-      const stat = stats.get(id) ?? { recent: 0, base: 0, posts: 0, fresh: 0 }
+      const stat = stats.get(id) ?? { recent: 0, base: 0, posts: 0, fresh: 0, support: new Set<string>() }
       stat.recent += visit.recent
       stat.base += visit.base
-      if (visit.recent > 0) stat.posts++
+      if (visit.recent > 0) { stat.posts++; stat.support.add(`${post.kind}:${post.id}`) }
       if (fresh) stat.fresh++
       stats.set(id, stat)
       recentTotal += visit.recent
@@ -81,9 +85,28 @@ export function risingIdentities({ formations, visits, skip = new Set(), now = D
   const candidates = scored(rows)
   const best = Math.max(...candidates.map(item => item.score), 0)
   const mostFresh = Math.max(...candidates.map(item => stats.get(item.id)!.fresh), 0)
-  return candidates
-    .map(item => ({ ...item, final: item.score / best + (mostFresh ? FRESH_WEIGHT * stats.get(item.id)!.fresh / mostFresh : 0) }))
+  const ranked = candidates
+    .map(item => ({ ...item, final: item.score / best + (mostFresh ? FRESH_WEIGHT * stats.get(item.id)!.fresh / mostFresh : 0), support: stats.get(item.id)!.support }))
     .sort((a, b) => b.final - a.final || b.recent - a.recent || a.id.localeCompare(b.id))
-    .slice(0, limit)
-    .map(({ id, recent, rise }) => ({ id, recent, rise }))
+  // Greedy re-rank: the next pick is the best score after the overlap penalty, and no third identity joins a pair that shares its posts.
+  const picked: typeof ranked = []
+  while (picked.length < limit && ranked.length) {
+    let bestIndex = -1
+    let bestValue = -Infinity
+    ranked.forEach((item, index) => {
+      const overlaps = picked.map(other => jaccard(item.support, other.support))
+      if (overlaps.filter(overlap => overlap >= TEAM_OVERLAP).length >= MAX_TEAM) return
+      const value = item.final * (1 - OVERLAP_PENALTY * Math.max(0, ...overlaps))
+      if (value > bestValue) { bestValue = value; bestIndex = index }
+    })
+    if (bestIndex < 0) break
+    picked.push(...ranked.splice(bestIndex, 1))
+  }
+  return picked.map(({ id, recent, rise }) => ({ id, recent, rise }))
+}
+
+const jaccard = (a: ReadonlySet<string>, b: ReadonlySet<string>) => {
+  let shared = 0
+  for (const key of a) if (b.has(key)) shared++
+  return shared / (a.size + b.size - shared)
 }
