@@ -1,7 +1,9 @@
 'use client'
 
 import { useSuggestions } from '@/hooks/useSuggestions'
-import { useState, type CSSProperties } from 'react'
+import { LCB_IDS } from '@/lib/constants/game'
+import { suggestionContext } from '@/lib/decks/formation-order'
+import { useMemo, useState, type CSSProperties } from 'react'
 import Image from 'next/image'
 import { useReducedMotion } from 'motion/react'
 import * as m from 'motion/react-m'
@@ -94,7 +96,7 @@ const MANUAL_ATTACK_MAIN_KEYWORDS = new Set<string>(['참격', '관통', '타격
 /* ── 탭 1: 인격 편성 (플래너 패턴: 40% 변경 / 60% 편성 토글) ── */
 export function IdentityTab({
   sinners, identities, deckSlots, upties,
-  formationOrder, onFormationToggle, onFormationReset, onIdentitySelect,
+  formationOrder, onFormationToggle, onFormationReset, onOrderChange, onIdentitySelect,
   mainKeywordCounts, selectedMainKeywords, maxMainKeywords, mainKeywordLabel, onMainKeywordToggle,
 }: {
   sinners: Sinner[]
@@ -109,6 +111,8 @@ export function IdentityTab({
   formationOrder: string[]
   onFormationToggle: (sinnerId: string) => void
   onFormationReset: () => void
+  /** The user picked a formation number on a card's badge. */
+  onOrderChange: (sinnerId: string, number: number) => void
   onMainKeywordToggle: (keyword: string) => void
   onIdentitySelect: (identity: Identity, uptie: number) => void
 }) {
@@ -118,7 +122,10 @@ export function IdentityTab({
   const reduceMotion = useReducedMotion()
   const modalSinner = modalSinnerId ? sinners.find(s => s.id === modalSinnerId) ?? null : null
   // Suggestions follow the identities already deployed beside the slot being picked.
-  const deployedBeside = modalSinnerId ? formationOrder.flatMap(id => id !== modalSinnerId && deckSlots[id] ? [deckSlots[id]!.id] : []) : []
+  const lcbIds = useMemo(() => new Set(identities.filter(identity => identity.game_id === LCB_IDS[identity.sinner_id]).map(identity => identity.id)), [identities])
+  const deployedBeside = modalSinnerId
+    ? suggestionContext(Object.fromEntries(Object.entries(deckSlots).map(([id, identity]) => [id, identity?.id])), formationOrder, modalSinnerId, identityId => lcbIds.has(identityId))
+    : []
   const suggestedIds = useSuggestions<{ items: { id: string }[] }>(
     modalSinnerId && deployedBeside.length ? `/api/discovery/suggest?type=identity&sinner=${modalSinnerId}&with=${deployedBeside.join(',')}` : null,
   )?.items.map(item => item.id)
@@ -149,6 +156,8 @@ export function IdentityTab({
       slots={boardSlots}
       onOpenIdentityModal={openIdentityModal}
       onFormationToggle={onFormationToggle}
+      onOrderChange={onOrderChange}
+      orderCount={formationOrder.length}
       onResetOrder={onFormationReset}
       getSinnerName={sinner => getDeckBuilderSinnerName(sinner as Sinner, locale)}
     />

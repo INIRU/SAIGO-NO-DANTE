@@ -1257,6 +1257,8 @@
         "bench": "控え",
         "change": "変更",
         "removeFormation": "編成解除",
+        "changeOrder": "{order}番の順番を変える",
+        "orderChanged": "{order}番に変えました",
         "addFormation": "編成する",
         "form": "編成",
         "modalTitle": "人格選択",
