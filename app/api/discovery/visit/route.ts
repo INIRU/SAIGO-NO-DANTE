@@ -6,15 +6,15 @@ import { authOptions } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { checkRequestRateLimit, rateLimitResponse } from "@/lib/rate-limit";
 import { discoveryUserId } from "@/lib/discovery/user-id";
+import { isAllowedRequestOrigin } from "@/lib/request-origin";
 const schema = z.object({
   kind: z.enum(["identity", "deck", "planner"]),
   id: z.string().uuid(),
 });
 export async function POST(request: NextRequest) {
-  if (
-    request.headers.get("origin") &&
-    request.headers.get("origin") !== request.nextUrl.origin
-  )
+  // Behind the tunnel nextUrl is http://<host>, so the https origin is matched by host.
+  const origin = request.headers.get("origin");
+  if (origin && !isAllowedRequestOrigin(origin, request.nextUrl.origin, request.headers.get("host"), []))
     return new Response(null, { status: 403 });
   const limit = checkRequestRateLimit(request, {
     scope: "discovery-visit",
@@ -72,7 +72,7 @@ export async function POST(request: NextRequest) {
     response.cookies.set("limbus_visitor", visitor, {
       httpOnly: true,
       sameSite: "lax",
-      secure: request.nextUrl.protocol === "https:",
+      secure: request.headers.get("x-forwarded-proto") === "https" || request.nextUrl.protocol === "https:",
       maxAge: 60 * 60 * 24 * 180,
       path: "/",
     });
