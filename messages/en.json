@@ -482,7 +482,8 @@
       "otherOpinionsDescription": "Decks using the same identities with different order or E.G.O choices.",
       "otherOpinionsEmpty": "No alternate take with this identity lineup yet.",
       "similarDecks": "Similar Decks",
-      "similarDecksDescription": "Decks close in formation, theme, or E.G.O setup."
+      "similarDecksDescription": "Decks close in formation, theme, or E.G.O setup.",
+      "coVisited": "Viewed together"
     },
     "identityPreview": {
       "title": "Identity details",

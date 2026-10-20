@@ -482,7 +482,8 @@
       "otherOpinionsDescription": "同じ人格編成で、順序やE.G.O選択が異なるデッキです。",
       "otherOpinionsEmpty": "同じ人格編成の別運用はまだありません。",
       "similarDecks": "似たデッキ",
-      "similarDecksDescription": "編成、テーマ、E.G.O構成が近いデッキです。"
+      "similarDecksDescription": "編成、テーマ、E.G.O構成が近いデッキです。",
+      "coVisited": "一緒に見られた投稿"
     },
     "identityPreview": {
       "title": "人格詳細",

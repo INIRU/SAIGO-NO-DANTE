@@ -17,6 +17,8 @@ import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import { withoutOtherLocales } from '@/lib/i18n/strip-locales'
 import type { MdEvent, MdEventChoice } from '@/components/mirror-dungeon/types'
 import { loadSeriesOfPost } from '@/lib/series/server'
+import CoVisitedLane from '@/components/discovery/CoVisitedLane'
+import type { SupportedLang } from '@/lib/i18n/types'
 import PlanDetailClient from './PlanDetailClient'
 import PlanDetailSkeleton from './PlanDetailSkeleton'
 
@@ -164,6 +166,7 @@ export default async function PlanDetailPage({ params }: Props) {
       <PlanDetailClient
         plan={plan as any}
         series={series}
+        coVisited={<Suspense fallback={null}><CoVisitedLane kind="planner" id={id} lang={lang as SupportedLang} exclude={[]} /></Suspense>}
         themes={themes}
         gifts={gifts}
         recipes={used.recipes}

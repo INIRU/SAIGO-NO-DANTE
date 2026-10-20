@@ -482,7 +482,8 @@
       "otherOpinionsDescription": "같은 인격 편성에서 순서나 E.G.O 선택이 다른 덱입니다.",
       "otherOpinionsEmpty": "같은 인격 편성의 다른 의견이 아직 없습니다.",
       "similarDecks": "비슷한 덱",
-      "similarDecksDescription": "편성, 테마, E.G.O 구성이 가까운 덱입니다."
+      "similarDecksDescription": "편성, 테마, E.G.O 구성이 가까운 덱입니다.",
+      "coVisited": "함께 본 글"
     },
     "identityPreview": {
       "title": "인격 상세",
