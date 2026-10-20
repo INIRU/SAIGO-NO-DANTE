@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react'
 import Image from 'next/image'
-import { Eye, Heart } from 'lucide-react'
+import { Eye, Heart, MessageCircle } from 'lucide-react'
 import { DEFAULT_AVATAR_URL } from '@/lib/constants/game'
 import { useLocale, useTranslations } from 'next-intl'
 import { useKeywordData, useKeywords } from '@/components/providers/KeywordProvider'
@@ -88,6 +88,7 @@ export function PostCounts({ post, className = '' }: { post: RowPost; className?
     <span className={`flex shrink-0 items-center gap-2.5 text-[0.8125rem] tabular-nums text-[var(--text-tertiary)] ${className}`}>
       <span className="flex items-center gap-1"><Heart style={{ width: '0.6875rem', height: '0.6875rem' }} fill="currentColor" stroke="none" />{post.vote_count ?? 0}</span>
       <span className="flex items-center gap-1"><Eye style={{ width: '0.6875rem', height: '0.6875rem' }} />{post.view_count ?? 0}</span>
+      {(post.comment_count ?? 0) > 0 && <span data-count="comments" className="flex items-center gap-1"><MessageCircle style={{ width: '0.6875rem', height: '0.6875rem' }} />{post.comment_count}</span>}
     </span>
   )
 }
