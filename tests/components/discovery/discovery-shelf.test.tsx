@@ -150,6 +150,25 @@ describe('REQ-COMMUNITY-074 rising shelf', () => {
     expect(html).toContain('×3.2')
   })
 
+  it('REQ-COMMUNITY-085 holds the rising shelf with its loading shape until the feed answers, then swaps it for the shelf', () => {
+    const loading = render(full)
+    expect(loading).toContain('data-shelf-skeleton="rising"')
+    expect(loading).toContain('data-identity-row-skeleton')
+    expect(loading).not.toContain('data-shelf="rising"')
+    state.rising = risingFeed
+    const arrived = render(full)
+    expect(arrived).not.toContain('data-shelf-skeleton="rising"')
+    expect(arrived).toContain('data-shelf="rising"')
+  })
+
+  it('REQ-COMMUNITY-085 lets the loading shape go without a header when nothing is rising', () => {
+    state.rising = { posts: [], identities: [] }
+    const html = render(full)
+    expect(html).not.toContain('data-shelf-skeleton="rising"')
+    expect(html).not.toContain('data-shelf="rising"')
+    expect(html).not.toContain('>rising</h2>')
+  })
+
   it('REQ-COMMUNITY-074 draws nothing while loading, on a failed read, or with fewer than two rising', () => {
     expect(render(full)).not.toContain('data-shelf="rising"')
     state.rising = { posts: [{ post: { id: 'x1' }, rise: 2 }], identities: [] }

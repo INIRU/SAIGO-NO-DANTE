@@ -16,7 +16,7 @@ import { GIFT_KEYWORD_COLORS } from '@/lib/constants/gift'
 import type { EgoGift } from '@/components/mirror-dungeon/types'
 import FinalGiftTile from './FinalGiftTile'
 import FloorGiftPickerModal from './FloorGiftPickerModal'
-import { useSuggestions } from '@/hooks/useSuggestions'
+import { useSuggestionState } from '@/hooks/useSuggestions'
 import ConfirmModal from '@/components/ui/ConfirmModal'
 import { previousFloorGifts } from '@/lib/planner/floor-copy'
 import { showSuccess } from '@/lib/toast'
@@ -172,7 +172,7 @@ export default function FloorTab({ state, dispatch, themes, gifts, recipes, gift
   const selectedTheme = activeEntry?.theme_id ? themeMap.get(activeEntry.theme_id) ?? null : null
   // What plans like this one took on the floor, asked only while one of the pickers is open.
   const fielded = state.identitySlots.filter(slot => slot.slot_order < 99).map(slot => slot.identity_id)
-  const floorSuggestions = useSuggestions<{ themes: { id: string; count: number }[]; gifts: { id: string }[] }>(
+  const { data: floorSuggestions, loading: floorSuggestionsLoading } = useSuggestionState<{ themes: { id: string; count: number }[]; gifts: { id: string }[] }>(
     activeEntry && (themeModalOpen || giftPickerOpen)
       ? `/api/discovery/suggest?type=floor&floor=${activeEntry.floor}&identities=${fielded.join(',')}&keywords=${encodeURIComponent((state.mainKeywords ?? []).join(','))}`
       : null,
@@ -776,6 +776,7 @@ export default function FloorTab({ state, dispatch, themes, gifts, recipes, gift
             exclusiveIds={selectedTheme ? themeExclusiveGiftIds(selectedTheme) : []}
             showRecent
             suggestedIds={floorSuggestions?.gifts.map(gift => gift.id)}
+            suggestionsLoading={floorSuggestionsLoading}
             selectedIds={plannedIds}
             onToggle={gift => toggleGiftId(String(gift.game_id), entry.gift_ids)}
             onClose={() => setGiftPickerOpen(false)}
@@ -1134,6 +1135,7 @@ export default function FloorTab({ state, dispatch, themes, gifts, recipes, gift
             .flatMap(id => { const gift = giftMap.get(id); return gift ? [gift.name, gift.name_en, gift.name_jp] : [] })].join(' ')}
           themes={pickerThemes}
           suggested={floorSuggestions?.themes}
+          suggestionsLoading={floorSuggestionsLoading}
           selectedThemeId={activeEntry.theme_id}
           lang={locale}
           onClose={() => setThemeModalOpen(false)}

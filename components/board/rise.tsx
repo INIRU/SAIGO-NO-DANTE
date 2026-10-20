@@ -10,9 +10,13 @@ async function read(url: string): Promise<RisingFeed> {
   return response.json()
 }
 
-/** The rising lists of one board; null while loading or when the read fails (the database function may not be there yet). */
-export function useRising(kind: 'deck' | 'planner'): RisingFeed | null {
-  return useSWR(`/api/discovery/rising?kind=${kind}`, read, { revalidateOnFocus: false }).data ?? null
+/**
+ * The rising lists of one board. `feed` is null while loading or when the read fails (the database function may not be there
+ * yet); `loading` is true only until the first answer or failure, so the shelf can hold its place meanwhile.
+ */
+export function useRising(kind: 'deck' | 'planner'): { feed: RisingFeed | null; loading: boolean } {
+  const { data, error } = useSWR(`/api/discovery/rising?kind=${kind}`, read, { revalidateOnFocus: false })
+  return { feed: data ?? null, loading: data === undefined && !error }
 }
 
 /** The rise: a small up chevron and a Bebas multiplier. */

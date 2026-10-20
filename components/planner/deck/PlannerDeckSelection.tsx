@@ -9,6 +9,8 @@ import * as m from 'motion/react-m'
 import { showSuccess } from '@/lib/toast'
 import BaseModal from '@/components/ui/BaseModal'
 import SuggestionRibbon from '@/components/ui/SuggestionRibbon'
+import { IdentityTileSkeleton, SuggestionGroupSkeleton, SuggestionTitleSkeleton } from '@/components/ui/SuggestionSkeleton'
+import { SkeletonPage } from '@/components/ui/Skeleton'
 import SuggestionNote, { useArchetypeLabel } from './SuggestionNote'
 import type { Archetype, Suggestion } from '@/lib/discovery/suggestion-types'
 import CharacterPickerFilters from '@/components/ui/CharacterPickerFilters'
@@ -405,6 +407,7 @@ export function PlannerIdentitySelectModal({
   selectedUptie = 4,
   suggestions,
   archetype,
+  suggestionsLoading = false,
   partnerIdentity,
   onClose,
   onSelect,
@@ -419,6 +422,8 @@ export function PlannerIdentitySelectModal({
   suggestions?: readonly Suggestion[] | null
   /** The archetype of the chosen identities, named beside the ribbon when it has keywords. */
   archetype?: Archetype | null
+  /** The suggestions are still being read: hold the group's place with its loading shape. */
+  suggestionsLoading?: boolean
   /** Looks up a partner's identity (any sinner) for its face. */
   partnerIdentity?: (id: string) => PlannerDeckIdentity | undefined
   onClose: () => void
@@ -440,6 +445,7 @@ export function PlannerIdentitySelectModal({
     .sort(compareReleaseDate)
   const byId = new Map(filtered.map(identity => [identity.id, identity]))
   const suggestionOf = new Map((suggestions ?? []).map(suggestion => [suggestion.id, suggestion]))
+  const holdSuggested = suggestionsLoading && !needle && !grade
   const suggested = needle || grade ? [] : (suggestions ?? []).flatMap(suggestion => byId.get(suggestion.id) ?? []).slice(0, SUGGESTED_LIMIT)
   const archetypeLabel = useArchetypeLabel()(archetype)
   const suggestedSet = new Set(suggested.map(identity => identity.id))
@@ -473,10 +479,18 @@ export function PlannerIdentitySelectModal({
           <div className="character-picker-layout">
             <CharacterPickerFilters query={query} onQuery={setQuery} grade={grade} onGrade={setGrade} grades={[3, 2, 1].map(n => ({ value: String(n), label: '0'.repeat(n) }))} count={filtered.length} />
             <div className="idpick__results">
+              {holdSuggested && (
+                <SkeletonPage>
+                  <div className="idpick__suggest" data-suggestion-skeleton="identity"><SuggestionTitleSkeleton archetype /></div>
+                  <ul className="idpick__grid" data-group="suggested">
+                    {Array.from({ length: SUGGESTED_LIMIT }, (_, index) => <li key={index} className="idpick__card"><IdentityTileSkeleton /></li>)}
+                  </ul>
+                </SkeletonPage>
+              )}
               {(suggested.length ? [{ items: suggested, ribbon: true }, { items: rest, ribbon: false }] : [{ items: rest, ribbon: false }]).map(group => (
                 <Fragment key={group.ribbon ? 'suggested' : 'rest'}>
                   {group.ribbon && <div className="idpick__suggest"><SuggestionRibbon />{archetypeLabel && <span className="idpick__archetype">{archetypeLabel}</span>}</div>}
-                  <ul className="idpick__grid" data-group={group.ribbon ? 'suggested' : suggested.length ? 'after-suggested' : undefined}>
+                  <ul className="idpick__grid" data-group={group.ribbon ? 'suggested' : suggested.length || holdSuggested ? 'after-suggested' : undefined}>
                     {group.items.map(identity => {
                       const selected = selectedIdentityId === identity.id
                       const name = localizeIdentityName(identity, locale)
@@ -751,6 +765,7 @@ export function PlannerEgoSelectModal({
   selectedEgosByGrade,
   suggestions,
   archetype,
+  suggestionsLoading = false,
   partnerIdentity,
   onClose,
   onSelect,
@@ -764,6 +779,8 @@ export function PlannerEgoSelectModal({
   /** Suggested E.G.O, most equipped first, listed under the "추천" ribbon; only while nothing is searched or filtered. They stay in their grade rows too. */
   suggestions?: readonly Suggestion[] | null
   archetype?: Archetype | null
+  /** The suggestions are still being read: hold the group's place with its loading shape. */
+  suggestionsLoading?: boolean
   partnerIdentity?: (id: string) => PlannerDeckIdentity | undefined
   onClose: () => void
   onSelect: (ego: PlannerDeckEgo) => void
@@ -779,6 +796,7 @@ export function PlannerEgoSelectModal({
   const filtered = egos.filter(ego => (!gradeFilter || ego.grade === gradeFilter) && [ego.name, ego.name_kr, ego.name_en, ego.name_jp].some(name => name?.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase())))
   const egoById = new Map(filtered.map(ego => [ego.id, ego]))
   const suggestionOf = new Map((suggestions ?? []).map(suggestion => [suggestion.id, suggestion]))
+  const holdSuggested = suggestionsLoading && !query.trim() && !gradeFilter
   const suggested = query.trim() || gradeFilter ? [] : (suggestions ?? []).flatMap(suggestion => egoById.get(suggestion.id) ?? []).slice(0, SUGGESTED_LIMIT)
   const archetypeLabel = useArchetypeLabel()(archetype)
   const renderEgo = (ego: PlannerDeckEgo, note = false) => (
@@ -816,6 +834,9 @@ export function PlannerEgoSelectModal({
           <div className="character-picker-layout">
           <CharacterPickerFilters query={query} onQuery={setQuery} grade={gradeFilter} onGrade={setGradeFilter} grades={PLANNER_EGO_GRADE_ORDER.map(value => ({ value, label: value }))} count={filtered.length} />
           <div className="planner-deck-select-modal__results flex flex-col gap-5 p-5">
+            {holdSuggested && (
+              <SuggestionGroupSkeleton shape="ego" count={SUGGESTED_LIMIT} titleClassName="mb-2" tilesClassName="grid grid-cols-2 gap-3 sm:grid-cols-3" archetype />
+            )}
             {suggested.length > 0 && (
               <div>
                 <div className="mb-2 flex items-center gap-2.5"><SuggestionRibbon />{archetypeLabel && <span className="font-[family-name:var(--font-heading)] text-[0.9375rem] text-[#cbb994]">{archetypeLabel}</span>}</div>

@@ -19,6 +19,7 @@ import { loadSeriesOfPost } from '@/lib/series/server'
 import type { SeriesView } from '@/lib/series/order'
 import type { IdentitySlot, IdentityDetail } from '@/components/deck-detail/DeckIdentityCard'
 import CoVisitedLane from '@/components/discovery/CoVisitedLane'
+import { RecommendationLaneSkeleton } from '@/components/deck-detail/RecommendationSkeleton'
 import type { DeckRecommendationSummary, DeckRecommendationsData } from '@/components/deck-detail/DeckRecommendations'
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://saigo-no-dante.com'
@@ -746,7 +747,7 @@ async function DeckDetailRuntime({ params }: Props) {
           initialComments={initialComments}
           initialRecommendations={initialRecommendations}
           initialSeries={initialSeries}
-          coVisited={initialDeck && <Suspense fallback={null}><CoVisitedLane kind="deck" id={id} lang={lang} exclude={[...initialRecommendations.otherOpinions, ...initialRecommendations.similarDecks].map(deck => deck.id)} /></Suspense>}
+          coVisited={initialDeck && <Suspense fallback={<RecommendationLaneSkeleton kind="deck" />}><CoVisitedLane kind="deck" id={id} lang={lang} exclude={[...initialRecommendations.otherOpinions, ...initialRecommendations.similarDecks].map(deck => deck.id)} /></Suspense>}
         />
       </Suspense>
     </>
