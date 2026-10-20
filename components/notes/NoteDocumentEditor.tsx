@@ -7,7 +7,7 @@ import { useLocale, useTranslations } from "next-intl";
 import useSWR from "swr";
 import { GIFT_KEYWORD_COLORS } from "@/lib/constants/gift";
 import { assetName } from "@/lib/notes/assets";
-import { filterMentions, findMentionQuery } from "@/lib/notes/mention";
+import { MENTION_LIMIT, filterMentions, findMentionQuery } from "@/lib/notes/mention";
 import { formatNoteCount, noteCountState, noteTextLength } from "@/lib/notes/count";
 import { translations } from "@/lib/i18n/translations";
 import { AtSign, Bold, Italic, Heading2, List, ListOrdered, Quote, Undo2, Redo2, Copy, Eye, Pencil, Link2, X } from "lucide-react";
@@ -122,15 +122,14 @@ export default function NoteDocumentEditor({
     }
     const selection = current.state.selection;
     const before = textBeforeCaret(current);
+    // Words after an @ that match no name are ordinary text: the keyword and gift suggestions below take over.
     const mention=findMentionQuery(before);
-    if (mention) {
-      const found=filterMentions(mentionPool,mention.query,6);
+    const found=mention ? filterMentions(mentionPool,mention.query,MENTION_LIMIT) : [];
+    if (found.length) {
       setSuggestions(found);
       setSelected(0);
-      if (found.length) {
-        const point = current.view.coordsAtPos(selection.from);
-        setAnchor({ left: point.left, top: point.bottom + 6, width: 340 });
-      }
+      const point = current.view.coordsAtPos(selection.from);
+      setAnchor({ left: point.left, top: point.bottom + 6, width: 340 });
       return;
     }
     const context=getNoteAutocompleteContext(before,before.length);
