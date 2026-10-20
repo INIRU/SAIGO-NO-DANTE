@@ -92,6 +92,27 @@ describe('risingIdentities', () => {
     expect(idsOf(risingIdentities({ formations: tie, visits: tieVisits, now: NOW }))).toEqual(['big', 'fresh', 'old'])
   })
 
+  // Nothing has a base visitor but the quiet post, which gives the board a base to compare with.
+  const quiet = formation('quiet', ['q1', 'q2'])
+  const solo = (name: string) => ['1', '2', '3'].map(n => formation(`${name}${n}`, [name, `${name}${n}-partner`]))
+  const soloVisits = (name: string, recent: number) => ['1', '2', '3'].map(n => seen(`${name}${n}`, recent, 0))
+
+  it('REQ-COMMUNITY-072 shows at most two identities of one team that rose on the same three posts, and lets others in', () => {
+    const team = ['team1', 'team2', 'team3', 'team4', 'team5']
+    const crowd = [...['t1', 't2', 't3'].map(id => formation(id, team)), ...solo('o1'), ...solo('o2'), quiet]
+    const crowdVisits = { deck: [...['t1', 't2', 't3'].map(id => seen(id, 40, 0)), ...soloVisits('o1', 10), ...soloVisits('o2', 10), seen('quiet', 0, 100)], planner: [] }
+    const result = idsOf(risingIdentities({ formations: crowd, visits: crowdVisits, now: NOW }))
+    // The second teammate still outranks the quiet ones (×0.3 of a top score), but the third is cut by the cap.
+    expect(result).toEqual(['team1', 'team2', 'o1', 'o2'])
+  })
+
+  it('REQ-COMMUNITY-072 pulls an identity down by how much its posts overlap the ones already chosen', () => {
+    // x1 and x2 rise on the same posts; x3 on its own with about a third of their score: 0.35 beats x2's 1.0 × (1 − 0.7).
+    const shared = [...['s1', 's2', 's3'].map(id => formation(id, ['x1', 'x2'])), ...solo('x3'), quiet]
+    const sharedVisits = { deck: [...['s1', 's2', 's3'].map(id => seen(id, 40, 0)), ...soloVisits('x3', 20), seen('quiet', 0, 100)], planner: [] }
+    expect(idsOf(risingIdentities({ formations: shared, visits: sharedVisits, now: NOW }))).toEqual(['x1', 'x3', 'x2'])
+  })
+
   it('REQ-COMMUNITY-071 gives nothing when there is no traffic to compare with', () => {
     expect(risingIdentities({ formations: posts, visits: { deck: [], planner: [] }, now: NOW })).toEqual([])
     expect(risingIdentities({ formations: posts, visits: { deck: posts.slice(0, 3).map(post => seen(post.id, 10, 0)), planner: [] }, now: NOW })).toEqual([])
