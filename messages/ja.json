@@ -2756,6 +2756,9 @@
     "notFound": "シリーズが見つかりません"
   },
   "suggestions": {
-    "label": "おすすめ"
+    "label": "おすすめ",
+    "pairsWith": "相性",
+    "archetype": "{name}デッキ",
+    "sinResonance": "{sin}共鳴"
   }
 }

@@ -9,6 +9,8 @@ import * as m from 'motion/react-m'
 import { showSuccess } from '@/lib/toast'
 import BaseModal from '@/components/ui/BaseModal'
 import SuggestionRibbon from '@/components/ui/SuggestionRibbon'
+import SuggestionNote, { useArchetypeLabel } from './SuggestionNote'
+import type { Archetype, Suggestion } from '@/lib/discovery/suggestion-types'
 import CharacterPickerFilters from '@/components/ui/CharacterPickerFilters'
 import { compareReleaseDate } from '@/lib/utils/release-order'
 import EgoDisplayCard from '@/components/sinners/EgoDisplayCard'
@@ -401,7 +403,9 @@ export function PlannerIdentitySelectModal({
   identities,
   selectedIdentityId,
   selectedUptie = 4,
-  suggestedIds,
+  suggestions,
+  archetype,
+  partnerIdentity,
   onClose,
   onSelect,
   getSinnerName,
@@ -411,8 +415,12 @@ export function PlannerIdentitySelectModal({
   identities: PlannerDeckIdentity[]
   selectedIdentityId?: string | null
   selectedUptie?: number
-  /** Identity ids to list first under the "추천" ribbon (most fitting first); only while nothing is searched or filtered. */
-  suggestedIds?: readonly string[] | null
+  /** Suggested identities, most fitting first, listed under the "추천" ribbon with who they pair with; only while nothing is searched or filtered. */
+  suggestions?: readonly Suggestion[] | null
+  /** The archetype of the chosen identities, named beside the ribbon when it has keywords. */
+  archetype?: Archetype | null
+  /** Looks up a partner's identity (any sinner) for its face. */
+  partnerIdentity?: (id: string) => PlannerDeckIdentity | undefined
   onClose: () => void
   /** Plain click applies uptie 4; the picker passes the chosen uptie. "Back to LCB" passes the LCB identity at IV: a sinner is never left empty. */
   onSelect: (identity: PlannerDeckIdentity, uptie: number) => void
@@ -431,7 +439,9 @@ export function PlannerIdentitySelectModal({
     .filter(identity => (!grade || String(identity.rarity) === grade) && [identity.name, identity.name_kr, identity.name_en, identity.name_jp].some(name => name?.toLocaleLowerCase().includes(needle)))
     .sort(compareReleaseDate)
   const byId = new Map(filtered.map(identity => [identity.id, identity]))
-  const suggested = needle || grade ? [] : (suggestedIds ?? []).flatMap(id => byId.get(id) ?? []).slice(0, SUGGESTED_LIMIT)
+  const suggestionOf = new Map((suggestions ?? []).map(suggestion => [suggestion.id, suggestion]))
+  const suggested = needle || grade ? [] : (suggestions ?? []).flatMap(suggestion => byId.get(suggestion.id) ?? []).slice(0, SUGGESTED_LIMIT)
+  const archetypeLabel = useArchetypeLabel()(archetype)
   const suggestedSet = new Set(suggested.map(identity => identity.id))
   const rest = suggested.length ? filtered.filter(identity => !suggestedSet.has(identity.id)) : filtered
   const lcb = sinner ? identities.find(identity => identity.game_id === LCB_IDS[sinner.id]) : undefined
@@ -465,7 +475,7 @@ export function PlannerIdentitySelectModal({
             <div className="idpick__results">
               {(suggested.length ? [{ items: suggested, ribbon: true }, { items: rest, ribbon: false }] : [{ items: rest, ribbon: false }]).map(group => (
                 <Fragment key={group.ribbon ? 'suggested' : 'rest'}>
-                  {group.ribbon && <div className="idpick__suggest"><SuggestionRibbon /></div>}
+                  {group.ribbon && <div className="idpick__suggest"><SuggestionRibbon />{archetypeLabel && <span className="idpick__archetype">{archetypeLabel}</span>}</div>}
                   <ul className="idpick__grid" data-group={group.ribbon ? 'suggested' : suggested.length ? 'after-suggested' : undefined}>
                     {group.items.map(identity => {
                       const selected = selectedIdentityId === identity.id
@@ -509,6 +519,7 @@ export function PlannerIdentitySelectModal({
                               </button>
                             ))}
                           </div>
+                          {group.ribbon && partnerIdentity && suggestionOf.has(identity.id) && <SuggestionNote suggestion={suggestionOf.get(identity.id)!} identityOf={partnerIdentity} />}
                         </li>
                       )
                     })}
@@ -535,7 +546,8 @@ export function PlannerIdentitySelectModal({
             .idpick__close :global(svg) { width: 1.25rem; height: 1.25rem; }
             .idpick__results { min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
             .idpick__grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(8.5rem, 1fr)); gap: 1.25rem 1rem; padding: 1.25rem; list-style: none; }
-            .idpick__suggest { padding: 1.25rem 1.25rem 0; }
+            .idpick__suggest { display: flex; align-items: center; gap: 0.625rem; padding: 1.25rem 1.25rem 0; }
+            .idpick__archetype { color: #cbb994; font-family: var(--font-heading), var(--font-sans); font-size: 0.9375rem; }
             .idpick__grid[data-group='suggested'] { padding-top: 0.75rem; }
             .idpick__grid[data-group='after-suggested'] { margin-top: 0.25rem; border-top: 1px solid #2e2417; }
             .idpick__card { position: relative; min-width: 0; }
@@ -737,7 +749,9 @@ export function PlannerEgoSelectModal({
   sinner,
   egos,
   selectedEgosByGrade,
-  suggestedIds,
+  suggestions,
+  archetype,
+  partnerIdentity,
   onClose,
   onSelect,
   onDeselect,
@@ -747,8 +761,10 @@ export function PlannerEgoSelectModal({
   sinner: PlannerDeckSinner | null
   egos: PlannerDeckEgo[]
   selectedEgosByGrade: Record<string, PlannerDeckEgo | undefined>
-  /** E.G.O ids to list first under the "추천" ribbon (most equipped first); only while nothing is searched or filtered. They stay in their grade rows too. */
-  suggestedIds?: readonly string[] | null
+  /** Suggested E.G.O, most equipped first, listed under the "추천" ribbon; only while nothing is searched or filtered. They stay in their grade rows too. */
+  suggestions?: readonly Suggestion[] | null
+  archetype?: Archetype | null
+  partnerIdentity?: (id: string) => PlannerDeckIdentity | undefined
   onClose: () => void
   onSelect: (ego: PlannerDeckEgo) => void
   onDeselect: (grade: string, ego: PlannerDeckEgo) => void
@@ -762,8 +778,10 @@ export function PlannerEgoSelectModal({
   useEffect(() => { setQuery(''); setGradeFilter('') }, [open, sinner?.id])
   const filtered = egos.filter(ego => (!gradeFilter || ego.grade === gradeFilter) && [ego.name, ego.name_kr, ego.name_en, ego.name_jp].some(name => name?.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase())))
   const egoById = new Map(filtered.map(ego => [ego.id, ego]))
-  const suggested = query.trim() || gradeFilter ? [] : (suggestedIds ?? []).flatMap(id => egoById.get(id) ?? []).slice(0, SUGGESTED_LIMIT)
-  const renderEgo = (ego: PlannerDeckEgo) => (
+  const suggestionOf = new Map((suggestions ?? []).map(suggestion => [suggestion.id, suggestion]))
+  const suggested = query.trim() || gradeFilter ? [] : (suggestions ?? []).flatMap(suggestion => egoById.get(suggestion.id) ?? []).slice(0, SUGGESTED_LIMIT)
+  const archetypeLabel = useArchetypeLabel()(archetype)
+  const renderEgo = (ego: PlannerDeckEgo, note = false) => (
     <div key={ego.id}>
       <EgoDisplayCard
         onClick={() => onSelect(ego)}
@@ -774,6 +792,7 @@ export function PlannerEgoSelectModal({
         selected={selectedEgosByGrade[ego.grade]?.id === ego.id}
         className="character-picker-ego-card"
       />
+      {note && partnerIdentity && suggestionOf.has(ego.id) && <SuggestionNote suggestion={suggestionOf.get(ego.id)!} identityOf={partnerIdentity} />}
     </div>
   )
   const egosByGrade = new Map<string, PlannerDeckEgo[]>()
@@ -799,8 +818,8 @@ export function PlannerEgoSelectModal({
           <div className="planner-deck-select-modal__results flex flex-col gap-5 p-5">
             {suggested.length > 0 && (
               <div>
-                <div className="mb-2"><SuggestionRibbon /></div>
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">{suggested.map(renderEgo)}</div>
+                <div className="mb-2 flex items-center gap-2.5"><SuggestionRibbon />{archetypeLabel && <span className="font-[family-name:var(--font-heading)] text-[0.9375rem] text-[#cbb994]">{archetypeLabel}</span>}</div>
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">{suggested.map(ego => renderEgo(ego, true))}</div>
               </div>
             )}
             {!filtered.length && <p className="py-8 text-center" style={{ color: 'var(--text-secondary)' }}>{locale === 'ja' ? '結果がありません' : locale === 'en' ? 'No results' : '검색 결과가 없습니다'}</p>}
@@ -839,7 +858,7 @@ export function PlannerEgoSelectModal({
                     </div>
                   ) : (
                     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                      {gradeEgos.map(renderEgo)}
+                      {gradeEgos.map(ego => renderEgo(ego))}
                     </div>
                   )}
                 </div>

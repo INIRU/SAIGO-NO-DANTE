@@ -20,7 +20,7 @@ const identities = [identity('i1', '가'), identity('i2', '나'), identity('i3',
 const names = (html: string, marker: string) => [...html.matchAll(new RegExp(`<span ${marker}="true">([^<]*)</span>`, 'g'))].map(match => match[1])
 
 const identityModal = (suggestedIds?: string[]) => renderToStaticMarkup(
-  <PlannerIdentitySelectModal open sinner={sinner} identities={identities} suggestedIds={suggestedIds} onClose={() => {}} onSelect={() => {}} />,
+  <PlannerIdentitySelectModal open sinner={sinner} identities={identities} suggestions={suggestedIds?.map(id => ({ id }))} onClose={() => {}} onSelect={() => {}} />,
 )
 
 describe('identity picker suggestions', () => {
@@ -41,7 +41,7 @@ describe('E.G.O picker suggestions', () => {
   const ego = (id: string, grade: string, name: string) => ({ id, sinner_id: 'faust', name, name_kr: name, grade })
   const egos = [ego('e1', 'ZAYIN', '자인'), ego('e2', 'WAW', '와우')]
   const render = (suggestedIds?: string[]) => renderToStaticMarkup(
-    <PlannerEgoSelectModal open sinner={sinner} egos={egos} selectedEgosByGrade={{}} suggestedIds={suggestedIds} onClose={() => {}} onSelect={() => {}} onDeselect={() => {}} />,
+    <PlannerEgoSelectModal open sinner={sinner} egos={egos} selectedEgosByGrade={{}} suggestions={suggestedIds?.map(id => ({ id }))} onClose={() => {}} onSelect={() => {}} onDeselect={() => {}} />,
   )
 
   it('REQ-DECKS-023 lists the suggested E.G.O first under the ribbon, and keeps them in their grade rows', () => {

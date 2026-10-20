@@ -2756,6 +2756,9 @@
     "notFound": "Series not found"
   },
   "suggestions": {
-    "label": "Suggested"
+    "label": "Suggested",
+    "pairsWith": "Pairs with",
+    "archetype": "{name} deck",
+    "sinResonance": "{sin} resonance"
   }
 }

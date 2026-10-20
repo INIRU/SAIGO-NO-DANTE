@@ -1,7 +1,9 @@
 'use client'
 
 import { useSuggestions } from '@/hooks/useSuggestions'
-import { useState, type CSSProperties } from 'react'
+import { LCB_IDS } from '@/lib/constants/game'
+import { suggestionContext, type SuggestionResponse } from '@/lib/discovery/suggestion-types'
+import { useMemo, useState, type CSSProperties } from 'react'
 import Image from 'next/image'
 import { useReducedMotion } from 'motion/react'
 import * as m from 'motion/react-m'
@@ -117,11 +119,15 @@ export function IdentityTab({
   const { getIconUrl, keywords: keywordInfo } = useKeywordData()
   const reduceMotion = useReducedMotion()
   const modalSinner = modalSinnerId ? sinners.find(s => s.id === modalSinnerId) ?? null : null
-  // Suggestions follow the identities already deployed beside the slot being picked.
-  const deployedBeside = modalSinnerId ? formationOrder.flatMap(id => id !== modalSinnerId && deckSlots[id] ? [deckSlots[id]!.id] : []) : []
-  const suggestedIds = useSuggestions<{ items: { id: string }[] }>(
-    modalSinnerId && deployedBeside.length ? `/api/discovery/suggest?type=identity&sinner=${modalSinnerId}&with=${deployedBeside.join(',')}` : null,
-  )?.items.map(item => item.id)
+  // Suggestions follow every identity already chosen on the board beside the slot being picked, with or without a formation number.
+  const lcbIds = useMemo(() => new Set(identities.filter(identity => identity.game_id === LCB_IDS[identity.sinner_id]).map(identity => identity.id)), [identities])
+  const chosenBeside = modalSinnerId
+    ? suggestionContext(Object.fromEntries(Object.entries(deckSlots).map(([id, identity]) => [id, identity?.id])), formationOrder, modalSinnerId, identityId => lcbIds.has(identityId))
+    : []
+  const suggestion = useSuggestions<SuggestionResponse>(
+    modalSinnerId && chosenBeside.length ? `/api/discovery/suggest?type=identity&sinner=${modalSinnerId}&with=${chosenBeside.join(',')}` : null,
+  )
+  const identityById = useMemo(() => new Map(identities.map(identity => [identity.id, identity])), [identities])
   const modalIdentities = modalSinnerId
     ? identities
         .filter(i => i.sinner_id === modalSinnerId)
@@ -221,7 +227,9 @@ export function IdentityTab({
       identities={modalIdentities}
       selectedIdentityId={modalSinnerId ? deckSlots[modalSinnerId]?.id ?? null : null}
       selectedUptie={modalSinnerId ? upties[modalSinnerId] ?? 4 : 4}
-      suggestedIds={suggestedIds}
+      suggestions={suggestion?.items}
+      archetype={suggestion?.archetype}
+      partnerIdentity={id => identityById.get(id)}
       onClose={() => setModalSinnerId(null)}
       onSelect={(identity, uptie) => {
         onIdentitySelect(identity as Identity, uptie)
@@ -235,10 +243,11 @@ export function IdentityTab({
 
 /* ── 탭 2: 에고 편성 ─────────────────────────────────── */
 export function EgoTab({
-  sinners, egos, egoSlots, identityIds, lang, onEgoSelect, onEgoDeselect,
+  sinners, egos, egoSlots, identityIds, identities, lang, onEgoSelect, onEgoDeselect,
 }: {
   sinners: Sinner[]
   egos: EGO[]
+  identities: Identity[]
   /** sinnerId → the identity picked for that sinner (its E.G.O suggestions follow it). */
   identityIds: Record<string, string | undefined>
   egoSlots: Record<string, Record<string, EGO>>
@@ -249,7 +258,8 @@ export function EgoTab({
   const [modalSinnerId, setModalSinnerId] = useState<string | null>(null)
   const modalSinner = modalSinnerId ? sinners.find(s => s.id === modalSinnerId) ?? null : null
   const modalIdentityId = modalSinnerId ? identityIds[modalSinnerId] : undefined
-  const suggestedIds = useSuggestions<{ items: { id: string }[] }>(modalIdentityId ? `/api/discovery/suggest?type=ego&identity=${modalIdentityId}` : null)?.items.map(item => item.id)
+  const suggestion = useSuggestions<SuggestionResponse>(modalIdentityId ? `/api/discovery/suggest?type=ego&identity=${modalIdentityId}` : null)
+  const identityById = useMemo(() => new Map(identities.map(identity => [identity.id, identity])), [identities])
   const modalEgos = modalSinnerId
     ? egos
         .filter(e => e.sinner_id === modalSinnerId)
@@ -279,7 +289,9 @@ export function EgoTab({
       sinner={modalSinner}
       egos={modalEgos}
       selectedEgosByGrade={selectedByGrade}
-      suggestedIds={suggestedIds}
+      suggestions={suggestion?.items}
+      archetype={suggestion?.archetype}
+      partnerIdentity={id => identityById.get(id)}
       onClose={() => setModalSinnerId(null)}
       onSelect={ego => onEgoSelect(ego as EGO)}
       onDeselect={grade => {
