@@ -118,18 +118,12 @@ export function PlannerIdentityBoard({
   onApplyCode,
   onImport,
   onLongPress,
-  onOrderChange,
-  orderCount = 0,
   getSinnerName,
 }: {
   sinners: PlannerDeckSinner[]
   slots: Record<string, PlannerIdentityBoardSlot | undefined>
   onOpenIdentityModal: (sinnerId: string) => void
   onFormationToggle: (sinnerId: string) => void
-  /** Gives a card the 1-based formation number the user picks on its number badge (the badge then opens a number menu). */
-  onOrderChange?: (sinnerId: string, number: number) => void
-  /** How many cards have a number now: the badge menu offers 1 to this. */
-  orderCount?: number
   /** Clears every formation number (all back to the bench). */
   onResetOrder?: () => void
   /** Loads a pasted formation code; false when it is not a valid code (the field then shows the error). */
@@ -161,15 +155,6 @@ export function PlannerIdentityBoard({
     setCodeInvalid(Boolean(text.trim()))
     setCodeOpen(true)
   }
-  const [orderMenu, setOrderMenu] = useState<string | null>(null)
-  useEffect(() => {
-    if (!orderMenu) return
-    const close = (event: Event) => { if (!(event.target as Element | null)?.closest?.('[data-order-menu], [data-order-button]')) setOrderMenu(null) }
-    const key = (event: KeyboardEvent) => { if (event.key === 'Escape') setOrderMenu(null) }
-    document.addEventListener('pointerdown', close)
-    document.addEventListener('keydown', key)
-    return () => { document.removeEventListener('pointerdown', close); document.removeEventListener('keydown', key) }
-  }, [orderMenu])
   const press = useRef<{ timer?: ReturnType<typeof setTimeout>; fired: boolean }>({ fired: false })
   // Tiles are memoized; handlers read the latest callbacks through a ref so a formation click
   // re-renders only the tiles whose number changed.
@@ -211,7 +196,6 @@ export function PlannerIdentityBoard({
           ? sinnerName + ' ' + name + ' ' + (overlay ? t('removeFormation') + ' ' + overlay.order : t('addFormation'))
           : t('change') + ' ' + sinnerName + ' ' + name}
         longPress={view && !!onLongPress}
-        orderMenu={view && onOrderChange && overlay ? { count: orderCount, open: orderMenu === sinner.id, label: t('changeOrder', { order: overlay.order }), toggle: () => setOrderMenu(current => current === sinner.id ? null : sinner.id), choose: (number: number) => { setOrderMenu(null); if (number !== overlay.order) { onOrderChange(sinner.id, number); showSuccess(t('orderChanged', { order: number })) } } } : undefined}
         onActivate={activate}
         onPressStart={startPress}
         onPressEnd={endPress}
@@ -274,23 +258,6 @@ export function PlannerIdentityBoard({
           width: 100%; max-width: var(--fboard-w); margin: 0 auto; padding: 0.75rem 0; list-style: none;
         }
         .fboard__grid > li { min-width: 0; }
-        .fboard__item { position: relative; }
-        /* Over the number banner (54.5% down the card), full tile width less the edges; at least 44px tall. */
-        .fboard__order { position: absolute; left: 8%; right: 8%; top: 54.5%; z-index: 5; transform: translateY(-50%); height: 24%; border-radius: 0.25rem; cursor: pointer; }
-        .fboard__order:focus-visible { outline: 2px solid #e8b030; outline-offset: 1px; }
-        .fboard__orders {
-          position: absolute; left: 50%; top: 66%; z-index: 20; display: flex; max-width: 14rem; flex-wrap: wrap; justify-content: center; gap: 0.25rem; padding: 0.375rem;
-          transform: translateX(-50%); border: 1px solid #5a4526; border-radius: 0.375rem; background: #1d160d; box-shadow: 0 0.5rem 1.25rem rgba(0, 0, 0, 0.6);
-          animation: fboard-orders-in 140ms cubic-bezier(0.23, 1, 0.32, 1);
-        }
-        .fboard__orders button {
-          display: grid; min-width: 2.75rem; min-height: 2.75rem; place-items: center; border-radius: 0.25rem; color: #cbb994; cursor: pointer;
-          font-family: var(--font-title), var(--font-sans); font-size: 1.375rem; line-height: 1; transition: background-color 0.15s ease, color 0.15s ease;
-        }
-        .fboard__orders button:hover { background: rgba(232, 176, 48, 0.12); color: #fff3d6; }
-        .fboard__orders button:focus-visible { outline: 2px solid #e8b030; outline-offset: -2px; }
-        .fboard__orders button[data-current='true'] { background: #c8900a; color: #0d0b08; }
-        @keyframes fboard-orders-in { from { opacity: 0; transform: translateX(-50%) scale(0.96); } }
         .fboard__sheet {
           position: absolute; inset: 0; z-index: 10; overflow: hidden;
           background: #17120c; box-shadow: inset 0 1px #2e2417, inset 0 -1px #2e2417;
@@ -375,7 +342,7 @@ export function PlannerIdentityBoard({
           .fboard__grid { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 0.75rem var(--fboard-col-gap); }
         }
         @media (min-width: 64rem) { .fboard { --fboard-card: 8.75rem; --fboard-col-gap: 1rem; } .fboard__grid { row-gap: 0.875rem; } }
-        @media (prefers-reduced-motion: reduce) { .fboard__orders { animation: none; } .fboard__sheet, .fboard__tile, .fboard__bar, .fboard__hint, .fboard__tools, .fboard__reset { transition: none; } }
+        @media (prefers-reduced-motion: reduce) { .fboard__sheet, .fboard__tile, .fboard__bar, .fboard__hint, .fboard__tools, .fboard__reset { transition: none; } }
       `}</style>
     </section>
   )
@@ -392,15 +359,14 @@ type BoardTileProps = {
   giftBadgeUrls?: string[]
   ariaLabel: string
   longPress: boolean
-  orderMenu?: { count: number; open: boolean; label: string; toggle: () => void; choose: (number: number) => void }
   onActivate: (sinnerId: string, view: boolean) => void
   onPressStart: (sinnerId: string) => void
   onPressEnd: () => void
 }
 
-const BoardTile = memo(function BoardTile({ sinnerId, view, identity, uptie, name, sinnerName, order, giftBadgeUrls, ariaLabel, longPress, orderMenu, onActivate, onPressStart, onPressEnd }: BoardTileProps) {
+const BoardTile = memo(function BoardTile({ sinnerId, view, identity, uptie, name, sinnerName, order, giftBadgeUrls, ariaLabel, longPress, onActivate, onPressStart, onPressEnd }: BoardTileProps) {
   return (
-    <li className="fboard__item">
+    <li>
       <button
         type="button"
         className="fboard__tile"
@@ -423,23 +389,10 @@ const BoardTile = memo(function BoardTile({ sinnerId, view, identity, uptie, nam
           </span>
         )}
       </button>
-      {orderMenu && (
-        <>
-          {/* A 44px tap area over the number banner: a sibling of the card button, so the card itself still toggles. */}
-          <button type="button" data-order-button className="fboard__order" style={{ minHeight: '2.75rem' }} aria-haspopup="menu" aria-expanded={orderMenu.open} aria-label={orderMenu.label} onClick={orderMenu.toggle} />
-          {orderMenu.open && (
-            <div role="menu" data-order-menu className="fboard__orders">
-              {Array.from({ length: orderMenu.count }, (_, index) => (
-                <button key={index} type="button" role="menuitemradio" aria-checked={order === index} data-current={order === index} onClick={() => orderMenu.choose(index + 1)}>{index + 1}</button>
-              ))}
-            </div>
-          )}
-        </>
-      )}
     </li>
   )
 }, (a, b) => (Object.keys(a) as (keyof BoardTileProps)[]).every(key => (
-  key === 'giftBadgeUrls' ? String(a[key]) === String(b[key]) : key === 'orderMenu' ? JSON.stringify([a.orderMenu?.count, a.orderMenu?.open, a.orderMenu?.label]) === JSON.stringify([b.orderMenu?.count, b.orderMenu?.open, b.orderMenu?.label]) : Object.is(a[key], b[key])
+  key === 'giftBadgeUrls' ? String(a[key]) === String(b[key]) : Object.is(a[key], b[key])
 )))
 
 export function PlannerIdentitySelectModal({

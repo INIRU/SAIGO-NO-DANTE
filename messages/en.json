@@ -1257,8 +1257,6 @@
         "bench": "Bench",
         "change": "Change",
         "removeFormation": "Remove",
-        "changeOrder": "Change order {order}",
-        "orderChanged": "Moved to {order}",
         "addFormation": "Add",
         "form": "Form",
         "modalTitle": "Select Identity",
