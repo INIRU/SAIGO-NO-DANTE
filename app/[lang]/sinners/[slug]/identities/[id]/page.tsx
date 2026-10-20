@@ -183,7 +183,7 @@ export default async function IdentityPage({
           currentSeason={currentSeason}
           sd={sd}
           illust={illust}
-          recommendations={<Suspense fallback={null}><Recommendations id={id} /></Suspense>}
+          recommendations={<Suspense key="recommendations" fallback={null}><Recommendations id={id} /></Suspense>}
         />
       </Suspense>
     </>
