@@ -153,6 +153,20 @@ export function decodedPlanToPlannerState(decoded: DecodedPlan, identities: Iden
 }
 
 /** Build a reviewable planner draft from observations; the source plan remains untouched. */
+/**
+ * The plan's gift inventory after a run: the source plan's start and observed gifts as they were, then every gift still
+ * held at the end (fusions and sales already applied) as a final gift, keeping the enhancement the plan gave that gift.
+ * The floors keep what was taken on them; only this list is the end state.
+ */
+function exportedGiftInventory(run: RunState): string[] {
+  const planned = run.sourcePlanSnapshot?.giftInventory ?? []
+  const auto = planned.filter(key => /^(start|observe)_/.test(key))
+  const autoIds = new Set(auto.map(key => key.replace(/^(start|observe)_/, '').replace(/_plus(plus)?$/, '')))
+  const plannedFinal = new Map(planned.flatMap(key => { const match = /^final_(.+?)(_plus|_plusplus)?$/.exec(key); return match ? [[match[1], key] as const] : [] }))
+  const held = [...new Set(run.giftInventory)].filter(id => !autoIds.has(id))
+  return [...auto, ...held.map(id => plannedFinal.get(id) ?? `final_${id}`)]
+}
+
 export function runStateToPlannerState(run: RunState): PlannerState {
   const initial = createInitialState(run.difficulty)
   const source = run.sourcePlanSnapshot
@@ -164,7 +178,7 @@ export function runStateToPlannerState(run: RunState): PlannerState {
     mainKeywordsManual: source?.mainKeywordsManual ?? false,
     identitySlots: structuredClone(run.identitySlots),
     egoSlots: structuredClone(run.egoSlots),
-    giftInventory: [...run.giftInventory],
+    giftInventory: exportedGiftInventory(run),
     floorPlan: initial.floorPlan.map((entry, index) => {
       const observed = run.floorLogs[index]
       const planned = source?.floorPlan?.find(floor => floor.floor === index + 1)
