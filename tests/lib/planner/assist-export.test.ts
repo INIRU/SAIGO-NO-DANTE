@@ -21,7 +21,7 @@ it('exports observed run data while leaving unobserved plan goals and source unt
   const draft = runStateToPlannerState(run)
   expect(draft.floorPlan[0]).toMatchObject({ theme_id: '101', gift_ids: ['actual'], memo: 'observed memo', constraints: [1] })
   expect(draft.floorPlan[1]).toMatchObject({ theme_id: null, gift_ids: [], memo: '', constraints: [] })
-  expect(draft.giftInventory).toEqual(['actual'])
+  expect(draft.giftInventory).toEqual(['final_actual'])
   expect(draft.identitySlots[0]).toMatchObject({ identity_id: 'i1', s1_count: 2, s2_count: 3, s3_count: 1 })
   expect(draft.title).toBe('Original plan')
   draft.identitySlots[0].name_kr = 'Edited draft'
@@ -70,4 +70,20 @@ it('reports run history write success and quota failure', () => {
   } finally {
     Object.defineProperty(globalThis, 'localStorage', { configurable: true, value: previous })
   }
+})
+
+it('REQ-ASSIST-076 exports the gifts held at the end as final gifts, keeping the plan\'s start and observed gifts and enhancements', () => {
+  const source = createInitialState('hard')
+  source.giftInventory = ['start_100', 'observe_200', 'final_300_plus', 'final_400']
+  let run = runReducer(createInitialRunState(), { type: 'LOAD_FROM_PLAN', planState: source })
+  for (const giftId of ['100', '300', '500', '500']) run = runReducer(run, { type: 'ACQUIRE_GIFT', giftId })
+  run = runReducer(run, { type: 'NEXT_FLOOR' })
+  run = runReducer(run, { type: 'ACQUIRE_GIFT', giftId: '600' })
+  run = runReducer(run, { type: 'CRAFT_FUSION', materialIds: ['500', '600'], resultId: '700' })
+  const draft = runStateToPlannerState(run)
+  // 100 is the start gift, 300 keeps its planned +, 400 was never held, the fused 500 and 600 became 700; one 500 is still held.
+  expect(draft.giftInventory).toEqual(['start_100', 'observe_200', 'final_300_plus', 'final_500', 'final_700'])
+  // Each floor still lists what was taken there, fused or not (the fusion result on the floor it was made).
+  expect(draft.floorPlan[0].gift_ids).toEqual(['100', '300', '500', '500'])
+  expect(draft.floorPlan[1].gift_ids).toEqual(['600', '700'])
 })
