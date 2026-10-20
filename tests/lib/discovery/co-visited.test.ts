@@ -62,32 +62,32 @@ beforeEach(() => {
 })
 
 describe('similarTo', () => {
-  it('REQ-COMMUNITY-065 ranks same-kind posts by shared identities over the union, then votes, views and id', () => {
+  it('REQ-COMMUNITY-070 ranks same-kind posts by shared identities over the union, then votes, views and id', () => {
     const rows = [...state.formations, f('s4', ['A', 'B', 'C'], { votes: 2 })]
     // me = A B C D. s1 and s4 share 3 of 4 (0.75), s2 shares 2 of 5 (0.4), s3 shares 1 of 7; far and the plan are not candidates.
     expect(similarTo(rows, 'deck', 'me').map(post => post.id)).toEqual(['s4', 's1', 's2', 's3'])
   })
 
-  it('REQ-COMMUNITY-065 returns nothing for a post without a formation', () => {
+  it('REQ-COMMUNITY-070 returns nothing for a post without a formation', () => {
     expect(similarTo(state.formations, 'deck', 'missing')).toEqual([])
   })
 })
 
 describe('getCoVisited', () => {
-  it('REQ-COMMUNITY-064 asks the database function for the post and window, and keeps its order', async () => {
+  it('REQ-COMMUNITY-069 asks the database function for the post and window, and keeps its order', async () => {
     state.rows = [row('c2'), row('c1'), row('c3'), row('c4')]
     const posts = await getCoVisited('deck', 'me', [])
     expect(state.rpcArgs).toMatchObject({ entity: 'me', post_kind: 'deck' })
     expect(posts.map(post => post.id)).toEqual(['c2', 'c1', 'c3'])
   })
 
-  it('REQ-COMMUNITY-064 leaves out the post itself and posts the page already shows elsewhere', async () => {
+  it('REQ-COMMUNITY-069 leaves out the post itself and posts the page already shows elsewhere', async () => {
     state.rows = [row('me'), row('shown'), row('c1'), row('c2')]
     const posts = await getCoVisited('deck', 'me', ['shown'])
     expect(posts.map(post => post.id)).toEqual(['c1', 'c2', 's1'])
   })
 
-  it('REQ-COMMUNITY-065 fills a sparse lane from similar formations of the same kind', async () => {
+  it('REQ-COMMUNITY-070 fills a sparse lane from similar formations of the same kind', async () => {
     state.rows = [row('c1')]
     expect((await getCoVisited('deck', 'me', [])).map(post => post.id)).toEqual(['c1', 's1', 's2'])
     state.rows = []
@@ -95,19 +95,19 @@ describe('getCoVisited', () => {
     expect(state.asked.md_plans).toBeUndefined()
   })
 
-  it('REQ-COMMUNITY-064 skips a deleted post and takes the next one', async () => {
+  it('REQ-COMMUNITY-069 skips a deleted post and takes the next one', async () => {
     state.rows = [row('c1'), row('c2'), row('c3'), row('c4')]
     state.gone = new Set(['c1'])
     expect((await getCoVisited('deck', 'me', [])).map(post => post.id)).toEqual(['c2', 'c3', 'c4'])
   })
 
-  it('REQ-COMMUNITY-066 is cached for hours under the board list tag', async () => {
+  it('REQ-COMMUNITY-071 is cached for hours under the board list tag', async () => {
     await getCoVisited('planner', 'p1', [])
     expect(state.life).toEqual(['hours'])
     expect(state.tags).toEqual(expect.arrayContaining(['plans-list']))
   })
 
-  it('REQ-COMMUNITY-066 throws when the database function is missing, so the lane is hidden', async () => {
+  it('REQ-COMMUNITY-071 throws when the database function is missing, so the lane is hidden', async () => {
     state.rpcError = { message: 'function limbus.discovery_covisited does not exist' }
     await expect(getCoVisited('deck', 'me', [])).rejects.toThrow()
   })

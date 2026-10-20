@@ -19,7 +19,7 @@ const render = (kind: 'deck' | 'planner' = 'deck') => renderToStaticMarkup(<Risi
 beforeEach(() => { state.swr = { data: feed } })
 
 describe('RisingShelf', () => {
-  it('REQ-COMMUNITY-069 shows the title, the rising identities and the board posts, each with its rise', () => {
+  it('REQ-COMMUNITY-074 shows the title, the rising identities and the board posts, each with its rise', () => {
     const html = render()
     expect(html).toContain('data-shelf="rising"')
     expect(html).toContain('>rising<')
@@ -29,11 +29,11 @@ describe('RisingShelf', () => {
     expect(html).not.toContain('data-plan')
   })
 
-  it('REQ-COMMUNITY-069 shows plan cards on the plan board', () => {
+  it('REQ-COMMUNITY-074 shows plan cards on the plan board', () => {
     expect(render('planner')).toContain('<span data-plan="true">a</span>')
   })
 
-  it('REQ-COMMUNITY-069 draws nothing while loading, on a failed read, or with fewer than two rising', () => {
+  it('REQ-COMMUNITY-074 draws nothing while loading, on a failed read, or with fewer than two rising', () => {
     state.swr = {}
     expect(render()).toBe('')
     state.swr = { error: new Error('503') }

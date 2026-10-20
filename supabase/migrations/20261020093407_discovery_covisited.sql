@@ -1,4 +1,4 @@
--- REQ-COMMUNITY-067: posts that the same visitors looked at, for the "함께 본 글" lane on deck and plan details.
+-- REQ-COMMUNITY-072: posts that the same visitors looked at, for the "함께 본 글" lane on deck and plan details.
 -- Counts distinct visitors of `entity` who also visited another post of the same kind (post_kind: 'deck' or 'planner')
 -- since the boundary day (null = all time). A post needs at least 3 shared visitors and more than the count a pair of
 -- unrelated posts would share (target visitors x other visitors / all visitors of the kind); rows are ranked by

@@ -160,14 +160,14 @@ describe('companions on an identity page', () => {
   // P (popular, in every post) against R (rare, only beside A).
   const model = buildIdentityModel([...times(5, () => post(['A', 'R', 'P'])), ...times(15, () => post(['P']))], catalog)
 
-  it('REQ-COMMUNITY-061 lists identities of other sinners that posts field with this one, tighter pairs over popular ones, with the shared count', () => {
+  it('REQ-COMMUNITY-066 lists identities of other sinners that posts field with this one, tighter pairs over popular ones, with the shared count', () => {
     const rows = companionsOfIdentity(model, 'A')
     expect(rows.map(row => row.identity_id)).toEqual(['R', 'P'])
     expect(rows[0]).toMatchObject({ identity_id: 'R', count: 5 })
     expect(rows[0].score).toBeGreaterThan(rows[1].score)
   })
 
-  it('REQ-COMMUNITY-061 has none for an identity no post fields, never lists the same sinner, and keeps at most the limit', () => {
+  it('REQ-COMMUNITY-066 has none for an identity no post fields, never lists the same sinner, and keeps at most the limit', () => {
     expect(companionsOfIdentity(model, 'S')).toEqual([])
     expect(companionsOfIdentity(model, 'nobody')).toEqual([])
     expect(companionsOfIdentity(model, 'A', { limit: 1 })).toHaveLength(1)

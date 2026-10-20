@@ -1,4 +1,4 @@
--- REQ-COMMUNITY-070: visitors of a board's posts (or of identities) in the last days against the days before, for the
+-- REQ-COMMUNITY-075: visitors of a board's posts (or of identities) in the last days against the days before, for the
 -- "지금 뜨는" shelf. Per entity of `post_kind` ('deck', 'planner' or 'identity'): distinct visitors in the latest
 -- `recent_days` UTC days (today included) and in the `base_days` days before them. Entities with fewer than `min_recent`
 -- recent visitors are left out; the busiest `max_rows` come back, and the app ranks them by smoothed rise.
