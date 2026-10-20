@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { descendantIds } from '@/lib/comments/thread'
 import { revalidateTag } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { requireActiveUser } from '@/lib/auth'
@@ -204,12 +205,16 @@ export async function DELETE(
       return NextResponse.json({ error: '삭제 권한이 없습니다.' }, { status: 403 })
     }
 
-    // 답글 수 조회 (CASCADE 삭제 전)
-    const { count: replyCount } = await admin
+    // 아래로 이어진 답글 전체 수 (CASCADE 삭제 전, 답글의 답글까지)
+    const { data: threadRows, error: threadError } = await admin
       .schema('limbus')
       .from('deck_comments')
-      .select('id', { count: 'exact', head: true })
-      .eq('parent_id', commentId)
+      .select('id, parent_id')
+      .eq('deck_id', id)
+    if (threadError) {
+      return NextResponse.json({ error: threadError.message }, { status: 500 })
+    }
+    const replyCount = descendantIds(threadRows ?? [], commentId).size
 
     const { error } = await admin
       .schema('limbus')
@@ -222,7 +227,7 @@ export async function DELETE(
     }
 
     // 본 댓글 + 답글 수만큼 감소
-    const totalToDecrement = 1 + (replyCount ?? 0)
+    const totalToDecrement = 1 + replyCount
     for (let i = 0; i < totalToDecrement; i++) {
       const { error: decrementError } = await admin.schema('limbus').rpc('decrement_comment', { deck_id: id })
       if (decrementError) {
