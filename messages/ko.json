@@ -1257,8 +1257,6 @@
         "bench": "대기",
         "change": "변경",
         "removeFormation": "편성 해제",
-        "changeOrder": "{order}번 순서 바꾸기",
-        "orderChanged": "{order}번으로 바꿨어요",
         "addFormation": "편성하기",
         "form": "편성",
         "modalTitle": "인격 선택",

@@ -44,7 +44,6 @@ import { deckInitFromTeamCode, formationParamFromSearch } from '@/lib/decks/form
 import type { EgoSlot, IdentitySlot } from '@/lib/planner/types'
 import { CONTENT_TYPES } from '@/lib/constants/deck-tokens'
 import { LCB_IDS, isDeployedSlot } from '@/lib/constants/game'
-import { orderAfterPick, orderWithSwap } from '@/lib/decks/formation-order'
 import { Users, Sparkles, SlidersHorizontal, FileText, ArrowLeft, Copy, Download, Save, Upload, Check } from 'lucide-react'
 import { IdentityTab, EgoTab, SkillsetTab } from '@/components/deck-builder/DeckBuilderTabs'
 import { getIdentityImageUrl } from '@/lib/utils/images'
@@ -686,14 +685,11 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
               formationOrder={formationOrder}
               onFormationToggle={handleFormationToggle}
               onFormationReset={() => setFormationOrder([])}
-              onOrderChange={(sinnerId, number) => setFormationOrder(prev => orderWithSwap(prev, sinnerId, number))}
               onMainKeywordToggle={handleMainKeywordToggle}
               onIdentitySelect={(identity, uptie) => {
                 if (!identity) return
                 setDeckSlots(prev => ({ ...prev, [identity.sinner_id]: identity }))
                 setUpties(prev => ({ ...prev, [identity.sinner_id]: uptie }))
-                // A new pick takes the next free formation number; the LCB placeholder frees it.
-                setFormationOrder(prev => orderAfterPick(prev, identity.sinner_id, identity.game_id === LCB_IDS[identity.sinner_id]))
               }}
             />
 
