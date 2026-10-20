@@ -7,8 +7,8 @@ const doc = (...content: object[]) => ({ type: 'doc', content })
 const mention = (attrs: object) => ({ type: 'noteMention', attrs })
 const para = (...content: object[]) => ({ type: 'paragraph', content })
 
-describe('REQ-COMMUNITY-051 mention nodes are saved', () => {
-  it('REQ-COMMUNITY-051 keeps an identity and an E.G.O mention inside a sentence and cuts what is too long', () => {
+describe('REQ-COMMUNITY-052 mention nodes are saved', () => {
+  it('REQ-COMMUNITY-052 keeps an identity and an E.G.O mention inside a sentence and cuts what is too long', () => {
     const d = normalizeDocument(doc(para(
       { type: 'text', text: '추천: ' }, mention({ kind: 'identity', id: 'abc', name: '로쟈' }),
       mention({ kind: 'ego', id: 'x'.repeat(300), name: 'n'.repeat(300) }),
@@ -18,13 +18,13 @@ describe('REQ-COMMUNITY-051 mention nodes are saved', () => {
     expect(ego.attrs!.id).toHaveLength(150)
     expect(ego.attrs!.name).toHaveLength(100)
   })
-  it('REQ-COMMUNITY-051 drops a mention of any other kind or without an id', () => {
+  it('REQ-COMMUNITY-052 drops a mention of any other kind or without an id', () => {
     const d = normalizeDocument(doc(para(
       { type: 'text', text: 'a' }, mention({ kind: 'gift', id: 'g1', name: 'x' }), mention({ kind: 'identity', id: '', name: 'x' }), mention({ id: 'z' }),
     )))!
     expect(d.content![0].content).toEqual([{ type: 'text', text: 'a', marks: [] }])
   })
-  it('REQ-COMMUNITY-051 saves as a block document, asks for the asset, and reads as its name in plain text', () => {
+  it('REQ-COMMUNITY-052 saves as a block document, asks for the asset, and reads as its name in plain text', () => {
     const d = doc(para({ type: 'text', text: '봐요 ' }, mention({ kind: 'identity', id: 'i1', name: '로쟈' })))
     expect(hasBlocks(d)).toBe(true)
     const saved = tiptapContentToMarkdown(d)
@@ -36,13 +36,13 @@ describe('REQ-COMMUNITY-051 mention nodes are saved', () => {
   })
 })
 
-describe('REQ-COMMUNITY-052 typing @ finds identities and E.G.O', () => {
-  it('REQ-COMMUNITY-052 reads the name typed after an @ at a word start', () => {
+describe('REQ-COMMUNITY-053 typing @ finds identities and E.G.O', () => {
+  it('REQ-COMMUNITY-053 reads the name typed after an @ at a word start', () => {
     expect(findMentionQuery('첫 문장 @로쟈')).toEqual({ query: '로쟈', length: 3 })
     expect(findMentionQuery('@')).toEqual({ query: '', length: 1 })
     expect(findMentionQuery('(@Rod')).toEqual({ query: 'Rod', length: 4 })
   })
-  it('REQ-COMMUNITY-052 ignores an email, a finished word and a name that is too long', () => {
+  it('REQ-COMMUNITY-053 ignores an email, a finished word and a name that is too long', () => {
     expect(findMentionQuery('mail me@example')).toBeNull()
     expect(findMentionQuery('@로쟈 뒤에 글')).toBeNull()
     expect(findMentionQuery('@' + 'a'.repeat(31))).toBeNull()
@@ -53,19 +53,19 @@ describe('REQ-COMMUNITY-052 typing @ finds identities and E.G.O', () => {
     { id: 'c', label: '이상', aliases: ['Yi Sang', 'イサン'] },
     { id: 'd', label: '이상', aliases: ['Yi Sang', 'イサン'] },
   ]
-  it('REQ-COMMUNITY-052 matches a name in any language and puts names that start with the query first', () => {
+  it('REQ-COMMUNITY-053 matches a name in any language and puts names that start with the query first', () => {
     expect(filterMentions(pool, '로쟈', 6).map(p => p.id)).toEqual(['b', 'a'])
     expect(filterMentions(pool, 'rodion', 6).map(p => p.id)).toEqual(['a', 'b'])
     expect(filterMentions(pool, 'イサン', 6).map(p => p.id)).toEqual(['c', 'd'])
   })
-  it('REQ-COMMUNITY-052 lists the first entries for a bare @ and stops at the limit', () => {
+  it('REQ-COMMUNITY-053 lists the first entries for a bare @ and stops at the limit', () => {
     expect(filterMentions(pool, '', 3).map(p => p.id)).toEqual(['a', 'b', 'c'])
     expect(filterMentions(pool, '없는 이름', 6)).toEqual([])
   })
 })
 
-describe('REQ-COMMUNITY-053 where a mention links to', () => {
-  it('REQ-COMMUNITY-053 goes to the identity page or the E.G.O page of its sinner', () => {
+describe('REQ-COMMUNITY-054 where a mention links to', () => {
+  it('REQ-COMMUNITY-054 goes to the identity page or the E.G.O page of its sinner', () => {
     expect(mentionHref('identity', 'i1', 'rodion')).toBe('/sinners/rodion/identities/i1')
     expect(mentionHref('ego', 'e1', 'faust')).toBe('/sinners/faust/ego/e1')
   })
