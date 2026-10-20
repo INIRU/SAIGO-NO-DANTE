@@ -746,6 +746,7 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
                   allowedKeywords={allowedKeywords}
                   egoGiftLookup={egoGiftLookup}
                   textScale="comfortable"
+                  anchors
                 />
               </div>
             </Section>

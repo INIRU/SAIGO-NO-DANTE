@@ -7,16 +7,19 @@ import { Table, TableRow, TableCell, TableHeader } from '@tiptap/extension-table
 import { useLocale } from 'next-intl'
 import useSWR from 'swr'
 import { toast } from 'sonner'
-import { Plus, ChevronDown, ChevronLeft, ChevronRight, X, Search, GripVertical, Trash2 } from 'lucide-react'
+import { Plus, ChevronDown, ChevronLeft, ChevronRight, X, Search, GripVertical, Trash2, Copy } from 'lucide-react'
 import NoteAssetPicker from './NoteAssetPicker'
 import NoteCharacterPicker from './NoteCharacterPicker'
 import BaseModal from '@/components/ui/BaseModal'
 import Dropdown from '@/components/ui/Dropdown'
 import { BLOCK_LABELS, CALLOUT_VARIANTS, CARD_KINDS, CARD_ID, isAssetKind, blockLabel, newBlock, youtubeId, type BlockKind, type AssetKind } from '@/lib/notes/blocks'
+import { isMentionKind } from '@/lib/notes/mention'
+import { duplicateBlockAtTr, duplicateBlockTr, moveBlockAtTr, moveBlockTr } from '@/lib/notes/block-ops'
+import { isRichClipboardHtml, pastedMarkdownContent } from '@/lib/notes/document'
 import { assetName, type NoteAssetData } from '@/lib/notes/assets'
 import { isNoteImageUrl, pendingNoteUploads } from '@/lib/notes/images'
 import { NoteCardView, NoteCardPicker, type NoteCardKind } from './NoteCardBlock'
-import { NoteAssetView, NoteAssetArtwork, NoteKeywordLabel, NoteGiftLabel, NoteVideo, fetchNoteAssets } from './NoteBlockViewer'
+import { NoteAssetView, NoteAssetArtwork, NoteKeywordLabel, NoteGiftLabel, NoteMentionLabel, NoteVideo, fetchNoteAssets } from './NoteBlockViewer'
 
 const tr = (lang:string,ko:string,ja:string,en:string)=>lang==='ja'?ja:lang==='en'?en:ko
 const pickTitle = (kind:BlockKind,lang:string)=>{const label=blockLabel(kind,lang);return tr(lang,`${label} 선택`,`${label}を選択`,`Choose ${kind==='ego'||kind==='youtube'?label:label.toLowerCase()}`)}
@@ -55,21 +58,34 @@ function AssetPicker(props: {kind:AssetKind;onSelect:(asset:NoteAssetData)=>void
 export function moveNoteBlock(editor:Editor,getPos:NodeViewProps['getPos'],direction:-1|1) {
   const pos=getPos()
   if (typeof pos!=='number') return
-  const {state}=editor, node=state.doc.nodeAt(pos), $pos=state.doc.resolve(pos)
-  const index=$pos.index(), parent=$pos.parent, target=index+direction
-  if (!node || target<0 || target>=parent.childCount) return
-  const sibling=parent.child(target)
-  const tr=direction<0
-    ? state.tr.delete(pos,pos+node.nodeSize).insert(pos-sibling.nodeSize,node)
-    : state.tr.insert(pos+node.nodeSize+sibling.nodeSize,node).delete(pos,pos+node.nodeSize)
-  editor.view.dispatch(tr.scrollIntoView())
+  const tr=moveBlockAtTr(editor.state,pos,direction)
+  if (tr) editor.view.dispatch(tr)
 }
+const duplicatedMessage=(lang:string)=>tr(lang,'블록을 복제했어요','ブロックを複製しました','Block duplicated')
+/** Copies the block right after itself; the toast tells the author where the copy went. */
+export function duplicateNoteBlock(editor:Editor,lang:string,getPos?:NodeViewProps['getPos']) {
+  const pos=getPos?.()
+  const transaction=typeof pos==='number' ? duplicateBlockAtTr(editor.state,pos) : duplicateBlockTr(editor.state)
+  if (!transaction) { toast.error(tr(lang,'이 블록은 복제할 수 없어요','このブロックは複製できません','This block cannot be duplicated')); return false }
+  editor.view.dispatch(transaction)
+  editor.view.focus()
+  toast.success(duplicatedMessage(lang))
+  return true
+}
+/** Keyboard: Mod-Shift-Up/Down move the block around the caret, Mod-Shift-D duplicates it. */
+export const NoteBlockKeys = Extension.create<{lang:string}>({name:'noteBlockKeys',addOptions(){return {lang:'ko'}},
+  addKeyboardShortcuts(){
+    const move=(direction:-1|1)=>()=>{const transaction=moveBlockTr(this.editor.state,direction);if(transaction)this.editor.view.dispatch(transaction);return true}
+    return {'Mod-Shift-ArrowUp':move(-1),'Mod-Shift-ArrowDown':move(1),'Mod-Shift-d':()=>{duplicateNoteBlock(this.editor,this.options.lang);return true}}
+  },
+})
 function BlockActions({editor,getPos,onDelete}:{editor:Editor;getPos:NodeViewProps['getPos'];onDelete:()=>void}) {
   const lang=useLocale()
   return <div className="note-block-actions">
     <span data-drag-handle aria-hidden="true" className="note-block-drag"><GripVertical size={14}/></span>
     <button type="button" onClick={()=>moveNoteBlock(editor,getPos,-1)} aria-label={tr(lang,'앞으로 이동','前へ移動','Move back')}><ChevronLeft size={16}/></button>
     <button type="button" onClick={()=>moveNoteBlock(editor,getPos,1)} aria-label={tr(lang,'뒤로 이동','後ろへ移動','Move forward')}><ChevronRight size={16}/></button>
+    <button type="button" className="note-block-duplicate" onClick={()=>duplicateNoteBlock(editor,lang,getPos)} aria-label={tr(lang,'블록 복제','ブロック複製','Duplicate block')}><Copy size={14}/></button>
     <button type="button" className="note-block-delete" onClick={onDelete} aria-label={tr(lang,'블록 삭제','ブロック削除','Delete block')}><X size={14}/></button>
   </div>
 }
@@ -90,8 +106,19 @@ function KeywordNodeView({node,updateAttributes}:NodeViewProps) {
   </NodeViewWrapper>
 }
 function GiftInlineNodeView({node}:NodeViewProps) {
-  return <NodeViewWrapper as="span" className="note-gift-inline-node" contentEditable={false}><NoteGiftLabel id={node.attrs.id} name={node.attrs.name}/></NodeViewWrapper>
+  return <NodeViewWrapper as="span" className="note-gift-inline-node" contentEditable={false}><NoteGiftLabel id={node.attrs.id} name={node.attrs.name} preview={false}/></NodeViewWrapper>
 }
+function MentionInlineNodeView({node}:NodeViewProps) {
+  return <NodeViewWrapper as="span" className="note-mention-node" contentEditable={false}><NoteMentionLabel kind={node.attrs.kind} id={node.attrs.id} name={node.attrs.name} linked={false}/></NodeViewWrapper>
+}
+/** An identity or E.G.O named inside a sentence (typed with @). Stores the name too for plain text and search. */
+export const NoteMention = Node.create({name:'noteMention',group:'inline',inline:true,atom:true,
+  addAttributes(){return {kind:{default:'identity'},id:{default:''},name:{default:''}}},
+  parseHTML(){return [{tag:'span[data-note-mention]',getAttrs:el=>{const kind=el.getAttribute('data-note-mention'),id=(el.getAttribute('data-mention-id') ?? '').slice(0,150);return isMentionKind(kind)&&id?{kind,id,name:(el.textContent ?? '').slice(0,100)}:false}}]},
+  renderHTML({node}){return ['span',{'data-note-mention':node.attrs.kind,'data-mention-id':node.attrs.id},node.attrs.name]},
+  renderText({node}){return node.attrs.name},
+  addNodeView(){return ReactNodeViewRenderer(MentionInlineNodeView)},
+})
 /** A gift inside a sentence, like a keyword: small art and its name. Stores the name too for plain text and search. */
 export const NoteGift = Node.create({name:'noteGift',group:'inline',inline:true,atom:true,
   addAttributes(){return {id:{default:''},name:{default:''}}},
@@ -222,11 +249,17 @@ export const NoteInput = Extension.create<{lang:string}>({name:'noteInput',addOp
   addProseMirrorPlugins(){const editor=this.editor,lang=this.options.lang;return [new Plugin({key:new PluginKey('note-input'),props:{
     handleDrop(view,event,_slice,moved){const files=Array.from(event.dataTransfer?.files ?? []);if(moved || !files.length)return false;event.preventDefault();const pos=view.posAtCoords({left:event.clientX,top:event.clientY})?.pos;void uploadNoteFiles(editor,files,lang,pos);return true},
     handlePaste(_view,event){const files=Array.from(event.clipboardData?.files ?? []);if(files.length){event.preventDefault();void uploadNoteFiles(editor,files,lang);return true}
-      const id=youtubeId(event.clipboardData?.getData('text/plain').trim() ?? '');if(!id)return false
-      event.preventDefault();editor.chain().insertContent([{type:'noteVideo',attrs:{videoId:id}},{type:'paragraph'}]).run();return true},
+      const text=event.clipboardData?.getData('text/plain') ?? ''
+      const id=youtubeId(text.trim())
+      if(id){event.preventDefault();editor.chain().insertContent([{type:'noteVideo',attrs:{videoId:id}},{type:'paragraph'}]).run();return true}
+      // Rich text (a web page, a document) keeps its own formatting; plain markdown becomes blocks, but only in a body paragraph.
+      const blocks=isRichClipboardHtml(event.clipboardData?.getData('text/html') ?? '') || editor.state.selection.$from.parent.type.name!=='paragraph' ? null : pastedMarkdownContent(text)
+      if(!blocks)return false
+      event.preventDefault();editor.chain().insertContent(blocks).run()
+      toast.success(tr(lang,'마크다운을 블록으로 붙여 넣었어요','マークダウンをブロックとして貼り付けました','Pasted markdown as blocks'));return true},
   }})]},
 })
-export const noteBlockExtensions = [NoteAsset,NoteKeyword,NoteGift,NoteAccordion,NoteTitle,NoteBody,NoteVideoNode,NoteUpload,NoteCallout,NoteCard,Table,TableRow,TableCell,TableHeader]
+export const noteBlockExtensions = [NoteAsset,NoteKeyword,NoteGift,NoteMention,NoteAccordion,NoteTitle,NoteBody,NoteVideoNode,NoteUpload,NoteCallout,NoteCard,Table,TableRow,TableCell,TableHeader]
 export function notePlaceholder(lang:string,nodeType:string) {
   return nodeType==='noteTitle'?tr(lang,'아코디언 제목을 입력하세요','アコーディオンの見出し','Accordion title') : tr(lang,'여기에 글을 입력하거나 /로 블록을 추가하세요','文章を入力、または / でブロックを追加','Write here or type / to add a block')
 }

@@ -140,9 +140,11 @@
     },
     "confirm": "확인",
     "autosave": {
-      "title": "자동 저장된 편집 내용",
-      "restore": "복구",
-      "discard": "삭제"
+      "title": "임시 저장한 글이 있어요",
+      "restore": "불러오기",
+      "discard": "버리기",
+      "restored": "임시 저장한 글을 불러왔어요",
+      "restoreFailed": "임시 저장한 글을 불러오지 못했어요"
     }
   },
   "globalSearch": {

@@ -29,12 +29,12 @@ export default async function EditDeckPage({ params }: { params: Promise<{ lang:
     : null
 
   const deckSelectWithMainKeywords = `
-    id, user_id, title, description, tags, main_keywords, content_type,
+    id, user_id, title, description, tags, main_keywords, content_type, updated_at,
     deck_identities(*),
     deck_egos(ego_id, grade)
   `
   const deckSelectLegacy = `
-    id, user_id, title, description, tags, content_type,
+    id, user_id, title, description, tags, content_type, updated_at,
     deck_identities(*),
     deck_egos(ego_id, grade)
   `
@@ -129,6 +129,7 @@ export default async function EditDeckPage({ params }: { params: Promise<{ lang:
         deckId: id,
         title: deck.title ?? '',
         description: deck.description ?? '',
+        updatedAt: (deck as Record<string, unknown>).updated_at as string | null ?? null,
         tags: deck.tags ?? [],
         mainKeywords: Array.isArray((deck as Record<string, unknown>).main_keywords)
           ? ((deck as Record<string, unknown>).main_keywords as string[])
