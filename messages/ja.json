@@ -2753,5 +2753,8 @@
     "empty": "投稿がありません",
     "metaTitle": "{title} | シリーズ",
     "notFound": "シリーズが見つかりません"
+  },
+  "suggestions": {
+    "label": "おすすめ"
   }
 }

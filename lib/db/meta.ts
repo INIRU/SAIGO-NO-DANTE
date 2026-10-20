@@ -2,6 +2,8 @@ import { createClient } from '@supabase/supabase-js'
 import { cacheLife, cacheTag } from 'next/cache'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import type { Formation } from '@/lib/discovery/co-occurrence'
+import type { PlanChoice } from '@/lib/discovery/suggestions'
+import { computeKeywordDeckCombo } from '@/lib/decks/keyword-rules'
 import { aggregateMeta, fieldedSlots, metaPeriodStart, planGiftIds, planThemeIds } from '@/lib/meta/aggregate'
 import { readAllMetaRows } from '@/lib/meta/pagination'
 import { DEFAULT_META_PERIOD, DEFAULT_META_SOURCE, type MetaData, type MetaFilters, type MetaIdentity, type MetaEGO, type MetaGift, type MetaPost, type MetaSkill, type MetaSource, type MetaPeriod, type MetaTheme } from '@/lib/meta/types'
@@ -14,7 +16,7 @@ function publicClient() {
   }).schema('limbus')
 }
 
-async function getMetaCatalog() {
+export async function getMetaCatalog() {
   'use cache'
   cacheLife('page-1h')
   cacheTag(CACHE_TAGS.gameData, CACHE_TAGS.meta, CACHE_TAGS.keywords)
@@ -141,5 +143,31 @@ export async function getFormations(): Promise<Formation[]> {
   return [...decks, ...plans].flatMap(post => {
     const ids = fieldedSlots(post, identities).filter(slot => slot.order < 99).map(slot => slot.identity.id)
     return ids.length ? [{ kind: post.source === 'decks' ? 'deck' as const : 'planner' as const, id: post.id, identities: ids, votes: post.votes ?? 0, views: post.views ?? 0 }] : []
+  })
+}
+
+/** Every public plan as what a floor picker counts: battle identities, main keywords, and per floor the pack and gifts taken. */
+export async function getPlanChoices(): Promise<PlanChoice[]> {
+  'use cache'
+  cacheLife('hours')
+  cacheTag(CACHE_TAGS.plansList, CACHE_TAGS.meta, CACHE_TAGS.gameData)
+  const [{ identities }, plans] = await Promise.all([getMetaCatalog(), getSourcePosts('planner', 'all')])
+  return plans.flatMap(plan => {
+    const battle = fieldedSlots(plan, identities).filter(slot => slot.order < 99)
+    if (!battle.length) return []
+    const floors: PlanChoice['floors'] = {}
+    for (const row of Array.isArray(plan.floorPlan) ? plan.floorPlan as { floor?: unknown; theme_id?: unknown; gift_ids?: unknown }[] : []) {
+      const floor = Number(row?.floor)
+      if (!Number.isInteger(floor) || floor < 1 || floor > 15 || floors[floor]) continue
+      floors[floor] = {
+        theme: typeof row.theme_id === 'string' || typeof row.theme_id === 'number' ? String(row.theme_id) : null,
+        gifts: Array.isArray(row.gift_ids) ? row.gift_ids.map(String).filter(id => /^\d+$/.test(id)) : [],
+      }
+    }
+    return [{
+      identities: battle.map(slot => slot.identity.id),
+      keywords: computeKeywordDeckCombo(battle.map(({ identity, order }) => ({ slot_order: order, skill_keyword_list: identity.skill_keyword_list ?? identity.keywords }))),
+      floors,
+    }]
   })
 }
