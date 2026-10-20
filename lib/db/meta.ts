@@ -142,7 +142,7 @@ export async function getFormations(): Promise<Formation[]> {
   const [{ identities }, decks, plans] = await Promise.all([getMetaCatalog(), getSourcePosts('decks', 'all'), getSourcePosts('planner', 'all')])
   return [...decks, ...plans].flatMap(post => {
     const ids = fieldedSlots(post, identities).filter(slot => slot.order < 99).map(slot => slot.identity.id)
-    return ids.length ? [{ kind: post.source === 'decks' ? 'deck' as const : 'planner' as const, id: post.id, identities: ids, votes: post.votes ?? 0, views: post.views ?? 0 }] : []
+    return ids.length ? [{ kind: post.source === 'decks' ? 'deck' as const : 'planner' as const, id: post.id, identities: ids, votes: post.votes ?? 0, views: post.views ?? 0, created_at: post.created_at }] : []
   })
 }
 
