@@ -106,7 +106,7 @@ function KeywordNodeView({node,updateAttributes}:NodeViewProps) {
   </NodeViewWrapper>
 }
 function GiftInlineNodeView({node}:NodeViewProps) {
-  return <NodeViewWrapper as="span" className="note-gift-inline-node" contentEditable={false}><NoteGiftLabel id={node.attrs.id} name={node.attrs.name}/></NodeViewWrapper>
+  return <NodeViewWrapper as="span" className="note-gift-inline-node" contentEditable={false}><NoteGiftLabel id={node.attrs.id} name={node.attrs.name} preview={false}/></NodeViewWrapper>
 }
 function MentionInlineNodeView({node}:NodeViewProps) {
   return <NodeViewWrapper as="span" className="note-mention-node" contentEditable={false}><NoteMentionLabel kind={node.attrs.kind} id={node.attrs.id} name={node.attrs.name} linked={false}/></NodeViewWrapper>

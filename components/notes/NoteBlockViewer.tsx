@@ -18,6 +18,7 @@ import { mentionHref, type MentionKind } from '@/lib/notes/mention'
 import QuietImage from '@/components/ui/QuietImage'
 import { Link } from '@/lib/i18n/navigation'
 import NoteLightboxImage from './NoteLightboxImage'
+import NotePreviewHost from './NotePreviewCard'
 import NoteTocLayout, { NoteHeadingLink } from './NoteToc'
 import { NOTE_TOC_MIN, collectHeadings } from '@/lib/notes/toc'
 import { isNoteColorSin } from '@/lib/notes/text-style'
@@ -52,15 +53,17 @@ export function NoteKeywordLabel({id}:{id:string}) {
   return <KeywordWithTooltip keyword={name} krKey={info ? id : undefined} inline displayColor={color}><span style={{color,fontWeight:600}}>{name}</span></KeywordWithTooltip>
 }
 /** A gift written inside a sentence: its art at text height and its name in the keyword's colour; opens the gift. */
-export function NoteGiftLabel({id,name}:{id:string;name?:string}) {
+export function NoteGiftLabel({id,name,preview=true}:{id:string;name?:string;/** The editor draws its gifts without the hover card. */preview?:boolean}) {
   const lang=useLocale(), {data}=useContext(AssetContext), onGiftClick=useContext(NoteGiftClickContext)
   const asset=data.get('gift:'+id)
   const label=asset ? assetName(asset,lang) : name || id
   const style={'--gift-color':GIFT_KEYWORD_COLORS[asset?.keyword ?? ''] ?? '#c8b898'} as React.CSSProperties
   const body=<>{asset?.image_url && <img src={asset.image_url} alt="" loading="lazy" decoding="async"/>}<strong>{label}</strong></>
-  return onGiftClick && asset
+  const element=onGiftClick && asset
     ? <button type="button" className="note-gift-label" style={style} onClick={()=>onGiftClick(id)}>{body}</button>
     : <span className="note-gift-label" style={style}>{body}</span>
+  // With a gift window wired in, a tap opens that window; without one a tap opens the preview.
+  return preview ? <NotePreviewHost asset={asset} modalOnTap={!onGiftClick}>{element}</NotePreviewHost> : element
 }
 /**
  * An identity or E.G.O named inside a sentence: its portrait and name as a chip. In the viewer it links to the page
@@ -70,9 +73,10 @@ export function NoteMentionLabel({kind,id,name,linked=true}:{kind:MentionKind;id
   const lang=useLocale(), {data}=useContext(AssetContext)
   const asset=data.get(`${kind}:${id}`)
   const sinnerId=asset?.identity?.sinner_id ?? asset?.sinnerId
-  const body=<>{asset?.image_url && <QuietImage src={asset.image_url} alt="" width={20} height={20} sizes="1.25rem"/>}<span>{asset ? assetName(asset,lang) : name || id}</span></>
-  return linked && asset && sinnerId
-    ? <Link href={mentionHref(kind,id,sinnerId)} className="note-mention">{body}</Link>
+  const body=<>{asset?.image_url && <QuietImage src={asset.image_url} alt="" width={20} height={20} sizes="1.25rem" style={{width:'1.25rem',height:'1.25rem'}}/>}<span>{asset ? assetName(asset,lang) : name || id}</span></>
+  const href=asset && sinnerId ? mentionHref(kind,id,sinnerId) : undefined
+  return linked && href
+    ? <NotePreviewHost asset={asset} href={href}><Link href={href} className="note-mention">{body}</Link></NotePreviewHost>
     : <span className="note-mention">{body}</span>
 }
 export function NoteAssetArtwork({asset, compact=false}:{asset:NoteAssetData; compact?:boolean}) {
