@@ -2,15 +2,15 @@ import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import { NOTE_CHAR_LIMIT, formatNoteCount, noteCountState, noteTextLength } from '@/lib/notes/count'
 
-describe('REQ-COMMUNITY-055 note character count', () => {
-  it('REQ-COMMUNITY-055 counts characters without line breaks, an emoji or a syllable as one', () => {
+describe('REQ-COMMUNITY-056 note character count', () => {
+  it('REQ-COMMUNITY-056 counts characters without line breaks, an emoji or a syllable as one', () => {
     expect(noteTextLength('가나다')).toBe(3)
     expect(noteTextLength('가\n나\r\n다')).toBe(3)
     expect(noteTextLength('a b')).toBe(3)
     expect(noteTextLength('😀')).toBe(1)
     expect(noteTextLength('')).toBe(0)
   })
-  it('REQ-COMMUNITY-055 turns gold from 90% of the limit and red at the limit', () => {
+  it('REQ-COMMUNITY-056 turns gold from 90% of the limit and red at the limit', () => {
     expect(NOTE_CHAR_LIMIT).toBe(5000)
     expect(noteCountState(0)).toBe('ok')
     expect(noteCountState(4499)).toBe('ok')
@@ -19,13 +19,13 @@ describe('REQ-COMMUNITY-055 note character count', () => {
     expect(noteCountState(5000)).toBe('limit')
     expect(noteCountState(6200)).toBe('limit')
   })
-  it('REQ-COMMUNITY-055 writes "count / limit" with the reader\'s thousands separator', () => {
+  it('REQ-COMMUNITY-056 writes "count / limit" with the reader\'s thousands separator', () => {
     expect(formatNoteCount(1234, 'ko')).toBe('1,234 / 5,000')
     expect(formatNoteCount(1234, 'en')).toBe('1,234 / 5,000')
     expect(formatNoteCount(1234, 'ja')).toBe('1,234 / 5,000')
     expect(formatNoteCount(0, 'ko')).toBe('0 / 5,000')
   })
-  it('REQ-COMMUNITY-055 is drawn muted in the digit font, gold near the limit and in the error colour at it', () => {
+  it('REQ-COMMUNITY-056 is drawn muted in the digit font, gold near the limit and in the error colour at it', () => {
     const css = readFileSync('app/globals.css', 'utf8')
     const rule = (selector: string) => css.match(new RegExp(selector.replace(/[[\]]/g, '\\$&') + '\\{[^}]*\\}'))?.[0] ?? ''
     expect(rule('.note-count')).toContain('font-family:var(--font-title)')
