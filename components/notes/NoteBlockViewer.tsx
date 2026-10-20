@@ -1,5 +1,5 @@
 'use client'
-import { createContext, useContext, useMemo, useState, useId, type ReactNode } from 'react'
+import { Fragment, createContext, useContext, useMemo, useState, useId, type ReactNode } from 'react'
 import useSWR from 'swr'
 import { ChevronDown } from 'lucide-react'
 import { useLocale } from 'next-intl'
@@ -106,16 +106,23 @@ export function NoteVideo({id}:{id:string}) {
     <a href={`https://www.youtube.com/watch?v=${id}`} target="_blank" rel="noopener noreferrer">{lang==='ko'?'YouTube에서 보기 ↗':lang==='ja'?'YouTubeで見る ↗':'Watch on YouTube ↗'}</a>
   </div>
 }
-function NoteAccordionView({title,children}:{title:ReactNode;children:ReactNode}) {
-  const [open,setOpen]=useState(true), id=useId(), lang=useLocale()
+function NoteAccordionView({title,children,open,onToggle}:{title:ReactNode;children:ReactNode;open:boolean;onToggle:()=>void}) {
+  const id=useId(), lang=useLocale()
   return <section className="note-accordion" data-open={open}>
-    <div className="note-accordion-heading"><button type="button" aria-expanded={open} aria-controls={id} aria-label={lang==='ko'?'아코디언 접기 또는 펼치기':lang==='ja'?'アコーディオン開閉':'Toggle accordion'} onClick={()=>setOpen(!open)}><ChevronDown size={18}/></button><div>{title}</div></div>
+    <div className="note-accordion-heading"><button type="button" aria-expanded={open} aria-controls={id} aria-label={lang==='ko'?'아코디언 접기 또는 펼치기':lang==='ja'?'アコーディオン開閉':'Toggle accordion'} onClick={onToggle}><ChevronDown size={18}/></button><div>{title}</div></div>
     <div id={id} className="note-accordion-panel" inert={!open}><div><div className="note-accordion-body">{children}</div></div></div>
   </section>
 }
 export default function NoteBlockViewer({doc,renderText,anchors=false}:{doc:JSONContent;renderText:(text:string)=>ReactNode;/** Give the headings ids and a copy-link button, and a table of contents from three headings (detail pages, previews). */anchors?:boolean}) {
   const lang=useLocale(), tr=(ko:string,ja:string,en:string)=>lang==='ja'?ja:lang==='en'?en:ko
   const headings=useMemo(()=>anchors?collectHeadings(doc):[],[anchors,doc])
+  // Open or closed lives here (not in each accordion) so the "close all" button and the accordions share it.
+  const accordions=useMemo(()=>{const found:JSONContent[]=[];const visit=(n:JSONContent)=>{if(n.type==='noteAccordion')found.push(n);n.content?.forEach(visit)};visit(doc);return found},[doc])
+  // By position in the document: a parent that parses the text again makes new node objects, the positions stay.
+  const accordionAt=useMemo(()=>new Map(accordions.map((a,index)=>[a,index])),[accordions])
+  const [closed,setClosed]=useState<ReadonlySet<number>>(()=>new Set())
+  const allOpen=accordions.every((_,index)=>!closed.has(index))
+  const toggleAccordion=(index:number)=>setClosed(current=>{const next=new Set(current);if(!next.delete(index))next.add(index);return next})
   const headingIds=useMemo(()=>headings.length>=NOTE_TOC_MIN?new Map(headings.map(h=>[h.node,h])):null,[headings])
   function render(n:JSONContent,key:string):ReactNode {
     // A text node of only spaces is the gap between two chips (or a chip and a word): it stays, the paragraph around it decides whether anything shows.
@@ -137,7 +144,11 @@ export default function NoteBlockViewer({doc,renderText,anchors=false}:{doc:JSON
       return <span key={key}>{result}</span>
     }
     switch(n.type) {
-      case 'noteAccordion': return <NoteAccordionView key={key} title={n.content?.[0]?.content?.map((c,i)=>render(c,`${key}-title-${i}`)) || '…'}>{n.content?.[1]?.content?.map((c,i)=>render(c,`${key}-body-${i}`))}</NoteAccordionView>
+      case 'noteAccordion': {
+        const index=accordionAt.get(n) ?? 0
+        const view=<NoteAccordionView key={key} open={!closed.has(index)} onToggle={()=>toggleAccordion(index)} title={n.content?.[0]?.content?.map((c,i)=>render(c,`${key}-title-${i}`)) || '…'}>{n.content?.[1]?.content?.map((c,i)=>render(c,`${key}-body-${i}`))}</NoteAccordionView>
+        return accordions.length>1 && n===accordions[0] ? <Fragment key={key}><button type="button" className="note-accordion-all" onClick={()=>setClosed(allOpen?new Set(accordions.map((_,index)=>index)):new Set())}>{allOpen?tr('모두 접기','すべて閉じる','Collapse all'):tr('모두 펼치기','すべて開く','Expand all')}</button>{view}</Fragment> : view
+      }
       case 'noteCallout': { const variant = n.attrs?.variant === 'warning' ? 'warning' : 'tip'; return <aside key={key} className="note-callout" data-variant={variant}><div className="note-callout-head"><strong>{variant === 'warning' ? tr('주의', '注意', 'Warning') : tr('팁', 'ヒント', 'Tip')}</strong></div><div className="note-callout-body">{children}</div></aside> }
       case 'noteCard': return <NoteCardView key={key} kind={n.attrs!.kind} id={n.attrs!.id}/>
       case 'table': return <div key={key} className="note-block-table"><table><tbody>{children}</tbody></table></div>
