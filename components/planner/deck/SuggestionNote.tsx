@@ -26,14 +26,17 @@ export function useReasonLabel() {
   }).join(' · ')
 }
 
-/** "출혈 덱": the archetype the chosen identities add up to, for the title of the suggestion group; '' when no keyword stands out. */
+/** "출혈 덱": the archetype the chosen identities add up to, for the title of the suggestion group (the affiliation when no keyword stands out); '' when neither does. */
 export function useArchetypeLabel() {
   const locale = useLocale() as SupportedLang
   const keywords = useKeywords()
   const t = useTranslations('suggestions')
-  return (archetype: Archetype | null | undefined) => archetype?.keywords.length
-    ? t('archetype', { name: archetype.keywords.slice(0, 2).map(keyword => localizeDeckKeyword(keyword, keywords[keyword], locale)).join(', ') })
-    : ''
+  return (archetype: Archetype | null | undefined) => {
+    const names = archetype?.keywords.length
+      ? archetype.keywords.slice(0, 2).map(keyword => localizeDeckKeyword(keyword, keywords[keyword], locale))
+      : (archetype?.factions ?? []).slice(0, 1).map(faction => getLocalizedAffiliation(faction, locale))
+    return names.length ? t('archetype', { name: names.join(', ') }) : ''
+  }
 }
 
 /** A face of a partner identity: a round crop of its portrait, with the name on hover, focus, or tap. Gold ring when it is already on the board. */

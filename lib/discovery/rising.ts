@@ -89,7 +89,7 @@ export function risingIdentities({ formations, visits, skip = new Set(), now = D
   for (const post of formations) {
     const visit = seen[post.kind].get(post.id)
     if (!visit) continue
-    const fresh = post.created_at !== undefined && now - Date.parse(post.created_at) < FRESH_DAYS * 86_400_000
+    const fresh = post.createdAt !== undefined && now - post.createdAt < FRESH_DAYS * 86_400_000
     for (const id of post.identities) {
       if (skip.has(id)) continue
       const stat = stats.get(id) ?? { recent: 0, base: 0, posts: 0, fresh: 0, support: new Set<string>() }
