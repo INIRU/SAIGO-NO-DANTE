@@ -1319,7 +1319,16 @@
         "defenseSkills": "Defense skills",
         "attackTypes": "Attack types",
         "sinResources": "Sin resources",
-        "egoCost": "E.G.O cost"
+        "egoCost": "E.G.O cost",
+        "activation": {
+          "easy": "Easy",
+          "medium": "Medium",
+          "hard": "Hard",
+          "impossible": "Impossible"
+        },
+        "activationTurns": "{count} turns",
+        "activationTurnsOver": "{count}+ turns",
+        "activationChance": "{percent}%"
       },
       "mainKeywords": {
         "label": "Plan main keywords",

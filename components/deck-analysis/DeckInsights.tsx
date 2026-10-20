@@ -6,7 +6,8 @@ import { useLocale, useTranslations } from 'next-intl'
 import { SIN_COLORS, getSinIconUrl } from '@/lib/constants/sin'
 import { normalizeThemeKeyword } from '@/lib/constants/keywords'
 import { computeKeywordDistribution } from '@/lib/planner/fusion'
-import { getPassiveCondition, type PlannerPassiveLike } from '@/lib/planner/passives'
+import { getPassiveCondition, passiveRequirements, type PlannerPassiveLike } from '@/lib/planner/passives'
+import { ACTIVATION_ORDER, STOCK_MAX_TURNS, rateIdentityPassive, type PassiveActivation, type SinWeights } from '@/lib/decks/passive-activation'
 import KeywordChart, { type KeywordChartContributor } from '@/components/planner/KeywordChart'
 import SkillDescription from '@/components/skill/SkillDescription'
 import { localizeDeckKeyword } from '@/components/decks/decks-types'
@@ -35,6 +36,8 @@ export type DeckInsightIdentity = {
   imageUrl: string
   keywords: string[]
   passives: DeckInsightPassive[]
+  /** Cards per sin of this identity's skill deck (its sin production alone); without it no activation level is shown. */
+  deck?: SinWeights
 }
 
 type Props = {
@@ -91,10 +94,31 @@ export default function DeckInsights({ identities, sinCounts, baseSinCounts, sum
   const owners = useMemo(() => identities.map(identity => ({ id: identity.id, keywords: identity.keywords, texts: identity.passives.map(passive => passive.description) })), [identities])
   const ownKeywords = useOwnKeywordSets(owners)
 
-  const groups = identities.flatMap(identity => {
-    const list = identity.passives.filter(passive => passive.passive_type === passiveType)
+  // Who fights: the deployed identities, or every placed one while nobody is deployed yet. Their skill decks feed every passive's activation.
+  const fieldedIds = useMemo(() => {
+    const deployed = deployedIds ? identities.filter(identity => deployedIds.has(identity.id)) : []
+    return new Set((deployed.length ? deployed : identities).map(identity => identity.id))
+  }, [identities, deployedIds])
+  const team = useMemo(() => identities.flatMap(identity => (fieldedIds.has(identity.id) && identity.deck ? [identity.deck] : [])), [identities, fieldedIds])
+
+  // Hardest to activate first inside an identity; passives without a stock or resonance condition keep their order after the rated ones.
+  const groups = useMemo(() => identities.flatMap(identity => {
+    const list = identity.passives
+      .filter(passive => passive.passive_type === passiveType)
+      .map((passive, index) => ({
+        passive,
+        index,
+        activation: rateIdentityPassive(passive, passiveRequirements(passive), fieldedIds.has(identity.id), team),
+      }))
+      .sort((a, b) => (a.activation ? ACTIVATION_ORDER[a.activation.level] : 4) - (b.activation ? ACTIVATION_ORDER[b.activation.level] : 4) || a.index - b.index)
     return list.length ? [{ identity, list }] : []
-  })
+  }), [identities, passiveType, fieldedIds, team])
+
+  const activationValue = (activation: PassiveActivation) => {
+    if (activation.level === 'impossible') return undefined
+    if (activation.kind === 'resonance') return tDeck('stats.activationChance', { percent: Math.round(activation.chance * 100) })
+    return activation.turns === null ? tDeck('stats.activationTurnsOver', { count: STOCK_MAX_TURNS }) : tDeck('stats.activationTurns', { count: activation.turns })
+  }
 
   return (
     <div className="deck-insights">
@@ -135,7 +159,7 @@ export default function DeckInsights({ identities, sinCounts, baseSinCounts, sum
                     </p>
                   </div>
                   <div className="deck-passives__body">
-                    {list.map((passive, index) => {
+                    {list.map(({ passive, activation }, index) => {
                       const conditionPassive = asConditionPassive(passive)
                       const { requirements, met: isMet, primarySin } = getPassiveCondition(conditionPassive, sinCounts)
                       const isResonance = passive.active_cond === 'resonance'
@@ -157,6 +181,9 @@ export default function DeckInsights({ identities, sinCounts, baseSinCounts, sum
                                   </span>
                                 ))}
                               </span>
+                            )}
+                            {activation && (
+                              <span className="deck-passive__rate" data-level={activation.level} title={activationValue(activation)}>{tDeck(`stats.activation.${activation.level}`)}</span>
                             )}
                             {distributionWarning && <span className="deck-passive__warn" title={tDeck('stats.passiveWarning')}>!</span>}
                           </div>
@@ -228,6 +255,10 @@ export default function DeckInsights({ identities, sinCounts, baseSinCounts, sum
         .deck-passive__count { font-variant-numeric: tabular-nums; }
         .deck-passive__req[data-met='false'] .deck-passive__count { color: #e07060; }
         .deck-passive__desc > div { color: #c9b99c !important; font-size: 0.875rem !important; line-height: 1.65 !important; }
+        .deck-passive__rate { display: inline-flex; align-items: center; min-height: 1.5rem; padding: 0 0.5rem; border-radius: 0.25rem; background: var(--bg-elevated); color: var(--text-secondary); font-size: 0.75rem; font-weight: 600; }
+        .deck-passive__rate[data-level='easy'] { background: color-mix(in srgb, var(--gold-light) 14%, transparent); color: var(--gold-light); }
+        .deck-passive__rate[data-level='hard'] { background: color-mix(in srgb, #9b2c23 30%, transparent); color: var(--error); }
+        .deck-passive__rate[data-level='impossible'] { background: #9b2c23; color: var(--text-primary); }
         .deck-passive__warn { display: inline-flex; width: 1.25rem; height: 1.25rem; align-items: center; justify-content: center; border-radius: 999px; background: #9b2c23; color: #e8dcc8; font-size: 0.75rem; font-weight: 700; }
       `}</style>
     </div>
