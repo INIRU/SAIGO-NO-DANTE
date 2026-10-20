@@ -50,9 +50,9 @@ describe('rising', () => {
 
 // Identities by the formations they are fielded in, weighted by each post's visitors.
 const NOW = Date.parse('2026-10-20T00:00:00Z')
-const OLD = '2026-06-01T00:00:00Z'
-const day = (ago: number) => new Date(NOW - ago * 86_400_000).toISOString()
-const formation = (id: string, identities: string[], created_at = OLD, kind: 'deck' | 'planner' = 'deck'): Formation => ({ kind, id, identities, votes: 0, views: 0, created_at })
+const OLD = Date.parse('2026-06-01T00:00:00Z')
+const day = (ago: number) => NOW - ago * 86_400_000
+const formation = (id: string, identities: string[], createdAt = OLD, kind: 'deck' | 'planner' = 'deck'): Formation => ({ kind, id, identities, votes: 0, views: 0, createdAt })
 const seen = (entity_id: string, recent: number, base: number) => ({ entity_id, recent, base })
 const idsOf = (rows: { id: string }[]) => rows.map(row => row.id)
 

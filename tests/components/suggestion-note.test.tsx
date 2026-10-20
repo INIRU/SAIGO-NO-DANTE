@@ -51,9 +51,11 @@ describe('identity picker suggestion note', () => {
     expect(html.match(/data-partner-face/g)).toHaveLength(1)
   })
 
-  it('REQ-DECKS-033 names the archetype beside the ribbon when it has keywords', () => {
+  it('REQ-DECKS-033 names the archetype beside the ribbon from its keywords, or its affiliation when it has none', () => {
     expect(render([full], { keywords: ['출혈', '진동', '충전'], factions: [] })).toContain('archetype{&quot;name&quot;:&quot;출혈, 진동&quot;}')
-    expect(render([full], { keywords: [], factions: ['거미집'] })).not.toContain('archetype{')
+    // With no keyword standing out, the affiliation names the archetype.
+    expect(render([full], { keywords: [], factions: ['거미집'] })).toContain('archetype{&quot;name&quot;:&quot;거미집&quot;}')
+    expect(render([full], { keywords: [], factions: [] })).not.toContain('archetype{')
     expect(render([full])).not.toContain('archetype{')
   })
 

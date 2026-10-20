@@ -7,7 +7,7 @@ const state = vi.hoisted(() => ({
   asked: {} as Record<string, string[]>,
   gone: new Set<string>(),
   asks: [] as { post_kind: string; max_rows?: number }[],
-  formations: [] as { kind: 'deck' | 'planner'; id: string; identities: string[]; votes: number; views: number; created_at?: string }[],
+  formations: [] as { kind: 'deck' | 'planner'; id: string; identities: string[]; votes: number; views: number; createdAt?: number }[],
   tags: [] as string[],
   life: [] as string[],
 }))

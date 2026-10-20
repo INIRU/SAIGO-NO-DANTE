@@ -1,8 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Formation } from '@/lib/discovery/co-occurrence'
+import { catalogOf, identity } from './rec-fixtures'
 
 const state = vi.hoisted(() => ({
   formations: [] as Formation[],
+  catalog: null as unknown,
   rpcError: null as null | { message: string },
   asked: {} as Record<string, string[]>,
   tags: [] as string[],
@@ -13,7 +15,7 @@ vi.mock('next/cache', () => ({
   cacheLife: (profile: string) => state.life.push(profile),
   cacheTag: (...tags: string[]) => state.tags.push(...tags),
 }))
-vi.mock('@/lib/db/meta', () => ({ getFormations: async () => state.formations }))
+vi.mock('@/lib/db/meta', () => ({ getFormations: async () => state.formations, getRecCatalog: async () => state.catalog }))
 vi.mock('@/lib/supabase/admin', () => ({
   createAdminClient: () => ({
     schema: () => ({
@@ -42,6 +44,7 @@ const f = (id: string, identities: string[], extra: Partial<Formation> = {}): Fo
   ({ kind: 'deck', id, identities, votes: 0, views: 0, ...extra })
 
 beforeEach(() => {
+  state.catalog = catalogOf({ identities: [identity('A', 'x'), identity('B', 'y'), identity('C', 'z')] })
   state.rpcError = null
   state.asked = {}
   state.tags = []
