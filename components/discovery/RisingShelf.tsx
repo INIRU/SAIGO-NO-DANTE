@@ -28,7 +28,7 @@ function Rise({ value, className = '' }: { value: number; className?: string }) 
 }
 
 /**
- * "지금 뜨는" on a board: identities and posts whose visitors of the last 3 days rose against the 14 before.
+ * "지금 뜨는" on a board: identities and posts whose visitors of the last 7 days rose against the 21 before.
  * Draws nothing while loading, when the read fails (the database function may not be there yet) or nobody rose.
  */
 export default function RisingShelf({ kind }: { kind: 'deck' | 'planner' }) {
