@@ -3,11 +3,13 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { EditorContent, useEditor, type Editor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import useSWR from "swr";
 import { GIFT_KEYWORD_COLORS } from "@/lib/constants/gift";
 import { assetName } from "@/lib/notes/assets";
-import { Bold, Italic, Heading2, List, ListOrdered, Quote, Undo2, Redo2, Copy, Eye, Pencil, Link2, X } from "lucide-react";
+import { filterMentions, findMentionQuery } from "@/lib/notes/mention";
+import { translations } from "@/lib/i18n/translations";
+import { AtSign, Bold, Italic, Heading2, List, ListOrdered, Quote, Undo2, Redo2, Copy, Eye, Pencil, Link2, X } from "lucide-react";
 import {
   NoteAutocompleteDropdown,
   buildKeywordPool,
@@ -58,6 +60,18 @@ export default function NoteDocumentEditor({
     label:assetName(gift,lang), type:'egogift', typeLabel:label('기프트','ギフト','Gift'), color:GIFT_KEYWORD_COLORS[gift.keyword ?? ''] ?? '#c8b898',
     imageUrl:gift.image_url ?? undefined, token:'[gift:'+gift.id+']', syntax:'inline',
   })),[giftCatalog,lang]);
+  // @ mentions: identities and E.G.O of the game, the same catalog requests the pickers use. Same-name entries are told apart by sinner.
+  const tSinner=useTranslations('sinner');
+  const {data:identityCatalog}=useSWR('/api/notes/assets?kind=identity&catalog=1',fetchNoteAssets,{revalidateOnFocus:false});
+  const {data:egoCatalog}=useSWR('/api/notes/assets?kind=ego&catalog=1',fetchNoteAssets,{revalidateOnFocus:false});
+  const mentionPool=useMemo<AutocompleteSuggestion[]>(()=>[...(identityCatalog ?? []),...(egoCatalog ?? [])].map(asset=>{
+    const kind=asset.kind==='ego'?'ego':'identity', sinnerId=asset.identity?.sinner_id ?? asset.sinnerId;
+    return {
+      label:assetName(asset,lang), type:kind, color:'var(--text-primary)', imageUrl:(kind==='identity'?asset.image_url:asset.ego?.image_url ?? asset.image_url) ?? undefined,
+      typeLabel:`${sinnerId ? tSinner(sinnerId)+' · ' : ''}${kind==='identity'?label('인격','人格','Identity'):'E.G.O'}`,
+      token:`[@${kind}:${asset.id}]`, syntax:'inline' as const, aliases:[asset.name,asset.name_en,asset.name_jp,...Object.values(translations[`sinner.${sinnerId}` as keyof typeof translations] ?? {})].filter((name): name is string => Boolean(name)),
+    };
+  }),[identityCatalog,egoCatalog,lang,tSinner]);
   const last = useRef(value),
     change = useRef(onChange);
   useEffect(() => {
@@ -96,6 +110,17 @@ export default function NoteDocumentEditor({
     }
     const selection = current.state.selection;
     const before = textBeforeCaret(current);
+    const mention=findMentionQuery(before);
+    if (mention) {
+      const found=filterMentions(mentionPool,mention.query,6);
+      setSuggestions(found);
+      setSelected(0);
+      if (found.length) {
+        const point = current.view.coordsAtPos(selection.from);
+        setAnchor({ left: point.left, top: point.bottom + 6, width: 340 });
+      }
+      return;
+    }
     const context=getNoteAutocompleteContext(before,before.length);
     const named=(item:AutocompleteSuggestion)=>nameEnd(before,item.label)>=0;
     // A name that is both a keyword and a gift (데스페라도) offers both; the keyword stays first.
@@ -126,6 +151,15 @@ export default function NoteDocumentEditor({
     }
     const selection = editor.state.selection;
     const before = textBeforeCaret(editor);
+    const mentioned = item.token.match(/^\[@(identity|ego):(.+)\]$/);
+    if (mentioned) {
+      const typed = findMentionQuery(before);
+      if (!typed) return;
+      editor.chain().focus(undefined, { scrollIntoView: false }).deleteRange({ from: selection.from - typed.length, to: selection.from })
+        .insertContent([{type:'noteMention',attrs:{kind:mentioned[1],id:mentioned[2],name:item.label}},{type:'text',text:' '}]).run();
+      setSuggestions([]);
+      return;
+    }
     const inline = item.type==='keyword' || item.token.startsWith('[gift:');
     const end = inline ? nameEnd(before, item.label) : -1;
     const context = getNoteAutocompleteContext(before, before.length);
@@ -258,6 +292,7 @@ export default function NoteDocumentEditor({
             title: label("인용", "引用", "Quote"),
             run: () => editor?.chain().focus().toggleBlockquote().run(),
           },
+          { Icon: AtSign, title: label("인격·E.G.O 멘션", "人格・E.G.Oメンション", "Mention identity or E.G.O"), run: () => editor?.chain().focus().insertContent("@").run() },
           { Icon: Copy, title: label("블록 복제", "ブロック複製", "Duplicate block"), run: () => { if (editor) duplicateNoteBlock(editor, lang) } },
           {
             Icon: Undo2,
