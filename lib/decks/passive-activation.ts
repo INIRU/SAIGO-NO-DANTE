@@ -29,13 +29,13 @@ export const RESONANCE_MEDIUM_CHANCE = 0.25
 export const ACTIVATION_ORDER: Record<ActivationLevel, number> = { impossible: 0, hard: 1, medium: 2, easy: 3 }
 
 /** Per-slot chance of each required sin (the rest of the deck makes some other sin). */
-type Slot = number[]
+export type Slot = number[]
 
 /**
  * Slots of a turn: a fight starts with one column per fielded identity and one more column a turn (random identity), up to 12.
  * Every identity has floor(S/n) of them; the S mod n others belong to a random identity, drawn as the team's average slot.
  */
-function slotsAtTurn(decks: Slot[], turn: number): Slot[] {
+export function slotsAtTurn(decks: Slot[], turn: number): Slot[] {
   const n = decks.length
   const total = Math.min(MAX_SLOTS, n + turn - 1)
   const each = Math.floor(total / n)
@@ -45,13 +45,13 @@ function slotsAtTurn(decks: Slot[], turn: number): Slot[] {
 }
 
 /** Distribution of the capped per-sin counts after the given slots: index = mixed radix of the counts (capped at each requirement). */
-function emptyState(caps: number[]): Float64Array {
+export function emptyState(caps: number[]): Float64Array {
   const states = new Float64Array(caps.reduce((size, cap) => size * (cap + 1), 1))
   states[0] = 1
   return states
 }
 
-function addSlot(states: Float64Array, caps: number[], slot: Slot): Float64Array {
+export function addSlot(states: Float64Array, caps: number[], slot: Slot): Float64Array {
   const next = new Float64Array(states.length)
   const none = Math.max(0, 1 - slot.reduce((sum, p) => sum + p, 0))
   for (let state = 0; state < states.length; state++) {
@@ -68,7 +68,24 @@ function addSlot(states: Float64Array, caps: number[], slot: Slot): Float64Array
   return next
 }
 
-const reached = (states: Float64Array) => states[states.length - 1]
+export const reached = (states: Float64Array) => states[states.length - 1]
+
+/**
+ * The per-sin caps (the highest count any requirement asks) and each identity's chance per card of making each required sin;
+ * null when no fielded identity makes one of the required sins at all. Shared with the recommender (`lib/discovery/passive-fit.ts`).
+ */
+export function prepareActivation(requirements: readonly ActivationRequirement[], team: readonly SinWeights[]): { caps: number[]; decks: Slot[] } | null {
+  const needs = new Map<SinType, number>()
+  for (const { sin, count } of requirements) needs.set(sin, Math.max(needs.get(sin) ?? 0, count))
+  const sins = [...needs.keys()]
+  const caps = sins.map(sin => needs.get(sin)!)
+  const decks: Slot[] = team.map(weights => {
+    const total = Object.values(weights).reduce<number>((sum, value) => sum + (value ?? 0), 0)
+    return sins.map(sin => (total > 0 ? (weights[sin] ?? 0) / total : 0))
+  })
+  if (sins.some((_, j) => decks.every(deck => deck[j] === 0))) return null
+  return { caps, decks }
+}
 
 /**
  * How easily a passive's condition comes true for the fielded team, from the sin of each skill-deck card (see the change's
@@ -79,15 +96,9 @@ const reached = (states: Float64Array) => states[states.length - 1]
  */
 export function ratePassiveActivation(kind: ActivationKind, requirements: readonly ActivationRequirement[], team: readonly SinWeights[]): PassiveActivation | null {
   if (team.length === 0 || requirements.length === 0) return null
-  const needs = new Map<SinType, number>()
-  for (const { sin, count } of requirements) needs.set(sin, Math.max(needs.get(sin) ?? 0, count))
-  const sins = [...needs.keys()]
-  const caps = sins.map(sin => needs.get(sin)!)
-  const decks: Slot[] = team.map(weights => {
-    const total = Object.values(weights).reduce<number>((sum, value) => sum + (value ?? 0), 0)
-    return sins.map(sin => (total > 0 ? (weights[sin] ?? 0) / total : 0))
-  })
-  if (sins.some((_, j) => decks.every(deck => deck[j] === 0))) return { level: 'impossible', kind, turns: null, chance: 0 }
+  const prepared = prepareActivation(requirements, team)
+  if (!prepared) return { level: 'impossible', kind, turns: null, chance: 0 }
+  const { caps, decks } = prepared
 
   if (kind === 'stock') {
     let states = emptyState(caps)
