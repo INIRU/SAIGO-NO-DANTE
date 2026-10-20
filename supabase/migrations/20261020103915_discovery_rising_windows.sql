@@ -1,4 +1,4 @@
--- REQ-COMMUNITY-073: like discovery_rising_shares, over a longer window (7 days against the 21 before), and a gap in the
+-- REQ-COMMUNITY-078: like discovery_rising_shares, over a longer window (7 days against the 21 before), and a gap in the
 -- visit log is found by comparison, not by a fixed number: a UTC day whose distinct visitors of the kind are fewer than
 -- `gap_ratio` (default 40%) of the median of the other days' in the window is left out of the entities and the totals alike.
 -- Per entity of `post_kind` ('deck', 'planner' or 'identity'): distinct visitors in the latest `recent_days` UTC days and in

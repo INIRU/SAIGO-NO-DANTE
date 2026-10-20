@@ -1,4 +1,4 @@
--- REQ-COMMUNITY-070: visitors of a board's posts (or of identities) in the latest days against the days before, as a
+-- REQ-COMMUNITY-075: visitors of a board's posts (or of identities) in the latest days against the days before, as a
 -- share of the board's traffic, for the "지금 뜨는" shelf. Replaces discovery_rising (raw counts).
 -- Per entity of `post_kind` ('deck', 'planner' or 'identity'): distinct visitors in the latest `recent_days` UTC days and in
 -- the `base_days` days before them, and the distinct visitors of the whole kind in each window (recent_total, base_total),

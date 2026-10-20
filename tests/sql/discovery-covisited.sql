@@ -1,4 +1,4 @@
--- REQ-COMMUNITY-067. Run against a configured development database after 20261020093407; every fixture is rolled back.
+-- REQ-COMMUNITY-072. Run against a configured development database after 20261020093407; every fixture is rolled back.
 begin;
 do $$
 declare

@@ -59,7 +59,7 @@ beforeEach(() => {
 })
 
 describe('getIdentityRecommendations', () => {
-  it('REQ-COMMUNITY-062 sends companions with their card fields and the identity posts in window order, skipping deleted posts', async () => {
+  it('REQ-COMMUNITY-067 sends companions with their card fields and the identity posts in window order, skipping deleted posts', async () => {
     const result = await getIdentityRecommendations('A')
     expect(result.companions).toEqual([expect.objectContaining({ id: 'B', sinner_id: 'yisang', count: 4 })])
     // d2 has window visitors; then votes: gone (deleted) 50, d1 3, p1 1.
@@ -68,18 +68,18 @@ describe('getIdentityRecommendations', () => {
     expect(state.asked.md_plans).toEqual(['p1'])
   })
 
-  it('REQ-COMMUNITY-063 is cached for hours under the deck and plan list tags', async () => {
+  it('REQ-COMMUNITY-068 is cached for hours under the deck and plan list tags', async () => {
     await getIdentityRecommendations('A')
     expect(state.life).toEqual(['hours'])
     expect(state.tags).toEqual(expect.arrayContaining(['decks-list', 'plans-list']))
   })
 
-  it('REQ-COMMUNITY-063 fails loudly on a read error so the page hides the section', async () => {
+  it('REQ-COMMUNITY-068 fails loudly on a read error so the page hides the section', async () => {
     state.rpcError = { message: 'down' }
     await expect(getIdentityRecommendations('A')).rejects.toThrow()
   })
 
-  it('REQ-COMMUNITY-063 returns empty lists for an identity no formation fields', async () => {
+  it('REQ-COMMUNITY-068 returns empty lists for an identity no formation fields', async () => {
     expect(await getIdentityRecommendations('nobody')).toEqual({ companions: [], posts: [] })
   })
 })

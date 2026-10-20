@@ -18,7 +18,7 @@ const companion = (id: string, count: number): IdentityCompanion =>
 const post = (kind: 'deck' | 'planner', id: string): IdentityPost => ({ kind, post: { id, title: id } })
 
 describe('IdentityRecommendations', () => {
-  it('REQ-COMMUNITY-061 links each companion to its detail page and shows the shared count with a unit', () => {
+  it('REQ-COMMUNITY-066 links each companion to its detail page and shows the shared count with a unit', () => {
     const html = renderToStaticMarkup(<IdentityRecommendations companions={[companion('B', 7), companion('C', 3)]} posts={[]} />)
     expect(html).toContain('href="/sinners/yisang/identities/B"')
     expect(html).toContain('href="/sinners/yisang/identities/C"')
@@ -27,7 +27,7 @@ describe('IdentityRecommendations', () => {
     expect(html).not.toContain('identity.recommendations.popular')
   })
 
-  it('REQ-COMMUNITY-062 shows popular decks and plans as their own cards', () => {
+  it('REQ-COMMUNITY-067 shows popular decks and plans as their own cards', () => {
     const html = renderToStaticMarkup(<IdentityRecommendations companions={[]} posts={[post('deck', 'd1'), post('planner', 'p1')]} />)
     expect(html).toContain('<span data-deck="true">d1</span>')
     expect(html).toContain('<span data-plan="true">p1</span>')
@@ -35,7 +35,7 @@ describe('IdentityRecommendations', () => {
     expect(html).not.toContain('identity.recommendations.companions')
   })
 
-  it('REQ-COMMUNITY-063 draws nothing, not even a heading, when both lists are empty', () => {
+  it('REQ-COMMUNITY-068 draws nothing, not even a heading, when both lists are empty', () => {
     expect(renderToStaticMarkup(<IdentityRecommendations companions={[]} posts={[]} />)).toBe('')
   })
 })
