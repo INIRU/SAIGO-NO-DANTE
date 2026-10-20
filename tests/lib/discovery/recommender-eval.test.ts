@@ -31,19 +31,19 @@ describe('evaluation metrics', () => {
 })
 
 const identity = (id: string, sinner: string, release: string | null = '2023-01-01') => ({
-  id, sinner_id: sinner, name_kr: id, rarity: 2, release_date: release, keywords: [], skill_keyword_list: [], unit_keyword_list: [], association_list: [], affiliation: null, sin_affinity: null, game_id: null,
+  id, sinner_id: sinner, name_kr: id, rarity: 2, release_date: release, keywords: [], skill_keyword_list: [], association_list: [], affiliation: null,
 })
-const ego = (id: string, sinner: string, grade: string) => ({ id, sinner_id: sinner, grade, sin_affinity: null, keywords: [], release_date: '2023-01-01', cost: null, game_id: null, name_kr: id })
+const ego = (id: string, sinner: string, grade: string) => ({ id, sinner_id: sinner, grade, sin_affinity: null, keywords: [], release_date: '2023-01-01', cost: null })
 const formation = (key: string, author: string, identities: string[], extra: Partial<EvalFormation> = {}): EvalFormation => ({
-  key, kind: 'deck', id: key, createdAt: Date.parse('2026-10-01'), author, identities, distribution: {}, egos: [], mainKeywords: [], floors: [], ...extra,
+  key, kind: 'deck', id: key, votes: 0, views: 0, createdAt: Date.parse('2026-10-01'), author, identities, distribution: {}, egos: [], mainKeywords: [], floors: [], ...extra,
 })
-const theme = (id: number, floors: number[]) => ({ id, name: String(id), difficulty: 'hard', ego_gift_ids: [9001, 9002, 9003], specific_ego_gift_ids: [], floor_info: { 하드: floors } })
+const theme = (id: number, floors: number[]) => ({ id, difficulty: 'hard', ego_gift_ids: [9001, 9002, 9003], specific_ego_gift_ids: [], floor_info: { 하드: floors } })
 
 const snapshot: Snapshot = {
   catalog: {
     identities: [identity('a1', 'a'), identity('a2', 'a'), identity('a3', 'a', '2026-12-01'), identity('b1', 'b'), identity('b2', 'b'), identity('c1', 'c'), identity('c2', 'c')],
     egos: [ego('e-z', 'a', 'ZAYIN'), ego('e-t', 'a', 'TETH'), ego('e-h', 'a', 'HE'), ego('e-h2', 'a', 'HE')],
-    skills: [], passives: [], keywords: [],
+    skills: [], passives: [], gifts: [], themes: [theme(10, [1, 2]), theme(11, [1, 2]), theme(12, [1]), theme(13, [3])],
   },
   formations: [
     formation('f1', 'u1', ['a1', 'b1', 'c1'], {
@@ -53,8 +53,6 @@ const snapshot: Snapshot = {
     formation('f2', 'u1', ['a2', 'b1', 'c1']),
     formation('f3', 'u2', ['a1', 'b2']),
   ],
-  themes: [theme(10, [1, 2]), theme(11, [1, 2]), theme(12, [1]), theme(13, [3])],
-  gifts: [],
   exportedAt: 'test',
 }
 
@@ -80,12 +78,16 @@ describe('leave-one-out queries', () => {
     formations: [formation('w', 'u1', ['a1', 'b1', 'c1', 'd1'])],
   }
 
-  it('REQ-META-031 shrinks the known context for the half and first-picks regimes', () => {
-    const sizes = (regime: 'full' | 'half' | 'three' | 'one') => [...new Set(identityQueries(wide, 'formation', regime).map(q => q.context.length))]
+  it('REQ-META-031 shrinks the known context for the half, first-picks and empty-board regimes', () => {
+    const sizes = (regime: 'full' | 'half' | 'three' | 'one' | 'zero') => [...new Set(identityQueries(wide, 'formation', regime).map(q => q.context.length))]
     expect(sizes('full')).toEqual([3])
     expect(sizes('half')).toEqual([2])
     expect(sizes('three')).toEqual([3])
     expect(sizes('one')).toEqual([1])
+    // An empty board: every member of a one-person post is still a query.
+    expect(sizes('zero')).toEqual([0])
+    expect(identityQueries({ ...wide, formations: [formation('solo', 'u1', ['a1'])] }, 'formation', 'zero')).toHaveLength(1)
+    expect(identityQueries({ ...wide, formations: [formation('solo', 'u1', ['a1'])] }, 'formation', 'one')).toHaveLength(0)
   })
 
   it('REQ-META-031 grows the context one identity at a time for the stability sequences', () => {

@@ -6,10 +6,10 @@ import type { EvalFormation, Snapshot } from './load-snapshot'
 export type Split = 'formation' | 'author'
 /**
  * How much of the rest of the formation is known: full = every other member; half = a deterministic half (a user midway);
- * three / one = the first picks, where suggestions matter most.
+ * three / one / zero = the first picks (zero: an empty board), where suggestions matter most.
  */
-export type Regime = 'full' | 'half' | 'three' | 'one'
-const contextSize = (regime: Regime, others: number) => regime === 'full' ? others : regime === 'half' ? Math.max(1, Math.ceil(others / 2)) : Math.min(others, regime === 'three' ? 3 : 1)
+export type Regime = 'full' | 'half' | 'three' | 'one' | 'zero'
+const contextSize = (regime: Regime, others: number) => regime === 'zero' ? 0 : regime === 'full' ? others : regime === 'half' ? Math.max(1, Math.ceil(others / 2)) : Math.min(others, regime === 'three' ? 3 : 1)
 
 export function hash(text: string): number {
   let h = 2166136261
@@ -20,8 +20,10 @@ export function hash(text: string): number {
 export function trainFor(formations: readonly EvalFormation[], split: Split) {
   const cache = new Map<string, EvalFormation[]>()
   return (f: EvalFormation) => {
-    let train = cache.get(f.key)
-    if (!train) { train = formations.filter(g => (split === 'author' ? g.author !== f.author : g !== f)); cache.set(f.key, train) }
+    // One array per author (or per formation), so a model built from it can be cached by the array itself.
+    const key = split === 'author' ? f.author : f.key
+    let train = cache.get(key)
+    if (!train) { train = formations.filter(g => (split === 'author' ? g.author !== f.author : g !== f)); cache.set(key, train) }
     return train
   }
 }
@@ -37,13 +39,13 @@ export function identityQueries(snapshot: Snapshot, split: Split, regime: Regime
   const sinnerOf = new Map(snapshot.catalog.identities.map(i => [i.id, i.sinner_id]))
   const out: IdentityQuery[] = []
   for (const f of snapshot.formations) {
-    if (f.identities.length < 2) continue
+    if (f.identities.length < (regime === 'zero' ? 1 : 2)) continue
     for (const held of f.identities) {
       let context = f.identities.filter(id => id !== held)
       if (regime !== 'full') context = [...context].sort((a, b) => hash(`${f.key}:${held}:${a}`) - hash(`${f.key}:${held}:${b}`)).slice(0, contextSize(regime, context.length))
       const sinner = sinnerOf.get(held)!
       const candidates = snapshot.catalog.identities
-        .filter(i => i.sinner_id === sinner && !context.includes(i.id) && (i.id === held || releasedBy(i.release_date, f.createdAt)))
+        .filter(i => i.sinner_id === sinner && i.rarity > 1 && !context.includes(i.id) && (i.id === held || releasedBy(i.release_date, f.createdAt)))
         .map(i => i.id)
       out.push({ f, held, sinner, context, candidates, now: f.createdAt, mainKeywords: f.mainKeywords, train: train(f) })
     }
@@ -93,7 +95,7 @@ export function themeQueries(snapshot: Snapshot, split: Split): FloorQuery[] {
       if (!entry.theme) continue
       const used = f.floors.filter(other => other.floor !== entry.floor && other.theme).map(other => other.theme!)
       const key = DIFFICULTY_FLOOR_KEY[(entry.difficulty as Difficulty) in DIFFICULTY_FLOOR_KEY ? entry.difficulty as Difficulty : 'hard']
-      const available = getAvailableThemes(snapshot.themes as { floor_info: Record<string, number[] | string> | null; id: number }[], key, entry.floor)
+      const available = getAvailableThemes(snapshot.catalog.themes, key, entry.floor)
         .map(theme => String(theme.id)).filter(id => !used.includes(id))
       const candidates = available.includes(entry.theme) ? available : [...available, entry.theme]
       out.push({ f, floor: entry.floor, difficulty: entry.difficulty, held: entry.theme, candidates, usedThemes: used, takenGifts: [], theme: entry.theme, now: f.createdAt, train: train(f) })
@@ -105,7 +107,7 @@ export function themeQueries(snapshot: Snapshot, split: Split): FloorQuery[] {
 /** Hide one gift of a floor; rank the gifts its pack offers that the plan has not taken elsewhere. */
 export function giftQueries(snapshot: Snapshot, split: Split): FloorQuery[] {
   const train = trainFor(snapshot.formations, split)
-  const themeById = new Map(snapshot.themes.map(theme => [String(theme.id), theme]))
+  const themeById = new Map(snapshot.catalog.themes.map(theme => [String(theme.id), theme]))
   const out: FloorQuery[] = []
   for (const f of snapshot.formations) {
     for (const entry of f.floors) {
@@ -137,7 +139,7 @@ export function stabilityQueries(snapshot: Snapshot, split: Split): IdentityQuer
       const others = f.identities.filter(id => id !== held).sort((a, b) => hash(`${f.key}:${held}:${a}`) - hash(`${f.key}:${held}:${b}`))
       const sinner = sinnerOf.get(held)!
       const candidates = snapshot.catalog.identities
-        .filter(i => i.sinner_id === sinner && !others.includes(i.id) && (i.id === held || releasedBy(i.release_date, f.createdAt)))
+        .filter(i => i.sinner_id === sinner && i.rarity > 1 && !others.includes(i.id) && (i.id === held || releasedBy(i.release_date, f.createdAt)))
         .map(i => i.id)
       // From two identities up: a first pick has nothing to be stable against.
       out.push(Array.from({ length: others.length - 1 }, (_, step) => ({ f, held, sinner, context: others.slice(0, step + 2), candidates, now: f.createdAt, mainKeywords: f.mainKeywords, train: train(f) })))

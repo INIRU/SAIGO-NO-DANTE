@@ -58,5 +58,5 @@ write('keywords', keywords)
 // Only to keep one author's near-copies on the same side of an evaluation split; the id itself is never written.
 const author = row => crypto.createHash('sha256').update(`recsys:${row.user_id ?? row.guest_tag ?? row.id}`).digest('hex').slice(0, 10)
 write('decks', decks.map(({ user_id, guest_tag, ...deck }) => ({ ...deck, author: author({ user_id, guest_tag, id: deck.id }) })))
-write('plans', plans.map(plan => ({ id: plan.id, author: author(plan), created_at: plan.created_at, tags: plan.tags, difficulty: plan.difficulty, deck: plan.deck, egos: plan.egos, floor_plan: plan.floor_plan })))
+write('plans', plans.map(plan => ({ id: plan.id, author: author(plan), created_at: plan.created_at, vote_count: plan.vote_count, view_count: plan.view_count, tags: plan.tags, difficulty: plan.difficulty, deck: plan.deck, egos: plan.egos, floor_plan: plan.floor_plan })))
 write('meta', { exported_at: new Date().toISOString() })

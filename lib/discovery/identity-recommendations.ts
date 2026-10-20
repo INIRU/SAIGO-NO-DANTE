@@ -1,8 +1,9 @@
 import { cacheLife, cacheTag } from 'next/cache'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
-import { getFormations } from '@/lib/db/meta'
+import { getFormations, getRecCatalog } from '@/lib/db/meta'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { companionsOf, popularWith } from '@/lib/discovery/co-occurrence'
+import { popularWith } from '@/lib/discovery/co-occurrence'
+import { buildIdentityModel, companionsOfIdentity } from '@/lib/discovery/identity-recs'
 import { popularSince } from '@/lib/discovery/update-window'
 import { DISCOVERY_COLUMNS, DISCOVERY_TABLE, formatDiscoveryPosts, type DiscoveryKind } from '@/lib/discovery/recommend'
 
@@ -20,8 +21,8 @@ export async function getIdentityRecommendations(identityId: string): Promise<Id
   'use cache'
   cacheLife('hours')
   cacheTag(CACHE_TAGS.decksList, CACHE_TAGS.plansList, CACHE_TAGS.identities)
-  const formations = await getFormations()
-  const companions = companionsOf(formations, identityId)
+  const [formations, catalog] = await Promise.all([getFormations(), getRecCatalog()])
+  const companions = companionsOfIdentity(buildIdentityModel(formations, catalog), identityId)
   if (!formations.some(formation => formation.identities.includes(identityId))) return { companions: [], posts: [] }
   const db = createAdminClient().schema('limbus')
   // the RPC returns each board's 12 most visited posts, so a post fielding this identity ranks by visits only when it is among them; the rest fall back to votes. A per-identity count would need a new function.
