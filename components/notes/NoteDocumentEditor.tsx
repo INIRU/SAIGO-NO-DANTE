@@ -7,7 +7,7 @@ import { useLocale } from "next-intl";
 import useSWR from "swr";
 import { GIFT_KEYWORD_COLORS } from "@/lib/constants/gift";
 import { assetName } from "@/lib/notes/assets";
-import { Bold, Italic, Heading2, List, ListOrdered, Quote, Undo2, Redo2, Eye, Pencil, Link2, X } from "lucide-react";
+import { Bold, Italic, Heading2, List, ListOrdered, Quote, Undo2, Redo2, Copy, Eye, Pencil, Link2, X } from "lucide-react";
 import {
   NoteAutocompleteDropdown,
   buildKeywordPool,
@@ -16,7 +16,7 @@ import {
   type AutocompleteSuggestion,
   type CaretAnchor,
 } from "./NoteAutocomplete";
-import { noteBlockExtensions, NoteInput, notePlaceholder } from "./NoteBlocks";
+import { noteBlockExtensions, NoteBlockKeys, NoteInput, notePlaceholder, duplicateNoteBlock } from "./NoteBlocks";
 import { NoteAssetsProvider, fetchNoteAssets } from "./NoteBlockViewer";
 import { pendingNoteUploads } from "@/lib/notes/images";
 import { useKeywords } from '@/components/providers/KeywordProvider';
@@ -152,6 +152,7 @@ export default function NoteDocumentEditor({
       NoteImage,
       ...noteBlockExtensions,
       NoteInput.configure({lang}),
+      NoteBlockKeys.configure({lang}),
       Placeholder.configure({
         includeChildren: true,
         // Only the line being typed on shows the hint (every empty line showed it before).
@@ -240,6 +241,7 @@ export default function NoteDocumentEditor({
             title: label("인용", "引用", "Quote"),
             run: () => editor?.chain().focus().toggleBlockquote().run(),
           },
+          { Icon: Copy, title: label("블록 복제", "ブロック複製", "Duplicate block"), run: () => { if (editor) duplicateNoteBlock(editor, lang) } },
           {
             Icon: Undo2,
             title: label("실행 취소", "元に戻す", "Undo"),
