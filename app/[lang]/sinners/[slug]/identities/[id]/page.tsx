@@ -15,6 +15,7 @@ import JsonLd, { breadcrumbJsonLd, gameCharacterJsonLd } from '@/components/seo/
 import { getLocalizedName, getLocalizedKeywordName } from '@/lib/i18n/localize'
 import { getIdentityRecommendations } from '@/lib/discovery/identity-recommendations'
 import IdentityRecommendations from '@/components/identity/IdentityRecommendations'
+import { IdentityRecommendationsSkeleton } from '@/components/deck-detail/RecommendationSkeleton'
 import { getKeywordData } from '@/lib/keywords/server-data'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import type { SupportedLang } from '@/lib/i18n/types'
@@ -183,7 +184,7 @@ export default async function IdentityPage({
           currentSeason={currentSeason}
           sd={sd}
           illust={illust}
-          recommendations={<Suspense key="recommendations" fallback={null}><Recommendations id={id} /></Suspense>}
+          recommendations={<Suspense key="recommendations" fallback={<IdentityRecommendationsSkeleton />}><Recommendations id={id} /></Suspense>}
         />
       </Suspense>
     </>

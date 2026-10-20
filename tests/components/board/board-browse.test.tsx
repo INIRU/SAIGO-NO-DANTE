@@ -71,7 +71,8 @@ it('REQ-COMMUNITY-083 draws the loading shelves on the same rail and grid as the
     expect(shape).toContain(needle)
   }
   const shelves = renderToStaticMarkup(<BoardShelfSkeleton />)
-  expect(count(shelves, '<section')).toBe(2)
+  expect(count(shelves, '<section')).toBe(3)
+  expect(shelves).toContain('data-identity-row-skeleton')
   expect(count(shelves, 'data-board-skeleton')).toBe(1)
   expect(renderToStaticMarkup(<CardGridSkeleton count={4} />).match(/overflow-hidden rounded-lg border/g)).toHaveLength(4)
 })

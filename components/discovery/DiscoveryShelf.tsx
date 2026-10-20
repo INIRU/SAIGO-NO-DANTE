@@ -10,7 +10,7 @@ import BoardCard, { RankPlate } from '@/components/board/BoardCard'
 import { RankNumeral } from '@/components/board/FormationRow'
 import { RiseValue, useRising } from '@/components/board/rise'
 import { IdentityCards, Rail, SectionHead, TextAction, UpdatedRows, baseOf, useBoardData, type BoardData, type Period } from '@/components/board/shared'
-import { BoardShelfSkeleton } from '@/components/board/BoardShelfSkeleton'
+import { BoardShelfSkeleton, RisingShelfSkeleton } from '@/components/board/BoardShelfSkeleton'
 import type { RowPost } from '@/components/board/parts'
 
 export type InitialShelf = BoardData
@@ -33,7 +33,7 @@ export default function DiscoveryShelf({ kind, onBrowse, initialData }: {
   const [days, setDays] = useState<Period>('week')
   // A period tab changes the key: the shelves stay as they are until the new period arrives.
   const { data, error, mutate } = useBoardData(kind, days, initialData)
-  const rising = useRising(kind)
+  const { feed: rising, loading: risingLoading } = useRising(kind)
   const base = baseOf(kind)
 
   if (error && !data) {
@@ -94,6 +94,8 @@ export default function DiscoveryShelf({ kind, onBrowse, initialData }: {
             <Rail>{data.popular.slice(0, 6).map((post, index) => <BoardCard key={post.id} kind={kind} post={post as RowPost} lead={<RankPlate rank={index + 1} />} />)}</Rail>
           )}
         </section>
+
+        {risingLoading && <RisingShelfSkeleton />}
 
         {showRising && (
           <section data-shelf="rising" aria-labelledby="shelf-rising" className="space-y-5">

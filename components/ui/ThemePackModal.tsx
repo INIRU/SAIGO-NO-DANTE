@@ -5,6 +5,8 @@ import QuietImage from '@/components/ui/QuietImage'
 import { blurPlaceholder } from '@/lib/utils/thumbhash'
 import ThemePackCard from '@/components/ui/ThemePackCard'
 import SuggestionRibbon from '@/components/ui/SuggestionRibbon'
+import { SkeletonPage } from '@/components/ui/Skeleton'
+import { SuggestionTitleSkeleton, ThemeTileSkeleton } from '@/components/ui/SuggestionSkeleton'
 import { filterStyles } from '@/components/board/FilterControls'
 import { Search, X } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
@@ -282,6 +284,8 @@ interface ThemePackPickerModalProps<TTheme extends ThemePackPickerTheme> {
   searchText?: (theme: TTheme) => string
   /** Packs to list first under the "추천" ribbon, most picked first, with how many plans picked each (the number on the card's corner). Hidden while searching. */
   suggested?: { id: number | string; count: number }[] | null
+  /** The suggestions are still being read: the group's place is held with its loading shape. */
+  suggestionsLoading?: boolean
 }
 
 /** Picks a theme pack in the shared picker frame (the identity pickers'): header, a search over the packs, the posters. */
@@ -300,12 +304,14 @@ export function ThemePackPickerModal<TTheme extends ThemePackPickerTheme>({
   meta,
   searchText = theme => [theme.name, theme.name_en, theme.name_jp].join(' '),
   suggested,
+  suggestionsLoading = false,
 }: ThemePackPickerModalProps<TTheme>) {
   const [query, setQuery] = useState('')
   const needle = query.trim().toLocaleLowerCase()
   const shown = needle ? themes.filter(theme => searchText(theme).toLocaleLowerCase().includes(needle)) : themes
   const themeById = new Map(themes.map(theme => [String(theme.id), theme]))
   const picks = needle ? [] : (suggested ?? []).flatMap(row => themeById.has(String(row.id)) ? [{ theme: themeById.get(String(row.id))!, count: row.count }] : []).slice(0, SUGGESTED_LIMIT)
+  const holdPicks = suggestionsLoading && !needle
   const picked = new Set(picks.map(row => String(row.theme.id)))
   const rest = picks.length ? shown.filter(theme => !picked.has(String(theme.id))) : shown
   const card = (theme: TTheme) => (
@@ -346,6 +352,14 @@ export function ThemePackPickerModal<TTheme extends ThemePackPickerTheme>({
             <p className="py-12 text-center text-[0.9375rem] text-[#9c8b73]">{noResultsLabel}</p>
           ) : (
             <>
+              {holdPicks && (
+                <SkeletonPage>
+                  <div className="px-5 pt-5 max-sm:px-3 max-sm:pt-4" data-suggestion-skeleton="theme"><SuggestionTitleSkeleton /></div>
+                  <ul className={filterStyles.pickerGrid} style={{ paddingTop: '0.75rem' }}>
+                    {Array.from({ length: SUGGESTED_LIMIT }, (_, index) => <li key={index}><ThemeTileSkeleton /></li>)}
+                  </ul>
+                </SkeletonPage>
+              )}
               {picks.length > 0 && (
                 <>
                   <div className="px-5 pt-5 max-sm:px-3 max-sm:pt-4"><SuggestionRibbon /></div>
@@ -359,7 +373,7 @@ export function ThemePackPickerModal<TTheme extends ThemePackPickerTheme>({
                   </ul>
                 </>
               )}
-              <ul className={filterStyles.pickerGrid} style={picks.length ? { borderTop: '1px solid #2e2417' } : undefined}>
+              <ul className={filterStyles.pickerGrid} style={picks.length || holdPicks ? { borderTop: '1px solid #2e2417' } : undefined}>
                 {rest.map(theme => <li key={String(theme.id)}>{card(theme)}</li>)}
               </ul>
             </>

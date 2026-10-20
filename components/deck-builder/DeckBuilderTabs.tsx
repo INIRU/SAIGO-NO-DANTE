@@ -1,6 +1,6 @@
 'use client'
 
-import { useSuggestions } from '@/hooks/useSuggestions'
+import { useSuggestionState } from '@/hooks/useSuggestions'
 import { LCB_IDS } from '@/lib/constants/game'
 import { suggestionContext, type SuggestionResponse } from '@/lib/discovery/suggestion-types'
 import { useMemo, useState, type CSSProperties } from 'react'
@@ -124,7 +124,7 @@ export function IdentityTab({
   const chosenBeside = modalSinnerId
     ? suggestionContext(Object.fromEntries(Object.entries(deckSlots).map(([id, identity]) => [id, identity?.id])), formationOrder, modalSinnerId, identityId => lcbIds.has(identityId))
     : []
-  const suggestion = useSuggestions<SuggestionResponse>(
+  const { data: suggestion, loading: suggestionLoading } = useSuggestionState<SuggestionResponse>(
     modalSinnerId && chosenBeside.length ? `/api/discovery/suggest?type=identity&sinner=${modalSinnerId}&with=${chosenBeside.join(',')}` : null,
   )
   const identityById = useMemo(() => new Map(identities.map(identity => [identity.id, identity])), [identities])
@@ -229,6 +229,7 @@ export function IdentityTab({
       selectedUptie={modalSinnerId ? upties[modalSinnerId] ?? 4 : 4}
       suggestions={suggestion?.items}
       archetype={suggestion?.archetype}
+      suggestionsLoading={suggestionLoading}
       partnerIdentity={id => identityById.get(id)}
       onClose={() => setModalSinnerId(null)}
       onSelect={(identity, uptie) => {
@@ -258,7 +259,7 @@ export function EgoTab({
   const [modalSinnerId, setModalSinnerId] = useState<string | null>(null)
   const modalSinner = modalSinnerId ? sinners.find(s => s.id === modalSinnerId) ?? null : null
   const modalIdentityId = modalSinnerId ? identityIds[modalSinnerId] : undefined
-  const suggestion = useSuggestions<SuggestionResponse>(modalIdentityId ? `/api/discovery/suggest?type=ego&identity=${modalIdentityId}` : null)
+  const { data: suggestion, loading: suggestionLoading } = useSuggestionState<SuggestionResponse>(modalIdentityId ? `/api/discovery/suggest?type=ego&identity=${modalIdentityId}` : null)
   const identityById = useMemo(() => new Map(identities.map(identity => [identity.id, identity])), [identities])
   const modalEgos = modalSinnerId
     ? egos
@@ -291,6 +292,7 @@ export function EgoTab({
       selectedEgosByGrade={selectedByGrade}
       suggestions={suggestion?.items}
       archetype={suggestion?.archetype}
+      suggestionsLoading={suggestionLoading}
       partnerIdentity={id => identityById.get(id)}
       onClose={() => setModalSinnerId(null)}
       onSelect={ego => onEgoSelect(ego as EGO)}

@@ -247,6 +247,8 @@ export interface GiftCatalogProps {
   idleHint?: ReactNode
   /** Groups listed first, in this order, each under its own heading; a gift sits in the first group that has it.
    *  `warning` draws the red mark (e.g. gifts only this floor gives); `note` is a line of the user's own under the heading. */
+  /** Shown above the groups while a pinned group is still being read (its loading shape). */
+  holdPlace?: ReactNode
   pinned?: { ids: ReadonlySet<string>; label: string; warning?: boolean; note?: string; /** Heading as the gold "추천" ribbon instead of the label text. */ ribbon?: boolean }[]
 }
 
@@ -351,6 +353,7 @@ export default function GiftCatalog({
   moreFiltersActive = 0,
   idleHint,
   pinned,
+  holdPlace,
 }: GiftCatalogProps) {
   const {
     search, keywords, grades, tiers, sortBy, sortDesc, slotFilter, themeGiftNames, giftSlotMap, inputValue,
@@ -722,6 +725,7 @@ export default function GiftCatalog({
         // isolate: cards raise themselves on hover (z-index 10) and carry marks up to z-30; kept inside this stacking
         // context they scroll under the sticky filter row whatever its z-index is.
         <div className="mt-4 isolate" style={{ minHeight: compact ? 'var(--gift-catalog-min-h)' : undefined, opacity: isStale ? 0.7 : 1, transition: 'opacity 0.1s ease' }}>
+          {holdPlace}
           {groups.map((group, gi) => {
             const iconUrl = groupBy === 'keyword' ? getGiftKeywordIcon(group.key) : null
             const pin = group.key.startsWith(PINNED_GROUP) ? pinned?.[Number(group.key.slice(PINNED_GROUP.length))] : undefined

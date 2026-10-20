@@ -36,7 +36,7 @@ export function RailSkeleton() {
   )
 }
 
-/** The board's first screen while it loads: the first two shelves, titles and cards in their final places. */
+/** The board's first screen while it loads: the first two shelves and the identity row, titles and cards in their final places. */
 export function BoardShelfSkeleton() {
   return (
     <SkeletonPage className="pb-16">
@@ -47,7 +47,38 @@ export function BoardShelfSkeleton() {
             <RailSkeleton />
           </section>
         ))}
+        <section data-shelf-skeleton="identities">
+          <div className="mb-3 flex min-h-[1.8125rem] items-center"><SkeletonLine w="10rem" h="1.25rem" /></div>
+          <IdentityRowSkeleton />
+        </section>
       </div>
+    </SkeletonPage>
+  )
+}
+
+/** The identity row (frame cards with a value under each) while it loads: one swipe row on a phone, the whole width from md. */
+export function IdentityRowSkeleton({ count = 9 }: { count?: number }) {
+  return (
+    <ul className="-mx-4 flex gap-3 overflow-hidden px-4 pb-1 md:mx-0 md:gap-4 md:px-0" data-identity-row-skeleton>
+      {Array.from({ length: count }, (_, index) => (
+        <li key={index} className="w-24 shrink-0 md:w-auto md:max-w-[9.5rem] md:min-w-0 md:flex-1">
+          <Skeleton raised className="w-full" style={{ aspectRatio: '290 / 428' }} />
+          <div className="mt-1.5 flex h-[1.375rem] items-center justify-center"><SkeletonLine w="2.25rem" h="1.125rem" /></div>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+/** The "지금 뜨는" shelf while its feed loads: the title, three cards and the identity row. It goes away if nothing is rising. */
+export function RisingShelfSkeleton() {
+  return (
+    <SkeletonPage>
+      <section data-shelf-skeleton="rising" className="space-y-5">
+        <div className="mb-3 flex min-h-[1.8125rem] items-center"><SkeletonLine w="6rem" h="1.25rem" /></div>
+        <RailSkeleton />
+        <IdentityRowSkeleton />
+      </section>
     </SkeletonPage>
   )
 }
