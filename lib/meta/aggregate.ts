@@ -139,6 +139,27 @@ export function metaPeriodStart(period: MetaPeriod, now: number): string | null 
   return period === 'all' ? null : new Date(now - Number(period) * 86_400_000).toISOString()
 }
 
+/**
+ * Persisted planner slots are JSON. Resolve metadata through the current catalog, discard deleted/unknown IDs,
+ * and keep at most one identity per sinner, in slot order. Order 99 = not in the battle formation (support).
+ */
+export function fieldedSlots(post: Pick<MetaPost, 'source' | 'identities'>, identities: MetaIdentity[], identityCatalog: Map<string, MetaIdentity> = new Map(identities.map(identity => [identity.id, identity]))) {
+  const slots = objectRows(post.identities).flatMap(slot => {
+    const identity = (typeof slot.identity_id === 'string' ? identityCatalog.get(slot.identity_id) : undefined)
+      ?? (post.source === 'planner' ? resolvePlannerIdentity(slot, identities) : undefined)
+    if (!identity) return []
+    const order = typeof slot.slot_order === 'number' && Number.isInteger(slot.slot_order) && slot.slot_order >= 0 && slot.slot_order < 99
+      ? slot.slot_order : 99
+    return [{ identity, order, skills: getIdentitySkillDistribution(slot as Parameters<typeof getIdentitySkillDistribution>[0]).join('-') }]
+  }).sort((a, b) => a.order - b.order || a.identity.id.localeCompare(b.identity.id))
+  const seenSinners = new Set<string>()
+  return slots.filter(({ identity }) => {
+    if (seenSinners.has(identity.sinner_id)) return false
+    seenSinners.add(identity.sinner_id)
+    return true
+  })
+}
+
 const TOP_POSTS = 6
 
 /** Most recommended first, then most viewed, newest, and by id. */
@@ -193,22 +214,7 @@ export function aggregateMeta({ posts, identities, egos, keywordSinMap, source, 
     if (seenPosts.has(postKey)) continue
     seenPosts.add(postKey)
 
-    // Persisted planner slots are JSON. Resolve metadata through the current catalog,
-    // discard deleted/unknown IDs, and keep at most one identity per sinner.
-    const slots = objectRows(post.identities).flatMap(slot => {
-      const identity = (typeof slot.identity_id === 'string' ? identityCatalog.get(slot.identity_id) : undefined)
-        ?? (post.source === 'planner' ? resolvePlannerIdentity(slot, identities) : undefined)
-      if (!identity) return []
-      const order = typeof slot.slot_order === 'number' && Number.isInteger(slot.slot_order) && slot.slot_order >= 0 && slot.slot_order < 99
-        ? slot.slot_order : 99
-      return [{ identity, order, skills: getIdentitySkillDistribution(slot as Parameters<typeof getIdentitySkillDistribution>[0]).join('-') }]
-    }).sort((a, b) => a.order - b.order || a.identity.id.localeCompare(b.identity.id))
-    const seenSinners = new Set<string>()
-    const uniqueSlots = slots.filter(({ identity }) => {
-      if (seenSinners.has(identity.sinner_id)) return false
-      seenSinners.add(identity.sinner_id)
-      return true
-    })
+    const uniqueSlots = fieldedSlots(post, identities, identityCatalog)
     const battleSlots = uniqueSlots.filter(slot => slot.order < 99)
     if (battleSlots.length === 0) {
       excludedSamples++

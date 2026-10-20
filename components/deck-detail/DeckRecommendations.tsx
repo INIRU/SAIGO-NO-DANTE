@@ -2,6 +2,7 @@
 
 import DeckCard, { type DeckSummary } from '@/components/decks/DeckCard'
 import { useTranslations } from 'next-intl'
+import type { ReactNode } from 'react'
 
 export type DeckRecommendationSummary = DeckSummary & {
   reason?: string
@@ -12,17 +13,16 @@ export type DeckRecommendationsData = {
   similarDecks: DeckRecommendationSummary[]
 }
 
-type RecommendationLaneProps = {
+/** A titled row of post cards (decks and plans share it); `description` is optional and the heading stands alone without it. */
+export function RecommendationLane({ id, title, description, count, children }: {
   id: string
   title: string
-  description: string
-  decks: DeckRecommendationSummary[]
-  emptyLabel?: string
-}
-
-function RecommendationLane({ id, title, description, decks, emptyLabel }: RecommendationLaneProps) {
+  description?: string
+  count: number
+  children: ReactNode
+}) {
   const t = useTranslations('decks.recommendations')
-  if (decks.length === 0 && !emptyLabel) return null
+  if (count === 0) return null
 
   return (
     <section aria-labelledby={`${id}-recommendations-title`} className="min-w-0">
@@ -34,40 +34,19 @@ function RecommendationLane({ id, title, description, decks, emptyLabel }: Recom
           >
             {title}
           </h3>
-          <p className="mt-1 text-[0.875rem] leading-snug text-[#9c8b73]">
-            {description}
-          </p>
+          {description && (
+            <p className="mt-1 text-[0.875rem] leading-snug text-[#9c8b73]">
+              {description}
+            </p>
+          )}
         </div>
-        {decks.length > 0 && (
-          <span className="text-[0.875rem] tabular-nums text-[#9c8b73]">
-            {t('count', { count: decks.length })}
-          </span>
-        )}
+        <span className="text-[0.875rem] tabular-nums text-[#9c8b73]">
+          {t('count', { count })}
+        </span>
       </div>
-
-      {decks.length > 0 ? (
-        <div className="grid min-w-0 grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-          {decks.map(deck => (
-            <div key={deck.id} className="min-w-0">
-              <DeckCard deck={deck} />
-            </div>
-          ))}
-        </div>
-      ) : (
-        <p
-          className="rounded px-3 py-2"
-          style={{
-            background: 'rgba(200,144,10,0.04)',
-            border: '1px solid rgba(200,144,10,0.12)',
-            color: 'var(--text-tertiary)',
-            fontFamily: 'var(--font-body)',
-            fontSize: '0.875rem',
-            lineHeight: 1.55,
-          }}
-        >
-          {emptyLabel}
-        </p>
-      )}
+      <div className="grid min-w-0 grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+        {children}
+      </div>
     </section>
   )
 }
@@ -96,14 +75,18 @@ export default function DeckRecommendations({
         id="other-opinions"
         title={t('otherOpinions')}
         description={t('otherOpinionsDescription')}
-        decks={otherOpinions}
-      />
+        count={otherOpinions.length}
+      >
+        {otherOpinions.map(deck => <div key={deck.id} className="min-w-0"><DeckCard deck={deck} /></div>)}
+      </RecommendationLane>
       <RecommendationLane
         id="similar-decks"
         title={t('similarDecks')}
         description={t('similarDecksDescription')}
-        decks={similarDecks}
-      />
+        count={similarDecks.length}
+      >
+        {similarDecks.map(deck => <div key={deck.id} className="min-w-0"><DeckCard deck={deck} /></div>)}
+      </RecommendationLane>
     </div>
   )
 }

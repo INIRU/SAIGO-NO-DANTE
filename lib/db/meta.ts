@@ -1,7 +1,8 @@
 import { createClient } from '@supabase/supabase-js'
 import { cacheLife, cacheTag } from 'next/cache'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
-import { aggregateMeta, metaPeriodStart, planGiftIds, planThemeIds } from '@/lib/meta/aggregate'
+import type { Formation } from '@/lib/discovery/co-occurrence'
+import { aggregateMeta, fieldedSlots, metaPeriodStart, planGiftIds, planThemeIds } from '@/lib/meta/aggregate'
 import { readAllMetaRows } from '@/lib/meta/pagination'
 import { DEFAULT_META_PERIOD, DEFAULT_META_SOURCE, type MetaData, type MetaFilters, type MetaIdentity, type MetaEGO, type MetaGift, type MetaPost, type MetaSkill, type MetaSource, type MetaPeriod, type MetaTheme } from '@/lib/meta/types'
 
@@ -129,4 +130,16 @@ async function getUnfilteredMetaData(source: MetaSource, period: MetaPeriod): Pr
 /** Filters combine without bound, so a filtered result is not kept: it is counted again from the cached posts and catalogs. */
 export async function getMetaData(source: MetaSource = DEFAULT_META_SOURCE, period: MetaPeriod = DEFAULT_META_PERIOD, filters: MetaFilters = {}): Promise<MetaData> {
   return Object.keys(filters).length ? buildMetaData(source, period, filters) : getUnfilteredMetaData(source, period)
+}
+
+/** Every public deck and plan as its battle formation, for counting who is fielded with whom. Recounted when a deck or plan changes. */
+export async function getFormations(): Promise<Formation[]> {
+  'use cache'
+  cacheLife('hours')
+  cacheTag(CACHE_TAGS.decksList, CACHE_TAGS.plansList, CACHE_TAGS.meta, CACHE_TAGS.gameData)
+  const [{ identities }, decks, plans] = await Promise.all([getMetaCatalog(), getSourcePosts('decks', 'all'), getSourcePosts('planner', 'all')])
+  return [...decks, ...plans].flatMap(post => {
+    const ids = fieldedSlots(post, identities).filter(slot => slot.order < 99).map(slot => slot.identity.id)
+    return ids.length ? [{ kind: post.source === 'decks' ? 'deck' as const : 'planner' as const, id: post.id, identities: ids, votes: post.votes ?? 0, views: post.views ?? 0 }] : []
+  })
 }

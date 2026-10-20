@@ -1907,6 +1907,11 @@
       "passives": "パッシブ",
       "decks": "デッキ"
     },
+    "recommendations": {
+      "companions": "よく一緒に使う人格",
+      "popular": "この人格を使った人気のデッキ・プラン",
+      "unit": "回"
+    },
     "pageTab": {
       "info": "人格情報",
       "decks": "デッキ"
