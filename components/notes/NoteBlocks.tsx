@@ -7,12 +7,13 @@ import { Table, TableRow, TableCell, TableHeader } from '@tiptap/extension-table
 import { useLocale } from 'next-intl'
 import useSWR from 'swr'
 import { toast } from 'sonner'
-import { Plus, ChevronDown, ChevronLeft, ChevronRight, X, Search, GripVertical, Trash2 } from 'lucide-react'
+import { Plus, ChevronDown, ChevronLeft, ChevronRight, X, Search, GripVertical, Trash2, Copy } from 'lucide-react'
 import NoteAssetPicker from './NoteAssetPicker'
 import NoteCharacterPicker from './NoteCharacterPicker'
 import BaseModal from '@/components/ui/BaseModal'
 import Dropdown from '@/components/ui/Dropdown'
 import { BLOCK_LABELS, CALLOUT_VARIANTS, CARD_KINDS, CARD_ID, isAssetKind, blockLabel, newBlock, youtubeId, type BlockKind, type AssetKind } from '@/lib/notes/blocks'
+import { duplicateBlockAtTr, duplicateBlockTr, moveBlockAtTr, moveBlockTr } from '@/lib/notes/block-ops'
 import { assetName, type NoteAssetData } from '@/lib/notes/assets'
 import { isNoteImageUrl, pendingNoteUploads } from '@/lib/notes/images'
 import { NoteCardView, NoteCardPicker, type NoteCardKind } from './NoteCardBlock'
@@ -55,21 +56,34 @@ function AssetPicker(props: {kind:AssetKind;onSelect:(asset:NoteAssetData)=>void
 export function moveNoteBlock(editor:Editor,getPos:NodeViewProps['getPos'],direction:-1|1) {
   const pos=getPos()
   if (typeof pos!=='number') return
-  const {state}=editor, node=state.doc.nodeAt(pos), $pos=state.doc.resolve(pos)
-  const index=$pos.index(), parent=$pos.parent, target=index+direction
-  if (!node || target<0 || target>=parent.childCount) return
-  const sibling=parent.child(target)
-  const tr=direction<0
-    ? state.tr.delete(pos,pos+node.nodeSize).insert(pos-sibling.nodeSize,node)
-    : state.tr.insert(pos+node.nodeSize+sibling.nodeSize,node).delete(pos,pos+node.nodeSize)
-  editor.view.dispatch(tr.scrollIntoView())
+  const tr=moveBlockAtTr(editor.state,pos,direction)
+  if (tr) editor.view.dispatch(tr)
 }
+const duplicatedMessage=(lang:string)=>tr(lang,'블록을 복제했어요','ブロックを複製しました','Block duplicated')
+/** Copies the block right after itself; the toast tells the author where the copy went. */
+export function duplicateNoteBlock(editor:Editor,lang:string,getPos?:NodeViewProps['getPos']) {
+  const pos=getPos?.()
+  const transaction=typeof pos==='number' ? duplicateBlockAtTr(editor.state,pos) : duplicateBlockTr(editor.state)
+  if (!transaction) { toast.error(tr(lang,'이 블록은 복제할 수 없어요','このブロックは複製できません','This block cannot be duplicated')); return false }
+  editor.view.dispatch(transaction)
+  editor.view.focus()
+  toast.success(duplicatedMessage(lang))
+  return true
+}
+/** Keyboard: Mod-Shift-Up/Down move the block around the caret, Mod-Shift-D duplicates it. */
+export const NoteBlockKeys = Extension.create<{lang:string}>({name:'noteBlockKeys',addOptions(){return {lang:'ko'}},
+  addKeyboardShortcuts(){
+    const move=(direction:-1|1)=>()=>{const transaction=moveBlockTr(this.editor.state,direction);if(transaction)this.editor.view.dispatch(transaction);return true}
+    return {'Mod-Shift-ArrowUp':move(-1),'Mod-Shift-ArrowDown':move(1),'Mod-Shift-d':()=>{duplicateNoteBlock(this.editor,this.options.lang);return true}}
+  },
+})
 function BlockActions({editor,getPos,onDelete}:{editor:Editor;getPos:NodeViewProps['getPos'];onDelete:()=>void}) {
   const lang=useLocale()
   return <div className="note-block-actions">
     <span data-drag-handle aria-hidden="true" className="note-block-drag"><GripVertical size={14}/></span>
     <button type="button" onClick={()=>moveNoteBlock(editor,getPos,-1)} aria-label={tr(lang,'앞으로 이동','前へ移動','Move back')}><ChevronLeft size={16}/></button>
     <button type="button" onClick={()=>moveNoteBlock(editor,getPos,1)} aria-label={tr(lang,'뒤로 이동','後ろへ移動','Move forward')}><ChevronRight size={16}/></button>
+    <button type="button" className="note-block-duplicate" onClick={()=>duplicateNoteBlock(editor,lang,getPos)} aria-label={tr(lang,'블록 복제','ブロック複製','Duplicate block')}><Copy size={14}/></button>
     <button type="button" className="note-block-delete" onClick={onDelete} aria-label={tr(lang,'블록 삭제','ブロック削除','Delete block')}><X size={14}/></button>
   </div>
 }
