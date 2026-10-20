@@ -17,6 +17,12 @@ export function reasonParts(codes: readonly string[] | undefined, limit = 2): Re
   }).slice(0, limit)
 }
 
+/** The identity suggestions for one sinner's slot; an empty board still asks (the meta and new identities lead then). */
+export function identitySuggestUrl(sinnerId: string | null, context: readonly string[]): string | null {
+  if (!sinnerId) return null
+  return `/api/discovery/suggest?type=identity&sinner=${sinnerId}${context.length ? `&with=${context.join(',')}` : ''}`
+}
+
 /** Identity ids that suggestions for `sinnerId`'s slot are asked beside: every identity chosen on the board for the other sinners (placeholders are not a choice), those with a formation number first. */
 export function suggestionContext(chosen: Record<string, string | undefined>, formationOrder: readonly string[], sinnerId: string, isPlaceholder: (identityId: string) => boolean): string[] {
   const ordered = formationOrder.filter(id => id !== sinnerId)

@@ -2,7 +2,7 @@
 
 import { useSuggestionState } from '@/hooks/useSuggestions'
 import { LCB_IDS } from '@/lib/constants/game'
-import { suggestionContext, type SuggestionResponse } from '@/lib/discovery/suggestion-types'
+import { identitySuggestUrl, suggestionContext, type SuggestionResponse } from '@/lib/discovery/suggestion-types'
 import { useMemo, useState, type CSSProperties } from 'react'
 import Image from 'next/image'
 import { useReducedMotion } from 'motion/react'
@@ -124,9 +124,7 @@ export function IdentityTab({
   const chosenBeside = modalSinnerId
     ? suggestionContext(Object.fromEntries(Object.entries(deckSlots).map(([id, identity]) => [id, identity?.id])), formationOrder, modalSinnerId, identityId => lcbIds.has(identityId))
     : []
-  const { data: suggestion, loading: suggestionLoading } = useSuggestionState<SuggestionResponse>(
-    modalSinnerId && chosenBeside.length ? `/api/discovery/suggest?type=identity&sinner=${modalSinnerId}&with=${chosenBeside.join(',')}` : null,
-  )
+  const { data: suggestion, loading: suggestionLoading } = useSuggestionState<SuggestionResponse>(identitySuggestUrl(modalSinnerId, chosenBeside))
   const identityById = useMemo(() => new Map(identities.map(identity => [identity.id, identity])), [identities])
   const modalIdentities = modalSinnerId
     ? identities
