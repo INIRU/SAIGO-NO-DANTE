@@ -73,6 +73,8 @@ interface EditMode {
   deckId: string
   title: string
   description: string
+  /** When the deck was last saved on the server; an older browser draft is not offered. */
+  updatedAt?: string | null
   tags: string[]
   content_type?: string
   mainKeywords?: string[]
@@ -470,6 +472,7 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
   }
   const autosave = useAutosaveDraft({
     storageKey: autosaveKey('deck', editMode?.deckId), state: draftState, isState: isDeckDraft, ready: true, apply: applyDraft,
+    savedAt: editMode?.updatedAt ? Date.parse(editMode.updatedAt) : null,
   })
   const handleDeleteDraft = (slot: TempSlot<DeckDraft>) => {
     setDraftSlots(deleteTempSlot(DECK_DRAFTS_KEY, slot.slotNumber, isDeckDraft))
