@@ -15,6 +15,7 @@ import Dropdown from '@/components/ui/Dropdown'
 import { BLOCK_LABELS, CALLOUT_VARIANTS, CARD_KINDS, CARD_ID, isAssetKind, blockLabel, newBlock, youtubeId, type BlockKind, type AssetKind } from '@/lib/notes/blocks'
 import { isMentionKind } from '@/lib/notes/mention'
 import { duplicateBlockAtTr, duplicateBlockTr, moveBlockAtTr, moveBlockTr } from '@/lib/notes/block-ops'
+import { isRichClipboardHtml, pastedMarkdownContent } from '@/lib/notes/document'
 import { assetName, type NoteAssetData } from '@/lib/notes/assets'
 import { isNoteImageUrl, pendingNoteUploads } from '@/lib/notes/images'
 import { NoteCardView, NoteCardPicker, type NoteCardKind } from './NoteCardBlock'
@@ -248,8 +249,14 @@ export const NoteInput = Extension.create<{lang:string}>({name:'noteInput',addOp
   addProseMirrorPlugins(){const editor=this.editor,lang=this.options.lang;return [new Plugin({key:new PluginKey('note-input'),props:{
     handleDrop(view,event,_slice,moved){const files=Array.from(event.dataTransfer?.files ?? []);if(moved || !files.length)return false;event.preventDefault();const pos=view.posAtCoords({left:event.clientX,top:event.clientY})?.pos;void uploadNoteFiles(editor,files,lang,pos);return true},
     handlePaste(_view,event){const files=Array.from(event.clipboardData?.files ?? []);if(files.length){event.preventDefault();void uploadNoteFiles(editor,files,lang);return true}
-      const id=youtubeId(event.clipboardData?.getData('text/plain').trim() ?? '');if(!id)return false
-      event.preventDefault();editor.chain().insertContent([{type:'noteVideo',attrs:{videoId:id}},{type:'paragraph'}]).run();return true},
+      const text=event.clipboardData?.getData('text/plain') ?? ''
+      const id=youtubeId(text.trim())
+      if(id){event.preventDefault();editor.chain().insertContent([{type:'noteVideo',attrs:{videoId:id}},{type:'paragraph'}]).run();return true}
+      // Rich text (a web page, a document) keeps its own formatting; plain markdown becomes blocks, but only in a body paragraph.
+      const blocks=isRichClipboardHtml(event.clipboardData?.getData('text/html') ?? '') || editor.state.selection.$from.parent.type.name!=='paragraph' ? null : pastedMarkdownContent(text)
+      if(!blocks)return false
+      event.preventDefault();editor.chain().insertContent(blocks).run()
+      toast.success(tr(lang,'마크다운을 블록으로 붙여 넣었어요','マークダウンをブロックとして貼り付けました','Pasted markdown as blocks'));return true},
   }})]},
 })
 export const noteBlockExtensions = [NoteAsset,NoteKeyword,NoteGift,NoteMention,NoteAccordion,NoteTitle,NoteBody,NoteVideoNode,NoteUpload,NoteCallout,NoteCard,Table,TableRow,TableCell,TableHeader]
