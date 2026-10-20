@@ -27,11 +27,22 @@ import NoteImage from "./NoteImage";
 import { NoteFormationContext } from "./NoteAssetPicker";
 import NoteDocumentTools from "./NoteDocumentTools";
 import NoteMarkTools from "./NoteMarkTools";
+import { useNoteNew } from "./NoteNewDot";
 import { noteMarkExtensions } from "./NoteMarks";
 import {
   markdownToTiptapContent,
   tiptapContentToMarkdown,
 } from "@/lib/notes/document";
+/** A toolbar button; a tool that is new carries the gold dot until it has been used once. */
+function ToolButton({ Icon, title, feature, run, disabled }: { Icon: typeof Bold; title: string; feature?: string; run: () => void; disabled: boolean }) {
+  const news = useNoteNew(feature ?? "");
+  return (
+    <button type="button" aria-label={feature ? news.label(title) : title} disabled={disabled} onClick={() => { if (feature) news.used(); run(); }}
+      className="note-tool relative flex h-9 w-9 items-center justify-center text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-panel)]">
+      <Icon size={16} />{feature && news.dot}
+    </button>
+  );
+}
 export default function NoteDocumentEditor({
   formation = [],
   value,
@@ -295,8 +306,8 @@ export default function NoteDocumentEditor({
             title: label("인용", "引用", "Quote"),
             run: () => editor?.chain().focus().toggleBlockquote().run(),
           },
-          { Icon: AtSign, title: label("인격·E.G.O 멘션", "人格・E.G.Oメンション", "Mention identity or E.G.O"), run: () => editor?.chain().focus().insertContent("@").run() },
-          { Icon: Copy, title: label("블록 복제", "ブロック複製", "Duplicate block"), run: () => { if (editor) duplicateNoteBlock(editor, lang) } },
+          { Icon: AtSign, title: label("인격·E.G.O 멘션", "人格・E.G.Oメンション", "Mention identity or E.G.O"), run: () => editor?.chain().focus().insertContent("@").run(), feature: "mention" },
+          { Icon: Copy, title: label("블록 복제", "ブロック複製", "Duplicate block"), run: () => { if (editor) duplicateNoteBlock(editor, lang) }, feature: "duplicate" },
           {
             Icon: Undo2,
             title: label("실행 취소", "元に戻す", "Undo"),
@@ -307,17 +318,8 @@ export default function NoteDocumentEditor({
             title: label("다시 실행", "やり直し", "Redo"),
             run: () => editor?.chain().focus().redo().run(),
           },
-        ].map(({ Icon, title, run }) => (
-          <button
-            type="button"
-            key={title}
-            aria-label={title}
-            disabled={preview || !editor}
-            onClick={run}
-            className="flex h-9 w-9 items-center justify-center text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-panel)]"
-          >
-            <Icon size={16} />
-          </button>
+        ].map(({ Icon, title, run, feature }: { Icon: typeof Bold; title: string; run: () => void; feature?: string }) => (
+          <ToolButton key={title} Icon={Icon} title={title} feature={feature} run={run} disabled={preview || !editor} />
         ))}
         <button type="button" disabled={preview || !editor} aria-label={label("링크", "リンク", "Link")} className="flex h-9 w-9 items-center justify-center text-[var(--text-primary)]" onClick={()=>{setLinkUrl(editor?.getAttributes('link').href ?? '');setLinkError(false);setLinkOpen(!linkOpen)}}><Link2 size={16}/></button>
         {onPreviewChange && <button type="button" className="note-preview-button" aria-pressed={preview} onClick={()=>onPreviewChange(!preview)}>{preview ? <Pencil size={16}/> : <Eye size={16}/>}{preview ? label("편집", "編集", "Edit") : label("미리보기", "プレビュー", "Preview")}</button>}
