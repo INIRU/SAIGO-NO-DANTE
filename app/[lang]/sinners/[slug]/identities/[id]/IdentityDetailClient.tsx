@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, type ReactNode } from 'react'
 import { identityAtLevel, skillsAtLevel, MAX_IDENTITY_LEVEL } from '@/lib/identity/level'
 import { AnimatePresence, useReducedMotion } from 'motion/react'
 import * as m from 'motion/react-m'
@@ -40,6 +40,8 @@ interface Props {
   currentSeason?: number
   sd?: IdentitySpine | null
   illust?: IdentitySpine | null
+  /** Companions and popular posts (server-rendered); shown under the sanity section. */
+  recommendations?: ReactNode
 }
 
 export default function IdentityDetailClient({
@@ -52,6 +54,7 @@ export default function IdentityDetailClient({
   currentSeason = 7,
   sd,
   illust,
+  recommendations,
 }: Props) {
   const [level, setLevel] = useState(MAX_IDENTITY_LEVEL)
   const displayedIdentity = useMemo(() => identityAtLevel(identity, level), [identity, level])
@@ -211,7 +214,7 @@ export default function IdentityDetailClient({
                 <IdentitySanitySection sanityConditions={sanityConditions} panicInfo={panicInfo} />
               </m.div>
 
-
+              {recommendations}
 
               {/* 수감자 페이지로 돌아가기 */}
               <m.div variants={shouldReduceMotion ? undefined : workbenchStaggerItem}>

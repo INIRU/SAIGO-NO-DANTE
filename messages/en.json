@@ -1907,6 +1907,11 @@
       "passives": "Passives",
       "decks": "Decks"
     },
+    "recommendations": {
+      "companions": "Fielded together",
+      "popular": "Popular decks and plans with this identity",
+      "unit": "times"
+    },
     "pageTab": {
       "info": "Identity Info",
       "decks": "Decks"
