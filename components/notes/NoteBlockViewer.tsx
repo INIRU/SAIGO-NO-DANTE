@@ -14,6 +14,9 @@ import { KeywordWithTooltip, useKeywords } from '@/components/providers/KeywordP
 import { resolveKeywordTextColor } from '@/lib/keywords/text-color'
 import { getLocalizedKeywordName, type SupportedLang } from '@/lib/i18n'
 import { isNoteImageUrl } from '@/lib/notes/images'
+import { mentionHref, type MentionKind } from '@/lib/notes/mention'
+import QuietImage from '@/components/ui/QuietImage'
+import { Link } from '@/lib/i18n/navigation'
 import { isNoteColorSin } from '@/lib/notes/text-style'
 import { GIFT_KEYWORD_COLORS } from '@/lib/constants/gift'
 import { NoteCardView } from './NoteCardBlock'
@@ -55,6 +58,19 @@ export function NoteGiftLabel({id,name}:{id:string;name?:string}) {
   return onGiftClick && asset
     ? <button type="button" className="note-gift-label" style={style} onClick={()=>onGiftClick(id)}>{body}</button>
     : <span className="note-gift-label" style={style}>{body}</span>
+}
+/**
+ * An identity or E.G.O named inside a sentence: its portrait and name as a chip. In the viewer it links to the page
+ * (`linked`); the editor draws it as plain text so a click selects it. Without the asset only the saved name shows.
+ */
+export function NoteMentionLabel({kind,id,name,linked=true}:{kind:MentionKind;id:string;name?:string;linked?:boolean}) {
+  const lang=useLocale(), {data}=useContext(AssetContext)
+  const asset=data.get(`${kind}:${id}`)
+  const sinnerId=asset?.identity?.sinner_id ?? asset?.sinnerId
+  const body=<>{asset?.image_url && <QuietImage src={asset.image_url} alt="" width={20} height={20} sizes="1.25rem"/>}<span>{asset ? assetName(asset,lang) : name || id}</span></>
+  return linked && asset && sinnerId
+    ? <Link href={mentionHref(kind,id,sinnerId)} className="note-mention">{body}</Link>
+    : <span className="note-mention">{body}</span>
 }
 export function NoteAssetArtwork({asset, compact=false}:{asset:NoteAssetData; compact?:boolean}) {
   const lang=useLocale(), name=assetName(asset,lang)
@@ -125,6 +141,7 @@ export default function NoteBlockViewer({doc,renderText}:{doc:JSONContent;render
       case 'tableHeader': return <th key={key} colSpan={n.attrs?.colspan} rowSpan={n.attrs?.rowspan}>{children}</th>
       case 'noteKeyword': return <NoteKeywordLabel key={key} id={n.attrs!.id}/>
       case 'noteGift': return <NoteGiftLabel key={key} id={n.attrs!.id} name={n.attrs?.name}/>
+      case 'noteMention': return <NoteMentionLabel key={key} kind={n.attrs!.kind} id={n.attrs!.id} name={n.attrs?.name}/>
       case 'noteAsset': return <NoteAssetView key={key} kind={n.attrs!.kind} id={n.attrs!.id}/>
       case 'noteVideo': return <NoteVideo key={key} id={n.attrs!.videoId}/>
       case 'image': return isNoteImageUrl(n.attrs?.src) ? <img key={key} className="note-document-image" src={n.attrs!.src} alt={n.attrs?.alt ?? ''} loading="lazy"/> : null

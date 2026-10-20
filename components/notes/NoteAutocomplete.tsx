@@ -24,6 +24,8 @@ export type AutocompleteSuggestion = {
   imageUrl?: string
   token: string
   syntax?: 'inline' | 'block'
+  /** Other names (languages) the item is found by. */
+  aliases?: string[]
 }
 
 type TokenType = AutocompleteSuggestion['type']
@@ -274,6 +276,7 @@ function suggestionStartsWith(suggestion: AutocompleteSuggestion, query: string)
 }
 
 function getSuggestionMeta(suggestion: AutocompleteSuggestion): string | undefined {
+  if (suggestion.token.startsWith('[@')) return suggestion.typeLabel
   const parts = getTokenParts(suggestion.token)
   const typeLabel = suggestion.typeLabel ?? TOKEN_PREFIX_LABELS[suggestion.type]
   if (suggestion.type === 'identity' && parts.length >= 2) return `${parts[0]} · ${typeLabel}`
@@ -543,7 +546,7 @@ export function NoteAutocompleteDropdown({
     ? {
         left: anchor.left,
         top: anchor.top,
-        width: anchor.width ? Math.min(anchor.width, 280) : undefined,
+        width: anchor.width ? Math.min(anchor.width, 340) : undefined,
         maxWidth: 'calc(100vw - 1rem)',
       }
     : { left: 0, right: 0, bottom: '100%', marginBottom: -1 }
