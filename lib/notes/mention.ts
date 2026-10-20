@@ -7,20 +7,41 @@ export function mentionHref(kind: MentionKind, id: string, sinnerId: string): st
   return kind === 'identity' ? `/sinners/${sinnerId}/identities/${id}` : `/sinners/${sinnerId}/ego/${id}`
 }
 
-/** The name being typed after an `@` that starts a word (an e-mail's `@` does not count); `length` includes the `@`. */
+/** How many mentions the list shows at once (it scrolls): enough for a whole family such as the nine 거미집 identities. */
+export const MENTION_LIMIT = 12
+const MAX_QUERY = 40
+
+/**
+ * The name being typed after the last `@`, spaces included (names such as "거미집 검지 아비" have them); `length` includes the `@`.
+ * The `@` may follow a space, a bracket, a mention (`\ufffc`) or a Korean or Japanese word, but not a Latin letter or digit, so an
+ * e-mail does not open the list. A space right after the `@`, a new line or a long run ends it; the caller closes the list when
+ * nothing matches, so ordinary words written after an `@` stop it there.
+ */
 export function findMentionQuery(before: string): { query: string; length: number } | null {
-  const match = before.match(/(?:^|[\s(（])@([^\s@]{0,30})$/)
-  return match ? { query: match[1], length: match[1].length + 1 } : null
+  const at = before.lastIndexOf('@')
+  if (at < 0 || /[A-Za-z0-9._%+-]/.test(before[at - 1] ?? '')) return null
+  const query = before.slice(at + 1)
+  if (query.length > MAX_QUERY || /^\s|\s\s|[\n\ufffc]/.test(query)) return null
+  return { query, length: query.length + 1 }
 }
 
-/** Pool entries whose name (in any language) contains the query, names that start with it first; a bare `@` lists the first ones. */
+const compact = (value: string) => value.toLowerCase().replace(/\s+/g, '')
+
+/**
+ * Pool entries that match the query in any language: the whole query (spaces ignored) at the start of a name first, then at
+ * the start of another name, then inside one, then every word of the query somewhere in its names (the sinner's name counts),
+ * each group in pool order. A bare `@` lists the first ones.
+ */
 export function filterMentions<T extends { label: string; aliases?: string[] }>(pool: T[], query: string, limit: number): T[] {
-  const q = query.trim().toLowerCase()
-  if (!q) return pool.slice(0, limit)
+  const whole = compact(query)
+  if (!whole) return pool.slice(0, limit)
+  const words = query.toLowerCase().split(/\s+/).filter(Boolean)
   const ranked: { item: T; rank: number; at: number }[] = []
   pool.forEach((item, at) => {
     const names = [item.label, ...(item.aliases ?? [])].map(name => name.toLowerCase())
-    const rank = names[0].startsWith(q) ? 0 : names.some(name => name.startsWith(q)) ? 1 : names.some(name => name.includes(q)) ? 2 : -1
+    const squeezed = names.map(compact), all = names.join(' ')
+    const rank = squeezed[0].startsWith(whole) ? 0 : squeezed.some(name => name.startsWith(whole)) ? 1
+      : squeezed.some(name => name.includes(whole)) ? 2 : words.every(word => all.includes(word)) ? 3 : -1
     if (rank >= 0) ranked.push({ item, rank, at })
   })
   return ranked.sort((a, b) => a.rank - b.rank || a.at - b.at).slice(0, limit).map(entry => entry.item)

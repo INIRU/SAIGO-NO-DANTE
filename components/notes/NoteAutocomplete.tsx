@@ -573,6 +573,7 @@ export function NoteAutocompleteDropdown({
               key={sugg.token}
               onMouseDown={e => { e.preventDefault(); onSelect(sugg) }}
               onMouseEnter={() => onHover(i)}
+              ref={isSelected ? element => { element?.scrollIntoView({ block: 'nearest' }) } : undefined}
               className="flex items-center gap-1.5 rounded text-left focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-gold"
               style={{
                 background: isSelected ? 'rgba(200,144,10,0.1)' : 'transparent',

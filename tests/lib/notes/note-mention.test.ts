@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { NOTE_PREFIX, assetRefs, hasBlocks, normalizeDocument, notePlainText, notePreviewText, parseBlockDocument } from '@/lib/notes/blocks'
 import { tiptapContentToMarkdown } from '@/lib/notes/document'
-import { filterMentions, findMentionQuery, mentionHref } from '@/lib/notes/mention'
+import { MENTION_LIMIT, filterMentions, findMentionQuery, mentionHref } from '@/lib/notes/mention'
 
 const doc = (...content: object[]) => ({ type: 'doc', content })
 const mention = (attrs: object) => ({ type: 'noteMention', attrs })
@@ -42,10 +42,21 @@ describe('REQ-COMMUNITY-053 typing @ finds identities and E.G.O', () => {
     expect(findMentionQuery('@')).toEqual({ query: '', length: 1 })
     expect(findMentionQuery('(@Rod')).toEqual({ query: 'Rod', length: 4 })
   })
-  it('REQ-COMMUNITY-053 ignores an email, a finished word and a name that is too long', () => {
+  it('REQ-COMMUNITY-053 ignores an email, a space right after the @, another line and a name that is too long', () => {
     expect(findMentionQuery('mail me@example')).toBeNull()
-    expect(findMentionQuery('@로쟈 뒤에 글')).toBeNull()
-    expect(findMentionQuery('@' + 'a'.repeat(31))).toBeNull()
+    expect(findMentionQuery('@ 로쟈')).toBeNull()
+    expect(findMentionQuery('@로쟈\n다음')).toBeNull()
+    expect(findMentionQuery('@' + 'a'.repeat(41))).toBeNull()
+  })
+  it('REQ-COMMUNITY-053 keeps reading a name with spaces, so the words after the @ narrow the list until nothing matches', () => {
+    expect(findMentionQuery('@거미집 검지 아비')).toEqual({ query: '거미집 검지 아비', length: 10 })
+    expect(findMentionQuery('@로쟈 뒤에 글')).toEqual({ query: '로쟈 뒤에 글', length: 8 })
+    expect(filterMentions(pool, '로쟈 뒤에 글', 6)).toEqual([])
+  })
+  it('REQ-COMMUNITY-053 opens right after a mention or a Korean word, where no e-mail can be', () => {
+    expect(findMentionQuery('추천 \ufffc@')).toEqual({ query: '', length: 1 })
+    expect(findMentionQuery('추천 \ufffc@거미')).toEqual({ query: '거미', length: 3 })
+    expect(findMentionQuery('이상@')).toEqual({ query: '', length: 1 })
   })
   const pool = [
     { id: 'a', label: '붉은 눈 로쟈', aliases: ['Red Eyes Rodion', 'Rodion'] },
@@ -57,6 +68,17 @@ describe('REQ-COMMUNITY-053 typing @ finds identities and E.G.O', () => {
     expect(filterMentions(pool, '로쟈', 6).map(p => p.id)).toEqual(['b', 'a'])
     expect(filterMentions(pool, 'rodion', 6).map(p => p.id)).toEqual(['a', 'b'])
     expect(filterMentions(pool, 'イサン', 6).map(p => p.id)).toEqual(['c', 'd'])
+  })
+  const spider = ['검지 아비|yi-sang|이상', '소지 제자|sinclair|싱클레어', '약지 아비|hong-lu|홍루', '약지 제자|faust|파우스트', '엄지 아비|rodion|로쟈'].map(row => {
+    const [name, id, sinner] = row.split('|')
+    return { id, label: '거미집 ' + name, aliases: [sinner] }
+  })
+  it('REQ-COMMUNITY-053 matches every word of a name with spaces, in any order and with or without the spaces, and the sinner\'s name', () => {
+    expect(filterMentions(spider, '거미집 검지 아비 이상', 12).map(p => p.id)).toEqual(['yi-sang'])
+    expect(filterMentions(spider, '거미집검지', 12).map(p => p.id)).toEqual(['yi-sang'])
+    expect(filterMentions(spider, '아비 거미집', 12).map(p => p.id)).toEqual(['yi-sang', 'hong-lu', 'rodion'])
+    expect(filterMentions(spider, '거미집 ', 12)).toHaveLength(5)
+    expect(MENTION_LIMIT).toBeGreaterThanOrEqual(9)
   })
   it('REQ-COMMUNITY-053 lists the first entries for a bare @ and stops at the limit', () => {
     expect(filterMentions(pool, '', 3).map(p => p.id)).toEqual(['a', 'b', 'c'])
