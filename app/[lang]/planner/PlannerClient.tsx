@@ -230,7 +230,7 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
   const autosaveState = useMemo(() => snapshotPlannerState(state), [state])
   const autosave = useAutosaveDraft({
     storageKey: autosaveKey('plan', editId), state: autosaveState, isState: isPlannerState, ready: editResolved, enabled: autosaveEnabled,
-    apply: saved => dispatch({ type: 'LOAD_PLAN', state: { ...saved, identitySlots: withLcbIdentitySlots(identities, saved.identitySlots ?? []) } }),
+    apply: saved => { dispatch({ type: 'LOAD_PLAN', state: { ...saved, identitySlots: withLcbIdentitySlots(identities, saved.identitySlots ?? []) } }) },
   })
 
   const handleUpload = async () => {

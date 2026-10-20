@@ -3,7 +3,8 @@ import NoteEditorGuide from "./NoteEditorGuide";
 import { NoteBlockMenu, uploadNoteFiles } from "./NoteBlocks";
 import { useRef, useState } from "react";
 import { useLocale } from "next-intl";
-import { ImagePlus, LayoutTemplate } from "lucide-react";
+import { ImagePlus } from "lucide-react";
+import NoteTemplateMenu from "./NoteTemplateMenu";
 import { useEditorState, type Editor } from "@tiptap/react";
 export default function NoteDocumentTools({
   editor,
@@ -29,36 +30,7 @@ export default function NoteDocumentTools({
   return (
     <div className="flex flex-wrap items-center gap-1 text-sm">
       <NoteBlockMenu editor={editor} />
-      <button
-        type="button"
-        disabled={!editor || busy}
-        onClick={() =>
-          editor
-            ?.chain()
-            .focus()
-            .insertContent(
-              label(
-                ["운용 순서", "핵심 기프트", "대체 편성"].join("|"),
-                "運用手順|重要ギフト|代替編成",
-                "Rotation|Key gifts|Alternatives",
-              )
-                .split("|")
-                .flatMap((text) => [
-                  {
-                    type: "heading",
-                    attrs: { level: 2 },
-                    content: [{ type: "text", text }],
-                  },
-                  { type: "paragraph" },
-                ]),
-            )
-            .run()
-        }
-        className="flex min-h-9 items-center gap-1.5 px-2 text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-panel)] disabled:opacity-40"
-      >
-        <LayoutTemplate size={15} />
-        {label("양식 넣기", "テンプレート", "Template")}
-      </button>
+      <NoteTemplateMenu editor={editor} disabled={!editor || busy} />
       <button
         type="button"
         disabled={!editor || busy}

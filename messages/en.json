@@ -140,9 +140,11 @@
     },
     "confirm": "Confirm",
     "autosave": {
-      "title": "Autosaved draft",
+      "title": "You have a saved draft",
       "restore": "Restore",
-      "discard": "Discard"
+      "discard": "Discard",
+      "restored": "Draft restored",
+      "restoreFailed": "Could not restore the draft"
     }
   },
   "globalSearch": {

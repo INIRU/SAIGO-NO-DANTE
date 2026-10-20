@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { clearAutosave, readAutosave, writeAutosave } from '@/lib/drafts/autosave'
+import { clearAutosave, readAutosave, shouldOfferAutosave, writeAutosave } from '@/lib/drafts/autosave'
 
 const DELAY_MS = 1500
 
@@ -9,14 +9,17 @@ const DELAY_MS = 1500
  * Saves the editor state to localStorage a moment after each change and, when an earlier draft that differs from the
  * state the editor opened with exists, offers it back. Nothing is saved until the offer is answered, so a pending draft
  * is never overwritten. `ready` is true once the editor holds its opening state (loaded plan, fork, empty form).
+ * `savedAt` is when the item was last saved on the server: an older draft is dropped instead of offered.
+ * `apply` returns false when the draft could not be applied; `restore` passes that on for the toast.
  */
-export function useAutosaveDraft<T>({ storageKey, state, isState, ready, enabled = true, apply }: {
+export function useAutosaveDraft<T>({ storageKey, state, isState, ready, enabled = true, savedAt = null, apply }: {
   storageKey: string
   state: T
   isState: (state: unknown) => state is T
   ready: boolean
   enabled?: boolean
-  apply: (state: T) => void
+  savedAt?: number | null
+  apply: (state: T) => boolean | void
 }) {
   const [offer, setOffer] = useState<{ savedAt: number; state: T } | null>(null)
   const [answered, setAnswered] = useState(false)
@@ -29,9 +32,9 @@ export function useAutosaveDraft<T>({ storageKey, state, isState, ready, enabled
     if (!ready || !enabled || baseline.current !== null) return
     baseline.current = JSON.stringify(latest.current)
     const stored = readAutosave(storageKey, isState)
-    if (stored && JSON.stringify(stored.state) !== baseline.current) setOffer(stored)
+    if (stored && shouldOfferAutosave(stored, baseline.current, savedAt)) setOffer(stored)
     else { if (stored) clearAutosave(storageKey); setAnswered(true) }
-  }, [ready, enabled, storageKey, isState])
+  }, [ready, enabled, storageKey, isState, savedAt])
 
   useEffect(() => {
     if (!answered || stopped.current) return
@@ -43,10 +46,12 @@ export function useAutosaveDraft<T>({ storageKey, state, isState, ready, enabled
     return () => clearTimeout(timer)
   }, [answered, state, storageKey])
 
-  const restore = useCallback(() => {
-    if (offer) apply(offer.state)
+  const restore = useCallback((): boolean => {
+    let applied = true
+    try { if (offer) applied = apply(offer.state) !== false } catch { applied = false }
     setOffer(null)
     setAnswered(true)
+    return applied
   }, [offer, apply])
   const discard = useCallback(() => {
     clearAutosave(storageKey)

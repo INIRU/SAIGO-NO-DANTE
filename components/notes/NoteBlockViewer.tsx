@@ -1,5 +1,5 @@
 'use client'
-import { createContext, useContext, useMemo, useState, useId, type ReactNode } from 'react'
+import { Fragment, createContext, useContext, useMemo, useState, useId, type ReactNode } from 'react'
 import useSWR from 'swr'
 import { ChevronDown } from 'lucide-react'
 import { useLocale } from 'next-intl'
@@ -14,6 +14,14 @@ import { KeywordWithTooltip, useKeywords } from '@/components/providers/KeywordP
 import { resolveKeywordTextColor } from '@/lib/keywords/text-color'
 import { getLocalizedKeywordName, type SupportedLang } from '@/lib/i18n'
 import { isNoteImageUrl } from '@/lib/notes/images'
+import { mentionHref, type MentionKind } from '@/lib/notes/mention'
+import QuietImage from '@/components/ui/QuietImage'
+import { Link } from '@/lib/i18n/navigation'
+import NoteLightboxImage from './NoteLightboxImage'
+import NotePreviewHost from './NotePreviewCard'
+import NoteTocLayout, { NoteHeadingLink } from './NoteToc'
+import { NOTE_TOC_MIN, collectHeadings } from '@/lib/notes/toc'
+import { isNoteColorSin } from '@/lib/notes/text-style'
 import { GIFT_KEYWORD_COLORS } from '@/lib/constants/gift'
 import { NoteCardView } from './NoteCardBlock'
 
@@ -45,15 +53,31 @@ export function NoteKeywordLabel({id}:{id:string}) {
   return <KeywordWithTooltip keyword={name} krKey={info ? id : undefined} inline displayColor={color}><span style={{color,fontWeight:600}}>{name}</span></KeywordWithTooltip>
 }
 /** A gift written inside a sentence: its art at text height and its name in the keyword's colour; opens the gift. */
-export function NoteGiftLabel({id,name}:{id:string;name?:string}) {
+export function NoteGiftLabel({id,name,preview=true}:{id:string;name?:string;/** The editor draws its gifts without the hover card. */preview?:boolean}) {
   const lang=useLocale(), {data}=useContext(AssetContext), onGiftClick=useContext(NoteGiftClickContext)
   const asset=data.get('gift:'+id)
   const label=asset ? assetName(asset,lang) : name || id
   const style={'--gift-color':GIFT_KEYWORD_COLORS[asset?.keyword ?? ''] ?? '#c8b898'} as React.CSSProperties
   const body=<>{asset?.image_url && <img src={asset.image_url} alt="" loading="lazy" decoding="async"/>}<strong>{label}</strong></>
-  return onGiftClick && asset
+  const element=onGiftClick && asset
     ? <button type="button" className="note-gift-label" style={style} onClick={()=>onGiftClick(id)}>{body}</button>
     : <span className="note-gift-label" style={style}>{body}</span>
+  // With a gift window wired in, a tap opens that window; without one a tap opens the preview.
+  return preview ? <NotePreviewHost asset={asset} modalOnTap={!onGiftClick}>{element}</NotePreviewHost> : element
+}
+/**
+ * An identity or E.G.O named inside a sentence: its portrait and name as a chip. In the viewer it links to the page
+ * (`linked`); the editor draws it as plain text so a click selects it. Without the asset only the saved name shows.
+ */
+export function NoteMentionLabel({kind,id,name,linked=true}:{kind:MentionKind;id:string;name?:string;linked?:boolean}) {
+  const lang=useLocale(), {data}=useContext(AssetContext)
+  const asset=data.get(`${kind}:${id}`)
+  const sinnerId=asset?.identity?.sinner_id ?? asset?.sinnerId
+  const body=<>{asset?.image_url && <QuietImage src={asset.image_url} alt="" width={24} height={24} sizes="1.5rem" style={{width:'1.35em',height:'1.35em'}}/>}<strong>{asset ? assetName(asset,lang) : name || id}</strong></>
+  const href=asset && sinnerId ? mentionHref(kind,id,sinnerId) : undefined
+  return linked && href
+    ? <NotePreviewHost asset={asset} href={href}><Link href={href} className="note-mention">{body}</Link></NotePreviewHost>
+    : <span className="note-mention">{body}</span>
 }
 export function NoteAssetArtwork({asset, compact=false}:{asset:NoteAssetData; compact?:boolean}) {
   const lang=useLocale(), name=assetName(asset,lang)
@@ -86,15 +110,24 @@ export function NoteVideo({id}:{id:string}) {
     <a href={`https://www.youtube.com/watch?v=${id}`} target="_blank" rel="noopener noreferrer">{lang==='ko'?'YouTube에서 보기 ↗':lang==='ja'?'YouTubeで見る ↗':'Watch on YouTube ↗'}</a>
   </div>
 }
-function NoteAccordionView({title,children}:{title:ReactNode;children:ReactNode}) {
-  const [open,setOpen]=useState(true), id=useId(), lang=useLocale()
+function NoteAccordionView({title,children,open,onToggle}:{title:ReactNode;children:ReactNode;open:boolean;onToggle:()=>void}) {
+  const id=useId(), lang=useLocale()
   return <section className="note-accordion" data-open={open}>
-    <div className="note-accordion-heading"><button type="button" aria-expanded={open} aria-controls={id} aria-label={lang==='ko'?'아코디언 접기 또는 펼치기':lang==='ja'?'アコーディオン開閉':'Toggle accordion'} onClick={()=>setOpen(!open)}><ChevronDown size={18}/></button><div>{title}</div></div>
+    <div className="note-accordion-heading"><button type="button" aria-expanded={open} aria-controls={id} aria-label={lang==='ko'?'아코디언 접기 또는 펼치기':lang==='ja'?'アコーディオン開閉':'Toggle accordion'} onClick={onToggle}><ChevronDown size={18}/></button><div>{title}</div></div>
     <div id={id} className="note-accordion-panel" inert={!open}><div><div className="note-accordion-body">{children}</div></div></div>
   </section>
 }
-export default function NoteBlockViewer({doc,renderText}:{doc:JSONContent;renderText:(text:string)=>ReactNode}) {
+export default function NoteBlockViewer({doc,renderText,anchors=false}:{doc:JSONContent;renderText:(text:string)=>ReactNode;/** Give the headings ids and a copy-link button, and a table of contents from three headings (detail pages, previews). */anchors?:boolean}) {
   const lang=useLocale(), tr=(ko:string,ja:string,en:string)=>lang==='ja'?ja:lang==='en'?en:ko
+  const headings=useMemo(()=>anchors?collectHeadings(doc):[],[anchors,doc])
+  // Open or closed lives here (not in each accordion) so the "close all" button and the accordions share it.
+  const accordions=useMemo(()=>{const found:JSONContent[]=[];const visit=(n:JSONContent)=>{if(n.type==='noteAccordion')found.push(n);n.content?.forEach(visit)};visit(doc);return found},[doc])
+  // By position in the document: a parent that parses the text again makes new node objects, the positions stay.
+  const accordionAt=useMemo(()=>new Map(accordions.map((a,index)=>[a,index])),[accordions])
+  const [closed,setClosed]=useState<ReadonlySet<number>>(()=>new Set())
+  const allOpen=accordions.every((_,index)=>!closed.has(index))
+  const toggleAccordion=(index:number)=>setClosed(current=>{const next=new Set(current);if(!next.delete(index))next.add(index);return next})
+  const headingIds=useMemo(()=>headings.length>=NOTE_TOC_MIN?new Map(headings.map(h=>[h.node,h])):null,[headings])
   function render(n:JSONContent,key:string):ReactNode {
     // A text node of only spaces is the gap between two chips (or a chip and a word): it stays, the paragraph around it decides whether anything shows.
     if (!(n.type === 'text' && n.text) && !visibleNode(n) && !['horizontalRule','hardBreak','tableRow','tableCell','tableHeader'].includes(n.type ?? '')) return null
@@ -108,10 +141,18 @@ export default function NoteBlockViewer({doc,renderText}:{doc:JSONContent;render
         if(m.type==='code') result=<code>{n.text}</code>
         if(m.type==='link') result=<a href={m.attrs?.href} target="_blank" rel="noopener noreferrer">{result}</a>
       }
+      // The colour goes inside and the highlight outside whatever the saved order: the highlight lightens the colour it wraps (app/globals.css).
+      const sin=(n.marks ?? []).find(m=>m.type==='noteColor')?.attrs?.sin
+      if(isNoteColorSin(sin)) result=<span className="note-sin-color" data-note-color={sin} style={{'--note-sin':`var(--${sin})`} as React.CSSProperties}>{result}</span>
+      if(n.marks?.some(m=>m.type==='highlight')) result=<mark className="note-highlight">{result}</mark>
       return <span key={key}>{result}</span>
     }
     switch(n.type) {
-      case 'noteAccordion': return <NoteAccordionView key={key} title={n.content?.[0]?.content?.map((c,i)=>render(c,`${key}-title-${i}`)) || '…'}>{n.content?.[1]?.content?.map((c,i)=>render(c,`${key}-body-${i}`))}</NoteAccordionView>
+      case 'noteAccordion': {
+        const index=accordionAt.get(n) ?? 0
+        const view=<NoteAccordionView key={key} open={!closed.has(index)} onToggle={()=>toggleAccordion(index)} title={n.content?.[0]?.content?.map((c,i)=>render(c,`${key}-title-${i}`)) || '…'}>{n.content?.[1]?.content?.map((c,i)=>render(c,`${key}-body-${i}`))}</NoteAccordionView>
+        return accordions.length>1 && n===accordions[0] ? <Fragment key={key}><button type="button" className="note-accordion-all" onClick={()=>setClosed(allOpen?new Set(accordions.map((_,index)=>index)):new Set())}>{allOpen?tr('모두 접기','すべて閉じる','Collapse all'):tr('모두 펼치기','すべて開く','Expand all')}</button>{view}</Fragment> : view
+      }
       case 'noteCallout': { const variant = n.attrs?.variant === 'warning' ? 'warning' : 'tip'; return <aside key={key} className="note-callout" data-variant={variant}><div className="note-callout-head"><strong>{variant === 'warning' ? tr('주의', '注意', 'Warning') : tr('팁', 'ヒント', 'Tip')}</strong></div><div className="note-callout-body">{children}</div></aside> }
       case 'noteCard': return <NoteCardView key={key} kind={n.attrs!.kind} id={n.attrs!.id}/>
       case 'table': return <div key={key} className="note-block-table"><table><tbody>{children}</tbody></table></div>
@@ -120,10 +161,14 @@ export default function NoteBlockViewer({doc,renderText}:{doc:JSONContent;render
       case 'tableHeader': return <th key={key} colSpan={n.attrs?.colspan} rowSpan={n.attrs?.rowspan}>{children}</th>
       case 'noteKeyword': return <NoteKeywordLabel key={key} id={n.attrs!.id}/>
       case 'noteGift': return <NoteGiftLabel key={key} id={n.attrs!.id} name={n.attrs?.name}/>
+      case 'noteMention': return <NoteMentionLabel key={key} kind={n.attrs!.kind} id={n.attrs!.id} name={n.attrs?.name}/>
       case 'noteAsset': return <NoteAssetView key={key} kind={n.attrs!.kind} id={n.attrs!.id}/>
       case 'noteVideo': return <NoteVideo key={key} id={n.attrs!.videoId}/>
-      case 'image': return isNoteImageUrl(n.attrs?.src) ? <img key={key} className="note-document-image" src={n.attrs!.src} alt={n.attrs?.alt ?? ''} loading="lazy"/> : null
-      case 'heading': return n.attrs?.level===1?<h2 key={key}>{children}</h2>:<h3 key={key}>{children}</h3>
+      case 'image': return isNoteImageUrl(n.attrs?.src) ? <NoteLightboxImage key={key} className="note-document-image" src={n.attrs!.src} alt={n.attrs?.alt ?? ''}/> : null
+      case 'heading': {
+        const anchor=headingIds?.get(n), Tag=n.attrs?.level===1?'h2':'h3'
+        return anchor ? <Tag key={key} id={anchor.id} className="note-heading">{children}<NoteHeadingLink id={anchor.id} text={anchor.text}/></Tag> : <Tag key={key}>{children}</Tag>
+      }
       case 'paragraph': return <p key={key}>{children}</p>
       case 'bulletList': return <ul key={key}>{children}</ul>
       case 'orderedList': return <ol key={key} start={n.attrs?.start}>{children}</ol>
@@ -135,5 +180,5 @@ export default function NoteBlockViewer({doc,renderText}:{doc:JSONContent;render
       default: return <div key={key}>{children}</div>
     }
   }
-  return <NoteAssetsProvider doc={doc}><div className="note-block-document">{doc.content?.map((n,i)=>render(n,String(i)))}</div></NoteAssetsProvider>
+  return <NoteAssetsProvider doc={doc}><NoteTocLayout headings={headings}><div className="note-block-document">{doc.content?.map((n,i)=>render(n,String(i)))}</div></NoteTocLayout></NoteAssetsProvider>
 }
