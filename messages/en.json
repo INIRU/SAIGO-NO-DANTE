@@ -1663,7 +1663,8 @@
     "updatedPlans": "Recently updated plans",
     "popularDecks": "Frequently visited decks",
     "popularPlans": "Frequently visited plans",
-    "popularIdentities": "Frequently visited identities"
+    "popularIdentities": "Frequently visited identities",
+    "rising": "Rising now"
   },
   "ownedBadge": {
     "owned": "Owned",

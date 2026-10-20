@@ -1663,7 +1663,8 @@
     "updatedPlans": "최근 수정된 플랜",
     "popularDecks": "관리자분들이 자주 찾는 덱",
     "popularPlans": "관리자분들이 자주 찾는 플랜",
-    "popularIdentities": "관리자분들이 자주 찾는 인격"
+    "popularIdentities": "관리자분들이 자주 찾는 인격",
+    "rising": "지금 뜨는"
   },
   "ownedBadge": {
     "owned": "보유",
