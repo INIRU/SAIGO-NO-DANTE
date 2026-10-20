@@ -484,7 +484,8 @@
       "otherOpinionsDescription": "Decks using the same identities with different order or E.G.O choices.",
       "otherOpinionsEmpty": "No alternate take with this identity lineup yet.",
       "similarDecks": "Similar Decks",
-      "similarDecksDescription": "Decks close in formation, theme, or E.G.O setup."
+      "similarDecksDescription": "Decks close in formation, theme, or E.G.O setup.",
+      "coVisited": "Viewed together"
     },
     "identityPreview": {
       "title": "Identity details",
@@ -1673,7 +1674,8 @@
     "updatedPlans": "Recently updated plans",
     "popularDecks": "Frequently visited decks",
     "popularPlans": "Frequently visited plans",
-    "popularIdentities": "Frequently visited identities"
+    "popularIdentities": "Frequently visited identities",
+    "rising": "Rising now"
   },
   "ownedBadge": {
     "owned": "Owned",
@@ -1917,6 +1919,11 @@
       "skills": "Skills",
       "passives": "Passives",
       "decks": "Decks"
+    },
+    "recommendations": {
+      "companions": "Fielded together",
+      "popular": "Popular decks and plans with this identity",
+      "unit": "times"
     },
     "pageTab": {
       "info": "Identity Info",
@@ -2758,5 +2765,11 @@
     "empty": "No posts",
     "metaTitle": "{title} | Series",
     "notFound": "Series not found"
+  },
+  "suggestions": {
+    "label": "Suggested",
+    "pairsWith": "Pairs with",
+    "archetype": "{name} deck",
+    "sinResonance": "{sin} resonance"
   }
 }

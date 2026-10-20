@@ -1,6 +1,6 @@
 'use client'
 
-import { memo, useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react'
+import { Fragment, memo, useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react'
 import IdentityFrameCard, { getFormationOverlay } from '@/components/ui/IdentityFrameCard'
 import Image from 'next/image'
 import { ChevronDown, ChevronUp, ClipboardPaste, Download, RotateCcw, X } from 'lucide-react'
@@ -8,6 +8,9 @@ import { useReducedMotion } from 'motion/react'
 import * as m from 'motion/react-m'
 import { showSuccess } from '@/lib/toast'
 import BaseModal from '@/components/ui/BaseModal'
+import SuggestionRibbon from '@/components/ui/SuggestionRibbon'
+import SuggestionNote, { useArchetypeLabel } from './SuggestionNote'
+import type { Archetype, Suggestion } from '@/lib/discovery/suggestion-types'
 import CharacterPickerFilters from '@/components/ui/CharacterPickerFilters'
 import { compareReleaseDate } from '@/lib/utils/release-order'
 import EgoDisplayCard from '@/components/sinners/EgoDisplayCard'
@@ -74,6 +77,7 @@ export type PlannerEgoBoardSlot = {
 
 export const PLANNER_EGO_GRADE_ORDER = ['ZAYIN', 'TETH', 'HE', 'WAW', 'ALEPH'] as const
 const UPTIES = [1, 2, 3, 4] as const
+const SUGGESTED_LIMIT = 6
 const ROMAN = ['I', 'II', 'III', 'IV']
 
 const COMPACT_KOTRA_STYLE: CSSProperties = {
@@ -399,6 +403,9 @@ export function PlannerIdentitySelectModal({
   identities,
   selectedIdentityId,
   selectedUptie = 4,
+  suggestions,
+  archetype,
+  partnerIdentity,
   onClose,
   onSelect,
   getSinnerName,
@@ -408,6 +415,12 @@ export function PlannerIdentitySelectModal({
   identities: PlannerDeckIdentity[]
   selectedIdentityId?: string | null
   selectedUptie?: number
+  /** Suggested identities, most fitting first, listed under the "추천" ribbon with who they pair with; only while nothing is searched or filtered. */
+  suggestions?: readonly Suggestion[] | null
+  /** The archetype of the chosen identities, named beside the ribbon when it has keywords. */
+  archetype?: Archetype | null
+  /** Looks up a partner's identity (any sinner) for its face. */
+  partnerIdentity?: (id: string) => PlannerDeckIdentity | undefined
   onClose: () => void
   /** Plain click applies uptie 4; the picker passes the chosen uptie. "Back to LCB" passes the LCB identity at IV: a sinner is never left empty. */
   onSelect: (identity: PlannerDeckIdentity, uptie: number) => void
@@ -425,8 +438,15 @@ export function PlannerIdentitySelectModal({
   const filtered = identities
     .filter(identity => (!grade || String(identity.rarity) === grade) && [identity.name, identity.name_kr, identity.name_en, identity.name_jp].some(name => name?.toLocaleLowerCase().includes(needle)))
     .sort(compareReleaseDate)
+  const byId = new Map(filtered.map(identity => [identity.id, identity]))
+  const suggestionOf = new Map((suggestions ?? []).map(suggestion => [suggestion.id, suggestion]))
+  const suggested = needle || grade ? [] : (suggestions ?? []).flatMap(suggestion => byId.get(suggestion.id) ?? []).slice(0, SUGGESTED_LIMIT)
+  const archetypeLabel = useArchetypeLabel()(archetype)
+  const suggestedSet = new Set(suggested.map(identity => identity.id))
+  const rest = suggested.length ? filtered.filter(identity => !suggestedSet.has(identity.id)) : filtered
   const lcb = sinner ? identities.find(identity => identity.game_id === LCB_IDS[sinner.id]) : undefined
   const canResetToLcb = lcb && (selectedIdentityId !== lcb.id || selectedUptie !== 4)
+
 
   return (
     <BaseModal open={open && !!sinner} onClose={onClose} maxWidth="64rem" title={t('modalTitle')}>
@@ -453,53 +473,59 @@ export function PlannerIdentitySelectModal({
           <div className="character-picker-layout">
             <CharacterPickerFilters query={query} onQuery={setQuery} grade={grade} onGrade={setGrade} grades={[3, 2, 1].map(n => ({ value: String(n), label: '0'.repeat(n) }))} count={filtered.length} />
             <div className="idpick__results">
-              <ul className="idpick__grid">
-                {filtered.map(identity => {
-                  const selected = selectedIdentityId === identity.id
-                  const name = localizeIdentityName(identity, locale)
-                  // Hover only reveals the uptie bar; nothing changes until a numeral (or the card, = IV) is clicked.
-                  const shownUptie = selected ? selectedUptie : 4
-                  return (
-                    <li key={identity.id} className="idpick__card" data-picker={picker === identity.id}>
-                      <button
-                        type="button"
-                        className="idpick__main"
-                        aria-pressed={selected}
-                        aria-label={name + ' ' + t('uptie', { level: ROMAN[3] })}
-                        onClick={() => {
-                          if (press.current.fired) { press.current.fired = false; return }
-                          onSelect(identity, 4)
-                        }}
-                        onPointerDown={event => {
-                          if (event.pointerType === 'mouse') return
-                          press.current.fired = false
-                          press.current.timer = setTimeout(() => { press.current.fired = true; setPicker(identity.id) }, 450)
-                        }}
-                        onPointerUp={() => clearTimeout(press.current.timer)}
-                        onPointerLeave={() => clearTimeout(press.current.timer)}
-                        onPointerCancel={() => clearTimeout(press.current.timer)}
-                        onContextMenu={event => event.preventDefault()}
-                      >
-                        <IdentityFrameCard identity={identity} uptie={shownUptie} name={name} selected={selected} sizes="(max-width: 40rem) 30vw, 10rem" />
-                      </button>
-                      <div className="idpick__upties" role="group" aria-label={name + ' ' + t('uptieGroup')}>
-                        {UPTIES.map(level => (
+              {(suggested.length ? [{ items: suggested, ribbon: true }, { items: rest, ribbon: false }] : [{ items: rest, ribbon: false }]).map(group => (
+                <Fragment key={group.ribbon ? 'suggested' : 'rest'}>
+                  {group.ribbon && <div className="idpick__suggest"><SuggestionRibbon />{archetypeLabel && <span className="idpick__archetype">{archetypeLabel}</span>}</div>}
+                  <ul className="idpick__grid" data-group={group.ribbon ? 'suggested' : suggested.length ? 'after-suggested' : undefined}>
+                    {group.items.map(identity => {
+                      const selected = selectedIdentityId === identity.id
+                      const name = localizeIdentityName(identity, locale)
+                      // Hover only reveals the uptie bar; nothing changes until a numeral (or the card, = IV) is clicked.
+                      const shownUptie = selected ? selectedUptie : 4
+                      return (
+                        <li key={identity.id} className="idpick__card" data-picker={picker === identity.id}>
                           <button
-                            key={level}
                             type="button"
-                            aria-pressed={selected && selectedUptie === level}
-                            data-current={shownUptie === level}
-                            aria-label={name + ' ' + t('uptie', { level: ROMAN[level - 1] })}
-                            onClick={() => onSelect(identity, level)}
+                            className="idpick__main"
+                            aria-pressed={selected}
+                            aria-label={name + ' ' + t('uptie', { level: ROMAN[3] })}
+                            onClick={() => {
+                              if (press.current.fired) { press.current.fired = false; return }
+                              onSelect(identity, 4)
+                            }}
+                            onPointerDown={event => {
+                              if (event.pointerType === 'mouse') return
+                              press.current.fired = false
+                              press.current.timer = setTimeout(() => { press.current.fired = true; setPicker(identity.id) }, 450)
+                            }}
+                            onPointerUp={() => clearTimeout(press.current.timer)}
+                            onPointerLeave={() => clearTimeout(press.current.timer)}
+                            onPointerCancel={() => clearTimeout(press.current.timer)}
+                            onContextMenu={event => event.preventDefault()}
                           >
-                            {ROMAN[level - 1]}
+                            <IdentityFrameCard identity={identity} uptie={shownUptie} name={name} selected={selected} sizes="(max-width: 40rem) 30vw, 10rem" />
                           </button>
-                        ))}
-                      </div>
-                    </li>
-                  )
-                })}
-              </ul>
+                          <div className="idpick__upties" role="group" aria-label={name + ' ' + t('uptieGroup')}>
+                            {UPTIES.map(level => (
+                              <button
+                                key={level}
+                                type="button"
+                                aria-pressed={selected && selectedUptie === level}
+                                data-current={shownUptie === level}
+                                aria-label={name + ' ' + t('uptie', { level: ROMAN[level - 1] })}
+                                onClick={() => onSelect(identity, level)}
+                              >
+                                {ROMAN[level - 1]}
+                              </button>
+                            ))}
+                          </div>
+                          {group.ribbon && partnerIdentity && suggestionOf.has(identity.id) && <SuggestionNote suggestion={suggestionOf.get(identity.id)!} identityOf={partnerIdentity} />}
+                        </li>
+                      )
+                    })}
+                  </ul>
+                </Fragment>
+              ))}
               {filtered.length === 0 && <p className="py-8 text-center" style={{ color: '#9c8b73', fontSize: '0.9375rem' }}>{t('noResults')}</p>}
             </div>
           </div>
@@ -520,6 +546,10 @@ export function PlannerIdentitySelectModal({
             .idpick__close :global(svg) { width: 1.25rem; height: 1.25rem; }
             .idpick__results { min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
             .idpick__grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(8.5rem, 1fr)); gap: 1.25rem 1rem; padding: 1.25rem; list-style: none; }
+            .idpick__suggest { display: flex; align-items: center; gap: 0.625rem; padding: 1.25rem 1.25rem 0; }
+            .idpick__archetype { color: #cbb994; font-family: var(--font-heading), var(--font-sans); font-size: 0.9375rem; }
+            .idpick__grid[data-group='suggested'] { padding-top: 0.75rem; }
+            .idpick__grid[data-group='after-suggested'] { margin-top: 0.25rem; border-top: 1px solid #2e2417; }
             .idpick__card { position: relative; min-width: 0; }
             .idpick__main { display: block; width: 100%; padding: 0; border: 0; background: none; cursor: pointer; -webkit-touch-callout: none; user-select: none; transition: filter 0.15s ease; }
             .idpick__main:hover { filter: brightness(1.1); }
@@ -542,6 +572,8 @@ export function PlannerIdentitySelectModal({
             @media (pointer: coarse) { .idpick__upties button { min-height: 2.75rem; } }
             @media (max-width: 39.9375rem) {
               .idpick__grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.25rem 0.5rem; padding: 1rem 0.75rem; }
+              .idpick__suggest { padding: 1rem 0.75rem 0; }
+              .idpick__grid[data-group='suggested'] { padding-top: 0.75rem; }
               .idpick__upties { left: 3%; right: 3%; }
               .idpick__header { padding-left: 0.875rem; gap: 0.5rem; }
               .idpick__clear { padding: 0 0.625rem; }
@@ -717,6 +749,9 @@ export function PlannerEgoSelectModal({
   sinner,
   egos,
   selectedEgosByGrade,
+  suggestions,
+  archetype,
+  partnerIdentity,
   onClose,
   onSelect,
   onDeselect,
@@ -726,6 +761,10 @@ export function PlannerEgoSelectModal({
   sinner: PlannerDeckSinner | null
   egos: PlannerDeckEgo[]
   selectedEgosByGrade: Record<string, PlannerDeckEgo | undefined>
+  /** Suggested E.G.O, most equipped first, listed under the "추천" ribbon; only while nothing is searched or filtered. They stay in their grade rows too. */
+  suggestions?: readonly Suggestion[] | null
+  archetype?: Archetype | null
+  partnerIdentity?: (id: string) => PlannerDeckIdentity | undefined
   onClose: () => void
   onSelect: (ego: PlannerDeckEgo) => void
   onDeselect: (grade: string, ego: PlannerDeckEgo) => void
@@ -738,6 +777,24 @@ export function PlannerEgoSelectModal({
   const [query, setQuery] = useState(''), [gradeFilter, setGradeFilter] = useState('')
   useEffect(() => { setQuery(''); setGradeFilter('') }, [open, sinner?.id])
   const filtered = egos.filter(ego => (!gradeFilter || ego.grade === gradeFilter) && [ego.name, ego.name_kr, ego.name_en, ego.name_jp].some(name => name?.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase())))
+  const egoById = new Map(filtered.map(ego => [ego.id, ego]))
+  const suggestionOf = new Map((suggestions ?? []).map(suggestion => [suggestion.id, suggestion]))
+  const suggested = query.trim() || gradeFilter ? [] : (suggestions ?? []).flatMap(suggestion => egoById.get(suggestion.id) ?? []).slice(0, SUGGESTED_LIMIT)
+  const archetypeLabel = useArchetypeLabel()(archetype)
+  const renderEgo = (ego: PlannerDeckEgo, note = false) => (
+    <div key={ego.id}>
+      <EgoDisplayCard
+        onClick={() => onSelect(ego)}
+        ego={ego}
+        name={localizeEgoName(ego, locale)}
+        sinnerId={ego.sinner_id}
+        lang={locale}
+        selected={selectedEgosByGrade[ego.grade]?.id === ego.id}
+        className="character-picker-ego-card"
+      />
+      {note && partnerIdentity && suggestionOf.has(ego.id) && <SuggestionNote suggestion={suggestionOf.get(ego.id)!} identityOf={partnerIdentity} />}
+    </div>
+  )
   const egosByGrade = new Map<string, PlannerDeckEgo[]>()
   for (const ego of filtered) egosByGrade.set(ego.grade, [...(egosByGrade.get(ego.grade) ?? []), ego])
   return (
@@ -759,6 +816,12 @@ export function PlannerEgoSelectModal({
           <div className="character-picker-layout">
           <CharacterPickerFilters query={query} onQuery={setQuery} grade={gradeFilter} onGrade={setGradeFilter} grades={PLANNER_EGO_GRADE_ORDER.map(value => ({ value, label: value }))} count={filtered.length} />
           <div className="planner-deck-select-modal__results flex flex-col gap-5 p-5">
+            {suggested.length > 0 && (
+              <div>
+                <div className="mb-2 flex items-center gap-2.5"><SuggestionRibbon />{archetypeLabel && <span className="font-[family-name:var(--font-heading)] text-[0.9375rem] text-[#cbb994]">{archetypeLabel}</span>}</div>
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">{suggested.map(ego => renderEgo(ego, true))}</div>
+              </div>
+            )}
             {!filtered.length && <p className="py-8 text-center" style={{ color: 'var(--text-secondary)' }}>{locale === 'ja' ? '結果がありません' : locale === 'en' ? 'No results' : '검색 결과가 없습니다'}</p>}
             {PLANNER_EGO_GRADE_ORDER.filter(grade => (egosByGrade.get(grade)?.length ?? 0) > 0).map(grade => {
               const gradeColor = GRADE_COLORS[grade] ?? '#555'
@@ -795,22 +858,7 @@ export function PlannerEgoSelectModal({
                     </div>
                   ) : (
                     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                      {gradeEgos.map(ego => {
-                        const isSelected = selectedForGrade?.id === ego.id
-                        return (
-                          <div key={ego.id}>
-                            <EgoDisplayCard
-                              onClick={() => onSelect(ego)}
-                              ego={ego}
-                              name={localizeEgoName(ego, locale)}
-                              sinnerId={ego.sinner_id}
-                              lang={locale}
-                              selected={isSelected}
-                              className="character-picker-ego-card"
-                            />
-                          </div>
-                        )
-                      })}
+                      {gradeEgos.map(ego => renderEgo(ego))}
                     </div>
                   )}
                 </div>

@@ -5,7 +5,7 @@ import PostAuthorName from '@/components/community/PostAuthorName'
 import SeriesBox from '@/components/series/SeriesBox'
 import type { SeriesView } from '@/lib/series/order'
 import DeckDetailSkeleton from '@/components/decks/DeckDetailSkeleton'
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef, type ReactNode } from 'react'
 import dynamic from 'next/dynamic'
 import Image from 'next/image'
 import { useReducedMotion } from 'motion/react'
@@ -377,9 +377,11 @@ type DeckDetailClientProps = {
   initialComments?: Comment[]
   initialRecommendations?: DeckRecommendationsData | null
   initialSeries?: SeriesView | null
+  /** The "함께 본 글" lane, streamed by the server; empty when there is nothing to show. */
+  coVisited?: ReactNode
 }
 
-export default function DeckDetailClient({ id, initialDeck, initialComments, initialRecommendations, initialSeries }: DeckDetailClientProps) {
+export default function DeckDetailClient({ id, initialDeck, initialComments, initialRecommendations, initialSeries, coVisited }: DeckDetailClientProps) {
   const router = useRouter()
   const locale = useLocale() as SupportedLang
   const t = useTranslations('decks.detail')
@@ -1101,11 +1103,14 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
             </section>
           )}
 
-          {hasRecommendations && (
+          {hasRecommendations ? (
             <section id="deck-similar" aria-labelledby="deck-similar-title" className={styles.section}>
               <SectionHead id="deck-similar-title" title={t('sectionRelated')} />
               <DeckRecommendations recommendations={initialRecommendations} currentDeckId={id} />
+              <div className="mt-8 empty:hidden">{coVisited}</div>
             </section>
+          ) : (
+            <section className={`${styles.section} empty:hidden`}>{coVisited}</section>
           )}
 
           <section id="deck-comments" aria-labelledby="deck-comments-title" className={styles.section}>

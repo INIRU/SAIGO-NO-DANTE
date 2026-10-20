@@ -484,7 +484,8 @@
       "otherOpinionsDescription": "同じ人格編成で、順序やE.G.O選択が異なるデッキです。",
       "otherOpinionsEmpty": "同じ人格編成の別運用はまだありません。",
       "similarDecks": "似たデッキ",
-      "similarDecksDescription": "編成、テーマ、E.G.O構成が近いデッキです。"
+      "similarDecksDescription": "編成、テーマ、E.G.O構成が近いデッキです。",
+      "coVisited": "一緒に見られた投稿"
     },
     "identityPreview": {
       "title": "人格詳細",
@@ -1673,7 +1674,8 @@
     "updatedPlans": "最近更新されたプラン",
     "popularDecks": "よく読まれているデッキ",
     "popularPlans": "よく読まれているプラン",
-    "popularIdentities": "よく見られている人格"
+    "popularIdentities": "よく見られている人格",
+    "rising": "今伸びている"
   },
   "ownedBadge": {
     "owned": "所持",
@@ -1917,6 +1919,11 @@
       "skills": "スキル",
       "passives": "パッシブ",
       "decks": "デッキ"
+    },
+    "recommendations": {
+      "companions": "よく一緒に使う人格",
+      "popular": "この人格を使った人気のデッキ・プラン",
+      "unit": "回"
     },
     "pageTab": {
       "info": "人格情報",
@@ -2758,5 +2765,11 @@
     "empty": "投稿がありません",
     "metaTitle": "{title} | シリーズ",
     "notFound": "シリーズが見つかりません"
+  },
+  "suggestions": {
+    "label": "おすすめ",
+    "pairsWith": "相性",
+    "archetype": "{name}デッキ",
+    "sinResonance": "{sin}共鳴"
   }
 }

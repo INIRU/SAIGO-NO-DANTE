@@ -15,6 +15,7 @@ import { KEYWORD_COLORS, GRADE_LABELS, GRADES } from '@/components/mirror-dungeo
 import type { GiftData } from '@/lib/planner/types'
 import { getGiftKeywordIconUrl, getGiftKeywordSlug } from '@/lib/constants/gift'
 import { GIFT_KEYWORD_ORDER } from '@/lib/mirror-dungeon/gift-check'
+import SuggestionRibbon from '@/components/ui/SuggestionRibbon'
 
 const keywordRank = (keyword: string | null | undefined, order: readonly string[]) => {
   const index = order.indexOf(!keyword || keyword.startsWith('공통') ? '공통' : keyword)
@@ -246,7 +247,7 @@ export interface GiftCatalogProps {
   idleHint?: ReactNode
   /** Groups listed first, in this order, each under its own heading; a gift sits in the first group that has it.
    *  `warning` draws the red mark (e.g. gifts only this floor gives); `note` is a line of the user's own under the heading. */
-  pinned?: { ids: ReadonlySet<string>; label: string; warning?: boolean; note?: string }[]
+  pinned?: { ids: ReadonlySet<string>; label: string; warning?: boolean; note?: string; /** Heading as the gold "추천" ribbon instead of the label text. */ ribbon?: boolean }[]
 }
 
 type GiftItemProps = {
@@ -732,7 +733,7 @@ export default function GiftCatalog({
                     {pin ? (
                       <>
                         {pin.warning && <span className="relative inline-block h-[1.125rem] w-[1.125rem] shrink-0"><GiftWarningMark label={pin.label} className="inset-0 h-full w-full" /></span>}
-                        <span style={{ color: pin.warning ? '#ff9c9c' : 'var(--gold-light)', fontFamily: 'var(--font-heading)', fontSize: '1rem' }}>{pin.label}</span>
+                        {pin.ribbon ? <SuggestionRibbon /> : <span style={{ color: pin.warning ? '#ff9c9c' : 'var(--gold-light)', fontFamily: 'var(--font-heading)', fontSize: '1rem' }}>{pin.label}</span>}
                       </>
                     ) : groupBy === 'keyword' ? (
                       <>
