@@ -666,3 +666,8 @@ html[data-query-pending] [data-static-query-fallback] { display: contents; }
 .note-block-document a[href].note-mention:not(.note-card a){color:var(--text-primary);text-decoration:none}
 a.note-mention:is(:hover,:focus-visible),.note-block-document a[href].note-mention:not(.note-card a):is(:hover,:focus-visible){color:var(--gold-light);border-color:var(--gold-light)}
 .note-mention-node:is(:hover,.ProseMirror-selectednode) .note-mention{color:var(--gold-light);border-color:var(--gold-light)}
+/* Character count under the note editor: muted digits, gold from 90% of the limit, the error colour at it. */
+.note-editor-footer{display:flex;justify-content:flex-end;padding:.375rem .75rem;border-top:1px solid color-mix(in srgb,var(--border) 60%,transparent)}
+.note-count{font-family:var(--font-title);font-size:.875rem;letter-spacing:.04em;color:var(--text-muted);font-variant-numeric:tabular-nums;transition:color .15s ease}
+.note-count[data-state=near]{color:var(--gold-light)}
+.note-count[data-state=limit]{color:var(--error)}
