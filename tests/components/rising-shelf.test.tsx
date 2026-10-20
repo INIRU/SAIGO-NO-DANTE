@@ -13,7 +13,7 @@ vi.mock('@/components/planner/PlanCard', () => ({ default: ({ plan }: { plan: { 
 import RisingShelf from '@/components/discovery/RisingShelf'
 
 const identity = (id: string) => ({ id, sinner_id: 'yisang', name_kr: `인격${id}`, name_en: null, name_jp: null, rarity: 3, folder_name: 'x', game_id: '10101' })
-const feed = { posts: [{ post: { id: 'a' }, rise: 240 }, { post: { id: 'b' }, rise: 80 }], identities: [{ identity: identity('i1'), rise: 310 }] }
+const feed = { posts: [{ post: { id: 'a' }, rise: 2.4 }, { post: { id: 'b' }, rise: 1.8 }], identities: [{ identity: identity('i1'), rise: 3.1 }] }
 const render = (kind: 'deck' | 'planner' = 'deck') => renderToStaticMarkup(<RisingShelf kind={kind} />)
 
 beforeEach(() => { state.swr = { data: feed } })
@@ -25,7 +25,7 @@ describe('RisingShelf', () => {
     expect(html).toContain('>rising<')
     expect(html).toContain('href="/sinners/yisang/identities/i1"')
     expect(html).toContain('<span data-deck="true">a</span>')
-    for (const rise of ['240', '80', '310']) expect(html).toContain(`>${rise}<`)
+    for (const rise of ['×2.4', '×1.8', '×3.1']) expect(html).toContain(`>${rise}<`)
     expect(html).not.toContain('data-plan')
   })
 
@@ -33,12 +33,14 @@ describe('RisingShelf', () => {
     expect(render('planner')).toContain('<span data-plan="true">a</span>')
   })
 
-  it('REQ-COMMUNITY-069 draws nothing while loading, on a failed read, or with nobody rising', () => {
+  it('REQ-COMMUNITY-069 draws nothing while loading, on a failed read, or with fewer than two rising', () => {
     state.swr = {}
     expect(render()).toBe('')
     state.swr = { error: new Error('503') }
     expect(render()).toBe('')
     state.swr = { data: { posts: [], identities: [] } }
+    expect(render()).toBe('')
+    state.swr = { data: { posts: [{ post: { id: 'a' }, rise: 2.4 }], identities: [] } }
     expect(render()).toBe('')
     state.swr = { data: { recent: [], popular: [] } }
     expect(render()).toBe('')

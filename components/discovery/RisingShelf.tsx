@@ -17,13 +17,12 @@ async function read(url: string): Promise<RisingFeed> {
   return response.json()
 }
 
-/** The rise as a small up chevron and a Bebas percent. */
+/** The rise as a small up chevron and a Bebas multiplier. */
 function Rise({ value, className = '' }: { value: number; className?: string }) {
   return (
     <span className={`inline-flex items-center gap-0.5 text-[var(--gold-light)] ${className}`}>
       <ChevronUp size={14} strokeWidth={3} aria-hidden="true" />
-      <span className="font-[family-name:var(--font-title)] text-[1.25rem] leading-none tabular-nums">{value}</span>
-      <span className="text-[0.75rem] leading-none">%</span>
+      <span className="font-[family-name:var(--font-title)] text-[1.25rem] leading-none tabular-nums">×{value >= 99 ? 99 : value.toFixed(1)}</span>
     </span>
   )
 }
@@ -36,8 +35,8 @@ export default function RisingShelf({ kind }: { kind: 'deck' | 'planner' }) {
   const t = useTranslations('discoveryShelf')
   const lang = useLocale() as SupportedLang
   const { data } = useSWR(`/api/discovery/rising?kind=${kind}`, read, { revalidateOnFocus: false })
-  const posts = data?.posts ?? [], identities = data?.identities ?? []
-  if (posts.length === 0 && identities.length === 0) return null
+  const posts = (data?.posts ?? []).slice(0, 3), identities = (data?.identities ?? []).slice(0, 6)
+  if (posts.length + identities.length < 2) return null
 
   return (
     <section data-shelf="rising" aria-labelledby="rising-title">
