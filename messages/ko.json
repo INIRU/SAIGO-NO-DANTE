@@ -484,7 +484,8 @@
       "otherOpinionsDescription": "같은 인격 편성에서 순서나 E.G.O 선택이 다른 덱입니다.",
       "otherOpinionsEmpty": "같은 인격 편성의 다른 의견이 아직 없습니다.",
       "similarDecks": "비슷한 덱",
-      "similarDecksDescription": "편성, 테마, E.G.O 구성이 가까운 덱입니다."
+      "similarDecksDescription": "편성, 테마, E.G.O 구성이 가까운 덱입니다.",
+      "coVisited": "함께 본 글"
     },
     "identityPreview": {
       "title": "인격 상세",
@@ -1673,7 +1674,8 @@
     "updatedPlans": "최근 수정된 플랜",
     "popularDecks": "관리자분들이 자주 찾는 덱",
     "popularPlans": "관리자분들이 자주 찾는 플랜",
-    "popularIdentities": "관리자분들이 자주 찾는 인격"
+    "popularIdentities": "관리자분들이 자주 찾는 인격",
+    "rising": "지금 뜨는"
   },
   "ownedBadge": {
     "owned": "보유",
@@ -1917,6 +1919,11 @@
       "skills": "스킬",
       "passives": "패시브",
       "decks": "덱"
+    },
+    "recommendations": {
+      "companions": "함께 쓰는 인격",
+      "popular": "이 인격을 쓴 인기 덱·플랜",
+      "unit": "회"
     },
     "pageTab": {
       "info": "인격 정보",
@@ -2758,5 +2765,11 @@
     "empty": "글이 없습니다",
     "metaTitle": "{title} | 시리즈",
     "notFound": "시리즈를 찾을 수 없습니다"
+  },
+  "suggestions": {
+    "label": "추천",
+    "pairsWith": "잘 맞는",
+    "archetype": "{name} 덱",
+    "sinResonance": "{sin} 공명"
   }
 }

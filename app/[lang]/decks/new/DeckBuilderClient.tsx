@@ -710,6 +710,8 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
               sinners={sinners}
               egos={egos}
               egoSlots={egoSlots}
+              identities={identities}
+              identityIds={Object.fromEntries(Object.entries(deckSlots).map(([sinnerId, identity]) => [sinnerId, identity?.id]))}
               lang={locale as SupportedLang}
               onEgoSelect={ego => {
                 setEgoSlots(prev => ({

@@ -10,6 +10,7 @@ const state = vi.hoisted(() => ({ swr: {} as { data?: unknown; error?: Error }, 
 vi.mock('swr', () => ({ default: (_key: string, _fetcher: unknown, options: unknown) => { state.options = options; return state.swr } }))
 vi.mock('next-intl', () => ({ useLocale: () => 'ko', useTranslations: () => (key: string) => key }))
 vi.mock('@/lib/i18n/navigation', () => ({ Link: ({ children }: { children: React.ReactNode }) => <a>{children}</a> }))
+vi.mock('@/components/discovery/RisingShelf', () => ({ default: () => null }))
 vi.mock('@/components/discovery/ForYou', () => ({ default: () => <section data-for-you />, OwnedLink: () => null }))
 vi.mock('@/components/decks/DeckCard', () => ({ default: ({ deck }: { deck: { id: string } }) => <div data-card={deck.id} /> }))
 vi.mock('@/components/planner/PlanCard', () => ({ default: ({ plan }: { plan: { id: string } }) => <div data-card={plan.id} /> }))
@@ -71,12 +72,13 @@ describe('REQ-COMMUNITY-036 shelf titles', () => {
   })
 
   it('REQ-COMMUNITY-036 keeps the Korean wording and one tone across the three frequently visited shelves', () => {
-    type Titles = Record<'recentDecks' | 'recentPlans' | 'updatedDecks' | 'updatedPlans' | 'popularDecks' | 'popularPlans' | 'popularIdentities', string>
+    type Titles = Record<'recentDecks' | 'recentPlans' | 'updatedDecks' | 'updatedPlans' | 'popularDecks' | 'popularPlans' | 'popularIdentities' | 'rising', string>
     const titles = (messages: unknown) => (messages as { discoveryShelf: Titles }).discoveryShelf
     expect(titles(ko)).toEqual({
       recentDecks: '새로 올라온 덱', recentPlans: '새로 올라온 플랜',
       updatedDecks: '최근 수정된 덱', updatedPlans: '최근 수정된 플랜',
       popularDecks: '관리자분들이 자주 찾는 덱', popularPlans: '관리자분들이 자주 찾는 플랜', popularIdentities: '관리자분들이 자주 찾는 인격',
+      rising: '지금 뜨는',
     })
     const popular = (t: Titles) => [t.popularDecks, t.popularPlans, t.popularIdentities]
     // The short, subjectless form the deck and plan shelves already used: the longer one wraps on a 390px phone.
