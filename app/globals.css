@@ -660,12 +660,15 @@ html[data-query-pending] [data-static-query-fallback] { display: contents; }
 @media (hover:hover){.note-color-swatch:hover{background:var(--bg-elevated);transform:translateY(-1px)}.note-color-clear:hover{background:var(--bg-elevated);color:var(--text-primary)}}
 @media (prefers-reduced-motion:no-preference){.note-color-popover{animation:note-popover-in .15s ease-out}@keyframes note-popover-in{from{opacity:0;transform:translateY(-.25rem)}}}
 @media (prefers-reduced-motion:reduce){.note-color-swatch{transition:none}.note-color-swatch:hover{transform:none}}
-/* @ mention: portrait and name of an identity or E.G.O inside a sentence. A link in the viewer, a plain chip in the editor. */
-.note-mention{display:inline-flex;align-items:center;gap:.3rem;margin:0 .1em;padding:.05rem .55rem .05rem .15rem;border:1px solid var(--border);border-radius:62.5rem;background:var(--bg-elevated);color:var(--text-primary);font-weight:600;font-size:.9em;line-height:1.5;text-decoration:none;vertical-align:baseline;transition:color .15s ease,border-color .15s ease}
-.note-mention>img{width:1.25rem;height:1.25rem;border-radius:50%;object-fit:cover;object-position:top;flex-shrink:0}
-.note-block-document a[href].note-mention:not(.note-card a){color:var(--text-primary);text-decoration:none}
-a.note-mention:is(:hover,:focus-visible),.note-block-document a[href].note-mention:not(.note-card a):is(:hover,:focus-visible){color:var(--gold-light);border-color:var(--gold-light)}
-.note-mention-node:is(:hover,.ProseMirror-selectednode) .note-mention{color:var(--gold-light);border-color:var(--gold-light)}
+/* @ mention: an inline label like the gift label (icon at text height, then the name); no box. A link in the viewer, plain in the editor. */
+.note-mention{display:inline-flex;align-items:baseline;gap:.2em;margin:0 .1em;font:inherit;line-height:inherit;vertical-align:baseline;color:var(--gift-color,#c8b898);background:none}
+.note-mention>img{align-self:center;width:1.35em;height:1.35em;object-fit:cover;object-position:top;flex-shrink:0}
+.note-mention strong{font-weight:600}
+a.note-mention{text-decoration:underline;text-decoration-color:transparent;text-underline-offset:.2em;transition:text-decoration-color .15s}
+.note-block-document a[href].note-mention:not(.note-card a){color:var(--gift-color,#c8b898);text-decoration:underline;text-decoration-color:transparent}
+a.note-mention:is(:hover,:focus-visible),.note-block-document a[href].note-mention:not(.note-card a):is(:hover,:focus-visible){text-decoration-color:currentColor}
+.note-mention-node{display:inline}
+.note-mention-node.ProseMirror-selectednode{outline:1px solid var(--gold);border-radius:.2em}
 /* Character count under the note editor: muted digits, gold from 90% of the limit, the error colour at it. */
 .note-editor-footer{display:flex;justify-content:flex-end;padding:.375rem .75rem;border-top:1px solid color-mix(in srgb,var(--border) 60%,transparent)}
 .note-count{font-family:var(--font-title);font-size:.875rem;letter-spacing:.04em;color:var(--text-muted);font-variant-numeric:tabular-nums;transition:color .15s ease}

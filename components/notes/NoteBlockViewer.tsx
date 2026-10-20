@@ -73,7 +73,7 @@ export function NoteMentionLabel({kind,id,name,linked=true}:{kind:MentionKind;id
   const lang=useLocale(), {data}=useContext(AssetContext)
   const asset=data.get(`${kind}:${id}`)
   const sinnerId=asset?.identity?.sinner_id ?? asset?.sinnerId
-  const body=<>{asset?.image_url && <QuietImage src={asset.image_url} alt="" width={20} height={20} sizes="1.25rem" style={{width:'1.25rem',height:'1.25rem'}}/>}<span>{asset ? assetName(asset,lang) : name || id}</span></>
+  const body=<>{asset?.image_url && <QuietImage src={asset.image_url} alt="" width={24} height={24} sizes="1.5rem" style={{width:'1.35em',height:'1.35em'}}/>}<strong>{asset ? assetName(asset,lang) : name || id}</strong></>
   const href=asset && sinnerId ? mentionHref(kind,id,sinnerId) : undefined
   return linked && href
     ? <NotePreviewHost asset={asset} href={href}><Link href={href} className="note-mention">{body}</Link></NotePreviewHost>
