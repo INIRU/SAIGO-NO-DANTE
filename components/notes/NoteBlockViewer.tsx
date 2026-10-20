@@ -14,6 +14,7 @@ import { KeywordWithTooltip, useKeywords } from '@/components/providers/KeywordP
 import { resolveKeywordTextColor } from '@/lib/keywords/text-color'
 import { getLocalizedKeywordName, type SupportedLang } from '@/lib/i18n'
 import { isNoteImageUrl } from '@/lib/notes/images'
+import { isNoteColorSin } from '@/lib/notes/text-style'
 import { GIFT_KEYWORD_COLORS } from '@/lib/constants/gift'
 import { NoteCardView } from './NoteCardBlock'
 
@@ -108,6 +109,10 @@ export default function NoteBlockViewer({doc,renderText}:{doc:JSONContent;render
         if(m.type==='code') result=<code>{n.text}</code>
         if(m.type==='link') result=<a href={m.attrs?.href} target="_blank" rel="noopener noreferrer">{result}</a>
       }
+      // The colour goes inside and the highlight outside whatever the saved order: the highlight lightens the colour it wraps (app/globals.css).
+      const sin=(n.marks ?? []).find(m=>m.type==='noteColor')?.attrs?.sin
+      if(isNoteColorSin(sin)) result=<span className="note-sin-color" data-note-color={sin} style={{'--note-sin':`var(--${sin})`} as React.CSSProperties}>{result}</span>
+      if(n.marks?.some(m=>m.type==='highlight')) result=<mark className="note-highlight">{result}</mark>
       return <span key={key}>{result}</span>
     }
     switch(n.type) {

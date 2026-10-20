@@ -824,7 +824,8 @@ export function NoteRenderer({
   }
 
   const elements = renderInline(text, 'inline')
-  if (inline) return <span style={{ fontSize: '0.875rem', color: '#b0a898', lineHeight: 1.65 }}>{elements}</span>
+  // A sin-coloured note mark (app/globals.css) sets --note-sin-text for the words inside it.
+  if (inline) return <span style={{ fontSize: '0.875rem', color: 'var(--note-sin-text, #b0a898)', lineHeight: 1.65 }}>{elements}</span>
 
   const lines = text.replace(/\r\n/g, '\n').split('\n')
   const blocks: React.ReactNode[] = []

@@ -23,6 +23,8 @@ import { useKeywords } from '@/components/providers/KeywordProvider';
 import NoteImage from "./NoteImage";
 import { NoteFormationContext } from "./NoteAssetPicker";
 import NoteDocumentTools from "./NoteDocumentTools";
+import NoteMarkTools from "./NoteMarkTools";
+import { noteMarkExtensions } from "./NoteMarks";
 import {
   markdownToTiptapContent,
   tiptapContentToMarkdown,
@@ -150,6 +152,7 @@ export default function NoteDocumentEditor({
         link: { openOnClick: false },
       }),
       NoteImage,
+      ...noteMarkExtensions,
       ...noteBlockExtensions,
       NoteInput.configure({lang}),
       NoteBlockKeys.configure({lang}),
@@ -230,6 +233,20 @@ export default function NoteDocumentEditor({
             run: () => editor?.chain().focus().toggleBold().run(),
           },
           { Icon: Italic, title: label("기울임", "斜体", "Italic"), run: () => editor?.chain().focus().toggleItalic().run() },
+        ].map(({ Icon, title, run }) => (
+          <button
+            type="button"
+            key={title}
+            aria-label={title}
+            disabled={preview || !editor}
+            onClick={run}
+            className="flex h-9 w-9 items-center justify-center text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-panel)]"
+          >
+            <Icon size={16} />
+          </button>
+        ))}
+        <NoteMarkTools editor={editor} disabled={preview} />
+        {[
           { Icon: ListOrdered, title: label("번호 목록", "番号リスト", "Numbered list"), run: () => editor?.chain().focus().toggleOrderedList().run() },
           {
             Icon: List,

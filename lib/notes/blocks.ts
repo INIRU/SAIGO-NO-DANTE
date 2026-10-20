@@ -1,5 +1,6 @@
 import type { JSONContent } from '@tiptap/core'
 import { isNoteImageUrl } from './images'
+import { isNoteColorSin } from './text-style'
 
 export const NOTE_PREFIX = '!limbus-note:v1\n'
 export const ASSET_KINDS = ['gift', 'theme', 'identity', 'ego', 'skill', 'sin', 'keyword'] as const
@@ -65,7 +66,8 @@ export function normalizeDocument(value: unknown): JSONContent | null {
       if (typeof n.text !== 'string' || !n.text) return null
       result.text = n.text
       result.marks = (Array.isArray(n.marks) ? n.marks : []).flatMap(m => {
-        if (['bold', 'italic', 'code', 'strike'].includes(m.type)) return [{ type: m.type }]
+        if (['bold', 'italic', 'code', 'strike', 'highlight'].includes(m.type)) return [{ type: m.type }]
+        if (m.type === 'noteColor' && isNoteColorSin(m.attrs?.sin)) return [{ type: 'noteColor', attrs: { sin: m.attrs!.sin } }]
         if (m.type === 'link' && typeof m.attrs?.href === 'string' && /^https?:\/\//.test(m.attrs.href)) {
           try { const u = new URL(m.attrs.href); if (!u.username && !u.password) return [{ type: 'link', attrs: { href: u.href } }] } catch { /* invalid link */ }
         }
@@ -125,8 +127,10 @@ export function parseBlockDocument(value: string): JSONContent | null {
   if (!value.startsWith(NOTE_PREFIX) || value.length > 500_000) return null
   try { return normalizeDocument(JSON.parse(value.slice(NOTE_PREFIX.length))) } catch { return null }
 }
+/** Marks the markdown form cannot carry: a document with one is saved as blocks. */
+const BLOCK_ONLY_MARKS = new Set(['strike', 'highlight', 'noteColor'])
 export function hasBlocks(node: JSONContent): boolean {
-  return node.type?.startsWith('note') === true || node.type === 'table' || (node.content ?? []).some(hasBlocks)
+  return node.type?.startsWith('note') === true || node.type === 'table' || (node.marks ?? []).some(m => BLOCK_ONLY_MARKS.has(m.type)) || (node.content ?? []).some(hasBlocks)
 }
 export function visibleNode(node: JSONContent): boolean {
   if (node.type === 'noteAsset' || node.type === 'noteKeyword' || node.type === 'noteGift') return Boolean(node.attrs?.id)

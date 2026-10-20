@@ -646,3 +646,17 @@ html[data-query-pending] [data-static-query-fallback] { display: contents; }
 .note-card-option>button:focus-visible{box-shadow:inset 0 0 0 2px var(--gold)}
 .note-card-option--empty{aspect-ratio:17/16;background:var(--bg-card);border:1px solid var(--border)}
 @media(max-width:40rem){.note-direct-picker--card .note-direct-layout{grid-template-columns:1fr}.note-direct-picker--card .note-direct-sidebar>button{display:inline-flex}.note-card-grid{grid-template-columns:1fr}}
+/* Note text marks: a sin colour is the game's sin colour mixed into the text colour; inside a highlight the mix is lighter so both stay at 4.5:1 (lib/notes/text-style.ts, tests/lib/notes/note-marks.test.ts). */
+.note-sin-color{--note-sin-text:color-mix(in srgb,var(--note-sin) var(--note-sin-mix,70%),var(--text-primary));color:var(--note-sin-text)}
+.note-highlight{--note-sin-mix:35%;background:color-mix(in srgb,var(--gold-light) 20%,transparent);color:inherit;border-radius:.2em;padding:.05em .2em;-webkit-box-decoration-break:clone;box-decoration-break:clone}
+.note-editor-toolbar [data-active=true]{background:var(--bg-elevated);color:var(--gold-light)}
+.note-mark-tool{position:relative;display:inline-flex}
+.note-color-popover{position:absolute;z-index:80;top:calc(100% + .25rem);display:flex;flex-direction:column;gap:.375rem;padding:.5rem;background:var(--bg-card);border:1px solid var(--border);border-radius:.4rem;box-shadow:0 .8rem 2rem #0008}
+.note-color-swatches{display:flex;gap:.25rem}
+.note-color-swatch{display:grid;place-items:center;width:2.25rem;height:2.25rem;border-radius:.3rem;transition:background-color .15s ease,transform .15s ease}
+.note-color-swatch img{width:1.5rem;height:1.5rem;object-fit:contain}
+.note-color-swatch[aria-pressed=true]{background:color-mix(in srgb,var(--gold) 28%,var(--bg-card))}
+.note-color-clear{display:flex;align-items:center;gap:.375rem;min-height:2rem;padding:0 .5rem;border-radius:.3rem;color:var(--text-secondary);font-size:.8125rem;transition:background-color .15s ease,color .15s ease}
+@media (hover:hover){.note-color-swatch:hover{background:var(--bg-elevated);transform:translateY(-1px)}.note-color-clear:hover{background:var(--bg-elevated);color:var(--text-primary)}}
+@media (prefers-reduced-motion:no-preference){.note-color-popover{animation:note-popover-in .15s ease-out}@keyframes note-popover-in{from{opacity:0;transform:translateY(-.25rem)}}}
+@media (prefers-reduced-motion:reduce){.note-color-swatch{transition:none}.note-color-swatch:hover{transform:none}}
