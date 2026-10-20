@@ -140,9 +140,11 @@
     },
     "confirm": "確認",
     "autosave": {
-      "title": "自動保存された編集内容",
-      "restore": "復元",
-      "discard": "削除"
+      "title": "保存された下書きがあります",
+      "restore": "読み込む",
+      "discard": "破棄",
+      "restored": "下書きを読み込みました",
+      "restoreFailed": "下書きを読み込めませんでした"
     }
   },
   "globalSearch": {
@@ -192,7 +194,6 @@
     "header": {
       "eyebrow": "DECK BOARD",
       "title": "デッキ掲示板",
-      "subtitle": "リンバスカンパニーのコミュニティデッキを探して共有しましょう。",
       "newDeck": "デッキ作成"
     },
     "search": {
@@ -482,7 +483,8 @@
       "otherOpinionsDescription": "同じ人格編成で、順序やE.G.O選択が異なるデッキです。",
       "otherOpinionsEmpty": "同じ人格編成の別運用はまだありません。",
       "similarDecks": "似たデッキ",
-      "similarDecksDescription": "編成、テーマ、E.G.O構成が近いデッキです。"
+      "similarDecksDescription": "編成、テーマ、E.G.O構成が近いデッキです。",
+      "coVisited": "一緒に見られた投稿"
     },
     "identityPreview": {
       "title": "人格詳細",
@@ -1005,7 +1007,6 @@
       "header": {
         "eyebrow": "MIRROR DUNGEON PLANS",
         "title": "コミュニティプラン",
-        "subtitle": "ミラーダンジョンのルートと攻略プランを共有する場所です。",
         "newPlan": "プラン作成"
       },
       "search": {
@@ -1317,7 +1318,16 @@
         "defenseSkills": "防御スキル",
         "attackTypes": "攻撃タイプ",
         "sinResources": "罪悪資源",
-        "egoCost": "E.G.Oコスト"
+        "egoCost": "E.G.Oコスト",
+        "activation": {
+          "easy": "簡単",
+          "medium": "普通",
+          "hard": "難しい",
+          "impossible": "不可"
+        },
+        "activationTurns": "{count}ターン",
+        "activationTurnsOver": "{count}ターン以上",
+        "activationChance": "{percent}%"
       },
       "mainKeywords": {
         "label": "プラン代表キーワード",
@@ -1662,7 +1672,16 @@
     "updatedPlans": "最近更新されたプラン",
     "popularDecks": "よく読まれているデッキ",
     "popularPlans": "よく読まれているプラン",
-    "popularIdentities": "よく見られている人格"
+    "popularIdentities": "よく見られている人格",
+    "rising": "今伸びている",
+    "more": "もっと見る",
+    "less": "閉じる",
+    "viewAll": "すべて見る",
+    "viewAllDecks": "すべてのデッキ",
+    "viewAllPlans": "すべてのプラン",
+    "filters": "絞り込み",
+    "clear": "消去",
+    "back": "{title}に戻る"
   },
   "ownedBadge": {
     "owned": "所持",
@@ -1906,6 +1925,11 @@
       "skills": "スキル",
       "passives": "パッシブ",
       "decks": "デッキ"
+    },
+    "recommendations": {
+      "companions": "よく一緒に使う人格",
+      "popular": "この人格を使った人気のデッキ・プラン",
+      "unit": "回"
     },
     "pageTab": {
       "info": "人格情報",
@@ -2747,5 +2771,11 @@
     "empty": "投稿がありません",
     "metaTitle": "{title} | シリーズ",
     "notFound": "シリーズが見つかりません"
+  },
+  "suggestions": {
+    "label": "おすすめ",
+    "pairsWith": "相性",
+    "archetype": "{name}デッキ",
+    "sinResonance": "{sin}共鳴"
   }
 }

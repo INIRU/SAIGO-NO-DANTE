@@ -396,8 +396,9 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
       passives: passives
         .filter(passive => passive.identity_id === slot.identity_id)
         .map(passive => ({ ...passive, name: localizePassiveName(passive, locale), description: localizePassiveDescription(passive, locale) ?? null })),
+      deck: computeSinProduction([{ skills: skillsByIdentity.get(slot.identity_id) ?? [], distribution: getIdentitySkillDistribution(slot) }]),
     }]
-  }), [getIdentityInfoImageUrl, getIdentitySlotName, getLocalizedSinnerName, identityById, locale, passives, rosterBySinner, sinners])
+  }), [getIdentityInfoImageUrl, getIdentitySlotName, getLocalizedSinnerName, identityById, locale, passives, rosterBySinner, sinners, skillsByIdentity])
 
   const handleFormationToggle = (sinnerId: string) => {
     const slot = state.identitySlots.find(item => item.sinner_id === sinnerId)

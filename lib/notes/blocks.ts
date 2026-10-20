@@ -1,5 +1,7 @@
 import type { JSONContent } from '@tiptap/core'
 import { isNoteImageUrl } from './images'
+import { isNoteColorSin } from './text-style'
+import { isMentionKind } from './mention'
 
 export const NOTE_PREFIX = '!limbus-note:v1\n'
 export const ASSET_KINDS = ['gift', 'theme', 'identity', 'ego', 'skill', 'sin', 'keyword'] as const
@@ -50,8 +52,8 @@ export function newBlock(kind: BlockKind): JSONContent {
   return kind === 'youtube' ? { type: 'noteVideo', attrs: { videoId: '' } }
     : { type: 'noteAsset', attrs: { kind, id: '' } }
 }
-const TYPES = new Set(['doc', 'paragraph', 'heading', 'text', 'hardBreak', 'blockquote', 'bulletList', 'orderedList', 'listItem', 'codeBlock', 'horizontalRule', 'image', 'noteAccordion', 'noteTitle', 'noteBody', 'noteAsset', 'noteVideo', 'noteKeyword', 'noteGift', 'noteCallout', 'noteCard', 'table', 'tableRow', 'tableCell', 'tableHeader'])
-const INLINE_TYPES = new Set(['text', 'hardBreak', 'noteKeyword', 'noteGift'])
+const TYPES = new Set(['doc', 'paragraph', 'heading', 'text', 'hardBreak', 'blockquote', 'bulletList', 'orderedList', 'listItem', 'codeBlock', 'horizontalRule', 'image', 'noteAccordion', 'noteTitle', 'noteBody', 'noteAsset', 'noteVideo', 'noteKeyword', 'noteGift', 'noteMention', 'noteCallout', 'noteCard', 'table', 'tableRow', 'tableCell', 'tableHeader'])
+const INLINE_TYPES = new Set(['text', 'hardBreak', 'noteKeyword', 'noteGift', 'noteMention'])
 const BLOCK_TYPES = new Set(['paragraph', 'heading', 'blockquote', 'bulletList', 'orderedList', 'codeBlock', 'horizontalRule', 'image', 'noteAccordion', 'noteAsset', 'noteVideo', 'noteCallout', 'noteCard', 'table'])
 // The same bounded allowlist is used for persisted documents and pasted editor nodes.
 export function normalizeDocument(value: unknown): JSONContent | null {
@@ -65,7 +67,8 @@ export function normalizeDocument(value: unknown): JSONContent | null {
       if (typeof n.text !== 'string' || !n.text) return null
       result.text = n.text
       result.marks = (Array.isArray(n.marks) ? n.marks : []).flatMap(m => {
-        if (['bold', 'italic', 'code', 'strike'].includes(m.type)) return [{ type: m.type }]
+        if (['bold', 'italic', 'code', 'strike', 'highlight'].includes(m.type)) return [{ type: m.type }]
+        if (m.type === 'noteColor' && isNoteColorSin(m.attrs?.sin)) return [{ type: 'noteColor', attrs: { sin: m.attrs!.sin } }]
         if (m.type === 'link' && typeof m.attrs?.href === 'string' && /^https?:\/\//.test(m.attrs.href)) {
           try { const u = new URL(m.attrs.href); if (!u.username && !u.password) return [{ type: 'link', attrs: { href: u.href } }] } catch { /* invalid link */ }
         }
@@ -93,6 +96,10 @@ export function normalizeDocument(value: unknown): JSONContent | null {
     }
     if (n.type === 'noteKeyword') result.attrs = {id:typeof n.attrs?.id === 'string' ? n.attrs.id.slice(0,150) : ''}
     if (n.type === 'noteGift') result.attrs = {id:typeof n.attrs?.id === 'string' ? n.attrs.id.slice(0,150) : '', name:typeof n.attrs?.name === 'string' ? n.attrs.name.slice(0,100) : ''}
+    if (n.type === 'noteMention') {
+      if (!isMentionKind(n.attrs?.kind) || typeof n.attrs?.id !== 'string' || !n.attrs.id) return null
+      result.attrs = { kind: n.attrs.kind, id: n.attrs.id.slice(0,150), name: typeof n.attrs?.name === 'string' ? n.attrs.name.slice(0,100) : '' }
+    }
     if (n.type === 'noteVideo') result.attrs = { videoId: /^[\w-]{11}$/.test(n.attrs?.videoId ?? '') ? n.attrs!.videoId : '' }
     if (Array.isArray(n.content)) result.content = n.content.flatMap(c => { const clean = node(c, depth + 1); return clean ? [clean] : [] })
     if (['paragraph', 'heading', 'noteTitle'].includes(n.type)) result.content = (result.content ?? []).filter(c => INLINE_TYPES.has(c.type!))
@@ -112,7 +119,7 @@ export function normalizeDocument(value: unknown): JSONContent | null {
       result.content = (result.content ?? []).filter(c => c.type === child || (n.type === 'tableRow' && c.type === 'tableHeader'))
       if (!result.content.length) return null
     }
-    if (['text','hardBreak','horizontalRule','image','noteAsset','noteVideo','noteKeyword','noteGift','noteCard'].includes(n.type)) delete result.content
+    if (['text','hardBreak','horizontalRule','image','noteAsset','noteVideo','noteKeyword','noteGift','noteMention','noteCard'].includes(n.type)) delete result.content
     if (n.type === 'noteAccordion') {
       result.content = [result.content?.find(c => c.type === 'noteTitle') ?? { type: 'noteTitle' }, result.content?.find(c => c.type === 'noteBody') ?? { type: 'noteBody', content: [{ type: 'paragraph' }] }]
     }
@@ -125,11 +132,13 @@ export function parseBlockDocument(value: string): JSONContent | null {
   if (!value.startsWith(NOTE_PREFIX) || value.length > 500_000) return null
   try { return normalizeDocument(JSON.parse(value.slice(NOTE_PREFIX.length))) } catch { return null }
 }
+/** Marks the markdown form cannot carry: a document with one is saved as blocks. */
+const BLOCK_ONLY_MARKS = new Set(['strike', 'highlight', 'noteColor'])
 export function hasBlocks(node: JSONContent): boolean {
-  return node.type?.startsWith('note') === true || node.type === 'table' || (node.content ?? []).some(hasBlocks)
+  return node.type?.startsWith('note') === true || node.type === 'table' || (node.marks ?? []).some(m => BLOCK_ONLY_MARKS.has(m.type)) || (node.content ?? []).some(hasBlocks)
 }
 export function visibleNode(node: JSONContent): boolean {
-  if (node.type === 'noteAsset' || node.type === 'noteKeyword' || node.type === 'noteGift') return Boolean(node.attrs?.id)
+  if (node.type === 'noteAsset' || node.type === 'noteKeyword' || node.type === 'noteGift' || node.type === 'noteMention') return Boolean(node.attrs?.id)
   if (node.type === 'noteVideo') return Boolean(node.attrs?.videoId)
   if (node.type === 'noteCard') return Boolean(node.attrs?.id)
   if (node.type === 'image') return isNoteImageUrl(node.attrs?.src)
@@ -139,6 +148,7 @@ export function assetRefs(doc: JSONContent): string {
   const refs = new Map<string, {kind: AssetKind; id: string}>()
   function visit(n: JSONContent) {
     if (n.type === 'noteGift' && n.attrs?.id) refs.set('gift:' + n.attrs.id, {kind: 'gift', id: n.attrs.id})
+    if (n.type === 'noteMention' && isMentionKind(n.attrs?.kind) && n.attrs?.id) refs.set(`${n.attrs.kind}:${n.attrs.id}`, {kind: n.attrs.kind, id: n.attrs.id})
     if (n.type === 'noteAsset' && isAssetKind(n.attrs?.kind) && n.attrs?.id) refs.set(`${n.attrs.kind}:${n.attrs.id}`, {kind: n.attrs.kind, id: n.attrs.id})
     n.content?.forEach(visit)
   }
@@ -148,7 +158,7 @@ export function assetRefs(doc: JSONContent): string {
 function flattenNote(value: string, gift: (name: string) => string, keyword: (id: string) => string = id => id): string {
   const doc = parseBlockDocument(value)
   if (!doc) return value.startsWith(NOTE_PREFIX) ? '' : value
-  function text(n: JSONContent): string { return (n.type === 'noteKeyword' ? (n.attrs?.id ? keyword(n.attrs.id) : undefined) : n.type === 'noteGift' ? (n.attrs?.name ? gift(n.attrs.name) : undefined) : n.text) ?? (n.content ?? []).map(text).join(' ') }
+  function text(n: JSONContent): string { return (n.type === 'noteKeyword' ? (n.attrs?.id ? keyword(n.attrs.id) : undefined) : n.type === 'noteGift' ? (n.attrs?.name ? gift(n.attrs.name) : undefined) : n.type === 'noteMention' ? (n.attrs?.name || undefined) : n.text) ?? (n.content ?? []).map(text).join(' ') }
   return text(doc).trim()
 }
 export function notePlainText(value: string): string {

@@ -12,18 +12,18 @@ type Props = {
   missing?: ReadonlySet<string> | null
 }
 
-function Portrait({ slot, dim, locked }: { slot: ThumbnailSlot; dim: boolean; locked: boolean }) {
+export function Portrait({ slot, dim, locked, ratio = '3 / 4', sizes = '(max-width: 640px) 17vw, (max-width: 1024px) 8vw, 6vw' }: { slot: ThumbnailSlot; dim: boolean; locked: boolean; ratio?: string; sizes?: string }) {
   const [awakenFailed, setAwakenFailed] = useState(false)
   const [failed, setFailed] = useState(false)
   const gacksung = slot.gacksung && !awakenFailed
   return (
-    <div className="relative overflow-hidden" style={{ aspectRatio: '3 / 4', background: '#0a0806' }}>
+    <div className="relative overflow-hidden" style={{ aspectRatio: ratio, background: '#0a0806' }}>
       {!failed && (
         <Image
           src={getIdentityPortraitUrl(slot.sinnerId, slot.folderName, slot.gameId, gacksung)}
           alt=""
           fill
-          sizes="(max-width: 640px) 17vw, (max-width: 1024px) 8vw, 6vw"
+          sizes={sizes}
           quality={60}
           className="transition-[filter,opacity] duration-200 group-hover:opacity-100 group-hover:grayscale-0"
           style={{ objectFit: 'cover', objectPosition: 'center top', opacity: dim ? 0.38 : 1, filter: dim ? 'grayscale(0.7)' : locked ? 'brightness(0.55)' : undefined }}

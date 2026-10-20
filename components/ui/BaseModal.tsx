@@ -30,6 +30,8 @@ interface BaseModalProps {
   padding?: string
   /** Below 640px, dock the panel to the bottom edge like a sheet. */
   sheet?: boolean
+  /** Backdrop colour (default: a 60% black veil). */
+  backdrop?: string
   /** 'dialog' focuses the dialog itself on open instead of its first control (notices, where a ring on the first button reads as a selection). */
   initialFocus?: 'first' | 'dialog'
 }
@@ -47,6 +49,7 @@ export default function BaseModal({
   padding = '1rem',
   sheet = false,
   initialFocus = 'first',
+  backdrop = 'rgba(0,0,0,0.6)',
 }: BaseModalProps) {
   // null until the modal has been open, so a modal that mounts closed never touches the scroll position
   const scrollYRef = useRef<number | null>(null)
@@ -79,7 +82,7 @@ export default function BaseModal({
                 className="fixed inset-0"
                 style={{
                   zIndex,
-                  background: 'rgba(0,0,0,0.6)',
+                  background: backdrop,
                   ...(blur ? { backdropFilter: 'blur(3px)', WebkitBackdropFilter: 'blur(3px)' } : {}),
                 }}
                 variants={modalOverlayVariants}

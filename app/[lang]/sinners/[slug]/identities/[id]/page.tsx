@@ -13,6 +13,9 @@ import dynamic from 'next/dynamic'
 const IdentityDetailClient = dynamic(() => import('./IdentityDetailClient'))
 import JsonLd, { breadcrumbJsonLd, gameCharacterJsonLd } from '@/components/seo/JsonLd'
 import { getLocalizedName, getLocalizedKeywordName } from '@/lib/i18n/localize'
+import { getIdentityRecommendations } from '@/lib/discovery/identity-recommendations'
+import IdentityRecommendations from '@/components/identity/IdentityRecommendations'
+import { IdentityRecommendationsSkeleton } from '@/components/deck-detail/RecommendationSkeleton'
 import { getKeywordData } from '@/lib/keywords/server-data'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import type { SupportedLang } from '@/lib/i18n/types'
@@ -115,6 +118,15 @@ async function getCurrentSeason(): Promise<number> {
   return data?.value?.season ?? 7
 }
 
+/** Companions and popular posts, streamed after the page: a failed or sparse count leaves the section out. */
+async function Recommendations({ id }: { id: string }) {
+  const recommendations = await getIdentityRecommendations(id).catch(error => {
+    console.error('Failed to fetch identity recommendations:', error)
+    return null
+  })
+  return recommendations && <IdentityRecommendations {...recommendations} />
+}
+
 export default async function IdentityPage({
   params,
 }: {
@@ -172,6 +184,7 @@ export default async function IdentityPage({
           currentSeason={currentSeason}
           sd={sd}
           illust={illust}
+          recommendations={<Suspense key="recommendations" fallback={<IdentityRecommendationsSkeleton />}><Recommendations id={id} /></Suspense>}
         />
       </Suspense>
     </>

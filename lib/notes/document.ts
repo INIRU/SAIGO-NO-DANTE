@@ -156,6 +156,21 @@ export function markdownToTiptapContent(markdown: string): JSONContent {
   };
 }
 
+const MARKDOWN_BLOCK_LINE = /^(#{1,2}\s+\S|>\s?\S|\s*[-*]\s+\S|\s*\d+\.\s+\S)/;
+/** Clipboard HTML from a web page or document has structure tags; a code editor's copy is only styled `div`/`span` lines. */
+export function isRichClipboardHtml(html: string): boolean {
+  return /<(h[1-6]|ul|ol|li|blockquote|table|p|a|strong|em|b|i)[\s>]/i.test(html);
+}
+/**
+ * Pasted plain text that has markdown block markers (a heading, quote or list line) as note blocks; null for prose, so a
+ * normal paste stays as it is. A copied note document (`!limbus-note:v1`) is left to the plain paste too.
+ */
+export function pastedMarkdownContent(text: string): JSONContent[] | null {
+  const markdown = text.replace(/\r\n/g, "\n").trim();
+  if (markdown.startsWith(NOTE_PREFIX) || !markdown.split("\n").some((line) => MARKDOWN_BLOCK_LINE.test(line))) return null;
+  return markdownToTiptapContent(markdown).content ?? null;
+}
+
 function markText(text: string, marks?: JSONContent["marks"]): string {
   if (!marks?.length) return text;
   return marks.reduce((value, mark) => {

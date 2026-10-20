@@ -330,9 +330,6 @@ span.inline img[src*="bladetrail-afterimage"] + span {
 .note-document-content .is-empty::before { content: attr(data-placeholder); float: left; height: 0; color: var(--text-muted); pointer-events: none; }
 .note-document-image { display: block; height: auto; max-height: 36rem; max-width: 100%; object-fit: contain; margin: 1rem 0; }
 
-/* The rendered browse panel controls both server-rendered board headers. */
-.community-board .board-header { padding-top: 5.5rem; padding-bottom: 1.25rem; }
-.community-board .board-header-back { display: none; }
 /* Desktop browse is a workspace: the page stays still and only the list scrolls. Phones scroll the page itself,
    because a fixed-height list left an empty band under Safari's collapsing toolbar. */
 @media (min-width: 64rem) {
@@ -340,16 +337,9 @@ span.inline img[src*="bladetrail-afterimage"] + span {
   html.board-browse, html.board-browse body { overflow: hidden; }
 }
 html.board-browse body :is(footer, [data-floating-font-control]) { display: none !important; }
-.community-board:has([data-board-browse]) .board-header { padding-top: 5.25rem; padding-bottom: 1.75rem; }
-.community-board:has([data-board-browse]) .board-header-overview { display: none; }
-.community-board:has([data-board-browse]) .board-header-back { display: flex; }
 .community-board :is(button, a, input):focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
 /* The filter column scrolls, so it clips what sticks out of it: room on the left for the focus ring (2px + 3px offset), taken from the page margin so the column stays where it was. */
 .board-filters { width: calc(16rem + 0.375rem); margin-left: -0.375rem; padding-left: 0.375rem; }
-@media (max-width: 40rem) {
-  .community-board .board-header { padding-top: 5rem; padding-bottom: 1rem; }
-  .community-board:has([data-board-browse]) .board-header { padding-top: 4.75rem; padding-bottom: 1rem; }
-}
 
 /* Visual note blocks: shared by the editor and the lightweight document viewer. */
 .note-block-document{font-family:var(--font-body),sans-serif;font-size:1rem;line-height:1.75;color:var(--text-secondary);overflow-wrap:anywhere}
@@ -646,3 +636,91 @@ html[data-query-pending] [data-static-query-fallback] { display: contents; }
 .note-card-option>button:focus-visible{box-shadow:inset 0 0 0 2px var(--gold)}
 .note-card-option--empty{aspect-ratio:17/16;background:var(--bg-card);border:1px solid var(--border)}
 @media(max-width:40rem){.note-direct-picker--card .note-direct-layout{grid-template-columns:1fr}.note-direct-picker--card .note-direct-sidebar>button{display:inline-flex}.note-card-grid{grid-template-columns:1fr}}
+/* Note text marks: a sin colour is the game's sin colour mixed into the text colour; inside a highlight the mix is lighter so both stay at 4.5:1 (lib/notes/text-style.ts, tests/lib/notes/note-marks.test.ts). */
+.note-sin-color{--note-sin-text:color-mix(in srgb,var(--note-sin) var(--note-sin-mix,70%),var(--text-primary));color:var(--note-sin-text)}
+.note-highlight{--note-sin-mix:35%;background:color-mix(in srgb,var(--gold-light) 20%,transparent);color:inherit;border-radius:.2em;padding:.05em .2em;-webkit-box-decoration-break:clone;box-decoration-break:clone}
+.note-editor-toolbar [data-active=true]{background:var(--bg-elevated);color:var(--gold-light)}
+.note-mark-tool{position:relative;display:inline-flex}
+.note-color-popover{position:absolute;z-index:80;top:calc(100% + .25rem);display:flex;flex-direction:column;gap:.375rem;padding:.5rem;background:var(--bg-card);border:1px solid var(--border);border-radius:.4rem;box-shadow:0 .8rem 2rem #0008}
+.note-color-swatches{display:flex;gap:.25rem}
+.note-color-swatch{display:grid;place-items:center;width:2.25rem;height:2.25rem;border-radius:.3rem;transition:background-color .15s ease,transform .15s ease}
+.note-color-swatch img{width:1.5rem;height:1.5rem;object-fit:contain}
+.note-color-swatch[aria-pressed=true]{background:color-mix(in srgb,var(--gold) 28%,var(--bg-card))}
+.note-color-clear{display:flex;align-items:center;gap:.375rem;min-height:2rem;padding:0 .5rem;border-radius:.3rem;color:var(--text-secondary);font-size:.8125rem;transition:background-color .15s ease,color .15s ease}
+@media (hover:hover){.note-color-swatch:hover{background:var(--bg-elevated);transform:translateY(-1px)}.note-color-clear:hover{background:var(--bg-elevated);color:var(--text-primary)}}
+@media (prefers-reduced-motion:no-preference){.note-color-popover{animation:note-popover-in .15s ease-out}@keyframes note-popover-in{from{opacity:0;transform:translateY(-.25rem)}}}
+@media (prefers-reduced-motion:reduce){.note-color-swatch{transition:none}.note-color-swatch:hover{transform:none}}
+/* @ mention: an inline label like the gift label (icon at text height, then the name); no box. A link in the viewer, plain in the editor. */
+.note-mention{display:inline-flex;align-items:baseline;gap:.2em;margin:0 .1em;font:inherit;line-height:inherit;vertical-align:baseline;color:var(--gift-color,#c8b898);background:none}
+.note-mention>img{align-self:center;width:1.35em;height:1.35em;object-fit:cover;object-position:top;flex-shrink:0}
+.note-mention strong{font-weight:600}
+a.note-mention{text-decoration:underline;text-decoration-color:transparent;text-underline-offset:.2em;transition:text-decoration-color .15s}
+.note-block-document a[href].note-mention:not(.note-card a){color:var(--gift-color,#c8b898);text-decoration:underline;text-decoration-color:transparent}
+a.note-mention:is(:hover,:focus-visible),.note-block-document a[href].note-mention:not(.note-card a):is(:hover,:focus-visible){text-decoration-color:currentColor}
+.note-mention-node{display:inline}
+.note-mention-node.ProseMirror-selectednode{outline:1px solid var(--gold);border-radius:.2em}
+/* Character count under the note editor: muted digits, gold from 90% of the limit, the error colour at it. */
+.note-editor-footer{display:flex;justify-content:flex-end;padding:.375rem .75rem;border-top:1px solid color-mix(in srgb,var(--border) 60%,transparent)}
+.note-count{font-family:var(--font-title);font-size:.875rem;letter-spacing:.04em;color:var(--text-muted);font-variant-numeric:tabular-nums;transition:color .15s ease}
+.note-count[data-state=near]{color:var(--gold-light)}
+.note-count[data-state=limit]{color:var(--error)}
+/* Note table of contents (a rail beside the note where the container is wide, a collapsible bar where it is narrow) and the heading copy-link button. */
+.note-toc-frame{container-type:inline-size}
+.note-toc-layout{display:flex;flex-direction:column;gap:.75rem}
+.note-toc-body{min-width:0}
+.note-toc nav{display:grid;grid-template-rows:0fr;transition:grid-template-rows .22s ease}
+.note-toc nav>ol{min-height:0;overflow:hidden;margin:0;padding:0;list-style:none}
+.note-toc[data-open] nav{grid-template-rows:1fr}
+.note-toc-toggle{display:flex;width:100%;align-items:center;justify-content:space-between;min-height:2.5rem;padding:0 .875rem;border:1px solid var(--border);border-radius:.4rem;background:var(--bg-card);color:var(--text-primary);font-family:var(--font-heading);font-size:.9375rem}
+.note-toc-toggle svg{color:var(--gold);transition:transform .22s ease}
+.note-toc[data-open] .note-toc-toggle svg{transform:rotate(180deg)}
+.note-toc li{margin:0}
+.note-toc a{position:relative;display:block;padding:.4375rem .75rem .4375rem .875rem;color:var(--text-secondary);font-size:.875rem;line-height:1.4;text-decoration:none;overflow-wrap:anywhere;transition:color .15s ease,background-color .15s ease}
+.note-toc li[data-level="2"] a{padding-left:1.625rem}
+.note-toc a[aria-current=location]{color:var(--text-primary)}
+.note-toc a::before{content:"";position:absolute;left:0;top:.375rem;bottom:.375rem;width:.125rem;border-radius:.0625rem;background:var(--gold);transform:scaleY(0);transition:transform .2s ease}
+.note-toc a[aria-current=location]::before{transform:scaleY(1)}
+@media (hover:hover){.note-toc a:hover{color:var(--gold-light)}}
+.note-toc a:focus-visible,.note-toc-toggle:focus-visible,.note-heading-link:focus-visible{outline:2px solid var(--gold-light);outline-offset:2px}
+@container (min-width:46rem){
+  .note-toc-layout{display:grid;grid-template-columns:minmax(0,1fr) 12.5rem;align-items:start;gap:1.5rem}
+  .note-toc{order:2;position:sticky;top:5rem;max-height:calc(100dvh - 7rem);overflow:auto}
+  .note-toc-toggle{display:none}
+  .note-toc nav{display:block}
+  .note-toc nav>ol{overflow:visible;border-left:1px solid var(--border)}
+}
+.note-heading{scroll-margin-top:5rem}
+.note-heading-link{display:inline-grid;place-items:center;width:1.5rem;height:1.5rem;margin-left:.375rem;vertical-align:middle;border-radius:.25rem;color:var(--text-muted);opacity:0;transition:opacity .15s ease,color .15s ease}
+.note-heading:is(:hover,:focus-within) .note-heading-link,.note-heading-link:focus-visible{opacity:1}
+@media (hover:hover){.note-heading-link:hover{color:var(--gold-light)}}
+@media (hover:none){.note-heading-link{opacity:.7}}
+@media (prefers-reduced-motion:reduce){.note-toc nav,.note-toc-toggle svg,.note-toc a,.note-toc a::before,.note-heading-link{transition:none}}
+/* Note image lightbox: the picture fits the screen on the deep background; a button wraps the small picture in the reading view. */
+.note-image-button{display:block;max-width:100%;padding:0;border:0;background:none;cursor:zoom-in}
+.note-image-button:focus-visible{outline:2px solid var(--gold-light);outline-offset:3px}
+.popup-surface.note-lightbox>:first-child{background:transparent!important;border:0!important;box-shadow:none!important}
+.note-lightbox-frame{position:relative;display:grid;place-items:center;max-height:calc(100dvh - 1.5rem)}
+.note-lightbox-image{display:block;max-width:calc(96vw - 1.5rem);max-height:calc(100dvh - 1.5rem);width:auto;height:auto;object-fit:contain;cursor:zoom-out}
+.note-lightbox-close{position:absolute;top:.25rem;right:.25rem;z-index:1;display:grid;place-items:center;width:2.5rem;height:2.5rem;border-radius:50%;background:var(--bg-card);color:var(--text-primary);transition:background-color .15s ease,color .15s ease}
+@media (hover:hover){.note-lightbox-close:hover{background:var(--bg-elevated);color:var(--gold-light)}}
+/* "Expand all / collapse all": a plain text button, right-aligned above the first accordion. */
+.note-accordion-all{display:block;margin:1rem 0 -.5rem auto;padding:.25rem 0;color:var(--text-secondary);font-size:.8125rem;transition:color .15s ease}
+.note-accordion-all:focus-visible{outline:2px solid var(--gold-light);outline-offset:2px}
+@media (hover:hover){.note-accordion-all:hover{color:var(--gold-light)}}
+/* Preview card of a mention or a gift name: hover/focus card on a pointer, modal on touch. */
+.note-preview-host{display:inline}
+.note-preview-popover{position:fixed;z-index:10050;width:min(21rem,calc(100vw - 1rem));padding:.75rem;background:var(--bg-card);border:1px solid var(--border);border-radius:.5rem;box-shadow:0 .75rem 2rem #000a;color:var(--text-primary)}
+.note-preview-popover[data-above]{transform:translateY(-100%)}
+.note-preview-card{display:flex;gap:.875rem;align-items:flex-start;font-size:.875rem;line-height:1.5}
+.note-preview-art{flex:0 0 5.5rem;width:5.5rem}
+.note-preview-card[data-kind=identity] .note-preview-art{flex-basis:6.5rem;width:6.5rem}
+.note-preview-card[data-kind=ego] .note-preview-art{flex-basis:6.5rem;width:6.5rem}
+.note-preview-text{display:flex;min-width:0;flex:1;flex-direction:column;gap:.25rem}
+.note-preview-text>strong{font-family:var(--font-heading);font-size:1rem;font-weight:400;color:var(--text-primary);overflow-wrap:anywhere}
+.note-preview-text>small{color:var(--text-secondary);font-size:.8125rem}
+.note-preview-modal{display:flex;flex-direction:column;gap:1rem;padding:1.25rem}
+.note-preview-more{align-self:flex-end;padding:.5rem .875rem;border-radius:.4rem;background:var(--bg-elevated);color:var(--gold-light);font-size:.875rem;text-decoration:none;transition:background-color .15s ease}
+@media (prefers-reduced-motion:no-preference){.note-preview-popover{animation:note-popover-in .15s ease-out}}
+/* The gold dot of a new editor tool: no text, gone after the tool is first used. */
+.note-new-dot{position:absolute;top:.3125rem;right:.3125rem;width:.375rem;height:.375rem;border-radius:50%;background:var(--gold-light);pointer-events:none}
+.note-new-dot--row{top:50%;right:.75rem;transform:translateY(-50%)}

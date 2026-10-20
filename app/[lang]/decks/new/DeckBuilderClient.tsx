@@ -73,6 +73,8 @@ interface EditMode {
   deckId: string
   title: string
   description: string
+  /** When the deck was last saved on the server; an older browser draft is not offered. */
+  updatedAt?: string | null
   tags: string[]
   content_type?: string
   mainKeywords?: string[]
@@ -283,6 +285,7 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
         name: localizePassiveName(passive, locale),
         description: localizePassiveDescription(passive, locale) ?? null,
       })),
+      deck: computeSinProduction([{ skills: skillsOf(identity), distribution: skillDistribution[sinner.id] }]),
     }))
     const deployedIds = new Set(placed.filter(({ sinner }) => isDeployedSlot(formationOrder.indexOf(sinner.id))).map(({ identity }) => identity.id))
     return {
@@ -470,6 +473,7 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
   }
   const autosave = useAutosaveDraft({
     storageKey: autosaveKey('deck', editMode?.deckId), state: draftState, isState: isDeckDraft, ready: true, apply: applyDraft,
+    savedAt: editMode?.updatedAt ? Date.parse(editMode.updatedAt) : null,
   })
   const handleDeleteDraft = (slot: TempSlot<DeckDraft>) => {
     setDraftSlots(deleteTempSlot(DECK_DRAFTS_KEY, slot.slotNumber, isDeckDraft))
@@ -706,6 +710,8 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
               sinners={sinners}
               egos={egos}
               egoSlots={egoSlots}
+              identities={identities}
+              identityIds={Object.fromEntries(Object.entries(deckSlots).map(([sinnerId, identity]) => [sinnerId, identity?.id]))}
               lang={locale as SupportedLang}
               onEgoSelect={ego => {
                 setEgoSlots(prev => ({
