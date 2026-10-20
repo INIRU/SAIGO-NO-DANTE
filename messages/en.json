@@ -2753,5 +2753,8 @@
     "empty": "No posts",
     "metaTitle": "{title} | Series",
     "notFound": "Series not found"
+  },
+  "suggestions": {
+    "label": "Suggested"
   }
 }
