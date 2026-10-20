@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { EditorContent, useEditor, type Editor } from "@tiptap/react";
+import { EditorContent, useEditor, useEditorState, type Editor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
 import { useLocale, useTranslations } from "next-intl";
@@ -8,6 +8,7 @@ import useSWR from "swr";
 import { GIFT_KEYWORD_COLORS } from "@/lib/constants/gift";
 import { assetName } from "@/lib/notes/assets";
 import { filterMentions, findMentionQuery } from "@/lib/notes/mention";
+import { formatNoteCount, noteCountState, noteTextLength } from "@/lib/notes/count";
 import { translations } from "@/lib/i18n/translations";
 import { AtSign, Bold, Italic, Heading2, List, ListOrdered, Quote, Undo2, Redo2, Copy, Eye, Pencil, Link2, X } from "lucide-react";
 import {
@@ -233,6 +234,8 @@ export default function NoteDocumentEditor({
     },
     onSelectionUpdate: ({ editor }) => refresh(editor),
   });
+  const characters = useEditorState({ editor, selector: ({ editor: current }) => noteTextLength(current?.getText({ blockSeparator: '' }) ?? '') }) ?? 0;
+  const countState = noteCountState(characters);
   const editorRef = useRef<Editor | null>(null);
   editorRef.current = editor;
   useEffect(() => {
@@ -364,6 +367,12 @@ export default function NoteDocumentEditor({
         }}
       />
       </NoteAssetsProvider></div>
+      {!preview && <div className="note-editor-footer">
+        <span className="note-count" data-state={countState}>
+          <span className="sr-only">{label("글자 수", "文字数", "Characters")} </span><span aria-hidden="true">{formatNoteCount(characters, lang)}</span>
+          <span className="sr-only" role="status">{countState === "near" ? label("글자 수가 한도에 가까워요", "文字数が上限に近づいています", "Close to the character limit") : countState === "limit" ? label("글자 수가 한도에 닿았어요", "文字数が上限に達しました", "Character limit reached") : ""}</span>
+        </span>
+      </div>}
       <NoteAutocompleteDropdown
         suggestions={suggestions}
         selectedIdx={selected}
