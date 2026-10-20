@@ -885,6 +885,7 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
               </ul>
             )}
             <h1 className={styles.title}>{deck.title}</h1>
+            {initialSeries && <SeriesBox series={initialSeries} kind="deck" postId={id} />}
           </div>
 
           <div className={styles.author}>
@@ -976,8 +977,6 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
           </div>
         </m.header>
 
-        {initialSeries && <SeriesBox series={initialSeries} kind="deck" postId={id} />}
-
         <nav aria-label={t('sectionNav')} className={`sticky-under-nav ${styles.sectionNav}`}>
           <ol ref={sectionNavRef}>
             {sections.map(section => (
@@ -1045,7 +1044,7 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
             <section id="deck-note" aria-labelledby="deck-note-title" className={styles.section}>
               <SectionHead id="deck-note-title" title={t('deckNote')} />
               {deck.description?.trim() && (
-                <div className={styles.note}>
+                <div className={styles.note} data-note-wrap>
                   <NoteRenderer
                     text={deck.description}
                     {...noteLookups}
