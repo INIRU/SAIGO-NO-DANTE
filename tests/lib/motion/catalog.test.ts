@@ -90,3 +90,20 @@ describe('REQ-MOTION-001 identity order', () => {
     expect(faust.identities.map(i => i.slug)).toEqual(['id10216', 'heishou-mao-faust', 'link-heishou-mao-faust', 'id10201', 'lcb-faust'])
   })
 })
+
+describe('REQ-MOTION-002 state buttons read the index label', () => {
+  it('REQ-MOTION-002 writes the index label as it is, even when the name has brackets inside its condition', () => {
+    const best3 = entry({ state: 'v:best-3', name: '삼연[三連] [최고 상태 (얽힘 5 이상 + 나생[羅生])]', label: '최고 상태' })
+    expect(motionStateLabel(best3, 'ko')).toBe('최고 상태')
+    expect(motionStateLabel(entry({ state: 'v:reflex', name: 'x [레플렉시옹 보유]', label: '레플렉시옹 보유' }), 'ko')).toBe('레플렉시옹 보유')
+    expect(motionStateLabel(entry({ state: 'v:base', name: 'x', label: '기본' }), 'ko')).toBe('기본')
+  })
+
+  it('REQ-MOTION-002 turns only the three fixed labels into the page language', () => {
+    expect(motionStateLabel(entry({ state: 'v:best-2', name: 'x [최고 상태 (a)]', label: '최고 상태' }), 'en')).toBe('Best')
+    expect(motionStateLabel(entry({ state: 'max', name: 'x [최대 상태]', label: '최대 상태' }), 'ja')).toBe('最大状態')
+    expect(motionStateLabel(entry({ state: 'v:base', name: 'x', label: '기본' }), 'ja')).toBe('基本')
+    expect(motionStateLabel(entry({ state: 'v:reflex', name: 'x [레플렉시옹 보유]', label: '레플렉시옹 보유' }), 'en')).toBe('레플렉시옹 보유')
+  })
+})
+
