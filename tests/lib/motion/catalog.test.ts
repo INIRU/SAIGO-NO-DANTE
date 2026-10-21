@@ -136,3 +136,17 @@ describe('REQ-MOTION-014 the index fields for identities, links and languages', 
   })
 })
 
+describe('REQ-MOTION-015 skill names from the site data', () => {
+  it('REQ-MOTION-015 names a skill by its id from the site data in English and Japanese, after the index field and before the index name', () => {
+    const rows = [
+      entry({ slug: 'id10116', skillId: 1011601, name: '차원 베기', video: 'yisang/10116/1011601/v-base/layers.mp4' }),
+      entry({ slug: 'id10116', skillId: 1011602, name: '연속 차원 베기', nameEn: 'Index name', video: 'yisang/10116/1011602/v-base/layers.mp4' }),
+      entry({ slug: 'id10116', skillId: 1011606, name: 'EX 스킬', video: 'yisang/10116/1011606/v-base/layers.mp4' }),
+    ]
+    const names = new Map([[1011601, 'Dimensional Slice'], [1011602, 'Site name']])
+    const titles = (lang: string) => buildMotionCatalog(rows, new Map(), lang, names)[0].identities[0].skills.map(s => s.title)
+    expect(titles('en')).toEqual(['Dimensional Slice', 'Index name', 'EX 스킬'])
+    expect(titles('ko')).toEqual(['차원 베기', '연속 차원 베기', 'EX 스킬'])
+  })
+})
+

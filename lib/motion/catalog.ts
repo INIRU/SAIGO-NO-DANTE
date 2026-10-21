@@ -103,9 +103,10 @@ const slugRank = (slug: string) => slug.startsWith('id') ? 0 : slug.startsWith('
  * link with `members` is named after them; the others keep the index's name and borrow the portrait of the identity
  * their skill id belongs to (its first five digits), and its release date for the order. Another form of an identity
  * (`id<game id>-<form>`) is listed under it, after its own skills. Skill names and state labels take the page
- * language's field (nameEn, labelJa…) when the index has one.
+ * language's field (nameEn, labelJa…) when the index has one; a skill name otherwise comes from `skillNames` (the site's
+ * names by skill id, en/ja), then the index.
  */
-export function buildMotionCatalog(entries: readonly MotionEntry[], identities: ReadonlyMap<string, MotionIdentityInfo>, lang: string): MotionSinner[] {
+export function buildMotionCatalog(entries: readonly MotionEntry[], identities: ReadonlyMap<string, MotionIdentityInfo>, lang: string, skillNames: ReadonlyMap<number, string> = new Map()): MotionSinner[] {
   const sinners = new Map<string, Map<string, MotionIdentity>>()
   for (const entry of entries) {
     const sinnerId = motionSinnerId(entry)
@@ -131,7 +132,7 @@ export function buildMotionCatalog(entries: readonly MotionEntry[], identities: 
       bySlug.set(slug, identity)
     }
     const key = `${entry.slug}|${entry.skillId}`
-    const title = (lang === 'en' ? entry.nameEn : lang === 'ja' ? entry.nameJa : undefined)?.trim() || entry.name.replace(/ \[[^\]]+\]$/, '')
+    const title = (lang === 'en' ? entry.nameEn : lang === 'ja' ? entry.nameJa : undefined)?.trim() || (lang === 'ko' ? undefined : skillNames.get(entry.skillId)) || entry.name.replace(/ \[[^\]]+\]$/, '')
     let skill = identity.skills.find(s => s.key === key)
     if (!skill) identity.skills.push(skill = { key, skillId: entry.skillId, title, form, states: [] })
     if (isBase(entry.state)) skill.title = title

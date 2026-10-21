@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import { getIdentities } from '@/lib/db/queries'
 import { getLocalizedName } from '@/lib/i18n/localize'
+import { readAllMetaRows } from '@/lib/meta/pagination'
 import type { SupportedLang } from '@/lib/i18n/types'
 import { MOTION_ASSET_BASE, buildMotionCatalog, type MotionEntry, type MotionIdentityInfo, type MotionSinner } from '@/lib/motion/catalog'
 
@@ -18,18 +19,34 @@ async function loadMotionIndex(): Promise<MotionEntry[]> {
   return rows as MotionEntry[]
 }
 
+/** The site's skill names in English or Japanese by game skill id (the uptie 4 row writes `<id>_4`), the highest uptie's. */
+async function loadSkillNames(lang: 'en' | 'ja'): Promise<Map<number, string>> {
+  const db = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!)
+  type Row = { image_id: string; name_en: string | null; name_jp: string | null; uptie_level: number | null }
+  const rows = await readAllMetaRows<Row>((from, to) => db.schema('limbus').from('skills')
+    .select('image_id, name_en, name_jp, uptie_level').not('image_id', 'is', null).order('id').range(from, to), 1000)
+  const best = new Map<number, { name: string; uptie: number }>()
+  for (const row of rows) {
+    const name = (lang === 'en' ? row.name_en : row.name_jp)?.trim()
+    if (!name) continue
+    const id = Number(row.image_id.replace(/_4$/, '')), uptie = row.uptie_level ?? 0
+    if ((best.get(id)?.uptie ?? -1) < uptie) best.set(id, { name, uptie })
+  }
+  return new Map([...best].map(([id, { name }]) => [id, name]))
+}
+
 /** The motion list in one language: sinners → identities → skills → states (lib/motion/catalog.ts). */
 export async function loadMotionCatalog(lang: SupportedLang): Promise<MotionSinner[]> {
   'use cache'
   cacheLife('page-10m')
   cacheTag(CACHE_TAGS.motion, CACHE_TAGS.identities)
-  const [rows, identities] = await Promise.all([loadMotionIndex(), getIdentities()])
+  const [rows, identities, skillNames] = await Promise.all([loadMotionIndex(), getIdentities(), lang === 'ko' ? new Map<number, string>() : loadSkillNames(lang)])
   const byGameId = new Map<string, MotionIdentityInfo>()
   for (const identity of identities) {
     if (!identity.game_id) continue
     byGameId.set(identity.game_id, { id: identity.id, name: getLocalizedName(identity, lang), sinner_id: identity.sinner_id, game_id: identity.game_id, folder_name: identity.folder_name ?? null, release_date: identity.release_date ?? null })
   }
-  return buildMotionCatalog(rows, byGameId, lang)
+  return buildMotionCatalog(rows, byGameId, lang, skillNames)
 }
 
 export type MotionSkillRow = {
