@@ -85,14 +85,15 @@ export default function SkillMotionViewer() {
   const picker = <MotionPicker sinners={sinners} sinnerId={tab ?? picked.sinnerId} selectedKey={picked.skill.key} onSinner={setTab} onPick={choose} />
 
   return (
-    <div className="grid gap-5 lg:grid-cols-[17rem_minmax(0,1fr)] xl:grid-cols-[17rem_minmax(0,1fr)_20rem]">
-      <aside className="hidden lg:row-span-2 lg:block xl:row-span-1">
-        <div className="sticky top-[calc(var(--nav-offset)+1rem)] max-h-[calc(100dvh-var(--nav-offset)-2rem)] overflow-y-auto overscroll-contain pr-1 [scrollbar-width:thin] transition-[top] duration-300">
-          {picker}
-        </div>
+    // From lg the page is the viewport's height (the layout) and each column scrolls on its own: the list; the stage with the
+    // side panel under it (lg), or the stage and the side panel side by side (xl, where their wrapper steps aside).
+    <div className="grid gap-5 lg:min-h-0 lg:flex-1 lg:grid-cols-[17rem_minmax(0,1fr)] lg:grid-rows-[minmax(0,1fr)] xl:grid-cols-[17rem_minmax(0,1fr)_20rem]">
+      <aside className="hidden min-h-0 overflow-y-auto overscroll-contain pr-1 [scrollbar-width:thin] lg:block">
+        {picker}
       </aside>
 
-      <div className="flex min-w-0 flex-col gap-4">
+      <div className="flex min-w-0 flex-col gap-5 lg:min-h-0 lg:overflow-y-auto lg:overscroll-contain lg:pr-1 lg:[scrollbar-width:thin] xl:contents">
+      <div className="flex min-w-0 flex-col gap-4 xl:min-h-0 xl:overflow-y-auto xl:overscroll-contain xl:pr-1 xl:[scrollbar-width:thin]">
         <button type="button" onClick={() => setSheet(true)} aria-haspopup="dialog"
           className="flex items-center gap-3 rounded-lg border border-[var(--border)] bg-[var(--bg-panel)] p-2 text-left lg:hidden">
           <span className="relative h-11 w-11 shrink-0 overflow-hidden rounded-md border border-[#2e2417] bg-[#0a0806]">
@@ -133,9 +134,10 @@ export default function SkillMotionViewer() {
         </div>
       </div>
 
-      <aside className="min-w-0 lg:col-start-2 xl:col-start-auto">
+      <aside className="min-w-0 xl:min-h-0 xl:overflow-y-auto xl:overscroll-contain xl:pr-1 xl:[scrollbar-width:thin]">
         <MotionSidePanel skillId={picked.skill.skillId} layers={motion.layers} onLayer={motion.setLayer} />
       </aside>
+      </div>
 
       <BaseModal open={sheet} onClose={() => setSheet(false)} title={t('title')} sheet maxWidth="32rem" className="max-h-[85dvh] overflow-y-auto">
         {picker}

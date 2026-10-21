@@ -5,7 +5,9 @@ import { unbreakableCoinIndices } from '@/lib/identity/skill-description'
 import { SIN_COLORS, SIN_KR_TO_EN } from '@/lib/constants/sin'
 import type { SinType } from '@/lib/types'
 import { computeSkillImageIndices, getSkillIconUrl } from '@/lib/utils/images'
-import type { CSSProperties } from 'react'
+import { useOwnKeywords } from '@/lib/hooks/useOwnKeywords'
+import { descriptionTexts } from '@/lib/keywords/own-keywords'
+import { useMemo, type CSSProperties } from 'react'
 
 type SkillFrameSkill = {
   id: string
@@ -33,6 +35,8 @@ type SkillFrameSkill = {
 type SkillFrameIdentity = {
   sinner_id: string
   game_id?: string | null
+  /** The identity's listed keywords: with the skills' texts, the keyword set its older plain-word keywords are found in. */
+  keywords?: readonly string[] | null
 }
 
 type IdentitySkillFrameCardProps = {
@@ -41,9 +45,8 @@ type IdentitySkillFrameCardProps = {
   identity?: SkillFrameIdentity | null
   lang?: string
   size?: string
+  /** The identity's own keyword set when the caller has it (with its passives); else built from `identity` and `skills`. */
   allowedKeywords?: ReadonlySet<string>
-  /** The card shows a skill of an identity: draw `allowedKeywords` written as plain words. */
-  matchPlainKeywords?: boolean
   className?: string
   style?: CSSProperties
 }
@@ -94,10 +97,22 @@ export default function IdentitySkillFrameCard({
   lang,
   size = '3.5rem',
   allowedKeywords,
-  matchPlainKeywords,
   className = 'p-2.5 rounded',
   style,
 }: IdentitySkillFrameCardProps) {
+  // The card always shows a skill of an identity, so it reads the text like the identity page does wherever it is (the
+  // motion page, a skill block of a deck or plan note): the keywords older text writes as plain words, from the
+  // identity's own keyword set, and the names of its skills in their sin colour.
+  const texts = useMemo(() => descriptionTexts(skills), [skills])
+  const ownKeywords = useOwnKeywords(identity?.keywords, texts)
+  const skillNameColors = useMemo(() => {
+    const colors: Record<string, string> = {}
+    for (const s of skills) {
+      const sin = normalizeSin(s.sin_affinity)
+      for (const name of [s.name, s.name_en, s.name_jp]) if (name) colors[name] = sin === 'neutral' ? '#cccccc' : SIN_COLORS[sin]
+    }
+    return colors
+  }, [skills])
   const sin = normalizeSin(skill.sin_affinity)
   const sinColor = sin === 'neutral' ? '#cccccc' : SIN_COLORS[sin]
   const skillImageIdx = computeSkillImageIndices(skills)
@@ -135,8 +150,9 @@ export default function IdentitySkillFrameCard({
         description={description}
         unbreakableCoins={unbreakableCoinIndices(skill.description)}
         descVariant="compact"
-        allowedKeywords={allowedKeywords}
-        matchPlainKeywords={matchPlainKeywords}
+        allowedKeywords={allowedKeywords ?? ownKeywords}
+        matchPlainKeywords
+        skillNameColors={skillNameColors}
       />
     </div>
   )

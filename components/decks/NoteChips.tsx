@@ -186,7 +186,7 @@ export type NoteSkillEntry = {
   sinnerName: string
   skill?: Skill
   skills?: Skill[]
-  identity?: Pick<Identity, 'sinner_id' | 'game_id'>
+  identity?: Pick<Identity, 'sinner_id' | 'game_id'> & { keywords?: readonly string[] | null }
 }
 
 export type NotePassiveEntry = {
@@ -238,14 +238,13 @@ function resolveSkillFrameEntry(
   return skillLookup[`${parts[0]}:${parts[1]}:${humanVariant - 1}`]
 }
 
+/** The skill card reads its keywords from its own identity (IdentitySkillFrameCard), not from the deck-wide set. */
 function SkillFramePlaceholder({
   entry,
   lang,
-  allowedKeywords,
 }: {
   entry: NoteSkillEntry
   lang: string
-  allowedKeywords?: Set<string>
 }) {
   if (!entry.skill || !entry.skills || !entry.identity) {
     return <FallbackChip type="s" tokenKey={`${entry.sinnerName}:${entry.skill_order}`} />
@@ -265,7 +264,6 @@ function SkillFramePlaceholder({
         identity={entry.identity}
         lang={lang}
         size="4.5rem"
-        allowedKeywords={allowedKeywords}
         className="rounded-md p-2.5"
         style={{
           background: 'rgba(12,10,7,0.9)',
@@ -770,7 +768,6 @@ export function NoteRenderer({
               key={`${keyPrefix}-skill`}
               entry={entry}
               lang={locale}
-              allowedKeywords={allowedKeywords}
             />
           )
         : <FallbackChip key={`${keyPrefix}-skill-fallback`} type="s" tokenKey={tokenKey} />

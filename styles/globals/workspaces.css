@@ -23,3 +23,6 @@ html[data-with-gift-check] :is(.site-navigation, .site-footer) { display: none; 
 /* Friend code writing page: an editor with its own way back; on desktop the whole line-up fits the viewport without scrolling. */
 html[data-with-friend-compose] :is(.site-navigation, .site-footer) { display: none; }
 @media (min-width: 64rem) { html[data-with-friend-compose], html[data-with-friend-compose] body { overflow: hidden; } }
+/* Skill motion: a full-screen viewer with its own way back; on desktop each column scrolls on its own and the page does not. */
+html[data-with-motion] :is(.site-navigation, .site-footer) { display: none; }
+@media (min-width: 64rem) { html[data-with-motion], html[data-with-motion] body { overflow: hidden; } }
