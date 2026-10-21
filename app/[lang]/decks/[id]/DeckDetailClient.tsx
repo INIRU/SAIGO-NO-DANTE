@@ -303,7 +303,7 @@ function buildNoteLookups(
         iconUrl, identityName, sinnerName: localizedSinnerName,
         skill: frameSkillById.get(sk.id),
         skills: frameSkills,
-        identity: { sinner_id: id_.sinner_id, game_id: id_.game_id },
+        identity: { sinner_id: id_.sinner_id, game_id: id_.game_id, keywords: id_.keywords },
       }
       for (const sinnerName of sinnerTokenNames) {
         const key = subIdx === 0
