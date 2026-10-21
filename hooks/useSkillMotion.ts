@@ -22,6 +22,11 @@ export function useSkillMotion() {
   const comp = useRef<LayerCompositor | null>(null)
   const meta = useRef<LayerSetMeta | null>(null)
   const toggles = useRef(new Map<string, boolean>())
+  const canvasRef = useRef<HTMLCanvasElement | null>(null)
+  // The stage out of view (a phone scrolled down to the skill card): no frame is drawn, so iOS Safari does not upload a
+  // 1920×1440 video frame 60 times a second for nothing.
+  const onScreen = useRef(true)
+  const observer = useRef<IntersectionObserver | null>(null)
   const token = useRef(0)
   const frame = useRef({ value: 0, listeners: new Set<() => void>() })
   const [status, setStatus] = useState<MotionStatus>('idle')
@@ -38,9 +43,20 @@ export function useSkillMotion() {
     get: () => frame.current.value,
   }).current
 
+  /**
+   * Frees the compositor and its GL context at once. A dropped context otherwise lives until it is collected, and on iOS
+   * Safari that memory, with the video's frames, can leave the page's other images drawn as black boxes.
+   */
+  const free = useCallback(() => {
+    comp.current?.dispose()
+    comp.current = null
+    canvasRef.current?.getContext('webgl2')?.getExtension('WEBGL_lose_context')?.loseContext()
+    canvasRef.current = null
+  }, [])
+
   const draw = useCallback(() => {
     const v = video.current, m = meta.current
-    if (!v || !m || !comp.current) return
+    if (!v || !m || !comp.current || !onScreen.current) return
     const n = Math.min(m.frames - 1, Math.floor(v.currentTime * m.fps + 1e-3))
     comp.current.draw(v, n)
     if (n !== frame.current.value) {
@@ -57,6 +73,10 @@ export function useSkillMotion() {
     v.muted = true
     v.crossOrigin = 'anonymous' // the R2 host allows the site: WebGL may read the frames
     video.current = v
+    observer.current = new IntersectionObserver(([entry]) => {
+      onScreen.current = entry.isIntersecting
+      if (entry.isIntersecting) draw()
+    })
     let ticking = false
     const tick = () => {
       draw()
@@ -77,13 +97,13 @@ export function useSkillMotion() {
       v.removeEventListener('pause', onPause)
       v.removeEventListener('seeked', draw)
       document.removeEventListener('visibilitychange', onVisibility)
+      observer.current?.disconnect()
       v.pause()
       v.removeAttribute('src')
       v.load()
-      comp.current?.dispose()
-      comp.current = null
+      free()
     }
-  }, [draw])
+  }, [draw, free])
 
   /** Load one state; `keep` holds the time and play state over a change of state of the same skill. */
   const load = useCallback(async (state: MotionState, keep: Keep | null = null) => {
@@ -98,8 +118,7 @@ export function useSkillMotion() {
       const m = await response.json() as LayerSetMeta
       if (mine !== token.current) return
       v.pause()
-      comp.current?.dispose()
-      comp.current = null
+      free()
       meta.current = null
       v.src = motionAssetUrl(state.video, state.bytes)
       const loaded = new Promise<void>((resolve, reject) => {
@@ -120,7 +139,10 @@ export function useSkillMotion() {
         setStatus('error')
         return
       }
+      canvasRef.current = canvas
       hostRef.current?.replaceChildren(canvas)
+      observer.current?.disconnect()
+      observer.current?.observe(canvas)
       meta.current = m
       m.layers.forEach((layer, k) => {
         if (!toggles.current.has(layer.id)) toggles.current.set(layer.id, layer.enabled !== false)
