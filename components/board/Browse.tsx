@@ -3,7 +3,7 @@
 import type { ReactNode, Ref } from 'react'
 import { Search, SlidersHorizontal, X } from 'lucide-react'
 import { useTranslations } from 'next-intl'
-import { CardGridSkeleton } from './BoardShelfSkeleton'
+import { BoardCardSkeleton, CardGridSkeleton } from './BoardShelfSkeleton'
 import type { DiscoveryKind } from '@/lib/discovery/recommend'
 import BoardCard from './BoardCard'
 import type { RowPost } from './parts'
@@ -68,10 +68,12 @@ export function BoardResults({ kind, posts, loading, hasMore, loadingMore, senti
     <>
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4 xl:grid-cols-3">
         {posts.map(post => <div key={post.id} className="min-w-0"><BoardCard kind={kind} post={post} compactOnPhone /></div>)}
+        {/* The next page's shapes in the same grid, so they take the cells after the last card: two on a phone, six from md up. */}
+        {loadingMore && Array.from({ length: 6 }, (_, index) => (
+          <div key={`loading-${index}`} data-loading-card="" className={index < 2 ? 'min-w-0' : 'min-w-0 max-md:hidden'}><BoardCardSkeleton phoneRows={1} /></div>
+        ))}
       </div>
-      <div ref={sentinelRef} className="py-6" aria-hidden={!hasMore && !loadingMore}>
-        {loadingMore && <CardGridSkeleton count={2} />}
-      </div>
+      <div ref={sentinelRef} className="py-6" aria-hidden={!hasMore && !loadingMore} />
     </>
   )
 }

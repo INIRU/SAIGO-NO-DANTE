@@ -81,17 +81,16 @@ describe('loadRising', () => {
   })
 
   it('REQ-COMMUNITY-079 fills the row from thinner evidence when the stricter floor leaves it short', async () => {
-    state.fresh = new Set(['d4'])
-    // Without d4 only d2 and d7 have eight recent visitors; d8 (five, ×2.7) comes in under the relaxed floor, ahead of d6 and d1.
+    state.gone = new Set(['d4'])
+    // Without d4 (deleted) only d2 and d7 have eight recent visitors; d8 (five, ×2.7) comes in under the relaxed floor, ahead of d6 and d1.
     expect((await loadRising('deck')).posts.map(item => item.post.id)).toEqual(['d7', 'd8', 'd2'])
   })
 
-  it('REQ-COMMUNITY-074 leaves out posts and identities that are themselves new, so they stay with the new ones', async () => {
+  it('REQ-COMMUNITY-074 lets a new post and a new identity rise like any other, like a live ranking', async () => {
     state.fresh = new Set(['d4', 'i3'])
     const result = await loadRising('deck')
-    expect(result.posts.map(item => item.post.id)).not.toContain('d4')
-    // Two identities are left: a section with fewer than three is not shown.
-    expect(result.identities).toEqual([])
+    expect(result.posts.map(item => item.post.id)).toContain('d4')
+    expect(result.identities.map(item => item.identity.id)).toContain('i3')
   })
 
   it('REQ-COMMUNITY-079 leaves a section out when fewer than three qualify, and a deleted post counts as missing', async () => {

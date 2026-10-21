@@ -2,6 +2,7 @@ import type { JSONContent } from '@tiptap/core'
 import { isNoteImageUrl } from './images'
 import { isNoteColorSin } from './text-style'
 import { isMentionKind } from './mention'
+import { noteBlockTokenPattern, noteTokenPattern } from './inline-tokens'
 
 export const NOTE_PREFIX = '!limbus-note:v1\n'
 export const ASSET_KINDS = ['gift', 'theme', 'identity', 'ego', 'skill', 'sin', 'keyword'] as const
@@ -163,6 +164,17 @@ function flattenNote(value: string, gift: (name: string) => string, keyword: (id
 }
 export function notePlainText(value: string): string {
   return flattenNote(value, name => name)
+}
+/** The memo as one plain line for a card: tokens by their names, markdown marks, links and card tokens dropped, spaces collapsed. */
+export function noteSummaryText(value: string): string {
+  return notePlainText(value)
+    .replace(noteBlockTokenPattern(), ' ')
+    .replace(noteTokenPattern(), token => token.slice(3, -1).replace(/:/g, ' '))
+    .replace(/\[([^\]\n]+)\]\((https?:\/\/[^)\s]+)\)/g, '$1')
+    .replace(/^\s{0,3}(?:#{1,6}|[-*>]|\d+\.)\s+/gm, '')
+    .replace(/[*_`]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
 }
 /** One-line card preview: plain text, but gifts and keywords stay `[g:name]` / `[k:name]` tokens so NoteRenderer can draw them as chips. */
 export function notePreviewText(value: string): string {
