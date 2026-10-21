@@ -12,7 +12,7 @@ import { defaultMotionState, type MotionIdentity, type MotionSinner, type Motion
 import MotionConditions from './MotionConditions'
 import MotionPicker from './MotionPicker'
 import MotionSkillStrip from './MotionSkillStrip'
-import MotionStage, { useCreditNotice } from './MotionStage'
+import MotionStage, { MotionPendingStage, useCreditNotice } from './MotionStage'
 import MotionSidePanel from './MotionSidePanel'
 import SkillMotionSkeleton from './SkillMotionSkeleton'
 
@@ -43,36 +43,51 @@ export default function SkillMotionViewer() {
   const [tab, setTab] = useState<string | null>(null)
   const [sheet, setSheet] = useState(false)
   const motion = useSkillMotion()
-  const [notice, dismissNotice] = useCreditNotice(motion.hold)
+  const [notice, dismissNotice] = useCreditNotice()
 
   const byKey = useMemo(() => {
     const map = new Map<string, Pick>()
     for (const sinner of sinners ?? []) for (const identity of sinner.identities) for (const skill of identity.skills) map.set(skill.key, { sinnerId: sinner.id, identity, skill })
     return map
   }, [sinners])
-  const first = sinners?.[0]?.identities[0]?.skills[0]
+  // The first skill of the list (the newest identity may be a pending one, with none).
+  const first = sinners?.flatMap(sinner => sinner.identities).flatMap(identity => identity.skills)[0]
   const picked = (query.skill ? byKey.get(fromParam(query.skill)) : undefined) ?? (first ? byKey.get(first.key) : undefined)
+  // A new identity without motion yet, chosen by its slug: the stage says when to expect it.
+  const pending = useMemo(() => {
+    for (const sinner of sinners ?? []) for (const identity of sinner.identities) if (identity.pending && identity.slug === query.skill) return { sinnerId: sinner.id, identity }
+    return undefined
+  }, [sinners, query.skill])
+  const isPending = Boolean(pending)
   const state = picked ? picked.skill.states.find(s => s.state === query.state) ?? picked.skill.states.find(s => s.state === defaultMotionState(picked.skill)) : undefined
 
   // Load whenever the chosen video changes; a change of condition within one skill keeps the time and play state.
   const loadedKey = useRef<string | null>(null)
   const loadedState = useRef<string | null>(null)
-  const { load, current } = motion
+  const { load, current, hold } = motion
+  // Nothing plays until the Project Moon notice of this visit is dismissed, nor while a pending identity is shown.
+  useEffect(() => { hold(notice !== false || isPending) }, [notice, isPending, hold])
   useEffect(() => {
+    // A pending identity has no stage: the skill is loaded again when one is chosen.
+    if (isPending) { loadedKey.current = null; return }
     if (!picked || !state) return
     if (loadedKey.current === picked.skill.key && loadedState.current === state.state) return
     const keep = loadedKey.current === picked.skill.key ? current() : null
     loadedKey.current = picked.skill.key
     loadedState.current = state.state
     void load(state, keep)
-  }, [picked, state, load, current])
+  }, [picked, state, load, current, isPending])
 
-  // An identity alone opens its first skill (the one playing when it is already chosen).
+  // An identity alone opens its first skill (the one playing when it is already chosen); a pending one, its notice.
   const choose = (sinnerId: string, identity: MotionIdentity, skill?: MotionSkill) => {
     setTab(sinnerId)
     setSheet(false)
+    if (identity.pending) {
+      if (query.skill !== identity.slug) void setQuery({ skill: identity.slug, state: null })
+      return
+    }
     const next = skill ?? identity.skills.find(s => s.key === picked?.skill.key) ?? identity.skills[0]
-    if (next && next.key !== picked?.skill.key) void setQuery({ skill: toParam(next.key), state: null })
+    if (next && (isPending || next.key !== picked?.skill.key)) void setQuery({ skill: toParam(next.key), state: null })
   }
 
   if (error && !sinners) {
@@ -87,7 +102,8 @@ export default function SkillMotionViewer() {
   }
   if (!sinners || !picked || !state) return <SkillMotionSkeleton />
 
-  const picker = <MotionPicker sinners={sinners} sinnerId={tab ?? picked.sinnerId} selectedKey={picked.skill.key} onSinner={setTab} onPick={choose} />
+  const shown = pending?.identity ?? picked.identity
+  const picker = <MotionPicker sinners={sinners} sinnerId={tab ?? pending?.sinnerId ?? picked.sinnerId} selectedKey={pending ? pending.identity.slug : picked.skill.key} onSinner={setTab} onPick={choose} />
 
   return (
     // From lg the page is the viewport's height (the layout) and each column scrolls on its own: the list; the stage with the
@@ -102,30 +118,39 @@ export default function SkillMotionViewer() {
         <button type="button" onClick={() => setSheet(true)} aria-haspopup="dialog"
           className="flex items-center gap-3 rounded-lg border border-[var(--border)] bg-[var(--bg-panel)] p-2 text-left transition-colors active:bg-[var(--bg-elevated)] lg:hidden">
           <span className="relative h-11 w-11 shrink-0 overflow-hidden rounded-md border border-[#2e2417] bg-[#0a0806]">
-            {picked.identity.portrait && <QuietImage src={picked.identity.portrait} alt="" fill sizes="2.75rem" className="object-cover object-[50%_12%]" />}
+            {shown.portrait && <QuietImage src={shown.portrait} alt="" fill sizes="2.75rem" className="object-cover object-[50%_12%]" />}
           </span>
-          <span className="line-clamp-2 min-w-0 flex-1 text-[0.9375rem] leading-snug text-[var(--text-primary)]">{picked.identity.label}</span>
+          <span className="line-clamp-2 min-w-0 flex-1 text-[0.9375rem] leading-snug text-[var(--text-primary)]">{shown.label}</span>
           <ChevronDown className="h-5 w-5 shrink-0 text-[var(--gold-light)]" aria-hidden="true" />
         </button>
 
-        <MotionStage
-          hostRef={motion.hostRef} status={motion.status} error={motion.error} playing={motion.playing} muted={motion.muted} volume={motion.volume}
-          hasAudio={motion.hasAudio} frames={motion.frames} frameStore={motion.frameStore}
-          onTogglePlay={motion.togglePlay} onStep={motion.step} onSeek={motion.seek} onToggleMute={motion.toggleMute} onVolume={motion.setVolume}
-          onRetry={() => { loadedKey.current = null; void load(state, null) }} notice={notice} onDismiss={dismissNotice} />
+        {pending ? (
+          <>
+            <MotionPendingStage />
+            <h2 className="break-keep font-[family-name:var(--font-heading)] text-[1.125rem] leading-snug text-[var(--text-primary)] md:text-[1.25rem]">{pending.identity.label}</h2>
+          </>
+        ) : (
+          <>
+            <MotionStage
+              hostRef={motion.hostRef} status={motion.status} error={motion.error} playing={motion.playing} muted={motion.muted} volume={motion.volume}
+              hasAudio={motion.hasAudio} frames={motion.frames} frameStore={motion.frameStore}
+              onTogglePlay={motion.togglePlay} onStep={motion.step} onSeek={motion.seek} onToggleMute={motion.toggleMute} onVolume={motion.setVolume}
+              onRetry={() => { loadedKey.current = null; void load(state, null) }} notice={notice} onDismiss={dismissNotice} />
 
-        <div className="flex flex-col gap-4">
-          <MotionSkillStrip sinnerId={picked.sinnerId} skills={picked.identity.skills} selectedKey={picked.skill.key} onPick={skill => choose(picked.sinnerId, picked.identity, skill)} />
-          <h2 className="-mt-1 break-keep font-[family-name:var(--font-heading)] text-[1.125rem] leading-snug text-[var(--text-primary)] md:text-[1.25rem]">{picked.skill.title}</h2>
-          {picked.skill.states.length > 1 && (
-            <MotionConditions key={picked.skill.key} states={picked.skill.states} current={state.state}
-              onPick={next => void setQuery({ skill: toParam(picked.skill.key), state: next })} />
-          )}
-        </div>
+            <div className="flex flex-col gap-4">
+              <MotionSkillStrip sinnerId={picked.sinnerId} skills={picked.identity.skills} selectedKey={picked.skill.key} onPick={skill => choose(picked.sinnerId, picked.identity, skill)} />
+              <h2 className="-mt-1 break-keep font-[family-name:var(--font-heading)] text-[1.125rem] leading-snug text-[var(--text-primary)] md:text-[1.25rem]">{picked.skill.title}</h2>
+              {picked.skill.states.length > 1 && (
+                <MotionConditions key={picked.skill.key} states={picked.skill.states} current={state.state}
+                  onPick={next => void setQuery({ skill: toParam(picked.skill.key), state: next })} />
+              )}
+            </div>
+          </>
+        )}
       </div>
 
       <aside className="min-w-0 xl:min-h-0 xl:overflow-y-auto xl:overscroll-contain xl:pr-1">
-        <MotionSidePanel skillId={picked.skill.skillId} layers={motion.layers} onLayer={motion.setLayer} />
+        {!pending && <MotionSidePanel skillId={picked.skill.skillId} layers={motion.layers} onLayer={motion.setLayer} />}
       </aside>
       </div>
 

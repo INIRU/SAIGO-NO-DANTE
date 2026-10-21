@@ -47,8 +47,11 @@ export type MotionSkillFrame = { sin: string; slot: number; attack: 'slash' | 'p
  * `frame`: from the site's row of the skill, null when the site has none.
  */
 export type MotionSkill = { key: string; skillId: number; title: string; form: string | null; states: MotionState[]; frame?: MotionSkillFrame | null }
-/** `released`: the release date of the identity the skills belong to, for the list's order (null when the site has no row). */
-export type MotionIdentity = { slug: string; label: string; identityId: string | null; gameId: string | null; portrait: string | null; released: string | null; skills: MotionSkill[] }
+/**
+ * `released`: the release date of the identity the skills belong to, for the list's order (null when the site has no row).
+ * `pending`: a new identity the site has but the index has no motion for yet (no skills).
+ */
+export type MotionIdentity = { slug: string; label: string; identityId: string | null; gameId: string | null; portrait: string | null; released: string | null; skills: MotionSkill[]; pending?: boolean }
 export type MotionSinner = { id: string; identities: MotionIdentity[] }
 /** What the catalog needs of a site identity, its name (and its sinner's) already in the page's language. */
 export type MotionIdentityInfo = { id: string; name: string; sinner_id: string; sinner_name?: string; game_id: string | null; folder_name: string | null; rarity?: number | null; release_date?: string | null }
@@ -139,8 +142,14 @@ export function motionAssetUrl(path: string, bytes: number | undefined): string 
 // On one release date: the game's own identity, then entries of an older index (LCB, 흑수, 홍원 slugs), then old links.
 const slugRank = (slug: string) => slug.startsWith('id') ? 0 : slug.startsWith('lcb-') ? 1 : slug.startsWith('link-') ? 3 : 2
 
-/** The site data the catalog names things with, in the page language: skill names and frames by skill id, the keyword table. */
-export type MotionCatalogNames = { skillNames?: ReadonlyMap<number, string>; skillFrames?: ReadonlyMap<number, MotionSkillFrame>; refs?: GameTextRefNames | null }
+/**
+ * The site data the catalog names things with, in the page language: skill names and frames by skill id, the keyword table.
+ * `now`: lists the identities released in the last MOTION_PENDING_DAYS that have no motion yet as pending.
+ */
+export type MotionCatalogNames = { skillNames?: ReadonlyMap<number, string>; skillFrames?: ReadonlyMap<number, MotionSkillFrame>; refs?: GameTextRefNames | null; now?: Date }
+
+/** How long a new identity without motion is listed as pending: recording and building one takes 5 days to 2 weeks. */
+export const MOTION_PENDING_DAYS = 30
 
 /**
  * The R2 index as sinners → identities → skills → states, in the order the page lists them. A skill is its slug plus
@@ -155,12 +164,14 @@ export function buildMotionCatalog(entries: readonly MotionEntry[], identities: 
   // A link names its identity with the sinner: 흑수 - 묘 is both Ryōshū's and Outis's.
   const labelContext: MotionLabelContext = { refs: names.refs, identityName: id => { const info = identities.get(id); return info && (info.sinner_name ? `${info.name} ${info.sinner_name}` : info.name) } }
   const sinners = new Map<string, Map<string, MotionIdentity>>()
+  const withMotion = new Set<string>()
   for (const entry of entries) {
     const sinnerId = motionSinnerId(entry)
     if (!sinnerId) continue
     const bySlug = sinners.get(sinnerId) ?? sinners.set(sinnerId, new Map()).get(sinnerId)!
     const [, gameId = null, form = null] = /^id(\d{5})(?:-(.+))?$/.exec(entry.slug) ?? []
     const slug = gameId ? `id${gameId}` : entry.slug
+    if (entry.identityId ?? gameId) withMotion.add((entry.identityId ?? gameId)!)
     let identity = bySlug.get(slug)
     if (!identity) {
       const ownId = entry.identityId ?? gameId
@@ -195,6 +206,20 @@ export function buildMotionCatalog(entries: readonly MotionEntry[], identities: 
       state: entry.state, label: motionStateLabel(entry, lang, labelContext), name: entry.name, video: entry.video, meta: entry.meta, bytes: entry.bytes ?? 0,
       ...(link && { link }),
     })
+  }
+  // A new identity of the site the index has no motion for yet: listed with no skills, so the page can say it is coming.
+  if (names.now) {
+    const since = names.now.getTime() - MOTION_PENDING_DAYS * 86_400_000
+    for (const info of identities.values()) {
+      if (!info.game_id || withMotion.has(info.game_id)) continue
+      if (info.release_date && Date.parse(`${info.release_date.slice(0, 10)}T00:00:00+09:00`) < since) continue
+      const bySlug = sinners.get(info.sinner_id) ?? sinners.set(info.sinner_id, new Map()).get(info.sinner_id)!
+      bySlug.set(`id${info.game_id}`, {
+        slug: `id${info.game_id}`, label: info.name, identityId: info.id, gameId: info.game_id,
+        portrait: info.folder_name ? getIdentityPortraitUrl(info.sinner_id, info.folder_name, info.game_id, false) : null,
+        released: info.release_date ?? null, skills: [], pending: true,
+      })
+    }
   }
   return SINNER_SLUGS.flatMap(id => {
     const bySlug = sinners.get(id)
