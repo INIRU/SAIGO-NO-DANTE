@@ -2815,6 +2815,8 @@
     "retry": "Retry",
     "skills": "Skills",
     "link": "Link",
-    "maxState": "Max State"
+    "maxState": "Max State",
+    "pendingTitle": "Motion in progress",
+    "pendingBody": "Each motion is built by recording and analyzing in-game footage, so it takes at least 5 days to 2 weeks."
   }
 }

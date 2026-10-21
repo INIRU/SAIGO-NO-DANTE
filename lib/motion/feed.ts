@@ -65,7 +65,7 @@ export async function loadMotionCatalog(lang: SupportedLang): Promise<MotionSinn
     if (!identity.game_id) continue
     byGameId.set(identity.game_id, { id: identity.id, name: getLocalizedName(identity, lang), sinner_id: identity.sinner_id, sinner_name: sinnerNames.get(identity.sinner_id), game_id: identity.game_id, folder_name: identity.folder_name ?? null, release_date: identity.release_date ?? null })
   }
-  return buildMotionCatalog(rows, byGameId, lang, { skillNames: skills.names, skillFrames: skills.frames, refs })
+  return buildMotionCatalog(rows, byGameId, lang, { skillNames: skills.names, skillFrames: skills.frames, refs, now: new Date() })
 }
 
 export type MotionSkillRow = {

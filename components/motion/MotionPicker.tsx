@@ -3,7 +3,7 @@
 import { useDeferredValue, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import Image from 'next/image'
 import { useTranslations } from 'next-intl'
-import { Search, X } from 'lucide-react'
+import { Hourglass, Search, X } from 'lucide-react'
 import QuietImage from '@/components/ui/QuietImage'
 import { getSinnerLogoUrl } from '@/lib/utils/images'
 import type { MotionIdentity, MotionSinner, MotionSkill } from '@/lib/motion/catalog'
@@ -12,6 +12,7 @@ import { motionSkillIcon } from './MotionSkillStrip'
 const focusRing = 'focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--gold-light)]'
 
 function IdentityRow({ identity, selected, onPick, children }: { identity: MotionIdentity; selected: boolean; onPick: () => void; children?: ReactNode }) {
+  const t = useTranslations('motionPage')
   return (
     <li>
       <button type="button" onClick={onPick} aria-current={selected ? 'true' : undefined}
@@ -20,6 +21,7 @@ function IdentityRow({ identity, selected, onPick, children }: { identity: Motio
           {identity.portrait && <QuietImage src={identity.portrait} alt="" fill sizes="2.75rem" className="object-cover object-[50%_12%]" />}
         </span>
         <span className={`line-clamp-2 min-w-0 flex-1 text-[0.875rem] leading-snug transition-colors ${selected ? 'text-[var(--gold-light)]' : 'text-[var(--text-secondary)] group-hover:text-[var(--text-primary)]'}`}>{identity.label}</span>
+        {identity.pending && <Hourglass className="mr-1 h-4 w-4 shrink-0 text-[var(--text-tertiary)]" role="img" aria-label={t('pendingTitle')} />}
       </button>
       {children}
     </li>
@@ -42,7 +44,8 @@ export default function MotionPicker({ sinners, sinnerId, selectedKey, onSinner,
   const [query, setQuery] = useState('')
   const needle = useDeferredValue(query.trim().toLowerCase())
   const sinner = sinners.find(s => s.id === sinnerId) ?? sinners[0]
-  const owns = (identity: MotionIdentity) => identity.skills.some(skill => skill.key === selectedKey)
+  // A pending identity is chosen by its slug, the others by one of their skills.
+  const owns = (identity: MotionIdentity) => identity.slug === selectedKey || identity.skills.some(skill => skill.key === selectedKey)
 
   // The chosen identity in view when the list opens (a shared link, the sheet on a phone).
   const list = useRef<HTMLUListElement>(null)

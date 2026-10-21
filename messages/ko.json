@@ -2815,6 +2815,8 @@
     "retry": "다시 시도",
     "skills": "스킬",
     "link": "연계",
-    "maxState": "최대 상태"
+    "maxState": "최대 상태",
+    "pendingTitle": "모션 준비 중",
+    "pendingBody": "인게임 영상을 촬영·분석해 구현하므로 공개까지 최소 5일~2주가 걸립니다."
   }
 }
