@@ -33,6 +33,12 @@ export const NAV_GROUPS: { labelKey: string; items: { href: string; labelKey: st
     ],
   },
   {
+    labelKey: 'nav.motion.title',
+    items: [
+      { href: '/motion/skills', labelKey: 'nav.motion.skills' },
+    ],
+  },
+  {
     labelKey: 'nav.fun.title',
     items: [
       { href: '/random', labelKey: 'nav.fun.random' },
