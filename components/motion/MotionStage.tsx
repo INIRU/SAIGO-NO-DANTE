@@ -65,6 +65,17 @@ export default function MotionStage({ hostRef, status, error, playing, muted, vo
     try { localStorage.setItem(NOTICE_KEY, '1') } catch { /* private mode: shown again next time */ }
   }
   const ready = status === 'ready'
+  // A frame step or the seek bar pauses to look at a frame: the middle play button stays away until it plays again.
+  // (The video pauses a moment after the step, so the mark clears only when playback starts again.)
+  const [scrubbing, setScrubbing] = useState(false)
+  const [wasPlaying, setWasPlaying] = useState(playing)
+  if (playing !== wasPlaying) {
+    setWasPlaying(playing)
+    if (playing) setScrubbing(false)
+  }
+  const step = (delta: number) => { setScrubbing(true); onStep(delta) }
+  const seek = (n: number) => { setScrubbing(true); onSeek(n) }
+  const centerPlay = ready && !playing && !scrubbing && !notice
   const rootRef = useRef<HTMLDivElement>(null)
   const view = useStageScreen(rootRef)
   // Full screen: the root covers the screen (or is the browser's full screen element, which may not be turned), and the
@@ -78,6 +89,12 @@ export default function MotionStage({ hostRef, status, error, playing, muted, vo
     <div className={`${frame} @container bg-[#050403]`}>
       <div className={`relative w-full select-none bg-black ${view.full ? 'min-h-0 flex-1' : 'aspect-video'}`}>
         <div ref={hostRef} className="absolute inset-0 [&>canvas]:h-full [&>canvas]:w-full [&>canvas]:object-contain" onClick={ready ? onTogglePlay : undefined} />
+
+        {/* The bar's play button is the one assistive technology reads; this one is a bigger target over the picture. */}
+        <button type="button" data-center-play tabIndex={-1} aria-hidden="true" onClick={onTogglePlay}
+          className={`absolute left-1/2 top-1/2 z-[1] grid h-16 w-16 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border border-[rgba(232,176,48,0.45)] bg-[rgba(5,4,3,0.6)] text-[var(--gold-light)] shadow-[0_0.5rem_1.5rem_rgba(0,0,0,0.5)] transition-[opacity,scale,background-color] duration-200 hover:bg-[rgba(42,31,12,0.85)] motion-reduce:transition-none sm:h-20 sm:w-20 ${centerPlay ? 'scale-100 opacity-100' : 'pointer-events-none scale-90 opacity-0'}`}>
+          <Play className="ml-1 h-7 w-7 fill-current sm:h-9 sm:w-9" aria-hidden="true" />
+        </button>
 
         {status === 'loading' && (
           <div className="pointer-events-none absolute inset-0 grid place-items-center bg-[rgba(5,4,3,0.35)]">
@@ -122,9 +139,9 @@ export default function MotionStage({ hostRef, status, error, playing, muted, vo
         <button type="button" className={`${iconButton} grid`} onClick={onTogglePlay} disabled={!ready} aria-label={playing ? t('pause') : t('play')}>
           {playing ? <Pause className="h-5 w-5" aria-hidden="true" /> : <Play className="h-5 w-5" aria-hidden="true" />}
         </button>
-        <button type="button" className={`${iconButton} grid @max-md:hidden`} onClick={() => onStep(-1)} disabled={!ready} aria-label={t('prevFrame')}><ChevronLeft className="h-5 w-5" aria-hidden="true" /></button>
-        <button type="button" className={`${iconButton} grid @max-md:hidden`} onClick={() => onStep(1)} disabled={!ready} aria-label={t('nextFrame')}><ChevronRight className="h-5 w-5" aria-hidden="true" /></button>
-        <SeekBar store={frameStore} frames={ready ? frames : 0} label={t('frame')} onSeek={onSeek} />
+        <button type="button" className={`${iconButton} grid @max-md:hidden`} onClick={() => step(-1)} disabled={!ready} aria-label={t('prevFrame')}><ChevronLeft className="h-5 w-5" aria-hidden="true" /></button>
+        <button type="button" className={`${iconButton} grid @max-md:hidden`} onClick={() => step(1)} disabled={!ready} aria-label={t('nextFrame')}><ChevronRight className="h-5 w-5" aria-hidden="true" /></button>
+        <SeekBar store={frameStore} frames={ready ? frames : 0} label={t('frame')} onSeek={seek} />
         <FrameCounter store={frameStore} frames={frames} />
         <button type="button" className={`${iconButton} grid @max-md:ml-auto`} onClick={onToggleMute} disabled={!ready || !hasAudio} aria-label={muted ? t('soundOn') : t('soundOff')} aria-pressed={!muted}>
           {muted ? <VolumeX className="h-5 w-5" aria-hidden="true" /> : <Volume2 className="h-5 w-5" aria-hidden="true" />}

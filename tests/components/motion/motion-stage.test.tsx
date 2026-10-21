@@ -39,4 +39,13 @@ describe('REQ-MOTION-008 the stage says it is a simulation', () => {
     expect(stage({ muted: true, volume: 0.5, hasAudio: true })).toMatch(/<input[^>]*aria-label="volume"[^>]*value="0"/)
     expect(stage({ hasAudio: false })).toMatch(/<input[^>]*aria-label="volume"[^>]*disabled=""/)
   })
+
+  it('REQ-MOTION-012 shows a play button over the middle of a paused video, and fades it out while playing or loading', () => {
+    const center = (html: string) => /<button[^>]*data-center-play[^>]*>/.exec(html)?.[0] ?? ''
+    expect(center(stage({ playing: false }))).toContain('opacity-100')
+    expect(center(stage({ playing: true }))).toContain('opacity-0')
+    expect(center(stage({ playing: false, status: 'loading' }))).toContain('opacity-0')
+    // The bar's play button is the one assistive technology reads.
+    expect(center(stage({ playing: false }))).toContain('tabindex="-1"')
+  })
 })
