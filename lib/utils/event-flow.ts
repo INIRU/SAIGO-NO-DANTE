@@ -1,4 +1,6 @@
-import type { MdEventChoice } from '@/components/mirror-dungeon/types'
+import type { MdEvent, MdEventChoice } from '@/components/mirror-dungeon/types'
+import type { SinType } from '@/lib/types'
+import { SIN_ATTRIBUTE_CODES } from '@/lib/constants/sin'
 
 export function groupEventChoices(rows: readonly MdEventChoice[]): MdEventChoice[][] {
   const groups = new Map<number, MdEventChoice[]>()
@@ -21,4 +23,18 @@ export function eventResultCondition(raw: string | null | undefined, lang: strin
     ? pick(`반복 횟수 × ${number * 100}%`, `Repeats × ${number * 100}%`, `反復回数 × ${number * 100}%`)
     : pick(`100% − 반복 횟수 × ${-number * 100}%`, `100% − repeats × ${-number * 100}%`, `100% − 反復回数 × ${-number * 100}%`)
   return raw
+}
+
+/**
+ * The sins each option's check favours, read from the check event the option leads to (`next_event_id` → `judgment`):
+ * one entry per option that has a check, numbered from 1 in the order the options are shown, each sin once.
+ */
+export function eventCheckSins(rows: readonly MdEventChoice[], eventsById: ReadonlyMap<number, Pick<MdEvent, 'judgment'>>): { option: number; sins: SinType[] }[] {
+  return groupEventChoices(rows).flatMap((group, index) => {
+    const sins = [...new Set(group.flatMap(row => {
+      const check = row.next_event_id == null ? undefined : eventsById.get(row.next_event_id)?.judgment?.judgement
+      return (check?.judgementDataList ?? []).flatMap(item => SIN_ATTRIBUTE_CODES[item.attributeType] ?? [])
+    }))]
+    return sins.length ? [{ option: index + 1, sins }] : []
+  })
 }

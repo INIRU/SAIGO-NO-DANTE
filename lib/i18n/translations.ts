@@ -525,6 +525,7 @@ export const translations = {
   'mirrorDungeon.event.clearSearch': { ko: '검색 지우기', en: 'Clear search', ja: '検索をクリア' },
   'mirrorDungeon.event.outcomeStory': { ko: '결과 이야기', en: 'Outcome story', ja: '結果の物語' },
   'mirrorDungeon.event.choicesLabel': { ko: '선택지', en: 'Choices', ja: '選択肢' },
+  'mirrorDungeon.event.checkOption': { ko: '선택지 {n} 유리 판정', en: 'Option {n} check favours', ja: '選択肢{n} 有利判定' },
   'mirrorDungeon.event.noChoices': { ko: '선택지 정보 없음', en: 'No choice data', ja: '選択肢情報なし' },
   'mirrorDungeon.event.success': { ko: '성공', en: 'Success', ja: '成功' },
   'mirrorDungeon.event.failure': { ko: '실패', en: 'Failure', ja: '失敗' },
