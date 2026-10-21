@@ -2813,6 +2813,8 @@
     "loadError": "映像を読み込めませんでした。",
     "listError": "モーション一覧を読み込めませんでした。",
     "retry": "再試行",
-    "stateCount": "条件 {count}"
+    "skills": "スキル",
+    "link": "連携",
+    "maxState": "最大状態"
   }
 }
