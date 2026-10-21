@@ -18,6 +18,8 @@ export type MotionEntry = {
   bytes?: number
   video: string
   meta: string
+  /** The state's button text, as the extractor writes it: 기본, 최고 상태, 최대 상태 or the condition. */
+  label?: string
 }
 
 /** One video of a skill as the page needs it (frame count, fps and sound are read from its layers.json when it loads). */
@@ -50,8 +52,20 @@ const isBase = (state: string) => state === 'base' || state === 'v:base'
 const isTop = (state: string) => state === 'max' || /^v:best/.test(state)
 const stateRank = (state: string) => isBase(state) ? 0 : isTop(state) ? 2 : 1
 
-/** 기본 / 최대 상태 / the condition named in the brackets at the end of the skill name. */
-export function motionStateLabel(entry: Pick<MotionEntry, 'state' | 'name'>, lang: string): string {
+// The fixed labels of the index in the other page languages; a condition stays as the index writes it.
+const FIXED_LABELS: Record<string, [en: string, ja: string]> = { '기본': ['Base', '基本'], '최고 상태': ['Best', '最高状態'], '최대 상태': ['Max', '最大状態'] }
+
+/**
+ * A state's button text: the index's `label` as written (a name's brackets cannot be cut reliably: a condition may hold
+ * brackets of its own), with only the fixed labels in the page language. An entry without one: 기본 / 최대 상태 / the
+ * brackets at the end of the name.
+ */
+export function motionStateLabel(entry: Pick<MotionEntry, 'state' | 'name' | 'label'>, lang: string): string {
+  const label = entry.label?.trim()
+  if (label) {
+    const fixed = FIXED_LABELS[label]
+    return fixed ? pick(lang, label, ...fixed) : label
+  }
   if (isBase(entry.state)) return pick(lang, '기본', 'Base', '基本')
   if (entry.state === 'max') return pick(lang, '최대 상태', 'Max', '最大状態')
   return /\[([^\]]+)\]$/.exec(entry.name)?.[1] ?? entry.state.replace(/^v:/, '')
