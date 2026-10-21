@@ -115,7 +115,7 @@ export default function SkillMotionViewer() {
         <div className="flex flex-col gap-3">
           <div>
             <p className="text-[0.8125rem] text-[var(--text-secondary)]">{picked.identity.label}</p>
-            <h2 className="mt-0.5 break-keep font-[family-name:var(--font-heading)] text-[1.125rem] leading-snug text-[var(--text-primary)] md:text-[1.25rem]">{state.name}</h2>
+            <h2 className="mt-0.5 break-keep font-[family-name:var(--font-heading)] text-[1.125rem] leading-snug text-[var(--text-primary)] md:text-[1.25rem]">{lang === 'ko' ? state.name : picked.skill.title}</h2>
           </div>
           {picked.skill.states.length > 1 && (
             <div role="radiogroup" aria-label={t('states')} className="flex flex-wrap gap-1.5">

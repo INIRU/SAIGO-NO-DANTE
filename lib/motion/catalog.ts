@@ -20,6 +20,16 @@ export type MotionEntry = {
   meta: string
   /** The state's button text, as the extractor writes it: 기본, 최고 상태, 최대 상태 or the condition. */
   label?: string
+  /** The game id of the identity (five digits) when the slug is not `id<game id>` (흑수, 홍원, LCB). */
+  identityId?: string
+  /** A link: the game ids of the identities taking part, and its name. */
+  members?: string[]
+  linkName?: string
+  /** The skill name (without the state) and the state label in English and Japanese. */
+  nameEn?: string
+  nameJa?: string
+  labelEn?: string
+  labelJa?: string
 }
 
 /** One video of a skill as the page needs it (frame count, fps and sound are read from its layers.json when it loads). */
@@ -60,7 +70,9 @@ const FIXED_LABELS: Record<string, [en: string, ja: string]> = { '기본': ['Bas
  * brackets of its own), with only the fixed labels in the page language. An entry without one: 기본 / 최대 상태 / the
  * brackets at the end of the name.
  */
-export function motionStateLabel(entry: Pick<MotionEntry, 'state' | 'name' | 'label'>, lang: string): string {
+export function motionStateLabel(entry: Pick<MotionEntry, 'state' | 'name' | 'label' | 'labelEn' | 'labelJa'>, lang: string): string {
+  const own = (lang === 'en' ? entry.labelEn : lang === 'ja' ? entry.labelJa : undefined)?.trim()
+  if (own) return own
   const label = entry.label?.trim()
   if (label) {
     const fixed = FIXED_LABELS[label]
@@ -87,9 +99,11 @@ const slugRank = (slug: string) => slug.startsWith('id') ? 0 : slug.startsWith('
 /**
  * The R2 index as sinners → identities → skills → states, in the order the page lists them. A skill is its slug plus
  * skill id (a link, an LCB entry or a form shares skill ids with the identity it comes from). An identity whose slug is
- * `id<game id>` is named and drawn from the site data; the others keep the index's name and borrow the portrait of the
- * identity their skill id belongs to (its first five digits), and its release date for the order. Another form of an
- * identity (`id<game id>-<form>`) is listed under it, after its own skills.
+ * `id<game id>`, or whose entries carry `identityId`, is named (in the page language) and drawn from the site data; a
+ * link with `members` is named after them; the others keep the index's name and borrow the portrait of the identity
+ * their skill id belongs to (its first five digits), and its release date for the order. Another form of an identity
+ * (`id<game id>-<form>`) is listed under it, after its own skills. Skill names and state labels take the page
+ * language's field (nameEn, labelJa…) when the index has one.
  */
 export function buildMotionCatalog(entries: readonly MotionEntry[], identities: ReadonlyMap<string, MotionIdentityInfo>, lang: string): MotionSinner[] {
   const sinners = new Map<string, Map<string, MotionIdentity>>()
@@ -101,11 +115,13 @@ export function buildMotionCatalog(entries: readonly MotionEntry[], identities: 
     const slug = gameId ? `id${gameId}` : entry.slug
     let identity = bySlug.get(slug)
     if (!identity) {
-      const own = gameId ? identities.get(gameId) : undefined
+      const ownId = entry.identityId ?? gameId
+      const own = ownId ? identities.get(ownId) : undefined
       const art = own ?? identities.get(String(entry.skillId).slice(0, 5))
+      const members = entry.members?.map(id => identities.get(id)?.name).filter((name): name is string => Boolean(name))
       identity = {
         slug,
-        label: own?.name ?? entry.identity,
+        label: members?.length ? `${pick(lang, '연계', 'Link', '連携')} · ${members.join(' × ')}` : own?.name ?? entry.identity,
         identityId: own?.id ?? null,
         gameId: own?.game_id ?? gameId,
         portrait: art?.folder_name && art.game_id ? getIdentityPortraitUrl(art.sinner_id, art.folder_name, art.game_id, false) : null,
@@ -115,9 +131,10 @@ export function buildMotionCatalog(entries: readonly MotionEntry[], identities: 
       bySlug.set(slug, identity)
     }
     const key = `${entry.slug}|${entry.skillId}`
+    const title = (lang === 'en' ? entry.nameEn : lang === 'ja' ? entry.nameJa : undefined)?.trim() || entry.name.replace(/ \[[^\]]+\]$/, '')
     let skill = identity.skills.find(s => s.key === key)
-    if (!skill) identity.skills.push(skill = { key, skillId: entry.skillId, title: entry.name.replace(/ \[[^\]]+\]$/, ''), form, states: [] })
-    if (isBase(entry.state)) skill.title = entry.name.replace(/ \[[^\]]+\]$/, '')
+    if (!skill) identity.skills.push(skill = { key, skillId: entry.skillId, title, form, states: [] })
+    if (isBase(entry.state)) skill.title = title
     skill.states.push({
       state: entry.state, label: motionStateLabel(entry, lang), name: entry.name, video: entry.video, meta: entry.meta, bytes: entry.bytes ?? 0,
     })
