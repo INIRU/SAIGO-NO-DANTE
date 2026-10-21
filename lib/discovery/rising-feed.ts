@@ -3,7 +3,7 @@ import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { LCB_IDS } from '@/lib/constants/game'
 import { getFormations, getMetaCatalog } from '@/lib/db/meta'
-import { NEW_WITHIN_DAYS, byRise, rising, risingIdentities, type RisingRow } from '@/lib/discovery/rising'
+import { byRise, rising, risingIdentities, type RisingRow } from '@/lib/discovery/rising'
 import { DISCOVERY_COLUMNS, DISCOVERY_TABLE, formatDiscoveryPosts, type DiscoveryKind } from '@/lib/discovery/recommend'
 
 // One row of the board: three post cards, nine identity cards.
@@ -25,8 +25,8 @@ export type RisingFeed = {
 
 /**
  * The posts of one board that gained most share of the board's visitors lately (`rising`) and the identities that gained
- * most share of the visitors of the formations that field them (`risingIdentities`), each biggest multiplier first and
- * without the posts and identities that are themselves new (those belong to "new"). A section with fewer than three is
+ * most share of the visitors of the formations that field them (`risingIdentities`), each biggest multiplier first,
+ * new posts and new identities included (only the LCB defaults are left out). A section with fewer than three is
  * left empty. Throws when the database function is missing or a read fails, so the caller can hide the shelf.
  */
 export async function loadRising(kind: DiscoveryKind): Promise<RisingFeed> {
@@ -34,20 +34,15 @@ export async function loadRising(kind: DiscoveryKind): Promise<RisingFeed> {
   cacheLife('page-10m')
   cacheTag(kind === 'deck' ? CACHE_TAGS.decksList : CACHE_TAGS.plansList)
   const db = createAdminClient().schema('limbus')
-  const since = new Date(Date.now() - NEW_WITHIN_DAYS * 86_400_000)
-  const [decks, plans, formations, catalog, newPosts, newIdentities] = await Promise.all([
+  const [decks, plans, formations, catalog] = await Promise.all([
     db.rpc('discovery_rising_windows', { post_kind: 'deck', ...ALL_POSTS }), db.rpc('discovery_rising_windows', { post_kind: 'planner', ...ALL_POSTS }), getFormations(), getMetaCatalog(),
-    db.from(DISCOVERY_TABLE[kind]).select('id').gte('created_at', since.toISOString()),
-    db.from('identities').select('id').gte('release_date', since.toISOString().slice(0, 10)),
   ])
-  const failed = decks.error ?? plans.error ?? newPosts.error ?? newIdentities.error
+  const failed = decks.error ?? plans.error
   if (failed) throw failed
-  const newPostIds = new Set((newPosts.data ?? []).map(row => String(row.id)))
-  const postRise = rising(((kind === 'deck' ? decks : plans).data as RisingRow[]).filter(row => !newPostIds.has(row.entity_id)), POST_CANDIDATES)
-  const skip = new Set([
-    ...catalog.identities.filter(identity => identity.game_id && LCB_GAME_IDS.has(identity.game_id)).map(identity => identity.id),
-    ...(newIdentities.data ?? []).map(row => String(row.id)),
-  ])
+  // Like a live ranking: a post made this week rises like any other (its earlier window is simply empty).
+  const postRise = rising((kind === 'deck' ? decks : plans).data as RisingRow[], POST_CANDIDATES)
+  // The LCB defaults sit in almost every formation, so they would always lead; a new release rises like anything else.
+  const skip = new Set(catalog.identities.filter(identity => identity.game_id && LCB_GAME_IDS.has(identity.game_id)).map(identity => identity.id))
   const identityRise = risingIdentities({ formations, visits: { deck: decks.data as RisingRow[], planner: plans.data as RisingRow[] }, skip }, IDENTITIES).sort(byRise)
   const [postRows, identityRows] = await Promise.all([
     postRise.length ? db.from(DISCOVERY_TABLE[kind]).select(DISCOVERY_COLUMNS[kind]).in('id', postRise.map(item => item.id)) : { data: [], error: null },
