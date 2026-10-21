@@ -69,7 +69,7 @@ export default function DeckNoteEditor({
           sinnerName,
           skill: sk,
           skills: idSkills,
-          identity: { sinner_id: identity.sinner_id, game_id: identity.game_id },
+          identity: { sinner_id: identity.sinner_id, game_id: identity.game_id, keywords: identity.keywords },
         }
         map[key] = entry
         if (subIdx === 1) map[`${sinnerName}:${baseOrder}:1`] = entry
