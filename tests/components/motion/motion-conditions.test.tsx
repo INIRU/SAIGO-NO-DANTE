@@ -57,3 +57,15 @@ describe('REQ-MOTION-019 skill strip and conditions', () => {
     expect(html.match(/data-form-divider/g)).toHaveLength(1)
   })
 })
+
+describe('REQ-MOTION-019 columns without stray scrollbars', () => {
+  it('REQ-MOTION-019 keeps a switch press area inside its column and leaves the scrollbars to the site style', async () => {
+    const { readFileSync } = await import('node:fs')
+    const css = readFileSync('components/motion/MotionDeck.module.css', 'utf8')
+    // The press area of a switch at a column's right edge reached past the column's padding: a 1px sideways scroll.
+    const after = /\.switch::after\{[^}]*inset:([^;}]+)/.exec(css)![1].trim().split(/\s+/)
+    expect(after.length === 4 ? after[1] : after[1] ?? after[0]).toBe('0')
+    // scrollbar-width replaces the site's gold ::-webkit-scrollbar (app/globals.css) with the system bar in Chrome.
+    expect(readFileSync('components/motion/SkillMotionViewer.tsx', 'utf8')).not.toContain('scrollbar-width:thin')
+  })
+})
