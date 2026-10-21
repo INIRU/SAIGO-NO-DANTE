@@ -5,6 +5,8 @@ import { useLocale, useTranslations } from 'next-intl'
 import IdentitySkillFrameCard from '@/components/identity/IdentitySkillFrameCard'
 import Skeleton, { SkeletonLine } from '@/components/ui/Skeleton'
 import type { MotionLayerToggle } from '@/hooks/useSkillMotion'
+import { useGameTextRefs } from '@/lib/hooks/useGameTextRefs'
+import { formatMotionLabelKey } from '@/lib/motion/catalog'
 import type { MotionSkillRow } from '@/lib/motion/feed'
 
 const readSkill = async (url: string): Promise<MotionSkillRow | null> => {
@@ -33,6 +35,9 @@ function SkillCard({ skillId }: { skillId: number }) {
 /** Beside the stage: one switch per buff effect the video can show, then the skill's card. */
 export default function MotionSidePanel({ skillId, layers, onLayer }: { skillId: number | null; layers: MotionLayerToggle[]; onLayer: (id: string, on: boolean) => void }) {
   const t = useTranslations('motionPage')
+  // A layer's labelKey in the page language from the keyword table (loaded only when a layer has one); else its label.
+  const { names } = useGameTextRefs({ lazy: !layers.some(layer => layer.labelKey) })
+  const layerName = (layer: MotionLayerToggle) => (layer.labelKey && formatMotionLabelKey(layer.labelKey, names, () => undefined)) || layer.label
   return (
     <div className="flex flex-col gap-4">
       {layers.length > 0 && (
@@ -44,7 +49,7 @@ export default function MotionSidePanel({ skillId, layers, onLayer }: { skillId:
                 <label className="flex min-h-10 cursor-pointer items-center gap-2.5 rounded-md px-2 py-1.5 transition-colors hover:bg-[rgba(200,144,10,0.08)]">
                   <input type="checkbox" checked={layer.on} onChange={event => onLayer(layer.id, event.target.checked)}
                     className="h-4 w-4 shrink-0 accent-[var(--gold)]" />
-                  <span className="min-w-0 flex-1 break-keep text-[0.875rem] text-[var(--text-primary)]">{layer.label}</span>
+                  <span className="min-w-0 flex-1 break-keep text-[0.875rem] text-[var(--text-primary)]">{layerName(layer)}</span>
                   {layer.offAtSkill && <span className="shrink-0 rounded border border-[#3a2a15] px-1.5 py-0.5 text-[0.6875rem] text-[var(--text-secondary)]">{t('offAtSkill')}</span>}
                 </label>
               </li>

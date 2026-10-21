@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildMotionCatalog, defaultMotionState, motionAssetUrl, motionSinnerId, motionStateLabel, type MotionEntry } from '@/lib/motion/catalog'
+import { buildMotionCatalog, defaultMotionState, formatMotionLabelKey, motionAssetUrl, motionSinnerId, motionStateLabel, type MotionEntry } from '@/lib/motion/catalog'
 
 const entry = (over: Partial<MotionEntry>): MotionEntry => ({
   slug: 'id10216', skillId: 1021601, state: 'v:base', identity: '새벽 사무소 해결사 파우스트', name: '여명의 섬광',
@@ -49,7 +49,7 @@ describe('REQ-MOTION-002 states', () => {
     const got = sinner.identities[0].skills[0].states
     expect(got.map(s => s.state)).toEqual(['v:base', 'v:case2', 'v:best'])
     expect(got.map(s => s.label)).toEqual(['기본', '관 2단계', '최고 상태 (a)'])
-    expect(motionStateLabel(entry({ state: 'max', name: '연계 [최대 상태]' }), 'en')).toBe('Max')
+    expect(motionStateLabel(entry({ state: 'max', name: '연계 [최대 상태]' }), 'en')).toBe('Max State')
     expect(motionStateLabel(entry({ state: 'base' }), 'ja')).toBe('基本')
   })
   it('REQ-MOTION-002 opens on the best state when there is one, else on base', () => {
@@ -100,10 +100,75 @@ describe('REQ-MOTION-002 state buttons read the index label', () => {
   })
 
   it('REQ-MOTION-002 turns only the three fixed labels into the page language', () => {
-    expect(motionStateLabel(entry({ state: 'v:best-2', name: 'x [최고 상태 (a)]', label: '최고 상태' }), 'en')).toBe('Best')
+    expect(motionStateLabel(entry({ state: 'v:best-2', name: 'x [최고 상태 (a)]', label: '최고 상태' }), 'en')).toBe('Best State')
     expect(motionStateLabel(entry({ state: 'max', name: 'x [최대 상태]', label: '최대 상태' }), 'ja')).toBe('最大状態')
     expect(motionStateLabel(entry({ state: 'v:base', name: 'x', label: '기본' }), 'ja')).toBe('基本')
     expect(motionStateLabel(entry({ state: 'v:reflex', name: 'x [레플렉시옹 보유]', label: '레플렉시옹 보유' }), 'en')).toBe('레플렉시옹 보유')
   })
 })
 
+describe('REQ-MOTION-014 identities and skills by id, links as states, labels from labelKey', () => {
+  const info = (game_id: string, name: string, sinner_id: string, sinner_name: string) => [game_id, { id: `u${game_id}`, name, sinner_id, sinner_name, game_id, folder_name: 'f', release_date: '2025-08-28' }] as const
+  const en = new Map([info('10613', 'The Lord of Hongyuan', 'hong-lu', 'Hong Lu'), info('10114', 'Heishou Pack - Wu Branch Adept', 'yi-sang', 'Yi Sang'), info('10104', 'Blade Lineage Salsu', 'yi-sang', 'Yi Sang')])
+  const ko = new Map([info('10613', '홍원 군주', 'hong-lu', '홍루'), info('10114', '흑수 - 오 필두', 'yi-sang', '이상'), info('10104', '검계 살수', 'yi-sang', '이상')])
+  const refs = { Charge: { k: 'keyword' as const, n: 'Charge', kw: '충전' }, SojiRyoshuEntangle: { k: 'keyword' as const, n: 'String Severance [絕緣]', kw: '절연' } }
+  const refsKo = { Charge: { k: 'keyword' as const, n: '충전', kw: '충전' }, SojiRyoshuEntangle: { k: 'keyword' as const, n: '절연[絕緣]', kw: '절연' } }
+  const row = (over: Partial<MotionEntry>) => entry({ slug: 'id10613', identityId: '10613', skillId: 1061305, identity: '홍원 군주 홍루', name: '군주의 길을 열겠다', video: 'honglu/10613/1061305/x.mp4', ...over })
+  const rows = [
+    row({ state: 'v:base', label: '기본', labelEn: 'Base' }),
+    row({ state: 'v:link-10114', label: '흑수 이상 연계', labelEn: 'Heishou Yi Sang Link', labelKey: '<i:10114>', members: ['10613', '10114'], linkMax: false }),
+    row({ state: 'v:link-10114-max', label: '흑수 이상 연계 (최대 상태)', labelKey: '<i:10114>', members: ['10613', '10114'], linkMax: true }),
+    row({ state: 'v:charge15', label: '충전 15 이상', labelEn: 'Charge 15 or more', labelKey: '[Charge] 15 + [SojiRyoshuEntangle] 2' }),
+    row({ state: 'v:best', label: '최고 상태', labelEn: 'Best State' }),
+  ]
+  const names = new Map([[1061305, 'Clear the Way for the Lord']]), namesKo = new Map([[1061305, '군주의 길을 열겠다!']])
+
+  it('REQ-MOTION-014 names identities and skills from the site data by id, and keeps a link as a state of its skill', () => {
+    const honglu = buildMotionCatalog(rows, en, 'en', { skillNames: names, refs }).find(s => s.id === 'hong-lu')!
+    expect(honglu.identities).toHaveLength(1)
+    expect(honglu.identities[0].label).toBe('The Lord of Hongyuan')
+    expect(honglu.identities[0].skills[0].title).toBe('Clear the Way for the Lord')
+    // The Korean page reads the site data too; the index name is only a fallback.
+    const hongluKo = buildMotionCatalog(rows, ko, 'ko', { skillNames: namesKo, refs: refsKo }).find(s => s.id === 'hong-lu')!
+    expect(hongluKo.identities[0].label).toBe('홍원 군주')
+    expect(hongluKo.identities[0].skills[0].title).toBe('군주의 길을 열겠다!')
+  })
+
+  it('REQ-MOTION-014 writes a state from its labelKey: keywords and stacks from the site keyword table, an identity for a link, then the max mark', () => {
+    const labels = (lang: string, ids: typeof en, r: typeof refs) => buildMotionCatalog(rows, ids, lang, { refs: r }).find(s => s.id === 'hong-lu')!.identities[0].skills[0].states.map(x => x.label)
+    expect(labels('en', en, refs)).toEqual(['Base', 'Charge 15 + String Severance [絕緣] 2', 'Link: Heishou Pack - Wu Branch Adept Yi Sang', 'Link: Heishou Pack - Wu Branch Adept Yi Sang (Max State)', 'Best State'])
+    expect(labels('ko', ko, refsKo)).toEqual(['기본', '충전 15 + 절연[絕緣] 2', '연계: 흑수 - 오 필두 이상', '연계: 흑수 - 오 필두 이상 (최대 상태)', '최고 상태'])
+  })
+
+  it('REQ-MOTION-014 falls back to the label of the page language when a labelKey cannot be resolved', () => {
+    const labels = buildMotionCatalog(rows, en, 'en', { refs: {} }).find(s => s.id === 'hong-lu')!.identities[0].skills[0].states.map(x => x.label)
+    expect(labels).toContain('Charge 15 or more')
+  })
+})
+
+describe('REQ-MOTION-015 skill names from the site data', () => {
+  it('REQ-MOTION-015 names a skill by its id from the site data, then the index field, then the index name', () => {
+    const rows = [
+      entry({ slug: 'id10116', skillId: 1011601, name: '차원 베기', video: 'yisang/10116/1011601/v-base/layers.mp4' }),
+      entry({ slug: 'id10116', skillId: 1011602, name: '연속 차원 베기', nameEn: 'Index name', video: 'yisang/10116/1011602/v-base/layers.mp4' }),
+      entry({ slug: 'id10116', skillId: 1011606, name: 'EX 스킬', video: 'yisang/10116/1011606/v-base/layers.mp4' }),
+    ]
+    const titles = (lang: string, skillNames: Map<number, string>) => buildMotionCatalog(rows, new Map(), lang, { skillNames })[0].identities[0].skills.map(s => s.title)
+    expect(titles('en', new Map([[1011601, 'Dimensional Slice']]))).toEqual(['Dimensional Slice', 'Index name', 'EX 스킬'])
+    expect(titles('ko', new Map([[1011601, '차원 베기!']]))).toEqual(['차원 베기!', '연속 차원 베기', 'EX 스킬'])
+  })
+})
+
+describe('REQ-MOTION-016 effect names from labelKey', () => {
+  it('REQ-MOTION-016 writes a layer labelKey with the site keyword table, and gives nothing back for a key it cannot resolve', () => {
+    const refs = { Charge: { k: 'keyword' as const, n: '충전', kw: '충전' }, Sinking: { k: 'keyword' as const, n: '침잠', kw: '침잠' } }
+    expect(formatMotionLabelKey('[Charge] 15', refs, () => undefined)).toBe('충전 15')
+    expect(formatMotionLabelKey('[Sinking] + [Charge] 3', refs, () => undefined)).toBe('침잠 + 충전 3')
+    expect(formatMotionLabelKey('[Unknown] 2', refs, () => undefined)).toBeNull()
+    expect(formatMotionLabelKey('[Charge] 10~19', refs, () => undefined)).toBe('충전 10~19')
+    // A key that holds word tokens (<stage:2>, <up>, <coin:1>…) is left to the index's label sentence.
+    expect(formatMotionLabelKey('[Charge] <stage:2>', refs, () => undefined)).toBeNull()
+    expect(formatMotionLabelKey('[Sinking] <count> 10 <up>', refs, () => undefined)).toBeNull()
+    expect(formatMotionLabelKey('<i:10114>', refs, id => (id === '10114' ? '흑수 - 오 필두' : undefined))).toBe('흑수 - 오 필두')
+  })
+})
