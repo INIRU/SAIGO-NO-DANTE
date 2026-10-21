@@ -3,7 +3,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 
 vi.mock('next-intl', () => ({ useTranslations: () => (key: string) => key }))
 
-import MotionStage from '@/components/motion/MotionStage'
+import MotionStage, { MotionPendingStage } from '@/components/motion/MotionStage'
 
 const store = { subscribe: () => () => {}, get: () => 0 }
 const stage = (props: Partial<Parameters<typeof MotionStage>[0]> = {}) => renderToStaticMarkup(
@@ -59,5 +59,14 @@ describe('REQ-MOTION-008 the stage credits Project Moon', () => {
     expect(center(stage({ playing: false, status: 'loading' }))).toContain('opacity-0')
     // The bar's play button is the one assistive technology reads.
     expect(center(stage({ playing: false }))).toContain('tabindex="-1"')
+  })
+})
+
+describe('REQ-MOTION-020 the stage of an identity without motion yet', () => {
+  it('REQ-MOTION-020 says the motion is being made from in-game footage and takes 5 days to 2 weeks, in the stage frame', () => {
+    const html = renderToStaticMarkup(<MotionPendingStage />)
+    expect(html).toContain('pendingTitle')
+    expect(html).toContain('pendingBody')
+    expect(html).toContain('aspect-video')
   })
 })
