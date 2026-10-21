@@ -23,6 +23,12 @@ export function identitySuggestUrl(sinnerId: string | null, context: readonly st
   return `/api/discovery/suggest?type=identity&sinner=${sinnerId}${context.length ? `&with=${context.join(',')}` : ''}`
 }
 
+/** `suggestionContext` from a plan's identity slots: the numbered slots (formation order) first, unnumbered ones (99) after. */
+export function plannerSuggestionContext(slots: readonly { sinner_id: string; identity_id: string; slot_order: number }[], sinnerId: string, isPlaceholder: (identityId: string) => boolean): string[] {
+  const order = slots.filter(slot => slot.slot_order < 99).sort((a, b) => a.slot_order - b.slot_order).map(slot => slot.sinner_id)
+  return suggestionContext(Object.fromEntries(slots.map(slot => [slot.sinner_id, slot.identity_id])), order, sinnerId, isPlaceholder)
+}
+
 /** Identity ids that suggestions for `sinnerId`'s slot are asked beside: every identity chosen on the board for the other sinners (placeholders are not a choice), those with a formation number first. */
 export function suggestionContext(chosen: Record<string, string | undefined>, formationOrder: readonly string[], sinnerId: string, isPlaceholder: (identityId: string) => boolean): string[] {
   const ordered = formationOrder.filter(id => id !== sinnerId)
