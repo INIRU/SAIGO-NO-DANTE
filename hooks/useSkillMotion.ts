@@ -28,6 +28,7 @@ export function useSkillMotion() {
   const [error, setError] = useState<MotionError | null>(null)
   const [playing, setPlaying] = useState(false)
   const [muted, setMuted] = useState(true)
+  const [volume, setVolumeState] = useState(1)
   const [frames, setFrames] = useState(0)
   const [hasAudio, setHasAudio] = useState(false)
   const [layers, setLayers] = useState<MotionLayerToggle[]>([])
@@ -155,8 +156,19 @@ export function useSkillMotion() {
     const v = video.current
     if (!v) return
     v.muted = !v.muted
+    // Sound back on after the slider took it to 0: at full volume, not silent.
+    if (!v.muted && v.volume === 0) { v.volume = 1; setVolumeState(1) }
     setMuted(v.muted)
     if (!v.muted && v.paused) v.play().catch(() => {})
+  }, [])
+  /** The slider: above 0 turns the sound on, 0 mutes. iPhone Safari ignores it (the device buttons only). */
+  const setVolume = useCallback((value: number) => {
+    const v = video.current
+    if (!v) return
+    v.volume = value
+    v.muted = value === 0
+    setVolumeState(value)
+    setMuted(v.muted)
   }, [])
   const setLayer = useCallback((id: string, on: boolean) => {
     toggles.current.set(id, on)
@@ -165,7 +177,7 @@ export function useSkillMotion() {
     draw()
   }, [draw])
 
-  return { hostRef, status, error, playing, muted, frames, hasAudio, layers, frameStore, load, current, togglePlay, seek, step, toggleMute, setLayer }
+  return { hostRef, status, error, playing, muted, volume, frames, hasAudio, layers, frameStore, load, current, togglePlay, seek, step, toggleMute, setVolume, setLayer }
 }
 
 /** The frame being shown, for a component that draws it (the counter, the seek bar). */

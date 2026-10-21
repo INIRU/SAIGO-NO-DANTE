@@ -22,7 +22,8 @@ export type MotionEntry = {
 
 /** One video of a skill as the page needs it (frame count, fps and sound are read from its layers.json when it loads). */
 export type MotionState = Pick<MotionEntry, 'state' | 'name' | 'video' | 'meta'> & { label: string; bytes: number }
-export type MotionSkill = { key: string; skillId: number; title: string; states: MotionState[] }
+/** `form`: the identity's other form the skill belongs to (`castoff` of `id10215-castoff`), null for its own skills. */
+export type MotionSkill = { key: string; skillId: number; title: string; form: string | null; states: MotionState[] }
 export type MotionIdentity = { slug: string; label: string; identityId: string | null; gameId: string | null; portrait: string | null; skills: MotionSkill[] }
 export type MotionSinner = { id: string; identities: MotionIdentity[] }
 /** What the catalog needs of a site identity, its name already in the page's language. */
@@ -72,7 +73,8 @@ const slugRank = (slug: string) => slug.startsWith('id') ? 0 : slug.startsWith('
  * The R2 index as sinners → identities → skills → states, in the order the page lists them. A skill is its slug plus
  * skill id (a link, an LCB entry or a form shares skill ids with the identity it comes from). An identity whose slug is
  * `id<game id>` is named and drawn from the site data; the others keep the index's name and borrow the portrait of the
- * identity their skill id belongs to (its first five digits).
+ * identity their skill id belongs to (its first five digits). Another form of an identity (`id<game id>-<form>`) is listed
+ * under it, after its own skills.
  */
 export function buildMotionCatalog(entries: readonly MotionEntry[], identities: ReadonlyMap<string, MotionIdentityInfo>, lang: string): MotionSinner[] {
   const sinners = new Map<string, Map<string, MotionIdentity>>()
@@ -80,24 +82,25 @@ export function buildMotionCatalog(entries: readonly MotionEntry[], identities: 
     const sinnerId = motionSinnerId(entry)
     if (!sinnerId) continue
     const bySlug = sinners.get(sinnerId) ?? sinners.set(sinnerId, new Map()).get(sinnerId)!
-    let identity = bySlug.get(entry.slug)
+    const [, gameId = null, form = null] = /^id(\d{5})(?:-(.+))?$/.exec(entry.slug) ?? []
+    const slug = gameId ? `id${gameId}` : entry.slug
+    let identity = bySlug.get(slug)
     if (!identity) {
-      const gameId = /^id(\d{5})$/.exec(entry.slug)?.[1] ?? null
       const own = gameId ? identities.get(gameId) : undefined
       const art = own ?? identities.get(String(entry.skillId).slice(0, 5))
       identity = {
-        slug: entry.slug,
+        slug,
         label: own?.name ?? entry.identity,
         identityId: own?.id ?? null,
         gameId: own?.game_id ?? gameId,
         portrait: art?.folder_name && art.game_id ? getIdentityPortraitUrl(art.sinner_id, art.folder_name, art.game_id, false) : null,
         skills: [],
       }
-      bySlug.set(entry.slug, identity)
+      bySlug.set(slug, identity)
     }
     const key = `${entry.slug}|${entry.skillId}`
     let skill = identity.skills.find(s => s.key === key)
-    if (!skill) identity.skills.push(skill = { key, skillId: entry.skillId, title: entry.name.replace(/ \[[^\]]+\]$/, ''), states: [] })
+    if (!skill) identity.skills.push(skill = { key, skillId: entry.skillId, title: entry.name.replace(/ \[[^\]]+\]$/, ''), form, states: [] })
     if (isBase(entry.state)) skill.title = entry.name.replace(/ \[[^\]]+\]$/, '')
     skill.states.push({
       state: entry.state, label: motionStateLabel(entry, lang), name: entry.name, video: entry.video, meta: entry.meta, bytes: entry.bytes ?? 0,
@@ -108,7 +111,7 @@ export function buildMotionCatalog(entries: readonly MotionEntry[], identities: 
     if (!bySlug) return []
     const list = [...bySlug.values()]
     for (const identity of list) {
-      identity.skills.sort((a, b) => a.skillId - b.skillId)
+      identity.skills.sort((a, b) => (a.form ?? '').localeCompare(b.form ?? '') || a.skillId - b.skillId)
       for (const skill of identity.skills) skill.states.sort((a, b) => stateRank(a.state) - stateRank(b.state) || a.state.localeCompare(b.state))
     }
     list.sort((a, b) => slugRank(a.slug) - slugRank(b.slug) || (b.gameId ?? '').localeCompare(a.gameId ?? '') || a.slug.localeCompare(b.slug))
