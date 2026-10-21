@@ -55,3 +55,9 @@ export function normalizeSin(sin: string | null): SinType | null {
 
 // ── 죄악 순서 (3개 파일에서 중복되던 것 통합) ────────────────────────────────
 export const SIN_ORDER: SinType[] = ['wrath', 'lust', 'sloth', 'gluttony', 'gloom', 'pride', 'envy']
+
+// ── 게임 데이터의 죄악 속성 코드(판정·스킬 조건) → SinType ─────────────────────
+export const SIN_ATTRIBUTE_CODES: Record<string, SinType> = {
+  CRIMSON: 'wrath', SCARLET: 'lust', ORANGE: 'lust', AMBER: 'sloth', YELLOW: 'sloth',
+  SHAMROCK: 'gluttony', GREEN: 'gluttony', AZURE: 'gloom', INDIGO: 'pride', VIOLET: 'envy',
+}
