@@ -12,7 +12,7 @@ import { defaultMotionState, type MotionIdentity, type MotionSinner, type Motion
 import MotionConditions from './MotionConditions'
 import MotionPicker from './MotionPicker'
 import MotionSkillStrip from './MotionSkillStrip'
-import MotionStage from './MotionStage'
+import MotionStage, { useCreditNotice } from './MotionStage'
 import MotionSidePanel from './MotionSidePanel'
 import SkillMotionSkeleton from './SkillMotionSkeleton'
 
@@ -43,6 +43,7 @@ export default function SkillMotionViewer() {
   const [tab, setTab] = useState<string | null>(null)
   const [sheet, setSheet] = useState(false)
   const motion = useSkillMotion()
+  const [notice, dismissNotice] = useCreditNotice(motion.hold)
 
   const byKey = useMemo(() => {
     const map = new Map<string, Pick>()
@@ -111,7 +112,7 @@ export default function SkillMotionViewer() {
           hostRef={motion.hostRef} status={motion.status} error={motion.error} playing={motion.playing} muted={motion.muted} volume={motion.volume}
           hasAudio={motion.hasAudio} frames={motion.frames} frameStore={motion.frameStore}
           onTogglePlay={motion.togglePlay} onStep={motion.step} onSeek={motion.seek} onToggleMute={motion.toggleMute} onVolume={motion.setVolume}
-          onRetry={() => { loadedKey.current = null; void load(state, null) }} />
+          onRetry={() => { loadedKey.current = null; void load(state, null) }} notice={notice} onDismiss={dismissNotice} />
 
         <div className="flex flex-col gap-4">
           <MotionSkillStrip sinnerId={picked.sinnerId} skills={picked.identity.skills} selectedKey={picked.skill.key} onPick={skill => choose(picked.sinnerId, picked.identity, skill)} />

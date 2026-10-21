@@ -15,7 +15,8 @@ type Keep = { t: number; playing: boolean }
  * The skill motion player (the reference player of the R2 export, as a hook): a hidden video element feeds the WebGL2
  * compositor, which draws the base picture plus the wanted buff layers into a canvas the hook puts in `hostRef`. A newer
  * load cancels an older one; the layer switches are kept by layer id across skills and states. The video starts muted
- * (autoplay), and iOS Safari loads no frame until play(), so a load always calls play() first.
+ * (autoplay), and iOS Safari loads no frame until play(), so a load always calls play() first. While held (the stage's
+ * Project Moon notice is up) a load stops at its first frame and nothing plays; releasing the hold starts it.
  */
 export function useSkillMotion() {
   const hostRef = useRef<HTMLDivElement | null>(null)
@@ -28,6 +29,7 @@ export function useSkillMotion() {
   // 1920×1440 video frame 60 times a second for nothing.
   const onScreen = useRef(true)
   const observer = useRef<IntersectionObserver | null>(null)
+  const held = useRef(true)
   const token = useRef(0)
   const frame = useRef({ value: 0, listeners: new Set<() => void>() })
   const [status, setStatus] = useState<MotionStatus>('idle')
@@ -156,7 +158,7 @@ export function useSkillMotion() {
       frame.current.value = -1
       draw()
       setStatus('ready')
-      if (!keep || keep.playing) v.play().catch(() => {})
+      if (!held.current && (!keep || keep.playing)) v.play().catch(() => {})
       else v.pause()
     } catch {
       if (mine !== token.current) return
@@ -166,7 +168,15 @@ export function useSkillMotion() {
   }, [draw])
 
   const current = useCallback((): Keep => ({ t: video.current?.currentTime ?? 0, playing: Boolean(video.current && !video.current.paused) }), [])
-  const togglePlay = useCallback(() => { const v = video.current; if (v) (v.paused ? v.play().catch(() => {}) : v.pause()) }, [])
+  const togglePlay = useCallback(() => { const v = video.current; if (v && !held.current) (v.paused ? v.play().catch(() => {}) : v.pause()) }, [])
+  /** Hold or release playback; a release plays the loaded video (the notice's 확인 is the press that starts it). */
+  const hold = useCallback((on: boolean) => {
+    held.current = on
+    const v = video.current
+    if (!v) return
+    if (on) v.pause()
+    else if (meta.current && v.paused) v.play().catch(() => {})
+  }, [])
   /** Go to a frame: the middle of its slot (a seek to the exact boundary may land on the previous frame). */
   const seek = useCallback((n: number) => {
     const v = video.current, m = meta.current
@@ -182,7 +192,7 @@ export function useSkillMotion() {
     // Sound back on after the slider took it to 0: at full volume, not silent.
     if (!v.muted && v.volume === 0) { v.volume = 1; setVolumeState(1) }
     setMuted(v.muted)
-    if (!v.muted && v.paused) v.play().catch(() => {})
+    if (!v.muted && v.paused && !held.current) v.play().catch(() => {})
   }, [])
   /** The slider: above 0 turns the sound on, 0 mutes. iPhone Safari ignores it (the device buttons only). */
   const setVolume = useCallback((value: number) => {
@@ -200,7 +210,7 @@ export function useSkillMotion() {
     draw()
   }, [draw])
 
-  return { hostRef, status, error, playing, muted, volume, frames, hasAudio, layers, frameStore, load, current, togglePlay, seek, step, toggleMute, setVolume, setLayer }
+  return { hostRef, status, error, playing, muted, volume, frames, hasAudio, layers, frameStore, load, current, togglePlay, hold, seek, step, toggleMute, setVolume, setLayer }
 }
 
 /** The frame being shown, for a component that draws it (the counter, the seek bar). */
