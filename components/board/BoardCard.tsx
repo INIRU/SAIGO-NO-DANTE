@@ -5,10 +5,11 @@ import { useLocale, useTranslations } from 'next-intl'
 import { Link } from '@/lib/i18n/navigation'
 import { useMemo } from 'react'
 import { Portrait } from '@/components/ui/FormationThumbnail'
+import RelativeTime from '@/components/ui/RelativeTime'
 import { formationThumbnail } from '@/lib/decks/formation-thumbnail'
 import type { DiscoveryKind } from '@/lib/discovery/recommend'
 import type { SupportedLang } from '@/lib/i18n/types'
-import { AuthorLine, PostChips, PostCounts, PostSummary, postAuthor, postSlots, type RowPost } from './parts'
+import { AuthorLine, PostChips, PostCounts, PostSummary, postSlots, type RowPost } from './parts'
 import { postHref } from './FormationRow'
 
 /** The rank of a post as a gold plate with a cut corner (first three) or a dark one. */
@@ -23,12 +24,11 @@ export function RankPlate({ rank }: { rank: number }) {
 
 /**
  * A board card of equal height: the 6×2 formation, a one-line title, the memo's first line and the tag line, and a footer with the lead
- * (rank plate or rise), the author and the counts. Nothing sits on the portraits.
+ * (rank plate or rise), the author with how long ago the post went up, and the counts. Nothing sits on the portraits.
  */
 export default function BoardCard({ kind, post, lead, compactOnPhone = false }: { kind: DiscoveryKind; post: RowPost; lead?: ReactNode; /** One row of six portraits on a phone (the list view), the full 6×2 from md up. */ compactOnPhone?: boolean }) {
   const locale = useLocale() as SupportedLang
   const anonymous = useTranslations('planner.communityBoard.card')('anonymous')
-  const author = postAuthor(kind, post, locale, anonymous)
   const tiles = useMemo(() => {
     const all = formationThumbnail(postSlots(kind, post) as never)
     const formed = all.some(slot => slot.order !== null)
@@ -51,8 +51,11 @@ export default function BoardCard({ kind, post, lead, compactOnPhone = false }: 
       </div>
       <div className="flex h-11 items-center gap-2.5 border-t border-[#2e2417] px-3">
         {lead}
-        <AuthorLine kind={kind} post={post} locale={locale} anonymous={anonymous} className="flex-1" />
-        <PostCounts post={post} className={author ? '' : 'ml-auto'} />
+        <span className="flex min-w-0 flex-1 items-center gap-2">
+          <AuthorLine kind={kind} post={post} locale={locale} anonymous={anonymous} />
+          {typeof post.created_at === 'string' && <RelativeTime date={post.created_at} className="shrink-0 text-[0.75rem] text-[var(--text-muted)]" />}
+        </span>
+        <PostCounts post={post} />
       </div>
     </article>
   )
