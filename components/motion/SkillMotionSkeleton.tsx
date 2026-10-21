@@ -3,14 +3,15 @@ import Skeleton, { SkeletonLine } from '@/components/ui/Skeleton'
 /** The motion page while its list loads: the same grid, the picker column, the 16:9 stage with its control bar, the side panel. */
 export default function SkillMotionSkeleton() {
   return (
-    <div role="status" aria-busy="true" className="grid gap-5 lg:grid-cols-[17rem_minmax(0,1fr)] xl:grid-cols-[17rem_minmax(0,1fr)_20rem]">
-      <div className="hidden flex-col gap-3 lg:row-span-2 lg:flex xl:row-span-1">
+    <div role="status" aria-busy="true" className="grid gap-5 lg:min-h-0 lg:flex-1 lg:grid-cols-[17rem_minmax(0,1fr)] lg:grid-rows-[minmax(0,1fr)] lg:overflow-hidden xl:grid-cols-[17rem_minmax(0,1fr)_20rem]">
+      <div className="hidden flex-col gap-3 lg:flex">
         <Skeleton className="h-10 w-full" />
         <div className="grid grid-cols-6 gap-1.5">{Array.from({ length: 12 }, (_, i) => <Skeleton key={i} className="aspect-square" />)}</div>
         {Array.from({ length: 7 }, (_, i) => (
           <div key={i} className="flex items-center gap-3 p-1.5"><Skeleton className="h-11 w-11 shrink-0" /><SkeletonLine w="70%" /></div>
         ))}
       </div>
+      <div className="flex min-w-0 flex-col gap-5 xl:contents">
       <div className="flex min-w-0 flex-col gap-4">
         <Skeleton className="h-[3.75rem] w-full lg:hidden" />
         <div className="overflow-hidden rounded-lg border border-[#2e2417]">
@@ -19,7 +20,8 @@ export default function SkillMotionSkeleton() {
         </div>
         <div className="flex flex-col gap-2"><SkeletonLine w="10rem" /><SkeletonLine w="60%" h="1.25rem" /></div>
       </div>
-      <div className="lg:col-start-2 xl:col-start-auto"><Skeleton className="h-48 w-full" /></div>
+      <Skeleton className="h-48 w-full" />
+      </div>
     </div>
   )
 }
