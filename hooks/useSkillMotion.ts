@@ -2,7 +2,8 @@ import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from '
 import { LayerCompositor, type LayerSetMeta } from '@/lib/motion/compositor'
 import { motionAssetUrl, type MotionState } from '@/lib/motion/catalog'
 
-export type MotionLayerToggle = { id: string; label: string; on: boolean; offAtSkill: boolean }
+/** `labelKey`: the layer's name as keys (`[Keyword] stack`), written in the page language by the side panel. */
+export type MotionLayerToggle = { id: string; label: string; labelKey?: string; on: boolean; offAtSkill: boolean }
 export type MotionStatus = 'idle' | 'loading' | 'ready' | 'error'
 export type MotionError = 'webgl' | 'load'
 /** The frame being shown, read by the controls only (the rest of the page does not re-render 60 times a second). */
@@ -148,7 +149,7 @@ export function useSkillMotion() {
         if (!toggles.current.has(layer.id)) toggles.current.set(layer.id, layer.enabled !== false)
         comp.current!.on[k] = !layer.empty && toggles.current.get(layer.id)!
       })
-      setLayers(m.layers.filter(layer => !layer.empty).map(layer => ({ id: layer.id, label: layer.label, on: toggles.current.get(layer.id)!, offAtSkill: Boolean(layer.offAtSkill) })))
+      setLayers(m.layers.filter(layer => !layer.empty).map(layer => ({ id: layer.id, label: layer.label, labelKey: (layer as { labelKey?: string }).labelKey, on: toggles.current.get(layer.id)!, offAtSkill: Boolean(layer.offAtSkill) })))
       setFrames(m.frames)
       setHasAudio(Boolean(m.audio))
       v.currentTime = keep ? Math.min(keep.t, (m.frames - 1) / m.fps) : 0

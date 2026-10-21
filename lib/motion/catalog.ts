@@ -1,5 +1,6 @@
 import { LCB_IDS, SINNER_SLUGS } from '@/lib/constants/game'
 import { getIdentityPortraitUrl } from '@/lib/utils/images'
+import type { GameTextRefNames } from '@/lib/db/game-text-refs'
 
 /** Where the skill motion videos, their layer metadata and `index.json` live (Cloudflare R2, read directly by the browser). */
 export const MOTION_ASSET_BASE = 'https://assets.saigo-no-dante.com/'
@@ -18,8 +19,21 @@ export type MotionEntry = {
   bytes?: number
   video: string
   meta: string
-  /** The state's button text, as the extractor writes it: 기본, 최고 상태, 최대 상태 or the condition. */
+  /** The game id of the identity (five digits); the slug is `id<identityId>`, with a suffix for another form. */
+  identityId?: string
+  /** The state's button text, as the extractor writes it (기본, 최고 상태, a condition), and in English and Japanese. */
   label?: string
+  labelEn?: string
+  labelJa?: string
+  /** The state as keys the site writes in the page language: `[Keyword] stack` and `<i:identity id>`, joined by ` + `. */
+  labelKey?: string
+  /** A link state (`v:link-<id>`): the identities taking part, the skills it chains, and whether it is the max video. */
+  members?: string[]
+  linkSkillIds?: number[]
+  linkMax?: boolean
+  /** Skill names in English and Japanese, for a skill the site has no row for. */
+  nameEn?: string
+  nameJa?: string
 }
 
 /** One video of a skill as the page needs it (frame count, fps and sound are read from its layers.json when it loads). */
@@ -29,8 +43,8 @@ export type MotionSkill = { key: string; skillId: number; title: string; form: s
 /** `released`: the release date of the identity the skills belong to, for the list's order (null when the site has no row). */
 export type MotionIdentity = { slug: string; label: string; identityId: string | null; gameId: string | null; portrait: string | null; released: string | null; skills: MotionSkill[] }
 export type MotionSinner = { id: string; identities: MotionIdentity[] }
-/** What the catalog needs of a site identity, its name already in the page's language. */
-export type MotionIdentityInfo = { id: string; name: string; sinner_id: string; game_id: string | null; folder_name: string | null; rarity?: number | null; release_date?: string | null }
+/** What the catalog needs of a site identity, its name (and its sinner's) already in the page's language. */
+export type MotionIdentityInfo = { id: string; name: string; sinner_id: string; sinner_name?: string; game_id: string | null; folder_name: string | null; rarity?: number | null; release_date?: string | null }
 
 // R2 folders (and link slugs) spell the sinners without hyphens.
 const R2_SINNERS: Record<string, string> = Object.fromEntries(SINNER_SLUGS.map(id => [id.replace(/-/g, ''), id]))
@@ -52,22 +66,50 @@ const isBase = (state: string) => state === 'base' || state === 'v:base'
 const isTop = (state: string) => state === 'max' || /^v:best/.test(state)
 const stateRank = (state: string) => isBase(state) ? 0 : isTop(state) ? 2 : 1
 
-// The fixed labels of the index in the other page languages; a condition stays as the index writes it.
-const FIXED_LABELS: Record<string, [en: string, ja: string]> = { '기본': ['Base', '基本'], '최고 상태': ['Best', '最高状態'], '최대 상태': ['Max', '最大状態'] }
+// The fixed labels of the index in the other page languages (as the index writes them); a condition stays as written.
+const FIXED_LABELS: Record<string, [en: string, ja: string]> = { '기본': ['Base', '基本'], '최고 상태': ['Best State', '最高状態'], '최대 상태': ['Max State', '最大状態'] }
 
 /**
- * A state's button text: the index's `label` as written (a name's brackets cannot be cut reliably: a condition may hold
- * brackets of its own), with only the fixed labels in the page language. An entry without one: 기본 / 최대 상태 / the
- * brackets at the end of the name.
+ * A `labelKey` in the page language: `[Keyword] stack` from the site's keyword table (game_text_refs), `<i:id>` an
+ * identity's name, parts joined by ` + `. Null when a part cannot be resolved or holds the index's word tokens
+ * (`<count>`, `<up>`, `<coin:1>`…): the index writes those sentences itself (label, labelEn, labelJa), and the caller
+ * uses them.
  */
-export function motionStateLabel(entry: Pick<MotionEntry, 'state' | 'name' | 'label'>, lang: string): string {
+export function formatMotionLabelKey(key: string, refs: GameTextRefNames | null | undefined, identityName: (gameId: string) => string | undefined): string | null {
+  const parts = key.split(' + ').map(part => {
+    const identity = /^<i:(\d+)>$/.exec(part.trim())
+    if (identity) return identityName(identity[1]) ?? null
+    // A stack is a number or a range (10~19, 50%); a word token (<stage:2>, <up>…) leaves the key to the label sentence.
+    const keyword = /^\[([^\]]+)\](?:\s+([\d.~%-]+))?$/.exec(part.trim())
+    const name = keyword ? refs?.[keyword[1]]?.n : undefined
+    return name ? (keyword![2] ? `${name} ${keyword![2]}` : name) : null
+  })
+  return parts.every(Boolean) ? parts.join(' + ') : null
+}
+
+/** What a state's labelKey needs: the keyword names and the identity names, both in the page language. */
+export type MotionLabelContext = { refs?: GameTextRefNames | null; identityName?: (gameId: string) => string | undefined }
+
+/**
+ * A state's button text: its `labelKey` written in the page language (a link as "연계: identity", its max video with
+ * "(최대 상태)"); else the index's label of the page language (a name's brackets cannot be cut reliably), the fixed
+ * labels translated; an entry without any: 기본 / 최대 상태 / the brackets at the end of the name.
+ */
+export function motionStateLabel(entry: Pick<MotionEntry, 'state' | 'name' | 'label' | 'labelEn' | 'labelJa' | 'labelKey' | 'linkMax'>, lang: string, context: MotionLabelContext = {}): string {
+  const keyed = entry.labelKey ? formatMotionLabelKey(entry.labelKey, context.refs, context.identityName ?? (() => undefined)) : null
+  if (keyed) {
+    if (!entry.labelKey!.includes('<i:')) return keyed
+    return `${pick(lang, '연계', 'Link', '連携')}: ${keyed}${entry.linkMax ? ` (${pick(lang, '최대 상태', 'Max State', '最大状態')})` : ''}`
+  }
+  const own = (lang === 'en' ? entry.labelEn : lang === 'ja' ? entry.labelJa : undefined)?.trim()
+  if (own) return own
   const label = entry.label?.trim()
   if (label) {
     const fixed = FIXED_LABELS[label]
     return fixed ? pick(lang, label, ...fixed) : label
   }
   if (isBase(entry.state)) return pick(lang, '기본', 'Base', '基本')
-  if (entry.state === 'max') return pick(lang, '최대 상태', 'Max', '最大状態')
+  if (entry.state === 'max') return pick(lang, '최대 상태', 'Max State', '最大状態')
   return /\[([^\]]+)\]$/.exec(entry.name)?.[1] ?? entry.state.replace(/^v:/, '')
 }
 
@@ -81,17 +123,24 @@ export function motionAssetUrl(path: string, bytes: number | undefined): string 
   return MOTION_ASSET_BASE + path + (bytes ? `?v=${bytes}` : '')
 }
 
-// On one release date: the game's own identity, then the grouped entries (LCB, 흑수, 홍원), then the links.
+// On one release date: the game's own identity, then entries of an older index (LCB, 흑수, 홍원 slugs), then old links.
 const slugRank = (slug: string) => slug.startsWith('id') ? 0 : slug.startsWith('lcb-') ? 1 : slug.startsWith('link-') ? 3 : 2
+
+/** The site data the catalog names things with, in the page language: skill names by skill id and the keyword table. */
+export type MotionCatalogNames = { skillNames?: ReadonlyMap<number, string>; refs?: GameTextRefNames | null }
 
 /**
  * The R2 index as sinners → identities → skills → states, in the order the page lists them. A skill is its slug plus
- * skill id (a link, an LCB entry or a form shares skill ids with the identity it comes from). An identity whose slug is
- * `id<game id>` is named and drawn from the site data; the others keep the index's name and borrow the portrait of the
- * identity their skill id belongs to (its first five digits), and its release date for the order. Another form of an
- * identity (`id<game id>-<form>`) is listed under it, after its own skills.
+ * skill id (a form shares skill ids with the identity it comes from). Identities and skills are named from the site data
+ * by id, in the page language (`identityId`, else the slug's game id; the skill id); the index's Korean `identity` and
+ * `name` are only a fallback for what the site has no row for. A link is a state of the skill it belongs to; state
+ * labels come from `labelKey` (motionStateLabel). Another form of an identity (`id<game id>-<form>`) is listed under it,
+ * after its own skills.
  */
-export function buildMotionCatalog(entries: readonly MotionEntry[], identities: ReadonlyMap<string, MotionIdentityInfo>, lang: string): MotionSinner[] {
+export function buildMotionCatalog(entries: readonly MotionEntry[], identities: ReadonlyMap<string, MotionIdentityInfo>, lang: string, names: MotionCatalogNames = {}): MotionSinner[] {
+  const skillNames = names.skillNames ?? new Map<number, string>()
+  // A link names its identity with the sinner: 흑수 - 묘 is both Ryōshū's and Outis's.
+  const labelContext: MotionLabelContext = { refs: names.refs, identityName: id => { const info = identities.get(id); return info && (info.sinner_name ? `${info.name} ${info.sinner_name}` : info.name) } }
   const sinners = new Map<string, Map<string, MotionIdentity>>()
   for (const entry of entries) {
     const sinnerId = motionSinnerId(entry)
@@ -101,7 +150,8 @@ export function buildMotionCatalog(entries: readonly MotionEntry[], identities: 
     const slug = gameId ? `id${gameId}` : entry.slug
     let identity = bySlug.get(slug)
     if (!identity) {
-      const own = gameId ? identities.get(gameId) : undefined
+      const ownId = entry.identityId ?? gameId
+      const own = ownId ? identities.get(ownId) : undefined
       const art = own ?? identities.get(String(entry.skillId).slice(0, 5))
       identity = {
         slug,
@@ -115,11 +165,12 @@ export function buildMotionCatalog(entries: readonly MotionEntry[], identities: 
       bySlug.set(slug, identity)
     }
     const key = `${entry.slug}|${entry.skillId}`
+    const title = skillNames.get(entry.skillId) || (lang === 'en' ? entry.nameEn : lang === 'ja' ? entry.nameJa : undefined)?.trim() || entry.name.replace(/ \[[^\]]+\]$/, '')
     let skill = identity.skills.find(s => s.key === key)
-    if (!skill) identity.skills.push(skill = { key, skillId: entry.skillId, title: entry.name.replace(/ \[[^\]]+\]$/, ''), form, states: [] })
-    if (isBase(entry.state)) skill.title = entry.name.replace(/ \[[^\]]+\]$/, '')
+    if (!skill) identity.skills.push(skill = { key, skillId: entry.skillId, title, form, states: [] })
+    if (isBase(entry.state)) skill.title = title
     skill.states.push({
-      state: entry.state, label: motionStateLabel(entry, lang), name: entry.name, video: entry.video, meta: entry.meta, bytes: entry.bytes ?? 0,
+      state: entry.state, label: motionStateLabel(entry, lang, labelContext), name: entry.name, video: entry.video, meta: entry.meta, bytes: entry.bytes ?? 0,
     })
   }
   return SINNER_SLUGS.flatMap(id => {
