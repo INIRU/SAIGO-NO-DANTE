@@ -458,7 +458,6 @@ export default function DeckIdentityCard({
               identity={id_}
               lang={lang}
               allowedKeywords={allowedKeywords}
-              matchPlainKeywords
             />
           ))}
         </div>

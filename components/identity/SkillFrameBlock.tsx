@@ -64,6 +64,8 @@ export interface SkillFrameBlockProps {
   allowedKeywords?: ReadonlySet<string>
   /** The description is a skill of an identity / E.G.O: draw `allowedKeywords` written as plain words. */
   matchPlainKeywords?: boolean
+  /** Names of the identity's skills, coloured by sin inside the description (as on the identity page). */
+  skillNameColors?: Record<string, string>
   /** Mental consume (shown only when non-zero) */
   mentalConsume?: number
 }
@@ -88,6 +90,7 @@ export default function SkillFrameBlock({
   descVariant = 'compact',
   allowedKeywords,
   matchPlainKeywords,
+  skillNameColors,
   mentalConsume,
 }: SkillFrameBlockProps) {
   const t = useTranslations()
@@ -244,6 +247,7 @@ export default function SkillFrameBlock({
           variant={descVariant}
           allowedKeywords={allowedKeywords}
           matchPlainKeywords={matchPlainKeywords}
+          skillNameColors={skillNameColors}
         />
       )}
     </div>

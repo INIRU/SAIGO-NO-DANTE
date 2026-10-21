@@ -36,7 +36,7 @@ export type MotionSkillRow = {
   id: string; name: string; skill_type: string; atk_type: string | null; sin_affinity: string | null
   coins: number; base_power: number; coin_power: number; description: string | null; skill_order: number
   image_id: string | null; atk_weight: number | null; offense_level: number | null; variant_order: number | null; uptie_level: number | null
-  identity: { sinner_id: string; game_id: string | null } | null
+  identity: { sinner_id: string; game_id: string | null; keywords: string[] | null } | null
 }
 
 /** The row a motion's panel shows for a game skill id: the highest uptie, then the first variant. */
@@ -44,7 +44,7 @@ export function pickMotionSkillRow<T extends { uptie_level: number | null; varia
   return [...rows].sort((a, b) => (b.uptie_level ?? 0) - (a.uptie_level ?? 0) || (a.variant_order ?? 0) - (b.variant_order ?? 0))[0] ?? null
 }
 
-const SKILL_COLUMNS = 'id, name, name_en, name_jp, skill_type, atk_type, sin_affinity, coins, base_power, coin_power, description, description_en, description_jp, skill_order, image_id, atk_weight, offense_level, variant_order, uptie_level, identity:identities(sinner_id, game_id)'
+const SKILL_COLUMNS = 'id, name, name_en, name_jp, skill_type, atk_type, sin_affinity, coins, base_power, coin_power, description, description_en, description_jp, skill_order, image_id, atk_weight, offense_level, variant_order, uptie_level, identity:identities(sinner_id, game_id, keywords)'
 
 /** The site's data of a game skill (`skills.image_id`), its texts in one language; null when the site has none. */
 export async function loadMotionSkill(skillId: number, lang: SupportedLang): Promise<MotionSkillRow | null> {
