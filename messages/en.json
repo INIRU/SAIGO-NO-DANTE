@@ -2813,6 +2813,8 @@
     "loadError": "Could not load the video.",
     "listError": "Could not load the motion list.",
     "retry": "Retry",
-    "stateCount": "{count} conditions"
+    "skills": "Skills",
+    "link": "Link",
+    "maxState": "Max State"
   }
 }

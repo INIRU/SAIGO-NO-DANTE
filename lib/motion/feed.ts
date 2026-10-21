@@ -6,7 +6,7 @@ import { getLocalizedName } from '@/lib/i18n/localize'
 import { readAllMetaRows } from '@/lib/meta/pagination'
 import { getGameTextRefNamesOrNull } from '@/lib/db/game-text-refs'
 import type { SupportedLang } from '@/lib/i18n/types'
-import { MOTION_ASSET_BASE, buildMotionCatalog, type MotionEntry, type MotionIdentityInfo, type MotionSinner } from '@/lib/motion/catalog'
+import { MOTION_ASSET_BASE, buildMotionCatalog, type MotionEntry, type MotionIdentityInfo, type MotionSinner, type MotionSkillFrame } from '@/lib/motion/catalog'
 
 /** The R2 `index.json` (about 0.6 MB): read once per ten minutes for every visitor, never copied into the database. */
 async function loadMotionIndex(): Promise<MotionEntry[]> {
@@ -20,20 +20,30 @@ async function loadMotionIndex(): Promise<MotionEntry[]> {
   return rows as MotionEntry[]
 }
 
-/** The site's skill names in the page language by game skill id (the uptie 4 row writes `<id>_4`), the highest uptie's. */
-async function loadSkillNames(lang: SupportedLang): Promise<Map<number, string>> {
+/**
+ * The site's skills by game skill id, in the page language: their names, and the frame their sprite sits in (sin, slot,
+ * attack type). The uptie 4 row writes its image id with `_4`; the highest uptie of an id wins.
+ */
+async function loadSkillData(lang: SupportedLang): Promise<{ names: Map<number, string>; frames: Map<number, MotionSkillFrame> }> {
   const db = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!)
-  type Row = { image_id: string; name: string | null; name_en: string | null; name_jp: string | null; uptie_level: number | null }
+  type Row = { image_id: string; name: string | null; name_en: string | null; name_jp: string | null; uptie_level: number | null; skill_order: number; atk_type: string | null; sin_affinity: string | null }
   const rows = await readAllMetaRows<Row>((from, to) => db.schema('limbus').from('skills')
-    .select('image_id, name, name_en, name_jp, uptie_level').not('image_id', 'is', null).order('id').range(from, to), 1000)
-  const best = new Map<number, { name: string; uptie: number }>()
+    .select('image_id, name, name_en, name_jp, uptie_level, skill_order, atk_type, sin_affinity').not('image_id', 'is', null).order('id').range(from, to), 1000)
+  // A row without a name in the page language leaves the name to the highest uptie that has one.
+  const best = new Map<number, Row>(), named = new Map<number, Row & { text: string }>()
   for (const row of rows) {
-    const name = (lang === 'en' ? row.name_en : lang === 'ja' ? row.name_jp : row.name)?.trim()
-    if (!name) continue
     const id = Number(row.image_id.replace(/_4$/, '')), uptie = row.uptie_level ?? 0
-    if ((best.get(id)?.uptie ?? -1) < uptie) best.set(id, { name, uptie })
+    if ((best.get(id)?.uptie_level ?? -1) < uptie) best.set(id, row)
+    const text = (lang === 'en' ? row.name_en : lang === 'ja' ? row.name_jp : row.name)?.trim()
+    if (text && (named.get(id)?.uptie_level ?? -1) < uptie) named.set(id, { ...row, text })
   }
-  return new Map([...best].map(([id, { name }]) => [id, name]))
+  const names = new Map([...named].map(([id, row]) => [id, row.text]))
+  const frames = new Map<number, MotionSkillFrame>()
+  for (const [id, row] of best) {
+    const attack = row.atk_type === 'slash' || row.atk_type === 'pierce' || row.atk_type === 'blunt' ? row.atk_type : null
+    frames.set(id, { sin: row.sin_affinity ?? 'neutral', slot: row.skill_order >= 5 ? 3 : row.skill_order, attack })
+  }
+  return { names, frames }
 }
 
 /** The sinners' names in the page language, by sinner id (a link button names its identity with the sinner). */
@@ -49,13 +59,13 @@ export async function loadMotionCatalog(lang: SupportedLang): Promise<MotionSinn
   'use cache'
   cacheLife('page-10m')
   cacheTag(CACHE_TAGS.motion, CACHE_TAGS.identities)
-  const [rows, identities, skillNames, refs, sinnerNames] = await Promise.all([loadMotionIndex(), getIdentities(), loadSkillNames(lang), getGameTextRefNamesOrNull(lang), loadSinnerNames(lang)])
+  const [rows, identities, skills, refs, sinnerNames] = await Promise.all([loadMotionIndex(), getIdentities(), loadSkillData(lang), getGameTextRefNamesOrNull(lang), loadSinnerNames(lang)])
   const byGameId = new Map<string, MotionIdentityInfo>()
   for (const identity of identities) {
     if (!identity.game_id) continue
     byGameId.set(identity.game_id, { id: identity.id, name: getLocalizedName(identity, lang), sinner_id: identity.sinner_id, sinner_name: sinnerNames.get(identity.sinner_id), game_id: identity.game_id, folder_name: identity.folder_name ?? null, release_date: identity.release_date ?? null })
   }
-  return buildMotionCatalog(rows, byGameId, lang, { skillNames, refs })
+  return buildMotionCatalog(rows, byGameId, lang, { skillNames: skills.names, skillFrames: skills.frames, refs })
 }
 
 export type MotionSkillRow = {

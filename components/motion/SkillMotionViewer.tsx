@@ -9,7 +9,9 @@ import BaseModal from '@/components/ui/BaseModal'
 import QuietImage from '@/components/ui/QuietImage'
 import { useSkillMotion } from '@/hooks/useSkillMotion'
 import { defaultMotionState, type MotionIdentity, type MotionSinner, type MotionSkill } from '@/lib/motion/catalog'
+import MotionConditions from './MotionConditions'
 import MotionPicker from './MotionPicker'
+import MotionSkillStrip from './MotionSkillStrip'
 import MotionStage from './MotionStage'
 import MotionSidePanel from './MotionSidePanel'
 import SkillMotionSkeleton from './SkillMotionSkeleton'
@@ -29,9 +31,9 @@ const QUERY = { skill: parseAsString, state: parseAsString }
 const QUERY_OPTIONS = { history: 'replace', shallow: true, scroll: false } as const
 
 /**
- * The skill motion page: pick a sinner → identity → skill (a list on the left from lg up, a sheet on a phone), watch it
- * on the stage with its conditions under it, and the skill card and the effect switches beside it. The chosen skill and
- * condition live in the address, so a link opens the same motion.
+ * The skill motion page: pick a sinner → identity in the list (on the left from lg up, a sheet on a phone), then under the
+ * stage the identity's skill (its sprites) and the skill's condition (text choices, link partners as portraits); the effect
+ * switches and the skill card beside it. The chosen skill and condition live in the address, so a link opens the same motion.
  */
 export default function SkillMotionViewer() {
   const lang = useLocale()
@@ -64,10 +66,12 @@ export default function SkillMotionViewer() {
     void load(state, keep)
   }, [picked, state, load, current])
 
-  const choose = (sinnerId: string, _identity: MotionIdentity, skill: MotionSkill) => {
+  // An identity alone opens its first skill (the one playing when it is already chosen).
+  const choose = (sinnerId: string, identity: MotionIdentity, skill?: MotionSkill) => {
     setTab(sinnerId)
     setSheet(false)
-    void setQuery({ skill: toParam(skill.key), state: null })
+    const next = skill ?? identity.skills.find(s => s.key === picked?.skill.key) ?? identity.skills[0]
+    if (next && next.key !== picked?.skill.key) void setQuery({ skill: toParam(next.key), state: null })
   }
 
   if (error && !sinners) {
@@ -95,14 +99,11 @@ export default function SkillMotionViewer() {
       <div className="flex min-w-0 flex-col gap-5 lg:min-h-0 lg:overflow-y-auto lg:overscroll-contain lg:pr-1 lg:[scrollbar-width:thin] xl:contents">
       <div className="flex min-w-0 flex-col gap-4 xl:min-h-0 xl:overflow-y-auto xl:overscroll-contain xl:pr-1 xl:[scrollbar-width:thin]">
         <button type="button" onClick={() => setSheet(true)} aria-haspopup="dialog"
-          className="flex items-center gap-3 rounded-lg border border-[var(--border)] bg-[var(--bg-panel)] p-2 text-left lg:hidden">
+          className="flex items-center gap-3 rounded-lg border border-[var(--border)] bg-[var(--bg-panel)] p-2 text-left transition-colors active:bg-[var(--bg-elevated)] lg:hidden">
           <span className="relative h-11 w-11 shrink-0 overflow-hidden rounded-md border border-[#2e2417] bg-[#0a0806]">
             {picked.identity.portrait && <QuietImage src={picked.identity.portrait} alt="" fill sizes="2.75rem" className="object-cover object-[50%_12%]" />}
           </span>
-          <span className="min-w-0 flex-1">
-            <span className="block truncate text-[0.8125rem] text-[var(--text-secondary)]">{picked.identity.label}</span>
-            <span className="block truncate text-[0.9375rem] text-[var(--text-primary)]">{picked.skill.title}</span>
-          </span>
+          <span className="line-clamp-2 min-w-0 flex-1 text-[0.9375rem] leading-snug text-[var(--text-primary)]">{picked.identity.label}</span>
           <ChevronDown className="h-5 w-5 shrink-0 text-[var(--gold-light)]" aria-hidden="true" />
         </button>
 
@@ -112,24 +113,12 @@ export default function SkillMotionViewer() {
           onTogglePlay={motion.togglePlay} onStep={motion.step} onSeek={motion.seek} onToggleMute={motion.toggleMute} onVolume={motion.setVolume}
           onRetry={() => { loadedKey.current = null; void load(state, null) }} />
 
-        <div className="flex flex-col gap-3">
-          <div>
-            <p className="text-[0.8125rem] text-[var(--text-secondary)]">{picked.identity.label}</p>
-            <h2 className="mt-0.5 break-keep font-[family-name:var(--font-heading)] text-[1.125rem] leading-snug text-[var(--text-primary)] md:text-[1.25rem]">{picked.skill.title}</h2>
-          </div>
+        <div className="flex flex-col gap-4">
+          <MotionSkillStrip sinnerId={picked.sinnerId} skills={picked.identity.skills} selectedKey={picked.skill.key} onPick={skill => choose(picked.sinnerId, picked.identity, skill)} />
+          <h2 className="-mt-1 break-keep font-[family-name:var(--font-heading)] text-[1.125rem] leading-snug text-[var(--text-primary)] md:text-[1.25rem]">{picked.skill.title}</h2>
           {picked.skill.states.length > 1 && (
-            <div role="radiogroup" aria-label={t('states')} className="flex flex-wrap gap-1.5">
-              {picked.skill.states.map(option => {
-                const active = option.state === state.state
-                return (
-                  <button key={option.state} type="button" role="radio" aria-checked={active} title={option.label}
-                    onClick={() => void setQuery({ skill: toParam(picked.skill.key), state: option.state })}
-                    className={`max-w-full truncate rounded-full border px-3 py-1.5 text-[0.8125rem] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--gold-light)] ${active ? 'border-[var(--gold)] bg-[#2a1f0c] font-semibold text-[var(--gold-light)]' : 'border-[#3a2a15] bg-[var(--bg-panel)] text-[var(--text-secondary)] hover:border-[#5a4526] hover:text-[var(--text-primary)]'}`}>
-                    {option.label}
-                  </button>
-                )
-              })}
-            </div>
+            <MotionConditions key={picked.skill.key} states={picked.skill.states} current={state.state}
+              onPick={next => void setQuery({ skill: toParam(picked.skill.key), state: next })} />
           )}
         </div>
       </div>

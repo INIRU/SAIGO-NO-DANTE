@@ -172,3 +172,31 @@ describe('REQ-MOTION-016 effect names from labelKey', () => {
     expect(formatMotionLabelKey('<i:10114>', refs, id => (id === '10114' ? '흑수 - 오 필두' : undefined))).toBe('흑수 - 오 필두')
   })
 })
+
+describe('REQ-MOTION-018 a link state names its partner', () => {
+  it('REQ-MOTION-018 gives a link state the identity it links with (name, sinner, portrait) and whether it is the max video', () => {
+    const info = (game_id: string, name: string, sinner_id: string, sinner_name: string) => [game_id, { id: `u${game_id}`, name, sinner_id, sinner_name, game_id, folder_name: 'Heishou', release_date: '2025-08-28' }] as const
+    const ids = new Map([info('10613', '홍원 군주', 'hong-lu', '홍루'), info('10114', '흑수 - 오 필두', 'yi-sang', '이상')])
+    const row = (state: string, linkMax: boolean) => entry({ slug: 'id10613', identityId: '10613', skillId: 1061305, state, labelKey: '<i:10114>', members: ['10613', '10114'], linkMax, video: 'honglu/10613/1061305/x.mp4' })
+    const states = buildMotionCatalog([row('v:link-10114', false), row('v:link-10114-max', true), entry({ slug: 'id10613', identityId: '10613', skillId: 1061305, state: 'v:base', label: '기본', video: 'honglu/10613/1061305/b.mp4' })], ids, 'ko')
+      .find(s => s.id === 'hong-lu')!.identities[0].skills[0].states
+    expect(states[0].link).toBeUndefined()
+    expect(states[1].link).toMatchObject({ gameId: '10114', name: '흑수 - 오 필두', sinner: '이상', max: false })
+    expect(states[1].link!.portrait).toContain('10114')
+    expect(states[2].link).toMatchObject({ gameId: '10114', max: true })
+  })
+})
+
+
+describe('REQ-MOTION-019 a skill carries its frame', () => {
+  it('REQ-MOTION-019 gives a skill the sin, slot and attack type of its site row, and none when the site has no row', () => {
+    const rows = [
+      entry({ slug: 'id10613', identityId: '10613', skillId: 1061301, video: 'honglu/10613/1061301/v-base/layers.mp4' }),
+      entry({ slug: 'id10613', identityId: '10613', skillId: 1061399, video: 'honglu/10613/1061399/v-base/layers.mp4' }),
+    ]
+    const skillFrames = new Map([[1061301, { sin: 'gloom', slot: 1, attack: 'slash' as const }]])
+    const skills = buildMotionCatalog(rows, new Map(), 'ko', { skillFrames })[0].identities[0].skills
+    expect(skills[0].frame).toEqual({ sin: 'gloom', slot: 1, attack: 'slash' })
+    expect(skills[1].frame).toBeNull()
+  })
+})

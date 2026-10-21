@@ -36,10 +36,17 @@ export type MotionEntry = {
   nameJa?: string
 }
 
+/** The identity a link state links with (the member that is not the skill's owner), and whether it is the max video. */
+export type MotionLink = { gameId: string; name: string; sinner: string | null; portrait: string | null; max: boolean }
 /** One video of a skill as the page needs it (frame count, fps and sound are read from its layers.json when it loads). */
-export type MotionState = Pick<MotionEntry, 'state' | 'name' | 'video' | 'meta'> & { label: string; bytes: number }
-/** `form`: the identity's other form the skill belongs to (`castoff` of `id10215-castoff`), null for its own skills. */
-export type MotionSkill = { key: string; skillId: number; title: string; form: string | null; states: MotionState[] }
+export type MotionState = Pick<MotionEntry, 'state' | 'name' | 'video' | 'meta'> & { label: string; bytes: number; link?: MotionLink }
+/** The game frame a skill's sprite sits in: its sin, its slot (1–3, 4 for a defense) and its attack type badge. */
+export type MotionSkillFrame = { sin: string; slot: number; attack: 'slash' | 'pierce' | 'blunt' | null }
+/**
+ * `form`: the identity's other form the skill belongs to (`castoff` of `id10215-castoff`), null for its own skills.
+ * `frame`: from the site's row of the skill, null when the site has none.
+ */
+export type MotionSkill = { key: string; skillId: number; title: string; form: string | null; states: MotionState[]; frame?: MotionSkillFrame | null }
 /** `released`: the release date of the identity the skills belong to, for the list's order (null when the site has no row). */
 export type MotionIdentity = { slug: string; label: string; identityId: string | null; gameId: string | null; portrait: string | null; released: string | null; skills: MotionSkill[] }
 export type MotionSinner = { id: string; identities: MotionIdentity[] }
@@ -118,6 +125,12 @@ export function defaultMotionState(skill: Pick<MotionSkill, 'states'>): string {
   return (skill.states.find(s => isTop(s.state)) ?? skill.states.find(s => isBase(s.state)) ?? skill.states[0])?.state ?? ''
 }
 
+/** The video of a link partner at the chosen max (its other video when the index has only one). */
+export function pickLinkState(states: readonly MotionState[], gameId: string, max: boolean): MotionState | undefined {
+  const own = states.filter(s => s.link?.gameId === gameId)
+  return own.find(s => s.link!.max === max) ?? own[0]
+}
+
 /** A file on the R2 host; its size in the query makes a browser that cached an older render fetch it again. */
 export function motionAssetUrl(path: string, bytes: number | undefined): string {
   return MOTION_ASSET_BASE + path + (bytes ? `?v=${bytes}` : '')
@@ -126,8 +139,8 @@ export function motionAssetUrl(path: string, bytes: number | undefined): string 
 // On one release date: the game's own identity, then entries of an older index (LCB, 흑수, 홍원 slugs), then old links.
 const slugRank = (slug: string) => slug.startsWith('id') ? 0 : slug.startsWith('lcb-') ? 1 : slug.startsWith('link-') ? 3 : 2
 
-/** The site data the catalog names things with, in the page language: skill names by skill id and the keyword table. */
-export type MotionCatalogNames = { skillNames?: ReadonlyMap<number, string>; refs?: GameTextRefNames | null }
+/** The site data the catalog names things with, in the page language: skill names and frames by skill id, the keyword table. */
+export type MotionCatalogNames = { skillNames?: ReadonlyMap<number, string>; skillFrames?: ReadonlyMap<number, MotionSkillFrame>; refs?: GameTextRefNames | null }
 
 /**
  * The R2 index as sinners → identities → skills → states, in the order the page lists them. A skill is its slug plus
@@ -164,13 +177,23 @@ export function buildMotionCatalog(entries: readonly MotionEntry[], identities: 
       }
       bySlug.set(slug, identity)
     }
+    const partnerId = entry.members?.find(id => id !== (entry.identityId ?? gameId))
+    const partner = partnerId ? identities.get(partnerId) : undefined
+    const link: MotionLink | undefined = partnerId ? {
+      gameId: partnerId,
+      name: partner?.name ?? partnerId,
+      sinner: partner?.sinner_name ?? null,
+      portrait: partner?.folder_name ? getIdentityPortraitUrl(partner.sinner_id, partner.folder_name, partnerId, false) : null,
+      max: !!entry.linkMax,
+    } : undefined
     const key = `${entry.slug}|${entry.skillId}`
     const title = skillNames.get(entry.skillId) || (lang === 'en' ? entry.nameEn : lang === 'ja' ? entry.nameJa : undefined)?.trim() || entry.name.replace(/ \[[^\]]+\]$/, '')
     let skill = identity.skills.find(s => s.key === key)
-    if (!skill) identity.skills.push(skill = { key, skillId: entry.skillId, title, form, states: [] })
+    if (!skill) identity.skills.push(skill = { key, skillId: entry.skillId, title, form, states: [], frame: names.skillFrames?.get(entry.skillId) ?? null })
     if (isBase(entry.state)) skill.title = title
     skill.states.push({
       state: entry.state, label: motionStateLabel(entry, lang, labelContext), name: entry.name, video: entry.video, meta: entry.meta, bytes: entry.bytes ?? 0,
+      ...(link && { link }),
     })
   }
   return SINNER_SLUGS.flatMap(id => {
