@@ -34,15 +34,17 @@ const iconButton = 'h-10 w-10 shrink-0 place-items-center rounded-md text-[var(-
 /**
  * The 16:9 stage the compositor draws into, with the simulation notes: a notice over the picture on the first visit
  * (dismissed once, remembered in the browser) and a small "simulation" label always at the bottom centre. Under it the
- * controls: play, a frame back and forward, the seek bar, the frame counter, the sound and the full screen (on a phone held
+ * controls: play, a frame back and forward, the seek bar, the frame counter, the sound and its volume (with a mouse; iPhone
+ * Safari takes the volume from the device buttons only) and the full screen (on a phone held
  * upright, also landscape). On a narrow stage the seek bar takes its own row above the buttons.
  */
-export default function MotionStage({ hostRef, status, error, playing, muted, hasAudio, frames, frameStore, onTogglePlay, onStep, onSeek, onToggleMute, onRetry }: {
+export default function MotionStage({ hostRef, status, error, playing, muted, volume, hasAudio, frames, frameStore, onTogglePlay, onStep, onSeek, onToggleMute, onVolume, onRetry }: {
   hostRef: RefObject<HTMLDivElement | null>
   status: MotionStatus
   error: MotionError | null
   playing: boolean
   muted: boolean
+  volume: number
   hasAudio: boolean
   frames: number
   frameStore: MotionFrameStore
@@ -50,6 +52,7 @@ export default function MotionStage({ hostRef, status, error, playing, muted, ha
   onStep: (delta: number) => void
   onSeek: (frame: number) => void
   onToggleMute: () => void
+  onVolume: (volume: number) => void
   onRetry: () => void
 }) {
   const t = useTranslations('motionPage')
@@ -126,6 +129,10 @@ export default function MotionStage({ hostRef, status, error, playing, muted, ha
         <button type="button" className={`${iconButton} grid @max-md:ml-auto`} onClick={onToggleMute} disabled={!ready || !hasAudio} aria-label={muted ? t('soundOn') : t('soundOff')} aria-pressed={!muted}>
           {muted ? <VolumeX className="h-5 w-5" aria-hidden="true" /> : <Volume2 className="h-5 w-5" aria-hidden="true" />}
         </button>
+        <input type="range" min={0} max={1} step={0.05} value={muted ? 0 : volume} aria-label={t('volume')} disabled={!ready || !hasAudio}
+          onChange={event => onVolume(Number(event.target.value))}
+          className={`${styles.seek} hidden h-8 w-20 shrink-0 cursor-pointer @md:pointer-fine:block`}
+          style={{ ['--fill' as string]: `${(muted ? 0 : volume) * 100}%` }} />
         <button type="button" className={`${iconButton} hidden max-sm:pointer-coarse:grid`} onClick={() => void (view.turned ? view.close() : view.open(true))}
           aria-label={view.turned ? t('portrait') : t('landscape')}>
           <Smartphone className={`h-5 w-5 transition-transform ${view.turned ? '' : 'rotate-90'}`} aria-hidden="true" />

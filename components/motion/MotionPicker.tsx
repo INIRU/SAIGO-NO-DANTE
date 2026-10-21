@@ -43,7 +43,11 @@ function IdentityRow({ sinnerId, identity, open, selectedKey, onOpen, onPick }: 
       </button>
       {open && (
         <ul className="pb-1.5 pl-[3.5rem] pr-1">
-          {identity.skills.map(skill => <SkillRow key={skill.key} sinnerId={sinnerId} skill={skill} selected={skill.key === selectedKey} onPick={() => onPick(skill)} />)}
+          {identity.skills.flatMap((skill, k) => [
+            // Another form of the identity: a line between its own skills and the form's.
+            ...(k > 0 && skill.form !== identity.skills[k - 1].form ? [<li key={`${skill.key}:form`} aria-hidden="true" className="mx-2 my-1.5 h-px bg-[#3a2a15]" />] : []),
+            <SkillRow key={skill.key} sinnerId={sinnerId} skill={skill} selected={skill.key === selectedKey} onPick={() => onPick(skill)} />,
+          ])}
         </ul>
       )}
     </li>
@@ -65,8 +69,8 @@ export default function MotionPicker({ sinners, sinnerId, selectedKey, onSinner,
   const tSinner = useTranslations('sinner')
   const [query, setQuery] = useState('')
   const needle = useDeferredValue(query.trim().toLowerCase())
-  const selectedSlug = selectedKey?.split('|')[0] ?? null
-  const [openSlug, setOpenSlug] = useState<string | null>(selectedSlug)
+  // A form's skill keeps its own slug in the key, so the open identity is found by the skill.
+  const [openSlug, setOpenSlug] = useState<string | null>(() => sinners.flatMap(s => s.identities).find(identity => identity.skills.some(skill => skill.key === selectedKey))?.slug ?? null)
   const sinner = sinners.find(s => s.id === sinnerId) ?? sinners[0]
 
   const matches = useMemo(() => {

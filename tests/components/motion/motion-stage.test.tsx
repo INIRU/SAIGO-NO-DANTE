@@ -7,8 +7,8 @@ import MotionStage from '@/components/motion/MotionStage'
 
 const store = { subscribe: () => () => {}, get: () => 0 }
 const stage = (props: Partial<Parameters<typeof MotionStage>[0]> = {}) => renderToStaticMarkup(
-  <MotionStage hostRef={{ current: null }} status="ready" error={null} playing={false} muted hasAudio={false} frames={120} frameStore={store}
-    onTogglePlay={() => {}} onStep={() => {}} onSeek={() => {}} onToggleMute={() => {}} onRetry={() => {}} {...props} />,
+  <MotionStage hostRef={{ current: null }} status="ready" error={null} playing={false} muted volume={1} hasAudio={false} frames={120} frameStore={store}
+    onTogglePlay={() => {}} onStep={() => {}} onSeek={() => {}} onToggleMute={() => {}} onVolume={() => {}} onRetry={() => {}} {...props} />,
 )
 
 describe('REQ-MOTION-008 the stage says it is a simulation', () => {
@@ -32,5 +32,11 @@ describe('REQ-MOTION-008 the stage says it is a simulation', () => {
     const html = stage()
     expect(html).toContain('aria-label="fullscreen"')
     expect(html).toMatch(/class="[^"]*\bhidden max-sm:pointer-coarse:grid[^"]*"[^>]*aria-label="landscape"/)
+  })
+
+  it('REQ-MOTION-010 has a volume slider beside the sound button that reads 0 while muted', () => {
+    expect(stage({ muted: false, volume: 0.5, hasAudio: true })).toMatch(/<input[^>]*aria-label="volume"[^>]*value="0.5"/)
+    expect(stage({ muted: true, volume: 0.5, hasAudio: true })).toMatch(/<input[^>]*aria-label="volume"[^>]*value="0"/)
+    expect(stage({ hasAudio: false })).toMatch(/<input[^>]*aria-label="volume"[^>]*disabled=""/)
   })
 })

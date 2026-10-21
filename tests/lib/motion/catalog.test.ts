@@ -64,3 +64,17 @@ it('REQ-MOTION-003 reads every file from the R2 host with its size, so a re-rend
   expect(motionAssetUrl('faust/10216/1021601/v-best/layers.mp4', 7357815)).toBe('https://assets.saigo-no-dante.com/faust/10216/1021601/v-best/layers.mp4?v=7357815')
   expect(motionAssetUrl('a/b.json', 0)).toBe('https://assets.saigo-no-dante.com/a/b.json')
 })
+
+describe('REQ-MOTION-011 an identity\'s other form', () => {
+  it('REQ-MOTION-011 lists a form (id<game id>-<form>) under its identity after the base skills, each skill keeping its own key', () => {
+    const identities = new Map([['10215', { id: 'uuid-2', name: '거미집 약지 제자', sinner_id: 'faust', game_id: '10215', folder_name: 'Spider', rarity: 3 }]])
+    const at = (slug: string, skillId: number) => entry({ slug, skillId, identity: slug, name: `s${skillId}`, video: `faust/${slug}/${skillId}/v-base/layers.mp4` })
+    // The form's rows come first in the index: the identity is still the base one.
+    const [faust] = buildMotionCatalog([at('id10215-castoff', 1021505), at('id10215', 1021502), at('id10215', 1021501)], identities, 'ko')
+    expect(faust.identities).toHaveLength(1)
+    expect(faust.identities[0]).toMatchObject({ slug: 'id10215', label: '거미집 약지 제자', identityId: 'uuid-2' })
+    expect(faust.identities[0].skills.map(s => [s.key, s.form])).toEqual([
+      ['id10215|1021501', null], ['id10215|1021502', null], ['id10215-castoff|1021505', 'castoff'],
+    ])
+  })
+})

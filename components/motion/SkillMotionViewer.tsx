@@ -106,9 +106,9 @@ export default function SkillMotionViewer() {
         </button>
 
         <MotionStage
-          hostRef={motion.hostRef} status={motion.status} error={motion.error} playing={motion.playing} muted={motion.muted}
+          hostRef={motion.hostRef} status={motion.status} error={motion.error} playing={motion.playing} muted={motion.muted} volume={motion.volume}
           hasAudio={motion.hasAudio} frames={motion.frames} frameStore={motion.frameStore}
-          onTogglePlay={motion.togglePlay} onStep={motion.step} onSeek={motion.seek} onToggleMute={motion.toggleMute}
+          onTogglePlay={motion.togglePlay} onStep={motion.step} onSeek={motion.seek} onToggleMute={motion.toggleMute} onVolume={motion.setVolume}
           onRetry={() => { loadedKey.current = null; void load(state, null) }} />
 
         <div className="flex flex-col gap-3">

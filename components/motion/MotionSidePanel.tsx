@@ -30,12 +30,11 @@ function SkillCard({ skillId }: { skillId: number }) {
   return <IdentitySkillFrameCard skill={data} skills={[data]} identity={data.identity} lang={lang} className="rounded-lg p-3" />
 }
 
-/** Beside the stage: the skill's card, then one switch per buff effect the video can show. */
+/** Beside the stage: one switch per buff effect the video can show, then the skill's card. */
 export default function MotionSidePanel({ skillId, layers, onLayer }: { skillId: number | null; layers: MotionLayerToggle[]; onLayer: (id: string, on: boolean) => void }) {
   const t = useTranslations('motionPage')
   return (
     <div className="flex flex-col gap-4">
-      {skillId !== null && <SkillCard key={skillId} skillId={skillId} />}
       {layers.length > 0 && (
         <section aria-labelledby="motion-effects" className="rounded-lg border border-[#2e2417] bg-[var(--bg-panel)] p-3">
           <h2 id="motion-effects" className="mb-2 font-[family-name:var(--font-heading)] text-[0.9375rem] text-[var(--text-primary)]">{t('effects')}</h2>
@@ -53,6 +52,7 @@ export default function MotionSidePanel({ skillId, layers, onLayer }: { skillId:
           </ul>
         </section>
       )}
+      {skillId !== null && <SkillCard key={skillId} skillId={skillId} />}
     </div>
   )
 }
