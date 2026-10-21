@@ -1,7 +1,8 @@
 'use client'
 
 import { useMemo } from 'react'
-import { groupEventChoices } from '@/lib/utils/event-flow'
+import Image from 'next/image'
+import { eventCheckSins, groupEventChoices } from '@/lib/utils/event-flow'
 import { colorizeEventText } from '@/lib/utils/event-text'
 import { getRootEvents } from '@/lib/utils/event-catalog'
 import { Search, X, ArrowUpRight } from 'lucide-react'
@@ -14,6 +15,8 @@ import type { EgoGift, EgoGiftTheme, MdEvent, MdEventChoice } from '@/components
 import { translations } from '@/lib/i18n/translations'
 import type { SupportedLang } from '@/lib/i18n/types'
 import { getLocalizedName } from '@/lib/i18n/localize'
+import { useTranslations } from 'next-intl'
+import { getSinIconUrl } from '@/lib/constants/sin'
 
 interface EventTabProps {
   lang: SupportedLang
@@ -63,6 +66,8 @@ export default function EventTab({
   }
 
   const rootEvents = useMemo(() => getRootEvents(events, choicesByEventId), [events, choicesByEventId])
+  const eventsById = useMemo(() => new Map(events.map(event => [event.id, event])), [events])
+  const tSin = useTranslations('sin')
 
   const themeOptions = useMemo(() => [
     { value: '', label: t('mirrorDungeon.event.allThemes') },
@@ -120,6 +125,7 @@ export default function EventTab({
         {filteredEvents.map((event, index) => {
           const gifts = (event.gift_ids ?? []).flatMap(id => giftByGameId.get(id) ?? [])
           const count = groupEventChoices(choicesByEventId.get(event.id) ?? []).length
+          const checks = eventCheckSins(choicesByEventId.get(event.id) ?? [], eventsById)
           return (
             <button type="button" key={event.id} className={`ev-card ${styles.card}`} onClick={() => onSelectEvent(event)} data-event-id={event.id}>
               {event.image_url ? <div className={styles.image}>
@@ -128,6 +134,14 @@ export default function EventTab({
               <div className={styles.caption}>
                 <div className={styles.cardMeta}><span>#{event.id}</span><span>{t('mirrorDungeon.event.choicesLabel')} {count}</span></div>
                 <h3>{colorizeEventText(getEventTitle(event), lang)}</h3>
+                {checks.length > 0 && <ul className={styles.checks}>
+                  {checks.map(check => (
+                    <li key={check.option} aria-label={`${t('mirrorDungeon.event.checkOption').replace('{n}', String(check.option))}: ${check.sins.map(sin => tSin(sin)).join(', ')}`}>
+                      <b aria-hidden="true">{check.option}</b>
+                      {check.sins.map(sin => <Image key={sin} src={getSinIconUrl(sin)} alt="" title={tSin(sin)} width={18} height={18} />)}
+                    </li>
+                  ))}
+                </ul>}
                 <div className={styles.cardFooter}>
                   <span className={styles.gifts}>{gifts.filter(gift => gift.image_url).slice(0, 4).map(gift => <span key={gift.id} className={styles.giftPreview}><GiftArtwork gift={gift} displayName={getLocalizedName({ name_kr: gift.name, name_en: gift.name_en, name_jp: gift.name_jp }, lang)} sizes="64px" /></span>)}{gifts.length > 4 && <span>+{gifts.length - 4}</span>}</span>
                   <ArrowUpRight size={19} aria-hidden="true" />
