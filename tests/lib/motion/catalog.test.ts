@@ -107,3 +107,32 @@ describe('REQ-MOTION-002 state buttons read the index label', () => {
   })
 })
 
+describe('REQ-MOTION-014 the index fields for identities, links and languages', () => {
+  const info = (game_id: string, ko: string, en: string, sinner_id = 'yi-sang') => ({ ko: [game_id, { id: `u${game_id}`, name: ko, sinner_id, game_id, folder_name: 'f', release_date: '2025-08-28' }] as const, en: [game_id, { id: `u${game_id}`, name: en, sinner_id, game_id, folder_name: 'f', release_date: '2025-08-28' }] as const })
+  const wu = info('10114', '흑수 - 오 필두', 'Heishou Pack - Wu Branch Adept'), ryo = info('10412', 'N사 E.G.O:: 경멸, 경외', 'N Corp. E.G.O:: Contempt, Awe', 'ryoshu'), nsang = info('10113', 'N사 E.G.O:: 흉탄', 'N Corp. E.G.O:: Fell Bullet')
+  const ko = new Map([wu.ko, ryo.ko, nsang.ko]), en = new Map([wu.en, ryo.en, nsang.en])
+  const rows = [
+    entry({ slug: 'heishou-wu-yisang', identityId: '10114', skillId: 1011401, state: 'v:base', identity: '흑수 - 오 필두 이상', name: '흑수의 칼', label: '기본', nameEn: 'Heishou Blade', video: 'yisang/x/1011401/base.mp4' }),
+    entry({ slug: 'heishou-wu-yisang', identityId: '10114', skillId: 1011401, state: 'v:best', identity: '흑수 - 오 필두 이상', name: '흑수의 칼 [최고 상태 (a)]', label: '최고 상태', labelEn: 'Best state', video: 'yisang/x/1011401/best.mp4' }),
+    entry({ slug: 'link-fellbullet', skillId: 1041206, state: 'base', identity: '연계 · N사 이상 × 료슈 쏘아내겠소', name: '쏘아내겠소', label: '기본', members: ['10113', '10412'], linkName: '쏘아내겠소', video: 'links/fellbullet/1041206/base.mp4' }),
+  ]
+
+  it('REQ-MOTION-014 names an identity from its identityId, in the page language, and skills and labels from nameEn / labelEn', () => {
+    const [yisang] = buildMotionCatalog(rows, en, 'en')
+    const wuIdentity = yisang.identities.find(i => i.slug === 'heishou-wu-yisang')!
+    expect(wuIdentity).toMatchObject({ label: 'Heishou Pack - Wu Branch Adept', gameId: '10114', identityId: 'u10114' })
+    expect(wuIdentity.skills[0].title).toBe('Heishou Blade')
+    expect(wuIdentity.skills[0].states.map(s => s.label)).toEqual(['Base', 'Best state'])
+  })
+
+  it('REQ-MOTION-014 names a link after its members, and keeps the index names where a language field is missing', () => {
+    const ryoshu = buildMotionCatalog(rows, en, 'en').find(s => s.id === 'ryoshu')!
+    expect(ryoshu.identities[0].label).toBe('Link · N Corp. E.G.O:: Fell Bullet × N Corp. E.G.O:: Contempt, Awe')
+    expect(ryoshu.identities[0].skills[0].title).toBe('쏘아내겠소')
+    const [yisangKo] = buildMotionCatalog(rows, ko, 'ko')
+    expect(yisangKo.identities.find(i => i.slug === 'heishou-wu-yisang')!.label).toBe('흑수 - 오 필두')
+    expect(yisangKo.identities[0].skills[0].title).toBe('흑수의 칼')
+    expect(buildMotionCatalog(rows, ko, 'ko').find(s => s.id === 'ryoshu')!.identities[0].label).toBe('연계 · N사 E.G.O:: 흉탄 × N사 E.G.O:: 경멸, 경외')
+  })
+})
+
