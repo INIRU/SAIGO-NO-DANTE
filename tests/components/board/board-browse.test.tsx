@@ -33,9 +33,13 @@ it('REQ-COMMUNITY-082 shows the empty state when nothing matches and the loading
   expect(count(loading, 'overflow-hidden rounded-lg border'), 'six card shapes').toBe(6)
 })
 
-it('REQ-COMMUNITY-082 adds two card shapes under the list while the next page loads', () => {
+it('REQ-COMMUNITY-082 fills the rest of the grid with card shapes while the next page loads: six from md up, two on a phone', () => {
   const html = results({ loadingMore: true, hasMore: true })
-  expect(count(html, 'overflow-hidden rounded-lg border')).toBe(2)
+  expect(count(html, 'overflow-hidden rounded-lg border')).toBe(6)
+  // In the same grid as the cards, so they take the empty cells after the last card.
+  expect(count(html, 'xl:grid-cols-3')).toBe(1)
+  expect(count(html, 'data-loading-card')).toBe(6)
+  expect(count(html, 'data-loading-card="" class="min-w-0 max-md:hidden"')).toBe(4)
 })
 
 it('REQ-COMMUNITY-082 puts the search field and the filters button on top of a phone list, with the result count and the sort', () => {
@@ -57,6 +61,7 @@ it('REQ-COMMUNITY-083 draws the loading card with the same parts as the real car
   const html = renderToStaticMarkup(<BoardCardSkeleton />)
   expect(count(html, 'aspect-ratio:3 / 4')).toBe(12)
   expect(html).toContain('h-[1.375rem]')
+  expect(html).toContain('h-5')
   expect(html).toContain('h-6')
   expect(html).toContain('h-11')
   const list = renderToStaticMarkup(<BoardCardSkeleton phoneRows={1} />)
