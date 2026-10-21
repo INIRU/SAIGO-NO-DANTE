@@ -16,10 +16,10 @@ vi.mock('next-intl/server', async () => {
   }
 })
 
-it('REQ-SHARED-041 the footer links every DB, community, tools and fun page of the menu as a locale-prefixed anchor', async () => {
+it('REQ-SHARED-041 the footer links every DB, community, tools, motion and fun page of the menu as a locale-prefixed anchor', async () => {
   const { default: Footer } = await import('@/components/layout/Footer')
-  const groups = NAV_GROUPS.filter(group => ['nav.db.title', 'nav.community.title', 'nav.tools.title', 'nav.fun.title'].includes(group.labelKey))
-  expect(groups).toHaveLength(4)
+  const groups = NAV_GROUPS.filter(group => ['nav.db.title', 'nav.community.title', 'nav.tools.title', 'nav.motion.title', 'nav.fun.title'].includes(group.labelKey))
+  expect(groups).toHaveLength(5)
   expect(groups).toHaveLength(NAV_GROUPS.length)
   const funTitles: Record<string, string> = { ko: '재미', en: 'Fun', ja: 'お楽しみ' }
 

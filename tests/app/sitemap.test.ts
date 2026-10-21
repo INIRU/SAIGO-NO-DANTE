@@ -61,4 +61,11 @@ describe('sitemap', () => {
     for (const path of ['/collection', '/friends', '/planner', '/planner/run', '/random', '/login']) expect(urls).not.toContain(`https://saigo-no-dante.com/ko${path}`)
     expect(urls).toContain('https://saigo-no-dante.com/ko/planner/community')
   })
+
+  it('REQ-MOTION-006 lists the skill motion page', async () => {
+    const { default: sitemap } = await import('@/app/sitemap')
+    const urls = (await sitemap()).map(entry => entry.url)
+
+    expect(urls).toContain('https://saigo-no-dante.com/ko/motion/skills')
+  })
 })

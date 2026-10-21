@@ -1,0 +1,141 @@
+'use client'
+
+import { useEffect, useRef, useState, type RefObject } from 'react'
+import { useTranslations } from 'next-intl'
+import { ChevronLeft, ChevronRight, Info, Maximize, Minimize, Pause, Play, RotateCw, Smartphone, Volume2, VolumeX } from 'lucide-react'
+import { useMotionFrame, type MotionError, type MotionFrameStore, type MotionStatus } from '@/hooks/useSkillMotion'
+import { useStageScreen } from '@/hooks/useStageScreen'
+import styles from './Motion.module.css'
+
+const NOTICE_KEY = 'motion-simulation-notice:v1'
+
+function FrameCounter({ store, frames }: { store: MotionFrameStore; frames: number }) {
+  const frame = Math.max(0, useMotionFrame(store))
+  return (
+    <span className="shrink-0 font-[family-name:var(--font-title)] text-[1rem] tabular-nums tracking-wide text-[var(--text-secondary)]">
+      <span className="text-[var(--text-primary)]">{frame}</span> / {Math.max(0, frames - 1)}
+    </span>
+  )
+}
+
+function SeekBar({ store, frames, label, onSeek }: { store: MotionFrameStore; frames: number; label: string; onSeek: (frame: number) => void }) {
+  const frame = Math.max(0, useMotionFrame(store))
+  const max = Math.max(0, frames - 1)
+  return (
+    <input type="range" min={0} max={max} step={1} value={Math.min(frame, max)} aria-label={label} disabled={frames === 0}
+      onChange={event => onSeek(Number(event.target.value))}
+      className={`${styles.seek} h-8 min-w-0 flex-1 cursor-pointer @max-md:order-first @max-md:basis-full @max-md:px-2`}
+      style={{ ['--fill' as string]: `${max ? (frame / max) * 100 : 0}%` }} />
+  )
+}
+
+const iconButton = 'h-10 w-10 shrink-0 place-items-center rounded-md text-[var(--text-secondary)] transition-colors hover:bg-[rgba(200,144,10,0.08)] hover:text-[var(--gold-light)] disabled:pointer-events-none disabled:opacity-35 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--gold-light)]'
+
+/**
+ * The 16:9 stage the compositor draws into, with the simulation notes: a notice over the picture on the first visit
+ * (dismissed once, remembered in the browser) and a small "simulation" label always at the bottom centre. Under it the
+ * controls: play, a frame back and forward, the seek bar, the frame counter, the sound and the full screen (on a phone held
+ * upright, also landscape). On a narrow stage the seek bar takes its own row above the buttons.
+ */
+export default function MotionStage({ hostRef, status, error, playing, muted, hasAudio, frames, frameStore, onTogglePlay, onStep, onSeek, onToggleMute, onRetry }: {
+  hostRef: RefObject<HTMLDivElement | null>
+  status: MotionStatus
+  error: MotionError | null
+  playing: boolean
+  muted: boolean
+  hasAudio: boolean
+  frames: number
+  frameStore: MotionFrameStore
+  onTogglePlay: () => void
+  onStep: (delta: number) => void
+  onSeek: (frame: number) => void
+  onToggleMute: () => void
+  onRetry: () => void
+}) {
+  const t = useTranslations('motionPage')
+  const [notice, setNotice] = useState(false)
+  useEffect(() => {
+    try { setNotice(localStorage.getItem(NOTICE_KEY) !== '1') } catch { setNotice(true) }
+  }, [])
+  const dismiss = () => {
+    setNotice(false)
+    try { localStorage.setItem(NOTICE_KEY, '1') } catch { /* private mode: shown again next time */ }
+  }
+  const ready = status === 'ready'
+  const rootRef = useRef<HTMLDivElement>(null)
+  const view = useStageScreen(rootRef)
+  // Full screen: the root covers the screen (or is the browser's full screen element, which may not be turned), and the
+  // frame inside it fills it, or lies a quarter turned across a phone held upright.
+  const frame = !view.full ? 'overflow-hidden rounded-lg border border-[#2e2417]'
+    : view.turned ? 'absolute left-1/2 top-1/2 flex h-[100dvw] w-[100dvh] -translate-x-1/2 -translate-y-1/2 rotate-90 flex-col'
+    : 'absolute inset-0 flex flex-col'
+
+  return (
+    <div ref={rootRef} className={view.full ? 'fixed inset-0 z-[110] bg-black' : undefined}>
+    <div className={`${frame} @container bg-[#050403]`}>
+      <div className={`relative w-full select-none bg-black ${view.full ? 'min-h-0 flex-1' : 'aspect-video'}`}>
+        <div ref={hostRef} className="absolute inset-0 [&>canvas]:h-full [&>canvas]:w-full [&>canvas]:object-contain" onClick={ready ? onTogglePlay : undefined} />
+
+        {status === 'loading' && (
+          <div className="pointer-events-none absolute inset-0 grid place-items-center bg-[rgba(5,4,3,0.35)]">
+            <span className="h-9 w-9 animate-spin rounded-full border-2 border-[rgba(232,176,48,0.25)] border-t-[var(--gold-light)] motion-reduce:animate-none" aria-hidden="true" />
+          </div>
+        )}
+
+        {status === 'error' && (
+          <div role="alert" className="absolute inset-0 grid place-items-center bg-[rgba(5,4,3,0.85)] p-6 text-center">
+            <div className="flex flex-col items-center gap-3">
+              <p className="text-[0.9375rem] text-[var(--text-primary)]">{error === 'webgl' ? t('webglError') : t('loadError')}</p>
+              {error === 'load' && (
+                <button type="button" onClick={onRetry} className="inline-flex h-10 items-center gap-2 rounded-md border border-[#8a6010] bg-[#2a1f0c] px-4 text-[0.875rem] font-semibold text-[var(--gold-light)] hover:bg-[#35270e]">
+                  <RotateCw className="h-4 w-4" aria-hidden="true" />{t('retry')}
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {notice && (
+          <div className="absolute inset-0 z-[2] grid place-items-center bg-[rgba(5,4,3,0.62)] p-2 sm:p-4">
+            <div role="dialog" aria-modal="false" aria-labelledby="motion-notice-title"
+              className={`${styles.notice} w-full max-w-[24rem] rounded-lg border border-[#5a4526] bg-[rgba(18,14,9,0.94)] px-4 py-3 text-center sm:p-5 shadow-[0_1rem_3rem_rgba(0,0,0,0.6)]`}>
+              <Info className="mx-auto mb-2 h-6 w-6 text-[var(--gold-light)] max-sm:hidden" aria-hidden="true" />
+              <p id="motion-notice-title" className="font-[family-name:var(--font-heading)] text-[0.9375rem] text-[var(--text-primary)] sm:text-[1.0625rem]">{t('noticeTitle')}</p>
+              <p className="mt-1 break-keep text-[0.8125rem] leading-snug text-[var(--text-secondary)] sm:mt-2 sm:text-[0.875rem] sm:leading-relaxed">{t('noticeBody')}</p>
+              <button type="button" onClick={dismiss} autoFocus
+                className="mt-2.5 inline-flex h-9 min-w-[6rem] sm:mt-4 sm:h-10 items-center justify-center rounded-md border border-[#8a6010] bg-[#2a1f0c] px-4 text-[0.875rem] font-semibold text-[var(--gold-light)] transition-colors hover:bg-[#35270e] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--gold-light)]">
+                {t('noticeOk')}
+              </button>
+            </div>
+          </div>
+        )}
+
+        <span className="pointer-events-none absolute bottom-2.5 left-1/2 z-[1] -translate-x-1/2 rounded-full border border-[rgba(232,176,48,0.35)] bg-[rgba(5,4,3,0.72)] px-3 py-0.5 text-[0.75rem] font-semibold tracking-[0.02em] text-[var(--gold-light)] sm:bottom-3 sm:text-[0.8125rem]">
+          {t('simulation')}
+        </span>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-1 border-t border-[#2e2417] bg-[var(--bg-panel)] px-1.5 py-1 @md:flex-nowrap @md:gap-1.5 @md:px-2">
+        <button type="button" className={`${iconButton} grid`} onClick={onTogglePlay} disabled={!ready} aria-label={playing ? t('pause') : t('play')}>
+          {playing ? <Pause className="h-5 w-5" aria-hidden="true" /> : <Play className="h-5 w-5" aria-hidden="true" />}
+        </button>
+        <button type="button" className={`${iconButton} grid @max-md:hidden`} onClick={() => onStep(-1)} disabled={!ready} aria-label={t('prevFrame')}><ChevronLeft className="h-5 w-5" aria-hidden="true" /></button>
+        <button type="button" className={`${iconButton} grid @max-md:hidden`} onClick={() => onStep(1)} disabled={!ready} aria-label={t('nextFrame')}><ChevronRight className="h-5 w-5" aria-hidden="true" /></button>
+        <SeekBar store={frameStore} frames={ready ? frames : 0} label={t('frame')} onSeek={onSeek} />
+        <FrameCounter store={frameStore} frames={frames} />
+        <button type="button" className={`${iconButton} grid @max-md:ml-auto`} onClick={onToggleMute} disabled={!ready || !hasAudio} aria-label={muted ? t('soundOn') : t('soundOff')} aria-pressed={!muted}>
+          {muted ? <VolumeX className="h-5 w-5" aria-hidden="true" /> : <Volume2 className="h-5 w-5" aria-hidden="true" />}
+        </button>
+        <button type="button" className={`${iconButton} hidden max-sm:pointer-coarse:grid`} onClick={() => void (view.turned ? view.close() : view.open(true))}
+          aria-label={view.turned ? t('portrait') : t('landscape')}>
+          <Smartphone className={`h-5 w-5 transition-transform ${view.turned ? '' : 'rotate-90'}`} aria-hidden="true" />
+        </button>
+        <button type="button" className={`${iconButton} grid`} onClick={() => void (view.full ? view.close() : view.open(false))}
+          aria-label={view.full ? t('exitFullscreen') : t('fullscreen')}>
+          {view.full ? <Minimize className="h-5 w-5" aria-hidden="true" /> : <Maximize className="h-5 w-5" aria-hidden="true" />}
+        </button>
+      </div>
+    </div>
+    </div>
+  )
+}

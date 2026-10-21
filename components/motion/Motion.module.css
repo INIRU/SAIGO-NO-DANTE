@@ -1,0 +1,15 @@
+/* The seek bar: a gold fill up to the shown frame (--fill), a round handle, the site's colours. */
+.seek { appearance: none; background: transparent; }
+.seek:focus-visible { outline: 2px solid var(--gold-light); outline-offset: 2px; border-radius: 0.25rem; }
+.seek::-webkit-slider-runnable-track { height: 0.25rem; border-radius: 999px; background: linear-gradient(to right, var(--gold) var(--fill), #2e2417 var(--fill)); }
+.seek::-moz-range-track { height: 0.25rem; border-radius: 999px; background: #2e2417; }
+.seek::-moz-range-progress { height: 0.25rem; border-radius: 999px; background: var(--gold); }
+.seek::-webkit-slider-thumb { appearance: none; width: 0.875rem; height: 0.875rem; margin-top: -0.3125rem; border-radius: 999px; background: var(--gold-light); box-shadow: 0 0 0 3px rgba(5, 4, 3, 0.9); transition: transform 0.15s ease; }
+.seek::-moz-range-thumb { width: 0.875rem; height: 0.875rem; border: 0; border-radius: 999px; background: var(--gold-light); box-shadow: 0 0 0 3px rgba(5, 4, 3, 0.9); }
+.seek:hover::-webkit-slider-thumb, .seek:active::-webkit-slider-thumb { transform: scale(1.2); }
+.seek:disabled { opacity: 0.4; cursor: default; }
+
+/* The simulation notice rises in once over the first frame. */
+.notice { animation: noticeIn 0.24s cubic-bezier(0.23, 1, 0.32, 1) both; }
+@keyframes noticeIn { from { opacity: 0; transform: translateY(0.5rem) scale(0.98); } }
+@media (prefers-reduced-motion: reduce) { .notice { animation: none; } .seek::-webkit-slider-thumb { transition: none; } }
