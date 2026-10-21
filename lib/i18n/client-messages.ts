@@ -9,6 +9,7 @@ export const SECTION_MESSAGES = {
   planner: ['planner.run', 'planner.floorTab', 'planner.blessingTab', 'planner.finalPresets'],
   meta: ['meta'],
   random: ['randomPage'],
+  motion: ['motionPage'],
   login: ['loginPage'],
   admin: ['adminShell'],
 } as const

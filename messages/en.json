@@ -28,6 +28,10 @@
     "other": {
       "calendar": "News calendar"
     },
+    "motion": {
+      "title": "Motion",
+      "skills": "Skill Motion"
+    },
     "fun": {
       "title": "Fun",
       "random": "Random"
@@ -2777,5 +2781,37 @@
     "pairsWith": "Pairs with",
     "archetype": "{name} deck",
     "sinResonance": "{sin} resonance"
+  },
+  "motionPage": {
+    "title": "Skill Motion",
+    "metaTitle": "Limbus Company Identity Skill Motion",
+    "metaDescription": "Play Limbus Company identity skill animations by condition and turn buff effects on or off.",
+    "search": "Search identity or skill",
+    "noResults": "No results.",
+    "sinners": "Sinners",
+    "states": "Conditions",
+    "effects": "Effects",
+    "offAtSkill": "Off at start",
+    "play": "Play",
+    "pause": "Pause",
+    "prevFrame": "Previous frame",
+    "nextFrame": "Next frame",
+    "soundOn": "Sound on",
+    "soundOff": "Sound off",
+    "volume": "Volume",
+    "fullscreen": "Full screen",
+    "exitFullscreen": "Exit full screen",
+    "landscape": "Landscape",
+    "portrait": "Portrait",
+    "frame": "Frame",
+    "simulation": "Simulation",
+    "noticeTitle": "This is a simulation",
+    "noticeBody": "Built from guesses and analysis of in-game footage, so it may differ somewhat from the game.",
+    "noticeOk": "OK",
+    "webglError": "This browser does not support video compositing (WebGL2).",
+    "loadError": "Could not load the video.",
+    "listError": "Could not load the motion list.",
+    "retry": "Retry",
+    "stateCount": "{count} conditions"
   }
 }
