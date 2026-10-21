@@ -2815,6 +2815,8 @@
     "retry": "다시 시도",
     "skills": "스킬",
     "link": "연계",
-    "maxState": "최대 상태"
+    "maxState": "최대 상태",
+    "pendingTitle": "모션 준비 중",
+    "pendingBody": "인게임에서 영상을 찍어 분석하여 구현하는 거라 최소 5일~2주 정도 소요됩니다."
   }
 }

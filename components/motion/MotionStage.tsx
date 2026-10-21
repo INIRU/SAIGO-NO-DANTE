@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, type RefObject } from 'react'
 import { useTranslations } from 'next-intl'
-import { ChevronLeft, ChevronRight, Info, Maximize, Minimize, Pause, Play, RotateCw, Smartphone, Volume2, VolumeX } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Hourglass, Info, Maximize, Minimize, Pause, Play, RotateCw, Smartphone, Volume2, VolumeX } from 'lucide-react'
 import { useMotionFrame, type MotionError, type MotionFrameStore, type MotionStatus } from '@/hooks/useSkillMotion'
 import { useStageScreen } from '@/hooks/useStageScreen'
 import styles from './Motion.module.css'
@@ -42,21 +42,34 @@ const iconButton = 'h-10 w-10 shrink-0 place-items-center rounded-md text-[var(-
  */
 /**
  * The Project Moon notice of this visit: null until the browser says whether the visit has seen it (nothing shows, so a
- * reload does not flash it), then shown until dismissed. Playback is held (`onHold`) until it is dismissed.
+ * reload does not flash it), then shown until dismissed. The page holds playback until it is dismissed (`notice !== false`).
  */
-export function useCreditNotice(onHold: (held: boolean) => void): [notice: boolean | null, dismiss: () => void] {
+export function useCreditNotice(): [notice: boolean | null, dismiss: () => void] {
   const [notice, setNotice] = useState<boolean | null>(null)
   useEffect(() => {
     let seen = false
     try { seen = sessionStorage.getItem(NOTICE_KEY) === '1' } catch { /* storage blocked: asked every time */ }
     setNotice(!seen)
   }, [])
-  useEffect(() => { onHold(notice !== false) }, [notice, onHold])
   const dismiss = useCallback(() => {
     setNotice(false)
     try { sessionStorage.setItem(NOTICE_KEY, '1') } catch { /* storage blocked: asked again next time */ }
   }, [])
   return [notice, dismiss]
+}
+
+/** The stage of a new identity the index has no motion for yet: the same frame, with when to expect it. */
+export function MotionPendingStage() {
+  const t = useTranslations('motionPage')
+  return (
+    <div className="grid aspect-video place-items-center overflow-hidden rounded-lg border border-[#2e2417] bg-[#050403] p-6 text-center">
+      <div className="flex max-w-[26rem] flex-col items-center gap-2">
+        <Hourglass className="h-7 w-7 text-[var(--gold-light)]" aria-hidden="true" />
+        <p className="font-[family-name:var(--font-heading)] text-[1rem] text-[var(--text-primary)] sm:text-[1.125rem]">{t('pendingTitle')}</p>
+        <p className="break-keep text-[0.8125rem] leading-relaxed text-[var(--text-secondary)] sm:text-[0.875rem]">{t('pendingBody')}</p>
+      </div>
+    </div>
+  )
 }
 
 export default function MotionStage({ hostRef, status, error, playing, muted, volume, hasAudio, frames, frameStore, onTogglePlay, onStep, onSeek, onToggleMute, onVolume, onRetry, notice, onDismiss }: {

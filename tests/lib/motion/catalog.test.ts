@@ -200,3 +200,18 @@ describe('REQ-MOTION-019 a skill carries its frame', () => {
     expect(skills[1].frame).toBeNull()
   })
 })
+
+describe('REQ-MOTION-020 a new identity without motion yet', () => {
+  it('REQ-MOTION-020 lists an identity of the last 30 days that has no motion as pending, at the top of its sinner, and not an older one', () => {
+    const info = (game_id: string, name: string, release_date: string) => [game_id, { id: `u${game_id}`, name, sinner_id: 'yi-sang', game_id, folder_name: 'X', release_date }] as const
+    const ids = new Map([info('10116', '차원찢개', '2026-08-05'), info('10117', '새 인격', '2026-10-20'), info('10118', '옛 인격', '2026-09-01')])
+    const rows = [entry({ slug: 'id10116', identityId: '10116', skillId: 1011601, video: 'yisang/10116/1011601/v-base/layers.mp4' })]
+    const yiSang = (now?: Date) => buildMotionCatalog(rows, ids, 'ko', { now }).find(s => s.id === 'yi-sang')!.identities
+    const listed = yiSang(new Date('2026-10-21T12:00:00+09:00'))
+    expect(listed.map(i => i.slug)).toEqual(['id10117', 'id10116'])
+    expect(listed[0]).toMatchObject({ label: '새 인격', pending: true, skills: [] })
+    expect(listed[1].pending).toBeFalsy()
+    // Without a clock (a test, an old caller) nothing is added.
+    expect(yiSang().map(i => i.slug)).toEqual(['id10116'])
+  })
+})
