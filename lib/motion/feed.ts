@@ -46,13 +46,16 @@ export function pickMotionSkillRow<T extends { uptie_level: number | null; varia
 
 const SKILL_COLUMNS = 'id, name, name_en, name_jp, skill_type, atk_type, sin_affinity, coins, base_power, coin_power, description, description_en, description_jp, skill_order, image_id, atk_weight, offense_level, variant_order, uptie_level, identity:identities(sinner_id, game_id, keywords)'
 
-/** The site's data of a game skill (`skills.image_id`), its texts in one language; null when the site has none. */
+/**
+ * The site's data of a game skill, its texts in one language; null when the site has none. The uptie 4 row writes its
+ * image id with `_4` (`1091608_4`), so both ids are read and pickMotionSkillRow takes the highest uptie.
+ */
 export async function loadMotionSkill(skillId: number, lang: SupportedLang): Promise<MotionSkillRow | null> {
   'use cache'
   cacheLife('page-1h')
   cacheTag(CACHE_TAGS.gameData, CACHE_TAGS.identities)
   const db = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!)
-  const { data, error } = await db.schema('limbus').from('skills').select(SKILL_COLUMNS).eq('image_id', String(skillId))
+  const { data, error } = await db.schema('limbus').from('skills').select(SKILL_COLUMNS).in('image_id', [String(skillId), `${skillId}_4`])
   if (error) throw error
   type Row = MotionSkillRow & { name_en: string | null; name_jp: string | null; description_en: string | null; description_jp: string | null; identity: MotionSkillRow['identity'] | MotionSkillRow['identity'][] }
   const row = pickMotionSkillRow((data ?? []) as unknown as Row[])
