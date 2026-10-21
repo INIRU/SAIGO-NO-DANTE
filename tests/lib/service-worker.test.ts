@@ -66,3 +66,23 @@ describe('service worker image freshness', () => {
     expect(api.classifyRequest(new Request(storage, { mode: 'cors' }))).toBe('stale-while-revalidate')
   })
 })
+
+describe('REQ-SHARED-049 stale image copies are dropped', () => {
+  it('REQ-SHARED-049 deletes the v5 caches on activation, where Safari kept image copies drawn with black instead of transparency', async () => {
+    const handlers: Record<string, (event: unknown) => void> = {}
+    const deleted: string[] = []
+    const cache = { keys: vi.fn().mockResolvedValue([]), delete: vi.fn() }
+    const caches = {
+      keys: vi.fn().mockResolvedValue(['saigo-images-v5', 'saigo-static-v5', 'saigo-pages-v5', 'other-app']),
+      delete: vi.fn(async (key: string) => { deleted.push(key); return true }),
+      open: vi.fn().mockResolvedValue(cache),
+    }
+    const self = { location: { origin: 'https://site.test' }, addEventListener: (type: string, handler: (event: unknown) => void) => { handlers[type] = handler }, clients: { claim: vi.fn() } }
+    runInNewContext(readFileSync('public/sw.js', 'utf8'), { URL, Headers, Response, fetch: vi.fn(), caches, self })
+    let done: Promise<unknown> = Promise.resolve()
+    handlers.activate({ waitUntil: (p: Promise<unknown>) => { done = p } })
+    await done
+    expect(deleted.sort()).toEqual(['saigo-images-v5', 'saigo-pages-v5', 'saigo-static-v5'])
+  })
+})
+

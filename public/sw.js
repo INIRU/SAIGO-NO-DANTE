@@ -3,7 +3,7 @@
 // Cache version: bump CACHE_VERSION on each deploy to bust stale caches.
 // ============================================================
 
-const CACHE_VERSION = 'v5'
+const CACHE_VERSION = 'v6' // v6 (2026-10-21): Safari kept v5 image copies drawn with black instead of transparency
 const CACHE_STATIC   = `saigo-static-${CACHE_VERSION}`   // Next.js chunks, fonts
 const CACHE_IMAGES   = `saigo-images-${CACHE_VERSION}`   // Supabase Storage + /images/*
 const CACHE_PAGES    = `saigo-pages-${CACHE_VERSION}`    // HTML pages (offline fallback)
