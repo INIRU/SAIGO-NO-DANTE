@@ -2,12 +2,14 @@
 
 import useSWR from 'swr'
 import { useLocale, useTranslations } from 'next-intl'
+import { FilterSection } from '@/components/board/FilterControls'
 import IdentitySkillFrameCard from '@/components/identity/IdentitySkillFrameCard'
 import Skeleton, { SkeletonLine } from '@/components/ui/Skeleton'
 import type { MotionLayerToggle } from '@/hooks/useSkillMotion'
 import { useGameTextRefs } from '@/lib/hooks/useGameTextRefs'
 import { formatMotionLabelKey } from '@/lib/motion/catalog'
 import type { MotionSkillRow } from '@/lib/motion/feed'
+import styles from './MotionDeck.module.css'
 
 const readSkill = async (url: string): Promise<MotionSkillRow | null> => {
   const response = await fetch(url)
@@ -39,23 +41,20 @@ export default function MotionSidePanel({ skillId, layers, onLayer }: { skillId:
   const { names } = useGameTextRefs({ lazy: !layers.some(layer => layer.labelKey) })
   const layerName = (layer: MotionLayerToggle) => (layer.labelKey && formatMotionLabelKey(layer.labelKey, names, () => undefined)) || layer.label
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-5">
       {layers.length > 0 && (
-        <section aria-labelledby="motion-effects" className="rounded-lg border border-[#2e2417] bg-[var(--bg-panel)] p-3">
-          <h2 id="motion-effects" className="mb-2 font-[family-name:var(--font-heading)] text-[0.9375rem] text-[var(--text-primary)]">{t('effects')}</h2>
-          <ul className="flex flex-col gap-0.5">
+        <FilterSection label={t('effects')}>
+          <div className={styles.effects}>
             {layers.map(layer => (
-              <li key={layer.id}>
-                <label className="flex min-h-10 cursor-pointer items-center gap-2.5 rounded-md px-2 py-1.5 transition-colors hover:bg-[rgba(200,144,10,0.08)]">
-                  <input type="checkbox" checked={layer.on} onChange={event => onLayer(layer.id, event.target.checked)}
-                    className="h-4 w-4 shrink-0 accent-[var(--gold)]" />
-                  <span className="min-w-0 flex-1 break-keep text-[0.875rem] text-[var(--text-primary)]">{layerName(layer)}</span>
-                  {layer.offAtSkill && <span className="shrink-0 rounded border border-[#3a2a15] px-1.5 py-0.5 text-[0.6875rem] text-[var(--text-secondary)]">{t('offAtSkill')}</span>}
-                </label>
-              </li>
+              <label key={layer.id} className={styles.effect}>
+                <span>{layerName(layer)}{layer.offAtSkill && <small>{t('offAtSkill')}</small>}</span>
+                <span className={styles.switch} data-on={layer.on || undefined}>
+                  <input type="checkbox" role="switch" checked={layer.on} onChange={event => onLayer(layer.id, event.target.checked)} />
+                </span>
+              </label>
             ))}
-          </ul>
-        </section>
+          </div>
+        </FilterSection>
       )}
       {skillId !== null && <SkillCard key={skillId} skillId={skillId} />}
     </div>
