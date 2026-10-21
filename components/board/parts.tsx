@@ -11,6 +11,7 @@ import { CONTENT_TYPE_COLORS } from '@/lib/constants/deck-tokens'
 import { normalizeDeckMainKeyword } from '@/lib/decks/keyword-rules'
 import { normalizePlannerListKeywords, planDifficultyBadge } from '@/lib/planner/stripPlanForList'
 import { guestAuthorName } from '@/lib/guest/copy'
+import { noteSummaryText } from '@/lib/notes/blocks'
 import type { DiscoveryKind } from '@/lib/discovery/recommend'
 import type { SupportedLang } from '@/lib/i18n/types'
 
@@ -91,6 +92,12 @@ export function PostCounts({ post, className = '' }: { post: RowPost; className?
       {(post.comment_count ?? 0) > 0 && <span data-count="comments" className="flex items-center gap-1"><MessageCircle style={{ width: '0.6875rem', height: '0.6875rem' }} />{post.comment_count}</span>}
     </span>
   )
+}
+
+/** The memo's first words in one line under the title; an empty line of the same height keeps the cards even. */
+export function PostSummary({ post }: { post: RowPost }) {
+  const text = useMemo(() => typeof post.description === 'string' ? noteSummaryText(post.description) : '', [post.description])
+  return <p className="h-5 truncate text-[0.8125rem] leading-5 text-[var(--text-secondary)]">{text}</p>
 }
 
 /** The author's avatar and name, as the cards show them: the avatar (or the default one) before the name. */

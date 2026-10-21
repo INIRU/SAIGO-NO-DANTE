@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { cacheLife, cacheTag } from 'next/cache'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
+import { isDeployedSlot } from '@/lib/constants/game'
 import type { Formation } from '@/lib/discovery/co-occurrence'
 import { buildRecCatalog, type RawCatalog, type RecCatalog } from '@/lib/discovery/rec-catalog'
 import { aggregateMeta, fieldedSlots, metaPeriodStart, planGiftIds, planThemeIds } from '@/lib/meta/aggregate'
@@ -144,8 +145,10 @@ export async function getFormations(): Promise<Formation[]> {
   const [{ identities, egos }, decks, plans] = await Promise.all([getMetaCatalog(), getSourcePosts('decks', 'all'), getSourcePosts('planner', 'all')])
   const egoIds = new Set(egos.map(ego => ego.id))
   return [...decks, ...plans].flatMap(post => {
-    const ids = fieldedSlots(post, identities).filter(slot => slot.order < 99).map(slot => slot.identity.id)
+    const fielded = fieldedSlots(post, identities).filter(slot => slot.order < 99)
+    const ids = fielded.map(slot => slot.identity.id)
     if (!ids.length) return []
+    const deployed = fielded.filter(slot => isDeployedSlot(slot.order)).map(slot => slot.identity.id)
     const equipped = [...new Set((Array.isArray(post.egos) ? post.egos as { ego_id?: unknown }[] : []).flatMap(row => typeof row?.ego_id === 'string' && egoIds.has(row.ego_id) ? [row.ego_id] : []))]
     const floors: NonNullable<Formation['floors']> = []
     for (const row of Array.isArray(post.floorPlan) ? post.floorPlan as { floor?: unknown; theme_id?: unknown; gift_ids?: unknown; difficulty?: unknown }[] : []) {
@@ -158,7 +161,7 @@ export async function getFormations(): Promise<Formation[]> {
       })
     }
     return [{
-      kind: post.source === 'decks' ? 'deck' as const : 'planner' as const, id: post.id, identities: ids, votes: post.votes ?? 0, views: post.views ?? 0,
+      kind: post.source === 'decks' ? 'deck' as const : 'planner' as const, id: post.id, identities: ids, deployed, votes: post.votes ?? 0, views: post.views ?? 0,
       createdAt: Date.parse(post.created_at), egos: equipped, ...(post.source === 'planner' ? { floors } : {}),
     }]
   })

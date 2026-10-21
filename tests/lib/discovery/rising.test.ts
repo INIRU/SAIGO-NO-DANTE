@@ -65,6 +65,12 @@ describe('risingIdentities', () => {
     expect(risingIdentities({ formations: posts, visits, now: NOW })).toEqual([{ id: 'a', recent: 30, rise: 2.5, posts: 3 }])
   })
 
+  it('REQ-COMMUNITY-076 counts only the identities that fight (the first seven), not the backup of a formation', () => {
+    // Same posts, but a sits in the backup of every one: only the deployed list counts, so a is not there to rise.
+    const benched = posts.map(post => ({ ...post, deployed: post.identities.filter(id => id !== 'a') }))
+    expect(risingIdentities({ formations: benched, visits, now: NOW })).toEqual([])
+  })
+
   it('REQ-COMMUNITY-076 reads decks and plans together, each post by its own kind', () => {
     const mixed = [formation('p1', ['a', 'x'], OLD, 'deck'), formation('p1', ['a', 'y'], OLD, 'planner'), formation('p2', ['a', 'z']), formation('p4', ['x', 'y'])]
     const both = { deck: [seen('p1', 10, 10), seen('p2', 10, 10), seen('p4', 10, 90)], planner: [seen('p1', 10, 10)] }

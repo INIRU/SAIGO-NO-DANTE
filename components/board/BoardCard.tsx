@@ -8,7 +8,7 @@ import { Portrait } from '@/components/ui/FormationThumbnail'
 import { formationThumbnail } from '@/lib/decks/formation-thumbnail'
 import type { DiscoveryKind } from '@/lib/discovery/recommend'
 import type { SupportedLang } from '@/lib/i18n/types'
-import { AuthorLine, PostChips, PostCounts, postAuthor, postSlots, type RowPost } from './parts'
+import { AuthorLine, PostChips, PostCounts, PostSummary, postAuthor, postSlots, type RowPost } from './parts'
 import { postHref } from './FormationRow'
 
 /** The rank of a post as a gold plate with a cut corner (first three) or a dark one. */
@@ -22,7 +22,7 @@ export function RankPlate({ rank }: { rank: number }) {
 }
 
 /**
- * A board card of equal height: the 6×2 formation, a one-line title and tag line, and a footer with the lead
+ * A board card of equal height: the 6×2 formation, a one-line title, the memo's first line and the tag line, and a footer with the lead
  * (rank plate or rise), the author and the counts. Nothing sits on the portraits.
  */
 export default function BoardCard({ kind, post, lead, compactOnPhone = false }: { kind: DiscoveryKind; post: RowPost; lead?: ReactNode; /** One row of six portraits on a phone (the list view), the full 6×2 from md up. */ compactOnPhone?: boolean }) {
@@ -46,6 +46,7 @@ export default function BoardCard({ kind, post, lead, compactOnPhone = false }: 
       </div>
       <div className="flex min-w-0 flex-1 flex-col gap-1.5 px-3 pb-2 pt-2.5">
         <h3 className="line-clamp-1 font-[family-name:var(--font-heading)] text-[1rem] leading-snug text-[var(--text-primary)]">{post.title}</h3>
+        <PostSummary post={post} />
         <PostChips kind={kind} post={post} max={3} nowrap className="min-h-6" />
       </div>
       <div className="flex h-11 items-center gap-2.5 border-t border-[#2e2417] px-3">

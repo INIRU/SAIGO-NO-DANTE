@@ -9,6 +9,7 @@ export function BoardCardSkeleton({ phoneRows = 2 }: { phoneRows?: 1 | 2 }) {
       </div>
       <div className="flex flex-col gap-1.5 px-3 pb-2 pt-2.5">
         <div className="flex h-[1.375rem] items-center"><SkeletonLine w="60%" h="1rem" raised /></div>
+        <div className="flex h-5 items-center"><SkeletonLine w="85%" h="0.75rem" raised /></div>
         <div className="flex h-6 items-center gap-1"><Skeleton raised className="h-full w-16" /><Skeleton raised className="h-full w-12" /></div>
       </div>
       <div className="flex h-11 items-center border-t border-[#2e2417] px-3"><SkeletonLine w="6rem" h="0.8125rem" raised /></div>

@@ -2,8 +2,6 @@ import type { Formation } from '@/lib/discovery/co-occurrence'
 
 export const RECENT_DAYS = 7
 export const BASE_DAYS = 21
-/** Posts and identities newer than this are "new", not "rising" (the site is young: a whole 28 day window would leave almost no post). */
-export const NEW_WITHIN_DAYS = 14
 const FRESH_DAYS = 14
 
 // Prior strength: this many pseudo-visitors are added to the recent count and to the count the base share predicts.
@@ -69,7 +67,7 @@ type Stat = { recent: number; base: number; posts: number; fresh: number; suppor
 /**
  * Identities that are fielded in more of the board's traffic lately, read from the formations instead of the identity
  * pages: an identity's visits in a window are the visitors of every deck and plan that fields it (support slots and
- * `skip`, the LCB defaults and new releases, do not count), and the window's total is the sum over all fielded identities,
+ * `skip`, the LCB defaults, do not count; only the deployed slots of a formation count), and the window's total is the sum over all fielded identities,
  * so the comparison is the same share-over-share of `rising`. It needs 3 posts with at least 3 recent visitors each and 20
  * recent visitors over its posts; when that leaves the row short, 10, then 5, then two posts. Ranked by
  * (rise − 1) × √recent against the best of them, plus up to 0.2 for how many posts it is fielded in that were
@@ -90,7 +88,8 @@ export function risingIdentities({ formations, visits, skip = new Set(), now = D
     const visit = seen[post.kind].get(post.id)
     if (!visit) continue
     const fresh = post.createdAt !== undefined && now - post.createdAt < FRESH_DAYS * 86_400_000
-    for (const id of post.identities) {
+    // Only the identities that fight count: a backup slot is not what the formation is played with.
+    for (const id of post.deployed ?? post.identities) {
       if (skip.has(id)) continue
       const stat = stats.get(id) ?? { recent: 0, base: 0, posts: 0, fresh: 0, support: new Set<string>() }
       stat.recent += visit.recent

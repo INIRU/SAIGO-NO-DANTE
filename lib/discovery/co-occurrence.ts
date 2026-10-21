@@ -4,6 +4,8 @@
  */
 export type Formation = {
   kind: 'deck' | 'planner'; id: string; identities: string[]; votes: number; views: number
+  /** The identities that fight (formation order 1–DEPLOYED_SLOT_COUNT), without the backup; `identities` has every ordered one. */
+  deployed?: string[]
   createdAt?: number
   egos?: string[]
   floors?: { floor: number; theme: string | null; gifts: string[]; difficulty: string }[]
