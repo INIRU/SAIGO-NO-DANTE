@@ -92,12 +92,12 @@ export default function SkillMotionViewer() {
     // From lg the page is the viewport's height (the layout) and each column scrolls on its own: the list; the stage with the
     // side panel under it (lg), or the stage and the side panel side by side (xl, where their wrapper steps aside).
     <div className="grid gap-5 lg:min-h-0 lg:flex-1 lg:grid-cols-[17rem_minmax(0,1fr)] lg:grid-rows-[minmax(0,1fr)] xl:grid-cols-[17rem_minmax(0,1fr)_20rem]">
-      <aside className="hidden min-h-0 overflow-y-auto overscroll-contain pr-1 [scrollbar-width:thin] lg:block">
+      <aside className="hidden min-h-0 overflow-y-auto overscroll-contain pr-1 lg:block">
         {picker}
       </aside>
 
-      <div className="flex min-w-0 flex-col gap-5 lg:min-h-0 lg:overflow-y-auto lg:overscroll-contain lg:pr-1 lg:[scrollbar-width:thin] xl:contents">
-      <div className="flex min-w-0 flex-col gap-4 xl:min-h-0 xl:overflow-y-auto xl:overscroll-contain xl:pr-1 xl:[scrollbar-width:thin]">
+      <div className="flex min-w-0 flex-col gap-5 lg:min-h-0 lg:overflow-y-auto lg:overscroll-contain lg:pr-1 xl:contents">
+      <div className="flex min-w-0 flex-col gap-4 xl:min-h-0 xl:overflow-y-auto xl:overscroll-contain xl:pr-1">
         <button type="button" onClick={() => setSheet(true)} aria-haspopup="dialog"
           className="flex items-center gap-3 rounded-lg border border-[var(--border)] bg-[var(--bg-panel)] p-2 text-left transition-colors active:bg-[var(--bg-elevated)] lg:hidden">
           <span className="relative h-11 w-11 shrink-0 overflow-hidden rounded-md border border-[#2e2417] bg-[#0a0806]">
@@ -123,7 +123,7 @@ export default function SkillMotionViewer() {
         </div>
       </div>
 
-      <aside className="min-w-0 xl:min-h-0 xl:overflow-y-auto xl:overscroll-contain xl:pr-1 xl:[scrollbar-width:thin]">
+      <aside className="min-w-0 xl:min-h-0 xl:overflow-y-auto xl:overscroll-contain xl:pr-1">
         <MotionSidePanel skillId={picked.skill.skillId} layers={motion.layers} onLayer={motion.setLayer} />
       </aside>
       </div>
