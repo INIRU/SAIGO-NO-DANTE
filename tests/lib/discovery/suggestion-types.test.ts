@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { identitySuggestUrl, reasonParts, suggestionContext } from '@/lib/discovery/suggestion-types'
+import { identitySuggestUrl, plannerSuggestionContext, reasonParts, suggestionContext } from '@/lib/discovery/suggestion-types'
 
 describe('suggestionContext', () => {
   it('REQ-DECKS-031 takes every chosen identity of the other sinners with or without a formation number, numbered ones first', () => {
@@ -30,5 +30,18 @@ describe('REQ-DECKS-022 identity suggestions are asked even before anything else
     expect(identitySuggestUrl('gregor', ['a', 'b'])).toBe('/api/discovery/suggest?type=identity&sinner=gregor&with=a,b')
     expect(identitySuggestUrl('gregor', [])).toBe('/api/discovery/suggest?type=identity&sinner=gregor')
     expect(identitySuggestUrl(null, ['a'])).toBeNull()
+  })
+})
+
+describe('REQ-PLANNER-043 the planner asks for identity suggestions from its own slots', () => {
+  it('REQ-PLANNER-043 reads the other sinners\' chosen identities, numbered ones first, without the LCB placeholders or the slot being picked', () => {
+    const slots = [
+      { sinner_id: 'yi-sang', identity_id: 'lcb-yi', slot_order: 99 },
+      { sinner_id: 'faust', identity_id: 'f1', slot_order: 1 },
+      { sinner_id: 'gregor', identity_id: 'g1', slot_order: 0 },
+      { sinner_id: 'rodion', identity_id: 'r1', slot_order: 99 },
+    ]
+    expect(plannerSuggestionContext(slots, 'gregor', id => id.startsWith('lcb-'))).toEqual(['f1', 'r1'])
+    expect(plannerSuggestionContext(slots, 'rodion', id => id.startsWith('lcb-'))).toEqual(['g1', 'f1'])
   })
 })
