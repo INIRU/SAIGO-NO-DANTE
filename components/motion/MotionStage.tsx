@@ -1,13 +1,14 @@
 'use client'
 
-import { useEffect, useRef, useState, type RefObject } from 'react'
+import { useCallback, useEffect, useRef, useState, type RefObject } from 'react'
 import { useTranslations } from 'next-intl'
 import { ChevronLeft, ChevronRight, Info, Maximize, Minimize, Pause, Play, RotateCw, Smartphone, Volume2, VolumeX } from 'lucide-react'
 import { useMotionFrame, type MotionError, type MotionFrameStore, type MotionStatus } from '@/hooks/useSkillMotion'
 import { useStageScreen } from '@/hooks/useStageScreen'
 import styles from './Motion.module.css'
 
-const NOTICE_KEY = 'motion-simulation-notice:v1'
+// Once per visit (the tab's session): a reload or another skill in the same visit does not ask again.
+const NOTICE_KEY = 'motion-credit-notice'
 
 function FrameCounter({ store, frames }: { store: MotionFrameStore; frames: number }) {
   const frame = Math.max(0, useMotionFrame(store))
@@ -32,13 +33,33 @@ function SeekBar({ store, frames, label, onSeek }: { store: MotionFrameStore; fr
 const iconButton = 'h-10 w-10 shrink-0 place-items-center rounded-md text-[var(--text-secondary)] transition-colors hover:bg-[rgba(200,144,10,0.08)] hover:text-[var(--gold-light)] disabled:pointer-events-none disabled:opacity-35 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--gold-light)]'
 
 /**
- * The 16:9 stage the compositor draws into, with the simulation notes: a notice over the picture on the first visit
- * (dismissed once, remembered in the browser) and a small "simulation" label always at the bottom centre. Under it the
+ * The 16:9 stage the compositor draws into, with Project Moon's credit: a notice over the picture once a visit (the
+ * motion is their work and may differ from the game), which holds playback until it is dismissed, and a small
+ * "© Project Moon" label always at the bottom centre. Under it the
  * controls: play, a frame back and forward, the seek bar, the frame counter, the sound and its volume (with a mouse; iPhone
  * Safari takes the volume from the device buttons only) and the full screen (on a phone held
  * upright, also landscape). On a narrow stage the seek bar takes its own row above the buttons.
  */
-export default function MotionStage({ hostRef, status, error, playing, muted, volume, hasAudio, frames, frameStore, onTogglePlay, onStep, onSeek, onToggleMute, onVolume, onRetry }: {
+/**
+ * The Project Moon notice of this visit: null until the browser says whether the visit has seen it (nothing shows, so a
+ * reload does not flash it), then shown until dismissed. Playback is held (`onHold`) until it is dismissed.
+ */
+export function useCreditNotice(onHold: (held: boolean) => void): [notice: boolean | null, dismiss: () => void] {
+  const [notice, setNotice] = useState<boolean | null>(null)
+  useEffect(() => {
+    let seen = false
+    try { seen = sessionStorage.getItem(NOTICE_KEY) === '1' } catch { /* storage blocked: asked every time */ }
+    setNotice(!seen)
+  }, [])
+  useEffect(() => { onHold(notice !== false) }, [notice, onHold])
+  const dismiss = useCallback(() => {
+    setNotice(false)
+    try { sessionStorage.setItem(NOTICE_KEY, '1') } catch { /* storage blocked: asked again next time */ }
+  }, [])
+  return [notice, dismiss]
+}
+
+export default function MotionStage({ hostRef, status, error, playing, muted, volume, hasAudio, frames, frameStore, onTogglePlay, onStep, onSeek, onToggleMute, onVolume, onRetry, notice, onDismiss }: {
   hostRef: RefObject<HTMLDivElement | null>
   status: MotionStatus
   error: MotionError | null
@@ -54,17 +75,12 @@ export default function MotionStage({ hostRef, status, error, playing, muted, vo
   onToggleMute: () => void
   onVolume: (volume: number) => void
   onRetry: () => void
+  /** The notice of this visit (useCreditNotice): the controls stay off until it is dismissed (false). */
+  notice: boolean | null
+  onDismiss: () => void
 }) {
   const t = useTranslations('motionPage')
-  const [notice, setNotice] = useState(false)
-  useEffect(() => {
-    try { setNotice(localStorage.getItem(NOTICE_KEY) !== '1') } catch { setNotice(true) }
-  }, [])
-  const dismiss = () => {
-    setNotice(false)
-    try { localStorage.setItem(NOTICE_KEY, '1') } catch { /* private mode: shown again next time */ }
-  }
-  const ready = status === 'ready'
+  const ready = status === 'ready' && notice === false
   // A frame step or the seek bar pauses to look at a frame: the middle play button stays away until it plays again.
   // (The video pauses a moment after the step, so the mark clears only when playback starts again.)
   const [scrubbing, setScrubbing] = useState(false)
@@ -122,7 +138,7 @@ export default function MotionStage({ hostRef, status, error, playing, muted, vo
               <Info className="mx-auto mb-2 h-6 w-6 text-[var(--gold-light)] max-sm:hidden" aria-hidden="true" />
               <p id="motion-notice-title" className="font-[family-name:var(--font-heading)] text-[0.9375rem] text-[var(--text-primary)] sm:text-[1.0625rem]">{t('noticeTitle')}</p>
               <p className="mt-1 break-keep text-[0.8125rem] leading-snug text-[var(--text-secondary)] sm:mt-2 sm:text-[0.875rem] sm:leading-relaxed">{t('noticeBody')}</p>
-              <button type="button" onClick={dismiss} autoFocus
+              <button type="button" onClick={onDismiss} autoFocus
                 className="mt-2.5 inline-flex h-9 min-w-[6rem] sm:mt-4 sm:h-10 items-center justify-center rounded-md border border-[#8a6010] bg-[#2a1f0c] px-4 text-[0.875rem] font-semibold text-[var(--gold-light)] transition-colors hover:bg-[#35270e] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--gold-light)]">
                 {t('noticeOk')}
               </button>
@@ -131,7 +147,7 @@ export default function MotionStage({ hostRef, status, error, playing, muted, vo
         )}
 
         <span className="pointer-events-none absolute bottom-2.5 left-1/2 z-[1] -translate-x-1/2 rounded-full border border-[rgba(232,176,48,0.35)] bg-[rgba(5,4,3,0.72)] px-3 py-0.5 text-[0.75rem] font-semibold tracking-[0.02em] text-[var(--gold-light)] sm:bottom-3 sm:text-[0.8125rem]">
-          {t('simulation')}
+          {t('credit')}
         </span>
       </div>
 
