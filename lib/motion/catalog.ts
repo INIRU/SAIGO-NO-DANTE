@@ -24,10 +24,11 @@ export type MotionEntry = {
 export type MotionState = Pick<MotionEntry, 'state' | 'name' | 'video' | 'meta'> & { label: string; bytes: number }
 /** `form`: the identity's other form the skill belongs to (`castoff` of `id10215-castoff`), null for its own skills. */
 export type MotionSkill = { key: string; skillId: number; title: string; form: string | null; states: MotionState[] }
-export type MotionIdentity = { slug: string; label: string; identityId: string | null; gameId: string | null; portrait: string | null; skills: MotionSkill[] }
+/** `released`: the release date of the identity the skills belong to, for the list's order (null when the site has no row). */
+export type MotionIdentity = { slug: string; label: string; identityId: string | null; gameId: string | null; portrait: string | null; released: string | null; skills: MotionSkill[] }
 export type MotionSinner = { id: string; identities: MotionIdentity[] }
 /** What the catalog needs of a site identity, its name already in the page's language. */
-export type MotionIdentityInfo = { id: string; name: string; sinner_id: string; game_id: string | null; folder_name: string | null; rarity?: number | null }
+export type MotionIdentityInfo = { id: string; name: string; sinner_id: string; game_id: string | null; folder_name: string | null; rarity?: number | null; release_date?: string | null }
 
 // R2 folders (and link slugs) spell the sinners without hyphens.
 const R2_SINNERS: Record<string, string> = Object.fromEntries(SINNER_SLUGS.map(id => [id.replace(/-/g, ''), id]))
@@ -66,15 +67,15 @@ export function motionAssetUrl(path: string, bytes: number | undefined): string 
   return MOTION_ASSET_BASE + path + (bytes ? `?v=${bytes}` : '')
 }
 
-// Identities: the game's own first (newest first), then LCB, the grouped forms (흑수, 홍원) and the links last.
+// On one release date: the game's own identity, then the grouped entries (LCB, 흑수, 홍원), then the links.
 const slugRank = (slug: string) => slug.startsWith('id') ? 0 : slug.startsWith('lcb-') ? 1 : slug.startsWith('link-') ? 3 : 2
 
 /**
  * The R2 index as sinners → identities → skills → states, in the order the page lists them. A skill is its slug plus
  * skill id (a link, an LCB entry or a form shares skill ids with the identity it comes from). An identity whose slug is
  * `id<game id>` is named and drawn from the site data; the others keep the index's name and borrow the portrait of the
- * identity their skill id belongs to (its first five digits). Another form of an identity (`id<game id>-<form>`) is listed
- * under it, after its own skills.
+ * identity their skill id belongs to (its first five digits), and its release date for the order. Another form of an
+ * identity (`id<game id>-<form>`) is listed under it, after its own skills.
  */
 export function buildMotionCatalog(entries: readonly MotionEntry[], identities: ReadonlyMap<string, MotionIdentityInfo>, lang: string): MotionSinner[] {
   const sinners = new Map<string, Map<string, MotionIdentity>>()
@@ -94,6 +95,7 @@ export function buildMotionCatalog(entries: readonly MotionEntry[], identities: 
         identityId: own?.id ?? null,
         gameId: own?.game_id ?? gameId,
         portrait: art?.folder_name && art.game_id ? getIdentityPortraitUrl(art.sinner_id, art.folder_name, art.game_id, false) : null,
+        released: art?.release_date ?? null,
         skills: [],
       }
       bySlug.set(slug, identity)
@@ -114,7 +116,9 @@ export function buildMotionCatalog(entries: readonly MotionEntry[], identities: 
       identity.skills.sort((a, b) => (a.form ?? '').localeCompare(b.form ?? '') || a.skillId - b.skillId)
       for (const skill of identity.skills) skill.states.sort((a, b) => stateRank(a.state) - stateRank(b.state) || a.state.localeCompare(b.state))
     }
-    list.sort((a, b) => slugRank(a.slug) - slugRank(b.slug) || (b.gameId ?? '').localeCompare(a.gameId ?? '') || a.slug.localeCompare(b.slug))
+    // Newest release first, like the site's identity lists; one the site has no row for yet is the newest.
+    const released = (identity: MotionIdentity) => identity.released ?? '9999'
+    list.sort((a, b) => released(b).localeCompare(released(a)) || slugRank(a.slug) - slugRank(b.slug) || (b.gameId ?? '').localeCompare(a.gameId ?? '') || a.slug.localeCompare(b.slug))
     return [{ id, identities: list }]
   })
 }

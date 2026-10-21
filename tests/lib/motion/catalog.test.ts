@@ -78,3 +78,15 @@ describe('REQ-MOTION-011 an identity\'s other form', () => {
     ])
   })
 })
+
+describe('REQ-MOTION-001 identity order', () => {
+  it('REQ-MOTION-001 lists identities newest release first, each grouped entry at the release of the identity its skills belong to, a link right after it', () => {
+    const info = (game_id: string, release_date: string) => [game_id, { id: `u${game_id}`, name: `n${game_id}`, sinner_id: 'faust', game_id, folder_name: 'f', release_date }] as const
+    const identities = new Map([info('10216', '2026-09-10'), info('10212', '2025-06-12'), info('10201', '2023-02-26')])
+    const at = (slug: string, skillId: number) => entry({ slug, skillId, identity: slug, video: `faust/${slug}/${skillId}/v-base/layers.mp4` })
+    const [faust] = buildMotionCatalog([
+      at('lcb-faust', 1020101), at('link-heishou-mao-faust', 1021203), at('id10201', 1020101), at('heishou-mao-faust', 1021201), at('id10216', 1021601),
+    ], identities, 'ko')
+    expect(faust.identities.map(i => i.slug)).toEqual(['id10216', 'heishou-mao-faust', 'link-heishou-mao-faust', 'id10201', 'lcb-faust'])
+  })
+})
