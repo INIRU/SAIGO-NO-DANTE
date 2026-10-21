@@ -15,10 +15,11 @@ const contentSecurityPolicyDirectives = [
   // The last five hosts serve news images partners post for the calendar (NEWS_MEDIA_HOSTS in lib/news/payload.ts).
   "img-src 'self' data: blob: https://lpgqcleszdlldneiwgep.supabase.co https://lh3.googleusercontent.com https://i.ytimg.com https://*.steamstatic.com https://*.twimg.com https://*.ytimg.com https://*.pstatic.net https://livecloud-thumb.akamaized.net",
   "font-src 'self'",
-  "connect-src 'self' https://lpgqcleszdlldneiwgep.supabase.co https://va.vercel-scripts.com https://cloudflareinsights.com",
+  // assets.saigo-no-dante.com: the skill motion videos and their layer data on R2, read by the motion player.
+  "connect-src 'self' https://lpgqcleszdlldneiwgep.supabase.co https://va.vercel-scripts.com https://cloudflareinsights.com https://assets.saigo-no-dante.com",
   "worker-src 'self' blob:",
   "frame-src https://www.youtube.com https://www.youtube-nocookie.com",
-  "media-src 'self'",
+  "media-src 'self' https://assets.saigo-no-dante.com",
   "object-src 'none'",
   "base-uri 'self'",
   "form-action 'self'",

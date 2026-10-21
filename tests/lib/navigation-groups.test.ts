@@ -13,12 +13,20 @@ it('REQ-SHARED-036 lists analysis under tools and has no other group, named in e
 })
 
 it('REQ-SHARED-045 puts developers last under tools and random under fun', () => {
-  expect(NAV_GROUPS.map(entry => entry.labelKey)).toEqual(['nav.db.title', 'nav.community.title', 'nav.tools.title', 'nav.fun.title'])
+  expect(NAV_GROUPS.map(entry => entry.labelKey)).toEqual(['nav.db.title', 'nav.community.title', 'nav.tools.title', 'nav.motion.title', 'nav.fun.title'])
   expect(group('nav.tools.title').at(-1)).toEqual({ href: '/developers', labelKey: 'nav.tools.developers' })
   expect(group('nav.fun.title')).toEqual([{ href: '/random', labelKey: 'nav.fun.random' }])
   // Each page is listed once across the menu.
   const hrefs = NAV_GROUPS.flatMap(entry => entry.items.map(item => item.href))
   expect(new Set(hrefs).size).toBe(hrefs.length)
+})
+
+it('REQ-MOTION-007 puts the motion group left of fun with the skill motion page, named in every locale', () => {
+  const labels = NAV_GROUPS.map(entry => entry.labelKey)
+  expect(labels.indexOf('nav.motion.title')).toBe(labels.indexOf('nav.fun.title') - 1)
+  expect(group('nav.motion.title')).toEqual([{ href: '/motion/skills', labelKey: 'nav.motion.skills' }])
+  const nav = (messages: typeof ko) => messages.nav as unknown as Record<string, Record<string, string>>
+  expect([ko, en, ja].map(messages => nav(messages).motion.title)).toEqual(['모션', 'Motion', 'モーション'])
 })
 
 it('REQ-SHARED-045 names the fun group, random and developer tools in every locale', () => {

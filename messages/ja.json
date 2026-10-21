@@ -28,6 +28,10 @@
     "other": {
       "calendar": "ニュースカレンダー"
     },
+    "motion": {
+      "title": "モーション",
+      "skills": "スキルモーション"
+    },
     "fun": {
       "title": "お楽しみ",
       "random": "ランダム編成"
@@ -2777,5 +2781,36 @@
     "pairsWith": "相性",
     "archetype": "{name}デッキ",
     "sinResonance": "{sin}共鳴"
+  },
+  "motionPage": {
+    "title": "スキルモーション",
+    "metaTitle": "リンバスカンパニー 人格スキルモーション",
+    "metaDescription": "リンバスカンパニーの人格スキル演出を条件ごとに再生し、バフエフェクトをオン・オフできます。",
+    "search": "人格・スキル検索",
+    "noResults": "検索結果がありません。",
+    "sinners": "囚人",
+    "states": "条件",
+    "effects": "エフェクト",
+    "offAtSkill": "開始時オフ",
+    "play": "再生",
+    "pause": "一時停止",
+    "prevFrame": "前のフレーム",
+    "nextFrame": "次のフレーム",
+    "soundOn": "音声オン",
+    "soundOff": "音声オフ",
+    "fullscreen": "全画面",
+    "exitFullscreen": "全画面を終了",
+    "landscape": "横向きで見る",
+    "portrait": "縦向きに戻す",
+    "frame": "フレーム",
+    "simulation": "シミュレーション",
+    "noticeTitle": "シミュレーション映像です",
+    "noticeBody": "推測とゲーム内映像の分析で構成した映像のため、実際のゲームとは多少異なる場合があります。",
+    "noticeOk": "確認",
+    "webglError": "このブラウザは映像合成(WebGL2)に対応していません。",
+    "loadError": "映像を読み込めませんでした。",
+    "listError": "モーション一覧を読み込めませんでした。",
+    "retry": "再試行",
+    "stateCount": "条件 {count}"
   }
 }
