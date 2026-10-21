@@ -47,7 +47,9 @@ import {
   type PlannerEgoBoardSlot,
   type PlannerIdentityBoardSlot,
 } from '@/components/planner/deck/PlannerDeckSelection'
-import { isDeployedSlot } from '@/lib/constants/game'
+import { LCB_IDS, isDeployedSlot } from '@/lib/constants/game'
+import { useSuggestionState } from '@/hooks/useSuggestions'
+import { identitySuggestUrl, plannerSuggestionContext, type SuggestionResponse } from '@/lib/discovery/suggestion-types'
 import {
   DECK_MAIN_KEYWORDS,
   MAX_DECK_MAIN_KEYWORDS,
@@ -490,6 +492,14 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
     setIdentityModalSinner(null)
   }
 
+  // Picker suggestions, as in the deck builder: the identity picker reads the other sinners' choices (an empty board still asks),
+  // the E.G.O picker the identity chosen for that sinner.
+  const lcbIdentityIds = useMemo(() => new Set(identities.filter(identity => identity.game_id === LCB_IDS[identity.sinner_id]).map(identity => identity.id)), [identities])
+  const identitySuggestionUrl = identityModalSinner ? identitySuggestUrl(identityModalSinner, plannerSuggestionContext(state.identitySlots, identityModalSinner, id => lcbIdentityIds.has(id))) : null
+  const { data: identitySuggestion, loading: identitySuggestionLoading } = useSuggestionState<SuggestionResponse>(identitySuggestionUrl)
+  const egoModalIdentityId = egoModalSinner ? getSelectedIdentity(egoModalSinner)?.identity_id : undefined
+  const { data: egoSuggestion, loading: egoSuggestionLoading } = useSuggestionState<SuggestionResponse>(egoModalIdentityId ? `/api/discovery/suggest?type=ego&identity=${egoModalIdentityId}` : null)
+
   // --- Modal sinner data ---
   const modalSinner = identityModalSinner ? sinners.find(s => s.id === identityModalSinner) ?? null : null
   const modalIdentities = identityModalSinner ? (sinnerIdentities.get(identityModalSinner) ?? []) : []
@@ -627,6 +637,10 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
         identities={modalIdentities}
         selectedIdentityId={modalSlot?.identity_id ?? null}
         selectedUptie={modalSlot?.uptie ?? 4}
+        suggestions={identitySuggestion?.items}
+        archetype={identitySuggestion?.archetype}
+        suggestionsLoading={identitySuggestionLoading}
+        partnerIdentity={id => identityById.get(id)}
         onClose={() => setIdentityModalSinner(null)}
         onSelect={(identity, uptie) => handleSelectIdentity(identity as IdentityData, uptie)}
       />
@@ -646,6 +660,10 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
         sinner={egoModalSinner ? sinners.find(s => s.id === egoModalSinner) ?? null : null}
         egos={egoModalSinner ? (sinnerEgosMap.get(egoModalSinner) ?? []) : []}
         selectedEgosByGrade={egoModalSelectedByGrade}
+        suggestions={egoSuggestion?.items}
+        archetype={egoSuggestion?.archetype}
+        suggestionsLoading={egoSuggestionLoading}
+        partnerIdentity={id => identityById.get(id)}
         onClose={() => setEgoModalSinner(null)}
         onSelect={ego => {
           dispatch({
