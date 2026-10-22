@@ -6,7 +6,7 @@ import { NoteRenderer, useNoteGiftLookup } from '@/components/decks/NoteChips'
 import FormationThumbnail from '@/components/ui/FormationThumbnail'
 import RelativeTime from '@/components/ui/RelativeTime'
 import { memo } from 'react'
-import { Link } from '@/lib/i18n/navigation'
+import IntentLink from '@/components/ui/IntentLink'
 import Image from 'next/image'
 import { Heart, Eye, MessageCircle } from 'lucide-react'
 import type { Difficulty } from '@/lib/planner/types'
@@ -92,7 +92,7 @@ function PlanCard({
     <article
       className="board-card group relative flex flex-col h-full overflow-hidden"
     >
-      <Link href={`/planner/community/${plan.id}`} prefetch={false} className="flex flex-col flex-1">
+      <IntentLink href={`/planner/community/${plan.id}`} className="flex flex-col flex-1">
         <FormationThumbnail slots={Array.isArray(plan.deck) ? plan.deck : []} missing={missing} />
         <OwnedBadge missing={missing} />
 
@@ -134,7 +134,7 @@ function PlanCard({
             </div>
           </div>
         </div>
-      </Link>
+      </IntentLink>
       <div
         data-planner-card-meta="true"
         className="flex items-center gap-1.5 px-4 pb-3"
