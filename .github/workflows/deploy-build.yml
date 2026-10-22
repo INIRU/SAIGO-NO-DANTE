@@ -1,0 +1,55 @@
+# Builds the production app for the self-hosted server (docs/deployment.md). The server downloads site.tgz for the commit
+# main points at (deploy/server/fetch-build.sh) and only swaps it in: building next to the live app on a 4GB box ran it
+# out of memory (2026-10-22).
+name: Deploy build
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-build-${{ github.sha }}
+
+jobs:
+  build:
+    name: Build site.tgz
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --prefer-offline --no-audit --no-fund
+      # next build type-checks here (SKIP_BUILD_TYPECHECK is only for a fallback build on the server).
+      - run: npm run build
+        env:
+          SELF_HOSTED: '1'
+          NEXT_TELEMETRY_DISABLED: '1'
+          NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA: ${{ github.sha }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+          NEXT_PUBLIC_SENTRY_DSN: ${{ secrets.NEXT_PUBLIC_SENTRY_DSN }}
+          NEXT_PUBLIC_SITE_URL: ${{ secrets.NEXT_PUBLIC_SITE_URL }}
+          YOUTUBE_CHANNEL_ID: ${{ secrets.YOUTUBE_CHANNEL_ID }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
+      # The standalone output plus the files Next leaves out of it. The deployed site reads the recognition model data
+      # from Storage (same list as .vercelignore), so it is not shipped.
+      - name: Package the standalone app
+        run: |
+          S=.next/standalone
+          cp -R .next/static "$S/.next/static"
+          cp -R public/. "$S/public/"
+          find "$S/public/models" \( -name '*.onnx' -o -name '*.json' -o -name '*.wasm' -o -name '*.traineddata.gz' \) -delete
+          rm -rf "$S/.next/cache"
+          tar -czf site.tgz -C "$S" .
+          ls -l site.tgz
+      - uses: actions/upload-artifact@v4
+        with:
+          name: site-${{ github.sha }}
+          path: site.tgz
+          retention-days: 1
+          compression-level: 0
