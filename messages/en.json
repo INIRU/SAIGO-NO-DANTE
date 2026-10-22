@@ -152,30 +152,40 @@
     }
   },
   "globalSearch": {
-    "ariaLabel": "Global search",
-    "placeholder": "Identity, E.G.O, sinner, keyword or gift name",
+    "ariaLabel": "Site search",
+    "placeholder": "Identity, gift, keyword, theme pack, page",
     "clear": "Clear search",
-    "loading": "Searching",
-    "emptyPromptTitle": "Type to search",
-    "noResultsTitle": "No results found",
-    "recentTitle": "Recent searches",
-    "noResultsFor": "Nothing matches “{query}”",
-    "error": "Search didn’t work. Please try again in a moment.",
-    "suggestionsTitle": "Did you mean one of these?",
-    "resultCount": "{count} results",
-    "suggestionCount": "{count} suggestions",
-    "footerHint": "Type a query, then choose a result",
+    "recentTitle": "Recent",
+    "sinnersTitle": "Sinners",
+    "noResultsFor": "No results for “{query}”",
+    "error": "Could not load the search list",
+    "retry": "Retry",
+    "more": "{count} more",
     "keyboard": {
       "move": "Move",
-      "select": "Select",
+      "select": "Open",
+      "type": "Type",
       "close": "Close"
     },
     "types": {
-      "sinner": "Sinner",
-      "identity": "Identity",
+      "all": "All",
+      "sinner": "Sinners",
+      "identity": "Identities",
       "ego": "E.G.O",
+      "egoGift": "Gifts",
+      "keyword": "Keywords",
+      "themePack": "Theme Packs",
+      "event": "Events",
+      "page": "Pages"
+    },
+    "reasons": {
+      "ko": "Korean",
+      "en": "English",
+      "ja": "Japanese",
+      "sinner": "Sinner",
       "keyword": "Keyword",
-      "egoGift": "Gift"
+      "alias": "Also called",
+      "fuzzy": "Similar name"
     }
   },
   "lang": {

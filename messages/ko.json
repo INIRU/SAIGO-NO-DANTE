@@ -153,29 +153,39 @@
   },
   "globalSearch": {
     "ariaLabel": "전역 검색",
-    "placeholder": "인격, E.G.O, 수감자, 키워드, 기프트 이름",
+    "placeholder": "인격, 기프트, 키워드, 테마팩, 페이지 이름",
     "clear": "검색어 지우기",
-    "loading": "검색 중",
-    "emptyPromptTitle": "검색어를 입력하세요",
-    "noResultsTitle": "검색 결과가 없습니다",
     "recentTitle": "최근 검색",
-    "noResultsFor": "‘{query}’ 검색 결과가 없어요",
-    "error": "검색하지 못했어요. 잠시 뒤 다시 시도해 주세요.",
-    "suggestionsTitle": "이런 결과를 찾으셨나요?",
-    "resultCount": "{count}개 결과",
-    "suggestionCount": "{count}개 추천",
-    "footerHint": "검색어 입력 후 결과를 선택하세요",
+    "sinnersTitle": "수감자",
+    "noResultsFor": "‘{query}’ 결과 없음",
+    "error": "검색 목록을 불러오지 못했어요",
+    "retry": "다시 시도",
+    "more": "{count}개 더",
     "keyboard": {
       "move": "이동",
-      "select": "선택",
+      "select": "열기",
+      "type": "종류",
       "close": "닫기"
     },
     "types": {
+      "all": "전체",
       "sinner": "수감자",
       "identity": "인격",
       "ego": "E.G.O",
+      "egoGift": "기프트",
       "keyword": "키워드",
-      "egoGift": "기프트"
+      "themePack": "테마팩",
+      "event": "이벤트",
+      "page": "페이지"
+    },
+    "reasons": {
+      "ko": "한국어",
+      "en": "영어",
+      "ja": "일본어",
+      "sinner": "수감자",
+      "keyword": "키워드",
+      "alias": "다른 이름",
+      "fuzzy": "비슷한 이름"
     }
   },
   "lang": {
