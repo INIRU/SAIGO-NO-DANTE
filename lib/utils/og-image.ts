@@ -48,7 +48,7 @@ export const ogFontOptions = {
 type ImageDataUriOptions = {
   width: number
   height: number
-  fit?: keyof sharp.FitEnum
+  fit?: 'cover' | 'contain' | 'fill' | 'inside' | 'outside'
   position?: string
   quality?: number
   format?: 'jpeg' | 'png'

@@ -95,10 +95,10 @@ Sentry.init({
 export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;
 
 // Replay is the largest part of the Sentry bundle; load it as a separate chunk once the page is idle.
-// @sentry-internal/replay is Sentry's own package pinned to the same version as @sentry/nextjs.
+// @sentry/replay (named @sentry-internal/replay before 10.76) is declared in package.json with the same range as @sentry/nextjs.
 function loadReplay() {
   if (process.env.NODE_ENV !== "production") return;
-  import("@sentry-internal/replay").then(({ replayIntegration }) => {
+  import("@sentry/replay").then(({ replayIntegration }) => {
     Sentry.addIntegration(replayIntegration({
       maskAllText: true,
       maskAllInputs: true,
