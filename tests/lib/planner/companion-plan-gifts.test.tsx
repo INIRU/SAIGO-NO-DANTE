@@ -99,7 +99,9 @@ it('switches the gift list to the plan tier IV+ gifts while the fusion screen is
   const grid = (html: string) => [...html.matchAll(/data-gift-id="(\d+)"/g)].map(match => Number(match[1]))
   const fusion = render(planned, null, 'fusion')
   // Tier V gift 50 is not in the plan, so it is not listed.
-  expect(fusion).toContain('합성으로 얻을 플랜 4등급 이상 기프트 (1개)')
+  // The group heading carries the count; the header has no count line.
+  expect(fusion).toMatch(/<span>최종 기프트<\/span><span[^>]*>1<\/span>/)
+  expect(fusion).not.toContain('합성으로 얻을 플랜 4등급 이상 기프트')
   expect(grid(fusion)).toEqual([40])
   expect(fusion).not.toContain('data-gift-grid="planned"')
   expect(grid(render(planned, null, 'shop'))).toEqual([20, 30, 10])
