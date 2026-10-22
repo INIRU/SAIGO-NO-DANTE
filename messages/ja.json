@@ -901,7 +901,18 @@
       "gameLanguageHint": "Limbus Company内で設定している言語を選んでください。その言語の文字認識モデルを読み込みます。",
       "gameLanguageLiveNote": "変更した言語は画面を再接続すると適用されます。",
       "gameLanguageLoadFailed": "ゲーム言語の認識用テキストを読み込めませんでした。イベント認識の精度が下がる場合があります。",
-      "pipGroupOthers": "その他のギフト"
+      "pipGroupOthers": "その他のギフト",
+      "pipFormation": "編成",
+      "fusionReasonFinal": "最終",
+      "fusionReasonMaterial": "目標素材",
+      "deckKeyword": "デッキキーワード",
+      "fusionNearly": "素材あと1つ",
+      "pipGiftAdvice": "おすすめ",
+      "adviceFinal": "最終目標",
+      "adviceMaterial": "{name}の素材",
+      "adviceMaterialComplete": "{name}完成",
+      "adviceSynergy": "所持ギフトと相性",
+      "advicePopular": "プラン{percent}%"
     },
     "community": "コミュニティプラン",
     "detail": {

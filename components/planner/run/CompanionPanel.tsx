@@ -12,7 +12,10 @@ import { getCurrentFloorPriorityGifts, getFusionTierGifts, giftGameId, nextGiftP
 import { acquisitionAttributionFloor, clearedThemeFloors, floorThemeObservationAction, getRunThemeGuidance, pendingThemeSelectionFloor, planStartGiftIds, runStartEnded } from '@/lib/planner/run-theme-guidance'
 import { EVENT_EXIT_SCENES, EVENT_IDLE_EXIT_MS, nextEventView, type StableScene } from '@/lib/vision/scene-state'
 import { normalizeRunState, runReducer, type RunAction, type RunState } from '@/lib/planner/run-types'
-import type { ThemeData, GiftData, SkillSummary, RecipeData } from '@/lib/planner/types'
+import type { ThemeData, GiftData, SkillSummary, RecipeData, SinnerData, IdentityData, EgoData } from '@/lib/planner/types'
+import { committedKeywords, formationRow, fusionGuide, recommendGifts } from '@/lib/planner/assist-gift-guide'
+import { teamCodeFromPlanSlots } from '@/lib/planner/team-code-import'
+import type { PlanGiftStats } from '@/lib/meta/plan-gift-stats'
 import { recipeIngredientsInInventory, recipeOwnedGiftIds, themeExclusiveGiftIds } from '@/lib/planner/fusion'
 import GiftArtwork from '@/components/ui/GiftArtwork'
 import { GiftWarningMark } from '@/components/ui/GiftCard'
@@ -26,6 +29,9 @@ import CompanionAcquisitionOverlay, { fusionFeedback, type AcquisitionOverlayEve
 import CompanionNextFloorButton from './CompanionNextFloorButton'
 import CompanionStartGifts from './CompanionStartGifts'
 import CompanionSkillExchange from './CompanionSkillExchange'
+import CompanionFormation from './CompanionFormation'
+import CompanionGiftAdvice from './CompanionGiftAdvice'
+import FusionGuideList from './FusionGuideList'
 import ThemePackCard from '@/components/ui/ThemePackCard'
 import type { SkillExchangeRead } from '@/lib/vision/skill-exchange'
 import { AUTO_ACQUIRE_EXCLUDED_GIFT_IDS } from '@/lib/vision/popup-evidence'
@@ -70,11 +76,17 @@ interface Props {
   observedFloor?: number | null
   /** Fusion materials identified on each confirmation dialog, latest last. */
   fusionEvidence?: FusionEvidence[] | null
+  /** For the formation screen: sinner order, and the catalog the formation code is written from. */
+  sinners?: SinnerData[]
+  identities?: IdentityData[]
+  egos?: EgoData[]
+  /** Public plans' gifts, for the recommendation's synergy and adoption (none: goals and keywords only). */
+  planGiftStats?: PlanGiftStats | null
 }
 export default function CompanionPanel({ state, dispatch, themes, giftMap, observedGiftIds = [], popupAcquisitions = [],
   events = [], eventChoices = [], eventChoiceEvidence = null, captureRunning = false, scene = null,
   themeSelectionFloor = null, floorThemeObservation = null, observedFloor = null, fusionEvidence = null, prediction = null, giftSales = [],
-  skillExchange = null, skills = [], recipes = [] }: Props) {
+  skillExchange = null, skills = [], recipes = [], sinners = [], identities = [], egos = [], planGiftStats = null }: Props) {
   const t = useTranslations('planner.run')
   const locale = useLocale() as SupportedLang
   const localized = (item: { name: string; name_en?: string | null; name_jp?: string | null }) => getLocalizedName({ name_kr: item.name, name_en: item.name_en, name_jp: item.name_jp }, locale)
@@ -146,6 +158,22 @@ export default function CompanionPanel({ state, dispatch, themes, giftMap, obser
     : getCurrentFloorPriorityGifts(listState, themes, giftMap, giftPromotion.current?.ids)
   const guidance = useMemo(() => getRunThemeGuidance(viewFloor === state.currentFloor ? state : { ...state, currentFloor: viewFloor }, themes),
     [state, themes, viewFloor])
+  const committed = useMemo(() => committedKeywords(state.identitySlots, state.giftInventory, giftMap), [state.identitySlots, state.giftInventory, giftMap])
+  const guide = useMemo(() => fusionView.current ? fusionGuide({ inventory: state.giftInventory, targets: state.targetGifts, recipes, giftMap, committed }) : null,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [fusionView.current, state.giftInventory, state.targetGifts, recipes, giftMap, committed])
+  // Gifts read on an offering screen (shop, rewards, events), ranked for this run.
+  const adviceIds = captureRunning && !fusionView.current && scene && ['shop', 'reward_choice', 'event'].includes(scene.label) ? observedGiftIds : []
+  const advice = useMemo(() => adviceIds.length ? recommendGifts({ candidates: adviceIds, inventory: state.giftInventory, targets: state.targetGifts, recipes, giftMap,
+    committed, stats: planGiftStats }) : [],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [adviceIds.join(','), state.giftInventory, state.targetGifts, recipes, giftMap, committed, planGiftStats])
+  // Start gift screens sometimes read as battle_setup, so a battle's setup shows the formation only once the start is over.
+  const formationScreen = captureRunning && (scene?.label === 'run_setup' || (scene?.label === 'battle_setup' && !startPhase))
+  const formationCode = useMemo(() => {
+    if (!formationScreen || !sinners.length) return ''
+    try { return teamCodeFromPlanSlots(state.identitySlots, state.egoSlots, sinners, identities, egos) } catch { return '' }
+  }, [formationScreen, state.identitySlots, state.egoSlots, sinners, identities, egos])
   const canUndo = undoStack.current.length > 0 && undoStack.current[undoStack.current.length - 1].afterKey === stateKey
   const canRedo = redoStack.current.length > 0 && redoStack.current[redoStack.current.length - 1].beforeKey === stateKey
 
@@ -442,6 +470,11 @@ export default function CompanionPanel({ state, dispatch, themes, giftMap, obser
       {header(inPip)}
       <CompanionSkillExchange exchange={skillExchange} slots={state.sourcePlanSnapshot.identitySlots ?? []} skills={skills} />
     </div>
+    // The formation and starlight screens (and each battle's setup) show who to field, in the game's sinner order.
+    if (formationScreen && sinners.length && state.identitySlots.length) return <div data-companion-content={inPip ? 'pip' : 'inline'}>
+      {header(inPip, t('pipFormation'))}
+      <CompanionFormation cells={formationRow(state.identitySlots, sinners)} code={formationCode} />
+    </div>
     if (startPhase) {
       const { start, observe } = planStartGiftIds(state)
       const gifts = (ids: number[]) => ids.flatMap(id => giftMap.get(id) ?? [])
@@ -494,6 +527,8 @@ export default function CompanionPanel({ state, dispatch, themes, giftMap, obser
       <m.div key={theme?.id ?? 'unselected'} initial={reducedMotion ? false : { opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: reducedMotion ? 0 : 0.18, ease: 'easeOut' }}>
       {!theme ? <section aria-label={t('pipThemeGuidance')} className="grid place-items-center" style={{ minHeight: inPip ? Math.max(180, actualSize.height - 96) : 180 }}>
         {pack ? <div data-theme-choice={pack.theme.id} className={`flex justify-center gap-3 ${stacked ? 'flex-col items-center' : 'items-start'}`}><div className="shrink-0" style={{ width: posterWidth }}><ThemePackCard theme={pack.theme} imageSurface="bare" sizes={`${posterWidth}px`} ariaLabel={`${localized(pack.theme)} · ${t('pipThemePossible')} · ${t('pipThemeFloors', { floors: pack.availableFloors.join(', ') || '—' })}${pack.remainingOrder.length ? ` · ${t('pipThemeRemaining', { themes: pack.remainingOrder.map(next => `${next.floor}F ${localized(next.theme)}`).join(' · ') })}` : ''}`} title={`${localized(pack.theme)} · ${t('pipThemeFloors', { floors: pack.availableFloors.join(', ') || '—' })}`} onClick={event => { const owner = event.currentTarget.ownerDocument; const surface = event.currentTarget.closest('[data-companion-content]')?.getAttribute('data-companion-content'); chooseTheme(pack.theme.id); if (surface) owner.defaultView?.requestAnimationFrame(() => owner.querySelector<HTMLElement>(`[data-companion-content="${surface}"] [data-theme-title]`)?.focus({ preventScroll: true })); toast.success(t('themeSelected', { name: localized(pack.theme) })) }} /></div>{packGiftList}</div> : <p role="status" className="px-2 text-center font-[family-name:var(--font-heading)] text-lg font-semibold text-[var(--gold-light)]">{t('pipChooseThemeBlank')}</p>}</section> : <section className="space-y-3">
+        {advice.length > 0 && <CompanionGiftAdvice advice={advice} onAcquire={(id, event) => acquire(id, event)} />}
+        {guide && <FusionGuideList guide={guide} />}
         {!count ? <p className="text-xs text-[var(--text-tertiary)]">{t(fusionView.current ? 'fusionTierGiftsOwned' : 'allThemeGiftsOwned')}</p>
           : grouped ? groups.map(group => <div key={group.key}>{groupTitle(group.label, group.list.length)}{giftGrid(group.list, group.key)}</div>)
           : giftGrid(availableGifts, 'all')}
