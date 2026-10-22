@@ -428,8 +428,6 @@ function BlessingCard({
           overflowWrap: 'anywhere',
           pointerEvents: 'auto',
           overscrollBehavior: 'contain',
-          scrollbarWidth: 'thin',
-          scrollbarColor: 'rgba(111, 140, 255, 0.44) rgba(9, 12, 25, 0.34)',
         }}
       >
         {currentEffects.map((effect: string, i: number) => (

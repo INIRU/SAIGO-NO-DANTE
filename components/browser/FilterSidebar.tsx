@@ -34,7 +34,7 @@ export default function FilterSidebar({ children, activeCount }: Props) {
     <>
       {/* 데스크탑 사이드바 */}
       <aside
-        className="sticky-under-nav hidden lg:block shrink-0 self-start overflow-y-auto scrollbar-thin"
+        className="sticky-under-nav hidden lg:block shrink-0 self-start overflow-y-auto"
         style={{
           width: '16rem',
           top: 'calc(var(--nav-offset) + 1rem)',

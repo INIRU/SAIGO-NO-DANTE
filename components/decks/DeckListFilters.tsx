@@ -572,7 +572,7 @@ export default function DeckListFilters({
   return (
     <>
       <aside
-        className="decks-filters board-filters hidden h-full shrink-0 overflow-y-auto pr-3 scrollbar-thin lg:block"
+        className="decks-filters board-filters hidden h-full shrink-0 overflow-y-auto pr-3 lg:block"
         aria-label={t('filters.aside')}
       >
         {filterSurface}
@@ -593,7 +593,7 @@ export default function DeckListFilters({
           <div
             ref={panelRef}
             tabIndex={-1}
-            className="popup-drawer absolute bottom-0 left-0 right-0 max-h-[82dvh] overflow-y-auto rounded-t-lg outline-none scrollbar-thin"
+            className="popup-drawer absolute bottom-0 left-0 right-0 max-h-[82dvh] overflow-y-auto rounded-t-lg outline-none"
             style={{
               background: '#1a1510',
               borderTop: '1px solid rgba(200,144,10,0.25)',

@@ -116,10 +116,7 @@ function DeckStatsPanel({
         .deck-stats-defense-label{font-size:0.875rem}
         .deck-stats-sin-value{font-size:0.875rem}
         .deck-stats-passives{display:flex;min-width:0;flex-direction:column}
-        .deck-stats-passives__list{max-height:20rem;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:#3a2c18 transparent}
-        .deck-stats-passives__list::-webkit-scrollbar{width:4px}
-        .deck-stats-passives__list::-webkit-scrollbar-track{background:transparent}
-        .deck-stats-passives__list::-webkit-scrollbar-thumb{background:#3a2c18;border-radius:4px}
+        .deck-stats-passives__list{max-height:20rem;overscroll-behavior:contain}
         @media (min-width:48rem){
           .deck-stats-passives{min-height:16rem}
           .deck-stats-passives__list{flex:1 1 0;min-height:0;max-height:none;contain:size}
