@@ -25,7 +25,7 @@ const DIFF_SHORT: Record<Difficulty, string> = { normal: 'n', hard: 'h', overlap
 const SHORT_DIFF: Record<string, Difficulty> = { n: 'normal', h: 'hard', o: 'overlap', e: 'extreme' }
 
 export async function encodePlan(state: PlannerState): Promise<string> {
-  const pako = (await import('pako')).default
+  const pako = await import('pako')
   const data: PlanData = {
     v: 3,
     fc: state.floorPlan.map(f => f.constraints ?? []),
@@ -68,7 +68,7 @@ export async function decodePlan(encoded: string): Promise<{
   title: string
   description: string
 }> {
-  const pako = (await import('pako')).default
+  const pako = await import('pako')
   // URL-safe base64 복원
   let b64 = encoded.replace(/-/g, '+').replace(/_/g, '/')
   while (b64.length % 4) b64 += '='

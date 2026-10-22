@@ -1,4 +1,4 @@
-import pako from 'pako'
+import * as pako from 'pako'
 
 const TEAM_CODE_BITS = 560
 const TEAM_CODE_BYTES = TEAM_CODE_BITS / 8

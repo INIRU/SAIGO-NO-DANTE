@@ -35,7 +35,7 @@ export function decodePresetCode(code: string): GiftPresetBody | null {
   const value = code.trim()
   if (!value || value.length > MAX_CODE_LENGTH || !/^[\w-]+$/.test(value)) return null
   try {
-    const json = inflate(Uint8Array.from(atob(value.replaceAll('-', '+').replaceAll('_', '/')), char => char.charCodeAt(0)), { to: 'string' })
+    const json = inflate(Uint8Array.from(atob(value.replaceAll('-', '+').replaceAll('_', '/')), char => char.charCodeAt(0)), { toText: true })
     if (json.length > MAX_JSON_LENGTH) return null
     const raw = JSON.parse(json) as { v?: unknown; n?: unknown; g?: unknown }
     if (raw?.v !== CODE_VERSION || !Array.isArray(raw.g)) return null
