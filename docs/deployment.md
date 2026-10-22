@@ -17,15 +17,18 @@
 
 ## 배포
 
-`main`이 움직이면 서버가 알아서 배포한다. `saigo-deploy.timer`가 2분마다 `~/saigo/auto-deploy.sh`를 돌려 `~/saigo/src`(읽기 전용 배포 키로 받은 main)를 확인하고, 새 커밋이면 `~/saigo/deploy.sh`에 넘긴다.
+`main`이 움직이면 GitHub이 빌드하고 서버는 받아서 바꿔 끼운다(2026-10-22부터). 서버 스크립트의 원본은 저장소 `deploy/server/`이고, 고치면 서버의 `~/saigo/`(덧붙임은 `/etc/systemd/system/saigo-web.service.d/`)에 복사한다.
 
-`deploy.sh`는 `~/saigo/app-new`에서 `npm ci`와 빌드(약 4분, 최대 메모리 약 2.1GB)를 하고, 성공하면 앱 폴더를 바꿔 끼운 뒤 서비스를 다시 켠다(멈춤은 1초 안팎). 빌드가 실패하면 운영 앱은 건드리지 않는다. 바꿔 끼운 뒤 60초 안에 `/ko`가 응답하지 않으면 이전 폴더(`app-old`)로 되돌린다. 실패한 커밋은 `~/saigo/failed-rev`에 남고, main이 다시 움직일 때까지 재시도하지 않는다.
+1. GitHub Actions `deploy-build.yml`이 main의 커밋마다 운영용으로 빌드한다(타입 검사 포함, `SELF_HOSTED=1`). `output: 'standalone'`에 `.next/static`·`public`을 넣어 `site-<sha>`(`site.tgz`)로 1일 보관한다. 배포 사이트가 Storage에서 읽는 인식 모델 데이터는 넣지 않는다. 빌드에 쓰는 값은 GitHub 비밀값(Supabase 3개, `NEXT_PUBLIC_SENTRY_DSN`, `NEXT_PUBLIC_SITE_URL`, `YOUTUBE_CHANNEL_ID`, `SENTRY_ORG`, `SENTRY_PROJECT`)이고, 운영 서버 값과 같아야 한다.
+2. 서버의 `saigo-deploy.timer`가 2분마다 `auto-deploy.sh`를 돌려 `~/saigo/src`(읽기 전용 배포 키로 받은 main)를 확인하고, 새 커밋이면 `fetch-build.sh`로 그 커밋의 결과물을 받는다(토큰 `~/saigo/github-token`, 이 저장소 Actions 읽기 전용). GitHub 빌드가 진행 중이면 다음 확인까지 기다리고, 실패했으면 배포하지 않는다.
+3. 결과물을 받았으면 `deploy.sh`가 `~/saigo/app-new`에 풀고 앱 폴더를 바꿔 끼운 뒤 서비스를 다시 켠다(멈춤은 1초 안팎, 서버는 빌드도 설치도 하지 않는다). 60초 안에 `/ko`가 응답하지 않으면 이전 폴더(`app-old`)로 되돌린다. 실패한 커밋은 `~/saigo/failed-rev`에 남고, main이 다시 움직일 때까지 재시도하지 않는다.
+4. 토큰이 없거나 20분이 지나도 GitHub 결과물이 없으면 예전처럼 서버에서 빌드한다(같은 standalone 모양, 타입 검사는 건너뜀: `SKIP_BUILD_TYPECHECK=1`, `nice -n 10`). 2026-10-22 서버 빌드 중 TypeScript 7의 tsc(약 1.75GB)가 빌드·운영 앱과 함께 돌다 메모리가 바닥나 사이트가 몇 분 멈췄다. 그래서 빌드는 GitHub에서 한다.
 
-서버 빌드는 타입 검사를 건너뛴다(`SKIP_BUILD_TYPECHECK=1` → `next.config.ts`의 `typescript.ignoreBuildErrors`, 빌드는 `nice -n 10`). 타입 검사는 PR마다 CI의 TypeCheck가 한다. 2026-10-22 TypeScript 7의 tsc(약 1.75GB)가 빌드·운영 앱과 함께 돌다 메모리가 바닥나 사이트가 몇 분 멈췄다(빌드는 커널이 종료, 운영 앱은 그대로).
+서비스는 덧붙임 `standalone.conf`로 앱 폴더에 `server.js`가 있으면 `node server.js`, 없으면(되돌린 예전 폴더) `next start`로 뜬다. 환경 변수 파일(`~/saigo/env.production`)은 systemd도 넘긴다.
 
 이미지 최적화 캐시는 배포와 상관없이 `~/saigo/cache/images` 하나를 쓴다. `deploy.sh`가 새 빌드의 `.next/cache/images`를 그 폴더로 잇는다(2026-10-22). 앱 폴더 안에 두면 배포마다 캐시가 사라져 이미지 수천 장을 sharp로 다시 변환하고, 그동안 힙 바깥 메모리가 분당 수 MB씩 늘었다.
 
-서비스 설정은 `/etc/systemd/system/saigo-web.service`와 덧붙임 `saigo-web.service.d/memory.conf`다. 덧붙임은 `MALLOC_ARENA_MAX=2`(sharp가 쓰는 glibc 메모리 영역 수를 줄여 메모리가 불어나지 않게)와 `NODE_OPTIONS=--max-old-space-size=1024 --trace-warnings`(`MaxListenersExceededWarning`이 어디서 나는지 기록)를 넣는다. 서비스는 메모리 상한으로 자동 재시작하지 않는다(사용자 결정, 2026-10-22). 설정은 다음 배포 때 서비스가 새로 뜨면서 적용된다.
+서비스 설정은 `/etc/systemd/system/saigo-web.service`와 덧붙임 `saigo-web.service.d/memory.conf`·`standalone.conf`다. 덧붙임은 `MALLOC_ARENA_MAX=2`(sharp가 쓰는 glibc 메모리 영역 수를 줄여 메모리가 불어나지 않게)와 `NODE_OPTIONS=--max-old-space-size=1024 --trace-warnings`(`MaxListenersExceededWarning`이 어디서 나는지 기록)를 넣는다. 서비스는 메모리 상한으로 자동 재시작하지 않는다(사용자 결정, 2026-10-22). 설정은 다음 배포 때 서비스가 새로 뜨면서 적용된다.
 
 - 배포 기록: `journalctl -u saigo-deploy`
 - 앱 로그: `journalctl -u saigo-web`
