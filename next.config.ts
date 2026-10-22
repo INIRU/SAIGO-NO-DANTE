@@ -1,5 +1,5 @@
 import type { NextConfig } from "next";
-import { withSentryConfig } from "@sentry/nextjs";
+import { withSentryConfig } from "@sentry/nextjs/config";
 import createNextIntlPlugin from 'next-intl/plugin';
 import { HTML_LIMITED_BOTS } from './lib/seo/html-limited-bots';
 

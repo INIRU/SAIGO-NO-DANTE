@@ -17,8 +17,8 @@ import DeckCard, { type DeckSummary } from '@/components/decks/DeckCard'
 
 const deck: DeckSummary = { id: 'd1', user_id: 'u1', title: '덱', description: null, tags: [], vote_count: 0, view_count: 0, created_at: '2026-10-15T00:00:00Z' }
 
-describe('card links do not prefetch heavy detail pages', () => {
-  it('deck card detail link has prefetch disabled', () => {
+describe('card links prefetch heavy detail pages only on intent (IntentLink)', () => {
+  it('deck card detail link does not prefetch before intent', () => {
     const html = renderToStaticMarkup(<DeckCard deck={deck} />)
     expect(html).toMatch(/<a href="\/decks\/d1" data-prefetch="false"/)
   })

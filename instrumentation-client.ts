@@ -63,14 +63,19 @@ function scrubEvent<T extends ScrubbableEvent>(event: T): T {
 Sentry.init({
   dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
   enabled: process.env.NODE_ENV === "production",
-  sendDefaultPii: false,
+  // Sentry 11 replaced sendDefaultPii with dataCollection; these keep the old "no personal data" behaviour.
+  dataCollection: {
+    userInfo: false,
+    cookies: false,
+    httpHeaders: { request: { deny: ["x-forwarded-for", "x-real-ip", "forwarded", "cf-connecting-ip"] }, response: true },
+  },
 
   tracesSampleRate: process.env.NODE_ENV === "development" ? 1.0 : 0.1,
+  // Sentry 11 streams spans by default, which ignores beforeSendTransaction (our scrubber); keep the old transaction behaviour.
+  traceLifecycle: "static",
 
   replaysSessionSampleRate: 0.1,
   replaysOnErrorSampleRate: 1.0,
-
-  enableLogs: true,
 
   // 세션 리플레이는 첫 화면 이후에 따로 불러온다(아래 loadReplay)
   integrations: [],
@@ -95,10 +100,10 @@ Sentry.init({
 export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;
 
 // Replay is the largest part of the Sentry bundle; load it as a separate chunk once the page is idle.
-// @sentry-internal/replay is Sentry's own package pinned to the same version as @sentry/nextjs.
+// @sentry/replay (named @sentry-internal/replay before 10.76) is declared in package.json with the same range as @sentry/nextjs.
 function loadReplay() {
   if (process.env.NODE_ENV !== "production") return;
-  import("@sentry-internal/replay").then(({ replayIntegration }) => {
+  import("@sentry/replay").then(({ replayIntegration }) => {
     Sentry.addIntegration(replayIntegration({
       maskAllText: true,
       maskAllInputs: true,

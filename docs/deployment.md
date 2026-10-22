@@ -21,6 +21,10 @@
 
 `deploy.sh`는 `~/saigo/app-new`에서 `npm ci`와 빌드(약 4분, 최대 메모리 약 2.1GB)를 하고, 성공하면 앱 폴더를 바꿔 끼운 뒤 서비스를 다시 켠다(멈춤은 1초 안팎). 빌드가 실패하면 운영 앱은 건드리지 않는다. 바꿔 끼운 뒤 60초 안에 `/ko`가 응답하지 않으면 이전 폴더(`app-old`)로 되돌린다. 실패한 커밋은 `~/saigo/failed-rev`에 남고, main이 다시 움직일 때까지 재시도하지 않는다.
 
+이미지 최적화 캐시는 배포와 상관없이 `~/saigo/cache/images` 하나를 쓴다. `deploy.sh`가 새 빌드의 `.next/cache/images`를 그 폴더로 잇는다(2026-10-22). 앱 폴더 안에 두면 배포마다 캐시가 사라져 이미지 수천 장을 sharp로 다시 변환하고, 그동안 힙 바깥 메모리가 분당 수 MB씩 늘었다.
+
+서비스 설정은 `/etc/systemd/system/saigo-web.service`와 덧붙임 `saigo-web.service.d/memory.conf`다. 덧붙임은 `MALLOC_ARENA_MAX=2`(sharp가 쓰는 glibc 메모리 영역 수를 줄여 메모리가 불어나지 않게)와 `NODE_OPTIONS=--max-old-space-size=1024 --trace-warnings`(`MaxListenersExceededWarning`이 어디서 나는지 기록)를 넣는다. 서비스는 메모리 상한으로 자동 재시작하지 않는다(사용자 결정, 2026-10-22). 설정은 다음 배포 때 서비스가 새로 뜨면서 적용된다.
+
 - 배포 기록: `journalctl -u saigo-deploy`
 - 앱 로그: `journalctl -u saigo-web`
 - 지금 배포된 커밋: `cat ~/saigo/app/REVISION`

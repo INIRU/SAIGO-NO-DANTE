@@ -5,6 +5,7 @@ import { notePreviewText } from '@/lib/notes/blocks'
 import FormationThumbnail from '@/components/ui/FormationThumbnail'
 import { memo, useMemo } from 'react'
 import { Link } from '@/lib/i18n/navigation'
+import IntentLink from '@/components/ui/IntentLink'
 import Image from 'next/image'
 import { Heart, Eye, MessageCircle } from 'lucide-react'
 import { useLocale, useTranslations } from 'next-intl'
@@ -107,7 +108,7 @@ function DeckCard({ deck, onTagClick }: DeckCardProps) {
   return (
     <div className="board-card group relative flex flex-col h-full overflow-hidden">
       <div className="relative flex flex-col flex-1">
-        <Link href={`/decks/${deck.id}`} prefetch={false} locale={locale} aria-label={deck.title} className="absolute inset-0 z-[1]" />
+        <IntentLink href={`/decks/${deck.id}`} locale={locale} aria-label={deck.title} className="absolute inset-0 z-[1]" />
         <FormationThumbnail slots={thumbnailSlots} missing={missing} />
         <OwnedBadge missing={missing} />
 

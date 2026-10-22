@@ -20,7 +20,7 @@ export function decodePlans(value: string): Record<string, Plan> {
     atob(value.replaceAll("-", "+").replaceAll("_", "/")),
     (c) => c.charCodeAt(0),
   );
-  const json = inflate(bytes, { to: "string" });
+  const json = inflate(bytes, { toText: true });
   if (json.length > 100000) throw new Error("Invalid cookie");
   const raw = JSON.parse(json);
   if (
