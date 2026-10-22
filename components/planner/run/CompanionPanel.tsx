@@ -163,12 +163,18 @@ export default function CompanionPanel({ state, dispatch, themes, giftMap, obser
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [fusionView.current, state.giftInventory, state.targetGifts, recipes, giftMap, committed])
   // Gifts read on an offering screen (shop, rewards, events), ranked for this run.
-  const adviceIds = captureRunning && !fusionView.current && scene && ['shop', 'reward_choice', 'event'].includes(scene.label) ? observedGiftIds : []
+  const offering = captureRunning && !fusionView.current && !!scene && ['shop', 'reward_choice', 'event'].includes(scene.label)
+  const adviceIds = offering ? observedGiftIds : []
   const advice = useMemo(() => adviceIds.length ? recommendGifts({ candidates: adviceIds, inventory: state.giftInventory, targets: state.targetGifts, recipes, giftMap,
-    committed, stats: planGiftStats }) : [],
+    committed, stats: planGiftStats, limit: 6 }) : [],
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [adviceIds.join(','), state.giftInventory, state.targetGifts, recipes, giftMap, committed, planGiftStats])
   // Start gift screens sometimes read as battle_setup, so a battle's setup shows the formation only once the start is over.
+  // The last advice stays for the rest of its screen: OCR misses a frame now and then, and the row must not blink.
+  const heldAdvice = useRef<{ since: number; advice: typeof advice } | null>(null)
+  if (!offering) heldAdvice.current = null
+  else if (advice.length) heldAdvice.current = { since: scene!.since, advice }
+  const shownAdvice = offering && heldAdvice.current?.since === scene!.since ? heldAdvice.current.advice : []
   const formationScreen = captureRunning && (scene?.label === 'run_setup' || (scene?.label === 'battle_setup' && !startPhase))
   const formationCode = useMemo(() => {
     if (!formationScreen || !sinners.length) return ''
@@ -462,8 +468,12 @@ export default function CompanionPanel({ state, dispatch, themes, giftMap, obser
     const width = actualSize.width
     const availableWidth = Math.max(240, width - (inPip ? 36 : 24))
     const count = availableGifts.length
-    const columns = Math.max(1, Math.min(count || 1, Math.floor((availableWidth + 6) / 62)))
-    const cell = Math.max(52, Math.min(76, Math.floor((availableWidth - (columns - 1) * 6) / columns)))
+    // A wide window puts the fusion guide beside the plan's tier IV+ gifts instead of above them.
+    const fusionSplit = inPip && !!guide && guide.ready.length + guide.nearly.length > 0 && width >= 560 && width >= actualSize.height * 1.25
+    // The guide's rows hold four icons and a name, so it takes 3/5 of the width and the tier IV+ grid the rest.
+    const gridWidth = fusionSplit ? Math.floor((availableWidth - 16) * 0.4) : availableWidth
+    const columns = Math.max(1, Math.min(count || 1, Math.floor((gridWidth + 6) / 62)))
+    const cell = Math.max(52, Math.min(76, Math.floor((gridWidth - (columns - 1) * 6) / columns)))
     const artwork = Math.max(44, Math.min(64, cell - 8))
     // The skill replacement window takes the whole view until it closes; the gift list returns after it.
     if (skillExchange && state.sourcePlanSnapshot) return <div data-companion-content={inPip ? 'pip' : 'inline'}>
@@ -473,7 +483,8 @@ export default function CompanionPanel({ state, dispatch, themes, giftMap, obser
     // The formation and starlight screens (and each battle's setup) show who to field, in the game's sinner order.
     if (formationScreen && sinners.length && state.identitySlots.length) return <div data-companion-content={inPip ? 'pip' : 'inline'}>
       {header(inPip, t('pipFormation'))}
-      <CompanionFormation cells={formationRow(state.identitySlots, sinners)} code={formationCode} />
+      <CompanionFormation cells={formationRow(state.identitySlots, sinners)} code={formationCode} width={availableWidth}
+        height={inPip ? actualSize.height - 84 : 320} />
     </div>
     if (startPhase) {
       const { start, observe } = planStartGiftIds(state)
@@ -522,16 +533,26 @@ export default function CompanionPanel({ state, dispatch, themes, giftMap, obser
     const groupTitle = (label: string, size: number) => <h3 className="mb-1.5 flex items-center gap-2 text-[0.6875rem] font-bold text-[var(--gold-light)]"><span>{label}</span><span className="font-[family-name:var(--font-title)] text-xs font-normal text-[var(--text-secondary)]">{size}</span><span aria-hidden="true" className="h-px flex-1 bg-[var(--border)]" /></h3>
     const grouped = groups.length > 1
     return <div data-companion-content={inPip ? 'pip' : 'inline'}>
-      {theme ? header(inPip, localized(theme), t(fusionView.current ? 'fusionTierGiftsCount' : 'currentThemeGiftsCount', { count }), true)
+      {theme ? header(inPip, localized(theme), undefined, true)
         : header(inPip, t('pipThemeGuidance'), pack ? t('pipThemeFloors', { floors: pack.availableFloors.join(', ') || '—' }) : undefined)}
       <m.div key={theme?.id ?? 'unselected'} initial={reducedMotion ? false : { opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: reducedMotion ? 0 : 0.18, ease: 'easeOut' }}>
       {!theme ? <section aria-label={t('pipThemeGuidance')} className="grid place-items-center" style={{ minHeight: inPip ? Math.max(180, actualSize.height - 96) : 180 }}>
         {pack ? <div data-theme-choice={pack.theme.id} className={`flex justify-center gap-3 ${stacked ? 'flex-col items-center' : 'items-start'}`}><div className="shrink-0" style={{ width: posterWidth }}><ThemePackCard theme={pack.theme} imageSurface="bare" sizes={`${posterWidth}px`} ariaLabel={`${localized(pack.theme)} · ${t('pipThemePossible')} · ${t('pipThemeFloors', { floors: pack.availableFloors.join(', ') || '—' })}${pack.remainingOrder.length ? ` · ${t('pipThemeRemaining', { themes: pack.remainingOrder.map(next => `${next.floor}F ${localized(next.theme)}`).join(' · ') })}` : ''}`} title={`${localized(pack.theme)} · ${t('pipThemeFloors', { floors: pack.availableFloors.join(', ') || '—' })}`} onClick={event => { const owner = event.currentTarget.ownerDocument; const surface = event.currentTarget.closest('[data-companion-content]')?.getAttribute('data-companion-content'); chooseTheme(pack.theme.id); if (surface) owner.defaultView?.requestAnimationFrame(() => owner.querySelector<HTMLElement>(`[data-companion-content="${surface}"] [data-theme-title]`)?.focus({ preventScroll: true })); toast.success(t('themeSelected', { name: localized(pack.theme) })) }} /></div>{packGiftList}</div> : <p role="status" className="px-2 text-center font-[family-name:var(--font-heading)] text-lg font-semibold text-[var(--gold-light)]">{t('pipChooseThemeBlank')}</p>}</section> : <section className="space-y-3">
-        {advice.length > 0 && <CompanionGiftAdvice advice={advice} onAcquire={(id, event) => acquire(id, event)} />}
-        {guide && <FusionGuideList guide={guide} />}
-        {!count ? <p className="text-xs text-[var(--text-tertiary)]">{t(fusionView.current ? 'fusionTierGiftsOwned' : 'allThemeGiftsOwned')}</p>
-          : grouped ? groups.map(group => <div key={group.key}>{groupTitle(group.label, group.list.length)}{giftGrid(group.list, group.key)}</div>)
-          : giftGrid(availableGifts, 'all')}
+        {offering && <CompanionGiftAdvice advice={shownAdvice.slice(0, columns)} columns={columns} cell={cell} artwork={artwork} onAcquire={(id, event) => acquire(id, event)} />}
+        {(() => {
+          const gifts = !count ? <p className="text-xs text-[var(--text-tertiary)]">{t(fusionView.current ? 'fusionTierGiftsOwned' : 'allThemeGiftsOwned')}</p>
+            : grouped ? groups.map(group => <div key={group.key}>{groupTitle(group.label, group.list.length)}{giftGrid(group.list, group.key)}</div>)
+            : giftGrid(availableGifts, 'all')
+          if (!guide) return gifts
+          // Finals one material short are already in the guide with their recipe; the grid lists the rest once.
+          const nearlyIds = new Set(guide.nearly.flatMap(item => item.fusion.result ? [item.fusion.result.game_id] : []))
+          const rest = availableGifts.filter(gift => !nearlyIds.has(gift.game_id))
+          const finals = rest.length > 0 && <div>{groupTitle(t('groupTargets'), rest.length)}{giftGrid(rest, 'all')}</div>
+          // Up to four icons a row beside an arrow and the result name: as close to the grid's artwork as the row allows.
+          const listWidth = fusionSplit ? availableWidth - 16 - gridWidth : availableWidth
+          const list = <FusionGuideList guide={guide} iconSize={Math.max(32, Math.min(artwork, Math.floor((listWidth - 130) / 4)))} readyTitle={t('pipFusionReady')} />
+          return fusionSplit && finals ? <div className="grid grid-cols-[3fr_2fr] items-start gap-4">{list}{finals}</div> : <>{list}{finals}</>
+        })()}
       </section>}
       </m.div>
     </div>

@@ -912,7 +912,8 @@
       "adviceMaterial": "For {name}",
       "adviceMaterialComplete": "Completes {name}",
       "adviceSynergy": "Fits held gifts",
-      "advicePopular": "{percent}% of plans"
+      "advicePopular": "{percent}% of plans",
+      "pipFusionReady": "Ready to fuse"
     },
     "community": "Community Plans",
     "detail": {

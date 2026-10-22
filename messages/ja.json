@@ -912,7 +912,8 @@
       "adviceMaterial": "{name}の素材",
       "adviceMaterialComplete": "{name}完成",
       "adviceSynergy": "所持ギフトと相性",
-      "advicePopular": "プラン{percent}%"
+      "advicePopular": "プラン{percent}%",
+      "pipFusionReady": "合成可能"
     },
     "community": "コミュニティプラン",
     "detail": {
