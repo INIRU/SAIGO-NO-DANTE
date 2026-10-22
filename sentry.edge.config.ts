@@ -71,6 +71,8 @@ Sentry.init({
   },
 
   tracesSampleRate: process.env.NODE_ENV === "development" ? 1.0 : 0.1,
+  // Sentry 11 streams spans by default, which ignores beforeSendTransaction (our scrubber); keep the old transaction behaviour.
+  traceLifecycle: "static",
 
   beforeSend: scrubEvent,
   beforeSendTransaction: scrubEvent,
