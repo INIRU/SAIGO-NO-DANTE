@@ -29,7 +29,7 @@
     "@tiptap/extension-table": "3.32.0",
     "@tiptap/react": "^3.32.0",
     "@tiptap/starter-kit": "^3.32.0",
-    "@vercel/analytics": "^1.6.1",
+    "@vercel/analytics": "^2.0.1",
     "gifenc": "^1.0.3",
     "html2canvas": "^1.4.1",
     "lucide-react": "^1.61.0",
