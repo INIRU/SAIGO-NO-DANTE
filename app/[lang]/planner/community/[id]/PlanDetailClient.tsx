@@ -54,7 +54,7 @@ import {
 } from '@/components/planner/BlessingTab'
 import { workbenchReveal } from '@/lib/animations'
 import styles from './PlanDetailHeader.module.css'
-import { observationCost } from '@/lib/planner/observation'
+import { observationCost, type Observation } from '@/lib/planner/observation'
 import { gameTextToPlain } from '@/lib/game-text/rich-text'
 
 // ── 상수 ──────────────────────────────────────────────────────────────────────
@@ -337,6 +337,8 @@ interface Props {
   skills: SkillSummary[]
   passives: PassiveSummary[]
   egos: EgoData[]
+  /** The current season's start observation, for the observe cost. */
+  observation: Observation
   /** Events that award this plan's floor gifts, plus their follow-up events (for the in-place event modal). */
   events: MdEvent[]
   eventChoices: MdEventChoice[]
@@ -347,7 +349,7 @@ interface Props {
 
 // ── Main component ────────────────────────────────────────────────────────────
 
-export default function PlanDetailClient({ plan, themes, gifts, recipes, identities, sinners, skills, passives, egos, events, eventChoices, series, coVisited }: Props) {
+export default function PlanDetailClient({ plan, themes, gifts, recipes, identities, sinners, skills, passives, egos, observation, events, eventChoices, series, coVisited }: Props) {
   useHtmlFlag('with-plan-detail')
   const locale = useLocale() as SupportedLang
   const tPlanner = useTranslations('planner')
@@ -794,7 +796,7 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
                 )}
               </div>
               <div className="min-w-0 md:border-l md:border-[#2e2417] md:pl-8">
-                <SubHead title={tDetail('observeGifts')} meta={<>{tDetail('observeCount', { count: observeGifts.length })}{observeGifts.length > 0 && <StarlightCost label={tDetail('observeCost')} value={observationCost(observeGifts.length)} />}</>} />
+                <SubHead title={tDetail('observeGifts')} meta={<>{tDetail('observeCount', { count: observeGifts.length })}{observeGifts.length > 0 && <StarlightCost label={tDetail('observeCost')} value={observationCost(observation, observeGifts.length)} />}</>} />
                 {observeGifts.length > 0 ? (
                   <GiftGrid locale={locale} gifts={observeGifts.map(g => ({ gift: g, enhance: 0 }))} onGiftClick={openGift} />
                 ) : (

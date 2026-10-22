@@ -26,6 +26,7 @@ import FloorTab from '@/components/planner/FloorTab'
 import PlanIntroEditor from '@/components/planner/PlanIntroEditor'
 import BlessingTab from '@/components/planner/BlessingTab'
 import GiftPlanTab from '@/components/planner/GiftPlanTab'
+import type { Observation } from '@/lib/planner/observation'
 import TempSaveMenu from '@/components/ui/TempSaveMenu'
 import AutosaveRestoreModal from '@/components/ui/AutosaveRestoreModal'
 import { useAutosaveDraft } from '@/hooks/useAutosaveDraft'
@@ -42,6 +43,7 @@ interface Props {
   passives: PassiveData[]
   skills: SkillSummary[]
   egos: EgoData[]
+  observation: Observation
 }
 
 const PLANNER_TAB_KEYS = ['deck', 'blessing', 'gift', 'floor', 'summary'] as const
@@ -78,7 +80,7 @@ function isPlannerTab(value: string): value is PlannerTab {
   return (PLANNER_TAB_KEYS as readonly string[]).includes(value)
 }
 
-export default function PlannerClient({ themes, gifts, recipes, identities, sinners, passives, skills, egos }: Props) {
+export default function PlannerClient({ themes, gifts, recipes, identities, sinners, passives, skills, egos, observation }: Props) {
   const tPlanner = useTranslations('planner')
   const tTempSaves = useTranslations('planner.tempSaves')
   const locale = useLocale()
@@ -394,7 +396,7 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
     summary: <IntroSection state={state} dispatch={dispatch} themes={themes} gifts={gifts} giftMap={giftMap} sinners={sinners} />,
     deck: <DeckSection state={sectionState} dispatch={dispatch} identities={identities} sinners={sinners} themes={themes} gifts={gifts} giftMap={giftMap} passives={passives} skills={skills} egos={egos} />,
     blessing: <BlessingSection state={sectionState} dispatch={dispatch} />,
-    gift: <GiftSection state={sectionState} dispatch={dispatch} gifts={gifts} giftMap={giftMap} />,
+    gift: <GiftSection state={sectionState} dispatch={dispatch} gifts={gifts} giftMap={giftMap} observation={observation} />,
     floor: <FloorSection state={giftConditionState} dispatch={dispatch} themes={themes} gifts={gifts} recipes={recipes} giftMap={giftMap} />,
   }
   const plannedFloors = state.floorPlan.filter(floor => floor.theme_id).length
