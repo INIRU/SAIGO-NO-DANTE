@@ -95,8 +95,6 @@
   overflow-y: auto;
   overscroll-behavior: contain;
   padding: 0.25rem 0.5rem 0.75rem;
-  scrollbar-color: var(--border) transparent;
-  scrollbar-width: thin;
 }
 .groupHead {
   display: flex;

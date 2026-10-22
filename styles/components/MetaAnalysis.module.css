@@ -303,7 +303,7 @@
 .pickerSinners button:hover { opacity: 1; background: rgba(255,255,255,.04); }
 .pickerSinners button[aria-pressed=true] { opacity: 1; background: var(--bg-elevated); box-shadow: inset 0 -2px 0 var(--gold); }
 .pickerSinners .pickerAll { width: auto; padding: 0 .75rem; font-size: .75rem; color: var(--text-secondary); }
-.pickerResults { min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 1.25rem 1.5rem 1.5rem; scrollbar-width: thin; }
+.pickerResults { min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 1.25rem 1.5rem 1.5rem; }
 .pickerGrid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 1rem .75rem; }
 .pickerCard { display: flex; flex-direction: column; gap: .5rem; width: 100%; text-align: left; transition: transform 160ms ease; }
 .pickerCard:hover { transform: translateY(-2px); }
@@ -379,7 +379,7 @@
   .identityLayout { grid-template-columns: 17.5rem minmax(0, 1fr); }
   .identityList { position: sticky; top: calc(var(--nav-offset, 4rem) + 3.75rem); display: flex; flex-direction: column; gap: .625rem; max-height: calc(100dvh - var(--nav-offset, 4rem) - 5rem); padding: .75rem; transition: top 300ms cubic-bezier(0.4, 0, 0.2, 1), max-height 300ms cubic-bezier(0.4, 0, 0.2, 1); background: var(--bg-panel); border: 1px solid var(--border); border-radius: .625rem; }
   /* Rows only (li > button): the search's clear button must keep its own size, or the input shrinks to nothing. */
-  .identityList ol { min-height: 0; overflow-y: auto; overscroll-behavior: contain; display: grid; gap: .125rem; scrollbar-width: thin; }
+  .identityList ol { min-height: 0; overflow-y: auto; overscroll-behavior: contain; display: grid; gap: .125rem; }
   .identityList li > button { display: grid; grid-template-columns: 2.5rem minmax(0, 1fr) auto; align-items: center; gap: .625rem; width: 100%; padding: .3125rem .5rem; border-radius: .25rem; text-align: left; transition: background-color 160ms ease; }
   .identityList li > button:hover { background: rgba(255,255,255,.03); }
   .identityList li > button[aria-pressed=true] { background: var(--bg-elevated); box-shadow: inset 2px 0 0 var(--gold); }

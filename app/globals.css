@@ -172,6 +172,10 @@ body {
 ::-webkit-scrollbar-track { background: var(--bg-deep); }
 ::-webkit-scrollbar-thumb { background: var(--gold-dim); border-radius: 2px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--gold); }
+/* The site's scrollbar is the rule above. In Chrome and Safari any scrollbar-width or scrollbar-color on an element turns it
+   off for the system bar, so components do not set them (only `none` to hide one). Firefox, which has no ::-webkit-scrollbar,
+   takes the same colours from the standard properties. */
+@supports not selector(::-webkit-scrollbar) { * { scrollbar-width: thin; scrollbar-color: var(--gold-dim) var(--bg-deep); } }
 ::selection { background: rgba(200,144,10,0.3); color: var(--gold-light); }
 
 /* ── content-visibility 유틸리티 (오프스크린 렌더링 지연) ── */
@@ -525,7 +529,6 @@ html body[data-scroll-locked] { overflow-y: scroll !important; margin-right: 0 !
 
 /* ── Page-scoped additions: other pages keep the site defaults above. ── */
 /* Assist run page and its PiP window only. */
-html:is([data-with-assist-run], [data-assist-pip]) { scrollbar-color: var(--gold-dim) var(--bg-deep); scrollbar-width: thin; }
 html:is([data-with-assist-run], [data-assist-pip])::-webkit-scrollbar, html:is([data-with-assist-run], [data-assist-pip]) ::-webkit-scrollbar { width: 8px; height: 8px; }
 html:is([data-with-assist-run], [data-assist-pip])::-webkit-scrollbar-thumb, html:is([data-with-assist-run], [data-assist-pip]) ::-webkit-scrollbar-thumb { border: 2px solid var(--bg-deep); border-radius: 8px; }
 /* Preserve a visible keyboard cue even on borderless search fields. */

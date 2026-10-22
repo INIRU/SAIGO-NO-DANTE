@@ -915,7 +915,7 @@ export default function DecksClient({
         <FacetPickerModal kind={facetModal} facets={facetData} selected={facetModal ? facetSelections[facetModal] : []}
           onToggle={id => { if (facetModal) toggleFacet(facetModal, id) }} onClose={() => setFacetModal(null)} />
 
-        <div ref={scrollRootRef} className="min-h-0 flex-1 pb-16 scrollbar-thin lg:overflow-y-auto lg:pr-1">
+        <div ref={scrollRootRef} className="min-h-0 flex-1 pb-16 lg:overflow-y-auto lg:pr-1">
           <BrowseBar
             search={{ value: inputValue, onChange: v => { setInputValue(v); setShowSuggestions(false) }, onClear: () => { setInputValue(''); void setSearch(null, QUERY_OPTIONS); setDebouncedSearch('') }, placeholder: t('search.placeholder'), label: t('search.label') }}
             sort={{ value: sort, options: (['latest', 'popular'] as const).map(key => ({ key, label: t(`sort.${key}`) })), onChange: key => { void setSortQuery(key as SortKey, QUERY_OPTIONS) } }}
