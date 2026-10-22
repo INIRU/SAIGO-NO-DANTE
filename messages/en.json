@@ -1355,7 +1355,7 @@
       },
       "observe": {
         "cost": "Observe cost:",
-        "selected": "Selected {count}/3",
+        "selected": "Selected {count}/{max}",
         "gradeRange": "Grades {from}-{to} · no Remnants",
         "selectedTitle": "Selected E.G.O Gifts",
         "starlightAlt": "Starlight",

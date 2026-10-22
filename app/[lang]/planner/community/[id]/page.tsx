@@ -21,6 +21,7 @@ import CoVisitedLane from '@/components/discovery/CoVisitedLane'
 import { RecommendationLaneSkeleton } from '@/components/deck-detail/RecommendationSkeleton'
 import type { SupportedLang } from '@/lib/i18n/types'
 import PlanDetailClient from './PlanDetailClient'
+import { OBSERVATION_COLUMNS, observationFrom, type ObservationRow } from '@/lib/planner/observation'
 import PlanDetailSkeleton from './PlanDetailSkeleton'
 
 interface Props {
@@ -71,18 +72,19 @@ async function fetchPlanDetailGameData() {
   cacheLife('max')
   cacheTag(CACHE_TAGS.gameData, CACHE_TAGS.mirrorDungeon, CACHE_TAGS.themes, CACHE_TAGS.egoGifts, CACHE_TAGS.identities, CACHE_TAGS.sinners, CACHE_TAGS.ego)
   const db = createAdminClient().schema('limbus')
-  const [themes, gifts, recipes, identities, sinners, egos] = await Promise.all([
+  const [themes, gifts, recipes, identities, sinners, egos, observation] = await Promise.all([
     db.from('ego_gift_themes').select('id, name, name_en, name_jp, ego_gift_ids, specific_ego_gift_ids, fixed_reward_gift_ids, image_url, difficulty, floor_info, name_color, name_segments'),
     db.from('ego_gifts').select('*').order('keyword').order('grade'),
     db.from('ego_gift_recipes').select('*'),
     db.from('identities').select('id, sinner_id, name, name_kr, name_en, name_jp, tier, rarity, keywords, skill_keyword_list, affiliation, association_list, game_id, folder_name, hp, speed_min, speed_max, def_level, slash_res, pierce_res, blunt_res').order('rarity', { ascending: false }),
     db.from('sinners').select('id, name_kr, order_num').order('order_num'),
     db.from('ego').select('id, sinner_id, name, name_kr, name_en, name_jp, grade, sin_affinity, image_url, cost, game_id'),
+    db.from('md_observation').select(OBSERVATION_COLUMNS).order('mirror_dungeon_id', { ascending: false }).limit(1).maybeSingle<ObservationRow>(),
   ])
-  for (const [name, result] of Object.entries({ themes, gifts, recipes, identities, sinners, egos })) {
+  for (const [name, result] of Object.entries({ themes, gifts, recipes, identities, sinners, egos, observation })) {
     if (result.error) console.error('Failed to fetch ' + name + ':', result.error)
   }
-  return { themes: themes.data ?? [], gifts: gifts.data ?? [], recipes: recipes.data ?? [], identities: identities.data ?? [], sinners: sinners.data ?? [], egos: egos.data ?? [] }
+  return { themes: themes.data ?? [], gifts: gifts.data ?? [], recipes: recipes.data ?? [], identities: identities.data ?? [], sinners: sinners.data ?? [], egos: egos.data ?? [], observation: observationFrom(observation.data) }
 }
 
 // 층 계획의 기프트를 주는 진입 이벤트와, 선택지가 이어지는 후속 이벤트·선택지만 읽는다(이벤트 모달용)
@@ -176,6 +178,7 @@ export default async function PlanDetailPage({ params }: Props) {
         skills={memberIds.flatMap(id => selectUptieRows((skills ?? []).filter(row => row.identity_id === id), 4))}
         passives={memberIds.flatMap(id => selectUptieRows((passives ?? []).filter(row => row.identity_id === id), 4))}
         egos={used.egos}
+        observation={game.observation}
         events={planEvents.events.map(event => withoutOtherLocales(event, lang, ['desc_text'], ['judgment'])) as unknown as MdEvent[]}
         eventChoices={planEvents.choices.map(choice => ({
           ...withoutOtherLocales(choice, lang, ['result_text', 'message', 'message_desc'], ['effects']),

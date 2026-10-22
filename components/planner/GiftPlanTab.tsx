@@ -1,6 +1,6 @@
 'use client'
 
-import { MAX_OBSERVED_GIFTS, OBSERVATION_GIFT_IDS, observationCost } from '@/lib/planner/observation'
+import { maxObserved, observationCost, type Observation } from '@/lib/planner/observation'
 import GiftGrade from '@/components/ui/GiftGrade'
 
 import { GIFT_BG_URL } from '@/lib/constants/gift'
@@ -27,10 +27,12 @@ interface Props {
   dispatch: React.Dispatch<PlannerAction>
   gifts: GiftData[]
   giftMap: Map<number, GiftData>
+  /** The current season's start observation (md_observation). */
+  observation: Observation
 }
 
 // ── Main component ───────────────────────────────────────────────────────────
-export default function GiftPlanTab({ state, dispatch, gifts, giftMap }: Props) {
+export default function GiftPlanTab({ state, dispatch, gifts, giftMap, observation }: Props) {
   const locale = useLocale()
   const t = useTranslations('planner.giftTab')
   const [subTab, setSubTab] = useState<GiftSubTab>('observe')
@@ -50,10 +52,10 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap }: Props) 
     const key = `observe_${gift.game_id}`
     if (observeIds.has(gift.game_id)) {
       dispatch({ type: 'REMOVE_GIFT', giftId: key })
-    } else if (observeIds.size < MAX_OBSERVED_GIFTS) {
+    } else if (observeIds.size < maxObserved(observation)) {
       dispatch({ type: 'ADD_GIFT', giftId: key })
     }
-  }, [dispatch, observeIds])
+  }, [dispatch, observeIds, observation])
   const startIds = useMemo(
     () => new Set(
       state.giftInventory
@@ -70,8 +72,11 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap }: Props) 
 
   const observeGifts = useMemo(
     // Only what the start observation can actually offer, per the game's observation list.
-    () => gifts.filter(g => OBSERVATION_GIFT_IDS.has(g.game_id)),
-    [gifts]
+    () => {
+      const ids = new Set(observation.giftIds)
+      return gifts.filter(g => ids.has(g.game_id))
+    },
+    [gifts, observation]
   )
 
   const subTabs: { key: GiftSubTab; label: string; count: number }[] = [
@@ -154,7 +159,7 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap }: Props) 
                 height={16}
                 style={{ width: '1rem', height: '1rem', verticalAlign: 'middle' }}
               />
-              <span style={{ color: '#e8b030', fontWeight: 700 }}>{observationCost(observeIds.size)}</span>
+              <span style={{ color: '#e8b030', fontWeight: 700 }}>{observationCost(observation, observeIds.size)}</span>
             </span>
             <span style={{
               fontSize: '0.6875rem',
@@ -165,7 +170,7 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap }: Props) 
               border: `1px solid ${observeIds.size >= 3 ? 'rgba(220,38,38,0.25)' : 'rgba(200,144,10,0.25)'}`,
               fontWeight: 600,
             }}>
-              {t('observe.selected', { count: observeIds.size })}
+              {t('observe.selected', { count: observeIds.size, max: maxObserved(observation) })}
             </span>
             <span style={{ fontSize: '0.625rem', color: '#444' }}>
               {t('observe.gradeRange', { from: GRADE_ROMAN['1'], to: GRADE_ROMAN['3'] })}
@@ -194,7 +199,7 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap }: Props) 
                   borderRadius: '0.25rem',
                   border: '1px solid rgba(200,144,10,0.2)',
                 }}>
-                  {observeIds.size}/3
+                  {observeIds.size}/{maxObserved(observation)}
                 </span>
               }
               footer={
@@ -216,7 +221,7 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap }: Props) 
                       height={14}
                       style={{ width: '0.875rem', height: '0.875rem' }}
                     />
-                    {t('observe.starlightCost', { count: observationCost(observeIds.size) })}
+                    {t('observe.starlightCost', { count: observationCost(observation, observeIds.size) })}
                   </div>
                 ) : undefined
               }

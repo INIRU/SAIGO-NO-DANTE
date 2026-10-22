@@ -13,6 +13,7 @@ import PlannerSkeleton from '@/components/planner/PlannerSkeleton'
 import PageHeader from '@/components/ui/PageHeader'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import StaticQueryAdapter from '@/components/providers/StaticQueryAdapter'
+import { OBSERVATION_COLUMNS, observationFrom, type ObservationRow } from '@/lib/planner/observation'
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params
@@ -35,11 +36,13 @@ async function fetchPlannerStaticData() {
   const supabase = createAdminClient()
 
   // 그룹 1: 거울 던전 데이터
-  const [{ data: themes, error: themesError }, { data: gifts, error: giftsError }, { data: recipes, error: recipesError }] = await Promise.all([
+  const [{ data: themes, error: themesError }, { data: gifts, error: giftsError }, { data: recipes, error: recipesError }, { data: observationRow, error: observationError }] = await Promise.all([
     supabase.schema('limbus').from('ego_gift_themes').select('id, name, name_en, name_jp, ego_gift_ids, specific_ego_gift_ids, fixed_reward_gift_ids, image_url, difficulty, floor_info, name_color, name_segments'),
     supabase.schema('limbus').from('ego_gifts').select('*').order('keyword').order('grade'),
     supabase.schema('limbus').from('ego_gift_recipes').select('*'),
+    supabase.schema('limbus').from('md_observation').select(OBSERVATION_COLUMNS).order('mirror_dungeon_id', { ascending: false }).limit(1).maybeSingle<ObservationRow>(),
   ])
+  if (observationError) Sentry.captureException(observationError, { tags: { location: 'planner/page:fetchPlannerStaticData' }, extra: { msg: 'Failed to fetch md_observation' } })
   if (themesError) Sentry.captureException(themesError, { tags: { location: 'planner/page:fetchPlannerStaticData' }, extra: { msg: 'Failed to fetch themes' } })
   if (giftsError) Sentry.captureException(giftsError, { tags: { location: 'planner/page:fetchPlannerStaticData' }, extra: { msg: 'Failed to fetch gifts' } })
   if (recipesError) Sentry.captureException(recipesError, { tags: { location: 'planner/page:fetchPlannerStaticData' }, extra: { msg: 'Failed to fetch recipes' } })
@@ -61,14 +64,14 @@ async function fetchPlannerStaticData() {
   const { data: egos, error: egosError } = await supabase.schema('limbus').from('ego').select('id, sinner_id, name, name_kr, name_en, name_jp, grade, sin_affinity, image_url, cost, game_id, stage_levels:ego_skills(construe_level)')
   if (egosError) Sentry.captureException(egosError, { tags: { location: 'planner/page:fetchPlannerStaticData' }, extra: { msg: 'Failed to fetch egos' } })
 
-  return { themes, gifts, recipes, identities, sinners, passives, skills, egos: egos?.map(withEgoStage) }
+  return { themes, gifts, recipes, identities, sinners, passives, skills, egos: egos?.map(withEgoStage), observation: observationFrom(observationRow) }
 }
 
 export default async function PlannerPage({ params }: { params: Promise<{ lang: string }> }) {
   const { lang } = await params
   const t = await getTranslations({ locale: lang, namespace: 'planner' })
   const data = await fetchPlannerStaticData()
-  const { themes, recipes, identities, sinners, skills, egos } = data
+  const { themes, recipes, identities, sinners, skills, egos, observation } = data
   // 현재 언어가 아닌 긴 설명은 보내지 않는다(없으면 화면이 한국어로 되돌아간다). 초기 전송량의 절반 가까이가 여기서 줄어든다.
   const gifts = data.gifts?.map(gift => withoutOtherLocales(gift, lang, ['effect_base', 'effect_plus', 'effect_plusplus']))
   const passives = data.passives?.map(passive => withoutOtherLocales(passive, lang, ['description']))
@@ -91,6 +94,7 @@ export default async function PlannerPage({ params }: { params: Promise<{ lang: 
             passives={passives ?? []}
             skills={skills ?? []}
             egos={egos ?? []}
+            observation={observation}
           />
         </StaticQueryAdapter>
       </Suspense>
