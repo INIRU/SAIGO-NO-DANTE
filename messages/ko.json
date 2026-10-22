@@ -912,7 +912,8 @@
       "adviceMaterial": "{name} 재료",
       "adviceMaterialComplete": "{name} 완성",
       "adviceSynergy": "보유 기프트와 궁합",
-      "advicePopular": "플랜 {percent}%"
+      "advicePopular": "플랜 {percent}%",
+      "pipFusionReady": "조합 가능"
     },
     "community": "커뮤니티 플랜",
     "detail": {
