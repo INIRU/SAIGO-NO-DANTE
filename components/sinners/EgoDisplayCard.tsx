@@ -4,7 +4,7 @@ import { getFormationBannerUrl } from '@/lib/utils/images'
 
 import { useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
-import { Link } from '@/lib/i18n/navigation'
+import IntentLink from '@/components/ui/IntentLink'
 import { layoutWithLines, prepareWithSegments, setLocale as setPretextLocale } from '@chenglou/pretext'
 import { GRADE_COLORS, SIN_COLORS, STORAGE_BASE, type SinType, getSinnerLogoUrl, normalizeSin } from '@/lib/data/sinners'
 import type { SupportedLang } from '@/lib/i18n/types'
@@ -754,15 +754,14 @@ export default function EgoDisplayCard({
 
   if (href) {
     return (
-      <Link
+      <IntentLink
         href={href}
-        prefetch={false}
         className={rootClassName}
         style={rootStyle}
         aria-label={name}
       >
         {body}
-      </Link>
+      </IntentLink>
     )
   }
 

@@ -2,7 +2,7 @@
 
 import type { ReactNode } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
-import { Link } from '@/lib/i18n/navigation'
+import IntentLink from '@/components/ui/IntentLink'
 import { useMemo } from 'react'
 import { Portrait } from '@/components/ui/FormationThumbnail'
 import RelativeTime from '@/components/ui/RelativeTime'
@@ -36,7 +36,7 @@ export default function BoardCard({ kind, post, lead, compactOnPhone = false }: 
   }, [kind, post])
   return (
     <article className="board-card group relative flex flex-col overflow-hidden transition-transform duration-150 [transition-timing-function:cubic-bezier(0.23,1,0.32,1)] active:scale-[0.985] motion-reduce:transition-none motion-reduce:active:scale-100">
-      <Link href={postHref(kind, post.id)} prefetch={false} aria-label={post.title} className="absolute inset-0 z-[1] focus-visible:outline-none" />
+      <IntentLink href={postHref(kind, post.id)} aria-label={post.title} className="absolute inset-0 z-[1] focus-visible:outline-none" />
       <div className="grid grid-cols-6 gap-px border-b border-[#2e2417] bg-[#17120c]">
         {tiles.map(({ slot, dim }, index) => (
           <div key={slot.sinnerId} className={compactOnPhone && index >= 6 ? 'max-md:hidden' : undefined}>

@@ -2,7 +2,7 @@
 
 import { useMemo, type ReactNode } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
-import { Link } from '@/lib/i18n/navigation'
+import IntentLink from '@/components/ui/IntentLink'
 import { Portrait } from '@/components/ui/FormationThumbnail'
 import { formationThumbnail } from '@/lib/decks/formation-thumbnail'
 import type { DiscoveryKind } from '@/lib/discovery/recommend'
@@ -41,7 +41,7 @@ export default function FormationRow({ kind, post, lead, tags = true }: {
   const locale = useLocale() as SupportedLang
   const anonymous = useTranslations('planner.communityBoard.card')('anonymous')
   return (
-    <Link href={postHref(kind, post.id)} prefetch={false}
+    <IntentLink href={postHref(kind, post.id)}
       className="group flex min-h-[5.25rem] items-center gap-3 px-4 py-3 transition-[background-color,transform] duration-200 [transition-timing-function:cubic-bezier(0.23,1,0.32,1)] active:scale-[0.99] active:bg-white/[0.06] focus-visible:bg-white/[0.04] focus-visible:outline-none motion-reduce:transition-none motion-reduce:active:scale-100 [@media(hover:hover)]:hover:bg-white/[0.035] md:px-3">
       {lead}
       <FormationMosaic kind={kind} post={post} />
@@ -53,7 +53,7 @@ export default function FormationRow({ kind, post, lead, tags = true }: {
           <PostCounts post={post} className="ml-auto" />
         </span>
       </span>
-    </Link>
+    </IntentLink>
   )
 }
 
