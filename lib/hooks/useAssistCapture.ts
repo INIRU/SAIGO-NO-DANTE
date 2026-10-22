@@ -19,6 +19,7 @@ import { acquisitionSeq, acquisitionsToRelease, continuesFusionDialog, dialogFor
   fusionWheelAnchors, fusionWheelCrop, fusionWheelResultBox, isFusionSelectionScreen, wheelBandMatch, wheelSelectionSize, emptyWheelResult, popupEndBefore, sameWheelSignature, WHEEL_BAND_MIN, WHEEL_BAND_SIZE,
   type FusionAnchors, type FusionDialogEvidence, type FusionRead, type SeenDialog, type WheelAnchors,
   type FusionSlotRead } from '@/lib/vision/fusion-evidence'
+import { onBlessingScreen, showsBlessingScreen } from '@/lib/vision/blessing-screen'
 import { confirmsExploration, explorationFloor, explorationThemeReads, themeSelectionHeaderFloor, type ExplorationObservation,
   type ExplorationThemeReference } from '@/lib/vision/exploration-match'
 import { acquisitionPlate, darkPopupPlate, detectGiftPopupLabel, popupCaptureAction, popupIconSignature, popupLabelColor, popupPriority, popupQuality,
@@ -281,6 +282,8 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
   const wheelAnchors = useRef<{ anchors: WheelAnchors; at: number } | null>(null)
   // Capture time of the latest OCR read showing the fusion screen's title: the fusion screen in any UI theme.
   const fusionTitleAt = useRef(0)
+  // Capture time of the latest OCR read of the starlight screen (title and 입장): run_setup whatever its card colour.
+  const blessingAt = useRef(0)
   // The result box of a crop taken while OCR read the selection screen: other crops count as the wheel only if their box
   // matches it (a dialog, popup or prompt over the wheel reads as confident nonsense). Browser memory only.
   const wheelReference = useRef<Float32Array | null>(null)
@@ -461,6 +464,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
     wheelRequest.current = null
     wheelAnchors.current = null
     fusionTitleAt.current = 0
+    blessingAt.current = 0
     wheelReference.current = null
     lastDialogAt.current = 0
     dialogBreakAt.current = 0
@@ -1288,6 +1292,10 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
                 // The PiP and scene consumers follow the same fusion decision as the reader, whatever the classifier said.
                 setScene(current => current?.label === 'fusion' || current?.label === 'gift_acquired' ? current : { label: 'fusion', since: capture.at })
               }
+              if (showsBlessingScreen(result.text)) {
+                blessingAt.current = Math.max(blessingAt.current, capture.at)
+                setScene(current => current?.label === 'run_setup' || current?.label === 'gift_acquired' ? current : { label: 'run_setup', since: capture.at })
+              }
               screenReads.current = [...screenReads.current.filter(item => capture.at - item.at < 10_000), { at: capture.at, fusion: fusionScreen }]
               // OCR positions are on the reading canvas (at most 1920 px wide); the slot crops use full-size frames.
               const factor = capture.width ? capture.width / Math.min(capture.width, 1920) : 1
@@ -1700,7 +1708,9 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
               else sceneCandidate.current = { label: result.label, at: capture.at, count: 1 }
               const held = sceneCandidate.current!
               // A recently read fusion title outranks the classifier (it learned the brown UI only); gift popups still show.
-              const label = held.label !== 'gift_acquired' && onFusionScreen(null, fusionTitleAt.current, Date.now()) ? 'fusion' : held.label
+              // So does a recent read of the starlight screen, which the classifier learned in its old red colours only.
+              const label = held.label === 'gift_acquired' ? held.label : onFusionScreen(null, fusionTitleAt.current, Date.now()) ? 'fusion'
+                : onBlessingScreen(blessingAt.current, Date.now()) ? 'run_setup' : held.label
               if (held.count >= 2) setScene(current => current?.label === label ? current : { label, since: held.at })
             }
             // Event screens and pack selection headers are read by full-frame OCR, so both ask for it promptly.
