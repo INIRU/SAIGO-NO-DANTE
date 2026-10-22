@@ -48,7 +48,10 @@ export default function KeywordsClient({
   /** Game id (`[Id]` of raw game text) → keyword name, for finding the gifts that mention a keyword. */
   refKeywords: Record<string, string>
 }) {
-  const [selected, setSelected] = useState<KeywordEntry | null>(null)
+  // 키워드 상세는 주소(keyword=이름)로 열고 닫는다: 검색 결과가 바로 그 창으로 온다
+  const [keywordParam, setKeywordParam] = useQueryState('keyword', parseAsString.withDefault(''))
+  const selected = useMemo(() => keywords.find(k => k.name === keywordParam) ?? null, [keywords, keywordParam])
+  const setSelected = useCallback((kw: KeywordEntry | null) => { void setKeywordParam(kw ? kw.name : null) }, [setKeywordParam])
   const [selectedGift, setSelectedGift] = useState<KeywordGift | null>(null)
   const lang = useLocale() as SupportedLang
   const t = (key: string) => kt(key, lang)

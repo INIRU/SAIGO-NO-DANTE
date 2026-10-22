@@ -152,30 +152,40 @@
     }
   },
   "globalSearch": {
-    "ariaLabel": "グローバル検索",
-    "placeholder": "人格、E.G.O、囚人、キーワード、ギフト名",
-    "clear": "検索語を消去",
-    "loading": "検索中",
-    "emptyPromptTitle": "検索語を入力",
-    "noResultsTitle": "検索結果がありません",
+    "ariaLabel": "サイト内検索",
+    "placeholder": "人格、ギフト、キーワード、テーマパック、ページ",
+    "clear": "検索語を消す",
     "recentTitle": "最近の検索",
-    "noResultsFor": "「{query}」に一致する結果はありません",
-    "error": "検索できませんでした。しばらくしてからもう一度お試しください。",
-    "suggestionsTitle": "もしかしてこちらですか？",
-    "resultCount": "{count}件の結果",
-    "suggestionCount": "{count}件の候補",
-    "footerHint": "検索語を入力して結果を選択してください",
+    "sinnersTitle": "囚人",
+    "noResultsFor": "「{query}」の結果なし",
+    "error": "検索リストを読み込めませんでした",
+    "retry": "再試行",
+    "more": "ほか{count}件",
     "keyboard": {
       "move": "移動",
-      "select": "選択",
+      "select": "開く",
+      "type": "種類",
       "close": "閉じる"
     },
     "types": {
+      "all": "すべて",
       "sinner": "囚人",
       "identity": "人格",
       "ego": "E.G.O",
+      "egoGift": "ギフト",
       "keyword": "キーワード",
-      "egoGift": "ギフト"
+      "themePack": "テーマパック",
+      "event": "イベント",
+      "page": "ページ"
+    },
+    "reasons": {
+      "ko": "韓国語",
+      "en": "英語",
+      "ja": "日本語",
+      "sinner": "囚人",
+      "keyword": "キーワード",
+      "alias": "別名",
+      "fuzzy": "似た名前"
     }
   },
   "lang": {

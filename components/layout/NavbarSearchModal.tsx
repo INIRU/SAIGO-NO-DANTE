@@ -2,6 +2,8 @@
 
 import { Suspense, useEffect, useState } from 'react'
 import dynamic from 'next/dynamic'
+import { useLocale } from 'next-intl'
+import { loadSearchIndex } from '@/hooks/useSearchIndex'
 
 const SearchModal = dynamic(() => import('@/components/ui/SearchModal'))
 
@@ -16,11 +18,17 @@ interface Props {
  * The search modal's chunk loads after the page is idle (or on the first hover/open) instead of with every page. It is
  * mounted closed first and opened a frame later, so even the first open plays the enter animation. It has its own
  * Suspense boundary: a lazy chunk that is still loading must never send the navbar back to a fallback.
+ * The search index (about 120KB) is fetched on hover/focus or the first open, not with the page.
  */
 export default function NavbarSearchModal({ open, preload, onClose }: Props) {
   const [mounted, setMounted] = useState(false)
   const [ready, setReady] = useState(false)
+  const locale = useLocale()
   if ((open || preload) && !mounted) setMounted(true)
+
+  useEffect(() => {
+    if (open || preload) loadSearchIndex(locale).catch(() => {})
+  }, [open, preload, locale])
 
   useEffect(() => {
     if (mounted) return
