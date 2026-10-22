@@ -2,7 +2,7 @@
 
 // Design Ref: §5.1 — 인격 전체 브라우저 클라이언트
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Link } from '@/lib/i18n/navigation'
+import IntentLink from '@/components/ui/IntentLink'
 import { Search } from 'lucide-react'
 import { useLocale, useTranslations } from 'next-intl'
 import { getLocalizedName } from '@/lib/i18n/localize'
@@ -225,9 +225,8 @@ export default function IdentityBrowserClient({ identities, sinners }: Props) {
                   role="listitem"
                   variants={shouldReduceMotion ? undefined : workbenchStaggerItem}
                 >
-                  <Link
+                  <IntentLink
                     href={`/sinners/${id.sinner_slug}/identities/${id.id}`}
-                    prefetch={false}
                     aria-label={getLocalizedName({ name_kr: id.name_kr || id.name, name_en: id.name_en, name_jp: id.name_jp }, lang)}
                   >
                     <IdentityCard
@@ -237,7 +236,7 @@ export default function IdentityBrowserClient({ identities, sinners }: Props) {
                       }}
                       preload={index < PRELOADED_CARDS}
                     />
-                  </Link>
+                  </IntentLink>
                 </m.div>
               ))}
             </m.div>

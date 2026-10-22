@@ -63,11 +63,16 @@ function scrubEvent<T extends ScrubbableEvent>(event: T): T {
 Sentry.init({
   dsn: process.env.SENTRY_DSN,
   enabled: process.env.NODE_ENV === "production",
-  sendDefaultPii: false,
+  // Sentry 11 replaced sendDefaultPii with dataCollection; these keep the old "no personal data" behaviour.
+  dataCollection: {
+    userInfo: false,
+    cookies: false,
+    httpHeaders: { request: { deny: ["x-forwarded-for", "x-real-ip", "forwarded", "cf-connecting-ip"] }, response: true },
+  },
 
   tracesSampleRate: process.env.NODE_ENV === "development" ? 1.0 : 0.1,
-
-  enableLogs: true,
+  // Sentry 11 streams spans by default, which ignores beforeSendTransaction (our scrubber); keep the old transaction behaviour.
+  traceLifecycle: "static",
 
   beforeSend: scrubEvent,
   beforeSendTransaction: scrubEvent,
