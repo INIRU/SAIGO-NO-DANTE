@@ -901,7 +901,18 @@
       "gameLanguageHint": "Choose the language set in Limbus Company. Assist loads the text reader for that language.",
       "gameLanguageLiveNote": "A new language applies after you reconnect the screen.",
       "gameLanguageLoadFailed": "Could not load texts for the game language. Event recognition may be less accurate.",
-      "pipGroupOthers": "Other gifts"
+      "pipGroupOthers": "Other gifts",
+      "pipFormation": "Formation",
+      "fusionReasonFinal": "Final",
+      "fusionReasonMaterial": "Final material",
+      "deckKeyword": "Deck keyword",
+      "fusionNearly": "One material short",
+      "pipGiftAdvice": "Picks",
+      "adviceFinal": "Final goal",
+      "adviceMaterial": "For {name}",
+      "adviceMaterialComplete": "Completes {name}",
+      "adviceSynergy": "Fits held gifts",
+      "advicePopular": "{percent}% of plans"
     },
     "community": "Community Plans",
     "detail": {
