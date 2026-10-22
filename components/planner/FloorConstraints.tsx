@@ -118,7 +118,7 @@ export default function FloorConstraints({
               </strong>
               <span
                 style={{ wordBreak: lang === "ko" ? "keep-all" : "normal" }}
-                className={`absolute inset-x-[14%] top-[36%] bottom-[27%] overflow-y-auto overscroll-contain whitespace-pre-line text-left font-[family-name:var(--font-game-text)] font-normal leading-[1.3] text-[#efe6e8] [scrollbar-color:rgba(255,154,174,0.45)_transparent] [scrollbar-width:thin] [text-shadow:0_0.05em_0.2em_rgba(0,0,0,0.9)] ${{ ko: "text-[max(0.6875rem,6.6cqw)]", ja: "text-[max(0.6875rem,6cqw)]", en: "text-[max(0.6875rem,5.2cqw)]" }[lang]}`}
+                className={`absolute inset-x-[14%] top-[36%] bottom-[27%] overflow-y-auto overscroll-contain whitespace-pre-line text-left font-[family-name:var(--font-game-text)] font-normal leading-[1.3] text-[#efe6e8] [text-shadow:0_0.05em_0.2em_rgba(0,0,0,0.9)] ${{ ko: "text-[max(0.6875rem,6.6cqw)]", ja: "text-[max(0.6875rem,6cqw)]", en: "text-[max(0.6875rem,5.2cqw)]" }[lang]}`}
               >
                 {c.descriptions[lang].replace(/\n{2,}/g, "\n")}
               </span>

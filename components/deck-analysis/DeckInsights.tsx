@@ -212,7 +212,7 @@ export default function DeckInsights({ identities, sinCounts, baseSinCounts, sum
         .deck-insights__empty { color: #9c8b73; font-size: 0.875rem; }
         /* Passives follow the keyword column's height and scroll inside it (contain: size keeps the list from growing the row). */
         .deck-insights__passives { display: flex; min-width: 0; flex-direction: column; }
-        .deck-insights__scroll { max-height: 24rem; overflow-y: auto; overscroll-behavior: contain; padding-right: 0.75rem; scrollbar-width: thin; scrollbar-color: #3a2c18 transparent; }
+        .deck-insights__scroll { max-height: 24rem; overflow-y: auto; overscroll-behavior: contain; padding-right: 0.75rem; }
         .deck-insights__scroll::-webkit-scrollbar { width: 4px; }
         .deck-insights__scroll::-webkit-scrollbar-track { background: transparent; }
         .deck-insights__scroll::-webkit-scrollbar-thumb { background: #3a2c18; border-radius: 4px; }
