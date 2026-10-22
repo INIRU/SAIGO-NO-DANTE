@@ -1355,7 +1355,7 @@
       },
       "observe": {
         "cost": "観測費用:",
-        "selected": "選択 {count}/3",
+        "selected": "選択 {count}/{max}",
         "gradeRange": "{from}~{to}等級・残響除外",
         "selectedTitle": "選択中のE.G.Oギフト",
         "starlightAlt": "星光",
