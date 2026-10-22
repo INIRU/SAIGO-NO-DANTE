@@ -220,8 +220,13 @@ export default function MirrorDungeonClient({
   }, [choicesByEventId])
 
   // 로컬 상태 (모달/UI)
-  const [selected, setSelected] = useState<EgoGift | null>(null)
-  const [expandedThemeId, setExpandedThemeId] = useState<number | null>(null)
+  // 기프트·테마팩·이벤트 상세는 주소(gift, pack, event)로 열고 닫는다: 검색 결과가 바로 그 창으로 온다
+  const [giftIdParam, setGiftIdParam] = useQueryState('gift', parseAsString.withDefault(''))
+  const selected = useMemo(() => gifts.find(g => String(g.id) === giftIdParam) ?? null, [gifts, giftIdParam])
+  const setSelected = useCallback((gift: EgoGift | null) => { void setGiftIdParam(gift ? String(gift.id) : null) }, [setGiftIdParam])
+  const [packIdParam, setPackIdParam] = useQueryState('pack', parseAsString.withDefault(''))
+  const expandedThemeId = packIdParam && themes.some(t => String(t.id) === packIdParam) ? Number(packIdParam) : null
+  const setExpandedThemeId = useCallback((id: number | null) => { void setPackIdParam(id === null ? null : String(id)) }, [setPackIdParam])
   const [eventIdParam, setEventIdParam] = useQueryState('event', parseAsString.withDefault(''))
   const selectedEvent = eventById.get(Number(eventIdParam)) ?? null
   const setSelectedEvent = (event: MdEvent | null) => setEventIdParam(event ? String(event.id) : null)
