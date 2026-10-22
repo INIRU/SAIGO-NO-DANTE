@@ -1355,7 +1355,7 @@
       },
       "observe": {
         "cost": "관측 비용:",
-        "selected": "선택 {count}/3",
+        "selected": "선택 {count}/{max}",
         "gradeRange": "{from}~{to} 등급 · 잔영 제외",
         "selectedTitle": "선택한 E.G.O 기프트",
         "starlightAlt": "별빛",
