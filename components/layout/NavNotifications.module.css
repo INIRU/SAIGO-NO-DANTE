@@ -19,7 +19,7 @@
 .floating { right: .75rem; top: calc(100% - .25rem); }
 .head { display: flex; align-items: baseline; padding: .625rem .75rem .5rem; font-size: 1rem; font-weight: 600; color: var(--text-primary); }
 .count { margin-left: auto; font-size: .75rem; font-weight: 400; color: var(--text-muted); }
-.list { overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: #3a2a15 transparent; }
+.list { overflow-y: auto; overscroll-behavior: contain; }
 /* The rise is on the card, inside the item's padding: a row moved below its place would stick out of the list and flash a scrollbar. */
 .row .card { animation: arrive 240ms ease-out both; animation-delay: calc(var(--i) * 40ms); }
 .item { display: block; padding: .625rem .75rem; border-radius: .5rem; transition: background-color 150ms ease; }

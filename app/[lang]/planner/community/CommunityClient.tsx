@@ -973,13 +973,13 @@ export default function CommunityClient({ initialPlans, initialTotal, initialShe
       <BoardBrowseLock />
       <div className="relative z-[1] mx-auto flex h-full min-h-0 w-full max-w-7xl gap-5">
         <aside
-          className="board-filters hidden h-full shrink-0 overflow-y-auto pr-3 scrollbar-thin lg:block"
+          className="board-filters hidden h-full shrink-0 overflow-y-auto pr-3 lg:block"
           aria-label={t('filters.aside')}
         >
           {filterSurface}
         </aside>
 
-        <div ref={scrollRootRef} className="min-h-0 flex-1 pb-16 scrollbar-thin lg:overflow-y-auto lg:pr-1">
+        <div ref={scrollRootRef} className="min-h-0 flex-1 pb-16 lg:overflow-y-auto lg:pr-1">
           <BrowseBar
             search={{ value: inputValue, onChange: v => { setInputValue(v); setShowSuggestions(false) }, onClear: () => { setInputValue(''); setShowSuggestions(false); setAcIndex(-1) }, placeholder: t('search.placeholder'), label: t('search.label') }}
             filterCount={totalActiveCount}
@@ -1012,7 +1012,7 @@ export default function CommunityClient({ initialPlans, initialTotal, initialShe
           <div
             ref={mobilePanelRef}
             tabIndex={-1}
-            className="popup-drawer absolute bottom-0 left-0 right-0 max-h-[82dvh] overflow-y-auto rounded-t-lg outline-none scrollbar-thin"
+            className="popup-drawer absolute bottom-0 left-0 right-0 max-h-[82dvh] overflow-y-auto rounded-t-lg outline-none"
             style={{
               background: '#1a1510',
               borderTop: '1px solid rgba(200,144,10,0.25)',
