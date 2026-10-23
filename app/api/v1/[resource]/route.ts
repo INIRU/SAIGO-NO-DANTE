@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { publicSupabase } from "@/lib/supabase/public";
 import { allows, consumeApiKey } from "@/lib/developer/access";
 import {
   RESOURCES,
@@ -121,11 +121,7 @@ export async function GET(
     if (!["recent", "popular"].includes(sort) || search.length > 100)
       return fail("sort: recent or popular; q: up to 100 characters", 400);
     // Public credentials preserve the same RLS boundary as the public site.
-    const db = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
-      { auth: { persistSession: false } },
-    );
+    const db = publicSupabase();
     const columns =
       resource === "decks"
         ? "id,title,description,lang,main_keywords,tags,created_at,updated_at,vote_count,view_count,deck_identities(identity_id,slot_order),deck_egos(ego_id,grade)"

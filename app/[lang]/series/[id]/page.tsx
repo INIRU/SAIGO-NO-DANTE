@@ -4,7 +4,7 @@ import { ArrowLeft, Layers, Map as MapIcon } from 'lucide-react'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { cacheLife, cacheTag } from 'next/cache'
-import { createClient } from '@supabase/supabase-js'
+import { publicSupabase } from '@/lib/supabase/public'
 import { getTranslations } from 'next-intl/server'
 import { z } from 'zod'
 import DeckCard from '@/components/decks/DeckCard'
@@ -28,7 +28,7 @@ async function getCachedSeriesPage(id: string) {
   cacheLife('max')
   // Any deck or plan of the series may change (title, votes), so the board tags refresh it too.
   cacheTag(CACHE_TAGS.series(id), CACHE_TAGS.decksList, CACHE_TAGS.plansList)
-  const db = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!, { auth: { autoRefreshToken: false, persistSession: false } })
+  const db = publicSupabase()
   const series = await loadSeries(db, id)
   if (!series) return null
   const [cards, [owner]] = await Promise.all([

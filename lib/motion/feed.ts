@@ -1,5 +1,5 @@
 import { cacheLife, cacheTag } from 'next/cache'
-import { createClient } from '@supabase/supabase-js'
+import { publicSupabase } from '@/lib/supabase/public'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import { getIdentities } from '@/lib/db/queries'
 import { getLocalizedName } from '@/lib/i18n/localize'
@@ -25,7 +25,7 @@ async function loadMotionIndex(): Promise<MotionEntry[]> {
  * attack type). The uptie 4 row writes its image id with `_4`; the highest uptie of an id wins.
  */
 async function loadSkillData(lang: SupportedLang): Promise<{ names: Map<number, string>; frames: Map<number, MotionSkillFrame> }> {
-  const db = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!)
+  const db = publicSupabase()
   type Row = { image_id: string; name: string | null; name_en: string | null; name_jp: string | null; uptie_level: number | null; skill_order: number; atk_type: string | null; sin_affinity: string | null }
   const rows = await readAllMetaRows<Row>((from, to) => db.schema('limbus').from('skills')
     .select('image_id, name, name_en, name_jp, uptie_level, skill_order, atk_type, sin_affinity').not('image_id', 'is', null).order('id').range(from, to), 1000)
@@ -48,7 +48,7 @@ async function loadSkillData(lang: SupportedLang): Promise<{ names: Map<number, 
 
 /** The sinners' names in the page language, by sinner id (a link button names its identity with the sinner). */
 async function loadSinnerNames(lang: SupportedLang): Promise<Map<string, string>> {
-  const db = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!)
+  const db = publicSupabase()
   const { data, error } = await db.schema('limbus').from('sinners').select('id, name_kr, name_en, name_jp')
   if (error) throw error
   return new Map((data ?? []).map(row => [row.id as string, ((lang === 'en' ? row.name_en : lang === 'ja' ? row.name_jp : row.name_kr) ?? row.name_kr) as string]))
@@ -90,7 +90,7 @@ export async function loadMotionSkill(skillId: number, lang: SupportedLang): Pro
   'use cache'
   cacheLife('page-1h')
   cacheTag(CACHE_TAGS.gameData, CACHE_TAGS.identities)
-  const db = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!)
+  const db = publicSupabase()
   const { data, error } = await db.schema('limbus').from('skills').select(SKILL_COLUMNS).in('image_id', [String(skillId), `${skillId}_4`])
   if (error) throw error
   type Row = MotionSkillRow & { name_en: string | null; name_jp: string | null; description_en: string | null; description_jp: string | null; identity: MotionSkillRow['identity'] | MotionSkillRow['identity'][] }

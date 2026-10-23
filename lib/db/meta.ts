@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js'
+import { publicSupabase } from '@/lib/supabase/public'
 import { cacheLife, cacheTag } from 'next/cache'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import { isDeployedSlot } from '@/lib/constants/game'
@@ -12,9 +12,7 @@ import { DEFAULT_META_PERIOD, DEFAULT_META_SOURCE, type MetaData, type MetaFilte
 function publicClient() {
   // Aggregated results are shared publicly: never derive them from a user's session
   // or use an administrator key that could include rows hidden by RLS.
-  return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!, {
-    auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
-  }).schema('limbus')
+  return publicSupabase().schema('limbus')
 }
 
 export async function getMetaCatalog() {

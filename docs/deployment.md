@@ -28,7 +28,7 @@
 
 이미지 최적화 캐시는 배포와 상관없이 `~/saigo/cache/images` 하나를 쓴다. `deploy.sh`가 새 빌드의 `.next/cache/images`를 그 폴더로 잇는다(2026-10-22). 앱 폴더 안에 두면 배포마다 캐시가 사라져 이미지 수천 장을 sharp로 다시 변환하고, 그동안 힙 바깥 메모리가 분당 수 MB씩 늘었다.
 
-서비스 설정은 `/etc/systemd/system/saigo-web.service`와 덧붙임 `saigo-web.service.d/memory.conf`·`standalone.conf`다. 덧붙임은 `MALLOC_ARENA_MAX=2`(sharp가 쓰는 glibc 메모리 영역 수를 줄여 메모리가 불어나지 않게)와 `NODE_OPTIONS=--max-old-space-size=1024 --trace-warnings`(`MaxListenersExceededWarning`이 어디서 나는지 기록)를 넣는다. 서비스는 메모리 상한으로 자동 재시작하지 않는다(사용자 결정, 2026-10-22). 설정은 다음 배포 때 서비스가 새로 뜨면서 적용된다.
+서비스 설정은 `/etc/systemd/system/saigo-web.service`와 덧붙임 `saigo-web.service.d/memory.conf`·`standalone.conf`다. 덧붙임은 `MALLOC_ARENA_MAX=2`(sharp가 쓰는 glibc 메모리 영역 수를 줄여 메모리가 불어나지 않게)와 `NODE_OPTIONS=--max-old-space-size=2048 --trace-warnings`(`MaxListenersExceededWarning`이 어디서 나는지 기록)를 넣는다. JS 메모리 상한은 2GB다: 서버에서 빌드하던 때의 1GB에서는 상세 페이지 캐시가 차며 상한에 닿아 서비스가 죽고 재시작 동안 500이 났다(2026-10-23, 빌드는 GitHub로 옮겨 여유가 생김). 서비스는 메모리 상한으로 자동 재시작하지 않는다(사용자 결정, 2026-10-22). 설정은 다음 배포 때 서비스가 새로 뜨면서 적용된다.
 
 - 배포 기록: `journalctl -u saigo-deploy`
 - 앱 로그: `journalctl -u saigo-web`
