@@ -1178,7 +1178,6 @@
       "empty": "Unset",
       "shortGiftCount": "{count} gifts",
       "selectTheme": "Choose theme pack",
-      "selectThemeFirst": "Choose a theme pack first.",
       "availableThemeCount": "{count} available",
       "close": "Close",
       "memoPlaceholder": "Strategy memo for this floor… (keyword and gift autocomplete supported)",
