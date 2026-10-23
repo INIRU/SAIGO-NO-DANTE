@@ -2808,6 +2808,8 @@
     "title": "인격 스킬 모션",
     "metaTitle": "림버스 컴퍼니 인격 스킬 모션",
     "metaDescription": "림버스 컴퍼니 인격 스킬 연출을 조건별로 재생하고 버프 이펙트를 켜고 끌 수 있습니다.",
+    "skillMetaTitle": "{sinner} {identity} {skill} 스킬 모션",
+    "skillMetaDescription": "림버스 컴퍼니 {sinner} {identity}의 「{skill}」 스킬 연출({states})을 재생하고 버프 이펙트를 켜고 끌 수 있습니다.",
     "back": "뒤로",
     "search": "인격·스킬 검색",
     "noResults": "검색 결과가 없습니다.",

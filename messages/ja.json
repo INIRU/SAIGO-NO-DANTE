@@ -2808,6 +2808,8 @@
     "title": "スキルモーション",
     "metaTitle": "リンバスカンパニー 人格スキルモーション",
     "metaDescription": "リンバスカンパニーの人格スキル演出を条件ごとに再生し、バフエフェクトをオン・オフできます。",
+    "skillMetaTitle": "{sinner} {identity} {skill} スキルモーション",
+    "skillMetaDescription": "リンバスカンパニー {sinner} {identity}のスキル「{skill}」の演出（{states}）を再生し、バフエフェクトをオン・オフできます。",
     "back": "戻る",
     "search": "人格・スキル検索",
     "noResults": "検索結果がありません。",

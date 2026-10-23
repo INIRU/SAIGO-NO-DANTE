@@ -9,8 +9,6 @@ export type MotionError = 'webgl' | 'load'
 /** The frame being shown, read by the controls only (the rest of the page does not re-render 60 times a second). */
 export type MotionFrameStore = { subscribe: (listener: () => void) => () => void; get: () => number }
 
-type Keep = { t: number; playing: boolean }
-
 /**
  * The skill motion player (the reference player of the R2 export, as a hook): a hidden video element feeds the WebGL2
  * compositor, which draws the base picture plus the wanted buff layers into a canvas the hook puts in `hostRef`. A newer
@@ -57,16 +55,19 @@ export function useSkillMotion() {
     canvasRef.current = null
   }, [])
 
+  const show = useCallback((n: number) => {
+    if (n === frame.current.value) return
+    frame.current.value = n
+    frame.current.listeners.forEach(listener => listener())
+  }, [])
+
   const draw = useCallback(() => {
     const v = video.current, m = meta.current
     if (!v || !m || !comp.current || !onScreen.current) return
     const n = Math.min(m.frames - 1, Math.floor(v.currentTime * m.fps + 1e-3))
     comp.current.draw(v, n)
-    if (n !== frame.current.value) {
-      frame.current.value = n
-      frame.current.listeners.forEach(listener => listener())
-    }
-  }, [])
+    show(n)
+  }, [show])
 
   useEffect(() => {
     const v = document.createElement('video')
@@ -108,11 +109,12 @@ export function useSkillMotion() {
     }
   }, [draw, free])
 
-  /** Load one state; `keep` holds the time and play state over a change of state of the same skill. */
-  const load = useCallback(async (state: MotionState, keep: Keep | null = null) => {
+  /** Load one state (another skill or condition), from its first frame. */
+  const load = useCallback(async (state: MotionState) => {
     const v = video.current
     if (!v) return
     const mine = ++token.current
+    show(0)
     setStatus('loading')
     setError(null)
     try {
@@ -154,20 +156,18 @@ export function useSkillMotion() {
       setLayers(m.layers.filter(layer => !layer.empty).map(layer => ({ id: layer.id, label: layer.label, labelKey: (layer as { labelKey?: string }).labelKey, on: toggles.current.get(layer.id)!, offAtSkill: Boolean(layer.offAtSkill) })))
       setFrames(m.frames)
       setHasAudio(Boolean(m.audio))
-      v.currentTime = keep ? Math.min(keep.t, (m.frames - 1) / m.fps) : 0
-      frame.current.value = -1
+      v.currentTime = 0
       draw()
       setStatus('ready')
-      if (!held.current && (!keep || keep.playing)) v.play().catch(() => {})
+      if (!held.current) v.play().catch(() => {})
       else v.pause()
     } catch {
       if (mine !== token.current) return
       setError('load')
       setStatus('error')
     }
-  }, [draw])
+  }, [draw, show])
 
-  const current = useCallback((): Keep => ({ t: video.current?.currentTime ?? 0, playing: Boolean(video.current && !video.current.paused) }), [])
   const togglePlay = useCallback(() => { const v = video.current; if (v && !held.current) (v.paused ? v.play().catch(() => {}) : v.pause()) }, [])
   /** Hold or release playback; a release plays the loaded video (the notice's 확인 is the press that starts it). */
   const hold = useCallback((on: boolean) => {
@@ -177,13 +177,18 @@ export function useSkillMotion() {
     if (on) v.pause()
     else if (meta.current && v.paused) v.play().catch(() => {})
   }, [])
-  /** Go to a frame: the middle of its slot (a seek to the exact boundary may land on the previous frame). */
+  /**
+   * Go to a frame: the middle of its slot (a seek to the exact boundary may land on the previous frame). The controls show
+   * it at once: the seek bar under a finger and repeated frame steps do not wait for the video to get there.
+   */
   const seek = useCallback((n: number) => {
     const v = video.current, m = meta.current
     if (!v || !m) return
+    const to = Math.max(0, Math.min(m.frames - 1, n))
     v.pause()
-    v.currentTime = (Math.max(0, Math.min(m.frames - 1, n)) + 0.5) / m.fps
-  }, [])
+    v.currentTime = (to + 0.5) / m.fps
+    show(to)
+  }, [show])
   const step = useCallback((delta: number) => seek(frame.current.value + delta), [seek])
   const toggleMute = useCallback(() => {
     const v = video.current
@@ -210,7 +215,7 @@ export function useSkillMotion() {
     draw()
   }, [draw])
 
-  return { hostRef, status, error, playing, muted, volume, frames, hasAudio, layers, frameStore, load, current, togglePlay, hold, seek, step, toggleMute, setVolume, setLayer }
+  return { hostRef, status, error, playing, muted, volume, frames, hasAudio, layers, frameStore, load, togglePlay, hold, seek, step, toggleMute, setVolume, setLayer }
 }
 
 /** The frame being shown, for a component that draws it (the counter, the seek bar). */
