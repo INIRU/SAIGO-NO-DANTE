@@ -8,7 +8,7 @@ import { ChevronDown, RotateCw } from 'lucide-react'
 import BaseModal from '@/components/ui/BaseModal'
 import QuietImage from '@/components/ui/QuietImage'
 import { useSkillMotion } from '@/hooks/useSkillMotion'
-import { defaultMotionState, type MotionIdentity, type MotionSinner, type MotionSkill } from '@/lib/motion/catalog'
+import { defaultMotionState, fromMotionParam as fromParam, toMotionParam as toParam, type MotionIdentity, type MotionSinner, type MotionSkill } from '@/lib/motion/catalog'
 import MotionConditions from './MotionConditions'
 import MotionPicker from './MotionPicker'
 import MotionSkillStrip from './MotionSkillStrip'
@@ -24,9 +24,6 @@ const readCatalog = async (url: string): Promise<MotionSinner[]> => {
   return (await response.json()).sinners
 }
 
-// The address names a skill as "<slug>~<skill id>" ("|" of the internal key reads badly in a URL).
-const toParam = (key: string) => key.replace('|', '~')
-const fromParam = (param: string) => param.replace('~', '|')
 const QUERY = { skill: parseAsString, state: parseAsString }
 const QUERY_OPTIONS = { history: 'replace', shallow: true, scroll: false } as const
 
