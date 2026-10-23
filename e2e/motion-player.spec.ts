@@ -15,6 +15,11 @@ async function closeAnnouncements(page: Page) {
 
 async function open(page: Page) {
   await closeAnnouncements(page)
+  // The asset host answers another origin's CORS header now and then (an edge-cached response): allow this one.
+  await page.route('https://assets.saigo-no-dante.com/**', async route => {
+    const response = await route.fetch()
+    await route.fulfill({ response, headers: { ...response.headers(), 'access-control-allow-origin': '*' } })
+  })
   await page.goto(SKILL)
   await page.getByRole('button', { name: '확인' }).click()
   await expect(page.getByRole('button', { name: '일시정지' })).toBeEnabled({ timeout: 30000 })
@@ -56,4 +61,29 @@ test('REQ-MOTION-024 a sinner tab seen once comes back as it was, without loadin
   await expect(tabs.nth(1)).toHaveAttribute('aria-selected', 'true')
   await tabs.nth(0).click()
   expect(await portrait().evaluate(img => (img as HTMLImageElement & { seen?: boolean }).seen ?? false), 'the same image element, not a new one').toBe(true)
+})
+
+test('REQ-MOTION-025 coming back to the page, the sound button and the bar match what the video plays', async ({ page }) => {
+  // The page's <video> is not in the document: record the element the hook last set, to read what it really plays.
+  await page.addInitScript(() => {
+    for (const name of ['volume', 'muted'] as const) {
+      const property = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, name)!
+      Object.defineProperty(HTMLMediaElement.prototype, name, { configurable: true, get() { return property.get!.call(this) },
+        set(value) { (window as unknown as { media: HTMLMediaElement }).media = this; property.set!.call(this, value) } })
+    }
+  })
+  const media = () => page.evaluate(() => { const v = (window as unknown as { media: HTMLMediaElement }).media; return { muted: v.muted, volume: v.volume } })
+  await open(page)
+  await page.getByRole('slider', { name: '음량' }).fill('0.3')
+  expect(await media()).toEqual({ muted: false, volume: 0.3 })
+  // A client navigation (the site's home link; the motion page hides the bar it sits in), then the browser's back.
+  await page.locator('a[href="/ko"]').first().evaluate(link => (link as HTMLAnchorElement).click())
+  await page.waitForURL(/\/ko$/)
+  await page.goBack()
+  await expect(page.getByRole('button', { name: /소리 (켜기|끄기)/ })).toBeEnabled({ timeout: 30000 })
+  await expect(page.getByRole('button', { name: '소리 켜기' })).toBeVisible()
+  expect((await media()).muted).toBe(true)
+  await page.getByRole('button', { name: '소리 켜기' }).click()
+  expect(await media()).toEqual({ muted: false, volume: 0.3 })
+  await expect(page.getByRole('slider', { name: '음량' })).toHaveValue('0.3')
 })
