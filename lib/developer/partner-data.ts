@@ -1,12 +1,12 @@
 import { cacheLife, cacheTag } from 'next/cache'
-import { createClient } from '@supabase/supabase-js'
+import { publicSupabase } from '@/lib/supabase/public'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 
 type Row = Record<string, any>
 
 // Public credentials preserve the same RLS boundary as the public site.
 const db = () =>
-  createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!, { auth: { persistSession: false } }).schema('limbus')
+  publicSupabase().schema('limbus')
 
 const IDENTITY = 'id, game_id, sinner_id, folder_name, name, name_kr, name_en, name_jp, tier, rarity, sin_affinity, hp, speed_min, speed_max, def_level, keywords, skill_keyword_list, unit_keyword_list, affiliation, association_list, slash_res, pierce_res, blunt_res, release_date'
 const SKILLS = 'skills(id, name, name_en, name_jp, skill_type, atk_type, sin_affinity, coins, base_power, coin_power, description, description_en, description_jp, skill_order, variant_order, uptie_level, image_id, atk_weight, offense_level)'

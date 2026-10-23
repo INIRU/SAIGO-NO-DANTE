@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js'
+import { publicSupabase } from '@/lib/supabase/public'
 import { renderOgPreview } from '@/components/ui/OgPreview'
 import { resolvePlannerIdentity } from '@/lib/planner/catalog-references'
 import { getIdentityPortraitUrl } from '@/lib/utils/images'
@@ -9,7 +9,7 @@ export const contentType = OG_CONTENT_TYPE
 export default async function PlanOgImage({ params }: { params: Promise<{ lang: string; id: string }> }) {
   const { lang: rawLang, id } = await params
   const lang = isSupportedLang(rawLang) ? rawLang : 'ko'
-  const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!)
+  const supabase = publicSupabase()
   const { data: plan, error } = await supabase.schema('limbus').from('md_plans').select('title, deck').eq('id', id).maybeSingle()
   const slots = !error && Array.isArray(plan?.deck) ? plan.deck.filter(slot => slot && typeof slot === 'object' && !Array.isArray(slot)) as { identity_id?: unknown; sinner_id?: unknown; game_id?: unknown; slot_order?: number; gacksung?: boolean }[] : []
   let images: string[] = []
