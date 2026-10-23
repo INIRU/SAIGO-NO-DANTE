@@ -87,3 +87,11 @@ test('REQ-MOTION-025 coming back to the page, the sound button and the bar match
   expect(await media()).toEqual({ muted: false, volume: 0.3 })
   await expect(page.getByRole('slider', { name: '음량' })).toHaveValue('0.3')
 })
+
+test('REQ-MOTION-003 the video and its layers.json are read at their plain R2 paths, which the upload purges', async ({ page }) => {
+  const assets: string[] = []
+  page.on('request', request => { if (request.url().startsWith('https://assets.saigo-no-dante.com/') && !request.url().endsWith('index.json')) assets.push(request.url()) })
+  await open(page)
+  expect(assets.some(url => url.endsWith('/layers.mp4')) && assets.some(url => url.endsWith('/layers.json'))).toBe(true)
+  expect(assets.filter(url => url.includes('?'))).toEqual([])
+})

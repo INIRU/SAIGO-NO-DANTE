@@ -124,14 +124,14 @@ export function useSkillMotion() {
     setStatus('loading')
     setError(null)
     try {
-      const response = await fetch(motionAssetUrl(state.meta, state.bytes))
+      const response = await fetch(motionAssetUrl(state.meta))
       if (!response.ok) throw new Error(String(response.status))
       const m = await response.json() as LayerSetMeta
       if (mine !== token.current) return
       v.pause()
       free()
       meta.current = null
-      v.src = motionAssetUrl(state.video, state.bytes)
+      v.src = motionAssetUrl(state.video)
       const loaded = new Promise<void>((resolve, reject) => {
         v.onloadeddata = () => resolve()
         v.onerror = () => reject(new Error('video'))

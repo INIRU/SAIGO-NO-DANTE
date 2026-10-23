@@ -145,9 +145,12 @@ export function pickLinkState(states: readonly MotionState[], gameId: string, ma
   return own.find(s => s.link!.max === max) ?? own[0]
 }
 
-/** A file on the R2 host; its size in the query makes a browser that cached an older render fetch it again. */
-export function motionAssetUrl(path: string, bytes: number | undefined): string {
-  return MOTION_ASSET_BASE + path + (bytes ? `?v=${bytes}` : '')
+/**
+ * A file on the R2 host at its plain path. A re-upload purges that address from the Cloudflare cache and the files are
+ * stored no-cache, so browsers revalidate; a query string would keep an old render cached where the purge cannot reach.
+ */
+export function motionAssetUrl(path: string): string {
+  return MOTION_ASSET_BASE + path
 }
 
 // On one release date: the game's own identity, then entries of an older index (LCB, 흑수, 홍원 slugs), then old links.
