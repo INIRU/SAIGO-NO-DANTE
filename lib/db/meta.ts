@@ -5,7 +5,6 @@ import { isDeployedSlot } from '@/lib/constants/game'
 import type { Formation } from '@/lib/discovery/co-occurrence'
 import { buildRecCatalog, type RawCatalog, type RecCatalog } from '@/lib/discovery/rec-catalog'
 import { aggregateMeta, fieldedSlots, metaPeriodStart, planGiftIds, planThemeIds } from '@/lib/meta/aggregate'
-import { planGiftStats, type PlanGiftStats } from '@/lib/meta/plan-gift-stats'
 import { readAllMetaRows } from '@/lib/meta/pagination'
 import { DEFAULT_META_PERIOD, DEFAULT_META_SOURCE, type MetaData, type MetaFilters, type MetaIdentity, type MetaEGO, type MetaGift, type MetaPost, type MetaSkill, type MetaSource, type MetaPeriod, type MetaTheme } from '@/lib/meta/types'
 
@@ -118,16 +117,6 @@ async function buildMetaData(source: MetaSource, period: MetaPeriod, filters: Me
   const giftIds = [...summaries.flatMap(summary => summary.gifts), ...dungeon.routes, ...dungeon.start, ...dungeon.observe, ...dungeon.enhanced].map(row => row.key)
   const themeIds = [...summaries.flatMap(summary => summary.themes), ...dungeon.floors.flatMap(floor => floor.themes)].map(row => row.key)
   return { ...data, giftCatalog: pick(planCatalog.gifts, giftIds), themeCatalog: pick(planCatalog.themes, themeIds), skillCatalog: pick(skills, Object.keys(data.identityInsights)) }
-}
-
-/** Gift and gift-pair counts over every public plan, for the assist's recommendations; recounted daily or when a plan changes. */
-export async function getPlanGiftStats(): Promise<PlanGiftStats> {
-  'use cache'
-  cacheLife('page-1d')
-  cacheTag(CACHE_TAGS.plansList, CACHE_TAGS.meta)
-  const rows = await readAllMetaRows<{ gift_inventory: unknown; floor_plan: unknown }>((from, to) => publicClient().from('md_plans')
-    .select('id, gift_inventory, floor_plan').order('id').range(from, to))
-  return planGiftStats(rows.map(row => ({ inventory: row.gift_inventory, floorPlan: row.floor_plan })))
 }
 
 /** One of the twelve unfiltered scopes (source × period): what most visits ask for, kept whole. */

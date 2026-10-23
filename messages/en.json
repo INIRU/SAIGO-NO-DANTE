@@ -907,12 +907,6 @@
       "fusionReasonMaterial": "Final material",
       "deckKeyword": "Deck keyword",
       "fusionNearly": "One material short",
-      "pipGiftAdvice": "Picks",
-      "adviceFinal": "Final goal",
-      "adviceMaterial": "For {name}",
-      "adviceMaterialComplete": "Completes {name}",
-      "adviceSynergy": "Fits held gifts",
-      "advicePopular": "{percent}% of plans",
       "pipFusionReady": "Ready to fuse"
     },
     "community": "Community Plans",

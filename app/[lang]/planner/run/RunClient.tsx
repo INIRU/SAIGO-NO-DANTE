@@ -21,7 +21,6 @@ import type { MdEvent, MdEventChoice } from '@/components/mirror-dungeon/types'
 import RunSetup from '@/components/planner/run/RunSetup'
 import FloorPanel, { type RunView } from '@/components/planner/run/FloorPanel'
 import CompanionPanel from '@/components/planner/run/CompanionPanel'
-import type { PlanGiftStats } from '@/lib/meta/plan-gift-stats'
 import RecognitionModeControl from '@/components/planner/run/RecognitionModeControl'
 import DetectionToggles, { ToggleSwitch } from '@/components/planner/run/DetectionToggles'
 import { DETECTION_STORAGE_KEY, DEFAULT_DETECTION, readDetectionSettings, type DetectionSettings } from '@/lib/vision/detection-settings'
@@ -65,14 +64,6 @@ export default function RunClient({ themes, gifts, recipes, identities, sinners,
   const state = useRunStore()
   const dispatch = useRunStore(s => s.dispatch)
   const [loadingPlan, setLoadingPlan] = useState(true)
-  // Recommendations work without plan statistics; a failed load only drops their synergy and adoption parts.
-  const [planGiftStats, setPlanGiftStats] = useState<PlanGiftStats | null>(null)
-  useEffect(() => {
-    let live = true
-    fetch('/api/planner/gift-stats').then(response => response.ok ? response.json() : null)
-      .then(stats => { if (live && stats && typeof stats.plans === 'number' && stats.holders) setPlanGiftStats(stats) }).catch(() => {})
-    return () => { live = false }
-  }, [])
   const tTempSaves = useTranslations('planner.tempSaves')
   const [runSlots, setRunSlots] = useState<TempSlot<RunState>[]>([])
   useEffect(() => { setRunSlots(loadTempSlots(RUN_DRAFTS_KEY, isRunState)) }, [])
@@ -345,7 +336,7 @@ export default function RunClient({ themes, gifts, recipes, identities, sinners,
             skillExchange={capture.status === 'running' ? capture.skillExchange : null}
             skills={skills}
             recipes={recipes}
-            sinners={sinners} identities={identities} egos={egos} planGiftStats={planGiftStats}
+            sinners={sinners} identities={identities} egos={egos}
             themeSelectionFloor={capture.status === 'running' ? capture.themeSelectionFloor : null}
             floorThemeObservation={capture.status === 'running' ? capture.floorThemeObservation : null}
             observedFloor={capture.status === 'running' ? capture.observedFloor : null}
