@@ -5,12 +5,8 @@ export const EVENT_IDLE_EXIT_MS = 15000
 
 /** A classifier label seen in two consecutive confident predictions, and when it was first seen. */
 export interface StableScene { label: string; since: number }
-/** Formation screens shown in the PiP: one confident frame of another screen leaves them (the next screen must not wait). */
-const FORMATION_SCENES: ReadonlySet<string> = new Set(['run_setup', 'battle_setup'])
-export const LEAVE_FORMATION_CONFIDENCE = 0.8
-/** How many consecutive frames of `label` replace the stable scene `current`. */
-export const framesToSwitchScene = (current: string | undefined, label: string, confidence: number) =>
-  current !== undefined && FORMATION_SCENES.has(current) && label !== current && confidence >= LEAVE_FORMATION_CONFIDENCE ? 1 : 2
+/** Screens the PiP shows the formation on: the dungeon entry (run_setup) and the formation itself, read as battle_setup. */
+export const FORMATION_SCENES: ReadonlySet<string> = new Set(['run_setup', 'battle_setup'])
 export interface EventView { eventId: number; observedAt: number; floor: number | null }
 
 /** When the event screen was left according to the stable scene, or null while it may still be showing. */
