@@ -1,6 +1,14 @@
 import { describe, expect, it, vi } from 'vitest'
 
 vi.mock('@sentry/nextjs', () => ({ captureException: vi.fn() }))
+const motionCatalog = vi.fn(async () => [{ id: 'yi-sang', identities: [
+  { slug: 'id10199', label: '새 인격', identityId: null, gameId: '10199', portrait: null, released: null, skills: [], pending: true },
+  { slug: 'id10116', label: '차원찢개', identityId: 'a', gameId: '10116', portrait: null, released: null, skills: [
+    { key: 'id10116|1011601', skillId: 1011601, title: '차원 베기', form: null, states: [] },
+    { key: 'id10116|1011602', skillId: 1011602, title: '차원 가르기', form: null, states: [] },
+  ] },
+] }])
+vi.mock('@/lib/motion/feed', () => ({ loadMotionCatalog: () => motionCatalog() }))
 
 const rows: Record<string, object[]> = {
   identities: [{ id: '10101', sinner_id: 'yisang', release_date: '2026-09-10' }],
@@ -67,5 +75,17 @@ describe('sitemap', () => {
     const urls = (await sitemap()).map(entry => entry.url)
 
     expect(urls).toContain('https://saigo-no-dante.com/ko/motion/skills')
+  })
+  it('REQ-MOTION-022 lists every skill motion address, and the rest when the list cannot be read', async () => {
+    const { default: sitemap } = await import('@/app/sitemap')
+    const entries = await sitemap()
+    const skill = entries.find(entry => entry.url === 'https://saigo-no-dante.com/ko/motion/skills?skill=id10116~1011601')
+    expect(skill?.alternates?.languages).toMatchObject({ en: 'https://saigo-no-dante.com/en/motion/skills?skill=id10116~1011601' })
+    expect(entries.filter(entry => entry.url.includes('/motion/skills?skill='))).toHaveLength(2)
+
+    motionCatalog.mockRejectedValueOnce(new Error('R2 down'))
+    const fallback = (await sitemap()).map(entry => entry.url)
+    expect(fallback).toContain('https://saigo-no-dante.com/ko/motion/skills')
+    expect(fallback.some(url => url.includes('?skill='))).toBe(false)
   })
 })

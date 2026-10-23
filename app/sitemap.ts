@@ -3,6 +3,8 @@ import type { MetadataRoute } from 'next'
 import { createClient } from '@/lib/supabase/server'
 import { SINNER_SLUGS } from '@/lib/constants/game'
 import { PRIMARY_LOCALE, localeLanguages, localeUrl } from '@/lib/seo/metadata'
+import { loadMotionCatalog } from '@/lib/motion/feed'
+import { toMotionParam } from '@/lib/motion/catalog'
 
 type Entry = MetadataRoute.Sitemap[number]
 type Row = { id: string; sinner_id?: string; release_date?: string | null; updated_at?: string | null }
@@ -43,6 +45,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const deckRows: Row[] = decks ?? []
   const planRows: Row[] = plans ?? []
   const gameDataDate = latest([...identityRows, ...egoRows], 'release_date')
+  // Every skill motion has its own address (?skill=, with its own title). The R2 list down: the motion page alone.
+  const motionSkills = await loadMotionCatalog(PRIMARY_LOCALE).then(
+    sinners => sinners.flatMap(sinner => sinner.identities.flatMap(identity => identity.skills.map(skill => entry(`/motion/skills?skill=${toMotionParam(skill.key)}`, identity.released)))),
+    error => { Sentry.captureException(error, { tags: { location: 'sitemap:sitemap' }, extra: { msg: 'Failed to read the motion list' } }); return [] },
+  )
 
   // Left out: pages kept out of the index (login, my page, writing and editing screens, and the personal or crawler-empty
   // /collection, /friends, /planner editor, /planner/run, /random) and /decks/new, /developers, which are not decided yet.
@@ -69,5 +76,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...egoRows.map(row => entry(`/sinners/${row.sinner_id}/ego/${row.id}`, row.release_date)),
     ...deckRows.map(row => entry(`/decks/${row.id}`, row.updated_at)),
     ...planRows.map(row => entry(`/planner/community/${row.id}`, row.updated_at)),
+    ...motionSkills,
   ]
 }

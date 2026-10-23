@@ -2808,6 +2808,8 @@
     "title": "Skill Motion",
     "metaTitle": "Limbus Company Identity Skill Motion",
     "metaDescription": "Play Limbus Company identity skill animations by condition and turn buff effects on or off.",
+    "skillMetaTitle": "{sinner} {identity} {skill} Skill Motion",
+    "skillMetaDescription": "Play the skill animation of Limbus Company {sinner} {identity}’s {skill} ({states}) and turn buff effects on or off.",
     "back": "Back",
     "search": "Search identity or skill",
     "noResults": "No results.",
