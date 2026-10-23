@@ -1,6 +1,5 @@
 import { expect, it } from 'vitest'
-import { committedKeywords, formationRow, fusionGuide, recommendGifts } from '../../../lib/planner/assist-gift-guide'
-import { planGiftStats } from '../../../lib/meta/plan-gift-stats'
+import { committedKeywords, formationRow, fusionGuide } from '../../../lib/planner/assist-gift-guide'
 import type { GiftData, IdentitySlot, RecipeData } from '../../../lib/planner/types'
 
 const gift = (game_id: number, keyword = '공통', grade = '2', name = `g${game_id}`) => ({ game_id, name, keyword, grade }) as GiftData
@@ -26,7 +25,7 @@ it('REQ-ASSIST-077 lays the run formation out in sinner order with 1-based forma
   ])
 })
 
-it('REQ-ASSIST-079 commits to keywords counted from deployed identities and held gifts', () => {
+it('REQ-ASSIST-078 commits to keywords counted from deployed identities and held gifts', () => {
   const slots = [slot('a', 0, ['화상']), slot('b', 1, ['화상', '출혈']), slot('c', 9, ['화상'])]
   expect(committedKeywords(slots, ['1'], giftMap)).toEqual(['화상'])
   expect(committedKeywords(slots, ['1', '4', '5'], giftMap)).toEqual(['화상', '출혈'])
@@ -46,21 +45,4 @@ it('REQ-ASSIST-078 orders craftable fusions by final, final material, keyword, t
 it('REQ-ASSIST-078 marks a fusion whose result is a material of a final recipe and skips results already held', () => {
   const guide = fusionGuide({ inventory: ['1', '2', '4', '20', '13'], targets: ['12'], recipes, giftMap, committed: [] })
   expect(guide.ready.map(item => [item.fusion.result?.game_id, item.reason])).toEqual([[10, 'material']])
-})
-
-it('REQ-ASSIST-079 ranks seen gifts by goal, keyword commitment, plan synergy and shrunk adoption', () => {
-  // 100 plans: 1 in 50, 2 in 40 (30 of them with 1), 20 in 60 (all of 1's), 4 in 10 (none with 1), 3 in 5.
-  const stats = planGiftStats(Array.from({ length: 100 }, (_, i) => ({ floorPlan: null, inventory: [
-    i < 50 && 'final_1', i >= 20 && i < 60 && 'final_2', i >= 90 && 'final_4', i < 60 && 'final_20', i >= 60 && i < 65 && 'final_3'].filter(Boolean) })))
-  const ranked = recommendGifts({ candidates: [20, 4, 2, 1, 999], inventory: ['1'], targets: ['10'], recipes, giftMap, committed: ['화상'], stats })
-  expect(ranked.map(item => item.gift.game_id)).toEqual([2, 20, 4])
-  expect(ranked[0].reasons.map(reason => reason.kind)).toEqual(['material', 'keyword', 'synergy', 'popular'])
-  expect(ranked[0].reasons[0]).toMatchObject({ kind: 'material', complete: true })
-  expect(ranked[2].score).toBeLessThan(0)
-})
-
-it('REQ-ASSIST-079 still ranks without plan statistics and puts final gifts first', () => {
-  const ranked = recommendGifts({ candidates: [4, 10, 3], inventory: [], targets: ['10'], recipes, giftMap, committed: [], stats: null })
-  expect(ranked[0]).toMatchObject({ gift: { game_id: 10 }, score: 100 })
-  expect(ranked[0].reasons).toEqual([{ kind: 'final' }])
 })

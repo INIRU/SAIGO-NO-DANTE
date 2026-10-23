@@ -907,12 +907,6 @@
       "fusionReasonMaterial": "목표 재료",
       "deckKeyword": "덱 키워드",
       "fusionNearly": "재료 1개 부족",
-      "pipGiftAdvice": "추천",
-      "adviceFinal": "최종 목표",
-      "adviceMaterial": "{name} 재료",
-      "adviceMaterialComplete": "{name} 완성",
-      "adviceSynergy": "보유 기프트와 궁합",
-      "advicePopular": "플랜 {percent}%",
       "pipFusionReady": "조합 가능"
     },
     "community": "커뮤니티 플랜",

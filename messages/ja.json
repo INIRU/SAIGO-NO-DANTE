@@ -907,12 +907,6 @@
       "fusionReasonMaterial": "目標素材",
       "deckKeyword": "デッキキーワード",
       "fusionNearly": "素材あと1つ",
-      "pipGiftAdvice": "おすすめ",
-      "adviceFinal": "最終目標",
-      "adviceMaterial": "{name}の素材",
-      "adviceMaterialComplete": "{name}完成",
-      "adviceSynergy": "所持ギフトと相性",
-      "advicePopular": "プラン{percent}%",
       "pipFusionReady": "合成可能"
     },
     "community": "コミュニティプラン",
