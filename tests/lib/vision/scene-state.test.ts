@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest'
-import { eventExitAt, framesToSwitchScene, nextEventView } from '../../../lib/vision/scene-state'
+import { eventExitAt, FORMATION_SCENES, nextEventView } from '../../../lib/vision/scene-state'
 
 const view = { eventId: 901007, observedAt: 1_000, floor: 1 }
 const step = (current: typeof view | null, input: Partial<Parameters<typeof nextEventView>[1]>) =>
@@ -31,12 +31,8 @@ it('ends on a stable exit scene, floor change, stop or a long other scene, then 
   expect(eventExitAt({ label: 'theme_select', since: 2_000 }, 2_100)).toBe(2_000)
 })
 
-it('REQ-ASSIST-082 leaves the formation screens on one confident frame of another screen and waits for two frames otherwise', () => {
-  expect(framesToSwitchScene('run_setup', 'start_gift', 0.8)).toBe(1)
-  expect(framesToSwitchScene('run_setup', 'battle_setup', 0.95)).toBe(1)
-  expect(framesToSwitchScene('battle_setup', 'battle', 0.9)).toBe(1)
-  expect(framesToSwitchScene('run_setup', 'start_gift', 0.79)).toBe(2)
-  expect(framesToSwitchScene('start_gift', 'run_setup', 0.99)).toBe(2)
-  expect(framesToSwitchScene(undefined, 'run_setup', 0.99)).toBe(2)
-  expect(framesToSwitchScene('shop', 'event', 0.99)).toBe(2)
+it('REQ-ASSIST-077 shows the formation on the dungeon entry and formation screens, in the run start too', () => {
+  // Video review 2026-10-23: entry screen run_setup, the formation screen battle_setup (0.5–0.95), start gifts start_gift.
+  expect([...FORMATION_SCENES].sort()).toEqual(['battle_setup', 'run_setup'])
+  expect(FORMATION_SCENES.has('start_gift')).toBe(false)
 })

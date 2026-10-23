@@ -6,7 +6,7 @@ import { corroboratedChoiceEvent, effectGiftIds, eventScreenEvidence, matchOcrCa
   type OcrWord } from '@/lib/vision/ocr-match'
 import { acquiredGiftFromPopup, acquisitionFloor, AUTO_ACQUIRE_EXCLUDED_GIFT_IDS, popupCandidateIds, popupHeaderEvidence, showsAcquiredHeader, type PopupLabelRead } from '@/lib/vision/popup-evidence'
 import type { RecipePopupEvidence } from '@/lib/planner/fusion'
-import { framesToSwitchScene, type StableScene } from '@/lib/vision/scene-state'
+import type { StableScene } from '@/lib/vision/scene-state'
 import { cpuFallback, isMobileDevice, webgpuBlock, type GpuBlock } from '@/lib/vision/device'
 import { RECOGNITION_PROFILES, type RecognitionMode } from '@/lib/vision/recognition-profile'
 import { DEFAULT_DETECTION, type DetectionSettings } from '@/lib/vision/detection-settings'
@@ -19,7 +19,7 @@ import { acquisitionSeq, acquisitionsToRelease, continuesFusionDialog, dialogFor
   fusionWheelAnchors, fusionWheelCrop, fusionWheelResultBox, isFusionSelectionScreen, wheelBandMatch, wheelSelectionSize, emptyWheelResult, popupEndBefore, sameWheelSignature, WHEEL_BAND_MIN, WHEEL_BAND_SIZE,
   type FusionAnchors, type FusionDialogEvidence, type FusionRead, type SeenDialog, type WheelAnchors,
   type FusionSlotRead } from '@/lib/vision/fusion-evidence'
-import { onBlessingScreen, showsBlessingScreen } from '@/lib/vision/blessing-screen'
+import { BLESSING_SCENE, onBlessingScreen, showsBlessingScreen } from '@/lib/vision/blessing-screen'
 import { confirmsExploration, explorationFloor, explorationThemeReads, themeSelectionHeaderFloor, type ExplorationObservation,
   type ExplorationThemeReference } from '@/lib/vision/exploration-match'
 import { acquisitionPlate, darkPopupPlate, detectGiftPopupLabel, popupCaptureAction, popupIconSignature, popupLabelColor, popupPriority, popupQuality,
@@ -1294,7 +1294,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
               }
               if (showsBlessingScreen(result.text)) {
                 blessingAt.current = Math.max(blessingAt.current, capture.at)
-                setScene(current => current?.label === 'run_setup' || current?.label === 'gift_acquired' ? current : { label: 'run_setup', since: capture.at })
+                setScene(current => current?.label === BLESSING_SCENE || current?.label === 'gift_acquired' ? current : { label: BLESSING_SCENE, since: capture.at })
               }
               screenReads.current = [...screenReads.current.filter(item => capture.at - item.at < 10_000), { at: capture.at, fusion: fusionScreen }]
               // OCR positions are on the reading canvas (at most 1920 px wide); the slot crops use full-size frames.
@@ -1710,9 +1710,8 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
               // A recently read fusion title outranks the classifier (it learned the brown UI only); gift popups still show.
               // So does a recent read of the starlight screen, which the classifier learned in its old red colours only.
               const label = held.label === 'gift_acquired' ? held.label : onFusionScreen(null, fusionTitleAt.current, Date.now()) ? 'fusion'
-                : onBlessingScreen(blessingAt.current, Date.now()) ? 'run_setup' : held.label
-              const confidence = result.confidence
-              setScene(current => current?.label === label || held.count < framesToSwitchScene(current?.label, label, confidence) ? current : { label, since: held.at })
+                : onBlessingScreen(blessingAt.current, Date.now()) ? BLESSING_SCENE : held.label
+              if (held.count >= 2) setScene(current => current?.label === label ? current : { label, since: held.at })
             }
             // Event screens and pack selection headers are read by full-frame OCR, so both ask for it promptly.
             // Fusion screens are read too: their confirmation dialog names how many materials are about to be consumed.

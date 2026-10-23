@@ -10,7 +10,7 @@ import { PictureInPicture2, RotateCcw, RotateCw, Settings2 } from 'lucide-react'
 import { useCompanionWindow } from '@/lib/hooks/useCompanionWindow'
 import { getCurrentFloorPriorityGifts, getFusionTierGifts, giftGameId, nextGiftPromotion, planGiftIds, planThemeGiftIds, type GiftPromotion } from '@/lib/planner/run-priority-gifts'
 import { acquisitionAttributionFloor, clearedThemeFloors, floorThemeObservationAction, getRunThemeGuidance, pendingThemeSelectionFloor, planStartGiftIds, runStartEnded } from '@/lib/planner/run-theme-guidance'
-import { EVENT_EXIT_SCENES, EVENT_IDLE_EXIT_MS, nextEventView, type StableScene } from '@/lib/vision/scene-state'
+import { EVENT_EXIT_SCENES, EVENT_IDLE_EXIT_MS, FORMATION_SCENES, nextEventView, type StableScene } from '@/lib/vision/scene-state'
 import { normalizeRunState, runReducer, type RunAction, type RunState } from '@/lib/planner/run-types'
 import type { ThemeData, GiftData, SkillSummary, RecipeData, SinnerData, IdentityData, EgoData } from '@/lib/planner/types'
 import { committedKeywords, formationRow, fusionGuide } from '@/lib/planner/assist-gift-guide'
@@ -159,10 +159,9 @@ export default function CompanionPanel({ state, dispatch, themes, giftMap, obser
   const guide = useMemo(() => fusionView.current ? fusionGuide({ inventory: state.giftInventory, targets: state.targetGifts, recipes, giftMap, committed }) : null,
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [fusionView.current, state.giftInventory, state.targetGifts, recipes, giftMap, committed])
-  // Start gift screens sometimes read as battle_setup, so a battle's setup shows the formation only once the start is over.
   // The plan author's memo for a floor (runs started from a plan only).
   const planMemo = (floor: number) => state.sourcePlanSnapshot?.floorPlan?.find(entry => entry.floor === floor)?.memo
-  const formationScreen = captureRunning && (scene?.label === 'run_setup' || (scene?.label === 'battle_setup' && !startPhase))
+  const formationScreen = captureRunning && !!scene && FORMATION_SCENES.has(scene.label)
   const formationCode = useMemo(() => {
     if (!formationScreen || !sinners.length) return ''
     try { return teamCodeFromPlanSlots(state.identitySlots, state.egoSlots, sinners, identities, egos) } catch { return '' }
@@ -467,7 +466,7 @@ export default function CompanionPanel({ state, dispatch, themes, giftMap, obser
       {header(inPip)}
       <CompanionSkillExchange exchange={skillExchange} slots={state.sourcePlanSnapshot.identitySlots ?? []} skills={skills} />
     </div>
-    // The formation and starlight screens (and each battle's setup) show who to field, in the game's sinner order.
+    // The dungeon entry and formation screens (and each battle's setup) show who to field, in the game's sinner order.
     if (formationScreen && sinners.length && state.identitySlots.length) return <div data-companion-content={inPip ? 'pip' : 'inline'}>
       {header(inPip, t('pipFormation'))}
       <CompanionFormation cells={formationRow(state.identitySlots, sinners)} code={formationCode} width={availableWidth}

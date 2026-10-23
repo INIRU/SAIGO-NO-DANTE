@@ -7,6 +7,12 @@ const normalized = (text: string) => text.normalize('NFKC').replace(/\s+/g, '')
  */
 export const showsBlessingScreen = (text: string) => { const read = normalized(text); return read.includes('별의가호') && read.includes('입장') }
 
+/**
+ * The scene that screen stands for. It now comes after the formation and before the start gifts (recording 2026-10-23),
+ * so it is part of the run start: the PiP leaves the formation for the start gifts there.
+ */
+export const BLESSING_SCENE = 'start_gift'
+
 /** How long a read of that screen keeps it on after the capture it came from. */
 export const BLESSING_KEEP_MS = 4000
 
