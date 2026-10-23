@@ -272,7 +272,8 @@ export function plannerReducer(state: PlannerState, action: PlannerAction): Plan
       return {
         ...state,
         floorPlan: state.floorPlan.map(f =>
-          f.floor === action.floor ? { ...f, theme_id: action.themeId, gift_ids: [], memo: f.memo } : f
+          // Gifts picked before any pack exclude every pack's own gifts, so the first pack keeps them; a change clears them.
+          f.floor === action.floor ? { ...f, theme_id: action.themeId, gift_ids: !f.theme_id && action.themeId ? f.gift_ids : [], memo: f.memo } : f
         ),
       }
     case 'SET_FLOOR_GIFTS':

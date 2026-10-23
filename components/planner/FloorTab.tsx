@@ -713,10 +713,9 @@ export default function FloorTab({ state, dispatch, themes, gifts, recipes, gift
             <h5 className="mb-2 text-[0.9375rem]" style={{ fontFamily: 'var(--font-heading)', color: '#e8dcc8' }}>
               {t('acquiredGiftCount', { count: floorGifts.length })}
             </h5>
-            {selectedTheme ? (
             <div className="flex flex-wrap items-start gap-2">
               {floorGifts.map(gift => {
-                const warning = themeExclusiveGiftIds(selectedTheme).includes(gift.game_id) ? exclusiveLabel : undefined
+                const warning = selectedTheme && themeExclusiveGiftIds(selectedTheme).includes(gift.game_id) ? exclusiveLabel : undefined
                 if (!plannedIds.has(String(gift.game_id))) {
                   return (
                     <div key={gift.game_id} className="w-[4rem]">
@@ -754,9 +753,6 @@ export default function FloorTab({ state, dispatch, themes, gifts, recipes, gift
                 onClick={() => setGiftPickerOpen(true)}
               />
             </div>
-          ) : (
-            <p className="text-sm" style={{ color: '#6a6058' }}>{t('selectThemeFirst')}</p>
-          )}
           </div>
 
           <ConfirmModal
@@ -769,9 +765,9 @@ export default function FloorTab({ state, dispatch, themes, gifts, recipes, gift
             onCancel={() => setCopyConfirm(null)}
           />
           <FloorGiftPickerModal
-            open={giftPickerOpen && Boolean(selectedTheme)}
+            open={giftPickerOpen}
             title={t('floorGiftPickerTitle', { floor: entry.floor })}
-            floorGifts={availableGifts}
+            floorGifts={selectedTheme ? availableGifts : null}
             allGifts={reachableGifts}
             exclusiveIds={selectedTheme ? themeExclusiveGiftIds(selectedTheme) : []}
             showRecent
