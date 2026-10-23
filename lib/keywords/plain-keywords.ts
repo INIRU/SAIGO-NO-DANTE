@@ -47,6 +47,34 @@ export const PLAIN_KEYWORDS: Readonly<Record<string, PlainKeywordTier>> = Object
   ...Object.fromEntries(COUNTED.map((name) => [name, 'counted' as const])),
 })
 
+/**
+ * A keyword's own description (tooltip, keyword page): the game writes every keyword in it as plain words, in all three
+ * languages (no `[Id]` in the game's buff text). PLAIN_KEYWORDS plus the specific names keyword descriptions mention, read
+ * one by one in the stored ko/en/ja descriptions (2026-10-23).
+ * Left out: names that are (or sit inside) an E.G.O gift name in some language (상처, 경멸, 시선, 가호, 지령, 얽힘, 예지안,
+ * 맥동, 원한, 포박, 타오름, 버림, 잔불 …), ordinary words without an English name (관통, 참격, 타격, 해금) and a passive name (추모).
+ */
+const KEYWORD_TEXT_FREE = [
+  '12구산 연료', '과열 연료', '결투 선포', '경혈 갑주', '그림 재료', '생체 재료', '깊은 눈물', '꿰뚫는 검', '지키는 검', '호표탄', '맹호표탄',
+  '맺혀가는 응어리', '불안정한 격정', '시간 대여', '천퇴성[天退星]', '신(心) - 천퇴성[天退星]', '아르뮈르 에비이예', '르누아르 개버딘 원단 코트',
+  '압송 채비', '원호 공격', '저격 자세', '중지 - 원한', '지령 대상', '지령 표식', '지령의 가호', '진동 - 중첩', '진폭 변환', '진폭 얽힘',
+  '집중 공격', '찢긴 색채 [루주]', '찢긴 색채 [블뢰]', '찢어진 추억', '파괴 불가 코인', '포박 [홍루]', '포자탄[기본]', '포자탄[산탄]',
+  '피로 물든 손', '합 위력 증가', '해금 - I', '해금 - II', '해금 - III', '화살 - 시', '레플렉시옹', '오혈', '적안', '참회', '현혹', '새단장',
+]
+const KEYWORD_TEXT_COUNTED = ['부하', '배고픔', '보존', '포자', '절망', '경의']
+
+export const KEYWORD_TEXT_KEYWORDS: Readonly<Record<string, PlainKeywordTier>> = Object.freeze({
+  ...PLAIN_KEYWORDS,
+  ...Object.fromEntries(KEYWORD_TEXT_FREE.map((name) => [name, 'free' as const])),
+  ...Object.fromEntries(KEYWORD_TEXT_COUNTED.map((name) => [name, 'counted' as const])),
+})
+const KEYWORD_TEXT_NAMES = Object.keys(KEYWORD_TEXT_KEYWORDS)
+
+/** The keywords a keyword's description may draw: every listed one but the keyword itself. */
+export function keywordTextAllowed(self: string): ReadonlySet<string> {
+  return new Set(KEYWORD_TEXT_NAMES.filter((name) => name !== self))
+}
+
 type Lang = 'ko' | 'en' | 'ja'
 
 /** Other ways the stored text writes a name, so that part of it is not cut out: Japanese `振動 爆発` for `振動爆発`. */
@@ -76,19 +104,27 @@ const LEFT_EN = String.raw`(?<![\p{L}\p{M}\p{N}_'’-])`
 const RIGHT_KO = String.raw`(?![\p{L}\p{M}](?<![이가을를은는의]))`
 const RIGHT_EN = String.raw`(?![\p{L}\p{M}\p{N}_-])`
 const RIGHT_JA = String.raw`(?![\p{Script=Han}\p{Script=Katakana}A-Za-z])`
+// Keyword descriptions (`loose`): hiragana before a Japanese name is a particle or a verb ending (`対象に出血`, `自分の火傷`),
+// and 威力 / 回数 / ダメージ after it are its Potency, Count and damage (`火傷回数`), as `Burn Potency` in English.
+const LEFT_JA_LOOSE = String.raw`(?<![\p{Script=Han}\p{Script=Katakana}A-Za-z])`
+const RIGHT_JA_LOOSE = String.raw`(?!(?!威力|回数|ダメージ)[\p{Script=Han}\p{Script=Katakana}A-Za-z])`
 
-const matchers = new WeakMap<Record<string, KeywordInfo>, Map<Lang, PlainKeywordMatcher | null>>()
+const matchers = new WeakMap<Record<string, KeywordInfo>, Map<string, PlainKeywordMatcher | null>>()
 
-/** The search for one catalog and language, built once and shared (the catalog object is stable per page). */
-export function plainKeywordMatcher(keywords: Record<string, KeywordInfo>, locale: string): PlainKeywordMatcher | null {
+/**
+ * The search for one catalog and language, built once and shared (the catalog object is stable per page). `loose`: the
+ * Japanese edges of keyword descriptions (LEFT_JA_LOOSE); skill text keeps the audited ones.
+ */
+export function plainKeywordMatcher(keywords: Record<string, KeywordInfo>, locale: string, loose = false): PlainKeywordMatcher | null {
   let byLang = matchers.get(keywords)
   if (!byLang) matchers.set(keywords, (byLang = new Map()))
   const lang = langOf(locale)
-  if (!byLang.has(lang)) byLang.set(lang, buildMatcher(keywords, lang))
-  return byLang.get(lang) ?? null
+  const key = loose && lang === 'ja' ? 'ja-loose' : lang
+  if (!byLang.has(key)) byLang.set(key, buildMatcher(keywords, lang, key === 'ja-loose'))
+  return byLang.get(key) ?? null
 }
 
-function buildMatcher(keywords: Record<string, KeywordInfo>, lang: Lang): PlainKeywordMatcher | null {
+function buildMatcher(keywords: Record<string, KeywordInfo>, lang: Lang, loose: boolean): PlainKeywordMatcher | null {
   const krOf = new Map<string, string | null>()
   for (const [krKey, info] of Object.entries(keywords)) {
     const name = nameIn(lang, krKey, info)
@@ -99,8 +135,8 @@ function buildMatcher(keywords: Record<string, KeywordInfo>, lang: Lang): PlainK
   }
   if (krOf.size === 0) return null
   const names = [...krOf.keys()].sort((a, b) => b.length - a.length || (a < b ? -1 : 1))
-  const left = lang === 'en' ? LEFT_EN : LEFT
-  const right = lang === 'en' ? RIGHT_EN : lang === 'ja' ? RIGHT_JA : RIGHT_KO
+  const left = lang === 'en' ? LEFT_EN : loose ? LEFT_JA_LOOSE : LEFT
+  const right = lang === 'en' ? RIGHT_EN : lang === 'ja' ? (loose ? RIGHT_JA_LOOSE : RIGHT_JA) : RIGHT_KO
   return { pattern: new RegExp(`${left}(?:${names.map(escapeRegExp).join('|')})${right}`, 'gu'), krOf, lang }
 }
 

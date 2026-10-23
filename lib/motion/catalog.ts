@@ -237,7 +237,9 @@ export function buildMotionCatalog(entries: readonly MotionEntry[], identities: 
     if (!bySlug) return []
     const list = [...bySlug.values()]
     for (const identity of list) {
-      identity.skills.sort((a, b) => (a.form ?? '').localeCompare(b.form ?? '') || a.skillId - b.skillId)
+      // The game's order (skill 1, 2, 3, defense): a skill id's last digits need not follow it (10102: …02 is skill 3).
+      const slot = (skill: MotionSkill) => skill.frame?.slot ?? 9
+      identity.skills.sort((a, b) => (a.form ?? '').localeCompare(b.form ?? '') || slot(a) - slot(b) || a.skillId - b.skillId)
       for (const skill of identity.skills) skill.states.sort((a, b) => stateRank(a.state) - stateRank(b.state) || a.state.localeCompare(b.state))
     }
     // Newest release first, like the site's identity lists; one the site has no row for yet is the newest.

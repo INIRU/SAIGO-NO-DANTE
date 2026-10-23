@@ -18,7 +18,7 @@ function IdentityRow({ identity, selected, onPick, children }: { identity: Motio
       <button type="button" onClick={onPick} aria-current={selected ? 'true' : undefined}
         className={`group flex w-full items-center gap-3 rounded-lg p-1.5 text-left transition-colors hover:bg-[rgba(200,144,10,0.08)] aria-[current=true]:bg-[rgba(200,144,10,0.12)] ${focusRing}`}>
         <span className={`relative h-11 w-11 shrink-0 overflow-hidden rounded-md border bg-[#0a0806] transition-colors ${selected ? 'border-[var(--gold)]' : 'border-[#2e2417]'}`}>
-          {identity.portrait && <QuietImage src={identity.portrait} alt="" fill sizes="2.75rem" className="object-cover object-[50%_12%]" />}
+          {identity.portrait && <QuietImage src={identity.portrait} alt="" fill sizes="2.75rem" loading="eager" className="object-cover object-[50%_12%]" />}
         </span>
         <span className={`line-clamp-2 min-w-0 flex-1 text-[0.875rem] leading-snug transition-colors ${selected ? 'text-[var(--gold-light)]' : 'text-[var(--text-secondary)] group-hover:text-[var(--text-primary)]'}`}>{identity.label}</span>
         {identity.pending && <Hourglass className="mr-1 h-4 w-4 shrink-0 text-[var(--text-tertiary)]" role="img" aria-label={t('pendingTitle')} />}
@@ -44,11 +44,14 @@ export default function MotionPicker({ sinners, sinnerId, selectedKey, onSinner,
   const [query, setQuery] = useState('')
   const needle = useDeferredValue(query.trim().toLowerCase())
   const sinner = sinners.find(s => s.id === sinnerId) ?? sinners[0]
+  // A sinner's list, once shown, stays (hidden) while another is: going back shows it at once, its portraits already drawn.
+  const [seen, setSeen] = useState<readonly string[]>(() => (sinner ? [sinner.id] : []))
+  if (sinner && !seen.includes(sinner.id)) setSeen([...seen, sinner.id])
   // A pending identity is chosen by its slug, the others by one of their skills.
   const owns = (identity: MotionIdentity) => identity.slug === selectedKey || identity.skills.some(skill => skill.key === selectedKey)
 
   // The chosen identity in view when the list opens (a shared link, the sheet on a phone).
-  const list = useRef<HTMLUListElement>(null)
+  const list = useRef<HTMLDivElement>(null)
   useEffect(() => { list.current?.querySelector('[aria-current="true"]')?.scrollIntoView({ block: 'nearest' }) }, [])
 
   const matches = useMemo(() => {
@@ -87,9 +90,10 @@ export default function MotionPicker({ sinners, sinnerId, selectedKey, onSinner,
         </div>
       )}
 
-      <ul ref={list} className="flex flex-col gap-0.5" aria-label={matches ? t('search') : sinner ? tSinner(sinner.id) : undefined}>
-        {matches
-          ? matches.length === 0
+      <div ref={list}>
+      {matches ? (
+      <ul className="flex flex-col gap-0.5" aria-label={t('search')}>
+        {matches.length === 0
             ? <li className="px-2 py-6 text-center text-[0.875rem] text-[var(--text-secondary)]">{t('noResults')}</li>
             : matches.map(({ sinnerId: id, identity, skills }) => (
                 <IdentityRow key={identity.slug} identity={identity} selected={owns(identity)} onPick={() => onPick(id, identity, skills[0])}>
@@ -109,11 +113,16 @@ export default function MotionPicker({ sinners, sinnerId, selectedKey, onSinner,
                     </ul>
                   )}
                 </IdentityRow>
-              ))
-          : sinner?.identities.map(identity => (
-              <IdentityRow key={identity.slug} identity={identity} selected={owns(identity)} onPick={() => onPick(sinner.id, identity)} />
-            ))}
+              ))}
       </ul>
+      ) : sinners.filter(s => seen.includes(s.id)).map(s => (
+        <ul key={s.id} hidden={s.id !== sinner?.id} className="flex flex-col gap-0.5" aria-label={tSinner(s.id)}>
+          {s.identities.map(identity => (
+            <IdentityRow key={identity.slug} identity={identity} selected={owns(identity)} onPick={() => onPick(s.id, identity)} />
+          ))}
+        </ul>
+      ))}
+      </div>
     </div>
   )
 }

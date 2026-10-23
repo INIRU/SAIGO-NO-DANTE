@@ -2,6 +2,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it, vi } from 'vitest'
 import { KeywordProvider, resolveKeywordIconUrl, useFormatSkillDesc, type KeywordInfo } from '@/components/providers/KeywordProvider'
 import SkillDescription from '@/components/skill/SkillDescription'
+import { keywordTextAllowed } from '@/lib/keywords/plain-keywords'
 import type { GameTextRefNames } from '@/lib/db/game-text-refs'
 
 const REFS: GameTextRefNames = {
@@ -34,12 +35,12 @@ const KEYWORDS: Record<string, KeywordInfo> = {
 const OWN = new Set(['진동', '침잠', '침잠쇄도'])
 
 type Options = Parameters<ReturnType<typeof useFormatSkillDesc>>[4]
-function Formatter({ text, skillNameColors, allowed, options }: { text: string; skillNameColors?: Record<string, string>; allowed: Set<string> | null; options?: Options }) {
+function Formatter({ text, skillNameColors, allowed, options }: { text: string; skillNameColors?: Record<string, string>; allowed: ReadonlySet<string> | null; options?: Options }) {
   const format = useFormatSkillDesc()
   return <>{format(text, '#abcdef', skillNameColors, allowed ?? undefined, options)}</>
 }
 /** `allowed` null: the caller gave no set. `options` defaults to switched on; `{}` is what every other caller passes. */
-const render = (text: string, allowed: Set<string> | null = OWN, options: Options = { matchPlainKeywords: true }, skillNameColors?: Record<string, string>) =>
+const render = (text: string, allowed: ReadonlySet<string> | null = OWN, options: Options = { matchPlainKeywords: true }, skillNameColors?: Record<string, string>) =>
   renderToStaticMarkup(<KeywordProvider keywords={KEYWORDS}><Formatter text={text} allowed={allowed} options={options} skillNameColors={skillNameColors} /></KeywordProvider>)
 const tokens = (html: string) => html.match(/keyword-token/g)?.length ?? 0
 
@@ -131,5 +132,29 @@ describe('REQ-KEYWORDS-007 plain keywords of older skill text', () => {
     expect(tokens(wrap(<SkillDescription description={text} accentColor="#c2b79f" variant="detail" allowedKeywords={OWN} matchPlainKeywords />))).toBe(2)
     expect(tokens(wrap(<SkillDescription description={text} accentColor="#c2b79f" variant="detail" allowedKeywords={OWN} />))).toBe(0)
     expect(tokens(wrap(<SkillDescription description={text} accentColor="#c2b79f" variant="detail" matchPlainKeywords />))).toBe(0)
+  })
+})
+
+describe('REQ-KEYWORDS-010 a keyword description draws the keywords it names', () => {
+  const keywordText = (text: string, options: Options = {}) =>
+    render(text, keywordTextAllowed('신속'), { highlightValues: '#e8b030', matchPlainKeywords: true, keywordText: true, ...options })
+
+  it('REQ-KEYWORDS-010 draws the battle keywords of a keyword description, but not the keyword it describes', () => {
+    const html = keywordText('- 신속 1당 진동 위력 +1, 침잠 횟수 2')
+    expect(tokens(html)).toBe(2)
+    expect(html).toContain('>진동<')
+    expect(html).toContain('>침잠<')
+  })
+
+  it('REQ-KEYWORDS-010 opens no tooltip from a keyword inside a tooltip: icon and colour only', () => {
+    const inside = keywordText('진동 위력 +1', { nested: true })
+    expect(tokens(inside)).toBe(1)
+    expect(inside).toContain('<img')
+    expect(inside).not.toContain('tabindex="0"')
+    expect(inside).not.toContain('cursor:help')
+    // The keyword page (not a tooltip) keeps the tooltip.
+    expect(keywordText('진동 위력 +1')).toContain('tabindex="0"')
+    // A game [Id] inside a tooltip opens nothing either.
+    expect(render('[Sinking] 3', OWN, { nested: true })).not.toContain('tabindex="0"')
   })
 })
