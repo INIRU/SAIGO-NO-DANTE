@@ -95,3 +95,16 @@ test('REQ-MOTION-003 the video and its layers.json are read at their plain R2 pa
   expect(assets.some(url => url.endsWith('/layers.mp4')) && assets.some(url => url.endsWith('/layers.json'))).toBe(true)
   expect(assets.filter(url => url.includes('?'))).toEqual([])
 })
+
+test('REQ-MOTION-001 every page open reads index.json from R2 in the browser, not a list the server kept', async ({ page }) => {
+  const index: string[] = [], lists: string[] = []
+  page.on('request', request => {
+    if (request.url() === 'https://assets.saigo-no-dante.com/index.json') index.push(request.headers()['cache-control'] ?? '')
+    if (request.url().includes('/api/motion/catalog')) lists.push(request.url())
+  })
+  await open(page)
+  await page.reload()
+  await expect(page.getByRole('button', { name: /소리 (켜기|끄기)/ })).toBeVisible({ timeout: 30000 })
+  expect(index.length).toBeGreaterThanOrEqual(2)
+  expect(lists).toEqual([])
+})

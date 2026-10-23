@@ -6,14 +6,14 @@ import { getLocalizedName } from '@/lib/i18n/localize'
 import { readAllMetaRows } from '@/lib/meta/pagination'
 import { getGameTextRefNamesOrNull } from '@/lib/db/game-text-refs'
 import type { SupportedLang } from '@/lib/i18n/types'
-import { MOTION_ASSET_BASE, buildMotionCatalog, type MotionEntry, type MotionIdentityInfo, type MotionSinner, type MotionSkillFrame } from '@/lib/motion/catalog'
+import { MOTION_INDEX_URL, motionCatalogFrom, type MotionEntry, type MotionSinner, type MotionSiteData, type MotionSkillFrame } from '@/lib/motion/catalog'
 
-/** The R2 `index.json` (about 0.6 MB): read once per ten minutes for every visitor, never copied into the database. */
+/** The R2 `index.json` (about 0.9 MB) for the sitemap and skill metadata: read once per ten minutes, never copied into the database. */
 async function loadMotionIndex(): Promise<MotionEntry[]> {
   'use cache'
   cacheLife('page-10m')
   cacheTag(CACHE_TAGS.motion)
-  const response = await fetch(MOTION_ASSET_BASE + 'index.json')
+  const response = await fetch(MOTION_INDEX_URL)
   if (!response.ok) throw new Error(`motion index: ${response.status}`)
   const rows: unknown = await response.json()
   if (!Array.isArray(rows)) throw new Error('motion index: not a list')
@@ -54,18 +54,31 @@ async function loadSinnerNames(lang: SupportedLang): Promise<Map<string, string>
   return new Map((data ?? []).map(row => [row.id as string, ((lang === 'en' ? row.name_en : lang === 'ja' ? row.name_jp : row.name_kr) ?? row.name_kr) as string]))
 }
 
-/** The motion list in one language: sinners → identities → skills → states (lib/motion/catalog.ts). */
+/** The site's names and sprites for the motion list in one language (the R2 index is read apart, see MOTION_INDEX_URL). */
+export async function loadMotionSiteData(lang: SupportedLang): Promise<MotionSiteData> {
+  'use cache'
+  cacheLife('page-1h')
+  cacheTag(CACHE_TAGS.gameData, CACHE_TAGS.identities)
+  const [identities, skills, refs, sinnerNames] = await Promise.all([getIdentities(), loadSkillData(lang), getGameTextRefNamesOrNull(lang), loadSinnerNames(lang)])
+  return {
+    identities: identities.flatMap(identity => identity.game_id ? [{ id: identity.id, name: getLocalizedName(identity, lang), sinner_id: identity.sinner_id,
+      sinner_name: sinnerNames.get(identity.sinner_id), game_id: identity.game_id, folder_name: identity.folder_name ?? null, release_date: identity.release_date ?? null }] : []),
+    skillNames: [...skills.names],
+    skillFrames: [...skills.frames],
+    refs,
+  }
+}
+
+/**
+ * The motion list in one language on the server, for the sitemap and each skill's metadata (the player builds its own from
+ * the index it reads, so a list ten minutes old here only delays a new skill's search page).
+ */
 export async function loadMotionCatalog(lang: SupportedLang): Promise<MotionSinner[]> {
   'use cache'
   cacheLife('page-10m')
   cacheTag(CACHE_TAGS.motion, CACHE_TAGS.identities)
-  const [rows, identities, skills, refs, sinnerNames] = await Promise.all([loadMotionIndex(), getIdentities(), loadSkillData(lang), getGameTextRefNamesOrNull(lang), loadSinnerNames(lang)])
-  const byGameId = new Map<string, MotionIdentityInfo>()
-  for (const identity of identities) {
-    if (!identity.game_id) continue
-    byGameId.set(identity.game_id, { id: identity.id, name: getLocalizedName(identity, lang), sinner_id: identity.sinner_id, sinner_name: sinnerNames.get(identity.sinner_id), game_id: identity.game_id, folder_name: identity.folder_name ?? null, release_date: identity.release_date ?? null })
-  }
-  return buildMotionCatalog(rows, byGameId, lang, { skillNames: skills.names, skillFrames: skills.frames, refs, now: new Date() })
+  const [rows, site] = await Promise.all([loadMotionIndex(), loadMotionSiteData(lang)])
+  return motionCatalogFrom(rows, site, lang, new Date())
 }
 
 export type MotionSkillRow = {
