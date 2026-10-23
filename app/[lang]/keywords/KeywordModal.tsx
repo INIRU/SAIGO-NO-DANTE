@@ -15,6 +15,7 @@ import { getEgoGradeBannerUrl, getIdentityPortraitUrl } from '@/lib/utils/images
 import { getLocalizedName } from '@/lib/i18n/localize'
 import type { SupportedLang } from '@/lib/i18n/types'
 import { keywordDesc, keywordName, kt, useKeywordColor, type KeywordEntry } from './KeywordCard'
+import { keywordTextAllowed } from '@/lib/keywords/plain-keywords'
 
 export interface KeywordIdentity {
   id: string; name: string; name_kr: string; sinner_id: string
@@ -111,7 +112,7 @@ export default function KeywordModal({
 
           {desc && (
             <div className="whitespace-pre-line border-t border-[#2e2417] px-5 py-4 text-[0.875rem] leading-[1.75] text-[#d8ccb4]">
-              {formatSkillDesc(desc, '#d8ccb4', undefined, undefined, { highlightValues: color })}
+              {formatSkillDesc(desc, '#d8ccb4', undefined, keywordTextAllowed(kw.name), { highlightValues: color, matchPlainKeywords: true, keywordText: true })}
             </div>
           )}
 

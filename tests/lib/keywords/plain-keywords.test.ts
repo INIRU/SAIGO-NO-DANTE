@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { KeywordInfo } from '@/lib/keywords/catalog'
-import { findPlainKeywords, plainKeywordMatcher, PLAIN_KEYWORDS, quotedRanges } from '@/lib/keywords/plain-keywords'
+import { findPlainKeywords, KEYWORD_TEXT_KEYWORDS, plainKeywordMatcher, PLAIN_KEYWORDS, quotedRanges } from '@/lib/keywords/plain-keywords'
 
 // Names as keyword_meta spells them (ko name, name_en, name_jp). 버림, 경멸, 새벽 사무소 are real keywords that are NOT in PLAIN_KEYWORDS.
 const CATALOG: Record<string, KeywordInfo> = {
@@ -190,5 +190,55 @@ describe('REQ-KEYWORDS-007 plain keywords of older skill text', () => {
   it('REQ-KEYWORDS-007 builds the search once per catalog and language', () => {
     expect(plainKeywordMatcher(CATALOG, 'ko')).toBe(plainKeywordMatcher(CATALOG, 'ko'))
     expect(plainKeywordMatcher(CATALOG, 'en')).not.toBe(plainKeywordMatcher(CATALOG, 'ko'))
+  })
+})
+
+describe('REQ-KEYWORDS-010 keywords named in a keyword description', () => {
+  const KW: Record<string, KeywordInfo> = {
+    ...CATALOG,
+    '지령의 가호': { desc: '', nameEn: 'Grace of the Prescript', nameJp: '指令の加護' },
+    '지령 표식': { desc: '', nameEn: 'Mark of the Prescript', nameJp: '指令の印' },
+    지령: { desc: '', nameEn: 'Prescript', nameJp: '指令' },
+    잔불: { desc: '', nameEn: 'Embers', nameJp: '残り火' },
+    '시선의 경멸': { desc: '', nameEn: 'Contempt of the Gaze', nameJp: '視線の軽蔑' },
+    부하: { desc: '', nameEn: 'Load', nameJp: '負荷' },
+  }
+  const ALL_KW = new Set(Object.keys(KW))
+  const found = (text: string, locale: 'ko' | 'en' | 'ja', loose = true) =>
+    findPlainKeywords(text, plainKeywordMatcher(KW, locale, loose), ALL_KW, [], KEYWORD_TEXT_KEYWORDS).map(hit => text.slice(hit.from, hit.to))
+
+  it('REQ-KEYWORDS-010 finds the battle keywords and the specific keyword names other keywords mention, in all three languages', () => {
+    expect(found('- 화상 위력, 화상 횟수 또는 출혈을 부여하는 기본 스킬', 'ko')).toEqual(['화상', '화상', '출혈'])
+    expect(found('편성할 수 있는 지령의 가호 최댓값: 9, 지령 표식이 새겨진', 'ko')).toEqual(['지령의 가호', '지령 표식'])
+    expect(found('Max Grace of the Prescript: 9; inflict 2 Burn', 'en')).toEqual(['Grace of the Prescript', 'Burn'])
+    expect(found('編成できる指令の加護の最大値', 'ja')).toEqual(['指令の加護'])
+  })
+
+  it('REQ-KEYWORDS-010 reads Japanese particles before a keyword and 威力・回数 after it, in keyword descriptions only', () => {
+    expect(found('対象に出血 1を付与', 'ja')).toEqual(['出血'])
+    expect(found('自分の火傷回数が3以上なら、敵の出血と火傷の合計', 'ja')).toEqual(['火傷', '出血', '火傷'])
+    expect(found('振動威力', 'ja')).toEqual(['振動'])
+    // Still not inside a longer word.
+    expect(found('充電器を使う', 'ja')).toEqual([])
+    // The skill text keeps the audited rule.
+    expect(found('対象に出血 1を付与', 'ja', false)).toEqual([])
+  })
+
+  it('REQ-KEYWORDS-010 never draws a name that is also an E.G.O gift or an ordinary word', () => {
+    // 잔불·지령·시선의 경멸 are keywords whose names are (or sit inside) gift names: never drawn.
+    expect(found('잔불 수치만큼 화상 위력 증가', 'ko')).toEqual(['화상'])
+    expect(found('Gain Embers equal to Burn Potency', 'en')).toEqual(['Burn'])
+    expect(found('지령 수행 시 시선의 경멸이 유지되는 동안', 'ko')).toEqual([])
+    expect(found('E.G.O 기프트로 인한 회복 제외', 'ko')).toEqual([])
+    for (const name of ['상처', '경멸', '경멸의 시선', '시선', '시선의 경멸', '가호', '지령', '얽힘', '예지안', '맥동', '원한', '포박', '타오름', '버림', '잔불', '잔향', '파탄']) {
+      expect(KEYWORD_TEXT_KEYWORDS[name], name).toBeUndefined()
+    }
+    // An ordinary word counts only next to its number.
+    expect(found('충전 횟수 1, 부하 1 얻음', 'ko')).toEqual(['충전', '부하'])
+    expect(found('부하가 걸리면', 'ko')).toEqual([])
+  })
+
+  it('REQ-KEYWORDS-010 keeps every name of the skill list', () => {
+    for (const [name, tier] of Object.entries(PLAIN_KEYWORDS)) expect(KEYWORD_TEXT_KEYWORDS[name]).toBe(tier)
   })
 })
