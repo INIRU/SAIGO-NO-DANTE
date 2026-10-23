@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest'
-import { eventExitAt, nextEventView } from '../../../lib/vision/scene-state'
+import { eventExitAt, FORMATION_SCENES, nextEventView } from '../../../lib/vision/scene-state'
 
 const view = { eventId: 901007, observedAt: 1_000, floor: 1 }
 const step = (current: typeof view | null, input: Partial<Parameters<typeof nextEventView>[1]>) =>
@@ -29,4 +29,10 @@ it('ends on a stable exit scene, floor change, stop or a long other scene, then 
   expect(step(view, { scene: { label: 'loading', since: 2_000 }, now: 20_000 })).toBeNull()
   expect(eventExitAt({ label: 'loading', since: 2_000 }, 10_000)).toBeNull()
   expect(eventExitAt({ label: 'theme_select', since: 2_000 }, 2_100)).toBe(2_000)
+})
+
+it('REQ-ASSIST-077 shows the formation on the dungeon entry and formation screens, in the run start too', () => {
+  // Video review 2026-10-23: entry screen run_setup, the formation screen battle_setup (0.5–0.95), start gifts start_gift.
+  expect([...FORMATION_SCENES].sort()).toEqual(['battle_setup', 'run_setup'])
+  expect(FORMATION_SCENES.has('start_gift')).toBe(false)
 })

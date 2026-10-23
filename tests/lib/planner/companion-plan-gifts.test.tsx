@@ -13,6 +13,9 @@ vi.mock('@/lib/hooks/useCompanionWindow', () => ({
 }))
 vi.mock('@/components/ui/GiftArtwork', () => ({ default: () => <span data-test-artwork /> }))
 vi.mock('@/components/ui/ImageWithFallback', () => ({ default: () => <span data-test-poster /> }))
+vi.mock('@/components/decks/NoteChips', () => ({
+  NoteRenderer: ({ text, egoGiftLookup }: { text: string; egoGiftLookup: Record<string, unknown> }) => <span data-note-labels={Object.keys(egoGiftLookup).join(',')}>{text}</span>,
+}))
 
 const theme = (id: string, gifts: number[], exclusive: number[] = []): ThemeData =>
   ({ id, name: `pack-${id}`, floor_info: { '하드': [1] }, ego_gift_ids: gifts, specific_ego_gift_ids: exclusive, image_url: `https://example.test/${id}.webp`, difficulty: null })
@@ -116,4 +119,17 @@ it('treats ingredients of an owned recipe result as owned in the floor list with
   </NextIntlClientProvider>)
   expect([...html.matchAll(/data-gift-id="(\d+)"/g)].map(match => Number(match[1]))).toEqual([30])
   expect(state.giftInventory).toEqual(['40'])
+})
+
+it('REQ-ASSIST-083 shows the floor memo of the plan in short, its gift block as a gift label', () => {
+  const memo = '!limbus-note:v1\n' + JSON.stringify({ type: 'doc', content: [
+    { type: 'paragraph', content: [{ type: 'text', text: '보스 전에 챙기기' }] },
+    { type: 'noteAsset', attrs: { kind: 'gift', id: '20' } },
+  ] })
+  const withMemo = { ...started(), sourcePlanSnapshot: { floorPlan: [{ floor: 1, theme_id: 'A', gift_ids: ['20'], memo }] } as RunState['sourcePlanSnapshot'] }
+  const html = render(runReducer(withMemo, { type: 'SET_FLOOR_THEME', themeId: 'A' }))
+  const shown = html.match(/<p[^>]*data-plan-memo[^>]*>.*?<\/p>/)?.[0] ?? ''
+  expect(shown).toContain('보스 전에 챙기기 [g:gift-20]')
+  expect(shown).toContain('data-note-labels="gift-20"')
+  expect(render(runReducer(started(), { type: 'SET_FLOOR_THEME', themeId: 'A' }))).not.toContain('data-plan-memo')
 })
