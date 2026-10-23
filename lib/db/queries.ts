@@ -1,16 +1,11 @@
-import { createClient } from '@supabase/supabase-js'
+import { publicSupabase } from '@/lib/supabase/public'
 import type { Sinner, Identity, IdentityWithSinner, Skill, Passive, EGO, EGOWithSinner, EgoGiftNote, SinType, SanityCondition, PanicType } from '@/lib/types'
 import type { IdentityBrowserItem, EGOBrowserItem } from '@/lib/types/browser'
 import { splitEgoSkillDescription } from '@/lib/identity/skill-description'
 import { readAllMetaRows } from '@/lib/meta/pagination'
 
-// ── Supabase 클라이언트 (browser/server 공용 publishable key) ───────────────
-function supabase() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!
-  )
-}
+// ── Supabase 클라이언트 (browser/server 공용 publishable key, 프로세스당 하나: lib/supabase/public.ts) ──
+const supabase = publicSupabase
 
 // ── DB 조회 함수 ───────────────────────────────────────────────────────────
 export async function getSinners(): Promise<Sinner[]> {
