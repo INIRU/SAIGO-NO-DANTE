@@ -8,7 +8,7 @@ import { ChevronDown, RotateCw } from 'lucide-react'
 import BaseModal from '@/components/ui/BaseModal'
 import QuietImage from '@/components/ui/QuietImage'
 import { useSkillMotion } from '@/hooks/useSkillMotion'
-import { defaultMotionState, type MotionIdentity, type MotionSinner, type MotionSkill } from '@/lib/motion/catalog'
+import { defaultMotionState, fromMotionParam as fromParam, toMotionParam as toParam, type MotionIdentity, type MotionSinner, type MotionSkill } from '@/lib/motion/catalog'
 import MotionConditions from './MotionConditions'
 import MotionPicker from './MotionPicker'
 import MotionSkillStrip from './MotionSkillStrip'
@@ -24,9 +24,6 @@ const readCatalog = async (url: string): Promise<MotionSinner[]> => {
   return (await response.json()).sinners
 }
 
-// The address names a skill as "<slug>~<skill id>" ("|" of the internal key reads badly in a URL).
-const toParam = (key: string) => key.replace('|', '~')
-const fromParam = (param: string) => param.replace('~', '|')
 const QUERY = { skill: parseAsString, state: parseAsString }
 const QUERY_OPTIONS = { history: 'replace', shallow: true, scroll: false } as const
 
@@ -61,22 +58,18 @@ export default function SkillMotionViewer() {
   const isPending = Boolean(pending)
   const state = picked ? picked.skill.states.find(s => s.state === query.state) ?? picked.skill.states.find(s => s.state === defaultMotionState(picked.skill)) : undefined
 
-  // Load whenever the chosen video changes; a change of condition within one skill keeps the time and play state.
-  const loadedKey = useRef<string | null>(null)
-  const loadedState = useRef<string | null>(null)
-  const { load, current, hold } = motion
+  // Load whenever the chosen video (skill or condition) changes, from its first frame.
+  const loaded = useRef<string | null>(null)
+  const { load, hold } = motion
   // Nothing plays until the Project Moon notice of this visit is dismissed, nor while a pending identity is shown.
   useEffect(() => { hold(notice !== false || isPending) }, [notice, isPending, hold])
   useEffect(() => {
     // A pending identity has no stage: the skill is loaded again when one is chosen.
-    if (isPending) { loadedKey.current = null; return }
-    if (!picked || !state) return
-    if (loadedKey.current === picked.skill.key && loadedState.current === state.state) return
-    const keep = loadedKey.current === picked.skill.key ? current() : null
-    loadedKey.current = picked.skill.key
-    loadedState.current = state.state
-    void load(state, keep)
-  }, [picked, state, load, current, isPending])
+    if (isPending) { loaded.current = null; return }
+    if (!state || loaded.current === state.video) return
+    loaded.current = state.video
+    void load(state)
+  }, [state, load, isPending])
 
   // An identity alone opens its first skill (the one playing when it is already chosen); a pending one, its notice.
   const choose = (sinnerId: string, identity: MotionIdentity, skill?: MotionSkill) => {
@@ -135,7 +128,7 @@ export default function SkillMotionViewer() {
               hostRef={motion.hostRef} status={motion.status} error={motion.error} playing={motion.playing} muted={motion.muted} volume={motion.volume}
               hasAudio={motion.hasAudio} frames={motion.frames} frameStore={motion.frameStore}
               onTogglePlay={motion.togglePlay} onStep={motion.step} onSeek={motion.seek} onToggleMute={motion.toggleMute} onVolume={motion.setVolume}
-              onRetry={() => { loadedKey.current = null; void load(state, null) }} notice={notice} onDismiss={dismissNotice} />
+              onRetry={() => void load(state)} notice={notice} onDismiss={dismissNotice} />
 
             <div className="flex flex-col gap-4">
               <MotionSkillStrip sinnerId={picked.sinnerId} skills={picked.identity.skills} selectedKey={picked.skill.key} onPick={skill => choose(picked.sinnerId, picked.identity, skill)} />

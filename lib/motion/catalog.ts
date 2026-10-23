@@ -128,6 +128,17 @@ export function defaultMotionState(skill: Pick<MotionSkill, 'states'>): string {
   return (skill.states.find(s => isTop(s.state)) ?? skill.states.find(s => isBase(s.state)) ?? skill.states[0])?.state ?? ''
 }
 
+// The address names a skill as "<slug>~<skill id>" ("|" of the internal key reads badly in a URL).
+export const toMotionParam = (key: string) => key.replace('|', '~')
+export const fromMotionParam = (param: string) => param.replace('~', '|')
+
+/** The skill an address names (`?skill=`), with its sinner and identity; none for an unknown or pending one. */
+export function findMotionSkill(sinners: readonly MotionSinner[], param: string): { sinnerId: string; identity: MotionIdentity; skill: MotionSkill } | null {
+  const key = fromMotionParam(param)
+  for (const sinner of sinners) for (const identity of sinner.identities) for (const skill of identity.skills) if (skill.key === key) return { sinnerId: sinner.id, identity, skill }
+  return null
+}
+
 /** The video of a link partner at the chosen max (its other video when the index has only one). */
 export function pickLinkState(states: readonly MotionState[], gameId: string, max: boolean): MotionState | undefined {
   const own = states.filter(s => s.link?.gameId === gameId)
