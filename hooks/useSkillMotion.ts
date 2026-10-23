@@ -35,6 +35,9 @@ export function useSkillMotion() {
   const [playing, setPlaying] = useState(false)
   const [muted, setMuted] = useState(true)
   const [volume, setVolumeState] = useState(1)
+  // Read when a new <video> is made: React keeps this hook's state while the page is hidden (a client navigation away
+  // and back), but the effect below makes a fresh element, muted at full volume.
+  const volumeRef = useRef(1)
   const [frames, setFrames] = useState(0)
   const [hasAudio, setHasAudio] = useState(false)
   const [layers, setLayers] = useState<MotionLayerToggle[]>([])
@@ -75,6 +78,9 @@ export function useSkillMotion() {
     v.playsInline = true
     v.preload = 'auto'
     v.muted = true
+    v.volume = volumeRef.current
+    // It plays muted (the browser allows that without a press), so the controls show it muted, at the volume they had.
+    setMuted(true)
     v.crossOrigin = 'anonymous' // the R2 host allows the site: WebGL may read the frames
     video.current = v
     observer.current = new IntersectionObserver(([entry]) => {
@@ -195,7 +201,7 @@ export function useSkillMotion() {
     if (!v) return
     v.muted = !v.muted
     // Sound back on after the slider took it to 0: at full volume, not silent.
-    if (!v.muted && v.volume === 0) { v.volume = 1; setVolumeState(1) }
+    if (!v.muted && v.volume === 0) { v.volume = 1; volumeRef.current = 1; setVolumeState(1) }
     setMuted(v.muted)
     if (!v.muted && v.paused && !held.current) v.play().catch(() => {})
   }, [])
@@ -204,6 +210,7 @@ export function useSkillMotion() {
     const v = video.current
     if (!v) return
     v.volume = value
+    volumeRef.current = value
     v.muted = value === 0
     setVolumeState(value)
     setMuted(v.muted)
