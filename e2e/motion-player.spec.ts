@@ -8,9 +8,13 @@ const SKILL = '/ko/motion/skills?skill=id10116~1011601'
 
 const frameOf = (page: Page) => page.getByRole('slider', { name: '프레임' }).evaluate(input => Number((input as HTMLInputElement).value))
 
-async function open(page: Page) {
+async function closeAnnouncements(page: Page) {
   const popup = page.getByRole('dialog').filter({ hasText: '공지' })
   await page.addLocatorHandler(popup, async () => { await popup.getByRole('button', { name: '닫기' }).last().click() })
+}
+
+async function open(page: Page) {
+  await closeAnnouncements(page)
   await page.goto(SKILL)
   await page.getByRole('button', { name: '확인' }).click()
   await expect(page.getByRole('button', { name: '일시정지' })).toBeEnabled({ timeout: 30000 })
@@ -37,4 +41,19 @@ test('REQ-MOTION-021 another condition starts from the first frame', async ({ pa
   await expect(page).toHaveURL(/state=v%3Abase|state=v:base/)
   await expect(page.getByRole('button', { name: '일시정지' })).toBeEnabled({ timeout: 30000 })
   expect(await frameOf(page)).toBeLessThan(30)
+})
+
+test('REQ-MOTION-024 a sinner tab seen once comes back as it was, without loading its portraits again', async ({ page }) => {
+  await closeAnnouncements(page)
+  await page.goto(SKILL)
+  const picker = page.locator('aside').first()
+  const tabs = picker.getByRole('tab')
+  const portrait = () => picker.locator('ul:visible li img').first()
+  await expect(portrait()).toBeVisible({ timeout: 30000 })
+  expect(await portrait().getAttribute('loading')).toBe('eager')
+  await portrait().evaluate(img => { (img as HTMLImageElement & { seen?: boolean }).seen = true })
+  await tabs.nth(1).click()
+  await expect(tabs.nth(1)).toHaveAttribute('aria-selected', 'true')
+  await tabs.nth(0).click()
+  expect(await portrait().evaluate(img => (img as HTMLImageElement & { seen?: boolean }).seen ?? false), 'the same image element, not a new one').toBe(true)
 })
