@@ -1,5 +1,6 @@
 import { expect, it } from 'vitest'
-import { BLESSING_KEEP_MS, onBlessingScreen, showsBlessingScreen } from '@/lib/vision/blessing-screen'
+import { BLESSING_KEEP_MS, BLESSING_SCENE, onBlessingScreen, showsBlessingScreen } from '@/lib/vision/blessing-screen'
+import { FORMATION_SCENES } from '@/lib/vision/scene-state'
 
 it('REQ-ASSIST-081 reads the starlight screen from its title and entry button in any card colour', () => {
   // OCR of the 2026-10 blue screen (spacing and line breaks as read).
@@ -14,4 +15,9 @@ it('REQ-ASSIST-081 keeps the screen for a while after the read', () => {
   expect(onBlessingScreen(1000, 1000 + BLESSING_KEEP_MS - 1)).toBe(true)
   expect(onBlessingScreen(1000, 1000 + BLESSING_KEEP_MS)).toBe(false)
   expect(onBlessingScreen(0, 10)).toBe(false)
+})
+
+it('REQ-ASSIST-081 counts the starlight screen as the run start, after the formation (2026-10 order)', () => {
+  expect(BLESSING_SCENE).toBe('start_gift')
+  expect(FORMATION_SCENES.has(BLESSING_SCENE)).toBe(false)
 })

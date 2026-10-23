@@ -62,3 +62,16 @@ describe('plannerReducer partial LOAD_PLAN', () => {
     expect(next.floorPlan[0]).toMatchObject({ theme_id: '1013', gift_ids: ['9273'], memo: 'm' })
   })
 })
+
+describe('REQ-PLANNER-044 floor gifts without a theme pack', () => {
+  it('keeps gifts picked before the pack, and clears them when the pack changes or is removed', () => {
+    let state = createInitialState('hard')
+    state = plannerReducer(state, { type: 'SET_FLOOR_GIFTS', floor: 1, giftIds: ['9001', '9002'] })
+    expect(state.floorPlan[0].theme_id).toBeNull()
+    expect(state.floorPlan[0].gift_ids).toEqual(['9001', '9002'])
+    state = plannerReducer(state, { type: 'SET_FLOOR_THEME', floor: 1, themeId: '1003' })
+    expect(state.floorPlan[0]).toMatchObject({ theme_id: '1003', gift_ids: ['9001', '9002'] })
+    expect(plannerReducer(state, { type: 'SET_FLOOR_THEME', floor: 1, themeId: '1102' }).floorPlan[0].gift_ids).toEqual([])
+    expect(plannerReducer(state, { type: 'SET_FLOOR_THEME', floor: 1, themeId: null }).floorPlan[0].gift_ids).toEqual([])
+  })
+})

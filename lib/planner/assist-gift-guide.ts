@@ -1,6 +1,5 @@
 import { normalizeThemeKeyword } from '../constants/keywords'
 import { isDeployedSlot } from '../constants/game'
-import { giftCount, pairCount, type PlanGiftStats } from '../meta/plan-gift-stats'
 import { findAvailableFusions, type FusionResult } from './fusion'
 import { getIdentityGiftConditionKeywords } from './gift-condition-status'
 import { giftGameId } from './run-priority-gifts'
@@ -82,62 +81,4 @@ export function fusionGuide({ inventory, targets, recipes, giftMap, committed }:
     return fusion && missing.length === 1 ? [{ fusion, missing }] : []
   })
   return { ready, nearly }
-}
-
-export type GiftReason =
-  | { kind: 'final' }
-  | { kind: 'material'; result: GiftData; complete: boolean }
-  | { kind: 'keyword'; keyword: string }
-  | { kind: 'synergy' }
-  | { kind: 'popular'; share: number }
-export interface GiftAdvice { gift: GiftData; score: number; reasons: GiftReason[] }
-
-/** Plans counted as if this many more held nothing, so a gift of a handful of plans does not look popular. */
-const ADOPTION_PRIOR = 10
-/** A reason is shown once its part of the score reaches this. */
-const SHOWN = 5
-
-/**
- * The gifts on screen ranked for this run. Score: final gift 100; material of a final recipe 60 (80 when it completes
- * one); committed keyword 30, or −10 for another keyword once the run is committed; plan synergy with held gifts
- * (10·log2 of observed over expected pair count, ±20 at most); adoption among public plans shrunk toward 0 (0–10).
- * Popularity weighs least: human picks carry biases (it measures what plans take, not what wins).
- */
-export function recommendGifts({ candidates, inventory, targets, recipes, giftMap, committed, stats, limit = 3 }: {
-  candidates: readonly number[]; inventory: readonly string[]; targets: readonly string[]; recipes: readonly RecipeData[]
-  giftMap: Map<number, GiftData>; committed: readonly string[]; stats: PlanGiftStats | null; limit?: number
-}): GiftAdvice[] {
-  const owned = held(inventory)
-  const { finalSet, finalRecipes } = goals({ targets, recipes, giftMap, owned })
-  const ranked = [...new Set(candidates)].flatMap(id => {
-    const gift = giftMap.get(id)
-    if (!gift || owned.has(id)) return []
-    const reasons: GiftReason[] = []
-    let score = 0
-    if (finalSet.has(id)) { score += 100; reasons.push({ kind: 'final' }) }
-    const feeds = finalRecipes.filter(item => item.ingredients.some(material => material.game_id === id))
-      .map(item => ({ result: item.result, complete: item.ingredients.every(material => material.game_id === id || owned.has(material.game_id)) }))
-      .sort((a, b) => Number(b.complete) - Number(a.complete))[0]
-    if (feeds) { score += feeds.complete ? 80 : 60; reasons.push({ kind: 'material', ...feeds }) }
-    const keyword = gift.keyword ? normalizeThemeKeyword(gift.keyword) : ''
-    if (committed.includes(keyword)) { score += 30; reasons.push({ kind: 'keyword', keyword }) }
-    else if (committed.length && GIFT_KEYWORDS.has(keyword)) score -= 10
-    if (stats && stats.plans > 0) {
-      const count = giftCount(stats, id)
-      let synergy = 0
-      for (const other of owned) {
-        const otherCount = giftCount(stats, other)
-        if (!otherCount || !count) continue
-        synergy += 10 * Math.log2((pairCount(stats, id, other) + 1) / (count * otherCount / stats.plans + 1))
-      }
-      synergy = Math.max(-20, Math.min(20, synergy))
-      score += synergy
-      if (synergy >= SHOWN) reasons.push({ kind: 'synergy' })
-      const adoption = Math.min(10, 20 * count / (stats.plans + ADOPTION_PRIOR))
-      score += adoption
-      if (adoption >= SHOWN) reasons.push({ kind: 'popular', share: count / stats.plans })
-    }
-    return [{ gift, score, reasons }]
-  })
-  return ranked.sort((a, b) => b.score - a.score).slice(0, limit)
 }

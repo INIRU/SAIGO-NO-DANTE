@@ -156,10 +156,11 @@ export function assetRefs(doc: JSONContent): string {
   visit(doc)
   return JSON.stringify([...refs.values()].sort((a,b) => `${a.kind}:${a.id}`.localeCompare(`${b.kind}:${b.id}`)))
 }
-function flattenNote(value: string, gift: (name: string) => string, keyword: (id: string) => string = id => id): string {
+function flattenNote(value: string, gift: (name: string) => string, keyword: (id: string) => string = id => id, assetGiftName?: (id: string) => string | undefined): string {
   const doc = parseBlockDocument(value)
   if (!doc) return value.startsWith(NOTE_PREFIX) ? '' : value
-  function text(n: JSONContent): string { return (n.type === 'noteKeyword' ? (n.attrs?.id ? keyword(n.attrs.id) : undefined) : n.type === 'noteGift' ? (n.attrs?.name ? gift(n.attrs.name) : undefined) : n.type === 'noteMention' ? (n.attrs?.name || undefined) : n.text) ?? (n.content ?? []).map(text).join(' ') }
+  const assetGift = (id: unknown) => { const name = typeof id === 'string' && id ? assetGiftName?.(id) : undefined; return name ? gift(name) : '' }
+  function text(n: JSONContent): string { return (n.type === 'noteKeyword' ? (n.attrs?.id ? keyword(n.attrs.id) : undefined) : n.type === 'noteGift' ? (n.attrs?.name ? gift(n.attrs.name) : undefined) : n.type === 'noteMention' ? (n.attrs?.name || undefined) : n.type === 'noteAsset' && n.attrs?.kind === 'gift' ? assetGift(n.attrs.id) : n.text) ?? (n.content ?? []).map(text).join(' ') }
   return text(doc).trim()
 }
 export function notePlainText(value: string): string {
@@ -179,4 +180,17 @@ export function noteSummaryText(value: string): string {
 /** One-line card preview: plain text, but gifts and keywords stay `[g:name]` / `[k:name]` tokens so NoteRenderer can draw them as chips. */
 export function notePreviewText(value: string): string {
   return flattenNote(value, name => '[g:' + name + ']', id => (/[\[\]]/.test(id) ? id : '[k:' + id + ']'))
+}
+/**
+ * The memo as one line for a small panel: gifts (gift blocks by id, `{{gift:…}}` and `[g:…]`) and keywords stay tokens
+ * for NoteRenderer's labels; skill, passive and other blocks, markdown marks and links drop out.
+ */
+export function noteLabelPreview(value: string, giftName: (id: string) => string | undefined): string {
+  return flattenNote(value, name => '[g:' + name + ']', id => (/[\[\]]/.test(id) ? id : '[k:' + id + ']'), giftName)
+    .replace(noteBlockTokenPattern(), token => { const gift = token.match(/^\{\{gift:([^{}\n:]+)/); return gift ? ` [g:${gift[1].trim()}] ` : ' ' })
+    .replace(/\[([^\]\n]+)\]\((https?:\/\/[^)\s]+)\)/g, '$1')
+    .replace(/^\s{0,3}(?:#{1,6}|[-*>]|\d+\.)\s+/gm, '')
+    .replace(/[*_`]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
 }

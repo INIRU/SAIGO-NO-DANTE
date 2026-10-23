@@ -386,6 +386,9 @@ async function openPage(browser, cfg) {
   await context.addInitScript(pageInit, cfg)
   const page = await context.newPage()
   page.on('pageerror', error => console.error('[page error]', error.message))
+  // A site announcement popup covers the run page's buttons until it is closed (as e2e/motion-player.spec.ts does).
+  const popup = page.getByRole('dialog').filter({ has: page.getByRole('button', { name: /닫기|Close|閉じる/ }) })
+  await page.addLocatorHandler(popup, async () => { await popup.getByRole('button', { name: /닫기|Close|閉じる/ }).last().click() })
   await page.goto(base + '/' + lang + '/planner/run', { waitUntil: 'domcontentloaded', timeout: 180000 })
   return { context, page, hmr }
 }
