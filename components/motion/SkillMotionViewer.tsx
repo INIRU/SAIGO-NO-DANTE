@@ -8,7 +8,7 @@ import { ChevronDown, RotateCw } from 'lucide-react'
 import BaseModal from '@/components/ui/BaseModal'
 import QuietImage from '@/components/ui/QuietImage'
 import { useSkillMotion } from '@/hooks/useSkillMotion'
-import { defaultMotionState, fromMotionParam as fromParam, toMotionParam as toParam, type MotionIdentity, type MotionSinner, type MotionSkill } from '@/lib/motion/catalog'
+import { MOTION_INDEX_URL, defaultMotionState, fromMotionParam as fromParam, motionCatalogFrom, toMotionParam as toParam, type MotionEntry, type MotionIdentity, type MotionSiteData, type MotionSkill } from '@/lib/motion/catalog'
 import MotionConditions from './MotionConditions'
 import MotionPicker from './MotionPicker'
 import MotionSkillStrip from './MotionSkillStrip'
@@ -18,11 +18,14 @@ import SkillMotionSkeleton from './SkillMotionSkeleton'
 
 type Pick = { sinnerId: string; identity: MotionIdentity; skill: MotionSkill }
 
-const readCatalog = async (url: string): Promise<MotionSinner[]> => {
-  const response = await fetch(url)
+const readJson = async <T,>(url: string, init?: RequestInit): Promise<T> => {
+  const response = await fetch(url, init)
   if (!response.ok) throw new Error(String(response.status))
-  return (await response.json()).sinners
+  return response.json()
 }
+const readSiteData = (url: string) => readJson<MotionSiteData>(url)
+// The index changes with every upload: asked again on every page open, the browser checking its copy with R2 (304 when the same).
+const readIndex = (url: string) => readJson<MotionEntry[]>(url, { cache: 'no-cache' })
 
 const QUERY = { skill: parseAsString, state: parseAsString }
 const QUERY_OPTIONS = { history: 'replace', shallow: true, scroll: false } as const
@@ -35,7 +38,12 @@ const QUERY_OPTIONS = { history: 'replace', shallow: true, scroll: false } as co
 export default function SkillMotionViewer() {
   const lang = useLocale()
   const t = useTranslations('motionPage')
-  const { data: sinners, error, mutate } = useSWR(`/api/motion/catalog?lang=${lang}`, readCatalog, { revalidateOnFocus: false })
+  // The R2 index (read by the browser itself, so a new video shows on the next page open) and the site's names for it.
+  const site = useSWR(`/api/motion/site-data?lang=${lang}`, readSiteData, { revalidateOnFocus: false })
+  const index = useSWR(MOTION_INDEX_URL, readIndex, { revalidateOnFocus: false })
+  const sinners = useMemo(() => site.data && index.data ? motionCatalogFrom(index.data, site.data, lang, new Date()) : undefined, [site.data, index.data, lang])
+  const error = site.error ?? index.error
+  const mutate = () => Promise.all([site.mutate(), index.mutate()])
   const [query, setQuery] = useQueryStates(QUERY, QUERY_OPTIONS)
   const [tab, setTab] = useState<string | null>(null)
   const [sheet, setSheet] = useState(false)

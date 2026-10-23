@@ -162,6 +162,21 @@ const slugRank = (slug: string) => slug.startsWith('id') ? 0 : slug.startsWith('
  */
 export type MotionCatalogNames = { skillNames?: ReadonlyMap<number, string>; skillFrames?: ReadonlyMap<number, MotionSkillFrame>; refs?: GameTextRefNames | null; now?: Date }
 
+/**
+ * What the site adds to the R2 index, by id: identities (by game id), skill names and sprite frames, game text names. It
+ * comes from the site's database and is cached; the index is read from R2 on every page open (MOTION_INDEX_URL).
+ */
+export type MotionSiteData = { identities: MotionIdentityInfo[]; skillNames: [number, string][]; skillFrames: [number, MotionSkillFrame][]; refs: GameTextRefNames | null }
+
+/** The R2 index: the browser reads it on every page open (Cloudflare keeps no copy of it), so a new video shows at once. */
+export const MOTION_INDEX_URL = `${MOTION_ASSET_BASE}index.json`
+
+/** The motion list from the R2 index and the site's data, in the browser or on the server. */
+export function motionCatalogFrom(entries: readonly MotionEntry[], site: MotionSiteData, lang: string, now: Date): MotionSinner[] {
+  const identities = new Map(site.identities.flatMap(identity => identity.game_id ? [[identity.game_id, identity] as const] : []))
+  return buildMotionCatalog(entries, identities, lang, { skillNames: new Map(site.skillNames), skillFrames: new Map(site.skillFrames), refs: site.refs, now })
+}
+
 /** How long a new identity without motion is listed as pending: recording and building one takes 5 days to 2 weeks. */
 export const MOTION_PENDING_DAYS = 30
 
