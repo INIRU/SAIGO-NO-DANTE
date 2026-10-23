@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js'
+import { publicSupabase } from '@/lib/supabase/public'
 import { renderOgPreview } from '@/components/ui/OgPreview'
 import { getIdentityPortraitUrl } from '@/lib/utils/images'
 import { OG_SIZE, OG_CONTENT_TYPE, isSupportedLang } from '@/lib/utils/og-image'
@@ -8,7 +8,7 @@ export const contentType = OG_CONTENT_TYPE
 export default async function DeckOgImage({ params }: { params: Promise<{ lang: string; id: string }> }) {
   const { lang: rawLang, id } = await params
   const lang = isSupportedLang(rawLang) ? rawLang : 'ko'
-  const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!)
+  const supabase = publicSupabase()
   const { data: deck, error } = await supabase.schema('limbus').from('decks')
     .select('title, deck_identities(slot_order, gacksung, identities(sinner_id, folder_name, game_id))').eq('id', id).maybeSingle()
   const slots = error ? [] : [...(deck?.deck_identities ?? [])].sort((a, b) => a.slot_order - b.slot_order)
