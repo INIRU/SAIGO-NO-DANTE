@@ -4,6 +4,7 @@ import { pageMetadata, seoLang } from '@/lib/seo/metadata'
 import { loadMotionCatalog } from '@/lib/motion/feed'
 import { findMotionSkill, toMotionParam } from '@/lib/motion/catalog'
 import SkillMotionViewer from '@/components/motion/SkillMotionViewer'
+import RequestTimeRoute from '@/components/layout/RequestTimeRoute'
 
 const STATE_SEPARATOR = { ko: '·', en: ', ', ja: '・' }
 
@@ -27,7 +28,15 @@ export async function generateMetadata({ params, searchParams }: { params: Promi
   })
 }
 
-/** The frame (title, way back, full screen) is the layout's, shared with the loading screen. */
+/**
+ * The frame (title, way back, full screen) is the layout's, shared with the loading screen. Rendered per request: the
+ * metadata reads `?skill=` (Next blocks a static route's metadata that reads the address).
+ */
 export default function SkillMotionPage() {
-  return <SkillMotionViewer />
+  return (
+    <>
+      <RequestTimeRoute />
+      <SkillMotionViewer />
+    </>
+  )
 }

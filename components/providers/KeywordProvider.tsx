@@ -17,6 +17,7 @@ import { PlaceholderText } from '@/components/ui/PlaceholderLabel'
 import { mayBeRawGameText, parseGameText } from '@/lib/game-text/rich-text'
 import { preloadGameTextRefDescriptions, preloadGameTextRefFlavors, useGameTextRefDescription, useKeywordFlavor, wantGameTextRefs } from '@/lib/hooks/useGameTextRefs'
 import GameText from '@/components/game-text/GameText'
+import { keywordTextAllowed } from '@/lib/keywords/plain-keywords'
 import { FLAVOR_COLOR } from '@/lib/game-text/flavor'
 
 const KeywordContext = createContext<Record<string, KeywordInfo>>({})
@@ -76,6 +77,10 @@ type FormatSkillDescOptions = {
    * the text writes them as plain words (older game text), see lib/keywords/plain-keywords.ts. Off everywhere else.
    */
   matchPlainKeywords?: boolean
+  /** A keyword's own description (tooltip, keyword page): `allowedKeywords` from keywordTextAllowed, the longer name list. */
+  keywordText?: boolean
+  /** Drawn inside a tooltip: its keywords show icon and colour but open no tooltip of their own. */
+  nested?: boolean
 }
 
 /**
@@ -106,6 +111,8 @@ export function useFormatSkillDesc() {
           highlightValues={options?.highlightValues}
           matchPlainKeywords={options?.matchPlainKeywords}
           allowedKeywords={allowedKeywords}
+          keywordText={options?.keywordText}
+          nested={options?.nested}
         />
       )
     },
@@ -229,8 +236,8 @@ function KwTooltipPopup({ id, rect, iconUrl, keyword, info, refId, onMouseEnter,
           {localDesc === undefined
             ? <span aria-hidden="true" style={{ display: 'block', height: '3.5em', borderRadius: '0.25rem', background: 'linear-gradient(90deg, #211a12, #2b2218, #211a12)' }} />
             : info
-              ? formatDescription(localDesc, '#d0c7b8', undefined, undefined, { highlightValues: color })
-              : <GameText nodes={parseGameText(localDesc)} accent="#d0c7b8" keywords={keywords} keywordRef={KeywordWithTooltip} nested />}
+              ? formatDescription(localDesc, '#d0c7b8', undefined, keywordTextAllowed(keyword), { highlightValues: color, matchPlainKeywords: true, keywordText: true, nested: true })
+              : <GameText nodes={parseGameText(localDesc)} accent="#d0c7b8" keywords={keywords} keywordRef={KeywordWithTooltip} nested matchPlainKeywords allowedKeywords={keywordTextAllowed(keyword)} keywordText />}
         </span>
         {flavor && localDesc !== undefined && (
           <span style={{ display: 'block', marginTop: '0.625rem', color: FLAVOR_COLOR, fontStyle: 'italic', fontSize: '0.8125rem', lineHeight: 1.6, whiteSpace: 'pre-line' }}>
@@ -275,7 +282,7 @@ export function KeywordWithTooltip({
   plain?: boolean
   /** A keyword `[Id]` of game text: when it has no keyword_meta row the tooltip shows the game's own description of it. */
   refId?: string
-  /** Inside a tooltip: such a keyword without a keyword_meta row gets no tooltip of its own (it would close its parent). */
+  /** Inside a tooltip: icon and colour only, no tooltip of its own (a tooltip in a tooltip). */
   nested?: boolean
 }) {
   const ref = useRef<HTMLSpanElement>(null)
@@ -285,7 +292,7 @@ export function KeywordWithTooltip({
   const keywords = useKeywords()
   const lookupKey = krKey ?? keyword
   const info = keywords[lookupKey]
-  const hasTooltip = !!info || (!!refId && !nested)
+  const hasTooltip = !nested && (!!info || !!refId)
   const iconUrl = refId && !info ? null : getKeywordIconUrl(lookupKey, info?.iconSlug)
   const [failedIconUrl, setFailedIconUrl] = useState<string | null>(null)
   const visibleIconUrl = failedIconUrl === iconUrl ? null : iconUrl

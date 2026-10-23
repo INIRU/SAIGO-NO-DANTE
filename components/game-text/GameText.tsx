@@ -8,7 +8,7 @@ import { skillConditionColor } from '@/lib/identity/skill-condition-color'
 import { leadingPlaceholder } from '@/lib/game-text/placeholders'
 import type { GameTextNode } from '@/lib/game-text/rich-text'
 import { resolveKeywordIconUrl, type KeywordInfo } from '@/lib/keywords/catalog'
-import { findPlainKeywords, plainKeywordMatcher, type PlainKeywordHit, type PlainKeywordMatcher } from '@/lib/keywords/plain-keywords'
+import { findPlainKeywords, KEYWORD_TEXT_KEYWORDS, PLAIN_KEYWORDS, plainKeywordMatcher, type PlainKeywordHit, type PlainKeywordMatcher } from '@/lib/keywords/plain-keywords'
 import { KEYWORD_DEFAULT_COLOR, resolveKeywordTextColor } from '@/lib/keywords/text-color'
 import { useGameTextRefs } from '@/lib/hooks/useGameTextRefs'
 import type { GameTextRefName } from '@/lib/db/game-text-refs'
@@ -102,7 +102,7 @@ type GameTextKeywordProps = {
  * background (user decision 2026-10-01); only keywords, condition tags, own skill names and tooltip numbers are coloured.
  * `accent` (the skill/sin colour the callers pass) is for the coin label and for a condition tag with no colour of its own.
  */
-export default function GameText({ nodes, accent, keywords, keywordRef: KeywordRef, nested = false, skillNameColors, highlightValues: valueColor, matchPlainKeywords = false, allowedKeywords }: {
+export default function GameText({ nodes, accent, keywords, keywordRef: KeywordRef, nested = false, skillNameColors, highlightValues: valueColor, matchPlainKeywords = false, allowedKeywords, keywordText = false }: {
   nodes: readonly GameTextNode[]
   /** Accent colour of the caller (sin/skill colour): the coin label and condition tags without a colour of their own. */
   accent: string
@@ -117,13 +117,15 @@ export default function GameText({ nodes, accent, keywords, keywordRef: KeywordR
   matchPlainKeywords?: boolean
   /** keyword_meta names (Korean) the identity / E.G.O owns; without any, no plain word is a keyword. */
   allowedKeywords?: ReadonlySet<string>
+  /** A keyword's own description: the longer list of keyword names and the Japanese edges of KEYWORD_TEXT_KEYWORDS. */
+  keywordText?: boolean
 }) {
   // Plain text and plain styling need no table: only a text that holds a ref, link or sprite asks for it right away
   // (the formatters of KeywordProvider otherwise ask once a text may hold one, see wantGameTextRefs).
   const { names } = useGameTextRefs({ lazy: !needsRefs(nodes) })
   const t = useTranslations()
   const locale = useLocale()
-  const plainMatcher: PlainKeywordMatcher | null = matchPlainKeywords && allowedKeywords?.size ? plainKeywordMatcher(keywords, locale) : null
+  const plainMatcher: PlainKeywordMatcher | null = matchPlainKeywords && allowedKeywords?.size ? plainKeywordMatcher(keywords, locale, keywordText) : null
 
   /** A keyword drawn by its tooltip component: `[Id]` / `<link>` of the game text, or a plain word found by the matcher (no `id`). */
   const renderKeyword = (ref: { n: string; kw?: string }, id: string | undefined, key: number | string, children?: ReactNode): ReactNode => {
@@ -150,7 +152,7 @@ export default function GameText({ nodes, accent, keywords, keywordRef: KeywordR
   const renderText = (text: string, key: number, plainOk: boolean): ReactNode => {
     const stretch = (value: string): ReactNode => valueColor ? highlightValues(value, valueColor) : value
     const names = skillNameColors ? skillNameRanges(text, skillNameColors) : []
-    const hits: PlainKeywordHit[] = plainOk ? findPlainKeywords(text, plainMatcher, allowedKeywords, names.map(({ from, to }) => [from, to] as const)) : []
+    const hits: PlainKeywordHit[] = plainOk ? findPlainKeywords(text, plainMatcher, allowedKeywords, names.map(({ from, to }) => [from, to] as const), keywordText ? KEYWORD_TEXT_KEYWORDS : PLAIN_KEYWORDS) : []
     if (names.length === 0 && hits.length === 0) return skillNameColors || valueColor ? <span key={key}>{stretch(text)}</span> : text
     const pieces = [
       ...names.map(({ from, to }) => ({ from, to, hit: null as PlainKeywordHit | null })),

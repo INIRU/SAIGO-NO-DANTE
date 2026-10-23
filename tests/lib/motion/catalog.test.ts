@@ -199,6 +199,19 @@ describe('REQ-MOTION-019 a skill carries its frame', () => {
     expect(skills[0].frame).toEqual({ sin: 'gloom', slot: 1, attack: 'slash' })
     expect(skills[1].frame).toBeNull()
   })
+
+  it('REQ-MOTION-023 lists the skills in the game order (skill 1, 2, 3, then defense), not by skill id', () => {
+    // 남부 세븐 협회 6과 이상: 1010202 is skill 3 and 1010203 is skill 2.
+    const rows = [1010204, 1010203, 1010202, 1010201].map(skillId => entry({ slug: 'id10102', identityId: '10102', skillId, video: `yisang/10102/${skillId}/v-base/layers.mp4` }))
+    const skillFrames = new Map([
+      [1010201, { sin: 'gloom', slot: 1, attack: 'pierce' as const }],
+      [1010202, { sin: 'sloth', slot: 3, attack: 'blunt' as const }],
+      [1010203, { sin: 'gluttony', slot: 2, attack: 'pierce' as const }],
+      [1010204, { sin: 'gluttony', slot: 4, attack: null }],
+    ])
+    const skills = buildMotionCatalog(rows, new Map(), 'ko', { skillFrames })[0].identities[0].skills
+    expect(skills.map(skill => skill.skillId)).toEqual([1010201, 1010203, 1010202, 1010204])
+  })
 })
 
 describe('REQ-MOTION-020 a new identity without motion yet', () => {
