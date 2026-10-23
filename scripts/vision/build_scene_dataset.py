@@ -29,6 +29,12 @@ def text_label(text):
     t = re.sub(r'\s+', '', text)
     if '획득했습니다' in t:
         return 'gift_acquired'
+    # The run start (2026-10 screens, in this order after the formation): the starlight choice (its cards name the pack
+    # selection, the pack screen names the starlight's effect), the start gift choice and the gift observation, with
+    # their confirmations. All are the run start for Assist; their gift descriptions can name the shop ("구매 비용").
+    if '시작의별' in t or ('별의가호' in t and '입장' in t and '효과발동' not in t) \
+            or re.search(r'E\.?G\.?[O0]기프트관[측즉]', t) or ('선택한E.G.O기프트' in t and '선택하지않음' in t):
+        return 'start_gift'
     # A gift's information or purchase dialog looks like the acquisition popup; it belongs to the screen under it.
     if '기프트구매' in t:
         return 'shop'  # only the shop sells
@@ -44,6 +50,14 @@ def text_label(text):
             return label
     if '테마팩선택' in t:
         return 'theme_select'
+    # The dungeon's entry screen and its formation (a warning over the formation stays the formation).
+    if '거울던전#' in t and ('프리셋' in t or '편성' in t):
+        return 'battle_setup'
+    if 'DUNGEON' in t and '탐사현황' in t:
+        return 'run_setup'
+    # Loading screens show a character's art with a battle tip, which a model alone takes for the battle.
+    if 'NOWLOADING' in t.upper():
+        return 'loading'
     return None
 
 
