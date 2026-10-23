@@ -30,6 +30,7 @@ import CompanionStartGifts from './CompanionStartGifts'
 import CompanionSkillExchange from './CompanionSkillExchange'
 import CompanionFormation from './CompanionFormation'
 import FusionGuideList from './FusionGuideList'
+import CompanionPlanMemo from './CompanionPlanMemo'
 import ThemePackCard from '@/components/ui/ThemePackCard'
 import type { SkillExchangeRead } from '@/lib/vision/skill-exchange'
 import { AUTO_ACQUIRE_EXCLUDED_GIFT_IDS } from '@/lib/vision/popup-evidence'
@@ -159,6 +160,8 @@ export default function CompanionPanel({ state, dispatch, themes, giftMap, obser
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [fusionView.current, state.giftInventory, state.targetGifts, recipes, giftMap, committed])
   // Start gift screens sometimes read as battle_setup, so a battle's setup shows the formation only once the start is over.
+  // The plan author's memo for a floor (runs started from a plan only).
+  const planMemo = (floor: number) => state.sourcePlanSnapshot?.floorPlan?.find(entry => entry.floor === floor)?.memo
   const formationScreen = captureRunning && (scene?.label === 'run_setup' || (scene?.label === 'battle_setup' && !startPhase))
   const formationCode = useMemo(() => {
     if (!formationScreen || !sinners.length) return ''
@@ -475,6 +478,7 @@ export default function CompanionPanel({ state, dispatch, themes, giftMap, obser
       const gifts = (ids: number[]) => ids.flatMap(id => giftMap.get(id) ?? [])
       return <div data-companion-content={inPip ? 'pip' : 'inline'}>
         {header(inPip)}
+        <div className="mb-3"><CompanionPlanMemo memo={planMemo(state.startFloor)} giftMap={giftMap} /></div>
         <CompanionStartGifts start={gifts(start)} observe={gifts(observe)} owned={ownedIds} width={availableWidth} onAcquire={(id, event) => acquire(id, event)} />
       </div>
     }
@@ -522,6 +526,7 @@ export default function CompanionPanel({ state, dispatch, themes, giftMap, obser
       <m.div key={theme?.id ?? 'unselected'} initial={reducedMotion ? false : { opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: reducedMotion ? 0 : 0.18, ease: 'easeOut' }}>
       {!theme ? <section aria-label={t('pipThemeGuidance')} className="grid place-items-center" style={{ minHeight: inPip ? Math.max(180, actualSize.height - 96) : 180 }}>
         {pack ? <div data-theme-choice={pack.theme.id} className={`flex justify-center gap-3 ${stacked ? 'flex-col items-center' : 'items-start'}`}><div className="shrink-0" style={{ width: posterWidth }}><ThemePackCard theme={pack.theme} imageSurface="bare" sizes={`${posterWidth}px`} ariaLabel={`${localized(pack.theme)} · ${t('pipThemePossible')} · ${t('pipThemeFloors', { floors: pack.availableFloors.join(', ') || '—' })}${pack.remainingOrder.length ? ` · ${t('pipThemeRemaining', { themes: pack.remainingOrder.map(next => `${next.floor}F ${localized(next.theme)}`).join(' · ') })}` : ''}`} title={`${localized(pack.theme)} · ${t('pipThemeFloors', { floors: pack.availableFloors.join(', ') || '—' })}`} onClick={event => { const owner = event.currentTarget.ownerDocument; const surface = event.currentTarget.closest('[data-companion-content]')?.getAttribute('data-companion-content'); chooseTheme(pack.theme.id); if (surface) owner.defaultView?.requestAnimationFrame(() => owner.querySelector<HTMLElement>(`[data-companion-content="${surface}"] [data-theme-title]`)?.focus({ preventScroll: true })); toast.success(t('themeSelected', { name: localized(pack.theme) })) }} /></div>{packGiftList}</div> : <p role="status" className="px-2 text-center font-[family-name:var(--font-heading)] text-lg font-semibold text-[var(--gold-light)]">{t('pipChooseThemeBlank')}</p>}</section> : <section className="space-y-3">
+        {!fusionView.current && <CompanionPlanMemo memo={planMemo(state.currentFloor)} giftMap={giftMap} />}
         {(() => {
           const gifts = !count ? <p className="text-xs text-[var(--text-tertiary)]">{t(fusionView.current ? 'fusionTierGiftsOwned' : 'allThemeGiftsOwned')}</p>
             : grouped ? groups.map(group => <div key={group.key}>{groupTitle(group.label, group.list.length)}{giftGrid(group.list, group.key)}</div>)
