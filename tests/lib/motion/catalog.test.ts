@@ -60,9 +60,9 @@ describe('REQ-MOTION-002 states', () => {
   })
 })
 
-it('REQ-MOTION-003 reads every file from the R2 host with its size, so a re-rendered video is fetched again', () => {
-  expect(motionAssetUrl('faust/10216/1021601/v-best/layers.mp4', 7357815)).toBe('https://assets.saigo-no-dante.com/faust/10216/1021601/v-best/layers.mp4?v=7357815')
-  expect(motionAssetUrl('a/b.json', 0)).toBe('https://assets.saigo-no-dante.com/a/b.json')
+it('REQ-MOTION-003 reads every file from the R2 host at its plain path, the address the upload purges from the edge cache', () => {
+  expect(motionAssetUrl('faust/10216/1021601/v-best/layers.mp4')).toBe('https://assets.saigo-no-dante.com/faust/10216/1021601/v-best/layers.mp4')
+  expect(motionAssetUrl('a/b.json')).toBe('https://assets.saigo-no-dante.com/a/b.json')
 })
 
 describe('REQ-MOTION-011 an identity\'s other form', () => {
