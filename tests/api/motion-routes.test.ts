@@ -2,24 +2,24 @@ import { beforeEach, expect, it, vi } from 'vitest'
 
 const state = vi.hoisted(() => ({ fail: false, skill: null as unknown }))
 vi.mock('@/lib/motion/feed', async () => ({
-  loadMotionCatalog: async (lang: string) => { if (state.fail) throw new Error('down'); return [{ id: 'faust', identities: [], lang }] },
+  loadMotionSiteData: async (lang: string) => { if (state.fail) throw new Error('down'); return { identities: [], skillNames: [[1, lang]], skillFrames: [], refs: null } },
   loadMotionSkill: async (id: number) => { if (state.fail) throw new Error('down'); return id === 1021601 ? state.skill : null },
   pickMotionSkillRow: (await vi.importActual<typeof import('@/lib/motion/feed')>('@/lib/motion/feed')).pickMotionSkillRow,
 }))
 
-import { GET as catalog } from '@/app/api/motion/catalog/route'
+import { GET as siteData } from '@/app/api/motion/site-data/route'
 import { GET as skill } from '@/app/api/motion/skill/route'
 import { pickMotionSkillRow } from '@/lib/motion/feed'
 
 beforeEach(() => { state.fail = false; state.skill = { id: 's1', name: '여명의 섬광', coins: 2 } })
 
-it('REQ-MOTION-004 serves the motion list in the asked language, cached publicly, and 503 when R2 or the database is down', async () => {
-  const res = await catalog(new Request('http://localhost/api/motion/catalog?lang=en'))
-  expect(await res.json()).toEqual({ sinners: [{ id: 'faust', identities: [], lang: 'en' }] })
+it('REQ-MOTION-004 serves the site\'s names for the motion list in the asked language, cached publicly, and 503 when the database is down', async () => {
+  const res = await siteData(new Request('http://localhost/api/motion/site-data?lang=en'))
+  expect(await res.json()).toEqual({ identities: [], skillNames: [[1, 'en']], skillFrames: [], refs: null })
   expect(res.headers.get('cache-control')).toContain('public')
-  expect((await (await catalog(new Request('http://localhost/api/motion/catalog?lang=xx'))).json()).sinners[0].lang).toBe('ko')
+  expect((await (await siteData(new Request('http://localhost/api/motion/site-data?lang=xx'))).json()).skillNames[0][1]).toBe('ko')
   state.fail = true
-  expect((await catalog(new Request('http://localhost/api/motion/catalog'))).status).toBe(503)
+  expect((await siteData(new Request('http://localhost/api/motion/site-data'))).status).toBe(503)
 })
 
 it('REQ-MOTION-005 returns the site\'s skill for a game skill id, 404 for one it does not have and 400 for a bad id', async () => {

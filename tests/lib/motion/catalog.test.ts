@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildMotionCatalog, defaultMotionState, formatMotionLabelKey, motionAssetUrl, motionSinnerId, motionStateLabel, type MotionEntry } from '@/lib/motion/catalog'
+import { buildMotionCatalog, defaultMotionState, motionCatalogFrom, MOTION_INDEX_URL, formatMotionLabelKey, motionAssetUrl, motionSinnerId, motionStateLabel, type MotionEntry } from '@/lib/motion/catalog'
 
 const entry = (over: Partial<MotionEntry>): MotionEntry => ({
   slug: 'id10216', skillId: 1021601, state: 'v:base', identity: '새벽 사무소 해결사 파우스트', name: '여명의 섬광',
@@ -227,4 +227,18 @@ describe('REQ-MOTION-020 a new identity without motion yet', () => {
     // Without a clock (a test, an old caller) nothing is added.
     expect(yiSang().map(i => i.slug)).toEqual(['id10116'])
   })
+})
+
+it('REQ-MOTION-001 builds the list in the browser from the R2 index and the site\'s names, read from R2 at every page open', () => {
+  expect(MOTION_INDEX_URL).toBe('https://assets.saigo-no-dante.com/index.json')
+  const site = {
+    identities: [{ id: 'faust-dawn', name: '새벽 사무소 해결사', sinner_id: 'faust', sinner_name: '파우스트', game_id: '10216', folder_name: 'Dawn', release_date: '2026-01-01' }],
+    skillNames: [[1021601, 'Dawn Flash']] as [number, string][],
+    skillFrames: [[1021601, { sin: 'wrath', slot: 1, attack: 'slash' }]] as [number, { sin: string; slot: number; attack: 'slash' }][],
+    refs: null,
+  }
+  const catalog = motionCatalogFrom([entry({})], site, 'en', new Date('2026-10-24'))
+  const identity = catalog.find(s => s.id === 'faust')!.identities[0]
+  expect(identity).toMatchObject({ label: '새벽 사무소 해결사', identityId: 'faust-dawn', gameId: '10216', released: '2026-01-01' })
+  expect(identity.skills[0]).toMatchObject({ title: 'Dawn Flash', frame: { sin: 'wrath', slot: 1, attack: 'slash' } })
 })
