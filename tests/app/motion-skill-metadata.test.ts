@@ -17,6 +17,8 @@ vi.mock('next-intl/server', async () => {
 vi.mock('@sentry/nextjs', () => ({ captureException: vi.fn() }))
 vi.mock('@/components/motion/SkillMotionViewer', () => ({ default: () => null }))
 vi.mock('@/components/motion/SkillMotionSkeleton', () => ({ default: () => null }))
+function RequestTimeMarker() { return null }
+vi.mock('@/components/layout/RequestTimeRoute', () => ({ default: RequestTimeMarker }))
 
 const state = (id: string, label: string) => ({ state: id, label, name: '', video: `v/${id}.mp4`, meta: '', bytes: 1 })
 const catalog = (lang: string): MotionSinner[] => [{
@@ -64,5 +66,9 @@ describe('REQ-MOTION-022 each skill motion has its own address for search', () =
     }
     load.mockRejectedValueOnce(new Error('R2 down'))
     expect((await metadataOf('ko', { skill: 'id10116~1011601' })).alternates).toMatchObject({ canonical: 'https://saigo-no-dante.com/ko/motion/skills' })
+  })
+  it('REQ-MOTION-022 renders at request time, as its metadata reads the address (Next blocks the metadata otherwise)', async () => {
+    const page = (await import('@/app/[lang]/motion/skills/page')).default as () => { props: { children: { type: unknown }[] } }
+    expect(page().props.children.map(child => child.type)).toContain(RequestTimeMarker)
   })
 })
