@@ -9,6 +9,9 @@ export type MotionError = 'webgl' | 'load'
 /** The frame being shown, read by the controls only (the rest of the page does not re-render 60 times a second). */
 export type MotionFrameStore = { subscribe: (listener: () => void) => () => void; get: () => number }
 
+/** How long without a frame report, while playing, before a display refresh draws the frame itself (6 frames at 60 fps). */
+const STALE_MS = 100
+
 /**
  * The skill motion player (the reference player of the R2 export, as a hook): a hidden video element feeds the WebGL2
  * compositor, which draws the base picture plus the wanted buff layers into a canvas the hook puts in `hostRef`. A newer
@@ -87,14 +90,33 @@ export function useSkillMotion() {
       onScreen.current = entry.isIntersecting
       if (entry.isIntersecting) draw()
     })
-    let ticking = false
-    const tick = () => {
+    // The video's frame reports draw each new frame. Every display refresh while it plays also checks on them: when none
+    // came for STALE_MS (Windows Chrome stopped sending them for this off-document video while it played on, the canvas
+    // frozen mid-skill), the refresh draws the frame itself and asks again. Without the reports (old Safari) it always does.
+    const reports = 'requestVideoFrameCallback' in v
+    let ticking = false, reportedAt = 0, pending = 0
+    const report = () => {
+      reportedAt = performance.now()
       draw()
-      if (v.paused) { ticking = false; return }
-      if ('requestVideoFrameCallback' in v) v.requestVideoFrameCallback(tick)
-      else requestAnimationFrame(tick)
+      if (!v.paused) pending = v.requestVideoFrameCallback(report)
     }
-    const onPlay = () => { setPlaying(true); if (!ticking) { ticking = true; tick() } }
+    const watch = () => {
+      if (v.paused) { ticking = false; return }
+      if (!reports || performance.now() - reportedAt > STALE_MS) {
+        draw()
+        if (reports) { v.cancelVideoFrameCallback(pending); pending = v.requestVideoFrameCallback(report) }
+      }
+      requestAnimationFrame(watch)
+    }
+    const onPlay = () => {
+      setPlaying(true)
+      if (ticking) return
+      ticking = true
+      reportedAt = performance.now()
+      draw()
+      if (reports) pending = v.requestVideoFrameCallback(report)
+      requestAnimationFrame(watch)
+    }
     const onPause = () => { setPlaying(false); draw() }
     const onVisibility = () => { if (document.hidden) v.pause() }
     v.addEventListener('play', onPlay)
@@ -107,6 +129,7 @@ export function useSkillMotion() {
       v.removeEventListener('pause', onPause)
       v.removeEventListener('seeked', draw)
       document.removeEventListener('visibilitychange', onVisibility)
+      if (reports) v.cancelVideoFrameCallback(pending)
       observer.current?.disconnect()
       v.pause()
       v.removeAttribute('src')
