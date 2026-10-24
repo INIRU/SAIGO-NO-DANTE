@@ -108,3 +108,16 @@ test('REQ-MOTION-001 every page open reads index.json from R2 in the browser, no
   expect(index.length).toBeGreaterThanOrEqual(2)
   expect(lists).toEqual([])
 })
+
+test('REQ-MOTION-026 the stage keeps drawing while the video plays even when the browser stops reporting new video frames', async ({ page }) => {
+  // Windows Chrome: the canvas froze mid-skill while the video, fully buffered, played on. Here the frame reports never come.
+  await page.addInitScript(() => {
+    HTMLVideoElement.prototype.requestVideoFrameCallback = function () { return 1 }
+    HTMLVideoElement.prototype.cancelVideoFrameCallback = function () {}
+  })
+  await open(page)
+  const frame = () => page.getByRole('slider', { name: '프레임' }).evaluate(input => Number((input as HTMLInputElement).value))
+  const first = await frame()
+  await page.waitForTimeout(1500)
+  expect(await frame()).toBeGreaterThan(first + 30)
+})
