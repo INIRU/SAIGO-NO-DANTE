@@ -23,6 +23,13 @@ export const communityCopy = {
     ruleNote:
       "하루 기준은 한국 시간입니다. 덱·플랜 삭제, 좋아요 취소, 기여 승인 철회 시 해당 점수가 차감됩니다. 같은 활동을 반복해도 추가 점수를 받지 않습니다.",
     visibility: "프로필 공개",
+    visibilityGroup: "공개 범위",
+    publicFollowing: "팔로잉 목록 공개",
+    publicFollowers: "팔로워 목록 공개",
+    notifications: "알림",
+    notifyComments: "댓글·답글",
+    notifyFollows: "새 팔로워",
+    notifyPosts: "팔로우한 관리자의 새 글",
     visibilityHint:
       "닉네임, 소개, 활동 점수와 작성한 덱을 다른 사람이 볼 수 있습니다. 이메일과 문의 내용은 공개되지 않습니다.",
     view: "공개 프로필 보기",
@@ -105,6 +112,13 @@ export const communityCopy = {
     ruleNote:
       "Daily limits reset at midnight Korea time. Deleting decks or plans, removing likes or revoking approvals removes their points. Repeating the same activity does not earn extra points.",
     visibility: "Public profile",
+    visibilityGroup: "Visibility",
+    publicFollowing: "Public following list",
+    publicFollowers: "Public followers list",
+    notifications: "Notifications",
+    notifyComments: "Comments and replies",
+    notifyFollows: "New followers",
+    notifyPosts: "New posts from people you follow",
     visibilityHint:
       "Others can see your name, bio, activity points and decks. Your email and support messages stay private.",
     view: "View public profile",
@@ -188,6 +202,13 @@ export const communityCopy = {
     ruleNote:
       "1日の区切りは韓国時間です。デッキ・プラン削除、いいね取消、承認撤回で該当ポイントが減ります。同じ活動を繰り返しても追加ポイントは付きません。",
     visibility: "プロフィールを公開",
+    visibilityGroup: "公開範囲",
+    publicFollowing: "フォローリストを公開",
+    publicFollowers: "フォロワーリストを公開",
+    notifications: "通知",
+    notifyComments: "コメント・返信",
+    notifyFollows: "新しいフォロワー",
+    notifyPosts: "フォロー中の管理人の新しい投稿",
     visibilityHint:
       "名前、紹介、活動ポイント、投稿デッキを公開します。メールアドレスとお問い合わせ内容は公開されません。",
     view: "公開プロフィールを見る",

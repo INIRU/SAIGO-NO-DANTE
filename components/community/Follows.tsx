@@ -66,17 +66,3 @@ export function FollowList({id,initialKind='following'}:{id:string;initialKind?:
     </>}
   </section>
 }
-export function ProfilePrivacy({id,publicProfile,onSaved}:{id:string;publicProfile:boolean;onSaved:()=>Promise<void>}) {
-  const label=useCopy(), {data,mutate,error}=useSWR(endpoint(id),fetcher), [busy,setBusy]=useState(false)
-  async function save(key:string,value:boolean) {setBusy(true);try{const r=await fetch('/api/community/me',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({[key]:value})});if(!r.ok)throw Error();await Promise.all([mutate(),onSaved()]);showSuccess(label('공개 범위를 저장했습니다.','公開範囲を保存しました。','Visibility saved.'))}catch{showError(label('저장하지 못했습니다.','保存できませんでした。','Could not save.'))}finally{setBusy(false)}}
-  return <section className="community-settings">
-    <h2>{label('공개 범위','公開範囲','Visibility')}</h2>
-    <div className="space-y-4 py-3">{[
-      ['public_profile',label('프로필 공개','プロフィール公開','Public profile'),publicProfile],
-      ['public_following',label('팔로잉 목록 공개','フォローリスト公開','Public following list'),data?.public_following],
-      ['public_followers',label('팔로워 목록 공개','フォロワーリスト公開','Public followers list'),data?.public_followers],
-    ].map(([key,title,value])=><label key={String(key)} className="!flex min-h-11 items-center justify-between gap-4"><span>{title}</span><button type="button" role="switch" aria-checked={value===true} aria-label={String(title)} disabled={busy || value===undefined} onClick={()=>save(String(key),!value)} className={`relative h-7 w-12 shrink-0 rounded-full transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--gold)] ${value?'bg-[var(--gold)]':'bg-white/15'}`}><span className={`absolute left-1 top-1 h-5 w-5 rounded-full bg-white transition-transform duration-200 motion-reduce:transition-none ${value?'translate-x-5':'translate-x-0'}`}/></button></label>)}</div>
-    <p className="mt-4 text-xs leading-relaxed text-[var(--text-muted)]">{label('비공개 목록과 인원수는 나만 볼 수 있어요. 프로필이 비공개이면 다른 사람에게 목록도 표시되지 않습니다.','非公開リストと人数は自分だけが確認できます。プロフィールが非公開の場合、リストも公開されません。','Only you can view private lists and their counts. A private profile also hides its lists.')}</p>
-    {error&&<button className="community-link" onClick={()=>mutate()}>{label('다시 불러오기','再読み込み','Retry')}</button>}
-  </section>
-}

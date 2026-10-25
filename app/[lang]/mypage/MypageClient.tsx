@@ -17,7 +17,8 @@ import PlannerTab from "./components/PlannerTab";
 import CollectionTab from "./components/CollectionTab";
 import { type DeckSummary } from "@/components/decks/DeckCard";
 import AchievementGrid from "@/components/community/AchievementGrid";
-import { FollowList, ProfilePrivacy } from "@/components/community/Follows";
+import { FollowList } from "@/components/community/Follows";
+import ProfileSettings from "@/components/community/ProfileSettings";
 import Skeleton from "@/components/ui/Skeleton";
 import { getCommunityCopy } from "@/lib/community/copy";
 import { achievementProgress } from "@/lib/community/achievements";
@@ -192,7 +193,7 @@ export default function MypageClient() {
             <div className={styles.head}><h2 className={styles.title}>{t.profile}</h2></div>
             <div className={styles.settings}>
               <ProfileTab profile={data.profile} email={data.email} onProfileUpdate={async () => { await Promise.all([mutate(), community.mutate()]); }} />
-              <ProfilePrivacy id={community.data.profile.id} publicProfile={community.data.profile.public_profile} onSaved={async () => { await community.mutate(); }} />
+              {community.data.settings && <ProfileSettings initial={community.data.settings} onSaved={async () => { await community.mutate(); }} />}
             </div>
           </>
         )}
