@@ -235,7 +235,7 @@ function ModalContent({ data, lang, t }: { data: ApiResponse; lang: SupportedLan
           )}
           <div className="flex-1 min-w-0 pt-1">
             <div className="flex items-center gap-2 mb-1">
-              <span className="font-serif" style={{ color: '#e8dcc8', fontSize: '1.0625rem', lineHeight: 1.2 }}>
+              <span className="font-serif" style={{ color: 'var(--text-primary)', fontSize: '1.0625rem', lineHeight: 1.2 }}>
                 {getLocalizedName({ name_kr: ego.name_kr ?? ego.name, name_en: ego.name_en, name_jp: ego.name_jp }, lang)}
               </span>
             </div>
@@ -370,7 +370,7 @@ function ModalContent({ data, lang, t }: { data: ApiResponse; lang: SupportedLan
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="px-5 py-3" style={{ borderBottom: '1px solid rgba(32,20,8,0.5)' }}>
-      <h3 className="font-serif mb-2" style={{ color: '#c8900a', fontSize: '0.8125rem', letterSpacing: '0.05em' }}>
+      <h3 className="font-serif mb-2" style={{ color: 'var(--gold)', fontSize: '0.8125rem', letterSpacing: '0.05em' }}>
         {title}
       </h3>
       {children}
@@ -414,12 +414,12 @@ function EgoSkillCard({ skill, gradeColor, isCorrosion, lang, t, allowedKeywords
       {/* 수치 */}
       <div className="flex items-center gap-3 mb-1" style={{ fontSize: '0.6875rem', color: '#999' }}>
         <span>{t('ego.power')} <strong style={{ color: accentColor, fontFamily: 'var(--font-mono)' }}>{skill.base_power}</strong></span>
-        <span>{t('ego.coin')} <strong style={{ color: '#c8900a', fontFamily: 'var(--font-mono)' }}>{skill.coins}</strong></span>
+        <span>{t('ego.coin')} <strong style={{ color: 'var(--gold)', fontFamily: 'var(--font-mono)' }}>{skill.coins}</strong></span>
         <span>{t('ego.coinPower')} <strong style={{ color: accentColor, fontFamily: 'var(--font-mono)' }}>{coinPowerStr}</strong></span>
         {skill.atk_weight != null && skill.atk_weight !== 1 && (
           <span>{t('ego.weight')} <strong style={{ color: '#d0a020', fontFamily: 'var(--font-mono)' }}>{skill.atk_weight}</strong></span>
         )}
-        <span style={{ marginLeft: 'auto' }}>{t('ego.max')} <strong style={{ color: '#e8dcc8', fontFamily: 'var(--font-mono)' }}>{maxPower}</strong></span>
+        <span style={{ marginLeft: 'auto' }}>{t('ego.max')} <strong style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>{maxPower}</strong></span>
       </div>
 
       {/* 스킬 설명 */}

@@ -29,7 +29,7 @@ button.strip:hover .frame polygon { stroke: var(--gold-light); }
 .ego i[data-on='TETH'] { background: #c8762f; }
 .ego i[data-on='HE'] { background: #b33a32; }
 .ego i[data-on='WAW'] { background: #8b5fd0; }
-.ego i[data-on='ALEPH'] { background: #e8dcc8; }
+.ego i[data-on='ALEPH'] { background: var(--text-primary); }
 /* A short row (wanted identities): fixed-width strips, no E.G.O places. */
 .few { gap: 0.35rem; padding-top: 0; }
 .few .strip { flex: 0 0 3.6rem; }

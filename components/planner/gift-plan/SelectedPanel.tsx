@@ -50,7 +50,7 @@ export default function SelectedPanel({
       }}>
         <span className="planner-selected-panel-title" style={{
           fontSize: '0.75rem',
-          color: '#c8900a',
+          color: 'var(--gold)',
           fontWeight: 600,
           letterSpacing: '0.02em',
         }}>
@@ -89,7 +89,7 @@ export default function SelectedPanel({
                   alignItems: 'center',
                   gap: '0.375rem',
                   padding: '0.3rem 0.375rem',
-                  background: '#1a1510',
+                  background: 'var(--bg-card)',
                   border: '1px solid #2a2520',
                   borderRadius: '0.375rem',
                   transition: 'border-color 0.15s',

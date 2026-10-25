@@ -63,7 +63,7 @@ export default function AvatarPicker({ open, currentUrl, onSelect, onReset, onCl
       <div
         className="relative w-full max-h-[80vh] flex flex-col"
         style={{
-          background: '#1a1510',
+          background: 'var(--bg-card)',
           border: '1px solid var(--border)',
           borderRadius: '0.5rem',
           overflow: 'hidden',
@@ -126,7 +126,7 @@ export default function AvatarPicker({ open, currentUrl, onSelect, onReset, onCl
             <button
               key={s.id}
               onClick={() => setSelectedSinner(s.id)}
-              className="flex flex-shrink-0 items-center justify-center transition duration-150 focus-visible:outline-none focus-visible:ring-[0.125rem] focus-visible:ring-[var(--gold)] focus-visible:ring-offset-[0.125rem] focus-visible:ring-offset-[#1a1510]"
+              className="flex flex-shrink-0 items-center justify-center transition duration-150 focus-visible:outline-none focus-visible:ring-[0.125rem] focus-visible:ring-[var(--gold)] focus-visible:ring-offset-[0.125rem] focus-visible:ring-offset-[var(--bg-card)]"
               title={s.name_kr}
               aria-pressed={selectedSinner === s.id}
               style={{
@@ -200,7 +200,7 @@ export default function AvatarPicker({ open, currentUrl, onSelect, onReset, onCl
                         ? '0 0 12px rgba(200,144,10,0.3)'
                         : 'none',
                       cursor: 'pointer',
-                      background: '#120e09',
+                      background: 'var(--bg-panel)',
                     }}
                   >
                     <Image
@@ -232,7 +232,7 @@ export default function AvatarPicker({ open, currentUrl, onSelect, onReset, onCl
                       <p
                         className="text-center"
                         style={{
-                          color: '#e8dcc8',
+                          color: 'var(--text-primary)',
                           fontSize: '0.75rem',
                           lineHeight: 1.3,
                         }}
@@ -255,7 +255,7 @@ export default function AvatarPicker({ open, currentUrl, onSelect, onReset, onCl
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            color: '#0d0b08',
+                            color: 'var(--bg-deep)',
                             fontWeight: 'bold',
                             fontSize: '0.875rem',
                           }}

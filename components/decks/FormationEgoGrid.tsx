@@ -26,9 +26,9 @@ export function FormationTabs<K extends string>({ tabs, active, onChange, label,
               role="tab"
               aria-selected={selected}
               onClick={() => onChange(tab.key)}
-              className={`inline-flex min-h-11 shrink-0 items-center gap-1.5 whitespace-nowrap border-b-2 px-3.5 text-[0.9375rem] transition-colors first:pl-0.5 focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[#e8b030] motion-reduce:transition-none ${selected
-                ? 'border-[#c8900a] font-semibold text-[#e8dcc8]'
-                : 'border-transparent text-[#9c8b73] hover:text-[#e8dcc8]'}`}
+              className={`inline-flex min-h-11 shrink-0 items-center gap-1.5 whitespace-nowrap border-b-2 px-3.5 text-[0.9375rem] transition-colors first:pl-0.5 focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[var(--gold-light)] motion-reduce:transition-none ${selected
+                ? 'border-[var(--gold)] font-semibold text-[var(--text-primary)]'
+                : 'border-transparent text-[#9c8b73] hover:text-[var(--text-primary)]'}`}
             >
               {tab.label}
               {tab.count && <span className="font-normal tabular-nums text-[#7f7364]">{tab.count}</span>}
@@ -81,7 +81,7 @@ export function FormationEgoGrid({ sinners, egos, onEgoClick, noIdentityLabel }:
                     key={grade}
                     type="button"
                     onClick={() => onEgoClick(ego.id)}
-                    className="flex min-h-8 items-center gap-2 rounded-sm border px-1.5 py-1 text-left transition-[filter] hover:brightness-125 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#e8b030]"
+                    className="flex min-h-8 items-center gap-2 rounded-sm border px-1.5 py-1 text-left transition-[filter] hover:brightness-125 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--gold-light)]"
                     style={{ background: `${ec}1a`, borderColor: `${ec}55` }}
                   >
                     {banner}

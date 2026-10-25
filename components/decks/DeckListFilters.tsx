@@ -181,7 +181,7 @@ function InfoScoreLabel() {
           style={{
             top: position.top,
             left: position.left,
-            background: '#1a1510',
+            background: 'var(--bg-card)',
             borderColor: 'rgba(200,144,10,0.28)',
             boxShadow: '0 0.75rem 1.5rem rgba(0,0,0,0.32)',
             color: 'var(--deck-filter-text-muted)',

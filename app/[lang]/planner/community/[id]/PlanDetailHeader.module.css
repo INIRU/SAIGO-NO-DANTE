@@ -31,7 +31,7 @@
   font-family: var(--font-heading);
   font-size: 2rem;
   line-height: 1.15;
-  color: #e8dcc8;
+  color: var(--text-primary);
   overflow-wrap: anywhere;
   text-wrap: pretty;
 }
@@ -62,7 +62,7 @@
   font-family: var(--font-title);
   font-size: 1.75rem;
   line-height: 1;
-  color: #e8dcc8;
+  color: var(--text-primary);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
@@ -112,15 +112,15 @@
 }
 
 .actions button:hover {
-  border-color: #8a6010;
+  border-color: var(--gold-dim);
   background: #211a12;
-  color: #e8b030;
+  color: var(--gold-light);
 }
 
 .actions button:active {
-  border-color: #8a6010;
+  border-color: var(--gold-dim);
   background: #2a2118;
-  color: #e8b030;
+  color: var(--gold-light);
 }
 
 .actions button:disabled {
@@ -130,18 +130,18 @@
 
 /* Recommended: filled heart, gold tint. */
 .actions button[aria-pressed="true"] {
-  border-color: #8a6010;
+  border-color: var(--gold-dim);
   background: #2a1f0c;
-  color: #e8b030;
+  color: var(--gold-light);
 }
 
 /* Assist Mode: the one solid gold element on the page. */
 .actions button[data-plan-action="assist"] {
   grid-column: 1 / -1;
   min-height: 3.25rem;
-  border-color: #c8900a;
-  background: #c8900a;
-  color: #0d0b08;
+  border-color: var(--gold);
+  background: var(--gold);
+  color: var(--bg-deep);
   font-size: 1.0625rem;
 }
 
@@ -150,29 +150,29 @@
 }
 
 .actions button[data-plan-action="assist"]:hover {
-  border-color: #e8b030;
-  background: #e8b030;
-  color: #0d0b08;
+  border-color: var(--gold-light);
+  background: var(--gold-light);
+  color: var(--bg-deep);
 }
 
 .actions button[data-plan-action="assist"]:active {
   border-color: #a87808;
   background: #a87808;
-  color: #0d0b08;
+  color: var(--bg-deep);
 }
 
 /* Owner tools follow the run action and stay visibly secondary. */
 .actions button[data-plan-action="edit"] {
   border-color: #3a2c14;
   background: transparent;
-  color: #c8900a;
+  color: var(--gold);
 }
 
 .actions button[data-plan-action="edit"]:hover,
 .actions button[data-plan-action="edit"]:active {
-  border-color: #c8900a;
+  border-color: var(--gold);
   background: #17120c;
-  color: #e8b030;
+  color: var(--gold-light);
 }
 
 .actions button[data-plan-action="delete"] {
@@ -229,7 +229,7 @@
   z-index: 30;
   margin: 0 -0.75rem;
   padding: 0 0.75rem;
-  background: #0d0b08;
+  background: var(--bg-deep);
   border-bottom: 1px solid #5a4526;
 }
 
@@ -257,10 +257,10 @@
 }
 
 .sectionNav a:first-child { padding-left: 0; }
-.sectionNav a:hover { color: #e8dcc8; }
-.sectionNav a[aria-current] { border-bottom-color: #c8900a; color: #e8dcc8; font-weight: 600; }
+.sectionNav a:hover { color: var(--text-primary); }
+.sectionNav a[aria-current] { border-bottom-color: var(--gold); color: var(--text-primary); font-weight: 600; }
 .sectionNav a span { color: #7f7364; font-variant-numeric: tabular-nums; font-weight: 400; }
-.sectionNav a:focus-visible { outline: 2px solid #e8b030; outline-offset: -2px; }
+.sectionNav a:focus-visible { outline: 2px solid var(--gold-light); outline-offset: -2px; }
 
 @media (min-width: 640px) {
   .sectionNav { margin: 0 -1.5rem; padding: 0 1.5rem; }
@@ -292,7 +292,7 @@
 }
 
 .giftCell:has(:focus-visible) {
-  border-color: #c8900a;
+  border-color: var(--gold);
   background: #17120c;
 }
 

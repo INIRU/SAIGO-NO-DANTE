@@ -36,7 +36,7 @@ export default function GiftCheckWindow({ title, sections, checkedIds, checkedLa
             <span style={{ color: 'var(--gold-light)', fontFamily: 'var(--font-heading)', fontSize: '1rem' }}>{section.label}</span>
             <span className="tabular-nums" style={{ color: '#9c8b73', fontFamily: 'var(--font-title)', fontSize: '1.125rem', lineHeight: 1 }}>{section.gifts.length}</span>
           </h2>
-          {section.note && <p className="mb-2 whitespace-pre-wrap break-words text-[0.8125rem] leading-[1.5] text-[#b0a890]">{section.note}</p>}
+          {section.note && <p className="mb-2 whitespace-pre-wrap break-words text-[0.8125rem] leading-[1.5] text-[var(--text-secondary)]">{section.note}</p>}
           <div className="gift-grid [&_.gift-card:hover]:[transform:none]!" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(3rem, 1fr))', gap: '0.5rem 0.375rem' }}>
             {section.gifts.map(gift => {
               const isMarked = checkedIds.has(gift.id)

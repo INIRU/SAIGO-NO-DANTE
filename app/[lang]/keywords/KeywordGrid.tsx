@@ -34,7 +34,7 @@ export default function KeywordGrid({ keywords, countMaps, onSelect, viewMode, l
     return (
       <div className="py-20 text-center">
         <p className="font-[family-name:var(--font-heading)] text-[1rem] text-[#9c8b73]">{kt('keyword.noResults.title', lang)}</p>
-        <p className="mt-1 text-[0.8125rem] text-[#6a6058]">{kt('keyword.noResults.subtitle', lang)}</p>
+        <p className="mt-1 text-[0.8125rem] text-[var(--text-muted)]">{kt('keyword.noResults.subtitle', lang)}</p>
       </div>
     )
   }

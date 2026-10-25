@@ -461,7 +461,7 @@ export function PlannerIdentitySelectModal({
           <div className="idpick__header">
             <Image src={getSinnerLogoUrl(sinner.id)} alt="" width={24} height={24} className="idpick__logo" />
             <div className="min-w-0 flex-1">
-              <p className="truncate" style={{ ...compactNameStyle, color: '#e8dcc8', fontSize: '1.0625rem' }}>{t('modalHeading', { sinner: sinnerNameOf(sinner) })}</p>
+              <p className="truncate" style={{ ...compactNameStyle, color: 'var(--text-primary)', fontSize: '1.0625rem' }}>{t('modalHeading', { sinner: sinnerNameOf(sinner) })}</p>
               <p className="idpick__hint">{t('uptieHint')}</p>
             </div>
             {canResetToLcb && (
@@ -822,7 +822,7 @@ export function PlannerEgoSelectModal({
           <div className="planner-deck-select-modal__header">
             <div className="flex min-w-0 items-center gap-2">
               <Image src={getSinnerLogoUrl(sinner.id)} alt="" width={20} height={20} style={{ width: '1.25rem', height: '1.25rem', opacity: 0.7 }} />
-              <span className="min-w-0 truncate" style={{ ...compactNameStyle, color: '#e8dcc8', fontSize: '1rem' }}>
+              <span className="min-w-0 truncate" style={{ ...compactNameStyle, color: 'var(--text-primary)', fontSize: '1rem' }}>
                 {t('modalHeading', { sinner: getLocalizedSinnerName(sinner) })}
               </span>
             </div>

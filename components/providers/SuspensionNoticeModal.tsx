@@ -104,18 +104,18 @@ export default function SuspensionNoticeModal() {
   const reason = remote?.reason?.trim() || copy.defaultReason
   return (
     <BaseModal open onClose={() => setDismissed(true)} title={copy.modalTitle} maxWidth="26rem" blur={false} initialFocus="dialog">
-      <section className="relative overflow-hidden rounded-xl border border-[#3a2a15] bg-[#17120c] p-6 shadow-[0_1.5rem_3rem_rgba(0,0,0,0.55)]">
+      <section className="relative overflow-hidden rounded-xl border border-[var(--border)] bg-[#17120c] p-6 shadow-[0_1.5rem_3rem_rgba(0,0,0,0.55)]">
         <span aria-hidden="true" className="absolute inset-x-0 top-0 h-[3px] bg-[#9b2c23]" />
         <button type="button" onClick={() => setDismissed(true)} aria-label={copy.closeLabel}
-          className="absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-md text-[#8a7d69] transition-colors hover:bg-white/5 hover:text-[#e8dcc8] focus-visible:outline-2 focus-visible:outline-[var(--gold)]">
+          className="absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-md text-[#8a7d69] transition-colors hover:bg-white/5 hover:text-[var(--text-primary)] focus-visible:outline-2 focus-visible:outline-[var(--gold)]">
           <X size={16} aria-hidden="true" />
         </button>
         <h2 className="pr-8 text-[1.25rem] font-bold leading-snug text-[#f0e6d2]">{copy.heading}</h2>
         <p className="mt-2 text-[0.9375rem] leading-relaxed text-[#a89a84]">{copy.description}</p>
-        <dl className="mt-5 divide-y divide-[#2e2417] rounded-lg border border-[#2e2417] bg-[#120e09]">
+        <dl className="mt-5 divide-y divide-[#2e2417] rounded-lg border border-[#2e2417] bg-[var(--bg-panel)]">
           <div className="flex gap-4 px-4 py-3">
             <dt className="w-16 shrink-0 text-[0.8125rem] text-[#8a7d69]">{copy.reason}</dt>
-            <dd className="min-w-0 break-words text-[0.9375rem] leading-relaxed text-[#e8dcc8]">{reason}</dd>
+            <dd className="min-w-0 break-words text-[0.9375rem] leading-relaxed text-[var(--text-primary)]">{reason}</dd>
           </div>
           <div className="flex gap-4 px-4 py-3">
             <dt className="w-16 shrink-0 text-[0.8125rem] text-[#8a7d69]">{copy.until}</dt>
@@ -123,7 +123,7 @@ export default function SuspensionNoticeModal() {
           </div>
         </dl>
         <Link href={`/${locale}/support`} onClick={() => setDismissed(true)}
-          className="mt-5 flex min-h-12 w-full items-center justify-center rounded-lg bg-[var(--gold)] text-[1rem] font-bold text-[#0d0b08] transition-[filter] hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--gold-light)]">
+          className="mt-5 flex min-h-12 w-full items-center justify-center rounded-lg bg-[var(--gold)] text-[1rem] font-bold text-[var(--bg-deep)] transition-[filter] hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--gold-light)]">
           {copy.support}
         </Link>
       </section>

@@ -414,8 +414,8 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
         aria-current={currentSection === tab.key ? 'location' : undefined}
         onClick={event => { event.preventDefault(); goToSection(tab.key) }}
         className={variant === 'bar'
-          ? '-mb-px inline-flex min-h-12 items-center gap-1.5 whitespace-nowrap border-b-2 border-transparent px-3 text-[0.9375rem] text-[#a8977d] transition-colors hover:text-[#e8dcc8] focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[#e8b030] motion-reduce:transition-none aria-[current]:border-[#c8900a] aria-[current]:font-semibold aria-[current]:text-[#e8dcc8] [li:first-child>&]:pl-0'
-          : '-ml-px flex min-h-11 items-center justify-between gap-2 border-l-2 border-transparent pl-3 pr-1 text-[0.9375rem] text-[#a8977d] transition-colors hover:text-[#e8dcc8] focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[#e8b030] motion-reduce:transition-none aria-[current]:border-[#c8900a] aria-[current]:font-semibold aria-[current]:text-[#e8dcc8]'}
+          ? '-mb-px inline-flex min-h-12 items-center gap-1.5 whitespace-nowrap border-b-2 border-transparent px-3 text-[0.9375rem] text-[#a8977d] transition-colors hover:text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[var(--gold-light)] motion-reduce:transition-none aria-[current]:border-[var(--gold)] aria-[current]:font-semibold aria-[current]:text-[var(--text-primary)] [li:first-child>&]:pl-0'
+          : '-ml-px flex min-h-11 items-center justify-between gap-2 border-l-2 border-transparent pl-3 pr-1 text-[0.9375rem] text-[#a8977d] transition-colors hover:text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[var(--gold-light)] motion-reduce:transition-none aria-[current]:border-[var(--gold)] aria-[current]:font-semibold aria-[current]:text-[var(--text-primary)]'}
       >
         {tPlanner(tab.labelKey)}
         {status && <span className="font-normal tabular-nums text-[#7f7364]">{status}</span>}
@@ -428,7 +428,7 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
   const railHidden = 'lg:group-data-[layout=bar]/planner:invisible lg:group-data-[layout=bar]/planner:-translate-x-3 lg:group-data-[layout=bar]/planner:opacity-0 lg:group-data-[layout=bar]/planner:duration-0'
 
   return (
-    <div className="min-h-[100dvh] pb-16" style={{ background: '#0d0b08' }}>
+    <div className="min-h-[100dvh] pb-16" style={{ background: 'var(--bg-deep)' }}>
       <AutosaveRestoreModal savedAt={autosave.offer?.savedAt ?? null} onRestore={autosave.restore} onDiscard={autosave.discard} />
       <div className="max-w-[90rem] mx-auto px-3 md:px-6">
         {/* 헤더는 server-rendered page.tsx에서 렌더링 — 여기서는 액션 버튼만 */}
@@ -449,7 +449,7 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
               onClick={() => { savePlanForRun({ ...giftConditionState, title: state.title, description: state.description }); window.location.href = '/planner/run?from-plan=1' }}
               style={{
                 display: 'flex', alignItems: 'center', gap: '0.25rem', padding: '0.375rem 0.625rem',
-                background: '#c8900a', borderRadius: '0.375rem', color: '#0d0b08',
+                background: 'var(--gold)', borderRadius: '0.375rem', color: 'var(--bg-deep)',
                 fontSize: '0.9375rem', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s',
               }}
             >
@@ -460,7 +460,7 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
               display: 'flex', alignItems: 'center', gap: '0.25rem', padding: '0.375rem 0.625rem',
               background: copied ? 'rgba(34,197,94,0.15)' : 'rgba(200,144,10,0.1)',
               border: `1px solid ${copied ? 'rgba(34,197,94,0.4)' : 'rgba(200,144,10,0.3)'}`,
-              borderRadius: '0.375rem', color: copied ? '#4ade80' : '#e8b030',
+              borderRadius: '0.375rem', color: copied ? '#4ade80' : 'var(--gold-light)',
               fontSize: '0.9375rem', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s',
             }}>
               {copied ? <Check size={12} /> : <Copy size={12} />}
@@ -476,7 +476,7 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
                 background: uploaded ? 'rgba(34,197,94,0.12)' : 'rgba(200,144,10,0.1)',
                 border: `1px solid ${uploaded ? 'rgba(34,197,94,0.35)' : 'rgba(200,144,10,0.3)'}`,
                 borderRadius: '0.375rem',
-                color: uploaded ? '#4ade80' : '#e8b030',
+                color: uploaded ? '#4ade80' : 'var(--gold-light)',
                 fontSize: '0.9375rem', cursor: session.status === 'loading' ? 'wait' : 'pointer',
                 transition: 'all 0.2s',
               }}
@@ -491,16 +491,16 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
             </button>
             {/* 로그인 확인 전에도 줄 자리를 잡아 둔다: 늦게 끼어들면 아래 편성판 전체가 한 줄 밀린다 */}
             {session.status !== 'authenticated' && (
-              <div className="col-span-2 flex w-full flex-wrap items-center gap-x-4 gap-y-2 text-[0.8125rem] text-[#6a6058] sm:justify-end" style={session.status === 'loading' ? { visibility: 'hidden' } : undefined}>
+              <div className="col-span-2 flex w-full flex-wrap items-center gap-x-4 gap-y-2 text-[0.8125rem] text-[var(--text-muted)] sm:justify-end" style={session.status === 'loading' ? { visibility: 'hidden' } : undefined}>
                 <p>
                   {getGuestCopy(locale).saveHint}{' '}
-                  <Link href="/guest" className="text-[#e8b030] underline-offset-4 hover:underline">{getGuestCopy(locale).manage}</Link>
+                  <Link href="/guest" className="text-[var(--gold-light)] underline-offset-4 hover:underline">{getGuestCopy(locale).manage}</Link>
                 </p>
                 {!editId && (
                   <label className="flex items-center gap-2 font-semibold text-[#b9a47f]">
                     {getGuestCopy(locale).pin}
                     <GuestPinInput value={pin} onChange={setPin} locale={locale}
-                      className="h-8 w-32 rounded-md border border-[rgba(200,144,10,0.3)] bg-[#0d0b08] px-3 text-[0.875rem] text-[#e8dcc8] outline-none focus-visible:border-[#e8b030]" />
+                      className="h-8 w-32 rounded-md border border-[rgba(200,144,10,0.3)] bg-[var(--bg-deep)] px-3 text-[0.875rem] text-[var(--text-primary)] outline-none focus-visible:border-[var(--gold-light)]" />
                   </label>
                 )}
               </div>
@@ -511,8 +511,8 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
         {/* 구역 목차. 좁은 화면은 늘 가로 밑줄 탭. 넓은 화면은 왼쪽 레일이다가 최종 기프트부터 가로 막대로 바뀌어 본문이 전체 폭을 쓴다.
             넓은 화면의 nav는 높이 0의 sticky 틀이라 두 목록이 서로 겹쳐 전환돼도 본문 높이는 그대로다. --planner-bar-h는 아래 sticky 도구줄의 기준이다. */}
         <div ref={layoutRef} data-layout={navLayout} className="group/planner [--planner-bar-h:3rem] [--planner-rail-w:0rem] lg:[--planner-rail-w:13.5rem] lg:data-[layout=rail]:[--planner-bar-h:0rem]">
-        <nav aria-label={tPlanner('sectionNav')} className="sticky-under-nav z-40 -mx-3 border-b border-[#5a4526] bg-[#0d0b08] px-3 md:-mx-6 md:px-6 lg:mx-0 lg:h-0 lg:border-0 lg:bg-transparent lg:px-0">
-          <div className={`lg:absolute lg:-inset-x-6 lg:top-0 lg:border-b lg:border-[#5a4526] lg:bg-[#0d0b08] lg:px-6 ${navFade} ${barHidden}`}>
+        <nav aria-label={tPlanner('sectionNav')} className="sticky-under-nav z-40 -mx-3 border-b border-[#5a4526] bg-[var(--bg-deep)] px-3 md:-mx-6 md:px-6 lg:mx-0 lg:h-0 lg:border-0 lg:bg-transparent lg:px-0">
+          <div className={`lg:absolute lg:-inset-x-6 lg:top-0 lg:border-b lg:border-[#5a4526] lg:bg-[var(--bg-deep)] lg:px-6 ${navFade} ${barHidden}`}>
             <ol ref={sectionNavRef} className="flex gap-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {TABS.map(tab => <li key={tab.key} className="shrink-0">{renderNavLink(tab, 'bar')}</li>)}
             </ol>
@@ -531,7 +531,7 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
                 className="scroll-mt-[6rem]"
                 style={{ paddingTop: index ? '2.5rem' : '1.75rem', paddingBottom: '1rem', borderTop: index ? '1px solid #2e2417' : undefined, marginTop: index ? '1.5rem' : undefined }}
               >
-                <h2 id={`plan-${tab.key}-title`} className="mb-4 flex items-baseline gap-3" style={{ fontFamily: 'var(--font-heading)', fontSize: '1.375rem', color: '#e8dcc8' }}>
+                <h2 id={`plan-${tab.key}-title`} className="mb-4 flex items-baseline gap-3" style={{ fontFamily: 'var(--font-heading)', fontSize: '1.375rem', color: 'var(--text-primary)' }}>
                   {tPlanner(tab.labelKey)}
                   {tab.key === 'summary' && <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.8125rem', color: '#9c8b73' }}>{tPlanner('summaryHint')}</span>}
                 </h2>

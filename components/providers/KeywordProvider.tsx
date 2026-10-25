@@ -228,7 +228,7 @@ function KwTooltipPopup({ id, rect, iconUrl, keyword, info, refId, onMouseEnter,
           {localName}
           {info?.maxStack ? (
             <span style={{ marginLeft: 'auto', fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-              {t('keyword.maxStack')} <b style={{ color: '#e8b030' }}>{info.maxStack}</b>
+              {t('keyword.maxStack')} <b style={{ color: 'var(--gold-light)' }}>{info.maxStack}</b>
             </span>
           ) : null}
         </span>

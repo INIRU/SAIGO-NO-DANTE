@@ -26,7 +26,7 @@ const CREDIT_ICON = getGameUiAsset('resources/md-credit')
 
 function Credits({ value }: { value: number }) {
   return (
-    <dd className="inline-flex items-center gap-1 tabular-nums" style={{ color: '#e8dcc8', fontFamily: 'var(--font-title)', fontSize: '1.0625rem' }}>
+    <dd className="inline-flex items-center gap-1 tabular-nums" style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-title)', fontSize: '1.0625rem' }}>
       <Image src={CREDIT_ICON} alt="" width={64} height={64} unoptimized className="size-[1.125rem] self-center" />
       {value}
     </dd>
@@ -173,7 +173,7 @@ function GiftLink({ target }: { target: GiftLinkTarget }) {
       type="button"
       onClick={target.onClick}
       className="mx-0.5 inline-flex items-baseline gap-1 rounded-sm align-baseline underline decoration-[rgba(232,176,48,0.6)] underline-offset-[0.2em] transition-colors hover:text-[#ffd479] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold-light)]"
-      style={{ color: '#e8b030', textIndent: 0, cursor: 'pointer' }}
+      style={{ color: 'var(--gold-light)', textIndent: 0, cursor: 'pointer' }}
     >
       {target.image_url && <Image src={target.image_url} alt="" width={18} height={18} className="self-center" style={{ width: '1.125rem', height: '1.125rem', objectFit: 'contain' }} />}
       {target.name}
@@ -266,7 +266,7 @@ export default function GiftDetailModal({ gift, lang, onClose, initialLevel = 0,
               </GiftArtwork>
             </div>
             <div className="min-w-0 flex-1">
-              <h2 className="text-pretty" style={{ fontFamily: 'var(--font-heading)', fontSize: '1.3125rem', lineHeight: 1.3, color: '#e8dcc8' }}>
+              <h2 className="text-pretty" style={{ fontFamily: 'var(--font-heading)', fontSize: '1.3125rem', lineHeight: 1.3, color: 'var(--text-primary)' }}>
                 {gift.name}
               </h2>
               <div className="mt-2 flex flex-wrap items-center gap-1.5">

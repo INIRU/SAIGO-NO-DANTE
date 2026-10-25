@@ -55,11 +55,11 @@ async function SeriesContent({ params }: Props) {
   const { series, cards, owner } = page
   const deckCount = cards.filter(card => card.kind === 'deck').length
   return (
-    <div className="min-h-screen bg-[#0d0b08] pt-24 pb-20">
+    <div className="min-h-screen bg-[var(--bg-deep)] pt-24 pb-20">
       <div className="mx-auto w-full max-w-7xl px-3 sm:px-6">
         <BackLink
           href={owner?.public_profile !== false ? `/users/${series.user_id}` : '/planner/community'}
-          className="mb-5 inline-flex min-h-[44px] items-center gap-2 rounded-sm px-1 text-[0.9375rem] font-medium text-[#9c8b73] transition-colors hover:text-[#e8b030] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#c8900a]"
+          className="mb-5 inline-flex min-h-[44px] items-center gap-2 rounded-sm px-1 text-[0.9375rem] font-medium text-[#9c8b73] transition-colors hover:text-[var(--gold-light)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--gold)]"
         >
           <ArrowLeft className="h-4 w-4" aria-hidden="true" />
           {t('back')}

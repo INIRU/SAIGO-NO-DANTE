@@ -71,7 +71,7 @@ export function ThemePackModalShell({
               <div className="w-[5.5rem] shrink-0 sm:w-[8.5rem]">{poster}</div>
               <div className="min-w-0 flex-1 pb-1">
                 {eyebrow && <div className="mb-2">{eyebrow}</div>}
-                <h3 className="text-pretty" style={{ fontFamily: 'var(--font-heading)', fontSize: 'clamp(1.375rem, 4vw, 1.875rem)', lineHeight: 1.25, color: '#e8dcc8' }}>
+                <h3 className="text-pretty" style={{ fontFamily: 'var(--font-heading)', fontSize: 'clamp(1.375rem, 4vw, 1.875rem)', lineHeight: 1.25, color: 'var(--text-primary)' }}>
                   {title}
                 </h3>
                 {meta && <div className="mt-2.5 flex flex-wrap items-center gap-1.5">{meta}</div>}
@@ -338,9 +338,9 @@ export function ThemePackPickerModal<TTheme extends ThemePackPickerTheme>({
           <div className="flex shrink-0 items-center gap-3 px-5 pt-4 max-sm:px-3">
             <label className="relative min-w-0 flex-1 sm:max-w-[22rem]">
               <span className="sr-only">{searchLabel}</span>
-              <Search size={16} aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#6a6058]" />
+              <Search size={16} aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
               <input type="text" enterKeyHint="search" value={query} onChange={event => setQuery(event.target.value)} placeholder={searchLabel}
-                className="min-h-10 w-full rounded-md border border-[#2e2417] bg-[#0d0b08] pl-9 pr-3 text-[0.9375rem] text-[#e8dcc8] placeholder:text-[#6a6058] focus-visible:border-[var(--gold)] focus-visible:outline-none" />
+                className="min-h-10 w-full rounded-md border border-[#2e2417] bg-[var(--bg-deep)] pl-9 pr-3 text-[0.9375rem] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus-visible:border-[var(--gold)] focus-visible:outline-none" />
             </label>
             <span className="shrink-0 text-sm tabular-nums text-[#9c8b73]">{countLabel(shown.length)}</span>
           </div>

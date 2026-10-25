@@ -47,7 +47,7 @@ export default function LegalToc({ headings, label, otherHref, otherLabel }: { h
         aria-label={label}
         value={active}
         onChange={event => go(Number(event.target.value))}
-        className="h-11 w-full appearance-none truncate rounded-md border border-[#3a2a15] bg-[#17120c] pl-3 pr-10 text-base text-[var(--text-primary)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--gold-light)]"
+        className="h-11 w-full appearance-none truncate rounded-md border border-[var(--border)] bg-[#17120c] pl-3 pr-10 text-base text-[var(--text-primary)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--gold-light)]"
       >
         {headings.map((heading, i) => <option key={i} value={i}>{heading}</option>)}
       </select>
