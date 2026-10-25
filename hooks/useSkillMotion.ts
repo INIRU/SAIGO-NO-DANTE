@@ -1,11 +1,6 @@
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { LayerCompositor, type LayerSetMeta } from '@/lib/motion/compositor'
-import { motionAssetUrl, motionVideoFiles, type MotionState } from '@/lib/motion/catalog'
-
-// Whether this browser plays VP9 4:4:4 is asked once; a WebM that then fails (some browsers say "probably" and still
-// cannot decode it) sends every later load in this tab to the MP4.
-let vp9Answer: string | undefined
-let webmFailed = false
+import { motionAssetUrl, type MotionState } from '@/lib/motion/catalog'
 
 /** `labelKey`: the layer's name as keys (`[Keyword] stack`), written in the page language by the side panel. */
 export type MotionLayerToggle = { id: string; label: string; labelKey?: string; on: boolean; offAtSkill: boolean }
@@ -143,7 +138,6 @@ export function useSkillMotion() {
     }
   }, [draw, free])
 
-  const reload = useRef<((state: MotionState) => Promise<void>) | null>(null)
   /** Load one state (another skill or condition), from its first frame. */
   const load = useCallback(async (state: MotionState) => {
     const v = video.current
@@ -160,33 +154,14 @@ export function useSkillMotion() {
       v.pause()
       free()
       meta.current = null
-      // The full-colour WebM first where the browser plays it, else (or when it fails) the MP4.
-      const files = motionVideoFiles(state, type => (vp9Answer ??= v.canPlayType(type)), webmFailed)
-      let chosen = files[0]
-      for (const [i, file] of files.entries()) {
-        chosen = file
-        v.src = motionAssetUrl(file)
-        const loaded = new Promise<void>((resolve, reject) => {
-          v.onloadeddata = () => resolve()
-          v.onerror = () => reject(new Error('video'))
-        })
-        v.play().catch(() => {})
-        try {
-          await loaded
-          break
-        } catch (failure) {
-          if (mine !== token.current) return
-          if (i === files.length - 1) throw failure
-          webmFailed = true
-        }
-      }
+      v.src = motionAssetUrl(state.video)
+      const loaded = new Promise<void>((resolve, reject) => {
+        v.onloadeddata = () => resolve()
+        v.onerror = () => reject(new Error('video'))
+      })
+      v.play().catch(() => {})
+      await loaded
       if (mine !== token.current) return
-      // A WebM that fails while playing: the same state again from the MP4.
-      v.onerror = chosen === state.videoWebm ? () => {
-        if (mine !== token.current) return
-        webmFailed = true
-        void reload.current?.(state)
-      } : null
       // A canvas keeps its first GL context: a new element for every load.
       const canvas = document.createElement('canvas')
       canvas.className = 'block h-auto w-full'
@@ -221,7 +196,6 @@ export function useSkillMotion() {
       setStatus('error')
     }
   }, [draw, show])
-  useEffect(() => { reload.current = load }, [load])
 
   const togglePlay = useCallback(() => { const v = video.current; if (v && !held.current) (v.paused ? v.play().catch(() => {}) : v.pause()) }, [])
   /** Hold or release playback; a release plays the loaded video (the notice's 확인 is the press that starts it). */
