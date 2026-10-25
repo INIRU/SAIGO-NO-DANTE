@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 import { Construction, Plus, Trash2 } from 'lucide-react'
 import { showError, showSuccess } from '@/lib/toast'
+import Switch from '@/components/ui/Switch'
 import ConfirmModal from '@/components/ui/ConfirmModal'
 import { maintenanceStatus, type MaintenanceRow, type MaintenanceStatus } from '@/lib/maintenance'
 
@@ -208,7 +209,7 @@ export default function AdminMaintenance() {
               </div>
               <div className="announcement-options">
                 <label>
-                  <input type="checkbox" className="admin-switch" checked={draft.is_active} onChange={(e) => set({ is_active: e.target.checked })} />
+                  <Switch checked={draft.is_active} onChange={(active) => set({ is_active: active })} />
                   <span>{L('점검 켜기', 'メンテナンスを有効化', 'Enabled')}</span>
                 </label>
                 <span className="admin-chip" data-tone={tone[draftStatus]}>{statusLabel[draftStatus]}</span>

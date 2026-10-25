@@ -5,6 +5,7 @@ import { Plus, Eye, PenLine, Trash2, Pin, Megaphone } from 'lucide-react'
 import { showError, showSuccess } from '@/lib/toast'
 import dynamic from 'next/dynamic'
 import ConfirmModal from '@/components/ui/ConfirmModal'
+import Switch from '@/components/ui/Switch'
 import AnnouncementBody from '@/components/announcements/AnnouncementBody'
 import {
   type Announcement,
@@ -256,24 +257,20 @@ export default function AdminAnnouncements() {
                   </select>
                 </label>
                 <label>
-                  <input
-                    type="checkbox"
-                    className="admin-switch"
+                  <Switch
                     checked={pinned}
-                    onChange={(e) => {
-                      setPinned(e.target.checked)
+                    onChange={(next) => {
+                      setPinned(next)
                       setDirty(true)
                     }}
                   />
                   <span>{ko ? '메인 우선 표시' : ja ? 'ホームに優先表示' : 'Feature on home'}</span>
                 </label>
                 <label title={ko ? '게시하면 이 언어 사이트에 들어온 사람에게 한 번 팝업으로 띄웁니다' : ja ? '公開すると、この言語のサイト訪問者に一度だけ表示します' : 'Once published, shown once as a popup to visitors of this language'}>
-                  <input
-                    type="checkbox"
-                    className="admin-switch"
+                  <Switch
                     checked={popup}
-                    onChange={(e) => {
-                      setPopup(e.target.checked)
+                    onChange={(next) => {
+                      setPopup(next)
                       setDirty(true)
                     }}
                   />
@@ -281,12 +278,7 @@ export default function AdminAnnouncements() {
                 </label>
                 {lang === 'ko' && !editing?.published && (
                   <label title={ko ? '게시할 때 디스코드 공지에 @everyone을 붙입니다' : undefined}>
-                    <input
-                      type="checkbox"
-                      className="admin-switch"
-                      checked={discordEveryone}
-                      onChange={(e) => setDiscordEveryone(e.target.checked)}
-                    />
+                    <Switch checked={discordEveryone} onChange={setDiscordEveryone} />
                     <span>{ko ? '디스코드 @everyone' : ja ? 'Discord @everyone' : 'Discord @everyone'}</span>
                   </label>
                 )}

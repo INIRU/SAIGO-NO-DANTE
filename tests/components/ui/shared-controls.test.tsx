@@ -1,12 +1,17 @@
 import { renderToStaticMarkup } from 'react-dom/server'
-import { readFileSync } from 'node:fs'
-import { resolve } from 'node:path'
+import { readdirSync, readFileSync, statSync } from 'node:fs'
+import { join, resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { Bell } from 'lucide-react'
 import Button, { buttonClass } from '@/components/ui/Button'
 import Switch from '@/components/ui/Switch'
 
-const source = (path: string) => readFileSync(resolve(__dirname, '../../..', path), 'utf8')
+const root = resolve(__dirname, '../../..')
+const source = (path: string) => readFileSync(resolve(root, path), 'utf8')
+const tsxFiles = (dir: string): string[] => readdirSync(join(root, dir)).flatMap(name => {
+  const path = `${dir}/${name}`
+  return statSync(join(root, path)).isDirectory() ? tsxFiles(path) : path.endsWith('.tsx') ? [path] : []
+})
 
 describe('shared Button', () => {
   it('REQ-SHARED-056 renders each variant with a touch-size height, press feedback and a gold focus ring', () => {
@@ -46,6 +51,9 @@ describe('shared Switch', () => {
     expect(off).toContain('aria-checked="false"')
     expect(off).toContain('disabled=""')
     expect(on).not.toContain('transition-all')
+    const small = renderToStaticMarkup(<Switch size="sm" checked onChange={() => {}} label="알림" />)
+    expect(small).toContain('h-5 w-9')
+    expect(small).toContain('translate-x-4')
   })
 })
 
@@ -63,5 +71,33 @@ describe('shared Sheet', () => {
       expect(file, path).toContain("from '@/components/ui/Sheet'")
       expect(file, path).not.toContain('popup-drawer')
     }
+  })
+})
+
+describe('one Switch everywhere', () => {
+  it('REQ-SHARED-060 keeps role="switch" inside the shared Switch only', () => {
+    const offenders = [...tsxFiles('app'), ...tsxFiles('components')].filter(path => path !== 'components/ui/Switch.tsx' && source(path).includes('role="switch"'))
+    expect(offenders).toEqual([])
+  })
+
+  it('REQ-SHARED-060 has no screen-specific switch styles left', () => {
+    const left: Record<string, RegExp> = {
+      'components/collection/CollectionBoard.module.css': /\.switch\b/,
+      'components/random/random.module.css': /\.switch\b/,
+      'components/motion/MotionDeck.module.css': /\.switch\b/,
+      'components/tools/LunacyCalendar.module.css': /\.switch(Track|State)\b/,
+      'components/support/support.css': /desk-switch/,
+    }
+    for (const [path, pattern] of Object.entries(left)) expect(source(path), path).not.toMatch(pattern)
+    for (const path of ['app/[lang]/admin/maintenance/page.tsx', 'app/[lang]/admin/announcements/page.tsx', 'components/admin/admin.css']) expect(source(path), path).not.toContain('admin-switch')
+  })
+})
+
+describe('shared DownloadModal', () => {
+  it('REQ-SHARED-061 is a BaseModal with shared Buttons, not a hand-built overlay', () => {
+    const modal = source('components/mypage/DownloadModal.tsx')
+    expect(modal).toContain("from '@/components/ui/BaseModal'")
+    expect(modal).toContain("from '@/components/ui/Button'")
+    expect(modal).not.toContain('fixed inset-0')
   })
 })

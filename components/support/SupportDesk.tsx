@@ -10,6 +10,7 @@ import DanteLogo from '@/components/brand/DanteLogo'
 import { inquirerName, isUnread, lastActivity, sortMessages, type Inquiry } from '@/lib/support'
 import './support.css'
 import { SupportRowsSkeleton } from './SupportSkeleton'
+import Switch from '@/components/ui/Switch'
 import { SkeletonPage } from '@/components/ui/Skeleton'
 const CATEGORIES = ['bug', 'data', 'account', 'suggestion', 'other'] as const
 const FILTERS = ['all', 'open', 'answered', 'closed'] as const
@@ -314,13 +315,10 @@ export default function SupportDesk({ admin = false, initialTopic, initialId }: 
                   <div className="desk-thread-actions">
                     {selected.category === 'data' && (
                       <label>
-                        <input
-                          type="checkbox"
-                          role="switch"
-                          className="desk-switch"
+                        <Switch
                           checked={selected.contribution_accepted}
                           disabled={busy || !selected.reply.trim()}
-                          onChange={(e) => void update({ contribution_accepted: e.target.checked })}
+                          onChange={(accepted) => void update({ contribution_accepted: accepted })}
                         />
                         {t('approveContribution')}
                       </label>
