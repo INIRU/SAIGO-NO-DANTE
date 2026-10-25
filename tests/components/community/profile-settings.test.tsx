@@ -2,7 +2,8 @@ import { describe, expect, it, vi } from 'vitest'
 import { renderToStaticMarkup } from 'react-dom/server'
 
 vi.mock('next-intl', () => ({ useLocale: () => 'ko' }))
-vi.mock('server-only', () => ({}))
+const pushState = vi.hoisted(() => ({ state: 'off' as string }))
+vi.mock('@/hooks/usePushSubscription', () => ({ usePushSubscription: () => ({ state: pushState.state, enable: vi.fn(), disable: vi.fn() }) }))
 
 import ProfileSettings from '@/components/community/ProfileSettings'
 import { loadCommunityProfile } from '@/lib/community/server'
@@ -15,12 +16,26 @@ const settings = (extra: Partial<CommunitySettings> = {}): CommunitySettings => 
 })
 
 describe('profile settings rows', () => {
+  it('REQ-COMMUNITY-094 shows the browser notification switch, or its state when it cannot be used', () => {
+    const ko = communityCopy.ko
+    pushState.state = 'on'
+    expect(renderToStaticMarkup(<ProfileSettings initial={settings()} onSaved={async () => {}} />).match(/aria-checked="true"/g)).toHaveLength(5)
+    for (const [state, text] of [['denied', ko.pushBlocked], ['unsupported', ko.pushUnsupported]] as const) {
+      pushState.state = state
+      const html = renderToStaticMarkup(<ProfileSettings initial={settings()} onSaved={async () => {}} />)
+      expect(html).toContain(text)
+      expect(html.match(/role="switch"/g)).toHaveLength(6)
+    }
+    pushState.state = 'off'
+  })
+
   it('REQ-COMMUNITY-090 shows visibility and notification settings as named switches without a paragraph', () => {
     const html = renderToStaticMarkup(<ProfileSettings initial={settings()} onSaved={async () => {}} />)
     const ko = communityCopy.ko
     for (const label of [ko.visibility, ko.publicFollowing, ko.publicFollowers, ko.notifyComments, ko.notifyFollows, ko.notifyPosts]) expect(html).toContain(label)
-    expect(html.match(/role="switch"/g)).toHaveLength(6)
+    expect(html.match(/role="switch"/g)).toHaveLength(7)
     expect(html.match(/aria-checked="true"/g)).toHaveLength(4)
+    expect(html).toContain(ko.pushRow)
     expect(html).not.toContain(ko.visibilityHint)
     expect(html).not.toContain('<p')
   })

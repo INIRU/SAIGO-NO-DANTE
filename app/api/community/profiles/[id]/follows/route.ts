@@ -1,4 +1,5 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, after } from 'next/server';
+import { pushForFollow } from '@/lib/push/send';
 import { getServerSession } from 'next-auth';
 import { z } from 'zod';
 import { authOptions } from '@/lib/auth';
@@ -28,6 +29,7 @@ async function handle(request: Request, { params }: { params: Promise<{ id: stri
       const { data, error } = await db.schema('limbus').rpc('community_set_follow', { p_actor: viewer, p_target: id, p_follow: request.method === 'POST' });
       if (error) throw error;
       if (!data) return NextResponse.json({ error: 'Unavailable profile' }, { status: 404, headers });
+      if (request.method === 'POST' && viewer) after(() => pushForFollow(viewer, id));
     }
     const { data, error } = await db.schema('limbus').rpc('community_follows', { p_user: id, p_viewer: viewer, p_kind: query.data.kind ?? null, p_offset: query.data.offset });
     if (error) throw error;
