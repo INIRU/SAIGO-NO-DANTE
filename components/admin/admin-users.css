@@ -72,7 +72,6 @@
 .admin-users-moderation fieldset span { display: grid; place-items: center; min-height: 2.5rem; border: 1px solid var(--admin-line); border-radius: 0.25rem; color: var(--text-secondary); font-size: 0.8125rem; }
 .admin-users-moderation fieldset input:checked + span { border-color: var(--gold-dim); background: rgba(200, 144, 10, 0.12); color: var(--gold-light); }
 .admin-users-moderation fieldset input:focus-visible + span { outline: 2px solid var(--gold); outline-offset: 2px; }
-.admin-users-moderation .admin-button { width: 100%; margin-top: 0.75rem; }
 .admin-users-moderation .admin-users-dates { margin-top: 0.75rem; }
 .admin-users-reason { padding: 0.625rem 0.75rem; border-left: 0.125rem solid #9b2c23; background: rgba(155, 44, 35, 0.08); color: var(--text-primary); white-space: pre-wrap; overflow-wrap: anywhere; }
 .admin-users-muted { color: var(--text-muted); font-size: 0.8125rem; }
@@ -105,5 +104,4 @@
   .admin-users-filters button { min-height: 2.375rem; }
   .admin-users :is(th, td) { padding-inline: 0.5rem; }
   .admin-users-pagination button { width: 2.75rem; height: 2.75rem; }
-  .admin-users-confirm-actions .admin-button { flex: 1; }
 }

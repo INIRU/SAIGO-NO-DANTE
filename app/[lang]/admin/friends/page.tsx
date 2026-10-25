@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl'
 import useSWR from 'swr'
 import SupportStrips from '@/components/friends/SupportStrips'
 import { useFriendCatalog } from '@/components/friends/board'
+import Button from '@/components/ui/Button'
 import ConfirmModal from '@/components/ui/ConfirmModal'
 import { WANT_LIMIT, type StoredSlot } from '@/lib/friends/codes'
 import { showError, showSuccess } from '@/lib/toast'
@@ -39,7 +40,7 @@ export default function AdminFriendsPage() {
     <header className="admin-topbar"><div><h1>{t('admin.title')}</h1></div></header>
     <div className="admin-body">
       {list.error
-        ? <div className="admin-state" role="alert"><p>{t('loadFailed')}</p><button className="admin-button" onClick={() => void list.mutate()}>{t('retry')}</button></div>
+        ? <div className="admin-state" role="alert"><p>{t('loadFailed')}</p><Button variant="secondary" onClick={() => void list.mutate()}>{t('retry')}</Button></div>
         : list.data && !items.length
           ? <div className="admin-state"><p>{t('admin.empty')}</p></div>
           : <ul className="admin-list">
@@ -55,7 +56,7 @@ export default function AdminFriendsPage() {
                 <SupportStrips slots={item.kind === 'support' ? catalog.supportSlots(item.slots) : catalog.wantSlots(item.identityIds)} count={item.kind === 'support' ? 12 : WANT_LIMIT} />
               </div>
               <div className="admin-topbar-actions" style={{ marginTop: '0.8rem' }}>
-                {(['dismiss', 'remove', 'block'] as const).map(action => <button key={action} className={`admin-button ${action === 'block' ? 'primary' : ''}`} onClick={() => setAsking({ id: item.id, action })}>{label[action]}</button>)}
+                {(['dismiss', 'remove', 'block'] as const).map(action => <Button key={action} variant={action === 'block' ? 'primary' : 'secondary'} onClick={() => setAsking({ id: item.id, action })}>{label[action]}</Button>)}
               </div>
             </li>)}
           </ul>}

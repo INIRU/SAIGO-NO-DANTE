@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 import { Construction, Plus, Trash2 } from 'lucide-react'
 import { showError, showSuccess } from '@/lib/toast'
+import Button, { buttonClass } from '@/components/ui/Button'
 import Switch from '@/components/ui/Switch'
 import ConfirmModal from '@/components/ui/ConfirmModal'
 import { maintenanceStatus, type MaintenanceRow, type MaintenanceStatus } from '@/lib/maintenance'
@@ -136,10 +137,9 @@ export default function AdminMaintenance() {
           </p>
         </div>
         <div className="admin-topbar-actions">
-          <button className="admin-button primary" onClick={() => open('new')}>
-            <Plus size={16} aria-hidden="true" />
+          <Button variant="primary" icon={Plus} onClick={() => open('new')}>
             {L('새 점검', '新規', 'New')}
-          </button>
+          </Button>
         </div>
       </header>
       <div className="admin-body is-flush announcement-manager-grid">
@@ -147,7 +147,7 @@ export default function AdminMaintenance() {
           {error ? (
             <div className="admin-state" role="alert">
               <p>{error}</p>
-              <button className="admin-button" onClick={load}>{L('다시 시도', '再試行', 'Retry')}</button>
+              <Button variant="secondary" onClick={load}>{L('다시 시도', '再試行', 'Retry')}</Button>
             </div>
           ) : items.length === 0 ? (
             <div className="admin-state"><p>{L('등록된 점검이 없습니다.', 'メンテナンスはありません。', 'No maintenance windows.')}</p></div>
@@ -199,11 +199,11 @@ export default function AdminMaintenance() {
                   <input type="datetime-local" value={draft.ends} onChange={(e) => set({ ends: e.target.value })} />
                   <span className="maintenance-quick">
                     {[30, 60, 120].map((m) => (
-                      <button key={m} type="button" className="admin-button" onClick={() => extendEnd(m)}>
+                      <Button key={m} size="sm" variant="secondary" onClick={() => extendEnd(m)}>
                         +{m < 60 ? L(`${m}분`, `${m}分`, `${m}m`) : L(`${m / 60}시간`, `${m / 60}時間`, `${m / 60}h`)}
-                      </button>
+                      </Button>
                     ))}
-                    {draft.ends && <button type="button" className="admin-button" onClick={() => set({ ends: '' })}>{L('지우기', 'クリア', 'Clear')}</button>}
+                    {draft.ends && <Button size="sm" variant="secondary" onClick={() => set({ ends: '' })}>{L('지우기', 'クリア', 'Clear')}</Button>}
                   </span>
                 </label>
               </div>
@@ -218,14 +218,13 @@ export default function AdminMaintenance() {
             <footer className="announcement-compose-actions">
               <div>
                 {selected !== 'new' && (
-                  <button className="admin-button danger" disabled={busy} onClick={() => setDeleteTarget(selected)}>
-                    <Trash2 size={15} aria-hidden="true" />
+                  <Button variant="danger" icon={Trash2} className="max-[48rem]:flex-1" disabled={busy} onClick={() => setDeleteTarget(selected)}>
                     {L('삭제', '削除', 'Delete')}
-                  </button>
+                  </Button>
                 )}
               </div>
               <div>
-                <a className="admin-button" href={`/${locale}/maintenance?${new URLSearchParams({
+                <a className={`${buttonClass({ variant: 'secondary' })} max-[48rem]:flex-1`} href={`/${locale}/maintenance?${new URLSearchParams({
                   from: draft.path,
                   ...(draft.reason && { reason: draft.reason }),
                   ...(draft.message && { message: draft.message }),
@@ -234,9 +233,9 @@ export default function AdminMaintenance() {
                 })}`} target="_blank" rel="noreferrer">
                   {L('점검 화면 미리보기', 'プレビュー', 'Preview page')}
                 </a>
-                <button className="admin-button primary" disabled={busy || !draft.path.startsWith('/')} onClick={save}>
+                <Button variant="primary" className="max-[48rem]:flex-1" disabled={busy || !draft.path.startsWith('/')} onClick={save}>
                   {busy ? '…' : L('저장', '保存', 'Save')}
-                </button>
+                </Button>
               </div>
             </footer>
           </section>

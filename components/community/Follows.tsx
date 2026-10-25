@@ -43,7 +43,7 @@ export function FollowSummary({id,onOpen}:{id:string;onOpen?:(kind:FollowKind)=>
     </div>
     <BaseModal open={kind!==null} onClose={()=>setKind(null)} title={label('팔로우','フォロー','Follows')}>
       <div className="rounded-lg bg-[var(--bg-panel)] p-5 text-[var(--text-primary)]">
-        <div className="mb-3 flex items-center justify-between"><h2 className="font-bold">{label('팔로우','フォロー','Follows')}</h2><button className="community-icon-button" onClick={()=>setKind(null)} aria-label={label('닫기','閉じる','Close')}><X size={18}/></button></div>
+        <div className="mb-3 flex items-center justify-between"><h2 className="font-bold">{label('팔로우','フォロー','Follows')}</h2><Button variant="ghost" size="sm" icon={X} onClick={()=>setKind(null)} aria-label={label('닫기','閉じる','Close')} /></div>
         {kind && <FollowList id={id} initialKind={kind}/>}
       </div>
     </BaseModal>
