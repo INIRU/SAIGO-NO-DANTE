@@ -1,6 +1,6 @@
 import "server-only";
 import type { createAdminClient } from "@/lib/supabase/admin";
-import type { CommunityProfile } from "./rules";
+import { COMMUNITY_SETTING_KEYS, type CommunitySettings, type CommunityProfile } from "./rules";
 import { stripPlanForList } from "@/lib/planner/stripPlanForList";
 import { listUserSeries } from "@/lib/series/server";
 export async function loadCommunityProfile(
@@ -11,7 +11,8 @@ export async function loadCommunityProfile(
   const profileResult = await db
     .schema("limbus")
     .from("profiles")
-    .select("id,username,bio,avatar_url,created_at,public_profile,suspended")
+    // The switches are read for everyone but returned only to the owner (settings below).
+    .select("id,username,bio,avatar_url,created_at,suspended,public_profile,public_following,public_followers,notify_comments,notify_follows,notify_posts")
     .eq("id", id)
     .maybeSingle();
   if (profileResult.error) throw new Error("Profile lookup failed");
@@ -53,5 +54,6 @@ export async function loadCommunityProfile(
     plans: (plans.data ?? []).map((plan) => stripPlanForList(plan as Record<string, unknown>)),
     series,
     eggs: (eggs.data ?? []).map((egg) => egg.egg as CommunityProfile["eggs"][number]),
+    ...(owner && { settings: Object.fromEntries(COMMUNITY_SETTING_KEYS.map((key) => [key, row[key] === true])) as CommunitySettings }),
   };
 }
