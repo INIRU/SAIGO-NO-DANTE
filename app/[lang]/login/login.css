@@ -15,7 +15,7 @@ html[data-with-login-page], html[data-with-login-page] body { overflow: hidden; 
 .login-wall-tile img { object-fit: cover; object-position: 50% 25%; }
 @keyframes login-drift { from { transform: translateX(0); } to { transform: translateX(calc(-50% - .625rem)); } }
 
-.login-back { position: absolute; top: max(1rem, env(safe-area-inset-top)); left: clamp(1rem, 3vw, 2rem); display: inline-flex; align-items: center; gap: .45rem; min-height: 2.5rem; padding: 0 .9rem 0 .7rem; border: 1px solid #3a2a15; border-radius: 999px; background: #14100b; color: var(--text-primary); font-size: .85rem; font-weight: 600; box-shadow: 0 .25rem 1rem rgba(0,0,0,.5); transition: border-color 150ms; }
+.login-back { position: absolute; top: max(1rem, env(safe-area-inset-top)); left: clamp(1rem, 3vw, 2rem); display: inline-flex; align-items: center; gap: .45rem; min-height: 2.5rem; padding: 0 .9rem 0 .7rem; border: 1px solid var(--border); border-radius: 999px; background: #14100b; color: var(--text-primary); font-size: .85rem; font-weight: 600; box-shadow: 0 .25rem 1rem rgba(0,0,0,.5); transition: border-color 150ms; }
 .login-back:hover { border-color: var(--gold); color: var(--gold-light); }
 
 .login-main { display: flex; flex-direction: column; align-items: center; width: min(100%, 27rem); max-height: 100%; padding: clamp(1.5rem, 4dvh, 2.5rem) clamp(1.25rem, 4vw, 2.25rem); border: 1px solid #2e2417; border-radius: 1rem; background: #14100b; box-shadow: 0 1.5rem 4rem rgba(0,0,0,.55); overflow-y: auto; animation: login-in 450ms cubic-bezier(.2,.7,.2,1) both; }
@@ -25,7 +25,7 @@ html[data-with-login-page], html[data-with-login-page] body { overflow: hidden; 
 .login-site { color: var(--text-secondary); font: .95rem/1 var(--font-heading), var(--font-body); letter-spacing: .02em; }
 
 .login-panel { width: 100%; min-height: 0; margin-top: clamp(1.25rem, 4dvh, 2.5rem); }
-.login-google { display: flex; align-items: center; justify-content: center; gap: .7rem; width: 100%; min-height: 3rem; margin-top: 1rem; border: 1px solid #4a3a24; border-radius: .6rem; background: #241c12; color: var(--text-primary); font: 600 .95rem var(--font-body); cursor: pointer; transition: background-color 150ms, border-color 150ms; }
+.login-google { display: flex; align-items: center; justify-content: center; gap: .7rem; width: 100%; min-height: 3rem; margin-top: 1rem; border: 1px solid #4a3a24; border-radius: .6rem; background: var(--bg-elevated); color: var(--text-primary); font: 600 .95rem var(--font-body); cursor: pointer; transition: background-color 150ms, border-color 150ms; }
 .login-google svg { flex-shrink: 0; }
 .login-google:hover:not(:disabled) { border-color: var(--gold); background: #2e2417; }
 .login-google:disabled { border-color: #2e2417; background: #17120c; color: var(--text-muted); cursor: not-allowed; }

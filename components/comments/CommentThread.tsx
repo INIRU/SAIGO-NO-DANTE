@@ -20,7 +20,7 @@ function CommentBody({ item, small, replyTo, footer }: { item: ThreadItem; small
       />
       <div className="min-w-0 flex-1">
         <p className="flex flex-wrap items-baseline gap-x-2.5">
-          <span className="text-[0.9375rem] font-semibold text-[#e8dcc8]">{item.name}</span>
+          <span className="text-[0.9375rem] font-semibold text-[var(--text-primary)]">{item.name}</span>
           {item.badge}
           <RelativeTime date={item.created_at} className="text-[0.8125rem] text-[#7f7364]" />
         </p>
@@ -46,9 +46,9 @@ export function CommentReplyForm({ targetName, value, onChange, onSubmit, onCanc
   const tCommon = useTranslations('common')
   return (
     <form onSubmit={event => { event.preventDefault(); onSubmit() }}>
-      <div className="mb-2 flex items-center justify-between gap-3 rounded border border-[#3a2c14] bg-[#17120c] py-1 pl-3 pr-1 text-[0.875rem] text-[#e8b030]">
+      <div className="mb-2 flex items-center justify-between gap-3 rounded border border-[#3a2c14] bg-[#17120c] py-1 pl-3 pr-1 text-[0.875rem] text-[var(--gold-light)]">
         <span className="min-w-0 truncate">@{targetName}{t('replyingToSuffix')}</span>
-        <button type="button" onClick={onCancel} aria-label={tCommon('cancel')} className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded text-[#9c8b73] hover:text-[#e8dcc8]">
+        <button type="button" onClick={onCancel} aria-label={tCommon('cancel')} className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded text-[#9c8b73] hover:text-[var(--text-primary)]">
           <X className="h-4 w-4" aria-hidden="true" />
         </button>
       </div>
@@ -61,14 +61,14 @@ export function CommentReplyForm({ targetName, value, onChange, onSubmit, onCanc
         rows={2}
         autoFocus
         onKeyDown={event => { if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) { event.preventDefault(); onSubmit() } }}
-        className="block w-full resize-y rounded-md border border-[#2e2417] bg-[#17120c] px-3 py-2.5 text-[0.9375rem] leading-relaxed text-[#e8dcc8] placeholder:text-[#7f7364] focus:border-[#c8900a] focus:outline-none"
+        className="block w-full resize-y rounded-md border border-[#2e2417] bg-[#17120c] px-3 py-2.5 text-[0.9375rem] leading-relaxed text-[var(--text-primary)] placeholder:text-[#7f7364] focus:border-[var(--gold)] focus:outline-none"
       />
       <div className="mt-2 flex items-center justify-between gap-3">
         <span className="text-[0.8125rem] tabular-nums text-[#7f7364]">{value.length}/500</span>
         <button
           type="submit"
           disabled={submitting || !value.trim()}
-          className="inline-flex min-h-10 items-center gap-2 rounded border border-[#8a6010] bg-[#2a1f0c] px-3.5 text-[0.875rem] font-semibold text-[#e8b030] transition-colors hover:border-[#c8900a] hover:bg-[#35270e] disabled:cursor-not-allowed disabled:opacity-40"
+          className="inline-flex min-h-10 items-center gap-2 rounded border border-[var(--gold-dim)] bg-[#2a1f0c] px-3.5 text-[0.875rem] font-semibold text-[var(--gold-light)] transition-colors hover:border-[var(--gold)] hover:bg-[#35270e] disabled:cursor-not-allowed disabled:opacity-40"
         >
           {submitting ? t('submitting') : t('replySubmit')}
         </button>
@@ -96,7 +96,7 @@ export default function CommentThread({ items, canReply, replyingTo, onReply, re
   const footer = (item: ThreadItem, isReply: boolean) => (canReply || actions) && (
     <div className="mt-1 flex items-center gap-1">
       {canReply && (
-        <button type="button" onClick={() => onReply(item)} aria-expanded={replyingTo === item.id} className="-ml-1 inline-flex min-h-9 items-center rounded px-1 text-[0.8125rem] text-[#9c8b73] hover:text-[#e8b030] aria-expanded:text-[#e8b030]">
+        <button type="button" onClick={() => onReply(item)} aria-expanded={replyingTo === item.id} className="-ml-1 inline-flex min-h-9 items-center rounded px-1 text-[0.8125rem] text-[#9c8b73] hover:text-[var(--gold-light)] aria-expanded:text-[var(--gold-light)]">
           {t('reply')}
         </button>
       )}

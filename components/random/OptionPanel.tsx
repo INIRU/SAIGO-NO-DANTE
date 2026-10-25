@@ -6,6 +6,7 @@ import { Check } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { RARITY_ICON_MAP } from '@/lib/constants/game'
 import { MAX_DEPLOY, type KeywordCondition } from '@/lib/random/engine'
+import Switch from '@/components/ui/Switch'
 import KeywordChips from './KeywordChips'
 import styles from './random.module.css'
 
@@ -76,7 +77,7 @@ export default function OptionPanel(props: Props) {
       <section className={styles.group}>
         <label className={styles.switchRow}>
           <span className={styles.label}>{t('order')}</span>
-          <input type="checkbox" role="switch" className={styles.switch} checked={props.orderEnabled && props.identityEnabled} disabled={!props.identityEnabled} onChange={props.onOrderToggle} />
+          <Switch size="sm" checked={props.orderEnabled && props.identityEnabled} disabled={!props.identityEnabled} onChange={() => props.onOrderToggle()} />
         </label>
         {props.orderEnabled && props.identityEnabled && (
           <>
@@ -100,7 +101,7 @@ export default function OptionPanel(props: Props) {
         <label className={styles.switchRow}>
           <span className={styles.label}>{t('collection')}</span>
           {props.collectionEnabled && props.collectionDecoded && <span className={styles.linked}><Check aria-hidden="true" />{t('collectionLinked')}</span>}
-          <input type="checkbox" role="switch" className={styles.switch} checked={props.collectionEnabled} onChange={props.onCollectionToggle} />
+          <Switch size="sm" checked={props.collectionEnabled} onChange={() => props.onCollectionToggle()} />
         </label>
         {props.collectionEnabled && (
           <input

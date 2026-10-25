@@ -56,7 +56,7 @@ export default function GiftInventory({ inventory, gifts, giftMap, onAdd, onRemo
         </span>
         <span style={{
           fontSize: '0.75rem',
-          color: '#c8900a',
+          color: 'var(--gold)',
           background: 'rgba(200,144,10,0.12)',
           padding: '0.125rem 0.5rem',
           borderRadius: '0.25rem',
@@ -72,7 +72,7 @@ export default function GiftInventory({ inventory, gifts, giftMap, onAdd, onRemo
           display: 'flex',
           alignItems: 'center',
           gap: '0.5rem',
-          background: '#1a1510',
+          background: 'var(--bg-card)',
           border: '1px solid #333',
           borderRadius: '0.375rem',
           padding: '0.375rem 0.625rem',
@@ -105,7 +105,7 @@ export default function GiftInventory({ inventory, gifts, giftMap, onAdd, onRemo
             top: 'calc(100% + 0.25rem)',
             left: 0,
             right: 0,
-            background: '#1a1510',
+            background: 'var(--bg-card)',
             border: '1px solid #333',
             borderRadius: '0.375rem',
             zIndex: 50,
@@ -152,7 +152,7 @@ export default function GiftInventory({ inventory, gifts, giftMap, onAdd, onRemo
                 )}
                 <span style={{ fontSize: '0.8125rem', flex: 1 }}>{gift.name}</span>
                 {gift.keyword && (
-                  <span style={{ fontSize: '0.6875rem', color: '#8a6010' }}>{gift.keyword}</span>
+                  <span style={{ fontSize: '0.6875rem', color: 'var(--gold-dim)' }}>{gift.keyword}</span>
                 )}
               </button>
             ))}
@@ -190,7 +190,7 @@ export default function GiftInventory({ inventory, gifts, giftMap, onAdd, onRemo
               <div
                 style={{
                   position: 'relative',
-                  background: '#1a1510',
+                  background: 'var(--bg-card)',
                   border: '1px solid #222',
                   borderRadius: '0.375rem',
                   padding: '0.5rem',

@@ -567,7 +567,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                     <div
                       className="absolute z-50 left-0 right-0 mt-1 rounded overflow-hidden"
                       style={{
-                        background: '#1a1510',
+                        background: 'var(--bg-card)',
                         border: '1px solid var(--border)',
                         boxShadow: '0 8px 24px rgba(0,0,0,0.6)',
                         maxHeight: '17.5rem',
@@ -628,13 +628,13 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                                 className="flex items-center gap-2 px-3 py-1.5 text-xs"
                                 style={{
                                   background: isFocused ? 'rgba(200,144,10,0.12)' : 'transparent',
-                                  color: isFocused ? '#e8b030' : '#ccc',
+                                  color: isFocused ? 'var(--gold-light)' : '#ccc',
                                   borderLeft: isFocused ? '2px solid var(--gold)' : '2px solid transparent',
                                 }}
                               >
                                 <span
                                   className="inline-block w-1.5 h-1.5 rounded-full flex-shrink-0"
-                                  style={{ background: ident.rarity === 3 ? '#c8900a' : ident.rarity === 2 ? '#5588bb' : '#556677' }}
+                                  style={{ background: ident.rarity === 3 ? 'var(--gold)' : ident.rarity === 2 ? '#5588bb' : '#556677' }}
                                 />
                                 <span>{getName(ident.name_kr, ident.name_en, ident.name_jp)}</span>
                                 <span style={{ color: '#444', fontSize: '0.625rem', marginLeft: 'auto' }}>{t('browser.rarityStar', { n: ident.rarity })}</span>
@@ -660,7 +660,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                                 className="flex items-center gap-2 px-3 py-1.5 text-xs"
                                 style={{
                                   background: isFocused ? 'rgba(200,144,10,0.12)' : 'transparent',
-                                  color: isFocused ? '#e8b030' : '#ccc',
+                                  color: isFocused ? 'var(--gold-light)' : '#ccc',
                                   borderLeft: isFocused ? '2px solid var(--gold)' : '2px solid transparent',
                                 }}
                               >

@@ -347,7 +347,7 @@ export default function MirrorDungeonClient({
                   }}
                 >
                   {tab.label}
-                  <span className="tabular-nums" style={{ fontFamily: 'var(--font-title)', fontSize: '1.25rem', lineHeight: 1, color: isActive ? 'var(--gold-light)' : '#6a6058' }}>
+                  <span className="tabular-nums" style={{ fontFamily: 'var(--font-title)', fontSize: '1.25rem', lineHeight: 1, color: isActive ? 'var(--gold-light)' : 'var(--text-muted)' }}>
                     {tab.count}
                   </span>
                 </button>

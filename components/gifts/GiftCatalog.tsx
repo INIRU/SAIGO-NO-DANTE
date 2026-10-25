@@ -42,7 +42,7 @@ export function giftKeywordLabel(key: string, lang: SupportedLang): string {
   return entry?.[lang] ?? entry?.ko ?? key
 }
 
-const FOCUS_RING = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold-light)] focus-visible:ring-offset-1 focus-visible:ring-offset-[#0d0b08]'
+const FOCUS_RING = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold-light)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--bg-deep)]'
 
 /** 키워드 밑줄 탭 하나. 미러 던전 기프트 목록과 플래너 최종 기프트가 같이 쓴다. color가 없으면 '전체' 탭. */
 export function GiftKeywordTab({ label, iconUrl, color, active, count, onClick }: {
@@ -524,7 +524,7 @@ export default function GiftCatalog({
     return () => obs.disconnect()
   }, [deferredFiltered, visibleCount])
 
-  const focusRing = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold-light)] focus-visible:ring-offset-1 focus-visible:ring-offset-[#0d0b08]'
+  const focusRing = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold-light)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--bg-deep)]'
 
   return (
     <div ref={rootRef} className={compact ? undefined : 'mb-8'}>
@@ -534,7 +534,7 @@ export default function GiftCatalog({
         role="search"
       aria-label={tp('giftFilters')}
         className={compact ? 'sticky z-10 pb-2 transition-[top] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] motion-reduce:transition-none' : 'sticky-under-nav z-30 -mx-4 px-4 pt-1 pb-2 md:-mx-6 md:px-6'}
-        style={{ top: compact ? 'var(--gift-catalog-sticky-top, 0px)' : undefined, background: compact ? 'var(--gift-catalog-bg, #0d0b08)' : '#0d0b08', borderBottom: '1px solid #2e2417' }}
+        style={{ top: compact ? 'var(--gift-catalog-sticky-top, 0px)' : undefined, background: compact ? 'var(--gift-catalog-bg, var(--bg-deep))' : 'var(--bg-deep)', borderBottom: '1px solid #2e2417' }}
       >
         {/* 키워드 */}
         <div className={`flex ${compact ? '' : '-mx-4 md:mx-0'}`} style={{ borderBottom: '1px solid #2e2417' }}>
@@ -568,7 +568,7 @@ export default function GiftCatalog({
               placeholder={t('mirrorDungeon.search.placeholder')}
               value={inputValue}
               onChange={e => setInputValue(e.target.value)}
-              className="h-9 w-full min-w-0 rounded border border-[#2e2417] bg-[#17120c] pl-8 pr-7 text-[0.8125rem] text-[var(--text-primary)] outline-none placeholder:text-[#6a6058] focus-visible:border-[var(--gold)] [&::-webkit-search-cancel-button]:hidden"
+              className="h-9 w-full min-w-0 rounded border border-[#2e2417] bg-[#17120c] pl-8 pr-7 text-[0.8125rem] text-[var(--text-primary)] outline-none placeholder:text-[var(--text-muted)] focus-visible:border-[var(--gold)] [&::-webkit-search-cancel-button]:hidden"
             />
             {(inputValue || search) && (
               <button
@@ -753,7 +753,7 @@ export default function GiftCatalog({
                     <span className="tabular-nums" style={{ color: '#9c8b73', fontFamily: 'var(--font-title)', fontSize: '1.125rem', lineHeight: 1 }}>{groupCounts.get(group.key) ?? group.gifts.length}</span>
                   </h2>
                 )}
-                {pin?.note && <p className="mb-2 whitespace-pre-wrap break-words text-[0.8125rem] leading-[1.5] text-[#b0a890]">{pin.note}</p>}
+                {pin?.note && <p className="mb-2 whitespace-pre-wrap break-words text-[0.8125rem] leading-[1.5] text-[var(--text-secondary)]">{pin.note}</p>}
                 <div
                   className={compact ? 'gift-grid [&_.gift-card:hover]:[transform:none]!' : 'gift-grid'}
                   style={{

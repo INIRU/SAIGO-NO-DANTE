@@ -88,7 +88,7 @@ export default function GiftCheckSection({ state, dispatch, gifts, giftMap, them
   const check = (checked: boolean, onChange: (value: boolean) => void, label: string, total: number) => (
     <label className="inline-flex min-h-9 cursor-pointer select-none items-center gap-2 whitespace-nowrap text-[0.8125rem] text-[var(--text-primary)]">
       <input type="checkbox" checked={checked} onChange={event => onChange(event.target.checked)} className="peer sr-only" />
-      <span aria-hidden="true" className="grid h-[1.125rem] w-[1.125rem] place-items-center rounded-[0.25rem] border border-[#5a4526] bg-[#0d0b08] text-transparent transition-colors peer-checked:border-[#c8900a] peer-checked:bg-[#c8900a] peer-checked:text-[#0d0b08] peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-[#e8b030]">
+      <span aria-hidden="true" className="grid h-[1.125rem] w-[1.125rem] place-items-center rounded-[0.25rem] border border-[#5a4526] bg-[var(--bg-deep)] text-transparent transition-colors peer-checked:border-[var(--gold)] peer-checked:bg-[var(--gold)] peer-checked:text-[var(--bg-deep)] peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-[var(--gold-light)]">
         <Check size={13} strokeWidth={3} />
       </span>
       {label}<span className="tabular-nums text-xs text-[var(--text-tertiary)]">{total}</span>

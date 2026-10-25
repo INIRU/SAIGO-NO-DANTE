@@ -34,6 +34,7 @@ import {
 } from '@/components/decks/decks-types'
 import { getIdentityPortraitUrl, getIdentityInfoUrl } from '@/lib/utils/images'
 import type { SupportedLang } from '@/lib/i18n'
+import Sheet from '@/components/ui/Sheet'
 
 type SortKey = 'latest' | 'popular'
 type SearchSuggestion = { label: string; type: 'identity' | 'keyword'; imageUrl?: string }
@@ -222,7 +223,6 @@ export default function CommunityClient({ initialPlans, initialTotal, initialShe
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [acIndex, setAcIndex] = useState(-1)
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false)
-  const mobilePanelRef = useRef<HTMLDivElement>(null)
 
   // 전체 인격 목록 (자동완성용 - 이름 + 일러스트)
   const [allIdentities, setAllIdentities] = useState<IdentityNameEntry[]>([])
@@ -501,21 +501,6 @@ export default function CommunityClient({ initialPlans, initialTotal, initialShe
   useEffect(() => {
     collectionDataRef.current = collectionData
   }, [collectionData])
-
-  useEffect(() => {
-    if (!mobileFiltersOpen) return
-    mobilePanelRef.current?.focus()
-    const previousOverflow = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-    const handler = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setMobileFiltersOpen(false)
-    }
-    document.addEventListener('keydown', handler)
-    return () => {
-      document.removeEventListener('keydown', handler)
-      document.body.style.overflow = previousOverflow
-    }
-  }, [mobileFiltersOpen])
 
   const loadCollectionData = useCallback(async () => {
     if (collectionDataRef.current) return collectionDataRef.current
@@ -997,52 +982,11 @@ export default function CommunityClient({ initialPlans, initialTotal, initialShe
         </div>
       </div>
 
-      {mobileFiltersOpen && (
-        <div
-          className="fixed inset-0 z-50 lg:hidden"
-          role="dialog"
-          aria-modal="true"
-          aria-label={t('filters.panel')}
-        >
-          <button
-            className="absolute inset-0 h-full w-full bg-black/60"
-            onClick={() => setMobileFiltersOpen(false)}
-            aria-label={t('filters.closePanel')}
-          />
-          <div
-            ref={mobilePanelRef}
-            tabIndex={-1}
-            className="popup-drawer absolute bottom-0 left-0 right-0 max-h-[82dvh] overflow-y-auto rounded-t-lg outline-none"
-            style={{
-              background: '#1a1510',
-              borderTop: '1px solid rgba(200,144,10,0.25)',
-              animation: 'plannerCommunityFilterSlideUp 0.24s ease-out',
-            }}
-          >
-            <div
-              className="sticky top-0 flex items-center justify-between px-5 py-3"
-              style={{
-                background: '#1a1510',
-                borderBottom: '1px solid rgba(255,255,255,0.08)',
-                zIndex: 1,
-              }}
-            >
-              <span style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-heading)', fontSize: '1rem' }}>{t('filters.button')}</span>
-              <button
-                onClick={() => setMobileFiltersOpen(false)}
-                className="flex items-center justify-center rounded transition-colors hover:bg-white/5"
-                style={{ width: '2.75rem', height: '2.75rem', cursor: 'pointer', color: '#9a938a' }}
-                aria-label={t('filters.close')}
-              >
-                <X size={20} />
-              </button>
-            </div>
-            <div className="px-5 py-4">
-              {filterSurface}
-            </div>
-          </div>
+      <Sheet open={mobileFiltersOpen} onClose={() => setMobileFiltersOpen(false)} title={t('filters.button')} closeLabel={t('filters.close')}>
+        <div className="px-5 py-4">
+          {filterSurface}
         </div>
-      )}
+      </Sheet>
 
       <FacetPickerModal kind={facetModal} facets={facetData} selected={facetModal ? facetSelections[facetModal] : []}
         onToggle={id => { if (facetModal) toggleFacet(facetModal, id) }} onClose={() => setFacetModal(null)} />
@@ -1059,12 +1003,6 @@ export default function CommunityClient({ initialPlans, initialTotal, initialShe
         onClose={() => setIdentityModalSinnerId(null)}
       />
 
-      <style jsx>{`
-        @keyframes plannerCommunityFilterSlideUp {
-          from { transform: translateY(100%); }
-          to { transform: translateY(0); }
-        }
-      `}</style>
     </div>
   )
 }

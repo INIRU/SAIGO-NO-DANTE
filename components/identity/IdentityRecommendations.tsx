@@ -20,7 +20,7 @@ export default function IdentityRecommendations({ companions, posts }: { compani
     <div className="flex min-w-0 flex-col gap-8">
       {companions.length > 0 && (
         <section aria-labelledby="identity-companions-title" className="min-w-0">
-          <h3 id="identity-companions-title" className="mb-3 font-[family-name:var(--font-heading)] text-[1.0625rem] leading-snug text-[#e8dcc8]">
+          <h3 id="identity-companions-title" className="mb-3 font-[family-name:var(--font-heading)] text-[1.0625rem] leading-snug text-[var(--text-primary)]">
             {t('companions')}
           </h3>
           <ul className="-mx-4 flex snap-x snap-mandatory scroll-px-4 gap-3 overflow-x-auto px-4 pb-2 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0">

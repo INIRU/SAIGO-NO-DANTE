@@ -6,7 +6,7 @@ import { useSession } from 'next-auth/react'
 import { useTranslations } from 'next-intl'
 import { Check, Layers } from 'lucide-react'
 import BaseModal from '@/components/ui/BaseModal'
-import CompactButton from '@/components/ui/CompactButton'
+import Button from '@/components/ui/Button'
 import { SERIES_TITLE_MAX, type SeriesPostKind, type SeriesSummary } from '@/lib/series/order'
 import { showError } from '@/lib/toast'
 
@@ -55,22 +55,22 @@ export default function SeriesPicker({ kind, postId, onChange }: { kind: SeriesP
 
   return (
     <>
-      <CompactButton icon={Layers} variant={current ? 'gold' : 'muted'} onClick={() => setOpen(true)} disabled={!data}>
+      <Button size="sm" icon={Layers} variant={current ? 'outline' : 'secondary'} onClick={() => setOpen(true)} disabled={!data}>
         {current?.title ?? t('picker.label')}
-      </CompactButton>
+      </Button>
       <BaseModal open={open} onClose={() => setOpen(false)} title={t('picker.choose')} maxWidth="30rem" sheet>
-        <section className="grid gap-3 rounded-lg border border-[#3a2a15] bg-[#120e09] p-4">
-          <h2 className="font-[family-name:var(--font-heading)] text-[1.125rem] text-[#e8dcc8]">{t('picker.choose')}</h2>
+        <section className="grid gap-3 rounded-lg border border-[var(--border)] bg-[var(--bg-panel)] p-4">
+          <h2 className="font-[family-name:var(--font-heading)] text-[1.125rem] text-[var(--text-primary)]">{t('picker.choose')}</h2>
           <ul className="grid max-h-[45dvh] gap-0.5 overflow-y-auto">
             <li>
-              <button type="button" className={`${row} ${selected === null ? 'text-[#e8b030]' : 'text-[#b9a47f]'}`} aria-pressed={selected === null} onClick={() => choose(null)}>
+              <button type="button" className={`${row} ${selected === null ? 'text-[var(--gold-light)]' : 'text-[#b9a47f]'}`} aria-pressed={selected === null} onClick={() => choose(null)}>
                 <span className="min-w-0 flex-1 truncate">{t('none')}</span>
                 {selected === null && <Check size={16} aria-hidden="true" />}
               </button>
             </li>
             {data?.series.map(item => (
               <li key={item.id}>
-                <button type="button" className={`${row} ${selected === item.id ? 'text-[#e8b030]' : 'text-[#e8dcc8]'}`} aria-pressed={selected === item.id} onClick={() => choose(item.id)}>
+                <button type="button" className={`${row} ${selected === item.id ? 'text-[var(--gold-light)]' : 'text-[var(--text-primary)]'}`} aria-pressed={selected === item.id} onClick={() => choose(item.id)}>
                   <span className="min-w-0 flex-1 truncate">{item.title}</span>
                   <span className="shrink-0 font-[family-name:var(--font-title)] text-[1.0625rem] text-[#9c8b73]">{item.count}</span>
                   {selected === item.id && <Check size={16} aria-hidden="true" />}
@@ -85,9 +85,9 @@ export default function SeriesPicker({ kind, postId, onChange }: { kind: SeriesP
               placeholder={t('picker.titlePlaceholder')}
               aria-label={t('picker.create')}
               onChange={event => setName(event.target.value)}
-              className="min-h-[2.5rem] min-w-0 flex-1 rounded-md border border-[#3a2a15] bg-[#0d0b08] px-3 text-[0.9375rem] text-[#e8dcc8] outline-none focus:border-[#c8900a]"
+              className="min-h-[2.5rem] min-w-0 flex-1 rounded-md border border-[var(--border)] bg-[var(--bg-deep)] px-3 text-[0.9375rem] text-[var(--text-primary)] outline-none focus:border-[var(--gold)]"
             />
-            <button type="submit" disabled={!name.trim() || creating} className="min-h-[2.5rem] rounded-md border border-[#c8900a] bg-[#c8900a] px-4 text-[0.9375rem] font-semibold text-[#0d0b08] transition-colors hover:bg-[#e8b030] disabled:cursor-not-allowed disabled:opacity-50">{t('picker.add')}</button>
+            <button type="submit" disabled={!name.trim() || creating} className="min-h-[2.5rem] rounded-md border border-[var(--gold)] bg-[var(--gold)] px-4 text-[0.9375rem] font-semibold text-[var(--bg-deep)] transition-colors hover:bg-[var(--gold-light)] disabled:cursor-not-allowed disabled:opacity-50">{t('picker.add')}</button>
           </form>
         </section>
       </BaseModal>

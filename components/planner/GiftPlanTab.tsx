@@ -104,9 +104,9 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap, observati
                 padding: '0.5rem 1.25rem',
                 background: 'transparent',
                 border: 'none',
-                borderBottom: `2px solid ${isActive ? '#c8900a' : 'transparent'}`,
+                borderBottom: `2px solid ${isActive ? 'var(--gold)' : 'transparent'}`,
                 cursor: 'pointer',
-                color: isActive ? '#e8b030' : '#555',
+                color: isActive ? 'var(--gold-light)' : '#555',
                 fontSize: '0.8125rem',
                 fontWeight: isActive ? 700 : 400,
                 transition: 'all 0.2s',
@@ -121,8 +121,8 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap, observati
               {tab.count > 0 && (
                 <span style={{
                   fontSize: '0.5625rem',
-                  background: isActive ? 'rgba(200,144,10,0.2)' : '#1a1510',
-                  color: isActive ? '#c8900a' : '#444',
+                  background: isActive ? 'rgba(200,144,10,0.2)' : 'var(--bg-card)',
+                  color: isActive ? 'var(--gold)' : '#444',
                   border: `1px solid ${isActive ? '#c8900a40' : '#222'}`,
                   borderRadius: '0.75rem',
                   padding: '0 0.375rem',
@@ -159,11 +159,11 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap, observati
                 height={16}
                 style={{ width: '1rem', height: '1rem', verticalAlign: 'middle' }}
               />
-              <span style={{ color: '#e8b030', fontWeight: 700 }}>{observationCost(observation, observeIds.size)}</span>
+              <span style={{ color: 'var(--gold-light)', fontWeight: 700 }}>{observationCost(observation, observeIds.size)}</span>
             </span>
             <span style={{
               fontSize: '0.6875rem',
-              color: observeIds.size >= 3 ? '#dc2626' : '#c8900a',
+              color: observeIds.size >= 3 ? '#dc2626' : 'var(--gold)',
               background: observeIds.size >= 3 ? 'rgba(220,38,38,0.1)' : 'rgba(200,144,10,0.1)',
               padding: '0.125rem 0.5rem',
               borderRadius: '0.25rem',
@@ -193,7 +193,7 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap, observati
               badge={
                 <span style={{
                   fontSize: '0.5625rem',
-                  color: '#c8900a',
+                  color: 'var(--gold)',
                   background: 'rgba(200,144,10,0.12)',
                   padding: '0.125rem 0.375rem',
                   borderRadius: '0.25rem',
@@ -212,7 +212,7 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap, observati
                     paddingTop: '0.375rem',
                     borderTop: '1px solid #1f1a14',
                     fontSize: '0.6875rem',
-                    color: '#8a6010',
+                    color: 'var(--gold-dim)',
                   }}>
                     <Image
                       src={getGameUiAsset('start-buffs/starlight')}
@@ -265,7 +265,7 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap, observati
                   const iconUrl = slug ? getKeywordIconUrl(slug) : null
                   return (
                     <div key={kw} className="planner-gift-start-group" style={{
-                      background: '#1a1510',
+                      background: 'var(--bg-card)',
                       border: '1px solid #2a2520',
                       borderRadius: '0.5rem',
                       overflow: 'hidden',
@@ -280,7 +280,7 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap, observati
                         {iconUrl && (
                           <Image src={iconUrl} alt="" width={18} height={18} style={{ width: '1.125rem', height: '1.125rem', objectFit: 'contain' }} />
                         )}
-                        <span style={{ color: '#e8dcc8', fontSize: '0.8125rem', fontWeight: 600 }}>{keywordLabel(slug)}</span>
+                        <span style={{ color: 'var(--text-primary)', fontSize: '0.8125rem', fontWeight: 600 }}>{keywordLabel(slug)}</span>
                       </div>
                       {/* 기프트 3개 */}
                       <div className="planner-gift-start-card-row" style={{ display: 'flex', justifyContent: 'center', gap: '0.5rem', padding: '0.75rem' }}>
@@ -314,7 +314,7 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap, observati
                                 backgroundSize: 'contain',
                                 position: 'relative',
                                 overflow: 'hidden',
-                                outline: isSelected ? '2px solid #c8900a' : 'none',
+                                outline: isSelected ? '2px solid var(--gold)' : 'none',
                                 outlineOffset: '2px',
                               }}>
                                 <GiftGrade grade={gift.grade} style={{
@@ -331,7 +331,7 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap, observati
                                 </div>
                                 {isSelected && (
                                   <div style={{ position: 'absolute', inset: 0, background: 'rgba(200,144,10,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 20 }}>
-                                    <span style={{ color: '#e8b030', fontSize: '1.25rem', textShadow: '0 0 0.5rem rgba(0,0,0,0.8)' }}>✓</span>
+                                    <span style={{ color: 'var(--gold-light)', fontSize: '1.25rem', textShadow: '0 0 0.5rem rgba(0,0,0,0.8)' }}>✓</span>
                                   </div>
                                 )}
                               </div>
@@ -354,7 +354,7 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap, observati
               badge={
                 <span style={{
                   fontSize: '0.5625rem',
-                  color: startIds.size >= maxStartGifts ? '#dc2626' : '#c8900a',
+                  color: startIds.size >= maxStartGifts ? '#dc2626' : 'var(--gold)',
                   background: startIds.size >= maxStartGifts ? 'rgba(220,38,38,0.1)' : 'rgba(200,144,10,0.1)',
                   padding: '0.125rem 0.375rem',
                   borderRadius: '0.25rem',

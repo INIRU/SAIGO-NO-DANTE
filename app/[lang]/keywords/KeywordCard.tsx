@@ -45,7 +45,7 @@ export function useKeywordColor(name: string) {
 const CARD = 'kw-card flex h-full w-full flex-col rounded-md border border-[#2e2417] bg-[#17120c] text-left'
 const DETAIL = `${CARD} p-4`
 const TILE = `${CARD} items-center gap-2 px-1.5 pb-2.5 pt-3`
-const INTERACTIVE = 'cursor-pointer transition-colors hover:border-[#3a2a15] hover:bg-[#1d160e] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold-light)] motion-reduce:transition-none'
+const INTERACTIVE = 'cursor-pointer transition-colors hover:border-[var(--border)] hover:bg-[#1d160e] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold-light)] motion-reduce:transition-none'
 
 export default function KeywordCard({ keyword: kw, counts, onClick, lang, compact = false }: {
   keyword: KeywordEntry
@@ -79,7 +79,7 @@ export default function KeywordCard({ keyword: kw, counts, onClick, lang, compac
   return (
     <button type="button" onClick={onClick} className={`${DETAIL} ${INTERACTIVE}`}>
       <span className="flex h-11 w-full items-center gap-3">
-        <span className="flex size-11 shrink-0 items-center justify-center rounded bg-[#0d0b08]">
+        <span className="flex size-11 shrink-0 items-center justify-center rounded bg-[var(--bg-deep)]">
           {iconUrl && <KeywordIcon src={iconUrl} alt="" width={32} height={32} className="size-8 object-contain" />}
         </span>
         <span className="min-w-0 flex-1">
@@ -89,7 +89,7 @@ export default function KeywordCard({ keyword: kw, counts, onClick, lang, compac
           </span>
           {kw.max_stack ? (
             <span className="mt-0.5 block text-[0.75rem] leading-tight text-[#9c8b73]">
-              {kt('keyword.maxStack', lang)} <span className="font-[family-name:var(--font-title)] text-[0.9375rem] tabular-nums text-[#e8b030]">{kw.max_stack}</span>
+              {kt('keyword.maxStack', lang)} <span className="font-[family-name:var(--font-title)] text-[0.9375rem] tabular-nums text-[var(--gold-light)]">{kw.max_stack}</span>
             </span>
           ) : null}
         </span>
@@ -98,7 +98,7 @@ export default function KeywordCard({ keyword: kw, counts, onClick, lang, compac
       <span className="mt-auto grid w-full grid-cols-3 border-t border-[#2e2417] pt-2.5">
         {stats.map(s => (
           <span key={s.label} className="flex h-6 items-baseline gap-1.5">
-            <span className="font-[family-name:var(--font-title)] text-[1.25rem] leading-6 tabular-nums" style={{ color: s.value ? '#e8dcc8' : '#6a6058' }}>{s.value}</span>
+            <span className="font-[family-name:var(--font-title)] text-[1.25rem] leading-6 tabular-nums" style={{ color: s.value ? 'var(--text-primary)' : 'var(--text-muted)' }}>{s.value}</span>
             <span className="truncate text-[0.75rem] text-[#9c8b73]">{s.label}</span>
           </span>
         ))}

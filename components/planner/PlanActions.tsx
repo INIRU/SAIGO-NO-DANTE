@@ -200,9 +200,9 @@ export default function PlanActions({
     setShowDeleteModal(false)
   }
 
-  const actionBase = 'inline-flex min-h-[44px] items-center justify-center gap-2 rounded-md border px-3.5 text-[0.9375rem] font-semibold whitespace-nowrap transition-[background-color,border-color,color,transform] duration-200 hover:border-[#8a6010] hover:text-[#e8b030] active:translate-y-px disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#c8900a] focus-visible:outline-offset-2'
+  const actionBase = 'inline-flex min-h-[44px] items-center justify-center gap-2 rounded-md border px-3.5 text-[0.9375rem] font-semibold whitespace-nowrap transition-[background-color,border-color,color,transform] duration-200 hover:border-[var(--gold-dim)] hover:text-[var(--gold-light)] active:translate-y-px disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--gold)] focus-visible:outline-offset-2'
   const quietAction = `${actionBase} border-transparent bg-[#ffffff06] text-[#b9a47f]`
-  const primaryAction = `${actionBase} border-[#c8900a] bg-[#c8900a] text-[#0d0b08] hover:bg-[#e8b030] hover:text-[#0d0b08]`
+  const primaryAction = `${actionBase} border-[var(--gold)] bg-[var(--gold)] text-[var(--bg-deep)] hover:bg-[var(--gold-light)] hover:text-[var(--bg-deep)]`
 
   return (
     <>
@@ -239,7 +239,7 @@ export default function PlanActions({
             <button
               data-plan-action="edit"
               onClick={handleEdit}
-              className={`${actionBase} border-[#6f5115] bg-[#15100b] text-[#c8900a]`}
+              className={`${actionBase} border-[#6f5115] bg-[#15100b] text-[var(--gold)]`}
             >
               <Pencil className="h-4 w-4" aria-hidden="true" />
               {tCommon('edit')}
@@ -254,7 +254,7 @@ export default function PlanActions({
             </button>
           </>
         )}
-        {onGuestRecovered && <GuestPinRecover kind="plan" id={planId} onRecovered={onGuestRecovered} className={`${actionBase} border-[#6f5115] bg-[#15100b] text-[#c8900a] min-[420px]:col-span-2`} />}
+        {onGuestRecovered && <GuestPinRecover kind="plan" id={planId} onRecovered={onGuestRecovered} className={`${actionBase} border-[#6f5115] bg-[#15100b] text-[var(--gold)] min-[420px]:col-span-2`} />}
       </div>
 
       <ConfirmModal

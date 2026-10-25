@@ -11,7 +11,7 @@
 .titleRow a { color: var(--text-muted); font-size: .8125rem; }
 .titleRow a:hover { color: var(--gold-light); }
 .titleRow > img { flex-shrink: 0; margin-top: .5rem; }
-.artwork { position: relative; aspect-ratio: 1; width: min(100%, 26rem); margin: 1.25rem auto .75rem; border-radius: 50%; overflow: hidden; background: #120e09; }
+.artwork { position: relative; aspect-ratio: 1; width: min(100%, 26rem); margin: 1.25rem auto .75rem; border-radius: 50%; overflow: hidden; background: var(--bg-panel); }
 .artworkImage { object-fit: contain; transition: opacity .2s ease; }
 .artworkImage[data-hidden] { opacity: 0; }
 .artworkTabs { margin-top: 1rem; }
@@ -27,7 +27,7 @@
 .infoRow { padding: 1rem 0; border-bottom: 1px solid #2e2417; }
 .infoRow h3 { font-size: .75rem; color: var(--text-secondary); font-weight: 600; margin-bottom: .625rem; }
 .keywords { display: flex; flex-wrap: wrap; gap: .5rem; }
-.keyword { padding: .375rem .625rem; background: #120e09; border: 1px solid #2e2417; border-radius: .25rem; font-size: .875rem; }
+.keyword { padding: .375rem .625rem; background: var(--bg-panel); border: 1px solid #2e2417; border-radius: .25rem; font-size: .875rem; }
 .costs { display: flex; flex-wrap: wrap; gap: 1.5rem; }
 .cost { display: flex; align-items: center; gap: .5rem; }
 .cost > span { font-family: var(--font-excelsior); font-size: 1.75rem; color: var(--text-primary); }

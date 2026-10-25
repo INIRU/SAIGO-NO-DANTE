@@ -30,7 +30,7 @@ export function RecommendationLane({ id, title, description, count, children }: 
         <div className="min-w-0">
           <h3
             id={`${id}-recommendations-title`}
-            className="font-[family-name:var(--font-heading)] text-[1.0625rem] leading-snug text-[#e8dcc8]"
+            className="font-[family-name:var(--font-heading)] text-[1.0625rem] leading-snug text-[var(--text-primary)]"
           >
             {title}
           </h3>

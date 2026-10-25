@@ -50,7 +50,7 @@ export function UptieChangePanel({ level, title, stats = [], lines, accentColor,
   return (
     <section
       aria-label={t('identity.uptie.changesAt', { level: UPTIE_NUMERALS[level] ?? level })}
-      className="mt-3 rounded-sm border-l-2 bg-[#120e09] px-3 py-2.5 text-[.8125rem] leading-[1.7]"
+      className="mt-3 rounded-sm border-l-2 bg-[var(--bg-panel)] px-3 py-2.5 text-[.8125rem] leading-[1.7]"
       style={{ borderLeftColor: 'var(--gold)' }}
     >
       <div className="mb-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs" style={{ color: 'var(--gold)', fontFamily: 'var(--font-heading)' }}>
@@ -65,7 +65,7 @@ export function UptieChangePanel({ level, title, stats = [], lines, accentColor,
               {label}{' '}
               <span className="tabular-nums text-[var(--text-muted)]">{sign ? signed(diff.from) : diff.from}</span>
               <span aria-hidden className="mx-1 text-[var(--text-muted)]">→</span>
-              <b className="tabular-nums" style={{ color: diff.to > diff.from ? '#e8b030' : '#e69b86' }}>{sign ? signed(diff.to) : diff.to}</b>
+              <b className="tabular-nums" style={{ color: diff.to > diff.from ? 'var(--gold-light)' : '#e69b86' }}>{sign ? signed(diff.to) : diff.to}</b>
             </li>
           ))}
         </ul>
@@ -74,7 +74,7 @@ export function UptieChangePanel({ level, title, stats = [], lines, accentColor,
         <ul className="space-y-0.5">
           {lines.map((line, i) => (
             <li key={i} className="flex items-start gap-2">
-              <span aria-hidden className="w-2.5 shrink-0 text-center font-bold" style={{ color: line.kind === 'added' ? '#e8b030' : '#6f6352' }}>
+              <span aria-hidden className="w-2.5 shrink-0 text-center font-bold" style={{ color: line.kind === 'added' ? 'var(--gold-light)' : '#6f6352' }}>
                 {line.kind === 'added' ? '+' : '−'}
               </span>
               {line.coin > 0 && <span className="mt-[.2rem]"><CoinBadge number={line.coin} size="1.25rem" /></span>}

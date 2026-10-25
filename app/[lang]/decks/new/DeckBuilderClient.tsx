@@ -36,7 +36,7 @@ import {
 import { encodeDeckCode, decodeDeckCode } from '@/components/deck-builder/deckCodeUtils'
 import UnderlineTabBar, { type TabItem } from '@/components/ui/UnderlineTabBar'
 import Dropdown from '@/components/ui/Dropdown'
-import CompactButton from '@/components/ui/CompactButton'
+import Button from '@/components/ui/Button'
 import ConfirmModal from '@/components/ui/ConfirmModal'
 import FormationSourceModal from '@/components/planner/FormationSourceModal'
 import { deckFormationFromPlan } from '@/lib/planner/formation-transfer'
@@ -579,32 +579,34 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
                     style={{ background: 'var(--bg-elevated)', border: `1px solid ${codeError ? 'var(--error)' : 'var(--border)'}`, color: 'var(--text-primary)', fontSize: '0.9375rem', fontFamily: 'var(--font-mono)' }}
                     onKeyDown={e => { if (e.key === 'Enter') handleApplyCode() }}
                   />
-                  <CompactButton onClick={handleApplyCode} disabled={!codeInput.trim() || codeApplying} variant="gold">
+                  <Button size="sm" variant="outline" onClick={handleApplyCode} disabled={!codeInput.trim() || codeApplying}>
                     {codeApplying ? builderT('fields.applying') : builderT('fields.applyCode')}
-                  </CompactButton>
+                  </Button>
                   {codeError && <span role="alert" className="deck-workspace-code-error">{builderT('fields.codeError')}</span>}
                 </div>
-                <CompactButton icon={Download} onClick={() => setImportOpen(true)} variant="muted">{tImport('fromPlan')}</CompactButton>
+                <Button size="sm" icon={Download} onClick={() => setImportOpen(true)} variant="secondary">{tImport('fromPlan')}</Button>
                 <SeriesPicker kind="deck" postId={editMode?.deckId} onChange={setSeriesChoice} />
                 <TempSaveMenu title={tTempSaves('deckMenuLabel')} slots={draftSlots} onSave={handleSaveDraft} onLoad={handleLoadDraft} onDelete={handleDeleteDraft} />
-                <CompactButton
+                <Button
+                  size="sm"
                   icon={codeCopied ? Check : Copy}
                   onClick={handleCopyCode}
                   disabled={identityCount < 12}
-                  variant={codeCopied ? 'success' : 'muted'}
-                  title={identityCount < 12 ? builderT('actions.copyDisabled') : ''}
+                  variant="secondary"
+                  title={identityCount < 12 ? builderT('actions.copyDisabled') : undefined}
                 >
                   {codeCopied ? builderT('actions.copied') : builderT('actions.copyCode')}
-                </CompactButton>
-                <CompactButton
+                </Button>
+                <Button
+                  size="sm"
                   icon={Upload}
                   onClick={handleSave}
                   disabled={authStatus === 'loading' || !title.trim() || identityCount < 12 || !contentType || saving}
                   variant="primary"
-                  title={!contentType ? builderT('actions.contentRequired') : identityCount < 12 ? builderT('actions.identityRequired', { count: identityCount, total: sinners.length }) : ''}
+                  title={!contentType ? builderT('actions.contentRequired') : identityCount < 12 ? builderT('actions.identityRequired', { count: identityCount, total: sinners.length }) : undefined}
                 >
                   {saving ? builderT('actions.saving') : editMode ? builderT('actions.save') : builderT('actions.upload')}
-                </CompactButton>
+                </Button>
                 {/* 로그인 확인 전에도 줄 자리를 잡아 둔다(늦게 끼어들면 아래 편성판이 밀린다) */}
                 {authStatus !== 'authenticated' && (
                   <div className="flex w-full flex-wrap items-center justify-end gap-x-4 gap-y-2 text-[0.8125rem] text-[var(--text-muted)]" style={authStatus === 'loading' ? { visibility: 'hidden' } : undefined}>

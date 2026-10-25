@@ -2,6 +2,7 @@
 
 import BackLink from '@/components/navigation/BackLink'
 import PostAuthorName from '@/components/community/PostAuthorName'
+import FollowAuthorButton from '@/components/community/FollowAuthorButton'
 import SeriesBox from '@/components/series/SeriesBox'
 import type { SeriesView } from '@/lib/series/order'
 import DeckDetailSkeleton from '@/components/decks/DeckDetailSkeleton'
@@ -820,7 +821,7 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
     return (
       <div
         className="flex items-center justify-center px-4"
-        style={{ minHeight: 'calc(100dvh - 4rem)', background: '#0d0b08' }}
+        style={{ minHeight: 'calc(100dvh - 4rem)', background: 'var(--bg-deep)' }}
       >
         <div className="text-center">
           <p className="mb-4 font-serif text-2xl" style={{ color: 'var(--gold)' }}>{t('notFound')}</p>
@@ -853,12 +854,12 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
 
   return (
     <NoteGiftClickContext value={openNoteGift}>
-    <div className="min-h-screen bg-[#0d0b08] pt-24 pb-20">
+    <div className="min-h-screen bg-[var(--bg-deep)] pt-24 pb-20">
       <div className="mx-auto w-full max-w-7xl px-3 sm:px-6">
         <BackLink
           href="/decks"
           locale={locale}
-          className="mb-5 inline-flex min-h-[44px] items-center gap-2 rounded-sm px-1 text-[0.9375rem] font-medium text-[#9c8b73] transition-colors hover:text-[#e8b030] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#c8900a]"
+          className="mb-5 inline-flex min-h-[44px] items-center gap-2 rounded-sm px-1 text-[0.9375rem] font-medium text-[#9c8b73] transition-colors hover:text-[var(--gold-light)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--gold)]"
         >
           <ArrowLeft className="h-4 w-4" aria-hidden="true" />
           {t('backToList')}
@@ -895,10 +896,11 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
                 userId={deck.profiles?.username ? deck.user_id : null}
                 username={deck.profiles?.username ?? guestAuthorName(deck.guest_tag, locale) ?? commentsT('anonymous')}
                 profilePublic={deck.profiles?.public_profile}
-                className="block truncate text-[1rem] font-semibold leading-snug text-[#e8dcc8] hover:text-[#e8b030]"
+                className="block truncate text-[1rem] font-semibold leading-snug text-[var(--text-primary)] hover:text-[var(--gold-light)]"
               />
               <RelativeTime date={deck.created_at} className="text-[0.875rem] text-[#9c8b73]" />
             </div>
+            {deck.profiles?.username && deck.profiles.public_profile !== false && <FollowAuthorButton userId={deck.user_id} />}
           </div>
 
           <dl className={styles.facts}>
@@ -1149,7 +1151,7 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
 function SectionHead({ id, title, meta }: { id: string; title: string; meta?: string }) {
   return (
     <div className="mb-5 flex min-w-0 flex-wrap items-end justify-between gap-x-4 gap-y-1">
-      <h2 id={id} className="font-[family-name:var(--font-heading)] text-[1.375rem] leading-snug text-[#e8dcc8] sm:text-[1.5rem]">{title}</h2>
+      <h2 id={id} className="font-[family-name:var(--font-heading)] text-[1.375rem] leading-snug text-[var(--text-primary)] sm:text-[1.5rem]">{title}</h2>
       {meta && <p className="text-[0.875rem] text-[#9c8b73]">{meta}</p>}
     </div>
   )

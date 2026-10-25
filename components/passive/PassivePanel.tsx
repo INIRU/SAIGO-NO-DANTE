@@ -41,7 +41,7 @@ export default function PassivePanel({
   const ownKeywords = useOwnKeywordSets(owners)
 
   return (
-    <div className={className} style={{ flex: 1, background: '#120e09', border: '1px solid #221a0f', borderRadius: '0.375rem', overflow: 'hidden' }}>
+    <div className={className} style={{ flex: 1, background: 'var(--bg-panel)', border: '1px solid #221a0f', borderRadius: '0.375rem', overflow: 'hidden' }}>
       <div className="flex" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
         {(['battle', 'support'] as const).map(tab => {
           const active = passiveTab === tab

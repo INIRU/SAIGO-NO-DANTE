@@ -75,7 +75,7 @@ export default function DetailPageSkeleton({ s, facts, actions, nav, children }:
       </div>
     </div>
     <div className={s.sectionNav}>
-      <div className="flex gap-1 overflow-hidden">{nav.map((w, i) => <div key={i} className={`-mb-px flex min-h-12 shrink-0 items-center border-b-2 px-3 ${i === 0 ? 'border-[#c8900a] pl-0' : 'border-transparent'}`}><SkeletonLine w={w} h="0.9375rem" /></div>)}</div>
+      <div className="flex gap-1 overflow-hidden">{nav.map((w, i) => <div key={i} className={`-mb-px flex min-h-12 shrink-0 items-center border-b-2 px-3 ${i === 0 ? 'border-[var(--gold)] pl-0' : 'border-transparent'}`}><SkeletonLine w={w} h="0.9375rem" /></div>)}</div>
     </div>
     {children}
   </div>

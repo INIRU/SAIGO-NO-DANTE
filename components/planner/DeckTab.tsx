@@ -512,7 +512,7 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
         className="mb-6 flex items-center gap-1 overflow-x-auto"
         role="tablist"
         aria-label={tDeck('subTabs.label')}
-        style={{ borderBottom: '1px solid #1a1510', WebkitOverflowScrolling: 'touch' }}
+        style={{ borderBottom: '1px solid var(--bg-card)', WebkitOverflowScrolling: 'touch' }}
       >
         {SUB_TABS.map(tab => {
           const active = subTab === tab.key
@@ -529,8 +529,8 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
                 ...COMPACT_KOTRA_STYLE,
                 padding: '0.5rem 1rem',
                 fontSize: '0.9375rem',
-                color: active ? '#e8dcc8' : '#555',
-                borderBottom: active ? '2px solid #c8900a' : '2px solid transparent',
+                color: active ? 'var(--text-primary)' : '#555',
+                borderBottom: active ? '2px solid var(--gold)' : '2px solid transparent',
                 background: active ? 'rgba(200,144,10,0.05)' : 'transparent',
                 cursor: 'pointer',
               }}

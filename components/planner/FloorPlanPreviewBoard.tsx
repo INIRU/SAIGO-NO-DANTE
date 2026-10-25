@@ -117,7 +117,7 @@ export default function FloorPlanPreviewBoard({
 
   if (segments.length === 0) {
     return (
-      <div className="rounded-md border border-[#1f1710] bg-[#120e09] px-4 py-5 text-center text-[0.875rem] text-[#6b6255]">
+      <div className="rounded-md border border-[#1f1710] bg-[var(--bg-panel)] px-4 py-5 text-center text-[0.875rem] text-[#6b6255]">
         {tFloor('empty')}
       </div>
     )
@@ -139,7 +139,7 @@ export default function FloorPlanPreviewBoard({
           aria-label={tFloor(`segment.${segment.labelKey}`, { start: segment.start, end: segment.end })}
         >
           <div className="flex items-center justify-between gap-4 px-1 py-2">
-            <h3 className="text-[1rem] font-semibold text-[#e8dcc8]">
+            <h3 className="text-[1rem] font-semibold text-[var(--text-primary)]">
               {segment.start}-{segment.end}
             </h3>
             <span className="min-w-0 truncate text-[0.875rem] font-medium text-[#9d8d72]">
@@ -177,7 +177,7 @@ export default function FloorPlanPreviewBoard({
                       className="overflow-hidden rounded-md"
                       style={{
                         borderColor: theme ? 'rgba(200,144,10,0.34)' : '#2a2118',
-                        background: theme ? '#1a1510' : '#0d0b08',
+                        background: theme ? 'var(--bg-card)' : 'var(--bg-deep)',
                       }}
                     >
                       <div className="relative aspect-[416/684] w-full overflow-hidden rounded-sm bg-[#151210]">
@@ -210,7 +210,7 @@ export default function FloorPlanPreviewBoard({
                           </span>
                         )}
                       </div>
-                      <div className="min-w-0 font-[family-name:var(--font-paperlogy)] text-lg font-semibold leading-snug text-[#e8dcc8]">
+                      <div className="min-w-0 font-[family-name:var(--font-paperlogy)] text-lg font-semibold leading-snug text-[var(--text-primary)]">
                         {themeName}
                       </div>
                     </div>
@@ -234,7 +234,7 @@ export default function FloorPlanPreviewBoard({
                                   ariaLabel={giftName}
                                   size="3.25rem"
                                   showName={false}
-                                  className="focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#c8900a]"
+                                  className="focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--gold)]"
                                 />
                               </div>
                             )

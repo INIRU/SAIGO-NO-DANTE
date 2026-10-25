@@ -4,7 +4,7 @@
 .head { grid-area: head; }
 .stage { grid-area: stage; position: relative; aspect-ratio: 1; overflow: hidden; touch-action: none; cursor: grab; border-block: 1px solid #2e2417; }
 .stage:active { cursor: grabbing; }
-.stage[data-backdrop='dark'], .swatch[data-backdrop='dark'] { background: #120e09; }
+.stage[data-backdrop='dark'], .swatch[data-backdrop='dark'] { background: var(--bg-panel); }
 .stage[data-backdrop='black'], .swatch[data-backdrop='black'] { background: #000; }
 .stage[data-backdrop='white'], .swatch[data-backdrop='white'] { background: #fff; }
 .stage[data-backdrop='clear'] { background: repeating-conic-gradient(#2a2118 0% 25%, #15110b 0% 50%) 0 0 / 1.25rem 1.25rem; }

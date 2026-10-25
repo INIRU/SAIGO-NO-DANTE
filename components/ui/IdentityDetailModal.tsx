@@ -185,7 +185,7 @@ function LoadedContent({ data, uptie, egos, onEgoClick, onClose }: Omit<Identity
             {themeKeywords.map(kw => {
               const icon = getIconUrl(kw)
               return (
-                <li key={kw} className="inline-flex min-h-[1.75rem] items-center gap-1 rounded border border-[#2e2417] bg-[#120e09] px-2 text-[0.8125rem] text-[var(--text-secondary)]">
+                <li key={kw} className="inline-flex min-h-[1.75rem] items-center gap-1 rounded border border-[#2e2417] bg-[var(--bg-panel)] px-2 text-[0.8125rem] text-[var(--text-secondary)]">
                   {icon && <Image src={icon} alt="" width={16} height={16} />}
                   {localizeDeckKeyword(kw, keywordInfo[kw], locale)}
                 </li>

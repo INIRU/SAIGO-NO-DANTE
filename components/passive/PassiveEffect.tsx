@@ -57,7 +57,7 @@ export function PassiveNoteRow({
     <div
       className="flex items-start gap-2 rounded px-3 py-2"
       style={{
-        background: '#120e09',
+        background: 'var(--bg-panel)',
         border: '1px solid #221a0f',
         opacity: condition.met ? 1 : 0.55,
         maxWidth: '32rem',

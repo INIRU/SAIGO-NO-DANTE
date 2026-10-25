@@ -8,8 +8,11 @@ export const ACTIVITY_RULES = {
   contribution: { points: 50, dailyLimit: null },
 } as const;
 export type ActivityKind = keyof typeof ACTIVITY_RULES;
+export const COMMUNITY_SETTING_KEYS = ['public_profile', 'public_following', 'public_followers', 'notify_comments', 'notify_follows', 'notify_posts'] as const;
+/** The owner's visibility and notification switches. */
+export type CommunitySettings = Record<(typeof COMMUNITY_SETTING_KEYS)[number], boolean>;
 export const communitySettingsSchema = z
-  .object({ public_profile: z.boolean().optional(), public_following: z.boolean().optional(), public_followers: z.boolean().optional() })
+  .object(Object.fromEntries(COMMUNITY_SETTING_KEYS.map((key) => [key, z.boolean().optional()])) as Record<keyof CommunitySettings, z.ZodOptional<z.ZodBoolean>>)
   .strict().refine((data) => Object.keys(data).length > 0);
 
 export type CommunityProfile = {
@@ -30,6 +33,8 @@ export type CommunityProfile = {
   series?: { id: string; title: string; count: number }[];
   /** Easter eggs found on the account (any browser). */
   eggs: EasterEgg[];
+  /** Only in the owner's own profile. */
+  settings?: CommunitySettings;
 };
 import type { DeckSummary } from "@/components/decks/DeckCard";
 import type { PlanSummary } from "@/components/planner/PlanCard";

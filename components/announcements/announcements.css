@@ -58,3 +58,18 @@
   background: var(--bg-deep);
   padding: 0.1rem 0.3rem;
 }
+
+/* Announcement list and page: rows rise in one after another, capped so a long list does not wait. */
+.announcement-rise {
+  animation: announcement-rise 0.45s cubic-bezier(0.23, 1, 0.32, 1) both;
+  animation-delay: calc(min(var(--i, 0), 8) * 45ms);
+}
+@keyframes announcement-rise {
+  from { opacity: 0; transform: translateY(0.5rem); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .announcement-rise { animation: none; }
+}
+
+/* A cover that could not load leaves nothing behind (QuietImage renders nothing). */
+.announcement-cover:empty { display: none; }

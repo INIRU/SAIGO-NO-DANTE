@@ -610,7 +610,7 @@ export default function FloorTab({ state, dispatch, themes, gifts, recipes, gift
                 disabled={pickerThemes.length === 0}
                 aria-label={t('selectTheme')}
                 className={`flex aspect-[416/684] w-full items-center justify-center rounded-sm border border-dashed transition-colors hover:border-[var(--gold)] hover:text-[var(--gold-light)] disabled:cursor-not-allowed disabled:opacity-60 ${focusRing}`}
-                style={{ borderColor: '#4a3b28', background: '#120e09', color: '#6a6058' }}
+                style={{ borderColor: '#4a3b28', background: 'var(--bg-panel)', color: 'var(--text-muted)' }}
               >
                 <Plus size={28} aria-hidden="true" />
               </button>
@@ -622,7 +622,7 @@ export default function FloorTab({ state, dispatch, themes, gifts, recipes, gift
               <div className="min-w-0 flex-1 basis-40">
                 <h4
                   className="text-[1.25rem] leading-snug"
-                  style={{ fontFamily: 'var(--font-heading)', color: activeThemeName ? '#e8b030' : '#9c8b73' }}
+                  style={{ fontFamily: 'var(--font-heading)', color: activeThemeName ? 'var(--gold-light)' : '#9c8b73' }}
                 >
                   {activeThemeName ?? t('noTheme')}
                 </h4>
@@ -637,7 +637,7 @@ export default function FloorTab({ state, dispatch, themes, gifts, recipes, gift
                   <div
                     role="group"
                     className="flex rounded-md border p-0.5"
-                    style={{ background: '#0d0b08', borderColor: '#2e2417' }}
+                    style={{ background: 'var(--bg-deep)', borderColor: '#2e2417' }}
                     aria-label={t('difficultySelectorLabel', { floor: entry.floor })}
                   >
                     {(['normal', 'hard'] as const).map(difficulty => {
@@ -651,7 +651,7 @@ export default function FloorTab({ state, dispatch, themes, gifts, recipes, gift
                           className={`min-h-[2.5rem] rounded px-3.5 text-sm font-semibold transition-colors ${focusRing}`}
                           style={{
                             background: selected ? 'rgba(200,144,10,0.2)' : 'transparent',
-                            color: selected ? '#e8b030' : '#9c8b73',
+                            color: selected ? 'var(--gold-light)' : '#9c8b73',
                           }}
                         >
                           {t(`difficulty.${difficulty}`)}
@@ -669,7 +669,7 @@ export default function FloorTab({ state, dispatch, themes, gifts, recipes, gift
                   onClick={() => toggleFloor(entry.floor)}
                   aria-label={t('ladder.collapse', { floor: entry.floor })}
                   title={t('ladder.collapseShort')}
-                  className={`grid h-[2.75rem] w-[2.75rem] place-items-center rounded-md transition-colors hover:bg-white/5 hover:text-[#e8dcc8] ${focusRing}`}
+                  className={`grid h-[2.75rem] w-[2.75rem] place-items-center rounded-md transition-colors hover:bg-white/5 hover:text-[var(--text-primary)] ${focusRing}`}
                   style={{ color: '#9c8b73' }}
                 >
                   <ChevronUp size={18} aria-hidden="true" />
@@ -682,7 +682,7 @@ export default function FloorTab({ state, dispatch, themes, gifts, recipes, gift
                 onClick={() => setThemeModalOpen(true)}
                 disabled={pickerThemes.length === 0}
                 className={`min-h-[2.75rem] rounded-md border px-4 text-[0.9375rem] font-semibold transition-colors hover:bg-[rgba(200,144,10,0.2)] disabled:cursor-not-allowed disabled:opacity-60 ${focusRing}`}
-                style={{ borderColor: 'rgba(200,144,10,0.4)', background: 'rgba(200,144,10,0.12)', color: '#e8b030' }}
+                style={{ borderColor: 'rgba(200,144,10,0.4)', background: 'rgba(200,144,10,0.12)', color: 'var(--gold-light)' }}
               >
                 {selectedTheme ? t('changeTheme') : t('selectTheme')}
               </button>
@@ -710,7 +710,7 @@ export default function FloorTab({ state, dispatch, themes, gifts, recipes, gift
           </div>
 
           <div className="col-span-2 min-w-0 sm:col-span-1 sm:col-start-2">
-            <h5 className="mb-2 text-[0.9375rem]" style={{ fontFamily: 'var(--font-heading)', color: '#e8dcc8' }}>
+            <h5 className="mb-2 text-[0.9375rem]" style={{ fontFamily: 'var(--font-heading)', color: 'var(--text-primary)' }}>
               {t('acquiredGiftCount', { count: floorGifts.length })}
             </h5>
             <div className="flex flex-wrap items-start gap-2">
@@ -783,7 +783,7 @@ export default function FloorTab({ state, dispatch, themes, gifts, recipes, gift
         <FloorGuidance entry={entry} entries={state.floorPlan} inventory={state.giftInventory} recipes={recipes} gifts={giftMap} />
 
         <div className="mt-5">
-          <h5 className="mb-2 text-[0.9375rem]" style={{ fontFamily: 'var(--font-heading)', color: '#e8dcc8' }}>
+          <h5 className="mb-2 text-[0.9375rem]" style={{ fontFamily: 'var(--font-heading)', color: 'var(--text-primary)' }}>
             {t('memo')}
           </h5>
           <FloorMemo
@@ -834,7 +834,7 @@ export default function FloorTab({ state, dispatch, themes, gifts, recipes, gift
             </span>
             <span
               className={`min-w-0 leading-snug ${theme ? 'text-[1rem]' : 'text-[0.9375rem]'}`}
-              style={{ fontFamily: theme ? 'var(--font-heading)' : undefined, color: theme ? '#e8dcc8' : '#6a6058' }}
+              style={{ fontFamily: theme ? 'var(--font-heading)' : undefined, color: theme ? 'var(--text-primary)' : 'var(--text-muted)' }}
             >
               {theme ? themeName(theme) : t('ladder.emptyHint')}
             </span>
@@ -917,7 +917,7 @@ export default function FloorTab({ state, dispatch, themes, gifts, recipes, gift
                         style={{
                           fontFamily: 'var(--font-title)',
                           fontSize: 'clamp(2.125rem, 1.6rem + 1.6vw, 3.25rem)',
-                          color: isOpen ? '#e8b030' : planned ? '#e8dcc8' : '#5c4f3e',
+                          color: isOpen ? 'var(--gold-light)' : planned ? 'var(--text-primary)' : '#5c4f3e',
                         }}
                       >
                         {entry.floor}
@@ -938,10 +938,10 @@ export default function FloorTab({ state, dispatch, themes, gifts, recipes, gift
         {/* 이 영역은 처음부터 목차 레일 자리까지 넓다. 여기에 오면 레일 대신 위쪽 가로 막대가 겹쳐 나타난다(PlannerClient가 관찰) */}
         <div data-final-gifts-start aria-hidden="true" className="pointer-events-none absolute inset-y-0 left-0 w-px" />
         <div className="mb-1 flex items-baseline gap-2">
-          <h3 id="final-gifts-title" className="text-[1.25rem] leading-tight" style={{ fontFamily: 'var(--font-heading)', color: '#e8dcc8' }}>
+          <h3 id="final-gifts-title" className="text-[1.25rem] leading-tight" style={{ fontFamily: 'var(--font-heading)', color: 'var(--text-primary)' }}>
             {t('finalGifts')}
           </h3>
-          <span className="tabular-nums leading-none" style={{ fontFamily: 'var(--font-title)', fontSize: '1.25rem', color: '#c8900a' }}>
+          <span className="tabular-nums leading-none" style={{ fontFamily: 'var(--font-title)', fontSize: '1.25rem', color: 'var(--gold)' }}>
             <span aria-hidden="true">{finalFloorGifts.length}</span>
             <span className="sr-only">{t('finalGiftCount', { count: finalFloorGifts.length })}</span>
           </span>
@@ -1012,13 +1012,13 @@ export default function FloorTab({ state, dispatch, themes, gifts, recipes, gift
         )}
 
         <div className="mt-5">
-          <h4 className="mb-2 text-[0.9375rem]" style={{ fontFamily: 'var(--font-heading)', color: '#e8dcc8' }}>{t('allGiftCatalog')}</h4>
+          <h4 className="mb-2 text-[0.9375rem]" style={{ fontFamily: 'var(--font-heading)', color: 'var(--text-primary)' }}>{t('allGiftCatalog')}</h4>
           {/* 페이지 흐름 안에 둔다(스크롤은 창 하나). 도구줄은 사이트 메뉴와 플래너 가로 목차 아래에 붙고, 결과 칸은 필터를 바꿔도 페이지가 줄지 않게 한 화면 높이를 확보한다. */}
           <div
             className="border-t px-0.5 pb-3"
             style={{
               borderColor: '#2e2417',
-              '--gift-catalog-bg': '#0d0b08',
+              '--gift-catalog-bg': 'var(--bg-deep)',
               '--gift-catalog-sticky-top': 'calc(var(--nav-offset, 4rem) + var(--planner-bar-h, 0rem))',
               '--gift-catalog-min-h': 'calc(100dvh - var(--gift-catalog-sticky-top) - 6rem)',
             } as React.CSSProperties}
@@ -1040,7 +1040,7 @@ export default function FloorTab({ state, dispatch, themes, gifts, recipes, gift
         const result = localizedGift(suggestedFusion.result)
         const materials = suggestedFusion.materials.map(localizedGift)
         const applyLabel = t('fusionAlertApply', { gift: result.name })
-        const iconButton = 'inline-flex h-11 w-11 shrink-0 items-center justify-center rounded text-[#9c8b73] transition-colors hover:text-[#e8dcc8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--gold-light)]'
+        const iconButton = 'inline-flex h-11 w-11 shrink-0 items-center justify-center rounded text-[#9c8b73] transition-colors hover:text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--gold-light)]'
         return (
           // 페이지 이동 버튼(PageNavigation, 오른쪽 아래 2.75rem 폭) 바로 왼쪽에 붙는다: 오른쪽 여백 = 그 버튼 여백 + 폭 + 테두리 + 간격
           <aside
@@ -1059,19 +1059,19 @@ export default function FloorTab({ state, dispatch, themes, gifts, recipes, gift
                   title={t('fusionAlertExpand')}
                   onClick={() => setFusionCollapsed(false)}
                   className="flex h-11 items-center gap-2 rounded-r-lg pl-2 pr-2.5 text-[0.875rem] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--gold-light)]"
-                  style={{ color: '#e8b030', fontFamily: 'var(--font-heading)' }}
+                  style={{ color: 'var(--gold-light)', fontFamily: 'var(--font-heading)' }}
                 >
                   <span id="fusion-alert-title">{t('fusionAlertTitle')}</span>
-                  {craftableFusions.length > 1 && <span className="tabular-nums" style={{ fontFamily: 'var(--font-title)', fontSize: '1rem', color: '#c8900a' }}>{craftableFusions.length}</span>}
+                  {craftableFusions.length > 1 && <span className="tabular-nums" style={{ fontFamily: 'var(--font-title)', fontSize: '1rem', color: 'var(--gold)' }}>{craftableFusions.length}</span>}
                   <ChevronUp size={16} aria-hidden="true" className="text-[#9c8b73]" />
                 </button>
               </div>
             ) : (
               <div className="pb-3 pl-3.5">
                 <div className="flex items-center gap-2">
-                  <h3 id="fusion-alert-title" className="min-w-0 flex-1 text-[0.9375rem]" style={{ color: '#e8b030', fontFamily: 'var(--font-heading)' }}>
+                  <h3 id="fusion-alert-title" className="min-w-0 flex-1 text-[0.9375rem]" style={{ color: 'var(--gold-light)', fontFamily: 'var(--font-heading)' }}>
                     {t('fusionAlertTitle')}
-                    {craftableFusions.length > 1 && <span className="ml-1.5 tabular-nums" style={{ fontFamily: 'var(--font-title)', fontSize: '1.0625rem', color: '#c8900a' }}>{craftableFusions.length}</span>}
+                    {craftableFusions.length > 1 && <span className="ml-1.5 tabular-nums" style={{ fontFamily: 'var(--font-title)', fontSize: '1.0625rem', color: 'var(--gold)' }}>{craftableFusions.length}</span>}
                   </h3>
                   <div className="flex">
                     <button type="button" data-fusion-toggle aria-expanded aria-label={t('fusionAlertCollapse')} title={t('fusionAlertCollapse')} onClick={() => setFusionCollapsed(true)} className={iconButton}>
@@ -1100,15 +1100,15 @@ export default function FloorTab({ state, dispatch, themes, gifts, recipes, gift
 
                 <div className="mt-2.5 flex items-end gap-3 pr-3.5">
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-[0.9375rem] text-[#e8dcc8]" style={{ fontFamily: 'var(--font-heading)' }} title={result.name}>{result.name}</p>
+                    <p className="truncate text-[0.9375rem] text-[var(--text-primary)]" style={{ fontFamily: 'var(--font-heading)' }} title={result.name}>{result.name}</p>
                     <p className="mt-0.5 break-keep text-[0.75rem] leading-snug text-[#9c8b73]">{t('fusionAlertHint')}</p>
                   </div>
                   <button
                     type="button"
                     onClick={applySuggestedFusion}
                     aria-label={applyLabel}
-                    className="h-9 shrink-0 rounded px-3.5 text-[0.875rem] font-bold transition-colors hover:bg-[#e8b030] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold-light)] focus-visible:ring-offset-2 focus-visible:ring-offset-[#17120c]"
-                    style={{ background: '#c8900a', color: '#0d0b08' }}
+                    className="h-9 shrink-0 rounded px-3.5 text-[0.875rem] font-bold transition-colors hover:bg-[var(--gold-light)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold-light)] focus-visible:ring-offset-2 focus-visible:ring-offset-[#17120c]"
+                    style={{ background: 'var(--gold)', color: 'var(--bg-deep)' }}
                   >
                     {t('fusionAlertApplyShort')}
                   </button>

@@ -139,12 +139,12 @@ export function FacetPickerModal({ kind, facets, selected, onToggle, onClose }: 
     <BaseModal open={kind !== null} onClose={() => { setQuery(''); onClose() }} title={kind ? t(kind) : ''} maxWidth="64rem">
       <div className="flex h-[min(80dvh,56rem)] flex-col rounded-xl border border-[rgba(200,144,10,0.22)] bg-[#17120c] shadow-[0_1.5rem_3rem_rgba(0,0,0,0.55)]">
         <div className="flex shrink-0 items-center justify-between border-b border-[#2e2417] px-5 py-3">
-          <h2 className="font-[family-name:var(--font-heading)] text-[1.125rem] text-[#e8dcc8]">
+          <h2 className="font-[family-name:var(--font-heading)] text-[1.125rem] text-[var(--text-primary)]">
             {kind && t(kind)}
-            {selected.length > 0 && <span className="ml-2 font-[family-name:var(--font-title)] text-[1.125rem] text-[#e8b030]">{selected.length}</span>}
+            {selected.length > 0 && <span className="ml-2 font-[family-name:var(--font-title)] text-[1.125rem] text-[var(--gold-light)]">{selected.length}</span>}
           </h2>
           <button type="button" onClick={() => { setQuery(''); onClose() }} aria-label={t('close')}
-            className="grid h-10 w-10 place-items-center rounded text-[#9c8b73] transition-colors hover:bg-white/5 hover:text-[#e8dcc8]">
+            className="grid h-10 w-10 place-items-center rounded text-[#9c8b73] transition-colors hover:bg-white/5 hover:text-[var(--text-primary)]">
             <X size={18} />
           </button>
         </div>

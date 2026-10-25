@@ -12,7 +12,7 @@ export default function CollectionTab({ savedCode }: Props) {
   return (
     <Suspense
       fallback={
-        <div style={{ background: '#1a1510', border: '1px solid var(--border)', borderRadius: '0.5rem', padding: '1.5rem' }}>
+        <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '0.5rem', padding: '1.5rem' }}>
           <div style={{ width: '8.75rem', height: '0.875rem', background: '#2a2015', borderRadius: '0.125rem' }} />
         </div>
       }

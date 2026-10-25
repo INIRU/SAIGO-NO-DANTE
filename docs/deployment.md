@@ -78,6 +78,8 @@ Next.js는 로봇 요청에 메타데이터를 본문으로 흘려보내지 않�
 - 서버에 넣지 않는 값: `EDGE_CONFIG`, `VERCEL_API_TOKEN`, `VERCEL_TEAM_ID`. 없으면 점검 목록을 Supabase에서 읽는다.
 - Vercel의 값은 대부분 sensitive라 다시 꺼낼 수 없다. `npm run env:pull`(Vercel CLI)로 받아도 그 값은 비어 있다. 서버 값은 사용자 Mac의 `.env.local`에서 코드가 쓰는 이름만 옮겼다.
 
+`VAPID_PUBLIC_KEY`·`VAPID_PRIVATE_KEY`·`VAPID_SUBJECT`는 브라우저 푸시 키다(2026-10-25 서버에서 만들어 서버와 사용자 Mac `.env.local`에 같은 값을 넣음, 서버 백업 `~/saigo/env.production.bak-20261025`). 셋 중 하나라도 없으면 푸시를 보내지 않고 마이페이지의 브라우저 알림 줄이 "지원하지 않음"으로 보인다. 키를 바꾸면 이미 구독한 브라우저는 다시 켜야 한다.
+
 `DISCORD_ANNOUNCEMENT_WEBHOOK_URL`은 서버 전용이다. 한국어 공지가 게시되는 순간(새로 게시하거나 임시 저장을 게시로 바꿀 때) 디스코드로 한 번 보낸다. 본문 마크다운을 유지하고 이미지 앞뒤로 메시지를 나눈다. 값이 없으면 전송을 건너뛰고 관리자 화면에 실패를 알린다.
 
 점검(`/admin/maintenance`)은 Supabase `site_maintenance`에 저장한다. `EDGE_CONFIG`(Vercel Storage의 saigo-no-dante-edge-config 연결 문자열)와 `VERCEL_API_TOKEN`(Warin 팀 범위의 Vercel 액세스 토큰)이 모두 있으면 저장할 때마다 활성 점검 목록을 Edge Config `maintenance` 항목에 올리고, proxy도 Edge Config에서 읽는다. 둘 중 하나라도 없으면(지금 서버) proxy는 Supabase를 읽는다. 어느 쪽이든 인스턴스마다 60초 동안 목록을 재사용한다.

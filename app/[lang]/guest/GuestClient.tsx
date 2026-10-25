@@ -15,7 +15,7 @@ import Skeleton, { SkeletonLine } from '@/components/ui/Skeleton'
 import '@/components/community/community.css'
 import styles from '@/components/community/profile.module.css'
 
-const input = 'min-h-10 w-full min-w-0 rounded-lg border border-[#3a2a15] bg-[#17120c] px-3 text-[0.875rem] text-[#e8dcc8] outline-none transition-colors placeholder:text-[#6a6058] focus:border-[#8a6010] aria-[invalid=true]:border-[#9b2c23]'
+const input = 'min-h-10 w-full min-w-0 rounded-lg border border-[var(--border)] bg-[#17120c] px-3 text-[0.875rem] text-[var(--text-primary)] outline-none transition-colors placeholder:text-[var(--text-muted)] focus:border-[var(--gold-dim)] aria-[invalid=true]:border-[#9b2c23]'
 
 function PostSkeletonRows() {
   return (
@@ -52,7 +52,7 @@ function PostList({ title, posts, href, empty, icon: Icon }: { title: string; po
         <ul className="grid gap-2">
           {posts.map(post => (
             <li key={post.id}>
-              <Link href={href(post.id)} className="flex min-h-12 items-center justify-between gap-3 rounded-lg border border-[#2e2417] bg-[#120e09] px-4 py-2.5 text-[#e8dcc8] transition-colors duration-150 hover:border-[#5a4526] hover:bg-[#17120c] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--gold-light)]">
+              <Link href={href(post.id)} className="flex min-h-12 items-center justify-between gap-3 rounded-lg border border-[#2e2417] bg-[var(--bg-panel)] px-4 py-2.5 text-[var(--text-primary)] transition-colors duration-150 hover:border-[#5a4526] hover:bg-[#17120c] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--gold-light)]">
                 <span className="min-w-0 truncate text-[0.9375rem] font-semibold">{post.title}</span>
                 <RelativeTime date={post.created_at} className="shrink-0 text-[0.8125rem] text-[#8a7d69]" />
               </Link>
@@ -130,12 +130,12 @@ export default function GuestClient() {
             <p className={styles.scoreLabel}>{t.key}</p>
             {key ? (
               <>
-                <output className="mt-2 block break-all rounded-lg border border-[#241c14] bg-[#17120c] px-3 py-2.5 text-[0.875rem] leading-relaxed text-[#e8dcc8]">{key}</output>
+                <output className="mt-2 block break-all rounded-lg border border-[#241c14] bg-[#17120c] px-3 py-2.5 text-[0.875rem] leading-relaxed text-[var(--text-primary)]">{key}</output>
                 <div className={styles.links}>
                   <button type="button" className={styles.ghost} onClick={copyKey}><Copy aria-hidden="true" />{t.copy}</button>
                   <button type="button" className={styles.ghost} onClick={downloadKey}><Download aria-hidden="true" />{t.download}</button>
                 </div>
-                <p className="mt-3 flex gap-2 text-[0.8125rem] leading-relaxed text-[#b0a890]">
+                <p className="mt-3 flex gap-2 text-[0.8125rem] leading-relaxed text-[var(--text-secondary)]">
                   <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0 text-[var(--gold)]" aria-hidden="true" />{t.warning}
                 </p>
               </>
@@ -170,7 +170,7 @@ export default function GuestClient() {
                   {claiming ? t.claiming : t.claim}
                 </button>
               ) : (
-                <p className="flex flex-wrap items-center justify-between gap-2 text-[0.875rem] text-[#b0a890]">
+                <p className="flex flex-wrap items-center justify-between gap-2 text-[0.875rem] text-[var(--text-secondary)]">
                   {t.signInToClaim}
                   <Link href="/login" className={styles.ghost}>{t.login}</Link>
                 </p>

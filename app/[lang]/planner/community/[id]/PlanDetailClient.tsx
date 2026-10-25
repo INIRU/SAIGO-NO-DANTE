@@ -3,6 +3,7 @@
 import BackLink from '@/components/navigation/BackLink'
 import SeriesBox from '@/components/series/SeriesBox'
 import PostAuthorName from '@/components/community/PostAuthorName'
+import FollowAuthorButton from '@/components/community/FollowAuthorButton'
 import type { SeriesView } from '@/lib/series/order'
 import { useHtmlFlag } from '@/hooks/useHtmlFlag'
 import { useGuestPosts } from '@/hooks/useGuestPosts'
@@ -250,7 +251,7 @@ function SectionHead({ id, title, meta, caption }: { id: string; title: string; 
   return (
     <div className="mb-5 flex min-w-0 flex-wrap items-end justify-between gap-x-4 gap-y-1">
       <div className="min-w-0">
-        <h2 id={id} className="font-[family-name:var(--font-heading)] text-[1.375rem] leading-snug text-[#e8dcc8] sm:text-[1.5rem]">{title}</h2>
+        <h2 id={id} className="font-[family-name:var(--font-heading)] text-[1.375rem] leading-snug text-[var(--text-primary)] sm:text-[1.5rem]">{title}</h2>
         {caption && <p className="mt-1 text-[0.9375rem] leading-snug text-[#9c8b73]">{caption}</p>}
       </div>
       {meta != null && <div className="shrink-0 text-[0.9375rem] tabular-nums text-[#9c8b73]">{meta}</div>}
@@ -264,7 +265,7 @@ function StarlightCost({ label, value }: { label: string; value: number }) {
     <span className="inline-flex min-h-9 items-center gap-1.5 rounded-md border border-[rgba(92,73,54,0.86)] bg-[rgba(18,15,12,0.72)] px-2.5 text-[0.875rem] text-[#d8c1a0]">
       <Image src={getGameUiAsset('start-buffs/starlight')} alt="" width={18} height={18} className="h-[1.125rem] w-[1.125rem]" />
       {label}
-      <span className="font-semibold tabular-nums text-[#e8b030]">{value}</span>
+      <span className="font-semibold tabular-nums text-[var(--gold-light)]">{value}</span>
     </span>
   )
 }
@@ -272,7 +273,7 @@ function StarlightCost({ label, value }: { label: string; value: number }) {
 function SubHead({ title, meta }: { title: string; meta: ReactNode }) {
   return (
     <div className="mb-3 flex items-center justify-between gap-3">
-      <h3 className="font-[family-name:var(--font-heading)] text-[1.0625rem] text-[#e8dcc8]">{title}</h3>
+      <h3 className="font-[family-name:var(--font-heading)] text-[1.0625rem] text-[var(--text-primary)]">{title}</h3>
       <span className="flex items-center gap-2 text-[0.875rem] tabular-nums text-[#9c8b73]">{meta}</span>
     </div>
   )
@@ -611,11 +612,11 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
 
   return (
     <NoteGiftClickContext value={openNoteGift}>
-    <div data-plan-detail className="min-h-screen bg-[#0d0b08] pt-24 pb-20">
+    <div data-plan-detail className="min-h-screen bg-[var(--bg-deep)] pt-24 pb-20">
       <div className="mx-auto w-full max-w-7xl px-3 sm:px-6">
         <BackLink
           href="/planner/community"
-          className="mb-5 inline-flex min-h-[44px] items-center gap-2 rounded-sm px-1 text-[0.9375rem] font-medium text-[#9c8b73] transition-colors hover:text-[#e8b030] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#c8900a]"
+          className="mb-5 inline-flex min-h-[44px] items-center gap-2 rounded-sm px-1 text-[0.9375rem] font-medium text-[#9c8b73] transition-colors hover:text-[var(--gold-light)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--gold)]"
         >
           <ArrowLeft className="h-4 w-4" aria-hidden="true" />
           {tDetail('backToCommunity')}
@@ -654,10 +655,11 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
                 userId={plan.profiles?.username ? plan.user_id : null}
                 username={username}
                 profilePublic={plan.profiles?.public_profile}
-                className="block truncate text-[1rem] font-semibold leading-snug text-[#e8dcc8] hover:text-[#e8b030]"
+                className="block truncate text-[1rem] font-semibold leading-snug text-[var(--text-primary)] hover:text-[var(--gold-light)]"
               />
               <RelativeTime date={plan.created_at} className="text-[0.875rem] text-[#9c8b73]" />
             </div>
+            {plan.profiles?.username && plan.profiles.public_profile !== false && <FollowAuthorButton userId={plan.user_id} />}
           </div>
 
           <dl className={styles.facts}>
@@ -835,7 +837,7 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
             {deck.length > 0 && finalGifts.length > 0 && (
               <ul className="mb-4 flex flex-wrap gap-x-6 gap-y-1.5 text-[0.875rem] leading-snug text-[#9c8b73]">
                 <li className="inline-flex items-center gap-2"><span className="h-2 w-2 shrink-0 rounded-full bg-[#ef4444]" aria-hidden="true" />{tDetail('conditionUnmet')}</li>
-                <li className="inline-flex items-center gap-2"><span className="h-2 w-2 shrink-0 rounded-full bg-[#e8b030]" aria-hidden="true" />{tDetail('conditionWarn', { deployed: DEPLOYED_SLOT_COUNT })}</li>
+                <li className="inline-flex items-center gap-2"><span className="h-2 w-2 shrink-0 rounded-full bg-[var(--gold-light)]" aria-hidden="true" />{tDetail('conditionWarn', { deployed: DEPLOYED_SLOT_COUNT })}</li>
               </ul>
             )}
             {finalGifts.length > 0 ? (

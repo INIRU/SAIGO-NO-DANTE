@@ -8,7 +8,9 @@ import { showSuccess, showError } from "@/lib/toast";
 import AvatarPicker from "@/components/mypage/AvatarPicker";
 import { DEFAULT_AVATAR_URL } from "@/lib/constants/game";
 import { getCommunityCopy } from "@/lib/community/copy";
-import { Pencil } from "lucide-react";
+import { LogOut, Pencil } from "lucide-react";
+import Button from "@/components/ui/Button";
+import { forgetPushSubscription } from "@/hooks/usePushSubscription";
 
 type Profile = {
   username: string | null;
@@ -123,12 +125,9 @@ export default function ProfileTab({
           />
           <span className="community-muted text-right">{bio.length} / 300</span>
         </label>
-        <button
-          className="community-button primary justify-self-end"
-          disabled={busy}
-        >
+        <Button type="submit" variant="primary" className="justify-self-end" loading={busy}>
           {busy ? t.saving : t.save}
-        </button>
+        </Button>
       </form>
       <details className="community-account" open={askWithdraw || undefined}>
         <summary>{t.account}</summary>
@@ -137,36 +136,22 @@ export default function ProfileTab({
           <>
             <p>{t.withdrawWarning}</p>
             <div className="community-account-actions">
-              <button
-                className="community-button"
-                disabled={busy}
-                onClick={() => setWithdraw(false)}
-              >
+              <Button disabled={busy} onClick={() => setWithdraw(false)}>
                 {t.cancel}
-              </button>
-              <button
-                className="community-button"
-                disabled={busy}
-                onClick={removeAccount}
-              >
+              </Button>
+              <Button variant="danger" loading={busy} onClick={removeAccount}>
                 {t.confirm}
-              </button>
+              </Button>
             </div>
           </>
         ) : (
           <div className="community-account-actions">
-            <button
-              className="community-button"
-              onClick={() => signOut({ callbackUrl: `/${locale}` })}
-            >
+            <Button icon={LogOut} onClick={() => void forgetPushSubscription().finally(() => signOut({ callbackUrl: `/${locale}` }))}>
               {t.logout}
-            </button>
-            <button
-              className="community-button"
-              onClick={() => setWithdraw(true)}
-            >
+            </Button>
+            <Button variant="ghost" onClick={() => setWithdraw(true)}>
               {t.withdraw}
-            </button>
+            </Button>
           </div>
         )}
       </details>

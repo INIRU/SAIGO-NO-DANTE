@@ -72,7 +72,7 @@
 .who strong { font-weight: 700; color: var(--text-primary); }
 
 /* Writing page. */
-.editor { padding: 1.25rem 1.25rem 1.4rem; background: #120e09; border: 1px solid #5a4526; }
+.editor { padding: 1.25rem 1.25rem 1.4rem; background: var(--bg-panel); border: 1px solid #5a4526; }
 .fields { display: flex; align-items: flex-end; flex-wrap: wrap; gap: 1.25rem; margin-bottom: 1.2rem; }
 .fields > label, .fields > div { display: flex; flex-direction: column; gap: 0.35rem; font-size: 0.78rem; font-weight: 600; color: var(--text-secondary); }
 input.code { height: 2.5rem; width: 15rem; max-width: 100%; padding: 0 0.8rem; background: #070604; border: 1px solid #5a4526; outline: none; }
@@ -82,7 +82,7 @@ input.pin { width: 9.5rem; }
 input.pin::placeholder { font: 400 0.85rem/1 var(--font-body); letter-spacing: 0; }
 
 /* The window that takes the viewer's own code for an exchange. */
-.exchange { display: flex; flex-direction: column; gap: 0.9rem; padding: 1.25rem; background: #120e09; border: 1px solid #5a4526; }
+.exchange { display: flex; flex-direction: column; gap: 0.9rem; padding: 1.25rem; background: var(--bg-panel); border: 1px solid #5a4526; }
 .exchange h2 { margin: 0; font-family: var(--font-heading); font-size: 1.1rem; }
 .exchange input.code { width: 100%; }
 .exchange .warning { margin: 0; }

@@ -141,7 +141,7 @@ function TooltipPopup({
           ? { bottom: window.innerHeight - rect.top + 6 }
           : { top: rect.bottom + 6 }),
         zIndex: 200,
-        background: '#1a1510',
+        background: 'var(--bg-card)',
         border: '1px solid #3a3020',
         borderRadius: 4,
         minWidth, maxWidth,
@@ -164,7 +164,7 @@ function TooltipPopup({
         <div style={{
           position: 'absolute',
           bottom: 0, left: 0, right: 0, height: 32,
-          background: 'linear-gradient(to bottom, transparent, #1a1510)',
+          background: 'linear-gradient(to bottom, transparent, var(--bg-card))',
           borderRadius: '0 0 4px 4px',
           pointerEvents: 'none',
         }} />
@@ -659,7 +659,7 @@ export function NoteRenderer({
             href={m[3]}
             target="_blank"
             rel="noopener noreferrer"
-            style={{ color: '#e8b030', textDecoration: 'underline', textUnderlineOffset: '0.1875rem' }}
+            style={{ color: 'var(--gold-light)', textDecoration: 'underline', textUnderlineOffset: '0.1875rem' }}
           >
             <PlaceholderText text={m[2]} />
           </a>
@@ -681,7 +681,7 @@ export function NoteRenderer({
           <code
             key={`${keyPrefix}-c${m.index}`}
             style={{
-              color: '#e8b030',
+              color: 'var(--gold-light)',
               background: 'rgba(200,144,10,0.12)',
               border: '1px solid rgba(200,144,10,0.18)',
               borderRadius: 3,

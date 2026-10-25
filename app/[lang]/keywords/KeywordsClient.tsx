@@ -155,7 +155,7 @@ export default function KeywordsClient({
     <div className="mx-auto min-h-[100dvh] max-w-7xl px-4 pb-16 pt-[5.5rem] md:px-6">
       <PageHeader title={t('keyword.title')} />
 
-      <div role="search" aria-label={t('keyword.search.aria')} className="sticky-under-nav z-30 -mx-4 mb-4 border-b border-[#2e2417] bg-[#0d0b08] px-4 pb-2 pt-1 md:-mx-6 md:px-6">
+      <div role="search" aria-label={t('keyword.search.aria')} className="sticky-under-nav z-30 -mx-4 mb-4 border-b border-[#2e2417] bg-[var(--bg-deep)] px-4 pb-2 pt-1 md:-mx-6 md:px-6">
         <div role="group" aria-label={t('keyword.filter.categoryAria')} className="-mx-4 flex overflow-x-auto border-b border-[#2e2417] px-4 [scrollbar-width:none] md:mx-0 md:px-0 [&::-webkit-scrollbar]:hidden">
           <GiftKeywordTab label={t('mirrorDungeon.filter.all')} active={selectedCategories.size === 0} count={keywords.length} onClick={() => setCatParam(null)} />
           {KEYWORD_CATEGORIES.map(cat => (
@@ -178,7 +178,7 @@ export default function KeywordsClient({
               onChange={e => setSearch(e.target.value || null)}
               placeholder={t('keyword.search.placeholder')}
               aria-label={t('keyword.search.aria')}
-              className="h-9 w-full min-w-0 rounded border border-[#2e2417] bg-[#17120c] pl-8 pr-8 text-[0.8125rem] text-[var(--text-primary)] outline-none placeholder:text-[#6a6058] focus-visible:border-[var(--gold)] [&::-webkit-search-cancel-button]:hidden"
+              className="h-9 w-full min-w-0 rounded border border-[#2e2417] bg-[#17120c] pl-8 pr-8 text-[0.8125rem] text-[var(--text-primary)] outline-none placeholder:text-[var(--text-muted)] focus-visible:border-[var(--gold)] [&::-webkit-search-cancel-button]:hidden"
             />
             {search && (
               <button

@@ -11,7 +11,7 @@
 }
 .tile:disabled { cursor: default; }
 .tile:not(:disabled):hover { filter: brightness(1.12); }
-.tile:focus-visible { outline: 2px solid #e8b030; outline-offset: 2px; }
+.tile:focus-visible { outline: 2px solid var(--gold-light); outline-offset: 2px; }
 
 .empty {
   display: flex; width: 100%; aspect-ratio: 290 / 428; align-items: center; justify-content: center;
