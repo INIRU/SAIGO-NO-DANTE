@@ -9,7 +9,7 @@ const SKILL = '/ko/motion/skills?skill=id10116~1011601'
 const frameOf = (page: Page) => page.getByRole('slider', { name: '프레임' }).evaluate(input => Number((input as HTMLInputElement).value))
 
 async function closeAnnouncements(page: Page) {
-  const popup = page.getByRole('dialog').filter({ hasText: '공지' })
+  const popup = page.getByRole('dialog').filter({ has: page.locator('[data-announcement-popup]') })
   await page.addLocatorHandler(popup, async () => { await popup.getByRole('button', { name: '닫기' }).last().click() })
 }
 
@@ -120,4 +120,29 @@ test('REQ-MOTION-026 the stage keeps drawing while the video plays even when the
   const first = await frame()
   await page.waitForTimeout(1500)
   expect(await frame()).toBeGreaterThan(first + 30)
+})
+
+test('REQ-MOTION-027 a WebM that fails to load falls back to the MP4 and plays', async ({ page }) => {
+  const asked: string[] = []
+  await closeAnnouncements(page)
+  await page.route('https://assets.saigo-no-dante.com/**', async route => {
+    const url = route.request().url()
+    asked.push(new URL(url).pathname)
+    if (/\.webm(\?|$)/.test(url)) return route.fulfill({ status: 404, body: '' })
+    const response = await route.fetch()
+    const headers = { ...response.headers(), 'access-control-allow-origin': '*' }
+    // Give this skill's states a WebM, as a re-rendered skill has (the file itself is missing here).
+    if (url.includes('/index.json')) {
+      const rows = await response.json() as { slug: string; skillId: number; video: string }[]
+      const json = rows.map(row => (row.slug === 'id10116' && row.skillId === 1011601 ? { ...row, videoWebm: row.video.replace(/\.mp4$/, '.webm') } : row))
+      return route.fulfill({ response, headers, json })
+    }
+    await route.fulfill({ response, headers })
+  })
+  await page.goto(SKILL)
+  await page.getByRole('button', { name: '확인' }).click()
+  await expect(page.getByRole('button', { name: '일시정지' })).toBeEnabled({ timeout: 30000 })
+  const webm = asked.findIndex(path => path.endsWith('.webm')), mp4 = asked.findIndex(path => path.endsWith('.mp4'))
+  expect(webm, 'Chrome plays VP9 4:4:4, so the WebM is tried first').toBeGreaterThanOrEqual(0)
+  expect(mp4, 'then the MP4').toBeGreaterThan(webm)
 })
