@@ -19,6 +19,7 @@ import {
 } from './decks-types'
 import type { DeckFilterIdentity, DeckFilterSinner } from './DeckIdentityFilterModal'
 import FormationCountFilter from './FormationCountFilter'
+import Sheet from '@/components/ui/Sheet'
 import { FilterChoice, FilterFieldHelp, FilterIconTile, FilterPicked, FilterSection, FilterSinnerTiles, FilterTextButton, filterStyles } from '@/components/board/FilterControls'
 
 // The closed BaseModal is SSR-safe; opting out here aborts the whole list's Suspense boundary.
@@ -234,7 +235,6 @@ export default function DeckListFilters({
   const [showIdentityFilter, setShowIdentityFilter] = useState(true)
   const [identityModalSinnerId, setIdentityModalSinnerId] = useState<string | null>(null)
   const [keywordTagInput, setKeywordTagInput] = useState('')
-  const panelRef = useRef<HTMLDivElement>(null)
   const collectionCount = (filterOwnedIdentity ? 1 : 0) + (filterOwnedEgo ? 1 : 0)
   const totalActiveCount = advancedFilterCount + (activeContentType ? 1 : 0) + (inputValue.trim() ? 1 : 0)
   const selectedIdentitiesBySinner = useMemo(() => {
@@ -279,21 +279,6 @@ export default function DeckListFilters({
   const localizeSinnerName = (sinner: DeckFilterSinner) => (
     rootT(`sinner.${sinner.id}` as Parameters<typeof rootT>[0])
   )
-
-  useEffect(() => {
-    if (!mobileOpen) return
-    panelRef.current?.focus()
-    const previousOverflow = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-    const handler = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setMobileOpen(false)
-    }
-    document.addEventListener('keydown', handler)
-    return () => {
-      document.removeEventListener('keydown', handler)
-      document.body.style.overflow = previousOverflow
-    }
-  }, [mobileOpen])
 
   const filterSurface = (
     <div className={filterStyles.surface}>
@@ -578,52 +563,11 @@ export default function DeckListFilters({
         {filterSurface}
       </aside>
 
-      {mobileOpen && (
-        <div
-          className="fixed inset-0 z-50 lg:hidden"
-          role="dialog"
-          aria-modal="true"
-          aria-label={t('filters.panel')}
-        >
-          <button
-            className="absolute inset-0 h-full w-full bg-black/60"
-            onClick={() => setMobileOpen(false)}
-            aria-label={t('filters.closePanel')}
-          />
-          <div
-            ref={panelRef}
-            tabIndex={-1}
-            className="popup-drawer absolute bottom-0 left-0 right-0 max-h-[82dvh] overflow-y-auto rounded-t-lg outline-none"
-            style={{
-              background: '#1a1510',
-              borderTop: '1px solid rgba(200,144,10,0.25)',
-              animation: 'deckFilterSlideUp 0.24s ease-out',
-            }}
-          >
-            <div
-              className="sticky top-0 flex items-center justify-between px-5 py-3"
-              style={{
-                background: '#1a1510',
-                borderBottom: '1px solid rgba(255,255,255,0.08)',
-                zIndex: 1,
-              }}
-            >
-              <span style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-heading)', fontSize: '1rem' }}>{t('filters.button')}</span>
-              <button
-                onClick={() => setMobileOpen(false)}
-                className="flex items-center justify-center rounded transition-colors hover:bg-white/5"
-                style={{ width: '2.75rem', height: '2.75rem', cursor: 'pointer', color: '#9a938a' }}
-                aria-label={t('filters.close')}
-              >
-                <X size={20} />
-              </button>
-            </div>
-            <div className="px-5 py-4">
-              {filterSurface}
-            </div>
-          </div>
+      <Sheet open={mobileOpen} onClose={() => setMobileOpen(false)} title={t('filters.button')} closeLabel={t('filters.close')}>
+        <div className="px-5 py-4">
+          {filterSurface}
         </div>
-      )}
+      </Sheet>
 
       <DeckIdentityFilterModal
         open={identityModalSinnerId !== null}
@@ -636,13 +580,6 @@ export default function DeckListFilters({
         onSinnerChange={setIdentityModalSinnerId}
         onClose={() => setIdentityModalSinnerId(null)}
       />
-
-      <style jsx>{`
-        @keyframes deckFilterSlideUp {
-          from { transform: translateY(100%); }
-          to { transform: translateY(0); }
-        }
-      `}</style>
     </>
   )
 }

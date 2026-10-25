@@ -97,6 +97,9 @@
 | 스킬 이름 배너 | `components/skill/SkillNameBanner.tsx` |
 | 페이지 머리말, 뒤로 가기 | `components/ui/PageHeader.tsx`, `components/navigation/BackLink.tsx` |
 | 모달, 확인창 | `components/ui/BaseModal.tsx`, `ConfirmModal.tsx`, 상세는 `GiftDetailModal`·`ThemePackModal`·`IdentityDetailModal`·`EgoDetailModal` |
+| 버튼(주·보조·외곽선·고스트·위험, sm/md, 아이콘만, 처리 중), 버튼 모양 링크 | `components/ui/Button.tsx`(`Button`, `buttonClass()`) |
+| 켜기·끄기 설정 | `components/ui/Switch.tsx` |
+| 모바일 아래 시트(필터 등) | `components/ui/Sheet.tsx` |
 | 키워드 아이콘 | `components/ui/KeywordIcon.tsx` |
 | 실패하면 사라지는 이미지 (기프트·테마팩·이벤트 그림, 스킬 아이콘) | `components/ui/QuietImage.tsx` |
 | 스켈레톤 | `components/ui/Skeleton.tsx`, `DetailPageSkeleton.tsx` |
