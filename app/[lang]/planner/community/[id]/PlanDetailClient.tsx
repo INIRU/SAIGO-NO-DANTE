@@ -3,6 +3,7 @@
 import BackLink from '@/components/navigation/BackLink'
 import SeriesBox from '@/components/series/SeriesBox'
 import PostAuthorName from '@/components/community/PostAuthorName'
+import FollowAuthorButton from '@/components/community/FollowAuthorButton'
 import type { SeriesView } from '@/lib/series/order'
 import { useHtmlFlag } from '@/hooks/useHtmlFlag'
 import { useGuestPosts } from '@/hooks/useGuestPosts'
@@ -658,6 +659,7 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
               />
               <RelativeTime date={plan.created_at} className="text-[0.875rem] text-[#9c8b73]" />
             </div>
+            {plan.profiles?.username && plan.profiles.public_profile !== false && <FollowAuthorButton userId={plan.user_id} />}
           </div>
 
           <dl className={styles.facts}>

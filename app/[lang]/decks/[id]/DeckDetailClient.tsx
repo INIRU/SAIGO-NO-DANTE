@@ -2,6 +2,7 @@
 
 import BackLink from '@/components/navigation/BackLink'
 import PostAuthorName from '@/components/community/PostAuthorName'
+import FollowAuthorButton from '@/components/community/FollowAuthorButton'
 import SeriesBox from '@/components/series/SeriesBox'
 import type { SeriesView } from '@/lib/series/order'
 import DeckDetailSkeleton from '@/components/decks/DeckDetailSkeleton'
@@ -899,6 +900,7 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
               />
               <RelativeTime date={deck.created_at} className="text-[0.875rem] text-[#9c8b73]" />
             </div>
+            {deck.profiles?.username && deck.profiles.public_profile !== false && <FollowAuthorButton userId={deck.user_id} />}
           </div>
 
           <dl className={styles.facts}>

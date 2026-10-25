@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { freshForToast, newestFirst, toNotification, type Notification, type NotificationRow } from '@/lib/notifications'
 
@@ -51,5 +53,32 @@ describe('REQ-COMMUNITY-016 which notifications are announced with a toast', () 
   it('REQ-COMMUNITY-016 only those newer than the last announced one afterwards', () => {
     expect(freshForToast(feed, '2026-10-02T12:04:00Z').map(entry => entry.id)).toEqual(['e'])
     expect(freshForToast(feed, '2026-10-02T12:05:00Z')).toEqual([])
+  })
+})
+
+describe('REQ-COMMUNITY-092 follows bring new followers and new posts into the list', () => {
+  it('REQ-COMMUNITY-092 a new follower links to their profile', () => {
+    expect(toNotification({ ...row, kind: 'follow', target_type: 'user', target_id: 'u-9', target_title: null, comment_id: 'u-9', excerpt: null }))
+      .toMatchObject({ id: 'u-9', kind: 'follow', target: 'user', href: '/users/u-9', title: '', excerpt: '' })
+  })
+
+  it('REQ-COMMUNITY-092 a new deck or plan by someone followed links to the post itself', () => {
+    expect(toNotification({ ...row, kind: 'post', target_type: 'deck', target_id: 'deck-7', comment_id: 'deck-7', excerpt: null }))
+      .toMatchObject({ kind: 'post', target: 'deck', href: '/decks/deck-7', excerpt: '화상 덱' })
+    expect(toNotification({ ...row, kind: 'post', target_type: 'plan', target_id: 'plan-7', comment_id: 'plan-7', excerpt: null }).href)
+      .toBe('/planner/community/plan-7')
+  })
+})
+
+describe('REQ-COMMUNITY-093 the feed function follows the notification settings', () => {
+  const sql = readFileSync(resolve(__dirname, '../../supabase/migrations/20261025150000_follow_notifications.sql'), 'utf8')
+  it('REQ-COMMUNITY-093 each kind is read only while its switch is on', () => {
+    expect(sql).toMatch(/me\.notify_comments/)
+    expect(sql).toMatch(/me\.notify_follows/)
+    expect(sql).toMatch(/me\.notify_posts/)
+  })
+  it('REQ-COMMUNITY-092 posts count only after the follow, from public authors that are not suspended', () => {
+    expect(sql).toMatch(/created_at > f\.created_at/)
+    expect(sql).toMatch(/public_profile and not \w+\.suspended/)
   })
 })
