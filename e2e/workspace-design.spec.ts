@@ -36,6 +36,6 @@ for(const width of [1440,390])test(`workspace controls and privacy ${width}`,asy
  await page.screenshot({path:info.outputPath(`developer-${width}.png`),fullPage:true})
  expect(await page.evaluate(()=>document.documentElement.scrollWidth-innerWidth)).toBeLessThanOrEqual(1)
  await page.getByRole('link',{name:'추가 한도 요청하기',exact:true}).click();await expect(page).toHaveURL(/\/ko\/support\?topic=api-limit$/);await expect(page.getByLabel('제목',{exact:true})).toHaveValue('API 추가 한도 요청');await expect(page.locator('.desk-choice').getByRole('button',{name:'기타',exact:true})).toHaveAttribute('aria-pressed','true');await expect(page.getByLabel('문의 내용',{exact:true})).toBeEmpty();
- await page.goto('/ko/announcements');await page.getByRole('navigation',{name:'공지 목록'}).getByRole('button').first().click();await expect(page.locator('article')).toBeVisible();await page.getByRole('button',{name:'목록으로',exact:true}).click();await expect(page.getByRole('navigation',{name:'공지 목록'})).toBeVisible()
+ await page.goto('/ko/announcements');await page.locator('main a[href*="/announcements/"]').first().click();await expect(page).toHaveURL(/\/ko\/announcements\/[0-9a-f-]{36}$/);await expect(page.locator('article h1')).toBeVisible();await page.getByRole('link',{name:'공지사항',exact:true}).click();await expect(page).toHaveURL(/\/ko\/announcements$/)
  expect(errors).toEqual([])
 })
