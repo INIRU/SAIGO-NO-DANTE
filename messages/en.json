@@ -103,6 +103,17 @@
     "someone": "Anonymous",
     "close": "Dismiss"
   },
+  "announcements": {
+    "title": "Announcements",
+    "description": "Check site updates and notices.",
+    "pinned": "Pinned",
+    "readMore": "Read more",
+    "close": "Close",
+    "empty": "No announcements yet.",
+    "back": "Announcements",
+    "older": "Previous",
+    "newer": "Next"
+  },
   "maintenance": {
     "title": "Under maintenance",
     "ended": "Maintenance is over",

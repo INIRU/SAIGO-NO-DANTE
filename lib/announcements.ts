@@ -120,3 +120,31 @@ export type Announcement = {
   created_at: string
   updated_at?: string | null
 }
+
+/** What a teaser of an announcement needs (home, popup, list): the body document stays on its own page. */
+export type AnnouncementPreview = Pick<Announcement, 'id' | 'title' | 'created_at' | 'pinned'> & { cover: string | null; excerpt: string }
+
+/** Plain text on one line, cut at `max` characters with an ellipsis. */
+export function announcementExcerpt(text: string, max = 160): string {
+  const flat = text.replace(/\s+/g, ' ').trim()
+  return flat.length > max ? `${flat.slice(0, max - 1).trimEnd()}…` : flat
+}
+
+export function announcementPreview(row: Pick<Announcement, 'id' | 'title' | 'content' | 'content_doc' | 'pinned' | 'created_at'>, max?: number): AnnouncementPreview {
+  return {
+    id: row.id, title: row.title, created_at: row.created_at, pinned: row.pinned,
+    cover: announcementCover(row.content_doc),
+    excerpt: announcementExcerpt(row.content || announcementText(row.content_doc), max),
+  }
+}
+
+/** The announcements written just before (older) and after (newer) `id`, by creation date. */
+export function adjacentAnnouncements<T extends { id: string; created_at: string }>(items: T[], id: string): { older: T | null; newer: T | null } {
+  const byDate = [...items].sort((a, b) => b.created_at.localeCompare(a.created_at))
+  const at = byDate.findIndex(item => item.id === id)
+  if (at < 0) return { older: null, newer: null }
+  return { older: byDate[at + 1] ?? null, newer: byDate[at - 1] ?? null }
+}
+
+/** 2026-10-21T… → 2026.10.21 */
+export const announcementDate = (iso: string) => iso.slice(0, 10).replaceAll('-', '.')

@@ -103,6 +103,17 @@
     "someone": "匿名",
     "close": "閉じる"
   },
+  "announcements": {
+    "title": "お知らせ",
+    "description": "サイトの更新とお知らせを確認できます。",
+    "pinned": "固定",
+    "readMore": "続きを読む",
+    "close": "閉じる",
+    "empty": "お知らせはありません。",
+    "back": "お知らせ",
+    "older": "前のお知らせ",
+    "newer": "次のお知らせ"
+  },
   "maintenance": {
     "title": "メンテナンス中です",
     "ended": "メンテナンスが終了しました",

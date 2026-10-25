@@ -3,6 +3,7 @@ import { localeAlternates } from '@/lib/seo/metadata'
 import { cacheLife, cacheTag } from 'next/cache'
 import { getLatestEGOs, getLatestIdentities } from '@/lib/db/queries'
 import { getPinnedAnnouncementForLang } from '@/lib/db/announcements'
+import { announcementPreview, type AnnouncementPreview } from '@/lib/announcements'
 import HomeClient from './HomeClient'
 import HomeStaticSections from '@/components/home/HomeStaticSections'
 import JsonLd, { faqJsonLd } from '@/components/seo/JsonLd'
@@ -80,20 +81,10 @@ const HOME_FAQ: Record<SupportedLang, { question: string; answer: string }[]> = 
   },
 ] }
 
-export type Announcement = {
-  id: string
-  title: string
-  content: string
-  pinned: boolean
-  created_at: string
-}
-
-async function getPinnedAnnouncement(lang: SupportedLang): Promise<Announcement | null> {
-  try {
-    return getPinnedAnnouncementForLang(lang)
-  } catch {
-    return null
-  }
+// The home banner gets only the teaser (cover and excerpt); the body stays on the announcement's page.
+async function getPinnedAnnouncement(lang: SupportedLang): Promise<AnnouncementPreview | null> {
+  const item = await getPinnedAnnouncementForLang(lang)
+  return item ? announcementPreview(item, 200) : null
 }
 
 // ── Project Moon 공식 채널 ID ────────────────────────────────────────────────
