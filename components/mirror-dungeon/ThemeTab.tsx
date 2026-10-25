@@ -220,7 +220,7 @@ export default function ThemeTab({
     '기타': t('mirrorDungeon.theme.other'),
   }
   const floorUnit = t('mirrorDungeon.theme.floor')
-  const focusRing = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold-light)] focus-visible:ring-offset-1 focus-visible:ring-offset-[#0d0b08]'
+  const focusRing = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold-light)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--bg-deep)]'
   const posterGrid = 'grid grid-cols-3 gap-x-2 gap-y-3 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-7 xl:grid-cols-8'
   const posterSizes = '(max-width: 640px) 33vw, (max-width: 1024px) 17vw, 10rem'
 
@@ -231,7 +231,7 @@ export default function ThemeTab({
         role="search"
         aria-label={tp('themeFilters')}
         className="sticky-under-nav z-30 -mx-4 mb-6 flex flex-wrap items-center gap-2 px-4 py-2.5 md:-mx-6 md:px-6"
-        style={{ background: '#0d0b08', borderBottom: '1px solid #2e2417' }}
+        style={{ background: 'var(--bg-deep)', borderBottom: '1px solid #2e2417' }}
       >
         <div className="relative w-full min-w-0 sm:w-auto sm:flex-1 sm:max-w-[20rem]">
           <Search size={14} aria-hidden style={{ position: 'absolute', left: '0.625rem', top: '50%', transform: 'translateY(-50%)', color: '#9c8b73', pointerEvents: 'none' }} />
@@ -243,7 +243,7 @@ export default function ThemeTab({
             onChange={e => setThemeSearch(e.target.value)}
             onFocus={() => setSearchFocused(true)}
             onBlur={() => setTimeout(() => setSearchFocused(false), 200)}
-            className="min-h-[2.25rem] w-full py-1.5 pl-8 pr-8 text-[0.8125rem] outline-none placeholder:text-[#6a6058] focus-visible:border-[var(--gold)]"
+            className="min-h-[2.25rem] w-full py-1.5 pl-8 pr-8 text-[0.8125rem] outline-none placeholder:text-[var(--text-muted)] focus-visible:border-[var(--gold)]"
             style={{ background: '#17120c', border: '1px solid #2e2417', borderRadius: '0.25rem', color: 'var(--text-primary)' }}
           />
           {themeSearch && (
@@ -296,7 +296,7 @@ export default function ThemeTab({
                 style={{
                   cursor: 'pointer',
                   fontFamily: 'var(--font-heading)',
-                  color: active ? (isExtreme ? '#f3e2d6' : '#0d0b08') : '#9c8b73',
+                  color: active ? (isExtreme ? '#f3e2d6' : 'var(--bg-deep)') : '#9c8b73',
                   background: active ? (isExtreme ? '#9b2c23' : 'var(--gold)') : 'transparent',
                   borderLeft: i > 0 ? '1px solid #2e2417' : 'none',
                 }}

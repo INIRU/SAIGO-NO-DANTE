@@ -125,15 +125,15 @@ export default function FinalGiftPresets({ inventory, dispatch, giftMap }: {
   }
 
   const bySlot = new Map((presets ?? []).map(p => [p.slot, p]))
-  const iconButton = 'grid h-9 w-9 shrink-0 place-items-center rounded border border-[#2e2417] text-[#a8894e] hover:text-[#e8b030] focus-visible:outline-2 focus-visible:outline-[#e8b030] disabled:opacity-40'
-  const textButton = 'inline-flex min-h-9 items-center gap-1 rounded border px-2 text-[0.875rem] font-semibold focus-visible:outline-2 focus-visible:outline-[#e8b030] disabled:cursor-not-allowed disabled:opacity-40'
-  const goldButton = textButton + ' border-[rgba(200,144,10,0.25)] bg-[rgba(200,144,10,0.1)] font-bold text-[#e8b030] hover:bg-[rgba(200,144,10,0.2)]'
-  const plainButton = textButton + ' border-[#2e2417] text-[#e8dcc8] hover:bg-[rgba(232,220,200,0.06)]'
+  const iconButton = 'grid h-9 w-9 shrink-0 place-items-center rounded border border-[#2e2417] text-[#a8894e] hover:text-[var(--gold-light)] focus-visible:outline-2 focus-visible:outline-[var(--gold-light)] disabled:opacity-40'
+  const textButton = 'inline-flex min-h-9 items-center gap-1 rounded border px-2 text-[0.875rem] font-semibold focus-visible:outline-2 focus-visible:outline-[var(--gold-light)] disabled:cursor-not-allowed disabled:opacity-40'
+  const goldButton = textButton + ' border-[rgba(200,144,10,0.25)] bg-[rgba(200,144,10,0.1)] font-bold text-[var(--gold-light)] hover:bg-[rgba(200,144,10,0.2)]'
+  const plainButton = textButton + ' border-[#2e2417] text-[var(--text-primary)] hover:bg-[rgba(232,220,200,0.06)]'
 
   return (
     <div ref={root} className="relative ml-auto self-center">
       <button type="button" onClick={() => setOpen(value => !value)} aria-expanded={open} aria-haspopup="dialog" disabled={presets === null}
-        className="inline-flex min-h-9 items-center gap-1.5 rounded-md border border-[rgba(200,144,10,0.3)] bg-[rgba(200,144,10,0.1)] px-2.5 text-[0.9375rem] font-semibold text-[#e8b030] transition-colors hover:bg-[rgba(200,144,10,0.18)] focus-visible:outline-2 focus-visible:outline-[#e8b030] disabled:opacity-50">
+        className="inline-flex min-h-9 items-center gap-1.5 rounded-md border border-[rgba(200,144,10,0.3)] bg-[rgba(200,144,10,0.1)] px-2.5 text-[0.9375rem] font-semibold text-[var(--gold-light)] transition-colors hover:bg-[rgba(200,144,10,0.18)] focus-visible:outline-2 focus-visible:outline-[var(--gold-light)] disabled:opacity-50">
         <Bookmark size={13} aria-hidden="true" />
         {t('button')}
         <span className="text-[0.8125rem] font-medium tabular-nums text-[#a8894e]">{presets?.length ?? 0}/{slotCount}</span>
@@ -143,14 +143,14 @@ export default function FinalGiftPresets({ inventory, dispatch, giftMap }: {
         <div ref={panel} role="dialog" aria-label={t('title')}
           className="fixed inset-x-3 top-24 z-40 flex max-h-[calc(100dvh-7rem)] flex-col overflow-hidden rounded-lg border border-[rgba(200,144,10,0.25)] bg-[#17120c] shadow-[0_1rem_2.5rem_rgba(0,0,0,0.55)] sm:absolute sm:inset-x-auto sm:right-0 sm:top-full sm:mt-2 sm:max-h-[min(40rem,calc(100dvh-10rem))] sm:w-[27rem]">
           <div className="flex items-center justify-between border-b border-[#2e2417] px-3 py-2">
-            <span className="text-[0.9375rem] font-bold text-[#e8dcc8]">{t('title')}</span>
+            <span className="text-[0.9375rem] font-bold text-[var(--text-primary)]">{t('title')}</span>
             <button type="button" onClick={() => setOpen(false)} aria-label={t('close')}
-              className="grid h-9 w-9 place-items-center rounded text-[#a8894e] hover:text-[#e8b030] focus-visible:outline-2 focus-visible:outline-[#e8b030]"><X size={16} aria-hidden="true" /></button>
+              className="grid h-9 w-9 place-items-center rounded text-[#a8894e] hover:text-[var(--gold-light)] focus-visible:outline-2 focus-visible:outline-[var(--gold-light)]"><X size={16} aria-hidden="true" /></button>
           </div>
           <div className="border-b border-[#2e2417] px-3 py-2.5">
             <label className="block text-[0.8125rem] text-[#9c8b73]" htmlFor="final-preset-name">{t('nameLabel')}</label>
             <input id="final-preset-name" value={name} onChange={event => setName(event.target.value)} maxLength={MAX_PRESET_NAME} placeholder={t('namePlaceholder')}
-              className="mt-1 h-9 w-full rounded border border-[#2e2417] bg-[#0d0b08] px-2.5 text-[0.9375rem] text-[#e8dcc8] placeholder:text-[#6b5f4f] focus-visible:border-[#c8900a] focus-visible:outline-none" />
+              className="mt-1 h-9 w-full rounded border border-[#2e2417] bg-[var(--bg-deep)] px-2.5 text-[0.9375rem] text-[var(--text-primary)] placeholder:text-[#6b5f4f] focus-visible:border-[var(--gold)] focus-visible:outline-none" />
             <p className="mt-1.5 text-[0.8125rem] text-[#8a7d69]">
               {picked.length ? t('current', { count: picked.length }) : t('noSelection')}
             </p>
@@ -162,15 +162,15 @@ export default function FinalGiftPresets({ inventory, dispatch, giftMap }: {
               const editing = renaming?.slot === slot
               return (
                 <li key={slot} className="grid grid-cols-[1.75rem_minmax(0,1fr)_auto] items-center gap-x-2.5 gap-y-2 px-1.5 py-2.5">
-                  <span className={'grid h-7 w-7 place-items-center rounded text-[0.875rem] font-bold ' + (preset ? 'bg-[rgba(200,144,10,0.16)] text-[#e8b030]' : 'bg-[#1f1810] text-[#6b5f4f]')}>{slot}</span>
+                  <span className={'grid h-7 w-7 place-items-center rounded text-[0.875rem] font-bold ' + (preset ? 'bg-[rgba(200,144,10,0.16)] text-[var(--gold-light)]' : 'bg-[#1f1810] text-[#6b5f4f]')}>{slot}</span>
                   {editing ? (
                     <input autoFocus value={renaming.value} maxLength={MAX_PRESET_NAME} aria-label={t('renameLabel', { name: preset?.name ?? '' })}
                       onChange={event => setRenaming({ slot, value: event.target.value })}
                       onKeyDown={event => { if (event.key === 'Enter') rename(); if (event.key === 'Escape') { event.stopPropagation(); setRenaming(null) } }}
-                      className="h-9 min-w-0 rounded border border-[#c8900a] bg-[#0d0b08] px-2 text-[0.9375rem] text-[#e8dcc8] focus-visible:outline-none" />
+                      className="h-9 min-w-0 rounded border border-[var(--gold)] bg-[var(--bg-deep)] px-2 text-[0.9375rem] text-[var(--text-primary)] focus-visible:outline-none" />
                   ) : (
                     <span className="min-w-0">
-                      <span className={'block truncate text-[0.9375rem] font-semibold ' + (preset ? 'text-[#e8dcc8]' : 'text-[#7d7160]')}>{preset?.name ?? t('emptySlot')}</span>
+                      <span className={'block truncate text-[0.9375rem] font-semibold ' + (preset ? 'text-[var(--text-primary)]' : 'text-[#7d7160]')}>{preset?.name ?? t('emptySlot')}</span>
                       {preset && (
                         <span className="flex gap-2 text-[0.8125rem] text-[#8a7d69]">
                           <span className="tabular-nums text-[#a8894e]">{t('giftCount', { count: preset.giftKeys.length })}</span>

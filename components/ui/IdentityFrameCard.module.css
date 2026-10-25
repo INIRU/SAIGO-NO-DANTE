@@ -39,5 +39,5 @@
   text-shadow: oklch(0.74 0.13 53) 0 0 3px;
 }
 .card[data-deployed='backup'] .number { color: oklch(0.89 0.15 183); -webkit-text-stroke: 1px oklch(0.62 0.08 190 / 0.65); text-shadow: oklch(0.62 0.08 190 / 0.78) 0 0 3px, rgba(0, 0, 0, 0.82) 0 0.125rem 0.25rem; }
-.gifts { position: absolute; left: 50%; top: 71%; display: flex; align-items: center; gap: 0.125rem; transform: translate(-50%, -50%); color: #e8b030; font-size: 0.6875rem; }
+.gifts { position: absolute; left: 50%; top: 71%; display: flex; align-items: center; gap: 0.125rem; transform: translate(-50%, -50%); color: var(--gold-light); font-size: 0.6875rem; }
 .gifts img { width: 1rem; height: 1rem; object-fit: contain; filter: drop-shadow(0 0 0.125rem rgba(0, 0, 0, 0.85)); }

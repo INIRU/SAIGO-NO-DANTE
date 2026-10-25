@@ -40,7 +40,7 @@ export default function GiftArtwork({ gift, displayName, isInsert = false, isSel
         background: 'var(--bg-deep)',
         clipPath: OCTAGON_CLIP,
         containerType: 'inline-size',
-        outline: isSelected ? '2px solid #c8900a' : 'none',
+        outline: isSelected ? '2px solid var(--gold)' : 'none',
         outlineOffset: '2px',
       }}>
         {/* A real, eagerly loaded image lets all consumers verify the shared background. */}

@@ -90,7 +90,7 @@ export default function KeywordModal({
 
         <div className="overflow-y-auto overscroll-contain" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
           <header className="flex items-center gap-4 px-5 pb-4 pr-14 pt-5">
-            <span className="flex size-[4.5rem] shrink-0 items-center justify-center rounded bg-[#0d0b08] sm:size-20">
+            <span className="flex size-[4.5rem] shrink-0 items-center justify-center rounded bg-[var(--bg-deep)] sm:size-20">
               {iconUrl && <KeywordIcon src={iconUrl} alt="" width={56} height={56} className="size-12 object-contain sm:size-14" />}
             </span>
             <div className="min-w-0 flex-1">
@@ -98,7 +98,7 @@ export default function KeywordModal({
               <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[0.8125rem] text-[#9c8b73]">
                 <span>{categoryLabel}</span>
                 {kw.max_stack ? (
-                  <span>{kt('keyword.maxStack', lang)} <span className="font-[family-name:var(--font-title)] text-[1rem] tabular-nums text-[#e8b030]">{kw.max_stack}</span></span>
+                  <span>{kt('keyword.maxStack', lang)} <span className="font-[family-name:var(--font-title)] text-[1rem] tabular-nums text-[var(--gold-light)]">{kw.max_stack}</span></span>
                 ) : null}
                 {sin && (
                   <span className="inline-flex items-center gap-1">

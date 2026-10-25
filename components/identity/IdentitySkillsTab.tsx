@@ -217,7 +217,7 @@ export default function IdentitySkillsTab({
                     {skill.offense_level != null && (
                       <div className="flex items-center gap-1">
                         <Image src={getDetailStatIconUrl(isDefense ? 'defense' : 'offense')} alt="" width={22} height={22} className="w-4 h-4 sm:w-[1.375rem] sm:h-[1.375rem]" />
-                        <span style={{ fontFamily: "var(--font-excelsior), sans-serif", color: '#e8dcc8', fontSize: 'clamp(1rem, 3vw, 1.375rem)', textDecoration: 'underline', textUnderlineOffset: '3px', textDecorationColor: '#e8dcc8' }}>
+                        <span style={{ fontFamily: "var(--font-excelsior), sans-serif", color: 'var(--text-primary)', fontSize: 'clamp(1rem, 3vw, 1.375rem)', textDecoration: 'underline', textUnderlineOffset: '3px', textDecorationColor: 'var(--text-primary)' }}>
                           {skill.offense_level}
                         </span>
                         {offCorrStr && <span style={{ fontFamily: "var(--font-excelsior), sans-serif", color: '#888', fontSize: '1rem' }}>{offCorrStr}</span>}
@@ -225,10 +225,10 @@ export default function IdentitySkillsTab({
                     )}
                     {atkTypeKey && (skill.atk_weight || 1) > 0 && (
                       <div className="flex items-center gap-1.5">
-                        <span style={{ fontFamily: 'var(--font-heading)', color: '#c8900a', fontSize: '0.6875rem', fontWeight: 700 }}>{t('identity.skills.atkWeight')}</span>
+                        <span style={{ fontFamily: 'var(--font-heading)', color: 'var(--gold)', fontSize: '0.6875rem', fontWeight: 700 }}>{t('identity.skills.atkWeight')}</span>
                         <div className="flex gap-0.5">
                           {Array.from({ length: skill.atk_weight || 1 }).map((_, i) => (
-                            <div key={i} style={{ width: '0.5rem', height: '0.5rem', background: '#c8900a', borderRadius: '0.1rem' }} />
+                            <div key={i} style={{ width: '0.5rem', height: '0.5rem', background: 'var(--gold)', borderRadius: '0.1rem' }} />
                           ))}
                         </div>
                       </div>

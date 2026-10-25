@@ -156,8 +156,8 @@ export default function ThemePackCard({
       {/* Selected indicator */}
       {isSelected && !imageSrc && (
         <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-center" style={{ padding: '0.375rem', background: 'rgba(200,144,10,0.15)' }}>
-          <Check style={{ width: '0.875rem', height: '0.875rem', color: '#c8900a' }} />
-          <span style={{ color: '#c8900a', fontSize: '0.75rem', fontWeight: 700, marginLeft: '0.25rem' }}>{t('mirrorDungeon.theme.selected')}</span>
+          <Check style={{ width: '0.875rem', height: '0.875rem', color: 'var(--gold)' }} />
+          <span style={{ color: 'var(--gold)', fontSize: '0.75rem', fontWeight: 700, marginLeft: '0.25rem' }}>{t('mirrorDungeon.theme.selected')}</span>
         </div>
       )}
       {imageSrc ? (
@@ -166,7 +166,7 @@ export default function ThemePackCard({
           style={{
             aspectRatio: THEME_CARD_ASPECT_RATIO,
             borderRadius: 'var(--radius-md)',
-            background: isBareImageSurface ? 'transparent' : '#0d0b08',
+            background: isBareImageSurface ? 'transparent' : 'var(--bg-deep)',
           }}
         >
           {/* The card names the pack itself (aria-label, title text): the art is decoration, and a failed load leaves the card face. */}

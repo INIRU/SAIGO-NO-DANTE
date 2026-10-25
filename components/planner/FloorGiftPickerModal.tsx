@@ -72,9 +72,9 @@ export default function FloorGiftPickerModal({ open, title, floorGifts, allGifts
   }
 
   const toggle = floorGifts !== null && (
-    <label className="ml-auto inline-flex min-h-10 cursor-pointer select-none items-center gap-2 text-[0.9375rem] text-[#e8dcc8]">
+    <label className="ml-auto inline-flex min-h-10 cursor-pointer select-none items-center gap-2 text-[0.9375rem] text-[var(--text-primary)]">
       <input type="checkbox" checked={onlyFloor} onChange={event => setOnlyFloor(event.target.checked)} className="peer sr-only" />
-      <span aria-hidden="true" className="grid h-[1.125rem] w-[1.125rem] place-items-center rounded-[0.25rem] border border-[#5a4526] bg-[#0d0b08] text-transparent transition-colors peer-checked:border-[#c8900a] peer-checked:bg-[#c8900a] peer-checked:text-[#0d0b08] peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-[#e8b030]">
+      <span aria-hidden="true" className="grid h-[1.125rem] w-[1.125rem] place-items-center rounded-[0.25rem] border border-[#5a4526] bg-[var(--bg-deep)] text-transparent transition-colors peer-checked:border-[var(--gold)] peer-checked:bg-[var(--gold)] peer-checked:text-[var(--bg-deep)] peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-[var(--gold-light)]">
         <Check size={13} strokeWidth={3} />
       </span>
       {t('onlyFloor')}
@@ -85,12 +85,12 @@ export default function FloorGiftPickerModal({ open, title, floorGifts, allGifts
     <BaseModal open={open} onClose={onClose} title={title} maxWidth="64rem">
       <div className="flex h-[min(80dvh,56rem)] flex-col rounded-xl border border-[rgba(200,144,10,0.22)] bg-[#17120c] shadow-[0_1.5rem_3rem_rgba(0,0,0,0.55)]">
         <div className="flex shrink-0 items-center justify-between gap-3 border-b border-[#2e2417] px-5 py-3">
-          <h2 className="font-[family-name:var(--font-heading)] text-[1.125rem] text-[#e8dcc8]">
+          <h2 className="font-[family-name:var(--font-heading)] text-[1.125rem] text-[var(--text-primary)]">
             {title}
-            {selectedIds.size > 0 && <span className="ml-2 font-[family-name:var(--font-title)] text-[1.125rem] text-[#e8b030]">{selectedIds.size}</span>}
+            {selectedIds.size > 0 && <span className="ml-2 font-[family-name:var(--font-title)] text-[1.125rem] text-[var(--gold-light)]">{selectedIds.size}</span>}
           </h2>
           <button type="button" onClick={onClose} aria-label={t('close')}
-            className="grid h-10 w-10 place-items-center rounded text-[#9c8b73] transition-colors hover:bg-white/5 hover:text-[#e8dcc8]">
+            className="grid h-10 w-10 place-items-center rounded text-[#9c8b73] transition-colors hover:bg-white/5 hover:text-[var(--text-primary)]">
             <X size={18} />
           </button>
         </div>

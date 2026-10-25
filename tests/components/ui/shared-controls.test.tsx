@@ -124,3 +124,20 @@ describe('one Button family', () => {
     expect(offenders).toEqual([])
   })
 })
+
+describe('design token colours', () => {
+  const hexes = '0d0b08|1a1510|241c12|120e09|c8900a|e8b030|8a6010|3a2a15|e8dcc8|b0a890|8a8070|6a6058|c84040|4a9868'
+
+  it('REQ-SHARED-063 has no Tailwind arbitrary value written as a token hex in tsx/ts', () => {
+    const pattern = new RegExp(`\\[#(${hexes})\\]`, 'i')
+    const offenders = [...filesWith('app', ['.tsx', '.ts']), ...filesWith('components', ['.tsx', '.ts'])].filter(path => pattern.test(source(path)))
+    expect(offenders).toEqual([])
+  })
+
+  it('REQ-SHARED-063 has no token hex in css outside app/globals.css', () => {
+    const pattern = new RegExp(`#(${hexes})\\b`, 'i')
+    const offenders = [...filesWith('app', ['.css']), ...filesWith('components', ['.css']), ...filesWith('styles', ['.css'])]
+      .filter(path => path !== 'app/globals.css' && pattern.test(source(path)))
+    expect(offenders).toEqual([])
+  })
+})

@@ -136,7 +136,7 @@ export default function MotionStage({ hostRef, status, error, playing, muted, vo
             <div className="flex flex-col items-center gap-3">
               <p className="text-[0.9375rem] text-[var(--text-primary)]">{error === 'webgl' ? t('webglError') : t('loadError')}</p>
               {error === 'load' && (
-                <button type="button" onClick={onRetry} className="inline-flex h-10 items-center gap-2 rounded-md border border-[#8a6010] bg-[#2a1f0c] px-4 text-[0.875rem] font-semibold text-[var(--gold-light)] hover:bg-[#35270e]">
+                <button type="button" onClick={onRetry} className="inline-flex h-10 items-center gap-2 rounded-md border border-[var(--gold-dim)] bg-[#2a1f0c] px-4 text-[0.875rem] font-semibold text-[var(--gold-light)] hover:bg-[#35270e]">
                   <RotateCw className="h-4 w-4" aria-hidden="true" />{t('retry')}
                 </button>
               )}
@@ -152,7 +152,7 @@ export default function MotionStage({ hostRef, status, error, playing, muted, vo
               <p id="motion-notice-title" className="font-[family-name:var(--font-heading)] text-[0.9375rem] text-[var(--text-primary)] sm:text-[1.0625rem]">{t('noticeTitle')}</p>
               <p className="mt-1 break-keep text-[0.8125rem] leading-snug text-[var(--text-secondary)] sm:mt-2 sm:text-[0.875rem] sm:leading-relaxed">{t('noticeBody')}</p>
               <button type="button" onClick={onDismiss} autoFocus
-                className="mt-2.5 inline-flex h-9 min-w-[6rem] sm:mt-4 sm:h-10 items-center justify-center rounded-md border border-[#8a6010] bg-[#2a1f0c] px-4 text-[0.875rem] font-semibold text-[var(--gold-light)] transition-colors hover:bg-[#35270e] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--gold-light)]">
+                className="mt-2.5 inline-flex h-9 min-w-[6rem] sm:mt-4 sm:h-10 items-center justify-center rounded-md border border-[var(--gold-dim)] bg-[#2a1f0c] px-4 text-[0.875rem] font-semibold text-[var(--gold-light)] transition-colors hover:bg-[#35270e] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--gold-light)]">
                 {t('noticeOk')}
               </button>
             </div>

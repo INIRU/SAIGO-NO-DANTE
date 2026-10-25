@@ -28,7 +28,7 @@ export default function FloorMemoView({ children, moreLabel, lessLabel }: { chil
       </div>
       {long && (
         <button type="button" onClick={() => setOpen(value => !value)} aria-expanded={open}
-          className="mt-1 inline-flex min-h-8 items-center gap-1 text-[0.875rem] font-semibold text-[#c8900a] hover:text-[#e8b030] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#c8900a]">
+          className="mt-1 inline-flex min-h-8 items-center gap-1 text-[0.875rem] font-semibold text-[var(--gold)] hover:text-[var(--gold-light)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--gold)]">
           {open ? lessLabel : moreLabel}
           <ChevronDown size={14} aria-hidden="true" className={open ? 'rotate-180' : ''} />
         </button>

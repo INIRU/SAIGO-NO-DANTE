@@ -11,14 +11,14 @@ const SubHead = () => <div className="mb-3 flex h-[1.6rem] items-center justify-
  * final gifts), at least one screen tall, so loading never collapses the page or toggles the scrollbar.
  */
 export default function PlanDetailSkeleton() {
-  return <div data-plan-detail className="min-h-screen bg-[#0d0b08] pb-20 pt-24">
+  return <div data-plan-detail className="min-h-screen bg-[var(--bg-deep)] pb-20 pt-24">
     <HtmlFlag name="with-plan-detail" />
     <SkeletonPage>
       <DetailPageSkeleton s={styles} facts={6} actions={['4.5rem', '4.2rem', '7.5rem', '4.2rem']} nav={['3.5rem', '1.8rem', '2.5rem', '3.6rem', '4.6rem', '2.4rem']}>
         <section className={styles.section}>
           <SectionHeadSkeleton w="5rem" />
           <div className="mb-4 flex items-end justify-between gap-4 shadow-[inset_0_-1px_0_#2e2417]">
-            <div className="flex">{['3.2rem', '3.6rem', '3.4rem'].map((w, i) => <div key={i} className={`flex min-h-11 items-center border-b-2 px-3.5 first:pl-0.5 ${i === 0 ? 'border-[#c8900a]' : 'border-transparent'}`}><SkeletonLine w={w} h="0.9375rem" /></div>)}</div>
+            <div className="flex">{['3.2rem', '3.6rem', '3.4rem'].map((w, i) => <div key={i} className={`flex min-h-11 items-center border-b-2 px-3.5 first:pl-0.5 ${i === 0 ? 'border-[var(--gold)]' : 'border-transparent'}`}><SkeletonLine w={w} h="0.9375rem" /></div>)}</div>
             <SkeletonLine w="7rem" h="0.8125rem" className="mb-2 hidden sm:block" />
           </div>
           <FormationBoardSkeleton className="mt-2" />
@@ -39,7 +39,7 @@ export default function PlanDetailSkeleton() {
           <SectionHeadSkeleton w="5rem" meta="3rem" />
           <SkeletonLine w="min(20rem, 80%)" h="0.9375rem" className="-mt-4 mb-6" />
           <div className="flex items-center justify-between px-1 py-2"><SkeletonLine w="2rem" h="1rem" /><SkeletonLine w="5rem" h="0.875rem" /></div>
-          <div className="mt-3 space-y-3">{Array.from({ length: 3 }, (_, i) => <div key={i} className="grid grid-cols-[5rem_minmax(0,1fr)] items-start gap-4 rounded-lg bg-[#1a1510] p-4 md:grid-cols-[2rem_7rem_minmax(0,1fr)] md:gap-5 md:p-6">
+          <div className="mt-3 space-y-3">{Array.from({ length: 3 }, (_, i) => <div key={i} className="grid grid-cols-[5rem_minmax(0,1fr)] items-start gap-4 rounded-lg bg-[var(--bg-card)] p-4 md:grid-cols-[2rem_7rem_minmax(0,1fr)] md:gap-5 md:p-6">
             <SkeletonLine w="1.4rem" h="1rem" raised className="hidden md:block" />
             <Skeleton raised className="w-full" style={{ aspectRatio: '416 / 684' }} />
             <div className="min-w-0 space-y-2"><SkeletonLine w="6rem" h="1.5rem" raised /><SkeletonLine w="8rem" h="1.25rem" raised /><div className="flex gap-1.5 pt-2">{Array.from({ length: 3 }, (_, j) => <Skeleton key={j} raised className="h-14 w-14" />)}</div></div>

@@ -50,13 +50,13 @@ function PackMark({ packs, label }: { packs: EgoGiftTheme[]; label: string }) {
         </span>
       )}
       {packs.length > 1 && (
-        <span className="mt-px rounded-[0.125rem] bg-[#0d0b08]/85 px-0.5 tabular-nums text-[#e8dcc8]" style={{ fontFamily: 'var(--font-title)', fontSize: '0.6875rem', lineHeight: 1 }}>+{packs.length - 1}</span>
+        <span className="mt-px rounded-[0.125rem] bg-[var(--bg-deep)]/85 px-0.5 tabular-nums text-[var(--text-primary)]" style={{ fontFamily: 'var(--font-title)', fontSize: '0.6875rem', lineHeight: 1 }}>+{packs.length - 1}</span>
       )}
     </span>
   )
 }
 
-const TOOL = 'flex h-9 shrink-0 items-center justify-center gap-1.5 rounded border border-[#2e2417] text-[0.8125rem] text-[#9c8b73] transition-colors hover:text-[var(--text-primary)] disabled:pointer-events-none disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold-light)] focus-visible:ring-offset-1 focus-visible:ring-offset-[#0d0b08]'
+const TOOL = 'flex h-9 shrink-0 items-center justify-center gap-1.5 rounded border border-[#2e2417] text-[0.8125rem] text-[#9c8b73] transition-colors hover:text-[var(--text-primary)] disabled:pointer-events-none disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold-light)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--bg-deep)]'
 
 /** Mirror Dungeon gift list. A click opens the gift detail; in check mode it records the gift as obtained. */
 export default function GiftTab({ gifts, themes, recipes, getGiftKeywordIcon, onSelectGift, checkMode, onCheckModeChange, ...filters }: GiftTabProps) {

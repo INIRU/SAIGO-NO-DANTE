@@ -11,7 +11,7 @@ type LegalType = LegalDoc['type']
 // Shared by the page and its skeleton so both keep the same grid.
 const PAGE = 'mx-auto min-h-[100dvh] max-w-[42rem] px-4 pb-24 pt-[5.5rem] md:px-6 lg:grid lg:max-w-[62rem] lg:grid-cols-[13rem_minmax(0,42rem)] lg:content-start lg:justify-center lg:gap-x-16 print:block print:max-w-none print:p-0'
 const HEAD = 'lg:col-start-2'
-const NAV = 'sticky-under-nav z-30 -mx-4 border-b border-[#2e2417] bg-[#0d0b08] px-4 py-2 md:-mx-6 md:px-6 lg:col-start-1 lg:row-start-2 lg:mx-0 lg:self-start lg:border-0 lg:bg-transparent lg:px-0 lg:pb-0 lg:pt-8 print:hidden'
+const NAV = 'sticky-under-nav z-30 -mx-4 border-b border-[#2e2417] bg-[var(--bg-deep)] px-4 py-2 md:-mx-6 md:px-6 lg:col-start-1 lg:row-start-2 lg:mx-0 lg:self-start lg:border-0 lg:bg-transparent lg:px-0 lg:pb-0 lg:pt-8 print:hidden'
 const ARTICLE = 'min-w-0 pt-8 lg:col-start-2 lg:row-start-2 print:pt-4'
 const SECTION = 'border-t border-[#241c14] py-8 first:border-t-0 first:pt-0 print:break-inside-avoid print:border-[#ccc]'
 

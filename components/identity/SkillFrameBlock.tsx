@@ -203,11 +203,11 @@ export default function SkillFrameBlock({
                 />
                 <span style={{
                   fontFamily: 'var(--font-excelsior), sans-serif',
-                  color: '#e8dcc8',
+                  color: 'var(--text-primary)',
                   fontSize: offenseLevelSize,
                   textDecoration: 'underline',
                   textUnderlineOffset: '2px',
-                  textDecorationColor: '#e8dcc8',
+                  textDecorationColor: 'var(--text-primary)',
                 }}>
                   {offense.level}
                 </span>
@@ -216,12 +216,12 @@ export default function SkillFrameBlock({
             )}
             {showAtkWeight && (
               <div className="flex items-center gap-1">
-                <span style={{ fontFamily: 'var(--font-heading)', color: '#c8900a', fontSize: '0.625rem', fontWeight: 700 }}>
+                <span style={{ fontFamily: 'var(--font-heading)', color: 'var(--gold)', fontSize: '0.625rem', fontWeight: 700 }}>
                   {t('identity.skills.atkWeight')}
                 </span>
                 <div className="flex gap-0.5">
                   {Array.from({ length: atkWeight }).map((_, i) => (
-                    <div key={i} style={{ width: atkWeightSquare, height: atkWeightSquare, background: '#c8900a', borderRadius: '0.1rem' }} />
+                    <div key={i} style={{ width: atkWeightSquare, height: atkWeightSquare, background: 'var(--gold)', borderRadius: '0.1rem' }} />
                   ))}
                 </div>
               </div>

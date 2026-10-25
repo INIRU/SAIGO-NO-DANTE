@@ -25,7 +25,7 @@ export default function OwnedBadge({ missing }: { missing: ReadonlySet<string> |
   return (
     <span
       className="pointer-events-none absolute right-1.5 top-1.5 z-10 inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[0.75rem] font-semibold leading-4"
-      style={{ background: 'rgba(13,11,8,0.86)', color: '#e8b030', boxShadow: 'inset 0 0 0 1px rgba(200,144,10,0.6)' }}
+      style={{ background: 'rgba(13,11,8,0.86)', color: 'var(--gold-light)', boxShadow: 'inset 0 0 0 1px rgba(200,144,10,0.6)' }}
     >
       <Check size={12} strokeWidth={3} aria-hidden="true" />
       {t('owned')}

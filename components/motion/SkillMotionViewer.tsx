@@ -95,7 +95,7 @@ export default function SkillMotionViewer() {
     return (
       <div role="alert" className="flex flex-col items-center gap-3 rounded-lg border border-[#2e2417] bg-[var(--bg-panel)] px-6 py-16 text-center">
         <p className="text-[0.9375rem] text-[var(--text-primary)]">{t('listError')}</p>
-        <button type="button" onClick={() => void mutate()} className="inline-flex h-10 items-center gap-2 rounded-md border border-[#8a6010] bg-[#2a1f0c] px-4 text-[0.875rem] font-semibold text-[var(--gold-light)] hover:bg-[#35270e]">
+        <button type="button" onClick={() => void mutate()} className="inline-flex h-10 items-center gap-2 rounded-md border border-[var(--gold-dim)] bg-[#2a1f0c] px-4 text-[0.875rem] font-semibold text-[var(--gold-light)] hover:bg-[#35270e]">
           <RotateCw className="h-4 w-4" aria-hidden="true" />{t('retry')}
         </button>
       </div>

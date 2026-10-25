@@ -39,7 +39,7 @@ export function Portrait({ slot, dim, locked, ratio = '3 / 4', sizes = '(max-wid
       {slot.order !== null && (
         <span
           className="absolute bottom-0 left-0 z-[1] grid place-items-center"
-          style={{ minWidth: '1.125rem', height: '1.125rem', padding: '0 0.2rem', background: 'rgba(13,11,8,0.85)', color: '#e8b030', fontFamily: 'var(--font-title)', fontSize: '0.8125rem', lineHeight: 1, borderTopRightRadius: '0.25rem' }}
+          style={{ minWidth: '1.125rem', height: '1.125rem', padding: '0 0.2rem', background: 'rgba(13,11,8,0.85)', color: 'var(--gold-light)', fontFamily: 'var(--font-title)', fontSize: '0.8125rem', lineHeight: 1, borderTopRightRadius: '0.25rem' }}
         >
           {slot.order + 1}
         </span>

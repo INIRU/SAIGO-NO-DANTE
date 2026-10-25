@@ -108,12 +108,12 @@ export default function DeckComments({ deckId, initialComments, headingId }: Pro
   const items: ThreadItem[] = comments.map(c => ({
     ...c, name: c.username ?? t('anonymous'), avatar: c.avatar_url,
     badge: c.role === 'admin' ? <span className="text-[0.75rem] font-semibold text-[#e48b7f]">Admin</span>
-      : c.role === 'wanjang' ? <span className="text-[0.75rem] font-semibold text-[#e8b030]">{t('moderator')}</span> : undefined,
+      : c.role === 'wanjang' ? <span className="text-[0.75rem] font-semibold text-[var(--gold-light)]">{t('moderator')}</span> : undefined,
   }))
 
   return (
     <div>
-      <h2 id={headingId} className="mb-5 flex items-baseline gap-2.5 font-[family-name:var(--font-heading)] text-[1.375rem] leading-snug text-[#e8dcc8] sm:text-[1.5rem]">
+      <h2 id={headingId} className="mb-5 flex items-baseline gap-2.5 font-[family-name:var(--font-heading)] text-[1.375rem] leading-snug text-[var(--text-primary)] sm:text-[1.5rem]">
         {t('title')}
         <span className="font-[family-name:var(--font-body)] text-[1rem] tabular-nums text-[#9c8b73]">{comments.length}</span>
       </h2>
@@ -127,7 +127,7 @@ export default function DeckComments({ deckId, initialComments, headingId }: Pro
             placeholder={t('placeholder')}
             maxLength={500}
             rows={3}
-            className="block w-full resize-y rounded-md border border-[#2e2417] bg-[#17120c] px-3.5 py-3 text-[0.9375rem] leading-relaxed text-[#e8dcc8] placeholder:text-[#7f7364] transition-colors focus:border-[#c8900a] focus:outline-none"
+            className="block w-full resize-y rounded-md border border-[#2e2417] bg-[#17120c] px-3.5 py-3 text-[0.9375rem] leading-relaxed text-[var(--text-primary)] placeholder:text-[#7f7364] transition-colors focus:border-[var(--gold)] focus:outline-none"
             onKeyDown={e => {
               if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); handleCommentSubmit() }
             }}
@@ -137,7 +137,7 @@ export default function DeckComments({ deckId, initialComments, headingId }: Pro
             <button
               type="submit"
               disabled={commentSubmitting || !commentText.trim()}
-              className="inline-flex min-h-11 items-center gap-2 rounded border border-[#8a6010] bg-[#2a1f0c] px-4 text-[0.9375rem] font-semibold text-[#e8b030] transition-colors hover:border-[#c8900a] hover:bg-[#35270e] disabled:cursor-not-allowed disabled:opacity-40"
+              className="inline-flex min-h-11 items-center gap-2 rounded border border-[var(--gold-dim)] bg-[#2a1f0c] px-4 text-[0.9375rem] font-semibold text-[var(--gold-light)] transition-colors hover:border-[var(--gold)] hover:bg-[#35270e] disabled:cursor-not-allowed disabled:opacity-40"
             >
               <Send className="h-4 w-4" aria-hidden="true" />
               {commentSubmitting ? t('submitting') : t('submit')}
@@ -146,7 +146,7 @@ export default function DeckComments({ deckId, initialComments, headingId }: Pro
         </form>
       ) : (
         <p className="border-l-2 border-[#2e2417] py-1 pl-3 text-[0.9375rem]">
-          <Link href="/login" className="text-[#e8b030] underline-offset-4 hover:underline">{t('loginRequired')}</Link>
+          <Link href="/login" className="text-[var(--gold-light)] underline-offset-4 hover:underline">{t('loginRequired')}</Link>
         </p>
       )}
 

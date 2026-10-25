@@ -22,7 +22,7 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
 
   return (
     <html lang={lang}>
-      <body style={{ margin: 0, background: '#0d0b08', color: '#e8dcc8', colorScheme: 'dark', fontFamily: 'system-ui, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif' }}>
+      <body style={{ margin: 0, background: 'var(--bg-deep)', color: 'var(--text-primary)', colorScheme: 'dark', fontFamily: 'system-ui, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif' }}>
         <main style={{ boxSizing: 'border-box', minHeight: '100dvh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '5rem 1.5rem', textAlign: 'center' }}>
           <p className="ge-code" aria-hidden="true" translate="no">500</p>
           <h1 style={{ margin: '1.5rem 0 0', fontSize: '1.375rem', fontWeight: 700 }}>{t.title}</h1>

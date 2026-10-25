@@ -41,7 +41,7 @@ export default function FilterSidebar({ children, activeCount }: Props) {
           style={{
             cursor: 'pointer',
             background: 'var(--gold)',
-            color: '#0d0b08',
+            color: 'var(--bg-deep)',
             fontWeight: 600,
             fontSize: '0.8125rem',
           }}

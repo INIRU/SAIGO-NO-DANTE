@@ -1,5 +1,5 @@
 .floor-preview { font-family: var(--font-body); }
-.floor-preview-row { display: grid; grid-template-columns: 2rem 7rem minmax(0, 1fr); gap: 1.25rem; padding: 1.5rem; border-radius: .5rem; background: #1a1510; min-width: 0; align-items: start; }
+.floor-preview-row { display: grid; grid-template-columns: 2rem 7rem minmax(0, 1fr); gap: 1.25rem; padding: 1.5rem; border-radius: .5rem; background: var(--bg-card); min-width: 0; align-items: start; }
 .floor-preview-number { color: #d0a749; font: 500 1.25rem/1.5 var(--font-body); font-variant-numeric: tabular-nums; }
 .floor-preview-cover { min-width: 0; }
 .floor-preview-guidance { grid-column: 3; min-width: 0; }

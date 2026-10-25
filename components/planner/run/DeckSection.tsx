@@ -185,13 +185,13 @@ export default function DeckSection({ state, dispatch, identities, sinners, skil
   return (
     <div>
       {/* 서브탭 */}
-      <div className="flex gap-1 mb-4" style={{ borderBottom: '1px solid #1a1510', overflowX: 'auto', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none' }}>
+      <div className="flex gap-1 mb-4" style={{ borderBottom: '1px solid var(--bg-card)', overflowX: 'auto', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none' }}>
         {SUB_TABS.map(tab => {
           const active = subTab === tab.key
           const Icon = tab.icon
           return (
             <button key={tab.key} onClick={() => setSubTab(tab.key)} className="flex items-center gap-1 transition shrink-0"
-              style={{ padding: '0.5rem 0.75rem', fontSize: '0.75rem', fontWeight: active ? 700 : 400, color: active ? '#e8dcc8' : '#555', borderBottom: `2px solid ${active ? '#c8900a' : 'transparent'}`, minHeight: '2.75rem' }}>
+              style={{ padding: '0.5rem 0.75rem', fontSize: '0.75rem', fontWeight: active ? 700 : 400, color: active ? 'var(--text-primary)' : '#555', borderBottom: `2px solid ${active ? 'var(--gold)' : 'transparent'}`, minHeight: '2.75rem' }}>
               <Icon style={{ width: '0.75rem', height: '0.75rem' }} /> {t(`deckTab_${tab.key}`)}
             </button>
           )
@@ -262,7 +262,7 @@ export default function DeckSection({ state, dispatch, identities, sinners, skil
                 disabled={!slot}
                 className="text-left border-0 p-0 w-full"
                 style={{
-                  background: 'linear-gradient(160deg, #1a1510 0%, #100d08 100%)',
+                  background: 'linear-gradient(160deg, var(--bg-card) 0%, #100d08 100%)',
                   border: `1px solid ${slot ? '#221a0f' : '#18120a'}`,
                   borderRadius: '0.25rem', overflow: 'hidden',
                   opacity: slot ? 1 : 0.4, cursor: slot ? 'pointer' : 'default',
@@ -377,12 +377,12 @@ export default function DeckSection({ state, dispatch, identities, sinners, skil
           for (const e of selectedEgos) egoByGrade[e.grade] = e
 
           return (
-          <div className="relative w-full" style={{ background: '#1a1510', border: '1px solid #333', borderRadius: '0.5rem', maxHeight: '85vh', overflowY: 'auto', boxShadow: '0 1rem 3rem rgba(0,0,0,0.8)' }}>
+          <div className="relative w-full" style={{ background: 'var(--bg-card)', border: '1px solid #333', borderRadius: '0.5rem', maxHeight: '85vh', overflowY: 'auto', boxShadow: '0 1rem 3rem rgba(0,0,0,0.8)' }}>
             {/* 헤더 */}
-            <div className="flex items-center justify-between sticky top-0 z-10" style={{ padding: '1rem 1.25rem', background: '#1a1510', borderBottom: '1px solid #222' }}>
+            <div className="flex items-center justify-between sticky top-0 z-10" style={{ padding: '1rem 1.25rem', background: 'var(--bg-card)', borderBottom: '1px solid #222' }}>
               <div className="flex items-center gap-2 min-w-0">
                 {modalSinnerEgo && <Image src={getSinnerLogoUrl(modalSinnerEgo.id)} alt="" width={20} height={20} style={{ width: '1.25rem', height: '1.25rem', opacity: 0.7, flexShrink: 0 }} />}
-                <span className="font-serif truncate" style={{ color: '#e8dcc8', fontSize: '1rem' }}>{modalSinnerEgo?.name_kr} — {t('chooseEgo')}</span>
+                <span className="font-serif truncate" style={{ color: 'var(--text-primary)', fontSize: '1rem' }}>{modalSinnerEgo?.name_kr} — {t('chooseEgo')}</span>
               </div>
               <button onClick={() => setEgoSinner(null)} className="shrink-0 flex items-center justify-center" style={{ color: '#666', cursor: 'pointer', minWidth: '2.75rem', minHeight: '2.75rem' }}><X style={{ width: '1.25rem', height: '1.25rem' }} /></button>
             </div>
@@ -431,13 +431,13 @@ export default function DeckSection({ state, dispatch, identities, sinners, skil
                             }}>
                               {/* EGO 이미지 */}
                               {ego.image_url?.startsWith('http') && (
-                                <div className="relative w-full" style={{ aspectRatio: '1/1', overflow: 'hidden', background: '#0d0b08' }}>
+                                <div className="relative w-full" style={{ aspectRatio: '1/1', overflow: 'hidden', background: 'var(--bg-deep)' }}>
                                   <Image src={ego.image_url} alt={ego.name_kr ?? ego.name} fill className="object-contain" sizes="(max-width:640px) 50vw, 25vw" />
                                 </div>
                               )}
                               {/* EGO 정보 */}
                               <div style={{ padding: '0.375rem 0.5rem 0.5rem' }}>
-                                <p className="font-serif truncate" style={{ color: isSelected ? '#e8dcc8' : '#b0a898', fontSize: '0.625rem', lineHeight: 1.3 }}>
+                                <p className="font-serif truncate" style={{ color: isSelected ? 'var(--text-primary)' : '#b0a898', fontSize: '0.625rem', lineHeight: 1.3 }}>
                                   {ego.name_kr ?? ego.name}
                                 </p>
                                 <div className="flex items-center gap-1" style={{ marginTop: '0.25rem' }}>

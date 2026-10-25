@@ -212,7 +212,7 @@ export default function ThemeModal({
                 const name = getEventDisplayName(ev)
                 const choices = choiceCountByEventId?.get(ev.id) ?? 0
                 return (
-                  <li key={ev.id} className="flex items-center gap-2.5 rounded-sm border p-1.5" style={{ borderColor: '#2e2417', background: '#0d0b08' }}>
+                  <li key={ev.id} className="flex items-center gap-2.5 rounded-sm border p-1.5" style={{ borderColor: '#2e2417', background: 'var(--bg-deep)' }}>
                     {ev.image_url && (
                       <span className="relative h-11 w-11 shrink-0 overflow-hidden rounded-sm">
                         <QuietImage src={ev.image_url} alt="" fill sizes="44px" className="object-cover" {...blurPlaceholder(ev.image_url)} />

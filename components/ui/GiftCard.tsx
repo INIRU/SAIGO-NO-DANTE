@@ -107,7 +107,7 @@ export function GiftEnhancePicker({ level, max, giftName, onChange }: { level: n
     { value: 2, label: t('plusplus'), idle: 'plusplusIdle', active: 'plusplus' },
   ].slice(0, max + 1) as { value: number; label: string; idle: keyof typeof ENHANCE_SPRITES; active: keyof typeof ENHANCE_SPRITES }[]
   return (
-    <div role="radiogroup" aria-label={t('group', { gift: giftName })} className="mt-1 flex w-full overflow-hidden rounded-sm border" style={{ borderColor: '#2e2417', background: '#0d0b08' }}>
+    <div role="radiogroup" aria-label={t('group', { gift: giftName })} className="mt-1 flex w-full overflow-hidden rounded-sm border" style={{ borderColor: '#2e2417', background: 'var(--bg-deep)' }}>
       {options.map(option => {
         const checked = level === option.value
         return (
@@ -119,8 +119,8 @@ export function GiftEnhancePicker({ level, max, giftName, onChange }: { level: n
             aria-label={option.label}
             title={option.label}
             onClick={() => onChange(option.value)}
-            className="flex h-7 min-w-0 flex-1 items-center justify-center px-0.5 transition-colors hover:bg-white/5 focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[#e8b030] motion-reduce:transition-none"
-            style={{ background: checked ? 'rgba(200,144,10,0.16)' : undefined, boxShadow: checked ? 'inset 0 -2px 0 #c8900a' : undefined }}
+            className="flex h-7 min-w-0 flex-1 items-center justify-center px-0.5 transition-colors hover:bg-white/5 focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[var(--gold-light)] motion-reduce:transition-none"
+            style={{ background: checked ? 'rgba(200,144,10,0.16)' : undefined, boxShadow: checked ? 'inset 0 -2px 0 var(--gold)' : undefined }}
           >
             <span className="flex max-w-full justify-center" style={{ height: option.value === 0 ? '0.4375rem' : checked && option.value > 0 ? '0.9375rem' : '0.6875rem', opacity: checked ? 1 : 0.55 }}>
               <EnhanceSprite sprite={checked ? option.active : option.idle} className="max-w-full object-contain" />
@@ -189,7 +189,7 @@ const GiftCard = memo(function GiftCard({
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             background: 'rgba(200,144,10,0.22)',
           }}>
-            <span style={{ color: '#e8b030', fontSize: '1.5rem', textShadow: '0 0 0.5rem rgba(200,144,10,0.6)' }}>✓</span>
+            <span style={{ color: 'var(--gold-light)', fontSize: '1.5rem', textShadow: '0 0 0.5rem rgba(200,144,10,0.6)' }}>✓</span>
           </div>
         )}
 
@@ -241,8 +241,8 @@ const GiftCard = memo(function GiftCard({
         <p style={{
           fontSize: '0.5625rem',
           color: conditionStatus?.level === 'unmet' ? '#ef4444'
-            : conditionStatus?.level === 'warn' ? '#e8b030'
-            : isSelected ? '#e8b030' : '#aaa',
+            : conditionStatus?.level === 'warn' ? 'var(--gold-light)'
+            : isSelected ? 'var(--gold-light)' : '#aaa',
           textAlign: 'center',
           marginTop: '0.25rem',
           lineHeight: 1.45,
