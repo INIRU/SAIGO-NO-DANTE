@@ -10,7 +10,8 @@ export interface LayerSetMeta {
   fps: number;
   frames: number;
   tile: { w: number; h: number };
-  video: { file: string; w: number; h: number };
+  /** `webm`: the same frames as VP9 4:4:4 where the skill was rendered again (same tiles, so drawing is the same) */
+  video: { file: string; webm?: string; w: number; h: number };
   /** the MP4 carries an AAC track of the skill's sound cues */
   audio?: { cues: number } | null;
   base: Rect;

@@ -13,7 +13,7 @@ test('an identity card prefetches its detail only after the pointer rests on it'
     if (request.headers()['rsc'] && DETAIL.test(url.pathname)) prefetched.add(url.pathname)
   })
   // The announcement popup covers the list on a first visit, whenever it opens.
-  const popup = page.getByRole('dialog').filter({ hasText: '공지' })
+  const popup = page.getByRole('dialog').filter({ has: page.locator('[data-announcement-popup]') })
   await page.addLocatorHandler(popup, async () => { await popup.getByRole('button', { name: '닫기' }).last().click() })
   await page.goto('/ko/sinners/identities')
   const cards = page.locator('a[href*="/identities/"]')

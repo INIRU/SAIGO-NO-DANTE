@@ -18,6 +18,8 @@ export type MotionEntry = {
   fps: number
   bytes?: number
   video: string
+  /** The same video as VP9 profile 1, 4:4:4 (full-resolution colour), where the skill was rendered again; absent otherwise. */
+  videoWebm?: string
   meta: string
   /** The game id of the identity (five digits); the slug is `id<identityId>`, with a suffix for another form. */
   identityId?: string
@@ -39,7 +41,7 @@ export type MotionEntry = {
 /** The identity a link state links with (the member that is not the skill's owner), and whether it is the max video. */
 export type MotionLink = { gameId: string; name: string; sinner: string | null; portrait: string | null; max: boolean }
 /** One video of a skill as the page needs it (frame count, fps and sound are read from its layers.json when it loads). */
-export type MotionState = Pick<MotionEntry, 'state' | 'name' | 'video' | 'meta'> & { label: string; bytes: number; link?: MotionLink }
+export type MotionState = Pick<MotionEntry, 'state' | 'name' | 'video' | 'videoWebm' | 'meta'> & { label: string; bytes: number; link?: MotionLink }
 /** The game frame a skill's sprite sits in: its sin, its slot (1–3, 4 for a defense) and its attack type badge. */
 export type MotionSkillFrame = { sin: string; slot: number; attack: 'slash' | 'pierce' | 'blunt' | null }
 /**
@@ -153,6 +155,17 @@ export function motionAssetUrl(path: string): string {
   return MOTION_ASSET_BASE + path
 }
 
+/** VP9 profile 1, 4:4:4, 8-bit: Chrome, Edge and Firefox play it; Safari plays VP9 profiles 0 and 2 only. */
+export const VP9_444_TYPE = 'video/webm; codecs="vp09.01.40.08.03"'
+
+/**
+ * The files to try for a state, in order: its WebM first when the browser says it plays VP9 4:4:4 (`canPlay` is
+ * `HTMLVideoElement.canPlayType`), then the MP4. After a WebM failed in this tab (`webmFailed`), the MP4 alone.
+ */
+export function motionVideoFiles(state: Pick<MotionState, 'video' | 'videoWebm'>, canPlay: (type: string) => string, webmFailed = false): string[] {
+  return state.videoWebm && !webmFailed && canPlay(VP9_444_TYPE) !== '' ? [state.videoWebm, state.video] : [state.video]
+}
+
 // On one release date: the game's own identity, then entries of an older index (LCB, 흑수, 홍원 slugs), then old links.
 const slugRank = (slug: string) => slug.startsWith('id') ? 0 : slug.startsWith('lcb-') ? 1 : slug.startsWith('link-') ? 3 : 2
 
@@ -233,6 +246,7 @@ export function buildMotionCatalog(entries: readonly MotionEntry[], identities: 
     if (isBase(entry.state)) skill.title = title
     skill.states.push({
       state: entry.state, label: motionStateLabel(entry, lang, labelContext), name: entry.name, video: entry.video, meta: entry.meta, bytes: entry.bytes ?? 0,
+      ...(entry.videoWebm && { videoWebm: entry.videoWebm }),
       ...(link && { link }),
     })
   }
