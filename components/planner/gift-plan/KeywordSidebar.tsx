@@ -50,10 +50,10 @@ export default function KeywordSidebar({
               borderTop: orientation === 'horizontal' ? horizontalBorder : 'none',
               borderRight: orientation === 'horizontal' ? horizontalBorder : 'none',
               borderBottom: orientation === 'horizontal' ? horizontalBorder : 'none',
-              borderLeft: orientation === 'horizontal' ? horizontalBorder : `2px solid ${isActive ? '#c8900a' : 'transparent'}`,
+              borderLeft: orientation === 'horizontal' ? horizontalBorder : `2px solid ${isActive ? 'var(--gold)' : 'transparent'}`,
               borderRadius: orientation === 'horizontal' ? '0.375rem' : '0 0.25rem 0.25rem 0',
               cursor: 'pointer',
-              color: isActive ? '#e8b030' : '#777',
+              color: isActive ? 'var(--gold-light)' : '#777',
               fontSize: orientation === 'horizontal' ? '0.9375rem' : '0.75rem',
               fontWeight: isActive ? 700 : 400,
               transition: 'all 0.15s',
@@ -78,8 +78,8 @@ export default function KeywordSidebar({
             <span style={{ flex: 1 }}>{label}</span>
             <span style={{
               fontSize: '0.5625rem',
-              color: isActive ? '#c8900a' : '#444',
-              background: isActive ? 'rgba(200,144,10,0.15)' : '#1a1510',
+              color: isActive ? 'var(--gold)' : '#444',
+              background: isActive ? 'rgba(200,144,10,0.15)' : 'var(--bg-card)',
               padding: '0 0.375rem',
               borderRadius: '0.5rem',
               lineHeight: 1.6,

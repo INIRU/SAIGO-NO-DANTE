@@ -391,36 +391,6 @@
 .desk-form-footer .desk-privacy {
   flex: 1 1 14rem;
 }
-.desk-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.45rem;
-  min-height: 2.75rem;
-  padding: 0.6rem 1rem;
-  border: 1px solid var(--desk-line);
-  border-radius: 0.25rem;
-  color: var(--text-primary);
-  font-size: 0.875rem;
-  white-space: nowrap;
-  cursor: pointer;
-}
-.desk-button:hover {
-  border-color: var(--border-hover);
-}
-.desk-button.primary {
-  border-color: var(--gold);
-  background: var(--gold);
-  color: var(--bg-deep);
-  font-weight: 700;
-}
-.desk-button.primary:hover {
-  background: var(--gold-light);
-}
-.desk-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
 .desk-empty {
   display: flex;
   flex: 1;
@@ -467,38 +437,6 @@
   font: 2rem/1.1 var(--font-heading);
   color: var(--text-primary);
 }
-.desk-switch {
-  appearance: none;
-  position: relative;
-  flex-shrink: 0;
-  width: 2.75rem;
-  height: 1.5rem;
-  border-radius: 1rem;
-  background: rgba(255, 255, 255, 0.15);
-  cursor: pointer;
-  transition: background 0.2s;
-}
-.desk-switch::after {
-  content: '';
-  position: absolute;
-  top: 0.25rem;
-  left: 0.25rem;
-  width: 1rem;
-  height: 1rem;
-  border-radius: 50%;
-  background: var(--text-primary);
-  transition: transform 0.2s;
-}
-.desk-switch:checked {
-  background: var(--gold);
-}
-.desk-switch:checked::after {
-  transform: translateX(1.25rem);
-}
-.desk-switch:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
 .support-desk :is(a, button, input, textarea):focus-visible {
   outline: 2px solid var(--gold);
   outline-offset: 2px;
@@ -534,11 +472,5 @@
   }
   .desk-composer > div {
     justify-content: flex-end;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .desk-switch,
-  .desk-switch::after {
-    transition: none;
   }
 }

@@ -62,7 +62,7 @@ export default function PlanIntroEditor({ state, dispatch, themes, gifts, giftMa
         maxLength={80}
         placeholder={t('titlePlaceholder')}
         aria-label={t('titleLabel')}
-        className="w-full rounded-md border border-[#2e2417] bg-[#17120c] px-4 py-3 font-[family-name:var(--font-heading)] text-lg text-[#e8dcc8] placeholder:text-[#6f604c] focus-visible:border-[#c8900a] focus-visible:outline-none"
+        className="w-full rounded-md border border-[#2e2417] bg-[#17120c] px-4 py-3 font-[family-name:var(--font-heading)] text-lg text-[var(--text-primary)] placeholder:text-[#6f604c] focus-visible:border-[var(--gold)] focus-visible:outline-none"
       />
       <NoteDocumentEditor
         formation={formation}

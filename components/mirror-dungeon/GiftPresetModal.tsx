@@ -27,8 +27,8 @@ export interface HeldGift { key: string; from: number | null }
 export interface DropSpot { group: number; before: string | null }
 
 const DRAG_START = 6
-const ICON = 'grid h-11 w-11 shrink-0 place-items-center rounded text-[#9c8b73] transition-colors hover:bg-white/5 hover:text-[#e8dcc8] motion-reduce:transition-none'
-const FIELD = 'min-w-0 rounded border border-[#2e2417] bg-[#0d0b08] px-3 text-[#e8dcc8] placeholder:text-[#6a6058] focus-visible:border-[var(--gold)]'
+const ICON = 'grid h-11 w-11 shrink-0 place-items-center rounded text-[#9c8b73] transition-colors hover:bg-white/5 hover:text-[var(--text-primary)] motion-reduce:transition-none'
+const FIELD = 'min-w-0 rounded border border-[#2e2417] bg-[var(--bg-deep)] px-3 text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus-visible:border-[var(--gold)]'
 const NUMBER: CSSProperties = { fontFamily: 'var(--font-title)', fontSize: '1.25rem', lineHeight: 1 }
 
 /**
@@ -168,7 +168,7 @@ export function GiftPresetPanel({ preset, gifts, selected, onSelect, onChange, o
     root.current?.querySelector<HTMLElement>(`[data-preset-chip="${CSS.escape(refocus.current)}"] button`)?.focus()
     refocus.current = null
   })
-  const tab = (chosen: boolean) => chosen ? 'bg-[var(--gold)] text-[#0d0b08]' : 'bg-[#241c12] text-[#9c8b73] hover:text-[#e8dcc8]'
+  const tab = (chosen: boolean) => chosen ? 'bg-[var(--gold)] text-[var(--bg-deep)]' : 'bg-[var(--bg-elevated)] text-[#9c8b73] hover:text-[var(--text-primary)]'
 
   return (
     <div ref={root} className="flex flex-col gap-2.5 p-4 lg:px-5 lg:pt-[0.875rem]">
@@ -177,7 +177,7 @@ export function GiftPresetPanel({ preset, gifts, selected, onSelect, onChange, o
           onChange={event => onChange({ ...preset, name: event.target.value })}
           className={`${FIELD} h-11 flex-1 font-[family-name:var(--font-heading)] text-[1.0625rem]`} />
         <p className="shrink-0 px-1.5 tabular-nums" style={NUMBER}>
-          <span className="text-[#e8b030]">{presetGiftCount(preset)}</span><span className="text-[#6a6058]">/{GIFT_PRESET_GIFT_LIMIT}</span>
+          <span className="text-[var(--gold-light)]">{presetGiftCount(preset)}</span><span className="text-[var(--text-muted)]">/{GIFT_PRESET_GIFT_LIMIT}</span>
         </p>
         {actions}
       </div>
@@ -199,7 +199,7 @@ export function GiftPresetPanel({ preset, gifts, selected, onSelect, onChange, o
         const target = over?.group === index
         return (
           <section key={index} data-preset-group={index} aria-label={label(index)} onPointerDown={() => onSelect(index)}
-            className={`${chosen ? '' : 'max-lg:hidden '}rounded-lg border p-2.5 transition-colors motion-reduce:transition-none ${target ? 'border-[#e8b030] bg-[#241c12]' : chosen ? 'border-[rgba(200,144,10,0.5)] bg-[#1d160d]' : 'border-[#2e2417] bg-[#120e09]'}`}>
+            className={`${chosen ? '' : 'max-lg:hidden '}rounded-lg border p-2.5 transition-colors motion-reduce:transition-none ${target ? 'border-[var(--gold-light)] bg-[var(--bg-elevated)]' : chosen ? 'border-[rgba(200,144,10,0.5)] bg-[#1d160d]' : 'border-[#2e2417] bg-[var(--bg-panel)]'}`}>
             <div className="flex items-center gap-1.5">
               <button type="button" aria-pressed={chosen} aria-label={t('presetGroupSelect', { name: label(index) })} onClick={() => onSelect(index)}
                 className={`hidden h-9 w-9 shrink-0 place-items-center rounded tabular-nums transition-colors motion-reduce:transition-none lg:grid ${tab(chosen)}`} style={NUMBER}>
@@ -214,7 +214,7 @@ export function GiftPresetPanel({ preset, gifts, selected, onSelect, onChange, o
                 <Trash2 size={16} aria-hidden />
               </button>
             </div>
-            <ul className="mt-2 flex min-h-[3.25rem] flex-wrap content-start gap-1 rounded border border-[#241c14] bg-[#0d0b08] p-1 lg:min-h-[calc(3.75rem+2px)] [&_.gift-card:hover]:[transform:none]!">
+            <ul className="mt-2 flex min-h-[3.25rem] flex-wrap content-start gap-1 rounded border border-[#241c14] bg-[var(--bg-deep)] p-1 lg:min-h-[calc(3.75rem+2px)] [&_.gift-card:hover]:[transform:none]!">
               {group.gifts.map((key, at) => {
                 const gift = byKey.get(key)
                 if (!gift) return null
@@ -222,7 +222,7 @@ export function GiftPresetPanel({ preset, gifts, selected, onSelect, onChange, o
                 const mark = !target || held?.key === key ? null : over.before === key ? '-left-[0.1875rem]' : over.before === null && at === group.gifts.length - 1 ? '-right-[0.1875rem]' : null
                 return (
                   <li key={key} data-preset-chip={key} className={`relative w-11 lg:w-[3.25rem] ${held?.key === key ? 'opacity-40' : ''}`} onKeyDown={event => step(index, key, event)}>
-                    {mark && <span data-drop-mark aria-hidden className={`pointer-events-none absolute inset-y-0 z-20 w-0.5 rounded bg-[#e8b030] ${mark}`} />}
+                    {mark && <span data-drop-mark aria-hidden className={`pointer-events-none absolute inset-y-0 z-20 w-0.5 rounded bg-[var(--gold-light)] ${mark}`} />}
                     <GiftCard gift={gift} giftId={gift.id} showName={false} ariaLabel={t('presetGiftRemove', { name })} title={name} onClick={() => onChange(removeGift(preset, key))} />
                   </li>
                 )
@@ -236,7 +236,7 @@ export function GiftPresetPanel({ preset, gifts, selected, onSelect, onChange, o
       })}
 
       <button type="button" disabled={!canAdd} onClick={add}
-        className="hidden h-9 items-center justify-center gap-1.5 rounded border border-dashed border-[#3a2a15] text-[0.875rem] text-[#9c8b73] transition-colors hover:border-[#5a4526] hover:text-[#e8dcc8] disabled:pointer-events-none disabled:opacity-40 motion-reduce:transition-none lg:flex"
+        className="hidden h-9 items-center justify-center gap-1.5 rounded border border-dashed border-[var(--border)] text-[0.875rem] text-[#9c8b73] transition-colors hover:border-[#5a4526] hover:text-[var(--text-primary)] disabled:pointer-events-none disabled:opacity-40 motion-reduce:transition-none lg:flex"
         style={{ fontFamily: 'var(--font-heading)' }}>
         <Plus size={15} aria-hidden />{t('presetGroupAdd')}
       </button>

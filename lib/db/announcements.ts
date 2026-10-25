@@ -1,4 +1,6 @@
+import { cacheLife, cacheTag } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import type { Announcement } from '@/lib/announcements'
 export type AnnouncementRow = Announcement
 export async function getAnnouncementsForLang(
@@ -16,6 +18,13 @@ export async function getAnnouncementsForLang(
     .limit(100)
   if (error) throw error
   return data ?? []
+}
+/** The public list (pinned first, newest first), cached until an announcement is saved. A failed read is not cached. */
+export async function getCachedAnnouncements(lang: 'ko' | 'en' | 'ja'): Promise<AnnouncementRow[]> {
+  'use cache'
+  cacheLife('max')
+  cacheTag(CACHE_TAGS.announcements)
+  return getAnnouncementsForLang(lang)
 }
 export async function getPinnedAnnouncementForLang(
   lang?: string | null,

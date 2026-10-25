@@ -293,7 +293,7 @@ export default function CollectionSection({ savedCode, persistMode = 'db', title
 
   const visibleIds = (activeSinner === COLLECTION_ALL ? data.sinners : data.sinners.filter(s => s.id === activeSinner))
     .flatMap(s => [...(filtered.identities[s.id] ?? []), ...(filtered.egos[s.id] ?? [])].map(item => item.id))
-  const actionButton = 'inline-flex min-h-10 items-center gap-1.5 rounded-lg border border-[#3a2a15] px-3.5 text-[0.875rem] font-semibold text-[#e8dcc8] transition-colors hover:bg-[#241c12] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--gold-light)] disabled:cursor-wait disabled:opacity-60'
+  const actionButton = 'inline-flex min-h-10 items-center gap-1.5 rounded-lg border border-[var(--border)] px-3.5 text-[0.875rem] font-semibold text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--gold-light)] disabled:cursor-wait disabled:opacity-60'
   return (
     <section>
       <div className="mb-4 flex min-h-11 flex-wrap items-center justify-between gap-x-6 gap-y-2">
@@ -331,7 +331,7 @@ export default function CollectionSection({ savedCode, persistMode = 'db', title
           <button type="button" onClick={() => setShowDownloadModal(true)} disabled={generating} className={actionButton}><Download size={16} aria-hidden="true" />{generating ? t('generatingImage') : t('saveImage')}</button>
           {persistMode === 'db' && (
             <button type="button" onClick={saveCollection} disabled={saving || !dirty}
-              className="inline-flex min-h-10 items-center gap-1.5 rounded-lg bg-[var(--gold)] px-4 text-[0.875rem] font-bold text-[#0d0b08] transition-[filter,opacity] hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--gold-light)] disabled:cursor-default disabled:opacity-40 disabled:hover:brightness-100">
+              className="inline-flex min-h-10 items-center gap-1.5 rounded-lg bg-[var(--gold)] px-4 text-[0.875rem] font-bold text-[var(--bg-deep)] transition-[filter,opacity] hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--gold-light)] disabled:cursor-default disabled:opacity-40 disabled:hover:brightness-100">
               {saving ? t('saving') : t('save')}
             </button>
           )}

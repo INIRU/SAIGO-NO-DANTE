@@ -50,9 +50,9 @@ export default function FormationSourceModal({ kind, open, onClose, onLoaded }: 
     <BaseModal open={open} onClose={onClose} title={title} maxWidth="32rem">
       <div className="flex h-[min(70dvh,34rem)] flex-col rounded-xl border border-[rgba(200,144,10,0.22)] bg-[#17120c] shadow-[0_1.5rem_3rem_rgba(0,0,0,0.55)]">
         <div className="flex shrink-0 items-center justify-between gap-3 border-b border-[#2e2417] px-5 py-3">
-          <h2 className="font-[family-name:var(--font-heading)] text-[1.125rem] text-[#e8dcc8]">{title}</h2>
+          <h2 className="font-[family-name:var(--font-heading)] text-[1.125rem] text-[var(--text-primary)]">{title}</h2>
           <button type="button" onClick={onClose} aria-label={t('close')}
-            className="grid h-10 w-10 place-items-center rounded text-[#9c8b73] transition-colors hover:bg-white/5 hover:text-[#e8dcc8]">
+            className="grid h-10 w-10 place-items-center rounded text-[#9c8b73] transition-colors hover:bg-white/5 hover:text-[var(--text-primary)]">
             <X size={18} />
           </button>
         </div>
@@ -62,8 +62,8 @@ export default function FormationSourceModal({ kind, open, onClose, onLoaded }: 
               {rows.map(row => (
                 <li key={row.id}>
                   <button type="button" onClick={() => pick(row)} disabled={busyId !== null}
-                    className="flex min-h-12 w-full items-center justify-between gap-3 rounded px-3 py-2 text-left transition-colors hover:bg-[rgba(200,144,10,0.1)] focus-visible:outline-2 focus-visible:outline-[#e8b030] disabled:opacity-60">
-                    <span className="min-w-0 truncate text-[0.9375rem] font-semibold text-[#e8dcc8]">{row.title.trim() || t('untitled')}</span>
+                    className="flex min-h-12 w-full items-center justify-between gap-3 rounded px-3 py-2 text-left transition-colors hover:bg-[rgba(200,144,10,0.1)] focus-visible:outline-2 focus-visible:outline-[var(--gold-light)] disabled:opacity-60">
+                    <span className="min-w-0 truncate text-[0.9375rem] font-semibold text-[var(--text-primary)]">{row.title.trim() || t('untitled')}</span>
                     <span className="shrink-0 text-[0.8125rem] tabular-nums text-[#9c8b73]">{format.format(new Date(row.created_at))}</span>
                   </button>
                 </li>

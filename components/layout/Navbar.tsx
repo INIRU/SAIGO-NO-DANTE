@@ -1,6 +1,7 @@
 'use client'
 
 import { Suspense, useCallback, useEffect, useRef, useState } from 'react'
+import { forgetPushSubscription } from '@/hooks/usePushSubscription'
 import { useTapEgg } from '@/components/community/easterEggs'
 import { useSession, signOut } from 'next-auth/react'
 import { Menu, X, Search, CalendarDays } from 'lucide-react'
@@ -269,7 +270,7 @@ export default function Navbar({ mainNavLabel }: NavbarProps) {
                     )}
                     <button
                       type="button"
-                      onClick={() => { signOut({ callbackUrl: '/' }); setMenuOpen(false) }}
+                      onClick={() => { void forgetPushSubscription().finally(() => signOut({ callbackUrl: '/' })); setMenuOpen(false) }}
                       className={`${menuRow} w-full cursor-pointer text-left text-[var(--text-tertiary)]`}
                     >
                       {t('common.logout' as TranslationKey)}

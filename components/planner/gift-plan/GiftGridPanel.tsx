@@ -120,7 +120,7 @@ export default memo(function GiftGridPanel({
               value={query}
               onChange={event => setQuery(event.target.value)}
               placeholder={searchPlaceholder ?? t('final.searchPlaceholder')}
-              className="w-full rounded-md border bg-[#0d0b08] px-3 py-2 text-[0.9375rem] text-neutral-200 outline-none transition-colors placeholder:text-neutral-600 focus:border-[var(--gold)] focus:ring-1 focus:ring-[var(--gold)]"
+              className="w-full rounded-md border bg-[var(--bg-deep)] px-3 py-2 text-[0.9375rem] text-neutral-200 outline-none transition-colors placeholder:text-neutral-600 focus:border-[var(--gold)] focus:ring-1 focus:ring-[var(--gold)]"
               style={{ borderColor: '#30271d', minHeight: '2.75rem' }}
             />
           </label>

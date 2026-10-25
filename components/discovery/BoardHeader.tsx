@@ -23,10 +23,10 @@ export default function BoardHeader({ kind, title, action, viewAll, back, assist
             <Play size={16} aria-hidden="true" /><span className="hidden whitespace-nowrap text-[1rem] font-semibold lg:inline">{assist}</span>
           </Link>
         )}
-        <Link href={`${board}?browse=all`} aria-label={viewAll} className={`[.community-board:has([data-board-browse])_&]:hidden flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-2 rounded-md border border-[#3a2a15] bg-[#17120c] px-3 text-[var(--text-primary)] [@media(hover:hover)]:hover:border-[#5a4526] ${press}`}>
+        <Link href={`${board}?browse=all`} aria-label={viewAll} className={`[.community-board:has([data-board-browse])_&]:hidden flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-2 rounded-md border border-[var(--border)] bg-[#17120c] px-3 text-[var(--text-primary)] [@media(hover:hover)]:hover:border-[#5a4526] ${press}`}>
           <SlidersHorizontal size={17} aria-hidden="true" /><span className="hidden whitespace-nowrap text-[1rem] font-semibold md:inline">{viewAll}</span>
         </Link>
-        <Link href={board} aria-label={back} data-board-back className={`hidden [.community-board:has([data-board-browse])_&]:flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-2 rounded-md border border-[#3a2a15] bg-[#17120c] px-3 text-[var(--text-primary)] [@media(hover:hover)]:hover:border-[#5a4526] ${press}`}>
+        <Link href={board} aria-label={back} data-board-back className={`hidden [.community-board:has([data-board-browse])_&]:flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-2 rounded-md border border-[var(--border)] bg-[#17120c] px-3 text-[var(--text-primary)] [@media(hover:hover)]:hover:border-[#5a4526] ${press}`}>
           <ArrowLeft size={17} aria-hidden="true" /><span className="hidden whitespace-nowrap text-[1rem] font-semibold md:inline">{back}</span>
         </Link>
         <Link href={kind === 'deck' ? '/decks/new' : '/planner'} aria-label={action} className={`flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-2 rounded-md bg-[var(--gold)] px-3 text-[var(--bg-deep)] [@media(hover:hover)]:hover:brightness-110 ${press}`}>

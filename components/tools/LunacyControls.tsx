@@ -1,7 +1,8 @@
 "use client";
 import Image from "next/image";
-import { Plus, Minus, Check } from "lucide-react";
+import { Plus, Minus } from "lucide-react";
 import { useId } from "react";
+import Switch from "@/components/ui/Switch";
 import { getResourceIconUrl } from "@/lib/utils/images";
 import css from "./LunacyCalendar.module.css";
 export function LunacyIcon({ size = 24 }: { size?: number }) {
@@ -90,20 +91,10 @@ export function Toggle({
   showState?: boolean;
 }) {
   return (
-    <button
-      type="button"
-      className={css.toggleRow}
-      role="switch"
-      disabled={disabled}
-      aria-label={label}
-      aria-checked={checked}
-      onClick={() => onChange(!checked)}
-    >
+    <label className={css.toggleRow} data-on={checked || undefined}>
       <span>{label}</span>
-      {showState && <b className={css.switchState}>{checked ? "ON" : "OFF"}</b>}
-      <span className={css.switchTrack}>
-        <span>{checked && <Check size={11} />}</span>
-      </span>
-    </button>
+      {showState && <b className={css.toggleState}>{checked ? "ON" : "OFF"}</b>}
+      <Switch size="sm" checked={checked} onChange={onChange} disabled={disabled} />
+    </label>
   );
 }

@@ -9,6 +9,7 @@ import { useDebounce } from '@/hooks/useDebounce'
 import { DEFAULT_AVATAR_URL } from '@/lib/constants/game'
 import QuietImage from '@/components/ui/QuietImage'
 import BaseModal from '@/components/ui/BaseModal'
+import Button from '@/components/ui/Button'
 import { showError, showSuccess } from '@/lib/toast'
 import './admin-users.css'
 
@@ -69,7 +70,7 @@ export default function AdminUsers() {
     </div>
     <div className="admin-users-grid" data-detail={mobileDetail}>
       <div className="admin-users-list" ref={listRef} tabIndex={-1}>
-        {error ? <div className="admin-users-message" role="alert"><p>{c.error}</p><button className="admin-button" onClick={() => mutate()}>{c.retry}</button></div> : isLoading ? <p className="admin-users-message" role="status">{c.loading}</p> : !data?.users.length ? <div className="admin-users-message"><Users aria-hidden="true" /><p>{c.empty}</p></div> : <>
+        {error ? <div className="admin-users-message" role="alert"><p>{c.error}</p><Button variant="secondary" onClick={() => mutate()}>{c.retry}</Button></div> : isLoading ? <p className="admin-users-message" role="status">{c.loading}</p> : !data?.users.length ? <div className="admin-users-message"><Users aria-hidden="true" /><p>{c.empty}</p></div> : <>
           <table><thead><tr><th>{c.user}</th><th className="admin-users-joined">{c.joined}</th><th>{c.seen}</th><th>{c.status}</th></tr></thead>
             <tbody>{data.users.map(user => <tr key={user.id} data-selected={currentId === user.id}><td><button className="admin-users-person" aria-pressed={currentId === user.id} onClick={() => { setSelectedId(user.id); setMobileDetail(true); requestAnimationFrame(() => detailRef.current?.focus()) }}><Avatar user={user} /><span>{user.username || c.member}</span></button></td><td className="admin-users-joined">{date(user.created_at)}</td><td>{date(user.last_seen_at)}</td><td><Status restricted={user.restricted} c={c} /></td></tr>)}</tbody>
           </table>
@@ -117,7 +118,7 @@ function UserDetail({ id, c, date, onUpdated }: { id: string; c: Copy; date: (v:
     } catch (e) { const message = e instanceof Error ? e.message : c.failed; setActionError(message); showError(message) }
     finally { submitting.current = false; setBusy(false) }
   }
-  if (error) return <div className="admin-users-message" role="alert"><p>{c.error}</p><button className="admin-button" onClick={() => mutate()}>{c.retry}</button></div>
+  if (error) return <div className="admin-users-message" role="alert"><p>{c.error}</p><Button variant="secondary" onClick={() => mutate()}>{c.retry}</Button></div>
   if (!user) return <p className="admin-users-message" role="status">{c.loading}</p>
   const current = user.partners.find(partner => partner.code === user.partner)
   const partnerName = user.partner && `${current?.name ?? user.partner} (${user.partner})`
@@ -130,10 +131,10 @@ function UserDetail({ id, c, date, onUpdated }: { id: string; c: Copy; date: (v:
     <div className="admin-users-counts"><div><span>{c.decks}</span><strong>{user.deckCount}<small>{c.count}</small></strong></div><div><span>{c.plans}</span><strong>{user.planCount}<small>{c.count}</small></strong></div></div>
     <details className="admin-users-posts"><summary>{c.recent}</summary>{!user.decks.length && !user.plans.length ? <p>{c.noPosts}</p> : <ul>{user.decks.map(p => <li key={p.id}><span>{c.decks}</span><Link href={`/decks/${p.id}`}>{p.title}<ArrowUpRight size={12} /></Link></li>)}{user.plans.map(p => <li key={p.id}><span>{c.plans}</span><Link href={`/planner/community/${p.id}`}>{p.title}<ArrowUpRight size={12} /></Link></li>)}</ul>}</details>
     <section className="admin-users-moderation"><h3>{c.moderation}</h3>
-      {user.protected ? <p className="admin-users-muted">{c.protect}</p> : user.restricted ? <><p className="admin-users-reason">{user.suspension_reason}</p><dl className="admin-users-dates"><div><dt>{c.until}</dt><dd>{user.suspended_until ? date(user.suspended_until) : c.forever}</dd></div></dl><button className="admin-button primary" disabled={busy} onClick={openConfirmation}>{c.release}</button></> : <form onSubmit={e => { e.preventDefault(); openConfirmation() }}>
+      {user.protected ? <p className="admin-users-muted">{c.protect}</p> : user.restricted ? <><p className="admin-users-reason">{user.suspension_reason}</p><dl className="admin-users-dates"><div><dt>{c.until}</dt><dd>{user.suspended_until ? date(user.suspended_until) : c.forever}</dd></div></dl><Button variant="primary" className="mt-3 w-full" disabled={busy} onClick={openConfirmation}>{c.release}</Button></> : <form onSubmit={e => { e.preventDefault(); openConfirmation() }}>
         <label htmlFor="admin-suspension-reason">{c.reason}</label><textarea id="admin-suspension-reason" placeholder={c.placeholder} value={reason} onChange={e => setReason(e.target.value)} required maxLength={1000} rows={3} />
         <fieldset><legend>{c.period}</legend>{([7, 30, null] as const).map(d => <label key={String(d)}><input type="radio" name="duration" checked={durationDays === d} onChange={() => setDays(d)} /><span>{d === 7 ? c.days7 : d === 30 ? c.days30 : c.forever}</span></label>)}</fieldset>
-        <button type="submit" className="admin-button danger" disabled={!reason.trim() || busy}>{c.suspend}</button>
+        <Button type="submit" variant="danger" className="mt-3 w-full" disabled={!reason.trim() || busy}>{c.suspend}</Button>
       </form>}
       {actionError && <p role="alert" className="admin-users-action-error">{actionError}</p>}
     </section>
@@ -141,13 +142,13 @@ function UserDetail({ id, c, date, onUpdated }: { id: string; c: Copy; date: (v:
       {partnerName && <p className="admin-users-reason">{partnerName}</p>}
       <p className="admin-users-muted">{user.partner ? c.partnerOn : c.partnerOff}</p>
       {user.partner
-        ? <button type="button" className="admin-button" disabled={busy} onClick={() => setPartner(null)}>{c.partnerRemove}</button>
-        : user.partners.map(partner => <button key={partner.code} type="button" className="admin-button primary" disabled={busy} onClick={() => setPartner(partner.code)}>{c.partnerGrant}: {partner.name} ({partner.code})</button>)}
+        ? <Button variant="secondary" className="mt-3 w-full" disabled={busy} onClick={() => setPartner(null)}>{c.partnerRemove}</Button>
+        : user.partners.map(partner => <Button key={partner.code} variant="primary" className="mt-3 w-full" disabled={busy} onClick={() => setPartner(partner.code)}>{c.partnerGrant}: {partner.name} ({partner.code})</Button>)}
     </section>
     <details className="admin-users-history"><summary>{c.history}</summary>{user.history.length ? <ul>{user.history.map(h => <li key={h.id}><span>{h.action === 'suspend' ? c.suspend : h.action === 'unsuspend' ? c.release : c.expired}</span><time>{date(h.created_at)}</time>{h.details?.reason && <p>{h.details.reason}</p>}</li>)}</ul> : <p>{c.noHistory}</p>}</details>
     <BaseModal open={confirm !== null} onClose={() => { if (!busy) setConfirm(null) }} title={c.confirm} maxWidth="28rem" className="admin-users-confirm">
       <h2>{c.confirm}</h2><dl className="admin-users-dates"><div><dt>{c.user}</dt><dd>{user.username || c.member}</dd></div><div><dt>{c.status}</dt><dd>{confirm?.suspended ? c.suspend : c.release}</dd></div>{confirm?.suspended && <div><dt>{c.period}</dt><dd>{daysLabel}</dd></div>}</dl>{confirm?.suspended && <p className="admin-users-reason">{confirm.reason}</p>}
-      <div className="admin-users-confirm-actions"><button className="admin-button" disabled={busy} onClick={() => setConfirm(null)}>{c.cancel}</button><button className={confirm?.suspended ? 'admin-button danger-solid' : 'admin-button primary'} disabled={busy} onClick={save}>{busy ? c.saving : confirm?.suspended ? c.suspend : c.release}</button></div>
+      <div className="admin-users-confirm-actions"><Button variant="secondary" className="max-[48rem]:flex-1" disabled={busy} onClick={() => setConfirm(null)}>{c.cancel}</Button><Button variant={confirm?.suspended ? 'dangerSolid' : 'primary'} className="max-[48rem]:flex-1" disabled={busy} onClick={save}>{busy ? c.saving : confirm?.suspended ? c.suspend : c.release}</Button></div>
     </BaseModal>
   </>
 }

@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
+import { PUSH_SCOPE } from '@/lib/push/keys'
 
 function isLocalHost(hostname: string) {
   return hostname === 'localhost' ||
@@ -11,7 +12,10 @@ function isLocalHost(hostname: string) {
 
 async function clearDevServiceWorkers() {
   const registrations = await navigator.serviceWorker.getRegistrations()
-  await Promise.all(registrations.map((registration) => registration.unregister()))
+  // The push-only worker caches nothing, so development keeps it for testing pushes.
+  await Promise.all(registrations
+    .filter((registration) => !registration.scope.endsWith(PUSH_SCOPE))
+    .map((registration) => registration.unregister()))
 
   if ('caches' in window) {
     const keys = await caches.keys()

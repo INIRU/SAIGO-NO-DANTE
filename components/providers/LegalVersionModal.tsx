@@ -170,7 +170,7 @@ export default function LegalVersionModal() {
               <Link href={`/${locale}/privacy`} target="_blank" className="text-[var(--gold-light)] underline underline-offset-4">{copy.privacy}</Link>
             </p>}
         <button type="button" onClick={acknowledge} disabled={submitting || !allAgreed}
-          className="mt-5 min-h-12 w-full rounded-lg bg-[var(--gold)] text-[1rem] font-bold text-[#0d0b08] transition-[filter,opacity] hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--gold-light)] disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:brightness-100">
+          className="mt-5 min-h-12 w-full rounded-lg bg-[var(--gold)] text-[1rem] font-bold text-[var(--bg-deep)] transition-[filter,opacity] hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--gold-light)] disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:brightness-100">
           {submitting ? copy.saving : copy.confirm}
         </button>
         <Link href={`/${locale}/mypage?tab=profile&withdraw=1`}

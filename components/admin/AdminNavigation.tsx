@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Link, usePathname } from '@/lib/i18n/navigation'
 import { useLocale, useTranslations } from 'next-intl'
 import { Flag, MessageSquare, Megaphone, Users, Construction, ArrowUpRight, Menu, X, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
+import Button from '@/components/ui/Button'
 import './admin.css'
 const STORAGE_KEY = 'admin-nav-collapsed'
 export default function AdminNavigation() {
@@ -79,18 +80,17 @@ export default function AdminNavigation() {
               <strong>{ko ? '운영 데스크' : ja ? '運営デスク' : 'Operations'}</strong>
             </span>
           </Link>
-          <button
+          <Button
             ref={closeButton}
-            type="button"
-            className="admin-icon-button admin-drawer-close"
+            variant="ghost"
+            icon={X}
+            className="hidden! max-[48rem]:inline-flex!"
             aria-label={t('closeMenu')}
             onClick={() => {
               setOpen(false)
               menuButton.current?.focus()
             }}
-          >
-            <X size={18} aria-hidden="true" />
-          </button>
+          />
         </div>
         <nav aria-label={t('nav')}>
           {groups.map((g) => (
@@ -116,16 +116,16 @@ export default function AdminNavigation() {
             <ArrowUpRight size={18} aria-hidden="true" />
             <span>{visit}</span>
           </Link>
-          <button
-            type="button"
-            className="admin-icon-button admin-collapse"
+          <Button
+            variant="ghost"
+            size="sm"
+            icon={collapsed ? PanelLeftOpen : PanelLeftClose}
+            className="max-[48rem]:hidden"
             aria-label={collapsed ? t('expand') : t('collapse')}
             title={collapsed ? t('expand') : t('collapse')}
             aria-pressed={collapsed}
             onClick={toggleCollapsed}
-          >
-            {collapsed ? <PanelLeftOpen size={18} aria-hidden="true" /> : <PanelLeftClose size={18} aria-hidden="true" />}
-          </button>
+          />
         </div>
       </aside>
     </>

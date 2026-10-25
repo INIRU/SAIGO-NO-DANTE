@@ -83,7 +83,7 @@ export default function DeckEgoGiftAccordion({
   }
 
   return (
-    <div className="mb-3 rounded-lg overflow-hidden" style={{ background: '#120e09', border: '1px solid var(--border)' }}>
+    <div className="mb-3 rounded-lg overflow-hidden" style={{ background: 'var(--bg-panel)', border: '1px solid var(--border)' }}>
       <button
         onClick={onToggle}
         className="w-full flex items-center justify-between px-4 py-2.5 transition-colors"
@@ -93,7 +93,7 @@ export default function DeckEgoGiftAccordion({
           <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: open ? '#8a7040' : 'var(--text-tertiary)', letterSpacing: '0.12em' }}>
             {t('detail.egoGifts')}
           </span>
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: '#c8900a' }}>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: 'var(--gold)' }}>
             {activated.length}
           </span>
         </div>

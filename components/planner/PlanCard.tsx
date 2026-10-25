@@ -98,7 +98,7 @@ function PlanCard({
 
         <div className="flex flex-col flex-1 p-4">
           {/* 제목 */}
-          <h3 className="font-[family-name:var(--font-paperlogy)] font-bold tracking-[-0.015em] mb-1.5 leading-snug line-clamp-1 transition-colors duration-200 group-hover:text-[#e8b030]"
+          <h3 className="font-[family-name:var(--font-paperlogy)] font-bold tracking-[-0.015em] mb-1.5 leading-snug line-clamp-1 transition-colors duration-200 group-hover:text-[var(--gold-light)]"
             style={{ fontSize: '1rem', color: 'var(--text-primary)' }}>
             {plan.title}
           </h3>
@@ -175,7 +175,7 @@ function PlanCard({
                   key={kw}
                   type="button"
                   onClick={() => onKeywordToggle(kw)}
-                  className="flex min-h-8 min-w-0 items-center gap-1 transition-colors hover:border-[#8a6010] hover:text-[#c8900a] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#c8900a]"
+                  className="flex min-h-8 min-w-0 items-center gap-1 transition-colors hover:border-[var(--gold-dim)] hover:text-[var(--gold)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--gold)]"
                   style={commonStyle}
                   aria-label={t('toggleKeyword', { keyword: label })}
                 >

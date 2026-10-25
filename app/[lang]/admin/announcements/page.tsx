@@ -5,6 +5,8 @@ import { Plus, Eye, PenLine, Trash2, Pin, Megaphone } from 'lucide-react'
 import { showError, showSuccess } from '@/lib/toast'
 import dynamic from 'next/dynamic'
 import ConfirmModal from '@/components/ui/ConfirmModal'
+import Button from '@/components/ui/Button'
+import Switch from '@/components/ui/Switch'
 import AnnouncementBody from '@/components/announcements/AnnouncementBody'
 import {
   type Announcement,
@@ -171,10 +173,9 @@ export default function AdminAnnouncements() {
           </p>
         </div>
         <div className="admin-topbar-actions">
-          <button className="admin-button primary" onClick={() => open('new')}>
-            <Plus size={16} aria-hidden="true" />
+          <Button variant="primary" icon={Plus} onClick={() => open('new')}>
             {ko ? '새 공지' : ja ? '新規' : 'New'}
-          </button>
+          </Button>
         </div>
       </header>
       <div className="admin-body is-flush announcement-manager-grid">
@@ -182,9 +183,9 @@ export default function AdminAnnouncements() {
           {error ? (
             <div className="admin-state" role="alert">
               <p>{error}</p>
-              <button className="admin-button" onClick={load}>
+              <Button variant="secondary" onClick={load}>
                 {ko ? '다시 시도' : ja ? '再試行' : 'Retry'}
-              </button>
+              </Button>
             </div>
           ) : items.length === 0 ? (
             <div className="admin-state">
@@ -256,24 +257,20 @@ export default function AdminAnnouncements() {
                   </select>
                 </label>
                 <label>
-                  <input
-                    type="checkbox"
-                    className="admin-switch"
+                  <Switch
                     checked={pinned}
-                    onChange={(e) => {
-                      setPinned(e.target.checked)
+                    onChange={(next) => {
+                      setPinned(next)
                       setDirty(true)
                     }}
                   />
                   <span>{ko ? '메인 우선 표시' : ja ? 'ホームに優先表示' : 'Feature on home'}</span>
                 </label>
                 <label title={ko ? '게시하면 이 언어 사이트에 들어온 사람에게 한 번 팝업으로 띄웁니다' : ja ? '公開すると、この言語のサイト訪問者に一度だけ表示します' : 'Once published, shown once as a popup to visitors of this language'}>
-                  <input
-                    type="checkbox"
-                    className="admin-switch"
+                  <Switch
                     checked={popup}
-                    onChange={(e) => {
-                      setPopup(e.target.checked)
+                    onChange={(next) => {
+                      setPopup(next)
                       setDirty(true)
                     }}
                   />
@@ -281,12 +278,7 @@ export default function AdminAnnouncements() {
                 </label>
                 {lang === 'ko' && !editing?.published && (
                   <label title={ko ? '게시할 때 디스코드 공지에 @everyone을 붙입니다' : undefined}>
-                    <input
-                      type="checkbox"
-                      className="admin-switch"
-                      checked={discordEveryone}
-                      onChange={(e) => setDiscordEveryone(e.target.checked)}
-                    />
+                    <Switch checked={discordEveryone} onChange={setDiscordEveryone} />
                     <span>{ko ? '디스코드 @everyone' : ja ? 'Discord @everyone' : 'Discord @everyone'}</span>
                   </label>
                 )}
@@ -317,15 +309,13 @@ export default function AdminAnnouncements() {
             <footer className="announcement-compose-actions">
               <div>
                 {editing && (
-                  <button className="admin-button danger" disabled={busy} onClick={() => setDeleteTarget(editing)}>
-                    <Trash2 size={15} aria-hidden="true" />
+                  <Button variant="danger" icon={Trash2} className="max-[48rem]:flex-1" disabled={busy} onClick={() => setDeleteTarget(editing)}>
                     {ko ? '삭제' : ja ? '削除' : 'Delete'}
-                  </button>
+                  </Button>
                 )}
               </div>
               <div>
-                <button className="admin-button" disabled={uploading} onClick={() => setPreview(!preview)}>
-                  {preview ? <PenLine size={16} aria-hidden="true" /> : <Eye size={16} aria-hidden="true" />}
+                <Button variant="secondary" icon={preview ? PenLine : Eye} className="max-[48rem]:flex-1" disabled={uploading} onClick={() => setPreview(!preview)}>
                   {ko
                     ? preview
                       ? '편집'
@@ -337,12 +327,13 @@ export default function AdminAnnouncements() {
                       : preview
                         ? 'Edit'
                         : 'Preview'}
-                </button>
-                <button className="admin-button" disabled={busy || uploading || !title.trim()} onClick={() => save(false)}>
+                </Button>
+                <Button variant="secondary" className="max-[48rem]:flex-1" disabled={busy || uploading || !title.trim()} onClick={() => save(false)}>
                   {ko ? (editing?.published ? '게시 내리기' : '임시 저장') : ja ? '下書き保存' : 'Save draft'}
-                </button>
-                <button
-                  className="admin-button primary"
+                </Button>
+                <Button
+                  variant="primary"
+                  className="max-[48rem]:flex-1"
                   disabled={busy || uploading || !title.trim()}
                   onClick={() => save(true)}
                 >
@@ -355,7 +346,7 @@ export default function AdminAnnouncements() {
                       : ja
                         ? '公開'
                         : 'Publish'}
-                </button>
+                </Button>
               </div>
             </footer>
           </section>

@@ -87,7 +87,7 @@ export default memo(function FinalGiftTile({ gift, entry, conditionStatus, onEnh
           <span
             aria-hidden="true"
             className="pointer-events-none absolute bottom-[7%] left-[7%] z-20 rounded-[0.1875rem] border px-1 text-[0.625rem] leading-[1rem] transition-opacity group-hover:opacity-0 group-focus-within:opacity-0"
-            style={{ background: 'rgba(13,11,8,0.88)', borderColor: 'rgba(200,144,10,0.45)', color: '#e8b030' }}
+            style={{ background: 'rgba(13,11,8,0.88)', borderColor: 'rgba(200,144,10,0.45)', color: 'var(--gold-light)' }}
           >
             {t(entry.source === 'start' ? 'finalAutoStartTag' : 'finalAutoObserveTag')}
           </span>
@@ -131,7 +131,7 @@ export default memo(function FinalGiftTile({ gift, entry, conditionStatus, onEnh
           </button>
         )}
       </div>
-      <span aria-hidden="true" className="mt-1 block truncate text-center text-[0.6875rem] leading-tight" style={{ color: entry.level ? '#e8b030' : '#b9aa98' }}>
+      <span aria-hidden="true" className="mt-1 block truncate text-center text-[0.6875rem] leading-tight" style={{ color: entry.level ? 'var(--gold-light)' : '#b9aa98' }}>
         {gift.name}
       </span>
     </li>

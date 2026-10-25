@@ -1,7 +1,8 @@
 
 import { notePlainText } from '@/lib/notes/blocks'
 import { authorColumns, authorRateKey, guestPinOf, recordGuestAuthorship, resolveAuthor } from '@/lib/guest/server'
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse, after } from 'next/server'
+import { pushForPost } from '@/lib/push/send'
 import { revalidatePath, revalidateTag } from 'next/cache'
 import { saveSeriesChoice } from '@/lib/series/server'
 import { createClient } from '@/lib/supabase/server'
@@ -615,6 +616,7 @@ export async function POST(request: NextRequest) {
     for (const locale of ['ko', 'en', 'ja'] as const) revalidatePath(`/${locale}/decks/${deck.id}`)
     revalidateTag(CACHE_TAGS.deck(deck.id), 'max')
     revalidateTag(CACHE_TAGS.decksList, 'max')
+    if (userId) after(() => pushForPost('deck', deck.id))
     return NextResponse.json(deck, { status: 201 })
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Internal Server Error'

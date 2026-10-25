@@ -94,7 +94,7 @@ export default function IdentityInfoCard({ identity, currentSeason = 7 }: Identi
           {identity.release_date && (
             <div className="flex items-center gap-2">
               <span style={{ color: '#9c8b73', fontSize: '0.75rem', minWidth: '52px' }}>{t('identity.info.releaseDate')}</span>
-              <span style={{ color: '#e8dcc8', fontSize: '0.75rem' }}>{identity.release_date}</span>
+              <span style={{ color: 'var(--text-primary)', fontSize: '0.75rem' }}>{identity.release_date}</span>
             </div>
           )}
           {(() => {
@@ -146,7 +146,7 @@ export default function IdentityInfoCard({ identity, currentSeason = 7 }: Identi
                         style={{
                           fontSize: '0.75rem', fontWeight: 500,
                           padding: '2px 8px', borderRadius: '3px',
-                          color: '#c8900a',
+                          color: 'var(--gold)',
                           background: 'rgba(200,144,10,0.1)',
                           border: '1px solid rgba(200,144,10,0.2)',
                         }}
@@ -176,7 +176,7 @@ export default function IdentityInfoCard({ identity, currentSeason = 7 }: Identi
                         style={{
                           fontSize: '0.75rem', fontWeight: 500,
                           padding: '2px 8px', borderRadius: '3px',
-                          color: '#e8b030',
+                          color: 'var(--gold-light)',
                           background: 'rgba(232,176,48,0.08)',
                           border: '1px solid rgba(232,176,48,0.2)',
                         }}
@@ -198,7 +198,7 @@ export default function IdentityInfoCard({ identity, currentSeason = 7 }: Identi
                         {info.gacha === 'pickup' && info.gacha_from_season && ` (S${info.gacha_from_season}~)`}
                       </span>
                       {info.target_sinner && (
-                        <span style={{ fontSize: '0.75rem', color: '#e8b030' }}>
+                        <span style={{ fontSize: '0.75rem', color: 'var(--gold-light)' }}>
                           · {info.target_sinner} {t('identity.info.targetExtraction')}
                         </span>
                       )}
@@ -209,7 +209,7 @@ export default function IdentityInfoCard({ identity, currentSeason = 7 }: Identi
                 {gachaName && (
                   <div className="flex items-center gap-2">
                     <span style={{ color: '#9c8b73', fontSize: '0.75rem', minWidth: '52px' }}>{t('identity.info.gachaBanner')}</span>
-                    <span style={{ fontSize: '0.75rem', color: '#e8dcc8' }}>{gachaName}</span>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-primary)' }}>{gachaName}</span>
                   </div>
                 )}
 

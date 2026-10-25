@@ -606,7 +606,7 @@ export function ReadOnlyBlessingGrid({ blessings, selectedBlessings, emptyText }
 
   if (selectedBlessings.size === 0) {
     return (
-      <div className="rounded-md border border-[#241c14] bg-[#120e09] px-4 py-5 text-center text-[0.9375rem] leading-relaxed text-[#6b6255]">
+      <div className="rounded-md border border-[#241c14] bg-[var(--bg-panel)] px-4 py-5 text-center text-[0.9375rem] leading-relaxed text-[#6b6255]">
         {emptyText}
       </div>
     )
@@ -775,13 +775,13 @@ export default function BlessingTab({ state, dispatch }: Props) {
 
         <div className="flex flex-wrap items-center gap-2" style={{ borderBottom: '1px solid rgba(92, 73, 54, 0.66)', paddingBottom: '1rem', rowGap: '0.625rem' }}>
           <div className="flex flex-wrap items-center gap-2">
-            <button type="button" onClick={handlePrimarySelection} className="transition-[background-color,border-color,box-shadow,transform,filter] hover:brightness-110 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-[#e8b030]" style={controlButtonStyle(hasSelectedBlessings || allSelectedAtLevel(1))}>
+            <button type="button" onClick={handlePrimarySelection} className="transition-[background-color,border-color,box-shadow,transform,filter] hover:brightness-110 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-[var(--gold-light)]" style={controlButtonStyle(hasSelectedBlessings || allSelectedAtLevel(1))}>
               {hasSelectedBlessings ? t('allClear') : t('selectAll')}
             </button>
-            <button type="button" onClick={() => selectAll(2)} aria-label={allSelectedAtLevel(2) ? t('plusClear') : t('allPlus')} className="flex items-center justify-center transition-[background-color,border-color,box-shadow,transform,filter] hover:brightness-110 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-[#e8b030]" style={squareControlButtonStyle(allSelectedAtLevel(2))}>
+            <button type="button" onClick={() => selectAll(2)} aria-label={allSelectedAtLevel(2) ? t('plusClear') : t('allPlus')} className="flex items-center justify-center transition-[background-color,border-color,box-shadow,transform,filter] hover:brightness-110 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-[var(--gold-light)]" style={squareControlButtonStyle(allSelectedAtLevel(2))}>
               <span aria-hidden="true" style={toolbarUpgradeGlyphStyle(allSelectedAtLevel(2))}>+</span>
             </button>
-            <button type="button" onClick={() => selectAll(3)} aria-label={allSelectedAtLevel(3) ? t('plusplusClear') : t('allPlusPlus')} className="flex items-center justify-center transition-[background-color,border-color,box-shadow,transform,filter] hover:brightness-110 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-[#e8b030]" style={squareControlButtonStyle(allSelectedAtLevel(3))}>
+            <button type="button" onClick={() => selectAll(3)} aria-label={allSelectedAtLevel(3) ? t('plusplusClear') : t('allPlusPlus')} className="flex items-center justify-center transition-[background-color,border-color,box-shadow,transform,filter] hover:brightness-110 active:translate-y-px focus:outline-none focus:ring-2 focus:ring-[var(--gold-light)]" style={squareControlButtonStyle(allSelectedAtLevel(3))}>
               <span aria-hidden="true" style={toolbarUpgradeGlyphStyle(allSelectedAtLevel(3))}>++</span>
             </button>
           </div>

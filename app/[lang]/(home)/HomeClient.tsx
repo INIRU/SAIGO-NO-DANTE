@@ -13,7 +13,8 @@ import LimpiLink from '@/components/home/LimpiLink'
 import DiscordSupportLink from '@/components/home/DiscordSupportLink'
 import DanteLogo from '@/components/brand/DanteLogo'
 import { SinnerRosterIcon, DeckBoardIcon, MirrorDungeonIcon } from '@/components/brand/icons'
-import AnnouncementBanner, { type AnnouncementData } from '@/components/home/AnnouncementBanner'
+import AnnouncementBanner from '@/components/home/AnnouncementBanner'
+import type { AnnouncementPreview } from '@/lib/announcements'
 import ScrollAnimations from '@/components/home/ScrollAnimations'
 import {
   type IdentityWithSinner,
@@ -71,7 +72,7 @@ function RarityIcon({ rarity }: { rarity: number }) {
 
 interface HomeClientProps {
   latestIdentities: IdentityWithSinner[]
-  pinnedAnnouncement?: AnnouncementData | null
+  pinnedAnnouncement?: AnnouncementPreview | null
 }
 
 export default function HomeClient({ latestIdentities, pinnedAnnouncement }: HomeClientProps) {

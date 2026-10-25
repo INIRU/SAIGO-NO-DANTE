@@ -1,9 +1,10 @@
 'use client'
 
-// Design Ref: §5.3 — 반응형 사이드바 (데스크탑 sticky / 모바일 슬라이드업)
-import { useState, useEffect, useRef } from 'react'
-import { SlidersHorizontal, X } from 'lucide-react'
+// Design Ref: §5.3 — 반응형 사이드바 (데스크탑 sticky / 모바일 시트)
+import { useState } from 'react'
+import { SlidersHorizontal } from 'lucide-react'
 import { useTranslations } from 'next-intl'
+import Sheet from '@/components/ui/Sheet'
 
 type Props = {
   children: React.ReactNode
@@ -13,22 +14,6 @@ type Props = {
 export default function FilterSidebar({ children, activeCount }: Props) {
   const t = useTranslations('browser')
   const [mobileOpen, setMobileOpen] = useState(false)
-  const panelRef = useRef<HTMLDivElement>(null)
-
-  // ESC 키로 닫기 + 열릴 때 포커스 + body scroll lock
-  useEffect(() => {
-    if (!mobileOpen) return
-    panelRef.current?.focus()
-    document.body.style.overflow = 'hidden'
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setMobileOpen(false)
-    }
-    document.addEventListener('keydown', handler)
-    return () => {
-      document.removeEventListener('keydown', handler)
-      document.body.style.overflow = ''
-    }
-  }, [mobileOpen])
 
   return (
     <>
@@ -56,7 +41,7 @@ export default function FilterSidebar({ children, activeCount }: Props) {
           style={{
             cursor: 'pointer',
             background: 'var(--gold)',
-            color: '#0d0b08',
+            color: 'var(--bg-deep)',
             fontWeight: 600,
             fontSize: '0.8125rem',
           }}
@@ -66,62 +51,11 @@ export default function FilterSidebar({ children, activeCount }: Props) {
         </button>
       </div>
 
-      {/* 모바일 슬라이드업 패널 */}
-      {mobileOpen && (
-        <div
-          className="lg:hidden fixed inset-0 z-50"
-          role="dialog"
-          aria-modal="true"
-          aria-label={t('filterPanel')}
-        >
-          {/* 백드롭 */}
-          <div
-            className="absolute inset-0 bg-black/60"
-            onClick={() => setMobileOpen(false)}
-          />
-          {/* 패널 */}
-          <div
-            ref={panelRef}
-            tabIndex={-1}
-            className="popup-drawer absolute bottom-0 left-0 right-0 rounded-t-2xl overflow-y-auto outline-none"
-            style={{
-              background: '#1a1510',
-              maxHeight: '80vh',
-              animation: 'slideUp 0.3s ease-out',
-            }}
-          >
-            {/* 헤더 */}
-            <div className="sticky top-0 flex items-center justify-between px-5 py-3" style={{
-              background: '#1a1510',
-              borderBottom: '1px solid rgba(255,255,255,0.08)',
-              zIndex: 1,
-            }}>
-              <span className="text-sm font-semibold" style={{ color: 'var(--gold)' }}>
-                {t('filter')}
-              </span>
-              <button
-                type="button"
-                onClick={() => setMobileOpen(false)}
-                className="grid h-10 w-10 place-items-center"
-                style={{ cursor: 'pointer', color: 'var(--text-muted)' }}
-                aria-label={t('closeFilter')}
-              >
-                <X size={20} />
-              </button>
-            </div>
-            <div className="flex flex-col gap-4 px-5 py-4">
-              {children}
-            </div>
-          </div>
+      <Sheet open={mobileOpen} onClose={() => setMobileOpen(false)} title={t('filter')} closeLabel={t('closeFilter')}>
+        <div className="flex flex-col gap-4 px-5 py-4">
+          {children}
         </div>
-      )}
-
-      <style jsx>{`
-        @keyframes slideUp {
-          from { transform: translateY(100%); }
-          to { transform: translateY(0); }
-        }
-      `}</style>
+      </Sheet>
     </>
   )
 }

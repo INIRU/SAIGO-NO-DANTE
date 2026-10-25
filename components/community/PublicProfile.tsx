@@ -73,7 +73,7 @@ export default function PublicProfile({ id }: { id: string }) {
             <ul className={styles.list}>
               {data.series.map((item) => (
                 <li key={item.id} className={styles.item}>
-                  <Link href={`/series/${item.id}`} className="flex items-center justify-between gap-3 rounded-lg border border-[var(--border)] bg-[var(--bg-panel)] px-4 py-3 transition-colors hover:border-[#8a6010]">
+                  <Link href={`/series/${item.id}`} className="flex items-center justify-between gap-3 rounded-lg border border-[var(--border)] bg-[var(--bg-panel)] px-4 py-3 transition-colors hover:border-[var(--gold-dim)]">
                     <span className="min-w-0 truncate font-[family-name:var(--font-heading)] text-[1rem] text-[var(--text-primary)]">{item.title}</span>
                     <span className="shrink-0 font-[family-name:var(--font-title)] text-[1.125rem] text-[var(--gold-light)]">{item.count}</span>
                   </Link>

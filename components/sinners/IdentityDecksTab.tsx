@@ -185,10 +185,10 @@ export default function IdentityDecksTab({ identityId }: Props) {
             onKeyDown={handleSearchKeyDown}
             className="w-full pl-10 pr-4 py-2.5 text-sm outline-none transition"
             style={{
-              background: '#120e09',
+              background: 'var(--bg-panel)',
               border: '1px solid var(--border)',
               borderRadius: '4px',
-              color: '#e8dcc8',
+              color: 'var(--text-primary)',
               fontFamily: 'var(--font-body)',
             }}
           />
@@ -207,7 +207,7 @@ export default function IdentityDecksTab({ identityId }: Props) {
               style={{
                 top: '100%',
                 marginTop: 4,
-                background: '#1a1510',
+                background: 'var(--bg-card)',
                 border: '1px solid var(--border)',
                 borderRadius: '4px',
                 boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
@@ -224,7 +224,7 @@ export default function IdentityDecksTab({ identityId }: Props) {
                     key={kw}
                     className="flex items-center gap-2 px-3 py-2 text-xs cursor-pointer"
                     style={{
-                      color: isFocused ? '#e8b030' : '#c8b890',
+                      color: isFocused ? 'var(--gold-light)' : '#c8b890',
                       fontFamily: 'var(--font-heading)',
                       background: isFocused ? 'rgba(200,144,10,0.12)' : 'transparent',
                       borderLeft: isFocused ? '2px solid var(--gold)' : '2px solid transparent',
@@ -279,7 +279,7 @@ export default function IdentityDecksTab({ identityId }: Props) {
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="rounded" style={{ background: '#1a1510', border: '1px solid var(--border)', height: '10rem', opacity: 0.4 + i * 0.1 }}>
+            <div key={i} className="rounded" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', height: '10rem', opacity: 0.4 + i * 0.1 }}>
               <div style={{ padding: '1.25rem' }}>
                 <div style={{ width: '60%', height: '0.875rem', background: '#2a2015', borderRadius: '0.125rem', marginBottom: '0.625rem' }} />
                 <div style={{ width: '90%', height: '0.625rem', background: '#2a2015', borderRadius: '0.125rem', marginBottom: '0.375rem' }} />

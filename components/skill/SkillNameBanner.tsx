@@ -19,7 +19,7 @@ export default function SkillNameBanner({ name, sinColor, fontSize = '0.875rem' 
       <div data-skill-name-banner className="overflow-hidden mb-1" style={{
         width: 'fit-content', maxWidth: '100%', fontSize: fitted,
         clipPath: 'polygon(0 0, calc(100% - 0.8em) 0, 100% 100%, 0 100%)',
-        color: '#e8dcc8', backgroundImage: `linear-gradient(255deg, transparent 1.5em, ${sinColor}30 1.5em)`,
+        color: 'var(--text-primary)', backgroundImage: `linear-gradient(255deg, transparent 1.5em, ${sinColor}30 1.5em)`,
       }}>
         <div style={{
           padding: '0.1em 0 0.1em 0.3em',

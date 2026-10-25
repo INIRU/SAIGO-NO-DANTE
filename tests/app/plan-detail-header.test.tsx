@@ -31,8 +31,8 @@ it('styles the Assist Mode button as the gold primary with a dark label in every
   expect(assist).toContain('lucide-play')
   for (const state of ['', ':hover', ':active']) {
     const rule = css.match(new RegExp(`\\.actions button\\[data-plan-action="assist"\\]${state.replace(':', '\\:')} \\{([^}]*)\\}`))?.[1] ?? ''
-    expect(rule, `primary${state}`).toMatch(/color: #0d0b08;/)
-    expect(rule, `primary${state}`).toMatch(/background: #(c8900a|e8b030|a87808);/)
+    expect(rule, `primary${state}`).toMatch(/color: var\(--bg-deep\);/)
+    expect(rule, `primary${state}`).toMatch(/background: (var\(--gold\)|var\(--gold-light\)|#a87808);/)
   }
   // Pressing must not move the button (the old active:translate-y-px).
   expect(css).toMatch(/\.actions button \{[^}]*translate: none;/)
