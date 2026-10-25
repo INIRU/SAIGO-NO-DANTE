@@ -10,6 +10,7 @@ import { DEFAULT_AVATAR_URL } from "@/lib/constants/game";
 import { getCommunityCopy } from "@/lib/community/copy";
 import { LogOut, Pencil } from "lucide-react";
 import Button from "@/components/ui/Button";
+import { forgetPushSubscription } from "@/hooks/usePushSubscription";
 
 type Profile = {
   username: string | null;
@@ -145,7 +146,7 @@ export default function ProfileTab({
           </>
         ) : (
           <div className="community-account-actions">
-            <Button icon={LogOut} onClick={() => signOut({ callbackUrl: `/${locale}` })}>
+            <Button icon={LogOut} onClick={() => void forgetPushSubscription().finally(() => signOut({ callbackUrl: `/${locale}` }))}>
               {t.logout}
             </Button>
             <Button variant="ghost" onClick={() => setWithdraw(true)}>

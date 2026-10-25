@@ -4,7 +4,8 @@ import { useLocale } from 'next-intl'
 import Switch from '@/components/ui/Switch'
 import { getCommunityCopy } from '@/lib/community/copy'
 import type { CommunitySettings } from '@/lib/community/rules'
-import { showError } from '@/lib/toast'
+import { showError, showSuccess } from '@/lib/toast'
+import { usePushSubscription } from '@/hooks/usePushSubscription'
 
 type Key = keyof CommunitySettings
 const GROUPS: { title: 'visibilityGroup' | 'notifications'; rows: { key: Key; label: 'visibility' | 'publicFollowing' | 'publicFollowers' | 'notifyComments' | 'notifyFollows' | 'notifyPosts' }[] }[] = [
@@ -17,8 +18,15 @@ const GROUPS: { title: 'visibilityGroup' | 'notifications'; rows: { key: Key; la
  * back and says so. The list switches wait while the whole profile is private.
  */
 export default function ProfileSettings({ initial, onSaved }: { initial: CommunitySettings; onSaved: () => Promise<void> }) {
-  const t = getCommunityCopy(useLocale())
+  const locale = useLocale()
+  const t = getCommunityCopy(locale)
   const id = useId()
+  const push = usePushSubscription(locale === 'en' || locale === 'ja' ? locale : 'ko')
+  async function togglePush(on: boolean) {
+    if (!on) return push.disable()
+    if (await push.enable()) showSuccess(t.pushOn)
+    else showError(t.pushError)
+  }
   const [values, setValues] = useState(initial)
   const [saving, setSaving] = useState<Key | null>(null)
   async function change(key: Key, value: boolean) {
@@ -40,6 +48,14 @@ export default function ProfileSettings({ initial, onSaved }: { initial: Communi
       {GROUPS.map(group => (
         <section key={group.title} aria-labelledby={`${id}-${group.title}`} className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--bg-panel)]">
           <h2 id={`${id}-${group.title}`} className="px-5 pb-2.5 pt-4 font-[family-name:var(--font-heading)] text-[0.9375rem] text-[var(--text-secondary)]">{t[group.title]}</h2>
+          {group.title === 'notifications' && (
+            <label htmlFor={`${id}-push`} className="flex min-h-14 cursor-pointer items-center justify-between gap-4 border-t border-white/[0.05] px-5">
+              <span className="text-[0.9375rem] text-[var(--text-primary)]">{t.pushRow}</span>
+              {push.state === 'denied' || push.state === 'unsupported'
+                ? <span className="text-[var(--text-sm)] text-[var(--text-tertiary)]">{push.state === 'denied' ? t.pushBlocked : t.pushUnsupported}</span>
+                : <Switch id={`${id}-push`} checked={push.state === 'on'} disabled={push.state === 'loading' || push.state === 'busy'} onChange={on => void togglePush(on)} />}
+            </label>
+          )}
           {group.rows.map(({ key, label }) => {
             const locked = (key === 'public_following' || key === 'public_followers') && !values.public_profile
             return (

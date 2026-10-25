@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse, after } from 'next/server'
+import { pushForPost } from '@/lib/push/send'
 import { revalidateTag } from 'next/cache'
 import { saveSeriesChoice } from '@/lib/series/server'
 import { authorColumns, authorRateKey, guestPinOf, recordGuestAuthorship, resolveAuthor } from '@/lib/guest/server'
@@ -439,6 +440,7 @@ export async function POST(req: NextRequest) {
     })
 
     revalidateTag(CACHE_TAGS.plansList, 'max')
+    if (userId) after(() => pushForPost('plan', data.id))
     return NextResponse.json({ id: data.id }, { status: 201 })
   } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

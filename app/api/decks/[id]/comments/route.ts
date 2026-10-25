@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse, after } from 'next/server'
+import { pushForComment } from '@/lib/push/send'
 import { descendantIds } from '@/lib/comments/thread'
 import { revalidateTag } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
@@ -146,6 +147,7 @@ export async function POST(
       .single()
 
     revalidateDeckCommentCaches(id)
+    after(() => pushForComment('deck', data.id))
     return NextResponse.json({
       ...data,
       username: profile?.username ?? session.user.name,
