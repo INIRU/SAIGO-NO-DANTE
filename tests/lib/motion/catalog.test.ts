@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildMotionCatalog, defaultMotionState, motionCatalogFrom, MOTION_INDEX_URL, formatMotionLabelKey, motionAssetUrl, motionSinnerId, motionStateLabel, type MotionEntry } from '@/lib/motion/catalog'
+import { buildMotionCatalog, defaultMotionState, motionCatalogFrom, MOTION_INDEX_URL, formatMotionLabelKey, motionAssetUrl, motionSinnerId, motionStateLabel, motionVideoFiles, VP9_444_TYPE, type MotionEntry } from '@/lib/motion/catalog'
 
 const entry = (over: Partial<MotionEntry>): MotionEntry => ({
   slug: 'id10216', skillId: 1021601, state: 'v:base', identity: '새벽 사무소 해결사 파우스트', name: '여명의 섬광',
@@ -241,4 +241,32 @@ it('REQ-MOTION-001 builds the list in the browser from the R2 index and the site
   const identity = catalog.find(s => s.id === 'faust')!.identities[0]
   expect(identity).toMatchObject({ label: '새벽 사무소 해결사', identityId: 'faust-dawn', gameId: '10216', released: '2026-01-01' })
   expect(identity.skills[0]).toMatchObject({ title: 'Dawn Flash', frame: { sin: 'wrath', slot: 1, attack: 'slash' } })
+})
+
+describe('REQ-MOTION-027 the full-colour WebM first', () => {
+  const webm = 'faust/10216/1021601/v-base/layers.webm'
+  const plays = (answer: string) => (type: string) => (type === VP9_444_TYPE ? answer : '')
+
+  it('REQ-MOTION-027 asks for VP9 profile 1, 4:4:4', () => {
+    expect(VP9_444_TYPE).toBe('video/webm; codecs="vp09.01.40.08.03"')
+  })
+
+  it('REQ-MOTION-027 tries the WebM, then the MP4, where the browser plays VP9 4:4:4', () => {
+    expect(motionVideoFiles({ video: 'a/layers.mp4', videoWebm: webm }, plays('probably'))).toEqual([webm, 'a/layers.mp4'])
+    expect(motionVideoFiles({ video: 'a/layers.mp4', videoWebm: webm }, plays('maybe'))).toEqual([webm, 'a/layers.mp4'])
+  })
+
+  it('REQ-MOTION-027 keeps the MP4 alone for Safari, entries without a WebM, or after a WebM failed', () => {
+    expect(motionVideoFiles({ video: 'a/layers.mp4', videoWebm: webm }, plays(''))).toEqual(['a/layers.mp4'])
+    expect(motionVideoFiles({ video: 'a/layers.mp4' }, plays('probably'))).toEqual(['a/layers.mp4'])
+    expect(motionVideoFiles({ video: 'a/layers.mp4', videoWebm: webm }, plays('probably'), true)).toEqual(['a/layers.mp4'])
+  })
+
+  it('REQ-MOTION-027 passes the index\'s WebM to the state', () => {
+    const site = { identities: [{ id: 'faust-dawn', name: '새벽', sinner_id: 'faust', sinner_name: '파우스트', game_id: '10216', folder_name: 'Dawn', release_date: '2026-01-01' }], skillNames: [] as [number, string][], skillFrames: [], refs: null }
+    const [withWebm] = motionCatalogFrom([entry({ videoWebm: webm })], site, 'ko', new Date('2026-10-24')).find(s => s.id === 'faust')!.identities[0].skills[0].states
+    expect(withWebm.videoWebm).toBe(webm)
+    const [without] = motionCatalogFrom([entry({})], site, 'ko', new Date('2026-10-24')).find(s => s.id === 'faust')!.identities[0].skills[0].states
+    expect('videoWebm' in without).toBe(false)
+  })
 })
