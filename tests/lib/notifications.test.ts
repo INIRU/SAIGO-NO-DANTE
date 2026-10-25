@@ -71,7 +71,7 @@ describe('REQ-COMMUNITY-092 follows bring new followers and new posts into the l
 })
 
 describe('REQ-COMMUNITY-093 the feed function follows the notification settings', () => {
-  const sql = readFileSync(resolve(__dirname, '../../supabase/migrations/20261025150000_follow_notifications.sql'), 'utf8')
+  const sql = readFileSync(resolve(__dirname, '../../supabase/migrations/20261025045239_follow_notifications.sql'), 'utf8')
   it('REQ-COMMUNITY-093 each kind is read only while its switch is on', () => {
     expect(sql).toMatch(/me\.notify_comments/)
     expect(sql).toMatch(/me\.notify_follows/)
