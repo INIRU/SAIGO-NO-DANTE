@@ -34,11 +34,6 @@
 .chip[aria-pressed='true'] img { opacity: 1; }
 .chip:focus-visible { outline: 2px solid var(--gold-light); outline-offset: 2px; }
 .switchRow { display: inline-flex; min-height: 2.25rem; align-items: center; gap: 0.625rem; color: #b0a890; font-size: 0.875rem; cursor: pointer; }
-.switch { position: relative; width: 2.25rem; height: 1.25rem; margin: 0; border-radius: 999px; background: #2e2417; appearance: none; cursor: pointer; transition: background-color 150ms; }
-.switch::before { content: ''; position: absolute; top: 0.1875rem; left: 0.1875rem; width: 0.875rem; height: 0.875rem; border-radius: 50%; background: #9c8b73; transition: transform 150ms, background-color 150ms; }
-.switch:checked { background: var(--gold); }
-.switch:checked::before { background: #0d0b08; transform: translateX(1rem); }
-.switch:focus-visible { outline: 2px solid var(--gold-light); outline-offset: 2px; }
 
 .actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; padding: 0.75rem 0; border-block: 1px solid #2e2417; }
 
@@ -68,4 +63,4 @@
   .identities { grid-template-columns: repeat(auto-fill, minmax(8.5rem, 1fr)); gap: 1.25rem 1.125rem; }
   .egos { grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr)); gap: 1.25rem 1rem; }
 }
-@media (prefers-reduced-motion: reduce) { .sinner, .sinner img, .bar > span, .chip, .switch, .switch::before, .item > * { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .sinner, .sinner img, .bar > span, .chip, .item > * { transition: none; } }

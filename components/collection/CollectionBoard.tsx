@@ -3,6 +3,7 @@
 import type { ReactNode } from 'react'
 import Image from 'next/image'
 import { useLocale, useTranslations } from 'next-intl'
+import Switch from '@/components/ui/Switch'
 import IdentityFrameCard from '@/components/ui/IdentityFrameCard'
 import EgoDisplayCard from '@/components/sinners/EgoDisplayCard'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
@@ -120,7 +121,7 @@ export default function CollectionBoard({ data, filtered, counts, owned, sinner,
         </div>
         <label className={styles.switchRow}>
           {t('showUnowned')}
-          <input type="checkbox" role="switch" className={styles.switch} checked={showUnowned} onChange={event => onShowUnowned(event.target.checked)} />
+          <Switch checked={showUnowned} onChange={onShowUnowned} />
         </label>
       </div>
       {actions && <div className={styles.actions}>{actions}</div>}

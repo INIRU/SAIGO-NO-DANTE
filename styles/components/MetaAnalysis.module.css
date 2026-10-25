@@ -211,7 +211,7 @@
   .posts { grid-template-columns: minmax(0, 1fr); }
 }
 @media(prefers-reduced-motion: reduce) { .period, .legendRow, .ranking button, .post, .changeButton, .detailLink { transition: none; } }
-.sectionHead [role=switch] { border-bottom: 0; padding-block: 0; min-height: 2.25rem; }
+.sectionHead > label { padding-block: 0; min-height: 2.25rem; }
 /* Ranking: fielded / bench switch */
 .rankingHead { display: flex; align-items: center; justify-content: space-between; gap: .75rem; }
 .segmented { display: inline-flex; padding: .1875rem; background: rgba(13,11,8,.6); border: 1px solid #2e2417; border-radius: .3125rem; }

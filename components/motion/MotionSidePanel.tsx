@@ -4,6 +4,7 @@ import useSWR from 'swr'
 import { useLocale, useTranslations } from 'next-intl'
 import { FilterSection } from '@/components/board/FilterControls'
 import IdentitySkillFrameCard from '@/components/identity/IdentitySkillFrameCard'
+import Switch from '@/components/ui/Switch'
 import Skeleton, { SkeletonLine } from '@/components/ui/Skeleton'
 import type { MotionLayerToggle } from '@/hooks/useSkillMotion'
 import { useGameTextRefs } from '@/lib/hooks/useGameTextRefs'
@@ -48,9 +49,7 @@ export default function MotionSidePanel({ skillId, layers, onLayer }: { skillId:
             {layers.map(layer => (
               <label key={layer.id} className={styles.effect}>
                 <span>{layerName(layer)}{layer.offAtSkill && <small>{t('offAtSkill')}</small>}</span>
-                <span className={styles.switch} data-on={layer.on || undefined}>
-                  <input type="checkbox" role="switch" checked={layer.on} onChange={event => onLayer(layer.id, event.target.checked)} />
-                </span>
+                <Switch size="sm" checked={layer.on} onChange={on => onLayer(layer.id, on)} />
               </label>
             ))}
           </div>

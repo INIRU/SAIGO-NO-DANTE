@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { FilterChoice, FilterSection, filterStyles } from '@/components/board/FilterControls'
+import Switch from '@/components/ui/Switch'
 import QuietImage from '@/components/ui/QuietImage'
 import { pickLinkState, type MotionLink, type MotionState } from '@/lib/motion/catalog'
 import styles from './MotionDeck.module.css'
@@ -34,9 +35,9 @@ export default function MotionConditions({ states, current, onPick }: { states: 
       )}
       {partners.length > 0 && (
         <FilterSection label={t('link')} end={
-          <label className={styles.switch} data-on={max || undefined}>
+          <label className={styles.maxSwitch} data-on={max || undefined}>
             <span>{t('maxState')}</span>
-            <input type="checkbox" role="switch" checked={max} onChange={() => (chosen ? pickPartner(chosen.gameId, !max) : setWantMax(!max))} />
+            <Switch size="sm" checked={max} onChange={() => (chosen ? pickPartner(chosen.gameId, !max) : setWantMax(!max))} />
           </label>
         }>
           <div className={styles.partners}>

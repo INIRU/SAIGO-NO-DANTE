@@ -34,8 +34,8 @@ describe('REQ-MOTION-019 skill strip and conditions', () => {
   it('REQ-MOTION-019 marks the chosen partner and sets the max switch from the chosen link', () => {
     const normal = render('v:link-10114')
     expect(normal).toMatch(/aria-pressed="true"[^>]*data-partner="10114"/)
-    expect(normal).toMatch(/<input[^>]*role="switch"(?![^>]*checked)[^>]*>/)
-    expect(render('v:link-10114-max')).toMatch(/<input[^>]*role="switch"[^>]*checked=""/)
+    expect(normal).toMatch(/<button[^>]*role="switch"[^>]*aria-checked="false"/)
+    expect(render('v:link-10114-max')).toMatch(/<button[^>]*role="switch"[^>]*aria-checked="true"/)
     // A skill without links has no link section and no switch.
     expect(renderToStaticMarkup(<MotionConditions states={[states[0], states[5]]} current="v:base" onPick={() => {}} />)).not.toContain('role="switch"')
   })
@@ -59,12 +59,8 @@ describe('REQ-MOTION-019 skill strip and conditions', () => {
 })
 
 describe('REQ-MOTION-019 columns without stray scrollbars', () => {
-  it('REQ-MOTION-019 keeps a switch press area inside its column and leaves the scrollbars to the site style', async () => {
+  it('REQ-MOTION-019 leaves the scrollbars to the site style', async () => {
     const { readFileSync } = await import('node:fs')
-    const css = readFileSync('components/motion/MotionDeck.module.css', 'utf8')
-    // The press area of a switch at a column's right edge reached past the column's padding: a 1px sideways scroll.
-    const after = /\.switch::after\{[^}]*inset:([^;}]+)/.exec(css)![1].trim().split(/\s+/)
-    expect(after.length === 4 ? after[1] : after[1] ?? after[0]).toBe('0')
     // scrollbar-width replaces the site's gold ::-webkit-scrollbar (app/globals.css) with the system bar in Chrome.
     expect(readFileSync('components/motion/SkillMotionViewer.tsx', 'utf8')).not.toContain('scrollbar-width:thin')
   })
