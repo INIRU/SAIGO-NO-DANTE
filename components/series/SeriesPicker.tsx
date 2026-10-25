@@ -6,7 +6,7 @@ import { useSession } from 'next-auth/react'
 import { useTranslations } from 'next-intl'
 import { Check, Layers } from 'lucide-react'
 import BaseModal from '@/components/ui/BaseModal'
-import CompactButton from '@/components/ui/CompactButton'
+import Button from '@/components/ui/Button'
 import { SERIES_TITLE_MAX, type SeriesPostKind, type SeriesSummary } from '@/lib/series/order'
 import { showError } from '@/lib/toast'
 
@@ -55,9 +55,9 @@ export default function SeriesPicker({ kind, postId, onChange }: { kind: SeriesP
 
   return (
     <>
-      <CompactButton icon={Layers} variant={current ? 'gold' : 'muted'} onClick={() => setOpen(true)} disabled={!data}>
+      <Button size="sm" icon={Layers} variant={current ? 'outline' : 'secondary'} onClick={() => setOpen(true)} disabled={!data}>
         {current?.title ?? t('picker.label')}
-      </CompactButton>
+      </Button>
       <BaseModal open={open} onClose={() => setOpen(false)} title={t('picker.choose')} maxWidth="30rem" sheet>
         <section className="grid gap-3 rounded-lg border border-[#3a2a15] bg-[#120e09] p-4">
           <h2 className="font-[family-name:var(--font-heading)] text-[1.125rem] text-[#e8dcc8]">{t('picker.choose')}</h2>

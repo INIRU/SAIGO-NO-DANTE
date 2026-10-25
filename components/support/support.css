@@ -391,36 +391,6 @@
 .desk-form-footer .desk-privacy {
   flex: 1 1 14rem;
 }
-.desk-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.45rem;
-  min-height: 2.75rem;
-  padding: 0.6rem 1rem;
-  border: 1px solid var(--desk-line);
-  border-radius: 0.25rem;
-  color: var(--text-primary);
-  font-size: 0.875rem;
-  white-space: nowrap;
-  cursor: pointer;
-}
-.desk-button:hover {
-  border-color: var(--border-hover);
-}
-.desk-button.primary {
-  border-color: var(--gold);
-  background: var(--gold);
-  color: var(--bg-deep);
-  font-weight: 700;
-}
-.desk-button.primary:hover {
-  background: var(--gold-light);
-}
-.desk-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
 .desk-empty {
   display: flex;
   flex: 1;

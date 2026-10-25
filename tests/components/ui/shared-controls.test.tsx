@@ -1,5 +1,5 @@
 import { renderToStaticMarkup } from 'react-dom/server'
-import { readdirSync, readFileSync, statSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { Bell } from 'lucide-react'
@@ -8,10 +8,11 @@ import Switch from '@/components/ui/Switch'
 
 const root = resolve(__dirname, '../../..')
 const source = (path: string) => readFileSync(resolve(root, path), 'utf8')
-const tsxFiles = (dir: string): string[] => readdirSync(join(root, dir)).flatMap(name => {
+const filesWith = (dir: string, exts: string[]): string[] => readdirSync(join(root, dir)).flatMap(name => {
   const path = `${dir}/${name}`
-  return statSync(join(root, path)).isDirectory() ? tsxFiles(path) : path.endsWith('.tsx') ? [path] : []
+  return statSync(join(root, path)).isDirectory() ? filesWith(path, exts) : exts.some(ext => path.endsWith(ext)) ? [path] : []
 })
+const tsxFiles = (dir: string) => filesWith(dir, ['.tsx'])
 
 describe('shared Button', () => {
   it('REQ-SHARED-056 renders each variant with a touch-size height, press feedback and a gold focus ring', () => {
@@ -25,6 +26,14 @@ describe('shared Button', () => {
     }
     expect(buttonClass({ variant: 'primary' })).toContain('bg-[var(--gold)]')
     expect(buttonClass({ size: 'sm' })).toContain('min-h-9')
+  })
+
+  it('REQ-SHARED-056 keeps a disabled button\'s tooltip and hovers only when it can be pressed', () => {
+    const html = renderToStaticMarkup(<Button disabled title="이유">복사</Button>)
+    expect(html).toContain('title="이유"')
+    expect(html).not.toContain('pointer-events-none')
+    expect(buttonClass({ variant: 'primary' })).not.toMatch(/(^| )hover:/)
+    expect(buttonClass({ variant: 'dangerSolid' })).toContain('bg-[var(--error)]')
   })
 
   it('REQ-SHARED-056 marks a busy button disabled and aria-busy', () => {
@@ -99,5 +108,19 @@ describe('shared DownloadModal', () => {
     expect(modal).toContain("from '@/components/ui/BaseModal'")
     expect(modal).toContain("from '@/components/ui/Button'")
     expect(modal).not.toContain('fixed inset-0')
+  })
+})
+
+describe('one Button family', () => {
+  it('REQ-SHARED-062 has no CompactButton file and no importer', () => {
+    expect(existsSync(resolve(root, 'components/ui/CompactButton.tsx'))).toBe(false)
+    const importers = [...tsxFiles('app'), ...tsxFiles('components')].filter(path => /\bCompactButton\b/.test(source(path)))
+    expect(importers).toEqual([])
+  })
+
+  it('REQ-SHARED-062 has no screen-specific button class left in tsx or css', () => {
+    const pattern = /\b(community-button|community-icon-button|desk-button|admin-button|admin-icon-button)\b/
+    const offenders = [...filesWith('app', ['.tsx', '.css']), ...filesWith('components', ['.tsx', '.css'])].filter(path => pattern.test(source(path)))
+    expect(offenders).toEqual([])
   })
 })

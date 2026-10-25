@@ -10,6 +10,7 @@ import DanteLogo from '@/components/brand/DanteLogo'
 import { inquirerName, isUnread, lastActivity, sortMessages, type Inquiry } from '@/lib/support'
 import './support.css'
 import { SupportRowsSkeleton } from './SupportSkeleton'
+import Button from '@/components/ui/Button'
 import Switch from '@/components/ui/Switch'
 import { SkeletonPage } from '@/components/ui/Skeleton'
 const CATEGORIES = ['bug', 'data', 'account', 'suggestion', 'other'] as const
@@ -146,12 +147,12 @@ export default function SupportDesk({ admin = false, initialTopic, initialId }: 
           <MessageSquare size={32} aria-hidden="true" />
           <h1>{t('title')}</h1>
           <p>{t('loginHint')}</p>
-          <button
-            className="desk-button primary"
+          <Button
+            variant="primary"
             onClick={() => goToLogin(lang, '/' + lang + '/support' + (initialTopic === 'api-limit' ? '?topic=api-limit' : ''))}
           >
             {t('login')}
-          </button>
+          </Button>
           <p className="desk-privacy">
             <LockKeyhole size={14} aria-hidden="true" />
             {t('private')}
@@ -172,10 +173,9 @@ export default function SupportDesk({ admin = false, initialTopic, initialId }: 
             <div className="desk-list-title">
               <h1>{admin ? t('inbox') : t('title')}</h1>
               {!admin && (
-                <button className="desk-button primary" onClick={startNew} aria-pressed={creating}>
-                  <Plus size={16} aria-hidden="true" />
+                <Button variant="primary" icon={Plus} onClick={startNew} aria-pressed={creating}>
                   {t('new')}
-                </button>
+                </Button>
               )}
             </div>
             {admin && (
@@ -288,13 +288,12 @@ export default function SupportDesk({ admin = false, initialTopic, initialId }: 
                   <LockKeyhole size={14} aria-hidden="true" />
                   {t('private')}
                 </p>
-                <button type="button" className="desk-button" disabled={busy} onClick={() => setCreating(false)}>
+                <Button variant="secondary" disabled={busy} onClick={() => setCreating(false)}>
                   {t('cancel')}
-                </button>
-                <button disabled={busy} className="desk-button primary">
-                  <Send size={16} aria-hidden="true" />
+                </Button>
+                <Button type="submit" variant="primary" icon={Send} disabled={busy}>
                   {busy ? '…' : t('send')}
-                </button>
+                </Button>
               </div>
             </form>
           ) : selected ? (
@@ -323,9 +322,9 @@ export default function SupportDesk({ admin = false, initialTopic, initialId }: 
                         {t('approveContribution')}
                       </label>
                     )}
-                    <button className="desk-button" disabled={busy} onClick={() => void update({ closed: selected.status !== 'closed' })}>
+                    <Button variant="secondary" disabled={busy} onClick={() => void update({ closed: selected.status !== 'closed' })}>
                       {selected.status === 'closed' ? t('reopen') : t('close')}
-                    </button>
+                    </Button>
                   </div>
                 )}
               </header>
@@ -348,10 +347,9 @@ export default function SupportDesk({ admin = false, initialTopic, initialId }: 
                 <div className="desk-closed">
                   <p>{admin ? t('adminClosedNote') : t('closedNote')}</p>
                   {!admin && (
-                    <button className="desk-button" onClick={startNew}>
-                      <Plus size={16} aria-hidden="true" />
+                    <Button variant="secondary" icon={Plus} onClick={startNew}>
                       {t('new')}
-                    </button>
+                    </Button>
                   )}
                 </div>
               ) : (
@@ -369,10 +367,9 @@ export default function SupportDesk({ admin = false, initialTopic, initialId }: 
                   />
                   <div>
                     <span>{t('sendHint')}</span>
-                    <button disabled={busy || !draft.trim()} className="desk-button primary">
-                      <Send size={16} aria-hidden="true" />
+                    <Button type="submit" variant="primary" icon={Send} disabled={busy || !draft.trim()}>
                       {busy ? '…' : t('send')}
-                    </button>
+                    </Button>
                   </div>
                 </form>
               )}
@@ -382,10 +379,9 @@ export default function SupportDesk({ admin = false, initialTopic, initialId }: 
               <MessageSquare size={32} aria-hidden="true" />
               <p>{t('select')}</p>
               {!admin && (
-                <button className="desk-button primary" onClick={startNew}>
-                  <Plus size={16} aria-hidden="true" />
+                <Button variant="primary" icon={Plus} onClick={startNew}>
                   {t('new')}
-                </button>
+                </Button>
               )}
             </div>
           )}
