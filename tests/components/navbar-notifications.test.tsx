@@ -6,7 +6,8 @@ import type { Notification } from '@/lib/notifications'
 
 // `pathname: null` stands for a route whose params are unknown while prerendering: reading it there never returns.
 const nav = vi.hoisted(() => ({ pathname: null as string | null }))
-const feed = vi.hoisted(() => ({ items: [] as Notification[], unread: 0 }))
+const feed = vi.hoisted(() => ({ items: [] as Notification[], unread: 0, fresh: [] as Notification[] }))
+const toasts = vi.hoisted(() => ({ custom: vi.fn(), dismiss: vi.fn() }))
 const auth = vi.hoisted(() => ({ status: 'authenticated' as 'authenticated' | 'loading', supportUnread: false }))
 vi.mock('@/lib/i18n/navigation', async () => {
   const { use } = await import('react')
@@ -27,7 +28,10 @@ vi.mock('next-auth/react', () => ({
   signOut: vi.fn(),
 }))
 vi.mock('@/hooks/useSupportUnread', () => ({ useSupportUnread: () => auth.supportUnread }))
-vi.mock('@/hooks/useNotifications', () => ({ useNotifications: () => ({ ...feed, open: vi.fn() }) }))
+vi.mock('@/hooks/useNotifications', () => ({
+  useNotifications: (_on: boolean, onFresh: (fresh: Notification[]) => void) => { if (feed.fresh.length) onFresh(feed.fresh); return { ...feed, open: vi.fn() } },
+}))
+vi.mock('@/lib/toast', () => ({ toast: toasts }))
 vi.mock('@/components/community/easterEggs', () => ({ useTapEgg: () => () => {} }))
 vi.mock('next/dynamic', async () => {
   const { lazy } = await import('react')
@@ -45,7 +49,7 @@ const items: Notification[] = [
   { id: 'c1', kind: 'comment', target: 'deck', href: '/decks/d1#deck-comments-title', title: '출혈 덱', actor: null, avatar: null, excerpt: '댓글 내용', at: '2026-10-02T12:00:00Z', unread: false },
 ]
 
-beforeEach(() => { nav.pathname = null; feed.items = []; feed.unread = 0; auth.status = 'authenticated'; auth.supportUnread = false })
+beforeEach(() => { nav.pathname = null; feed.items = []; feed.unread = 0; feed.fresh = []; toasts.custom.mockClear(); auth.status = 'authenticated'; auth.supportUnread = false })
 
 describe('REQ-COMMUNITY-015 the navbar bell shows unread notifications and its panel lists them', () => {
   it('REQ-COMMUNITY-015 the list links each item to its post\'s comments and names only unread ones as new', async () => {
@@ -119,6 +123,33 @@ describe('REQ-COMMUNITY-016 a new notification is announced as a toast card', ()
     expect(html).toContain('답글 내용')
     expect(html.match(/<button/g)).toHaveLength(2)
     expect(html).toContain('aria-label="닫기"')
+  })
+
+  it('REQ-COMMUNITY-016 the toast is one card: the site toaster\'s box (background, border, padding) is taken off it, and a bar shows the time left', async () => {
+    feed.fresh = [items[0]]
+    const { default: Navbar } = await import('@/components/layout/Navbar')
+    renderToStaticMarkup(<Navbar mainNavLabel="main" />)
+    // sonner spreads the <Toaster> toastOptions.style onto every toast's <li>, custom ones included.
+    const options = toasts.custom.mock.calls[0][1]
+    expect(options.style).toMatchObject({ background: 'none', border: 0, padding: 0, boxShadow: 'none' })
+    const { NotificationToast } = await import('@/components/layout/NavNotifications')
+    const html = renderToStaticMarkup(<NotificationToast item={items[0]} sentence="s" closeLabel="닫기" onOpen={() => {}} onClose={() => {}} />)
+    expect(html).toContain('data-toast-timer')
+  })
+})
+
+describe('REQ-COMMUNITY-096 each notification row shows its kind, and the bell\'s badge stays small', () => {
+  it('REQ-COMMUNITY-096 a kind mark sits on every row\'s picture', async () => {
+    const { NotificationList } = await import('@/components/layout/NavNotifications')
+    const html = renderToStaticMarkup(<NotificationList items={items} onNavigate={() => {}} />)
+    expect(html).toContain('data-kind="reply"')
+    expect(html).toContain('data-kind="comment"')
+  })
+
+  it('REQ-COMMUNITY-096 the badge is .875rem tall and rings out as an outline, not a filled circle', () => {
+    const css = readFileSync(resolve(__dirname, '../../components/layout/NavNotifications.module.css'), 'utf8')
+    expect(css).toMatch(/\.badge \{[^}]*height: \.875rem;/)
+    expect(css).not.toMatch(/\.badge::after \{[^}]*background/)
   })
 })
 
