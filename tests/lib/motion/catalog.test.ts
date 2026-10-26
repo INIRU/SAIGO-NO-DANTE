@@ -159,8 +159,8 @@ describe('REQ-MOTION-015 skill names from the site data', () => {
   })
 })
 
-describe('REQ-MOTION-016 effect names from labelKey', () => {
-  it('REQ-MOTION-016 writes a layer labelKey with the site keyword table, and gives nothing back for a key it cannot resolve', () => {
+describe('REQ-MOTION-014 condition labels from labelKey', () => {
+  it('REQ-MOTION-014 writes a labelKey with the site keyword table, and gives nothing back for a key it cannot resolve', () => {
     const refs = { Charge: { k: 'keyword' as const, n: '충전', kw: '충전' }, Sinking: { k: 'keyword' as const, n: '침잠', kw: '침잠' } }
     expect(formatMotionLabelKey('[Charge] 15', refs, () => undefined)).toBe('충전 15')
     expect(formatMotionLabelKey('[Sinking] + [Charge] 3', refs, () => undefined)).toBe('침잠 + 충전 3')
