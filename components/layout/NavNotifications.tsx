@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, type CSSProperties, type ReactNode } from 'react'
-import { Bell, MessageCircle, X } from 'lucide-react'
+import { Bell, Mail, MessageCircle, MessageSquare, PenLine, Reply, UserPlus, X, type LucideIcon } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import RelativeTime from '@/components/ui/RelativeTime'
 import { DEFAULT_AVATAR_URL } from '@/lib/constants/game'
@@ -9,9 +9,13 @@ import type { Notification } from '@/lib/notifications'
 import { NavAvatar, NavLink, focusRing } from './nav-shared'
 import styles from './NavNotifications.module.css'
 
+const KIND_ICONS: Record<Notification['kind'], LucideIcon> = { comment: MessageSquare, reply: Reply, follow: UserPlus, post: PenLine, inquiry: Mail }
+
 interface CardProps {
   /** The commenter's picture; null draws the support desk's mark instead. */
   avatar: string | null
+  /** Marked on the picture's corner (the support desk's row has none). */
+  kind?: Notification['kind']
   /** Who did what, with the name in <b>. */
   sentence: ReactNode
   /** The comment's first words. */
@@ -26,10 +30,14 @@ interface CardProps {
  * One notification row: picture, a line saying who did what, a line of the comment, the time and a dot while unread.
  * It reads no translations itself, because a toast renders it outside the page's message provider.
  */
-function NotificationCard({ avatar, sentence, words, unread, newLabel, time }: CardProps) {
+function NotificationCard({ avatar, kind, sentence, words, unread, newLabel, time }: CardProps) {
+  const Kind = kind && KIND_ICONS[kind]
   return (
     <span className={styles.card} data-unread={unread || undefined}>
-      {avatar ? <NavAvatar url={avatar} size="2.25rem" /> : <span className={styles.support}><MessageCircle size={17} aria-hidden="true" /></span>}
+      <span className={styles.face}>
+        {avatar ? <NavAvatar url={avatar} size="2.25rem" /> : <span className={styles.support}><MessageCircle size={17} aria-hidden="true" /></span>}
+        {Kind && <span className={styles.kind} data-kind={kind}><Kind size={10} strokeWidth={2.5} aria-hidden="true" /></span>}
+      </span>
       <span className="min-w-0">
         <span className={styles.line}>{sentence}</span>
         {words && <span className={`${styles.line} ${styles.words}`}>{words}</span>}
@@ -62,15 +70,15 @@ export function NotificationList({ items, supportUnread = false, onNavigate }: {
     <ul className={styles.list}>
       {supportUnread && (
         <li className={styles.row} style={{ '--i': 0 } as CSSProperties}>
-          <NavLink href="/support" onClick={onNavigate} className={`${styles.item} ${focusRing}`}>
+          <NavLink href="/support" onClick={onNavigate} data-unread className={`${styles.item} ${focusRing}`}>
             <NotificationCard avatar={null} sentence={t.rich('supportReply', { b: chunks => <b>{chunks}</b> })} unread newLabel={t('new')} />
           </NavLink>
         </li>
       )}
       {items.map((item, index) => (
         <li key={item.id} className={styles.row} style={{ '--i': Math.min(index + (supportUnread ? 1 : 0), 8) } as CSSProperties}>
-          <NavLink href={item.href} onClick={onNavigate} className={`${styles.item} ${focusRing}`}>
-            <NotificationCard avatar={item.avatar || DEFAULT_AVATAR_URL} sentence={sentenceOf(item, t)} words={item.excerpt} unread={item.unread} newLabel={t('new')}
+          <NavLink href={item.href} onClick={onNavigate} data-unread={item.unread || undefined} className={`${styles.item} ${focusRing}`}>
+            <NotificationCard avatar={item.avatar || DEFAULT_AVATAR_URL} kind={item.kind} sentence={sentenceOf(item, t)} words={item.excerpt} unread={item.unread} newLabel={t('new')}
               time={item.at && <RelativeTime date={item.at} />} />
           </NavLink>
         </li>
@@ -78,6 +86,11 @@ export function NotificationList({ items, supportUnread = false, onNavigate }: {
     </ul>
   )
 }
+
+/** How long a notification toast stays up; its bar runs down over the same time. */
+export const TOAST_LIFE_MS = 8000
+/** sonner puts the <Toaster>'s toastOptions.style (the site toasts' box) on custom toasts too: the card is the whole toast. */
+export const TOAST_FRAME = { background: 'none', border: 0, padding: 0, boxShadow: 'none' } as const
 
 /**
  * A new notification as a toast (sonner's `toast.custom`): the same row; pressing it opens the panel. `sentence` and
@@ -87,9 +100,10 @@ export function NotificationToast({ item, sentence, closeLabel, onOpen, onClose 
   return (
     <div className={styles.toast}>
       <button type="button" className={styles.toastOpen} onClick={onOpen}>
-        <NotificationCard avatar={item.avatar || DEFAULT_AVATAR_URL} sentence={sentence} words={item.excerpt} unread={false} newLabel="" />
+        <NotificationCard avatar={item.avatar || DEFAULT_AVATAR_URL} kind={item.kind} sentence={sentence} words={item.excerpt} unread={false} newLabel="" />
       </button>
       <button type="button" className={styles.toastClose} aria-label={closeLabel} onClick={onClose}><X size={15} aria-hidden="true" /></button>
+      <span aria-hidden="true" data-toast-timer className={styles.timer} style={{ animationDuration: `${TOAST_LIFE_MS}ms` }} />
     </div>
   )
 }
@@ -133,7 +147,7 @@ export default function NavNotifications({ items, unread, supportUnread, open, o
         className={`relative flex cursor-pointer items-center justify-center rounded-md transition-colors duration-150 hover:bg-[rgba(200,144,10,0.08)] hover:text-[var(--gold-light)] ${mobile ? 'h-11 w-11' : 'h-9 w-9'} ${open ? 'bg-[rgba(200,144,10,0.08)] text-[var(--gold-light)]' : 'text-[var(--text-secondary)]'} ${focusRing}`}
       >
         <Bell size={mobile ? 20 : 17} aria-hidden="true" className={unread > 0 ? styles.swing : undefined} />
-        {unread > 0 && <span aria-hidden="true" data-testid="nav-notify-badge" className={styles.badge}>{unread > 9 ? '9+' : unread}</span>}
+        {unread > 0 && <span key={unread} aria-hidden="true" data-testid="nav-notify-badge" className={styles.badge}>{unread > 9 ? '9+' : unread}</span>}
       </button>
       {open && (
         <div role="dialog" aria-label={t('title')} className={`${styles.panel} ${mobile ? styles.floating : styles.popover}`}>
