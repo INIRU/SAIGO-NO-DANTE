@@ -67,7 +67,7 @@ export function useSkillMotion() {
     const v = video.current, m = meta.current
     if (!v || !m || !comp.current || !onScreen.current) return
     const n = Math.min(m.frames - 1, Math.floor(v.currentTime * m.fps + 1e-3))
-    comp.current.draw(v, n)
+    comp.current.draw(v)
     show(n)
   }, [show])
 
@@ -147,6 +147,8 @@ export function useSkillMotion() {
       if (!response.ok) throw new Error(String(response.status))
       const m = await response.json() as LayerSetMeta
       if (mine !== token.current) return
+      // Older exports (before version 7) are replaced on R2; the compositor draws only the Y·Cb·Cr planes.
+      if (!m.basePlanes) throw new Error('layers.json before version 7')
       v.pause()
       free()
       meta.current = null
