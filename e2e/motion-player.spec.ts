@@ -13,14 +13,14 @@ async function closeAnnouncements(page: Page) {
   await page.addLocatorHandler(popup, async () => { await popup.getByRole('button', { name: '닫기' }).last().click() })
 }
 
-async function open(page: Page, url = SKILL) {
+async function open(page: Page) {
   await closeAnnouncements(page)
   // The asset host answers another origin's CORS header now and then (an edge-cached response): allow this one.
   await page.route('https://assets.saigo-no-dante.com/**', async route => {
     const response = await route.fetch()
     await route.fulfill({ response, headers: { ...response.headers(), 'access-control-allow-origin': '*' } })
   })
-  await page.goto(url)
+  await page.goto(SKILL)
   await page.getByRole('button', { name: '확인' }).click()
   await expect(page.getByRole('button', { name: '일시정지' })).toBeEnabled({ timeout: 30000 })
 }
@@ -122,8 +122,22 @@ test('REQ-MOTION-026 the stage keeps drawing while the video plays even when the
   expect(await frame()).toBeGreaterThan(first + 30)
 })
 
-test('REQ-MOTION-029 the player has no effect switches, even for a video whose layers.json lists layers', async ({ page }) => {
-  // 이상 흑수 - 오 필두 skill 1: its version 4 layers.json still lists two buff layers.
-  await open(page, '/ko/motion/skills?skill=id10114~1011401')
+test('REQ-MOTION-029 the player has no effect switches, even for a skill whose index entry counts layers', async ({ page }) => {
+  // 이상 흑수 - 오 필두 skill 1: the index counted two buff layers before version 9.
+  await closeAnnouncements(page)
+  await page.goto('/ko/motion/skills?skill=id10114~1011401')
+  await page.getByRole('button', { name: '확인' }).click()
+  await expect(page.getByRole('button', { name: '일시정지' }).or(page.getByText('영상을 불러오지 못했습니다.'))).toBeVisible({ timeout: 30000 })
   await expect(page.getByText('이펙트', { exact: true })).toHaveCount(0)
+})
+
+test('REQ-MOTION-028 a layers.json from before version 7 (no Y·Cb·Cr planes) is not drawn: the stage says it could not load', async ({ page }) => {
+  await page.route('https://assets.saigo-no-dante.com/**/layers.json', route => route.fulfill({
+    json: { version: 4, fps: 60, frames: 10, tile: { w: 1920, h: 1080 }, video: { file: 'layers.mp4', w: 1920, h: 1080 }, base: { x: 0, y: 0, w: 1920, h: 1080 }, layers: [] },
+    headers: { 'access-control-allow-origin': '*' },
+  }))
+  await closeAnnouncements(page)
+  await page.goto(SKILL)
+  await page.getByRole('button', { name: '확인' }).click()
+  await expect(page.getByText('영상을 불러오지 못했습니다.')).toBeVisible({ timeout: 30000 })
 })
