@@ -3,7 +3,6 @@ import { LayerCompositor, type LayerSetMeta } from '@/lib/motion/compositor'
 import { motionAssetUrl, type MotionState } from '@/lib/motion/catalog'
 
 /** `labelKey`: the layer's name as keys (`[Keyword] stack`), written in the page language by the side panel. */
-export type MotionLayerToggle = { id: string; label: string; labelKey?: string; on: boolean; offAtSkill: boolean }
 export type MotionStatus = 'idle' | 'loading' | 'ready' | 'error'
 export type MotionError = 'webgl' | 'load'
 /** The frame being shown, read by the controls only (the rest of the page does not re-render 60 times a second). */
@@ -14,9 +13,8 @@ const STALE_MS = 100
 
 /**
  * The skill motion player (the reference player of the R2 export, as a hook): a hidden video element feeds the WebGL2
- * compositor, which draws the base picture plus the wanted buff layers into a canvas the hook puts in `hostRef`. A newer
- * load cancels an older one; the layer switches are kept by layer id across skills and states. The video starts muted
- * (autoplay), and iOS Safari loads no frame until play(), so a load always calls play() first. While held (the stage's
+ * compositor, which draws the picture into a canvas the hook puts in `hostRef`. A newer load cancels an older one. The
+ * video starts muted (autoplay), and iOS Safari loads no frame until play(), so a load always calls play() first. While held (the stage's
  * Project Moon notice is up) a load stops at its first frame and nothing plays; releasing the hold starts it.
  */
 export function useSkillMotion() {
@@ -24,7 +22,6 @@ export function useSkillMotion() {
   const video = useRef<HTMLVideoElement | null>(null)
   const comp = useRef<LayerCompositor | null>(null)
   const meta = useRef<LayerSetMeta | null>(null)
-  const toggles = useRef(new Map<string, boolean>())
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   // The stage out of view (a phone scrolled down to the skill card): no frame is drawn, so iOS Safari does not upload a
   // 1920×1440 video frame 60 times a second for nothing.
@@ -43,7 +40,6 @@ export function useSkillMotion() {
   const volumeRef = useRef(1)
   const [frames, setFrames] = useState(0)
   const [hasAudio, setHasAudio] = useState(false)
-  const [layers, setLayers] = useState<MotionLayerToggle[]>([])
 
   const frameStore = useRef<MotionFrameStore>({
     subscribe: listener => { frame.current.listeners.add(listener); return () => frame.current.listeners.delete(listener) },
@@ -178,11 +174,6 @@ export function useSkillMotion() {
       observer.current?.disconnect()
       observer.current?.observe(canvas)
       meta.current = m
-      m.layers.forEach((layer, k) => {
-        if (!toggles.current.has(layer.id)) toggles.current.set(layer.id, layer.enabled !== false)
-        comp.current!.on[k] = !layer.empty && toggles.current.get(layer.id)!
-      })
-      setLayers(m.layers.filter(layer => !layer.empty).map(layer => ({ id: layer.id, label: layer.label, labelKey: (layer as { labelKey?: string }).labelKey, on: toggles.current.get(layer.id)!, offAtSkill: Boolean(layer.offAtSkill) })))
       setFrames(m.frames)
       setHasAudio(Boolean(m.audio))
       v.currentTime = 0
@@ -238,14 +229,8 @@ export function useSkillMotion() {
     setVolumeState(value)
     setMuted(v.muted)
   }, [])
-  const setLayer = useCallback((id: string, on: boolean) => {
-    toggles.current.set(id, on)
-    meta.current?.layers.forEach((layer, k) => { if (layer.id === id && comp.current) comp.current.on[k] = on })
-    setLayers(list => list.map(layer => layer.id === id ? { ...layer, on } : layer))
-    draw()
-  }, [draw])
 
-  return { hostRef, status, error, playing, muted, volume, frames, hasAudio, layers, frameStore, load, togglePlay, hold, seek, step, toggleMute, setVolume, setLayer }
+  return { hostRef, status, error, playing, muted, volume, frames, hasAudio, frameStore, load, togglePlay, hold, seek, step, toggleMute, setVolume }
 }
 
 /** The frame being shown, for a component that draws it (the counter, the seek bar). */

@@ -151,7 +151,7 @@ export default function SkillMotionViewer() {
       </div>
 
       <aside className="min-w-0 xl:min-h-0 xl:overflow-y-auto xl:overscroll-contain xl:pr-1">
-        {!pending && <MotionSidePanel skillId={picked.skill.skillId} layers={motion.layers} onLayer={motion.setLayer} />}
+        {!pending && <MotionSidePanel skillId={picked.skill.skillId} />}
       </aside>
       </div>
 

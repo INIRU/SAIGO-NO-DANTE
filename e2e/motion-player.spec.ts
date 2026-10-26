@@ -13,14 +13,14 @@ async function closeAnnouncements(page: Page) {
   await page.addLocatorHandler(popup, async () => { await popup.getByRole('button', { name: '닫기' }).last().click() })
 }
 
-async function open(page: Page) {
+async function open(page: Page, url = SKILL) {
   await closeAnnouncements(page)
   // The asset host answers another origin's CORS header now and then (an edge-cached response): allow this one.
   await page.route('https://assets.saigo-no-dante.com/**', async route => {
     const response = await route.fetch()
     await route.fulfill({ response, headers: { ...response.headers(), 'access-control-allow-origin': '*' } })
   })
-  await page.goto(SKILL)
+  await page.goto(url)
   await page.getByRole('button', { name: '확인' }).click()
   await expect(page.getByRole('button', { name: '일시정지' })).toBeEnabled({ timeout: 30000 })
 }
@@ -120,4 +120,10 @@ test('REQ-MOTION-026 the stage keeps drawing while the video plays even when the
   const first = await frame()
   await page.waitForTimeout(1500)
   expect(await frame()).toBeGreaterThan(first + 30)
+})
+
+test('REQ-MOTION-029 the player has no effect switches, even for a video whose layers.json lists layers', async ({ page }) => {
+  // 이상 흑수 - 오 필두 skill 1: its version 4 layers.json still lists two buff layers.
+  await open(page, '/ko/motion/skills?skill=id10114~1011401')
+  await expect(page.getByText('이펙트', { exact: true })).toHaveCount(0)
 })
