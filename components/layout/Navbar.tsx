@@ -17,7 +17,7 @@ import { toast } from '@/lib/toast'
 import { NAV_AUTH_HINT_KEY } from '@/lib/constants/nav-boot'
 import { NavAvatar, NavLink, focusRing, menuRow, navItem, panel } from './nav-shared'
 import { NavbarGroups, NavbarRouteReset } from './NavbarIslands'
-import NavNotifications, { NotificationToast, sentenceOf } from './NavNotifications'
+import NavNotifications, { NotificationToast, TOAST_FRAME, TOAST_LIFE_MS, sentenceOf } from './NavNotifications'
 import NavbarMobileSheet from './NavbarMobileSheet'
 import NavbarSearchModal from './NavbarSearchModal'
 
@@ -134,7 +134,7 @@ export default function Navbar({ mainNavLabel }: NavbarProps) {
       const id = `notify-${item.id}`
       toast.custom(() => (
         <NotificationToast item={item} sentence={sentenceOf(item, tNotify)} closeLabel={tNotify('close')} onOpen={() => openNotifications.current()} onClose={() => toast.dismiss(id)} />
-      ), { id, duration: 8000 })
+      ), { id, duration: TOAST_LIFE_MS, style: TOAST_FRAME })
     }
   })
   const closeNotifications = useCallback(() => setNotifyOpen(false), [])
