@@ -22,7 +22,7 @@ async function compose(page: Page, meta: LayerSetMeta, tiles: Tile[]): Promise<n
     for (const t of tiles) { ctx.fillStyle = `rgb(${t.rgb.join(',')})`; ctx.fillRect(t.x, t.y, t.w, t.h) }
     const { LayerCompositor } = (window as unknown as { MotionCompositor: typeof import('../lib/motion/compositor') }).MotionCompositor
     const comp = new LayerCompositor(document.createElement('canvas'), meta)
-    comp.draw(source as unknown as HTMLVideoElement)
+    comp.draw(source as unknown as HTMLVideoElement, 0)
     const px = new Uint8Array(4)
     comp.gl.readPixels(meta.tile.w >> 1, meta.tile.h >> 1, 1, 1, comp.gl.RGBA, comp.gl.UNSIGNED_BYTE, px)
     return [px[0] / 255, px[1] / 255, px[2] / 255]
@@ -35,7 +35,7 @@ const grey = (v: number): [number, number, number] => [v, v, v]
 
 // Version 9: 8×8 canvas from a 16×16 video, the Y, Cb and Cr planes in three quarters (the fourth holds the frame code).
 const meta: LayerSetMeta = {
-  version: 9, fps: 60, frames: 10, tile: { w: 8, h: 8 }, video: { file: 'layers.mp4', w: 16, h: 16 },
+  skill: { name: 'test' }, fps: 60, frames: 10, tile: { w: 8, h: 8 }, video: { file: 'layers.mp4', w: 16, h: 16 }, base: { x: 0, y: 0 }, layers: [],
   basePlanes: { y: { x: 0, y: 0, w: 8, h: 8 }, cb: { x: 8, y: 0, w: 8, h: 8 }, cr: { x: 0, y: 8, w: 8, h: 8 } },
 }
 const Y = 128, CB = 153, CR = 102

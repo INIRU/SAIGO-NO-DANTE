@@ -1,9 +1,10 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState, type RefObject } from 'react'
+import { useCallback, useEffect, useId, useRef, useState, type RefObject } from 'react'
 import { useTranslations } from 'next-intl'
-import { ChevronLeft, ChevronRight, Hourglass, Info, Maximize, Minimize, Pause, Play, RotateCw, Smartphone, Volume2, VolumeX } from 'lucide-react'
-import { useMotionFrame, type MotionError, type MotionFrameStore, type MotionStatus } from '@/hooks/useSkillMotion'
+import { ChevronLeft, ChevronRight, Hourglass, Info, Maximize, Minimize, Pause, Play, RotateCw, SlidersHorizontal, Smartphone, Volume2, VolumeX } from 'lucide-react'
+import Switch from '@/components/ui/Switch'
+import { useMotionFrame, type MotionError, type MotionFrameStore, type MotionStatus, type MotionVolumes } from '@/hooks/useSkillMotion'
 import { useStageScreen } from '@/hooks/useStageScreen'
 import styles from './Motion.module.css'
 
@@ -30,14 +31,43 @@ function SeekBar({ store, frames, label, onSeek }: { store: MotionFrameStore; fr
   )
 }
 
+/**
+ * The sound settings over the bar's right end: the master, voice and effects volumes (each sound at once, also while muted)
+ * and the critical-hit sound switch. It stays in the page while closed (hidden), so the sliders keep their place.
+ */
+function VolumePanel({ id, open, volumes, critical, hasCritical, onVolume, onCritical }: {
+  id: string; open: boolean; volumes: MotionVolumes; critical: boolean; hasCritical: boolean
+  onVolume: (kind: keyof MotionVolumes, value: number) => void; onCritical: (on: boolean) => void
+}) {
+  const t = useTranslations('motionPage')
+  const rows = [['master', 'volumeMaster'], ['voice', 'volumeVoice'], ['sfx', 'volumeSfx']] as const
+  return (
+    <div id={id} hidden={!open} className={`${styles.volumePanel} absolute bottom-full right-1.5 z-[3] mb-1.5 w-[15.5rem] rounded-lg border border-[#5a4526] bg-[rgba(18,14,9,0.96)] px-3.5 py-3 shadow-[0_1rem_2.5rem_rgba(0,0,0,0.6)]`}>
+      {rows.map(([kind, key]) => (
+        <label key={kind} className="grid grid-cols-[3.75rem_minmax(0,1fr)_2.25rem] items-center gap-2 py-1 text-[0.8125rem] text-[var(--text-secondary)]">
+          <span>{t(key)}</span>
+          <input type="range" min={0} max={1} step={0.05} value={volumes[kind]} aria-label={t(key)}
+            onChange={event => onVolume(kind, Number(event.target.value))}
+            className={`${styles.seek} h-7 w-full cursor-pointer`} style={{ ['--fill' as string]: `${volumes[kind] * 100}%` }} />
+          <span className="text-right font-[family-name:var(--font-title)] tabular-nums text-[var(--text-primary)]">{Math.round(volumes[kind] * 100)}</span>
+        </label>
+      ))}
+      <div className="mt-1.5 flex items-center justify-between gap-2 border-t border-[#2e2417] pt-2.5 text-[0.8125rem] text-[var(--text-secondary)]">
+        <span>{t('critSound')}</span>
+        <Switch size="sm" checked={critical} onChange={onCritical} label={t('critSound')} disabled={!hasCritical} />
+      </div>
+    </div>
+  )
+}
+
 const iconButton = 'h-10 w-10 shrink-0 place-items-center rounded-md text-[var(--text-secondary)] transition-colors hover:bg-[rgba(200,144,10,0.08)] hover:text-[var(--gold-light)] disabled:pointer-events-none disabled:opacity-35 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--gold-light)]'
 
 /**
  * The 16:9 stage the compositor draws into, with Project Moon's credit: a notice over the picture once a visit (the
  * motion is their work and may differ from the game), which holds playback until it is dismissed, and a small
  * "© Project Moon" label always at the bottom centre. Under it the
- * controls: play, a frame back and forward, the seek bar, the frame counter, the sound and its volume (with a mouse; iPhone
- * Safari takes the volume from the device buttons only) and the full screen (on a phone held
+ * controls: play, a frame back and forward, the seek bar, the frame counter, the sound, its volume panel (master, voice,
+ * effects and the critical-hit sound; Web Audio, so the iPhone follows it too) and the full screen (on a phone held
  * upright, also landscape). On a narrow stage the seek bar takes its own row above the buttons.
  */
 /**
@@ -72,13 +102,16 @@ export function MotionPendingStage() {
   )
 }
 
-export default function MotionStage({ hostRef, status, error, playing, muted, volume, hasAudio, frames, frameStore, onTogglePlay, onStep, onSeek, onToggleMute, onVolume, onRetry, notice, onDismiss }: {
+export default function MotionStage({ hostRef, status, error, playing, muted, volumes, critical, hasCritical, hasAudio, frames, frameStore, onTogglePlay, onStep, onSeek, onToggleMute, onVolume, onCritical, onRetry, notice, onDismiss }: {
   hostRef: RefObject<HTMLDivElement | null>
   status: MotionStatus
   error: MotionError | null
   playing: boolean
   muted: boolean
-  volume: number
+  volumes: MotionVolumes
+  /** The critical-hit sound on, and whether this state has one to switch. */
+  critical: boolean
+  hasCritical: boolean
   hasAudio: boolean
   frames: number
   frameStore: MotionFrameStore
@@ -86,7 +119,8 @@ export default function MotionStage({ hostRef, status, error, playing, muted, vo
   onStep: (delta: number) => void
   onSeek: (frame: number) => void
   onToggleMute: () => void
-  onVolume: (volume: number) => void
+  onVolume: (kind: keyof MotionVolumes, volume: number) => void
+  onCritical: (on: boolean) => void
   onRetry: () => void
   /** The notice of this visit (useCreditNotice): the controls stay off until it is dismissed (false). */
   notice: boolean | null
@@ -107,6 +141,18 @@ export default function MotionStage({ hostRef, status, error, playing, muted, vo
   const centerPlay = ready && !playing && !scrubbing && !notice
   const rootRef = useRef<HTMLDivElement>(null)
   const view = useStageScreen(rootRef)
+  // The volume panel closes on a press outside it and its button, and on Escape.
+  const [volumeOpen, setVolumeOpen] = useState(false)
+  const volumeRef = useRef<HTMLDivElement>(null)
+  const panelId = useId()
+  useEffect(() => {
+    if (!volumeOpen) return
+    const outside = (event: PointerEvent) => { if (!volumeRef.current?.contains(event.target as Node)) setVolumeOpen(false) }
+    const escape = (event: KeyboardEvent) => { if (event.key === 'Escape') setVolumeOpen(false) }
+    document.addEventListener('pointerdown', outside)
+    document.addEventListener('keydown', escape)
+    return () => { document.removeEventListener('pointerdown', outside); document.removeEventListener('keydown', escape) }
+  }, [volumeOpen])
   // Full screen: the root covers the screen (or is the browser's full screen element, which may not be turned), and the
   // frame inside it fills it, or lies a quarter turned across a phone held upright.
   const frame = !view.full ? 'overflow-hidden rounded-lg border border-[#2e2417]'
@@ -164,7 +210,7 @@ export default function MotionStage({ hostRef, status, error, playing, muted, vo
         </span>
       </div>
 
-      <div className="flex flex-wrap items-center gap-1 border-t border-[#2e2417] bg-[var(--bg-panel)] px-1.5 py-1 @md:flex-nowrap @md:gap-1.5 @md:px-2">
+      <div className="relative flex flex-wrap items-center gap-1 border-t border-[#2e2417] bg-[var(--bg-panel)] px-1.5 py-1 @md:flex-nowrap @md:gap-1.5 @md:px-2">
         <button type="button" className={`${iconButton} grid`} onClick={onTogglePlay} disabled={!ready} aria-label={playing ? t('pause') : t('play')}>
           {playing ? <Pause className="h-5 w-5" aria-hidden="true" /> : <Play className="h-5 w-5" aria-hidden="true" />}
         </button>
@@ -175,10 +221,13 @@ export default function MotionStage({ hostRef, status, error, playing, muted, vo
         <button type="button" className={`${iconButton} grid @max-md:ml-auto`} onClick={onToggleMute} disabled={!ready || !hasAudio} aria-label={muted ? t('soundOn') : t('soundOff')} aria-pressed={!muted}>
           {muted ? <VolumeX className="h-5 w-5" aria-hidden="true" /> : <Volume2 className="h-5 w-5" aria-hidden="true" />}
         </button>
-        <input type="range" min={0} max={1} step={0.05} value={muted ? 0 : volume} aria-label={t('volume')} disabled={!ready || !hasAudio}
-          onChange={event => onVolume(Number(event.target.value))}
-          className={`${styles.seek} hidden h-8 w-20 shrink-0 cursor-pointer @md:pointer-fine:block`}
-          style={{ ['--fill' as string]: `${(muted ? 0 : volume) * 100}%` }} />
+        <div ref={volumeRef} className="contents">
+          <button type="button" className={`${iconButton} grid`} onClick={() => setVolumeOpen(!volumeOpen)} disabled={!ready || !hasAudio}
+            aria-label={t('volume')} aria-expanded={volumeOpen} aria-controls={panelId} data-open={volumeOpen || undefined}>
+            <SlidersHorizontal className="h-5 w-5" aria-hidden="true" />
+          </button>
+          <VolumePanel id={panelId} open={volumeOpen && ready && hasAudio} volumes={volumes} critical={critical} hasCritical={hasCritical} onVolume={onVolume} onCritical={onCritical} />
+        </div>
         <button type="button" className={`${iconButton} hidden max-sm:pointer-coarse:grid`} onClick={() => void (view.turned ? view.close() : view.open(true))}
           aria-label={view.turned ? t('portrait') : t('landscape')}>
           <Smartphone className={`h-5 w-5 transition-transform ${view.turned ? '' : 'rotate-90'}`} aria-hidden="true" />
