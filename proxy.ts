@@ -179,12 +179,15 @@ export async function proxy(request: NextRequest) {
       if (!(token as Record<string, unknown>)?.isAdmin) {
         const url = request.nextUrl.clone()
         url.pathname = locale ? `/${locale}/maintenance` : '/maintenance'
-        url.searchParams.set('from', pathname)
+        url.search = ''
+        url.searchParams.set('from', pathname + request.nextUrl.search)
         if (matched.message) url.searchParams.set('message', matched.message)
         if (matched.reason) url.searchParams.set('reason', matched.reason)
         if (matched.starts_at) url.searchParams.set('starts_at', matched.starts_at)
         if (matched.ends_at) url.searchParams.set('ends_at', matched.ends_at)
-        return NextResponse.rewrite(url)
+        // A redirect, not a rewrite: the server listens on 127.0.0.1, which Next calls localhost in nextUrl, so a
+        // rewrite looked like another host and was proxied over https to the plain-http server (500).
+        return NextResponse.redirect(url, 307)
       }
     }
   }
