@@ -2842,6 +2842,11 @@
     "skills": "Skills",
     "link": "Link",
     "maxState": "Max State",
+    "volumeMaster": "Master",
+    "volumeVoice": "Voice",
+    "volumeSfx": "Effects",
+    "critSound": "Critical hit sound",
+    "deadAllies": "Fallen allies",
     "pendingTitle": "Motion in progress",
     "pendingBody": "Each motion is built by recording and analyzing in-game footage, so it takes at least 5 days to 2 weeks."
   }

@@ -7,8 +7,8 @@ import MotionStage, { MotionPendingStage } from '@/components/motion/MotionStage
 
 const store = { subscribe: () => () => {}, get: () => 0 }
 const stage = (props: Partial<Parameters<typeof MotionStage>[0]> = {}) => renderToStaticMarkup(
-  <MotionStage hostRef={{ current: null }} status="ready" error={null} playing={false} muted volume={1} hasAudio={false} frames={120} frameStore={store}
-    onTogglePlay={() => {}} onStep={() => {}} onSeek={() => {}} onToggleMute={() => {}} onVolume={() => {}} onRetry={() => {}} notice={false} onDismiss={() => {}} {...props} />,
+  <MotionStage hostRef={{ current: null }} status="ready" error={null} playing={false} muted volumes={{ master: 0.5, voice: 1, sfx: 1 }} critical hasCritical={false} hasAudio={false} frames={120} frameStore={store}
+    onTogglePlay={() => {}} onStep={() => {}} onSeek={() => {}} onToggleMute={() => {}} onVolume={() => {}} onCritical={() => {}} onRetry={() => {}} notice={false} onDismiss={() => {}} {...props} />,
 )
 
 describe('REQ-MOTION-008 the stage credits Project Moon', () => {
@@ -46,10 +46,19 @@ describe('REQ-MOTION-008 the stage credits Project Moon', () => {
     expect(html).toMatch(/class="[^"]*\bhidden max-sm:pointer-coarse:grid[^"]*"[^>]*aria-label="landscape"/)
   })
 
-  it('REQ-MOTION-010 has a volume slider beside the sound button that reads 0 while muted', () => {
-    expect(stage({ muted: false, volume: 0.5, hasAudio: true })).toMatch(/<input[^>]*aria-label="volume"[^>]*value="0.5"/)
-    expect(stage({ muted: true, volume: 0.5, hasAudio: true })).toMatch(/<input[^>]*aria-label="volume"[^>]*value="0"/)
-    expect(stage({ hasAudio: false })).toMatch(/<input[^>]*aria-label="volume"[^>]*disabled=""/)
+  it('REQ-MOTION-010 opens the volume panel from a button beside the sound button, off for a video without sound', () => {
+    expect(stage({ hasAudio: true })).toMatch(/<button[^>]*aria-label="volume"[^>]*aria-expanded="false"/)
+    expect(stage({ hasAudio: false })).toMatch(/<button[^>]*disabled=""[^>]*aria-label="volume"|<button[^>]*aria-label="volume"[^>]*disabled=""/)
+  })
+
+  it('REQ-MOTION-031 holds the master, voice and effects sliders at their values (also while muted) and the critical-hit sound switch', () => {
+    const html = stage({ hasAudio: true, hasCritical: true, muted: true, volumes: { master: 0.3, voice: 0.8, sfx: 0.6 } })
+    expect(html).toMatch(/<input[^>]*aria-label="volumeMaster"[^>]*value="0.3"/)
+    expect(html).toMatch(/<input[^>]*aria-label="volumeVoice"[^>]*value="0.8"/)
+    expect(html).toMatch(/<input[^>]*aria-label="volumeSfx"[^>]*value="0.6"/)
+    expect(html).toMatch(/<button[^>]*role="switch"[^>]*aria-checked="true"[^>]*aria-label="critSound"|<button[^>]*aria-label="critSound"[^>]*role="switch"[^>]*aria-checked="true"/)
+    // A state without a critical-hit sound: the switch is off limits.
+    expect(stage({ hasAudio: true, hasCritical: false })).toMatch(/<button[^>]*role="switch"[^>]*disabled=""/)
   })
 
   it('REQ-MOTION-012 shows a play button over the middle of a paused video, and fades it out while playing or loading', () => {
