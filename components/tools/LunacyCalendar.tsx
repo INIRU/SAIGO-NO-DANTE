@@ -117,7 +117,7 @@ export default function LunacyCalendar() {
   if (!plan || !computed)
     return (
       <div className={css.page} aria-busy="true">
-        {t.title}
+        <h1 className="[font:inherit]">{t.title}</h1>
       </div>
     );
   const month = computed.months[monthIndex],

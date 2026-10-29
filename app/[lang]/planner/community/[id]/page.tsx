@@ -61,8 +61,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     path,
     title: tDetail('metaTitle', { title: plan.title }),
     description: plan.description
-      ? tDetail('metaDescriptionWithDescription', { difficulty: diff, description: notePlainText(plan.description).slice(0,160) })
-      : tDetail('metaDescription', { difficulty: diff }),
+      ? tDetail('metaDescriptionWithDescription', { difficulty: diff, description: notePlainText(plan.description).replace(/\s+/g, ' ').trim().slice(0, 160) })
+      : tDetail('metaDescription', { difficulty: diff, title: plan.title }),
     image: { url: absoluteUrl(`/${lang}${path}/opengraph-image`), width: 1200, height: 630, alt: plan.title },
   })
 }

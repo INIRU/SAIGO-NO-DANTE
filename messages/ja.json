@@ -926,7 +926,7 @@
     "detail": {
       "notFoundTitle": "プランが見つかりません",
       "metaTitle": "{title} — リンバスカンパニー ミラーダンジョンプラン",
-      "metaDescription": "リンバスカンパニー ミラーダンジョン {difficulty} プラン",
+      "metaDescription": "{title}：リンバスカンパニー ミラーダンジョン {difficulty} プラン。編成・階層ごとのテーマパック・ギフトの流れをまとめています。",
       "metaDescriptionWithDescription": "{difficulty}難易度 — {description}",
       "backToCommunity": "コミュニティプラン",
       "anonymous": "匿名",
