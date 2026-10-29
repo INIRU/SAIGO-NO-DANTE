@@ -20,12 +20,10 @@ import type { GiftConditionScope, GiftConditionStatus } from '@/lib/planner/gift
 import { gameTextToPlain, splitGameTextLines } from '@/lib/game-text/rich-text'
 import { createGiftRefSplitter, type GiftRefTarget } from '@/lib/mirror-dungeon/gift-refs'
 import { getGameUiAsset } from '@/lib/utils/game-ui'
-import { STORAGE_BASE } from '@/lib/constants/game'
 import { conditionLines } from '@/lib/mirror-dungeon/gift-condition-lines'
 import { PlaceholderGiftProvider, type PlaceholderGift } from '@/components/ui/PlaceholderLabel'
 
 const CREDIT_ICON = getGameUiAsset('resources/md-credit')
-const LOCK_URL = `${STORAGE_BASE}/icons/ui/lock.webp`
 
 function Credits({ value }: { value: number }) {
   return (
@@ -140,8 +138,11 @@ function Section({ title, aside, children }: { title: string; aside?: ReactNode;
   )
 }
 
-/** gate: the gift has a head-count condition; its lines get the game's lock and, while it is unmet (off), fade. */
-export function EffectText({ text, color, links, gate }: { text: string; color: string; links?: GiftDetailData['giftLinks']; gate?: { partial: boolean; off: boolean } }) {
+/**
+ * gate: the gift has a head-count condition. The lines it decides turn gold while the condition's lock is pressed (as an
+ * enhancement's text does), and fade while the condition is unmet.
+ */
+export function EffectText({ text, color, links, gate }: { text: string; color: string; links?: GiftDetailData['giftLinks']; gate?: { partial: boolean; off: boolean; shown: boolean } }) {
   const formatSkillDesc = useFormatSkillDesc()
   const split = useMemo(() => links?.targets.length ? createGiftRefSplitter(links.targets, links) : null, [links])
   // {{gift:<game id>}} (a convert_to gift's target) shows that gift as a link.
@@ -153,22 +154,22 @@ export function EffectText({ text, color, links, gate }: { text: string; color: 
   // Lines split so a tag spanning lines keeps applying; the bullet check reads the visible text, as a line may start with a tag.
   const lines = splitGameTextLines(text).map(l => l.trim()).filter(Boolean)
   const gated = new Set(gate ? conditionLines(lines.map(line => gameTextToPlain(line)), gate.partial)?.gated ?? [] : [])
-  const render = (line: string) => split
+  const render = (line: string, lineColor: string) => split
     ? split(line).map((part, i) => typeof part === 'string'
-      ? <span key={i}>{formatSkillDesc(part, color)}</span>
+      ? <span key={i}>{formatSkillDesc(part, lineColor)}</span>
       : <GiftLink key={i} target={part.gift as GiftLinkTarget} />)
-    : formatSkillDesc(line, color)
+    : formatSkillDesc(line, lineColor)
   return (
     <PlaceholderGiftProvider lookup={giftById}>
       <div style={{ color: '#d8ccb4', fontSize: '0.875rem', lineHeight: 1.75 }}>
         {lines.map((line, i) => {
           const isSub = /^-\s/.test(gameTextToPlain(line))
           const locked = gated.has(i)
+          const lit = locked && gate?.shown
           return (
             <p key={i} data-gated={locked ? '' : undefined}
-              style={{ ...(isSub ? { paddingLeft: '0.875rem', textIndent: '-0.625rem', marginTop: '0.125rem' } : { marginTop: i > 0 ? '0.5rem' : 0 }), ...(locked && gate?.off ? { opacity: 0.45 } : {}), transition: 'opacity 0.2s ease' }}>
-              {locked && <Image src={LOCK_URL} alt="" width={118} height={157} className="mr-1.5 inline-block align-[-0.1em]" style={{ width: '0.625rem', height: 'auto' }} />}
-              {render(line)}
+              style={{ ...(isSub ? { paddingLeft: '0.875rem', textIndent: '-0.625rem', marginTop: '0.125rem' } : { marginTop: i > 0 ? '0.5rem' : 0 }), ...(lit ? { color: 'var(--gold-light)' } : {}), ...(locked && gate?.off ? { opacity: 0.45 } : {}), transition: 'opacity 0.2s ease, color 0.2s ease' }}>
+              {render(line, lit ? '#e8b030' : color)}
             </p>
           )
         })}
@@ -228,6 +229,8 @@ export default function GiftDetailModal({ gift, lang, onClose, initialLevel = 0,
   const [base, plus, plusplus] = gift.effects
   const maxLevel = plusplus ? 2 : plus ? 1 : 0
   const [level, setLevel] = useState(Math.min(initialLevel, maxLevel))
+  // The condition's lock, pressed: the effect lines it decides turn gold.
+  const [showGated, setShowGated] = useState(false)
   const effect = [base, plus, plusplus][level] ?? base
   const effectColor = level === 2 ? '#e8b030' : level === 1 ? '#d8b878' : '#c8b898'
   const kwColor = getGiftKeywordColor(gift.keyword ?? null)
@@ -297,7 +300,8 @@ export default function GiftDetailModal({ gift, lang, onClose, initialLevel = 0,
           </header>
 
           {/* The condition gates the effect, so it sits between the gift and its effect, marked with the game's lock. */}
-          {gift.condition && <GiftConditionPlate text={gift.condition} condition={gift.activation} scope={gift.conditionScope} status={gift.conditionStatus} />}
+          {gift.condition && <GiftConditionPlate text={gift.condition} condition={gift.activation} scope={gift.conditionScope} status={gift.conditionStatus}
+            gatedShown={showGated} onToggleGated={effect ? () => setShowGated(shown => !shown) : undefined} />}
 
           {effect && (
             <Section
@@ -309,7 +313,7 @@ export default function GiftDetailModal({ gift, lang, onClose, initialLevel = 0,
               )}
             >
               <EffectText key={level} text={effect} color={effectColor} links={gift.giftLinks}
-                gate={gift.condition ? { partial: !!gift.activation?.partial, off: gift.conditionStatus?.level === 'unmet' } : undefined} />
+                gate={gift.condition ? { partial: !!gift.activation?.partial, off: gift.conditionStatus?.level === 'unmet', shown: showGated } : undefined} />
             </Section>
           )}
 

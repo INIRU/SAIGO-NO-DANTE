@@ -79,8 +79,10 @@ function conditionIcons(condition: PlateCondition): string[] {
  * The gift's condition as the game marks a locked effect: the lock, the keyword or affiliation icons and the rule; under
  * it the head count it reads, and with a formation the count as pips (gold: deployed, outlined: the bench) against the need.
  */
-export function GiftConditionPlate({ text, condition, scope, status }: {
+export function GiftConditionPlate({ text, condition, scope, status, gatedShown = false, onToggleGated }: {
   text: string; condition?: PlateCondition | null; scope?: GiftConditionScope | null; status?: GiftConditionStatus | null
+  /** The lock is a switch when there is an effect to mark: pressed, the effect lines the condition decides turn gold. */
+  gatedShown?: boolean; onToggleGated?: () => void
 }) {
   const t = useTranslations('giftDetail')
   const summary = useGiftConditionText()
@@ -90,7 +92,11 @@ export function GiftConditionPlate({ text, condition, scope, status }: {
   const bench = status && !status.scope ? Math.max(0, status.all - status.formation) : 0
   return (
     <div className={styles.lockPlate} data-level={status?.level ?? 'met'} data-partial={condition?.partial ? '' : undefined}>
-      <Image src={LOCK_URL} alt="" width={118} height={157} className={styles.lock} />
+      {onToggleGated
+        ? <button type="button" className={styles.lockButton} aria-pressed={gatedShown} onClick={onToggleGated} title={t('showGated')} aria-label={t('showGated')}>
+          <Image src={LOCK_URL} alt="" width={118} height={157} className={styles.lock} />
+        </button>
+        : <Image src={LOCK_URL} alt="" width={118} height={157} className={styles.lock} />}
       <div className={styles.lockBody}>
         <p className={styles.lockRule}>
           {icons.map(src => <Image key={src} src={src} alt="" width={24} height={24} className={styles.lockIcon} />)}
@@ -98,7 +104,7 @@ export function GiftConditionPlate({ text, condition, scope, status }: {
         </p>
         <p className={styles.lockTags}>
           {/* Which effects it decides: all of them, or the locked lines of the effect below. */}
-          <span>{t(condition?.partial ? 'partialOnly' : 'allEffects')}</span>
+          <span data-on={gatedShown ? '' : undefined}>{t(condition?.partial ? 'partialOnly' : 'allEffects')}</span>
           {scope && <span>{t(scope === 'deployed' ? 'scopeDeployed' : 'scopeFormation')}</span>}
           {tiers.length > 1 && <span>{t('tierSteps', { steps: tiers.join(' / ') })}</span>}
         </p>
