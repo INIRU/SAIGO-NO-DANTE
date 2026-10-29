@@ -2409,24 +2409,16 @@
     "sideA": "自分側",
     "sideB": "相手側",
     "result": "結果",
-    "searchIdentity": "人格名で検索",
-    "skill": "スキル",
-    "skillChoose": "スキルを選択",
-    "loading": "一覧を読み込み中です。",
-    "loadError": "一覧を読み込めませんでした。コインは手入力できます。",
     "basePower": "基礎威力",
     "sanity": "正気度",
     "coins": "コイン",
     "coin": "コイン{index}",
-    "operator": "演算",
     "coinValue": "コイン{index}の値",
     "operatorOption": {
       "ADD": "+ 加算",
       "SUB": "− 減算",
       "MUL": "× 乗算"
     },
-    "coinAdd": "コインを追加",
-    "coinRemove": "コイン{index}を削除",
     "adders": "加算",
     "probabilityAdder": "表の確率加算 (%p)",
     "powerAdder": "威力加算",
@@ -2445,9 +2437,12 @@
     "limitNote": "表の確率は{min}%〜{max}%に収めます。この限度は推定です。",
     "rules": "計算方法",
     "rulesHeads": "表の確率は50%に、正気度1ごとに1%、加算を足したものです。正気度は−45〜45です。",
-    "rulesCoins": "コインは順に振り、表ならそのコインの演算（加算・減算・乗算）を適用します。値は0を下回りません。開始値は基礎威力です。",
+    "rulesCoins": "コインは順に振り、表ならそのコインの演算（加算・減算）を適用します。値は0を下回りません。開始値は基礎威力です。",
     "rulesExchange": "交換のたびに残りのコインをすべて振り直し、合計補正を足して大きい方が勝ちます。負けた側は先頭のコインを1枚失い、同点なら誰も失いません。どちらかのコインがなくなるか99回交換すると終わります。",
-    "rulesDamage": "交換1回ごとに、続くスキルのダメージが3%増えます。交換回数の横のリンクからダメージ計算機へ渡せます。"
+    "rulesDamage": "交換1回ごとに、続くスキルのダメージが3%増えます。交換回数の横のリンクからダメージ計算機へ渡せます。",
+    "coinCount": "コイン数",
+    "coinLess": "コインを1枚減らす",
+    "coinMore": "コインを1枚増やす"
   },
   "mirrorDungeonPage": {
     "intro": "階層を下りながら出会うE.G.Oギフト、テーマパック、選択肢をまとめて探せます。",
@@ -2938,5 +2933,14 @@
     "scoreFont": "S-Coreフォントライセンス",
     "dafontFree": "100%フリー(DaFont)",
     "authorFree": "作者許諾による無料使用"
+  },
+  "toolSkill": {
+    "pickIdentity": "人格を読み込む",
+    "pickEgo": "E.G.Oを読み込む",
+    "change": "変更",
+    "clear": "クリア",
+    "skills": "スキル",
+    "corrosion": "侵蝕",
+    "loadError": "スキルを読み込めませんでした。再試行"
   }
 }

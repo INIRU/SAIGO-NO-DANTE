@@ -2409,24 +2409,16 @@
     "sideA": "Your side",
     "sideB": "Opponent",
     "result": "Clash result",
-    "searchIdentity": "Search identities by name",
-    "skill": "Skill",
-    "skillChoose": "Choose a skill",
-    "loading": "Loading the list.",
-    "loadError": "The list could not be loaded. You can still enter coins by hand.",
     "basePower": "Base Power",
     "sanity": "Sanity",
     "coins": "Coins",
     "coin": "Coin {index}",
-    "operator": "Operator",
     "coinValue": "Coin {index} value",
     "operatorOption": {
       "ADD": "+ Add",
       "SUB": "− Subtract",
       "MUL": "× Multiply"
     },
-    "coinAdd": "Add a coin",
-    "coinRemove": "Remove coin {index}",
     "adders": "Adders",
     "probabilityAdder": "Heads chance adder (%p)",
     "powerAdder": "Power adder",
@@ -2445,9 +2437,12 @@
     "limitNote": "The heads chance is held to {min}%–{max}%. This limit is an estimate.",
     "rules": "How it is calculated",
     "rulesHeads": "The heads chance is 50% plus 1% per point of sanity plus the adder. Sanity runs from −45 to 45.",
-    "rulesCoins": "Coins are rolled in order; a heads applies its coin's operator (add, subtract, multiply). The value never drops below 0. It starts at the base power.",
+    "rulesCoins": "Coins are rolled in order; a heads applies its coin's operator (add or subtract). The value never drops below 0. It starts at the base power.",
     "rulesExchange": "Each exchange rolls all remaining coins again, adds the clash total adder, and the higher total wins. The loser loses its front coin; on a tie nobody loses one. The clash ends when a side has no coins or after 99 exchanges.",
-    "rulesDamage": "Every exchange raises the damage of the skill that follows by 3%. The link beside the exchange count hands it to the damage calculator."
+    "rulesDamage": "Every exchange raises the damage of the skill that follows by 3%. The link beside the exchange count hands it to the damage calculator.",
+    "coinCount": "Coins",
+    "coinLess": "Remove a coin",
+    "coinMore": "Add a coin"
   },
   "mirrorDungeonPage": {
     "intro": "Find the E.G.O gifts, theme packs and choices you meet on the way down, floor by floor.",
@@ -2938,5 +2933,14 @@
     "scoreFont": "S-Core Font License",
     "dafontFree": "100% Free (DaFont)",
     "authorFree": "Free to use (author)"
+  },
+  "toolSkill": {
+    "pickIdentity": "Load identity",
+    "pickEgo": "Load E.G.O",
+    "change": "Change",
+    "clear": "Clear",
+    "skills": "Skills",
+    "corrosion": "Corrosion",
+    "loadError": "Could not load the skills. Retry"
   }
 }
