@@ -168,4 +168,4 @@
 
 ## 2026-10-29 DB 정리
 
-실제 DB를 SELECT로만 점검한 설계는 `out/_handoff_choeae/UPDATE-2026-10-29-db.md`에 있다. 마이그레이션 4개(순서대로): `20261029120000_game_values.sql`(새 칼럼), `20261029130000_cleanup.sql`(빈 칼럼·은퇴 스키마 삭제, NOT NULL·UNIQUE·CHECK·외래 키, 인덱스, `skills_max_uptie`·`passives_max_uptie` 뷰), `20261029140000_drop_name_copies.sql`(`name_kr`과 같은 `identities.name`·`ego.name`·`ego_gift_recipes.final_result` 삭제; 추출 도구 반영 뒤), `20261029150000_normalize_arrays.sql`(선택: 재료·테마·이벤트의 기프트·테마 번호를 연결 표로).
+실제 DB를 SELECT로만 점검한 설계는 `out/_handoff_choeae/UPDATE-2026-10-29-db.md`에 있다. 마이그레이션 4개(순서대로): `20261029120912_game_values.sql`(새 칼럼), `20261029130000_cleanup.sql`(빈 칼럼·은퇴 스키마 삭제, NOT NULL·UNIQUE·CHECK·외래 키, 인덱스, `skills_max_uptie`·`passives_max_uptie` 뷰), `20261029140000_drop_name_copies.sql`(`name_kr`과 같은 `identities.name`·`ego.name`·`ego_gift_recipes.final_result` 삭제; 추출 도구 반영 뒤), `20261029150000_normalize_arrays.sql`(선택: 재료·테마·이벤트의 기프트·테마 번호를 연결 표로).
