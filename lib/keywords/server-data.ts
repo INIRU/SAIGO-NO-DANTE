@@ -11,7 +11,6 @@ const KeywordRowSchema = z.object({
   description: z.string().nullable().optional(),
   max_stack: z.number().nullable().optional(),
   icon_slug: z.string().nullable().optional(),
-  sin_affinity: z.string().nullable().optional(),
   effect_type: z.enum(['positive', 'negative', 'neutral']).nullable().optional(),
   name_en: z.string().nullable().optional(),
   name_jp: z.string().nullable().optional(),
@@ -20,7 +19,7 @@ const KeywordRowSchema = z.object({
   game_id: z.string().nullable().optional(),
 })
 const KeywordRowsSchema = z.array(KeywordRowSchema)
-const KEYWORD_META_BASE_SELECT = 'name, description, max_stack, icon_slug, sin_affinity, name_en, name_jp, description_en, description_jp'
+const KEYWORD_META_BASE_SELECT = 'name, description, max_stack, icon_slug, name_en, name_jp, description_en, description_jp'
 // Most complete first: a column whose migration is not applied yet (effect_type, game_id) falls back to the next set.
 const KEYWORD_META_SELECTS = [
   `${KEYWORD_META_BASE_SELECT}, effect_type, game_id`,
@@ -53,6 +52,8 @@ async function loadKeywordData(): Promise<Record<string, KeywordInfo>> {
   for (const select of KEYWORD_META_SELECTS) {
     const result = await fetchKeywordRows(select)
     if (result.error && isMissingColumnError(result.error) && select !== KEYWORD_META_BASE_SELECT) continue
+    // A failed read throws, so the cached catalog is never an empty one (callers fall back for this request only).
+    if (result.error) throw new Error(`keyword_meta: ${result.error.message}`)
     allData.push(...result.rows)
     break
   }
@@ -72,7 +73,6 @@ async function loadKeywordData(): Promise<Record<string, KeywordInfo>> {
       desc: row.description ?? '',
       ...(row.max_stack != null ? { maxStack: row.max_stack } : {}),
       ...(row.icon_slug ? { iconSlug: row.icon_slug } : {}),
-      ...(row.sin_affinity ? { sinAffinity: row.sin_affinity } : {}),
       ...(row.effect_type ? { effectType: row.effect_type } : {}),
       ...(row.game_id ? { gameId: row.game_id } : {}),
       nameEn: row.name_en ?? null,

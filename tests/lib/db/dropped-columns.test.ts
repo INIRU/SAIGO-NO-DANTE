@@ -40,4 +40,12 @@ describe('select strings after the database cleanup', () => {
     })
     expect(hits).toEqual([])
   })
+
+  it('read no keyword_meta.sin_affinity (dropped by the cleanup; other tables keep their sin_affinity)', () => {
+    // A file that reads keyword_meta: none of its select strings may name sin_affinity (the keyword catalog went empty once).
+    const hits = files.filter(file => text(file).includes("'keyword_meta'")).flatMap(file =>
+      [...text(file).matchAll(/(?:from\('keyword_meta'\)\s*\.select\(\s*|KEYWORD\w*\s*=\s*)[`'"]([^`'"]+)[`'"]/g)]
+        .filter(match => /(^|[\s,])sin_affinity([\s,]|$)/.test(match[1])).map(() => file))
+    expect(hits).toEqual([])
+  })
 })

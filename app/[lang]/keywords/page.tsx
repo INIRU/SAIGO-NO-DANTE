@@ -22,7 +22,7 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
 }
 
 
-const KEYWORD_COLUMNS = 'name, description, max_stack, icon_slug, sin_affinity, category, name_en, name_jp, description_en, description_jp'
+const KEYWORD_COLUMNS = 'name, description, max_stack, icon_slug, category, name_en, name_jp, description_en, description_jp'
 
 /** keyword_meta rows with the names and descriptions of their game_text_refs row (keyword_meta's own where a row has no game_id). */
 async function fetchAllKeywords(supabase: ReturnType<typeof createAdminClient>, withRefs: boolean) {
