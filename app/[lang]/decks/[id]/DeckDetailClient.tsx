@@ -1092,7 +1092,7 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
                           key={`${identity.id}-${i}`}
                           identity={{
                             imageUrl: identity.folder_name && identity.game_id ? getIdentityImageUrl(identity.sinner_id, identity.folder_name, `${identity.game_id}_normal_info`) : null,
-                            name: adapted.name,
+                            name: adapted.name ?? '',
                             sinnerName: rootT(`sinner.${identity.sinner_id}`),
                           }}
                           onIdentityClick={() => setIdentityPreview({ slot })}

@@ -5,7 +5,7 @@ import type { GiftData, RecipeData } from '@/lib/planner/types'
 
 const names = ['억류된 찬송', '밀라르카', '치성', '연기와 철조망', '녹슨 입마개', '피안개', '달의 기억', '잘려나간 기억', '구멍난 기억', '안식처']
 const giftMap = new Map(names.map((name, index) => [index + 1, { game_id: index + 1, name } as GiftData]))
-const recipe = (result: string, ingredients: string[]) => ({ id: result, result_name: result, keyword: '', ingredients, final_result: null }) as RecipeData
+const recipe = (result: string, ingredients: string[]) => ({ id: result, result_name: result, keyword: '', ingredients}) as RecipeData
 // 피안개 has a direct and an expanded variant, as stored.
 const recipes = [recipe('치성', ['억류된 찬송', '밀라르카']), recipe('피안개', ['연기와 철조망', '녹슨 입마개', '치성']),
   recipe('피안개', ['연기와 철조망', '녹슨 입마개', '억류된 찬송', '밀라르카']),

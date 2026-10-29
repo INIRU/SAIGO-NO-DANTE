@@ -13,7 +13,7 @@ type SkillRow = {
   coins: number | null; base_power: number | null; coin_power: number | null; coin_list?: { scale: number; operator: string }[] | null
   skill_order: number | null; variant_order: number | null; uptie_level: number | null
 }
-type IdentityRow = { id: string; sinner_id: string | null; name_kr: string | null; name: string | null; name_en: string | null; name_jp: string | null }
+type IdentityRow = { id: string; sinner_id: string | null; name_kr: string | null; name_en: string | null; name_jp: string | null }
 
 const SKILL_COLUMNS = 'identity_id, name, name_en, name_jp, skill_type, coins, base_power, coin_power, skill_order, variant_order, uptie_level'
 const inLanguage = (lang: SupportedLang, ko: string, en?: string | null, ja?: string | null) => (lang === 'en' ? en : lang === 'ja' ? ja : null) || ko
@@ -29,7 +29,7 @@ async function getClashSkills(lang: SupportedLang) {
   // coin_list is a newer column: until its migration is applied a skill's coins are its count times the one coin power.
   let skills = await readSkills(`${SKILL_COLUMNS}, coin_list`)
   if (skills.error && isMissingColumnError(skills.error)) skills = await readSkills(SKILL_COLUMNS)
-  const identities = await db.from('identities').select('id, sinner_id, name, name_kr, name_en, name_jp').order('rarity', { ascending: false })
+  const identities = await db.from('identities').select('id, sinner_id, name_kr, name_en, name_jp').order('rarity', { ascending: false })
   // A failed read throws instead of caching an empty list.
   if (skills.error) throw new Error(skills.error.message)
   if (identities.error) throw new Error(identities.error.message)
@@ -46,7 +46,7 @@ async function getClashSkills(lang: SupportedLang) {
     const rows = (byIdentity.get(identity.id) ?? []).sort((a, b) => (a.skill_order ?? 0) - (b.skill_order ?? 0) || (a.variant_order ?? 0) - (b.variant_order ?? 0))
     if (!rows.length) return []
     return [{
-      id: identity.id, sinner: identity.sinner_id, label: inLanguage(lang, identity.name_kr ?? identity.name ?? '', identity.name_en, identity.name_jp),
+      id: identity.id, sinner: identity.sinner_id, label: inLanguage(lang, identity.name_kr ?? '', identity.name_en, identity.name_jp),
       skills: rows.map(row => ({
         key: `${row.skill_order}:${row.variant_order ?? 0}`, label: inLanguage(lang, row.name, row.name_en, row.name_jp), type: row.skill_type,
         coins: row.coins ?? 0, base_power: row.base_power ?? 0, coin_power: row.coin_power ?? 0, coin_list: row.coin_list ?? null,

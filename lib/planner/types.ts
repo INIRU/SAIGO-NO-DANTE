@@ -391,7 +391,6 @@ export interface RecipeData {
   result_name: string
   keyword: string
   ingredients: string[]
-  final_result: string | null
   /** Game ids of the ingredients, in the order of `ingredients` (ego_gift_recipes.ingredient_ids). Absent on older rows: names are used. */
   ingredient_ids?: number[] | null
   /** Game id of result_name (ego_gift_recipes.result_id). Absent on older rows: the name is used. */
@@ -427,8 +426,7 @@ export interface EgoData {
   max_construe_level?: number
   id: string
   sinner_id: string
-  name: string
-  name_kr: string | null
+  name_kr: string
   name_en?: string | null
   name_jp?: string | null
   grade: string

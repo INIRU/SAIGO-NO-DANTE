@@ -255,8 +255,6 @@ export const translations = {
   'ego.egoSkill': { ko: 'EGO 스킬', en: 'EGO Skill', ja: 'EGOスキル' },
   'ego.corrosionSection': { ko: '침식', en: 'Corrosion', ja: '侵蝕' },
   'ego.keyword': { ko: '키워드', en: 'Keywords', ja: 'キーワード' },
-  'ego.acquisition': { ko: '입수 방법', en: 'Acquisition', ja: '入手方法' },
-  'ego.fragmentExchange': { ko: '파편 교환', en: 'Fragment Exchange', ja: '破片交換' },
   'ego.construeLevel': { ko: '해석', en: 'Construe', ja: '解釈' },
   'ego.noSkillData': { ko: '스킬 데이터 없음', en: 'No skill data', ja: 'スキルデータなし' },
   'ego.noCorSkillData': { ko: '침식 스킬 데이터 없음', en: 'No corrosion skill data', ja: '侵蝕スキルデータなし' },

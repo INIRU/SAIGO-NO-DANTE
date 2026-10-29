@@ -85,8 +85,7 @@ type SinnerData = {
 type EgoData = {
   id: string
   sinner_id: string
-  name: string
-  name_kr: string | null
+  name_kr: string
   name_en?: string | null
   name_jp?: string | null
   grade: string
@@ -198,7 +197,6 @@ function adaptPreviewEgos(sinnerId: string | null | undefined, egoSlots: EgoSlot
         grade: slot.grade ?? ego.grade,
         ego: {
           id: ego.id,
-          name: ego.name,
           name_kr: ego.name_kr,
           name_en: ego.name_en,
           name_jp: ego.name_jp,
@@ -278,7 +276,7 @@ export default function PlanDeckTabs({
     for (const slot of egoSlots) {
       if (!slot.sinner_id || !slot.grade || !slot.ego_id) continue
       const ego = egoById.get(slot.ego_id)
-      const name = getLocalizedName({ name_kr: ego?.name_kr ?? slot.name_kr ?? ego?.name ?? '', name_en: ego?.name_en, name_jp: ego?.name_jp }, locale as SupportedLang)
+      const name = getLocalizedName({ name_kr: ego?.name_kr ?? slot.name_kr ?? '', name_en: ego?.name_en, name_jp: ego?.name_jp }, locale as SupportedLang)
       ;(map[slot.sinner_id] ??= {})[slot.grade] = { id: slot.ego_id, name, sin_affinity: ego?.sin_affinity ?? null }
     }
     return map

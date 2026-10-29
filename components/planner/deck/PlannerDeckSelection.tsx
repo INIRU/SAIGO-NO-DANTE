@@ -50,8 +50,7 @@ export type PlannerDeckEgo = {
   max_construe_level?: number
   id: string
   sinner_id: string
-  name: string
-  name_kr: string | null
+  name_kr: string
   name_en?: string | null
   name_jp?: string | null
   grade: string
@@ -793,7 +792,7 @@ export function PlannerEgoSelectModal({
   const compactNameStyle = getCompactNameStyle(locale)
   const [query, setQuery] = useState(''), [gradeFilter, setGradeFilter] = useState('')
   useEffect(() => { setQuery(''); setGradeFilter('') }, [open, sinner?.id])
-  const filtered = egos.filter(ego => (!gradeFilter || ego.grade === gradeFilter) && [ego.name, ego.name_kr, ego.name_en, ego.name_jp].some(name => name?.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase())))
+  const filtered = egos.filter(ego => (!gradeFilter || ego.grade === gradeFilter) && [ego.name_kr, ego.name_en, ego.name_jp].some(name => name?.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase())))
   const egoById = new Map(filtered.map(ego => [ego.id, ego]))
   const suggestionOf = new Map((suggestions ?? []).map(suggestion => [suggestion.id, suggestion]))
   const holdSuggested = suggestionsLoading && !query.trim() && !gradeFilter

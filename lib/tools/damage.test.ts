@@ -74,7 +74,7 @@ describe('damage calculator', () => {
     // ×0.5 weakened by 0.3 is ×0.8: −10%, not −25% + 30%.
     expect(damage({ power: 100, physicalResist: 0.5, modifiers: [{ target: 'physical', value: 0.3 }] })).toBe(90)
     expect(damage({ power: 100, sinResist: 1, modifiers: [{ target: 'sin', value: 0.3 }] })).toBe(130)
-    // A staggered target's physical resistance is 2 + (stage − 1) × 0.5 plus the weakening (BattleUnitModel GetAtkResistValueByType).
+    // A staggered target's physical resistance is 2 + (stage − 1) × 0.5 plus the weakening.
     expect(damage({ power: 100, stagger: 1, modifiers: [{ target: 'physical', value: 0.3 }] })).toBe(230)
     expect(damage({ power: 100, stagger: 3, modifiers: [{ target: 'physical', value: 0.2 }] })).toBe(320)
     expect(damage({ power: 100, stagger: 2, physicalResist: 0.5, modifiers: [{ target: 'physical', value: 0.5 }] })).toBe(300)

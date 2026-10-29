@@ -188,7 +188,7 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
     for (const sinner of sinners) {
       const defaultName = DEFAULT_EGO_NAMES[sinner.name_kr]
       const ego = defaultName
-        ? egos.find(e => e.sinner_id === sinner.id && (e.name_kr === defaultName || e.name === defaultName))
+        ? egos.find(e => e.sinner_id === sinner.id && (e.name_kr === defaultName))
             ?? egos.find(e => e.sinner_id === sinner.id && e.grade === 'ZAYIN')
         : egos.find(e => e.sinner_id === sinner.id && e.grade === 'ZAYIN')
       if (ego) initial[sinner.id] = { [ego.grade]: ego }

@@ -5,7 +5,7 @@ import type { EgoData, IdentityData } from './types'
 const identity = (id: string, sinner_id: string): IdentityData =>
   ({ id, sinner_id, name_kr: id, rarity: 3, keywords: ['화상'], game_id: id, folder_name: id })
 const ego = (id: string, sinner_id: string, grade: string): EgoData =>
-  ({ id, sinner_id, name: id, name_kr: id, grade, sin_affinity: '분노', image_url: null, cost: null })
+  ({ id, sinner_id, name_kr: id, grade, sin_affinity: '분노', image_url: null, cost: null })
 const identities = [identity('i1', 's1'), identity('i2', 's2')]
 const egos = [ego('e1', 's1', 'ZAYIN'), ego('e2', 's2', 'HE')]
 

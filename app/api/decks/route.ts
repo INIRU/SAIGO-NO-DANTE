@@ -374,6 +374,15 @@ function deckMatchesAdvancedFilters(deck: DeckListRow, filters: AdvancedDeckFilt
   return true
 }
 
+/**
+ * Decks are public to everyone, so a list answer does not depend on who asks. Without a session cookie the CDN may keep
+ * it for 30 seconds (and refresh it in the background). A request that carries a session cookie keeps the old no-header answer.
+ */
+function listResponse(request: NextRequest, body: unknown) {
+  const signedIn = request.cookies.getAll().some(cookie => cookie.name.includes('session-token'))
+  return NextResponse.json(body, signedIn ? undefined : { headers: { 'Cache-Control': 'public, max-age=0, s-maxage=30, stale-while-revalidate=120' } })
+}
+
 export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient()
@@ -418,7 +427,7 @@ export async function GET(request: NextRequest) {
       }
 
       if (!matches || matches.length === 0) {
-        return NextResponse.json([])
+        return listResponse(request, [])
       }
 
       deckIds = [...new Set(matches.map(m => m.deck_id))]
@@ -468,10 +477,12 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    // Authors first: the name search below matches them.
-    const rows = await withPostAuthors((data ?? []) as unknown as DeckListRow[])
+    // Authors are looked up once: for the candidates when the name search needs them, else only for the page that is returned.
+    const searchesAuthors = hasAdvancedFilters && advancedFilters.searchTermsLower.length > 0
+    const candidates = (data ?? []) as unknown as DeckListRow[]
+    const rows = !hasAdvancedFilters || searchesAuthors ? await withPostAuthors(candidates) : candidates
     if (!hasAdvancedFilters) {
-      return NextResponse.json(rows)
+      return listResponse(request, rows)
     }
 
     const pageIds = rows
@@ -480,7 +491,7 @@ export async function GET(request: NextRequest) {
       .map(deck => deck.id)
 
     if (pageIds.length === 0) {
-      return NextResponse.json([])
+      return listResponse(request, [])
     }
 
     let fullResult = await buildQuery(DECK_LIST_SELECT_WITH_SKILL_KEYWORDS)
@@ -493,9 +504,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: fullResult.error.message }, { status: 500 })
     }
 
-    const fullRows = await withPostAuthors((fullResult.data ?? []) as unknown as DeckListRow[])
+    const fullData = (fullResult.data ?? []) as unknown as DeckListRow[]
+    const authorsById = new Map(rows.map(deck => [deck.id, deck.profiles]))
+    const fullRows = searchesAuthors ? fullData.map(deck => ({ ...deck, profiles: authorsById.get(deck.id) ?? deck.profiles })) : await withPostAuthors(fullData)
     const fullRowsById = new Map(fullRows.map(deck => [deck.id, deck]))
-    return NextResponse.json(pageIds.map(id => fullRowsById.get(id)).filter(Boolean))
+    return listResponse(request, pageIds.map(id => fullRowsById.get(id)).filter(Boolean))
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Internal Server Error'
     return NextResponse.json({ error: message }, { status: 500 })

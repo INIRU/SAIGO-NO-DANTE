@@ -44,7 +44,7 @@ function goals({ targets, recipes, giftMap, owned }: GoalContext) {
   const finals = [...new Set(targets.flatMap(entry => { const id = giftGameId(entry); return id === null || owned.has(id) ? [] : [id] }))]
   const finalSet = new Set(finals)
   const finalRecipes = recipes.flatMap(recipe => {
-    const resultId = recipeResultId(recipe, idByName, false)
+    const resultId = recipeResultId(recipe, idByName)
     const result = resultId === undefined ? undefined : giftMap.get(resultId)
     return result && finalSet.has(result.game_id)
       ? [{ recipe, result, ingredients: recipeIngredientIds(recipe, idByName).flatMap(id => id === undefined ? [] : giftMap.get(id) ?? []) }] : []

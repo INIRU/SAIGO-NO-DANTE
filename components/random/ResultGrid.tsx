@@ -71,7 +71,7 @@ export default function ResultGrid({ sinners, pools, result, view, revealing, fr
                   {EGO_GRADES.map((grade, row) => {
                     const ego = egos.find(e => e.grade === grade)
                     const sin = normalizeSin(ego?.sin_affinity ?? null)
-                    const egoName = ego ? getLocalizedName({ name_kr: ego.name_kr || ego.name, name_en: ego.name_en, name_jp: ego.name_jp }, lang) : ''
+                    const egoName = ego ? getLocalizedName({ name_kr: ego.name_kr, name_en: ego.name_en, name_jp: ego.name_jp }, lang) : ''
                     return (
                       <li key={grade} className={styles.ego} data-empty={!ego || undefined} data-rare={isRareEgo(ego) || undefined}
                         style={{ '--row': row, ...(sin ? { '--sin': SIN_COLORS[sin] } : {}) } as CSSProperties}>

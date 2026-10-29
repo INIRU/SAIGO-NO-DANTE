@@ -105,7 +105,7 @@ export default function DeckNoteEditor({
       if (!identity) continue
       const sinnerName = sinners.find(s => s.id === identity.sinner_id)?.name_kr ?? identity.name_kr
       for (const ego of Object.values(egoSlots[identity.sinner_id] ?? {})) {
-        const name = ego.name_kr || ego.name
+        const name = ego.name_kr
         map[`${sinnerName}:${name}`] = {
           name,
           grade: ego.grade,

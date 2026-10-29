@@ -18,12 +18,12 @@ import { keywordDesc, keywordName, kt, useKeywordColor, type KeywordEntry } from
 import { keywordTextAllowed } from '@/lib/keywords/plain-keywords'
 
 export interface KeywordIdentity {
-  id: string; name: string; name_kr: string; sinner_id: string
+  id: string; name_kr: string; sinner_id: string
   name_en: string | null; name_jp: string | null
   keywords: string[] | null; rarity: number; game_id: string | null; folder_name: string | null
 }
 export interface KeywordEgo {
-  id: string; name: string; name_kr: string | null; sinner_id: string
+  id: string; name_kr: string; sinner_id: string
   name_en: string | null; name_jp: string | null
   grade: string; sin_affinity: string | null; keywords: string[] | null
   folder_name: string | null; image_url: string | null
@@ -138,7 +138,7 @@ export default function KeywordModal({
             <Section title={kt('keyword.related.ego', lang)} count={relatedEgos.length}>
               <ul className="grid gap-1.5" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(3.25rem, 1fr))' }}>
                 {bySinner(relatedEgos).map(ego => {
-                  const label = `${getLocalizedName({ name_kr: ego.name_kr ?? ego.name, name_en: ego.name_en, name_jp: ego.name_jp }, lang)} ${sinnerNameMap[ego.sinner_id] ?? ''}`.trim()
+                  const label = `${getLocalizedName({ name_kr: ego.name_kr, name_en: ego.name_en, name_jp: ego.name_jp }, lang)} ${sinnerNameMap[ego.sinner_id] ?? ''}`.trim()
                   return (
                     <li key={ego.id}>
                       <Link href={`/sinners/${ego.sinner_id}/ego/${ego.id}`} onClick={onClose} title={label} aria-label={label} className={`${TILE} aspect-square`}>

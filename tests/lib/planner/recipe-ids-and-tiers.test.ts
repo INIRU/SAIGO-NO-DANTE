@@ -12,7 +12,7 @@ const gift = (game_id: number, name: string, grade = '1') => [game_id, { game_id
 describe('recipes by id', () => {
   // Two gifts share a name: names cannot tell the recipe's ingredient from the other one, ids can.
   const giftMap = new Map([gift(1, '조각'), gift(2, '조각'), gift(3, '받침'), gift(4, '결과')])
-  const byName = { id: 'r', result_name: '결과', keyword: '', ingredients: ['조각', '받침'], final_result: '결과' } as RecipeData
+  const byName = { id: 'r', result_name: '결과', keyword: '', ingredients: ['조각', '받침'] } as RecipeData
   const byId = { ...byName, ingredient_ids: [1, 3], result_id: 4 } as RecipeData
 
   it('reads ids when stored and names otherwise', () => {
@@ -21,7 +21,7 @@ describe('recipes by id', () => {
     expect(recipeIngredientIds(byId, idByName)).toEqual([1, 3])
     expect(recipeIngredientIds({ ...byId, ingredient_ids: [1] } as RecipeData, idByName)).toEqual([2, 3]) // length mismatch: names
     expect(recipeResultId(byId, new Map())).toBe(4)
-    expect(recipeResultId({ ...byId, final_result: '다른 결과' } as RecipeData, new Map([['다른 결과', 9]]))).toBe(9)
+    expect(recipeResultId(byName, new Map([['결과', 9]]))).toBe(9)
   })
 
   it('crafts from the stored ids even when names collide', () => {

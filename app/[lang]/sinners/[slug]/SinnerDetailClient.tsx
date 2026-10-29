@@ -215,7 +215,6 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
         ]
 
         return i.name_kr.toLowerCase().includes(q) ||
-          i.name.toLowerCase().includes(q) ||
           affiliationTerms.some(affiliation => affiliation.toLowerCase().includes(q)) ||
           getRepresentativeKeywords(i).some(kw => kw.toLowerCase().startsWith(q))
       })
@@ -245,7 +244,6 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
       const q = searchQuery.trim().toLowerCase()
       result = result.filter(e =>
         (e.name_kr && e.name_kr.toLowerCase().includes(q)) ||
-        e.name.toLowerCase().includes(q) ||
         (e.keywords && e.keywords.some(kw => kw.toLowerCase().startsWith(q)))
       )
     }
@@ -283,7 +281,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
       })
       .slice(0, 5)
     const matchedIdent = identities
-      .filter(i => i.name_kr.toLowerCase().includes(q) || i.name.toLowerCase().includes(q))
+      .filter(i => i.name_kr.toLowerCase().includes(q))
       .sort((a, b) => {
         const aS = a.name_kr.toLowerCase().startsWith(q) ? 0 : 1
         const bS = b.name_kr.toLowerCase().startsWith(q) ? 0 : 1
@@ -292,10 +290,10 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
       })
       .slice(0, 5)
     const matchedEgo = egos
-      .filter(e => (e.name_kr && e.name_kr.toLowerCase().includes(q)) || e.name.toLowerCase().includes(q))
+      .filter(e => e.name_kr.toLowerCase().includes(q))
       .sort((a, b) => {
-        const aName = a.name_kr || a.name
-        const bName = b.name_kr || b.name
+        const aName = a.name_kr
+        const bName = b.name_kr
         const aS = aName.toLowerCase().startsWith(q) ? 0 : 1
         const bS = bName.toLowerCase().startsWith(q) ? 0 : 1
         if (aS !== bS) return aS - bS
@@ -668,7 +666,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                                   className="inline-block w-1.5 h-1.5 rounded-full flex-shrink-0"
                                   style={{ background: gradeColor }}
                                 />
-                                <span>{getName(ego.name_kr, ego.name_en, ego.name_jp) || ego.name}</span>
+                                <span>{getName(ego.name_kr, ego.name_en, ego.name_jp)}</span>
                                 <span style={{ color: gradeColor, fontSize: '0.625rem', marginLeft: 'auto' }}>{ego.grade}</span>
                               </div>
                             )
@@ -818,7 +816,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                 ) : (
                   <StaggerReveal key={filteredEgos.map(e => e.id).join()} className={styles.egoGrid} staggerDelay={0.05}>
                     {filteredEgos.map((ego) => {
-                      const egoName = getName(ego.name_kr, ego.name_en, ego.name_jp) || ego.name
+                      const egoName = getName(ego.name_kr, ego.name_en, ego.name_jp)
 
                       return (
                         <m.div

@@ -39,6 +39,6 @@ export function planSlotsFromTeamCode(code: string, sinners: { id: string; order
       skill_keyword_list: identity.skill_keyword_list ?? [], game_id: identity.game_id, folder_name: identity.folder_name, slot_order: order >= 0 ? order : 99 }]
   })
   const egoSlots = Object.entries(decoded.egoSlots).flatMap(([sinnerId, grades]) => Object.values(grades).map((ego): EgoSlot =>
-    ({ ego_id: ego.id, sinner_id: sinnerId, name_kr: ego.name_kr ?? ego.name, grade: ego.grade, sin_affinity: ego.sin_affinity })))
+    ({ ego_id: ego.id, sinner_id: sinnerId, name_kr: ego.name_kr, grade: ego.grade, sin_affinity: ego.sin_affinity })))
   return identitySlots.length ? { identitySlots, egoSlots } : null
 }

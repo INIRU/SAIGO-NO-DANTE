@@ -162,7 +162,7 @@ it('converts decoded plans without dropping goals, notes, constraints, or skill 
   plan.giftInventory = ['final_9274_plusplus']
   const decoded = await decodePlan(await encodePlan(plan))
   const identities = [{ id: 'identity-1', sinner_id: 'sinner-1', name_kr: 'Tester', rarity: 3, keywords: ['burn'], game_id: '100', folder_name: 'test' }] as IdentityData[]
-  const egos = [{ id: 'ego-1', sinner_id: 'sinner-1', name: 'EGO', name_kr: null, grade: 'HE', sin_affinity: 'wrath' }] as EgoData[]
+  const egos = [{ id: 'ego-1', sinner_id: 'sinner-1', name_kr: 'EGO', grade: 'HE', sin_affinity: 'wrath' }] as EgoData[]
   const restored = decodedPlanToPlannerState(decoded, identities, egos)
   expect(restored).toMatchObject({
     title: 'Test plan', description: 'Route', mainKeywords: ['burn'], mainKeywordsManual: true,

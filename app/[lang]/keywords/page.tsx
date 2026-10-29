@@ -81,16 +81,16 @@ async function renderKeywords(withRefs: boolean) {
     { data: egos, error: egosError },
   ] = await Promise.all([
     supabase.schema('limbus').from('identities')
-      .select('id, name, name_kr, name_en, name_jp, sinner_id, keywords, rarity, game_id, folder_name')
-      .order('name'),
+      .select('id, name_kr, name_en, name_jp, sinner_id, keywords, rarity, game_id, folder_name')
+      .order('name_kr'),
     supabase.schema('limbus').from('sinners')
       .select('id, name_kr, name_en, name_jp'),
     supabase.schema('limbus').from('ego_gifts')
       .select('name, keyword, grade, image_url, effect_base, effect_plus, effect_plusplus')
       .order('name'),
     supabase.schema('limbus').from('ego')
-      .select('id, name, name_kr, name_en, name_jp, sinner_id, grade, sin_affinity, keywords, folder_name, image_url')
-      .order('name'),
+      .select('id, name_kr, name_en, name_jp, sinner_id, grade, sin_affinity, keywords, folder_name, image_url')
+      .order('name_kr'),
   ])
 
   if (identitiesError) console.error('Failed to fetch identities:', identitiesError)

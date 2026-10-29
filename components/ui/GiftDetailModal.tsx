@@ -106,14 +106,12 @@ export interface GiftDetailData {
   buyDisabled?: boolean
   condition?: string | null
   conditionStatus?: GiftConditionStatus | null
-  recipe?: { ingredients: GiftDetailRecipePart[]; result: GiftDetailRecipePart; finalResult?: GiftDetailRecipePart | null } | null
+  recipe?: { ingredients: GiftDetailRecipePart[]; result: GiftDetailRecipePart } | null
   themes?: GiftDetailTheme[]
   /** The gift sits in every listed pack's pool, so one line replaces the list. */
   inAllThemes?: boolean
   /** Other gifts that effect text may name (upgrade targets etc.), rendered as links. */
   giftLinks?: { targets: GiftLinkTarget[]; selfId?: string | null; convertToId?: string | null } | null
-  acquisition?: string | null
-  related?: string | null
 }
 
 const BADGE_TONES = {
@@ -330,12 +328,6 @@ export default function GiftDetailModal({ gift, lang, onClose, initialLevel = 0,
                 <Sign>=</Sign>
                 <RecipeGift part={gift.recipe.result} fragmentsLabel={t('recipeFragments')} />
               </div>
-              {gift.recipe.finalResult && (
-                <div className="mt-3 flex items-center gap-3">
-                  <span style={{ fontSize: '0.8125rem', color: '#9c8b73' }}>{t('finalSynthesis')}</span>
-                  <RecipeGift part={gift.recipe.finalResult} fragmentsLabel={t('recipeFragments')} />
-                </div>
-              )}
             </Section>
           )}
 
@@ -364,16 +356,6 @@ export default function GiftDetailModal({ gift, lang, onClose, initialLevel = 0,
             </Section>
           )}
 
-          {(gift.acquisition || gift.related) && (
-            <Section title={t('acquisition')}>
-              {gift.acquisition && <p className="whitespace-pre-line" style={{ fontSize: '0.8125rem', lineHeight: 1.7, color: '#bfae92' }}>{gift.acquisition}</p>}
-              {gift.related && (
-                <p className={gift.acquisition ? 'mt-1.5' : undefined} style={{ fontSize: '0.8125rem', color: '#9c8b73' }}>
-                  {t('related')} <span style={{ color: '#bfae92' }}>{gift.related}</span>
-                </p>
-              )}
-            </Section>
-          )}
           <div className="h-2 sm:h-1" />
         </div>
       </div>
