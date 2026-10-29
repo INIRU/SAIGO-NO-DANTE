@@ -45,36 +45,8 @@ interface Live { cue: SoundCue; src: AudioBufferSourceNode; gain: GainNode; when
 // window that will be output within the lookahead), falling fast (0.8 ms) and rising with the release time. Loaded from a Blob (no extra file for the page to ship).
 // (site change 2026-10-29, USER "플레이어 좀 최적화 하자 사운드를 합성하는거다 보니"): the window's peak comes from a running maximum (a queue of the falling peaks) instead of a search of
 // the whole window per sample (240 reads a sample at 48 kHz, three limiters); the output is the same (tests/lib/motion/sound-limiter.test.ts)
-export const LIMITER = `
-class Lim extends AudioWorkletProcessor {
-  static get parameterDescriptors() { return [{ name: "ceiling", defaultValue: 1, automationRate: "k-rate" }, { name: "release", defaultValue: 0.0052, automationRate: "k-rate" }]; }
-  constructor() { super(); this.L = Math.max(8, Math.round(sampleRate * 0.005)); this.ring = [new Float32Array(this.L), new Float32Array(this.L)]; this.pos = 0; this.gain = 1; this.atk = 1 - Math.exp(-1 / (0.0008 * sampleRate));
-    this.qv = new Float32Array(this.L + 1); this.qt = new Float64Array(this.L + 1); this.qf = 0; this.qn = 0; this.t = 0; }
-  process(inputs, outputs, parameters) {
-    const inp = inputs[0], out = outputs[0], n = out[0].length, L = this.L, Q = L + 1, qv = this.qv, qt = this.qt, c = Math.max(1e-6, parameters.ceiling[0]), rel = 1 - Math.exp(-1 / (Math.max(0.0005, parameters.release[0]) * sampleRate));
-    for (let i = 0; i < n; i++) {
-      let p = 0;
-      for (let ch = 0; ch < out.length; ch++) {
-        const x = inp[ch] ? inp[ch][i] : (inp[0] ? inp[0][i] : 0);
-        out[ch][i] = this.ring[ch][this.pos];       // the sample from L samples ago
-        this.ring[ch][this.pos] = x;
-        if (Math.abs(x) > p) p = Math.abs(x);
-      }
-      // the peaks of the last L samples, falling from the front: a smaller one behind this one can never be the maximum again
-      while (this.qn > 0 && qv[(this.qf + this.qn - 1) % Q] <= p) this.qn--;
-      const b = (this.qf + this.qn) % Q; qv[b] = p; qt[b] = this.t; this.qn++;
-      while (qt[this.qf] <= this.t - L) { this.qf = (this.qf + 1) % Q; this.qn--; }
-      this.t++;
-      const m = qv[this.qf];
-      const target = m > c ? c / m : 1;
-      this.gain += (target - this.gain) * (target < this.gain ? this.atk : rel);
-      for (let ch = 0; ch < out.length; ch++) out[ch][i] *= this.gain;
-      this.pos = (this.pos + 1) % L;
-    }
-    return true;
-  }
-}
-registerProcessor("sfx-limiter", Lim);`;
+/** The limiter AudioWorklet (public/motion-sfx-limiter.js): a same-origin file, as the CSP allows no blob: scripts. */
+export const LIMITER_URL = '/motion-sfx-limiter.js';
 
 export class SoundPlayer {
   private ctx: AudioContext | null = null;
@@ -201,8 +173,7 @@ export class SoundPlayer {
     this.crit = ctx.createGain(); this.crit.gain.value = this.critOn ? 1 : 0; this.crit.connect(this.bus2);
     // the limiters sit between the buses and the duck; until the worklet is in (or when there is none) the buses pass straight through
     if (ctx.audioWorklet) {
-      const url = URL.createObjectURL(new Blob([LIMITER], { type: "text/javascript" }));
-      ctx.audioWorklet.addModule(url).then(() => {
+      ctx.audioWorklet.addModule(LIMITER_URL).then(() => {
         if (this.ctx !== ctx) return;
         const limiter = () => new AudioWorkletNode(ctx, "sfx-limiter", { numberOfInputs: 1, numberOfOutputs: 1, outputChannelCount: [2], channelCount: 2, channelCountMode: "explicit" });
         [this.bus2!, this.bus3!].forEach((b, k) => {
@@ -214,7 +185,7 @@ export class SoundPlayer {
         m.parameters.get("ceiling")!.value = MASTER_CEILING; m.parameters.get("release")!.value = MASTER_RELEASE;
         this.master!.disconnect(); this.master!.connect(m); m.connect(ctx.destination);
         this.setLimiter();
-      }).catch(() => { /* no worklet: the effects are not limited */ }).finally(() => URL.revokeObjectURL(url));
+      }).catch(() => { /* no worklet: the effects are not limited */ });
     }
   }
 
