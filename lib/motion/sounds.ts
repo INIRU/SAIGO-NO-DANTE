@@ -43,12 +43,15 @@ interface Live { cue: SoundCue; src: AudioBufferSourceNode; gain: GainNode; when
 
 // the SFX bus limiter (bus:/Master/SFX, FMOD Limiter): a lookahead peak limiter on the stereo bus, linked channels. The audio is delayed by the lookahead; the gain follows ceiling / (the peak of the
 // window that will be output within the lookahead), falling fast (0.8 ms) and rising with the release time. Loaded from a Blob (no extra file for the page to ship).
-const LIMITER = `
+// (site change 2026-10-29, USER "플레이어 좀 최적화 하자 사운드를 합성하는거다 보니"): the window's peak comes from a running maximum (a queue of the falling peaks) instead of a search of
+// the whole window per sample (240 reads a sample at 48 kHz, three limiters); the output is the same (tests/lib/motion/sound-limiter.test.ts)
+export const LIMITER = `
 class Lim extends AudioWorkletProcessor {
   static get parameterDescriptors() { return [{ name: "ceiling", defaultValue: 1, automationRate: "k-rate" }, { name: "release", defaultValue: 0.0052, automationRate: "k-rate" }]; }
-  constructor() { super(); this.L = Math.max(8, Math.round(sampleRate * 0.005)); this.ring = [new Float32Array(this.L), new Float32Array(this.L)]; this.pk = new Float32Array(this.L); this.pos = 0; this.gain = 1; this.atk = 1 - Math.exp(-1 / (0.0008 * sampleRate)); }
+  constructor() { super(); this.L = Math.max(8, Math.round(sampleRate * 0.005)); this.ring = [new Float32Array(this.L), new Float32Array(this.L)]; this.pos = 0; this.gain = 1; this.atk = 1 - Math.exp(-1 / (0.0008 * sampleRate));
+    this.qv = new Float32Array(this.L + 1); this.qt = new Float64Array(this.L + 1); this.qf = 0; this.qn = 0; this.t = 0; }
   process(inputs, outputs, parameters) {
-    const inp = inputs[0], out = outputs[0], n = out[0].length, L = this.L, c = Math.max(1e-6, parameters.ceiling[0]), rel = 1 - Math.exp(-1 / (Math.max(0.0005, parameters.release[0]) * sampleRate));
+    const inp = inputs[0], out = outputs[0], n = out[0].length, L = this.L, Q = L + 1, qv = this.qv, qt = this.qt, c = Math.max(1e-6, parameters.ceiling[0]), rel = 1 - Math.exp(-1 / (Math.max(0.0005, parameters.release[0]) * sampleRate));
     for (let i = 0; i < n; i++) {
       let p = 0;
       for (let ch = 0; ch < out.length; ch++) {
@@ -57,8 +60,12 @@ class Lim extends AudioWorkletProcessor {
         this.ring[ch][this.pos] = x;
         if (Math.abs(x) > p) p = Math.abs(x);
       }
-      this.pk[this.pos] = p;
-      let m = 0; for (let k = 0; k < L; k++) if (this.pk[k] > m) m = this.pk[k];
+      // the peaks of the last L samples, falling from the front: a smaller one behind this one can never be the maximum again
+      while (this.qn > 0 && qv[(this.qf + this.qn - 1) % Q] <= p) this.qn--;
+      const b = (this.qf + this.qn) % Q; qv[b] = p; qt[b] = this.t; this.qn++;
+      while (qt[this.qf] <= this.t - L) { this.qf = (this.qf + 1) % Q; this.qn--; }
+      this.t++;
+      const m = qv[this.qf];
       const target = m > c ? c / m : 1;
       this.gain += (target - this.gain) * (target < this.gain ? this.atk : rel);
       for (let ch = 0; ch < out.length; ch++) out[ch][i] *= this.gain;
@@ -266,12 +273,12 @@ export class SoundPlayer {
       for (; i < p.options.length - 1; i++) { r -= p.options[i].weight; if (r < 0) break; }
       this.picks.set(p.id, i);
     }
+    this.play = this.cues.filter((c) => (!c.pool || this.picks.get(c.pool) === c.option) && (!c.roll || this.picks.get(c.roll) === 0));
   }
 
-  /** the cues that sound in this play */
-  wanted(): SoundCue[] {
-    return this.cues.filter((c) => (!c.pool || this.picks.get(c.pool) === c.option) && (!c.roll || this.picks.get(c.roll) === 0));
-  }
+  /** the cues that sound in this play (site change: kept from pickAll, not filtered again on every scheduler step) */
+  private play: SoundCue[] = [];
+  wanted(): SoundCue[] { return this.play; }
 
   /** everything stops (a state change) */
   stop() {
