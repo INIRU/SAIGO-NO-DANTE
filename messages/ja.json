@@ -2856,6 +2856,9 @@
     "description": "サイトで使用しているフォントとソフトウェアのライセンス",
     "fonts": "フォント",
     "software": "ソフトウェア",
-    "freeFont": "フリーフォント"
+    "kogl1": "KOGL 第1類型(出典表示)",
+    "scoreFont": "S-Coreフォントライセンス",
+    "dafontFree": "100%フリー(DaFont)",
+    "authorFree": "作者許諾による無料使用"
   }
 }

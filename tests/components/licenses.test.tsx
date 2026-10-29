@@ -30,7 +30,7 @@ it('REQ-SHARED-064 the licenses page names each font and the Spine runtime with 
   const { LICENSES } = await import('@/lib/licenses')
   const { default: LicensesPage } = await import('@/app/[lang]/licenses/page')
   const names = LICENSES.flatMap(group => group.items.map(item => item.name))
-  for (const name of ['Pretendard', 'M PLUS 1p', 'Corporate Logo', 'Noto Sans Mono', 'Paperlogy', 'Bebas Kai', 'Mikodacs', 'Spine Runtimes']) expect(names).toContain(name)
+  for (const name of ['Pretendard', 'M PLUS 1p', 'Corporate Logo', 'Noto Sans Mono', 'Paperlogy', 'Bebas Kai', 'Mikodacs', 'KOTRA Bold', 'S-Core Dream', 'Excelsior Sans', 'Perfect DOS VGA 437', 'Spine Runtimes']) expect(names).toContain(name)
   for (const item of LICENSES.flatMap(group => group.items)) {
     expect(item.holder).toBeTruthy()
     // A license text the site serves itself is really there.
@@ -41,5 +41,10 @@ it('REQ-SHARED-064 the licenses page names each font and the Spine runtime with 
     expect(html).toContain('Esoteric Software LLC')
     expect(html).toContain('href="/licenses/spine-runtimes.txt"')
     expect(html).toContain('SIL Open Font License 1.1')
+    // The distributors' own terms are named in the page language, never as a raw key.
+    expect(html).not.toMatch(/>(kogl1|scoreFont|dafontFree|authorFree)</)
   }
+  const ko = renderToStaticMarkup(await LicensesPage({ params: Promise.resolve({ lang: 'ko' }) }))
+  expect(ko).toContain('공공누리 제1유형(출처표시)')
+  expect(ko).toContain('에스코어 글꼴 라이선스')
 })
