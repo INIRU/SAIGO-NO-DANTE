@@ -1399,7 +1399,9 @@
         "unmetTitle": "条件未達: {text}",
         "warnTitle": "条件注意: {text}",
         "formation": "編成 {have}/{need}",
-        "withBench": "待機込み {have}/{need}"
+        "withBench": "待機込み {have}/{need}",
+        "tier": "{reached}/{total}段階",
+        "partial": "一部の効果のみ条件"
       },
       "keywords": {
         "all": "全て",

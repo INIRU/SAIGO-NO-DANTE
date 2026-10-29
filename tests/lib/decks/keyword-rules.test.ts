@@ -2,6 +2,9 @@ import { describe, expect, it } from 'vitest'
 import {
   computeAllGiftAffiliationCounts,
   computeFormationGiftAffiliationCounts,
+  computeAllGiftAffiliationMembers,
+  computeFormationGiftAffiliationMembers,
+  countGiftConditionAffiliationMembers,
   countGiftConditionAffiliations,
   getDeckIdentityAffiliations,
   normalizeGiftAffiliationLabel,
@@ -32,5 +35,19 @@ describe('deck gift affiliation rules', () => {
 
     expect(normalizeGiftAffiliationLabel('- 턴 시작 시 중지')).toBe('턴 시작 시 중지')
     expect(countGiftConditionAffiliations(formationCounts, ['- 턴 시작 시 중지'])).toBe(3)
+  })
+})
+
+describe('deck affiliation members ("A or B" counts an identity once)', () => {
+  const slots: DeckKeywordSlot[] = [
+    { slot_order: 0, identities: { affiliation: 'A', association_list: ['B'] } },
+    { slot_order: 1, identities: { affiliation: 'B' } },
+    { slot_order: 9, identities: { affiliation: 'A' } },
+  ]
+  it('unions the matched affiliations', () => {
+    const formation = computeFormationGiftAffiliationMembers(slots)
+    expect(countGiftConditionAffiliationMembers(formation, ['A', 'B'])).toBe(2)
+    expect(countGiftConditionAffiliations(computeFormationGiftAffiliationCounts(slots), ['A', 'B'])).toBe(3)
+    expect(countGiftConditionAffiliationMembers(computeAllGiftAffiliationMembers(slots), ['A', 'B'])).toBe(3)
   })
 })

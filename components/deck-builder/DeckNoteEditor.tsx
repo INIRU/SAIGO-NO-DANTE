@@ -151,6 +151,9 @@ export default function DeckNoteEditor({
   const egoGiftConditionLookup = useMemo(() => {
     const formationAffiliationCounts: Record<string, number> = {}
     const allAffiliationCounts: Record<string, number> = {}
+    // Affiliation -> deck sinner ids, so an identity with two of a condition's affiliations ("A or B") counts once.
+    const formationAffiliationMembers: Record<string, string[]> = {}
+    const allAffiliationMembers: Record<string, string[]> = {}
     const activeFormationIds = new Set(formationOrder.slice(0, DEPLOYED_SLOT_COUNT))
     const assignedIds = new Set(formationOrder)
 
@@ -160,11 +163,13 @@ export default function DeckNoteEditor({
       if (activeFormationIds.has(sinnerId)) {
         for (const affiliation of affiliations) {
           formationAffiliationCounts[affiliation] = (formationAffiliationCounts[affiliation] ?? 0) + 1
+          ;(formationAffiliationMembers[affiliation] ??= []).push(sinnerId)
         }
       }
       if (assignedIds.has(sinnerId)) {
         for (const affiliation of affiliations) {
           allAffiliationCounts[affiliation] = (allAffiliationCounts[affiliation] ?? 0) + 1
+          ;(allAffiliationMembers[affiliation] ??= []).push(sinnerId)
         }
       }
     }
@@ -177,6 +182,8 @@ export default function DeckNoteEditor({
         allKeywordCounts: allGiftKeywordCounts,
         formationAffiliationCounts,
         allAffiliationCounts,
+        formationAffiliationMembers,
+        allAffiliationMembers,
       })
     }
     return map

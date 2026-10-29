@@ -804,6 +804,10 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
         return dialog && dialog.firstAt <= capturedAt && capturedAt - dialog.lastSeenAt <= 4000
           ? fusionMaterials(dialog.reads, dialog.count, dialog.capacity) : []
       }
+      const popupDialogCount = (capturedAt: number) => {
+        const dialog = fusionDialog.current
+        return dialog && dialog.firstAt <= capturedAt && capturedAt - dialog.lastSeenAt <= 4000 ? dialog.count : undefined
+      }
       const finishPopup = (requestId: number) => {
         const pending = popupPending.current.get(requestId)
         if (!pending?.ocr || !pending.icon) return
@@ -840,7 +844,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
         const giftId = resolve && popupHeaderEvidence(header)
           ? resolve({ ...popupCandidateIds({ header, labels: merged.labels, iconGiftIds: icons, effectGiftIds: effects,
             lexiconGiftIds: inFusion ? [...new Set(merged.lexicon)] : [], gifts: catalog.gifts }),
-            materials: popupDialogMaterials(pending.capturedAt) }, verdict, inFusion)
+            materials: popupDialogMaterials(pending.capturedAt), materialCount: popupDialogCount(pending.capturedAt) }, verdict, inFusion)
           : verdict
         if (!giftId) {
           // Every frame of a real gift popup read and none named the gift: a hard case worth a sample. Only with the

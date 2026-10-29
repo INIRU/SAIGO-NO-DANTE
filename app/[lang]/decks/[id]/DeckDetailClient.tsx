@@ -27,8 +27,10 @@ import { getIdentityImageUrl, getIdentityPortraitUrl, getSkillIconUrl, computeSk
 import type { Identity, Skill } from '@/lib/types'
 import {
   computeAllGiftAffiliationCounts,
+  computeAllGiftAffiliationMembers,
   computeAllGiftKeywordCounts,
   computeFormationGiftAffiliationCounts,
+  computeFormationGiftAffiliationMembers,
   computeFormationGiftKeywordCounts,
   normalizeDeckMainKeyword,
   type DeckKeywordSlot,
@@ -676,6 +678,8 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
     const allKeywordCounts = computeAllGiftKeywordCounts(deckKeywordSlots)
     const formationAffiliationCounts = computeFormationGiftAffiliationCounts(deckKeywordSlots)
     const allAffiliationCounts = computeAllGiftAffiliationCounts(deckKeywordSlots)
+    const formationAffiliationMembers = computeFormationGiftAffiliationMembers(deckKeywordSlots)
+    const allAffiliationMembers = computeAllGiftAffiliationMembers(deckKeywordSlots)
 
     const map: Record<string, ReturnType<typeof getGiftActivationConditionStatus>> = {}
     for (const gift of Object.values(egoGiftLookup)) {
@@ -685,6 +689,8 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
         allKeywordCounts,
         formationAffiliationCounts,
         allAffiliationCounts,
+        formationAffiliationMembers,
+        allAffiliationMembers,
       })
     }
     return map

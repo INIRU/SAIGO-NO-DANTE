@@ -1399,7 +1399,9 @@
         "unmetTitle": "Condition unmet: {text}",
         "warnTitle": "Condition warning: {text}",
         "formation": "Deployed {have}/{need}",
-        "withBench": "With reserves {have}/{need}"
+        "withBench": "With reserves {have}/{need}",
+        "tier": "Tier {reached}/{total}",
+        "partial": "Only some effects need it"
       },
       "keywords": {
         "all": "All",

@@ -1399,7 +1399,9 @@
         "unmetTitle": "조건 미달: {text}",
         "warnTitle": "조건 주의: {text}",
         "formation": "편성 {have}/{need}",
-        "withBench": "대기 포함 {have}/{need}"
+        "withBench": "대기 포함 {have}/{need}",
+        "tier": "{reached}/{total}단계",
+        "partial": "일부 효과만 조건"
       },
       "keywords": {
         "all": "전체",

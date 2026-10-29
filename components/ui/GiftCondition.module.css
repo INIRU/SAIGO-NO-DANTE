@@ -5,7 +5,8 @@
   cursor: help;
   background: linear-gradient(to top, rgba(8, 5, 3, 0.95) 0%, rgba(8, 5, 3, 0.75) 30%, rgba(8, 5, 3, 0) 62%);
 }
-.mark[data-level='unmet'] { background: linear-gradient(to top, rgba(8, 5, 3, 0.95) 0%, rgba(8, 5, 3, 0.8) 30%, rgba(8, 5, 3, 0.4) 62%, rgba(8, 5, 3, 0.3)); }
+/* partial: the base effect is on, so no darkened art (the warn look). */
+.mark[data-level='unmet']:not([data-partial]) { background: linear-gradient(to top, rgba(8, 5, 3, 0.95) 0%, rgba(8, 5, 3, 0.8) 30%, rgba(8, 5, 3, 0.4) 62%, rgba(8, 5, 3, 0.3)); }
 
 .plate {
   position: absolute;
@@ -22,16 +23,16 @@
 }
 /* A hairline over the plate in the level's colour. */
 .plate::before { content: ''; position: absolute; left: 8%; right: 8%; top: -0.35em; height: 1px; }
-.mark[data-level='unmet'] .plate::before { background: linear-gradient(90deg, transparent, rgba(214, 72, 56, 0.9), transparent); }
-.mark[data-level='warn'] .plate::before { background: linear-gradient(90deg, transparent, rgba(222, 164, 32, 0.9), transparent); }
+.mark[data-level='unmet']:not([data-partial]) .plate::before { background: linear-gradient(90deg, transparent, rgba(214, 72, 56, 0.9), transparent); }
+.mark[data-level='warn'] .plate::before, .mark[data-level='unmet'][data-partial] .plate::before { background: linear-gradient(90deg, transparent, rgba(222, 164, 32, 0.9), transparent); }
 
 .icon { flex-shrink: 0; width: 1.3em; height: 1.3em; object-fit: contain; }
 .subject { min-width: 0; font-family: var(--font-body); font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .count { flex-shrink: 0; font-family: var(--font-title); letter-spacing: 0.02em; }
 .count b { font-weight: 400; font-size: 1.25em; }
 .count i { font-style: normal; font-size: 0.9em; opacity: 0.7; }
-.mark[data-level='unmet'] .count { color: #ff8f7c; }
-.mark[data-level='warn'] .count { color: #f2c14e; }
+.mark[data-level='unmet']:not([data-partial]) .count { color: #ff8f7c; }
+.mark[data-level='warn'] .count, .mark[data-level='unmet'][data-partial] .count { color: #f2c14e; }
 
 .line {
   display: block;

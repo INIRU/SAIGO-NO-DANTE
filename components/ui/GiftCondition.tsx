@@ -15,18 +15,19 @@ export function useGiftConditionText() {
   const lang = useLocale() as SupportedLang
   return (status: GiftConditionStatus) => {
     const subject = status.subjects
-      .map(value => status.kind === 'keyword' ? localizeGiftKeyword(value, lang) : getLocalizedAffiliation(value, lang))
+      .map(value => status.kind === 'keyword' ? localizeGiftKeyword(value, lang) : status.kind === 'skill' ? value : getLocalizedAffiliation(value, lang))
       .join(status.kind === 'keyword' ? '+' : '/')
     const formation = t('formation', { have: status.formation, need: status.need })
     const withBench = t('withBench', { have: status.all, need: status.need })
-    const summary = subject + ' ' + formation + ', ' + withBench
-    return { subject, formation, withBench, summary, title: t(status.level === 'unmet' ? 'unmetTitle' : 'warnTitle', { text: summary }) }
+    const tier = status.tier ? t('tier', { reached: status.tier.reached, total: status.tier.total }) : ''
+    const summary = subject + ' ' + formation + ', ' + withBench + (tier ? ', ' + tier : '') + (status.partial ? ', ' + t('partial') : '')
+    return { subject, formation, withBench, tier, summary, title: t(status.level === 'unmet' ? 'unmetTitle' : 'warnTitle', { text: summary }) }
   }
 }
 
 function subjectIcon(status: GiftConditionStatus): string | null {
   const first = status.subjects[0]
-  if (!first) return null
+  if (!first || status.kind === 'skill') return null
   return status.kind === 'keyword' ? getGiftKeywordIconUrl(getGiftKeywordSlug(first) ?? 'general') : getAffiliationIconUrl(first)
 }
 /**
@@ -38,7 +39,7 @@ export function GiftConditionMark({ status }: { status: GiftConditionStatus }) {
   const text = useGiftConditionText()(status)
   const icon = subjectIcon(status)
   return (
-    <span className={styles.mark} data-level={status.level} title={text.title}>
+    <span className={styles.mark} data-level={status.level} data-partial={status.partial ? '' : undefined} title={text.title}>
       <span className={styles.plate}>
         {icon && <Image src={icon} alt="" width={24} height={24} className={styles.icon} />}
         {/* The plate is narrow: "The Ring" reads as "Ring" (the full name stays in the title). */}
@@ -52,5 +53,5 @@ export function GiftConditionMark({ status }: { status: GiftConditionStatus }) {
 /** Under the card: the count once the bench is included. */
 export function GiftConditionLine({ status }: { status: GiftConditionStatus }) {
   const text = useGiftConditionText()(status)
-  return <span className={styles.line} data-level={status.level} title={text.title}>{text.withBench}</span>
+  return <span className={styles.line} data-level={status.level} title={text.title}>{text.withBench}{text.tier && ' · ' + text.tier}</span>
 }
