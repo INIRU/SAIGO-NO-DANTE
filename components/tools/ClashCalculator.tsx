@@ -24,7 +24,10 @@ function NumberField(props: Parameters<typeof NumberInput>[0]) {
   return <label className={styles.field}>{props.label}<NumberInput {...props} /></label>
 }
 
-/** One side of the clash: the skill (loaded from an identity or E.G.O, or typed in), its coins and the numbers that move its rolls. */
+/**
+ * One side of the clash: its skill, coins and the numbers that move its rolls. The sinner's side loads its skill from an identity
+ * or E.G.O; the enemy's side is typed in, since enemies are not identities.
+ */
 function SidePanel({ side, title, form, onChange, resetKey }: { side: 'a' | 'b'; title: string; form: SideForm; onChange: (patch: Partial<SideForm>) => void; resetKey: number }) {
   const t = useTranslations('clash')
   const setCoin = (index: number, patch: Partial<ClashCoin>) => onChange({ coins: form.coins.map((coin, i) => i === index ? { ...coin, ...patch } : coin) })
@@ -32,8 +35,8 @@ function SidePanel({ side, title, form, onChange, resetKey }: { side: 'a' | 'b';
   const resize = (count: number) => onChange({ coins: count < form.coins.length ? form.coins.slice(0, count) : [...form.coins, { ...form.coins[form.coins.length - 1] }] })
   return <section className={`${styles.panel} ${clash.side}`} data-side={side} aria-label={title}>
     <h2>{title}</h2>
-    <SkillLoader key={resetKey} selectedKey={form.skillKey}
-      onSkill={skill => onChange(skill ? { skillKey: skill.key, basePower: skill.base_power, coins: coinsOf(skill).slice(0, MAX_CLASH_COINS) } : { skillKey: '' })} />
+    {side === 'a' && <SkillLoader key={resetKey} selectedKey={form.skillKey}
+      onSkill={skill => onChange(skill ? { skillKey: skill.key, basePower: skill.base_power, coins: coinsOf(skill).slice(0, MAX_CLASH_COINS) } : { skillKey: '' })} />}
     <div className={clash.numbers}>
       <NumberField label={t('basePower')} value={form.basePower} max={999} onChange={basePower => onChange({ basePower })} />
       <NumberField label={t('sanity')} value={form.sanity} min={-SANITY_RANGE} max={SANITY_RANGE} onChange={sanity => onChange({ sanity })} />
