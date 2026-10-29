@@ -1,5 +1,6 @@
 'use client'
 
+import type { ReactNode } from 'react'
 import Image from 'next/image'
 import { useLocale, useTranslations } from 'next-intl'
 import { getLocalizedAffiliation, localizeGiftKeyword } from '@/lib/i18n/localize'
@@ -76,13 +77,12 @@ function conditionIcons(condition: PlateCondition): string[] {
 }
 
 /**
- * The gift's condition as the game marks a locked effect: the lock, the keyword or affiliation icons and the rule; under
- * it the head count it reads, and with a formation the count as pips (gold: deployed, outlined: the bench) against the need.
+ * The effects a gift's condition decides, in one box inside the effect list: its head names the condition with the game's
+ * lock and the keyword or affiliation icons, the head count it reads and, with a formation, the count against the need
+ * (pips: gold deployed, outlined the bench). Lines outside the box always apply. Unmet, the box's lines fade.
  */
-export function GiftConditionPlate({ text, condition, scope, status, gatedShown = false, onToggleGated }: {
-  text: string; condition?: PlateCondition | null; scope?: GiftConditionScope | null; status?: GiftConditionStatus | null
-  /** The lock is a switch when there is an effect to mark: pressed, the effect lines the condition decides turn gold. */
-  gatedShown?: boolean; onToggleGated?: () => void
+export function GiftConditionBox({ text, condition, scope, status, children }: {
+  text: string; condition?: PlateCondition | null; scope?: GiftConditionScope | null; status?: GiftConditionStatus | null; children?: ReactNode
 }) {
   const t = useTranslations('giftDetail')
   const summary = useGiftConditionText()
@@ -91,31 +91,22 @@ export function GiftConditionPlate({ text, condition, scope, status, gatedShown 
   const counted = status ? (status.scope === 'formation' ? status.all : status.formation) : 0
   const bench = status && !status.scope ? Math.max(0, status.all - status.formation) : 0
   return (
-    <div className={styles.lockPlate} data-level={status?.level ?? 'met'} data-partial={condition?.partial ? '' : undefined}>
-      {onToggleGated
-        ? <button type="button" className={styles.lockButton} aria-pressed={gatedShown} onClick={onToggleGated} title={t('showGated')} aria-label={t('showGated')}>
-          <Image src={LOCK_URL} alt="" width={118} height={157} className={styles.lock} />
-        </button>
-        : <Image src={LOCK_URL} alt="" width={118} height={157} className={styles.lock} />}
-      <div className={styles.lockBody}>
-        <p className={styles.lockRule}>
-          {icons.map(src => <Image key={src} src={src} alt="" width={24} height={24} className={styles.lockIcon} />)}
-          <span>{text}</span>
-        </p>
-        <p className={styles.lockTags}>
-          {/* Which effects it decides: all of them, or the locked lines of the effect below. */}
-          <span data-on={gatedShown ? '' : undefined}>{t(condition?.partial ? 'partialOnly' : 'allEffects')}</span>
-          {scope && <span>{t(scope === 'deployed' ? 'scopeDeployed' : 'scopeFormation')}</span>}
-          {tiers.length > 1 && <span>{t('tierSteps', { steps: tiers.join(' / ') })}</span>}
-        </p>
-        {status && <p className={styles.lockStatus} aria-label={summary(status).title}>
+    <section className={styles.gateBox} data-level={status?.level ?? 'met'} aria-label={text}>
+      <header className={styles.gateHead}>
+        <Image src={LOCK_URL} alt="" width={118} height={157} className={styles.lock} />
+        {icons.map(src => <Image key={src} src={src} alt="" width={24} height={24} className={styles.lockIcon} />)}
+        <strong>{text}</strong>
+        {scope && <span className={styles.gateChip}>{t(scope === 'deployed' ? 'scopeDeployed' : 'scopeFormation')}</span>}
+        {tiers.length > 1 && <span className={styles.gateChip}>{t('tierSteps', { steps: tiers.join(' / ') })}</span>}
+        {status && <span className={styles.gateStatus} aria-label={summary(status).title}>
           <span className={styles.pips} aria-hidden="true">
             {Array.from({ length: Math.min(status.need, 12) }, (_, i) => <i key={i} data-fill={i < counted ? 'deployed' : i < counted + bench ? 'bench' : undefined} />)}
           </span>
           <b aria-hidden="true">{counted}<small>/{status.need}</small></b>
           <em aria-hidden="true">{t(status.level === 'unmet' ? 'conditionUnmet' : 'conditionWarn')}</em>
-        </p>}
-      </div>
-    </div>
+        </span>}
+      </header>
+      {children && <div className={styles.gateLines}>{children}</div>}
+    </section>
   )
 }
