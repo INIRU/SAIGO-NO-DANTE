@@ -84,7 +84,12 @@ export type Identity = {
   } | null
 }
 
+/** One coin of a skill as the game data lists it (skills.coin_list): value, operator, colour, whether it cannot break. */
+export type SkillCoin = { scale: number; operator: 'ADD' | 'SUB' | 'MUL'; color: string | null; unbreakable: boolean }
+
 export type Skill = {
+  /** Every coin in order; null/absent until the sync fills it (the readers then use coins/coin_power and the text). */
+  coin_list?: SkillCoin[] | null
   image_id?: string | null
   id: string
   identity_id: string

@@ -65,6 +65,7 @@ import { getGiftActivationConditionStatus } from '@/lib/planner/gift-condition-s
 import type { SupportedLang } from '@/lib/i18n/types'
 import { workbenchReveal } from '@/lib/animations'
 import styles from './DeckDetail.module.css'
+import { skillSlot } from '@/lib/identity/skill-model'
 
 const IdentityDetailModal = dynamic(() => import('@/components/ui/IdentityDetailModal'), { ssr: false })
 const EgoDetailModal = dynamic(() => import('@/components/ui/EgoDetailModal'), { ssr: false })
@@ -230,9 +231,7 @@ function uniqueNames(...names: Array<string | null | undefined>): string[] {
 }
 
 function getNoteSkillBaseOrder(skill: Pick<IdentityDetail['skills'][number], 'skill_order' | 'skill_type'>): number {
-  if (['evade', 'defense', 'counter'].includes(skill.skill_type)) return 4
-  if (skill.skill_order >= 5) return 3
-  return skill.skill_order
+  return skillSlot(skill)
 }
 
 function buildNoteLookups(

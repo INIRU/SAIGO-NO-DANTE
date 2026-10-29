@@ -8,10 +8,9 @@ import { getGiftActivationConditionStatus } from '@/lib/planner/gift-condition-s
 import { getDeckIdentityAffiliations } from '@/lib/decks/keyword-rules'
 import type { SupportedLang } from '@/lib/i18n/types'
 import { DEPLOYED_SLOT_COUNT } from '@/lib/constants/game'
+import { skillSlot } from '@/lib/identity/skill-model'
 function getNoteSkillBaseOrder(skill: Skill): number {
-  if (['evade', 'defense', 'counter'].includes(skill.skill_type)) return 4
-  if (skill.skill_order >= 5) return 3
-  return skill.skill_order
+  return skillSlot(skill)
 }
 interface Props {
   sinners: Sinner[]

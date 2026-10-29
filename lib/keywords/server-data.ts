@@ -74,6 +74,7 @@ async function loadKeywordData(): Promise<Record<string, KeywordInfo>> {
       ...(row.icon_slug ? { iconSlug: row.icon_slug } : {}),
       ...(row.sin_affinity ? { sinAffinity: row.sin_affinity } : {}),
       ...(row.effect_type ? { effectType: row.effect_type } : {}),
+      ...(row.game_id ? { gameId: row.game_id } : {}),
       nameEn: row.name_en ?? null,
       nameJp: row.name_jp ?? null,
       descEn: row.description_en ?? null,

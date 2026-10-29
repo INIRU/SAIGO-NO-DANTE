@@ -9,6 +9,10 @@ describe('REQ-SHARED-019 keyword text colour', () => {
     expect(resolveKeywordTextColor('x', { desc: '', effectType: 'positive' })).toBe('#f8c200')
   })
 
+  it('REQ-SHARED-019 does not colour the names the game types as neutral or negative as positive', () => {
+    for (const name of ['도발치', '정신력 회복 효율', '빼기 코인 강화']) expect(resolveKeywordTextColor(name)).toBe(KEYWORD_DEFAULT_COLOR)
+  })
+
   it('REQ-SHARED-019 colours warning brackets red, bladetrail names negative and unknown names with the default', () => {
     expect(resolveKeywordTextColor('[합 불가능]')).toBe('#ff0000')
     expect(resolveKeywordTextColor('검흔[잔상]')).toBe('#e30000')
