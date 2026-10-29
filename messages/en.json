@@ -926,7 +926,7 @@
     "detail": {
       "notFoundTitle": "Plan not found",
       "metaTitle": "{title} — Limbus Company Mirror Dungeon Plan",
-      "metaDescription": "Limbus Company Mirror Dungeon {difficulty} plan",
+      "metaDescription": "{title}: a Limbus Company Mirror Dungeon {difficulty} plan with the team, floor-by-floor theme packs and gift route.",
       "metaDescriptionWithDescription": "{difficulty} difficulty — {description}",
       "backToCommunity": "Community Plans",
       "anonymous": "Anonymous",

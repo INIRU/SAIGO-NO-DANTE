@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useMemo, useEffect, useRef } from 'react'
+import { useState, useCallback, useMemo, useEffect, useRef, startTransition } from 'react'
 import { useSession } from 'next-auth/react'
 import { useLocale, useTranslations } from 'next-intl'
 import { Copy, FastForward, Shuffle } from 'lucide-react'
@@ -204,7 +204,8 @@ export default function RandomClient({ sinners, identities, egos }: Props) {
       deploy: orderEnabled && identityEnabled ? normalizeDeployRange({ min: deployMin, max: deployMax }) : null,
     }
     const rollOwned = collectionEnabled ? ownedIds : null
-    start({ settings, collectionCode: rollOwned && owned ? owned.code : null, ownedIds: rollOwned })
+    // The board (twelve cards) renders as a transition so the press paints first on slow phones (INP).
+    startTransition(() => start({ settings, collectionCode: rollOwned && owned ? owned.code : null, ownedIds: rollOwned }))
   }, [sinners, identityEnabled, egoEnabled, keywords, pools, egoPools, collectionEnabled, ownedIds, owned, rarityFilter, orderEnabled, deployMin, deployMax, bothOff, rolling, marks, result, start, t, lang])
 
   // Formation code once the cards have landed (and again after each reroll).
