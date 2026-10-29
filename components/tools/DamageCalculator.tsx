@@ -173,5 +173,6 @@ export default function DamageCalculator() {
       <summary>{t('formula')}</summary>
       <p>{t('formulaBody')}</p><p>{t('formulaResist')}</p><p>{t('formulaLevel')}</p><p>{t('formulaFinal')}</p><p>{t('formulaNote')}</p>
     </details>
+    <p className={styles.hint}>{t('estimateNote')}</p>
   </div>
 }
