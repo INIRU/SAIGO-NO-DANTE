@@ -77,11 +77,11 @@ function conditionIcons(condition: PlateCondition): string[] {
 }
 
 /**
- * The effects a gift's condition decides, in one box inside the effect list: its head names the condition with the game's
- * lock and the keyword or affiliation icons, the head count it reads and, with a formation, the count against the need
- * (pips: gold deployed, outlined the bench). Lines outside the box always apply. Unmet, the box's lines fade.
+ * In the effect text, where the effects a gift's condition decides begin: a rule across with the game's lock, the keyword
+ * or affiliation icons, the condition, the head count it reads and, with a formation, the count against the need (pips:
+ * gold deployed, outlined the bench). The decided lines follow it; the lines before it always apply. Unmet, they fade.
  */
-export function GiftConditionBox({ text, condition, scope, status, children }: {
+export function GiftConditionDivider({ text, condition, scope, status, children }: {
   text: string; condition?: PlateCondition | null; scope?: GiftConditionScope | null; status?: GiftConditionStatus | null; children?: ReactNode
 }) {
   const t = useTranslations('giftDetail')
@@ -91,8 +91,9 @@ export function GiftConditionBox({ text, condition, scope, status, children }: {
   const counted = status ? (status.scope === 'formation' ? status.all : status.formation) : 0
   const bench = status && !status.scope ? Math.max(0, status.all - status.formation) : 0
   return (
-    <section className={styles.gateBox} data-level={status?.level ?? 'met'} aria-label={text}>
+    <section className={styles.gate} data-level={status?.level ?? 'met'} aria-label={text}>
       <header className={styles.gateHead}>
+        <i className={styles.rule} aria-hidden="true" />
         <Image src={LOCK_URL} alt="" width={118} height={157} className={styles.lock} />
         {icons.map(src => <Image key={src} src={src} alt="" width={24} height={24} className={styles.lockIcon} />)}
         <strong>{text}</strong>
@@ -105,6 +106,7 @@ export function GiftConditionBox({ text, condition, scope, status, children }: {
           <b aria-hidden="true">{counted}<small>/{status.need}</small></b>
           <em aria-hidden="true">{t(status.level === 'unmet' ? 'conditionUnmet' : 'conditionWarn')}</em>
         </span>}
+        <i className={styles.rule} aria-hidden="true" />
       </header>
       {children && <div className={styles.gateLines}>{children}</div>}
     </section>
