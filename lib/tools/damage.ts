@@ -8,7 +8,9 @@ import { effectModifiers, type AbilityEffect, type EffectTarget, type SkillTrait
 export const STAGGER_RESIST = [null, 2, 2.5, 3] as const
 /** A sin resistance is held between 0 and this after every buff and weakening. */
 export const SIN_RESIST_MAX = 2
-/** The least a hit does before the final multiplier: this share of the coin's power, rounded down, and at least 1. */
+/** Outside stagger the physical resistance is held between −2 and 2 after every buff and weakening. */
+export const PHYSICAL_RESIST_LIMIT = 2
+/** The least a hit does: this share of the coin's power, rounded down, and at least 1. */
 export const MIN_DAMAGE_RATE = 0.05
 export type StaggerStage = 0 | 1 | 2 | 3
 
@@ -36,8 +38,16 @@ export type DamageInput = {
   sinResist: number
   stagger?: StaggerStage
   critical?: boolean
+  /** Added to the critical hit's 0.2 (a fraction). */
+  critAdder?: number
+  /** The critical passives' sum (a fraction): the critical bonus is multiplied by 1 + this. */
+  critPassive?: number
   clashCount?: number
   observationLevel?: number
+  /** Flat damage added by both sides, weighed by the resistances and the level difference alone. */
+  damageAdder?: number
+  /** Flat damage added straight to the hit. */
+  hpAdder?: number
   modifiers?: Modifier[]
 }
 
@@ -49,11 +59,17 @@ function count(value: number, name: string) {
   if (!Number.isInteger(value)) throw new RangeError(`${name} must be a whole number`)
   return amount(value, name)
 }
+function finite(value: number, name: string) {
+  if (!Number.isFinite(value)) throw new RangeError(`${name} must be a number`)
+  return value
+}
 
-// Below normal, only half of the reduction counts: two ×0.5 resistances halve the damage instead of removing it.
-const resistTerm = (resist: number) => resist >= 1 ? resist - 1 : (resist - 1) / 2
-
-const levelTerm = (offense: number, defense: number) => (offense - defense) / (Math.abs(offense - defense) + 25)
+// The game figures a hit in 32-bit floats, step by step in this order (game values), then floors it.
+const f = Math.fround
+// Below normal only half of the reduction counts; below 0 it stays at −0.5, the same as 0.
+const resistTerm = (resist: number) => resist >= 1 ? f(resist - 1) : resist >= 0 ? f(f(resist - 1) * 0.5) : -0.5
+// (defense − offense) over (|that| + 25): a higher defense takes from the hit.
+const levelTerm = (offense: number, defense: number) => f(f(defense - offense) / f(Math.abs(defense - offense) + 25))
 
 export function coinDamage(input: DamageInput) {
   const power = amount(input.power, 'power')
@@ -62,33 +78,36 @@ export function coinDamage(input: DamageInput) {
   const stagger = input.stagger ?? 0
   if (![0, 1, 2, 3].includes(stagger)) throw new RangeError('stagger must be 0 to 3')
   let physical = STAGGER_RESIST[stagger] ?? amount(input.physicalResist, 'physicalResist')
-  let sin = Math.min(SIN_RESIST_MAX, amount(input.sinResist, 'sinResist'))
+  let sin = amount(input.sinResist, 'sinResist')
   const clash = count(input.clashCount ?? 0, 'clashCount')
   const observation = count(input.observationLevel ?? 0, 'observationLevel')
 
-  let damageFactor = 1
-  let resistFactor = 1 + levelTerm(offense, defense)
-    + (input.critical ? CRITICAL_BONUS : 0) + clash * CLASH_BONUS + observation * OBSERVATION_BONUS
-  let finalMultiplier = 1
+  let damageSum = 0, resistSum = 0, finalMultiplier = 1
   for (const modifier of input.modifiers ?? []) {
-    if (!Number.isFinite(modifier.value)) throw new RangeError('modifier value must be a number')
-    if (modifier.target === 'damage') damageFactor += modifier.value
-    else if (modifier.target === 'resist') resistFactor += modifier.value
-    // While staggered the game sets the physical resistance to 2 + (stage − 1) × 0.5 and adds the weakening on top.
-    else if (modifier.target === 'physical') physical = stagger ? physical + modifier.value : Math.max(0, physical + modifier.value)
-    else if (modifier.target === 'sin') sin = Math.min(SIN_RESIST_MAX, Math.max(0, sin + modifier.value))
+    finite(modifier.value, 'modifier value')
+    if (modifier.target === 'damage') damageSum += modifier.value
+    else if (modifier.target === 'resist') resistSum += modifier.value
+    else if (modifier.target === 'physical') physical += modifier.value
+    else if (modifier.target === 'sin') sin += modifier.value
     else finalMultiplier *= amount(modifier.value, 'final multiplier')
   }
-  resistFactor += resistTerm(physical) + resistTerm(sin)
-  // Each side stops at zero: reductions past −100% on both would otherwise multiply into a gain.
-  damageFactor = Math.max(0, damageFactor)
-  resistFactor = Math.max(0, resistFactor)
+  // Staggered, the resistance is the stage's value plus the weakening, uncapped; otherwise it stays within ±2.
+  if (!stagger) physical = Math.min(PHYSICAL_RESIST_LIMIT, Math.max(-PHYSICAL_RESIST_LIMIT, physical))
+  sin = Math.min(SIN_RESIST_MAX, Math.max(0, sin))
 
-  // Rounded to six places first: 100 × 1.15 is 114.99999999999999 in binary and would floor to 114.
-  const whole = (value: number) => Math.floor(Math.round(value * 1e6) / 1e6)
-  // The write-ups say a final multiplier applies "after the damage calculation", so it meets the floored value.
-  const minimum = Math.max(1, whole(power * MIN_DAMAGE_RATE))
-  const damage = Math.max(1, whole(Math.max(minimum, whole(power * damageFactor * resistFactor)) * finalMultiplier))
+  const base = f(f(f(resistTerm(sin) + resistTerm(physical)) - levelTerm(offense, defense)) + f(resistSum))
+  const critical = input.critical
+    ? f(f(f(finite(input.critAdder ?? 0, 'critAdder')) + f(CRITICAL_BONUS)) * Math.max(0, f(1 + f(finite(input.critPassive ?? 0, 'critPassive')))))
+    : 0
+  const resistFactor = Math.max(0, f(f(f(f(base + critical) + f(clash * f(CLASH_BONUS))) + f(observation * f(OBSERVATION_BONUS))) + 1))
+  // The flat adder is weighed without the critical, clash and observation bonuses.
+  const flat = f(Math.max(0, base) + 1)
+  // The game does not stop the damage sum at 0: past −100% the least damage below takes over.
+  const damageFactor = f(f(damageSum) + 1)
+  const hit = f(f(f(finite(input.hpAdder ?? 0, 'hpAdder')) + f(flat * f(finite(input.damageAdder ?? 0, 'damageAdder')))) + f(f(power * resistFactor) * damageFactor))
+  const minimum = Math.max(1, Math.floor(f(power * f(MIN_DAMAGE_RATE))))
+  // The final multiplier stands for the abilities that change a hit after it is figured: it meets the floored value.
+  const damage = Math.max(1, Math.floor(f(Math.max(minimum, Math.floor(hit)) * f(finalMultiplier))))
   return { damage, damageFactor, resistFactor, finalMultiplier }
 }
 
