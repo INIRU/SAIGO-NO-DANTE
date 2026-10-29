@@ -539,7 +539,8 @@ async function getCachedDeckMetadata(lang: 'ko' | 'en' | 'ja', id: string): Prom
     .from('decks')
     .select('title, description, tags')
     .eq('id', id)
-    .single()
+    // A deleted deck is a "not found" page, not an error.
+    .maybeSingle()
   if (error) Sentry.captureException(error, { tags: { location: 'decks/[id]/page:generateMetadata' }, extra: { msg: 'Failed to fetch deck metadata' } })
 
   if (!data) {
@@ -601,7 +602,7 @@ async function getCachedDeckDetailPayload(lang: 'ko' | 'en' | 'ja', id: string) 
           )
         `)
         .eq('id', id)
-        .single(),
+        .maybeSingle(),
       supabase
         .schema('limbus')
         .from('deck_comments')
