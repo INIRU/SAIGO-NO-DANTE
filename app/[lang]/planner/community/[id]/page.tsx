@@ -144,7 +144,7 @@ export default async function PlanDetailPage({ params }: Props) {
 
   const [{ data: skills, error: skillsError }, { data: passives, error: passivesError }, planEvents] = await Promise.all([
     supabase.schema('limbus').from('skills')
-      .select('id, identity_id, image_id, name, name_en, name_jp, skill_type, atk_type, sin_affinity, coins, base_power, coin_power, skill_order, variant_order, atk_weight, offense_level, description, description_en, description_jp, uptie_level')
+      .select('id, identity_id, image_id, name, name_en, name_jp, skill_type, atk_type, sin_affinity, coins, base_power, coin_power, coin_list, skill_order, variant_order, atk_weight, offense_level, description, description_en, description_jp, uptie_level')
       .in('identity_id', memberIds)
       .gte('uptie_level', 3),
     supabase.schema('limbus').from('passives')
