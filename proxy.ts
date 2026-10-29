@@ -7,6 +7,7 @@ import createMiddleware from 'next-intl/middleware'
 import { routing } from './lib/i18n/routing'
 import { isAllowedRequestOrigin } from './lib/request-origin'
 import { PRIMARY_LOCALE } from './lib/seo/metadata'
+import { canonicalRedirectUrl } from './lib/seo/canonical-host'
 import { isMaintenanceOpen, maintenanceEdgeReadUrl, type MaintenanceEntry } from './lib/maintenance'
 
 const intlMiddleware = createMiddleware(routing)
@@ -138,6 +139,10 @@ export async function proxy(request: NextRequest) {
   let tokenPromise: Promise<JWT | null> | undefined
   const readToken = () => (tokenPromise ??= getToken({ req: request }))
 
+  // ── 0. http·www → https 본 주소 (검색엔진이 한 주소만 보게) ──
+  const canonical = canonicalRedirectUrl(request.headers.get('host'), request.headers.get('cf-visitor'), pathname + request.nextUrl.search)
+  if (canonical) return NextResponse.redirect(canonical, 308)
+
   // ── 1. 봇/스캐너 프로빙 즉시 차단 ──
   if (isBlockedPath(pathname)) {
     return FORBIDDEN_RESPONSE
@@ -243,7 +248,7 @@ export async function proxy(request: NextRequest) {
   }
 
   // ── 6. i18n routing (next-intl middleware) ──
-  if (!pathname.startsWith('/api/')) {
+  if (!hasPathPrefix(pathname, '/api')) {
     // Crawlers send no Accept-Language; next-intl would send them to the 'en' default. Korean is the primary site.
     // 308 only for the bare '/', whose canonical target is /ko; deeper paths keep 307.
     if (!locale && !request.headers.has('accept-language') && !request.cookies.has('NEXT_LOCALE') && !request.cookies.has('preferred_lang')) {

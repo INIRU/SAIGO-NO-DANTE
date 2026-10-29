@@ -2,7 +2,7 @@
 
 import { getRootEvents } from '@/lib/utils/event-catalog'
 
-import { memo, useState, useMemo, useEffect, useCallback } from 'react'
+import { memo, useState, useMemo, useEffect, useCallback, startTransition } from 'react'
 import { useTranslations } from 'next-intl'
 import { useQueryState, parseAsString } from 'nuqs'
 import ScrollReveal from '@/components/ui/ScrollReveal'
@@ -221,15 +221,16 @@ export default function MirrorDungeonClient({
 
   // 로컬 상태 (모달/UI)
   // 기프트·테마팩·이벤트 상세는 주소(gift, pack, event)로 열고 닫는다: 검색 결과가 바로 그 창으로 온다
+  // 창 열기는 transition으로: 느린 폰에서도 누른 직후 한 번 그린 뒤 창을 그린다(INP)
   const [giftIdParam, setGiftIdParam] = useQueryState('gift', parseAsString.withDefault(''))
   const selected = useMemo(() => gifts.find(g => String(g.id) === giftIdParam) ?? null, [gifts, giftIdParam])
-  const setSelected = useCallback((gift: EgoGift | null) => { void setGiftIdParam(gift ? String(gift.id) : null) }, [setGiftIdParam])
+  const setSelected = useCallback((gift: EgoGift | null) => startTransition(() => { void setGiftIdParam(gift ? String(gift.id) : null) }), [setGiftIdParam])
   const [packIdParam, setPackIdParam] = useQueryState('pack', parseAsString.withDefault(''))
   const expandedThemeId = packIdParam && themes.some(t => String(t.id) === packIdParam) ? Number(packIdParam) : null
-  const setExpandedThemeId = useCallback((id: number | null) => { void setPackIdParam(id === null ? null : String(id)) }, [setPackIdParam])
+  const setExpandedThemeId = useCallback((id: number | null) => startTransition(() => { void setPackIdParam(id === null ? null : String(id)) }), [setPackIdParam])
   const [eventIdParam, setEventIdParam] = useQueryState('event', parseAsString.withDefault(''))
   const selectedEvent = eventById.get(Number(eventIdParam)) ?? null
-  const setSelectedEvent = (event: MdEvent | null) => setEventIdParam(event ? String(event.id) : null)
+  const setSelectedEvent = (event: MdEvent | null) => startTransition(() => { void setEventIdParam(event ? String(event.id) : null) })
 
   // game_id → EgoGift 매핑 (테마팩 필터 + EventTab 공용)
   const giftByGameId = useMemo(() => {
