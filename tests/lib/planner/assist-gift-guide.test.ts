@@ -7,7 +7,7 @@ const giftMap = new Map([
   gift(1, '화상', '1'), gift(2, '화상', '2'), gift(3, '화상', '3'), gift(4, '출혈', '2'), gift(5, '출혈', '3'),
   gift(10, '화상', '4'), gift(11, '출혈', '4'), gift(12, '화상', '4'), gift(13, '공통', '4'), gift(14, '출혈', '4'), gift(20, '공통', '2'),
 ].map(item => [item.game_id, item]))
-const recipe = (id: string, result: number, ingredients: number[]) => ({ id, result_name: `g${result}`, keyword: '', ingredients: ingredients.map(n => `g${n}`), final_result: null }) as RecipeData
+const recipe = (id: string, result: number, ingredients: number[]) => ({ id, result_name: `g${result}`, keyword: '', ingredients: ingredients.map(n => `g${n}`)}) as RecipeData
 const recipes = [
   recipe('a', 10, [1, 2]),
   recipe('b', 12, [10, 3]),

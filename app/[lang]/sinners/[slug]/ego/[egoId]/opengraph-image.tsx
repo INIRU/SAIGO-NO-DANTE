@@ -10,7 +10,7 @@ export default async function OgImage({ params }: { params: Promise<{ lang: stri
   const lang = isSupportedLang(rawLang) ? rawLang : 'ko'
   const [sinner, item] = await Promise.all([getSinnerById(slug), getEGOById(egoId)])
   const valid = sinner && item && item.sinner_id === slug
-  const title = valid ? getLocalizedName({ name_kr: item.name_kr ?? item.name, name_en: item.name_en, name_jp: item.name_jp }, lang) : (lang === 'ko' ? '정보를 찾을 수 없습니다' : lang === 'ja' ? '情報が見つかりません' : 'Not found')
+  const title = valid ? getLocalizedName({ name_kr: item.name_kr, name_en: item.name_en, name_jp: item.name_jp }, lang) : (lang === 'ko' ? '정보를 찾을 수 없습니다' : lang === 'ja' ? '情報が見つかりません' : 'Not found')
   const art = valid ? (item.image_url || item.cor_image_url || '') : ''
   return renderOgPreview({ lang, eyebrow: 'E.G.O ARCHIVE', title,
     subtitle: valid ? getLocalizedName({ name_kr: sinner.name_kr, name_en: sinner.name, name_jp: sinner.name_jp }, lang) : undefined,

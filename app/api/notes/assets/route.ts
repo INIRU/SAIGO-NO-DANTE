@@ -14,8 +14,8 @@ const TABLES = { gift:'ego_gifts', theme:'ego_gift_themes', identity:'identities
 const COLUMNS = {
   gift:'id,name,name_en,name_jp,grade,keyword,image_url,effect_base,effect_base_en,effect_base_jp',
   theme:'id,name,name_en,name_jp,image_url',
-  identity:'id,name,name_kr,name_en,name_jp,sinner_id,rarity,game_id,folder_name,keywords,release_date',
-  ego:'id,name,name_kr,name_en,name_jp,grade,image_url,sinner_id,sin_affinity,stage_levels:ego_skills(construe_level)',
+  identity:'id,name_kr,name_en,name_jp,sinner_id,rarity,game_id,folder_name,keywords,release_date',
+  ego:'id,name_kr,name_en,name_jp,grade,image_url,sinner_id,sin_affinity,stage_levels:ego_skills(construe_level)',
   skill:'id,name,name_en,name_jp,identity_id,skill_type,atk_type,sin_affinity,coins,base_power,coin_power,skill_order,image_id,variant_order,atk_weight,offense_level,description,description_en,description_jp,uptie_level',
   keyword:'name,name_en,name_jp,description,icon_slug',
 } as const

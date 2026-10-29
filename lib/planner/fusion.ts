@@ -11,14 +11,9 @@ export function recipeIngredientIds(recipe: RecipeData, idByName: ReadonlyMap<st
   return recipe.ingredients.map(name => idByName.get(name))
 }
 
-/**
- * A recipe's result gift id: the stored result_id (which is result_name's id, so it is used only when the final result is
- * that same gift), else looked up by name. `byFinal` false reads result_name alone.
- */
-export function recipeResultId(recipe: RecipeData, idByName: ReadonlyMap<string, number>, byFinal = true): number | undefined {
-  const sameResult = !byFinal || !recipe.final_result || recipe.final_result === recipe.result_name
-  if (recipe.result_id != null && sameResult) return recipe.result_id
-  return idByName.get(byFinal ? recipe.final_result ?? recipe.result_name : recipe.result_name)
+/** A recipe's result gift id: the stored result_id, else looked up by result_name. */
+export function recipeResultId(recipe: RecipeData, idByName: ReadonlyMap<string, number>): number | undefined {
+  return recipe.result_id ?? idByName.get(recipe.result_name)
 }
 
 // ── 기프트 활성화 상태 ─────────────────────────────────────────────────────
@@ -108,7 +103,7 @@ export function deriveBlockedFinalFusionMaterialIds({
   const recipesByResult = new Map<number, RecipeData[]>()
   for (const recipe of recipes) {
     const result = recipeResultId(recipe, idByName)
-    if (result !== undefined && (recipe.final_result ?? recipe.result_name) !== KEPT_INGREDIENTS_RESULT) {
+    if (result !== undefined && recipe.result_name !== KEPT_INGREDIENTS_RESULT) {
       recipesByResult.set(result, [...(recipesByResult.get(result) ?? []), recipe])
     }
   }
@@ -146,7 +141,7 @@ export function findAvailableFusions(
       const known = recipeIngredientIds(recipe, idByName).map(id => id === undefined ? undefined : giftMap.get(id))
       const materials = known.filter(Boolean) as GiftData[]
       const pseudoIngredients = recipe.ingredients.filter((_, index) => !known[index])
-      const resultId = recipeResultId(recipe, idByName, false)
+      const resultId = recipeResultId(recipe, idByName)
       const result = resultId === undefined ? null : giftMap.get(resultId) ?? null
       // a pseudo-ingredient (no such gift) never blocks
       const canCraft = materials.every(gift => invSet.has(String(gift.game_id)))

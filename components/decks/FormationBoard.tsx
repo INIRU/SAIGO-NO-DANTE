@@ -7,7 +7,7 @@ import styles from './FormationBoard.module.css'
 
 export type FormationBoardSlot = {
   key: string
-  identity: (IdentityFrameCardIdentity & { name: string }) | null
+  identity: (IdentityFrameCardIdentity & { name?: string }) | null
   /** Shown as a quiet logo tile when the slot has no identity. */
   sinnerId?: string
   slotOrder: number | null
@@ -38,7 +38,7 @@ export default function FormationBoard({ slots, className }: { slots: FormationB
               <IdentityFrameCard
                 identity={slot.identity}
                 uptie={slot.uptie}
-                name={slot.identity.name}
+                name={slot.identity.name ?? ''}
                 order={slot.slotOrder}
                 selected={slot.selected}
                 giftBadgeUrls={slot.giftBadgeUrls}

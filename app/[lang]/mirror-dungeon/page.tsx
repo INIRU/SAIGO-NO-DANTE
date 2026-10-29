@@ -5,6 +5,7 @@ import { metaText, pageMetadata } from '@/lib/seo/metadata'
 import { Suspense } from 'react'
 import { cacheLife, cacheTag } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { GIFT_COLUMNS, RECIPE_COLUMNS, MD_EVENT_COLUMNS, MD_EVENT_CHOICE_COLUMNS } from '@/lib/db/columns'
 import type { SupportedLang } from '@/lib/i18n/types'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import MirrorDungeonClient from './MirrorDungeonClient'
@@ -59,9 +60,9 @@ const MIRROR_FAQ: Record<'ko' | 'en' | 'ja', { question: string; answer: string 
   },
 ] }
 
-export default async function MirrorDungeonPage({ params }: { params: Promise<{ lang: string }> }) {
+/** One read of the game tables for all three languages; the page below only picks the language. */
+async function fetchMirrorDungeonData() {
   'use cache'
-  const { lang } = await params
   cacheLife('max')
   cacheTag(CACHE_TAGS.mirrorDungeon, CACHE_TAGS.gameData)
   const supabase = createAdminClient()
@@ -73,21 +74,31 @@ export default async function MirrorDungeonPage({ params }: { params: Promise<{ 
     { data: events, error: eventsError },
     { data: choices, error: choicesError },
   ] = await Promise.all([
-    supabase.schema('limbus').from('ego_gifts').select('id, game_id, name, name_en, name_jp, keyword, grade, enhancement, price, buy_disabled, effect_base, effect_base_en, effect_base_jp, effect_plus, effect_plus_en, effect_plus_jp, effect_plusplus, effect_plusplus_en, effect_plusplus_jp, activation_condition, is_synthesis, related, image_url, acquisition, difficulty, convert_to').order('keyword').order('grade'),
-    supabase.schema('limbus').from('ego_gift_recipes').select('id, result_name, keyword, ingredients, final_result'),
+    supabase.schema('limbus').from('ego_gifts').select(GIFT_COLUMNS).order('keyword').order('grade'),
+    supabase.schema('limbus').from('ego_gift_recipes').select(RECIPE_COLUMNS),
     supabase.schema('limbus').from('ego_gift_themes').select('id, name, name_en, name_jp, ego_gift_ids, specific_ego_gift_ids, image_url, difficulty, floor_info, is_hidden, hidden_rate, fixed_reward_gift_ids, name_color, name_segments').order('id'),
     supabase
       .schema('limbus')
       .from('md_events')
-      .select('id, name, name_en, name_jp, desc_text, desc_text_en, desc_text_jp, event_type, source, image_url, theme_ids, gift_ids, variant_of, category, judgment')
+      .select(MD_EVENT_COLUMNS)
       .order('id'),
-    supabase.schema('limbus').from('md_event_choices').select('*').order('event_id').order('sort_order'),
+    supabase.schema('limbus').from('md_event_choices').select(MD_EVENT_CHOICE_COLUMNS).order('event_id').order('sort_order'),
   ])
   if (giftsError) Sentry.captureException(giftsError, { tags: { location: 'mirror-dungeon/page:MirrorDungeonPage' }, extra: { msg: 'Failed to fetch gifts' } })
   if (recipesError) Sentry.captureException(recipesError, { tags: { location: 'mirror-dungeon/page:MirrorDungeonPage' }, extra: { msg: 'Failed to fetch recipes' } })
   if (themesError) Sentry.captureException(themesError, { tags: { location: 'mirror-dungeon/page:MirrorDungeonPage' }, extra: { msg: 'Failed to fetch themes' } })
   if (eventsError) Sentry.captureException(eventsError, { tags: { location: 'mirror-dungeon/page:MirrorDungeonPage' }, extra: { msg: 'Failed to fetch events' } })
   if (choicesError) Sentry.captureException(choicesError, { tags: { location: 'mirror-dungeon/page:MirrorDungeonPage' }, extra: { msg: 'Failed to fetch event choices' } })
+
+  return { gifts, recipes, themes, events, choices }
+}
+
+export default async function MirrorDungeonPage({ params }: { params: Promise<{ lang: string }> }) {
+  'use cache'
+  const { lang } = await params
+  cacheLife('max')
+  cacheTag(CACHE_TAGS.mirrorDungeon, CACHE_TAGS.gameData)
+  const { gifts, recipes, themes, events, choices } = await fetchMirrorDungeonData()
 
   return (
     <>

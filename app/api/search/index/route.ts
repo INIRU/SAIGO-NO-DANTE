@@ -44,8 +44,8 @@ async function getRows(withRefs: boolean) {
   const db = createAdminClient().schema('limbus')
   const [sinners, identities, ego, keywords, gifts, themes, events] = await Promise.all([
     db.from('sinners').select('id, name, name_kr, name_en, name_jp, order_num'),
-    db.from('identities').select('id, name, name_kr, name_en, name_jp, rarity, game_id, folder_name, sinner_id'),
-    db.from('ego').select('id, name, name_kr, name_en, name_jp, grade, image_url, sinner_id'),
+    db.from('identities').select('id, name_kr, name_en, name_jp, rarity, game_id, folder_name, sinner_id'),
+    db.from('ego').select('id, name_kr, name_en, name_jp, grade, image_url, sinner_id'),
     db.from('keyword_meta').select('name, name_en, name_jp, description, icon_slug'),
     db.from('ego_gifts').select('id, name, name_en, name_jp, keyword, grade, image_url'),
     db.from('ego_gift_themes').select('id, name, name_en, name_jp, image_url, difficulty'),

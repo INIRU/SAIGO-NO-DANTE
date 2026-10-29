@@ -13,6 +13,17 @@ export function forBuilder<T extends Record<string, unknown>>(row: T, lang: Supp
   return copy as T
 }
 
+/** The builder's tables, read once for every language (the per-language copy below only localizes them). */
+async function fetchDeckBuilderRows() {
+  'use cache'
+  cacheLife('max')
+  cacheTag(CACHE_TAGS.gameData, CACHE_TAGS.sinners, CACHE_TAGS.identities, CACHE_TAGS.ego, CACHE_TAGS.egoGifts)
+  const [sinners, identities, egos, skills, passives, egoGifts] = await Promise.all([
+    getSinners(), getIdentities(), getEGOs(), getAllSkills(), getAllPassives(), getEgoGiftsForNotes(),
+  ])
+  return { sinners, identities, egos, egoGifts, skills, passives }
+}
+
 /**
  * Game data of the deck builder (new, fork and edit), cached per language until a game data sync. Every skill and passive
  * row is sent to the browser, so the text the builder never shows stays out of the page payload.
@@ -21,11 +32,9 @@ export async function fetchDeckBuilderData(lang: SupportedLang) {
   'use cache'
   cacheLife('max')
   cacheTag(CACHE_TAGS.gameData, CACHE_TAGS.sinners, CACHE_TAGS.identities, CACHE_TAGS.ego, CACHE_TAGS.egoGifts)
-  const [sinners, identities, egos, skills, passives, egoGifts] = await Promise.all([
-    getSinners(), getIdentities(), getEGOs(), getAllSkills(), getAllPassives(), getEgoGiftsForNotes(),
-  ])
+  const { skills, passives, ...rest } = await fetchDeckBuilderRows()
   return {
-    sinners, identities, egos, egoGifts,
+    ...rest,
     skills: skills.map(skill => forBuilder(skill, lang)),
     passives: passives.map(passive => forBuilder(passive, lang)),
   }

@@ -175,8 +175,7 @@ type SinnerData = {
 type EgoData = {
   id: string
   sinner_id: string
-  name: string
-  name_kr: string | null
+  name_kr: string
   name_en?: string | null
   name_jp?: string | null
   grade: string

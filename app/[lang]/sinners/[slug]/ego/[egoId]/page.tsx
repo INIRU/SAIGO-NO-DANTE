@@ -37,15 +37,15 @@ export async function generateMetadata({
   if (!sinner || !ego) return { title: notFoundTitle, robots: { index: false } }
 
   const path = `/sinners/${slug}/ego/${egoId}`
-  const egoName = getLocalizedName({ ...ego, name_kr: ego.name_kr ?? ego.name }, lang)
+  const egoName = getLocalizedName({ ...ego, name_kr: ego.name_kr }, lang)
   const sinnerName = getLocalizedName({ name_kr: sinner.name_kr, name_en: sinner.name, name_jp: sinner.name_jp }, lang)
   const sinStr = ego.sin_affinity ?? ''
   const description = {
-    ko: `${sinner.name_kr} ${ego.name_kr ?? ego.name} — ${ego.grade} 등급${sinStr ? `, ${sinStr} 속성` : ''} EGO. 스킬, 패시브, 내성 정보.`,
+    ko: `${sinner.name_kr} ${ego.name_kr} — ${ego.grade} 등급${sinStr ? `, ${sinStr} 속성` : ''} EGO. 스킬, 패시브, 내성 정보.`,
     en: `${sinnerName} ${egoName} — ${ego.grade} E.G.O${sinStr ? `, ${sinStr} affinity` : ''}. Skills, passives and sin resistances.`,
     ja: `${sinnerName} ${egoName} — ${ego.grade}等級${sinStr ? `・${sinStr}属性` : ''}のE.G.O。スキル、パッシブ、耐性情報。`,
   }[lang]
-  const ogTitle = lang === 'ko' ? `${ego.name_kr ?? ego.name} — ${sinner.name_kr} | 최애의 관리자` : `${egoName} — ${sinnerName} | SAIGO NO DANTE`
+  const ogTitle = lang === 'ko' ? `${ego.name_kr} — ${sinner.name_kr} | 최애의 관리자` : `${egoName} — ${sinnerName} | SAIGO NO DANTE`
 
   return pageMetadata({
     lang,
@@ -72,7 +72,7 @@ export default async function EGODetailPage({ params }: { params: Promise<{ lang
         { name: translations['nav.home'][lang], url: localeUrl(lang) },
         { name: translations['nav.sinners'][lang], url: localeUrl(lang, '/sinners') },
         { name: getLocalizedName({ name_kr: sinner.name_kr, name_en: sinner.name, name_jp: sinner.name_jp }, lang), url: localeUrl(lang, `/sinners/${slug}`) },
-        { name: getLocalizedName({ ...ego, name_kr: ego.name_kr ?? ego.name }, lang), url: localeUrl(lang, `/sinners/${slug}/ego/${egoId}`) },
+        { name: getLocalizedName({ ...ego, name_kr: ego.name_kr }, lang), url: localeUrl(lang, `/sinners/${slug}/ego/${egoId}`) },
       ])} />
       <Suspense fallback={null}>
         <EGODetailClient sinner={sinner} ego={ego} />

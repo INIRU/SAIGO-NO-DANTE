@@ -20,9 +20,7 @@ export interface EgoGift {
     count: number
   } | null
   is_synthesis: boolean
-  related: string | null
   image_url: string | null
-  acquisition: string | null
   game_id: number | null
   difficulty: string | null
   convert_to: number | null
@@ -41,7 +39,6 @@ export interface Recipe {
   result_name: string
   keyword: string
   ingredients: string[]
-  final_result: string | null
 }
 
 export interface EgoGiftTheme {

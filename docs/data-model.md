@@ -22,7 +22,7 @@
 
 - 표 57개 모두 RLS가 켜져 있다(2026-10-14 확인). 공개 읽기 정책이 없는 표는 서버의 service_role만 접근한다.
 - 동기화가 쓰는 표는 14개다: `sinners`, `identities`, `skills`, `passives`, `ego`, `ego_skills`, `ego_passives`, `keyword_meta`, `game_text_refs`, `ego_gifts`, `ego_gift_themes`, `ego_gift_recipes`, `md_events`, `md_event_choices`. 반영 전에 백업하고 되돌리기가 복원하는 범위와 같다(`limbus-asset-extractor/site-sync/scripts/sync/extraction-restore.ts`의 `RESTORE_TABLES`).
-- 제거한 기능의 표는 비공개 스키마 `limbus_retired`에 있다.
+- 제거한 기능의 표는 `limbus_retired`에 있었고 2026-10-29 정리(`20261029130000_cleanup.sql`)에서 스키마째 지웠다. 표 11개 모두 0행이었다.
 
 ### 2026-10-01에 추가된 칸과 함수
 
@@ -158,10 +158,14 @@
 
 2026-09-10 `20260910064305_retire_unused_features.sql`을 연결 프로젝트에 적용했다. 삭제 기능의 테이블 11개, 감성 추이 뷰, AI 요약 함수를 `limbus_retired`로 이동했다. 이 스키마는 anon/authenticated에 공개하지 않는다. 이동 전 11개 테이블과 중복 EGO 컬럼의 데이터가 모두 0건임을 확인했다. 값이 있는 다른 환경에서는 중복 컬럼 제거를 중단한다.
 
-되돌릴 때는 `supabase/rollback/retire_unused_features.sql`로 원래 스키마를 복원한다. 과거 마이그레이션, 사용자/덱/플래너 기록, Discord 봇 테이블, 기존 backup 테이블은 보존했다. 전체 DB 권한 정비를 완료한 것은 아니다. 당시 Supabase 검사에는 기존 `skills`, `deck_identities`, 일부 게임/백업 테이블의 RLS 미설정과 함수 search_path 경고가 남아 있었다. RLS는 이후 모든 표에 켜졌고(위 "현재 표") search_path는 5단계에 남아 있다.
+`limbus_retired`는 2026-10-29에 지웠으므로 되돌리는 스크립트(`supabase/rollback/retire_unused_features.sql`)도 함께 없앴다. 과거 마이그레이션, 사용자/덱/플래너 기록, Discord 봇 테이블, 기존 backup 테이블은 보존했다. 전체 DB 권한 정비를 완료한 것은 아니다. 당시 Supabase 검사에는 기존 `skills`, `deck_identities`, 일부 게임/백업 테이블의 RLS 미설정과 함수 search_path 경고가 남아 있었다. RLS는 이후 모든 표에 켜졌고(위 "현재 표") search_path는 5단계에 남아 있다.
 
 2026-09-29 `20260929095502_drop_discord_bot_tables.sql`로 서비스를 종료한 Discord 봇 테이블 5개(`feed_tracker`, `guild_settings`, `guild_feed_history`, `tickets`, `warnings`)를 삭제했다. 사이트 코드는 이 테이블을 쓰지 않았고, 참조하는 외래 키·뷰·트리거·함수·cron도 없었다. 삭제 직전 행은 `backups/2026-09-29/`에 있고, 스키마는 `supabase/rollback/drop_discord_bot_tables.sql`로 되살린다. 관리자 공지를 Discord로 보내는 웹훅은 봇과 별개라 유지한다.
 
 2026-09-10 `20260910071945_restore_ego_skill_source_fields.sql`을 적용했다. `ego_skills.game_skill_id`는 이름이 해석 단계에 따라 바뀌어도 같은 원본 스킬을 연결하며, `mental_consume`은 원본 정신력 소모다. 해석 I~V는 원본이 지원하는 최대 단계까지만 저장한다. 카드의 `max_construe_level`은 스킬 관계에서 계산하는 조회 값이며 중복 DB 컬럼을 추가하지 않는다.
 
 `20260910140000_rebuild_mirror_event_graph.sql`과 `20260910141000_scope_mirror_event_replacement.sql`을 적용했다. 두 번째는 서비스 역할에서 실행되는 safe-update 검사에 맞춰 교체 범위를 양의 게임 데이터 ID로 지정한다. 교체 전 두 테이블 백업과 원자적 롤백 시험을 수행했고, 적용된 330개 노드·736개 결과를 계획과 모든 필드 단위로 대조했다. 복원은 `before-event-graph-rebuild/` 백업으로 두 테이블을 같은 트랜잭션 안에서 복원해야 하며 코드 revert만으로 DB가 되돌아가지는 않는다.
+
+## 2026-10-29 DB 정리
+
+실제 DB를 SELECT로만 점검한 설계는 `out/_handoff_choeae/UPDATE-2026-10-29-db.md`에 있다. 마이그레이션 4개(순서대로): `20261029120000_game_values.sql`(새 칼럼), `20261029130000_cleanup.sql`(빈 칼럼·은퇴 스키마 삭제, NOT NULL·UNIQUE·CHECK·외래 키, 인덱스, `skills_max_uptie`·`passives_max_uptie` 뷰), `20261029140000_drop_name_copies.sql`(`name_kr`과 같은 `identities.name`·`ego.name`·`ego_gift_recipes.final_result` 삭제; 추출 도구 반영 뒤), `20261029150000_normalize_arrays.sql`(선택: 재료·테마·이벤트의 기프트·테마 번호를 연결 표로).

@@ -18,10 +18,8 @@ export type AbilityEffect = { target: EffectTarget; side: EffectSide; value: num
 
 type Rule = { target: EffectTarget; side: EffectSide; scaled: boolean }
 
-// What each ability does. "ByStack" / "AsStack" abilities multiply their value by the stack count; the others add it once
-// (BuffAbility_AtkDamageMultiplierByStack.CalculateDmgMul = stack × value; TakeAtkDamageMultiplierByStack.CalcDmgMul the same;
-// SkillPowerAdderAsStack = (int)value × stack). The flat names are read from the same game data: Fragile, Protection and
-// Damage Up are the ByStack kind with ±0.1 and a maximum of 10.
+// What each ability does. "ByStack" / "AsStack" abilities multiply their value by the stack count (AsStack: (int)value × stack);
+// the others add it once. Fragile, Protection and Damage Up are the ByStack kind with ±0.1 and a maximum of 10 in the game data.
 export const ABILITY_RULES: Readonly<Record<string, Rule>> = {
   AtkDamageMultiplier: { target: 'damage', side: 'self', scaled: false },
   AtkDamageMultiplierByStack: { target: 'damage', side: 'self', scaled: true },

@@ -35,7 +35,8 @@ export type PanicType = {
 export type Identity = {
   id: string
   sinner_id: string
-  name: string
+  /** The name a page shows (picked from name_kr / name_en / name_jp by the page); not a database column. */
+  name?: string
   name_kr: string
   name_en?: string | null
   name_jp?: string | null
@@ -195,14 +196,11 @@ export type EGO = {
   max_construe_level?: number
   id: string
   sinner_id: string
-  name: string
-  name_kr: string | null
+  name_kr: string
   name_en?: string | null
   name_jp?: string | null
   grade: string
   sin_affinity: SinType | null
-  description: string | null
-  corrosion_risk: string | null
   folder_name: string | null
   image_url: string | null
   passive_name: string | null
@@ -211,14 +209,11 @@ export type EGO = {
   passive_name_jp?: string | null
   passive_content_en?: string | null
   passive_content_jp?: string | null
-  obtaining_method_en?: string | null
-  obtaining_method_jp?: string | null
   ego_skills: EGOSkill[] | null
   ego_cor_skills: EGOSkill[] | null
   resistance: string[] | null
   cost: number[] | null
   keywords: string[] | null
-  obtaining_method: string | null
   cor_image_url: string | null
   /** Full-size art URL (`{id}_cg-{hash12}.webp`) the sync stores; null/absent for rows that predate it (see getEgoArtworkUrl). */
   artwork_url?: string | null

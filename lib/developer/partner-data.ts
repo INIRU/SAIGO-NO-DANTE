@@ -8,10 +8,10 @@ type Row = Record<string, any>
 const db = () =>
   publicSupabase().schema('limbus')
 
-const IDENTITY = 'id, game_id, sinner_id, folder_name, name, name_kr, name_en, name_jp, tier, rarity, sin_affinity, hp, speed_min, speed_max, def_level, keywords, skill_keyword_list, unit_keyword_list, affiliation, association_list, slash_res, pierce_res, blunt_res, release_date'
+const IDENTITY = 'id, game_id, sinner_id, folder_name, name_kr, name_en, name_jp, tier, rarity, sin_affinity, hp, speed_min, speed_max, def_level, keywords, skill_keyword_list, unit_keyword_list, affiliation, association_list, slash_res, pierce_res, blunt_res, release_date'
 const SKILLS = 'skills(id, name, name_en, name_jp, skill_type, atk_type, sin_affinity, coins, base_power, coin_power, description, description_en, description_jp, skill_order, variant_order, uptie_level, image_id, atk_weight, offense_level)'
 const PASSIVES = 'passives(id, name, name_en, name_jp, passive_type, sin_affinity, sin_count, sin_requirements, active_cond, description, description_en, description_jp, passive_order, uptie_level)'
-const EGO = 'id, game_id, sinner_id, folder_name, name, name_kr, name_en, name_jp, grade, sin_affinity, resistance, cost, keywords, release_date, image_url, cor_image_url, artwork_url, corrosion_artwork_url'
+const EGO = 'id, game_id, sinner_id, folder_name, name_kr, name_en, name_jp, grade, sin_affinity, resistance, cost, keywords, release_date, image_url, cor_image_url, artwork_url, corrosion_artwork_url'
 const EGO_SKILLS = 'ego_skills(id, name, name_en, name_jp, skill_type, category, sin_affinity, coins, base_power, coin_power, description, description_en, description_jp, skill_order, construe_level, atk_weight, offense_level, mental_consume)'
 
 /** Table, list columns, extra columns of the one-item read, order and cache tag per partner catalog. */
@@ -20,13 +20,13 @@ const CATALOGS: Record<string, { table: string; columns: string; detail?: string
   egos: {
     table: 'ego',
     columns: EGO,
-    detail: `passive_name, passive_name_en, passive_name_jp, passive_content, passive_content_en, passive_content_jp, obtaining_method, obtaining_method_en, obtaining_method_jp, ${EGO_SKILLS}, ego_passives(game_passive_id, min_stage, max_stage, name, name_en, name_jp, description, description_en, description_jp)`,
+    detail: `passive_name, passive_name_en, passive_name_jp, passive_content, passive_content_en, passive_content_jp, ${EGO_SKILLS}, ego_passives(game_passive_id, min_stage, max_stage, name, name_en, name_jp, description, description_en, description_jp)`,
     order: ['sinner_id', 'game_id'],
     tag: CACHE_TAGS.ego,
   },
   'ego-gifts': {
     table: 'ego_gifts',
-    columns: 'id, game_id, name, name_en, name_jp, keyword, grade, enhancement, price, buy_disabled, is_synthesis, difficulty, acquisition, convert_to, image_url, effect_base, effect_base_en, effect_base_jp, effect_plus, effect_plus_en, effect_plus_jp, effect_plusplus, effect_plusplus_en, effect_plusplus_jp, activation_condition',
+    columns: 'id, game_id, name, name_en, name_jp, keyword, grade, enhancement, price, buy_disabled, is_synthesis, difficulty, convert_to, image_url, effect_base, effect_base_en, effect_base_jp, effect_plus, effect_plus_en, effect_plus_jp, effect_plusplus, effect_plusplus_en, effect_plusplus_jp, activation_condition',
     order: ['game_id'],
     tag: CACHE_TAGS.egoGifts,
   },
@@ -45,7 +45,7 @@ const CATALOGS: Record<string, { table: string; columns: string; detail?: string
   },
   keywords: {
     table: 'keyword_meta',
-    columns: 'name, name_en, name_jp, description, description_en, description_jp, max_stack, icon_slug, sin_affinity, category, effect_type, game_id',
+    columns: 'name, name_en, name_jp, description, description_en, description_jp, max_stack, icon_slug, category, effect_type, game_id',
     order: ['name'],
     tag: CACHE_TAGS.keywords,
   },
@@ -79,8 +79,8 @@ export async function loadCatalogItem(resource: 'identities' | 'egos', id: strin
   return data as unknown as Row | null
 }
 
-const FORMATION_IDENTITY = `id, game_id, sinner_id, folder_name, name, name_kr, name_en, name_jp, rarity, slash_res, pierce_res, blunt_res, ${SKILLS}`
-const FORMATION_EGO = 'id, sinner_id, name, name_kr, name_en, name_jp, grade, sin_affinity, image_url, cost, ego_skills(skill_type, category, construe_level, skill_order)'
+const FORMATION_IDENTITY = `id, game_id, sinner_id, folder_name, name_kr, name_en, name_jp, rarity, slash_res, pierce_res, blunt_res, ${SKILLS}`
+const FORMATION_EGO = 'id, sinner_id, name_kr, name_en, name_jp, grade, sin_affinity, image_url, cost, ego_skills(skill_type, category, construe_level, skill_order)'
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 /** A public deck with every slot's identity, skills and E.G.O, for presentDeck. */
