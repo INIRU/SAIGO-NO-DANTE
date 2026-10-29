@@ -138,5 +138,6 @@ export default function ClashCalculator() {
       <summary>{t('rules')}</summary>
       <p>{t('rulesHeads')}</p><p>{t('rulesCoins')}</p><p>{t('rulesExchange')}</p><p>{t('rulesDamage')}</p>
     </details>
+    <p className={styles.hint}>{t('estimateNote')}</p>
   </div>
 }
