@@ -14,6 +14,7 @@
 .conditions{display:flex;flex-direction:column;gap:1.25rem}
 .partners{display:grid;grid-template-columns:repeat(auto-fill,minmax(4.25rem,1fr));gap:.375rem .25rem}
 .partner{display:flex;flex-direction:column;align-items:center;gap:.375rem;min-width:0;padding:.25rem .25rem .375rem;border:1px solid transparent;border-radius:.375rem;color:var(--text-secondary);font-size:.75rem;line-height:1.2;cursor:pointer;transition:color .16s,background-color .16s,border-color .16s,transform .16s cubic-bezier(.23,1,.32,1)}
+.faces{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:.25rem;width:100%}
 .face{position:relative;width:100%;aspect-ratio:1;overflow:hidden;border-radius:.25rem;background:#0a0806}
 .face img{object-fit:cover;object-position:50% 12%;opacity:.6;transition:opacity .16s,transform .25s cubic-bezier(.23,1,.32,1)}
 .partner>span:last-child{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -26,9 +27,6 @@
 .maxSwitch{display:inline-flex;flex-shrink:0;align-items:center;gap:.5rem;color:#9c8b73;font-size:.8125rem;cursor:pointer;transition:color .16s}
 .maxSwitch[data-on]{color:var(--gold-light)}
 
-.effects{display:flex;flex-direction:column}
-.effect{display:flex;align-items:center;justify-content:space-between;gap:.75rem;min-height:2.5rem;color:var(--text-primary);font-size:.875rem}
-.effect>span{min-width:0;word-break:keep-all}.effect small{display:block;color:#9c8b73;font-size:.75rem}
 
 .skill:focus-visible,.partner:focus-visible{outline:2px solid var(--gold-light);outline-offset:2px}
 /* Less motion keeps the colour and opacity changes and drops what moves: the press, the lift, the growing rule, the thumb's slide. */

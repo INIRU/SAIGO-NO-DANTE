@@ -18,8 +18,6 @@ export type MotionEntry = {
   fps: number
   bytes?: number
   video: string
-  /** The same video as VP9 profile 1, 4:4:4 (full-resolution colour), where the skill was rendered again; absent otherwise. */
-  videoWebm?: string
   meta: string
   /** The game id of the identity (five digits); the slug is `id<identityId>`, with a suffix for another form. */
   identityId?: string
@@ -33,15 +31,22 @@ export type MotionEntry = {
   members?: string[]
   linkSkillIds?: number[]
   linkMax?: boolean
+  /** 공간참 - 잔 (id10415 · 1041507): the 거미집 아비 dead in this state (`v:dead-<id>[+dead-<id>…]`), in the game's order. */
+  deadAllies?: string[]
   /** Skill names in English and Japanese, for a skill the site has no row for. */
   nameEn?: string
   nameJa?: string
 }
 
-/** The identity a link state links with (the member that is not the skill's owner), and whether it is the max video. */
-export type MotionLink = { gameId: string; name: string; sinner: string | null; portrait: string | null; max: boolean }
-/** One video of a skill as the page needs it (frame count, fps and sound are read from its layers.json when it loads). */
-export type MotionState = Pick<MotionEntry, 'state' | 'name' | 'video' | 'videoWebm' | 'meta'> & { label: string; bytes: number; link?: MotionLink }
+/** An identity a state names: a link partner, a dead 아비. */
+export type MotionPartner = { gameId: string; name: string; sinner: string | null; portrait: string | null }
+/** A link state: every member that is not the skill's owner, the link's id (their ids joined by +) and whether it is the max video. */
+export type MotionLink = { id: string; partners: MotionPartner[]; max: boolean }
+/**
+ * One video of a skill as the page needs it (frame count, fps and sound are read from its layers.json when it loads).
+ * `dead`: the 아비 dead in a 공간참 - 잔 state.
+ */
+export type MotionState = Pick<MotionEntry, 'state' | 'name' | 'video' | 'meta'> & { label: string; bytes: number; link?: MotionLink; dead?: MotionPartner[] }
 /** The game frame a skill's sprite sits in: its sin, its slot (1–3, 4 for a defense) and its attack type badge. */
 export type MotionSkillFrame = { sin: string; slot: number; attack: 'slash' | 'pierce' | 'blunt' | null }
 /**
@@ -74,12 +79,10 @@ export function motionSinnerId(entry: Pick<MotionEntry, 'slug' | 'video' | 'skil
 }
 
 const pick = (lang: string, ko: string, en: string, ja: string) => lang === 'en' ? en : lang === 'ja' ? ja : ko
-const isBase = (state: string) => state === 'base' || state === 'v:base'
-const isTop = (state: string) => state === 'max' || /^v:best/.test(state)
+// The order the index asks for: 기본, the conditions, the best states.
+const isBase = (state: string) => state === 'v:base'
+const isTop = (state: string) => /^v:best/.test(state)
 const stateRank = (state: string) => isBase(state) ? 0 : isTop(state) ? 2 : 1
-
-// The fixed labels of the index in the other page languages (as the index writes them); a condition stays as written.
-const FIXED_LABELS: Record<string, [en: string, ja: string]> = { '기본': ['Base', '基本'], '최고 상태': ['Best State', '最高状態'], '최대 상태': ['Max State', '最大状態'] }
 
 /**
  * A `labelKey` in the page language: `[Keyword] stack` from the site's keyword table (game_text_refs), `<i:id>` an
@@ -104,8 +107,8 @@ export type MotionLabelContext = { refs?: GameTextRefNames | null; identityName?
 
 /**
  * A state's button text: its `labelKey` written in the page language (a link as "연계: identity", its max video with
- * "(최대 상태)"); else the index's label of the page language (a name's brackets cannot be cut reliably), the fixed
- * labels translated; an entry without any: 기본 / 최대 상태 / the brackets at the end of the name.
+ * "(최대 상태)"); else the index's label of the page language, else its Korean label. Never made from the state name or
+ * the name's brackets (the index renames states; a skill name can hold brackets).
  */
 export function motionStateLabel(entry: Pick<MotionEntry, 'state' | 'name' | 'label' | 'labelEn' | 'labelJa' | 'labelKey' | 'linkMax'>, lang: string, context: MotionLabelContext = {}): string {
   const keyed = entry.labelKey ? formatMotionLabelKey(entry.labelKey, context.refs, context.identityName ?? (() => undefined)) : null
@@ -115,19 +118,23 @@ export function motionStateLabel(entry: Pick<MotionEntry, 'state' | 'name' | 'la
   }
   const own = (lang === 'en' ? entry.labelEn : lang === 'ja' ? entry.labelJa : undefined)?.trim()
   if (own) return own
-  const label = entry.label?.trim()
-  if (label) {
-    const fixed = FIXED_LABELS[label]
-    return fixed ? pick(lang, label, ...fixed) : label
-  }
-  if (isBase(entry.state)) return pick(lang, '기본', 'Base', '基本')
-  if (entry.state === 'max') return pick(lang, '최대 상태', 'Max State', '最大状態')
-  return /\[([^\]]+)\]$/.exec(entry.name)?.[1] ?? entry.state.replace(/^v:/, '')
+  return entry.label?.trim() || entry.state
 }
 
-/** The state a skill opens on: its best (or max) state when it has one, else base, else the first. */
+/** The state a skill opens on: every 아비 dead (공간참 - 잔), else its best state, else base, else the first. */
 export function defaultMotionState(skill: Pick<MotionSkill, 'states'>): string {
-  return (skill.states.find(s => isTop(s.state)) ?? skill.states.find(s => isBase(s.state)) ?? skill.states[0])?.state ?? ''
+  return (mostDead(skill.states) ?? skill.states.find(s => isTop(s.state)) ?? skill.states.find(s => isBase(s.state)) ?? skill.states[0])?.state ?? ''
+}
+
+/** The state with the most 아비 dead: its order is the cards' order. */
+export const mostDead = (states: readonly MotionState[]) => states.reduce<MotionState | undefined>((best, s) => (s.dead?.length ?? 0) > (best?.dead?.length ?? 0) ? s : best, undefined)
+
+/** The state a 아비 card opens when pressed: the current dead with that one turned on or off (base with none); undefined when the index has no such video. */
+export function toggleDeadState(states: readonly MotionState[], current: string, gameId: string): string | undefined {
+  const dead = new Set(states.find(s => s.state === current)?.dead?.map(d => d.gameId))
+  if (!dead.delete(gameId)) dead.add(gameId)
+  if (!dead.size) return states.find(s => isBase(s.state))?.state
+  return states.find(s => s.dead?.length === dead.size && s.dead.every(d => dead.has(d.gameId)))?.state
 }
 
 // The address names a skill as "<slug>~<skill id>" ("|" of the internal key reads badly in a URL).
@@ -141,9 +148,9 @@ export function findMotionSkill(sinners: readonly MotionSinner[], param: string)
   return null
 }
 
-/** The video of a link partner at the chosen max (its other video when the index has only one). */
-export function pickLinkState(states: readonly MotionState[], gameId: string, max: boolean): MotionState | undefined {
-  const own = states.filter(s => s.link?.gameId === gameId)
+/** The video of a link at the chosen max (its other video when the index has only one). */
+export function pickLinkState(states: readonly MotionState[], id: string, max: boolean): MotionState | undefined {
+  const own = states.filter(s => s.link?.id === id)
   return own.find(s => s.link!.max === max) ?? own[0]
 }
 
@@ -153,17 +160,6 @@ export function pickLinkState(states: readonly MotionState[], gameId: string, ma
  */
 export function motionAssetUrl(path: string): string {
   return MOTION_ASSET_BASE + path
-}
-
-/** VP9 profile 1, 4:4:4, 8-bit: Chrome, Edge and Firefox play it; Safari plays VP9 profiles 0 and 2 only. */
-export const VP9_444_TYPE = 'video/webm; codecs="vp09.01.40.08.03"'
-
-/**
- * The files to try for a state, in order: its WebM first when the browser says it plays VP9 4:4:4 (`canPlay` is
- * `HTMLVideoElement.canPlayType`), then the MP4. After a WebM failed in this tab (`webmFailed`), the MP4 alone.
- */
-export function motionVideoFiles(state: Pick<MotionState, 'video' | 'videoWebm'>, canPlay: (type: string) => string, webmFailed = false): string[] {
-  return state.videoWebm && !webmFailed && canPlay(VP9_444_TYPE) !== '' ? [state.videoWebm, state.video] : [state.video]
 }
 
 // On one release date: the game's own identity, then entries of an older index (LCB, 흑수, 홍원 slugs), then old links.
@@ -230,15 +226,13 @@ export function buildMotionCatalog(entries: readonly MotionEntry[], identities: 
       }
       bySlug.set(slug, identity)
     }
-    const partnerId = entry.members?.find(id => id !== (entry.identityId ?? gameId))
-    const partner = partnerId ? identities.get(partnerId) : undefined
-    const link: MotionLink | undefined = partnerId ? {
-      gameId: partnerId,
-      name: partner?.name ?? partnerId,
-      sinner: partner?.sinner_name ?? null,
-      portrait: partner?.folder_name ? getIdentityPortraitUrl(partner.sinner_id, partner.folder_name, partnerId, false) : null,
-      max: !!entry.linkMax,
-    } : undefined
+    const person = (id: string): MotionPartner => {
+      const info = identities.get(id)
+      return { gameId: id, name: info?.name ?? id, sinner: info?.sinner_name ?? null, portrait: info?.folder_name ? getIdentityPortraitUrl(info.sinner_id, info.folder_name, id, false) : null }
+    }
+    // A link with no one else (v:link-self) is a plain state.
+    const partners = entry.members?.filter(id => id !== (entry.identityId ?? gameId)).map(person) ?? []
+    const link: MotionLink | undefined = partners.length ? { id: partners.map(p => p.gameId).join('+'), partners, max: !!entry.linkMax } : undefined
     const key = `${entry.slug}|${entry.skillId}`
     const title = skillNames.get(entry.skillId) || (lang === 'en' ? entry.nameEn : lang === 'ja' ? entry.nameJa : undefined)?.trim() || entry.name.replace(/ \[[^\]]+\]$/, '')
     let skill = identity.skills.find(s => s.key === key)
@@ -246,8 +240,8 @@ export function buildMotionCatalog(entries: readonly MotionEntry[], identities: 
     if (isBase(entry.state)) skill.title = title
     skill.states.push({
       state: entry.state, label: motionStateLabel(entry, lang, labelContext), name: entry.name, video: entry.video, meta: entry.meta, bytes: entry.bytes ?? 0,
-      ...(entry.videoWebm && { videoWebm: entry.videoWebm }),
       ...(link && { link }),
+      ...(entry.deadAllies?.length && { dead: entry.deadAllies.map(person) }),
     })
   }
   // A new identity of the site the index has no motion for yet: listed with no skills, so the page can say it is coming.
