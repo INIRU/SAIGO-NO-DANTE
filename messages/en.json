@@ -145,6 +145,7 @@
     "close": "Close",
     "terms": "Terms",
     "privacy": "Privacy Policy",
+    "licenses": "Licenses",
     "contact": "Contact",
     "fanDisclaimer": "Unofficial fan-made site · Limbus Company is a work of Project Moon.",
     "unaffiliatedDisclaimer": "This fan site is not affiliated with Project Moon.",
@@ -2849,5 +2850,12 @@
     "deadAllies": "Fallen allies",
     "pendingTitle": "Motion in progress",
     "pendingBody": "Each motion is built by recording and analyzing in-game footage, so it takes at least 5 days to 2 weeks."
+  },
+  "licensesPage": {
+    "title": "Licenses",
+    "description": "Licenses of the fonts and software this site uses",
+    "fonts": "Fonts",
+    "software": "Software",
+    "freeFont": "Free font"
   }
 }
