@@ -31,8 +31,8 @@ export type GiftConditionScope = 'deployed' | 'formation'
  * "대기 인원 제외/미포함", "출격 인원을 기준으로 함": the deployed seven; "편성 인원 포함", "대기 인원 포함",
  * "편성 인원을 기준으로 함": everyone in the formation. Null when neither says.
  */
-export function giftConditionScope(gift: { activation_condition?: { scope?: string | null } | null; effect_base?: string | null }): GiftConditionScope | null {
-  const stored = gift.activation_condition?.scope
+export function giftConditionScope(gift: { activation_condition?: object | null; effect_base?: string | null }): GiftConditionScope | null {
+  const stored = (gift.activation_condition as { scope?: unknown } | null | undefined)?.scope
   if (stored === 'deployed' || stored === 'formation') return stored
   const text = gift.effect_base ?? ''
   // The page language's text may be the one at hand: the same brackets in English and Japanese.

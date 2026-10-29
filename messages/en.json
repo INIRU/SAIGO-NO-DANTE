@@ -570,8 +570,6 @@
     "conditionSkill": "{skill}: {count}+",
     "conditionUnmet": "Condition not met",
     "conditionWarn": "Check condition",
-    "unmetHint": "Not enough even counting reserve Identities.",
-    "warnHint": "Short with the 7 deployed Identities; met once reserves count.",
     "recipe": "Recipe",
     "recipeFragments": "Any 2 fragments",
     "finalSynthesis": "Final synthesis",
@@ -583,7 +581,11 @@
     "extreme": "Extreme",
     "back": "Back to {gift}",
     "showAllThemes": "Show all {count} packs",
-    "allThemes": "All theme packs"
+    "allThemes": "All theme packs",
+    "scopeDeployed": "Backup excluded",
+    "scopeFormation": "Backup included",
+    "partialOnly": "Some effects only",
+    "tierSteps": "Steps at {steps}"
   },
   "themePackDetail": {
     "clearReward": "Clear reward",

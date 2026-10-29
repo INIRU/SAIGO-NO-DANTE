@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
+import { giftConditionScope } from '@/lib/planner/gift-condition-status'
 import GiftDetailModal, { localizedGiftText, useGiftConditionText, type GiftDetailRecipePart } from '@/components/ui/GiftDetailModal'
 import type { GiftData, ThemeData } from '@/lib/planner/types'
 import type { GiftConditionStatus } from '@/lib/planner/gift-condition-status'
@@ -53,6 +54,8 @@ export default function PlannerGiftModal({ gift, onClose, themes = [], onThemeCl
           localizedGiftText(lang, shown.effect_plusplus, shown.effect_plusplus_en, shown.effect_plusplus_jp),
         ],
         condition: conditionText(shown.activation_condition),
+        activation: shown.activation_condition,
+        conditionScope: giftConditionScope(shown),
         conditionStatus: material ? null : conditionStatus,
         recipe: !material && recipe ? {
           ingredients: [...recipe.materials.map(part), ...(recipe.pseudoIngredients ?? []).map(text => ({ text }))],
