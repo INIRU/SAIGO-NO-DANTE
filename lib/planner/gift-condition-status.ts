@@ -20,13 +20,32 @@ export type GiftConditionStatus = {
   tier?: { reached: number; total: number }
   /** Only some effects depend on the condition; the gift's base effect is on whatever the status says. */
   partial?: boolean
+  /** The head count the gift reads: the deployed seven only, or the whole formation with the bench. Absent when unknown. */
+  scope?: GiftConditionScope
+}
+
+export type GiftConditionScope = 'deployed' | 'formation'
+
+/**
+ * The head count a gift's condition reads (game text): the stored scope, else the bracket of its effect text —
+ * "대기 인원 제외/미포함", "출격 인원을 기준으로 함": the deployed seven; "편성 인원 포함", "대기 인원 포함",
+ * "편성 인원을 기준으로 함": everyone in the formation. Null when neither says.
+ */
+export function giftConditionScope(gift: { activation_condition?: { scope?: string | null } | null; effect_base?: string | null }): GiftConditionScope | null {
+  const stored = gift.activation_condition?.scope
+  if (stored === 'deployed' || stored === 'formation') return stored
+  const text = gift.effect_base ?? ''
+  // The page language's text may be the one at hand: the same brackets in English and Japanese.
+  if (/대기 인원 (제외|미포함)|출격 인원을 기준|(except|excluding) Backup|待機人員を(除く|含まない)|出撃人員を基準/i.test(text)) return 'deployed'
+  if (/(편성|대기) 인원 포함|편성 인원을 기준|including[^;)]*Backup|count(ing|s) Backup|(編成|待機)人員を含む|編成人員を基準/i.test(text)) return 'formation'
+  return null
 }
 
 /** Stable identity of a status, for memo comparisons and list keys. */
 export function giftConditionKey(status: GiftConditionStatus | null | undefined): string {
   return status
     ? status.level + ':' + status.formation + '/' + status.all + '/' + status.need
-      + (status.tier ? ':t' + status.tier.reached + '/' + status.tier.total : '') + (status.partial ? ':p' : '')
+      + (status.tier ? ':t' + status.tier.reached + '/' + status.tier.total : '') + (status.partial ? ':p' : '') + (status.scope ? ':' + status.scope : '')
     : ''
 }
 
@@ -216,7 +235,7 @@ export function getGiftActivationConditionStatus({
   formationSkillCounts,
   allSkillCounts,
 }: {
-  gift: Pick<GiftData, 'activation_condition'>
+  gift: Pick<GiftData, 'activation_condition'> & { effect_base?: string | null }
   formationKeywordCounts: Record<string, number>
   allKeywordCounts: Record<string, number>
   formationAffiliationCounts?: Record<string, number>
@@ -275,11 +294,14 @@ export function getGiftActivationConditionStatus({
     return null
   }
 
-  const reached = thresholds.filter(count => formationHave >= count).length
+  // The deployed seven or the whole formation decide alone when the gift says which; otherwise the bench makes a warning.
+  const scope = giftConditionScope(gift)
+  const counted = scope === 'formation' ? allHave : formationHave
+  const reached = thresholds.filter(count => counted >= count).length
   if (reached === thresholds.length) return null
   const need = thresholds[reached]
   return {
-    level: allHave >= need ? 'warn' : 'unmet',
+    level: !scope && allHave >= need ? 'warn' : 'unmet',
     kind,
     subjects,
     need,
@@ -287,5 +309,6 @@ export function getGiftActivationConditionStatus({
     all: allHave,
     ...(thresholds.length > 1 ? { tier: { reached, total: thresholds.length } } : {}),
     ...(cond.partial ? { partial: true } : {}),
+    ...(scope ? { scope } : {}),
   }
 }

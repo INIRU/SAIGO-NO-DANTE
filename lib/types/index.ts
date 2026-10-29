@@ -237,6 +237,7 @@ export type ActivationCondition = {
   tiers?: { count: number }[]
   partial?: boolean
   source?: 'code' | 'text'
+  scope?: 'deployed' | 'formation' | null
 }
 
 export type EgoGiftNote = {

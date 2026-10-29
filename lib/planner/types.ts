@@ -360,6 +360,8 @@ export interface GiftActivationCondition {
   partial?: boolean
   /** Where the condition was read from: a game code constant or the effect sentence. */
   source?: 'code' | 'text'
+  /** The head count the condition reads (the game text's bracket): the deployed seven or the whole formation. */
+  scope?: 'deployed' | 'formation' | null
 }
 
 export interface GiftData {
