@@ -2441,15 +2441,17 @@
     "toDamage": "To the damage calculator",
     "left": "Coins left",
     "leftCoins": "{count}",
-    "limitNote": "The heads chance is held to {min}%–{max}%. This limit is an estimate.",
+    "limitNote": "The {min}%–{max}% heads chance limit and +1 clash power per {gap} Offense Levels of gap are estimates.",
     "rules": "How it is calculated",
     "rulesHeads": "The heads chance is 50% plus 1% per point of sanity plus the adder. Sanity runs from −45 to 45.",
     "rulesCoins": "Coins are rolled in order; a heads applies its coin's operator (add or subtract). The value never drops below 0. It starts at the base power.",
-    "rulesExchange": "Each exchange rolls all remaining coins again, adds the clash total adder, and the higher total wins. The loser loses its front coin; on a tie nobody loses one. The clash ends when a side has no coins or after 99 exchanges.",
+    "rulesExchange": "Each exchange rolls all remaining coins again, adds the clash total adder, and the higher total wins. The loser loses its front coin; on a tie nobody loses one. The clash ends when a side has no coins or after 99 exchanges. The side with the higher Offense Level adds 1 to each exchange total for every 3 levels of gap.",
     "rulesDamage": "Every exchange raises the damage of the skill that follows by 3%. The link beside the exchange count hands it to the damage calculator.",
     "coinCount": "Coins",
     "coinLess": "Remove a coin",
-    "coinMore": "Add a coin"
+    "coinMore": "Add a coin",
+    "offenseLevel": "Offense Level",
+    "subCoinPowerAdder": "Subtracting coin power adder"
   },
   "mirrorDungeonPage": {
     "intro": "Find the E.G.O gifts, theme packs and choices you meet on the way down, floor by floor.",

@@ -88,6 +88,29 @@ describe('solveClash', () => {
   })
 })
 
+describe('REQ-TOOLS-035 game rules of the totals', () => {
+  it('REQ-TOOLS-035 adds a third of the attack level gap (rounded down) to the higher side every exchange', () => {
+    // Equal one-coin skills at 50%: a gap of 6 levels is +2 for the higher side, so it wins every tie and every 1-point loss.
+    const even = solveClash(side(4, [add(1)]), side(4, [add(1)]))
+    const higher = solveClash(side(4, [add(1)], { offenseLevel: 66 }), side(4, [add(1)], { offenseLevel: 60 }))
+    expect(even.winA).toBeCloseTo(0.5)
+    expect(higher.winA).toBe(1)
+    // A gap under 3 changes nothing.
+    expect(solveClash(side(4, [add(1)], { offenseLevel: 62 }), side(4, [add(1)], { offenseLevel: 60 })).winA).toBeCloseTo(0.5)
+  })
+  it('REQ-TOOLS-035 adds the subtracting coins\' own adder to subtracting coins only', () => {
+    const sub = (scale: number): ClashCoin => ({ scale, operator: 'SUB' })
+    // 10 − (3 + 2) at heads against a steady 6: heads 5 loses, tails 10 wins.
+    const result = solveClash(side(10, [sub(3)], { sanity: 45, subCoinPowerAdder: 2 }), side(6, [add(0)]))
+    expect(result.winA).toBeCloseTo(0.05)
+  })
+  it('REQ-TOOLS-035 never lets an exchange total go under 0 after its adders', () => {
+    // −10 on a 3-power skill is 0, the same as a 0-power skill: a tie forever.
+    const result = solveClash(side(3, [add(0)], { clashAdder: -10 }), side(0, [add(0)]))
+    expect(result.unresolved).toBe(1)
+  })
+})
+
 describe('link to the damage calculator', () => {
   it('hands over a whole number of exchanges, held to 0–99', () => {
     expect(damageLink('ko', 2.6)).toBe('/ko/tools/damage?clash=3')

@@ -7,7 +7,9 @@ import { useLocale, useTranslations } from 'next-intl'
 import { Minus, Plus, RotateCcw } from 'lucide-react'
 import PageHeader from '@/components/ui/PageHeader'
 import { COIN_IMAGES } from '@/lib/identity/skill-description'
-import { coinsOf, damageLink, MAX_CLASH_ROUNDS, PROBABILITY_LIMITS, SANITY_RANGE, solveClash, type ClashCoin, type ClashSide } from '@/lib/tools/clash'
+import { MAX_IDENTITY_LEVEL } from '@/lib/constants/game'
+import { toDamageSkill } from '@/lib/tools/skill-source'
+import { coinsOf, damageLink, MAX_CLASH_ROUNDS, LEVEL_GAP_DIVISOR, PROBABILITY_LIMITS, SANITY_RANGE, solveClash, type ClashCoin, type ClashSide } from '@/lib/tools/clash'
 import NumberInput from './NumberInput'
 import SkillLoader from './SkillLoader'
 import styles from './DamageCalculator.module.css'
@@ -16,7 +18,7 @@ import clash from './CalculatorArena.module.css'
 type SideForm = Omit<ClashSide, 'coins'> & { coins: ClashCoin[]; skillKey: string }
 
 const MAX_CLASH_COINS = 10
-const EMPTY: SideForm = { basePower: 4, coins: [{ scale: 4, operator: 'ADD' }, { scale: 4, operator: 'ADD' }], sanity: 0, probabilityAdder: 0, powerAdder: 0, coinPowerAdder: 0, clashAdder: 0, skillKey: '' }
+const EMPTY: SideForm = { basePower: 4, coins: [{ scale: 4, operator: 'ADD' }, { scale: 4, operator: 'ADD' }], sanity: 0, offenseLevel: MAX_IDENTITY_LEVEL, probabilityAdder: 0, powerAdder: 0, coinPowerAdder: 0, subCoinPowerAdder: 0, clashAdder: 0, skillKey: '' }
 const SIGN = { ADD: '+', SUB: '−', MUL: '×' } as const
 const percent = (value: number) => `${(value * 100).toFixed(value > 0 && value < 0.0005 ? 3 : 1)}%`
 
@@ -36,10 +38,11 @@ function SidePanel({ side, title, form, onChange, resetKey }: { side: 'a' | 'b';
   return <section className={`${styles.panel} ${clash.side}`} data-side={side} aria-label={title}>
     <h2>{title}</h2>
     {side === 'a' && <SkillLoader key={resetKey} selectedKey={form.skillKey}
-      onSkill={skill => onChange(skill ? { skillKey: skill.key, basePower: skill.base_power, coins: coinsOf(skill).slice(0, MAX_CLASH_COINS) } : { skillKey: '' })} />}
+      onSkill={skill => onChange(skill ? { skillKey: skill.key, basePower: skill.base_power, coins: coinsOf(skill).slice(0, MAX_CLASH_COINS), offenseLevel: toDamageSkill(skill, MAX_CLASH_COINS).offenseLevel } : { skillKey: '' })} />}
     <div className={clash.numbers}>
       <NumberField label={t('basePower')} value={form.basePower} max={999} onChange={basePower => onChange({ basePower })} />
       <NumberField label={t('sanity')} value={form.sanity} min={-SANITY_RANGE} max={SANITY_RANGE} onChange={sanity => onChange({ sanity })} />
+      <NumberField label={t('offenseLevel')} value={form.offenseLevel ?? MAX_IDENTITY_LEVEL} min={1} max={999} onChange={offenseLevel => onChange({ offenseLevel })} />
     </div>
     <div className={clash.coinHead}>
       <h3>{t('coins')}</h3>
@@ -66,6 +69,7 @@ function SidePanel({ side, title, form, onChange, resetKey }: { side: 'a' | 'b';
         <NumberField label={t('probabilityAdder')} value={form.probabilityAdder ?? 0} min={-99} max={99} onChange={probabilityAdder => onChange({ probabilityAdder })} />
         <NumberField label={t('powerAdder')} value={form.powerAdder ?? 0} min={-99} max={99} onChange={powerAdder => onChange({ powerAdder })} />
         <NumberField label={t('coinPowerAdder')} value={form.coinPowerAdder ?? 0} min={-99} max={99} onChange={coinPowerAdder => onChange({ coinPowerAdder })} />
+        <NumberField label={t('subCoinPowerAdder')} value={form.subCoinPowerAdder ?? 0} min={-99} max={99} onChange={subCoinPowerAdder => onChange({ subCoinPowerAdder })} />
         <NumberField label={t('clashAdder')} value={form.clashAdder ?? 0} min={-99} max={99} onChange={clashAdder => onChange({ clashAdder })} />
       </div>
     </details>
@@ -127,7 +131,7 @@ export default function ClashCalculator() {
             <span>{t('leftCoins', { count: row.count })}</span><span className={clash.leftBar}><i style={{ '--share': row.chance } as CSSProperties} /></span><b>{percent(row.chance)}</b>
           </li>)}</ul>
         </div>)}
-        <p className={styles.hint}>{t('limitNote', { min: PROBABILITY_LIMITS.min * 100, max: PROBABILITY_LIMITS.max * 100 })}</p>
+        <p className={styles.hint}>{t('limitNote', { min: PROBABILITY_LIMITS.min * 100, max: PROBABILITY_LIMITS.max * 100, gap: LEVEL_GAP_DIVISOR })}</p>
       </div>
     </section>
     <details className={styles.details}>
