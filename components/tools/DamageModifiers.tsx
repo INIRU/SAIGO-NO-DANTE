@@ -19,7 +19,8 @@ import type { SupportedLang } from '@/lib/i18n/types'
 import type { GiftData } from '@/lib/planner/types'
 import { showWarning } from '@/lib/toast'
 import { clampModifierValue, coinChoices, MAX_MODIFIER_NAME, MAX_MODIFIER_OPTIONS, MAX_MODIFIERS, MAX_MODIFIER_VALUE, MODIFIER_TARGETS, type ModifierTarget, type SavedModifier } from '@/lib/tools/damage'
-import { findApplied, MAX_STACKS, suggestDamageSources, type DamageSources, type DamageSuggestion, type SourceGroup, type StackEffect } from '@/lib/tools/damage-sources'
+import { effectSummary, type AbilityEffect } from '@/lib/tools/damage-abilities'
+import { DEFAULT_MAX_STACKS, findApplied, MAX_STACKS, suggestDamageSources, type DamageSources, type DamageSuggestion, type SourceGroup, type StackEffect } from '@/lib/tools/damage-sources'
 import NumberInput from './NumberInput'
 import styles from './DamageCalculator.module.css'
 
@@ -101,10 +102,19 @@ export default function DamageModifiers({ modifiers, setModifiers, coinCount }: 
   // A saved count of a keyword that is no stack keyword (any more) is dropped once the list says so: its value stays, typed like any other.
   useEffect(() => {
     if (!data) return
-    const stale = (modifier: SavedModifier) => !!modifier.stacks && !data.keywords.some(keyword => keyword.name === modifier.keyword && keyword.stack)
+    const stale = (modifier: SavedModifier) => !!modifier.stacks && !modifier.effects && !data.keywords.some(keyword => keyword.name === modifier.keyword && keyword.stack)
     setModifiers(list => list.some(stale) ? list.map(modifier => stale(modifier) ? { ...modifier, stacks: undefined } : modifier) : list)
   }, [data, setModifiers])
+  // How far a count can go: a keyword read from the game's values by its own maximum (99 for a gift's count), a text-read stack keyword by its sentence; 0 when it has no count.
+  const stackLimit = (modifier: SavedModifier) => modifier.effects
+    ? modifier.stacks ? (modifier.keyword ? data?.keywords.find(keyword => keyword.name === modifier.keyword && keyword.effects)?.maxStack : undefined) ?? DEFAULT_MAX_STACKS : 0
+    : stackOf(modifier)?.max ?? 0
   const setStacks = (modifier: SavedModifier, stacks: number) => {
+    if (modifier.effects) {
+      const count = Math.max(1, Math.min(stackLimit(modifier), stacks))
+      update(modifier.id, { stacks: count, ...effectSummary(modifier.effects, count) })
+      return
+    }
     const stack = stackOf(modifier)
     if (!stack) return
     const count = Math.max(1, Math.min(stack.max, stacks))
@@ -146,6 +156,8 @@ export default function DamageModifiers({ modifiers, setModifiers, coinCount }: 
     const stage = source?.stages.find(candidate => candidate.level === level)
     if (!source || !stage || !modifier.gift) return
     const options = stage.values.slice(0, MAX_MODIFIER_OPTIONS)
+    // A gift read from the game's values has the same numbers at every level: only its text and artwork change.
+    if (modifier.effects) { update(modifier.id, { name: (source.label + '+'.repeat(level)).slice(0, MAX_MODIFIER_NAME), gift: { ...modifier.gift, level } }); return }
     update(modifier.id, { name: (source.label + '+'.repeat(level)).slice(0, MAX_MODIFIER_NAME), gift: { ...modifier.gift, level }, options, value: options[0] ?? 0 })
   }
   const art = (modifier: Pick<SavedModifier, 'name'> & Partial<Pick<SavedModifier, 'keyword' | 'gift'>>, sizes = '48px') => {
@@ -154,7 +166,16 @@ export default function DamageModifiers({ modifiers, setModifiers, coinCount }: 
     const url = modifier.keyword ? getKeywordIconUrl(modifier.keyword, keywords[modifier.keyword]?.iconSlug) : null
     return url ? <KeywordIcon src={url} alt="" width={64} height={64} /> : <Pencil size={16} aria-hidden="true" />
   }
-  const candidateValue = ({ perStack, modifier }: DamageSuggestion) => perStack !== undefined ? t('picker.perStack', { value: signed(perStack, modifier.target) }) : modifier.options?.length ? signed(modifier.value, modifier.target) : null
+  // "+10% a stack", "−1 power"; a restriction to one sin or attack type is named after it.
+  const effectLine = (effect: AbilityEffect) => {
+    const target = effect.target === 'damage' ? (effect.side === 'self' ? 'damage' : 'takeDamage') : effect.target
+    const only = effect.attribute ? t(`skillSinOption.${effect.attribute}`) : effect.atk ? t(`skillAtkOption.${effect.atk}`) : null
+    return t('picker.effectLine', {
+      target: t(`picker.effectTarget.${target}`), value: signed(effect.value, effect.target === 'damage' ? 'damage' : 'physical'),
+      per: effect.scaled ? t('picker.perStackShort') : '', only: only ? t('picker.onlyFor', { name: only }) : '',
+    })
+  }
+  const candidateValue = ({ perStack, modifier, inert }: DamageSuggestion) => inert ? t('picker.notCalculated') : perStack !== undefined ? t('picker.perStack', { value: signed(perStack, modifier.target) }) : modifier.options?.length ? signed(modifier.value, modifier.target) : null
   const numberInput = (modifier: SavedModifier, name: string) => (
     <span className={styles.modifierNumber}>
       <NumberInput label={`${name} ${t('customValue')}`} value={modifier.value} decimal step={isPercent(modifier.target) ? 1 : 0.05}
@@ -170,7 +191,8 @@ export default function DamageModifiers({ modifiers, setModifiers, coinCount }: 
       const groupName = t(`picker.group.${group}`)
       const applied = modifiers.filter(modifier => groupOf(modifier) === group)
       const chosen = applied.find(modifier => modifier.id === selected)
-      const stack = chosen ? stackOf(chosen) : null
+      const stack = chosen ? stackLimit(chosen) : 0
+      const unsupported = chosen?.keyword ? data?.keywords.find(keyword => keyword.name === chosen.keyword)?.unsupported ?? 0 : 0
       return <section key={group} className={styles.side} aria-label={groupName}>
         <h4>{groupName}</h4>
         <div className={styles.tiles}>
@@ -206,17 +228,19 @@ export default function DamageModifiers({ modifiers, setModifiers, coinCount }: 
               {text
                 ? <EffectText key={level} text={text} color={level === 2 ? '#e8b030' : level === 1 ? '#d8b878' : '#c8b898'} />
                 : <p className={styles.hint} role={error ? 'alert' : 'status'}>{error ? t('picker.loadError') : t('picker.loading')}</p>}
+              {chosen.effects && <ul className={styles.effectList}>{chosen.effects.map((effect, index) => <li key={index}>{effectLine(effect)}</li>)}</ul>}
+              {unsupported > 0 && <p className={styles.hint}>{t('picker.unsupported', { count: unsupported })}</p>}
             </div>
             <div className={`${styles.editorPart} ${styles.editorControls}`}>
               <span>{t('picker.value')}</span>
-              {stack ? <>
+              {stack > 0 ? <>
                 <div className={styles.stepper}>
                   <button type="button" aria-label={t('picker.decrease', { name })} disabled={chosen.stacks! <= 1} onClick={() => setStacks(chosen, chosen.stacks! - 1)}><Minus size={14} aria-hidden="true" /></button>
                   <b key={chosen.stacks} aria-live="polite">{chosen.stacks}</b>
-                  <button type="button" aria-label={t('picker.increase', { name })} disabled={chosen.stacks! >= stack.max} onClick={() => setStacks(chosen, chosen.stacks! + 1)}><Plus size={14} aria-hidden="true" /></button>
+                  <button type="button" aria-label={t('picker.increase', { name })} disabled={chosen.stacks! >= stack} onClick={() => setStacks(chosen, chosen.stacks! + 1)}><Plus size={14} aria-hidden="true" /></button>
                 </div>
                 <strong className={styles.modifierValue}>{signed(chosen.value, chosen.target)}</strong>
-              </> : <>
+              </> : chosen.effects ? <strong className={styles.modifierValue}>{signed(chosen.value, chosen.target)}</strong> : <>
                 {(chosen.options?.length ?? 0) > 1 && <div className={styles.options} role="group" aria-label={t('picker.choices', { name })}>
                   {chosen.options!.map(option => <button key={option} type="button" className={styles.chip} aria-pressed={option === chosen.value} onClick={() => update(chosen.id, { value: clampModifierValue(option, chosen.target) })}>{signed(option, chosen.target)}</button>)}
                 </div>}
@@ -249,7 +273,7 @@ export default function DamageModifiers({ modifiers, setModifiers, coinCount }: 
           {candidates.length > 0 && <div className={styles.candidates}>
             {candidates.map(candidate => {
               const picked = !!findApplied(modifiers, candidate.modifier)
-              return <button key={candidate.key} type="button" className={styles.tile} aria-pressed={picked} onClick={() => toggle(candidate.modifier)}>
+              return <button key={candidate.key} type="button" className={styles.tile} aria-pressed={picked} aria-disabled={candidate.inert || undefined} onClick={() => { if (!candidate.inert) toggle(candidate.modifier) }}>
                 <span className={styles.tileArt}>{art(candidate.modifier)}{picked && <span className={styles.picked}><Check size={12} strokeWidth={3} aria-hidden="true" /></span>}</span>
                 <span className={styles.tileName}>{labelOf(candidate.modifier)}</span>
                 <small>{candidateValue(candidate)}</small>

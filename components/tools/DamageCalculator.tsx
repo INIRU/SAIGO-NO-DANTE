@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import { useTranslations } from 'next-intl'
 import { RotateCcw } from 'lucide-react'
-import { coinDamage, coinModifiers, coinPowers, MAX_COINS, parseSavedModifiers, SIN_RESIST_MAX, STAGGER_RESIST, type SavedModifier, type StaggerStage } from '@/lib/tools/damage'
+import { abilityPower, ATTACK_TYPES, SIN_ATTRIBUTES, type SkillTraits } from '@/lib/tools/damage-abilities'
+import { coinDamage, coinModifiers, coinPowers, MAX_COINS, parseNumberInput, parseSavedModifiers, SIN_RESIST_MAX, STAGGER_RESIST, type SavedModifier, type StaggerStage } from '@/lib/tools/damage'
 import { COIN_IMAGES } from '@/lib/identity/skill-description'
 import Dropdown from '@/components/ui/Dropdown'
 import PageHeader from '@/components/ui/PageHeader'
@@ -17,6 +18,8 @@ const DEFAULTS = {
   basePower: 4, coinPower: 4, coinCount: 3, offenseLevel: 55,
   defenseLevel: 55, physicalResist: 1, sinResist: 1, stagger: 0 as StaggerStage, observationLevel: 0,
   critical: false, clashCount: 0,
+  /** The skill's sin and attack type (the game's English names, '' for neither): what a keyword's effect narrowed to one of them waits for. */
+  skillSin: '', skillAtk: '',
 }
 const ALL_HEADS: boolean[] = Array(MAX_COINS).fill(true)
 const dropdownStyle = {width:'100%',justifyContent:'space-between',minHeight:'2.75rem',padding:'.7rem',background:'var(--bg-deep)',borderColor:'var(--border)',fontSize:'.9375rem',color:'var(--text-primary)'}
@@ -36,6 +39,9 @@ export default function DamageCalculator() {
   const [loaded, setLoaded] = useState(false)
   useEffect(() => {
     try { setCustom(parseSavedModifiers(localStorage.getItem(STORAGE_KEY))) } catch { /* storage blocked: start empty */ }
+    // The clash calculator links here with the number of exchanges its result expects (?clash=3).
+    const clash = parseNumberInput(new URLSearchParams(window.location.search).get('clash') ?? '', { min: 0, max: 99 })
+    if (clash !== null) setForm(current => ({ ...current, clashCount: clash }))
     setLoaded(true)
   }, [])
   useEffect(() => {
@@ -45,8 +51,11 @@ export default function DamageCalculator() {
 
   const set = (patch: Partial<typeof DEFAULTS>) => setForm(current => ({ ...current, ...patch }))
   const staggerResist = STAGGER_RESIST[form.stagger]
-  const powers = coinPowers(form.basePower, form.coinPower, heads.slice(0, form.coinCount))
-  const results = powers.map((power, index) => coinDamage({ ...form, power, modifiers: coinModifiers(custom, index + 1) }))
+  const skill: SkillTraits = { sin: (form.skillSin || undefined) as SkillTraits['sin'], atk: (form.skillAtk || undefined) as SkillTraits['atk'] }
+  // Keywords and gifts that add power (a skill's, or the heads coin's) change the power before the damage is figured.
+  const added = abilityPower(custom, skill)
+  const powers = coinPowers(form.basePower + added.power, form.coinPower + added.coinPower, heads.slice(0, form.coinCount))
+  const results = powers.map((power, index) => coinDamage({ ...form, power, modifiers: coinModifiers(custom, index + 1, skill) }))
   const total = results.reduce((sum, result) => sum + result.damage, 0)
   // A modifier set to one coin makes the factors differ from coin to coin: each coin then shows its own.
   const factors = (result: typeof results[number]) => [
@@ -72,6 +81,16 @@ export default function DamageCalculator() {
                 onChange={value => set({ coinCount: Number(value) })} />
             </div>
             <NumberField label={t('offenseLevel')} value={form.offenseLevel} max={999} onChange={offenseLevel => set({ offenseLevel })} />
+            <div className={styles.field}>{t('skillSin')}
+              <Dropdown ariaLabel={t('skillSin')} buttonStyle={dropdownStyle} value={form.skillSin}
+                options={[{ value: '', label: t('skillNone') }, ...Object.keys(SIN_ATTRIBUTES).map(value => ({ value, label: t(`skillSinOption.${value}`) }))]}
+                onChange={skillSin => set({ skillSin })} />
+            </div>
+            <div className={styles.field}>{t('skillAtk')}
+              <Dropdown ariaLabel={t('skillAtk')} buttonStyle={dropdownStyle} value={form.skillAtk}
+                options={[{ value: '', label: t('skillNone') }, ...Object.keys(ATTACK_TYPES).map(value => ({ value, label: t(`skillAtkOption.${value}`) }))]}
+                onChange={skillAtk => set({ skillAtk })} />
+            </div>
           </div>
           <div className={styles.coins} role="group" aria-label={t('coins')}>
             {heads.slice(0, form.coinCount).map((isHeads, index) => (

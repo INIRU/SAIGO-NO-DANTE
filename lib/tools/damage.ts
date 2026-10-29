@@ -2,6 +2,7 @@
 // The special flat addition of one skill (Ryōshū's "I Can Cook Anything") and the sin resonance bonus are left out.
 
 import { STORAGE_BASE } from '@/lib/constants/game'
+import { effectModifiers, type AbilityEffect, type EffectTarget, type SkillTraits } from './damage-abilities'
 
 /** Physical resistance while staggered, by stage: none, stagger, stagger+, stagger++ (2 + (stage − 1) × 0.5). A weakening is added on top. */
 export const STAGGER_RESIST = [null, 2, 2.5, 3] as const
@@ -19,9 +20,11 @@ export const OBSERVATION_BONUS = 0.03
  * damage: summed with buffs, passives, gifts and skill effects. resist: summed with resistances and the level difference.
  * final: multiplies the finished damage. physical, sin: added to that resistance itself (a weakening of 0.1 a stack).
  */
-export type ModifierTarget = 'damage' | 'resist' | 'final' | 'physical' | 'sin'
+export type FormulaTarget = 'damage' | 'resist' | 'final' | 'physical' | 'sin'
+/** power, coin_power: added to the skill's power / the heads coin's power before the damage is figured (a keyword's or gift's effect, never typed in). */
+export type ModifierTarget = FormulaTarget | Extract<EffectTarget, 'power' | 'coin_power'>
 /** value: a fraction for damage and resist (0.25 = +25%), a multiplier for final (2 = double), a resistance amount for physical and sin (0.3). */
-export type Modifier = { target: ModifierTarget; value: number }
+export type Modifier = { target: FormulaTarget; value: number }
 
 export type DamageInput = {
   /** The coin's final power when it hits. */
@@ -102,6 +105,11 @@ export type SavedModifier = {
   gift?: { id: string; level: number; image_url: string | null; grade: string | null; keyword: string | null }
   /** The values its text offered, to switch between. */
   options?: number[]
+  /**
+   * What a keyword or gift read from the game's own values does (damage-abilities.ts). When present, `value`/`target` are only
+   * the tile's summary and the calculation uses these, each scaled by `stacks` where it is per stack.
+   */
+  effects?: AbilityEffect[]
   /** The one coin it applies to, counted from 1; every coin when absent. */
   coin?: number
 }
@@ -115,17 +123,19 @@ export const GIFT_IMAGE_BASE = `${STORAGE_BASE}/`
 // Far above any count of modifiers, and the next id (the largest + 1) is still a distinct whole number.
 const MAX_MODIFIER_ID = 1e9
 export const MODIFIER_TARGETS: ModifierTarget[] = ['damage', 'resist', 'physical', 'sin', 'final']
+const SAVED_TARGETS: ModifierTarget[] = [...MODIFIER_TARGETS, 'power', 'coin_power']
 /** The range a typed value may take: a final multiplier cannot be negative. */
 export const clampModifierValue = (value: number, target: ModifierTarget) =>
   Math.min(MAX_MODIFIER_VALUE, Math.max(target === 'final' ? 0 : -MAX_MODIFIER_VALUE, value))
 /** The saved value as coinDamage takes it: held to its range (whatever was saved, the calculation must not refuse it), percents as fractions. */
 export const toModifier = ({ target, value }: Pick<SavedModifier, 'target' | 'value'>): Modifier => {
   const held = clampModifierValue(value, target)
-  return { target, value: target === 'damage' || target === 'resist' ? held / 100 : held }
+  return { target: target as FormulaTarget, value: target === 'damage' || target === 'resist' ? held / 100 : held }
 }
 /** What applies to the `coin`th coin (from 1): the modifiers for every coin and those set to this one. */
-export const coinModifiers = (saved: readonly SavedModifier[], coin: number): Modifier[] =>
-  saved.filter(modifier => modifier.coin === undefined || modifier.coin === coin).map(toModifier)
+export const coinModifiers = (saved: readonly SavedModifier[], coin: number, skill: SkillTraits = {}): Modifier[] =>
+  saved.filter(modifier => modifier.coin === undefined || modifier.coin === coin)
+    .flatMap(modifier => modifier.effects ? effectModifiers(modifier.effects, modifier.stacks, skill) : [toModifier(modifier)])
 export const MAX_MODIFIERS = 30
 export const MAX_MODIFIER_NAME = 40
 export const MAX_MODIFIER_VALUE = 1000
@@ -141,7 +151,7 @@ export function parseSavedModifiers(raw: string | null): SavedModifier[] {
     if (!row || typeof row !== 'object') continue
     const { id, name, value, target } = row as Record<string, unknown>
     if (!Number.isInteger(id) || (id as number) < 0 || (id as number) > MAX_MODIFIER_ID || saved.has(id as number) || typeof name !== 'string' || typeof value !== 'number' || !Number.isFinite(value)) continue
-    if (!MODIFIER_TARGETS.includes(target as ModifierTarget) || (target === 'final' && value < 0)) continue
+    if (!SAVED_TARGETS.includes(target as ModifierTarget) || (target === 'final' && value < 0)) continue
     saved.set(id as number, {
       id: id as number, name: name.slice(0, MAX_MODIFIER_NAME), value: clampModifierValue(value, target as ModifierTarget), target: target as ModifierTarget,
       ...savedSource(row as Record<string, unknown>, target as ModifierTarget),
@@ -154,8 +164,16 @@ const text = (value: unknown, max: number): value is string => typeof value === 
 // A keyword or a grade is looked up in plain tables where it is drawn: not a name every object answers to ("constructor", "__proto__").
 const key = (value: unknown, max: number): value is string => text(value, max) && !(value in Object.prototype)
 
+const EFFECT_TARGETS = ['damage', 'power', 'coin_power', 'physical', 'sin']
+function isEffect(row: unknown): row is AbilityEffect {
+  if (!row || typeof row !== 'object') return false
+  const { target, side, value, scaled, attribute, atk } = row as Record<string, unknown>
+  return EFFECT_TARGETS.includes(target as string) && (side === 'self' || side === 'target') && typeof value === 'number' && Math.abs(value) <= MAX_MODIFIER_VALUE
+    && typeof scaled === 'boolean' && (attribute === undefined || key(attribute, 20)) && (atk === undefined || key(atk, 20))
+}
+
 /** The optional parts of a saved modifier. A part that is not what it should be is left out; the modifier itself stays. */
-function savedSource({ keyword, side, stacks, gift, options, coin }: Record<string, unknown>, target: ModifierTarget): Partial<SavedModifier> {
+function savedSource({ keyword, side, stacks, gift, options, coin, effects }: Record<string, unknown>, target: ModifierTarget): Partial<SavedModifier> {
   const source: Partial<SavedModifier> = {}
   if (Number.isInteger(coin) && (coin as number) >= 1 && (coin as number) <= MAX_COINS) source.coin = coin as number
   if (key(keyword, 60)) source.keyword = keyword
@@ -164,6 +182,8 @@ function savedSource({ keyword, side, stacks, gift, options, coin }: Record<stri
   if (Array.isArray(options) && options.length <= MAX_MODIFIER_OPTIONS && options.every(option => typeof option === 'number' && Number.isFinite(option))) {
     source.options = options.map(option => clampModifierValue(option, target))
   }
+  const kept = Array.isArray(effects) ? effects.slice(0, MAX_MODIFIER_OPTIONS * 2).filter(isEffect) : []
+  if (kept.length) source.effects = kept
   if (gift && typeof gift === 'object') {
     const { id, level, image_url, grade, keyword: giftKeyword } = gift as Record<string, unknown>
     const ownImage = image_url === null || (text(image_url, 500) && image_url.startsWith(GIFT_IMAGE_BASE) && !image_url.includes('..'))
