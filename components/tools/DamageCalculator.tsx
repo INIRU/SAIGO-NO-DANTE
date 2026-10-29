@@ -7,10 +7,12 @@ import { RotateCcw } from 'lucide-react'
 import { abilityPower, ATTACK_TYPES, SIN_ATTRIBUTES, type SkillTraits } from '@/lib/tools/damage-abilities'
 import { coinDamage, coinModifiers, coinPowers, MAX_COINS, parseNumberInput, parseSavedModifiers, SIN_RESIST_MAX, STAGGER_RESIST, type SavedModifier, type StaggerStage } from '@/lib/tools/damage'
 import { COIN_IMAGES } from '@/lib/identity/skill-description'
+import { toDamageSkill } from '@/lib/tools/skill-source'
 import Dropdown from '@/components/ui/Dropdown'
 import PageHeader from '@/components/ui/PageHeader'
 import DamageModifiers from './DamageModifiers'
 import NumberInput from './NumberInput'
+import SkillLoader from './SkillLoader'
 import styles from './DamageCalculator.module.css'
 
 const STORAGE_KEY = 'damage-calculator-modifiers'
@@ -35,6 +37,9 @@ export default function DamageCalculator() {
   const [form, setForm] = useState(DEFAULTS)
   const [heads, setHeads] = useState(ALL_HEADS)
   const [custom, setCustom] = useState<SavedModifier[]>([])
+  // The loaded skill (its frame is pressed in the skill card) and a key that empties the card on reset.
+  const [skillKey, setSkillKey] = useState('')
+  const [resetKey, setResetKey] = useState(0)
   // The saved modifiers are read after the first render, so the server and the browser draw the same page.
   const [loaded, setLoaded] = useState(false)
   useEffect(() => {
@@ -66,12 +71,17 @@ export default function DamageCalculator() {
 
   return <div className={styles.page}>
     <PageHeader title={t('title')} description={t('subtitle')} actions={
-      <button type="button" className={styles.reset} onClick={() => { setForm(DEFAULTS); setHeads(ALL_HEADS) }}><RotateCcw size={16} aria-hidden="true" />{t('reset')}</button>
+      <button type="button" className={styles.reset} onClick={() => { setForm(DEFAULTS); setHeads(ALL_HEADS); setSkillKey(''); setResetKey(key => key + 1) }}><RotateCcw size={16} aria-hidden="true" />{t('reset')}</button>
     } />
     <div className={styles.workspace}>
       <div className={styles.inputs}>
         <section className={styles.panel} aria-labelledby="damage-skill-heading">
           <h2 id="damage-skill-heading">{t('skill')}</h2>
+          <SkillLoader key={resetKey} selectedKey={skillKey} onSkill={loaded => {
+            setSkillKey(loaded?.key ?? '')
+            if (loaded) { set(toDamageSkill(loaded, MAX_COINS)); setHeads(ALL_HEADS) }
+          }} />
+          <div className={styles.skillFields}>
           <div className={styles.fields}>
             <NumberField label={t('basePower')} value={form.basePower} max={999} onChange={basePower => set({ basePower })} />
             <NumberField label={t('coinPower')} value={form.coinPower} min={-99} max={99} onChange={coinPower => set({ coinPower })} />
@@ -91,6 +101,7 @@ export default function DamageCalculator() {
                 options={[{ value: '', label: t('skillNone') }, ...Object.keys(ATTACK_TYPES).map(value => ({ value, label: t(`skillAtkOption.${value}`) }))]}
                 onChange={skillAtk => set({ skillAtk })} />
             </div>
+          </div>
           </div>
           <div className={styles.coins} role="group" aria-label={t('coins')}>
             {heads.slice(0, form.coinCount).map((isHeads, index) => (
