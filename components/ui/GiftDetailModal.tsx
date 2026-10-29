@@ -8,7 +8,7 @@ import { useTranslations } from 'next-intl'
 import BaseModal from '@/components/ui/BaseModal'
 import GiftArtwork, { type GiftArtworkGift } from '@/components/ui/GiftArtwork'
 import GiftCard, { GiftEnhanceMark, GiftEnhancePicker } from '@/components/ui/GiftCard'
-import { GiftConditionBox } from '@/components/ui/GiftCondition'
+import { GiftConditionDivider } from '@/components/ui/GiftCondition'
 import { blurPlaceholder } from '@/lib/utils/thumbhash'
 import KeywordChip from '@/components/ui/KeywordChip'
 import { useFormatSkillDesc } from '@/components/sinners/KeywordTooltip'
@@ -139,10 +139,10 @@ function Section({ title, aside, children }: { title: string; aside?: ReactNode;
 }
 
 /**
- * gate: the gift has a head-count condition. The lines it decides go in one box (`box`, headed by the condition); the
- * lines outside it always apply. A condition no line states gets its box, empty, before the effect.
+ * gate: the gift has a head-count condition. The lines it decides follow its divider (`divider`: the lock and the
+ * condition across the text); the lines before it always apply. A condition no line states gets its divider first.
  */
-export function EffectText({ text, color, links, gate }: { text: string; color: string; links?: GiftDetailData['giftLinks']; gate?: { partial: boolean; box: (lines: ReactNode) => ReactNode } }) {
+export function EffectText({ text, color, links, gate }: { text: string; color: string; links?: GiftDetailData['giftLinks']; gate?: { partial: boolean; divider: (lines: ReactNode) => ReactNode } }) {
   const formatSkillDesc = useFormatSkillDesc()
   const split = useMemo(() => links?.targets.length ? createGiftRefSplitter(links.targets, links) : null, [links])
   // {{gift:<game id>}} (a convert_to gift's target) shows that gift as a link.
@@ -162,7 +162,7 @@ export function EffectText({ text, color, links, gate }: { text: string; color: 
   return (
     <PlaceholderGiftProvider lookup={giftById}>
       <div style={{ color: '#d8ccb4', fontSize: '0.875rem', lineHeight: 1.75 }}>
-        {gate && !gated.size && <div style={{ marginBottom: '0.75rem' }}>{gate.box(null)}</div>}
+        {gate && !gated.size && <div style={{ marginBottom: '0.5rem' }}>{gate.divider(null)}</div>}
         {lines.map((line, i) => {
           if (gated.has(i) && i !== Math.min(...gated)) return null
           const paragraph = (index: number, first: boolean) => {
@@ -174,7 +174,7 @@ export function EffectText({ text, color, links, gate }: { text: string; color: 
             )
           }
           // The decided lines, together in the condition's box where the first of them stands.
-          if (gated.has(i)) return <div key={i} style={{ marginTop: i > 0 ? '0.75rem' : 0 }}>{gate!.box([...gated].sort((x, y) => x - y).map((index, k) => paragraph(index, k === 0)))}</div>
+          if (gated.has(i)) return <div key={i} style={{ marginTop: i > 0 ? '0.75rem' : 0 }}>{gate!.divider([...gated].sort((x, y) => x - y).map((index, k) => paragraph(index, k === 0)))}</div>
           return paragraph(i, i === 0)
         })}
       </div>
@@ -301,8 +301,8 @@ export default function GiftDetailModal({ gift, lang, onClose, initialLevel = 0,
             </div>
           </header>
 
-          {/* With no effect text to hold it, the condition shows on its own. */}
-          {gift.condition && !effect && <div className="px-5 pb-4"><GiftConditionBox text={gift.condition} condition={gift.activation} scope={gift.conditionScope} status={gift.conditionStatus} /></div>}
+          {/* With no effect text to follow it, the condition's divider shows on its own. */}
+          {gift.condition && !effect && <div className="px-5 pb-4"><GiftConditionDivider text={gift.condition} condition={gift.activation} scope={gift.conditionScope} status={gift.conditionStatus} /></div>}
 
           {effect && (
             <Section
@@ -314,8 +314,8 @@ export default function GiftDetailModal({ gift, lang, onClose, initialLevel = 0,
               )}
             >
               <EffectText key={level} text={effect} color={effectColor} links={gift.giftLinks}
-                gate={gift.condition ? { partial: !!gift.activation?.partial, box: lines => (
-                  <GiftConditionBox text={gift.condition!} condition={gift.activation} scope={gift.conditionScope} status={gift.conditionStatus}>{lines}</GiftConditionBox>
+                gate={gift.condition ? { partial: !!gift.activation?.partial, divider: lines => (
+                  <GiftConditionDivider text={gift.condition!} condition={gift.activation} scope={gift.conditionScope} status={gift.conditionStatus}>{lines}</GiftConditionDivider>
                 ) } : undefined} />
             </Section>
           )}

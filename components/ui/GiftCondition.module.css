@@ -47,17 +47,16 @@
 .line[data-level='unmet'] { color: #ef6a5a; }
 .line[data-level='warn'] { color: #d9a534; }
 
-/* The effects a gift's condition decides: one box in the effect list, headed by the lock and the condition. */
-.gateBox { border: 1px solid var(--border); border-radius: 0.3rem; background: #100d09; transition: border-color 0.2s ease; }
-.gateBox[data-level='unmet'] { border-color: rgba(155, 44, 35, 0.6); }
-.gateBox[data-level='warn'] { border-color: rgba(200, 144, 10, 0.5); }
-.gateHead { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.45rem; padding: 0.55rem 0.8rem; border-bottom: 1px solid #241c14; }
-.gateBox:not(:has(.gateLines)) .gateHead { border-bottom: 0; }
+/* In the effect text: a rule across where the decided effects begin, the lock and the condition in its middle. */
+.gate { transition: opacity 0.2s ease; }
+.gateHead { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 0.35rem 0.45rem; padding: 0.15rem 0 0.45rem; }
 .gateHead strong { color: var(--gold-light); font: 0.9375rem/1.35 var(--font-heading); }
-.lock { width: 0.875rem; height: auto; margin-right: 0.1rem; filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.6)); }
+.rule { flex: 1 1 1.5rem; min-width: 1.5rem; height: 1px; background: linear-gradient(90deg, transparent, rgba(200, 144, 10, 0.55)); }
+.gateHead .rule:last-child { background: linear-gradient(90deg, rgba(200, 144, 10, 0.55), transparent); }
+.lock { width: 0.875rem; height: auto; filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.6)); }
 .lockIcon { width: 1.125rem; height: 1.125rem; object-fit: contain; }
 .gateChip { padding: 0.05rem 0.45rem; border: 1px solid #2e2417; border-radius: 0.2rem; color: var(--text-secondary); font-size: 0.75rem; }
-.gateStatus { display: inline-flex; align-items: center; gap: 0.45rem; margin-left: auto; }
+.gateStatus { display: inline-flex; align-items: center; gap: 0.45rem; }
 .pips { display: flex; flex-wrap: wrap; gap: 0.2rem; }
 .pips i { width: 0.5rem; height: 0.5rem; border: 1px solid #5a4526; transform: rotate(45deg); }
 .pips i[data-fill='deployed'] { border-color: var(--gold); background: var(--gold); }
@@ -65,8 +64,10 @@
 .gateStatus b { color: var(--text-primary); font: 1.125rem/1 var(--font-title); font-weight: 400; }
 .gateStatus small { color: #9c8b73; font-size: 0.85em; }
 .gateStatus em { font-style: normal; font-size: 0.75rem; }
-.gateBox[data-level='unmet'] .gateStatus em { color: #ef6a5a; }
-.gateBox[data-level='warn'] .gateStatus em { color: var(--gold-light); }
-.gateLines { padding: 0.55rem 0.8rem 0.65rem; transition: opacity 0.2s ease; }
-.gateBox[data-level='unmet'] .gateLines { opacity: 0.5; }
-@media (prefers-reduced-motion: reduce) { .gateBox, .gateLines { transition: none; } }
+.gate[data-level='unmet'] .gateStatus em { color: #ef6a5a; }
+.gate[data-level='warn'] .gateStatus em { color: var(--gold-light); }
+.gate[data-level='unmet'] .rule { background: linear-gradient(90deg, transparent, rgba(214, 72, 56, 0.6)); }
+.gate[data-level='unmet'] .gateHead .rule:last-child { background: linear-gradient(90deg, rgba(214, 72, 56, 0.6), transparent); }
+.gate[data-level='unmet'] .gateLines { opacity: 0.5; }
+.gateLines { transition: opacity 0.2s ease; }
+@media (prefers-reduced-motion: reduce) { .gate, .gateLines { transition: none; } }
