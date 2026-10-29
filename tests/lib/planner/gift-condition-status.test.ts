@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { getGiftActivationConditionStatus, getGiftConditionCountsForSlots, giftConditionKey } from '@/lib/planner/gift-condition-status'
+import { getGiftActivationConditionStatus, getGiftConditionCountsForSlots, giftConditionKey, giftConditionScope } from '@/lib/planner/gift-condition-status'
 import { getLocalizedAffiliation } from '@/lib/i18n/localize'
 
 const gift = (activation_condition: unknown) => ({ activation_condition }) as Parameters<typeof getGiftActivationConditionStatus>[0]['gift']
@@ -75,5 +75,32 @@ describe('activation_condition extensions', () => {
     const cond = gift({ type: 'affiliation', affiliation: 'a', count: 2 })
     const slots = [slot(0, 'a'), slot(7, 'a')]
     expect(getGiftActivationConditionStatus({ gift: cond, ...getGiftConditionCountsForSlots(slots) })).toMatchObject({ level: 'warn', formation: 1, all: 2 })
+  })
+})
+
+describe('REQ-PLANNER-090 the head count a condition reads (game text)', () => {
+  const counts = { formationKeywordCounts: { 화상: 2 }, allKeywordCounts: { 화상: 5 } }
+  const withText = (effect_base: string, scope?: string) =>
+    ({ activation_condition: { type: 'keyword', keyword: '화상', count: 4, ...(scope ? { scope } : {}) }, effect_base }) as Parameters<typeof getGiftActivationConditionStatus>[0]['gift']
+  it('REQ-PLANNER-090 reads "대기 인원 제외" and "출격 인원을 기준으로 함" as the deployed seven only: the bench does not help', () => {
+    expect(giftConditionScope(withText('화상 인격 4인 이상이면 (E.G.O 스킬 제외. 대기 인원 제외)'))).toBe('deployed')
+    expect(giftConditionScope(withText('… (출격 인원을 기준으로 함)'))).toBe('deployed')
+    expect(getGiftActivationConditionStatus({ gift: withText('(대기 인원 제외)'), ...counts })).toMatchObject({ level: 'unmet', scope: 'deployed', formation: 2 })
+  })
+  it('REQ-PLANNER-090 reads "편성 인원 포함" and "대기 인원 포함" as the whole formation: met with the bench, no warning', () => {
+    expect(giftConditionScope(withText('(E.G.O 스킬 제외, 편성 인원 포함)'))).toBe('formation')
+    expect(giftConditionScope(withText('(대기 인원 포함)'))).toBe('formation')
+    expect(giftConditionScope(withText('(except E.G.O Skills; except Backup Units)'))).toBe('deployed')
+    expect(giftConditionScope(withText('(出撃人員を基準とする)'))).toBe('deployed')
+    expect(giftConditionScope(withText("(including 'Unique Sinking' and Backup Units; excluding E.G.O Skills)"))).toBe('formation')
+    expect(giftConditionScope(withText('(E.G.Oスキルを除く、編成人員を含む)'))).toBe('formation')
+    expect(getGiftActivationConditionStatus({ gift: withText('(편성 인원 포함)'), ...counts })).toBeNull()
+    expect(getGiftActivationConditionStatus({ gift: { ...withText('(편성 인원 포함)'), activation_condition: { type: 'keyword', keyword: '화상', count: 6 } } as never, ...counts }))
+      .toMatchObject({ level: 'unmet', scope: 'formation', all: 5 })
+  })
+  it('REQ-PLANNER-090 prefers the stored scope and keeps the old rule when neither says', () => {
+    expect(giftConditionScope(withText('(대기 인원 제외)', 'formation'))).toBe('formation')
+    expect(giftConditionScope(withText('화상 인격 4인 이상이면'))).toBeNull()
+    expect(getGiftActivationConditionStatus({ gift: withText('화상 인격 4인 이상이면'), ...counts })).toMatchObject({ level: 'warn' })
   })
 })

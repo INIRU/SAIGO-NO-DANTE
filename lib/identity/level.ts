@@ -7,7 +7,8 @@ export function identityAtLevel(identity: Identity, level: number): Identity {
   return {
     ...identity,
     hp: identity.base_hp != null && identity.hp_per_level != null
-      ? Math.floor(identity.base_hp + identity.hp_per_level * level)
+      // The game rounds level × per-level half up (32-bit floats) and adds it to the base.
+      ? identity.base_hp + Math.round(Math.fround(level * Math.fround(identity.hp_per_level)))
       : identity.hp,
     def_level: identity.def_level + level - IDENTITY_STAT_BASE_LEVEL,
   }
