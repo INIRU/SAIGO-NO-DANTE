@@ -21,6 +21,10 @@ const DEFAULTS = {
   basePower: 4, coinPower: 4, coinCount: 3, offenseLevel: 55,
   defenseLevel: 55, physicalResist: 1, sinResist: 1, stagger: 0 as StaggerStage, observationLevel: 0,
   critical: false, clashCount: 0,
+  /** Percent added to a critical hit's 20%, and the critical passives' sum in percent (the bonus is multiplied by 1 + it). */
+  critAdder: 0, critPassive: 0,
+  /** Flat damage: weighed by the resistances and level difference (damageAdder), or added straight (hpAdder). */
+  damageAdder: 0, hpAdder: 0,
   /** The skill's sin and attack type (the game's English names, '' for neither): what a keyword's effect narrowed to one of them waits for. */
   skillSin: '', skillAtk: '',
 }
@@ -61,7 +65,7 @@ export default function DamageCalculator() {
   // Keywords and gifts that add power (a skill's, or the heads coin's) change the power before the damage is figured.
   const added = abilityPower(custom, skill)
   const powers = coinPowers(form.basePower + added.power, form.coinPower + added.coinPower, heads.slice(0, form.coinCount))
-  const results = powers.map((power, index) => coinDamage({ ...form, power, modifiers: coinModifiers(custom, index + 1, skill) }))
+  const results = powers.map((power, index) => coinDamage({ ...form, critAdder: form.critAdder / 100, critPassive: form.critPassive / 100, power, modifiers: coinModifiers(custom, index + 1, skill) }))
   const total = results.reduce((sum, result) => sum + result.damage, 0)
   // A modifier set to one coin makes the factors differ from coin to coin: each coin then shows its own.
   const factors = (result: typeof results[number]) => [
@@ -157,6 +161,10 @@ export default function DamageCalculator() {
       <div className={styles.fields}>
         <NumberField label={t('clashCount')} value={form.clashCount} max={99} onChange={clashCount => set({ clashCount })} />
         <label className={styles.check}><input type="checkbox" checked={form.critical} onChange={e => set({ critical: e.target.checked })} />{t('critical')}</label>
+        <NumberField label={t('critAdder')} value={form.critAdder} min={-100} max={999} disabled={!form.critical} onChange={critAdder => set({ critAdder })} />
+        <NumberField label={t('critPassive')} value={form.critPassive} min={-100} max={999} disabled={!form.critical} onChange={critPassive => set({ critPassive })} />
+        <NumberField label={t('damageAdder')} value={form.damageAdder} min={-999} max={999} onChange={damageAdder => set({ damageAdder })} />
+        <NumberField label={t('hpAdder')} value={form.hpAdder} min={-999} max={999} onChange={hpAdder => set({ hpAdder })} />
       </div>
       <h3>{t('custom')}</h3>
       <DamageModifiers modifiers={custom} setModifiers={setCustom} coinCount={form.coinCount} />
