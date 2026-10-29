@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { cacheLife } from 'next/cache'
 import { getTranslations } from 'next-intl/server'
 import PageHeader from '@/components/ui/PageHeader'
-import { LICENSES } from '@/lib/licenses'
+import { LICENSES, type LicenseItem } from '@/lib/licenses'
 import { pageMetadata } from '@/lib/seo/metadata'
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
@@ -17,7 +17,7 @@ export default async function LicensesPage({ params }: { params: Promise<{ lang:
 
   const { lang } = await params
   const t = await getTranslations({ locale: lang, namespace: 'licensesPage' })
-  const license = (value: string) => (value === 'freeFont' ? t('freeFont') : value)
+  const license = (item: LicenseItem) => ('licenseKey' in item ? t(item.licenseKey) : item.license)
   return (
     <div className="mx-auto min-h-[100dvh] max-w-[42rem] px-4 pb-24 pt-[5.5rem] md:px-6">
       <PageHeader title={t('title')} />
@@ -35,7 +35,7 @@ export default async function LicensesPage({ params }: { params: Promise<{ lang:
                 </div>
                 <a href={item.url} target="_blank" rel="noopener noreferrer"
                   className="hit-target text-right text-[0.8125rem] text-[var(--gold)] underline-offset-4 transition-colors duration-150 hover:text-[var(--gold-light)] hover:underline motion-reduce:transition-none">
-                  {license(item.license)}
+                  {license(item)}
                 </a>
               </li>
             ))}

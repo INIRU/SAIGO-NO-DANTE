@@ -2856,6 +2856,9 @@
     "description": "Licenses of the fonts and software this site uses",
     "fonts": "Fonts",
     "software": "Software",
-    "freeFont": "Free font"
+    "kogl1": "KOGL Type 1 (attribution)",
+    "scoreFont": "S-Core Font License",
+    "dafontFree": "100% Free (DaFont)",
+    "authorFree": "Free to use (author)"
   }
 }
