@@ -42,6 +42,7 @@
       "experience": "경험치 계산기",
       "lunacy": "월간 광기 계산기",
       "damage": "피해량 계산기",
+      "clash": "합 계산기",
       "developers": "개발자 도구"
     },
     "support": "문의"
@@ -569,22 +570,21 @@
     "conditionSkill": "{skill} {count}인 이상",
     "conditionUnmet": "조건 미달",
     "conditionWarn": "조건 주의",
-    "unmetHint": "편성 인격과 대기 인격을 모두 포함해도 부족합니다.",
-    "warnHint": "편성(1–7)만으로는 부족하지만 대기 인격을 포함하면 충족됩니다.",
     "recipe": "조합 레시피",
     "recipeFragments": "조각 중 택 2종",
     "finalSynthesis": "최종 조합",
     "themes": "얻을 수 있는 테마팩",
     "exclusive": "전용",
     "clearReward": "클리어 보상",
-    "acquisition": "획득 방법",
-    "related": "관련",
     "synthesis": "합성",
     "hard": "하드",
     "extreme": "익스트림",
     "back": "이전: {gift}",
     "showAllThemes": "테마팩 {count}개 모두 보기",
-    "allThemes": "모든 테마팩"
+    "allThemes": "모든 테마팩",
+    "scopeDeployed": "대기 인원 제외",
+    "scopeFormation": "편성 인원 포함",
+    "tierSteps": "{steps}인 단계"
   },
   "themePackDetail": {
     "clearReward": "클리어 보상",
@@ -1399,7 +1399,9 @@
         "unmetTitle": "조건 미달: {text}",
         "warnTitle": "조건 주의: {text}",
         "formation": "편성 {have}/{need}",
-        "withBench": "대기 포함 {have}/{need}"
+        "withBench": "대기 포함 {have}/{need}",
+        "tier": "{reached}/{total}단계",
+        "partial": "일부 효과만 조건"
       },
       "keywords": {
         "all": "전체",
@@ -2310,7 +2312,7 @@
       "2": "흐트러짐+",
       "3": "흐트러짐++"
     },
-    "staggerFixed": "흐트러짐 중에는 물리 내성이 ×{value}로 고정됩니다.",
+    "staggerFixed": "흐트러짐 중에는 물리 내성이 ×{value}이고, 내성 약화를 더합니다.",
     "observation": "관찰 단계",
     "observationHelp": "게임에서 적용되지 않는다는 보고가 있어 기본값은 0입니다.",
     "modifiers": "보정",
@@ -2342,12 +2344,12 @@
     "resistFactor": "내성·레벨",
     "finalMultiplier": "최종 배율",
     "formula": "계산 방식",
-    "formulaBody": "위력 × (1 + 피해량 증감) × (1 + 물리 내성 + 죄악 내성 + 레벨 보정 + 크리티컬 20% + 합 횟수 × 3% + 관찰 단계 × 3%). 소수점은 버리고 최소 1입니다.",
-    "formulaResist": "물리 내성은 스킬의 공격 유형(참격·관통·타격)에 대한 내성입니다. ×2는 +100%로 들어가고, 보통(×1)보다 낮으면 감소치의 절반만 적용되어 ×0.5는 −25%입니다.",
+    "formulaBody": "위력 × (1 + 피해량 증감) × (1 + 물리 내성 + 죄악 내성 + 레벨 보정 + 크리티컬 + 합 횟수 × 3% + 관찰 단계 × 3%) + 고정 피해 가산 × (1 + 물리 내성 + 죄악 내성 + 레벨 보정) + 체력 피해 가산. 소수점은 버리며, 최소 피해는 위력의 5%(소수점 버림)와 1 중 큰 값입니다.",
+    "formulaResist": "물리 내성은 스킬의 공격 유형(참격·관통·타격)에 대한 내성입니다. ×2는 +100%로 들어가고, 보통(×1)보다 낮으면 감소치의 절반만 적용되어 ×0.5는 −25%, 0보다 낮으면 −50%입니다. 흐트러짐이 아닐 때 물리 내성은 −2~2, 죄악 내성은 0~2 안으로 잡습니다.",
     "formulaLevel": "레벨 보정은 (공격 레벨 − 방어 레벨) ÷ (두 레벨의 차 + 25)입니다. 차는 항상 양수로 셉니다.",
-    "formulaNote": "커뮤니티에서 분석한 공식으로 계산한 예상치이며 실제 피해량과 다를 수 있습니다. 화상·출혈 같은 효과 피해, 일부 스킬의 특수 피해량 증가, 죄악 공명 보정은 계산하지 않습니다.",
+    "formulaNote": "게임 값 기준 계산입니다. 화상·출혈 같은 효과 피해, 일부 스킬의 특수 피해량 증가, 죄악 공명 보정은 계산하지 않습니다. 관찰 단계는 환상체를 공격할 때만 붙습니다.",
     "full": "보정은 {max}개까지 추가할 수 있습니다.",
-    "formulaFinal": "최종 배율은 위 계산을 마치고 소수점을 버린 값에 곱합니다. 내성 약화처럼 내성 값을 바꾸는 보정은 내성에 먼저 더합니다.",
+    "formulaFinal": "크리티컬은 (20% + 크리티컬 피해 가산) × (1 + 크리티컬 배율 패시브)입니다. 최종 배율은 위 계산을 마치고 소수점을 버린 값에 곱합니다. 내성 약화처럼 내성 값을 바꾸는 보정은 내성에 먼저 더합니다.",
     "picker": {
       "search": "이름으로 검색",
       "group": {
@@ -2368,8 +2370,89 @@
       "noResults": "검색 결과가 없습니다.",
       "delete": "삭제",
       "effect": "효과",
-      "value": "적용 수치"
-    }
+      "value": "적용 수치",
+      "notCalculated": "계산 안 됨",
+      "unsupported": "이 키워드에는 계산에 넣지 못한 효과가 {count}개 더 있습니다.",
+      "effectLine": "{target} {value}{per}{only}",
+      "perStackShort": " (수치당)",
+      "onlyFor": " · {name} 스킬만",
+      "effectTarget": {
+        "damage": "가하는 피해",
+        "takeDamage": "받는 피해",
+        "power": "위력",
+        "coin_power": "코인 위력",
+        "physical": "물리 내성",
+        "sin": "죄악 내성"
+      }
+    },
+    "skillSin": "스킬 죄악",
+    "skillAtk": "스킬 공격 유형",
+    "skillNone": "선택 안 함",
+    "skillSinOption": {
+      "CRIMSON": "분노",
+      "SCARLET": "색욕",
+      "AMBER": "나태",
+      "SHAMROCK": "탐식",
+      "AZURE": "우울",
+      "INDIGO": "오만",
+      "VIOLET": "질투"
+    },
+    "skillAtkOption": {
+      "SLASH": "참격",
+      "PENETRATE": "관통",
+      "HIT": "타격"
+    },
+    "coinLess": "코인 하나 빼기",
+    "coinMore": "코인 하나 더하기",
+    "coinTitle": "코인",
+    "critAdder": "크리티컬 피해 가산 (%)",
+    "critPassive": "크리티컬 배율 패시브 (%)",
+    "damageAdder": "고정 피해 가산",
+    "hpAdder": "체력 피해 가산"
+  },
+  "clash": {
+    "title": "합 계산기",
+    "subtitle": "양쪽 스킬의 코인과 정신력으로 합의 승률과 교환 수, 남는 코인을 계산합니다.",
+    "reset": "초기화",
+    "sideA": "내 쪽",
+    "sideB": "적",
+    "result": "합 결과",
+    "basePower": "기본 위력",
+    "sanity": "정신력",
+    "coins": "코인",
+    "coin": "코인 {index}",
+    "coinValue": "코인 {index} 수치",
+    "operatorOption": {
+      "ADD": "+ 더하기",
+      "SUB": "− 빼기",
+      "MUL": "× 곱하기"
+    },
+    "adders": "가산",
+    "probabilityAdder": "앞면 확률 가산 (%p)",
+    "powerAdder": "위력 가산",
+    "coinPowerAdder": "코인 위력 가산",
+    "clashAdder": "합 보정 가산",
+    "headsA": "내 쪽 앞면 확률",
+    "headsB": "적 앞면 확률",
+    "meanRounds": "평균 교환 수",
+    "unresolved": "{max}번 안에 끝나지 않음",
+    "rounds": "교환 수",
+    "roundLabel": "{count}번",
+    "restRounds": "그 밖",
+    "toDamage": "피해량 계산기로",
+    "left": "남는 코인",
+    "leftCoins": "{count}개",
+    "limitNote": "앞면 확률 {min}%~{max}% 한계와 공격 레벨 차 {gap}당 합 +1은 추정입니다.",
+    "rules": "계산 방식",
+    "rulesHeads": "앞면 확률은 50% + 정신력 1당 1% + 가산입니다. 정신력은 −45~45입니다.",
+    "rulesCoins": "코인은 순서대로 굴리고, 앞면이면 그 코인의 연산(더하기·빼기)을 적용합니다. 값은 0 아래로 내려가지 않습니다. 시작값은 기본 위력입니다.",
+    "rulesExchange": "교환마다 남은 코인을 모두 다시 굴려 합 보정을 더하고, 큰 쪽이 이깁니다. 진 쪽은 가장 앞의 코인 1개를 잃고, 동점이면 아무도 잃지 않습니다. 한쪽 코인이 모두 사라지거나 99번 교환하면 끝납니다. 공격 레벨이 높은 쪽은 레벨 차 3마다 교환 합계에 1을 더합니다.",
+    "rulesDamage": "합 한 번마다 이어지는 스킬의 피해량이 3% 늘어납니다. 교환 수 옆의 링크로 피해량 계산기에 넘길 수 있습니다.",
+    "coinCount": "코인 수",
+    "coinLess": "코인 하나 빼기",
+    "coinMore": "코인 하나 더하기",
+    "offenseLevel": "공격 레벨",
+    "subCoinPowerAdder": "빼기 코인 위력 가산"
   },
   "mirrorDungeonPage": {
     "intro": "층을 내려가며 만나는 E.G.O 기프트와 테마팩, 선택지를 한곳에서 찾아봅니다.",
@@ -2860,5 +2943,14 @@
     "scoreFont": "에스코어 글꼴 라이선스",
     "dafontFree": "100% 무료(DaFont)",
     "authorFree": "작가 허락 무료 사용"
+  },
+  "toolSkill": {
+    "pickIdentity": "인격 불러오기",
+    "pickEgo": "E.G.O 불러오기",
+    "change": "바꾸기",
+    "clear": "비우기",
+    "skills": "스킬",
+    "corrosion": "침식",
+    "loadError": "스킬을 불러오지 못했습니다. 다시 시도"
   }
 }

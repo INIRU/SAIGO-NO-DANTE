@@ -95,7 +95,6 @@ type DeckRecommendationIdentity = {
   game_id: string | null
   keywords: string[] | null
   skill_keyword_list?: string[] | null
-  name: string | null
   name_kr: string | null
   name_en: string | null
   name_jp: string | null
@@ -241,8 +240,8 @@ function getUsername(profiles: RecommendationSourceDeck['profiles']): string | u
 /** DeckCard reads only these identity fields; the candidate query also loads affiliation/association lists. */
 function pickRecommendationIdentity(identity: DeckRecommendationIdentity | null): DeckRecommendationIdentity | null {
   if (!identity) return null
-  const { id, sinner_id, folder_name, game_id, keywords, skill_keyword_list, name, name_kr, name_en, name_jp } = identity
-  return { id, sinner_id, folder_name, game_id, keywords, skill_keyword_list, name, name_kr, name_en, name_jp }
+  const { id, sinner_id, folder_name, game_id, keywords, skill_keyword_list, name_kr, name_en, name_jp } = identity
+  return { id, sinner_id, folder_name, game_id, keywords, skill_keyword_list, name_kr, name_en, name_jp }
 }
 
 function toRecommendationSummary(deck: RecommendationSourceDeck): DeckRecommendationSummary {
@@ -465,7 +464,7 @@ async function fetchDeckRecommendations(
         guest_tag, profiles!decks_user_id_fkey(username),
         deck_identities(
           slot_order, gacksung, uptie,
-          identities(id, sinner_id, folder_name, game_id, keywords, skill_keyword_list, affiliation, association_list, name, name_kr, name_en, name_jp)
+          identities(id, sinner_id, folder_name, game_id, keywords, skill_keyword_list, affiliation, association_list, name_kr, name_en, name_jp)
         ),
         deck_egos(ego_id)
       `)
@@ -532,7 +531,7 @@ async function fetchDeckRecommendations(
 async function getCachedDeckMetadata(lang: 'ko' | 'en' | 'ja', id: string): Promise<Metadata> {
   'use cache'
   cacheLife('max')
-  cacheTag(CACHE_TAGS.deck(id), CACHE_TAGS.decksList)
+  cacheTag(CACHE_TAGS.deck(id))
 
   const supabase = createDeckReadClient()
   const { data, error } = await supabase
@@ -567,8 +566,9 @@ async function getCachedDeckMetadata(lang: 'ko' | 'en' | 'ja', id: string): Prom
 
 async function getCachedDeckDetailPayload(lang: 'ko' | 'en' | 'ja', id: string) {
   'use cache'
-  cacheLife('max')
-  cacheTag(CACHE_TAGS.deck(id), CACHE_TAGS.decksList)
+  // The deck's own edits, votes and comments revalidate its tag; the other decks it recommends refresh within the hour.
+  cacheLife('page-1h')
+  cacheTag(CACHE_TAGS.deck(id))
 
   // Server-side prefetch: hero portrait strip + basic deck fields for LCP
   let initialDeck = null
@@ -589,15 +589,15 @@ async function getCachedDeckDetailPayload(lang: 'ko' | 'en' | 'ja', id: string) 
           deck_identities(
             slot_order, gacksung, uptie, s1_count, s2_count, s3_count,
             identities(
-              id, sinner_id, folder_name, game_id, keywords, skill_keyword_list, affiliation, association_list, name, name_kr, name_en, name_jp, tier, rarity,
+              id, sinner_id, folder_name, game_id, keywords, skill_keyword_list, affiliation, association_list, name_kr, name_en, name_jp, tier, rarity,
               hp, speed_min, speed_max, def_level, slash_res, pierce_res, blunt_res,
-              skills(id, image_id, name, name_en, name_jp, skill_type, atk_type, sin_affinity, coins, base_power, coin_power, skill_order, variant_order, atk_weight, offense_level, description, description_en, description_jp, uptie_level),
+              skills(id, image_id, name, name_en, name_jp, skill_type, atk_type, sin_affinity, coins, base_power, coin_power, coin_list, skill_order, variant_order, atk_weight, offense_level, description, description_en, description_jp, uptie_level),
               passives(name, name_en, name_jp, passive_type, sin_affinity, sin_count, sin_requirements, active_cond, description, description_en, description_jp, passive_order, uptie_level)
             )
           ),
           deck_egos(
             grade,
-            ego:ego_id(id, name, name_kr, name_en, name_jp, grade, sin_affinity, sinner_id, folder_name, image_url, cost)
+            ego:ego_id(id, name_kr, name_en, name_jp, grade, sin_affinity, sinner_id, folder_name, image_url, cost)
           )
         `)
         .eq('id', id)

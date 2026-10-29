@@ -5,7 +5,8 @@
   cursor: help;
   background: linear-gradient(to top, rgba(8, 5, 3, 0.95) 0%, rgba(8, 5, 3, 0.75) 30%, rgba(8, 5, 3, 0) 62%);
 }
-.mark[data-level='unmet'] { background: linear-gradient(to top, rgba(8, 5, 3, 0.95) 0%, rgba(8, 5, 3, 0.8) 30%, rgba(8, 5, 3, 0.4) 62%, rgba(8, 5, 3, 0.3)); }
+/* partial: the base effect is on, so no darkened art (the warn look). */
+.mark[data-level='unmet']:not([data-partial]) { background: linear-gradient(to top, rgba(8, 5, 3, 0.95) 0%, rgba(8, 5, 3, 0.8) 30%, rgba(8, 5, 3, 0.4) 62%, rgba(8, 5, 3, 0.3)); }
 
 .plate {
   position: absolute;
@@ -22,16 +23,16 @@
 }
 /* A hairline over the plate in the level's colour. */
 .plate::before { content: ''; position: absolute; left: 8%; right: 8%; top: -0.35em; height: 1px; }
-.mark[data-level='unmet'] .plate::before { background: linear-gradient(90deg, transparent, rgba(214, 72, 56, 0.9), transparent); }
-.mark[data-level='warn'] .plate::before { background: linear-gradient(90deg, transparent, rgba(222, 164, 32, 0.9), transparent); }
+.mark[data-level='unmet']:not([data-partial]) .plate::before { background: linear-gradient(90deg, transparent, rgba(214, 72, 56, 0.9), transparent); }
+.mark[data-level='warn'] .plate::before, .mark[data-level='unmet'][data-partial] .plate::before { background: linear-gradient(90deg, transparent, rgba(222, 164, 32, 0.9), transparent); }
 
 .icon { flex-shrink: 0; width: 1.3em; height: 1.3em; object-fit: contain; }
 .subject { min-width: 0; font-family: var(--font-body); font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .count { flex-shrink: 0; font-family: var(--font-title); letter-spacing: 0.02em; }
 .count b { font-weight: 400; font-size: 1.25em; }
 .count i { font-style: normal; font-size: 0.9em; opacity: 0.7; }
-.mark[data-level='unmet'] .count { color: #ff8f7c; }
-.mark[data-level='warn'] .count { color: #f2c14e; }
+.mark[data-level='unmet']:not([data-partial]) .count { color: #ff8f7c; }
+.mark[data-level='warn'] .count, .mark[data-level='unmet'][data-partial] .count { color: #f2c14e; }
 
 .line {
   display: block;
@@ -45,3 +46,28 @@
 }
 .line[data-level='unmet'] { color: #ef6a5a; }
 .line[data-level='warn'] { color: #d9a534; }
+
+/* In the effect text: a rule across where the decided effects begin, the lock and the condition in its middle. */
+.gate { transition: opacity 0.2s ease; }
+.gateHead { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 0.35rem 0.45rem; padding: 0.15rem 0 0.45rem; }
+.gateHead strong { color: var(--gold-light); font: 0.9375rem/1.35 var(--font-heading); }
+.rule { flex: 1 1 1.5rem; min-width: 1.5rem; height: 1px; background: linear-gradient(90deg, transparent, rgba(200, 144, 10, 0.55)); }
+.gateHead .rule:last-child { background: linear-gradient(90deg, rgba(200, 144, 10, 0.55), transparent); }
+.lock { width: 0.875rem; height: auto; filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.6)); }
+.lockIcon { width: 1.125rem; height: 1.125rem; object-fit: contain; }
+.gateChip { padding: 0.05rem 0.45rem; border: 1px solid #2e2417; border-radius: 0.2rem; color: var(--text-secondary); font-size: 0.75rem; }
+.gateStatus { display: inline-flex; align-items: center; gap: 0.45rem; }
+.pips { display: flex; flex-wrap: wrap; gap: 0.2rem; }
+.pips i { width: 0.5rem; height: 0.5rem; border: 1px solid #5a4526; transform: rotate(45deg); }
+.pips i[data-fill='deployed'] { border-color: var(--gold); background: var(--gold); }
+.pips i[data-fill='bench'] { border-color: var(--gold); }
+.gateStatus b { color: var(--text-primary); font: 1.125rem/1 var(--font-title); font-weight: 400; }
+.gateStatus small { color: #9c8b73; font-size: 0.85em; }
+.gateStatus em { font-style: normal; font-size: 0.75rem; }
+.gate[data-level='unmet'] .gateStatus em { color: #ef6a5a; }
+.gate[data-level='warn'] .gateStatus em { color: var(--gold-light); }
+.gate[data-level='unmet'] .rule { background: linear-gradient(90deg, transparent, rgba(214, 72, 56, 0.6)); }
+.gate[data-level='unmet'] .gateHead .rule:last-child { background: linear-gradient(90deg, rgba(214, 72, 56, 0.6), transparent); }
+.gate[data-level='unmet'] .gateLines { opacity: 0.5; }
+.gateLines { transition: opacity 0.2s ease; }
+@media (prefers-reduced-motion: reduce) { .gate, .gateLines { transition: none; } }

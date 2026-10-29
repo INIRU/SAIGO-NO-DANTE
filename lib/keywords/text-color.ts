@@ -19,8 +19,9 @@ const WARNING_BRACKET_KEYWORDS = new Set([
   '일방 공격',
 ])
 
+// Fallback only for a keyword_meta row without effect_type (the DB value, from the game's buffType, wins). Names the game types
+// differently are not listed: 도발치 and 정신력 회복 효율 are Neutral, 빼기 코인 강화 is Negative (buff data buffType).
 const POSITIVE_KEYWORD_FALLBACKS = new Set([
-  '도발치',
   '신속',
   '피해량 증가',
   '공격 레벨 증가',
@@ -31,8 +32,6 @@ const POSITIVE_KEYWORD_FALLBACKS = new Set([
   '크리티컬 피해량 증가',
   '타격 피해량 증가',
   '타격 위력 증가',
-  '정신력 회복 효율',
-  '빼기 코인 강화',
   '관통 피해량 증가',
   '관통 위력 증가',
   '더하기 코인 강화',

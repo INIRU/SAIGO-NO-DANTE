@@ -22,7 +22,7 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
 }
 
 
-const KEYWORD_COLUMNS = 'name, description, max_stack, icon_slug, sin_affinity, category, name_en, name_jp, description_en, description_jp'
+const KEYWORD_COLUMNS = 'name, description, max_stack, icon_slug, category, name_en, name_jp, description_en, description_jp'
 
 /** keyword_meta rows with the names and descriptions of their game_text_refs row (keyword_meta's own where a row has no game_id). */
 async function fetchAllKeywords(supabase: ReturnType<typeof createAdminClient>, withRefs: boolean) {
@@ -81,16 +81,16 @@ async function renderKeywords(withRefs: boolean) {
     { data: egos, error: egosError },
   ] = await Promise.all([
     supabase.schema('limbus').from('identities')
-      .select('id, name, name_kr, name_en, name_jp, sinner_id, keywords, rarity, game_id, folder_name')
-      .order('name'),
+      .select('id, name_kr, name_en, name_jp, sinner_id, keywords, rarity, game_id, folder_name')
+      .order('name_kr'),
     supabase.schema('limbus').from('sinners')
       .select('id, name_kr, name_en, name_jp'),
     supabase.schema('limbus').from('ego_gifts')
       .select('name, keyword, grade, image_url, effect_base, effect_plus, effect_plusplus')
       .order('name'),
     supabase.schema('limbus').from('ego')
-      .select('id, name, name_kr, name_en, name_jp, sinner_id, grade, sin_affinity, keywords, folder_name, image_url')
-      .order('name'),
+      .select('id, name_kr, name_en, name_jp, sinner_id, grade, sin_affinity, keywords, folder_name, image_url')
+      .order('name_kr'),
   ])
 
   if (identitiesError) console.error('Failed to fetch identities:', identitiesError)

@@ -18,7 +18,7 @@ async function getEgoDetail(id: string) {
     supabase
       .schema('limbus')
       .from('ego')
-      .select('id, sinner_id, name, name_kr, name_en, name_jp, grade, sin_affinity, folder_name, image_url, cor_image_url, passive_name, passive_content, resistance, cost, keywords, description, corrosion_risk, obtaining_method, obtaining_method_en, obtaining_method_jp')
+      .select('id, sinner_id, name_kr, name_en, name_jp, grade, sin_affinity, folder_name, image_url, cor_image_url, passive_name, passive_content, resistance, cost, keywords')
       .eq('id', id)
       .maybeSingle(),
     supabase

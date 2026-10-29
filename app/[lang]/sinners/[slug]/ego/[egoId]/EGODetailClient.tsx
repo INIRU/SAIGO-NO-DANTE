@@ -54,12 +54,6 @@ function GradeImg({ grade, height = 16 }: { grade: string; height?: number }) {
   )
 }
 
-function getLocalizedObtainingMethod(ego: EGO, lang: SupportedLang) {
-  if (lang === 'en') return ego.obtaining_method_en ?? ego.obtaining_method
-  if (lang === 'ja') return ego.obtaining_method_jp ?? ego.obtaining_method
-  return ego.obtaining_method
-}
-
 // ─── EGO 스킬 프레임 패널 ────────────────────────────────────────────
 function SkillFramePanel({
   skill, sinColor, skillIconUrl, lang, allowedKeywords,
@@ -74,7 +68,7 @@ function SkillFramePanel({
   const skillSinColor = skillSin ? (SIN_COLORS[skillSin] ?? sinColor) : sinColor
 
   // 코인 효과 배열 (coinNum개만)
-  const coinEffects = [skill.coin1Effect, skill.coin2Effect, skill.coin3Effect, skill.coin4Effect, skill.coin5Effect]
+  const coinEffects = (skill.coinEffects ?? [skill.coin1Effect, skill.coin2Effect, skill.coin3Effect, skill.coin4Effect, skill.coin5Effect])
     .slice(0, skill.coinNum)
 
   // 파괴 불가 코인 감지 (0-based index)
@@ -91,13 +85,13 @@ function SkillFramePanel({
     : skill.name
 
   // 스킬 설명 재조립 — 언어별 효과 텍스트 선택
-  const locCoinEffects = [
+  const locCoinEffects = ((lang === 'en' ? skill.coinEffects_en : lang === 'ja' ? skill.coinEffects_jp : null) ?? [
     lang === 'en' ? skill.coin1Effect_en : lang === 'ja' ? skill.coin1Effect_jp : null,
     lang === 'en' ? skill.coin2Effect_en : lang === 'ja' ? skill.coin2Effect_jp : null,
     lang === 'en' ? skill.coin3Effect_en : lang === 'ja' ? skill.coin3Effect_jp : null,
     lang === 'en' ? skill.coin4Effect_en : lang === 'ja' ? skill.coin4Effect_jp : null,
     lang === 'en' ? skill.coin5Effect_en : lang === 'ja' ? skill.coin5Effect_jp : null,
-  ].slice(0, skill.coinNum)
+  ]).slice(0, skill.coinNum)
 
   const normalEffectLoc =
     lang === 'en' ? (skill.normalEffect_en ?? skill.normalEffect) :
@@ -107,7 +101,7 @@ function SkillFramePanel({
   const descParts: string[] = []
   if (normalEffectLoc) descParts.push(normalEffectLoc)
   coinEffects.forEach((effect, i) => {
-    const locEffect = locCoinEffects[i] ?? effect
+    const locEffect = locCoinEffects[i] || effect
     // A <coin=N> block, not a "[코인 N]" line: a tag the main text leaves open must not run on into the coin, and a coin's
     // lines stay together. The description reader (SkillDescription) draws the coin label for the page language.
     if (locEffect) descParts.push(`<coin=${i + 1}>${locEffect}</coin>`)
@@ -142,153 +136,6 @@ function SkillFramePanel({
   )
 }
 
-// ─── 입수 방법 로컬라이즈 ─────────────────────────────────────────────
-function localizeObtainingMethod(text: string, lang: SupportedLang): string {
-  if (lang === 'ko') return text
-
-  const map: Record<string, { en: string; ja: string }> = {
-    '선의의 순례': { en: 'Pilgrimage of Compassion', ja: '善意の巡礼' },
-    '발푸르기스의 밤': { en: "Walpurgis Night", ja: 'ヴァルプルギスの夜' },
-    '정기검진': { en: 'Regular Checkup', ja: '定期検診' },
-    '특정 추출': { en: 'Targeted Extraction', ja: '特定抽出' },
-    '배틀 패스': { en: 'Battle Pass', ja: 'バトルパス' },
-    '자아 파편': { en: 'EGO Shard', ja: '自我の欠片' },
-    '이벤트': { en: 'Event', ja: 'イベント' },
-    '기본': { en: 'Default', ja: 'デフォルト' },
-    '추출': { en: 'Extraction', ja: '抽出' },
-    '상시': { en: 'Permanent', ja: '常時' },
-    '시즌': { en: 'S', ja: 'S' },
-    '이후': { en: 'onwards', ja: '以降' },
-    '교환': { en: 'Exchange', ja: '交換' },
-    '유료': { en: 'Paid', ja: '有料' },
-    '무료': { en: 'Free', ja: '無料' },
-    '레벨': { en: 'Level', ja: 'レベル' },
-    '보상': { en: 'Reward', ja: '報酬' },
-    '개': { en: '', ja: '個' },
-  }
-
-  let result = text
-  // Replace longer phrases first to avoid partial matches
-  const sorted = Object.entries(map).sort((a, b) => b[0].length - a[0].length)
-  for (const [kr, trans] of sorted) {
-    result = result.replaceAll(kr, trans[lang])
-  }
-  return result.replace(/\s+/g, ' ').trim()
-}
-
-// ─── 입수 방법 배지 ───────────────────────────────────────────────────
-function EgoAcquisitionBadges({ text, fragmentLabel, lang }: { text: string; fragmentLabel: string; lang: SupportedLang }) {
-  // Parse classification from Korean original; display localized text
-  const parts = text.split(/\s*\/\s*/)
-  const localizedParts = localizeObtainingMethod(text, lang).split(/\s*\/\s*/)
-
-  const badges: { label: string; color: string; bg: string }[] = []
-  let fragmentInfo: string | null = null
-
-  for (let idx = 0; idx < parts.length; idx++) {
-    const p = parts[idx].trim()
-    const lp = (localizedParts[idx] ?? p).trim()
-
-    if (p === '기본') {
-      const label = lang === 'ko' ? '기본' : lang === 'en' ? 'Default' : 'デフォルト'
-      badges.push({ label, color: '#9c8b73', bg: 'rgba(156,139,115,0.12)' })
-    } else if (/^추출\s*\(상시\)$/.test(p)) {
-      const label = lang === 'ko' ? '추출(상시)' : lang === 'en' ? 'Extraction (Perm.)' : '抽出(常時)'
-      badges.push({ label, color: '#e8dcc8', bg: 'rgba(232,220,200,0.12)' })
-    } else if (/^추출\s*\(시즌\s*(\d+)\s*이후\)$/.test(p)) {
-      const m = p.match(/시즌\s*(\d+)/)
-      const s = m?.[1]
-      const label = lang === 'ko' ? `추출(S${s}~)` : lang === 'en' ? `Extraction (S${s}~)` : `抽出(S${s}~)`
-      badges.push({ label, color: '#e8dcc8', bg: 'rgba(232,220,200,0.12)' })
-    } else if (/이벤트\s*추출/.test(p)) {
-      const m = p.match(/시즌\s*(\d+)/)
-      const label = m
-        ? (lang === 'ko' ? `이벤트 추출(S${m[1]})` : lang === 'en' ? `Event Extraction (S${m[1]})` : `イベント抽出(S${m[1]})`)
-        : (lang === 'ko' ? '이벤트 추출' : lang === 'en' ? 'Event Extraction' : 'イベント抽出')
-      badges.push({ label, color: '#e8b030', bg: 'rgba(232,176,48,0.12)' })
-    } else if (/발푸르기스의\s*밤/.test(p)) {
-      if (/추출/.test(p)) {
-        const label = lang === 'ko' ? '발푸르기스 추출' : lang === 'en' ? 'Walpurgis Extraction' : 'ヴァルプルギス抽出'
-        badges.push({ label, color: '#d9826b', bg: 'rgba(217,130,107,0.12)' })
-      } else {
-        const m = p.match(/[ⅠⅡⅢⅣⅤⅥⅦⅧⅨⅩ]+/)
-        const base = lang === 'ko' ? '발푸르기스' : lang === 'en' ? 'Walpurgis' : 'ヴァルプルギス'
-        const label = m ? `${base} ${m[0]}` : base
-        badges.push({ label, color: '#d9826b', bg: 'rgba(217,130,107,0.12)' })
-      }
-    } else if (/특정\s*추출/.test(p)) {
-      const m = p.match(/(.+?)\s*특정\s*추출/)
-      const prefix = m ? localizeObtainingMethod(m[1].trim(), lang) : ''
-      const targetedLabel = lang === 'ko' ? '특정 추출' : lang === 'en' ? 'Targeted Extraction' : '特定抽出'
-      const label = prefix ? `${prefix} ${lang === 'ko' ? '특정 추출' : lang === 'en' ? 'Targeted' : '特定抽出'}` : targetedLabel
-      badges.push({ label, color: '#e8b030', bg: 'rgba(232,176,48,0.12)' })
-    } else if (/배틀\s*패스/.test(p)) {
-      const season = p.match(/시즌\s*(\d+)/)
-      const level = p.match(/(\d+)\s*레벨/)
-      const paid = /유료/.test(p)
-      const paidLabel = paid
-        ? (lang === 'ko' ? '유료' : lang === 'en' ? 'Paid' : '有料')
-        : (lang === 'ko' ? '무료' : lang === 'en' ? 'Free' : '無料')
-      const passLabel = lang === 'ko' ? '패스' : lang === 'en' ? 'Pass' : 'パス'
-      const label = `${paidLabel} ${passLabel}${season ? ` S${season[1]}` : ''}${level ? ` Lv.${level[1]}` : ''}`
-      badges.push({ label, color: '#b8a684', bg: 'rgba(184,166,132,0.12)' })
-    } else if (/선의의\s*순례/.test(p)) {
-      const pilgrimLabel = lang === 'ko' ? '선의의 순례' : lang === 'en' ? 'Pilgrimage' : '善意の巡礼'
-      if (/추출/.test(p)) {
-        const extractLabel = lang === 'ko' ? '추출' : lang === 'en' ? 'Extraction' : '抽出'
-        badges.push({ label: `${pilgrimLabel} ${extractLabel}`, color: '#e8b030', bg: 'rgba(232,176,48,0.12)' })
-      } else {
-        const rewardLabel = lang === 'ko' ? '보상' : lang === 'en' ? 'Reward' : '報酬'
-        badges.push({ label: `${pilgrimLabel} ${rewardLabel}`, color: '#e8b030', bg: 'rgba(232,176,48,0.12)' })
-      }
-    } else if (/이벤트.*보상|이벤트.*교환/.test(p) || /\d+개\s*(보상|획득)/.test(p)) {
-      badges.push({ label: lp.replace(/\s*\/.*$/, '').trim(), color: '#e8b030', bg: 'rgba(232,176,48,0.12)' })
-    } else if (/자아\s*파편/.test(p)) {
-      const cost = p.match(/(\d+)\s*(개\s*)?교환/)
-      const allSeasons = [...p.matchAll(/시즌\s*(\d+)/g)].map(m => m[1])
-      if (cost) {
-        const shardLabel = lang === 'ko' ? '자아 파편' : lang === 'en' ? 'EGO Shard' : '自我の欠片'
-        let detail = `${shardLabel} ${cost[1]}`
-        if (allSeasons.length > 0) {
-          detail += ` (S${allSeasons.join(', S')}~)`
-        } else if (/상시/.test(p)) {
-          detail += lang === 'ko' ? ' (상시)' : lang === 'en' ? ' (Perm.)' : ' (常時)'
-        }
-        fragmentInfo = detail
-      }
-    } else {
-      badges.push({ label: lp, color: '#7a6a5a', bg: 'rgba(122,106,90,0.12)' })
-    }
-  }
-
-  return (
-    <div className="space-y-2">
-      <div className="flex items-center gap-1.5 flex-wrap">
-        {badges.map((b, i) => (
-          <span
-            key={i}
-            style={{
-              fontSize: '0.75rem', fontWeight: 600,
-              padding: '2px 8px', borderRadius: '3px',
-              color: b.color,
-              background: b.bg,
-              border: `1px solid ${b.color}30`,
-            }}
-          >
-            {b.label}
-          </span>
-        ))}
-      </div>
-      {fragmentInfo && (
-        <div className="flex items-center gap-2">
-          <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem', minWidth: '3rem' }}>{fragmentLabel}</span>
-          <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{fragmentInfo}</span>
-        </div>
-      )}
-    </div>
-  )
-}
-
 // ─── 메인 컴포넌트 ────────────────────────────────────────────────────
 interface Props {
   sinner: Sinner
@@ -312,7 +159,6 @@ export default function EGODetailClient({ sinner, ego }: Props) {
   const t = useTranslations()
   const locale = useLocale()
   const lang = locale as SupportedLang
-  const obtainingMethod = getLocalizedObtainingMethod(ego, lang)
 
   const gradeColor = GRADE_COLORS[ego.grade] ?? '#667788'
   const sinColor = SIN_COLORS[ego.sin_affinity as SinType] ?? gradeColor
@@ -335,7 +181,7 @@ export default function EGODetailClient({ sinner, ego }: Props) {
 
   // 로컬라이즈된 이름
   const egoLocalName = getLocalizedName(
-    { name_kr: ego.name_kr ?? ego.name, name_en: ego.name_en, name_jp: ego.name_jp },
+    { name_kr: ego.name_kr, name_en: ego.name_en, name_jp: ego.name_jp },
     lang
   )
   const sinnerLocalName = getLocalizedName(sinner, lang)
@@ -414,10 +260,6 @@ export default function EGODetailClient({ sinner, ego }: Props) {
                 <span>{key ? t(key as Parameters<typeof t>[0]) : resistance}</span>
               </div>
             })}</div>
-          </div>}
-          {obtainingMethod && <div className={styles.infoRow}>
-            <h3>{t('ego.acquisition')}</h3>
-            <EgoAcquisitionBadges text={obtainingMethod} fragmentLabel={t('ego.fragmentExchange')} lang={lang} />
           </div>}
         </section>
       </div>

@@ -110,3 +110,17 @@ it('uses original artwork for all nine replica weapon keywords, including explic
   }
   expect(getKeywordIconUrl('커다란 검으로 몸통을 갈라야 할 때는…', 'when-rending-the-body-with-a-great-sword')).toContain('/when-rending-the-body-with-a-greatsword.webp')
 })
+
+describe('game tag aliases', () => {
+  it('reads a game tag from keyword_meta.game_id before the static aliases', () => {
+    const withIds: Record<string, KeywordInfo> = {
+      '화상': { desc: '', nameEn: 'Burn', gameId: 'Combustion' },
+      '새 키워드': { desc: '', nameEn: 'New', gameId: 'NewTag' },
+    }
+    const { localToKr, localKeywords } = getLocalizedKeywordIndex(withIds, 'en')
+    expect(localToKr.NewTag).toBe('새 키워드')
+    expect(localToKr.Combustion).toBe('화상')
+    expect(localKeywords).toContain('NewTag')
+    expect(getLocalizedKeywordIndex(catalog, 'en').localToKr.Sinking).toBe('침잠')
+  })
+})

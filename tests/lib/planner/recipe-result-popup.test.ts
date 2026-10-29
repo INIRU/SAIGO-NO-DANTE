@@ -9,7 +9,7 @@ const names: [number, string][] = [[9721, '은빛 시계 케이스'], [9722, '�
   [9728, '회중시계 : 타입 L'], [9729, '회중시계 : 타입 E'], [9730, '회중시계 : 타입 Y'], [9731, '회중시계 : 타입 P'],
   [9701, '부서진 칼날'], [9702, '낡은 칼자루'], [9784, '탁마'], [9277, '비슷한 칼'], [9001, '평범한 기프트']]
 const giftMap = new Map(names.map(([game_id, name]) => [game_id, { game_id, name } as GiftData]))
-const recipe = (result: string, ingredients: string[]) => ({ id: result, result_name: result, keyword: '', ingredients, final_result: result }) as RecipeData
+const recipe = (result: string, ingredients: string[]) => ({ id: result, result_name: result, keyword: '', ingredients}) as RecipeData
 const recipes = [recipe('회중시계 : 타입 L', ['은빛 시계 케이스', '에칭 시계침']), recipe('회중시계 : 타입 E', ['은빛 시계 케이스', '녹슨 시계침']),
   recipe('회중시계 : 타입 Y', ['빛바랜 시계 케이스', '에칭 시계침']), recipe('회중시계 : 타입 P', ['빛바랜 시계 케이스', '녹슨 시계침']),
   recipe('탁마', ['부서진 칼날', '낡은 칼자루'])]

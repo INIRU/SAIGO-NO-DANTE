@@ -19,7 +19,7 @@ const GRADES = ['ZAYIN', 'ZAYIN', 'TETH', 'TETH', 'HE', 'HE', 'WAW', 'ALEPH']
 
 export const EGOS: EGO[] = SINNERS.flatMap((sinner, s) => GRADES.map((grade, k) => ({
   id: `e-${s + 1}-${k + 1}`, sinner_id: sinner.id, name: `EGO ${s + 1}-${k + 1}`, name_kr: `에고 ${s + 1}-${k + 1}`, grade,
-  sin_affinity: null, description: null, corrosion_risk: null, folder_name: null, image_url: null, passive_name: null,
+  sin_affinity: null, description: null, folder_name: null, image_url: null, passive_name: null,
   passive_content: null, ego_skills: null, game_id: `2${pad2(s + 1)}${pad2(k + 1)}`,
 }) as unknown as EGO))
 

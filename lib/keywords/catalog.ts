@@ -12,6 +12,8 @@ export type KeywordInfo = {
   nameJp?: string | null
   descEn?: string | null
   descJp?: string | null
+  /** keyword_meta.game_id: the game's own id of the keyword (limbus.game_text_refs.id), e.g. 'Combustion' for 화상. */
+  gameId?: string | null
 }
 
 export function resolveKeywordIconUrl(keyword: string, iconSlug?: string | null): string | null {
@@ -64,9 +66,16 @@ function buildLocalizedIndex(keywords: KeywordCatalog, locale: string) {
     map[krName] = krName
     list.push(krName)
   }
-  // Internal game-data tag aliases → KR keyword names
-  // EN effect descriptions use these internal tags (e.g. [Vibration])
-  // but keyword_meta stores display names (e.g. "Tremor")
+  // Internal game-data tags → KR keyword names. EN effect descriptions use the game's ids (e.g. [Vibration]) but keyword_meta
+  // stores display names. The ids are keyword_meta.game_id; TAG_ALIASES below only covers keywords whose game_id is still
+  // empty (all of its 95 entries are ids of the game's BattleKeywords whose Korean name equals the value) and can lose
+  // each entry once the keyword has its game_id.
+  for (const [krName, info] of Object.entries(keywords)) {
+    if (info.gameId && !map[info.gameId]) {
+      map[info.gameId] = krName
+      list.push(info.gameId)
+    }
+  }
   const TAG_ALIASES: Record<string, string> = {
     'Aggro': '도발치',
     'Agility': '신속',

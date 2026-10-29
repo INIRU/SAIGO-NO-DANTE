@@ -138,7 +138,8 @@ export default async function LangLayout({
   // The names of `[Id]` references in game text go along with the page so the first paint is final (no raw ids swapping later).
   const [messages, keywords, refNames, t] = await Promise.all([
     getMessages({ locale: validLang }),
-    getKeywordCatalog(),
+    // A failed read is not cached; this page then draws without keyword icons.
+    getKeywordCatalog().catch(() => ({})),
     getGameTextRefNamesOrNull(validLang),
     getTranslations({ locale: validLang }),
   ])

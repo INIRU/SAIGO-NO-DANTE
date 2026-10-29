@@ -112,7 +112,7 @@ export default function IdentityDetailClient({
             {getLocalizedName({ name_kr: sinner.name_kr, name_en: sinner.name, name_jp: sinner.name_jp }, lang)}
           </Link>
           <span aria-hidden style={{ color: '#4a3d2c' }}>›</span>
-          <span style={{ color: 'var(--gold)' }}>{getLocalizedName(identity, lang) || identity.name}</span>
+          <span style={{ color: 'var(--gold)' }}>{getLocalizedName(identity, lang)}</span>
         </m.div>
 
         <m.div

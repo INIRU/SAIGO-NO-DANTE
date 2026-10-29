@@ -1,4 +1,5 @@
 import { publicSupabase } from '@/lib/supabase/public'
+import { SKILL_BUILDER_COLUMNS, PASSIVE_BUILDER_COLUMNS } from '@/lib/db/columns'
 import type { Sinner, Identity, IdentityWithSinner, Skill, Passive, EGO, EGOWithSinner, EgoGiftNote, SinType, SanityCondition, PanicType } from '@/lib/types'
 import type { IdentityBrowserItem, EGOBrowserItem } from '@/lib/types/browser'
 import { splitEgoSkillDescription } from '@/lib/identity/skill-description'
@@ -38,7 +39,7 @@ export async function getSinnerById(id: string): Promise<Sinner | null> {
 export async function getIdentities(sinnerId?: string): Promise<Identity[]> {
   let q = supabase().schema('limbus').from('identities').select('*')
   if (sinnerId) q = q.eq('sinner_id', sinnerId)
-  const { data, error } = await q.order('rarity').order('name')
+  const { data, error } = await q.order('rarity').order('name_kr')
   if (error) throw error
   return data ?? []
 }
@@ -115,7 +116,7 @@ export async function getAllSkills(): Promise<Skill[]> {
   return readAllMetaRows<Skill>((from, to) => supabase()
     .schema('limbus')
     .from('skills')
-    .select('*')
+    .select(SKILL_BUILDER_COLUMNS)
     .order('skill_order')
     .order('variant_order')
     .order('id')
@@ -140,7 +141,7 @@ export async function getAllPassives(): Promise<Passive[]> {
   return readAllMetaRows<Passive>((from, to) => supabase()
     .schema('limbus')
     .from('passives')
-    .select('*')
+    .select(PASSIVE_BUILDER_COLUMNS)
     .order('passive_order')
     .order('id')
     .range(from, to), 1000)
@@ -198,7 +199,7 @@ export async function getLatestEGOs(limit = 6): Promise<EGOWithSinner[]> {
 export async function getEGOs(sinnerId?: string): Promise<EGO[]> {
   let q = supabase().schema('limbus').from('ego').select('*, stage_levels:ego_skills(construe_level)')
   if (sinnerId) q = q.eq('sinner_id', sinnerId)
-  const { data, error } = await q.order('grade').order('name')
+  const { data, error } = await q.order('grade').order('name_kr')
   if (error) throw error
   return (data ?? []).map(withEgoStage) as EGO[]
 }
@@ -236,6 +237,8 @@ export async function getEGOById(id: string): Promise<EGO | null> {
         [`coin3Effect_${suffix}`]: coinEffects[2] || null,
         [`coin4Effect_${suffix}`]: coinEffects[3] || null,
         [`coin5Effect_${suffix}`]: coinEffects[4] || null,
+        // Every coin, however many the skill has: the five fields above stay for readers that still use them.
+        [`coinEffects_${suffix}`]: coinEffects,
       }
     }
 
@@ -261,6 +264,7 @@ export async function getEGOById(id: string): Promise<EGO | null> {
         coin3Effect: (krParsed.coin3Effect_kr as string) || '',
         coin4Effect: (krParsed.coin4Effect_kr as string) || '',
         coin5Effect: (krParsed.coin5Effect_kr as string) || '',
+        coinEffects: (krParsed.coinEffects_kr as string[] | undefined) ?? [],
         name_en: (s.name_en as string) || null,
         name_jp: (s.name_jp as string) || null,
         ...parseDescription(s.description_en as string, 'en'),
@@ -286,9 +290,9 @@ export async function getAllIdentitiesForBrowser(): Promise<IdentityBrowserItem[
     supabase()
       .schema('limbus')
       .from('identities')
-      .select('id, sinner_id, name, name_kr, name_en, name_jp, rarity, sin_affinity, keywords, skill_keyword_list, folder_name, game_id, hp, speed_min, speed_max, def_level, acquisition_info, sinner:sinners(id, name_kr, order_num)')
+      .select('id, sinner_id, name_kr, name_en, name_jp, rarity, sin_affinity, keywords, skill_keyword_list, folder_name, game_id, hp, speed_min, speed_max, def_level, acquisition_info, sinner:sinners(id, name_kr, order_num)')
       .order('rarity', { ascending: false })
-      .order('name'),
+      .order('name_kr'),
     supabase()
       .schema('limbus')
       .from('skills')
@@ -322,7 +326,7 @@ export async function getAllIdentitiesForBrowser(): Promise<IdentityBrowserItem[
     return {
       id: id.id,
       sinner_id: id.sinner_id,
-      name: id.name,
+      name: id.name_kr,
       name_kr: id.name_kr,
       name_en: id.name_en,
       name_jp: id.name_jp,
@@ -353,9 +357,9 @@ export async function getAllEGOsForBrowser(): Promise<EGOBrowserItem[]> {
   const { data, error } = await supabase()
     .schema('limbus')
     .from('ego')
-    .select('id, sinner_id, name, name_kr, name_en, name_jp, grade, sin_affinity, keywords, folder_name, image_url, game_id, stage_levels:ego_skills(construe_level), sinner:sinners(id, name_kr, order_num)')
+    .select('id, sinner_id, name_kr, name_en, name_jp, grade, sin_affinity, keywords, folder_name, image_url, game_id, stage_levels:ego_skills(construe_level), sinner:sinners(id, name_kr, order_num)')
     .order('grade')
-    .order('name')
+    .order('name_kr')
   if (error) throw error
 
   return (data ?? []).map(e => {
@@ -363,7 +367,7 @@ export async function getAllEGOsForBrowser(): Promise<EGOBrowserItem[]> {
     return {
       id: e.id,
       sinner_id: e.sinner_id,
-      name: e.name,
+      name: e.name_kr,
       name_kr: e.name_kr,
       name_en: e.name_en,
       name_jp: e.name_jp,

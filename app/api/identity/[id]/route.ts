@@ -17,13 +17,13 @@ async function getIdentityDetail(id: string): Promise<IdentityDetail | null> {
     supabase
       .schema('limbus')
       .from('identities')
-      .select('id, sinner_id, name, name_kr, name_en, name_jp, tier, rarity, sin_affinity, hp, base_hp, hp_per_level, speed_min, speed_max, def_level, keywords, slash_res, pierce_res, blunt_res, break_section, game_id, folder_name')
+      .select('id, sinner_id, name_kr, name_en, name_jp, tier, rarity, sin_affinity, hp, base_hp, hp_per_level, speed_min, speed_max, def_level, keywords, slash_res, pierce_res, blunt_res, break_section, game_id, folder_name')
       .eq('id', id)
       .maybeSingle(),
     supabase
       .schema('limbus')
       .from('skills')
-      .select('id, identity_id, name, name_en, name_jp, skill_type, atk_type, sin_affinity, coins, base_power, coin_power, description, description_en, description_jp, flavor, flavor_en, flavor_jp, skill_order, image_id, atk_weight, offense_level, uptie_level, variant_order')
+      .select('id, identity_id, name, name_en, name_jp, skill_type, atk_type, sin_affinity, coins, base_power, coin_power, coin_list, description, description_en, description_jp, flavor, flavor_en, flavor_jp, skill_order, image_id, atk_weight, offense_level, uptie_level, variant_order')
       .eq('identity_id', id)
       .order('skill_order')
       .order('variant_order'),

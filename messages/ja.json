@@ -42,6 +42,7 @@
       "experience": "経験値計算機",
       "lunacy": "月間狂気計算機",
       "damage": "ダメージ計算機",
+      "clash": "合（クラッシュ）計算機",
       "developers": "開発者ツール"
     },
     "support": "お問い合わせ"
@@ -569,22 +570,21 @@
     "conditionSkill": "{skill} {count}人以上",
     "conditionUnmet": "条件未達",
     "conditionWarn": "条件注意",
-    "unmetHint": "編成と待機人格を合わせても不足しています。",
-    "warnHint": "編成(1〜7)だけでは不足ですが、待機人格を含めると満たします。",
     "recipe": "合成レシピ",
     "recipeFragments": "破片から2種",
     "finalSynthesis": "最終合成",
     "themes": "入手できるテーマパック",
     "exclusive": "専用",
     "clearReward": "クリア報酬",
-    "acquisition": "獲得方法",
-    "related": "関連",
     "synthesis": "合成",
     "hard": "ハード",
     "extreme": "エクストリーム",
     "back": "{gift}に戻る",
     "showAllThemes": "テーマパック{count}個をすべて表示",
-    "allThemes": "すべてのテーマパック"
+    "allThemes": "すべてのテーマパック",
+    "scopeDeployed": "待機人員を除く",
+    "scopeFormation": "編成人員を含む",
+    "tierSteps": "{steps}人の段階"
   },
   "themePackDetail": {
     "clearReward": "クリア報酬",
@@ -1399,7 +1399,9 @@
         "unmetTitle": "条件未達: {text}",
         "warnTitle": "条件注意: {text}",
         "formation": "編成 {have}/{need}",
-        "withBench": "待機込み {have}/{need}"
+        "withBench": "待機込み {have}/{need}",
+        "tier": "{reached}/{total}段階",
+        "partial": "一部の効果のみ条件"
       },
       "keywords": {
         "all": "全て",
@@ -2310,7 +2312,7 @@
       "2": "混乱+",
       "3": "混乱++"
     },
-    "staggerFixed": "混乱中は物理耐性が×{value}に固定されます。",
+    "staggerFixed": "混乱中は物理耐性が×{value}になり、耐性弱化が加算されます。",
     "observation": "観測レベル",
     "observationHelp": "ゲームで適用されないという報告があるため、初期値は0です。",
     "modifiers": "補正",
@@ -2342,12 +2344,12 @@
     "resistFactor": "耐性・レベル",
     "finalMultiplier": "最終倍率",
     "formula": "計算方法",
-    "formulaBody": "威力 × (1 + ダメージ量増減) × (1 + 物理耐性 + 罪悪耐性 + レベル補正 + クリティカル20% + マッチ回数 × 3% + 観測レベル × 3%)。小数点以下は切り捨て、最小値は1です。",
-    "formulaResist": "物理耐性はスキルの攻撃タイプ（斬撃・貫通・打撃）に対する耐性です。×2は+100%として加わり、普通（×1）より低い場合は減少分の半分だけ適用されるため、×0.5は−25%です。",
+    "formulaBody": "威力 × (1 + ダメージ量増減) × (1 + 物理耐性 + 罪悪耐性 + レベル補正 + クリティカル + マッチ回数 × 3% + 観測レベル × 3%) + 固定ダメージ加算 × (1 + 物理耐性 + 罪悪耐性 + レベル補正) + 体力ダメージ加算。小数点以下は切り捨て、最小ダメージは威力の5%(切り捨て)と1の大きい方です。",
+    "formulaResist": "物理耐性はスキルの攻撃タイプ（斬撃・貫通・打撃）に対する耐性です。×2は+100%として加わり、普通（×1）より低い場合は減少分の半分だけ適用されるため×0.5は−25%、0より低い場合は−50%です。混乱中でなければ物理耐性は−2〜2、罪悪耐性は0〜2に収めます。",
     "formulaLevel": "レベル補正は（攻撃レベル − 防御レベル）÷（二つのレベルの差 + 25）です。差は常に正の数で数えます。",
-    "formulaNote": "コミュニティが分析した式による予測値で、実際のダメージと異なる場合があります。火傷・出血などの効果ダメージ、一部スキルの特殊なダメージ量増加、罪悪共鳴の補正は計算しません。",
+    "formulaNote": "ゲームの値に基づく計算です。火傷・出血などの効果ダメージ、一部スキルの特殊なダメージ量増加、罪悪共鳴の補正は計算しません。観測レベルは幻想体を攻撃するときだけ加わります。",
     "full": "補正は{max}個まで追加できます。",
-    "formulaFinal": "最終倍率は、上の計算を終えて小数点以下を切り捨てた値に掛けます。耐性弱化のように耐性の値を変える補正は、先に耐性へ加えます。",
+    "formulaFinal": "クリティカルは（20% + クリティカルダメージ加算）×（1 + クリティカル倍率パッシブ）です。最終倍率は、上の計算を終えて小数点以下を切り捨てた値に掛けます。耐性弱化のように耐性の値を変える補正は、先に耐性へ加えます。",
     "picker": {
       "search": "名前で検索",
       "group": {
@@ -2368,8 +2370,89 @@
       "noResults": "検索結果がありません。",
       "delete": "削除",
       "effect": "効果",
-      "value": "適用する数値"
-    }
+      "value": "適用する数値",
+      "notCalculated": "計算対象外",
+      "unsupported": "このキーワードには計算に入れていない効果がさらに{count}件あります。",
+      "effectLine": "{target} {value}{per}{only}",
+      "perStackShort": "（1スタックごと）",
+      "onlyFor": " · {name}スキルのみ",
+      "effectTarget": {
+        "damage": "与ダメージ",
+        "takeDamage": "被ダメージ",
+        "power": "威力",
+        "coin_power": "コイン威力",
+        "physical": "物理耐性",
+        "sin": "罪耐性"
+      }
+    },
+    "skillSin": "スキルの罪",
+    "skillAtk": "スキルの攻撃タイプ",
+    "skillNone": "選択しない",
+    "skillSinOption": {
+      "CRIMSON": "憤怒",
+      "SCARLET": "色欲",
+      "AMBER": "怠惰",
+      "SHAMROCK": "暴食",
+      "AZURE": "憂鬱",
+      "INDIGO": "傲慢",
+      "VIOLET": "嫉妬"
+    },
+    "skillAtkOption": {
+      "SLASH": "斬撃",
+      "PENETRATE": "貫通",
+      "HIT": "打撃"
+    },
+    "coinLess": "コインを1枚減らす",
+    "coinMore": "コインを1枚増やす",
+    "coinTitle": "コイン",
+    "critAdder": "クリティカルダメージ加算 (%)",
+    "critPassive": "クリティカル倍率パッシブ (%)",
+    "damageAdder": "固定ダメージ加算",
+    "hpAdder": "体力ダメージ加算"
+  },
+  "clash": {
+    "title": "合（クラッシュ）計算機",
+    "subtitle": "両者のスキルのコインと正気度から、勝率・交換回数・残るコインを計算します。",
+    "reset": "リセット",
+    "sideA": "自分側",
+    "sideB": "敵",
+    "result": "結果",
+    "basePower": "基礎威力",
+    "sanity": "正気度",
+    "coins": "コイン",
+    "coin": "コイン{index}",
+    "coinValue": "コイン{index}の値",
+    "operatorOption": {
+      "ADD": "+ 加算",
+      "SUB": "− 減算",
+      "MUL": "× 乗算"
+    },
+    "adders": "加算",
+    "probabilityAdder": "表の確率加算 (%p)",
+    "powerAdder": "威力加算",
+    "coinPowerAdder": "コイン威力加算",
+    "clashAdder": "合計補正加算",
+    "headsA": "自分側の表の確率",
+    "headsB": "敵の表確率",
+    "meanRounds": "平均交換回数",
+    "unresolved": "{max}回以内に終わらない",
+    "rounds": "交換回数",
+    "roundLabel": "{count}回",
+    "restRounds": "その他",
+    "toDamage": "ダメージ計算機へ",
+    "left": "残るコイン",
+    "leftCoins": "{count}枚",
+    "limitNote": "表確率{min}%〜{max}%の上下限と、攻撃レベル差{gap}ごとのマッチ威力+1は推定です。",
+    "rules": "計算方法",
+    "rulesHeads": "表の確率は50%に、正気度1ごとに1%、加算を足したものです。正気度は−45〜45です。",
+    "rulesCoins": "コインは順に振り、表ならそのコインの演算（加算・減算）を適用します。値は0を下回りません。開始値は基礎威力です。",
+    "rulesExchange": "交換のたびに残りのコインをすべて振り直し、合計補正を足して大きい方が勝ちます。負けた側は先頭のコインを1枚失い、同点なら誰も失いません。どちらかのコインがなくなるか99回交換すると終わります。 攻撃レベルが高い側は、レベル差3ごとに各交換の合計に1を加えます。",
+    "rulesDamage": "交換1回ごとに、続くスキルのダメージが3%増えます。交換回数の横のリンクからダメージ計算機へ渡せます。",
+    "coinCount": "コイン数",
+    "coinLess": "コインを1枚減らす",
+    "coinMore": "コインを1枚増やす",
+    "offenseLevel": "攻撃レベル",
+    "subCoinPowerAdder": "マイナスコイン威力加算"
   },
   "mirrorDungeonPage": {
     "intro": "階層を下りながら出会うE.G.Oギフト、テーマパック、選択肢をまとめて探せます。",
@@ -2860,5 +2943,14 @@
     "scoreFont": "S-Coreフォントライセンス",
     "dafontFree": "100%フリー(DaFont)",
     "authorFree": "作者許諾による無料使用"
+  },
+  "toolSkill": {
+    "pickIdentity": "人格を読み込む",
+    "pickEgo": "E.G.Oを読み込む",
+    "change": "変更",
+    "clear": "クリア",
+    "skills": "スキル",
+    "corrosion": "侵蝕",
+    "loadError": "スキルを読み込めませんでした。再試行"
   }
 }

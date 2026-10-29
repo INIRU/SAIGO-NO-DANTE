@@ -5,6 +5,7 @@ import { getIdentities } from '@/lib/db/queries'
 import { getLocalizedName } from '@/lib/i18n/localize'
 import { readAllMetaRows } from '@/lib/meta/pagination'
 import { getGameTextRefNamesOrNull } from '@/lib/db/game-text-refs'
+import { skillSlot } from '@/lib/identity/skill-model'
 import type { SupportedLang } from '@/lib/i18n/types'
 import { MOTION_INDEX_URL, motionCatalogFrom, type MotionEntry, type MotionSinner, type MotionSiteData, type MotionSkillFrame } from '@/lib/motion/catalog'
 
@@ -41,7 +42,7 @@ async function loadSkillData(lang: SupportedLang): Promise<{ names: Map<number, 
   const frames = new Map<number, MotionSkillFrame>()
   for (const [id, row] of best) {
     const attack = row.atk_type === 'slash' || row.atk_type === 'pierce' || row.atk_type === 'blunt' ? row.atk_type : null
-    frames.set(id, { sin: row.sin_affinity ?? 'neutral', slot: row.skill_order >= 5 ? 3 : row.skill_order, attack })
+    frames.set(id, { sin: row.sin_affinity ?? 'neutral', slot: skillSlot(row), attack })
   }
   return { names, frames }
 }

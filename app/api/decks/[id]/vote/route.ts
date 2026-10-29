@@ -157,7 +157,7 @@ export async function POST(
     }
 
     revalidatePath(`/decks/${id}`)
-    revalidateTag(CACHE_TAGS.decksList, 'max')
+    // Only this deck's pages: the lists that show its count have minutes-long lifetimes of their own.
     revalidateTag(CACHE_TAGS.deck(id), 'max')
     return NextResponse.json({ voted })
   } catch (err: unknown) {

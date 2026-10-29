@@ -209,7 +209,7 @@ export function runFrameTask(task: FrameTask, now = performance.now()): boolean 
 }
 
 export function useAssistCapture({ giftReferences = [], eventReferences = [], ocrCatalog, themeCatalog, language = 'ko', floor = null,
-  mode = 'balanced', detection = DEFAULT_DETECTION, resolvePopup, completeFusion, samples = false, heldGiftIds = [] }: {
+  mode = 'balanced', detection = DEFAULT_DETECTION, resolvePopup, completeFusion, samples = false, heldGiftIds = [], giftPrice }: {
   giftReferences?: VisualReference[]
   eventReferences?: VisualReference[]
   ocrCatalog?: OcrCatalog
@@ -220,6 +220,8 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
   mode?: RecognitionMode
   /** Screens to read; a switched-off kind does no reading work at all. Read live, no rebuild. */
   detection?: DetectionSettings
+  /** A gift's price by its id: a sale whose read price does not fit it (half to the whole price) is not taken. */
+  giftPrice?: (giftId: string) => number | null | undefined
   /**
    * Final say on a popup with its header read: its candidate gift ids and the fusion's materials read so far, the
    * recognizer's own verdict (null when it abstained) and whether the fusion screen is up; returns the gift or null.
@@ -326,6 +328,8 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
   references.current = { giftReferences, eventReferences }
   const ocrReferences = useRef(ocrCatalog)
   ocrReferences.current = ocrCatalog
+  const giftPriceRef = useRef(giftPrice)
+  giftPriceRef.current = giftPrice
   const themeReferences = useRef(themeCatalog)
   themeReferences.current = themeCatalog
   const currentFloor = useRef(floor)
@@ -804,6 +808,10 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
         return dialog && dialog.firstAt <= capturedAt && capturedAt - dialog.lastSeenAt <= 4000
           ? fusionMaterials(dialog.reads, dialog.count, dialog.capacity) : []
       }
+      const popupDialogCount = (capturedAt: number) => {
+        const dialog = fusionDialog.current
+        return dialog && dialog.firstAt <= capturedAt && capturedAt - dialog.lastSeenAt <= 4000 ? dialog.count : undefined
+      }
       const finishPopup = (requestId: number) => {
         const pending = popupPending.current.get(requestId)
         if (!pending?.ocr || !pending.icon) return
@@ -840,7 +848,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
         const giftId = resolve && popupHeaderEvidence(header)
           ? resolve({ ...popupCandidateIds({ header, labels: merged.labels, iconGiftIds: icons, effectGiftIds: effects,
             lexiconGiftIds: inFusion ? [...new Set(merged.lexicon)] : [], gifts: catalog.gifts }),
-            materials: popupDialogMaterials(pending.capturedAt) }, verdict, inFusion)
+            materials: popupDialogMaterials(pending.capturedAt), materialCount: popupDialogCount(pending.capturedAt) }, verdict, inFusion)
           : verdict
         if (!giftId) {
           // Every frame of a real gift popup read and none named the gift: a hard case worth a sample. Only with the
@@ -1801,7 +1809,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
     const cost = capture.width && capture.height ? sellCost(words, Math.round(capture.width * scale), Math.round(capture.height * scale)) : []
     if (isSellWindow(text)) sellWindowAt.current = capture.at
     const step = readSaleStep(saleState.current, { at: capture.at, text, cost,
-      giftId: name => ocrReferences.current ? sellGiftId(name, ocrReferences.current.gifts) : null })
+      giftId: name => ocrReferences.current ? sellGiftId(name, ocrReferences.current.gifts) : null, giftPrice: id => giftPriceRef.current?.(id) })
     saleState.current = step.state
     // One sale is one sample group: settled by a sale, uploaded when its dialog could not be read.
     if (step.state.dialog || isSellWindow(text)) sampleRecorder.current?.begin('sale')

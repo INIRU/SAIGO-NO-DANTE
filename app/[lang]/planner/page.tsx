@@ -6,6 +6,7 @@ import { pageMetadata } from '@/lib/seo/metadata'
 import { Suspense } from 'react'
 import { cacheLife, cacheTag } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { GIFT_COLUMNS, RECIPE_COLUMNS, MD_EVENT_COLUMNS, MD_EVENT_CHOICE_COLUMNS } from '@/lib/db/columns'
 import { readAllRows } from '@/lib/meta/pagination'
 import { getTranslations } from 'next-intl/server'
 import PlannerClient from './PlannerClient'
@@ -38,8 +39,8 @@ async function fetchPlannerStaticData() {
   // 그룹 1: 거울 던전 데이터
   const [{ data: themes, error: themesError }, { data: gifts, error: giftsError }, { data: recipes, error: recipesError }, { data: observationRow, error: observationError }] = await Promise.all([
     supabase.schema('limbus').from('ego_gift_themes').select('id, name, name_en, name_jp, ego_gift_ids, specific_ego_gift_ids, fixed_reward_gift_ids, image_url, difficulty, floor_info, name_color, name_segments'),
-    supabase.schema('limbus').from('ego_gifts').select('*').order('keyword').order('grade'),
-    supabase.schema('limbus').from('ego_gift_recipes').select('*'),
+    supabase.schema('limbus').from('ego_gifts').select(GIFT_COLUMNS).order('keyword').order('grade'),
+    supabase.schema('limbus').from('ego_gift_recipes').select(RECIPE_COLUMNS),
     supabase.schema('limbus').from('md_observation').select(OBSERVATION_COLUMNS).order('mirror_dungeon_id', { ascending: false }).limit(1).maybeSingle<ObservationRow>(),
   ])
   if (observationError) Sentry.captureException(observationError, { tags: { location: 'planner/page:fetchPlannerStaticData' }, extra: { msg: 'Failed to fetch md_observation' } })
@@ -61,7 +62,7 @@ async function fetchPlannerStaticData() {
   if (skillsError) Sentry.captureException(skillsError, { tags: { location: 'planner/page:fetchPlannerStaticData' }, extra: { msg: 'Failed to fetch skills' } })
 
   // 그룹 3: EGO
-  const { data: egos, error: egosError } = await supabase.schema('limbus').from('ego').select('id, sinner_id, name, name_kr, name_en, name_jp, grade, sin_affinity, image_url, cost, game_id, stage_levels:ego_skills(construe_level)')
+  const { data: egos, error: egosError } = await supabase.schema('limbus').from('ego').select('id, sinner_id, name_kr, name_en, name_jp, grade, sin_affinity, image_url, cost, game_id, stage_levels:ego_skills(construe_level)')
   if (egosError) Sentry.captureException(egosError, { tags: { location: 'planner/page:fetchPlannerStaticData' }, extra: { msg: 'Failed to fetch egos' } })
 
   return { themes, gifts, recipes, identities, sinners, passives, skills, egos: egos?.map(withEgoStage), observation: observationFrom(observationRow) }

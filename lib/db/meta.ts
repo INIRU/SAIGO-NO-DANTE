@@ -19,15 +19,13 @@ export async function getMetaCatalog() {
   cacheLife('page-1h')
   cacheTag(CACHE_TAGS.gameData, CACHE_TAGS.meta, CACHE_TAGS.keywords)
   const db = publicClient()
-  const [identities, egos, keywords] = await Promise.all([
+  const [identities, egos] = await Promise.all([
     readAllMetaRows<MetaIdentity>((from, to) => db.from('identities')
       .select('id, sinner_id, name_kr, name_en, name_jp, keywords, skill_keyword_list, rarity, folder_name, game_id').order('id').range(from, to)),
     readAllMetaRows<MetaEGO>((from, to) => db.from('ego')
       .select('id, sinner_id, name_kr, name_en, name_jp, grade, sin_affinity, image_url, game_id').order('id').range(from, to)),
-    readAllMetaRows<{ name: string; sin_affinity: string | null }>((from, to) => db.from('keyword_meta')
-      .select('name, sin_affinity').order('name').range(from, to)),
   ])
-  return { identities, egos, keywords }
+  return { identities, egos }
 }
 
 type Reception = { vote_count: number | null; view_count: number | null; comment_count: number | null }
@@ -63,13 +61,13 @@ async function getSourcePosts(source: Exclude<MetaSource, 'all'>, period: MetaPe
 
 type SkillRow = { identity_id: string; skill_order: number; uptie_level: number | null; variant_order: number | null; name: string; name_en: string | null; name_jp: string | null; sin_affinity: string | null; image_id: string | null }
 
-/** S1–S3 of every identity at its highest uptie (the first variant), for the skill exchange icons. */
+/** S1–S3 of every identity at its highest uptie (the first variant), for the skill exchange icons. Read from skills_max_uptie: 876 rows instead of all 3,001. */
 async function getSkillCatalog(): Promise<Record<string, MetaSkill[]>> {
   'use cache'
   cacheLife('page-1h')
   cacheTag(CACHE_TAGS.gameData, CACHE_TAGS.meta)
   const db = publicClient()
-  const rows = await readAllMetaRows<SkillRow>((from, to) => db.from('skills')
+  const rows = await readAllMetaRows<SkillRow>((from, to) => db.from('skills_max_uptie')
     .select('identity_id, skill_order, uptie_level, variant_order, name, name_en, name_jp, sin_affinity, image_id')
     .in('skill_order', [1, 2, 3])
     .order('identity_id').order('skill_order').order('uptie_level', { ascending: false }).order('variant_order').order('id').range(from, to))
@@ -109,8 +107,8 @@ async function buildMetaData(source: MetaSource, period: MetaPeriod, filters: Me
     source === 'planner' ? Promise.resolve([]) : getSourcePosts('decks', period),
     source === 'decks' ? Promise.resolve([]) : getSourcePosts('planner', period),
   ])
+  // keyword_meta has no sin column (it never held a value), so no keyword maps to a sin here.
   const keywordSinMap: Record<string, string> = {}
-  for (const keyword of catalog.keywords) if (keyword.sin_affinity) keywordSinMap[keyword.name] = keyword.sin_affinity
   const data = aggregateMeta({ posts: [...decks, ...plans], identities: catalog.identities, egos: catalog.egos, keywordSinMap, source, period, filters, now: Date.now() })
   const summaries = [data.planStats, ...Object.values(data.identityInsights).flatMap(insight => insight.plan ? [insight.plan] : [])]
   const { dungeon } = data
@@ -179,16 +177,16 @@ export async function getRecCatalog(): Promise<RecCatalog> {
       .select('id, sinner_id, name_kr, rarity, release_date, keywords, skill_keyword_list, association_list, affiliation').order('id').range(from, to)),
     readAllMetaRows<RawCatalog['egos'][number]>((from, to) => db.from('ego')
       .select('id, sinner_id, grade, sin_affinity, keywords, release_date, cost').order('id').range(from, to)),
-    readAllMetaRows<RecSkillRow>((from, to) => db.from('skills')
+    readAllMetaRows<RecSkillRow>((from, to) => db.from('skills_max_uptie')
       .select('identity_id, skill_order, sin_affinity, description, uptie_level, variant_order').in('skill_order', [1, 2, 3])
       .order('identity_id').order('skill_order').order('uptie_level', { ascending: false }).order('variant_order').order('id').range(from, to)),
-    readAllMetaRows<RecPassiveRow>((from, to) => db.from('passives')
+    readAllMetaRows<RecPassiveRow>((from, to) => db.from('passives_max_uptie')
       .select('identity_id, passive_type, passive_order, sin_affinity, sin_count, active_cond, sin_requirements, description, uptie_level')
       .order('identity_id').order('passive_type').order('passive_order').order('uptie_level', { ascending: false }).order('id').range(from, to)),
     readAllMetaRows<RawCatalog['gifts'][number]>((from, to) => db.from('ego_gifts').select('game_id, keyword, grade').order('game_id').range(from, to)),
     readAllMetaRows<RawCatalog['themes'][number]>((from, to) => db.from('ego_gift_themes').select('id, difficulty, ego_gift_ids, specific_ego_gift_ids, floor_info').order('id').range(from, to)),
   ])
-  // The catalog shows the highest uptie of the base variant: the first row of each skill / passive slot.
+  // The catalog shows the highest uptie of the base variant: the views already keep only each slot's highest uptie, the first row of each slot is its base variant.
   const first = <T extends { identity_id: string }>(rows: T[], key: (row: T) => string) => {
     const seen = new Set<string>()
     return rows.filter(row => { const k = `${row.identity_id}:${key(row)}`; if (seen.has(k)) return false; seen.add(k); return true })

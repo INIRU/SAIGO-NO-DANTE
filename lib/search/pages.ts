@@ -29,6 +29,7 @@ const ALIASES: Record<string, string[]> = {
   '/tools/experience': ['경험치', '레벨', 'EXP'],
   '/tools/lunacy': ['광기', '월정액', 'Lunacy'],
   '/tools/damage': ['딜', '데미지', 'DPS', 'Damage'],
+  '/tools/clash': ['합', '승률', '코인', 'Clash', '合'],
   '/developers': ['API', '개발자'],
   '/motion/skills': ['모션', '스킬 영상', 'Motion'],
   '/random': ['랜덤', 'Random'],

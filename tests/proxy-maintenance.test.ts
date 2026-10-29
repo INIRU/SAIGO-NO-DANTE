@@ -5,7 +5,7 @@ vi.mock('next-auth/jwt', () => ({ getToken: async () => null }))
 // The locale middleware runs after the maintenance check; its ESM build does not load under vitest.
 vi.mock('next-intl/middleware', () => ({ default: () => () => new Response(null) }))
 
-afterEach(() => { vi.unstubAllGlobals(); vi.resetModules() })
+afterEach(() => { vi.unstubAllGlobals(); vi.unstubAllEnvs(); vi.resetModules() })
 
 describe('REQ-ADMIN-014 a page under maintenance sends the visitor to the maintenance screen', () => {
   it('REQ-ADMIN-014 redirects (relative to the site) instead of rewriting: the self-hosted server listens on 127.0.0.1, which Next renames localhost, so a rewrite went out as an external https proxy and failed', async () => {
@@ -20,5 +20,15 @@ describe('REQ-ADMIN-014 a page under maintenance sends the visitor to the mainte
     expect(location.searchParams.get('from')).toBe('/ko/motion/skills?skill=id10101~1010101')
     expect(location.searchParams.get('reason')).toBe('플레이어 수정')
     expect(location.searchParams.get('message')).toBe('고치는 중')
+  })
+
+  it('REQ-ADMIN-014 leaves the local development server open while the site is under maintenance (it reads the same database)', async () => {
+    vi.stubEnv('NODE_ENV', 'development')
+    const fetchMock = vi.fn(async () => Response.json([{ path: '/', reason: null, message: null, starts_at: null, ends_at: null }]))
+    vi.stubGlobal('fetch', fetchMock)
+    const { proxy } = await import('@/proxy')
+    const response = await proxy(new NextRequest('http://localhost:3300/ko/tools/clash'))
+    expect(response.headers.get('location')).toBeNull()
+    expect(fetchMock).not.toHaveBeenCalled()
   })
 })

@@ -11,6 +11,7 @@ import { notFound } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { GIFT_COLUMNS, RECIPE_COLUMNS, MD_EVENT_COLUMNS, MD_EVENT_CHOICE_COLUMNS } from '@/lib/db/columns'
 import { withPostAuthors } from '@/lib/community/post-authors'
 import { cacheLife, cacheTag } from 'next/cache'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
@@ -74,11 +75,11 @@ async function fetchPlanDetailGameData() {
   const db = createAdminClient().schema('limbus')
   const [themes, gifts, recipes, identities, sinners, egos, observation] = await Promise.all([
     db.from('ego_gift_themes').select('id, name, name_en, name_jp, ego_gift_ids, specific_ego_gift_ids, fixed_reward_gift_ids, image_url, difficulty, floor_info, name_color, name_segments'),
-    db.from('ego_gifts').select('*').order('keyword').order('grade'),
-    db.from('ego_gift_recipes').select('*'),
-    db.from('identities').select('id, sinner_id, name, name_kr, name_en, name_jp, tier, rarity, keywords, skill_keyword_list, affiliation, association_list, game_id, folder_name, hp, speed_min, speed_max, def_level, slash_res, pierce_res, blunt_res').order('rarity', { ascending: false }),
+    db.from('ego_gifts').select(GIFT_COLUMNS).order('keyword').order('grade'),
+    db.from('ego_gift_recipes').select(RECIPE_COLUMNS),
+    db.from('identities').select('id, sinner_id, name_kr, name_en, name_jp, tier, rarity, keywords, skill_keyword_list, affiliation, association_list, game_id, folder_name, hp, speed_min, speed_max, def_level, slash_res, pierce_res, blunt_res').order('rarity', { ascending: false }),
     db.from('sinners').select('id, name_kr, order_num').order('order_num'),
-    db.from('ego').select('id, sinner_id, name, name_kr, name_en, name_jp, grade, sin_affinity, image_url, cost, game_id'),
+    db.from('ego').select('id, sinner_id, name_kr, name_en, name_jp, grade, sin_affinity, image_url, cost, game_id'),
     db.from('md_observation').select(OBSERVATION_COLUMNS).order('mirror_dungeon_id', { ascending: false }).limit(1).maybeSingle<ObservationRow>(),
   ])
   for (const [name, result] of Object.entries({ themes, gifts, recipes, identities, sinners, egos, observation })) {
@@ -102,7 +103,7 @@ async function fetchPlanEvents(giftIds: number[]) {
   let pending = events.map(event => event.id)
   // 후속 이벤트 체인은 4단계까지만 따라간다(실제 데이터는 그보다 얕다)
   for (let depth = 0; pending.length && depth < 4; depth++) {
-    const next = await db.from('md_event_choices').select('*').in('event_id', pending).order('event_id').order('sort_order')
+    const next = await db.from('md_event_choices').select(MD_EVENT_CHOICE_COLUMNS).in('event_id', pending).order('event_id').order('sort_order')
     if (next.error) { console.error('Failed to fetch plan event choices:', next.error); break }
     choices.push(...next.data)
     const known = new Set(events.map(event => event.id))
@@ -143,7 +144,7 @@ export default async function PlanDetailPage({ params }: Props) {
 
   const [{ data: skills, error: skillsError }, { data: passives, error: passivesError }, planEvents] = await Promise.all([
     supabase.schema('limbus').from('skills')
-      .select('id, identity_id, image_id, name, name_en, name_jp, skill_type, atk_type, sin_affinity, coins, base_power, coin_power, skill_order, variant_order, atk_weight, offense_level, description, description_en, description_jp, uptie_level')
+      .select('id, identity_id, image_id, name, name_en, name_jp, skill_type, atk_type, sin_affinity, coins, base_power, coin_power, coin_list, skill_order, variant_order, atk_weight, offense_level, description, description_en, description_jp, uptie_level')
       .in('identity_id', memberIds)
       .gte('uptie_level', 3),
     supabase.schema('limbus').from('passives')

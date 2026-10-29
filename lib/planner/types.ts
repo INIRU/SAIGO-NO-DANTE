@@ -36,6 +36,7 @@ export interface IdentitySlot {
   skill_keyword_list?: string[] | null
   affiliation?: string | null
   association_list?: string[] | null
+  skill_condition_list?: string[] | null
   s1_count?: number | null
   s2_count?: number | null
   s3_count?: number | null
@@ -350,7 +351,17 @@ export interface GiftActivationCondition {
   keywords?: string[]
   affiliation?: string
   affiliations?: string[]
+  /** type 'skill': the skill condition's name in Korean (e.g. 혈찬 소모). */
+  skill_condition?: string
   count?: number
+  /** Stepped conditions (6/8/10/12 or more): each step's count. */
+  tiers?: { count: number }[]
+  /** Only some effects depend on the condition; the base effect is always on. */
+  partial?: boolean
+  /** Where the condition was read from: a game code constant or the effect sentence. */
+  source?: 'code' | 'text'
+  /** The head count the condition reads (the game text's bracket): the deployed seven or the whole formation. */
+  scope?: 'deployed' | 'formation' | null
 }
 
 export interface GiftData {
@@ -373,6 +384,8 @@ export interface GiftData {
   effect_plusplus_jp?: string | null
   theme_ids: number[] | null
   activation_condition: GiftActivationCondition | null
+  /** The gift's price (game ego-gift data `price`; ego_gifts.price). Absent until synced: price checks then pass. */
+  price?: number | null
 }
 
 export interface RecipeData {
@@ -380,7 +393,10 @@ export interface RecipeData {
   result_name: string
   keyword: string
   ingredients: string[]
-  final_result: string | null
+  /** Game ids of the ingredients, in the order of `ingredients` (ego_gift_recipes.ingredient_ids). Absent on older rows: names are used. */
+  ingredient_ids?: number[] | null
+  /** Game id of result_name (ego_gift_recipes.result_id). Absent on older rows: the name is used. */
+  result_id?: number | null
 }
 
 export interface IdentityData {
@@ -394,6 +410,8 @@ export interface IdentityData {
   skill_keyword_list?: string[] | null
   affiliation?: string | null
   association_list?: string[] | null
+  /** Skill conditions this identity meets (e.g. 혈찬 소모). Not synced yet: absent means unknown. */
+  skill_condition_list?: string[] | null
   game_id: string | null
   folder_name: string | null
 }
@@ -410,8 +428,7 @@ export interface EgoData {
   max_construe_level?: number
   id: string
   sinner_id: string
-  name: string
-  name_kr: string | null
+  name_kr: string
   name_en?: string | null
   name_jp?: string | null
   grade: string

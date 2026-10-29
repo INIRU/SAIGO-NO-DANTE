@@ -27,7 +27,7 @@ const report = (msg: string) => problems.push(msg)
 const [gifts, themes, recipes, events, identities, egos] = await Promise.all([
   all('ego_gifts', 'game_id,name,name_en,name_jp,convert_to,image_url'),
   all('ego_gift_themes', 'id,name,name_en,name_jp,ego_gift_ids,specific_ego_gift_ids,fixed_reward_gift_ids,image_url,boss_image_url'),
-  all('ego_gift_recipes', 'result_name,ingredients,final_result'),
+  all('ego_gift_recipes', 'result_name,ingredients'),
   all('md_events', 'id,name,name_en,name_jp,gift_ids,theme_ids,image_url'),
   all('identities', 'game_id,name_kr,name_en,name_jp,affiliation,association_list,bg_image_url'),
   all('ego', 'game_id,name_kr,name_en,name_jp,image_url,cor_image_url'),
@@ -44,7 +44,7 @@ for (const t of themes) {
 }
 for (const g of gifts) if (g.convert_to != null && !giftIds.has(g.convert_to)) report('gift ' + g.game_id + ' ' + g.name + ': convert_to ' + g.convert_to + ' is missing')
 for (const r of recipes) {
-  for (const name of [r.result_name, r.final_result, ...(r.ingredients ?? [])]) {
+  for (const name of [r.result_name, ...(r.ingredients ?? [])]) {
     if (name && !giftNames.has(name)) report('recipe ' + r.result_name + ': gift "' + name + '" is missing')
   }
 }

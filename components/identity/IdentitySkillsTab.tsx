@@ -1,9 +1,9 @@
 'use client'
 
-import { unbreakableCoinIndices, COIN_IMAGES } from '@/lib/identity/skill-description'
+import { coinPowerLabels, unbreakableCoinSet, COIN_IMAGES } from '@/lib/identity/skill-description'
 
 import Image from 'next/image'
-import { groupIdentitySkills } from '@/lib/identity/skill-model'
+import { groupIdentitySkills, skillLabel, skillSlot } from '@/lib/identity/skill-model'
 import {
   Identity,
   Skill,
@@ -119,21 +119,20 @@ export default function IdentitySkillsTab({
           const imgIdx = skillImgIdxMap[skill.id] ?? skill.skill_order
           const skillIconUrl = getSkillIconUrl(identity, imgIdx, skill)
           const v = variantMap[skill.id]
-          const baseOrder = v?.baseOrder ?? (skill.skill_order >= 5 ? 3 : skill.skill_order)
+          const baseOrder = v?.baseOrder ?? skillSlot(skill)
           const diff = skillDiffs?.get(skill.id)
           const offCorrStr = skill.offense_level != null ? offenseLevelDisplay(skill.offense_level - level + IDENTITY_STAT_BASE_LEVEL).correction : ''
           const isAttackSkill = baseOrder !== 4
           const isDefense = baseOrder === 4
-          const skillLabel = isDefense
-            ? (v && v.total > 1
-              ? `${SKILL_TYPE_LABELS[skill.skill_type] || skill.skill_type}-${v.idx}`
-              : SKILL_TYPE_LABELS[skill.skill_type] || skill.skill_type)
-            : (v && v.total > 1 ? `S${baseOrder}-${v.idx}` : `S${baseOrder}`)
+          const label = skillLabel(skill, filteredSkills, SKILL_TYPE_LABELS[skill.skill_type] || skill.skill_type)
           const atkTypeKey = skillAttackType(skill)
           const skillDescription = localSkillDesc(skill)
           const skillFlavor = localSkillFlavor(skill, locale)
 
-          const unbreakableCoins = unbreakableCoinIndices(skillDescription)
+          const unbreakableCoins = unbreakableCoinSet(skill)
+          // The game lists every coin's own value; when they differ (or an operator is not ADD), each coin shows its own.
+          const coinLabels = coinPowerLabels(skill)
+          const coinsDiffer = new Set(coinLabels).size > 1
 
           return (
             <div
@@ -161,7 +160,7 @@ export default function IdentitySkillsTab({
                     sin={skill.sin_affinity || 'neutral'}
                     skillSlot={isDefense ? 4 : baseOrder <= 3 ? baseOrder : 1}
                     sinColor={skillSinColor}
-                    label={skillLabel}
+                    label={label}
                     size="100%"
                     eager
                   />
@@ -202,11 +201,15 @@ export default function IdentitySkillsTab({
                     {Array.from({ length: skill.coins }).map((_, ci) => {
                       const isUb = unbreakableCoins.has(ci)
                       return (
-                        <Image key={ci}
-                          src={isUb ? COIN_IMAGES.unbreakable : COIN_IMAGES.normal}
-                          alt={isUb ? t('identity.skills.unbreakableCoin') : t('identity.skills.coin')} width={16} height={16}
-                          className="w-3 h-3 sm:w-4 sm:h-4"
-                        />
+                        <span key={ci} className="flex flex-col items-center">
+                          <Image
+                            src={isUb ? COIN_IMAGES.unbreakable : COIN_IMAGES.normal}
+                            alt={isUb ? t('identity.skills.unbreakableCoin') : t('identity.skills.coin')} width={16} height={16}
+                            title={coinLabels[ci]}
+                            className="w-3 h-3 sm:w-4 sm:h-4"
+                          />
+                          {coinsDiffer && <span className="text-[0.625rem] leading-none text-[var(--text-muted)]">{coinLabels[ci]}</span>}
+                        </span>
                       )
                     })}
                   </div>

@@ -17,6 +17,7 @@ import { getIdentityRecommendations } from '@/lib/discovery/identity-recommendat
 import IdentityRecommendations from '@/components/identity/IdentityRecommendations'
 import { IdentityRecommendationsSkeleton } from '@/components/deck-detail/RecommendationSkeleton'
 import { getKeywordData } from '@/lib/keywords/server-data'
+import type { KeywordInfo } from '@/lib/keywords/catalog'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import type { SupportedLang } from '@/lib/i18n/types'
 
@@ -39,7 +40,7 @@ export async function generateMetadata({
     getSinnerById(slug),
     getIdentityById(id),
     getTranslations({ locale: lang }),
-    getKeywordData(),
+    getKeywordData().catch((): Record<string, KeywordInfo> => ({})),
   ])
   if (!sinner || !identity) return { title: t('identity.notFound'), robots: { index: false } }
 

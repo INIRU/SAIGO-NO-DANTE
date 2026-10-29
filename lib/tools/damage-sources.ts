@@ -4,6 +4,7 @@
 import type { SupportedLang } from '@/lib/i18n/types'
 import type { KeywordInfo } from '@/lib/keywords/catalog'
 import { MAX_MODIFIER_OPTIONS, type SavedModifier } from './damage'
+import { effectSummary, readAbilities, readGiftModifiers, type AbilityEffect, type GiftModifier, type KeywordAbility } from './damage-abilities'
 
 // The first three are the attack types (physical resistance), the rest the sins.
 const ATTRIBUTES = ['참격', '관통', '타격', '분노', '색욕', '나태', '탐식', '우울', '오만', '질투']
@@ -120,13 +121,29 @@ export type GiftSourceRow = {
   effect_base: string | null; effect_plus: string | null; effect_plusplus: string | null
   effect_base_en: string | null; effect_plus_en: string | null; effect_plusplus_en: string | null
   effect_base_jp: string | null; effect_plus_jp: string | null; effect_plusplus_jp: string | null
+  /** ego_gifts.modifiers: the gift's damage numbers as the game holds them (null / absent: read the sentences). */
+  modifiers?: GiftModifier[] | null
 }
+
+/** The most stacks a keyword without a stated maximum is offered up to. */
+export const DEFAULT_MAX_STACKS = 99
 
 export type DamageSources = {
   /** name: the Korean keyword name (the catalog key). */
-  keywords: { name: string; label: string; text: string; values: number[]; stack: StackEffect | null; side: Side }[]
+  keywords: {
+    name: string; label: string; text: string; values: number[]; stack: StackEffect | null; side: Side
+    /** Read from the keyword's game values (keyword_meta.abilities); a keyword with these has no `stack`. */
+    effects?: AbilityEffect[]
+    /** Abilities that touch damage and are not in the interpretation table: shown as not calculated. */
+    unsupported?: number
+    maxStack?: number
+  }[]
   /** stages: one per enhancement level the gift has (0 base, 1 +, 2 ++). */
-  gifts: { id: string; name: string; label: string; grade: string | null; keyword: string | null; image_url: string | null; stages: { level: number; text: string; values: number[] }[] }[]
+  gifts: {
+    id: string; name: string; label: string; grade: string | null; keyword: string | null; image_url: string | null; stages: { level: number; text: string; values: number[] }[]
+    /** Read from ego_gifts.modifiers; when present the stage values are not used. */
+    effects?: AbilityEffect[]
+  }[]
 }
 
 const inLanguage = (lang: SupportedLang, ko: string, en?: string | null, ja?: string | null) => (lang === 'en' ? en : lang === 'ja' ? ja : null) || ko
@@ -139,15 +156,26 @@ const inLanguage = (lang: SupportedLang, ko: string, en?: string | null, ja?: st
  * - A gift counts what the attacker deals and what the enemy takes, not what allies take.
  */
 export function buildDamageSources(
-  keywords: Record<string, Pick<KeywordInfo, 'desc' | 'nameEn' | 'nameJp' | 'descEn' | 'descJp'>>,
+  keywords: Record<string, Pick<KeywordInfo, 'desc' | 'nameEn' | 'nameJp' | 'descEn' | 'descJp'> & { maxStack?: number }>,
   gifts: readonly GiftSourceRow[],
   lang: SupportedLang,
+  abilities: Readonly<Record<string, readonly KeywordAbility[]>> = {},
 ): DamageSources {
   const stackRows: (DamageSources['keywords'][number] & { rank: number })[] = []
+  const inertRows: DamageSources['keywords'] = []
   const keywordRows: DamageSources['keywords'] = []
   for (const [name, info] of Object.entries(keywords)) {
     const row = { name, label: inLanguage(lang, name, info.nameEn, info.nameJp), text: inLanguage(lang, info.desc, info.descEn, info.descJp) }
     const stack = readStack(info.desc)
+    // The game's values come first: a keyword with an ability the table knows is offered by those, per side.
+    const read = abilities[name] ? readAbilities(abilities[name]) : null
+    if (read?.effects.length) {
+      for (const side of ['self', 'target'] as const) {
+        const own = read.effects.filter(effect => effect.side === side)
+        if (own.length) stackRows.push({ ...row, values: [], stack: null, side, effects: own, unsupported: read.unsupported, maxStack: info.maxStack ?? DEFAULT_MAX_STACKS, rank: stack?.rank ?? 1000 })
+      }
+      continue
+    }
     // a stack keyword is offered as its stacks only; were a text to hold the sentence and another damage percent, that percent would go unread. No keyword does (2026-10-05); offer both rows if one appears.
     if (stack) { stackRows.push({ ...row, values: [], stack: stack.effect, side: stack.effect.side, rank: stack.rank }); continue }
     const changes = damageChanges(info.desc)
@@ -155,6 +183,7 @@ export function buildDamageSources(
       const own = changes.filter(change => change.taken === (side === 'target'))
       if (own.length) keywordRows.push({ ...row, values: valuesOf(own), stack: null, side })
     }
+    if (read?.unsupported && !changes.length) inertRows.push({ ...row, values: [], stack: null, side: 'self', effects: [], unsupported: read.unsupported })
   }
   const giftRows: DamageSources['gifts'] = []
   for (const gift of gifts) {
@@ -168,26 +197,39 @@ export function buildDamageSources(
       const changes = damageChanges(ko).filter(change => !change.taken || change.foe)
       return [{ level, text: inLanguage(lang, ko, en, ja), values: valuesOf(changes), changes: changes.length }]
     })
-    if (!stages.some(stage => stage.changes)) continue
+    const effects = readGiftModifiers(gift.modifiers)
+    if (!effects.length && !stages.some(stage => stage.changes)) continue
     giftRows.push({
+      ...(effects.length ? { effects } : {}),
       id: String(gift.game_id ?? gift.name), name: gift.name, label: inLanguage(lang, gift.name, gift.name_en, gift.name_jp),
       grade: gift.grade, keyword: gift.keyword, image_url: gift.image_url,
       stages: stages.map(({ level, text, values }) => ({ level, text, values })),
     })
   }
-  return { keywords: [...stackRows.sort((a, b) => a.rank - b.rank).map(({ rank: _, ...row }) => row), ...keywordRows], gifts: giftRows }
+  return { keywords: [...stackRows.sort((a, b) => a.rank - b.rank).map(({ rank: _, ...row }) => row), ...keywordRows, ...inertRows], gifts: giftRows }
 }
 
 type NewModifier = Omit<SavedModifier, 'id'>
 
 /** A keyword of the list as a modifier: a stack keyword starts at one stack (and its effect knows its own side), any other at the first value its text offers (0 when it offers none). */
-export function keywordModifier({ name, label, values, stack, side }: Omit<DamageSources['keywords'][number], 'text'>): NewModifier {
+export function keywordModifier({ name, label, values, stack, side, effects }: Omit<DamageSources['keywords'][number], 'text'>): NewModifier {
+  if (effects?.length) return effectsModifier(label, effects, { keyword: name, side })
   return stack
     ? { name: label, keyword: name, stacks: 1, value: stack.perStack, target: stack.target, side: stack.side }
     : { name: label, keyword: name, value: values[0] ?? 0, options: values.slice(0, MAX_MODIFIER_OPTIONS), target: 'damage', side }
 }
 
-export type DamageSuggestion = { key: string; kind: 'keyword' | 'gift'; label: string; modifier: NewModifier; /** A stack keyword's effect per stack. */ perStack?: number }
+/** A modifier that carries its game-read effects: a count (stacks) when any of them is per stack. */
+function effectsModifier(name: string, effects: AbilityEffect[], extra: Partial<NewModifier>): NewModifier {
+  const summary = effectSummary(effects, 1)
+  return { name, effects, target: summary.target, value: summary.value, ...(effects.some(effect => effect.scaled) ? { stacks: 1 } : {}), ...extra }
+}
+
+export type DamageSuggestion = {
+  key: string; kind: 'keyword' | 'gift'; label: string; modifier: NewModifier; /** A stack keyword's effect per stack. */ perStack?: number
+  /** Nothing of it can be calculated: shown, not applicable. */
+  inert?: boolean
+}
 
 export type SourceGroup = Side | 'gift'
 
@@ -206,15 +248,22 @@ export function suggestDamageSources(sources: DamageSources, query: string, { gr
   const rows: DamageSuggestion[] = []
   for (const keyword of group === 'gift' ? [] : sources.keywords) {
     if (group && keyword.side !== group) continue
-    rows.push({ key: `k:${keyword.name}:${keyword.side}`, kind: 'keyword', label: keyword.label, modifier: keywordModifier(keyword), ...(keyword.stack ? { perStack: keyword.stack.perStack } : {}) })
+    const effectsOnly = keyword.effects?.length ? effectSummary(keyword.effects, 1) : null
+    rows.push({
+      key: `k:${keyword.name}:${keyword.side}`, kind: 'keyword', label: keyword.label, modifier: keywordModifier(keyword),
+      ...(keyword.stack ? { perStack: keyword.stack.perStack } : {}),
+      // A scaled effect is offered per stack, a flat one as its value.
+      ...(effectsOnly && keyword.effects!.some(effect => effect.scaled) ? { perStack: effectsOnly.value } : {}),
+      ...(keyword.effects && !keyword.effects.length ? { inert: true } : {}),
+    })
   }
   for (const gift of group && group !== 'gift' ? [] : sources.gifts) {
-    const [stage] = gift.stages
+    const stage = gift.stages[0] ?? { level: 0, values: [] as number[] }
     const values = stage.values.slice(0, MAX_MODIFIER_OPTIONS)
-    rows.push({ key: `g:${gift.id}`, kind: 'gift', label: gift.label, modifier: {
-      name: gift.label, value: values[0] ?? 0, options: values, target: 'damage',
-      gift: { id: gift.id, level: stage.level, image_url: gift.image_url, grade: gift.grade, keyword: gift.keyword },
-    } })
+    const giftArt = { id: gift.id, level: stage.level, image_url: gift.image_url, grade: gift.grade, keyword: gift.keyword }
+    rows.push({ key: `g:${gift.id}`, kind: 'gift', label: gift.label, modifier: gift.effects?.length
+      ? effectsModifier(gift.label, gift.effects, { gift: giftArt })
+      : { name: gift.label, value: values[0] ?? 0, options: values, target: 'damage', gift: giftArt } })
   }
   if (!needle) return rows.slice(0, limit)
   const position = (row: DamageSuggestion) => row.label.toLocaleLowerCase().indexOf(needle)

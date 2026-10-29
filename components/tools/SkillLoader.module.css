@@ -1,0 +1,30 @@
+/* A calculator's skill source: two empty slots, then the picked identity or E.G.O as its art beside its skills in game frames. */
+.loader{--ease:cubic-bezier(.23,1,.32,1)}
+.slots{display:grid;grid-template-columns:1fr 1fr;gap:.5rem}
+.slot{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.4rem;height:7.25rem;border:1px dashed #5a4526;border-radius:.25rem;color:var(--gold);font:.9375rem var(--font-heading);cursor:pointer;transition:background-color .16s ease,border-color .16s ease,transform .16s var(--ease)}
+.slot span{color:var(--text-secondary)}.slot:active{transform:scale(.98)}
+@media(hover:hover) and (pointer:fine){.slot:hover{background:rgba(200,144,10,.08);border-color:var(--gold)}.slot:hover span{color:var(--text-primary)}}
+.card{display:grid;grid-template-columns:7.25rem minmax(0,1fr);gap:1rem;padding:.75rem;border:1px solid color-mix(in srgb,var(--sin) 24%,transparent);border-radius:.25rem;background:color-mix(in srgb,var(--sin) 5%,var(--bg-deep));transition:background-color .24s ease,border-color .24s ease}
+/* The game card fills the column: the identity card by its width, the fixed-size E.G.O card scaled down to it. */
+.art{display:block;align-self:start;width:100%;padding:0;cursor:pointer;transition:transform .16s var(--ease),filter .16s ease}.art[data-kind=ego]{zoom:.76}
+.art:active{transform:scale(.98)}
+@media(hover:hover) and (pointer:fine){.art:hover{filter:drop-shadow(0 .15rem .4rem rgba(200,144,10,.25)) brightness(1.06)}}
+.body{display:flex;flex-direction:column;gap:.55rem;min-width:0}
+.head{display:flex;align-items:center;gap:.25rem;min-height:2.25rem}.head>span{flex:1;color:var(--text-secondary);font:.875rem var(--font-heading)}
+.icon{flex-shrink:0;display:grid;place-items:center;width:2.25rem;height:2.25rem;border-radius:.2rem;color:var(--text-muted);cursor:pointer;transition:color .16s ease,transform .16s var(--ease)}.icon:active{transform:scale(.94)}
+@media(hover:hover) and (pointer:fine){.icon:hover{color:var(--gold-light)}}
+/* The skill strip of the motion page: a pressed frame lifts to full strength with a gold line under it. */
+.strip{display:flex;flex-wrap:wrap;align-items:flex-start;gap:.25rem;min-height:4.25rem}
+.skill{position:relative;width:3.75rem;padding:.125rem .125rem .5rem;border-radius:.375rem;cursor:pointer;transition:background-color .16s ease,transform .16s var(--ease)}
+.skill::after{content:'';position:absolute;right:.6875rem;bottom:.1875rem;left:.6875rem;height:2px;border-radius:1px;background:var(--gold-light);transform:scaleX(0);transition:transform .22s var(--ease)}
+.frame{position:relative;display:block;aspect-ratio:1;opacity:.55;transition:opacity .16s ease}
+.skill:active{transform:scale(.96)}.skill[aria-pressed=true]{background:rgba(200,144,10,.12)}.skill[aria-pressed=true] .frame{opacity:1}.skill[aria-pressed=true]::after{transform:scaleX(1)}
+@media(hover:hover) and (pointer:fine){.skill:hover .frame{opacity:.9}}
+.corrosion{position:absolute;top:0;right:0;padding:0 .2rem;border-radius:.15rem;background:#3a1612;color:#e0907a;font-size:.625rem;line-height:1.35}
+.placeholder{width:3.75rem;height:4.25rem;border-radius:.375rem;background:var(--bg-card)}
+.retry{color:var(--gold);font-size:.8125rem;text-decoration:underline;text-underline-offset:.2rem;cursor:pointer}
+.banner{min-height:1.9rem}
+.skill:focus-visible,.slot:focus-visible,.art:focus-visible,.icon:focus-visible{outline:2px solid var(--gold-light);outline-offset:2px}
+@media(max-width:760px){.card{grid-template-columns:5.75rem minmax(0,1fr);gap:.75rem;padding:.6rem}.slot{height:5.5rem}.skill{width:3.4rem}}
+@media(prefers-reduced-motion:reduce){.slot,.art,.icon,.skill,.skill::after,.frame,.card{transition:none}}
+@media(max-width:760px){.art[data-kind=ego]{zoom:.6}}

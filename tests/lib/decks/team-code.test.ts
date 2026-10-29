@@ -52,7 +52,6 @@ function makeEgo(sinnerNumber: number, localId: number, grade: string): EGO {
     grade,
     sin_affinity: null,
     description: null,
-    corrosion_risk: null,
     folder_name: null,
     image_url: null,
     passive_name: null,
@@ -62,7 +61,6 @@ function makeEgo(sinnerNumber: number, localId: number, grade: string): EGO {
     resistance: null,
     cost: null,
     keywords: null,
-    obtaining_method: null,
     cor_image_url: null,
     game_id: egoGameId(sinnerNumber, localId),
   } as EGO

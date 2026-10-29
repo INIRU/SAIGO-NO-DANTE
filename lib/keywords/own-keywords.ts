@@ -49,9 +49,14 @@ export function egoTexts(ego: EgoTextSource): string[] {
   const out = descriptionTexts(ego.stage_passives)
   for (const text of [ego.passive_content, ego.passive_content_en, ego.passive_content_jp]) if (text) out.push(text)
   for (const skill of [...(ego.ego_skills ?? []), ...(ego.ego_cor_skills ?? [])] as Record<string, unknown>[])
-    for (const effect of EGO_EFFECTS) for (const suffix of ['', '_en', '_jp']) {
-      const text = skill[effect + suffix]
-      if (typeof text === 'string' && text) out.push(text)
+    for (const suffix of ['', '_en', '_jp']) {
+      for (const effect of EGO_EFFECTS) {
+        const text = skill[effect + suffix]
+        if (typeof text === 'string' && text) out.push(text)
+      }
+      // Coins past the fifth exist only in the full list.
+      const coins = skill['coinEffects' + suffix]
+      if (Array.isArray(coins)) for (const text of coins.slice(5)) if (typeof text === 'string' && text) out.push(text)
     }
   return out
 }

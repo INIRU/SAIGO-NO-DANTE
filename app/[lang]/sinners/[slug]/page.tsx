@@ -65,17 +65,17 @@ async function getCachedSinnerData(slug: string) {
     supabase
       .schema('limbus')
       .from('identities')
-      .select('id, sinner_id, name, name_kr, name_en, name_jp, rarity, hp, speed_min, speed_max, def_level, keywords, affiliation, association_list, folder_name, game_id')
+      .select('id, sinner_id, name_kr, name_en, name_jp, rarity, hp, speed_min, speed_max, def_level, keywords, affiliation, association_list, folder_name, game_id')
       .eq('sinner_id', slug)
       .order('rarity')
-      .order('name'),
+      .order('name_kr'),
     supabase
       .schema('limbus')
       .from('ego')
-      .select('id, sinner_id, name, name_kr, name_en, name_jp, grade, sin_affinity, image_url')
+      .select('id, sinner_id, name_kr, name_en, name_jp, grade, sin_affinity, image_url')
       .eq('sinner_id', slug)
       .order('grade')
-      .order('name'),
+      .order('name_kr'),
   ])
 
   const identities = ((identitiesRes.data ?? []) as unknown as Identity[]).map(identity => {

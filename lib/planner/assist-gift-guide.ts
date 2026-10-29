@@ -1,6 +1,6 @@
 import { normalizeThemeKeyword } from '../constants/keywords'
 import { isDeployedSlot } from '../constants/game'
-import { findAvailableFusions, type FusionResult } from './fusion'
+import { findAvailableFusions, recipeIngredientIds, recipeResultId, type FusionResult } from './fusion'
 import { getIdentityGiftConditionKeywords } from './gift-condition-status'
 import { giftGameId } from './run-priority-gifts'
 import type { GiftData, IdentitySlot, RecipeData } from './types'
@@ -40,13 +40,14 @@ interface GoalContext { targets: readonly string[]; recipes: readonly RecipeData
 
 /** Unheld final gifts in plan order and, for each recipe that makes one, its real (catalog) ingredients. */
 function goals({ targets, recipes, giftMap, owned }: GoalContext) {
-  const byName = new Map([...giftMap.values()].map(gift => [gift.name, gift]))
+  const idByName = new Map([...giftMap.values()].map(gift => [gift.name, gift.game_id]))
   const finals = [...new Set(targets.flatMap(entry => { const id = giftGameId(entry); return id === null || owned.has(id) ? [] : [id] }))]
   const finalSet = new Set(finals)
   const finalRecipes = recipes.flatMap(recipe => {
-    const result = byName.get(recipe.result_name)
+    const resultId = recipeResultId(recipe, idByName)
+    const result = resultId === undefined ? undefined : giftMap.get(resultId)
     return result && finalSet.has(result.game_id)
-      ? [{ recipe, result, ingredients: recipe.ingredients.flatMap(name => byName.get(name) ?? []) }] : []
+      ? [{ recipe, result, ingredients: recipeIngredientIds(recipe, idByName).flatMap(id => id === undefined ? [] : giftMap.get(id) ?? []) }] : []
   }).sort((a, b) => finals.indexOf(a.result.game_id) - finals.indexOf(b.result.game_id))
   return { finalSet, finalRecipes }
 }
