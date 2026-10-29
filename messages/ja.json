@@ -586,7 +586,8 @@
     "scopeFormation": "編成人員を含む",
     "partialOnly": "ロックの効果のみ",
     "tierSteps": "{steps}人の段階",
-    "allEffects": "すべての効果"
+    "allEffects": "すべての効果",
+    "showGated": "条件の効果を表示"
   },
   "themePackDetail": {
     "clearReward": "クリア報酬",

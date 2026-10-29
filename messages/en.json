@@ -586,7 +586,8 @@
     "scopeFormation": "Backup included",
     "partialOnly": "Locked effects only",
     "tierSteps": "Steps at {steps}",
-    "allEffects": "All effects"
+    "allEffects": "All effects",
+    "showGated": "Show conditional effects"
   },
   "themePackDetail": {
     "clearReward": "Clear reward",
