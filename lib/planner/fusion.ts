@@ -1,6 +1,26 @@
 import type { RecipeData, GiftData } from './types'
 import { normalizeThemeKeyword } from '../constants/keywords'
 
+/**
+ * A recipe's ingredient gift ids in the order of `ingredients`: the stored game ids when the row has them (one per
+ * ingredient), else looked up by name (undefined = no such gift). Names can collide or drift; ids cannot.
+ */
+export function recipeIngredientIds(recipe: RecipeData, idByName: ReadonlyMap<string, number>): (number | undefined)[] {
+  const ids = recipe.ingredient_ids
+  if (ids && ids.length === recipe.ingredients.length) return [...ids]
+  return recipe.ingredients.map(name => idByName.get(name))
+}
+
+/**
+ * A recipe's result gift id: the stored result_id (which is result_name's id, so it is used only when the final result is
+ * that same gift), else looked up by name. `byFinal` false reads result_name alone.
+ */
+export function recipeResultId(recipe: RecipeData, idByName: ReadonlyMap<string, number>, byFinal = true): number | undefined {
+  const sameResult = !byFinal || !recipe.final_result || recipe.final_result === recipe.result_name
+  if (recipe.result_id != null && sameResult) return recipe.result_id
+  return idByName.get(byFinal ? recipe.final_result ?? recipe.result_name : recipe.result_name)
+}
+
 // ── 기프트 활성화 상태 ─────────────────────────────────────────────────────
 // Design Ref: §4.6 — 키워드 매칭 기반 확률업 하이라이트
 
@@ -85,26 +105,27 @@ export function deriveBlockedFinalFusionMaterialIds({
   gifts?: GiftData[]
 }): Set<number> {
   const idByName = new Map([...(gifts ?? giftMap.values())].map(gift => [gift.name, gift.game_id]))
-  const recipesByResult = new Map<string, RecipeData[]>()
+  const recipesByResult = new Map<number, RecipeData[]>()
   for (const recipe of recipes) {
-    const result = recipe.final_result ?? recipe.result_name
-    if (result !== KEPT_INGREDIENTS_RESULT) recipesByResult.set(result, [...(recipesByResult.get(result) ?? []), recipe])
+    const result = recipeResultId(recipe, idByName)
+    if (result !== undefined && (recipe.final_result ?? recipe.result_name) !== KEPT_INGREDIENTS_RESULT) {
+      recipesByResult.set(result, [...(recipesByResult.get(result) ?? []), recipe])
+    }
   }
   const blocked = new Set<number>()
-  const visit = (name: string, root: string, seen: Set<string>) => {
-    if (seen.has(name)) return
-    seen.add(name)
-    for (const recipe of recipesByResult.get(name) ?? []) {
-      for (const ingredient of recipe.ingredients) {
-        const id = idByName.get(ingredient)
-        if (id !== undefined && ingredient !== root) blocked.add(id)
-        visit(ingredient, root, seen)
+  const visit = (resultId: number, root: number, seen: Set<number>) => {
+    if (seen.has(resultId)) return
+    seen.add(resultId)
+    for (const recipe of recipesByResult.get(resultId) ?? []) {
+      for (const id of recipeIngredientIds(recipe, idByName)) {
+        if (id === undefined) continue
+        if (id !== root) blocked.add(id)
+        visit(id, root, seen)
       }
     }
   }
   for (const id of selectedFinalGiftIds) {
-    const name = giftMap.get(id)?.name
-    if (name) visit(name, name, new Set())
+    if (giftMap.has(id)) visit(id, id, new Set())
   }
   return blocked
 }
@@ -118,19 +139,17 @@ export function findAvailableFusions(
   giftMap: Map<number, GiftData>,
 ): FusionResult[] {
   const invSet = new Set(inventory)
-  const nameMap = new Map<string, GiftData>()
-  for (const g of giftMap.values()) nameMap.set(g.name, g)
+  const idByName = giftIdsByName(giftMap)
 
   return recipes
     .map(recipe => {
-      const materials = recipe.ingredients.map(name => nameMap.get(name)).filter(Boolean) as GiftData[]
-      const pseudoIngredients = recipe.ingredients.filter(name => !nameMap.has(name))
-      const result = nameMap.get(recipe.result_name) ?? null
-      const canCraft = recipe.ingredients.every(name => {
-        if (!nameMap.has(name)) return true  // pseudo-ingredient, skip
-        const gift = nameMap.get(name)!
-        return invSet.has(String(gift.game_id))
-      })
+      const known = recipeIngredientIds(recipe, idByName).map(id => id === undefined ? undefined : giftMap.get(id))
+      const materials = known.filter(Boolean) as GiftData[]
+      const pseudoIngredients = recipe.ingredients.filter((_, index) => !known[index])
+      const resultId = recipeResultId(recipe, idByName, false)
+      const result = resultId === undefined ? null : giftMap.get(resultId) ?? null
+      // a pseudo-ingredient (no such gift) never blocks
+      const canCraft = materials.every(gift => invSet.has(String(gift.game_id)))
 
       return { recipe, materials, pseudoIngredients, result, canCraft }
     })
@@ -148,15 +167,15 @@ export function findRecipesFor(
   recipes: RecipeData[],
   giftMap: Map<number, GiftData>,
 ): FusionResult[] {
-  const nameMap = new Map<string, GiftData>()
-  for (const g of giftMap.values()) nameMap.set(g.name, g)
+  const idByName = giftIdsByName(giftMap)
+  const result = [...giftMap.values()].find(gift => gift.name === targetName) ?? null
 
   return recipes
     .filter(r => r.result_name === targetName)
     .map(recipe => {
-      const materials = recipe.ingredients.map(name => nameMap.get(name)).filter(Boolean) as GiftData[]
-      const pseudoIngredients = recipe.ingredients.filter(name => !nameMap.has(name))
-      const result = nameMap.get(targetName) ?? null
+      const known = recipeIngredientIds(recipe, idByName).map(id => id === undefined ? undefined : giftMap.get(id))
+      const materials = known.filter(Boolean) as GiftData[]
+      const pseudoIngredients = recipe.ingredients.filter((_, index) => !known[index])
       return { recipe, materials, pseudoIngredients, result, canCraft: false }
     })
 }
@@ -255,15 +274,14 @@ export function getAvailableThemes<T extends { floor_info: Record<string, number
  * longer sought. Mixed fusions such as 달의 기억 (any two and three of two groups) are not recipes here and imply nothing.
  */
 export function recipeOwnedGiftIds(inventory: readonly string[], recipes: readonly RecipeData[], giftMap: Map<number, GiftData>): Set<number> {
-  const idByName = new Map([...giftMap.values()].map(gift => [gift.name, gift.game_id]))
+  const idByName = giftIdsByName(giftMap)
   const owned = new Set(inventory.map(id => parseInt(id, 10)).filter(Number.isInteger))
   const queue = [...owned]
   for (let id = queue.shift(); id !== undefined; id = queue.shift()) {
-    const name = giftMap.get(id)?.name
+    if (!giftMap.has(id)) continue
     for (const recipe of recipes) {
-      if (!name || (recipe.final_result ?? recipe.result_name) !== name) continue
-      for (const ingredient of recipe.ingredients) {
-        const ingredientId = idByName.get(ingredient)
+      if (recipeResultId(recipe, idByName) !== id) continue
+      for (const ingredientId of recipeIngredientIds(recipe, idByName)) {
         if (ingredientId !== undefined && !owned.has(ingredientId)) { owned.add(ingredientId); queue.push(ingredientId) }
       }
     }
@@ -281,28 +299,105 @@ const giftIdsByName = (giftMap: Map<number, GiftData>) => new Map([...giftMap.va
  */
 export function recipeIngredientsInInventory(resultId: number, inventory: readonly string[], recipes: readonly RecipeData[],
   giftMap: Map<number, GiftData>, read: readonly string[] = []): string[] | null {
-  const name = giftMap.get(resultId)?.name
-  if (!name) return null
+  if (!giftMap.has(resultId)) return null
   const idByName = giftIdsByName(giftMap)
-  const variants = recipes.filter(recipe => (recipe.final_result ?? recipe.result_name) === name)
-  const hasRead = (recipe: RecipeData) => read.every(id => recipe.ingredients.some(ingredient => idByName.get(ingredient) === parseInt(id, 10)))
+  const variants = recipes.filter(recipe => recipeResultId(recipe, idByName) === resultId)
+  const hasRead = (recipe: RecipeData) => read.every(id => recipeIngredientIds(recipe, idByName).includes(parseInt(id, 10)))
   for (const recipe of [...variants.filter(hasRead), ...variants.filter(recipe => !hasRead(recipe))]) {
     const keys = heldIngredientKeys(recipe, inventory, idByName)
     if (keys) return keys
   }
-  return null
+  return mixedFusionKeys(resultId, inventory, read)
 }
 
 /** Inventory keys holding one recipe's ingredients (a key per ingredient), or null when one is not held. */
 function heldIngredientKeys(recipe: RecipeData, inventory: readonly string[], idByName: Map<string, number>): string[] | null {
   const remaining = [...inventory]
   const keys: string[] = []
-  for (const ingredient of recipe.ingredients) {
-    const index = remaining.findIndex(key => parseInt(key, 10) === idByName.get(ingredient))
+  for (const ingredientId of recipeIngredientIds(recipe, idByName)) {
+    const index = remaining.findIndex(key => parseInt(key, 10) === ingredientId)
     if (index < 0) return null
     keys.push(...remaining.splice(index, 1))
   }
   return keys
+}
+
+/**
+ * Mixed fusions (egoGiftCombineFixedTable.combineMixed, mirror-dungeon-common-data md8): `aNeed` gifts out of group A and
+ * `bNeed` out of group B make the result, whichever ones. There is one: 달의 기억 (9083) from 2 of the 7 first-tier
+ * fragments (9105...9136) and 3 of the 3 second-tier ones (9142, 9147, 9152). Not in ego_gift_recipes.
+ */
+export interface MixedRecipe { aIds: readonly number[]; aNeed: number; bIds: readonly number[]; bNeed: number; resultId: number }
+export const MIXED_RECIPES: readonly MixedRecipe[] = [
+  { aIds: [9105, 9110, 9116, 9121, 9126, 9131, 9136], aNeed: 2, bIds: [9142, 9147, 9152], bNeed: 3, resultId: 9083 },
+]
+
+/** The mixed recipe whose group A and B hold exactly these materials (distinct gift ids), or null. */
+export function mixedResultFromMaterials(materials: readonly string[], mixed: readonly MixedRecipe[] = MIXED_RECIPES): number | null {
+  const ids = materials.map(Number)
+  if (new Set(ids).size !== ids.length) return null
+  return mixed.find(recipe => ids.length === recipe.aNeed + recipe.bNeed &&
+    ids.filter(id => recipe.aIds.includes(id)).length === recipe.aNeed && ids.filter(id => recipe.bIds.includes(id)).length === recipe.bNeed)?.resultId ?? null
+}
+
+/** Inventory keys a mixed fusion of `resultId` would consume (materials read first), or null when the groups cannot be filled. */
+export function mixedFusionKeys(resultId: number, inventory: readonly string[], read: readonly string[] = [],
+  mixed: readonly MixedRecipe[] = MIXED_RECIPES): string[] | null {
+  const recipe = mixed.find(item => item.resultId === resultId)
+  if (!recipe) return null
+  const remaining = [...inventory]
+  const wanted = new Set(read.map(Number))
+  const pick = (ids: readonly number[], need: number): string[] | null => {
+    const picked: string[] = []
+    for (const id of [...ids].sort((a, b) => Number(wanted.has(b)) - Number(wanted.has(a)))) {
+      if (picked.length === need) break
+      const index = remaining.findIndex(key => parseInt(key, 10) === id)
+      if (index >= 0) picked.push(...remaining.splice(index, 1))
+    }
+    return picked.length === need ? picked : null
+  }
+  const a = pick(recipe.aIds, recipe.aNeed)
+  const b = a && pick(recipe.bIds, recipe.bNeed)
+  return a && b ? [...a, ...b] : null
+}
+
+/**
+ * Random fusion tiers (egoGiftCombineTierTable, md8): each material scores by its tier and the sum maps to the result
+ * tier. combineTwo/combineThree are this same table (checked for all 16 rows). Starlight-enhanced fusions use lower bounds.
+ */
+const COMBINE_SCORE_BY_TIER: Record<number, number> = { 1: 3, 2: 6, 3: 10, 4: 15, 5: 30 }
+const COMBINE_TIER_BY_SCORE = [[6, 1], [11, 2], [17, 3], [25, 4]] as const
+const ENHANCED_COMBINE_TIER_BY_SCORE = [[6, 1], [10, 2], [15, 3], [22, 4]] as const
+
+/** Result tier of a random fusion of materials of these tiers, or null (fewer than two, a tier without a score, too low a sum). */
+export function randomFusionTier(materialTiers: readonly number[], enhanced = false): number | null {
+  if (materialTiers.length < 2 || materialTiers.some(tier => COMBINE_SCORE_BY_TIER[tier] === undefined)) return null
+  const score = materialTiers.reduce((sum, tier) => sum + COMBINE_SCORE_BY_TIER[tier], 0)
+  const table = enhanced ? ENHANCED_COMBINE_TIER_BY_SCORE : COMBINE_TIER_BY_SCORE
+  return [...table].reverse().find(([min]) => score >= min)?.[1] ?? null
+}
+
+/** A gift's tier from its grade (1-5; EX is tier 5 with the extra tag), or null when unknown. */
+export function giftTier(gift: Pick<GiftData, 'grade'> | undefined): number | null {
+  const grade = gift?.grade === 'EX' ? 5 : Number(gift?.grade)
+  return Number.isInteger(grade) && grade >= 1 && grade <= 5 ? grade : null
+}
+
+/**
+ * Tiers a random fusion of the materials read can give (plain and starlight-enhanced), or null when this is not a clear
+ * random fusion: the dialog's N/M count was not all read, a material is unknown, or the materials are a fixed or mixed recipe.
+ */
+function randomFusionTiers(evidence: RecipePopupEvidence, recipes: readonly RecipeData[], giftMap: Map<number, GiftData>): Set<number> | null {
+  const materials = evidence.materials ?? []
+  if (materials.length < 2 || evidence.materialCount !== materials.length) return null
+  const tiers = materials.map(id => giftTier(giftMap.get(Number(id))))
+  if (tiers.some(tier => tier === null)) return null
+  const idByName = giftIdsByName(giftMap)
+  const read = materials.map(Number).sort((a, b) => a - b).join()
+  const isRecipe = recipes.some(recipe => recipeIngredientIds(recipe, idByName).map(id => id ?? -1).sort((a, b) => a - b).join() === read)
+  if (isRecipe || mixedResultFromMaterials(materials) !== null) return null
+  const result = [false, true].map(enhanced => randomFusionTier(tiers as number[], enhanced)).filter((tier): tier is number => tier !== null)
+  return result.length ? new Set(result) : null
 }
 
 /**
@@ -312,19 +407,18 @@ function heldIngredientKeys(recipe: RecipeData, inventory: readonly string[], id
  */
 export function recipeFusionMaterials(read: readonly string[], count: number, resultId: string, inventory: readonly string[],
   recipes: readonly RecipeData[], giftMap: Map<number, GiftData>, excluded: ReadonlySet<string>): string[] | null {
-  const name = giftMap.get(Number(resultId))?.name
-  if (!name) return null
+  if (!giftMap.has(Number(resultId))) return null
   const idByName = giftIdsByName(giftMap)
   const fits = new Map<string, string[]>()
   for (const recipe of recipes) {
-    if ((recipe.final_result ?? recipe.result_name) !== name || recipe.ingredients.length !== count) continue
-    const left = recipe.ingredients.map(ingredient => idByName.get(ingredient))
+    if (recipeResultId(recipe, idByName) !== Number(resultId) || recipe.ingredients.length !== count) continue
+    const left = recipeIngredientIds(recipe, idByName)
     const contains = read.filter(id => !excluded.has(id)).every(id => {
       const index = left.indexOf(parseInt(id, 10))
       return index >= 0 && left.splice(index, 1).length > 0
     })
     const keys = contains ? heldIngredientKeys(recipe, inventory, idByName) : null
-    if (keys) fits.set([...recipe.ingredients].sort().join('|'), keys)
+    if (keys) fits.set(recipeIngredientIds(recipe, idByName).map(String).sort().join('|'), keys)
   }
   return fits.size === 1 ? [...fits.values()][0] : null
 }
@@ -337,6 +431,8 @@ export interface RecipePopupEvidence {
   others: readonly string[]
   /** Material gift ids read on the confirmation dialog or wheel so far (may be partial or look-alike). */
   materials?: readonly string[]
+  /** How many materials the dialog's "N/M" said were chosen; the tier check below runs only when all of them were read. */
+  materialCount?: number
 }
 
 /**
@@ -358,16 +454,15 @@ export function resolveRecipeResult(evidence: RecipePopupEvidence, inventory: re
   const candidates = [...evidence.named, ...evidence.others]
   let pool = [...new Set(candidates.map(Number).filter(craftable))]
   if (!pool.length && inFusion) {
-    pool = [...new Set(recipes.filter(recipe => recipe.ingredients.some(name => {
-      const id = idByName.get(name)
-      return id !== undefined && held.has(id) && candidates.includes(String(id))
-    })).map(recipe => idByName.get(recipe.final_result ?? recipe.result_name)).filter(craftable))]
+    pool = [...new Set(recipes.filter(recipe => recipeIngredientIds(recipe, idByName).some(id =>
+      id !== undefined && held.has(id) && candidates.includes(String(id))))
+      .map(recipe => recipeResultId(recipe, idByName)).filter(craftable))]
   }
   if (pool.length <= 1) return one(pool)
   // Several siblings are craftable: keep those whose recipe holds the most materials read on the fusion.
   const materials = (evidence.materials ?? []).map(Number)
-  const score = (id: number) => Math.max(0, ...recipes.filter(recipe => idByName.get(recipe.final_result ?? recipe.result_name) === id)
-    .map(recipe => materials.filter(material => recipe.ingredients.some(name => idByName.get(name) === material)).length))
+  const score = (id: number) => Math.max(0, ...recipes.filter(recipe => recipeResultId(recipe, idByName) === id)
+    .map(recipe => materials.filter(material => recipeIngredientIds(recipe, idByName).includes(material)).length))
   const best = Math.max(...pool.map(score))
   return best > 0 ? one(pool.filter(id => score(id) === best)) : null
 }
@@ -383,9 +478,13 @@ export function recipeFromMaterials(materials: readonly string[], inventory: rea
   const held = new Set(inventory.map(key => parseInt(key, 10)))
   const read = materials.map(Number).sort((a, b) => a - b).join()
   const results = new Set(recipes.filter(recipe =>
-    recipe.ingredients.map(name => idByName.get(name) ?? -1).sort((a, b) => a - b).join() === read)
-    .map(recipe => idByName.get(recipe.final_result ?? recipe.result_name))
+    recipeIngredientIds(recipe, idByName).map(id => id ?? -1).sort((a, b) => a - b).join() === read)
+    .map(recipe => recipeResultId(recipe, idByName))
     .filter((id): id is number => id !== undefined && !held.has(id) && recipeIngredientsInInventory(id, inventory, recipes, giftMap) !== null))
+  if (results.size === 0) {
+    const mixed = mixedResultFromMaterials(materials)
+    if (mixed !== null && !held.has(mixed) && recipeIngredientsInInventory(mixed, inventory, recipes, giftMap) !== null) return String(mixed)
+  }
   return results.size === 1 ? String([...results][0]) : null
 }
 
@@ -397,13 +496,20 @@ export function recipeFromMaterials(materials: readonly string[], inventory: rea
  * fusion screen; an abstained popup falls back to resolveRecipeResult. Named results stand, as their ingredients may
  * simply not have been recorded.
  */
-export function settleResultPopup(evidence: RecipePopupEvidence, verdict: string | null, inventory: readonly string[],
+export function settleResultPopup(evidence: RecipePopupEvidence, verdictRead: string | null, inventory: readonly string[],
   recipes: readonly RecipeData[], giftMap: Map<number, GiftData>, inFusion: boolean): string | null {
+  let verdict = verdictRead
   const exact = recipeFromMaterials(evidence.materials ?? [], inventory, recipes, giftMap)
   if (exact && (verdict === null || !evidence.named.includes(verdict))) return exact
+  // A random fusion's result tier follows from its materials: an icon or effect look-alike of another tier is dropped
+  // (a name read exactly stands, as the materials may be look-alikes).
+  const tiers = verdict === null || evidence.named.includes(verdict) ? null : randomFusionTiers(evidence, recipes, giftMap)
+  const verdictTier = verdict === null ? null : giftTier(giftMap.get(Number(verdict)))
+  if (tiers && verdictTier !== null && !tiers.has(verdictTier)) verdict = null
   if (verdict === null) return resolveRecipeResult(evidence, inventory, recipes, giftMap, inFusion)
   const id = Number(verdict)
-  const recipeResult = recipes.some(recipe => (recipe.final_result ?? recipe.result_name) === giftMap.get(id)?.name)
+  const idByName = giftIdsByName(giftMap)
+  const recipeResult = giftMap.has(id) && recipes.some(recipe => recipeResultId(recipe, idByName) === id)
   if (!recipeResult || evidence.named.includes(verdict) || recipeIngredientsInInventory(id, inventory, recipes, giftMap)) return verdict
   return resolveRecipeResult(evidence, inventory, recipes, giftMap, inFusion) ?? (inFusion ? verdict : null)
 }

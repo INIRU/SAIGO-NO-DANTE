@@ -239,6 +239,9 @@ export type ActivationCondition = {
   affiliations?: string[]
   skill_condition?: string
   count: number
+  tiers?: { count: number }[]
+  partial?: boolean
+  source?: 'code' | 'text'
 }
 
 export type EgoGiftNote = {
