@@ -16,7 +16,7 @@ const COLUMNS = {
   theme:'id,name,name_en,name_jp,image_url',
   identity:'id,name_kr,name_en,name_jp,sinner_id,rarity,game_id,folder_name,keywords,release_date',
   ego:'id,name_kr,name_en,name_jp,grade,image_url,sinner_id,sin_affinity,stage_levels:ego_skills(construe_level)',
-  skill:'id,name,name_en,name_jp,identity_id,skill_type,atk_type,sin_affinity,coins,base_power,coin_power,skill_order,image_id,variant_order,atk_weight,offense_level,description,description_en,description_jp,uptie_level',
+  skill:'id,name,name_en,name_jp,identity_id,skill_type,atk_type,sin_affinity,coins,base_power,coin_power,coin_list,skill_order,image_id,variant_order,atk_weight,offense_level,description,description_en,description_jp,uptie_level',
   keyword:'name,name_en,name_jp,description,icon_slug',
 } as const
 async function load(kind: AssetKind, query: string, ids: string[], offset = 0, grade = '', identityIds: string[] | null = null, catalog = false): Promise<NoteAssetData[]> {
