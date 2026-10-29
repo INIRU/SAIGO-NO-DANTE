@@ -96,11 +96,12 @@ export function GiftConditionPlate({ text, condition, scope, status }: {
           {icons.map(src => <Image key={src} src={src} alt="" width={24} height={24} className={styles.lockIcon} />)}
           <span>{text}</span>
         </p>
-        {(scope || condition?.partial || tiers.length > 1) && <p className={styles.lockTags}>
+        <p className={styles.lockTags}>
+          {/* Which effects it decides: all of them, or the locked lines of the effect below. */}
+          <span>{t(condition?.partial ? 'partialOnly' : 'allEffects')}</span>
           {scope && <span>{t(scope === 'deployed' ? 'scopeDeployed' : 'scopeFormation')}</span>}
           {tiers.length > 1 && <span>{t('tierSteps', { steps: tiers.join(' / ') })}</span>}
-          {condition?.partial && <span>{t('partialOnly')}</span>}
-        </p>}
+        </p>
         {status && <p className={styles.lockStatus} aria-label={summary(status).title}>
           <span className={styles.pips} aria-hidden="true">
             {Array.from({ length: Math.min(status.need, 12) }, (_, i) => <i key={i} data-fill={i < counted ? 'deployed' : i < counted + bench ? 'bench' : undefined} />)}
