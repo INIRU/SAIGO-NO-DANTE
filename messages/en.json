@@ -2347,7 +2347,8 @@
     "formulaBody": "Power × (1 + damage modifiers) × (1 + physical resistance + sin resistance + level difference + critical + Clash Count × 3% + Observation Level × 3%) + flat damage adder × (1 + physical resistance + sin resistance + level difference) + flat HP damage. Decimals are dropped. The minimum is the larger of 5% of the power (rounded down) and 1.",
     "formulaResist": "Physical resistance is the resistance to the skill's attack type (Slash, Pierce or Blunt). ×2 counts as +100%; below normal (×1) only half of the reduction applies, so ×0.5 counts as −25%, and below 0 it counts as −50%. Outside stagger the physical resistance is held between −2 and 2, the sin resistance between 0 and 2.",
     "formulaLevel": "The level difference is (Offense Level − Defense Level) ÷ (the gap between the two levels + 25). The gap is always counted as positive.",
-    "formulaNote": "Calculated from game values. Effect damage such as Burn and Bleed, the special damage increase of some skills and the sin resonance bonus are not calculated. The Observation Level only counts against Abnormalities.",
+    "formulaNote": "These are estimated values. Effect damage such as Burn and Bleed, the special damage increase of some skills and the sin resonance bonus are not calculated. The Observation Level only counts against Abnormalities.",
+    "estimateNote": "These are estimates calculated from community research and data corrections. Actual damage may differ.",
     "full": "Up to {max} modifiers can be added.",
     "formulaFinal": "A critical hit adds (20% + critical damage adder) × (1 + critical multiplier passives). A final multiplier applies to the result after its decimals are dropped. A modifier that changes a resistance value, such as a resistance weakening, is added to the resistance first.",
     "picker": {
@@ -2443,6 +2444,7 @@
     "left": "Coins left",
     "leftCoins": "{count}",
     "limitNote": "The {min}%–{max}% heads chance limit and +1 clash power per {gap} Offense Levels of gap are estimates.",
+    "estimateNote": "These are estimates calculated from community research and data corrections. Actual results may differ.",
     "rules": "How it is calculated",
     "rulesHeads": "The heads chance is 50% plus 1% per point of sanity plus the adder. Sanity runs from −45 to 45.",
     "rulesCoins": "Coins are rolled in order; a heads applies its coin's operator (add or subtract). The value never drops below 0. It starts at the base power.",
