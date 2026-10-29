@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Skill } from '@/lib/types'
-import { groupIdentitySkills, buildSkillVariantMap, dropRepeatedTopUptie, selectIdentitySkills, selectUptieRows, uptieLevels } from '@/lib/identity/skill-model'
+import { groupIdentitySkills, buildSkillVariantMap, dropRepeatedTopUptie, resolveUptieLevel, selectIdentitySkills, selectUptieRows, skillLabel, skillSlot, uptieLevels } from '@/lib/identity/skill-model'
 
 const skill = (id: string, order: number, level?: number) => ({ id, skill_order: order, uptie_level: level } as Skill)
 
@@ -61,4 +61,41 @@ it('groups all variants in one block per base skill without dropping defense or 
   ])
   expect(rows).toEqual(original)
   expect(groupIdentitySkills([])).toEqual([])
+})
+
+describe('uptie level resolution (the game lists data only where it changes)', () => {
+  it('reads a missing level from the level below, never from a higher one', () => {
+    expect(resolveUptieLevel([1, 4], 3)).toBe(1)
+    expect(resolveUptieLevel([1, 2, 3, 4], 4)).toBe(4)
+    expect(resolveUptieLevel([1, 3], 4)).toBe(3)
+    expect(selectUptieRows([skill('one', 1, 1), skill('four', 1, 4)], 3).map(row => row.id)).toEqual(['one'])
+  })
+  it('falls back to the lowest level present when the wanted level is below all of them', () => {
+    expect(resolveUptieLevel([3, 4], 1)).toBe(3)
+    expect(resolveUptieLevel([], 2)).toBeNull()
+    expect(selectUptieRows([], 2)).toEqual([])
+  })
+})
+
+describe('skill slot (game skillTier 1-3, defense list = 4)', () => {
+  const row = (id: string, order: number, type = 'slash') => ({ id, skill_order: order, skill_type: type })
+  it('keeps tiers 1-3, puts every defense type in slot 4 even with a tier, and reads old rows >= 5 as S3', () => {
+    expect(skillSlot(row('a', 1))).toBe(1)
+    expect(skillSlot(row('b', 4, 'defense'))).toBe(4)
+    expect(skillSlot(row('c', 3, 'counter'))).toBe(4)
+    expect(skillSlot(row('d', 2, 'evade'))).toBe(4)
+    expect(skillSlot(row('e', 5))).toBe(3)
+  })
+  it('labels the same skill identically wherever it is drawn', () => {
+    const group = [row('s1', 1), row('s3', 3), row('s3b', 3), row('g', 4, 'defense'), row('c', 3, 'counter')]
+    expect(skillLabel(group[0], group, '방어')).toBe('S1')
+    expect(skillLabel(group[2], group, '방어')).toBe('S3-2')
+    expect(skillLabel(group[3], group, '방어')).toBe('방어-1')
+    expect(skillLabel(group[4], group, '반격')).toBe('반격-2')
+    expect(skillLabel(group[0], [group[0]], '방어')).toBe('S1')
+  })
+  it('groups a tiered counter with the defense skills', () => {
+    const rows = [row('s3', 3), row('c', 3, 'counter'), row('g', 4, 'defense')] as Skill[]
+    expect(groupIdentitySkills(rows).map(group => group.map(item => item.id))).toEqual([['s3'], ['c', 'g']])
+  })
 })

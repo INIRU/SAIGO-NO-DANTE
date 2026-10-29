@@ -1,5 +1,6 @@
 
 import { getGameUiAsset } from '@/lib/utils/game-ui'
+import type { SkillCoin } from '@/lib/types'
 import { hasVisibleGameText, mayBeRawGameText, splitCoinBlocks, splitGameTextLines } from '@/lib/game-text/rich-text'
 
 interface CoinSection {
@@ -142,6 +143,21 @@ export function splitEgoSkillDescription(description: string | null | undefined)
 export function unbreakableCoinIndices(description?: string | null): Set<number> {
   return new Set(parseSkillDescription(description ?? '').coinSections
     .filter(coin => coin.isUnbreakable).map(coin => coin.coinNum - 1))
+}
+
+/**
+ * Which coins cannot break. The skill's coin_list (the game's coin data, one entry per coin) decides when the sync has
+ * filled it; rows without one keep reading the description text.
+ */
+export function unbreakableCoinSet(skill: { description?: string | null; coin_list?: readonly SkillCoin[] | null }): Set<number> {
+  const coins = skill.coin_list
+  if (!coins?.length) return unbreakableCoinIndices(skill.description)
+  return new Set(coins.flatMap((coin, index) => coin.unbreakable ? [index] : []))
+}
+
+/** "+7", "-12" or "×2" per coin from the game's coin data (operator ADD/SUB/MUL); empty without a coin_list. */
+export function coinPowerLabels(skill: { coin_list?: readonly SkillCoin[] | null }): string[] {
+  return (skill.coin_list ?? []).map(coin => (coin.operator === 'SUB' ? '-' : coin.operator === 'MUL' ? '×' : '+') + coin.scale)
 }
 
 export const COIN_IMAGES = { normal: getGameUiAsset('coins/normal'), unbreakable: getGameUiAsset('coins/unbreakable') } as const
