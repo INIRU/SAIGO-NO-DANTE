@@ -20,9 +20,12 @@ import type { GiftConditionScope, GiftConditionStatus } from '@/lib/planner/gift
 import { gameTextToPlain, splitGameTextLines } from '@/lib/game-text/rich-text'
 import { createGiftRefSplitter, type GiftRefTarget } from '@/lib/mirror-dungeon/gift-refs'
 import { getGameUiAsset } from '@/lib/utils/game-ui'
+import { STORAGE_BASE } from '@/lib/constants/game'
+import { conditionLines } from '@/lib/mirror-dungeon/gift-condition-lines'
 import { PlaceholderGiftProvider, type PlaceholderGift } from '@/components/ui/PlaceholderLabel'
 
 const CREDIT_ICON = getGameUiAsset('resources/md-credit')
+const LOCK_URL = `${STORAGE_BASE}/icons/ui/lock.webp`
 
 function Credits({ value }: { value: number }) {
   return (
@@ -137,7 +140,8 @@ function Section({ title, aside, children }: { title: string; aside?: ReactNode;
   )
 }
 
-export function EffectText({ text, color, links }: { text: string; color: string; links?: GiftDetailData['giftLinks'] }) {
+/** gate: the gift has a head-count condition; its lines get the game's lock and, while it is unmet (off), fade. */
+export function EffectText({ text, color, links, gate }: { text: string; color: string; links?: GiftDetailData['giftLinks']; gate?: { partial: boolean; off: boolean } }) {
   const formatSkillDesc = useFormatSkillDesc()
   const split = useMemo(() => links?.targets.length ? createGiftRefSplitter(links.targets, links) : null, [links])
   // {{gift:<game id>}} (a convert_to gift's target) shows that gift as a link.
@@ -148,6 +152,7 @@ export function EffectText({ text, color, links }: { text: string; color: string
   }, [links])
   // Lines split so a tag spanning lines keeps applying; the bullet check reads the visible text, as a line may start with a tag.
   const lines = splitGameTextLines(text).map(l => l.trim()).filter(Boolean)
+  const gated = new Set(gate ? conditionLines(lines.map(line => gameTextToPlain(line)), gate.partial)?.gated ?? [] : [])
   const render = (line: string) => split
     ? split(line).map((part, i) => typeof part === 'string'
       ? <span key={i}>{formatSkillDesc(part, color)}</span>
@@ -158,8 +163,11 @@ export function EffectText({ text, color, links }: { text: string; color: string
       <div style={{ color: '#d8ccb4', fontSize: '0.875rem', lineHeight: 1.75 }}>
         {lines.map((line, i) => {
           const isSub = /^-\s/.test(gameTextToPlain(line))
+          const locked = gated.has(i)
           return (
-            <p key={i} style={isSub ? { paddingLeft: '0.875rem', textIndent: '-0.625rem', marginTop: '0.125rem' } : { marginTop: i > 0 ? '0.5rem' : 0 }}>
+            <p key={i} data-gated={locked ? '' : undefined}
+              style={{ ...(isSub ? { paddingLeft: '0.875rem', textIndent: '-0.625rem', marginTop: '0.125rem' } : { marginTop: i > 0 ? '0.5rem' : 0 }), ...(locked && gate?.off ? { opacity: 0.45 } : {}), transition: 'opacity 0.2s ease' }}>
+              {locked && <Image src={LOCK_URL} alt="" width={118} height={157} className="mr-1.5 inline-block align-[-0.1em]" style={{ width: '0.625rem', height: 'auto' }} />}
               {render(line)}
             </p>
           )
@@ -300,7 +308,8 @@ export default function GiftDetailModal({ gift, lang, onClose, initialLevel = 0,
                 </div>
               )}
             >
-              <EffectText key={level} text={effect} color={effectColor} links={gift.giftLinks} />
+              <EffectText key={level} text={effect} color={effectColor} links={gift.giftLinks}
+                gate={gift.condition ? { partial: !!gift.activation?.partial, off: gift.conditionStatus?.level === 'unmet' } : undefined} />
             </Section>
           )}
 
