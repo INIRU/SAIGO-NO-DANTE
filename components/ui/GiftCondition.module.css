@@ -48,7 +48,7 @@
 .line[data-level='warn'] { color: #d9a534; }
 
 /* The effects a gift's condition decides: one box in the effect list, headed by the lock and the condition. */
-.gateBox { border: 1px solid #3a2a15; border-radius: 0.3rem; background: #100d09; transition: border-color 0.2s ease; }
+.gateBox { border: 1px solid var(--border); border-radius: 0.3rem; background: #100d09; transition: border-color 0.2s ease; }
 .gateBox[data-level='unmet'] { border-color: rgba(155, 44, 35, 0.6); }
 .gateBox[data-level='warn'] { border-color: rgba(200, 144, 10, 0.5); }
 .gateHead { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.45rem; padding: 0.55rem 0.8rem; border-bottom: 1px solid #241c14; }
