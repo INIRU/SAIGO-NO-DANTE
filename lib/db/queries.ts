@@ -236,6 +236,8 @@ export async function getEGOById(id: string): Promise<EGO | null> {
         [`coin3Effect_${suffix}`]: coinEffects[2] || null,
         [`coin4Effect_${suffix}`]: coinEffects[3] || null,
         [`coin5Effect_${suffix}`]: coinEffects[4] || null,
+        // Every coin, however many the skill has: the five fields above stay for readers that still use them.
+        [`coinEffects_${suffix}`]: coinEffects,
       }
     }
 
@@ -261,6 +263,7 @@ export async function getEGOById(id: string): Promise<EGO | null> {
         coin3Effect: (krParsed.coin3Effect_kr as string) || '',
         coin4Effect: (krParsed.coin4Effect_kr as string) || '',
         coin5Effect: (krParsed.coin5Effect_kr as string) || '',
+        coinEffects: (krParsed.coinEffects_kr as string[] | undefined) ?? [],
         name_en: (s.name_en as string) || null,
         name_jp: (s.name_jp as string) || null,
         ...parseDescription(s.description_en as string, 'en'),

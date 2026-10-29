@@ -2310,7 +2310,7 @@
       "2": "Stagger+",
       "3": "Stagger++"
     },
-    "staggerFixed": "While staggered, the physical resistance is fixed at ×{value}.",
+    "staggerFixed": "While staggered, the physical resistance is ×{value}, plus any resistance weakening.",
     "observation": "Observation Level",
     "observationHelp": "Reported not to apply in the game, so it starts at 0.",
     "modifiers": "Modifiers",
@@ -2342,7 +2342,7 @@
     "resistFactor": "Resistance and level",
     "finalMultiplier": "Final multiplier",
     "formula": "How it is calculated",
-    "formulaBody": "Power × (1 + damage modifiers) × (1 + physical resistance + sin resistance + level difference + critical 20% + Clash Count × 3% + Observation Level × 3%). Decimals are dropped and the minimum is 1.",
+    "formulaBody": "Power × (1 + damage modifiers) × (1 + physical resistance + sin resistance + level difference + critical 20% + Clash Count × 3% + Observation Level × 3%). Decimals are dropped. The minimum is the larger of 5% of the power (rounded down) and 1. Sin resistance is held between 0 and 2.",
     "formulaResist": "Physical resistance is the resistance to the skill's attack type (Slash, Pierce or Blunt). ×2 counts as +100%; below normal (×1) only half of the reduction applies, so ×0.5 counts as −25%.",
     "formulaLevel": "The level difference is (Offense Level − Defense Level) ÷ (the gap between the two levels + 25). The gap is always counted as positive.",
     "formulaNote": "This is an estimate from a formula worked out by the community and can differ from the game. Effect damage such as Burn and Bleed, the special damage increase of some skills and the sin resonance bonus are not calculated.",

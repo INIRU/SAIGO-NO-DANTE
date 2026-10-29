@@ -27,7 +27,7 @@ describe('deck gift affiliation rules', () => {
     expect(computeAllGiftAffiliationCounts(slots).중지).toBe(4)
   })
 
-  it('게임 추출 조건에 붙은 설명성 접두어를 제거하고 실제 소속을 매칭한다', () => {
+  it('게임 값 조건에 붙은 설명성 접두어를 제거하고 실제 소속을 매칭한다', () => {
     const formationCounts = computeFormationGiftAffiliationCounts(slots)
 
     expect(normalizeGiftAffiliationLabel('- 턴 시작 시 중지')).toBe('턴 시작 시 중지')

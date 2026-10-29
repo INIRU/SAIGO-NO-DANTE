@@ -3,8 +3,12 @@
 
 import { STORAGE_BASE } from '@/lib/constants/game'
 
-/** Physical resistance while staggered, by stage: none, stagger, stagger+, stagger++. */
+/** Physical resistance while staggered, by stage: none, stagger, stagger+, stagger++ (2 + (stage − 1) × 0.5). A weakening is added on top. */
 export const STAGGER_RESIST = [null, 2, 2.5, 3] as const
+/** A sin resistance is held between 0 and this after every buff and weakening. */
+export const SIN_RESIST_MAX = 2
+/** The least a hit does before the final multiplier: this share of the coin's power, rounded down, and at least 1. */
+export const MIN_DAMAGE_RATE = 0.05
 export type StaggerStage = 0 | 1 | 2 | 3
 
 export const CRITICAL_BONUS = 0.2
@@ -55,7 +59,7 @@ export function coinDamage(input: DamageInput) {
   const stagger = input.stagger ?? 0
   if (![0, 1, 2, 3].includes(stagger)) throw new RangeError('stagger must be 0 to 3')
   let physical = STAGGER_RESIST[stagger] ?? amount(input.physicalResist, 'physicalResist')
-  let sin = amount(input.sinResist, 'sinResist')
+  let sin = Math.min(SIN_RESIST_MAX, amount(input.sinResist, 'sinResist'))
   const clash = count(input.clashCount ?? 0, 'clashCount')
   const observation = count(input.observationLevel ?? 0, 'observationLevel')
 
@@ -67,9 +71,9 @@ export function coinDamage(input: DamageInput) {
     if (!Number.isFinite(modifier.value)) throw new RangeError('modifier value must be a number')
     if (modifier.target === 'damage') damageFactor += modifier.value
     else if (modifier.target === 'resist') resistFactor += modifier.value
-    // A stagger fixes the physical resistance, so a weakening does not move it.
-    else if (modifier.target === 'physical') physical = STAGGER_RESIST[stagger] ?? Math.max(0, physical + modifier.value)
-    else if (modifier.target === 'sin') sin = Math.max(0, sin + modifier.value)
+    // While staggered the game sets the physical resistance to 2 + (stage − 1) × 0.5 and adds the weakening on top.
+    else if (modifier.target === 'physical') physical = stagger ? physical + modifier.value : Math.max(0, physical + modifier.value)
+    else if (modifier.target === 'sin') sin = Math.min(SIN_RESIST_MAX, Math.max(0, sin + modifier.value))
     else finalMultiplier *= amount(modifier.value, 'final multiplier')
   }
   resistFactor += resistTerm(physical) + resistTerm(sin)
@@ -80,7 +84,8 @@ export function coinDamage(input: DamageInput) {
   // Rounded to six places first: 100 × 1.15 is 114.99999999999999 in binary and would floor to 114.
   const whole = (value: number) => Math.floor(Math.round(value * 1e6) / 1e6)
   // The write-ups say a final multiplier applies "after the damage calculation", so it meets the floored value.
-  const damage = Math.max(1, whole(Math.max(1, whole(power * damageFactor * resistFactor)) * finalMultiplier))
+  const minimum = Math.max(1, whole(power * MIN_DAMAGE_RATE))
+  const damage = Math.max(1, whole(Math.max(minimum, whole(power * damageFactor * resistFactor)) * finalMultiplier))
   return { damage, damageFactor, resistFactor, finalMultiplier }
 }
 

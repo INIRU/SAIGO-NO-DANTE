@@ -150,6 +150,10 @@ export type EGOSkill = {
   coin3Effect: string
   coin4Effect: string
   coin5Effect: string
+  /** The effect text of every coin in order (as many as the skill has); coin1Effect … coin5Effect hold the first five of the same. */
+  coinEffects?: string[]
+  coinEffects_en?: string[] | null
+  coinEffects_jp?: string[] | null
   name_en?: string | null
   name_jp?: string | null
   normalEffect_en?: string | null

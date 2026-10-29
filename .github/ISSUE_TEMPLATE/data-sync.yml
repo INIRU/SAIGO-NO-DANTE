@@ -26,6 +26,6 @@ body:
   - type: input
     id: extraction
     attributes:
-      label: 추출본
+      label: 게임 데이터
       description: 확인한 추출 ZIP의 날짜(알면)
       placeholder: 예) LimbusAssets_2026-10-01
