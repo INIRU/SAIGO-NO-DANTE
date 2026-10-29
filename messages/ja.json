@@ -145,6 +145,7 @@
     "close": "閉じる",
     "terms": "利用規約",
     "privacy": "プライバシーポリシー",
+    "licenses": "ライセンス",
     "contact": "お問い合わせ",
     "fanDisclaimer": "ファン制作の非公式サイト · Limbus CompanyはProject Moonの著作物です。",
     "unaffiliatedDisclaimer": "Project Moonとは提携していないファンサイトです。",
@@ -2849,5 +2850,12 @@
     "deadAllies": "死亡した味方",
     "pendingTitle": "モーション準備中",
     "pendingBody": "ゲーム内の映像を録画・分析して実装するため、最低5日〜2週間ほどかかります。"
+  },
+  "licensesPage": {
+    "title": "ライセンス",
+    "description": "サイトで使用しているフォントとソフトウェアのライセンス",
+    "fonts": "フォント",
+    "software": "ソフトウェア",
+    "freeFont": "フリーフォント"
   }
 }

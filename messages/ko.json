@@ -145,6 +145,7 @@
     "close": "닫기",
     "terms": "이용약관",
     "privacy": "개인정보 처리방침",
+    "licenses": "라이선스",
     "contact": "문의",
     "fanDisclaimer": "팬 제작 비공식 사이트 · Limbus Company는 Project Moon의 저작물입니다.",
     "unaffiliatedDisclaimer": "Project Moon과 제휴하지 않은 팬 사이트입니다.",
@@ -2849,5 +2850,12 @@
     "deadAllies": "사망한 아군",
     "pendingTitle": "모션 준비 중",
     "pendingBody": "인게임 영상을 촬영·분석해 구현하므로 공개까지 최소 5일~2주가 걸립니다."
+  },
+  "licensesPage": {
+    "title": "라이선스",
+    "description": "사이트에 쓰인 글꼴과 소프트웨어의 라이선스",
+    "fonts": "글꼴",
+    "software": "소프트웨어",
+    "freeFont": "무료 배포 글꼴"
   }
 }
