@@ -570,8 +570,6 @@
     "conditionSkill": "{skill} {count}人以上",
     "conditionUnmet": "条件未達",
     "conditionWarn": "条件注意",
-    "unmetHint": "編成と待機人格を合わせても不足しています。",
-    "warnHint": "編成(1〜7)だけでは不足ですが、待機人格を含めると満たします。",
     "recipe": "合成レシピ",
     "recipeFragments": "破片から2種",
     "finalSynthesis": "最終合成",
@@ -583,7 +581,11 @@
     "extreme": "エクストリーム",
     "back": "{gift}に戻る",
     "showAllThemes": "テーマパック{count}個をすべて表示",
-    "allThemes": "すべてのテーマパック"
+    "allThemes": "すべてのテーマパック",
+    "scopeDeployed": "待機人員を除く",
+    "scopeFormation": "編成人員を含む",
+    "partialOnly": "一部の効果のみ",
+    "tierSteps": "{steps}人の段階"
   },
   "themePackDetail": {
     "clearReward": "クリア報酬",

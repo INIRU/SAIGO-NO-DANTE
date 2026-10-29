@@ -570,8 +570,6 @@
     "conditionSkill": "{skill} {count}인 이상",
     "conditionUnmet": "조건 미달",
     "conditionWarn": "조건 주의",
-    "unmetHint": "편성 인격과 대기 인격을 모두 포함해도 부족합니다.",
-    "warnHint": "편성(1–7)만으로는 부족하지만 대기 인격을 포함하면 충족됩니다.",
     "recipe": "조합 레시피",
     "recipeFragments": "조각 중 택 2종",
     "finalSynthesis": "최종 조합",
@@ -583,7 +581,11 @@
     "extreme": "익스트림",
     "back": "이전: {gift}",
     "showAllThemes": "테마팩 {count}개 모두 보기",
-    "allThemes": "모든 테마팩"
+    "allThemes": "모든 테마팩",
+    "scopeDeployed": "대기 인원 제외",
+    "scopeFormation": "편성 인원 포함",
+    "partialOnly": "일부 효과만",
+    "tierSteps": "{steps}인 단계"
   },
   "themePackDetail": {
     "clearReward": "클리어 보상",

@@ -5,7 +5,8 @@ import { useLocale, useTranslations } from 'next-intl'
 import { getLocalizedAffiliation, localizeGiftKeyword } from '@/lib/i18n/localize'
 import { getAffiliationIconUrl } from '@/lib/constants/affiliation-icons'
 import { getGiftKeywordIconUrl, getGiftKeywordSlug } from '@/lib/constants/gift'
-import type { GiftConditionStatus } from '@/lib/planner/gift-condition-status'
+import { STORAGE_BASE } from '@/lib/constants/game'
+import type { GiftConditionScope, GiftConditionStatus } from '@/lib/planner/gift-condition-status'
 import type { SupportedLang } from '@/lib/i18n/types'
 import styles from './GiftCondition.module.css'
 
@@ -20,7 +21,9 @@ export function useGiftConditionText() {
     const formation = t('formation', { have: status.formation, need: status.need })
     const withBench = t('withBench', { have: status.all, need: status.need })
     const tier = status.tier ? t('tier', { reached: status.tier.reached, total: status.tier.total }) : ''
-    const summary = subject + ' ' + formation + ', ' + withBench + (tier ? ', ' + tier : '') + (status.partial ? ', ' + t('partial') : '')
+    // A gift that says which head count it reads shows that one count only.
+    const counts = status.scope === 'deployed' ? formation : status.scope === 'formation' ? withBench : formation + ', ' + withBench
+    const summary = subject + ' ' + counts + (tier ? ', ' + tier : '') + (status.partial ? ', ' + t('partial') : '')
     return { subject, formation, withBench, tier, summary, title: t(status.level === 'unmet' ? 'unmetTitle' : 'warnTitle', { text: summary }) }
   }
 }
@@ -53,5 +56,59 @@ export function GiftConditionMark({ status }: { status: GiftConditionStatus }) {
 /** Under the card: the count once the bench is included. */
 export function GiftConditionLine({ status }: { status: GiftConditionStatus }) {
   const text = useGiftConditionText()(status)
-  return <span className={styles.line} data-level={status.level} title={text.title}>{text.withBench}{text.tier && ' · ' + text.tier}</span>
+  return <span className={styles.line} data-level={status.level} title={text.title}>{status.scope === 'deployed' ? text.formation : text.withBench}{text.tier && ' · ' + text.tier}</span>
+}
+
+const LOCK_URL = `${STORAGE_BASE}/icons/ui/lock.webp`
+
+type PlateCondition = {
+  type: string; keyword?: string; keywords?: string[]; affiliation?: string; affiliations?: string[]
+  count?: number | null; tiers?: { count: number }[] | null; partial?: boolean
+}
+
+function conditionIcons(condition: PlateCondition): string[] {
+  const known = (src: string | null): src is string => !!src
+  if (condition.type === 'affiliation') return (condition.affiliations ?? (condition.affiliation ? [condition.affiliation] : [])).map(getAffiliationIconUrl).filter(known)
+  if (condition.type === 'keyword' || condition.type === 'multi_keyword') {
+    return (condition.keywords ?? (condition.keyword ? [condition.keyword] : [])).map(k => getGiftKeywordIconUrl(getGiftKeywordSlug(k) ?? 'general')).filter(known)
+  }
+  return []
+}
+
+/**
+ * The gift's condition as the game marks a locked effect: the lock, the keyword or affiliation icons and the rule; under
+ * it the head count it reads, and with a formation the count as pips (gold: deployed, outlined: the bench) against the need.
+ */
+export function GiftConditionPlate({ text, condition, scope, status }: {
+  text: string; condition?: PlateCondition | null; scope?: GiftConditionScope | null; status?: GiftConditionStatus | null
+}) {
+  const t = useTranslations('giftDetail')
+  const summary = useGiftConditionText()
+  const icons = condition ? conditionIcons(condition) : []
+  const tiers = (condition?.tiers ?? []).map(tier => tier.count).filter(Boolean)
+  const counted = status ? (status.scope === 'formation' ? status.all : status.formation) : 0
+  const bench = status && !status.scope ? Math.max(0, status.all - status.formation) : 0
+  return (
+    <div className={styles.lockPlate} data-level={status?.level ?? 'met'} data-partial={condition?.partial ? '' : undefined}>
+      <Image src={LOCK_URL} alt="" width={118} height={157} className={styles.lock} />
+      <div className={styles.lockBody}>
+        <p className={styles.lockRule}>
+          {icons.map(src => <Image key={src} src={src} alt="" width={24} height={24} className={styles.lockIcon} />)}
+          <span>{text}</span>
+        </p>
+        {(scope || condition?.partial || tiers.length > 1) && <p className={styles.lockTags}>
+          {scope && <span>{t(scope === 'deployed' ? 'scopeDeployed' : 'scopeFormation')}</span>}
+          {tiers.length > 1 && <span>{t('tierSteps', { steps: tiers.join(' / ') })}</span>}
+          {condition?.partial && <span>{t('partialOnly')}</span>}
+        </p>}
+        {status && <p className={styles.lockStatus} aria-label={summary(status).title}>
+          <span className={styles.pips} aria-hidden="true">
+            {Array.from({ length: Math.min(status.need, 12) }, (_, i) => <i key={i} data-fill={i < counted ? 'deployed' : i < counted + bench ? 'bench' : undefined} />)}
+          </span>
+          <b aria-hidden="true">{counted}<small>/{status.need}</small></b>
+          <em aria-hidden="true">{t(status.level === 'unmet' ? 'conditionUnmet' : 'conditionWarn')}</em>
+        </p>}
+      </div>
+    </div>
+  )
 }

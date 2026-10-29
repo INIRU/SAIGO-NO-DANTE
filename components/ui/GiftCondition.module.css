@@ -46,3 +46,26 @@
 }
 .line[data-level='unmet'] { color: #ef6a5a; }
 .line[data-level='warn'] { color: #d9a534; }
+
+/* The detail window's condition: the game's lock beside the rule, the head count it reads, and pips against the need. */
+.lockPlate { display: grid; grid-template-columns: 1.5rem minmax(0, 1fr); gap: 0.85rem; align-items: start; margin: 0 1.25rem 1rem; padding: 0.8rem 1rem; border: 1px solid #2e2417; border-radius: 0.25rem; background: #0f0c08; transition: border-color 0.2s ease; }
+.lockPlate[data-level='unmet']:not([data-partial]) { border-color: rgba(155, 44, 35, 0.65); }
+.lockPlate[data-level='warn'], .lockPlate[data-level='unmet'][data-partial] { border-color: rgba(200, 144, 10, 0.45); }
+.lock { width: 1.125rem; height: auto; margin: 0.15rem auto 0; filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.6)); }
+.lockBody { display: flex; flex-direction: column; gap: 0.45rem; min-width: 0; }
+.lockRule { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem; margin: 0; color: var(--text-primary); font: 0.9375rem/1.4 var(--font-heading); }
+.lockIcon { width: 1.25rem; height: 1.25rem; object-fit: contain; }
+.lockTags { display: flex; flex-wrap: wrap; gap: 0.3rem; margin: 0; }
+.lockTags span { padding: 0.1rem 0.45rem; border: 1px solid #2e2417; border-radius: 0.2rem; color: var(--text-secondary); font-size: 0.75rem; }
+.lockStatus { display: flex; align-items: center; gap: 0.6rem; margin: 0; }
+.pips { display: flex; flex-wrap: wrap; gap: 0.2rem; }
+.pips i { width: 0.55rem; height: 0.55rem; border: 1px solid #5a4526; transform: rotate(45deg); }
+.pips i[data-fill='deployed'] { border-color: var(--gold); background: var(--gold); }
+.pips i[data-fill='bench'] { border-color: var(--gold); }
+.lockStatus b { color: var(--text-primary); font: 1.25rem/1 var(--font-title); font-weight: 400; }
+.lockStatus small { color: #9c8b73; font-size: 0.85em; }
+.lockStatus em { font-style: normal; font-size: 0.8125rem; }
+.lockPlate[data-level='unmet']:not([data-partial]) .lockStatus em { color: #ef6a5a; }
+.lockPlate[data-level='warn'] .lockStatus em, .lockPlate[data-level='unmet'][data-partial] .lockStatus em { color: var(--gold-light); }
+@media (max-width: 40rem) { .lockPlate { margin: 0 1rem 0.9rem; } }
+@media (prefers-reduced-motion: reduce) { .lockPlate { transition: none; } }

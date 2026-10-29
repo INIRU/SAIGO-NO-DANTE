@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
+import { giftConditionScope } from '@/lib/planner/gift-condition-status'
 import GiftDetailModal, { localizedGiftText, useGiftConditionText, type GiftDetailData, type GiftDetailRecipePart } from '@/components/ui/GiftDetailModal'
 import type { SupportedLang } from '@/lib/i18n/types'
 import { getLocalizedName } from '@/lib/i18n/localize'
@@ -85,6 +86,8 @@ export default function GiftModal({
     price: gift.price,
     buyDisabled: gift.buy_disabled,
     condition: conditionText(gift.activation_condition),
+    activation: gift.activation_condition,
+    conditionScope: giftConditionScope(gift),
     recipe: recipe && {
       ingredients: recipe.ingredients.map(recipePart),
       result: recipePart(recipe.result_name),

@@ -8,7 +8,7 @@ import { useTranslations } from 'next-intl'
 import BaseModal from '@/components/ui/BaseModal'
 import GiftArtwork, { type GiftArtworkGift } from '@/components/ui/GiftArtwork'
 import GiftCard, { GiftEnhanceMark, GiftEnhancePicker } from '@/components/ui/GiftCard'
-import { useGiftConditionText as useConditionStatusText } from '@/components/ui/GiftCondition'
+import { GiftConditionPlate } from '@/components/ui/GiftCondition'
 import { blurPlaceholder } from '@/lib/utils/thumbhash'
 import KeywordChip from '@/components/ui/KeywordChip'
 import { useFormatSkillDesc } from '@/components/sinners/KeywordTooltip'
@@ -16,7 +16,7 @@ import { getGiftKeywordColor } from '@/lib/constants/gift'
 import { getThemePackCompositeImageUrl, getThemePackVisualConfig } from '@/lib/data/theme-pack-visuals'
 import { getLocalizedAffiliation, getLocalizedName, localizeGiftKeyword } from '@/lib/i18n/localize'
 import type { SupportedLang } from '@/lib/i18n/types'
-import type { GiftConditionStatus } from '@/lib/planner/gift-condition-status'
+import type { GiftConditionScope, GiftConditionStatus } from '@/lib/planner/gift-condition-status'
 import { gameTextToPlain, splitGameTextLines } from '@/lib/game-text/rich-text'
 import { createGiftRefSplitter, type GiftRefTarget } from '@/lib/mirror-dungeon/gift-refs'
 import { getGameUiAsset } from '@/lib/utils/game-ui'
@@ -105,6 +105,10 @@ export interface GiftDetailData {
   price?: number | null
   buyDisabled?: boolean
   condition?: string | null
+  /** The condition data, for its keyword or affiliation icons and steps. */
+  activation?: Condition & { tiers?: { count: number }[] | null; partial?: boolean } | null
+  /** The head count the condition reads (giftConditionScope). */
+  conditionScope?: GiftConditionScope | null
   conditionStatus?: GiftConditionStatus | null
   recipe?: { ingredients: GiftDetailRecipePart[]; result: GiftDetailRecipePart } | null
   themes?: GiftDetailTheme[]
@@ -219,9 +223,6 @@ export default function GiftDetailModal({ gift, lang, onClose, initialLevel = 0,
   const effect = [base, plus, plusplus][level] ?? base
   const effectColor = level === 2 ? '#e8b030' : level === 1 ? '#d8b878' : '#c8b898'
   const kwColor = getGiftKeywordColor(gift.keyword ?? null)
-  const status = gift.conditionStatus
-  const conditionText = useConditionStatusText()
-  const statusColor = status?.level === 'unmet' ? '#ef4444' : '#e8b030'
   // Reward and exclusive packs come first; a long pool list shows six chips and a "+N" that expands.
   const [showAllThemes, setShowAllThemes] = useState(false)
   const themes = gift.themes ?? []
@@ -287,6 +288,9 @@ export default function GiftDetailModal({ gift, lang, onClose, initialLevel = 0,
             </div>
           </header>
 
+          {/* The condition gates the effect, so it sits between the gift and its effect, marked with the game's lock. */}
+          {gift.condition && <GiftConditionPlate text={gift.condition} condition={gift.activation} scope={gift.conditionScope} status={gift.conditionStatus} />}
+
           {effect && (
             <Section
               title={t('effect')}
@@ -297,22 +301,6 @@ export default function GiftDetailModal({ gift, lang, onClose, initialLevel = 0,
               )}
             >
               <EffectText key={level} text={effect} color={effectColor} links={gift.giftLinks} />
-            </Section>
-          )}
-
-          {gift.condition && (
-            <Section title={t('condition')}>
-              <p style={{ fontSize: '0.875rem', color: status ? statusColor : '#8fb0e0' }}>{gift.condition}</p>
-              {status && (
-                <div className="mt-2 rounded-sm border-l-2 px-3 py-2" style={{ borderColor: statusColor, background: status.level === 'unmet' ? 'rgba(239,68,68,0.08)' : 'rgba(232,176,48,0.08)' }}>
-                  <p style={{ fontSize: '0.8125rem', color: statusColor }}>
-                    {status.level === 'unmet' ? t('conditionUnmet') : t('conditionWarn')}: {conditionText(status).summary}
-                  </p>
-                  <p className="mt-0.5" style={{ fontSize: '0.75rem', color: '#9c8b73' }}>
-                    {status.level === 'unmet' ? t('unmetHint') : t('warnHint')}
-                  </p>
-                </div>
-              )}
             </Section>
           )}
 
