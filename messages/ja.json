@@ -584,10 +584,7 @@
     "allThemes": "すべてのテーマパック",
     "scopeDeployed": "待機人員を除く",
     "scopeFormation": "編成人員を含む",
-    "partialOnly": "ロックの効果のみ",
-    "tierSteps": "{steps}人の段階",
-    "allEffects": "すべての効果",
-    "showGated": "条件の効果を表示"
+    "tierSteps": "{steps}人の段階"
   },
   "themePackDetail": {
     "clearReward": "クリア報酬",

@@ -584,10 +584,7 @@
     "allThemes": "모든 테마팩",
     "scopeDeployed": "대기 인원 제외",
     "scopeFormation": "편성 인원 포함",
-    "partialOnly": "자물쇠 효과만",
-    "tierSteps": "{steps}인 단계",
-    "allEffects": "모든 효과",
-    "showGated": "조건 효과 표시"
+    "tierSteps": "{steps}인 단계"
   },
   "themePackDetail": {
     "clearReward": "클리어 보상",
