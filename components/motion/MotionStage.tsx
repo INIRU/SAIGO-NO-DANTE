@@ -11,10 +11,12 @@ import styles from './Motion.module.css'
 // Once per visit (the tab's session): a reload or another skill in the same visit does not ask again.
 const NOTICE_KEY = 'motion-credit-notice'
 
+// The counter and the seek bar change every frame: data-sentry-block keeps them out of the session replay, which otherwise
+// records (and parses the style of) each change, 60 a second.
 function FrameCounter({ store, frames }: { store: MotionFrameStore; frames: number }) {
   const frame = Math.max(0, useMotionFrame(store))
   return (
-    <span className="shrink-0 font-[family-name:var(--font-title)] text-[1rem] tabular-nums tracking-wide text-[var(--text-secondary)]">
+    <span data-sentry-block className="shrink-0 font-[family-name:var(--font-title)] text-[1rem] tabular-nums tracking-wide text-[var(--text-secondary)]">
       <span className="text-[var(--text-primary)]">{frame}</span> / {Math.max(0, frames - 1)}
     </span>
   )
@@ -24,7 +26,7 @@ function SeekBar({ store, frames, label, onSeek }: { store: MotionFrameStore; fr
   const frame = Math.max(0, useMotionFrame(store))
   const max = Math.max(0, frames - 1)
   return (
-    <input type="range" min={0} max={max} step={1} value={Math.min(frame, max)} aria-label={label} disabled={frames === 0}
+    <input type="range" min={0} max={max} step={1} value={Math.min(frame, max)} aria-label={label} disabled={frames === 0} data-sentry-block
       onChange={event => onSeek(Number(event.target.value))}
       className={`${styles.seek} h-8 min-w-0 flex-1 cursor-pointer @max-md:order-first @max-md:basis-full @max-md:px-2`}
       style={{ ['--fill' as string]: `${max ? (frame / max) * 100 : 0}%` }} />

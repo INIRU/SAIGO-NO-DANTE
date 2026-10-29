@@ -51,6 +51,12 @@ describe('REQ-MOTION-008 the stage credits Project Moon', () => {
     expect(stage({ hasAudio: false })).toMatch(/<button[^>]*disabled=""[^>]*aria-label="volume"|<button[^>]*aria-label="volume"[^>]*disabled=""/)
   })
 
+  it('REQ-MOTION-036 keeps the parts that change every frame (seek bar, frame counter) out of the session replay', () => {
+    const html = stage()
+    expect(html).toMatch(/<input[^>]*aria-label="frame"[^>]*data-sentry-block|<input[^>]*data-sentry-block[^>]*aria-label="frame"/)
+    expect(html).toMatch(/<span[^>]*data-sentry-block[^>]*><span[^>]*>0<\/span> \/ 119<\/span>/)
+  })
+
   it('REQ-MOTION-031 holds the master, voice and effects sliders at their values (also while muted) and the critical-hit sound switch', () => {
     const html = stage({ hasAudio: true, hasCritical: true, muted: true, volumes: { master: 0.3, voice: 0.8, sfx: 0.6 } })
     expect(html).toMatch(/<input[^>]*aria-label="volumeMaster"[^>]*value="0.3"/)
