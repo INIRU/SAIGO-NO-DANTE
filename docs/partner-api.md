@@ -44,6 +44,7 @@
 - 응답은 항상 `{ "data": [...] }`다. `id`로 찾지 못하면 빈 배열이다.
 - 게임 자원 목록은 한 번에 전부 내려간다(가장 큰 `md-events`가 약 750KB). 게임 데이터는 패치 때만 바뀌므로 봇은 목록을 받아 메모리에 두고 주기적으로 새로 받는 방식을 쓴다. Discord 자동완성은 이 캐시에서 찾는다.
 - `sin_affinity`, `atk_type`, `skill_type`은 영어 코드(`wrath`, `slash`, `evade` …)다. 내성(`slash_res`, `resistance`), 키워드, 소속은 게임 원문 한국어 값이다.
+- 2026-10-29부터 값이 없던 칸이 응답에서 빠졌다: E.G.O의 `description`·`corrosion_risk`·`obtaining_method*`, 기프트의 `acquisition`·`related`, 키워드의 `sin_affinity`. 인격·E.G.O의 `name`은 그대로 내려간다(`name_kr`·`name_en`·`name_jp`를 고른 언어 하나로 합친 값).
 - 인격·E.G.O에는 `url`(사이트 상세)과 `card_url`(OG 카드 이미지, 1200×630)이 붙는다. 이미지 주소는 인증 없이 열린다.
 
 ## 파트너 덱·플랜 상세

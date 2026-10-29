@@ -8,6 +8,41 @@ const base: DamageInput = { power: 10, offenseLevel: 50, defenseLevel: 50, physi
 const damage = (input: Partial<DamageInput>) => coinDamage({ ...base, ...input }).damage
 
 describe('damage calculator', () => {
+  // The game's worked examples (game values): every coin is figured in 32-bit floats, in the game's order.
+  describe('REQ-TOOLS-014 the game formula', () => {
+    const game = (input: Partial<DamageInput>) => coinDamage({ ...base, offenseLevel: 60, defenseLevel: 50, ...input }).damage
+    it('REQ-TOOLS-014 example 1: a weak physical resistance and a level gap', () => {
+      expect(game({ physicalResist: 2 })).toBe(22)
+    })
+    it('REQ-TOOLS-014 example 2: three stacks of damage up multiply the whole hit', () => {
+      expect(game({ physicalResist: 2, modifiers: [{ target: 'damage', value: 0.3 }] })).toBe(29)
+    })
+    it('REQ-TOOLS-014 example 3: a flat damage adder is weighed by the resistances and the level gap alone', () => {
+      expect(game({ physicalResist: 2, damageAdder: 5 })).toBe(34)
+      expect(game({ physicalResist: 2, hpAdder: 5 })).toBe(27)
+    })
+    it('REQ-TOOLS-014 example 4: ten stacks of protection leave the least damage (5% of the power)', () => {
+      expect(damage({ power: 40, physicalResist: 0.5, sinResist: 0, modifiers: [{ target: 'damage', value: -1 }] })).toBe(2)
+      expect(damage({ power: 40, physicalResist: 0.5, sinResist: 0 })).toBe(10)
+    })
+    it('REQ-TOOLS-014 example 5: 100 power with +15% is 115 in 32-bit floats', () => {
+      expect(damage({ power: 100, modifiers: [{ target: 'damage', value: 0.15 }] })).toBe(115)
+    })
+    it('REQ-TOOLS-014 example 6: a critical hit adds 0.2 times its passives, clashes 3% each', () => {
+      expect(damage({ power: 20, critical: true })).toBe(24)
+      expect(damage({ power: 20, critical: true, clashCount: 5 })).toBe(27)
+      expect(damage({ power: 20, critical: true, critAdder: 0.1 })).toBe(26)
+      expect(damage({ power: 20, critical: true, critPassive: 0.5 })).toBe(26)
+    })
+    it('REQ-TOOLS-014 example 7: staggered+ with 0.3 weakening is 2.8, over the normal cap', () => {
+      expect(damage({ power: 12, stagger: 2, modifiers: [{ target: 'physical', value: 0.3 }] })).toBe(33)
+    })
+    it('REQ-TOOLS-014 holds the physical resistance between −2 and 2 when not staggered', () => {
+      expect(damage({ physicalResist: 2, modifiers: [{ target: 'physical', value: 0.3 }] })).toBe(20)
+      // Below 0 the resistance counts as −0.5, the same as 0.
+      expect(damage({ physicalResist: 0.5, modifiers: [{ target: 'physical', value: -1 }] })).toBe(damage({ physicalResist: 0 }))
+    })
+  })
   it('REQ-TOOLS-007 matches the worked example (W Don Quixote against a staggered+ enemy)', () => {
     expect(damage({ power: 8, offenseLevel: 53, defenseLevel: 19, stagger: 2, sinResist: 0.75, observationLevel: 1 })).toBe(23)
   })
@@ -36,9 +71,11 @@ describe('damage calculator', () => {
   })
   it('REQ-TOOLS-007 never lets reductions on both sides multiply into more damage', () => {
     // Damage modifiers at −150% and a resistance side below zero: two negative factors would give +5.
-    expect(damage({ power: 100, offenseLevel: 20, defenseLevel: 60, physicalResist: 0.5, sinResist: 0.5, modifiers: [{ target: 'damage', value: -1.5 }] })).toBe(1)
-    expect(damage({ power: 100, modifiers: [{ target: 'damage', value: -3 }, { target: 'resist', value: -3 }] })).toBe(1)
-    expect(coinDamage({ ...base, modifiers: [{ target: 'damage', value: -3 }] }).damageFactor).toBe(0)
+    expect(damage({ power: 100, offenseLevel: 20, defenseLevel: 60, physicalResist: 0.5, sinResist: 0.5, modifiers: [{ target: 'damage', value: -1.5 }] })).toBe(5)
+    expect(damage({ power: 100, modifiers: [{ target: 'damage', value: -3 }, { target: 'resist', value: -3 }] })).toBe(5)
+    // The game does not stop the damage sum at 0; the least damage takes over below it.
+    expect(coinDamage({ ...base, modifiers: [{ target: 'damage', value: -3 }] }).damageFactor).toBe(-2)
+    expect(damage({ modifiers: [{ target: 'damage', value: -3 }] })).toBe(1)
   })
   it('REQ-TOOLS-007 floors the result, never below 1, without losing a point to binary fractions', () => {
     expect(damage({ power: 1, modifiers: [{ target: 'damage', value: -1 }] })).toBe(1)
@@ -74,8 +111,29 @@ describe('damage calculator', () => {
     // ×0.5 weakened by 0.3 is ×0.8: −10%, not −25% + 30%.
     expect(damage({ power: 100, physicalResist: 0.5, modifiers: [{ target: 'physical', value: 0.3 }] })).toBe(90)
     expect(damage({ power: 100, sinResist: 1, modifiers: [{ target: 'sin', value: 0.3 }] })).toBe(130)
-    // A staggered target's physical resistance stays fixed.
-    expect(damage({ power: 100, stagger: 1, modifiers: [{ target: 'physical', value: 0.3 }] })).toBe(200)
+    // A staggered target's physical resistance is 2 + (stage − 1) × 0.5 plus the weakening.
+    expect(damage({ power: 100, stagger: 1, modifiers: [{ target: 'physical', value: 0.3 }] })).toBe(230)
+    expect(damage({ power: 100, stagger: 3, modifiers: [{ target: 'physical', value: 0.2 }] })).toBe(320)
+    expect(damage({ power: 100, stagger: 2, physicalResist: 0.5, modifiers: [{ target: 'physical', value: 0.5 }] })).toBe(300)
+  })
+  it('REQ-TOOLS-011 holds a sin resistance between 0 and 2', () => {
+    // Typed above 2, or raised past 2 by a weakening, it counts as 2: 100 × (1 + 1 + 1).
+    expect(damage({ power: 100, sinResist: 10 })).toBe(damage({ power: 100, sinResist: 2 }))
+    expect(damage({ power: 100, sinResist: 10 })).toBe(200)
+    expect(damage({ power: 100, sinResist: 1.5, modifiers: [{ target: 'sin', value: 1 }] })).toBe(200)
+    // The weakening is added first and the sum is held to 0–2 (game values): 10 − 0.5 is still 2.
+    expect(damage({ power: 100, sinResist: 10, modifiers: [{ target: 'sin', value: -0.5 }] })).toBe(200)
+    expect(damage({ power: 100, sinResist: 2, modifiers: [{ target: 'sin', value: -0.5 }] })).toBe(150)
+    expect(damage({ power: 100, sinResist: 0.5, modifiers: [{ target: 'sin', value: -2 }] })).toBe(50)
+  })
+  it('REQ-TOOLS-007 never goes under 5% of the coin power, rounded down, or 1', () => {
+    expect(damage({ power: 100, modifiers: [{ target: 'damage', value: -1 }] })).toBe(5)
+    expect(damage({ power: 59, modifiers: [{ target: 'damage', value: -1 }] })).toBe(2)
+    expect(damage({ power: 19, modifiers: [{ target: 'damage', value: -1 }] })).toBe(1)
+    // Above the minimum the ordinary result stands.
+    expect(damage({ power: 100, modifiers: [{ target: 'damage', value: -0.5 }] })).toBe(50)
+    // The final multiplier meets the raised minimum.
+    expect(damage({ power: 100, modifiers: [{ target: 'damage', value: -1 }, { target: 'final', value: 2 }] })).toBe(10)
   })
   it('REQ-TOOLS-008 keeps a typed value inside the range of its target', () => {
     expect(clampModifierValue(-5000, 'damage')).toBe(-1000)

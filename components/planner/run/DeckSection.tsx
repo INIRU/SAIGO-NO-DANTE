@@ -177,7 +177,7 @@ export default function DeckSection({ state, dispatch, identities, sinners, skil
   const handleSelectEgo = (ego: EgoData) => {
     dispatch({
       type: 'SWAP_EGO', sinnerId: ego.sinner_id,
-      newEgo: { ego_id: ego.id, sinner_id: ego.sinner_id, name_kr: ego.name_kr ?? ego.name, grade: ego.grade, sin_affinity: ego.sin_affinity },
+      newEgo: { ego_id: ego.id, sinner_id: ego.sinner_id, name_kr: ego.name_kr, grade: ego.grade, sin_affinity: ego.sin_affinity },
     })
     setEgoSinner(null)
   }
@@ -432,13 +432,13 @@ export default function DeckSection({ state, dispatch, identities, sinners, skil
                               {/* EGO 이미지 */}
                               {ego.image_url?.startsWith('http') && (
                                 <div className="relative w-full" style={{ aspectRatio: '1/1', overflow: 'hidden', background: 'var(--bg-deep)' }}>
-                                  <Image src={ego.image_url} alt={ego.name_kr ?? ego.name} fill className="object-contain" sizes="(max-width:640px) 50vw, 25vw" />
+                                  <Image src={ego.image_url} alt={ego.name_kr} fill className="object-contain" sizes="(max-width:640px) 50vw, 25vw" />
                                 </div>
                               )}
                               {/* EGO 정보 */}
                               <div style={{ padding: '0.375rem 0.5rem 0.5rem' }}>
                                 <p className="font-serif truncate" style={{ color: isSelected ? 'var(--text-primary)' : '#b0a898', fontSize: '0.625rem', lineHeight: 1.3 }}>
-                                  {ego.name_kr ?? ego.name}
+                                  {ego.name_kr}
                                 </p>
                                 <div className="flex items-center gap-1" style={{ marginTop: '0.25rem' }}>
                                   {normalizeSin(ego.sin_affinity) && (

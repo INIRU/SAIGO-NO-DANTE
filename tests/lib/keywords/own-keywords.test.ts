@@ -42,4 +42,10 @@ describe('REQ-KEYWORDS-008 the keywords an identity or E.G.O owns', () => {
     })
     expect(texts.sort()).toEqual(['본문', '[Vibration]', 'en coin', 'jp coin', '부식', '단계 패시브', 'stage passive', '패시브', '패시ブ'].sort())
   })
+
+  it('REQ-KEYWORDS-008 reads the coins past the fifth of an E.G.O skill, once', () => {
+    const coins = ['1', '2', '3', '4', '5', '여섯째', '일곱째']
+    const texts = egoTexts({ ego_skills: [{ coin1Effect: '1', coin5Effect: '5', coinEffects: coins, coinEffects_en: [...coins.slice(0, 5), 'sixth'] }] })
+    expect(texts.sort()).toEqual(['1', '5', '여섯째', '일곱째', 'sixth'].sort())
+  })
 })

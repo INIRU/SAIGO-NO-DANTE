@@ -58,6 +58,8 @@ export interface SkillFrameBlockProps {
   description?: string | null
   /** Unbreakable coin indices (0-based) */
   unbreakableCoins?: Set<number>
+  /** Per-coin power from the game's coin data ("+7", "-12"), shown as each coin's tooltip */
+  coinLabels?: string[]
   /** SkillDescription variant */
   descVariant?: 'compact' | 'detail'
   /** Allowed keywords for SkillDescription */
@@ -87,6 +89,7 @@ export default function SkillFrameBlock({
   isDefense = false,
   description,
   unbreakableCoins = new Set(),
+  coinLabels,
   descVariant = 'compact',
   allowedKeywords,
   matchPlainKeywords,
@@ -183,6 +186,7 @@ export default function SkillFrameBlock({
                   key={i}
                   src={isUb ? COIN_IMAGES.unbreakable : COIN_IMAGES.normal}
                   alt={isUb ? t('identity.skills.unbreakableCoin') : t('identity.skills.coin')}
+                  title={coinLabels?.[i]}
                   width={16} height={16}
                   style={{ width: coinIconSize, height: coinIconSize }}
                 />

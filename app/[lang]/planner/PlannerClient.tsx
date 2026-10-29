@@ -344,7 +344,7 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
             return {
               ego_id: id,
               sinner_id: ego.sinner_id,
-              name_kr: ego.name,
+              name_kr: ego.name_kr,
               grade: ego.grade,
               sin_affinity: ego.sin_affinity,
             }

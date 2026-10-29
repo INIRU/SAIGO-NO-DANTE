@@ -192,32 +192,62 @@ export function computeAllGiftAffiliationCounts(slots: readonly DeckKeywordSlot[
   return computeAffiliationCounts(slots, isAssignedKeywordSlot)
 }
 
+/** The count keys a condition's affiliations match (each key once: an exact label wins over fuzzy suffix matches). */
+function matchGiftAffiliationKeys(keys: readonly string[], rawAffiliations: readonly string[]): string[] {
+  const used = new Set<string>()
+  for (const rawAffiliation of rawAffiliations) {
+    const affiliation = normalizeGiftAffiliationLabel(rawAffiliation)
+    if (keys.includes(affiliation)) {
+      used.add(affiliation)
+      continue
+    }
+    for (const key of keys) {
+      if (used.has(key)) continue
+      if (affiliation.endsWith(key) || affiliation.includes(` ${key}`)) used.add(key)
+    }
+  }
+  return Array.from(used)
+}
+
+/** Sums the matched keys' counts. An identity with two of the listed affiliations counts twice: use the Members form for "A or B". */
 export function countGiftConditionAffiliations(
   counts: Record<string, number>,
   rawAffiliations: readonly string[],
 ): number {
-  const usedKeys = new Set<string>()
-  let total = 0
+  return matchGiftAffiliationKeys(Object.keys(counts), rawAffiliations).reduce((sum, key) => sum + counts[key], 0)
+}
 
-  for (const rawAffiliation of rawAffiliations) {
-    const affiliation = normalizeGiftAffiliationLabel(rawAffiliation)
-    const exact = counts[affiliation]
-    if (exact !== undefined) {
-      if (!usedKeys.has(affiliation)) {
-        usedKeys.add(affiliation)
-        total += exact
-      }
-      continue
+/** Affiliation -> the slots (by array index) that carry it; for "A or B" conditions where one identity counts once. */
+function computeAffiliationMembers(
+  slots: readonly DeckKeywordSlot[],
+  includeSlot: (slotOrder: number | null | undefined) => boolean,
+): Record<string, string[]> {
+  const members: Record<string, string[]> = {}
+  slots.forEach((slot, index) => {
+    if (!includeSlot(slot.slot_order)) return
+    for (const affiliation of getDeckIdentityAffiliations(getSlotIdentity(slot))) {
+      ;(members[affiliation] ??= []).push(String(index))
     }
+  })
+  return members
+}
 
-    for (const [key, count] of Object.entries(counts)) {
-      if (usedKeys.has(key)) continue
-      if (affiliation.endsWith(key) || affiliation.includes(` ${key}`)) {
-        usedKeys.add(key)
-        total += count
-      }
-    }
+export function computeFormationGiftAffiliationMembers(slots: readonly DeckKeywordSlot[]): Record<string, string[]> {
+  return computeAffiliationMembers(slots, isFormationKeywordSlot)
+}
+
+export function computeAllGiftAffiliationMembers(slots: readonly DeckKeywordSlot[]): Record<string, string[]> {
+  return computeAffiliationMembers(slots, isAssignedKeywordSlot)
+}
+
+/** Identities carrying any of the condition's affiliations, each once. */
+export function countGiftConditionAffiliationMembers(
+  members: Record<string, readonly string[]>,
+  rawAffiliations: readonly string[],
+): number {
+  const ids = new Set<string>()
+  for (const key of matchGiftAffiliationKeys(Object.keys(members), rawAffiliations)) {
+    for (const id of members[key]) ids.add(id)
   }
-
-  return total
+  return ids.size
 }

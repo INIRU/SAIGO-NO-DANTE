@@ -29,7 +29,7 @@ export function planSlotsFromDeckRows(rows: DeckIdentityRow[], egoRows: DeckEgoR
   if (!identitySlots.length) return null
   const egoSlots = egoRows.flatMap((row): EgoSlot[] => {
     const ego = egoById.get(row.ego_id ?? row.ego?.id ?? '')
-    return ego ? [{ ego_id: ego.id, sinner_id: ego.sinner_id, name_kr: ego.name_kr ?? ego.name, grade: ego.grade, sin_affinity: ego.sin_affinity }] : []
+    return ego ? [{ ego_id: ego.id, sinner_id: ego.sinner_id, name_kr: ego.name_kr, grade: ego.grade, sin_affinity: ego.sin_affinity }] : []
   })
   return { identitySlots, egoSlots }
 }

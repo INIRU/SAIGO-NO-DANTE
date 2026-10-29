@@ -46,7 +46,7 @@ export default function EventSection({ state, dispatch, events, choices, giftMap
   const giftByGameId = useMemo(() => new Map([...giftMap].map(([id, gift]) => [id, {
     ...gift, keyword: gift.keyword ?? '', grade: gift.grade ?? '', enhancement: false,
     price: null, buy_disabled: false, is_synthesis: false, related: null,
-    acquisition: null, difficulty: null, convert_to: null,
+    difficulty: null, convert_to: null,
     activation_condition: gift.activation_condition ? { ...gift.activation_condition, count: gift.activation_condition.count ?? 0 } : null,
   } as EgoGift])), [giftMap])
   const eventThemes = useMemo(() => themes.map(theme => ({ ...theme, id: Number(theme.id),

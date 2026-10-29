@@ -29,7 +29,6 @@ function recipe(id: string, resultName: string, ingredients: string[]): RecipeDa
     result_name: resultName,
     keyword: '',
     ingredients,
-    final_result: null,
   }
 }
 

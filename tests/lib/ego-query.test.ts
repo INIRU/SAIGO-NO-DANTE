@@ -26,6 +26,15 @@ describe('normalized EGO skill query', () => {
     expect(result?.ego_skills?.[0]).toMatchObject({ name: 'skill', skillPower: 12, normalEffect: '효과', coin1Effect: '첫 효과', coin1Effect_en: 'First' })
     expect(result?.ego_cor_skills).toEqual([])
   })
+  it('keeps the effect of every coin of a skill with more than five, in every language', async () => {
+    const coin = (word: string, n: number) => Array.from({ length: n }, (_, i) => `<coin=${i + 1}>${word}${i + 1}</coin>`).join('\n')
+    state.skills = [{ name: 'Seven', category: 'awakening', coins: 7, description: `본문\n${coin('효과', 7)}`, description_en: coin('fx', 7), description_jp: coin('効', 7) }]
+    const skill = (await getEGOById('e'))?.ego_skills?.[0]
+    expect(skill?.coinEffects).toEqual(['효과1', '효과2', '효과3', '효과4', '효과5', '효과6', '효과7'])
+    expect(skill?.coinEffects_en?.[6]).toBe('fx7')
+    expect(skill?.coinEffects_jp?.[5]).toBe('効6')
+    expect(skill).toMatchObject({ coin1Effect: '효과1', coin5Effect: '효과5' })
+  })
   it('reports relational lookup failure instead of silently rendering missing skills', async () => {
     state.error = { message: 'relation failed' }
     await expect(getEGOById('e')).rejects.toEqual(state.error)

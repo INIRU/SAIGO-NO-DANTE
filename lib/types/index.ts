@@ -35,7 +35,8 @@ export type PanicType = {
 export type Identity = {
   id: string
   sinner_id: string
-  name: string
+  /** The name a page shows (picked from name_kr / name_en / name_jp by the page); not a database column. */
+  name?: string
   name_kr: string
   name_en?: string | null
   name_jp?: string | null
@@ -84,7 +85,12 @@ export type Identity = {
   } | null
 }
 
+/** One coin of a skill as the game data lists it (skills.coin_list): value, operator, colour, whether it cannot break. */
+export type SkillCoin = { scale: number; operator: 'ADD' | 'SUB' | 'MUL'; color: string | null; unbreakable: boolean }
+
 export type Skill = {
+  /** Every coin in order; null/absent until the sync fills it (the readers then use coins/coin_power and the text). */
+  coin_list?: SkillCoin[] | null
   image_id?: string | null
   id: string
   identity_id: string
@@ -150,6 +156,10 @@ export type EGOSkill = {
   coin3Effect: string
   coin4Effect: string
   coin5Effect: string
+  /** The effect text of every coin in order (as many as the skill has); coin1Effect … coin5Effect hold the first five of the same. */
+  coinEffects?: string[]
+  coinEffects_en?: string[] | null
+  coinEffects_jp?: string[] | null
   name_en?: string | null
   name_jp?: string | null
   normalEffect_en?: string | null
@@ -186,14 +196,11 @@ export type EGO = {
   max_construe_level?: number
   id: string
   sinner_id: string
-  name: string
-  name_kr: string | null
+  name_kr: string
   name_en?: string | null
   name_jp?: string | null
   grade: string
   sin_affinity: SinType | null
-  description: string | null
-  corrosion_risk: string | null
   folder_name: string | null
   image_url: string | null
   passive_name: string | null
@@ -202,14 +209,11 @@ export type EGO = {
   passive_name_jp?: string | null
   passive_content_en?: string | null
   passive_content_jp?: string | null
-  obtaining_method_en?: string | null
-  obtaining_method_jp?: string | null
   ego_skills: EGOSkill[] | null
   ego_cor_skills: EGOSkill[] | null
   resistance: string[] | null
   cost: number[] | null
   keywords: string[] | null
-  obtaining_method: string | null
   cor_image_url: string | null
   /** Full-size art URL (`{id}_cg-{hash12}.webp`) the sync stores; null/absent for rows that predate it (see getEgoArtworkUrl). */
   artwork_url?: string | null
@@ -230,6 +234,10 @@ export type ActivationCondition = {
   affiliations?: string[]
   skill_condition?: string
   count: number
+  tiers?: { count: number }[]
+  partial?: boolean
+  source?: 'code' | 'text'
+  scope?: 'deployed' | 'formation' | null
 }
 
 export type EgoGiftNote = {

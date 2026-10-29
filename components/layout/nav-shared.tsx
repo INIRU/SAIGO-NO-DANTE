@@ -29,6 +29,7 @@ export const NAV_GROUPS: { labelKey: string; items: { href: string; labelKey: st
       { href: '/tools/experience', labelKey: 'nav.tools.experience' },
       { href: '/tools/lunacy',     labelKey: 'nav.tools.lunacy' },
       { href: '/tools/damage',     labelKey: 'nav.tools.damage' },
+      { href: '/tools/clash',      labelKey: 'nav.tools.clash' },
       { href: '/developers',       labelKey: 'nav.tools.developers' },
     ],
   },

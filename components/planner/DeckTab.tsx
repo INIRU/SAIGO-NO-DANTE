@@ -307,7 +307,6 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
         egosByGrade[slot.grade] = egoById.get(slot.ego_id) ?? {
           id: slot.ego_id,
           sinner_id: slot.sinner_id,
-          name: slot.name_kr,
           name_kr: slot.name_kr,
           grade: slot.grade,
           sin_affinity: slot.sin_affinity,
@@ -331,7 +330,6 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
       selectedByGrade[slot.grade] = egoById.get(slot.ego_id) ?? {
         id: slot.ego_id,
         sinner_id: slot.sinner_id,
-        name: slot.name_kr,
         name_kr: slot.name_kr,
         grade: slot.grade,
         sin_affinity: slot.sin_affinity,
@@ -346,14 +344,14 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
     const sinnerName = sinners.find(s => s.id === sinnerId)?.name_kr
     const defaultName = sinnerName ? DEFAULT_EGO_NAMES[sinnerName] : undefined
     return defaultName
-      ? egos.find(e => e.sinner_id === sinnerId && e.grade === 'ZAYIN' && (e.name_kr === defaultName || e.name === defaultName))
+      ? egos.find(e => e.sinner_id === sinnerId && e.grade === 'ZAYIN' && (e.name_kr === defaultName))
         ?? egos.find(e => e.sinner_id === sinnerId && e.grade === 'ZAYIN')
       : egos.find(e => e.sinner_id === sinnerId && e.grade === 'ZAYIN')
   }, [egos, sinners])
 
   const defaultEgoSlots = useMemo(() => sinners.flatMap(sinner => {
     const ego = getDefaultEgoForSinner(sinner.id)
-    return ego ? [{ ego_id: ego.id, sinner_id: sinner.id, name_kr: ego.name_kr ?? ego.name, grade: ego.grade, sin_affinity: ego.sin_affinity }] : []
+    return ego ? [{ ego_id: ego.id, sinner_id: sinner.id, name_kr: ego.name_kr, grade: ego.grade, sin_affinity: ego.sin_affinity }] : []
   }), [getDefaultEgoForSinner, sinners])
 
   useEffect(() => {
@@ -486,7 +484,7 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
     if (!hasZayin && defaultEgo) {
       dispatch({
         type: 'ADD_EGO',
-        slot: { ego_id: defaultEgo.id, sinner_id: ident.sinner_id, name_kr: defaultEgo.name_kr ?? defaultEgo.name, grade: defaultEgo.grade, sin_affinity: defaultEgo.sin_affinity },
+        slot: { ego_id: defaultEgo.id, sinner_id: ident.sinner_id, name_kr: defaultEgo.name_kr, grade: defaultEgo.grade, sin_affinity: defaultEgo.sin_affinity },
       })
     }
     setIdentityModalSinner(null)
@@ -671,7 +669,7 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
             slot: {
               ego_id: ego.id,
               sinner_id: ego.sinner_id,
-              name_kr: ego.name_kr ?? ego.name,
+              name_kr: ego.name_kr,
               grade: ego.grade,
               sin_affinity: ego.sin_affinity,
             },

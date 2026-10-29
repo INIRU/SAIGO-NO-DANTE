@@ -77,7 +77,7 @@ function NewReleases({ identities, egos, lang, t }: { identities: IdentityWithSi
                 <EgoDisplayCard
                   ego={{ grade: ego.grade, max_construe_level: ego.max_construe_level, image_url: ego.image_url, sin_affinity: ego.sin_affinity }}
                   href={`/sinners/${ego.sinner_id}/ego/${ego.id}`}
-                  name={localName(ego, lang) || ego.name}
+                  name={localName(ego, lang)}
                   sinnerId={ego.sinner_id}
                   lang={lang}
                 />

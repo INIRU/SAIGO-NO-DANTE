@@ -12,6 +12,17 @@ import type { OcrReference } from './ocr-match'
 import { nearestName, ocrNormalized } from './text-normalize'
 
 export interface SellDialog { name: string; price: number }
+
+/**
+ * The sell dialog's price against the gift's price (game ego-gift data `price`). Estimate (추정): sales in the recorded
+ * samples show half the price (어두운 잔영 100 -> 50, 빛나는 잔영 300 -> 150), but the client's sell-price method
+ * (GetEgoGiftSellPrice, with an "egoGiftSellPriceHigher" modifier) was not read, so a price of half, rounded either
+ * way, or a higher sell price up to the full price fits. Unknown gift price: fits.
+ */
+export function sellPriceFits(readPrice: number, giftPrice: number | null | undefined): boolean {
+  if (!giftPrice) return true
+  return readPrice >= Math.floor(giftPrice / 2) && readPrice <= giftPrice
+}
 export interface PendingSale extends SellDialog { giftId: string; at: number; costBefore: number }
 export const SALE_CONFIRM_MS = 5000
 
@@ -141,7 +152,9 @@ export const EMPTY_SALE_STATE: SaleState = { pending: null, dialog: null, lastCo
  * a following dialog shows the new cost, a dialog read while closing already shows the sold total, or the shop screen
  * shows it after leaving at once.
  */
-export function readSaleStep(state: SaleState, read: { at: number; text: string; cost: string[]; giftId: (name: string) => string | null }):
+export function readSaleStep(state: SaleState, read: { at: number; text: string; cost: string[]; giftId: (name: string) => string | null;
+  /** The gift's catalog price, when known: a dialog price that cannot be its sale price is a misread. */
+  giftPrice?: (giftId: string) => number | null | undefined }):
   { state: SaleState; sold: PendingSale[] } {
   const { at, text, cost } = read
   const sold: PendingSale[] = []
@@ -160,7 +173,7 @@ export function readSaleStep(state: SaleState, read: { at: number; text: string;
   const giftId = read.giftId(dialog.name)
   const recent = lastCost && at - lastCost.at < 10_000 ? lastCost.cost : []
   const before = costBeforeSale(recent, dialog.price) ?? costBeforeSale(cost, dialog.price)
-  if (!giftId || before === null) return { state: { pending: null, dialog: null, lastCost }, sold }
+  if (!giftId || before === null || !sellPriceFits(dialog.price, read.giftPrice?.(giftId))) return { state: { pending: null, dialog: null, lastCost }, sold }
   const sale = { ...dialog, giftId, at, costBefore: before }
   const digits = cost.join('')
   const closing = recent.length > 0 && digits.startsWith(String(before + dialog.price)) && !digits.startsWith(String(before))

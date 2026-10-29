@@ -38,7 +38,7 @@ const TITLE_TEXT_SHADOW = '0.125rem 0.125rem 0.0625rem rgba(7, 4, 2, 0.96)'
 // Game colours: terms (<k>…</k> in the messages) and values that went up with the level.
 const EFFECT_COLORS = { normal: undefined, term: '#627eff', diff: '#f8c200' } as const
 
-// 가호 데이터 (게임 추출 기반)
+// 가호 데이터 (게임 값 기준)
 export interface Blessing {
   baseId: number
   name: string

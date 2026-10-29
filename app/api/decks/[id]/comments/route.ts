@@ -24,7 +24,6 @@ function normalizeParentId(value: unknown): string | null | undefined {
 
 function revalidateDeckCommentCaches(deckId: string) {
   revalidateTag(CACHE_TAGS.deck(deckId), 'max')
-  revalidateTag(CACHE_TAGS.decksList, 'max')
 }
 
 export async function GET(

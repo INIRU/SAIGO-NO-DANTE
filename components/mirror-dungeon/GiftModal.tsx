@@ -2,9 +2,10 @@
 
 import { useMemo, useState } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
+import { giftConditionScope } from '@/lib/planner/gift-condition-status'
 import GiftDetailModal, { localizedGiftText, useGiftConditionText, type GiftDetailData, type GiftDetailRecipePart } from '@/components/ui/GiftDetailModal'
 import type { SupportedLang } from '@/lib/i18n/types'
-import { getLocalizedAffiliation, getLocalizedName } from '@/lib/i18n/localize'
+import { getLocalizedName } from '@/lib/i18n/localize'
 import type { EgoGift, Recipe, EgoGiftTheme } from './types'
 
 const RECIPE_FRAGMENTS = '조각 중 택 2종'
@@ -39,19 +40,6 @@ export default function GiftModal({
   const [previous, setPrevious] = useState<EgoGift | null>(null)
 
   const name = getLocalizedName({ name_kr: gift.name, name_en: gift.name_en, name_jp: gift.name_jp }, lang)
-  const hasHangul = (text: string) => /[\uac00-\ud7a3]/.test(text)
-  const acquisition = gift.acquisition && (lang === 'ko' || !hasHangul(gift.acquisition)) ? gift.acquisition : null
-
-  const localizeRelated = (text: string): string => {
-    if (lang === 'ko') return text
-    const affiliation = text.match(/^집단:\s*(.+)$/)
-    if (affiliation) return (lang === 'ja' ? '所属: ' : 'Group: ') + getLocalizedAffiliation(affiliation[1], lang)
-    const character = text.match(/^캐릭터:\s*(.+)$/)
-    if (character) return (lang === 'ja' ? 'キャラクター: ' : 'Character: ') + character[1]
-    const abno = text.match(/^환상체:\s*(.+)$/)
-    if (abno) return (lang === 'ja' ? '幻想体: ' : 'Abnormality: ') + abno[1]
-    return text
-  }
 
   const open = (target: EgoGift) => {
     setPrevious(gift)
@@ -98,10 +86,11 @@ export default function GiftModal({
     price: gift.price,
     buyDisabled: gift.buy_disabled,
     condition: conditionText(gift.activation_condition),
+    activation: gift.activation_condition,
+    conditionScope: giftConditionScope(gift),
     recipe: recipe && {
       ingredients: recipe.ingredients.map(recipePart),
       result: recipePart(recipe.result_name),
-      finalResult: recipe.final_result && recipe.final_result !== recipe.result_name ? recipePart(recipe.final_result) : null,
     },
     // Packs that give this gift: clear reward first, then pack-exclusive, then the shared pool.
     themes: giftId == null ? [] : themes
@@ -115,8 +104,6 @@ export default function GiftModal({
       .map(({ theme, tag }) => ({ ...theme, tag, onClick: onThemeClick ? () => onThemeClick(theme.id) : undefined })),
     inAllThemes: giftId != null && themes.length > 0 && themes.every(theme => theme.ego_gift_ids.includes(giftId)),
     giftLinks: onSelectGift ? giftLinks : null,
-    acquisition,
-    related: gift.related && gift.related !== '불명' && gift.related !== '-' ? localizeRelated(gift.related) : null,
   }
 
   return (

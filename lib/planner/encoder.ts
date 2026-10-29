@@ -132,7 +132,7 @@ export function decodedPlanToPlannerState(decoded: DecodedPlan, identities: Iden
     }),
     egoSlots: decoded.egoIds.flatMap(id => {
       const ego = egoById.get(id)
-      return ego ? [{ ego_id: id, sinner_id: ego.sinner_id, name_kr: ego.name_kr ?? ego.name, grade: ego.grade, sin_affinity: ego.sin_affinity }] : []
+      return ego ? [{ ego_id: id, sinner_id: ego.sinner_id, name_kr: ego.name_kr, grade: ego.grade, sin_affinity: ego.sin_affinity }] : []
     }),
     floorPlan: Array.from({ length: Math.max(initial.floorPlan.length, decoded.floorThemeIds.length) }, (_, index) => {
       const floor = initial.floorPlan[index] ?? {

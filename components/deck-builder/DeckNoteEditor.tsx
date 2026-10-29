@@ -8,10 +8,9 @@ import { getGiftActivationConditionStatus } from '@/lib/planner/gift-condition-s
 import { getDeckIdentityAffiliations } from '@/lib/decks/keyword-rules'
 import type { SupportedLang } from '@/lib/i18n/types'
 import { DEPLOYED_SLOT_COUNT } from '@/lib/constants/game'
+import { skillSlot } from '@/lib/identity/skill-model'
 function getNoteSkillBaseOrder(skill: Skill): number {
-  if (['evade', 'defense', 'counter'].includes(skill.skill_type)) return 4
-  if (skill.skill_order >= 5) return 3
-  return skill.skill_order
+  return skillSlot(skill)
 }
 interface Props {
   sinners: Sinner[]
@@ -106,7 +105,7 @@ export default function DeckNoteEditor({
       if (!identity) continue
       const sinnerName = sinners.find(s => s.id === identity.sinner_id)?.name_kr ?? identity.name_kr
       for (const ego of Object.values(egoSlots[identity.sinner_id] ?? {})) {
-        const name = ego.name_kr || ego.name
+        const name = ego.name_kr
         map[`${sinnerName}:${name}`] = {
           name,
           grade: ego.grade,
@@ -152,6 +151,9 @@ export default function DeckNoteEditor({
   const egoGiftConditionLookup = useMemo(() => {
     const formationAffiliationCounts: Record<string, number> = {}
     const allAffiliationCounts: Record<string, number> = {}
+    // Affiliation -> deck sinner ids, so an identity with two of a condition's affiliations ("A or B") counts once.
+    const formationAffiliationMembers: Record<string, string[]> = {}
+    const allAffiliationMembers: Record<string, string[]> = {}
     const activeFormationIds = new Set(formationOrder.slice(0, DEPLOYED_SLOT_COUNT))
     const assignedIds = new Set(formationOrder)
 
@@ -161,11 +163,13 @@ export default function DeckNoteEditor({
       if (activeFormationIds.has(sinnerId)) {
         for (const affiliation of affiliations) {
           formationAffiliationCounts[affiliation] = (formationAffiliationCounts[affiliation] ?? 0) + 1
+          ;(formationAffiliationMembers[affiliation] ??= []).push(sinnerId)
         }
       }
       if (assignedIds.has(sinnerId)) {
         for (const affiliation of affiliations) {
           allAffiliationCounts[affiliation] = (allAffiliationCounts[affiliation] ?? 0) + 1
+          ;(allAffiliationMembers[affiliation] ??= []).push(sinnerId)
         }
       }
     }
@@ -178,6 +182,8 @@ export default function DeckNoteEditor({
         allKeywordCounts: allGiftKeywordCounts,
         formationAffiliationCounts,
         allAffiliationCounts,
+        formationAffiliationMembers,
+        allAffiliationMembers,
       })
     }
     return map

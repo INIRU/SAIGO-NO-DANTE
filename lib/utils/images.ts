@@ -3,6 +3,7 @@ import { getGameUiAsset } from '@/lib/utils/game-ui'
 import skillFrameVersions from '@/lib/generated/skill-frame-versions.json'
 import egoArtwork from '@/lib/generated/ego-artwork.json'
 import type { Identity } from '@/lib/types'
+import { skillSlot } from '@/lib/identity/skill-model'
 import { STORAGE_BASE, LCB_IDS } from '@/lib/constants/game'
 
 /** Tiny 4x4 warm-dark blur placeholder for remote images */
@@ -84,15 +85,15 @@ export function getSkillIconUrl(identity: Pick<Identity, 'sinner_id' | 'game_id'
   return `${STORAGE_BASE}/icons/skills/${owner}/${sprite}.webp`
 }
 
-/** 스킬 목록(skill_order, id 순 정렬)에서 이미지 인덱스 계산.
- *  S1→01, S2→02, S3→03, 수비→04, 변형→05, 06 ...
- *  skill_order >= 5 는 S3 변형(구 데이터), 같은 skill_order 중복은 변형 스킬 */
-export function computeSkillImageIndices(skills: { id: string; skill_order: number }[]): Record<string, number> {
+/** 스킬 목록(skill_order, id 순 정렬)에서 이미지 인덱스 계산 (image_id가 없는 옛 행의 대체).
+ *  S1→01, S2→02, S3→03, 수비→04, 변형→05, 06 ... (게임 스킬 번호 끝 두 자리와 같은 규칙).
+ *  슬롯은 skillSlot(): 같은 슬롯의 두 번째부터는 변형 스킬 */
+export function computeSkillImageIndices(skills: { id: string; skill_order: number; skill_type?: string | null }[]): Record<string, number> {
   const seenOrder = new Set<number>()
   const result: Record<string, number> = {}
   const variants: { id: string }[] = []
   for (const s of skills) {
-    const base = s.skill_order >= 5 ? 3 : s.skill_order
+    const base = skillSlot(s)
     if (!seenOrder.has(base)) {
       seenOrder.add(base)
       result[s.id] = base

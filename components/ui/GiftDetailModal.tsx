@@ -8,7 +8,7 @@ import { useTranslations } from 'next-intl'
 import BaseModal from '@/components/ui/BaseModal'
 import GiftArtwork, { type GiftArtworkGift } from '@/components/ui/GiftArtwork'
 import GiftCard, { GiftEnhanceMark, GiftEnhancePicker } from '@/components/ui/GiftCard'
-import { useGiftConditionText as useConditionStatusText } from '@/components/ui/GiftCondition'
+import { GiftConditionDivider } from '@/components/ui/GiftCondition'
 import { blurPlaceholder } from '@/lib/utils/thumbhash'
 import KeywordChip from '@/components/ui/KeywordChip'
 import { useFormatSkillDesc } from '@/components/sinners/KeywordTooltip'
@@ -16,10 +16,11 @@ import { getGiftKeywordColor } from '@/lib/constants/gift'
 import { getThemePackCompositeImageUrl, getThemePackVisualConfig } from '@/lib/data/theme-pack-visuals'
 import { getLocalizedAffiliation, getLocalizedName, localizeGiftKeyword } from '@/lib/i18n/localize'
 import type { SupportedLang } from '@/lib/i18n/types'
-import type { GiftConditionStatus } from '@/lib/planner/gift-condition-status'
+import type { GiftConditionScope, GiftConditionStatus } from '@/lib/planner/gift-condition-status'
 import { gameTextToPlain, splitGameTextLines } from '@/lib/game-text/rich-text'
 import { createGiftRefSplitter, type GiftRefTarget } from '@/lib/mirror-dungeon/gift-refs'
 import { getGameUiAsset } from '@/lib/utils/game-ui'
+import { conditionLines } from '@/lib/mirror-dungeon/gift-condition-lines'
 import { PlaceholderGiftProvider, type PlaceholderGift } from '@/components/ui/PlaceholderLabel'
 
 const CREDIT_ICON = getGameUiAsset('resources/md-credit')
@@ -105,15 +106,17 @@ export interface GiftDetailData {
   price?: number | null
   buyDisabled?: boolean
   condition?: string | null
+  /** The condition data, for its keyword or affiliation icons and steps. */
+  activation?: Condition & { tiers?: { count: number }[] | null; partial?: boolean } | null
+  /** The head count the condition reads (giftConditionScope). */
+  conditionScope?: GiftConditionScope | null
   conditionStatus?: GiftConditionStatus | null
-  recipe?: { ingredients: GiftDetailRecipePart[]; result: GiftDetailRecipePart; finalResult?: GiftDetailRecipePart | null } | null
+  recipe?: { ingredients: GiftDetailRecipePart[]; result: GiftDetailRecipePart } | null
   themes?: GiftDetailTheme[]
   /** The gift sits in every listed pack's pool, so one line replaces the list. */
   inAllThemes?: boolean
   /** Other gifts that effect text may name (upgrade targets etc.), rendered as links. */
   giftLinks?: { targets: GiftLinkTarget[]; selfId?: string | null; convertToId?: string | null } | null
-  acquisition?: string | null
-  related?: string | null
 }
 
 const BADGE_TONES = {
@@ -135,7 +138,11 @@ function Section({ title, aside, children }: { title: string; aside?: ReactNode;
   )
 }
 
-export function EffectText({ text, color, links }: { text: string; color: string; links?: GiftDetailData['giftLinks'] }) {
+/**
+ * gate: the gift has a head-count condition. The lines it decides follow its divider (`divider`: the lock and the
+ * condition across the text); the lines before it always apply. A condition no line states gets its divider first.
+ */
+export function EffectText({ text, color, links, gate }: { text: string; color: string; links?: GiftDetailData['giftLinks']; gate?: { partial: boolean; divider: (lines: ReactNode) => ReactNode } }) {
   const formatSkillDesc = useFormatSkillDesc()
   const split = useMemo(() => links?.targets.length ? createGiftRefSplitter(links.targets, links) : null, [links])
   // {{gift:<game id>}} (a convert_to gift's target) shows that gift as a link.
@@ -146,21 +153,29 @@ export function EffectText({ text, color, links }: { text: string; color: string
   }, [links])
   // Lines split so a tag spanning lines keeps applying; the bullet check reads the visible text, as a line may start with a tag.
   const lines = splitGameTextLines(text).map(l => l.trim()).filter(Boolean)
-  const render = (line: string) => split
+  const gated = new Set(gate ? conditionLines(lines.map(line => gameTextToPlain(line)), gate.partial)?.gated ?? [] : [])
+  const render = (line: string, lineColor: string) => split
     ? split(line).map((part, i) => typeof part === 'string'
-      ? <span key={i}>{formatSkillDesc(part, color)}</span>
+      ? <span key={i}>{formatSkillDesc(part, lineColor)}</span>
       : <GiftLink key={i} target={part.gift as GiftLinkTarget} />)
-    : formatSkillDesc(line, color)
+    : formatSkillDesc(line, lineColor)
   return (
     <PlaceholderGiftProvider lookup={giftById}>
       <div style={{ color: '#d8ccb4', fontSize: '0.875rem', lineHeight: 1.75 }}>
+        {gate && !gated.size && <div style={{ marginBottom: '0.5rem' }}>{gate.divider(null)}</div>}
         {lines.map((line, i) => {
-          const isSub = /^-\s/.test(gameTextToPlain(line))
-          return (
-            <p key={i} style={isSub ? { paddingLeft: '0.875rem', textIndent: '-0.625rem', marginTop: '0.125rem' } : { marginTop: i > 0 ? '0.5rem' : 0 }}>
-              {render(line)}
-            </p>
-          )
+          if (gated.has(i) && i !== Math.min(...gated)) return null
+          const paragraph = (index: number, first: boolean) => {
+            const isSub = /^-\s/.test(gameTextToPlain(lines[index]))
+            return (
+              <p key={index} style={isSub ? { paddingLeft: '0.875rem', textIndent: '-0.625rem', marginTop: '0.125rem' } : { marginTop: first ? 0 : '0.5rem' }}>
+                {render(lines[index], color)}
+              </p>
+            )
+          }
+          // The decided lines, together in the condition's box where the first of them stands.
+          if (gated.has(i)) return <div key={i} style={{ marginTop: i > 0 ? '0.75rem' : 0 }}>{gate!.divider([...gated].sort((x, y) => x - y).map((index, k) => paragraph(index, k === 0)))}</div>
+          return paragraph(i, i === 0)
         })}
       </div>
     </PlaceholderGiftProvider>
@@ -221,9 +236,6 @@ export default function GiftDetailModal({ gift, lang, onClose, initialLevel = 0,
   const effect = [base, plus, plusplus][level] ?? base
   const effectColor = level === 2 ? '#e8b030' : level === 1 ? '#d8b878' : '#c8b898'
   const kwColor = getGiftKeywordColor(gift.keyword ?? null)
-  const status = gift.conditionStatus
-  const conditionText = useConditionStatusText()
-  const statusColor = status?.level === 'unmet' ? '#ef4444' : '#e8b030'
   // Reward and exclusive packs come first; a long pool list shows six chips and a "+N" that expands.
   const [showAllThemes, setShowAllThemes] = useState(false)
   const themes = gift.themes ?? []
@@ -289,6 +301,9 @@ export default function GiftDetailModal({ gift, lang, onClose, initialLevel = 0,
             </div>
           </header>
 
+          {/* With no effect text to follow it, the condition's divider shows on its own. */}
+          {gift.condition && !effect && <div className="px-5 pb-4"><GiftConditionDivider text={gift.condition} condition={gift.activation} scope={gift.conditionScope} status={gift.conditionStatus} /></div>}
+
           {effect && (
             <Section
               title={t('effect')}
@@ -298,23 +313,10 @@ export default function GiftDetailModal({ gift, lang, onClose, initialLevel = 0,
                 </div>
               )}
             >
-              <EffectText key={level} text={effect} color={effectColor} links={gift.giftLinks} />
-            </Section>
-          )}
-
-          {gift.condition && (
-            <Section title={t('condition')}>
-              <p style={{ fontSize: '0.875rem', color: status ? statusColor : '#8fb0e0' }}>{gift.condition}</p>
-              {status && (
-                <div className="mt-2 rounded-sm border-l-2 px-3 py-2" style={{ borderColor: statusColor, background: status.level === 'unmet' ? 'rgba(239,68,68,0.08)' : 'rgba(232,176,48,0.08)' }}>
-                  <p style={{ fontSize: '0.8125rem', color: statusColor }}>
-                    {status.level === 'unmet' ? t('conditionUnmet') : t('conditionWarn')}: {conditionText(status).summary}
-                  </p>
-                  <p className="mt-0.5" style={{ fontSize: '0.75rem', color: '#9c8b73' }}>
-                    {status.level === 'unmet' ? t('unmetHint') : t('warnHint')}
-                  </p>
-                </div>
-              )}
+              <EffectText key={level} text={effect} color={effectColor} links={gift.giftLinks}
+                gate={gift.condition ? { partial: !!gift.activation?.partial, divider: lines => (
+                  <GiftConditionDivider text={gift.condition!} condition={gift.activation} scope={gift.conditionScope} status={gift.conditionStatus}>{lines}</GiftConditionDivider>
+                ) } : undefined} />
             </Section>
           )}
 
@@ -330,12 +332,6 @@ export default function GiftDetailModal({ gift, lang, onClose, initialLevel = 0,
                 <Sign>=</Sign>
                 <RecipeGift part={gift.recipe.result} fragmentsLabel={t('recipeFragments')} />
               </div>
-              {gift.recipe.finalResult && (
-                <div className="mt-3 flex items-center gap-3">
-                  <span style={{ fontSize: '0.8125rem', color: '#9c8b73' }}>{t('finalSynthesis')}</span>
-                  <RecipeGift part={gift.recipe.finalResult} fragmentsLabel={t('recipeFragments')} />
-                </div>
-              )}
             </Section>
           )}
 
@@ -364,16 +360,6 @@ export default function GiftDetailModal({ gift, lang, onClose, initialLevel = 0,
             </Section>
           )}
 
-          {(gift.acquisition || gift.related) && (
-            <Section title={t('acquisition')}>
-              {gift.acquisition && <p className="whitespace-pre-line" style={{ fontSize: '0.8125rem', lineHeight: 1.7, color: '#bfae92' }}>{gift.acquisition}</p>}
-              {gift.related && (
-                <p className={gift.acquisition ? 'mt-1.5' : undefined} style={{ fontSize: '0.8125rem', color: '#9c8b73' }}>
-                  {t('related')} <span style={{ color: '#bfae92' }}>{gift.related}</span>
-                </p>
-              )}
-            </Section>
-          )}
           <div className="h-2 sm:h-1" />
         </div>
       </div>

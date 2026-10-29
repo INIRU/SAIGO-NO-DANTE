@@ -167,7 +167,8 @@ export async function proxy(request: NextRequest) {
   }
 
   // ── 3. 점검 모드 체크 (페이지 요청만) ──
-  if (!MAINTENANCE_SKIP.some(p => hasPathPrefix(routePathname, p)) && pathname !== '/favicon.ico') {
+  // The local development server reads the same database: a maintenance set for the live site does not close it.
+  if (process.env.NODE_ENV !== 'development' && !MAINTENANCE_SKIP.some(p => hasPathPrefix(routePathname, p)) && pathname !== '/favicon.ico') {
     const entries = await activeMaintenance()
     const now = new Date()
     // 시작 전·종료 후 항목은 무시한다(예약 점검)

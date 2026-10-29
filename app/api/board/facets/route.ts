@@ -56,7 +56,7 @@ async function facets(kind: Kind) {
   const identityIds = [...identityPosts.keys()]
   const [identities, egos, gifts, themes] = await Promise.all([
     identityIds.length ? db.from('identities').select('id, association_list').in('id', identityIds) : Promise.resolve({ data: [], error: null }),
-    egoCounts.size ? db.from('ego').select('id, game_id, sinner_id, grade, sin_affinity, name, name_kr, name_en, name_jp, image_url').in('id', [...egoCounts.keys()]) : Promise.resolve({ data: [], error: null }),
+    egoCounts.size ? db.from('ego').select('id, game_id, sinner_id, grade, sin_affinity, name_kr, name_en, name_jp, image_url').in('id', [...egoCounts.keys()]) : Promise.resolve({ data: [], error: null }),
     giftCounts.size ? db.from('ego_gifts').select('game_id, name, name_en, name_jp, grade, keyword, image_url').in('game_id', [...giftCounts.keys()].map(Number)) : Promise.resolve({ data: [], error: null }),
     themeCounts.size ? db.from('ego_gift_themes').select('id, name, name_en, name_jp, image_url, name_color, name_segments').in('id', [...themeCounts.keys()].map(Number)) : Promise.resolve({ data: [], error: null }),
   ])

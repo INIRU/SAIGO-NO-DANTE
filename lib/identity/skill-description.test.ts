@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { isUnbreakableCoinText, parseSkillDescription, skillDescriptionBlocks, splitEgoSkillDescription, unbreakableCoinIndices } from './skill-description'
+import { coinPowerLabels, isUnbreakableCoinText, parseSkillDescription, skillDescriptionBlocks, splitEgoSkillDescription, unbreakableCoinIndices, unbreakableCoinSet } from './skill-description'
 
 it('uses the same zero-based unbreakable coin indices for every locale and renderer', () => {
   for (const [coin, unbreakable] of [['코인', '파괴 불가 코인'], ['Coin', 'Unbreakable Coin'], ['コイン', '破壊不可コイン']]) {
@@ -94,5 +94,19 @@ describe('REQ-SHARED-020 E.G.O skill effect split', () => {
     expect(splitEgoSkillDescription('<style="highlight">본문 A</style>\n\n본문 B\n<coin=1>[SuperCoin]\n효과</coin>\n<coin=3>끝</coin>')).toEqual({
       normalEffect: '<style="highlight">본문 A</style>\n\n본문 B', coinEffects: ['[SuperCoin]\n효과', '', '끝'],
     })
+  })
+})
+
+describe('coin_list from the game coin data', () => {
+  const coin = (scale: number, operator: 'ADD' | 'SUB' | 'MUL', unbreakable = false) => ({ scale, operator, color: null, unbreakable })
+  it('takes the unbreakable coins from coin_list and the text only when there is none', () => {
+    const text = '[코인 1] 파괴 불가 코인'
+    expect([...unbreakableCoinSet({ description: text, coin_list: [coin(7, 'ADD'), coin(7, 'ADD', true)] })]).toEqual([1])
+    expect([...unbreakableCoinSet({ description: text, coin_list: null })]).toEqual([0])
+    expect([...unbreakableCoinSet({ description: text, coin_list: [] })]).toEqual([0])
+  })
+  it('labels each coin with its value and operator', () => {
+    expect(coinPowerLabels({ coin_list: [coin(7, 'ADD'), coin(12, 'SUB'), coin(2, 'MUL')] })).toEqual(['+7', '-12', '×2'])
+    expect(coinPowerLabels({})).toEqual([])
   })
 })

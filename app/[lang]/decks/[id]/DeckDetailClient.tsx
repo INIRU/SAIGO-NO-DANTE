@@ -27,8 +27,10 @@ import { getIdentityImageUrl, getIdentityPortraitUrl, getSkillIconUrl, computeSk
 import type { Identity, Skill } from '@/lib/types'
 import {
   computeAllGiftAffiliationCounts,
+  computeAllGiftAffiliationMembers,
   computeAllGiftKeywordCounts,
   computeFormationGiftAffiliationCounts,
+  computeFormationGiftAffiliationMembers,
   computeFormationGiftKeywordCounts,
   normalizeDeckMainKeyword,
   type DeckKeywordSlot,
@@ -65,6 +67,7 @@ import { getGiftActivationConditionStatus } from '@/lib/planner/gift-condition-s
 import type { SupportedLang } from '@/lib/i18n/types'
 import { workbenchReveal } from '@/lib/animations'
 import styles from './DeckDetail.module.css'
+import { skillSlot } from '@/lib/identity/skill-model'
 
 const IdentityDetailModal = dynamic(() => import('@/components/ui/IdentityDetailModal'), { ssr: false })
 const EgoDetailModal = dynamic(() => import('@/components/ui/EgoDetailModal'), { ssr: false })
@@ -230,9 +233,7 @@ function uniqueNames(...names: Array<string | null | undefined>): string[] {
 }
 
 function getNoteSkillBaseOrder(skill: Pick<IdentityDetail['skills'][number], 'skill_order' | 'skill_type'>): number {
-  if (['evade', 'defense', 'counter'].includes(skill.skill_type)) return 4
-  if (skill.skill_order >= 5) return 3
-  return skill.skill_order
+  return skillSlot(skill)
 }
 
 function buildNoteLookups(
@@ -677,6 +678,8 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
     const allKeywordCounts = computeAllGiftKeywordCounts(deckKeywordSlots)
     const formationAffiliationCounts = computeFormationGiftAffiliationCounts(deckKeywordSlots)
     const allAffiliationCounts = computeAllGiftAffiliationCounts(deckKeywordSlots)
+    const formationAffiliationMembers = computeFormationGiftAffiliationMembers(deckKeywordSlots)
+    const allAffiliationMembers = computeAllGiftAffiliationMembers(deckKeywordSlots)
 
     const map: Record<string, ReturnType<typeof getGiftActivationConditionStatus>> = {}
     for (const gift of Object.values(egoGiftLookup)) {
@@ -686,6 +689,8 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
         allKeywordCounts,
         formationAffiliationCounts,
         allAffiliationCounts,
+        formationAffiliationMembers,
+        allAffiliationMembers,
       })
     }
     return map
@@ -1087,7 +1092,7 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
                           key={`${identity.id}-${i}`}
                           identity={{
                             imageUrl: identity.folder_name && identity.game_id ? getIdentityImageUrl(identity.sinner_id, identity.folder_name, `${identity.game_id}_normal_info`) : null,
-                            name: adapted.name,
+                            name: adapted.name ?? '',
                             sinnerName: rootT(`sinner.${identity.sinner_id}`),
                           }}
                           onIdentityClick={() => setIdentityPreview({ slot })}

@@ -2,6 +2,9 @@ import { describe, expect, it } from 'vitest'
 import {
   computeAllGiftAffiliationCounts,
   computeFormationGiftAffiliationCounts,
+  computeAllGiftAffiliationMembers,
+  computeFormationGiftAffiliationMembers,
+  countGiftConditionAffiliationMembers,
   countGiftConditionAffiliations,
   getDeckIdentityAffiliations,
   normalizeGiftAffiliationLabel,
@@ -27,10 +30,24 @@ describe('deck gift affiliation rules', () => {
     expect(computeAllGiftAffiliationCounts(slots).중지).toBe(4)
   })
 
-  it('게임 추출 조건에 붙은 설명성 접두어를 제거하고 실제 소속을 매칭한다', () => {
+  it('게임 값 조건에 붙은 설명성 접두어를 제거하고 실제 소속을 매칭한다', () => {
     const formationCounts = computeFormationGiftAffiliationCounts(slots)
 
     expect(normalizeGiftAffiliationLabel('- 턴 시작 시 중지')).toBe('턴 시작 시 중지')
     expect(countGiftConditionAffiliations(formationCounts, ['- 턴 시작 시 중지'])).toBe(3)
+  })
+})
+
+describe('deck affiliation members ("A or B" counts an identity once)', () => {
+  const slots: DeckKeywordSlot[] = [
+    { slot_order: 0, identities: { affiliation: 'A', association_list: ['B'] } },
+    { slot_order: 1, identities: { affiliation: 'B' } },
+    { slot_order: 9, identities: { affiliation: 'A' } },
+  ]
+  it('unions the matched affiliations', () => {
+    const formation = computeFormationGiftAffiliationMembers(slots)
+    expect(countGiftConditionAffiliationMembers(formation, ['A', 'B'])).toBe(2)
+    expect(countGiftConditionAffiliations(computeFormationGiftAffiliationCounts(slots), ['A', 'B'])).toBe(3)
+    expect(countGiftConditionAffiliationMembers(computeAllGiftAffiliationMembers(slots), ['A', 'B'])).toBe(3)
   })
 })

@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { pageMetadata } from '@/lib/seo/metadata'
 import { cacheLife, cacheTag } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { GIFT_COLUMNS, RECIPE_COLUMNS, MD_EVENT_COLUMNS, MD_EVENT_CHOICE_COLUMNS } from '@/lib/db/columns'
 import { readAllRows } from '@/lib/meta/pagination'
 import { getTranslations } from 'next-intl/server'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
@@ -26,8 +27,8 @@ export default async function RunPage({ params }: { params: Promise<{ lang: stri
 
   const [{ data: themes, error: e1 }, { data: gifts, error: e2 }, { data: recipes, error: e3 }] = await Promise.all([
     supabase.schema('limbus').from('ego_gift_themes').select('id, name, name_en, name_jp, ego_gift_ids, specific_ego_gift_ids, fixed_reward_gift_ids, image_url, difficulty, floor_info, name_color, name_segments'),
-    supabase.schema('limbus').from('ego_gifts').select('*').order('keyword').order('grade'),
-    supabase.schema('limbus').from('ego_gift_recipes').select('*'),
+    supabase.schema('limbus').from('ego_gifts').select(GIFT_COLUMNS).order('keyword').order('grade'),
+    supabase.schema('limbus').from('ego_gift_recipes').select(RECIPE_COLUMNS),
   ])
   if (e1 || e2 || e3) console.error('[RunPage] query group 1:', e1?.message, e2?.message, e3?.message)
 
@@ -41,9 +42,9 @@ export default async function RunPage({ params }: { params: Promise<{ lang: stri
   if (e4 || e5 || e6 || e6b) console.error('[RunPage] query group 2:', e4?.message, e5?.message, e6?.message, e6b?.message)
 
   const [{ data: egos, error: e7 }, { data: mdEvents, error: e8 }, { data: mdChoices, error: e9 }] = await Promise.all([
-    supabase.schema('limbus').from('ego').select('id, sinner_id, name, name_kr, grade, sin_affinity, image_url, cost, game_id'),
-    supabase.schema('limbus').from('md_events').select('*').order('id'),
-    supabase.schema('limbus').from('md_event_choices').select('*').order('event_id').order('sort_order'),
+    supabase.schema('limbus').from('ego').select('id, sinner_id, name_kr, grade, sin_affinity, image_url, cost, game_id'),
+    supabase.schema('limbus').from('md_events').select(MD_EVENT_COLUMNS).order('id'),
+    supabase.schema('limbus').from('md_event_choices').select(MD_EVENT_CHOICE_COLUMNS).order('event_id').order('sort_order'),
   ])
   if (e7 || e8 || e9) console.error('[RunPage] query group 3:', e7?.message, e8?.message, e9?.message)
 

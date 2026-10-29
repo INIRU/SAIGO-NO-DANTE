@@ -143,6 +143,8 @@ export default function RunClient({ themes, gifts, recipes, identities, sinners,
     try { window.localStorage.setItem(SAMPLES_STORAGE_KEY, next ? 'on' : 'off') } catch { /* applies to this session */ }
   }
   const giftMap = useMemo(() => buildGiftMap(gifts), [gifts])
+  // The sale dialog's price is checked against the gift's own (game value): half to the whole price.
+  const giftPrice = useCallback((id: string) => giftMap.get(Number(id))?.price, [giftMap])
   // Fixed-recipe fusions: their materials decide the result, and a popup the recognizer cannot settle may still be the
   // only recipe result the current inventory can make.
   const resolvePopup = useCallback((evidence: RecipePopupEvidence, verdict: string | null, inFusion: boolean) =>
@@ -152,6 +154,7 @@ export default function RunClient({ themes, gifts, recipes, identities, sinners,
     recipeFusionMaterials(read, count, resultId, useRunStore.getState().giftInventory, recipes, giftMap, AUTO_ACQUIRE_EXCLUDED_GIFT_IDS), [recipes, giftMap])
   const capture = useAssistCapture({ giftReferences, eventReferences, ocrCatalog, themeCatalog, mode: recognitionMode, detection, resolvePopup, completeFusion, samples: samples === true,
     heldGiftIds: state.giftInventory,
+    giftPrice,
     language: gameLanguage, floor: state.phase === 'playing' ? state.currentFloor : null })
   const { visualCandidates, ocrCandidates, eventChoiceEvidence } =
     captureEvidence(capture, state.phase === 'playing' ? state.currentFloor : null, Date.now())

@@ -1,9 +1,10 @@
 'use client'
 
 import SkillFrameBlock from '@/components/identity/SkillFrameBlock'
-import { unbreakableCoinIndices } from '@/lib/identity/skill-description'
+import { coinPowerLabels, unbreakableCoinSet } from '@/lib/identity/skill-description'
+import { skillLabel, skillSlot } from '@/lib/identity/skill-model'
 import { SIN_COLORS, SIN_KR_TO_EN } from '@/lib/constants/sin'
-import type { SinType } from '@/lib/types'
+import type { SinType, SkillCoin } from '@/lib/types'
 import { computeSkillImageIndices, getSkillIconUrl } from '@/lib/utils/images'
 import { useOwnKeywords } from '@/lib/hooks/useOwnKeywords'
 import { descriptionTexts } from '@/lib/keywords/own-keywords'
@@ -30,6 +31,8 @@ type SkillFrameSkill = {
   atk_weight?: number | null
   offense_level?: number | null
   variant_order?: number | null
+  uptie_level?: number | null
+  coin_list?: SkillCoin[] | null
 }
 
 type SkillFrameIdentity = {
@@ -53,7 +56,7 @@ type IdentitySkillFrameCardProps = {
 
 const DEFENSE_LABELS: Record<string, { ko: string; en: string; ja: string }> = {
   evade: { ko: '회피', en: 'Evade', ja: '回避' },
-  defense: { ko: '수비', en: 'Guard', ja: '防御' },
+  defense: { ko: '방어', en: 'Guard', ja: '防御' },
   counter: { ko: '반격', en: 'Counter', ja: '反撃' },
 }
 
@@ -76,18 +79,13 @@ function localizedText(
   return fallback
 }
 
+/** The same label as the identity page: S1-S3 (-n for variants) or the defense type, counted among the skills of the same uptie. */
 function variantLabel(skill: SkillFrameSkill, skills: SkillFrameSkill[], lang?: string): string {
+  const level = skill.uptie_level ?? 3
+  const sameLevel = skills.filter(item => (item.uptie_level ?? 3) === level)
   const defense = DEFENSE_LABELS[skill.skill_type]
-  if (defense) return lang === 'en' || lang === 'ja' ? defense[lang] : defense.ko
-
-  const sameOrder = skills
-    .filter(item => item.skill_order === skill.skill_order)
-    .sort((a, b) => (a.variant_order ?? 0) - (b.variant_order ?? 0))
-
-  if (sameOrder.length <= 1) return `S${skill.skill_order}`
-
-  const variantIndex = sameOrder.findIndex(item => item.id === skill.id)
-  return `S${skill.skill_order}-${variantIndex >= 0 ? variantIndex + 1 : 1}`
+  const name = defense ? (lang === 'en' || lang === 'ja' ? defense[lang] : defense.ko) : ''
+  return skillLabel(skill, sameLevel.some(item => item.id === skill.id) ? sameLevel : [skill], name)
 }
 
 export default function IdentitySkillFrameCard({
@@ -115,8 +113,7 @@ export default function IdentitySkillFrameCard({
   }, [skills])
   const sin = normalizeSin(skill.sin_affinity)
   const sinColor = sin === 'neutral' ? '#cccccc' : SIN_COLORS[sin]
-  const skillImageIdx = computeSkillImageIndices(skills)
-  const imageIndex = skillImageIdx[skill.id] ?? skill.skill_order
+  const imageIndex = computeSkillImageIndices(skills.filter(item => (item.uptie_level ?? 3) === (skill.uptie_level ?? 3)))[skill.id] ?? skillSlot(skill)
   const skillIconUrl = identity?.game_id
     ? getSkillIconUrl({ sinner_id: identity.sinner_id, game_id: identity.game_id }, imageIndex, skill)
     : ''
@@ -136,7 +133,7 @@ export default function IdentitySkillFrameCard({
         skillIconUrl={skillIconUrl}
         sin={sin}
         sinColor={sinColor}
-        skillSlot={skill.skill_order <= 3 ? skill.skill_order : 1}
+        skillSlot={skillSlot(skill)}
         label={variantLabel(skill, skills, lang)}
         size={size}
         name={localizedText(lang, skill.name, skill.name_en, skill.name_jp) ?? skill.name}
@@ -148,7 +145,8 @@ export default function IdentitySkillFrameCard({
         atkWeight={skill.atk_weight || 1}
         isDefense={Boolean(DEFENSE_LABELS[skill.skill_type])}
         description={description}
-        unbreakableCoins={unbreakableCoinIndices(skill.description)}
+        unbreakableCoins={unbreakableCoinSet(skill)}
+        coinLabels={coinPowerLabels(skill)}
         descVariant="compact"
         allowedKeywords={allowedKeywords ?? ownKeywords}
         matchPlainKeywords

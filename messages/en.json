@@ -42,6 +42,7 @@
       "experience": "EXP calculator",
       "lunacy": "Monthly Lunacy planner",
       "damage": "Damage calculator",
+      "clash": "Clash calculator",
       "developers": "Developer tools"
     },
     "support": "Support"
@@ -569,22 +570,21 @@
     "conditionSkill": "{skill}: {count}+",
     "conditionUnmet": "Condition not met",
     "conditionWarn": "Check condition",
-    "unmetHint": "Not enough even counting reserve Identities.",
-    "warnHint": "Short with the 7 deployed Identities; met once reserves count.",
     "recipe": "Recipe",
     "recipeFragments": "Any 2 fragments",
     "finalSynthesis": "Final synthesis",
     "themes": "Found in theme packs",
     "exclusive": "Exclusive",
     "clearReward": "Clear reward",
-    "acquisition": "Acquisition",
-    "related": "Related",
     "synthesis": "Fusion",
     "hard": "Hard",
     "extreme": "Extreme",
     "back": "Back to {gift}",
     "showAllThemes": "Show all {count} packs",
-    "allThemes": "All theme packs"
+    "allThemes": "All theme packs",
+    "scopeDeployed": "Backup excluded",
+    "scopeFormation": "Backup included",
+    "tierSteps": "Steps at {steps}"
   },
   "themePackDetail": {
     "clearReward": "Clear reward",
@@ -1399,7 +1399,9 @@
         "unmetTitle": "Condition unmet: {text}",
         "warnTitle": "Condition warning: {text}",
         "formation": "Deployed {have}/{need}",
-        "withBench": "With reserves {have}/{need}"
+        "withBench": "With reserves {have}/{need}",
+        "tier": "Tier {reached}/{total}",
+        "partial": "Only some effects need it"
       },
       "keywords": {
         "all": "All",
@@ -2310,7 +2312,7 @@
       "2": "Stagger+",
       "3": "Stagger++"
     },
-    "staggerFixed": "While staggered, the physical resistance is fixed at ×{value}.",
+    "staggerFixed": "While staggered, the physical resistance is ×{value}, plus any resistance weakening.",
     "observation": "Observation Level",
     "observationHelp": "Reported not to apply in the game, so it starts at 0.",
     "modifiers": "Modifiers",
@@ -2342,12 +2344,12 @@
     "resistFactor": "Resistance and level",
     "finalMultiplier": "Final multiplier",
     "formula": "How it is calculated",
-    "formulaBody": "Power × (1 + damage modifiers) × (1 + physical resistance + sin resistance + level difference + critical 20% + Clash Count × 3% + Observation Level × 3%). Decimals are dropped and the minimum is 1.",
-    "formulaResist": "Physical resistance is the resistance to the skill's attack type (Slash, Pierce or Blunt). ×2 counts as +100%; below normal (×1) only half of the reduction applies, so ×0.5 counts as −25%.",
+    "formulaBody": "Power × (1 + damage modifiers) × (1 + physical resistance + sin resistance + level difference + critical + Clash Count × 3% + Observation Level × 3%) + flat damage adder × (1 + physical resistance + sin resistance + level difference) + flat HP damage. Decimals are dropped. The minimum is the larger of 5% of the power (rounded down) and 1.",
+    "formulaResist": "Physical resistance is the resistance to the skill's attack type (Slash, Pierce or Blunt). ×2 counts as +100%; below normal (×1) only half of the reduction applies, so ×0.5 counts as −25%, and below 0 it counts as −50%. Outside stagger the physical resistance is held between −2 and 2, the sin resistance between 0 and 2.",
     "formulaLevel": "The level difference is (Offense Level − Defense Level) ÷ (the gap between the two levels + 25). The gap is always counted as positive.",
-    "formulaNote": "This is an estimate from a formula worked out by the community and can differ from the game. Effect damage such as Burn and Bleed, the special damage increase of some skills and the sin resonance bonus are not calculated.",
+    "formulaNote": "Calculated from game values. Effect damage such as Burn and Bleed, the special damage increase of some skills and the sin resonance bonus are not calculated. The Observation Level only counts against Abnormalities.",
     "full": "Up to {max} modifiers can be added.",
-    "formulaFinal": "A final multiplier applies to the result after its decimals are dropped. A modifier that changes a resistance value, such as a resistance weakening, is added to the resistance first.",
+    "formulaFinal": "A critical hit adds (20% + critical damage adder) × (1 + critical multiplier passives). A final multiplier applies to the result after its decimals are dropped. A modifier that changes a resistance value, such as a resistance weakening, is added to the resistance first.",
     "picker": {
       "search": "Search by name",
       "group": {
@@ -2368,8 +2370,89 @@
       "noResults": "No results.",
       "delete": "Remove",
       "effect": "Effect",
-      "value": "Applied value"
-    }
+      "value": "Applied value",
+      "notCalculated": "Not calculated",
+      "unsupported": "This keyword has {count} more effect(s) that are not calculated.",
+      "effectLine": "{target} {value}{per}{only}",
+      "perStackShort": " per stack",
+      "onlyFor": " · {name} skills only",
+      "effectTarget": {
+        "damage": "Damage dealt",
+        "takeDamage": "Damage taken",
+        "power": "Power",
+        "coin_power": "Coin Power",
+        "physical": "Physical resistance",
+        "sin": "Sin resistance"
+      }
+    },
+    "skillSin": "Skill sin",
+    "skillAtk": "Skill attack type",
+    "skillNone": "None",
+    "skillSinOption": {
+      "CRIMSON": "Wrath",
+      "SCARLET": "Lust",
+      "AMBER": "Sloth",
+      "SHAMROCK": "Gluttony",
+      "AZURE": "Gloom",
+      "INDIGO": "Pride",
+      "VIOLET": "Envy"
+    },
+    "skillAtkOption": {
+      "SLASH": "Slash",
+      "PENETRATE": "Pierce",
+      "HIT": "Blunt"
+    },
+    "coinLess": "Remove a coin",
+    "coinMore": "Add a coin",
+    "coinTitle": "Coins",
+    "critAdder": "Critical damage adder (%)",
+    "critPassive": "Critical multiplier passives (%)",
+    "damageAdder": "Flat damage adder",
+    "hpAdder": "Flat HP damage"
+  },
+  "clash": {
+    "title": "Clash calculator",
+    "subtitle": "Work out the win chance, the number of exchanges and the coins left from both skills' coins and sanity.",
+    "reset": "Reset",
+    "sideA": "Your side",
+    "sideB": "Enemy",
+    "result": "Clash result",
+    "basePower": "Base Power",
+    "sanity": "Sanity",
+    "coins": "Coins",
+    "coin": "Coin {index}",
+    "coinValue": "Coin {index} value",
+    "operatorOption": {
+      "ADD": "+ Add",
+      "SUB": "− Subtract",
+      "MUL": "× Multiply"
+    },
+    "adders": "Adders",
+    "probabilityAdder": "Heads chance adder (%p)",
+    "powerAdder": "Power adder",
+    "coinPowerAdder": "Coin Power adder",
+    "clashAdder": "Clash total adder",
+    "headsA": "Your heads chance",
+    "headsB": "Enemy heads chance",
+    "meanRounds": "Average exchanges",
+    "unresolved": "Not over within {max} exchanges",
+    "rounds": "Exchanges",
+    "roundLabel": "{count}",
+    "restRounds": "Other",
+    "toDamage": "To the damage calculator",
+    "left": "Coins left",
+    "leftCoins": "{count}",
+    "limitNote": "The {min}%–{max}% heads chance limit and +1 clash power per {gap} Offense Levels of gap are estimates.",
+    "rules": "How it is calculated",
+    "rulesHeads": "The heads chance is 50% plus 1% per point of sanity plus the adder. Sanity runs from −45 to 45.",
+    "rulesCoins": "Coins are rolled in order; a heads applies its coin's operator (add or subtract). The value never drops below 0. It starts at the base power.",
+    "rulesExchange": "Each exchange rolls all remaining coins again, adds the clash total adder, and the higher total wins. The loser loses its front coin; on a tie nobody loses one. The clash ends when a side has no coins or after 99 exchanges. The side with the higher Offense Level adds 1 to each exchange total for every 3 levels of gap.",
+    "rulesDamage": "Every exchange raises the damage of the skill that follows by 3%. The link beside the exchange count hands it to the damage calculator.",
+    "coinCount": "Coins",
+    "coinLess": "Remove a coin",
+    "coinMore": "Add a coin",
+    "offenseLevel": "Offense Level",
+    "subCoinPowerAdder": "Subtracting coin power adder"
   },
   "mirrorDungeonPage": {
     "intro": "Find the E.G.O gifts, theme packs and choices you meet on the way down, floor by floor.",
@@ -2860,5 +2943,14 @@
     "scoreFont": "S-Core Font License",
     "dafontFree": "100% Free (DaFont)",
     "authorFree": "Free to use (author)"
+  },
+  "toolSkill": {
+    "pickIdentity": "Load identity",
+    "pickEgo": "Load E.G.O",
+    "change": "Change",
+    "clear": "Clear",
+    "skills": "Skills",
+    "corrosion": "Corrosion",
+    "loadError": "Could not load the skills. Retry"
   }
 }

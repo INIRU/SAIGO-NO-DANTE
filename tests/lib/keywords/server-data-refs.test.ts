@@ -37,9 +37,9 @@ vi.mock('@/lib/supabase/admin', () => ({
 import { getKeywordCatalog, getKeywordData, keywordDescriptions } from '@/lib/keywords/server-data'
 
 const META = [
-  { name: '화상', description: '옛 설명', max_stack: null, icon_slug: 'burn', sin_affinity: 'wrath', effect_type: 'negative', name_en: 'old Burn', name_jp: '旧', description_en: 'old en', description_jp: '旧説明', game_id: 'Combustion' },
-  { name: '호흡', description: '크리티컬 확률 증가', max_stack: 20, icon_slug: 'poise', sin_affinity: null, effect_type: 'positive', name_en: 'Poise', name_jp: '呼吸', description_en: 'Poise en', description_jp: null, game_id: null },
-  { name: '원호 공격', description: '손으로 쓴 설명', max_stack: null, icon_slug: null, sin_affinity: null, effect_type: null, name_en: null, name_jp: null, description_en: null, description_jp: null, game_id: 'CoverAttack' },
+  { name: '화상', description: '옛 설명', max_stack: null, icon_slug: 'burn', effect_type: 'negative', name_en: 'old Burn', name_jp: '旧', description_en: 'old en', description_jp: '旧説明', game_id: 'Combustion' },
+  { name: '호흡', description: '크리티컬 확률 증가', max_stack: 20, icon_slug: 'poise', effect_type: 'positive', name_en: 'Poise', name_jp: '呼吸', description_en: 'Poise en', description_jp: null, game_id: null },
+  { name: '원호 공격', description: '손으로 쓴 설명', max_stack: null, icon_slug: null, effect_type: null, name_en: null, name_jp: null, description_en: null, description_jp: null, game_id: 'CoverAttack' },
 ]
 const REFS = [
   { id: 'Combustion', name: '화상', name_en: 'Burn', name_jp: '火傷', description: '턴 종료 시 피해', description_en: 'At turn end, take damage', description_jp: 'ターン終了時にダメージ' },
@@ -58,7 +58,7 @@ describe('REQ-KEYWORDS-004 the keyword catalogue reads names and descriptions fr
     const data = await getKeywordData()
     expect(data['화상']).toMatchObject({
       desc: '턴 종료 시 피해', nameEn: 'Burn', nameJp: '火傷', descEn: 'At turn end, take damage', descJp: 'ターン終了時にダメージ',
-      iconSlug: 'burn', sinAffinity: 'wrath', effectType: 'negative',
+      iconSlug: 'burn', effectType: 'negative',
     })
     expect(Object.keys(data)).toEqual(['화상', '호흡', '원호 공격'])
   })
