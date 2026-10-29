@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import { useTranslations } from 'next-intl'
 import { RotateCcw } from 'lucide-react'
-import { coinDamage, coinModifiers, coinPowers, MAX_COINS, parseSavedModifiers, STAGGER_RESIST, type SavedModifier, type StaggerStage } from '@/lib/tools/damage'
+import { coinDamage, coinModifiers, coinPowers, MAX_COINS, parseSavedModifiers, SIN_RESIST_MAX, STAGGER_RESIST, type SavedModifier, type StaggerStage } from '@/lib/tools/damage'
 import { COIN_IMAGES } from '@/lib/identity/skill-description'
 import Dropdown from '@/components/ui/Dropdown'
 import PageHeader from '@/components/ui/PageHeader'
@@ -95,7 +95,7 @@ export default function DamageCalculator() {
                 onChange={value => set({ stagger: Number(value) as StaggerStage })} />
             </div>
             <NumberField label={t('physicalResist')} value={staggerResist ?? form.physicalResist} max={10} decimal disabled={staggerResist !== null} onChange={physicalResist => set({ physicalResist })} />
-            <NumberField label={t('sinResist')} value={form.sinResist} max={10} decimal onChange={sinResist => set({ sinResist })} />
+            <NumberField label={t('sinResist')} value={form.sinResist} max={SIN_RESIST_MAX} decimal onChange={sinResist => set({ sinResist })} />
             <NumberField label={t('observation')} value={form.observationLevel} max={10} onChange={observationLevel => set({ observationLevel })} />
           </div>
           {staggerResist !== null && <p className={styles.hint}>{t('staggerFixed', { value: staggerResist })}</p>}

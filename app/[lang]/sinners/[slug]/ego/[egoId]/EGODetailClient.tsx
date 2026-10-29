@@ -74,7 +74,7 @@ function SkillFramePanel({
   const skillSinColor = skillSin ? (SIN_COLORS[skillSin] ?? sinColor) : sinColor
 
   // 코인 효과 배열 (coinNum개만)
-  const coinEffects = [skill.coin1Effect, skill.coin2Effect, skill.coin3Effect, skill.coin4Effect, skill.coin5Effect]
+  const coinEffects = (skill.coinEffects ?? [skill.coin1Effect, skill.coin2Effect, skill.coin3Effect, skill.coin4Effect, skill.coin5Effect])
     .slice(0, skill.coinNum)
 
   // 파괴 불가 코인 감지 (0-based index)
@@ -91,13 +91,13 @@ function SkillFramePanel({
     : skill.name
 
   // 스킬 설명 재조립 — 언어별 효과 텍스트 선택
-  const locCoinEffects = [
+  const locCoinEffects = ((lang === 'en' ? skill.coinEffects_en : lang === 'ja' ? skill.coinEffects_jp : null) ?? [
     lang === 'en' ? skill.coin1Effect_en : lang === 'ja' ? skill.coin1Effect_jp : null,
     lang === 'en' ? skill.coin2Effect_en : lang === 'ja' ? skill.coin2Effect_jp : null,
     lang === 'en' ? skill.coin3Effect_en : lang === 'ja' ? skill.coin3Effect_jp : null,
     lang === 'en' ? skill.coin4Effect_en : lang === 'ja' ? skill.coin4Effect_jp : null,
     lang === 'en' ? skill.coin5Effect_en : lang === 'ja' ? skill.coin5Effect_jp : null,
-  ].slice(0, skill.coinNum)
+  ]).slice(0, skill.coinNum)
 
   const normalEffectLoc =
     lang === 'en' ? (skill.normalEffect_en ?? skill.normalEffect) :
@@ -107,7 +107,7 @@ function SkillFramePanel({
   const descParts: string[] = []
   if (normalEffectLoc) descParts.push(normalEffectLoc)
   coinEffects.forEach((effect, i) => {
-    const locEffect = locCoinEffects[i] ?? effect
+    const locEffect = locCoinEffects[i] || effect
     // A <coin=N> block, not a "[코인 N]" line: a tag the main text leaves open must not run on into the coin, and a coin's
     // lines stay together. The description reader (SkillDescription) draws the coin label for the page language.
     if (locEffect) descParts.push(`<coin=${i + 1}>${locEffect}</coin>`)

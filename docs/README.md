@@ -7,7 +7,7 @@
 | 하려는 일 | 먼저 읽을 문서 |
 |---|---|
 | 화면이나 컴포넌트를 고친다 | [디자인 기준](../DESIGN.md), [구조](architecture.md), [개발과 검증](development.md) |
-| 새 추출본을 반영한다, 반영을 되돌린다 | [추출본 반영](https://github.com/INIRU/limbus-asset-extractor/blob/main/site-sync/docs/runbook.md) |
+| 새 게임 데이터를 반영한다, 반영을 되돌린다 | [게임 데이터 반영](https://github.com/INIRU/limbus-asset-extractor/blob/main/site-sync/docs/runbook.md) |
 | 동기화 코드를 고친다(코드는 추출 도구 저장소 `site-sync/`에 있다) | [동기화 코드를 고칠 때](https://github.com/INIRU/limbus-asset-extractor/blob/main/site-sync/docs/developing.md), [동기화 규칙](https://github.com/INIRU/limbus-asset-extractor/blob/main/site-sync/docs/rules.md) |
 | 게임 원본의 값을 새로 보여 준다(칸 추가) | [필드 하나 추가하기](https://github.com/INIRU/limbus-asset-extractor/blob/main/site-sync/docs/adding-a-field.md), [데이터 모델](data-model.md) |
 | 이미지·아이콘의 원본 위치, 과거 백업과 반영 기록을 찾는다 | [출처와 복구 기록](https://github.com/INIRU/limbus-asset-extractor/blob/main/site-sync/docs/provenance.md) |

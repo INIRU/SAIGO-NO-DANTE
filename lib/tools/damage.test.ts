@@ -36,8 +36,8 @@ describe('damage calculator', () => {
   })
   it('REQ-TOOLS-007 never lets reductions on both sides multiply into more damage', () => {
     // Damage modifiers at −150% and a resistance side below zero: two negative factors would give +5.
-    expect(damage({ power: 100, offenseLevel: 20, defenseLevel: 60, physicalResist: 0.5, sinResist: 0.5, modifiers: [{ target: 'damage', value: -1.5 }] })).toBe(1)
-    expect(damage({ power: 100, modifiers: [{ target: 'damage', value: -3 }, { target: 'resist', value: -3 }] })).toBe(1)
+    expect(damage({ power: 100, offenseLevel: 20, defenseLevel: 60, physicalResist: 0.5, sinResist: 0.5, modifiers: [{ target: 'damage', value: -1.5 }] })).toBe(5)
+    expect(damage({ power: 100, modifiers: [{ target: 'damage', value: -3 }, { target: 'resist', value: -3 }] })).toBe(5)
     expect(coinDamage({ ...base, modifiers: [{ target: 'damage', value: -3 }] }).damageFactor).toBe(0)
   })
   it('REQ-TOOLS-007 floors the result, never below 1, without losing a point to binary fractions', () => {
@@ -74,8 +74,28 @@ describe('damage calculator', () => {
     // ×0.5 weakened by 0.3 is ×0.8: −10%, not −25% + 30%.
     expect(damage({ power: 100, physicalResist: 0.5, modifiers: [{ target: 'physical', value: 0.3 }] })).toBe(90)
     expect(damage({ power: 100, sinResist: 1, modifiers: [{ target: 'sin', value: 0.3 }] })).toBe(130)
-    // A staggered target's physical resistance stays fixed.
-    expect(damage({ power: 100, stagger: 1, modifiers: [{ target: 'physical', value: 0.3 }] })).toBe(200)
+    // A staggered target's physical resistance is 2 + (stage − 1) × 0.5 plus the weakening (BattleUnitModel GetAtkResistValueByType).
+    expect(damage({ power: 100, stagger: 1, modifiers: [{ target: 'physical', value: 0.3 }] })).toBe(230)
+    expect(damage({ power: 100, stagger: 3, modifiers: [{ target: 'physical', value: 0.2 }] })).toBe(320)
+    expect(damage({ power: 100, stagger: 2, physicalResist: 0.5, modifiers: [{ target: 'physical', value: 0.5 }] })).toBe(300)
+  })
+  it('REQ-TOOLS-011 holds a sin resistance between 0 and 2', () => {
+    // Typed above 2, or raised past 2 by a weakening, it counts as 2: 100 × (1 + 1 + 1).
+    expect(damage({ power: 100, sinResist: 10 })).toBe(damage({ power: 100, sinResist: 2 }))
+    expect(damage({ power: 100, sinResist: 10 })).toBe(200)
+    expect(damage({ power: 100, sinResist: 1.5, modifiers: [{ target: 'sin', value: 1 }] })).toBe(200)
+    // The weakening lowers the capped value, not the typed one.
+    expect(damage({ power: 100, sinResist: 10, modifiers: [{ target: 'sin', value: -0.5 }] })).toBe(150)
+    expect(damage({ power: 100, sinResist: 0.5, modifiers: [{ target: 'sin', value: -2 }] })).toBe(50)
+  })
+  it('REQ-TOOLS-007 never goes under 5% of the coin power, rounded down, or 1', () => {
+    expect(damage({ power: 100, modifiers: [{ target: 'damage', value: -1 }] })).toBe(5)
+    expect(damage({ power: 59, modifiers: [{ target: 'damage', value: -1 }] })).toBe(2)
+    expect(damage({ power: 19, modifiers: [{ target: 'damage', value: -1 }] })).toBe(1)
+    // Above the minimum the ordinary result stands.
+    expect(damage({ power: 100, modifiers: [{ target: 'damage', value: -0.5 }] })).toBe(50)
+    // The final multiplier meets the raised minimum.
+    expect(damage({ power: 100, modifiers: [{ target: 'damage', value: -1 }, { target: 'final', value: 2 }] })).toBe(10)
   })
   it('REQ-TOOLS-008 keeps a typed value inside the range of its target', () => {
     expect(clampModifierValue(-5000, 'damage')).toBe(-1000)
