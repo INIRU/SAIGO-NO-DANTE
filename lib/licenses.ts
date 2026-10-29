@@ -18,8 +18,8 @@ export const LICENSES: LicenseGroup[] = [
       { name: 'Noto Sans Mono', holder: 'The Noto Project Authors', license: OFL, url: '/fonts/licenses/NotoSansMono-OFL.txt' },
       // The distributor says OFL without a version
       { name: 'Paperlogy', holder: 'PT&', license: 'SIL Open Font License', url: 'https://freesentation.blog/paperlogyfont' },
-      { name: 'Bebas Kai', holder: 'Dharma Type', license: OFL, url: 'https://github.com/dharmatype/Bebas' },
-      { name: 'Mikodacs', holder: 'gluk', license: OFL, url: 'https://www.fontsquirrel.com/fonts/mikodacs' },
+      { name: 'Bebas Kai', holder: 'Dharma Type', license: OFL, url: 'https://www.fontsquirrel.com/license/bebas-kai' },
+      { name: 'Mikodacs', holder: 'gluk', license: OFL, url: 'https://www.fontsquirrel.com/license/mikodacs' },
       // KOGL type 1 (attribution) at the Korea Copyright Commission; KOTRA: no modification or redistribution of the file
       { name: 'KOTRA Bold', holder: 'KOTRA', licenseKey: 'kogl1', url: 'https://gongu.copyright.or.kr/gongu/wrt/wrt/view.do?wrtSn=13302258&menuNo=200023' },
       { name: 'S-Core Dream', holder: 'S-Core Co., Ltd.', licenseKey: 'scoreFont', url: 'https://s-core.co.kr/company/font/' },
