@@ -2400,7 +2400,10 @@
       "SLASH": "斬撃",
       "PENETRATE": "貫通",
       "HIT": "打撃"
-    }
+    },
+    "coinLess": "コインを1枚減らす",
+    "coinMore": "コインを1枚増やす",
+    "coinTitle": "コイン"
   },
   "clash": {
     "title": "合（クラッシュ）計算機",

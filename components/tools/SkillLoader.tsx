@@ -1,23 +1,21 @@
 'use client'
 
 import { useState } from 'react'
-import Image from 'next/image'
 import dynamic from 'next/dynamic'
 import useSWR from 'swr'
 import { useLocale, useTranslations } from 'next-intl'
 import { Plus, RefreshCw, X } from 'lucide-react'
 import SkillFrame from '@/components/identity/SkillFrame'
 import SkillNameBanner from '@/components/skill/SkillNameBanner'
-import QuietImage from '@/components/ui/QuietImage'
-import { STORAGE_BASE } from '@/lib/constants/game'
+import IdentityFrameCard from '@/components/ui/IdentityFrameCard'
 import { SIN_COLORS } from '@/lib/constants/sin'
 import { assetName, type NoteAssetData } from '@/lib/notes/assets'
 import type { ToolSkill } from '@/lib/tools/skill-source'
-import { getEgoGradeBannerUrl, getSinnerLogoUrl } from '@/lib/utils/images'
 import styles from './SkillLoader.module.css'
 
-// The picker (and its catalog request) loads when it is first opened.
+// The picker (and its catalog request) loads when it is first opened, the E.G.O card when an E.G.O is picked.
 const NoteCharacterPicker = dynamic(() => import('@/components/notes/NoteCharacterPicker'), { ssr: false })
+const EgoDisplayCard = dynamic(() => import('@/components/sinners/EgoDisplayCard'), { ssr: false })
 
 type Kind = 'identity' | 'ego'
 const sinColor = (skill: ToolSkill | undefined) => (skill?.sin ? SIN_COLORS[skill.sin] : '#cccccc')
@@ -48,8 +46,6 @@ export default function SkillLoader({ selectedKey, onSkill }: { selectedKey: str
   const pick = (asset: NoteAssetData) => { if (picking) setOwner({ kind: picking, asset }); setPicking(null) }
   const clear = () => { setOwner(null); onSkill(null) }
   const asset = owner?.asset
-  const sinnerId = asset?.identity?.sinner_id ?? asset?.sinnerId
-  const rarity = asset?.identity?.rarity
 
   return <div className={styles.loader}>
     {!owner ? <div className={styles.slots}>
@@ -57,16 +53,15 @@ export default function SkillLoader({ selectedKey, onSkill }: { selectedKey: str
         <Plus size={18} aria-hidden="true" /><span>{t(kind === 'identity' ? 'pickIdentity' : 'pickEgo')}</span>
       </button>)}
     </div> : <div className={styles.card} data-kind={owner.kind} style={{ '--sin': sinColor(selected) } as React.CSSProperties}>
-      <button type="button" className={styles.art} onClick={() => setPicking(owner.kind)} aria-label={t('change')}>
-        {asset?.image_url && <QuietImage src={asset.image_url} alt="" fill sizes="8rem" className={styles.artImage} />}
-        {owner.kind === 'identity' && rarity
-          ? <img className={styles.grade} src={`${STORAGE_BASE}/icons/Rarity/${rarity}star.webp`} alt={'0'.repeat(rarity)} width={rarity * 16} height={16} />
-          : asset?.ego?.grade && <img className={styles.grade} src={getEgoGradeBannerUrl(asset.ego.grade)} alt={asset.ego.grade} width={44} height={22} />}
+      {/* The game's own card: the identity's formation card, or the E.G.O card. Pressing it picks another. */}
+      <button type="button" className={styles.art} data-kind={owner.kind} onClick={() => setPicking(owner.kind)} aria-label={t('change')}>
+        {owner.kind === 'identity' && asset?.identity
+          ? <IdentityFrameCard identity={asset.identity} name={assetName(asset, lang)} sizes="8rem" />
+          : asset?.ego && asset.sinnerId && <EgoDisplayCard ego={asset.ego} sinnerId={asset.sinnerId} name={assetName(asset, lang)} lang={lang === 'en' || lang === 'ja' ? lang : 'ko'} displayOnly />}
       </button>
       <div className={styles.body}>
         <div className={styles.head}>
-          {sinnerId && <Image src={getSinnerLogoUrl(sinnerId)} alt="" width={28} height={28} className={styles.logo} />}
-          <h3>{asset ? assetName(asset, lang) : ''}</h3>
+          <span>{t('skills')}</span>
           <button type="button" className={styles.icon} onClick={() => setPicking(owner.kind)} aria-label={t('change')} title={t('change')}><RefreshCw size={16} aria-hidden="true" /></button>
           <button type="button" className={styles.icon} onClick={clear} aria-label={t('clear')} title={t('clear')}><X size={18} aria-hidden="true" /></button>
         </div>
