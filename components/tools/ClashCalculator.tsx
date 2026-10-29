@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import useSWR from 'swr'
 import { useLocale, useTranslations } from 'next-intl'
-import { Plus, RotateCcw, Trash2 } from 'lucide-react'
+import { Plus, RotateCcw, Search, Trash2 } from 'lucide-react'
 import Dropdown from '@/components/ui/Dropdown'
 import PageHeader from '@/components/ui/PageHeader'
 import { coinsOf, damageLink, MAX_CLASH_ROUNDS, PROBABILITY_LIMITS, SANITY_RANGE, solveClash, type ClashCoin, type ClashSide, type CoinOperator } from '@/lib/tools/clash'
@@ -49,6 +49,7 @@ function SidePanel({ title, form, onChange, identities, loading, failed }: { tit
   return <section className={styles.panel} aria-label={title}>
     <h2>{title}</h2>
     <label className={styles.search}>
+      <Search size={16} aria-hidden="true" />
       <input type="text" aria-label={t('searchIdentity')} placeholder={t('searchIdentity')} value={query} onChange={event => setQuery(event.target.value)} />
     </label>
     {(loading || failed) && <p className={styles.hint} role={failed ? 'alert' : 'status'}>{failed ? t('loadError') : t('loading')}</p>}
