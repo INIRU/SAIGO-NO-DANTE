@@ -2,7 +2,7 @@
 // Rules (game values): the heads chance is 50% + 1% per point of sanity + the buff adder; coins are rolled in order and
 // each heads applies its operator to the running power, which never goes below 0; every exchange rolls the remaining
 // coins again, the higher total wins and takes one coin from the loser's front, a tie takes none; at most 99 exchanges.
-// The 5%–95% limit of the heads chance is not confirmed by the game's values (an estimate).
+// The 5%–95% limit of the heads chance and the level-gap divisor 3 are not confirmed by the game's values (estimates).
 
 export type CoinOperator = 'ADD' | 'SUB' | 'MUL'
 export type ClashCoin = { scale: number; operator: CoinOperator }
@@ -13,6 +13,8 @@ export const SANITY_RANGE = 45
 export const PROBABILITY_LIMITS = { min: 0.05, max: 0.95 } as const
 /** One exchange of a clash adds this much damage to the skill that follows it (CLASH_BONUS of the damage calculator). */
 export const CLASH_DAMAGE_BONUS = 0.03
+/** Every this many attack levels above the other side add 1 to each exchange total (estimate: the game's divisor was not read). */
+export const LEVEL_GAP_DIVISOR = 3
 
 export type ClashSide = {
   basePower: number
@@ -25,8 +27,12 @@ export type ClashSide = {
   powerAdder?: number
   /** Added to the scale of every adding coin. */
   coinPowerAdder?: number
+  /** Added to the scale of every subtracting coin (it then takes more away). */
+  subCoinPowerAdder?: number
   /** Added to the total of every exchange. */
   clashAdder?: number
+  /** The skill's attack level: the higher side adds a third of the gap to every exchange. */
+  offenseLevel?: number
 }
 
 export type ClashResult = {
@@ -87,12 +93,24 @@ export function compare(a: [number, number][], b: [number, number][]) {
   return { win, tie, lose: 1 - win - tie }
 }
 
-/** The total of a side's remaining coins `left` … end, with its base power and adders. */
-function rolls(side: ClashSide, heads: number) {
-  const coins = side.coins.map(coin => coin.operator === 'ADD' ? { ...coin, scale: coin.scale + (side.coinPowerAdder ?? 0) } : coin)
+/** The higher attack level's bonus to each exchange: a third of the gap, rounded down (the lower side gets none). */
+export function levelGapBonus(own?: number, other?: number) {
+  if (own == null || other == null) return 0
+  return Math.max(0, Math.trunc((own - other) / LEVEL_GAP_DIVISOR))
+}
+
+/** The total of a side's remaining coins `left` … end, with its base power and adders; a total never goes under 0. */
+function rolls(side: ClashSide, heads: number, bonus: number) {
+  const adder = (coin: ClashCoin) => coin.operator === 'ADD' ? side.coinPowerAdder ?? 0 : coin.operator === 'SUB' ? side.subCoinPowerAdder ?? 0 : 0
+  const coins = side.coins.map(coin => ({ ...coin, scale: Math.max(0, coin.scale + adder(coin)) }))
   const start = side.basePower + (side.powerAdder ?? 0)
-  // After i lost coins the coins i … n−1 are rolled (the front coin is the one that breaks).
-  return coins.map((_, lost) => rollDistribution(start, coins.slice(lost), heads).map(([value, chance]): [number, number] => [keyOf(value + (side.clashAdder ?? 0)), chance]))
+  const total = (value: number) => keyOf(Math.max(0, value + (side.clashAdder ?? 0) + bonus))
+  // After i lost coins the coins i … n−1 are rolled (the front coin is the one that breaks). Totals that meet merge.
+  return coins.map((_, lost) => {
+    const merged = new Map<number, number>()
+    for (const [value, chance] of rollDistribution(start, coins.slice(lost), heads)) merged.set(total(value), (merged.get(total(value)) ?? 0) + chance)
+    return [...merged].sort((a, b) => a[0] - b[0])
+  })
 }
 
 /**
@@ -102,7 +120,7 @@ function rolls(side: ClashSide, heads: number) {
 export function solveClash(a: ClashSide, b: ClashSide): ClashResult {
   const headsA = headsChance(a.sanity, a.probabilityAdder), headsB = headsChance(b.sanity, b.probabilityAdder)
   const n = a.coins.length, m = b.coins.length
-  const rollsA = rolls(a, headsA), rollsB = rolls(b, headsB)
+  const rollsA = rolls(a, headsA, levelGapBonus(a.offenseLevel, b.offenseLevel)), rollsB = rolls(b, headsB, levelGapBonus(b.offenseLevel, a.offenseLevel))
   const odds = Array.from({ length: n }, (_, i) => Array.from({ length: m }, (_, j) => compare(rollsA[i], rollsB[j])))
 
   const result: ClashResult = { winA: 0, winB: 0, unresolved: 0, rounds: Array(MAX_CLASH_ROUNDS + 1).fill(0), leftA: Array(n + 1).fill(0), leftB: Array(m + 1).fill(0), meanRounds: 0, headsA, headsB }
