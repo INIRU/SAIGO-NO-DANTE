@@ -33,7 +33,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     supabase.schema('limbus').from('identities').select('id, sinner_id, release_date'),
     supabase.schema('limbus').from('ego').select('id, sinner_id, release_date'),
     supabase.schema('limbus').from('decks').select('id, updated_at').order('created_at', { ascending: false }).limit(500),
-    supabase.schema('limbus').from('md_plans').select('id, updated_at').order('created_at', { ascending: false }).limit(200),
+    supabase.schema('limbus').from('md_plans').select('id, updated_at').order('created_at', { ascending: false }).limit(500),
   ])
   if (identitiesError) Sentry.captureException(identitiesError, { tags: { location: 'sitemap:sitemap' }, extra: { msg: 'Failed to fetch identities' } })
   if (egosError) Sentry.captureException(egosError, { tags: { location: 'sitemap:sitemap' }, extra: { msg: 'Failed to fetch egos' } })

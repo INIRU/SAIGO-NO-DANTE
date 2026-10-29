@@ -550,7 +550,7 @@ async function getCachedDeckMetadata(lang: 'ko' | 'en' | 'ja', id: string): Prom
 
   const title = data.title
   const description = data.description
-    ? notePlainText(data.description).slice(0, 160)
+    ? notePlainText(data.description).replace(/\s+/g, ' ').trim().slice(0, 160)
     : `${data.title} — ${{ ko: '림버스 컴퍼니 덱 빌드', en: 'Limbus Company deck build', ja: 'リンバスカンパニー デッキ構築' }[lang]}`
   const boardName = { ko: '덱 게시판', en: 'Deck Board', ja: 'デッキ掲示板' }[lang]
 

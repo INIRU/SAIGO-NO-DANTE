@@ -926,7 +926,7 @@
     "detail": {
       "notFoundTitle": "플랜을 찾을 수 없습니다",
       "metaTitle": "{title} — 림버스 거울 던전 플랜",
-      "metaDescription": "림버스 컴퍼니 거울 던전 {difficulty} 플랜",
+      "metaDescription": "{title}: 림버스 컴퍼니 거울 던전 {difficulty} 플랜. 편성, 층별 테마팩, 기프트 경로를 정리했습니다.",
       "metaDescriptionWithDescription": "{difficulty} 난이도 — {description}",
       "backToCommunity": "커뮤니티 플랜",
       "anonymous": "익명",
