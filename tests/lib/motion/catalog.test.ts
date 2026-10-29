@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildMotionCatalog, defaultMotionState, motionCatalogFrom, MOTION_INDEX_URL, formatMotionLabelKey, motionAssetUrl, motionSinnerId, motionStateLabel, motionVideoFiles, VP9_444_TYPE, type MotionEntry } from '@/lib/motion/catalog'
+import { buildMotionCatalog, defaultMotionState, motionCatalogFrom, MOTION_INDEX_URL, formatMotionLabelKey, motionAssetUrl, motionSinnerId, motionStateLabel, type MotionEntry } from '@/lib/motion/catalog'
 
 const entry = (over: Partial<MotionEntry>): MotionEntry => ({
   slug: 'id10216', skillId: 1021601, state: 'v:base', identity: '새벽 사무소 해결사 파우스트', name: '여명의 섬광',
@@ -42,21 +42,26 @@ describe('REQ-MOTION-001 the motion list is read from the R2 index', () => {
 
 describe('REQ-MOTION-002 states', () => {
   const states = [
-    entry({ state: 'v:best', name: 'x [최고 상태 (a)]' }), entry({ state: 'v:case2', name: 'x [관 2단계]' }), entry({ state: 'v:base' }),
+    entry({ state: 'v:best-2', name: 'x [최고 상태 (a)]', label: '최고 상태 (a)' }), entry({ state: 'v:case2', name: 'x [관 2단계]', label: '관 2단계' }), entry({ state: 'v:base', label: '기본' }),
   ]
-  it('REQ-MOTION-002 orders base, then the conditions, then the best or max state, and labels them', () => {
+  it('REQ-MOTION-002 orders base, then the conditions, then the best state, and labels them', () => {
     const [sinner] = buildMotionCatalog(states, new Map(), 'ko')
     const got = sinner.identities[0].skills[0].states
-    expect(got.map(s => s.state)).toEqual(['v:base', 'v:case2', 'v:best'])
+    expect(got.map(s => s.state)).toEqual(['v:base', 'v:case2', 'v:best-2'])
     expect(got.map(s => s.label)).toEqual(['기본', '관 2단계', '최고 상태 (a)'])
-    expect(motionStateLabel(entry({ state: 'max', name: '연계 [최대 상태]' }), 'en')).toBe('Max State')
-    expect(motionStateLabel(entry({ state: 'base' }), 'ja')).toBe('基本')
   })
   it('REQ-MOTION-002 opens on the best state when there is one, else on base', () => {
     const [sinner] = buildMotionCatalog(states, new Map(), 'ko')
-    expect(defaultMotionState(sinner.identities[0].skills[0])).toBe('v:best')
+    expect(defaultMotionState(sinner.identities[0].skills[0])).toBe('v:best-2')
     const [plain] = buildMotionCatalog([entry({}), entry({ state: 'v:case2', name: 'x [관 2단계]' })], new Map(), 'ko')
     expect(defaultMotionState(plain.identities[0].skills[0])).toBe('v:base')
+  })
+  it('REQ-MOTION-002 never makes a label from the state name or the brackets of the name, nor reads the old names', () => {
+    expect(motionStateLabel(entry({ state: 'v:case2', name: 'x [관 2단계]' }), 'ko')).toBe('v:case2')
+    // The old names are gone from the index: no special meaning, no fixed text.
+    expect(motionStateLabel(entry({ state: 'max', name: '연계 [최대 상태]' }), 'en')).toBe('max')
+    const [old] = buildMotionCatalog([entry({ state: 'max', label: 'M' }), entry({ state: 'base', label: 'B' }), entry({ state: 'v:kill', label: 'K' })], new Map(), 'ko')
+    expect(old.identities[0].skills[0].states.map(s => s.state)).toEqual(['base', 'max', 'v:kill'])
   })
 })
 
@@ -99,11 +104,10 @@ describe('REQ-MOTION-002 state buttons read the index label', () => {
     expect(motionStateLabel(entry({ state: 'v:base', name: 'x', label: '기본' }), 'ko')).toBe('기본')
   })
 
-  it('REQ-MOTION-002 turns only the three fixed labels into the page language', () => {
-    expect(motionStateLabel(entry({ state: 'v:best-2', name: 'x [최고 상태 (a)]', label: '최고 상태' }), 'en')).toBe('Best State')
-    expect(motionStateLabel(entry({ state: 'max', name: 'x [최대 상태]', label: '최대 상태' }), 'ja')).toBe('最大状態')
-    expect(motionStateLabel(entry({ state: 'v:base', name: 'x', label: '기본' }), 'ja')).toBe('基本')
-    expect(motionStateLabel(entry({ state: 'v:reflex', name: 'x [레플렉시옹 보유]', label: '레플렉시옹 보유' }), 'en')).toBe('레플렉시옹 보유')
+  it('REQ-MOTION-002 writes the label of the page language, and the Korean label as it is when that one is missing', () => {
+    expect(motionStateLabel(entry({ state: 'v:best-2', label: '최고 상태', labelEn: 'Best State', labelJa: '最高状態' }), 'en')).toBe('Best State')
+    expect(motionStateLabel(entry({ state: 'v:best-2', label: '최고 상태', labelEn: 'Best State', labelJa: '最高状態' }), 'ja')).toBe('最高状態')
+    expect(motionStateLabel(entry({ state: 'v:base', label: '기본' }), 'ja')).toBe('기본')
   })
 })
 
@@ -159,8 +163,8 @@ describe('REQ-MOTION-015 skill names from the site data', () => {
   })
 })
 
-describe('REQ-MOTION-016 effect names from labelKey', () => {
-  it('REQ-MOTION-016 writes a layer labelKey with the site keyword table, and gives nothing back for a key it cannot resolve', () => {
+describe('REQ-MOTION-014 condition labels from labelKey', () => {
+  it('REQ-MOTION-014 writes a labelKey with the site keyword table, and gives nothing back for a key it cannot resolve', () => {
     const refs = { Charge: { k: 'keyword' as const, n: '충전', kw: '충전' }, Sinking: { k: 'keyword' as const, n: '침잠', kw: '침잠' } }
     expect(formatMotionLabelKey('[Charge] 15', refs, () => undefined)).toBe('충전 15')
     expect(formatMotionLabelKey('[Sinking] + [Charge] 3', refs, () => undefined)).toBe('침잠 + 충전 3')
@@ -181,9 +185,46 @@ describe('REQ-MOTION-018 a link state names its partner', () => {
     const states = buildMotionCatalog([row('v:link-10114', false), row('v:link-10114-max', true), entry({ slug: 'id10613', identityId: '10613', skillId: 1061305, state: 'v:base', label: '기본', video: 'honglu/10613/1061305/b.mp4' })], ids, 'ko')
       .find(s => s.id === 'hong-lu')!.identities[0].skills[0].states
     expect(states[0].link).toBeUndefined()
-    expect(states[1].link).toMatchObject({ gameId: '10114', name: '흑수 - 오 필두', sinner: '이상', max: false })
-    expect(states[1].link!.portrait).toContain('10114')
-    expect(states[2].link).toMatchObject({ gameId: '10114', max: true })
+    expect(states[1].link).toMatchObject({ id: '10114', max: false, partners: [{ gameId: '10114', name: '흑수 - 오 필두', sinner: '이상' }] })
+    expect(states[1].link!.partners[0].portrait).toContain('10114')
+    expect(states[2].link).toMatchObject({ id: '10114', max: true })
+  })
+
+  const info = (game_id: string, sinner_id: string, sinner_name: string) => [game_id, { id: `u${game_id}`, name: `n${game_id}`, sinner_id, sinner_name, game_id, folder_name: 'f', release_date: '2025-08-28' }] as const
+  const ids = new Map([info('10216', 'faust', '파우스트'), info('11216', 'gregor', '그레고르'), info('11009', 'sinclair', '싱클레어'), info('10715', 'heathcliff', '히스클리프')])
+
+  it('REQ-MOTION-033 gives a link every member but the identity itself, in the index order, under one link id', () => {
+    const [faust] = buildMotionCatalog([entry({ identityId: '10216', skillId: 1021603, state: 'v:link-11216+11009', label: 'L', members: ['10216', '11216', '11009'], linkMax: false })], ids, 'ko')
+    const link = faust.identities[0].skills[0].states[0].link!
+    expect(link.partners.map(p => p.gameId)).toEqual(['11216', '11009'])
+    expect(link.id).toBe('11216+11009')
+  })
+
+  it('REQ-MOTION-033 keeps a link with no partner (v:link-self) a plain state', () => {
+    const [heath] = buildMotionCatalog([entry({ slug: 'id10715', identityId: '10715', skillId: 1071503, state: 'v:link-self', label: '연계', members: ['10715'], linkMax: false, video: 'heathcliff/10715/1071503/v-link-self/layers.mp4' })], ids, 'ko')
+    expect(heath.identities[0].skills[0].states[0].link).toBeUndefined()
+  })
+})
+
+describe('REQ-MOTION-034 the dead 거미집 아비 of 공간참 - 잔', () => {
+  const info = (game_id: string, sinner_id: string, sinner_name: string) => [game_id, { id: `u${game_id}`, name: `아비 ${game_id}`, sinner_id, sinner_name, game_id, folder_name: 'f', release_date: '2025-08-28' }] as const
+  const ids = new Map([info('10916', 'rodion', '로쟈'), info('10115', 'yi-sang', '이상'), info('11115', 'outis', '오티스'), info('10614', 'hong-lu', '홍루')])
+  const row = (state: string, deadAllies?: string[]) => entry({ slug: 'id10415', identityId: '10415', skillId: 1041507, state, label: state, video: `ryoshu/10415/1041507/${state}/layers.mp4`, ...(deadAllies && { deadAllies }) })
+  const rows = [row('v:base'), row('v:best-3'), row('v:dead-10916', ['10916']), row('v:dead-10916+dead-10115+dead-11115+dead-10614', ['10916', '10115', '11115', '10614'])]
+
+  it('REQ-MOTION-034 gives a dead state its dead identities (name, sinner, portrait), in the index order', () => {
+    const [ryoshu] = buildMotionCatalog(rows, ids, 'ko')
+    const states = ryoshu.identities[0].skills[0].states
+    expect(states.find(s => s.state === 'v:base')!.dead).toBeUndefined()
+    expect(states.find(s => s.state === 'v:dead-10916')!.dead!.map(d => d.gameId)).toEqual(['10916'])
+    const all = states.find(s => s.state.endsWith('10614'))!.dead!
+    expect(all.map(d => d.sinner)).toEqual(['로쟈', '이상', '오티스', '홍루'])
+    expect(all[0].portrait).toContain('10916')
+  })
+
+  it('REQ-MOTION-034 opens on every 아비 dead, ahead of the best state', () => {
+    const [ryoshu] = buildMotionCatalog(rows, ids, 'ko')
+    expect(defaultMotionState(ryoshu.identities[0].skills[0])).toBe('v:dead-10916+dead-10115+dead-11115+dead-10614')
   })
 })
 
@@ -241,32 +282,4 @@ it('REQ-MOTION-001 builds the list in the browser from the R2 index and the site
   const identity = catalog.find(s => s.id === 'faust')!.identities[0]
   expect(identity).toMatchObject({ label: '새벽 사무소 해결사', identityId: 'faust-dawn', gameId: '10216', released: '2026-01-01' })
   expect(identity.skills[0]).toMatchObject({ title: 'Dawn Flash', frame: { sin: 'wrath', slot: 1, attack: 'slash' } })
-})
-
-describe('REQ-MOTION-027 the full-colour WebM first', () => {
-  const webm = 'faust/10216/1021601/v-base/layers.webm'
-  const plays = (answer: string) => (type: string) => (type === VP9_444_TYPE ? answer : '')
-
-  it('REQ-MOTION-027 asks for VP9 profile 1, 4:4:4', () => {
-    expect(VP9_444_TYPE).toBe('video/webm; codecs="vp09.01.40.08.03"')
-  })
-
-  it('REQ-MOTION-027 tries the WebM, then the MP4, where the browser plays VP9 4:4:4', () => {
-    expect(motionVideoFiles({ video: 'a/layers.mp4', videoWebm: webm }, plays('probably'))).toEqual([webm, 'a/layers.mp4'])
-    expect(motionVideoFiles({ video: 'a/layers.mp4', videoWebm: webm }, plays('maybe'))).toEqual([webm, 'a/layers.mp4'])
-  })
-
-  it('REQ-MOTION-027 keeps the MP4 alone for Safari, entries without a WebM, or after a WebM failed', () => {
-    expect(motionVideoFiles({ video: 'a/layers.mp4', videoWebm: webm }, plays(''))).toEqual(['a/layers.mp4'])
-    expect(motionVideoFiles({ video: 'a/layers.mp4' }, plays('probably'))).toEqual(['a/layers.mp4'])
-    expect(motionVideoFiles({ video: 'a/layers.mp4', videoWebm: webm }, plays('probably'), true)).toEqual(['a/layers.mp4'])
-  })
-
-  it('REQ-MOTION-027 passes the index\'s WebM to the state', () => {
-    const site = { identities: [{ id: 'faust-dawn', name: '새벽', sinner_id: 'faust', sinner_name: '파우스트', game_id: '10216', folder_name: 'Dawn', release_date: '2026-01-01' }], skillNames: [] as [number, string][], skillFrames: [], refs: null }
-    const [withWebm] = motionCatalogFrom([entry({ videoWebm: webm })], site, 'ko', new Date('2026-10-24')).find(s => s.id === 'faust')!.identities[0].skills[0].states
-    expect(withWebm.videoWebm).toBe(webm)
-    const [without] = motionCatalogFrom([entry({})], site, 'ko', new Date('2026-10-24')).find(s => s.id === 'faust')!.identities[0].skills[0].states
-    expect('videoWebm' in without).toBe(false)
-  })
 })

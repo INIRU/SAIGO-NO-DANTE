@@ -17,8 +17,10 @@ async function open(page: Page) {
   await closeAnnouncements(page)
   // The asset host answers another origin's CORS header now and then (an edge-cached response): allow this one.
   await page.route('https://assets.saigo-no-dante.com/**', async route => {
-    const response = await route.fetch()
-    await route.fulfill({ response, headers: { ...response.headers(), 'access-control-allow-origin': '*' } })
+    try {
+      const response = await route.fetch()
+      await route.fulfill({ response, headers: { ...response.headers(), 'access-control-allow-origin': '*' } })
+    } catch { /* the test ended while a sound file was still loading */ }
   })
   await page.goto(SKILL)
   await page.getByRole('button', { name: '확인' }).click()
@@ -63,29 +65,95 @@ test('REQ-MOTION-024 a sinner tab seen once comes back as it was, without loadin
   expect(await portrait().evaluate(img => (img as HTMLImageElement & { seen?: boolean }).seen ?? false), 'the same image element, not a new one').toBe(true)
 })
 
-test('REQ-MOTION-025 coming back to the page, the sound button and the bar match what the video plays', async ({ page }) => {
-  // The page's <video> is not in the document: record the element the hook last set, to read what it really plays.
+test('REQ-MOTION-025 coming back to the page, the sound is off and the volume panel holds the volumes set before', async ({ page }) => {
+  // The page's <video> is not in the document: record the element the hook last muted or unmuted.
   await page.addInitScript(() => {
-    for (const name of ['volume', 'muted'] as const) {
-      const property = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, name)!
-      Object.defineProperty(HTMLMediaElement.prototype, name, { configurable: true, get() { return property.get!.call(this) },
-        set(value) { (window as unknown as { media: HTMLMediaElement }).media = this; property.set!.call(this, value) } })
-    }
+    const property = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, 'muted')!
+    Object.defineProperty(HTMLMediaElement.prototype, 'muted', { configurable: true, get() { return property.get!.call(this) },
+      set(value) { (window as unknown as { media: HTMLMediaElement }).media = this; property.set!.call(this, value) } })
   })
-  const media = () => page.evaluate(() => { const v = (window as unknown as { media: HTMLMediaElement }).media; return { muted: v.muted, volume: v.volume } })
+  const muted = () => page.evaluate(() => (window as unknown as { media: HTMLMediaElement }).media.muted)
   await open(page)
-  await page.getByRole('slider', { name: '음량' }).fill('0.3')
-  expect(await media()).toEqual({ muted: false, volume: 0.3 })
+  await page.getByRole('button', { name: '음량' }).click()
+  // The master above 0 turns the sound on (the silent track unmuted: iOS lets Web Audio through only then).
+  await page.getByRole('slider', { name: '전체' }).fill('0.3')
+  await page.getByRole('slider', { name: '보이스' }).fill('0.6')
+  expect(await muted()).toBe(false)
+  await page.keyboard.press('Escape')
+  await expect(page.getByRole('slider', { name: '전체' })).toBeHidden()
   // A client navigation (the site's home link; the motion page hides the bar it sits in), then the browser's back.
   await page.locator('a[href="/ko"]').first().evaluate(link => (link as HTMLAnchorElement).click())
   await page.waitForURL(/\/ko$/)
   await page.goBack()
-  await expect(page.getByRole('button', { name: /소리 (켜기|끄기)/ })).toBeEnabled({ timeout: 30000 })
-  await expect(page.getByRole('button', { name: '소리 켜기' })).toBeVisible()
-  expect((await media()).muted).toBe(true)
-  await page.getByRole('button', { name: '소리 켜기' }).click()
-  expect(await media()).toEqual({ muted: false, volume: 0.3 })
-  await expect(page.getByRole('slider', { name: '음량' })).toHaveValue('0.3')
+  await expect(page.getByRole('button', { name: '소리 켜기' })).toBeEnabled({ timeout: 30000 })
+  expect(await muted()).toBe(true)
+  await page.getByRole('button', { name: '음량' }).click()
+  await expect(page.getByRole('slider', { name: '전체' })).toHaveValue('0.3')
+  await expect(page.getByRole('slider', { name: '보이스' })).toHaveValue('0.6')
+  await expect(page.getByRole('slider', { name: '효과음' })).toHaveValue('1')
+})
+
+test('REQ-MOTION-030 the sounds come from the shared library and the play rules on R2, not from the video', async ({ page }) => {
+  const asked: string[] = []
+  page.on('request', request => { if (request.url().startsWith('https://assets.saigo-no-dante.com/')) asked.push(new URL(request.url()).pathname) })
+  await open(page)
+  await expect.poll(() => asked.some(path => /^\/(sfx|voices)\/.+\.m4a$/.test(path)), { timeout: 15000 }).toBe(true)
+  expect(asked).toContain('/sound_rules.json')
+  await page.getByRole('button', { name: '음량' }).click()
+  await expect(page.getByRole('switch', { name: '치명타 소리' })).toBeVisible()
+})
+
+test('REQ-MOTION-032 in the sound tail past the last picture frame, nothing is drawn again and the last frame stays', async ({ page }) => {
+  // Count the frames the compositor uploads, and keep the page's (off-document) video at hand.
+  await page.addInitScript(() => {
+    const w = window as unknown as { uploads: number; media: HTMLMediaElement }
+    w.uploads = 0
+    const upload = WebGL2RenderingContext.prototype.texImage2D
+    WebGL2RenderingContext.prototype.texImage2D = function (this: WebGL2RenderingContext, ...args: unknown[]) { w.uploads++; return (upload as (...a: unknown[]) => void).apply(this, args) } as typeof upload
+    const property = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, 'muted')!
+    Object.defineProperty(HTMLMediaElement.prototype, 'muted', { configurable: true, get() { return property.get!.call(this) },
+      set(value) { w.media = this; property.set!.call(this, value) } })
+  })
+  await open(page)
+  const slider = page.getByRole('slider', { name: '프레임' })
+  const last = Number(await slider.getAttribute('max'))
+  await slider.fill(String(last))
+  await expect.poll(() => frameOf(page)).toBe(last)
+  await page.waitForTimeout(500)
+  const before = await page.evaluate(() => (window as unknown as { uploads: number }).uploads)
+  // Into the tail: the video's time at or past frames / fps (its length is the sound's).
+  await page.evaluate(n => new Promise<void>(resolve => {
+    const v = (window as unknown as { media: HTMLMediaElement }).media
+    v.addEventListener('seeked', () => resolve(), { once: true })
+    v.currentTime = Math.min(v.duration, (n + 1) / 60 + 0.001)
+  }), last)
+  await page.waitForTimeout(300)
+  expect(await page.evaluate(() => (window as unknown as { uploads: number }).uploads)).toBe(before)
+  expect(await frameOf(page)).toBe(last)
+})
+
+test('REQ-MOTION-034 공간참 - 잔 opens with the four 아비 dead, and a card turned off opens the state without that one', async ({ page }) => {
+  await closeAnnouncements(page)
+  await page.goto('/ko/motion/skills?skill=id10415~1041507')
+  await page.getByRole('button', { name: '확인' }).click()
+  const cards = page.locator('[data-dead]')
+  await expect(cards).toHaveCount(4, { timeout: 30000 })
+  for (const card of await cards.all()) await expect(card).toHaveAttribute('aria-pressed', 'true')
+  await page.locator('[data-dead="11115"]').click()
+  await expect(page).toHaveURL(/state=v(%3A|:)dead-10916(%2B|\+)dead-10115(%2B|\+)dead-10614/)
+  await expect(page.locator('[data-dead="11115"]')).toHaveAttribute('aria-pressed', 'false')
+})
+
+test('REQ-MOTION-035 an identity with link lines has their sound buttons in its link section', async ({ page }) => {
+  await closeAnnouncements(page)
+  await page.goto('/ko/motion/skills?skill=id10315~1031505')
+  await page.getByRole('button', { name: '확인' }).click()
+  const line = page.locator('[data-voice="noir-sinclair"]')
+  await expect(line).toBeVisible({ timeout: 30000 })
+  await line.click()
+  await expect(line).toHaveAttribute('aria-pressed', 'true')
+  await line.click()
+  await expect(line).toHaveAttribute('aria-pressed', 'false')
 })
 
 test('REQ-MOTION-003 the video and its layers.json are read at their plain R2 paths, which the upload purges', async ({ page }) => {
@@ -122,27 +190,22 @@ test('REQ-MOTION-026 the stage keeps drawing while the video plays even when the
   expect(await frame()).toBeGreaterThan(first + 30)
 })
 
-test('REQ-MOTION-027 a WebM that fails to load falls back to the MP4 and plays', async ({ page }) => {
-  const asked: string[] = []
+test('REQ-MOTION-029 the player has no effect switches, even for a skill whose index entry counts layers', async ({ page }) => {
+  // 이상 흑수 - 오 필두 skill 1: the index counted two buff layers before version 9.
   await closeAnnouncements(page)
-  await page.route('https://assets.saigo-no-dante.com/**', async route => {
-    const url = route.request().url()
-    asked.push(new URL(url).pathname)
-    if (/\.webm(\?|$)/.test(url)) return route.fulfill({ status: 404, body: '' })
-    const response = await route.fetch()
-    const headers = { ...response.headers(), 'access-control-allow-origin': '*' }
-    // Give this skill's states a WebM, as a re-rendered skill has (the file itself is missing here).
-    if (url.includes('/index.json')) {
-      const rows = await response.json() as { slug: string; skillId: number; video: string }[]
-      const json = rows.map(row => (row.slug === 'id10116' && row.skillId === 1011601 ? { ...row, videoWebm: row.video.replace(/\.mp4$/, '.webm') } : row))
-      return route.fulfill({ response, headers, json })
-    }
-    await route.fulfill({ response, headers })
-  })
+  await page.goto('/ko/motion/skills?skill=id10114~1011401')
+  await page.getByRole('button', { name: '확인' }).click()
+  await expect(page.getByRole('button', { name: '일시정지' }).or(page.getByText('영상을 불러오지 못했습니다.'))).toBeVisible({ timeout: 30000 })
+  await expect(page.getByText('이펙트', { exact: true })).toHaveCount(0)
+})
+
+test('REQ-MOTION-028 a layers.json from before version 7 (no Y·Cb·Cr planes) is not drawn: the stage says it could not load', async ({ page }) => {
+  await page.route('https://assets.saigo-no-dante.com/**/layers.json', route => route.fulfill({
+    json: { version: 4, fps: 60, frames: 10, tile: { w: 1920, h: 1080 }, video: { file: 'layers.mp4', w: 1920, h: 1080 }, base: { x: 0, y: 0, w: 1920, h: 1080 }, layers: [] },
+    headers: { 'access-control-allow-origin': '*' },
+  }))
+  await closeAnnouncements(page)
   await page.goto(SKILL)
   await page.getByRole('button', { name: '확인' }).click()
-  await expect(page.getByRole('button', { name: '일시정지' })).toBeEnabled({ timeout: 30000 })
-  const webm = asked.findIndex(path => path.endsWith('.webm')), mp4 = asked.findIndex(path => path.endsWith('.mp4'))
-  expect(webm, 'Chrome plays VP9 4:4:4, so the WebM is tried first').toBeGreaterThanOrEqual(0)
-  expect(mp4, 'then the MP4').toBeGreaterThan(webm)
+  await expect(page.getByText('영상을 불러오지 못했습니다.')).toBeVisible({ timeout: 30000 })
 })

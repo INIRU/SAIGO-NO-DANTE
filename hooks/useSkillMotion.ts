@@ -1,35 +1,50 @@
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { LayerCompositor, type LayerSetMeta } from '@/lib/motion/compositor'
-import { motionAssetUrl, motionVideoFiles, type MotionState } from '@/lib/motion/catalog'
-
-// Whether this browser plays VP9 4:4:4 is asked once; a WebM that then fails (some browsers say "probably" and still
-// cannot decode it) sends every later load in this tab to the MP4.
-let vp9Answer: string | undefined
-let webmFailed = false
+import { SoundPlayer } from '@/lib/motion/sounds'
+import { SoundButtons, type VoiceLink } from '@/lib/motion/soundbuttons'
+import { MOTION_ASSET_BASE, motionAssetUrl, type MotionState } from '@/lib/motion/catalog'
+import { useStored } from './useStored'
 
 /** `labelKey`: the layer's name as keys (`[Keyword] stack`), written in the page language by the side panel. */
-export type MotionLayerToggle = { id: string; label: string; labelKey?: string; on: boolean; offAtSkill: boolean }
 export type MotionStatus = 'idle' | 'loading' | 'ready' | 'error'
 export type MotionError = 'webgl' | 'load'
 /** The frame being shown, read by the controls only (the rest of the page does not re-render 60 times a second). */
 export type MotionFrameStore = { subscribe: (listener: () => void) => () => void; get: () => number }
+/** The three volumes, 0..1: the page's master (the game's loudness at 1), and the game's voice and effects options. */
+export type MotionVolumes = { master: number; voice: number; sfx: number }
+type SoundSettings = MotionVolumes & { critical: boolean }
 
 /** How long without a frame report, while playing, before a display refresh draws the frame itself (6 frames at 60 fps). */
 const STALE_MS = 100
 
+// The visitor's sound settings, kept in the browser: the master starts at half (the game's full loudness is loud), the
+// critical-hit sound on.
+const SOUND_KEY = 'motion-sound'
+const level = (value: unknown, fallback: number) => (typeof value === 'number' && value >= 0 && value <= 1 ? value : fallback)
+const parseSound = (saved: unknown): SoundSettings => {
+  const s = (saved ?? {}) as Partial<SoundSettings>
+  return { master: level(s.master, 0.5), voice: level(s.voice, 1), sfx: level(s.sfx, 1), critical: s.critical !== false }
+}
+
+// The link section's sound buttons: one for the page's lifetime (its AudioContext is made at the first press and kept).
+let buttons: SoundButtons | null = null
+const linkButtons = () => (buttons ??= new SoundButtons(MOTION_ASSET_BASE))
+/** voice_links.json (the link section's sound buttons); [] when R2 has none. */
+export const readMotionVoiceLinks = () => linkButtons().list()
+
 /**
  * The skill motion player (the reference player of the R2 export, as a hook): a hidden video element feeds the WebGL2
- * compositor, which draws the base picture plus the wanted buff layers into a canvas the hook puts in `hostRef`. A newer
- * load cancels an older one; the layer switches are kept by layer id across skills and states. The video starts muted
+ * compositor, which draws the picture into a canvas the hook puts in `hostRef`; the SoundPlayer plays every sound of the
+ * skill over it (the video's own audio track is silent). A newer load cancels an older one. The video starts muted
  * (autoplay), and iOS Safari loads no frame until play(), so a load always calls play() first. While held (the stage's
  * Project Moon notice is up) a load stops at its first frame and nothing plays; releasing the hold starts it.
  */
 export function useSkillMotion() {
   const hostRef = useRef<HTMLDivElement | null>(null)
   const video = useRef<HTMLVideoElement | null>(null)
+  const sounds = useRef<SoundPlayer | null>(null)
   const comp = useRef<LayerCompositor | null>(null)
   const meta = useRef<LayerSetMeta | null>(null)
-  const toggles = useRef(new Map<string, boolean>())
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   // The stage out of view (a phone scrolled down to the skill card): no frame is drawn, so iOS Safari does not upload a
   // 1920×1440 video frame 60 times a second for nothing.
@@ -38,22 +53,34 @@ export function useSkillMotion() {
   const held = useRef(true)
   const token = useRef(0)
   const frame = useRef({ value: 0, listeners: new Set<() => void>() })
+  // The frame on the canvas (the sound tail keeps the last one).
+  const drawn = useRef(-1)
   const [status, setStatus] = useState<MotionStatus>('idle')
   const [error, setError] = useState<MotionError | null>(null)
   const [playing, setPlaying] = useState(false)
   const [muted, setMuted] = useState(true)
-  const [volume, setVolumeState] = useState(1)
-  // Read when a new <video> is made: React keeps this hook's state while the page is hidden (a client navigation away
-  // and back), but the effect below makes a fresh element, muted at full volume.
-  const volumeRef = useRef(1)
+  const [sound, saveSound] = useStored(SOUND_KEY, parseSound)
+  const soundRef = useRef(sound)
+  soundRef.current = sound
   const [frames, setFrames] = useState(0)
   const [hasAudio, setHasAudio] = useState(false)
-  const [layers, setLayers] = useState<MotionLayerToggle[]>([])
+  const [hasCritical, setHasCritical] = useState(false)
 
   const frameStore = useRef<MotionFrameStore>({
     subscribe: listener => { frame.current.listeners.add(listener); return () => frame.current.listeners.delete(listener) },
     get: () => frame.current.value,
   }).current
+
+  const applySound = useCallback(() => {
+    const s = soundRef.current, p = sounds.current
+    p?.setVolume(s.master)
+    p?.setVoiceVolume(s.voice)
+    p?.setSfxVolume(s.sfx)
+    p?.setCritical(s.critical)
+    buttons?.setVolume(s.master)
+    buttons?.setVoiceVolume(s.voice)
+  }, [])
+  useEffect(applySound, [sound, applySound])
 
   /**
    * Frees the compositor and its GL context at once. A dropped context otherwise lives until it is collected, and on iOS
@@ -72,11 +99,16 @@ export function useSkillMotion() {
     frame.current.listeners.forEach(listener => listener())
   }, [])
 
-  const draw = useCallback(() => {
+  /** exact: the frame a frame report says the video hands over now; otherwise the frame of its current time. */
+  const draw = useCallback((exact?: number) => {
     const v = video.current, m = meta.current
     if (!v || !m || !comp.current || !onScreen.current) return
-    const n = Math.min(m.frames - 1, Math.floor(v.currentTime * m.fps + 1e-3))
-    comp.current.draw(v, n)
+    const last = m.frames - 1
+    // The sound tail: the audio runs on past the last picture frame, where the video has no frame (Safari shows black).
+    if (exact === undefined && v.currentTime >= m.frames / m.fps && drawn.current === last) { show(last); return }
+    const n = exact ?? Math.min(last, Math.floor(v.currentTime * m.fps + 1e-3))
+    comp.current.draw(v, n, exact !== undefined)
+    drawn.current = n
     show(n)
   }, [show])
 
@@ -86,23 +118,29 @@ export function useSkillMotion() {
     v.playsInline = true
     v.preload = 'auto'
     v.muted = true
-    v.volume = volumeRef.current
-    // It plays muted (the browser allows that without a press), so the controls show it muted, at the volume they had.
+    // It plays muted (the browser allows that without a press), so the controls show it muted.
     setMuted(true)
     v.crossOrigin = 'anonymous' // the R2 host allows the site: WebGL may read the frames
     video.current = v
+    const player = new SoundPlayer()
+    player.attach(v)
+    sounds.current = player
+    applySound()
+    const redraw = () => draw()
     observer.current = new IntersectionObserver(([entry]) => {
       onScreen.current = entry.isIntersecting
       if (entry.isIntersecting) draw()
     })
-    // The video's frame reports draw each new frame. Every display refresh while it plays also checks on them: when none
-    // came for STALE_MS (Windows Chrome stopped sending them for this off-document video while it played on, the canvas
-    // frozen mid-skill), the refresh draws the frame itself and asks again. Without the reports (old Safari) it always does.
+    // The video's frame reports draw each new frame (none in the sound tail). Every display refresh while it plays also
+    // checks on them: when none came for STALE_MS (Windows Chrome stopped sending them for this off-document video while it
+    // played on, the canvas frozen mid-skill), the refresh draws the frame itself and asks again. Without the reports (old
+    // Safari) it always does.
     const reports = 'requestVideoFrameCallback' in v
     let ticking = false, reportedAt = 0, pending = 0
-    const report = () => {
+    const report = (_: number, md: VideoFrameCallbackMetadata) => {
       reportedAt = performance.now()
-      draw()
+      const m = meta.current
+      if (m && md.mediaTime < m.frames / m.fps) draw(Math.min(m.frames - 1, Math.round(md.mediaTime * m.fps)))
       if (!v.paused) pending = v.requestVideoFrameCallback(report)
     }
     const watch = () => {
@@ -126,24 +164,26 @@ export function useSkillMotion() {
     const onVisibility = () => { if (document.hidden) v.pause() }
     v.addEventListener('play', onPlay)
     v.addEventListener('pause', onPause)
-    v.addEventListener('seeked', draw)
+    v.addEventListener('seeked', redraw)
     document.addEventListener('visibilitychange', onVisibility)
     return () => {
       token.current++
       v.removeEventListener('play', onPlay)
       v.removeEventListener('pause', onPause)
-      v.removeEventListener('seeked', draw)
+      v.removeEventListener('seeked', redraw)
       document.removeEventListener('visibilitychange', onVisibility)
       if (reports) v.cancelVideoFrameCallback(pending)
       observer.current?.disconnect()
       v.pause()
       v.removeAttribute('src')
       v.load()
+      player.dispose()
+      sounds.current = null
+      buttons?.stop()
       free()
     }
-  }, [draw, free])
+  }, [draw, free, applySound])
 
-  const reload = useRef<((state: MotionState) => Promise<void>) | null>(null)
   /** Load one state (another skill or condition), from its first frame. */
   const load = useCallback(async (state: MotionState) => {
     const v = video.current
@@ -157,59 +197,43 @@ export function useSkillMotion() {
       if (!response.ok) throw new Error(String(response.status))
       const m = await response.json() as LayerSetMeta
       if (mine !== token.current) return
+      // Older exports (before version 7) are replaced on R2; the compositor draws only the Y·Cb·Cr planes.
+      if (!m.basePlanes) throw new Error('layers.json before version 7')
       v.pause()
       free()
       meta.current = null
-      // The full-colour WebM first where the browser plays it, else (or when it fails) the MP4.
-      const files = motionVideoFiles(state, type => (vp9Answer ??= v.canPlayType(type)), webmFailed)
-      let chosen = files[0]
-      for (const [i, file] of files.entries()) {
-        chosen = file
-        v.src = motionAssetUrl(file)
-        const loaded = new Promise<void>((resolve, reject) => {
-          v.onloadeddata = () => resolve()
-          v.onerror = () => reject(new Error('video'))
-        })
-        v.play().catch(() => {})
-        try {
-          await loaded
-          break
-        } catch (failure) {
-          if (mine !== token.current) return
-          if (i === files.length - 1) throw failure
-          webmFailed = true
-        }
-      }
+      v.src = motionAssetUrl(state.video)
+      const loaded = new Promise<void>((resolve, reject) => {
+        v.onloadeddata = () => resolve()
+        v.onerror = () => reject(new Error('video'))
+      })
+      v.play().catch(() => {})
+      await loaded
       if (mine !== token.current) return
-      // A WebM that fails while playing: the same state again from the MP4.
-      v.onerror = chosen === state.videoWebm ? () => {
-        if (mine !== token.current) return
-        webmFailed = true
-        void reload.current?.(state)
-      } : null
       // A canvas keeps its first GL context: a new element for every load.
       const canvas = document.createElement('canvas')
       canvas.className = 'block h-auto w-full'
+      const base = motionAssetUrl(state.meta.slice(0, state.meta.lastIndexOf('/') + 1))
       try {
-        comp.current = new LayerCompositor(canvas, m)
+        comp.current = new LayerCompositor(canvas, m, file => base + file)
       } catch {
         v.pause()
         setError('webgl')
         setStatus('error')
         return
       }
+      // (A frame the compositor decodes itself, ready after the draw that wanted it: playing, the next frame draws.)
+      comp.current.onReady = () => { if (v.paused) draw() }
       canvasRef.current = canvas
       hostRef.current?.replaceChildren(canvas)
       observer.current?.disconnect()
       observer.current?.observe(canvas)
       meta.current = m
-      m.layers.forEach((layer, k) => {
-        if (!toggles.current.has(layer.id)) toggles.current.set(layer.id, layer.enabled !== false)
-        comp.current!.on[k] = !layer.empty && toggles.current.get(layer.id)!
-      })
-      setLayers(m.layers.filter(layer => !layer.empty).map(layer => ({ id: layer.id, label: layer.label, labelKey: (layer as { labelKey?: string }).labelKey, on: toggles.current.get(layer.id)!, offAtSkill: Boolean(layer.offAtSkill) })))
+      drawn.current = -1
+      void sounds.current?.load(MOTION_ASSET_BASE, m)
       setFrames(m.frames)
       setHasAudio(Boolean(m.audio))
+      setHasCritical(Boolean(m.sounds && m.audio?.critical))
       v.currentTime = 0
       draw()
       setStatus('ready')
@@ -220,8 +244,7 @@ export function useSkillMotion() {
       setError('load')
       setStatus('error')
     }
-  }, [draw, show])
-  useEffect(() => { reload.current = load }, [load])
+  }, [draw, show, free])
 
   const togglePlay = useCallback(() => { const v = video.current; if (v && !held.current) (v.paused ? v.play().catch(() => {}) : v.pause()) }, [])
   /** Hold or release playback; a release plays the loaded video (the notice's 확인 is the press that starts it). */
@@ -245,33 +268,42 @@ export function useSkillMotion() {
     show(to)
   }, [show])
   const step = useCallback((delta: number) => seek(frame.current.value + delta), [seek])
+  /**
+   * Sound on or off, inside the press: iOS lets Web Audio past the ringer switch only while a video with sound plays (the
+   * silent track, unmuted) and starts an AudioContext only in a press.
+   */
+  const unmute = useCallback((on: boolean) => {
+    const v = video.current
+    if (!v) return
+    v.muted = !on
+    sounds.current?.setMuted(!on)
+    setMuted(!on)
+    if (on && v.paused && !held.current) v.play().catch(() => {})
+  }, [])
   const toggleMute = useCallback(() => {
     const v = video.current
     if (!v) return
-    v.muted = !v.muted
-    // Sound back on after the slider took it to 0: at full volume, not silent.
-    if (!v.muted && v.volume === 0) { v.volume = 1; volumeRef.current = 1; setVolumeState(1) }
-    setMuted(v.muted)
-    if (!v.muted && v.paused && !held.current) v.play().catch(() => {})
+    // Sound back on after the master went to 0: at the starting level, not silent.
+    if (v.muted && soundRef.current.master === 0) saveSound({ ...soundRef.current, master: 0.5 })
+    unmute(v.muted)
+  }, [unmute, saveSound])
+  /** A volume slider; the master above 0 turns the sound on. */
+  const setVolume = useCallback((kind: keyof MotionVolumes, value: number) => {
+    saveSound({ ...soundRef.current, [kind]: value })
+    if (kind === 'master' && value > 0 && video.current?.muted) unmute(true)
+  }, [saveSound, unmute])
+  const setCritical = useCallback((on: boolean) => saveSound({ ...soundRef.current, critical: on }), [saveSound])
+  /** A link line of the link section, played inside the press; resolves when it ends or another press stopped it. */
+  const playVoice = useCallback((link: VoiceLink) => {
+    const b = linkButtons()
+    b.setVolume(soundRef.current.master)
+    b.setVoiceVolume(soundRef.current.voice)
+    return b.play(link)
   }, [])
-  /** The slider: above 0 turns the sound on, 0 mutes. iPhone Safari ignores it (the device buttons only). */
-  const setVolume = useCallback((value: number) => {
-    const v = video.current
-    if (!v) return
-    v.volume = value
-    volumeRef.current = value
-    v.muted = value === 0
-    setVolumeState(value)
-    setMuted(v.muted)
-  }, [])
-  const setLayer = useCallback((id: string, on: boolean) => {
-    toggles.current.set(id, on)
-    meta.current?.layers.forEach((layer, k) => { if (layer.id === id && comp.current) comp.current.on[k] = on })
-    setLayers(list => list.map(layer => layer.id === id ? { ...layer, on } : layer))
-    draw()
-  }, [draw])
+  const stopVoice = useCallback(() => buttons?.stop(), [])
 
-  return { hostRef, status, error, playing, muted, volume, frames, hasAudio, layers, frameStore, load, togglePlay, hold, seek, step, toggleMute, setVolume, setLayer }
+  const volumes: MotionVolumes = { master: sound.master, voice: sound.voice, sfx: sound.sfx }
+  return { hostRef, status, error, playing, muted, volumes, critical: sound.critical, hasCritical, frames, hasAudio, frameStore, load, togglePlay, hold, seek, step, toggleMute, setVolume, setCritical, playVoice, stopVoice }
 }
 
 /** The frame being shown, for a component that draws it (the counter, the seek bar). */

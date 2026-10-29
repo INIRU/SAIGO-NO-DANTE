@@ -7,7 +7,7 @@ import { useLocale, useTranslations } from 'next-intl'
 import { ChevronDown, RotateCw } from 'lucide-react'
 import BaseModal from '@/components/ui/BaseModal'
 import QuietImage from '@/components/ui/QuietImage'
-import { useSkillMotion } from '@/hooks/useSkillMotion'
+import { readMotionVoiceLinks, useSkillMotion } from '@/hooks/useSkillMotion'
 import { MOTION_INDEX_URL, defaultMotionState, fromMotionParam as fromParam, motionCatalogFrom, toMotionParam as toParam, type MotionEntry, type MotionIdentity, type MotionSiteData, type MotionSkill } from '@/lib/motion/catalog'
 import MotionConditions from './MotionConditions'
 import MotionPicker from './MotionPicker'
@@ -41,6 +41,8 @@ export default function SkillMotionViewer() {
   // The R2 index (read by the browser itself, so a new video shows on the next page open) and the site's names for it.
   const site = useSWR(`/api/motion/site-data?lang=${lang}`, readSiteData, { revalidateOnFocus: false })
   const index = useSWR(MOTION_INDEX_URL, readIndex, { revalidateOnFocus: false })
+  // The link section's sound buttons (voice_links.json on R2).
+  const voiceLinks = useSWR('motion-voice-links', readMotionVoiceLinks, { revalidateOnFocus: false })
   const sinners = useMemo(() => site.data && index.data ? motionCatalogFrom(index.data, site.data, lang, new Date()) : undefined, [site.data, index.data, lang])
   const error = site.error ?? index.error
   const mutate = () => Promise.all([site.mutate(), index.mutate()])
@@ -102,6 +104,8 @@ export default function SkillMotionViewer() {
     )
   }
   if (!sinners || !picked || !state) return <SkillMotionSkeleton />
+  const gameId = picked.identity.gameId
+  const voices = voiceLinks.data?.filter(line => gameId && line.identities.includes(gameId)) ?? []
 
   const shown = pending?.identity ?? picked.identity
   const picker = <MotionPicker sinners={sinners} sinnerId={tab ?? pending?.sinnerId ?? picked.sinnerId} selectedKey={pending ? pending.identity.slug : picked.skill.key} onSinner={setTab} onPick={choose} />
@@ -133,17 +137,18 @@ export default function SkillMotionViewer() {
         ) : (
           <>
             <MotionStage
-              hostRef={motion.hostRef} status={motion.status} error={motion.error} playing={motion.playing} muted={motion.muted} volume={motion.volume}
-              hasAudio={motion.hasAudio} frames={motion.frames} frameStore={motion.frameStore}
-              onTogglePlay={motion.togglePlay} onStep={motion.step} onSeek={motion.seek} onToggleMute={motion.toggleMute} onVolume={motion.setVolume}
+              hostRef={motion.hostRef} status={motion.status} error={motion.error} playing={motion.playing} muted={motion.muted} volumes={motion.volumes}
+              critical={motion.critical} hasCritical={motion.hasCritical} hasAudio={motion.hasAudio} frames={motion.frames} frameStore={motion.frameStore}
+              onTogglePlay={motion.togglePlay} onStep={motion.step} onSeek={motion.seek} onToggleMute={motion.toggleMute} onVolume={motion.setVolume} onCritical={motion.setCritical}
               onRetry={() => void load(state)} notice={notice} onDismiss={dismissNotice} />
 
             <div className="flex flex-col gap-4">
               <MotionSkillStrip sinnerId={picked.sinnerId} skills={picked.identity.skills} selectedKey={picked.skill.key} onPick={skill => choose(picked.sinnerId, picked.identity, skill)} />
               <h2 className="-mt-1 break-keep font-[family-name:var(--font-heading)] text-[1.125rem] leading-snug text-[var(--text-primary)] md:text-[1.25rem]">{picked.skill.title}</h2>
-              {picked.skill.states.length > 1 && (
+              {(picked.skill.states.length > 1 || voices.length > 0) && (
                 <MotionConditions key={picked.skill.key} states={picked.skill.states} current={state.state}
-                  onPick={next => void setQuery({ skill: toParam(picked.skill.key), state: next })} />
+                  onPick={next => void setQuery({ skill: toParam(picked.skill.key), state: next })}
+                  voices={voices} onVoice={motion.playVoice} onVoiceStop={motion.stopVoice} />
               )}
             </div>
           </>
@@ -151,7 +156,7 @@ export default function SkillMotionViewer() {
       </div>
 
       <aside className="min-w-0 xl:min-h-0 xl:overflow-y-auto xl:overscroll-contain xl:pr-1">
-        {!pending && <MotionSidePanel skillId={picked.skill.skillId} layers={motion.layers} onLayer={motion.setLayer} />}
+        {!pending && <MotionSidePanel skillId={picked.skill.skillId} />}
       </aside>
       </div>
 
