@@ -11,7 +11,7 @@ import { coinsOf, damageLink, MAX_CLASH_ROUNDS, PROBABILITY_LIMITS, SANITY_RANGE
 import NumberInput from './NumberInput'
 import SkillLoader from './SkillLoader'
 import styles from './DamageCalculator.module.css'
-import clash from './ClashCalculator.module.css'
+import clash from './CalculatorArena.module.css'
 
 type SideForm = Omit<ClashSide, 'coins'> & { coins: ClashCoin[]; skillKey: string }
 
@@ -51,13 +51,12 @@ function SidePanel({ side, title, form, onChange, resetKey }: { side: 'a' | 'b';
     </div>
     <ol className={clash.coinTrack}>
       {form.coins.map((coin, index) => <li key={index}>
-        {/* The coin turns its operator over: adding and subtracting are the two the game's skills use. */}
-        <button type="button" className={clash.coin} data-operator={coin.operator}
-          aria-label={`${t('coin', { index: index + 1 })} ${t(`operatorOption.${coin.operator}`)}`}
-          onClick={() => setCoin(index, { operator: coin.operator === 'ADD' ? 'SUB' : 'ADD' })}>
+        {/* Heads or tails is what the odds are over, so the coin is not pressed; its small sign switches adding and subtracting. */}
+        <span className={clash.coin} data-operator={coin.operator}>
           <Image src={COIN_IMAGES.normal} alt="" width={64} height={64} unoptimized />
-          <span aria-hidden="true">{SIGN[coin.operator]}</span>
-        </button>
+          <button type="button" aria-label={`${t('coin', { index: index + 1 })} ${t(`operatorOption.${coin.operator}`)}`} title={t(`operatorOption.${coin.operator}`)}
+            onClick={() => setCoin(index, { operator: coin.operator === 'ADD' ? 'SUB' : 'ADD' })}>{SIGN[coin.operator]}</button>
+        </span>
         <NumberInput label={t('coinValue', { index: index + 1 })} value={coin.scale} min={0} max={999} decimal step={coin.operator === 'MUL' ? 0.1 : 1} onChange={scale => setCoin(index, { scale })} />
       </li>)}
     </ol>

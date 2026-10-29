@@ -1,13 +1,13 @@
 'use client'
 
 import { useState } from 'react'
-import Image from 'next/image'
 import { useLocale, useTranslations } from 'next-intl'
 import useSWR from 'swr'
 import { X } from 'lucide-react'
 import BaseModal from '@/components/ui/BaseModal'
 import CharacterPickerFilters from '@/components/ui/CharacterPickerFilters'
-import { SINNER_SLUGS, STORAGE_BASE } from '@/lib/constants/game'
+import IdentityFrameCard from '@/components/ui/IdentityFrameCard'
+import { SINNER_SLUGS } from '@/lib/constants/game'
 import { getSinnerLogoUrl } from '@/lib/utils/images'
 import { compareReleaseDate } from '@/lib/utils/release-order'
 import { assetName, type NoteAssetData } from '@/lib/notes/assets'
@@ -38,8 +38,8 @@ export default function NoteCharacterPicker({ kind, onSelect, onClose }: {
           const items = filtered.filter(a => (a.identity?.sinner_id ?? a.sinnerId) === id)
           if (!items.length) return null
           return <section key={id}><h3><img src={getSinnerLogoUrl(id)} alt="" width={28} height={28} />{t(id)}<small>{items.length}</small></h3>
-            <div className="note-picker-grid">{items.map(a => <button type="button" key={a.id} className={`note-picker-item ${kind === 'ego' ? 'character-picker-ego-card' : ''}`} onClick={() => onSelect(a)} aria-label={assetName(a, lang)}>
-              {kind === 'identity' ? <><div className="note-character-portrait">{a.image_url ? <Image src={a.image_url} alt="" fill sizes="(max-width: 640px) 33vw, 9rem" /> : null}<small><img src={`${STORAGE_BASE}/icons/Rarity/${a.identity?.rarity ?? 1}star.webp`} alt={'0'.repeat(a.identity?.rarity ?? 1)} width={(a.identity?.rarity ?? 1) * 20} height={20} /></small></div><span>{assetName(a, lang)}</span></> : <NoteAssetArtwork asset={a} compact />}
+            <div className="note-picker-grid">{items.map(a => <button type="button" key={a.id} className="note-picker-item character-picker-ego-card" onClick={() => onSelect(a)} aria-label={assetName(a, lang)}>
+              {kind === 'identity' ? a.identity && <IdentityFrameCard identity={a.identity} name={assetName(a, lang)} sizes="8rem" /> : <NoteAssetArtwork asset={a} compact />}
             </button>)}</div>
           </section>
         })}

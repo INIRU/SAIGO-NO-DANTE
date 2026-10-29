@@ -2400,7 +2400,10 @@
       "SLASH": "Slash",
       "PENETRATE": "Pierce",
       "HIT": "Blunt"
-    }
+    },
+    "coinLess": "Remove a coin",
+    "coinMore": "Add a coin",
+    "coinTitle": "Coins"
   },
   "clash": {
     "title": "Clash calculator",

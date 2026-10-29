@@ -7,11 +7,12 @@
 .coinTrack{list-style:none;margin:.9rem 0 0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(3.5rem,1fr));gap:.75rem .4rem}
 .coinTrack li{display:flex;flex-direction:column;align-items:center;gap:.4rem;min-width:0}
 .coinTrack li input[type=number]{min-height:2.25rem;padding:.35rem .2rem;text-align:center;font:1.125rem/1 var(--font-title)}
-.coin{position:relative;width:3rem;height:3rem;border-radius:50%;cursor:pointer;transition:transform .16s var(--ease)}.coin img{width:100%;height:100%}
-.coin span{position:absolute;right:-.25rem;bottom:-.2rem;display:grid;place-items:center;width:1.35rem;height:1.35rem;border:1px solid var(--gold);border-radius:50%;background:var(--bg-deep);color:var(--gold-light);font:1.05rem/1 var(--font-title);transition:border-color .16s ease,color .16s ease}
-.coin[data-operator=SUB] span{border-color:#9b2c23;color:#e0907a}
-.coin:active{transform:scale(.92)}
-.coin:focus-visible{outline:2px solid var(--gold-light);outline-offset:3px}
+.coin{position:relative;width:3rem;height:3rem}.coin img{width:100%;height:100%}
+.coin button{position:absolute;right:-.35rem;bottom:-.3rem;display:grid;place-items:center;width:1.6rem;height:1.6rem;border:1px solid var(--gold);border-radius:50%;background:var(--bg-deep);color:var(--gold-light);font:1.1rem/1 var(--font-title);cursor:pointer;transition:border-color .16s ease,color .16s ease,transform .16s var(--ease)}
+.coin[data-operator=SUB] button{border-color:#9b2c23;color:#e0907a}
+.coin button:active{transform:scale(.9)}
+.coin button:focus-visible{outline:2px solid var(--gold-light);outline-offset:2px}
+@media(hover:hover) and (pointer:fine){.coin button:hover{border-color:var(--gold-light)}}
 .adders{margin-top:1.3rem;padding-top:1rem;border-top:1px solid var(--border)}
 .adders summary{cursor:pointer;color:var(--text-secondary);font:.95rem var(--font-heading);transition:color .16s ease}.adders[open] summary{margin-bottom:.9rem;color:var(--text-primary)}
 @media(hover:hover) and (pointer:fine){.adders summary:hover{color:var(--gold-light)}}
@@ -43,4 +44,4 @@
 @media(max-width:1080px){.arena{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.versus{order:-1;grid-column:1/-1;position:sticky;top:var(--nav-offset);z-index:5;flex-direction:row;align-items:center;gap:1rem;padding:.7rem 1rem;background:var(--bg-card);border:1px solid var(--border);box-shadow:0 .5rem 1rem rgba(0,0,0,.45)}
   .versusTitle{display:none}.odds{flex:1;flex-direction:row;align-items:center;gap:.9rem}.odds .meter{flex:1}.oddsA strong,.oddsB strong{font-size:2.2rem}.versus dl{margin:0;min-width:10rem}}
 @media(max-width:760px){.arena{grid-template-columns:1fr}.versus dl{display:none}.oddsA strong,.oddsB strong{font-size:1.9rem}.outcome{grid-template-columns:1fr;gap:1.5rem}.histogram{height:9rem}.column{height:5.5rem}}
-@media(prefers-reduced-motion:reduce){.coin,.coin span,.meter i,.histogram a,.column i,.leftBar i,.versus{transition:none}}
+@media(prefers-reduced-motion:reduce){.coin button,.meter i,.histogram a,.column i,.leftBar i,.versus{transition:none}}

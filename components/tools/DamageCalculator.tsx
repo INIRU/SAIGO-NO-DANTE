@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import { useTranslations } from 'next-intl'
-import { RotateCcw } from 'lucide-react'
+import { Minus, Plus, RotateCcw } from 'lucide-react'
 import { abilityPower, ATTACK_TYPES, SIN_ATTRIBUTES, type SkillTraits } from '@/lib/tools/damage-abilities'
 import { coinDamage, coinModifiers, coinPowers, MAX_COINS, parseNumberInput, parseSavedModifiers, SIN_RESIST_MAX, STAGGER_RESIST, type SavedModifier, type StaggerStage } from '@/lib/tools/damage'
 import { COIN_IMAGES } from '@/lib/identity/skill-description'
@@ -14,6 +14,7 @@ import DamageModifiers from './DamageModifiers'
 import NumberInput from './NumberInput'
 import SkillLoader from './SkillLoader'
 import styles from './DamageCalculator.module.css'
+import arena from './CalculatorArena.module.css'
 
 const STORAGE_KEY = 'damage-calculator-modifiers'
 const DEFAULTS = {
@@ -69,80 +70,62 @@ export default function DamageCalculator() {
   ] as [string, number][]
   const sameFactors = results.every(result => (['damageFactor', 'resistFactor', 'finalMultiplier'] as const).every(key => result[key] === results[0][key]))
 
+  const coinCount = (count: number) => set({ coinCount: Math.min(MAX_COINS, Math.max(1, count)) })
+  const factorRows = <dl className={styles.factors}>
+    {factors(results[0]).map(([name, value]) => <div key={name}><dt>{name}</dt><dd>{factor(value)}</dd></div>)}
+  </dl>
+
+  // The attacking skill and the target face each other across the damage, as the clash calculator's sides do; what changes
+  // the damage on top of them (clashes, critical, keyword and gift effects) runs the full width under them.
   return <div className={styles.page}>
     <PageHeader title={t('title')} description={t('subtitle')} actions={
       <button type="button" className={styles.reset} onClick={() => { setForm(DEFAULTS); setHeads(ALL_HEADS); setSkillKey(''); setResetKey(key => key + 1) }}><RotateCcw size={16} aria-hidden="true" />{t('reset')}</button>
     } />
-    <div className={styles.workspace}>
-      <div className={styles.inputs}>
-        <section className={styles.panel} aria-labelledby="damage-skill-heading">
-          <h2 id="damage-skill-heading">{t('skill')}</h2>
-          <SkillLoader key={resetKey} selectedKey={skillKey} onSkill={loaded => {
-            setSkillKey(loaded?.key ?? '')
-            if (loaded) { set(toDamageSkill(loaded, MAX_COINS)); setHeads(ALL_HEADS) }
-          }} />
-          <div className={styles.skillFields}>
-          <div className={styles.fields}>
-            <NumberField label={t('basePower')} value={form.basePower} max={999} onChange={basePower => set({ basePower })} />
-            <NumberField label={t('coinPower')} value={form.coinPower} min={-99} max={99} onChange={coinPower => set({ coinPower })} />
-            <div className={styles.field}>{t('coinCount')}
-              <Dropdown ariaLabel={t('coinCount')} buttonStyle={dropdownStyle} value={String(form.coinCount)}
-                options={ALL_HEADS.map((_, index) => ({ value: String(index + 1), label: String(index + 1) }))}
-                onChange={value => set({ coinCount: Number(value) })} />
-            </div>
-            <NumberField label={t('offenseLevel')} value={form.offenseLevel} max={999} onChange={offenseLevel => set({ offenseLevel })} />
-            <div className={styles.field}>{t('skillSin')}
-              <Dropdown ariaLabel={t('skillSin')} buttonStyle={dropdownStyle} value={form.skillSin}
-                options={[{ value: '', label: t('skillNone') }, ...Object.keys(SIN_ATTRIBUTES).map(value => ({ value, label: t(`skillSinOption.${value}`) }))]}
-                onChange={skillSin => set({ skillSin })} />
-            </div>
-            <div className={styles.field}>{t('skillAtk')}
-              <Dropdown ariaLabel={t('skillAtk')} buttonStyle={dropdownStyle} value={form.skillAtk}
-                options={[{ value: '', label: t('skillNone') }, ...Object.keys(ATTACK_TYPES).map(value => ({ value, label: t(`skillAtkOption.${value}`) }))]}
-                onChange={skillAtk => set({ skillAtk })} />
-            </div>
+    <div className={arena.arena}>
+      <section className={styles.panel} aria-labelledby="damage-skill-heading">
+        <h2 id="damage-skill-heading">{t('skill')}</h2>
+        <SkillLoader key={resetKey} selectedKey={skillKey} onSkill={picked => {
+          setSkillKey(picked?.key ?? '')
+          if (picked) { set(toDamageSkill(picked, MAX_COINS)); setHeads(ALL_HEADS) }
+        }} />
+        <div className={`${styles.fields} ${arena.numbers}`}>
+          <NumberField label={t('basePower')} value={form.basePower} max={999} onChange={basePower => set({ basePower })} />
+          <NumberField label={t('coinPower')} value={form.coinPower} min={-99} max={99} onChange={coinPower => set({ coinPower })} />
+          <NumberField label={t('offenseLevel')} value={form.offenseLevel} max={999} onChange={offenseLevel => set({ offenseLevel })} />
+          <div className={styles.field}>{t('skillSin')}
+            <Dropdown ariaLabel={t('skillSin')} buttonStyle={dropdownStyle} value={form.skillSin}
+              options={[{ value: '', label: t('skillNone') }, ...Object.keys(SIN_ATTRIBUTES).map(value => ({ value, label: t(`skillSinOption.${value}`) }))]}
+              onChange={skillSin => set({ skillSin })} />
           </div>
+          <div className={styles.field}>{t('skillAtk')}
+            <Dropdown ariaLabel={t('skillAtk')} buttonStyle={dropdownStyle} value={form.skillAtk}
+              options={[{ value: '', label: t('skillNone') }, ...Object.keys(ATTACK_TYPES).map(value => ({ value, label: t(`skillAtkOption.${value}`) }))]}
+              onChange={skillAtk => set({ skillAtk })} />
           </div>
-          <div className={styles.coins} role="group" aria-label={t('coins')}>
-            {heads.slice(0, form.coinCount).map((isHeads, index) => (
-              // The label names the side, so the button is not also announced as pressed.
-              <button key={index} type="button" className={styles.coin} data-heads={isHeads}
-                aria-label={t('coinToggle', { index: index + 1, side: t(isHeads ? 'heads' : 'tails') })}
-                onClick={() => setHeads(sides => sides.map((side, i) => i === index ? !side : side))}>
-                <Image src={COIN_IMAGES.normal} alt="" width={64} height={64} unoptimized />
-                <span aria-hidden="true">{t(isHeads ? 'heads' : 'tails')}</span>
-              </button>
-            ))}
+        </div>
+        <div className={arena.coinHead}>
+          <h3>{t('coinTitle')}</h3>
+          <div className={styles.stepper} role="group" aria-label={t('coinCount')}>
+            <button type="button" aria-label={t('coinLess')} disabled={form.coinCount <= 1} onClick={() => coinCount(form.coinCount - 1)}><Minus size={16} aria-hidden="true" /></button>
+            <b>{form.coinCount}</b>
+            <button type="button" aria-label={t('coinMore')} disabled={form.coinCount >= MAX_COINS} onClick={() => coinCount(form.coinCount + 1)}><Plus size={16} aria-hidden="true" /></button>
           </div>
-        </section>
-        <section className={styles.panel} aria-labelledby="damage-target-heading">
-          <h2 id="damage-target-heading">{t('target')}</h2>
-          <div className={styles.fields}>
-            <NumberField label={t('defenseLevel')} value={form.defenseLevel} max={999} onChange={defenseLevel => set({ defenseLevel })} />
-            <div className={styles.field}>{t('stagger')}
-              <Dropdown ariaLabel={t('stagger')} buttonStyle={dropdownStyle} value={String(form.stagger)}
-                options={STAGGER_RESIST.map((_, stage) => ({ value: String(stage), label: t(`staggerOption.${stage as StaggerStage}`) }))}
-                onChange={value => set({ stagger: Number(value) as StaggerStage })} />
-            </div>
-            <NumberField label={t('physicalResist')} value={staggerResist ?? form.physicalResist} max={10} decimal disabled={staggerResist !== null} onChange={physicalResist => set({ physicalResist })} />
-            <NumberField label={t('sinResist')} value={form.sinResist} max={SIN_RESIST_MAX} decimal onChange={sinResist => set({ sinResist })} />
-            <NumberField label={t('observation')} value={form.observationLevel} max={10} onChange={observationLevel => set({ observationLevel })} />
-          </div>
-          {staggerResist !== null && <p className={styles.hint}>{t('staggerFixed', { value: staggerResist })}</p>}
-          <p className={styles.hint}>{t('observationHelp')}</p>
-        </section>
-        <section className={styles.panel} aria-labelledby="damage-modifiers-heading">
-          <h2 id="damage-modifiers-heading">{t('modifiers')}</h2>
-          <div className={styles.fields}>
-            <NumberField label={t('clashCount')} value={form.clashCount} max={99} onChange={clashCount => set({ clashCount })} />
-            <label className={styles.check}><input type="checkbox" checked={form.critical} onChange={e => set({ critical: e.target.checked })} />{t('critical')}</label>
-          </div>
-          <h3>{t('custom')}</h3>
-          <DamageModifiers modifiers={custom} setModifiers={setCustom} coinCount={form.coinCount} />
-        </section>
-      </div>
-      <section className={`${styles.panel} ${styles.result}`} aria-labelledby="damage-result-heading">
-        <h2 id="damage-result-heading">{t('result')}</h2>
+        </div>
+        {/* Each coin turns over like the game's coin toss: the damage is for the heads and tails shown. */}
+        <div className={styles.coins} role="group" aria-label={t('coins')}>
+          {heads.slice(0, form.coinCount).map((isHeads, index) => (
+            // The label names the side, so the button is not also announced as pressed.
+            <button key={index} type="button" className={styles.coin} data-heads={isHeads}
+              aria-label={t('coinToggle', { index: index + 1, side: t(isHeads ? 'heads' : 'tails') })}
+              onClick={() => setHeads(sides => sides.map((side, i) => i === index ? !side : side))}>
+              <Image src={COIN_IMAGES.normal} alt="" width={64} height={64} unoptimized />
+              <span aria-hidden="true">{t(isHeads ? 'heads' : 'tails')}</span>
+            </button>
+          ))}
+        </div>
+      </section>
+      <section className={`${arena.versus} ${styles.outcome}`} aria-labelledby="damage-result-heading">
+        <h2 id="damage-result-heading" className={arena.versusTitle}>{t('result')}</h2>
         <div className={styles.total} aria-live="polite" aria-atomic="true"><span>{t('total')}</span><strong key={total} data-testid="damage-total">{total}</strong></div>
         <ol className={styles.coinResults}>
           {results.map((result, index) => <li key={index}>
@@ -150,11 +133,34 @@ export default function DamageCalculator() {
             {!sameFactors && <small className={styles.coinFactors} data-testid={`damage-coin-factors-${index + 1}`}>{factors(result).map(([name, value]) => `${name} ${factor(value)}`).join(' · ')}</small>}
           </li>)}
         </ol>
-        {sameFactors && <dl className={styles.factors}>
-          {factors(results[0]).map(([name, value]) => <div key={name}><dt>{name}</dt><dd>{factor(value)}</dd></div>)}
-        </dl>}
+        {sameFactors && factorRows}
+      </section>
+      <section className={styles.panel} aria-labelledby="damage-target-heading">
+        <h2 id="damage-target-heading">{t('target')}</h2>
+        <div className={styles.fields}>
+          <NumberField label={t('defenseLevel')} value={form.defenseLevel} max={999} onChange={defenseLevel => set({ defenseLevel })} />
+          <div className={styles.field}>{t('stagger')}
+            <Dropdown ariaLabel={t('stagger')} buttonStyle={dropdownStyle} value={String(form.stagger)}
+              options={STAGGER_RESIST.map((_, stage) => ({ value: String(stage), label: t(`staggerOption.${stage as StaggerStage}`) }))}
+              onChange={value => set({ stagger: Number(value) as StaggerStage })} />
+          </div>
+          <NumberField label={t('physicalResist')} value={staggerResist ?? form.physicalResist} max={10} decimal disabled={staggerResist !== null} onChange={physicalResist => set({ physicalResist })} />
+          <NumberField label={t('sinResist')} value={form.sinResist} max={SIN_RESIST_MAX} decimal onChange={sinResist => set({ sinResist })} />
+          <NumberField label={t('observation')} value={form.observationLevel} max={10} onChange={observationLevel => set({ observationLevel })} />
+        </div>
+        {staggerResist !== null && <p className={styles.hint}>{t('staggerFixed', { value: staggerResist })}</p>}
+        <p className={styles.hint}>{t('observationHelp')}</p>
       </section>
     </div>
+    <section className={`${styles.panel} ${styles.modifierPanel}`} aria-labelledby="damage-modifiers-heading">
+      <h2 id="damage-modifiers-heading">{t('modifiers')}</h2>
+      <div className={styles.fields}>
+        <NumberField label={t('clashCount')} value={form.clashCount} max={99} onChange={clashCount => set({ clashCount })} />
+        <label className={styles.check}><input type="checkbox" checked={form.critical} onChange={e => set({ critical: e.target.checked })} />{t('critical')}</label>
+      </div>
+      <h3>{t('custom')}</h3>
+      <DamageModifiers modifiers={custom} setModifiers={setCustom} coinCount={form.coinCount} />
+    </section>
     <details className={styles.details}>
       <summary>{t('formula')}</summary>
       <p>{t('formulaBody')}</p><p>{t('formulaResist')}</p><p>{t('formulaLevel')}</p><p>{t('formulaFinal')}</p><p>{t('formulaNote')}</p>

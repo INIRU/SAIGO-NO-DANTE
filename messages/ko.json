@@ -2400,7 +2400,10 @@
       "SLASH": "참격",
       "PENETRATE": "관통",
       "HIT": "타격"
-    }
+    },
+    "coinLess": "코인 하나 빼기",
+    "coinMore": "코인 하나 더하기",
+    "coinTitle": "코인"
   },
   "clash": {
     "title": "합 계산기",
