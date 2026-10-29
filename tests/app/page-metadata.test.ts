@@ -51,6 +51,7 @@ const PAGES: [string, () => Promise<unknown>][] = [
   ['/tools/experience', () => import('@/app/[lang]/tools/experience/page')],
   ['/tools/lunacy', () => import('@/app/[lang]/tools/lunacy/page')],
   ['/tools/damage', () => import('@/app/[lang]/tools/damage/page')],
+  ['/tools/clash', () => import('@/app/[lang]/tools/clash/page')],
   ['/motion/skills', () => import('@/app/[lang]/motion/skills/page')],
   ['/random', () => import('@/app/[lang]/random/page')],
   ['/collection', () => import('@/app/[lang]/collection/page')],

@@ -68,6 +68,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     entry('/tools/experience'),
     entry('/tools/lunacy'),
     entry('/tools/damage'),
+    entry('/tools/clash'),
     entry('/motion/skills'),
     entry('/privacy'),
     entry('/terms'),
