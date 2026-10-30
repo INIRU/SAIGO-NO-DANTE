@@ -11,6 +11,8 @@ import { useLocale, useTranslations } from 'next-intl'
 import { ArrowUpRight, Layers3, X, ChevronsUpDown, Search } from 'lucide-react'
 import { Link } from '@/lib/i18n/navigation'
 import { isBaseEgo, type CountStat, type IdentityStat, type MetaData, type MetaInsightPost } from '@/lib/meta/types'
+import { searchIdentityRows } from '@/lib/meta/identity-search'
+import { useKeywords } from '@/components/providers/KeywordProvider'
 import type { Identity } from '@/lib/types'
 import type { SupportedLang } from '@/lib/i18n/types'
 import IdentityCard from '@/components/sinners/IdentityCard'
@@ -40,12 +42,9 @@ function Share({ value, digits = 1 }: { value: number; digits?: number }) {
 function IdentityList({ rows, sampleCount, selectedId, onSelect, name }: { rows: IdentityStat[]; sampleCount: number; selectedId: string; onSelect: (id: string) => void; name: (row: IdentityStat) => string }) {
   const t = useTranslations('meta.analysis')
   const rootT = useTranslations()
-  const locale = useLocale() as SupportedLang
+  const keywords = useKeywords()
   const [search, setSearch] = useState('')
-  const shown = useMemo(() => {
-    const query = search.trim().toLocaleLowerCase(locale)
-    return query ? rows.filter(row => (name(row) + ' ' + rootT('sinner.' + row.sinner_id)).toLocaleLowerCase(locale).includes(query)) : rows
-  }, [rows, search, locale, name, rootT])
+  const shown = useMemo(() => searchIdentityRows(rows, search, keywords), [rows, search, keywords])
   return <aside className={styles.identityList} aria-label={t('identity')} data-identity-list>
     <label className={styles.pickerSearch}>
       <Search size={16} aria-hidden="true" />

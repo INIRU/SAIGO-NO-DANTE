@@ -5,7 +5,7 @@ import useSWR from 'swr'
 import { useTranslations } from 'next-intl'
 import { SlidersHorizontal } from 'lucide-react'
 import UnderlineTabBar from '@/components/ui/UnderlineTabBar'
-import { META_SOURCES, META_PERIODS, META_FILTER_KEYS, META_FILTER_MODES, DEFAULT_META_SOURCE, DEFAULT_META_PERIOD, parseMetaFilters, type IdentityStat, type MetaFilterMode, type MetaSource, type MetaPeriod, type MetaData } from '@/lib/meta/types'
+import { META_SOURCES, META_PERIODS, META_FILTER_KEYS, META_FILTER_MODES, DEFAULT_META_SOURCE, DEFAULT_META_PERIOD, parseMetaFilters, parseMetaPeriod, type IdentityStat, type MetaFilterMode, type MetaSource, type MetaData } from '@/lib/meta/types'
 import { useQueryState, useQueryStates, parseAsArrayOf, parseAsString, parseAsStringLiteral } from 'nuqs'
 import IdentityAnalysis from '@/components/meta/IdentityAnalysis'
 import MetaOverview from '@/components/meta/MetaOverview'
@@ -33,7 +33,7 @@ export default function MetaClient({ initialData }: { initialData: MetaData | nu
   const [sourceParam, setSource] = useQueryState('source', parseAsString.withDefault(DEFAULT_META_SOURCE))
   const [periodParam, setPeriod] = useQueryState('period', parseAsString.withDefault(DEFAULT_META_PERIOD))
   const source = META_SOURCES.includes(sourceParam as MetaSource) ? sourceParam as MetaSource : DEFAULT_META_SOURCE
-  const period = META_PERIODS.includes(periodParam as MetaPeriod) ? periodParam as MetaPeriod : DEFAULT_META_PERIOD
+  const period = parseMetaPeriod(periodParam)
   const [filterParams, setFilterParams] = useQueryStates(FILTER_PARAMS)
   // An unknown value in the address is no filter. A difficulty is a plan's: the deck board has none to narrow by.
   const { filters } = parseMetaFilters(key => key === 'difficulty' && source === 'decks' ? null : filterParams[key])
