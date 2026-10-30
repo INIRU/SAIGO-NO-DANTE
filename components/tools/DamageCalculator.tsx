@@ -153,7 +153,6 @@ export default function DamageCalculator() {
           <NumberField label={t('observation')} value={form.observationLevel} max={10} onChange={observationLevel => set({ observationLevel })} />
         </div>
         {staggerResist !== null && <p className={styles.hint}>{t('staggerFixed', { value: staggerResist })}</p>}
-        <p className={styles.hint}>{t('observationHelp')}</p>
       </section>
     </div>
     <section className={`${styles.panel} ${styles.modifierPanel}`} aria-labelledby="damage-modifiers-heading">
@@ -169,10 +168,6 @@ export default function DamageCalculator() {
       <h3>{t('custom')}</h3>
       <DamageModifiers modifiers={custom} setModifiers={setCustom} coinCount={form.coinCount} />
     </section>
-    <details className={styles.details}>
-      <summary>{t('formula')}</summary>
-      <p>{t('formulaBody')}</p><p>{t('formulaResist')}</p><p>{t('formulaLevel')}</p><p>{t('formulaFinal')}</p><p>{t('formulaNote')}</p>
-    </details>
     <p className={styles.hint}>{t('estimateNote')}</p>
   </div>
 }
