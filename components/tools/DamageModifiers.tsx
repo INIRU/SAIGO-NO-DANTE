@@ -303,6 +303,5 @@ export default function DamageModifiers({ modifiers, setModifiers, coinCount }: 
       <button type="button" className={styles.add} disabled={full} onClick={() => add({ name: '', value: 10, target: 'damage' })}><Plus size={16} aria-hidden="true" />{t('add')}</button>
     </section>
     {full && <p className={styles.hint}>{t('full', { max: MAX_MODIFIERS })}</p>}
-    <p className={styles.hint}>{t('customHelp')}</p>
   </div>
 }
