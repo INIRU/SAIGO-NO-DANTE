@@ -9,7 +9,7 @@ import PageHeader from '@/components/ui/PageHeader'
 import { COIN_IMAGES } from '@/lib/identity/skill-description'
 import { MAX_IDENTITY_LEVEL } from '@/lib/constants/game'
 import { toDamageSkill } from '@/lib/tools/skill-source'
-import { coinsOf, damageLink, MAX_CLASH_ROUNDS, LEVEL_GAP_DIVISOR, PROBABILITY_LIMITS, SANITY_RANGE, solveClash, type ClashCoin, type ClashSide } from '@/lib/tools/clash'
+import { coinsOf, damageLink, MAX_CLASH_ROUNDS, SANITY_RANGE, solveClash, type ClashCoin, type ClashSide } from '@/lib/tools/clash'
 import NumberInput from './NumberInput'
 import SkillLoader from './SkillLoader'
 import styles from './DamageCalculator.module.css'
@@ -131,13 +131,8 @@ export default function ClashCalculator() {
             <span>{t('leftCoins', { count: row.count })}</span><span className={clash.leftBar}><i style={{ '--share': row.chance } as CSSProperties} /></span><b>{percent(row.chance)}</b>
           </li>)}</ul>
         </div>)}
-        <p className={styles.hint}>{t('limitNote', { min: PROBABILITY_LIMITS.min * 100, max: PROBABILITY_LIMITS.max * 100, gap: LEVEL_GAP_DIVISOR })}</p>
       </div>
     </section>
-    <details className={styles.details}>
-      <summary>{t('rules')}</summary>
-      <p>{t('rulesHeads')}</p><p>{t('rulesCoins')}</p><p>{t('rulesExchange')}</p><p>{t('rulesDamage')}</p>
-    </details>
     <p className={styles.hint}>{t('estimateNote')}</p>
   </div>
 }
