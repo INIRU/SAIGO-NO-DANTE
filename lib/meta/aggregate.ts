@@ -4,6 +4,7 @@ import { normalizeThemeKeyword } from '@/lib/constants/keywords'
 import { normalizeSin } from '@/lib/constants/sin'
 import { getIdentitySkillDistribution } from '@/lib/planner/types'
 import { META_DIFFICULTIES, type IdentityStat, type EGOStat, type MetaData, type MetaDungeon, type MetaFacets, type MetaFilters, type MetaIdentity, type MetaEGO, type MetaPost, type MetaSource, type MetaPeriod, type MetaUsage, type MetaInsightPost, type MetaPlanSummary, type CountStat } from './types'
+import { updateWeekStart } from '@/lib/discovery/update-window'
 
 const USAGE_BY_CONTENT_TYPE: Record<string, MetaUsage> = {
   '스토리': 'story', '경험치 던전': 'expDungeon', '끈 던전': 'threadDungeon',
@@ -135,8 +136,11 @@ function objectRows(value: unknown): Record<string, unknown>[] {
     : []
 }
 
+const WEEK_MS = 7 * 86_400_000
+
 export function metaPeriodStart(period: MetaPeriod, now: number): string | null {
-  return period === 'all' ? null : new Date(now - Number(period) * 86_400_000).toISOString()
+  if (period === 'all') return null
+  return new Date(updateWeekStart(new Date(now)).getTime() - (period === 'month' ? 3 * WEEK_MS : 0)).toISOString()
 }
 
 /**

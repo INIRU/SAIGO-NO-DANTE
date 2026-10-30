@@ -11,7 +11,7 @@ const post = (id: string, source: MetaPost['source'] = 'decks', age = 1): MetaPo
   identities: [{ identity_id: 'a', slot_order: 0 }, { identity_id: 'b', slot_order: 1 }, { identity_id: 'c', slot_order: 99 }],
   egos: [{ ego_id: 'e1' }, { ego_id: 'e1' }, { ego_id: 'e3' }, { ego_id: 'unknown' }],
 })
-const aggregate = (posts: MetaPost[], source: 'all' | 'decks' | 'planner' = 'all', period: 'all' | '30' | '90' = '30') => aggregateMeta({
+const aggregate = (posts: MetaPost[], source: 'all' | 'decks' | 'planner' = 'all', period: 'all' | 'week' | 'month' = 'month') => aggregateMeta({
   posts, identities, source, period, now, keywordSinMap: { '화상': '분노' },
   egos: ['1', '3'].map(sinner_id => ({ id: `e${sinner_id}`, sinner_id, name_kr: 'EGO', grade: 'HE', sin_affinity: '분노', image_url: null })),
 })
@@ -64,12 +64,13 @@ describe('published formation meta', () => {
     expect(data.egoStats[0]).toMatchObject({ ego_id: 'e1', count: 2, sin_affinity: 'wrath' })
   })
 
-  it('applies source and inclusive rolling period boundaries, rejecting future dates', () => {
-    const posts = [post('day30', 'decks', 30), post('day31', 'decks', 31), post('plan', 'planner', 2), post('future', 'decks', -1)]
+  it('applies source and update-week period boundaries, rejecting future dates', () => {
+    // now is Thursday 2026-09-10 21:00 KST: this update week began 12:00 KST that day, the last four on 2026-08-20.
+    const posts = [post('day21', 'decks', 21), post('day22', 'decks', 22), post('plan', 'planner', 2), post('today', 'planner', 0), post('future', 'decks', -1)]
     expect(aggregate(posts, 'decks').sampleCount).toBe(1)
-    expect(aggregate(posts, 'planner').sampleCount).toBe(1)
-    expect(aggregate(posts, 'all', '90').sampleCount).toBe(3)
-    expect(aggregate(posts, 'all', 'all').sampleCount).toBe(3)
+    expect(aggregate(posts, 'planner').sampleCount).toBe(2)
+    expect(aggregate(posts, 'all', 'week').sampleCount).toBe(1)
+    expect(aggregate(posts, 'all', 'all').sampleCount).toBe(4)
   })
 
   it('excludes malformed, deleted and support-only formations from the denominator', () => {
@@ -168,7 +169,7 @@ it('counts each companion identity separately with the selected identity denomin
   expect(insight.companions).toEqual([{ identity_id: 'a', count: 1 }, { identity_id: 'a2', count: 1 }, { identity_id: 'c', count: 1 }])
   expect(insight.companions[0].count / insight.count).toBeCloseTo(1 / 3)
   expect(aggregate(posts, 'decks').identityInsights.b.companions).toEqual([{ identity_id: 'a', count: 1 }])
-  expect(aggregate(posts, 'all', '90').identityInsights.b.companions).toEqual([{ identity_id: 'a', count: 2 }, { identity_id: 'a2', count: 1 }, { identity_id: 'c', count: 1 }])
+  expect(aggregate(posts, 'all', 'all').identityInsights.b.companions).toEqual([{ identity_id: 'a', count: 2 }, { identity_id: 'a2', count: 1 }, { identity_id: 'c', count: 1 }])
   expect(aggregate([solo]).identityInsights.b.companions).toEqual([])
 })
 it('tallies plan difficulty, final gifts and theme packs overall and for each fielded identity', () => {
@@ -376,7 +377,7 @@ describe('popular posts', () => {
     // A row carries what it shows and nothing else.
     expect(top.decks[0]).toEqual({ id: 'story', source: 'decks', title: 'story', usage: 'story', combo: [], votes: 50, views: 4, comments: 2 })
     expect(aggregate(posts, 'planner').topPosts).toMatchObject({ decks: [], planner: [{ id: 'p2' }, { id: 'p1' }, { id: 'p0' }] })
-    const stories = aggregateMeta({ posts, identities, egos: [], keywordSinMap: {}, source: 'all', period: '30', now, filters: { usage: ['story'] } }).topPosts
+    const stories = aggregateMeta({ posts, identities, egos: [], keywordSinMap: {}, source: 'all', period: 'month', now, filters: { usage: ['story'] } }).topPosts
     expect(stories).toMatchObject({ decks: [{ id: 'story' }], planner: [] })
     expect(stories.decks).toHaveLength(1)
     expect(aggregate([]).topPosts).toEqual({ decks: [], planner: [] })

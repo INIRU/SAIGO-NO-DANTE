@@ -98,11 +98,18 @@ export interface MetaDungeon {
 export interface MetaSkill { order: 1 | 2 | 3; name: string; name_en?: string | null; name_jp?: string | null; sin_affinity: string | null; image_id?: string | null }
 
 export const META_SOURCES = ['all', 'decks', 'planner'] as const
-export const META_PERIODS = ['7', '30', '90', 'all'] as const
+/** Game update weeks (Thursday 12:00 KST), like the home and plan boards: this week, the last four, all time. */
+export const META_PERIODS = ['week', 'month', 'all'] as const
 export type MetaSource = typeof META_SOURCES[number]
 export type MetaPeriod = typeof META_PERIODS[number]
 export const DEFAULT_META_SOURCE: MetaSource = 'all'
 export const DEFAULT_META_PERIOD: MetaPeriod = 'all'
+// Addresses from before the update-week periods counted days.
+const LEGACY_META_PERIODS: Record<string, MetaPeriod> = { '7': 'week', '30': 'month', '90': 'month' }
+export function parseMetaPeriod(value: string | null | undefined): MetaPeriod {
+  if (!value) return DEFAULT_META_PERIOD
+  return META_PERIODS.includes(value as MetaPeriod) ? value as MetaPeriod : LEGACY_META_PERIODS[value] ?? DEFAULT_META_PERIOD
+}
 
 export const META_DIFFICULTIES = ['normal', 'hard', 'extreme'] as const
 export type MetaDifficulty = typeof META_DIFFICULTIES[number]
