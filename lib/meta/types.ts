@@ -171,6 +171,8 @@ export type MetaPost = {
   id: string
   source: Exclude<MetaSource, 'all'>
   created_at: string
+  /** Last content edit (not views or votes); a post edited within the period counts in it. */
+  edited_at?: string | null
   title?: string
   keywords?: string[] | null
   content_type?: string | null
