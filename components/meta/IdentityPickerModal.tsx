@@ -9,6 +9,8 @@ import IdentityFrameCard from '@/components/ui/IdentityFrameCard'
 import { getSinnerLogoUrl } from '@/lib/utils/images'
 import { SINNER_SLUGS } from '@/lib/constants/game'
 import type { IdentityStat } from '@/lib/meta/types'
+import { searchIdentityRows } from '@/lib/meta/identity-search'
+import { useKeywords } from '@/components/providers/KeywordProvider'
 import type { SupportedLang } from '@/lib/i18n/types'
 import styles from '@/styles/components/MetaAnalysis.module.css'
 
@@ -27,6 +29,7 @@ export default function IdentityPickerModal({ open, onClose, rows, sampleCount, 
   const t = useTranslations('meta.analysis')
   const rootT = useTranslations()
   const locale = useLocale() as SupportedLang
+  const keywords = useKeywords()
   const [search, setSearch] = useState('')
   const [sinner, setSinner] = useState('')
   const [byName, setByName] = useState(false)
@@ -35,11 +38,10 @@ export default function IdentityPickerModal({ open, onClose, rows, sampleCount, 
 
   const sinners = SINNER_SLUGS.filter(slug => rows.some(row => row.sinner_id === slug))
   const filtered = useMemo(() => {
-    const query = search.trim().toLocaleLowerCase(locale)
-    const list = rows.filter(row => (!sinner || row.sinner_id === sinner)
-      && (name(row) + ' ' + rootT('sinner.' + row.sinner_id)).toLocaleLowerCase(locale).includes(query))
-    return byName ? [...list].sort((a, b) => name(a).localeCompare(name(b), locale)) : list
-  }, [rows, sinner, search, byName, locale, name, rootT])
+    const list = searchIdentityRows(sinner ? rows.filter(row => row.sinner_id === sinner) : rows, search, keywords)
+    // A search ranks by relevance; the name order applies to the unsearched list.
+    return byName && !search.trim() ? [...list].sort((a, b) => name(a).localeCompare(name(b), locale)) : list
+  }, [rows, sinner, search, byName, locale, name, keywords])
 
   const reset = () => { setVisible(PAGE); results.current?.scrollTo({ top: 0 }) }
   useEffect(() => { if (open) { setSearch(''); setSinner(''); setVisible(PAGE) } }, [open])

@@ -11,6 +11,7 @@ import { localizeGiftKeyword } from '@/lib/i18n/localize'
 import { translations } from '@/lib/i18n/translations'
 import { pageEntries } from '@/lib/search/pages'
 import type { ContextField, IndexEntry } from '@/lib/search/engine'
+import { SINNER_ALIASES } from '@/lib/search/sinner-aliases'
 
 type Names = { name_kr?: string | null; name_en: string | null; name_jp: string | null; name?: string | null }
 type Lang = 'ko' | 'en' | 'ja'
@@ -18,13 +19,6 @@ type Lang = 'ko' | 'en' | 'ja'
 const ko = (row: Names) => row.name_kr ?? row.name ?? ''
 const pick = (row: Names, lang: Lang) => (lang === 'en' ? row.name_en : lang === 'ja' ? row.name_jp : null) || ko(row)
 const names = (row: Names) => ({ ko: ko(row), en: row.name_en, ja: row.name_jp })
-
-// 게임 영어 이름과 다르게 부르는 이름
-const SINNER_ALIASES: Record<string, string[]> = {
-  rodion: ['Rodya', '로댜'],
-  'don-quixote': ['동키호테', 'Donqui'],
-  gregor: ['그렉', 'Greg'],
-}
 
 // 표가 작아(수천 행) 한 번 읽어 두고, 검색은 브라우저에서 한다. 게임 데이터 동기화 때 태그로 갱신된다.
 // 키워드 부제의 [Id]는 참조 표(한국어)로 이름을 얻는다. 표를 못 읽었거나 아직 비었으면 그 색인은 오래 두면 안 된다:

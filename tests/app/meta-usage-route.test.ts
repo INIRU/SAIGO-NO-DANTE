@@ -16,8 +16,15 @@ it('REQ-META-010 refuses a filter value, mode, source or period that is not on i
 })
 
 it('REQ-META-010 hands known filters on in one order, whatever order they were sent in', async () => {
-  expect((await get('source=planner&period=30&keyword=' + encodeURIComponent('진동,화상') + '&keywordMode=or&sinner=faust,yi-sang')).status).toBe(200)
-  expect(getMetaData).toHaveBeenCalledWith('planner', '30', { keyword: ['화상', '진동'], sinner: ['yi-sang', 'faust'], keywordMode: 'or' })
+  expect((await get('source=planner&period=month&keyword=' + encodeURIComponent('진동,화상') + '&keywordMode=or&sinner=faust,yi-sang')).status).toBe(200)
+  expect(getMetaData).toHaveBeenCalledWith('planner', 'month', { keyword: ['화상', '진동'], sinner: ['yi-sang', 'faust'], keywordMode: 'or' })
   await get('')
   expect(getMetaData).toHaveBeenLastCalledWith('all', 'all', {})
+})
+
+it('REQ-META-032 reads the old day-count periods as update-week periods', async () => {
+  expect((await get('period=7')).status).toBe(200)
+  expect(getMetaData).toHaveBeenLastCalledWith('all', 'week', {})
+  expect((await get('period=90')).status).toBe(200)
+  expect(getMetaData).toHaveBeenLastCalledWith('all', 'month', {})
 })
