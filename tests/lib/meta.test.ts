@@ -73,6 +73,15 @@ describe('published formation meta', () => {
     expect(aggregate(posts, 'all', 'all').sampleCount).toBe(4)
   })
 
+  it('counts a post edited within the period by its edit time, but never an edit from the future', () => {
+    const edited = { ...post('edited', 'decks', 40), edited_at: new Date(now - 3_600_000).toISOString() }
+    const later = { ...post('later', 'planner', 40), edited_at: new Date(now + 86_400_000).toISOString() }
+    const stale = { ...post('stale', 'decks', 40), edited_at: new Date(now - 30 * 86_400_000).toISOString() }
+    expect(aggregate([edited, later, stale], 'all', 'week').sampleCount).toBe(1)
+    expect(aggregate([edited, later, stale], 'all', 'month').sampleCount).toBe(1)
+    expect(aggregate([edited, later, stale], 'all', 'all').sampleCount).toBe(3)
+  })
+
   it('excludes malformed, deleted and support-only formations from the denominator', () => {
     const invalid = [null, {}, [null, 'a', { identity_id: 'deleted', slot_order: 0 }], [{ identity_id: 'a', slot_order: 99 }]]
     const data = aggregate([...invalid.map((slots, i) => ({ ...post(String(i)), identities: slots })), post('valid')])
