@@ -213,7 +213,10 @@ export function aggregateMeta({ posts, identities, egos, keywordSinMap, source, 
   for (const post of [...posts].sort(byPopularity)) {
     if (source !== 'all' && post.source !== source) continue
     const createdAt = Date.parse(post.created_at)
-    if (!Number.isFinite(createdAt) || createdAt > now || (since && createdAt < Date.parse(since))) continue
+    if (!Number.isFinite(createdAt) || createdAt > now) continue
+    const editedAt = post.edited_at ? Date.parse(post.edited_at) : NaN
+    const activeAt = Number.isFinite(editedAt) && editedAt <= now ? Math.max(createdAt, editedAt) : createdAt
+    if (since && activeAt < Date.parse(since)) continue
     const postKey = `${post.source}:${post.id}`
     if (seenPosts.has(postKey)) continue
     seenPosts.add(postKey)

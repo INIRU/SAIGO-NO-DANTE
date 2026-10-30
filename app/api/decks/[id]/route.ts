@@ -247,7 +247,7 @@ export async function PATCH(
     const { data: deck } = await admin
       .schema('limbus')
       .from('decks')
-      .select('id, user_id, title, description, tags, main_keywords, content_type')
+      .select('id, user_id, title, description, tags, main_keywords, content_type, content_edited_at')
       .eq('id', id)
       .single()
 
@@ -276,6 +276,7 @@ export async function PATCH(
       tags: deck.tags,
       main_keywords: deck.main_keywords,
       content_type: deck.content_type,
+      content_edited_at: deck.content_edited_at,
     }
 
     // 자식 롤백을 위해 기존 children 미리 저장
@@ -294,6 +295,7 @@ export async function PATCH(
         tags: tags || [],
         main_keywords: mainKeywordsResult.value,
         content_type: content_type || '없음',
+        content_edited_at: new Date().toISOString(),
       })
       .eq('id', id)
 
