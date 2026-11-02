@@ -45,7 +45,7 @@ const count = (html: string, needle: string) => html.split(needle).length - 1
 /** One shelf's markup: from its opening tag to the next shelf or the end. */
 const shelf = (html: string, key: string) => html.split(`data-shelf="${key}"`)[1]?.split('data-shelf="')[0] ?? ''
 const full: Feed = { recent: posts('r1', 'r2', 'r3', 'r4'), updated: posts('u1'), popular: posts('p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7'), identities: [{ id: 'i1' }, { id: 'i2' }] }
-const risingFeed = { posts: [{ post: { id: 'x1' }, rise: 4.4 }, { post: { id: 'x2' }, rise: 2.1 }], identities: [{ identity: { id: 'ri1' }, rise: 3.2 }] }
+const risingFeed = { posts: [{ post: { id: 'x1' }, rise: 4.4 }, { post: { id: 'x2' }, rise: 2.1 }], identities: [{ identity: { id: 'ri1' }, count: 12 }] }
 
 beforeEach(() => { state.feed = {}; state.rising = undefined; state.options = undefined })
 
@@ -147,7 +147,7 @@ describe('REQ-COMMUNITY-074 rising shelf', () => {
     expect(html).toContain('data-card="x1"')
     expect(html).toContain('data-identity="ri1"')
     expect(html).toContain('×4.4')
-    expect(html).toContain('×3.2')
+    expect(html).toContain('×12')
   })
 
   it('REQ-COMMUNITY-085 holds the rising shelf with its loading shape until the feed answers, then swaps it for the shelf', () => {
