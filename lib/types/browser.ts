@@ -19,6 +19,8 @@ export type IdentityBrowserItem = {
   game_id: string | null
   // 스탯
   hp: number
+  base_hp?: number
+  hp_per_level?: number
   speed_min: number
   speed_max: number
   def_level: number
