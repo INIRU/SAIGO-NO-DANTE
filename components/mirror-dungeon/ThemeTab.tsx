@@ -415,7 +415,7 @@ export default function ThemeTab({
                     className="flex flex-col items-center justify-center text-center"
                     style={{ aspectRatio: '416/684', border: '1px dashed #3a2f4a', background: '#141019', padding: '0.75rem', whiteSpace: 'pre-line' }}
                   >
-                    <span style={{ fontFamily: 'var(--font-title)', fontSize: '2rem', color: '#6e5a86', lineHeight: 1 }}>{hiddenThemes.length}</span>
+                    <span style={{ fontFamily: 'var(--font-title)', fontSize: '2rem', color: '#a08cc0', lineHeight: 1 }}>{hiddenThemes.length}</span>
                     <span style={{ marginTop: '0.5rem', color: '#9c8bb0', fontSize: '0.75rem', fontFamily: 'var(--font-heading)', lineHeight: 1.4 }}>
                       {t('mirrorDungeon.theme.hiddenExists')}
                     </span>

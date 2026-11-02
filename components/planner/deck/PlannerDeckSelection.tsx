@@ -305,7 +305,7 @@ export function PlannerIdentityBoard({
           border-radius: 0.25rem 0 0 0.25rem; background: #140f09; color: #e8dcc8; font-family: var(--font-mono); font-size: 0.8125rem;
           outline: none; transition: border-color 0.15s ease;
         }
-        .fboard__code input::placeholder { color: #6a6058; font-family: var(--font-sans); }
+        .fboard__code input::placeholder { color: var(--text-muted); font-family: var(--font-sans); }
         .fboard__code input:focus-visible { border-color: #c8900a; }
         .fboard__code input[aria-invalid='true'] { border-color: #9b2c23; }
         .fboard__code button {
@@ -680,7 +680,7 @@ export function PlannerEgoBoard({
                       </span>
                       )
                     })() : (
-                      <span style={{ color: '#2a1e10', fontSize: '0.875rem', lineHeight: 1 }}>{enabled ? '—' : ''}</span>
+                      <span style={{ color: 'var(--text-muted)', fontSize: '0.875rem', lineHeight: 1 }}>{enabled ? '—' : ''}</span>
                     )}
                   </div>
                 )
@@ -688,7 +688,7 @@ export function PlannerEgoBoard({
             </div>
             {!enabled && (
               <div className="px-2 pb-1.5 pt-1 text-center">
-                <span style={{ fontSize: '0.875rem', color: '#333' }}>{t('noIdentity')}</span>
+                <span style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>{t('noIdentity')}</span>
               </div>
             )}
           </m.button>
@@ -825,7 +825,7 @@ export function PlannerEgoSelectModal({
                 {t('modalHeading', { sinner: getLocalizedSinnerName(sinner) })}
               </span>
             </div>
-            <button type="button" onClick={onClose} aria-label={t('close')} className="inline-flex min-h-11 min-w-11 items-center justify-center rounded" style={{ color: '#666', cursor: 'pointer' }}>
+            <button type="button" onClick={onClose} aria-label={t('close')} className="inline-flex min-h-11 min-w-11 items-center justify-center rounded" style={{ color: 'var(--text-muted)', cursor: 'pointer' }}>
               <X style={{ width: '1.25rem', height: '1.25rem' }} aria-hidden="true" />
             </button>
           </div>
@@ -865,7 +865,7 @@ export function PlannerEgoSelectModal({
                         type="button"
                         onClick={() => onDeselect(grade, selectedForGrade)}
                         className="min-h-11 rounded px-3"
-                        style={{ color: '#c83040', fontSize: '0.9375rem', cursor: 'pointer', border: '1px solid #3a1515', background: 'rgba(200,48,64,0.08)' }}
+                        style={{ color: 'var(--error-text)', fontSize: '0.9375rem', cursor: 'pointer', border: '1px solid #3a1515', background: 'rgba(200,48,64,0.08)' }}
                       >
                         {t('remove')}
                       </button>
@@ -874,7 +874,7 @@ export function PlannerEgoSelectModal({
 
                   {gradeEgos.length === 0 ? (
                     <div className="rounded p-2.5 text-center" style={{ background: 'rgba(10,8,5,0.5)', border: `1px solid ${gradeColor}15` }}>
-                      <span style={{ color: '#333', fontSize: '0.875rem' }}>{t('emptyGrade')}</span>
+                      <span style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>{t('emptyGrade')}</span>
                     </div>
                   ) : (
                     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">

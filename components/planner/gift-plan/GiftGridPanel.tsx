@@ -153,7 +153,7 @@ export default memo(function GiftGridPanel({
                 </span>
                 <span style={{
                   fontSize: '0.625rem',
-                  color: '#555',
+                  color: 'var(--text-muted)',
                 }}>
                   {gradeGifts.length}
                 </span>
@@ -197,7 +197,7 @@ export default memo(function GiftGridPanel({
           <div className="planner-gift-empty" style={{
             padding: '2.5rem',
             textAlign: 'center',
-            color: '#4b5563',
+            color: 'var(--text-muted)',
             fontSize: '0.9375rem',
             border: '1px dashed #222',
             borderRadius: '0.5rem',

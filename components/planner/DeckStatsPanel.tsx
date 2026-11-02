@@ -173,7 +173,7 @@ function DeckStatsPanel({
                 <Image src={getSinIconUrl(sin)} alt="" width={12} height={12} style={{ width: '0.75rem', height: '0.75rem' }} />
                 {hasEgoCosts && need > 0 ? (
                   <span className="deck-stats-sin-value" style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: sufficient ? '#40a060' : '#cc4444' }}>
-                    {have}<span style={{ color: '#555', fontWeight: 400 }}>/</span>{need}
+                    {have}<span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>/</span>{need}
                   </span>
                 ) : (
                   <span className="deck-stats-sin-value" style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: sc }}>{have}</span>

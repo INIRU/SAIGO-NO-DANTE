@@ -77,7 +77,7 @@ describe('REQ-SHARED-022 game text body is the default colour', () => {
     const html = render('<style="highlight">[OnSucceedAttack] [Combustion] 3 부여</style>')
     expect(html).toContain('color:#93f13e')
     expect(html).toContain('>[적중시]<')
-    expect(html).toContain('color:#e30000')
+    expect(html).toContain('color:#ff4f42')
     expect(html).toContain('<img')
     expect(html).not.toContain(ACCENT)
   })

@@ -29,7 +29,7 @@ describe('REQ-SHARED-021 game text is always drawn by the game text renderer', (
     expect(html).toContain('화상 3 부여')
     expect(html).not.toContain('keyword-token')
     expect(html).not.toContain('<img')
-    expect(html).not.toContain('color:#e30000')
+    expect(html).not.toContain('color:#ff4f42')
   })
 
   it('REQ-SHARED-021 does not colour [사용시]-style old brackets or search plain words in a tagged string either', () => {

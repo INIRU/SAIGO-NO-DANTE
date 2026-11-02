@@ -69,7 +69,7 @@ describe('REQ-SHARED-019 game text rendering', () => {
   it('REQ-SHARED-019 draws a matched keyword ref as a coloured localized name with a tooltip trigger', () => {
     const html = render('<b>x</b> [Combustion] 3 부여')
     expect(html).toContain('keyword-token')
-    expect(html).toContain('color:#e30000')
+    expect(html).toContain('color:#ff4f42')
     expect(html).toContain('>화상<')
     expect(html).toContain(resolveKeywordIconUrl('화상', 'burn')!.split('/').pop()!)
     expect(html).not.toContain('[Combustion]')
@@ -118,7 +118,7 @@ describe('REQ-SHARED-019 game text rendering', () => {
     expect(link).toContain('keyword-token')
     expect(link).toContain('화상 효과')
     expect(link).not.toContain('<img')
-    expect(link).not.toContain('#e30000')
+    expect(link).not.toContain('#ff4f42')
 
     expect(render('<sprite name="Unknown">남음')).not.toContain('<img')
   })
@@ -136,7 +136,7 @@ describe('REQ-SHARED-019 game text rendering', () => {
     expect(html).toContain('[Conbustion]')
     expect(html).toContain('[사용시]')
     expect(html).not.toContain('keyword-token')
-    expect(html).not.toContain('color:#e30000')
+    expect(html).not.toContain('color:#ff4f42')
   })
 
   // REQ-SHARED-021 replaces "old-format text is guessed": the stored text is the game's own now, so plain words are

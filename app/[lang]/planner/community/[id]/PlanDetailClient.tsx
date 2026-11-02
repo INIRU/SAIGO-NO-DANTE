@@ -75,7 +75,7 @@ const DIFFICULTY_STYLE: Record<Difficulty, { bg: string; color: string; border: 
   normal:  { bg: 'rgba(74,152,104,0.15)',  color: '#4a9868', border: 'rgba(74,152,104,0.35)' },
   hard:    { bg: 'rgba(200,144,10,0.15)',  color: '#e8b030', border: 'rgba(200,144,10,0.35)' },
   overlap: { bg: 'rgba(72,152,176,0.15)',  color: '#48b0c0', border: 'rgba(72,152,176,0.35)' },
-  extreme: { bg: 'rgba(200,48,48,0.15)',   color: '#e05050', border: 'rgba(200,48,48,0.35)' },
+  extreme: { bg: 'rgba(200,48,48,0.15)',   color: '#ec6a5e', border: 'rgba(200,48,48,0.35)' },
 }
 
 // ── 타입 ──────────────────────────────────────────────────────────────────────
@@ -280,7 +280,7 @@ function SubHead({ title, meta }: { title: string; meta: ReactNode }) {
 
 function EmptyState({ text }: { text: string }) {
   return (
-    <p className="border-l-2 border-[#2e2417] py-1 pl-3 text-[0.9375rem] leading-relaxed text-[#7f7364]">
+    <p className="border-l-2 border-[#2e2417] py-1 pl-3 text-[0.9375rem] leading-relaxed text-[var(--text-muted)]">
       {text}
     </p>
   )
@@ -677,7 +677,7 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
             {floorPlan.length > 0 && (
               <div className={styles.fact}>
                 <dt>{tDetail('factFloors')}</dt>
-                <dd aria-label={floorCountLabel}>{configuredFloors}<span className="text-[#7f7364]">/{floorPlan.length}</span></dd>
+                <dd aria-label={floorCountLabel}>{configuredFloors}<span className="text-[var(--text-muted)]">/{floorPlan.length}</span></dd>
               </div>
             )}
             <div className={styles.fact}>

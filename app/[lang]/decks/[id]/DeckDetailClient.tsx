@@ -917,7 +917,7 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
             )}
             <div className={styles.fact}>
               <dt>{t('factFormed')}</dt>
-              <dd>{formedSlots.length}<span className="text-[#7f7364]">/{BOARD_SLOT_COUNT}</span></dd>
+              <dd>{formedSlots.length}<span className="text-[var(--text-muted)]">/{BOARD_SLOT_COUNT}</span></dd>
             </div>
             <div className={styles.fact}>
               <dt>E.G.O</dt>

@@ -58,9 +58,9 @@ export function getGiftKeywordSlug(keyword: string | null): string | null {
 // ── 기프트 키워드 색상 ──────────────────────────────────────────────────────
 export const GIFT_KEYWORD_COLORS: Record<string, string> = {
   // 게임 키워드 아이콘에서 뽑은 색을 화면용으로 조금 밝힌 값
-  화상: '#e0503a', 출혈: '#d1323a', 진동: '#dca24a', 파열: '#22c4a4',
-  침잠: '#3a82dc', 호흡: '#7fb3ae', 충전: '#22b8cc', 참격: '#c0784a',
-  관통: '#c0784a', 타격: '#c0784a', 공통: '#9c8b73', '공통/범용': '#9c8b73',
+  화상: '#f0644c', 출혈: '#ee5a64', 진동: '#dca24a', 파열: '#22c4a4',
+  침잠: '#5f9de8', 호흡: '#7fb3ae', 충전: '#22b8cc', 참격: '#cf8a5c',
+  관통: '#cf8a5c', 타격: '#cf8a5c', 공통: '#9c8b73', '공통/범용': '#9c8b73',
 }
 
 export function getGiftKeywordColor(keyword: string | null): string {

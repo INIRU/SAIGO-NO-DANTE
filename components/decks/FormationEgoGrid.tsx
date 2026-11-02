@@ -31,12 +31,12 @@ export function FormationTabs<K extends string>({ tabs, active, onChange, label,
                 : 'border-transparent text-[#9c8b73] hover:text-[var(--text-primary)]'}`}
             >
               {tab.label}
-              {tab.count && <span className="font-normal tabular-nums text-[#7f7364]">{tab.count}</span>}
+              {tab.count && <span className="font-normal tabular-nums text-[var(--text-muted)]">{tab.count}</span>}
             </button>
           )
         })}
       </div>
-      {hint && <p className="pb-2 text-[0.8125rem] text-[#7f7364]">{hint}</p>}
+      {hint && <p className="pb-2 text-[0.8125rem] text-[var(--text-muted)]">{hint}</p>}
     </div>
   )
 }
@@ -60,7 +60,7 @@ export function FormationEgoGrid({ sinners, egos, onEgoClick, noIdentityLabel }:
           <li key={sinner.id} className={`min-w-0 overflow-hidden rounded border border-[#241c14] bg-[#17120c] ${sinner.filled ? '' : 'opacity-50'}`}>
             <div className="flex items-center gap-2 border-b border-[#241c14] px-2.5 py-2">
               <Image src={getSinnerLogoUrl(sinner.id)} alt="" width={16} height={16} className="h-4 w-4 opacity-60" />
-              <span className={`truncate font-[family-name:var(--font-heading)] text-[0.875rem] ${sinner.filled ? 'text-[#cfc2ad]' : 'text-[#7f7364]'}`}>
+              <span className={`truncate font-[family-name:var(--font-heading)] text-[0.875rem] ${sinner.filled ? 'text-[#cfc2ad]' : 'text-[var(--text-muted)]'}`}>
                 {sinner.name}
               </span>
             </div>
@@ -90,12 +90,12 @@ export function FormationEgoGrid({ sinners, egos, onEgoClick, noIdentityLabel }:
                 ) : (
                   <div key={grade} className="flex min-h-8 items-center gap-2 rounded-sm border border-transparent px-1.5 py-1">
                     {banner}
-                    {sinner.filled && <span className="text-[0.75rem] text-[#4a3f31]" aria-hidden="true">—</span>}
+                    {sinner.filled && <span className="text-[0.75rem] text-[var(--text-muted)]" aria-hidden="true">—</span>}
                   </div>
                 )
               })}
             </div>
-            {!sinner.filled && <p className="px-2 pb-2 text-center text-[0.75rem] text-[#7f7364]">{noIdentityLabel}</p>}
+            {!sinner.filled && <p className="px-2 pb-2 text-center text-[0.75rem] text-[var(--text-muted)]">{noIdentityLabel}</p>}
           </li>
         )
       })}

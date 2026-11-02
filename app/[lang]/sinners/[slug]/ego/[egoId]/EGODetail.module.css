@@ -1,6 +1,6 @@
 .page { max-width: 90rem; margin: 0 auto; padding: 5.5rem 2rem 4rem; color: var(--text-primary); }
 .breadcrumb { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; margin-bottom: 1.5rem; color: var(--text-muted); font-size: .75rem; }
-.breadcrumb > span[aria-hidden] { color: #4a3d2c; }
+.breadcrumb > span[aria-hidden] { color: var(--text-muted); }
 .breadcrumb > span:last-child { color: var(--gold); }
 .breadcrumb a:hover, .backLink:hover { color: var(--gold-light); }
 .hero { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: 2.5rem; align-items: start; }

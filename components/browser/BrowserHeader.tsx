@@ -37,7 +37,7 @@ export default function BrowserHeader({
         <Link
           href={backHref}
           className="transition-colors hover:text-[var(--gold)]"
-          style={{ color: '#666' }}
+          style={{ color: 'var(--text-muted)' }}
           aria-label={t('back')}
         >
           <ArrowLeft size={20} />

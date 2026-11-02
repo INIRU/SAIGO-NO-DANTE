@@ -477,7 +477,7 @@ const DownloadContainer = forwardRef<HTMLDivElement, {
         <p style={{ color: '#c8900a', fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '8px' }}>
           {t('title')}{showIdentity && !showEgo ? ` — ${t('identities')}` : !showIdentity && showEgo ? ' — E.G.O' : ''}
         </p>
-        <p style={{ color: '#555', fontFamily: 'var(--font-perfect-dos), monospace', fontSize: '0.8125rem' }}>
+        <p style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-perfect-dos), monospace', fontSize: '0.8125rem' }}>
           {showIdentity && <>{t('identities')} {stats.ownedIdentities}/{stats.totalIdentities}</>}
           {showIdentity && showEgo && <span style={{ fontFamily: 'sans-serif' }}>{' · '}</span>}
           {showEgo && <>EGO {stats.ownedEgos}/{stats.totalEgos}</>}
@@ -497,7 +497,7 @@ const DownloadContainer = forwardRef<HTMLDivElement, {
                 {/* eslint-disable-next-line @next/next/no-img-element -- crossOrigin required for canvas image download */}
                 <img src={sinnerLogoUrl(sinner.id)} alt="" crossOrigin="anonymous" style={{ width: '1.75rem', height: '1.75rem' }} />
                 <span style={{ color: '#c8900a', fontSize: '1rem', fontWeight: 'bold' }}>{getLocalizedName(sinner, lang)}</span>
-                <span style={{ color: '#555', fontFamily: 'var(--font-perfect-dos), monospace', fontSize: '0.6875rem' }}>{ids.length + egoList.length}/{allIds.length + allEgos.length}</span>
+                <span style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-perfect-dos), monospace', fontSize: '0.6875rem' }}>{ids.length + egoList.length}/{allIds.length + allEgos.length}</span>
               </div>
               {ids.length > 0 && renderIdentityGrid(ids)}
               {egoList.length > 0 && renderEgoGrid(egoList)}
@@ -515,7 +515,7 @@ const DownloadContainer = forwardRef<HTMLDivElement, {
             <div key={themeKw} style={{ marginBottom: '28px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px', paddingBottom: '8px', borderBottom: '1px solid #1a1510' }}>
                 <span style={{ color: '#c8900a', fontSize: '1rem', fontWeight: 'bold' }}>{groupLabel(themeKw)}</span>
-                <span style={{ color: '#555', fontFamily: 'var(--font-perfect-dos), monospace', fontSize: '0.6875rem' }}>{ids.length + egoList.length}</span>
+                <span style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-perfect-dos), monospace', fontSize: '0.6875rem' }}>{ids.length + egoList.length}</span>
               </div>
               {ids.length > 0 && renderIdentityGrid(ids)}
               {egoList.length > 0 && renderEgoGrid(egoList)}

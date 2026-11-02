@@ -259,7 +259,7 @@
 .sectionNav a:first-child { padding-left: 0; }
 .sectionNav a:hover { color: var(--text-primary); }
 .sectionNav a[aria-current] { border-bottom-color: var(--gold); color: var(--text-primary); font-weight: 600; }
-.sectionNav a span { color: #7f7364; font-variant-numeric: tabular-nums; font-weight: 400; }
+.sectionNav a span { color: var(--text-muted); font-variant-numeric: tabular-nums; font-weight: 400; }
 .sectionNav a:focus-visible { outline: 2px solid var(--gold-light); outline-offset: -2px; }
 
 @media (min-width: 640px) {

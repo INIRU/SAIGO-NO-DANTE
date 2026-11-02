@@ -58,7 +58,7 @@ const DIFFICULTY_STYLE: Record<Difficulty, { bg: string; color: string; border: 
   normal:  { bg: 'rgba(74,152,104,0.12)',  color: '#4a9868', border: 'rgba(74,152,104,0.3)' },
   hard:    { bg: 'rgba(200,144,10,0.12)',  color: '#e8b030', border: 'rgba(200,144,10,0.3)' },
   overlap: { bg: 'rgba(72,152,176,0.12)',  color: '#48b0c0', border: 'rgba(72,152,176,0.3)' },
-  extreme: { bg: 'rgba(200,48,48,0.12)',   color: '#e05050', border: 'rgba(200,48,48,0.3)' },
+  extreme: { bg: 'rgba(200,48,48,0.12)',   color: '#ec6a5e', border: 'rgba(200,48,48,0.3)' },
 }
 
 function PlanCard({
@@ -188,7 +188,7 @@ function PlanCard({
               )
             })}
             {hiddenKeywordCount > 0 && (
-              <span style={{ flexShrink: 0, fontSize: '0.875rem', color: '#5d4d38' }}>
+              <span style={{ flexShrink: 0, fontSize: '0.875rem', color: 'var(--text-muted)' }}>
                 +{hiddenKeywordCount}
               </span>
             )}
