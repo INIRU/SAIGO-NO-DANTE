@@ -2,8 +2,6 @@ import type { SinType, Identity } from '@/lib/types'
 import { SIN_COLORS } from '@/lib/constants/sin'
 import { STORAGE_BASE } from '@/lib/constants/game'
 import { getGameUiAsset } from '@/lib/utils/game-ui'
-import sourceIconAliases from './keyword-icon-aliases.json'
-import sourceIconVariants from './keyword-icon-variants.json'
 
 /**
  * 인격의 키워드 목록에서 메인 죄악 속성을 추론.
@@ -98,18 +96,6 @@ const BASE_ATTACK_ICON_SLUG_PATHS: Record<string, string> = {
 
 const ATLAS_KEYWORD_SLUGS = new Set(['tiantui-star', 'shin-tiantui-star', 'tremor-burst', 'shimmering-bloodfiend'])
 
-const ORIGINAL_WEAPON_ICON_SLUGS = new Set([
-  'when-boring-a-20-inch-hole-with-a-lance',
-  'when-caving-in-the-back-of-the-skull-with-a-hammer',
-  'when-cleaving-through-the-shoulder-and-the-skull-with-a-bastard-sword',
-  'when-hacking-through-the-ribs-with-a-hatchet',
-  'when-lacerating-through-space-itself-with-a-scythe-like-a-certain-someone',
-  'when-penetrating-the-lungs-with-a-stiletto',
-  'when-punching-10-or-more-holes-in-the-torso-with-a-rapier',
-  'when-ripping-the-flesh-to-ten-thousand-strips-with-a-whip',
-  'when-rending-the-body-with-a-greatsword',
-])
-
 export function getKeywordIconUrl(keyword: string, iconSlug?: string): string | null {
   if (['파괴 불가 코인', 'Unbreakable Coin', '破壊不可コイン'].includes(keyword) || iconSlug === 'unbreakable-coin') {
     return getGameUiAsset('coins/unbreakable')
@@ -118,13 +104,5 @@ export function getKeywordIconUrl(keyword: string, iconSlug?: string): string | 
   if (statIconPath) return getGameUiAsset(statIconPath)
   if (!iconSlug) return null
   if (ATLAS_KEYWORD_SLUGS.has(iconSlug)) return getGameUiAsset(`keywords/${iconSlug}`)
-  // Drive source labels and visually verified shared icons; see limbus-asset-extractor/site-sync/docs/provenance.md.
-  // Reuse the existing public asset rather than uploading a copy for every alias.
-  const variants = sourceIconVariants as Record<string, string>
-  // These nine weapon effects use the original artwork, including the greatsword spelling variant.
-  const originalSlug = iconSlug.replace(/-2$/, '').replace('with-a-great-sword', 'with-a-greatsword')
-  if (ORIGINAL_WEAPON_ICON_SLUGS.has(originalSlug)) return `${STORAGE_BASE}/icons/keywords/${originalSlug}.webp`
-  const alias = variants[iconSlug] ?? (sourceIconAliases as Record<string, string>)[iconSlug] ?? iconSlug
-  const sourceSlug = variants[alias] ?? alias
-  return `${STORAGE_BASE}/icons/keywords/${sourceSlug}.webp`
+  return `${STORAGE_BASE}/icons/keywords/${iconSlug}.webp`
 }
