@@ -51,11 +51,12 @@ describe('REQ-MOTION-046 scenarios', () => {
   const buffs = [{ name: '해금 - II', icon: '/k/unlock.webp', stack: '1' }, { name: '대행 [헤르메스]', icon: null, stack: '9' }]
 
   it('REQ-MOTION-046 writes a scenario from the game values and drops the sentence', () => {
-    const html = render('v:base', [state('v:base', '기본'), state('v:form', '가면 벗음', { conditions: buffs, extras: ['치명타'] })])
+    const html = render('v:base', [state('v:base', '기본'), state('v:form', '가면 벗음', { conditions: buffs, extras: [{ text: '치명타', icon: null }, { text: '색욕 공명 4', icon: '/sins/lust.webp' }] })])
     expect(html).not.toContain('가면 벗음')
     expect(html.indexOf('/k/unlock.webp')).toBeLessThan(html.indexOf('해금 - II'))
     expect(html).toContain('대행 [헤르메스]')
     expect(html).toContain('치명타')
+    expect(html.indexOf('/sins/lust.webp')).toBeLessThan(html.indexOf('색욕 공명 4'))
     expect(html).toContain('>normal<')
     expect(html).not.toContain('<h3')
   })
@@ -99,6 +100,8 @@ describe('REQ-MOTION-046 scenarios', () => {
     const html = render('v:dead-all', list)
     expect(html).toMatch(/aria-pressed="true"[^>]*data-scenario="v:dead-all"/)
     expect(html).toContain('/p/10916.webp')
+    // A dead ally's face is grey; an ally who plays along is not.
+    expect(html).toMatch(/data-dead="true"[^>]*title="[^"]*로쟈/)
   })
 
   const voice = (id: string): VoiceLink => ({ id, identities: ['10315'], main: '10315', partners: [], dead: [], when: 'roundStart', label: `대사 ${id}`, labelEn: `Line ${id}`, cues: [], pools: [], seconds: 3 })

@@ -1,5 +1,7 @@
 import { SINNER_SLUGS } from '@/lib/constants/game'
 import { getKeywordIconUrl } from '@/lib/constants/keywords'
+import { getSinIconUrl, SIN_ATTRIBUTE_CODES } from '@/lib/constants/sin'
+import { getGameUiAsset } from '@/lib/utils/game-ui'
 import { getIdentityPortraitUrl } from '@/lib/utils/images'
 import type { GameTextRefNames } from '@/lib/db/game-text-refs'
 
@@ -33,7 +35,7 @@ export type MotionEntry = {
   linkSkillIds?: number[]
   linkMax?: boolean
   /** The buffs this video was recorded with. */
-  conditions?: { keyword: string; stack?: number; target?: boolean }[]
+  conditions?: { keyword: string; stack?: number | string; target?: boolean }[]
   /** 공간참 - 잔 (id10415 · 1041507): the 거미집 아비 dead in this state (`v:dead-<id>[+dead-<id>…]`), in the game's order. */
   deadAllies?: string[]
   /** Skill names in English and Japanese, for a skill the site has no row for. */
@@ -57,7 +59,9 @@ export type MotionLink = { id: string; partners: MotionPartner[]; max: boolean }
  */
 /** A buff a video was recorded with, written from the site's keyword table. */
 export type MotionCondition = { name: string; icon: string | null; stack: string | null }
-export type MotionState = Pick<MotionEntry, 'state' | 'name' | 'video' | 'meta'> & { label: string; bytes: number; link?: MotionLink; dead?: MotionPartner[]; conditions?: MotionCondition[]; ally?: MotionPartner; /** What the labelKey says besides the conditions, in the page language. */ extras?: string[] }
+/** A part of a labelKey the conditions do not show, in the page language, with the site's picture of it when it has one. */
+export type MotionExtra = { text: string; icon: string | null }
+export type MotionState = Pick<MotionEntry, 'state' | 'name' | 'video' | 'meta'> & { label: string; bytes: number; link?: MotionLink; dead?: MotionPartner[]; conditions?: MotionCondition[]; ally?: MotionPartner; /** What the labelKey says besides the conditions, in the page language. */ extras?: MotionExtra[] }
 /**
  * The game frame a skill's sprite sits in: its sin, its slot (1–3, 4 for a defense) and its attack type badge. `sprite`: the
  * sprite id when the skill is saved under another identity's (see borrowedRows), else the skill id is the sprite's.
@@ -104,6 +108,16 @@ const LABEL_WORDS: Record<string, [ko: string, en: string, ja: string]> = {
   crit: ['치명타', 'Critical Hit', 'クリティカル'], cutin: ['컷인', 'Cut-in', 'カットイン'], dead: ['사망', 'Death', '死亡'], form: ['변신', 'Transformation', '変身'], hp: ['체력', 'HP', 'HP'],
   kill: ['처치', 'Kill', '撃破'], resonance: ['공명', 'Resonance', '共鳴'], reuse: ['재사용', 'Reuse', '再使用'], sp: ['정신력', 'SP', 'SP'], speed: ['속도', 'Speed', '速度'],
   target: ['대상', 'Target', '対象'], under: ['이하', 'or less', '以下'], weight: ['가중치', 'Weight', 'ウェイト'],
+  'coin:head': ['코인 앞면', 'Heads', '表'], 'coin:tail': ['코인 뒷면', 'Tails', '裏'], small: ['소형', 'Small', '小型'],
+  // The sins by the game's colour code, as the site names them (messages sin.*).
+  'sin:crimson': ['분노', 'Wrath', '憤怒'], 'sin:scarlet': ['색욕', 'Lust', '色欲'], 'sin:amber': ['나태', 'Sloth', '怠惰'], 'sin:shamrock': ['탐식', 'Gluttony', '暴食'],
+  'sin:azure': ['우울', 'Gloom', '憂鬱'], 'sin:indigo': ['오만', 'Pride', '傲慢'], 'sin:violet': ['질투', 'Envy', '嫉妬'],
+}
+/** The site's picture of a word token: a sin's icon, a coin. */
+const labelIcon = (token: string): string | null => {
+  const sin = /^sin:([a-z]+)$/.exec(token)?.[1]
+  if (sin) { const type = SIN_ATTRIBUTE_CODES[sin.toUpperCase()]; return type ? getSinIconUrl(type) : null }
+  return token === 'coin:head' || token === 'coin:tail' ? getGameUiAsset('coins/normal') : null
 }
 const labelWord = (token: string, lang: string): string | null => {
   const words = LABEL_WORDS[token]
@@ -130,12 +144,16 @@ export function formatMotionLabelKey(key: string, refs: GameTextRefNames | null 
 }
 
 /** The parts of a labelKey the conditions and the faces do not already show, in the page language; a part that cannot be written is left out. */
-function labelExtras(entry: Pick<MotionEntry, 'labelKey' | 'conditions'>, refs: GameTextRefNames | null | undefined, identityName: (gameId: string) => string | undefined, lang: string): string[] {
+function labelExtras(entry: Pick<MotionEntry, 'labelKey' | 'conditions'>, refs: GameTextRefNames | null | undefined, identityName: (gameId: string) => string | undefined, lang: string): MotionExtra[] {
   const shown = new Set(entry.conditions?.map(condition => condition.keyword))
-  return (entry.labelKey ?? '').split(/\s[+·]\s/).flatMap(part => {
+  const parts = (entry.labelKey ?? '').split(/\s[+·]\s/)
+  // A sin is its own part before the resonance: "<sin:scarlet> + <resonance> 4" reads as one, 색욕 공명 4.
+  for (let k = parts.length - 2; k >= 0; k--) if (/^<sin:[a-z]+>$/.test(parts[k]) && parts[k + 1].startsWith('<resonance>')) parts.splice(k, 2, `${parts[k]} ${parts[k + 1]}`)
+  return parts.flatMap(part => {
     if (part.includes('<i:') || [...part.matchAll(/\[([^\]]+)\]/g)].some(m => shown.has(m[1]))) return []
     const text = formatMotionLabelKey(part, refs, identityName, lang)
-    return text ? [text] : []
+    const icon = [...part.matchAll(/<([^>]+)>/g)].map(m => labelIcon(m[1])).find(Boolean) ?? null
+    return text ? [{ text, icon }] : []
   })
 }
 

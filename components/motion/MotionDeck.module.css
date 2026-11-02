@@ -24,3 +24,5 @@
 .skill:focus-visible{outline:2px solid var(--gold-light);outline-offset:2px}
 /* Less motion keeps the colour and opacity changes and drops what moves: the press, the lift, the growing rule, the thumb's slide. */
 @media(prefers-reduced-motion:reduce){.skill{transition-property:color,background-color,border-color}.art{transition-property:opacity}.skill::after{transition:none}.skill:active{transform:none}.skill:hover .art{transform:none}}
+/* An ally who died before the skill: the face in grey. */
+.face[data-dead] img{filter:grayscale(1)}

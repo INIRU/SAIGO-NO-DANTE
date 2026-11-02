@@ -12,11 +12,11 @@ import styles from './MotionDeck.module.css'
 const fullName = (p: MotionPartner) => (p.sinner ? `${p.name} ${p.sinner}` : p.name)
 const row = 'flex min-h-11 w-full items-center gap-2.5 rounded-md px-3 py-2 text-left text-[0.9375rem] leading-snug transition-[color,background-color] duration-150 hover:bg-[rgba(200,144,10,0.06)] hover:text-[var(--text-primary)] aria-pressed:bg-[rgba(200,144,10,0.12)] aria-pressed:text-[var(--gold-light)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--gold-light)] text-[var(--text-secondary)] motion-reduce:transition-none'
 
-function Face({ person }: { person: MotionPartner }) {
-  return <span title={fullName(person)} className={styles.face}>{person.portrait && <QuietImage src={person.portrait} alt="" fill sizes="2rem" />}</span>
+function Face({ person, dead }: { person: MotionPartner; dead?: boolean }) {
+  return <span data-dead={dead || undefined} title={fullName(person)} className={styles.face}>{person.portrait && <QuietImage src={person.portrait} alt="" fill sizes="2rem" />}</span>
 }
 
-const Faces = ({ people }: { people: readonly MotionPartner[] }) => people.length > 0 && <span className="flex shrink-0 -space-x-2">{people.map(p => <Face key={p.gameId} person={p} />)}</span>
+const Faces = ({ people, dead }: { people: readonly MotionPartner[]; dead?: boolean }) => people.length > 0 && <span className="flex shrink-0 -space-x-2">{people.map(p => <Face key={p.gameId} person={p} dead={dead} />)}</span>
 
 const peopleOf = (state: MotionState, ally?: MotionPartner) => { const person = state.ally ?? ally; return person ? [person] : state.dead ?? [] }
 /** What identifies a scenario on screen: two scenarios the same in it need their own text. */
@@ -34,7 +34,7 @@ function Scenario({ state, ally, fallback, current, onPick }: { state: MotionSta
   const text = fallback ?? (isBase(state.state) ? t('normal') : !buffs.length && !extras.length ? people.map(p => p.sinner ?? p.name).join(' · ') : null)
   return (
     <button type="button" aria-pressed={current} data-scenario={state.state} className={row} onClick={onPick}>
-      <Faces people={people} />
+      <Faces people={people} dead={!state.ally && !ally && Boolean(state.dead?.length)} />
       <span className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1">
         {!fallback && buffs.map(c => (
           <span key={c.name} data-condition={c.name} className="inline-flex items-center gap-1.5">
@@ -43,7 +43,12 @@ function Scenario({ state, ally, fallback, current, onPick }: { state: MotionSta
             {c.stack && <span className="font-[family-name:var(--font-title)] text-[1rem] tabular-nums tracking-wide">{c.stack}</span>}
           </span>
         ))}
-        {!fallback && extras.map(extra => <span key={extra} className="break-keep">{extra}</span>)}
+        {!fallback && extras.map(extra => (
+          <span key={extra.text} className="inline-flex items-center gap-1.5">
+            {extra.icon && <span className="relative h-6 w-6 shrink-0"><QuietImage src={extra.icon} alt="" fill sizes="1.5rem" className="object-contain" /></span>}
+            <span className="break-keep">{extra.text}</span>
+          </span>
+        ))}
         {text && <span className="break-keep">{text}</span>}
       </span>
     </button>
