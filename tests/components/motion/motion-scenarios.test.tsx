@@ -84,7 +84,15 @@ describe('REQ-MOTION-046 scenarios', () => {
   })
 
   it('REQ-MOTION-046 shows the ally of a formation by its face', () => {
-    expect(render('v:base', [states[0], state('v:with-10114', '아군 오', { ally: person('10114', '이상') })])).toContain('/p/10114.webp')
+    expect(render('v:base', [states[0], state('v:with-10114', '아군 오', { allies: [person('10114', '이상')] })])).toContain('/p/10114.webp')
+  })
+
+  it('REQ-MOTION-056 tells the best state from the same buffs by its ally, so both keep their chips', () => {
+    const buff = { conditions: [{ name: '전투 감각', icon: '/k/f.webp', stack: '3' }] }
+    const html = render('v:base', [states[0], state('v:b-Firstlight-3', '전투 감각 3', buff), state('v:best', '최고', { ...buff, allies: [person('11216', '그레고르')] })])
+    expect(html).not.toContain('전투 감각 3<')
+    expect(html).not.toContain('최고')
+    expect(html.lastIndexOf('/p/11216.webp')).toBeGreaterThan(html.indexOf('data-scenario="v:best"'))
   })
 
   it('REQ-MOTION-033 shows one row with every partner of a link', () => {

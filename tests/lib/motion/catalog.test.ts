@@ -435,7 +435,18 @@ describe('REQ-MOTION-046 the buffs of a scenario', () => {
   it('REQ-MOTION-046 gives an ally formation its identity', () => {
     const [info] = [{ id: 'a', name: '경멸, 경외', sinner_id: 'ryoshu', sinner_name: '료슈', game_id: '10412', folder_name: 'F' }]
     const list = buildMotionCatalog([entry({ state: 'v:with-10412' })], new Map([['10412', info]]), 'ko')
-    expect(list[0].identities[0].skills[0].states[0].ally).toMatchObject({ gameId: '10412', name: '경멸, 경외', sinner: '료슈' })
+    expect(list[0].identities[0].skills[0].states[0].allies).toMatchObject([{ gameId: '10412', name: '경멸, 경외', sinner: '료슈' }])
+  })
+
+  it('REQ-MOTION-056 takes the allies of a scenario from its labelKey too, every one once, and a dead one only as dead', () => {
+    const allies = (over: Partial<MotionEntry>) => buildMotionCatalog([entry(over)], new Map(), 'ko')[0].identities[0].skills[0].states[0]
+    expect(allies({ state: 'v:best', labelKey: '[X] 30 + [Y] 3 + <i:11216>' }).allies?.map(p => p.gameId)).toEqual(['11216'])
+    expect(allies({ state: 'v:with-both', labelKey: '<i:10216> + <i:11216>' }).allies?.map(p => p.gameId)).toEqual(['10216', '11216'])
+    expect(allies({ state: 'v:with-11216', labelKey: '<i:11216>' }).allies?.map(p => p.gameId)).toEqual(['11216'])
+    const dead = allies({ state: 'v:dead-10115', labelKey: '[Shin] 1 + <i:10115>', deadAllies: ['10115'] })
+    expect(dead.allies).toBeUndefined()
+    expect(dead.dead?.map(p => p.gameId)).toEqual(['10115'])
+    expect(allies({ state: 'v:link-10115', labelKey: '<i:10115>', members: ['10216', '10115'] }).allies).toBeUndefined()
   })
 })
 
