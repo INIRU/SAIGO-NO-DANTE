@@ -14,7 +14,7 @@ const readSkill = async (url: string): Promise<MotionSkillRow | null> => {
 }
 
 /** The site's card of the skill (frame, sin, coins, power, text); nothing when the site has no row for it. */
-function SkillCard({ skillId }: { skillId: number }) {
+function SkillCard({ skillId, icon }: { skillId: number; icon?: string }) {
   const lang = useLocale()
   const { data, isLoading } = useSWR(`/api/motion/skill?id=${skillId}&lang=${lang}`, readSkill, { revalidateOnFocus: false })
   if (isLoading) {
@@ -26,10 +26,10 @@ function SkillCard({ skillId }: { skillId: number }) {
     )
   }
   if (!data) return null
-  return <IdentitySkillFrameCard skill={data} skills={[data]} identity={data.identity} lang={lang} className="rounded-lg p-3" />
+  return <IdentitySkillFrameCard skill={data} skills={[data]} identity={data.identity} lang={lang} iconUrl={icon} className="rounded-lg p-3" />
 }
 
 /** Beside the stage: the skill's card. */
-export default function MotionSidePanel({ skillId }: { skillId: number | null }) {
-  return skillId !== null ? <SkillCard key={skillId} skillId={skillId} /> : null
+export default function MotionSidePanel({ skillId, icon }: { skillId: number | null; icon?: string }) {
+  return skillId !== null ? <SkillCard key={skillId} skillId={skillId} icon={icon} /> : null
 }

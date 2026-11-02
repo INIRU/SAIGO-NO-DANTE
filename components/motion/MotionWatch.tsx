@@ -1,15 +1,15 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import useSWR from 'swr'
 import { parseAsString, useQueryStates } from 'nuqs'
 import { useTranslations } from 'next-intl'
 import { ArrowLeft, Check, ChevronDown, Link2 } from 'lucide-react'
 import BackLink from '@/components/navigation/BackLink'
 import QuietImage from '@/components/ui/QuietImage'
-import { useMotionCatalog } from '@/hooks/useMotionCatalog'
+import { useCutinAllies, useMotionCatalog } from '@/hooks/useMotionCatalog'
 import { readMotionVoiceLinks, useSkillMotion } from '@/hooks/useSkillMotion'
-import { defaultMotionState, findMotionSkill, toMotionParam as toParam, type MotionIdentity, type MotionSkill } from '@/lib/motion/catalog'
+import { defaultMotionState, findMotionSkill, isMotionEgo, toMotionParam as toParam, type MotionIdentity, type MotionSkill } from '@/lib/motion/catalog'
 import { useRouter } from '@/lib/i18n/navigation'
 import { showError } from '@/lib/toast'
 import MotionScenarios from './MotionScenarios'
@@ -60,7 +60,7 @@ function Header({ back, image, title }: { back: string; image: string | null; ti
 export default function MotionWatch() {
   const t = useTranslations('motionPage')
   const router = useRouter()
-  const { sinners, error } = useMotionCatalog()
+  const { sinners, error, skillNames, partner } = useMotionCatalog()
   const voiceLinks = useSWR('motion-voice-links', readMotionVoiceLinks, { revalidateOnFocus: false })
   const [query, setQuery] = useQueryStates(QUERY, QUERY_OPTIONS)
   const motion = useSkillMotion()
@@ -74,6 +74,10 @@ export default function MotionWatch() {
   }, [sinners, query.skill])
   const skill = found?.skill
   const state = skill ? skill.states.find(s => s.state === query.state) ?? skill.states.find(s => s.state === defaultMotionState(skill)) : undefined
+
+  const ownGameId = found && !isMotionEgo(found.owner) ? found.owner.gameId : null
+  const cutinAllies = useCutinAllies(skill?.key, skill?.states, ownGameId, partner)
+  const skillName = useCallback((id: number) => (id === skill?.skillId ? skill.title : skillNames.get(id)), [skill, skillNames])
 
   const lost = (Boolean(sinners) && !found && !pending) || (Boolean(error) && !sinners)
   useEffect(() => { if (lost) router.replace('/motion/skills') }, [lost, router])
@@ -118,31 +122,32 @@ export default function MotionWatch() {
           <div className="mx-auto w-full lg:max-w-[calc((100dvh-13.5rem)*16/9)]">
             <MotionStage
               hostRef={motion.hostRef} status={motion.status} error={motion.error} playing={motion.playing} muted={motion.muted} volumes={motion.volumes}
-              hasAudio={motion.hasAudio} frames={motion.frames} frameStore={motion.frameStore} chapters={motion.chapters} marks={motion.marks} skillTitle={skill.title}
+              hasAudio={motion.hasAudio} frames={motion.frames} frameStore={motion.frameStore} chapters={motion.chapters} marks={motion.marks} skillName={skillName}
               onTogglePlay={motion.togglePlay} onStep={motion.step} onSeek={motion.seek} onToggleMute={motion.toggleMute} onVolume={motion.setVolume}
               onRetry={() => void load(state)} notice={notice} onDismiss={dismissNotice} />
           </div>
           <div className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-2 sm:flex-nowrap">
             <MotionSkillStrip icon={icon} skills={owner.skills} selectedKey={skill.key} onPick={next => void setQuery({ skill: toParam(next.key), state: null })} />
-            <h2 className="min-w-0 break-keep font-[family-name:var(--font-heading)] text-[1rem] leading-snug text-[var(--text-primary)] md:text-[1.125rem]">{skill.title}</h2>
+            <div className="min-w-0">
+              {ego && <p className="text-[0.8125rem] leading-tight text-[var(--gold-light)]">{t(skill.erode ? 'erode' : 'awaken')}</p>}
+              <h2 className="break-keep font-[family-name:var(--font-heading)] text-[1rem] leading-snug text-[var(--text-primary)] md:text-[1.125rem]">{skill.title}</h2>
+            </div>
           </div>
         </div>
 
         <aside className="flex min-w-0 flex-col gap-3 lg:min-h-0 lg:overflow-y-auto lg:overscroll-contain lg:pr-1">
           <section aria-labelledby="motion-scenarios">
             <h2 id="motion-scenarios" className="mb-1 px-3 pt-1 font-[family-name:var(--font-heading)] text-[1rem] text-[var(--gold)]">{t('scenarios')}</h2>
-            <MotionScenarios key={skill.key} states={skill.states} current={state.state}
+            <MotionScenarios key={skill.key} states={skill.states} current={state.state} allies={cutinAllies}
               onPick={next => void setQuery({ skill: toParam(skill.key), state: next })}
               voices={voices} onVoice={motion.playVoice} onVoiceStop={motion.stopVoice} />
           </section>
-          {!ego && (
-            <details className="group border-t border-[#2e2417]" onToggle={event => setInfo(event.currentTarget.open)}>
-              <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between rounded-md px-3 text-[0.9375rem] text-[var(--text-secondary)] transition-colors hover:text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--gold-light)] [&::-webkit-details-marker]:hidden">
-                {t('skillInfo')}<ChevronDown className="h-4 w-4 transition-transform duration-200 group-open:rotate-180 motion-reduce:transition-none" aria-hidden="true" />
-              </summary>
-              {info && <div className="pt-2"><MotionSidePanel skillId={skill.skillId} /></div>}
-            </details>
-          )}
+          <details className="group border-t border-[#2e2417]" onToggle={event => setInfo(event.currentTarget.open)}>
+            <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between rounded-md px-3 text-[0.9375rem] text-[var(--text-secondary)] transition-colors hover:text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--gold-light)] [&::-webkit-details-marker]:hidden">
+              {t('skillInfo')}<ChevronDown className="h-4 w-4 transition-transform duration-200 group-open:rotate-180 motion-reduce:transition-none" aria-hidden="true" />
+            </summary>
+            {info && <div className="pt-2"><MotionSidePanel skillId={skill.skillId} icon={ego ? icon(skill) : undefined} /></div>}
+          </details>
         </aside>
       </div>
     </div>

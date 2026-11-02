@@ -154,7 +154,8 @@ export function useSkillMotion() {
     const report = (_: number, md: VideoFrameCallbackMetadata) => {
       reportedAt = performance.now()
       const m = meta.current
-      if (m && md.mediaTime < m.frames / m.fps) draw(Math.min(m.frames - 1, Math.round(md.mediaTime * m.fps)))
+      // (While seeking the frame reported is the one before the seek: the controls already show where it is going.)
+      if (m && !v.seeking && md.mediaTime < m.frames / m.fps) draw(Math.min(m.frames - 1, Math.round(md.mediaTime * m.fps)))
       if (!v.paused) pending = v.requestVideoFrameCallback(report)
     }
     const watch = () => {

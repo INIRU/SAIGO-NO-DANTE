@@ -2,13 +2,13 @@ import { describe, expect, it, vi } from 'vitest'
 import { renderToStaticMarkup } from 'react-dom/server'
 
 const locale = vi.hoisted(() => ({ value: 'ko' }))
-vi.mock('next-intl', () => ({ useTranslations: () => (key: string) => key, useLocale: () => locale.value }))
+vi.mock('next-intl', () => ({ useTranslations: () => (key: string, values?: { n: number }) => (values ? `${key} ${values.n}` : key), useLocale: () => locale.value }))
 vi.mock('next/image', () => ({ default: ({ src, alt }: { src: string; alt: string }) => <img src={src} alt={alt} /> }))
 
 import MotionScenarios from '@/components/motion/MotionScenarios'
 import MotionSkillStrip from '@/components/motion/MotionSkillStrip'
 import MotionTimeline, { chapterSpans, currentChapter } from '@/components/motion/MotionTimeline'
-import { pickLinkState, toggleDeadState, type MotionPartner, type MotionSkill, type MotionState } from '@/lib/motion/catalog'
+import { pickLinkState, type MotionPartner, type MotionSkill, type MotionState } from '@/lib/motion/catalog'
 import type { VoiceLink } from '@/lib/motion/soundbuttons'
 
 const state = (id: string, label: string, extra: Partial<MotionState> = {}): MotionState => ({ state: id, label, name: '', video: '', meta: '', bytes: 0, ...extra })
@@ -48,6 +48,44 @@ describe('REQ-MOTION-046 scenarios', () => {
     expect(pickLinkState(states, '99999', false)).toBeUndefined()
   })
 
+  const buffs = [{ name: '해금 - II', icon: '/k/unlock.webp', stack: '1' }, { name: '대행 [헤르메스]', icon: null, stack: '9' }]
+
+  it('REQ-MOTION-046 writes a scenario from the game values and drops the sentence', () => {
+    const html = render('v:base', [state('v:base', '기본'), state('v:form', '가면 벗음', { conditions: buffs, extras: ['치명타'] })])
+    expect(html).not.toContain('가면 벗음')
+    expect(html.indexOf('/k/unlock.webp')).toBeLessThan(html.indexOf('해금 - II'))
+    expect(html).toContain('대행 [헤르메스]')
+    expect(html).toContain('치명타')
+    expect(html).toContain('>normal<')
+    expect(html).not.toContain('<h3')
+  })
+
+  it('REQ-MOTION-046 keeps a scenario the data says nothing about: its sentence in Korean, a number elsewhere', () => {
+    const list = [state('v:base', '기본'), state('v:head', '코인 앞면'), state('v:1', '하나', { conditions: buffs }), state('v:2', '둘', { conditions: buffs })]
+    const ko = render('v:base', list)
+    expect(ko).toContain('코인 앞면')
+    expect(ko).toContain('하나')
+    expect(ko).toContain('둘')
+    locale.value = 'en'
+    try {
+      const en = render('v:base', list)
+      expect(en).not.toContain('코인 앞면')
+      expect(en).toContain('scenarioNumber 2')
+      expect(en).toContain('scenarioNumber 4')
+    } finally { locale.value = 'ko' }
+  })
+
+  it('REQ-MOTION-046 writes a cut-in as the ally\'s face and the buff', () => {
+    const list = [states[0], state('v:b', '차원 표류 1', { conditions: [{ name: '차원 표류', icon: '/k/d.webp', stack: '1' }] }), state('v:cutin', '아군 공격 뒤 끼어듦 (차원 표류 1)', { conditions: [{ name: '차원 표류', icon: '/k/d.webp', stack: '1' }] })]
+    const html = renderToStaticMarkup(<MotionScenarios states={list} current="v:base" allies={{ 'v:cutin': person('10201', '파우스트') }} onPick={() => {}} voices={[]} onVoice={async () => {}} onVoiceStop={() => {}} />)
+    expect(html).not.toContain('끼어듦')
+    expect(html.lastIndexOf('/p/10201.webp')).toBeGreaterThan(html.indexOf('data-scenario="v:cutin"'))
+  })
+
+  it('REQ-MOTION-046 shows the ally of a formation by its face', () => {
+    expect(render('v:base', [states[0], state('v:with-10114', '아군 오', { ally: person('10114', '이상') })])).toContain('/p/10114.webp')
+  })
+
   it('REQ-MOTION-033 shows one row with every partner of a link', () => {
     const duo = [states[0], state('v:link-11216+11009', 'L', link([person('11216', '그레고르'), person('11009', '싱클레어')], false))]
     const html = render('v:link-11216+11009', duo)
@@ -56,26 +94,11 @@ describe('REQ-MOTION-046 scenarios', () => {
     expect(html).toContain('/p/11009.webp')
   })
 
-  const ids = ['10916', '10115', '11115', '10614']
-  const abi = Object.fromEntries(ids.map((id, i) => [id, person(id, ['로쟈', '이상', '오티스', '홍루'][i])]))
-  const dead = (...who: string[]) => state(`v:${who.map(id => `dead-${id}`).join('+')}`, 'x', { dead: who.map(id => abi[id]) })
-  const list = [state('v:base', '기본'), state('v:best-3', '최고 상태'), dead('10916'), dead('10115'), dead('10916', '10115'), dead(...ids)]
-
-  it('REQ-MOTION-046 shows the dead allies as cards in the order of the state with the most dead, the other videos as rows', () => {
-    const html = render('v:dead-10916+dead-10115', list)
-    expect([...html.matchAll(/data-dead="(\d+)"/g)].map(m => m[1])).toEqual(ids)
-    expect(html).toMatch(/aria-pressed="true"[^>]*data-dead="10916"/)
-    expect(html).toMatch(/aria-pressed="false"[^>]*data-dead="11115"/)
-    expect(html).toContain('최고 상태')
-    expect(html).not.toContain('>x<')
-  })
-
-  it('REQ-MOTION-046 turns a card on or off by opening the state with that set of dead, base with none', () => {
-    expect(toggleDeadState(list, 'v:dead-10916', '10115')).toBe('v:dead-10916+dead-10115')
-    expect(toggleDeadState(list, 'v:dead-10916+dead-10115', '10916')).toBe('v:dead-10115')
-    expect(toggleDeadState(list, 'v:dead-10916', '10916')).toBe('v:base')
-    expect(toggleDeadState(list, 'v:best-3', '10115')).toBe('v:dead-10115')
-    expect(toggleDeadState(list, 'v:dead-10916', '10614')).toBeUndefined()
+  it('REQ-MOTION-046 lists the dead allies as rows with their faces', () => {
+    const list = [state('v:base', '기본'), state('v:dead-1', '아비 사망', { dead: [person('10115', '이상')] }), state('v:dead-all', '4명 사망', { dead: [person('10115', '이상'), person('10916', '로쟈')] })]
+    const html = render('v:dead-all', list)
+    expect(html).toMatch(/aria-pressed="true"[^>]*data-scenario="v:dead-all"/)
+    expect(html).toContain('/p/10916.webp')
   })
 
   const voice = (id: string): VoiceLink => ({ id, identities: ['10315'], main: '10315', partners: [], dead: [], when: 'roundStart', label: `대사 ${id}`, labelEn: `Line ${id}`, cues: [], pools: [], seconds: 3 })

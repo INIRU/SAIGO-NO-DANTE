@@ -2914,14 +2914,12 @@
     "volumeMaster": "Master",
     "volumeVoice": "Voice",
     "volumeSfx": "Effects",
-    "deadAllies": "Fallen allies",
     "pendingTitle": "Motion in progress",
     "pendingBody": "Each motion is built by recording and analyzing in-game footage, so it takes at least 5 days to 2 weeks.",
     "scenarios": "Scenarios",
     "identities": "Identities",
     "egos": "E.G.O",
     "skillInfo": "Skill info",
-    "voiceLines": "Link lines",
     "copyLink": "Copy link",
     "linkCopied": "Link copied",
     "copyLinkFailed": "Could not copy the link.",
@@ -2938,7 +2936,11 @@
       "resonance": "Resonance",
       "dead": "Death",
       "break": "Stagger"
-    }
+    },
+    "awaken": "Awakening",
+    "erode": "Corrosion",
+    "normal": "Normal",
+    "scenarioNumber": "Scenario {n}"
   },
   "licensesPage": {
     "title": "Licenses",

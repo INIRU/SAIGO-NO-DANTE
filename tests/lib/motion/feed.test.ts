@@ -45,3 +45,27 @@ describe('REQ-MOTION-042 the site data of the E.G.O', () => {
     expect(site.identities[0]).toMatchObject({ game_id: '10216', rarity: 3, folder_name: 'Dawn', sinner_name: 'Faust' })
   })
 })
+
+describe('REQ-MOTION-015 a skill id another identity borrows', () => {
+  const row = (game_id: string, name: string) => ({ name, identity: { game_id } })
+
+  it('REQ-MOTION-015 reads the rows of the identity the id belongs to, whatever the other rows are', async () => {
+    const { ownSkillRows } = await import('@/lib/motion/feed')
+    const own = row('10113', '대상 조정 사격'), borrowed = row('10412', '쏘아내겠소 / 언제든지')
+    expect(ownSkillRows([borrowed, own], 1011303)).toEqual([own])
+    // The uptie 4 id and an identity list of one both count.
+    expect(ownSkillRows([{ name: 'a', identity: [{ game_id: '10113' }] }, borrowed], 1011303).map(r => r.name)).toEqual(['a'])
+    // No row of its own: what there is.
+    expect(ownSkillRows([borrowed], 1011303)).toEqual([borrowed])
+  })
+})
+
+describe('REQ-MOTION-042 the skill card of an E.G.O skill', () => {
+  it('REQ-MOTION-042 shapes the highest construe row like an identity skill, in the page language', async () => {
+    const { egoSkillRow } = await import('@/lib/motion/feed')
+    const row = (construe_level: number) => ({ id: 'x', name: '구멍', name_en: 'Le Trou', name_jp: null, skill_type: 'pierce', sin_affinity: 'pride', coins: 1, base_power: 5, coin_power: 5, description: '설명', description_en: 'Text', description_jp: null, skill_order: 1, atk_weight: 1, offense_level: 60, construe_level, coin_list: [], category: 'awakening', ego: { sinner_id: 'faust', game_id: '20211' } })
+    expect(egoSkillRow([row(1), row(4)], 'en')).toMatchObject({ name: 'Le Trou', description: 'Text', atk_type: 'pierce', skill_order: 3, uptie_level: 4, image_id: null, identity: { sinner_id: 'faust', game_id: '20211', keywords: null } })
+    expect(egoSkillRow([row(1)], 'ja')).toMatchObject({ name: '구멍', description: '설명' })
+    expect(egoSkillRow([], 'ko')).toBeNull()
+  })
+})

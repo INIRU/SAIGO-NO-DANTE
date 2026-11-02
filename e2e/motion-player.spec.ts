@@ -13,16 +13,18 @@ async function closeAnnouncements(page: Page) {
   await page.addLocatorHandler(popup, async () => { await popup.getByRole('button', { name: '닫기' }).last().click() })
 }
 
-async function open(page: Page) {
+async function open(page: Page, address = SKILL) {
   await closeAnnouncements(page)
   // The asset host answers another origin's CORS header now and then (an edge-cached response): allow this one.
   await page.route('https://assets.saigo-no-dante.com/**', async route => {
+    // (The videos go straight: a seek needs range requests.)
+    if (route.request().url().endsWith('.mp4')) return route.continue()
     try {
       const response = await route.fetch()
       await route.fulfill({ response, headers: { ...response.headers(), 'access-control-allow-origin': '*' } })
     } catch { /* the test ended while a sound file was still loading */ }
   })
-  await page.goto(SKILL)
+  await page.goto(address)
   await page.getByRole('button', { name: '확인' }).click()
   await expect(page.getByRole('button', { name: '일시정지' })).toBeEnabled({ timeout: 30000 })
 }
@@ -44,25 +46,45 @@ test('REQ-MOTION-021 another condition starts from the first frame', async ({ pa
   await open(page)
   await page.getByRole('button', { name: '일시정지' }).click()
   await page.getByRole('slider', { name: '프레임' }).fill('120')
-  await page.getByRole('button', { name: '기본', exact: true }).click()
-  await expect(page).toHaveURL(/state=v%3Abase|state=v:base/)
+  await page.locator('[data-scenario="v:b-DriftingDimensionYisang-1"]').click()
+  await expect(page).toHaveURL(/state=v(%3A|:)b-DriftingDimensionYisang-1/)
   await expect(page.getByRole('button', { name: '일시정지' })).toBeEnabled({ timeout: 30000 })
   expect(await frameOf(page)).toBeLessThan(30)
 })
 
-test('REQ-MOTION-024 a sinner tab seen once comes back as it was, without loading its portraits again', async ({ page }) => {
+test('REQ-MOTION-024 a sinner tab seen once comes back as it was, without loading its cards again', async ({ page }) => {
   await closeAnnouncements(page)
-  await page.goto(SKILL)
-  const picker = page.locator('aside').first()
-  const tabs = picker.getByRole('tab')
-  const portrait = () => picker.locator('ul:visible li img').first()
-  await expect(portrait()).toBeVisible({ timeout: 30000 })
-  expect(await portrait().getAttribute('loading')).toBe('eager')
-  await portrait().evaluate(img => { (img as HTMLImageElement & { seen?: boolean }).seen = true })
+  await page.goto('/ko/motion/skills')
+  const tabs = page.getByRole('tablist', { name: '수감자' }).getByRole('tab')
+  const card = () => page.locator('main ul:visible li img').first()
+  await expect(card()).toBeVisible({ timeout: 30000 })
+  await card().evaluate(img => { (img as HTMLImageElement & { seen?: boolean }).seen = true })
   await tabs.nth(1).click()
   await expect(tabs.nth(1)).toHaveAttribute('aria-selected', 'true')
   await tabs.nth(0).click()
-  expect(await portrait().evaluate(img => (img as HTMLImageElement & { seen?: boolean }).seen ?? false), 'the same image element, not a new one').toBe(true)
+  expect(await card().evaluate(img => (img as HTMLImageElement & { seen?: boolean }).seen ?? false), 'the same image element, not a new one').toBe(true)
+})
+
+test('REQ-MOTION-043 a card of the picking page opens the watching page, and the way back keeps the sinner and tab', async ({ page }) => {
+  await closeAnnouncements(page)
+  await page.goto('/ko/motion/skills?tab=ego')
+  await page.locator('main ul:visible a').first().click()
+  await expect(page).toHaveURL(/\/motion\/skills\/watch\?skill=ego-/, { timeout: 30000 })
+  await page.getByRole('button', { name: '확인' }).click()
+  await expect(page.getByRole('button', { name: '일시정지' })).toBeEnabled({ timeout: 30000 })
+  await page.getByRole('link', { name: '뒤로' }).click()
+  await expect(page).toHaveURL(/\/motion\/skills\?.*tab=ego/)
+})
+
+test('REQ-MOTION-045 the old single-page address goes to the watching page with its query', async ({ request }) => {
+  const response = await request.get('/ko/motion/skills?skill=id10116~1011601&state=v:base', { maxRedirects: 0 })
+  expect(response.status()).toBe(308)
+  expect(response.headers().location).toContain('/ko/motion/skills/watch?skill=id10116~1011601')
+})
+
+test('REQ-MOTION-041 the timeline is cut at the chapters of the real video and carries its marks', async ({ page }) => {
+  await open(page)
+  await expect(page.locator('[data-mark]').first()).toBeAttached({ timeout: 30000 })
 })
 
 test('REQ-MOTION-025 coming back to the page, the sound is off and the volume panel holds the volumes set before', async ({ page }) => {
@@ -100,48 +122,55 @@ test('REQ-MOTION-030 the sounds come from the shared library and the play rules 
   await expect.poll(() => asked.some(path => /^\/(sfx|voices)\/.+\.m4a$/.test(path)), { timeout: 15000 }).toBe(true)
   expect(asked).toContain('/sound_rules.json')
   await page.getByRole('button', { name: '음량' }).click()
-  await expect(page.getByRole('switch', { name: '치명타 소리' })).toBeVisible()
+  await expect(page.getByRole('switch')).toHaveCount(0)
 })
 
-test('REQ-MOTION-032 in the sound tail past the last picture frame, nothing is drawn again and the last frame stays', async ({ page }) => {
-  // Count the frames the compositor uploads, and keep the page's (off-document) video at hand.
+test('REQ-MOTION-040 past the last frame of a video with a tail the picture and the counter stay, and it still reads as playing', async ({ page }) => {
   await page.addInitScript(() => {
     const w = window as unknown as { uploads: number; media: HTMLMediaElement }
     w.uploads = 0
     const upload = WebGL2RenderingContext.prototype.texImage2D
     WebGL2RenderingContext.prototype.texImage2D = function (this: WebGL2RenderingContext, ...args: unknown[]) { w.uploads++; return (upload as (...a: unknown[]) => void).apply(this, args) } as typeof upload
-    const property = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, 'muted')!
-    Object.defineProperty(HTMLMediaElement.prototype, 'muted', { configurable: true, get() { return property.get!.call(this) },
-      set(value) { w.media = this; property.set!.call(this, value) } })
+    const create = document.createElement.bind(document)
+    document.createElement = ((tag: string) => { const element = create(tag); if (tag === 'video') w.media = element as HTMLMediaElement; return element }) as typeof document.createElement
   })
-  await open(page)
-  const slider = page.getByRole('slider', { name: '프레임' })
-  const last = Number(await slider.getAttribute('max'))
-  await slider.fill(String(last))
+  // (Not through open(): a routed page cannot seek a video.)
+  await closeAnnouncements(page)
+  await page.goto('/ko/motion/skills/watch?skill=ego-faust~2021112&state=v:base')
+  await page.getByRole('button', { name: '확인' }).click()
+  await expect(page.getByRole('button', { name: '일시정지' })).toBeEnabled({ timeout: 30000 })
+  await page.evaluate(() => { const v = (window as unknown as { media: HTMLMediaElement }).media; v.currentTime = v.duration - 0.2 })
+  await expect.poll(() => page.evaluate(() => (window as unknown as { media: HTMLMediaElement }).media.ended), { timeout: 30000 }).toBe(true)
+  const last = Number(await page.getByRole('slider', { name: '프레임' }).getAttribute('max'))
   await expect.poll(() => frameOf(page)).toBe(last)
-  await page.waitForTimeout(500)
+  await expect(page.getByRole('button', { name: '일시정지' })).toBeVisible()
   const before = await page.evaluate(() => (window as unknown as { uploads: number }).uploads)
-  // Into the tail: the video's time at or past frames / fps (its length is the sound's).
-  await page.evaluate(n => new Promise<void>(resolve => {
-    const v = (window as unknown as { media: HTMLMediaElement }).media
-    v.addEventListener('seeked', () => resolve(), { once: true })
-    v.currentTime = Math.min(v.duration, (n + 1) / 60 + 0.001)
-  }), last)
-  await page.waitForTimeout(300)
+  await page.waitForTimeout(1500)
   expect(await page.evaluate(() => (window as unknown as { uploads: number }).uploads)).toBe(before)
   expect(await frameOf(page)).toBe(last)
 })
 
-test('REQ-MOTION-046 공간참 - 잔 opens with the four 아비 dead, and a card turned off opens the state without that one', async ({ page }) => {
+test('REQ-MOTION-037 the real sound files decode and start when the sound is turned on', async ({ page }) => {
+  await page.addInitScript(() => {
+    const w = window as unknown as { started: number }
+    w.started = 0
+    const start = AudioBufferSourceNode.prototype.start
+    AudioBufferSourceNode.prototype.start = function (this: AudioBufferSourceNode, ...args: Parameters<typeof start>) { w.started++; return start.apply(this, args) }
+  })
+  await open(page, '/ko/motion/skills/watch?skill=ego-faust~2021112')
+  await page.getByRole('button', { name: '소리 켜기' }).click()
+  await expect.poll(() => page.evaluate(() => (window as unknown as { started: number }).started), { timeout: 20000 }).toBeGreaterThan(0)
+})
+
+test('REQ-MOTION-046 공간참 - 잔 lists the dead allies as scenarios and opens the one pressed', async ({ page }) => {
   await closeAnnouncements(page)
   await page.goto('/ko/motion/skills/watch?skill=id10415~1041507')
   await page.getByRole('button', { name: '확인' }).click()
-  const cards = page.locator('[data-dead]')
-  await expect(cards).toHaveCount(4, { timeout: 30000 })
-  for (const card of await cards.all()) await expect(card).toHaveAttribute('aria-pressed', 'true')
-  await page.locator('[data-dead="11115"]').click()
-  await expect(page).toHaveURL(/state=v(%3A|:)dead-10916(%2B|\+)dead-10115(%2B|\+)dead-10614/)
-  await expect(page.locator('[data-dead="11115"]')).toHaveAttribute('aria-pressed', 'false')
+  const all = page.locator('[data-scenario="v:dead-all"]')
+  await expect(all).toBeVisible({ timeout: 30000 })
+  await all.click()
+  await expect(page).toHaveURL(/state=v(%3A|:)dead-all/)
+  await expect(all).toHaveAttribute('aria-pressed', 'true')
 })
 
 test('REQ-MOTION-046 an identity with link lines has their sound buttons in its link section', async ({ page }) => {

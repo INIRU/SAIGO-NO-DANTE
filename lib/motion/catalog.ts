@@ -1,4 +1,5 @@
-import { LCB_IDS, SINNER_SLUGS } from '@/lib/constants/game'
+import { SINNER_SLUGS } from '@/lib/constants/game'
+import { getKeywordIconUrl } from '@/lib/constants/keywords'
 import { getIdentityPortraitUrl } from '@/lib/utils/images'
 import type { GameTextRefNames } from '@/lib/db/game-text-refs'
 
@@ -31,6 +32,8 @@ export type MotionEntry = {
   members?: string[]
   linkSkillIds?: number[]
   linkMax?: boolean
+  /** The buffs this video was recorded with. */
+  conditions?: { keyword: string; stack?: number; target?: boolean }[]
   /** 공간참 - 잔 (id10415 · 1041507): the 거미집 아비 dead in this state (`v:dead-<id>[+dead-<id>…]`), in the game's order. */
   deadAllies?: string[]
   /** Skill names in English and Japanese, for a skill the site has no row for. */
@@ -52,7 +55,9 @@ export type MotionLink = { id: string; partners: MotionPartner[]; max: boolean }
  * One video of a skill as the page needs it (frame count, fps and sound are read from its layers.json when it loads).
  * `dead`: the 아비 dead in a 공간참 - 잔 state.
  */
-export type MotionState = Pick<MotionEntry, 'state' | 'name' | 'video' | 'meta'> & { label: string; bytes: number; link?: MotionLink; dead?: MotionPartner[] }
+/** A buff a video was recorded with, written from the site's keyword table. */
+export type MotionCondition = { name: string; icon: string | null; stack: string | null }
+export type MotionState = Pick<MotionEntry, 'state' | 'name' | 'video' | 'meta'> & { label: string; bytes: number; link?: MotionLink; dead?: MotionPartner[]; conditions?: MotionCondition[]; ally?: MotionPartner; /** What the labelKey says besides the conditions, in the page language. */ extras?: string[] }
 /** The game frame a skill's sprite sits in: its sin, its slot (1–3, 4 for a defense) and its attack type badge. */
 export type MotionSkillFrame = { sin: string; slot: number; attack: 'slash' | 'pierce' | 'blunt' | null }
 /**
@@ -79,40 +84,56 @@ export type MotionIdentityInfo = { id: string; name: string; sinner_id: string; 
 // R2 folders (and link slugs) spell the sinners without hyphens.
 const R2_SINNERS: Record<string, string> = Object.fromEntries(SINNER_SLUGS.map(id => [id.replace(/-/g, ''), id]))
 
-/**
- * The site's sinner id of an entry: its folder (`<sinner>/ego/…` for an E.G.O too); for a link (`links/…`) the sinner its
- * slug ends with, else the sinner whose identities' game ids start like the skill id (1041206 → 104… → Ryōshū).
- */
-export function motionSinnerId(entry: Pick<MotionEntry, 'slug' | 'video' | 'skillId'>): string | null {
-  const folder = entry.video.split('/')[0]
-  if (R2_SINNERS[folder]) return R2_SINNERS[folder]
-  const tail = entry.slug.split('-').at(-1) ?? ''
-  if (R2_SINNERS[tail]) return R2_SINNERS[tail]
-  return Object.entries(LCB_IDS).find(([, gameId]) => String(entry.skillId).startsWith(gameId.slice(0, 3)))?.[0] ?? null
+/** The site's sinner id of an entry: its folder (`<sinner>/<identity>/…`, `<sinner>/ego/…`). */
+export function motionSinnerId(entry: Pick<MotionEntry, 'video'>): string | null {
+  return R2_SINNERS[entry.video.split('/')[0]] ?? null
 }
 
 const pick = (lang: string, ko: string, en: string, ja: string) => lang === 'en' ? en : lang === 'ja' ? ja : ko
 // The order the index asks for: 기본, the conditions, the best states.
-const isBase = (state: string) => state === 'v:base'
-const isTop = (state: string) => /^v:best/.test(state)
+export const isBase = (state: string) => state === 'v:base'
+export const isTop = (state: string) => /^v:best/.test(state)
 const stateRank = (state: string) => isBase(state) ? 0 : isTop(state) ? 2 : 1
 
+// The index's word tokens in a labelKey, in the page language.
+const LABEL_WORDS: Record<string, [ko: string, en: string, ja: string]> = {
+  ally: ['아군', 'Ally', '味方'], break: ['흐트러짐', 'Stagger', '混乱'], coin: ['코인', 'Coin', 'コイン'], 'coin:last': ['마지막 코인', 'Last Coin', '最後のコイン'], count: ['횟수', 'Count', '回数'],
+  crit: ['치명타', 'Critical Hit', 'クリティカル'], cutin: ['컷인', 'Cut-in', 'カットイン'], dead: ['사망', 'Death', '死亡'], form: ['변신', 'Transformation', '変身'], hp: ['체력', 'HP', 'HP'],
+  kill: ['처치', 'Kill', '撃破'], resonance: ['공명', 'Resonance', '共鳴'], reuse: ['재사용', 'Reuse', '再使用'], sp: ['정신력', 'SP', 'SP'], speed: ['속도', 'Speed', '速度'],
+  target: ['대상', 'Target', '対象'], under: ['이하', 'or less', '以下'], weight: ['가중치', 'Weight', 'ウェイト'],
+}
+const labelWord = (token: string, lang: string): string | null => {
+  const words = LABEL_WORDS[token]
+  if (words) return pick(lang, ...words)
+  const [, name, n] = /^([a-z]+):(\d+)$/.exec(token) ?? []
+  if (name === 'part') return pick(lang, `${n}부`, `Part ${n}`, `第${n}部`)
+  return name && LABEL_WORDS[name] ? `${pick(lang, ...LABEL_WORDS[name])} ${n}` : null
+}
+
 /**
- * A `labelKey` in the page language: `[Keyword] stack` from the site's keyword table (game_text_refs), `<i:id>` an
- * identity's name, parts joined by ` + `. Null when a part cannot be resolved or holds the index's word tokens
- * (`<count>`, `<up>`, `<coin:1>`…): the index writes those sentences itself (label, labelEn, labelJa), and the caller
- * uses them.
+ * A `labelKey` in the page language: `[Keyword]` from the site's keyword table (game_text_refs), `<i:id>` an identity's
+ * name, the other tokens from LABEL_WORDS; numbers and separators stay as they are. Null when a token cannot be resolved:
+ * the caller then uses the index's sentence.
  */
-export function formatMotionLabelKey(key: string, refs: GameTextRefNames | null | undefined, identityName: (gameId: string) => string | undefined): string | null {
-  const parts = key.split(' + ').map(part => {
-    const identity = /^<i:(\d+)>$/.exec(part.trim())
-    if (identity) return identityName(identity[1]) ?? null
-    // A stack is a number or a range (10~19, 50%); a word token (<stage:2>, <up>…) leaves the key to the label sentence.
-    const keyword = /^\[([^\]]+)\](?:\s+([\d.~%-]+))?$/.exec(part.trim())
-    const name = keyword ? refs?.[keyword[1]]?.n : undefined
-    return name ? (keyword![2] ? `${name} ${keyword![2]}` : name) : null
+export function formatMotionLabelKey(key: string, refs: GameTextRefNames | null | undefined, identityName: (gameId: string) => string | undefined, lang = 'ko'): string | null {
+  let whole = true
+  const text = key.replace(/\[([^\]]+)\]|<([^>]+)>/g, (_, keyword: string | undefined, token: string) => {
+    const identity = /^i:(\d+)$/.exec(token ?? '')
+    const word = keyword ? refs?.[keyword]?.n : identity ? identityName(identity[1]) : labelWord(token, lang)
+    if (!word) whole = false
+    return word ?? ''
   })
-  return parts.every(Boolean) ? parts.join(' + ') : null
+  return whole ? text : null
+}
+
+/** The parts of a labelKey the conditions and the faces do not already show, in the page language; a part that cannot be written is left out. */
+function labelExtras(entry: Pick<MotionEntry, 'labelKey' | 'conditions'>, refs: GameTextRefNames | null | undefined, identityName: (gameId: string) => string | undefined, lang: string): string[] {
+  const shown = new Set(entry.conditions?.map(condition => condition.keyword))
+  return (entry.labelKey ?? '').split(/\s[+·]\s/).flatMap(part => {
+    if (part.includes('<i:') || [...part.matchAll(/\[([^\]]+)\]/g)].some(m => shown.has(m[1]))) return []
+    const text = formatMotionLabelKey(part, refs, identityName, lang)
+    return text ? [text] : []
+  })
 }
 
 /** What a state's labelKey needs: the keyword names and the identity names, both in the page language. */
@@ -124,9 +145,9 @@ export type MotionLabelContext = { refs?: GameTextRefNames | null; identityName?
  * the name's brackets (the index renames states; a skill name can hold brackets).
  */
 export function motionStateLabel(entry: Pick<MotionEntry, 'state' | 'name' | 'label' | 'labelEn' | 'labelJa' | 'labelKey' | 'linkMax'>, lang: string, context: MotionLabelContext = {}): string {
-  const keyed = entry.labelKey ? formatMotionLabelKey(entry.labelKey, context.refs, context.identityName ?? (() => undefined)) : null
+  const keyed = entry.labelKey ? formatMotionLabelKey(entry.labelKey, context.refs, context.identityName ?? (() => undefined), lang) : null
   if (keyed) {
-    if (!entry.labelKey!.includes('<i:')) return keyed
+    if (!entry.state.startsWith('v:link')) return keyed
     return `${pick(lang, '연계', 'Link', '連携')}: ${keyed}${entry.linkMax ? ` (${pick(lang, '최대 상태', 'Max State', '最大状態')})` : ''}`
   }
   const own = (lang === 'en' ? entry.labelEn : lang === 'ja' ? entry.labelJa : undefined)?.trim()
@@ -134,20 +155,9 @@ export function motionStateLabel(entry: Pick<MotionEntry, 'state' | 'name' | 'la
   return entry.label?.trim() || entry.state
 }
 
-/** The state a skill opens on: every 아비 dead (공간참 - 잔), else its best state, else base, else the first. */
+/** The state a skill opens on: its best state, else base, else the first. */
 export function defaultMotionState(skill: Pick<MotionSkill, 'states'>): string {
-  return (mostDead(skill.states) ?? skill.states.find(s => isTop(s.state)) ?? skill.states.find(s => isBase(s.state)) ?? skill.states[0])?.state ?? ''
-}
-
-/** The state with the most 아비 dead: its order is the cards' order. */
-export const mostDead = (states: readonly MotionState[]) => states.reduce<MotionState | undefined>((best, s) => (s.dead?.length ?? 0) > (best?.dead?.length ?? 0) ? s : best, undefined)
-
-/** The state a 아비 card opens when pressed: the current dead with that one turned on or off (base with none); undefined when the index has no such video. */
-export function toggleDeadState(states: readonly MotionState[], current: string, gameId: string): string | undefined {
-  const dead = new Set(states.find(s => s.state === current)?.dead?.map(d => d.gameId))
-  if (!dead.delete(gameId)) dead.add(gameId)
-  if (!dead.size) return states.find(s => isBase(s.state))?.state
-  return states.find(s => s.dead?.length === dead.size && s.dead.every(d => dead.has(d.gameId)))?.state
+  return (skill.states.find(s => isTop(s.state)) ?? skill.states.find(s => isBase(s.state)) ?? skill.states[0])?.state ?? ''
 }
 
 // The address names a skill as "<slug>~<skill id>" ("|" of the internal key reads badly in a URL).
@@ -165,14 +175,20 @@ export function findMotionSkill(sinners: readonly MotionSinner[], param: string)
 export type MotionChapterWords = { skill: string; form: string; cutin: string; coin: string; reuse: string; part: string; weight: string; sp: string; resonance: string; dead: string; break: string }
 
 /**
- * A chapter's name on the seek bar, from its token: `<s:id>` the skill's name, `<coin:N>`, `<part:N>`, `<form>`, `<cutin>`,
+ * A chapter's name on the seek bar, from its token: `<s:id>` that skill's name (a cut-in runs an ally's skill), `<coin:N>`, `<part:N>`, `<form>`, `<cutin>`,
  * `<weight>`, `<sp>`, `<resonance>`, `<dead>`, `<break>` from the words. A token it does not know takes the general name
  * of the chapter's kind.
  */
-export function motionChapterLabel(chapter: { kind: string; key: string }, words: MotionChapterWords, skillName?: string): string {
+export function motionChapterLabel(chapter: { kind: string; key: string }, words: MotionChapterWords, skillName?: (skillId: number) => string | undefined): string {
   const [, name = '', n = ''] = /^<([a-z]+)(?::(\d+))?>$/.exec(chapter.key) ?? []
-  const word = name === 's' ? skillName || words.skill : name in words ? words[name as keyof MotionChapterWords] : words[chapter.kind as keyof MotionChapterWords] ?? chapter.key
+  const word = name === 's' ? skillName?.(Number(n)) || words.skill : name in words ? words[name as keyof MotionChapterWords] : words[chapter.kind as keyof MotionChapterWords] ?? chapter.key
   return word.replace('{n}', n).trim()
+}
+
+/** The ally a cut-in video runs a skill of: the first chapter's skill that is not the owner's, as an identity game id. */
+export function cutinAllyId(chapters: readonly { key: string }[] | undefined, ownerGameId: string | null): string | null {
+  const skill = chapters?.map(chapter => /^<s:(\d{7})>$/.exec(chapter.key)?.[1]).find(id => id && !id.startsWith(ownerGameId ?? ' '))
+  return skill?.slice(0, 5) ?? null
 }
 
 /** The video of a link at the chosen max (its other video when the index has only one). */
@@ -272,19 +288,26 @@ export function buildMotionCatalog(entries: readonly MotionEntry[], identities: 
     // A link with no one else (v:link-self) is a plain state.
     const partners = entry.members?.filter(id => id !== (entry.identityId ?? gameId)).map(person) ?? []
     const link: MotionLink | undefined = partners.length ? { id: partners.map(p => p.gameId).join('+'), partners, max: !!entry.linkMax } : undefined
+    const ally = /^v:with-(\d{5})/.exec(entry.state)
     const key = `${entry.slug}|${entry.skillId}`
     const title = skillNames.get(entry.skillId) || (lang === 'en' ? entry.nameEn : lang === 'ja' ? entry.nameJa : undefined)?.trim() || entry.name.replace(/ \[[^\]]+\]$/, '')
     let skill = owner.skills.find(s => s.key === key)
     if (!skill) {
       // An E.G.O skill sits in slot 3 of its sin's frame; an identity's frame is the site row of the skill.
-      const frame = isMotionEgo(owner) ? { sin: owner.sin ?? 'neutral', slot: 3, attack: null } : names.skillFrames?.get(entry.skillId) ?? null
-      owner.skills.push(skill = { key, skillId: entry.skillId, title, form, states: [], frame, ...(isMotionEgo(owner) && { erode: !!entry.erode }) })
+      const frame = names.skillFrames?.get(entry.skillId) ?? (isMotionEgo(owner) ? { sin: owner.sin ?? 'neutral', slot: 3, attack: null } : null)
+      owner.skills.push(skill = { key, skillId: entry.skillId, title, form: entry.ego ? (entry.erode ? 'erode' : null) : form, states: [], frame, ...(isMotionEgo(owner) && { erode: !!entry.erode }) })
     }
     if (isBase(entry.state)) skill.title = title
     skill.states.push({
       state: entry.state, label: motionStateLabel(entry, lang, labelContext), name: entry.name, video: entry.video, meta: entry.meta, bytes: entry.bytes ?? 0,
       ...(link && { link }),
       ...(entry.deadAllies?.length && { dead: entry.deadAllies.map(person) }),
+      ...(entry.conditions?.length && { conditions: entry.conditions.flatMap(condition => {
+        const ref = names.refs?.[condition.keyword]
+        return ref ? [{ name: condition.target ? `${labelWord('target', lang)} ${ref.n}` : ref.n, icon: ref.i ? getKeywordIconUrl(ref.kw ?? condition.keyword, ref.i) : null, stack: condition.stack == null ? null : String(condition.stack) }] : []
+      }) }),
+      ...(ally && { ally: person(ally[1]) }),
+      ...(entry.labelKey && { extras: labelExtras(entry, names.refs, labelContext.identityName!, lang) }),
     })
   }
   // A new identity of the site the index has no motion for yet: listed with no skills, so the page can say it is coming.
