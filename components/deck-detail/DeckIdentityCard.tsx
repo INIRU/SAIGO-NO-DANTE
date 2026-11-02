@@ -1,5 +1,6 @@
 'use client'
 
+import { identityAtLevel, MAX_IDENTITY_LEVEL } from '@/lib/identity/level'
 import { getEgoGradeBannerUrl } from '@/lib/utils/images'
 
 
@@ -84,6 +85,8 @@ export type IdentityDetail = {
   tier: number
   rarity: number
   hp: number | null
+  base_hp?: number | null
+  hp_per_level?: number | null
   speed_min: number | null
   speed_max: number | null
   def_level: number | null
@@ -276,6 +279,7 @@ export default function DeckIdentityCard({
   const { getIconUrl } = useKeywordData()
   const keywords = useKeywords()
   const id_ = slot.identities!
+  const atMaxLevel = identityAtLevel(id_, MAX_IDENTITY_LEVEL)
   // The keywords of this identity (its keyword list and what its own skills and passives reference): plain words of older text are searched among these.
   const ownTexts = useMemo(() => descriptionTexts(id_.skills, id_.passives), [id_.skills, id_.passives])
   const allowedKeywords = useOwnKeywords(id_.keywords, ownTexts)
@@ -375,10 +379,10 @@ export default function DeckIdentityCard({
 
           {/* 스탯 */}
           <div className="flex items-center gap-3 mb-2.5">
-            {id_.hp != null && (
+            {atMaxLevel.hp != null && (
               <span className="flex items-center gap-1" style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6875rem' }}>
                 <Image src={STAT_ICON_URL.hp} alt="HP" width={16} height={16} style={{ opacity: 0.9 }} />
-                <strong style={{ color: '#cc5050' }}>{id_.hp}</strong>
+                <strong style={{ color: '#cc5050' }}>{atMaxLevel.hp}</strong>
               </span>
             )}
             {id_.speed_min != null && id_.speed_max != null && (
@@ -387,10 +391,10 @@ export default function DeckIdentityCard({
                 <strong style={{ color: '#88a830' }}>{id_.speed_min}-{id_.speed_max}</strong>
               </span>
             )}
-            {id_.def_level != null && (
+            {atMaxLevel.def_level != null && (
               <span className="flex items-center gap-1" style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6875rem' }}>
                 <Image src={STAT_ICON_URL.def} alt="DEF" width={16} height={16} style={{ opacity: 0.9 }} />
-                <strong style={{ color: '#4898b0' }}>{id_.def_level}</strong>
+                <strong style={{ color: '#4898b0' }}>{atMaxLevel.def_level}</strong>
               </span>
             )}
           </div>
