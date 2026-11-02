@@ -171,8 +171,8 @@ describe('REQ-MOTION-038 a cue in its middle, a negative start, an end', () => {
     expect(sources[0].started).toEqual([[10, 0.5]])
   })
 
-  it('REQ-MOTION-038 stops at `end` on the audio clock with no fade of its own', async () => {
-    await setup(meta([cue({ start: 1, end: 1.5, mix: [[60, 1, 1], [90, 1, 1]] })]))
+  it('REQ-MOTION-038 stops at `end` on the audio clock, with no fade when the curve is down', async () => {
+    await setup(meta([cue({ start: 1, end: 1.5, mix: [[60, 1, 1], [90, 0, 0]] })]))
     play()
     expect(sources[0].stops).toHaveLength(1)
     expect(sources[0].stops[0]).toBeCloseTo(10.7)
@@ -181,7 +181,7 @@ describe('REQ-MOTION-038 a cue in its middle, a negative start, an end', () => {
 
   it('REQ-MOTION-038 repeats a loop cue shorter than its span, from the file offset modulo its length when started late', async () => {
     durations['sfx/loop.m4a'] = 1
-    await setup(meta([cue({ start: 1, end: 5, kind: 'loop', files: ['sfx/loop.m4a'], seconds: 4 })]))
+    await setup(meta([cue({ start: 1, end: 5, kind: 'loop', files: ['sfx/loop.m4a'], seconds: 4, mix: [[60, 1, 1], [300, 0, 0]] })]))
     play(3.25)                                       // 2.25 s into the cue: 0.25 into the third round
     const src = sources[0]
     expect(src.loop).toBe(true)
@@ -309,5 +309,26 @@ describe('REQ-MOTION-047 a sound file that is not on R2', () => {
     play()
     expect(sources).toHaveLength(1)
     decode.mockRestore()
+  })
+})
+
+describe('REQ-MOTION-038 a cue that ends', () => {
+  beforeEach(() => { vi.useFakeTimers() })
+  afterEach(() => { vi.useRealTimers() })
+
+  it('REQ-MOTION-038 fades a cue still sounding at its end over the game steal fade, instead of cutting it', async () => {
+    await setup(meta([cue({ end: 1.5, mix: [[60, 0.3, 0.3], [90, 0.3, 0.3]] })]))
+    play()
+    const [src] = sources, { steal } = chain(src)
+    expect(steal.gain.events.filter(e => e.kind === 'ramp').map(e => e.v)).toEqual([0])
+    const fadeStart = steal.gain.events.find(e => e.kind === 'set')!.t, fadeEnd = steal.gain.events.find(e => e.kind === 'ramp')!.t
+    expect(fadeEnd - fadeStart).toBeCloseTo(0.043, 3)
+    expect(src.stops.at(-1)).toBeCloseTo(fadeEnd, 6)
+  })
+
+  it('REQ-MOTION-038 adds no fade when the curve is already down at the end', async () => {
+    await setup(meta([cue({ end: 1.5, mix: [[60, 0.3, 0.3], [90, 0, 0]] })]))
+    play()
+    expect(chain(sources[0]).steal.gain.events).toEqual([])
   })
 })
