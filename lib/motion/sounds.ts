@@ -1,5 +1,5 @@
-// Every sound of a skill video, composed by Web Audio over its silent video. layers.json lists the cues; a cue's `mix` is its whole level: [frame, left, right] points holding the game's volume, the lowering
-// under a voice, the 3D distance and pan and the fade of a sound the game stopped. Besides it only the effects and voice options, the game's limits and the master act on a sound.
+// Every sound of a skill video over its silent video. layers.json lists the cues; a cue's `mix` is its whole level: [frame, left, right] points holding the game's volume, the lowering under a voice, the 3D
+// distance and pan and the fade of a sound the game stopped. All effects are mixed into one track and all voices into another before the play, so what sounds is the same every time, sample for sample.
 export interface SoundCue {
   start: number; files: string[]; seconds: number; kind?: "sfx" | "loop" | "voice"; d3?: boolean; event?: string; end?: number;
   /** [frame, left, right]: straight lines between the points, the first / last value outside them */
@@ -22,12 +22,13 @@ export type PlayCue = SoundCue & { file: string; cut?: number };
 /** The limiter AudioWorklet (public/motion-sfx-limiter.js): a same-origin file, as the CSP allows no blob: scripts. */
 export const LIMITER_URL = '/motion-sfx-limiter.js';
 
-const LOOK = 0.3;      // seconds of cues started ahead (a skill can hold a thousand: not all at once on a phone)
-const STEP_MS = 25;    // the scheduler's period
+const STEP_MS = 25;    // how often the player looks at the video
 const SAMPLE_RATE = 48000;
 const CUT_FADE = 0.043;
 const DEFAULT_VOLUME = 0.5;   // the page's volume at the start; 1 = the game's own loudness
-const MASTER_CEILING = 0.977, MASTER_RELEASE = 0.05;
+const MASTER_CEILING = 0.977;
+const DRIFT = 0.08;    // how far the picture may run from the sound before the tracks move to it
+const LEAD = 0.02;     // seconds ahead the tracks are started, so both begin on the same sample
 
 /** A cue's level at a frame: side 1 left, 2 right. */
 export function gainAt(mix: SoundCue["mix"], f: number, side: 1 | 2): number {
@@ -82,31 +83,77 @@ export function limitCues(cues: readonly PlayCue[], rules: Pick<SoundRules, "eve
   return out;
 }
 
-interface Buses { sfx2: GainNode; sfx3: GainNode; voice: GainNode; output: GainNode; page: GainNode; limiters: (AudioWorkletNode | null)[] }
+/** Where a cue stops sounding: its file, or sooner at `end` or a cut. */
+function cueStop(c: PlayCue, buffer: AudioBuffer) {
+  const looping = c.kind === "loop" && c.end !== undefined && buffer.duration < c.end - c.start;
+  const fileEnd = looping ? Infinity : c.start + buffer.duration;
+  return { looping, fileEnd, stop: Math.min(c.end ?? Infinity, c.cut !== undefined ? c.cut + CUT_FADE : Infinity, fileEnd) };
+}
 
-/**
- * 2D effects -> limiter, 3D effects -> limiter, voices with no limiter; the three summed -> the game's output -> the last
- * limiter -> the page's volume. The effects and voice options sit in front, so they multiply the mix.
- */
-function makeBuses(ctx: AudioContext, onLimiters: () => void): Buses {
-  const sum = ctx.createGain(), output = ctx.createGain(), page = ctx.createGain(), sfx2 = ctx.createGain(), sfx3 = ctx.createGain(), voice = ctx.createGain();
-  for (const bus of [sfx2, sfx3, voice]) bus.connect(sum);
+/** One cue on a track. How long it plays is its file; only `end` and a cut stop it sooner. */
+function addCue(ctx: BaseAudioContext, to: AudioNode, buffer: AudioBuffer, c: PlayCue, fps: number) {
+  const { looping, fileEnd, stop } = cueStop(c, buffer);
+  if (stop <= 0) return;
+  const begin = Math.max(0, c.start);                    // a negative start: the file's middle at video 0 s
+  const toTime = (f: number) => f / fps;
+  const src = ctx.createBufferSource();
+  src.buffer = buffer;
+  if (looping) { src.loop = true; src.loopEnd = buffer.duration; }
+  const split = ctx.createChannelSplitter(2), merge = ctx.createChannelMerger(2), left = ctx.createGain(), right = ctx.createGain();
+  src.connect(split);
+  split.connect(left, 0).connect(merge, 0, 0);
+  split.connect(right, buffer.numberOfChannels > 1 ? 1 : 0).connect(merge, 0, 1);
+  merge.connect(to);
+  const fromFrame = begin * fps, cutFrame = c.cut !== undefined ? c.cut * fps : undefined;
+  setCurve(left.gain, c.mix, 1, fromFrame, toTime, cutFrame);
+  setCurve(right.gain, c.mix, 2, fromFrame, toTime, cutFrame);
+  src.start(begin, begin - c.start);
+  if (stop < fileEnd) src.stop(stop);
+}
+
+const limiter = (ctx: BaseAudioContext, ceiling: number, release: number, to: AudioNode) => {
+  const n = new AudioWorkletNode(ctx, "sfx-limiter", { numberOfInputs: 1, numberOfOutputs: 1, outputChannelCount: [2], channelCount: 2, channelCountMode: "explicit", parameterData: { ceiling, release } });
+  n.connect(to);
+  return n;
+};
+
+/** Cues mixed down to one stereo track; with `limits`, the 2D and 3D effects each through the game's limiter. */
+async function mixTrack(cues: readonly PlayCue[], buffers: ReadonlyMap<string, AudioBuffer | null>, fps: number, limits?: SoundRules["limiter"]) {
+  const seconds = Math.max(0, ...cues.map((c) => cueStop(c, buffers.get(c.file)!).stop));
+  if (!seconds) return null;
+  const ctx = new OfflineAudioContext(2, Math.ceil(seconds * SAMPLE_RATE), SAMPLE_RATE);
+  let flat: AudioNode = ctx.destination, spatial: AudioNode = ctx.destination;
+  if (limits) {
+    try {
+      await ctx.audioWorklet.addModule(LIMITER_URL);
+      flat = limiter(ctx, limits.ceiling, limits.release, ctx.destination);
+      spatial = limiter(ctx, limits.ceiling3D, limits.release, ctx.destination);
+    } catch { /* no worklet: nothing is limited */ }
+  }
+  for (const c of cues) addCue(ctx, c.d3 ? spatial : flat, buffers.get(c.file)!, c, fps);
+  return ctx.startRendering();
+}
+
+interface Tracks { play: PlayCue[]; sfx: AudioBuffer | null; voice: AudioBuffer | null }
+interface Output { sfx: GainNode; voice: GainNode; output: GainNode; page: GainNode; last: AudioWorkletNode | null }
+
+/** The two tracks -> their options -> summed -> the game's output -> the last limiter -> the page's volume. */
+function makeOutput(ctx: AudioContext, onLimiter: () => void): Output {
+  const sum = ctx.createGain(), output = ctx.createGain(), page = ctx.createGain(), sfx = ctx.createGain(), voice = ctx.createGain();
+  sfx.connect(sum); voice.connect(sum);
   sum.connect(output).connect(page).connect(ctx.destination);
-  const buses: Buses = { sfx2, sfx3, voice, output, page, limiters: [null, null] };
+  const out: Output = { sfx, voice, output, page, last: null };
   void ctx.audioWorklet?.addModule(LIMITER_URL).then(() => {
-    const limiter = () => new AudioWorkletNode(ctx, "sfx-limiter", { numberOfInputs: 1, numberOfOutputs: 1, outputChannelCount: [2], channelCount: 2, channelCountMode: "explicit" });
-    [sfx2, sfx3].forEach((bus, k) => { const n = limiter(); bus.disconnect(); bus.connect(n); n.connect(sum); buses.limiters[k] = n; });
-    const last = limiter();
-    last.parameters.get("ceiling")!.value = MASTER_CEILING; last.parameters.get("release")!.value = MASTER_RELEASE;
-    output.disconnect(); output.connect(last); last.connect(page);
-    onLimiters();
+    out.last = limiter(ctx, MASTER_CEILING, 0.0052, page);
+    output.disconnect(); output.connect(out.last);
+    onLimiter();
   }).catch(() => { /* no worklet: nothing is limited */ });
-  return buses;
+  return out;
 }
 
 export class SoundPlayer {
   private ctx: AudioContext | null = null;
-  private buses: Buses | null = null;
+  private out: Output | null = null;
   private video!: HTMLVideoElement;
   private timer = 0;
   private muted = true;
@@ -122,22 +169,23 @@ export class SoundPlayer {
   private cues: SoundCue[] = [];
   private pools: SoundPoolMeta[] = [];
   private buffers = new Map<string, AudioBuffer | null>();
-  private play: PlayCue[] = [];
-  private next = 0;          // the first cue of `play` not started
+  private tracks: Tracks | null = null;
+  private spare: Tracks | null = null;   // the next play's draw, mixed ahead
   private live = new Set<AudioBufferSourceNode>();
+  private sounding = false;  // this clock's tracks have started
   private from = 0;          // the video time of the last start
   private at = 0;            // the context time of that video time
   private running = false;   // the clock runs: playing, or in the tail after the end
+  private waiting = false;   // playback started: the first frame's report starts the sound
+  private frame = 0;
   private over = false;      // the video reached its end: the next play is a new draw
   private last = 0;          // the last video time seen (a jump back = the loop wrapped)
-  /** test hook: every cue started */
-  log: { file: string; when: number; offset: number; start: number; opt?: number; kind?: string }[] = [];
 
   attach(video: HTMLVideoElement) {
     this.video = video;
     video.addEventListener("play", () => { if (this.over) { this.over = false; this.last = 0; this.draw(); } });
-    video.addEventListener("playing", () => this.sync());
-    video.addEventListener("seeked", () => { if (!video.paused) this.sync(); });
+    video.addEventListener("playing", () => this.start());
+    video.addEventListener("seeked", () => { if (!video.paused) this.start(); });
     // (At its end a video pauses: the sound runs on in the tail.)
     video.addEventListener("pause", () => { if (!video.ended) this.stop(); });
     video.addEventListener("ended", () => { this.over = true; });
@@ -148,6 +196,7 @@ export class SoundPlayer {
 
   dispose() {
     window.clearInterval(this.timer);
+    this.video?.cancelVideoFrameCallback?.(this.frame);
     this.stop();
     void this.ctx?.close();
     this.ctx = null;
@@ -163,41 +212,38 @@ export class SoundPlayer {
   /** the page's volume 0..1, after the last limiter */
   setVolume(v: number) { this.vol = Math.max(0, Math.min(1, v)); this.level(); }
   get volume() { return this.vol; }
-  /** the effects option 0..1: every effect cue, also those sounding now */
+  /** the effects option 0..1, on the effects track */
   setSfxVolume(v: number) { this.sfxOpt = Math.max(0, Math.min(1, v)); this.level(); }
   get sfxVolume() { return this.sfxOpt; }
-  /** the voice option 0..1 */
+  /** the voice option 0..1, on the voice track */
   setVoiceVolume(v: number) { this.voiceOpt = Math.max(0, Math.min(1, v)); this.level(); }
   get voiceVolume() { return this.voiceOpt; }
 
   private level() {
-    const b = this.buses;
-    if (!b) return;
-    b.output.gain.value = this.rules?.output ?? 1;
-    b.page.gain.value = this.muted ? 0 : this.vol;
-    b.sfx2.gain.value = b.sfx3.gain.value = this.sfxOpt;
-    b.voice.gain.value = this.voiceOpt;
+    const o = this.out;
+    if (!o) return;
+    o.output.gain.value = this.rules?.output ?? 1;
+    o.page.gain.value = this.muted ? 0 : this.vol;
+    o.sfx.gain.value = this.sfxOpt;
+    o.voice.gain.value = this.voiceOpt;
   }
 
   private make() {
     const AC = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
     const ctx = (this.ctx = new AC({ sampleRate: SAMPLE_RATE }));
-    this.buses = makeBuses(ctx, () => this.limits());
+    this.out = makeOutput(ctx, () => this.limits());
     this.level();
     // (A context that starts later: the clock is laid again from where the video is.)
-    ctx.onstatechange = () => { if (ctx.state === "running" && this.running && !this.video.ended) this.sync(); };
+    ctx.onstatechange = () => { if (ctx.state === "running" && this.running && !this.video.ended) this.start(); };
   }
 
   private limits() {
-    const r = this.rules?.limiter;
-    this.buses?.limiters.forEach((n, k) => {
-      if (!n) return;
-      n.parameters.get("ceiling")!.value = r ? (k === 0 ? r.ceiling : r.ceiling3D) : 1e6;
-      n.parameters.get("release")!.value = r ? r.release : 0.0052;
-    });
+    const release = this.rules?.limiter.release;
+    const n = this.out?.last;
+    if (n && release !== undefined) n.parameters.get("release")!.value = release;
   }
 
-  /** the state's sounds: the rules of the data root once, every file of `sounds`, then the first draw */
+  /** the state's sounds: the rules of the data root once, every file of `sounds`, then the tracks of the first draw */
   async load(root: string, m: SoundMeta) {
     const token = ++this.loading;
     this.stop();
@@ -205,7 +251,7 @@ export class SoundPlayer {
     this.fps = m.fps;
     this.cues = m.sounds ?? [];
     this.pools = m.soundPools ?? [];
-    this.play = []; this.log = []; this.over = false; this.last = 0;
+    this.tracks = this.spare = null; this.over = false; this.last = 0;
     if (this.buffers.size > 240) this.buffers.clear();
     if (!this.cues.length) return;
     if (!this.ctx) this.make();
@@ -228,35 +274,82 @@ export class SoundPlayer {
       } catch { this.buffers.set(f, null); }
     }));
     if (token !== this.loading) return;
-    this.draw();
-    if (!this.video.paused) this.sync();
+    const tracks = await this.mix();
+    if (token !== this.loading) return;
+    this.tracks = tracks;
+    this.mixAhead();
+    if (!this.video.paused) this.start();
   }
 
-  /** one play's cues: the draw, and the limit on what it drew */
-  private draw() {
-    this.play = limitCues(pickCues(this.cues, this.pools), this.rules, (c) => this.buffers.get(c.file)?.duration ?? 0);
+  /** one play: the draw, the limit on what it drew, and its two tracks */
+  private async mix(): Promise<Tracks> {
+    const play = limitCues(pickCues(this.cues, this.pools), this.rules, (c) => this.buffers.get(c.file)?.duration ?? 0).filter((c) => this.buffers.get(c.file));
+    const [sfx, voice] = await Promise.all([
+      mixTrack(play.filter((c) => c.kind !== "voice"), this.buffers, this.fps, this.rules?.limiter),
+      mixTrack(play.filter((c) => c.kind === "voice"), this.buffers, this.fps),
+    ]);
+    return { play, sfx, voice };
   }
-  /** a new draw (a test hook too) */
+
+  /** The next play's tracks, while this one sounds; data with nothing random has only the one. */
+  private mixAhead() {
+    this.spare = null;
+    if (!this.pools.length && !this.cues.some((c) => c.files.length > 1)) return;
+    const token = this.loading;
+    void this.mix().then((t) => { if (token === this.loading) this.spare = t; });
+  }
+
+  /** a new play takes the tracks mixed ahead (a test hook too) */
+  private draw() { if (this.spare) { this.tracks = this.spare; this.mixAhead(); } }
   pickAll() { this.draw(); }
   /** the cues that sound in this play */
-  wanted(): PlayCue[] { return this.play; }
+  wanted(): PlayCue[] { return this.tracks?.play ?? []; }
+
+  /** the tracks stop; the clock goes on */
+  private silence() {
+    for (const src of this.live) { try { src.stop(); } catch { /* ended */ } }
+    this.live.clear();
+    this.sounding = false;
+  }
 
   /** everything stops */
   stop() {
-    for (const src of this.live) { try { src.stop(); } catch { /* ended */ } }
-    this.live.clear();
+    this.silence();
     this.running = false;
+    this.waiting = false;
   }
 
-  /** the clock from where the video is now: a sound comes out `latency` after it is started, so it is started that much ahead */
-  private sync() {
+  /** the context time at which what is started now comes out of the speakers */
+  private heard() {
+    const ctx = this.ctx!;
+    return ctx.currentTime - ((ctx as AudioContext & { outputLatency?: number }).outputLatency || ctx.baseLatency || 0);
+  }
+
+  /** Playback (re)starts: the sound waits for the first frame on screen, which a large video can show well after its event. */
+  private start() {
     this.stop();
-    const ctx = this.ctx;
-    if (!ctx) return;
-    const latency = (ctx as AudioContext & { outputLatency?: number }).outputLatency || ctx.baseLatency || 0;
-    this.from = this.video.currentTime;
-    this.at = ctx.currentTime - latency;
-    this.next = 0;
+    const v = this.video;
+    if (!v.requestVideoFrameCallback) { this.sync(v.currentTime, 0); return; }
+    v.cancelVideoFrameCallback(this.frame);
+    this.waiting = true;
+    const report = (_: number, md: VideoFrameCallbackMetadata) => {
+      const ahead = (md.expectedDisplayTime - performance.now()) / 1000;
+      if (this.waiting) this.sync(md.mediaTime, ahead);
+      else if (this.running && !v.ended && Math.abs(this.heard() + ahead - (this.at + md.mediaTime - this.from)) > DRIFT) { // a hard jump; a stalling video is already caught by `waiting`
+        this.sync(md.mediaTime, ahead);
+        this.sound();
+      }
+      if (!v.paused) this.frame = v.requestVideoFrameCallback(report);
+    };
+    this.frame = v.requestVideoFrameCallback(report);
+  }
+
+  /** the clock: video time `media` is on screen `ahead` seconds from now */
+  private sync(media: number, ahead: number) {
+    this.stop();
+    if (!this.ctx) return;
+    this.from = media;
+    this.at = this.heard() + ahead;
     this.running = true;
   }
 
@@ -264,41 +357,25 @@ export class SoundPlayer {
     const ctx = this.ctx;
     if (!ctx || ctx.state !== "running" || !this.running) return;
     const shown = this.video.currentTime;
-    if (!this.video.ended && shown < this.last - 0.5) { this.last = shown; this.draw(); this.sync(); } // the loop wrapped: a new play
+    if (!this.video.ended && shown < this.last - 0.5) { this.last = shown; this.draw(); this.start(); return; } // the loop wrapped: a new play
     this.last = shown;
-    const now = this.from + ctx.currentTime - this.at;
-    for (; this.next < this.play.length && this.play[this.next].start <= now + LOOK; this.next++) {
-      const c = this.play[this.next], buffer = this.buffers.get(c.file);
-      if (buffer === undefined) break;                     // still decoding: due again on the next step
-      if (buffer) this.playCue(buffer, c, now);            // (null: the file did not load - that cue stays silent)
-    }
+    if (!this.sounding) this.sound();
   }
 
-  /** A cue, from `now` at the latest. How long it plays is its file; only `end` and a cut stop it sooner. */
-  private playCue(buffer: AudioBuffer, c: PlayCue, now: number) {
-    const ctx = this.ctx!, b = this.buses!, fps = this.fps;
-    const looping = c.kind === "loop" && c.end !== undefined && buffer.duration < c.end - c.start;
-    const fileEnd = looping ? Infinity : c.start + buffer.duration, stop = Math.min(c.end ?? Infinity, c.cut !== undefined ? c.cut + CUT_FADE : Infinity, fileEnd);
-    if (stop <= now) return;                               // already over
-    const begin = Math.max(now, this.from, c.start);       // a negative start: the file's middle at video 0 s
-    const toTime = (f: number) => this.at + f / fps - this.from;
-    const src = ctx.createBufferSource();
-    src.buffer = buffer;
-    if (looping) { src.loop = true; src.loopEnd = buffer.duration; }
-    const split = ctx.createChannelSplitter(2), merge = ctx.createChannelMerger(2), left = ctx.createGain(), right = ctx.createGain();
-    src.connect(split);
-    split.connect(left, 0).connect(merge, 0, 0);
-    split.connect(right, buffer.numberOfChannels > 1 ? 1 : 0).connect(merge, 0, 1);
-    merge.connect(c.kind === "voice" ? b.voice : c.d3 ? b.sfx3 : b.sfx2);
-    const fromFrame = begin * fps, cutFrame = c.cut !== undefined ? c.cut * fps : undefined;
-    setCurve(left.gain, c.mix, 1, fromFrame, toTime, cutFrame);
-    setCurve(right.gain, c.mix, 2, fromFrame, toTime, cutFrame);
-    const when = this.at + begin - this.from, offset = looping ? (begin - c.start) % buffer.duration : begin - c.start;
-    src.start(when, offset);
-    if (stop < fileEnd) src.stop(this.at + stop - this.from);
-    this.live.add(src);
-    src.onended = () => { this.live.delete(src); src.disconnect(); split.disconnect(); left.disconnect(); right.disconnect(); merge.disconnect(); };
-    this.log.push({ file: c.file, when, offset, start: c.start, opt: c.option, kind: c.kind });
-    if (this.log.length > 1000) this.log.shift();
+  /** Both tracks from where the clock is, on one instant. */
+  private sound() {
+    const ctx = this.ctx!, o = this.out!, t = this.tracks;
+    if (!t) return;
+    const begin = Math.max(ctx.currentTime + LEAD, this.at), offset = this.from + begin - this.at;
+    this.sounding = true;
+    for (const [track, to] of [[t.sfx, o.sfx], [t.voice, o.voice]] as const) {
+      if (!track || offset >= track.duration) continue;
+      const src = ctx.createBufferSource();
+      src.buffer = track;
+      src.connect(to);
+      src.start(begin, offset);
+      this.live.add(src);
+      src.onended = () => { this.live.delete(src); src.disconnect(); };
+    }
   }
 }
