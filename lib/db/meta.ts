@@ -158,7 +158,7 @@ export async function getFormations(): Promise<Formation[]> {
     }
     return [{
       kind: post.source === 'decks' ? 'deck' as const : 'planner' as const, id: post.id, identities: ids, deployed, votes: post.votes ?? 0, views: post.views ?? 0,
-      createdAt: Date.parse(post.created_at), egos: equipped, ...(post.source === 'planner' ? { floors } : {}),
+      createdAt: Date.parse(post.created_at), ...(post.edited_at ? { editedAt: Date.parse(post.edited_at) } : {}), egos: equipped, ...(post.source === 'planner' ? { floors } : {}),
     }]
   })
 }

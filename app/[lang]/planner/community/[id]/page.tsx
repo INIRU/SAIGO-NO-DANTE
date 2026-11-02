@@ -77,7 +77,7 @@ async function fetchPlanDetailGameData() {
     db.from('ego_gift_themes').select('id, name, name_en, name_jp, ego_gift_ids, specific_ego_gift_ids, fixed_reward_gift_ids, image_url, difficulty, floor_info, name_color, name_segments'),
     db.from('ego_gifts').select(GIFT_COLUMNS).order('keyword').order('grade'),
     db.from('ego_gift_recipes').select(RECIPE_COLUMNS),
-    db.from('identities').select('id, sinner_id, name_kr, name_en, name_jp, tier, rarity, keywords, skill_keyword_list, affiliation, association_list, game_id, folder_name, hp, speed_min, speed_max, def_level, slash_res, pierce_res, blunt_res').order('rarity', { ascending: false }),
+    db.from('identities').select('id, sinner_id, name_kr, name_en, name_jp, tier, rarity, keywords, skill_keyword_list, affiliation, association_list, game_id, folder_name, hp, base_hp, hp_per_level, speed_min, speed_max, def_level, slash_res, pierce_res, blunt_res').order('rarity', { ascending: false }),
     db.from('sinners').select('id, name_kr, order_num').order('order_num'),
     db.from('ego').select('id, sinner_id, name_kr, name_en, name_jp, grade, sin_affinity, image_url, cost, game_id'),
     db.from('md_observation').select(OBSERVATION_COLUMNS).order('mirror_dungeon_id', { ascending: false }).limit(1).maybeSingle<ObservationRow>(),

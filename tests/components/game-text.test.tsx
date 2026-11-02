@@ -8,6 +8,10 @@ const REFS: GameTextRefNames = {
   Combustion: { k: 'keyword', n: '화상', kw: '화상' },
   Burst: { k: 'keyword', n: '폭발', kw: '폭발' },
   CalcValue: { k: 'keyword', n: '계산값' },
+  // Same name, two buffs: the game finds each one's art by id.
+  FullReload: { k: 'keyword', n: '재장전', kw: '재장전', i: 'game-FullReload' },
+  ReloadLament: { k: 'keyword', n: '재장전', kw: '재장전', i: 'game-ReloadLament' },
+  EnemyOnly: { k: 'keyword', n: '적 전용', i: 'game-EnemyOnly' },
   OnSucceedAttack: { k: 'skilltag', n: '[적중시]' },
   // The id and the label colour differ in the game's tables: the Force variant of "전투 시작시" is green, the label blue.
   StartBattle_Force: { k: 'skilltag', n: '[전투 시작시]' },
@@ -37,6 +41,7 @@ vi.mock('swr', () => ({
 const KEYWORDS: Record<string, KeywordInfo> = {
   화상: { desc: '', iconSlug: 'burn', effectType: 'negative' },
   폭발: { desc: '', iconSlug: 'burst' },
+  재장전: { desc: '', iconSlug: 'reload-2' },
 }
 
 type FormatOptions = Parameters<ReturnType<typeof useFormatSkillDesc>>[4]
@@ -46,6 +51,28 @@ function Formatter({ text, options }: { text: string; options?: FormatOptions })
 }
 const render = (text: string, options?: FormatOptions) =>
   renderToStaticMarkup(<KeywordProvider keywords={KEYWORDS}><Formatter text={text} options={options} /></KeywordProvider>)
+
+describe('REQ-KEYWORDS-011 buff icons in game text', () => {
+  it('REQ-KEYWORDS-011 draws two buffs of one name with their own files', () => {
+    const html = render('[FullReload] [ReloadLament]')
+    expect(html).toContain('game-FullReload.webp')
+    expect(html).toContain('game-ReloadLament.webp')
+    expect(html).not.toContain('reload-2')
+  })
+
+  it('REQ-KEYWORDS-011 falls back to keyword_meta without an icon of its own', () => {
+    expect(render('[Combustion]')).toContain('burn.webp')
+  })
+
+  it('REQ-KEYWORDS-011 draws the icon of a buff that has no keyword_meta row, and none without a file', () => {
+    expect(render('[EnemyOnly]')).toContain('game-EnemyOnly.webp')
+    expect(render('[CalcValue]')).not.toContain('icons/keywords')
+  })
+
+  it('REQ-KEYWORDS-011 a keyword written as a sprite uses the same icon', () => {
+    expect(render('<sprite name="ReloadLament">')).toContain('game-ReloadLament.webp')
+  })
+})
 
 describe('REQ-SHARED-019 game text rendering', () => {
   it('REQ-SHARED-019 draws underline, bold, italic and strikethrough from their tags, never the tags themselves', () => {
