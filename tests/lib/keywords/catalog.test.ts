@@ -1,6 +1,7 @@
 import { getGiftKeywordIconUrl } from '@/lib/constants/gift'
 import { describe, expect, it } from 'vitest'
 import { getKeywordIndex, getLocalizedKeywordIndex, type KeywordInfo } from '@/lib/keywords/catalog'
+import { STORAGE_BASE } from '@/lib/constants/game'
 import { getKeywordIconUrl } from '@/lib/constants/keywords'
 import { getGameUiAsset } from '@/lib/utils/game-ui'
 
@@ -11,11 +12,16 @@ const catalog: Record<string, KeywordInfo> = {
 }
 
 describe('shared keyword catalog indexes', () => {
-  it('uses the user-selected second sprite when a same-name source variant exists', () => {
-    for (const slug of ['nerve-strike-hong-lu', 'sealed-sword', 'concussion', 'solitude', 'shattermark']) {
-      expect(getKeywordIconUrl('name', slug)).toContain(`/icons/keywords/${slug}-2.webp`)
+  it('draws the Storage file named exactly by icon_slug', () => {
+    expect(getKeywordIconUrl('책임감', 'game-SadLamanchaland')).toBe(`${STORAGE_BASE}/icons/keywords/game-SadLamanchaland.webp`)
+    expect(getKeywordIconUrl('출혈', 'bleed')).toBe(`${STORAGE_BASE}/icons/keywords/bleed.webp`)
+    expect(getKeywordIconUrl('파괴 불가 코인', 'unbreakable-coin')).toBe(getGameUiAsset('coins/unbreakable'))
+    expect(getKeywordIconUrl('천퇴성[天退星]', 'tiantui-star')).toBe(getGameUiAsset('keywords/tiantui-star'))
+  })
+  it('never swaps icon_slug for another file', () => {
+    for (const slug of ['responsibility', 'prescript', 'prescript-device-i', 'nerve-strike-hong-lu', 'concussion', 'max-hp-up-2', 'when-rending-the-body-with-a-great-sword']) {
+      expect(getKeywordIconUrl('name', slug)).toBe(`${STORAGE_BASE}/icons/keywords/${slug}.webp`)
     }
-    expect(getKeywordIconUrl('name', 'prescript-paper-slip-i')).toContain('/prescript-2.webp')
   })
   it('shares bronze attack icons between gift filters and the keyword catalog', () => {
     for (const slug of ['slash', 'pierce', 'blunt']) expect(getGiftKeywordIconUrl(slug)).toBe(getGameUiAsset(`stats/${slug}`))
@@ -25,15 +31,7 @@ describe('shared keyword catalog indexes', () => {
       expect(getKeywordIconUrl('localized name', slug)).toMatch(new RegExp(`^/assets/game-ui/keywords/${slug}\\.webp\\?v=[a-f0-9]{12}$`))
     }
   })
-  it('reuses verified source URLs for localized prescript stages and shared bloodfeast', () => {
-    for (const slug of ['prescript-device-i', 'prescript-device-ii', 'index-prescript-don-2', 'prescript-device-iv']) {
-      expect(getKeywordIconUrl('지령', slug)).toBe(getKeywordIconUrl('Prescript', 'prescript-2'))
-    }
-    for (const slug of ['prescript-paper-slip-i', 'prescript-paper-slip-ii', 'index-prescript-faust-2', 'prescript-paper-slip-iv']) {
-      expect(getKeywordIconUrl('지령', slug)).toBe(getKeywordIconUrl('Prescript', 'prescript'))
-    }
-    expect(getKeywordIconUrl('Bloodfeast Consumed', 'bloodfeast-consumed')).toBe(getKeywordIconUrl('공용 누적 소모 혈찬', 'bloodfeast-consumed-shared'))
-    expect(getKeywordIconUrl('당연한 믿음', 'faith-beyond-question')).toBe(getKeywordIconUrl('ally', 'faith-beyond-question-2'))
+  it('returns no icon without icon_slug and no replacement for a missing source', () => {
     // A missing source must never silently acquire a similar-looking replacement.
     expect(getKeywordIconUrl('공격 레벨+', 'offense-level')).toContain('/offense-level.webp')
     expect(getKeywordIconUrl('unknown')).toBeNull()
@@ -83,33 +81,6 @@ it('legacy gift filter breath shares the verified Poise icon URL', () => {
   expect(getGiftKeywordIconUrl('general')).toBeNull()
 })
 
-
-it('prefers source suffix 2 in identity tooltips and nested mirror-dungeon icon folders', () => {
-  for (const slug of ['max-hp-up', 'nethersea-brand']) {
-    expect(getKeywordIconUrl('localized label', slug)).toContain(`/${slug}-2.webp`)
-    expect(getKeywordIconUrl('localized label', `${slug}-2`)).toContain(`/${slug}-2.webp`)
-  }
-})
-
-it('uses original artwork for all nine replica weapon keywords, including explicit variant inputs', () => {
-  const originals = [
-    'when-boring-a-20-inch-hole-with-a-lance',
-    'when-caving-in-the-back-of-the-skull-with-a-hammer',
-    'when-cleaving-through-the-shoulder-and-the-skull-with-a-bastard-sword',
-    'when-hacking-through-the-ribs-with-a-hatchet',
-    'when-lacerating-through-space-itself-with-a-scythe-like-a-certain-someone',
-    'when-penetrating-the-lungs-with-a-stiletto',
-    'when-punching-10-or-more-holes-in-the-torso-with-a-rapier',
-    'when-ripping-the-flesh-to-ten-thousand-strips-with-a-whip',
-    'when-rending-the-body-with-a-greatsword',
-  ]
-  for (const original of originals) {
-    for (const slug of [original, `${original}-2`]) {
-      expect(getKeywordIconUrl('localized weapon label', slug)).toContain(`/icons/keywords/${original}.webp`)
-    }
-  }
-  expect(getKeywordIconUrl('커다란 검으로 몸통을 갈라야 할 때는…', 'when-rending-the-body-with-a-great-sword')).toContain('/when-rending-the-body-with-a-greatsword.webp')
-})
 
 describe('game tag aliases', () => {
   it('reads a game tag from keyword_meta.game_id before the static aliases', () => {

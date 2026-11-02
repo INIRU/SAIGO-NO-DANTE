@@ -24,7 +24,7 @@ for (const width of [1440, 390]) {
         await card.scrollIntoViewIfNeeded()
         await expect.poll(()=>card.locator('img').evaluate((i:HTMLImageElement)=>i.complete&&i.naturalWidth>0)).toBe(true)
       }
-      await expect(cards.filter({has:page.getByText('점혈 - 홍루',{exact:true})}).locator('img')).toHaveAttribute('src',/nerve-strike-hong-lu-2\.webp/)
+      await expect(cards.filter({has:page.getByText('점혈 - 홍루',{exact:true})}).locator('img')).toHaveAttribute('src',/game-DianxueDonQuixote\.webp/)
       expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true)
       if(!visit){await page.goto('/ko');await page.goto(route)}
     }
