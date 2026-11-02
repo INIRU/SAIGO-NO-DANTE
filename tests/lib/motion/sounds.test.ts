@@ -356,6 +356,23 @@ describe('REQ-MOTION-047 a video that stops for buffering', () => {
   })
 })
 
+describe('REQ-MOTION-051 play rules an edge keeps as missing', () => {
+  it('REQ-MOTION-051 asks again past the cache, so the sound never goes on without the output and the limits', async () => {
+    const urls: string[] = []
+    vi.stubGlobal('fetch', vi.fn(async (url: string) => {
+      urls.push(url)
+      if (url.endsWith('/sound_rules.json')) return { ok: false, status: 404 }
+      return url.includes('sound_rules.json') ? { ok: true, json: async () => RULES } : { ok: true, arrayBuffer: async () => ({ url }) }
+    }))
+    player = new SoundPlayer(); video = new Video()
+    player.attach(video as unknown as HTMLVideoElement)
+    await player.load('https://r2/', meta([cue()]))
+    expect(urls.filter(u => u.includes('sound_rules.json'))).toHaveLength(2)
+    expect(gains.some(g => g.gain.value === 4)).toBe(true)
+    expect(limiters.filter(l => l.ctx instanceof Offline)).toHaveLength(2)
+  })
+})
+
 describe('REQ-MOTION-047 a sound file that is not on R2', () => {
   it('REQ-MOTION-047 stays silent and never decodes the error page', async () => {
     const decode = vi.spyOn(Ctx.prototype, 'decodeAudioData')

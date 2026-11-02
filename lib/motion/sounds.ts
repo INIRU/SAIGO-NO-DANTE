@@ -259,7 +259,14 @@ export class SoundPlayer {
     if (this.rulesRoot !== root) {
       this.rulesRoot = root;
       this.rules = null;
-      this.rulesLoad = (async () => { try { const r = await fetch(root + "sound_rules.json"); if (r.ok) this.rules = await r.json(); } catch { /* no rules: nothing is limited */ } })();
+      this.rulesLoad = (async () => {
+        try {
+          const url = root + "sound_rules.json";
+          let r = await fetch(url);
+          if (!r.ok) r = await fetch(`${url}?v=${Date.now()}`);   // (the edge keeps a copy per Origin, a 404 too: without the rules the mix is 12 dB low and unlimited)
+          if (r.ok) this.rules = await r.json();
+        } catch { /* no rules: nothing is limited */ }
+      })();
     }
     await this.rulesLoad;
     if (token !== this.loading) return;
