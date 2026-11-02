@@ -5,8 +5,11 @@ import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import type { SupportedLang } from '@/lib/i18n/types'
 import { flavorKeyOfKeyword } from '@/lib/game-text/flavor'
 
-/** What a `[Id]` of raw game text is, in one language: its kind, label and (keywords) the keyword_meta row it maps to. */
-export type GameTextRefName = { k: 'keyword' | 'skilltag'; n: string; kw?: string }
+/**
+ * What a `[Id]` of raw game text is, in one language: its kind, label and (keywords) the keyword_meta row it maps to.
+ * `i` is the buff's own icon file (game_text_refs.icon_slug); without one it draws keyword_meta's.
+ */
+export type GameTextRefName = { k: 'keyword' | 'skilltag'; n: string; kw?: string; i?: string }
 export type GameTextRefNames = Record<string, GameTextRefName>
 export type GameTextRefDescriptions = Record<string, string>
 /** Flavor lines of the keywords by game id (raw game text), only for keywords that have one. */
@@ -25,12 +28,14 @@ const RowSchema = z.object({
   flavor_en: z.string().nullable().optional(),
   flavor_jp: z.string().nullable().optional(),
   keyword_name: z.string().nullable(),
+  icon_slug: z.string().nullable().optional(),
 })
 export type GameTextRefRow = z.infer<typeof RowSchema>
 
-const NAME_COLUMNS = 'id, kind, name, name_en, name_jp, keyword_name'
-const ALL_COLUMNS = `${NAME_COLUMNS}, description, description_en, description_jp`
-const FLAVOR_COLUMNS = `${NAME_COLUMNS}, flavor, flavor_en, flavor_jp`
+const BASE_COLUMNS = 'id, kind, name, name_en, name_jp, keyword_name'
+const NAME_COLUMNS = `${BASE_COLUMNS}, icon_slug`
+const ALL_COLUMNS = `${BASE_COLUMNS}, description, description_en, description_jp`
+const FLAVOR_COLUMNS = `${BASE_COLUMNS}, flavor, flavor_en, flavor_jp`
 const PAGE = 1000
 
 async function loadRows(columns: string): Promise<GameTextRefRow[]> {
@@ -63,6 +68,7 @@ export function gameTextRefNames(rows: readonly GameTextRefRow[], lang: Supporte
       k: row.kind,
       n: pick(lang, row.name, row.name_en, row.name_jp) || row.id,
       ...(row.keyword_name ? { kw: row.keyword_name } : {}),
+      ...(row.icon_slug ? { i: row.icon_slug } : {}),
     }
   }
   return out
