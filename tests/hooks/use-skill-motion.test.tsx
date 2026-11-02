@@ -17,7 +17,7 @@ vi.mock('@/lib/motion/compositor', () => ({
 vi.mock('@/lib/motion/sounds', () => ({
   SoundPlayer: class {
     constructor() {
-      for (const name of ['attach', 'dispose', 'load', 'stop', 'setMuted', 'setVolume', 'setVoiceVolume', 'setSfxVolume']) (this as Record<string, unknown>)[name] = (calls.sound[name] ??= vi.fn())
+      for (const name of ['attach', 'dispose', 'unlock', 'load', 'stop', 'setMuted', 'setVolume', 'setVoiceVolume', 'setSfxVolume']) (this as Record<string, unknown>)[name] = (calls.sound[name] ??= vi.fn())
     }
   },
 }))
@@ -284,5 +284,49 @@ describe('REQ-MOTION-047 stalls and errors while watching', () => {
     await act(async () => { await result.current.load(STATE) })
     await act(async () => { stale?.() })
     expect(result.current.status).toBe('ready')
+  })
+})
+
+describe('REQ-MOTION-025 the sound stays on', () => {
+  it('REQ-MOTION-025 keeps the switch in the browser: on comes back after a new page, off stays off', async () => {
+    store['motion-sound-on'] = '1'
+    await mount()
+    expect(result.current.muted).toBe(false)
+    expect(calls.sound.setMuted).toHaveBeenLastCalledWith(false)
+    await act(async () => { result.current.toggleMute() })
+    expect(store['motion-sound-on']).toBe('0')
+  })
+
+  it('REQ-MOTION-053 plays on when the page comes back, if it was playing when it was left', async () => {
+    await open()
+    expect(video.paused).toBe(false)
+    doc.hidden = true; doc.dispatchEvent(new Event('visibilitychange'))
+    expect(video.paused).toBe(true)
+    doc.hidden = false; doc.dispatchEvent(new Event('visibilitychange'))
+    expect(video.paused).toBe(false)
+  })
+
+  it('REQ-MOTION-053 keeps a video stopped by the viewer stopped when the page comes back', async () => {
+    await open()
+    await act(async () => { result.current.togglePlay() })
+    doc.hidden = true; doc.dispatchEvent(new Event('visibilitychange'))
+    doc.hidden = false; doc.dispatchEvent(new Event('visibilitychange'))
+    expect(video.paused).toBe(true)
+  })
+
+  it('REQ-MOTION-053 falls back to playing without the silent track when a browser refuses it, and takes it back at the next press', async () => {
+    store['motion-sound-on'] = '1'
+    await mount()
+    let refused = 0
+    const play = video.play.bind(video)
+    video.play = () => (!video.muted && !refused++ ? Promise.reject(new Error('NotAllowed')) : play())
+    video.muted = false
+    await act(async () => { await result.current.load(STATE) })
+    await act(async () => { result.current.hold(false) })
+    expect(video.muted).toBe(true)
+    expect(video.paused).toBe(false)
+    doc.dispatchEvent(new Event('click'))
+    expect(video.muted).toBe(false)
+    expect(calls.sound.unlock).toHaveBeenCalled()
   })
 })

@@ -23,6 +23,10 @@ const STALE_MS = 100
 
 // The visitor's sound settings, kept in the browser: the master starts at the game's full loudness, where a hit has its edge.
 const SOUND_KEY = 'motion-sound-v2'
+// Whether the sound is on, '1' or '0': it stays as the visitor left it through other videos, pages and visits.
+const SOUND_ON_KEY = 'motion-sound-on'
+const readSoundOn = () => { try { return localStorage.getItem(SOUND_ON_KEY) === '1' } catch { return false } }
+const keepSoundOn = (on: boolean) => { try { localStorage.setItem(SOUND_ON_KEY, on ? '1' : '0') } catch { /* private mode: kept for this page only */ } }
 const level = (value: unknown, fallback: number) => (typeof value === 'number' && value >= 0 && value <= 1 ? value : fallback)
 const parseSound = (saved: unknown): MotionVolumes => {
   const s = (saved ?? {}) as Partial<MotionVolumes>
@@ -64,6 +68,8 @@ export function useSkillMotion() {
   const [error, setError] = useState<MotionError | null>(null)
   const [playing, setPlaying] = useState(false)
   const [muted, setMuted] = useState(true)
+  const soundOn = useRef(false)
+  const resuming = useRef(false)   // the page was left while the video played
   const [sound, saveSound] = useStored(SOUND_KEY, parseSound)
   const soundRef = useRef(sound)
   soundRef.current = sound
@@ -76,6 +82,16 @@ export function useSkillMotion() {
     subscribe: listener => { frame.current.listeners.add(listener); return () => frame.current.listeners.delete(listener) },
     get: () => frame.current.value,
   }).current
+
+  /** Plays; a browser that refuses the silent track outside a press plays without it, and the next press brings it back. */
+  const playVideo = useCallback(() => {
+    const v = video.current
+    v?.play().catch(() => {
+      if (v.muted) return
+      v.muted = true
+      v.play().catch(() => {})
+    })
+  }, [])
 
   const applySound = useCallback(() => {
     const s = soundRef.current, p = sounds.current
@@ -132,14 +148,25 @@ export function useSkillMotion() {
     v.playsInline = true
     v.preload = 'auto'
     v.muted = true
-    // It plays muted (the browser allows that without a press), so the controls show it muted.
-    setMuted(true)
+    // It plays muted (the browser allows that without a press); saved on, the sound joins at once or at the first press.
+    soundOn.current = readSoundOn()
+    setMuted(!soundOn.current)
     v.crossOrigin = 'anonymous' // the R2 host allows the site: WebGL may read the frames
     video.current = v
     const player = new SoundPlayer()
     player.attach(v)
     sounds.current = player
     applySound()
+    if (soundOn.current) {
+      player.setMuted(false)
+      if ((navigator as Navigator & { userActivation?: { hasBeenActive: boolean } }).userActivation?.hasBeenActive) v.muted = false
+    }
+    const wake = () => {
+      if (!soundOn.current) return
+      sounds.current?.unlock()
+      v.muted = false
+      if (resuming.current && !held.current) { resuming.current = false; playVideo() }
+    }
     const redraw = () => draw()
     observer.current = new IntersectionObserver(([entry]) => {
       onScreen.current = entry.isIntersecting
@@ -191,12 +218,24 @@ export function useSkillMotion() {
         v.play().catch(() => setPlaying(false))
       }, Math.max(0, m.frames / m.fps + m.tail - v.duration) * 1000)
     }
-    const onVisibility = () => { if (document.hidden) { clearTail(); v.pause() } }
+    const onVisibility = () => {
+      if (document.hidden) {
+        resuming.current = !v.paused || Boolean(tailTimer.current)
+        clearTail()
+        v.pause()
+      } else if (resuming.current && !held.current) {
+        resuming.current = false
+        wake()
+        playVideo()
+      } else wake()
+    }
     v.addEventListener('play', onPlay)
     v.addEventListener('pause', onPause)
     v.addEventListener('ended', onEnded)
     v.addEventListener('seeked', redraw)
     document.addEventListener('visibilitychange', onVisibility)
+    document.addEventListener('click', wake, true)
+    document.addEventListener('touchend', wake, true)
     return () => {
       token.current++
       window.clearTimeout(tailTimer.current)
@@ -206,6 +245,8 @@ export function useSkillMotion() {
       v.removeEventListener('ended', onEnded)
       v.removeEventListener('seeked', redraw)
       document.removeEventListener('visibilitychange', onVisibility)
+      document.removeEventListener('click', wake, true)
+      document.removeEventListener('touchend', wake, true)
       if (reports) v.cancelVideoFrameCallback(pending)
       observer.current?.disconnect()
       v.pause()
@@ -216,7 +257,7 @@ export function useSkillMotion() {
       buttons?.stop()
       free()
     }
-  }, [draw, show, free, applySound, clearTail])
+  }, [draw, show, free, applySound, clearTail, playVideo])
 
   /** Load one state (another skill or condition), from its first frame. */
   const load = useCallback(async (state: MotionState) => {
@@ -244,7 +285,7 @@ export function useSkillMotion() {
         v.onloadeddata = () => resolve()
         v.onerror = () => reject(new Error('video'))
       })
-      v.play().catch(() => {})
+      playVideo()
       await loaded
       if (mine !== token.current) return
       // From here a video error is the player's failure, not a failed load.
@@ -283,7 +324,7 @@ export function useSkillMotion() {
       v.currentTime = 0
       draw()
       setStatus('ready')
-      if (!held.current) v.play().catch(() => {})
+      if (!held.current) playVideo()
       else v.pause()
     } catch {
       if (mine !== token.current) return
@@ -305,8 +346,8 @@ export function useSkillMotion() {
     const v = video.current
     if (!v) return
     if (on) { clearTail(); v.pause() }
-    else if (meta.current && v.paused) v.play().catch(() => {})
-  }, [clearTail])
+    else if (meta.current && v.paused) playVideo()
+  }, [clearTail, playVideo])
   /**
    * Go to a frame: the middle of its slot (a seek to the exact boundary may land on the previous frame). The controls show
    * it at once: the seek bar under a finger and repeated frame steps do not wait for the video to get there.
@@ -329,6 +370,8 @@ export function useSkillMotion() {
     const v = video.current
     if (!v) return
     v.muted = !on
+    soundOn.current = on
+    keepSoundOn(on)
     sounds.current?.setMuted(!on)
     setMuted(!on)
     if (on && v.paused && !held.current) v.play().catch(() => {})
@@ -337,13 +380,13 @@ export function useSkillMotion() {
     const v = video.current
     if (!v) return
     // Sound back on after the master went to 0: at the starting level, not silent.
-    if (v.muted && soundRef.current.master === 0) saveSound({ ...soundRef.current, master: 1 })
-    unmute(v.muted)
+    if (!soundOn.current && soundRef.current.master === 0) saveSound({ ...soundRef.current, master: 1 })
+    unmute(!soundOn.current)
   }, [unmute, saveSound])
   /** A volume slider; the master above 0 turns the sound on. */
   const setVolume = useCallback((kind: keyof MotionVolumes, value: number) => {
     saveSound({ ...soundRef.current, [kind]: value })
-    if (kind === 'master' && value > 0 && video.current?.muted) unmute(true)
+    if (kind === 'master' && value > 0 && !soundOn.current) unmute(true)
   }, [saveSound, unmute])
   /** A link line of the link section, played inside the press; resolves when it ends or another press stopped it. */
   const playVoice = useCallback((link: VoiceLink) => {
