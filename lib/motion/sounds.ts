@@ -340,7 +340,12 @@ export class SoundPlayer {
       for (const v of same.slice(0, Math.max(0, same.length - rule.max + 1))) { this.cutLive(v, when, this.rules!.steal.fade); stolen++; }
     }
     src.start(when, offset);
-    if (looping || (c.end !== undefined && c.end < natural)) src.stop(endCtx);   // (the curve is already down at `end`: no fade of its own)
+    if (looping || (c.end !== undefined && c.end < natural)) {
+      // Most cues still sound at `end` (a newer instance took their place): they go as the game's stolen ones do. One whose curve is already down just stops.
+      const last = c.mix.at(-1), fade = last && Math.max(last[1], last[2]) > 0 ? this.rules?.steal.fade ?? 0 : 0;
+      if (fade) { gain.gain.setValueAtTime(1, endCtx); gain.gain.linearRampToValueAtTime(0, endCtx + fade); }
+      src.stop(endCtx + fade);
+    }
     const l: Live = { cue: c, src, gain, when, end: endCtx, cutAt: Infinity, seq: this.seq++ };
     this.live.add(l);
     src.onended = () => { this.live.delete(l); src.disconnect(); gain.disconnect(); split.disconnect(); merge.disconnect(); };
