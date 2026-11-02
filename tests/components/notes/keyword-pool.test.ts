@@ -4,9 +4,9 @@ import { getKeywordIconUrl } from '@/lib/constants/keywords'
 import { getGameUiAsset } from '@/lib/utils/game-ui'
 
 describe('note keyword artwork', () => {
-  it('uses the same verified alias and atlas URLs as the catalogue', () => {
+  it('uses the same icon_slug file and atlas URLs as the catalogue', () => {
     const pool = buildKeywordPool({
-      '지령': { desc: '장치', iconSlug: 'prescript-device-iv' },
+      '지령': { desc: '장치', iconSlug: 'prescript-2' },
       '진동 폭발': { desc: '폭발', iconSlug: 'tremor-burst' },
     })
     expect(pool.map(suggestion => suggestion.iconUrl)).toEqual([
