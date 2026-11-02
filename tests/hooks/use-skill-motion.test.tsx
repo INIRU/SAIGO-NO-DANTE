@@ -140,13 +140,19 @@ describe('REQ-MOTION-041 chapters and marks come out of the hook', () => {
 })
 
 describe('REQ-MOTION-031 the sound settings have no critical-hit switch', () => {
+  it('REQ-MOTION-031 starts at the game\'s full loudness, whatever an older page kept at half', async () => {
+    store['motion-sound'] = JSON.stringify({ master: 0.5, voice: 1, sfx: 1 })
+    await mount()
+    expect(result.current.volumes).toEqual({ master: 1, voice: 1, sfx: 1 })
+  })
+
   it('REQ-MOTION-031 returns no critical, hasCritical or setCritical, and drops the old saved switch', async () => {
-    store['motion-sound'] = JSON.stringify({ master: 0.3, voice: 0.8, sfx: 0.6, critical: false })
+    store['motion-sound-v2'] = JSON.stringify({ master: 0.3, voice: 0.8, sfx: 0.6, critical: false })
     await mount()
     expect(result.current.volumes).toEqual({ master: 0.3, voice: 0.8, sfx: 0.6 })
     for (const key of ['critical', 'hasCritical', 'setCritical']) expect(result.current).not.toHaveProperty(key)
     await act(async () => { result.current.setVolume('sfx', 0.4) })
-    expect(JSON.parse(store['motion-sound'])).toEqual({ master: 0.3, voice: 0.8, sfx: 0.4 })
+    expect(JSON.parse(store['motion-sound-v2'])).toEqual({ master: 0.3, voice: 0.8, sfx: 0.4 })
     expect(calls.sound.setSfxVolume).toHaveBeenLastCalledWith(0.4)
   })
 })
