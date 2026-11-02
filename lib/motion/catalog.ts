@@ -58,8 +58,11 @@ export type MotionLink = { id: string; partners: MotionPartner[]; max: boolean }
 /** A buff a video was recorded with, written from the site's keyword table. */
 export type MotionCondition = { name: string; icon: string | null; stack: string | null }
 export type MotionState = Pick<MotionEntry, 'state' | 'name' | 'video' | 'meta'> & { label: string; bytes: number; link?: MotionLink; dead?: MotionPartner[]; conditions?: MotionCondition[]; ally?: MotionPartner; /** What the labelKey says besides the conditions, in the page language. */ extras?: string[] }
-/** The game frame a skill's sprite sits in: its sin, its slot (1–3, 4 for a defense) and its attack type badge. */
-export type MotionSkillFrame = { sin: string; slot: number; attack: 'slash' | 'pierce' | 'blunt' | null }
+/**
+ * The game frame a skill's sprite sits in: its sin, its slot (1–3, 4 for a defense) and its attack type badge. `sprite`: the
+ * sprite id when the skill is saved under another identity's (see borrowedRows), else the skill id is the sprite's.
+ */
+export type MotionSkillFrame = { sin: string; slot: number; attack: 'slash' | 'pierce' | 'blunt' | null; sprite?: number }
 /**
  * `form`: the identity's other form the skill belongs to (`castoff` of `id10215-castoff`), null for its own skills.
  * `frame`: from the site's row of the skill, null when the site has none.
@@ -212,13 +215,13 @@ const slugRank = (slug: string) => slug.startsWith('id') ? 0 : slug.startsWith('
  * The site data the catalog names things with, in the page language: skill names and frames by skill id, the keyword table.
  * `now`: lists the identities released in the last MOTION_PENDING_DAYS that have no motion yet as pending.
  */
-export type MotionCatalogNames = { skillNames?: ReadonlyMap<number, string>; skillFrames?: ReadonlyMap<number, MotionSkillFrame>; egos?: ReadonlyMap<string, MotionEgoInfo>; refs?: GameTextRefNames | null; now?: Date }
+export type MotionCatalogNames = { skillNames?: ReadonlyMap<number, string>; skillFrames?: ReadonlyMap<number, MotionSkillFrame>; skillBorrowed?: ReadonlyMap<string, { name?: string; frame: MotionSkillFrame }>; egos?: ReadonlyMap<string, MotionEgoInfo>; refs?: GameTextRefNames | null; now?: Date }
 
 /**
  * What the site adds to the R2 index, by id: identities (by game id), skill names and sprite frames, game text names. It
  * comes from the site's database and is cached; the index is read from R2 on every page open (MOTION_INDEX_URL).
  */
-export type MotionSiteData = { identities: MotionIdentityInfo[]; egos: MotionEgoInfo[]; skillNames: [number, string][]; skillFrames: [number, MotionSkillFrame][]; refs: GameTextRefNames | null }
+export type MotionSiteData = { identities: MotionIdentityInfo[]; egos: MotionEgoInfo[]; skillNames: [number, string][]; skillFrames: [number, MotionSkillFrame][]; skillBorrowed?: [string, { name?: string; frame: MotionSkillFrame }][]; refs: GameTextRefNames | null }
 
 /** The R2 index: the browser reads it on every page open (Cloudflare keeps no copy of it), so a new video shows at once. */
 export const MOTION_INDEX_URL = `${MOTION_ASSET_BASE}index.json`
@@ -226,7 +229,7 @@ export const MOTION_INDEX_URL = `${MOTION_ASSET_BASE}index.json`
 /** The motion list from the R2 index and the site's data, in the browser or on the server. */
 export function motionCatalogFrom(entries: readonly MotionEntry[], site: MotionSiteData, lang: string, now: Date): MotionSinner[] {
   const identities = new Map(site.identities.flatMap(identity => identity.game_id ? [[identity.game_id, identity] as const] : []))
-  return buildMotionCatalog(entries, identities, lang, { skillNames: new Map(site.skillNames), skillFrames: new Map(site.skillFrames), egos: new Map((site.egos ?? []).map(ego => [ego.game_id, ego])), refs: site.refs, now })
+  return buildMotionCatalog(entries, identities, lang, { skillNames: new Map(site.skillNames), skillFrames: new Map(site.skillFrames), skillBorrowed: new Map(site.skillBorrowed ?? []), egos: new Map((site.egos ?? []).map(ego => [ego.game_id, ego])), refs: site.refs, now })
 }
 
 /** How long a new identity without motion is listed as pending: recording and building one takes 5 days to 2 weeks. */
@@ -290,11 +293,13 @@ export function buildMotionCatalog(entries: readonly MotionEntry[], identities: 
     const link: MotionLink | undefined = partners.length ? { id: partners.map(p => p.gameId).join('+'), partners, max: !!entry.linkMax } : undefined
     const ally = /^v:with-(\d{5})/.exec(entry.state)
     const key = `${entry.slug}|${entry.skillId}`
-    const title = skillNames.get(entry.skillId) || (lang === 'en' ? entry.nameEn : lang === 'ja' ? entry.nameJa : undefined)?.trim() || entry.name.replace(/ \[[^\]]+\]$/, '')
+    // A skill saved under another identity's sprite id has no row by its id: the one its identity borrowed.
+    const lent = names.skillFrames?.has(entry.skillId) ? undefined : names.skillBorrowed?.get(String(entry.skillId).slice(0, 5))
+    const title = skillNames.get(entry.skillId) || lent?.name || (lang === 'en' ? entry.nameEn : lang === 'ja' ? entry.nameJa : undefined)?.trim() || entry.name.replace(/ \[[^\]]+\]$/, '')
     let skill = owner.skills.find(s => s.key === key)
     if (!skill) {
       // An E.G.O skill sits in slot 3 of its sin's frame; an identity's frame is the site row of the skill.
-      const frame = names.skillFrames?.get(entry.skillId) ?? (isMotionEgo(owner) ? { sin: owner.sin ?? 'neutral', slot: 3, attack: null } : null)
+      const frame = names.skillFrames?.get(entry.skillId) ?? lent?.frame ?? (isMotionEgo(owner) ? { sin: owner.sin ?? 'neutral', slot: 3, attack: null } : null)
       owner.skills.push(skill = { key, skillId: entry.skillId, title, form: entry.ego ? (entry.erode ? 'erode' : null) : form, states: [], frame, ...(isMotionEgo(owner) && { erode: !!entry.erode }) })
     }
     if (isBase(entry.state)) skill.title = title
