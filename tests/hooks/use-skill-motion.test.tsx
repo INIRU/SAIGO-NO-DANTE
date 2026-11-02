@@ -329,4 +329,41 @@ describe('REQ-MOTION-025 the sound stays on', () => {
     expect(video.muted).toBe(false)
     expect(calls.sound.unlock).toHaveBeenCalled()
   })
+
+  it('REQ-MOTION-054 with the sound on, starts the video from its first frame only when the tracks are ready', async () => {
+    store['motion-sound-on'] = '1'
+    await mount()
+    await act(async () => { result.current.hold(false) })
+    let ready = () => {}
+    calls.sound.load.mockReturnValue(new Promise<void>(resolve => { ready = resolve }))
+    let loading = Promise.resolve()
+    await act(async () => { loading = result.current.load(STATE); await vi.advanceTimersByTimeAsync(0) })
+    expect(video.paused).toBe(true)
+    expect(result.current.status).toBe('loading')
+    video.currentTime = 0.4
+    await act(async () => { ready(); await loading })
+    expect(video.currentTime).toBe(0)
+    expect(video.paused).toBe(false)
+    expect(result.current.status).toBe('ready')
+  })
+
+  it('REQ-MOTION-054 with the sound off, plays without waiting for the tracks', async () => {
+    await mount()
+    await act(async () => { result.current.hold(false) })
+    calls.sound.load.mockReturnValue(new Promise<void>(() => {}))
+    await act(async () => { await result.current.load(STATE) })
+    expect(video.paused).toBe(false)
+  })
+
+  it('REQ-MOTION-054 gives up waiting for tracks that never come, and plays', async () => {
+    store['motion-sound-on'] = '1'
+    await mount()
+    await act(async () => { result.current.hold(false) })
+    calls.sound.load.mockReturnValue(new Promise<void>(() => {}))
+    let loading = Promise.resolve()
+    await act(async () => { loading = result.current.load(STATE); await vi.advanceTimersByTimeAsync(0) })
+    expect(video.paused).toBe(true)
+    await act(async () => { await vi.advanceTimersByTimeAsync(8000); await loading })
+    expect(video.paused).toBe(false)
+  })
 })
