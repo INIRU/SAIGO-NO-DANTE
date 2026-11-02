@@ -8,7 +8,7 @@ import ForYou, { OwnedLink } from './ForYou'
 import { PeriodTabs, RecentHistory } from './shelf-parts'
 import BoardCard, { RankPlate } from '@/components/board/BoardCard'
 import { RankNumeral } from '@/components/board/FormationRow'
-import { RiseValue, useRising } from '@/components/board/rise'
+import { RiseValue, RisingCount, useRising } from '@/components/board/rise'
 import { IdentityCards, Rail, SectionHead, TextAction, UpdatedRows, baseOf, useBoardData, type BoardData, type Period } from '@/components/board/shared'
 import { BoardShelfSkeleton, RisingShelfSkeleton } from '@/components/board/BoardShelfSkeleton'
 import type { RowPost } from '@/components/board/parts'
@@ -101,7 +101,7 @@ export default function DiscoveryShelf({ kind, onBrowse, initialData }: {
           <section data-shelf="rising" aria-labelledby="shelf-rising" className="space-y-5">
             <SectionHead id="shelf-rising" title={t('rising')} />
             {risers.length > 0 && <Rail>{risers.map(({ post, rise }) => <BoardCard key={post.id} kind={kind} post={post as RowPost} lead={<RiseValue rise={rise} />} />)}</Rail>}
-            {risingIdentities.length > 0 && <IdentityCards kind={kind} items={risingIdentities.slice(0, 9).map(item => ({ identity: item.identity, trailing: <RiseValue rise={item.rise} /> }))} />}
+            {risingIdentities.length > 0 && <IdentityCards kind={kind} items={risingIdentities.slice(0, 9).map(item => ({ identity: item.identity, trailing: <RisingCount count={item.count} /> }))} />}
           </section>
         )}
 
