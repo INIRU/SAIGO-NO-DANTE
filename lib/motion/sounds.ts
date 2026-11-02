@@ -25,7 +25,7 @@ export const LIMITER_URL = '/motion-sfx-limiter.js';
 const STEP_MS = 25;    // how often the player looks at the video
 const SAMPLE_RATE = 48000;
 const CUT_FADE = 0.043;
-const DEFAULT_VOLUME = 0.5;   // the page's volume at the start; 1 = the game's own loudness
+const DEFAULT_VOLUME = 1;     // the page's volume at the start: the game's own loudness
 const MASTER_CEILING = 0.977;
 const DRIFT = 0.08;    // how far the picture may run from the sound before the tracks move to it
 const LEAD = 0.02;     // seconds ahead the tracks are started, so both begin on the same sample

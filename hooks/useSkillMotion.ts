@@ -21,12 +21,12 @@ type MotionMeta = LayerSetMeta & { tail?: number; chapters?: MotionChapter[]; ma
 /** How long without a frame report, while playing, before a display refresh draws the frame itself (6 frames at 60 fps). */
 const STALE_MS = 100
 
-// The visitor's sound settings, kept in the browser: the master starts at half (the game's full loudness is loud).
-const SOUND_KEY = 'motion-sound'
+// The visitor's sound settings, kept in the browser: the master starts at the game's full loudness, where a hit has its edge.
+const SOUND_KEY = 'motion-sound-v2'
 const level = (value: unknown, fallback: number) => (typeof value === 'number' && value >= 0 && value <= 1 ? value : fallback)
 const parseSound = (saved: unknown): MotionVolumes => {
   const s = (saved ?? {}) as Partial<MotionVolumes>
-  return { master: level(s.master, 0.5), voice: level(s.voice, 1), sfx: level(s.sfx, 1) }
+  return { master: level(s.master, 1), voice: level(s.voice, 1), sfx: level(s.sfx, 1) }
 }
 
 // The link section's sound buttons: one for the page's lifetime (its AudioContext is made at the first press and kept).
@@ -337,7 +337,7 @@ export function useSkillMotion() {
     const v = video.current
     if (!v) return
     // Sound back on after the master went to 0: at the starting level, not silent.
-    if (v.muted && soundRef.current.master === 0) saveSound({ ...soundRef.current, master: 0.5 })
+    if (v.muted && soundRef.current.master === 0) saveSound({ ...soundRef.current, master: 1 })
     unmute(v.muted)
   }, [unmute, saveSound])
   /** A volume slider; the master above 0 turns the sound on. */
