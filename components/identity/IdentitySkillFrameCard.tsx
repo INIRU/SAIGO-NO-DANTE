@@ -52,6 +52,8 @@ type IdentitySkillFrameCardProps = {
   allowedKeywords?: ReadonlySet<string>
   className?: string
   style?: CSSProperties
+  /** The art in the frame when it is not the skill's sprite (an E.G.O skill). */
+  iconUrl?: string
 }
 
 const DEFENSE_LABELS: Record<string, { ko: string; en: string; ja: string }> = {
@@ -97,6 +99,7 @@ export default function IdentitySkillFrameCard({
   allowedKeywords,
   className = 'p-2.5 rounded',
   style,
+  iconUrl,
 }: IdentitySkillFrameCardProps) {
   // The card always shows a skill of an identity, so it reads the text like the identity page does wherever it is (the
   // motion page, a skill block of a deck or plan note): the keywords older text writes as plain words, from the
@@ -114,9 +117,9 @@ export default function IdentitySkillFrameCard({
   const sin = normalizeSin(skill.sin_affinity)
   const sinColor = sin === 'neutral' ? '#cccccc' : SIN_COLORS[sin]
   const imageIndex = computeSkillImageIndices(skills.filter(item => (item.uptie_level ?? 3) === (skill.uptie_level ?? 3)))[skill.id] ?? skillSlot(skill)
-  const skillIconUrl = identity?.game_id
+  const skillIconUrl = iconUrl ?? (identity?.game_id
     ? getSkillIconUrl({ sinner_id: identity.sinner_id, game_id: identity.game_id }, imageIndex, skill)
-    : ''
+    : '')
   const description = localizedText(lang, skill.description, skill.description_en, skill.description_jp)
   const atkType = skill.atk_type ?? skill.atkType ?? skill.attack_type ?? skill.skill_type
 

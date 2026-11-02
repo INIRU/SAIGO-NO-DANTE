@@ -30,7 +30,7 @@
     },
     "motion": {
       "title": "모션",
-      "skills": "인격 스킬 모션"
+      "skills": "스킬 모션"
     },
     "fun": {
       "title": "재미",
@@ -150,6 +150,7 @@
     "contact": "문의",
     "fanDisclaimer": "팬 제작 비공식 사이트 · Limbus Company는 Project Moon의 저작물입니다.",
     "unaffiliatedDisclaimer": "Project Moon과 제휴하지 않은 팬 사이트입니다.",
+    "assetsNotice": "게임 이미지, 스킬 애니메이션, 보이스를 비롯한 모든 게임 에셋의 저작권은 Project Moon(Limbus Company)에 있습니다.",
     "footerNav": "하단 내비게이션",
     "mainNav": "메인 내비게이션",
     "pageNavigation": {
@@ -2880,16 +2881,15 @@
     "sinResonance": "{sin} 공명"
   },
   "motionPage": {
-    "title": "인격 스킬 모션",
-    "metaTitle": "림버스 컴퍼니 인격 스킬 모션",
-    "metaDescription": "림버스 컴퍼니 인격 스킬 연출을 조건별로 재생합니다.",
+    "title": "스킬 모션",
+    "metaTitle": "림버스 컴퍼니 스킬 모션",
+    "metaDescription": "림버스 컴퍼니 인격과 E.G.O의 스킬 연출을 시나리오별로 재생합니다.",
     "skillMetaTitle": "{sinner} {identity} {skill} 스킬 모션",
     "skillMetaDescription": "림버스 컴퍼니 {sinner} {identity}의 「{skill}」 스킬 연출({states})을 재생합니다.",
     "back": "뒤로",
-    "search": "인격·스킬 검색",
+    "search": "인격·E.G.O·스킬 검색",
     "noResults": "검색 결과가 없습니다.",
     "sinners": "수감자",
-    "states": "조건",
     "play": "재생",
     "pause": "일시정지",
     "prevFrame": "이전 프레임",
@@ -2902,7 +2902,6 @@
     "landscape": "가로로 보기",
     "portrait": "세로로 보기",
     "frame": "프레임",
-    "credit": "© Project Moon",
     "noticeTitle": "Project Moon의 저작물입니다",
     "noticeBody": "실제 게임과 다를 수 있습니다. 정확한 스킬 모션은 Limbus Company에서 확인해 주세요.",
     "noticeOk": "확인",
@@ -2911,15 +2910,37 @@
     "listError": "모션 목록을 불러오지 못했습니다.",
     "retry": "다시 시도",
     "skills": "스킬",
-    "link": "연계",
     "maxState": "최대 상태",
     "volumeMaster": "전체",
     "volumeVoice": "보이스",
     "volumeSfx": "효과음",
-    "critSound": "치명타 소리",
-    "deadAllies": "사망한 아군",
     "pendingTitle": "모션 준비 중",
-    "pendingBody": "인게임 영상을 촬영·분석해 구현하므로 공개까지 최소 5일~2주가 걸립니다."
+    "pendingBody": "인게임 영상을 촬영·분석해 구현하므로 공개까지 최소 5일~2주가 걸립니다.",
+    "scenarios": "시나리오",
+    "identities": "인격",
+    "egos": "E.G.O",
+    "skillInfo": "스킬 정보",
+    "copyLink": "링크 복사",
+    "linkCopied": "링크를 복사했습니다",
+    "copyLinkFailed": "링크를 복사하지 못했습니다.",
+    "clearSearch": "검색어 지우기",
+    "chapters": {
+      "skill": "스킬",
+      "coin": "코인 {n}",
+      "cutin": "컷인",
+      "form": "변신",
+      "reuse": "재사용",
+      "part": "{n}부",
+      "weight": "위력",
+      "sp": "정신력",
+      "resonance": "공명",
+      "dead": "사망",
+      "break": "흐트러짐"
+    },
+    "awaken": "각성",
+    "erode": "침식",
+    "normal": "기본",
+    "scenarioNumber": "시나리오 {n}"
   },
   "licensesPage": {
     "title": "라이선스",

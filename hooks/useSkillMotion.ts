@@ -5,25 +5,32 @@ import { SoundButtons, type VoiceLink } from '@/lib/motion/soundbuttons'
 import { MOTION_ASSET_BASE, motionAssetUrl, type MotionState } from '@/lib/motion/catalog'
 import { useStored } from './useStored'
 
-/** `labelKey`: the layer's name as keys (`[Keyword] stack`), written in the page language by the side panel. */
 export type MotionStatus = 'idle' | 'loading' | 'ready' | 'error'
 export type MotionError = 'webgl' | 'load'
 /** The frame being shown, read by the controls only (the rest of the page does not re-render 60 times a second). */
 export type MotionFrameStore = { subscribe: (listener: () => void) => () => void; get: () => number }
 /** The three volumes, 0..1: the page's master (the game's loudness at 1), and the game's voice and effects options. */
 export type MotionVolumes = { master: number; voice: number; sfx: number }
-type SoundSettings = MotionVolumes & { critical: boolean }
+/** A part of the video the seek bar marks: `key` is the chapter's name token (`<s:2021112>`, `<coin:2>`, `<form>`…). */
+export type MotionChapter = { f: number; kind: 'form' | 'skill' | 'cutin' | 'coin' | 'reuse' | 'part'; key: string }
+/** A moment on the seek bar: a hit (with its targets, damage and whether it is a critical hit or kills), a kill or a voice line. */
+export type MotionMark = { f: number; kind: 'hit' | 'kill' | 'voice'; targets?: number; damage?: number; critical?: boolean; kill?: boolean }
+/** What layers.json says beyond the compositor's own fields: `tail` = seconds the sound runs on after the last picture frame. */
+type MotionMeta = LayerSetMeta & { tail?: number; chapters?: MotionChapter[]; marks?: MotionMark[] }
 
 /** How long without a frame report, while playing, before a display refresh draws the frame itself (6 frames at 60 fps). */
 const STALE_MS = 100
 
-// The visitor's sound settings, kept in the browser: the master starts at half (the game's full loudness is loud), the
-// critical-hit sound on.
-const SOUND_KEY = 'motion-sound'
+// The visitor's sound settings, kept in the browser: the master starts at the game's full loudness, where a hit has its edge.
+const SOUND_KEY = 'motion-sound-v2'
+// Whether the sound is on, '1' or '0': it stays as the visitor left it through other videos, pages and visits.
+const SOUND_ON_KEY = 'motion-sound-on'
+const readSoundOn = () => { try { return localStorage.getItem(SOUND_ON_KEY) === '1' } catch { return false } }
+const keepSoundOn = (on: boolean) => { try { localStorage.setItem(SOUND_ON_KEY, on ? '1' : '0') } catch { /* private mode: kept for this page only */ } }
 const level = (value: unknown, fallback: number) => (typeof value === 'number' && value >= 0 && value <= 1 ? value : fallback)
-const parseSound = (saved: unknown): SoundSettings => {
-  const s = (saved ?? {}) as Partial<SoundSettings>
-  return { master: level(s.master, 0.5), voice: level(s.voice, 1), sfx: level(s.sfx, 1), critical: s.critical !== false }
+const parseSound = (saved: unknown): MotionVolumes => {
+  const s = (saved ?? {}) as Partial<MotionVolumes>
+  return { master: level(s.master, 1), voice: level(s.voice, 1), sfx: level(s.sfx, 1) }
 }
 
 // The link section's sound buttons: one for the page's lifetime (its AudioContext is made at the first press and kept).
@@ -44,14 +51,16 @@ export function useSkillMotion() {
   const video = useRef<HTMLVideoElement | null>(null)
   const sounds = useRef<SoundPlayer | null>(null)
   const comp = useRef<LayerCompositor | null>(null)
-  const meta = useRef<LayerSetMeta | null>(null)
+  const meta = useRef<MotionMeta | null>(null)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   // The stage out of view (a phone scrolled down to the skill card): no frame is drawn, so iOS Safari does not upload a
-  // 1920×1440 video frame 60 times a second for nothing.
+  // 1920×3240 video frame 60 times a second for nothing.
   const onScreen = useRef(true)
   const observer = useRef<IntersectionObserver | null>(null)
   const held = useRef(true)
   const token = useRef(0)
+  // The wait after the video ended, while the sound tail runs on (one at a time).
+  const tailTimer = useRef(0)
   const frame = useRef({ value: 0, listeners: new Set<() => void>() })
   // The frame on the canvas (the sound tail keeps the last one).
   const drawn = useRef(-1)
@@ -59,28 +68,49 @@ export function useSkillMotion() {
   const [error, setError] = useState<MotionError | null>(null)
   const [playing, setPlaying] = useState(false)
   const [muted, setMuted] = useState(true)
+  const soundOn = useRef(false)
+  const resuming = useRef(false)   // the page was left while the video played
   const [sound, saveSound] = useStored(SOUND_KEY, parseSound)
   const soundRef = useRef(sound)
   soundRef.current = sound
   const [frames, setFrames] = useState(0)
   const [hasAudio, setHasAudio] = useState(false)
-  const [hasCritical, setHasCritical] = useState(false)
+  const [chapters, setChapters] = useState<MotionChapter[]>([])
+  const [marks, setMarks] = useState<MotionMark[]>([])
 
   const frameStore = useRef<MotionFrameStore>({
     subscribe: listener => { frame.current.listeners.add(listener); return () => frame.current.listeners.delete(listener) },
     get: () => frame.current.value,
   }).current
 
+  /** Plays; a browser that refuses the silent track outside a press plays without it, and the next press brings it back. */
+  const playVideo = useCallback(() => {
+    const v = video.current
+    v?.play().catch(() => {
+      if (v.muted) return
+      v.muted = true
+      v.play().catch(() => {})
+    })
+  }, [])
+
   const applySound = useCallback(() => {
     const s = soundRef.current, p = sounds.current
     p?.setVolume(s.master)
     p?.setVoiceVolume(s.voice)
     p?.setSfxVolume(s.sfx)
-    p?.setCritical(s.critical)
     buttons?.setVolume(s.master)
     buttons?.setVoiceVolume(s.voice)
   }, [])
   useEffect(applySound, [sound, applySound])
+
+  /** Ends the wait of the sound tail: the sound stops and the video shows as stopped. Nothing to do when none is waiting. */
+  const clearTail = useCallback(() => {
+    if (!tailTimer.current) return
+    window.clearTimeout(tailTimer.current)
+    tailTimer.current = 0
+    sounds.current?.stop()
+    setPlaying(false)
+  }, [])
 
   /**
    * Frees the compositor and its GL context at once. A dropped context otherwise lives until it is collected, and on iOS
@@ -118,14 +148,25 @@ export function useSkillMotion() {
     v.playsInline = true
     v.preload = 'auto'
     v.muted = true
-    // It plays muted (the browser allows that without a press), so the controls show it muted.
-    setMuted(true)
+    // It plays muted (the browser allows that without a press); saved on, the sound joins at once or at the first press.
+    soundOn.current = readSoundOn()
+    setMuted(!soundOn.current)
     v.crossOrigin = 'anonymous' // the R2 host allows the site: WebGL may read the frames
     video.current = v
     const player = new SoundPlayer()
     player.attach(v)
     sounds.current = player
     applySound()
+    if (soundOn.current) {
+      player.setMuted(false)
+      if ((navigator as Navigator & { userActivation?: { hasBeenActive: boolean } }).userActivation?.hasBeenActive) v.muted = false
+    }
+    const wake = () => {
+      if (!soundOn.current) return
+      sounds.current?.unlock()
+      v.muted = false
+      if (resuming.current && !held.current) { resuming.current = false; playVideo() }
+    }
     const redraw = () => draw()
     observer.current = new IntersectionObserver(([entry]) => {
       onScreen.current = entry.isIntersecting
@@ -140,12 +181,14 @@ export function useSkillMotion() {
     const report = (_: number, md: VideoFrameCallbackMetadata) => {
       reportedAt = performance.now()
       const m = meta.current
-      if (m && md.mediaTime < m.frames / m.fps) draw(Math.min(m.frames - 1, Math.round(md.mediaTime * m.fps)))
+      // (While seeking the frame reported is the one before the seek: the controls already show where it is going.)
+      if (m && !v.seeking && md.mediaTime < m.frames / m.fps) draw(Math.min(m.frames - 1, Math.round(md.mediaTime * m.fps)))
       if (!v.paused) pending = v.requestVideoFrameCallback(report)
     }
     const watch = () => {
       if (v.paused) { ticking = false; return }
-      if (!reports || performance.now() - reportedAt > STALE_MS) {
+      // (A stall: no frame is ready, nothing new to draw.)
+      if (v.readyState >= 3 && (!reports || performance.now() - reportedAt > STALE_MS)) {
         draw()
         if (reports) { v.cancelVideoFrameCallback(pending); pending = v.requestVideoFrameCallback(report) }
       }
@@ -160,18 +203,50 @@ export function useSkillMotion() {
       if (reports) pending = v.requestVideoFrameCallback(report)
       requestAnimationFrame(watch)
     }
-    const onPause = () => { setPlaying(false); draw() }
-    const onVisibility = () => { if (document.hidden) v.pause() }
+    // The pause that comes with the end of a video with a tail is not a stop: the last frame stays and the sound runs on.
+    const onPause = () => { if (v.ended && meta.current?.tail) return; setPlaying(false); draw() }
+    // The end of a video with a tail: the last frame stays, and after frames / fps + tail it plays again from the start.
+    const onEnded = () => {
+      const m = meta.current
+      if (!m?.tail) return
+      draw()
+      show(m.frames - 1)
+      window.clearTimeout(tailTimer.current)
+      tailTimer.current = window.setTimeout(() => {
+        tailTimer.current = 0
+        v.currentTime = 0
+        v.play().catch(() => setPlaying(false))
+      }, Math.max(0, m.frames / m.fps + m.tail - v.duration) * 1000)
+    }
+    const onVisibility = () => {
+      if (document.hidden) {
+        resuming.current = !v.paused || Boolean(tailTimer.current)
+        clearTail()
+        v.pause()
+      } else if (resuming.current && !held.current) {
+        resuming.current = false
+        wake()
+        playVideo()
+      } else wake()
+    }
     v.addEventListener('play', onPlay)
     v.addEventListener('pause', onPause)
+    v.addEventListener('ended', onEnded)
     v.addEventListener('seeked', redraw)
     document.addEventListener('visibilitychange', onVisibility)
+    document.addEventListener('click', wake, true)
+    document.addEventListener('touchend', wake, true)
     return () => {
       token.current++
+      window.clearTimeout(tailTimer.current)
+      tailTimer.current = 0
       v.removeEventListener('play', onPlay)
       v.removeEventListener('pause', onPause)
+      v.removeEventListener('ended', onEnded)
       v.removeEventListener('seeked', redraw)
       document.removeEventListener('visibilitychange', onVisibility)
+      document.removeEventListener('click', wake, true)
+      document.removeEventListener('touchend', wake, true)
       if (reports) v.cancelVideoFrameCallback(pending)
       observer.current?.disconnect()
       v.pause()
@@ -182,34 +257,45 @@ export function useSkillMotion() {
       buttons?.stop()
       free()
     }
-  }, [draw, free, applySound])
+  }, [draw, show, free, applySound, clearTail, playVideo])
 
   /** Load one state (another skill or condition), from its first frame. */
   const load = useCallback(async (state: MotionState) => {
     const v = video.current
     if (!v) return
     const mine = ++token.current
+    clearTail()
     show(0)
     setStatus('loading')
     setError(null)
     try {
       const response = await fetch(motionAssetUrl(state.meta))
       if (!response.ok) throw new Error(String(response.status))
-      const m = await response.json() as LayerSetMeta
+      const m = await response.json() as MotionMeta
       if (mine !== token.current) return
-      // Older exports (before version 7) are replaced on R2; the compositor draws only the Y·Cb·Cr planes.
-      if (!m.basePlanes) throw new Error('layers.json before version 7')
+      // The picture is three planes stacked in the video (Y, Cb, Cr, 1920×3240); one missing is a load failure.
+      if (!m.basePlanes?.y || !m.basePlanes.cb || !m.basePlanes.cr) throw new Error('layers.json without the Y, Cb, Cr planes')
       v.pause()
       free()
       meta.current = null
+      // A video with a tail does not loop by itself: the hook waits out the tail, then plays it again.
+      v.loop = !m.tail
       v.src = motionAssetUrl(state.video)
       const loaded = new Promise<void>((resolve, reject) => {
         v.onloadeddata = () => resolve()
         v.onerror = () => reject(new Error('video'))
       })
-      v.play().catch(() => {})
+      playVideo()
       await loaded
       if (mine !== token.current) return
+      // From here a video error is the player's failure, not a failed load.
+      v.onerror = () => {
+        if (mine !== token.current) return
+        clearTail()
+        sounds.current?.stop()
+        setError('load')
+        setStatus('error')
+      }
       // A canvas keeps its first GL context: a new element for every load.
       const canvas = document.createElement('canvas')
       canvas.className = 'block h-auto w-full'
@@ -233,28 +319,35 @@ export function useSkillMotion() {
       void sounds.current?.load(MOTION_ASSET_BASE, m)
       setFrames(m.frames)
       setHasAudio(Boolean(m.audio))
-      setHasCritical(Boolean(m.sounds && m.audio?.critical))
+      setChapters(m.chapters ?? [])
+      setMarks(m.marks ?? [])
       v.currentTime = 0
       draw()
       setStatus('ready')
-      if (!held.current) v.play().catch(() => {})
+      if (!held.current) playVideo()
       else v.pause()
     } catch {
       if (mine !== token.current) return
       setError('load')
       setStatus('error')
     }
-  }, [draw, show, free])
+  }, [draw, show, free, clearTail])
 
-  const togglePlay = useCallback(() => { const v = video.current; if (v && !held.current) (v.paused ? v.play().catch(() => {}) : v.pause()) }, [])
+  const togglePlay = useCallback(() => {
+    const v = video.current
+    if (!v || held.current) return
+    if (tailTimer.current) clearTail()          // a pause in the tail (the video itself has ended)
+    else if (v.paused || v.ended) v.play().catch(() => {})
+    else v.pause()
+  }, [clearTail])
   /** Hold or release playback; a release plays the loaded video (the notice's 확인 is the press that starts it). */
   const hold = useCallback((on: boolean) => {
     held.current = on
     const v = video.current
     if (!v) return
-    if (on) v.pause()
-    else if (meta.current && v.paused) v.play().catch(() => {})
-  }, [])
+    if (on) { clearTail(); v.pause() }
+    else if (meta.current && v.paused) playVideo()
+  }, [clearTail, playVideo])
   /**
    * Go to a frame: the middle of its slot (a seek to the exact boundary may land on the previous frame). The controls show
    * it at once: the seek bar under a finger and repeated frame steps do not wait for the video to get there.
@@ -263,10 +356,11 @@ export function useSkillMotion() {
     const v = video.current, m = meta.current
     if (!v || !m) return
     const to = Math.max(0, Math.min(m.frames - 1, n))
+    clearTail()
     v.pause()
     v.currentTime = (to + 0.5) / m.fps
     show(to)
-  }, [show])
+  }, [show, clearTail])
   const step = useCallback((delta: number) => seek(frame.current.value + delta), [seek])
   /**
    * Sound on or off, inside the press: iOS lets Web Audio past the ringer switch only while a video with sound plays (the
@@ -276,6 +370,8 @@ export function useSkillMotion() {
     const v = video.current
     if (!v) return
     v.muted = !on
+    soundOn.current = on
+    keepSoundOn(on)
     sounds.current?.setMuted(!on)
     setMuted(!on)
     if (on && v.paused && !held.current) v.play().catch(() => {})
@@ -284,15 +380,14 @@ export function useSkillMotion() {
     const v = video.current
     if (!v) return
     // Sound back on after the master went to 0: at the starting level, not silent.
-    if (v.muted && soundRef.current.master === 0) saveSound({ ...soundRef.current, master: 0.5 })
-    unmute(v.muted)
+    if (!soundOn.current && soundRef.current.master === 0) saveSound({ ...soundRef.current, master: 1 })
+    unmute(!soundOn.current)
   }, [unmute, saveSound])
   /** A volume slider; the master above 0 turns the sound on. */
   const setVolume = useCallback((kind: keyof MotionVolumes, value: number) => {
     saveSound({ ...soundRef.current, [kind]: value })
-    if (kind === 'master' && value > 0 && video.current?.muted) unmute(true)
+    if (kind === 'master' && value > 0 && !soundOn.current) unmute(true)
   }, [saveSound, unmute])
-  const setCritical = useCallback((on: boolean) => saveSound({ ...soundRef.current, critical: on }), [saveSound])
   /** A link line of the link section, played inside the press; resolves when it ends or another press stopped it. */
   const playVoice = useCallback((link: VoiceLink) => {
     const b = linkButtons()
@@ -302,8 +397,7 @@ export function useSkillMotion() {
   }, [])
   const stopVoice = useCallback(() => buttons?.stop(), [])
 
-  const volumes: MotionVolumes = { master: sound.master, voice: sound.voice, sfx: sound.sfx }
-  return { hostRef, status, error, playing, muted, volumes, critical: sound.critical, hasCritical, frames, hasAudio, frameStore, load, togglePlay, hold, seek, step, toggleMute, setVolume, setCritical, playVoice, stopVoice }
+  return { hostRef, status, error, playing, muted, volumes: sound, frames, hasAudio, chapters, marks, frameStore, load, togglePlay, hold, seek, step, toggleMute, setVolume, playVoice, stopVoice }
 }
 
 /** The frame being shown, for a component that draws it (the counter, the seek bar). */

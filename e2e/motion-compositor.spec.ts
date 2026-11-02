@@ -33,13 +33,13 @@ const near = (got: number[], want: number[]) => got.forEach((value, i) => expect
 const clamp = (v: number) => Math.min(1, Math.max(0, v))
 const grey = (v: number): [number, number, number] => [v, v, v]
 
-// Version 9: 8×8 canvas from a 16×16 video, the Y, Cb and Cr planes in three quarters (the fourth holds the frame code).
+// Version 11: 8×8 canvas from an 8×24 video, the Y, Cb and Cr planes stacked from the top.
 const meta: LayerSetMeta = {
-  skill: { name: 'test' }, fps: 60, frames: 10, tile: { w: 8, h: 8 }, video: { file: 'layers.mp4', w: 16, h: 16 }, base: { x: 0, y: 0 }, layers: [],
-  basePlanes: { y: { x: 0, y: 0, w: 8, h: 8 }, cb: { x: 8, y: 0, w: 8, h: 8 }, cr: { x: 0, y: 8, w: 8, h: 8 } },
+  skill: { name: 'test' }, fps: 60, frames: 10, tile: { w: 8, h: 8 }, video: { file: 'layers.mp4', w: 8, h: 24 }, base: { x: 0, y: 0 }, layers: [],
+  basePlanes: { y: { x: 0, y: 0, w: 8, h: 8 }, cb: { x: 0, y: 8, w: 8, h: 8 }, cr: { x: 0, y: 16, w: 8, h: 8 } },
 }
 const Y = 128, CB = 153, CR = 102
-const planes: Tile[] = [{ x: 0, y: 0, w: 8, h: 8, rgb: grey(Y) }, { x: 8, y: 0, w: 8, h: 8, rgb: grey(CB) }, { x: 0, y: 8, w: 8, h: 8, rgb: grey(CR) }, { x: 8, y: 8, w: 8, h: 8, rgb: grey(255) }]
+const planes: Tile[] = [{ x: 0, y: 0, w: 8, h: 8, rgb: grey(Y) }, { x: 0, y: 8, w: 8, h: 8, rgb: grey(CB) }, { x: 0, y: 16, w: 8, h: 8, rgb: grey(CR) }]
 const [y, cb, cr] = [Y / 255, CB / 255, CR / 255]
 const picture = [y + 1.5748 * (cr - 0.5), y - 0.1873 * (cb - 0.5) - 0.4681 * (cr - 0.5), y + 1.8556 * (cb - 0.5)]
 
@@ -48,6 +48,6 @@ test.beforeEach(async ({ page }) => {
   await page.addScriptTag({ content: bundle })
 })
 
-test('REQ-MOTION-028 version 9 draws the Y·Cb·Cr planes as the Unity picture (BT.709 full range)', async ({ page }) => {
+test('REQ-MOTION-028 version 11 draws the three stacked planes as the picture (BT.709 full range)', async ({ page }) => {
   near(await compose(page, meta, planes), picture.map(clamp))
 })

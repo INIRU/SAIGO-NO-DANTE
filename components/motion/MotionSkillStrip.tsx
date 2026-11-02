@@ -13,11 +13,11 @@ export const motionSkillIcon = (sinnerId: string, skillId: number) => getSkillIc
 const sinColor = (sin: string) => { const key = normalizeSin(sin); return key ? SIN_COLORS[key] : '#cccccc' }
 
 /**
- * The identity's skills under the stage, each in the game's skill frame of its sin, slot and attack type (a plain neutral
- * frame when the site has no row for it); a line before another form's skills; the chosen one pressed.
+ * The skills under the stage, each in the game's skill frame of its sin, slot and attack type (a plain neutral frame when
+ * the site has no row for it); a line before another form's skills; the chosen one pressed. `icon`: what sits in a frame.
  */
-export default function MotionSkillStrip({ sinnerId, skills, selectedKey, onPick }: {
-  sinnerId: string; skills: readonly MotionSkill[]; selectedKey: string; onPick: (skill: MotionSkill) => void
+export default function MotionSkillStrip({ icon, skills, selectedKey, onPick }: {
+  icon: (skill: MotionSkill) => string; skills: readonly MotionSkill[]; selectedKey: string; onPick: (skill: MotionSkill) => void
 }) {
   const t = useTranslations('motionPage')
   return (
@@ -26,7 +26,7 @@ export default function MotionSkillStrip({ sinnerId, skills, selectedKey, onPick
         ...(k > 0 && skill.form !== skills[k - 1].form ? [<span key={`${skill.key}:form`} data-form-divider="" aria-hidden="true" className={styles.divider} />] : []),
         <button key={skill.key} type="button" aria-pressed={skill.key === selectedKey} aria-label={skill.title} title={skill.title} className={styles.skill} onClick={() => onPick(skill)}>
           <span className={styles.art}>
-            <SkillFrame skillIconUrl={motionSkillIcon(sinnerId, skill.skillId)} sin={skill.frame?.sin ?? 'neutral'} skillSlot={skill.frame?.slot ?? 1}
+            <SkillFrame skillIconUrl={icon(skill)} sin={skill.frame?.sin ?? 'neutral'} skillSlot={skill.frame?.slot ?? 1}
               sinColor={sinColor(skill.frame?.sin ?? 'neutral')} attackType={skill.frame?.attack ?? null} label="" size="100%" eager />
           </span>
         </button>,

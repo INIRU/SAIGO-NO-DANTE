@@ -7,14 +7,14 @@ import MotionStage, { MotionPendingStage } from '@/components/motion/MotionStage
 
 const store = { subscribe: () => () => {}, get: () => 0 }
 const stage = (props: Partial<Parameters<typeof MotionStage>[0]> = {}) => renderToStaticMarkup(
-  <MotionStage hostRef={{ current: null }} status="ready" error={null} playing={false} muted volumes={{ master: 0.5, voice: 1, sfx: 1 }} critical hasCritical={false} hasAudio={false} frames={120} frameStore={store}
-    onTogglePlay={() => {}} onStep={() => {}} onSeek={() => {}} onToggleMute={() => {}} onVolume={() => {}} onCritical={() => {}} onRetry={() => {}} notice={false} onDismiss={() => {}} {...props} />,
+  <MotionStage hostRef={{ current: null }} status="ready" error={null} playing={false} muted volumes={{ master: 0.5, voice: 1, sfx: 1 }} hasAudio={false} frames={120} frameStore={store}
+    onTogglePlay={() => {}} onStep={() => {}} onSeek={() => {}} onToggleMute={() => {}} onVolume={() => {}} onRetry={() => {}} notice={false} onDismiss={() => {}} {...props} />,
 )
 
 describe('REQ-MOTION-008 the stage credits Project Moon', () => {
-  it('REQ-MOTION-008 always shows the Project Moon credit over the video, and leaves the first-visit notice to the browser', () => {
+  it('REQ-MOTION-008 draws no credit over the video (it is in the picture), and leaves the first-visit notice to the browser', () => {
     const html = stage({ notice: null })
-    expect(html).toMatch(/<span[^>]*bottom-2\.5[^>]*left-1\/2[^>]*>credit<\/span>/)
+    expect(html).not.toContain('>credit<')
     // The notice reads the browser's memory, so the server markup never flashes it at a returning visitor.
     expect(html).not.toContain('noticeTitle')
   })
@@ -31,12 +31,10 @@ describe('REQ-MOTION-008 the stage credits Project Moon', () => {
     expect(stage({ notice: false })).not.toMatch(/<button[^>]*disabled=""[^>]*aria-label="play"/)
   })
 
-  it('REQ-MOTION-008 keeps the credit while loading, and offers a retry when the video fails', () => {
-    expect(stage({ status: 'loading' })).toContain('>credit<')
+  it('REQ-MOTION-008 offers a retry when the video fails', () => {
     const failed = stage({ status: 'error', error: 'load' })
     expect(failed).toContain('loadError')
     expect(failed).toContain('retry')
-    expect(failed).toContain('>credit<')
     expect(stage({ status: 'error', error: 'webgl' })).not.toContain('retry')
   })
 
@@ -57,14 +55,12 @@ describe('REQ-MOTION-008 the stage credits Project Moon', () => {
     expect(html).toMatch(/<span[^>]*data-sentry-block[^>]*><span[^>]*>0<\/span> \/ 119<\/span>/)
   })
 
-  it('REQ-MOTION-031 holds the master, voice and effects sliders at their values (also while muted) and the critical-hit sound switch', () => {
-    const html = stage({ hasAudio: true, hasCritical: true, muted: true, volumes: { master: 0.3, voice: 0.8, sfx: 0.6 } })
+  it('REQ-MOTION-031 holds the master, voice and effects sliders at their values (also while muted), and no critical-hit switch', () => {
+    const html = stage({ hasAudio: true, muted: true, volumes: { master: 0.3, voice: 0.8, sfx: 0.6 } })
     expect(html).toMatch(/<input[^>]*aria-label="volumeMaster"[^>]*value="0.3"/)
     expect(html).toMatch(/<input[^>]*aria-label="volumeVoice"[^>]*value="0.8"/)
     expect(html).toMatch(/<input[^>]*aria-label="volumeSfx"[^>]*value="0.6"/)
-    expect(html).toMatch(/<button[^>]*role="switch"[^>]*aria-checked="true"[^>]*aria-label="critSound"|<button[^>]*aria-label="critSound"[^>]*role="switch"[^>]*aria-checked="true"/)
-    // A state without a critical-hit sound: the switch is off limits.
-    expect(stage({ hasAudio: true, hasCritical: false })).toMatch(/<button[^>]*role="switch"[^>]*disabled=""/)
+    expect(html).not.toContain('role="switch"')
   })
 
   it('REQ-MOTION-012 shows a play button over the middle of a paused video, and fades it out while playing or loading', () => {

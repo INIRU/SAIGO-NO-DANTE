@@ -2,7 +2,7 @@ import { beforeEach, expect, it, vi } from 'vitest'
 
 const state = vi.hoisted(() => ({ fail: false, skill: null as unknown }))
 vi.mock('@/lib/motion/feed', async () => ({
-  loadMotionSiteData: async (lang: string) => { if (state.fail) throw new Error('down'); return { identities: [], skillNames: [[1, lang]], skillFrames: [], refs: null } },
+  loadMotionSiteData: async (lang: string) => { if (state.fail) throw new Error('down'); return { identities: [], egos: [], skillNames: [[1, lang]], skillFrames: [], refs: null } },
   loadMotionSkill: async (id: number) => { if (state.fail) throw new Error('down'); return id === 1021601 ? state.skill : null },
   pickMotionSkillRow: (await vi.importActual<typeof import('@/lib/motion/feed')>('@/lib/motion/feed')).pickMotionSkillRow,
 }))
@@ -15,7 +15,7 @@ beforeEach(() => { state.fail = false; state.skill = { id: 's1', name: '여명�
 
 it('REQ-MOTION-004 serves the site\'s names for the motion list in the asked language, cached publicly, and 503 when the database is down', async () => {
   const res = await siteData(new Request('http://localhost/api/motion/site-data?lang=en'))
-  expect(await res.json()).toEqual({ identities: [], skillNames: [[1, 'en']], skillFrames: [], refs: null })
+  expect(await res.json()).toEqual({ identities: [], egos: [], skillNames: [[1, 'en']], skillFrames: [], refs: null })
   expect(res.headers.get('cache-control')).toContain('public')
   expect((await (await siteData(new Request('http://localhost/api/motion/site-data?lang=xx'))).json()).skillNames[0][1]).toBe('ko')
   state.fail = true

@@ -79,9 +79,9 @@ describe('sitemap', () => {
   it('REQ-MOTION-022 lists every skill motion address, and the rest when the list cannot be read', async () => {
     const { default: sitemap } = await import('@/app/sitemap')
     const entries = await sitemap()
-    const skill = entries.find(entry => entry.url === 'https://saigo-no-dante.com/ko/motion/skills?skill=id10116~1011601')
-    expect(skill?.alternates?.languages).toMatchObject({ en: 'https://saigo-no-dante.com/en/motion/skills?skill=id10116~1011601' })
-    expect(entries.filter(entry => entry.url.includes('/motion/skills?skill='))).toHaveLength(2)
+    const skill = entries.find(entry => entry.url === 'https://saigo-no-dante.com/ko/motion/skills/watch?skill=id10116~1011601')
+    expect(skill?.alternates?.languages).toMatchObject({ en: 'https://saigo-no-dante.com/en/motion/skills/watch?skill=id10116~1011601' })
+    expect(entries.filter(entry => entry.url.includes('/motion/skills/watch?skill='))).toHaveLength(2)
 
     motionCatalog.mockRejectedValueOnce(new Error('R2 down'))
     const fallback = (await sitemap()).map(entry => entry.url)
