@@ -275,6 +275,20 @@ it('REQ-MOTION-001 builds the list in the browser from the R2 index and the site
   expect(identity.skills[0]).toMatchObject({ title: 'Dawn Flash', frame: { sin: 'wrath', slot: 1, attack: 'slash' } })
 })
 
+it('REQ-MOTION-015 names and frames a skill saved under another identity\'s sprite id from the row its identity borrowed', () => {
+  const site = {
+    identities: [{ id: 'yisang-n', name: 'N사 E.G.O:: 경멸, 경외', sinner_id: 'yisang', sinner_name: '이상', game_id: '10412', folder_name: 'N', release_date: '2026-01-01' }],
+    skillNames: [[1011303, '대상 조정 사격']] as [number, string][],
+    skillFrames: [[1011303, { sin: 'gloom', slot: 3, attack: 'pierce' }]] as [number, { sin: string; slot: number; attack: 'pierce' }][],
+    skillBorrowed: [['10412', { name: '쏘아내겠소 / 언제든지', frame: { sin: 'pride', slot: 3, attack: 'pierce', sprite: 1011303 } }]] as [string, { name?: string; frame: { sin: string; slot: number; attack: 'pierce'; sprite: number } }][],
+    egos: [],
+    refs: null,
+  }
+  const linked = entry({ slug: 'id10412', skillId: 1041206, state: 'v:link', identity: 'N사 E.G.O:: 경멸, 경외 이상', name: '쏘아내겠소 / 언제든지', video: 'yisang/10412/1041206/v-link/layers.mp4', meta: 'yisang/10412/1041206/v-link/layers.json' })
+  const [skill] = motionCatalogFrom([linked], site, 'ko', new Date('2026-10-24'))[0].identities[0].skills
+  expect(skill).toMatchObject({ title: '쏘아내겠소 / 언제든지', frame: { sin: 'pride', slot: 3, attack: 'pierce', sprite: 1011303 } })
+})
+
 describe('REQ-MOTION-042 E.G.O under the sinner', () => {
   const ego = (over: Partial<MotionEntry>): MotionEntry => entry({
     ego: true, egoId: 20211, sinner: 'faust', grade: 'ZAYIN', erode: false, slug: 'ego-faust', skillId: 2021112, identity: '이름 없는 에고', name: '에고 스킬',

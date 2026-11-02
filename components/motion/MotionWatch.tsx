@@ -109,7 +109,7 @@ export default function MotionWatch() {
   const ego = 'egoId' in owner
   const image = ego ? owner.image : owner.portrait
   // An E.G.O skill has no sprite of its own: the game shows the E.G.O's art in the frame, its corrosion art for the corrosion.
-  const icon = (s: MotionSkill) => (ego ? ((s.erode ? owner.image?.replace('_awaken_profile', '_erosion_profile') : owner.image) ?? '') : motionSkillIcon(sinnerId, s.skillId))
+  const icon = (s: MotionSkill) => (ego ? ((s.erode ? owner.image?.replace('_awaken_profile', '_erosion_profile') : owner.image) ?? '') : motionSkillIcon(sinnerId, s.frame?.sprite ?? s.skillId))
   const gameId = ego ? null : owner.gameId
   const voices = voiceLinks.data?.filter(line => gameId && line.identities.includes(gameId)) ?? []
 
