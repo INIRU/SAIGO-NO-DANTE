@@ -48,98 +48,45 @@ describe('rising', () => {
   })
 })
 
-// Identities by the formations they are fielded in, weighted by each post's visitors.
+// Identities by how many recent posts of one board field them.
 const NOW = Date.parse('2026-10-20T00:00:00Z')
-const OLD = Date.parse('2026-06-01T00:00:00Z')
 const day = (ago: number) => NOW - ago * 86_400_000
-const formation = (id: string, identities: string[], createdAt = OLD, kind: 'deck' | 'planner' = 'deck'): Formation => ({ kind, id, identities, votes: 0, views: 0, createdAt })
-const seen = (entity_id: string, recent: number, base: number) => ({ entity_id, recent, base })
-const idsOf = (rows: { id: string }[]) => rows.map(row => row.id)
+const post = (id: string, deployed: string[], dates: { createdAt?: number; editedAt?: number } = { createdAt: day(3) }, kind: 'deck' | 'planner' = 'deck'): Formation =>
+  ({ kind, id, identities: deployed, deployed, votes: 0, views: 0, ...dates })
+const count = (formations: Formation[], options: { kind?: 'deck' | 'planner'; skip?: Set<string>; limit?: number } = {}) =>
+  risingIdentities({ formations, kind: options.kind ?? 'deck', skip: options.skip, now: NOW }, options.limit)
 
 describe('risingIdentities', () => {
-  const posts = [formation('p1', ['a', 'x']), formation('p2', ['a', 'y']), formation('p3', ['a', 'z']), formation('p4', ['x', 'y'])]
-  const visits = { deck: [seen('p1', 10, 10), seen('p2', 10, 10), seen('p3', 10, 10), seen('p4', 10, 90)], planner: [] }
-
-  it('REQ-COMMUNITY-076 weights an identity by the visitors of the posts that field it, as a share of all fielded visits', () => {
-    // a: 30 recent, 30 base. Recent total 4 posts × 10 × 2 = 80, base total 2 × (10 + 10 + 10 + 90) = 240: expected 30 × 80 / 240 = 10, so (30 + 3) / (10 + 3) = 2.5.
-    expect(risingIdentities({ formations: posts, visits, now: NOW })).toEqual([{ id: 'a', recent: 30, rise: 2.5, posts: 3 }])
+  it('REQ-COMMUNITY-076 counts the recent posts that field an identity, most first', () => {
+    expect(count([post('p1', ['a', 'b']), post('p2', ['a', 'b']), post('p3', ['a', 'c']), post('p4', ['c'])]))
+      .toEqual([{ id: 'a', count: 3 }, { id: 'b', count: 2 }, { id: 'c', count: 2 }])
   })
 
-  it('REQ-COMMUNITY-076 counts only the identities that fight (the first seven), not the backup of a formation', () => {
-    // Same posts, but a sits in the backup of every one: only the deployed list counts, so a is not there to rise.
-    const benched = posts.map(post => ({ ...post, deployed: post.identities.filter(id => id !== 'a') }))
-    expect(risingIdentities({ formations: benched, visits, now: NOW })).toEqual([])
-  })
-
-  it('REQ-COMMUNITY-076 reads decks and plans together, each post by its own kind', () => {
-    const mixed = [formation('p1', ['a', 'x'], OLD, 'deck'), formation('p1', ['a', 'y'], OLD, 'planner'), formation('p2', ['a', 'z']), formation('p4', ['x', 'y'])]
-    const both = { deck: [seen('p1', 10, 10), seen('p2', 10, 10), seen('p4', 10, 90)], planner: [seen('p1', 10, 10)] }
-    expect(idsOf(risingIdentities({ formations: mixed, visits: both, now: NOW }))).toEqual(['a'])
-  })
-
-  it('REQ-COMMUNITY-079 asks three posts with three visitors each and 20 in all, and relaxes to 10, 5, then two posts only to fill the row', () => {
-    // 'full' stands on three posts of 10; 'thin' on two (a bigger share); 'faint' on three posts of 2 (Σ 6, no post with three visitors).
-    const mix = [
-      ...['f1', 'f2', 'f3'].map(id => formation(id, ['full', `${id}-partner`])),
-      ...['t1', 't2'].map(id => formation(id, ['thin', `${id}-partner`])),
-      ...['n1', 'n2', 'n3'].map(id => formation(id, ['faint', `${id}-partner`])),
-      formation('quiet', ['q1', 'q2']),
+  it('REQ-COMMUNITY-076 takes a post written or edited in the last 14 days, and no older one', () => {
+    const posts = [
+      post('written', ['a'], { createdAt: day(13) }), post('edited', ['a'], { createdAt: day(200), editedAt: day(2) }),
+      post('old', ['a'], { createdAt: day(15) }), post('old-edit', ['a'], { createdAt: day(200), editedAt: day(15) }),
     ]
-    const mixVisits = { deck: [...['f1', 'f2', 'f3'].map(id => seen(id, 10, 0)), ...['t1', 't2'].map(id => seen(id, 30, 0)), ...['n1', 'n2', 'n3'].map(id => seen(id, 2, 0)), seen('quiet', 0, 100)], planner: [] }
-    expect(idsOf(risingIdentities({ formations: mix, visits: mixVisits, now: NOW }, 1))).toEqual(['full'])
-    expect(idsOf(risingIdentities({ formations: mix, visits: mixVisits, now: NOW }, 2))).toEqual(['full', 'thin'])
-    expect(idsOf(risingIdentities({ formations: mix, visits: mixVisits, now: NOW }))).toEqual(['full', 'thin'])
+    expect(count(posts)).toEqual([{ id: 'a', count: 2 }])
   })
 
-  it('REQ-COMMUNITY-079 keeps an identity with no recent visitor on its posts out, even when the row is short', () => {
-    const none = [...['n1', 'n2', 'n3'].map(id => formation(id, ['gone', `${id}-partner`])), formation('quiet', ['q1', 'q2'])]
-    expect(risingIdentities({ formations: none, visits: { deck: [...['n1', 'n2', 'n3'].map(id => seen(id, 0, 9)), seen('quiet', 0, 100)], planner: [] }, now: NOW })).toEqual([])
+  it('REQ-COMMUNITY-076 counts only the identities that fight (the first seven), not the backup', () => {
+    const benched = ['p1', 'p2'].map(id => ({ ...post(id, ['a']), identities: ['a', 'bench'] }))
+    expect(count(benched)).toEqual([{ id: 'a', count: 2 }])
   })
 
-  it('REQ-COMMUNITY-076 leaves out the identities it is told to skip, such as the LCB defaults', () => {
-    expect(risingIdentities({ formations: posts, visits, skip: new Set(['a']), now: NOW })).toEqual([])
+  it('REQ-COMMUNITY-076 keeps the boards apart', () => {
+    const posts = [post('d1', ['deck']), post('d2', ['deck']), post('p1', ['plan'], undefined, 'planner'), post('p2', ['plan'], undefined, 'planner')]
+    expect(count(posts, { kind: 'deck' })).toEqual([{ id: 'deck', count: 2 }])
+    expect(count(posts, { kind: 'planner' })).toEqual([{ id: 'plan', count: 2 }])
   })
 
-  it('REQ-COMMUNITY-076 ignores a post without visit counts and one that no formation fields', () => {
-    expect(risingIdentities({ formations: posts.slice(0, 3), visits: { deck: [seen('p1', 10, 10), seen('p2', 10, 10), seen('ghost', 99, 0)], planner: [] }, now: NOW })).toEqual([])
+  it('REQ-COMMUNITY-076 leaves out an identity seen on one post and those it is told to skip, such as the LCB defaults', () => {
+    expect(count([post('p1', ['a', 'b']), post('p2', ['a'])], { skip: new Set(['a']) })).toEqual([])
   })
 
-  it('REQ-COMMUNITY-076 lets posts made in the last 14 days break ties, without lifting a weak riser over a strong one', () => {
-    // 'old' and 'fresh' share the same visits; only the posts of 'fresh' are new.
-    const tie = [
-      ...['o1', 'o2', 'o3'].map(id => formation(id, ['old', `${id}-partner`])),
-      ...['f1', 'f2', 'f3'].map(id => formation(id, ['fresh', `${id}-partner`], day(5))),
-      ...['b1', 'b2', 'b3'].map(id => formation(id, ['big', `${id}-partner`])),
-      formation('quiet', ['q1', 'q2']),
-    ]
-    // Nothing had a base visitor but the quiet post, which gives the board a base to compare with.
-    const tieVisits = { deck: [...['o1', 'o2', 'o3', 'f1', 'f2', 'f3'].map(id => seen(id, 10, 0)), ...['b1', 'b2', 'b3'].map(id => seen(id, 40, 0)), seen('quiet', 0, 100)], planner: [] }
-    expect(idsOf(risingIdentities({ formations: tie, visits: tieVisits, now: NOW }))).toEqual(['big', 'fresh', 'old'])
-  })
-
-  // Nothing has a base visitor but the quiet post, which gives the board a base to compare with.
-  const quiet = formation('quiet', ['q1', 'q2'])
-  const solo = (name: string) => ['1', '2', '3'].map(n => formation(`${name}${n}`, [name, `${name}${n}-partner`]))
-  const soloVisits = (name: string, recent: number) => ['1', '2', '3'].map(n => seen(`${name}${n}`, recent, 0))
-
-  it('REQ-COMMUNITY-077 shows at most two identities of one team that rose on the same three posts, and lets others in', () => {
-    const team = ['team1', 'team2', 'team3', 'team4', 'team5']
-    const crowd = [...['t1', 't2', 't3'].map(id => formation(id, team)), ...solo('o1'), ...solo('o2'), quiet]
-    const crowdVisits = { deck: [...['t1', 't2', 't3'].map(id => seen(id, 40, 0)), ...soloVisits('o1', 10), ...soloVisits('o2', 10), seen('quiet', 0, 100)], planner: [] }
-    const result = idsOf(risingIdentities({ formations: crowd, visits: crowdVisits, now: NOW }))
-    // The second teammate still outranks the quiet ones (×0.3 of a top score), but the third is cut by the cap.
-    expect(result).toEqual(['team1', 'team2', 'o1', 'o2'])
-  })
-
-  it('REQ-COMMUNITY-077 pulls an identity down by how much its posts overlap the ones already chosen', () => {
-    // x1 and x2 rise on the same posts; x3 on its own with about a third of their score: 0.35 beats x2's 1.0 × (1 − 0.7).
-    const shared = [...['s1', 's2', 's3'].map(id => formation(id, ['x1', 'x2'])), ...solo('x3'), quiet]
-    const sharedVisits = { deck: [...['s1', 's2', 's3'].map(id => seen(id, 40, 0)), ...soloVisits('x3', 20), seen('quiet', 0, 100)], planner: [] }
-    expect(idsOf(risingIdentities({ formations: shared, visits: sharedVisits, now: NOW }))).toEqual(['x1', 'x3', 'x2'])
-  })
-
-  it('REQ-COMMUNITY-076 gives nothing when there is no traffic to compare with', () => {
-    expect(risingIdentities({ formations: posts, visits: { deck: [], planner: [] }, now: NOW })).toEqual([])
-    expect(risingIdentities({ formations: posts, visits: { deck: posts.slice(0, 3).map(post => seen(post.id, 10, 0)), planner: [] }, now: NOW })).toEqual([])
+  it('REQ-COMMUNITY-079 breaks ties by id and keeps at most the limit', () => {
+    const posts = ['p1', 'p2'].map(id => post(id, ['c', 'a', 'b']))
+    expect(count(posts, { limit: 2 }).map(row => row.id)).toEqual(['a', 'b'])
   })
 })

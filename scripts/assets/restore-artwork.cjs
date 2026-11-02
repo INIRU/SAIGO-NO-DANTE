@@ -31,14 +31,6 @@ const KEYWORD_ALIASES = {
   'unlock': 'unlock-i', // Source UnlockBuff_Base.iconId = UnlockBuff_1.
   'unlock-buff-ally-2': 'unlock-ii',
 }
-function keywordVariants(plan) {
-  return Object.fromEntries(plan.filter(item =>
-    item.key.startsWith('icons/keywords/') && item.key.endsWith('-2.webp') && /[ _]2\.webp$/i.test(path.basename(item.local)),
-  ).map(item => {
-    const variant = path.basename(item.key, '.webp')
-    return [variant.slice(0, -2), variant]
-  }).sort(([a], [b]) => a.localeCompare(b)))
-}
 async function restore(base, apply = false) {
   const files = ['art', 'icons'].flatMap(domain => JSON.parse(fs.readFileSync(path.join(base, `drive-complete-${domain}.json`))).files).filter(f => f.mimeType === 'image/png')
   const plan = []
@@ -108,11 +100,7 @@ async function restore(base, apply = false) {
     }
   }
   await Promise.all(Array.from({ length: 6 }, worker)); save()
-  const verified = new Set(results.filter(item => item.status === 'verified').map(item => `${item.key}:${item.sha256}`))
-  const variantsPath = path.resolve(__dirname, '../../lib/constants/keyword-icon-variants.json')
-  const variants = { ...JSON.parse(fs.readFileSync(variantsPath)), ...keywordVariants(plan.filter(item => verified.has(`${item.key}:${item.sha256}`))) }
-  fs.writeFileSync(variantsPath, JSON.stringify(Object.fromEntries(Object.entries(variants).sort(([a], [b]) => a.localeCompare(b))), null, 2) + '\n')
   console.log(JSON.stringify({ verified: results.filter(r => r.status === 'verified').length, failed: results.filter(r => r.status === 'failed').length }))
 }
-module.exports = { keywordVariants, storagePath, safeStoragePath, slug, SINNERS, KEYWORD_ALIASES }
+module.exports = { storagePath, safeStoragePath, slug, SINNERS, KEYWORD_ALIASES }
 if (require.main === module) restore(path.resolve(process.argv[2] || '../assets/recovery-2026-09-10'), process.argv.includes('--apply')).catch(e => { console.error(e.message); process.exitCode = 1 })

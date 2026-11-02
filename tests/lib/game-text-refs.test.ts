@@ -23,6 +23,13 @@ describe('REQ-SHARED-019 game text reference reads', () => {
     expect(gameTextRefNames(rows, 'ko').Combustion.n).toBe('화상')
   })
 
+  it('REQ-KEYWORDS-011 hands an id its own icon file as stored, and no icon key when the row has none', () => {
+    const names = gameTextRefNames([{ ...rows[0], id: 'FullReload', icon_slug: 'game-FullReload' }, { ...rows[0], id: 'Empty', icon_slug: null }, rows[0]], 'ko')
+    expect(names.FullReload.i).toBe('game-FullReload')
+    expect(names.Empty).not.toHaveProperty('i')
+    expect(names.Combustion).not.toHaveProperty('i')
+  })
+
   it('REQ-SHARED-019 falls back to another language before the id when the name is missing (ko, en, jp order)', () => {
     for (const lang of ['ko', 'en', 'ja'] as const) {
       expect(gameTextRefNames(rows, lang).CantBreak.n).toBe('[破壊不可]')
