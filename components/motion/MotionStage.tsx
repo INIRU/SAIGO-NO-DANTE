@@ -24,11 +24,11 @@ function FrameCounter({ store, frames }: { store: MotionFrameStore; frames: numb
 }
 
 /** The name of the chapter on screen, written only when the chapter changes. */
-function ChapterName({ store, chapters, skillTitle }: { store: MotionFrameStore; chapters: readonly MotionChapter[]; skillTitle: string }) {
+function ChapterName({ store, chapters, skillName }: { store: MotionFrameStore; chapters: readonly MotionChapter[]; skillName?: (skillId: number) => string | undefined }) {
   const t = useTranslations('motionPage')
   const chapter = currentChapter(chapters, Math.max(0, useMotionFrame(store)))
   if (!chapter) return null
-  return <span className="shrink-0 text-[0.8125rem] text-[var(--text-secondary)] @max-md:hidden">{motionChapterLabel(chapter, t.raw('chapters') as MotionChapterWords, skillTitle)}</span>
+  return <span className="ml-1.5 shrink-0 text-[0.8125rem] text-[var(--text-secondary)] @max-md:hidden">{motionChapterLabel(chapter, t.raw('chapters') as MotionChapterWords, skillName)}</span>
 }
 
 /**
@@ -96,7 +96,7 @@ export function MotionPendingStage() {
   )
 }
 
-export default function MotionStage({ hostRef, status, error, playing, muted, volumes, hasAudio, frames, frameStore, chapters = [], marks = [], skillTitle = '', onTogglePlay, onStep, onSeek, onToggleMute, onVolume, onRetry, notice, onDismiss }: {
+export default function MotionStage({ hostRef, status, error, playing, muted, volumes, hasAudio, frames, frameStore, chapters = [], marks = [], skillName, onTogglePlay, onStep, onSeek, onToggleMute, onVolume, onRetry, notice, onDismiss }: {
   hostRef: RefObject<HTMLDivElement | null>
   status: MotionStatus
   error: MotionError | null
@@ -108,8 +108,8 @@ export default function MotionStage({ hostRef, status, error, playing, muted, vo
   frameStore: MotionFrameStore
   chapters?: readonly MotionChapter[]
   marks?: readonly MotionMark[]
-  /** The skill's name, for its chapter on the timeline. */
-  skillTitle?: string
+  /** A skill's name by id, for the chapters on the timeline. */
+  skillName?: (skillId: number) => string | undefined
   onTogglePlay: () => void
   onStep: (delta: number) => void
   onSeek: (frame: number) => void
@@ -207,7 +207,7 @@ export default function MotionStage({ hostRef, status, error, playing, muted, vo
         <button type="button" className={`${iconButton} grid @max-md:hidden`} onClick={() => step(-1)} disabled={!ready} aria-label={t('prevFrame')}><ChevronLeft className="h-5 w-5" aria-hidden="true" /></button>
         <button type="button" className={`${iconButton} grid @max-md:hidden`} onClick={() => step(1)} disabled={!ready} aria-label={t('nextFrame')}><ChevronRight className="h-5 w-5" aria-hidden="true" /></button>
         <MotionTimeline store={frameStore} frames={ready ? frames : 0} chapters={chapters} marks={marks} label={t('frame')} onSeek={seek} />
-        <ChapterName store={frameStore} chapters={chapters} skillTitle={skillTitle} />
+        <ChapterName store={frameStore} chapters={chapters} skillName={skillName} />
         <FrameCounter store={frameStore} frames={frames} />
         <button type="button" className={`${iconButton} grid @max-md:ml-auto`} onClick={onToggleMute} disabled={!ready || !hasAudio} aria-label={muted ? t('soundOn') : t('soundOff')} aria-pressed={!muted}>
           {muted ? <VolumeX className="h-5 w-5" aria-hidden="true" /> : <Volume2 className="h-5 w-5" aria-hidden="true" />}

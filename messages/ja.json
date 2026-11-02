@@ -2914,14 +2914,12 @@
     "volumeMaster": "全体",
     "volumeVoice": "ボイス",
     "volumeSfx": "効果音",
-    "deadAllies": "死亡した味方",
     "pendingTitle": "モーション準備中",
     "pendingBody": "ゲーム内の映像を録画・分析して実装するため、最低5日〜2週間ほどかかります。",
     "scenarios": "シナリオ",
     "identities": "人格",
     "egos": "E.G.O",
     "skillInfo": "スキル情報",
-    "voiceLines": "連携セリフ",
     "copyLink": "リンクをコピー",
     "linkCopied": "リンクをコピーしました",
     "copyLinkFailed": "リンクをコピーできませんでした。",
@@ -2938,7 +2936,11 @@
       "resonance": "共鳴",
       "dead": "死亡",
       "break": "混乱"
-    }
+    },
+    "awaken": "覚醒",
+    "erode": "侵蝕",
+    "normal": "通常",
+    "scenarioNumber": "シナリオ{n}"
   },
   "licensesPage": {
     "title": "ライセンス",

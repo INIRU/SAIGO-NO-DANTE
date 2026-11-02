@@ -11,22 +11,16 @@
 /* A phone fits a whole identity (nine sprites and a form line) on one row; more than that scrolls. */
 @media(max-width:39.9375rem){.strip{flex:1 1 100%;gap:.125rem}.skill{flex:1 1 0;min-width:2.25rem;max-width:4.75rem;padding:.125rem .125rem .4375rem}.divider{margin:0 .1875rem .3125rem}}
 
-.partners{display:grid;grid-template-columns:repeat(auto-fill,minmax(4.25rem,1fr));gap:.375rem .25rem}
-.partner{display:flex;flex-direction:column;align-items:center;gap:.375rem;min-width:0;padding:.25rem .25rem .375rem;border:1px solid transparent;border-radius:.375rem;color:var(--text-secondary);font-size:.75rem;line-height:1.2;cursor:pointer;transition:color .16s,background-color .16s,border-color .16s,transform .16s cubic-bezier(.23,1,.32,1)}
-.faces{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:.25rem;width:100%}
-.face{position:relative;width:100%;aspect-ratio:1;overflow:hidden;border-radius:.25rem;background:#0a0806}
-.face img{object-fit:cover;object-position:50% 12%;opacity:.6;transition:opacity .16s,transform .25s cubic-bezier(.23,1,.32,1)}
-.partner>span:last-child{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.partner:active{transform:scale(.97)}
-.partner[aria-pressed=true]{color:var(--gold-light);border-color:var(--border);background:rgba(200,144,10,.12)}.partner[aria-pressed=true] .face img{opacity:1}
+.face{position:relative;display:block;flex:none;width:2rem;height:2rem;overflow:hidden;border-radius:50%;background:#0a0806;box-shadow:0 0 0 2px var(--bg-deep)}
+.face img{object-fit:cover;object-position:50% 12%}
 /* A touch screen would keep a tapped tile in its hover look; only a mouse lifts them. */
-@media(hover:hover) and (pointer:fine){.skill:hover .art{opacity:.9}.partner:hover{color:var(--text-primary)}.partner:hover .face img{opacity:.95}.skill:hover .art,.partner:hover .face img{transform:scale(1.06)}.maxSwitch:hover{color:var(--text-primary)}}
+@media(hover:hover) and (pointer:fine){.skill:hover .art{opacity:.9;transform:scale(1.06)}.maxSwitch:hover{color:var(--text-primary)}}
 
 /* The link's max-video switch, at the end of a section's rule. */
 .maxSwitch{display:inline-flex;flex-shrink:0;align-items:center;gap:.5rem;color:#9c8b73;font-size:.8125rem;cursor:pointer;transition:color .16s}
 .maxSwitch[data-on]{color:var(--gold-light)}
 
 
-.skill:focus-visible,.partner:focus-visible{outline:2px solid var(--gold-light);outline-offset:2px}
+.skill:focus-visible{outline:2px solid var(--gold-light);outline-offset:2px}
 /* Less motion keeps the colour and opacity changes and drops what moves: the press, the lift, the growing rule, the thumb's slide. */
-@media(prefers-reduced-motion:reduce){.skill,.partner{transition-property:color,background-color,border-color}.art,.face img{transition-property:opacity}.skill::after{transition:none}.skill:active,.partner:active{transform:none}.skill:hover .art,.partner:hover .face img{transform:none}}
+@media(prefers-reduced-motion:reduce){.skill{transition-property:color,background-color,border-color}.art{transition-property:opacity}.skill::after{transition:none}.skill:active{transform:none}.skill:hover .art{transform:none}}

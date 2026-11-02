@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildMotionCatalog, defaultMotionState, findMotionSkill, isMotionEgo, motionCatalogFrom, motionChapterLabel, MOTION_INDEX_URL, formatMotionLabelKey, motionAssetUrl, motionSinnerId, motionStateLabel, type MotionChapterWords, type MotionEgoInfo, type MotionEntry } from '@/lib/motion/catalog'
+import { buildMotionCatalog, defaultMotionState, findMotionSkill, isMotionEgo, motionCatalogFrom, motionChapterLabel, MOTION_INDEX_URL, cutinAllyId, formatMotionLabelKey, motionAssetUrl, motionSinnerId, motionStateLabel, type MotionChapterWords, type MotionEgoInfo, type MotionEntry } from '@/lib/motion/catalog'
 
 const entry = (over: Partial<MotionEntry>): MotionEntry => ({
   slug: 'id10216', skillId: 1021601, state: 'v:base', identity: '새벽 사무소 해결사 파우스트', name: '여명의 섬광',
@@ -11,24 +11,18 @@ describe('REQ-MOTION-001 the motion list is read from the R2 index', () => {
     const rows = [
       entry({}),
       entry({ state: 'v:best', name: '여명의 섬광 [최고 상태 (관 3단계)]', video: 'faust/10216/1021601/v-best/layers.mp4', meta: 'faust/10216/1021601/v-best/layers.json' }),
-      entry({ slug: 'link-heishou-mao-faust', skillId: 1021601, state: 'max', identity: '연계 · 흑수 - 묘 필두 파우스트', name: '연계 [최대 상태]', video: 'links/heishou-mao-faust/1021601/max/layers.mp4', meta: 'links/heishou-mao-faust/1021601/max/layers.json' }),
     ]
     const catalog = buildMotionCatalog(rows, new Map(), 'ko')
     const faust = catalog.find(s => s.id === 'faust')!
-    expect(faust.identities.map(i => i.slug)).toEqual(['id10216', 'link-heishou-mao-faust'])
+    expect(faust.identities.map(i => i.slug)).toEqual(['id10216'])
     expect(faust.identities[0].skills[0].states.map(s => s.state)).toEqual(['v:base', 'v:best'])
-    expect(faust.identities[1].skills[0].states.map(s => s.state)).toEqual(['max'])
   })
 
   it('REQ-MOTION-001 maps the R2 sinner folders and the link slugs to the site\'s sinner ids', () => {
     expect(motionSinnerId(entry({ video: 'yisang/10101/1010101/v-base/layers.mp4' }))).toBe('yi-sang')
     expect(motionSinnerId(entry({ video: 'donquixote/10301/x/layers.mp4' }))).toBe('don-quixote')
     expect(motionSinnerId(entry({ video: 'honglu/10601/x/layers.mp4' }))).toBe('hong-lu')
-    expect(motionSinnerId(entry({ slug: 'link-heishou-mao-faust', video: 'links/heishou-mao-faust/1021203/base/layers.mp4' }))).toBe('faust')
-    expect(motionSinnerId(entry({ slug: 'link-heishou-wu-yisang', video: 'links/heishou-wu-yisang/1/base/layers.mp4' }))).toBe('yi-sang')
     // A link slug without a sinner in it: the skill id's first digits name the sinner.
-    expect(motionSinnerId(entry({ slug: 'link-fellbullet', skillId: 1041206, video: 'links/fellbullet/1041206/base/layers.mp4' }))).toBe('ryoshu')
-    expect(motionSinnerId(entry({ slug: 'link-id10313', skillId: 1031303, video: 'links/id10313/1031303/base/layers.mp4' }))).toBe('don-quixote')
   })
 
   it('REQ-MOTION-001 names an identity from the site data when the slug is a game id, and the skill without its state', () => {
@@ -222,10 +216,6 @@ describe('REQ-MOTION-046 the dead 거미집 아비 of 공간참 - 잔', () => {
     expect(all[0].portrait).toContain('10916')
   })
 
-  it('REQ-MOTION-046 opens on every 아비 dead, ahead of the best state', () => {
-    const [ryoshu] = buildMotionCatalog(rows, ids, 'ko')
-    expect(defaultMotionState(ryoshu.identities[0].skills[0])).toBe('v:dead-10916+dead-10115+dead-11115+dead-10614')
-  })
 })
 
 
@@ -367,7 +357,7 @@ describe('REQ-MOTION-043 an identity carries what the site card needs', () => {
 
 describe('REQ-MOTION-041 chapter names', () => {
   const words: MotionChapterWords = { skill: '스킬', form: '폼', cutin: '컷인', coin: '코인 {n}', reuse: '재사용', part: '파트 {n}', weight: '가중', sp: 'SP', resonance: '공명', dead: '사망', break: '파괴' }
-  const at = (key: string, kind = 'skill', skillName?: string) => motionChapterLabel({ kind, key }, words, skillName)
+  const at = (key: string, kind = 'skill', skillName?: string) => motionChapterLabel({ kind, key }, words, () => skillName)
 
   it('REQ-MOTION-041 names a chapter by its token: the skill by its name, the coin and part by their number, the rest from the words', () => {
     expect(at('<s:2021112>', 'skill', '여명의 섬광')).toBe('여명의 섬광')
@@ -381,5 +371,67 @@ describe('REQ-MOTION-041 chapter names', () => {
     expect(at('<mystery:7>', 'reuse')).toBe('재사용')
     expect(at('<mystery>', 'coin')).toBe('코인')
     expect(at('plain', 'part')).toBe('파트')
+  })
+})
+
+describe('REQ-MOTION-046 the buffs of a scenario', () => {
+  const refs = { Burst: { k: 'keyword' as const, n: '파열', kw: '파열', i: 'rupture' }, Odd: { k: 'keyword' as const, n: '이상한 표식' } }
+  const states = (conditions: MotionEntry['conditions']) => buildMotionCatalog([entry({ state: 'v:1', conditions })], new Map(), 'ko', { refs })[0].identities[0].skills[0].states
+
+  it('REQ-MOTION-046 names each condition from the keyword table with its icon and stack, the target in the page language', () => {
+    const [state] = states([{ keyword: 'Burst', stack: 10, target: true }, { keyword: 'Odd', stack: 5, target: false }])
+    expect(state.conditions?.map(c => [c.name, c.stack])).toEqual([['대상 파열', '10'], ['이상한 표식', '5']])
+    expect(state.conditions?.[0].icon).toContain('/icons/keywords/rupture.webp')
+    expect(state.conditions?.[1].icon).toBeNull()
+  })
+
+  it('REQ-MOTION-046 keeps the words of the labelKey the conditions do not show, in the page language', () => {
+    const extras = (labelKey: string, conditions: MotionEntry['conditions'], lang = 'ko') => buildMotionCatalog([entry({ state: 'v:1', labelKey, conditions })], new Map(), lang, { refs })[0].identities[0].skills[0].states[0].extras
+    expect(extras('[Burst] 10 + <crit> · <weight> 3', [{ keyword: 'Burst', stack: 10, target: false }])).toEqual(['치명타', '가중치 3'])
+    expect(extras('[Burst] 10 + <crit>', [{ keyword: 'Burst', stack: 10, target: false }], 'en')).toEqual(['Critical Hit'])
+    expect(extras('[Burst] 10', undefined)).toEqual(['파열 10'])
+    expect(extras('<ally> <i:10412> + <crit>', undefined)).toEqual(['치명타'])
+  })
+
+  it('REQ-MOTION-046 leaves out a keyword the table does not know, and keeps a scenario without conditions plain', () => {
+    expect(states([{ keyword: 'Nope', target: false }])[0].conditions).toEqual([])
+    expect(states(undefined)[0].conditions).toBeUndefined()
+  })
+
+  it('REQ-MOTION-046 gives an ally formation its identity', () => {
+    const [info] = [{ id: 'a', name: '경멸, 경외', sinner_id: 'ryoshu', sinner_name: '료슈', game_id: '10412', folder_name: 'F' }]
+    const list = buildMotionCatalog([entry({ state: 'v:with-10412' })], new Map([['10412', info]]), 'ko')
+    expect(list[0].identities[0].skills[0].states[0].ally).toMatchObject({ gameId: '10412', name: '경멸, 경외', sinner: '료슈' })
+  })
+})
+
+describe('REQ-MOTION-041 the word tokens of a label', () => {
+  const refs = { Charge: { k: 'keyword' as const, n: 'Charge' } }
+
+  it('REQ-MOTION-041 writes the tokens in the page language and keeps the numbers and separators', () => {
+    expect(formatMotionLabelKey('<resonance> 2 · <weight> 4', refs, () => undefined, 'ko')).toBe('공명 2 · 가중치 4')
+    expect(formatMotionLabelKey('<target> [Charge] 2 + <crit>', refs, () => undefined, 'en')).toBe('Target Charge 2 + Critical Hit')
+    expect(formatMotionLabelKey('<hp> 49% · <coin> 3 <reuse>', refs, () => undefined, 'ja')).toBe('HP 49% · コイン 3 再使用')
+    expect(formatMotionLabelKey('<coin:2> <kill> <part:3> <coin:last>', refs, () => undefined, 'ko')).toBe('코인 2 처치 3부 마지막 코인')
+    expect(formatMotionLabelKey('<ally> <i:10412>', refs, () => '경멸, 경외', 'ko')).toBe('아군 경멸, 경외')
+  })
+})
+
+describe('REQ-MOTION-042 awakening and corrosion', () => {
+  it('REQ-MOTION-042 keeps two awakening skills together and sets the corrosion apart as a form, with names and frames from the site', () => {
+    const ego = (skillId: number, erode: boolean) => entry({ ego: true, egoId: 20211, sinner: 'faust', grade: 'ZAYIN', erode, slug: 'ego-faust', skillId, identity: 'E', video: 'faust/ego/1/v-base/layers.mp4' })
+    const [sinner] = buildMotionCatalog([ego(2021113, true), ego(2021112, false), ego(2021111, false)], new Map(), 'ko', { skillNames: new Map([[2021111, '구멍(le trou)']]), skillFrames: new Map([[2021111, { sin: 'pride', slot: 3, attack: 'pierce' as const }]]) })
+    const skills = sinner.egos[0].skills
+    expect(skills.map(s => [s.skillId, s.form])).toEqual([[2021111, null], [2021112, null], [2021113, 'erode']])
+    expect(skills[0]).toMatchObject({ title: '구멍(le trou)', frame: { sin: 'pride', attack: 'pierce' } })
+  })
+})
+
+describe('REQ-MOTION-046 the ally of a cut-in', () => {
+  it('REQ-MOTION-046 reads it from the first chapter skill of another identity', () => {
+    expect(cutinAllyId([{ key: '<s:1020101>' }, { key: '<coin:0> <reuse>' }], '10116')).toBe('10201')
+    expect(cutinAllyId([{ key: '<s:1011601>' }, { key: '<s:1020101>' }], '10116')).toBe('10201')
+    expect(cutinAllyId([{ key: '<s:1011601>' }], '10116')).toBeNull()
+    expect(cutinAllyId(undefined, '10116')).toBeNull()
   })
 })

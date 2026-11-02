@@ -2914,14 +2914,12 @@
     "volumeMaster": "전체",
     "volumeVoice": "보이스",
     "volumeSfx": "효과음",
-    "deadAllies": "사망한 아군",
     "pendingTitle": "모션 준비 중",
     "pendingBody": "인게임 영상을 촬영·분석해 구현하므로 공개까지 최소 5일~2주가 걸립니다.",
     "scenarios": "시나리오",
     "identities": "인격",
     "egos": "E.G.O",
     "skillInfo": "스킬 정보",
-    "voiceLines": "연계 대사",
     "copyLink": "링크 복사",
     "linkCopied": "링크를 복사했습니다",
     "copyLinkFailed": "링크를 복사하지 못했습니다.",
@@ -2938,7 +2936,11 @@
       "resonance": "공명",
       "dead": "사망",
       "break": "흐트러짐"
-    }
+    },
+    "awaken": "각성",
+    "erode": "침식",
+    "normal": "기본",
+    "scenarioNumber": "시나리오 {n}"
   },
   "licensesPage": {
     "title": "라이선스",
