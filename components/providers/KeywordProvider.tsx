@@ -270,6 +270,7 @@ export function KeywordWithTooltip({
   displayColor,
   plain,
   refId,
+  iconSlug,
   nested,
 }: {
   keyword: string
@@ -282,6 +283,8 @@ export function KeywordWithTooltip({
   plain?: boolean
   /** A keyword `[Id]` of game text: when it has no keyword_meta row the tooltip shows the game's own description of it. */
   refId?: string
+  /** The buff's own icon file (game_text_refs.icon_slug), for this keyword and its tooltip instead of keyword_meta's. */
+  iconSlug?: string
   /** Inside a tooltip: icon and colour only, no tooltip of its own (a tooltip in a tooltip). */
   nested?: boolean
 }) {
@@ -293,7 +296,7 @@ export function KeywordWithTooltip({
   const lookupKey = krKey ?? keyword
   const info = keywords[lookupKey]
   const hasTooltip = !nested && (!!info || !!refId)
-  const iconUrl = refId && !info ? null : getKeywordIconUrl(lookupKey, info?.iconSlug)
+  const iconUrl = refId && !info && !iconSlug ? null : getKeywordIconUrl(lookupKey, iconSlug ?? info?.iconSlug)
   const [failedIconUrl, setFailedIconUrl] = useState<string | null>(null)
   const visibleIconUrl = failedIconUrl === iconUrl ? null : iconUrl
 

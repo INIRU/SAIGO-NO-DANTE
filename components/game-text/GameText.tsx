@@ -79,6 +79,8 @@ type GameTextKeywordProps = {
   krKey?: string
   /** Game id of an `[Id]` / `<link>`; a keyword found as a plain word has none. */
   refId?: string
+  /** The buff's own icon file, drawn instead of keyword_meta's. */
+  iconSlug?: string
   inline: true
   displayColor: string
   /** Only the tooltip, no icon or keyword colour on the children (a `<link>`). */
@@ -128,10 +130,10 @@ export default function GameText({ nodes, accent, keywords, keywordRef: KeywordR
   const plainMatcher: PlainKeywordMatcher | null = matchPlainKeywords && allowedKeywords?.size ? plainKeywordMatcher(keywords, locale, keywordText) : null
 
   /** A keyword drawn by its tooltip component: `[Id]` / `<link>` of the game text, or a plain word found by the matcher (no `id`). */
-  const renderKeyword = (ref: { n: string; kw?: string }, id: string | undefined, key: number | string, children?: ReactNode): ReactNode => {
+  const renderKeyword = (ref: { n: string; kw?: string; i?: string }, id: string | undefined, key: number | string, children?: ReactNode): ReactNode => {
     const keywordColor = resolveKeywordTextColor(ref.n, ref.kw ? keywords[ref.kw] : undefined, ref.kw)
     return (
-      <KeywordRef key={key} keyword={ref.n} krKey={ref.kw} refId={id} inline displayColor={keywordColor} plain={children !== undefined} nested={nested}>
+      <KeywordRef key={key} keyword={ref.n} krKey={ref.kw} refId={id} iconSlug={ref.i} inline displayColor={keywordColor} plain={children !== undefined} nested={nested}>
         {children ?? <span style={{ color: keywordColor, fontWeight: 600, ...KEYWORD_UNDERLINE }}>{ref.n}</span>}
       </KeywordRef>
     )
@@ -187,8 +189,10 @@ export default function GameText({ nodes, accent, keywords, keywordRef: KeywordR
         case 'ref':
           return renderRef(node.id, index)
         case 'sprite': {
-          const kw = names?.[node.name]?.kw
-          const src = kw ? resolveKeywordIconUrl(kw, keywords[kw]?.iconSlug) : null
+          const ref = names?.[node.name]
+          const src = ref && (ref.kw || ref.i)
+            ? resolveKeywordIconUrl(ref.kw ?? ref.n, ref.i ?? (ref.kw ? keywords[ref.kw]?.iconSlug : undefined))
+            : null
           return src
             ? <KeywordIcon key={index} src={src} alt="" width={16} height={16} unoptimized style={{ display: 'inline', verticalAlign: 'text-bottom', width: '1em', height: '1em' }} />
             : null
