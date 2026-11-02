@@ -10,6 +10,7 @@ import { useKeywordData } from '@/components/providers/KeywordProvider'
 import { normalizeThemeKeyword } from '@/lib/constants/keywords'
 import { identityNameLines } from '@/lib/decks/identity-name-lines'
 import { identityCardFrame } from '@/lib/decks/identity-card-frame'
+import { identityAtLevel, MAX_IDENTITY_LEVEL } from '@/lib/identity/level'
 import { getLocalizedAffiliation } from '@/lib/i18n'
 import type { SupportedLang } from '@/lib/i18n/types'
 import styles from '@/styles/components/IdentityCard.module.css'
@@ -76,6 +77,7 @@ export default function IdentityCard({
   const { sinMap: kwSinMap, getIconUrl } = useKeywordData()
   const t = useTranslations()
   const locale = useLocale() as SupportedLang
+  const atMaxLevel = identityAtLevel(identity, MAX_IDENTITY_LEVEL)
   const displayName = (locale === 'en' ? identity.name_en : locale === 'ja' ? identity.name_jp : null) ?? identity.name_kr ?? ''
   const nameLines = identityNameLines(displayName, identity.game_id, locale)
   const associationChips = getAssociationChips(identity, locale)
@@ -164,9 +166,9 @@ export default function IdentityCard({
         <div className={styles.meta}>
           <dl className={styles.stats}>
             {[
-              { label: t('identity.stat.hp'), value: identity.hp },
+              { label: t('identity.stat.hp'), value: atMaxLevel.hp },
               { label: t('identity.stat.speed'), value: `${identity.speed_min}–${identity.speed_max}` },
-              { label: t('identity.stat.defense'), value: identity.def_level },
+              { label: t('identity.stat.defense'), value: atMaxLevel.def_level },
             ].map(({ label, value }) => (
               <div key={label}>
                 <dd>{value}</dd>

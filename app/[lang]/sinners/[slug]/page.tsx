@@ -65,7 +65,7 @@ async function getCachedSinnerData(slug: string) {
     supabase
       .schema('limbus')
       .from('identities')
-      .select('id, sinner_id, name_kr, name_en, name_jp, rarity, hp, speed_min, speed_max, def_level, keywords, affiliation, association_list, folder_name, game_id')
+      .select('id, sinner_id, name_kr, name_en, name_jp, rarity, hp, base_hp, hp_per_level, speed_min, speed_max, def_level, keywords, affiliation, association_list, folder_name, game_id')
       .eq('sinner_id', slug)
       .order('rarity')
       .order('name_kr'),

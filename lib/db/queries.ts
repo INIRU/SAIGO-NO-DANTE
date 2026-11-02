@@ -290,7 +290,7 @@ export async function getAllIdentitiesForBrowser(): Promise<IdentityBrowserItem[
     supabase()
       .schema('limbus')
       .from('identities')
-      .select('id, sinner_id, name_kr, name_en, name_jp, rarity, sin_affinity, keywords, skill_keyword_list, folder_name, game_id, hp, speed_min, speed_max, def_level, acquisition_info, sinner:sinners(id, name_kr, order_num)')
+      .select('id, sinner_id, name_kr, name_en, name_jp, rarity, sin_affinity, keywords, skill_keyword_list, folder_name, game_id, hp, base_hp, hp_per_level, speed_min, speed_max, def_level, acquisition_info, sinner:sinners(id, name_kr, order_num)')
       .order('rarity', { ascending: false })
       .order('name_kr'),
     supabase()
@@ -337,6 +337,8 @@ export async function getAllIdentitiesForBrowser(): Promise<IdentityBrowserItem[
       folder_name: id.folder_name,
       game_id: id.game_id,
       hp: id.hp ?? 0,
+      base_hp: id.base_hp ?? undefined,
+      hp_per_level: id.hp_per_level ?? undefined,
       speed_min: id.speed_min ?? 0,
       speed_max: id.speed_max ?? 0,
       def_level: id.def_level ?? 0,
