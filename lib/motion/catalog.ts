@@ -61,7 +61,7 @@ export type MotionLink = { id: string; partners: MotionPartner[]; max: boolean }
 export type MotionCondition = { name: string; icon: string | null; stack: string | null }
 /** A part of a labelKey the conditions do not show, in the page language, with the site's picture of it when it has one. */
 export type MotionExtra = { text: string; icon: string | null }
-export type MotionState = Pick<MotionEntry, 'state' | 'name' | 'video' | 'meta'> & { label: string; bytes: number; link?: MotionLink; dead?: MotionPartner[]; conditions?: MotionCondition[]; ally?: MotionPartner; /** What the labelKey says besides the conditions, in the page language. */ extras?: MotionExtra[] }
+export type MotionState = Pick<MotionEntry, 'state' | 'name' | 'video' | 'meta'> & { label: string; bytes: number; link?: MotionLink; dead?: MotionPartner[]; conditions?: MotionCondition[]; allies?: MotionPartner[]; /** What the labelKey says besides the conditions, in the page language. */ extras?: MotionExtra[] }
 /**
  * The game frame a skill's sprite sits in: its sin, its slot (1–3, 4 for a defense) and its attack type badge. `sprite`: the
  * sprite id when the skill is saved under another identity's (see borrowedRows), else the skill id is the sprite's.
@@ -309,7 +309,9 @@ export function buildMotionCatalog(entries: readonly MotionEntry[], identities: 
     // A link with no one else (v:link-self) is a plain state.
     const partners = entry.members?.filter(id => id !== (entry.identityId ?? gameId)).map(person) ?? []
     const link: MotionLink | undefined = partners.length ? { id: partners.map(p => p.gameId).join('+'), partners, max: !!entry.linkMax } : undefined
-    const ally = /^v:with-(\d{5})/.exec(entry.state)
+    // The allies in a scenario: its name's (v:with-<id>) and every <i:id> of its labelKey, once each; a dead one is only dead.
+    const allyIds = link ? [] : [...new Set([/^v:with-(\d{5})/.exec(entry.state)?.[1], ...[...(entry.labelKey ?? '').matchAll(/<i:(\d{5})>/g)].map(m => m[1])])]
+      .filter((id): id is string => !!id && !entry.deadAllies?.includes(id))
     const key = `${entry.slug}|${entry.skillId}`
     // A skill saved under another identity's sprite id has no row by its id: the one its identity borrowed.
     const lent = names.skillFrames?.has(entry.skillId) ? undefined : names.skillBorrowed?.get(String(entry.skillId).slice(0, 5))
@@ -329,7 +331,7 @@ export function buildMotionCatalog(entries: readonly MotionEntry[], identities: 
         const ref = names.refs?.[condition.keyword]
         return ref ? [{ name: condition.target ? `${labelWord('target', lang)} ${ref.n}` : ref.n, icon: ref.i ? getKeywordIconUrl(ref.kw ?? condition.keyword, ref.i) : null, stack: condition.stack == null ? null : String(condition.stack) }] : []
       }) }),
-      ...(ally && { ally: person(ally[1]) }),
+      ...(allyIds.length && { allies: allyIds.map(person) }),
       ...(entry.labelKey && { extras: labelExtras(entry, names.refs, labelContext.identityName!, lang) }),
     })
   }

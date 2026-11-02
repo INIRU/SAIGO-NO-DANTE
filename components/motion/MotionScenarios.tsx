@@ -12,13 +12,16 @@ import styles from './MotionDeck.module.css'
 const fullName = (p: MotionPartner) => (p.sinner ? `${p.name} ${p.sinner}` : p.name)
 const row = `${styles.scenario} hit-target`
 
-function Face({ person, dead }: { person: MotionPartner; dead?: boolean }) {
+/** A face of a scenario: an ally who plays along, or one dead in it (grey). */
+type FaceOf = { person: MotionPartner; dead?: boolean }
+
+function Face({ person, dead }: FaceOf) {
   return <span data-dead={dead || undefined} title={fullName(person)} className={styles.face}>{person.portrait && <QuietImage src={person.portrait} alt="" fill sizes="2rem" />}</span>
 }
 
 /** One face full size; two to four as a small 2×2 group in the same square, so the column keeps one width. */
-const Faces = ({ people, dead }: { people: readonly MotionPartner[]; dead?: boolean }) => (
-  <span data-many={people.length > 1 || undefined} className={styles.faces}>{people.slice(0, 4).map(p => <Face key={p.gameId} person={p} dead={dead} />)}</span>
+const Faces = ({ faces }: { faces: readonly FaceOf[] }) => (
+  <span data-many={faces.length > 1 || undefined} className={styles.faces}>{faces.slice(0, 4).map(f => <Face key={f.person.gameId} {...f} />)}</span>
 )
 
 /** A buff, a sin's resonance or a word of the scenario, in one shape: its picture, its name, its value in the number font. */
@@ -32,9 +35,13 @@ function Chip({ icon, name, value }: { icon?: string | null; name: string; value
   )
 }
 
-const peopleOf = (state: MotionState, ally?: MotionPartner) => { const person = state.ally ?? ally; return person ? [person] : state.dead ?? [] }
+/** The allies of a scenario (its own, and a cut-in's from the video), each once, then the dead. */
+const facesOf = (state: MotionState, ally?: MotionPartner): FaceOf[] => [
+  ...[...(state.allies ?? []), ...(ally ? [ally] : [])].filter((p, k, all) => all.findIndex(q => q.gameId === p.gameId) === k).map(person => ({ person })),
+  ...(state.dead ?? []).map(person => ({ person, dead: true })),
+]
 /** What identifies a scenario on screen: two scenarios the same in it need their own text. */
-const signature = (state: MotionState, ally?: MotionPartner) => [peopleOf(state, ally).map(p => p.gameId), state.conditions?.map(c => [c.name, c.stack]), state.extras]
+const signature = (state: MotionState, ally?: MotionPartner) => [facesOf(state, ally).map(f => [f.person.gameId, !!f.dead]), state.conditions?.map(c => [c.name, c.stack]), state.extras]
 /** The faces column, when a row of the list has a face. */
 const leadWidth = (faces: number) => (faces ? '2.5rem' : null)
 
@@ -44,13 +51,13 @@ const leadWidth = (faces: number) => (faces ? '2.5rem' : null)
  */
 function Scenario({ state, ally, lead, fallback, current, onPick }: { state: MotionState; ally?: MotionPartner; lead: string | null; fallback: string | null; current: boolean; onPick: () => void }) {
   const t = useTranslations('motionPage')
-  const people = peopleOf(state, ally)
+  const faces = facesOf(state, ally)
   const buffs = isBase(state.state) ? [] : state.conditions ?? []
   const extras = isBase(state.state) ? [] : state.extras ?? []
-  const text = fallback ?? (isBase(state.state) ? t('normal') : !buffs.length && !extras.length ? people.map(p => p.sinner ?? p.name).join(', ') : null)
+  const text = fallback ?? (isBase(state.state) ? t('normal') : !buffs.length && !extras.length ? faces.map(f => f.person.sinner ?? f.person.name).join(', ') : null)
   return (
     <button type="button" aria-pressed={current} data-scenario={state.state} className={row} style={lead ? { gridTemplateColumns: `${lead} minmax(0, 1fr)` } : undefined} onClick={onPick}>
-      {lead && <Faces people={people} dead={!state.ally && !ally && Boolean(state.dead?.length)} />}
+      {lead && <Faces faces={faces} />}
       <span className={styles.chips}>
         {!fallback && buffs.map(c => <span key={c.name} data-condition={c.name} className="contents"><Chip icon={c.icon} name={c.name} value={c.stack} /></span>)}
         {!fallback && extras.map(extra => <Chip key={extra.text} icon={extra.icon} name={extra.text} />)}
@@ -82,13 +89,13 @@ export default function MotionScenarios({ states, current, allies, onPick, voice
   const signatures = plain.map(s => JSON.stringify(signature(s, allies?.[s.state])))
   // The data says nothing about it, or the same as another: the index's sentence in Korean, a number elsewhere.
   const fallback = (s: MotionState, k: number) => {
-    const told = isBase(s.state) || s.conditions?.length || s.extras?.length || peopleOf(s, allies?.[s.state]).length
+    const told = isBase(s.state) || s.conditions?.length || s.extras?.length || facesOf(s, allies?.[s.state]).length
     if (told && signatures.indexOf(signatures[k]) === signatures.lastIndexOf(signatures[k])) return null
     return lang === 'ko' ? s.label : t('scenarioNumber', { n: k + 1 })
   }
   const links = [...new Map(states.flatMap(s => (s.link ? [[s.link.id, s.link] as const] : []))).values()]
   // One faces column for the whole list (links included), as wide as its most faces; a play icon sits in it for a line.
-  const lead = leadWidth(Math.max(0, ...plain.map(s => peopleOf(s, allies?.[s.state]).length), ...links.map(l => l.partners.length)))
+  const lead = leadWidth(Math.max(0, ...plain.map(s => facesOf(s, allies?.[s.state]).length), ...links.map(l => l.partners.length)))
   const grid = lead ? { gridTemplateColumns: `${lead} minmax(0, 1fr)` } : undefined
   const chosen = states.find(s => s.state === current)?.link
   const pickLink = (id: string, max: boolean) => {
@@ -112,7 +119,7 @@ export default function MotionScenarios({ states, current, allies, onPick, voice
         return (
           <div key={l.id}>
             <button type="button" aria-pressed={chosen?.id === l.id} data-partner={l.id} className={row} style={grid} onClick={() => pickLink(l.id, chosen?.max ?? false)}>
-              {lead && <Faces people={l.partners} />}
+              {lead && <Faces faces={l.partners.map(person => ({ person }))} />}
               <span className={styles.scenarioText}>{names}</span>
             </button>
             {chosen?.id === l.id && (
