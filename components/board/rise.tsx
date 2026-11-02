@@ -28,3 +28,8 @@ export function RiseValue({ rise, className = '' }: { rise: number; className?: 
     </span>
   )
 }
+
+/** How many recent posts field an identity: the same Bebas figure as the rise. */
+export function RisingCount({ count }: { count: number }) {
+  return <span className="font-[family-name:var(--font-title)] text-[1.375rem] leading-none tabular-nums text-[var(--gold-light)]">×{count}</span>
+}

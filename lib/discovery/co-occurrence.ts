@@ -7,6 +7,8 @@ export type Formation = {
   /** The identities that fight (formation order 1–DEPLOYED_SLOT_COUNT), without the backup; `identities` has every ordered one. */
   deployed?: string[]
   createdAt?: number
+  /** Last content edit (not views or votes). */
+  editedAt?: number
   egos?: string[]
   floors?: { floor: number; theme: string | null; gifts: string[]; difficulty: string }[]
 }
