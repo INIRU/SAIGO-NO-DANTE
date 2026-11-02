@@ -527,7 +527,7 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
                 ...COMPACT_KOTRA_STYLE,
                 padding: '0.5rem 1rem',
                 fontSize: '0.9375rem',
-                color: active ? 'var(--text-primary)' : '#555',
+                color: active ? 'var(--text-primary)' : 'var(--text-muted)',
                 borderBottom: active ? '2px solid var(--gold)' : '2px solid transparent',
                 background: active ? 'rgba(200,144,10,0.05)' : 'transparent',
                 cursor: 'pointer',
@@ -541,7 +541,7 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
             </m.button>
           )
         })}
-        <div className="ml-auto flex flex-shrink-0 items-center font-mono" style={{ fontSize: '0.875rem', color: '#666', paddingRight: '0.5rem' }}>
+        <div className="ml-auto flex flex-shrink-0 items-center font-mono" style={{ fontSize: '0.875rem', color: 'var(--text-muted)', paddingRight: '0.5rem' }}>
           {state.identitySlots.filter(slot => slot.slot_order < 99).length} / 12
         </div>
       </div>
@@ -682,7 +682,7 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
       {subTab === 'skillset' && (
         <div>
           {state.identitySlots.length === 0 ? (
-            <div className="text-center" style={{ padding: '3rem 1rem', color: '#444', fontSize: '0.8125rem' }}>
+            <div className="text-center" style={{ padding: '3rem 1rem', color: 'var(--text-muted)', fontSize: '0.8125rem' }}>
               {tDeck('skillset.selectIdentityFirst')}
             </div>
           ) : (

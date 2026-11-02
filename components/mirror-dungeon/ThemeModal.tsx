@@ -44,7 +44,7 @@ function GiftSection({ title, count, tone = 'muted', icon, hint, children }: {
       <div className="mb-2.5 flex items-center gap-2">
         {icon}
         <h4 style={{ fontFamily: 'var(--font-heading)', fontSize: '0.9375rem', color }}>{title}</h4>
-        <span className="tabular-nums" style={{ fontFamily: 'var(--font-title)', fontSize: '1.0625rem', lineHeight: 1, color: '#6a5a44' }}>{count}</span>
+        <span className="tabular-nums" style={{ fontFamily: 'var(--font-title)', fontSize: '1.0625rem', lineHeight: 1, color: 'var(--text-muted)' }}>{count}</span>
       </div>
       {hint && <p className="-mt-1 mb-3" style={{ fontSize: '0.8125rem', color: '#9c8b73' }}>{hint}</p>}
       {children}
@@ -180,7 +180,7 @@ export default function ThemeModal({
           <section className="mb-5">
             <h4 className="mb-3 flex items-center gap-2" style={{ fontFamily: 'var(--font-heading)', fontSize: '0.9375rem', color: '#bfae92' }}>
               {tp('common')}
-              <span className="tabular-nums" style={{ fontFamily: 'var(--font-title)', fontSize: '1.0625rem', lineHeight: 1, color: '#6a5a44' }}>{sharedGifts.length}</span>
+              <span className="tabular-nums" style={{ fontFamily: 'var(--font-title)', fontSize: '1.0625rem', lineHeight: 1, color: 'var(--text-muted)' }}>{sharedGifts.length}</span>
             </h4>
             {keywordGroups.map(([kw, kwGifts]) => {
               const iconUrl = getGiftKeywordIcon(kw)
@@ -190,7 +190,7 @@ export default function ThemeModal({
                   <div className="mb-2 flex items-center gap-1.5">
                     {iconUrl && <Image src={iconUrl} alt="" width={16} height={16} style={{ width: '1rem', height: '1rem' }} />}
                     <span style={{ color: '#9c8b73', fontSize: '0.8125rem' }}>{label}</span>
-                    <span className="tabular-nums" style={{ color: '#6a5a44', fontSize: '0.8125rem' }}>{kwGifts.length}</span>
+                    <span className="tabular-nums" style={{ color: 'var(--text-muted)', fontSize: '0.8125rem' }}>{kwGifts.length}</span>
                   </div>
                   <ThemePackModalGrid>
                     {kwGifts.map(g => <GiftCard key={g.id} gift={getGiftCardData(g)} onClick={() => onSelectGift(g)} />)}
@@ -205,7 +205,7 @@ export default function ThemeModal({
           <section className="border-t pt-4" style={{ borderColor: '#2e2417' }}>
             <h4 className="mb-3 flex items-center gap-2" style={{ fontFamily: 'var(--font-heading)', fontSize: '0.9375rem', color: '#bfae92' }}>
               {tp('events')}
-              <span className="tabular-nums" style={{ fontFamily: 'var(--font-title)', fontSize: '1.0625rem', lineHeight: 1, color: '#6a5a44' }}>{themeEvents.length}</span>
+              <span className="tabular-nums" style={{ fontFamily: 'var(--font-title)', fontSize: '1.0625rem', lineHeight: 1, color: 'var(--text-muted)' }}>{themeEvents.length}</span>
             </h4>
             <ul className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 13rem), 1fr))' }}>
               {themeEvents.map(ev => {

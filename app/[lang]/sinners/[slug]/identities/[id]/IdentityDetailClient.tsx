@@ -107,11 +107,11 @@ export default function IdentityDetailClient({
           <Link href="/sinners" className="hover:text-yellow-300 transition-colors">
             {t('sinners.title')}
           </Link>
-          <span aria-hidden style={{ color: '#4a3d2c' }}>›</span>
+          <span aria-hidden style={{ color: 'var(--text-muted)' }}>›</span>
           <Link href={`/sinners/${sinner.id}`} className="hover:text-yellow-300 transition-colors">
             {getLocalizedName({ name_kr: sinner.name_kr, name_en: sinner.name, name_jp: sinner.name_jp }, lang)}
           </Link>
-          <span aria-hidden style={{ color: '#4a3d2c' }}>›</span>
+          <span aria-hidden style={{ color: 'var(--text-muted)' }}>›</span>
           <span style={{ color: 'var(--gold)' }}>{getLocalizedName(identity, lang)}</span>
         </m.div>
 

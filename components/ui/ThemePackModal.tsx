@@ -144,7 +144,7 @@ export function ThemePackModalPill({ children, tone = 'neutral' }: ThemePackModa
     red: {
       background: 'rgba(224,64,64,0.18)',
       border: '1px solid rgba(224,64,64,0.28)',
-      color: '#e04040',
+      color: 'var(--error-text)',
     },
     purple: {
       background: 'rgba(144,112,176,0.16)',
@@ -202,7 +202,7 @@ export function ThemePackModalSection({
           {title}
         </span>
         {typeof count === 'number' && (
-          <span style={{ color: '#666', fontSize: '0.875rem', fontFamily: 'var(--font-mono)' }}>
+          <span style={{ color: 'var(--text-muted)', fontSize: '0.875rem', fontFamily: 'var(--font-mono)' }}>
             ({count})
           </span>
         )}
@@ -243,7 +243,7 @@ export function ThemePackModalEmpty({ children }: ThemePackModalEmptyProps) {
       style={{
         textAlign: 'center',
         padding: '2rem 1rem',
-        color: '#6b7280',
+        color: 'var(--text-muted)',
         fontSize: '0.9375rem',
         border: '1px dashed rgba(255,255,255,0.08)',
         borderRadius: '0.5rem',

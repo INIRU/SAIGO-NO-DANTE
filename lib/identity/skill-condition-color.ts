@@ -11,7 +11,7 @@ const CONDITIONS = [
   ["#ff0000", "CantIdentify", "피아식별불가", "Indiscriminate", "敵味方識別不可"],
   ["#26cfff", "EndSkill", "공격 종료시", "Attack End", "攻撃後"],
   ["#26cfff", "StartBattle", "전투 시작시", "Combat Start", "戦闘開始時"],
-  ["#e30000", "DefeatDuel", "합 패배", "Clash Lose", "マッチ敗北"],
+  ["#ff4f42", "DefeatDuel", "합 패배", "Clash Lose", "マッチ敗北"],
   ["#c7ff94", "OnSucceedAttackHead", "앞면 적중시", "Heads Hit", "表面的中時"],
   ["#93f13e", "OnSucceedAttackTail", "뒷면 적중시", "Tails Hit", "裏面的中時"],
   ["#93f13e", "OnSucceedEvade", "회피 성공시", "On Evade", "回避成功時"],

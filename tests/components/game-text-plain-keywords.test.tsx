@@ -71,7 +71,7 @@ describe('REQ-KEYWORDS-007 plain keywords of older skill text', () => {
     expect(trigger(plain)).not.toBe('')
     // Same markup apart from the game id the [Id] carries.
     expect(trigger(plain)).toBe(trigger(ref).replace(' data-game-ref="Sinking"', ''))
-    for (const marker of ['text-decoration-line:underline', 'color:#e30000', 'cursor:help', 'tabindex="0"', '<img']) expect(plain).toContain(marker)
+    for (const marker of ['text-decoration-line:underline', 'color:#ff4f42', 'cursor:help', 'tabindex="0"', '<img']) expect(plain).toContain(marker)
   })
 
   it('REQ-KEYWORDS-007 finds nothing without the allowed set of the identity, or with an empty one', () => {

@@ -129,26 +129,26 @@ export default function SkillExchangePanel({
         .skx__total { grid-area: total; color: #e0604f; font-family: var(--font-title), var(--font-sans); font-size: 1.375rem; line-height: 1; font-variant-numeric: tabular-nums; }
         .skx__total span { color: inherit; opacity: 0.6; font-size: 0.9375rem; }
         .skx__total[data-ok="true"] { color: #e8dcc8; }
-        .skx__total[data-ok="true"] span { color: #7f7364; opacity: 1; }
+        .skx__total[data-ok="true"] span { color: var(--text-muted); opacity: 1; }
         .skx__skills { grid-area: skills; display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
         .skx[data-readonly] .skx__skills { justify-content: flex-end; gap: 1rem; }
         .skx__skill { display: flex; align-items: center; gap: 0.25rem; }
         .skx__icon { display: flex; width: 2rem; height: 2rem; flex: 0 0 auto; align-items: center; justify-content: center; margin-right: 0.125rem; border-bottom: 2px solid; }
         .skx__icon :global(img) { width: 1.875rem; height: 1.875rem; }
-        .skx__slot { color: #7f7364; font-size: 0.6875rem; }
+        .skx__slot { color: var(--text-muted); font-size: 0.6875rem; }
         .skx__step {
           display: flex; width: 1.5rem; height: 1.5rem; align-items: center; justify-content: center; padding: 0;
           border: 0; border-radius: 0.25rem; background: #1d1710; color: #9c8b73;
           cursor: pointer; font-size: 0.875rem; line-height: 1; transition: background-color 150ms ease, color 150ms ease;
         }
         .skx__step:hover:not(:disabled) { background: rgba(200,144,10,0.16); color: #e8b030; }
-        .skx__step:disabled { background: transparent; color: #3a2e1e; cursor: not-allowed; }
+        .skx__step:disabled { background: transparent; color: var(--text-muted); cursor: not-allowed; }
         .skx__count { min-width: 1rem; color: #e8dcc8; font-family: var(--font-title), var(--font-sans); font-size: 1.25rem; line-height: 1; text-align: center; }
-        .skx__count[data-zero="true"] { color: #5a4a34; }
+        .skx__count[data-zero="true"] { color: var(--text-muted); }
         .skx__presets { grid-area: presets; display: flex; gap: 0.25rem; }
         .skx__presets button {
           min-height: 1.5rem; padding: 0 0.5rem; border: 1px solid #2e2417; border-radius: 0.25rem;
-          background: transparent; color: #8a7a63; cursor: pointer; font-size: 0.75rem; font-variant-numeric: tabular-nums;
+          background: transparent; color: var(--text-muted); cursor: pointer; font-size: 0.75rem; font-variant-numeric: tabular-nums;
           transition: border-color 150ms ease, color 150ms ease;
         }
         .skx__presets button:hover { border-color: #5a4526; color: #e8dcc8; }

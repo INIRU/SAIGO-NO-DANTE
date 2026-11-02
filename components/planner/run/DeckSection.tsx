@@ -196,7 +196,7 @@ export default function DeckSection({ state, dispatch, identities, sinners, skil
             </button>
           )
         })}
-        <span className="ml-auto shrink-0" style={{ fontSize: '0.6875rem', color: '#555', padding: '0.5rem 0.25rem' }}>
+        <span className="ml-auto shrink-0" style={{ fontSize: '0.6875rem', color: 'var(--text-muted)', padding: '0.5rem 0.25rem' }}>
           {state.identitySlots.length}/12
         </span>
       </div>
@@ -295,7 +295,7 @@ export default function DeckSection({ state, dispatch, identities, sinners, skil
                         {ego ? (
                           <span style={{ color: gc, fontSize: '0.5rem', fontWeight: 700, lineHeight: 1.2, flex: 1, textAlign: 'left' }}>{ego.name_kr ?? ''}</span>
                         ) : (
-                          <span style={{ color: '#2a1e10', fontSize: '0.5rem' }}>{slot ? '—' : ''}</span>
+                          <span style={{ color: 'var(--text-muted)', fontSize: '0.5rem' }}>{slot ? '—' : ''}</span>
                         )}
                       </div>
                     )
@@ -311,7 +311,7 @@ export default function DeckSection({ state, dispatch, identities, sinners, skil
       {subTab === 'skillset' && (
         <div>
           {state.identitySlots.length === 0 ? (
-            <div className="text-center" style={{ padding: '3rem 1rem', color: '#444', fontSize: '0.8125rem' }}>
+            <div className="text-center" style={{ padding: '3rem 1rem', color: 'var(--text-muted)', fontSize: '0.8125rem' }}>
               {t('chooseIdentityFirst')}
             </div>
           ) : (
@@ -384,7 +384,7 @@ export default function DeckSection({ state, dispatch, identities, sinners, skil
                 {modalSinnerEgo && <Image src={getSinnerLogoUrl(modalSinnerEgo.id)} alt="" width={20} height={20} style={{ width: '1.25rem', height: '1.25rem', opacity: 0.7, flexShrink: 0 }} />}
                 <span className="font-serif truncate" style={{ color: 'var(--text-primary)', fontSize: '1rem' }}>{modalSinnerEgo?.name_kr} — {t('chooseEgo')}</span>
               </div>
-              <button onClick={() => setEgoSinner(null)} className="shrink-0 flex items-center justify-center" style={{ color: '#666', cursor: 'pointer', minWidth: '2.75rem', minHeight: '2.75rem' }}><X style={{ width: '1.25rem', height: '1.25rem' }} /></button>
+              <button onClick={() => setEgoSinner(null)} className="shrink-0 flex items-center justify-center" style={{ color: 'var(--text-muted)', cursor: 'pointer', minWidth: '2.75rem', minHeight: '2.75rem' }}><X style={{ width: '1.25rem', height: '1.25rem' }} /></button>
             </div>
 
             {/* 등급별 섹션 */}
@@ -406,7 +406,7 @@ export default function DeckSection({ state, dispatch, identities, sinners, skil
                       <div style={{ flex: 1, height: '1px', background: gc + '30' }} />
                       {selectedForGrade && (
                         <button onClick={() => dispatch({ type: 'REMOVE_EGO', egoId: selectedForGrade.ego_id })}
-                          style={{ color: '#c83040', fontSize: '0.625rem', cursor: 'pointer', padding: '0.125rem 0.375rem', border: '1px solid #3a1515', borderRadius: '0.25rem', background: 'rgba(200,48,64,0.08)' }}>
+                          style={{ color: 'var(--error-text)', fontSize: '0.625rem', cursor: 'pointer', padding: '0.125rem 0.375rem', border: '1px solid #3a1515', borderRadius: '0.25rem', background: 'rgba(200,48,64,0.08)' }}>
                           {t('clearSelection')}
                         </button>
                       )}
@@ -414,7 +414,7 @@ export default function DeckSection({ state, dispatch, identities, sinners, skil
 
                     {gradeEgos.length === 0 ? (
                       <div style={{ padding: '0.625rem', background: 'rgba(10,8,5,0.5)', borderRadius: '0.25rem', border: `1px solid ${gc}15`, textAlign: 'center' }}>
-                        <span style={{ color: '#333', fontSize: '0.6875rem' }}>{t('noEgoGrade')}</span>
+                        <span style={{ color: 'var(--text-muted)', fontSize: '0.6875rem' }}>{t('noEgoGrade')}</span>
                       </div>
                     ) : (
                       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4" style={{ gap: '0.5rem' }}>

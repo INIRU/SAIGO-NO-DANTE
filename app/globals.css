@@ -52,10 +52,11 @@
 
   --gold:        #c8900a;
   --gold-light:  #e8b030;
-  --gold-dim:    #8a6010;
+  --gold-dim:    #ad7f1a;
   --crimson:     #8b1a1a;
   --crimson-bright: #c83020;
   --border:      #3a2a15;
+  --border-control: #86683a;
   --border-gold: #c8900a80;
 
   --wrath:    #c83030;
@@ -81,14 +82,15 @@
   /* ── 텍스트 위계 ─────────────────────────────── */
   --text-primary:   #e8dcc8;
   --text-secondary: #b0a890;
-  --text-tertiary:  #8a8070;
-  --text-muted:     #6a6058;
+  --text-tertiary:  #a89c8a;
+  --text-muted:     #94887a;
   --text-accent:    var(--gold-light);
 
   /* ── 상태 색상 ───────────────────────────────── */
   --success: #4a9868;
   --warning: #d4a030;
   --error:   #c84040;
+  --error-text: #ec6a5e;
   --info:    #4898b0;
 
   /* ── 보더 확장 ───────────────────────────────── */
@@ -122,8 +124,8 @@
   --deck-filter-surface-muted: rgba(255,255,255,0.02);
   --deck-filter-surface-active: rgba(200,144,10,0.1);
   --deck-filter-text: #ccc;
-  --deck-filter-text-muted: #777;
-  --deck-filter-text-soft: #888;
+  --deck-filter-text-muted: var(--text-muted);
+  --deck-filter-text-soft: var(--text-tertiary);
   --deck-filter-control-min: 2.25rem;
 }
 
@@ -290,7 +292,7 @@ textarea:focus-visible {
 
 .keyword-token img[src*="bladetrail-afterimage"] + span,
 span.inline img[src*="bladetrail-afterimage"] + span {
-  color: #e30000 !important;
+  color: #ff4f42 !important;
 }
 
 /* ── 히어로 슬라이더 CSS 애니메이션 ─────────────────────────────────────── */
@@ -729,3 +731,12 @@ a.note-mention:is(:hover,:focus-visible),.note-block-document a[href].note-menti
 /* The gold dot of a new editor tool: no text, gone after the tool is first used. */
 .note-new-dot{position:absolute;top:.3125rem;right:.3125rem;width:.375rem;height:.375rem;border-radius:50%;background:var(--gold-light);pointer-events:none}
 .note-new-dot--row{top:50%;right:.75rem;transform:translateY(-50%)}
+
+@layer base {
+  input::placeholder, textarea::placeholder { color: var(--text-muted); }
+}
+
+/* Outside any layer so the edge of a field shows on every surface; hover, focus and error keep their own colour. */
+:is(input:not([type='checkbox'], [type='radio'], [type='range'], [type='color']), textarea, select):not(:hover, :focus, [aria-invalid='true']) {
+  border-color: var(--border-control);
+}

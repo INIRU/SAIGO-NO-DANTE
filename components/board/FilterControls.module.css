@@ -11,7 +11,7 @@
 .title>button{position:relative;display:flex;align-items:center;gap:.45rem;min-width:0;font:inherit;color:inherit;text-align:left;cursor:pointer}.title>button::after{content:'';position:absolute;inset:-.55rem -.25rem -.65rem 0}
 /* The number changes in place, without an entrance: it changes on every press, and a number that fades in each time reads as flicker. */
 .count{color:var(--gold-light);font:1.05rem/1 var(--font-title);font-weight:400}
-.chevron{flex-shrink:0;color:#7f7364;transition:transform .2s cubic-bezier(.2,.8,.2,1)}[aria-expanded=false]>.chevron{transform:rotate(-90deg)}
+.chevron{flex-shrink:0;color:var(--text-muted);transition:transform .2s cubic-bezier(.2,.8,.2,1)}[aria-expanded=false]>.chevron{transform:rotate(-90deg)}
 .body{padding-top:.7rem;animation:tick .2s cubic-bezier(.2,.8,.2,1)}
 .textButton{position:relative;display:inline-flex;flex-shrink:0;align-items:center;gap:.25rem;min-height:1.75rem;color:#9c8b73;font-size:.8125rem;cursor:pointer;transition:color .16s}.textButton::after{content:'';position:absolute;inset:-.5rem -.3rem}.textButton:hover{color:var(--text-primary)}.textButton[aria-pressed=true],.textButton[data-accent]{color:var(--gold-light)}
 /* Choices are plain text flush with the section's title, so every left edge of the column is one line; the chosen one takes the colour and a rule under it (the planner's tabs). No box and no weight change: nothing moves when the choice changes. */
@@ -36,10 +36,10 @@
 .sinnerPortrait{position:absolute;inset:.15rem;overflow:hidden;border-radius:.2rem}.sinnerPortrait img{object-fit:cover;object-position:center 14%}
 .pickedList{display:flex;flex-direction:column;gap:.1rem}
 .picked{display:flex;align-items:center;gap:.6rem;width:100%;min-height:2.3rem;padding:0 .3rem;border-radius:.3rem;color:var(--text-primary);font-size:.875rem;text-align:left;cursor:pointer;transition:background-color .16s}
-.picked:hover{background:rgba(232,220,200,.05)}.picked>span:nth-last-child(2){flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.picked>svg{flex-shrink:0;color:#7f7364}.picked:hover>svg{color:var(--text-primary)}
+.picked:hover{background:rgba(232,220,200,.05)}.picked>span:nth-last-child(2){flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.picked>svg{flex-shrink:0;color:var(--text-muted)}.picked:hover>svg{color:var(--text-primary)}
 .thumb{position:relative;flex-shrink:0;width:1.6rem;height:1.6rem;overflow:hidden}
 .field{display:flex;align-items:center;gap:.5rem;min-height:2.75rem;padding:0 .7rem;border:1px solid var(--border);border-radius:.35rem;background:var(--bg-card);color:var(--text-secondary);transition:border-color .16s}.field:focus-within{border-color:var(--gold)}.field[data-invalid]{border-color:rgba(200,80,80,.6)}
-.field input.fieldInput{flex:1;width:100%;min-width:0;min-height:1.5rem;background:none;outline:none;color:var(--text-primary);font-size:.875rem;text-overflow:ellipsis}.field input.fieldInput::placeholder{color:#7f7364;text-overflow:ellipsis}
+.field input.fieldInput{flex:1;width:100%;min-width:0;min-height:1.5rem;background:none;outline:none;color:var(--text-primary);font-size:.875rem;text-overflow:ellipsis}.field input.fieldInput::placeholder{color:var(--text-muted);text-overflow:ellipsis}
 .field>button{display:grid;flex-shrink:0;place-items:center;width:1.75rem;height:1.75rem;margin-right:-.35rem;border-radius:.25rem;color:#9c8b73;cursor:pointer}.field>button:hover{color:var(--text-primary)}
 .field{position:relative}
 .field>button.help{cursor:help}.help>span{position:absolute;top:calc(100% + .4rem);right:0;z-index:20;display:none;padding:.45rem .65rem;border:1px solid var(--border);border-radius:.3rem;background:var(--bg-elevated);box-shadow:0 .5rem 1.25rem rgba(0,0,0,.5);color:var(--text-primary);font-size:.8125rem;line-height:1.4;white-space:nowrap}
@@ -59,7 +59,7 @@
 /* Named options of one size (affiliations): icon, name, how many posts use it. */
 .options{display:grid;grid-template-columns:repeat(auto-fill,minmax(11rem,1fr));gap:.3rem}
 .option{display:flex;align-items:center;gap:.6rem;min-width:0;min-height:2.75rem;padding:0 .75rem;border:1px solid transparent;border-radius:.3rem;color:var(--text-secondary);font-size:.9375rem;text-align:left;cursor:pointer;transition:color .16s,background-color .16s,border-color .16s,transform .12s}
-.option>i{flex-shrink:0;display:grid;place-items:center;width:1.6rem;height:1.6rem}.option img{max-width:100%;max-height:100%;object-fit:contain}.option>span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.option>b{color:#7f7364;font:1rem/1 var(--font-title);font-weight:400}
+.option>i{flex-shrink:0;display:grid;place-items:center;width:1.6rem;height:1.6rem}.option img{max-width:100%;max-height:100%;object-fit:contain}.option>span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.option>b{color:var(--text-muted);font:1rem/1 var(--font-title);font-weight:400}
 .option:hover{color:var(--text-primary);background:rgba(232,220,200,.04)}.option:active{transform:scale(.98)}.option[aria-pressed=true]{color:var(--gold-light);border-color:var(--border);background:rgba(200,144,10,.12)}.option[aria-pressed=true]>b{color:var(--gold-light)}
 @media(max-width:39.9375rem){.pickerGrid{grid-template-columns:repeat(3,minmax(0,1fr));gap:1.25rem .5rem;padding:1rem .75rem}.pickerHead{padding-left:.875rem}}
 @media(prefers-reduced-motion:reduce){.pickerGrid button,.option{transition:none}.pickerGrid button:hover{transform:none}}

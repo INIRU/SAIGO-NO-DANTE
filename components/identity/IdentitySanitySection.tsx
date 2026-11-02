@@ -166,7 +166,7 @@ export default function IdentitySanitySection({ sanityConditions, panicInfo }: I
               </div>
 
               <div className="flex-1 min-w-0">
-                <div style={{ color: '#e04040', fontFamily: 'var(--font-heading)', fontSize: '1.25rem', lineHeight: 1.25, marginBottom: '0.375rem' }}>
+                <div style={{ color: 'var(--error-text)', fontFamily: 'var(--font-heading)', fontSize: '1.25rem', lineHeight: 1.25, marginBottom: '0.375rem' }}>
                   {localText(panicInfo.name, panicInfo.name_en, panicInfo.name_jp)}
                 </div>
                 <div

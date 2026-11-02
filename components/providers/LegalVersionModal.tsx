@@ -161,7 +161,7 @@ export default function LegalVersionModal() {
       <section className="rounded-xl border border-[rgba(200,144,10,0.22)] bg-[#17120c] p-6 shadow-[0_1.5rem_3rem_rgba(0,0,0,0.55)]">
         <h2 className="text-[1.25rem] font-bold leading-snug text-[#f0e6d2]">{copy.heading}</h2>
         <p className="mt-2 text-[0.9375rem] leading-relaxed text-[#a89a84]">{copy.description}</p>
-        {currentVersion && <p className="mt-1 text-[0.8125rem] text-[#7d7160]">{copy.versionLabel} {currentVersion}</p>}
+        {currentVersion && <p className="mt-1 text-[0.8125rem] text-[var(--text-muted)]">{copy.versionLabel} {currentVersion}</p>}
         {texts.length > 0
           ? <LegalConsent docs={texts} agreed={agreed} onChange={setAgreed} labels={copy.consent}
               summary={currentVersion && LEGAL_CHANGES[currentVersion] ? { title: copy.changesTitle, items: LEGAL_CHANGES[currentVersion][locale] } : LEGAL_KEY_POINTS[locale]} />

@@ -1,7 +1,7 @@
 /* A support strip opened: the strip on the left, its E.G.O on the right as the site's E.G.O cards. */
 .detail { background: var(--bg-deep); border: 1px solid var(--border); font-family: var(--font-body); }
 .detail > header { display: flex; align-items: center; gap: 0.7rem; padding: 0.7rem 0.7rem 0.7rem 1rem; border-bottom: 1px solid var(--border); }
-.detail > header span { font: 400 2rem/1 var(--font-mikodacs), Impact, sans-serif; color: #8f1310; text-shadow: 0 2px 0 rgba(0, 0, 0, 0.5); }
+.detail > header span { font: 400 2rem/1 var(--font-mikodacs), Impact, sans-serif; color: #d8433a; text-shadow: 0 2px 0 rgba(0, 0, 0, 0.5); }
 .detail h2 { flex: 1; min-width: 0; margin: 0; font-size: 1rem; font-weight: 700; color: #f8c000; word-break: keep-all; }
 .detail > header button { display: grid; place-items: center; width: 2.5rem; height: 2.5rem; color: var(--text-secondary); }
 .detail > header button:hover { color: var(--gold-light); }

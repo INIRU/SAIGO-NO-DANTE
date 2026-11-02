@@ -70,19 +70,19 @@ function getResStyle(value: string, t: (key: TranslationKey) => string): { color
     '내성': { color: '#4488dd', tKey: 'ego.res.resist' },
     '견딤': { color: '#4488dd', tKey: 'ego.res.endure' },
     'resist': { color: '#4488dd', tKey: 'ego.res.resist' },
-    '보통': { color: '#667788', tKey: 'ego.res.normal' },
-    'normal': { color: '#667788', tKey: 'ego.res.normal' },
+    '보통': { color: 'var(--text-muted)', tKey: 'ego.res.normal' },
+    'normal': { color: 'var(--text-muted)', tKey: 'ego.res.normal' },
     '취약': { color: '#e06070', tKey: 'ego.res.weak' },
     'weak': { color: '#e06070', tKey: 'ego.res.weak' },
-    '치명': { color: '#e04040', tKey: 'ego.res.fatal' },
-    'fatal': { color: '#e04040', tKey: 'ego.res.fatal' },
+    '치명': { color: 'var(--error-text)', tKey: 'ego.res.fatal' },
+    'fatal': { color: 'var(--error-text)', tKey: 'ego.res.fatal' },
     '무효': { color: '#40c060', tKey: 'ego.res.null' },
     '면역': { color: '#40c060', tKey: 'ego.res.immune' },
     'immune': { color: '#40c060', tKey: 'ego.res.null' },
   }
   const entry = map[value]
   if (entry) return { color: entry.color, label: t(entry.tKey) }
-  return { color: '#667788', label: value }
+  return { color: 'var(--text-muted)', label: value }
 }
 
 function sinIconUrl(sin: string): string {
@@ -152,7 +152,7 @@ export default function EgoDetailModal({ egoId, onClose }: EgoDetailModalProps) 
 
         {loading && <LoadingSkeleton />}
         {error && (
-          <div className="p-6 text-center" style={{ color: '#c84050', fontSize: '0.875rem' }}>
+          <div className="p-6 text-center" style={{ color: 'var(--error-text)', fontSize: '0.875rem' }}>
             {error}
           </div>
         )}
@@ -228,7 +228,7 @@ function ModalContent({ data, lang, t }: { data: ApiResponse; lang: SupportedLan
               </span>
             </div>
             {sinner && (
-              <p style={{ color: '#8a7050', fontSize: '0.75rem', fontFamily: 'var(--font-body)', marginBottom: '0.375rem' }}>
+              <p style={{ color: 'var(--gold-dim)', fontSize: '0.75rem', fontFamily: 'var(--font-body)', marginBottom: '0.375rem' }}>
                 {getLocalizedName(sinner, lang)}
               </p>
             )}

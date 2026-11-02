@@ -150,7 +150,7 @@ export default function FinalGiftPresets({ inventory, dispatch, giftMap }: {
           <div className="border-b border-[#2e2417] px-3 py-2.5">
             <label className="block text-[0.8125rem] text-[#9c8b73]" htmlFor="final-preset-name">{t('nameLabel')}</label>
             <input id="final-preset-name" value={name} onChange={event => setName(event.target.value)} maxLength={MAX_PRESET_NAME} placeholder={t('namePlaceholder')}
-              className="mt-1 h-9 w-full rounded border border-[#2e2417] bg-[var(--bg-deep)] px-2.5 text-[0.9375rem] text-[var(--text-primary)] placeholder:text-[#6b5f4f] focus-visible:border-[var(--gold)] focus-visible:outline-none" />
+              className="mt-1 h-9 w-full rounded border border-[#2e2417] bg-[var(--bg-deep)] px-2.5 text-[0.9375rem] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus-visible:border-[var(--gold)] focus-visible:outline-none" />
             <p className="mt-1.5 text-[0.8125rem] text-[#8a7d69]">
               {picked.length ? t('current', { count: picked.length }) : t('noSelection')}
             </p>
@@ -162,7 +162,7 @@ export default function FinalGiftPresets({ inventory, dispatch, giftMap }: {
               const editing = renaming?.slot === slot
               return (
                 <li key={slot} className="grid grid-cols-[1.75rem_minmax(0,1fr)_auto] items-center gap-x-2.5 gap-y-2 px-1.5 py-2.5">
-                  <span className={'grid h-7 w-7 place-items-center rounded text-[0.875rem] font-bold ' + (preset ? 'bg-[rgba(200,144,10,0.16)] text-[var(--gold-light)]' : 'bg-[#1f1810] text-[#6b5f4f]')}>{slot}</span>
+                  <span className={'grid h-7 w-7 place-items-center rounded text-[0.875rem] font-bold ' + (preset ? 'bg-[rgba(200,144,10,0.16)] text-[var(--gold-light)]' : 'bg-[#1f1810] text-[var(--text-muted)]')}>{slot}</span>
                   {editing ? (
                     <input autoFocus value={renaming.value} maxLength={MAX_PRESET_NAME} aria-label={t('renameLabel', { name: preset?.name ?? '' })}
                       onChange={event => setRenaming({ slot, value: event.target.value })}
@@ -170,7 +170,7 @@ export default function FinalGiftPresets({ inventory, dispatch, giftMap }: {
                       className="h-9 min-w-0 rounded border border-[var(--gold)] bg-[var(--bg-deep)] px-2 text-[0.9375rem] text-[var(--text-primary)] focus-visible:outline-none" />
                   ) : (
                     <span className="min-w-0">
-                      <span className={'block truncate text-[0.9375rem] font-semibold ' + (preset ? 'text-[var(--text-primary)]' : 'text-[#7d7160]')}>{preset?.name ?? t('emptySlot')}</span>
+                      <span className={'block truncate text-[0.9375rem] font-semibold ' + (preset ? 'text-[var(--text-primary)]' : 'text-[var(--text-muted)]')}>{preset?.name ?? t('emptySlot')}</span>
                       {preset && (
                         <span className="flex gap-2 text-[0.8125rem] text-[#8a7d69]">
                           <span className="tabular-nums text-[#a8894e]">{t('giftCount', { count: preset.giftKeys.length })}</span>
@@ -185,7 +185,7 @@ export default function FinalGiftPresets({ inventory, dispatch, giftMap }: {
                       <button type="button" onClick={() => setRenaming(null)} aria-label={t('cancel')} className={iconButton}><X size={14} aria-hidden="true" /></button>
                     </> : preset ? <>
                       <button type="button" onClick={() => setRenaming({ slot, value: preset.name })} aria-label={t('renameLabel', { name: preset.name })} className={iconButton}><Pencil size={13} aria-hidden="true" /></button>
-                      <button type="button" onClick={() => setPending({ kind: 'delete', preset })} disabled={busy} aria-label={t('deleteLabel', { name: preset.name })} className={iconButton + ' text-[#a16855] hover:text-[#d0826a]'}><Trash2 size={13} aria-hidden="true" /></button>
+                      <button type="button" onClick={() => setPending({ kind: 'delete', preset })} disabled={busy} aria-label={t('deleteLabel', { name: preset.name })} className={iconButton + ' text-[#c08a74] hover:text-[#d0826a]'}><Trash2 size={13} aria-hidden="true" /></button>
                     </> : (
                       <button type="button" onClick={() => save(slot, name.trim() || t('defaultName', { slot }))} disabled={busy || !picked.length || loadError} className={goldButton}>
                         <Plus size={13} aria-hidden="true" />{t('add')}

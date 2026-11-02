@@ -117,7 +117,7 @@ export default function FloorPlanPreviewBoard({
 
   if (segments.length === 0) {
     return (
-      <div className="rounded-md border border-[#1f1710] bg-[var(--bg-panel)] px-4 py-5 text-center text-[0.875rem] text-[#6b6255]">
+      <div className="rounded-md border border-[#1f1710] bg-[var(--bg-panel)] px-4 py-5 text-center text-[0.875rem] text-[var(--text-muted)]">
         {tFloor('empty')}
       </div>
     )
@@ -191,7 +191,7 @@ export default function FloorPlanPreviewBoard({
                             className="object-cover saturate-[0.9]"
                           />
                         ) : (
-                          <div className="flex h-full w-full items-center justify-center text-[1rem] text-[#3a2a10]">-</div>
+                          <div className="flex h-full w-full items-center justify-center text-[1rem] text-[var(--text-muted)]">-</div>
                         )}
                         {themeImageSrc && <div className="absolute inset-0 bg-[#080604]/18" aria-hidden="true" />}
                       </div>
@@ -205,7 +205,7 @@ export default function FloorPlanPreviewBoard({
                           {tFloor(`difficulty.${floorDifficulty}`)}
                         </span>
                         {theme && (
-                          <span className="min-w-0 truncate text-[0.875rem] text-[#6f6354]">
+                          <span className="min-w-0 truncate text-[0.875rem] text-[var(--text-muted)]">
                             {tFloor('themeGiftCount', { count: theme.ego_gift_ids?.length ?? 0 })}
                           </span>
                         )}
@@ -241,7 +241,7 @@ export default function FloorPlanPreviewBoard({
                           })}
                         </div>
                       ) : (
-                        <span className="text-[0.875rem] text-[#5d5144]">{tFloor('acquiredGiftCount', { count: 0 })}</span>
+                        <span className="text-[0.875rem] text-[var(--text-muted)]">{tFloor('acquiredGiftCount', { count: 0 })}</span>
                       )}
                     </div>
 

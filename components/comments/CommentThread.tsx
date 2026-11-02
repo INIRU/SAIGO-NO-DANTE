@@ -22,7 +22,7 @@ function CommentBody({ item, small, replyTo, footer }: { item: ThreadItem; small
         <p className="flex flex-wrap items-baseline gap-x-2.5">
           <span className="text-[0.9375rem] font-semibold text-[var(--text-primary)]">{item.name}</span>
           {item.badge}
-          <RelativeTime date={item.created_at} className="text-[0.8125rem] text-[#7f7364]" />
+          <RelativeTime date={item.created_at} className="text-[0.8125rem] text-[var(--text-muted)]" />
         </p>
         {replyTo && (
           <p className="mt-0.5 flex min-w-0 items-center gap-1 text-[0.8125rem] text-[#9c8b73]">
@@ -61,10 +61,10 @@ export function CommentReplyForm({ targetName, value, onChange, onSubmit, onCanc
         rows={2}
         autoFocus
         onKeyDown={event => { if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) { event.preventDefault(); onSubmit() } }}
-        className="block w-full resize-y rounded-md border border-[#2e2417] bg-[#17120c] px-3 py-2.5 text-[0.9375rem] leading-relaxed text-[var(--text-primary)] placeholder:text-[#7f7364] focus:border-[var(--gold)] focus:outline-none"
+        className="block w-full resize-y rounded-md border border-[#2e2417] bg-[#17120c] px-3 py-2.5 text-[0.9375rem] leading-relaxed text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--gold)] focus:outline-none"
       />
       <div className="mt-2 flex items-center justify-between gap-3">
-        <span className="text-[0.8125rem] tabular-nums text-[#7f7364]">{value.length}/500</span>
+        <span className="text-[0.8125rem] tabular-nums text-[var(--text-muted)]">{value.length}/500</span>
         <button
           type="submit"
           disabled={submitting || !value.trim()}
