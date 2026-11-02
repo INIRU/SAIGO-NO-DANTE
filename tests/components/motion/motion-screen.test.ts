@@ -15,7 +15,7 @@ describe('REQ-MOTION-013 the motion page is a full-screen viewer', () => {
   it('REQ-MOTION-044 sets the flag on the watching page and its loading screen, not on the picking page', () => {
     expect(read('app/[lang]/motion/skills/watch/layout.tsx')).toContain('<MotionScreenFlag />')
     expect(read('app/[lang]/motion/skills/layout.tsx')).not.toContain('MotionScreenFlag')
-    expect(read('components/motion/MotionWatch.tsx')).toMatch(/<BackLink href=/)
+    expect(read('components/motion/MotionWatch.tsx')).toMatch(/<BackLink parent href=/)
     expect(read('components/motion/MotionScreenFlag.tsx')).toContain("useHtmlFlag('with-motion')")
   })
 

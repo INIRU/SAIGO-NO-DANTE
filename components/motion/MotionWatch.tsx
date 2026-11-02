@@ -44,7 +44,7 @@ function Header({ back, image, title }: { back: string; image: string | null; ti
   const t = useTranslations('motionPage')
   return (
     <header className="flex shrink-0 items-center gap-2">
-      <BackLink href={back} aria-label={t('back')} title={t('back')} className={`${iconButton} -ml-2`}><ArrowLeft className="h-5 w-5" aria-hidden="true" /></BackLink>
+      <BackLink parent href={back} aria-label={t('back')} title={t('back')} className={`${iconButton} -ml-2`}><ArrowLeft className="h-5 w-5" aria-hidden="true" /></BackLink>
       <span className="relative h-11 w-11 shrink-0 overflow-hidden rounded-md border border-[#2e2417] bg-[#0a0806]">{image && <QuietImage src={image} alt="" fill sizes="2.75rem" className="object-cover object-[50%_12%]" />}</span>
       <h1 className="min-w-0 truncate font-[family-name:var(--font-heading)] text-[1.125rem] leading-tight text-[var(--text-primary)] md:text-[1.375rem]">{title}</h1>
       <CopyLink />
