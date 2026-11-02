@@ -48,3 +48,12 @@ it('REQ-SHARED-064 the licenses page names each font and the Spine runtime with 
   expect(ko).toContain('공공누리 제1유형(출처표시)')
   expect(ko).toContain('에스코어 글꼴 라이선스')
 })
+
+it('REQ-MOTION-048 the licenses page says the game assets belong to Project Moon, in every language', async () => {
+  const { default: LicensesPage } = await import('@/app/[lang]/licenses/page')
+  for (const [lang, word] of [['ko', '스킬 애니메이션'], ['en', 'skill animations'], ['ja', 'スキルアニメーション']]) {
+    const html = renderToStaticMarkup(await LicensesPage({ params: Promise.resolve({ lang }) }))
+    expect(html).toContain(word)
+    expect(html).toContain('Project Moon')
+  }
+})

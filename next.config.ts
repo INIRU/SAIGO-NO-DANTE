@@ -110,6 +110,14 @@ const nextConfig: NextConfig = {
     // With hundreds of distinct game images per page, cold misses (first view, new widths) were the slow loads.
     formats: ['image/webp'],
   },
+  // The player moved to its own page; a link or search result with ?skill= keeps working (the query goes along).
+  async redirects() {
+    const skill = [{ type: 'query' as const, key: 'skill' }]
+    return [
+      { source: '/motion/skills', has: skill, destination: '/motion/skills/watch', permanent: true },
+      { source: '/:lang(ko|en|ja)/motion/skills', has: skill, destination: '/:lang/motion/skills/watch', permanent: true },
+    ]
+  },
   async headers() {
     return [
       {

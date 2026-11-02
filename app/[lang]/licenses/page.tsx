@@ -18,10 +18,12 @@ export default async function LicensesPage({ params }: { params: Promise<{ lang:
 
   const { lang } = await params
   const t = await getTranslations({ locale: lang, namespace: 'licensesPage' })
+  const tCommon = await getTranslations({ locale: lang, namespace: 'common' })
   const license = (item: LicenseItem) => ('licenseKey' in item ? t(item.licenseKey) : item.license)
   return (
     <div className="mx-auto min-h-[100dvh] max-w-[42rem] px-4 pb-24 pt-[5.5rem] md:px-6">
       <PageHeader title={t('title')} />
+      <p className="mt-3 break-keep text-[0.9375rem] leading-relaxed text-[var(--text-secondary)]">{tCommon('assetsNotice')}</p>
       {LICENSES.map(({ group, items }) => (
         <section key={group} aria-labelledby={`licenses-${group}`} className="border-t border-[#241c14] py-8 first-of-type:border-t-0">
           <h2 id={`licenses-${group}`} className="font-[family-name:var(--font-heading)] text-[1.125rem] font-bold text-[var(--gold)] md:text-[1.25rem]">
