@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildMotionCatalog, defaultMotionState, motionCatalogFrom, MOTION_INDEX_URL, formatMotionLabelKey, motionAssetUrl, motionSinnerId, motionStateLabel, type MotionEntry } from '@/lib/motion/catalog'
+import { buildMotionCatalog, defaultMotionState, findMotionSkill, isMotionEgo, motionCatalogFrom, motionChapterLabel, MOTION_INDEX_URL, formatMotionLabelKey, motionAssetUrl, motionSinnerId, motionStateLabel, type MotionChapterWords, type MotionEgoInfo, type MotionEntry } from '@/lib/motion/catalog'
 
 const entry = (over: Partial<MotionEntry>): MotionEntry => ({
   slug: 'id10216', skillId: 1021601, state: 'v:base', identity: '새벽 사무소 해결사 파우스트', name: '여명의 섬광',
@@ -206,13 +206,13 @@ describe('REQ-MOTION-018 a link state names its partner', () => {
   })
 })
 
-describe('REQ-MOTION-034 the dead 거미집 아비 of 공간참 - 잔', () => {
+describe('REQ-MOTION-046 the dead 거미집 아비 of 공간참 - 잔', () => {
   const info = (game_id: string, sinner_id: string, sinner_name: string) => [game_id, { id: `u${game_id}`, name: `아비 ${game_id}`, sinner_id, sinner_name, game_id, folder_name: 'f', release_date: '2025-08-28' }] as const
   const ids = new Map([info('10916', 'rodion', '로쟈'), info('10115', 'yi-sang', '이상'), info('11115', 'outis', '오티스'), info('10614', 'hong-lu', '홍루')])
   const row = (state: string, deadAllies?: string[]) => entry({ slug: 'id10415', identityId: '10415', skillId: 1041507, state, label: state, video: `ryoshu/10415/1041507/${state}/layers.mp4`, ...(deadAllies && { deadAllies }) })
   const rows = [row('v:base'), row('v:best-3'), row('v:dead-10916', ['10916']), row('v:dead-10916+dead-10115+dead-11115+dead-10614', ['10916', '10115', '11115', '10614'])]
 
-  it('REQ-MOTION-034 gives a dead state its dead identities (name, sinner, portrait), in the index order', () => {
+  it('REQ-MOTION-046 gives a dead state its dead identities (name, sinner, portrait), in the index order', () => {
     const [ryoshu] = buildMotionCatalog(rows, ids, 'ko')
     const states = ryoshu.identities[0].skills[0].states
     expect(states.find(s => s.state === 'v:base')!.dead).toBeUndefined()
@@ -222,15 +222,15 @@ describe('REQ-MOTION-034 the dead 거미집 아비 of 공간참 - 잔', () => {
     expect(all[0].portrait).toContain('10916')
   })
 
-  it('REQ-MOTION-034 opens on every 아비 dead, ahead of the best state', () => {
+  it('REQ-MOTION-046 opens on every 아비 dead, ahead of the best state', () => {
     const [ryoshu] = buildMotionCatalog(rows, ids, 'ko')
     expect(defaultMotionState(ryoshu.identities[0].skills[0])).toBe('v:dead-10916+dead-10115+dead-11115+dead-10614')
   })
 })
 
 
-describe('REQ-MOTION-019 a skill carries its frame', () => {
-  it('REQ-MOTION-019 gives a skill the sin, slot and attack type of its site row, and none when the site has no row', () => {
+describe('REQ-MOTION-044 a skill carries its frame', () => {
+  it('REQ-MOTION-044 gives a skill the sin, slot and attack type of its site row, and none when the site has no row', () => {
     const rows = [
       entry({ slug: 'id10613', identityId: '10613', skillId: 1061301, video: 'honglu/10613/1061301/v-base/layers.mp4' }),
       entry({ slug: 'id10613', identityId: '10613', skillId: 1061399, video: 'honglu/10613/1061399/v-base/layers.mp4' }),
@@ -276,10 +276,110 @@ it('REQ-MOTION-001 builds the list in the browser from the R2 index and the site
     identities: [{ id: 'faust-dawn', name: '새벽 사무소 해결사', sinner_id: 'faust', sinner_name: '파우스트', game_id: '10216', folder_name: 'Dawn', release_date: '2026-01-01' }],
     skillNames: [[1021601, 'Dawn Flash']] as [number, string][],
     skillFrames: [[1021601, { sin: 'wrath', slot: 1, attack: 'slash' }]] as [number, { sin: string; slot: number; attack: 'slash' }][],
+    egos: [],
     refs: null,
   }
   const catalog = motionCatalogFrom([entry({})], site, 'en', new Date('2026-10-24'))
   const identity = catalog.find(s => s.id === 'faust')!.identities[0]
   expect(identity).toMatchObject({ label: '새벽 사무소 해결사', identityId: 'faust-dawn', gameId: '10216', released: '2026-01-01' })
   expect(identity.skills[0]).toMatchObject({ title: 'Dawn Flash', frame: { sin: 'wrath', slot: 1, attack: 'slash' } })
+})
+
+describe('REQ-MOTION-042 E.G.O under the sinner', () => {
+  const ego = (over: Partial<MotionEntry>): MotionEntry => entry({
+    ego: true, egoId: 20211, sinner: 'faust', grade: 'ZAYIN', erode: false, slug: 'ego-faust', skillId: 2021112, identity: '이름 없는 에고', name: '에고 스킬',
+    video: 'faust/ego/2021112/v-base/layers.mp4', meta: 'faust/ego/2021112/v-base/layers.json', ...over,
+  })
+  const info = (game_id: string, name: string, grade: string, sin_affinity: string | null): [string, MotionEgoInfo] => [game_id, { game_id, name, image_url: `https://img/${game_id}.webp`, grade, sinner_id: 'faust', sin_affinity }]
+  const egos = new Map([info('20211', '에고 하나', 'ZAYIN', 'gloom'), info('20215', '에고 둘', 'WAW', 'wrath'), info('20213', '에고 셋', 'ZAYIN', null)])
+  const rows = [
+    entry({}),
+    ego({ egoId: 20215, grade: 'WAW', slug: 'ego-faust-b', skillId: 2021512, video: 'faust/ego/2021512/v-base/layers.mp4' }),
+    ego({ skillId: 2021113, erode: true, video: 'faust/ego/2021113/v-base/layers.mp4' }),
+    ego({}),
+    ego({ egoId: 20213, slug: 'ego-faust-c', skillId: 2021312, video: 'faust/ego/2021312/v-base/layers.mp4' }),
+  ]
+  const faust = () => buildMotionCatalog(rows, new Map(), 'ko', { egos }).find(s => s.id === 'faust')!
+
+  it('REQ-MOTION-042 keeps an E.G.O entry out of the identity rules and puts it in the sinner\'s egos, one card per egoId', () => {
+    expect(faust().identities.map(i => i.slug)).toEqual(['id10216'])
+    expect(faust().egos.map(e => e.egoId)).toEqual([20213, 20211, 20215])
+  })
+
+  it('REQ-MOTION-042 orders the E.G.O by grade, then egoId descending, and its skills awakening first, then erosion', () => {
+    expect(faust().egos.map(e => [e.grade, e.egoId])).toEqual([['ZAYIN', 20213], ['ZAYIN', 20211], ['WAW', 20215]])
+    expect(faust().egos[1].skills.map(s => [s.skillId, s.erode])).toEqual([[2021112, false], [2021113, true]])
+  })
+
+  it('REQ-MOTION-042 names an E.G.O and its picture from the site by game id, with the slug and skill id as the skill key', () => {
+    const one = faust().egos[1]
+    expect(one).toMatchObject({ label: '에고 하나', image: 'https://img/20211.webp', sin: 'gloom' })
+    expect(one.skills[0].key).toBe('ego-faust|2021112')
+    expect(one.skills[0].states[0].video).toBe('faust/ego/2021112/v-base/layers.mp4')
+  })
+
+  it('REQ-MOTION-042 gives an E.G.O skill the frame of its sin in slot 3, the neutral one without a sin, and names it from the index without a site row', () => {
+    expect(faust().egos[1].skills[0].frame).toEqual({ sin: 'gloom', slot: 3, attack: null })
+    expect(faust().egos[0].skills[0].frame).toEqual({ sin: 'neutral', slot: 3, attack: null })
+    const [bare] = buildMotionCatalog([ego({})], new Map(), 'ko')
+    expect(bare.egos[0]).toMatchObject({ egoId: 20211, grade: 'ZAYIN', label: '이름 없는 에고', image: null, sin: null })
+  })
+
+  it('REQ-MOTION-042 lists a sinner that has E.G.O only, and one that has identities only with no egos', () => {
+    const only = buildMotionCatalog([ego({ sinner: 'yisang', video: 'yisang/ego/2021112/v-base/layers.mp4', slug: 'ego-yisang' })], new Map(), 'ko')
+    expect(only.map(s => [s.id, s.identities.length, s.egos.length])).toEqual([['yi-sang', 0, 1]])
+    expect(buildMotionCatalog([entry({})], new Map(), 'ko')[0].egos).toEqual([])
+  })
+
+  it('REQ-MOTION-042 finds the sinner of an E.G.O by its folder', () => {
+    expect(motionSinnerId(ego({ video: 'donquixote/ego/2031112/v-base/layers.mp4' }))).toBe('don-quixote')
+  })
+
+  it('REQ-MOTION-042 builds the E.G.O in the browser from the site data', () => {
+    const site = { identities: [], skillNames: [[2021112, 'Ego Skill']] as [number, string][], skillFrames: [] as [number, never][], refs: null, egos: [egos.get('20211')!] }
+    const [f] = motionCatalogFrom([ego({})], site, 'en', new Date('2026-10-24'))
+    expect(f.egos[0]).toMatchObject({ label: '에고 하나' })
+    expect(f.egos[0].skills[0].title).toBe('Ego Skill')
+  })
+
+  it('REQ-MOTION-042 finds a skill of an identity or an E.G.O from its address, with its owner', () => {
+    const sinners = buildMotionCatalog(rows, new Map(), 'ko', { egos })
+    const own = findMotionSkill(sinners, 'id10216~1021601')!
+    expect(own).toMatchObject({ sinnerId: 'faust', skill: { key: 'id10216|1021601' } })
+    expect(isMotionEgo(own.owner)).toBe(false)
+    expect(own.owner.label).toBe('새벽 사무소 해결사 파우스트')
+    const found = findMotionSkill(sinners, 'ego-faust~2021113')!
+    expect(found).toMatchObject({ sinnerId: 'faust', skill: { skillId: 2021113, erode: true } })
+    expect(isMotionEgo(found.owner)).toBe(true)
+    expect(found.owner.label).toBe('에고 하나')
+    expect(findMotionSkill(sinners, 'ego-faust~1')).toBeNull()
+  })
+})
+
+describe('REQ-MOTION-043 an identity carries what the site card needs', () => {
+  it('REQ-MOTION-043 gives an identity its rarity and folder name, null when the site has no row', () => {
+    const identities = new Map([['10216', { id: 'u', name: 'n', sinner_id: 'faust', game_id: '10216', folder_name: 'Dawn', rarity: 3 }]])
+    const [faust] = buildMotionCatalog([entry({}), entry({ slug: 'id10299', skillId: 1029901, video: 'faust/10299/1029901/v-base/layers.mp4' })], identities, 'ko')
+    expect(faust.identities.find(i => i.slug === 'id10216')).toMatchObject({ rarity: 3, folderName: 'Dawn' })
+    expect(faust.identities.find(i => i.slug === 'id10299')).toMatchObject({ rarity: null, folderName: null })
+  })
+})
+
+describe('REQ-MOTION-041 chapter names', () => {
+  const words: MotionChapterWords = { skill: '스킬', form: '폼', cutin: '컷인', coin: '코인 {n}', reuse: '재사용', part: '파트 {n}', weight: '가중', sp: 'SP', resonance: '공명', dead: '사망', break: '파괴' }
+  const at = (key: string, kind = 'skill', skillName?: string) => motionChapterLabel({ kind, key }, words, skillName)
+
+  it('REQ-MOTION-041 names a chapter by its token: the skill by its name, the coin and part by their number, the rest from the words', () => {
+    expect(at('<s:2021112>', 'skill', '여명의 섬광')).toBe('여명의 섬광')
+    expect(at('<s:2021112>')).toBe('스킬')
+    expect(at('<coin:3>', 'coin')).toBe('코인 3')
+    expect(at('<part:2>', 'part')).toBe('파트 2')
+    for (const [key, name] of [['<form>', '폼'], ['<cutin>', '컷인'], ['<weight>', '가중'], ['<sp>', 'SP'], ['<resonance>', '공명'], ['<dead>', '사망'], ['<break>', '파괴']]) expect(at(key, 'form')).toBe(name)
+  })
+
+  it('REQ-MOTION-041 falls back to the general name of the chapter kind for a token it does not know', () => {
+    expect(at('<mystery:7>', 'reuse')).toBe('재사용')
+    expect(at('<mystery>', 'coin')).toBe('코인')
+    expect(at('plain', 'part')).toBe('파트')
+  })
 })
