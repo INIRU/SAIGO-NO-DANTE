@@ -125,7 +125,7 @@ test('REQ-MOTION-030 the sounds come from the shared library and the play rules 
   await expect(page.getByRole('switch')).toHaveCount(0)
 })
 
-test('REQ-MOTION-040 past the last frame of a video with a tail the picture and the counter stay, and it still reads as playing', async ({ page }) => {
+test('REQ-MOTION-032 REQ-MOTION-040 past the last frame of a video with a tail the picture and the counter stay, and it still reads as playing', async ({ page }) => {
   await page.addInitScript(() => {
     const w = window as unknown as { uploads: number; media: HTMLMediaElement }
     w.uploads = 0
