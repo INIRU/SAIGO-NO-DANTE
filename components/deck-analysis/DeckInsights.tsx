@@ -257,7 +257,7 @@ export default function DeckInsights({ identities, sinCounts, baseSinCounts, sum
         .deck-passive__desc > div { color: #c9b99c !important; font-size: 0.875rem !important; line-height: 1.65 !important; }
         .deck-passive__rate { display: inline-flex; align-items: center; min-height: 1.5rem; padding: 0 0.5rem; border-radius: 0.25rem; background: var(--bg-elevated); color: var(--text-secondary); font-size: 0.75rem; font-weight: 600; }
         .deck-passive__rate[data-level='easy'] { background: color-mix(in srgb, var(--gold-light) 14%, transparent); color: var(--gold-light); }
-        .deck-passive__rate[data-level='hard'] { background: color-mix(in srgb, #9b2c23 30%, transparent); color: var(--error); }
+        .deck-passive__rate[data-level='hard'] { background: color-mix(in srgb, #9b2c23 30%, transparent); color: var(--error-text); }
         .deck-passive__rate[data-level='impossible'] { background: #9b2c23; color: var(--text-primary); }
         .deck-passive__warn { display: inline-flex; width: 1.25rem; height: 1.25rem; align-items: center; justify-content: center; border-radius: 999px; background: #9b2c23; color: #e8dcc8; font-size: 0.75rem; font-weight: 700; }
       `}</style>

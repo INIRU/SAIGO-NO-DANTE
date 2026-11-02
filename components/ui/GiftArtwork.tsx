@@ -103,7 +103,7 @@ export default function GiftArtwork({ gift, displayName, isInsert = false, isSel
               <QuietImage src={gift.image_url} alt="" fill className="object-contain" sizes={sizes} />
             </div>
           ) : (
-            <FlaskConical size="1.5rem" style={{ color: '#444' }} />
+            <FlaskConical size="1.5rem" style={{ color: 'var(--text-muted)' }} />
           )}
         </div>
 

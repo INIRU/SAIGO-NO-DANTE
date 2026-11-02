@@ -348,7 +348,7 @@ export function SkillChip({ entry, interactive = true }: { entry: NoteSkillEntry
           {atkIcon && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 4 }}>
               <Image src={atkIcon} alt="" width={12} height={12} />
-              <span style={{ color: '#666677', fontSize: '0.75rem', fontFamily: 'var(--font-mono)' }}>{t(`identity.skillType.${entry.skill_type}` as Parameters<typeof t>[0]) ?? entry.skill_type}</span>
+              <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem', fontFamily: 'var(--font-mono)' }}>{t(`identity.skillType.${entry.skill_type}` as Parameters<typeof t>[0]) ?? entry.skill_type}</span>
             </div>
           )}
           {entry.description && (
@@ -557,7 +557,7 @@ export function EgoGiftChip({ entry, label = false }: { entry: NoteEgoGiftEntry;
               <Image src={entry.image_url} alt="" width={20} height={20} style={{ objectFit: 'contain' }} />
             )}
             <span style={{ color: sc, fontSize: '0.8125rem', fontWeight: 700 }}>{entry.name}</span>
-            <span style={{ color: '#555', fontSize: '0.8125rem' }}>{localizeDeckKeyword(entry.keyword, keywords[entry.keyword], locale as SupportedLang)} {entry.grade}</span>
+            <span style={{ color: 'var(--text-muted)', fontSize: '0.8125rem' }}>{localizeDeckKeyword(entry.keyword, keywords[entry.keyword], locale as SupportedLang)} {entry.grade}</span>
           </div>
           {entry.effect_base && (
             <div style={{ color: '#aaa', fontSize: '0.75rem', lineHeight: 1.55 }}>

@@ -32,7 +32,7 @@ export default function LegalDocument({ type, lang, doc }: { type: LegalType; la
       <PageHeader
         className={`${HEAD} !mb-0 print:[&_h1]:text-black`}
         title={doc?.title ?? t(`legal.${type}.title`)}
-        description={(lastUpdated || version) && <span className="flex flex-wrap gap-x-4 print:text-[#444]">
+        description={(lastUpdated || version) && <span className="flex flex-wrap gap-x-4 print:text-[var(--text-muted)]">
           {lastUpdated && <span>{t('legal.lastUpdated')} {lastUpdated}</span>}
           {version && <span>{t('legal.version')} {version}</span>}
         </span>}

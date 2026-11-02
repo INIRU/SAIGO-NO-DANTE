@@ -53,7 +53,7 @@ export default function KeywordSidebar({
               borderLeft: orientation === 'horizontal' ? horizontalBorder : `2px solid ${isActive ? 'var(--gold)' : 'transparent'}`,
               borderRadius: orientation === 'horizontal' ? '0.375rem' : '0 0.25rem 0.25rem 0',
               cursor: 'pointer',
-              color: isActive ? 'var(--gold-light)' : '#777',
+              color: isActive ? 'var(--gold-light)' : 'var(--text-muted)',
               fontSize: orientation === 'horizontal' ? '0.9375rem' : '0.75rem',
               fontWeight: isActive ? 700 : 400,
               transition: 'all 0.15s',
@@ -78,7 +78,7 @@ export default function KeywordSidebar({
             <span style={{ flex: 1 }}>{label}</span>
             <span style={{
               fontSize: '0.5625rem',
-              color: isActive ? 'var(--gold)' : '#444',
+              color: isActive ? 'var(--gold)' : 'var(--text-muted)',
               background: isActive ? 'rgba(200,144,10,0.15)' : 'var(--bg-card)',
               padding: '0 0.375rem',
               borderRadius: '0.5rem',

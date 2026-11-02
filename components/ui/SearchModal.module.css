@@ -84,7 +84,7 @@
 }
 .tab:hover { color: var(--text-primary); }
 .tab[aria-selected='true'] { border-bottom-color: var(--gold); color: var(--text-primary); }
-.tabCount { color: #7f7364; font-family: var(--font-body); font-size: 0.75rem; font-variant-numeric: tabular-nums; }
+.tabCount { color: var(--text-muted); font-family: var(--font-body); font-size: 0.75rem; font-variant-numeric: tabular-nums; }
 .tab[aria-selected='true'] .tabCount { color: #b9aa98; }
 
 /* 목록 */

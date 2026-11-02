@@ -156,7 +156,7 @@
 
 .block { margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid #241c14; }
 .subhead { margin-bottom: 1rem; font-family: var(--font-heading); font-size: 1.0625rem; color: var(--text-primary); }
-.empty { border-left: 2px solid #2e2417; padding: 0.25rem 0 0.25rem 0.75rem; color: #7f7364; font-size: 0.9375rem; line-height: 1.6; }
+.empty { border-left: 2px solid #2e2417; padding: 0.25rem 0 0.25rem 0.75rem; color: var(--text-muted); font-size: 0.9375rem; line-height: 1.6; }
 
 .note {
   max-width: 52rem;

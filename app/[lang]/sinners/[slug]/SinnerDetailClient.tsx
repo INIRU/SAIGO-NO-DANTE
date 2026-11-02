@@ -395,7 +395,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
           <Link href="/sinners" className="inline-flex min-h-11 items-center gap-2 hover:text-yellow-300 transition-colors">
             <ArrowLeft size={16} aria-hidden />{t('sinners.title')}
           </Link>
-          <span aria-hidden style={{ color: '#4a3d2c' }}>&rsaquo;</span>
+          <span aria-hidden style={{ color: 'var(--text-muted)' }}>&rsaquo;</span>
           <span style={{ color: 'var(--gold)' }}>{getName(sinner.name_kr, sinner.name_en, sinner.name_jp)}</span>
         </div>
 
@@ -575,8 +575,8 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                       {/* 키워드 매칭 */}
                       {autocompleteResults.keywords.length > 0 && (
                         <div>
-                          <div className="px-3 py-1.5" style={{ background: 'rgba(255,255,255,0.03)', color: '#555', fontSize: '0.625rem', fontWeight: 600 }}>
-                            {t('sinnerDetail.keyword')} <span style={{ color: '#444', fontWeight: 400 }}>{t('sinnerDetail.tabSelect')}</span>
+                          <div className="px-3 py-1.5" style={{ background: 'rgba(255,255,255,0.03)', color: 'var(--text-muted)', fontSize: '0.625rem', fontWeight: 600 }}>
+                            {t('sinnerDetail.keyword')} <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>{t('sinnerDetail.tabSelect')}</span>
                           </div>
                           {autocompleteResults.keywords.map(({ kw, count }, i) => {
                             const idx = kwStart + i
@@ -603,7 +603,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                                   />
                                 )}
                                 <span>{kw}</span>
-                                <span style={{ color: '#444', fontSize: '0.625rem', marginLeft: 'auto' }}>{count}{t('sinnerDetail.count')}</span>
+                                <span style={{ color: 'var(--text-muted)', fontSize: '0.625rem', marginLeft: 'auto' }}>{count}{t('sinnerDetail.count')}</span>
                                 {isSelected && <span style={{ color: chipColor, fontSize: '0.625rem' }}>ON</span>}
                               </div>
                             )
@@ -614,7 +614,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                       {/* 인격 매칭 */}
                       {autocompleteResults.identities.length > 0 && (
                         <div>
-                          <div className="px-3 py-1.5" style={{ background: 'rgba(255,255,255,0.03)', color: '#555', fontSize: '0.625rem', fontWeight: 600 }}>
+                          <div className="px-3 py-1.5" style={{ background: 'rgba(255,255,255,0.03)', color: 'var(--text-muted)', fontSize: '0.625rem', fontWeight: 600 }}>
                             {t('sinnerDetail.identity')}
                           </div>
                           {autocompleteResults.identities.map((ident, i) => {
@@ -635,7 +635,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                                   style={{ background: ident.rarity === 3 ? 'var(--gold)' : ident.rarity === 2 ? '#5588bb' : '#556677' }}
                                 />
                                 <span>{getName(ident.name_kr, ident.name_en, ident.name_jp)}</span>
-                                <span style={{ color: '#444', fontSize: '0.625rem', marginLeft: 'auto' }}>{t('browser.rarityStar', { n: ident.rarity })}</span>
+                                <span style={{ color: 'var(--text-muted)', fontSize: '0.625rem', marginLeft: 'auto' }}>{t('browser.rarityStar', { n: ident.rarity })}</span>
                               </div>
                             )
                           })}
@@ -645,7 +645,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                       {/* EGO 매칭 */}
                       {autocompleteResults.egos.length > 0 && (
                         <div>
-                          <div className="px-3 py-1.5" style={{ background: 'rgba(255,255,255,0.03)', color: '#555', fontSize: '0.625rem', fontWeight: 600 }}>
+                          <div className="px-3 py-1.5" style={{ background: 'rgba(255,255,255,0.03)', color: 'var(--text-muted)', fontSize: '0.625rem', fontWeight: 600 }}>
                             EGO
                           </div>
                           {autocompleteResults.egos.map((ego, i) => {

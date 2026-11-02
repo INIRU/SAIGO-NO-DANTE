@@ -165,7 +165,7 @@ export default function GiftInventory({ inventory, gifts, giftMap, onAdd, onRemo
         <div style={{
           padding: '2rem',
           textAlign: 'center',
-          color: '#4b5563',
+          color: 'var(--text-muted)',
           fontSize: '0.8125rem',
           border: '1px dashed #222',
           borderRadius: '0.5rem',

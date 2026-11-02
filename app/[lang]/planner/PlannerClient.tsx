@@ -418,7 +418,7 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
           : '-ml-px flex min-h-11 items-center justify-between gap-2 border-l-2 border-transparent pl-3 pr-1 text-[0.9375rem] text-[#a8977d] transition-colors hover:text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[var(--gold-light)] motion-reduce:transition-none aria-[current]:border-[var(--gold)] aria-[current]:font-semibold aria-[current]:text-[var(--text-primary)]'}
       >
         {tPlanner(tab.labelKey)}
-        {status && <span className="font-normal tabular-nums text-[#7f7364]">{status}</span>}
+        {status && <span className="font-normal tabular-nums text-[var(--text-muted)]">{status}</span>}
       </a>
     )
   }

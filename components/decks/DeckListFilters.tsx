@@ -335,7 +335,7 @@ export default function DeckListFilters({
                       <Image src={kwIconUrl} alt="" width={14} height={14} style={{ flexShrink: 0 }} />
                     ) : null}
                     <span className="min-w-0 flex-1 truncate">{sg.type === 'keyword' ? localKeyword(sg.label) : sg.label}</span>
-                    <span style={{ marginLeft: 'auto', fontSize: '0.625rem', color: '#666', flexShrink: 0 }}>
+                    <span style={{ marginLeft: 'auto', fontSize: '0.625rem', color: 'var(--text-muted)', flexShrink: 0 }}>
                       {sg.type === 'identity' ? t('search.suggestionIdentity') : t('search.suggestionKeyword')}
                     </span>
                   </button>
@@ -547,7 +547,7 @@ export default function DeckListFilters({
               </label>
               <button type="button" className={filterStyles.action} onClick={onApplyCode}>{t('filters.apply')}</button>
             </div>
-            {codeError && <p className={filterStyles.hint} role="alert" style={{ color: '#c85050' }}>{t('filters.invalidCode')}</p>}
+            {codeError && <p className={filterStyles.hint} role="alert" style={{ color: 'var(--error-text)' }}>{t('filters.invalidCode')}</p>}
           </>
         )}
       </FilterSection>

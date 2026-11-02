@@ -127,13 +127,13 @@ export default function DeckComments({ deckId, initialComments, headingId }: Pro
             placeholder={t('placeholder')}
             maxLength={500}
             rows={3}
-            className="block w-full resize-y rounded-md border border-[#2e2417] bg-[#17120c] px-3.5 py-3 text-[0.9375rem] leading-relaxed text-[var(--text-primary)] placeholder:text-[#7f7364] transition-colors focus:border-[var(--gold)] focus:outline-none"
+            className="block w-full resize-y rounded-md border border-[#2e2417] bg-[#17120c] px-3.5 py-3 text-[0.9375rem] leading-relaxed text-[var(--text-primary)] placeholder:text-[var(--text-muted)] transition-colors focus:border-[var(--gold)] focus:outline-none"
             onKeyDown={e => {
               if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); handleCommentSubmit() }
             }}
           />
           <div className="mt-2 flex items-center justify-between gap-3">
-            <span className="text-[0.8125rem] tabular-nums text-[#7f7364]">{commentText.length}/500</span>
+            <span className="text-[0.8125rem] tabular-nums text-[var(--text-muted)]">{commentText.length}/500</span>
             <button
               type="submit"
               disabled={commentSubmitting || !commentText.trim()}
@@ -151,7 +151,7 @@ export default function DeckComments({ deckId, initialComments, headingId }: Pro
       )}
 
       {items.length === 0 ? (
-        <p className="mt-6 text-[0.9375rem] text-[#7f7364]">{t('empty')}</p>
+        <p className="mt-6 text-[0.9375rem] text-[var(--text-muted)]">{t('empty')}</p>
       ) : (
         <CommentThread
           items={items}
@@ -162,7 +162,7 @@ export default function DeckComments({ deckId, initialComments, headingId }: Pro
             <CommentReplyForm targetName={replyingTo.targetName} value={replyText} onChange={setReplyText} onSubmit={handleReplySubmit} onCancel={() => setReplyingTo(null)} submitting={commentSubmitting} />
           )}
           actions={signedIn ? (item, isReply) => (
-            <button type="button" onClick={() => handleCommentDelete(item.id)} className="inline-flex min-h-9 items-center rounded px-1 text-[0.8125rem] text-[#7f7364] hover:text-[#e48b7f]">
+            <button type="button" onClick={() => handleCommentDelete(item.id)} className="inline-flex min-h-9 items-center rounded px-1 text-[0.8125rem] text-[var(--text-muted)] hover:text-[#e48b7f]">
               {isReply ? t('deleteReply') : t('deleteComment')}
             </button>
           ) : undefined}

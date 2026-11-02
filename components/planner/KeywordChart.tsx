@@ -91,8 +91,8 @@ export default function KeywordChart({
                   />
                 )}
               </div>
-              <span style={{ textAlign: 'right', fontSize: '0.875rem', color: color, fontWeight: 600, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
-                {layered ? <>{d.deployed ?? 0}<span style={{ opacity: 0.5, fontWeight: 400 }}>/{d.count}</span></> : d.count}
+              <span style={{ textAlign: 'right', fontSize: '0.875rem', color: 'var(--text-primary)', fontWeight: 600, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
+                {layered ? <>{d.deployed ?? 0}<span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>/{d.count}</span></> : d.count}
               </span>
               {hasExtra && <span style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>{d.extra}</span>}
             </div>

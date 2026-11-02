@@ -12,11 +12,11 @@ button.strip:focus-visible { outline: 2px solid var(--gold-light); outline-offse
 /* The art darkens toward the top and the bottom, as in the game. */
 .shade { position: absolute; inset: 0; z-index: 1; clip-path: polygon(0 5%, 100% 0, 100% 95%, 0 100%); pointer-events: none;
   background: linear-gradient(180deg, #000 0, rgba(0, 0, 0, 0.92) 6%, rgba(0, 0, 0, 0.35) 12%, transparent 18%, transparent 74%, rgba(0, 0, 0, 0.55) 82%, rgba(0, 0, 0, 0.95) 90%, #000 100%); }
-.add::after { content: '+'; position: absolute; inset: 0; z-index: 4; display: grid; place-items: center; font-size: 1.5rem; color: #5a4526; }
+.add::after { content: '+'; position: absolute; inset: 0; z-index: 4; display: grid; place-items: center; font-size: 1.5rem; color: var(--text-muted); }
 /* The sinner number, measured on the game screen: on the top left corner, partly above the strip, about half the strip wide;
    the frame line runs over it (the frame is drawn after it). */
 .no { position: absolute; left: 1cqw; top: -2.2%; z-index: 2; font: 400 54cqw/0.9 var(--font-mikodacs), Impact, sans-serif; letter-spacing: -0.03em;
-  color: #8f1310; text-shadow: 0 0.06em 0 rgba(0, 0, 0, 0.6); }
+  color: #d8433a; text-shadow: 0 0.06em 0 rgba(0, 0, 0, 0.6); }
 /* The frame: the art's outline exactly (points in the art's 197x982 box), one device-independent line whatever the strip's size. */
 .frame { position: absolute; inset: 0; z-index: 3; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
 .frame polygon { fill: none; stroke: #6e5733; stroke-width: 1.5; vector-effect: non-scaling-stroke; stroke-linejoin: miter; }

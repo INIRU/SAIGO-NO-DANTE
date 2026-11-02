@@ -606,7 +606,7 @@ export function ReadOnlyBlessingGrid({ blessings, selectedBlessings, emptyText }
 
   if (selectedBlessings.size === 0) {
     return (
-      <div className="rounded-md border border-[#241c14] bg-[var(--bg-panel)] px-4 py-5 text-center text-[0.9375rem] leading-relaxed text-[#6b6255]">
+      <div className="rounded-md border border-[#241c14] bg-[var(--bg-panel)] px-4 py-5 text-center text-[0.9375rem] leading-relaxed text-[var(--text-muted)]">
         {emptyText}
       </div>
     )

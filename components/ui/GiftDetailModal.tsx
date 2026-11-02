@@ -216,7 +216,7 @@ function RecipeGift({ part, fragmentsLabel }: { part: GiftDetailRecipePart; frag
 }
 
 const Sign = ({ children }: { children: ReactNode }) => (
-  <span aria-hidden="true" className="flex h-14 items-center" style={{ color: '#6a5a44', fontSize: '1rem' }}>{children}</span>
+  <span aria-hidden="true" className="flex h-14 items-center" style={{ color: 'var(--text-muted)', fontSize: '1rem' }}>{children}</span>
 )
 
 /** Gift detail layout shared by the Mirror Dungeon catalog and the planner. */
@@ -340,7 +340,7 @@ export default function GiftDetailModal({ gift, lang, onClose, initialLevel = 0,
               <p style={{ fontSize: '0.875rem', color: '#d8ccb4' }}>{t('allThemes')}</p>
             </Section>
           ) : themes.length > 0 && (
-            <Section title={t('themes')} aside={<span className="tabular-nums" style={{ fontFamily: 'var(--font-title)', fontSize: '1.125rem', color: '#6a5a44' }}>{themes.length}</span>}>
+            <Section title={t('themes')} aside={<span className="tabular-nums" style={{ fontFamily: 'var(--font-title)', fontSize: '1.125rem', color: 'var(--text-muted)' }}>{themes.length}</span>}>
               <ul className="flex flex-wrap gap-1.5">
                 {visibleThemes.map(theme => <ThemeChip key={theme.id} theme={theme} lang={lang} tagLabel={theme.tag === 'reward' ? t('clearReward') : theme.tag === 'exclusive' ? t('exclusive') : null} />)}
                 {hiddenThemeCount > 0 && (

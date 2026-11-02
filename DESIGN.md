@@ -23,14 +23,19 @@
 | 약한 선 | `#241c14`, `#2e2417` | |
 | 기본 테두리 | `#3a2a15` | `--border` |
 | 구분선(강조) | `#5a4526` | |
+| 입력칸 테두리 | `#86683a` | `--border-control` |
 | 금색 강조 | `#c8900a` | `--gold` |
 | 밝은 금색 | `#e8b030` | `--gold-light` |
 | 본문 글자 | `#e8dcc8` | `--text-primary` |
 | 보조 글자 | `#b0a890`, `#9c8b73` | `--text-secondary` |
-| 흐린 글자 | `#6a6058` | `--text-muted` |
+| 셋째 글자 | `#a89c8a` | `--text-tertiary` |
+| 흐린 글자 | `#94887a` | `--text-muted` |
+| 오류 글자 | `#ec6a5e` | `--error-text` |
 | 익스트림·위험 | `#9b2c23` | |
 | 인격 이름(카드 위) | `#f8c000` | |
 
+- 글자는 가장 밝은 면(`--bg-elevated`)에서도 4.5:1 이상, 입력칸 테두리는 3:1 이상을 지킨다(`tests/styles/text-contrast.test.ts`). 가장 어두운 글자는 `--text-muted`다. `#444`, `#555` 같은 회색이나 투명도로 더 흐리게 만들지 않고, 비활성 상태만 예외다.
+- 색을 고칠 때는 색조를 유지하고 명도만 올린다. `--error`는 흰 글자를 얹는 면, 글자에는 `--error-text`를 쓴다.
 - 갈색·금색 계열 안에서 명도로 층을 나눈다. 파랑·보라 같은 새 강조색을 만들지 않는다.
 - 키워드 색은 `GIFT_KEYWORD_COLORS`, 죄악 색은 `SIN_COLORS` 하나만 쓴다. 파일마다 색을 새로 적지 않는다.
 - 강화된 기프트 배경(`gift/background-enhanced.webp`)은 주황 줄무늬 슬롯 위에 노란 팔각형을 얹은 게임 슬롯이다(`scripts/assets/extract-gift-slot-enhanced.mjs`). 아틀라스의 주황 발광 테두리는 선택 표시라서 넣지 않는다. 노란색으로 칠하지 않는다.

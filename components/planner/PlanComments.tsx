@@ -99,7 +99,7 @@ export default function PlanComments({ planId, headingId }: Props) {
             placeholder={tDetail('commentPlaceholder')}
             maxLength={500}
             rows={3}
-            className="block w-full resize-y rounded-md border border-[#2e2417] bg-[#17120c] px-3.5 py-3 text-[0.9375rem] leading-relaxed text-[var(--text-primary)] placeholder:text-[#7f7364] transition-colors focus:border-[var(--gold)] focus:outline-none"
+            className="block w-full resize-y rounded-md border border-[#2e2417] bg-[#17120c] px-3.5 py-3 text-[0.9375rem] leading-relaxed text-[var(--text-primary)] placeholder:text-[var(--text-muted)] transition-colors focus:border-[var(--gold)] focus:outline-none"
             onKeyDown={e => {
               if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
                 e.preventDefault()
@@ -108,7 +108,7 @@ export default function PlanComments({ planId, headingId }: Props) {
             }}
           />
           <div className="mt-2 flex items-center justify-between gap-3">
-            <span className="text-[0.8125rem] tabular-nums text-[#7f7364]">{commentText.length}/500</span>
+            <span className="text-[0.8125rem] tabular-nums text-[var(--text-muted)]">{commentText.length}/500</span>
             <button
               type="submit"
               disabled={submitting || !commentText.trim()}
@@ -126,9 +126,9 @@ export default function PlanComments({ planId, headingId }: Props) {
       )}
 
       {commentsLoading ? (
-        <p className="mt-6 text-[0.9375rem] text-[#7f7364]" role="status">{tGrid('loadingMore')}</p>
+        <p className="mt-6 text-[0.9375rem] text-[var(--text-muted)]" role="status">{tGrid('loadingMore')}</p>
       ) : items.length === 0 ? (
-        <p className="mt-6 text-[0.9375rem] text-[#7f7364]">{t('empty')}</p>
+        <p className="mt-6 text-[0.9375rem] text-[var(--text-muted)]">{t('empty')}</p>
       ) : (
         <CommentThread
           items={items}

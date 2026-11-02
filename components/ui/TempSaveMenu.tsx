@@ -55,9 +55,9 @@ export default function TempSaveMenu<T>({ title, slots, onSave, onLoad, onDelete
           <ul className="divide-y divide-[#241c14] p-1.5">
             {slots.map(slot => (
               <li key={slot.slotNumber} className="grid grid-cols-[1.75rem_minmax(0,1fr)_auto] items-center gap-x-2.5 gap-y-1.5 px-1.5 py-2.5">
-                <span className={`grid h-7 w-7 place-items-center rounded text-[0.875rem] font-bold ${slot.draft ? 'bg-[rgba(200,144,10,0.16)] text-[var(--gold-light)]' : 'bg-[#1f1810] text-[#6b5f4f]'}`}>{slot.slotNumber}</span>
+                <span className={`grid h-7 w-7 place-items-center rounded text-[0.875rem] font-bold ${slot.draft ? 'bg-[rgba(200,144,10,0.16)] text-[var(--gold-light)]' : 'bg-[#1f1810] text-[var(--text-muted)]'}`}>{slot.slotNumber}</span>
                 <span className="min-w-0">
-                  <span className={`block truncate text-[0.9375rem] font-semibold ${slot.draft ? 'text-[var(--text-primary)]' : 'text-[#7d7160]'}`}>{slot.draft?.label ?? t('emptySlot')}</span>
+                  <span className={`block truncate text-[0.9375rem] font-semibold ${slot.draft ? 'text-[var(--text-primary)]' : 'text-[var(--text-muted)]'}`}>{slot.draft?.label ?? t('emptySlot')}</span>
                   {slot.draft && <span className="block text-[0.8125rem] text-[#8a7d69]">{savedAt(slot.draft.savedAt)}</span>}
                 </span>
                 <span className="flex gap-1">
@@ -71,7 +71,7 @@ export default function TempSaveMenu<T>({ title, slots, onSave, onLoad, onDelete
                       <FolderOpen size={13} aria-hidden="true" />{t('loadSlot')}
                     </button>
                     <button type="button" role="menuitem" onClick={() => onDelete(slot)} aria-label={t('deleteSlotLabel', { slot: slot.slotNumber })}
-                      className="grid min-h-9 w-9 place-items-center rounded border border-[#2e2417] text-[#a16855] hover:text-[#d0826a] focus-visible:outline-2 focus-visible:outline-[var(--gold-light)]">
+                      className="grid min-h-9 w-9 place-items-center rounded border border-[#2e2417] text-[#c08a74] hover:text-[#d0826a] focus-visible:outline-2 focus-visible:outline-[var(--gold-light)]">
                       <Trash2 size={13} aria-hidden="true" />
                     </button>
                   </>}
