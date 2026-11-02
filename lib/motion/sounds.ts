@@ -28,6 +28,7 @@ const CUT_FADE = 0.043;
 const DEFAULT_VOLUME = 1;     // the page's volume at the start: the game's own loudness
 const MASTER_CEILING = 0.977;
 const DRIFT = 0.08;    // how far the picture may run from the sound before the tracks move to it
+const REPORT_MS = 400; // how long the first frame's report is waited for (an off-document video may send none)
 const LEAD = 0.02;     // seconds ahead the tracks are started, so both begin on the same sample
 
 /** A cue's level at a frame: side 1 left, 2 right. */
@@ -177,6 +178,7 @@ export class SoundPlayer {
   private at = 0;            // the context time of that video time
   private running = false;   // the clock runs: playing, or in the tail after the end
   private waiting = false;   // playback started: the first frame's report starts the sound
+  private asked = 0;         // when that report was asked for
   private frame = 0;
   private over = false;      // the video reached its end: the next play is a new draw
   private last = 0;          // the last video time seen (a jump back = the loop wrapped)
@@ -234,7 +236,11 @@ export class SoundPlayer {
     this.out = makeOutput(ctx, () => this.limits());
     this.level();
     // (A context that starts later: the clock is laid again from where the video is.)
-    ctx.onstatechange = () => { if (ctx.state === "running" && this.running && !this.video.ended) this.start(); };
+    // (A phone suspends it when the video changes or the page is left, until it is asked to go on.)
+    ctx.onstatechange = () => {
+      if (ctx.state === "running") { if (this.running && !this.video.ended) this.start(); }
+      else if (ctx.state !== "closed" && !this.muted) void ctx.resume();
+    };
   }
 
   private limits() {
@@ -335,10 +341,12 @@ export class SoundPlayer {
   /** Playback (re)starts: the sound waits for the first frame on screen, which a large video can show well after its event. */
   private start() {
     this.stop();
+    if (!this.muted) this.unlock();
     const v = this.video;
     if (!v.requestVideoFrameCallback) { this.sync(v.currentTime, 0); return; }
     v.cancelVideoFrameCallback(this.frame);
     this.waiting = true;
+    this.asked = performance.now();
     const report = (_: number, md: VideoFrameCallbackMetadata) => {
       const ahead = (md.expectedDisplayTime - performance.now()) / 1000;
       if (this.waiting) this.sync(md.mediaTime, ahead);
@@ -362,6 +370,7 @@ export class SoundPlayer {
 
   private pump() {
     const ctx = this.ctx;
+    if (this.waiting && !this.video.paused && performance.now() - this.asked > REPORT_MS) this.sync(this.video.currentTime, 0);
     if (!ctx || ctx.state !== "running" || !this.running) return;
     const shown = this.video.currentTime;
     if (!this.video.ended && shown < this.last - 0.5) { this.last = shown; this.draw(); this.start(); return; } // the loop wrapped: a new play

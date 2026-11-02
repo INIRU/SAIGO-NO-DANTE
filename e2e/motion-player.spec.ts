@@ -87,7 +87,23 @@ test('REQ-MOTION-041 the timeline is cut at the chapters of the real video and c
   await expect(page.locator('[data-mark]').first()).toBeAttached({ timeout: 30000 })
 })
 
-test('REQ-MOTION-025 coming back to the page, the sound is off and the volume panel holds the volumes set before', async ({ page }) => {
+test('REQ-MOTION-052 the back button lands on the list, and the scenarios moved through stay out of the history', async ({ page }) => {
+  await page.goto('/ko')
+  await open(page)
+  const start = await page.evaluate(() => history.length)
+  await page.locator('button[data-scenario]').nth(1).click()
+  await expect(page).toHaveURL(/state=/)
+  const moved = page.url()
+  await page.locator('button[data-scenario]').first().click()
+  await expect.poll(() => page.url()).not.toBe(moved)
+  expect(await page.evaluate(() => history.length)).toBe(start)
+  await page.getByRole('link', { name: '뒤로' }).click()
+  await page.waitForURL(/\/ko\/motion\/skills(\?|$)/)
+  await page.goBack()
+  await page.waitForURL(/\/ko$/)
+})
+
+test('REQ-MOTION-025 coming back to the page, the sound stays on and the volume panel holds the volumes set before', async ({ page }) => {
   // The page's <video> is not in the document: record the element the hook last muted or unmuted.
   await page.addInitScript(() => {
     const property = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, 'muted')!
@@ -107,8 +123,8 @@ test('REQ-MOTION-025 coming back to the page, the sound is off and the volume pa
   await page.locator('a[href="/ko"]').first().evaluate(link => (link as HTMLAnchorElement).click())
   await page.waitForURL(/\/ko$/)
   await page.goBack()
-  await expect(page.getByRole('button', { name: '소리 켜기' })).toBeEnabled({ timeout: 30000 })
-  expect(await muted()).toBe(true)
+  await expect(page.getByRole('button', { name: '소리 끄기' })).toBeEnabled({ timeout: 30000 })
+  expect(await muted()).toBe(false)
   await page.getByRole('button', { name: '음량' }).click()
   await expect(page.getByRole('slider', { name: '전체' })).toHaveValue('0.3')
   await expect(page.getByRole('slider', { name: '보이스' })).toHaveValue('0.6')

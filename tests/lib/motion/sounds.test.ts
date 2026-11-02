@@ -439,6 +439,29 @@ describe('REQ-MOTION-049 the sound follows the picture', () => {
     expect(sources[0].started[0][1]).toBeCloseTo(0.9, 3)
   })
 
+  it('REQ-MOTION-049 starts on the video time when no frame is reported, as an off-document video may not', async () => {
+    const v = await framed(meta([cue({ start: 0.5 })]))
+    v.currentTime = 0.8; v.paused = false
+    const now = vi.fn(() => 0)
+    vi.stubGlobal('performance', { now })
+    v.fire('playing')
+    now.mockReturnValue(500)
+    vi.advanceTimersByTime(60)
+    expect(sources).toHaveLength(1)
+  })
+
+  it('REQ-MOTION-053 wakes the audio a phone suspended when the video changed, while the sound is on', async () => {
+    const v = await framed(meta([cue({ start: 0.5 })]))
+    const resume = vi.spyOn(ctx, 'resume')
+    ctx.state = 'suspended'
+    v.paused = false
+    v.fire('playing')
+    expect(resume).toHaveBeenCalled()
+    player.setMuted(true); resume.mockClear()
+    v.fire('playing')
+    expect(resume).not.toHaveBeenCalled()
+  })
+
   it('REQ-MOTION-049 moves the track to the picture when the video has really fallen behind', async () => {
     const v = await framed(meta([cue({ start: 0.5 })]))
     v.currentTime = 0.4; v.paused = false
