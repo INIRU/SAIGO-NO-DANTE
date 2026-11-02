@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { SoundPlayer, gainAt, limitCues, type SoundCue, type SoundMeta } from '@/lib/motion/sounds'
+import { SoundPlayer, gainAt, limitCues, type PlayCue, type SoundCue, type SoundMeta } from '@/lib/motion/sounds'
 
 // Web Audio and the video element as recorders: the tests read what the player scheduled, not what a speaker plays.
 class Param {
@@ -52,12 +52,12 @@ const RULES = { version: 1, steal: { fade: 0.043 }, limiter: { release: 0.005, l
 const cue = (over: Partial<SoundCue> = {}): SoundCue => ({ start: 1, files: ['sfx/a.m4a'], seconds: 2, kind: 'sfx', mix: [[0, 1, 1]], ...over })
 const meta = (sounds: SoundCue[], extra: Partial<SoundMeta> = {}): SoundMeta => ({ fps: 60, sounds, ...extra })
 const rounded = (p: Param) => p.events.map(e => ({ ...e, t: Math.round(e.t * 1e6) / 1e6 }))
-const stealed = (src: Source) => (src.out[0] as Gain).gain.events.some(e => e.kind === 'ramp' && e.v === 0)
+const stealed = (src: Source) => chain(src).left.events.some(e => e.kind === 'ramp' && e.v === 0)
 
-/** The nodes of one started source: src -> steal gain -> splitter -> left, right -> merger -> bus. */
+/** The nodes of one started source: src -> splitter -> left, right -> merger -> bus. */
 function chain(src: Source) {
-  const steal = src.out[0] as Gain, [left, right] = steal.out[0].out as Gain[]
-  return { steal, left: left.gain, right: right.gain, bus: left.out[0].out[0] as Gain }
+  const [left, right] = src.out[0].out as Gain[]
+  return { left: left.gain, right: right.gain, bus: left.out[0].out[0] as Gain }
 }
 
 let player: SoundPlayer, video: Video
@@ -92,11 +92,11 @@ afterEach(() => { player?.dispose(); vi.useRealTimers(); vi.unstubAllGlobals(); 
 describe('REQ-MOTION-037 the level of a cue is its mix curve', () => {
   it('REQ-MOTION-037 reads the curve linearly between points and holds the first and last value outside them', () => {
     const mix: [number, number, number][] = [[60, 0.2, 0.4], [120, 0.6, 0.0]]
-    expect(gainAt(mix, 0)).toEqual([0.2, 0.4])
-    expect(gainAt(mix, 60)).toEqual([0.2, 0.4])
-    const mid = gainAt(mix, 90)
+    expect([gainAt(mix, 0, 1), gainAt(mix, 0, 2)]).toEqual([0.2, 0.4])
+    expect([gainAt(mix, 60, 1), gainAt(mix, 60, 2)]).toEqual([0.2, 0.4])
+    const mid = [gainAt(mix, 90, 1), gainAt(mix, 90, 2)]
     expect(mid[0]).toBeCloseTo(0.4); expect(mid[1]).toBeCloseTo(0.2)
-    expect(gainAt(mix, 500)).toEqual([0.6, 0])
+    expect([gainAt(mix, 500, 1), gainAt(mix, 500, 2)]).toEqual([0.6, 0])
   })
 
   it('REQ-MOTION-037 puts the curve on a left and a right gain node at frame / fps seconds on the audio clock', async () => {
@@ -134,8 +134,9 @@ describe('REQ-MOTION-037 the level of a cue is its mix curve', () => {
     expect(voice.bus.gain.value).toBe(0.25)
     expect(sfx.left.events).toHaveLength(1)
     player.setVolume(0.25)
-    // The rules' output gain (4) times the page volume.
-    expect(gains.find(g => g.out[0] === ctx.destination)!.gain.value).toBe(1)
+    // The page volume is last, after the game's output gain (4).
+    expect(gains.find(g => g.out[0] === ctx.destination)!.gain.value).toBe(0.25)
+    expect(gains.some(g => g.gain.value === 4)).toBe(true)
   })
 })
 
@@ -233,8 +234,9 @@ describe('REQ-MOTION-039 random files and cues on top of each other', () => {
     play(0.9)
     expect(sources.filter(stealed)).toHaveLength(1)
     expect(stealed(sources[0])).toBe(true)
-    const ramp = (sources[0].out[0] as Gain).gain.events.find(e => e.kind === 'ramp')!
-    expect(ramp.t - 10.13).toBeCloseTo(0.043)
+    const left = chain(sources[0]).left.events, down = left.at(-1)!, before = left.at(-2)!
+    expect([down.kind, down.v]).toEqual(['ramp', 0])
+    expect(down.t - before.t).toBeCloseTo(0.043)
   })
 })
 
@@ -263,9 +265,9 @@ describe('REQ-MOTION-040 the sound tail after the video ended', () => {
     play(0.3)
     video.currentTime = 2; video.ended = true; video.paused = true
     video.fire('pause')
-    expect(stealed(sources[0])).toBe(false)
+    expect(sources[0].stops).toHaveLength(0)
     video.ended = false; video.fire('seeking')
-    expect(stealed(sources[0])).toBe(true)
+    expect(sources[0].stops).toHaveLength(1)
   })
 
   it('REQ-MOTION-040 ends the tail with stop(): no cue is scheduled after it', async () => {
@@ -288,7 +290,7 @@ describe('REQ-MOTION-047 a video that stops for buffering', () => {
     video.currentTime = 1; ctx.currentTime = 10.7
     video.readyState = 2
     video.fire('waiting')
-    expect(stealed(sources[0])).toBe(true)
+    expect(sources[0].stops).toHaveLength(1)
     // The stall lasts 9 s of the audio clock; the cue at 3 s is not due, as the video is held at 1 s.
     ctx.currentTime = 20; vi.advanceTimersByTime(30)
     expect(sources).toHaveLength(1)
@@ -324,20 +326,25 @@ describe('REQ-MOTION-039 the buses', () => {
 })
 
 describe('REQ-MOTION-039 the limit of an event', () => {
-  const rules = { ...RULES, events: { 'event:/sfx/20220329/hit': { max: 8 } } }
-  const hit = (start: number) => cue({ start, event: 'event:/SFX/20220329/Hit' })
+  const rules = { events: { 'event:/sfx/20220329/hit': { max: 8 } } }
+  const hit = (start: number, file = 'f'): PlayCue => ({ ...cue({ start, event: 'event:/SFX/20220329/Hit' }), file })
 
-  it('REQ-MOTION-039 counts every cue of a frame for itself and takes the oldest off when one more starts', () => {
+  it('REQ-MOTION-039 cuts the oldest when a later start goes over, each cue for itself', () => {
     const first = Array.from({ length: 7 }, () => hit(1)), second = Array.from({ length: 7 }, () => hit(1.1))
-    const stolen = limitCues([...first, ...second], () => 1, rules)
-    expect(stolen.size).toBe(6)
-    expect(first.slice(0, 6).every(c => stolen.get(c) === 1.1)).toBe(true)
-    expect(stolen.has(first[6])).toBe(false)
+    const out = limitCues([...first, ...second], rules, () => 1)
+    expect(out).toHaveLength(14)
+    expect(first.slice(0, 6).every(c => c.cut === 1.1)).toBe(true)
+    expect(first[6].cut).toBeUndefined()
   })
 
-  it('REQ-MOTION-039 leaves a cue alone once its file has ended, and voices and events with no limit', () => {
-    expect(limitCues(Array.from({ length: 12 }, (_, k) => hit(k)), () => 0.5, rules).size).toBe(0)
-    expect(limitCues(Array.from({ length: 12 }, () => cue({ start: 1, kind: 'voice', event: 'event:/SFX/20220329/Hit' })), () => 1, rules).size).toBe(0)
-    expect(limitCues(Array.from({ length: 12 }, () => cue({ start: 1, event: 'event:/x' })), () => 1, rules).size).toBe(0)
+  it('REQ-MOTION-039 leaves out starts of one frame beyond the limit, without cutting the others', () => {
+    const cues = Array.from({ length: 10 }, () => hit(1))
+    expect(limitCues(cues, rules, () => 1)).toHaveLength(8)
+    expect(cues.every(c => c.cut === undefined)).toBe(true)
+  })
+
+  it('REQ-MOTION-039 leaves a cue alone once its file has ended, and events with no limit', () => {
+    expect(limitCues(Array.from({ length: 12 }, (_, k) => hit(k)), rules, () => 0.5)).toHaveLength(12)
+    expect(limitCues(Array.from({ length: 12 }, () => ({ ...cue({ start: 1, event: 'event:/x' }), file: 'f' })), rules, () => 1)).toHaveLength(12)
   })
 })
