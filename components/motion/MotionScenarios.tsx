@@ -10,46 +10,51 @@ import type { VoiceLink } from '@/lib/motion/soundbuttons'
 import styles from './MotionDeck.module.css'
 
 const fullName = (p: MotionPartner) => (p.sinner ? `${p.name} ${p.sinner}` : p.name)
-const row = 'flex min-h-11 w-full items-center gap-2.5 rounded-md px-3 py-2 text-left text-[0.9375rem] leading-snug transition-[color,background-color] duration-150 hover:bg-[rgba(200,144,10,0.06)] hover:text-[var(--text-primary)] aria-pressed:bg-[rgba(200,144,10,0.12)] aria-pressed:text-[var(--gold-light)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--gold-light)] text-[var(--text-secondary)] motion-reduce:transition-none'
+const row = `${styles.scenario} hit-target`
 
 function Face({ person, dead }: { person: MotionPartner; dead?: boolean }) {
   return <span data-dead={dead || undefined} title={fullName(person)} className={styles.face}>{person.portrait && <QuietImage src={person.portrait} alt="" fill sizes="2rem" />}</span>
 }
 
-const Faces = ({ people, dead }: { people: readonly MotionPartner[]; dead?: boolean }) => people.length > 0 && <span className="flex shrink-0 -space-x-2">{people.map(p => <Face key={p.gameId} person={p} dead={dead} />)}</span>
+/** One face full size; two to four as a small 2×2 group in the same square, so the column keeps one width. */
+const Faces = ({ people, dead }: { people: readonly MotionPartner[]; dead?: boolean }) => (
+  <span data-many={people.length > 1 || undefined} className={styles.faces}>{people.slice(0, 4).map(p => <Face key={p.gameId} person={p} dead={dead} />)}</span>
+)
+
+/** A buff, a sin's resonance or a word of the scenario, in one shape: its picture, its name, its value in the number font. */
+function Chip({ icon, name, value }: { icon?: string | null; name: string; value?: string | null }) {
+  return (
+    <span data-plain={!icon || undefined} className={styles.chip}>
+      {icon && <span className={styles.chipIcon}><QuietImage src={icon} alt="" fill sizes="1.5rem" className="object-contain" /></span>}
+      <span className="break-keep">{name}</span>
+      {value && <span className={styles.chipValue}>{value}</span>}
+    </span>
+  )
+}
 
 const peopleOf = (state: MotionState, ally?: MotionPartner) => { const person = state.ally ?? ally; return person ? [person] : state.dead ?? [] }
 /** What identifies a scenario on screen: two scenarios the same in it need their own text. */
 const signature = (state: MotionState, ally?: MotionPartner) => [peopleOf(state, ally).map(p => p.gameId), state.conditions?.map(c => [c.name, c.stack]), state.extras]
+/** The faces column, when a row of the list has a face. */
+const leadWidth = (faces: number) => (faces ? '2.5rem' : null)
 
 /**
- * A scenario in values of the game only, so it reads in every language: the faces, then each buff's icon, name and stack,
- * then the words of its labelKey. `fallback` is for the few the data says nothing about.
+ * A scenario in values of the game only, so it reads in every language: the faces in a column of their own (so every row's
+ * words start on one line), then each buff and word as a chip. `fallback` is for the few the data says nothing about.
  */
-function Scenario({ state, ally, fallback, current, onPick }: { state: MotionState; ally?: MotionPartner; fallback: string | null; current: boolean; onPick: () => void }) {
+function Scenario({ state, ally, lead, fallback, current, onPick }: { state: MotionState; ally?: MotionPartner; lead: string | null; fallback: string | null; current: boolean; onPick: () => void }) {
   const t = useTranslations('motionPage')
   const people = peopleOf(state, ally)
   const buffs = isBase(state.state) ? [] : state.conditions ?? []
   const extras = isBase(state.state) ? [] : state.extras ?? []
-  const text = fallback ?? (isBase(state.state) ? t('normal') : !buffs.length && !extras.length ? people.map(p => p.sinner ?? p.name).join(' · ') : null)
+  const text = fallback ?? (isBase(state.state) ? t('normal') : !buffs.length && !extras.length ? people.map(p => p.sinner ?? p.name).join(', ') : null)
   return (
-    <button type="button" aria-pressed={current} data-scenario={state.state} className={row} onClick={onPick}>
-      <Faces people={people} dead={!state.ally && !ally && Boolean(state.dead?.length)} />
-      <span className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1">
-        {!fallback && buffs.map(c => (
-          <span key={c.name} data-condition={c.name} className="inline-flex items-center gap-1.5">
-            {c.icon && <span className="relative h-6 w-6 shrink-0"><QuietImage src={c.icon} alt="" fill sizes="1.5rem" className="object-contain" /></span>}
-            <span className="break-keep">{c.name}</span>
-            {c.stack && <span className="font-[family-name:var(--font-title)] text-[1rem] tabular-nums tracking-wide">{c.stack}</span>}
-          </span>
-        ))}
-        {!fallback && extras.map(extra => (
-          <span key={extra.text} className="inline-flex items-center gap-1.5">
-            {extra.icon && <span className="relative h-6 w-6 shrink-0"><QuietImage src={extra.icon} alt="" fill sizes="1.5rem" className="object-contain" /></span>}
-            <span className="break-keep">{extra.text}</span>
-          </span>
-        ))}
-        {text && <span className="break-keep">{text}</span>}
+    <button type="button" aria-pressed={current} data-scenario={state.state} className={row} style={lead ? { gridTemplateColumns: `${lead} minmax(0, 1fr)` } : undefined} onClick={onPick}>
+      {lead && <Faces people={people} dead={!state.ally && !ally && Boolean(state.dead?.length)} />}
+      <span className={styles.chips}>
+        {!fallback && buffs.map(c => <span key={c.name} data-condition={c.name} className="contents"><Chip icon={c.icon} name={c.name} value={c.stack} /></span>)}
+        {!fallback && extras.map(extra => <Chip key={extra.text} icon={extra.icon} name={extra.text} />)}
+        {text && <span className={styles.scenarioText}>{text}</span>}
       </span>
     </button>
   )
@@ -82,6 +87,9 @@ export default function MotionScenarios({ states, current, allies, onPick, voice
     return lang === 'ko' ? s.label : t('scenarioNumber', { n: k + 1 })
   }
   const links = [...new Map(states.flatMap(s => (s.link ? [[s.link.id, s.link] as const] : []))).values()]
+  // One faces column for the whole list (links included), as wide as its most faces; a play icon sits in it for a line.
+  const lead = leadWidth(Math.max(0, ...plain.map(s => peopleOf(s, allies?.[s.state]).length), ...links.map(l => l.partners.length)))
+  const grid = lead ? { gridTemplateColumns: `${lead} minmax(0, 1fr)` } : undefined
   const chosen = states.find(s => s.state === current)?.link
   const pickLink = (id: string, max: boolean) => {
     const next = pickLinkState(states, id, max)
@@ -97,18 +105,18 @@ export default function MotionScenarios({ states, current, allies, onPick, voice
   }
 
   return (
-    <div className="flex flex-col">
-      {plain.map((s, k) => <Scenario key={s.state} state={s} ally={allies?.[s.state]} fallback={fallback(s, k)} current={s.state === current} onPick={() => onPick(s.state)} />)}
+    <div className={styles.scenarios}>
+      {plain.map((s, k) => <Scenario key={s.state} state={s} ally={allies?.[s.state]} lead={lead} fallback={fallback(s, k)} current={s.state === current} onPick={() => onPick(s.state)} />)}
       {links.map(l => {
-        const names = l.partners.map(fullName).join(' · ')
+        const names = l.partners.map(fullName).join(', ')
         return (
           <div key={l.id}>
-            <button type="button" aria-pressed={chosen?.id === l.id} data-partner={l.id} className={row} onClick={() => pickLink(l.id, chosen?.max ?? false)}>
-              <Faces people={l.partners} />
-              <span className="min-w-0 flex-1 break-keep">{names}</span>
+            <button type="button" aria-pressed={chosen?.id === l.id} data-partner={l.id} className={row} style={grid} onClick={() => pickLink(l.id, chosen?.max ?? false)}>
+              {lead && <Faces people={l.partners} />}
+              <span className={styles.scenarioText}>{names}</span>
             </button>
             {chosen?.id === l.id && (
-              <label className={`${styles.maxSwitch} w-full justify-between px-3 py-2`} data-on={chosen.max || undefined}>
+              <label className={`${styles.maxSwitch} w-full justify-between py-2 pr-3`} style={{ paddingLeft: lead ? `calc(${lead} + 1.5rem)` : '0.75rem' }} data-on={chosen.max || undefined}>
                 <span>{t('maxState')}</span>
                 <Switch size="sm" checked={chosen.max} onChange={() => pickLink(l.id, !chosen.max)} />
               </label>
@@ -120,9 +128,9 @@ export default function MotionScenarios({ states, current, allies, onPick, voice
         const label = (lang === 'ko' ? line.label : line.labelEn) || line.label
         const Icon = speaking === line.id ? Square : Play
         return (
-          <button key={line.id} type="button" aria-pressed={speaking === line.id} data-voice={line.id} title={label} className={row} onClick={() => speak(line)}>
-            <Icon className="h-3.5 w-3.5 shrink-0 fill-current" aria-hidden="true" />
-            <span className="min-w-0 flex-1 break-keep">{label}</span>
+          <button key={line.id} type="button" aria-pressed={speaking === line.id} data-voice={line.id} title={label} className={row} style={{ gridTemplateColumns: `${lead ?? '1rem'} minmax(0, 1fr)` }} onClick={() => speak(line)}>
+            <span className="grid place-items-center"><Icon className="h-3.5 w-3.5 fill-current" aria-hidden="true" /></span>
+            <span className={styles.scenarioText}>{label}</span>
           </button>
         )
       })}
