@@ -3,9 +3,10 @@
 import { useCallback, useEffect, useId, useRef, useState, type RefObject } from 'react'
 import { useTranslations } from 'next-intl'
 import { ChevronLeft, ChevronRight, Hourglass, Info, Maximize, Minimize, Pause, Play, RotateCw, SlidersHorizontal, Smartphone, Volume2, VolumeX } from 'lucide-react'
-import Switch from '@/components/ui/Switch'
-import { useMotionFrame, type MotionError, type MotionFrameStore, type MotionStatus, type MotionVolumes } from '@/hooks/useSkillMotion'
+import { useMotionFrame, type MotionChapter, type MotionError, type MotionFrameStore, type MotionMark, type MotionStatus, type MotionVolumes } from '@/hooks/useSkillMotion'
 import { useStageScreen } from '@/hooks/useStageScreen'
+import { motionChapterLabel, type MotionChapterWords } from '@/lib/motion/catalog'
+import MotionTimeline, { currentChapter } from './MotionTimeline'
 import styles from './Motion.module.css'
 
 // Once per visit (the tab's session): a reload or another skill in the same visit does not ask again.
@@ -22,24 +23,20 @@ function FrameCounter({ store, frames }: { store: MotionFrameStore; frames: numb
   )
 }
 
-function SeekBar({ store, frames, label, onSeek }: { store: MotionFrameStore; frames: number; label: string; onSeek: (frame: number) => void }) {
-  const frame = Math.max(0, useMotionFrame(store))
-  const max = Math.max(0, frames - 1)
-  return (
-    <input type="range" min={0} max={max} step={1} value={Math.min(frame, max)} aria-label={label} disabled={frames === 0} data-sentry-block
-      onChange={event => onSeek(Number(event.target.value))}
-      className={`${styles.seek} h-8 min-w-0 flex-1 cursor-pointer @max-md:order-first @max-md:basis-full @max-md:px-2`}
-      style={{ ['--fill' as string]: `${max ? (frame / max) * 100 : 0}%` }} />
-  )
+/** The name of the chapter on screen, written only when the chapter changes. */
+function ChapterName({ store, chapters, skillTitle }: { store: MotionFrameStore; chapters: readonly MotionChapter[]; skillTitle: string }) {
+  const t = useTranslations('motionPage')
+  const chapter = currentChapter(chapters, Math.max(0, useMotionFrame(store)))
+  if (!chapter) return null
+  return <span className="shrink-0 text-[0.8125rem] text-[var(--text-secondary)] @max-md:hidden">{motionChapterLabel(chapter, t.raw('chapters') as MotionChapterWords, skillTitle)}</span>
 }
 
 /**
- * The sound settings over the bar's right end: the master, voice and effects volumes (each sound at once, also while muted)
- * and the critical-hit sound switch. It stays in the page while closed (hidden), so the sliders keep their place.
+ * The sound settings over the bar's right end: the master, voice and effects volumes (each sound at once, also while
+ * muted). It stays in the page while closed (hidden), so the sliders keep their place.
  */
-function VolumePanel({ id, open, volumes, critical, hasCritical, onVolume, onCritical }: {
-  id: string; open: boolean; volumes: MotionVolumes; critical: boolean; hasCritical: boolean
-  onVolume: (kind: keyof MotionVolumes, value: number) => void; onCritical: (on: boolean) => void
+function VolumePanel({ id, open, volumes, onVolume }: {
+  id: string; open: boolean; volumes: MotionVolumes; onVolume: (kind: keyof MotionVolumes, value: number) => void
 }) {
   const t = useTranslations('motionPage')
   const rows = [['master', 'volumeMaster'], ['voice', 'volumeVoice'], ['sfx', 'volumeSfx']] as const
@@ -54,10 +51,6 @@ function VolumePanel({ id, open, volumes, critical, hasCritical, onVolume, onCri
           <span className="text-right font-[family-name:var(--font-title)] tabular-nums text-[var(--text-primary)]">{Math.round(volumes[kind] * 100)}</span>
         </label>
       ))}
-      <div className="mt-1.5 flex items-center justify-between gap-2 border-t border-[#2e2417] pt-2.5 text-[0.8125rem] text-[var(--text-secondary)]">
-        <span>{t('critSound')}</span>
-        <Switch size="sm" checked={critical} onChange={onCritical} label={t('critSound')} disabled={!hasCritical} />
-      </div>
     </div>
   )
 }
@@ -65,12 +58,11 @@ function VolumePanel({ id, open, volumes, critical, hasCritical, onVolume, onCri
 const iconButton = 'h-10 w-10 shrink-0 place-items-center rounded-md text-[var(--text-secondary)] transition-colors hover:bg-[rgba(200,144,10,0.08)] hover:text-[var(--gold-light)] disabled:pointer-events-none disabled:opacity-35 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--gold-light)]'
 
 /**
- * The 16:9 stage the compositor draws into, with Project Moon's credit: a notice over the picture once a visit (the
- * motion is their work and may differ from the game), which holds playback until it is dismissed, and a small
- * "© Project Moon" label always at the bottom centre. Under it the
- * controls: play, a frame back and forward, the seek bar, the frame counter, the sound, its volume panel (master, voice,
- * effects and the critical-hit sound; Web Audio, so the iPhone follows it too) and the full screen (on a phone held
- * upright, also landscape). On a narrow stage the seek bar takes its own row above the buttons.
+ * The 16:9 stage the compositor draws into, with a notice over the picture once a visit (the motion is Project Moon's work
+ * and may differ from the game), which holds playback until it is dismissed; the credit itself is in the picture. Under it
+ * the controls: play, a frame back and forward, the timeline, the chapter and frame counter, the sound, its volume panel
+ * (master, voice and effects; Web Audio, so the iPhone follows it too) and the full screen (on a phone held upright, also
+ * landscape). On a narrow stage the timeline takes its own row above the buttons.
  */
 /**
  * The Project Moon notice of this visit: null until the browser says whether the visit has seen it (nothing shows, so a
@@ -104,25 +96,25 @@ export function MotionPendingStage() {
   )
 }
 
-export default function MotionStage({ hostRef, status, error, playing, muted, volumes, critical, hasCritical, hasAudio, frames, frameStore, onTogglePlay, onStep, onSeek, onToggleMute, onVolume, onCritical, onRetry, notice, onDismiss }: {
+export default function MotionStage({ hostRef, status, error, playing, muted, volumes, hasAudio, frames, frameStore, chapters = [], marks = [], skillTitle = '', onTogglePlay, onStep, onSeek, onToggleMute, onVolume, onRetry, notice, onDismiss }: {
   hostRef: RefObject<HTMLDivElement | null>
   status: MotionStatus
   error: MotionError | null
   playing: boolean
   muted: boolean
   volumes: MotionVolumes
-  /** The critical-hit sound on, and whether this state has one to switch. */
-  critical: boolean
-  hasCritical: boolean
   hasAudio: boolean
   frames: number
   frameStore: MotionFrameStore
+  chapters?: readonly MotionChapter[]
+  marks?: readonly MotionMark[]
+  /** The skill's name, for its chapter on the timeline. */
+  skillTitle?: string
   onTogglePlay: () => void
   onStep: (delta: number) => void
   onSeek: (frame: number) => void
   onToggleMute: () => void
   onVolume: (kind: keyof MotionVolumes, volume: number) => void
-  onCritical: (on: boolean) => void
   onRetry: () => void
   /** The notice of this visit (useCreditNotice): the controls stay off until it is dismissed (false). */
   notice: boolean | null
@@ -206,10 +198,6 @@ export default function MotionStage({ hostRef, status, error, playing, muted, vo
             </div>
           </div>
         )}
-
-        <span className="pointer-events-none absolute bottom-2.5 left-1/2 z-[1] -translate-x-1/2 rounded-full border border-[rgba(232,176,48,0.35)] bg-[rgba(5,4,3,0.72)] px-3 py-0.5 text-[0.75rem] font-semibold tracking-[0.02em] text-[var(--gold-light)] sm:bottom-3 sm:text-[0.8125rem]">
-          {t('credit')}
-        </span>
       </div>
 
       <div className="relative flex flex-wrap items-center gap-1 border-t border-[#2e2417] bg-[var(--bg-panel)] px-1.5 py-1 @md:flex-nowrap @md:gap-1.5 @md:px-2">
@@ -218,7 +206,8 @@ export default function MotionStage({ hostRef, status, error, playing, muted, vo
         </button>
         <button type="button" className={`${iconButton} grid @max-md:hidden`} onClick={() => step(-1)} disabled={!ready} aria-label={t('prevFrame')}><ChevronLeft className="h-5 w-5" aria-hidden="true" /></button>
         <button type="button" className={`${iconButton} grid @max-md:hidden`} onClick={() => step(1)} disabled={!ready} aria-label={t('nextFrame')}><ChevronRight className="h-5 w-5" aria-hidden="true" /></button>
-        <SeekBar store={frameStore} frames={ready ? frames : 0} label={t('frame')} onSeek={seek} />
+        <MotionTimeline store={frameStore} frames={ready ? frames : 0} chapters={chapters} marks={marks} label={t('frame')} onSeek={seek} />
+        <ChapterName store={frameStore} chapters={chapters} skillTitle={skillTitle} />
         <FrameCounter store={frameStore} frames={frames} />
         <button type="button" className={`${iconButton} grid @max-md:ml-auto`} onClick={onToggleMute} disabled={!ready || !hasAudio} aria-label={muted ? t('soundOn') : t('soundOff')} aria-pressed={!muted}>
           {muted ? <VolumeX className="h-5 w-5" aria-hidden="true" /> : <Volume2 className="h-5 w-5" aria-hidden="true" />}
@@ -228,7 +217,7 @@ export default function MotionStage({ hostRef, status, error, playing, muted, vo
             aria-label={t('volume')} aria-expanded={volumeOpen} aria-controls={panelId} data-open={volumeOpen || undefined}>
             <SlidersHorizontal className="h-5 w-5" aria-hidden="true" />
           </button>
-          <VolumePanel id={panelId} open={volumeOpen && ready && hasAudio} volumes={volumes} critical={critical} hasCritical={hasCritical} onVolume={onVolume} onCritical={onCritical} />
+          <VolumePanel id={panelId} open={volumeOpen && ready && hasAudio} volumes={volumes} onVolume={onVolume} />
         </div>
         <button type="button" className={`${iconButton} hidden max-sm:pointer-coarse:grid`} onClick={() => void (view.turned ? view.close() : view.open(true))}
           aria-label={view.turned ? t('portrait') : t('landscape')}>

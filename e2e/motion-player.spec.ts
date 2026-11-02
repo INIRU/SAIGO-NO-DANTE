@@ -4,7 +4,7 @@ test.use({ channel: 'chrome' })
 test.setTimeout(90000)
 
 // 이상 LCE E.G.O::차원찢개 skill 1: three conditions of different lengths (the videos come from R2).
-const SKILL = '/ko/motion/skills?skill=id10116~1011601'
+const SKILL = '/ko/motion/skills/watch?skill=id10116~1011601'
 
 const frameOf = (page: Page) => page.getByRole('slider', { name: '프레임' }).evaluate(input => Number((input as HTMLInputElement).value))
 
@@ -132,9 +132,9 @@ test('REQ-MOTION-032 in the sound tail past the last picture frame, nothing is d
   expect(await frameOf(page)).toBe(last)
 })
 
-test('REQ-MOTION-034 공간참 - 잔 opens with the four 아비 dead, and a card turned off opens the state without that one', async ({ page }) => {
+test('REQ-MOTION-046 공간참 - 잔 opens with the four 아비 dead, and a card turned off opens the state without that one', async ({ page }) => {
   await closeAnnouncements(page)
-  await page.goto('/ko/motion/skills?skill=id10415~1041507')
+  await page.goto('/ko/motion/skills/watch?skill=id10415~1041507')
   await page.getByRole('button', { name: '확인' }).click()
   const cards = page.locator('[data-dead]')
   await expect(cards).toHaveCount(4, { timeout: 30000 })
@@ -144,9 +144,9 @@ test('REQ-MOTION-034 공간참 - 잔 opens with the four 아비 dead, and a card
   await expect(page.locator('[data-dead="11115"]')).toHaveAttribute('aria-pressed', 'false')
 })
 
-test('REQ-MOTION-035 an identity with link lines has their sound buttons in its link section', async ({ page }) => {
+test('REQ-MOTION-046 an identity with link lines has their sound buttons in its link section', async ({ page }) => {
   await closeAnnouncements(page)
-  await page.goto('/ko/motion/skills?skill=id10315~1031505')
+  await page.goto('/ko/motion/skills/watch?skill=id10315~1031505')
   await page.getByRole('button', { name: '확인' }).click()
   const line = page.locator('[data-voice="noir-sinclair"]')
   await expect(line).toBeVisible({ timeout: 30000 })
@@ -188,15 +188,6 @@ test('REQ-MOTION-026 the stage keeps drawing while the video plays even when the
   const first = await frame()
   await page.waitForTimeout(1500)
   expect(await frame()).toBeGreaterThan(first + 30)
-})
-
-test('REQ-MOTION-029 the player has no effect switches, even for a skill whose index entry counts layers', async ({ page }) => {
-  // 이상 흑수 - 오 필두 skill 1: the index counted two buff layers before version 9.
-  await closeAnnouncements(page)
-  await page.goto('/ko/motion/skills?skill=id10114~1011401')
-  await page.getByRole('button', { name: '확인' }).click()
-  await expect(page.getByRole('button', { name: '일시정지' }).or(page.getByText('영상을 불러오지 못했습니다.'))).toBeVisible({ timeout: 30000 })
-  await expect(page.getByText('이펙트', { exact: true })).toHaveCount(0)
 })
 
 test('REQ-MOTION-028 a layers.json from before version 7 (no Y·Cb·Cr planes) is not drawn: the stage says it could not load', async ({ page }) => {

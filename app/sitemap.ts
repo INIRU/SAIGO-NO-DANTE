@@ -47,7 +47,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const gameDataDate = latest([...identityRows, ...egoRows], 'release_date')
   // Every skill motion has its own address (?skill=, with its own title). The R2 list down: the motion page alone.
   const motionSkills = await loadMotionCatalog(PRIMARY_LOCALE).then(
-    sinners => sinners.flatMap(sinner => sinner.identities.flatMap(identity => identity.skills.map(skill => entry(`/motion/skills?skill=${toMotionParam(skill.key)}`, identity.released)))),
+    sinners => sinners.flatMap(sinner => [
+      ...sinner.identities.flatMap(identity => identity.skills.map(skill => entry(`/motion/skills/watch?skill=${toMotionParam(skill.key)}`, identity.released))),
+      ...(sinner.egos ?? []).flatMap(ego => ego.skills.map(skill => entry(`/motion/skills/watch?skill=${toMotionParam(skill.key)}`))),
+    ]),
     error => { Sentry.captureException(error, { tags: { location: 'sitemap:sitemap' }, extra: { msg: 'Failed to read the motion list' } }); return [] },
   )
 

@@ -1,5 +1,11 @@
-import SkillMotionSkeleton from '@/components/motion/SkillMotionSkeleton'
+import { PageHeaderSkeleton } from '@/components/ui/PageHeader'
+import { MotionBrowserSkeleton } from '@/components/motion/SkillMotionSkeleton'
 
 export default function Loading() {
-  return <SkillMotionSkeleton />
+  return (
+    <div className="mx-auto min-h-[100dvh] max-w-[76rem] px-4 pb-24 pt-[5.5rem] md:px-6">
+      <PageHeaderSkeleton description={false} />
+      <MotionBrowserSkeleton />
+    </div>
+  )
 }

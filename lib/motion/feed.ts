@@ -7,7 +7,7 @@ import { readAllMetaRows } from '@/lib/meta/pagination'
 import { getGameTextRefNamesOrNull } from '@/lib/db/game-text-refs'
 import { skillSlot } from '@/lib/identity/skill-model'
 import type { SupportedLang } from '@/lib/i18n/types'
-import { MOTION_INDEX_URL, motionCatalogFrom, type MotionEntry, type MotionSinner, type MotionSiteData, type MotionSkillFrame } from '@/lib/motion/catalog'
+import { MOTION_INDEX_URL, motionCatalogFrom, type MotionEgoInfo, type MotionEntry, type MotionSinner, type MotionSiteData, type MotionSkillFrame } from '@/lib/motion/catalog'
 
 /** The R2 `index.json` (about 0.9 MB) for the sitemap and skill metadata: read once per ten minutes, never copied into the database. */
 async function loadMotionIndex(): Promise<MotionEntry[]> {
@@ -55,15 +55,24 @@ async function loadSinnerNames(lang: SupportedLang): Promise<Map<string, string>
   return new Map((data ?? []).map(row => [row.id as string, ((lang === 'en' ? row.name_en : lang === 'ja' ? row.name_jp : row.name_kr) ?? row.name_kr) as string]))
 }
 
+/** The site's E.G.O by game id, their names in the page language (the E.G.O cards of the motion list). */
+async function loadEgos(lang: SupportedLang): Promise<MotionEgoInfo[]> {
+  const db = publicSupabase()
+  const { data, error } = await db.schema('limbus').from('ego').select('game_id, sinner_id, name_kr, name_en, name_jp, grade, sin_affinity, image_url').not('game_id', 'is', null)
+  if (error) throw error
+  return (data ?? []).map(row => ({ game_id: String(row.game_id), name: getLocalizedName(row, lang), image_url: row.image_url ?? null, grade: row.grade as string, sinner_id: row.sinner_id as string, sin_affinity: row.sin_affinity ?? null }))
+}
+
 /** The site's names and sprites for the motion list in one language (the R2 index is read apart, see MOTION_INDEX_URL). */
 export async function loadMotionSiteData(lang: SupportedLang): Promise<MotionSiteData> {
   'use cache'
   cacheLife('page-1h')
   cacheTag(CACHE_TAGS.gameData, CACHE_TAGS.identities)
-  const [identities, skills, refs, sinnerNames] = await Promise.all([getIdentities(), loadSkillData(lang), getGameTextRefNamesOrNull(lang), loadSinnerNames(lang)])
+  const [identities, skills, refs, sinnerNames, egos] = await Promise.all([getIdentities(), loadSkillData(lang), getGameTextRefNamesOrNull(lang), loadSinnerNames(lang), loadEgos(lang)])
   return {
     identities: identities.flatMap(identity => identity.game_id ? [{ id: identity.id, name: getLocalizedName(identity, lang), sinner_id: identity.sinner_id,
-      sinner_name: sinnerNames.get(identity.sinner_id), game_id: identity.game_id, folder_name: identity.folder_name ?? null, release_date: identity.release_date ?? null }] : []),
+      sinner_name: sinnerNames.get(identity.sinner_id), game_id: identity.game_id, folder_name: identity.folder_name ?? null, rarity: identity.rarity ?? null, release_date: identity.release_date ?? null }] : []),
+    egos,
     skillNames: [...skills.names],
     skillFrames: [...skills.frames],
     refs,
