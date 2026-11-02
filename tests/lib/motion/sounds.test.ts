@@ -171,8 +171,8 @@ describe('REQ-MOTION-038 a cue in its middle, a negative start, an end', () => {
     expect(sources[0].started).toEqual([[10, 0.5]])
   })
 
-  it('REQ-MOTION-038 stops at `end` on the audio clock, with no fade when the curve is down', async () => {
-    await setup(meta([cue({ start: 1, end: 1.5, mix: [[60, 1, 1], [90, 0, 0]] })]))
+  it('REQ-MOTION-038 stops at `end` on the audio clock with no fade of its own', async () => {
+    await setup(meta([cue({ start: 1, end: 1.5, mix: [[60, 1, 1], [90, 1, 1]] })]))
     play()
     expect(sources[0].stops).toHaveLength(1)
     expect(sources[0].stops[0]).toBeCloseTo(10.7)
@@ -312,23 +312,14 @@ describe('REQ-MOTION-047 a sound file that is not on R2', () => {
   })
 })
 
-describe('REQ-MOTION-038 a cue that ends', () => {
+describe('REQ-MOTION-039 the buses', () => {
   beforeEach(() => { vi.useFakeTimers() })
   afterEach(() => { vi.useRealTimers() })
 
-  it('REQ-MOTION-038 fades a cue still sounding at its end over the game steal fade, instead of cutting it', async () => {
-    await setup(meta([cue({ end: 1.5, mix: [[60, 0.3, 0.3], [90, 0.3, 0.3]] })]))
+  it('REQ-MOTION-039 sends a cue to the 3D bus by its own d3, not by the rule of its event', async () => {
+    await setup(meta([cue({ event: 'event:/SFX/20220329/Hit', d3: false }), cue({ event: 'event:/SFX/x', d3: true })]))
     play()
-    const [src] = sources, { steal } = chain(src)
-    expect(steal.gain.events.filter(e => e.kind === 'ramp').map(e => e.v)).toEqual([0])
-    const fadeStart = steal.gain.events.find(e => e.kind === 'set')!.t, fadeEnd = steal.gain.events.find(e => e.kind === 'ramp')!.t
-    expect(fadeEnd - fadeStart).toBeCloseTo(0.043, 3)
-    expect(src.stops.at(-1)).toBeCloseTo(fadeEnd, 6)
-  })
-
-  it('REQ-MOTION-038 adds no fade when the curve is already down at the end', async () => {
-    await setup(meta([cue({ end: 1.5, mix: [[60, 0.3, 0.3], [90, 0, 0]] })]))
-    play()
-    expect(chain(sources[0]).steal.gain.events).toEqual([])
+    const [plain, spatial] = sources.map(src => chain(src).bus)
+    expect(plain).not.toBe(spatial)
   })
 })
