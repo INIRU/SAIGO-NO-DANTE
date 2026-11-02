@@ -12,19 +12,23 @@ const row = (image_id: string, uptie_level: number) => ({
   base_power: 3, coin_power: 7, description: `${uptie_level}동기화`, description_en: null, description_jp: null, skill_order: 4, image_id,
   atk_weight: 1, offense_level: null, variant_order: 8, uptie_level, identity: { sinner_id: 'heathcliff', game_id: '10916', keywords: [] },
 })
-const ROWS = [row('1091608', 1), row('1091608', 3), row('1091608_4', 4)]
+const ROWS: Record<string, unknown>[] = [row('1091608', 1), row('1091608', 3), row('1091608_4', 4),
+  // 경멸, 경외 (10412) saves its link skill 1041206 under 흉탄's sprite id
+  { ...row('1011303', 4), id: 'link', name: '쏘아내겠소 / 언제든지', skill_type: 'pierce', skill_order: 3, sin_affinity: 'pride', atk_type: 'pierce', identity_id: 'u-10412', identity: { sinner_id: 'yisang', game_id: '10412', keywords: [] } },
+  { ...row('1041201', 4), id: 'own', name: '경멸스러운 것', skill_order: 1, identity_id: 'u-10412', identity: { sinner_id: 'yisang', game_id: '10412', keywords: [] } }]
 // The database as a filter over ROWS: whichever of eq / in the loader uses.
 // (the ego and sinners tables are read to the end of the chain; the skills table is paged by readAllMetaRows)
 const table = (name: string) => {
-  const rows = name === 'ego' ? EGOS : name === 'sinners' ? SINNERS : []
-  const chain: Record<string, unknown> = { not: () => chain, order: () => chain, range: () => chain, then: (done: (v: unknown) => void) => done({ data: rows, error: null }) }
+  const rows = name === 'ego' ? EGOS : name === 'sinners' ? SINNERS : name === 'skills' ? ROWS : []
+  let from = 0
+  const chain: Record<string, unknown> = { not: () => chain, order: () => chain, range: (start: number) => { from = start; return chain }, then: (done: (v: unknown) => void) => done({ data: name === 'skills' ? rows.slice(from) : rows, error: null }) }
   return chain
 }
 vi.mock('@supabase/supabase-js', () => ({
   createClient: () => ({ schema: () => ({ from: (name: string) => ({ select: () => ({
     ...table(name),
-    eq: async (column: string, value: string) => ({ data: ROWS.filter(r => r[column as 'image_id'] === value), error: null }),
-    in: async (column: string, values: string[]) => ({ data: ROWS.filter(r => values.includes(r[column as 'image_id'])), error: null }),
+    eq: async (column: string, value: string) => ({ data: name === 'identities' ? (value === '10412' ? [{ id: 'u-10412' }] : []) : name === 'ego_skills' ? [] : ROWS.filter(r => r[column] === value), error: null }),
+    in: async (column: string, values: string[]) => ({ data: ROWS.filter(r => values.includes(r[column] as string)), error: null }),
   }) }) }) }),
 }))
 
@@ -67,5 +71,26 @@ describe('REQ-MOTION-042 the skill card of an E.G.O skill', () => {
     expect(egoSkillRow([row(1), row(4)], 'en')).toMatchObject({ name: 'Le Trou', description: 'Text', atk_type: 'pierce', skill_order: 3, uptie_level: 4, image_id: null, identity: { sinner_id: 'faust', game_id: '20211', keywords: null } })
     expect(egoSkillRow([row(1)], 'ja')).toMatchObject({ name: '구멍', description: '설명' })
     expect(egoSkillRow([], 'ko')).toBeNull()
+  })
+})
+
+describe('REQ-MOTION-015 a skill saved under another identity\'s sprite id', () => {
+  it('REQ-MOTION-015 takes the one row an identity borrowed, and none when there are several or none', async () => {
+    const { borrowedRows } = await import('@/lib/motion/feed')
+    const own = { image_id: '1041201', identity: { game_id: '10412' } }, lent = { image_id: '1011303', identity: { game_id: '10412' } }, lent4 = { image_id: '1011303_4', identity: { game_id: '10412' } }
+    expect(borrowedRows([own, lent, lent4], '10412')).toEqual([lent, lent4])
+    expect(borrowedRows([own, lent, { image_id: '1011304', identity: { game_id: '10412' } }], '10412')).toEqual([])
+    expect(borrowedRows([own], '10412')).toEqual([])
+  })
+
+  it('REQ-MOTION-015 gives the skill card of 1041206 from that row', async () => {
+    const { loadMotionSkill } = await import('@/lib/motion/feed')
+    expect(await loadMotionSkill(1041206, 'ko')).toMatchObject({ name: '쏘아내겠소 / 언제든지', sin_affinity: 'pride', identity: { game_id: '10412' } })
+  })
+
+  it('REQ-MOTION-015 hands the catalog the borrowed row of each identity by its game id', async () => {
+    const { loadMotionSiteData } = await import('@/lib/motion/feed')
+    const site = await loadMotionSiteData('ko')
+    expect(site.skillBorrowed).toEqual([['10412', { name: '쏘아내겠소 / 언제든지', frame: { sin: 'pride', slot: 3, attack: 'pierce', sprite: 1011303 } }]])
   })
 })

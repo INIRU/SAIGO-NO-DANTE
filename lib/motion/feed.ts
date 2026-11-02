@@ -32,29 +32,51 @@ type SkillOwner = { game_id: string | null } | { game_id: string | null }[] | nu
  */
 export function ownSkillRows<T extends { identity?: SkillOwner }>(rows: readonly T[], skillId: number): T[] {
   const owner = String(skillId).slice(0, 5)
-  const own = rows.filter(row => (Array.isArray(row.identity) ? row.identity[0] : row.identity)?.game_id === owner)
+  const own = rows.filter(row => ownerOf(row) === owner)
   return own.length ? own : [...rows]
 }
+const ownerOf = (row: { identity?: SkillOwner }) => (Array.isArray(row.identity) ? row.identity[0] : row.identity)?.game_id ?? null
 
-async function loadSkillData(lang: SupportedLang): Promise<{ names: Map<number, string>; frames: Map<number, MotionSkillFrame> }> {
+/**
+ * The other way round: an identity's skill saved under another identity's sprite id (경멸, 경외's 1041206 is saved as
+ * 1011303), so its own id has no row. The rows of the identity with a sprite id not its own, when they are one skill.
+ */
+export function borrowedRows<T extends { image_id: string | null; identity?: SkillOwner }>(rows: readonly T[], owner: string): T[] {
+  const lent = rows.filter(row => ownerOf(row) === owner && row.image_id && !row.image_id.startsWith(owner))
+  return new Set(lent.map(row => row.image_id!.replace(/_4$/, ''))).size === 1 ? lent : []
+}
+
+type SkillSummary = { name?: string; frame: MotionSkillFrame }
+
+async function loadSkillData(lang: SupportedLang): Promise<{ names: Map<number, string>; frames: Map<number, MotionSkillFrame>; borrowed: Map<string, SkillSummary> }> {
   const db = publicSupabase()
   type Row = { image_id: string; name: string | null; name_en: string | null; name_jp: string | null; uptie_level: number | null; skill_order: number; atk_type: string | null; sin_affinity: string | null; identity?: SkillOwner }
   const rows = await readAllMetaRows<Row>((from, to) => db.schema('limbus').from('skills')
     .select('image_id, name, name_en, name_jp, uptie_level, skill_order, atk_type, sin_affinity, identity:identities(game_id)').not('image_id', 'is', null).order('id').range(from, to), 1000)
-  // A row without a name in the page language leaves the name to the highest uptie that has one.
-  const best = new Map<number, Row>(), named = new Map<number, Row & { text: string }>()
-  const byId = Map.groupBy(rows, row => Number(row.image_id.replace(/_4$/, '')))
-  for (const [id, group] of byId) for (const row of ownSkillRows(group, id)) {
-    const uptie = row.uptie_level ?? 0
-    if ((best.get(id)?.uptie_level ?? -1) < uptie) best.set(id, row)
-    const text = (lang === 'en' ? row.name_en : lang === 'ja' ? row.name_jp : row.name)?.trim()
-    if (text && (named.get(id)?.uptie_level ?? -1) < uptie) named.set(id, { ...row, text })
+  // The frame of the highest uptie; a row without a name in the page language leaves the name to the highest uptie that has one.
+  const summary = (group: readonly Row[]): SkillSummary | null => {
+    let best: Row | null = null, named: (Row & { text: string }) | null = null
+    for (const row of group) {
+      const uptie = row.uptie_level ?? 0
+      if ((best?.uptie_level ?? -1) < uptie) best = row
+      const text = (lang === 'en' ? row.name_en : lang === 'ja' ? row.name_jp : row.name)?.trim()
+      if (text && (named?.uptie_level ?? -1) < uptie) named = { ...row, text }
+    }
+    if (!best) return null
+    const attack = best.atk_type === 'slash' || best.atk_type === 'pierce' || best.atk_type === 'blunt' ? best.atk_type : null
+    return { ...(named && { name: named.text }), frame: { sin: best.sin_affinity ?? 'neutral', slot: skillSlot(best), attack } }
   }
-  const names = new Map([...named].map(([id, row]) => [id, row.text]))
-  const frames = new Map<number, MotionSkillFrame>()
-  for (const [id, row] of best) {
-    const attack = row.atk_type === 'slash' || row.atk_type === 'pierce' || row.atk_type === 'blunt' ? row.atk_type : null
-    frames.set(id, { sin: row.sin_affinity ?? 'neutral', slot: skillSlot(row), attack })
+  const names = new Map<number, string>(), frames = new Map<number, MotionSkillFrame>(), borrowed = new Map<string, SkillSummary>()
+  for (const [id, group] of Map.groupBy(rows, row => Number(row.image_id.replace(/_4$/, '')))) {
+    const found = summary(ownSkillRows(group, id))
+    if (!found) continue
+    if (found.name) names.set(id, found.name)
+    frames.set(id, found.frame)
+  }
+  for (const [owner, group] of Map.groupBy(rows, row => ownerOf(row) ?? '')) {
+    const lent = owner ? borrowedRows(group, owner) : []
+    const found = summary(lent)
+    if (found) borrowed.set(owner, { ...found, frame: { ...found.frame, sprite: Number(lent[0].image_id.replace(/_4$/, '')) } })
   }
   // The E.G.O skills: their own table, one row per construe level, always in the third skill's frame.
   type EgoRow = { game_skill_id: number | null; name: string | null; name_en: string | null; name_jp: string | null; skill_type: string | null; sin_affinity: string | null }
@@ -66,7 +88,7 @@ async function loadSkillData(lang: SupportedLang): Promise<{ names: Map<number, 
     const attack = row.skill_type === 'slash' || row.skill_type === 'pierce' || row.skill_type === 'blunt' ? row.skill_type : null
     frames.set(id, { sin: row.sin_affinity ?? 'neutral', slot: 3, attack })
   }
-  return { names, frames }
+  return { names, frames, borrowed }
 }
 
 /** The sinners' names in the page language, by sinner id (a link button names its identity with the sinner). */
@@ -97,6 +119,7 @@ export async function loadMotionSiteData(lang: SupportedLang): Promise<MotionSit
     egos,
     skillNames: [...skills.names],
     skillFrames: [...skills.frames],
+    skillBorrowed: [...skills.borrowed],
     refs,
   }
 }
@@ -156,7 +179,18 @@ export async function loadMotionSkill(skillId: number, lang: SupportedLang): Pro
   const { data, error } = await db.schema('limbus').from('skills').select(SKILL_COLUMNS).in('image_id', [String(skillId), `${skillId}_4`])
   if (error) throw error
   type Row = MotionSkillRow & { name_en: string | null; name_jp: string | null; description_en: string | null; description_jp: string | null; identity: MotionSkillRow['identity'] | MotionSkillRow['identity'][] }
-  const row = pickMotionSkillRow(ownSkillRows((data ?? []) as unknown as Row[], skillId))
+  let row = pickMotionSkillRow(ownSkillRows((data ?? []) as unknown as Row[], skillId))
+  if (!row) {
+    // Saved under another identity's sprite id: the identity's one borrowed skill (see borrowedRows).
+    const owner = String(skillId).slice(0, 5)
+    const identity = await db.schema('limbus').from('identities').select('id').eq('game_id', owner)
+    if (identity.error) throw identity.error
+    if (identity.data?.length) {
+      const own = await db.schema('limbus').from('skills').select(SKILL_COLUMNS).eq('identity_id', identity.data[0].id)
+      if (own.error) throw own.error
+      row = pickMotionSkillRow(borrowedRows((own.data ?? []) as unknown as Row[], owner))
+    }
+  }
   if (!row) {
     const ego = await db.schema('limbus').from('ego_skills').select(EGO_SKILL_COLUMNS).eq('game_skill_id', skillId)
     if (ego.error) throw ego.error
