@@ -20,6 +20,7 @@ type MotionMeta = LayerSetMeta & { tail?: number; chapters?: MotionChapter[]; ma
 
 /** How long without a frame report, while playing, before a display refresh draws the frame itself (6 frames at 60 fps). */
 const STALE_MS = 100
+const SOUND_WAIT_MS = 8000   // how long a video waits for its sound before it plays without
 
 // The visitor's sound settings, kept in the browser: the master starts at the game's full loudness, where a hit has its edge.
 const SOUND_KEY = 'motion-sound-v2'
@@ -316,11 +317,21 @@ export function useSkillMotion() {
       observer.current?.observe(canvas)
       meta.current = m
       drawn.current = -1
-      void sounds.current?.load(MOTION_ASSET_BASE, m)
+      const tracks = sounds.current?.load(MOTION_ASSET_BASE, m)
       setFrames(m.frames)
       setHasAudio(Boolean(m.audio))
       setChapters(m.chapters ?? [])
       setMarks(m.marks ?? [])
+      // With the sound on the video waits for its tracks: started sooner, the first sounds would come in cut.
+      if (soundOn.current && tracks) {
+        v.pause()
+        v.currentTime = 0
+        draw()
+        let timer = 0
+        await Promise.race([tracks, new Promise(resolve => { timer = window.setTimeout(resolve, SOUND_WAIT_MS) })])
+        window.clearTimeout(timer)
+        if (mine !== token.current) return
+      }
       v.currentTime = 0
       draw()
       setStatus('ready')
