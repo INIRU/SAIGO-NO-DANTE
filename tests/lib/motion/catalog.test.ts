@@ -400,11 +400,31 @@ describe('REQ-MOTION-046 the buffs of a scenario', () => {
   })
 
   it('REQ-MOTION-046 keeps the words of the labelKey the conditions do not show, in the page language', () => {
-    const extras = (labelKey: string, conditions: MotionEntry['conditions'], lang = 'ko') => buildMotionCatalog([entry({ state: 'v:1', labelKey, conditions })], new Map(), lang, { refs })[0].identities[0].skills[0].states[0].extras
+    const extras = (labelKey: string, conditions: MotionEntry['conditions'], lang = 'ko') => buildMotionCatalog([entry({ state: 'v:1', labelKey, conditions })], new Map(), lang, { refs })[0].identities[0].skills[0].states[0].extras?.map(extra => extra.text)
     expect(extras('[Burst] 10 + <crit> · <weight> 3', [{ keyword: 'Burst', stack: 10, target: false }])).toEqual(['치명타', '가중치 3'])
     expect(extras('[Burst] 10 + <crit>', [{ keyword: 'Burst', stack: 10, target: false }], 'en')).toEqual(['Critical Hit'])
     expect(extras('[Burst] 10', undefined)).toEqual(['파열 10'])
     expect(extras('<ally> <i:10412> + <crit>', undefined)).toEqual(['치명타'])
+  })
+
+  it('REQ-MOTION-055 writes the sin with the site sin icon and joins it to the resonance after it, the coin face and a small target in words', () => {
+    const extras = (labelKey: string, lang = 'ko') => buildMotionCatalog([entry({ state: 'v:1', labelKey })], new Map(), lang, { refs })[0].identities[0].skills[0].states[0].extras
+    const [sin, weight] = extras('<sin:scarlet> + <resonance> 4 · <weight> 2')!
+    expect(sin).toMatchObject({ text: '색욕 공명 4' })
+    expect(sin.icon).toContain('/assets/game-ui/sins/lust.webp')
+    expect(weight).toEqual({ text: '가중치 2', icon: null })
+    expect(extras('<sin:crimson> + <resonance> 3', 'ja')![0].text).toBe('憤怒 共鳴 3')
+    expect(extras('<sin:azure>', 'en')![0]).toMatchObject({ text: 'Gloom' })
+    const [tail] = extras('<coin:tail>')!
+    expect(tail.text).toBe('코인 뒷면')
+    expect(tail.icon).toContain('/assets/game-ui/coins/normal.webp')
+    expect(extras('<coin:head>', 'en')![0].text).toBe('Heads')
+    expect(extras('<target> <small>')![0]).toEqual({ text: '대상 소형', icon: null })
+  })
+
+  it('REQ-MOTION-055 takes a keyword value as written, a string such as 1/15, and no number for a stage', () => {
+    const [state] = buildMotionCatalog([entry({ state: 'v:1', conditions: [{ keyword: 'Burst', stack: '1/15', target: false }, { keyword: 'Burst', target: false }] })], new Map(), 'ko', { refs })[0].identities[0].skills[0].states
+    expect(state.conditions?.map(c => c.stack)).toEqual(['1/15', null])
   })
 
   it('REQ-MOTION-046 leaves out a keyword the table does not know, and keeps a scenario without conditions plain', () => {
