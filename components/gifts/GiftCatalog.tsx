@@ -65,7 +65,7 @@ export function GiftKeywordTab({ label, iconUrl, color, active, count, onClick }
     >
       {iconUrl && <KeywordImage src={iconUrl} size={16} dim={!active} />}
       {label}
-      {count !== undefined && <span className="tabular-nums" style={{ fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: active ? '#b9aa98' : '#7f7364' }}>{count}</span>}
+      {count !== undefined && <span className="tabular-nums" style={{ fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: active ? '#b9aa98' : 'var(--text-muted)' }}>{count}</span>}
     </button>
   )
 }
@@ -89,7 +89,7 @@ export function GiftGradeChip({ grade, ariaLabel, active, count, onClick }: {
       }}
     >
       {GRADE_LABELS[grade] ?? grade}
-      {count !== undefined && <span className="tabular-nums" style={{ fontFamily: 'var(--font-body)', fontSize: '0.75rem', letterSpacing: 0, color: active ? '#b9aa98' : '#7f7364' }}>{count}</span>}
+      {count !== undefined && <span className="tabular-nums" style={{ fontFamily: 'var(--font-body)', fontSize: '0.75rem', letterSpacing: 0, color: active ? '#b9aa98' : 'var(--text-muted)' }}>{count}</span>}
     </button>
   )
 }

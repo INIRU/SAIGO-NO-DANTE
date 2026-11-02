@@ -112,7 +112,7 @@ export default function DeckEgoGiftAccordion({
                 {getIconUrl(kw) && (
                   <Image src={getIconUrl(kw)!} alt="" width={12} height={12} style={{ opacity: 0.7 }} />
                 )}
-                <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: '#8a7040', letterSpacing: '0.05em' }}>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: 'var(--gold-dim)', letterSpacing: '0.05em' }}>
                   {localizeDeckKeyword(kw, keywords[kw], locale)} ({grouped[kw].length})
                 </span>
               </div>
@@ -133,7 +133,7 @@ export default function DeckEgoGiftAccordion({
                         <span style={{ fontSize: '0.6875rem', color: '#c8a450', fontWeight: 600 }}>{g.name}</span>
                         <span style={{ fontSize: '0.75rem', color: '#8a8060', marginLeft: '6px', fontFamily: 'var(--font-mono)' }}>{condLabel}</span>
                       </div>
-                      <span style={{ fontSize: '0.75rem', color: '#2a8a2a', fontFamily: 'var(--font-mono)', fontWeight: 700 }}>{t('egoGifts.on')}</span>
+                      <span style={{ fontSize: '0.75rem', color: '#4fb04f', fontFamily: 'var(--font-mono)', fontWeight: 700 }}>{t('egoGifts.on')}</span>
                     </div>
                   )
                 })}

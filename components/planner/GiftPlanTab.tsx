@@ -106,7 +106,7 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap, observati
                 border: 'none',
                 borderBottom: `2px solid ${isActive ? 'var(--gold)' : 'transparent'}`,
                 cursor: 'pointer',
-                color: isActive ? 'var(--gold-light)' : '#555',
+                color: isActive ? 'var(--gold-light)' : 'var(--text-muted)',
                 fontSize: '0.8125rem',
                 fontWeight: isActive ? 700 : 400,
                 transition: 'all 0.2s',
@@ -122,7 +122,7 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap, observati
                 <span style={{
                   fontSize: '0.5625rem',
                   background: isActive ? 'rgba(200,144,10,0.2)' : 'var(--bg-card)',
-                  color: isActive ? 'var(--gold)' : '#444',
+                  color: isActive ? 'var(--gold)' : 'var(--text-muted)',
                   border: `1px solid ${isActive ? '#c8900a40' : '#222'}`,
                   borderRadius: '0.75rem',
                   padding: '0 0.375rem',
@@ -172,7 +172,7 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap, observati
             }}>
               {t('observe.selected', { count: observeIds.size, max: maxObserved(observation) })}
             </span>
-            <span style={{ fontSize: '0.625rem', color: '#444' }}>
+            <span style={{ fontSize: '0.625rem', color: 'var(--text-muted)' }}>
               {t('observe.gradeRange', { from: GRADE_ROMAN['1'], to: GRADE_ROMAN['3'] })}
             </span>
           </div>

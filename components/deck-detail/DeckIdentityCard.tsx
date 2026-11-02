@@ -154,10 +154,10 @@ const RES_ATK_ICON: Record<string, string> = {
 const RES_STYLE: Record<string, { color: string; bg: string; border: string }> = {
   '효율': { color: '#e06070', bg: 'rgba(200,64,80,0.12)', border: 'rgba(200,64,80,0.3)' },
   '취약': { color: '#e06070', bg: 'rgba(200,64,80,0.12)', border: 'rgba(200,64,80,0.3)' },
-  '보통': { color: '#556677', bg: 'rgba(48,48,64,0.15)', border: 'rgba(80,80,100,0.2)' },
+  '보통': { color: 'var(--text-muted)', bg: 'rgba(48,48,64,0.15)', border: 'rgba(80,80,100,0.2)' },
   '내성': { color: '#4898b0', bg: 'rgba(52,120,160,0.12)', border: 'rgba(52,120,160,0.3)' },
   '견딤': { color: '#4898b0', bg: 'rgba(52,120,160,0.12)', border: 'rgba(52,120,160,0.3)' },
-  '무효': { color: '#334455', bg: 'rgba(20,28,36,0.3)', border: 'rgba(40,56,72,0.2)' },
+  '무효': { color: 'var(--text-muted)', bg: 'rgba(20,28,36,0.3)', border: 'rgba(40,56,72,0.2)' },
 }
 
 // ── 헬퍼 ──────────────────────────────────────────────────────────────────
@@ -253,7 +253,7 @@ export function PassiveDescriptionLines({ text, color, allowedKeywords }: { text
   const formatSkillDesc = useFormatSkillDesc()
   return splitGameTextLines(text).map((line, li) => (
     <div key={li}>
-      <span style={{ color: '#686050', whiteSpace: 'pre-wrap' }}>{formatSkillDesc(line, color, undefined, allowedKeywords, allowedKeywords ? { matchPlainKeywords: true } : undefined)}</span>
+      <span style={{ color: 'var(--text-muted)', whiteSpace: 'pre-wrap' }}>{formatSkillDesc(line, color, undefined, allowedKeywords, allowedKeywords ? { matchPlainKeywords: true } : undefined)}</span>
     </div>
   ))
 }
@@ -364,7 +364,7 @@ export default function DeckIdentityCard({
                 const rawDesc = keywordMeta?.[kw]?.description
                 const desc = rawDesc ? plainText(rawDesc, { keepPlaceholders: false }) : rawDesc
                 return (
-                  <span key={kw} className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded" title={desc} style={{ background: 'rgba(120,76,28,0.12)', color: '#907040', border: '1px solid rgba(120,76,28,0.22)', fontFamily: 'var(--font-heading)', fontSize: '0.75rem', cursor: desc ? 'help' : 'default' }}>
+                  <span key={kw} className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded" title={desc} style={{ background: 'rgba(120,76,28,0.12)', color: 'var(--gold-dim)', border: '1px solid rgba(120,76,28,0.22)', fontFamily: 'var(--font-heading)', fontSize: '0.75rem', cursor: desc ? 'help' : 'default' }}>
                     {iconUrl && <Image src={iconUrl} alt="" width={14} height={14} />}
                     {localizeDeckKeyword(kw, keywords[kw], lang)}
                   </span>
@@ -378,7 +378,7 @@ export default function DeckIdentityCard({
             {id_.hp != null && (
               <span className="flex items-center gap-1" style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6875rem' }}>
                 <Image src={STAT_ICON_URL.hp} alt="HP" width={16} height={16} style={{ opacity: 0.9 }} />
-                <strong style={{ color: '#cc5050' }}>{id_.hp}</strong>
+                <strong style={{ color: 'var(--error-text)' }}>{id_.hp}</strong>
               </span>
             )}
             {id_.speed_min != null && id_.speed_max != null && (
@@ -403,7 +403,7 @@ export default function DeckIdentityCard({
               { label: 'blunt', iconKey: '타', val: id_.blunt_res },
             ] as { label: string; iconKey: string; val: string | null }[]).map(({ label, iconKey, val }) => {
               if (!val) return null
-              const st = RES_STYLE[val] ?? { color: '#556677', bg: 'rgba(48,48,64,0.15)', border: 'rgba(80,80,100,0.2)' }
+              const st = RES_STYLE[val] ?? { color: 'var(--text-muted)', bg: 'rgba(48,48,64,0.15)', border: 'rgba(80,80,100,0.2)' }
               return (
                 <span key={label} className="inline-flex items-center gap-0.5 px-1.5 py-px rounded" style={{ background: st.bg, color: st.color, border: `1px solid ${st.border}`, fontFamily: 'var(--font-mono)', fontSize: '0.75rem' }}>
                   <Image src={RES_ATK_ICON[iconKey]} alt={localizeDeckKeyword(label, keywords[label], lang)} width={12} height={12} style={{ opacity: 0.75 }} />

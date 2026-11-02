@@ -78,7 +78,7 @@ const COMBAT_KEYWORDS = ['참격', '관통', '타격'] as const
 const IDENTITY_FILTER_SELECT_WITH_SKILL_KEYWORDS = 'id, sinner_id, name_kr, name_en, name_jp, rarity, release_date, keywords, skill_keyword_list, folder_name, game_id, hp, speed_min, speed_max, def_level, sinner:sinners(id, name_kr, order_num)'
 const IDENTITY_FILTER_SELECT_LEGACY = 'id, sinner_id, name_kr, name_en, name_jp, rarity, release_date, keywords, folder_name, game_id, hp, speed_min, speed_max, def_level, sinner:sinners(id, name_kr, order_num)'
 
-const DIFFICULTY_COLOR: Record<string, string> = { normal: '#4a9868', hard: '#e8b030', overlap: '#48b0c0', extreme: '#e05050' }
+const DIFFICULTY_COLOR: Record<string, string> = { normal: '#4a9868', hard: '#e8b030', overlap: '#48b0c0', extreme: '#ec6a5e' }
 
 
 function parseCsvParam(value: string) {
@@ -794,8 +794,8 @@ export default function CommunityClient({ initialPlans, initialTotal, initialShe
                 boxShadow: 'var(--shadow-lg)',
               }}
             >
-              <div className="px-2.5 py-1" style={{ background: 'rgba(255,255,255,0.03)', color: '#666', fontSize: '0.6875rem', fontWeight: 600 }}>
-                {t('search.suggestionHeading')} <span style={{ color: '#555', fontWeight: 400 }}>{t('search.suggestionHint')}</span>
+              <div className="px-2.5 py-1" style={{ background: 'rgba(255,255,255,0.03)', color: 'var(--text-muted)', fontSize: '0.6875rem', fontWeight: 600 }}>
+                {t('search.suggestionHeading')} <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>{t('search.suggestionHint')}</span>
               </div>
               {suggestions.map((sg, i) => {
                 const kwIconUrl = sg.type === 'keyword' ? getIconUrl(sg.label) : null
@@ -829,7 +829,7 @@ export default function CommunityClient({ initialPlans, initialTotal, initialShe
                       <Image src={kwIconUrl} alt="" width={14} height={14} style={{ flexShrink: 0 }} />
                     ) : null}
                     <span className="min-w-0 flex-1 truncate">{sg.type === 'keyword' ? localKeyword(sg.label) : sg.label}</span>
-                    <span style={{ marginLeft: 'auto', fontSize: '0.625rem', color: '#666', flexShrink: 0 }}>
+                    <span style={{ marginLeft: 'auto', fontSize: '0.625rem', color: 'var(--text-muted)', flexShrink: 0 }}>
                       {sg.type === 'identity' ? t('search.suggestionIdentity') : t('search.suggestionKeyword')}
                     </span>
                   </button>
@@ -946,7 +946,7 @@ export default function CommunityClient({ initialPlans, initialTotal, initialShe
             <button type="button" className={filterStyles.action} onClick={() => applyCollectionCode(codeInput)} disabled={collectionLoading}>{t('filters.apply')}</button>
           </div>
         )}
-        {codeError && <p className={filterStyles.hint} role="alert" style={{ color: '#c85050' }}>{t('filters.invalidCode')}</p>}
+        {codeError && <p className={filterStyles.hint} role="alert" style={{ color: 'var(--error-text)' }}>{t('filters.invalidCode')}</p>}
       </FilterSection>
     </div>
   )

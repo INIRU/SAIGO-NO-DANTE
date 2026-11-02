@@ -65,7 +65,7 @@ export default function SinnersInteractive({ children }: { children: React.React
           height: '0.0625rem',
           background: 'linear-gradient(90deg, transparent, rgba(200,144,10,0.2))',
         }} />
-        <span className="font-mono" style={{ color: '#2a2015', fontSize: '0.5625rem', letterSpacing: '0.3em' }}>
+        <span className="font-mono" style={{ color: 'var(--text-muted)', fontSize: '0.5625rem', letterSpacing: '0.3em' }}>
           XII
         </span>
         <div style={{

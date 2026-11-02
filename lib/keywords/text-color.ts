@@ -4,7 +4,7 @@ import type { KeywordInfo } from '@/lib/keywords/catalog'
 import type { SinType } from '@/lib/types'
 
 const KEYWORD_POSITIVE_COLOR = '#f8c200'
-export const KEYWORD_NEGATIVE_COLOR = '#e30000'
+export const KEYWORD_NEGATIVE_COLOR = '#ff4f42'
 const KEYWORD_WARNING_COLOR = '#ff0000'
 export const KEYWORD_DEFAULT_COLOR = '#e8dcc8'
 

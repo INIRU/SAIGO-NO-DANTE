@@ -35,7 +35,7 @@ export function facetOption(kind: FacetKind, id: string, facets: BoardFacets | u
 
 function Count({ value }: { value: number }) {
   const t = useTranslations('boardFacets')
-  return <p className="mt-1 text-center text-[0.75rem] text-[#7f7364]">{t('postCount', { count: value })}</p>
+  return <p className="mt-1 text-center text-[0.75rem] text-[var(--text-muted)]">{t('postCount', { count: value })}</p>
 }
 
 function NameSearch({ value, onChange, placeholder }: { value: string; onChange: (value: string) => void; placeholder: string }) {

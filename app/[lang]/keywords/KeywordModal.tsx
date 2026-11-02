@@ -44,7 +44,7 @@ function Section({ title, count, children }: { title: string; count: number; chi
     <section className="border-t border-[#2e2417] px-5 py-4">
       <div className="mb-2.5 flex min-h-7 items-center justify-between gap-3">
         <h3 className="font-[family-name:var(--font-heading)] text-[0.875rem] text-[#9c8b73]">{title}</h3>
-        <span className="font-[family-name:var(--font-title)] text-[1.125rem] tabular-nums text-[#6a5a44]">{count}</span>
+        <span className="font-[family-name:var(--font-title)] text-[1.125rem] tabular-nums text-[var(--text-muted)]">{count}</span>
       </div>
       {children}
     </section>

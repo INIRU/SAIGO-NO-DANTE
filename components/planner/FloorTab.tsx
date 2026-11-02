@@ -821,7 +821,7 @@ export default function FloorTab({ state, dispatch, themes, gifts, recipes, gift
             <span
               aria-hidden="true"
               className="flex h-[3rem] items-center justify-center rounded-sm border border-dashed"
-              style={{ borderColor: '#3a2f22', color: '#5c4f3e' }}
+              style={{ borderColor: '#3a2f22', color: 'var(--text-muted)' }}
             >
               <Plus size={18} />
             </span>
@@ -917,7 +917,7 @@ export default function FloorTab({ state, dispatch, themes, gifts, recipes, gift
                         style={{
                           fontFamily: 'var(--font-title)',
                           fontSize: 'clamp(2.125rem, 1.6rem + 1.6vw, 3.25rem)',
-                          color: isOpen ? 'var(--gold-light)' : planned ? 'var(--text-primary)' : '#5c4f3e',
+                          color: isOpen ? 'var(--gold-light)' : planned ? 'var(--text-primary)' : 'var(--text-muted)',
                         }}
                       >
                         {entry.floor}
@@ -1089,7 +1089,7 @@ export default function FloorTab({ state, dispatch, themes, gifts, recipes, gift
                   <ul inert className="flex min-w-0 flex-wrap items-center gap-x-1 gap-y-1.5">
                     {materials.map((gift, index) => (
                       <li key={gift.game_id} className="flex items-center gap-1" title={gift.name}>
-                        {index > 0 && <span aria-hidden="true" className="text-[0.8125rem] text-[#6b5d4b]">+</span>}
+                        {index > 0 && <span aria-hidden="true" className="text-[0.8125rem] text-[var(--text-muted)]">+</span>}
                         <span className="w-11"><GiftCard gift={gift} size="100%" showName={false} onClick={applySuggestedFusion} /></span>
                       </li>
                     ))}

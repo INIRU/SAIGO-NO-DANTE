@@ -64,7 +64,7 @@ export default function SelectedPanel({
         <div className="planner-selected-panel-empty" style={{
           padding: '1.5rem 0',
           textAlign: 'center',
-          color: '#2f2a20',
+          color: 'var(--text-muted)',
           fontSize: '0.75rem',
           border: '1px dashed #1f1a14',
           borderRadius: '0.375rem',

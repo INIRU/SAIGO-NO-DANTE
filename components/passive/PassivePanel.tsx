@@ -49,10 +49,10 @@ export default function PassivePanel({
           return (
             <button key={tab} onClick={() => setPassiveTab(tab)} style={{
               flex: 1, padding: '0.5rem', fontSize: '0.75rem', fontWeight: active ? 700 : 400,
-              color: active ? (tab === 'battle' ? '#c84050' : '#4898b0') : '#555',
+              color: active ? (tab === 'battle' ? 'var(--error-text)' : '#4898b0') : 'var(--text-muted)',
               background: active ? (tab === 'battle' ? 'rgba(200,64,80,0.06)' : 'rgba(72,152,176,0.06)') : 'transparent',
               borderTop: 'none', borderLeft: 'none', borderRight: 'none',
-              borderBottom: `2px solid ${active ? (tab === 'battle' ? '#c84050' : '#4898b0') : 'transparent'}`,
+              borderBottom: `2px solid ${active ? (tab === 'battle' ? 'var(--error-text)' : '#4898b0') : 'transparent'}`,
               cursor: 'pointer', fontFamily: 'var(--font-heading)',
             }}>
               {tab === 'battle' ? t('battlePassive') : t('supportPassive')} ({cnt})
@@ -73,7 +73,7 @@ export default function PassivePanel({
                   {slot.sinner_id && (
                     <Image src={getSinnerLogoUrl(slot.sinner_id)} alt="" width={12} height={12} style={{ opacity: 0.4, width: '0.75rem', height: '0.75rem' }} />
                   )}
-                  <span style={{ color: '#6a5e38', fontSize: '0.6875rem', fontFamily: 'var(--font-mono)' }}>{sName}</span>
+                  <span style={{ color: 'var(--gold-dim)', fontSize: '0.6875rem', fontFamily: 'var(--font-mono)' }}>{sName}</span>
                 </div>
                 <p className="truncate" style={{ color: '#c8a450', fontSize: '0.6875rem', fontWeight: 700, lineHeight: 1.3 }}>{slot.name_kr}</p>
               </div>
