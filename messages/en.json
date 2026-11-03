@@ -3061,6 +3061,9 @@
     "runCounts": "{done} fulfilled, {failed} violated, {recalled} recalled",
     "recordsNote": "Records stay in this browser only.",
     "rankingMine": "My best grace",
-    "rankingSoon": "The ranking is not open yet. When it opens, only runs with the terminal on to the end will count."
+    "rankingSoon": "The ranking is not open yet. When it opens, only runs with the terminal on to the end will count.",
+    "goal_swap_identity": "Put another Identity in {sinner}'s place",
+    "goal_formation_keyword": "Field {count} {keyword} Identities in the first six places",
+    "kind_formation": "Formation"
   }
 }

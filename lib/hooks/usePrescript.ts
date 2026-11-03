@@ -8,6 +8,7 @@ import { EVENT_EXIT_SCENES } from '@/lib/vision/scene-state'
 import { HISTORY_KEY, readHistory, summarizeRun, withRun } from '@/lib/fun/prescript-history'
 import type { FloorThemeObservation, FusionEvidence, GiftSale, PopupAcquisition } from '@/lib/hooks/useAssistCapture'
 import type { OwnedGridRead } from '@/lib/vision/owned-grid'
+import type { FormationRead } from '@/lib/vision/formation-bar'
 
 /** The last finished run's record in this browser. A run not yet ended is never kept: a reload or a break starts over
  * (USER 2026-11-04: turned off or cut before the dungeon ends, its score and record are reset). */
@@ -33,7 +34,7 @@ export interface PrescriptOffer { scope: PrescriptScope; floor: number; cards: P
  * its token), a popup that follows a fusion dialog as that fusion's result, and the capture leaving `running` as a break.
  * Offers a card choice whenever a kind wants one; the player only chooses, never marks a prescript done.
  */
-export function usePrescript({ enabled, status, acquisitions, sales, fusions, floorObservation, ownedGrid, eventRoom, eventOutcome, scene, inShop, context }: {
+export function usePrescript({ enabled, status, acquisitions, sales, fusions, floorObservation, ownedGrid, eventRoom, eventOutcome, formation, scene, inShop, context }: {
   enabled: boolean
   status: string
   acquisitions: readonly PopupAcquisition[]
@@ -46,6 +47,8 @@ export function usePrescript({ enabled, status, acquisitions, sales, fusions, fl
   eventRoom?: { eventId: number; options: number[] } | null
   /** A ? room's result page: the option taken. */
   eventOutcome?: { eventId: number; option: number; at: number } | null
+  /** The formation read from the shop's bar. */
+  formation?: FormationRead | null
   /** The capture's stable scene label: leaving the shop's screens for the map, a battle or a room settles shop prescripts. */
   scene: string | null
   /** The shop shelf is on screen and read (a shop prescript may be offered). */
@@ -141,6 +144,9 @@ export function usePrescript({ enabled, status, acquisitions, sales, fusions, fl
     activeEvent.current = roomId
     setRun(current => receive(current, card, contextRef.current.floor, Date.now()))
   }, [enabled, status, run.ended, roomId, eventRoom?.options])
+  useEffect(() => {
+    if (enabled && formation) apply({ type: 'formation', ids: formation.ids, at: formation.observedAt })
+  }, [enabled, formation, apply])
   useEffect(() => {
     if (enabled && eventOutcome) apply({ type: 'event-outcome', eventId: eventOutcome.eventId, option: eventOutcome.option, at: eventOutcome.at })
   }, [enabled, eventOutcome, apply])

@@ -26,8 +26,9 @@ import { EMPTY_PLAN, planFromRunDraft, RUN_DRAFT_KEY, type PrescriptPlan } from 
 /** The prescripts are drawn for the run the mode is meant for: Extreme, to the 15th floor. */
 const RUN_DIFFICULTY = 'extreme'
 
-export default function PrescriptClient({ themes, gifts, recipes, events, eventChoices, dataError }: { themes: ThemeData[]; gifts: GiftData[]; recipes: RecipeData[];
-  events: MdEvent[]; eventChoices: MdEventChoice[]; dataError?: boolean }) {
+export default function PrescriptClient({ themes, gifts, recipes, events, eventChoices, identities, sinners, dataError }: { themes: ThemeData[]; gifts: GiftData[]; recipes: RecipeData[];
+  events: MdEvent[]; eventChoices: MdEventChoice[]; identities: { game_id: string | null; sinner_id: string; keywords: string[] | null }[];
+  sinners: { id: string; name_kr: string | null; name_en: string | null; name_jp: string | null }[]; dataError?: boolean }) {
   const t = useTranslations('prescriptMode')
   const lang = useLocale() as SupportedLang
   // The game client's language picks the text reader's model and the gift names it compares (the Assist's own setting).
@@ -75,13 +76,18 @@ export default function PrescriptClient({ themes, gifts, recipes, events, eventC
     window.addEventListener('storage', read)
     return () => window.removeEventListener('storage', read)
   }, [])
+  // the formation from the shop's bar: each portrait's Sinner and keywords
+  const identityById = useMemo(() => new Map(identities.flatMap(identity => identity.game_id
+    ? [[identity.game_id, { sinner: identity.sinner_id, keywords: identity.keywords ?? [] }] as const] : [])), [identities])
+  const formationKey = (capture.formation?.ids ?? []).join(',')
+  const formation = useMemo(() => formationKey ? formationKey.split(',').map(id => id || null) : undefined, [formationKey])
   const context = useMemo<PrescriptContext>(() => ({
     floor, inventory: held, planGiftIds: plan.giftIds, planKeywords: plan.keywords,
     gift: id => { const gift = giftMap.get(id); return gift ? { keyword: gift.keyword, tier: giftTier(gift) } : undefined },
     craftable: () => findAvailableFusions(held, recipes, giftMap).filter(fusion => fusion.canCraft && fusion.result).map(fusion => fusion.result!.game_id),
     themesOn: next => getAvailableThemes(themes, DIFFICULTY_FLOOR_KEY[getLegacyPlanFloorDifficulty(RUN_DIFFICULTY, next)], next).map(theme => theme.id),
-    random: Math.random, shelf: shelfIds,
-  }), [floor, held, giftMap, recipes, themes, shelfIds, plan])
+    random: Math.random, shelf: shelfIds, formation, identity: id => identityById.get(id),
+  }), [floor, held, giftMap, recipes, themes, shelfIds, plan, formation, identityById])
   // A ? room: its choice screen (the options anyone may take, with a result to judge them by) and the option its result
   // page names
   const evidence = captureEvidence(capture, floor, Date.now())
@@ -96,7 +102,7 @@ export default function PrescriptClient({ themes, gifts, recipes, events, eventC
   const outcomeKey = outcome ? `${outcome.event_id}:${outcome.option_index}` : ''
   const eventOutcome = useMemo(() => outcomeKey ? { eventId: Number(outcomeKey.split(':')[0]), option: Number(outcomeKey.split(':')[1]), at: Date.now() } : null,
     [outcomeKey])
-  const prescript = usePrescript({ eventRoom, eventOutcome, enabled: true, status: capture.status, acquisitions: capture.popupAcquisitions, sales: capture.giftSales,
+  const prescript = usePrescript({ eventRoom, eventOutcome, formation: capture.formation, enabled: true, status: capture.status, acquisitions: capture.popupAcquisitions, sales: capture.giftSales,
     fusions: capture.fusionEvidence, floorObservation: capture.floorThemeObservation, ownedGrid: capture.ownedGrid, scene: capture.scene?.label ?? null,
     inShop: shelfIds.length > 0, context })
   const ownedKey = prescript.owned.join(',')
@@ -118,6 +124,12 @@ export default function PrescriptClient({ themes, gifts, recipes, events, eventC
       case 'buy-gift': return t('goal_buy_gift', { gift: em(giftName(goal.giftId)) })
       case 'buy-leftmost': return t('goal_buy_leftmost', { gift: em(giftName(goal.giftId)) })
       case 'no-answer': return t('goal_no_answer')
+      case 'swap-identity': {
+        const sinner = sinners.find(item => item.id === goal.sinner)
+        const name = (lang === 'en' && sinner?.name_en) || (lang === 'ja' && sinner?.name_jp) || sinner?.name_kr || goal.sinner
+        return t('goal_swap_identity', { sinner: em(name) })
+      }
+      case 'formation-keyword': return t('goal_formation_keyword', { keyword: em(giftKeywordLabel(goal.keyword, lang)), count: em(goal.count) })
       case 'event-choice': {
         const choice = recognizable.choices.find(item => item.event_id === goal.eventId && item.option_index === goal.option)
         const text = choice ? (lang === 'en' && choice.message_en) || (lang === 'ja' && choice.message_jp) || choice.message || '' : String(goal.option + 1)
