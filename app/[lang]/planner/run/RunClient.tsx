@@ -32,10 +32,21 @@ import GpuRequiredModal from '@/components/planner/run/GpuRequiredModal'
 import { captureEvidence, useAssistCapture } from '@/lib/hooks/useAssistCapture'
 import { recognizableEvents } from '@/lib/utils/event-catalog'
 import { gameTextForScreen, refNameLabels } from '@/lib/game-text/rich-text'
+import PrescriptPanel from '@/components/fun/PrescriptPanel'
+import { giftKeywordLabel } from '@/components/gifts/GiftCatalog'
+import type { PrescriptContext, PrescriptGoal } from '@/lib/fun/prescript'
+import { usePrescript } from '@/lib/hooks/usePrescript'
+import { findAvailableFusions, getAvailableThemes, giftTier } from '@/lib/planner/fusion'
+import { getLegacyPlanFloorDifficulty } from '@/lib/planner/floor-difficulty'
+import { planGiftIds } from '@/lib/planner/run-priority-gifts'
+import { DIFFICULTY_FLOOR_KEY } from '@/lib/planner/types'
+import { shelfGift } from '@/lib/vision/shop-shelf'
+import type { SupportedLang } from '@/lib/i18n'
 import { useGameTextRefs } from '@/lib/hooks/useGameTextRefs'
 
 /** Assist temporary saves: five slots of whole runs in this browser. */
 const RUN_DRAFTS_KEY = 'md-run-temp-slots'
+const PRESCRIPT_MODE_KEY = 'md-prescript-mode'
 const isRunState = (value: unknown): value is RunState => !!value && typeof value === 'object' && Array.isArray((value as RunState).floorLogs)
 /** The views the bar switches between; the pack picker is reached from the floor log instead. */
 const RUN_VIEWS = ['overview', 'deck', 'event'] as const
@@ -159,6 +170,48 @@ export default function RunClient({ themes, gifts, recipes, identities, sinners,
   const { visualCandidates, ocrCandidates, eventChoiceEvidence } =
     captureEvidence(capture, state.phase === 'playing' ? state.currentFloor : null, Date.now())
   const { reportInventoryChange } = capture
+  // Index prescript mode (재미): opened from the Fun tab (?mode=prescript) or switched in the menu; this browser remembers it.
+  const tPrescript = useTranslations('prescriptMode')
+  const [prescriptMode, setPrescriptMode] = useState(false)
+  useEffect(() => {
+    try { setPrescriptMode(new URLSearchParams(window.location.search).get('mode') === 'prescript' || window.localStorage.getItem(PRESCRIPT_MODE_KEY) === 'on') } catch { /* off */ }
+  }, [])
+  const changePrescriptMode = (next: boolean) => {
+    setPrescriptMode(next)
+    try { window.localStorage.setItem(PRESCRIPT_MODE_KEY, next ? 'on' : 'off') } catch { /* applies to this session */ }
+  }
+  const shelf = capture.status === 'running' && capture.shopShelf && Date.now() - capture.shopShelf.observedAt < 3000 ? capture.shopShelf : null
+  const shelfKey = (shelf?.slots ?? []).map(slot => `${shelfGift(slot)}:${slot.sold}`).join(',')
+  const shelfIds = useMemo(() => shelfKey.split(',').filter(Boolean).filter(item => item.endsWith(':false') && !item.startsWith('null'))
+    .map(item => Number(item.split(':')[0])), [shelfKey])
+  const prescriptContext = useMemo<PrescriptContext>(() => ({
+    floor: state.currentFloor, inventory: state.giftInventory, planGiftIds: new Set(planGiftIds(state)),
+    gift: id => { const gift = giftMap.get(id); return gift ? { keyword: gift.keyword, tier: giftTier(gift) } : undefined },
+    craftable: () => findAvailableFusions(state.giftInventory, recipes, giftMap).filter(fusion => fusion.canCraft && fusion.result).map(fusion => fusion.result!.game_id),
+    themesOn: floor => getAvailableThemes(themes, DIFFICULTY_FLOOR_KEY[state.floorLogs[floor - 1]?.difficulty ?? getLegacyPlanFloorDifficulty(state.difficulty, floor)], floor).map(theme => theme.id),
+    random: Math.random, shelf: shelfIds,
+  }), [state, giftMap, recipes, themes, shelfIds])
+  const prescript = usePrescript({ enabled: prescriptMode && state.phase === 'playing', status: capture.status,
+    acquisitions: capture.popupAcquisitions, sales: capture.giftSales, fusions: capture.fusionEvidence,
+    floorObservation: capture.floorThemeObservation, scene: capture.scene?.label ?? null, inShop: shelfIds.length > 0, context: prescriptContext })
+  const lang = locale as SupportedLang
+  const giftName = (id: number) => { const gift = giftMap.get(id); return gift ? (lang === 'en' && gift.name_en) || (lang === 'ja' && gift.name_jp) || gift.name : String(id) }
+  const themeName = (id: string) => { const theme = themes.find(item => item.id === id); return theme ? (lang === 'en' && theme.name_en) || (lang === 'ja' && theme.name_jp) || theme.name : id }
+  const prescriptLabel = (goal: PrescriptGoal) => {
+    switch (goal.kind) {
+      case 'sell-keyword': return tPrescript('goal_sell_keyword', { keyword: giftKeywordLabel(goal.keyword, lang) })
+      case 'sell-tier': return tPrescript('goal_sell_tier', { tier: goal.tier })
+      case 'fuse-gift': return tPrescript('goal_fuse_gift', { gift: giftName(goal.giftId) })
+      case 'fuse-tier': return tPrescript('goal_fuse_tier', { tier: goal.tier })
+      case 'get-keyword': return tPrescript('goal_get_keyword', { keyword: giftKeywordLabel(goal.keyword, lang), count: goal.count })
+      case 'no-sale': return tPrescript('goal_no_sale')
+      case 'pick-theme': return tPrescript('goal_pick_theme', { floor: goal.floor, theme: themeName(goal.themeId) })
+      case 'buy-gift': return tPrescript('goal_buy_gift', { gift: giftName(goal.giftId) })
+      case 'buy-leftmost': return tPrescript('goal_buy_leftmost', { gift: giftName(goal.giftId) })
+    }
+  }
+  const prescriptPanel = (compact: boolean) => prescriptMode && state.phase === 'playing' ? <PrescriptPanel run={prescript.run} offers={prescript.offers}
+    label={prescriptLabel} onChoose={prescript.choose} onReroll={prescript.reroll} onRefuse={prescript.refuse} compact={compact} /> : null
   // Inventory edits during a run feed the opt-in recognition report (a no-op unless capturing with consent).
   useEffect(() => useRunStore.subscribe((next, previous) => {
     if (next.phase === 'playing' && previous.phase === 'playing' && next.giftInventory !== previous.giftInventory)
@@ -272,6 +325,8 @@ export default function RunClient({ themes, gifts, recipes, identities, sinners,
         events: { label: t('detectionEvents'), description: t('detectionEventsHint') } }} />
     <ToggleSwitch data-assist-samples="" on={samples === true} onChange={() => changeSamples(samples !== true)}
       label={t('samplesLabel')} description={t('samplesHint')} />
+    <ToggleSwitch data-prescript-mode="" on={prescriptMode} onChange={() => changePrescriptMode(!prescriptMode)}
+      label={tPrescript('modeLabel')} description={tPrescript('modeHint')} />
   </div>
   const recognitionSummary = { fastest: t('recognitionModeFastest'), performance: t('recognitionModePerformance'),
     balanced: t('recognitionModeBalanced'), quality: t('recognitionModeQuality') }[recognitionMode]
@@ -344,6 +399,7 @@ export default function RunClient({ themes, gifts, recipes, identities, sinners,
             floorThemeObservation={capture.status === 'running' ? capture.floorThemeObservation : null}
             observedFloor={capture.status === 'running' ? capture.observedFloor : null}
             fusionEvidence={capture.status === 'running' ? capture.fusionEvidence : null}
+            pipTop={prescriptPanel(true)}
             />
         </>}
           <TempSaveMenu title={tTempSaves('runMenuLabel')} slots={runSlots} onSave={saveRunSlot} onLoad={loadRunSlot} onDelete={deleteRunSlot} />
@@ -391,6 +447,7 @@ export default function RunClient({ themes, gifts, recipes, identities, sinners,
           <p className="mt-4 text-[var(--text-secondary)]">{t('completedSummary', { floors: state.floorLogs.filter(log => log.completedAt).length, gifts: state.giftInventory.length })}</p>
           <div className="mt-7 flex flex-wrap justify-center gap-3"><button onClick={reset} className="min-h-11 rounded-md border border-[var(--border-gold)] px-5 text-[var(--gold-light)]">{t('newRun')}</button><button onClick={reviewDraft} className="min-h-11 rounded-md bg-[var(--gold)] px-5 font-bold text-[var(--bg-deep)]">{t('reviewDraft')}</button></div>
         </section> : <>
+          {prescriptMode && <div className="mb-3 shrink-0">{prescriptPanel(false)}</div>}
           <div className="min-h-0 min-w-0 flex-1">
             <FloorPanel state={giftConditionState} dispatch={dispatch} themes={themes} gifts={gifts} giftMap={giftMap} recipes={recipes} identities={identities} sinners={sinners} skills={skills} passives={passives} egos={egos} events={events} eventChoices={eventChoices} observedEventIds={observedEventIds} view={view} onView={setView} />
           </div>

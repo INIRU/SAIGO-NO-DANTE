@@ -34,7 +34,8 @@
     },
     "fun": {
       "title": "お楽しみ",
-      "random": "ランダム編成"
+      "random": "ランダム編成",
+      "prescript": "人差し指の指令"
     },
     "tools": {
       "title": "ツール",
@@ -2960,5 +2961,40 @@
     "skills": "スキル",
     "corrosion": "侵蝕",
     "loadError": "スキルを読み込めませんでした。再試行"
+  },
+  "prescriptMode": {
+    "title": "人差し指の指令",
+    "standing": "常時指令",
+    "special": "特別指令",
+    "shop": "ショップ指令",
+    "score": "スコア {score}",
+    "streak": "連続 {count}",
+    "rerolls": "リロール {count}",
+    "offerTitle": "{scope}が下された",
+    "strength1": "勧告",
+    "strength2": "指示",
+    "strength3": "命令",
+    "strength4": "厳命",
+    "strength5": "聖指令",
+    "reroll": "引き直す",
+    "refuse": "受けない",
+    "waiting": "指令を待っている。画面を接続すると指令が下される。",
+    "log": "指令の記録 {count}",
+    "status_done": "履行",
+    "status_failed": "違反",
+    "status_void": "破棄",
+    "void_capture_stopped": "画面が途切れたため判定できなかった",
+    "void_floor_unseen": "その階を見られなかったため判定できなかった",
+    "modeLabel": "人差し指の指令モード",
+    "modeHint": "鏡ダンジョンの間に指令が下され、画面で履行を判定する。画面が途切れるとその指令は破棄される。",
+    "goal_sell_keyword": "{keyword}のギフトを一つ手放せ。",
+    "goal_sell_tier": "{tier}等級のギフトを一つ手放せ。",
+    "goal_fuse_gift": "二つを一つに結べ。{gift}の名のもとに。",
+    "goal_fuse_tier": "合成で{tier}等級のギフトを作れ。",
+    "goal_get_keyword": "{keyword}のギフトを{count}個集めよ。",
+    "goal_no_sale": "この階では何も手放すな。",
+    "goal_pick_theme": "{floor}階で{theme}を選べ。",
+    "goal_buy_gift": "並んでいる{gift}を手に取れ。",
+    "goal_buy_leftmost": "一番左に置かれたものを手に取れ。（{gift}）"
   }
 }

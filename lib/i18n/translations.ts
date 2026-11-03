@@ -74,6 +74,7 @@ export const translations = {
   'nav.fun.title': { ko: '재미', en: 'Fun', ja: 'お楽しみ' },
   'nav.tools.meta': { ko: '분석', en: 'Analysis', ja: '分析' },
   'nav.fun.random': { ko: '랜덤 편성', en: 'Random', ja: 'ランダム編成' },
+  'nav.fun.prescript': { ko: '검지 지령', en: 'Index Prescripts', ja: '人差し指の指令' },
   'nav.tools.developers': { ko: '개발자 도구', en: 'Developer tools', ja: '開発者ツール' },
 
   // Mypage

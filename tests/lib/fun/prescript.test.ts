@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { applyEvent, createPrescriptRun, offer, PRESCRIPT_REROLLS, prescriptPoints, receive, reroll, type PrescriptContext } from '../../../lib/fun/prescript'
+import { applyEvent, createPrescriptRun, offer, PRESCRIPT_REROLLS, prescriptPoints, receive, reroll, wanted, type PrescriptContext } from '../../../lib/fun/prescript'
 
 const gifts: Record<number, { keyword: string | null; tier: number | null }> = {
   9001: { keyword: 'Combustion', tier: 1 }, 9002: { keyword: 'Combustion', tier: 2 }, 9003: { keyword: 'Bleeding', tier: 1 },
@@ -90,6 +90,32 @@ describe('judging from the screen', () => {
     expect(run.score).toBe(0)
     run = applyEvent(run, { type: 'sale', giftId: 9003, at: 2 }, context())
     expect(run.prescripts[0].status).toBe('void')
+  })
+})
+
+describe('shop prescripts', () => {
+  it('are offered from the shelf as read: a gift on sale, and the leftmost one', () => {
+    const cards = [0.05, 0.5, 0.95].flatMap(r => offer('shop', context({ shelf: [9004, 9006], random: () => r })))
+    expect(cards.length).toBeGreaterThan(0)
+    for (const card of cards) {
+      if (card.goal.kind === 'buy-gift') expect([9004, 9006]).toContain(card.goal.giftId)
+      if (card.goal.kind === 'buy-leftmost') expect(card.goal.giftId).toBe(9004)
+    }
+    expect(offer('shop', context({ shelf: [] }))).toEqual([])
+  })
+
+  it('a shop prescript wants a card once a floor, only while the shelf is seen', () => {
+    expect(wanted(createPrescriptRun(), 2, true)).toContain('shop')
+    expect(wanted(createPrescriptRun(), 2, false)).not.toContain('shop')
+  })
+
+  it('the acquisition of that gift carries it out; leaving the shop without it fails it', () => {
+    let run = receive(createPrescriptRun(), { scope: 'shop', goal: { kind: 'buy-gift', giftId: 9004 }, strength: 3 }, 2, 0)
+    run = applyEvent(run, { type: 'acquire', giftId: 9004, at: 1 }, context())
+    expect(run.prescripts[0].status).toBe('done')
+    run = receive(run, { scope: 'shop', goal: { kind: 'buy-leftmost', giftId: 9006 }, strength: 2 }, 3, 2)
+    run = applyEvent(run, { type: 'leave-shop', at: 3 }, context())
+    expect(run.prescripts[1].status).toBe('failed')
   })
 })
 
