@@ -34,7 +34,7 @@ export interface PrescriptOffer { scope: PrescriptScope; floor: number; cards: P
  * its token), a popup that follows a fusion dialog as that fusion's result, and the capture leaving `running` as a break.
  * Offers a card choice whenever a kind wants one; the player only chooses, never marks a prescript done.
  */
-export function usePrescript({ enabled, grade = 'proselyte', status, acquisitions, sales, fusions, floorObservation, ownedGrid, eventRoom, eventOutcome, formation, scene, inShop, context }: {
+export function usePrescript({ enabled, grade = 'proselyte', status, acquisitions, sales, fusions, floorObservation, ownedGrid, eventRoom, eventOutcome, eventPick, formation, scene, inShop, context }: {
   enabled: boolean
   /** The grade a new run starts at (a run keeps the grade it began with). */
   grade?: PrescriptGrade
@@ -48,7 +48,10 @@ export function usePrescript({ enabled, grade = 'proselyte', status, acquisition
   /** A ? room's choice screen on screen: the event and the options anyone may take (a mandatory prescript names one). */
   eventRoom?: { eventId: number; options: number[] } | null
   /** A ? room's result page: the option taken. */
+  // the room's option read from the screen after it (its result text or the next stage)
   eventOutcome?: { eventId: number; option: number; at: number } | null
+  // the option the cursor clicked (or last rested on) when the choice list went
+  eventPick?: { eventId: number; option: number; at: number } | null
   /** The formation read from the shop's bar. */
   formation?: FormationRead | null
   /** The capture's stable scene label: leaving the shop's screens for the map, a battle or a room settles shop prescripts. */
@@ -153,12 +156,22 @@ export function usePrescript({ enabled, grade = 'proselyte', status, acquisition
   useEffect(() => {
     if (enabled && formation) apply({ type: 'formation', ids: formation.ids, at: formation.observedAt })
   }, [enabled, formation, apply])
+  // The screen after the room decides; the cursor's pick only when nothing after it was read. Both read and different:
+  // recalled (a misjudged room costs more than a missed one)
+  const picks = useRef(new Map<number, number>())
   useEffect(() => {
-    if (enabled && eventOutcome) apply({ type: 'event-outcome', eventId: eventOutcome.eventId, option: eventOutcome.option, at: eventOutcome.at })
+    if (enabled && eventPick) picks.current.set(eventPick.eventId, eventPick.option)
+  }, [enabled, eventPick])
+  useEffect(() => {
+    if (!enabled || !eventOutcome) return
+    const picked = picks.current.get(eventOutcome.eventId)
+    apply({ type: 'event-outcome', eventId: eventOutcome.eventId, option: eventOutcome.option, at: eventOutcome.at,
+      conflict: picked !== undefined && picked !== eventOutcome.option })
   }, [enabled, eventOutcome, apply])
   useEffect(() => {
     if (!enabled || !scene || activeEvent.current === null || !EVENT_EXIT_SCENES.has(scene)) return
-    apply({ type: 'leave-event', eventId: activeEvent.current, at: Date.now() })
+    const eventId = activeEvent.current, picked = picks.current.get(eventId), at = Date.now()
+    apply(picked === undefined ? { type: 'leave-event', eventId, at } : { type: 'event-outcome', eventId, option: picked, at })
     activeEvent.current = null
   }, [enabled, scene, apply])
 

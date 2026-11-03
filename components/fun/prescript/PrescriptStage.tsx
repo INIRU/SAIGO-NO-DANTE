@@ -47,6 +47,43 @@ function playArrival(): () => void {
   return () => { timers.forEach(window.clearTimeout); first.pause() }
 }
 
+/** A verdict's beeps: fulfilled once, violated three times fast (the arrival's beep); a recall is silent. */
+function playVerdict(status: Prescript['status']) {
+  const loaded = loadSounds()
+  if (!loaded || status === 'void' || status === 'active') return
+  for (let i = 0; i < (status === 'done' ? 1 : 3); i++) window.setTimeout(() => {
+    const beep = loaded.second.cloneNode() as HTMLAudioElement
+    beep.volume = loaded.second.volume
+    void beep.play().catch(() => {})
+  }, i * 90)
+}
+
+/** How long a verdict stays on the stage. */
+const VERDICT_MS = 2400
+
+/**
+ * Prescripts settled since the stage was drawn, one at a time: the terminal stamps 이행 / 위반 / 회수 over the stage
+ * (a reload or a run read back shows none again). The stage keeps its size; the stamp lies over it.
+ */
+function useVerdicts(run: PrescriptRun) {
+  const seen = useRef<Set<number> | null>(null)
+  const [queue, setQueue] = useState<Prescript[]>([])
+  useEffect(() => {
+    const settled = run.prescripts.filter(p => p.status !== 'active')
+    if (!seen.current) { seen.current = new Set(settled.map(p => p.id)); return }
+    const fresh = settled.filter(p => !seen.current!.has(p.id) && p.goal.kind !== 'no-answer')
+    for (const p of settled) seen.current.add(p.id)
+    if (fresh.length) setQueue(current => [...current, ...fresh])
+  }, [run.prescripts])
+  const shown = queue[0] ?? null
+  useEffect(() => {
+    if (!shown) return
+    const timer = window.setTimeout(() => setQueue(current => current.slice(1)), VERDICT_MS)
+    return () => window.clearTimeout(timer)
+  }, [shown])
+  return shown
+}
+
 interface Part { text: string; em: boolean }
 /** A label's marked names and numbers (\u0001…\u0002) as parts to set apart. */
 const partsOf = (text: string): Part[] => text.split(/(\u0001[^\u0002]*\u0002)/).filter(Boolean)
@@ -128,6 +165,8 @@ export default function PrescriptStage({ run, offers, label, onChoose, canChoose
     cued.current = offerKey
     return pip ? undefined : playArrival()
   }, [offerKey, pip])
+  const verdict = useVerdicts(run)
+  useEffect(() => { if (verdict && !pip) playVerdict(verdict.status) }, [verdict, pip])
   const held = run.prescripts.filter(p => p.status === 'active')
   const settled = run.prescripts.filter(p => p.status !== 'active').slice().reverse()
   // the game's form: the order in 【】, then its deadline (Faust: "기한은 여섯 달 이내")
@@ -172,6 +211,13 @@ export default function PrescriptStage({ run, offers, label, onChoose, canChoose
           {gradeOf(run).refuse && <button type="button" className={styles.b} onClick={() => onRefuse(offer.scope)}>{t('refuse')}</button>}
         </div>
       </>}
+      {verdict && <div key={verdict.id} className={`${styles.verdict} ${verdict.status === 'done' ? styles.vOk : verdict.status === 'failed' ? styles.vNo : styles.vRe}`}
+        role="status">
+        <span className={styles.stamp}>{t(`status_${verdict.status}`)}</span>
+        <span className={styles.vOrder}>【{plain(label(verdict.goal))}】</span>
+        {verdict.status === 'done' ? <span className={styles.vPts}>+{verdict.points} {t('scoreUnit')}</span>
+          : verdict.reason ? <span className={styles.vWhy}>{t(`void_${verdict.reason.replace(/-/g, '_')}`)}</span> : null}
+      </div>}
     </section>
 
     <h2 className={styles.sect}>{t('held')}</h2>

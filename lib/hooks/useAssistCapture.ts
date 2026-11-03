@@ -9,6 +9,7 @@ import type { RecipePopupEvidence } from '@/lib/planner/fusion'
 import type { ShopShelf, ShopSlotRead } from '@/lib/vision/shop-shelf'
 import type { OwnedGridRead } from '@/lib/vision/owned-grid'
 import type { FormationRead } from '@/lib/vision/formation-bar'
+import { EMPTY_PICK, choiceBands, cursorSeen, listMissing, listShown, type CursorSample, type EventPick } from '@/lib/vision/event-pick'
 import type { StableScene } from '@/lib/vision/scene-state'
 import { cpuFallback, isMobileDevice, webgpuBlock, type GpuBlock } from '@/lib/vision/device'
 import { RECOGNITION_PROFILES, type RecognitionMode } from '@/lib/vision/recognition-profile'
@@ -279,6 +280,11 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
   // The bottom bar's Identities (the formation), read on the shop's screen every 2 s
   const [formation, setFormation] = useState<FormationRead | null>(null)
   const formationRequest = useRef<{ requestId: number; at: number } | null>(null)
+  // A ? room's choice list and the cursor over it (read every ~150 ms on the event screen): the option clicked
+  const [eventPick, setEventPick] = useState<EventPick | null>(null)
+  const pickState = useRef(EMPTY_PICK)
+  const cursorSamples = useRef<CursorSample[]>([])
+  const cursorRequest = useRef<{ requestId: number; at: number } | null>(null)
   const [skillExchange, setSkillExchange] = useState<SkillExchangeView | null>(null)
   const saleState = useRef(EMPTY_SALE_STATE)
   const sellWindowAt = useRef(0)
@@ -563,7 +569,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
     setOcrEngine(null)
     setOcrWorkers(0)
     setFusionEvidence([])
-    setShopShelf(null); setOwnedGrid(null); setFormation(null)
+    setShopShelf(null); setOwnedGrid(null); setFormation(null); setEventPick(null); pickState.current = EMPTY_PICK; cursorSamples.current = []
     setGiftSales([]); setSkillExchange(null)
     saleState.current = EMPTY_SALE_STATE
     setObservedFloor(null)
@@ -627,7 +633,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
     setOcrEngine(null)
     setOcrWorkers(0)
     setFusionEvidence([])
-    setShopShelf(null); setOwnedGrid(null); setFormation(null)
+    setShopShelf(null); setOwnedGrid(null); setFormation(null); setEventPick(null); pickState.current = EMPTY_PICK; cursorSamples.current = []
     setGiftSales([]); setSkillExchange(null)
     saleState.current = EMPTY_SALE_STATE
     setObservedFloor(null)
@@ -694,7 +700,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
         setOcrEngine(null)
         setOcrWorkers(0)
         setFusionEvidence([])
-        setShopShelf(null); setOwnedGrid(null); setFormation(null)
+        setShopShelf(null); setOwnedGrid(null); setFormation(null); setEventPick(null); pickState.current = EMPTY_PICK; cursorSamples.current = []
         setGiftSales([]); setSkillExchange(null)
         saleState.current = EMPTY_SALE_STATE
         setObservedFloor(null)
@@ -1166,7 +1172,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
           setOcrEngine(null)
           setOcrWorkers(0)
           setFusionEvidence([])
-          setShopShelf(null); setOwnedGrid(null); setFormation(null)
+          setShopShelf(null); setOwnedGrid(null); setFormation(null); setEventPick(null); pickState.current = EMPTY_PICK; cursorSamples.current = []
           setGiftSales([]); setSkillExchange(null)
           saleState.current = EMPTY_SALE_STATE
           // Start over with new workers after a wait (the screen share and scene worker keep running meanwhile).
@@ -1308,6 +1314,18 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
                 ...eventScreenEvidence(document, ocrReferences.current) }
                 : { gifts: [], events: [], choices: [], scopedChoices: [], outcomeEventIds: [], choiceEventIds: [], bodyEventIds: [] }
               const want = detectionRef.current
+              if (want.events && capture.width && capture.height) {
+                const boxes = 'choiceBoxes' in matches ? matches.choiceBoxes ?? [] : []
+                if (boxes.length) {
+                  pickState.current = listShown(pickState.current, choiceBands(boxes, capture.width, capture.height, Math.min(1, 1920 / capture.width)), capture.at)
+                  // a click before this read: the cursor readings since a second before it
+                  for (const sample of cursorSamples.current) if (sample.at >= capture.at - 1000) pickState.current = cursorSeen(pickState.current, sample)
+                } else {
+                  const settled = listMissing(pickState.current, capture.at)
+                  pickState.current = settled.state
+                  if (settled.pick) setEventPick(settled.pick)
+                }
+              }
               setOcrCandidates({ ...matches, ...(want.gifts ? {} : { gifts: [] }),
                 ...(want.events ? {} : { events: [], choices: [], scopedChoices: [], outcomeEventIds: [], choiceEventIds: [], bodyEventIds: [] }),
                 observedAt: capture.at, expiresAt: capture.at + 6000, floor: capture.floor })
@@ -1660,6 +1678,19 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
           } catch { inFlight.current = false }
           return
         }
+        // The cursor while a ? room is on screen (every 150 ms; cheap: 2 ms at 640 px)
+        if (!inFlight.current && latestLabel.current === 'event' && hasFrame() && !popupVisionQueue.current.length &&
+          Date.now() - (cursorRequest.current?.at ?? 0) >= 150 && Date.now() - inferredAt < profileRef.current.sceneIntervalMs - 20) {
+          inFlight.current = true
+          try {
+            const frame = await grabBitmap()
+            if (run !== generation.current || !worker.current) { frame.close(); inFlight.current = false; return }
+            const requestId = ++ocrRequestId.current
+            cursorRequest.current = { requestId, at: Date.now() }
+            worker.current.postMessage({ type: 'cursor', requestId, frame }, [frame])
+          } catch { inFlight.current = false }
+          return
+        }
         // The formation from the bottom bar while the shop is on screen
         if (gifts && !inFlight.current && latestLabel.current === 'shop' && hasFrame() && !popupVisionQueue.current.length &&
           Date.now() - (formationRequest.current?.at ?? 0) >= 2000 && Date.now() - inferredAt < profileRef.current.sceneIntervalMs - 20) {
@@ -1765,6 +1796,11 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
           inFlight.current = false
           visionFailures = 0
           latestLabel.current = result.confidence >= 0.5 ? result.label : latestLabel.current
+          if (latestLabel.current !== 'event' && pickState.current.bands.length) {
+            const settled = listMissing(pickState.current, Date.now(), true)
+            pickState.current = settled.state
+            if (settled.pick) setEventPick(settled.pick)
+          }
           setPrediction({ label: result.label, confidence: result.confidence })
           const capture = visualCapture.current
           visualCapture.current = null
@@ -1801,6 +1837,15 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
           const slots = parseShopShelf((result as { slots?: unknown }).slots)
           const at = shelfRequest.current?.at ?? Date.now()
           if (slots && latestLabel.current === 'shop') setShopShelf({ slots, observedAt: at })
+          flushVisionPopup()
+        } else if (result.type === 'cursor' && cursorRequest.current?.requestId === result.requestId) {
+          inFlight.current = false
+          const cursor = (result as { cursor?: { x?: unknown; y?: unknown; pressed?: unknown } | null }).cursor
+          if (cursor && typeof cursor.x === 'number' && typeof cursor.y === 'number' && Number.isFinite(cursor.x) && Number.isFinite(cursor.y)) {
+            const sample = { at: cursorRequest.current?.at ?? Date.now(), x: cursor.x, y: cursor.y, pressed: cursor.pressed === true }
+            cursorSamples.current = [...cursorSamples.current.filter(item => sample.at - item.at < 4000), sample]
+            pickState.current = cursorSeen(pickState.current, sample)
+          }
           flushVisionPopup()
         } else if (result.type === 'formation' && formationRequest.current?.requestId === result.requestId) {
           inFlight.current = false
@@ -1864,7 +1909,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
       setOcrEngine(null)
       setOcrWorkers(0)
       setFusionEvidence([])
-      setShopShelf(null); setOwnedGrid(null); setFormation(null)
+      setShopShelf(null); setOwnedGrid(null); setFormation(null); setEventPick(null); pickState.current = EMPTY_PICK; cursorSamples.current = []
       setGiftSales([]); setSkillExchange(null)
       saleState.current = EMPTY_SALE_STATE
       setObservedFloor(null)
@@ -1922,7 +1967,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
 
   return { supported, status, error, prediction, visualCandidates, ocrCandidates, ocrStatus,
     popupAcquisitions, floorThemeObservation, observedFloor, scene, themeSelectionFloor, queueStatus, mobile, gpu, inference, ocrEngine,
-    ocrWorkers, fusionEvidence, giftSales, skillExchange, shopShelf, ownedGrid, formation, start, stop, reportInventoryChange }
+    ocrWorkers, fusionEvidence, giftSales, skillExchange, shopShelf, ownedGrid, formation, eventPick, start, stop, reportInventoryChange }
 }
 
 /**

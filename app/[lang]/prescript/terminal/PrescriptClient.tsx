@@ -9,7 +9,7 @@ import PrescriptRules from '@/components/fun/prescript/PrescriptRules'
 import PrescriptStage from '@/components/fun/prescript/PrescriptStage'
 import styles from '@/components/fun/prescript/prescript.module.css'
 import { giftKeywordLabel } from '@/components/gifts/GiftCatalog'
-import type { PrescriptContext, PrescriptGoal, PrescriptGrade } from '@/lib/fun/prescript'
+import { eventRoomOptions, optionLeadingTo, type PrescriptContext, type PrescriptGoal, type PrescriptGrade } from '@/lib/fun/prescript'
 import { captureEvidence, useAssistCapture } from '@/lib/hooks/useAssistCapture'
 import type { MdEvent, MdEventChoice } from '@/components/mirror-dungeon/types'
 import { recognizableEvents } from '@/lib/utils/event-catalog'
@@ -96,17 +96,24 @@ export default function PrescriptClient({ themes, gifts, recipes, events, eventC
   // page names
   const evidence = captureEvidence(capture, floor, Date.now())
   const roomEventId = evidence.eventChoiceEvidence?.eventId ?? null
-  const roomOptions = useMemo(() => roomEventId === null ? [] : [...new Set(recognizable.choices
-    .filter(choice => choice.event_id === roomEventId && !choice.selection_condition && choice.result_text && Number.isInteger(choice.option_index))
-    .map(choice => choice.option_index as number))].sort((a, b) => a - b), [roomEventId, recognizable])
-  const optionsKey = roomOptions.join(',')
+  const roomChoices = useMemo(() => roomEventId === null ? [] : eventRoomOptions(recognizable.events.find(event => event.id === roomEventId),
+    recognizable.choices.filter(choice => choice.event_id === roomEventId)), [roomEventId, recognizable])
+  const optionsKey = roomChoices.map(item => item.option).join(',')
+  // the last room with options: a later stage on screen names the option that led to it
+  const [openRoom, setOpenRoom] = useState<{ eventId: number; options: { option: number; next: number[] }[] } | null>(null)
+  useEffect(() => { if (roomEventId !== null && roomChoices.length) setOpenRoom({ eventId: roomEventId, options: roomChoices }) }, [roomEventId, roomChoices])
+  const stageOption = openRoom && roomEventId !== null && roomEventId !== openRoom.eventId ? optionLeadingTo(openRoom.options, roomEventId) : null
   const eventRoom = useMemo(() => roomEventId === null ? null : { eventId: roomEventId, options: optionsKey ? optionsKey.split(',').map(Number) : [] },
     [roomEventId, optionsKey])
   const outcome = (evidence.ocrCandidates?.outcomeChoiceIds ?? []).map(id => choiceById.get(id)).find(choice => choice && Number.isInteger(choice.option_index))
-  const outcomeKey = outcome ? `${outcome.event_id}:${outcome.option_index}` : ''
+  const outcomeKey = outcome ? `${outcome.event_id}:${outcome.option_index}` : openRoom && stageOption !== null ? `${openRoom.eventId}:${stageOption}` : ''
   const eventOutcome = useMemo(() => outcomeKey ? { eventId: Number(outcomeKey.split(':')[0]), option: Number(outcomeKey.split(':')[1]), at: Date.now() } : null,
     [outcomeKey])
-  const prescript = usePrescript({ grade, eventRoom, eventOutcome, formation: capture.formation, enabled: true, status: capture.status, acquisitions: capture.popupAcquisitions, sales: capture.giftSales,
+  const picked = capture.eventPick ? choiceById.get(capture.eventPick.choiceId) : undefined
+  const pickKey = picked && Number.isInteger(picked.option_index) && !picked.outcome ? `${picked.event_id}:${picked.option_index}:${capture.eventPick!.at}` : ''
+  const eventPick = useMemo(() => pickKey ? { eventId: Number(pickKey.split(':')[0]), option: Number(pickKey.split(':')[1]), at: Number(pickKey.split(':')[2]) } : null,
+    [pickKey])
+  const prescript = usePrescript({ grade, eventRoom, eventOutcome, eventPick, formation: capture.formation, enabled: true, status: capture.status, acquisitions: capture.popupAcquisitions, sales: capture.giftSales,
     fusions: capture.fusionEvidence, floorObservation: capture.floorThemeObservation, ownedGrid: capture.ownedGrid, scene: capture.scene?.label ?? null,
     inShop: shelfIds.length > 0, context })
   const ownedKey = prescript.owned.join(',')
@@ -137,7 +144,8 @@ export default function PrescriptClient({ themes, gifts, recipes, events, eventC
       case 'event-choice': {
         const choice = recognizable.choices.find(item => item.event_id === goal.eventId && item.option_index === goal.option)
         const text = choice ? (lang === 'en' && choice.message_en) || (lang === 'ja' && choice.message_jp) || choice.message || '' : String(goal.option + 1)
-        return t('goal_event_choice', { choice: em(text) })
+        // the option as the game writes it, without its closing stop (the order adds its own)
+        return t('goal_event_choice', { choice: em(text.replace(/<[^>]*>/g, '').replace(/[.。．]+$/u, '').trim()) })
       }
     }
   }
