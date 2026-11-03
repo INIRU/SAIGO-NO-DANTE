@@ -19,7 +19,7 @@ it('REQ-ASSIST-064 REQ-ASSIST-072 the shipped scene and icon models are the ones
 
 it('REQ-ASSIST-065 the icon model knows the gifts added to the catalog since it was first trained', () => {
   const labels: string[] = JSON.parse(text('icon-labels.json'))
-  for (const gift of ['9836', '9837', '9838', '9839']) expect(labels).toContain(gift)
+  for (const gift of ['9836', '9837', '9838', '9839', '9284', '9285', '9286', '9287', '9288', '9289', '9290', '9291']) expect(labels).toContain(gift)
   // Vestiges stay one class and an empty slot one.
   expect(labels.filter(label => /^999[2-5]$/.test(label))).toEqual([])
   expect(labels).toContain('9991')

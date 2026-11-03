@@ -241,7 +241,7 @@ def main():
     random.seed(0)
     assets = Assets(args.data, args.stages)
     real = json.load(open(args.data / 'real.json'))
-    device = torch.device('mps' if torch.backends.mps.is_available() else 'cpu')
+    device = torch.device('cuda' if torch.cuda.is_available() else 'mps' if torch.backends.mps.is_available() else 'cpu')
     if args.init_onnx:
         from train_scene import from_onnx
         known = json.load(open(args.init_labels))
@@ -303,7 +303,7 @@ def main():
     model.load_state_dict(torch.load(args.out / 'best.pt', map_location=device))
     model.eval().cpu()
     torch.onnx.export(model, torch.zeros(1, 3, SIZE, SIZE), args.out / 'icon-classifier.onnx', input_names=['input'], output_names=['logits'],
-                      dynamic_axes={'input': {0: 'batch'}, 'logits': {0: 'batch'}}, opset_version=17)
+                      dynamic_axes={'input': {0: 'batch'}, 'logits': {0: 'batch'}}, opset_version=17, dynamo=False)  # one file: the newer exporter splits the weights out and cannot go below opset 18
     json.dump(assets.classes, open(args.out / 'icon-labels.json', 'w'))
     json.dump({'history': history, 'classes': len(assets.classes), 'input': [SIZE, SIZE], 'crop': '1.3x the slot region',
                'mean': MEAN.tolist(), 'std': STD.tolist()}, open(args.out / 'report.json', 'w'), indent=1)
