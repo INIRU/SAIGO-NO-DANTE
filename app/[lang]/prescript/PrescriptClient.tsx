@@ -4,7 +4,6 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { ArrowLeft } from 'lucide-react'
 import BackLink from '@/components/navigation/BackLink'
-import { useHtmlFlag } from '@/hooks/useHtmlFlag'
 import { useLocale, useTranslations } from 'next-intl'
 import IndexIntro from '@/components/fun/prescript/IndexIntro'
 import PrescriptStage from '@/components/fun/prescript/PrescriptStage'
@@ -26,8 +25,6 @@ const RUN_DIFFICULTY = 'extreme'
 
 export default function PrescriptClient({ themes, gifts, recipes, dataError }: { themes: ThemeData[]; gifts: GiftData[]; recipes: RecipeData[]; dataError?: boolean }) {
   const t = useTranslations('prescriptMode')
-  // the Index's own screen: no site navigation or footer (its header links back)
-  useHtmlFlag('with-prescript')
   const lang = useLocale() as SupportedLang
   // The game client's language picks the text reader's model and the gift names it compares (the Assist's own setting).
   const [gameLanguage, setGameLanguage] = useState<GameLanguage>(lang === 'en' || lang === 'ja' ? lang : 'ko')
@@ -73,17 +70,19 @@ export default function PrescriptClient({ themes, gifts, recipes, dataError }: {
 
   const giftName = (id: number) => { const gift = giftMap.get(id); return gift ? (lang === 'en' && gift.name_en) || (lang === 'ja' && gift.name_jp) || gift.name : String(id) }
   const themeName = (id: string) => { const theme = themes.find(item => item.id === id); return theme ? (lang === 'en' && theme.name_en) || (lang === 'ja' && theme.name_jp) || theme.name : id }
+  // the names and numbers a prescript points at are marked (\u0001…\u0002) for the stage to set apart
+  const em = (value: string | number) => `\u0001${value}\u0002`
   const label = (goal: PrescriptGoal) => {
     switch (goal.kind) {
-      case 'sell-keyword': return t('goal_sell_keyword', { keyword: giftKeywordLabel(goal.keyword, lang) })
-      case 'sell-tier': return t('goal_sell_tier', { tier: goal.tier })
-      case 'fuse-gift': return t('goal_fuse_gift', { gift: giftName(goal.giftId) })
-      case 'fuse-tier': return t('goal_fuse_tier', { tier: goal.tier })
-      case 'get-keyword': return t('goal_get_keyword', { keyword: giftKeywordLabel(goal.keyword, lang), count: goal.count })
+      case 'sell-keyword': return t('goal_sell_keyword', { keyword: em(giftKeywordLabel(goal.keyword, lang)) })
+      case 'sell-tier': return t('goal_sell_tier', { tier: em(goal.tier) })
+      case 'fuse-gift': return t('goal_fuse_gift', { gift: em(giftName(goal.giftId)) })
+      case 'fuse-tier': return t('goal_fuse_tier', { tier: em(goal.tier) })
+      case 'get-keyword': return t('goal_get_keyword', { keyword: em(giftKeywordLabel(goal.keyword, lang)), count: em(goal.count) })
       case 'no-sale': return t('goal_no_sale')
-      case 'pick-theme': return t('goal_pick_theme', { floor: goal.floor, theme: themeName(goal.themeId) })
-      case 'buy-gift': return t('goal_buy_gift', { gift: giftName(goal.giftId) })
-      case 'buy-leftmost': return t('goal_buy_leftmost', { gift: giftName(goal.giftId) })
+      case 'pick-theme': return t('goal_pick_theme', { floor: em(goal.floor), theme: em(themeName(goal.themeId)) })
+      case 'buy-gift': return t('goal_buy_gift', { gift: em(giftName(goal.giftId)) })
+      case 'buy-leftmost': return t('goal_buy_leftmost', { gift: em(giftName(goal.giftId)) })
     }
   }
 
