@@ -34,7 +34,8 @@
     },
     "fun": {
       "title": "Fun",
-      "random": "Random"
+      "random": "Random",
+      "prescript": "Index Prescripts"
     },
     "tools": {
       "title": "Tools",
@@ -2960,5 +2961,40 @@
     "skills": "Skills",
     "corrosion": "Corrosion",
     "loadError": "Could not load the skills. Retry"
+  },
+  "prescriptMode": {
+    "title": "Index Prescripts",
+    "standing": "Standing prescript",
+    "special": "Special prescript",
+    "shop": "Shop prescript",
+    "score": "Score {score}",
+    "streak": "Streak {count}",
+    "rerolls": "Rerolls {count}",
+    "offerTitle": "A {scope} has come down",
+    "strength1": "Advice",
+    "strength2": "Directive",
+    "strength3": "Order",
+    "strength4": "Decree",
+    "strength5": "Holy Prescript",
+    "reroll": "Draw again",
+    "refuse": "Decline",
+    "waiting": "Awaiting prescripts. Connect the screen and they will come down.",
+    "log": "Prescript record {count}",
+    "status_done": "Fulfilled",
+    "status_failed": "Violated",
+    "status_void": "Voided",
+    "void_capture_stopped": "the screen was interrupted, so it could not be judged",
+    "void_floor_unseen": "that floor was not seen, so it could not be judged",
+    "modeLabel": "Index prescript mode",
+    "modeHint": "Prescripts come down during the Mirror Dungeon and are judged from the screen. A prescript is voided if the screen is interrupted.",
+    "goal_sell_keyword": "Lay down one {keyword} gift.",
+    "goal_sell_tier": "Lay down one Tier {tier} gift.",
+    "goal_fuse_gift": "Bind two into one, in the name of {gift}.",
+    "goal_fuse_tier": "Forge a Tier {tier} gift by fusion.",
+    "goal_get_keyword": "Gather {count} {keyword} gifts.",
+    "goal_no_sale": "Lay down nothing on this floor.",
+    "goal_pick_theme": "On floor {floor}, choose {theme}.",
+    "goal_buy_gift": "Take up {gift} from the shelf.",
+    "goal_buy_leftmost": "Take up what lies leftmost. ({gift})"
   }
 }

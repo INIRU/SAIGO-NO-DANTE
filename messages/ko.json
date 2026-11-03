@@ -34,7 +34,8 @@
     },
     "fun": {
       "title": "재미",
-      "random": "랜덤 편성"
+      "random": "랜덤 편성",
+      "prescript": "검지 지령"
     },
     "tools": {
       "title": "도구",
@@ -2960,5 +2961,40 @@
     "skills": "스킬",
     "corrosion": "침식",
     "loadError": "스킬을 불러오지 못했습니다. 다시 시도"
+  },
+  "prescriptMode": {
+    "title": "검지 지령",
+    "standing": "상시 지령",
+    "special": "특별 지령",
+    "shop": "상점 지령",
+    "score": "점수 {score}",
+    "streak": "연속 {count}",
+    "rerolls": "리롤 {count}",
+    "offerTitle": "{scope}이 내려왔다",
+    "strength1": "권고",
+    "strength2": "지시",
+    "strength3": "명령",
+    "strength4": "엄명",
+    "strength5": "성지령",
+    "reroll": "다시 받기",
+    "refuse": "받지 않기",
+    "waiting": "지령을 기다린다. 화면을 연결하면 지령이 내려온다.",
+    "log": "지령 기록 {count}",
+    "status_done": "이행",
+    "status_failed": "위반",
+    "status_void": "폐지",
+    "void_capture_stopped": "화면이 끊겨 판정하지 못했다",
+    "void_floor_unseen": "그 층을 보지 못해 판정하지 못했다",
+    "modeLabel": "검지 지령 모드",
+    "modeHint": "거던을 도는 동안 지령이 내려오고, 화면으로 이행을 판정한다. 화면이 끊기면 그 지령은 폐지된다.",
+    "goal_sell_keyword": "{keyword} 기프트를 하나 내려놓아라.",
+    "goal_sell_tier": "{tier}등급 기프트를 하나 내려놓아라.",
+    "goal_fuse_gift": "둘을 하나로 묶어라. {gift}의 이름으로.",
+    "goal_fuse_tier": "합성으로 {tier}등급 기프트를 빚어라.",
+    "goal_get_keyword": "{keyword} 기프트를 {count}개 거두어라.",
+    "goal_no_sale": "이 층에서는 무엇도 내려놓지 마라.",
+    "goal_pick_theme": "{floor}층에서 {theme}을(를) 골라라.",
+    "goal_buy_gift": "진열된 {gift}을(를) 거두어라.",
+    "goal_buy_leftmost": "가장 왼쪽에 놓인 것을 거두어라. ({gift})"
   }
 }

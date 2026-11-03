@@ -3,11 +3,12 @@
  * out is read only from the Assist capture's evidence (acquisition popups, sales, fusions, confirmed floors). The player
  * never marks one done. A break in the capture voids what was in progress: neither failed nor scored (USER 2026-11-03).
  *
- * Two kinds: a standing prescript (always one; the next comes once it is carried out, to the end of the run) and a special
- * one (one a floor, due before the next floor is confirmed). Only prescripts the run can carry out now are offered.
+ * Three kinds: a standing prescript (always one; the next comes once it is carried out, to the end of the run), a special
+ * one (one a floor, due before the next floor is confirmed) and a shop one (one a floor, from the shelf as read, due before
+ * the shop is left). Only prescripts the run can carry out now are offered.
  */
 
-export type PrescriptScope = 'standing' | 'special'
+export type PrescriptScope = 'standing' | 'special' | 'shop'
 export type Strength = 1 | 2 | 3 | 4 | 5
 
 export type PrescriptGoal =
@@ -18,6 +19,9 @@ export type PrescriptGoal =
   | { kind: 'get-keyword'; keyword: string; count: number }
   | { kind: 'no-sale' }
   | { kind: 'pick-theme'; floor: number; themeId: string }
+  | { kind: 'buy-gift'; giftId: number }
+  /** The shelf's first gift when it was offered (its id kept: buying it is what counts). */
+  | { kind: 'buy-leftmost'; giftId: number }
 
 export interface PrescriptCard { scope: PrescriptScope; goal: PrescriptGoal; strength: Strength }
 export type PrescriptStatus = 'active' | 'done' | 'failed' | 'void'
@@ -41,6 +45,8 @@ export type PrescriptEvent =
   | { type: 'fusion'; resultId: number; at: number }
   | { type: 'floor'; floor: number; themeIds: readonly string[]; at: number }
   | { type: 'gap'; at: number; reason: string }
+  /** The shop's screens gave way to the map, a battle or another room. */
+  | { type: 'leave-shop'; at: number }
 
 export interface PrescriptContext {
   floor: number
@@ -53,6 +59,8 @@ export interface PrescriptContext {
   /** Pack ids a floor of this run can offer. */
   themesOn: (floor: number) => string[]
   random: () => number
+  /** Gifts on the shop shelf, unsold, read with confidence, in shelf order (empty outside the shop). */
+  shelf?: readonly number[]
 }
 
 export const PRESCRIPT_REROLLS = 3
@@ -63,10 +71,10 @@ export function createPrescriptRun(): PrescriptRun {
   return { prescripts: [], score: 0, streak: 0, rerollsLeft: PRESCRIPT_REROLLS, nextId: 1 }
 }
 
-/** Strength points, x1.5 for a special prescript (it can fail), x1.1 / 1.2 / 1.5 from the 3rd / 5th / 10th in a row. */
+/** Strength points, x1.5 for a special or shop prescript (they can fail), x1.1 / 1.2 / 1.5 from the 3rd / 5th / 10th in a row. */
 export function prescriptPoints(strength: Strength, scope: PrescriptScope, inARow: number): number {
   const streak = inARow >= 10 ? 1.5 : inARow >= 5 ? 1.2 : inARow >= 3 ? 1.1 : 1
-  return Math.round(STRENGTH_POINTS[strength - 1] * (scope === 'special' ? 1.5 : 1) * streak)
+  return Math.round(STRENGTH_POINTS[strength - 1] * (scope === 'standing' ? 1 : 1.5) * streak)
 }
 
 const giftIdOf = (inventoryId: string) => {
@@ -90,6 +98,13 @@ export function candidates(scope: PrescriptScope, ctx: PrescriptContext): Prescr
     for (const giftId of ctx.craftable().filter(id => !owned.includes(id)))
       cards.push({ scope, goal: { kind: 'fuse-gift', giftId }, strength: (ctx.gift(giftId)?.tier ?? 0) >= 4 ? 4 : 3 })
     cards.push({ scope, goal: { kind: 'no-sale' }, strength: 2 })
+  } else if (scope === 'shop') {
+    const shelf = (ctx.shelf ?? []).filter(id => !owned.includes(id))
+    for (const giftId of shelf) {
+      const tier = ctx.gift(giftId)?.tier ?? 1
+      cards.push({ scope, goal: { kind: 'buy-gift', giftId }, strength: tier <= 2 ? 2 : tier === 3 ? 3 : 4 })
+    }
+    if (shelf.length > 1) cards.push({ scope, goal: { kind: 'buy-leftmost', giftId: shelf[0] }, strength: 1 })
   } else {
     // a floor-bound pack comes at least one floor ahead, so there is time to prepare
     for (const floor of [ctx.floor + 1, ctx.floor + 2].filter(f => f <= LAST_FLOOR))
@@ -124,11 +139,13 @@ export function reroll(run: PrescriptRun): PrescriptRun | null {
   return run.rerollsLeft > 0 ? { ...run, rerollsLeft: run.rerollsLeft - 1 } : null
 }
 
-/** Which kinds want a card now: no active standing prescript, or no special one received on this floor yet. */
-export function wanted(run: PrescriptRun, floor: number): PrescriptScope[] {
+/** Which kinds want a card now: no active standing prescript, no special one received on this floor yet, and in the shop
+ * (`inShop`: its shelf is read) no shop one received on this floor yet. */
+export function wanted(run: PrescriptRun, floor: number, inShop = false): PrescriptScope[] {
   const scopes: PrescriptScope[] = []
   if (!run.prescripts.some(p => p.scope === 'standing' && p.status === 'active')) scopes.push('standing')
   if (floor >= 1 && !run.prescripts.some(p => p.scope === 'special' && p.floor === floor)) scopes.push('special')
+  if (inShop && floor >= 1 && !run.prescripts.some(p => p.scope === 'shop' && p.floor === floor)) scopes.push('shop')
   return scopes
 }
 
@@ -139,12 +156,14 @@ function judge(p: Prescript, event: PrescriptEvent, ctx: PrescriptContext): Outc
   const gift = 'giftId' in event ? ctx.gift(event.giftId) : undefined
   switch (event.type) {
     case 'gap': return { status: 'void', reason: event.reason }
+    case 'leave-shop': return p.scope === 'shop' ? { status: 'failed' } : null
     case 'sale':
       if (goal.kind === 'no-sale') return { status: 'failed' }
       if (goal.kind === 'sell-keyword' && gift?.keyword === goal.keyword) return { status: 'done' }
       if (goal.kind === 'sell-tier' && gift?.tier === goal.tier) return { status: 'done' }
       return null
     case 'acquire':
+      if ((goal.kind === 'buy-gift' || goal.kind === 'buy-leftmost') && event.giftId === goal.giftId) return { status: 'done' }
       if (goal.kind === 'get-keyword' && gift?.keyword === goal.keyword)
         return p.progress + 1 >= goal.count ? { status: 'done' } : { progress: p.progress + 1 }
       return null
@@ -158,6 +177,8 @@ function judge(p: Prescript, event: PrescriptEvent, ctx: PrescriptContext): Outc
         // its floor went by unseen: the pick cannot be known, so it is not called a failure
         return event.floor > goal.floor ? { status: 'void', reason: 'floor-unseen' } : null
       }
+      // a shop prescript's floor ended without the shop being seen left (a capture between): it cannot be called failed
+      if (p.scope === 'shop' && event.floor > p.floor) return { status: 'void', reason: 'floor-unseen' }
       if (p.scope === 'special' && event.floor > p.floor) {
         // a floor between was not seen: whether it was done in time cannot be known
         if (event.floor > p.floor + 1) return { status: 'void', reason: 'floor-unseen' }
