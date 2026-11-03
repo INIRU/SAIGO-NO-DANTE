@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { applyEvent, candidates, createPrescriptRun, endPrescriptRun, feasible, missOffer, offer, resist, PRESCRIPT_REROLLS, prescriptPoints, receive, reroll, wanted, type PrescriptContext } from '../../../lib/fun/prescript'
+import { applyEvent, candidates, createPrescriptRun, endPrescriptRun, feasible, missOffer, offer, resist, PRESCRIPT_REROLLS, prescriptPoints, receive, reroll, wanted, type PrescriptContext, type PrescriptRun } from '../../../lib/fun/prescript'
 
 const gifts: Record<number, { keyword: string | null; tier: number | null }> = {
   9001: { keyword: 'Combustion', tier: 1 }, 9002: { keyword: 'Combustion', tier: 2 }, 9003: { keyword: 'Bleeding', tier: 1 },
@@ -207,12 +207,23 @@ describe('burden and timing', () => {
   })
 
   it('an offer let pass is a violation that breaks the streak, and carrying one out makes up for a refusal', () => {
-    let run = { ...createPrescriptRun(), streak: 4, resisted: 2 }
+    let run: PrescriptRun = { ...createPrescriptRun(), streak: 4, resisted: 2 }
     run = missOffer(run, 'shop', 3, 10)
     expect(run.streak).toBe(0)
     expect(run.prescripts.at(-1)).toMatchObject({ status: 'failed', reason: 'no-answer', points: 0 })
     const sell = { scope: 'special' as const, goal: { kind: 'sell-keyword' as const, keyword: 'Bleeding' }, strength: 2 as const }
     run = applyEvent(receive(run, sell, 3, 20), { type: 'sale', giftId: 9003, at: 30 }, ctx())
     expect(run.resisted).toBe(1)
+  })
+})
+
+describe('the plan keywords', () => {
+  it('giving up a main keyword weighs more, gathering it less', () => {
+    const ctx = context({ planKeywords: ['Bleeding'] })
+    const sell = candidates('special', ctx).find(c => c.goal.kind === 'sell-keyword' && c.goal.keyword === 'Bleeding')!
+    const plain = candidates('special', context()).find(c => c.goal.kind === 'sell-keyword' && c.goal.keyword === 'Bleeding')!
+    expect(sell.strength).toBe(plain.strength + 1)
+    const gather = candidates('standing', ctx).find(c => c.goal.kind === 'get-keyword' && c.goal.keyword === 'Bleeding' && c.goal.count === 3)!
+    expect(gather.strength).toBe(2)
   })
 })

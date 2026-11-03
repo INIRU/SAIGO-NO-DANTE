@@ -58,8 +58,10 @@ export type PrescriptEvent =
 export interface PrescriptContext {
   floor: number
   inventory: readonly string[]
-  /** Gifts the plan needs: never asked to be sold. */
+  /** Gifts the plan needs: never asked to be sold, the lightest to buy. */
   planGiftIds: ReadonlySet<number>
+  /** The plan's main keywords: giving up such a gift weighs more, gathering them less. */
+  planKeywords?: readonly string[]
   gift: (id: number) => { keyword: string | null; tier: number | null } | undefined
   /** Fixed-recipe results the inventory can make now. */
   craftable: () => number[]
@@ -107,7 +109,8 @@ export function candidates(scope: PrescriptScope, ctx: PrescriptContext): Prescr
   if (scope === 'special') {
     for (const keyword of new Set(sellable.map(g => g.keyword).filter((k): k is string => !!k))) {
       const cheapest = Math.min(...sellable.filter(g => g.keyword === keyword).map(g => g.tier ?? 4))
-      cards.push({ scope, goal: { kind: 'sell-keyword', keyword }, strength: cheapest <= 2 ? 2 : cheapest === 3 ? 3 : 4 })
+      const base = cheapest <= 2 ? 2 : cheapest === 3 ? 3 : 4
+      cards.push({ scope, goal: { kind: 'sell-keyword', keyword }, strength: Math.min(5, base + (ctx.planKeywords?.includes(keyword) ? 1 : 0)) as Strength })
     }
     // giving up a tier V gift (EX, 달의 기억) is the heaviest order there is
     for (const tier of new Set(sellable.map(g => g.tier).filter((t): t is number => t !== null && t !== undefined)))
@@ -128,8 +131,9 @@ export function candidates(scope: PrescriptScope, ctx: PrescriptContext): Prescr
     for (const floor of [ctx.floor + 1, ctx.floor + 2].filter(f => f <= LAST_FLOOR))
       for (const themeId of ctx.themesOn(floor)) cards.push({ scope, goal: { kind: 'pick-theme', floor, themeId }, strength: 3 })
     for (const keyword of keywords) {
-      cards.push({ scope, goal: { kind: 'get-keyword', keyword, count: 2 }, strength: 2 })
-      cards.push({ scope, goal: { kind: 'get-keyword', keyword, count: 3 }, strength: 3 })
+      const planned = ctx.planKeywords?.includes(keyword) ? 1 : 0
+      cards.push({ scope, goal: { kind: 'get-keyword', keyword, count: 2 }, strength: (2 - planned) as Strength })
+      cards.push({ scope, goal: { kind: 'get-keyword', keyword, count: 3 }, strength: (3 - planned) as Strength })
     }
     if (owned.length >= 3) cards.push({ scope, goal: { kind: 'fuse-tier', tier: 4 }, strength: 4 })
   }

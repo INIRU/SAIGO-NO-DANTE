@@ -19,6 +19,7 @@ import { getLegacyPlanFloorDifficulty } from '@/lib/planner/floor-difficulty'
 import { DIFFICULTY_FLOOR_KEY, type GiftData, type RecipeData, type ThemeData } from '@/lib/planner/types'
 import { readGameLanguage, type GameLanguage } from '@/lib/vision/recognition-profile'
 import { shelfGift } from '@/lib/vision/shop-shelf'
+import { EMPTY_PLAN, planFromRunDraft, RUN_DRAFT_KEY, type PrescriptPlan } from '@/lib/fun/prescript-plan'
 
 /** The prescripts are drawn for the run the mode is meant for: Extreme, to the 15th floor. */
 const RUN_DIFFICULTY = 'extreme'
@@ -55,13 +56,21 @@ export default function PrescriptClient({ themes, gifts, recipes, dataError }: {
   const shelfKey = (shelf?.slots ?? []).map(slot => `${shelfGift(slot)}:${slot.sold}`).join(',')
   const shelfIds = useMemo(() => shelfKey.split(',').filter(item => item.endsWith(':false') && !item.startsWith('null'))
     .map(item => Number(item.split(':')[0])), [shelfKey])
+  // the plan the run page was started from, in this browser: what it aims for weighs on the prescripts
+  const [plan, setPlan] = useState<PrescriptPlan>(EMPTY_PLAN)
+  useEffect(() => {
+    const read = () => { try { setPlan(planFromRunDraft(window.localStorage.getItem(RUN_DRAFT_KEY))) } catch { /* no plan */ } }
+    read()
+    window.addEventListener('storage', read)
+    return () => window.removeEventListener('storage', read)
+  }, [])
   const context = useMemo<PrescriptContext>(() => ({
-    floor, inventory: held, planGiftIds: new Set<number>(),
+    floor, inventory: held, planGiftIds: plan.giftIds, planKeywords: plan.keywords,
     gift: id => { const gift = giftMap.get(id); return gift ? { keyword: gift.keyword, tier: giftTier(gift) } : undefined },
     craftable: () => findAvailableFusions(held, recipes, giftMap).filter(fusion => fusion.canCraft && fusion.result).map(fusion => fusion.result!.game_id),
     themesOn: next => getAvailableThemes(themes, DIFFICULTY_FLOOR_KEY[getLegacyPlanFloorDifficulty(RUN_DIFFICULTY, next)], next).map(theme => theme.id),
     random: Math.random, shelf: shelfIds,
-  }), [floor, held, giftMap, recipes, themes, shelfIds])
+  }), [floor, held, giftMap, recipes, themes, shelfIds, plan])
   const prescript = usePrescript({ enabled: true, status: capture.status, acquisitions: capture.popupAcquisitions, sales: capture.giftSales,
     fusions: capture.fusionEvidence, floorObservation: capture.floorThemeObservation, ownedGrid: capture.ownedGrid, scene: capture.scene?.label ?? null,
     inShop: shelfIds.length > 0, context })
