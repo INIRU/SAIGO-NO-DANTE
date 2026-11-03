@@ -2,6 +2,9 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { ArrowLeft } from 'lucide-react'
+import BackLink from '@/components/navigation/BackLink'
+import { useHtmlFlag } from '@/hooks/useHtmlFlag'
 import { useLocale, useTranslations } from 'next-intl'
 import IndexIntro from '@/components/fun/prescript/IndexIntro'
 import PrescriptStage from '@/components/fun/prescript/PrescriptStage'
@@ -23,6 +26,8 @@ const RUN_DIFFICULTY = 'extreme'
 
 export default function PrescriptClient({ themes, gifts, recipes, dataError }: { themes: ThemeData[]; gifts: GiftData[]; recipes: RecipeData[]; dataError?: boolean }) {
   const t = useTranslations('prescriptMode')
+  // the Index's own screen: no site navigation or footer (its header links back)
+  useHtmlFlag('with-prescript')
   const lang = useLocale() as SupportedLang
   // The game client's language picks the text reader's model and the gift names it compares (the Assist's own setting).
   const [gameLanguage, setGameLanguage] = useState<GameLanguage>(lang === 'en' || lang === 'ja' ? lang : 'ko')
@@ -90,6 +95,7 @@ export default function PrescriptClient({ themes, gifts, recipes, dataError }: {
     <IndexIntro siteName="SAIGO NO DANTE" title={t('title')} english="The Index" />
     <div className={styles.wrap}>
       <header className={styles.head}>
+        <BackLink href="/" aria-label={t('leave')} title={t('leave')} className={styles.back}><ArrowLeft size={18} aria-hidden="true" /></BackLink>
         {/* eslint-disable-next-line @next/next/no-img-element -- a small game emblem from public/ */}
         <img src="/assets/fun/prescript/index_emblem_color_256.png" alt="" width={36} height={36} />
         <h1>{t('title')}</h1>
@@ -104,7 +110,7 @@ export default function PrescriptClient({ themes, gifts, recipes, dataError }: {
         <button type="button" className={`${styles.b} ${captureActive ? '' : styles.pri}`} disabled={capture.mobile}
           onClick={() => { if (captureActive) capture.stop(); else void capture.start() }}>{t(captureActive ? 'disconnect' : 'connect')}</button>
         <button type="button" className={styles.b} onClick={togglePip}>{t(container ? 'pipClose' : 'pipOpen')}</button>
-        <p role="status" className={`${styles.state} ${running ? styles.live : capture.status === 'error' || capture.status === 'unsupported' ? styles.bad : ''}`}>
+        <p role="status" title={t('privacy')} className={`${styles.state} ${running ? styles.live : capture.status === 'error' || capture.status === 'unsupported' ? styles.bad : ''}`}>
           {capture.mobile ? t('mobile') : pipFailed ? t('pipFailed') : t(`capture_${capture.status}`)}
         </p>
       </div>
