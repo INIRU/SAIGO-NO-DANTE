@@ -3064,6 +3064,11 @@
     "rankingSoon": "ランキングはまだ開いていない。開けば、最後まで端末を起動していた回だけが載る。",
     "goal_swap_identity": "{sinner}の人格を替えよ",
     "goal_formation_keyword": "前の6枠に{keyword}の人格を{count}人並べよ",
-    "kind_formation": "編成"
+    "kind_formation": "編成",
+    "gradeTitle": "端末の等級",
+    "grade_proselyte": "遂行者",
+    "grade_proxy": "代行者",
+    "grade_proselyte_line": "3回戻せる。20秒以内に答える。奉じないこともできる。",
+    "grade_proxy_line": "1回戻せる。12秒以内に答える。拒否はない。加護1.5倍。"
   }
 }

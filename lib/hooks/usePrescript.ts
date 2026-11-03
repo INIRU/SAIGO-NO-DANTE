@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { applyEvent, createPrescriptRun, endPrescriptRun, eventPrescript, feasible, missOffer, offer, PRESCRIPT_REPLY_MS, receive, resist, reroll as rerollRun, wanted, type PrescriptCard, type PrescriptContext,
+import { applyEvent, createPrescriptRun, endPrescriptRun, eventPrescript, feasible, gradeOf, missOffer, offer, receive, resist, reroll as rerollRun, wanted, type PrescriptCard, type PrescriptContext, type PrescriptGrade,
   type PrescriptEvent, type PrescriptRun, type PrescriptScope } from '@/lib/fun/prescript'
 import { fusionResultFollows } from '@/lib/vision/fusion-evidence'
 import { EVENT_EXIT_SCENES } from '@/lib/vision/scene-state'
@@ -34,8 +34,10 @@ export interface PrescriptOffer { scope: PrescriptScope; floor: number; cards: P
  * its token), a popup that follows a fusion dialog as that fusion's result, and the capture leaving `running` as a break.
  * Offers a card choice whenever a kind wants one; the player only chooses, never marks a prescript done.
  */
-export function usePrescript({ enabled, status, acquisitions, sales, fusions, floorObservation, ownedGrid, eventRoom, eventOutcome, formation, scene, inShop, context }: {
+export function usePrescript({ enabled, grade = 'proselyte', status, acquisitions, sales, fusions, floorObservation, ownedGrid, eventRoom, eventOutcome, formation, scene, inShop, context }: {
   enabled: boolean
+  /** The grade a new run starts at (a run keeps the grade it began with). */
+  grade?: PrescriptGrade
   status: string
   acquisitions: readonly PopupAcquisition[]
   sales: readonly GiftSale[]
@@ -56,7 +58,7 @@ export function usePrescript({ enabled, status, acquisitions, sales, fusions, fl
   context: PrescriptContext
 }) {
   // read once when first drawn (the page renders in the browser only): a load in an effect lost the run to the first save
-  const [run, setRun] = useState<PrescriptRun>(() => load() ?? createPrescriptRun())
+  const [run, setRun] = useState<PrescriptRun>(() => load() ?? createPrescriptRun(grade))
   const [offers, setOffers] = useState<PrescriptOffer[]>([])
   useEffect(() => {
     try { window.localStorage.setItem(PRESCRIPT_STORAGE_KEY, JSON.stringify(run)) } catch { /* kept for this page only */ }
@@ -68,7 +70,9 @@ export function usePrescript({ enabled, status, acquisitions, sales, fusions, fl
   const contextRef = useRef(context)
   contextRef.current = context
   const apply = useCallback((event: PrescriptEvent) => setRun(current => current.ended ? current : applyEvent(current, event, contextRef.current)), [])
-  const restart = useCallback(() => { setRun(createPrescriptRun()); setOffers([]); setOwned([]); issuedEvents.current.clear(); activeEvent.current = null }, [])
+  const gradeRef = useRef(grade)
+  gradeRef.current = grade
+  const restart = useCallback(() => { setRun(createPrescriptRun(gradeRef.current)); setOffers([]); setOwned([]); issuedEvents.current.clear(); activeEvent.current = null }, [])
 
   // a break in the capture before the dungeon ends: the run's score and record are gone, the next one starts from nothing
   const running = useRef(false)
@@ -77,7 +81,7 @@ export function usePrescript({ enabled, status, acquisitions, sales, fusions, fl
     if (status === 'running') running.current = true
     else if (running.current) {
       running.current = false
-      setRun(current => current.ended ? current : createPrescriptRun())
+      setRun(current => current.ended ? current : createPrescriptRun(gradeRef.current))
       setOffers([])
       setOwned([])
     }
@@ -205,7 +209,7 @@ export function usePrescript({ enabled, status, acquisitions, sales, fusions, fl
     const timer = window.setInterval(() => {
       const now = Date.now()
       for (const o of offersRef.current) {
-        if (!o.cards.length || now - o.issuedAt < PRESCRIPT_REPLY_MS) continue
+        if (!o.cards.length || now - o.issuedAt < gradeOf(runRef.current).replyMs) continue
         const open = o.cards.filter(card => feasible(card, contextRef.current, inShopRef.current))
         if (open.length) choose(open[Math.floor(Math.random() * open.length)])
         else setOffers(current => current.map(item => item === o ? { ...item, cards: [] } : item))
@@ -213,6 +217,8 @@ export function usePrescript({ enabled, status, acquisitions, sales, fusions, fl
     }, 1000)
     return () => window.clearInterval(timer)
   }, [enabled, status, choose])
+  const runRef = useRef(run)
+  runRef.current = run
   const reroll = useCallback((scope: PrescriptScope) => {
     const next = rerollRun(run)
     if (!next) return false
@@ -222,6 +228,7 @@ export function usePrescript({ enabled, status, acquisitions, sales, fusions, fl
   }, [run])
   // 거부: no prescript this time, but the terminal answers resistance with heavier ones from then on
   const refuse = useCallback((scope: PrescriptScope) => {
+    if (!gradeOf(runRef.current).refuse) return
     setRun(current => resist(current))
     setOffers(current => current.map(o => o.scope === scope ? { ...o, cards: [] } : o))
   }, [])

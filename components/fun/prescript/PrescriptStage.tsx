@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
-import { PRESCRIPT_REPLY_MS, prescriptPoints, type Prescript, type PrescriptCard, type PrescriptGoal, type PrescriptRun, type PrescriptScope } from '@/lib/fun/prescript'
+import { gradeOf, prescriptPoints, type Prescript, type PrescriptCard, type PrescriptGoal, type PrescriptRun, type PrescriptScope } from '@/lib/fun/prescript'
 import type { PrescriptOffer } from '@/lib/hooks/usePrescript'
 import styles from './prescript.module.css'
 
@@ -86,12 +86,12 @@ function Settle({ parts, roll, ms }: { parts: Part[]; roll?: number; ms?: number
 }
 
 /** The offer's reply deadline: a bar running out and the seconds left (the terminal chooses at zero). */
-function Countdown({ issuedAt, label }: { issuedAt: number; label: (seconds: number) => string }) {
+function Countdown({ issuedAt, replyMs, label }: { issuedAt: number; replyMs: number; label: (seconds: number) => string }) {
   const [now, setNow] = useState(() => Date.now())
   useEffect(() => { const id = window.setInterval(() => setNow(Date.now()), 250); return () => window.clearInterval(id) }, [])
-  const left = Math.max(0, PRESCRIPT_REPLY_MS - (now - issuedAt))
+  const left = Math.max(0, replyMs - (now - issuedAt))
   return <div className={styles.due2}>
-    <div className={styles.dueBar}><span style={{ transform: `scaleX(${left / PRESCRIPT_REPLY_MS})` }} /></div>
+    <div className={styles.dueBar}><span style={{ transform: `scaleX(${left / replyMs})` }} /></div>
     <span>{label(Math.ceil(left / 1000))}</span>
   </div>
 }
@@ -152,10 +152,10 @@ export default function PrescriptStage({ run, offers, label, onChoose, canChoose
         {t(run.ended ? 'ended' : offer ? 'arrived' : 'waiting')}
       </p>
       {offer && <>
-        <Countdown issuedAt={offer.issuedAt} label={seconds => t('replyIn', { seconds })} />
+        <Countdown issuedAt={offer.issuedAt} replyMs={gradeOf(run).replyMs} label={seconds => t('replyIn', { seconds })} />
         <div className={styles.cards} role="group" aria-label={t(offer.scope)}>
           {offer.cards.map(card => {
-            const points = prescriptPoints(card.strength, card.scope, run.streak + 1)
+            const points = prescriptPoints(card.strength, card.scope, run.streak + 1, run.grade)
             const open = canChoose(card)
             return <button key={JSON.stringify(card.goal)} type="button" className={styles.c} onClick={() => onChoose(card)} disabled={!open}
               aria-label={t('cardLabel', { strength: card.strength, kind: t(KIND[card.goal.kind]), points, text: quote(card.goal, card.scope) })}>
@@ -169,7 +169,7 @@ export default function PrescriptStage({ run, offers, label, onChoose, canChoose
         </div>
         <div className={styles.acts}>
           <button type="button" className={styles.b} disabled={run.rerollsLeft === 0} onClick={() => onReroll(offer.scope)}>{t('reroll', { count: run.rerollsLeft })}</button>
-          <button type="button" className={styles.b} onClick={() => onRefuse(offer.scope)}>{t('refuse')}</button>
+          {gradeOf(run).refuse && <button type="button" className={styles.b} onClick={() => onRefuse(offer.scope)}>{t('refuse')}</button>}
         </div>
       </>}
     </section>

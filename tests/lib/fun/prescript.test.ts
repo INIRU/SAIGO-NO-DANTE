@@ -267,3 +267,14 @@ describe('formation prescripts', () => {
     expect(applyEvent(receive(createPrescriptRun(), front, 3, 0), { type: 'formation', ids: moved, at: 1 }, context({ identity })).prescripts[0].status).toBe('done')
   })
 })
+
+describe('the terminal grade', () => {
+  it('a Proxy run starts with one reroll and earns half again the grace', () => {
+    expect(createPrescriptRun('proxy').rerollsLeft).toBe(1)
+    expect(createPrescriptRun().rerollsLeft).toBe(3)
+    expect(prescriptPoints(3, 'special', 1, 'proxy')).toBe(Math.round(prescriptPoints(3, 'special', 1) * 1.5))
+    const sell = { scope: 'special' as const, goal: { kind: 'sell-keyword' as const, keyword: 'Bleeding' }, strength: 2 as const }
+    const run = applyEvent(receive(createPrescriptRun('proxy'), sell, 2, 0), { type: 'sale', giftId: 9003, at: 1 }, context())
+    expect(run.score).toBe(prescriptPoints(2, 'special', 1, 'proxy'))
+  })
+})

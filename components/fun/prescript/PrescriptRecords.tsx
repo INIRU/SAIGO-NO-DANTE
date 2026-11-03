@@ -32,7 +32,7 @@ export default function PrescriptRecords() {
         <ol className={styles.runs}>{(history ?? []).map(run => <li key={run.endedAt}>
           <time dateTime={new Date(run.endedAt).toISOString()}>{new Date(run.endedAt).toLocaleDateString(locale)}</time>
           <span className={styles.fl}>{run.floor ? `${run.floor}F` : '-'}</span>
-          <span className={styles.counts}>{t('runCounts', { done: run.done, failed: run.failed, recalled: run.recalled })}</span>
+          <span className={styles.counts}>{t(`grade_${run.grade ?? 'proselyte'}`)} {t('runCounts', { done: run.done, failed: run.failed, recalled: run.recalled })}</span>
           <b>{run.score}</b>
         </li>)}</ol>}
       <p className={styles.note}>{t('recordsNote')}</p>

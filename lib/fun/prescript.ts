@@ -51,7 +51,7 @@ export interface Prescript extends PrescriptCard {
  * `resisted`: refusals not yet made up for. Each raises the weakest strength the terminal offers by one ("저항은 권하지
  * 않습니다… 절제 범위가 커진 지령이 새로 도착"); each prescript carried out takes one away.
  */
-export interface PrescriptRun { prescripts: Prescript[]; score: number; streak: number; rerollsLeft: number; nextId: number; ended?: boolean; endedAt?: number; resisted?: number }
+export interface PrescriptRun { prescripts: Prescript[]; score: number; streak: number; rerollsLeft: number; nextId: number; ended?: boolean; endedAt?: number; resisted?: number; grade?: PrescriptGrade }
 
 export type PrescriptEvent =
   | { type: 'acquire'; giftId: number; at: number }
@@ -89,6 +89,16 @@ export interface PrescriptContext {
   identity?: (id: string) => { sinner: string; keywords: readonly string[] } | undefined
 }
 
+/**
+ * The terminal's grade, chosen before a run: a Proselyte (수행자) may return cards three times, has 20 s to answer and may
+ * decline; a Proxy (대행자) returns them once, has 12 s and may not decline, for half again the grace.
+ */
+export type PrescriptGrade = 'proselyte' | 'proxy'
+export const GRADES: Record<PrescriptGrade, { rerolls: number; replyMs: number; refuse: boolean; multiplier: number }> = {
+  proselyte: { rerolls: 3, replyMs: 20000, refuse: true, multiplier: 1 },
+  proxy: { rerolls: 1, replyMs: 12000, refuse: false, multiplier: 1.5 },
+}
+export const gradeOf = (run: PrescriptRun) => GRADES[run.grade ?? 'proselyte']
 export const PRESCRIPT_REROLLS = 3
 /** How long an offer waits for an answer before the terminal chooses for the player (선택받는 삶). */
 export const PRESCRIPT_REPLY_MS = 20000
@@ -97,8 +107,8 @@ export const isVestige = (giftId: number) => giftId >= 9991 && giftId <= 9995
 export const LAST_FLOOR = 15
 const STRENGTH_POINTS = [5, 10, 20, 35, 60] as const
 
-export function createPrescriptRun(): PrescriptRun {
-  return { prescripts: [], score: 0, streak: 0, rerollsLeft: PRESCRIPT_REROLLS, nextId: 1 }
+export function createPrescriptRun(grade: PrescriptGrade = 'proselyte'): PrescriptRun {
+  return { prescripts: [], score: 0, streak: 0, rerollsLeft: GRADES[grade].rerolls, nextId: 1, grade }
 }
 
 /** The dungeon is over: the record closes, and what is still in progress is recalled (not done, not a violation). */
@@ -107,9 +117,9 @@ export function endPrescriptRun(run: PrescriptRun, at: number): PrescriptRun {
 }
 
 /** Strength points, x1.5 for a special or shop prescript (they can fail), x1.1 / 1.2 / 1.5 from the 3rd / 5th / 10th in a row. */
-export function prescriptPoints(strength: Strength, scope: PrescriptScope, inARow: number): number {
+export function prescriptPoints(strength: Strength, scope: PrescriptScope, inARow: number, grade: PrescriptGrade = 'proselyte'): number {
   const streak = inARow >= 10 ? 1.5 : inARow >= 5 ? 1.2 : inARow >= 3 ? 1.1 : 1
-  return Math.round(STRENGTH_POINTS[strength - 1] * (scope === 'standing' ? 1 : 1.5) * streak)
+  return Math.round(STRENGTH_POINTS[strength - 1] * (scope === 'standing' ? 1 : 1.5) * streak * GRADES[grade].multiplier)
 }
 
 const giftIdOf = (inventoryId: string) => {
@@ -317,7 +327,7 @@ export function applyEvent(run: PrescriptRun, event: PrescriptEvent, ctx: Prescr
     if (outcome.status === 'failed') { streak = 0; return { ...p, status: 'failed' as const, settledAt: event.at, points: 0 } }
     streak += 1
     resisted = Math.max(0, resisted - 1)
-    const points = prescriptPoints(p.strength, p.scope, streak)
+    const points = prescriptPoints(p.strength, p.scope, streak, run.grade)
     score += points
     return { ...p, status: 'done' as const, settledAt: event.at, points, progress: p.goal.kind === 'get-keyword' ? p.goal.count : p.progress }
   })
