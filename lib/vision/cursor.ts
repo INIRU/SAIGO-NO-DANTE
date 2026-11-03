@@ -107,7 +107,7 @@ export function findCursor(frame: ArrayLike<number>, width: number, height: numb
     }
     const w = x1 - x0 + 1, h = y1 - y0 + 1
     // the nib is about 0.55 as wide as tall and fills about half its box
-    if (h < 14 || h > 130 || w < 0.35 * h || w > 0.85 * h || count < 0.25 * w * h || count > 0.75 * w * h) continue
+    if (h < 9 || h > 130 || w < 0.35 * h || w > 0.85 * h || count < 0.25 * w * h || count > 0.75 * w * h) continue
     for (const [pressed, picture, form] of [[false, templates.off, forms.off], [true, templates.on, forms.on]] as const) {
       const base = h / form.h
       // the blob's outline must be the nib's: overlap with the picture's opaque part (orange art, hair and flames differ)

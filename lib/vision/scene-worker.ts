@@ -17,7 +17,7 @@ type Request = { type: 'init'; giftReferences?: VisualReference[]; eventReferenc
   { type: 'fusion-wheel'; requestId: number; frame: ImageBitmap; capacity: number; origin: { x: number; y: number }; scale?: number;
     frameSize: { width: number; height: number }; anchors?: WheelAnchors; candidates?: string[] } |
   { type: 'shop-shelf'; requestId: number; frame: ImageBitmap } | { type: 'owned-grid'; requestId: number; frame: ImageBitmap } |
-  { type: 'formation'; requestId: number; frame: ImageBitmap } | { type: 'cursor'; requestId: number; frame: ImageBitmap }
+  { type: 'formation'; requestId: number; frame: ImageBitmap } | { type: 'cursor'; requestId: number; frame: ImageBitmap; region?: { x: number; y: number; width: number; height: number } }
 type Response = { type: 'ready'; provider: 'webgpu' | 'wasm'; adapter: string } | { type: 'prediction'; label: string; confidence: number; gifts: VisualMatch[]; events: VisualMatch[] } |
   { type: 'popup-icon'; requestId: number; gifts: VisualMatch[] } |
   { type: 'fusion-slots'; requestId: number; slots: FusionSlotRead[] } | { type: 'icons'; count: number; ms: number } |
@@ -34,8 +34,12 @@ let visualSession: ort.InferenceSession | null = null
 let iconSession: ort.InferenceSession | null = null
 let portraitIndex: Promise<PortraitIndex | null> | null = null
 let cursorTemplates: Promise<CursorTemplates | null> | null = null
-/** The cursor is looked for at this width at most: 2 ms a frame, none claimed on 750 cursorless frames (2026-11-04). */
-const CURSOR_WIDTH = 640
+/**
+ * The cursor is looked for in the region asked (the choice list) at the capture's own size, up to this width: Windows
+ * draws it about 30 px tall, so a shared window scaled down leaves 10 to 20 px (found 78 to 97%, nothing claimed on 750
+ * cursorless frames, 2026-11-04).
+ */
+const CURSOR_WIDTH = 1280
 let iconLabels: string[] = []
 let embeddingIndex: EmbeddingIndex | null = null
 let labels: string[] = []
@@ -415,20 +419,23 @@ self.onmessage = async (event: MessageEvent<Request>) => {
     }
     if (event.data.type === 'cursor') {
       // The game's cursor (the screen share draws it in), in frame pixels
-      const { requestId } = event.data
+      const { requestId, region } = event.data
       if (!Number.isSafeInteger(requestId)) throw new Error('Invalid cursor request')
       cursorTemplates ??= fetch(`${ASSET_ROOT}cursor.json`).then(response => response.ok ? response.json() : null)
         .then(decodeCursorTemplates).catch(() => null)
       const templates = await cursorTemplates
-      const scale = Math.min(1, CURSOR_WIDTH / frame.width)
-      const width = Math.max(1, Math.round(frame.width * scale)), height = Math.max(1, Math.round(frame.height * scale))
+      const x0 = Math.max(0, Math.floor(region?.x ?? 0)), y0 = Math.max(0, Math.floor(region?.y ?? 0))
+      const x1 = Math.min(frame.width, Math.ceil(region ? region.x + region.width : frame.width))
+      const y1 = Math.min(frame.height, Math.ceil(region ? region.y + region.height : frame.height))
+      const scale = Math.min(1, CURSOR_WIDTH / Math.max(1, x1 - x0))
+      const width = Math.max(1, Math.round((x1 - x0) * scale)), height = Math.max(1, Math.round((y1 - y0) * scale))
       const canvas = new OffscreenCanvas(width, height)
       const context = canvas.getContext('2d', { willReadFrequently: true })
       let cursor: CursorRead | null = null
-      if (templates && context) {
-        context.drawImage(frame, 0, 0, width, height)
+      if (templates && context && x1 > x0 && y1 > y0) {
+        context.drawImage(frame, x0, y0, x1 - x0, y1 - y0, 0, 0, width, height)
         const hit = findCursor(context.getImageData(0, 0, width, height).data, width, height, templates)
-        if (hit) cursor = { ...hit, x: hit.x / scale, y: hit.y / scale }
+        if (hit) cursor = { ...hit, x: x0 + hit.x / scale, y: y0 + hit.y / scale }
       }
       respond({ type: 'cursor', requestId, cursor })
       return
