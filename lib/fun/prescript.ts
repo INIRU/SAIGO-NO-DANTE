@@ -37,7 +37,8 @@ export interface Prescript extends PrescriptCard {
   /** Why it was voided. */
   reason?: string
 }
-export interface PrescriptRun { prescripts: Prescript[]; score: number; streak: number; rerollsLeft: number; nextId: number }
+/** `ended`: the dungeon's end screen was seen with the terminal on from then to the end; only such a record is kept. */
+export interface PrescriptRun { prescripts: Prescript[]; score: number; streak: number; rerollsLeft: number; nextId: number; ended?: boolean }
 
 export type PrescriptEvent =
   | { type: 'acquire'; giftId: number; at: number }
@@ -69,6 +70,11 @@ const STRENGTH_POINTS = [5, 10, 20, 35, 60] as const
 
 export function createPrescriptRun(): PrescriptRun {
   return { prescripts: [], score: 0, streak: 0, rerollsLeft: PRESCRIPT_REROLLS, nextId: 1 }
+}
+
+/** The dungeon is over: the record closes, and what is still in progress is recalled (not done, not a violation). */
+export function endPrescriptRun(run: PrescriptRun, at: number): PrescriptRun {
+  return { ...run, ended: true, prescripts: run.prescripts.map(p => p.status === 'active' ? { ...p, status: 'void' as const, reason: 'run-ended', settledAt: at } : p) }
 }
 
 /** Strength points, x1.5 for a special or shop prescript (they can fail), x1.1 / 1.2 / 1.5 from the 3rd / 5th / 10th in a row. */

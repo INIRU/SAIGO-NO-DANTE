@@ -1,29 +1,24 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { applyEvent, createPrescriptRun, offer, receive, reroll as rerollRun, wanted, type PrescriptCard, type PrescriptContext,
+import { applyEvent, createPrescriptRun, endPrescriptRun, offer, receive, reroll as rerollRun, wanted, type PrescriptCard, type PrescriptContext,
   type PrescriptEvent, type PrescriptRun, type PrescriptScope } from '@/lib/fun/prescript'
 import { fusionResultFollows } from '@/lib/vision/fusion-evidence'
 import type { FloorThemeObservation, FusionEvidence, GiftSale, PopupAcquisition } from '@/lib/hooks/useAssistCapture'
 
-/** The run's prescripts in this browser: a reload keeps them (the capture stopping on reload voids what was active). */
+/** The last finished run's record in this browser. A run not yet ended is never kept: a reload or a break starts over
+ * (USER 2026-11-04: turned off or cut before the dungeon ends, its score and record are reset). */
 export const PRESCRIPT_STORAGE_KEY = 'md-prescript-run'
-
-/** The cards drawn so far, kept too: a refusal or a reload must not draw a floor's cards again. */
-const OFFERS_STORAGE_KEY = 'md-prescript-offers'
 
 const load = (): PrescriptRun | null => {
   try {
     const value = JSON.parse(window.localStorage.getItem(PRESCRIPT_STORAGE_KEY) ?? 'null')
-    return value && Array.isArray(value.prescripts) ? value as PrescriptRun : null
+    return value && Array.isArray(value.prescripts) && value.ended ? value as PrescriptRun : null
   } catch { return null }
 }
-const loadOffers = (): PrescriptOffer[] => {
-  try {
-    const value = JSON.parse(window.localStorage.getItem(OFFERS_STORAGE_KEY) ?? '[]')
-    return Array.isArray(value) ? value as PrescriptOffer[] : []
-  } catch { return [] }
-}
+
+/** A new dungeon run begins on these screens: a closed record gives way to a fresh one. */
+const RUN_START = new Set(['run_setup', 'start_gift'])
 
 const LEFT_SHOP = new Set(['exploration', 'battle', 'battle_setup', 'event', 'theme_select', 'loading', 'reward_choice'])
 
@@ -49,29 +44,38 @@ export function usePrescript({ enabled, status, acquisitions, sales, fusions, fl
 }) {
   // read once when first drawn (the page renders in the browser only): a load in an effect lost the run to the first save
   const [run, setRun] = useState<PrescriptRun>(() => load() ?? createPrescriptRun())
-  const [offers, setOffers] = useState<PrescriptOffer[]>(loadOffers)
+  const [offers, setOffers] = useState<PrescriptOffer[]>([])
   useEffect(() => {
     try { window.localStorage.setItem(PRESCRIPT_STORAGE_KEY, JSON.stringify(run)) } catch { /* kept for this page only */ }
   }, [run])
-  useEffect(() => {
-    try { window.localStorage.setItem(OFFERS_STORAGE_KEY, JSON.stringify(offers)) } catch { /* kept for this page only */ }
-  }, [offers])
+  // The gifts held, counted from the same evidence (the prescript page keeps no run record of its own): an acquisition
+  // adds, a sale takes one away, a fusion takes its dialog's materials
+  const [owned, setOwned] = useState<string[]>([])
 
   const contextRef = useRef(context)
   contextRef.current = context
-  const apply = useCallback((event: PrescriptEvent) => setRun(current => applyEvent(current, event, contextRef.current)), [])
+  const apply = useCallback((event: PrescriptEvent) => setRun(current => current.ended ? current : applyEvent(current, event, contextRef.current)), [])
+  const restart = useCallback(() => { setRun(createPrescriptRun()); setOffers([]); setOwned([]) }, [])
 
-  // a break in the capture: what is in progress cannot be judged any more
+  // a break in the capture before the dungeon ends: the run's score and record are gone, the next one starts from nothing
   const running = useRef(false)
   useEffect(() => {
     if (!enabled) return
     if (status === 'running') running.current = true
-    else if (running.current) { running.current = false; apply({ type: 'gap', at: Date.now(), reason: 'capture-stopped' }) }
-  }, [enabled, status, apply])
+    else if (running.current) {
+      running.current = false
+      setRun(current => current.ended ? current : createPrescriptRun())
+      setOffers([])
+      setOwned([])
+    }
+  }, [enabled, status])
 
-  // The gifts held, counted from the same evidence (the prescript page keeps no run record of its own): an acquisition
-  // adds, a sale takes one away, a fusion takes its dialog's materials
-  const [owned, setOwned] = useState<string[]>([])
+  // the dungeon's end screen closes the record; the next run's first screens open a new one
+  useEffect(() => {
+    if (!enabled || !scene) return
+    if (scene === 'run_end') { setRun(current => current.ended ? current : endPrescriptRun(current, Date.now())); setOffers([]) }
+    else if (RUN_START.has(scene) && run.ended) restart()
+  }, [enabled, scene, run.ended, restart])
   const without = (list: string[], ids: readonly string[]) => { const rest = [...list]; for (const id of ids) { const at = rest.indexOf(id); if (at >= 0) rest.splice(at, 1) } return rest }
   const seen = useRef(new Set<string>())
   const once = (token: string) => !seen.current.has(token) && !!seen.current.add(token)
@@ -110,7 +114,7 @@ export function usePrescript({ enabled, status, acquisitions, sales, fusions, fl
   // cards: one choice a kind, drawn once (a reroll draws again)
   const floor = context.floor
   useEffect(() => {
-    if (!enabled || status !== 'running') return
+    if (!enabled || status !== 'running' || run.ended) return
     const want = wanted(run, floor, inShop).filter(scope => !offers.some(o => o.scope === scope && o.floor === floor))
     if (!want.length) return
     setOffers(current => [...current.filter(o => o.floor === floor),
@@ -132,7 +136,7 @@ export function usePrescript({ enabled, status, acquisitions, sales, fusions, fl
   // 거부: this floor's choice of that kind is put away without a prescript (no points, the streak is kept)
   const refuse = useCallback((scope: PrescriptScope) =>
     setOffers(current => current.map(o => o.scope === scope ? { ...o, cards: [] } : o)), [])
-  const reset = useCallback(() => { setRun(createPrescriptRun()); setOffers([]); setOwned([]); seen.current.clear() }, [])
+  const reset = useCallback(() => { restart(); seen.current.clear() }, [restart])
 
   // a pack card for a floor already picked is no choice any more
   const open = offers.map(o => ({ ...o, cards: o.cards.filter(c => c.goal.kind !== 'pick-theme' || c.goal.floor > floor) }))

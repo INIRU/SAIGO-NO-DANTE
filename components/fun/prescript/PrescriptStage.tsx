@@ -136,7 +136,7 @@ export default function PrescriptStage({ run, offers, label, onChoose, onReroll,
       <p className={styles.call}>
         {/* eslint-disable-next-line @next/next/no-img-element -- the game's prescript (terminal) keyword icon from public/ */}
         <img className={styles.term} src={`${ASSET}/prescript_terminal.png`} alt="" width={40} height={40} />
-        {t(offer ? 'arrived' : 'waiting')}
+        {t(run.ended ? 'ended' : offer ? 'arrived' : 'waiting')}
       </p>
       {offer && <>
         <div className={styles.cards} role="group" aria-label={t(offer.scope)}>
