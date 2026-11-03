@@ -6,6 +6,7 @@ import { acceptedIcon, heldSlotRead, iconTemplate, mergeRankedGroups, plateShape
 import { fusionSlotRegions, fusionSlotRegionsFromAnchors, fusionWheelRegions, vestigeGroup, type FusionAnchors, type FusionSlotRead, type WheelAnchors } from './fusion-evidence'
 import { assistModelRoot, ortWasmPaths } from './model-assets'
 import { classifierKnowsHeld, classifierSlotRead, heldLabels, iconTensor, ICON_CROP, ICON_INPUT } from './icon-classifier'
+import { ownedGridGifts, ownedGridOffset, ownedGridRegions, ownedGridStrips, yellowRows } from './owned-grid'
 import { shopShelfRegions, shopSoldBand, soldMark, SHOP_SOLD_MIN, titleBarRows, type ShopSlotRead } from './shop-shelf'
 
 type Request = { type: 'init'; giftReferences?: VisualReference[]; eventReferences?: VisualReference[] } |
@@ -13,11 +14,12 @@ type Request = { type: 'init'; giftReferences?: VisualReference[]; eventReferenc
   { type: 'fusion-slots'; requestId: number; frame: ImageBitmap; count: number; capacity: number; anchors?: FusionAnchors; candidates?: string[] } |
   { type: 'fusion-wheel'; requestId: number; frame: ImageBitmap; capacity: number; origin: { x: number; y: number }; scale?: number;
     frameSize: { width: number; height: number }; anchors?: WheelAnchors; candidates?: string[] } |
-  { type: 'shop-shelf'; requestId: number; frame: ImageBitmap }
+  { type: 'shop-shelf'; requestId: number; frame: ImageBitmap } | { type: 'owned-grid'; requestId: number; frame: ImageBitmap }
 type Response = { type: 'ready'; provider: 'webgpu' | 'wasm'; adapter: string } | { type: 'prediction'; label: string; confidence: number; gifts: VisualMatch[]; events: VisualMatch[] } |
   { type: 'popup-icon'; requestId: number; gifts: VisualMatch[] } |
   { type: 'fusion-slots'; requestId: number; slots: FusionSlotRead[] } | { type: 'icons'; count: number; ms: number } |
   { type: 'shop-shelf'; requestId: number; slots: ShopSlotRead[]; titleBar: number } |
+  { type: 'owned-grid'; requestId: number; gifts: string[] } |
   { type: 'error'; message: string }
 
 const ASSET_ROOT = `${assistModelRoot(self.location.hostname)}/assist-scene/`
@@ -389,6 +391,24 @@ self.onmessage = async (event: MessageEvent<Request>) => {
       respond({ type: 'shop-shelf', requestId, slots, titleBar })
       return
     }
+    if (event.data.type === 'owned-grid') {
+      // The sell window's owned list: the scroll from the slots' yellow down the view, then the whole slots in it
+      const { requestId } = event.data
+      if (!Number.isSafeInteger(requestId)) throw new Error('Invalid owned list request')
+      const titleBar = titleBarRows(rowMeans(frame, 64), frame.height)
+      const profile = new Array<number>(418).fill(0)
+      for (const strip of ownedGridStrips(frame.width, frame.height, titleBar)) {
+        const pixels = sampleRect(frame, strip), width = Math.max(1, Math.min(160, Math.round(strip.width)))
+        const rows = yellowRows(pixels, width)
+        for (let y = 0; y < profile.length; y++) profile[y] += rows[Math.min(rows.length - 1, Math.floor(y * rows.length / profile.length))] ?? 0
+      }
+      const regions = ownedGridRegions(frame.width, frame.height, ownedGridOffset(profile), titleBar)
+      const sample = sampler(frame)
+      const filled = regions.filter(region => !blankSlot(sample, region))
+      const classified = await classifySlots(sample, filled, new Set())
+      respond({ type: 'owned-grid', requestId, gifts: classified ? ownedGridGifts(classified) : [] })
+      return
+    }
     if (event.data.type === 'popup-icon') {
       const { box, requestId } = event.data
       if (!embeddingIndex || !visualSession || !Number.isSafeInteger(requestId) ||
@@ -444,6 +464,7 @@ self.onmessage = async (event: MessageEvent<Request>) => {
     if (event.data.type === 'popup-icon') respond({ type: 'popup-icon', requestId: event.data.requestId, gifts: [] })
     else if (event.data.type === 'fusion-slots' || event.data.type === 'fusion-wheel') respond({ type: 'fusion-slots', requestId: event.data.requestId, slots: [] })
     else if (event.data.type === 'shop-shelf') respond({ type: 'shop-shelf', requestId: event.data.requestId, slots: [], titleBar: 0 })
+    else if (event.data.type === 'owned-grid') respond({ type: 'owned-grid', requestId: event.data.requestId, gifts: [] })
     else respond({ type: 'error', message: error instanceof Error ? error.message : 'Inference failed' })
   } finally {
     frame.close()
