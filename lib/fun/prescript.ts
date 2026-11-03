@@ -143,7 +143,9 @@ export function reroll(run: PrescriptRun): PrescriptRun | null {
  * (`inShop`: its shelf is read) no shop one received on this floor yet. */
 export function wanted(run: PrescriptRun, floor: number, inShop = false): PrescriptScope[] {
   const scopes: PrescriptScope[] = []
-  if (!run.prescripts.some(p => p.scope === 'standing' && p.status === 'active')) scopes.push('standing')
+  // a recalled standing prescript (the capture broke) comes again only on the next floor: a break is no free reroll
+  if (!run.prescripts.some(p => p.scope === 'standing' && (p.status === 'active' || (p.status === 'void' && p.floor === floor))))
+    scopes.push('standing')
   if (floor >= 1 && !run.prescripts.some(p => p.scope === 'special' && p.floor === floor)) scopes.push('special')
   if (inShop && floor >= 1 && !run.prescripts.some(p => p.scope === 'shop' && p.floor === floor)) scopes.push('shop')
   return scopes
@@ -193,6 +195,8 @@ export function applyEvent(run: PrescriptRun, event: PrescriptEvent, ctx: Prescr
   let { score, streak } = run
   const prescripts = run.prescripts.map(p => {
     if (p.status !== 'active') return p
+    // only what happened after it was received counts: a fusion or purchase seen earlier and read late is not its doing
+    if (event.type !== 'gap' && event.at < p.receivedAt) return p
     const outcome = judge(p, event, ctx)
     if (!outcome) return p
     if ('progress' in outcome) return { ...p, progress: outcome.progress }

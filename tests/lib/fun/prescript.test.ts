@@ -135,3 +135,24 @@ describe('rerolls and points', () => {
     expect(prescriptPoints(2, 'standing', 10)).toBe(15)
   })
 })
+
+describe('no points from the past or from breaks', () => {
+  it('evidence captured before the prescript was received does not carry it out', () => {
+    const fuse = { scope: 'shop' as const, goal: { kind: 'fuse-gift' as const, giftId: 9005 }, strength: 2 as const }
+    let run = receive(createPrescriptRun(), fuse, 2, 1000)
+    run = applyEvent(run, { type: 'fusion', resultId: 9005, at: 900 }, context())
+    expect(run.prescripts[0].status).toBe('active')
+    expect(run.score).toBe(0)
+    run = applyEvent(run, { type: 'fusion', resultId: 9005, at: 1100 }, context())
+    expect(run.prescripts[0].status).toBe('done')
+  })
+
+  it('a standing prescript recalled by a break is drawn again only on the next floor', () => {
+    const gather = { scope: 'standing' as const, goal: { kind: 'get-keyword' as const, keyword: 'Bleeding', count: 3 }, strength: 2 as const }
+    let run = receive(createPrescriptRun(), gather, 2, 0)
+    run = applyEvent(run, { type: 'gap', at: 10, reason: 'capture-stopped' }, context())
+    expect(run.prescripts[0].status).toBe('void')
+    expect(wanted(run, 2)).not.toContain('standing')
+    expect(wanted(run, 3)).toContain('standing')
+  })
+})
