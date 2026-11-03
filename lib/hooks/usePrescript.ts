@@ -5,6 +5,7 @@ import { applyEvent, createPrescriptRun, endPrescriptRun, offer, receive, reroll
   type PrescriptEvent, type PrescriptRun, type PrescriptScope } from '@/lib/fun/prescript'
 import { fusionResultFollows } from '@/lib/vision/fusion-evidence'
 import type { FloorThemeObservation, FusionEvidence, GiftSale, PopupAcquisition } from '@/lib/hooks/useAssistCapture'
+import type { OwnedGridRead } from '@/lib/vision/owned-grid'
 
 /** The last finished run's record in this browser. A run not yet ended is never kept: a reload or a break starts over
  * (USER 2026-11-04: turned off or cut before the dungeon ends, its score and record are reset). */
@@ -29,13 +30,15 @@ export interface PrescriptOffer { scope: PrescriptScope; floor: number; cards: P
  * its token), a popup that follows a fusion dialog as that fusion's result, and the capture leaving `running` as a break.
  * Offers a card choice whenever a kind wants one; the player only chooses, never marks a prescript done.
  */
-export function usePrescript({ enabled, status, acquisitions, sales, fusions, floorObservation, scene, inShop, context }: {
+export function usePrescript({ enabled, status, acquisitions, sales, fusions, floorObservation, ownedGrid, scene, inShop, context }: {
   enabled: boolean
   status: string
   acquisitions: readonly PopupAcquisition[]
   sales: readonly GiftSale[]
   fusions: readonly FusionEvidence[] | null
   floorObservation: FloorThemeObservation | null
+  /** The sell window's owned list as read: gifts held before the terminal was connected are learned from it. */
+  ownedGrid?: OwnedGridRead | null
   /** The capture's stable scene label: leaving the shop's screens for the map, a battle or a room settles shop prescripts. */
   scene: string | null
   /** The shop shelf is on screen and read (a shop prescript may be offered). */
@@ -98,6 +101,11 @@ export function usePrescript({ enabled, status, acquisitions, sales, fusions, fl
       if (once(`s:${sale.token}`) && Number.isInteger(giftId)) { apply({ type: 'sale', giftId, at: sale.capturedAt }); setOwned(list => without(list, [String(giftId)])) }
     }
   }, [enabled, sales, apply])
+  // what the owned list shows is held, whenever it came: a run joined midway learns its gifts here (a sale still takes one away)
+  useEffect(() => {
+    if (!enabled || !ownedGrid?.gifts.length) return
+    setOwned(list => { const missing = ownedGrid.gifts.filter(id => !list.includes(id)); return missing.length ? [...list, ...missing] : list })
+  }, [enabled, ownedGrid])
   useEffect(() => {
     if (enabled && floorObservation && once(`f:${floorObservation.token}`))
       apply({ type: 'floor', floor: floorObservation.floor, themeIds: floorObservation.themeIds, at: floorObservation.observedAt })

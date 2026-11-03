@@ -63,7 +63,7 @@ export default function PrescriptClient({ themes, gifts, recipes, dataError }: {
     random: Math.random, shelf: shelfIds,
   }), [floor, held, giftMap, recipes, themes, shelfIds])
   const prescript = usePrescript({ enabled: true, status: capture.status, acquisitions: capture.popupAcquisitions, sales: capture.giftSales,
-    fusions: capture.fusionEvidence, floorObservation: capture.floorThemeObservation, scene: capture.scene?.label ?? null,
+    fusions: capture.fusionEvidence, floorObservation: capture.floorThemeObservation, ownedGrid: capture.ownedGrid, scene: capture.scene?.label ?? null,
     inShop: shelfIds.length > 0, context })
   const ownedKey = prescript.owned.join(',')
   useEffect(() => { setHeld(ownedKey ? ownedKey.split(',') : []) }, [ownedKey])
