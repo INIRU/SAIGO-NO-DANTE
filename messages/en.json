@@ -3011,7 +3011,7 @@
     "goal_fuse_tier": "Forge a Tier {tier} gift by fusion",
     "goal_get_keyword": "Gather {count} {keyword} gifts",
     "goal_no_sale": "Sell nothing",
-    "goal_pick_theme": "On floor {floor}, choose {theme}",
+    "goal_pick_theme": "Floor {floor}. Theme pack {theme}. Choose it",
     "goal_buy_gift": "Buy {gift} from the shelf",
     "goal_buy_leftmost": "Buy what lies leftmost on the shelf. Do not think twice. P.S. It is {gift}",
     "leave": "Leave",

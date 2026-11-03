@@ -3011,7 +3011,7 @@
     "goal_fuse_tier": "合成で{tier}等級のギフトを作れ",
     "goal_get_keyword": "{keyword}のギフトを{count}個集めよ",
     "goal_no_sale": "何も売るな",
-    "goal_pick_theme": "{floor}階で{theme}を選べ",
+    "goal_pick_theme": "{floor}階。テーマパック{theme}。選べ",
     "goal_buy_gift": "並んでいる{gift}を買え",
     "goal_buy_leftmost": "陳列台の一番左のものを買え。迷わずに。追伸、それは{gift}だ",
     "leave": "立ち去る",

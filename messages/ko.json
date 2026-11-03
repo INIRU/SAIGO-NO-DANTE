@@ -3011,7 +3011,7 @@
     "goal_fuse_tier": "합성으로 {tier}등급 기프트를 빚어라",
     "goal_get_keyword": "{keyword} 기프트 {count}개를 거두어라",
     "goal_no_sale": "무엇도 팔지 마라",
-    "goal_pick_theme": "{floor}층에서 {theme}을(를) 골라라",
+    "goal_pick_theme": "{floor}층. 테마팩 {theme}. 골라라",
     "goal_buy_gift": "진열된 {gift}을(를) 사라",
     "goal_buy_leftmost": "진열대의 가장 왼쪽 것을 사라. 두 번 고민하지 말고. 추신. 그것은 {gift}이다",
     "leave": "떠난다",
