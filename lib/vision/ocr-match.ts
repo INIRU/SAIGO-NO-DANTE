@@ -234,6 +234,8 @@ export interface EventScreenEvidence {
   scopedChoices: OcrChoiceMatch[]
   /** Events whose choice result text is on screen, i.e. an outcome page rather than the choice list. */
   outcomeEventIds: string[]
+  /** Choices whose own result text is on screen: text no other choice of the same event has (the choice that was taken). */
+  outcomeChoiceIds?: string[]
   /** The one event owning two or more distinct choice texts on screen, each used by no other event. */
   choiceEventIds: string[]
   /** The one event owning two or more distinct body text windows on screen, each used by no other event. */
@@ -243,7 +245,7 @@ export interface EventScreenEvidence {
 const RESULT_FRAGMENT = 12
 const BODY_WINDOW = 10
 const scopedCache = new WeakMap<OcrCatalog, { short: Map<string, Map<string, number>>; results: Map<string, string[]>;
-  choiceOwners: Map<string, string | null>; bodyOwners: Map<string, string | null> }>()
+  choiceResults: Map<string, string[]>; choiceOwners: Map<string, string | null>; bodyOwners: Map<string, string | null> }>()
 
 function own(owners: Map<string, string | null>, key: string, id: string) {
   const owner = owners.get(key)
@@ -257,6 +259,7 @@ function indexedEventScreens(catalog: OcrCatalog) {
   const results = new Map<string, string[]>()
   const choiceOwners = new Map<string, string | null>()
   const bodyOwners = new Map<string, string | null>()
+  const choiceFragments = new Map<string, { eventId: string; fragments: string[] }>()
   for (const event of catalog.events) for (const piece of event.texts.flatMap(gameTextPieces)) {
     const characters = [...piece]
     for (let offset = 0; offset + BODY_WINDOW <= characters.length; offset++) {
@@ -270,16 +273,25 @@ function indexedEventScreens(catalog: OcrCatalog) {
     for (const value of pieces) counts.set(value, (counts.get(value) ?? 0) + 1)
     short.set(choice.eventId, counts)
     const fragments = results.get(choice.eventId) ?? []
+    const mine: string[] = []
     for (const piece of (choice.resultTexts ?? []).flatMap(gameTextPieces)) {
       const characters = [...piece]
-      if (characters.length >= 8 && characters.length < RESULT_FRAGMENT) fragments.push(characters.join(''))
+      if (characters.length >= 8 && characters.length < RESULT_FRAGMENT) mine.push(characters.join(''))
       for (let offset = 0; offset + RESULT_FRAGMENT <= characters.length; offset += RESULT_FRAGMENT / 2) {
-        fragments.push(characters.slice(offset, offset + RESULT_FRAGMENT).join(''))
+        mine.push(characters.slice(offset, offset + RESULT_FRAGMENT).join(''))
       }
     }
+    fragments.push(...mine)
     results.set(choice.eventId, fragments)
+    choiceFragments.set(choice.id, { eventId: choice.eventId, fragments: mine })
   }
-  const index = { short, results, choiceOwners, bodyOwners }
+  // a choice's result fragments that no other choice of its event shares: on screen, they name the choice taken
+  const choiceResults = new Map<string, string[]>()
+  for (const [id, { eventId, fragments }] of choiceFragments) {
+    const others = new Set([...choiceFragments].filter(([other, entry]) => other !== id && entry.eventId === eventId).flatMap(([, entry]) => entry.fragments))
+    choiceResults.set(id, fragments.filter(fragment => !others.has(fragment)))
+  }
+  const index = { short, results, choiceResults, choiceOwners, bodyOwners }
   scopedCache.set(catalog, index)
   return index
 }
@@ -296,6 +308,8 @@ export function eventScreenEvidence(document: OcrDocument, catalog: OcrCatalog):
   })).map(choice => ({ id: choice.id, eventId: choice.eventId, score: 1 }))
   const outcomeEventIds = [...index.results].filter(([, fragments]) => fragments.some(fragment => screen.includes(fragment)))
     .map(([eventId]) => eventId)
+  const outcomeChoiceIds = [...index.choiceResults].filter(([, fragments]) => fragments.some(fragment => screen.includes(fragment)))
+    .map(([choiceId]) => choiceId)
   const choiceHits = new Map<string, Set<string>>()
   for (const [text, owner] of index.choiceOwners) {
     if (owner && screen.includes(text)) choiceHits.set(owner, (choiceHits.get(owner) ?? new Set()).add(text))
@@ -312,7 +326,7 @@ export function eventScreenEvidence(document: OcrDocument, catalog: OcrCatalog):
     const ids = [...hits].filter(([, texts]) => texts.size >= 2).map(([id]) => id)
     return ids.length === 1 ? ids : []
   }
-  return { scopedChoices, outcomeEventIds, choiceEventIds: single(choiceHits), bodyEventIds: single(bodyHits) }
+  return { scopedChoices, outcomeEventIds, outcomeChoiceIds, choiceEventIds: single(choiceHits), bodyEventIds: single(bodyHits) }
 }
 
 /**

@@ -192,3 +192,17 @@ it('names an event from two of its own unique choices or body windows, and absta
   const pair: OcrCatalog = { ...catalog, choices: [...catalog.choices, { id: 'r3', eventId: 'rest', texts: ['담요를 덮는다'] }] }
   expect(eventScreenEvidence(document('잠시 쉬어간다 담요를 덮는다'), pair).choiceEventIds).toEqual(['rest'])
 })
+
+it('names the choice taken from the result text only it has within its event', () => {
+  const taken: OcrCatalog = {
+    gifts: [],
+    events: [{ id: 'gate', texts: ['녹슨 철문 앞에 낡은 자물쇠가 매달려 있다.'] }],
+    choices: [
+      { id: 'force', eventId: 'gate', texts: ['문을 부순다'], resultTexts: ['쇠가 비명을 지르며 문이 안쪽으로 쓰러졌다. 먼지가 가라앉는다.'] },
+      { id: 'leave', eventId: 'gate', texts: ['돌아간다'], resultTexts: ['발걸음을 돌려 어두운 복도로 되돌아갔다. 먼지가 가라앉는다.'] },
+    ],
+  }
+  expect(eventScreenEvidence(document('쇠가 비명을 지르며 문이 안쪽으로 쓰러졌다.'), taken).outcomeChoiceIds).toEqual(['force'])
+  // a sentence both results end with names neither
+  expect(eventScreenEvidence(document('먼지가 가라앉는다.'), taken).outcomeChoiceIds).toEqual([])
+})
