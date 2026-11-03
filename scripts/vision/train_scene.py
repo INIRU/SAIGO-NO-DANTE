@@ -343,7 +343,7 @@ def main():
     random.seed(42)
     np.random.seed(42)
     torch.manual_seed(42)
-    device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
+    device = torch.device("cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu")
     weights = models.MobileNet_V3_Small_Weights.DEFAULT
     weight_preprocessing = weights.transforms()
     preprocessing = transforms.Compose([
