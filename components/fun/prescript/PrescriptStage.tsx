@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
-import { prescriptPoints, type Prescript, type PrescriptCard, type PrescriptGoal, type PrescriptRun, type PrescriptScope } from '@/lib/fun/prescript'
+import { PRESCRIPT_REPLY_MS, prescriptPoints, type Prescript, type PrescriptCard, type PrescriptGoal, type PrescriptRun, type PrescriptScope } from '@/lib/fun/prescript'
 import type { PrescriptOffer } from '@/lib/hooks/usePrescript'
 import styles from './prescript.module.css'
 
@@ -85,12 +85,23 @@ function Settle({ parts, roll, ms }: { parts: Part[]; roll?: number; ms?: number
   })}</span>
 }
 
+/** The offer's reply deadline: a bar running out and the seconds left (the terminal chooses at zero). */
+function Countdown({ issuedAt, label }: { issuedAt: number; label: (seconds: number) => string }) {
+  const [now, setNow] = useState(() => Date.now())
+  useEffect(() => { const id = window.setInterval(() => setNow(Date.now()), 250); return () => window.clearInterval(id) }, [])
+  const left = Math.max(0, PRESCRIPT_REPLY_MS - (now - issuedAt))
+  return <div className={styles.due2}>
+    <div className={styles.dueBar}><span style={{ transform: `scaleX(${left / PRESCRIPT_REPLY_MS})` }} /></div>
+    <span>{label(Math.ceil(left / 1000))}</span>
+  </div>
+}
+
 const Flower = () => <svg viewBox="-12 -12 24 24" aria-hidden="true"><g fill="#3d7fe0">{[0, 72, 144, 216, 288].map(r =>
   <ellipse key={r} cx="0" cy="-6" rx="3.6" ry="6" transform={`rotate(${r})`} />)}</g><circle r="2" fill="#f1f4f8" /></svg>
 
 const KIND: Record<PrescriptGoal['kind'], string> = {
   'sell-keyword': 'kind_sell', 'sell-tier': 'kind_sell', 'fuse-gift': 'kind_fuse', 'fuse-tier': 'kind_fuse', 'get-keyword': 'kind_gather',
-  'no-sale': 'kind_floor', 'pick-theme': 'kind_theme', 'buy-gift': 'kind_shop', 'buy-leftmost': 'kind_shop',
+  'no-sale': 'kind_floor', 'pick-theme': 'kind_theme', 'buy-gift': 'kind_shop', 'buy-leftmost': 'kind_shop', 'no-answer': 'kind_floor',
 }
 
 interface Props {
@@ -98,13 +109,15 @@ interface Props {
   offers: PrescriptOffer[]
   label: (goal: PrescriptGoal) => string
   onChoose: (card: PrescriptCard) => void
+  /** Whether a card can still be carried out now (its occasion may have passed while the offer waited). */
+  canChoose: (card: PrescriptCard) => boolean
   onReroll: (scope: PrescriptScope) => boolean
   onRefuse: (scope: PrescriptScope) => void
   /** The PiP shows the stage and what is held, without the record. */
   pip?: boolean
 }
 
-export default function PrescriptStage({ run, offers, label, onChoose, onReroll, onRefuse, pip = false }: Props) {
+export default function PrescriptStage({ run, offers, label, onChoose, canChoose, onReroll, onRefuse, pip = false }: Props) {
   const t = useTranslations('prescriptMode')
   const offer = offers[0] ?? null
   const offerKey = offer ? `${offer.scope}:${offer.floor}:${offer.cards.map(c => JSON.stringify(c.goal)).join('|')}` : ''
@@ -139,11 +152,14 @@ export default function PrescriptStage({ run, offers, label, onChoose, onReroll,
         {t(run.ended ? 'ended' : offer ? 'arrived' : 'waiting')}
       </p>
       {offer && <>
+        <Countdown issuedAt={offer.issuedAt} label={seconds => t('replyIn', { seconds })} />
         <div className={styles.cards} role="group" aria-label={t(offer.scope)}>
           {offer.cards.map(card => {
             const points = prescriptPoints(card.strength, card.scope, run.streak + 1)
-            return <button key={JSON.stringify(card.goal)} type="button" className={styles.c} onClick={() => onChoose(card)}
+            const open = canChoose(card)
+            return <button key={JSON.stringify(card.goal)} type="button" className={styles.c} onClick={() => onChoose(card)} disabled={!open}
               aria-label={t('cardLabel', { strength: card.strength, kind: t(KIND[card.goal.kind]), points, text: quote(card.goal, card.scope) })}>
+              {!open && <div className={styles.expired}>{t('cardExpired')}</div>}
               <div className={styles.ban}>{t(offer.scope)}</div>
               <div className={styles.lv}><b>{card.strength}</b>{Array.from({ length: card.strength }, (_, i) => <Flower key={i} />)}</div>
               <div className={styles.d}>{text(card.goal, card.scope, ROLL, SETTLE)}</div>
@@ -172,7 +188,7 @@ export default function PrescriptStage({ run, offers, label, onChoose, onReroll,
       <div className={styles.log} data-prescript-log>
         {settled.length ? settled.map(p => <div key={p.id} className={styles.row}>
           <span className={styles.fl}>{p.floor}F</span>
-          <span className={styles.tx}><span className="sr-only">{quote(p.goal, p.scope)}</span>{text(p.goal, p.scope)}{p.status === 'void' && p.reason && <span className={styles.why}>{t(`void_${p.reason.replace(/-/g, '_')}`)}</span>}</span>
+          <span className={styles.tx}><span className="sr-only">{quote(p.goal, p.scope)}</span>{text(p.goal, p.scope)}{p.reason && <span className={styles.why}>{t(`void_${p.reason.replace(/-/g, '_')}`)}</span>}</span>
           <span className={`${styles.rs} ${p.status === 'done' ? styles.ok : p.status === 'failed' ? styles.no : styles.re}`}>{t(`status_${p.status}`)}</span>
           <span className={styles.sc}>{p.status === 'done' ? `+${p.points}` : ''}</span>
         </div>) : <p className={styles.empty}>{t('noRecord')}</p>}

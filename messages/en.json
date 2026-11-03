@@ -3021,6 +3021,10 @@
     "deadline_shop": "Deadline: before leaving this shop",
     "deadline_pick": "Deadline: when the floor {floor} theme pack is chosen",
     "ended": "The Mirror Dungeon is over. The record of fulfilment is closed.",
-    "void_run_ended": "recalled when the Mirror Dungeon ended"
+    "void_run_ended": "recalled when the Mirror Dungeon ended",
+    "cardExpired": "Past its deadline",
+    "replyIn": "Uphold one within {seconds}s, or the terminal decides",
+    "goal_no_answer": "The Prescript went unanswered",
+    "void_no_answer": "its moment passed without an answer"
   }
 }

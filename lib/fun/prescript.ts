@@ -22,6 +22,8 @@ export type PrescriptGoal =
   | { kind: 'buy-gift'; giftId: number }
   /** The shelf's first gift when it was offered (its id kept: buying it is what counts). */
   | { kind: 'buy-leftmost'; giftId: number }
+  /** An offer the player let pass without answering (recorded, never offered). */
+  | { kind: 'no-answer' }
 
 export interface PrescriptCard { scope: PrescriptScope; goal: PrescriptGoal; strength: Strength }
 export type PrescriptStatus = 'active' | 'done' | 'failed' | 'void'
@@ -37,8 +39,12 @@ export interface Prescript extends PrescriptCard {
   /** Why it was voided. */
   reason?: string
 }
-/** `ended`: the dungeon's end screen was seen with the terminal on from then to the end; only such a record is kept. */
-export interface PrescriptRun { prescripts: Prescript[]; score: number; streak: number; rerollsLeft: number; nextId: number; ended?: boolean }
+/**
+ * `ended`: the dungeon's end screen was seen with the terminal on from then to the end; only such a record is kept.
+ * `resisted`: refusals not yet made up for. Each raises the weakest strength the terminal offers by one ("저항은 권하지
+ * 않습니다… 절제 범위가 커진 지령이 새로 도착"); each prescript carried out takes one away.
+ */
+export interface PrescriptRun { prescripts: Prescript[]; score: number; streak: number; rerollsLeft: number; nextId: number; ended?: boolean; resisted?: number }
 
 export type PrescriptEvent =
   | { type: 'acquire'; giftId: number; at: number }
@@ -65,6 +71,10 @@ export interface PrescriptContext {
 }
 
 export const PRESCRIPT_REROLLS = 3
+/** How long an offer waits for an answer before the terminal chooses for the player (선택받는 삶). */
+export const PRESCRIPT_REPLY_MS = 20000
+/** The five vestiges (잔재): worth nothing to get or to give up, so no prescript asks for or counts them. */
+export const isVestige = (giftId: number) => giftId >= 9991 && giftId <= 9995
 export const LAST_FLOOR = 15
 const STRENGTH_POINTS = [5, 10, 20, 35, 60] as const
 
@@ -90,25 +100,27 @@ const giftIdOf = (inventoryId: string) => {
 
 /** Every prescript the run can carry out now, of one kind. */
 export function candidates(scope: PrescriptScope, ctx: PrescriptContext): PrescriptCard[] {
-  const owned = ctx.inventory.map(giftIdOf).filter((id): id is number => id !== null)
+  const owned = ctx.inventory.map(giftIdOf).filter((id): id is number => id !== null && !isVestige(id))
   const sellable = owned.filter(id => !ctx.planGiftIds.has(id)).map(id => ({ id, ...ctx.gift(id) }))
   const keywords = [...new Set(owned.map(id => ctx.gift(id)?.keyword).filter((k): k is string => !!k))]
   const cards: PrescriptCard[] = []
   if (scope === 'special') {
     for (const keyword of new Set(sellable.map(g => g.keyword).filter((k): k is string => !!k))) {
       const cheapest = Math.min(...sellable.filter(g => g.keyword === keyword).map(g => g.tier ?? 4))
-      cards.push({ scope, goal: { kind: 'sell-keyword', keyword }, strength: cheapest <= 2 ? 2 : 3 })
+      cards.push({ scope, goal: { kind: 'sell-keyword', keyword }, strength: cheapest <= 2 ? 2 : cheapest === 3 ? 3 : 4 })
     }
-    for (const tier of new Set(sellable.map(g => g.tier).filter((t): t is number => t !== null && t !== undefined && t <= 4)))
-      cards.push({ scope, goal: { kind: 'sell-tier', tier }, strength: tier <= 2 ? 2 : tier === 3 ? 3 : 4 })
+    // giving up a tier V gift (EX, 달의 기억) is the heaviest order there is
+    for (const tier of new Set(sellable.map(g => g.tier).filter((t): t is number => t !== null && t !== undefined)))
+      cards.push({ scope, goal: { kind: 'sell-tier', tier }, strength: tier <= 2 ? 2 : tier === 3 ? 3 : tier === 4 ? 4 : 5 })
     for (const giftId of ctx.craftable().filter(id => !owned.includes(id)))
       cards.push({ scope, goal: { kind: 'fuse-gift', giftId }, strength: (ctx.gift(giftId)?.tier ?? 0) >= 4 ? 4 : 3 })
     cards.push({ scope, goal: { kind: 'no-sale' }, strength: 2 })
   } else if (scope === 'shop') {
-    const shelf = (ctx.shelf ?? []).filter(id => !owned.includes(id))
+    const shelf = (ctx.shelf ?? []).filter(id => !owned.includes(id) && !isVestige(id))
     for (const giftId of shelf) {
+      // a gift the plan wants is no burden to buy
       const tier = ctx.gift(giftId)?.tier ?? 1
-      cards.push({ scope, goal: { kind: 'buy-gift', giftId }, strength: tier <= 2 ? 2 : tier === 3 ? 3 : 4 })
+      cards.push({ scope, goal: { kind: 'buy-gift', giftId }, strength: ctx.planGiftIds.has(giftId) ? 1 : tier <= 2 ? 2 : tier === 3 ? 3 : 4 })
     }
     if (shelf.length > 1) cards.push({ scope, goal: { kind: 'buy-leftmost', giftId: shelf[0] }, strength: 1 })
   } else {
@@ -124,10 +136,13 @@ export function candidates(scope: PrescriptScope, ctx: PrescriptContext): Prescr
   return cards
 }
 
-/** Up to three cards of different strengths, weakest first; one card a strength, picked by `random`. */
-export function offer(scope: PrescriptScope, ctx: PrescriptContext, count = 3): PrescriptCard[] {
+/** Up to three cards of different strengths, weakest first; one card a strength, picked by `random`. `minStrength` (from the
+ * player's refusals) leaves out the weaker ones while anything as strong is left to offer. */
+export function offer(scope: PrescriptScope, ctx: PrescriptContext, count = 3, minStrength = 1): PrescriptCard[] {
   const byStrength = new Map<Strength, PrescriptCard[]>()
-  for (const card of candidates(scope, ctx)) byStrength.set(card.strength, [...byStrength.get(card.strength) ?? [], card])
+  const all = candidates(scope, ctx)
+  const floor = all.some(card => card.strength >= minStrength) ? minStrength : 1
+  for (const card of all.filter(card => card.strength >= floor)) byStrength.set(card.strength, [...byStrength.get(card.strength) ?? [], card])
   const strengths = [...byStrength.keys()]
   while (strengths.length > count) strengths.splice(Math.floor(ctx.random() * strengths.length), 1)
   return strengths.sort((a, b) => a - b).map(strength => {
@@ -139,6 +154,34 @@ export function offer(scope: PrescriptScope, ctx: PrescriptContext, count = 3): 
 export function receive(run: PrescriptRun, card: PrescriptCard, floor: number, at: number): PrescriptRun {
   const prescript: Prescript = { ...card, id: run.nextId, floor, receivedAt: at, status: 'active', progress: 0 }
   return { ...run, prescripts: [...run.prescripts, prescript], nextId: run.nextId + 1 }
+}
+
+/**
+ * Whether a card can still be carried out at the moment it is chosen: a card offered earlier may have run out of time while
+ * the offer waited (the shop left, the gift sold or bought, that floor's pack already picked, the recipe gone).
+ */
+export function feasible(card: PrescriptCard, ctx: PrescriptContext, inShop: boolean): boolean {
+  const goal = card.goal
+  if (card.scope === 'shop' && !inShop) return false
+  switch (goal.kind) {
+    case 'buy-gift': case 'buy-leftmost': return (ctx.shelf ?? []).includes(goal.giftId) && !ctx.inventory.includes(String(goal.giftId))
+    case 'pick-theme': return goal.floor > ctx.floor
+    case 'fuse-gift': return ctx.craftable().includes(goal.giftId)
+    case 'sell-keyword': case 'sell-tier': return candidates(card.scope, ctx).some(other => JSON.stringify(other.goal) === JSON.stringify(goal))
+    default: return true
+  }
+}
+
+/** A refusal: the next offers start one strength higher (up to the strongest). */
+export function resist(run: PrescriptRun): PrescriptRun {
+  return { ...run, resisted: Math.min(4, (run.resisted ?? 0) + 1) }
+}
+
+/** An offer left unanswered until its occasion passed (the shop left, the floor over): a violation, as the Index sees it. */
+export function missOffer(run: PrescriptRun, scope: PrescriptScope, floor: number, at: number): PrescriptRun {
+  const missed: Prescript = { scope, goal: { kind: 'no-answer' }, strength: 1, id: run.nextId, floor, receivedAt: at, status: 'failed',
+    progress: 0, settledAt: at, points: 0, reason: 'no-answer' }
+  return { ...run, streak: 0, prescripts: [...run.prescripts, missed], nextId: run.nextId + 1 }
 }
 
 export function reroll(run: PrescriptRun): PrescriptRun | null {
@@ -199,6 +242,7 @@ function judge(p: Prescript, event: PrescriptEvent, ctx: PrescriptContext): Outc
 /** One piece of screen evidence applied to every active prescript; points and the streak follow what it settles. */
 export function applyEvent(run: PrescriptRun, event: PrescriptEvent, ctx: PrescriptContext): PrescriptRun {
   let { score, streak } = run
+  let resisted = run.resisted ?? 0
   const prescripts = run.prescripts.map(p => {
     if (p.status !== 'active') return p
     // only what happened after it was received counts: a fusion or purchase seen earlier and read late is not its doing
@@ -209,9 +253,10 @@ export function applyEvent(run: PrescriptRun, event: PrescriptEvent, ctx: Prescr
     if (outcome.status === 'void') return { ...p, status: 'void' as const, reason: outcome.reason, settledAt: event.at }
     if (outcome.status === 'failed') { streak = 0; return { ...p, status: 'failed' as const, settledAt: event.at, points: 0 } }
     streak += 1
+    resisted = Math.max(0, resisted - 1)
     const points = prescriptPoints(p.strength, p.scope, streak)
     score += points
     return { ...p, status: 'done' as const, settledAt: event.at, points, progress: p.goal.kind === 'get-keyword' ? p.goal.count : p.progress }
   })
-  return { ...run, prescripts, score, streak }
+  return { ...run, prescripts, score, streak, resisted }
 }

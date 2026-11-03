@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { applyEvent, createPrescriptRun, endPrescriptRun, offer, PRESCRIPT_REROLLS, prescriptPoints, receive, reroll, wanted, type PrescriptContext } from '../../../lib/fun/prescript'
+import { applyEvent, candidates, createPrescriptRun, endPrescriptRun, feasible, missOffer, offer, resist, PRESCRIPT_REROLLS, prescriptPoints, receive, reroll, wanted, type PrescriptContext } from '../../../lib/fun/prescript'
 
 const gifts: Record<number, { keyword: string | null; tier: number | null }> = {
   9001: { keyword: 'Combustion', tier: 1 }, 9002: { keyword: 'Combustion', tier: 2 }, 9003: { keyword: 'Bleeding', tier: 1 },
@@ -167,5 +167,52 @@ describe('the end of the dungeon', () => {
     expect(ended.ended).toBe(true)
     expect(ended.score).toBe(run.score)
     expect(ended.prescripts.map(p => p.status)).toEqual(['done', 'void'])
+  })
+})
+
+describe('burden and timing', () => {
+  const tiers = { ...gifts, 9007: { keyword: 'Bleeding', tier: 5 }, 9991: { keyword: null, tier: 5 }, 9008: { keyword: 'Tremor', tier: 2 } }
+  const ctx = (over: Partial<PrescriptContext> = {}) => context({ gift: id => tiers[id as keyof typeof tiers], ...over })
+
+  it('selling a tier V gift is the heaviest order; a vestige is never asked for or counted', () => {
+    const cards = candidates('special', ctx({ inventory: ['9007', '9991', '9001'] }))
+    expect(cards.find(c => c.goal.kind === 'sell-tier' && c.goal.tier === 5)?.strength).toBe(5)
+    expect(cards.filter(c => c.goal.kind === 'sell-tier' && c.goal.tier === 5)).toHaveLength(1) // from 9007, not the vestige
+    const onlyVestige = candidates('special', ctx({ inventory: ['9991'], craftable: () => [] }))
+    expect(onlyVestige.map(c => c.goal.kind)).toEqual(['no-sale'])
+    expect(candidates('shop', ctx({ shelf: [9991, 9008] })).some(c => 'giftId' in c.goal && c.goal.giftId === 9991)).toBe(false)
+  })
+
+  it('a planned gift on the shelf is the lightest buy', () => {
+    const cards = candidates('shop', ctx({ inventory: [], shelf: [9008, 9004], planGiftIds: new Set([9004]) }))
+    expect(cards.find(c => c.goal.kind === 'buy-gift' && c.goal.giftId === 9004)?.strength).toBe(1)
+  })
+
+  it('refusals raise the weakest strength offered while something that strong is left', () => {
+    let run = createPrescriptRun()
+    run = resist(resist(run))
+    expect(run.resisted).toBe(2)
+    expect(offer('special', ctx(), 3, 1 + run.resisted!).every(c => c.strength >= 3)).toBe(true)
+    expect(offer('special', ctx({ inventory: [], craftable: () => [] }), 3, 5).map(c => c.goal.kind)).toEqual(['no-sale']) // nothing that strong: the rest
+  })
+
+  it('a card is checked again when chosen: the shop left, the gift gone, the floor passed', () => {
+    const buy = { scope: 'shop' as const, goal: { kind: 'buy-gift' as const, giftId: 9008 }, strength: 2 as const }
+    expect(feasible(buy, ctx({ inventory: [], shelf: [9008] }), true)).toBe(true)
+    expect(feasible(buy, ctx({ inventory: [], shelf: [9008] }), false)).toBe(false)
+    expect(feasible(buy, ctx({ inventory: [], shelf: [] }), true)).toBe(false)
+    const pick = { scope: 'standing' as const, goal: { kind: 'pick-theme' as const, floor: 3, themeId: '201' }, strength: 3 as const }
+    expect(feasible(pick, ctx({ floor: 2 }), false)).toBe(true)
+    expect(feasible(pick, ctx({ floor: 3 }), false)).toBe(false)
+  })
+
+  it('an offer let pass is a violation that breaks the streak, and carrying one out makes up for a refusal', () => {
+    let run = { ...createPrescriptRun(), streak: 4, resisted: 2 }
+    run = missOffer(run, 'shop', 3, 10)
+    expect(run.streak).toBe(0)
+    expect(run.prescripts.at(-1)).toMatchObject({ status: 'failed', reason: 'no-answer', points: 0 })
+    const sell = { scope: 'special' as const, goal: { kind: 'sell-keyword' as const, keyword: 'Bleeding' }, strength: 2 as const }
+    run = applyEvent(receive(run, sell, 3, 20), { type: 'sale', giftId: 9003, at: 30 }, ctx())
+    expect(run.resisted).toBe(1)
   })
 })
