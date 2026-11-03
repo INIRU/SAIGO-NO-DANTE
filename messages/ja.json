@@ -2985,7 +2985,7 @@
     "noRecord": "まだ履行の記録はない。",
     "status_done": "履行",
     "status_failed": "違反",
-    "status_void": "破棄",
+    "status_void": "回収",
     "void_capture_stopped": "画面が途切れたため判定できなかった",
     "void_floor_unseen": "その階を見られなかったため判定できなかった",
     "floorUnit": "階",

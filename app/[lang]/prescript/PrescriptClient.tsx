@@ -45,10 +45,13 @@ export default function PrescriptClient({ themes, gifts, recipes, dataError }: {
   const giftPrice = useCallback((id: string) => giftMap.get(Number(id))?.price, [giftMap])
 
   // What the page knows of the run comes only from the screen: the floor from the banner, the gifts from the evidence.
-  const [floor, setFloor] = useState(1)
+  // 0 until a floor is read: a run joined midway must not have its floor-bound prescripts tied to a guessed floor
+  const [floor, setFloor] = useState(0)
   const [held, setHeld] = useState<string[]>([])
   const capture = useAssistCapture({ giftReferences, ocrCatalog, themeCatalog, language: gameLanguage, floor, heldGiftIds: held, giftPrice })
   useEffect(() => { if (capture.observedFloor) setFloor(capture.observedFloor) }, [capture.observedFloor])
+  // a confirmed pack pick is that floor at once, in the same render as its judging, so the next cards are drawn for it
+  useEffect(() => { if (capture.floorThemeObservation) setFloor(capture.floorThemeObservation.floor) }, [capture.floorThemeObservation])
 
   const running = capture.status === 'running'
   const shelf = running && capture.shopShelf && Date.now() - capture.shopShelf.observedAt < 3000 ? capture.shopShelf : null
@@ -100,7 +103,7 @@ export default function PrescriptClient({ themes, gifts, recipes, dataError }: {
         <img src="/assets/fun/prescript/index_emblem_color_256.png" alt="" width={36} height={36} />
         <h1>{t('title')}</h1>
         <div className={styles.stats}>
-          <span><b>{floor}</b>{t('floorUnit')}</span>
+          <span><b>{floor || '-'}</b>{t('floorUnit')}</span>
           <span><b>{prescript.run.score}</b>{t('scoreUnit')}</span>
           <span><b>{prescript.run.streak}</b>{t('streakUnit')}</span>
           <span><b>{prescript.run.rerollsLeft}</b>{t('rerollUnit')}</span>

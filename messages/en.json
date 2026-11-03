@@ -2985,7 +2985,7 @@
     "noRecord": "Nothing fulfilled yet.",
     "status_done": "Fulfilled",
     "status_failed": "Violated",
-    "status_void": "Voided",
+    "status_void": "Recalled",
     "void_capture_stopped": "the screen was interrupted, so it could not be judged",
     "void_floor_unseen": "that floor was not seen, so it could not be judged",
     "floorUnit": "F",
