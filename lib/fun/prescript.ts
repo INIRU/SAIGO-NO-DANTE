@@ -62,7 +62,8 @@ export type PrescriptEvent =
   /** The shop's screens gave way to the map, a battle or another room. */
   | { type: 'leave-shop'; at: number }
   /** A ? room's result page: the option taken, read from the result text only it has. */
-  | { type: 'event-outcome'; eventId: number; option: number; at: number }
+  // `conflict`: two readings of the room named different options (the cursor and the next screen or the result text)
+  | { type: 'event-outcome'; eventId: number; option: number; at: number; conflict?: boolean }
   /** The ? room was left without its result page read. */
   | { type: 'leave-event'; eventId: number; at: number }
   /** The formation read from the bar: twelve Identity ids in deployment order (null where unread). */
@@ -225,6 +226,30 @@ function front(ids: readonly (string | null)[], keyword: string, ctx: PrescriptC
   return ids.slice(0, 6).filter(id => id !== null && ctx.identity?.(id)?.keywords.includes(keyword)).length
 }
 
+type RoomChoice = { event_id: number; option_index?: number | null; outcome?: string | null; selection_condition?: string | null; next_event_id?: number | null }
+
+/**
+ * The options a player picks in a ? room: none for a check stage (an event with a judgment, whose rows are its success
+ * and failure results), and only options anyone can take (no selection condition). With each, the next stage it leads to.
+ */
+export function eventRoomOptions(event: { judgment?: unknown } | undefined, choices: readonly RoomChoice[]): { option: number; next: number[] }[] {
+  if (!event || event.judgment) return []
+  const options = new Map<number, number[]>()
+  for (const choice of choices) {
+    if (!Number.isInteger(choice.option_index) || choice.outcome || choice.selection_condition) continue
+    const next = options.get(choice.option_index!) ?? []
+    if (choice.next_event_id) next.push(choice.next_event_id)
+    options.set(choice.option_index!, next)
+  }
+  return [...options].sort((a, b) => a[0] - b[0]).map(([option, next]) => ({ option, next }))
+}
+
+/** The room's option a stage after it shows: the one option leading to that event, if only one does. */
+export function optionLeadingTo(options: readonly { option: number; next: number[] }[], eventId: number): number | null {
+  const leading = options.filter(item => item.next.includes(eventId))
+  return leading.length === 1 ? leading[0].option : null
+}
+
 /** The ? room's mandatory prescript: one of the options anyone can take (no selection condition), picked by `random`. */
 export function eventPrescript(eventId: number, options: readonly number[], random: () => number): PrescriptCard | null {
   if (options.length < 2) return null
@@ -268,7 +293,8 @@ function judge(p: Prescript, event: PrescriptEvent, ctx: PrescriptContext): Outc
     case 'gap': return { status: 'void', reason: event.reason }
     case 'leave-shop': return p.scope === 'shop' ? { status: 'failed' } : null
     case 'event-outcome':
-      return goal.kind === 'event-choice' && goal.eventId === event.eventId ? { status: event.option === goal.option ? 'done' : 'failed' } : null
+      if (goal.kind !== 'event-choice' || goal.eventId !== event.eventId) return null
+      return event.conflict ? { status: 'void', reason: 'evidence-conflict' } : { status: event.option === goal.option ? 'done' : 'failed' }
     case 'formation': {
       if (goal.kind === 'swap-identity') {
         const now = event.ids.find(id => id !== null && ctx.identity?.(id)?.sinner === goal.sinner)

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { applyEvent, candidates, createPrescriptRun, endPrescriptRun, eventPrescript, feasible, missOffer, offer, resist, PRESCRIPT_REROLLS, prescriptPoints, receive, reroll, wanted, type PrescriptContext, type PrescriptRun } from '../../../lib/fun/prescript'
+import { applyEvent, candidates, createPrescriptRun, endPrescriptRun, eventPrescript, eventRoomOptions, optionLeadingTo, feasible, missOffer, offer, resist, PRESCRIPT_REROLLS, prescriptPoints, receive, reroll, wanted, type PrescriptContext, type PrescriptRun } from '../../../lib/fun/prescript'
 
 const gifts: Record<number, { keyword: string | null; tier: number | null }> = {
   9001: { keyword: 'Combustion', tier: 1 }, 9002: { keyword: 'Combustion', tier: 2 }, 9003: { keyword: 'Bleeding', tier: 1 },
@@ -241,6 +241,36 @@ describe('the ? room prescript', () => {
     expect(applyEvent(run, { type: 'event-outcome', eventId: 900101, option: 1, at: 1 }, context()).prescripts[0].status).toBe('failed')
     expect(applyEvent(run, { type: 'event-outcome', eventId: 900102, option: 1, at: 1 }, context()).prescripts[0].status).toBe('active')
     expect(applyEvent(run, { type: 'leave-event', eventId: 900101, at: 1 }, context()).prescripts[0]).toMatchObject({ status: 'void', reason: 'event-unseen' })
+  })
+
+  it('two readings naming different options recall it rather than judge it', () => {
+    const run = receive(createPrescriptRun(), eventPrescript(900101, [0, 1], () => 0)!, 3, 0)
+    expect(applyEvent(run, { type: 'event-outcome', eventId: 900101, option: 0, at: 1, conflict: true }, context()).prescripts[0])
+      .toMatchObject({ status: 'void', reason: 'evidence-conflict' })
+  })
+
+  it('offers the options a player picks, not the success and failure rows of a check stage (971037, 97103701)', () => {
+    const entry = [
+      { event_id: 971037, option_index: 0, outcome: null, selection_condition: null, next_event_id: 97103701 },
+      { event_id: 971037, option_index: 1, outcome: null, selection_condition: null, next_event_id: null },
+    ]
+    expect(eventRoomOptions({ judgment: null }, entry)).toEqual([{ option: 0, next: [97103701] }, { option: 1, next: [] }])
+    const check = [
+      { event_id: 97103701, option_index: 0, outcome: 'success', selection_condition: null, next_event_id: null },
+      { event_id: 97103701, option_index: 1, outcome: 'failure', selection_condition: null, next_event_id: null },
+    ]
+    expect(eventRoomOptions({ judgment: { judgement: {} } }, check)).toEqual([])
+    expect(eventRoomOptions({ judgment: null }, check)).toEqual([])
+    expect(eventRoomOptions({ judgment: null }, [{ ...entry[0], selection_condition: 'Sinner_3' }, entry[1]])).toEqual([{ option: 1, next: [] }])
+    expect(eventRoomOptions(undefined, entry)).toEqual([])
+  })
+
+  it('a later stage names the option that led to it, if only one does', () => {
+    const options = [{ option: 0, next: [97103701] }, { option: 1, next: [] }, { option: 2, next: [555, 97103702] }]
+    expect(optionLeadingTo(options, 97103701)).toBe(0)
+    expect(optionLeadingTo(options, 97103702)).toBe(2)
+    expect(optionLeadingTo(options, 123)).toBeNull()
+    expect(optionLeadingTo([{ option: 0, next: [7] }, { option: 1, next: [7] }], 7)).toBeNull()
   })
 })
 

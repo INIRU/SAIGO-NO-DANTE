@@ -6,6 +6,7 @@ import { acceptedIcon, heldSlotRead, iconTemplate, mergeRankedGroups, plateShape
 import { fusionSlotRegions, fusionSlotRegionsFromAnchors, fusionWheelRegions, vestigeGroup, type FusionAnchors, type FusionSlotRead, type WheelAnchors } from './fusion-evidence'
 import { assistModelRoot, ortWasmPaths } from './model-assets'
 import { classifierKnowsHeld, classifierSlotRead, heldLabels, iconTensor, ICON_CROP, ICON_INPUT } from './icon-classifier'
+import { decodeCursorTemplates, findCursor, type CursorRead, type CursorTemplates } from './cursor'
 import { decodePortraitIndex, formationBarRegions, matchPortrait, portraitId, shownPixels, type PortraitIndex } from './formation-bar'
 import { ownedGridGifts, ownedGridOffset, ownedGridRegions, ownedGridStrips, yellowRows } from './owned-grid'
 import { shopShelfRegions, shopSoldBand, soldMark, SHOP_SOLD_MIN, titleBarRows, type ShopSlotRead } from './shop-shelf'
@@ -16,13 +17,14 @@ type Request = { type: 'init'; giftReferences?: VisualReference[]; eventReferenc
   { type: 'fusion-wheel'; requestId: number; frame: ImageBitmap; capacity: number; origin: { x: number; y: number }; scale?: number;
     frameSize: { width: number; height: number }; anchors?: WheelAnchors; candidates?: string[] } |
   { type: 'shop-shelf'; requestId: number; frame: ImageBitmap } | { type: 'owned-grid'; requestId: number; frame: ImageBitmap } |
-  { type: 'formation'; requestId: number; frame: ImageBitmap }
+  { type: 'formation'; requestId: number; frame: ImageBitmap } | { type: 'cursor'; requestId: number; frame: ImageBitmap }
 type Response = { type: 'ready'; provider: 'webgpu' | 'wasm'; adapter: string } | { type: 'prediction'; label: string; confidence: number; gifts: VisualMatch[]; events: VisualMatch[] } |
   { type: 'popup-icon'; requestId: number; gifts: VisualMatch[] } |
   { type: 'fusion-slots'; requestId: number; slots: FusionSlotRead[] } | { type: 'icons'; count: number; ms: number } |
   { type: 'shop-shelf'; requestId: number; slots: ShopSlotRead[]; titleBar: number } |
   { type: 'owned-grid'; requestId: number; gifts: string[] } |
   { type: 'formation'; requestId: number; ids: (string | null)[] } |
+  { type: 'cursor'; requestId: number; cursor: CursorRead | null } |
   { type: 'error'; message: string }
 
 const ASSET_ROOT = `${assistModelRoot(self.location.hostname)}/assist-scene/`
@@ -31,6 +33,9 @@ let visualSession: ort.InferenceSession | null = null
 // The gift-icon classifier for fusion slots; until it loads (or if it fails) template matching reads them.
 let iconSession: ort.InferenceSession | null = null
 let portraitIndex: Promise<PortraitIndex | null> | null = null
+let cursorTemplates: Promise<CursorTemplates | null> | null = null
+/** The cursor is looked for at this width at most: 2 ms a frame, none claimed on 750 cursorless frames (2026-11-04). */
+const CURSOR_WIDTH = 640
 let iconLabels: string[] = []
 let embeddingIndex: EmbeddingIndex | null = null
 let labels: string[] = []
@@ -408,6 +413,26 @@ self.onmessage = async (event: MessageEvent<Request>) => {
       respond({ type: 'formation', requestId, ids })
       return
     }
+    if (event.data.type === 'cursor') {
+      // The game's cursor (the screen share draws it in), in frame pixels
+      const { requestId } = event.data
+      if (!Number.isSafeInteger(requestId)) throw new Error('Invalid cursor request')
+      cursorTemplates ??= fetch(`${ASSET_ROOT}cursor.json`).then(response => response.ok ? response.json() : null)
+        .then(decodeCursorTemplates).catch(() => null)
+      const templates = await cursorTemplates
+      const scale = Math.min(1, CURSOR_WIDTH / frame.width)
+      const width = Math.max(1, Math.round(frame.width * scale)), height = Math.max(1, Math.round(frame.height * scale))
+      const canvas = new OffscreenCanvas(width, height)
+      const context = canvas.getContext('2d', { willReadFrequently: true })
+      let cursor: CursorRead | null = null
+      if (templates && context) {
+        context.drawImage(frame, 0, 0, width, height)
+        const hit = findCursor(context.getImageData(0, 0, width, height).data, width, height, templates)
+        if (hit) cursor = { ...hit, x: hit.x / scale, y: hit.y / scale }
+      }
+      respond({ type: 'cursor', requestId, cursor })
+      return
+    }
     if (event.data.type === 'owned-grid') {
       // The sell window's owned list: the scroll from the slots' yellow down the view, then the whole slots in it
       const { requestId } = event.data
@@ -483,6 +508,7 @@ self.onmessage = async (event: MessageEvent<Request>) => {
     else if (event.data.type === 'shop-shelf') respond({ type: 'shop-shelf', requestId: event.data.requestId, slots: [], titleBar: 0 })
     else if (event.data.type === 'owned-grid') respond({ type: 'owned-grid', requestId: event.data.requestId, gifts: [] })
     else if (event.data.type === 'formation') respond({ type: 'formation', requestId: event.data.requestId, ids: [] })
+    else if (event.data.type === 'cursor') respond({ type: 'cursor', requestId: event.data.requestId, cursor: null })
     else respond({ type: 'error', message: error instanceof Error ? error.message : 'Inference failed' })
   } finally {
     frame.close()
