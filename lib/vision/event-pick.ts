@@ -3,7 +3,9 @@ import type { ChoiceBox } from './ocr-match'
 /**
  * Which ? room option was clicked, from where the cursor was while the choice list was up. A quick click can be over
  * before the next screen read, so the list's buttons (placed from their text lines) and the cursor (read every ~150 ms)
- * are kept, and when the list goes the last press on a button, or else the last button the cursor rested on, is taken.
+ * are kept, and when the list goes the last button the cursor was on is taken (the click leaves it there). Whether the
+ * button was down is not used: at the 10 to 20 px a shared window leaves the cursor, the two pictures are told apart
+ * badly (a resting cursor read as pressed in the live test, 2026-11-04).
  *
  * Measured on the game's choice list at 1920×1080 (2026-11-04): a button is 733×173 (the last one cut by the list's
  * scroll), its name line starts 77 px right of and 51 px below its top-left; the UI scales with min(width / 1920,
@@ -11,7 +13,8 @@ import type { ChoiceBox } from './ocr-match'
  */
 export interface ChoiceBand { choiceId: string; left: number; top: number; right: number; bottom: number }
 export interface CursorSample { at: number; x: number; y: number; pressed: boolean }
-export interface EventPick { choiceId: string; at: number }
+/** `list`: the game left the taken option alone on screen (its result page); `cursor`: where the cursor clicked or rested. */
+export interface EventPick { choiceId: string; at: number; via: 'list' | 'cursor' }
 
 /** Buttons in the frame's pixels from their name lines (`boxes` in the OCR frame's pixels, `ocrScale` = OCR / frame). */
 export function choiceBands(boxes: readonly ChoiceBox[], width: number, height: number, ocrScale = 1): ChoiceBand[] {
@@ -22,14 +25,26 @@ export function choiceBands(boxes: readonly ChoiceBox[], width: number, height: 
   })
 }
 
-export interface PickState { bands: ChoiceBand[]; shownAt: number; hits: { choiceId: string; at: number; pressed: boolean }[]; misses: number }
+export interface PickState {
+  bands: ChoiceBand[]; shownAt: number; hits: { choiceId: string; at: number; pressed: boolean }[]; misses: number
+  /** One option of the list read alone this many times in a row (the game keeps only the taken one). */
+  alone?: { choiceId: string; reads: number }
+}
 export const EMPTY_PICK: PickState = { bands: [], shownAt: 0, hits: [], misses: 0 }
 
-/** A read with the list on screen: its buttons now (a list of other choices starts over). */
-export function listShown(state: PickState, bands: readonly ChoiceBand[], at: number): PickState {
-  if (!bands.length) return state
-  const same = state.bands.length && bands.some(band => state.bands.some(old => old.choiceId === band.choiceId))
-  return { bands: [...bands], shownAt: at, hits: same ? state.hits : [], misses: 0 }
+/**
+ * A read with choices on screen. A list of other choices starts over. One option of a list of several read alone twice
+ * in a row (one read may drop a line) is the option taken: the pick and a fresh state.
+ */
+export function listShown(state: PickState, bands: readonly ChoiceBand[], at: number): { state: PickState; pick: EventPick | null } {
+  if (!bands.length) return { state, pick: null }
+  const same = state.bands.length > 0 && bands.some(band => state.bands.some(old => old.choiceId === band.choiceId))
+  if (same && state.bands.length > 1 && bands.length === 1) {
+    const reads = state.alone?.choiceId === bands[0].choiceId ? state.alone.reads + 1 : 1
+    if (reads >= 2) return { state: EMPTY_PICK, pick: { choiceId: bands[0].choiceId, at, via: 'list' } }
+    return { state: { ...state, alone: { choiceId: bands[0].choiceId, reads }, misses: 0 }, pick: null }
+  }
+  return { state: { bands: [...bands], shownAt: at, hits: same ? state.hits : [], misses: 0 }, pick: null }
 }
 
 /** A cursor reading: kept when it is on a button of the list shown in the last 3 s. */
@@ -46,7 +61,6 @@ export function cursorSeen(state: PickState, sample: CursorSample): PickState {
 export function listMissing(state: PickState, at: number, gone = false): { state: PickState; pick: EventPick | null } {
   if (!state.bands.length) return { state, pick: null }
   if (!gone && state.misses < 1) return { state: { ...state, misses: state.misses + 1 }, pick: null }
-  const pressed = state.hits.filter(hit => hit.pressed)
-  const last = (pressed.length ? pressed : state.hits).at(-1)
-  return { state: EMPTY_PICK, pick: last ? { choiceId: last.choiceId, at } : null }
+  const last = state.hits.at(-1)
+  return { state: EMPTY_PICK, pick: last ? { choiceId: last.choiceId, at, via: 'cursor' } : null }
 }

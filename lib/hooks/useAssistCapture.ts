@@ -147,6 +147,8 @@ export const OCR_READ_FAILURES = 3
  */
 export const SCENE_READ_FAILURES = 5
 export const OCR_REBUILD_MS = [5_000, 20_000, 60_000]
+/** Development only, with localStorage 'prescript-debug': the cursor and choice-list readings in the console. */
+const DEBUG_PICK = typeof window !== 'undefined' && process.env.NODE_ENV !== 'production' && (() => { try { return Boolean(window.localStorage.getItem('prescript-debug')) } catch { return false } })()
 /** What a worker's error answer to the read in flight does to its lane: skip the frame, or retire the lane once reads keep failing. */
 export function ocrErrorAction(failuresBefore: number): 'skip' | 'retire' {
   return failuresBefore + 1 < OCR_READ_FAILURES ? 'skip' : 'retire'
@@ -1317,7 +1319,10 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
               if (want.events && capture.width && capture.height) {
                 const boxes = 'choiceBoxes' in matches ? matches.choiceBoxes ?? [] : []
                 if (boxes.length) {
-                  pickState.current = listShown(pickState.current, choiceBands(boxes, capture.width, capture.height, Math.min(1, 1920 / capture.width)), capture.at)
+                  const shown = listShown(pickState.current, choiceBands(boxes, capture.width, capture.height, Math.min(1, 1920 / capture.width)), capture.at)
+                  pickState.current = shown.state
+                  if (shown.pick) setEventPick(shown.pick)
+                  if (DEBUG_PICK) console.info('[prescript] bands', JSON.stringify(pickState.current.bands.map(band => [band.choiceId, ...[band.left, band.top, band.right, band.bottom].map(Math.round)])))
                   // a click before this read: the cursor readings since a second before it
                   for (const sample of cursorSamples.current) if (sample.at >= capture.at - 1000) pickState.current = cursorSeen(pickState.current, sample)
                 } else {
@@ -1678,8 +1683,9 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
           } catch { inFlight.current = false }
           return
         }
-        // The cursor while a ? room is on screen (every 150 ms; cheap: 2 ms at 640 px)
-        if (!inFlight.current && latestLabel.current === 'event' && hasFrame() && !popupVisionQueue.current.length &&
+        // The cursor over a ? room's choice list while it is on screen (every 150 ms, only that region: a few ms)
+        const bands = pickState.current.bands
+        if (bands.length && !inFlight.current && latestLabel.current === 'event' && hasFrame() && !popupVisionQueue.current.length &&
           Date.now() - (cursorRequest.current?.at ?? 0) >= 150 && Date.now() - inferredAt < profileRef.current.sceneIntervalMs - 20) {
           inFlight.current = true
           try {
@@ -1687,7 +1693,11 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
             if (run !== generation.current || !worker.current) { frame.close(); inFlight.current = false; return }
             const requestId = ++ocrRequestId.current
             cursorRequest.current = { requestId, at: Date.now() }
-            worker.current.postMessage({ type: 'cursor', requestId, frame }, [frame])
+            // the buttons and a margin around them (the cursor's hot spot is its tip; the nib hangs below and right)
+            const margin = 60 * Math.min(frame.width / 1920, frame.height / 1080)
+            const left = Math.min(...bands.map(band => band.left)) - margin, top = Math.min(...bands.map(band => band.top)) - margin
+            const region = { x: left, y: top, width: Math.max(...bands.map(band => band.right)) + margin - left, height: Math.max(...bands.map(band => band.bottom)) + margin - top }
+            worker.current.postMessage({ type: 'cursor', requestId, frame, region }, [frame])
           } catch { inFlight.current = false }
           return
         }
@@ -1845,7 +1855,8 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
             const sample = { at: cursorRequest.current?.at ?? Date.now(), x: cursor.x, y: cursor.y, pressed: cursor.pressed === true }
             cursorSamples.current = [...cursorSamples.current.filter(item => sample.at - item.at < 4000), sample]
             pickState.current = cursorSeen(pickState.current, sample)
-          }
+            if (DEBUG_PICK) console.info('[prescript] cursor', Math.round(sample.x), Math.round(sample.y), sample.pressed, pickState.current.hits.length)
+          } else if (DEBUG_PICK) console.info('[prescript] cursor none')
           flushVisionPopup()
         } else if (result.type === 'formation' && formationRequest.current?.requestId === result.requestId) {
           inFlight.current = false

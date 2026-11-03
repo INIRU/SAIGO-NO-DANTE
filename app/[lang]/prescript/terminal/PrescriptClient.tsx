@@ -106,13 +106,22 @@ export default function PrescriptClient({ themes, gifts, recipes, events, eventC
   const eventRoom = useMemo(() => roomEventId === null ? null : { eventId: roomEventId, options: optionsKey ? optionsKey.split(',').map(Number) : [] },
     [roomEventId, optionsKey])
   const outcome = (evidence.ocrCandidates?.outcomeChoiceIds ?? []).map(id => choiceById.get(id)).find(choice => choice && Number.isInteger(choice.option_index))
-  const outcomeKey = outcome ? `${outcome.event_id}:${outcome.option_index}` : openRoom && stageOption !== null ? `${openRoom.eventId}:${stageOption}` : ''
+  // the game left the taken option alone on its result page: as good as its result text
+  const alone = capture.eventPick?.via === 'list' ? choiceById.get(capture.eventPick.choiceId) : undefined
+  const outcomeKey = outcome ? `${outcome.event_id}:${outcome.option_index}`
+    : alone && Number.isInteger(alone.option_index) && !alone.outcome ? `${alone.event_id}:${alone.option_index}`
+    : openRoom && stageOption !== null ? `${openRoom.eventId}:${stageOption}` : ''
   const eventOutcome = useMemo(() => outcomeKey ? { eventId: Number(outcomeKey.split(':')[0]), option: Number(outcomeKey.split(':')[1]), at: Date.now() } : null,
     [outcomeKey])
-  const picked = capture.eventPick ? choiceById.get(capture.eventPick.choiceId) : undefined
+  const picked = capture.eventPick?.via === 'cursor' ? choiceById.get(capture.eventPick.choiceId) : undefined
   const pickKey = picked && Number.isInteger(picked.option_index) && !picked.outcome ? `${picked.event_id}:${picked.option_index}:${capture.eventPick!.at}` : ''
   const eventPick = useMemo(() => pickKey ? { eventId: Number(pickKey.split(':')[0]), option: Number(pickKey.split(':')[1]), at: Number(pickKey.split(':')[2]) } : null,
     [pickKey])
+  // development only: which reading judged a room (the cursor, the next stage or the result text)
+  useEffect(() => { if (process.env.NODE_ENV !== 'production' && pickKey) console.info('[prescript] cursor pick', pickKey) }, [pickKey])
+  useEffect(() => {
+    if (process.env.NODE_ENV !== 'production' && outcomeKey) console.info('[prescript] screen outcome', outcomeKey, outcome ? 'result text' : alone ? 'option left alone' : 'next stage')
+  }, [outcomeKey]) // eslint-disable-line react-hooks/exhaustive-deps -- logged once a reading
   const prescript = usePrescript({ grade, eventRoom, eventOutcome, eventPick, formation: capture.formation, enabled: true, status: capture.status, acquisitions: capture.popupAcquisitions, sales: capture.giftSales,
     fusions: capture.fusionEvidence, floorObservation: capture.floorThemeObservation, ownedGrid: capture.ownedGrid, scene: capture.scene?.label ?? null,
     inShop: shelfIds.length > 0, context })
