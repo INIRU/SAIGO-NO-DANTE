@@ -9,11 +9,20 @@ import type { FloorThemeObservation, FusionEvidence, GiftSale, PopupAcquisition 
 /** The run's prescripts in this browser: a reload keeps them (the capture stopping on reload voids what was active). */
 export const PRESCRIPT_STORAGE_KEY = 'md-prescript-run'
 
+/** The cards drawn so far, kept too: a refusal or a reload must not draw a floor's cards again. */
+const OFFERS_STORAGE_KEY = 'md-prescript-offers'
+
 const load = (): PrescriptRun | null => {
   try {
     const value = JSON.parse(window.localStorage.getItem(PRESCRIPT_STORAGE_KEY) ?? 'null')
     return value && Array.isArray(value.prescripts) ? value as PrescriptRun : null
   } catch { return null }
+}
+const loadOffers = (): PrescriptOffer[] => {
+  try {
+    const value = JSON.parse(window.localStorage.getItem(OFFERS_STORAGE_KEY) ?? '[]')
+    return Array.isArray(value) ? value as PrescriptOffer[] : []
+  } catch { return [] }
 }
 
 const LEFT_SHOP = new Set(['exploration', 'battle', 'battle_setup', 'event', 'theme_select', 'loading', 'reward_choice'])
@@ -40,10 +49,13 @@ export function usePrescript({ enabled, status, acquisitions, sales, fusions, fl
 }) {
   // read once when first drawn (the page renders in the browser only): a load in an effect lost the run to the first save
   const [run, setRun] = useState<PrescriptRun>(() => load() ?? createPrescriptRun())
-  const [offers, setOffers] = useState<PrescriptOffer[]>([])
+  const [offers, setOffers] = useState<PrescriptOffer[]>(loadOffers)
   useEffect(() => {
     try { window.localStorage.setItem(PRESCRIPT_STORAGE_KEY, JSON.stringify(run)) } catch { /* kept for this page only */ }
   }, [run])
+  useEffect(() => {
+    try { window.localStorage.setItem(OFFERS_STORAGE_KEY, JSON.stringify(offers)) } catch { /* kept for this page only */ }
+  }, [offers])
 
   const contextRef = useRef(context)
   contextRef.current = context

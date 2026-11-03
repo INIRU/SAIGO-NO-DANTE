@@ -3018,6 +3018,7 @@
     "privacy": "The screen is read in this browser only and sent nowhere.",
     "deadline_standing": "Deadline: none",
     "deadline_special": "Deadline: before the next theme pack is chosen",
-    "deadline_shop": "Deadline: before leaving this shop"
+    "deadline_shop": "Deadline: before leaving this shop",
+    "deadline_pick": "Deadline: when the floor {floor} theme pack is chosen"
   }
 }

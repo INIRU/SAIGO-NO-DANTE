@@ -118,12 +118,14 @@ export default function PrescriptStage({ run, offers, label, onChoose, onReroll,
   const held = run.prescripts.filter(p => p.status === 'active')
   const settled = run.prescripts.filter(p => p.status !== 'active').slice().reverse()
   // the game's form: the order in 【】, then its deadline (Faust: "기한은 여섯 달 이내")
-  const quote = (goal: PrescriptGoal, scope: PrescriptScope) => `【${plain(label(goal))}】 ${t(`deadline_${scope}`)}`
+  // a pack prescript is due on its own floor, whatever kind it came as
+  const deadline = (goal: PrescriptGoal, scope: PrescriptScope) => goal.kind === 'pick-theme' ? t('deadline_pick', { floor: goal.floor }) : t(`deadline_${scope}`)
+  const quote = (goal: PrescriptGoal, scope: PrescriptScope) => `【${plain(label(goal))}】 ${deadline(goal, scope)}`
   // a plain function, not a component made in this render: one would be new on every render and roll its text again
   const text = (goal: PrescriptGoal, scope: PrescriptScope, roll?: number, ms?: number) =>
     <span className={styles.pt}>
       <span className={styles.order}>【<Settle parts={partsOf(label(goal))} roll={roll} ms={ms} />】</span>
-      <span className={styles.due}><Settle parts={[{ text: t(`deadline_${scope}`), em: false }]} roll={roll} ms={ms} /></span>
+      <span className={styles.due}><Settle parts={[{ text: deadline(goal, scope), em: false }]} roll={roll} ms={ms} /></span>
     </span>
   const progress = (p: Prescript) => p.goal.kind === 'get-keyword' ? `${p.progress}/${p.goal.count}` : ''
 

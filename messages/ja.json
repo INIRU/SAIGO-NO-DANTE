@@ -3018,6 +3018,7 @@
     "privacy": "画面はこのブラウザでのみ読み、どこにも送らない。",
     "deadline_standing": "期限は無制限",
     "deadline_special": "期限は次のテーマパックを選ぶまで",
-    "deadline_shop": "期限はこのショップを出るまで"
+    "deadline_shop": "期限はこのショップを出るまで",
+    "deadline_pick": "期限は{floor}階のテーマパックを選ぶまで"
   }
 }

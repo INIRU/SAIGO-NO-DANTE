@@ -3018,6 +3018,7 @@
     "privacy": "화면은 이 브라우저에서만 읽고, 어디에도 보내지 않는다.",
     "deadline_standing": "기한은 무제한",
     "deadline_special": "기한은 다음 테마팩을 고르기 전까지",
-    "deadline_shop": "기한은 이 상점을 떠나기 전까지"
+    "deadline_shop": "기한은 이 상점을 떠나기 전까지",
+    "deadline_pick": "기한은 {floor}층 테마팩을 고를 때까지"
   }
 }
