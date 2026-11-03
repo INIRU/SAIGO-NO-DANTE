@@ -43,7 +43,7 @@ export const NAV_GROUPS: { labelKey: string; items: { href: string; labelKey: st
     labelKey: 'nav.fun.title',
     items: [
       { href: '/random', labelKey: 'nav.fun.random' },
-      { href: '/planner/run?mode=prescript', labelKey: 'nav.fun.prescript' },
+      { href: '/prescript', labelKey: 'nav.fun.prescript' },
     ],
   },
 ]

@@ -15,7 +15,7 @@ it('REQ-SHARED-036 lists analysis under tools and has no other group, named in e
 it('REQ-SHARED-045 puts developers last under tools and random under fun', () => {
   expect(NAV_GROUPS.map(entry => entry.labelKey)).toEqual(['nav.db.title', 'nav.community.title', 'nav.tools.title', 'nav.motion.title', 'nav.fun.title'])
   expect(group('nav.tools.title').at(-1)).toEqual({ href: '/developers', labelKey: 'nav.tools.developers' })
-  expect(group('nav.fun.title')).toEqual([{ href: '/random', labelKey: 'nav.fun.random' }, { href: '/planner/run?mode=prescript', labelKey: 'nav.fun.prescript' }])
+  expect(group('nav.fun.title')).toEqual([{ href: '/random', labelKey: 'nav.fun.random' }, { href: '/prescript', labelKey: 'nav.fun.prescript' }])
   // Each page is listed once across the menu.
   const hrefs = NAV_GROUPS.flatMap(entry => entry.items.map(item => item.href))
   expect(new Set(hrefs).size).toBe(hrefs.length)
