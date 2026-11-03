@@ -27,6 +27,10 @@ export type PrescriptGoal =
   | { kind: 'no-answer' }
   /** In this ? room, take this option (its button: `option`, the choices table's option_index). */
   | { kind: 'event-choice'; eventId: number; option: number }
+  /** Put another Identity in this Sinner's place (the shop's formation): `fromId` is the one the bar showed. */
+  | { kind: 'swap-identity'; sinner: string; fromId: string }
+  /** At least `count` Identities of the keyword among the first six of the formation. */
+  | { kind: 'formation-keyword'; keyword: string; count: number }
 
 export interface PrescriptCard { scope: PrescriptScope; goal: PrescriptGoal; strength: Strength }
 export type PrescriptStatus = 'active' | 'done' | 'failed' | 'void'
@@ -61,6 +65,8 @@ export type PrescriptEvent =
   | { type: 'event-outcome'; eventId: number; option: number; at: number }
   /** The ? room was left without its result page read. */
   | { type: 'leave-event'; eventId: number; at: number }
+  /** The formation read from the bar: twelve Identity ids in deployment order (null where unread). */
+  | { type: 'formation'; ids: readonly (string | null)[]; at: number }
 
 export interface PrescriptContext {
   floor: number
@@ -77,6 +83,10 @@ export interface PrescriptContext {
   random: () => number
   /** Gifts on the shop shelf, unsold, read with confidence, in shelf order (empty outside the shop). */
   shelf?: readonly number[]
+  /** The formation last read from the bar (twelve ids in deployment order, null where unread). */
+  formation?: readonly (string | null)[]
+  /** An Identity's Sinner and keywords, by its id. */
+  identity?: (id: string) => { sinner: string; keywords: readonly string[] } | undefined
 }
 
 export const PRESCRIPT_REROLLS = 3
@@ -125,6 +135,17 @@ export function candidates(scope: PrescriptScope, ctx: PrescriptContext): Prescr
     for (const giftId of ctx.craftable().filter(id => !owned.includes(id)))
       cards.push({ scope, goal: { kind: 'fuse-gift', giftId }, strength: (ctx.gift(giftId)?.tier ?? 0) >= 4 ? 4 : 3 })
     cards.push({ scope, goal: { kind: 'no-sale' }, strength: 2 })
+    // the formation's front: one more of a keyword among the first six (a reorder will do when one waits behind, else a swap)
+    const formation = ctx.formation ?? []
+    if (formation.filter(Boolean).length >= 6) {
+      const keywords = new Set(formation.flatMap(id => id ? ctx.identity?.(id)?.keywords ?? [] : []))
+      for (const keyword of keywords) {
+        const count = front(formation, keyword, ctx)
+        if (count >= 6) continue
+        const behind = formation.slice(6).some(id => id !== null && ctx.identity?.(id)?.keywords.includes(keyword))
+        cards.push({ scope, goal: { kind: 'formation-keyword', keyword, count: count + 1 }, strength: behind ? 2 : 4 })
+      }
+    }
   } else if (scope === 'shop') {
     const shelf = (ctx.shelf ?? []).filter(id => !owned.includes(id) && !isVestige(id))
     for (const giftId of shelf) {
@@ -133,6 +154,11 @@ export function candidates(scope: PrescriptScope, ctx: PrescriptContext): Prescr
       cards.push({ scope, goal: { kind: 'buy-gift', giftId }, strength: ctx.planGiftIds.has(giftId) ? 1 : tier <= 2 ? 2 : tier === 3 ? 3 : 4 })
     }
     if (shelf.length > 1) cards.push({ scope, goal: { kind: 'buy-leftmost', giftId: shelf[0] }, strength: 1 })
+    // the shop's formation: put another Identity in a Sinner's place (it costs the shop's price)
+    for (const id of ctx.formation ?? []) {
+      const sinner = id ? ctx.identity?.(id)?.sinner : undefined
+      if (id && sinner) cards.push({ scope, goal: { kind: 'swap-identity', sinner, fromId: id }, strength: 3 })
+    }
   } else {
     // a floor-bound pack comes at least one floor ahead, so there is time to prepare
     for (const floor of [ctx.floor + 1, ctx.floor + 2].filter(f => f <= LAST_FLOOR))
@@ -178,9 +204,15 @@ export function feasible(card: PrescriptCard, ctx: PrescriptContext, inShop: boo
     case 'buy-gift': case 'buy-leftmost': return (ctx.shelf ?? []).includes(goal.giftId) && !ctx.inventory.includes(String(goal.giftId))
     case 'pick-theme': return goal.floor > ctx.floor
     case 'fuse-gift': return ctx.craftable().includes(goal.giftId)
+    case 'swap-identity': return (ctx.formation ?? []).includes(goal.fromId)
     case 'sell-keyword': case 'sell-tier': return candidates(card.scope, ctx).some(other => JSON.stringify(other.goal) === JSON.stringify(goal))
     default: return true
   }
+}
+
+/** How many of the formation's first six are of the keyword. */
+function front(ids: readonly (string | null)[], keyword: string, ctx: PrescriptContext) {
+  return ids.slice(0, 6).filter(id => id !== null && ctx.identity?.(id)?.keywords.includes(keyword)).length
 }
 
 /** The ? room's mandatory prescript: one of the options anyone can take (no selection condition), picked by `random`. */
@@ -227,6 +259,15 @@ function judge(p: Prescript, event: PrescriptEvent, ctx: PrescriptContext): Outc
     case 'leave-shop': return p.scope === 'shop' ? { status: 'failed' } : null
     case 'event-outcome':
       return goal.kind === 'event-choice' && goal.eventId === event.eventId ? { status: event.option === goal.option ? 'done' : 'failed' } : null
+    case 'formation': {
+      if (goal.kind === 'swap-identity') {
+        const now = event.ids.find(id => id !== null && ctx.identity?.(id)?.sinner === goal.sinner)
+        return now && now !== goal.fromId ? { status: 'done' } : null
+      }
+      if (goal.kind === 'formation-keyword')
+        return front(event.ids, goal.keyword, ctx) >= goal.count ? { status: 'done' } : null
+      return null
+    }
     case 'leave-event':
       // the result page went by unread: whether the option was taken cannot be known
       return goal.kind === 'event-choice' && goal.eventId === event.eventId ? { status: 'void', reason: 'event-unseen' } : null

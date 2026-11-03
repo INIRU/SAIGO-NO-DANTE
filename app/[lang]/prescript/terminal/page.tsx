@@ -28,16 +28,19 @@ export default async function PrescriptPage({ params }: { params: Promise<{ lang
     supabase.schema('limbus').from('ego_gift_recipes').select(RECIPE_COLUMNS),
   ])
   // the ? rooms: a room's mandatory prescript names one of its options, judged by the result text read
-  const [{ data: events, error: e4 }, { data: eventChoices, error: e5 }] = await Promise.all([
+  const [{ data: events, error: e4 }, { data: eventChoices, error: e5 }, { data: identities, error: e6 }, { data: sinners, error: e7 }] = await Promise.all([
     supabase.schema('limbus').from('md_events').select(MD_EVENT_COLUMNS).order('id'),
     supabase.schema('limbus').from('md_event_choices').select(MD_EVENT_CHOICE_COLUMNS).order('event_id').order('sort_order'),
+    // the formation's prescripts: whose place a portrait is and its keywords
+    supabase.schema('limbus').from('identities').select('game_id, sinner_id, keywords'),
+    supabase.schema('limbus').from('sinners').select('id, name_kr, name_en, name_jp'),
   ])
-  if (e1 || e2 || e3 || e4 || e5) console.error('[PrescriptPage]', e1?.message, e2?.message, e3?.message, e4?.message, e5?.message)
+  if (e1 || e2 || e3 || e4 || e5 || e6 || e7) console.error('[PrescriptPage]', e1?.message, e2?.message, e3?.message, e4?.message, e5?.message, e6?.message, e7?.message)
   const normalizedThemes = (themes ?? []).flatMap(theme => {
     const id = normalizePlannerThemeId(theme.id)
     return id === null ? [] : [{ ...theme, id }]
   })
   return <PrescriptWrapper themes={normalizedThemes}
     gifts={(gifts ?? []).map(gift => withoutOtherLocales(gift, lang, ['effect_base', 'effect_plus', 'effect_plusplus']))}
-    recipes={recipes ?? []} events={events ?? []} eventChoices={eventChoices ?? []} dataError={!!(e1 || e2 || e3)} />
+    recipes={recipes ?? []} events={events ?? []} eventChoices={eventChoices ?? []} identities={identities ?? []} sinners={sinners ?? []} dataError={!!(e1 || e2 || e3)} />
 }

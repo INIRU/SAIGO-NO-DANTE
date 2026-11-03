@@ -243,3 +243,27 @@ describe('the ? room prescript', () => {
     expect(applyEvent(run, { type: 'leave-event', eventId: 900101, at: 1 }, context()).prescripts[0]).toMatchObject({ status: 'void', reason: 'event-unseen' })
   })
 })
+
+describe('formation prescripts', () => {
+  const ids = ['10101', '10201', '10301', '10401', '10501', '10601', '10701', '10801', '10901', '11001', '11101', '11201']
+  const keywordOf: Record<string, string[]> = { 10101: ['화상'], 10201: ['화상'], 10701: ['화상'], 10301: ['출혈'] }
+  const identity = (id: string) => ({ sinner: `s${id.slice(1, 3)}`, keywords: keywordOf[id] ?? [] })
+
+  it('asks for one more of a keyword in the front six, lighter when one waits behind', () => {
+    const cards = candidates('special', context({ formation: ids, identity }))
+    expect(cards.find(c => c.goal.kind === 'formation-keyword' && c.goal.keyword === '화상')).toMatchObject({ goal: { count: 3 }, strength: 2 })
+    expect(cards.find(c => c.goal.kind === 'formation-keyword' && c.goal.keyword === '출혈')).toMatchObject({ goal: { count: 2 }, strength: 4 })
+  })
+
+  it('a swap is done when the bar shows another Identity in that Sinner place; a front is done when it counts enough', () => {
+    const swap = { scope: 'shop' as const, goal: { kind: 'swap-identity' as const, sinner: 's02', fromId: '10201' }, strength: 3 as const }
+    let run = receive(createPrescriptRun(), swap, 3, 0)
+    run = applyEvent(run, { type: 'formation', ids, at: 1 }, context({ identity }))
+    expect(run.prescripts[0].status).toBe('active')
+    run = applyEvent(run, { type: 'formation', ids: ids.map(id => id === '10201' ? '10205' : id), at: 2 }, context({ identity }))
+    expect(run.prescripts[0].status).toBe('done')
+    const front = { scope: 'special' as const, goal: { kind: 'formation-keyword' as const, keyword: '화상', count: 3 }, strength: 2 as const }
+    const moved = ['10101', '10201', '10701', '10301', '10401', '10501', '10601', '10801', '10901', '11001', '11101', '11201']
+    expect(applyEvent(receive(createPrescriptRun(), front, 3, 0), { type: 'formation', ids: moved, at: 1 }, context({ identity })).prescripts[0].status).toBe('done')
+  })
+})
