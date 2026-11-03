@@ -2999,7 +2999,7 @@
     "pipFailed": "端末を浮かべられなかった。ChromeかEdgeでもう一度試せ。",
     "mobile": "端末はPCでのみ動く。",
     "dataError": "指令の一覧を受け取れなかった。再読み込みせよ。",
-    "capture_idle": "端末は停止している。Limbusのウィンドウに接続せよ。",
+    "capture_idle": "端末は切れている。Limbusのウィンドウに接続せよ。鏡ダンジョンが終わる前に切れると、その回の加護と記録は消える。",
     "capture_requesting": "接続するLimbusのウィンドウを選べ。",
     "capture_loading": "端末を起こしている。",
     "capture_running": "指令を受信待機中。",
@@ -3019,6 +3019,8 @@
     "deadline_standing": "期限は無制限",
     "deadline_special": "期限は次のテーマパックを選ぶまで",
     "deadline_shop": "期限はこのショップを出るまで",
-    "deadline_pick": "期限は{floor}階のテーマパックを選ぶまで"
+    "deadline_pick": "期限は{floor}階のテーマパックを選ぶまで",
+    "ended": "鏡ダンジョンが終わった。履行の記録を閉じる。",
+    "void_run_ended": "鏡ダンジョンが終わり回収された"
   }
 }

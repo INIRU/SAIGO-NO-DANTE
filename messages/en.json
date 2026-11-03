@@ -2999,7 +2999,7 @@
     "pipFailed": "The terminal could not be raised. Try again in Chrome or Edge.",
     "mobile": "The terminal runs on a PC only.",
     "dataError": "The prescripts could not be received. Reload.",
-    "capture_idle": "The terminal is off. Link it to the Limbus window.",
+    "capture_idle": "The terminal is off. Connect it to the Limbus window. If it is cut before the Mirror Dungeon ends, that run's grace and record are lost.",
     "capture_requesting": "Choose the Limbus window to link.",
     "capture_loading": "Waking the terminal.",
     "capture_running": "Awaiting Prescripts.",
@@ -3019,6 +3019,8 @@
     "deadline_standing": "Deadline: none",
     "deadline_special": "Deadline: before the next theme pack is chosen",
     "deadline_shop": "Deadline: before leaving this shop",
-    "deadline_pick": "Deadline: when the floor {floor} theme pack is chosen"
+    "deadline_pick": "Deadline: when the floor {floor} theme pack is chosen",
+    "ended": "The Mirror Dungeon is over. The record of fulfilment is closed.",
+    "void_run_ended": "recalled when the Mirror Dungeon ended"
   }
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { applyEvent, createPrescriptRun, offer, PRESCRIPT_REROLLS, prescriptPoints, receive, reroll, wanted, type PrescriptContext } from '../../../lib/fun/prescript'
+import { applyEvent, createPrescriptRun, endPrescriptRun, offer, PRESCRIPT_REROLLS, prescriptPoints, receive, reroll, wanted, type PrescriptContext } from '../../../lib/fun/prescript'
 
 const gifts: Record<number, { keyword: string | null; tier: number | null }> = {
   9001: { keyword: 'Combustion', tier: 1 }, 9002: { keyword: 'Combustion', tier: 2 }, 9003: { keyword: 'Bleeding', tier: 1 },
@@ -154,5 +154,18 @@ describe('no points from the past or from breaks', () => {
     expect(run.prescripts[0].status).toBe('void')
     expect(wanted(run, 2)).not.toContain('standing')
     expect(wanted(run, 3)).toContain('standing')
+  })
+})
+
+describe('the end of the dungeon', () => {
+  it('closes the record and recalls what is still in progress, keeping the grace earned', () => {
+    const sell = { scope: 'special' as const, goal: { kind: 'sell-keyword' as const, keyword: 'Bleeding' }, strength: 2 as const }
+    const gather = { scope: 'standing' as const, goal: { kind: 'get-keyword' as const, keyword: 'Bleeding', count: 3 }, strength: 2 as const }
+    let run = receive(receive(createPrescriptRun(), sell, 2, 0), gather, 2, 0)
+    run = applyEvent(run, { type: 'sale', giftId: 9003, at: 1 }, context())
+    const ended = endPrescriptRun(run, 2)
+    expect(ended.ended).toBe(true)
+    expect(ended.score).toBe(run.score)
+    expect(ended.prescripts.map(p => p.status)).toEqual(['done', 'void'])
   })
 })
