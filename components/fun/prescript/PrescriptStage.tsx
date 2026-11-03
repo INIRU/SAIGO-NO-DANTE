@@ -93,7 +93,8 @@ export default function PrescriptStage({ run, offers, label, onChoose, onReroll,
   }, [offerKey, pip])
   const held = run.prescripts.filter(p => p.status === 'active')
   const settled = run.prescripts.filter(p => p.status !== 'active').slice().reverse()
-  const quote = (goal: PrescriptGoal) => `【${label(goal)}】`
+  // the game's form: the order, then its deadline (Faust: "기한은 여섯 달 이내"), inside 【】
+  const quote = (goal: PrescriptGoal, scope: PrescriptScope) => `【${label(goal)}. ${t(`deadline_${scope}`)}】`
   const progress = (p: Prescript) => p.goal.kind === 'get-keyword' ? `${p.progress}/${p.goal.count}` : ''
 
   return <div className={pip ? styles.pip : undefined}>
@@ -105,7 +106,7 @@ export default function PrescriptStage({ run, offers, label, onChoose, onReroll,
       {offer && <>
         <div className={styles.cards} role="group" aria-label={t(offer.scope)}>
           {offer.cards.map(card => {
-            const text = quote(card.goal)
+            const text = quote(card.goal, card.scope)
             const points = prescriptPoints(card.strength, card.scope, run.streak + 1)
             return <button key={JSON.stringify(card.goal)} type="button" className={styles.c} onClick={() => onChoose(card)}
               aria-label={t('cardLabel', { strength: card.strength, kind: t(KIND[card.goal.kind]), points, text })}>
@@ -127,7 +128,7 @@ export default function PrescriptStage({ run, offers, label, onChoose, onReroll,
     {held.length ? <ul className={styles.held} data-prescript-held>
       {held.map(p => <li key={p.id} className={styles.h}>
         <span className={styles.k}>{t(p.scope)}</span>
-        <span className={styles.tx}>{quote(p.goal)}</span>
+        <span className={styles.tx}>{quote(p.goal, p.scope)}</span>
         <span className={styles.p}>{progress(p) || POINTS[p.strength]}</span>
       </li>)}
     </ul> : <p className={styles.empty}>{t('noneHeld')}</p>}
@@ -137,7 +138,7 @@ export default function PrescriptStage({ run, offers, label, onChoose, onReroll,
       <div className={styles.log} data-prescript-log>
         {settled.length ? settled.map(p => <div key={p.id} className={styles.row}>
           <span className={styles.fl}>{p.floor}F</span>
-          <span className={styles.tx}>{quote(p.goal)}{p.status === 'void' && p.reason && <span className={styles.why}>{t(`void_${p.reason.replace(/-/g, '_')}`)}</span>}</span>
+          <span className={styles.tx}>{quote(p.goal, p.scope)}{p.status === 'void' && p.reason && <span className={styles.why}>{t(`void_${p.reason.replace(/-/g, '_')}`)}</span>}</span>
           <span className={`${styles.rs} ${p.status === 'done' ? styles.ok : p.status === 'failed' ? styles.no : styles.re}`}>{t(`status_${p.status}`)}</span>
           <span className={styles.sc}>{p.status === 'done' ? `+${p.points}` : ''}</span>
         </div>) : <p className={styles.empty}>{t('noRecord')}</p>}
