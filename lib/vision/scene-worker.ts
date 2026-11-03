@@ -96,6 +96,21 @@ async function loadIconClassifier() {
   } catch { iconSession = null }
 }
 
+/** The first run of each model compiles its WebGPU shaders: paid here, before 'ready', rather than on the first screen read
+ * (as the OCR worker does). Slot batches of the sizes the screens use. A failed warm-up only leaves the first read slower. */
+async function warmUp() {
+  try {
+    await runModel('scene', new Float32Array(3 * SCENE_SIZE * SCENE_SIZE))
+    if (visualSession) await runModel('visual', new Float32Array(3 * SCENE_SIZE * SCENE_SIZE))
+    const icons = iconSession
+    if (!icons) return
+    for (const batch of [1, 3, 5, 10]) {
+      const input = new ort.Tensor('float32', new Float32Array(batch * 3 * ICON_INPUT * ICON_INPUT), [batch, 3, ICON_INPUT, ICON_INPUT])
+      await exclusive(() => icons.run({ [icons.inputNames[0]]: input }))
+    }
+  } catch { /* the reads still work, the first one compiles */ }
+}
+
 /** Classifier reads for the given slots in one batch, or null to fall back to template matching. */
 async function classifySlots(sample: ReturnType<typeof sampler>, regions: { x: number; y: number; size: number }[], held: ReadonlySet<string>) {
   if (!iconSession || !regions.length || !classifierKnowsHeld(iconLabels, held)) return null
@@ -310,6 +325,7 @@ self.onmessage = async (event: MessageEvent<Request>) => {
       provider = await gpuAdapter() ? 'webgpu' : 'wasm'
       await createSessions(withVisual)
       await loadIconClassifier()
+      await warmUp()
       respond({ type: 'ready', provider, adapter: provider === 'webgpu' ? adapterName : '' })
       void loadTemplates(giftReferences)
     } catch (error) {
