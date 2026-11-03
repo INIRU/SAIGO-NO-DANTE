@@ -263,6 +263,9 @@ describe('the ? room prescript', () => {
     expect(eventRoomOptions({ judgment: null }, check)).toEqual([])
     expect(eventRoomOptions({ judgment: null }, [{ ...entry[0], selection_condition: 'Sinner_3' }, entry[1]])).toEqual([{ option: 1, next: [] }])
     expect(eventRoomOptions(undefined, entry)).toEqual([])
+    // the table writes no condition as 'None' (901001's three options)
+    expect(eventRoomOptions({ judgment: null }, entry.map(choice => ({ ...choice, selection_condition: 'None' })))).toHaveLength(2)
+    expect(eventRoomOptions({ judgment: null }, [{ ...entry[0], selection_condition: 'HasNotEnoughCost_100' }, entry[1]])).toEqual([{ option: 1, next: [] }])
   })
 
   it('a later stage names the option that led to it, if only one does', () => {
