@@ -7,7 +7,7 @@ const p = (status: Prescript['status']): Prescript => ({ scope: 'standing', goal
 describe('my records', () => {
   it('sums a finished run: the longest streak skips recalled ones and breaks on a violation', () => {
     const run = { ...createPrescriptRun(), score: 70, prescripts: ['done', 'void', 'done', 'failed', 'done', 'done', 'done'].map(s => p(s as Prescript['status'])) }
-    expect(summarizeRun(run, 9, 5)).toEqual({ endedAt: 5, score: 70, done: 5, failed: 1, recalled: 1, bestStreak: 3, floor: 9 })
+    expect(summarizeRun(run, 9, 5)).toEqual({ endedAt: 5, score: 70, done: 5, failed: 1, recalled: 1, bestStreak: 3, floor: 9, grade: 'proselyte' })
   })
 
   it('keeps the newest first, reads only well-formed rows and totals them', () => {
