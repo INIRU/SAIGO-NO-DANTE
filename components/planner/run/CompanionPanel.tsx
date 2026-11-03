@@ -79,13 +79,11 @@ interface Props {
   sinners?: SinnerData[]
   identities?: IdentityData[]
   egos?: EgoData[]
-  /** Shown at the top of the PiP window (the Index prescript mode's cards and active prescripts). */
-  pipTop?: React.ReactNode
 }
 export default function CompanionPanel({ state, dispatch, themes, giftMap, observedGiftIds = [], popupAcquisitions = [],
   events = [], eventChoices = [], eventChoiceEvidence = null, captureRunning = false, scene = null,
   themeSelectionFloor = null, floorThemeObservation = null, observedFloor = null, fusionEvidence = null, prediction = null, giftSales = [],
-  skillExchange = null, skills = [], recipes = [], sinners = [], identities = [], egos = [], pipTop = null }: Props) {
+  skillExchange = null, skills = [], recipes = [], sinners = [], identities = [], egos = [] }: Props) {
   const t = useTranslations('planner.run')
   const locale = useLocale() as SupportedLang
   const localized = (item: { name: string; name_en?: string | null; name_jp?: string | null }) => getLocalizedName({ name_kr: item.name, name_en: item.name_en, name_jp: item.name_jp }, locale)
@@ -555,6 +553,6 @@ export default function CompanionPanel({ state, dispatch, themes, giftMap, obser
       <PictureInPicture2 size={16} aria-hidden="true" /><span className="max-sm:sr-only">{t(container ? 'pipModeClose' : 'pipModeButton')}</span>
     </button>
     {!pipSupported && <span id={pipNoteId} className="sr-only">{t('pipModeUnsupported')}</span>}
-    {container && createPortal(<div className="min-h-full bg-[var(--bg-deep)] p-3 text-[var(--text-primary)]" style={{ scrollbarGutter: 'stable' }}>{pipTop}{content(true)}<CompanionAcquisitionOverlay events={acquisitionEvents} label={t('acquired')} consumedLabel={t('fusionConsumed')} /></div>, container)}
+    {container && createPortal(<div className="min-h-full bg-[var(--bg-deep)] p-3 text-[var(--text-primary)]" style={{ scrollbarGutter: 'stable' }}>{content(true)}<CompanionAcquisitionOverlay events={acquisitionEvents} label={t('acquired')} consumedLabel={t('fusionConsumed')} /></div>, container)}
   </>
 }

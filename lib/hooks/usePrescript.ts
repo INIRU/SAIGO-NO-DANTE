@@ -59,6 +59,10 @@ export function usePrescript({ enabled, status, acquisitions, sales, fusions, fl
     else if (running.current) { running.current = false; apply({ type: 'gap', at: Date.now(), reason: 'capture-stopped' }) }
   }, [enabled, status, apply])
 
+  // The gifts held, counted from the same evidence (the prescript page keeps no run record of its own): an acquisition
+  // adds, a sale takes one away, a fusion takes its dialog's materials
+  const [owned, setOwned] = useState<string[]>([])
+  const without = (list: string[], ids: readonly string[]) => { const rest = [...list]; for (const id of ids) { const at = rest.indexOf(id); if (at >= 0) rest.splice(at, 1) } return rest }
   const seen = useRef(new Set<string>())
   const once = (token: string) => !seen.current.has(token) && !!seen.current.add(token)
   useEffect(() => {
@@ -68,14 +72,16 @@ export function usePrescript({ enabled, status, acquisitions, sales, fusions, fl
       const giftId = Number(item.giftId), at = item.capturedAt ?? item.observedAt
       if (!Number.isInteger(giftId)) continue
       apply({ type: 'acquire', giftId, at })
-      if ((fusions ?? []).some(evidence => fusionResultFollows(evidence, item.capturedAt))) apply({ type: 'fusion', resultId: giftId, at })
+      const fusion = (fusions ?? []).find(evidence => fusionResultFollows(evidence, item.capturedAt))
+      if (fusion) apply({ type: 'fusion', resultId: giftId, at })
+      setOwned(list => [...without(list, fusion?.materials ?? []), String(giftId)])
     }
   }, [enabled, acquisitions, fusions, apply])
   useEffect(() => {
     if (!enabled) return
     for (const sale of sales) {
       const giftId = Number(sale.giftId)
-      if (once(`s:${sale.token}`) && Number.isInteger(giftId)) apply({ type: 'sale', giftId, at: sale.capturedAt })
+      if (once(`s:${sale.token}`) && Number.isInteger(giftId)) { apply({ type: 'sale', giftId, at: sale.capturedAt }); setOwned(list => without(list, [String(giftId)])) }
     }
   }, [enabled, sales, apply])
   useEffect(() => {
@@ -116,7 +122,7 @@ export function usePrescript({ enabled, status, acquisitions, sales, fusions, fl
   // 거부: this floor's choice of that kind is put away without a prescript (no points, the streak is kept)
   const refuse = useCallback((scope: PrescriptScope) =>
     setOffers(current => current.map(o => o.scope === scope ? { ...o, cards: [] } : o)), [])
-  const reset = useCallback(() => { setRun(createPrescriptRun()); setOffers([]); seen.current.clear() }, [])
+  const reset = useCallback(() => { setRun(createPrescriptRun()); setOffers([]); setOwned([]); seen.current.clear() }, [])
 
-  return { run, offers: offers.filter(o => o.cards.length), choose, reroll, refuse, reset }
+  return { run, owned, offers: offers.filter(o => o.cards.length), choose, reroll, refuse, reset }
 }
