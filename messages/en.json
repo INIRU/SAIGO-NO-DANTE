@@ -3050,7 +3050,7 @@
     "rule_connect": "Connect the terminal to the Limbus window and Prescripts come down. The screen is read in this browser only and sent nowhere.",
     "rule_answer": "When a Prescript comes down, uphold one within 20 seconds. If you do not answer, the terminal decides. A Prescript whose moment passes is a violation.",
     "rule_resist": "You may decline. But the more you resist, the heavier the Prescripts that come. Fulfil one and they lighten again.",
-    "rule_room": "Enter a room with choices and its Prescript comes down at once. It cannot be declined.",
+    "rule_room": "Enter a room with choices and its Prescript comes down at once. It cannot be declined. What you chose is read from the result screen and the mouse cursor; if they disagree, it is recalled.",
     "rule_judge": "Fulfilment and violation are judged from the screen alone. A Prescript that cannot be judged is recalled, not counted as a violation.",
     "rule_break": "If the screen is cut or the terminal switched off before the Mirror Dungeon ends, that run's grace and record are lost.",
     "totalRuns": "Runs",
