@@ -3,7 +3,7 @@ import { cacheLife, cacheTag } from 'next/cache'
 import { getTranslations } from 'next-intl/server'
 import { pageMetadata } from '@/lib/seo/metadata'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { GIFT_COLUMNS, RECIPE_COLUMNS } from '@/lib/db/columns'
+import { GIFT_COLUMNS, MD_EVENT_CHOICE_COLUMNS, MD_EVENT_COLUMNS, RECIPE_COLUMNS } from '@/lib/db/columns'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import { normalizePlannerThemeId } from '@/lib/planner/types'
 import { withoutOtherLocales } from '@/lib/i18n/strip-locales'
@@ -27,12 +27,17 @@ export default async function PrescriptPage({ params }: { params: Promise<{ lang
     supabase.schema('limbus').from('ego_gifts').select(GIFT_COLUMNS).order('keyword').order('grade'),
     supabase.schema('limbus').from('ego_gift_recipes').select(RECIPE_COLUMNS),
   ])
-  if (e1 || e2 || e3) console.error('[PrescriptPage]', e1?.message, e2?.message, e3?.message)
+  // the ? rooms: a room's mandatory prescript names one of its options, judged by the result text read
+  const [{ data: events, error: e4 }, { data: eventChoices, error: e5 }] = await Promise.all([
+    supabase.schema('limbus').from('md_events').select(MD_EVENT_COLUMNS).order('id'),
+    supabase.schema('limbus').from('md_event_choices').select(MD_EVENT_CHOICE_COLUMNS).order('event_id').order('sort_order'),
+  ])
+  if (e1 || e2 || e3 || e4 || e5) console.error('[PrescriptPage]', e1?.message, e2?.message, e3?.message, e4?.message, e5?.message)
   const normalizedThemes = (themes ?? []).flatMap(theme => {
     const id = normalizePlannerThemeId(theme.id)
     return id === null ? [] : [{ ...theme, id }]
   })
   return <PrescriptWrapper themes={normalizedThemes}
     gifts={(gifts ?? []).map(gift => withoutOtherLocales(gift, lang, ['effect_base', 'effect_plus', 'effect_plusplus']))}
-    recipes={recipes ?? []} dataError={!!(e1 || e2 || e3)} />
+    recipes={recipes ?? []} events={events ?? []} eventChoices={eventChoices ?? []} dataError={!!(e1 || e2 || e3)} />
 }

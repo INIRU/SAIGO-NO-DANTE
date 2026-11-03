@@ -3025,6 +3025,11 @@
     "cardExpired": "기한이 지났다",
     "replyIn": "{seconds}초 안에 받들지 않으면 단말기가 정한다",
     "goal_no_answer": "지령에 응답하지 않았다",
-    "void_no_answer": "응답 없이 그 때가 지났다"
+    "void_no_answer": "응답 없이 그 때가 지났다",
+    "event": "이 방의 지령",
+    "deadline_event": "기한은 이 방을 떠나기 전까지",
+    "goal_event_choice": "선택지 {choice}. 골라라",
+    "kind_event": "선택지",
+    "void_event_unseen": "결과를 보지 못해 판정하지 못했다"
   }
 }

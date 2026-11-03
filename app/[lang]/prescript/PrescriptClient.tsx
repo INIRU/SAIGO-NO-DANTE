@@ -10,7 +10,9 @@ import PrescriptStage from '@/components/fun/prescript/PrescriptStage'
 import styles from '@/components/fun/prescript/prescript.module.css'
 import { giftKeywordLabel } from '@/components/gifts/GiftCatalog'
 import type { PrescriptContext, PrescriptGoal } from '@/lib/fun/prescript'
-import { useAssistCapture } from '@/lib/hooks/useAssistCapture'
+import { captureEvidence, useAssistCapture } from '@/lib/hooks/useAssistCapture'
+import type { MdEvent, MdEventChoice } from '@/components/mirror-dungeon/types'
+import { recognizableEvents } from '@/lib/utils/event-catalog'
 import { useCompanionWindow } from '@/lib/hooks/useCompanionWindow'
 import { usePrescript } from '@/lib/hooks/usePrescript'
 import type { SupportedLang } from '@/lib/i18n'
@@ -24,7 +26,8 @@ import { EMPTY_PLAN, planFromRunDraft, RUN_DRAFT_KEY, type PrescriptPlan } from 
 /** The prescripts are drawn for the run the mode is meant for: Extreme, to the 15th floor. */
 const RUN_DIFFICULTY = 'extreme'
 
-export default function PrescriptClient({ themes, gifts, recipes, dataError }: { themes: ThemeData[]; gifts: GiftData[]; recipes: RecipeData[]; dataError?: boolean }) {
+export default function PrescriptClient({ themes, gifts, recipes, events, eventChoices, dataError }: { themes: ThemeData[]; gifts: GiftData[]; recipes: RecipeData[];
+  events: MdEvent[]; eventChoices: MdEventChoice[]; dataError?: boolean }) {
   const t = useTranslations('prescriptMode')
   const lang = useLocale() as SupportedLang
   // The game client's language picks the text reader's model and the gift names it compares (the Assist's own setting).
@@ -32,12 +35,20 @@ export default function PrescriptClient({ themes, gifts, recipes, dataError }: {
   useEffect(() => { setGameLanguage(current => readGameLanguage(window.localStorage, current)) }, [])
   const giftMap = useMemo(() => buildGiftMap(gifts), [gifts])
   const giftReferences = useMemo(() => gifts.map(gift => ({ id: String(gift.game_id), imageUrl: gift.image_url })), [gifts])
+  // ? rooms as the run page reads them (exact copies of another event left out: their text would name several at once)
+  const recognizable = useMemo(() => recognizableEvents(events, eventChoices), [events, eventChoices])
+  const eventReferences = useMemo(() => recognizable.events.map(event => ({ id: String(event.id), imageUrl: event.image_url })), [recognizable])
+  const choiceById = useMemo(() => new Map(recognizable.choices.map(choice => [String(choice.id), choice])), [recognizable])
   const ocrCatalog = useMemo(() => ({
     gifts: gifts.map(gift => ({ id: String(gift.game_id), effectTexts: [],
       texts: (gameLanguage === 'en' ? [gift.name_en, gift.name, gift.name_jp] : gameLanguage === 'ja' ? [gift.name_jp, gift.name, gift.name_en]
         : [gift.name, gift.name_en, gift.name_jp]).filter((value): value is string => Boolean(value)) })),
-    events: [], choices: [],
-  }), [gifts, gameLanguage])
+    events: recognizable.events.map(event => ({ id: String(event.id), texts: [event.name, event.desc_text, event.name_en, event.desc_text_en, event.name_jp,
+      event.desc_text_jp].filter((value): value is string => Boolean(value)) })),
+    choices: recognizable.choices.map(choice => ({ id: String(choice.id), eventId: String(choice.event_id),
+      texts: [choice.message, choice.message_en, choice.message_jp].filter((value): value is string => Boolean(value)),
+      resultTexts: [choice.result_text, choice.result_text_en, choice.result_text_jp].filter((value): value is string => Boolean(value)) })),
+  }), [gifts, gameLanguage, recognizable])
   const themeCatalog = useMemo(() => themes.map(theme => ({ id: String(theme.id),
     texts: [theme.name, theme.name_en, theme.name_jp].filter((value): value is string => Boolean(value)) })), [themes])
   const giftPrice = useCallback((id: string) => giftMap.get(Number(id))?.price, [giftMap])
@@ -46,7 +57,7 @@ export default function PrescriptClient({ themes, gifts, recipes, dataError }: {
   // 0 until a floor is read: a run joined midway must not have its floor-bound prescripts tied to a guessed floor
   const [floor, setFloor] = useState(0)
   const [held, setHeld] = useState<string[]>([])
-  const capture = useAssistCapture({ giftReferences, ocrCatalog, themeCatalog, language: gameLanguage, floor, heldGiftIds: held, giftPrice })
+  const capture = useAssistCapture({ giftReferences, eventReferences, ocrCatalog, themeCatalog, language: gameLanguage, floor, heldGiftIds: held, giftPrice })
   useEffect(() => { if (capture.observedFloor) setFloor(capture.observedFloor) }, [capture.observedFloor])
   // a confirmed pack pick is that floor at once, in the same render as its judging, so the next cards are drawn for it
   useEffect(() => { if (capture.floorThemeObservation) setFloor(capture.floorThemeObservation.floor) }, [capture.floorThemeObservation])
@@ -71,7 +82,21 @@ export default function PrescriptClient({ themes, gifts, recipes, dataError }: {
     themesOn: next => getAvailableThemes(themes, DIFFICULTY_FLOOR_KEY[getLegacyPlanFloorDifficulty(RUN_DIFFICULTY, next)], next).map(theme => theme.id),
     random: Math.random, shelf: shelfIds,
   }), [floor, held, giftMap, recipes, themes, shelfIds, plan])
-  const prescript = usePrescript({ enabled: true, status: capture.status, acquisitions: capture.popupAcquisitions, sales: capture.giftSales,
+  // A ? room: its choice screen (the options anyone may take, with a result to judge them by) and the option its result
+  // page names
+  const evidence = captureEvidence(capture, floor, Date.now())
+  const roomEventId = evidence.eventChoiceEvidence?.eventId ?? null
+  const roomOptions = useMemo(() => roomEventId === null ? [] : [...new Set(recognizable.choices
+    .filter(choice => choice.event_id === roomEventId && !choice.selection_condition && choice.result_text && Number.isInteger(choice.option_index))
+    .map(choice => choice.option_index as number))].sort((a, b) => a - b), [roomEventId, recognizable])
+  const optionsKey = roomOptions.join(',')
+  const eventRoom = useMemo(() => roomEventId === null ? null : { eventId: roomEventId, options: optionsKey ? optionsKey.split(',').map(Number) : [] },
+    [roomEventId, optionsKey])
+  const outcome = (evidence.ocrCandidates?.outcomeChoiceIds ?? []).map(id => choiceById.get(id)).find(choice => choice && Number.isInteger(choice.option_index))
+  const outcomeKey = outcome ? `${outcome.event_id}:${outcome.option_index}` : ''
+  const eventOutcome = useMemo(() => outcomeKey ? { eventId: Number(outcomeKey.split(':')[0]), option: Number(outcomeKey.split(':')[1]), at: Date.now() } : null,
+    [outcomeKey])
+  const prescript = usePrescript({ eventRoom, eventOutcome, enabled: true, status: capture.status, acquisitions: capture.popupAcquisitions, sales: capture.giftSales,
     fusions: capture.fusionEvidence, floorObservation: capture.floorThemeObservation, ownedGrid: capture.ownedGrid, scene: capture.scene?.label ?? null,
     inShop: shelfIds.length > 0, context })
   const ownedKey = prescript.owned.join(',')
@@ -93,6 +118,11 @@ export default function PrescriptClient({ themes, gifts, recipes, dataError }: {
       case 'buy-gift': return t('goal_buy_gift', { gift: em(giftName(goal.giftId)) })
       case 'buy-leftmost': return t('goal_buy_leftmost', { gift: em(giftName(goal.giftId)) })
       case 'no-answer': return t('goal_no_answer')
+      case 'event-choice': {
+        const choice = recognizable.choices.find(item => item.event_id === goal.eventId && item.option_index === goal.option)
+        const text = choice ? (lang === 'en' && choice.message_en) || (lang === 'ja' && choice.message_jp) || choice.message || '' : String(goal.option + 1)
+        return t('goal_event_choice', { choice: em(text) })
+      }
     }
   }
 
