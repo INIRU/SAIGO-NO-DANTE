@@ -12,19 +12,39 @@ const POINTS = [0, 5, 10, 20, 35, 60]
 /** One cell of the game's 5x7 prescript glyph sheet (Fx_T_Shape_Retro_Number, 13x5 cells), picked at random. */
 const cell = () => { const i = Math.floor(Math.random() * 65); return `${(i % 13) / 12 * 100}% ${Math.floor(i / 13) / 4 * 100}%` }
 
-/** The prescript arriving (Fx_Mon_Index_Buff_BuffScript_IndexPrescript_Ex): 0.6 s, sound 1; 0.8 s later sound 2 eight times, 0.1 s apart. */
+/** How long the glyphs roll before the letters come, and how long the letters take: the sounds follow the same clock. */
+const ROLL = 800, SETTLE = 800
+
+/** The two arrival sounds, fetched once when the stage is first drawn so they are not late on the first prescript. */
+let sounds: { first: HTMLAudioElement; second: HTMLAudioElement } | null = null
+function loadSounds() {
+  try {
+    if (!sounds) {
+      sounds = { first: new Audio(`${ASSET}/index_message_1.ogg`), second: new Audio(`${ASSET}/index_message_2.ogg`) }
+      for (const audio of [sounds.first, sounds.second]) { audio.preload = 'auto'; audio.volume = 0.5; audio.load() }
+    }
+  } catch { /* no audio: the prescript still shows */ }
+  return sounds
+}
+
+/** The prescript arriving (Fx_Mon_Index_Buff_BuffScript_IndexPrescript_Ex): sound 1 while the glyphs roll, then sound 2 eight
+ * times, 0.1 s apart, while the letters settle. */
 function playArrival(): () => void {
   const timers: number[] = []
-  try {
-    const first = new Audio(`${ASSET}/index_message_1.ogg`), second = new Audio(`${ASSET}/index_message_2.ogg`)
-    first.volume = second.volume = 0.5
-    timers.push(window.setTimeout(() => { void first.play().catch(() => {}) }, 600))
-    timers.push(window.setTimeout(() => {
-      first.pause()
-      for (let i = 0; i < 8; i++) timers.push(window.setTimeout(() => { second.currentTime = 0; void second.play().catch(() => {}) }, i * 100))
-    }, 1400))
-  } catch { /* no audio: the prescript still shows */ }
-  return () => timers.forEach(window.clearTimeout)
+  const loaded = loadSounds()
+  if (!loaded) return () => {}
+  const { first, second } = loaded
+  first.currentTime = 0
+  void first.play().catch(() => {})
+  timers.push(window.setTimeout(() => {
+    first.pause()
+    for (let i = 0; i < 8; i++) timers.push(window.setTimeout(() => {
+      const beep = second.cloneNode() as HTMLAudioElement // its own copy, so the beeps do not cut each other off
+      beep.volume = second.volume
+      void beep.play().catch(() => {})
+    }, i * (SETTLE / 8)))
+  }, ROLL))
+  return () => { timers.forEach(window.clearTimeout); first.pause() }
 }
 
 interface Part { text: string; em: boolean }
@@ -58,8 +78,9 @@ function Settle({ parts, roll, ms }: { parts: Part[]; roll?: number; ms?: number
   return <span aria-hidden="true">{parts.map((part, i) => {
     const shown = Math.max(0, Math.min(part.text.length, settled - at))
     at += part.text.length
+    // a rolling glyph is drawn over its own letter, kept but unseen, so the lines never change while the letters come
     const body = <>{part.text.slice(0, shown)}{[...part.text.slice(shown)].map((c, j) => c === ' ' ? c
-      : <span key={j} className={styles.gli} style={{ backgroundPosition: cell() }} />)}</>
+      : <span key={j} className={styles.gli} style={{ backgroundPosition: cell() }}>{c}</span>)}</>
     return part.em ? <b key={i} className={styles.em}>{body}</b> : <span key={i}>{body}</span>
   })}</span>
 }
@@ -87,6 +108,7 @@ export default function PrescriptStage({ run, offers, label, onChoose, onReroll,
   const t = useTranslations('prescriptMode')
   const offer = offers[0] ?? null
   const offerKey = offer ? `${offer.scope}:${offer.floor}:${offer.cards.map(c => JSON.stringify(c.goal)).join('|')}` : ''
+  useEffect(() => { if (!pip) loadSounds() }, [pip])
   const cued = useRef('')
   useEffect(() => {
     if (!offerKey || offerKey === cued.current) return
@@ -97,7 +119,8 @@ export default function PrescriptStage({ run, offers, label, onChoose, onReroll,
   const settled = run.prescripts.filter(p => p.status !== 'active').slice().reverse()
   // the game's form: the order in 【】, then its deadline (Faust: "기한은 여섯 달 이내")
   const quote = (goal: PrescriptGoal, scope: PrescriptScope) => `【${plain(label(goal))}】 ${t(`deadline_${scope}`)}`
-  const Text = ({ goal, scope, roll, ms }: { goal: PrescriptGoal; scope: PrescriptScope; roll?: number; ms?: number }) =>
+  // a plain function, not a component made in this render: one would be new on every render and roll its text again
+  const text = (goal: PrescriptGoal, scope: PrescriptScope, roll?: number, ms?: number) =>
     <span className={styles.pt}>
       <span className={styles.order}>【<Settle parts={partsOf(label(goal))} roll={roll} ms={ms} />】</span>
       <span className={styles.due}><Settle parts={[{ text: t(`deadline_${scope}`), em: false }]} roll={roll} ms={ms} /></span>
@@ -116,13 +139,12 @@ export default function PrescriptStage({ run, offers, label, onChoose, onReroll,
       {offer && <>
         <div className={styles.cards} role="group" aria-label={t(offer.scope)}>
           {offer.cards.map(card => {
-            const text = quote(card.goal, card.scope)
             const points = prescriptPoints(card.strength, card.scope, run.streak + 1)
             return <button key={JSON.stringify(card.goal)} type="button" className={styles.c} onClick={() => onChoose(card)}
-              aria-label={t('cardLabel', { strength: card.strength, kind: t(KIND[card.goal.kind]), points, text })}>
+              aria-label={t('cardLabel', { strength: card.strength, kind: t(KIND[card.goal.kind]), points, text: quote(card.goal, card.scope) })}>
               <div className={styles.ban}>{t(offer.scope)}</div>
               <div className={styles.lv}><b>{card.strength}</b>{Array.from({ length: card.strength }, (_, i) => <Flower key={i} />)}</div>
-              <div className={styles.d}><Text goal={card.goal} scope={card.scope} roll={1400} ms={800} /></div>
+              <div className={styles.d}>{text(card.goal, card.scope, ROLL, SETTLE)}</div>
               <div className={styles.f}><span>{t(KIND[card.goal.kind])}</span><b>{points}</b></div>
             </button>
           })}
@@ -138,7 +160,7 @@ export default function PrescriptStage({ run, offers, label, onChoose, onReroll,
     {held.length ? <ul className={styles.held} data-prescript-held>
       {held.map(p => <li key={p.id} className={styles.h}>
         <span className={styles.k}>{t(p.scope)}</span>
-        <span className={styles.tx}><span className="sr-only">{quote(p.goal, p.scope)}</span><Text goal={p.goal} scope={p.scope} roll={500} ms={700} /></span>
+        <span className={styles.tx}><span className="sr-only">{quote(p.goal, p.scope)}</span>{text(p.goal, p.scope)}</span>
         <span className={styles.p}>{progress(p) || POINTS[p.strength]}</span>
       </li>)}
     </ul> : <p className={styles.empty}>{t('noneHeld')}</p>}
@@ -148,7 +170,7 @@ export default function PrescriptStage({ run, offers, label, onChoose, onReroll,
       <div className={styles.log} data-prescript-log>
         {settled.length ? settled.map(p => <div key={p.id} className={styles.row}>
           <span className={styles.fl}>{p.floor}F</span>
-          <span className={styles.tx}><span className="sr-only">{quote(p.goal, p.scope)}</span><Text goal={p.goal} scope={p.scope} />{p.status === 'void' && p.reason && <span className={styles.why}>{t(`void_${p.reason.replace(/-/g, '_')}`)}</span>}</span>
+          <span className={styles.tx}><span className="sr-only">{quote(p.goal, p.scope)}</span>{text(p.goal, p.scope)}{p.status === 'void' && p.reason && <span className={styles.why}>{t(`void_${p.reason.replace(/-/g, '_')}`)}</span>}</span>
           <span className={`${styles.rs} ${p.status === 'done' ? styles.ok : p.status === 'failed' ? styles.no : styles.re}`}>{t(`status_${p.status}`)}</span>
           <span className={styles.sc}>{p.status === 'done' ? `+${p.points}` : ''}</span>
         </div>) : <p className={styles.empty}>{t('noRecord')}</p>}
