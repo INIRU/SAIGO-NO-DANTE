@@ -9,7 +9,7 @@ import PrescriptRules from '@/components/fun/prescript/PrescriptRules'
 import PrescriptStage from '@/components/fun/prescript/PrescriptStage'
 import styles from '@/components/fun/prescript/prescript.module.css'
 import { giftKeywordLabel } from '@/components/gifts/GiftCatalog'
-import type { PrescriptContext, PrescriptGoal } from '@/lib/fun/prescript'
+import type { PrescriptContext, PrescriptGoal, PrescriptGrade } from '@/lib/fun/prescript'
 import { captureEvidence, useAssistCapture } from '@/lib/hooks/useAssistCapture'
 import type { MdEvent, MdEventChoice } from '@/components/mirror-dungeon/types'
 import { recognizableEvents } from '@/lib/utils/event-catalog'
@@ -21,6 +21,7 @@ import { getLegacyPlanFloorDifficulty } from '@/lib/planner/floor-difficulty'
 import { DIFFICULTY_FLOOR_KEY, type GiftData, type RecipeData, type ThemeData } from '@/lib/planner/types'
 import { readGameLanguage, type GameLanguage } from '@/lib/vision/recognition-profile'
 import { shelfGift } from '@/lib/vision/shop-shelf'
+import { GRADE_KEY, readGrade } from '@/lib/fun/prescript-history'
 import { EMPTY_PLAN, planFromRunDraft, RUN_DRAFT_KEY, type PrescriptPlan } from '@/lib/fun/prescript-plan'
 
 /** The prescripts are drawn for the run the mode is meant for: Extreme, to the 15th floor. */
@@ -68,6 +69,9 @@ export default function PrescriptClient({ themes, gifts, recipes, events, eventC
   const shelfKey = (shelf?.slots ?? []).map(slot => `${shelfGift(slot)}:${slot.sold}`).join(',')
   const shelfIds = useMemo(() => shelfKey.split(',').filter(item => item.endsWith(':false') && !item.startsWith('null'))
     .map(item => Number(item.split(':')[0])), [shelfKey])
+  // the grade chosen on the entrance: a new run starts at it
+  const [grade, setGrade] = useState<PrescriptGrade>('proselyte')
+  useEffect(() => { try { setGrade(readGrade(window.localStorage.getItem(GRADE_KEY))) } catch { /* proselyte */ } }, [])
   // the plan the run page was started from, in this browser: what it aims for weighs on the prescripts
   const [plan, setPlan] = useState<PrescriptPlan>(EMPTY_PLAN)
   useEffect(() => {
@@ -102,7 +106,7 @@ export default function PrescriptClient({ themes, gifts, recipes, events, eventC
   const outcomeKey = outcome ? `${outcome.event_id}:${outcome.option_index}` : ''
   const eventOutcome = useMemo(() => outcomeKey ? { eventId: Number(outcomeKey.split(':')[0]), option: Number(outcomeKey.split(':')[1]), at: Date.now() } : null,
     [outcomeKey])
-  const prescript = usePrescript({ eventRoom, eventOutcome, formation: capture.formation, enabled: true, status: capture.status, acquisitions: capture.popupAcquisitions, sales: capture.giftSales,
+  const prescript = usePrescript({ grade, eventRoom, eventOutcome, formation: capture.formation, enabled: true, status: capture.status, acquisitions: capture.popupAcquisitions, sales: capture.giftSales,
     fusions: capture.fusionEvidence, floorObservation: capture.floorThemeObservation, ownedGrid: capture.ownedGrid, scene: capture.scene?.label ?? null,
     inShop: shelfIds.length > 0, context })
   const ownedKey = prescript.owned.join(',')
@@ -153,6 +157,7 @@ export default function PrescriptClient({ themes, gifts, recipes, events, eventC
         {/* eslint-disable-next-line @next/next/no-img-element -- a small game emblem from public/ */}
         <img src="/assets/fun/prescript/index_emblem_color_256.png" alt="" width={36} height={36} />
         <h1>{t('terminalTitle')}</h1>
+        <span className={styles.grade}>{t(`grade_${prescript.run.grade ?? 'proselyte'}`)}</span>
         <div className={styles.stats}>
           <span><b>{floor || '-'}</b>{t('floorUnit')}</span>
           <span><b>{prescript.run.score}</b>{t('scoreUnit')}</span>

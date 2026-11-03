@@ -1,4 +1,8 @@
-import type { PrescriptRun } from './prescript'
+import type { PrescriptGrade, PrescriptRun } from './prescript'
+
+/** The grade the next run starts at, as chosen on the entrance (this browser). */
+export const GRADE_KEY = 'prescript-grade'
+export const readGrade = (text: string | null): PrescriptGrade => text === 'proxy' ? 'proxy' : 'proselyte'
 
 /**
  * The finished runs of this browser (my records): a run is kept only when the dungeon's end screen closed it with the
@@ -15,6 +19,7 @@ export interface PrescriptRunSummary {
   bestStreak: number
   /** The highest floor read in the run (0 when none was read). */
   floor: number
+  grade?: PrescriptGrade
 }
 
 export const HISTORY_KEY = 'md-prescript-history'
@@ -27,7 +32,7 @@ export function summarizeRun(run: PrescriptRun, floor: number, endedAt: number):
     else if (p.status === 'failed') streak = 0
   }
   const count = (status: string) => run.prescripts.filter(p => p.status === status).length
-  return { endedAt, score: run.score, done: count('done'), failed: count('failed'), recalled: count('void'), bestStreak, floor }
+  return { endedAt, score: run.score, done: count('done'), failed: count('failed'), recalled: count('void'), bestStreak, floor, grade: run.grade ?? 'proselyte' }
 }
 
 export function readHistory(text: string | null): PrescriptRunSummary[] {

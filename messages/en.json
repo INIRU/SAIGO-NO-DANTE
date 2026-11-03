@@ -3064,6 +3064,11 @@
     "rankingSoon": "The ranking is not open yet. When it opens, only runs with the terminal on to the end will count.",
     "goal_swap_identity": "Put another Identity in {sinner}'s place",
     "goal_formation_keyword": "Field {count} {keyword} Identities in the first six places",
-    "kind_formation": "Formation"
+    "kind_formation": "Formation",
+    "gradeTitle": "Terminal grade",
+    "grade_proselyte": "Proselyte",
+    "grade_proxy": "Proxy",
+    "grade_proselyte_line": "Return cards three times, answer within 20 s. You may decline.",
+    "grade_proxy_line": "Return cards once, answer within 12 s. No declining. 1.5x grace."
   }
 }

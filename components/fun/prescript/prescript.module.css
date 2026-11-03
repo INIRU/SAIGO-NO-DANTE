@@ -146,6 +146,15 @@
 .menu b { font-family: var(--h); font-size: 1.05rem; }
 .menu span { color: var(--mute); font-size: 0.875rem; }
 
+/* the grade a run starts at: two plain choices, the chosen one lit */
+.grades { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; width: min(26rem, 100%); margin-top: 0.75rem; }
+.grades button { display: grid; gap: 0.25rem; padding: 0.625rem 0.75rem; text-align: left; font: inherit; color: var(--mute); background: none; border: 1px solid var(--line-2); border-radius: 4px; cursor: pointer; }
+.grades button b { font-family: var(--h); color: var(--white); font-size: 0.95rem; }
+.grades button span { font-size: 0.75rem; line-height: 1.45; }
+.grades .gradeOn { border-color: var(--blue); background: rgba(61, 127, 224, 0.12); }
+.grades button:focus-visible { outline: 2px solid var(--blue-lt); outline-offset: 2px; }
+.grade { font-family: var(--h); font-size: 0.75rem; color: var(--blue-lt); border: 1px solid var(--line-2); border-radius: 3px; padding: 0.125rem 0.375rem; }
+
 /* my records */
 .totals { padding: 0.5rem 0 1rem; border-bottom: 1px solid var(--line); }
 .totals dd { font-size: 2rem; }

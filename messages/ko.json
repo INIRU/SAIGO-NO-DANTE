@@ -3064,6 +3064,11 @@
     "rankingSoon": "랭킹은 아직 열리지 않았다. 열리면 끝까지 단말기를 켠 회차만 오른다.",
     "goal_swap_identity": "{sinner}의 인격을 바꿔라",
     "goal_formation_keyword": "앞 여섯 자리에 {keyword} 인격을 {count}명 세워라",
-    "kind_formation": "편성"
+    "kind_formation": "편성",
+    "gradeTitle": "단말기 등급",
+    "grade_proselyte": "수행자",
+    "grade_proxy": "대행자",
+    "grade_proselyte_line": "세 번 물리고 20초 안에 답한다. 받들지 않을 수 있다.",
+    "grade_proxy_line": "한 번 물리고 12초 안에 답한다. 거부는 없다. 가호 1.5배."
   }
 }
