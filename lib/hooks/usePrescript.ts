@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { applyEvent, createPrescriptRun, endPrescriptRun, offer, receive, reroll as rerollRun, wanted, type PrescriptCard, type PrescriptContext,
+import { applyEvent, createPrescriptRun, endPrescriptRun, feasible, missOffer, offer, PRESCRIPT_REPLY_MS, receive, resist, reroll as rerollRun, wanted, type PrescriptCard, type PrescriptContext,
   type PrescriptEvent, type PrescriptRun, type PrescriptScope } from '@/lib/fun/prescript'
 import { fusionResultFollows } from '@/lib/vision/fusion-evidence'
 import type { FloorThemeObservation, FusionEvidence, GiftSale, PopupAcquisition } from '@/lib/hooks/useAssistCapture'
@@ -23,7 +23,8 @@ const RUN_START = new Set(['run_setup', 'start_gift'])
 
 const LEFT_SHOP = new Set(['exploration', 'battle', 'battle_setup', 'event', 'theme_select', 'loading', 'reward_choice'])
 
-export interface PrescriptOffer { scope: PrescriptScope; floor: number; cards: PrescriptCard[] }
+/** `issuedAt`: when the terminal put it up; unanswered for PRESCRIPT_REPLY_MS, the terminal answers for the player. */
+export interface PrescriptOffer { scope: PrescriptScope; floor: number; cards: PrescriptCard[]; issuedAt: number }
 
 /**
  * Turns the Assist capture's evidence into prescript events: each acquisition popup, sale and confirmed floor once (by
@@ -116,37 +117,73 @@ export function usePrescript({ enabled, status, acquisitions, sales, fusions, fl
   useEffect(() => {
     if (!enabled || !scene) return
     if (inShop) wasInShop.current = true
-    else if (wasInShop.current && LEFT_SHOP.has(scene)) { wasInShop.current = false; apply({ type: 'leave-shop', at: Date.now() }) }
+    else if (wasInShop.current && LEFT_SHOP.has(scene)) {
+      wasInShop.current = false
+      const at = Date.now()
+      // a shop offer still unanswered when the shop is left was let pass: a violation
+      const unanswered = offersRef.current.find(o => o.scope === 'shop' && o.cards.length)
+      if (unanswered) setRun(current => missOffer(current, 'shop', unanswered.floor, at))
+      setOffers(current => current.filter(o => o.scope !== 'shop'))
+      apply({ type: 'leave-shop', at })
+    }
   }, [enabled, scene, inShop, apply])
 
-  // cards: one choice a kind, drawn once (a reroll draws again)
+  // cards: one choice a kind, drawn once (a reroll draws again), no weaker than the player's refusals allow
   const floor = context.floor
+  const offersRef = useRef(offers)
+  offersRef.current = offers
+  const inShopRef = useRef(inShop)
+  inShopRef.current = inShop
   useEffect(() => {
     if (!enabled || status !== 'running' || run.ended) return
-    const want = wanted(run, floor, inShop).filter(scope => !offers.some(o => o.scope === scope && o.floor === floor))
-    if (!want.length) return
-    setOffers(current => [...current.filter(o => o.floor === floor),
+    // a floor's special and shop offers end with it; one still unanswered was let pass (a standing offer carries on)
+    const passed = offers.filter(o => o.scope !== 'standing' && o.floor !== floor)
+    const want = wanted(run, floor, inShop).filter(scope => !offers.some(o => o.scope === scope && (o.scope === 'standing' || o.floor === floor)))
+    if (!want.length && !passed.length) return
+    const at = Date.now()
+    for (const o of passed) if (o.cards.length) setRun(current => missOffer(current, o.scope, o.floor, at))
+    setOffers(current => [...current.filter(o => o.scope === 'standing' || o.floor === floor),
       // kept even with no card, so a kind with nothing to offer is not drawn again every render
-      ...want.map(scope => ({ scope, floor, cards: offer(scope, contextRef.current) }))])
+      ...want.map(scope => ({ scope, floor, issuedAt: at, cards: offer(scope, contextRef.current, 3, 1 + (run.resisted ?? 0)) }))])
   }, [enabled, status, run, floor, inShop, offers])
 
+  const canChoose = useCallback((card: PrescriptCard) => feasible(card, contextRef.current, inShopRef.current), [])
   const choose = useCallback((card: PrescriptCard) => {
+    // checked again now: the offer may have waited past the card's occasion
+    if (!feasible(card, contextRef.current, inShopRef.current)) return false
     setRun(current => receive(current, card, contextRef.current.floor, Date.now()))
     setOffers(current => current.filter(o => o.scope !== card.scope))
+    return true
   }, [])
+  // unanswered for PRESCRIPT_REPLY_MS: the terminal chooses one of the cards still possible (waiting buys nothing)
+  useEffect(() => {
+    if (!enabled || status !== 'running') return
+    const timer = window.setInterval(() => {
+      const now = Date.now()
+      for (const o of offersRef.current) {
+        if (!o.cards.length || now - o.issuedAt < PRESCRIPT_REPLY_MS) continue
+        const open = o.cards.filter(card => feasible(card, contextRef.current, inShopRef.current))
+        if (open.length) choose(open[Math.floor(Math.random() * open.length)])
+        else setOffers(current => current.map(item => item === o ? { ...item, cards: [] } : item))
+      }
+    }, 1000)
+    return () => window.clearInterval(timer)
+  }, [enabled, status, choose])
   const reroll = useCallback((scope: PrescriptScope) => {
     const next = rerollRun(run)
     if (!next) return false
     setRun(next)
-    setOffers(current => current.map(o => o.scope === scope ? { ...o, cards: offer(scope, contextRef.current) } : o))
+    setOffers(current => current.map(o => o.scope === scope ? { ...o, issuedAt: Date.now(), cards: offer(scope, contextRef.current, 3, 1 + (run.resisted ?? 0)) } : o))
     return true
   }, [run])
-  // 거부: this floor's choice of that kind is put away without a prescript (no points, the streak is kept)
-  const refuse = useCallback((scope: PrescriptScope) =>
-    setOffers(current => current.map(o => o.scope === scope ? { ...o, cards: [] } : o)), [])
+  // 거부: no prescript this time, but the terminal answers resistance with heavier ones from then on
+  const refuse = useCallback((scope: PrescriptScope) => {
+    setRun(current => resist(current))
+    setOffers(current => current.map(o => o.scope === scope ? { ...o, cards: [] } : o))
+  }, [])
   const reset = useCallback(() => { restart(); seen.current.clear() }, [restart])
 
   // a pack card for a floor already picked is no choice any more
   const open = offers.map(o => ({ ...o, cards: o.cards.filter(c => c.goal.kind !== 'pick-theme' || c.goal.floor > floor) }))
-  return { run, owned, offers: open.filter(o => o.cards.length), choose, reroll, refuse, reset }
+  return { run, owned, offers: open.filter(o => o.cards.length), choose, canChoose, reroll, refuse, reset }
 }

@@ -3021,6 +3021,10 @@
     "deadline_shop": "期限はこのショップを出るまで",
     "deadline_pick": "期限は{floor}階のテーマパックを選ぶまで",
     "ended": "鏡ダンジョンが終わった。履行の記録を閉じる。",
-    "void_run_ended": "鏡ダンジョンが終わり回収された"
+    "void_run_ended": "鏡ダンジョンが終わり回収された",
+    "cardExpired": "期限切れ",
+    "replyIn": "{seconds}秒以内に奉じなければ端末が決める",
+    "goal_no_answer": "指令に応答しなかった",
+    "void_no_answer": "応答のないまま時が過ぎた"
   }
 }

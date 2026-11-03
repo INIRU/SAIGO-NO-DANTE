@@ -3021,6 +3021,10 @@
     "deadline_shop": "기한은 이 상점을 떠나기 전까지",
     "deadline_pick": "기한은 {floor}층 테마팩을 고를 때까지",
     "ended": "거울 던전이 끝났다. 이행 기록을 닫는다.",
-    "void_run_ended": "거울 던전이 끝나 거두어졌다"
+    "void_run_ended": "거울 던전이 끝나 거두어졌다",
+    "cardExpired": "기한이 지났다",
+    "replyIn": "{seconds}초 안에 받들지 않으면 단말기가 정한다",
+    "goal_no_answer": "지령에 응답하지 않았다",
+    "void_no_answer": "응답 없이 그 때가 지났다"
   }
 }

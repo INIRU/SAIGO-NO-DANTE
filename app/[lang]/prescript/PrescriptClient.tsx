@@ -83,6 +83,7 @@ export default function PrescriptClient({ themes, gifts, recipes, dataError }: {
       case 'pick-theme': return t('goal_pick_theme', { floor: em(goal.floor), theme: em(themeName(goal.themeId)) })
       case 'buy-gift': return t('goal_buy_gift', { gift: em(giftName(goal.giftId)) })
       case 'buy-leftmost': return t('goal_buy_leftmost', { gift: em(giftName(goal.giftId)) })
+      case 'no-answer': return t('goal_no_answer')
     }
   }
 
@@ -90,7 +91,7 @@ export default function PrescriptClient({ themes, gifts, recipes, dataError }: {
   const [pipFailed, setPipFailed] = useState(false)
   const togglePip = () => { if (container) close(); else open().catch(() => setPipFailed(true)) }
   const captureActive = capture.status === 'running' || capture.status === 'loading' || capture.status === 'requesting'
-  const stage = (pip: boolean) => <PrescriptStage run={prescript.run} offers={prescript.offers} label={label} onChoose={prescript.choose}
+  const stage = (pip: boolean) => <PrescriptStage run={prescript.run} offers={prescript.offers} label={label} onChoose={prescript.choose} canChoose={prescript.canChoose}
     onReroll={prescript.reroll} onRefuse={prescript.refuse} pip={pip} />
 
   return <div className={styles.root} data-prescript-page>
