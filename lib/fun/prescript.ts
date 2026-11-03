@@ -8,7 +8,8 @@
  * the shop is left). Only prescripts the run can carry out now are offered.
  */
 
-export type PrescriptScope = 'standing' | 'special' | 'shop'
+/** `event`: a mandatory prescript given in a ? room, never offered as a choice, never refused. */
+export type PrescriptScope = 'standing' | 'special' | 'shop' | 'event'
 export type Strength = 1 | 2 | 3 | 4 | 5
 
 export type PrescriptGoal =
@@ -24,6 +25,8 @@ export type PrescriptGoal =
   | { kind: 'buy-leftmost'; giftId: number }
   /** An offer the player let pass without answering (recorded, never offered). */
   | { kind: 'no-answer' }
+  /** In this ? room, take this option (its button: `option`, the choices table's option_index). */
+  | { kind: 'event-choice'; eventId: number; option: number }
 
 export interface PrescriptCard { scope: PrescriptScope; goal: PrescriptGoal; strength: Strength }
 export type PrescriptStatus = 'active' | 'done' | 'failed' | 'void'
@@ -54,6 +57,10 @@ export type PrescriptEvent =
   | { type: 'gap'; at: number; reason: string }
   /** The shop's screens gave way to the map, a battle or another room. */
   | { type: 'leave-shop'; at: number }
+  /** A ? room's result page: the option taken, read from the result text only it has. */
+  | { type: 'event-outcome'; eventId: number; option: number; at: number }
+  /** The ? room was left without its result page read. */
+  | { type: 'leave-event'; eventId: number; at: number }
 
 export interface PrescriptContext {
   floor: number
@@ -176,6 +183,12 @@ export function feasible(card: PrescriptCard, ctx: PrescriptContext, inShop: boo
   }
 }
 
+/** The ? room's mandatory prescript: one of the options anyone can take (no selection condition), picked by `random`. */
+export function eventPrescript(eventId: number, options: readonly number[], random: () => number): PrescriptCard | null {
+  if (options.length < 2) return null
+  return { scope: 'event', goal: { kind: 'event-choice', eventId, option: options[Math.floor(random() * options.length)] }, strength: 2 }
+}
+
 /** A refusal: the next offers start one strength higher (up to the strongest). */
 export function resist(run: PrescriptRun): PrescriptRun {
   return { ...run, resisted: Math.min(4, (run.resisted ?? 0) + 1) }
@@ -212,6 +225,11 @@ function judge(p: Prescript, event: PrescriptEvent, ctx: PrescriptContext): Outc
   switch (event.type) {
     case 'gap': return { status: 'void', reason: event.reason }
     case 'leave-shop': return p.scope === 'shop' ? { status: 'failed' } : null
+    case 'event-outcome':
+      return goal.kind === 'event-choice' && goal.eventId === event.eventId ? { status: event.option === goal.option ? 'done' : 'failed' } : null
+    case 'leave-event':
+      // the result page went by unread: whether the option was taken cannot be known
+      return goal.kind === 'event-choice' && goal.eventId === event.eventId ? { status: 'void', reason: 'event-unseen' } : null
     case 'sale':
       if (goal.kind === 'no-sale') return { status: 'failed' }
       if (goal.kind === 'sell-keyword' && gift?.keyword === goal.keyword) return { status: 'done' }

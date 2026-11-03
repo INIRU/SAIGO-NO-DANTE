@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { applyEvent, candidates, createPrescriptRun, endPrescriptRun, feasible, missOffer, offer, resist, PRESCRIPT_REROLLS, prescriptPoints, receive, reroll, wanted, type PrescriptContext, type PrescriptRun } from '../../../lib/fun/prescript'
+import { applyEvent, candidates, createPrescriptRun, endPrescriptRun, eventPrescript, feasible, missOffer, offer, resist, PRESCRIPT_REROLLS, prescriptPoints, receive, reroll, wanted, type PrescriptContext, type PrescriptRun } from '../../../lib/fun/prescript'
 
 const gifts: Record<number, { keyword: string | null; tier: number | null }> = {
   9001: { keyword: 'Combustion', tier: 1 }, 9002: { keyword: 'Combustion', tier: 2 }, 9003: { keyword: 'Bleeding', tier: 1 },
@@ -225,5 +225,21 @@ describe('the plan keywords', () => {
     expect(sell.strength).toBe(plain.strength + 1)
     const gather = candidates('standing', ctx).find(c => c.goal.kind === 'get-keyword' && c.goal.keyword === 'Bleeding' && c.goal.count === 3)!
     expect(gather.strength).toBe(2)
+  })
+})
+
+describe('the ? room prescript', () => {
+  it('names one of the options anyone may take, and needs a choice to make', () => {
+    expect(eventPrescript(900101, [0, 1, 2], () => 0.5)).toMatchObject({ scope: 'event', goal: { kind: 'event-choice', eventId: 900101, option: 1 } })
+    expect(eventPrescript(900101, [0], () => 0.5)).toBeNull()
+  })
+
+  it('the result page judges it; leaving without one read recalls it', () => {
+    const card = eventPrescript(900101, [0, 1], () => 0)!
+    const run = receive(createPrescriptRun(), card, 3, 0)
+    expect(applyEvent(run, { type: 'event-outcome', eventId: 900101, option: 0, at: 1 }, context()).prescripts[0].status).toBe('done')
+    expect(applyEvent(run, { type: 'event-outcome', eventId: 900101, option: 1, at: 1 }, context()).prescripts[0].status).toBe('failed')
+    expect(applyEvent(run, { type: 'event-outcome', eventId: 900102, option: 1, at: 1 }, context()).prescripts[0].status).toBe('active')
+    expect(applyEvent(run, { type: 'leave-event', eventId: 900101, at: 1 }, context()).prescripts[0]).toMatchObject({ status: 'void', reason: 'event-unseen' })
   })
 })

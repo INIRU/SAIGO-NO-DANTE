@@ -3025,6 +3025,11 @@
     "cardExpired": "期限切れ",
     "replyIn": "{seconds}秒以内に奉じなければ端末が決める",
     "goal_no_answer": "指令に応答しなかった",
-    "void_no_answer": "応答のないまま時が過ぎた"
+    "void_no_answer": "応答のないまま時が過ぎた",
+    "event": "この部屋の指令",
+    "deadline_event": "期限はこの部屋を出るまで",
+    "goal_event_choice": "選択肢{choice}。選べ",
+    "kind_event": "選択肢",
+    "void_event_unseen": "結果を見られず判定できなかった"
   }
 }

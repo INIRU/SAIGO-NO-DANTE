@@ -1,9 +1,10 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { applyEvent, createPrescriptRun, endPrescriptRun, feasible, missOffer, offer, PRESCRIPT_REPLY_MS, receive, resist, reroll as rerollRun, wanted, type PrescriptCard, type PrescriptContext,
+import { applyEvent, createPrescriptRun, endPrescriptRun, eventPrescript, feasible, missOffer, offer, PRESCRIPT_REPLY_MS, receive, resist, reroll as rerollRun, wanted, type PrescriptCard, type PrescriptContext,
   type PrescriptEvent, type PrescriptRun, type PrescriptScope } from '@/lib/fun/prescript'
 import { fusionResultFollows } from '@/lib/vision/fusion-evidence'
+import { EVENT_EXIT_SCENES } from '@/lib/vision/scene-state'
 import type { FloorThemeObservation, FusionEvidence, GiftSale, PopupAcquisition } from '@/lib/hooks/useAssistCapture'
 import type { OwnedGridRead } from '@/lib/vision/owned-grid'
 
@@ -31,7 +32,7 @@ export interface PrescriptOffer { scope: PrescriptScope; floor: number; cards: P
  * its token), a popup that follows a fusion dialog as that fusion's result, and the capture leaving `running` as a break.
  * Offers a card choice whenever a kind wants one; the player only chooses, never marks a prescript done.
  */
-export function usePrescript({ enabled, status, acquisitions, sales, fusions, floorObservation, ownedGrid, scene, inShop, context }: {
+export function usePrescript({ enabled, status, acquisitions, sales, fusions, floorObservation, ownedGrid, eventRoom, eventOutcome, scene, inShop, context }: {
   enabled: boolean
   status: string
   acquisitions: readonly PopupAcquisition[]
@@ -40,6 +41,10 @@ export function usePrescript({ enabled, status, acquisitions, sales, fusions, fl
   floorObservation: FloorThemeObservation | null
   /** The sell window's owned list as read: gifts held before the terminal was connected are learned from it. */
   ownedGrid?: OwnedGridRead | null
+  /** A ? room's choice screen on screen: the event and the options anyone may take (a mandatory prescript names one). */
+  eventRoom?: { eventId: number; options: number[] } | null
+  /** A ? room's result page: the option taken. */
+  eventOutcome?: { eventId: number; option: number; at: number } | null
   /** The capture's stable scene label: leaving the shop's screens for the map, a battle or a room settles shop prescripts. */
   scene: string | null
   /** The shop shelf is on screen and read (a shop prescript may be offered). */
@@ -59,7 +64,7 @@ export function usePrescript({ enabled, status, acquisitions, sales, fusions, fl
   const contextRef = useRef(context)
   contextRef.current = context
   const apply = useCallback((event: PrescriptEvent) => setRun(current => current.ended ? current : applyEvent(current, event, contextRef.current)), [])
-  const restart = useCallback(() => { setRun(createPrescriptRun()); setOffers([]); setOwned([]) }, [])
+  const restart = useCallback(() => { setRun(createPrescriptRun()); setOffers([]); setOwned([]); issuedEvents.current.clear(); activeEvent.current = null }, [])
 
   // a break in the capture before the dungeon ends: the run's score and record are gone, the next one starts from nothing
   const running = useRef(false)
@@ -111,6 +116,28 @@ export function usePrescript({ enabled, status, acquisitions, sales, fusions, fl
     if (enabled && floorObservation && once(`f:${floorObservation.token}`))
       apply({ type: 'floor', floor: floorObservation.floor, themeIds: floorObservation.themeIds, at: floorObservation.observedAt })
   }, [enabled, floorObservation, apply])
+
+  // A ? room: on its choice screen the terminal gives a mandatory prescript at once (no choice, no refusal), one a room;
+  // the result page judges it, leaving without one read recalls it
+  const issuedEvents = useRef(new Set<number>())
+  const activeEvent = useRef<number | null>(null)
+  const roomId = eventRoom?.eventId ?? null
+  useEffect(() => {
+    if (!enabled || status !== 'running' || run.ended || roomId === null || issuedEvents.current.has(roomId)) return
+    issuedEvents.current.add(roomId)
+    const card = eventPrescript(roomId, eventRoom?.options ?? [], Math.random)
+    if (!card) return
+    activeEvent.current = roomId
+    setRun(current => receive(current, card, contextRef.current.floor, Date.now()))
+  }, [enabled, status, run.ended, roomId, eventRoom?.options])
+  useEffect(() => {
+    if (enabled && eventOutcome) apply({ type: 'event-outcome', eventId: eventOutcome.eventId, option: eventOutcome.option, at: eventOutcome.at })
+  }, [enabled, eventOutcome, apply])
+  useEffect(() => {
+    if (!enabled || !scene || activeEvent.current === null || !EVENT_EXIT_SCENES.has(scene)) return
+    apply({ type: 'leave-event', eventId: activeEvent.current, at: Date.now() })
+    activeEvent.current = null
+  }, [enabled, scene, apply])
 
   // the shop's own screens (its windows, the sale and fusion panels, the acquired popup) are still the shop
   const wasInShop = useRef(false)
