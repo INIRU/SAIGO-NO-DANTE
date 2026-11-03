@@ -5,6 +5,7 @@ import { applyEvent, createPrescriptRun, endPrescriptRun, eventPrescript, feasib
   type PrescriptEvent, type PrescriptRun, type PrescriptScope } from '@/lib/fun/prescript'
 import { fusionResultFollows } from '@/lib/vision/fusion-evidence'
 import { EVENT_EXIT_SCENES } from '@/lib/vision/scene-state'
+import { HISTORY_KEY, readHistory, summarizeRun, withRun } from '@/lib/fun/prescript-history'
 import type { FloorThemeObservation, FusionEvidence, GiftSale, PopupAcquisition } from '@/lib/hooks/useAssistCapture'
 import type { OwnedGridRead } from '@/lib/vision/owned-grid'
 
@@ -78,6 +79,16 @@ export function usePrescript({ enabled, status, acquisitions, sales, fusions, fl
       setOwned([])
     }
   }, [enabled, status])
+
+  // a closed run goes into my records once (its end time is its key, so a reload does not add it again)
+  useEffect(() => {
+    if (!run.ended || !run.endedAt) return
+    try {
+      const history = readHistory(window.localStorage.getItem(HISTORY_KEY))
+      if (!history.some(row => row.endedAt === run.endedAt))
+        window.localStorage.setItem(HISTORY_KEY, JSON.stringify(withRun(history, summarizeRun(run, contextRef.current.floor, run.endedAt))))
+    } catch { /* kept on screen only */ }
+  }, [run])
 
   // the dungeon's end screen closes the record; the next run's first screens open a new one
   useEffect(() => {
