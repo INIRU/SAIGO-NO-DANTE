@@ -236,7 +236,8 @@ export function eventRoomOptions(event: { judgment?: unknown } | undefined, choi
   if (!event || event.judgment) return []
   const options = new Map<number, number[]>()
   for (const choice of choices) {
-    if (!Number.isInteger(choice.option_index) || choice.outcome || choice.selection_condition) continue
+    // the game's table writes no condition as 'None' (440 rows) or leaves it empty (325)
+    if (!Number.isInteger(choice.option_index) || choice.outcome || (choice.selection_condition && choice.selection_condition !== 'None')) continue
     const next = options.get(choice.option_index!) ?? []
     if (choice.next_event_id) next.push(choice.next_event_id)
     options.set(choice.option_index!, next)
