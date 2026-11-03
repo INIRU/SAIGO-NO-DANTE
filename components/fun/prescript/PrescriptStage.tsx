@@ -27,26 +27,41 @@ function playArrival(): () => void {
   return () => timers.forEach(window.clearTimeout)
 }
 
-/** The prescript text itself: every letter a rolling glyph for `roll` ms, then changing into the text letter by letter over `ms`; at once when motion is reduced. */
-function Settle({ text, ms, roll }: { text: string; ms: number; roll: number }) {
-  const [settled, setSettled] = useState(text.length)
+interface Part { text: string; em: boolean }
+/** A label's marked names and numbers (\u0001…\u0002) as parts to set apart. */
+const partsOf = (text: string): Part[] => text.split(/(\u0001[^\u0002]*\u0002)/).filter(Boolean)
+  .map(piece => piece.startsWith('\u0001') ? { text: piece.slice(1, -1), em: true } : { text: piece, em: false })
+const plain = (text: string) => text.replace(/[\u0001\u0002]/g, '')
+
+/** The prescript text itself: every letter a rolling glyph for `roll` ms, then changing into the text letter by letter over
+ * `ms`; still without them, and at once when motion is reduced. */
+function Settle({ parts, roll, ms }: { parts: Part[]; roll?: number; ms?: number }) {
+  const length = parts.reduce((sum, part) => sum + part.text.length, 0)
+  const key = parts.map(part => part.text).join('\u0003')
+  const [settled, setSettled] = useState(length)
   const [, setTick] = useState(0)
   useEffect(() => {
-    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) { setSettled(text.length); return }
+    if (roll === undefined || ms === undefined || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) { setSettled(length); return }
     const start = performance.now()
     let frame = 0
     const step = (now: number) => {
-      const k = now - start < roll ? 0 : Math.floor(Math.min(1, (now - start - roll) / ms) * text.length)
+      const k = now - start < roll ? 0 : Math.floor(Math.min(1, (now - start - roll) / ms) * length)
       setSettled(k)
       setTick(Math.floor((now - start) / 60)) // new glyphs every 60 ms
-      if (k < text.length) frame = requestAnimationFrame(step)
+      if (k < length) frame = requestAnimationFrame(step)
     }
     setSettled(0)
     frame = requestAnimationFrame(step)
     return () => cancelAnimationFrame(frame)
-  }, [text, ms, roll])
-  return <span aria-hidden="true">{[...text].map((c, i) => i < settled || c === ' ' ? c
-    : <span key={i} className={styles.gli} style={{ backgroundPosition: cell() }} />)}</span>
+  }, [key, length, roll, ms])
+  let at = 0
+  return <span aria-hidden="true">{parts.map((part, i) => {
+    const shown = Math.max(0, Math.min(part.text.length, settled - at))
+    at += part.text.length
+    const body = <>{part.text.slice(0, shown)}{[...part.text.slice(shown)].map((c, j) => c === ' ' ? c
+      : <span key={j} className={styles.gli} style={{ backgroundPosition: cell() }} />)}</>
+    return part.em ? <b key={i} className={styles.em}>{body}</b> : <span key={i}>{body}</span>
+  })}</span>
 }
 
 const Flower = () => <svg viewBox="-12 -12 24 24" aria-hidden="true"><g fill="#3d7fe0">{[0, 72, 144, 216, 288].map(r =>
@@ -80,14 +95,18 @@ export default function PrescriptStage({ run, offers, label, onChoose, onReroll,
   }, [offerKey, pip])
   const held = run.prescripts.filter(p => p.status === 'active')
   const settled = run.prescripts.filter(p => p.status !== 'active').slice().reverse()
-  // the game's form: the order, then its deadline (Faust: "기한은 여섯 달 이내"), inside 【】
-  const quote = (goal: PrescriptGoal, scope: PrescriptScope) => `【${label(goal)}. ${t(`deadline_${scope}`)}】`
+  // the game's form: the order in 【】, then its deadline (Faust: "기한은 여섯 달 이내")
+  const quote = (goal: PrescriptGoal, scope: PrescriptScope) => `【${plain(label(goal))}】 ${t(`deadline_${scope}`)}`
+  const Text = ({ goal, scope, roll, ms }: { goal: PrescriptGoal; scope: PrescriptScope; roll?: number; ms?: number }) =>
+    <span className={styles.pt}>
+      <span className={styles.order}>【<Settle parts={partsOf(label(goal))} roll={roll} ms={ms} />】</span>
+      <span className={styles.due}><Settle parts={[{ text: t(`deadline_${scope}`), em: false }]} roll={roll} ms={ms} /></span>
+    </span>
   const progress = (p: Prescript) => p.goal.kind === 'get-keyword' ? `${p.progress}/${p.goal.count}` : ''
 
   return <div className={pip ? styles.pip : undefined}>
     <section className={`${styles.stage} ${offer ? styles.on : ''}`} aria-live="polite" data-prescript-stage>
-      {/* eslint-disable-next-line @next/next/no-img-element -- a small game emblem from public/ */}
-      <img className={styles.mark} src={`${ASSET}/index_emblem_color_256.png`} alt="" width={92} height={92} />
+      {pip && <div className={styles.pipStats}><span><b>{run.score}</b>{t('scoreUnit')}</span><span><b>{run.streak}</b>{t('streakUnit')}</span></div>}
       {/* the terminal is always there, lit when a prescript comes in, so nothing below moves */}
       <p className={styles.call}>
         {/* eslint-disable-next-line @next/next/no-img-element -- the game's prescript (terminal) keyword icon from public/ */}
@@ -103,7 +122,7 @@ export default function PrescriptStage({ run, offers, label, onChoose, onReroll,
               aria-label={t('cardLabel', { strength: card.strength, kind: t(KIND[card.goal.kind]), points, text })}>
               <div className={styles.ban}>{t(offer.scope)}</div>
               <div className={styles.lv}><b>{card.strength}</b>{Array.from({ length: card.strength }, (_, i) => <Flower key={i} />)}</div>
-              <div className={styles.d}><Settle text={text} roll={1400} ms={800} /></div>
+              <div className={styles.d}><Text goal={card.goal} scope={card.scope} roll={1400} ms={800} /></div>
               <div className={styles.f}><span>{t(KIND[card.goal.kind])}</span><b>{points}</b></div>
             </button>
           })}
@@ -119,7 +138,7 @@ export default function PrescriptStage({ run, offers, label, onChoose, onReroll,
     {held.length ? <ul className={styles.held} data-prescript-held>
       {held.map(p => <li key={p.id} className={styles.h}>
         <span className={styles.k}>{t(p.scope)}</span>
-        <span className={styles.tx}><span className="sr-only">{quote(p.goal, p.scope)}</span><Settle text={quote(p.goal, p.scope)} roll={500} ms={700} /></span>
+        <span className={styles.tx}><span className="sr-only">{quote(p.goal, p.scope)}</span><Text goal={p.goal} scope={p.scope} roll={500} ms={700} /></span>
         <span className={styles.p}>{progress(p) || POINTS[p.strength]}</span>
       </li>)}
     </ul> : <p className={styles.empty}>{t('noneHeld')}</p>}
@@ -129,7 +148,7 @@ export default function PrescriptStage({ run, offers, label, onChoose, onReroll,
       <div className={styles.log} data-prescript-log>
         {settled.length ? settled.map(p => <div key={p.id} className={styles.row}>
           <span className={styles.fl}>{p.floor}F</span>
-          <span className={styles.tx}>{quote(p.goal, p.scope)}{p.status === 'void' && p.reason && <span className={styles.why}>{t(`void_${p.reason.replace(/-/g, '_')}`)}</span>}</span>
+          <span className={styles.tx}><span className="sr-only">{quote(p.goal, p.scope)}</span><Text goal={p.goal} scope={p.scope} />{p.status === 'void' && p.reason && <span className={styles.why}>{t(`void_${p.reason.replace(/-/g, '_')}`)}</span>}</span>
           <span className={`${styles.rs} ${p.status === 'done' ? styles.ok : p.status === 'failed' ? styles.no : styles.re}`}>{t(`status_${p.status}`)}</span>
           <span className={styles.sc}>{p.status === 'done' ? `+${p.points}` : ''}</span>
         </div>) : <p className={styles.empty}>{t('noRecord')}</p>}

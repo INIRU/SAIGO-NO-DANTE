@@ -38,12 +38,10 @@ export function usePrescript({ enabled, status, acquisitions, sales, fusions, fl
   inShop: boolean
   context: PrescriptContext
 }) {
-  const [run, setRun] = useState<PrescriptRun>(createPrescriptRun)
+  // read once when first drawn (the page renders in the browser only): a load in an effect lost the run to the first save
+  const [run, setRun] = useState<PrescriptRun>(() => load() ?? createPrescriptRun())
   const [offers, setOffers] = useState<PrescriptOffer[]>([])
-  const loaded = useRef(false)
-  useEffect(() => { const saved = load(); if (saved) setRun(saved); loaded.current = true }, [])
   useEffect(() => {
-    if (!loaded.current) return
     try { window.localStorage.setItem(PRESCRIPT_STORAGE_KEY, JSON.stringify(run)) } catch { /* kept for this page only */ }
   }, [run])
 
