@@ -6,15 +6,18 @@ import { acceptedIcon, heldSlotRead, iconTemplate, mergeRankedGroups, plateShape
 import { fusionSlotRegions, fusionSlotRegionsFromAnchors, fusionWheelRegions, vestigeGroup, type FusionAnchors, type FusionSlotRead, type WheelAnchors } from './fusion-evidence'
 import { assistModelRoot, ortWasmPaths } from './model-assets'
 import { classifierKnowsHeld, classifierSlotRead, heldLabels, iconTensor, ICON_CROP, ICON_INPUT } from './icon-classifier'
+import { shopShelfRegions, shopSoldBand, soldMark, SHOP_SOLD_MIN, titleBarRows, type ShopSlotRead } from './shop-shelf'
 
 type Request = { type: 'init'; giftReferences?: VisualReference[]; eventReferences?: VisualReference[] } |
   { type: 'infer'; frame: ImageBitmap } | { type: 'popup-icon'; requestId: number; frame: ImageBitmap; box: PopupLabelBox } |
   { type: 'fusion-slots'; requestId: number; frame: ImageBitmap; count: number; capacity: number; anchors?: FusionAnchors; candidates?: string[] } |
   { type: 'fusion-wheel'; requestId: number; frame: ImageBitmap; capacity: number; origin: { x: number; y: number }; scale?: number;
-    frameSize: { width: number; height: number }; anchors?: WheelAnchors; candidates?: string[] }
+    frameSize: { width: number; height: number }; anchors?: WheelAnchors; candidates?: string[] } |
+  { type: 'shop-shelf'; requestId: number; frame: ImageBitmap }
 type Response = { type: 'ready'; provider: 'webgpu' | 'wasm'; adapter: string } | { type: 'prediction'; label: string; confidence: number; gifts: VisualMatch[]; events: VisualMatch[] } |
   { type: 'popup-icon'; requestId: number; gifts: VisualMatch[] } |
   { type: 'fusion-slots'; requestId: number; slots: FusionSlotRead[] } | { type: 'icons'; count: number; ms: number } |
+  { type: 'shop-shelf'; requestId: number; slots: ShopSlotRead[]; titleBar: number } |
   { type: 'error'; message: string }
 
 const ASSET_ROOT = `${assistModelRoot(self.location.hostname)}/assist-scene/`
@@ -224,6 +227,25 @@ function heldTemplates(candidates: string[] | undefined) {
   return heldPool
 }
 
+/** Pixels of a frame rectangle at its own size (at most 160 px wide), RGBA. */
+function sampleRect(frame: ImageBitmap, rect: { x: number; y: number; width: number; height: number }) {
+  const width = Math.max(1, Math.min(160, Math.round(rect.width))), height = Math.max(1, Math.round(rect.height * width / Math.max(1, rect.width)))
+  const target = new OffscreenCanvas(width, height).getContext('2d', { willReadFrequently: true })!
+  target.drawImage(frame, rect.x, rect.y, rect.width, rect.height, 0, 0, width, height)
+  return target.getImageData(0, 0, width, height).data
+}
+/** Mean luminance of the frame's top `rows` rows (one value a row), for a window share's title bar. */
+function rowMeans(frame: ImageBitmap, rows: number): number[] {
+  const height = Math.min(rows, frame.height), width = 64
+  const target = new OffscreenCanvas(width, height).getContext('2d', { willReadFrequently: true })!
+  target.drawImage(frame, 0, 0, frame.width, height, 0, 0, width, height)
+  const data = target.getImageData(0, 0, width, height).data
+  return Array.from({ length: height }, (_, row) => {
+    let total = 0
+    for (let column = 0; column < width; column++) { const at = (row * width + column) * 4; total += 0.299 * data[at] + 0.587 * data[at + 1] + 0.114 * data[at + 2] }
+    return total / width
+  })
+}
 /**
  * An empty slot: the inner part is black (95th-percentile luminance under 12; empty wheel positions and dialog slots
  * measure 0–1, icons that are only starting to fade in 4–6, shown icons 39 and more).
@@ -335,6 +357,22 @@ self.onmessage = async (event: MessageEvent<Request>) => {
       respond({ type: 'fusion-slots', requestId: request.requestId, slots })
       return
     }
+    if (event.data.type === 'shop-shelf') {
+      // The shelf's eight slots, by the game's 1920×1080 layout scaled to the width (a window's title bar left out above)
+      const { requestId } = event.data
+      if (!Number.isSafeInteger(requestId)) throw new Error('Invalid shop request')
+      const titleBar = titleBarRows(rowMeans(frame, 64), frame.height)
+      const regions = shopShelfRegions(frame.width, frame.height, titleBar)
+      const sample = sampler(frame)
+      const blanks = regions.map(region => blankSlot(sample, region))
+      const filled = regions.filter((_, index) => !blanks[index])
+      const classified = await classifySlots(sample, filled, new Set())
+      const slots = regions.map((region, index): ShopSlotRead => ({ index, blank: blanks[index],
+        sold: !blanks[index] && soldMark(sampleRect(frame, shopSoldBand(region))) >= SHOP_SOLD_MIN,
+        read: blanks[index] ? { blank: true } : classified ? classified[filled.indexOf(region)] : null }))
+      respond({ type: 'shop-shelf', requestId, slots, titleBar })
+      return
+    }
     if (event.data.type === 'popup-icon') {
       const { box, requestId } = event.data
       if (!embeddingIndex || !visualSession || !Number.isSafeInteger(requestId) ||
@@ -389,6 +427,7 @@ self.onmessage = async (event: MessageEvent<Request>) => {
   } catch (error) {
     if (event.data.type === 'popup-icon') respond({ type: 'popup-icon', requestId: event.data.requestId, gifts: [] })
     else if (event.data.type === 'fusion-slots' || event.data.type === 'fusion-wheel') respond({ type: 'fusion-slots', requestId: event.data.requestId, slots: [] })
+    else if (event.data.type === 'shop-shelf') respond({ type: 'shop-shelf', requestId: event.data.requestId, slots: [], titleBar: 0 })
     else respond({ type: 'error', message: error instanceof Error ? error.message : 'Inference failed' })
   } finally {
     frame.close()
