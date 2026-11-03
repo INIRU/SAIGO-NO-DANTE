@@ -124,5 +124,7 @@ export function usePrescript({ enabled, status, acquisitions, sales, fusions, fl
     setOffers(current => current.map(o => o.scope === scope ? { ...o, cards: [] } : o)), [])
   const reset = useCallback(() => { setRun(createPrescriptRun()); setOffers([]); setOwned([]); seen.current.clear() }, [])
 
-  return { run, owned, offers: offers.filter(o => o.cards.length), choose, reroll, refuse, reset }
+  // a pack card for a floor already picked is no choice any more
+  const open = offers.map(o => ({ ...o, cards: o.cards.filter(c => c.goal.kind !== 'pick-theme' || c.goal.floor > floor) }))
+  return { run, owned, offers: open.filter(o => o.cards.length), choose, reroll, refuse, reset }
 }

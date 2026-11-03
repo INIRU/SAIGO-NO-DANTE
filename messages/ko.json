@@ -2985,7 +2985,7 @@
     "noRecord": "아직 기록된 이행이 없다.",
     "status_done": "이행",
     "status_failed": "위반",
-    "status_void": "폐지",
+    "status_void": "회수",
     "void_capture_stopped": "화면이 끊겨 판정하지 못했다",
     "void_floor_unseen": "그 층을 보지 못해 판정하지 못했다",
     "floorUnit": "층",
