@@ -8,6 +8,7 @@ import { acquiredGiftFromPopup, acquisitionFloor, AUTO_ACQUIRE_EXCLUDED_GIFT_IDS
 import type { RecipePopupEvidence } from '@/lib/planner/fusion'
 import type { ShopShelf, ShopSlotRead } from '@/lib/vision/shop-shelf'
 import type { OwnedGridRead } from '@/lib/vision/owned-grid'
+import type { FormationRead } from '@/lib/vision/formation-bar'
 import type { StableScene } from '@/lib/vision/scene-state'
 import { cpuFallback, isMobileDevice, webgpuBlock, type GpuBlock } from '@/lib/vision/device'
 import { RECOGNITION_PROFILES, type RecognitionMode } from '@/lib/vision/recognition-profile'
@@ -275,6 +276,9 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
   // The sell window's owned list, read like the shelf: the gifts it names for certain, for whoever counts what is held
   const [ownedGrid, setOwnedGrid] = useState<OwnedGridRead | null>(null)
   const gridRequest = useRef<{ requestId: number; at: number } | null>(null)
+  // The bottom bar's Identities (the formation), read on the shop's screen every 2 s
+  const [formation, setFormation] = useState<FormationRead | null>(null)
+  const formationRequest = useRef<{ requestId: number; at: number } | null>(null)
   const [skillExchange, setSkillExchange] = useState<SkillExchangeView | null>(null)
   const saleState = useRef(EMPTY_SALE_STATE)
   const sellWindowAt = useRef(0)
@@ -559,7 +563,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
     setOcrEngine(null)
     setOcrWorkers(0)
     setFusionEvidence([])
-    setShopShelf(null); setOwnedGrid(null)
+    setShopShelf(null); setOwnedGrid(null); setFormation(null)
     setGiftSales([]); setSkillExchange(null)
     saleState.current = EMPTY_SALE_STATE
     setObservedFloor(null)
@@ -623,7 +627,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
     setOcrEngine(null)
     setOcrWorkers(0)
     setFusionEvidence([])
-    setShopShelf(null); setOwnedGrid(null)
+    setShopShelf(null); setOwnedGrid(null); setFormation(null)
     setGiftSales([]); setSkillExchange(null)
     saleState.current = EMPTY_SALE_STATE
     setObservedFloor(null)
@@ -690,7 +694,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
         setOcrEngine(null)
         setOcrWorkers(0)
         setFusionEvidence([])
-        setShopShelf(null); setOwnedGrid(null)
+        setShopShelf(null); setOwnedGrid(null); setFormation(null)
         setGiftSales([]); setSkillExchange(null)
         saleState.current = EMPTY_SALE_STATE
         setObservedFloor(null)
@@ -1162,7 +1166,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
           setOcrEngine(null)
           setOcrWorkers(0)
           setFusionEvidence([])
-          setShopShelf(null); setOwnedGrid(null)
+          setShopShelf(null); setOwnedGrid(null); setFormation(null)
           setGiftSales([]); setSkillExchange(null)
           saleState.current = EMPTY_SALE_STATE
           // Start over with new workers after a wait (the screen share and scene worker keep running meanwhile).
@@ -1656,6 +1660,19 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
           } catch { inFlight.current = false }
           return
         }
+        // The formation from the bottom bar while the shop is on screen
+        if (gifts && !inFlight.current && latestLabel.current === 'shop' && hasFrame() && !popupVisionQueue.current.length &&
+          Date.now() - (formationRequest.current?.at ?? 0) >= 2000 && Date.now() - inferredAt < profileRef.current.sceneIntervalMs - 20) {
+          inFlight.current = true
+          try {
+            const frame = await grabBitmap()
+            if (run !== generation.current || !worker.current) { frame.close(); inFlight.current = false; return }
+            const requestId = ++ocrRequestId.current
+            formationRequest.current = { requestId, at: Date.now() }
+            worker.current.postMessage({ type: 'formation', requestId, frame }, [frame])
+          } catch { inFlight.current = false }
+          return
+        }
         // Popup icons go first, but scene inference still runs at least every 3s.
         if (inFlight.current || Date.now() - inferredAt < profileRef.current.sceneIntervalMs - 20 ||
           (popupVisionQueue.current.length && Date.now() - inferredAt < 3000) || !hasFrame()) return
@@ -1785,6 +1802,13 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
           const at = shelfRequest.current?.at ?? Date.now()
           if (slots && latestLabel.current === 'shop') setShopShelf({ slots, observedAt: at })
           flushVisionPopup()
+        } else if (result.type === 'formation' && formationRequest.current?.requestId === result.requestId) {
+          inFlight.current = false
+          const ids = (result as { ids?: unknown }).ids
+          const at = formationRequest.current?.at ?? Date.now()
+          if (Array.isArray(ids) && ids.length === 12 && ids.every(id => id === null || typeof id === 'string') && latestLabel.current === 'shop')
+            setFormation({ ids: ids as (string | null)[], observedAt: at })
+          flushVisionPopup()
         } else if (result.type === 'owned-grid' && gridRequest.current?.requestId === result.requestId) {
           inFlight.current = false
           const gifts = (result as { gifts?: unknown }).gifts
@@ -1840,7 +1864,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
       setOcrEngine(null)
       setOcrWorkers(0)
       setFusionEvidence([])
-      setShopShelf(null); setOwnedGrid(null)
+      setShopShelf(null); setOwnedGrid(null); setFormation(null)
       setGiftSales([]); setSkillExchange(null)
       saleState.current = EMPTY_SALE_STATE
       setObservedFloor(null)
@@ -1898,7 +1922,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
 
   return { supported, status, error, prediction, visualCandidates, ocrCandidates, ocrStatus,
     popupAcquisitions, floorThemeObservation, observedFloor, scene, themeSelectionFloor, queueStatus, mobile, gpu, inference, ocrEngine,
-    ocrWorkers, fusionEvidence, giftSales, skillExchange, shopShelf, ownedGrid, start, stop, reportInventoryChange }
+    ocrWorkers, fusionEvidence, giftSales, skillExchange, shopShelf, ownedGrid, formation, start, stop, reportInventoryChange }
 }
 
 /**
