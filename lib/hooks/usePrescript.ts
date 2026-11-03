@@ -137,12 +137,14 @@ export function usePrescript({ enabled, grade = 'proselyte', status, acquisition
 
   // A ? room: on its choice screen the terminal gives a mandatory prescript at once (no choice, no refusal), one a room;
   // the result page judges it, leaving without one read recalls it
-  const issuedEvents = useRef(new Set<number>())
+  // one a room visit: the same event on a later floor is another room (keyed by floor and event)
+  const issuedEvents = useRef(new Set<string>())
   const activeEvent = useRef<number | null>(null)
   const roomId = eventRoom?.eventId ?? null
   useEffect(() => {
-    if (!enabled || status !== 'running' || run.ended || roomId === null || issuedEvents.current.has(roomId)) return
-    issuedEvents.current.add(roomId)
+    const visit = `${contextRef.current.floor}:${roomId}`
+    if (!enabled || status !== 'running' || run.ended || roomId === null || issuedEvents.current.has(visit)) return
+    issuedEvents.current.add(visit)
     const card = eventPrescript(roomId, eventRoom?.options ?? [], Math.random)
     if (!card) return
     activeEvent.current = roomId
