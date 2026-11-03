@@ -6,6 +6,7 @@ import { corroboratedChoiceEvent, effectGiftIds, eventScreenEvidence, matchOcrCa
   type OcrWord } from '@/lib/vision/ocr-match'
 import { acquiredGiftFromPopup, acquisitionFloor, AUTO_ACQUIRE_EXCLUDED_GIFT_IDS, popupCandidateIds, popupHeaderEvidence, showsAcquiredHeader, type PopupLabelRead } from '@/lib/vision/popup-evidence'
 import type { RecipePopupEvidence } from '@/lib/planner/fusion'
+import type { ShopShelf, ShopSlotRead } from '@/lib/vision/shop-shelf'
 import type { StableScene } from '@/lib/vision/scene-state'
 import { cpuFallback, isMobileDevice, webgpuBlock, type GpuBlock } from '@/lib/vision/device'
 import { RECOGNITION_PROFILES, type RecognitionMode } from '@/lib/vision/recognition-profile'
@@ -151,6 +152,13 @@ export function ocrErrorAction(failuresBefore: number): 'skip' | 'retire' {
  * A confirmed acquisition; floor is null when the floor it was gained on is uncertain (inventory only). `capturedAt` is when
  * its frame was captured, `episode` the popup's number in order of appearance on screen.
  */
+/** A worker's shelf answer: eight slot reads, each blank, sold and its classifier read (or null when unread). */
+function parseShopShelf(value: unknown): ShopSlotRead[] | null {
+  if (!Array.isArray(value) || value.length !== 8) return null
+  return value.every(slot => slot && typeof slot === 'object' && typeof slot.blank === 'boolean' && typeof slot.sold === 'boolean' &&
+    Number.isInteger(slot.index)) ? value as ShopSlotRead[] : null
+}
+
 export interface PopupAcquisition { giftId: string; token: string; floor: number | null; observedAt: number; capturedAt?: number; episode?: number }
 /** A shop sale confirmed by the cost afterwards; capturedAt is when its confirmation dialog was on screen. */
 export interface GiftSale { giftId: string; token: string; capturedAt: number }
@@ -260,6 +268,9 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
   const [fusionEvidence, setFusionEvidence] = useState<FusionEvidence[]>([])
   // Confirmed shop sales (capture time of the dialog), latest last.
   const [giftSales, setGiftSales] = useState<GiftSale[]>([])
+  // The shop shelf as last read (eight slots by the game's layout), while the shop is on screen.
+  const [shopShelf, setShopShelf] = useState<ShopShelf | null>(null)
+  const shelfRequest = useRef<{ requestId: number; at: number } | null>(null)
   const [skillExchange, setSkillExchange] = useState<SkillExchangeView | null>(null)
   const saleState = useRef(EMPTY_SALE_STATE)
   const sellWindowAt = useRef(0)
@@ -544,6 +555,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
     setOcrEngine(null)
     setOcrWorkers(0)
     setFusionEvidence([])
+    setShopShelf(null)
     setGiftSales([]); setSkillExchange(null)
     saleState.current = EMPTY_SALE_STATE
     setObservedFloor(null)
@@ -607,6 +619,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
     setOcrEngine(null)
     setOcrWorkers(0)
     setFusionEvidence([])
+    setShopShelf(null)
     setGiftSales([]); setSkillExchange(null)
     saleState.current = EMPTY_SALE_STATE
     setObservedFloor(null)
@@ -673,6 +686,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
         setOcrEngine(null)
         setOcrWorkers(0)
         setFusionEvidence([])
+        setShopShelf(null)
         setGiftSales([]); setSkillExchange(null)
         saleState.current = EMPTY_SALE_STATE
         setObservedFloor(null)
@@ -1144,6 +1158,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
           setOcrEngine(null)
           setOcrWorkers(0)
           setFusionEvidence([])
+          setShopShelf(null)
           setGiftSales([]); setSkillExchange(null)
           saleState.current = EMPTY_SALE_STATE
           // Start over with new workers after a wait (the screen share and scene worker keep running meanwhile).
@@ -1611,6 +1626,19 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
         const gifts = detectionRef.current.gifts
         if (gifts && fusionWanted.current && await readFusionSlots()) return
         if (gifts && Date.now() - inferredAt < profileRef.current.sceneIntervalMs - 20 && await preReadWheel()) return
+        // The shop shelf while the shop is on screen, between scene reads (every 0.7 s; one request at a time)
+        if (gifts && !inFlight.current && latestLabel.current === 'shop' && hasFrame() && !popupVisionQueue.current.length &&
+          Date.now() - (shelfRequest.current?.at ?? 0) >= 700 && Date.now() - inferredAt < profileRef.current.sceneIntervalMs - 20) {
+          inFlight.current = true
+          try {
+            const frame = await grabBitmap()
+            if (run !== generation.current || !worker.current) { frame.close(); inFlight.current = false; return }
+            const requestId = ++ocrRequestId.current
+            shelfRequest.current = { requestId, at: Date.now() }
+            worker.current.postMessage({ type: 'shop-shelf', requestId, frame }, [frame])
+          } catch { inFlight.current = false }
+          return
+        }
         // Popup icons go first, but scene inference still runs at least every 3s.
         if (inFlight.current || Date.now() - inferredAt < profileRef.current.sceneIntervalMs - 20 ||
           (popupVisionQueue.current.length && Date.now() - inferredAt < 3000) || !hasFrame()) return
@@ -1734,6 +1762,12 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
             }
           }
           flushVisionPopup()
+        } else if (result.type === 'shop-shelf' && shelfRequest.current?.requestId === result.requestId) {
+          inFlight.current = false
+          const slots = parseShopShelf((result as { slots?: unknown }).slots)
+          const at = shelfRequest.current?.at ?? Date.now()
+          if (slots && latestLabel.current === 'shop') setShopShelf({ slots, observedAt: at })
+          flushVisionPopup()
         } else if (result.type === 'fusion-slots' && wheelRequest.current?.requestId === result.requestId) {
           inFlight.current = false
           const { state, capacity } = wheelRequest.current!
@@ -1782,6 +1816,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
       setOcrEngine(null)
       setOcrWorkers(0)
       setFusionEvidence([])
+      setShopShelf(null)
       setGiftSales([]); setSkillExchange(null)
       saleState.current = EMPTY_SALE_STATE
       setObservedFloor(null)
@@ -1839,7 +1874,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
 
   return { supported, status, error, prediction, visualCandidates, ocrCandidates, ocrStatus,
     popupAcquisitions, floorThemeObservation, observedFloor, scene, themeSelectionFloor, queueStatus, mobile, gpu, inference, ocrEngine,
-    ocrWorkers, fusionEvidence, giftSales, skillExchange, start, stop, reportInventoryChange }
+    ocrWorkers, fusionEvidence, giftSales, skillExchange, shopShelf, start, stop, reportInventoryChange }
 }
 
 /**
