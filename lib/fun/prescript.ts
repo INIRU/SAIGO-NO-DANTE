@@ -47,7 +47,7 @@ export interface Prescript extends PrescriptCard {
  * `resisted`: refusals not yet made up for. Each raises the weakest strength the terminal offers by one ("저항은 권하지
  * 않습니다… 절제 범위가 커진 지령이 새로 도착"); each prescript carried out takes one away.
  */
-export interface PrescriptRun { prescripts: Prescript[]; score: number; streak: number; rerollsLeft: number; nextId: number; ended?: boolean; resisted?: number }
+export interface PrescriptRun { prescripts: Prescript[]; score: number; streak: number; rerollsLeft: number; nextId: number; ended?: boolean; endedAt?: number; resisted?: number }
 
 export type PrescriptEvent =
   | { type: 'acquire'; giftId: number; at: number }
@@ -93,7 +93,7 @@ export function createPrescriptRun(): PrescriptRun {
 
 /** The dungeon is over: the record closes, and what is still in progress is recalled (not done, not a violation). */
 export function endPrescriptRun(run: PrescriptRun, at: number): PrescriptRun {
-  return { ...run, ended: true, prescripts: run.prescripts.map(p => p.status === 'active' ? { ...p, status: 'void' as const, reason: 'run-ended', settledAt: at } : p) }
+  return { ...run, ended: true, endedAt: at, prescripts: run.prescripts.map(p => p.status === 'active' ? { ...p, status: 'void' as const, reason: 'run-ended', settledAt: at } : p) }
 }
 
 /** Strength points, x1.5 for a special or shop prescript (they can fail), x1.1 / 1.2 / 1.5 from the 3rd / 5th / 10th in a row. */

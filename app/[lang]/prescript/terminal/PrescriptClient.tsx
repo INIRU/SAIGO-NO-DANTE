@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom'
 import { ArrowLeft } from 'lucide-react'
 import BackLink from '@/components/navigation/BackLink'
 import { useLocale, useTranslations } from 'next-intl'
-import IndexIntro from '@/components/fun/prescript/IndexIntro'
+import PrescriptRules from '@/components/fun/prescript/PrescriptRules'
 import PrescriptStage from '@/components/fun/prescript/PrescriptStage'
 import styles from '@/components/fun/prescript/prescript.module.css'
 import { giftKeywordLabel } from '@/components/gifts/GiftCatalog'
@@ -134,13 +134,13 @@ export default function PrescriptClient({ themes, gifts, recipes, events, eventC
     onReroll={prescript.reroll} onRefuse={prescript.refuse} pip={pip} />
 
   return <div className={styles.root} data-prescript-page>
-    <IndexIntro siteName="SAIGO NO DANTE" title={t('title')} english="The Index" />
+    <PrescriptRules />
     <div className={styles.wrap}>
       <header className={styles.head}>
-        <BackLink href="/" aria-label={t('leave')} title={t('leave')} className={styles.back}><ArrowLeft size={18} aria-hidden="true" /></BackLink>
+        <BackLink href="/prescript" parent aria-label={t('toHub')} title={t('toHub')} className={styles.back}><ArrowLeft size={18} aria-hidden="true" /></BackLink>
         {/* eslint-disable-next-line @next/next/no-img-element -- a small game emblem from public/ */}
         <img src="/assets/fun/prescript/index_emblem_color_256.png" alt="" width={36} height={36} />
-        <h1>{t('title')}</h1>
+        <h1>{t('terminalTitle')}</h1>
         <div className={styles.stats}>
           <span><b>{floor || '-'}</b>{t('floorUnit')}</span>
           <span><b>{prescript.run.score}</b>{t('scoreUnit')}</span>

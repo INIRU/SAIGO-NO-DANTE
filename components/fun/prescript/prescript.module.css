@@ -120,6 +120,54 @@
 .pip .h .k { grid-column: 1 / -1; }
 .pip .empty { font-size: 0.8125rem; padding: 0.375rem 0; }
 
+/* hub: the entrance. The emblem and one line, the terminal to switch on, the last run, then the ways on */
+.hub { display: grid; gap: 1.75rem; max-width: 40rem; }
+.hub > .back { justify-self: start; }
+.hero { display: grid; justify-items: center; text-align: center; gap: 0.75rem; padding: 1rem 0 0.5rem; }
+.hero img { width: 7rem; height: 7rem; filter: drop-shadow(0 0 1rem rgba(80, 172, 255, 0.35)); }
+.hero h1 { margin: 0; font-family: var(--h); font-size: clamp(1.75rem, 6vw, 2.5rem); }
+.hero p { margin: 0; color: var(--mute); }
+.start { display: inline-flex; align-items: center; justify-content: center; min-height: 3rem; padding: 0 2rem; margin-top: 0.5rem; text-decoration: none; font-size: 1rem; }
+.start:focus-visible { outline: 2px solid var(--blue-lt); outline-offset: 3px; }
+.last { border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 1rem 0; display: grid; gap: 0.5rem; }
+.last h2 { margin: 0; display: flex; justify-content: space-between; font-family: var(--h); font-size: 0.875rem; color: var(--mute); }
+.last time { font-family: var(--t); font-weight: 400; }
+.grace { margin: 0; color: var(--mute); }
+.grace b { font-family: var(--n); font-weight: 400; font-size: 3rem; line-height: 1; color: var(--white); margin-right: 0.375rem; }
+.last dl, .totals { margin: 0; display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.5rem; }
+.last dl div, .totals div { display: grid; gap: 0.125rem; }
+.last dt, .totals dt { font-size: 0.75rem; color: var(--mute); }
+.last dd, .totals dd { margin: 0; font-family: var(--n); font-size: 1.5rem; line-height: 1; }
+.menu { display: grid; border-top: 1px solid var(--line); }
+.menu a, .menu button { display: grid; grid-template-columns: 8rem 1fr; gap: 1rem; align-items: baseline; padding: 1rem 0.25rem; border: 0; border-bottom: 1px solid var(--line);
+  background: none; color: var(--white); font: inherit; text-align: left; text-decoration: none; cursor: pointer; }
+.menu a:hover b, .menu button:hover b { color: var(--blue-lt); }
+.menu a:focus-visible, .menu button:focus-visible { outline: 2px solid var(--blue-lt); outline-offset: -2px; }
+.menu b { font-family: var(--h); font-size: 1.05rem; }
+.menu span { color: var(--mute); font-size: 0.875rem; }
+
+/* my records */
+.totals { padding: 0.5rem 0 1rem; border-bottom: 1px solid var(--line); }
+.totals dd { font-size: 2rem; }
+.runs { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
+.runs li { display: grid; grid-template-columns: 6.5rem 3rem 1fr auto; gap: 0.75rem; align-items: baseline; padding: 0.625rem 0.125rem; border-bottom: 1px solid #141c29; }
+.runs time { color: var(--mute); font-size: 0.8125rem; }
+.runs .fl { font-family: var(--n); font-size: 1.1rem; color: var(--mute); }
+.runs .counts { font-size: 0.8125rem; color: var(--mute); }
+.runs b { font-family: var(--n); font-weight: 400; font-size: 1.4rem; }
+.note { color: var(--mute); font-size: 0.8125rem; margin-top: 1.25rem; }
+
+/* the rules, told once */
+.rulesBack { position: fixed; inset: 0; z-index: 70; display: grid; place-items: center; padding: 1rem; background: rgba(4, 5, 8, 0.82); }
+.rules { width: min(34rem, 100%); max-height: calc(100dvh - 2rem); overflow: auto; background: var(--panel); border: 1px solid var(--line-2); border-radius: 6px; padding: 1.5rem 1.25rem;
+  display: grid; gap: 0.875rem; justify-items: start; }
+.rules img { width: 2.5rem; height: 2.5rem; filter: drop-shadow(0 0 0.5rem rgba(80, 172, 255, 0.6)); }
+.rules h2 { margin: 0; font-family: var(--h); font-size: 1.25rem; }
+.rules ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.75rem; }
+.rules li { display: grid; grid-template-columns: 4rem 1fr; gap: 0.75rem; line-height: 1.6; word-break: keep-all; }
+.rules li b { font-family: var(--h); font-size: 0.8125rem; color: var(--blue-lt); padding-top: 0.15rem; }
+.rules .b { justify-self: stretch; margin-top: 0.25rem; }
+
 /* intro: the site's own look breaks apart into the Index's */
 .intro { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; background: #0d0b08; cursor: pointer; }
 .introSite { display: flex; align-items: center; gap: 0.75rem; color: #e8b030; font-family: var(--font-heading), var(--h); font-size: clamp(1.5rem, 5vw, 2.75rem); letter-spacing: 0.02em; }
@@ -148,6 +196,9 @@
 @keyframes leave { to { opacity: 0; visibility: hidden; } }
 
 @media (max-width: 40rem) {
+  .last dl, .totals { grid-template-columns: repeat(3, 1fr); }
+  .menu a, .menu button { grid-template-columns: 1fr; gap: 0.25rem; }
+  .runs li { grid-template-columns: 5.5rem 2.5rem 1fr auto; gap: 0.5rem; }
   .cards { grid-template-columns: 1fr; }
   .c { min-height: 0; }
   .stats { gap: 0.625rem; }
