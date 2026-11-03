@@ -27,35 +27,26 @@ function playArrival(): () => void {
   return () => timers.forEach(window.clearTimeout)
 }
 
-/** Text settling letter by letter out of glyph cells; at once when motion is reduced. */
-function Settle({ text, ms }: { text: string; ms: number }) {
+/** The prescript text itself: every letter a rolling glyph for `roll` ms, then changing into the text letter by letter over `ms`; at once when motion is reduced. */
+function Settle({ text, ms, roll }: { text: string; ms: number; roll: number }) {
   const [settled, setSettled] = useState(text.length)
+  const [, setTick] = useState(0)
   useEffect(() => {
     if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) { setSettled(text.length); return }
     const start = performance.now()
     let frame = 0
     const step = (now: number) => {
-      const k = Math.floor(Math.min(1, (now - start) / ms) * text.length)
+      const k = now - start < roll ? 0 : Math.floor(Math.min(1, (now - start - roll) / ms) * text.length)
       setSettled(k)
+      setTick(Math.floor((now - start) / 60)) // new glyphs every 60 ms
       if (k < text.length) frame = requestAnimationFrame(step)
     }
     setSettled(0)
     frame = requestAnimationFrame(step)
     return () => cancelAnimationFrame(frame)
-  }, [text, ms])
+  }, [text, ms, roll])
   return <span aria-hidden="true">{[...text].map((c, i) => i < settled || c === ' ' ? c
     : <span key={i} className={styles.gli} style={{ backgroundPosition: cell() }} />)}</span>
-}
-
-/** The glyph strip that runs while a prescript comes through. */
-function Wire({ on }: { on: boolean }) {
-  const [cells, setCells] = useState<string[]>([])
-  useEffect(() => {
-    if (!on || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) { setCells([]); return }
-    const id = window.setInterval(() => setCells(Array.from({ length: 40 }, cell)), 50)
-    return () => window.clearInterval(id)
-  }, [on])
-  return <div className={styles.wire} aria-hidden="true">{cells.map((p, i) => <span key={i} className={styles.gl} style={{ backgroundPosition: p }} />)}</div>
 }
 
 const Flower = () => <svg viewBox="-12 -12 24 24" aria-hidden="true"><g fill="#3d7fe0">{[0, 72, 144, 216, 288].map(r =>
@@ -81,15 +72,11 @@ export default function PrescriptStage({ run, offers, label, onChoose, onReroll,
   const t = useTranslations('prescriptMode')
   const offer = offers[0] ?? null
   const offerKey = offer ? `${offer.scope}:${offer.floor}:${offer.cards.map(c => JSON.stringify(c.goal)).join('|')}` : ''
-  const [arriving, setArriving] = useState(false)
   const cued = useRef('')
   useEffect(() => {
     if (!offerKey || offerKey === cued.current) return
     cued.current = offerKey
-    setArriving(true)
-    const stop = pip ? () => {} : playArrival()
-    const done = window.setTimeout(() => setArriving(false), 1600)
-    return () => { stop(); window.clearTimeout(done) }
+    return pip ? undefined : playArrival()
   }, [offerKey, pip])
   const held = run.prescripts.filter(p => p.status === 'active')
   const settled = run.prescripts.filter(p => p.status !== 'active').slice().reverse()
@@ -98,11 +85,15 @@ export default function PrescriptStage({ run, offers, label, onChoose, onReroll,
   const progress = (p: Prescript) => p.goal.kind === 'get-keyword' ? `${p.progress}/${p.goal.count}` : ''
 
   return <div className={pip ? styles.pip : undefined}>
-    <section className={`${styles.stage} ${offer ? styles.on : ''} ${arriving ? styles.rolling : ''}`} aria-live="polite" data-prescript-stage>
+    <section className={`${styles.stage} ${offer ? styles.on : ''}`} aria-live="polite" data-prescript-stage>
       {/* eslint-disable-next-line @next/next/no-img-element -- a small game emblem from public/ */}
       <img className={styles.mark} src={`${ASSET}/index_emblem_color_256.png`} alt="" width={92} height={92} />
-      <Wire on={arriving} />
-      <p className={styles.call}>{offer ? <><span className="sr-only">{t('arrived')}</span><Settle text={t('arrived')} ms={900} /></> : t('waiting')}</p>
+      {/* the terminal is always there, lit when a prescript comes in, so nothing below moves */}
+      <p className={styles.call}>
+        {/* eslint-disable-next-line @next/next/no-img-element -- the game's prescript (terminal) keyword icon from public/ */}
+        <img className={styles.term} src={`${ASSET}/prescript_terminal.png`} alt="" width={40} height={40} />
+        {t(offer ? 'arrived' : 'waiting')}
+      </p>
       {offer && <>
         <div className={styles.cards} role="group" aria-label={t(offer.scope)}>
           {offer.cards.map(card => {
@@ -112,7 +103,7 @@ export default function PrescriptStage({ run, offers, label, onChoose, onReroll,
               aria-label={t('cardLabel', { strength: card.strength, kind: t(KIND[card.goal.kind]), points, text })}>
               <div className={styles.ban}>{t(offer.scope)}</div>
               <div className={styles.lv}><b>{card.strength}</b>{Array.from({ length: card.strength }, (_, i) => <Flower key={i} />)}</div>
-              <div className={styles.d}><Settle text={text} ms={800} /></div>
+              <div className={styles.d}><Settle text={text} roll={1400} ms={800} /></div>
               <div className={styles.f}><span>{t(KIND[card.goal.kind])}</span><b>{points}</b></div>
             </button>
           })}
@@ -128,7 +119,7 @@ export default function PrescriptStage({ run, offers, label, onChoose, onReroll,
     {held.length ? <ul className={styles.held} data-prescript-held>
       {held.map(p => <li key={p.id} className={styles.h}>
         <span className={styles.k}>{t(p.scope)}</span>
-        <span className={styles.tx}>{quote(p.goal, p.scope)}</span>
+        <span className={styles.tx}><span className="sr-only">{quote(p.goal, p.scope)}</span><Settle text={quote(p.goal, p.scope)} roll={500} ms={700} /></span>
         <span className={styles.p}>{progress(p) || POINTS[p.strength]}</span>
       </li>)}
     </ul> : <p className={styles.empty}>{t('noneHeld')}</p>}
