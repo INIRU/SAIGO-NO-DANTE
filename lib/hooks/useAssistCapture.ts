@@ -26,7 +26,7 @@ import { acquisitionSeq, acquisitionsToRelease, continuesFusionDialog, dialogFor
   fusionWheelAnchors, fusionWheelCrop, fusionWheelResultBox, isFusionSelectionScreen, wheelBandMatch, wheelSelectionSize, emptyWheelResult, popupEndBefore, sameWheelSignature, WHEEL_BAND_MIN, WHEEL_BAND_SIZE,
   type FusionAnchors, type FusionDialogEvidence, type FusionRead, type SeenDialog, type WheelAnchors,
   type FusionSlotRead } from '@/lib/vision/fusion-evidence'
-import { BLESSING_SCENE, onBlessingScreen, showsBlessingScreen } from '@/lib/vision/blessing-screen'
+import { BLESSING_SCENE, blessingSpent, onBlessingScreen, showsBlessingScreen } from '@/lib/vision/blessing-screen'
 import { confirmsExploration, explorationFloor, explorationThemeReads, themeSelectionHeaderFloor, type ExplorationObservation,
   type ExplorationThemeReference } from '@/lib/vision/exploration-match'
 import { acquisitionPlate, darkPopupPlate, detectGiftPopupLabel, popupCaptureAction, popupIconSignature, popupLabelColor, popupPriority, popupQuality,
@@ -293,6 +293,11 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
   const gridRequest = useRef<{ requestId: number; at: number } | null>(null)
   // The bottom bar's Identities (the formation), read on the shop's screen every 2 s
   const [formation, setFormation] = useState<FormationRead | null>(null)
+  // The Star Blessing screen's taken cards and their starlight, read every second while it shows; kept once two reads in a
+  // row agree (a card under the cursor lights as if taken; the last steady read before 입장 is the one that counts)
+  const [blessings, setBlessings] = useState<{ levels: number[]; spent: number; observedAt: number } | null>(null)
+  const blessingRequest = useRef<{ requestId: number; at: number } | null>(null)
+  const lastBlessingRead = useRef('')
   const formationRequest = useRef<{ requestId: number; at: number } | null>(null)
   // A ? room's choice list and the cursor over it (read every ~150 ms on the event screen): the option clicked
   const [eventPick, setEventPick] = useState<EventPick | null>(null)
@@ -1854,6 +1859,19 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
           } catch { inFlight.current = false }
           return
         }
+        // The Star Blessing screen's cards, every second while it shows
+        if (gifts && !inFlight.current && onBlessingScreen(blessingAt.current, Date.now()) && hasFrame() && !popupVisionQueue.current.length &&
+          Date.now() - (blessingRequest.current?.at ?? 0) >= 1000) {
+          inFlight.current = true
+          try {
+            const frame = await grabBitmap()
+            if (run !== generation.current || !worker.current) { frame.close(); inFlight.current = false; return }
+            const requestId = ++ocrRequestId.current
+            blessingRequest.current = { requestId, at: Date.now() }
+            worker.current.postMessage({ type: 'blessings', requestId, frame }, [frame])
+          } catch { inFlight.current = false }
+          return
+        }
         // The formation from the bottom bar while the shop is on screen
         if (gifts && !inFlight.current && latestLabel.current === 'shop' && hasFrame() && !popupVisionQueue.current.length &&
           Date.now() - (formationRequest.current?.at ?? 0) >= 2000 && Date.now() - inferredAt < profileRef.current.sceneIntervalMs - 20) {
@@ -2043,6 +2061,17 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
           if (Array.isArray(ids) && ids.length === 12 && ids.every(id => id === null || typeof id === 'string') && latestLabel.current === 'shop')
             setFormation({ ids: ids as (string | null)[], observedAt: at })
           flushVisionPopup()
+        } else if (result.type === 'blessings' && blessingRequest.current?.requestId === result.requestId) {
+          inFlight.current = false
+          const levels = (result as { levels?: unknown }).levels
+          if (Array.isArray(levels) && levels.length === 10 && levels.every(level => Number.isInteger(level) && level >= 0 && level <= 3)) {
+            const key = levels.join('')
+            if (key === lastBlessingRead.current)
+              setBlessings(current => current && current.levels.join('') === key ? current
+                : { levels: levels as number[], spent: blessingSpent(levels as number[]), observedAt: blessingRequest.current?.at ?? Date.now() })
+            lastBlessingRead.current = key
+          } else lastBlessingRead.current = ''
+          flushVisionPopup()
         } else if (result.type === 'owned-grid' && gridRequest.current?.requestId === result.requestId) {
           inFlight.current = false
           const gifts = (result as { gifts?: unknown }).gifts
@@ -2156,7 +2185,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
 
   return { supported, status, error, prediction, visualCandidates, ocrCandidates, ocrStatus,
     popupAcquisitions, floorThemeObservation, observedFloor, scene, themeSelectionFloor, queueStatus, mobile, gpu, inference, ocrEngine,
-    ocrWorkers, fusionEvidence, giftSales, skillExchange, shopShelf, ownedGrid, formation, eventPick, start, stop, reportInventoryChange }
+    ocrWorkers, fusionEvidence, giftSales, skillExchange, shopShelf, ownedGrid, formation, blessings, eventPick, start, stop, reportInventoryChange }
 }
 
 /**
