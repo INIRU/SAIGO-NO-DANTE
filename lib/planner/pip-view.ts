@@ -60,9 +60,9 @@ export function pipDensity(width: number, height: number): PipDensity {
  */
 export interface FloorLayout { side: boolean; memoLines: number; compactTips: boolean; cell: { min: number; max: number } }
 export function floorLayout(density: PipDensity, hasSide: boolean): FloorLayout {
-  if (density === 'compact') return { side: false, memoLines: 2, compactTips: true, cell: { min: 50, max: 64 } }
-  if (density === 'wide' && hasSide) return { side: true, memoLines: 8, compactTips: false, cell: { min: 56, max: 76 } }
-  return { side: false, memoLines: 3, compactTips: false, cell: { min: 56, max: 76 } }
+  if (density === 'compact') return { side: false, memoLines: 2, compactTips: true, cell: { min: 46, max: 60 } }
+  if (density === 'wide' && hasSide) return { side: true, memoLines: 8, compactTips: false, cell: { min: 52, max: 72 } }
+  return { side: false, memoLines: 3, compactTips: false, cell: { min: 52, max: 72 } }
 }
 
 export interface GridFit { columns: number; size: number }
@@ -88,7 +88,7 @@ export function fitGrid({ count, width, height, gap = 4, min, max, maxColumns = 
   return best ?? { columns: fitting, size: min }
 }
 
-/** A mark on a gift cell. `tone`: plan = gold, warn = red, info = a word under the name (`short` where the cell is narrow). */
+/** A mark on a gift cell. `tone`: plan = gold, warn = red corner mark, info = a word on the art's lower edge (`short` there). */
 export interface GiftBadge { key: string; label: string; short?: string; tone: 'plan' | 'warn' | 'info' }
 
 /**

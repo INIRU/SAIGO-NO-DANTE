@@ -913,6 +913,8 @@
       "clearBonusNoPlan": "計画のギフトはありません",
       "clearBonusMark": "クリアボーナス",
       "clearBonusMarkShort": "ボーナス",
+      "giftInfoTier": "ランク{tier}",
+      "giftInfoPrice": "{price}コスト",
       "clearBonusOffer": "クリアボーナスに計画のギフトがあるパック",
       "clearBonusCard": "{n}番目のパック",
       "giftFilters": "ギフトの絞り込み",
