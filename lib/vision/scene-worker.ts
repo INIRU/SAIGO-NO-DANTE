@@ -11,6 +11,7 @@ import { decodePortraitIndex, formationBarRegions, matchPortrait, portraitId, sh
 import { readBlessingCards } from './blessing-screen'
 import { ownedGridGifts, ownedGridOffset, ownedGridRegions, ownedGridStrips, yellowRows } from './owned-grid'
 import { shopShelfRegions, shopSoldBand, soldMark, SHOP_SOLD_MIN, titleBarRows, type ShopSlotRead } from './shop-shelf'
+import { BONUS_PLACES, bonusBandPlaces, bonusIconRegions, bonusLayout, bonusLineShare, bonusLineStrip, type ClearBonusCard } from './clear-bonus'
 
 type Request = { type: 'init'; giftReferences?: VisualReference[]; eventReferences?: VisualReference[] } |
   { type: 'infer'; frame: ImageBitmap } | { type: 'popup-icon'; requestId: number; frame: ImageBitmap; box: PopupLabelBox } |
@@ -18,7 +19,7 @@ type Request = { type: 'init'; giftReferences?: VisualReference[]; eventReferenc
   { type: 'fusion-wheel'; requestId: number; frame: ImageBitmap; capacity: number; origin: { x: number; y: number }; scale?: number;
     frameSize: { width: number; height: number }; anchors?: WheelAnchors; candidates?: string[] } |
   { type: 'shop-shelf'; requestId: number; frame: ImageBitmap } | { type: 'owned-grid'; requestId: number; frame: ImageBitmap } |
-  { type: 'formation'; requestId: number; frame: ImageBitmap } | { type: 'blessings'; requestId: number; frame: ImageBitmap } | { type: 'cursor'; requestId: number; frame: ImageBitmap; region?: { x: number; y: number; width: number; height: number } }
+  { type: 'formation'; requestId: number; frame: ImageBitmap } | { type: 'blessings'; requestId: number; frame: ImageBitmap } | { type: 'clear-bonus'; requestId: number; frame: ImageBitmap } | { type: 'cursor'; requestId: number; frame: ImageBitmap; region?: { x: number; y: number; width: number; height: number } }
 type Response = { type: 'ready'; provider: 'webgpu' | 'wasm'; adapter: string } | { type: 'prediction'; label: string; confidence: number; gifts: VisualMatch[]; events: VisualMatch[] } |
   { type: 'popup-icon'; requestId: number; gifts: VisualMatch[] } |
   { type: 'fusion-slots'; requestId: number; slots: FusionSlotRead[] } | { type: 'icons'; count: number; ms: number } |
@@ -26,6 +27,7 @@ type Response = { type: 'ready'; provider: 'webgpu' | 'wasm'; adapter: string } 
   { type: 'owned-grid'; requestId: number; gifts: string[] } |
   { type: 'formation'; requestId: number; ids: (string | null)[] } |
   { type: 'blessings'; requestId: number; levels: number[] | null } |
+  { type: 'clear-bonus'; requestId: number; cards: ClearBonusCard[]; titleBar: number } |
   { type: 'cursor'; requestId: number; cursor: CursorRead | null } |
   { type: 'error'; message: string }
 
@@ -435,6 +437,27 @@ self.onmessage = async (event: MessageEvent<Request>) => {
         titleBarRows(rowMeans(frame, 64), frame.height)) })
       return
     }
+    if (event.data.type === 'clear-bonus') {
+      // The theme pack selection's CLEAR BONUS rows: which card places hold a band, then each band's icons
+      const { requestId } = event.data
+      if (!Number.isSafeInteger(requestId)) throw new Error('Invalid clear bonus request')
+      const titleBar = titleBarRows(rowMeans(frame, 64), frame.height)
+      const share = (place: number) => {
+        const strip = bonusLineStrip(frame.width, frame.height, place, titleBar)
+        if (strip.width < 4 || strip.y < 0 || strip.y + strip.height > frame.height) return 0
+        // native size: the one-pixel line must not be resampled away
+        const target = new OffscreenCanvas(strip.width, strip.height).getContext('2d', { willReadFrequently: true })!
+        target.drawImage(frame, strip.x, strip.y, strip.width, strip.height, 0, 0, strip.width, strip.height)
+        return bonusLineShare(target.getImageData(0, 0, strip.width, strip.height).data, strip.width, strip.height)
+      }
+      const places = bonusBandPlaces(BONUS_PLACES.odd.map(share), BONUS_PLACES.even.map(share))
+      const sample = sampler(frame)
+      const regions = places.flatMap(place => bonusIconRegions(frame.width, frame.height, place, titleBar))
+      const reads = await classifySlots(sample, regions, new Set())
+      const cards = reads ? places.map((place, index) => ({ place, gifts: bonusLayout(reads.slice(index * 7, index * 7 + 7)) })) : []
+      respond({ type: 'clear-bonus', requestId, cards, titleBar })
+      return
+    }
     if (event.data.type === 'cursor') {
       // The game's cursor (the screen share draws it in), in frame pixels
       const { requestId, region } = event.data
@@ -534,6 +557,7 @@ self.onmessage = async (event: MessageEvent<Request>) => {
     else if (event.data.type === 'owned-grid') respond({ type: 'owned-grid', requestId: event.data.requestId, gifts: [] })
     else if (event.data.type === 'formation') respond({ type: 'formation', requestId: event.data.requestId, ids: [] })
     else if (event.data.type === 'blessings') respond({ type: 'blessings', requestId: event.data.requestId, levels: null })
+    else if (event.data.type === 'clear-bonus') respond({ type: 'clear-bonus', requestId: event.data.requestId, cards: [], titleBar: 0 })
     else if (event.data.type === 'cursor') respond({ type: 'cursor', requestId: event.data.requestId, cursor: null })
     else respond({ type: 'error', message: error instanceof Error ? error.message : 'Inference failed' })
   } finally {
