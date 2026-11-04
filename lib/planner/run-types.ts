@@ -24,6 +24,8 @@ export interface FloorLog {
   selectedEventOptions: { eventId: number; optionIndex: number; rewardGiftIds?: string[]; uncertainRewardGiftIds?: string[] }[]
   memo: string
   completedAt: string | null
+  /** The pack card's CLEAR BONUS as read on the selection screen: beating the floor's boss offers these (game_id strings). */
+  clearBonus?: string[]
 }
 
 export interface RunState {
@@ -54,6 +56,7 @@ export type RunAction =
   /** null clears the current floor's pack; the floor, inventory and logs stay as they are. */
   | { type: 'SET_FLOOR_THEME'; themeId: string | null }
   | { type: 'OBSERVE_FLOOR_THEME'; floor: number; themeId: string; completedAt: string }
+  | { type: 'SET_FLOOR_CLEAR_BONUS'; floor: number; giftIds: string[] }
   | { type: 'NEXT_FLOOR' }
   | { type: 'GO_TO_FLOOR'; floor: number }
   | { type: 'COMPLETE_RUN' }
@@ -232,6 +235,7 @@ export function normalizeRunState(value: unknown): RunState {
         : [],
       memo: typeof raw.memo === 'string' ? raw.memo : '',
       completedAt: typeof raw.completedAt === 'string' ? raw.completedAt : null,
+      ...(Array.isArray(raw.clearBonus) ? { clearBonus: stringArray(raw.clearBonus) } : {}),
     }
   })
   const arrangements = isRecord(saved.skillArrangements) ? saved.skillArrangements : {}
@@ -363,6 +367,12 @@ export function runReducer(state: RunState, action: RunAction): RunState {
         floorLogs: state.floorLogs.map(log => log.floor === action.floor ? { ...log, themeId }
           : advancing && log.floor === state.currentFloor ? { ...log, completedAt: log.completedAt ?? action.completedAt } : log),
       }
+    }
+
+    case 'SET_FLOOR_CLEAR_BONUS': {
+      const giftIds = [...new Set(action.giftIds.filter(id => typeof id === 'string' && id))]
+      if (!Number.isInteger(action.floor)) return state
+      return { ...state, floorLogs: state.floorLogs.map(log => log.floor === action.floor ? { ...log, clearBonus: giftIds } : log) }
     }
 
     case 'NEXT_FLOOR': {

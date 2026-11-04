@@ -365,6 +365,7 @@ export default function RunClient({ themes, gifts, recipes, identities, sinners,
             floorThemeObservation={capture.status === 'running' ? capture.floorThemeObservation : null}
             observedFloor={capture.status === 'running' ? capture.observedFloor : null}
             fusionEvidence={capture.status === 'running' ? capture.fusionEvidence : null}
+            clearBonus={capture.status === 'running' ? capture.clearBonus : null}
             />
         </>}
           <TempSaveMenu title={tTempSaves('runMenuLabel')} slots={runSlots} onSave={saveRunSlot} onLoad={loadRunSlot} onDelete={deleteRunSlot} />

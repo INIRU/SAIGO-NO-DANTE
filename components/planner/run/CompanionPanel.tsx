@@ -35,6 +35,8 @@ import ThemePackCard from '@/components/ui/ThemePackCard'
 import type { SkillExchangeRead } from '@/lib/vision/skill-exchange'
 import { AUTO_ACQUIRE_EXCLUDED_GIFT_IDS } from '@/lib/vision/popup-evidence'
 import { recordingAutomatically } from '@/lib/vision/assist-report'
+import { bonusPicks, cardOfTheme, type ClearBonusOffer } from '@/lib/vision/clear-bonus'
+import CompanionClearBonus from './CompanionClearBonus'
 
 type HistoryEntry = { before: RunState; after: RunState; beforeKey: string; afterKey: string; pendingFloor: number | null }
 const snapshot = (state: RunState): RunState => normalizeRunState(JSON.parse(JSON.stringify(state)))
@@ -79,11 +81,13 @@ interface Props {
   sinners?: SinnerData[]
   identities?: IdentityData[]
   egos?: EgoData[]
+  /** The pack selection's CLEAR BONUS rows, as read on the screen. */
+  clearBonus?: ClearBonusOffer | null
 }
 export default function CompanionPanel({ state, dispatch, themes, giftMap, observedGiftIds = [], popupAcquisitions = [],
   events = [], eventChoices = [], eventChoiceEvidence = null, captureRunning = false, scene = null,
   themeSelectionFloor = null, floorThemeObservation = null, observedFloor = null, fusionEvidence = null, prediction = null, giftSales = [],
-  skillExchange = null, skills = [], recipes = [], sinners = [], identities = [], egos = [] }: Props) {
+  skillExchange = null, skills = [], recipes = [], sinners = [], identities = [], egos = [], clearBonus = null }: Props) {
   const t = useTranslations('planner.run')
   const locale = useLocale() as SupportedLang
   const localized = (item: { name: string; name_en?: string | null; name_jp?: string | null }) => getLocalizedName({ name_kr: item.name, name_en: item.name_en, name_jp: item.name_jp }, locale)
@@ -343,6 +347,17 @@ export default function CompanionPanel({ state, dispatch, themes, giftMap, obser
     record(action, true)
     toast.success(t('floorThemeObserved', { floor: action.floor, name: localized(observedTheme) }))
   }, [floorThemeObservation, state.phase, themes])
+  // The floor's pack is known and its card's CLEAR BONUS was read on the selection screen: the floor log keeps it.
+  const bonusFloor = clearBonus ? clearBonus.floor ?? selectionFloor : null
+  const bonusTheme = bonusFloor !== null ? state.floorLogs[bonusFloor - 1]?.themeId ?? null : null
+  useEffect(() => {
+    if (state.phase !== 'playing' || !clearBonus || bonusFloor === null || !bonusTheme) return
+    const pack = themes.find(item => String(item.id) === bonusTheme)
+    const pool = pack ? new Set([...(pack.ego_gift_ids ?? []), ...(pack.specific_ego_gift_ids ?? [])].map(String)) : null
+    const card = cardOfTheme(clearBonus.cards, bonusTheme, pool)
+    if (!card || current.current.floorLogs[bonusFloor - 1]?.clearBonus?.join(',') === card.gifts.join(',')) return
+    record({ type: 'SET_FLOOR_CLEAR_BONUS', floor: bonusFloor, giftIds: card.gifts }, true)
+  }, [clearBonus, bonusFloor, bonusTheme, state.phase, themes]) // eslint-disable-line react-hooks/exhaustive-deps -- record reads the latest state
   useEffect(() => {
     // Inventory comes first: a confirmed acquisition is recorded whatever the run's floor state; the evidence only
     // decides which floor log (or none) it belongs to.
@@ -511,12 +526,23 @@ export default function CompanionPanel({ state, dispatch, themes, giftMap, obser
     // Groups follow getCurrentFloorPriorityGifts' order: this floor's plan, final targets, then the rest led by
     // floor-only gifts outside the plan. The headings replace the neon outline the plan gifts had.
     const finalIds = new Set(state.targetGifts.map(giftGameId))
+    // this floor's CLEAR BONUS (beating the boss offers it): planned gifts in it need not be bought here
+    const bonusGifts = (log?.clearBonus ?? []).flatMap(id => giftMap.get(Number(id)) ?? [])
+    const bonusIds = new Set(bonusGifts.map(gift => gift.game_id))
+    const bonusPlanned = new Set([...planGiftIds(state), ...plannedGiftIds])
+    // On the selection screen: the offered cards whose CLEAR BONUS holds a planned gift, left to right
+    const offerCards = !theme && clearBonus && (clearBonus.floor ?? selectionFloor) === viewFloor ? clearBonus.cards.flatMap((card, index) => {
+      const gifts = card.gifts.flatMap(id => giftMap.get(Number(id)) ?? [])
+      if (!gifts.some(gift => bonusPlanned.has(gift.game_id) && !ownedIds.has(gift.game_id))) return []
+      const named = card.themeIds?.length === 1 ? themes.find(item => String(item.id) === card.themeIds![0]) : undefined
+      return [{ place: card.place, gifts, label: named ? localized(named) : t('clearBonusCard', { n: index + 1 }) }]
+    }) : []
     const groups = fusionView.current ? [] : [
       { key: 'planned', label: t('groupFloorPlan'), list: availableGifts.filter(gift => plannedGiftIds.has(gift.game_id)) },
       { key: 'final', label: t('groupTargets'), list: availableGifts.filter(gift => !plannedGiftIds.has(gift.game_id) && finalIds.has(gift.game_id)) },
       { key: 'others', label: t('pipGroupOthers'), list: availableGifts.filter(gift => !plannedGiftIds.has(gift.game_id) && !finalIds.has(gift.game_id)) },
     ].filter(group => group.list.length > 0)
-    const giftGrid = (list: typeof availableGifts, key: string) => <ul key={key} className="grid justify-center gap-[6px]" style={{ gridTemplateColumns: `repeat(${columns}, ${cell}px)` }} data-gift-grid={key}><AnimatePresence initial={false} mode="popLayout">{list.map(gift => <m.li key={gift.game_id} layout={reducedMotion ? false : 'position'} initial={reducedMotion ? false : { opacity: 0, scale: 0.94 }} animate={{ opacity: 1, scale: 1 }} exit={reducedMotion ? { opacity: 1 } : { opacity: 0, scale: 0.94 }} transition={{ duration: reducedMotion ? 0 : 0.18 }} title={localized(gift)} className="min-w-0"><button type="button" data-gift-id={gift.game_id} onClick={event => acquire(gift.game_id, event)} title={localized(gift)} aria-label={[t('pipAcquireGift', { name: localized(gift) }), plannedGiftIds.has(gift.game_id) && t('pipPlanGift'), floorOnlyIds.has(gift.game_id) && t('pipFloorOnly')].filter(Boolean).join(' · ')} data-plan-gift={plannedGiftIds.has(gift.game_id) || undefined} className="w-full rounded-sm p-1 text-center hover:bg-[var(--bg-elevated)] focus-visible:outline-2 focus-visible:outline-[var(--gold-light)]"><span className="relative mx-auto block" style={{ width: artwork }}><GiftArtwork gift={gift} displayName={localized(gift)} sizes={`${artwork}px`} />{floorOnlyIds.has(gift.game_id) && <span aria-hidden="true" data-floor-only><GiftWarningMark label={t('pipFloorOnly')} className="-right-0.5 -top-1 z-40 h-4 w-4" /></span>}</span><span className="mt-1 block line-clamp-2 break-words text-[0.65rem] leading-4 text-[var(--text-secondary)]">{localized(gift)}</span></button></m.li>)}</AnimatePresence></ul>
+    const giftGrid = (list: typeof availableGifts, key: string) => <ul key={key} className="grid justify-center gap-[6px]" style={{ gridTemplateColumns: `repeat(${columns}, ${cell}px)` }} data-gift-grid={key}><AnimatePresence initial={false} mode="popLayout">{list.map(gift => <m.li key={gift.game_id} layout={reducedMotion ? false : 'position'} initial={reducedMotion ? false : { opacity: 0, scale: 0.94 }} animate={{ opacity: 1, scale: 1 }} exit={reducedMotion ? { opacity: 1 } : { opacity: 0, scale: 0.94 }} transition={{ duration: reducedMotion ? 0 : 0.18 }} title={localized(gift)} className="min-w-0"><button type="button" data-gift-id={gift.game_id} onClick={event => acquire(gift.game_id, event)} title={localized(gift)} aria-label={[t('pipAcquireGift', { name: localized(gift) }), plannedGiftIds.has(gift.game_id) && t('pipPlanGift'), floorOnlyIds.has(gift.game_id) && t('pipFloorOnly'), bonusIds.has(gift.game_id) && t('clearBonusMark')].filter(Boolean).join(' · ')} data-plan-gift={plannedGiftIds.has(gift.game_id) || undefined} className="w-full rounded-sm p-1 text-center hover:bg-[var(--bg-elevated)] focus-visible:outline-2 focus-visible:outline-[var(--gold-light)]"><span className="relative mx-auto block" style={{ width: artwork }}><GiftArtwork gift={gift} displayName={localized(gift)} sizes={`${artwork}px`} />{floorOnlyIds.has(gift.game_id) && <span aria-hidden="true" data-floor-only><GiftWarningMark label={t('pipFloorOnly')} className="-right-0.5 -top-1 z-40 h-4 w-4" /></span>}</span><span className="mt-1 block line-clamp-2 break-words text-[0.65rem] leading-4 text-[var(--text-secondary)]">{localized(gift)}</span>{bonusIds.has(gift.game_id) && <span data-clear-bonus-mark className="mt-0.5 block text-[0.6rem] font-bold leading-3 text-[var(--gold-light)]">{t('clearBonusMark')}</span>}</button></m.li>)}</AnimatePresence></ul>
     const groupTitle = (label: string, size: number) => <h3 className="mb-1.5 flex items-center gap-2 text-[0.6875rem] font-bold text-[var(--gold-light)]"><span>{label}</span><span className="font-[family-name:var(--font-title)] text-xs font-normal text-[var(--text-secondary)]">{size}</span><span aria-hidden="true" className="h-px flex-1 bg-[var(--border)]" /></h3>
     const grouped = groups.length > 1
     return <div data-companion-content={inPip ? 'pip' : 'inline'}>
@@ -524,8 +550,14 @@ export default function CompanionPanel({ state, dispatch, themes, giftMap, obser
         : header(inPip, t('pipThemeGuidance'), pack ? t('pipThemeFloors', { floors: pack.availableFloors.join(', ') || '—' }) : undefined)}
       <m.div key={theme?.id ?? 'unselected'} initial={reducedMotion ? false : { opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: reducedMotion ? 0 : 0.18, ease: 'easeOut' }}>
       {!theme ? <section aria-label={t('pipThemeGuidance')} className="grid place-items-center" style={{ minHeight: inPip ? Math.max(180, actualSize.height - 96) : 180 }}>
-        {pack ? <div data-theme-choice={pack.theme.id} className={`flex justify-center gap-3 ${stacked ? 'flex-col items-center' : 'items-start'}`}><div className="shrink-0" style={{ width: posterWidth }}><ThemePackCard theme={pack.theme} imageSurface="bare" sizes={`${posterWidth}px`} ariaLabel={`${localized(pack.theme)} · ${t('pipThemePossible')} · ${t('pipThemeFloors', { floors: pack.availableFloors.join(', ') || '—' })}${pack.remainingOrder.length ? ` · ${t('pipThemeRemaining', { themes: pack.remainingOrder.map(next => `${next.floor}F ${localized(next.theme)}`).join(' · ') })}` : ''}`} title={`${localized(pack.theme)} · ${t('pipThemeFloors', { floors: pack.availableFloors.join(', ') || '—' })}`} onClick={event => { const owner = event.currentTarget.ownerDocument; const surface = event.currentTarget.closest('[data-companion-content]')?.getAttribute('data-companion-content'); chooseTheme(pack.theme.id); if (surface) owner.defaultView?.requestAnimationFrame(() => owner.querySelector<HTMLElement>(`[data-companion-content="${surface}"] [data-theme-title]`)?.focus({ preventScroll: true })); toast.success(t('themeSelected', { name: localized(pack.theme) })) }} /></div>{packGiftList}</div> : <p role="status" className="px-2 text-center font-[family-name:var(--font-heading)] text-lg font-semibold text-[var(--gold-light)]">{t('pipChooseThemeBlank')}</p>}</section> : <section className="space-y-3">
+        {pack ? <div data-theme-choice={pack.theme.id} className={`flex justify-center gap-3 ${stacked ? 'flex-col items-center' : 'items-start'}`}><div className="shrink-0" style={{ width: posterWidth }}><ThemePackCard theme={pack.theme} imageSurface="bare" sizes={`${posterWidth}px`} ariaLabel={`${localized(pack.theme)} · ${t('pipThemePossible')} · ${t('pipThemeFloors', { floors: pack.availableFloors.join(', ') || '—' })}${pack.remainingOrder.length ? ` · ${t('pipThemeRemaining', { themes: pack.remainingOrder.map(next => `${next.floor}F ${localized(next.theme)}`).join(' · ') })}` : ''}`} title={`${localized(pack.theme)} · ${t('pipThemeFloors', { floors: pack.availableFloors.join(', ') || '—' })}`} onClick={event => { const owner = event.currentTarget.ownerDocument; const surface = event.currentTarget.closest('[data-companion-content]')?.getAttribute('data-companion-content'); chooseTheme(pack.theme.id); if (surface) owner.defaultView?.requestAnimationFrame(() => owner.querySelector<HTMLElement>(`[data-companion-content="${surface}"] [data-theme-title]`)?.focus({ preventScroll: true })); toast.success(t('themeSelected', { name: localized(pack.theme) })) }} /></div>{packGiftList}</div> : <p role="status" className="px-2 text-center font-[family-name:var(--font-heading)] text-lg font-semibold text-[var(--gold-light)]">{t('pipChooseThemeBlank')}</p>}{offerCards.length > 0 && <div className="mt-3 w-full space-y-2" data-clear-bonus-offer>
+          <p className="text-[0.6875rem] font-bold text-[var(--gold-light)]">{t('clearBonusOffer')}</p>
+          {offerCards.map(card => <CompanionClearBonus key={card.place} gifts={card.gifts} planned={bonusPlanned} owned={ownedIds} label={card.label}
+            picks={bonusPicks(state.floorLogs[viewFloor - 1]?.difficulty ?? state.difficulty)} iconSize={32} />)}
+        </div>}</section> : <section className="space-y-3">
         {!fusionView.current && <CompanionPlanMemo memo={planMemo(state.currentFloor)} giftMap={giftMap} />}
+        {!fusionView.current && bonusGifts.length > 0 && <CompanionClearBonus gifts={bonusGifts} planned={bonusPlanned} owned={ownedIds}
+          picks={bonusPicks(log?.difficulty ?? state.difficulty)} iconSize={Math.max(32, Math.min(44, artwork - 12))} />}
         {(() => {
           const gifts = !count ? <p className="text-xs text-[var(--text-tertiary)]">{t(fusionView.current ? 'fusionTierGiftsOwned' : 'allThemeGiftsOwned')}</p>
             : grouped ? groups.map(group => <div key={group.key}>{groupTitle(group.label, group.list.length)}{giftGrid(group.list, group.key)}</div>)

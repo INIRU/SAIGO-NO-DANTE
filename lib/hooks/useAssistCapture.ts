@@ -23,6 +23,7 @@ import { EMPTY_SALE_STATE, isSellWindow, readSaleStep, sellCost, sellGiftId, sel
 import { readSkillExchange } from '@/lib/vision/skill-exchange'
 import { acquisitionSeq, acquisitionsToRelease, continuesFusionDialog, dialogForResult, dialoglessFusionResult, fusionAnchors, fusionConfirmation, fusionDiagnosis, fusionDialogClosed, fusionMaterials, onFusionScreen, showsFusionTitle, fusionWheelAnchors, fusionWheelCrop, fusionWheelResultBox, isFusionSelectionScreen, wheelSelectionSize, emptyWheelResult, popupEndBefore, sameWheelSignature, type FusionAnchors, type FusionDialogEvidence, type FusionRead, type SeenDialog, type WheelAnchors } from '@/lib/vision/fusion-evidence'
 import { BLESSING_SCENE, blessingSpent, onBlessingScreen, showsBlessingScreen } from '@/lib/vision/blessing-screen'
+import { BONUS_PLACES, bonusCardThemes, offerKey, type ClearBonusCard, type ClearBonusOffer } from '@/lib/vision/clear-bonus'
 import { onRunEndScreen, RUN_END_SCENE, showsRunEndScreen } from '@/lib/vision/run-end-screen'
 import { isVerbose, plog } from '@/lib/vision/assist-log'
 import { parseFusionSlots, WHEEL_FRAMES, WHEEL_KEEP_MS, WHEEL_CROP_WIDTH, WHEEL_AFTER_DIALOG_MS, WHEEL_BEFORE_DIALOG_MS, wheelReadOrder, DIALOGLESS_WHEEL_MS, CAPACITY_KEEP_MS, wheelSignature, showsWheel, resultBoxBand, sameAnchors, FUSION_HOLD_MS, SCREEN_HOLD_MS, OCR_READ_FAILURES, SCENE_READ_FAILURES, OCR_REBUILD_MS, OCR_STABLE_MS, ocrRebuildsAfterRead, ocrErrorAction, parseShopShelf, mobileBlocked, gpuBlocked, canCapture, validMatches, runFrameTask, type WheelFrame, type PopupAcquisition, type GiftSale, type SkillExchangeView, type FloorThemeObservation, type PopupFrame, type PopupPending, type OpenFrame, type FrameTask } from '@/lib/vision/capture-helpers'
@@ -54,6 +55,18 @@ export interface FusionEvidence extends FusionDialogEvidence { token: string }
 // the cursor and the choice boxes come several times a second: kept only while the log is verbose
 const FREQUENT = new Set(['cursor', 'bands', 'alone'])
 const dlog = (kind: string, ...args: unknown[]) => plog(kind, args.length === 1 ? args[0] : args, FREQUENT.has(kind))
+/** The cards with the pack names read for their places (unchanged cards keep their object; the array too when none changed). */
+function named(cards: ClearBonusCard[], names: ReadonlyMap<number, string[]>): ClearBonusCard[] {
+  let changed = false
+  const next = cards.map(card => {
+    const ids = names.get(card.place)
+    if (!ids || card.themeIds?.join('|') === ids.join('|')) return card
+    changed = true
+    return { ...card, themeIds: ids }
+  })
+  return changed ? next : cards
+}
+
 export function useAssistCapture({ giftReferences = [], eventReferences = [], ocrCatalog, themeCatalog, language = 'ko', floor = null,
   mode = 'balanced', detection = DEFAULT_DETECTION, resolvePopup, completeFusion, samples = false, heldGiftIds = [], giftPrice }: {
   giftReferences?: VisualReference[]
@@ -119,6 +132,14 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
   const [blessings, setBlessings] = useState<{ levels: number[]; spent: number; observedAt: number } | null>(null)
   const blessingRequest = useRef<{ requestId: number; at: number } | null>(null)
   const lastBlessingRead = useRef('')
+  // The theme pack selection's CLEAR BONUS rows, read every second while it shows; kept once two reads in a row agree
+  // (cards slide in). Pack names come from the screen's text reads, by card place.
+  const [clearBonus, setClearBonus] = useState<ClearBonusOffer | null>(null)
+  const bonusRequest = useRef<{ requestId: number; at: number } | null>(null)
+  const lastBonusRead = useRef('')
+  const bonusTitleBar = useRef(0)
+  const bonusNames = useRef<{ names: Map<number, string[]>; at: number } | null>(null)
+  const selectionHeader = useRef<number | null>(null)
   const formationRequest = useRef<{ requestId: number; at: number } | null>(null)
   // A ? room's choice list and the cursor over it (read every ~150 ms on the event screen): the option clicked
   const [eventPick, setEventPick] = useState<EventPick | null>(null)
@@ -436,6 +457,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
     setScene(null)
     setThemeSelectionFloor(null)
     setBlessings(null); lastBlessingRead.current = ''; blessingRequest.current = null
+    setClearBonus(null); lastBonusRead.current = ''; bonusRequest.current = null; bonusNames.current = null; selectionHeader.current = null
   }, [cleanup])
 
   const catalogFilled = Boolean(ocrCatalog && Object.values(ocrCatalog).some(items => items.length > 0))
@@ -1339,7 +1361,17 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
                 ...(want.events ? {} : { events: [], choices: [], scopedChoices: [], outcomeEventIds: [], choiceEventIds: [], bodyEventIds: [] }),
                 observedAt: capture.at, expiresAt: capture.at + 6000, floor: capture.floor })
               const headerFloor = themeSelectionHeaderFloor(result.text)
-              if (headerFloor !== null && want.themes) setThemeSelectionFloor({ floor: headerFloor, observedAt: capture.at })
+              if (headerFloor !== null && want.themes) { setThemeSelectionFloor({ floor: headerFloor, observedAt: capture.at }); selectionHeader.current = headerFloor }
+              // the pack names under the cards, for the CLEAR BONUS rows read by the icons
+              if (want.themes && want.gifts && latestLabel.current === 'theme_select' && capture.width && capture.height) {
+                const factor = capture.width / Math.min(capture.width, 1920)
+                const names = bonusCardThemes(result.words, [...BONUS_PLACES.odd, ...BONUS_PLACES.even], capture.width, capture.height,
+                  themeReferences.current ?? [], factor, bonusTitleBar.current)
+                if (names.size) {
+                  bonusNames.current = { names, at: capture.at }
+                  setClearBonus(current => current && named(current.cards, names) !== current.cards ? { ...current, cards: named(current.cards, names) } : current)
+                }
+              }
               if (want.gifts) readSale(result.text, result.words, capture)
               readSkillWindow(result.text, capture.at)
               const confirmation = fusionConfirmation(result.text)
@@ -1754,6 +1786,19 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
           } catch { inFlight.current = false }
           return
         }
+        // The theme pack selection's CLEAR BONUS rows, every second while it shows
+        if (gifts && !inFlight.current && latestLabel.current === 'theme_select' && hasFrame() && !popupVisionQueue.current.length &&
+          Date.now() - (bonusRequest.current?.at ?? 0) >= 1000 && Date.now() - inferredAt < profileRef.current.sceneIntervalMs - 20) {
+          markBusy()
+          try {
+            const frame = await grabBitmap()
+            if (run !== generation.current || !worker.current) { frame.close(); inFlight.current = false; return }
+            const requestId = ++ocrRequestId.current
+            bonusRequest.current = { requestId, at: Date.now() }
+            worker.current.postMessage({ type: 'clear-bonus', requestId, frame }, [frame])
+          } catch { inFlight.current = false }
+          return
+        }
         // The formation from the bottom bar while the shop is on screen
         if (gifts && !inFlight.current && latestLabel.current === 'shop' && hasFrame() && !popupVisionQueue.current.length &&
           Date.now() - (formationRequest.current?.at ?? 0) >= 2000 && Date.now() - inferredAt < profileRef.current.sceneIntervalMs - 20) {
@@ -1954,6 +1999,24 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
             lastBlessingRead.current = key
           } else lastBlessingRead.current = ''
           flushVisionPopup()
+        } else if (result.type === 'clear-bonus' && bonusRequest.current?.requestId === result.requestId) {
+          inFlight.current = false
+          const { cards, titleBar } = result as { cards?: unknown; titleBar?: unknown }
+          if (typeof titleBar === 'number' && Number.isFinite(titleBar)) bonusTitleBar.current = titleBar
+          const valid = Array.isArray(cards) && cards.every(card => card && typeof card.place === 'number' && Array.isArray(card.gifts) &&
+            card.gifts.every((gift: unknown) => typeof gift === 'string'))
+          // a read with no gifts at all (cards still sliding in, or every row empty) changes nothing
+          if (valid && latestLabel.current === 'theme_select' && (cards as ClearBonusCard[]).some(card => card.gifts.length)) {
+            const key = offerKey(cards as ClearBonusCard[])
+            if (key === lastBonusRead.current) {
+              const names = bonusNames.current && Date.now() - bonusNames.current.at < 15_000 ? bonusNames.current.names : null
+              const read = names ? named(cards as ClearBonusCard[], names) : cards as ClearBonusCard[]
+              setClearBonus(current => current && offerKey(current.cards) === key && current.floor === selectionHeader.current ? current
+                : { floor: selectionHeader.current, cards: read, observedAt: bonusRequest.current?.at ?? Date.now() })
+            }
+            lastBonusRead.current = key
+          } else lastBonusRead.current = ''
+          flushVisionPopup()
         } else if (result.type === 'owned-grid' && gridRequest.current?.requestId === result.requestId) {
           inFlight.current = false
           const gifts = (result as { gifts?: unknown }).gifts
@@ -2067,7 +2130,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
 
   return { supported, status, error, prediction, visualCandidates, ocrCandidates, ocrStatus,
     popupAcquisitions, floorThemeObservation, observedFloor, scene, themeSelectionFloor, queueStatus, mobile, gpu, inference, ocrEngine,
-    ocrWorkers, fusionEvidence, giftSales, skillExchange, shopShelf, ownedGrid, formation, blessings, eventPick, start, stop, reportInventoryChange }
+    ocrWorkers, fusionEvidence, giftSales, skillExchange, shopShelf, ownedGrid, formation, blessings, clearBonus, eventPick, start, stop, reportInventoryChange }
 }
 
 /**

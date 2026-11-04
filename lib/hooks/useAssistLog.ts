@@ -24,6 +24,7 @@ export function useAssistLog(capture: Capture) {
   }, [capture.floorThemeObservation])
   useEffect(() => { if (capture.formation) plog('formation', capture.formation.ids) }, [capture.formation])
   useEffect(() => { if (capture.blessings) plog('blessings', { levels: capture.blessings.levels.join(''), spent: capture.blessings.spent }) }, [capture.blessings])
+  useEffect(() => { if (capture.clearBonus) plog('clear-bonus', { floor: capture.clearBonus.floor, cards: capture.clearBonus.cards }) }, [capture.clearBonus])
   // lists that grow: each item once, by its token
   const seen = useRef(new Set<string>())
   useEffect(() => {
