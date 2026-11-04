@@ -184,7 +184,8 @@ it('names an event from two of its own unique choices or body windows, and absta
       { id: 'o2', eventId: 'other', texts: ['종을 울린다'] },
     ],
   }
-  expect(eventScreenEvidence(document('잠시 쉬어간다 무시하고 떠난다.'), catalog).choiceEventIds).toEqual([])
+  // both options of rest on screen, one shared with other: only rest has both (2026-11-04; it waited for the body text before)
+  expect(eventScreenEvidence(document('잠시 쉬어간다 무시하고 떠난다.'), catalog).choiceEventIds).toEqual(['rest'])
   expect(eventScreenEvidence(document('잠시 쉬어간다 종을 울린다'), catalog).choiceEventIds).toEqual([])
   expect(eventScreenEvidence(document('낡은 벤치 위에 누군가 남기고 간 담요'), catalog).bodyEventIds).toEqual(['rest'])
   expect(eventScreenEvidence(document('낡은 벤치 위에 누군'), catalog).bodyEventIds).toEqual([])
@@ -223,4 +224,18 @@ it('an option with several possible results is named by the text its rows share 
   // without options known, rows shared text with each other and named nothing
   const unknown = { ...rows, choices: rows.choices.map(({ option: _, ...choice }) => choice) }
   expect(eventScreenEvidence(document(opening), unknown).outcomeChoiceIds).toEqual([])
+})
+
+it('names the event whose choices are all on screen though one name is shared with another event', () => {
+  const shared: OcrCatalog = {
+    gifts: [], events: [{ id: 'a', texts: ['서류 더미가 쌓여 있다.'] }, { id: 'b', texts: ['낯선 이가 말을 건다.'] }],
+    choices: [
+      { id: 'a1', eventId: 'a', texts: ['사실대로 말한다.'] }, { id: 'a2', eventId: 'a', texts: ['아무것도 아닌 서류라고 한다.'] },
+      { id: 'b1', eventId: 'b', texts: ['사실대로 말한다.'] }, { id: 'b2', eventId: 'b', texts: ['자리를 피한다.'] },
+    ],
+  }
+  expect(eventScreenEvidence(document('사실대로 말한다. 아무것도 아닌 서류라고 한다.'), shared).choiceEventIds).toEqual(['a'])
+  // the shared name alone, or names of two events: nothing
+  expect(eventScreenEvidence(document('사실대로 말한다.'), shared).choiceEventIds).toEqual([])
+  expect(eventScreenEvidence(document('아무것도 아닌 서류라고 한다. 자리를 피한다.'), shared).choiceEventIds).toEqual([])
 })

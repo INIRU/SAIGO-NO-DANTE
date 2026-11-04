@@ -121,15 +121,19 @@ export default function PrescriptClient({ themes, gifts, recipes, events, eventC
   const single = new Set(named.map(choice => `${choice!.event_id}:${choice!.option_index}`)).size === 1 ? named[0] : undefined
   const ledFrom = single && openRoom && single.event_id !== openRoom.eventId ? optionLeadingTo(openRoom.options, single.event_id) : null
   const outcome = single && (!openRoom || single.event_id === openRoom.eventId) ? single : undefined
+  // an option read by its name may be another event's row with the same name ("사실대로 말한다." is in 901047 and 901085):
+  // within the room, the room's own option of that name
+  const inRoom = (choice: MdEventChoice | undefined) => !choice || !openRoom || choice.event_id === openRoom.eventId ? choice
+    : recognizable.choices.find(item => item.event_id === openRoom.eventId && item.message === choice.message && Number.isInteger(item.option_index))
   // the game left the taken option alone on its result page: as good as its result text
-  const alone = capture.eventPick?.via === 'list' ? choiceById.get(capture.eventPick.choiceId) : undefined
+  const alone = capture.eventPick?.via === 'list' ? inRoom(choiceById.get(capture.eventPick.choiceId)) : undefined
   const outcomeKey = outcome ? `${outcome.event_id}:${outcome.option_index}`
     : openRoom && ledFrom !== null ? `${openRoom.eventId}:${ledFrom}`
     : alone && Number.isInteger(alone.option_index) && !alone.outcome ? `${alone.event_id}:${alone.option_index}`
     : openRoom && stageOption !== null ? `${openRoom.eventId}:${stageOption}` : ''
   const eventOutcome = useMemo(() => outcomeKey ? { eventId: Number(outcomeKey.split(':')[0]), option: Number(outcomeKey.split(':')[1]), at: Date.now() } : null,
     [outcomeKey])
-  const picked = capture.eventPick?.via === 'cursor' ? choiceById.get(capture.eventPick.choiceId) : undefined
+  const picked = capture.eventPick?.via === 'cursor' ? inRoom(choiceById.get(capture.eventPick.choiceId)) : undefined
   const pickKey = picked && Number.isInteger(picked.option_index) && !picked.outcome ? `${picked.event_id}:${picked.option_index}:${capture.eventPick!.at}` : ''
   const eventPick = useMemo(() => pickKey ? { eventId: Number(pickKey.split(':')[0]), option: Number(pickKey.split(':')[1]), at: Number(pickKey.split(':')[2]) } : null,
     [pickKey])

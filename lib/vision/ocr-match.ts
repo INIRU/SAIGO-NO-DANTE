@@ -264,7 +264,7 @@ function choiceBoxes(words: readonly OcrWord[], choices: readonly OcrChoiceRefer
 const RESULT_FRAGMENT = 12
 const BODY_WINDOW = 10
 const scopedCache = new WeakMap<OcrCatalog, { short: Map<string, Map<string, number>>; results: Map<string, string[]>;
-  choiceResults: Map<string, string[]>; choiceOwners: Map<string, string | null>; bodyOwners: Map<string, string | null> }>()
+  choiceResults: Map<string, string[]>; choiceOwners: Map<string, string | null>; choiceEvents: Map<string, Set<string>>; bodyOwners: Map<string, string | null> }>()
 
 function own(owners: Map<string, string | null>, key: string, id: string) {
   const owner = owners.get(key)
@@ -277,6 +277,8 @@ function indexedEventScreens(catalog: OcrCatalog) {
   const short = new Map<string, Map<string, number>>()
   const results = new Map<string, string[]>()
   const choiceOwners = new Map<string, string | null>()
+  // every event a choice text is in (a name like "사실대로 말한다." is in several)
+  const choiceEvents = new Map<string, Set<string>>()
   const bodyOwners = new Map<string, string | null>()
   const choiceFragments = new Map<string, { eventId: string; option?: number; fragments: string[] }>()
   for (const event of catalog.events) for (const piece of event.texts.flatMap(gameTextPieces)) {
@@ -287,7 +289,10 @@ function indexedEventScreens(catalog: OcrCatalog) {
   }
   for (const choice of catalog.choices) {
     const pieces = new Set(choice.texts.flatMap(gameTextPieces))
-    for (const value of pieces) if (contentLength(value) >= 4) own(choiceOwners, value, choice.eventId)
+    for (const value of pieces) if (contentLength(value) >= 4) {
+      own(choiceOwners, value, choice.eventId)
+      choiceEvents.set(value, (choiceEvents.get(value) ?? new Set()).add(choice.eventId))
+    }
     const counts = short.get(choice.eventId) ?? new Map<string, number>()
     for (const value of pieces) counts.set(value, (counts.get(value) ?? 0) + 1)
     short.set(choice.eventId, counts)
@@ -313,7 +318,7 @@ function indexedEventScreens(catalog: OcrCatalog) {
       (option === undefined || entry.option !== option)).flatMap(([, entry]) => entry.fragments))
     choiceResults.set(id, fragments.filter(fragment => !others.has(fragment)))
   }
-  const index = { short, results, choiceResults, choiceOwners, bodyOwners }
+  const index = { short, results, choiceResults, choiceOwners, choiceEvents, bodyOwners }
   scopedCache.set(catalog, index)
   return index
 }
@@ -348,7 +353,15 @@ export function eventScreenEvidence(document: OcrDocument, catalog: OcrCatalog):
     const ids = [...hits].filter(([, texts]) => texts.size >= 2).map(([id]) => id)
     return ids.length === 1 ? ids : []
   }
-  const choiceEventIds = single(choiceHits), bodyEventIds = single(bodyHits)
+  let choiceEventIds = single(choiceHits)
+  const bodyEventIds = single(bodyHits)
+  // Two or more choice texts on screen that one event alone has all of, one of them its own: that event (one of its
+  // names shared with another event no longer waits for the body text, 901085 and 901047, 2026-11-04)
+  const listed = [...index.choiceEvents].filter(([text]) => screen.includes(text))
+  if (!choiceEventIds.length && listed.length >= 2) {
+    const common = [...listed[0][1]].filter(id => listed.every(([, events]) => events.has(id)))
+    if (common.length === 1 && listed.some(([text]) => index.choiceOwners.get(text) === common[0])) choiceEventIds = common
+  }
   const seen = new Set([...choiceEventIds, ...bodyEventIds, ...scopedChoices.map(choice => choice.eventId)])
   return { scopedChoices, outcomeEventIds, outcomeChoiceIds, choiceEventIds, bodyEventIds,
     choiceBoxes: seen.size ? choiceBoxes(document.words, catalog.choices.filter(choice => seen.has(choice.eventId))) : [] }
