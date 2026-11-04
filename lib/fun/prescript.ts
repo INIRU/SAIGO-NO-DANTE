@@ -42,8 +42,8 @@ export type PrescriptGoal =
   /** This fielded Identity among the first six (it stood in 7 to 12). */
   | { kind: 'front-identity'; identityId: string }
   /**
-   * The run's opening formation, free: the first bar read whole scores the first six places by star rating
-   * (START_FORMATION_POINTS), never a violation (USER 2026-11-04: "자유롭게 편성 ... 3성 0점, 2성 몇 점, 1성은 최대 점수").
+   * The run's opening formation, free: the first bar read whole scores all twelve Identities by star rating, in any order
+   * (START_FORMATION_POINTS), never a violation (USER 2026-11-04: "편성 전체 12명을 다 봐야해") (USER 2026-11-04: "자유롭게 편성 ... 3성 0점, 2성 몇 점, 1성은 최대 점수").
    */
   | { kind: 'start-formation' }
   /** Take this start gift (`pool`: its keyword's start gifts; one of them taken and not this one is a violation). */
@@ -174,13 +174,13 @@ export function blessingFactor(spent: number | undefined): number {
 }
 export const runBlessing = (run: PrescriptRun) => blessingFactor(run.blessingSpent)
 
-/** Grace for each of the opening formation's first six places, by the star rating of the Identity there. */
-export const START_FORMATION_POINTS: Readonly<Record<number, number>> = { 1: 20, 2: 8, 3: 0 }
-/** The opening formation's grace before the blessing factor: the first six places, once all six are read. */
+/** Grace for each of the opening formation's twelve Identities, by its star rating (all 1-star: 120). */
+export const START_FORMATION_POINTS: Readonly<Record<number, number>> = { 1: 10, 2: 4, 3: 0 }
+export const FORMATION_SIZE = 12
+/** The opening formation's grace before the blessing factor: all twelve, once all twelve are read (the order is free). */
 export function startFormationPoints(ids: readonly (string | null)[], ctx: PrescriptContext): number | null {
-  const front = ids.slice(0, 6)
-  if (front.length < 6 || front.some(id => id === null)) return null
-  return front.reduce((sum, id) => sum + (START_FORMATION_POINTS[ctx.identity?.(id!)?.rarity ?? 3] ?? 0), 0)
+  if (ids.length < FORMATION_SIZE || ids.some(id => id === null)) return null
+  return ids.reduce((sum, id) => sum + (START_FORMATION_POINTS[ctx.identity?.(id!)?.rarity ?? 3] ?? 0), 0)
 }
 
 const giftIdOf = (inventoryId: string) => {
