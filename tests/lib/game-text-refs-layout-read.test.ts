@@ -8,7 +8,7 @@ vi.mock('@/lib/supabase/admin', () => ({
   }),
 }))
 
-import { getGameTextRefNamesOrNull } from '@/lib/db/game-text-refs'
+import { getGameTextRefNamesOrNull, getGameTextRefNamesWireOrNull } from '@/lib/db/game-text-refs'
 
 const ROW = { id: 'Combustion', kind: 'keyword', name: '화상', name_en: 'Burn', name_jp: null, keyword_name: '화상' }
 
@@ -27,5 +27,20 @@ describe('REQ-SHARED-023 the layout reads the names without ever failing the pag
 
   it('REQ-SHARED-023 returns null for an empty table, so an unfilled table is not taken as complete', async () => {
     expect(await getGameTextRefNamesOrNull('ko')).toBeNull()
+  })
+})
+
+describe('REQ-SHARED-065 the layout reads the smaller form without ever failing the page', () => {
+  beforeEach(() => { state.result = { data: [], error: null } })
+
+  it('REQ-SHARED-065 returns the names of the language in the smaller form', async () => {
+    state.result = { data: [{ ...ROW, icon_slug: 'game-Combustion' }], error: null }
+    expect(await getGameTextRefNamesWireOrNull('en')).toEqual({ Combustion: { n: 'Burn', kw: '화상', i: 1 } })
+  })
+
+  it('REQ-SHARED-065 returns null when the read fails or the table is empty', async () => {
+    expect(await getGameTextRefNamesWireOrNull('ko')).toBeNull()
+    state.result = { data: [], error: { message: 'boom' } }
+    expect(await getGameTextRefNamesWireOrNull('ko')).toBeNull()
   })
 })

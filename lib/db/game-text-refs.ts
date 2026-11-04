@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import type { SupportedLang } from '@/lib/i18n/types'
 import { flavorKeyOfKeyword } from '@/lib/game-text/flavor'
+import { compactGameTextRefNames, type GameTextRefNamesWire } from '@/lib/game-text/ref-names-wire'
 
 /**
  * What a `[Id]` of raw game text is, in one language: its kind, label and (keywords) the keyword_meta row it maps to.
@@ -108,17 +109,35 @@ export async function getGameTextRefNames(lang: SupportedLang): Promise<GameText
   return gameTextRefNames(await loadRows(NAME_COLUMNS), lang)
 }
 
-/**
- * For the [lang] layout, which hands the names to every page: a failed read or a still empty table gives null instead of
- * an error, so the site keeps working and the browser requests the names itself (the first paint then shows raw ids once).
- */
-export async function getGameTextRefNamesOrNull(lang: SupportedLang): Promise<GameTextRefNames | null> {
+/** getGameTextRefNames in the smaller form of the [lang] layout (see ref-names-wire), read on its own so the layout's cache entries stay small. */
+export async function getGameTextRefNamesWire(lang: SupportedLang): Promise<GameTextRefNamesWire> {
+  'use cache'
+  cacheLife('max')
+  cacheTag(CACHE_TAGS.gameTextRefs, CACHE_TAGS.gameData)
+  return compactGameTextRefNames(gameTextRefNames(await loadRows(NAME_COLUMNS), lang))
+}
+
+/** A failed read or a still empty table gives null instead of an error, so the site keeps working. */
+async function orNull<T extends object>(read: () => Promise<T>): Promise<T | null> {
   try {
-    const names = await getGameTextRefNames(lang)
+    const names = await read()
     return Object.keys(names).length > 0 ? names : null
   } catch {
     return null
   }
+}
+
+/**
+ * For the [lang] layout, which hands the names to every page: a failed read or a still empty table gives null instead of
+ * an error, so the site keeps working and the browser requests the names itself (the first paint then shows raw ids once).
+ */
+export async function getGameTextRefNamesWireOrNull(lang: SupportedLang): Promise<GameTextRefNamesWire | null> {
+  return orNull(() => getGameTextRefNamesWire(lang))
+}
+
+/** The same in the full form, for server code that reads the names itself (the motion feed). */
+export async function getGameTextRefNamesOrNull(lang: SupportedLang): Promise<GameTextRefNames | null> {
+  return orNull(() => getGameTextRefNames(lang))
 }
 
 export async function getGameTextRefDescriptions(lang: SupportedLang): Promise<GameTextRefDescriptions> {

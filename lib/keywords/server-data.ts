@@ -5,6 +5,7 @@ import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import type { KeywordInfo } from '@/lib/keywords/catalog'
 import { isMissingColumnError, keywordTextsFromRefs, loadKeywordRefTexts } from '@/lib/keywords/ref-text'
 import type { SupportedLang } from '@/lib/i18n/types'
+import { compactKeywordCatalog, type KeywordInfoWire, type KeywordNameLanguages } from '@/lib/keywords/catalog-wire'
 
 const KeywordRowSchema = z.object({
   name: z.string(),
@@ -92,24 +93,15 @@ export async function getKeywordData(): Promise<Record<string, KeywordInfo>> {
 }
 
 /**
- * keywordCatalogWithoutDescriptions, cached on its own for the layout. A page rendered per request is resumed with the
- * cache entries its prerender read, sent with every request; this keeps the descriptions out of that state.
+ * The catalogue the [lang] layout hands to every page (compactKeywordCatalog: no descriptions, only the page language's
+ * names), cached on its own. A page rendered per request is resumed with the cache entries its prerender read, sent with
+ * every request; this keeps the descriptions out of that state.
  */
-export async function getKeywordCatalog(): Promise<Record<string, KeywordInfo>> {
+export async function getKeywordCatalog(names: KeywordNameLanguages): Promise<Record<string, KeywordInfoWire>> {
   'use cache'
   cacheLife('max')
   cacheTag(CACHE_TAGS.keywords, CACHE_TAGS.gameData)
-  return keywordCatalogWithoutDescriptions(await loadKeywordData())
-}
-
-/**
- * The catalog every page carries (keyword names, icons, colours for skill text) without descriptions: those appear only
- * in tooltips, which load them from /api/keyword-descriptions/[lang] (keywordDescriptions) when first needed.
- */
-export function keywordCatalogWithoutDescriptions(keywords: Record<string, KeywordInfo>): Record<string, KeywordInfo> {
-  const out: Record<string, KeywordInfo> = {}
-  for (const [name, info] of Object.entries(keywords)) out[name] = { ...info, desc: '', descEn: null, descJp: null }
-  return out
+  return compactKeywordCatalog(await loadKeywordData(), names)
 }
 
 /** Each keyword's description as the locale shows it (Korean when the locale text is missing). */
