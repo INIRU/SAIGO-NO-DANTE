@@ -1,7 +1,7 @@
 import { STORAGE_BASE } from '../constants/game'
 
 /** Content hash of the models in public/models (scripts/vision/assist-model-files.ts); `npm run upload:assist-models` uploads them under it and writes it here. */
-export const ASSIST_MODEL_VERSION = '34f50e1c3c0f'
+export const ASSIST_MODEL_VERSION = '2d323aece3c0'
 
 /**
  * Where the assist workers read their recognition models. A deployed site reads the Storage copy (the files are kept
