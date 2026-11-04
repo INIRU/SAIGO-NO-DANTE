@@ -70,6 +70,14 @@ function named(cards: ClearBonusCard[], names: ReadonlyMap<number, string[]>): C
   return changed ? next : cards
 }
 
+/** The screens a verdict hangs on, by the text detectors that already decide them (for the log). */
+export function screenTags(text: string): string[] {
+  return ([['purchase-dialog', popupPurchaseHeader], ['sale-dialog', sellQuestion], ['acquired-header', showsAcquiredHeader],
+    ['sell-window', isSellWindow], ['blessings', showsBlessingScreen], ['run-end', showsRunEndScreen],
+    ['theme-select', (value: string) => themeSelectionHeaderFloor(value) !== null]] as const)
+    .filter(([, shows]) => shows(text)).map(([tag]) => tag)
+}
+
 /** A purchase or sale confirmation on screen, from its first to its last full-frame sighting. */
 export interface ShopDialog { kind: 'purchase' | 'sale'; firstAt: number; lastAt: number }
 /** Sightings under 3 s apart are one dialog; the last eight are kept. */
@@ -787,12 +795,15 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
           // The shop's purchase confirmation sits where the acquisition popup then appears, so both look like one popup:
           // its reads must not use up the attempts the acquisition popup after it needs. Its later frames start afresh.
           if (popupPurchaseHeader(header) && !popupHeaderEvidence(header)) {
+            dlog('popup', { episode: pending.episode, result: 'purchase-dialog' })
             popupEvidence.current.delete(pending.episode)
             const state = lastPopup.current
             if (state?.episode === pending.episode) Object.assign(state, { episode: ++nextEpisode.current, firstAt: Date.now(),
               attempts: 0, capturedQuality: 0, capturedAt: 0 })
             return
           }
+          dlog('popup', { episode: pending.episode, result: null, header: popupHeaderEvidence(header), icons, effects,
+            labels: merged.labels.map(label => label.text).slice(0, 4) })
           // Every frame of a real gift popup read and none named the gift: a hard case worth a sample. Only with the
           // "acquired" header read: without it, 64 of 90 uploaded samples showed no acquisition at all (gift info and
           // purchase dialogs, skill windows, boss banners).
@@ -804,6 +815,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
           return
         }
         settleSample('popup:' + pending.episode, 'popup', null)
+        dlog('popup', { episode: pending.episode, result: giftId, icons, effects })
         popupEvidence.current.delete(pending.episode)
         for (const queue of [popupQueue, popupVisionQueue]) {
           queue.current = queue.current.filter(item => {
@@ -1015,6 +1027,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
           if (previous && !same) { releasePopupEpisode(previous.episode); endPopup(previous) }
           const state = same ? Object.assign(same, observation) : { ...observation, episode: ++nextEpisode.current,
             floor: floorAtCapture, firstAt: now, attempts: 0, capturedQuality: 0, capturedAt: 0 }
+          if (!same) dlog('popup-seen', { episode: state.episode, box: [label.x, label.y, label.width, label.height].map(Math.round) })
           lastPopup.current = state
           const quality = popupQuality(observation)
           const queued = popupQueue.current.find(item => item.episode === state.episode &&
@@ -1347,8 +1360,11 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
               lastScreenAt = capture.at
               const document = { text: result.text, words: result.words }
               screenReadMs = Date.now() - capture.at
+              // the screens a verdict hangs on keep their whole text, tagged by the detector that saw them (a cut line could not
+              // tell a missed read from a screen never shown, 2026-11-04)
+              const tags = screenTags(result.text)
               dlog('ocr', { ms: Date.now() - capture.at, timing: (result as { timing?: unknown }).timing ?? null, scene: latestLabel.current,
-                text: result.text.replace(/\s+/g, ' ').slice(0, 160) })
+                ...(tags.length ? { tags } : {}), text: result.text.replace(/\s+/g, ' ').slice(0, tags.length ? 1500 : 160) })
               const matches = ocrReferences.current ? { ...matchOcrCandidates(document, ocrReferences.current),
                 ...eventScreenEvidence(document, ocrReferences.current) }
                 : { gifts: [], events: [], choices: [], scopedChoices: [], outcomeEventIds: [], choiceEventIds: [], bodyEventIds: [] }
@@ -2013,10 +2029,12 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
           const at = formationRequest.current?.at ?? Date.now()
           if (Array.isArray(ids) && ids.length === 12 && ids.every(id => id === null || typeof id === 'string') && FORMATION_BAR_SCENES.has(latestLabel.current ?? ''))
             setFormation({ ids: ids as (string | null)[], observedAt: at })
+          else dlog('formation-miss', { scene: latestLabel.current, read: Array.isArray(ids) ? ids.length : null })
           flushVisionPopup()
         } else if (result.type === 'blessings' && blessingRequest.current?.requestId === result.requestId) {
           inFlight.current = false
           const levels = (result as { levels?: unknown }).levels
+          dlog('blessings-read', Array.isArray(levels) ? levels.join('') : null)
           if (Array.isArray(levels) && levels.length === 10 && levels.every(level => Number.isInteger(level) && level >= 0 && level <= 3)) {
             const key = levels.join('')
             if (key === lastBlessingRead.current)
@@ -2032,6 +2050,8 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
           const valid = Array.isArray(cards) && cards.every(card => card && typeof card.place === 'number' && Array.isArray(card.gifts) &&
             card.gifts.every((gift: unknown) => typeof gift === 'string'))
           // a read with no gifts at all (cards still sliding in, or every row empty) changes nothing
+          dlog('bonus-read', !valid ? 'invalid' : latestLabel.current !== 'theme_select' ? `scene ${latestLabel.current}`
+            : (cards as ClearBonusCard[]).map(card => `${card.place}:${card.gifts.length}`).join(' '))
           if (valid && latestLabel.current === 'theme_select' && (cards as ClearBonusCard[]).some(card => card.gifts.length)) {
             const key = offerKey(cards as ClearBonusCard[])
             if (key === lastBonusRead.current) {
