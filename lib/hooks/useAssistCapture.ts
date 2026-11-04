@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { VisualCandidates, VisualReference } from '@/lib/vision/embedding-match'
 import { corroboratedChoiceEvent, effectGiftIds, eventScreenEvidence, matchOcrCandidates, type EventScreenEvidence, type OcrCatalog, type OcrMatches,
   type OcrWord } from '@/lib/vision/ocr-match'
-import { acquiredGiftFromPopup, acquisitionFloor, AUTO_ACQUIRE_EXCLUDED_GIFT_IDS, popupCandidateIds, popupHeaderEvidence, showsAcquiredHeader, type PopupLabelRead } from '@/lib/vision/popup-evidence'
+import { acquiredGiftFromPopup, acquisitionFloor, AUTO_ACQUIRE_EXCLUDED_GIFT_IDS, popupCandidateIds, popupHeaderEvidence, popupPurchaseHeader, showsAcquiredHeader, type PopupLabelRead } from '@/lib/vision/popup-evidence'
 import type { RecipePopupEvidence } from '@/lib/planner/fusion'
 import type { ShopShelf } from '@/lib/vision/shop-shelf'
 import type { OwnedGridRead } from '@/lib/vision/owned-grid'
@@ -55,6 +55,9 @@ export interface FusionEvidence extends FusionDialogEvidence { token: string }
 // the cursor and the choice boxes come several times a second: kept only while the log is verbose
 const FREQUENT = new Set(['cursor', 'bands', 'alone'])
 const dlog = (kind: string, ...args: unknown[]) => plog(kind, args.length === 1 ? args[0] : args, FREQUENT.has(kind))
+/** Screens with the formation's bottom bar: the shop, and the formation screens (the run's entry, before a fight). */
+const FORMATION_BAR_SCENES: ReadonlySet<string> = new Set(['shop', 'battle_setup', 'run_setup'])
+
 /** The cards with the pack names read for their places (unchanged cards keep their object; the array too when none changed). */
 function named(cards: ClearBonusCard[], names: ReadonlyMap<number, string[]>): ClearBonusCard[] {
   let changed = false
@@ -65,6 +68,23 @@ function named(cards: ClearBonusCard[], names: ReadonlyMap<number, string[]>): C
     return { ...card, themeIds: ids }
   })
   return changed ? next : cards
+}
+
+/** The screens a verdict hangs on, by the text detectors that already decide them (for the log). */
+export function screenTags(text: string): string[] {
+  return ([['purchase-dialog', popupPurchaseHeader], ['sale-dialog', sellQuestion], ['acquired-header', showsAcquiredHeader],
+    ['sell-window', isSellWindow], ['blessings', showsBlessingScreen], ['run-end', showsRunEndScreen],
+    ['theme-select', (value: string) => themeSelectionHeaderFloor(value) !== null]] as const)
+    .filter(([, shows]) => shows(text)).map(([tag]) => tag)
+}
+
+/** A purchase or sale confirmation on screen, from its first to its last full-frame sighting. */
+export interface ShopDialog { kind: 'purchase' | 'sale'; firstAt: number; lastAt: number }
+/** Sightings under 3 s apart are one dialog; the last eight are kept. */
+export function noteShopDialog(items: readonly ShopDialog[], kind: ShopDialog['kind'], at: number): ShopDialog[] {
+  const last = items.findLast(item => item.kind === kind)
+  if (last && at - last.lastAt < 3000) return items.map(item => item === last ? { ...item, lastAt: at } : item)
+  return [...items.slice(-7), { kind, firstAt: at, lastAt: at }]
 }
 
 export function useAssistCapture({ giftReferences = [], eventReferences = [], ocrCatalog, themeCatalog, language = 'ko', floor = null,
@@ -119,6 +139,9 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
   const [fusionEvidence, setFusionEvidence] = useState<FusionEvidence[]>([])
   // Confirmed shop sales (capture time of the dialog), latest last.
   const [giftSales, setGiftSales] = useState<GiftSale[]>([])
+  // the shop's purchase and sale confirmations seen in full-frame reads: a result read after one settles it; none read
+  // means the result was missed, not that nothing happened
+  const [shopDialogs, setShopDialogs] = useState<ShopDialog[]>([])
   // The shop shelf as last read (eight slots by the game's layout), while the shop is on screen.
   const [shopShelf, setShopShelf] = useState<ShopShelf | null>(null)
   const shelfRequest = useRef<{ requestId: number; at: number } | null>(null)
@@ -769,6 +792,18 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
             materials: popupDialogMaterials(pending.capturedAt), materialCount: popupDialogCount(pending.capturedAt) }, verdict, inFusion)
           : verdict
         if (!giftId) {
+          // The shop's purchase confirmation sits where the acquisition popup then appears, so both look like one popup:
+          // its reads must not use up the attempts the acquisition popup after it needs. Its later frames start afresh.
+          if (popupPurchaseHeader(header) && !popupHeaderEvidence(header)) {
+            dlog('popup', { episode: pending.episode, result: 'purchase-dialog' })
+            popupEvidence.current.delete(pending.episode)
+            const state = lastPopup.current
+            if (state?.episode === pending.episode) Object.assign(state, { episode: ++nextEpisode.current, firstAt: Date.now(),
+              attempts: 0, capturedQuality: 0, capturedAt: 0 })
+            return
+          }
+          dlog('popup', { episode: pending.episode, result: null, header: popupHeaderEvidence(header), icons, effects,
+            labels: merged.labels.map(label => label.text).slice(0, 4) })
           // Every frame of a real gift popup read and none named the gift: a hard case worth a sample. Only with the
           // "acquired" header read: without it, 64 of 90 uploaded samples showed no acquisition at all (gift info and
           // purchase dialogs, skill windows, boss banners).
@@ -780,6 +815,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
           return
         }
         settleSample('popup:' + pending.episode, 'popup', null)
+        dlog('popup', { episode: pending.episode, result: giftId, icons, effects })
         popupEvidence.current.delete(pending.episode)
         for (const queue of [popupQueue, popupVisionQueue]) {
           queue.current = queue.current.filter(item => {
@@ -991,6 +1027,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
           if (previous && !same) { releasePopupEpisode(previous.episode); endPopup(previous) }
           const state = same ? Object.assign(same, observation) : { ...observation, episode: ++nextEpisode.current,
             floor: floorAtCapture, firstAt: now, attempts: 0, capturedQuality: 0, capturedAt: 0 }
+          if (!same) dlog('popup-seen', { episode: state.episode, box: [label.x, label.y, label.width, label.height].map(Math.round) })
           lastPopup.current = state
           const quality = popupQuality(observation)
           const queued = popupQueue.current.find(item => item.episode === state.episode &&
@@ -1323,8 +1360,11 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
               lastScreenAt = capture.at
               const document = { text: result.text, words: result.words }
               screenReadMs = Date.now() - capture.at
+              // the screens a verdict hangs on keep their whole text, tagged by the detector that saw them (a cut line could not
+              // tell a missed read from a screen never shown, 2026-11-04)
+              const tags = screenTags(result.text)
               dlog('ocr', { ms: Date.now() - capture.at, timing: (result as { timing?: unknown }).timing ?? null, scene: latestLabel.current,
-                text: result.text.replace(/\s+/g, ' ').slice(0, 160) })
+                ...(tags.length ? { tags } : {}), text: result.text.replace(/\s+/g, ' ').slice(0, tags.length ? 1500 : 160) })
               const matches = ocrReferences.current ? { ...matchOcrCandidates(document, ocrReferences.current),
                 ...eventScreenEvidence(document, ocrReferences.current) }
                 : { gifts: [], events: [], choices: [], scopedChoices: [], outcomeEventIds: [], choiceEventIds: [], bodyEventIds: [] }
@@ -1374,6 +1414,8 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
               }
               if (want.gifts) readSale(result.text, result.words, capture)
               readSkillWindow(result.text, capture.at)
+              const shopDialog = popupPurchaseHeader(result.text) ? 'purchase' as const : sellQuestion(result.text) ? 'sale' as const : null
+              if (shopDialog) setShopDialogs(items => noteShopDialog(items, shopDialog, capture.at))
               const confirmation = fusionConfirmation(result.text)
               const fusionScreen = showsFusionTitle(result.text)
               if (fusionScreen) {
@@ -1799,8 +1841,8 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
           } catch { inFlight.current = false }
           return
         }
-        // The formation from the bottom bar while the shop is on screen
-        if (gifts && !inFlight.current && latestLabel.current === 'shop' && hasFrame() && !popupVisionQueue.current.length &&
+        // The formation from the bottom bar while the shop or a formation screen (the run's entry, before a fight) is on screen
+        if (gifts && !inFlight.current && FORMATION_BAR_SCENES.has(latestLabel.current ?? '') && hasFrame() && !popupVisionQueue.current.length &&
           Date.now() - (formationRequest.current?.at ?? 0) >= 2000 && Date.now() - inferredAt < profileRef.current.sceneIntervalMs - 20) {
           markBusy()
           try {
@@ -1985,12 +2027,14 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
           inFlight.current = false
           const ids = (result as { ids?: unknown }).ids
           const at = formationRequest.current?.at ?? Date.now()
-          if (Array.isArray(ids) && ids.length === 12 && ids.every(id => id === null || typeof id === 'string') && latestLabel.current === 'shop')
+          if (Array.isArray(ids) && ids.length === 12 && ids.every(id => id === null || typeof id === 'string') && FORMATION_BAR_SCENES.has(latestLabel.current ?? ''))
             setFormation({ ids: ids as (string | null)[], observedAt: at })
+          else dlog('formation-miss', { scene: latestLabel.current, read: Array.isArray(ids) ? ids.length : null })
           flushVisionPopup()
         } else if (result.type === 'blessings' && blessingRequest.current?.requestId === result.requestId) {
           inFlight.current = false
           const levels = (result as { levels?: unknown }).levels
+          dlog('blessings-read', Array.isArray(levels) ? levels.join('') : null)
           if (Array.isArray(levels) && levels.length === 10 && levels.every(level => Number.isInteger(level) && level >= 0 && level <= 3)) {
             const key = levels.join('')
             if (key === lastBlessingRead.current)
@@ -2006,6 +2050,8 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
           const valid = Array.isArray(cards) && cards.every(card => card && typeof card.place === 'number' && Array.isArray(card.gifts) &&
             card.gifts.every((gift: unknown) => typeof gift === 'string'))
           // a read with no gifts at all (cards still sliding in, or every row empty) changes nothing
+          dlog('bonus-read', !valid ? 'invalid' : latestLabel.current !== 'theme_select' ? `scene ${latestLabel.current}`
+            : (cards as ClearBonusCard[]).map(card => `${card.place}:${card.gifts.length}`).join(' '))
           if (valid && latestLabel.current === 'theme_select' && (cards as ClearBonusCard[]).some(card => card.gifts.length)) {
             const key = offerKey(cards as ClearBonusCard[])
             if (key === lastBonusRead.current) {
@@ -2130,7 +2176,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
 
   return { supported, status, error, prediction, visualCandidates, ocrCandidates, ocrStatus,
     popupAcquisitions, floorThemeObservation, observedFloor, scene, themeSelectionFloor, queueStatus, mobile, gpu, inference, ocrEngine,
-    ocrWorkers, fusionEvidence, giftSales, skillExchange, shopShelf, ownedGrid, formation, blessings, clearBonus, eventPick, start, stop, reportInventoryChange }
+    ocrWorkers, fusionEvidence, giftSales, shopDialogs, skillExchange, shopShelf, ownedGrid, formation, blessings, clearBonus, eventPick, start, stop, reportInventoryChange }
 }
 
 /**

@@ -7,7 +7,7 @@ import { fusionSlotRegions, fusionSlotRegionsFromAnchors, fusionWheelRegions, ve
 import { assistModelRoot, ortWasmPaths } from './model-assets'
 import { classifierKnowsHeld, classifierSlotRead, heldLabels, iconTensor, ICON_CROP, ICON_INPUT } from './icon-classifier'
 import { decodeCursorTemplates, findCursor, type CursorRead, type CursorTemplates } from './cursor'
-import { decodePortraitIndex, formationBarRegions, matchPortrait, portraitId, shownPixels, type PortraitIndex } from './formation-bar'
+import { BAR_BAND, decodePortraitIndex, formationBarRegions, formationBarShift, isBarOrange, matchPortrait, portraitId, shownPixels, type PortraitIndex } from './formation-bar'
 import { readBlessingCards } from './blessing-screen'
 import { ownedGridGifts, ownedGridOffset, ownedGridRegions, ownedGridStrips, yellowRows } from './owned-grid'
 import { shopShelfRegions, shopSoldBand, soldMark, SHOP_SOLD_MIN, titleBarRows, type ShopSlotRead } from './shop-shelf'
@@ -422,7 +422,16 @@ self.onmessage = async (event: MessageEvent<Request>) => {
         .then(decodePortraitIndex).catch(() => null)
       const index = await portraitIndex
       const sample = sampler(frame)
-      const ids = index ? formationBarRegions(frame.width, frame.height).map(region =>
+      // where the bar is on this screen: the shop's place, or shifted (the formation screen before a fight)
+      const scale = frame.width / 1920
+      const bandTop = Math.max(0, Math.round(frame.height - BAR_BAND.top * scale)), bandHeight = Math.max(1, Math.round((BAR_BAND.top - BAR_BAND.bottom) * scale))
+      const strip = new OffscreenCanvas(frame.width, bandHeight).getContext('2d', { willReadFrequently: true })!
+      strip.drawImage(frame, 0, bandTop, frame.width, bandHeight, 0, 0, frame.width, bandHeight)
+      const pixels = strip.getImageData(0, 0, frame.width, bandHeight).data
+      const orange = new Uint16Array(frame.width)
+      for (let at = 0; at < pixels.length; at += 4) if (isBarOrange(pixels[at], pixels[at + 1], pixels[at + 2])) orange[(at / 4) % frame.width]++
+      const shift = formationBarShift(orange, frame.width)
+      const ids = index ? formationBarRegions(frame.width, frame.height, shift).map(region =>
         portraitId(matchPortrait(index, shownPixels(sample(region.x, region.y, region.size * (1 - 2 * index.inset), index.side), index.mask)))) : []
       respond({ type: 'formation', requestId, ids })
       return
