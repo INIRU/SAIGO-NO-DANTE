@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { OCR_READ_FAILURES, OCR_REBUILD_MS, ocrErrorAction, runFrameTask } from '@/lib/hooks/useAssistCapture'
+import { OCR_READ_FAILURES, OCR_REBUILD_MS, OCR_STABLE_MS, ocrErrorAction, ocrRebuildsAfterRead, runFrameTask } from '@/lib/hooks/useAssistCapture'
 
 // A hidden tab fires timers about once a second; frames from the captured track keep coming and drive the same work.
 it('runs timer work from either caller at most once per interval, and not after its timer stops', () => {
@@ -24,5 +24,15 @@ describe('OCR worker errors', () => {
     }
     expect(actions).toEqual([...Array(OCR_READ_FAILURES - 1).fill('skip'), 'retire'])
     expect(OCR_REBUILD_MS.length).toBeGreaterThan(0)
+  })
+})
+
+describe('the OCR rebuild budget over a long run', () => {
+  it('comes back once rebuilt workers have read for a while, so a run of hours does not end with no reading', () => {
+    expect(ocrRebuildsAfterRead(3, 1000, 1000 + OCR_STABLE_MS)).toBe(0)
+    expect(ocrRebuildsAfterRead(3, 1000, 1000 + OCR_STABLE_MS - 1)).toBe(3)
+    // the first workers of a capture spend nothing
+    expect(ocrRebuildsAfterRead(0, null, 10 ** 9)).toBe(0)
+    expect(ocrRebuildsAfterRead(2, null, 10 ** 9)).toBe(2)
   })
 })

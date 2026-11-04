@@ -149,6 +149,15 @@ export const OCR_READ_FAILURES = 3
  */
 export const SCENE_READ_FAILURES = 5
 export const OCR_REBUILD_MS = [5_000, 20_000, 60_000]
+/**
+ * New workers that then read for this long without dying get the rebuilds back: a run of hours could spend all three and
+ * read nothing for the rest of it (floors 13-15 went unread, 2026-11-04). The GPU models' retries work the same way.
+ */
+export const OCR_STABLE_MS = 5 * 60_000
+/** The rebuild budget after a read at `now` by workers built at `builtAt` (null: the first ones). */
+export function ocrRebuildsAfterRead(spent: number, builtAt: number | null, now: number): number {
+  return spent && builtAt !== null && now - builtAt >= OCR_STABLE_MS ? 0 : spent
+}
 /** Development only, with localStorage 'prescript-debug': the cursor and choice-list readings in the console. */
 const DEBUG_PICK = typeof window !== 'undefined' && process.env.NODE_ENV !== 'production' && (() => { try { return Boolean(window.localStorage.getItem('prescript-debug')) } catch { return false } })()
 /** What a worker's error answer to the read in flight does to its lane: skip the frame, or retire the lane once reads keep failing. */
@@ -345,6 +354,8 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
   const rebuildOcr = useRef<(() => void) | null>(null)
   // Automatic rebuilds of the OCR workers after all of them failed, in this capture.
   const ocrRebuilds = useRef(0)
+  // when the OCR workers in use were built after a failure (null: the first ones of this capture)
+  const ocrBuiltAt = useRef<number | null>(null)
   // Exploration floor read in two separate captures, even when its pack name could not be read.
   const [observedFloor, setObservedFloor] = useState<number | null>(null)
   // Classifier label held by two consecutive confident predictions; one-off misclassifications do not switch it.
@@ -631,6 +642,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
   const start = useCallback(async () => {
     cleanup()
     ocrRebuilds.current = 0
+    ocrBuiltAt.current = null
     setPrediction(null)
     setVisualCandidates(null)
     setOcrCandidates(null)
@@ -1190,7 +1202,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
           const wait = OCR_REBUILD_MS[ocrRebuilds.current]
           if (wait !== undefined) {
             ocrRebuilds.current += 1
-            setTimeout(() => { if (run === generation.current && !ocrPool.current) rebuildOcr.current?.() }, wait)
+            setTimeout(() => { if (run === generation.current && !ocrPool.current) { ocrBuiltAt.current = Date.now(); rebuildOcr.current?.() } }, wait)
           }
         }
         flushOcrPopup = () => {
@@ -1285,7 +1297,10 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
           if (!alive(lane)) return
           const result = event.data
           const mine = result.requestId === lane.activeRequest && lane.inFlight
-          if (mine && (result.type === 'result' || result.type === 'popupResult' || result.type === 'exploreResult')) lane.failures = 0
+          if (mine && (result.type === 'result' || result.type === 'popupResult' || result.type === 'exploreResult')) {
+            lane.failures = 0
+            ocrRebuilds.current = ocrRebuildsAfterRead(ocrRebuilds.current, ocrBuiltAt.current, Date.now())
+          }
           if (result.type === 'error' && typeof result.requestId === 'number') {
             // An answer to a read already given up on changes nothing.
             if (!mine) return
