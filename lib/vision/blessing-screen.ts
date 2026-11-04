@@ -1,11 +1,15 @@
 const normalized = (text: string) => text.normalize('NFKC').replace(/\s+/g, '')
 
 /**
- * The starlight (별의 가호) screen before a run: its title and its 입장 button in one read. The scene classifier learned
- * the old red cards only (14 frames); the 2026-10 screen is blue, and the text is the same in any colour. Either word
- * alone is not enough: the title also names the bonus gift popup ("별의 가호 효과 발동"), 입장 other screens' buttons.
+ * The starlight (별의 가호) screen before a run: its title with a word only that screen has (입장, 가호 전체 선택, 사용
+ * 가능) in one read. The scene classifier learned the old red cards only (14 frames); the 2026-10 screen is blue, and the
+ * text is the same in any colour. The title alone is not enough: it also names the bonus gift popup ("별의 가호 효과
+ * 발동"). 입장 alone failed in a window too short for it (2026-11-04: "시지프 별의 가호 … 가호전체선택", no 입장).
  */
-export const showsBlessingScreen = (text: string) => { const read = normalized(text); return read.includes('별의가호') && read.includes('입장') }
+export const showsBlessingScreen = (text: string) => {
+  const read = normalized(text)
+  return read.includes('별의가호') && !read.includes('효과발동') && ['입장', '가호전체선택', '사용가능'].some(word => read.includes(word))
+}
 
 /**
  * The scene that screen stands for. It now comes after the formation and before the start gifts (recording 2026-10-23),
