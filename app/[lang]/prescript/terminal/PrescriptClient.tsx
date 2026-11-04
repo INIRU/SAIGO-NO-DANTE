@@ -109,12 +109,16 @@ export default function PrescriptClient({ themes, gifts, recipes, events, eventC
   const stageOption = openRoom && roomEventId !== null && roomEventId !== openRoom.eventId ? optionLeadingTo(openRoom.options, roomEventId) : null
   const eventRoom = useMemo(() => roomEventId === null ? null : { eventId: roomEventId, options: optionsKey ? optionsKey.split(',').map(Number) : [] },
     [roomEventId, optionsKey])
-  // the left panel's result text: the rows it names must all be of one option (several are one option's possible results)
+  // the left panel's result text: the rows it names must all be of one option (several are one option's possible results).
+  // A later stage's result (a check's success or failure text) names the room's option that led to it
   const named = (evidence.ocrCandidates?.outcomeChoiceIds ?? []).map(id => choiceById.get(id)).filter(choice => choice && Number.isInteger(choice.option_index))
-  const outcome = new Set(named.map(choice => `${choice!.event_id}:${choice!.option_index}`)).size === 1 ? named[0] : undefined
+  const single = new Set(named.map(choice => `${choice!.event_id}:${choice!.option_index}`)).size === 1 ? named[0] : undefined
+  const ledFrom = single && openRoom && single.event_id !== openRoom.eventId ? optionLeadingTo(openRoom.options, single.event_id) : null
+  const outcome = single && (!openRoom || single.event_id === openRoom.eventId) ? single : undefined
   // the game left the taken option alone on its result page: as good as its result text
   const alone = capture.eventPick?.via === 'list' ? choiceById.get(capture.eventPick.choiceId) : undefined
   const outcomeKey = outcome ? `${outcome.event_id}:${outcome.option_index}`
+    : openRoom && ledFrom !== null ? `${openRoom.eventId}:${ledFrom}`
     : alone && Number.isInteger(alone.option_index) && !alone.outcome ? `${alone.event_id}:${alone.option_index}`
     : openRoom && stageOption !== null ? `${openRoom.eventId}:${stageOption}` : ''
   const eventOutcome = useMemo(() => outcomeKey ? { eventId: Number(outcomeKey.split(':')[0]), option: Number(outcomeKey.split(':')[1]), at: Date.now() } : null,
