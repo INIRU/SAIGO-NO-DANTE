@@ -195,20 +195,23 @@ export function usePrescript({ enabled, grade = 'proselyte', status, acquisition
   const floor = context.floor
   const offersRef = useRef(offers)
   offersRef.current = offers
-  const inShopRef = useRef(inShop)
-  inShopRef.current = inShop
+  // the shop visit, not only its shelf screen: fusing, selling and the acquired popup happen in the shop (the shelf is hidden
+  // then), so its prescripts stay open until a screen outside the shop comes
+  const inVisit = inShop || wasInShop.current
+  const inShopRef = useRef(inVisit)
+  inShopRef.current = inVisit
   useEffect(() => {
     if (!enabled || status !== 'running' || run.ended) return
     // a floor's special and shop offers end with it; one still unanswered was let pass (a standing offer carries on)
     const passed = offers.filter(o => o.scope !== 'standing' && o.floor !== floor)
-    const want = wanted(run, floor, inShop).filter(scope => !offers.some(o => o.scope === scope && (o.scope === 'standing' || o.floor === floor)))
+    const want = wanted(run, floor, inVisit).filter(scope => !offers.some(o => o.scope === scope && (o.scope === 'standing' || o.floor === floor)))
     if (!want.length && !passed.length) return
     const at = Date.now()
     for (const o of passed) if (o.cards.length) setRun(current => missOffer(current, o.scope, o.floor, at))
     setOffers(current => [...current.filter(o => o.scope === 'standing' || o.floor === floor),
       // kept even with no card, so a kind with nothing to offer is not drawn again every render
       ...want.map(scope => ({ scope, floor, issuedAt: at, cards: offer(scope, contextRef.current, 3, 1 + (run.resisted ?? 0)) }))])
-  }, [enabled, status, run, floor, inShop, offers])
+  }, [enabled, status, run, floor, inVisit, offers])
 
   const canChoose = useCallback((card: PrescriptCard) => feasible(card, contextRef.current, inShopRef.current), [])
   const choose = useCallback((card: PrescriptCard) => {
