@@ -1108,6 +1108,8 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
       // OCR lanes: popups (gift acquisition) and screen reads (event/pack full frame, exploration banner). One worker serves
       // both in performance mode; balanced and quality run one worker per lane so neither blocks the other.
       let recognizedAt = 0
+      // how long the last screen read took, capture to result: event and fusion screens are read as often as the GPU allows
+      let screenReadMs = 1000
       let exploredAt = 0
       let bannerRecent = false
       let lastScreenAt = 0
@@ -1212,8 +1214,11 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
           const want = detectionRef.current
           // Gifts alone still read the screen at the idle rate: only OCR finds the fusion and sell screens when the classifier misses them.
           if (!want.events && !want.themes && !want.gifts) return
-          const interval = fusionScreen ? Math.min(400, profile.recognizeMs.event)
-            : now - eventHintAt < 5000 ? profile.recognizeMs.event : profile.recognizeMs.idle
+          // A read takes 70-110 ms on a desktop GPU (live test, 2026-11-04): the 0.7 s wait was most of the delay, so
+          // a screen that needs it is read again after twice the last read's time (at least 0.25 s, at most as before)
+          const quick = Math.max(250, 2 * screenReadMs)
+          const interval = fusionScreen ? Math.min(400, profile.recognizeMs.event, quick)
+            : now - eventHintAt < 5000 ? Math.min(profile.recognizeMs.event, quick) : profile.recognizeMs.idle
           // With one shared worker, queued popups go first, but only for one extra interval.
           const shared = pool.popup === pool.screen
           // a screen change since the last read starts one at once (still one at a time, 120 ms apart at least)
@@ -1321,6 +1326,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
             if (capture && capture.at > lastScreenAt && capture.floor === currentFloor.current && Date.now() < capture.at + 6000) {
               lastScreenAt = capture.at
               const document = { text: result.text, words: result.words }
+              screenReadMs = Date.now() - capture.at
               if (DEBUG_PICK) console.info('[prescript] ocr', Date.now() - capture.at, 'ms after capture', JSON.stringify((result as { timing?: unknown }).timing ?? null), latestLabel.current)
               const matches = ocrReferences.current ? { ...matchOcrCandidates(document, ocrReferences.current),
                 ...eventScreenEvidence(document, ocrReferences.current) }
