@@ -3207,6 +3207,16 @@
           ]
         }
       ]
-    }
+    },
+    "chipRerolls": "リロール",
+    "chipReply": "返答時間",
+    "chipRefuse": "拒否",
+    "chipGrace": "加護",
+    "chipYes": "可",
+    "chipNo": "なし",
+    "firstGuide": "初めてならガイドから読んでください",
+    "unitSeconds": "秒",
+    "unitRuns": "回",
+    "menuBest": "最高"
   }
 }

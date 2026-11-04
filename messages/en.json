@@ -3207,6 +3207,16 @@
           ]
         }
       ]
-    }
+    },
+    "chipRerolls": "Rerolls",
+    "chipReply": "Reply time",
+    "chipRefuse": "Decline",
+    "chipGrace": "Grace",
+    "chipYes": "Yes",
+    "chipNo": "No",
+    "firstGuide": "First time? Read the guide first",
+    "unitSeconds": "s",
+    "unitRuns": "runs",
+    "menuBest": "Best"
   }
 }
