@@ -319,6 +319,8 @@ def main():
     parser.add_argument("--labels", type=Path, help="labels.json fixing the class order (image mode)")
     parser.add_argument("--init-onnx", type=Path, help="start from this exported scene model instead of ImageNet")
     parser.add_argument("--view", choices=("squash", "crop"), default="squash")
+    parser.add_argument("--arch", choices=("mnv3s", "mnv4s"), default="mnv3s",
+                        help="mnv4s: timm MobileNetV4-Conv-Small (ImageNet, e2400 r224), every layer trained")
     args = parser.parse_args()
     if args.self_check:
         self_check()
@@ -368,22 +370,31 @@ def main():
     sampler = torch.utils.data.WeightedRandomSampler(sample_weights, num_samples=len(sample_weights), replacement=True)
     loaders = {name: DataLoader(ds, batch_size=args.batch_size, sampler=sampler if name == "train" else None)
                for name, ds in data.items()}
-    if args.init_onnx:
-        model = from_onnx(args.init_onnx, len(labels))
+    if args.arch == "mnv4s":
+        # Same input as the shipped model (224, RGB, ImageNet mean and std): the worker's preprocessing does not change
+        import timm
+        model = timm.create_model("mobilenetv4_conv_small.e2400_r224_in1k", pretrained=True, num_classes=len(labels))
+        head = list(model.get_classifier().parameters())
+        body = [p for p in model.parameters() if all(p is not h for h in head)]
+        model.to(device)
+        optimizer = torch.optim.AdamW([{"params": body, "lr": 5e-4}, {"params": head, "lr": 2e-3}], weight_decay=1e-4)
     else:
-        model = models.mobilenet_v3_small(weights=weights)
-        model.classifier[-1] = nn.Linear(model.classifier[-1].in_features, len(labels))
-    for parameter in model.parameters():
-        parameter.requires_grad = False
-    # The last feature blocks and the classifier head learn; earlier ImageNet features stay fixed.
-    trainable = [*model.features[9:].parameters(), *model.classifier.parameters()]
-    for parameter in trainable:
-        parameter.requires_grad = True
-    model.to(device)
-    # A model that already knows the screens is corrected with smaller steps than one starting from ImageNet.
-    rate = .2 if args.init_onnx else 1
-    optimizer = torch.optim.AdamW([{"params": model.features[9:].parameters(), "lr": 3e-4 * rate},
-                                   {"params": model.classifier.parameters(), "lr": 1e-3 * rate}], weight_decay=1e-4)
+        if args.init_onnx:
+            model = from_onnx(args.init_onnx, len(labels))
+        else:
+            model = models.mobilenet_v3_small(weights=weights)
+            model.classifier[-1] = nn.Linear(model.classifier[-1].in_features, len(labels))
+        for parameter in model.parameters():
+            parameter.requires_grad = False
+        # The last feature blocks and the classifier head learn; earlier ImageNet features stay fixed.
+        trainable = [*model.features[9:].parameters(), *model.classifier.parameters()]
+        for parameter in trainable:
+            parameter.requires_grad = True
+        model.to(device)
+        # A model that already knows the screens is corrected with smaller steps than one starting from ImageNet.
+        rate = .2 if args.init_onnx else 1
+        optimizer = torch.optim.AdamW([{"params": model.features[9:].parameters(), "lr": 3e-4 * rate},
+                                       {"params": model.classifier.parameters(), "lr": 1e-3 * rate}], weight_decay=1e-4)
     loss_fn = nn.CrossEntropyLoss(label_smoothing=.05)
     for epoch in range(args.epochs):
         model.train()
@@ -396,7 +407,7 @@ def main():
     args.out.mkdir(parents=True, exist_ok=True)
     model = model.cpu().eval()
     sample = data["test"][0][0].unsqueeze(0)
-    onnx_path = args.out / "scene-mobilenetv3-small.onnx"
+    onnx_path = args.out / ("scene-mobilenetv4-small.onnx" if args.arch == "mnv4s" else "scene-mobilenetv3-small.onnx")
     torch.onnx.export(model, sample, onnx_path, input_names=["image"], output_names=["logits"],
                       dynamic_axes={"image": {0: "batch"}, "logits": {0: "batch"}}, opset_version=17,
                       dynamo=False)
@@ -406,7 +417,7 @@ def main():
     parity = float(np.max(np.abs(expected - actual)))
     if not np.allclose(expected, actual, atol=1e-4, rtol=1e-4):
         raise RuntimeError(f"ONNX numerical parity failed (max abs error {parity})")
-    torch.save(model.state_dict(), args.out / "scene-mobilenetv3-small.pth")
+    torch.save(model.state_dict(), onnx_path.with_suffix(".pth"))
     preprocess_report = {
         "color_order": "RGB",
         "input_layout": "NCHW",
