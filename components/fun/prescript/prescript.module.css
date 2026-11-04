@@ -172,7 +172,7 @@
 .last dt, .totals dt { font-size: 0.75rem; color: var(--mute); }
 .last dd, .totals dd { margin: 0; font-family: var(--n); font-size: 1.5rem; line-height: 1; }
 .menu { display: grid; border-top: 1px solid var(--line); }
-.menu a, .menu button { display: grid; grid-template-columns: 8rem 1fr; gap: 1rem; align-items: baseline; padding: 1rem 0.25rem; border: 0; border-bottom: 1px solid var(--line);
+.menu a, .menu button { display: grid; grid-template-columns: 8rem 1fr auto; gap: 1rem; align-items: baseline; padding: 1rem 0.25rem; border: 0; border-bottom: 1px solid var(--line);
   background: none; color: var(--white); font: inherit; text-align: left; text-decoration: none; cursor: pointer; }
 .menu a:hover b, .menu button:hover b { color: var(--blue-lt); }
 .menu a:focus-visible, .menu button:focus-visible { outline: 2px solid var(--blue-lt); outline-offset: -2px; }
@@ -184,6 +184,27 @@
 .grades button { display: grid; gap: 0.25rem; padding: 0.625rem 0.75rem; text-align: left; font: inherit; color: var(--mute); background: none; border: 1px solid var(--line-2); border-radius: 4px; cursor: pointer; }
 .grades button b { font-family: var(--h); color: var(--white); font-size: 0.95rem; }
 .grades button span { font-size: 0.75rem; line-height: 1.45; }
+/* a grade's terms as figures: rerolls, reply time, refusal, grace */
+.grades dl { display: grid; grid-template-columns: 1fr auto; gap: 0.125rem 0.75rem; margin: 0.375rem 0 0; }
+.grades dt { font-size: 0.75rem; color: var(--mute); }
+.grades dd { margin: 0; font-family: var(--n); font-size: 1.05rem; line-height: 1.2; color: var(--white); text-align: right; }
+.grades .gradeOn dd { color: var(--blue-lt); }
+/* the Korean beside a figure: the body face, smaller (the figures' face has no Hangul) */
+.grades dd small, .menu i small { font-family: var(--t); font-size: 0.75rem; margin: 0 0.125rem; }
+.grades dd.word { font-family: var(--t); font-size: 0.8125rem; line-height: 1.5; }
+/* the menu's live figure (runs, best grace) */
+.menu i { font-style: normal; font-family: var(--n); font-size: 1.1rem; color: var(--blue-lt); }
+/* first visit: the guide before the terminal */
+.first { font-size: 0.875rem; color: var(--blue-lt); text-underline-offset: 0.2em; }
+.first:focus-visible { outline: 2px solid var(--blue-lt); outline-offset: 2px; }
+.side { display: grid; gap: 1.75rem; align-content: start; }
+/* wide screens: the terminal on the left, the last run and the ways on the right */
+@media (min-width: 64rem) {
+  .hub { max-width: 66rem; grid-template-columns: minmax(0, 1fr) minmax(0, 27rem); column-gap: 4rem; align-items: start; }
+  .hub > .back { grid-column: 1 / -1; }
+  .hub .hero { padding-top: 2.5rem; }
+  .side { padding-top: 2.5rem; }
+}
 .grades .gradeOn { border-color: var(--blue); background: rgba(61, 127, 224, 0.12); }
 .grades button:focus-visible { outline: 2px solid var(--blue-lt); outline-offset: 2px; }
 .grade { font-family: var(--h); font-size: 0.75rem; color: var(--blue-lt); border: 1px solid var(--line-2); border-radius: 3px; padding: 0.125rem 0.375rem; }

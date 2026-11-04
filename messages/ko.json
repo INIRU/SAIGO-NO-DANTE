@@ -3207,6 +3207,16 @@
           ]
         }
       ]
-    }
+    },
+    "chipRerolls": "리롤",
+    "chipReply": "답할 시간",
+    "chipRefuse": "거부",
+    "chipGrace": "가호",
+    "chipYes": "가능",
+    "chipNo": "없음",
+    "firstGuide": "처음이라면 가이드부터 읽어 보세요",
+    "unitSeconds": "초",
+    "unitRuns": "회차",
+    "menuBest": "최고"
   }
 }
