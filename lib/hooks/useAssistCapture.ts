@@ -1906,12 +1906,15 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
           every(changeTimer, 100, () => { void sampleChange() })
           // the capture's last seconds, a frame every 100 ms scaled to 960 px, kept by their own worker
           const keeper = new Worker('/models/assist-scene/frame-tape-worker.js', { type: 'module' })
-          keeper.onmessage = (event: MessageEvent<{ type: string; requestId?: number; frames?: { at: number; bitmap: ImageBitmap }[]; kept?: number; bytes?: number }>) => {
+          keeper.onmessage = (event: MessageEvent<{ type: string; requestId?: number; frames?: { at: number; bitmap: ImageBitmap }[]; kept?: number; bytes?: number; keepMs?: number; dropped?: number }>) => {
             const answer = event.data.type === 'frames' && typeof event.data.requestId === 'number' ? tapeAnswers.get(event.data.requestId) : undefined
-            if (DEBUG_PICK && event.data.type === 'frames') console.info('[prescript] tape', event.data.frames?.length, 'of', event.data.kept, 'kept,', Math.round((event.data.bytes ?? 0) / 1e5) / 10, 'MB')
+            if (DEBUG_PICK && event.data.type === 'frames') console.info('[prescript] tape', event.data.frames?.length, 'of', event.data.kept, 'kept,',
+              Math.round((event.data.bytes ?? 0) / 1e5) / 10, 'MB,', event.data.keepMs, 'ms a frame,', event.data.dropped, 'dropped')
             if (answer) { tapeAnswers.delete(event.data.requestId!); answer(event.data.frames ?? []) } else for (const frame of event.data.frames ?? []) frame.bitmap.close()
           }
           tape.current = keeper
+          // development only: the kept seconds read again on demand (the live test triggers a replay with it)
+          if (DEBUG_PICK) Object.assign(window, { __assistReplay: (ms = 8000) => replayRoom(Date.now() - ms, Date.now()) })
           let feeding = false
           every(tapeTimer, TAPE_EVERY_MS, () => {
             if (feeding || !tape.current) return
