@@ -1,16 +1,15 @@
 /**
  * The gift-icon classifier (public/models/assist-scene/icon-classifier.onnx, scripts/vision/train_icons.py): one
- * MobileNetV3-small pass over 96 px crops of 1.3x a fusion slot region names the gift in every slot at once. It was trained
+ * MobileNetV4-Conv-Small pass (MobileNetV3-small until 2026-11-04b) over 96 px crops of 1.3x a fusion slot region names the gift in every slot at once. It was trained
  * on catalog icons pasted into real empty slots with fading, small captures and JPEG, the cases template matching missed.
  */
 import { AUTO_ACQUIRE_EXCLUDED_GIFT_IDS } from './popup-evidence'
 import type { FusionSlotRead } from './fusion-evidence'
+import { IMAGENET_MEAN as MEAN, IMAGENET_STD as STD } from './strong-read'
 
 export const ICON_INPUT = 96
 /** Crop side relative to the slot region, as in training. */
 export const ICON_CROP = 1.3
-const MEAN = [0.485, 0.456, 0.406]
-const STD = [0.229, 0.224, 0.225]
 /** The label of an empty slot and of the five vestiges, one class each (the app never tells vestiges apart). */
 export const BLANK_LABEL = 'blank'
 const VESTIGE_LABEL = '9991'

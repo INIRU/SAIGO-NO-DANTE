@@ -1,6 +1,6 @@
+import { IMAGENET_MEAN as MEAN, IMAGENET_STD as STD } from './strong-read'
+
 export const SCENE_SIZE = 224
-const MEAN = [0.485, 0.456, 0.406]
-const STD = [0.229, 0.224, 0.225]
 
 /** Convert a resized RGBA frame into the model's RGB NCHW float tensor. */
 export function sceneFrameToTensor(frame: Pick<ImageData, 'data' | 'width' | 'height'>): Float32Array {

@@ -16,8 +16,7 @@ import numpy as np
 import onnxruntime as ort
 from PIL import Image
 
-MEAN = np.array([0.485, 0.456, 0.406], np.float32)
-STD = np.array([0.229, 0.224, 0.225], np.float32)
+from assist_common import IMAGENET_MEAN as MEAN, IMAGENET_STD as STD
 
 
 def main():
@@ -28,8 +27,8 @@ def main():
     parser.add_argument('--models', nargs='+', required=True, help='name=path, the shipped model first')
     args = parser.parse_args()
     roots = {name: Path(folder) for name, folder in (item.split('=', 1) for item in args.roots)}
-    labels = json.loads(args.labels.read_text())
-    rows = [row for row in map(json.loads, args.images.read_text().splitlines()) if row['split'] != 'train']
+    labels = json.loads(args.labels.read_text(encoding='utf-8'))
+    rows = [row for row in map(json.loads, args.images.read_text(encoding='utf-8').splitlines()) if row['split'] != 'train']
     # As the worker: the whole frame to 224x224, smoothed.
     frames = np.stack([((np.asarray(Image.open(roots[row['root']] / row['file']).convert('RGB').resize((224, 224), Image.BILINEAR), np.float32) / 255 - MEAN) / STD)
                        .transpose(2, 0, 1) for row in rows])
@@ -44,7 +43,8 @@ def main():
         read[name] = (scores.argmax(1), scores.max(1))
     groups = defaultdict(list)
     for index, row in enumerate(rows):
-        by_text = row['source'] == 'text'
+        # labelled from the screen's own text or UI, not by an earlier model: these are scored against the truth
+        by_text = row['source'] in ('text', 'ui-labelled sample')
         groups[('text' if by_text else 'earlier model', row['shape'] if by_text else '-', row['label'] if by_text else 'all')].append(index)
         if by_text:
             groups[('text', 'ALL', 'all')].append(index)
