@@ -249,7 +249,9 @@ export interface ChoiceBox { choiceId: string; left: number; top: number; width:
 
 /**
  * A text line of a choice, by the word read whole (or nearly so: at least 0.6 of a text of 4 or more glyphs). A short
- * name ("말린다.") counts only as a line of its own, read exactly.
+ * name ("말린다.") counts only as a line of its own, read exactly. A line much longer than the name is not its button:
+ * a whole-screen share also reads the terminal's own order ("【선택지 「…」. 골라라】"), which named a button that was not
+ * on the game's list (2026-11-04).
  */
 function choiceBoxes(words: readonly OcrWord[], choices: readonly OcrChoiceReference[]): ChoiceBox[] {
   const boxes: ChoiceBox[] = []
@@ -258,7 +260,8 @@ function choiceBoxes(words: readonly OcrWord[], choices: readonly OcrChoiceRefer
     const word = words.find(item => {
       const text = normalized(item.text)
       return pieces.some(piece => text === piece || (contentLength(piece) >= 4 &&
-        (text.includes(piece) || (piece.includes(text) && contentLength(text) >= Math.max(4, 0.6 * contentLength(piece))))))
+        ((text.includes(piece) && contentLength(text) <= 1.3 * contentLength(piece) + 1) ||
+          (piece.includes(text) && contentLength(text) >= Math.max(4, 0.6 * contentLength(piece))))))
     })
     if (word) boxes.push({ choiceId: choice.id, left: word.left, top: word.top, width: word.width, height: word.height })
   }
