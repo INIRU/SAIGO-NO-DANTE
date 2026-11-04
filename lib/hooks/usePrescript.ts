@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { applyEvent, createPrescriptRun, penance, endPrescriptRun, eventPrescript, feasible, gradeOf, missOffer, offer, receive, resist, reroll as rerollRun, wanted, type PrescriptCard, type PrescriptContext, type PrescriptGrade,
+import { applyEvent, createPrescriptRun, penance, endPrescriptRun, eventPrescript, feasible, gradeOf, missOffer, offer, receive, resist, reroll as rerollRun, startPrescripts, wanted, type PrescriptCard, type PrescriptContext, type PrescriptGrade,
   type PrescriptEvent, type PrescriptRun, type PrescriptScope } from '@/lib/fun/prescript'
 import { fusionResultFollows } from '@/lib/vision/fusion-evidence'
 import { EVENT_EXIT_SCENES } from '@/lib/vision/scene-state'
@@ -112,6 +112,15 @@ export function usePrescript({ enabled, grade = 'proselyte', status, acquisition
     if (scene === 'run_end') { setRun(current => current.ended ? current : endPrescriptRun(current, Date.now())); setOffers([]) }
     else if (RUN_START.has(scene) && run.ended) restart()
   }, [enabled, scene, run.ended, restart])
+  // the run begins (its entry or start gift screens, before any floor): the opening orders at once, no choice, no refusal.
+  // Not on a formation screen alone: a run joined midway shows that before every battle
+  const started = run.prescripts.some(p => p.scope === 'start')
+  useEffect(() => {
+    if (!enabled || status !== 'running' || run.ended || started || !scene || !RUN_START.has(scene) || contextRef.current.floor >= 1) return
+    const at = Date.now()
+    setRun(current => current.prescripts.some(p => p.scope === 'start') ? current
+      : startPrescripts(contextRef.current).reduce((next, card) => receive(next, card, 0, at), current))
+  }, [enabled, status, run.ended, started, scene])
   const without = (list: string[], ids: readonly string[]) => { const rest = [...list]; for (const id of ids) { const at = rest.indexOf(id); if (at >= 0) rest.splice(at, 1) } return rest }
   const seen = useRef(new Set<string>())
   const once = (token: string) => !seen.current.has(token) && !!seen.current.add(token)
