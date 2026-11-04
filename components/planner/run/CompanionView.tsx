@@ -24,7 +24,8 @@ import CompanionFormation from './CompanionFormation'
 import CompanionPlanMemo from './CompanionPlanMemo'
 import CompanionClearBonus from './CompanionClearBonus'
 import FusionGuideList from './FusionGuideList'
-import { useGiftInfo } from './CompanionGiftInfo'
+import NotePreviewHost from '@/components/notes/NotePreviewCard'
+import { giftPreviewAsset } from '@/lib/notes/assets'
 
 /** What the window shows, already decided (lib/planner/pip-view, pip-tips): this component only draws it. */
 export interface PipView {
@@ -92,8 +93,6 @@ export default function CompanionView({ view, data, actions, width, height, inPi
   const locale = useLocale() as SupportedLang
   const reducedMotion = useReducedMotion()
   const [settingsOpen, setSettingsOpen] = useState(false)
-  // gift names and details on hover (the cells show the art only)
-  const info = useGiftInfo()
   const localized = (item: { name: string; name_en?: string | null; name_jp?: string | null }) => getLocalizedName({ name_kr: item.name, name_en: item.name_en, name_jp: item.name_jp }, locale)
   const giftsOf = (ids: readonly number[]) => ids.flatMap(id => data.giftMap.get(id) ?? [])
   const density = pipDensity(width, height)
@@ -134,21 +133,21 @@ export default function CompanionView({ view, data, actions, width, height, inPi
     switch (tip.kind) {
       case 'clear-bonus':
         return <CompanionClearBonus key={`${tip.kind}-${index}`} gifts={giftsOf(tip.gifts)} planned={view.planned} owned={view.owned} picks={tip.picks}
-          iconSize={icons(tip.gifts.length, tipWidth - 24)} compact={density === 'compact'} hover={gift => info.bind(gift, view.badges(gift.game_id))} />
+          iconSize={icons(tip.gifts.length, tipWidth - 24)} compact={density === 'compact'} />
       case 'clear-bonus-offer':
         return <div key={`${tip.kind}-${index}`} className="w-full space-y-2" data-clear-bonus-offer>
           <p className="text-[0.6875rem] font-bold text-[var(--gold-light)]">{t('clearBonusOffer')}</p>
           {tip.cards.map(card => {
             const named = card.themeId ? data.themes.find(item => String(item.id) === card.themeId) : undefined
             return <CompanionClearBonus key={card.place} gifts={giftsOf(card.gifts)} planned={view.planned} owned={view.owned} picks={tip.picks}
-              label={named ? localized(named) : t('clearBonusCard', { n: card.index + 1 })} iconSize={Math.min(32, icons(card.gifts.length, tipWidth - 24))} compact={density === 'compact'} hover={gift => info.bind(gift, view.badges(gift.game_id))} />
+              label={named ? localized(named) : t('clearBonusCard', { n: card.index + 1 })} iconSize={Math.min(32, icons(card.gifts.length, tipWidth - 24))} compact={density === 'compact'} />
           })}
         </div>
     }
   }
   const tips = view.tips.length > 0 && <div className="w-full space-y-2" data-pip-tips>{view.tips.map(tipView)}</div>
 
-  const wrap = (children: ReactNode) => <div data-companion-content={surface} data-pip-mode-view={view.mode} data-pip-density={density}>{children}{info.card}</div>
+  const wrap = (children: ReactNode) => <div data-companion-content={surface} data-pip-mode-view={view.mode} data-pip-density={density}>{children}</div>
 
   switch (view.mode) {
     case 'event':
@@ -193,8 +192,8 @@ export default function CompanionView({ view, data, actions, width, height, inPi
                 {packGifts.map(gift => {
                   const have = view.owned.has(gift.game_id)
                   const label = have ? `${localized(gift)} · ${t('owned')}` : localized(gift)
-                  return <li key={gift.game_id} aria-label={label} data-owned={have || undefined} className={have ? 'opacity-40' : undefined} {...info.bind(gift, view.badges(gift.game_id))}>
-                    <GiftArtwork gift={gift} displayName={localized(gift)} sizes={`${grid.size}px`} /></li>
+                  return <li key={gift.game_id} aria-label={label} data-owned={have || undefined} className={have ? 'opacity-40' : undefined}>
+                    <NotePreviewHost asset={giftPreviewAsset(gift)} modalOnTap={false} block><GiftArtwork gift={gift} displayName={localized(gift)} sizes={`${grid.size}px`} /></NotePreviewHost></li>
                 })}
               </ul>
             </div>}
@@ -219,7 +218,9 @@ export default function CompanionView({ view, data, actions, width, height, inPi
         const notes = badges.filter(badge => badge.tone === 'info')
         return <m.li key={gift.game_id} layout={reducedMotion ? false : 'position'} initial={reducedMotion ? false : { opacity: 0, scale: 0.94 }} animate={{ opacity: 1, scale: 1 }}
           exit={reducedMotion ? { opacity: 1 } : { opacity: 0, scale: 0.94 }} transition={{ duration: reducedMotion ? 0 : 0.18 }} className="min-w-0">
-          <button type="button" data-gift-id={gift.game_id} onClick={event => actions.acquire(gift.game_id, event)} {...info.bind(gift, badges)}
+          {/* the site's gift preview card on hover or keyboard focus; a tap or click records the gift */}
+          <NotePreviewHost asset={giftPreviewAsset(gift)} modalOnTap={false} block>
+          <button type="button" data-gift-id={gift.game_id} onClick={event => actions.acquire(gift.game_id, event)}
             aria-label={[t('pipAcquireGift', { name: localized(gift) }), ...badges.map(badge => badge.label)].join(' · ')}
             data-plan-gift={badges.some(badge => badge.tone === 'plan') || undefined}
             className="w-full rounded-sm p-1 text-center hover:bg-[var(--bg-elevated)] focus-visible:outline-2 focus-visible:outline-[var(--gold-light)]">
@@ -231,6 +232,7 @@ export default function CompanionView({ view, data, actions, width, height, inPi
                 className="absolute inset-x-0 bottom-0 z-40 overflow-hidden text-ellipsis whitespace-nowrap rounded-b-sm bg-[color-mix(in_srgb,var(--gold)_88%,black)] text-center text-[0.5625rem] font-bold leading-[0.875rem] text-[var(--bg-deep)]">{notes[0].short ?? notes[0].label}</span>}
             </span>
           </button>
+          </NotePreviewHost>
         </m.li>
       }
       const giftGrid = (list: GiftData[], key: string) => <ul key={key} className="grid justify-center gap-[6px]" style={{ gridTemplateColumns: `repeat(${cells.columns}, ${cells.size}px)` }} data-gift-grid={key}>
