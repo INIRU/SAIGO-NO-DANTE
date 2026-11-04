@@ -9,6 +9,7 @@ import type { RecipePopupEvidence } from '@/lib/planner/fusion'
 import type { ShopShelf, ShopSlotRead } from '@/lib/vision/shop-shelf'
 import type { OwnedGridRead } from '@/lib/vision/owned-grid'
 import type { FormationRead } from '@/lib/vision/formation-bar'
+import { SCREEN_CHANGE, THUMB_HEIGHT, THUMB_WIDTH, greyThumb, thumbDifference } from '@/lib/vision/screen-change'
 import { EMPTY_PICK, choiceBands, cursorSeen, listMissing, listShown, type CursorSample, type EventPick } from '@/lib/vision/event-pick'
 import type { StableScene } from '@/lib/vision/scene-state'
 import { cpuFallback, isMobileDevice, webgpuBlock, type GpuBlock } from '@/lib/vision/device'
@@ -306,6 +307,9 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
   // and only read once a dialog asks for them.
   const wheelFrames = useRef<WheelFrame[]>([])
   const wheelTimer = useRef<ReturnType<typeof setInterval> | null>(null)
+  // When the screen last changed enough to read it at once (a short-lived dialog), from 32×18 thumbnails every 100 ms
+  const changeTimer = useRef<ReturnType<typeof setInterval> | null>(null)
+  const screenChangedAt = useRef(0)
   // A wheel state read ahead of any dialog while the scene worker is idle (the complete wheel may be up for ~0.3 s).
   const wheelRequest = useRef<{ requestId: number; state: WheelFrame; capacity: number } | null>(null)
   const wheelAnchors = useRef<{ anchors: WheelAnchors; at: number } | null>(null)
@@ -483,6 +487,8 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
     fusionRequest.current = null
     if (wheelTimer.current) clearInterval(wheelTimer.current)
     wheelTimer.current = null
+    if (changeTimer.current) clearInterval(changeTimer.current)
+    changeTimer.current = null
     frameTasks.current = []
     latestFrame.current?.close()
     latestFrame.current = null
@@ -1209,7 +1215,9 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
             : now - eventHintAt < 5000 ? profile.recognizeMs.event : profile.recognizeMs.idle
           // With one shared worker, queued popups go first, but only for one extra interval.
           const shared = pool.popup === pool.screen
-          if (!alive(lane) || lane.inFlight || !lane.ready || now - recognizedAt < interval ||
+          // a screen change since the last read starts one at once (still one at a time, 120 ms apart at least)
+          const gap = screenChangedAt.current > recognizedAt ? 120 : interval
+          if (!alive(lane) || lane.inFlight || !lane.ready || now - recognizedAt < gap ||
             (shared && popupQueue.current.length && now - recognizedAt < interval * 2) || !hasFrame()) return
           recognizedAt = now
           lane.inFlight = true
@@ -1587,6 +1595,25 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
       }
       let wheelBusy = false
       /** Keeps a small crop of the selection wheel while the fusion screen is up (bounded ring, no inference here). */
+      let lastThumb: Float32Array | null = null
+      let changeBusy = false
+      const sampleChange = async () => {
+        if (changeBusy) return
+        const source = openFrame()
+        if (!source) return
+        changeBusy = true
+        try {
+          const bitmap = await createImageBitmap(source.source, { resizeWidth: THUMB_WIDTH, resizeHeight: THUMB_HEIGHT, resizeQuality: 'high' })
+          const canvas = new OffscreenCanvas(THUMB_WIDTH, THUMB_HEIGHT)
+          const context = canvas.getContext('2d', { willReadFrequently: true })
+          if (!context) { bitmap.close(); return }
+          context.drawImage(bitmap, 0, 0)
+          bitmap.close()
+          const thumb = greyThumb(context.getImageData(0, 0, THUMB_WIDTH, THUMB_HEIGHT).data)
+          if (lastThumb && thumbDifference(lastThumb, thumb) > SCREEN_CHANGE) { screenChangedAt.current = Date.now(); promptEventOcr() }
+          lastThumb = thumb
+        } catch { /* a missed thumbnail only delays the next read to its timer */ } finally { source.release(); changeBusy = false }
+      }
       const sampleWheel = async () => {
         const now = Date.now()
         const pruned = wheelFrames.current.filter(item => now - item.lastAt <= WHEEL_KEEP_MS)
@@ -1750,6 +1777,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
           setStatus('running')
           every(timer, 250, () => { void capture() })
           every(wheelTimer, 150, () => { void sampleWheel() })
+          every(changeTimer, 100, () => { void sampleChange() })
           // Polled at a low rate from the real queues; React only re-renders when a count changes.
           statusTimer.current = setInterval(() => {
             if (run !== generation.current) return
