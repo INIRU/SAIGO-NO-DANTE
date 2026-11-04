@@ -107,6 +107,8 @@ describe('shop prescripts', () => {
   it('a shop prescript wants a card once a floor, only while the shelf is seen', () => {
     expect(wanted(createPrescriptRun(), 2, true)).toContain('shop')
     expect(wanted(createPrescriptRun(), 2, false)).not.toContain('shop')
+    // floor 0: no floor read yet (the lobby showed 2F and 3F pack orders, 2026-11-04)
+    expect(wanted(createPrescriptRun(), 0, true)).toEqual([])
   })
 
   it('the acquisition of that gift carries it out; leaving the shop without it fails it', () => {
