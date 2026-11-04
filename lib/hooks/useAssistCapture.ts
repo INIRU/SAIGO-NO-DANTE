@@ -27,6 +27,7 @@ import { acquisitionSeq, acquisitionsToRelease, continuesFusionDialog, dialogFor
   type FusionAnchors, type FusionDialogEvidence, type FusionRead, type SeenDialog, type WheelAnchors,
   type FusionSlotRead } from '@/lib/vision/fusion-evidence'
 import { BLESSING_SCENE, blessingSpent, onBlessingScreen, showsBlessingScreen } from '@/lib/vision/blessing-screen'
+import { plog } from '@/lib/fun/prescript-log'
 import { confirmsExploration, explorationFloor, explorationThemeReads, themeSelectionHeaderFloor, type ExplorationObservation,
   type ExplorationThemeReference } from '@/lib/vision/exploration-match'
 import { acquisitionPlate, darkPopupPlate, detectGiftPopupLabel, popupCaptureAction, popupIconSignature, popupLabelColor, popupPriority, popupQuality,
@@ -160,6 +161,9 @@ export function ocrRebuildsAfterRead(spent: number, builtAt: number | null, now:
   return spent && builtAt !== null && now - builtAt >= OCR_STABLE_MS ? 0 : spent
 }
 /** Development only, with localStorage 'prescript-debug': the cursor and choice-list readings in the console. */
+// the cursor and the choice boxes come several times a second: kept only while the log is verbose
+const FREQUENT = new Set(['cursor', 'bands', 'alone'])
+const dlog = (kind: string, ...args: unknown[]) => plog(kind, args.length === 1 ? args[0] : args, FREQUENT.has(kind))
 const DEBUG_PICK = typeof window !== 'undefined' && process.env.NODE_ENV !== 'production' && (() => { try { return Boolean(window.localStorage.getItem('prescript-debug')) } catch { return false } })()
 /** What a worker's error answer to the read in flight does to its lane: skip the frame, or retire the lane once reads keep failing. */
 export function ocrErrorAction(failuresBefore: number): 'skip' | 'retire' {
@@ -1021,7 +1025,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
             const evidence = eventScreenEvidence({ text: read.text, words: read.words }, catalog)
             const named = (evidence.outcomeChoiceIds ?? []).map(id => catalog.choices.find(choice => choice.id === id)).filter(Boolean)
             if (named.length && new Set(named.map(choice => `${choice!.eventId}:${choice!.option}`)).size === 1) {
-              if (DEBUG_PICK) console.info('[prescript] replay', 'result text', named[0]!.id)
+              dlog('replay', 'result text', named[0]!.id)
               setEventPick({ choiceId: named[0]!.id, at, via: 'text' })
               return
             }
@@ -1032,9 +1036,9 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
             const shown = listShown(state, choiceBands(boxes, width, height), at,
               { resultPage: read.words.some(word => RESULT_HEADERS.has(word.text.trim())), options })
             state = shown.state
-            if (shown.pick) { if (DEBUG_PICK) console.info('[prescript] replay', 'option alone', shown.pick.choiceId); setEventPick(shown.pick); return }
+            if (shown.pick) { dlog('replay', 'option alone', shown.pick.choiceId); setEventPick(shown.pick); return }
           }
-          if (DEBUG_PICK) console.info('[prescript] replay', 'nothing in', frames.length, 'frames')
+          dlog('replay', 'nothing in', frames.length, 'frames')
         } finally { replaying = false }
       }
       // Likewise, a map scene asks for the exploration banner before it scrolls away.
@@ -1437,7 +1441,8 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
               lastScreenAt = capture.at
               const document = { text: result.text, words: result.words }
               screenReadMs = Date.now() - capture.at
-              if (DEBUG_PICK) console.info('[prescript] ocr', Date.now() - capture.at, 'ms after capture', JSON.stringify((result as { timing?: unknown }).timing ?? null), latestLabel.current)
+              dlog('ocr', { ms: Date.now() - capture.at, timing: (result as { timing?: unknown }).timing ?? null, scene: latestLabel.current,
+                text: result.text.replace(/\s+/g, ' ').slice(0, 160) })
               const matches = ocrReferences.current ? { ...matchOcrCandidates(document, ocrReferences.current),
                 ...eventScreenEvidence(document, ocrReferences.current) }
                 : { gifts: [], events: [], choices: [], scopedChoices: [], outcomeEventIds: [], choiceEventIds: [], bodyEventIds: [] }
@@ -1457,8 +1462,8 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
                   const shown = listShown(pickState.current, choiceBands(boxes, capture.width, capture.height, Math.min(1, 1920 / capture.width)), capture.at, { resultPage, options })
                   pickState.current = shown.state
                   if (shown.pick) setEventPick(shown.pick)
-                  if (DEBUG_PICK && boxes.length === 1) console.info('[prescript] alone', boxes[0].choiceId, 'header', resultPage, 'options', options)
-                  if (DEBUG_PICK) console.info('[prescript] bands', JSON.stringify(pickState.current.bands.map(band => [band.choiceId, ...[band.left, band.top, band.right, band.bottom].map(Math.round)])))
+                  if (boxes.length === 1) dlog('alone', boxes[0].choiceId, 'header', resultPage, 'options', options)
+                  dlog('bands', JSON.stringify(pickState.current.bands.map(band => [band.choiceId, ...[band.left, band.top, band.right, band.bottom].map(Math.round)])))
                   // a click before this read: the cursor readings since a second before it
                   for (const sample of cursorSamples.current) if (sample.at >= capture.at - 1000) pickState.current = cursorSeen(pickState.current, sample)
                 } else {
@@ -1926,7 +1931,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
           const keeper = new Worker('/models/assist-scene/frame-tape-worker.js', { type: 'module' })
           keeper.onmessage = (event: MessageEvent<{ type: string; requestId?: number; frames?: { at: number; bitmap: ImageBitmap }[]; kept?: number; bytes?: number; keepMs?: number; dropped?: number }>) => {
             const answer = event.data.type === 'frames' && typeof event.data.requestId === 'number' ? tapeAnswers.get(event.data.requestId) : undefined
-            if (DEBUG_PICK && event.data.type === 'frames') console.info('[prescript] tape', event.data.frames?.length, 'of', event.data.kept, 'kept,',
+            if (event.data.type === 'frames') dlog('tape', event.data.frames?.length, 'of', event.data.kept, 'kept,',
               Math.round((event.data.bytes ?? 0) / 1e5) / 10, 'MB,', event.data.keepMs, 'ms a frame,', event.data.dropped, 'dropped')
             if (answer) { tapeAnswers.delete(event.data.requestId!); answer(event.data.frames ?? []) } else for (const frame of event.data.frames ?? []) frame.bitmap.close()
           }
@@ -2051,8 +2056,8 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
             const sample = { at: cursorRequest.current?.at ?? Date.now(), x: cursor.x, y: cursor.y, pressed: cursor.pressed === true }
             cursorSamples.current = [...cursorSamples.current.filter(item => sample.at - item.at < 4000), sample]
             pickState.current = cursorSeen(pickState.current, sample)
-            if (DEBUG_PICK) console.info('[prescript] cursor', Math.round(sample.x), Math.round(sample.y), sample.pressed, pickState.current.hits.length)
-          } else if (DEBUG_PICK) console.info('[prescript] cursor none')
+            dlog('cursor', Math.round(sample.x), Math.round(sample.y), sample.pressed, pickState.current.hits.length)
+          } else dlog('cursor', 'none')
           flushVisionPopup()
         } else if (result.type === 'formation' && formationRequest.current?.requestId === result.requestId) {
           inFlight.current = false

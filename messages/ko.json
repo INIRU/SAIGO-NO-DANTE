@@ -3218,6 +3218,8 @@
     "unitSeconds": "초",
     "unitRuns": "회차",
     "menuBest": "최고",
-    "blessingUnit": "별빛 배율"
+    "blessingUnit": "별빛 배율",
+    "exportLog": "로그 내보내기",
+    "verboseLog": "자세한 기록"
   }
 }

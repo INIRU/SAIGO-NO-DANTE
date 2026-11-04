@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { ArrowLeft } from 'lucide-react'
 import BackLink from '@/components/navigation/BackLink'
@@ -18,6 +18,7 @@ import { LEFT_SHOP, usePrescript } from '@/lib/hooks/usePrescript'
 import type { SupportedLang } from '@/lib/i18n'
 import { buildGiftMap, findAvailableFusions, getAvailableThemes, giftTier } from '@/lib/planner/fusion'
 import startGifts from '@/lib/data/start-gifts.json'
+import { downloadLog, installConsole, isVerbose, plog, setVerbose } from '@/lib/fun/prescript-log'
 import { getLegacyPlanFloorDifficulty } from '@/lib/planner/floor-difficulty'
 import { DIFFICULTY_FLOOR_KEY, type GiftData, type RecipeData, type ThemeData } from '@/lib/planner/types'
 import { readGameLanguage, type GameLanguage } from '@/lib/vision/recognition-profile'
@@ -150,14 +151,22 @@ export default function PrescriptClient({ themes, gifts, recipes, events, eventC
   const pickKey = picked && Number.isInteger(picked.option_index) && !picked.outcome ? `${picked.event_id}:${picked.option_index}:${capture.eventPick!.at}` : ''
   const eventPick = useMemo(() => pickKey ? { eventId: Number(pickKey.split(':')[0]), option: Number(pickKey.split(':')[1]), at: Number(pickKey.split(':')[2]) } : null,
     [pickKey])
+  // the terminal's log (settings → 로그 내보내기, F12 → prescript.help()): which room, and which reading judged it
   useEffect(() => {
-    if (process.env.NODE_ENV !== 'production') console.info('[prescript] room', roomEventId, optionsKey, JSON.stringify({ choice: evidence.ocrCandidates?.choiceEventIds, body: evidence.ocrCandidates?.bodyEventIds, outcome: evidence.ocrCandidates?.outcomeEventIds }))
+    plog('room', { eventId: roomEventId, options: optionsKey, choice: evidence.ocrCandidates?.choiceEventIds, body: evidence.ocrCandidates?.bodyEventIds,
+      outcome: evidence.ocrCandidates?.outcomeEventIds })
   }, [roomEventId, optionsKey]) // eslint-disable-line react-hooks/exhaustive-deps -- logged once a room
-  // development only: which reading judged a room (the cursor, the next stage or the result text)
-  useEffect(() => { if (process.env.NODE_ENV !== 'production' && pickKey) console.info('[prescript] cursor pick', pickKey) }, [pickKey])
+  useEffect(() => { if (pickKey) plog('cursor-pick', pickKey) }, [pickKey])
   useEffect(() => {
-    if (process.env.NODE_ENV !== 'production' && outcomeKey) console.info('[prescript] screen outcome', outcomeKey, outcome ? 'result text' : alone ? 'option left alone' : 'next stage')
+    if (outcomeKey) plog('outcome', { key: outcomeKey, via: outcome ? 'result text' : alone ? 'option left alone' : 'next stage' })
   }, [outcomeKey]) // eslint-disable-line react-hooks/exhaustive-deps -- logged once a reading
+  useEffect(() => { plog('capture', capture.status) }, [capture.status])
+  useEffect(() => { plog('reader', { status: capture.ocrStatus, engine: capture.ocrEngine?.engine ?? null, loading: capture.ocrEngine?.loading ?? null }) },
+    [capture.ocrStatus, capture.ocrEngine?.engine, capture.ocrEngine?.loading])
+  useEffect(() => { if (sceneLabel) plog('scene', sceneLabel) }, [sceneLabel])
+  useEffect(() => { plog('floor', floor) }, [floor])
+  useEffect(() => { if (capture.formation) plog('formation', capture.formation.ids) }, [capture.formation])
+  useEffect(() => { if (capture.blessings) plog('blessings', { levels: capture.blessings.levels.join(''), spent: capture.blessings.spent }) }, [capture.blessings])
   const prescript = usePrescript({ grade, eventRoom, eventOutcome, eventPick, formation: capture.formation, blessings: capture.blessings, enabled: true, status: capture.status, acquisitions: capture.popupAcquisitions, sales: capture.giftSales,
     fusions: capture.fusionEvidence, floorObservation: capture.floorThemeObservation, ownedGrid: capture.ownedGrid, scene: capture.scene?.label ?? null,
     inShop: shelfIds.length > 0, context })
@@ -225,6 +234,15 @@ export default function PrescriptClient({ themes, gifts, recipes, events, eventC
     playVerdict(status)
     window.setTimeout(() => setPreview(null), 2400)
   }
+  // the state a saved log carries, and prescript.state() in the console
+  const snapshot = useRef<() => unknown>(() => null)
+  snapshot.current = () => ({ status: capture.status, reader: { status: capture.ocrStatus, engine: capture.ocrEngine }, gpu: capture.gpu, scene: sceneLabel,
+    floor, grade, language: gameLanguage, run: { score: prescript.run.score, streak: prescript.run.streak, ended: prescript.run.ended ?? false,
+      blessingSpent: prescript.run.blessingSpent ?? null, prescripts: prescript.run.prescripts.map(p => ({ id: p.id, scope: p.scope, kind: p.goal.kind,
+        status: p.status, points: p.points ?? 0, reason: p.reason ?? null })) }, offers: prescript.offers.map(o => o.scope) })
+  useEffect(() => installConsole(() => snapshot.current()), [])
+  const [verbose, setVerboseState] = useState(false)
+  useEffect(() => { setVerboseState(isVerbose()) }, [])
   const { container, open, close } = useCompanionWindow()
   const [pipFailed, setPipFailed] = useState(false)
   const togglePip = () => { if (container) close(); else open().catch(() => setPipFailed(true)) }
@@ -269,6 +287,8 @@ export default function PrescriptClient({ themes, gifts, recipes, events, eventC
         <button type="button" className={styles.b} onClick={() => playArrival()}>{t('testArrival')}</button>
         <button type="button" className={styles.b} onClick={() => showPreview('done')}>{t('testClear')}</button>
         <button type="button" className={styles.b} onClick={() => showPreview('failed')}>{t('testFail')}</button>
+        <button type="button" className={styles.b} onClick={() => downloadLog(snapshot.current())}>{t('exportLog')}</button>
+        <label><input type="checkbox" checked={verbose} onChange={event => { setVerbose(event.target.checked); setVerboseState(event.target.checked) }} />{t('verboseLog')}</label>
       </div>}
       {dataError && <p role="alert" className={styles.state}>{t('dataError')}</p>}
       {stage(false)}
