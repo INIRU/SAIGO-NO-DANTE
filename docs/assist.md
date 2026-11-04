@@ -353,7 +353,8 @@ python3 scripts/vision/train_icons.py --data <icon dataset> --out <checkpoint> -
 | 지금 보일 화면 | `lib/planner/pip-view.ts`의 `PIP_MODES` (위에서부터 처음 맞는 것) | 표에 한 줄을 넣거나 순서를 바꾼다. 지금 순서: 선택지 방 → 스킬 교체 → 편성 → 런 시작 → 테마팩 선택 → 합성 → 층 |
 | 창 크기별 배치 | `pipDensity`(compact: 폭 360 미만이나 높이 340 미만, wide: 폭 560 이상이고 높이의 1.25배 이상), `floorLayout` | compact는 메모 2줄·작은 팁, wide는 메모·팁을 왼쪽 열(40%, 스크롤해도 고정)에 두고 기프트를 오른쪽에 |
 | 아이콘 크기 | `fitGrid` 하나 | 높이를 주면 전부 들어가는 가장 큰 크기, 안 주면 최소 크기로 들어가는 만큼 열을 채운 뒤 키운다 |
-| 기프트 칸 표시 | `giftBadges` + `CompanionPanel`의 `badgeRows` | 줄 하나(기프트 집합, 이름, 짧은 이름, 색)를 넣는다. 지금: 플랜(금색 테두리), 이 층에서만(빨간 느낌표), 클리어 보너스(이름 아래 글자) |
+| 기프트 칸 표시 | `giftBadges` + `CompanionPanel`의 `badgeRows` | 줄 하나(기프트 집합, 이름, 짧은 이름, 색)를 넣는다. 지금: 플랜, 이 층에서만(빨간 느낌표), 클리어 보너스(그림 아래 가장자리의 "보너스" 띠) |
+| 기프트 정보 | `CompanionGiftInfo`의 `useGiftInfo` | 칸에는 그림만 둔다(이름 없음). 마우스를 올리거나 키보드로 고르면 카드가 뜬다: 이름(키워드 색), 등급, 키워드, 코스트, 표시, 효과. 칸 아래(자리가 없으면 위)에, 창 안에 맞춰 둔다. 클리어 보너스 아이콘과 팩 계획 기프트도 같은 카드 |
 | 뉴비 팁 | `lib/planner/pip-tips.ts`의 `PIP_TIPS` + `CompanionView`의 `tipView` | 규칙(보일 화면, 데이터 만드는 함수) 하나와 그리는 코드 하나, 메시지. 지금: 층의 클리어 보너스, 선택 화면에서 계획 기프트가 보너스에 있는 카드 |
 | 그리기 | `components/planner/run/CompanionView.tsx` | 화면마다 한 갈래. 상태·기록·인식은 모르고 받은 것만 그린다 |
 | 기록·인식 연결 | `components/planner/run/CompanionPanel.tsx` | 되돌리기, 자동 기록, 창 열기. 보일 데이터(`PipView`)를 만들어 넘긴다 |
