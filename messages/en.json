@@ -924,7 +924,10 @@
       "fusionNearly": "One material short",
       "pipFusionReady": "Ready to fuse",
       "exportLog": "Export log",
-      "exportLogHint": "If recognition goes wrong, sending this file helps find why. It holds only what was read from the screen and what was decided; it stays in this browser until you save it."
+      "exportLogHint": "If recognition goes wrong, sending this file helps find why. It holds only what was read from the screen and what was decided; it stays in this browser until you save it.",
+      "readerDown": "text reading stopped (restarting)",
+      "readerRecovering": "text reading recovering",
+      "readerSlow": "text reading slow (CPU)"
     },
     "community": "Community Plans",
     "detail": {

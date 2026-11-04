@@ -338,6 +338,10 @@ export default function RunClient({ themes, gifts, recipes, identities, sinners,
             : capture.status === 'error' || capture.status === 'unsupported' ? 'bg-[var(--error)]' : 'bg-[var(--text-muted)]'}`} />
           <p className="min-w-0 break-keep text-[0.8125rem] leading-5 max-sm:sr-only">
             <span className={`font-semibold ${capture.status === 'error' || capture.status === 'unsupported' ? 'text-[var(--error-text)]' : 'text-[var(--text-secondary)]'}`}>{t(`capture_${capture.status}`)}</span>
+            {/* the text reader down or slow while the screen still comes in: rooms, packs and popups are not being read */}
+            {capture.status === 'running' && (capture.ocrStatus === 'error' || capture.ocrEngine?.engine === 'tesseract') &&
+              <span data-reader-state={capture.ocrStatus === 'error' ? 'down' : 'slow'} className={capture.ocrStatus === 'error' ? 'text-[var(--error-text)]' : 'text-[var(--text-secondary)]'}>
+                {' · '}{t(capture.ocrStatus === 'error' ? 'readerDown' : capture.ocrEngine?.loading ? 'readerRecovering' : 'readerSlow')}</span>}
             <span className="sr-only"> {t(samples ? 'captureFramesPrivacySamples' : 'captureFramesPrivacy')}</span>
           </p>
         </div>}
