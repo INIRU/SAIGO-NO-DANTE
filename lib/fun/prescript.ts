@@ -193,7 +193,7 @@ export function candidates(scope: PrescriptScope, ctx: PrescriptContext): Prescr
       if (id && sinner) cards.push({ scope, goal: { kind: 'swap-identity', sinner, fromId: id }, strength: 3 })
     }
     // an Identity to field in a fielded Sinner's place: the plan's first; else that Sinner's other 3-star ones. Only one with a
-    // 2-star stand-in of its keywords is asked: whoever lacks it can still obey
+    // 2- or 1-star stand-in of its keywords is asked: whoever lacks it can still obey
     const planned = ctx.planIdentities ?? []
     for (const fielded of ctx.formation ?? []) {
       const sinner = fielded ? ctx.identity?.(fielded)?.sinner : undefined
@@ -202,7 +202,7 @@ export function candidates(scope: PrescriptScope, ctx: PrescriptContext): Prescr
       const targets = planned.filter(id => own.includes(id))
       for (const id of targets.length ? targets : own.filter(id => (ctx.identity?.(id)?.rarity ?? 0) >= 3)) {
         const keywords = (ctx.identity?.(id)?.keywords ?? []).filter(keyword => FORMATION_KEYWORDS.includes(keyword))
-        const twoStar = own.some(other => other !== id && (ctx.identity?.(other)?.rarity ?? 0) === 2 &&
+        const twoStar = own.some(other => other !== id && [1, 2].includes(ctx.identity?.(other)?.rarity ?? 0) &&
           (ctx.identity?.(other)?.keywords ?? []).some(keyword => keywords.includes(keyword)))
         if (keywords.length && twoStar) cards.push({ scope, goal: { kind: 'field-identity', identityId: id, sinner, fromId: fielded, keywords }, strength: 3 })
       }
@@ -278,7 +278,8 @@ export function visitShelf(onSale: readonly number[], reads: readonly (readonly 
 
 /**
  * Whether an Identity counts for a formation prescript: a 1-star one never does (every Sinner has one at no cost, so a
- * swap or a front filled with it would be grace for nothing). An unknown rarity counts.
+ * swap or a front filled with it would be grace for nothing). An unknown rarity counts. The one exception is a field-identity
+ * stand-in, where a 1-star one is the hardest way to obey and earns 110% more.
  */
 function counts(id: string | null, ctx: PrescriptContext): boolean {
   return id !== null && ctx.identity?.(id)?.rarity !== 1
@@ -374,7 +375,7 @@ export function wanted(run: PrescriptRun, floor: number, inShop = false): Prescr
   return scopes
 }
 
-/** `extra`: a share of the points on top (a 2-star stand-in fielded). */
+/** `extra`: a share of the points on top (a 2-star stand-in fielded 0.5, a 1-star one 1.1). */
 type Outcome = { status: 'done' | 'failed'; extra?: number } | { status: 'void'; reason: string } | { progress: number } | null
 
 function judge(p: Prescript, event: PrescriptEvent, ctx: PrescriptContext): Outcome {
@@ -395,12 +396,13 @@ function judge(p: Prescript, event: PrescriptEvent, ctx: PrescriptContext): Outc
         return front(event.ids, goal.keyword, ctx) >= goal.count ? { status: 'done' } : null
       if (goal.kind === 'field-identity') {
         if (event.ids.includes(goal.identityId)) return { status: 'done' }
-        // a stand-in: another Identity of that Sinner sharing a keyword, 3 stars, or 2 stars for half again
+        // a stand-in: another Identity of that Sinner sharing a keyword, 3 stars, or 2 stars for half again, or 1 star for 110% more
         const now = event.ids.find(id => id !== null && ctx.identity?.(id)?.sinner === goal.sinner)
         const stand = now && now !== goal.fromId ? ctx.identity?.(now) : undefined
         if (!stand || !stand.keywords.some(keyword => goal.keywords.includes(keyword))) return null
         if ((stand.rarity ?? 0) >= 3) return { status: 'done' }
         if ((stand.rarity ?? 0) === 2) return { status: 'done', extra: 0.5 }
+        if (stand.rarity === 1) return { status: 'done', extra: 1.1 }
         return null
       }
       if (goal.kind === 'front-identity') return event.ids.slice(0, 6).includes(goal.identityId) ? { status: 'done' } : null
