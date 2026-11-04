@@ -21,45 +21,55 @@ type EgoAttackSkill = {
   skill_order: number | null
 }
 
+// The detail page already has the deck from its first view: `?part=viewer` sends only what that lacks (REQ-DECKS-051).
+const VIEWER_COLUMNS = `
+  id, user_id, vote_count, view_count,
+  deck_identities(slot_order, identities(id, sinner_id, game_id)),
+  deck_egos(grade, ego:ego_id(id, sinner_id, grade, game_id))
+`
+
 // ── GET ────────────────────────────────────────────────────────────────────
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
   const { id } = await params
+  const viewerOnly = request.nextUrl.searchParams.get('part') === 'viewer'
   const supabase = await createClient()
 
   const [deckRes, sinnersRes] = await Promise.all([
-    supabase
-      .schema('limbus')
-      .from('decks')
-      .select(`
-        id, user_id, title, description, tags, main_keywords, content_type, vote_count, view_count, comment_count, created_at,
-        guest_tag, profiles!decks_user_id_fkey(username),
-        deck_identities(
-          slot_order, gacksung, uptie, s1_count, s2_count, s3_count,
-          identities(
-            id, sinner_id, folder_name, game_id, keywords, name_kr, tier, rarity,
-            hp, speed_min, speed_max, def_level, slash_res, pierce_res, blunt_res,
-            skills(id, name, skill_type, atk_type, sin_affinity, coins, base_power, coin_power, coin_list, skill_order, image_id, variant_order, atk_weight, offense_level, description, uptie_level),
-            passives(name, passive_type, sin_affinity, sin_count, sin_requirements, active_cond, description, passive_order, uptie_level)
+    viewerOnly
+      ? supabase.schema('limbus').from('decks').select(VIEWER_COLUMNS).eq('id', id).single()
+      : supabase
+        .schema('limbus')
+        .from('decks')
+        .select(`
+          id, user_id, title, description, tags, main_keywords, content_type, vote_count, view_count, comment_count, created_at,
+          guest_tag, profiles!decks_user_id_fkey(username),
+          deck_identities(
+            slot_order, gacksung, uptie, s1_count, s2_count, s3_count,
+            identities(
+              id, sinner_id, folder_name, game_id, keywords, name_kr, tier, rarity,
+              hp, speed_min, speed_max, def_level, slash_res, pierce_res, blunt_res,
+              skills(id, name, skill_type, atk_type, sin_affinity, coins, base_power, coin_power, coin_list, skill_order, image_id, variant_order, atk_weight, offense_level, description, uptie_level),
+              passives(name, passive_type, sin_affinity, sin_count, sin_requirements, active_cond, description, passive_order, uptie_level)
+            )
+          ),
+          deck_egos(
+            grade,
+            ego:ego_id(id, name_kr, grade, sin_affinity, sinner_id, folder_name, image_url, cost, game_id)
           )
-        ),
-        deck_egos(
-          grade,
-          ego:ego_id(id, name_kr, grade, sin_affinity, sinner_id, folder_name, image_url, cost, game_id)
-        )
-      `)
-      .eq('id', id)
-      .single(),
+        `)
+        .eq('id', id)
+        .single(),
     supabase.schema('limbus').from('sinners').select('id, order_num').order('order_num'),
   ])
 
   if (deckRes.error) {
     return NextResponse.json({ error: deckRes.error.message }, { status: 404 })
   }
-  const [deck] = await withPostAuthors([deckRes.data])
+  const [deck] = viewerOnly ? [deckRes.data] : await withPostAuthors([deckRes.data])
   const sinners = sinnersRes.data ?? []
 
   type SlotIdentity = { id: string; sinner_id: string; game_id: string | null } | null
@@ -88,7 +98,7 @@ export async function GET(
     allSinnerIds.length > 0
       ? supabase.schema('limbus').from('ego').select('id, sinner_id, grade, name_kr, sin_affinity, image_url, game_id').in('sinner_id', allSinnerIds).order('game_id')
       : Promise.resolve({ data: [] }),
-    selectedEgoIds.length > 0
+    !viewerOnly && selectedEgoIds.length > 0
       ? supabase.schema('limbus').from('ego_skills').select('ego_id, skill_type, category, construe_level, skill_order').in('ego_id', selectedEgoIds)
       : Promise.resolve({ data: [], error: null }),
   ])
@@ -159,6 +169,10 @@ export async function GET(
     sin_affinity: (e as Record<string, unknown>).sin_affinity as string | null,
     image_url: (e as Record<string, unknown>).image_url as string | null,
   }))
+
+  if (viewerOnly) {
+    return NextResponse.json({ deck_code: deckCode, is_owner: isOwner, is_admin: isAdmin, all_sinner_egos: allSinnerEgos, vote_count: deck.vote_count, view_count: deck.view_count })
+  }
 
   const deckEgosWithSkills = deckEgoRows.map(row => ({
     ...row,
