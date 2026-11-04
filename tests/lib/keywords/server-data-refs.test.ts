@@ -80,9 +80,17 @@ describe('REQ-KEYWORDS-004 the keyword catalogue reads names and descriptions fr
     expect(keywordDescriptions(data, 'ko')['화상']).toBe('턴 종료 시 피해')
   })
 
-  it('REQ-KEYWORDS-004 leaves descriptions out of the layout catalogue but keeps the reference names', async () => {
-    const catalog = await getKeywordCatalog()
-    expect(catalog['화상']).toMatchObject({ desc: '', descEn: null, descJp: null, nameEn: 'Burn', nameJp: '火傷' })
+  it('REQ-KEYWORDS-004 leaves descriptions out of the layout catalogue but keeps the reference names of the page language', async () => {
+    const catalog = await getKeywordCatalog('en')
+    expect(catalog['화상']).toMatchObject({ gameId: 'Combustion', nameEn: 'Burn' })
+    expect(catalog['화상']).not.toHaveProperty('desc')
+    expect(catalog['화상']).not.toHaveProperty('descEn')
+    expect(catalog['화상']).not.toHaveProperty('nameJp')
+  })
+
+  it('REQ-KEYWORDS-012 keeps both names for the sections that search across languages', async () => {
+    expect((await getKeywordCatalog('all'))['화상']).toMatchObject({ nameEn: 'Burn', nameJp: '火傷' })
+    expect((await getKeywordCatalog('ko'))['화상']).not.toHaveProperty('nameEn')
   })
 
   it('REQ-KEYWORDS-004 reads only keyword references, and none when no row has a game_id', async () => {

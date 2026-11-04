@@ -29,7 +29,7 @@ import SkipNav from '@/components/a11y/SkipNav'
 import AprilFoolsWrapper from '@/components/events/AprilFoolsWrapper'
 import { KeywordProvider } from '@/components/providers/KeywordProvider'
 import { GameTextRefsProvider } from '@/components/providers/GameTextRefsProvider'
-import { getGameTextRefNamesOrNull } from '@/lib/db/game-text-refs'
+import { getGameTextRefNamesWireOrNull } from '@/lib/db/game-text-refs'
 import { getKeywordCatalog } from '@/lib/keywords/server-data'
 import { fontVariables } from '../fonts'
 import { ROOT_OMITTED_MESSAGES, omitMessages } from '@/lib/i18n/client-messages'
@@ -139,8 +139,8 @@ export default async function LangLayout({
   const [messages, keywords, refNames, t] = await Promise.all([
     getMessages({ locale: validLang }),
     // A failed read is not cached; this page then draws without keyword icons.
-    getKeywordCatalog().catch(() => ({})),
-    getGameTextRefNamesOrNull(validLang),
+    getKeywordCatalog(validLang).catch(() => ({})),
+    getGameTextRefNamesWireOrNull(validLang),
     getTranslations({ locale: validLang }),
   ])
   const mainNavLabel = t('common.mainNav')
