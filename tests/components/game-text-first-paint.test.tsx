@@ -3,6 +3,7 @@ import { renderToString } from 'react-dom/server'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { KeywordProvider, useFormatSkillDesc, type KeywordInfo } from '@/components/providers/KeywordProvider'
 import { GameTextRefsProvider } from '@/components/providers/GameTextRefsProvider'
+import { compactGameTextRefNames } from '@/lib/game-text/ref-names-wire'
 import { usePlainGameText } from '@/lib/hooks/usePlainGameText'
 import type { GameTextRefNames } from '@/lib/db/game-text-refs'
 
@@ -32,7 +33,7 @@ function Plain({ text }: { text: string }) {
   return <>{usePlainGameText()(text)}</>
 }
 const withRefs = (node: React.ReactNode, locale = 'ko') => (
-  <GameTextRefsProvider locale={locale} names={REFS}><KeywordProvider keywords={KEYWORDS}>{node}</KeywordProvider></GameTextRefsProvider>
+  <GameTextRefsProvider locale={locale} names={compactGameTextRefNames(REFS)}><KeywordProvider keywords={KEYWORDS}>{node}</KeywordProvider></GameTextRefsProvider>
 )
 
 describe('REQ-SHARED-023 the first paint already has the reference names', () => {
@@ -56,7 +57,7 @@ describe('REQ-SHARED-023 the first paint already has the reference names', () =>
     const { KeywordProvider: Keywords, useFormatSkillDesc: useFormat } = await import('@/components/providers/KeywordProvider')
     const { GameTextRefsProvider: Refs } = await import('@/components/providers/GameTextRefsProvider')
     const Inner = () => <>{useFormat()(RAW, '#abcdef')}</>
-    const client = renderToString(<Refs locale="ko" names={REFS}><Keywords keywords={KEYWORDS}><Inner /></Keywords></Refs>)
+    const client = renderToString(<Refs locale="ko" names={compactGameTextRefNames(REFS)}><Keywords keywords={KEYWORDS}><Inner /></Keywords></Refs>)
     expect(client).toBe(server)
     expect(fetchMock).not.toHaveBeenCalled()
   })
@@ -80,7 +81,7 @@ describe('REQ-SHARED-023 the first paint already has the reference names', () =>
 
   it('REQ-SHARED-023 the root [lang] layout feeds the provider from the cached server read, outside the keyword provider', () => {
     const source = readFileSync('app/[lang]/layout.tsx', 'utf8')
-    expect(source).toContain("getGameTextRefNamesOrNull(validLang)")
+    expect(source).toContain("getGameTextRefNamesWireOrNull(validLang)")
     const provider = source.indexOf('<GameTextRefsProvider')
     expect(provider).toBeGreaterThan(-1)
     expect(provider).toBeLessThan(source.indexOf('<KeywordProvider'))

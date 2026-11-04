@@ -1,6 +1,6 @@
 'use client'
 
-import { cloneElement, createContext, isValidElement, useCallback, useContext, useEffect, useId, useRef, useState } from 'react'
+import { cloneElement, createContext, isValidElement, useCallback, useContext, useEffect, useId, useMemo, useRef, useState } from 'react'
 import KeywordIcon from '@/components/ui/KeywordIcon'
 import { createPortal } from 'react-dom'
 import { useLocale, useTranslations } from 'next-intl'
@@ -9,6 +9,7 @@ import { STORAGE_BASE } from '@/lib/constants/game'
 import { getKeywordIconUrl } from '@/lib/constants/keywords'
 import { getKeywordIndex, resolveKeywordIconUrl, type KeywordInfo } from '@/lib/keywords/catalog'
 export { resolveKeywordIconUrl, type KeywordInfo } from '@/lib/keywords/catalog'
+import { expandKeywordCatalog, type KeywordInfoWire } from '@/lib/keywords/catalog-wire'
 import { KEYWORD_DEFAULT_COLOR, KEYWORD_NEGATIVE_COLOR, resolveKeywordTextColor } from '@/lib/keywords/text-color'
 import { GIFT_KEYWORD_COLORS } from '@/lib/constants/gift'
 import { getLocalizedKeywordDesc, getLocalizedKeywordName } from '@/lib/i18n'
@@ -27,15 +28,17 @@ export function keywordAccentColor(keyword: string, info?: KeywordInfo): string 
   return GIFT_KEYWORD_COLORS[keyword] ?? resolveKeywordTextColor(keyword, info)
 }
 
+/** `keywords` may leave out the cells nobody reads (compactKeywordCatalog); the readers below get them filled in. */
 export function KeywordProvider({
   keywords,
   children,
 }: {
-  keywords: Record<string, KeywordInfo>
+  keywords: Record<string, KeywordInfoWire>
   children: React.ReactNode
 }) {
+  const catalog = useMemo(() => expandKeywordCatalog(keywords), [keywords])
   return (
-    <KeywordContext.Provider value={keywords}>
+    <KeywordContext.Provider value={catalog}>
       {children}
     </KeywordContext.Provider>
   )
