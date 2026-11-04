@@ -15,13 +15,29 @@ const cell = () => { const i = Math.floor(Math.random() * 65); return `${(i % 13
 /** How long the glyphs roll before the letters come, and how long the letters take: the sounds follow the same clock. */
 const ROLL = 800, SETTLE = 800
 
+/** The terminal's sound level (0 to 1, 0 is silent), kept in this browser. */
+export const VOLUME_KEY = 'prescript-volume'
+export function readVolume(): number {
+  try {
+    const stored = window.localStorage.getItem(VOLUME_KEY)
+    const value = Number(stored)
+    return stored !== null && Number.isFinite(value) ? Math.min(1, Math.max(0, value)) : 0.5
+  } catch { return 0.5 }
+}
+let volume = typeof window === 'undefined' ? 0.5 : readVolume()
+export function setVolume(value: number) {
+  volume = Math.min(1, Math.max(0, value))
+  try { window.localStorage.setItem(VOLUME_KEY, String(volume)) } catch { /* kept for this page only */ }
+  if (sounds) for (const audio of [sounds.first, sounds.second]) audio.volume = volume
+}
+
 /** The two arrival sounds, fetched once when the stage is first drawn so they are not late on the first prescript. */
 let sounds: { first: HTMLAudioElement; second: HTMLAudioElement } | null = null
 function loadSounds() {
   try {
     if (!sounds) {
       sounds = { first: new Audio(`${ASSET}/index_message_1.ogg`), second: new Audio(`${ASSET}/index_message_2.ogg`) }
-      for (const audio of [sounds.first, sounds.second]) { audio.preload = 'auto'; audio.volume = 0.5; audio.load() }
+      for (const audio of [sounds.first, sounds.second]) { audio.preload = 'auto'; audio.volume = volume; audio.load() }
     }
   } catch { /* no audio: the prescript still shows */ }
   return sounds
@@ -29,10 +45,10 @@ function loadSounds() {
 
 /** The prescript arriving (Fx_Mon_Index_Buff_BuffScript_IndexPrescript_Ex): sound 1 while the glyphs roll, then sound 2 eight
  * times, 0.1 s apart, while the letters settle. */
-function playArrival(): () => void {
+export function playArrival(): () => void {
   const timers: number[] = []
   const loaded = loadSounds()
-  if (!loaded) return () => {}
+  if (!loaded || volume === 0) return () => {}
   const { first, second } = loaded
   first.currentTime = 0
   void first.play().catch(() => {})
@@ -48,9 +64,9 @@ function playArrival(): () => void {
 }
 
 /** A verdict's beeps: fulfilled once, violated three times fast (the arrival's beep); a recall is silent. */
-function playVerdict(status: Prescript['status']) {
+export function playVerdict(status: Prescript['status']) {
   const loaded = loadSounds()
-  if (!loaded || status === 'void' || status === 'active') return
+  if (!loaded || volume === 0 || status === 'void' || status === 'active') return
   for (let i = 0; i < (status === 'done' ? 1 : 3); i++) window.setTimeout(() => {
     const beep = loaded.second.cloneNode() as HTMLAudioElement
     beep.volume = loaded.second.volume
@@ -155,9 +171,11 @@ interface Props {
   onRefuse: (scope: PrescriptScope) => void
   /** The PiP shows the stage and what is held, without the record. */
   pip?: boolean
+  /** A verdict shown as a preview (the settings' test), over the stage like a real one. */
+  preview?: Prescript | null
 }
 
-export default function PrescriptStage({ run, offers, label, onChoose, canChoose, onReroll, onRefuse, pip = false }: Props) {
+export default function PrescriptStage({ run, offers, label, onChoose, canChoose, onReroll, onRefuse, pip = false, preview = null }: Props) {
   const t = useTranslations('prescriptMode')
   const offer = offers[0] ?? null
   const offerKey = offer ? `${offer.scope}:${offer.floor}:${offer.cards.map(c => JSON.stringify(c.goal)).join('|')}` : ''
@@ -168,7 +186,7 @@ export default function PrescriptStage({ run, offers, label, onChoose, canChoose
     cued.current = offerKey
     return pip ? undefined : playArrival()
   }, [offerKey, pip])
-  const verdict = useNewPrescripts(run, settledShown, VERDICT_MS)
+  const verdict = useNewPrescripts(run, settledShown, VERDICT_MS) ?? preview
   useEffect(() => { if (verdict && !pip) playVerdict(verdict.status) }, [verdict, pip])
   // a ? room's prescript comes without cards to choose: it arrives on the stage with the arrival's sound
   const arrival = useNewPrescripts(run, roomArrived, ARRIVAL_MS)
@@ -227,6 +245,9 @@ export default function PrescriptStage({ run, offers, label, onChoose, canChoose
       </div>}
       {verdict && <div key={verdict.id} className={`${styles.verdict} ${verdict.status === 'done' ? styles.vOk : verdict.status === 'failed' ? styles.vNo : styles.vRe}`}
         role="status">
+        {verdict.status !== 'void' && <span className={styles.vWord} aria-hidden="true">
+          <Settle parts={[{ text: verdict.status === 'done' ? 'CLEAR' : 'FAIL', em: false }]} roll={300} ms={300} />
+        </span>}
         <span className={styles.stamp}>{t(verdict.penance && verdict.status === 'done' ? 'status_atoned' : `status_${verdict.status}`)}</span>
         <span className={styles.vOrder}>【{plain(label(verdict.goal))}】</span>
         {verdict.status === 'done' ? <span className={styles.vPts}>+{verdict.points} {t('scoreUnit')}{verdict.bonus ? ` · ${t('streakBonus', { count: run.streak, bonus: verdict.bonus })}` : ''}</span>

@@ -6,10 +6,10 @@ import { ArrowLeft } from 'lucide-react'
 import BackLink from '@/components/navigation/BackLink'
 import { useLocale, useTranslations } from 'next-intl'
 import PrescriptRules from '@/components/fun/prescript/PrescriptRules'
-import PrescriptStage from '@/components/fun/prescript/PrescriptStage'
+import PrescriptStage, { playArrival, playVerdict, readVolume, setVolume } from '@/components/fun/prescript/PrescriptStage'
 import styles from '@/components/fun/prescript/prescript.module.css'
 import { giftKeywordLabel } from '@/components/gifts/GiftCatalog'
-import { eventRoomOptions, optionLeadingTo, visitShelf, type PrescriptContext, type PrescriptGoal, type PrescriptGrade } from '@/lib/fun/prescript'
+import { eventRoomOptions, optionLeadingTo, visitShelf, type Prescript, type PrescriptContext, type PrescriptGoal, type PrescriptGrade } from '@/lib/fun/prescript'
 import { captureEvidence, useAssistCapture } from '@/lib/hooks/useAssistCapture'
 import type { MdEvent, MdEventChoice } from '@/components/mirror-dungeon/types'
 import { recognizableEvents } from '@/lib/utils/event-catalog'
@@ -205,12 +205,23 @@ export default function PrescriptClient({ themes, gifts, recipes, events, eventC
     return { identity: em(title), sinner: who }
   }
 
+  // settings: the sound level and its tests, and a verdict shown as a preview
+  const [settingsOpen, setSettingsOpen] = useState(false)
+  const [level, setLevel] = useState(50)
+  useEffect(() => { setLevel(Math.round(readVolume() * 100)) }, [])
+  const [preview, setPreview] = useState<Prescript | null>(null)
+  const showPreview = (status: 'done' | 'failed') => {
+    setPreview({ scope: 'special', goal: { kind: 'no-sale' }, strength: 2, id: -Date.now(), floor: 1, receivedAt: 0, status, progress: 0,
+      points: status === 'done' ? 15 : 0 })
+    playVerdict(status)
+    window.setTimeout(() => setPreview(null), 2400)
+  }
   const { container, open, close } = useCompanionWindow()
   const [pipFailed, setPipFailed] = useState(false)
   const togglePip = () => { if (container) close(); else open().catch(() => setPipFailed(true)) }
   const captureActive = capture.status === 'running' || capture.status === 'loading' || capture.status === 'requesting'
   const stage = (pip: boolean) => <PrescriptStage run={prescript.run} offers={prescript.offers} label={label} onChoose={prescript.choose} canChoose={prescript.canChoose}
-    onReroll={prescript.reroll} onRefuse={prescript.refuse} pip={pip} />
+    onReroll={prescript.reroll} onRefuse={prescript.refuse} pip={pip} preview={pip ? null : preview} />
 
   return <div className={styles.root} data-prescript-page>
     <PrescriptRules />
@@ -232,12 +243,23 @@ export default function PrescriptClient({ themes, gifts, recipes, events, eventC
         <button type="button" className={`${styles.b} ${captureActive ? '' : styles.pri}`} disabled={capture.mobile}
           onClick={() => { if (captureActive) capture.stop(); else void capture.start() }}>{t(captureActive ? 'disconnect' : 'connect')}</button>
         <button type="button" className={styles.b} onClick={togglePip}>{t(container ? 'pipClose' : 'pipOpen')}</button>
+        <button type="button" className={styles.b} aria-expanded={settingsOpen} onClick={() => setSettingsOpen(value => !value)}>{t('settings')}</button>
         <p role="status" title={t('privacy')} className={`${styles.state} ${running ? styles.live : capture.status === 'error' || capture.status === 'unsupported' ? styles.bad : ''}`}>
           {capture.mobile ? t('mobile') : pipFailed ? t('pipFailed') : t(`capture_${capture.status}`)}
           {/* screen text is what names rooms, popups and floors: say when its reader is down or on the slow CPU fallback */}
           {running && (capture.ocrStatus === 'error' ? ` · ${t('ocrDown')}` : capture.ocrEngine?.engine === 'tesseract' ? ` · ${t(capture.ocrEngine.loading ? 'ocrRecovering' : 'ocrSlow')}` : '')}
         </p>
       </div>
+      {settingsOpen && <div className={styles.settings} role="group" aria-label={t('settings')}>
+        <label>{t('volume')}
+          <input type="range" min={0} max={100} step={5} value={level} aria-valuetext={`${level}%`}
+            onChange={event => { const value = Number(event.target.value); setLevel(value); setVolume(value / 100) }} />
+          <span>{level === 0 ? t('muted') : `${level}%`}</span>
+        </label>
+        <button type="button" className={styles.b} onClick={() => playArrival()}>{t('testArrival')}</button>
+        <button type="button" className={styles.b} onClick={() => showPreview('done')}>{t('testClear')}</button>
+        <button type="button" className={styles.b} onClick={() => showPreview('failed')}>{t('testFail')}</button>
+      </div>}
       {dataError && <p role="alert" className={styles.state}>{t('dataError')}</p>}
       {stage(false)}
     </div>
