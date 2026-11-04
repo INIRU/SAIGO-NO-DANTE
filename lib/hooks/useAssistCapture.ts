@@ -44,7 +44,11 @@ const IDLE_QUEUE: CaptureQueueStatus = { analyzing: 0, frames: 0, text: 0, image
 /** Text reader actually serving capture: GPU PP-OCR once loaded, otherwise Tesseract (also while PP-OCR loads). */
 export interface OcrEngineStatus { engine: 'paddle' | 'tesseract'; adapter: string; loading: boolean; reason?: string }
 /** `failures`: reads in a row the worker answered with an error (a failed frame, not a dead worker). */
-interface OcrLane { worker: Worker; ready: boolean; inFlight: boolean; activeRequest: number; engine: OcrEngineStatus | null; failures: number }
+/** `since`: when its current read was sent (a read never answered is given up after OCR_WATCHDOG_MS). */
+interface OcrLane { worker: Worker; ready: boolean; inFlight: boolean; activeRequest: number; engine: OcrEngineStatus | null; failures: number; since: number }
+/** A scene worker request or a text read with no answer for this long is given up (a stalled GPU must not stop reading for good). */
+const SCENE_WATCHDOG_MS = 8000
+const OCR_WATCHDOG_MS = 12000
 /** OCR workers of one capture: one lane object shared by popups and screen reads, or one worker per lane. */
 interface OcrPool { popup: OcrLane; screen: OcrLane; lanes: OcrLane[]; started: boolean }
 /** Materials confirmed in one fusion confirmation dialog (slot by slot; unconfirmed slots are left out). */
@@ -470,6 +474,10 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
   const lastFloorRead = useRef<{ floor: number; at: number } | null>(null)
   const popupReader = useRef<ReadableStreamDefaultReader<VideoFrame> | null>(null)
   const inFlight = useRef(false)
+  // when the scene worker was last given a request (the watchdog frees `inFlight` if it never answers)
+  const busySince = useRef(0)
+  const markBusy = () => { inFlight.current = true; busySince.current = Date.now() }
+  // a stop or a failure clears what the screen reading published
   const ocrRequestId = useRef(0)
   const ocrCapture = useRef<{ at: number; floor: number | null; width?: number; height?: number } | null>(null)
   const visualCapture = useRef<{ at: number; floor: number | null } | null>(null)
@@ -614,7 +622,14 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
     setObservedFloor(null)
     setScene(null)
     setThemeSelectionFloor(null)
+    setBlessings(null); lastBlessingRead.current = ''; blessingRequest.current = null
   }, [cleanup])
+
+  const catalogFilled = Boolean(ocrCatalog && Object.values(ocrCatalog).some(items => items.length > 0))
+  useEffect(() => {
+    // connected before the catalog came: the text reader is built now (it never was)
+    if (status === 'running' && catalogFilled && !ocrPool.current && ocrStatus === 'idle') { plog('reader-late-build', true); rebuildOcr.current?.() }
+  }, [status, catalogFilled, ocrStatus])
 
   useEffect(() => {
     setSupported(canCapture())
@@ -987,8 +1002,8 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
         if (inFlight.current || worker.current !== vision) return
         const item = takePopup(popupVisionQueue)
         if (!item) return
-        inFlight.current = true
-        vision.postMessage({ type: 'popup-icon', ...item }, [item.frame])
+        markBusy()
+        try { vision.postMessage({ type: 'popup-icon', ...item }, [item.frame]) } catch (error) { inFlight.current = false; item.frame.close(); plog('post-failed', String(error)) }
       }
       let flushOcrPopup = () => {}
       // An image-identified event asks for prompt full-frame OCR so its choices are read while they are shown.
@@ -1019,7 +1034,10 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
         try {
           const frames = await takeTape(from, to, 6)
           let state = EMPTY_PICK
+          let next = 0
+          const closeRest = () => { for (const item of frames.slice(next)) item.bitmap.close() }
           for (const { at, bitmap } of frames) {
+            next++
             const width = bitmap.width, height = bitmap.height
             const read = await readTapeFrame(bitmap)
             const catalog = ocrReferences.current
@@ -1029,6 +1047,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
             if (named.length && new Set(named.map(choice => `${choice!.eventId}:${choice!.option}`)).size === 1) {
               dlog('replay', 'result text', named[0]!.id)
               setEventPick({ choiceId: named[0]!.id, at, via: 'text' })
+              closeRest()
               return
             }
             const boxes = distinctBoxes((evidence.choiceBoxes ?? []).filter(box => box.left >= 0.45 * width && box.left <= 0.75 * width))
@@ -1038,7 +1057,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
             const shown = listShown(state, choiceBands(boxes, width, height), at,
               { resultPage: read.words.some(word => RESULT_HEADERS.has(word.text.trim())), options })
             state = shown.state
-            if (shown.pick) { dlog('replay', 'option alone', shown.pick.choiceId); setEventPick(shown.pick); return }
+            if (shown.pick) { dlog('replay', 'option alone', shown.pick.choiceId); setEventPick(shown.pick); closeRest(); return }
           }
           dlog('replay', 'nothing in', frames.length, 'frames')
         } finally { replaying = false }
@@ -1196,7 +1215,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
       const buildOcrPool = () => {
         const profile = profileRef.current
         const makeLane = (): OcrLane => ({ worker: new Worker('/models/assist-ocr/ocr-worker.js', { type: 'module' }), ready: false,
-          inFlight: false, activeRequest: 0, engine: null, failures: 0 })
+          inFlight: false, activeRequest: 0, engine: null, failures: 0, since: 0 })
         const first = makeLane()
         const pool: OcrPool = profile.ocrWorkers === 2 ? (() => { const second = makeLane(); return { popup: first, screen: second, lanes: [first, second], started: false } })()
           : { popup: first, screen: first, lanes: [first], started: false }
@@ -1279,8 +1298,9 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
           const item = takePopup(popupQueue)
           if (!item) return
           lane.inFlight = true
+          lane.since = Date.now()
           lane.activeRequest = item.requestId
-          lane.worker.postMessage({ type: 'popup', ...item }, [item.frame])
+          try { lane.worker.postMessage({ type: 'popup', ...item }, [item.frame]) } catch (error) { dropInFlight(lane); item.frame.close(); plog('post-failed', String(error)) }
         }
         const recognize = async () => {
           const lane = pool.screen
@@ -1303,28 +1323,40 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
           const shared = pool.popup === pool.screen
           // a screen change since the last read starts one at once (still one at a time, 120 ms apart at least)
           const gap = screenChangedAt.current > recognizedAt ? 120 : interval
+          for (const stuck of pool.lanes) if (alive(stuck) && stuck.inFlight && now - stuck.since > OCR_WATCHDOG_MS) {
+            plog('ocr-watchdog', { ms: now - stuck.since, request: stuck.activeRequest })
+            dropInFlight(stuck)
+            stuck.failures += 1
+            if (ocrErrorAction(stuck.failures) !== 'skip') { ocrFail(stuck); return }
+          }
           if (!alive(lane) || lane.inFlight || !lane.ready || now - recognizedAt < gap ||
             (shared && popupQueue.current.length && now - recognizedAt < interval * 2) || !hasFrame()) return
           recognizedAt = now
           lane.inFlight = true
+          lane.since = now
           const requestId = ++ocrRequestId.current
           lane.activeRequest = requestId
+          let taken: ImageBitmap | null = null
           try {
             // Capture time is taken before the copy, so every read of this frame is dated by when it was on screen.
             const at = Date.now()
-            const frame = await grabBitmap()
+            const frame = taken = await grabBitmap()
             if (!alive(lane)) { frame.close(); return }
             ocrCapture.current = { at, floor: currentFloor.current, width: frame.width, height: frame.height }
             // The fusion screen belongs to the shop and may be classified either way; one copy at a time, closed on the next.
             if (latestLabel.current === 'shop' || latestLabel.current === null || onFusionScreen(latestLabel.current, fusionTitleAt.current, at)) {
               const copy = await createImageBitmap(frame)
+              if (!alive(lane)) { copy.close(); frame.close(); return }
               fusionFrame.current?.frame.close()
               fusionFrame.current = { frame: copy, at }
             }
             lane.worker.postMessage({ type: 'recognize', requestId, frame, detSide: profile.fullFrameDetSide,
               grid: profile.fullFrameGrid, tileScale: profile.fullFrameTileScale }, [frame])
-          } catch {
-            ocrFail(lane)
+          } catch (error) {
+            // this frame could not be taken or sent (the track between frames): skip it, the lane stays
+            taken?.close()
+            if (alive(lane)) dropInFlight(lane)
+            plog('ocr-frame-skipped', String(error))
           }
         }
         // The exploration banner, read in the game language. Right after a banner was read it is read again sooner while
@@ -1346,15 +1378,19 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
             !hasFrame()) return
           exploredAt = now
           lane.inFlight = true
+          lane.since = now
           const requestId = ++ocrRequestId.current
           lane.activeRequest = requestId
+          let taken: ImageBitmap | null = null
           try {
-            const frame = await grabBitmap()
+            const frame = taken = await grabBitmap()
             if (!alive(lane)) { frame.close(); return }
             exploreCapture.current = { at: Date.now(), requestId }
             lane.worker.postMessage({ type: 'explore', requestId, frame }, [frame])
-          } catch {
-            ocrFail(lane)
+          } catch (error) {
+            taken?.close()
+            if (alive(lane)) dropInFlight(lane)
+            plog('ocr-frame-skipped', String(error))
           }
         }
         promptEventOcr = () => { void recognize() }
@@ -1367,12 +1403,21 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
           if (!lane) { frame.close(); return null }
           const reader = lane, requestId = ++ocrRequestId.current
           reader.inFlight = true
+          reader.since = Date.now()
           reader.activeRequest = requestId
           return new Promise(resolve => {
             tapePending.set(requestId, resolve)
             const profile = profileRef.current
-            reader.worker.postMessage({ type: 'recognize', requestId, frame, detSide: profile.fullFrameDetSide, grid: profile.fullFrameGrid,
-              tileScale: profile.fullFrameTileScale }, [frame])
+            try {
+              reader.worker.postMessage({ type: 'recognize', requestId, frame, detSide: profile.fullFrameDetSide, grid: profile.fullFrameGrid,
+                tileScale: profile.fullFrameTileScale }, [frame])
+            } catch (error) {
+              tapePending.delete(requestId)
+              dropInFlight(reader)
+              frame.close()
+              plog('post-failed', String(error))
+              resolve(null)
+            }
             setTimeout(() => {
               const done = tapePending.get(requestId)
               if (!done) return
@@ -1678,20 +1723,26 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
           ocrReady.current = false
         }
       }
-      if (ocrReferences.current && Object.values(ocrReferences.current).some(items => items.length > 0)) {
+      // The text reader needs the catalog (gift, event and pack names); one that comes after connecting builds it then
+      // (useEffect below), as a failed reader's rebuild does
+      let disposePool: (() => void) | null = null
+      const buildIfReady = () => {
+        if (!ocrReferences.current || !Object.values(ocrReferences.current).some(items => items.length > 0)) return
         try {
-          let disposePool = buildOcrPool()
-          rebuildOcr.current = () => {
-            if (run !== generation.current) return
-            disposePool()
-            disposePool = buildOcrPool()
-          }
+          disposePool = buildOcrPool()
         } catch {
           for (const lane of ocrPool.current?.lanes ?? []) lane.worker.terminate()
           ocrPool.current = null
           setOcrStatus('error')
         }
       }
+      rebuildOcr.current = () => {
+        if (run !== generation.current) return
+        disposePool?.()
+        disposePool = null
+        buildIfReady()
+      }
+      buildIfReady()
       let inferredAt = 0
       const readFusionSlots = async () => {
         const wanted = fusionWanted.current
@@ -1714,7 +1765,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
         if (dialog?.dialogless) { finishFusionDialog(); return false }
         const retained = fusionFrameToRead.current
         if (!retained && fusionRequest.current && Date.now() - fusionRequest.current.at < 350) return false
-        inFlight.current = true
+        markBusy()
         try {
           if (retained) {
             // The frame the dialog was read from goes first; later captures may already show the result.
@@ -1790,7 +1841,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
       }
       /** Reads one wheel state in one layout into its cache (a copy of its frame goes to the worker; it may be read again). */
       const readWheelState = async (state: WheelFrame, capacity: number) => {
-        inFlight.current = true
+        markBusy()
         try {
           const frame = await createImageBitmap(state.frame)
           if (run !== generation.current || !worker.current) { frame.close(); inFlight.current = false; return true }
@@ -1819,6 +1870,12 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
         return readWheelState(state, capacity)
       }
       const capture = async () => {
+        if (inFlight.current && Date.now() - busySince.current > SCENE_WATCHDOG_MS) {
+          // a request the scene worker never answered (a stalled GPU): given up, so reading goes on; its late answer, if
+          // any, names a request no longer waited for and is ignored
+          plog('scene-watchdog', Date.now() - busySince.current)
+          inFlight.current = false
+        }
         // A queued acquisition icon goes before any fusion read (those take a few hundred ms).
         if (popupVisionQueue.current.length && !inFlight.current) {
           flushVisionPopup()
@@ -1830,7 +1887,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
         // The shop shelf while the shop is on screen, between scene reads (every 0.7 s; one request at a time)
         if (gifts && !inFlight.current && latestLabel.current === 'shop' && hasFrame() && !popupVisionQueue.current.length &&
           Date.now() - (shelfRequest.current?.at ?? 0) >= 700 && Date.now() - inferredAt < profileRef.current.sceneIntervalMs - 20) {
-          inFlight.current = true
+          markBusy()
           try {
             const frame = await grabBitmap()
             if (run !== generation.current || !worker.current) { frame.close(); inFlight.current = false; return }
@@ -1843,7 +1900,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
         // The owned list while the sell window is on screen, the same way
         if (gifts && !inFlight.current && latestLabel.current === 'sell' && hasFrame() && !popupVisionQueue.current.length &&
           Date.now() - (gridRequest.current?.at ?? 0) >= 700 && Date.now() - inferredAt < profileRef.current.sceneIntervalMs - 20) {
-          inFlight.current = true
+          markBusy()
           try {
             const frame = await grabBitmap()
             if (run !== generation.current || !worker.current) { frame.close(); inFlight.current = false; return }
@@ -1857,7 +1914,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
         const bands = pickState.current.bands
         if (bands.length && !inFlight.current && latestLabel.current === 'event' && hasFrame() && !popupVisionQueue.current.length &&
           Date.now() - (cursorRequest.current?.at ?? 0) >= 150 && Date.now() - inferredAt < profileRef.current.sceneIntervalMs - 20) {
-          inFlight.current = true
+          markBusy()
           try {
             const frame = await grabBitmap()
             if (run !== generation.current || !worker.current) { frame.close(); inFlight.current = false; return }
@@ -1874,7 +1931,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
         // The Star Blessing screen's cards, every second while it shows
         if (gifts && !inFlight.current && onBlessingScreen(blessingAt.current, Date.now()) && hasFrame() && !popupVisionQueue.current.length &&
           Date.now() - (blessingRequest.current?.at ?? 0) >= 1000) {
-          inFlight.current = true
+          markBusy()
           try {
             const frame = await grabBitmap()
             if (run !== generation.current || !worker.current) { frame.close(); inFlight.current = false; return }
@@ -1887,7 +1944,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
         // The formation from the bottom bar while the shop is on screen
         if (gifts && !inFlight.current && latestLabel.current === 'shop' && hasFrame() && !popupVisionQueue.current.length &&
           Date.now() - (formationRequest.current?.at ?? 0) >= 2000 && Date.now() - inferredAt < profileRef.current.sceneIntervalMs - 20) {
-          inFlight.current = true
+          markBusy()
           try {
             const frame = await grabBitmap()
             if (run !== generation.current || !worker.current) { frame.close(); inFlight.current = false; return }
@@ -1901,7 +1958,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
         if (inFlight.current || Date.now() - inferredAt < profileRef.current.sceneIntervalMs - 20 ||
           (popupVisionQueue.current.length && Date.now() - inferredAt < 3000) || !hasFrame()) return
         inferredAt = Date.now()
-        inFlight.current = true
+        markBusy()
         try {
           const frame = await grabBitmap()
           if (run !== generation.current || !worker.current) {
