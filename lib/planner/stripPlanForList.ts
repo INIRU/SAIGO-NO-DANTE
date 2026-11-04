@@ -1,4 +1,5 @@
 import { THEME_KEYWORDS, normalizeThemeKeyword } from '@/lib/constants/keywords'
+import { notePreviewText } from '@/lib/notes/blocks'
 import type { PlanSummary } from '@/components/planner/PlanCard'
 import { DECK_MAIN_KEYWORDS, computeDeckMainKeywordsFromSlots, normalizeDeckMainKeyword } from '@/lib/decks/keyword-rules'
 import {
@@ -228,6 +229,8 @@ export function stripPlanForList(plan: Record<string, unknown>): PlanSummary {
 
   return {
     ...rest,
+    // Cards show the description as one line: send that line, not the whole note document.
+    ...(typeof plan.description === 'string' && { description: notePreviewText(plan.description) }),
     deck: slimDeck,
     egos: slimEgos,
     theme_keywords,
