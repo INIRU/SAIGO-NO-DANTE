@@ -342,6 +342,10 @@ describe('the price of a violation, and a streak’s reward', () => {
     const given = after.prescripts.at(-1)!
     expect(given).toMatchObject({ penance: true, status: 'active', floor: 3, scope: 'special' })
     expect(given.strength).toBeGreaterThanOrEqual(4)
+    // its weight is what is asked: never an easy order scored heavy, never one already held
+    expect(given.goal.kind).not.toBe('no-sale')
+    const strengthOf = candidates('special', ctx()).find(card => JSON.stringify(card.goal) === JSON.stringify(given.goal))?.strength
+    expect(given.strength).toBe(strengthOf)
     // one at a time, and the same violation is answered once
     expect(penance(after, ctx(), 30)).toBe(after)
     // none before a floor is read

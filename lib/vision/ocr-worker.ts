@@ -56,6 +56,8 @@ const FULL_FRAME_LINES = 80
 const REC_BATCH = 6
 /** A popup box or crop outside the frame: that frame is unreadable by any engine, the GPU is not at fault. */
 class RegionError extends Error {}
+/** GPU runs failed in a row (a stall once is not a broken GPU). */
+let gpuFailures = 0
 let paddle: { det: ort.InferenceSession; rec: ort.InferenceSession; alphabet: string[]; adapter: string; loadedAt: number } | null = null
 let paddleRetries = 0
 let paddleRetry: ReturnType<typeof setTimeout> | null = null
@@ -534,13 +536,18 @@ self.onmessage = async (event: MessageEvent<Request>) => {
     const context = canvas.getContext('2d')
     if (!context) throw new Error('OCR canvas unavailable')
     context.drawImage(frame, 0, 0, canvas.width, canvas.height)
-    // GPU OCR first; a failure disables it and the same frame is read by Tesseract before any response.
+    // GPU OCR first. One failed run drops only its frame (a GPU busy with the game can stall a run past its timeout);
+    // a second in a row disables it and the frame is read by Tesseract before any response.
     const viaPaddle = async <T>(read: () => Promise<T>): Promise<T | null> => {
       if (!paddle) return null
       try {
-        return await read()
+        const done = await read()
+        gpuFailures = 0
+        return done
       } catch (error) {
         if (error instanceof RegionError) throw error
+        if (++gpuFailures < 2) throw new Error('GPU OCR run failed; frame dropped')
+        gpuFailures = 0
         console.warn('GPU OCR failed; using Tesseract until it reloads', error)
         await releasePaddle('gpu-ocr-runtime-failed')
         return null

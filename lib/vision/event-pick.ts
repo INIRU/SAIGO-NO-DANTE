@@ -37,23 +37,26 @@ export function choiceBands(boxes: readonly ChoiceBox[], width: number, height: 
 }
 
 export interface PickState {
-  bands: ChoiceBand[]; shownAt: number; hits: { choiceId: string; at: number; pressed: boolean }[]; misses: number
+  /** `choiceId` null: the cursor was off every button then (passing over one on the way to another is no pick). */
+  bands: ChoiceBand[]; shownAt: number; hits: { choiceId: string | null; at: number; pressed: boolean }[]; misses: number
   /** One option of the list read alone this many times in a row (the game keeps only the taken one). */
   alone?: { choiceId: string; reads: number }
 }
 export const EMPTY_PICK: PickState = { bands: [], shownAt: 0, hits: [], misses: 0 }
 
 /**
- * A read with choices on screen. A list of other choices starts over. One option read alone, of a list of several (seen
- * before, or `options`: the event has that many readable options), is the option taken: at once under the result
- * page's header, else when read so twice in a row (one read may drop a line). A quick click can bring the result page
- * before any read of the whole list, so the list need not have been seen.
+ * A read with choices on screen. A list of other choices starts over. One option read alone is the option taken: at once
+ * under the result page's header (`options`: the event has that many readable options; a quick click can bring the
+ * result page before any read of the whole list), else, after the whole list was read, when read alone twice in a row
+ * (one read may drop a line).
  */
 export function listShown(state: PickState, bands: readonly ChoiceBand[], at: number, { resultPage = false, options = 0 } = {}): { state: PickState; pick: EventPick | null } {
   if (!bands.length) return { state, pick: null }
   const same = state.bands.length > 0 && bands.some(band => state.bands.some(old => old.choiceId === band.choiceId))
-  if (bands.length === 1 && ((same && state.bands.length > 1) || options > 1)) {
-    if (resultPage) return { state: EMPTY_PICK, pick: { choiceId: bands[0].choiceId, at, via: 'list' } }
+  // the list slides in one option at a time: a lone option is the one taken only under the result header, or after the
+  // whole list was read (one option of several, read twice in a row while sliding in, was taken for the pick)
+  if (bands.length === 1 && options > 1 && resultPage) return { state: EMPTY_PICK, pick: { choiceId: bands[0].choiceId, at, via: 'list' } }
+  if (bands.length === 1 && same && state.bands.length > 1) {
     const reads = state.alone?.choiceId === bands[0].choiceId ? state.alone.reads + 1 : 1
     if (reads >= 2) return { state: EMPTY_PICK, pick: { choiceId: bands[0].choiceId, at, via: 'list' } }
     return { state: { ...state, alone: { choiceId: bands[0].choiceId, reads }, misses: 0 }, pick: null }
@@ -61,11 +64,11 @@ export function listShown(state: PickState, bands: readonly ChoiceBand[], at: nu
   return { state: { bands: [...bands], shownAt: at, hits: same ? state.hits : [], misses: 0 }, pick: null }
 }
 
-/** A cursor reading: kept when it is on a button of the list shown in the last 3 s. */
+/** A cursor reading while a list shown in the last 3 s is up: the button it is on, or none. */
 export function cursorSeen(state: PickState, sample: CursorSample): PickState {
   if (!state.bands.length || sample.at - state.shownAt > 3000) return state
   const band = state.bands.find(item => sample.x >= item.left && sample.x <= item.right && sample.y >= item.top && sample.y <= item.bottom)
-  return band ? { ...state, hits: [...state.hits.slice(-40), { choiceId: band.choiceId, at: sample.at, pressed: sample.pressed }] } : state
+  return { ...state, hits: [...state.hits.slice(-40), { choiceId: band?.choiceId ?? null, at: sample.at, pressed: sample.pressed }] }
 }
 
 /**
@@ -77,6 +80,7 @@ export function listMissing(state: PickState, at: number, gone = false): { state
   if (!gone && state.misses < 1) return { state: { ...state, misses: state.misses + 1 }, pick: null }
   // the result page read once (its option alone) before the room went on: that option, before the cursor
   if (state.alone) return { state: EMPTY_PICK, pick: { choiceId: state.alone.choiceId, at, via: 'list' } }
+  // where the cursor was last: a button, or off them all (then an option without a readable line may have been clicked)
   const last = state.hits.at(-1)
-  return { state: EMPTY_PICK, pick: last ? { choiceId: last.choiceId, at, via: 'cursor' } : null }
+  return { state: EMPTY_PICK, pick: last?.choiceId ? { choiceId: last.choiceId, at, via: 'cursor' } : null }
 }

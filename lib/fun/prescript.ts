@@ -282,8 +282,8 @@ export function eventPrescript(eventId: number, options: readonly number[], rand
 }
 
 /**
- * The terminal's answer to a violation: a penance, forced at once (no choice, refusal or reroll), one strength above the
- * prescript broken and at least 4, due on this floor. One at a time, and a broken penance brings no other (it costs grace
+ * The terminal's answer to a violation: a penance, forced at once (no choice, refusal or reroll), at least one strength
+ * above the prescript broken and at least 4 (else the heaviest the floor offers, 3 or more), due on this floor. One at a time, and a broken penance brings no other (it costs grace
  * instead). None before a floor is read, nor for a recall (that is no violation).
  */
 export function penance(run: PrescriptRun, ctx: PrescriptContext, at: number): PrescriptRun {
@@ -291,12 +291,17 @@ export function penance(run: PrescriptRun, ctx: PrescriptContext, at: number): P
   const broken = run.prescripts.filter(p => p.status === 'failed' && !p.penance && (p.settledAt ?? 0) > (run.penanceAt ?? 0)).at(-1)
   if (!broken) return run
   const floor = Math.min(5, Math.max(4, broken.strength + 1))
-  const pool = candidates('special', ctx).filter(card => feasible(card, ctx, false))
+  // what is asked must be the weight: an easy order is never scored as a heavy one ("무엇도 팔지 마라" came at strength 4),
+  // nor one already held
+  const held = new Set(run.prescripts.filter(p => p.status === 'active').map(p => JSON.stringify(p.goal)))
+  const pool = candidates('special', ctx).filter(card => feasible(card, ctx, false) && !held.has(JSON.stringify(card.goal)) && card.goal.kind !== 'no-sale')
   const heavy = pool.filter(card => card.strength >= floor)
-  const choices = heavy.length ? heavy : pool.filter(card => card.strength === Math.max(...pool.map(c => c.strength)))
+  const strongest = Math.max(0, ...pool.map(c => c.strength))
+  // nothing that heavy on this floor: the heaviest there is, if it weighs anything (3 or more)
+  const choices = heavy.length ? heavy : strongest >= 3 ? pool.filter(card => card.strength === strongest) : []
   if (!choices.length) return { ...run, penanceAt: at }
   const card = choices[Math.floor(ctx.random() * choices.length)]
-  const next = receive(run, { ...card, strength: Math.max(card.strength, floor) as Strength }, ctx.floor, at)
+  const next = receive(run, card, ctx.floor, at)
   return { ...next, penanceAt: at, prescripts: next.prescripts.map(p => p.id === next.nextId - 1 ? { ...p, penance: true } : p) }
 }
 

@@ -93,7 +93,7 @@ it('decodes CTC output: merges repeats, drops blanks, keeps a blank-separated re
 })
 
 describe('GPU OCR reload after a failure', () => {
-  it('reloads after growing waits, then leaves Tesseract, and starts over after a long healthy run', () => {
+  it('reloads after growing waits, then keeps trying at the longest, and starts over after a long healthy run', () => {
     let spent = 0
     const waits: (number | null)[] = []
     for (let failure = 0; failure < 4; failure++) {
@@ -101,7 +101,7 @@ describe('GPU OCR reload after a failure', () => {
       waits.push(plan.delay)
       spent = plan.spent
     }
-    expect(waits).toEqual([...PADDLE_RETRY_MS, null])
+    expect(waits).toEqual([...PADDLE_RETRY_MS, PADDLE_RETRY_MS.at(-1)])
     expect(paddleRetryDelay(spent, 0, PADDLE_STABLE_MS)).toEqual({ delay: PADDLE_RETRY_MS[0], spent: 1 })
   })
 })

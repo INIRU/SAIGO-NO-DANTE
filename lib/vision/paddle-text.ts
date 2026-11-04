@@ -270,13 +270,14 @@ export function joinRowLines<T extends { text: string; rect: TextRect }>(lines: 
 /**
  * Waits before reloading the GPU OCR models after each failure. A GPU busy with the game can stall a run past its timeout
  * without being unusable, so a failure no longer leaves Tesseract reading the rest of the capture; after the last wait it
- * does. Models that ran PADDLE_STABLE_MS before failing count as recovered and the waits start over.
+ * is tried again at that wait for as long as the capture runs (Tesseract left a long run all but unread, 2026-11-04).
+ * Models that ran PADDLE_STABLE_MS before failing count as recovered and the waits start over.
  */
 export const PADDLE_RETRY_MS = [10_000, 45_000, 180_000]
 export const PADDLE_STABLE_MS = 5 * 60_000
 
-/** The wait before the next reload (null: no more) and the retries spent with it, for models loaded at `loadedAt` (null: none ran). */
+/** The wait before the next reload and the retries spent with it, for models loaded at `loadedAt` (null: none ran). */
 export function paddleRetryDelay(spent: number, loadedAt: number | null, now: number): { delay: number | null; spent: number } {
   const used = loadedAt !== null && now - loadedAt >= PADDLE_STABLE_MS ? 0 : spent
-  return used < PADDLE_RETRY_MS.length ? { delay: PADDLE_RETRY_MS[used], spent: used + 1 } : { delay: null, spent: used }
+  return { delay: PADDLE_RETRY_MS[Math.min(used, PADDLE_RETRY_MS.length - 1)], spent: used + 1 }
 }

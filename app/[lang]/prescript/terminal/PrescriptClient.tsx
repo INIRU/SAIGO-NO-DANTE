@@ -212,7 +212,7 @@ export default function PrescriptClient({ themes, gifts, recipes, events, eventC
         <p role="status" title={t('privacy')} className={`${styles.state} ${running ? styles.live : capture.status === 'error' || capture.status === 'unsupported' ? styles.bad : ''}`}>
           {capture.mobile ? t('mobile') : pipFailed ? t('pipFailed') : t(`capture_${capture.status}`)}
           {/* screen text is what names rooms, popups and floors: say when its reader is down or on the slow CPU fallback */}
-          {running && (capture.ocrStatus === 'error' ? ` · ${t('ocrDown')}` : capture.ocrEngine?.engine === 'tesseract' && !capture.ocrEngine.loading ? ` · ${t('ocrSlow')}` : '')}
+          {running && (capture.ocrStatus === 'error' ? ` · ${t('ocrDown')}` : capture.ocrEngine?.engine === 'tesseract' ? ` · ${t(capture.ocrEngine.loading ? 'ocrRecovering' : 'ocrSlow')}` : '')}
         </p>
       </div>
       {dataError && <p role="alert" className={styles.state}>{t('dataError')}</p>}
