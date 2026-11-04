@@ -236,6 +236,7 @@ def main():
     parser.add_argument('--real-train', type=Path)
     parser.add_argument('--real-repeat', type=int, default=60)
     parser.add_argument('--dark', action='store_true')
+    parser.add_argument('--init-pt', type=Path, help='with --arch mnv4s: start from this state dict (a best.pt of an earlier run, same classes)')
     parser.add_argument('--arch', choices=('mnv3s', 'mnv4s'), default='mnv3s',
                         help='mnv4s: timm MobileNetV4-Conv-Small (ImageNet, e2400 r224) trained from ImageNet (no --init-onnx)')
     args = parser.parse_args()
@@ -246,7 +247,10 @@ def main():
     device = torch.device('cuda' if torch.cuda.is_available() else 'mps' if torch.backends.mps.is_available() else 'cpu')
     if args.arch == 'mnv4s':
         import timm
-        model = timm.create_model('mobilenetv4_conv_small.e2400_r224_in1k', pretrained=True, num_classes=len(assets.classes))
+        model = timm.create_model('mobilenetv4_conv_small.e2400_r224_in1k', pretrained=not args.init_pt, num_classes=len(assets.classes))
+        if args.init_pt:
+            model.load_state_dict(torch.load(args.init_pt, map_location='cpu'))
+            print('started from', args.init_pt, flush=True)
     elif args.init_onnx:
         from train_scene import from_onnx
         known = json.load(open(args.init_labels))
@@ -270,7 +274,7 @@ def main():
     optimizer = torch.optim.AdamW(model.parameters(), lr=1e-3, weight_decay=1e-4)
     real_train = json.load(open(args.real_train)) if args.real_train else []
     steps = args.epochs * math.ceil((args.per_epoch + len(real_train) * args.real_repeat) / args.batch)
-    scheduler = torch.optim.lr_scheduler.OneCycleLR(optimizer, max_lr=1e-4 if args.init_onnx else 2e-3, total_steps=steps, pct_start=0.1)
+    scheduler = torch.optim.lr_scheduler.OneCycleLR(optimizer, max_lr=1e-4 if args.init_onnx or args.init_pt else 2e-3, total_steps=steps, pct_start=0.1)
     loss_fn = nn.CrossEntropyLoss(label_smoothing=0.1)
     args.out.mkdir(parents=True, exist_ok=True)
     print('classes', len(assets.classes), 'backgrounds', len(assets.backgrounds), 'real', len(real), 'device', device, flush=True)

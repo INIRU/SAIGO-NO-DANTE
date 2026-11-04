@@ -372,3 +372,30 @@ describe('the price of a violation, and a streak’s reward', () => {
     expect(run.rerollsLeft).toBe(2)
   })
 })
+
+describe('prescripts of one Identity', () => {
+  const sinnerOf: Record<string, string> = { 10101: 's01', 10102: 's01', 10201: 's02', 10701: 's07' }
+  const identity = (id: string) => ({ sinner: sinnerOf[id] ?? `s${id.slice(1, 3)}`, keywords: [] as string[] })
+  const formation = ['10101', '10201', '10301', '10401', '10501', '10601', '10701', '10801', '10901', '11001', '11101', '11201']
+
+  it('a planned Identity whose Sinner fields another is to be fielded in the shop, done when the bar shows it', () => {
+    const ctx = context({ formation, identity, planIdentities: ['10102', '10201'] })
+    const cards = candidates('shop', ctx).filter(card => card.goal.kind === 'field-identity')
+    // 10201 is fielded already; 10102 is Sinner 1's other Identity
+    expect(cards.map(card => card.goal)).toEqual([{ kind: 'field-identity', identityId: '10102', sinner: 's01' }])
+    const run = receive(createPrescriptRun(), cards[0], 2, 0)
+    expect(applyEvent(run, { type: 'formation', ids: formation, at: 1 }, ctx).prescripts[0].status).toBe('active')
+    expect(applyEvent(run, { type: 'formation', ids: ['10102', ...formation.slice(1)], at: 1 }, ctx).prescripts[0].status).toBe('done')
+    expect(feasible(cards[0], context({ formation: ['10102', ...formation.slice(1)], identity }), true)).toBe(false)
+  })
+
+  it('an Identity standing in 7 to 12 is to be brought into the first six, done when the bar shows it there', () => {
+    const ctx = context({ formation, identity })
+    const fronts = candidates('special', ctx).filter(card => card.goal.kind === 'front-identity')
+    expect(fronts.map(card => card.goal.kind === 'front-identity' && card.goal.identityId)).toEqual(formation.slice(6))
+    const run = receive(createPrescriptRun(), fronts[0], 2, 0)
+    expect(applyEvent(run, { type: 'formation', ids: formation, at: 1 }, ctx).prescripts[0].status).toBe('active')
+    const swapped = ['10701', ...formation.slice(1, 6), '10101', ...formation.slice(7)]
+    expect(applyEvent(run, { type: 'formation', ids: swapped, at: 1 }, ctx).prescripts[0].status).toBe('done')
+  })
+})

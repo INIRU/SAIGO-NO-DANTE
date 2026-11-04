@@ -141,7 +141,7 @@ const Flower = () => <svg viewBox="-12 -12 24 24" aria-hidden="true"><g fill="#3
 
 const KIND: Record<PrescriptGoal['kind'], string> = {
   'sell-keyword': 'kind_sell', 'sell-tier': 'kind_sell', 'fuse-gift': 'kind_fuse', 'fuse-tier': 'kind_fuse', 'get-keyword': 'kind_gather',
-  'no-sale': 'kind_floor', 'pick-theme': 'kind_theme', 'buy-gift': 'kind_shop', 'buy-leftmost': 'kind_shop', 'no-answer': 'kind_floor', 'event-choice': 'kind_event', 'swap-identity': 'kind_formation', 'formation-keyword': 'kind_formation',
+  'no-sale': 'kind_floor', 'pick-theme': 'kind_theme', 'buy-gift': 'kind_shop', 'buy-leftmost': 'kind_shop', 'no-answer': 'kind_floor', 'event-choice': 'kind_event', 'swap-identity': 'kind_formation', 'formation-keyword': 'kind_formation', 'field-identity': 'kind_formation', 'front-identity': 'kind_formation',
 }
 
 interface Props {

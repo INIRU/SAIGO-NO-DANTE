@@ -3074,6 +3074,8 @@
     "rankingMine": "나의 최고 가호",
     "rankingSoon": "랭킹은 아직 열리지 않았다. 열리면 끝까지 단말기를 켠 회차만 오른다.",
     "goal_swap_identity": "{sinner}의 인격을 바꿔라",
+    "goal_field_identity": "인격 「{identity}」 {sinner}. 편성하라",
+    "goal_front_identity": "인격 「{identity}」 {sinner}. 1~6번에 세워라",
     "goal_formation_keyword": "앞 여섯 자리에 {keyword} 인격을 {count}명 세워라",
     "kind_formation": "편성",
     "gradeTitle": "단말기 등급",
