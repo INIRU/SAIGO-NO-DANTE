@@ -303,7 +303,7 @@ python3 scripts/vision/extract_scene_frames.py --videos <recording.mp4>... --out
 npx tsx scripts/vision/ocr_frames.ts <work dir> <work dir>/ocr-list.json <work dir>/ocr.json
 python3 scripts/vision/build_scene_dataset.py --videos <work dir> --samples <samples> --caches <ocr cache>... --out <dataset>
 python3 scripts/vision/train_scene.py --images <dataset>/annotations.jsonl --roots videos=<work dir> samples=<samples> \
-  --labels public/models/assist-scene/labels.json --init-onnx public/models/assist-scene/scene.onnx --epochs 12 --out <checkpoint>
+  --labels public/models/assist-scene/labels.json --arch mnv4s --epochs 12 --out <checkpoint>
 python3 scripts/vision/compare_scene_models.py --images <dataset>/annotations.jsonl --roots videos=<work dir> samples=<samples> \
   --labels public/models/assist-scene/labels.json --models shipped=public/models/assist-scene/scene.onnx new=<checkpoint>/scene-mobilenetv3-small.onnx
 # 아이콘: 지금 모델에서 시작해 새 기프트를 더한다. 단계마다 calibration(강한 판독 수, 정답을 지웠을 때 최고 점수)을 본다

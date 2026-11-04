@@ -1,5 +1,6 @@
 import { gameUiTransform, type ShelfRegion } from './shop-shelf'
 import type { FusionSlotRead } from './fusion-evidence'
+import { isStrongRead } from './strong-read'
 
 /**
  * The sell window's owned list at 1920×1080: five columns of 88 px slots (left edges below), rows 160 px apart, scrolled
@@ -62,5 +63,5 @@ export interface OwnedGridRead { gifts: string[]; observedAt: number }
 
 /** The gifts an owned-list read names for certain: the classifier's strong-read bar (0.85, lead 0.25), blanks left out. */
 export function ownedGridGifts(reads: readonly (FusionSlotRead | null)[]): string[] {
-  return reads.flatMap(read => read && 'id' in read && read.score >= 0.85 && read.margin >= 0.25 ? [read.id] : [])
+  return reads.flatMap(read => read && 'id' in read && isStrongRead(read) ? [read.id] : [])
 }

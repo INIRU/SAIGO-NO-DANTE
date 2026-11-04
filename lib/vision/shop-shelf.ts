@@ -1,4 +1,5 @@
 import type { FusionSlotRead } from './fusion-evidence'
+import { isStrongRead } from './strong-read'
 
 /**
  * Where the game draws its 1920×1080 UI in a captured frame: scaled by the width and centred vertically (measured
@@ -62,5 +63,5 @@ export interface ShopShelf { slots: ShopSlotRead[]; observedAt: number }
 /** A slot read the shop's prescripts can rely on: the classifier's strong-read bar (0.85, lead 0.25). */
 export function shelfGift(slot: ShopSlotRead): string | null {
   const read = slot.read
-  return !slot.blank && read && 'id' in read && read.score >= 0.85 && read.margin >= 0.25 ? read.id : null
+  return !slot.blank && read && 'id' in read && isStrongRead(read) ? read.id : null
 }
