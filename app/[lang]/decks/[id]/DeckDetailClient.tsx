@@ -8,6 +8,7 @@ import type { SeriesView } from '@/lib/series/order'
 import DeckDetailSkeleton from '@/components/decks/DeckDetailSkeleton'
 import { useState, useEffect, useCallback, useMemo, useRef, type ReactNode } from 'react'
 import dynamic from 'next/dynamic'
+import useSWR from 'swr'
 import Image from 'next/image'
 import { useReducedMotion } from 'motion/react'
 import * as m from 'motion/react-m'
@@ -35,7 +36,7 @@ import {
   normalizeDeckMainKeyword,
   type DeckKeywordSlot,
 } from '@/lib/decks/keyword-rules'
-import { NoteRenderer, type NoteSkillEntry, type NotePassiveEntry, type NoteEgoEntry, type NoteEgoGiftEntry, type NoteIdentityEntry } from '@/components/decks/NoteChips'
+import { NoteRenderer, fetchNoteGifts, type NoteSkillEntry, type NotePassiveEntry, type NoteEgoEntry, type NoteIdentityEntry } from '@/components/decks/NoteChips'
 import { NoteGiftClickContext } from '@/components/notes/NoteBlockViewer'
 import PlannerGiftModal from '@/components/planner/PlannerGiftModal'
 import type { GiftData } from '@/lib/planner/types'
@@ -412,7 +413,9 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
   const [shared, setShared] = useState(false)
   const [shareGenerating, setShareGenerating] = useState(false)
 
-  const [egoGiftLookup, setEgoGiftLookup] = useState<Record<string, NoteEgoGiftEntry>>({})
+  // Same key and fetcher as the card previews' gift lookup, so SWR downloads the gift list once.
+  const { data: noteGifts } = useSWR('/api/ego-gifts', fetchNoteGifts, { revalidateOnFocus: false, revalidateIfStale: false })
+  const egoGiftLookup = useMemo(() => Object.fromEntries((noteGifts ?? []).map(gift => [gift.name, gift])), [noteGifts])
   const [egoModalId, setEgoModalId] = useState<string | null>(null)
   // A gift label in the note: the list above is the light one, so the pressed gift is fetched whole for the modal.
   const [noteGift, setNoteGift] = useState<GiftData | null>(null)
@@ -436,20 +439,10 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
   }, [id])
 
   useEffect(() => {
-    fetch('/api/ego-gifts')
-      .then(r => r.ok ? r.json() : [])
-      .then((gifts: NoteEgoGiftEntry[]) => {
-        const map: Record<string, NoteEgoGiftEntry> = {}
-        for (const g of gifts) map[g.name] = g
-        setEgoGiftLookup(map)
-      })
-      .catch(() => {})
-  }, [])
-
-  useEffect(() => {
     let cancelled = false
 
-    fetch(`/api/decks/${id}`)
+    // With the first view rendered, only the viewer part (deck code, ownership, the sinners' E.G.O list, counts) is missing.
+    fetch(initialDeck ? `/api/decks/${id}?part=viewer` : `/api/decks/${id}`)
       .then(r => r.ok ? r.json() : null)
       .then(data => {
         if (cancelled || !data || data.error) return
