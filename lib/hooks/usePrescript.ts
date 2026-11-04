@@ -37,6 +37,9 @@ export interface PrescriptOffer { scope: PrescriptScope; floor: number; cards: P
  * its token), a popup that follows a fusion dialog as that fusion's result, and the capture leaving `running` as a break.
  * Offers a card choice whenever a kind wants one; the player only chooses, never marks a prescript done.
  */
+/** How long a room left waits for its kept frames to be read again before it is judged by what is known. */
+export const LEAVE_GRACE_MS = 4000
+
 export function usePrescript({ enabled, grade = 'proselyte', status, acquisitions, sales, fusions, floorObservation, ownedGrid, eventRoom, eventOutcome, eventPick, formation, scene, inShop, context }: {
   enabled: boolean
   /** The grade a new run starts at (a run keeps the grade it began with). */
@@ -177,11 +180,18 @@ export function usePrescript({ enabled, grade = 'proselyte', status, acquisition
     apply({ type: 'event-outcome', eventId: eventOutcome.eventId, option: eventOutcome.option, at: eventOutcome.at,
       conflict: picked !== undefined && picked !== eventOutcome.option })
   }, [enabled, eventOutcome, apply])
+  // A room left is judged a few seconds later: its kept frames are read again first (a result page left unread), and
+  // only then is it called unseen
+  const leaving = useRef<number[]>([])
+  useEffect(() => () => { for (const timer of leaving.current) window.clearTimeout(timer) }, [])
   useEffect(() => {
     if (!enabled || !scene || activeEvent.current === null || !EVENT_EXIT_SCENES.has(scene)) return
-    const eventId = activeEvent.current, picked = picks.current.get(eventId), at = Date.now()
-    apply(picked === undefined ? { type: 'leave-event', eventId, at } : { type: 'event-outcome', eventId, option: picked, at })
+    const eventId = activeEvent.current
     activeEvent.current = null
+    leaving.current.push(window.setTimeout(() => {
+      const picked = picks.current.get(eventId), at = Date.now()
+      apply(picked === undefined ? { type: 'leave-event', eventId, at } : { type: 'event-outcome', eventId, option: picked, at })
+    }, LEAVE_GRACE_MS))
   }, [enabled, scene, apply])
 
   // the shop's own screens (its windows, the sale and fusion panels, the acquired popup) are still the shop
