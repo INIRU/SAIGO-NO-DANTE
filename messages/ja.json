@@ -912,6 +912,7 @@
       "clearBonusTooMany": "計画のギフトが{planned}個ありますが、ボーナスで選べるのは{count}個だけです。残りはショップで買いましょう",
       "clearBonusNoPlan": "計画のギフトはありません",
       "clearBonusMark": "クリアボーナス",
+      "clearBonusMarkShort": "ボーナス",
       "clearBonusOffer": "クリアボーナスに計画のギフトがあるパック",
       "clearBonusCard": "{n}番目のパック",
       "giftFilters": "ギフトの絞り込み",

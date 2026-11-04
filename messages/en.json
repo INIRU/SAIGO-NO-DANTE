@@ -912,6 +912,7 @@
       "clearBonusTooMany": "{planned} planned gifts are here, but the bonus gives only {count}. Buy the rest in the shop",
       "clearBonusNoPlan": "No planned gifts here",
       "clearBonusMark": "Clear bonus",
+      "clearBonusMarkShort": "Bonus",
       "clearBonusOffer": "Packs whose clear bonus has a planned gift",
       "clearBonusCard": "Pack {n}",
       "giftFilters": "Gift filters",
