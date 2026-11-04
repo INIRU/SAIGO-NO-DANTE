@@ -11,6 +11,7 @@ import type { OwnedGridRead } from '@/lib/vision/owned-grid'
 import type { FormationRead } from '@/lib/vision/formation-bar'
 import { gameTextPieces } from '@/lib/vision/text-normalize'
 import { SCREEN_CHANGE, THUMB_HEIGHT, THUMB_WIDTH, greyThumb, thumbDifference } from '@/lib/vision/screen-change'
+import { TAPE_EVERY_MS, TAPE_WIDTH } from '@/lib/vision/frame-tape'
 import { EMPTY_PICK, RESULT_HEADERS, choiceBands, distinctBoxes, cursorSeen, listMissing, listShown, type CursorSample, type EventPick } from '@/lib/vision/event-pick'
 import type { StableScene } from '@/lib/vision/scene-state'
 import { cpuFallback, isMobileDevice, webgpuBlock, type GpuBlock } from '@/lib/vision/device'
@@ -317,8 +318,11 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
   // and only read once a dialog asks for them.
   const wheelFrames = useRef<WheelFrame[]>([])
   const wheelTimer = useRef<ReturnType<typeof setInterval> | null>(null)
-  // When the screen last changed enough to read it at once (a short-lived dialog), from 32×18 thumbnails every 100 ms
+  // When the screen last changed enough to read it at once (a short-lived dialog), from 32×18 grey copies every 100 ms
   const changeTimer = useRef<ReturnType<typeof setInterval> | null>(null)
+  // The last seconds of the capture, kept by their own worker so a moment the live reads missed can be read again
+  const tapeTimer = useRef<ReturnType<typeof setInterval> | null>(null)
+  const tape = useRef<Worker | null>(null)
   const screenChangedAt = useRef(0)
   // A wheel state read ahead of any dialog while the scene worker is idle (the complete wheel may be up for ~0.3 s).
   const wheelRequest = useRef<{ requestId: number; state: WheelFrame; capacity: number } | null>(null)
@@ -500,6 +504,10 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
     if (wheelTimer.current) clearInterval(wheelTimer.current)
     wheelTimer.current = null
     if (changeTimer.current) clearInterval(changeTimer.current)
+    if (tapeTimer.current) clearInterval(tapeTimer.current)
+    tapeTimer.current = null
+    tape.current?.terminate()
+    tape.current = null
     changeTimer.current = null
     frameTasks.current = []
     latestFrame.current?.close()
@@ -975,6 +983,55 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
       // An image-identified event asks for prompt full-frame OCR so its choices are read while they are shown.
       let eventHintAt = 0
       let promptEventOcr = () => {}
+      // One kept frame read by whichever OCR lane is idle (set up with the lanes); null when none could read it
+      let readTapeFrame: (frame: ImageBitmap) => Promise<{ text: string; words: OcrWord[] } | null> = async frame => { frame.close(); return null }
+      let tapeRequest = 0
+      // OCR reads of kept frames, answered by request id (not the live screen read's)
+      const tapePending = new Map<number, (read: { text: string; words: OcrWord[] } | null) => void>()
+      const tapeAnswers = new Map<number, (frames: { at: number; bitmap: ImageBitmap }[]) => void>()
+      const takeTape = (from: number, to: number, max: number) => new Promise<{ at: number; bitmap: ImageBitmap }[]>(resolve => {
+        const keeper = tape.current
+        if (!keeper) return resolve([])
+        const requestId = ++tapeRequest
+        tapeAnswers.set(requestId, resolve)
+        keeper.postMessage({ type: 'take', requestId, from, to, max })
+        setTimeout(() => { if (tapeAnswers.delete(requestId)) resolve([]) }, 3000)
+      })
+      /**
+       * A ? room left with nothing read of what was taken: its kept frames from the list on are read again, the sharpest
+       * of each moment, for the option left alone under the result header or one option's result text.
+       */
+      let replaying = false
+      const replayRoom = async (from: number, to: number) => {
+        if (replaying || !ocrReferences.current) return
+        replaying = true
+        try {
+          const frames = await takeTape(from, to, 6)
+          let state = EMPTY_PICK
+          for (const { at, bitmap } of frames) {
+            const width = bitmap.width, height = bitmap.height
+            const read = await readTapeFrame(bitmap)
+            const catalog = ocrReferences.current
+            if (!read || !catalog || run !== generation.current) continue
+            const evidence = eventScreenEvidence({ text: read.text, words: read.words }, catalog)
+            const named = (evidence.outcomeChoiceIds ?? []).map(id => catalog.choices.find(choice => choice.id === id)).filter(Boolean)
+            if (named.length && new Set(named.map(choice => `${choice!.eventId}:${choice!.option}`)).size === 1) {
+              if (DEBUG_PICK) console.info('[prescript] replay', 'result text', named[0]!.id)
+              setEventPick({ choiceId: named[0]!.id, at, via: 'text' })
+              return
+            }
+            const boxes = distinctBoxes((evidence.choiceBoxes ?? []).filter(box => box.left >= 0.45 * width && box.left <= 0.75 * width))
+            const first = boxes.length ? catalog.choices.find(item => item.id === boxes[0].choiceId) : undefined
+            const options = first ? new Set(catalog.choices.filter(item => item.eventId === first.eventId)
+              .map(item => gameTextPieces(item.texts[0] ?? '').join('')).filter(text => [...text].length >= 4)).size : 0
+            const shown = listShown(state, choiceBands(boxes, width, height), at,
+              { resultPage: read.words.some(word => RESULT_HEADERS.has(word.text.trim())), options })
+            state = shown.state
+            if (shown.pick) { if (DEBUG_PICK) console.info('[prescript] replay', 'option alone', shown.pick.choiceId); setEventPick(shown.pick); return }
+          }
+          if (DEBUG_PICK) console.info('[prescript] replay', 'nothing in', frames.length, 'frames')
+        } finally { replaying = false }
+      }
       // Likewise, a map scene asks for the exploration banner before it scrolls away.
       let explorationHintAt = 0
       let promptExplore = () => {}
@@ -1290,12 +1347,45 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
           }
         }
         promptEventOcr = () => { void recognize() }
+        readTapeFrame = async frame => {
+          // the popup lane when it is idle, else the screen lane; up to 2 s for one to be free
+          const until = Date.now() + 2000
+          let lane: OcrLane | undefined
+          while (!(lane = [pool.popup, pool.screen].find(item => alive(item) && item.ready && !item.inFlight)) && Date.now() < until)
+            await new Promise(resolve => setTimeout(resolve, 40))
+          if (!lane) { frame.close(); return null }
+          const reader = lane, requestId = ++ocrRequestId.current
+          reader.inFlight = true
+          reader.activeRequest = requestId
+          return new Promise(resolve => {
+            tapePending.set(requestId, resolve)
+            const profile = profileRef.current
+            reader.worker.postMessage({ type: 'recognize', requestId, frame, detSide: profile.fullFrameDetSide, grid: profile.fullFrameGrid,
+              tileScale: profile.fullFrameTileScale }, [frame])
+            setTimeout(() => {
+              const done = tapePending.get(requestId)
+              if (!done) return
+              tapePending.delete(requestId)
+              if (reader.activeRequest === requestId) reader.inFlight = false
+              done(null)
+            }, 4000)
+          })
+        }
         promptExplore = () => { void explore() }
         const handle = (lane: OcrLane) => (event: MessageEvent<{ type: string; requestId?: number; text?: string; words?: OcrWord[];
           floorText?: string; themeReads?: OcrWord[][]; engine?: string; adapter?: string; loading?: boolean; reason?: string;
           header?: string; label?: string; labelWords?: OcrWord[]; labels?: PopupLabelRead[]; body?: string; lexicon?: { id?: unknown } | null }>) => {
           if (!alive(lane)) return
           const result = event.data
+          // a kept frame's read goes back to its replay, not into the live screen state
+          const replay = typeof result.requestId === 'number' ? tapePending.get(result.requestId) : undefined
+          if (replay && (result.type === 'result' || result.type === 'error')) {
+            tapePending.delete(result.requestId!)
+            if (lane.activeRequest === result.requestId) lane.inFlight = false
+            replay(result.type === 'result' && typeof result.text === 'string' && Array.isArray(result.words) ? { text: result.text, words: result.words } : null)
+            flushOcrPopup()
+            return
+          }
           const mine = result.requestId === lane.activeRequest && lane.inFlight
           if (mine && (result.type === 'result' || result.type === 'popupResult' || result.type === 'exploreResult')) {
             lane.failures = 0
@@ -1367,9 +1457,12 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
                   // a click before this read: the cursor readings since a second before it
                   for (const sample of cursorSamples.current) if (sample.at >= capture.at - 1000) pickState.current = cursorSeen(pickState.current, sample)
                 } else {
+                  const listFrom = pickState.current.shownAt
                   const settled = listMissing(pickState.current, capture.at)
                   pickState.current = settled.state
                   if (settled.pick) setEventPick(settled.pick)
+                  // the list went and nothing named what was taken: the kept frames are read again
+                  else if (listFrom && settled.state === EMPTY_PICK) void replayRoom(listFrom - 500, capture.at)
                 }
               }
               setOcrCandidates({ ...matches, ...(want.gifts ? {} : { gifts: [] }),
@@ -1645,7 +1738,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
           const thumb = greyThumb(context.getImageData(0, 0, THUMB_WIDTH, THUMB_HEIGHT).data)
           if (lastThumb && thumbDifference(lastThumb, thumb) > SCREEN_CHANGE) { screenChangedAt.current = Date.now(); promptEventOcr() }
           lastThumb = thumb
-        } catch { /* a missed thumbnail only delays the next read to its timer */ } finally { source.release(); changeBusy = false }
+        } catch { /* a missed copy only delays the next read to its timer */ } finally { source.release(); changeBusy = false }
       }
       const sampleWheel = async () => {
         const now = Date.now()
@@ -1811,6 +1904,25 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
           every(timer, 250, () => { void capture() })
           every(wheelTimer, 150, () => { void sampleWheel() })
           every(changeTimer, 100, () => { void sampleChange() })
+          // the capture's last seconds, a frame every 100 ms scaled to 960 px, kept by their own worker
+          const keeper = new Worker('/models/assist-scene/frame-tape-worker.js', { type: 'module' })
+          keeper.onmessage = (event: MessageEvent<{ type: string; requestId?: number; frames?: { at: number; bitmap: ImageBitmap }[]; kept?: number; bytes?: number }>) => {
+            const answer = event.data.type === 'frames' && typeof event.data.requestId === 'number' ? tapeAnswers.get(event.data.requestId) : undefined
+            if (DEBUG_PICK && event.data.type === 'frames') console.info('[prescript] tape', event.data.frames?.length, 'of', event.data.kept, 'kept,', Math.round((event.data.bytes ?? 0) / 1e5) / 10, 'MB')
+            if (answer) { tapeAnswers.delete(event.data.requestId!); answer(event.data.frames ?? []) } else for (const frame of event.data.frames ?? []) frame.bitmap.close()
+          }
+          tape.current = keeper
+          let feeding = false
+          every(tapeTimer, TAPE_EVERY_MS, () => {
+            if (feeding || !tape.current) return
+            const source = openFrame()
+            if (!source) return
+            feeding = true
+            const scale = Math.min(1, TAPE_WIDTH / source.width)
+            void createImageBitmap(source.source, { resizeWidth: Math.round(source.width * scale), resizeHeight: Math.round(source.height * scale), resizeQuality: 'medium' })
+              .then(frame => { if (tape.current) tape.current.postMessage({ type: 'frame', at: Date.now(), frame }, [frame]); else frame.close() })
+              .catch(() => {}).finally(() => { source.release(); feeding = false })
+          })
           // Polled at a low rate from the real queues; React only re-renders when a count changes.
           statusTimer.current = setInterval(() => {
             if (run !== generation.current) return
@@ -1868,9 +1980,11 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
           visionFailures = 0
           latestLabel.current = result.confidence >= 0.5 ? result.label : latestLabel.current
           if (latestLabel.current !== 'event' && (pickState.current.bands.length || pickState.current.alone)) {
+            const listFrom = pickState.current.shownAt
             const settled = listMissing(pickState.current, Date.now(), true)
             pickState.current = settled.state
             if (settled.pick) setEventPick(settled.pick)
+            else if (listFrom) void replayRoom(listFrom - 500, Date.now())
           }
           setPrediction({ label: result.label, confidence: result.confidence })
           const capture = visualCapture.current

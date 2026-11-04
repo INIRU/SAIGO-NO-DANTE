@@ -13,8 +13,11 @@ import type { ChoiceBox } from './ocr-match'
  */
 export interface ChoiceBand { choiceId: string; left: number; top: number; right: number; bottom: number }
 export interface CursorSample { at: number; x: number; y: number; pressed: boolean }
-/** `list`: the game left the taken option alone on screen (its result page); `cursor`: where the cursor clicked or rested. */
-export interface EventPick { choiceId: string; at: number; via: 'list' | 'cursor' }
+/**
+ * `list`: the game left the taken option alone on screen (its result page); `text`: its result text, read again from the
+ * kept frames; `cursor`: where the cursor clicked or rested.
+ */
+export interface EventPick { choiceId: string; at: number; via: 'list' | 'text' | 'cursor' }
 
 /** The result page's header (the list shows "선택지" over it): one option under it is the option taken. */
 export const RESULT_HEADERS: ReadonlySet<string> = new Set(['결과', 'Result', 'Results', '結果'])

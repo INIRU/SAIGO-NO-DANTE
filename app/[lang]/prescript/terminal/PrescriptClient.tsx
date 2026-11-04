@@ -126,7 +126,7 @@ export default function PrescriptClient({ themes, gifts, recipes, events, eventC
   const inRoom = (choice: MdEventChoice | undefined) => !choice || !openRoom || choice.event_id === openRoom.eventId ? choice
     : recognizable.choices.find(item => item.event_id === openRoom.eventId && item.message === choice.message && Number.isInteger(item.option_index))
   // the game left the taken option alone on its result page: as good as its result text
-  const alone = capture.eventPick?.via === 'list' ? inRoom(choiceById.get(capture.eventPick.choiceId)) : undefined
+  const alone = capture.eventPick && capture.eventPick.via !== 'cursor' ? inRoom(choiceById.get(capture.eventPick.choiceId)) : undefined
   const outcomeKey = outcome ? `${outcome.event_id}:${outcome.option_index}`
     : openRoom && ledFrom !== null ? `${openRoom.eventId}:${ledFrom}`
     : alone && Number.isInteger(alone.option_index) && !alone.outcome ? `${alone.event_id}:${alone.option_index}`
