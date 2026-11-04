@@ -1,5 +1,6 @@
 import { expect, it } from 'vitest'
-import { keywordCatalogWithoutDescriptions, keywordDescriptions } from '../../../lib/keywords/server-data'
+import { keywordDescriptions } from '../../../lib/keywords/server-data'
+import { compactKeywordCatalog } from '../../../lib/keywords/catalog-wire'
 import type { KeywordInfo } from '../../../lib/keywords/catalog'
 
 const catalog: Record<string, KeywordInfo> = {
@@ -8,8 +9,8 @@ const catalog: Record<string, KeywordInfo> = {
 }
 
 it('keeps names, icons and colours for every page but leaves descriptions to the tooltip request', () => {
-  const slim = keywordCatalogWithoutDescriptions(catalog)
-  expect(slim.화상).toEqual({ desc: '', iconSlug: 'burn', sinAffinity: 'wrath', nameEn: 'Burn', nameJp: '火傷', descEn: null, descJp: null })
+  const slim = compactKeywordCatalog(catalog, 'all')
+  expect(slim.화상).toEqual({ iconSlug: 'burn', sinAffinity: 'wrath', nameEn: 'Burn', nameJp: '火傷' })
   expect(JSON.stringify(slim)).not.toMatch(/피해|damage|会心/)
 })
 
