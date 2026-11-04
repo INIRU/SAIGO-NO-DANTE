@@ -24,7 +24,7 @@ const load = (): PrescriptRun | null => {
 /** A new dungeon run begins on these screens: a closed record gives way to a fresh one. */
 const RUN_START = new Set(['run_setup', 'start_gift'])
 
-const LEFT_SHOP = new Set(['exploration', 'battle', 'battle_setup', 'event', 'theme_select', 'loading', 'reward_choice'])
+export const LEFT_SHOP: ReadonlySet<string> = new Set(['exploration', 'battle', 'battle_setup', 'event', 'theme_select', 'loading', 'reward_choice'])
 
 /** `issuedAt`: when the terminal put it up; unanswered for PRESCRIPT_REPLY_MS, the terminal answers for the player. */
 export interface PrescriptOffer { scope: PrescriptScope; floor: number; cards: PrescriptCard[]; issuedAt: number }
