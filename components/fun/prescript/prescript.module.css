@@ -115,6 +115,10 @@
 @keyframes vShake { 0%, 100% { translate: 0; } 20% { translate: -6px 0; } 40% { translate: 5px 0; } 60% { translate: -4px 0; } 80% { translate: 2px 0; } }
 @keyframes vFlicker { 0%, 40%, 80% { opacity: 1; } 20%, 60% { opacity: 0.25; } 100% { opacity: 0.7; } }
 .pip .verdict { position: fixed; z-index: 5; }
+/* a ? room's prescript arriving: the terminal lit and the order rolling in, no stamp */
+.vArrive { animation-duration: 3.4s; gap: 0.75rem; }
+.vArrive .term { opacity: 1; filter: drop-shadow(0 0 0.5rem rgba(80, 172, 255, 0.6)); }
+.vText { max-width: 34rem; font-size: 1.0625rem; }
 
 /* PiP: the same parts, smaller */
 /* PiP: a small terminal. The emblem fills the window's middle; the parts lie on it without the stage's box */
@@ -234,6 +238,6 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .term, .stage::before { transition: none; }
-  .verdict, .stamp, .vOrder, .vPts, .vWhy { animation: none; opacity: 1; }
+  .verdict, .stamp, .vOrder, .vPts, .vWhy, .vArrive { animation: none; opacity: 1; }
   .playing, .playing .introSite, .playing .scan, .playing .introIndex { animation: none; }
 }

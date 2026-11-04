@@ -58,31 +58,34 @@ function playVerdict(status: Prescript['status']) {
   }, i * 90)
 }
 
-/** How long a verdict stays on the stage. */
+/** How long a verdict stays on the stage, and a room's prescript arriving (its glyphs roll, settle, then it is read). */
 const VERDICT_MS = 2400
+const ARRIVAL_MS = ROLL + SETTLE + 1800
 
 /**
- * Prescripts settled since the stage was drawn, one at a time: the terminal stamps 이행 / 위반 / 회수 over the stage
- * (a reload or a run read back shows none again). The stage keeps its size; the stamp lies over it.
+ * Prescripts that came to `which` since the stage was drawn, one at a time, each shown for `ms` (a reload or a run
+ * read back shows none again): the verdicts (이행 / 위반 / 회수) and a ? room's prescript, which comes without cards.
  */
-function useVerdicts(run: PrescriptRun) {
+function useNewPrescripts(run: PrescriptRun, which: (p: Prescript) => boolean, ms: number) {
   const seen = useRef<Set<number> | null>(null)
   const [queue, setQueue] = useState<Prescript[]>([])
   useEffect(() => {
-    const settled = run.prescripts.filter(p => p.status !== 'active')
-    if (!seen.current) { seen.current = new Set(settled.map(p => p.id)); return }
-    const fresh = settled.filter(p => !seen.current!.has(p.id) && p.goal.kind !== 'no-answer')
-    for (const p of settled) seen.current.add(p.id)
+    const now = run.prescripts.filter(which)
+    if (!seen.current) { seen.current = new Set(now.map(p => p.id)); return }
+    const fresh = now.filter(p => !seen.current!.has(p.id))
+    for (const p of now) seen.current.add(p.id)
     if (fresh.length) setQueue(current => [...current, ...fresh])
-  }, [run.prescripts])
+  }, [run.prescripts, which])
   const shown = queue[0] ?? null
   useEffect(() => {
     if (!shown) return
-    const timer = window.setTimeout(() => setQueue(current => current.slice(1)), VERDICT_MS)
+    const timer = window.setTimeout(() => setQueue(current => current.slice(1)), ms)
     return () => window.clearTimeout(timer)
-  }, [shown])
+  }, [shown, ms])
   return shown
 }
+const settledShown = (p: Prescript) => p.status !== 'active' && p.goal.kind !== 'no-answer'
+const roomArrived = (p: Prescript) => p.scope === 'event' && p.status === 'active'
 
 interface Part { text: string; em: boolean }
 /** A label's marked names and numbers (\u0001…\u0002) as parts to set apart. */
@@ -165,8 +168,11 @@ export default function PrescriptStage({ run, offers, label, onChoose, canChoose
     cued.current = offerKey
     return pip ? undefined : playArrival()
   }, [offerKey, pip])
-  const verdict = useVerdicts(run)
+  const verdict = useNewPrescripts(run, settledShown, VERDICT_MS)
   useEffect(() => { if (verdict && !pip) playVerdict(verdict.status) }, [verdict, pip])
+  // a ? room's prescript comes without cards to choose: it arrives on the stage with the arrival's sound
+  const arrival = useNewPrescripts(run, roomArrived, ARRIVAL_MS)
+  useEffect(() => (arrival && !pip ? playArrival() : undefined), [arrival, pip])
   const held = run.prescripts.filter(p => p.status === 'active')
   const settled = run.prescripts.filter(p => p.status !== 'active').slice().reverse()
   // the game's form: the order in 【】, then its deadline (Faust: "기한은 여섯 달 이내")
@@ -211,6 +217,14 @@ export default function PrescriptStage({ run, offers, label, onChoose, canChoose
           {gradeOf(run).refuse && <button type="button" className={styles.b} onClick={() => onRefuse(offer.scope)}>{t('refuse')}</button>}
         </div>
       </>}
+      {arrival && !verdict && <div key={`a${arrival.id}`} className={`${styles.verdict} ${styles.vArrive}`} role="status">
+        <p className={styles.call}>
+          {/* eslint-disable-next-line @next/next/no-img-element -- the game's prescript (terminal) keyword icon from public/ */}
+          <img className={styles.term} src={`${ASSET}/prescript_terminal.png`} alt="" width={40} height={40} />
+          {t('roomArrived')}
+        </p>
+        <div className={styles.vText}>{text(arrival.goal, arrival.scope, ROLL, SETTLE)}</div>
+      </div>}
       {verdict && <div key={verdict.id} className={`${styles.verdict} ${verdict.status === 'done' ? styles.vOk : verdict.status === 'failed' ? styles.vNo : styles.vRe}`}
         role="status">
         <span className={styles.stamp}>{t(`status_${verdict.status}`)}</span>
