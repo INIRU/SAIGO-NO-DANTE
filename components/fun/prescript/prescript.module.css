@@ -105,6 +105,10 @@
 .vOrder { max-width: 32rem; font-size: 0.9375rem; color: var(--white); opacity: 0; animation: vText 0.3s 0.3s ease-out both; }
 .vPts, .vWhy { font-size: 0.8125rem; color: var(--mute); opacity: 0; animation: vText 0.3s 0.45s ease-out both; }
 .vPts { font-family: var(--n); font-size: 1.5rem; color: var(--blue-lt); }
+/* the game's CLEAR / FAIL over a verdict, in the terminal's glyphs */
+.vWord { font-family: var(--n); font-size: clamp(2.6rem, 10vw, 4.4rem); line-height: 0.9; letter-spacing: 0.12em; }
+.vOk .vWord { color: var(--blue-lt); text-shadow: 0 0 0.6rem rgba(80, 172, 255, 0.7), 0 0 1.6rem rgba(80, 172, 255, 0.35); }
+.vNo .vWord { color: var(--red); text-shadow: 0 0 0.6rem rgba(224, 87, 77, 0.7), 0 0 1.6rem rgba(224, 87, 77, 0.35); }
 .vOk .stamp { color: var(--blue-lt); box-shadow: 0 0 1.5rem rgba(80, 172, 255, 0.45), inset 0 0 1rem rgba(80, 172, 255, 0.25); }
 .vNo .stamp { color: var(--red); box-shadow: 0 0 1.5rem rgba(224, 87, 77, 0.4); animation: vStamp 0.32s cubic-bezier(0.2, 0.9, 0.3, 1.2) both, vShake 0.36s 0.32s linear both; }
 .vRe .stamp { color: var(--mute); border-style: dashed; animation: vStamp 0.32s ease-out both, vFlicker 0.6s 0.32s steps(6) both; }
@@ -115,6 +119,12 @@
 @keyframes vShake { 0%, 100% { translate: 0; } 20% { translate: -6px 0; } 40% { translate: 5px 0; } 60% { translate: -4px 0; } 80% { translate: 2px 0; } }
 @keyframes vFlicker { 0%, 40%, 80% { opacity: 1; } 20%, 60% { opacity: 0.25; } 100% { opacity: 0.7; } }
 .pip .verdict { position: fixed; z-index: 5; }
+/* the settings: sound level and tests */
+.settings { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 0.75rem; padding: 0.75rem 0.875rem; margin-bottom: 1rem;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 6px; font-size: 0.875rem; }
+.settings label { display: inline-flex; align-items: center; gap: 0.5rem; }
+.settings input[type=range] { width: 9rem; accent-color: var(--blue); }
+.settings .b { padding: 0.35rem 0.7rem; font-size: 0.8125rem; }
 /* a ? room's prescript arriving: the terminal lit and the order rolling in, no stamp */
 .vArrive { animation-duration: 3.4s; gap: 0.75rem; }
 .vArrive .term { opacity: 1; filter: drop-shadow(0 0 0.5rem rgba(80, 172, 255, 0.6)); }
