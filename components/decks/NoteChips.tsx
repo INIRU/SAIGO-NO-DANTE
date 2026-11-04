@@ -996,7 +996,7 @@ export function NoteRenderer({
   return headingAt ? <NoteTocLayout headings={headings}>{body}</NoteTocLayout> : body
 }
 
-const fetchNoteGifts = (url: string): Promise<NoteEgoGiftEntry[]> => fetch(url).then(response => { if (!response.ok) throw new Error('gifts'); return response.json() })
+export const fetchNoteGifts = (url: string): Promise<NoteEgoGiftEntry[]> => fetch(url).then(response => { if (!response.ok) throw new Error('gifts'); return response.json() })
 
 /** Gift lookup for one-line previews (cards). Loads the cached gift list once, only when the text mentions a gift. */
 export function useNoteGiftLookup(text: string): Record<string, NoteEgoGiftEntry> {

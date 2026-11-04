@@ -1,5 +1,5 @@
 
-import { notePlainText } from '@/lib/notes/blocks'
+import { notePlainText, notePreviewText } from '@/lib/notes/blocks'
 import { authorColumns, authorRateKey, guestPinOf, recordGuestAuthorship, resolveAuthor } from '@/lib/guest/server'
 import { NextRequest, NextResponse, after } from 'next/server'
 import { pushForPost } from '@/lib/push/send'
@@ -378,7 +378,9 @@ function deckMatchesAdvancedFilters(deck: DeckListRow, filters: AdvancedDeckFilt
  * Decks are public to everyone, so a list answer does not depend on who asks. Without a session cookie the CDN may keep
  * it for 30 seconds (and refresh it in the background). A request that carries a session cookie keeps the old no-header answer.
  */
-function listResponse(request: NextRequest, body: unknown) {
+// Cards show the description as one line: send that line, not the whole note document (up to ~23KB a deck).
+function listResponse(request: NextRequest, decks: DeckListRow[]) {
+  const body = decks.map(deck => deck.description ? { ...deck, description: notePreviewText(deck.description) } : deck)
   const signedIn = request.cookies.getAll().some(cookie => cookie.name.includes('session-token'))
   return NextResponse.json(body, signedIn ? undefined : { headers: { 'Cache-Control': 'public, max-age=0, s-maxage=30, stale-while-revalidate=120' } })
 }
@@ -508,7 +510,7 @@ export async function GET(request: NextRequest) {
     const authorsById = new Map(rows.map(deck => [deck.id, deck.profiles]))
     const fullRows = searchesAuthors ? fullData.map(deck => ({ ...deck, profiles: authorsById.get(deck.id) ?? deck.profiles })) : await withPostAuthors(fullData)
     const fullRowsById = new Map(fullRows.map(deck => [deck.id, deck]))
-    return listResponse(request, pageIds.map(id => fullRowsById.get(id)).filter(Boolean))
+    return listResponse(request, pageIds.map(id => fullRowsById.get(id)).filter((deck): deck is DeckListRow => Boolean(deck)))
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Internal Server Error'
     return NextResponse.json({ error: message }, { status: 500 })
