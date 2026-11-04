@@ -314,7 +314,7 @@ describe('the terminal grade', () => {
   })
 })
 
-describe('the shop visit's shelf', () => {
+describe('the shelf of a shop visit', () => {
   it('keeps a gift scrolled out of view on sale until a read shows it bought', () => {
     let onSale = visitShelf([], [[9001, false], [9002, false], [9003, false], [9004, false]])
     // scrolled down: the third row in view, the first out of it
