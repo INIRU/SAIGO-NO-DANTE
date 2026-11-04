@@ -6,9 +6,10 @@ import { Link } from '@/lib/i18n/navigation'
 const REST_MS = 120
 
 /**
- * A list card link that prefetches its (heavy) detail page only when the user shows intent, like Remix's
+ * A list card link that prefetches its (heavy) detail page whole only when the user shows intent, like Remix's
  * `prefetch="intent"`: the pointer rests on it for a moment, it gets keyboard focus, or a finger touches it.
- * Cards merely on screen, or passed over on the way to another, are not prefetched.
+ * Before that it keeps the default prefetch, which under Cache Components is the static shell alone: a click shows the
+ * detail's loading skeleton at once instead of waiting a round trip with the list still on screen.
  */
 export default function IntentLink({ onMouseEnter, onMouseLeave, onFocus, onTouchStart, ...props }: Omit<ComponentProps<typeof Link>, 'prefetch'>) {
   const [intent, setIntent] = useState(false)
@@ -17,7 +18,7 @@ export default function IntentLink({ onMouseEnter, onMouseLeave, onFocus, onTouc
   return (
     <Link
       {...props}
-      prefetch={intent}
+      prefetch={intent ? true : null}
       onMouseEnter={event => { if (!intent) timer.current = setTimeout(show, REST_MS); onMouseEnter?.(event) }}
       onMouseLeave={event => { clearTimeout(timer.current); onMouseLeave?.(event) }}
       onFocus={event => { show(); onFocus?.(event) }}
