@@ -922,7 +922,9 @@
       "fusionReasonMaterial": "目標素材",
       "deckKeyword": "デッキキーワード",
       "fusionNearly": "素材あと1つ",
-      "pipFusionReady": "合成可能"
+      "pipFusionReady": "合成可能",
+      "exportLog": "ログを書き出す",
+      "exportLogHint": "認識がおかしいとき、このファイルを送っていただくと原因を探せます。画面から読んだ内容と判断の記録だけを含み、押すまでこのブラウザの中にだけあります。"
     },
     "community": "コミュニティプラン",
     "detail": {

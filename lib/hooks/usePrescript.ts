@@ -9,7 +9,7 @@ import { HISTORY_KEY, readHistory, summarizeRun, withRun } from '@/lib/fun/presc
 import type { FloorThemeObservation, FusionEvidence, GiftSale, PopupAcquisition } from '@/lib/hooks/useAssistCapture'
 import type { OwnedGridRead } from '@/lib/vision/owned-grid'
 import type { FormationRead } from '@/lib/vision/formation-bar'
-import { plog } from '@/lib/fun/prescript-log'
+import { plog } from '@/lib/vision/assist-log'
 
 /** The last finished run's record in this browser. A run not yet ended is never kept: a reload or a break starts over
  * (USER 2026-11-04: turned off or cut before the dungeon ends, its score and record are reset). */

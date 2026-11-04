@@ -27,7 +27,7 @@ import { acquisitionSeq, acquisitionsToRelease, continuesFusionDialog, dialogFor
   type FusionAnchors, type FusionDialogEvidence, type FusionRead, type SeenDialog, type WheelAnchors,
   type FusionSlotRead } from '@/lib/vision/fusion-evidence'
 import { BLESSING_SCENE, blessingSpent, onBlessingScreen, showsBlessingScreen } from '@/lib/vision/blessing-screen'
-import { plog } from '@/lib/fun/prescript-log'
+import { isVerbose, plog } from '@/lib/vision/assist-log'
 import { confirmsExploration, explorationFloor, explorationThemeReads, themeSelectionHeaderFloor, type ExplorationObservation,
   type ExplorationThemeReference } from '@/lib/vision/exploration-match'
 import { acquisitionPlate, darkPopupPlate, detectGiftPopupLabel, popupCaptureAction, popupIconSignature, popupLabelColor, popupPriority, popupQuality,
@@ -164,7 +164,6 @@ export function ocrRebuildsAfterRead(spent: number, builtAt: number | null, now:
 // the cursor and the choice boxes come several times a second: kept only while the log is verbose
 const FREQUENT = new Set(['cursor', 'bands', 'alone'])
 const dlog = (kind: string, ...args: unknown[]) => plog(kind, args.length === 1 ? args[0] : args, FREQUENT.has(kind))
-const DEBUG_PICK = typeof window !== 'undefined' && process.env.NODE_ENV !== 'production' && (() => { try { return Boolean(window.localStorage.getItem('prescript-debug')) } catch { return false } })()
 /** What a worker's error answer to the read in flight does to its lane: skip the frame, or retire the lane once reads keep failing. */
 export function ocrErrorAction(failuresBefore: number): 'skip' | 'retire' {
   return failuresBefore + 1 < OCR_READ_FAILURES ? 'skip' : 'retire'
@@ -1937,7 +1936,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
           }
           tape.current = keeper
           // development only: the kept seconds read again on demand (the live test triggers a replay with it)
-          if (DEBUG_PICK) Object.assign(window, { __assistReplay: (ms = 8000) => replayRoom(Date.now() - ms, Date.now()) })
+          if (isVerbose()) Object.assign(window, { __assistReplay: (ms = 8000) => replayRoom(Date.now() - ms, Date.now()) })
           let feeding = false
           every(tapeTimer, TAPE_EVERY_MS, () => {
             if (feeding || !tape.current) return

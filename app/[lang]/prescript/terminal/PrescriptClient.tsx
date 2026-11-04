@@ -18,7 +18,8 @@ import { LEFT_SHOP, usePrescript } from '@/lib/hooks/usePrescript'
 import type { SupportedLang } from '@/lib/i18n'
 import { buildGiftMap, findAvailableFusions, getAvailableThemes, giftTier } from '@/lib/planner/fusion'
 import startGifts from '@/lib/data/start-gifts.json'
-import { downloadLog, installConsole, isVerbose, plog, setVerbose } from '@/lib/fun/prescript-log'
+import { downloadLog, installConsole, isVerbose, plog, setVerbose } from '@/lib/vision/assist-log'
+import { useAssistLog } from '@/lib/hooks/useAssistLog'
 import { getLegacyPlanFloorDifficulty } from '@/lib/planner/floor-difficulty'
 import { DIFFICULTY_FLOOR_KEY, type GiftData, type RecipeData, type ThemeData } from '@/lib/planner/types'
 import { readGameLanguage, type GameLanguage } from '@/lib/vision/recognition-profile'
@@ -160,13 +161,8 @@ export default function PrescriptClient({ themes, gifts, recipes, events, eventC
   useEffect(() => {
     if (outcomeKey) plog('outcome', { key: outcomeKey, via: outcome ? 'result text' : alone ? 'option left alone' : 'next stage' })
   }, [outcomeKey]) // eslint-disable-line react-hooks/exhaustive-deps -- logged once a reading
-  useEffect(() => { plog('capture', capture.status) }, [capture.status])
-  useEffect(() => { plog('reader', { status: capture.ocrStatus, engine: capture.ocrEngine?.engine ?? null, loading: capture.ocrEngine?.loading ?? null }) },
-    [capture.ocrStatus, capture.ocrEngine?.engine, capture.ocrEngine?.loading])
-  useEffect(() => { if (sceneLabel) plog('scene', sceneLabel) }, [sceneLabel])
+  useAssistLog(capture)
   useEffect(() => { plog('floor', floor) }, [floor])
-  useEffect(() => { if (capture.formation) plog('formation', capture.formation.ids) }, [capture.formation])
-  useEffect(() => { if (capture.blessings) plog('blessings', { levels: capture.blessings.levels.join(''), spent: capture.blessings.spent }) }, [capture.blessings])
   const prescript = usePrescript({ grade, eventRoom, eventOutcome, eventPick, formation: capture.formation, blessings: capture.blessings, enabled: true, status: capture.status, acquisitions: capture.popupAcquisitions, sales: capture.giftSales,
     fusions: capture.fusionEvidence, floorObservation: capture.floorThemeObservation, ownedGrid: capture.ownedGrid, scene: capture.scene?.label ?? null,
     inShop: shelfIds.length > 0, context })
