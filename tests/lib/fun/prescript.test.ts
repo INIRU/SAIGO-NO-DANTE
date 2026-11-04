@@ -378,7 +378,8 @@ describe('prescripts of one Identity', () => {
   const table: Record<string, { sinner: string; keywords: string[]; rarity: number }> = {
     10101: { sinner: 's01', keywords: ['파열'], rarity: 3 }, 10102: { sinner: 's01', keywords: ['파열', '진동', '피해량 증가'], rarity: 3 },
     10103: { sinner: 's01', keywords: ['진동'], rarity: 3 }, 10104: { sinner: 's01', keywords: ['진동'], rarity: 2 },
-    10105: { sinner: 's01', keywords: ['화상'], rarity: 2 },
+    10105: { sinner: 's01', keywords: ['화상'], rarity: 2 }, 10106: { sinner: 's01', keywords: ['파열', '진동'], rarity: 1 },
+    10701: { sinner: 's07', keywords: ['파열'], rarity: 1 },
   }
   const identity = (id: string) => table[id] ?? { sinner: `s${id.slice(1, 3)}`, keywords: [] as string[], rarity: 3 }
   const identitiesOf = (sinner: string) => Object.keys(table).filter(id => table[id].sinner === sinner)
@@ -400,14 +401,28 @@ describe('prescripts of one Identity', () => {
     // no shared keyword, or the one fielded before: not done
     expect(with_('10105').status).toBe('active')
     expect(with_('10101').status).toBe('active')
+    // a 1★ stand-in never counts
+    expect(with_('10106').status).toBe('active')
+  })
+
+  it('a 1★ Identity counts for no formation prescript: not a swap, not the front six, not one to bring forward', () => {
+    const swap = receive(createPrescriptRun(), { scope: 'shop', goal: { kind: 'swap-identity', sinner: 's01', fromId: '10101' }, strength: 3 }, 2, 0)
+    const swapTo = (id: string) => applyEvent(swap, { type: 'formation', ids: [id, ...formation.slice(1)], at: 1 }, ctx()).prescripts[0].status
+    expect(swapTo('10106')).toBe('active')
+    expect(swapTo('10104')).toBe('done')
+    const front = receive(createPrescriptRun(), { scope: 'special', goal: { kind: 'formation-keyword', keyword: '파열', count: 2 }, strength: 2 }, 2, 0)
+    const withFront = (ids: string[]) => applyEvent(front, { type: 'formation', ids, at: 1 }, ctx()).prescripts[0].status
+    expect(withFront(['10101', '10701', ...formation.slice(2, 6), '10201', ...formation.slice(7)])).toBe('active')
+    expect(withFront(['10101', '10102', ...formation.slice(2)])).toBe('done')
+    expect(candidates('special', ctx()).some(c => c.goal.kind === 'front-identity' && c.goal.identityId === '10701')).toBe(false)
   })
 
   it('an Identity standing in 7 to 12 is to be brought into the first six, done when the bar shows it there', () => {
     const fronts = candidates('special', ctx()).filter(c => c.goal.kind === 'front-identity')
-    expect(fronts.map(c => c.goal.kind === 'front-identity' && c.goal.identityId)).toEqual(formation.slice(6))
+    expect(fronts.map(c => c.goal.kind === 'front-identity' && c.goal.identityId)).toEqual(formation.slice(7))
     const run = receive(createPrescriptRun(), fronts[0], 2, 0)
     expect(applyEvent(run, { type: 'formation', ids: formation, at: 1 }, ctx()).prescripts[0].status).toBe('active')
-    const swapped = ['10701', ...formation.slice(1, 6), '10101', ...formation.slice(7)]
+    const swapped = ['10801', ...formation.slice(1, 6), '10701', '10101', ...formation.slice(8)]
     expect(applyEvent(run, { type: 'formation', ids: swapped, at: 1 }, ctx()).prescripts[0].status).toBe('done')
   })
 })
