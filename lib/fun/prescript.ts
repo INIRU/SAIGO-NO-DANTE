@@ -31,6 +31,10 @@ export type PrescriptGoal =
   | { kind: 'swap-identity'; sinner: string; fromId: string }
   /** At least `count` Identities of the keyword among the first six of the formation. */
   | { kind: 'formation-keyword'; keyword: string; count: number }
+  /** Field this Identity (the plan's, for a Sinner fielding another): the bar shows it anywhere. */
+  | { kind: 'field-identity'; identityId: string; sinner: string }
+  /** This fielded Identity among the first six (it stood in 7 to 12). */
+  | { kind: 'front-identity'; identityId: string }
 
 export interface PrescriptCard { scope: PrescriptScope; goal: PrescriptGoal; strength: Strength }
 export type PrescriptStatus = 'active' | 'done' | 'failed' | 'void'
@@ -89,6 +93,8 @@ export interface PrescriptContext {
   random: () => number
   /** Gifts on the shop shelf, unsold, read with confidence, in shelf order (empty outside the shop). */
   shelf?: readonly number[]
+  /** The plan's Identities (game ids): the ones the player means to field, so owns. */
+  planIdentities?: readonly string[]
   /** The formation last read from the bar (twelve ids in deployment order, null where unread). */
   formation?: readonly (string | null)[]
   /** An Identity's Sinner and keywords, by its id. */
@@ -164,6 +170,8 @@ export function candidates(scope: PrescriptScope, ctx: PrescriptContext): Prescr
         const behind = formation.slice(6).some(id => id !== null && ctx.identity?.(id)?.keywords.includes(keyword))
         cards.push({ scope, goal: { kind: 'formation-keyword', keyword, count: count + 1 }, strength: behind ? 2 : 4 })
       }
+      // an Identity standing in 7 to 12 brought into the first six (a reorder)
+      for (const id of formation.slice(6)) if (id) cards.push({ scope, goal: { kind: 'front-identity', identityId: id }, strength: 2 })
     }
   } else if (scope === 'shop') {
     const shelf = (ctx.shelf ?? []).filter(id => !owned.includes(id) && !isVestige(id))
@@ -177,6 +185,12 @@ export function candidates(scope: PrescriptScope, ctx: PrescriptContext): Prescr
     for (const id of ctx.formation ?? []) {
       const sinner = id ? ctx.identity?.(id)?.sinner : undefined
       if (id && sinner) cards.push({ scope, goal: { kind: 'swap-identity', sinner, fromId: id }, strength: 3 })
+    }
+    // a planned Identity whose Sinner fields another: put it in (the plan's are the ones the player owns)
+    for (const id of ctx.planIdentities ?? []) {
+      const sinner = ctx.identity?.(id)?.sinner
+      const fielded = (ctx.formation ?? []).find(other => other !== null && ctx.identity?.(other)?.sinner === sinner)
+      if (sinner && fielded && fielded !== id) cards.push({ scope, goal: { kind: 'field-identity', identityId: id, sinner }, strength: 3 })
     }
   } else {
     // a floor-bound pack comes at least one floor ahead, so there is time to prepare
@@ -224,6 +238,8 @@ export function feasible(card: PrescriptCard, ctx: PrescriptContext, inShop: boo
     case 'pick-theme': return goal.floor > ctx.floor
     case 'fuse-gift': return ctx.craftable().includes(goal.giftId)
     case 'swap-identity': return (ctx.formation ?? []).includes(goal.fromId)
+    case 'field-identity': return !(ctx.formation ?? []).includes(goal.identityId)
+    case 'front-identity': return (ctx.formation ?? []).slice(6).includes(goal.identityId)
     case 'sell-keyword': case 'sell-tier': return candidates(card.scope, ctx).some(other => JSON.stringify(other.goal) === JSON.stringify(goal))
     default: return true
   }
@@ -353,6 +369,8 @@ function judge(p: Prescript, event: PrescriptEvent, ctx: PrescriptContext): Outc
       }
       if (goal.kind === 'formation-keyword')
         return front(event.ids, goal.keyword, ctx) >= goal.count ? { status: 'done' } : null
+      if (goal.kind === 'field-identity') return event.ids.includes(goal.identityId) ? { status: 'done' } : null
+      if (goal.kind === 'front-identity') return event.ids.slice(0, 6).includes(goal.identityId) ? { status: 'done' } : null
       return null
     }
     case 'leave-event':

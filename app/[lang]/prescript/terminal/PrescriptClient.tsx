@@ -28,7 +28,8 @@ import { EMPTY_PLAN, planFromRunDraft, RUN_DRAFT_KEY, type PrescriptPlan } from 
 const RUN_DIFFICULTY = 'extreme'
 
 export default function PrescriptClient({ themes, gifts, recipes, events, eventChoices, identities, sinners, dataError }: { themes: ThemeData[]; gifts: GiftData[]; recipes: RecipeData[];
-  events: MdEvent[]; eventChoices: MdEventChoice[]; identities: { game_id: string | null; sinner_id: string; keywords: string[] | null }[];
+  events: MdEvent[]; eventChoices: MdEventChoice[]; identities: { id: string; game_id: string | null; sinner_id: string; keywords: string[] | null;
+    name_kr: string | null; name_en: string | null; name_jp: string | null }[];
   sinners: { id: string; name_kr: string | null; name_en: string | null; name_jp: string | null }[]; dataError?: boolean }) {
   const t = useTranslations('prescriptMode')
   const lang = useLocale() as SupportedLang
@@ -91,6 +92,10 @@ export default function PrescriptClient({ themes, gifts, recipes, events, eventC
     return () => window.removeEventListener('storage', read)
   }, [])
   // the formation from the shop's bar: each portrait's Sinner and keywords
+  // the plan's Identity slots (row ids) as the bar's game ids
+  const planIdentityKey = plan.identityIds.join(',')
+  const planIdentities = useMemo(() => planIdentityKey.split(',').filter(Boolean)
+    .map(id => identities.find(identity => identity.id === id)?.game_id).filter((id): id is string => Boolean(id)), [planIdentityKey, identities])
   const identityById = useMemo(() => new Map(identities.flatMap(identity => identity.game_id
     ? [[identity.game_id, { sinner: identity.sinner_id, keywords: identity.keywords ?? [] }] as const] : [])), [identities])
   const formationKey = (capture.formation?.ids ?? []).join(',')
@@ -100,8 +105,8 @@ export default function PrescriptClient({ themes, gifts, recipes, events, eventC
     gift: id => { const gift = giftMap.get(id); return gift ? { keyword: gift.keyword, tier: giftTier(gift) } : undefined },
     craftable: () => findAvailableFusions(held, recipes, giftMap).filter(fusion => fusion.canCraft && fusion.result).map(fusion => fusion.result!.game_id),
     themesOn: next => getAvailableThemes(themes, DIFFICULTY_FLOOR_KEY[getLegacyPlanFloorDifficulty(RUN_DIFFICULTY, next)], next).map(theme => theme.id),
-    random: Math.random, shelf: lastShelfIds, formation, identity: id => identityById.get(id),
-  }), [floor, held, giftMap, recipes, themes, lastShelfIds, plan, formation, identityById])
+    random: Math.random, shelf: lastShelfIds, formation, identity: id => identityById.get(id), planIdentities,
+  }), [floor, held, giftMap, recipes, themes, lastShelfIds, plan, formation, identityById, planIdentities])
   // A ? room: its choice screen (the options anyone may take, with a result to judge them by) and the option its result
   // page names
   const evidence = captureEvidence(capture, floor, Date.now())
@@ -173,6 +178,8 @@ export default function PrescriptClient({ themes, gifts, recipes, events, eventC
         return t('goal_swap_identity', { sinner: em(name) })
       }
       case 'formation-keyword': return t('goal_formation_keyword', { keyword: em(giftKeywordLabel(goal.keyword, lang)), count: em(goal.count) })
+      case 'field-identity': return t('goal_field_identity', identityWords(goal.identityId))
+      case 'front-identity': return t('goal_front_identity', identityWords(goal.identityId))
       case 'event-choice': {
         const choice = recognizable.choices.find(item => item.event_id === goal.eventId && item.option_index === goal.option)
         const text = choice ? (lang === 'en' && choice.message_en) || (lang === 'ja' && choice.message_jp) || choice.message || '' : String(goal.option + 1)
@@ -180,6 +187,15 @@ export default function PrescriptClient({ themes, gifts, recipes, events, eventC
         return t('goal_event_choice', { choice: em(text.replace(/<[^>]*>/g, '').replace(/[.。．]+$/u, '').trim()) })
       }
     }
+  }
+
+  // an Identity as the game names it: its title in 「」 and its Sinner ("「흑수 - 오」 이상")
+  function identityWords(gameId: string) {
+    const identity = identities.find(item => item.game_id === gameId)
+    const sinner = sinners.find(item => item.id === identity?.sinner_id)
+    const title = (lang === 'en' && identity?.name_en) || (lang === 'ja' && identity?.name_jp) || identity?.name_kr || gameId
+    const who = (lang === 'en' && sinner?.name_en) || (lang === 'ja' && sinner?.name_jp) || sinner?.name_kr || ''
+    return { identity: em(title), sinner: who }
   }
 
   const { container, open, close } = useCompanionWindow()
