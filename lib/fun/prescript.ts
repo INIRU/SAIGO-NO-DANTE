@@ -31,8 +31,12 @@ export type PrescriptGoal =
   | { kind: 'swap-identity'; sinner: string; fromId: string }
   /** At least `count` Identities of the keyword among the first six of the formation. */
   | { kind: 'formation-keyword'; keyword: string; count: number }
-  /** Field this Identity (the plan's, for a Sinner fielding another): the bar shows it anywhere. */
-  | { kind: 'field-identity'; identityId: string; sinner: string }
+  /**
+   * Field this Identity in its Sinner's place. One not owned may be stood in for by another Identity of that Sinner sharing
+   * one of `keywords`: of 3 stars, or else of 2 stars (worth half again). `fromId`: the one fielded when it was offered (a
+   * stand-in must be another).
+   */
+  | { kind: 'field-identity'; identityId: string; sinner: string; fromId: string; keywords: string[] }
   /** This fielded Identity among the first six (it stood in 7 to 12). */
   | { kind: 'front-identity'; identityId: string }
 
@@ -98,7 +102,9 @@ export interface PrescriptContext {
   /** The formation last read from the bar (twelve ids in deployment order, null where unread). */
   formation?: readonly (string | null)[]
   /** An Identity's Sinner and keywords, by its id. */
-  identity?: (id: string) => { sinner: string; keywords: readonly string[] } | undefined
+  identity?: (id: string) => { sinner: string; keywords: readonly string[]; rarity?: number } | undefined
+  /** Every Identity of a Sinner (game ids): the stand-ins a field-identity prescript may take. */
+  identitiesOf?: (sinner: string) => readonly string[]
 }
 
 /**
@@ -186,11 +192,20 @@ export function candidates(scope: PrescriptScope, ctx: PrescriptContext): Prescr
       const sinner = id ? ctx.identity?.(id)?.sinner : undefined
       if (id && sinner) cards.push({ scope, goal: { kind: 'swap-identity', sinner, fromId: id }, strength: 3 })
     }
-    // a planned Identity whose Sinner fields another: put it in (the plan's are the ones the player owns)
-    for (const id of ctx.planIdentities ?? []) {
-      const sinner = ctx.identity?.(id)?.sinner
-      const fielded = (ctx.formation ?? []).find(other => other !== null && ctx.identity?.(other)?.sinner === sinner)
-      if (sinner && fielded && fielded !== id) cards.push({ scope, goal: { kind: 'field-identity', identityId: id, sinner }, strength: 3 })
+    // an Identity to field in a fielded Sinner's place: the plan's first; else that Sinner's other 3-star ones. Only one with a
+    // 2-star stand-in of its keywords is asked: whoever lacks it can still obey
+    const planned = ctx.planIdentities ?? []
+    for (const fielded of ctx.formation ?? []) {
+      const sinner = fielded ? ctx.identity?.(fielded)?.sinner : undefined
+      if (!fielded || !sinner) continue
+      const own = (ctx.identitiesOf?.(sinner) ?? []).filter(id => id !== fielded)
+      const targets = planned.filter(id => own.includes(id))
+      for (const id of targets.length ? targets : own.filter(id => (ctx.identity?.(id)?.rarity ?? 0) >= 3)) {
+        const keywords = (ctx.identity?.(id)?.keywords ?? []).filter(keyword => FORMATION_KEYWORDS.includes(keyword))
+        const twoStar = own.some(other => other !== id && (ctx.identity?.(other)?.rarity ?? 0) === 2 &&
+          (ctx.identity?.(other)?.keywords ?? []).some(keyword => keywords.includes(keyword)))
+        if (keywords.length && twoStar) cards.push({ scope, goal: { kind: 'field-identity', identityId: id, sinner, fromId: fielded, keywords }, strength: 3 })
+      }
     }
   } else {
     // a floor-bound pack comes at least one floor ahead, so there is time to prepare
@@ -238,7 +253,7 @@ export function feasible(card: PrescriptCard, ctx: PrescriptContext, inShop: boo
     case 'pick-theme': return goal.floor > ctx.floor
     case 'fuse-gift': return ctx.craftable().includes(goal.giftId)
     case 'swap-identity': return (ctx.formation ?? []).includes(goal.fromId)
-    case 'field-identity': return !(ctx.formation ?? []).includes(goal.identityId)
+    case 'field-identity': return !(ctx.formation ?? []).includes(goal.identityId) && (ctx.formation ?? []).includes(goal.fromId)
     case 'front-identity': return (ctx.formation ?? []).slice(6).includes(goal.identityId)
     case 'sell-keyword': case 'sell-tier': return candidates(card.scope, ctx).some(other => JSON.stringify(other.goal) === JSON.stringify(goal))
     default: return true
@@ -351,7 +366,8 @@ export function wanted(run: PrescriptRun, floor: number, inShop = false): Prescr
   return scopes
 }
 
-type Outcome = { status: 'done' | 'failed' } | { status: 'void'; reason: string } | { progress: number } | null
+/** `extra`: a share of the points on top (a 2-star stand-in fielded). */
+type Outcome = { status: 'done' | 'failed'; extra?: number } | { status: 'void'; reason: string } | { progress: number } | null
 
 function judge(p: Prescript, event: PrescriptEvent, ctx: PrescriptContext): Outcome {
   const goal = p.goal
@@ -369,7 +385,16 @@ function judge(p: Prescript, event: PrescriptEvent, ctx: PrescriptContext): Outc
       }
       if (goal.kind === 'formation-keyword')
         return front(event.ids, goal.keyword, ctx) >= goal.count ? { status: 'done' } : null
-      if (goal.kind === 'field-identity') return event.ids.includes(goal.identityId) ? { status: 'done' } : null
+      if (goal.kind === 'field-identity') {
+        if (event.ids.includes(goal.identityId)) return { status: 'done' }
+        // a stand-in: another Identity of that Sinner sharing a keyword, 3 stars, or 2 stars for half again
+        const now = event.ids.find(id => id !== null && ctx.identity?.(id)?.sinner === goal.sinner)
+        const stand = now && now !== goal.fromId ? ctx.identity?.(now) : undefined
+        if (!stand || !stand.keywords.some(keyword => goal.keywords.includes(keyword))) return null
+        if ((stand.rarity ?? 0) >= 3) return { status: 'done' }
+        if ((stand.rarity ?? 0) === 2) return { status: 'done', extra: 0.5 }
+        return null
+      }
       if (goal.kind === 'front-identity') return event.ids.slice(0, 6).includes(goal.identityId) ? { status: 'done' } : null
       return null
     }
@@ -430,7 +455,8 @@ export function applyEvent(run: PrescriptRun, event: PrescriptEvent, ctx: Prescr
     }
     streak += 1
     resisted = Math.max(0, resisted - 1)
-    const points = prescriptPoints(p.strength, p.scope, streak, run.grade)
+    const base = prescriptPoints(p.strength, p.scope, streak, run.grade)
+    const points = base + Math.round(base * (outcome.extra ?? 0))
     const bonus = STREAK_BONUS[streak] ?? 0
     if (bonus) rerollsLeft = Math.min(gradeOf(run).rerolls, rerollsLeft + 1)
     score += points + bonus

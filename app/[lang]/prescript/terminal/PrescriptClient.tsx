@@ -28,7 +28,7 @@ import { EMPTY_PLAN, planFromRunDraft, RUN_DRAFT_KEY, type PrescriptPlan } from 
 const RUN_DIFFICULTY = 'extreme'
 
 export default function PrescriptClient({ themes, gifts, recipes, events, eventChoices, identities, sinners, dataError }: { themes: ThemeData[]; gifts: GiftData[]; recipes: RecipeData[];
-  events: MdEvent[]; eventChoices: MdEventChoice[]; identities: { id: string; game_id: string | null; sinner_id: string; keywords: string[] | null;
+  events: MdEvent[]; eventChoices: MdEventChoice[]; identities: { id: string; game_id: string | null; sinner_id: string; keywords: string[] | null; rarity: number | null;
     name_kr: string | null; name_en: string | null; name_jp: string | null }[];
   sinners: { id: string; name_kr: string | null; name_en: string | null; name_jp: string | null }[]; dataError?: boolean }) {
   const t = useTranslations('prescriptMode')
@@ -97,7 +97,12 @@ export default function PrescriptClient({ themes, gifts, recipes, events, eventC
   const planIdentities = useMemo(() => planIdentityKey.split(',').filter(Boolean)
     .map(id => identities.find(identity => identity.id === id)?.game_id).filter((id): id is string => Boolean(id)), [planIdentityKey, identities])
   const identityById = useMemo(() => new Map(identities.flatMap(identity => identity.game_id
-    ? [[identity.game_id, { sinner: identity.sinner_id, keywords: identity.keywords ?? [] }] as const] : [])), [identities])
+    ? [[identity.game_id, { sinner: identity.sinner_id, keywords: identity.keywords ?? [], rarity: identity.rarity ?? 0 }] as const] : [])), [identities])
+  const identitiesBySinner = useMemo(() => {
+    const by = new Map<string, string[]>()
+    for (const identity of identities) if (identity.game_id) by.set(identity.sinner_id, [...(by.get(identity.sinner_id) ?? []), identity.game_id])
+    return by
+  }, [identities])
   const formationKey = (capture.formation?.ids ?? []).join(',')
   const formation = useMemo(() => formationKey ? formationKey.split(',').map(id => id || null) : undefined, [formationKey])
   const context = useMemo<PrescriptContext>(() => ({
@@ -106,7 +111,8 @@ export default function PrescriptClient({ themes, gifts, recipes, events, eventC
     craftable: () => findAvailableFusions(held, recipes, giftMap).filter(fusion => fusion.canCraft && fusion.result).map(fusion => fusion.result!.game_id),
     themesOn: next => getAvailableThemes(themes, DIFFICULTY_FLOOR_KEY[getLegacyPlanFloorDifficulty(RUN_DIFFICULTY, next)], next).map(theme => theme.id),
     random: Math.random, shelf: lastShelfIds, formation, identity: id => identityById.get(id), planIdentities,
-  }), [floor, held, giftMap, recipes, themes, lastShelfIds, plan, formation, identityById, planIdentities])
+    identitiesOf: sinner => identitiesBySinner.get(sinner) ?? [],
+  }), [floor, held, giftMap, recipes, themes, lastShelfIds, plan, formation, identityById, planIdentities, identitiesBySinner])
   // A ? room: its choice screen (the options anyone may take, with a result to judge them by) and the option its result
   // page names
   const evidence = captureEvidence(capture, floor, Date.now())
@@ -178,7 +184,8 @@ export default function PrescriptClient({ themes, gifts, recipes, events, eventC
         return t('goal_swap_identity', { sinner: em(name) })
       }
       case 'formation-keyword': return t('goal_formation_keyword', { keyword: em(giftKeywordLabel(goal.keyword, lang)), count: em(goal.count) })
-      case 'field-identity': return t('goal_field_identity', identityWords(goal.identityId))
+      case 'field-identity': return t('goal_field_identity', { ...identityWords(goal.identityId),
+        keywords: em(goal.keywords.map(keyword => giftKeywordLabel(keyword, lang)).join('·')) })
       case 'front-identity': return t('goal_front_identity', identityWords(goal.identityId))
       case 'event-choice': {
         const choice = recognizable.choices.find(item => item.event_id === goal.eventId && item.option_index === goal.option)
