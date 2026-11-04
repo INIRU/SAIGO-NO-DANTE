@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { applyEvent, candidates, createPrescriptRun, endPrescriptRun, eventPrescript, eventRoomOptions, optionLeadingTo, feasible, missOffer, offer, resist, PRESCRIPT_REROLLS, prescriptPoints, receive, reroll, wanted, type PrescriptContext, type PrescriptRun } from '../../../lib/fun/prescript'
+import { applyEvent, candidates, createPrescriptRun, endPrescriptRun, eventPrescript, eventRoomOptions, optionLeadingTo, visitShelf, feasible, missOffer, offer, resist, PRESCRIPT_REROLLS, prescriptPoints, receive, reroll, wanted, type PrescriptContext, type PrescriptRun } from '../../../lib/fun/prescript'
 
 const gifts: Record<number, { keyword: string | null; tier: number | null }> = {
   9001: { keyword: 'Combustion', tier: 1 }, 9002: { keyword: 'Combustion', tier: 2 }, 9003: { keyword: 'Bleeding', tier: 1 },
@@ -311,5 +311,18 @@ describe('the terminal grade', () => {
     const sell = { scope: 'special' as const, goal: { kind: 'sell-keyword' as const, keyword: 'Bleeding' }, strength: 2 as const }
     const run = applyEvent(receive(createPrescriptRun('proxy'), sell, 2, 0), { type: 'sale', giftId: 9003, at: 1 }, context())
     expect(run.score).toBe(prescriptPoints(2, 'special', 1, 'proxy'))
+  })
+})
+
+describe('the shop visit's shelf', () => {
+  it('keeps a gift scrolled out of view on sale until a read shows it bought', () => {
+    let onSale = visitShelf([], [[9001, false], [9002, false], [9003, false], [9004, false]])
+    // scrolled down: the third row in view, the first out of it
+    onSale = visitShelf(onSale, [[9003, false], [9004, false], [9005, false]])
+    expect(onSale.sort()).toEqual([9001, 9002, 9003, 9004, 9005])
+    // 9002 bought (its slot moves to the end of a special shop's shelf, read there as 구매 완료)
+    onSale = visitShelf(onSale, [[9005, false], [9002, true]])
+    expect(onSale.sort()).toEqual([9001, 9003, 9004, 9005])
+    expect(visitShelf(onSale, [])).toEqual(onSale)
   })
 })

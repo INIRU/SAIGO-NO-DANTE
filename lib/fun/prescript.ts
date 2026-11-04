@@ -227,6 +227,16 @@ export function feasible(card: PrescriptCard, ctx: PrescriptContext, inShop: boo
  */
 export const FORMATION_KEYWORDS: readonly string[] = ['화상', '출혈', '진동', '파열', '침잠', '호흡', '충전']
 
+/**
+ * The gifts on sale this shop visit, from every shelf read of it: a read sees only the slots in view (a special shop's
+ * third row needs a scroll, and bought slots move to its end), so a gift out of view stays on sale until a read shows it
+ * bought (구매 완료). `reads`: [gift id, bought] of one read.
+ */
+export function visitShelf(onSale: readonly number[], reads: readonly (readonly [number, boolean])[]): number[] {
+  const bought = new Set(reads.filter(([, sold]) => sold).map(([id]) => id))
+  return [...new Set([...onSale, ...reads.filter(([, sold]) => !sold).map(([id]) => id)])].filter(id => !bought.has(id))
+}
+
 /** How many of the formation's first six are of the keyword. */
 function front(ids: readonly (string | null)[], keyword: string, ctx: PrescriptContext) {
   return ids.slice(0, 6).filter(id => id !== null && ctx.identity?.(id)?.keywords.includes(keyword)).length

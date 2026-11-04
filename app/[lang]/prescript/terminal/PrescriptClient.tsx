@@ -9,12 +9,12 @@ import PrescriptRules from '@/components/fun/prescript/PrescriptRules'
 import PrescriptStage from '@/components/fun/prescript/PrescriptStage'
 import styles from '@/components/fun/prescript/prescript.module.css'
 import { giftKeywordLabel } from '@/components/gifts/GiftCatalog'
-import { eventRoomOptions, optionLeadingTo, type PrescriptContext, type PrescriptGoal, type PrescriptGrade } from '@/lib/fun/prescript'
+import { eventRoomOptions, optionLeadingTo, visitShelf, type PrescriptContext, type PrescriptGoal, type PrescriptGrade } from '@/lib/fun/prescript'
 import { captureEvidence, useAssistCapture } from '@/lib/hooks/useAssistCapture'
 import type { MdEvent, MdEventChoice } from '@/components/mirror-dungeon/types'
 import { recognizableEvents } from '@/lib/utils/event-catalog'
 import { useCompanionWindow } from '@/lib/hooks/useCompanionWindow'
-import { usePrescript } from '@/lib/hooks/usePrescript'
+import { LEFT_SHOP, usePrescript } from '@/lib/hooks/usePrescript'
 import type { SupportedLang } from '@/lib/i18n'
 import { buildGiftMap, findAvailableFusions, getAvailableThemes, giftTier } from '@/lib/planner/fusion'
 import { getLegacyPlanFloorDifficulty } from '@/lib/planner/floor-difficulty'
@@ -69,10 +69,16 @@ export default function PrescriptClient({ themes, gifts, recipes, events, eventC
   const shelfKey = (shelf?.slots ?? []).map(slot => `${shelfGift(slot)}:${slot.sold}`).join(',')
   const shelfIds = useMemo(() => shelfKey.split(',').filter(item => item.endsWith(':false') && !item.startsWith('null'))
     .map(item => Number(item.split(':')[0])), [shelfKey])
-  // the visit's last shelf: the fusion and sell windows cover it, and a gift on it can still be bought after them
+  // the visit's shelf, from every read of it: a scroll or the fusion and sell windows hide slots that are still on sale
   const lastShelfKey = (running ? capture.shopShelf?.slots ?? [] : []).map(slot => `${shelfGift(slot)}:${slot.sold}`).join(',')
-  const lastShelfIds = useMemo(() => lastShelfKey.split(',').filter(item => item.endsWith(':false') && !item.startsWith('null'))
-    .map(item => Number(item.split(':')[0])), [lastShelfKey])
+  const [lastShelfIds, setLastShelfIds] = useState<number[]>([])
+  useEffect(() => {
+    const reads = lastShelfKey.split(',').filter(item => item && !item.startsWith('null'))
+      .map(item => [Number(item.split(':')[0]), item.endsWith(':true')] as const)
+    if (reads.length) setLastShelfIds(current => visitShelf(current, reads))
+  }, [lastShelfKey])
+  const sceneLabel = capture.scene?.label ?? null
+  useEffect(() => { if (sceneLabel && LEFT_SHOP.has(sceneLabel)) setLastShelfIds([]) }, [sceneLabel])
   // the grade chosen on the entrance: a new run starts at it
   const [grade, setGrade] = useState<PrescriptGrade>('proselyte')
   useEffect(() => { try { setGrade(readGrade(window.localStorage.getItem(GRADE_KEY))) } catch { /* proselyte */ } }, [])
