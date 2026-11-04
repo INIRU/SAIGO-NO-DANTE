@@ -3074,7 +3074,7 @@
     "rankingMine": "My best grace",
     "rankingSoon": "The ranking is not open yet. When it opens, only runs with the terminal on to the end will count.",
     "goal_swap_identity": "Put another Identity in {sinner}'s place",
-    "goal_field_identity": "Identity 「{identity}」 {sinner}. Field it",
+    "goal_field_identity": "Identity 「{identity}」 {sinner}. Field it. Lacking it, a 3★ {keywords} Identity of {sinner}; lacking that, a 2★ (grace ×1.5)",
     "goal_front_identity": "Identity 「{identity}」 {sinner}. Field it in places 1 to 6",
     "goal_formation_keyword": "Field {count} {keyword} Identities in the first six places",
     "kind_formation": "Formation",

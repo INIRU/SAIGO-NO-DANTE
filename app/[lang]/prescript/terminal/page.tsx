@@ -32,7 +32,7 @@ export default async function PrescriptPage({ params }: { params: Promise<{ lang
     supabase.schema('limbus').from('md_events').select(MD_EVENT_COLUMNS).order('id'),
     supabase.schema('limbus').from('md_event_choices').select(MD_EVENT_CHOICE_COLUMNS).order('event_id').order('sort_order'),
     // the formation's prescripts: whose place a portrait is and its keywords
-    supabase.schema('limbus').from('identities').select('id, game_id, sinner_id, keywords, name_kr, name_en, name_jp'),
+    supabase.schema('limbus').from('identities').select('id, game_id, sinner_id, keywords, rarity, name_kr, name_en, name_jp'),
     supabase.schema('limbus').from('sinners').select('id, name_kr, name_en, name_jp'),
   ])
   if (e1 || e2 || e3 || e4 || e5 || e6 || e7) console.error('[PrescriptPage]', e1?.message, e2?.message, e3?.message, e4?.message, e5?.message, e6?.message, e7?.message)

@@ -3074,7 +3074,7 @@
     "rankingMine": "私の最高加護",
     "rankingSoon": "ランキングはまだ開いていない。開けば、最後まで端末を起動していた回だけが載る。",
     "goal_swap_identity": "{sinner}の人格を替えよ",
-    "goal_field_identity": "人格「{identity}」{sinner}。編成せよ",
+    "goal_field_identity": "人格「{identity}」{sinner}。編成せよ。なければ{sinner}の{keywords}の3★、それもなければ2★（加護1.5倍）",
     "goal_front_identity": "人格「{identity}」{sinner}。1〜6番に並べよ",
     "goal_formation_keyword": "前の6枠に{keyword}の人格を{count}人並べよ",
     "kind_formation": "編成",

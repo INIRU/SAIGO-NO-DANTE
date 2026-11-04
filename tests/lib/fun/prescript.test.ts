@@ -374,28 +374,40 @@ describe('the price of a violation, and a streak’s reward', () => {
 })
 
 describe('prescripts of one Identity', () => {
-  const sinnerOf: Record<string, string> = { 10101: 's01', 10102: 's01', 10201: 's02', 10701: 's07' }
-  const identity = (id: string) => ({ sinner: sinnerOf[id] ?? `s${id.slice(1, 3)}`, keywords: [] as string[] })
+  // Sinner 1: 10101 fielded (3★ 파열), 10102 (3★ 파열·진동, the plan's), 10103 (3★ 진동), 10104 (2★ 진동), 10105 (2★ 화상)
+  const table: Record<string, { sinner: string; keywords: string[]; rarity: number }> = {
+    10101: { sinner: 's01', keywords: ['파열'], rarity: 3 }, 10102: { sinner: 's01', keywords: ['파열', '진동', '피해량 증가'], rarity: 3 },
+    10103: { sinner: 's01', keywords: ['진동'], rarity: 3 }, 10104: { sinner: 's01', keywords: ['진동'], rarity: 2 },
+    10105: { sinner: 's01', keywords: ['화상'], rarity: 2 },
+  }
+  const identity = (id: string) => table[id] ?? { sinner: `s${id.slice(1, 3)}`, keywords: [] as string[], rarity: 3 }
+  const identitiesOf = (sinner: string) => Object.keys(table).filter(id => table[id].sinner === sinner)
   const formation = ['10101', '10201', '10301', '10401', '10501', '10601', '10701', '10801', '10901', '11001', '11101', '11201']
+  const ctx = (over: Partial<PrescriptContext> = {}) => context({ formation, identity, identitiesOf, planIdentities: ['10102'], ...over })
+  const card = () => candidates('shop', ctx()).find(c => c.goal.kind === 'field-identity')!
 
-  it('a planned Identity whose Sinner fields another is to be fielded in the shop, done when the bar shows it', () => {
-    const ctx = context({ formation, identity, planIdentities: ['10102', '10201'] })
-    const cards = candidates('shop', ctx).filter(card => card.goal.kind === 'field-identity')
-    // 10201 is fielded already; 10102 is Sinner 1's other Identity
-    expect(cards.map(card => card.goal)).toEqual([{ kind: 'field-identity', identityId: '10102', sinner: 's01' }])
-    const run = receive(createPrescriptRun(), cards[0], 2, 0)
-    expect(applyEvent(run, { type: 'formation', ids: formation, at: 1 }, ctx).prescripts[0].status).toBe('active')
-    expect(applyEvent(run, { type: 'formation', ids: ['10102', ...formation.slice(1)], at: 1 }, ctx).prescripts[0].status).toBe('done')
-    expect(feasible(cards[0], context({ formation: ['10102', ...formation.slice(1)], identity }), true)).toBe(false)
+  it('the plan’s Identity is asked first, with its status keywords for a stand-in', () => {
+    expect(card().goal).toEqual({ kind: 'field-identity', identityId: '10102', sinner: 's01', fromId: '10101', keywords: ['파열', '진동'] })
+  })
+
+  it('fielding it, a 3★ stand-in of its keywords, or a 2★ one for half again', () => {
+    const run = receive(createPrescriptRun(), card(), 2, 0)
+    const with_ = (id: string) => applyEvent(run, { type: 'formation', ids: [id, ...formation.slice(1)], at: 1 }, ctx()).prescripts[0]
+    const base = prescriptPoints(3, 'shop', 1)
+    expect(with_('10102')).toMatchObject({ status: 'done', points: base })
+    expect(with_('10103')).toMatchObject({ status: 'done', points: base })
+    expect(with_('10104')).toMatchObject({ status: 'done', points: base + Math.round(base * 0.5) })
+    // no shared keyword, or the one fielded before: not done
+    expect(with_('10105').status).toBe('active')
+    expect(with_('10101').status).toBe('active')
   })
 
   it('an Identity standing in 7 to 12 is to be brought into the first six, done when the bar shows it there', () => {
-    const ctx = context({ formation, identity })
-    const fronts = candidates('special', ctx).filter(card => card.goal.kind === 'front-identity')
-    expect(fronts.map(card => card.goal.kind === 'front-identity' && card.goal.identityId)).toEqual(formation.slice(6))
+    const fronts = candidates('special', ctx()).filter(c => c.goal.kind === 'front-identity')
+    expect(fronts.map(c => c.goal.kind === 'front-identity' && c.goal.identityId)).toEqual(formation.slice(6))
     const run = receive(createPrescriptRun(), fronts[0], 2, 0)
-    expect(applyEvent(run, { type: 'formation', ids: formation, at: 1 }, ctx).prescripts[0].status).toBe('active')
+    expect(applyEvent(run, { type: 'formation', ids: formation, at: 1 }, ctx()).prescripts[0].status).toBe('active')
     const swapped = ['10701', ...formation.slice(1, 6), '10101', ...formation.slice(7)]
-    expect(applyEvent(run, { type: 'formation', ids: swapped, at: 1 }, ctx).prescripts[0].status).toBe('done')
+    expect(applyEvent(run, { type: 'formation', ids: swapped, at: 1 }, ctx()).prescripts[0].status).toBe('done')
   })
 })
