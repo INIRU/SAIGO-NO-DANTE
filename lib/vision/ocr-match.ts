@@ -11,7 +11,8 @@ export interface OcrWord {
 
 export interface OcrDocument { text: string; words: OcrWord[] }
 export interface OcrReference { id: string; texts: string[]; effectTexts?: string[] }
-export interface OcrChoiceReference extends OcrReference { eventId: string; resultTexts?: string[] }
+/** `option`: the option the row belongs to (an option with several possible results has a row each, sharing text). */
+export interface OcrChoiceReference extends OcrReference { eventId: string; resultTexts?: string[]; option?: number }
 export interface OcrCatalog {
   gifts: OcrReference[]
   events: OcrReference[]
@@ -277,7 +278,7 @@ function indexedEventScreens(catalog: OcrCatalog) {
   const results = new Map<string, string[]>()
   const choiceOwners = new Map<string, string | null>()
   const bodyOwners = new Map<string, string | null>()
-  const choiceFragments = new Map<string, { eventId: string; fragments: string[] }>()
+  const choiceFragments = new Map<string, { eventId: string; option?: number; fragments: string[] }>()
   for (const event of catalog.events) for (const piece of event.texts.flatMap(gameTextPieces)) {
     const characters = [...piece]
     for (let offset = 0; offset + BODY_WINDOW <= characters.length; offset++) {
@@ -301,12 +302,15 @@ function indexedEventScreens(catalog: OcrCatalog) {
     }
     fragments.push(...mine)
     results.set(choice.eventId, fragments)
-    choiceFragments.set(choice.id, { eventId: choice.eventId, fragments: mine })
+    choiceFragments.set(choice.id, { eventId: choice.eventId, option: choice.option, fragments: mine })
   }
   // a choice's result fragments that no other choice of its event shares: on screen, they name the choice taken
   const choiceResults = new Map<string, string[]>()
-  for (const [id, { eventId, fragments }] of choiceFragments) {
-    const others = new Set([...choiceFragments].filter(([other, entry]) => other !== id && entry.eventId === eventId).flatMap(([, entry]) => entry.fragments))
+  // text another row of the same option shares (its common opening) still names the option, so rows of one option are not
+  // each other's others
+  for (const [id, { eventId, option, fragments }] of choiceFragments) {
+    const others = new Set([...choiceFragments].filter(([other, entry]) => other !== id && entry.eventId === eventId &&
+      (option === undefined || entry.option !== option)).flatMap(([, entry]) => entry.fragments))
     choiceResults.set(id, fragments.filter(fragment => !others.has(fragment)))
   }
   const index = { short, results, choiceResults, choiceOwners, bodyOwners }

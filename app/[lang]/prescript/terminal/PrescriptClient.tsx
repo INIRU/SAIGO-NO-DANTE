@@ -47,7 +47,7 @@ export default function PrescriptClient({ themes, gifts, recipes, events, eventC
         : [gift.name, gift.name_en, gift.name_jp]).filter((value): value is string => Boolean(value)) })),
     events: recognizable.events.map(event => ({ id: String(event.id), texts: [event.name, event.desc_text, event.name_en, event.desc_text_en, event.name_jp,
       event.desc_text_jp].filter((value): value is string => Boolean(value)) })),
-    choices: recognizable.choices.map(choice => ({ id: String(choice.id), eventId: String(choice.event_id),
+    choices: recognizable.choices.map(choice => ({ id: String(choice.id), eventId: String(choice.event_id), option: choice.option_index ?? undefined,
       texts: [choice.message, choice.message_en, choice.message_jp].filter((value): value is string => Boolean(value)),
       resultTexts: [choice.result_text, choice.result_text_en, choice.result_text_jp].filter((value): value is string => Boolean(value)) })),
   }), [gifts, gameLanguage, recognizable])
@@ -109,7 +109,9 @@ export default function PrescriptClient({ themes, gifts, recipes, events, eventC
   const stageOption = openRoom && roomEventId !== null && roomEventId !== openRoom.eventId ? optionLeadingTo(openRoom.options, roomEventId) : null
   const eventRoom = useMemo(() => roomEventId === null ? null : { eventId: roomEventId, options: optionsKey ? optionsKey.split(',').map(Number) : [] },
     [roomEventId, optionsKey])
-  const outcome = (evidence.ocrCandidates?.outcomeChoiceIds ?? []).map(id => choiceById.get(id)).find(choice => choice && Number.isInteger(choice.option_index))
+  // the left panel's result text: the rows it names must all be of one option (several are one option's possible results)
+  const named = (evidence.ocrCandidates?.outcomeChoiceIds ?? []).map(id => choiceById.get(id)).filter(choice => choice && Number.isInteger(choice.option_index))
+  const outcome = new Set(named.map(choice => `${choice!.event_id}:${choice!.option_index}`)).size === 1 ? named[0] : undefined
   // the game left the taken option alone on its result page: as good as its result text
   const alone = capture.eventPick?.via === 'list' ? choiceById.get(capture.eventPick.choiceId) : undefined
   const outcomeKey = outcome ? `${outcome.event_id}:${outcome.option_index}`
