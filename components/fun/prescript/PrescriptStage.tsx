@@ -85,7 +85,7 @@ function useNewPrescripts(run: PrescriptRun, which: (p: Prescript) => boolean, m
   return shown
 }
 const settledShown = (p: Prescript) => p.status !== 'active' && p.goal.kind !== 'no-answer'
-const roomArrived = (p: Prescript) => p.scope === 'event' && p.status === 'active'
+const roomArrived = (p: Prescript) => (p.scope === 'event' || p.penance === true) && p.status === 'active'
 
 interface Part { text: string; em: boolean }
 /** A label's marked names and numbers (\u0001…\u0002) as parts to set apart. */
@@ -221,15 +221,16 @@ export default function PrescriptStage({ run, offers, label, onChoose, canChoose
         <p className={styles.call}>
           {/* eslint-disable-next-line @next/next/no-img-element -- the game's prescript (terminal) keyword icon from public/ */}
           <img className={styles.term} src={`${ASSET}/prescript_terminal.png`} alt="" width={40} height={40} />
-          {t('roomArrived')}
+          {t(arrival.penance ? 'penanceArrived' : 'roomArrived')}
         </p>
         <div className={styles.vText}>{text(arrival.goal, arrival.scope, ROLL, SETTLE)}</div>
       </div>}
       {verdict && <div key={verdict.id} className={`${styles.verdict} ${verdict.status === 'done' ? styles.vOk : verdict.status === 'failed' ? styles.vNo : styles.vRe}`}
         role="status">
-        <span className={styles.stamp}>{t(`status_${verdict.status}`)}</span>
+        <span className={styles.stamp}>{t(verdict.penance && verdict.status === 'done' ? 'status_atoned' : `status_${verdict.status}`)}</span>
         <span className={styles.vOrder}>【{plain(label(verdict.goal))}】</span>
-        {verdict.status === 'done' ? <span className={styles.vPts}>+{verdict.points} {t('scoreUnit')}</span>
+        {verdict.status === 'done' ? <span className={styles.vPts}>+{verdict.points} {t('scoreUnit')}{verdict.bonus ? ` · ${t('streakBonus', { count: run.streak, bonus: verdict.bonus })}` : ''}</span>
+          : verdict.status === 'failed' && verdict.points ? <span className={styles.vWhy}>{t('graceLost', { points: -verdict.points })}</span>
           : verdict.reason ? <span className={styles.vWhy}>{t(`void_${verdict.reason.replace(/-/g, '_')}`)}</span> : null}
       </div>}
     </section>
@@ -237,7 +238,7 @@ export default function PrescriptStage({ run, offers, label, onChoose, canChoose
     <h2 className={styles.sect}>{t('held')}</h2>
     {held.length ? <ul className={styles.held} data-prescript-held>
       {held.map(p => <li key={p.id} className={styles.h}>
-        <span className={styles.k}>{t(p.scope)}</span>
+        <span className={styles.k}>{t(p.penance ? 'penance' : p.scope)}</span>
         <span className={styles.tx}><span className="sr-only">{quote(p.goal, p.scope)}</span>{text(p.goal, p.scope)}</span>
         <span className={styles.p}>{progress(p) || POINTS[p.strength]}</span>
       </li>)}

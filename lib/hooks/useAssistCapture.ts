@@ -1321,6 +1321,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
             if (capture && capture.at > lastScreenAt && capture.floor === currentFloor.current && Date.now() < capture.at + 6000) {
               lastScreenAt = capture.at
               const document = { text: result.text, words: result.words }
+              if (DEBUG_PICK) console.info('[prescript] ocr', Date.now() - capture.at, 'ms after capture', JSON.stringify((result as { timing?: unknown }).timing ?? null), latestLabel.current)
               const matches = ocrReferences.current ? { ...matchOcrCandidates(document, ocrReferences.current),
                 ...eventScreenEvidence(document, ocrReferences.current) }
                 : { gifts: [], events: [], choices: [], scopedChoices: [], outcomeEventIds: [], choiceEventIds: [], bodyEventIds: [] }
