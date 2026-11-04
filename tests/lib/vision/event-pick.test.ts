@@ -19,7 +19,6 @@ describe('the ? room option the cursor clicked', () => {
     let state = show(EMPTY_PICK, both, 1000)
     state = cursorSeen(state, { at: 1100, x: 1300, y: 300, pressed: true })
     state = cursorSeen(state, { at: 1200, x: 1300, y: 500, pressed: false })
-    state = cursorSeen(state, { at: 1400, x: 200, y: 300, pressed: false }) // off the buttons
     let step = listMissing(state, 1500)
     expect(step.pick).toBeNull() // one read without the list may be a bad read
     step = listMissing(step.state, 2200)
@@ -57,18 +56,25 @@ describe('the ? room option the cursor clicked', () => {
     expect(listShown(step.state, alone, 2100).pick).toBeNull()
   })
 
-  it('a quick click: the result page alone names the option, the list never read (live test, 2026-11-04)', () => {
+  it('a quick click: the result page alone names the option, the list never read; a list sliding in names nothing', () => {
     const alone = choiceBands([boxes[1]], 1920, 1080)
     // under the result header: at once
     expect(listShown(EMPTY_PICK, alone, 700, { resultPage: true, options: 2 }).pick).toEqual({ choiceId: 'b', at: 700, via: 'list' })
-    // header unread: twice in a row
+    // no header and the list never read: the list may be sliding in one option at a time (901091 and 971056, 2026-11-04)
     const first = listShown(EMPTY_PICK, alone, 700, { options: 2 })
     expect(first.pick).toBeNull()
-    expect(listShown(first.state, alone, 1400, { options: 2 }).pick).toEqual({ choiceId: 'b', at: 1400, via: 'list' })
-    // read once, then the room went on: still that option
-    expect(listMissing(first.state, 1500, true).pick).toEqual({ choiceId: 'b', at: 1500, via: 'list' })
-    // an event of one readable option: its list is that one line, nothing taken yet
-    expect(listShown(listShown(EMPTY_PICK, alone, 700, { options: 1 }).state, alone, 1400, { options: 1 }).pick).toBeNull()
+    expect(listShown(first.state, alone, 1400, { options: 2 }).pick).toBeNull()
+    expect(listMissing(listShown(first.state, alone, 1400, { options: 2 }).state, 1500, true).pick).toBeNull()
+    // an event of one readable option under the header: its list may be that one line, nothing taken
+    expect(listShown(EMPTY_PICK, alone, 700, { resultPage: true, options: 1 }).pick).toBeNull()
+  })
+
+  it('passing over a button on the way to another names nothing: the cursor must rest on it last', () => {
+    // b's line read, a's not (a short name): the cursor crosses b and clicks where a is
+    let state = show(EMPTY_PICK, choiceBands([boxes[1]], 1920, 1080), 0)
+    state = cursorSeen(state, { at: 100, x: 1300, y: 500, pressed: false })
+    state = cursorSeen(state, { at: 250, x: 1300, y: 300, pressed: true })
+    expect(listMissing(state, 400, true).pick).toBeNull()
   })
 
   it('an option with several result rows is one line, not several buttons', () => {

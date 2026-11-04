@@ -247,14 +247,18 @@ export interface EventScreenEvidence {
 
 export interface ChoiceBox { choiceId: string; left: number; top: number; width: number; height: number }
 
-/** A text line of a choice, by the word read whole (or nearly so: at least 0.6 of a text of 4 or more glyphs). */
+/**
+ * A text line of a choice, by the word read whole (or nearly so: at least 0.6 of a text of 4 or more glyphs). A short
+ * name ("말린다.") counts only as a line of its own, read exactly.
+ */
 function choiceBoxes(words: readonly OcrWord[], choices: readonly OcrChoiceReference[]): ChoiceBox[] {
   const boxes: ChoiceBox[] = []
   for (const choice of choices) {
-    const pieces = [...new Set(choice.texts.flatMap(gameTextPieces))].filter(piece => contentLength(piece) >= 4)
+    const pieces = [...new Set(choice.texts.flatMap(gameTextPieces))].filter(piece => contentLength(piece) >= 2)
     const word = words.find(item => {
       const text = normalized(item.text)
-      return pieces.some(piece => text.includes(piece) || (piece.includes(text) && contentLength(text) >= Math.max(4, 0.6 * contentLength(piece))))
+      return pieces.some(piece => text === piece || (contentLength(piece) >= 4 &&
+        (text.includes(piece) || (piece.includes(text) && contentLength(text) >= Math.max(4, 0.6 * contentLength(piece))))))
     })
     if (word) boxes.push({ choiceId: choice.id, left: word.left, top: word.top, width: word.width, height: word.height })
   }

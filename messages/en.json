@@ -2972,6 +2972,7 @@
     "rule_penance": "A violation brings a penance at once: heavier, impossible to decline, due on this floor. Break the penance too and lose that much grace. Fulfil in a row and the 3rd, 5th and 10th add grace and give a reroll back.",
     "penance": "Penance",
     "ocrDown": "text reader restarting",
+    "ocrRecovering": "text reader recovering",
     "ocrSlow": "text reader slow (CPU)",
     "roomArrived": "This room's Prescript has come down. It cannot be declined.",
     "arrived": "A Prescript has arrived. Uphold one.",
