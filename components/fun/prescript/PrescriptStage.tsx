@@ -197,7 +197,7 @@ export default function PrescriptStage({ run, offers, label, onChoose, canChoose
         {t(run.ended ? 'ended' : offer ? 'arrived' : 'waiting')}
       </p>
       {offer && <>
-        <Countdown issuedAt={offer.issuedAt} replyMs={gradeOf(run).replyMs} label={seconds => t('replyIn', { seconds })} />
+        <Countdown issuedAt={offer.shownAt ?? Date.now()} replyMs={gradeOf(run).replyMs} label={seconds => t('replyIn', { seconds })} />
         <div className={styles.cards} role="group" aria-label={t(offer.scope)}>
           {offer.cards.map(card => {
             const points = prescriptPoints(card.strength, card.scope, run.streak + 1, run.grade)
