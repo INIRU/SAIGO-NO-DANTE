@@ -27,6 +27,7 @@ import { acquisitionSeq, acquisitionsToRelease, continuesFusionDialog, dialogFor
   type FusionAnchors, type FusionDialogEvidence, type FusionRead, type SeenDialog, type WheelAnchors,
   type FusionSlotRead } from '@/lib/vision/fusion-evidence'
 import { BLESSING_SCENE, blessingSpent, onBlessingScreen, showsBlessingScreen } from '@/lib/vision/blessing-screen'
+import { onRunEndScreen, RUN_END_SCENE, showsRunEndScreen } from '@/lib/vision/run-end-screen'
 import { isVerbose, plog } from '@/lib/vision/assist-log'
 import { confirmsExploration, explorationFloor, explorationThemeReads, themeSelectionHeaderFloor, type ExplorationObservation,
   type ExplorationThemeReference } from '@/lib/vision/exploration-match'
@@ -339,6 +340,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
   const fusionTitleAt = useRef(0)
   // Capture time of the latest OCR read of the starlight screen (title and 입장): run_setup whatever its card colour.
   const blessingAt = useRef(0)
+  const runEndAt = useRef(0)
   // The result box of a crop taken while OCR read the selection screen: other crops count as the wheel only if their box
   // matches it (a dialog, popup or prompt over the wheel reads as confident nonsense). Browser memory only.
   const wheelReference = useRef<Float32Array | null>(null)
@@ -530,6 +532,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
     wheelAnchors.current = null
     fusionTitleAt.current = 0
     blessingAt.current = 0
+    runEndAt.current = 0
     wheelReference.current = null
     lastDialogAt.current = 0
     dialogBreakAt.current = 0
@@ -1493,6 +1496,11 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
                 blessingAt.current = Math.max(blessingAt.current, capture.at)
                 setScene(current => current?.label === BLESSING_SCENE || current?.label === 'gift_acquired' ? current : { label: BLESSING_SCENE, since: capture.at })
               }
+              // the dungeon's end screen, by its own words (the classifier barely knows it)
+              if (showsRunEndScreen(result.text)) {
+                runEndAt.current = Math.max(runEndAt.current, capture.at)
+                setScene(current => current?.label === RUN_END_SCENE ? current : { label: RUN_END_SCENE, since: capture.at })
+              }
               screenReads.current = [...screenReads.current.filter(item => capture.at - item.at < 10_000), { at: capture.at, fusion: fusionScreen }]
               // OCR positions are on the reading canvas (at most 1920 px wide); the slot crops use full-size frames.
               const factor = capture.width ? capture.width / Math.min(capture.width, 1920) : 1
@@ -2026,7 +2034,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
               // A recently read fusion title outranks the classifier (it learned the brown UI only); gift popups still show.
               // So does a recent read of the starlight screen, which the classifier learned in its old red colours only.
               const label = held.label === 'gift_acquired' ? held.label : onFusionScreen(null, fusionTitleAt.current, Date.now()) ? 'fusion'
-                : onBlessingScreen(blessingAt.current, Date.now()) ? BLESSING_SCENE : held.label
+                : onBlessingScreen(blessingAt.current, Date.now()) ? BLESSING_SCENE : onRunEndScreen(runEndAt.current, Date.now()) ? RUN_END_SCENE : held.label
               if (held.count >= 2) setScene(current => current?.label === label ? current : { label, since: held.at })
             }
             // Event screens and pack selection headers are read by full-frame OCR, so both ask for it promptly.
