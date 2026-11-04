@@ -137,6 +137,9 @@ export default function PrescriptClient({ themes, gifts, recipes, events, eventC
   const pickKey = picked && Number.isInteger(picked.option_index) && !picked.outcome ? `${picked.event_id}:${picked.option_index}:${capture.eventPick!.at}` : ''
   const eventPick = useMemo(() => pickKey ? { eventId: Number(pickKey.split(':')[0]), option: Number(pickKey.split(':')[1]), at: Number(pickKey.split(':')[2]) } : null,
     [pickKey])
+  useEffect(() => {
+    if (process.env.NODE_ENV !== 'production') console.info('[prescript] room', roomEventId, optionsKey, JSON.stringify({ choice: evidence.ocrCandidates?.choiceEventIds, body: evidence.ocrCandidates?.bodyEventIds, outcome: evidence.ocrCandidates?.outcomeEventIds }))
+  }, [roomEventId, optionsKey]) // eslint-disable-line react-hooks/exhaustive-deps -- logged once a room
   // development only: which reading judged a room (the cursor, the next stage or the result text)
   useEffect(() => { if (process.env.NODE_ENV !== 'production' && pickKey) console.info('[prescript] cursor pick', pickKey) }, [pickKey])
   useEffect(() => {
