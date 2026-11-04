@@ -69,6 +69,10 @@ export default function PrescriptClient({ themes, gifts, recipes, events, eventC
   const shelfKey = (shelf?.slots ?? []).map(slot => `${shelfGift(slot)}:${slot.sold}`).join(',')
   const shelfIds = useMemo(() => shelfKey.split(',').filter(item => item.endsWith(':false') && !item.startsWith('null'))
     .map(item => Number(item.split(':')[0])), [shelfKey])
+  // the visit's last shelf: the fusion and sell windows cover it, and a gift on it can still be bought after them
+  const lastShelfKey = (running ? capture.shopShelf?.slots ?? [] : []).map(slot => `${shelfGift(slot)}:${slot.sold}`).join(',')
+  const lastShelfIds = useMemo(() => lastShelfKey.split(',').filter(item => item.endsWith(':false') && !item.startsWith('null'))
+    .map(item => Number(item.split(':')[0])), [lastShelfKey])
   // the grade chosen on the entrance: a new run starts at it
   const [grade, setGrade] = useState<PrescriptGrade>('proselyte')
   useEffect(() => { try { setGrade(readGrade(window.localStorage.getItem(GRADE_KEY))) } catch { /* proselyte */ } }, [])
@@ -90,8 +94,8 @@ export default function PrescriptClient({ themes, gifts, recipes, events, eventC
     gift: id => { const gift = giftMap.get(id); return gift ? { keyword: gift.keyword, tier: giftTier(gift) } : undefined },
     craftable: () => findAvailableFusions(held, recipes, giftMap).filter(fusion => fusion.canCraft && fusion.result).map(fusion => fusion.result!.game_id),
     themesOn: next => getAvailableThemes(themes, DIFFICULTY_FLOOR_KEY[getLegacyPlanFloorDifficulty(RUN_DIFFICULTY, next)], next).map(theme => theme.id),
-    random: Math.random, shelf: shelfIds, formation, identity: id => identityById.get(id),
-  }), [floor, held, giftMap, recipes, themes, shelfIds, plan, formation, identityById])
+    random: Math.random, shelf: lastShelfIds, formation, identity: id => identityById.get(id),
+  }), [floor, held, giftMap, recipes, themes, lastShelfIds, plan, formation, identityById])
   // A ? room: its choice screen (the options anyone may take, with a result to judge them by) and the option its result
   // page names
   const evidence = captureEvidence(capture, floor, Date.now())
