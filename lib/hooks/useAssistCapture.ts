@@ -70,6 +70,15 @@ function named(cards: ClearBonusCard[], names: ReadonlyMap<number, string[]>): C
   return changed ? next : cards
 }
 
+/** A purchase or sale confirmation on screen, from its first to its last full-frame sighting. */
+export interface ShopDialog { kind: 'purchase' | 'sale'; firstAt: number; lastAt: number }
+/** Sightings under 3 s apart are one dialog; the last eight are kept. */
+export function noteShopDialog(items: readonly ShopDialog[], kind: ShopDialog['kind'], at: number): ShopDialog[] {
+  const last = items.findLast(item => item.kind === kind)
+  if (last && at - last.lastAt < 3000) return items.map(item => item === last ? { ...item, lastAt: at } : item)
+  return [...items.slice(-7), { kind, firstAt: at, lastAt: at }]
+}
+
 export function useAssistCapture({ giftReferences = [], eventReferences = [], ocrCatalog, themeCatalog, language = 'ko', floor = null,
   mode = 'balanced', detection = DEFAULT_DETECTION, resolvePopup, completeFusion, samples = false, heldGiftIds = [], giftPrice }: {
   giftReferences?: VisualReference[]
@@ -122,6 +131,9 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
   const [fusionEvidence, setFusionEvidence] = useState<FusionEvidence[]>([])
   // Confirmed shop sales (capture time of the dialog), latest last.
   const [giftSales, setGiftSales] = useState<GiftSale[]>([])
+  // the shop's purchase and sale confirmations seen in full-frame reads: a result read after one settles it; none read
+  // means the result was missed, not that nothing happened
+  const [shopDialogs, setShopDialogs] = useState<ShopDialog[]>([])
   // The shop shelf as last read (eight slots by the game's layout), while the shop is on screen.
   const [shopShelf, setShopShelf] = useState<ShopShelf | null>(null)
   const shelfRequest = useRef<{ requestId: number; at: number } | null>(null)
@@ -1386,6 +1398,8 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
               }
               if (want.gifts) readSale(result.text, result.words, capture)
               readSkillWindow(result.text, capture.at)
+              const shopDialog = popupPurchaseHeader(result.text) ? 'purchase' as const : sellQuestion(result.text) ? 'sale' as const : null
+              if (shopDialog) setShopDialogs(items => noteShopDialog(items, shopDialog, capture.at))
               const confirmation = fusionConfirmation(result.text)
               const fusionScreen = showsFusionTitle(result.text)
               if (fusionScreen) {
@@ -2142,7 +2156,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
 
   return { supported, status, error, prediction, visualCandidates, ocrCandidates, ocrStatus,
     popupAcquisitions, floorThemeObservation, observedFloor, scene, themeSelectionFloor, queueStatus, mobile, gpu, inference, ocrEngine,
-    ocrWorkers, fusionEvidence, giftSales, skillExchange, shopShelf, ownedGrid, formation, blessings, clearBonus, eventPick, start, stop, reportInventoryChange }
+    ocrWorkers, fusionEvidence, giftSales, shopDialogs, skillExchange, shopShelf, ownedGrid, formation, blessings, clearBonus, eventPick, start, stop, reportInventoryChange }
 }
 
 /**
