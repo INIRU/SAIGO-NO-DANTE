@@ -3218,6 +3218,8 @@
     "unitSeconds": "秒",
     "unitRuns": "回",
     "menuBest": "最高",
-    "blessingUnit": "星光倍率"
+    "blessingUnit": "星光倍率",
+    "exportLog": "ログを書き出す",
+    "verboseLog": "詳しい記録"
   }
 }
