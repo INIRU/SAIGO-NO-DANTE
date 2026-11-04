@@ -6,15 +6,29 @@ import { acceptedIcon, heldSlotRead, iconTemplate, mergeRankedGroups, plateShape
 import { fusionSlotRegions, fusionSlotRegionsFromAnchors, fusionWheelRegions, vestigeGroup, type FusionAnchors, type FusionSlotRead, type WheelAnchors } from './fusion-evidence'
 import { assistModelRoot, ortWasmPaths } from './model-assets'
 import { classifierKnowsHeld, classifierSlotRead, heldLabels, iconTensor, ICON_CROP, ICON_INPUT } from './icon-classifier'
+import { decodeCursorTemplates, findCursor, type CursorRead, type CursorTemplates } from './cursor'
+import { decodePortraitIndex, formationBarRegions, matchPortrait, portraitId, shownPixels, type PortraitIndex } from './formation-bar'
+import { readBlessingCards } from './blessing-screen'
+import { ownedGridGifts, ownedGridOffset, ownedGridRegions, ownedGridStrips, yellowRows } from './owned-grid'
+import { shopShelfRegions, shopSoldBand, soldMark, SHOP_SOLD_MIN, titleBarRows, type ShopSlotRead } from './shop-shelf'
+import { BONUS_PLACES, bonusBandPlaces, bonusIconRegions, bonusLayout, bonusLineShare, bonusLineStrip, type ClearBonusCard } from './clear-bonus'
 
 type Request = { type: 'init'; giftReferences?: VisualReference[]; eventReferences?: VisualReference[] } |
   { type: 'infer'; frame: ImageBitmap } | { type: 'popup-icon'; requestId: number; frame: ImageBitmap; box: PopupLabelBox } |
   { type: 'fusion-slots'; requestId: number; frame: ImageBitmap; count: number; capacity: number; anchors?: FusionAnchors; candidates?: string[] } |
   { type: 'fusion-wheel'; requestId: number; frame: ImageBitmap; capacity: number; origin: { x: number; y: number }; scale?: number;
-    frameSize: { width: number; height: number }; anchors?: WheelAnchors; candidates?: string[] }
+    frameSize: { width: number; height: number }; anchors?: WheelAnchors; candidates?: string[] } |
+  { type: 'shop-shelf'; requestId: number; frame: ImageBitmap } | { type: 'owned-grid'; requestId: number; frame: ImageBitmap } |
+  { type: 'formation'; requestId: number; frame: ImageBitmap } | { type: 'blessings'; requestId: number; frame: ImageBitmap } | { type: 'clear-bonus'; requestId: number; frame: ImageBitmap } | { type: 'cursor'; requestId: number; frame: ImageBitmap; region?: { x: number; y: number; width: number; height: number } }
 type Response = { type: 'ready'; provider: 'webgpu' | 'wasm'; adapter: string } | { type: 'prediction'; label: string; confidence: number; gifts: VisualMatch[]; events: VisualMatch[] } |
   { type: 'popup-icon'; requestId: number; gifts: VisualMatch[] } |
   { type: 'fusion-slots'; requestId: number; slots: FusionSlotRead[] } | { type: 'icons'; count: number; ms: number } |
+  { type: 'shop-shelf'; requestId: number; slots: ShopSlotRead[]; titleBar: number } |
+  { type: 'owned-grid'; requestId: number; gifts: string[] } |
+  { type: 'formation'; requestId: number; ids: (string | null)[] } |
+  { type: 'blessings'; requestId: number; levels: number[] | null } |
+  { type: 'clear-bonus'; requestId: number; cards: ClearBonusCard[]; titleBar: number } |
+  { type: 'cursor'; requestId: number; cursor: CursorRead | null } |
   { type: 'error'; message: string }
 
 const ASSET_ROOT = `${assistModelRoot(self.location.hostname)}/assist-scene/`
@@ -22,6 +36,14 @@ let session: ort.InferenceSession | null = null
 let visualSession: ort.InferenceSession | null = null
 // The gift-icon classifier for fusion slots; until it loads (or if it fails) template matching reads them.
 let iconSession: ort.InferenceSession | null = null
+let portraitIndex: Promise<PortraitIndex | null> | null = null
+let cursorTemplates: Promise<CursorTemplates | null> | null = null
+/**
+ * The cursor is looked for in the region asked (the choice list) at the capture's own size, up to this width: Windows
+ * draws it about 30 px tall, so a shared window scaled down leaves 10 to 20 px (found 78 to 97%, nothing claimed on 750
+ * cursorless frames, 2026-11-04).
+ */
+const CURSOR_WIDTH = 1280
 let iconLabels: string[] = []
 let embeddingIndex: EmbeddingIndex | null = null
 let labels: string[] = []
@@ -93,14 +115,35 @@ async function loadIconClassifier() {
   } catch { iconSession = null }
 }
 
+/** The first run of each model compiles its WebGPU shaders: paid here, before 'ready', rather than on the first screen read
+ * (as the OCR worker does). Slot batches of the sizes the screens use. A failed warm-up only leaves the first read slower. */
+/** A run's first output as a copy, every output released (a capture of hours runs these several times a second). */
+function firstOutput(outputs: ort.InferenceSession.OnnxValueMapType, name: string): Float32Array {
+  const data = Float32Array.from(outputs[name].data as Float32Array)
+  for (const value of Object.values(outputs)) value.dispose()
+  return data
+}
+
+async function warmUp() {
+  try {
+    await runModel('scene', new Float32Array(3 * SCENE_SIZE * SCENE_SIZE))
+    if (visualSession) await runModel('visual', new Float32Array(3 * SCENE_SIZE * SCENE_SIZE))
+    const icons = iconSession
+    if (!icons) return
+    for (const batch of [1, 3, 5, 10]) {
+      const input = new ort.Tensor('float32', new Float32Array(batch * 3 * ICON_INPUT * ICON_INPUT), [batch, 3, ICON_INPUT, ICON_INPUT])
+      firstOutput(await exclusive(() => icons.run({ [icons.inputNames[0]]: input })), icons.outputNames[0])
+    }
+  } catch { /* the reads still work, the first one compiles */ }
+}
+
 /** Classifier reads for the given slots in one batch, or null to fall back to template matching. */
 async function classifySlots(sample: ReturnType<typeof sampler>, regions: { x: number; y: number; size: number }[], held: ReadonlySet<string>) {
   if (!iconSession || !regions.length || !classifierKnowsHeld(iconLabels, held)) return null
   try {
     const input = iconTensor(regions.map(region => sample(region.x, region.y, region.size * ICON_CROP, ICON_INPUT)))
     const icons = iconSession
-    const output = await exclusive(() => icons.run({ [icons.inputNames[0]]: new ort.Tensor('float32', input, [regions.length, 3, ICON_INPUT, ICON_INPUT]) }))
-    const logits = output[icons.outputNames[0]].data as Float32Array
+    const logits = firstOutput(await exclusive(() => icons.run({ [icons.inputNames[0]]: new ort.Tensor('float32', input, [regions.length, 3, ICON_INPUT, ICON_INPUT]) })), icons.outputNames[0])
     if (logits.length !== regions.length * iconLabels.length) return null
     return regions.map((_, index) => classifierSlotRead(logits.subarray(index * iconLabels.length, (index + 1) * iconLabels.length), iconLabels, held))
   } catch {
@@ -117,7 +160,7 @@ async function runModel(kind: 'scene' | 'visual', input: Float32Array) {
     if (!current) throw new Error('Model not ready')
     const feeds = { [current.inputNames[0]]: new ort.Tensor('float32', input, [1, 3, SCENE_SIZE, SCENE_SIZE]) }
     try {
-      return (await current.run(feeds))[current.outputNames[0]].data
+      return firstOutput(await current.run(feeds), current.outputNames[0])
     } catch (error) {
       if (provider === 'wasm') throw error
       const withVisual = visualSession !== null
@@ -126,7 +169,7 @@ async function runModel(kind: 'scene' | 'visual', input: Float32Array) {
       await createSessions(withVisual)
       await loadIconClassifier()
       const retry = kind === 'scene' ? session! : visualSession!
-      return (await retry.run({ [retry.inputNames[0]]: feeds[current.inputNames[0]] }))[retry.outputNames[0]].data
+      return firstOutput(await retry.run({ [retry.inputNames[0]]: feeds[current.inputNames[0]] }), retry.outputNames[0])
     }
   })
 }
@@ -224,6 +267,25 @@ function heldTemplates(candidates: string[] | undefined) {
   return heldPool
 }
 
+/** Pixels of a frame rectangle at its own size (at most 160 px wide), RGBA. */
+function sampleRect(frame: ImageBitmap, rect: { x: number; y: number; width: number; height: number }) {
+  const width = Math.max(1, Math.min(160, Math.round(rect.width))), height = Math.max(1, Math.round(rect.height * width / Math.max(1, rect.width)))
+  const target = new OffscreenCanvas(width, height).getContext('2d', { willReadFrequently: true })!
+  target.drawImage(frame, rect.x, rect.y, rect.width, rect.height, 0, 0, width, height)
+  return target.getImageData(0, 0, width, height).data
+}
+/** Mean luminance of the frame's top `rows` rows (one value a row), for a window share's title bar. */
+function rowMeans(frame: ImageBitmap, rows: number): number[] {
+  const height = Math.min(rows, frame.height), width = 64
+  const target = new OffscreenCanvas(width, height).getContext('2d', { willReadFrequently: true })!
+  target.drawImage(frame, 0, 0, frame.width, height, 0, 0, width, height)
+  const data = target.getImageData(0, 0, width, height).data
+  return Array.from({ length: height }, (_, row) => {
+    let total = 0
+    for (let column = 0; column < width; column++) { const at = (row * width + column) * 4; total += 0.299 * data[at] + 0.587 * data[at + 1] + 0.114 * data[at + 2] }
+    return total / width
+  })
+}
 /**
  * An empty slot: the inner part is black (95th-percentile luminance under 12; empty wheel positions and dialog slots
  * measure 0–1, icons that are only starting to fade in 4–6, shown icons 39 and more).
@@ -288,6 +350,7 @@ self.onmessage = async (event: MessageEvent<Request>) => {
       provider = await gpuAdapter() ? 'webgpu' : 'wasm'
       await createSessions(withVisual)
       await loadIconClassifier()
+      await warmUp()
       respond({ type: 'ready', provider, adapter: provider === 'webgpu' ? adapterName : '' })
       void loadTemplates(giftReferences)
     } catch (error) {
@@ -333,6 +396,107 @@ self.onmessage = async (event: MessageEvent<Request>) => {
         return read
       })
       respond({ type: 'fusion-slots', requestId: request.requestId, slots })
+      return
+    }
+    if (event.data.type === 'shop-shelf') {
+      // The shelf's eight slots, by the game's 1920×1080 layout scaled to the width (a window's title bar left out above)
+      const { requestId } = event.data
+      if (!Number.isSafeInteger(requestId)) throw new Error('Invalid shop request')
+      const titleBar = titleBarRows(rowMeans(frame, 64), frame.height)
+      const regions = shopShelfRegions(frame.width, frame.height, titleBar)
+      const sample = sampler(frame)
+      const blanks = regions.map(region => blankSlot(sample, region))
+      const filled = regions.filter((_, index) => !blanks[index])
+      const classified = await classifySlots(sample, filled, new Set())
+      const slots = regions.map((region, index): ShopSlotRead => ({ index, blank: blanks[index],
+        sold: !blanks[index] && soldMark(sampleRect(frame, shopSoldBand(region))) >= SHOP_SOLD_MIN,
+        read: blanks[index] ? { blank: true } : classified ? classified[filled.indexOf(region)] : null }))
+      respond({ type: 'shop-shelf', requestId, slots, titleBar })
+      return
+    }
+    if (event.data.type === 'formation') {
+      // The bottom bar's twelve portraits against the portrait index (fetched the first time it is wanted)
+      const { requestId } = event.data
+      if (!Number.isSafeInteger(requestId)) throw new Error('Invalid formation request')
+      portraitIndex ??= fetch(`${ASSET_ROOT}portrait-index.json`).then(response => response.ok ? response.json() : null)
+        .then(decodePortraitIndex).catch(() => null)
+      const index = await portraitIndex
+      const sample = sampler(frame)
+      const ids = index ? formationBarRegions(frame.width, frame.height).map(region =>
+        portraitId(matchPortrait(index, shownPixels(sample(region.x, region.y, region.size * (1 - 2 * index.inset), index.side), index.mask)))) : []
+      respond({ type: 'formation', requestId, ids })
+      return
+    }
+    if (event.data.type === 'blessings') {
+      // The Star Blessing screen's cards: which are taken and at what level (the whole frame at its own size)
+      const { requestId } = event.data
+      if (!Number.isSafeInteger(requestId)) throw new Error('Invalid blessings request')
+      const canvas = new OffscreenCanvas(frame.width, frame.height).getContext('2d', { willReadFrequently: true })!
+      canvas.drawImage(frame, 0, 0)
+      respond({ type: 'blessings', requestId, levels: readBlessingCards(canvas.getImageData(0, 0, frame.width, frame.height),
+        titleBarRows(rowMeans(frame, 64), frame.height)) })
+      return
+    }
+    if (event.data.type === 'clear-bonus') {
+      // The theme pack selection's CLEAR BONUS rows: which card places hold a band, then each band's icons
+      const { requestId } = event.data
+      if (!Number.isSafeInteger(requestId)) throw new Error('Invalid clear bonus request')
+      const titleBar = titleBarRows(rowMeans(frame, 64), frame.height)
+      const share = (place: number) => {
+        const strip = bonusLineStrip(frame.width, frame.height, place, titleBar)
+        if (strip.width < 4 || strip.y < 0 || strip.y + strip.height > frame.height) return 0
+        // native size: the one-pixel line must not be resampled away
+        const target = new OffscreenCanvas(strip.width, strip.height).getContext('2d', { willReadFrequently: true })!
+        target.drawImage(frame, strip.x, strip.y, strip.width, strip.height, 0, 0, strip.width, strip.height)
+        return bonusLineShare(target.getImageData(0, 0, strip.width, strip.height).data, strip.width, strip.height)
+      }
+      const places = bonusBandPlaces(BONUS_PLACES.odd.map(share), BONUS_PLACES.even.map(share))
+      const sample = sampler(frame)
+      const regions = places.flatMap(place => bonusIconRegions(frame.width, frame.height, place, titleBar))
+      const reads = await classifySlots(sample, regions, new Set())
+      const cards = reads ? places.map((place, index) => ({ place, gifts: bonusLayout(reads.slice(index * 7, index * 7 + 7)) })) : []
+      respond({ type: 'clear-bonus', requestId, cards, titleBar })
+      return
+    }
+    if (event.data.type === 'cursor') {
+      // The game's cursor (the screen share draws it in), in frame pixels
+      const { requestId, region } = event.data
+      if (!Number.isSafeInteger(requestId)) throw new Error('Invalid cursor request')
+      cursorTemplates ??= fetch(`${ASSET_ROOT}cursor.json`).then(response => response.ok ? response.json() : null)
+        .then(decodeCursorTemplates).catch(() => null)
+      const templates = await cursorTemplates
+      const x0 = Math.max(0, Math.floor(region?.x ?? 0)), y0 = Math.max(0, Math.floor(region?.y ?? 0))
+      const x1 = Math.min(frame.width, Math.ceil(region ? region.x + region.width : frame.width))
+      const y1 = Math.min(frame.height, Math.ceil(region ? region.y + region.height : frame.height))
+      const scale = Math.min(1, CURSOR_WIDTH / Math.max(1, x1 - x0))
+      const width = Math.max(1, Math.round((x1 - x0) * scale)), height = Math.max(1, Math.round((y1 - y0) * scale))
+      const canvas = new OffscreenCanvas(width, height)
+      const context = canvas.getContext('2d', { willReadFrequently: true })
+      let cursor: CursorRead | null = null
+      if (templates && context && x1 > x0 && y1 > y0) {
+        context.drawImage(frame, x0, y0, x1 - x0, y1 - y0, 0, 0, width, height)
+        const hit = findCursor(context.getImageData(0, 0, width, height).data, width, height, templates)
+        if (hit) cursor = { ...hit, x: x0 + hit.x / scale, y: y0 + hit.y / scale }
+      }
+      respond({ type: 'cursor', requestId, cursor })
+      return
+    }
+    if (event.data.type === 'owned-grid') {
+      // The sell window's owned list: the scroll from the slots' yellow down the view, then the whole slots in it
+      const { requestId } = event.data
+      if (!Number.isSafeInteger(requestId)) throw new Error('Invalid owned list request')
+      const titleBar = titleBarRows(rowMeans(frame, 64), frame.height)
+      const profile = new Array<number>(418).fill(0)
+      for (const strip of ownedGridStrips(frame.width, frame.height, titleBar)) {
+        const pixels = sampleRect(frame, strip), width = Math.max(1, Math.min(160, Math.round(strip.width)))
+        const rows = yellowRows(pixels, width)
+        for (let y = 0; y < profile.length; y++) profile[y] += rows[Math.min(rows.length - 1, Math.floor(y * rows.length / profile.length))] ?? 0
+      }
+      const regions = ownedGridRegions(frame.width, frame.height, ownedGridOffset(profile), titleBar)
+      const sample = sampler(frame)
+      const filled = regions.filter(region => !blankSlot(sample, region))
+      const classified = await classifySlots(sample, filled, new Set())
+      respond({ type: 'owned-grid', requestId, gifts: classified ? ownedGridGifts(classified) : [] })
       return
     }
     if (event.data.type === 'popup-icon') {
@@ -389,6 +553,12 @@ self.onmessage = async (event: MessageEvent<Request>) => {
   } catch (error) {
     if (event.data.type === 'popup-icon') respond({ type: 'popup-icon', requestId: event.data.requestId, gifts: [] })
     else if (event.data.type === 'fusion-slots' || event.data.type === 'fusion-wheel') respond({ type: 'fusion-slots', requestId: event.data.requestId, slots: [] })
+    else if (event.data.type === 'shop-shelf') respond({ type: 'shop-shelf', requestId: event.data.requestId, slots: [], titleBar: 0 })
+    else if (event.data.type === 'owned-grid') respond({ type: 'owned-grid', requestId: event.data.requestId, gifts: [] })
+    else if (event.data.type === 'formation') respond({ type: 'formation', requestId: event.data.requestId, ids: [] })
+    else if (event.data.type === 'blessings') respond({ type: 'blessings', requestId: event.data.requestId, levels: null })
+    else if (event.data.type === 'clear-bonus') respond({ type: 'clear-bonus', requestId: event.data.requestId, cards: [], titleBar: 0 })
+    else if (event.data.type === 'cursor') respond({ type: 'cursor', requestId: event.data.requestId, cursor: null })
     else respond({ type: 'error', message: error instanceof Error ? error.message : 'Inference failed' })
   } finally {
     frame.close()

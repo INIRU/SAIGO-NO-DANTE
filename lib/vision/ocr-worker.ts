@@ -56,6 +56,8 @@ const FULL_FRAME_LINES = 80
 const REC_BATCH = 6
 /** A popup box or crop outside the frame: that frame is unreadable by any engine, the GPU is not at fault. */
 class RegionError extends Error {}
+/** GPU runs failed in a row (a stall once is not a broken GPU). */
+let gpuFailures = 0
 let paddle: { det: ort.InferenceSession; rec: ort.InferenceSession; alphabet: string[]; adapter: string; loadedAt: number } | null = null
 let paddleRetries = 0
 let paddleRetry: ReturnType<typeof setTimeout> | null = null
@@ -417,6 +419,7 @@ async function readExplorationPaddle(frame: ImageBitmap) {
  */
 async function recognizePaddle(canvas: OffscreenCanvas, detSide = 960, grid = 1, tileScale = 1) {
   const frame = { x: 0, y: 0, width: canvas.width, height: canvas.height }
+  const started = performance.now()
   let rects: TextRect[]
   if (Number.isInteger(grid) && grid > 1 && grid <= 4) {
     const scale = Number.isFinite(tileScale) ? Math.min(2, Math.max(1, tileScale)) : 1
@@ -428,8 +431,11 @@ async function recognizePaddle(canvas: OffscreenCanvas, detSide = 960, grid = 1,
     const side = Number.isFinite(detSide) ? Math.min(1600, Math.max(640, Math.round(detSide))) : 960
     rects = await detectRects(canvas, frame, { side, type: 'max' }, FULL_FRAME_LINES)
   }
+  const detected = performance.now()
   const lines = await recognizeRects(canvas, rects)
-  return { text: lines.map(line => line.text).join('\n').slice(0, 20000), words: lineWords(lines) }
+  // how long the read took (detection, recognition, lines): the page logs it in development
+  const timing = { detMs: Math.round(detected - started), recMs: Math.round(performance.now() - detected), lines: rects.length }
+  return { text: lines.map(line => line.text).join('\n').slice(0, 20000), words: lineWords(lines), timing }
 }
 
 async function readPopup(frame: ImageBitmap, box: Extract<Request, { type: 'popup' }>['box']) {
@@ -530,13 +536,18 @@ self.onmessage = async (event: MessageEvent<Request>) => {
     const context = canvas.getContext('2d')
     if (!context) throw new Error('OCR canvas unavailable')
     context.drawImage(frame, 0, 0, canvas.width, canvas.height)
-    // GPU OCR first; a failure disables it and the same frame is read by Tesseract before any response.
+    // GPU OCR first. One failed run drops only its frame (a GPU busy with the game can stall a run past its timeout);
+    // a second in a row disables it and the frame is read by Tesseract before any response.
     const viaPaddle = async <T>(read: () => Promise<T>): Promise<T | null> => {
       if (!paddle) return null
       try {
-        return await read()
+        const done = await read()
+        gpuFailures = 0
+        return done
       } catch (error) {
         if (error instanceof RegionError) throw error
+        if (++gpuFailures < 2) throw new Error('GPU OCR run failed; frame dropped')
+        gpuFailures = 0
         console.warn('GPU OCR failed; using Tesseract until it reloads', error)
         await releasePaddle('gpu-ocr-runtime-failed')
         return null

@@ -303,7 +303,7 @@ python3 scripts/vision/extract_scene_frames.py --videos <recording.mp4>... --out
 npx tsx scripts/vision/ocr_frames.ts <work dir> <work dir>/ocr-list.json <work dir>/ocr.json
 python3 scripts/vision/build_scene_dataset.py --videos <work dir> --samples <samples> --caches <ocr cache>... --out <dataset>
 python3 scripts/vision/train_scene.py --images <dataset>/annotations.jsonl --roots videos=<work dir> samples=<samples> \
-  --labels public/models/assist-scene/labels.json --init-onnx public/models/assist-scene/scene.onnx --epochs 12 --out <checkpoint>
+  --labels public/models/assist-scene/labels.json --arch mnv4s --epochs 12 --out <checkpoint>
 python3 scripts/vision/compare_scene_models.py --images <dataset>/annotations.jsonl --roots videos=<work dir> samples=<samples> \
   --labels public/models/assist-scene/labels.json --models shipped=public/models/assist-scene/scene.onnx new=<checkpoint>/scene-mobilenetv3-small.onnx
 # 아이콘: 지금 모델에서 시작해 새 기프트를 더한다. 단계마다 calibration(강한 판독 수, 정답을 지웠을 때 최고 점수)을 본다
@@ -344,10 +344,28 @@ python3 scripts/vision/train_icons.py --data <icon dataset> --out <checkpoint> -
   ```
 
 
+## PiP 화면 구조 (2026-11-05)
+
+어시스트의 주 화면은 PiP다. 자주 바뀌므로 "무엇을 보일지"와 "어떻게 그릴지"를 나눴다.
+
+| 무엇 | 어디 | 바꾸는 법 |
+|---|---|---|
+| 지금 보일 화면 | `lib/planner/pip-view.ts`의 `PIP_MODES` (위에서부터 처음 맞는 것) | 표에 한 줄을 넣거나 순서를 바꾼다. 지금 순서: 선택지 방 → 스킬 교체 → 편성 → 런 시작 → 테마팩 선택 → 합성 → 층 |
+| 창 크기별 배치 | `pipDensity`(compact: 폭 360 미만이나 높이 340 미만, wide: 폭 560 이상이고 높이의 1.25배 이상), `floorLayout` | compact는 메모 2줄·작은 팁, wide는 메모·팁을 왼쪽 열(40%, 스크롤해도 고정)에 두고 기프트를 오른쪽에 |
+| 아이콘 크기 | `fitGrid` 하나 | 높이를 주면 전부 들어가는 가장 큰 크기, 안 주면 최소 크기로 들어가는 만큼 열을 채운 뒤 키운다 |
+| 기프트 칸 표시 | `giftBadges` + `CompanionPanel`의 `badgeRows` | 줄 하나(기프트 집합, 이름, 짧은 이름, 색)를 넣는다. 지금: 플랜, 이 층에서만(빨간 느낌표), 클리어 보너스(그림 아래 가장자리의 "보너스" 띠) |
+| 기프트 정보 | 사이트 공용 미리보기 카드 `NotePreviewHost`(`components/notes/NotePreviewCard.tsx`, 노트·덱과 같은 카드) + `giftPreviewAsset` | 칸에는 그림만 둔다(이름 없음). 마우스를 올리거나 키보드로 고르면 그림·이름·키워드·효과 카드가 뜬다. 카드는 그 요소가 있는 창(PiP 창이면 PiP 문서)에 그린다. 클릭은 기록이라 탭해도 창을 열지 않는다(`modalOnTap` 끔) |
+| 뉴비 팁 | `lib/planner/pip-tips.ts`의 `PIP_TIPS` + `CompanionView`의 `tipView` | 규칙(보일 화면, 데이터 만드는 함수) 하나와 그리는 코드 하나, 메시지. 지금: 층의 클리어 보너스, 선택 화면에서 계획 기프트가 보너스에 있는 카드 |
+| 그리기 | `components/planner/run/CompanionView.tsx` | 화면마다 한 갈래. 상태·기록·인식은 모르고 받은 것만 그린다 |
+| 기록·인식 연결 | `components/planner/run/CompanionPanel.tsx` | 되돌리기, 자동 기록, 창 열기. 보일 데이터(`PipView`)를 만들어 넘긴다 |
+
+**미리보기:** 개발 서버의 `/ko/planner/run/pip-preview`. 실제 기프트·팩으로 만든 화면(층, 하드 층, 보너스 못 읽음, 테마팩 선택, 계획 없음, 선택지 방, 런 시작)을 PiP 크기 넷(320×280, 380×420, 480×640, 640×420)으로 나란히 그린다. 게임이나 화면 연결 없이 PiP를 고친 결과를 바로 본다. 배포에서는 열리지 않는다.
+
 ## 편성 안내, 합성 순서 (2026-10-22)
 
 - **편성 화면**: 장면이 `run_setup`(또는 시작 단계가 끝난 뒤의 `battle_setup`)이면 PiP에 수감자 순서대로 실행 편성의 인격 얼굴과 편성 번호를 보이고, 편성 코드 복사 버튼을 둔다(`CompanionFormation`). `FORMATION_SCENES`(run_setup·battle_setup)이면 런 시작 단계에서도 편성을 보인다. 2026-10-23 녹화를 0.5초마다 판독해 보니 지금 순서는 던전 입장(run_setup) → 편성(battle_setup) → 별의 가호 → 시작 기프트(gift_acquired·start_gift) → 관측(start_gift)이었고, 시작 기프트 화면이 battle_setup으로 읽힌 적은 없었다.
 - **별의 가호 화면**: 2026-10 화면은 파란 카드라 장면 모델(준비 화면 학습 사진 14장, 모두 옛 빨간 화면)이 놓친다. OCR이 "별의 가호"와 "입장"을 한 번에 읽으면 4초 동안 `start_gift`(`BLESSING_SCENE`)로 둔다(`lib/vision/blessing-screen.ts`). 처음에는 `run_setup`으로 두었는데, 별의 가호가 편성 다음에 오면서 편성이 끝난 뒤에도 PiP에 편성이 다시 뜨고 4초를 더 남았다(2026-10-23 수정). 새 화면 녹화를 받으면 장면 모델에 넣어 다시 학습한다.
+- **테마팩 클리어 보너스** (2026-11-05): 테마팩 선택 화면에서 카드마다 아래 CLEAR BONUS 줄의 기프트를 1초마다 읽는다(`lib/vision/clear-bonus.ts`, 워커 `clear-bonus`). 그 층 보스를 이기면 이 중 1개(노말), 하드 이상은 2개를 고른다. 카드는 1920×1080 UI에서 x 964를 가운데로 315.8 간격의 고정 자리(3·5장은 홀수 자리, 4장은 짝수 자리)에 서고, 줄 위쪽 1픽셀 선(y 807, 노말 파랑·하드 빨강)이 있는 자리만 본다. 아이콘은 카드 가운데 기준 65.2 간격, 중심 y 843.6, 한 변 64.9; 반 칸씩 일곱 자리를 아이콘 분류기로 읽고 강한 판독이 많은 배치(4·3·2·1개)를 고른다. 두 번 연달아 같으면 둔다. 팩 이름은 같은 화면 OCR의 카드 이름 줄(y 640~730)로 카드와 묶고, 이름이 없으면 기프트가 모두 그 팩 풀 안인 카드가 하나뿐일 때 그 카드로 본다. 고른 팩이 정해지면 그 층 기록(`floorLogs[].clearBonus`)에 넣고, PiP 층 화면에 클리어 보너스 줄과 "상점에서 사지 않아도 돼요" 안내(계획 기프트가 고를 수 있는 수보다 많으면 나머지는 사라는 안내), 기프트 칸에 "클리어 보너스" 표시를 단다. 선택 화면에서는 계획 기프트가 클리어 보너스에 있는 카드를 보여 준다. 검증: 라벨 붙은 표본 350장(1280×720·1366×768·1440×1080·1920×1080) 원본과 1280 JPEG 75 모두 349장 정확, 1장 하나 모자람, 틀린 판독 0. 실제 녹화(하드, 빨간 선)에서도 읽히는 것을 눈으로 확인했다(정답 라벨 없음).
 - **합성 순서**(`fusionGuide`): 지금 만들 수 있는 조합을 최종 기프트, 최종 레시피 재료, 몰입 키워드, 그 외(등급 순)로 두고, 재료 1개가 모자란 최종 기프트를 따로 보인다. 런 현황과 PiP 합성 화면이 같이 쓴다.
 - **기프트 추천은 뺐다**(2026-10-23): 상점·보상·이벤트 화면에 읽힌 기프트를 점수로 골라 보이던 추천 줄과 공개 플랜 기프트 통계 API를 지웠다. 화면에 보인 것 중에서 고르다 보니 초보자가 플랜과 상관없는 기프트를 추천으로 오해했다.
 - **플랜 층 메모**(2026-10-23, `CompanionPlanMemo`): 플랜으로 시작한 런의 PiP 층 화면과 시작 기프트 화면에 그 층의 플랜 메모를 최대 3줄로 보인다. `noteLabelPreview`가 메모를 한 줄로 펴면서 기프트 블록(블록 문서의 `noteAsset`, 글 메모의 `{{gift:…}}`)을 `[g:이름]`으로 바꾸고, 플랜 카드와 같은 `NoteRenderer giftLabel`이 기프트 라벨로 그린다. 스킬·패시브 카드와 영상·표는 뺀다.

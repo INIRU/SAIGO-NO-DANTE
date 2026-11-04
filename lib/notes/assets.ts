@@ -11,3 +11,10 @@ export type NoteAssetData = {
 export function assetName(a: NoteAssetData, lang: string) {
   return (lang === 'en' ? a.name_en : lang === 'ja' ? a.name_jp : a.name) || a.name
 }
+
+/** A gift row (the planner's GiftData) as a preview card's asset: its name, art, grade, keyword and base effect. */
+export function giftPreviewAsset(gift: { game_id: number; name: string; name_en?: string | null; name_jp?: string | null; image_url?: string | null
+  grade?: string | null; keyword?: string | null; effect_base?: string | null; effect_base_en?: string | null; effect_base_jp?: string | null }): NoteAssetData {
+  return { id: String(gift.game_id), kind: 'gift', name: gift.name, name_en: gift.name_en, name_jp: gift.name_jp, image_url: gift.image_url,
+    grade: gift.grade, keyword: gift.keyword, description: gift.effect_base, description_en: gift.effect_base_en, description_jp: gift.effect_base_jp }
+}

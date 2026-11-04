@@ -7,6 +7,7 @@
  */
 import { AUTO_ACQUIRE_EXCLUDED_GIFT_IDS } from './popup-evidence'
 import { SAMPLE_DIAGNOSIS_MAX } from './assist-samples'
+import { isStrongRead } from './strong-read'
 
 const normalized = (text: string) => text.normalize('NFKC').replace(/\s+/g, '')
 const EGO = 'E\\.?G\\.?[O0]\\.?'
@@ -270,7 +271,7 @@ export const FUSION_VESTIGE_ID = '9991'
 export const vestigeGroup = (id: string) => AUTO_ACQUIRE_EXCLUDED_GIFT_IDS.has(id) ? FUSION_VESTIGE_ID : id
 /** One read is enough when the icon is well above acceptance, or far ahead of every other icon (0 wrong on labelled frames). */
 const strongRead = (slot: { score: number; margin: number }) =>
-  (slot.score >= 0.85 && slot.margin >= 0.25) || (slot.score >= 0.75 && slot.margin >= 0.3)
+  isStrongRead(slot) || (slot.score >= 0.75 && slot.margin >= 0.3)
 const acceptedRead = (slot: { score: number; margin: number }) => slot.score >= 0.8 && slot.margin >= 0.2
 /**
  * Only as one half of a wheel + dialog agreement, two independent renderings of the same material. Thin, dark icons

@@ -11,10 +11,11 @@ With --init-onnx the shipped model is kept and corrected with small steps: gifts
 and the scores of the gifts it already knows stay as the app's thresholds expect. Each epoch also reports how sure the model
 is of another gift when the true one is taken away (an icon it does not know), at the app's logit scale.
 --real-train adds labelled real crops ([{file, id}] in <data>/real, checked by eye) to every epoch: the gifts real captures
-read weakly (dark drawings on the dark slot) are corrected from their own crops. --dark instead draws dark icons more often,
-dims a third of all icons and labels 3% as blank ghosts (1-5% opacity, no ring); in 2026-10-07 trials it read the held-out
-dark gifts but lowered another dark gift (9026) or a faded one, and was not shipped.
-Writes <out>/icon-classifier.onnx, <out>/icon-labels.json and <out>/report.json. Assets: catalog icons of the site,
+read weakly (dark drawings on the dark slot) are corrected from their own crops. --arch mnv4s trains timm MobileNetV4-Conv-Small
+(the shipped model since 2026-11-04b); --init-pt continues such a run, with another --seed so its synthetic slots are new.
+The last epoch is exported (the schedule ends with tiny steps); the held-out real crops are scored every epoch and never
+used to pick one, so the numbers reported for them are not chosen on them.
+Writes <out>/icon-classifier.onnx (checked against PyTorch), <out>/icon-labels.json and <out>/report.json. Assets: catalog icons of the site,
 public/assets/ego-stages (grade numerals) and the site's keyword icons; slot backgrounds are crops of the maintainer's
 captures and are not distributed.
 """
@@ -28,22 +29,15 @@ from torch import nn
 from torch.utils.data import ConcatDataset, DataLoader, Dataset
 from torchvision import models
 
-SIZE = 96
-VESTIGES = {'9991', '9992', '9993', '9994', '9995'}
+from assist_common import ICON_SIZE as SIZE, IMAGENET_MEAN as MEAN, IMAGENET_STD as STD, LOGIT_SCALE, STRONG_LEAD, STRONG_P, export_onnx, from_onnx, group, mnv4s
+
 GLYPH = {'1': (103, 32, 120, 158), '2': (82, 35, 140, 156), '3': (61, 32, 162, 159), '4': (45, 32, 181, 158), '5': (63, 35, 155, 158)}
 KEYWORD = {'화상': 'burn', '출혈': 'bleed', '진동': 'tremor', '파열': 'rupture', '침잠': 'sinking', '호흡': 'breath', '충전': 'charge',
            '참격': 'slash', '관통': 'pierce', '타격': 'blunt'}
-MEAN = np.array([0.485, 0.456, 0.406], np.float32)
-STD = np.array([0.229, 0.224, 0.225], np.float32)
-
-
-def group(gift_id):
-    return '9991' if gift_id in VESTIGES else gift_id
-
 
 class Assets:
     def __init__(self, data, stages):
-        gifts = json.load(open(data / 'gifts.json'))
+        gifts = json.load(open(data / 'gifts.json', encoding='utf-8'))
         self.gifts = {str(g['game_id']): g for g in gifts if (data / 'icons' / f"{g['game_id']}.webp").exists()}
         self.icons = {gid: Image.open(data / 'icons' / f'{gid}.webp').convert('RGBA') for gid in self.gifts}
         self.glyphs = {grade: Image.open(stages / f'{grade}.webp').convert('RGBA').crop((x0, y0, x1 + 1, y1 + 1))
@@ -57,13 +51,6 @@ class Assets:
         self.members = {}
         for gid in self.gifts:
             self.members.setdefault(group(gid), []).append(gid)
-        # Sampling weight per class: up to 3x for the darkest icons (mean brightness of the opaque pixels), 1x for blank.
-        def brightness(gid):
-            pixels = np.asarray(self.icons[gid].resize((48, 48)), np.float32)
-            opaque = pixels[..., 3] > 128
-            return float(pixels[..., :3][opaque].mean()) if opaque.any() else 128.0
-        self.weights = [1.0 if name == 'blank' else 1 + 2 * max(0.0, min(1.0, (110 - min(brightness(gid) for gid in self.members[name])) / 70))
-                        for name in self.classes]
 
 
 def degrade(image, rng):
@@ -82,7 +69,7 @@ def degrade(image, rng):
     return image
 
 
-def synth(assets, label, rng, ghost=False, dark=False):
+def synth(assets, label, rng):
     slot = rng.choice(assets.backgrounds).copy()
     if rng.random() < 0.5:
         slot = slot.transpose(Image.FLIP_LEFT_RIGHT)
@@ -91,8 +78,7 @@ def synth(assets, label, rng, ghost=False, dark=False):
         gift = assets.gifts[gid]
         region = SIZE / 1.3
         layer = Image.new('RGBA', (SIZE, SIZE), (0, 0, 0, 0))
-        # A ghost has no ring yet: the ring and numeral of a filled slot are what tell a dark icon from one fading in.
-        if not ghost and rng.random() < 0.8:
+        if rng.random() < 0.8:
             ring_side = int(round(SIZE * rng.uniform(1.0, 1.25)))
             ring = assets.ring.resize((ring_side, ring_side), Image.LANCZOS)
             alpha = np.asarray(ring.getchannel('A'), np.float32) * rng.uniform(0.45, 1.0)
@@ -103,8 +89,6 @@ def synth(assets, label, rng, ghost=False, dark=False):
             slot = base.convert('RGB')
         side = int(round(region * rng.uniform(0.86, 1.14)))
         icon = assets.icons[gid].resize((side, side), Image.LANCZOS)
-        if dark and rng.random() < 0.3:
-            icon = ImageEnhance.Brightness(icon).enhance(rng.uniform(0.45, 0.85))
         shift = region * 0.06
         layer.alpha_composite(icon, (int(round((SIZE - side) / 2 + rng.gauss(0, shift))), int(round((SIZE - side) / 2 + rng.gauss(0, shift)))))
         edge = (SIZE - region) / 2
@@ -122,12 +106,8 @@ def synth(assets, label, rng, ghost=False, dark=False):
             y = int(SIZE - edge - badge_side + region * rng.uniform(-0.05, 0.25))
             layer.alpha_composite(assets.badges[slug].resize((badge_side, badge_side), Image.LANCZOS),
                                   (min(SIZE - badge_side, x), min(SIZE - badge_side, y)))
-        # Dialog slots fade in: the whole slot content at a fraction of its opacity. A ghost (the first moment of it) shows
-        # too little to name: such a slot is trained as blank, or a dark icon would be read into it.
-        if ghost:
-            alpha = np.asarray(layer.getchannel('A'), np.float32) * rng.uniform(0.01, 0.05)
-            layer.putalpha(Image.fromarray(alpha.astype(np.uint8)))
-        elif rng.random() < 0.25:
+        # Dialog slots fade in: the whole slot content at a fraction of its opacity.
+        if rng.random() < 0.25:
             alpha = np.asarray(layer.getchannel('A'), np.float32) * rng.uniform(0.2, 0.9)
             layer.putalpha(Image.fromarray(alpha.astype(np.uint8)))
         base = slot.convert('RGBA')
@@ -147,18 +127,16 @@ def to_tensor(image):
 
 
 class Synthetic(Dataset):
-    def __init__(self, assets, length, seed, dark=False):
-        self.assets, self.length, self.seed, self.dark = assets, length, seed, dark
+    def __init__(self, assets, length, seed):
+        self.assets, self.length, self.seed = assets, length, seed
 
     def __len__(self):
         return self.length
 
     def __getitem__(self, index):
         rng = random.Random(self.seed * 1_000_003 + index)
-        label = rng.choices(range(len(self.assets.classes)), self.assets.weights)[0] if self.dark else rng.randrange(len(self.assets.classes))
-        ghost = self.dark and self.assets.classes[label] != 'blank' and rng.random() < 0.03
-        image = synth(self.assets, self.assets.classes[label], rng, ghost, self.dark)
-        return to_tensor(image), self.assets.classes.index('blank') if ghost else label
+        label = rng.randrange(len(self.assets.classes))
+        return to_tensor(synth(self.assets, self.assets.classes[label], rng)), label
 
 
 class RealCrops(Dataset):
@@ -191,9 +169,6 @@ def evaluate(model, device, real, classes, data):
     return rows
 
 
-LOGIT_SCALE = 1.5  # lib/vision/scene-worker.ts scales the logits by this before the softmax
-
-
 def calibration(model, device, real, classes, data):
     """At the app's logit scale: slots it reads strongly (0.85, lead 0.25), and the top score left when the true class is removed."""
     index = {name: i for i, name in enumerate(classes)}
@@ -205,7 +180,7 @@ def calibration(model, device, real, classes, data):
     model.train()
     truth = torch.tensor([index[group(row['id'])] for row in rows])
     top = torch.softmax(logits, 1).topk(2, 1)
-    strong = int(((top.indices[:, 0] == truth) & (top.values[:, 0] >= 0.85) & (top.values[:, 0] - top.values[:, 1] >= 0.25)).sum())
+    strong = int(((top.indices[:, 0] == truth) & (top.values[:, 0] >= STRONG_P) & (top.values[:, 0] - top.values[:, 1] >= STRONG_LEAD)).sum())
     logits[torch.arange(len(rows)), truth] = -1e9
     other = torch.softmax(logits, 1)
     other[:, index['blank']] = 0
@@ -235,16 +210,25 @@ def main():
     parser.add_argument('--init-labels', type=Path)
     parser.add_argument('--real-train', type=Path)
     parser.add_argument('--real-repeat', type=int, default=60)
-    parser.add_argument('--dark', action='store_true')
+    parser.add_argument('--seed', type=int, default=0, help='synthetic slots and their damage; give a continued run (--init-pt) another one')
+    parser.add_argument('--init-pt', type=Path, help='with --arch mnv4s: start from this state dict (a best.pt of an earlier run, same classes)')
+    parser.add_argument('--arch', choices=('mnv3s', 'mnv4s'), default='mnv3s',
+                        help='mnv4s: timm MobileNetV4-Conv-Small (ImageNet, e2400 r224) trained from ImageNet (no --init-onnx)')
     args = parser.parse_args()
-    torch.manual_seed(0)
-    random.seed(0)
+    torch.manual_seed(args.seed)
+    random.seed(args.seed)
     assets = Assets(args.data, args.stages)
-    real = json.load(open(args.data / 'real.json'))
-    device = torch.device('mps' if torch.backends.mps.is_available() else 'cpu')
-    if args.init_onnx:
-        from train_scene import from_onnx
-        known = json.load(open(args.init_labels))
+    real = json.load(open(args.data / 'real.json', encoding='utf-8'))
+    device = torch.device('cuda' if torch.cuda.is_available() else 'mps' if torch.backends.mps.is_available() else 'cpu')
+    if args.arch == 'mnv4s':
+        if args.init_onnx:
+            parser.error('--init-onnx rebuilds a MobileNetV3 model; continue a MobileNetV4 run with --init-pt')
+        model = mnv4s(len(assets.classes), pretrained=not args.init_pt)
+        if args.init_pt:
+            model.load_state_dict(torch.load(args.init_pt, map_location='cpu'))
+            print('started from', args.init_pt, flush=True)
+    elif args.init_onnx:
+        known = json.load(open(args.init_labels, encoding='utf-8'))
         model = from_onnx(args.init_onnx, len(known))
         # Classes keep their rows; a gift the shipped model does not know starts from the average row.
         old, head = model.classifier[3], nn.Linear(model.classifier[3].in_features, len(assets.classes))
@@ -263,20 +247,19 @@ def main():
         model.classifier[3] = nn.Linear(model.classifier[3].in_features, len(assets.classes))
     model.to(device)
     optimizer = torch.optim.AdamW(model.parameters(), lr=1e-3, weight_decay=1e-4)
-    real_train = json.load(open(args.real_train)) if args.real_train else []
+    real_train = json.load(open(args.real_train, encoding='utf-8')) if args.real_train else []
     steps = args.epochs * math.ceil((args.per_epoch + len(real_train) * args.real_repeat) / args.batch)
-    scheduler = torch.optim.lr_scheduler.OneCycleLR(optimizer, max_lr=1e-4 if args.init_onnx else 2e-3, total_steps=steps, pct_start=0.1)
+    scheduler = torch.optim.lr_scheduler.OneCycleLR(optimizer, max_lr=1e-4 if args.init_onnx or args.init_pt else 2e-3, total_steps=steps, pct_start=0.1)
     loss_fn = nn.CrossEntropyLoss(label_smoothing=0.1)
     args.out.mkdir(parents=True, exist_ok=True)
     print('classes', len(assets.classes), 'backgrounds', len(assets.backgrounds), 'real', len(real), 'device', device, flush=True)
-    best, history = (-1, 0, 0.0), []
-    # Held-out crops of the gifts real captures read weakly: reported apart, never used to pick the epoch.
-    hard = [row for row in real if row['kind'] == 'hard']
+    history = []
     for epoch in range(args.epochs):
         started, total, count = time.time(), 0.0, 0
-        samples = Synthetic(assets, args.per_epoch, epoch, args.dark)
+        seed = args.seed * 1000 + epoch
+        samples = Synthetic(assets, args.per_epoch, seed)
         if args.real_train:
-            samples = ConcatDataset([samples, RealCrops(args.data, real_train, assets.classes, args.real_repeat, epoch)])
+            samples = ConcatDataset([samples, RealCrops(args.data, real_train, assets.classes, args.real_repeat, seed)])
         loader = DataLoader(samples, batch_size=args.batch, shuffle=bool(args.real_train), num_workers=args.workers, persistent_workers=False)
         for images, labels in loader:
             images, labels = images.to(device), labels.to(device)
@@ -289,24 +272,18 @@ def main():
             count += len(labels)
         rows = evaluate(model, device, real, assets.classes, args.data)
         score = summary(rows)
-        history.append({'epoch': epoch, 'loss': total / count, 'real': score, 'calibration': calibration(model, device, [row for row in real if row['kind'] != 'hard'], assets.classes, args.data),
-                        'hardStrong': calibration(model, device, hard, assets.classes, args.data)['strong'] if hard else None,
+        history.append({'epoch': epoch, 'loss': total / count, 'real': score, 'calibration': calibration(model, device, real, assets.classes, args.data),
                         'seconds': round(time.time() - started)})
         print(json.dumps(history[-1], ensure_ascii=False), flush=True)
-        # Chosen on the strong labels only (mid, hard and video rows stay held out); among equals, the epoch that is least
-        # sure of another gift when the true one is taken away.
-        rank = (score.get('strong', {}).get('top1', 0), -history[-1]['calibration']['unknownOver0.6'], -history[-1]['calibration']['unknownMax'])
-        if rank >= best:
-            best = rank
-            torch.save(model.state_dict(), args.out / 'best.pt')
-            json.dump(rows, open(args.out / 'real-predictions.json', 'w'), ensure_ascii=False)
-    model.load_state_dict(torch.load(args.out / 'best.pt', map_location=device))
-    model.eval().cpu()
-    torch.onnx.export(model, torch.zeros(1, 3, SIZE, SIZE), args.out / 'icon-classifier.onnx', input_names=['input'], output_names=['logits'],
-                      dynamic_axes={'input': {0: 'batch'}, 'logits': {0: 'batch'}}, opset_version=17)
-    json.dump(assets.classes, open(args.out / 'icon-labels.json', 'w'))
+    # the last epoch, kept as is (best.pt keeps its old name: --init-pt continues from it)
+    torch.save(model.state_dict(), args.out / 'best.pt')
+    json.dump(rows, open(args.out / 'real-predictions.json', 'w', encoding='utf-8'), ensure_ascii=False)
+    sample = torch.stack([to_tensor(Image.open(args.data / 'real' / row['file']).convert('RGB').resize((SIZE, SIZE))) for row in real[:8]]) if real else torch.zeros(1, 3, SIZE, SIZE)
+    parity = export_onnx(model, sample, args.out / 'icon-classifier.onnx', 'input', tolerance=1e-3)
+    json.dump(assets.classes, open(args.out / 'icon-labels.json', 'w', encoding='utf-8'))
     json.dump({'history': history, 'classes': len(assets.classes), 'input': [SIZE, SIZE], 'crop': '1.3x the slot region',
-               'mean': MEAN.tolist(), 'std': STD.tolist()}, open(args.out / 'report.json', 'w'), indent=1)
+               'mean': MEAN.tolist(), 'std': STD.tolist(), 'arch': args.arch, 'seed': args.seed, 'selection': 'last epoch',
+               'initialization': str(args.init_pt or args.init_onnx or 'ImageNet'), 'onnx_max_abs_error': parity}, open(args.out / 'report.json', 'w', encoding='utf-8'), indent=1)
 
 
 if __name__ == '__main__':

@@ -10,6 +10,8 @@ vi.mock('@/lib/hooks/useCompanionWindow', () => ({
   useCompanionWindow: () => ({ container: null, open: async () => {}, size: { width: 360, height: 480 }, actualSize: { width: 360, height: 480 }, updateSize: () => {} }),
 }))
 vi.mock('@/components/ui/GiftArtwork', () => ({ default: () => <span data-test-artwork /> }))
+// the site's preview card (hover) needs the router; the cells are what these tests read
+vi.mock('@/components/notes/NotePreviewCard', () => ({ default: ({ children }: { children: React.ReactNode }) => <>{children}</> }))
 vi.mock('@/components/ui/ImageWithFallback', () => ({ default: () => <span data-test-poster /> }))
 vi.mock('@/components/decks/NoteChips', () => ({ NoteRenderer: () => null }))
 

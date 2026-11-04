@@ -184,11 +184,69 @@ it('names an event from two of its own unique choices or body windows, and absta
       { id: 'o2', eventId: 'other', texts: ['종을 울린다'] },
     ],
   }
-  expect(eventScreenEvidence(document('잠시 쉬어간다 무시하고 떠난다.'), catalog).choiceEventIds).toEqual([])
+  // both options of rest on screen, one shared with other: only rest has both (2026-11-04; it waited for the body text before)
+  expect(eventScreenEvidence(document('잠시 쉬어간다 무시하고 떠난다.'), catalog).choiceEventIds).toEqual(['rest'])
   expect(eventScreenEvidence(document('잠시 쉬어간다 종을 울린다'), catalog).choiceEventIds).toEqual([])
   expect(eventScreenEvidence(document('낡은 벤치 위에 누군가 남기고 간 담요'), catalog).bodyEventIds).toEqual(['rest'])
   expect(eventScreenEvidence(document('낡은 벤치 위에 누군'), catalog).bodyEventIds).toEqual([])
   expect(eventScreenEvidence(document('낡은 벤치 위에 누군가 남기고 간 담요 젖은 골목 끝에서 희미한 종소리가 반복해서'), catalog).bodyEventIds).toEqual([])
   const pair: OcrCatalog = { ...catalog, choices: [...catalog.choices, { id: 'r3', eventId: 'rest', texts: ['담요를 덮는다'] }] }
   expect(eventScreenEvidence(document('잠시 쉬어간다 담요를 덮는다'), pair).choiceEventIds).toEqual(['rest'])
+})
+
+it('names the choice taken from the result text only it has within its event', () => {
+  const taken: OcrCatalog = {
+    gifts: [],
+    events: [{ id: 'gate', texts: ['녹슨 철문 앞에 낡은 자물쇠가 매달려 있다.'] }],
+    choices: [
+      { id: 'force', eventId: 'gate', texts: ['문을 부순다'], resultTexts: ['쇠가 비명을 지르며 문이 안쪽으로 쓰러졌다. 먼지가 가라앉는다.'] },
+      { id: 'leave', eventId: 'gate', texts: ['돌아간다'], resultTexts: ['발걸음을 돌려 어두운 복도로 되돌아갔다. 먼지가 가라앉는다.'] },
+    ],
+  }
+  expect(eventScreenEvidence(document('쇠가 비명을 지르며 문이 안쪽으로 쓰러졌다.'), taken).outcomeChoiceIds).toEqual(['force'])
+  // a sentence both results end with names neither
+  expect(eventScreenEvidence(document('먼지가 가라앉는다.'), taken).outcomeChoiceIds).toEqual([])
+})
+
+it('an option with several possible results is named by the text its rows share (left panel on the result page)', () => {
+  const opening = '손잡이를 붙잡고 온몸의 무게를 실어 힘껏 당겼다.'
+  const rows: OcrCatalog = {
+    gifts: [],
+    events: [{ id: 'gate', texts: ['녹슨 철문 앞에 낡은 자물쇠가 매달려 있다.'] }],
+    choices: [
+      { id: 'pull-ok', eventId: 'gate', option: 0, texts: ['문을 당긴다'], resultTexts: [`${opening} 문이 열렸다.`] },
+      { id: 'pull-no', eventId: 'gate', option: 0, texts: ['문을 당긴다'], resultTexts: [`${opening} 문은 꿈쩍도 하지 않았다.`] },
+      { id: 'leave', eventId: 'gate', option: 1, texts: ['돌아간다'], resultTexts: ['발걸음을 돌려 어두운 복도로 되돌아갔다.'] },
+    ],
+  }
+  // the opening both rows of option 0 share, typed out before the outcome: option 0
+  expect(eventScreenEvidence(document(opening), rows).outcomeChoiceIds).toEqual(['pull-ok', 'pull-no'])
+  // without options known, rows shared text with each other and named nothing
+  const unknown = { ...rows, choices: rows.choices.map(({ option: _, ...choice }) => choice) }
+  expect(eventScreenEvidence(document(opening), unknown).outcomeChoiceIds).toEqual([])
+})
+
+it('names the event whose choices are all on screen though one name is shared with another event', () => {
+  const shared: OcrCatalog = {
+    gifts: [], events: [{ id: 'a', texts: ['서류 더미가 쌓여 있다.'] }, { id: 'b', texts: ['낯선 이가 말을 건다.'] }],
+    choices: [
+      { id: 'a1', eventId: 'a', texts: ['사실대로 말한다.'] }, { id: 'a2', eventId: 'a', texts: ['아무것도 아닌 서류라고 한다.'] },
+      { id: 'b1', eventId: 'b', texts: ['사실대로 말한다.'] }, { id: 'b2', eventId: 'b', texts: ['자리를 피한다.'] },
+    ],
+  }
+  expect(eventScreenEvidence(document('사실대로 말한다. 아무것도 아닌 서류라고 한다.'), shared).choiceEventIds).toEqual(['a'])
+  // the shared name alone, or names of two events: nothing
+  expect(eventScreenEvidence(document('사실대로 말한다.'), shared).choiceEventIds).toEqual([])
+  expect(eventScreenEvidence(document('아무것도 아닌 서류라고 한다. 자리를 피한다.'), shared).choiceEventIds).toEqual([])
+})
+
+it('the terminal’s own order on a shared screen is no button of the game’s list', () => {
+  const catalog: OcrCatalog = {
+    gifts: [], events: [{ id: 'clock', texts: ['시간을 알리는 종이 넘어질 듯 젖혀졌다.'] }],
+    choices: [{ id: 'c0', eventId: 'clock', texts: ['균형을 잡도록 도와준다.'] }, { id: 'c1', eventId: 'clock', texts: ['더욱 젖혀버린다.'] }],
+  }
+  const words = (lines: [string, number][]) => ({ text: lines.map(([text]) => text).join(String.fromCharCode(10)),
+    words: lines.map(([text, left], i) => ({ text, confidence: 90, left, top: 300 + i * 176, width: 300, height: 38 })) })
+  const boxes = eventScreenEvidence(words([['균형을 잡도록 도와준다.', 1101], ['더욱 젖혀버린다.', 1101], ['【선택지 「더욱 젖혀버린다」. 골라라】', 120]]), catalog).choiceBoxes
+  expect(boxes?.map(box => [box.choiceId, box.left])).toEqual([['c0', 1101], ['c1', 1101]])
 })
