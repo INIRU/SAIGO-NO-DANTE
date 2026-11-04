@@ -168,30 +168,34 @@ export default function PrescriptClient({ themes, gifts, recipes, events, eventC
   const themeName = (id: string) => { const theme = themes.find(item => item.id === id); return theme ? (lang === 'en' && theme.name_en) || (lang === 'ja' && theme.name_jp) || theme.name : id }
   // the names and numbers a prescript points at are marked (\u0001…\u0002) for the stage to set apart
   const em = (value: string | number) => `\u0001${value}\u0002`
+  // a gift (its image and keyword colour on the stage) and a keyword (its colour)
+  const gem = (id: number) => `\u0001\u0007g:${id}\u0007${giftName(id)}\u0002`
+  const kem = (keyword: string) => `\u0001\u0007k:${keyword}\u0007${giftKeywordLabel(keyword, lang)}\u0002`
+  const giftLook = useCallback((id: number) => { const gift = giftMap.get(id); return gift ? { image: gift.image_url, keyword: gift.keyword } : undefined }, [giftMap])
   const label = (goal: PrescriptGoal) => {
     switch (goal.kind) {
-      case 'sell-keyword': return t('goal_sell_keyword', { keyword: em(giftKeywordLabel(goal.keyword, lang)) })
+      case 'sell-keyword': return t('goal_sell_keyword', { keyword: kem(goal.keyword) })
       case 'sell-tier': return t('goal_sell_tier', { tier: em(goal.tier) })
-      case 'fuse-gift': return t('goal_fuse_gift', { gift: em(giftName(goal.giftId)) })
+      case 'fuse-gift': return t('goal_fuse_gift', { gift: gem(goal.giftId) })
       case 'fuse-tier': return t('goal_fuse_tier', { tier: em(goal.tier) })
-      case 'get-keyword': return t('goal_get_keyword', { keyword: em(giftKeywordLabel(goal.keyword, lang)), count: em(goal.count) })
+      case 'get-keyword': return t('goal_get_keyword', { keyword: kem(goal.keyword), count: em(goal.count) })
       case 'no-sale': return t('goal_no_sale')
       case 'pick-theme': return t('goal_pick_theme', { floor: em(goal.floor), theme: em(themeName(goal.themeId)) })
-      case 'buy-gift': return t('goal_buy_gift', { gift: em(giftName(goal.giftId)) })
-      case 'buy-leftmost': return t('goal_buy_leftmost', { gift: em(giftName(goal.giftId)) })
+      case 'buy-gift': return t('goal_buy_gift', { gift: gem(goal.giftId) })
+      case 'buy-leftmost': return t('goal_buy_leftmost', { gift: gem(goal.giftId) })
       case 'no-answer': return t('goal_no_answer')
       case 'swap-identity': {
         const sinner = sinners.find(item => item.id === goal.sinner)
         const name = (lang === 'en' && sinner?.name_en) || (lang === 'ja' && sinner?.name_jp) || sinner?.name_kr || goal.sinner
         return t('goal_swap_identity', { sinner: em(name) })
       }
-      case 'formation-keyword': return t('goal_formation_keyword', { keyword: em(giftKeywordLabel(goal.keyword, lang)), count: em(goal.count) })
+      case 'formation-keyword': return t('goal_formation_keyword', { keyword: kem(goal.keyword), count: em(goal.count) })
       case 'field-identity': return t(goal.keep ? 'goal_field_identity_keep' : 'goal_field_identity', { ...identityWords(goal.identityId),
-        keywords: em(goal.keywords.map(keyword => giftKeywordLabel(keyword, lang)).join('·')) })
+        keywords: goal.keywords.map(kem).join('·') })
       case 'front-identity': return t('goal_front_identity', identityWords(goal.identityId))
       case 'start-formation': return t('goal_start_formation', { three: em(START_FORMATION_POINTS[3]), two: em(START_FORMATION_POINTS[2]), one: em(START_FORMATION_POINTS[1]) })
-      case 'start-gift': return t('goal_start_gift', { gift: em(giftName(goal.giftId)) })
-      case 'observe-gift': return t('goal_observe_gift', { gift: em(giftName(goal.giftId)) })
+      case 'start-gift': return t('goal_start_gift', { gift: gem(goal.giftId) })
+      case 'observe-gift': return t('goal_observe_gift', { gift: gem(goal.giftId) })
       case 'event-choice': {
         const choice = recognizable.choices.find(item => item.event_id === goal.eventId && item.option_index === goal.option)
         const text = choice ? (lang === 'en' && choice.message_en) || (lang === 'ja' && choice.message_jp) || choice.message || '' : String(goal.option + 1)
@@ -226,7 +230,7 @@ export default function PrescriptClient({ themes, gifts, recipes, events, eventC
   const togglePip = () => { if (container) close(); else open().catch(() => setPipFailed(true)) }
   const captureActive = capture.status === 'running' || capture.status === 'loading' || capture.status === 'requesting'
   const stage = (pip: boolean) => <PrescriptStage run={prescript.run} offers={prescript.offers} label={label} onChoose={prescript.choose} canChoose={prescript.canChoose}
-    onReroll={prescript.reroll} onRefuse={prescript.refuse} pip={pip} preview={pip ? null : preview} />
+    onReroll={prescript.reroll} onRefuse={prescript.refuse} pip={pip} preview={pip ? null : preview} giftLook={giftLook} />
 
   return <div className={styles.root} data-prescript-page>
     <PrescriptRules />

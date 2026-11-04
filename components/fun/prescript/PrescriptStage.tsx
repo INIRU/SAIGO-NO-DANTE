@@ -1,10 +1,11 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { createContext, useContext, useEffect, useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { gradeOf, prescriptPoints, type Prescript, type PrescriptCard, type PrescriptGoal, type PrescriptRun, type PrescriptScope } from '@/lib/fun/prescript'
 import type { PrescriptOffer } from '@/lib/hooks/usePrescript'
 import styles from './prescript.module.css'
+import { getGiftKeywordColor } from '@/lib/constants/gift'
 
 const ASSET = '/assets/fun/prescript'
 const POINTS = [0, 5, 10, 20, 35, 60]
@@ -103,15 +104,26 @@ function useNewPrescripts(run: PrescriptRun, which: (p: Prescript) => boolean, m
 const settledShown = (p: Prescript) => p.status !== 'active' && p.goal.kind !== 'no-answer'
 const roomArrived = (p: Prescript) => (p.scope === 'event' || p.scope === 'start' || p.penance === true) && p.status === 'active'
 
-interface Part { text: string; em: boolean }
-/** A label's marked names and numbers (\u0001…\u0002) as parts to set apart. */
-const partsOf = (text: string): Part[] => text.split(/(\u0001[^\u0002]*\u0002)/).filter(Boolean)
-  .map(piece => piece.startsWith('\u0001') ? { text: piece.slice(1, -1), em: true } : { text: piece, em: false })
-const plain = (text: string) => text.replace(/[\u0001\u0002]/g, '')
+/** `gift`: a gift's id (its image goes before the name, the name in its keyword's colour); `keyword`: a keyword's own colour. */
+interface Part { text: string; em: boolean; gift?: number; keyword?: string }
+/** A label's marked names and numbers (\u0001…\u0002) as parts to set apart; a mark may open with a tag (\u0007g:id\u0007 or
+ * \u0007k:keyword\u0007) naming a gift or a keyword. */
+const partsOf = (text: string): Part[] => text.split(/(\u0001[^\u0002]*\u0002)/).filter(Boolean).map(piece => {
+  if (!piece.startsWith('\u0001')) return { text: piece, em: false }
+  const tag = /^\u0007([gk]):([^\u0007]*)\u0007/.exec(piece.slice(1, -1))
+  const text = tag ? piece.slice(1 + tag[0].length, -1) : piece.slice(1, -1)
+  return tag?.[1] === 'g' ? { text, em: true, gift: Number(tag[2]) } : tag ? { text, em: true, keyword: tag[2] } : { text, em: true }
+})
+const plain = (text: string) => text.replace(/\u0007[^\u0007]*\u0007/g, '').replace(/[\u0001\u0002]/g, '')
+
+/** A gift's image and keyword, by its id (the page's gift data). */
+export type GiftLook = (id: number) => { image: string | null; keyword: string | null } | undefined
+const GiftLookContext = createContext<GiftLook>(() => undefined)
 
 /** The prescript text itself: every letter a rolling glyph for `roll` ms, then changing into the text letter by letter over
  * `ms`; still without them, and at once when motion is reduced. */
 function Settle({ parts, roll, ms }: { parts: Part[]; roll?: number; ms?: number }) {
+  const look = useContext(GiftLookContext)
   const length = parts.reduce((sum, part) => sum + part.text.length, 0)
   const key = parts.map(part => part.text).join('\u0003')
   const [settled, setSettled] = useState(length)
@@ -137,6 +149,13 @@ function Settle({ parts, roll, ms }: { parts: Part[]; roll?: number; ms?: number
     // a rolling glyph is drawn over its own letter, kept but unseen, so the lines never change while the letters come
     const body = <>{part.text.slice(0, shown)}{[...part.text.slice(shown)].map((c, j) => c === ' ' ? c
       : <span key={j} className={styles.gli} style={{ backgroundPosition: cell() }}>{c}</span>)}</>
+    if (part.gift !== undefined) {
+      const gift = look(part.gift)
+      return <b key={i} className={styles.em} style={gift?.keyword ? { color: getGiftKeywordColor(gift.keyword) } : undefined}>
+        {/* eslint-disable-next-line @next/next/no-img-element -- the gift's icon from the game data, inline in the text */}
+        {gift?.image && <img className={styles.gimg} src={gift.image} alt="" loading="lazy" />}{body}</b>
+    }
+    if (part.keyword) return <b key={i} className={styles.em} style={{ color: getGiftKeywordColor(part.keyword) }}>{body}</b>
     return part.em ? <b key={i} className={styles.em}>{body}</b> : <span key={i}>{body}</span>
   })}</span>
 }
@@ -173,9 +192,15 @@ interface Props {
   pip?: boolean
   /** A verdict shown as a preview (the settings' test), over the stage like a real one. */
   preview?: Prescript | null
+  /** The gifts' images and keywords for the names in the text. */
+  giftLook?: GiftLook
 }
 
-export default function PrescriptStage({ run, offers, label, onChoose, canChoose, onReroll, onRefuse, pip = false, preview = null }: Props) {
+export default function PrescriptStage({ giftLook, ...props }: Props) {
+  return <GiftLookContext.Provider value={giftLook ?? (() => undefined)}><Stage {...props} /></GiftLookContext.Provider>
+}
+
+function Stage({ run, offers, label, onChoose, canChoose, onReroll, onRefuse, pip = false, preview = null }: Omit<Props, 'giftLook'>) {
   const t = useTranslations('prescriptMode')
   const offer = offers[0] ?? null
   const offerKey = offer ? `${offer.scope}:${offer.floor}:${offer.cards.map(c => JSON.stringify(c.goal)).join('|')}` : ''
