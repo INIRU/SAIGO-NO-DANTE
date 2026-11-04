@@ -26,7 +26,8 @@ export function sharpness(grey: ArrayLike<number>, width: number, height: number
 
 /**
  * Which kept frames to read again for [from, to]: the sharpest of each `bucketMs` slice of it, at most `max` of them
- * (the sharpest slices when there are more), in time order.
+ * (the latest slices when there are more: what was missed is what came last, a result page before the room was left;
+ * taking the sharpest slices instead passed over it in the live test), in time order.
  */
 export function pickFrames<T extends TapeEntry>(entries: readonly T[], from: number, to: number, max: number, bucketMs = 300): T[] {
   const best = new Map<number, T>()
@@ -36,7 +37,7 @@ export function pickFrames<T extends TapeEntry>(entries: readonly T[], from: num
     const held = best.get(slice)
     if (!held || entry.sharpness > held.sharpness) best.set(slice, entry)
   }
-  return [...best.values()].sort((a, b) => b.sharpness - a.sharpness).slice(0, Math.max(0, max)).sort((a, b) => a.at - b.at)
+  return [...best.values()].sort((a, b) => b.at - a.at).slice(0, Math.max(0, max)).sort((a, b) => a.at - b.at)
 }
 
 /** Entries kept at `now`: the last TAPE_MS. */

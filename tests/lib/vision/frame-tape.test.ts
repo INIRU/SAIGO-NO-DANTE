@@ -9,7 +9,7 @@ describe('the capture’s last seconds', () => {
     expect(sharpness(new Float32Array(32 * 18).fill(80), 32, 18)).toBe(0)
   })
 
-  it('takes the sharpest frame of each slice of the span, the sharpest slices first, in time order', () => {
+  it('takes the sharpest frame of each slice of the span, the latest slices first, in time order', () => {
     const entries = [
       { at: 0, sharpness: 5 }, { at: 100, sharpness: 9 }, { at: 200, sharpness: 1 }, // slice 0: 100
       { at: 300, sharpness: 2 }, { at: 400, sharpness: 3 },                              // slice 1: 400
@@ -17,7 +17,7 @@ describe('the capture’s last seconds', () => {
       { at: 2000, sharpness: 99 },                                                       // outside
     ]
     expect(pickFrames(entries, 0, 899, 3).map(entry => entry.at)).toEqual([100, 400, 600])
-    expect(pickFrames(entries, 0, 899, 2).map(entry => entry.at)).toEqual([100, 600])
+    expect(pickFrames(entries, 0, 899, 2).map(entry => entry.at)).toEqual([400, 600])
     expect(pickFrames(entries, 0, 899, 0)).toEqual([])
   })
 
