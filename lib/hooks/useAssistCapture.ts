@@ -9,8 +9,9 @@ import type { RecipePopupEvidence } from '@/lib/planner/fusion'
 import type { ShopShelf, ShopSlotRead } from '@/lib/vision/shop-shelf'
 import type { OwnedGridRead } from '@/lib/vision/owned-grid'
 import type { FormationRead } from '@/lib/vision/formation-bar'
+import { gameTextPieces } from '@/lib/vision/text-normalize'
 import { SCREEN_CHANGE, THUMB_HEIGHT, THUMB_WIDTH, greyThumb, thumbDifference } from '@/lib/vision/screen-change'
-import { EMPTY_PICK, choiceBands, cursorSeen, listMissing, listShown, type CursorSample, type EventPick } from '@/lib/vision/event-pick'
+import { EMPTY_PICK, RESULT_HEADERS, choiceBands, distinctBoxes, cursorSeen, listMissing, listShown, type CursorSample, type EventPick } from '@/lib/vision/event-pick'
 import type { StableScene } from '@/lib/vision/scene-state'
 import { cpuFallback, isMobileDevice, webgpuBlock, type GpuBlock } from '@/lib/vision/device'
 import { RECOGNITION_PROFILES, type RecognitionMode } from '@/lib/vision/recognition-profile'
@@ -1325,9 +1326,14 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
                 : { gifts: [], events: [], choices: [], scopedChoices: [], outcomeEventIds: [], choiceEventIds: [], bodyEventIds: [] }
               const want = detectionRef.current
               if (want.events && capture.width && capture.height) {
-                const boxes = 'choiceBoxes' in matches ? matches.choiceBoxes ?? [] : []
+                const boxes = distinctBoxes('choiceBoxes' in matches ? matches.choiceBoxes ?? [] : [])
+                // how many options of that event can be read (a name of 4 or more glyphs): one of several alone is the one taken
+                const choice = boxes.length ? ocrReferences.current?.choices.find(item => item.id === boxes[0].choiceId) : undefined
+                const options = choice ? new Set(ocrReferences.current!.choices.filter(item => item.eventId === choice.eventId)
+                  .map(item => gameTextPieces(item.texts[0] ?? '').join('')).filter(text => [...text].length >= 4)).size : 0
+                const resultPage = result.words.some(word => RESULT_HEADERS.has(word.text.trim()))
                 if (boxes.length) {
-                  const shown = listShown(pickState.current, choiceBands(boxes, capture.width, capture.height, Math.min(1, 1920 / capture.width)), capture.at)
+                  const shown = listShown(pickState.current, choiceBands(boxes, capture.width, capture.height, Math.min(1, 1920 / capture.width)), capture.at, { resultPage, options })
                   pickState.current = shown.state
                   if (shown.pick) setEventPick(shown.pick)
                   if (DEBUG_PICK) console.info('[prescript] bands', JSON.stringify(pickState.current.bands.map(band => [band.choiceId, ...[band.left, band.top, band.right, band.bottom].map(Math.round)])))
@@ -1834,7 +1840,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
           inFlight.current = false
           visionFailures = 0
           latestLabel.current = result.confidence >= 0.5 ? result.label : latestLabel.current
-          if (latestLabel.current !== 'event' && pickState.current.bands.length) {
+          if (latestLabel.current !== 'event' && (pickState.current.bands.length || pickState.current.alone)) {
             const settled = listMissing(pickState.current, Date.now(), true)
             pickState.current = settled.state
             if (settled.pick) setEventPick(settled.pick)
