@@ -1,12 +1,12 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import type { VisualCandidates, VisualMatch, VisualReference } from '@/lib/vision/embedding-match'
+import type { VisualCandidates, VisualReference } from '@/lib/vision/embedding-match'
 import { corroboratedChoiceEvent, effectGiftIds, eventScreenEvidence, matchOcrCandidates, type EventScreenEvidence, type OcrCatalog, type OcrMatches,
   type OcrWord } from '@/lib/vision/ocr-match'
 import { acquiredGiftFromPopup, acquisitionFloor, AUTO_ACQUIRE_EXCLUDED_GIFT_IDS, popupCandidateIds, popupHeaderEvidence, showsAcquiredHeader, type PopupLabelRead } from '@/lib/vision/popup-evidence'
 import type { RecipePopupEvidence } from '@/lib/planner/fusion'
-import type { ShopShelf, ShopSlotRead } from '@/lib/vision/shop-shelf'
+import type { ShopShelf } from '@/lib/vision/shop-shelf'
 import type { OwnedGridRead } from '@/lib/vision/owned-grid'
 import type { FormationRead } from '@/lib/vision/formation-bar'
 import { gameTextPieces } from '@/lib/vision/text-normalize'
@@ -14,25 +14,23 @@ import { SCREEN_CHANGE, THUMB_HEIGHT, THUMB_WIDTH, greyThumb, thumbDifference } 
 import { TAPE_EVERY_MS, TAPE_WIDTH } from '@/lib/vision/frame-tape'
 import { EMPTY_PICK, RESULT_HEADERS, choiceBands, distinctBoxes, cursorSeen, listMissing, listShown, type CursorSample, type EventPick } from '@/lib/vision/event-pick'
 import type { StableScene } from '@/lib/vision/scene-state'
-import { cpuFallback, isMobileDevice, webgpuBlock, type GpuBlock } from '@/lib/vision/device'
+import { cpuFallback, type GpuBlock } from '@/lib/vision/device'
 import { RECOGNITION_PROFILES, type RecognitionMode } from '@/lib/vision/recognition-profile'
 import { DEFAULT_DETECTION, type DetectionSettings } from '@/lib/vision/detection-settings'
 import { AssistSampleRecorder } from '@/lib/vision/assist-samples'
 import { AssistReportTally, sendAssistReport, type ReportAction } from '@/lib/vision/assist-report'
 import { EMPTY_SALE_STATE, isSellWindow, readSaleStep, sellCost, sellGiftId, sellQuestion } from '@/lib/vision/sell-evidence'
-import { readSkillExchange, type SkillExchangeRead } from '@/lib/vision/skill-exchange'
-import { acquisitionSeq, acquisitionsToRelease, continuesFusionDialog, dialogForResult, dialoglessFusionResult, fusionAnchors,
-  fusionConfirmation, fusionDiagnosis, fusionDialogClosed, fusionMaterials, onFusionScreen, showsFusionTitle,
-  fusionWheelAnchors, fusionWheelCrop, fusionWheelResultBox, isFusionSelectionScreen, wheelBandMatch, wheelSelectionSize, emptyWheelResult, popupEndBefore, sameWheelSignature, WHEEL_BAND_MIN, WHEEL_BAND_SIZE,
-  type FusionAnchors, type FusionDialogEvidence, type FusionRead, type SeenDialog, type WheelAnchors,
-  type FusionSlotRead } from '@/lib/vision/fusion-evidence'
+import { readSkillExchange } from '@/lib/vision/skill-exchange'
+import { acquisitionSeq, acquisitionsToRelease, continuesFusionDialog, dialogForResult, dialoglessFusionResult, fusionAnchors, fusionConfirmation, fusionDiagnosis, fusionDialogClosed, fusionMaterials, onFusionScreen, showsFusionTitle, fusionWheelAnchors, fusionWheelCrop, fusionWheelResultBox, isFusionSelectionScreen, wheelSelectionSize, emptyWheelResult, popupEndBefore, sameWheelSignature, type FusionAnchors, type FusionDialogEvidence, type FusionRead, type SeenDialog, type WheelAnchors } from '@/lib/vision/fusion-evidence'
 import { BLESSING_SCENE, blessingSpent, onBlessingScreen, showsBlessingScreen } from '@/lib/vision/blessing-screen'
 import { onRunEndScreen, RUN_END_SCENE, showsRunEndScreen } from '@/lib/vision/run-end-screen'
 import { isVerbose, plog } from '@/lib/vision/assist-log'
+import { parseFusionSlots, WHEEL_FRAMES, WHEEL_KEEP_MS, WHEEL_CROP_WIDTH, WHEEL_AFTER_DIALOG_MS, WHEEL_BEFORE_DIALOG_MS, wheelReadOrder, DIALOGLESS_WHEEL_MS, CAPACITY_KEEP_MS, wheelSignature, showsWheel, resultBoxBand, sameAnchors, FUSION_HOLD_MS, SCREEN_HOLD_MS, OCR_READ_FAILURES, SCENE_READ_FAILURES, OCR_REBUILD_MS, OCR_STABLE_MS, ocrRebuildsAfterRead, ocrErrorAction, parseShopShelf, mobileBlocked, gpuBlocked, canCapture, validMatches, runFrameTask, type WheelFrame, type PopupAcquisition, type GiftSale, type SkillExchangeView, type FloorThemeObservation, type PopupFrame, type PopupPending, type OpenFrame, type FrameTask } from '@/lib/vision/capture-helpers'
+export { OCR_READ_FAILURES, SCENE_READ_FAILURES, OCR_REBUILD_MS, OCR_STABLE_MS, ocrRebuildsAfterRead, ocrErrorAction, runFrameTask }
+export type { PopupAcquisition, GiftSale, SkillExchangeView, FloorThemeObservation }
 import { confirmsExploration, explorationFloor, explorationThemeReads, themeSelectionHeaderFloor, type ExplorationObservation,
   type ExplorationThemeReference } from '@/lib/vision/exploration-match'
-import { acquisitionPlate, darkPopupPlate, detectGiftPopupLabel, popupCaptureAction, popupIconSignature, popupLabelColor, popupPriority, popupQuality,
-  POPUP_SETTLE_MS, samePopupEpisode, type PopupLabelBox, type PopupObservation } from '@/lib/vision/popup-detect'
+import { acquisitionPlate, darkPopupPlate, detectGiftPopupLabel, popupCaptureAction, popupIconSignature, popupLabelColor, popupPriority, popupQuality, POPUP_SETTLE_MS, samePopupEpisode, type PopupObservation } from '@/lib/vision/popup-detect'
 
 type CaptureStatus = 'idle' | 'requesting' | 'loading' | 'running' | 'unsupported' | 'error'
 export interface ScenePrediction { label: string; confidence: number }
@@ -53,194 +51,9 @@ const OCR_WATCHDOG_MS = 12000
 interface OcrPool { popup: OcrLane; screen: OcrLane; lanes: OcrLane[]; started: boolean }
 /** Materials confirmed in one fusion confirmation dialog (slot by slot; unconfirmed slots are left out). */
 export interface FusionEvidence extends FusionDialogEvidence { token: string }
-/**
- * A crop of the selection wheel: `origin` is its corner in the captured frame of `frameSize`. Identical-looking crops are
- * kept once (`at` first seen, `lastAt` last seen), so the ring holds distinct wheel states rather than repeats.
- */
-interface WheelFrame { frame: ImageBitmap; at: number; lastAt: number; signature: Uint8Array; band: Float32Array | null;
-  origin: { x: number; y: number }; scale: number; frameSize: { width: number; height: number }; anchors?: WheelAnchors;
-  reads: Partial<Record<number, FusionRead>>; shown?: boolean }
-/** Slot reads from the scene worker: an icon with its score and lead, a blank slot, or nothing; null unless `size` long. */
-function parseFusionSlots(raw: unknown, size: number): FusionSlotRead[] | null {
-  if (!Array.isArray(raw) || raw.length !== size) return null
-  return raw.map((slot): FusionSlotRead => {
-    if (slot && (slot as { blank?: unknown }).blank === true) return { blank: true }
-    const read = slot as { id?: unknown; score?: unknown; margin?: unknown } | null
-    return read && typeof read.id === 'string' && typeof read.score === 'number' && Number.isFinite(read.score) &&
-      typeof read.margin === 'number' && Number.isFinite(read.margin) ? { id: read.id, score: read.score, margin: read.margin } : null
-  })
-}
-// Distinct states kept (animations make many); crops at most WHEEL_CROP_WIDTH wide (about 1 MB each). A slow GPU reads the
-// result popup 3-4 s after it was captured and the result animation adds new states meanwhile, so the states just before the
-// result must outlive both (16 states / 4 s dropped them before the result arrived, 2026-09-28 replays).
-const WHEEL_FRAMES = 40
-const WHEEL_KEEP_MS = 8000
-const WHEEL_CROP_WIDTH = 640
-/** Wheel states read per dialog and how long after an earlier dialog a crop may belong to a new one. */
-const WHEEL_READS = 6
-const WHEEL_AFTER_DIALOG_MS = 800
-/** The dialog can already be up this long before OCR first sees it (the late states below). */
-const WHEEL_BEFORE_DIALOG_MS = 450
-/**
- * Reading order of the wheel states before a dialog (or a result without one) first seen at `end`: the newest state
- * certainly before it, then the late states oldest first (the complete wheel, often up only ~0.3 s, comes before the
- * dialog's own opening frames), then older states.
- */
-function wheelReadOrder(states: WheelFrame[], end: number, lateMs: number): WheelFrame[] {
-  const settled = states.filter(item => item.at <= end - lateMs).sort((first, second) => second.at - first.at)
-  const late = states.filter(item => item.at > end - lateMs).sort((first, second) => first.at - second.at)
-  return [...settled.slice(0, 1), ...late, ...settled.slice(1)].slice(0, WHEEL_READS)
-}
-/** Wheel states taken for a result without a seen dialog: last seen within this before the result popup. */
-const DIALOGLESS_WHEEL_MS = 3000
-/** How long the shop capacity of a dialog is assumed for later dialog-less results of the same session. */
-const CAPACITY_KEEP_MS = 15 * 60_000
-/** A 16×9 grey signature of a crop (analysis only, never shown), for telling a changed wheel from the same one. */
-const wheelSignature = (() => {
-  let context: OffscreenCanvasRenderingContext2D | null = null
-  return (frame: ImageBitmap) => {
-    context ??= new OffscreenCanvas(16, 9).getContext('2d', { willReadFrequently: true })
-    if (!context) return new Uint8Array(0)
-    context.drawImage(frame, 0, 0, 16, 9)
-    const pixels = context.getImageData(0, 0, 16, 9).data
-    const grey = new Uint8Array(16 * 9)
-    for (let index = 0; index < grey.length; index++) grey[index] = (pixels[index * 4] + pixels[index * 4 + 1] + pixels[index * 4 + 2]) / 3
-    return grey
-  }
-})()
-/**
- * A crop that shows the selection screen (its result box matches the reference), not something over the wheel. Once it
- * has matched a reference it stays accepted when a later reference is taken.
- */
-const showsWheel = (item: WheelFrame, reference: Float32Array | null) => {
-  if (!item.shown) item.shown = !!reference && !!item.band && wheelBandMatch(item.band, reference) >= WHEEL_BAND_MIN
-  return item.shown
-}
-/** A grey WHEEL_BAND_SIZE² sample of the wheel's result box inside a crop (square at `left`, `top` of side `side`). */
-const resultBoxBand = (() => {
-  let context: OffscreenCanvasRenderingContext2D | null = null
-  return (frame: ImageBitmap, left: number, top: number, side: number) => {
-    context ??= new OffscreenCanvas(WHEEL_BAND_SIZE, WHEEL_BAND_SIZE).getContext('2d', { willReadFrequently: true })
-    if (!context || side <= 0) return null
-    context.drawImage(frame, left, top, side, side, 0, 0, WHEEL_BAND_SIZE, WHEEL_BAND_SIZE)
-    const pixels = context.getImageData(0, 0, WHEEL_BAND_SIZE, WHEEL_BAND_SIZE).data
-    const grey = new Float32Array(WHEEL_BAND_SIZE * WHEEL_BAND_SIZE)
-    for (let index = 0; index < grey.length; index++) grey[index] = (pixels[index * 4] + pixels[index * 4 + 1] + pixels[index * 4 + 2]) / 3
-    return grey
-  }
-})()
-/**
- * Crops placed from the same screen text, within OCR jitter (a crop taken before the selection screen was read is placed
- * from the frame, so a static wheel is taken again once the text is known).
- */
-const sameAnchors = (first?: WheelAnchors, second?: WheelAnchors) => {
-  if (!first || !second) return first === second
-  const center = (box: WheelAnchors['title']) => [box.left + box.width / 2, box.top + box.height / 2]
-  return [[first.title, second.title], [first.wish, second.wish]].every(([a, b]) => {
-    const [ax, ay] = center(a), [bx, by] = center(b)
-    return Math.abs(ax - bx) <= 6 && Math.abs(ay - by) <= 6
-  })
-}
-/** How long a result on the fusion screen waits for its dialog's evidence (1.5 s while one is read, 1 s otherwise). */
-const FUSION_HOLD_MS = 1500
-const SCREEN_HOLD_MS = 1000
-/**
- * A worker that answers a read with an error keeps running; that frame is skipped. Only this many failed reads in a row
- * (or a crashed worker) retire the lane. When no lane is left, OCR is rebuilt after each of these waits; it used to stay
- * off for the rest of the capture after a single error.
- */
-export const OCR_READ_FAILURES = 3
-/**
- * Scene reads that may fail in a row (a GPU busy with the game, a frame closed mid-copy) before the capture stops with
- * an error; a single failure used to end the whole screen share.
- */
-export const SCENE_READ_FAILURES = 5
-export const OCR_REBUILD_MS = [5_000, 20_000, 60_000]
-/**
- * New workers that then read for this long without dying get the rebuilds back: a run of hours could spend all three and
- * read nothing for the rest of it (floors 13-15 went unread, 2026-11-04). The GPU models' retries work the same way.
- */
-export const OCR_STABLE_MS = 5 * 60_000
-/** The rebuild budget after a read at `now` by workers built at `builtAt` (null: the first ones). */
-export function ocrRebuildsAfterRead(spent: number, builtAt: number | null, now: number): number {
-  return spent && builtAt !== null && now - builtAt >= OCR_STABLE_MS ? 0 : spent
-}
-/** Development only, with localStorage 'prescript-debug': the cursor and choice-list readings in the console. */
 // the cursor and the choice boxes come several times a second: kept only while the log is verbose
 const FREQUENT = new Set(['cursor', 'bands', 'alone'])
 const dlog = (kind: string, ...args: unknown[]) => plog(kind, args.length === 1 ? args[0] : args, FREQUENT.has(kind))
-/** What a worker's error answer to the read in flight does to its lane: skip the frame, or retire the lane once reads keep failing. */
-export function ocrErrorAction(failuresBefore: number): 'skip' | 'retire' {
-  return failuresBefore + 1 < OCR_READ_FAILURES ? 'skip' : 'retire'
-}
-/**
- * A confirmed acquisition; floor is null when the floor it was gained on is uncertain (inventory only). `capturedAt` is when
- * its frame was captured, `episode` the popup's number in order of appearance on screen.
- */
-/** A worker's shelf answer: eight slot reads, each blank, sold and its classifier read (or null when unread). */
-function parseShopShelf(value: unknown): ShopSlotRead[] | null {
-  if (!Array.isArray(value) || value.length !== 8) return null
-  return value.every(slot => slot && typeof slot === 'object' && typeof slot.blank === 'boolean' && typeof slot.sold === 'boolean' &&
-    Number.isInteger(slot.index)) ? value as ShopSlotRead[] : null
-}
-
-export interface PopupAcquisition { giftId: string; token: string; floor: number | null; observedAt: number; capturedAt?: number; episode?: number }
-/** A shop sale confirmed by the cost afterwards; capturedAt is when its confirmation dialog was on screen. */
-export interface GiftSale { giftId: string; token: string; capturedAt: number }
-/** Shop skill replacement window on screen: its sinner and current skill counts. */
-export type SkillExchangeView = SkillExchangeRead & { seenAt: number }
-/**
- * Exploration banner seen twice with the same floor and pack, or once with an exact pack name under the current or next
- * floor; only a candidate until the run state validates it.
- */
-export interface FloorThemeObservation extends ExplorationObservation { token: string }
-interface PopupFrame { frame: ImageBitmap; box: PopupLabelBox; requestId: number; episode: number }
-interface PopupPending {
-  floor: number
-  capturedAt: number
-  episode: number
-  quality: number
-  readyAt: number
-  retry: boolean
-  priority: number
-  /** Its popup was already confirmed from another frame; it no longer holds back later popups. */
-  settled?: boolean
-  ocr?: { header: string; labels: PopupLabelRead[]; body: string; lexiconId: string | null }
-  icon?: VisualMatch[]
-}
-
-/** Screen recognition targets desktop game PCs; phones and tablets are refused before any capture starts. */
-function mobileBlocked(): boolean {
-  return typeof navigator !== 'undefined' && isMobileDevice(navigator as Parameters<typeof isMobileDevice>[0])
-}
-
-// Asked once per page: turning graphics acceleration on takes a browser restart, which loads the page again.
-let gpuCheck: Promise<GpuBlock | null> | null = null
-function gpuBlocked(): Promise<GpuBlock | null> {
-  return gpuCheck ??= webgpuBlock(navigator as Parameters<typeof webgpuBlock>[0])
-}
-
-function canCapture(): boolean {
-  return !mobileBlocked() && typeof navigator !== 'undefined' && typeof Worker !== 'undefined' &&
-    typeof OffscreenCanvas !== 'undefined' && typeof createImageBitmap !== 'undefined' &&
-    typeof navigator.mediaDevices?.getDisplayMedia === 'function'
-}
-
-function validMatches(value: unknown): value is VisualMatch[] {
-  return Array.isArray(value) && value.every(match => match && typeof match.id === 'string' &&
-    typeof match.score === 'number' && Number.isFinite(match.score) && match.score >= -1 && match.score <= 1)
-}
-
-type OpenFrame = { source: HTMLVideoElement | VideoFrame; width: number; height: number; release: () => void }
-type FrameTask = { ms: number; last: number; work: () => void; live: () => boolean }
-/** Runs a timer's work unless it ran within its interval (timer ticks and frame arrivals share one clock). */
-export function runFrameTask(task: FrameTask, now = performance.now()): boolean {
-  if (!task.live() || now - task.last < task.ms - 5) return false
-  task.last = now
-  task.work()
-  return true
-}
-
 export function useAssistCapture({ giftReferences = [], eventReferences = [], ocrCatalog, themeCatalog, language = 'ko', floor = null,
   mode = 'balanced', detection = DEFAULT_DETECTION, resolvePopup, completeFusion, samples = false, heldGiftIds = [], giftPrice }: {
   giftReferences?: VisualReference[]
