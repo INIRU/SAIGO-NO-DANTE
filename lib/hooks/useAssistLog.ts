@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from 'react'
 import { plog } from '@/lib/vision/assist-log'
+import { shelfGift } from '@/lib/vision/shop-shelf'
 import type { useAssistCapture } from '@/lib/hooks/useAssistCapture'
 
 type Capture = ReturnType<typeof useAssistCapture>
@@ -25,6 +26,9 @@ export function useAssistLog(capture: Capture) {
   useEffect(() => { if (capture.formation) plog('formation', capture.formation.ids) }, [capture.formation])
   useEffect(() => { if (capture.blessings) plog('blessings', { levels: capture.blessings.levels.join(''), spent: capture.blessings.spent }) }, [capture.blessings])
   useEffect(() => { if (capture.clearBonus) plog('clear-bonus', { floor: capture.clearBonus.floor, cards: capture.clearBonus.cards }) }, [capture.clearBonus])
+  // the shop shelf when it changes: each slot's gift (null unread) and whether it is sold
+  const shelfKey = (capture.shopShelf?.slots ?? []).map(slot => `${shelfGift(slot)}${slot.sold ? '*' : ''}`).join(' ')
+  useEffect(() => { if (shelfKey) plog('shelf', shelfKey) }, [shelfKey])
   // lists that grow: each item once, by its token
   const seen = useRef(new Set<string>())
   useEffect(() => {
@@ -33,6 +37,9 @@ export function useAssistLog(capture: Capture) {
   useEffect(() => {
     for (const item of capture.giftSales) if (!seen.current.has(`s:${item.token}`)) { seen.current.add(`s:${item.token}`); plog('sold', { gift: item.giftId }) }
   }, [capture.giftSales])
+  useEffect(() => {
+    for (const item of capture.shopDialogs) if (!seen.current.has(`d:${item.kind}:${item.firstAt}`)) { seen.current.add(`d:${item.kind}:${item.firstAt}`); plog('dialog', item.kind) }
+  }, [capture.shopDialogs])
   useEffect(() => {
     for (const item of capture.fusionEvidence ?? []) if (!seen.current.has(`f:${item.token}`)) { seen.current.add(`f:${item.token}`); plog('fusion', { materials: item.materials }) }
   }, [capture.fusionEvidence])
