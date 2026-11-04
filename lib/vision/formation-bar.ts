@@ -9,10 +9,39 @@ const BAR_X = [149.5, 264.5, 379.5, 494.5, 609.5, 725.5, 840.5, 955.5, 1070.5, 1
 const BAR_FROM_BOTTOM = 101.5
 const BAR_SIDE = 147
 
-/** The twelve slots in frame pixels (a window's title bar is above and does not move them). */
-export function formationBarRegions(width: number, height: number): ShelfRegion[] {
+/**
+ * The twelve slots in frame pixels (a window's title bar is above and does not move them). `shift`: the bar's offset in
+ * UI units on this screen (the shop's bar is at 0; the formation screen before a fight draws it about 16 to the right,
+ * measured 2026-11-04 on a real 1529-wide windowed capture), found by `formationBarShift`.
+ */
+export function formationBarRegions(width: number, height: number, shift = 0): ShelfRegion[] {
   const scale = width / 1920
-  return BAR_X.map(x => ({ x: x * scale, y: height - BAR_FROM_BOTTOM * scale, size: BAR_SIDE * scale }))
+  return BAR_X.map(x => ({ x: (x + shift) * scale, y: height - BAR_FROM_BOTTOM * scale, size: BAR_SIDE * scale }))
+}
+
+/** Each slot's hexagonal frame is orange and 91 wide (the shop's at 1920: 103 to 194 around 148.5); its edges are this far out. */
+export const BAR_HEX_HALF = 45.5
+/** The rows of the bar's frames, measured up from the bottom edge (UI units): the frames span 148 to 73 above it. */
+export const BAR_BAND = { top: 150, bottom: 70 } as const
+/** The frames' orange (RGB): bright red, middling green, little blue. */
+export const isBarOrange = (r: number, g: number, b: number) => r > 190 && g > 60 && g < 130 && b < 90
+
+/**
+ * The bar's horizontal shift on this screen, in UI units: the one (−30 to 40) that puts the most orange on the twelve
+ * frames' outer edges and the least just outside them (a frame's inside can be orange too). `orange[x]`: how many pixels
+ * of frame column x in the bar's band are frame orange. Within 8 of the shop's place it is the shop's (0): the shop
+ * samples measure −1 to 5 and read right at 0; the formation screen before a fight measures 16.
+ */
+export function formationBarShift(orange: ArrayLike<number>, width: number): number {
+  const scale = width / 1920
+  const near = (x: number) => { const at = Math.round(x * scale); let most = 0; for (let d = -2; d <= 2; d++) most = Math.max(most, orange[at + d] ?? 0); return most }
+  let best = 0, bestScore = -Infinity
+  for (let shift = -30; shift <= 40; shift++) {
+    let score = 0
+    for (const x of BAR_X) score += near(x + shift - BAR_HEX_HALF) + near(x + shift + BAR_HEX_HALF) - near(x + shift - BAR_HEX_HALF - 10) - near(x + shift + BAR_HEX_HALF + 10)
+    if (score > bestScore) { bestScore = score; best = shift }
+  }
+  return Math.abs(best) <= 8 ? 0 : best
 }
 
 /**

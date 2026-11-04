@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { VisualCandidates, VisualReference } from '@/lib/vision/embedding-match'
 import { corroboratedChoiceEvent, effectGiftIds, eventScreenEvidence, matchOcrCandidates, type EventScreenEvidence, type OcrCatalog, type OcrMatches,
   type OcrWord } from '@/lib/vision/ocr-match'
-import { acquiredGiftFromPopup, acquisitionFloor, AUTO_ACQUIRE_EXCLUDED_GIFT_IDS, popupCandidateIds, popupHeaderEvidence, showsAcquiredHeader, type PopupLabelRead } from '@/lib/vision/popup-evidence'
+import { acquiredGiftFromPopup, acquisitionFloor, AUTO_ACQUIRE_EXCLUDED_GIFT_IDS, popupCandidateIds, popupHeaderEvidence, popupPurchaseHeader, showsAcquiredHeader, type PopupLabelRead } from '@/lib/vision/popup-evidence'
 import type { RecipePopupEvidence } from '@/lib/planner/fusion'
 import type { ShopShelf } from '@/lib/vision/shop-shelf'
 import type { OwnedGridRead } from '@/lib/vision/owned-grid'
@@ -55,6 +55,9 @@ export interface FusionEvidence extends FusionDialogEvidence { token: string }
 // the cursor and the choice boxes come several times a second: kept only while the log is verbose
 const FREQUENT = new Set(['cursor', 'bands', 'alone'])
 const dlog = (kind: string, ...args: unknown[]) => plog(kind, args.length === 1 ? args[0] : args, FREQUENT.has(kind))
+/** Screens with the formation's bottom bar: the shop, and the formation screens (the run's entry, before a fight). */
+const FORMATION_BAR_SCENES: ReadonlySet<string> = new Set(['shop', 'battle_setup', 'run_setup'])
+
 /** The cards with the pack names read for their places (unchanged cards keep their object; the array too when none changed). */
 function named(cards: ClearBonusCard[], names: ReadonlyMap<number, string[]>): ClearBonusCard[] {
   let changed = false
@@ -769,6 +772,15 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
             materials: popupDialogMaterials(pending.capturedAt), materialCount: popupDialogCount(pending.capturedAt) }, verdict, inFusion)
           : verdict
         if (!giftId) {
+          // The shop's purchase confirmation sits where the acquisition popup then appears, so both look like one popup:
+          // its reads must not use up the attempts the acquisition popup after it needs. Its later frames start afresh.
+          if (popupPurchaseHeader(header) && !popupHeaderEvidence(header)) {
+            popupEvidence.current.delete(pending.episode)
+            const state = lastPopup.current
+            if (state?.episode === pending.episode) Object.assign(state, { episode: ++nextEpisode.current, firstAt: Date.now(),
+              attempts: 0, capturedQuality: 0, capturedAt: 0 })
+            return
+          }
           // Every frame of a real gift popup read and none named the gift: a hard case worth a sample. Only with the
           // "acquired" header read: without it, 64 of 90 uploaded samples showed no acquisition at all (gift info and
           // purchase dialogs, skill windows, boss banners).
@@ -1799,8 +1811,8 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
           } catch { inFlight.current = false }
           return
         }
-        // The formation from the bottom bar while the shop is on screen
-        if (gifts && !inFlight.current && latestLabel.current === 'shop' && hasFrame() && !popupVisionQueue.current.length &&
+        // The formation from the bottom bar while the shop or a formation screen (the run's entry, before a fight) is on screen
+        if (gifts && !inFlight.current && FORMATION_BAR_SCENES.has(latestLabel.current ?? '') && hasFrame() && !popupVisionQueue.current.length &&
           Date.now() - (formationRequest.current?.at ?? 0) >= 2000 && Date.now() - inferredAt < profileRef.current.sceneIntervalMs - 20) {
           markBusy()
           try {
@@ -1985,7 +1997,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
           inFlight.current = false
           const ids = (result as { ids?: unknown }).ids
           const at = formationRequest.current?.at ?? Date.now()
-          if (Array.isArray(ids) && ids.length === 12 && ids.every(id => id === null || typeof id === 'string') && latestLabel.current === 'shop')
+          if (Array.isArray(ids) && ids.length === 12 && ids.every(id => id === null || typeof id === 'string') && FORMATION_BAR_SCENES.has(latestLabel.current ?? ''))
             setFormation({ ids: ids as (string | null)[], observedAt: at })
           flushVisionPopup()
         } else if (result.type === 'blessings' && blessingRequest.current?.requestId === result.requestId) {
