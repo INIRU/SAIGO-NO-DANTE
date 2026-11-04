@@ -26,8 +26,11 @@ const RUN_START = new Set(['run_setup', 'start_gift'])
 
 export const LEFT_SHOP: ReadonlySet<string> = new Set(['exploration', 'battle', 'battle_setup', 'event', 'theme_select', 'loading', 'reward_choice'])
 
-/** `issuedAt`: when the terminal put it up; unanswered for PRESCRIPT_REPLY_MS, the terminal answers for the player. */
-export interface PrescriptOffer { scope: PrescriptScope; floor: number; cards: PrescriptCard[]; issuedAt: number }
+/**
+ * `issuedAt`: when the terminal put it up. `shownAt`: when it came to the front of the stage (offers come one at a time,
+ * so one put up with another waits its turn); unanswered for the reply time from then, the terminal answers for the player.
+ */
+export interface PrescriptOffer { scope: PrescriptScope; floor: number; cards: PrescriptCard[]; issuedAt: number; shownAt?: number }
 
 /**
  * Turns the Assist capture's evidence into prescript events: each acquisition popup, sale and confirmed floor once (by
@@ -227,7 +230,7 @@ export function usePrescript({ enabled, grade = 'proselyte', status, acquisition
     const timer = window.setInterval(() => {
       const now = Date.now()
       for (const o of offersRef.current) {
-        if (!o.cards.length || now - o.issuedAt < gradeOf(runRef.current).replyMs) continue
+        if (!o.cards.length || o.shownAt === undefined || now - o.shownAt < gradeOf(runRef.current).replyMs) continue
         const open = o.cards.filter(card => feasible(card, contextRef.current, inShopRef.current))
         if (open.length) choose(open[Math.floor(Math.random() * open.length)])
         else setOffers(current => current.map(item => item === o ? { ...item, cards: [] } : item))
@@ -241,7 +244,7 @@ export function usePrescript({ enabled, grade = 'proselyte', status, acquisition
     const next = rerollRun(run)
     if (!next) return false
     setRun(next)
-    setOffers(current => current.map(o => o.scope === scope ? { ...o, issuedAt: Date.now(), cards: offer(scope, contextRef.current, 3, 1 + (run.resisted ?? 0)) } : o))
+    setOffers(current => current.map(o => o.scope === scope ? { ...o, issuedAt: Date.now(), shownAt: Date.now(), cards: offer(scope, contextRef.current, 3, 1 + (run.resisted ?? 0)) } : o))
     return true
   }, [run])
   // 거부: no prescript this time, but the terminal answers resistance with heavier ones from then on
@@ -254,5 +257,12 @@ export function usePrescript({ enabled, grade = 'proselyte', status, acquisition
 
   // a pack card for a floor already picked is no choice any more
   const open = offers.map(o => ({ ...o, cards: o.cards.filter(c => c.goal.kind !== 'pick-theme' || c.goal.floor > floor) }))
+  // the reply time runs from when an offer comes to the front, not from when it was put up behind another
+  const front = open.find(o => o.cards.length)
+  const frontKey = front ? `${front.scope}:${front.floor}:${front.issuedAt}` : ''
+  useEffect(() => {
+    if (!frontKey) return
+    setOffers(current => current.map(o => `${o.scope}:${o.floor}:${o.issuedAt}` === frontKey && o.shownAt === undefined ? { ...o, shownAt: Date.now() } : o))
+  }, [frontKey])
   return { run, owned, offers: open.filter(o => o.cards.length), choose, canChoose, reroll, refuse, reset }
 }
