@@ -9,7 +9,7 @@ import PrescriptRules from '@/components/fun/prescript/PrescriptRules'
 import PrescriptStage, { playArrival, playVerdict, readVolume, setVolume } from '@/components/fun/prescript/PrescriptStage'
 import styles from '@/components/fun/prescript/prescript.module.css'
 import { giftKeywordLabel } from '@/components/gifts/GiftCatalog'
-import { eventRoomOptions, optionLeadingTo, visitShelf, type Prescript, type PrescriptContext, type PrescriptGoal, type PrescriptGrade } from '@/lib/fun/prescript'
+import { eventRoomOptions, optionLeadingTo, START_FORMATION_POINTS, visitShelf, type Prescript, type PrescriptContext, type PrescriptGoal, type PrescriptGrade } from '@/lib/fun/prescript'
 import { captureEvidence, useAssistCapture } from '@/lib/hooks/useAssistCapture'
 import type { MdEvent, MdEventChoice } from '@/components/mirror-dungeon/types'
 import { recognizableEvents } from '@/lib/utils/event-catalog'
@@ -17,6 +17,7 @@ import { useCompanionWindow } from '@/lib/hooks/useCompanionWindow'
 import { LEFT_SHOP, usePrescript } from '@/lib/hooks/usePrescript'
 import type { SupportedLang } from '@/lib/i18n'
 import { buildGiftMap, findAvailableFusions, getAvailableThemes, giftTier } from '@/lib/planner/fusion'
+import startGifts from '@/lib/data/start-gifts.json'
 import { getLegacyPlanFloorDifficulty } from '@/lib/planner/floor-difficulty'
 import { DIFFICULTY_FLOOR_KEY, type GiftData, type RecipeData, type ThemeData } from '@/lib/planner/types'
 import { readGameLanguage, type GameLanguage } from '@/lib/vision/recognition-profile'
@@ -27,10 +28,10 @@ import { EMPTY_PLAN, planFromRunDraft, RUN_DRAFT_KEY, type PrescriptPlan } from 
 /** The prescripts are drawn for the run the mode is meant for: Extreme, to the 15th floor. */
 const RUN_DIFFICULTY = 'extreme'
 
-export default function PrescriptClient({ themes, gifts, recipes, events, eventChoices, identities, sinners, dataError }: { themes: ThemeData[]; gifts: GiftData[]; recipes: RecipeData[];
+export default function PrescriptClient({ themes, gifts, recipes, events, eventChoices, identities, sinners, observable, dataError }: { themes: ThemeData[]; gifts: GiftData[]; recipes: RecipeData[];
   events: MdEvent[]; eventChoices: MdEventChoice[]; identities: { id: string; game_id: string | null; sinner_id: string; keywords: string[] | null; rarity: number | null;
     name_kr: string | null; name_en: string | null; name_jp: string | null }[];
-  sinners: { id: string; name_kr: string | null; name_en: string | null; name_jp: string | null }[]; dataError?: boolean }) {
+  sinners: { id: string; name_kr: string | null; name_en: string | null; name_jp: string | null }[]; observable?: number[]; dataError?: boolean }) {
   const t = useTranslations('prescriptMode')
   const lang = useLocale() as SupportedLang
   // The game client's language picks the text reader's model and the gift names it compares (the Assist's own setting).
@@ -112,7 +113,8 @@ export default function PrescriptClient({ themes, gifts, recipes, events, eventC
     themesOn: next => getAvailableThemes(themes, DIFFICULTY_FLOOR_KEY[getLegacyPlanFloorDifficulty(RUN_DIFFICULTY, next)], next).map(theme => theme.id),
     random: Math.random, shelf: lastShelfIds, formation, identity: id => identityById.get(id), planIdentities,
     identitiesOf: sinner => identitiesBySinner.get(sinner) ?? [],
-  }), [floor, held, giftMap, recipes, themes, lastShelfIds, plan, formation, identityById, planIdentities, identitiesBySinner])
+    startPools: startGifts.pools.map(pool => pool.giftIds), observable,
+  }), [floor, held, giftMap, recipes, themes, lastShelfIds, plan, formation, identityById, planIdentities, identitiesBySinner, observable])
   // A ? room: its choice screen (the options anyone may take, with a result to judge them by) and the option its result
   // page names
   const evidence = captureEvidence(capture, floor, Date.now())
@@ -184,9 +186,12 @@ export default function PrescriptClient({ themes, gifts, recipes, events, eventC
         return t('goal_swap_identity', { sinner: em(name) })
       }
       case 'formation-keyword': return t('goal_formation_keyword', { keyword: em(giftKeywordLabel(goal.keyword, lang)), count: em(goal.count) })
-      case 'field-identity': return t('goal_field_identity', { ...identityWords(goal.identityId),
+      case 'field-identity': return t(goal.keep ? 'goal_field_identity_keep' : 'goal_field_identity', { ...identityWords(goal.identityId),
         keywords: em(goal.keywords.map(keyword => giftKeywordLabel(keyword, lang)).join('·')) })
       case 'front-identity': return t('goal_front_identity', identityWords(goal.identityId))
+      case 'start-formation': return t('goal_start_formation', { three: em(START_FORMATION_POINTS[3]), two: em(START_FORMATION_POINTS[2]), one: em(START_FORMATION_POINTS[1]) })
+      case 'start-gift': return t('goal_start_gift', { gift: em(giftName(goal.giftId)) })
+      case 'observe-gift': return t('goal_observe_gift', { gift: em(giftName(goal.giftId)) })
       case 'event-choice': {
         const choice = recognizable.choices.find(item => item.event_id === goal.eventId && item.option_index === goal.option)
         const text = choice ? (lang === 'en' && choice.message_en) || (lang === 'ja' && choice.message_jp) || choice.message || '' : String(goal.option + 1)

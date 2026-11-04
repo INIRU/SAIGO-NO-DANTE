@@ -8,8 +8,9 @@
  * the shop is left). Only prescripts the run can carry out now are offered.
  */
 
-/** `event`: a mandatory prescript given in a ? room, never offered as a choice, never refused. */
-export type PrescriptScope = 'standing' | 'special' | 'shop' | 'event'
+/** `event`: a mandatory prescript given in a ? room, never offered as a choice, never refused. `start`: the run's opening
+ * orders (the formation, the start gift, the observed gift), given as the run begins, also never refused. */
+export type PrescriptScope = 'standing' | 'special' | 'shop' | 'event' | 'start'
 export type Strength = 1 | 2 | 3 | 4 | 5
 
 export type PrescriptGoal =
@@ -33,12 +34,22 @@ export type PrescriptGoal =
   | { kind: 'formation-keyword'; keyword: string; count: number }
   /**
    * Field this Identity in its Sinner's place. One not owned may be stood in for by another Identity of that Sinner sharing
-   * one of `keywords`: of 3 stars, or else of 2 stars (worth half again). `fromId`: the one fielded when it was offered (a
-   * stand-in must be another).
+   * one of `keywords`: of 3 stars, or else of 2 stars (50% more) or 1 star (110% more). `fromId`: the one fielded when it was
+   * offered (a stand-in must be another). `keep`: `fromId` is the Sinner's 1-star Identity, and leaving it fielded until the
+   * shop is left is obeying too, for 110% more (USER 2026-11-04: "안 바꾸면 110%").
    */
-  | { kind: 'field-identity'; identityId: string; sinner: string; fromId: string; keywords: string[] }
+  | { kind: 'field-identity'; identityId: string; sinner: string; fromId: string; keywords: string[]; keep?: boolean }
   /** This fielded Identity among the first six (it stood in 7 to 12). */
   | { kind: 'front-identity'; identityId: string }
+  /**
+   * The run's opening formation, free: the first bar read whole scores the first six places by star rating
+   * (START_FORMATION_POINTS), never a violation (USER 2026-11-04: "자유롭게 편성 ... 3성 0점, 2성 몇 점, 1성은 최대 점수").
+   */
+  | { kind: 'start-formation' }
+  /** Take this start gift (`pool`: its keyword's start gifts; one of them taken and not this one is a violation). */
+  | { kind: 'start-gift'; giftId: number; pool: number[] }
+  /** Take this gift by observation before the run (`pool`: the gifts observation offers). */
+  | { kind: 'observe-gift'; giftId: number; pool: number[] }
 
 export interface PrescriptCard { scope: PrescriptScope; goal: PrescriptGoal; strength: Strength }
 export type PrescriptStatus = 'active' | 'done' | 'failed' | 'void'
@@ -64,7 +75,8 @@ export interface Prescript extends PrescriptCard {
  * 않습니다… 절제 범위가 커진 지령이 새로 도착"); each prescript carried out takes one away.
  */
 /** `penanceAt`: when the last violation was answered (with a penance, or found none to give). */
-export interface PrescriptRun { prescripts: Prescript[]; score: number; streak: number; rerollsLeft: number; nextId: number; ended?: boolean; endedAt?: number; resisted?: number; grade?: PrescriptGrade; penanceAt?: number }
+/** `blessingSpent`: the starlight spent on the run's blessings (별의 가호), once read; it sets the run's blessing factor. */
+export interface PrescriptRun { prescripts: Prescript[]; score: number; streak: number; rerollsLeft: number; nextId: number; ended?: boolean; endedAt?: number; resisted?: number; grade?: PrescriptGrade; penanceAt?: number; blessingSpent?: number }
 
 export type PrescriptEvent =
   | { type: 'acquire'; giftId: number; at: number }
@@ -81,6 +93,8 @@ export type PrescriptEvent =
   | { type: 'leave-event'; eventId: number; at: number }
   /** The formation read from the bar: twelve Identity ids in deployment order (null where unread). */
   | { type: 'formation'; ids: readonly (string | null)[]; at: number }
+  /** The blessing screen as read before the run: the starlight its chosen blessings cost. */
+  | { type: 'blessings'; spent: number; at: number }
 
 export interface PrescriptContext {
   floor: number
@@ -105,6 +119,10 @@ export interface PrescriptContext {
   identity?: (id: string) => { sinner: string; keywords: readonly string[]; rarity?: number } | undefined
   /** Every Identity of a Sinner (game ids): the stand-ins a field-identity prescript may take. */
   identitiesOf?: (sinner: string) => readonly string[]
+  /** The start gifts, a pool a keyword (the dungeon's common data, three each). */
+  startPools?: readonly (readonly number[])[]
+  /** The gifts observation offers this season. */
+  observable?: readonly number[]
 }
 
 /**
@@ -138,9 +156,31 @@ export function endPrescriptRun(run: PrescriptRun, at: number): PrescriptRun {
 /** The streak milestones: grace on top, and a reroll back (up to the grade's own count). */
 export const STREAK_BONUS: Readonly<Record<number, number>> = { 3: 10, 5: 25, 10: 60 }
 
-export function prescriptPoints(strength: Strength, scope: PrescriptScope, inARow: number, grade: PrescriptGrade = 'proselyte'): number {
+/** `blessing`: the run's blessing factor (`blessingFactor`). */
+export function prescriptPoints(strength: Strength, scope: PrescriptScope, inARow: number, grade: PrescriptGrade = 'proselyte', blessing = 1): number {
   const streak = inARow >= 10 ? 1.5 : inARow >= 5 ? 1.2 : inARow >= 3 ? 1.1 : 1
-  return Math.round(STRENGTH_POINTS[strength - 1] * (scope === 'standing' ? 1 : 1.5) * streak * GRADES[grade].multiplier)
+  return Math.round(STRENGTH_POINTS[strength - 1] * (scope === 'standing' ? 1 : 1.5) * streak * GRADES[grade].multiplier * blessing)
+}
+
+/** The starlight every blessing at ++ costs together (the planner's BLESSING_CONFIGS: 30+30+60+60+90+90+120+120+150+180). */
+export const BLESSING_STARLIGHT_MAX = 930
+/**
+ * The less starlight the run's blessings cost, the more every prescript is worth (USER 2026-11-04: "덜 쓸수록 가산"): x2 with
+ * none, x1 with every blessing at ++, in a straight line between. Not yet read: x1.
+ */
+export function blessingFactor(spent: number | undefined): number {
+  if (spent === undefined || !Number.isFinite(spent)) return 1
+  return 1 + Math.max(0, BLESSING_STARLIGHT_MAX - Math.max(0, spent)) / BLESSING_STARLIGHT_MAX
+}
+export const runBlessing = (run: PrescriptRun) => blessingFactor(run.blessingSpent)
+
+/** Grace for each of the opening formation's first six places, by the star rating of the Identity there. */
+export const START_FORMATION_POINTS: Readonly<Record<number, number>> = { 1: 20, 2: 8, 3: 0 }
+/** The opening formation's grace before the blessing factor: the first six places, once all six are read. */
+export function startFormationPoints(ids: readonly (string | null)[], ctx: PrescriptContext): number | null {
+  const front = ids.slice(0, 6)
+  if (front.length < 6 || front.some(id => id === null)) return null
+  return front.reduce((sum, id) => sum + (START_FORMATION_POINTS[ctx.identity?.(id!)?.rarity ?? 3] ?? 0), 0)
 }
 
 const giftIdOf = (inventoryId: string) => {
@@ -204,7 +244,10 @@ export function candidates(scope: PrescriptScope, ctx: PrescriptContext): Prescr
         const keywords = (ctx.identity?.(id)?.keywords ?? []).filter(keyword => FORMATION_KEYWORDS.includes(keyword))
         const twoStar = own.some(other => other !== id && [1, 2].includes(ctx.identity?.(other)?.rarity ?? 0) &&
           (ctx.identity?.(other)?.keywords ?? []).some(keyword => keywords.includes(keyword)))
-        if (keywords.length && twoStar) cards.push({ scope, goal: { kind: 'field-identity', identityId: id, sinner, fromId: fielded, keywords }, strength: 3 })
+        // a Sinner on its 1-star Identity may also be left as it is (110% more): anyone can obey then
+        const keep = ctx.identity?.(fielded)?.rarity === 1
+        if (keywords.length && (twoStar || keep))
+          cards.push({ scope, goal: { kind: 'field-identity', identityId: id, sinner, fromId: fielded, keywords, ...(keep ? { keep } : {}) }, strength: 3 })
       }
     }
   } else {
@@ -217,6 +260,28 @@ export function candidates(scope: PrescriptScope, ctx: PrescriptContext): Prescr
       cards.push({ scope, goal: { kind: 'get-keyword', keyword, count: 3 }, strength: (3 - planned) as Strength })
     }
     if (owned.length >= 3) cards.push({ scope, goal: { kind: 'fuse-tier', tier: 4 }, strength: 4 })
+  }
+  return cards
+}
+
+/**
+ * The run's opening orders, given as it begins (before the formation is set): the formation, free and scored by star
+ * rating; a start gift (the plan's, else of the plan's keywords, else any); and a gift to observe (the plan's, else any).
+ */
+export function startPrescripts(ctx: PrescriptContext): PrescriptCard[] {
+  const pick = <T,>(list: readonly T[]): T | undefined => list[Math.floor(ctx.random() * list.length)]
+  const cards: PrescriptCard[] = [{ scope: 'start', goal: { kind: 'start-formation' }, strength: 1 }]
+  const pools = (ctx.startPools ?? []).filter(item => item.length)
+  const pool = pools.find(item => item.some(id => ctx.planGiftIds.has(id)))
+    ?? pick(pools.filter(item => item.some(id => ctx.planKeywords?.includes(ctx.gift(id)?.keyword ?? '')))) ?? pick(pools)
+  if (pool) {
+    const wanted = pool.filter(id => ctx.planGiftIds.has(id))
+    cards.push({ scope: 'start', goal: { kind: 'start-gift', giftId: pick(wanted.length ? wanted : pool)!, pool: [...pool] }, strength: 2 })
+  }
+  const observable = ctx.observable ?? []
+  if (observable.length) {
+    const wanted = observable.filter(id => ctx.planGiftIds.has(id))
+    cards.push({ scope: 'start', goal: { kind: 'observe-gift', giftId: pick(wanted.length ? wanted : observable)!, pool: [...observable] }, strength: 3 })
   }
   return cards
 }
@@ -375,15 +440,22 @@ export function wanted(run: PrescriptRun, floor: number, inShop = false): Prescr
   return scopes
 }
 
-/** `extra`: a share of the points on top (a 2-star stand-in fielded 0.5, a 1-star one 1.1). */
-type Outcome = { status: 'done' | 'failed'; extra?: number } | { status: 'void'; reason: string } | { progress: number } | null
+/** `extra`: a share of the points on top (a 2-star stand-in fielded 0.5, a 1-star one 1.1). `fixed`: grace that is not a
+ * strength's (the opening formation's), given as is with the blessing factor, outside the streak. */
+type Outcome = { status: 'done' | 'failed'; extra?: number; fixed?: number } | { status: 'void'; reason: string } | { progress: number } | null
 
 function judge(p: Prescript, event: PrescriptEvent, ctx: PrescriptContext): Outcome {
   const goal = p.goal
   const gift = 'giftId' in event ? ctx.gift(event.giftId) : undefined
   switch (event.type) {
     case 'gap': return { status: 'void', reason: event.reason }
-    case 'leave-shop': return p.scope === 'shop' ? { status: 'failed' } : null
+    case 'leave-shop':
+      if (p.scope !== 'shop') return null
+      // left on its 1-star Identity to the end of the visit: obeyed the hard way
+      if (goal.kind === 'field-identity' && goal.keep && ctx.formation?.find(id => id !== null && ctx.identity?.(id)?.sinner === goal.sinner) === goal.fromId)
+        return { status: 'done', extra: 1.1 }
+      return { status: 'failed' }
+    case 'blessings': return null
     case 'event-outcome':
       if (goal.kind !== 'event-choice' || goal.eventId !== event.eventId) return null
       return event.conflict ? { status: 'void', reason: 'evidence-conflict' } : { status: event.option === goal.option ? 'done' : 'failed' }
@@ -406,6 +478,10 @@ function judge(p: Prescript, event: PrescriptEvent, ctx: PrescriptContext): Outc
         return null
       }
       if (goal.kind === 'front-identity') return event.ids.slice(0, 6).includes(goal.identityId) ? { status: 'done' } : null
+      if (goal.kind === 'start-formation') {
+        const points = startFormationPoints(event.ids, ctx)
+        return points === null ? null : { status: 'done', fixed: points }
+      }
       return null
     }
     case 'leave-event':
@@ -418,6 +494,11 @@ function judge(p: Prescript, event: PrescriptEvent, ctx: PrescriptContext): Outc
       return null
     case 'acquire':
       if ((goal.kind === 'buy-gift' || goal.kind === 'buy-leftmost') && event.giftId === goal.giftId) return { status: 'done' }
+      if (goal.kind === 'start-gift' || goal.kind === 'observe-gift') {
+        if (event.giftId === goal.giftId) return { status: 'done' }
+        // another of its pool: a pick was made, and not this one (this one may still come with the next pick)
+        return goal.pool.includes(event.giftId) ? { progress: p.progress + 1 } : null
+      }
       if (goal.kind === 'get-keyword' && gift?.keyword === goal.keyword)
         return p.progress + 1 >= goal.count ? { status: 'done' } : { progress: p.progress + 1 }
       return null
@@ -426,6 +507,11 @@ function judge(p: Prescript, event: PrescriptEvent, ctx: PrescriptContext): Outc
       if (goal.kind === 'fuse-tier' && (ctx.gift(event.resultId)?.tier ?? 0) >= goal.tier) return { status: 'done' }
       return null
     case 'floor':
+      if (goal.kind === 'start-gift' || goal.kind === 'observe-gift') {
+        // the run is under way: another of the pool seen taken is a violation; none seen, the pick went unread
+        if (event.floor >= 1) return p.progress > 0 ? { status: 'failed' } : { status: 'void', reason: 'start-unseen' }
+        return null
+      }
       if (goal.kind === 'pick-theme') {
         if (event.floor === goal.floor) return { status: event.themeIds.includes(goal.themeId) ? 'done' : 'failed' }
         // its floor went by unseen: the pick cannot be known, so it is not called a failure
@@ -444,6 +530,8 @@ function judge(p: Prescript, event: PrescriptEvent, ctx: PrescriptContext): Outc
 
 /** One piece of screen evidence applied to every active prescript; points and the streak follow what it settles. */
 export function applyEvent(run: PrescriptRun, event: PrescriptEvent, ctx: PrescriptContext): PrescriptRun {
+  // the blessings are read before the run (the last read of their screen stands); they settle no prescript
+  if (event.type === 'blessings') return ctx.floor < 1 && !run.ended ? { ...run, blessingSpent: event.spent } : run
   let { score, streak, rerollsLeft } = run
   let resisted = run.resisted ?? 0
   const prescripts = run.prescripts.map(p => {
@@ -459,13 +547,18 @@ export function applyEvent(run: PrescriptRun, event: PrescriptEvent, ctx: Prescr
       // a violation is resistance too: the next prescripts come heavier
       resisted = Math.min(4, resisted + 1)
       // a failed penance costs what it would have given
-      const lost = p.penance ? Math.min(score, prescriptPoints(p.strength, p.scope, 1, run.grade)) : 0
+      const lost = p.penance ? Math.min(score, prescriptPoints(p.strength, p.scope, 1, run.grade, runBlessing(run))) : 0
       score -= lost
       return { ...p, status: 'failed' as const, settledAt: event.at, points: -lost }
     }
+    if (outcome.fixed !== undefined) {
+      const points = Math.round(outcome.fixed * runBlessing(run))
+      score += points
+      return { ...p, status: 'done' as const, settledAt: event.at, points }
+    }
     streak += 1
     resisted = Math.max(0, resisted - 1)
-    const base = prescriptPoints(p.strength, p.scope, streak, run.grade)
+    const base = prescriptPoints(p.strength, p.scope, streak, run.grade, runBlessing(run))
     const points = base + Math.round(base * (outcome.extra ?? 0))
     const bonus = STREAK_BONUS[streak] ?? 0
     if (bonus) rerollsLeft = Math.min(gradeOf(run).rerolls, rerollsLeft + 1)

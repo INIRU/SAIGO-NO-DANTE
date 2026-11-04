@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { applyEvent, penance, STREAK_BONUS, candidates, createPrescriptRun, endPrescriptRun, eventPrescript, eventRoomOptions, optionLeadingTo, visitShelf, feasible, missOffer, offer, resist, PRESCRIPT_REROLLS, prescriptPoints, receive, reroll, wanted, type PrescriptContext, type PrescriptRun } from '../../../lib/fun/prescript'
+import { BLESSING_CONFIGS } from '../../../components/planner/BlessingTab'
+import { applyEvent, BLESSING_STARLIGHT_MAX, blessingFactor, START_FORMATION_POINTS, startPrescripts, penance, STREAK_BONUS, candidates, createPrescriptRun, endPrescriptRun, eventPrescript, eventRoomOptions, optionLeadingTo, visitShelf, feasible, missOffer, offer, resist, PRESCRIPT_REROLLS, prescriptPoints, receive, reroll, wanted, type PrescriptContext, type PrescriptRun } from '../../../lib/fun/prescript'
 
 const gifts: Record<number, { keyword: string | null; tier: number | null }> = {
   9001: { keyword: 'Combustion', tier: 1 }, 9002: { keyword: 'Combustion', tier: 2 }, 9003: { keyword: 'Bleeding', tier: 1 },
@@ -423,5 +424,76 @@ describe('prescripts of one Identity', () => {
     expect(applyEvent(run, { type: 'formation', ids: formation, at: 1 }, ctx()).prescripts[0].status).toBe('active')
     const swapped = ['10801', ...formation.slice(1, 6), '10701', '10101', ...formation.slice(8)]
     expect(applyEvent(run, { type: 'formation', ids: swapped, at: 1 }, ctx()).prescripts[0].status).toBe('done')
+  })
+})
+
+describe('the opening orders and the blessing factor', () => {
+  // Sinner 1: 10101 (1★ base), 10102 (3★ 파열); Sinner 2: 10201 (1★ base), 10202 (2★ 파열); the rest 1★ bases
+  const table: Record<string, { sinner: string; keywords: string[]; rarity: number }> = {
+    10101: { sinner: 's01', keywords: ['파열'], rarity: 1 }, 10102: { sinner: 's01', keywords: ['파열'], rarity: 3 },
+    10201: { sinner: 's02', keywords: ['파열'], rarity: 1 }, 10202: { sinner: 's02', keywords: ['파열'], rarity: 2 },
+  }
+  const identity = (id: string) => table[id] ?? { sinner: `s${id.slice(1, 3)}`, keywords: [] as string[], rarity: 1 }
+  const identitiesOf = (sinner: string) => Object.keys(table).filter(id => table[id].sinner === sinner)
+  const bases = ['10101', '10201', '10301', '10401', '10501', '10601', '10701', '10801', '10901', '11001', '11101', '11201']
+  const pools = [[9001, 9002, 9005], [9003, 9004, 9006]]
+  const ctx = (over: Partial<PrescriptContext> = {}) => context({ floor: 0, identity, identitiesOf, startPools: pools, observable: [9101, 9102], ...over })
+  const started = (over: Partial<PrescriptContext> = {}) => startPrescripts(ctx(over)).reduce((run, card) => receive(run, card, 0, 0), createPrescriptRun())
+
+  it('the factor is x2 with no starlight spent, x1 with every blessing at ++ (their costs together), x1 until read', () => {
+    expect(BLESSING_STARLIGHT_MAX).toBe(BLESSING_CONFIGS.reduce((sum, blessing) => sum + blessing.costs[2], 0))
+    expect(blessingFactor(undefined)).toBe(1)
+    expect(blessingFactor(0)).toBe(2)
+    expect(blessingFactor(BLESSING_STARLIGHT_MAX)).toBe(1)
+    expect(blessingFactor(BLESSING_STARLIGHT_MAX / 2)).toBe(1.5)
+    // read before the run only
+    expect(applyEvent(createPrescriptRun(), { type: 'blessings', spent: 300, at: 1 }, ctx()).blessingSpent).toBe(300)
+    expect(applyEvent(createPrescriptRun(), { type: 'blessings', spent: 300, at: 1 }, ctx({ floor: 1 })).blessingSpent).toBeUndefined()
+  })
+
+  it('gives a free formation, the plan’s start gift and a gift to observe', () => {
+    const cards = startPrescripts(ctx({ planGiftIds: new Set([9004]) }))
+    expect(cards.map(card => card.goal)).toEqual([
+      { kind: 'start-formation' },
+      { kind: 'start-gift', giftId: 9004, pool: [9003, 9004, 9006] },
+      { kind: 'observe-gift', giftId: 9102, pool: [9101, 9102] },
+    ])
+    expect(cards.every(card => card.scope === 'start')).toBe(true)
+  })
+
+  it('the formation is graced by the stars of its first six places, times the blessing factor, outside the streak', () => {
+    const front = ['10102', '10202', '10301', '10401', '10501', '10601', ...bases.slice(6)]
+    let run: PrescriptRun = { ...started(), blessingSpent: 0 }
+    run = applyEvent(run, { type: 'formation', ids: [...front.slice(0, 5), null, ...front.slice(6)], at: 1 }, ctx())
+    expect(run.prescripts[0].status).toBe('active')
+    run = applyEvent(run, { type: 'formation', ids: front, at: 2 }, ctx())
+    // 3★ 0 + 2★ 8 + four 1★ 20 = 88, x2
+    expect(run.prescripts[0]).toMatchObject({ status: 'done', points: (START_FORMATION_POINTS[3] + START_FORMATION_POINTS[2] + 4 * START_FORMATION_POINTS[1]) * 2 })
+    expect(run.streak).toBe(0)
+  })
+
+  it('a start gift is done when taken, a violation when another of its pool was taken instead, recalled when no pick was seen', () => {
+    const at = (run: PrescriptRun, kind: string) => run.prescripts.find(p => p.goal.kind === kind)!
+    const pick = (giftIds: number[]) => [...giftIds.map(giftId => ({ type: 'acquire' as const, giftId, at: 1 })), { type: 'floor' as const, floor: 1, themeIds: [], at: 2 }]
+      .reduce((run, event) => applyEvent(run, event, ctx()), started())
+    for (const kind of ['start-gift', 'observe-gift']) {
+      const goal = at(started(), kind).goal as { giftId: number; pool: number[] }
+      const other = goal.pool.find(id => id !== goal.giftId)!
+      expect(at(pick([other]), kind).status).toBe('failed')
+      expect(at(pick([other, goal.giftId]), kind).status).toBe('done')
+      expect(at(pick([]), kind)).toMatchObject({ status: 'void', reason: 'start-unseen' })
+    }
+  })
+
+  it('an Identity to field over a 1★ base may be left as it is to the end of the shop, for 110% more', () => {
+    const shop = context({ floor: 2, formation: bases, identity, identitiesOf })
+    const card = candidates('shop', shop).find(c => c.goal.kind === 'field-identity' && c.goal.sinner === 's01')!
+    expect(card.goal).toMatchObject({ identityId: '10102', fromId: '10101', keep: true })
+    const run = receive(createPrescriptRun(), card, 2, 0)
+    const base = prescriptPoints(3, 'shop', 1)
+    expect(applyEvent(run, { type: 'leave-shop', at: 1 }, shop).prescripts[0]).toMatchObject({ status: 'done', points: base + Math.round(base * 1.1) })
+    const swapped = context({ floor: 2, formation: ['10102', ...bases.slice(1)], identity, identitiesOf })
+    expect(applyEvent(applyEvent(run, { type: 'formation', ids: ['10102', ...bases.slice(1)], at: 1 }, swapped), { type: 'leave-shop', at: 2 }, swapped).prescripts[0])
+      .toMatchObject({ status: 'done', points: base })
   })
 })

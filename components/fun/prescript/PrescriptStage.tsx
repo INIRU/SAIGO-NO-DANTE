@@ -101,7 +101,7 @@ function useNewPrescripts(run: PrescriptRun, which: (p: Prescript) => boolean, m
   return shown
 }
 const settledShown = (p: Prescript) => p.status !== 'active' && p.goal.kind !== 'no-answer'
-const roomArrived = (p: Prescript) => (p.scope === 'event' || p.penance === true) && p.status === 'active'
+const roomArrived = (p: Prescript) => (p.scope === 'event' || p.scope === 'start' || p.penance === true) && p.status === 'active'
 
 interface Part { text: string; em: boolean }
 /** A label's marked names and numbers (\u0001…\u0002) as parts to set apart. */
@@ -157,7 +157,7 @@ const Flower = () => <svg viewBox="-12 -12 24 24" aria-hidden="true"><g fill="#3
 
 const KIND: Record<PrescriptGoal['kind'], string> = {
   'sell-keyword': 'kind_sell', 'sell-tier': 'kind_sell', 'fuse-gift': 'kind_fuse', 'fuse-tier': 'kind_fuse', 'get-keyword': 'kind_gather',
-  'no-sale': 'kind_floor', 'pick-theme': 'kind_theme', 'buy-gift': 'kind_shop', 'buy-leftmost': 'kind_shop', 'no-answer': 'kind_floor', 'event-choice': 'kind_event', 'swap-identity': 'kind_formation', 'formation-keyword': 'kind_formation', 'field-identity': 'kind_formation', 'front-identity': 'kind_formation',
+  'no-sale': 'kind_floor', 'pick-theme': 'kind_theme', 'buy-gift': 'kind_shop', 'buy-leftmost': 'kind_shop', 'no-answer': 'kind_floor', 'event-choice': 'kind_event', 'swap-identity': 'kind_formation', 'formation-keyword': 'kind_formation', 'field-identity': 'kind_formation', 'front-identity': 'kind_formation', 'start-formation': 'kind_formation', 'start-gift': 'kind_start', 'observe-gift': 'kind_start',
 }
 
 interface Props {
@@ -195,7 +195,8 @@ export default function PrescriptStage({ run, offers, label, onChoose, canChoose
   const settled = run.prescripts.filter(p => p.status !== 'active').slice().reverse()
   // the game's form: the order in 【】, then its deadline (Faust: "기한은 여섯 달 이내")
   // a pack prescript is due on its own floor, whatever kind it came as
-  const deadline = (goal: PrescriptGoal, scope: PrescriptScope) => goal.kind === 'pick-theme' ? t('deadline_pick', { floor: goal.floor }) : t(`deadline_${scope}`)
+  const deadline = (goal: PrescriptGoal, scope: PrescriptScope) => goal.kind === 'pick-theme' ? t('deadline_pick', { floor: goal.floor })
+    : goal.kind === 'start-formation' ? t('deadline_start_formation') : t(`deadline_${scope}`)
   const quote = (goal: PrescriptGoal, scope: PrescriptScope) => `【${plain(label(goal))}】 ${deadline(goal, scope)}`
   // a plain function, not a component made in this render: one would be new on every render and roll its text again
   const text = (goal: PrescriptGoal, scope: PrescriptScope, roll?: number, ms?: number) =>
@@ -239,7 +240,7 @@ export default function PrescriptStage({ run, offers, label, onChoose, canChoose
         <p className={styles.call}>
           {/* eslint-disable-next-line @next/next/no-img-element -- the game's prescript (terminal) keyword icon from public/ */}
           <img className={styles.term} src={`${ASSET}/prescript_terminal.png`} alt="" width={40} height={40} />
-          {t(arrival.penance ? 'penanceArrived' : 'roomArrived')}
+          {t(arrival.penance ? 'penanceArrived' : arrival.scope === 'start' ? 'startArrived' : 'roomArrived')}
         </p>
         <div className={styles.vText}>{text(arrival.goal, arrival.scope, ROLL, SETTLE)}</div>
       </div>}

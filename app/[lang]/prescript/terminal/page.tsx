@@ -7,6 +7,7 @@ import { GIFT_COLUMNS, MD_EVENT_CHOICE_COLUMNS, MD_EVENT_COLUMNS, RECIPE_COLUMNS
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import { normalizePlannerThemeId } from '@/lib/planner/types'
 import { withoutOtherLocales } from '@/lib/i18n/strip-locales'
+import { OBSERVATION_COLUMNS, type ObservationRow } from '@/lib/planner/observation'
 import PrescriptWrapper from './PrescriptWrapper'
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
@@ -35,6 +36,10 @@ export default async function PrescriptPage({ params }: { params: Promise<{ lang
     supabase.schema('limbus').from('identities').select('id, game_id, sinner_id, keywords, rarity, name_kr, name_en, name_jp'),
     supabase.schema('limbus').from('sinners').select('id, name_kr, name_en, name_jp'),
   ])
+  // the opening orders: the gifts observation offers this season (latest row)
+  const { data: observation, error: e8 } = await supabase.schema('limbus').from('md_observation').select(OBSERVATION_COLUMNS)
+    .order('mirror_dungeon_id', { ascending: false }).limit(1).maybeSingle<ObservationRow>()
+  if (e8) console.error('[PrescriptPage] md_observation', e8.message)
   if (e1 || e2 || e3 || e4 || e5 || e6 || e7) console.error('[PrescriptPage]', e1?.message, e2?.message, e3?.message, e4?.message, e5?.message, e6?.message, e7?.message)
   const normalizedThemes = (themes ?? []).flatMap(theme => {
     const id = normalizePlannerThemeId(theme.id)
@@ -42,5 +47,5 @@ export default async function PrescriptPage({ params }: { params: Promise<{ lang
   })
   return <PrescriptWrapper themes={normalizedThemes}
     gifts={(gifts ?? []).map(gift => withoutOtherLocales(gift, lang, ['effect_base', 'effect_plus', 'effect_plusplus']))}
-    recipes={recipes ?? []} events={events ?? []} eventChoices={eventChoices ?? []} identities={identities ?? []} sinners={sinners ?? []} dataError={!!(e1 || e2 || e3)} />
+    recipes={recipes ?? []} events={events ?? []} eventChoices={eventChoices ?? []} identities={identities ?? []} sinners={sinners ?? []} observable={observation?.gift_ids ?? []} dataError={!!(e1 || e2 || e3)} />
 }
