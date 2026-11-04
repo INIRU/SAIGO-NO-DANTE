@@ -236,13 +236,18 @@ def main():
     parser.add_argument('--real-train', type=Path)
     parser.add_argument('--real-repeat', type=int, default=60)
     parser.add_argument('--dark', action='store_true')
+    parser.add_argument('--arch', choices=('mnv3s', 'mnv4s'), default='mnv3s',
+                        help='mnv4s: timm MobileNetV4-Conv-Small (ImageNet, e2400 r224) trained from ImageNet (no --init-onnx)')
     args = parser.parse_args()
     torch.manual_seed(0)
     random.seed(0)
     assets = Assets(args.data, args.stages)
     real = json.load(open(args.data / 'real.json'))
     device = torch.device('cuda' if torch.cuda.is_available() else 'mps' if torch.backends.mps.is_available() else 'cpu')
-    if args.init_onnx:
+    if args.arch == 'mnv4s':
+        import timm
+        model = timm.create_model('mobilenetv4_conv_small.e2400_r224_in1k', pretrained=True, num_classes=len(assets.classes))
+    elif args.init_onnx:
         from train_scene import from_onnx
         known = json.load(open(args.init_labels))
         model = from_onnx(args.init_onnx, len(known))
