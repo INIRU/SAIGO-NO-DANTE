@@ -55,6 +55,7 @@ export default function PrescriptHub() {
       </section>}
 
       <nav className={styles.menu} aria-label={t('title')}>
+        <Link href="/prescript/guide"><b>{t('guideTitle')}</b><span>{t('guideLine')}</span></Link>
         <Link href="/prescript/records"><b>{t('recordsTitle')}</b><span>{t('recordsLine')}</span></Link>
         <Link href="/prescript/ranking"><b>{t('rankingTitle')}</b><span>{t('rankingLine')}</span></Link>
         <button type="button" onClick={() => setRules(true)}><b>{t('rulesTitle')}</b><span>{t('rulesLine')}</span></button>

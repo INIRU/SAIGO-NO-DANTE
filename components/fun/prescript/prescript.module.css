@@ -251,3 +251,12 @@
   .verdict, .stamp, .vOrder, .vPts, .vWhy, .vArrive { animation: none; opacity: 1; }
   .playing, .playing .introSite, .playing .scan, .playing .introIndex { animation: none; }
 }
+
+/* the guide: plain reading text and the two point tables */
+.guide { max-width: 46rem; line-height: 1.75; font-size: 0.9375rem; }
+.guide h2 { margin: 1.75rem 0 0.5rem; font-size: 1.0625rem; color: var(--blue-lt); }
+.guide ul { margin: 0; padding-left: 1.25rem; list-style: disc; }
+.guide li { margin: 0.3rem 0; }
+.guide table { border-collapse: collapse; margin: 0.5rem 0 0.75rem; font-variant-numeric: tabular-nums; }
+.guide th, .guide td { border: 1px solid var(--line); padding: 0.35rem 0.8rem; text-align: center; }
+.guide thead th { background: var(--panel); }
