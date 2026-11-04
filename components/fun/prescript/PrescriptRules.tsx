@@ -5,7 +5,7 @@ import { useTranslations } from 'next-intl'
 import styles from './prescript.module.css'
 
 const SEEN_KEY = 'prescript-rules-seen'
-const ARTICLES = ['rule_connect', 'rule_answer', 'rule_resist', 'rule_room', 'rule_judge', 'rule_break'] as const
+const ARTICLES = ['rule_connect', 'rule_answer', 'rule_resist', 'rule_room', 'rule_penance', 'rule_judge', 'rule_break'] as const
 
 /**
  * The terminal's rules (수칙), told once: open by itself on the first visit of this browser, and again from the hub. The

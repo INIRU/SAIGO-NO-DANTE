@@ -417,6 +417,7 @@ async function readExplorationPaddle(frame: ImageBitmap) {
  */
 async function recognizePaddle(canvas: OffscreenCanvas, detSide = 960, grid = 1, tileScale = 1) {
   const frame = { x: 0, y: 0, width: canvas.width, height: canvas.height }
+  const started = performance.now()
   let rects: TextRect[]
   if (Number.isInteger(grid) && grid > 1 && grid <= 4) {
     const scale = Number.isFinite(tileScale) ? Math.min(2, Math.max(1, tileScale)) : 1
@@ -428,8 +429,11 @@ async function recognizePaddle(canvas: OffscreenCanvas, detSide = 960, grid = 1,
     const side = Number.isFinite(detSide) ? Math.min(1600, Math.max(640, Math.round(detSide))) : 960
     rects = await detectRects(canvas, frame, { side, type: 'max' }, FULL_FRAME_LINES)
   }
+  const detected = performance.now()
   const lines = await recognizeRects(canvas, rects)
-  return { text: lines.map(line => line.text).join('\n').slice(0, 20000), words: lineWords(lines) }
+  // how long the read took (detection, recognition, lines): the page logs it in development
+  const timing = { detMs: Math.round(detected - started), recMs: Math.round(performance.now() - detected), lines: rects.length }
+  return { text: lines.map(line => line.text).join('\n').slice(0, 20000), words: lineWords(lines), timing }
 }
 
 async function readPopup(frame: ImageBitmap, box: Extract<Request, { type: 'popup' }>['box']) {

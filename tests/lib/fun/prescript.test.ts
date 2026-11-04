@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { applyEvent, candidates, createPrescriptRun, endPrescriptRun, eventPrescript, eventRoomOptions, optionLeadingTo, visitShelf, feasible, missOffer, offer, resist, PRESCRIPT_REROLLS, prescriptPoints, receive, reroll, wanted, type PrescriptContext, type PrescriptRun } from '../../../lib/fun/prescript'
+import { applyEvent, penance, STREAK_BONUS, candidates, createPrescriptRun, endPrescriptRun, eventPrescript, eventRoomOptions, optionLeadingTo, visitShelf, feasible, missOffer, offer, resist, PRESCRIPT_REROLLS, prescriptPoints, receive, reroll, wanted, type PrescriptContext, type PrescriptRun } from '../../../lib/fun/prescript'
 
 const gifts: Record<number, { keyword: string | null; tier: number | null }> = {
   9001: { keyword: 'Combustion', tier: 1 }, 9002: { keyword: 'Combustion', tier: 2 }, 9003: { keyword: 'Bleeding', tier: 1 },
@@ -326,5 +326,45 @@ describe('the shelf of a shop visit', () => {
     onSale = visitShelf(onSale, [[9005, false], [9002, true]])
     expect(onSale.sort()).toEqual([9001, 9003, 9004, 9005])
     expect(visitShelf(onSale, [])).toEqual(onSale)
+  })
+})
+
+describe('the price of a violation, and a streak’s reward', () => {
+  const sale = { scope: 'special' as const, goal: { kind: 'no-sale' as const }, strength: 2 as const }
+  const ctx = (over: Partial<PrescriptContext> = {}) => context({ floor: 3, ...over })
+
+  it('a violation raises resistance and brings one forced penance, heavier, due on this floor', () => {
+    let run = receive(createPrescriptRun(), sale, 3, 0)
+    run = applyEvent(run, { type: 'sale', giftId: 9001, at: 10 }, ctx())
+    expect(run.prescripts[0].status).toBe('failed')
+    expect(run.resisted).toBe(1)
+    const after = penance(run, ctx(), 20)
+    const given = after.prescripts.at(-1)!
+    expect(given).toMatchObject({ penance: true, status: 'active', floor: 3, scope: 'special' })
+    expect(given.strength).toBeGreaterThanOrEqual(4)
+    // one at a time, and the same violation is answered once
+    expect(penance(after, ctx(), 30)).toBe(after)
+    // none before a floor is read
+    expect(penance(run, ctx({ floor: 0 }), 20)).toBe(run)
+  })
+
+  it('a broken penance costs the grace it would have given and brings no other', () => {
+    let run = { ...createPrescriptRun(), score: 100 }
+    run = receive(run, sale, 3, 0)
+    run = { ...run, prescripts: run.prescripts.map(p => ({ ...p, penance: true, strength: 4 as const })) }
+    run = applyEvent(run, { type: 'sale', giftId: 9001, at: 10 }, ctx())
+    expect(run.prescripts[0].points).toBe(-prescriptPoints(4, 'special', 1))
+    expect(run.score).toBe(100 - prescriptPoints(4, 'special', 1))
+    expect(penance(run, ctx(), 20).prescripts).toHaveLength(1)
+  })
+
+  it('the 3rd, 5th and 10th in a row add grace and give a reroll back, up to the grade’s count', () => {
+    const keep = { scope: 'special' as const, goal: { kind: 'no-sale' as const }, strength: 2 as const }
+    let run = { ...createPrescriptRun(), streak: 2, rerollsLeft: 1 }
+    run = receive(run, keep, 3, 0)
+    run = applyEvent(run, { type: 'floor', floor: 4, themeIds: [], at: 10 }, ctx())
+    expect(run.prescripts[0]).toMatchObject({ status: 'done', bonus: STREAK_BONUS[3] })
+    expect(run.score).toBe(prescriptPoints(2, 'special', 3) + STREAK_BONUS[3])
+    expect(run.rerollsLeft).toBe(2)
   })
 })

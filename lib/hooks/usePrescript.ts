@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { applyEvent, createPrescriptRun, endPrescriptRun, eventPrescript, feasible, gradeOf, missOffer, offer, receive, resist, reroll as rerollRun, wanted, type PrescriptCard, type PrescriptContext, type PrescriptGrade,
+import { applyEvent, createPrescriptRun, penance, endPrescriptRun, eventPrescript, feasible, gradeOf, missOffer, offer, receive, resist, reroll as rerollRun, wanted, type PrescriptCard, type PrescriptContext, type PrescriptGrade,
   type PrescriptEvent, type PrescriptRun, type PrescriptScope } from '@/lib/fun/prescript'
 import { fusionResultFollows } from '@/lib/vision/fusion-evidence'
 import { EVENT_EXIT_SCENES } from '@/lib/vision/scene-state'
@@ -156,6 +156,12 @@ export function usePrescript({ enabled, grade = 'proselyte', status, acquisition
     activeEvent.current = roomId
     setRun(current => receive(current, card, contextRef.current.floor, Date.now()))
   }, [enabled, status, run.ended, roomId, eventRoom?.options])
+  // a violation answered at once with a penance (forced, heavier, this floor)
+  const lastViolation = run.prescripts.filter(p => p.status === 'failed' && !p.penance).at(-1)?.settledAt ?? 0
+  useEffect(() => {
+    if (!enabled || status !== 'running' || !lastViolation || lastViolation <= (run.penanceAt ?? 0)) return
+    setRun(current => penance(current, contextRef.current, Date.now()))
+  }, [enabled, status, lastViolation, run.penanceAt])
   useEffect(() => {
     if (enabled && formation) apply({ type: 'formation', ids: formation.ids, at: formation.observedAt })
   }, [enabled, formation, apply])

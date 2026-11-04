@@ -45,13 +45,18 @@ export interface Prescript extends PrescriptCard {
   points?: number
   /** Why it was voided. */
   reason?: string
+  /** A penance: forced on a violation, heavier, and its own violation costs the grace it would have given. */
+  penance?: boolean
+  /** Grace for the streak it completed (3, 5 and 10 in a row), on top of `points`. */
+  bonus?: number
 }
 /**
  * `ended`: the dungeon's end screen was seen with the terminal on from then to the end; only such a record is kept.
  * `resisted`: refusals not yet made up for. Each raises the weakest strength the terminal offers by one ("저항은 권하지
  * 않습니다… 절제 범위가 커진 지령이 새로 도착"); each prescript carried out takes one away.
  */
-export interface PrescriptRun { prescripts: Prescript[]; score: number; streak: number; rerollsLeft: number; nextId: number; ended?: boolean; endedAt?: number; resisted?: number; grade?: PrescriptGrade }
+/** `penanceAt`: when the last violation was answered (with a penance, or found none to give). */
+export interface PrescriptRun { prescripts: Prescript[]; score: number; streak: number; rerollsLeft: number; nextId: number; ended?: boolean; endedAt?: number; resisted?: number; grade?: PrescriptGrade; penanceAt?: number }
 
 export type PrescriptEvent =
   | { type: 'acquire'; giftId: number; at: number }
@@ -118,6 +123,9 @@ export function endPrescriptRun(run: PrescriptRun, at: number): PrescriptRun {
 }
 
 /** Strength points, x1.5 for a special or shop prescript (they can fail), x1.1 / 1.2 / 1.5 from the 3rd / 5th / 10th in a row. */
+/** The streak milestones: grace on top, and a reroll back (up to the grade's own count). */
+export const STREAK_BONUS: Readonly<Record<number, number>> = { 3: 10, 5: 25, 10: 60 }
+
 export function prescriptPoints(strength: Strength, scope: PrescriptScope, inARow: number, grade: PrescriptGrade = 'proselyte'): number {
   const streak = inARow >= 10 ? 1.5 : inARow >= 5 ? 1.2 : inARow >= 3 ? 1.1 : 1
   return Math.round(STRENGTH_POINTS[strength - 1] * (scope === 'standing' ? 1 : 1.5) * streak * GRADES[grade].multiplier)
@@ -273,6 +281,25 @@ export function eventPrescript(eventId: number, options: readonly number[], rand
   return { scope: 'event', goal: { kind: 'event-choice', eventId, option: options[Math.floor(random() * options.length)] }, strength: 2 }
 }
 
+/**
+ * The terminal's answer to a violation: a penance, forced at once (no choice, refusal or reroll), one strength above the
+ * prescript broken and at least 4, due on this floor. One at a time, and a broken penance brings no other (it costs grace
+ * instead). None before a floor is read, nor for a recall (that is no violation).
+ */
+export function penance(run: PrescriptRun, ctx: PrescriptContext, at: number): PrescriptRun {
+  if (ctx.floor < 1 || run.ended || run.prescripts.some(p => p.penance && p.status === 'active')) return run
+  const broken = run.prescripts.filter(p => p.status === 'failed' && !p.penance && (p.settledAt ?? 0) > (run.penanceAt ?? 0)).at(-1)
+  if (!broken) return run
+  const floor = Math.min(5, Math.max(4, broken.strength + 1))
+  const pool = candidates('special', ctx).filter(card => feasible(card, ctx, false))
+  const heavy = pool.filter(card => card.strength >= floor)
+  const choices = heavy.length ? heavy : pool.filter(card => card.strength === Math.max(...pool.map(c => c.strength)))
+  if (!choices.length) return { ...run, penanceAt: at }
+  const card = choices[Math.floor(ctx.random() * choices.length)]
+  const next = receive(run, { ...card, strength: Math.max(card.strength, floor) as Strength }, ctx.floor, at)
+  return { ...next, penanceAt: at, prescripts: next.prescripts.map(p => p.id === next.nextId - 1 ? { ...p, penance: true } : p) }
+}
+
 /** A refusal: the next offers start one strength higher (up to the strongest). */
 export function resist(run: PrescriptRun): PrescriptRun {
   return { ...run, resisted: Math.min(4, (run.resisted ?? 0) + 1) }
@@ -359,7 +386,7 @@ function judge(p: Prescript, event: PrescriptEvent, ctx: PrescriptContext): Outc
 
 /** One piece of screen evidence applied to every active prescript; points and the streak follow what it settles. */
 export function applyEvent(run: PrescriptRun, event: PrescriptEvent, ctx: PrescriptContext): PrescriptRun {
-  let { score, streak } = run
+  let { score, streak, rerollsLeft } = run
   let resisted = run.resisted ?? 0
   const prescripts = run.prescripts.map(p => {
     if (p.status !== 'active') return p
@@ -369,12 +396,23 @@ export function applyEvent(run: PrescriptRun, event: PrescriptEvent, ctx: Prescr
     if (!outcome) return p
     if ('progress' in outcome) return { ...p, progress: outcome.progress }
     if (outcome.status === 'void') return { ...p, status: 'void' as const, reason: outcome.reason, settledAt: event.at }
-    if (outcome.status === 'failed') { streak = 0; return { ...p, status: 'failed' as const, settledAt: event.at, points: 0 } }
+    if (outcome.status === 'failed') {
+      streak = 0
+      // a violation is resistance too: the next prescripts come heavier
+      resisted = Math.min(4, resisted + 1)
+      // a failed penance costs what it would have given
+      const lost = p.penance ? Math.min(score, prescriptPoints(p.strength, p.scope, 1, run.grade)) : 0
+      score -= lost
+      return { ...p, status: 'failed' as const, settledAt: event.at, points: -lost }
+    }
     streak += 1
     resisted = Math.max(0, resisted - 1)
     const points = prescriptPoints(p.strength, p.scope, streak, run.grade)
-    score += points
-    return { ...p, status: 'done' as const, settledAt: event.at, points, progress: p.goal.kind === 'get-keyword' ? p.goal.count : p.progress }
+    const bonus = STREAK_BONUS[streak] ?? 0
+    if (bonus) rerollsLeft = Math.min(gradeOf(run).rerolls, rerollsLeft + 1)
+    score += points + bonus
+    return { ...p, status: 'done' as const, settledAt: event.at, points, ...(bonus ? { bonus } : {}),
+      progress: p.goal.kind === 'get-keyword' ? p.goal.count : p.progress }
   })
-  return { ...run, prescripts, score, streak, resisted }
+  return { ...run, prescripts, score, streak, resisted, rerollsLeft }
 }

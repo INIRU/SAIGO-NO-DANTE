@@ -2965,6 +2965,12 @@
   "prescriptMode": {
     "title": "Prescripts of the Index",
     "metaDescription": "A fun mode: receive the Index's prescripts during the Mirror Dungeon, judged from your screen.",
+    "penanceArrived": "The price of a violation. A penance has come down. It cannot be declined.",
+    "status_atoned": "Atoned",
+    "streakBonus": "{count} in a row +{bonus}",
+    "graceLost": "{points} grace lost",
+    "rule_penance": "A violation brings a penance at once: heavier, impossible to decline, due on this floor. Break the penance too and lose that much grace. Fulfil in a row and the 3rd, 5th and 10th add grace and give a reroll back.",
+    "penance": "Penance",
     "roomArrived": "This room's Prescript has come down. It cannot be declined.",
     "arrived": "A Prescript has arrived. Uphold one.",
     "waiting": "The terminal awaits the next Prescript.",
