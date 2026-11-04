@@ -9,7 +9,7 @@ import PrescriptRules from '@/components/fun/prescript/PrescriptRules'
 import PrescriptStage, { playArrival, playVerdict, readVolume, setVolume } from '@/components/fun/prescript/PrescriptStage'
 import styles from '@/components/fun/prescript/prescript.module.css'
 import { giftKeywordLabel } from '@/components/gifts/GiftCatalog'
-import { eventRoomOptions, optionLeadingTo, START_FORMATION_POINTS, visitShelf, type Prescript, type PrescriptContext, type PrescriptGoal, type PrescriptGrade } from '@/lib/fun/prescript'
+import { eventRoomOptions, optionLeadingTo, runBlessing, START_FORMATION_POINTS, visitShelf, type Prescript, type PrescriptContext, type PrescriptGoal, type PrescriptGrade } from '@/lib/fun/prescript'
 import { captureEvidence, useAssistCapture } from '@/lib/hooks/useAssistCapture'
 import type { MdEvent, MdEventChoice } from '@/components/mirror-dungeon/types'
 import { recognizableEvents } from '@/lib/utils/event-catalog'
@@ -158,7 +158,7 @@ export default function PrescriptClient({ themes, gifts, recipes, events, eventC
   useEffect(() => {
     if (process.env.NODE_ENV !== 'production' && outcomeKey) console.info('[prescript] screen outcome', outcomeKey, outcome ? 'result text' : alone ? 'option left alone' : 'next stage')
   }, [outcomeKey]) // eslint-disable-line react-hooks/exhaustive-deps -- logged once a reading
-  const prescript = usePrescript({ grade, eventRoom, eventOutcome, eventPick, formation: capture.formation, enabled: true, status: capture.status, acquisitions: capture.popupAcquisitions, sales: capture.giftSales,
+  const prescript = usePrescript({ grade, eventRoom, eventOutcome, eventPick, formation: capture.formation, blessings: capture.blessings, enabled: true, status: capture.status, acquisitions: capture.popupAcquisitions, sales: capture.giftSales,
     fusions: capture.fusionEvidence, floorObservation: capture.floorThemeObservation, ownedGrid: capture.ownedGrid, scene: capture.scene?.label ?? null,
     inShop: shelfIds.length > 0, context })
   const ownedKey = prescript.owned.join(',')
@@ -242,6 +242,7 @@ export default function PrescriptClient({ themes, gifts, recipes, events, eventC
           <span><b>{prescript.run.score}</b>{t('scoreUnit')}</span>
           <span><b>{prescript.run.streak}</b>{t('streakUnit')}</span>
           <span><b>{prescript.run.rerollsLeft}</b>{t('rerollUnit')}</span>
+          {prescript.run.blessingSpent !== undefined && <span><b>×{runBlessing(prescript.run).toFixed(2)}</b>{t('blessingUnit')}</span>}
         </div>
       </header>
       <div className={styles.connect}>

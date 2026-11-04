@@ -40,7 +40,7 @@ export interface PrescriptOffer { scope: PrescriptScope; floor: number; cards: P
 /** How long a room left waits for its kept frames to be read again before it is judged by what is known. */
 export const LEAVE_GRACE_MS = 4000
 
-export function usePrescript({ enabled, grade = 'proselyte', status, acquisitions, sales, fusions, floorObservation, ownedGrid, eventRoom, eventOutcome, eventPick, formation, scene, inShop, context }: {
+export function usePrescript({ enabled, grade = 'proselyte', status, acquisitions, sales, fusions, floorObservation, ownedGrid, eventRoom, eventOutcome, eventPick, formation, blessings, scene, inShop, context }: {
   enabled: boolean
   /** The grade a new run starts at (a run keeps the grade it began with). */
   grade?: PrescriptGrade
@@ -60,6 +60,8 @@ export function usePrescript({ enabled, grade = 'proselyte', status, acquisition
   eventPick?: { eventId: number; option: number; at: number } | null
   /** The formation read from the shop's bar. */
   formation?: FormationRead | null
+  /** The Star Blessing screen as last read steadily: the starlight its taken blessings cost. */
+  blessings?: { spent: number; observedAt: number } | null
   /** The capture's stable scene label: leaving the shop's screens for the map, a battle or a room settles shop prescripts. */
   scene: string | null
   /** The shop shelf is on screen and read (a shop prescript may be offered). */
@@ -177,6 +179,10 @@ export function usePrescript({ enabled, grade = 'proselyte', status, acquisition
   useEffect(() => {
     if (enabled && formation) apply({ type: 'formation', ids: formation.ids, at: formation.observedAt })
   }, [enabled, formation, apply])
+  // the blessings set the run's factor (before any floor only: applyEvent ignores a later read)
+  useEffect(() => {
+    if (enabled && blessings) apply({ type: 'blessings', spent: blessings.spent, at: blessings.observedAt })
+  }, [enabled, blessings, apply])
   // The screen after the room decides; the cursor's pick only when nothing after it was read. Both read and different:
   // recalled (a misjudged room costs more than a missed one)
   const picks = useRef(new Map<number, number>())

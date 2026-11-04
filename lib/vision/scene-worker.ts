@@ -8,6 +8,7 @@ import { assistModelRoot, ortWasmPaths } from './model-assets'
 import { classifierKnowsHeld, classifierSlotRead, heldLabels, iconTensor, ICON_CROP, ICON_INPUT } from './icon-classifier'
 import { decodeCursorTemplates, findCursor, type CursorRead, type CursorTemplates } from './cursor'
 import { decodePortraitIndex, formationBarRegions, matchPortrait, portraitId, shownPixels, type PortraitIndex } from './formation-bar'
+import { readBlessingCards } from './blessing-screen'
 import { ownedGridGifts, ownedGridOffset, ownedGridRegions, ownedGridStrips, yellowRows } from './owned-grid'
 import { shopShelfRegions, shopSoldBand, soldMark, SHOP_SOLD_MIN, titleBarRows, type ShopSlotRead } from './shop-shelf'
 
@@ -17,13 +18,14 @@ type Request = { type: 'init'; giftReferences?: VisualReference[]; eventReferenc
   { type: 'fusion-wheel'; requestId: number; frame: ImageBitmap; capacity: number; origin: { x: number; y: number }; scale?: number;
     frameSize: { width: number; height: number }; anchors?: WheelAnchors; candidates?: string[] } |
   { type: 'shop-shelf'; requestId: number; frame: ImageBitmap } | { type: 'owned-grid'; requestId: number; frame: ImageBitmap } |
-  { type: 'formation'; requestId: number; frame: ImageBitmap } | { type: 'cursor'; requestId: number; frame: ImageBitmap; region?: { x: number; y: number; width: number; height: number } }
+  { type: 'formation'; requestId: number; frame: ImageBitmap } | { type: 'blessings'; requestId: number; frame: ImageBitmap } | { type: 'cursor'; requestId: number; frame: ImageBitmap; region?: { x: number; y: number; width: number; height: number } }
 type Response = { type: 'ready'; provider: 'webgpu' | 'wasm'; adapter: string } | { type: 'prediction'; label: string; confidence: number; gifts: VisualMatch[]; events: VisualMatch[] } |
   { type: 'popup-icon'; requestId: number; gifts: VisualMatch[] } |
   { type: 'fusion-slots'; requestId: number; slots: FusionSlotRead[] } | { type: 'icons'; count: number; ms: number } |
   { type: 'shop-shelf'; requestId: number; slots: ShopSlotRead[]; titleBar: number } |
   { type: 'owned-grid'; requestId: number; gifts: string[] } |
   { type: 'formation'; requestId: number; ids: (string | null)[] } |
+  { type: 'blessings'; requestId: number; levels: number[] | null } |
   { type: 'cursor'; requestId: number; cursor: CursorRead | null } |
   { type: 'error'; message: string }
 
@@ -423,6 +425,16 @@ self.onmessage = async (event: MessageEvent<Request>) => {
       respond({ type: 'formation', requestId, ids })
       return
     }
+    if (event.data.type === 'blessings') {
+      // The Star Blessing screen's cards: which are taken and at what level (the whole frame at its own size)
+      const { requestId } = event.data
+      if (!Number.isSafeInteger(requestId)) throw new Error('Invalid blessings request')
+      const canvas = new OffscreenCanvas(frame.width, frame.height).getContext('2d', { willReadFrequently: true })!
+      canvas.drawImage(frame, 0, 0)
+      respond({ type: 'blessings', requestId, levels: readBlessingCards(canvas.getImageData(0, 0, frame.width, frame.height),
+        titleBarRows(rowMeans(frame, 64), frame.height)) })
+      return
+    }
     if (event.data.type === 'cursor') {
       // The game's cursor (the screen share draws it in), in frame pixels
       const { requestId, region } = event.data
@@ -521,6 +533,7 @@ self.onmessage = async (event: MessageEvent<Request>) => {
     else if (event.data.type === 'shop-shelf') respond({ type: 'shop-shelf', requestId: event.data.requestId, slots: [], titleBar: 0 })
     else if (event.data.type === 'owned-grid') respond({ type: 'owned-grid', requestId: event.data.requestId, gifts: [] })
     else if (event.data.type === 'formation') respond({ type: 'formation', requestId: event.data.requestId, ids: [] })
+    else if (event.data.type === 'blessings') respond({ type: 'blessings', requestId: event.data.requestId, levels: null })
     else if (event.data.type === 'cursor') respond({ type: 'cursor', requestId: event.data.requestId, cursor: null })
     else respond({ type: 'error', message: error instanceof Error ? error.message : 'Inference failed' })
   } finally {
