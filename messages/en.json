@@ -3099,6 +3099,114 @@
     "grade_proselyte": "Proselyte",
     "grade_proxy": "Proxy",
     "grade_proselyte_line": "Return cards three times, answer within 20 s. You may decline.",
-    "grade_proxy_line": "Return cards once, answer within 12 s. No declining. 1.5x grace."
+    "grade_proxy_line": "Return cards once, answer within 12 s. No declining. 1.5x grace.",
+    "guideTitle": "Guide",
+    "guideLine": "Rules and scoring",
+    "guide": {
+      "intro": "Index prescript mode reads the game screen while you run the Mirror Dungeon and gives you prescripts. Carry one out and you earn grace (points). There is no done button: whether you obeyed is judged from the screen only.",
+      "pointsTitle": "Base grace by strength",
+      "strength": "Strength",
+      "base": "Base",
+      "formationTitle": "Opening formation grace (each of the first six places)",
+      "stars": "Rarity",
+      "example": "Example: a strength 3 shop prescript, 5th in a row, Proselyte, 300 starlight spent on blessings → 20 × 1.5 (shop) × 1.2 (streak) × 1.68 (starlight) ≈ 60",
+      "sections": [
+        {
+          "title": "Setup",
+          "items": [
+            "On a PC in Chrome or Edge, press \"Turn the terminal on\" → \"Connect the terminal\" and share the Limbus window.",
+            "The screen is read in this browser only. Nothing is sent anywhere.",
+            "\"Float the terminal\" shows it in a small window (PiP) over the game.",
+            "A 16:9 game window reads best. Windows covering the game cannot be read through.",
+            "\"Settings\" sets the sound level and previews the arrival sound and CLEAR/FAIL."
+          ]
+        },
+        {
+          "title": "Flow",
+          "items": [
+            "The dungeon entry screen brings the opening orders (they cannot be refused).",
+            "Floor prescripts start once the floor 1 theme pack screen is read. The lobby (floor 0) gives none.",
+            "Prescripts come as three cards. Pick one and it becomes yours to carry out.",
+            "Keep the terminal on until the dungeon's end screen, or the run is not recorded."
+          ]
+        },
+        {
+          "title": "Kinds of prescripts",
+          "items": [
+            "Standing: always one. Carry it out and the next comes.",
+            "This floor: one a floor, due before the next theme pack is picked.",
+            "Shop: one a shop, due before you leave it.",
+            "Room: given as you enter a choice room. Pick the named option. Cannot be refused.",
+            "Opening orders: given at the dungeon entry, about the formation, the start gift and the observed gift. Cannot be refused.",
+            "Penance: given at once after a violation. Heavier, cannot be refused, due on this floor."
+          ]
+        },
+        {
+          "title": "Receiving prescripts",
+          "items": [
+            "Each card shows its strength (1 to 5) and the grace it gives.",
+            "A Proselyte has 20 s to pick, a Proxy 12 s. Pick nothing and the terminal picks for you.",
+            "A reroll draws three new cards (Proselyte 3, Proxy 1).",
+            "A Proselyte may decline. Each refusal raises the weakest strength offered by one; each prescript carried out lowers it by one.",
+            "A card whose moment passed (shop left, floor changed) counts as a violation."
+          ]
+        },
+        {
+          "title": "Opening orders",
+          "items": [
+            "Formation: field any Identities. Each of the first six places is graced by its rarity (table below). All 1★ gives the most.",
+            "The formation grace is set when the formation bar at the bottom of the shop screen is first read whole, usually at the first shop.",
+            "Start gift: take the named start gift. Taking only other gifts of its keyword is a violation.",
+            "Observed gift: take the named gift by observation.",
+            "If the pick and the acquisition screens were not read, it is recalled, not judged."
+          ]
+        },
+        {
+          "title": "Star Blessing factor",
+          "items": [
+            "The less starlight spent on Star Blessings before entering, the more every prescript of the run is worth.",
+            "None: ×2. All ten at ++ (930 starlight): ×1. In between it follows the starlight: factor = 1 + (930 − spent) ÷ 930.",
+            "Upgrades (+, ++) cost more starlight, so they lower the factor too.",
+            "If the blessing screen was not read, the factor is ×1."
+          ]
+        },
+        {
+          "title": "Scoring",
+          "items": [
+            "Grace = base by strength (table below) × kind × streak × terminal grade × Star Blessing factor.",
+            "Kind: standing ×1, every other kind (floor, shop, room, opening, penance) ×1.5.",
+            "Streak: ×1.1 from the 3rd in a row, ×1.2 from the 5th, ×1.5 from the 10th.",
+            "The 3rd, 5th and 10th in a row add +10, +25 and +60 and give a reroll back.",
+            "Terminal grade: Proselyte ×1, Proxy ×1.5.",
+            "In an Identity formation prescript, a 2★ stand-in of the same keyword gives +50%, a 1★ one or leaving the base Identity as it is +110%.",
+            "The opening formation grace is the table's points × the Star Blessing factor and does not count toward the streak.",
+            "A violation breaks the streak, makes the next prescripts heavier and brings a penance. Breaking a penance costs that much grace.",
+            "A recall (could not be judged) is neither points nor a violation."
+          ]
+        },
+        {
+          "title": "What is read to judge",
+          "items": [
+            "Gifts gained: the acquisition popup (purchases, start and observed gifts too).",
+            "Sales: the sell window. Fusions: the fusion window and the popup after it.",
+            "Floors and packs: the theme pack screen's floor and the pack picked.",
+            "Shop shelf: the shop screen. Slots scrolled out of view are remembered for the visit.",
+            "Formation: the Identity bar at the bottom of the shop screen.",
+            "Choices: the result screen, the result text on the left, the next stage and the mouse cursor. If they disagree, it is recalled."
+          ]
+        },
+        {
+          "title": "Things to watch",
+          "items": [
+            "If the screen share stops or the terminal is turned off before the dungeon ends, that run's grace and record are lost.",
+            "Popups or result screens skipped very fast may be missed. The last 15 s are re-read, but what never showed is recalled.",
+            "In choice rooms, let the result screen show at least briefly.",
+            "1★ Identities do not count for \"swap the Identity\", \"field keyword Identities in the first six\" or \"field it in places 1 to 6\".",
+            "Sharing the whole screen ignores the site's own text, but sharing only the game window is more accurate.",
+            "Records stay in this browser only. Clearing its data removes them."
+          ]
+        }
+      ]
+    }
   }
 }

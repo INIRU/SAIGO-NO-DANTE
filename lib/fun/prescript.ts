@@ -141,7 +141,7 @@ export const PRESCRIPT_REPLY_MS = 20000
 /** The five vestiges (잔재): worth nothing to get or to give up, so no prescript asks for or counts them. */
 export const isVestige = (giftId: number) => giftId >= 9991 && giftId <= 9995
 export const LAST_FLOOR = 15
-const STRENGTH_POINTS = [5, 10, 20, 35, 60] as const
+export const STRENGTH_POINTS = [5, 10, 20, 35, 60] as const
 
 export function createPrescriptRun(grade: PrescriptGrade = 'proselyte'): PrescriptRun {
   return { prescripts: [], score: 0, streak: 0, rerollsLeft: GRADES[grade].rerolls, nextId: 1, grade }
