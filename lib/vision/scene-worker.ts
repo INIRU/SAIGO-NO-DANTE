@@ -113,6 +113,13 @@ async function loadIconClassifier() {
 
 /** The first run of each model compiles its WebGPU shaders: paid here, before 'ready', rather than on the first screen read
  * (as the OCR worker does). Slot batches of the sizes the screens use. A failed warm-up only leaves the first read slower. */
+/** A run's first output as a copy, every output released (a capture of hours runs these several times a second). */
+function firstOutput(outputs: ort.InferenceSession.OnnxValueMapType, name: string): Float32Array {
+  const data = Float32Array.from(outputs[name].data as Float32Array)
+  for (const value of Object.values(outputs)) value.dispose()
+  return data
+}
+
 async function warmUp() {
   try {
     await runModel('scene', new Float32Array(3 * SCENE_SIZE * SCENE_SIZE))
@@ -121,7 +128,7 @@ async function warmUp() {
     if (!icons) return
     for (const batch of [1, 3, 5, 10]) {
       const input = new ort.Tensor('float32', new Float32Array(batch * 3 * ICON_INPUT * ICON_INPUT), [batch, 3, ICON_INPUT, ICON_INPUT])
-      await exclusive(() => icons.run({ [icons.inputNames[0]]: input }))
+      firstOutput(await exclusive(() => icons.run({ [icons.inputNames[0]]: input })), icons.outputNames[0])
     }
   } catch { /* the reads still work, the first one compiles */ }
 }
@@ -132,8 +139,7 @@ async function classifySlots(sample: ReturnType<typeof sampler>, regions: { x: n
   try {
     const input = iconTensor(regions.map(region => sample(region.x, region.y, region.size * ICON_CROP, ICON_INPUT)))
     const icons = iconSession
-    const output = await exclusive(() => icons.run({ [icons.inputNames[0]]: new ort.Tensor('float32', input, [regions.length, 3, ICON_INPUT, ICON_INPUT]) }))
-    const logits = output[icons.outputNames[0]].data as Float32Array
+    const logits = firstOutput(await exclusive(() => icons.run({ [icons.inputNames[0]]: new ort.Tensor('float32', input, [regions.length, 3, ICON_INPUT, ICON_INPUT]) })), icons.outputNames[0])
     if (logits.length !== regions.length * iconLabels.length) return null
     return regions.map((_, index) => classifierSlotRead(logits.subarray(index * iconLabels.length, (index + 1) * iconLabels.length), iconLabels, held))
   } catch {
@@ -150,7 +156,7 @@ async function runModel(kind: 'scene' | 'visual', input: Float32Array) {
     if (!current) throw new Error('Model not ready')
     const feeds = { [current.inputNames[0]]: new ort.Tensor('float32', input, [1, 3, SCENE_SIZE, SCENE_SIZE]) }
     try {
-      return (await current.run(feeds))[current.outputNames[0]].data
+      return firstOutput(await current.run(feeds), current.outputNames[0])
     } catch (error) {
       if (provider === 'wasm') throw error
       const withVisual = visualSession !== null
@@ -159,7 +165,7 @@ async function runModel(kind: 'scene' | 'visual', input: Float32Array) {
       await createSessions(withVisual)
       await loadIconClassifier()
       const retry = kind === 'scene' ? session! : visualSession!
-      return (await retry.run({ [retry.inputNames[0]]: feeds[current.inputNames[0]] }))[retry.outputNames[0]].data
+      return firstOutput(await retry.run({ [retry.inputNames[0]]: feeds[current.inputNames[0]] }), retry.outputNames[0])
     }
   })
 }
