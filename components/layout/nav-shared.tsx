@@ -3,6 +3,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useLocale, useTranslations } from 'next-intl'
 import type { TranslationKey } from '@/lib/i18n/translations'
+import { prescriptModeOn } from '@/lib/fun/prescript-flag'
 
 export const NAV_GROUPS: { labelKey: string; items: { href: string; labelKey: string }[] }[] = [
   {
@@ -43,6 +44,8 @@ export const NAV_GROUPS: { labelKey: string; items: { href: string; labelKey: st
     labelKey: 'nav.fun.title',
     items: [
       { href: '/random', labelKey: 'nav.fun.random' },
+      // on hold: development only unless NEXT_PUBLIC_PRESCRIPT_MODE=1 (lib/fun/prescript-flag)
+      ...(prescriptModeOn() ? [{ href: '/prescript', labelKey: 'nav.fun.prescript' }] : []),
     ],
   },
 ]

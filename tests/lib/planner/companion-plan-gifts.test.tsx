@@ -12,6 +12,8 @@ vi.mock('@/lib/hooks/useCompanionWindow', () => ({
   useCompanionWindow: () => ({ container: {}, open: async () => {}, size: { width: 360, height: 480 }, actualSize: { width: 360, height: 480 }, updateSize: () => {} }),
 }))
 vi.mock('@/components/ui/GiftArtwork', () => ({ default: () => <span data-test-artwork /> }))
+// the site's preview card (hover) needs the router; the cells are what these tests read
+vi.mock('@/components/notes/NotePreviewCard', () => ({ default: ({ children }: { children: React.ReactNode }) => <>{children}</> }))
 vi.mock('@/components/ui/ImageWithFallback', () => ({ default: () => <span data-test-poster /> }))
 vi.mock('@/components/decks/NoteChips', () => ({
   NoteRenderer: ({ text, egoGiftLookup }: { text: string; egoGiftLookup: Record<string, unknown> }) => <span data-note-labels={Object.keys(egoGiftLookup).join(',')}>{text}</span>,
@@ -44,8 +46,10 @@ it('shows only the planned pack, its poster beside the plan gifts for it, dimmin
   expect(list).toContain(`aria-label="${messages.planner.run.pipThemePlanGifts}"`)
   expect(list).not.toContain('opacity-0')
   expect(list).toMatch(/grid-template-columns:repeat\(2, 56px\)/)
-  expect(list).toContain('title="gift-20"')
-  expect(list).toContain(`title="gift-30 · ${messages.planner.run.owned}" aria-label="gift-30 · ${messages.planner.run.owned}" data-owned="true"`)
+  // names are in the hover card and the accessible name, not a native tooltip
+  expect(list).toContain('aria-label="gift-20"')
+  expect(list).toContain(`aria-label="gift-30 · ${messages.planner.run.owned}" data-owned="true"`)
+  expect(list).not.toContain('title=')
   expect(list).not.toContain('gift-10')
 })
 

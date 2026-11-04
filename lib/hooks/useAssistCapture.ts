@@ -1,29 +1,37 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import type { VisualCandidates, VisualMatch, VisualReference } from '@/lib/vision/embedding-match'
+import type { VisualCandidates, VisualReference } from '@/lib/vision/embedding-match'
 import { corroboratedChoiceEvent, effectGiftIds, eventScreenEvidence, matchOcrCandidates, type EventScreenEvidence, type OcrCatalog, type OcrMatches,
   type OcrWord } from '@/lib/vision/ocr-match'
 import { acquiredGiftFromPopup, acquisitionFloor, AUTO_ACQUIRE_EXCLUDED_GIFT_IDS, popupCandidateIds, popupHeaderEvidence, showsAcquiredHeader, type PopupLabelRead } from '@/lib/vision/popup-evidence'
 import type { RecipePopupEvidence } from '@/lib/planner/fusion'
+import type { ShopShelf } from '@/lib/vision/shop-shelf'
+import type { OwnedGridRead } from '@/lib/vision/owned-grid'
+import type { FormationRead } from '@/lib/vision/formation-bar'
+import { gameTextPieces } from '@/lib/vision/text-normalize'
+import { SCREEN_CHANGE, THUMB_HEIGHT, THUMB_WIDTH, greyThumb, thumbDifference } from '@/lib/vision/screen-change'
+import { TAPE_EVERY_MS, TAPE_WIDTH } from '@/lib/vision/frame-tape'
+import { EMPTY_PICK, RESULT_HEADERS, choiceBands, distinctBoxes, cursorSeen, listMissing, listShown, type CursorSample, type EventPick } from '@/lib/vision/event-pick'
 import type { StableScene } from '@/lib/vision/scene-state'
-import { cpuFallback, isMobileDevice, webgpuBlock, type GpuBlock } from '@/lib/vision/device'
+import { cpuFallback, type GpuBlock } from '@/lib/vision/device'
 import { RECOGNITION_PROFILES, type RecognitionMode } from '@/lib/vision/recognition-profile'
 import { DEFAULT_DETECTION, type DetectionSettings } from '@/lib/vision/detection-settings'
 import { AssistSampleRecorder } from '@/lib/vision/assist-samples'
 import { AssistReportTally, sendAssistReport, type ReportAction } from '@/lib/vision/assist-report'
 import { EMPTY_SALE_STATE, isSellWindow, readSaleStep, sellCost, sellGiftId, sellQuestion } from '@/lib/vision/sell-evidence'
-import { readSkillExchange, type SkillExchangeRead } from '@/lib/vision/skill-exchange'
-import { acquisitionSeq, acquisitionsToRelease, continuesFusionDialog, dialogForResult, dialoglessFusionResult, fusionAnchors,
-  fusionConfirmation, fusionDiagnosis, fusionDialogClosed, fusionMaterials, onFusionScreen, showsFusionTitle,
-  fusionWheelAnchors, fusionWheelCrop, fusionWheelResultBox, isFusionSelectionScreen, wheelBandMatch, wheelSelectionSize, emptyWheelResult, popupEndBefore, sameWheelSignature, WHEEL_BAND_MIN, WHEEL_BAND_SIZE,
-  type FusionAnchors, type FusionDialogEvidence, type FusionRead, type SeenDialog, type WheelAnchors,
-  type FusionSlotRead } from '@/lib/vision/fusion-evidence'
-import { BLESSING_SCENE, onBlessingScreen, showsBlessingScreen } from '@/lib/vision/blessing-screen'
+import { readSkillExchange } from '@/lib/vision/skill-exchange'
+import { acquisitionSeq, acquisitionsToRelease, continuesFusionDialog, dialogForResult, dialoglessFusionResult, fusionAnchors, fusionConfirmation, fusionDiagnosis, fusionDialogClosed, fusionMaterials, onFusionScreen, showsFusionTitle, fusionWheelAnchors, fusionWheelCrop, fusionWheelResultBox, isFusionSelectionScreen, wheelSelectionSize, emptyWheelResult, popupEndBefore, sameWheelSignature, type FusionAnchors, type FusionDialogEvidence, type FusionRead, type SeenDialog, type WheelAnchors } from '@/lib/vision/fusion-evidence'
+import { BLESSING_SCENE, blessingSpent, onBlessingScreen, showsBlessingScreen } from '@/lib/vision/blessing-screen'
+import { BONUS_PLACES, bonusCardThemes, offerKey, type ClearBonusCard, type ClearBonusOffer } from '@/lib/vision/clear-bonus'
+import { onRunEndScreen, RUN_END_SCENE, showsRunEndScreen } from '@/lib/vision/run-end-screen'
+import { isVerbose, plog } from '@/lib/vision/assist-log'
+import { parseFusionSlots, WHEEL_FRAMES, WHEEL_KEEP_MS, WHEEL_CROP_WIDTH, WHEEL_AFTER_DIALOG_MS, WHEEL_BEFORE_DIALOG_MS, wheelReadOrder, DIALOGLESS_WHEEL_MS, CAPACITY_KEEP_MS, wheelSignature, showsWheel, resultBoxBand, sameAnchors, FUSION_HOLD_MS, SCREEN_HOLD_MS, OCR_READ_FAILURES, SCENE_READ_FAILURES, OCR_REBUILD_MS, OCR_STABLE_MS, ocrRebuildsAfterRead, ocrErrorAction, parseShopShelf, mobileBlocked, gpuBlocked, canCapture, validMatches, runFrameTask, type WheelFrame, type PopupAcquisition, type GiftSale, type SkillExchangeView, type FloorThemeObservation, type PopupFrame, type PopupPending, type OpenFrame, type FrameTask } from '@/lib/vision/capture-helpers'
+export { OCR_READ_FAILURES, SCENE_READ_FAILURES, OCR_REBUILD_MS, OCR_STABLE_MS, ocrRebuildsAfterRead, ocrErrorAction, runFrameTask }
+export type { PopupAcquisition, GiftSale, SkillExchangeView, FloorThemeObservation }
 import { confirmsExploration, explorationFloor, explorationThemeReads, themeSelectionHeaderFloor, type ExplorationObservation,
   type ExplorationThemeReference } from '@/lib/vision/exploration-match'
-import { acquisitionPlate, darkPopupPlate, detectGiftPopupLabel, popupCaptureAction, popupIconSignature, popupLabelColor, popupPriority, popupQuality,
-  POPUP_SETTLE_MS, samePopupEpisode, type PopupLabelBox, type PopupObservation } from '@/lib/vision/popup-detect'
+import { acquisitionPlate, darkPopupPlate, detectGiftPopupLabel, popupCaptureAction, popupIconSignature, popupLabelColor, popupPriority, popupQuality, POPUP_SETTLE_MS, samePopupEpisode, type PopupObservation } from '@/lib/vision/popup-detect'
 
 type CaptureStatus = 'idle' | 'requesting' | 'loading' | 'running' | 'unsupported' | 'error'
 export interface ScenePrediction { label: string; confidence: number }
@@ -35,177 +43,28 @@ const IDLE_QUEUE: CaptureQueueStatus = { analyzing: 0, frames: 0, text: 0, image
 /** Text reader actually serving capture: GPU PP-OCR once loaded, otherwise Tesseract (also while PP-OCR loads). */
 export interface OcrEngineStatus { engine: 'paddle' | 'tesseract'; adapter: string; loading: boolean; reason?: string }
 /** `failures`: reads in a row the worker answered with an error (a failed frame, not a dead worker). */
-interface OcrLane { worker: Worker; ready: boolean; inFlight: boolean; activeRequest: number; engine: OcrEngineStatus | null; failures: number }
+/** `since`: when its current read was sent (a read never answered is given up after OCR_WATCHDOG_MS). */
+interface OcrLane { worker: Worker; ready: boolean; inFlight: boolean; activeRequest: number; engine: OcrEngineStatus | null; failures: number; since: number }
+/** A scene worker request or a text read with no answer for this long is given up (a stalled GPU must not stop reading for good). */
+const SCENE_WATCHDOG_MS = 8000
+const OCR_WATCHDOG_MS = 12000
 /** OCR workers of one capture: one lane object shared by popups and screen reads, or one worker per lane. */
 interface OcrPool { popup: OcrLane; screen: OcrLane; lanes: OcrLane[]; started: boolean }
 /** Materials confirmed in one fusion confirmation dialog (slot by slot; unconfirmed slots are left out). */
 export interface FusionEvidence extends FusionDialogEvidence { token: string }
-/**
- * A crop of the selection wheel: `origin` is its corner in the captured frame of `frameSize`. Identical-looking crops are
- * kept once (`at` first seen, `lastAt` last seen), so the ring holds distinct wheel states rather than repeats.
- */
-interface WheelFrame { frame: ImageBitmap; at: number; lastAt: number; signature: Uint8Array; band: Float32Array | null;
-  origin: { x: number; y: number }; scale: number; frameSize: { width: number; height: number }; anchors?: WheelAnchors;
-  reads: Partial<Record<number, FusionRead>>; shown?: boolean }
-/** Slot reads from the scene worker: an icon with its score and lead, a blank slot, or nothing; null unless `size` long. */
-function parseFusionSlots(raw: unknown, size: number): FusionSlotRead[] | null {
-  if (!Array.isArray(raw) || raw.length !== size) return null
-  return raw.map((slot): FusionSlotRead => {
-    if (slot && (slot as { blank?: unknown }).blank === true) return { blank: true }
-    const read = slot as { id?: unknown; score?: unknown; margin?: unknown } | null
-    return read && typeof read.id === 'string' && typeof read.score === 'number' && Number.isFinite(read.score) &&
-      typeof read.margin === 'number' && Number.isFinite(read.margin) ? { id: read.id, score: read.score, margin: read.margin } : null
+// the cursor and the choice boxes come several times a second: kept only while the log is verbose
+const FREQUENT = new Set(['cursor', 'bands', 'alone'])
+const dlog = (kind: string, ...args: unknown[]) => plog(kind, args.length === 1 ? args[0] : args, FREQUENT.has(kind))
+/** The cards with the pack names read for their places (unchanged cards keep their object; the array too when none changed). */
+function named(cards: ClearBonusCard[], names: ReadonlyMap<number, string[]>): ClearBonusCard[] {
+  let changed = false
+  const next = cards.map(card => {
+    const ids = names.get(card.place)
+    if (!ids || card.themeIds?.join('|') === ids.join('|')) return card
+    changed = true
+    return { ...card, themeIds: ids }
   })
-}
-// Distinct states kept (animations make many); crops at most WHEEL_CROP_WIDTH wide (about 1 MB each). A slow GPU reads the
-// result popup 3-4 s after it was captured and the result animation adds new states meanwhile, so the states just before the
-// result must outlive both (16 states / 4 s dropped them before the result arrived, 2026-09-28 replays).
-const WHEEL_FRAMES = 40
-const WHEEL_KEEP_MS = 8000
-const WHEEL_CROP_WIDTH = 640
-/** Wheel states read per dialog and how long after an earlier dialog a crop may belong to a new one. */
-const WHEEL_READS = 6
-const WHEEL_AFTER_DIALOG_MS = 800
-/** The dialog can already be up this long before OCR first sees it (the late states below). */
-const WHEEL_BEFORE_DIALOG_MS = 450
-/**
- * Reading order of the wheel states before a dialog (or a result without one) first seen at `end`: the newest state
- * certainly before it, then the late states oldest first (the complete wheel, often up only ~0.3 s, comes before the
- * dialog's own opening frames), then older states.
- */
-function wheelReadOrder(states: WheelFrame[], end: number, lateMs: number): WheelFrame[] {
-  const settled = states.filter(item => item.at <= end - lateMs).sort((first, second) => second.at - first.at)
-  const late = states.filter(item => item.at > end - lateMs).sort((first, second) => first.at - second.at)
-  return [...settled.slice(0, 1), ...late, ...settled.slice(1)].slice(0, WHEEL_READS)
-}
-/** Wheel states taken for a result without a seen dialog: last seen within this before the result popup. */
-const DIALOGLESS_WHEEL_MS = 3000
-/** How long the shop capacity of a dialog is assumed for later dialog-less results of the same session. */
-const CAPACITY_KEEP_MS = 15 * 60_000
-/** A 16×9 grey signature of a crop (analysis only, never shown), for telling a changed wheel from the same one. */
-const wheelSignature = (() => {
-  let context: OffscreenCanvasRenderingContext2D | null = null
-  return (frame: ImageBitmap) => {
-    context ??= new OffscreenCanvas(16, 9).getContext('2d', { willReadFrequently: true })
-    if (!context) return new Uint8Array(0)
-    context.drawImage(frame, 0, 0, 16, 9)
-    const pixels = context.getImageData(0, 0, 16, 9).data
-    const grey = new Uint8Array(16 * 9)
-    for (let index = 0; index < grey.length; index++) grey[index] = (pixels[index * 4] + pixels[index * 4 + 1] + pixels[index * 4 + 2]) / 3
-    return grey
-  }
-})()
-/**
- * A crop that shows the selection screen (its result box matches the reference), not something over the wheel. Once it
- * has matched a reference it stays accepted when a later reference is taken.
- */
-const showsWheel = (item: WheelFrame, reference: Float32Array | null) => {
-  if (!item.shown) item.shown = !!reference && !!item.band && wheelBandMatch(item.band, reference) >= WHEEL_BAND_MIN
-  return item.shown
-}
-/** A grey WHEEL_BAND_SIZE² sample of the wheel's result box inside a crop (square at `left`, `top` of side `side`). */
-const resultBoxBand = (() => {
-  let context: OffscreenCanvasRenderingContext2D | null = null
-  return (frame: ImageBitmap, left: number, top: number, side: number) => {
-    context ??= new OffscreenCanvas(WHEEL_BAND_SIZE, WHEEL_BAND_SIZE).getContext('2d', { willReadFrequently: true })
-    if (!context || side <= 0) return null
-    context.drawImage(frame, left, top, side, side, 0, 0, WHEEL_BAND_SIZE, WHEEL_BAND_SIZE)
-    const pixels = context.getImageData(0, 0, WHEEL_BAND_SIZE, WHEEL_BAND_SIZE).data
-    const grey = new Float32Array(WHEEL_BAND_SIZE * WHEEL_BAND_SIZE)
-    for (let index = 0; index < grey.length; index++) grey[index] = (pixels[index * 4] + pixels[index * 4 + 1] + pixels[index * 4 + 2]) / 3
-    return grey
-  }
-})()
-/**
- * Crops placed from the same screen text, within OCR jitter (a crop taken before the selection screen was read is placed
- * from the frame, so a static wheel is taken again once the text is known).
- */
-const sameAnchors = (first?: WheelAnchors, second?: WheelAnchors) => {
-  if (!first || !second) return first === second
-  const center = (box: WheelAnchors['title']) => [box.left + box.width / 2, box.top + box.height / 2]
-  return [[first.title, second.title], [first.wish, second.wish]].every(([a, b]) => {
-    const [ax, ay] = center(a), [bx, by] = center(b)
-    return Math.abs(ax - bx) <= 6 && Math.abs(ay - by) <= 6
-  })
-}
-/** How long a result on the fusion screen waits for its dialog's evidence (1.5 s while one is read, 1 s otherwise). */
-const FUSION_HOLD_MS = 1500
-const SCREEN_HOLD_MS = 1000
-/**
- * A worker that answers a read with an error keeps running; that frame is skipped. Only this many failed reads in a row
- * (or a crashed worker) retire the lane. When no lane is left, OCR is rebuilt after each of these waits; it used to stay
- * off for the rest of the capture after a single error.
- */
-export const OCR_READ_FAILURES = 3
-/**
- * Scene reads that may fail in a row (a GPU busy with the game, a frame closed mid-copy) before the capture stops with
- * an error; a single failure used to end the whole screen share.
- */
-export const SCENE_READ_FAILURES = 5
-export const OCR_REBUILD_MS = [5_000, 20_000, 60_000]
-/** What a worker's error answer to the read in flight does to its lane: skip the frame, or retire the lane once reads keep failing. */
-export function ocrErrorAction(failuresBefore: number): 'skip' | 'retire' {
-  return failuresBefore + 1 < OCR_READ_FAILURES ? 'skip' : 'retire'
-}
-/**
- * A confirmed acquisition; floor is null when the floor it was gained on is uncertain (inventory only). `capturedAt` is when
- * its frame was captured, `episode` the popup's number in order of appearance on screen.
- */
-export interface PopupAcquisition { giftId: string; token: string; floor: number | null; observedAt: number; capturedAt?: number; episode?: number }
-/** A shop sale confirmed by the cost afterwards; capturedAt is when its confirmation dialog was on screen. */
-export interface GiftSale { giftId: string; token: string; capturedAt: number }
-/** Shop skill replacement window on screen: its sinner and current skill counts. */
-export type SkillExchangeView = SkillExchangeRead & { seenAt: number }
-/**
- * Exploration banner seen twice with the same floor and pack, or once with an exact pack name under the current or next
- * floor; only a candidate until the run state validates it.
- */
-export interface FloorThemeObservation extends ExplorationObservation { token: string }
-interface PopupFrame { frame: ImageBitmap; box: PopupLabelBox; requestId: number; episode: number }
-interface PopupPending {
-  floor: number
-  capturedAt: number
-  episode: number
-  quality: number
-  readyAt: number
-  retry: boolean
-  priority: number
-  /** Its popup was already confirmed from another frame; it no longer holds back later popups. */
-  settled?: boolean
-  ocr?: { header: string; labels: PopupLabelRead[]; body: string; lexiconId: string | null }
-  icon?: VisualMatch[]
-}
-
-/** Screen recognition targets desktop game PCs; phones and tablets are refused before any capture starts. */
-function mobileBlocked(): boolean {
-  return typeof navigator !== 'undefined' && isMobileDevice(navigator as Parameters<typeof isMobileDevice>[0])
-}
-
-// Asked once per page: turning graphics acceleration on takes a browser restart, which loads the page again.
-let gpuCheck: Promise<GpuBlock | null> | null = null
-function gpuBlocked(): Promise<GpuBlock | null> {
-  return gpuCheck ??= webgpuBlock(navigator as Parameters<typeof webgpuBlock>[0])
-}
-
-function canCapture(): boolean {
-  return !mobileBlocked() && typeof navigator !== 'undefined' && typeof Worker !== 'undefined' &&
-    typeof OffscreenCanvas !== 'undefined' && typeof createImageBitmap !== 'undefined' &&
-    typeof navigator.mediaDevices?.getDisplayMedia === 'function'
-}
-
-function validMatches(value: unknown): value is VisualMatch[] {
-  return Array.isArray(value) && value.every(match => match && typeof match.id === 'string' &&
-    typeof match.score === 'number' && Number.isFinite(match.score) && match.score >= -1 && match.score <= 1)
-}
-
-type OpenFrame = { source: HTMLVideoElement | VideoFrame; width: number; height: number; release: () => void }
-type FrameTask = { ms: number; last: number; work: () => void; live: () => boolean }
-/** Runs a timer's work unless it ran within its interval (timer ticks and frame arrivals share one clock). */
-export function runFrameTask(task: FrameTask, now = performance.now()): boolean {
-  if (!task.live() || now - task.last < task.ms - 5) return false
-  task.last = now
-  task.work()
-  return true
+  return changed ? next : cards
 }
 
 export function useAssistCapture({ giftReferences = [], eventReferences = [], ocrCatalog, themeCatalog, language = 'ko', floor = null,
@@ -260,6 +119,33 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
   const [fusionEvidence, setFusionEvidence] = useState<FusionEvidence[]>([])
   // Confirmed shop sales (capture time of the dialog), latest last.
   const [giftSales, setGiftSales] = useState<GiftSale[]>([])
+  // The shop shelf as last read (eight slots by the game's layout), while the shop is on screen.
+  const [shopShelf, setShopShelf] = useState<ShopShelf | null>(null)
+  const shelfRequest = useRef<{ requestId: number; at: number } | null>(null)
+  // The sell window's owned list, read like the shelf: the gifts it names for certain, for whoever counts what is held
+  const [ownedGrid, setOwnedGrid] = useState<OwnedGridRead | null>(null)
+  const gridRequest = useRef<{ requestId: number; at: number } | null>(null)
+  // The bottom bar's Identities (the formation), read on the shop's screen every 2 s
+  const [formation, setFormation] = useState<FormationRead | null>(null)
+  // The Star Blessing screen's taken cards and their starlight, read every second while it shows; kept once two reads in a
+  // row agree (a card under the cursor lights as if taken; the last steady read before 입장 is the one that counts)
+  const [blessings, setBlessings] = useState<{ levels: number[]; spent: number; observedAt: number } | null>(null)
+  const blessingRequest = useRef<{ requestId: number; at: number } | null>(null)
+  const lastBlessingRead = useRef('')
+  // The theme pack selection's CLEAR BONUS rows, read every second while it shows; kept once two reads in a row agree
+  // (cards slide in). Pack names come from the screen's text reads, by card place.
+  const [clearBonus, setClearBonus] = useState<ClearBonusOffer | null>(null)
+  const bonusRequest = useRef<{ requestId: number; at: number } | null>(null)
+  const lastBonusRead = useRef('')
+  const bonusTitleBar = useRef(0)
+  const bonusNames = useRef<{ names: Map<number, string[]>; at: number } | null>(null)
+  const selectionHeader = useRef<number | null>(null)
+  const formationRequest = useRef<{ requestId: number; at: number } | null>(null)
+  // A ? room's choice list and the cursor over it (read every ~150 ms on the event screen): the option clicked
+  const [eventPick, setEventPick] = useState<EventPick | null>(null)
+  const pickState = useRef(EMPTY_PICK)
+  const cursorSamples = useRef<CursorSample[]>([])
+  const cursorRequest = useRef<{ requestId: number; at: number } | null>(null)
   const [skillExchange, setSkillExchange] = useState<SkillExchangeView | null>(null)
   const saleState = useRef(EMPTY_SALE_STATE)
   const sellWindowAt = useRef(0)
@@ -279,6 +165,12 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
   // and only read once a dialog asks for them.
   const wheelFrames = useRef<WheelFrame[]>([])
   const wheelTimer = useRef<ReturnType<typeof setInterval> | null>(null)
+  // When the screen last changed enough to read it at once (a short-lived dialog), from 32×18 grey copies every 100 ms
+  const changeTimer = useRef<ReturnType<typeof setInterval> | null>(null)
+  // The last seconds of the capture, kept by their own worker so a moment the live reads missed can be read again
+  const tapeTimer = useRef<ReturnType<typeof setInterval> | null>(null)
+  const tape = useRef<Worker | null>(null)
+  const screenChangedAt = useRef(0)
   // A wheel state read ahead of any dialog while the scene worker is idle (the complete wheel may be up for ~0.3 s).
   const wheelRequest = useRef<{ requestId: number; state: WheelFrame; capacity: number } | null>(null)
   const wheelAnchors = useRef<{ anchors: WheelAnchors; at: number } | null>(null)
@@ -286,6 +178,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
   const fusionTitleAt = useRef(0)
   // Capture time of the latest OCR read of the starlight screen (title and 입장): run_setup whatever its card colour.
   const blessingAt = useRef(0)
+  const runEndAt = useRef(0)
   // The result box of a crop taken while OCR read the selection screen: other crops count as the wheel only if their box
   // matches it (a dialog, popup or prompt over the wheel reads as confident nonsense). Browser memory only.
   const wheelReference = useRef<Float32Array | null>(null)
@@ -313,6 +206,8 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
   const rebuildOcr = useRef<(() => void) | null>(null)
   // Automatic rebuilds of the OCR workers after all of them failed, in this capture.
   const ocrRebuilds = useRef(0)
+  // when the OCR workers in use were built after a failure (null: the first ones of this capture)
+  const ocrBuiltAt = useRef<number | null>(null)
   // Exploration floor read in two separate captures, even when its pack name could not be read.
   const [observedFloor, setObservedFloor] = useState<number | null>(null)
   // Classifier label held by two consecutive confident predictions; one-off misclassifications do not switch it.
@@ -413,6 +308,10 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
   const lastFloorRead = useRef<{ floor: number; at: number } | null>(null)
   const popupReader = useRef<ReadableStreamDefaultReader<VideoFrame> | null>(null)
   const inFlight = useRef(false)
+  // when the scene worker was last given a request (the watchdog frees `inFlight` if it never answers)
+  const busySince = useRef(0)
+  const markBusy = () => { inFlight.current = true; busySince.current = Date.now() }
+  // a stop or a failure clears what the screen reading published
   const ocrRequestId = useRef(0)
   const ocrCapture = useRef<{ at: number; floor: number | null; width?: number; height?: number } | null>(null)
   const visualCapture = useRef<{ at: number; floor: number | null } | null>(null)
@@ -456,6 +355,12 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
     fusionRequest.current = null
     if (wheelTimer.current) clearInterval(wheelTimer.current)
     wheelTimer.current = null
+    if (changeTimer.current) clearInterval(changeTimer.current)
+    if (tapeTimer.current) clearInterval(tapeTimer.current)
+    tapeTimer.current = null
+    tape.current?.terminate()
+    tape.current = null
+    changeTimer.current = null
     frameTasks.current = []
     latestFrame.current?.close()
     latestFrame.current = null
@@ -469,6 +374,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
     wheelAnchors.current = null
     fusionTitleAt.current = 0
     blessingAt.current = 0
+    runEndAt.current = 0
     wheelReference.current = null
     lastDialogAt.current = 0
     dialogBreakAt.current = 0
@@ -544,12 +450,21 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
     setOcrEngine(null)
     setOcrWorkers(0)
     setFusionEvidence([])
+    setShopShelf(null); setOwnedGrid(null); setFormation(null); setEventPick(null); pickState.current = EMPTY_PICK; cursorSamples.current = []
     setGiftSales([]); setSkillExchange(null)
     saleState.current = EMPTY_SALE_STATE
     setObservedFloor(null)
     setScene(null)
     setThemeSelectionFloor(null)
+    setBlessings(null); lastBlessingRead.current = ''; blessingRequest.current = null
+    setClearBonus(null); lastBonusRead.current = ''; bonusRequest.current = null; bonusNames.current = null; selectionHeader.current = null
   }, [cleanup])
+
+  const catalogFilled = Boolean(ocrCatalog && Object.values(ocrCatalog).some(items => items.length > 0))
+  useEffect(() => {
+    // connected before the catalog came: the text reader is built now (it never was)
+    if (status === 'running' && catalogFilled && !ocrPool.current && ocrStatus === 'idle') { plog('reader-late-build', true); rebuildOcr.current?.() }
+  }, [status, catalogFilled, ocrStatus])
 
   useEffect(() => {
     setSupported(canCapture())
@@ -596,6 +511,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
   const start = useCallback(async () => {
     cleanup()
     ocrRebuilds.current = 0
+    ocrBuiltAt.current = null
     setPrediction(null)
     setVisualCandidates(null)
     setOcrCandidates(null)
@@ -607,6 +523,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
     setOcrEngine(null)
     setOcrWorkers(0)
     setFusionEvidence([])
+    setShopShelf(null); setOwnedGrid(null); setFormation(null); setEventPick(null); pickState.current = EMPTY_PICK; cursorSamples.current = []
     setGiftSales([]); setSkillExchange(null)
     saleState.current = EMPTY_SALE_STATE
     setObservedFloor(null)
@@ -673,6 +590,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
         setOcrEngine(null)
         setOcrWorkers(0)
         setFusionEvidence([])
+        setShopShelf(null); setOwnedGrid(null); setFormation(null); setEventPick(null); pickState.current = EMPTY_PICK; cursorSamples.current = []
         setGiftSales([]); setSkillExchange(null)
         saleState.current = EMPTY_SALE_STATE
         setObservedFloor(null)
@@ -919,13 +837,66 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
         if (inFlight.current || worker.current !== vision) return
         const item = takePopup(popupVisionQueue)
         if (!item) return
-        inFlight.current = true
-        vision.postMessage({ type: 'popup-icon', ...item }, [item.frame])
+        markBusy()
+        try { vision.postMessage({ type: 'popup-icon', ...item }, [item.frame]) } catch (error) { inFlight.current = false; item.frame.close(); plog('post-failed', String(error)) }
       }
       let flushOcrPopup = () => {}
       // An image-identified event asks for prompt full-frame OCR so its choices are read while they are shown.
       let eventHintAt = 0
       let promptEventOcr = () => {}
+      // One kept frame read by whichever OCR lane is idle (set up with the lanes); null when none could read it
+      let readTapeFrame: (frame: ImageBitmap) => Promise<{ text: string; words: OcrWord[] } | null> = async frame => { frame.close(); return null }
+      let tapeRequest = 0
+      // OCR reads of kept frames, answered by request id (not the live screen read's)
+      const tapePending = new Map<number, (read: { text: string; words: OcrWord[] } | null) => void>()
+      const tapeAnswers = new Map<number, (frames: { at: number; bitmap: ImageBitmap }[]) => void>()
+      const takeTape = (from: number, to: number, max: number) => new Promise<{ at: number; bitmap: ImageBitmap }[]>(resolve => {
+        const keeper = tape.current
+        if (!keeper) return resolve([])
+        const requestId = ++tapeRequest
+        tapeAnswers.set(requestId, resolve)
+        keeper.postMessage({ type: 'take', requestId, from, to, max })
+        setTimeout(() => { if (tapeAnswers.delete(requestId)) resolve([]) }, 3000)
+      })
+      /**
+       * A ? room left with nothing read of what was taken: its kept frames from the list on are read again, the sharpest
+       * of each moment, for the option left alone under the result header or one option's result text.
+       */
+      let replaying = false
+      const replayRoom = async (from: number, to: number) => {
+        if (replaying || !ocrReferences.current) return
+        replaying = true
+        try {
+          const frames = await takeTape(from, to, 6)
+          let state = EMPTY_PICK
+          let next = 0
+          const closeRest = () => { for (const item of frames.slice(next)) item.bitmap.close() }
+          for (const { at, bitmap } of frames) {
+            next++
+            const width = bitmap.width, height = bitmap.height
+            const read = await readTapeFrame(bitmap)
+            const catalog = ocrReferences.current
+            if (!read || !catalog || run !== generation.current) continue
+            const evidence = eventScreenEvidence({ text: read.text, words: read.words }, catalog)
+            const named = (evidence.outcomeChoiceIds ?? []).map(id => catalog.choices.find(choice => choice.id === id)).filter(Boolean)
+            if (named.length && new Set(named.map(choice => `${choice!.eventId}:${choice!.option}`)).size === 1) {
+              dlog('replay', 'result text', named[0]!.id)
+              setEventPick({ choiceId: named[0]!.id, at, via: 'text' })
+              closeRest()
+              return
+            }
+            const boxes = distinctBoxes((evidence.choiceBoxes ?? []).filter(box => box.left >= 0.45 * width && box.left <= 0.75 * width))
+            const first = boxes.length ? catalog.choices.find(item => item.id === boxes[0].choiceId) : undefined
+            const options = first ? new Set(catalog.choices.filter(item => item.eventId === first.eventId)
+              .map(item => gameTextPieces(item.texts[0] ?? '').join('')).filter(text => [...text].length >= 4)).size : 0
+            const shown = listShown(state, choiceBands(boxes, width, height), at,
+              { resultPage: read.words.some(word => RESULT_HEADERS.has(word.text.trim())), options })
+            state = shown.state
+            if (shown.pick) { dlog('replay', 'option alone', shown.pick.choiceId); setEventPick(shown.pick); closeRest(); return }
+          }
+          dlog('replay', 'nothing in', frames.length, 'frames')
+        } finally { replaying = false }
+      }
       // Likewise, a map scene asks for the exploration banner before it scrolls away.
       let explorationHintAt = 0
       let promptExplore = () => {}
@@ -1071,13 +1042,15 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
       // OCR lanes: popups (gift acquisition) and screen reads (event/pack full frame, exploration banner). One worker serves
       // both in performance mode; balanced and quality run one worker per lane so neither blocks the other.
       let recognizedAt = 0
+      // how long the last screen read took, capture to result: event and fusion screens are read as often as the GPU allows
+      let screenReadMs = 1000
       let exploredAt = 0
       let bannerRecent = false
       let lastScreenAt = 0
       const buildOcrPool = () => {
         const profile = profileRef.current
         const makeLane = (): OcrLane => ({ worker: new Worker('/models/assist-ocr/ocr-worker.js', { type: 'module' }), ready: false,
-          inFlight: false, activeRequest: 0, engine: null, failures: 0 })
+          inFlight: false, activeRequest: 0, engine: null, failures: 0, since: 0 })
         const first = makeLane()
         const pool: OcrPool = profile.ocrWorkers === 2 ? (() => { const second = makeLane(); return { popup: first, screen: second, lanes: [first, second], started: false } })()
           : { popup: first, screen: first, lanes: [first], started: false }
@@ -1144,13 +1117,14 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
           setOcrEngine(null)
           setOcrWorkers(0)
           setFusionEvidence([])
+          setShopShelf(null); setOwnedGrid(null); setFormation(null); setEventPick(null); pickState.current = EMPTY_PICK; cursorSamples.current = []
           setGiftSales([]); setSkillExchange(null)
           saleState.current = EMPTY_SALE_STATE
           // Start over with new workers after a wait (the screen share and scene worker keep running meanwhile).
           const wait = OCR_REBUILD_MS[ocrRebuilds.current]
           if (wait !== undefined) {
             ocrRebuilds.current += 1
-            setTimeout(() => { if (run === generation.current && !ocrPool.current) rebuildOcr.current?.() }, wait)
+            setTimeout(() => { if (run === generation.current && !ocrPool.current) { ocrBuiltAt.current = Date.now(); rebuildOcr.current?.() } }, wait)
           }
         }
         flushOcrPopup = () => {
@@ -1159,8 +1133,9 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
           const item = takePopup(popupQueue)
           if (!item) return
           lane.inFlight = true
+          lane.since = Date.now()
           lane.activeRequest = item.requestId
-          lane.worker.postMessage({ type: 'popup', ...item }, [item.frame])
+          try { lane.worker.postMessage({ type: 'popup', ...item }, [item.frame]) } catch (error) { dropInFlight(lane); item.frame.close(); plog('post-failed', String(error)) }
         }
         const recognize = async () => {
           const lane = pool.screen
@@ -1174,32 +1149,49 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
           const want = detectionRef.current
           // Gifts alone still read the screen at the idle rate: only OCR finds the fusion and sell screens when the classifier misses them.
           if (!want.events && !want.themes && !want.gifts) return
-          const interval = fusionScreen ? Math.min(400, profile.recognizeMs.event)
-            : now - eventHintAt < 5000 ? profile.recognizeMs.event : profile.recognizeMs.idle
+          // A read takes 70-110 ms on a desktop GPU (live test, 2026-11-04): the 0.7 s wait was most of the delay, so
+          // a screen that needs it is read again after twice the last read's time (at least 0.25 s, at most as before)
+          const quick = Math.max(250, 2 * screenReadMs)
+          const interval = fusionScreen ? Math.min(400, profile.recognizeMs.event, quick)
+            : now - eventHintAt < 5000 ? Math.min(profile.recognizeMs.event, quick) : profile.recognizeMs.idle
           // With one shared worker, queued popups go first, but only for one extra interval.
           const shared = pool.popup === pool.screen
-          if (!alive(lane) || lane.inFlight || !lane.ready || now - recognizedAt < interval ||
+          // a screen change since the last read starts one at once (still one at a time, 120 ms apart at least)
+          const gap = screenChangedAt.current > recognizedAt ? 120 : interval
+          for (const stuck of pool.lanes) if (alive(stuck) && stuck.inFlight && now - stuck.since > OCR_WATCHDOG_MS) {
+            plog('ocr-watchdog', { ms: now - stuck.since, request: stuck.activeRequest })
+            dropInFlight(stuck)
+            stuck.failures += 1
+            if (ocrErrorAction(stuck.failures) !== 'skip') { ocrFail(stuck); return }
+          }
+          if (!alive(lane) || lane.inFlight || !lane.ready || now - recognizedAt < gap ||
             (shared && popupQueue.current.length && now - recognizedAt < interval * 2) || !hasFrame()) return
           recognizedAt = now
           lane.inFlight = true
+          lane.since = now
           const requestId = ++ocrRequestId.current
           lane.activeRequest = requestId
+          let taken: ImageBitmap | null = null
           try {
             // Capture time is taken before the copy, so every read of this frame is dated by when it was on screen.
             const at = Date.now()
-            const frame = await grabBitmap()
+            const frame = taken = await grabBitmap()
             if (!alive(lane)) { frame.close(); return }
             ocrCapture.current = { at, floor: currentFloor.current, width: frame.width, height: frame.height }
             // The fusion screen belongs to the shop and may be classified either way; one copy at a time, closed on the next.
             if (latestLabel.current === 'shop' || latestLabel.current === null || onFusionScreen(latestLabel.current, fusionTitleAt.current, at)) {
               const copy = await createImageBitmap(frame)
+              if (!alive(lane)) { copy.close(); frame.close(); return }
               fusionFrame.current?.frame.close()
               fusionFrame.current = { frame: copy, at }
             }
             lane.worker.postMessage({ type: 'recognize', requestId, frame, detSide: profile.fullFrameDetSide,
               grid: profile.fullFrameGrid, tileScale: profile.fullFrameTileScale }, [frame])
-          } catch {
-            ocrFail(lane)
+          } catch (error) {
+            // this frame could not be taken or sent (the track between frames): skip it, the lane stays
+            taken?.close()
+            if (alive(lane)) dropInFlight(lane)
+            plog('ocr-frame-skipped', String(error))
           }
         }
         // The exploration banner, read in the game language. Right after a banner was read it is read again sooner while
@@ -1221,26 +1213,75 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
             !hasFrame()) return
           exploredAt = now
           lane.inFlight = true
+          lane.since = now
           const requestId = ++ocrRequestId.current
           lane.activeRequest = requestId
+          let taken: ImageBitmap | null = null
           try {
-            const frame = await grabBitmap()
+            const frame = taken = await grabBitmap()
             if (!alive(lane)) { frame.close(); return }
             exploreCapture.current = { at: Date.now(), requestId }
             lane.worker.postMessage({ type: 'explore', requestId, frame }, [frame])
-          } catch {
-            ocrFail(lane)
+          } catch (error) {
+            taken?.close()
+            if (alive(lane)) dropInFlight(lane)
+            plog('ocr-frame-skipped', String(error))
           }
         }
         promptEventOcr = () => { void recognize() }
+        readTapeFrame = async frame => {
+          // the popup lane when it is idle, else the screen lane; up to 2 s for one to be free
+          const until = Date.now() + 2000
+          let lane: OcrLane | undefined
+          while (!(lane = [pool.popup, pool.screen].find(item => alive(item) && item.ready && !item.inFlight)) && Date.now() < until)
+            await new Promise(resolve => setTimeout(resolve, 40))
+          if (!lane) { frame.close(); return null }
+          const reader = lane, requestId = ++ocrRequestId.current
+          reader.inFlight = true
+          reader.since = Date.now()
+          reader.activeRequest = requestId
+          return new Promise(resolve => {
+            tapePending.set(requestId, resolve)
+            const profile = profileRef.current
+            try {
+              reader.worker.postMessage({ type: 'recognize', requestId, frame, detSide: profile.fullFrameDetSide, grid: profile.fullFrameGrid,
+                tileScale: profile.fullFrameTileScale }, [frame])
+            } catch (error) {
+              tapePending.delete(requestId)
+              dropInFlight(reader)
+              frame.close()
+              plog('post-failed', String(error))
+              resolve(null)
+            }
+            setTimeout(() => {
+              const done = tapePending.get(requestId)
+              if (!done) return
+              tapePending.delete(requestId)
+              if (reader.activeRequest === requestId) reader.inFlight = false
+              done(null)
+            }, 4000)
+          })
+        }
         promptExplore = () => { void explore() }
         const handle = (lane: OcrLane) => (event: MessageEvent<{ type: string; requestId?: number; text?: string; words?: OcrWord[];
           floorText?: string; themeReads?: OcrWord[][]; engine?: string; adapter?: string; loading?: boolean; reason?: string;
           header?: string; label?: string; labelWords?: OcrWord[]; labels?: PopupLabelRead[]; body?: string; lexicon?: { id?: unknown } | null }>) => {
           if (!alive(lane)) return
           const result = event.data
+          // a kept frame's read goes back to its replay, not into the live screen state
+          const replay = typeof result.requestId === 'number' ? tapePending.get(result.requestId) : undefined
+          if (replay && (result.type === 'result' || result.type === 'error')) {
+            tapePending.delete(result.requestId!)
+            if (lane.activeRequest === result.requestId) lane.inFlight = false
+            replay(result.type === 'result' && typeof result.text === 'string' && Array.isArray(result.words) ? { text: result.text, words: result.words } : null)
+            flushOcrPopup()
+            return
+          }
           const mine = result.requestId === lane.activeRequest && lane.inFlight
-          if (mine && (result.type === 'result' || result.type === 'popupResult' || result.type === 'exploreResult')) lane.failures = 0
+          if (mine && (result.type === 'result' || result.type === 'popupResult' || result.type === 'exploreResult')) {
+            lane.failures = 0
+            ocrRebuilds.current = ocrRebuildsAfterRead(ocrRebuilds.current, ocrBuiltAt.current, Date.now())
+          }
           if (result.type === 'error' && typeof result.requestId === 'number') {
             // An answer to a read already given up on changes nothing.
             if (!mine) return
@@ -1281,15 +1322,56 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
             if (capture && capture.at > lastScreenAt && capture.floor === currentFloor.current && Date.now() < capture.at + 6000) {
               lastScreenAt = capture.at
               const document = { text: result.text, words: result.words }
+              screenReadMs = Date.now() - capture.at
+              dlog('ocr', { ms: Date.now() - capture.at, timing: (result as { timing?: unknown }).timing ?? null, scene: latestLabel.current,
+                text: result.text.replace(/\s+/g, ' ').slice(0, 160) })
               const matches = ocrReferences.current ? { ...matchOcrCandidates(document, ocrReferences.current),
                 ...eventScreenEvidence(document, ocrReferences.current) }
                 : { gifts: [], events: [], choices: [], scopedChoices: [], outcomeEventIds: [], choiceEventIds: [], bodyEventIds: [] }
               const want = detectionRef.current
+              if (want.events && capture.width && capture.height) {
+                // the game's list is right of the middle (its name lines start at 0.57 of the width): lines elsewhere are
+                // not its buttons (a whole-screen share also holds the terminal and its PiP)
+                const ocrWidth = capture.width * Math.min(1, 1920 / capture.width)
+                const boxes = distinctBoxes(('choiceBoxes' in matches ? matches.choiceBoxes ?? [] : [])
+                  .filter(box => box.left >= 0.45 * ocrWidth && box.left <= 0.75 * ocrWidth))
+                // how many options of that event can be read (a name of 4 or more glyphs): one of several alone is the one taken
+                const choice = boxes.length ? ocrReferences.current?.choices.find(item => item.id === boxes[0].choiceId) : undefined
+                const options = choice ? new Set(ocrReferences.current!.choices.filter(item => item.eventId === choice.eventId)
+                  .map(item => gameTextPieces(item.texts[0] ?? '').join('')).filter(text => [...text].length >= 4)).size : 0
+                const resultPage = result.words.some(word => RESULT_HEADERS.has(word.text.trim()))
+                if (boxes.length) {
+                  const shown = listShown(pickState.current, choiceBands(boxes, capture.width, capture.height, Math.min(1, 1920 / capture.width)), capture.at, { resultPage, options })
+                  pickState.current = shown.state
+                  if (shown.pick) setEventPick(shown.pick)
+                  if (boxes.length === 1) dlog('alone', boxes[0].choiceId, 'header', resultPage, 'options', options)
+                  dlog('bands', JSON.stringify(pickState.current.bands.map(band => [band.choiceId, ...[band.left, band.top, band.right, band.bottom].map(Math.round)])))
+                  // a click before this read: the cursor readings since a second before it
+                  for (const sample of cursorSamples.current) if (sample.at >= capture.at - 1000) pickState.current = cursorSeen(pickState.current, sample)
+                } else {
+                  const listFrom = pickState.current.shownAt
+                  const settled = listMissing(pickState.current, capture.at)
+                  pickState.current = settled.state
+                  if (settled.pick) setEventPick(settled.pick)
+                  // the list went and nothing named what was taken: the kept frames are read again
+                  else if (listFrom && settled.state === EMPTY_PICK) void replayRoom(listFrom - 500, capture.at)
+                }
+              }
               setOcrCandidates({ ...matches, ...(want.gifts ? {} : { gifts: [] }),
                 ...(want.events ? {} : { events: [], choices: [], scopedChoices: [], outcomeEventIds: [], choiceEventIds: [], bodyEventIds: [] }),
                 observedAt: capture.at, expiresAt: capture.at + 6000, floor: capture.floor })
               const headerFloor = themeSelectionHeaderFloor(result.text)
-              if (headerFloor !== null && want.themes) setThemeSelectionFloor({ floor: headerFloor, observedAt: capture.at })
+              if (headerFloor !== null && want.themes) { setThemeSelectionFloor({ floor: headerFloor, observedAt: capture.at }); selectionHeader.current = headerFloor }
+              // the pack names under the cards, for the CLEAR BONUS rows read by the icons
+              if (want.themes && want.gifts && latestLabel.current === 'theme_select' && capture.width && capture.height) {
+                const factor = capture.width / Math.min(capture.width, 1920)
+                const names = bonusCardThemes(result.words, [...BONUS_PLACES.odd, ...BONUS_PLACES.even], capture.width, capture.height,
+                  themeReferences.current ?? [], factor, bonusTitleBar.current)
+                if (names.size) {
+                  bonusNames.current = { names, at: capture.at }
+                  setClearBonus(current => current && named(current.cards, names) !== current.cards ? { ...current, cards: named(current.cards, names) } : current)
+                }
+              }
               if (want.gifts) readSale(result.text, result.words, capture)
               readSkillWindow(result.text, capture.at)
               const confirmation = fusionConfirmation(result.text)
@@ -1303,6 +1385,11 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
               if (showsBlessingScreen(result.text)) {
                 blessingAt.current = Math.max(blessingAt.current, capture.at)
                 setScene(current => current?.label === BLESSING_SCENE || current?.label === 'gift_acquired' ? current : { label: BLESSING_SCENE, since: capture.at })
+              }
+              // the dungeon's end screen, by its own words (the classifier barely knows it)
+              if (showsRunEndScreen(result.text)) {
+                runEndAt.current = Math.max(runEndAt.current, capture.at)
+                setScene(current => current?.label === RUN_END_SCENE ? current : { label: RUN_END_SCENE, since: capture.at })
               }
               screenReads.current = [...screenReads.current.filter(item => capture.at - item.at < 10_000), { at: capture.at, fusion: fusionScreen }]
               // OCR positions are on the reading canvas (at most 1920 px wide); the slot crops use full-size frames.
@@ -1481,20 +1568,26 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
           ocrReady.current = false
         }
       }
-      if (ocrReferences.current && Object.values(ocrReferences.current).some(items => items.length > 0)) {
+      // The text reader needs the catalog (gift, event and pack names); one that comes after connecting builds it then
+      // (useEffect below), as a failed reader's rebuild does
+      let disposePool: (() => void) | null = null
+      const buildIfReady = () => {
+        if (!ocrReferences.current || !Object.values(ocrReferences.current).some(items => items.length > 0)) return
         try {
-          let disposePool = buildOcrPool()
-          rebuildOcr.current = () => {
-            if (run !== generation.current) return
-            disposePool()
-            disposePool = buildOcrPool()
-          }
+          disposePool = buildOcrPool()
         } catch {
           for (const lane of ocrPool.current?.lanes ?? []) lane.worker.terminate()
           ocrPool.current = null
           setOcrStatus('error')
         }
       }
+      rebuildOcr.current = () => {
+        if (run !== generation.current) return
+        disposePool?.()
+        disposePool = null
+        buildIfReady()
+      }
+      buildIfReady()
       let inferredAt = 0
       const readFusionSlots = async () => {
         const wanted = fusionWanted.current
@@ -1517,7 +1610,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
         if (dialog?.dialogless) { finishFusionDialog(); return false }
         const retained = fusionFrameToRead.current
         if (!retained && fusionRequest.current && Date.now() - fusionRequest.current.at < 350) return false
-        inFlight.current = true
+        markBusy()
         try {
           if (retained) {
             // The frame the dialog was read from goes first; later captures may already show the result.
@@ -1541,6 +1634,25 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
       }
       let wheelBusy = false
       /** Keeps a small crop of the selection wheel while the fusion screen is up (bounded ring, no inference here). */
+      let lastThumb: Float32Array | null = null
+      let changeBusy = false
+      const sampleChange = async () => {
+        if (changeBusy) return
+        const source = openFrame()
+        if (!source) return
+        changeBusy = true
+        try {
+          const bitmap = await createImageBitmap(source.source, { resizeWidth: THUMB_WIDTH, resizeHeight: THUMB_HEIGHT, resizeQuality: 'high' })
+          const canvas = new OffscreenCanvas(THUMB_WIDTH, THUMB_HEIGHT)
+          const context = canvas.getContext('2d', { willReadFrequently: true })
+          if (!context) { bitmap.close(); return }
+          context.drawImage(bitmap, 0, 0)
+          bitmap.close()
+          const thumb = greyThumb(context.getImageData(0, 0, THUMB_WIDTH, THUMB_HEIGHT).data)
+          if (lastThumb && thumbDifference(lastThumb, thumb) > SCREEN_CHANGE) { screenChangedAt.current = Date.now(); promptEventOcr() }
+          lastThumb = thumb
+        } catch { /* a missed copy only delays the next read to its timer */ } finally { source.release(); changeBusy = false }
+      }
       const sampleWheel = async () => {
         const now = Date.now()
         const pruned = wheelFrames.current.filter(item => now - item.lastAt <= WHEEL_KEEP_MS)
@@ -1574,7 +1686,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
       }
       /** Reads one wheel state in one layout into its cache (a copy of its frame goes to the worker; it may be read again). */
       const readWheelState = async (state: WheelFrame, capacity: number) => {
-        inFlight.current = true
+        markBusy()
         try {
           const frame = await createImageBitmap(state.frame)
           if (run !== generation.current || !worker.current) { frame.close(); inFlight.current = false; return true }
@@ -1603,6 +1715,12 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
         return readWheelState(state, capacity)
       }
       const capture = async () => {
+        if (inFlight.current && Date.now() - busySince.current > SCENE_WATCHDOG_MS) {
+          // a request the scene worker never answered (a stalled GPU): given up, so reading goes on; its late answer, if
+          // any, names a request no longer waited for and is ignored
+          plog('scene-watchdog', Date.now() - busySince.current)
+          inFlight.current = false
+        }
         // A queued acquisition icon goes before any fusion read (those take a few hundred ms).
         if (popupVisionQueue.current.length && !inFlight.current) {
           flushVisionPopup()
@@ -1611,11 +1729,94 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
         const gifts = detectionRef.current.gifts
         if (gifts && fusionWanted.current && await readFusionSlots()) return
         if (gifts && Date.now() - inferredAt < profileRef.current.sceneIntervalMs - 20 && await preReadWheel()) return
+        // The shop shelf while the shop is on screen, between scene reads (every 0.7 s; one request at a time)
+        if (gifts && !inFlight.current && latestLabel.current === 'shop' && hasFrame() && !popupVisionQueue.current.length &&
+          Date.now() - (shelfRequest.current?.at ?? 0) >= 700 && Date.now() - inferredAt < profileRef.current.sceneIntervalMs - 20) {
+          markBusy()
+          try {
+            const frame = await grabBitmap()
+            if (run !== generation.current || !worker.current) { frame.close(); inFlight.current = false; return }
+            const requestId = ++ocrRequestId.current
+            shelfRequest.current = { requestId, at: Date.now() }
+            worker.current.postMessage({ type: 'shop-shelf', requestId, frame }, [frame])
+          } catch { inFlight.current = false }
+          return
+        }
+        // The owned list while the sell window is on screen, the same way
+        if (gifts && !inFlight.current && latestLabel.current === 'sell' && hasFrame() && !popupVisionQueue.current.length &&
+          Date.now() - (gridRequest.current?.at ?? 0) >= 700 && Date.now() - inferredAt < profileRef.current.sceneIntervalMs - 20) {
+          markBusy()
+          try {
+            const frame = await grabBitmap()
+            if (run !== generation.current || !worker.current) { frame.close(); inFlight.current = false; return }
+            const requestId = ++ocrRequestId.current
+            gridRequest.current = { requestId, at: Date.now() }
+            worker.current.postMessage({ type: 'owned-grid', requestId, frame }, [frame])
+          } catch { inFlight.current = false }
+          return
+        }
+        // The cursor over a ? room's choice list while it is on screen (every 150 ms, only that region: a few ms)
+        const bands = pickState.current.bands
+        if (bands.length && !inFlight.current && latestLabel.current === 'event' && hasFrame() && !popupVisionQueue.current.length &&
+          Date.now() - (cursorRequest.current?.at ?? 0) >= 150 && Date.now() - inferredAt < profileRef.current.sceneIntervalMs - 20) {
+          markBusy()
+          try {
+            const frame = await grabBitmap()
+            if (run !== generation.current || !worker.current) { frame.close(); inFlight.current = false; return }
+            const requestId = ++ocrRequestId.current
+            cursorRequest.current = { requestId, at: Date.now() }
+            // the buttons and a margin around them (the cursor's hot spot is its tip; the nib hangs below and right)
+            const margin = 60 * Math.min(frame.width / 1920, frame.height / 1080)
+            const left = Math.min(...bands.map(band => band.left)) - margin, top = Math.min(...bands.map(band => band.top)) - margin
+            const region = { x: left, y: top, width: Math.max(...bands.map(band => band.right)) + margin - left, height: Math.max(...bands.map(band => band.bottom)) + margin - top }
+            worker.current.postMessage({ type: 'cursor', requestId, frame, region }, [frame])
+          } catch { inFlight.current = false }
+          return
+        }
+        // The Star Blessing screen's cards, every second while it shows
+        if (gifts && !inFlight.current && onBlessingScreen(blessingAt.current, Date.now()) && hasFrame() && !popupVisionQueue.current.length &&
+          Date.now() - (blessingRequest.current?.at ?? 0) >= 1000) {
+          markBusy()
+          try {
+            const frame = await grabBitmap()
+            if (run !== generation.current || !worker.current) { frame.close(); inFlight.current = false; return }
+            const requestId = ++ocrRequestId.current
+            blessingRequest.current = { requestId, at: Date.now() }
+            worker.current.postMessage({ type: 'blessings', requestId, frame }, [frame])
+          } catch { inFlight.current = false }
+          return
+        }
+        // The theme pack selection's CLEAR BONUS rows, every second while it shows
+        if (gifts && !inFlight.current && latestLabel.current === 'theme_select' && hasFrame() && !popupVisionQueue.current.length &&
+          Date.now() - (bonusRequest.current?.at ?? 0) >= 1000 && Date.now() - inferredAt < profileRef.current.sceneIntervalMs - 20) {
+          markBusy()
+          try {
+            const frame = await grabBitmap()
+            if (run !== generation.current || !worker.current) { frame.close(); inFlight.current = false; return }
+            const requestId = ++ocrRequestId.current
+            bonusRequest.current = { requestId, at: Date.now() }
+            worker.current.postMessage({ type: 'clear-bonus', requestId, frame }, [frame])
+          } catch { inFlight.current = false }
+          return
+        }
+        // The formation from the bottom bar while the shop is on screen
+        if (gifts && !inFlight.current && latestLabel.current === 'shop' && hasFrame() && !popupVisionQueue.current.length &&
+          Date.now() - (formationRequest.current?.at ?? 0) >= 2000 && Date.now() - inferredAt < profileRef.current.sceneIntervalMs - 20) {
+          markBusy()
+          try {
+            const frame = await grabBitmap()
+            if (run !== generation.current || !worker.current) { frame.close(); inFlight.current = false; return }
+            const requestId = ++ocrRequestId.current
+            formationRequest.current = { requestId, at: Date.now() }
+            worker.current.postMessage({ type: 'formation', requestId, frame }, [frame])
+          } catch { inFlight.current = false }
+          return
+        }
         // Popup icons go first, but scene inference still runs at least every 3s.
         if (inFlight.current || Date.now() - inferredAt < profileRef.current.sceneIntervalMs - 20 ||
           (popupVisionQueue.current.length && Date.now() - inferredAt < 3000) || !hasFrame()) return
         inferredAt = Date.now()
-        inFlight.current = true
+        markBusy()
         try {
           const frame = await grabBitmap()
           if (run !== generation.current || !worker.current) {
@@ -1647,6 +1848,29 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
           setStatus('running')
           every(timer, 250, () => { void capture() })
           every(wheelTimer, 150, () => { void sampleWheel() })
+          every(changeTimer, 100, () => { void sampleChange() })
+          // the capture's last seconds, a frame every 100 ms scaled to 960 px, kept by their own worker
+          const keeper = new Worker('/models/assist-scene/frame-tape-worker.js', { type: 'module' })
+          keeper.onmessage = (event: MessageEvent<{ type: string; requestId?: number; frames?: { at: number; bitmap: ImageBitmap }[]; kept?: number; bytes?: number; keepMs?: number; dropped?: number }>) => {
+            const answer = event.data.type === 'frames' && typeof event.data.requestId === 'number' ? tapeAnswers.get(event.data.requestId) : undefined
+            if (event.data.type === 'frames') dlog('tape', event.data.frames?.length, 'of', event.data.kept, 'kept,',
+              Math.round((event.data.bytes ?? 0) / 1e5) / 10, 'MB,', event.data.keepMs, 'ms a frame,', event.data.dropped, 'dropped')
+            if (answer) { tapeAnswers.delete(event.data.requestId!); answer(event.data.frames ?? []) } else for (const frame of event.data.frames ?? []) frame.bitmap.close()
+          }
+          tape.current = keeper
+          // development only: the kept seconds read again on demand (the live test triggers a replay with it)
+          if (isVerbose()) Object.assign(window, { __assistReplay: (ms = 8000) => replayRoom(Date.now() - ms, Date.now()) })
+          let feeding = false
+          every(tapeTimer, TAPE_EVERY_MS, () => {
+            if (feeding || !tape.current) return
+            const source = openFrame()
+            if (!source) return
+            feeding = true
+            const scale = Math.min(1, TAPE_WIDTH / source.width)
+            void createImageBitmap(source.source, { resizeWidth: Math.round(source.width * scale), resizeHeight: Math.round(source.height * scale), resizeQuality: 'medium' })
+              .then(frame => { if (tape.current) tape.current.postMessage({ type: 'frame', at: Date.now(), frame }, [frame]); else frame.close() })
+              .catch(() => {}).finally(() => { source.release(); feeding = false })
+          })
           // Polled at a low rate from the real queues; React only re-renders when a count changes.
           statusTimer.current = setInterval(() => {
             if (run !== generation.current) return
@@ -1703,6 +1927,13 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
           inFlight.current = false
           visionFailures = 0
           latestLabel.current = result.confidence >= 0.5 ? result.label : latestLabel.current
+          if (latestLabel.current !== 'event' && (pickState.current.bands.length || pickState.current.alone)) {
+            const listFrom = pickState.current.shownAt
+            const settled = listMissing(pickState.current, Date.now(), true)
+            pickState.current = settled.state
+            if (settled.pick) setEventPick(settled.pick)
+            else if (listFrom) void replayRoom(listFrom - 500, Date.now())
+          }
           setPrediction({ label: result.label, confidence: result.confidence })
           const capture = visualCapture.current
           visualCapture.current = null
@@ -1718,7 +1949,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
               // A recently read fusion title outranks the classifier (it learned the brown UI only); gift popups still show.
               // So does a recent read of the starlight screen, which the classifier learned in its old red colours only.
               const label = held.label === 'gift_acquired' ? held.label : onFusionScreen(null, fusionTitleAt.current, Date.now()) ? 'fusion'
-                : onBlessingScreen(blessingAt.current, Date.now()) ? BLESSING_SCENE : held.label
+                : onBlessingScreen(blessingAt.current, Date.now()) ? BLESSING_SCENE : onRunEndScreen(runEndAt.current, Date.now()) ? RUN_END_SCENE : held.label
               if (held.count >= 2) setScene(current => current?.label === label ? current : { label, since: held.at })
             }
             // Event screens and pack selection headers are read by full-frame OCR, so both ask for it promptly.
@@ -1733,6 +1964,65 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
               promptExplore()
             }
           }
+          flushVisionPopup()
+        } else if (result.type === 'shop-shelf' && shelfRequest.current?.requestId === result.requestId) {
+          inFlight.current = false
+          const slots = parseShopShelf((result as { slots?: unknown }).slots)
+          const at = shelfRequest.current?.at ?? Date.now()
+          if (slots && latestLabel.current === 'shop') setShopShelf({ slots, observedAt: at })
+          flushVisionPopup()
+        } else if (result.type === 'cursor' && cursorRequest.current?.requestId === result.requestId) {
+          inFlight.current = false
+          const cursor = (result as { cursor?: { x?: unknown; y?: unknown; pressed?: unknown } | null }).cursor
+          if (cursor && typeof cursor.x === 'number' && typeof cursor.y === 'number' && Number.isFinite(cursor.x) && Number.isFinite(cursor.y)) {
+            const sample = { at: cursorRequest.current?.at ?? Date.now(), x: cursor.x, y: cursor.y, pressed: cursor.pressed === true }
+            cursorSamples.current = [...cursorSamples.current.filter(item => sample.at - item.at < 4000), sample]
+            pickState.current = cursorSeen(pickState.current, sample)
+            dlog('cursor', Math.round(sample.x), Math.round(sample.y), sample.pressed, pickState.current.hits.length)
+          } else dlog('cursor', 'none')
+          flushVisionPopup()
+        } else if (result.type === 'formation' && formationRequest.current?.requestId === result.requestId) {
+          inFlight.current = false
+          const ids = (result as { ids?: unknown }).ids
+          const at = formationRequest.current?.at ?? Date.now()
+          if (Array.isArray(ids) && ids.length === 12 && ids.every(id => id === null || typeof id === 'string') && latestLabel.current === 'shop')
+            setFormation({ ids: ids as (string | null)[], observedAt: at })
+          flushVisionPopup()
+        } else if (result.type === 'blessings' && blessingRequest.current?.requestId === result.requestId) {
+          inFlight.current = false
+          const levels = (result as { levels?: unknown }).levels
+          if (Array.isArray(levels) && levels.length === 10 && levels.every(level => Number.isInteger(level) && level >= 0 && level <= 3)) {
+            const key = levels.join('')
+            if (key === lastBlessingRead.current)
+              setBlessings(current => current && current.levels.join('') === key ? current
+                : { levels: levels as number[], spent: blessingSpent(levels as number[]), observedAt: blessingRequest.current?.at ?? Date.now() })
+            lastBlessingRead.current = key
+          } else lastBlessingRead.current = ''
+          flushVisionPopup()
+        } else if (result.type === 'clear-bonus' && bonusRequest.current?.requestId === result.requestId) {
+          inFlight.current = false
+          const { cards, titleBar } = result as { cards?: unknown; titleBar?: unknown }
+          if (typeof titleBar === 'number' && Number.isFinite(titleBar)) bonusTitleBar.current = titleBar
+          const valid = Array.isArray(cards) && cards.every(card => card && typeof card.place === 'number' && Array.isArray(card.gifts) &&
+            card.gifts.every((gift: unknown) => typeof gift === 'string'))
+          // a read with no gifts at all (cards still sliding in, or every row empty) changes nothing
+          if (valid && latestLabel.current === 'theme_select' && (cards as ClearBonusCard[]).some(card => card.gifts.length)) {
+            const key = offerKey(cards as ClearBonusCard[])
+            if (key === lastBonusRead.current) {
+              const names = bonusNames.current && Date.now() - bonusNames.current.at < 15_000 ? bonusNames.current.names : null
+              const read = names ? named(cards as ClearBonusCard[], names) : cards as ClearBonusCard[]
+              setClearBonus(current => current && offerKey(current.cards) === key && current.floor === selectionHeader.current ? current
+                : { floor: selectionHeader.current, cards: read, observedAt: bonusRequest.current?.at ?? Date.now() })
+            }
+            lastBonusRead.current = key
+          } else lastBonusRead.current = ''
+          flushVisionPopup()
+        } else if (result.type === 'owned-grid' && gridRequest.current?.requestId === result.requestId) {
+          inFlight.current = false
+          const gifts = (result as { gifts?: unknown }).gifts
+          const at = gridRequest.current?.at ?? Date.now()
+          if (Array.isArray(gifts) && gifts.every(gift => typeof gift === 'string') && latestLabel.current === 'sell')
+            setOwnedGrid({ gifts: gifts as string[], observedAt: at })
           flushVisionPopup()
         } else if (result.type === 'fusion-slots' && wheelRequest.current?.requestId === result.requestId) {
           inFlight.current = false
@@ -1782,6 +2072,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
       setOcrEngine(null)
       setOcrWorkers(0)
       setFusionEvidence([])
+      setShopShelf(null); setOwnedGrid(null); setFormation(null); setEventPick(null); pickState.current = EMPTY_PICK; cursorSamples.current = []
       setGiftSales([]); setSkillExchange(null)
       saleState.current = EMPTY_SALE_STATE
       setObservedFloor(null)
@@ -1839,7 +2130,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
 
   return { supported, status, error, prediction, visualCandidates, ocrCandidates, ocrStatus,
     popupAcquisitions, floorThemeObservation, observedFloor, scene, themeSelectionFloor, queueStatus, mobile, gpu, inference, ocrEngine,
-    ocrWorkers, fusionEvidence, giftSales, skillExchange, start, stop, reportInventoryChange }
+    ocrWorkers, fusionEvidence, giftSales, skillExchange, shopShelf, ownedGrid, formation, blessings, clearBonus, eventPick, start, stop, reportInventoryChange }
 }
 
 /**

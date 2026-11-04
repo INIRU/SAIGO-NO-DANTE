@@ -3,6 +3,8 @@
 html[data-with-admin-shell] :is(.site-navigation, .site-footer) { display: none; }
 /* Assist mode (setup and run) is a full-screen tool: its own header carries the way back. */
 html[data-with-assist-run] :is(.site-navigation, .site-footer) { display: none; }
+/* The Index prescript mode is the Index's own screen: its header carries the way back. */
+html[data-with-prescript] :is(.site-navigation, .site-footer) { display: none; }
 /* Support is a full-viewport chat; only its inner panes scroll and its list header links back to the site. */
 html[data-with-support-page] :is(.site-navigation, .site-footer) { display: none; }
 html[data-with-support-page], html[data-with-support-page] body { overflow: hidden; }

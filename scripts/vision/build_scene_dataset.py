@@ -22,6 +22,8 @@ from pathlib import Path
 
 from PIL import Image
 
+from assist_common import stable_split
+
 CAP = 700  # frames per label and source: classes are sampled equally, so more of one screen adds little
 
 
@@ -74,24 +76,25 @@ def main():
     parser.add_argument('--out', type=Path, required=True)
     args = parser.parse_args()
     rows = []
-    ocr = json.load(open(args.videos / 'ocr.json'))
-    for line in open(args.videos / 'teacher.jsonl'):
+    ocr = json.load(open(args.videos / 'ocr.json', encoding='utf-8'))
+    for line in open(args.videos / 'teacher.jsonl', encoding='utf-8'):
         frame = json.loads(line)
         label = text_label(ocr[frame['file']]['text']) if frame['file'] in ocr else None
         if label or frame['confidence'] >= 0.8:
             rows.append({'root': 'videos', 'file': frame['file'], 'label': label or frame['teacher'], 'source': 'text' if label else 'model',
                          'shape': '16:9', 'scene_id': f"{frame['video']}@{int(frame['timestamp_seconds'] // 30):04d}", 'model': frame['teacher']})
     for cache in args.caches:
-        for url, screen in json.load(open(cache)).items():
+        for url, screen in json.load(open(cache, encoding='utf-8')).items():
             label = text_label(screen['text'])
             file = url[len('/frames/'):] if url.startswith('/frames/') else url
             if label and (args.samples / file).exists():
                 with Image.open(args.samples / file) as image:
                     rows.append({'root': 'samples', 'file': file, 'label': label, 'source': 'text', 'shape': shape(*image.size), 'scene_id': file.rsplit('/', 1)[0]})
     rows = list({(row['root'], row['file']): row for row in rows}.values())
-    # Whole groups per split, in a fixed order: every seventh group validates, the next tests.
+    # Whole groups per split, by a hash of the group (about a seventh tests, a seventh validates): a group added later
+    # never moves another between splits
     groups = sorted({row['scene_id'] for row in rows})
-    split = {group: 'validation' if index % 7 == 5 else 'test' if index % 7 == 6 else 'train' for index, group in enumerate(groups)}
+    split = {group: stable_split(group, test_every=7, validation_every=6) for group in groups}
     kept, seen = [], Counter()
     for row in sorted(rows, key=lambda row: (row['scene_id'], row['file'])):
         row['split'] = split[row['scene_id']]

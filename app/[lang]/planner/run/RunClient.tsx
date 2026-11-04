@@ -25,6 +25,8 @@ import RecognitionModeControl from '@/components/planner/run/RecognitionModeCont
 import DetectionToggles, { ToggleSwitch } from '@/components/planner/run/DetectionToggles'
 import { DETECTION_STORAGE_KEY, DEFAULT_DETECTION, readDetectionSettings, type DetectionSettings } from '@/lib/vision/detection-settings'
 import { readSampleConsent, SAMPLES_STORAGE_KEY } from '@/lib/vision/assist-samples'
+import { downloadLog, installConsole, plog } from '@/lib/vision/assist-log'
+import { useAssistLog } from '@/lib/hooks/useAssistLog'
 import { GAME_LANGUAGE_STORAGE_KEY, GAME_LANGUAGES, readGameLanguage, readRecognitionMode, RECOGNITION_MODE_STORAGE_KEY, type GameLanguage,
   type RecognitionMode } from '@/lib/vision/recognition-profile'
 import ConfirmModal from '@/components/ui/ConfirmModal'
@@ -159,6 +161,13 @@ export default function RunClient({ themes, gifts, recipes, identities, sinners,
   const { visualCandidates, ocrCandidates, eventChoiceEvidence } =
     captureEvidence(capture, state.phase === 'playing' ? state.currentFloor : null, Date.now())
   const { reportInventoryChange } = capture
+  // the Assist's log (recognition settings → 로그 내보내기, F12 → assist.help())
+  useAssistLog(capture)
+  const snapshot = useRef<() => unknown>(() => null)
+  snapshot.current = () => ({ status: capture.status, reader: { status: capture.ocrStatus, engine: capture.ocrEngine }, gpu: capture.gpu,
+    scene: capture.scene?.label ?? null, mode: recognitionMode, detection, language: gameLanguage, phase: state.phase,
+    floor: state.phase === 'playing' ? state.currentFloor : null, gifts: state.giftInventory.length })
+  useEffect(() => installConsole(() => snapshot.current()), [])
   // Inventory edits during a run feed the opt-in recognition report (a no-op unless capturing with consent).
   useEffect(() => useRunStore.subscribe((next, previous) => {
     if (next.phase === 'playing' && previous.phase === 'playing' && next.giftInventory !== previous.giftInventory)
@@ -179,6 +188,9 @@ export default function RunClient({ themes, gifts, recipes, identities, sinners,
   // Same ids keep the same array, so the memoized floor panel skips capture ticks that changed nothing it shows.
   const observedEventKey = observedEventList.join(',')
   const observedEventIds = useMemo(() => observedEventList, [observedEventKey])
+  useEffect(() => { if (observedEventKey) plog('events-seen', observedEventKey) }, [observedEventKey])
+  const roomId = eventChoiceEvidence?.eventId ?? null
+  useEffect(() => { if (roomId !== null) plog('room', eventChoiceEvidence) }, [roomId]) // eslint-disable-line react-hooks/exhaustive-deps -- once a room
   const giftConditionState = useMemo(() => ({
     ...state,
     identitySlots: enrichIdentitySlotsForGiftConditions(state.identitySlots, identities),
@@ -272,6 +284,11 @@ export default function RunClient({ themes, gifts, recipes, identities, sinners,
         events: { label: t('detectionEvents'), description: t('detectionEventsHint') } }} />
     <ToggleSwitch data-assist-samples="" on={samples === true} onChange={() => changeSamples(samples !== true)}
       label={t('samplesLabel')} description={t('samplesHint')} />
+    <div>
+      <button type="button" data-assist-export-log onClick={() => downloadLog(snapshot.current())}
+        className="min-h-9 rounded-md border border-[var(--border)] px-3 text-sm text-[var(--text-primary)] hover:border-[var(--border-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--gold-light)]">{t('exportLog')}</button>
+      <p className="mt-1.5 break-keep text-[0.6875rem] leading-4 text-[var(--text-secondary)]">{t('exportLogHint')}</p>
+    </div>
   </div>
   const recognitionSummary = { fastest: t('recognitionModeFastest'), performance: t('recognitionModePerformance'),
     balanced: t('recognitionModeBalanced'), quality: t('recognitionModeQuality') }[recognitionMode]
@@ -321,6 +338,10 @@ export default function RunClient({ themes, gifts, recipes, identities, sinners,
             : capture.status === 'error' || capture.status === 'unsupported' ? 'bg-[var(--error)]' : 'bg-[var(--text-muted)]'}`} />
           <p className="min-w-0 break-keep text-[0.8125rem] leading-5 max-sm:sr-only">
             <span className={`font-semibold ${capture.status === 'error' || capture.status === 'unsupported' ? 'text-[var(--error-text)]' : 'text-[var(--text-secondary)]'}`}>{t(`capture_${capture.status}`)}</span>
+            {/* the text reader down or slow while the screen still comes in: rooms, packs and popups are not being read */}
+            {capture.status === 'running' && (capture.ocrStatus === 'error' || capture.ocrEngine?.engine === 'tesseract') &&
+              <span data-reader-state={capture.ocrStatus === 'error' ? 'down' : 'slow'} className={capture.ocrStatus === 'error' ? 'text-[var(--error-text)]' : 'text-[var(--text-secondary)]'}>
+                {' · '}{t(capture.ocrStatus === 'error' ? 'readerDown' : capture.ocrEngine?.loading ? 'readerRecovering' : 'readerSlow')}</span>}
             <span className="sr-only"> {t(samples ? 'captureFramesPrivacySamples' : 'captureFramesPrivacy')}</span>
           </p>
         </div>}
@@ -344,6 +365,7 @@ export default function RunClient({ themes, gifts, recipes, identities, sinners,
             floorThemeObservation={capture.status === 'running' ? capture.floorThemeObservation : null}
             observedFloor={capture.status === 'running' ? capture.observedFloor : null}
             fusionEvidence={capture.status === 'running' ? capture.fusionEvidence : null}
+            clearBonus={capture.status === 'running' ? capture.clearBonus : null}
             />
         </>}
           <TempSaveMenu title={tTempSaves('runMenuLabel')} slots={runSlots} onSave={saveRunSlot} onLoad={loadRunSlot} onDelete={deleteRunSlot} />
