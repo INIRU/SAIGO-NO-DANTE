@@ -36,7 +36,9 @@ export function NotePreviewBody({ asset }: { asset: NoteAssetData }) {
  * Wraps a name in a sentence so it shows a preview card: on hover or keyboard focus after PREVIEW_DELAY_MS for a mouse or a
  * pen, in a modal on a touch tap (with a link to the page). Touch never hovers. `modalOnTap` off leaves a tap to the name's own action.
  */
-export default function NotePreviewHost({ asset, href, modalOnTap = true, children }: { asset: NoteAssetData | undefined; href?: string; modalOnTap?: boolean; children: ReactNode }) {
+export default function NotePreviewHost({ asset, href, modalOnTap = true, block = false, children }: { asset: NoteAssetData | undefined; href?: string; modalOnTap?: boolean
+  /** A block host (a grid cell) instead of a name inside a sentence. */
+  block?: boolean; children: ReactNode }) {
   const lang = useLocale()
   const host = useRef<HTMLSpanElement>(null), card = useRef<HTMLDivElement>(null)
   const openTimer = useRef<ReturnType<typeof setTimeout>>(undefined), closeTimer = useRef<ReturnType<typeof setTimeout>>(undefined)
@@ -48,21 +50,24 @@ export default function NotePreviewHost({ asset, href, modalOnTap = true, childr
   useLayoutEffect(() => {
     if (!anchor || !card.current) return
     const size = card.current.getBoundingClientRect()
-    setPlace(previewPlacement(anchor, size, { width: document.documentElement.clientWidth, height: window.innerHeight }))
+    // the window the name is in: a page, or the Assist's Picture-in-Picture window (another document)
+    const doc = host.current?.ownerDocument ?? document
+    setPlace(previewPlacement(anchor, size, { width: doc.documentElement.clientWidth, height: doc.defaultView?.innerHeight ?? window.innerHeight }))
   }, [anchor])
   useEffect(() => {
     if (!anchor) return
     const hide = () => { clearTimeout(openTimer.current); setAnchor(null); setPlace(null) }
     const escape = (event: KeyboardEvent) => { if (event.key === 'Escape') hide() }
-    window.addEventListener('scroll', hide, { capture: true, passive: true })
-    window.addEventListener('resize', hide)
-    document.addEventListener('keydown', escape)
-    return () => { window.removeEventListener('scroll', hide, { capture: true }); window.removeEventListener('resize', hide); document.removeEventListener('keydown', escape) }
+    const doc = host.current?.ownerDocument ?? document, view = doc.defaultView ?? window
+    view.addEventListener('scroll', hide, { capture: true, passive: true })
+    view.addEventListener('resize', hide)
+    doc.addEventListener('keydown', escape)
+    return () => { view.removeEventListener('scroll', hide, { capture: true }); view.removeEventListener('resize', hide); doc.removeEventListener('keydown', escape) }
   }, [anchor])
   if (!asset) return <>{children}</>
   return <>
     <span
-      className="note-preview-host" ref={host}
+      className="note-preview-host" ref={host} style={block ? { display: 'block' } : undefined}
       onPointerDown={event => { lastPointer.current = event.pointerType }}
       onPointerEnter={event => { if (usesHover(event.pointerType)) open() }}
       onPointerLeave={close}
@@ -78,7 +83,7 @@ export default function NotePreviewHost({ asset, href, modalOnTap = true, childr
         style={{ left: place?.left ?? 0, top: place?.top ?? 0, visibility: place ? 'visible' : 'hidden' }}
         onPointerEnter={event => { if (usesHover(event.pointerType)) { clearTimeout(closeTimer.current) } }} onPointerLeave={close}>
         <NotePreviewBody asset={asset} />
-      </div>, document.body)}
+      </div>, host.current?.ownerDocument.body ?? document.body)}
     <BaseModal open={modal} onClose={() => setModal(false)} title={assetName(asset, lang)} maxWidth="26rem" zIndex={10000}>
       <div className="note-preview-modal">
         <NotePreviewBody asset={asset} />

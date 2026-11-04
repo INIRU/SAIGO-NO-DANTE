@@ -913,8 +913,6 @@
       "clearBonusNoPlan": "No planned gifts here",
       "clearBonusMark": "Clear bonus",
       "clearBonusMarkShort": "Bonus",
-      "giftInfoTier": "Tier {tier}",
-      "giftInfoPrice": "{price} cost",
       "clearBonusOffer": "Packs whose clear bonus has a planned gift",
       "clearBonusCard": "Pack {n}",
       "giftFilters": "Gift filters",

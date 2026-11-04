@@ -2,6 +2,8 @@
 
 import { useLocale, useTranslations } from 'next-intl'
 import GiftArtwork from '@/components/ui/GiftArtwork'
+import NotePreviewHost from '@/components/notes/NotePreviewCard'
+import { giftPreviewAsset } from '@/lib/notes/assets'
 import { getLocalizedName } from '@/lib/i18n/localize'
 import type { SupportedLang } from '@/lib/i18n/types'
 import type { GiftData } from '@/lib/planner/types'
@@ -18,8 +20,6 @@ interface Props {
   iconSize?: number
   /** A small window: tighter box. */
   compact?: boolean
-  /** Handlers that show a gift's details on hover (the PiP's gift card); without them the name is the tooltip. */
-  hover?: (gift: GiftData) => Record<string, unknown>
 }
 
 /**
@@ -27,7 +27,7 @@ interface Props {
  * are taken, so a planned gift among them need not be bought in this floor's shop (unless there are more planned ones
  * than picks).
  */
-export default function CompanionClearBonus({ gifts, planned, owned, picks, label, iconSize = 36, compact = false, hover }: Props) {
+export default function CompanionClearBonus({ gifts, planned, owned, picks, label, iconSize = 36, compact = false }: Props) {
   const t = useTranslations('planner.run')
   const locale = useLocale() as SupportedLang
   const localized = (gift: GiftData) => getLocalizedName({ name_kr: gift.name, name_en: gift.name_en, name_jp: gift.name_jp }, locale)
@@ -46,9 +46,9 @@ export default function CompanionClearBonus({ gifts, planned, owned, picks, labe
       const want = planned.has(gift.game_id) && !owned.has(gift.game_id)
       const have = owned.has(gift.game_id)
       const name = [localized(gift), want && t('pipPlanGift'), have && t('owned')].filter(Boolean).join(' · ')
-      return <li key={gift.game_id} title={hover ? undefined : name} aria-label={name} {...hover?.(gift)} data-bonus-planned={want || undefined} data-owned={have || undefined}
+      return <li key={gift.game_id} aria-label={name} data-bonus-planned={want || undefined} data-owned={have || undefined}
         className={`block rounded-sm p-0.5 ${want ? 'ring-2 ring-[var(--gold)]' : ''} ${have ? 'opacity-40' : ''}`} style={{ width: iconSize + 4 }}>
-        <GiftArtwork gift={gift} displayName={localized(gift)} sizes={`${iconSize}px`} />
+        <NotePreviewHost asset={giftPreviewAsset(gift)} modalOnTap={false} block><GiftArtwork gift={gift} displayName={localized(gift)} sizes={`${iconSize}px`} /></NotePreviewHost>
       </li>
     })}</ul>
     <p className={`mt-1.5 break-keep text-[0.6875rem] leading-4 ${wanted.length ? 'font-semibold text-[var(--text-primary)]' : 'text-[var(--text-tertiary)]'}`}>{advice}</p>
