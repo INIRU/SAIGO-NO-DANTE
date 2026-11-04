@@ -279,13 +279,15 @@ describe('the ? room prescript', () => {
 
 describe('formation prescripts', () => {
   const ids = ['10101', '10201', '10301', '10401', '10501', '10601', '10701', '10801', '10901', '11001', '11101', '11201']
-  const keywordOf: Record<string, string[]> = { 10101: ['화상'], 10201: ['화상'], 10701: ['화상'], 10301: ['출혈'] }
+  // an Identity's list also names its skills' buffs: never a formation prescript ("완성되어가는 교본" came as one, 2026-11-04)
+  const keywordOf: Record<string, string[]> = { 10101: ['화상', '완성되어가는 교본'], 10201: ['화상', '피해량 증가'], 10701: ['화상'], 10301: ['출혈'] }
   const identity = (id: string) => ({ sinner: `s${id.slice(1, 3)}`, keywords: keywordOf[id] ?? [] })
 
   it('asks for one more of a keyword in the front six, lighter when one waits behind', () => {
     const cards = candidates('special', context({ formation: ids, identity }))
     expect(cards.find(c => c.goal.kind === 'formation-keyword' && c.goal.keyword === '화상')).toMatchObject({ goal: { count: 3 }, strength: 2 })
     expect(cards.find(c => c.goal.kind === 'formation-keyword' && c.goal.keyword === '출혈')).toMatchObject({ goal: { count: 2 }, strength: 4 })
+    expect(cards.filter(c => c.goal.kind === 'formation-keyword').map(c => c.goal.kind === 'formation-keyword' && c.goal.keyword).sort()).toEqual(['출혈', '화상'])
   })
 
   it('a swap is done when the bar shows another Identity in that Sinner place; a front is done when it counts enough', () => {

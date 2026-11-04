@@ -149,7 +149,7 @@ export function candidates(scope: PrescriptScope, ctx: PrescriptContext): Prescr
     // the formation's front: one more of a keyword among the first six (a reorder will do when one waits behind, else a swap)
     const formation = ctx.formation ?? []
     if (formation.filter(Boolean).length >= 6) {
-      const keywords = new Set(formation.flatMap(id => id ? ctx.identity?.(id)?.keywords ?? [] : []))
+      const keywords = new Set(formation.flatMap(id => id ? ctx.identity?.(id)?.keywords ?? [] : []).filter(keyword => FORMATION_KEYWORDS.includes(keyword)))
       for (const keyword of keywords) {
         const count = front(formation, keyword, ctx)
         if (count >= 6) continue
@@ -220,6 +220,12 @@ export function feasible(card: PrescriptCard, ctx: PrescriptContext, inShop: boo
     default: return true
   }
 }
+
+/**
+ * The seven status keywords a formation is built around. An Identity's keyword list also names every buff its skills
+ * use (2026-11-04: "완성되어가는 교본", "피해량 증가", "신속" ...), which no player would read as a keyword to field.
+ */
+export const FORMATION_KEYWORDS: readonly string[] = ['화상', '출혈', '진동', '파열', '침잠', '호흡', '충전']
 
 /** How many of the formation's first six are of the keyword. */
 function front(ids: readonly (string | null)[], keyword: string, ctx: PrescriptContext) {
