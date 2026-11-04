@@ -344,6 +344,22 @@ python3 scripts/vision/train_icons.py --data <icon dataset> --out <checkpoint> -
   ```
 
 
+## PiP 화면 구조 (2026-11-05)
+
+어시스트의 주 화면은 PiP다. 자주 바뀌므로 "무엇을 보일지"와 "어떻게 그릴지"를 나눴다.
+
+| 무엇 | 어디 | 바꾸는 법 |
+|---|---|---|
+| 지금 보일 화면 | `lib/planner/pip-view.ts`의 `PIP_MODES` (위에서부터 처음 맞는 것) | 표에 한 줄을 넣거나 순서를 바꾼다. 지금 순서: 선택지 방 → 스킬 교체 → 편성 → 런 시작 → 테마팩 선택 → 합성 → 층 |
+| 창 크기별 배치 | `pipDensity`(compact: 폭 360 미만이나 높이 340 미만, wide: 폭 560 이상이고 높이의 1.25배 이상), `floorLayout` | compact는 메모 2줄·작은 팁, wide는 메모·팁을 왼쪽 열(40%, 스크롤해도 고정)에 두고 기프트를 오른쪽에 |
+| 아이콘 크기 | `fitGrid` 하나 | 높이를 주면 전부 들어가는 가장 큰 크기, 안 주면 최소 크기로 들어가는 만큼 열을 채운 뒤 키운다 |
+| 기프트 칸 표시 | `giftBadges` + `CompanionPanel`의 `badgeRows` | 줄 하나(기프트 집합, 이름, 짧은 이름, 색)를 넣는다. 지금: 플랜(금색 테두리), 이 층에서만(빨간 느낌표), 클리어 보너스(이름 아래 글자) |
+| 뉴비 팁 | `lib/planner/pip-tips.ts`의 `PIP_TIPS` + `CompanionView`의 `tipView` | 규칙(보일 화면, 데이터 만드는 함수) 하나와 그리는 코드 하나, 메시지. 지금: 층의 클리어 보너스, 선택 화면에서 계획 기프트가 보너스에 있는 카드 |
+| 그리기 | `components/planner/run/CompanionView.tsx` | 화면마다 한 갈래. 상태·기록·인식은 모르고 받은 것만 그린다 |
+| 기록·인식 연결 | `components/planner/run/CompanionPanel.tsx` | 되돌리기, 자동 기록, 창 열기. 보일 데이터(`PipView`)를 만들어 넘긴다 |
+
+**미리보기:** 개발 서버의 `/ko/planner/run/pip-preview`. 실제 기프트·팩으로 만든 화면(층, 하드 층, 보너스 못 읽음, 테마팩 선택, 계획 없음, 선택지 방, 런 시작)을 PiP 크기 넷(320×280, 380×420, 480×640, 640×420)으로 나란히 그린다. 게임이나 화면 연결 없이 PiP를 고친 결과를 바로 본다. 배포에서는 열리지 않는다.
+
 ## 편성 안내, 합성 순서 (2026-10-22)
 
 - **편성 화면**: 장면이 `run_setup`(또는 시작 단계가 끝난 뒤의 `battle_setup`)이면 PiP에 수감자 순서대로 실행 편성의 인격 얼굴과 편성 번호를 보이고, 편성 코드 복사 버튼을 둔다(`CompanionFormation`). `FORMATION_SCENES`(run_setup·battle_setup)이면 런 시작 단계에서도 편성을 보인다. 2026-10-23 녹화를 0.5초마다 판독해 보니 지금 순서는 던전 입장(run_setup) → 편성(battle_setup) → 별의 가호 → 시작 기프트(gift_acquired·start_gift) → 관측(start_gift)이었고, 시작 기프트 화면이 battle_setup으로 읽힌 적은 없었다.

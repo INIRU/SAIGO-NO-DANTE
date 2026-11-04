@@ -16,6 +16,8 @@ interface Props {
   /** A heading in front of the row (the pack's name on a selection screen); the plain title otherwise. */
   label?: string
   iconSize?: number
+  /** A small window: tighter box. */
+  compact?: boolean
 }
 
 /**
@@ -23,7 +25,7 @@ interface Props {
  * are taken, so a planned gift among them need not be bought in this floor's shop (unless there are more planned ones
  * than picks).
  */
-export default function CompanionClearBonus({ gifts, planned, owned, picks, label, iconSize = 36 }: Props) {
+export default function CompanionClearBonus({ gifts, planned, owned, picks, label, iconSize = 36, compact = false }: Props) {
   const t = useTranslations('planner.run')
   const locale = useLocale() as SupportedLang
   const localized = (gift: GiftData) => getLocalizedName({ name_kr: gift.name, name_en: gift.name_en, name_jp: gift.name_jp }, locale)
@@ -33,7 +35,7 @@ export default function CompanionClearBonus({ gifts, planned, owned, picks, labe
     : wanted.length <= picks ? t('clearBonusSkipShop', { names })
     : t('clearBonusTooMany', { planned: wanted.length, count: picks })
   return <section data-clear-bonus aria-label={label ?? t('clearBonusTitle')}
-    className="rounded-md border border-[color-mix(in_srgb,var(--gold)_35%,var(--border))] bg-[var(--bg-card)] px-2.5 py-2">
+    className={`rounded-md border border-[color-mix(in_srgb,var(--gold)_35%,var(--border))] bg-[var(--bg-card)] ${compact ? 'px-2 py-1.5' : 'px-2.5 py-2'}`}>
     <p className="flex flex-wrap items-baseline gap-x-2 text-[0.6875rem] leading-4">
       <span className="font-bold text-[var(--gold-light)]">{label ?? t('clearBonusTitle')}</span>
       <span className="text-[var(--text-secondary)]">{t('clearBonusPicks', { count: picks })}</span>
