@@ -206,3 +206,21 @@ it('names the choice taken from the result text only it has within its event', (
   // a sentence both results end with names neither
   expect(eventScreenEvidence(document('먼지가 가라앉는다.'), taken).outcomeChoiceIds).toEqual([])
 })
+
+it('an option with several possible results is named by the text its rows share (left panel on the result page)', () => {
+  const opening = '손잡이를 붙잡고 온몸의 무게를 실어 힘껏 당겼다.'
+  const rows: OcrCatalog = {
+    gifts: [],
+    events: [{ id: 'gate', texts: ['녹슨 철문 앞에 낡은 자물쇠가 매달려 있다.'] }],
+    choices: [
+      { id: 'pull-ok', eventId: 'gate', option: 0, texts: ['문을 당긴다'], resultTexts: [`${opening} 문이 열렸다.`] },
+      { id: 'pull-no', eventId: 'gate', option: 0, texts: ['문을 당긴다'], resultTexts: [`${opening} 문은 꿈쩍도 하지 않았다.`] },
+      { id: 'leave', eventId: 'gate', option: 1, texts: ['돌아간다'], resultTexts: ['발걸음을 돌려 어두운 복도로 되돌아갔다.'] },
+    ],
+  }
+  // the opening both rows of option 0 share, typed out before the outcome: option 0
+  expect(eventScreenEvidence(document(opening), rows).outcomeChoiceIds).toEqual(['pull-ok', 'pull-no'])
+  // without options known, rows shared text with each other and named nothing
+  const unknown = { ...rows, choices: rows.choices.map(({ option: _, ...choice }) => choice) }
+  expect(eventScreenEvidence(document(opening), unknown).outcomeChoiceIds).toEqual([])
+})
