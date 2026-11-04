@@ -1348,7 +1348,11 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
                 : { gifts: [], events: [], choices: [], scopedChoices: [], outcomeEventIds: [], choiceEventIds: [], bodyEventIds: [] }
               const want = detectionRef.current
               if (want.events && capture.width && capture.height) {
-                const boxes = distinctBoxes('choiceBoxes' in matches ? matches.choiceBoxes ?? [] : [])
+                // the game's list is right of the middle (its name lines start at 0.57 of the width): lines elsewhere are
+                // not its buttons (a whole-screen share also holds the terminal and its PiP)
+                const ocrWidth = capture.width * Math.min(1, 1920 / capture.width)
+                const boxes = distinctBoxes(('choiceBoxes' in matches ? matches.choiceBoxes ?? [] : [])
+                  .filter(box => box.left >= 0.45 * ocrWidth && box.left <= 0.75 * ocrWidth))
                 // how many options of that event can be read (a name of 4 or more glyphs): one of several alone is the one taken
                 const choice = boxes.length ? ocrReferences.current?.choices.find(item => item.id === boxes[0].choiceId) : undefined
                 const options = choice ? new Set(ocrReferences.current!.choices.filter(item => item.eventId === choice.eventId)
@@ -1358,6 +1362,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
                   const shown = listShown(pickState.current, choiceBands(boxes, capture.width, capture.height, Math.min(1, 1920 / capture.width)), capture.at, { resultPage, options })
                   pickState.current = shown.state
                   if (shown.pick) setEventPick(shown.pick)
+                  if (DEBUG_PICK && boxes.length === 1) console.info('[prescript] alone', boxes[0].choiceId, 'header', resultPage, 'options', options)
                   if (DEBUG_PICK) console.info('[prescript] bands', JSON.stringify(pickState.current.bands.map(band => [band.choiceId, ...[band.left, band.top, band.right, band.bottom].map(Math.round)])))
                   // a click before this read: the cursor readings since a second before it
                   for (const sample of cursorSamples.current) if (sample.at >= capture.at - 1000) pickState.current = cursorSeen(pickState.current, sample)

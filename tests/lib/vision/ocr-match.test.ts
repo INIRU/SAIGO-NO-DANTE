@@ -239,3 +239,14 @@ it('names the event whose choices are all on screen though one name is shared wi
   expect(eventScreenEvidence(document('사실대로 말한다.'), shared).choiceEventIds).toEqual([])
   expect(eventScreenEvidence(document('아무것도 아닌 서류라고 한다. 자리를 피한다.'), shared).choiceEventIds).toEqual([])
 })
+
+it('the terminal’s own order on a shared screen is no button of the game’s list', () => {
+  const catalog: OcrCatalog = {
+    gifts: [], events: [{ id: 'clock', texts: ['시간을 알리는 종이 넘어질 듯 젖혀졌다.'] }],
+    choices: [{ id: 'c0', eventId: 'clock', texts: ['균형을 잡도록 도와준다.'] }, { id: 'c1', eventId: 'clock', texts: ['더욱 젖혀버린다.'] }],
+  }
+  const words = (lines: [string, number][]) => ({ text: lines.map(([text]) => text).join(String.fromCharCode(10)),
+    words: lines.map(([text, left], i) => ({ text, confidence: 90, left, top: 300 + i * 176, width: 300, height: 38 })) })
+  const boxes = eventScreenEvidence(words([['균형을 잡도록 도와준다.', 1101], ['더욱 젖혀버린다.', 1101], ['【선택지 「더욱 젖혀버린다」. 골라라】', 120]]), catalog).choiceBoxes
+  expect(boxes?.map(box => [box.choiceId, box.left])).toEqual([['c0', 1101], ['c1', 1101]])
+})
