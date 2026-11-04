@@ -1,3 +1,4 @@
+import { notePreviewText } from '@/lib/notes/blocks'
 import { stripPlanForList } from '@/lib/planner/stripPlanForList'
 
 export type DiscoveryKind = 'deck' | 'planner'
@@ -14,7 +15,9 @@ export function formatDiscoveryPosts(kind: DiscoveryKind, rows: unknown[]) {
     const row = raw as Record<string, unknown>
     if (kind === 'planner') return stripPlanForList(row) as unknown as Record<string, unknown>
     const profile = (Array.isArray(row.profiles) ? row.profiles[0] : row.profiles) as { username?: string | null; avatar_url?: string | null; public_profile?: boolean } | null
-    return { ...row, username: profile?.username ?? undefined, avatar_url: profile?.avatar_url ?? null, profile_public: profile?.public_profile }
+    // Cards show the description as one line: send that line, not the whole note document.
+    const description = typeof row.description === 'string' ? { description: notePreviewText(row.description) } : {}
+    return { ...row, ...description, username: profile?.username ?? undefined, avatar_url: profile?.avatar_url ?? null, profile_public: profile?.public_profile }
   })
 }
 
