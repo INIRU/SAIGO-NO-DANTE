@@ -391,7 +391,7 @@ describe('prescripts of one Identity', () => {
     expect(card().goal).toEqual({ kind: 'field-identity', identityId: '10102', sinner: 's01', fromId: '10101', keywords: ['파열', '진동'] })
   })
 
-  it('fielding it, a 3★ stand-in of its keywords, or a 2★ one for half again', () => {
+  it('fielding it, a 3★ stand-in of its keywords, a 2★ one for 50% more, or a 1★ one for 110% more', () => {
     const run = receive(createPrescriptRun(), card(), 2, 0)
     const with_ = (id: string) => applyEvent(run, { type: 'formation', ids: [id, ...formation.slice(1)], at: 1 }, ctx()).prescripts[0]
     const base = prescriptPoints(3, 'shop', 1)
@@ -401,11 +401,10 @@ describe('prescripts of one Identity', () => {
     // no shared keyword, or the one fielded before: not done
     expect(with_('10105').status).toBe('active')
     expect(with_('10101').status).toBe('active')
-    // a 1★ stand-in never counts
-    expect(with_('10106').status).toBe('active')
+    expect(with_('10106')).toMatchObject({ status: 'done', points: base + Math.round(base * 1.1) })
   })
 
-  it('a 1★ Identity counts for no formation prescript: not a swap, not the front six, not one to bring forward', () => {
+  it('a 1★ Identity counts for no other formation prescript: not a swap, not the front six, not one to bring forward', () => {
     const swap = receive(createPrescriptRun(), { scope: 'shop', goal: { kind: 'swap-identity', sinner: 's01', fromId: '10101' }, strength: 3 }, 2, 0)
     const swapTo = (id: string) => applyEvent(swap, { type: 'formation', ids: [id, ...formation.slice(1)], at: 1 }, ctx()).prescripts[0].status
     expect(swapTo('10106')).toBe('active')
