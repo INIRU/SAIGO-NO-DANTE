@@ -16,6 +16,17 @@ export interface CursorSample { at: number; x: number; y: number; pressed: boole
 /** `list`: the game left the taken option alone on screen (its result page); `cursor`: where the cursor clicked or rested. */
 export interface EventPick { choiceId: string; at: number; via: 'list' | 'cursor' }
 
+/** The result page's header (the list shows "선택지" over it): one option under it is the option taken. */
+export const RESULT_HEADERS: ReadonlySet<string> = new Set(['결과', 'Result', 'Results', '結果'])
+
+/**
+ * One box per text line: an option with several result rows has a row (a choice id) each with the same name, read from
+ * the same line; the first stands for them (any row names the option).
+ */
+export function distinctBoxes(boxes: readonly ChoiceBox[]): ChoiceBox[] {
+  return boxes.filter((box, i) => !boxes.slice(0, i).some(other => Math.abs(other.left - box.left) < 2 && Math.abs(other.top - box.top) < 2))
+}
+
 /** Buttons in the frame's pixels from their name lines (`boxes` in the OCR frame's pixels, `ocrScale` = OCR / frame). */
 export function choiceBands(boxes: readonly ChoiceBox[], width: number, height: number, ocrScale = 1): ChoiceBand[] {
   const s = Math.min(width / 1920, height / 1080)
@@ -33,13 +44,16 @@ export interface PickState {
 export const EMPTY_PICK: PickState = { bands: [], shownAt: 0, hits: [], misses: 0 }
 
 /**
- * A read with choices on screen. A list of other choices starts over. One option of a list of several read alone twice
- * in a row (one read may drop a line) is the option taken: the pick and a fresh state.
+ * A read with choices on screen. A list of other choices starts over. One option read alone, of a list of several (seen
+ * before, or `options`: the event has that many readable options), is the option taken: at once under the result
+ * page's header, else when read so twice in a row (one read may drop a line). A quick click can bring the result page
+ * before any read of the whole list, so the list need not have been seen.
  */
-export function listShown(state: PickState, bands: readonly ChoiceBand[], at: number): { state: PickState; pick: EventPick | null } {
+export function listShown(state: PickState, bands: readonly ChoiceBand[], at: number, { resultPage = false, options = 0 } = {}): { state: PickState; pick: EventPick | null } {
   if (!bands.length) return { state, pick: null }
   const same = state.bands.length > 0 && bands.some(band => state.bands.some(old => old.choiceId === band.choiceId))
-  if (same && state.bands.length > 1 && bands.length === 1) {
+  if (bands.length === 1 && ((same && state.bands.length > 1) || options > 1)) {
+    if (resultPage) return { state: EMPTY_PICK, pick: { choiceId: bands[0].choiceId, at, via: 'list' } }
     const reads = state.alone?.choiceId === bands[0].choiceId ? state.alone.reads + 1 : 1
     if (reads >= 2) return { state: EMPTY_PICK, pick: { choiceId: bands[0].choiceId, at, via: 'list' } }
     return { state: { ...state, alone: { choiceId: bands[0].choiceId, reads }, misses: 0 }, pick: null }
@@ -59,8 +73,10 @@ export function cursorSeen(state: PickState, sample: CursorSample): PickState {
  * screen change, settle it: the pick and a fresh state.
  */
 export function listMissing(state: PickState, at: number, gone = false): { state: PickState; pick: EventPick | null } {
-  if (!state.bands.length) return { state, pick: null }
+  if (!state.bands.length && !state.alone) return { state, pick: null }
   if (!gone && state.misses < 1) return { state: { ...state, misses: state.misses + 1 }, pick: null }
+  // the result page read once (its option alone) before the room went on: that option, before the cursor
+  if (state.alone) return { state: EMPTY_PICK, pick: { choiceId: state.alone.choiceId, at, via: 'list' } }
   const last = state.hits.at(-1)
   return { state: EMPTY_PICK, pick: last ? { choiceId: last.choiceId, at, via: 'cursor' } : null }
 }

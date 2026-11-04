@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { EMPTY_PICK, choiceBands, cursorSeen, listMissing, listShown, type ChoiceBand, type PickState } from '../../../lib/vision/event-pick'
+import { EMPTY_PICK, choiceBands, cursorSeen, distinctBoxes, listMissing, listShown, type ChoiceBand, type PickState } from '../../../lib/vision/event-pick'
 
 // two buttons at 1920×1080 as the game lays them out: name lines at (1101, 300) and (1101, 476)
 const boxes = [{ choiceId: 'a', left: 1101, top: 300, width: 300, height: 38 }, { choiceId: 'b', left: 1101, top: 476, width: 300, height: 38 }]
@@ -55,5 +55,24 @@ describe('the ? room option the cursor clicked', () => {
     step = listShown(listShown(show(EMPTY_PICK, both, 0), alone, 700).state, both, 1400)
     expect(step.pick).toBeNull()
     expect(listShown(step.state, alone, 2100).pick).toBeNull()
+  })
+
+  it('a quick click: the result page alone names the option, the list never read (live test, 2026-11-04)', () => {
+    const alone = choiceBands([boxes[1]], 1920, 1080)
+    // under the result header: at once
+    expect(listShown(EMPTY_PICK, alone, 700, { resultPage: true, options: 2 }).pick).toEqual({ choiceId: 'b', at: 700, via: 'list' })
+    // header unread: twice in a row
+    const first = listShown(EMPTY_PICK, alone, 700, { options: 2 })
+    expect(first.pick).toBeNull()
+    expect(listShown(first.state, alone, 1400, { options: 2 }).pick).toEqual({ choiceId: 'b', at: 1400, via: 'list' })
+    // read once, then the room went on: still that option
+    expect(listMissing(first.state, 1500, true).pick).toEqual({ choiceId: 'b', at: 1500, via: 'list' })
+    // an event of one readable option: its list is that one line, nothing taken yet
+    expect(listShown(listShown(EMPTY_PICK, alone, 700, { options: 1 }).state, alone, 1400, { options: 1 }).pick).toBeNull()
+  })
+
+  it('an option with several result rows is one line, not several buttons', () => {
+    const rows = [boxes[0], { ...boxes[0], choiceId: 'a2' }, { ...boxes[0], choiceId: 'a3', left: 1101.5 }, boxes[1]]
+    expect(distinctBoxes(rows).map(box => box.choiceId)).toEqual(['a', 'b'])
   })
 })
