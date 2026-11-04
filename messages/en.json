@@ -2985,7 +2985,7 @@
     "startArrived": "The Mirror Dungeon begins. The opening orders have come down. They cannot be refused.",
     "deadline_start": "Due before the floor 1 theme pack is picked",
     "deadline_start_formation": "Graced when the formation is first read",
-    "goal_start_formation": "Field any Identities. Each of the first six places: 3★ {three}, 2★ {two}, 1★ {one} grace",
+    "goal_start_formation": "Field any Identities. Each of the twelve fielded: 3★ {three}, 2★ {two}, 1★ {one} grace",
     "goal_start_gift": "Take {gift} as a start gift",
     "goal_observe_gift": "Take {gift} by observation",
     "goal_field_identity_keep": "Identity 「{identity}」 {sinner}. Field it. Lacking it, a 3★ or 2★ {keywords} Identity of {sinner} (2★: grace +50%). Or leave the base Identity as it is (grace +110%)",
@@ -3107,7 +3107,7 @@
       "pointsTitle": "Base grace by strength",
       "strength": "Strength",
       "base": "Base",
-      "formationTitle": "Opening formation grace (each of the first six places)",
+      "formationTitle": "Opening formation grace (each of the twelve)",
       "stars": "Rarity",
       "example": "Example: a strength 3 shop prescript, 5th in a row, Proselyte, 300 starlight spent on blessings → 20 × 1.5 (shop) × 1.2 (streak) × 1.68 (starlight) ≈ 60",
       "sections": [
@@ -3154,8 +3154,8 @@
         {
           "title": "Opening orders",
           "items": [
-            "Formation: field any Identities. Each of the first six places is graced by its rarity (table below). All 1★ gives the most.",
-            "The formation grace is set when the formation bar at the bottom of the shop screen is first read whole, usually at the first shop.",
+            "Formation: field any Identities. Each of the twelve is graced by its rarity (table below), in any order. All 1★ gives the most (120).",
+            "The formation grace is set when the formation bar at the bottom of the shop screen is first read whole (all twelve), usually at the first shop.",
             "Start gift: take the named start gift. Taking only other gifts of its keyword is a violation.",
             "Observed gift: take the named gift by observation.",
             "If the pick and the acquisition screens were not read, it is recalled, not judged."

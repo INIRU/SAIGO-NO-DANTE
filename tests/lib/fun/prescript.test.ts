@@ -461,14 +461,14 @@ describe('the opening orders and the blessing factor', () => {
     expect(cards.every(card => card.scope === 'start')).toBe(true)
   })
 
-  it('the formation is graced by the stars of its first six places, times the blessing factor, outside the streak', () => {
+  it('the formation is graced by the stars of all twelve, in any order, times the blessing factor, outside the streak', () => {
     const front = ['10102', '10202', '10301', '10401', '10501', '10601', ...bases.slice(6)]
     let run: PrescriptRun = { ...started(), blessingSpent: 0 }
     run = applyEvent(run, { type: 'formation', ids: [...front.slice(0, 5), null, ...front.slice(6)], at: 1 }, ctx())
     expect(run.prescripts[0].status).toBe('active')
     run = applyEvent(run, { type: 'formation', ids: front, at: 2 }, ctx())
-    // 3★ 0 + 2★ 8 + four 1★ 20 = 88, x2
-    expect(run.prescripts[0]).toMatchObject({ status: 'done', points: (START_FORMATION_POINTS[3] + START_FORMATION_POINTS[2] + 4 * START_FORMATION_POINTS[1]) * 2 })
+    // one 3★, one 2★ and ten 1★ (the back six count too), x2
+    expect(run.prescripts[0]).toMatchObject({ status: 'done', points: (START_FORMATION_POINTS[3] + START_FORMATION_POINTS[2] + 10 * START_FORMATION_POINTS[1]) * 2 })
     expect(run.streak).toBe(0)
   })
 
