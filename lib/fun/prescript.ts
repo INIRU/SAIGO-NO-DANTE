@@ -173,11 +173,11 @@ export function candidates(scope: PrescriptScope, ctx: PrescriptContext): Prescr
       for (const keyword of keywords) {
         const count = front(formation, keyword, ctx)
         if (count >= 6) continue
-        const behind = formation.slice(6).some(id => id !== null && ctx.identity?.(id)?.keywords.includes(keyword))
+        const behind = formation.slice(6).some(id => counts(id, ctx) && ctx.identity?.(id!)?.keywords.includes(keyword))
         cards.push({ scope, goal: { kind: 'formation-keyword', keyword, count: count + 1 }, strength: behind ? 2 : 4 })
       }
       // an Identity standing in 7 to 12 brought into the first six (a reorder)
-      for (const id of formation.slice(6)) if (id) cards.push({ scope, goal: { kind: 'front-identity', identityId: id }, strength: 2 })
+      for (const id of formation.slice(6)) if (id && counts(id, ctx)) cards.push({ scope, goal: { kind: 'front-identity', identityId: id }, strength: 2 })
     }
   } else if (scope === 'shop') {
     const shelf = (ctx.shelf ?? []).filter(id => !owned.includes(id) && !isVestige(id))
@@ -276,9 +276,17 @@ export function visitShelf(onSale: readonly number[], reads: readonly (readonly 
   return [...new Set([...onSale, ...reads.filter(([, sold]) => !sold).map(([id]) => id)])].filter(id => !bought.has(id))
 }
 
-/** How many of the formation's first six are of the keyword. */
+/**
+ * Whether an Identity counts for a formation prescript: a 1-star one never does (every Sinner has one at no cost, so a
+ * swap or a front filled with it would be grace for nothing). An unknown rarity counts.
+ */
+function counts(id: string | null, ctx: PrescriptContext): boolean {
+  return id !== null && ctx.identity?.(id)?.rarity !== 1
+}
+
+/** How many of the formation's first six are of the keyword (1-star ones left out). */
 function front(ids: readonly (string | null)[], keyword: string, ctx: PrescriptContext) {
-  return ids.slice(0, 6).filter(id => id !== null && ctx.identity?.(id)?.keywords.includes(keyword)).length
+  return ids.slice(0, 6).filter(id => counts(id, ctx) && ctx.identity?.(id!)?.keywords.includes(keyword)).length
 }
 
 type RoomChoice = { event_id: number; option_index?: number | null; outcome?: string | null; selection_condition?: string | null; next_event_id?: number | null }
@@ -381,7 +389,7 @@ function judge(p: Prescript, event: PrescriptEvent, ctx: PrescriptContext): Outc
     case 'formation': {
       if (goal.kind === 'swap-identity') {
         const now = event.ids.find(id => id !== null && ctx.identity?.(id)?.sinner === goal.sinner)
-        return now && now !== goal.fromId ? { status: 'done' } : null
+        return now && now !== goal.fromId && counts(now, ctx) ? { status: 'done' } : null
       }
       if (goal.kind === 'formation-keyword')
         return front(event.ids, goal.keyword, ctx) >= goal.count ? { status: 'done' } : null
