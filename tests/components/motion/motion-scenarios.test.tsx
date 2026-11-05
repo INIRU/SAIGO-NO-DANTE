@@ -76,6 +76,14 @@ describe('REQ-MOTION-046 scenarios', () => {
     } finally { locale.value = 'ko' }
   })
 
+  it('REQ-MOTION-046 tells two same-looking scenarios apart by the index sentence, not the label made from their one labelKey', () => {
+    const key = '지령의 가호 9 + 정신력 45 + 변신'
+    const html = render('v:base', [states[0], state('v:form', key, { conditions: buffs, sentence: '개화' }), state('v:mark', key, { conditions: buffs, sentence: '개화 · 지령 표식' })])
+    expect(html).toContain('>개화<')
+    expect(html).toContain('개화 · 지령 표식')
+    expect(html).not.toContain(key)
+  })
+
   it('REQ-MOTION-046 writes a cut-in as the ally\'s face and the buff', () => {
     const list = [states[0], state('v:b', '차원 표류 1', { conditions: [{ name: '차원 표류', icon: '/k/d.webp', stack: '1' }] }), state('v:cutin', '아군 공격 뒤 끼어듦 (차원 표류 1)', { conditions: [{ name: '차원 표류', icon: '/k/d.webp', stack: '1' }] })]
     const html = renderToStaticMarkup(<MotionScenarios states={list} current="v:base" allies={{ 'v:cutin': person('10201', '파우스트') }} onPick={() => {}} voices={[]} onVoice={async () => {}} onVoiceStop={() => {}} />)

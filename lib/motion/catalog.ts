@@ -61,7 +61,7 @@ export type MotionLink = { id: string; partners: MotionPartner[]; max: boolean }
 export type MotionCondition = { name: string; icon: string | null; stack: string | null }
 /** A part of a labelKey the conditions do not show, in the page language, with the site's picture of it when it has one. */
 export type MotionExtra = { text: string; icon: string | null }
-export type MotionState = Pick<MotionEntry, 'state' | 'name' | 'video' | 'meta'> & { label: string; bytes: number; link?: MotionLink; dead?: MotionPartner[]; conditions?: MotionCondition[]; allies?: MotionPartner[]; /** What the labelKey says besides the conditions, in the page language. */ extras?: MotionExtra[] }
+export type MotionState = Pick<MotionEntry, 'state' | 'name' | 'video' | 'meta'> & { label: string; /** The index's Korean sentence: label is made from labelKey and can equal another state's. */ sentence?: string; bytes: number; link?: MotionLink; dead?: MotionPartner[]; conditions?: MotionCondition[]; allies?: MotionPartner[]; /** What the labelKey says besides the conditions, in the page language. */ extras?: MotionExtra[] }
 /**
  * The game frame a skill's sprite sits in: its sin, its slot (1–3, 4 for a defense) and its attack type badge. `sprite`: the
  * sprite id when the skill is saved under another identity's (see borrowedRows), else the skill id is the sprite's.
@@ -326,7 +326,7 @@ export function buildMotionCatalog(entries: readonly MotionEntry[], identities: 
     }
     if (isBase(entry.state)) skill.title = title
     skill.states.push({
-      state: entry.state, label: motionStateLabel(entry, lang, labelContext), name: entry.name, video: entry.video, meta: entry.meta, bytes: entry.bytes ?? 0,
+      state: entry.state, label: motionStateLabel(entry, lang, labelContext), ...(entry.label && { sentence: entry.label }), name: entry.name, video: entry.video, meta: entry.meta, bytes: entry.bytes ?? 0,
       ...(link && { link }),
       ...(entry.deadAllies?.length && { dead: entry.deadAllies.map(person) }),
       ...(entry.conditions?.length && { conditions: entry.conditions.flatMap(condition => {
