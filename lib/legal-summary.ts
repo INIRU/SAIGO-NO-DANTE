@@ -37,6 +37,23 @@ export const LEGAL_KEY_POINTS: Record<LegalLang, { title: string; items: string[
 
 /** What each version changed, shown in the update modal. A version missing here shows the key points instead. */
 export const LEGAL_CHANGES: Record<string, Record<LegalLang, string[]>> = {
+  v7: {
+    ko: [
+      '사이트에 **Google 애드센스 광고**가 붙어요. Google과 광고 파트너가 **광고 쿠키**로 이 사이트와 다른 사이트의 방문 기록을 바탕으로 광고를 보여 줄 수 있어요.',
+      '맞춤 광고는 **Google 광고 설정**에서 끌 수 있어요. 유럽 경제 지역·영국·스위스에서는 처음 방문할 때 동의를 물어봐요.',
+      '사이트 서버가 **AWS(Lightsail)와 Cloudflare**로 바뀐 것을 반영했어요. 개인정보를 **판매하지 않는 것**은 그대로예요. 이용약관 내용은 바뀌지 않았어요.',
+    ],
+    en: [
+      'The site now shows **Google AdSense ads**. Google and its partners may use **advertising cookies** to show ads based on your visits to this site and other sites.',
+      'You can turn off personalized ads in **Google Ads Settings**. Visitors in the European Economic Area, the UK and Switzerland are asked for consent on their first visit.',
+      'The policy now names the site\'s new hosts, **AWS (Lightsail) and Cloudflare**. We still **do not sell** personal information. The Terms of Service are unchanged.',
+    ],
+    ja: [
+      'サイトに**Google AdSenseの広告**が掲載されます。Googleとパートナーは**広告Cookie**を使い、このサイトや他のサイトへのアクセス情報に基づいて広告を表示することがあります。',
+      'パーソナライズ広告は**Googleの広告設定**で無効にできます。欧州経済領域・英国・スイスからの訪問では、初回に同意を確認します。',
+      'サイトのサーバーが**AWS（Lightsail）とCloudflare**に変わったことを反映しました。個人情報を**販売しない**点は変わりません。利用規約の内容は変わっていません。',
+    ],
+  },
   v6: {
     ko: [
       '어시스트 모드 **인식 개선 참여(선택)**로 보낸 게임 화면을 **인식 모델 학습에 사용**해요. 새로 보내는 화면에는 **삭제 기한을 두지 않아요**. 계정과 연결하지 않는 것은 그대로예요.',
