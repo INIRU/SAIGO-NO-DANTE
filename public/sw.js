@@ -3,23 +3,20 @@
 // Cache version: bump CACHE_VERSION on each deploy to bust stale caches.
 // ============================================================
 
-const CACHE_VERSION = 'v6' // v6 (2026-10-21): Safari kept v5 image copies drawn with black instead of transparency
-const CACHE_STATIC   = `saigo-static-${CACHE_VERSION}`   // Next.js chunks, fonts
+// v7 (2026-11-05): pages and Next.js chunks are no longer stored (the browser cache keeps the chunks), drop their copies
+const CACHE_VERSION = 'v7'
+const CACHE_STATIC   = `saigo-static-${CACHE_VERSION}`   // the offline page and app icons
 const CACHE_IMAGES   = `saigo-images-${CACHE_VERSION}`   // Supabase Storage + /images/*
-const CACHE_PAGES    = `saigo-pages-${CACHE_VERSION}`    // HTML pages (offline fallback)
 
-// Assets to precache on install (shell only — no game images)
+// Assets to precache on install (the offline page only — no game images)
 const PRECACHE_URLS = [
-  '/',
   '/offline',
   '/icons/icon-192x192.webp',
   '/icons/icon-512x512.webp',
 ]
 
-// Cache size limits (a grid page alone shows a few hundred images; 500 entries thrashed between pages)
+// Cache size limit (a grid page alone shows a few hundred images; 500 entries thrashed between pages)
 const MAX_IMAGE_ENTRIES = 1500
-const MAX_PAGE_ENTRIES  = 50
-const MAX_STATIC_ENTRIES = 300
 // Caches are trimmed once per this many writes instead of listing every key on every response.
 const TRIM_EVERY = 40
 
@@ -55,9 +52,10 @@ self.addEventListener('install', (event) => {
 // ACTIVATE — delete caches from previous versions
 // ============================================================
 self.addEventListener('activate', (event) => {
-  const keepCaches = new Set([CACHE_STATIC, CACHE_IMAGES, CACHE_PAGES])
+  const keepCaches = new Set([CACHE_STATIC, CACHE_IMAGES])
   event.waitUntil(
-    caches.keys().then((keys) =>
+    // A page request then starts while the worker boots instead of after it (see answerPage).
+    Promise.resolve(self.registration?.navigationPreload?.enable()).catch(() => {}).then(() => caches.keys()).then((keys) =>
       Promise.all(
         keys
           .filter((k) => k.startsWith('saigo-') && !keepCaches.has(k))
@@ -96,7 +94,7 @@ function trimSoon(cacheName, maxEntries) {
 
 /**
  * Classify a request into a caching strategy.
- * Returns: 'skip' | 'network-first' | 'cache-first-static' | 'cache-first-image' | 'stale-while-revalidate'
+ * Returns: 'skip' | 'page' | 'stale-while-revalidate'
  */
 function classifyRequest(request) {
   const url = new URL(request.url)
@@ -121,21 +119,18 @@ function classifyRequest(request) {
   // Only handle same-origin requests from here on
   if (origin !== self.location.origin) return 'skip'
 
-  // Next.js build chunks — long-lived hashed filenames, cache-first
-  if (pathname.startsWith('/_next/static/')) return 'cache-first-static'
+  // Next.js build chunks and fonts are hashed and served immutable for a year: the browser cache answers them without
+  // waking this worker (going through it held a reload's scripts up to 18s behind its other work).
 
   // Image optimization URLs can keep the same source path across data updates.
   if (pathname.startsWith('/_next/image')) return 'stale-while-revalidate'
 
-  // Font files under /fonts/
-  if (pathname.startsWith('/fonts/')) return 'cache-first-static'
-
   // Static icon/image assets in public/
   if (pathname.startsWith('/icons/') || pathname.startsWith('/images/')) return 'stale-while-revalidate'
 
-  // HTML pages — network-first with page cache fallback
+  // HTML pages — straight from the network, the offline page when it fails
   const acceptsHtml = request.headers.get('accept')?.includes('text/html')
-  if (acceptsHtml || pathname === '/') return 'network-first'
+  if (request.mode === 'navigate' || acceptsHtml) return 'page'
 
   return 'skip'
 }
@@ -144,36 +139,17 @@ function classifyRequest(request) {
 // Strategy implementations
 // ============================================================
 
-async function networkFirst(request) {
+/**
+ * A page streams straight from the network: the navigation preload response when the browser started one while the
+ * worker booted, a fetch otherwise. Nothing is stored (a copy only ever served offline); the offline page answers a
+ * failed network.
+ */
+async function answerPage(event) {
   try {
-    const response = await fetch(request)
-    if (response.ok) {
-      const cache = await caches.open(CACHE_PAGES)
-      cache.put(request, response.clone()).then(() => trimSoon(CACHE_PAGES, MAX_PAGE_ENTRIES)).catch(() => {})
-    }
-    return response
+    return (await event.preloadResponse) || await fetch(event.request)
   } catch {
-    const cached = await caches.match(request)
-    if (cached) return cached
-    // Return offline page for HTML navigation requests
     const offlinePage = await caches.match('/offline')
     return offlinePage || new Response('Offline', { status: 503, headers: { 'Content-Type': 'text/plain' } })
-  }
-}
-
-async function cacheFirstStatic(request) {
-  const cached = await caches.match(request)
-  if (cached) return cached
-
-  try {
-    const response = await fetch(request)
-    if (response.ok) {
-      const cache = await caches.open(CACHE_STATIC)
-      cache.put(request, response.clone()).then(() => trimSoon(CACHE_STATIC, MAX_STATIC_ENTRIES)).catch(() => {})
-    }
-    return response
-  } catch {
-    return new Response('Asset unavailable offline', { status: 503 })
   }
 }
 
@@ -226,10 +202,8 @@ self.addEventListener('fetch', (event) => {
 
   if (strategy === 'skip') return
 
-  if (strategy === 'network-first') {
-    event.respondWith(networkFirst(event.request))
-  } else if (strategy === 'cache-first-static') {
-    event.respondWith(cacheFirstStatic(event.request))
+  if (strategy === 'page') {
+    event.respondWith(answerPage(event))
   } else if (strategy === 'stale-while-revalidate') {
     event.respondWith(staleWhileRevalidateImage(event.request, event))
   }

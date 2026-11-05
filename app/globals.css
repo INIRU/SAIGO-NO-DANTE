@@ -68,12 +68,13 @@
   --envy:     #8058a8;
 
   /* 폰트 변수 (next/font/local CSS variables) */
-  /* Pretendard is split by unicode-range: core is preloaded, ext loads only for rare characters (app/pretendard.ts). */
-  --font-pretendard: var(--font-pretendard-core), var(--font-pretendard-ext);
+  /* Pretendard is split by unicode-range (app/pretendard.ts): latin and hangul-1 are preloaded, the other pieces load
+     only when a page shows one of their characters. */
+  --font-pretendard: var(--font-pretendard-latin), var(--font-pretendard-hangul-1), var(--font-pretendard-hangul-2), var(--font-pretendard-hangul-3), var(--font-pretendard-hangul-4), var(--font-pretendard-hangul-5), var(--font-pretendard-symbols), var(--font-pretendard-ext);
   --font-logo:    var(--font-bebas-kai), var(--font-kotra-bold), sans-serif;
   --font-title:   var(--font-bebas-kai), sans-serif;
   --font-heading: var(--font-kotra-bold), var(--font-scdream), var(--font-pretendard), 'SCDream5 Fallback', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
-  --font-body:    var(--font-pretendard), var(--font-scdream), 'SCDream5 Fallback', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+  --font-body:    var(--font-pretendard), 'SCDream5 Fallback', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
   --font-mono:    var(--font-noto-sans-mono), var(--font-pretendard), 'SCDream5 Fallback', 'Apple SD Gothic Neo', 'Malgun Gothic', monospace;
   --font-perfect-dos: var(--font-mono);
   /* Text on in-game cards (blessing effects, constraints): S-Core Dream like the game. en/ja keep their body font. */
