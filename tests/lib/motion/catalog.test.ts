@@ -101,7 +101,7 @@ describe('REQ-MOTION-002 state buttons read the index label', () => {
   it('REQ-MOTION-002 writes the label of the page language, and the Korean label as it is when that one is missing', () => {
     expect(motionStateLabel(entry({ state: 'v:best-2', label: '최고 상태', labelEn: 'Best State', labelJa: '最高状態' }), 'en')).toBe('Best State')
     expect(motionStateLabel(entry({ state: 'v:best-2', label: '최고 상태', labelEn: 'Best State', labelJa: '最高状態' }), 'ja')).toBe('最高状態')
-    expect(motionStateLabel(entry({ state: 'v:base', label: '기본' }), 'ja')).toBe('기본')
+    expect(motionStateLabel(entry({ state: 'v:case2', label: '관 2단계' }), 'ja')).toBe('관 2단계')
   })
 })
 
@@ -479,4 +479,13 @@ describe('REQ-MOTION-046 the ally of a cut-in', () => {
     expect(cutinAllyId([{ key: '<s:1011601>' }], '10116')).toBeNull()
     expect(cutinAllyId(undefined, '10116')).toBeNull()
   })
+})
+
+it('REQ-MOTION-037 the base state is named in the page language when the index has only its Korean label', () => {
+  const base = entry({ state: 'v:base', label: '기본' })
+  expect(motionStateLabel(base, 'ko')).toBe('기본')
+  expect(motionStateLabel(base, 'en')).toBe('Normal')
+  expect(motionStateLabel(base, 'ja')).toBe('通常')
+  // The index's own English or Japanese label still wins.
+  expect(motionStateLabel({ ...base, labelEn: 'Base' }, 'en')).toBe('Base')
 })

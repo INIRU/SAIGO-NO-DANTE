@@ -173,6 +173,8 @@ export function motionStateLabel(entry: Pick<MotionEntry, 'state' | 'name' | 'la
   }
   const own = (lang === 'en' ? entry.labelEn : lang === 'ja' ? entry.labelJa : undefined)?.trim()
   if (own) return own
+  // The index names the base state only in Korean; the scenario list calls it motionPage.normal.
+  if (lang !== 'ko' && isBase(entry.state)) return pick(lang, '기본', 'Normal', '通常')
   return entry.label?.trim() || entry.state
 }
 
