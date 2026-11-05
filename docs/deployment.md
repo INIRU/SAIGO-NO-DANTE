@@ -13,7 +13,7 @@
 | DNS | Cloudflare. apex·`www`는 `d3ra6rwderl7mq.cloudfront.net`을 가리키는 CNAME(DNS 전용, TTL 60), `new`는 터널 프록시 CNAME이다 |
 | 열린 포트 | Lightsail 방화벽과 ufw 모두 22번(SSH)만. 웹 포트는 열지 않는다(터널이 서버에서 바깥으로 연결한다) |
 
-2026-11-05부터 apex·`www`는 CloudFront 서울 거점으로 들어온다(`x-amz-cf-pop: ICN80`, `/ko` 0.14~0.23초). Cloudflare 거점(LAX 등)을 거치는 것은 `media.`·`assets.`뿐이다.
+apex·`www`의 앞단 구성은 아래 CloudFront 서울 거점 절을 본다. Cloudflare 거점(LAX 등)을 거치는 것은 `media.`·`assets.`뿐이다.
 
 ## CloudFront 서울 거점(2026-11-05)
 
