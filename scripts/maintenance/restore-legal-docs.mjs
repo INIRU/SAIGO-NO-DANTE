@@ -5,9 +5,12 @@ import nextEnv from '@next/env'
 import { createClient } from '@supabase/supabase-js'
 
 // Restore archived originals only; never overwrite a newer registered document.
-const root = fileURLToPath(new URL('../', import.meta.url))
+// The DB backups live outside the repository: pass the legal_docs.json export with --from <path>.
+const root = fileURLToPath(new URL('../../', import.meta.url))
 nextEnv.loadEnvConfig(root, true, { info() {}, error() {} })
-const originals = JSON.parse(await readFile(new URL('../backups/2026-03-23/legal_docs.json', import.meta.url), 'utf8'))
+const from = process.argv[process.argv.indexOf('--from') + 1]
+if (!process.argv.includes('--from') || !from) throw new Error('usage: node scripts/maintenance/restore-legal-docs.mjs --from <backup>/2026-03-23/legal_docs.json [--apply]')
+const originals = JSON.parse(await readFile(from, 'utf8'))
 assert.deepEqual(originals.map(doc => doc.type).sort(), ['privacy', 'terms'])
 for (const doc of originals) assert.ok(doc.title && doc.last_updated && Array.isArray(doc.sections) && doc.sections.length)
 const rows = originals.map(doc => ({ ...doc, lang: 'ko', version: 'v1' }))
