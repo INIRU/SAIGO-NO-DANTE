@@ -12,8 +12,10 @@ export function giftGameId(value: string): number | null {
  * rewards, in plan order. The pack match keeps a swapped pack's gifts with it.
  */
 export function planThemeGiftIds(state: RunState, themes: ThemeData[], themeId: string, floor?: number): number[] {
-  const entries = (state.sourcePlanSnapshot?.floorPlan ?? []).filter(entry => entry.theme_id === themeId || entry.floor === floor)
-  const keys = withThemeRewards(entries.flatMap(entry => entry.gift_ids ?? []), themes.find(theme => theme.id === themeId))
+  const plan = state.sourcePlanSnapshot?.floorPlan ?? []
+  const entries = plan.filter(entry => entry.theme_id === themeId || entry.floor === floor)
+  const rewardFloor = plan.find(entry => entry.theme_id === themeId)?.floor ?? floor
+  const keys = withThemeRewards(entries.flatMap(entry => entry.gift_ids ?? []), themes.find(theme => theme.id === themeId), rewardFloor)
   return [...new Set(keys.map(giftGameId).filter((id): id is number => id !== null))]
 }
 
@@ -102,7 +104,7 @@ export function getCurrentFloorPriorityGifts(state: RunState, themes: ThemeData[
       if (id !== null && available.has(id)) add(giftMap.get(id))
     }
   }
-  addKeys(withThemeRewards(planned?.gift_ids ?? [], theme))
+  addKeys(withThemeRewards(planned?.gift_ids ?? [], theme, state.currentFloor))
   addKeys(state.targetGifts)
   for (const gift of themeGifts) if (exclusiveIds.has(gift.game_id)) add(gift)
   for (const gift of themeGifts) if (promoted.has(gift.game_id)) add(gift)
