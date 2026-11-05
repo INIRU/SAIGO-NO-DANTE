@@ -10,10 +10,10 @@
 | 앱 | `~/saigo/app` (`REVISION`에 배포된 커밋), systemd `saigo-web`이 `127.0.0.1:3000`에서 실행하고 죽으면 다시 켠다 |
 | 환경 변수 | `~/saigo/env.production`(권한 600). 앱의 `.env.production.local`이 이 파일을 가리킨다 |
 | 터널 | systemd `cloudflared`, 설정 `/etc/cloudflared/config.yml`(터널 `saigo-web`, 호스트 `saigo-no-dante.com`·`www`·`new`) |
-| DNS | Cloudflare. apex·`www`·`new`는 터널을 가리키는 프록시 CNAME이다 |
+| DNS | Cloudflare. apex·`www`는 `d3ra6rwderl7mq.cloudfront.net`을 가리키는 CNAME(DNS 전용, TTL 60), `new`는 터널 프록시 CNAME이다 |
 | 열린 포트 | Lightsail 방화벽과 ufw 모두 22번(SSH)만. 웹 포트는 열지 않는다(터널이 서버에서 바깥으로 연결한다) |
 
-한국 방문자는 Cloudflare 무료 요금제라 LAX 같은 해외 거점으로 들어온다. 서버에 직접 붙는 것보다 첫 응답이 약 0.5초 늦지만, 공격 방어를 위해 Cloudflare 경유를 택했다(2026-10-19 결정).
+2026-11-05부터 apex·`www`는 CloudFront 서울 거점으로 들어온다(`x-amz-cf-pop: ICN80`, `/ko` 0.14~0.23초). Cloudflare 거점(LAX 등)을 거치는 것은 `media.`·`assets.`뿐이다. 되돌리기는 apex·`www`를 터널 CNAME(프록시)으로 바꾸는 것이다.
 
 ## 배포
 
