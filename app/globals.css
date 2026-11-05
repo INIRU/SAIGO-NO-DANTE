@@ -717,7 +717,7 @@ a.note-mention:is(:hover,:focus-visible),.note-block-document a[href].note-menti
 @media (hover:hover){.note-accordion-all:hover{color:var(--gold-light)}}
 /* Preview card of a mention or a gift name: hover/focus card on a pointer, modal on touch. */
 .note-preview-host{display:inline}
-.note-preview-popover{position:fixed;z-index:10050;width:min(21rem,calc(100vw - 1rem));padding:.75rem;background:var(--bg-card);border:1px solid var(--border);border-radius:.5rem;box-shadow:0 .75rem 2rem #000a;color:var(--text-primary)}
+.note-preview-popover{position:fixed;z-index:10050;width:min(21rem,calc(100vw - 1rem));padding:.75rem;background:var(--bg-card);border:1px solid var(--border);border-radius:.5rem;box-shadow:0 .75rem 2rem #000a;color:var(--text-primary);overflow-y:auto;overscroll-behavior:contain}
 .note-preview-popover[data-above]{transform:translateY(-100%)}
 .note-preview-card{display:flex;gap:.875rem;align-items:flex-start;font-size:.875rem;line-height:1.5}
 .note-preview-art{flex:0 0 5.5rem;width:5.5rem}
