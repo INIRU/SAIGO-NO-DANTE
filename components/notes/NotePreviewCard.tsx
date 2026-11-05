@@ -8,7 +8,8 @@ import { EffectText } from '@/components/ui/GiftDetailModal'
 import { Link } from '@/lib/i18n/navigation'
 import { GIFT_KEYWORD_COLORS } from '@/lib/constants/gift'
 import { assetName, type NoteAssetData } from '@/lib/notes/assets'
-import { PREVIEW_DELAY_MS, previewPlacement, usesHover } from '@/lib/notes/preview'
+import { PREVIEW_DELAY_MS, PREVIEW_WIDTHS_REM, usesHover } from '@/lib/notes/preview'
+import { placePopoverIn, type PopoverPlacement } from '@/lib/utils/popover'
 import { NoteAssetArtwork } from './NoteBlockViewer'
 
 const tr = (lang: string, ko: string, ja: string, en: string) => lang === 'ja' ? ja : lang === 'en' ? en : ko
@@ -43,26 +44,29 @@ export default function NotePreviewHost({ asset, href, modalOnTap = true, block 
   const host = useRef<HTMLSpanElement>(null), card = useRef<HTMLDivElement>(null)
   const openTimer = useRef<ReturnType<typeof setTimeout>>(undefined), closeTimer = useRef<ReturnType<typeof setTimeout>>(undefined)
   const lastPointer = useRef('')
-  const [anchor, setAnchor] = useState<DOMRect | null>(null), [place, setPlace] = useState<{ left: number; top: number; above: boolean } | null>(null), [modal, setModal] = useState(false)
+  const [anchor, setAnchor] = useState<DOMRect | null>(null), [place, setPlace] = useState<PopoverPlacement | null>(null), [modal, setModal] = useState(false)
   const open = () => { clearTimeout(closeTimer.current); clearTimeout(openTimer.current); openTimer.current = setTimeout(() => setAnchor(host.current?.getBoundingClientRect() ?? null), PREVIEW_DELAY_MS) }
   const close = () => { clearTimeout(openTimer.current); clearTimeout(closeTimer.current); closeTimer.current = setTimeout(() => { setAnchor(null); setPlace(null) }, 120) }
   useEffect(() => () => { clearTimeout(openTimer.current); clearTimeout(closeTimer.current) }, [])
   useLayoutEffect(() => {
     if (!anchor || !card.current) return
-    const size = card.current.getBoundingClientRect()
     // the window the name is in: a page, or the Assist's Picture-in-Picture window (another document)
     const doc = host.current?.ownerDocument ?? document
-    setPlace(previewPlacement(anchor, size, { width: doc.documentElement.clientWidth, height: doc.defaultView?.innerHeight ?? window.innerHeight }))
+    const rem = parseFloat(doc.defaultView?.getComputedStyle(doc.documentElement).fontSize ?? '') || 16
+    // measured on the hidden card itself: the narrowest width whose real height fits the screen
+    setPlace(placePopoverIn(card.current, card.current, { anchor, view: { width: doc.documentElement.clientWidth, height: doc.defaultView?.innerHeight ?? window.innerHeight }, widths: PREVIEW_WIDTHS_REM.map(width => width * rem) }))
   }, [anchor])
   useEffect(() => {
     if (!anchor) return
-    const hide = () => { clearTimeout(openTimer.current); setAnchor(null); setPlace(null) }
+    // the card scrolls inside itself when it is capped; that scroll must not close it
+    const hide = (event?: Event) => { if (event?.target instanceof Node && card.current?.contains(event.target)) return; clearTimeout(openTimer.current); setAnchor(null); setPlace(null) }
     const escape = (event: KeyboardEvent) => { if (event.key === 'Escape') hide() }
+    const resize = () => hide()
     const doc = host.current?.ownerDocument ?? document, view = doc.defaultView ?? window
     view.addEventListener('scroll', hide, { capture: true, passive: true })
-    view.addEventListener('resize', hide)
+    view.addEventListener('resize', resize)
     doc.addEventListener('keydown', escape)
-    return () => { view.removeEventListener('scroll', hide, { capture: true }); view.removeEventListener('resize', hide); doc.removeEventListener('keydown', escape) }
+    return () => { view.removeEventListener('scroll', hide, { capture: true }); view.removeEventListener('resize', resize); doc.removeEventListener('keydown', escape) }
   }, [anchor])
   if (!asset) return <>{children}</>
   return <>
@@ -80,7 +84,7 @@ export default function NotePreviewHost({ asset, href, modalOnTap = true, block 
     >{children}</span>
     {anchor && createPortal(
       <div ref={card} className="note-preview-popover" role="tooltip" data-above={place?.above || undefined}
-        style={{ left: place?.left ?? 0, top: place?.top ?? 0, visibility: place ? 'visible' : 'hidden' }}
+        style={{ left: place?.left ?? 0, top: place?.top ?? 0, width: place?.width, maxHeight: place?.maxHeight, visibility: place ? 'visible' : 'hidden' }}
         onPointerEnter={event => { if (usesHover(event.pointerType)) { clearTimeout(closeTimer.current) } }} onPointerLeave={close}>
         <NotePreviewBody asset={asset} />
       </div>, host.current?.ownerDocument.body ?? document.body)}

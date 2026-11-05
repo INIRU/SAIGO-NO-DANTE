@@ -1,6 +1,6 @@
 'use client'
 
-import { cloneElement, createContext, isValidElement, useCallback, useContext, useEffect, useId, useMemo, useRef, useState } from 'react'
+import { cloneElement, createContext, isValidElement, useCallback, useContext, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import KeywordIcon from '@/components/ui/KeywordIcon'
 import { createPortal } from 'react-dom'
 import { useLocale, useTranslations } from 'next-intl'
@@ -20,6 +20,7 @@ import { preloadGameTextRefDescriptions, preloadGameTextRefFlavors, useGameTextR
 import GameText from '@/components/game-text/GameText'
 import { keywordTextAllowed } from '@/lib/keywords/plain-keywords'
 import { FLAVOR_COLOR } from '@/lib/game-text/flavor'
+import { placePopoverIn, type PopoverPlacement } from '@/lib/utils/popover'
 
 const KeywordContext = createContext<Record<string, KeywordInfo>>({})
 
@@ -148,6 +149,9 @@ export function useKeywordData() {
   return getKeywordIndex(useKeywords())
 }
 
+/** The keyword tooltip's widths in rem, narrowest first. */
+const TOOLTIP_WIDTHS_REM = [22, 33, 44]
+
 /**
  * Tooltip of a keyword. `info` is its keyword_meta row; without one (a `[Id]` of game text that has no row) the popup
  * shows the name as given and the game's own description of `refId`, drawn as game text.
@@ -171,36 +175,41 @@ function KwTooltipPopup({ id, rect, iconUrl, keyword, info, refId, onMouseEnter,
   const flavor = useKeywordFlavor({ refId, keyword: info ? keyword : null }, true)
   const formatGameText = useFormatGameText()
 
-  const spaceAbove = rect.top
-  const spaceBelow = window.innerHeight - rect.bottom
-  const showAbove = spaceAbove > spaceBelow
-  const maxH = Math.min((showAbove ? spaceAbove : spaceBelow) - 24, window.innerHeight * 0.5)
-  // 22rem, never wider than the viewport minus 0.75rem gutters; arrow stays over the trigger.
+  const popupRef = useRef<HTMLSpanElement>(null)
+  const [place, setPlace] = useState<PopoverPlacement | null>(null)
   const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16
-  const width = Math.min(22 * rem, window.innerWidth - 1.5 * rem)
-  const gutter = 0.75 * rem
-  const left = Math.max(gutter, Math.min(rect.left + rect.width / 2 - width / 2, window.innerWidth - width - gutter))
-  const arrowX = Math.max(12, Math.min(rect.left + rect.width / 2 - left, width - 12))
   const color = keywordAccentColor(keyword, info)
+
+  // Measured on the real tooltip before it shows (and again when its text arrives): 22rem, then 33rem, then 44rem, the narrowest that fits.
+  useLayoutEffect(() => {
+    const popup = popupRef.current, scroller = contentRef.current
+    if (!popup || !scroller) return
+    setPlace(placePopoverIn(popup, scroller, { anchor: rect, view: { width: window.innerWidth, height: window.innerHeight }, widths: TOOLTIP_WIDTHS_REM.map(width => width * rem), margin: 0.75 * rem, align: 'center' }))
+  }, [rect, rem, localDesc, flavor])
 
   useEffect(() => {
     const el = contentRef.current
     if (el) setOverflowing(el.scrollHeight > el.clientHeight)
-  }, [localDesc, flavor])
+  }, [localDesc, flavor, place])
+
+  const showAbove = place?.above ?? false
+  const width = place?.width
+  // the arrow stays over the name
+  const arrowX = Math.max(12, Math.min(rect.left + rect.width / 2 - (place?.left ?? 0), (width ?? 0) - 12))
 
   return (
     <span
       id={id}
+      ref={popupRef}
       className="z-[200] rounded text-left"
       role="tooltip"
       onPointerEnter={event => { if (event.pointerType === 'mouse') onMouseEnter() }}
       onPointerLeave={event => { if (event.pointerType === 'mouse') onMouseLeave() }}
       style={{
         position: 'fixed',
-        left,
-        ...(showAbove
-          ? { bottom: window.innerHeight - rect.top + 8 }
-          : { top: rect.bottom + 8 }),
+        left: place?.left ?? 0,
+        ...(place ? (showAbove ? { bottom: window.innerHeight - place.top } : { top: place.top }) : { top: 0 }),
+        visibility: place ? 'visible' : 'hidden',
         background: '#17120c',
         border: `1px solid ${color}66`,
         boxShadow: '0 12px 32px #000a',
@@ -219,7 +228,7 @@ function KwTooltipPopup({ id, rect, iconUrl, keyword, info, refId, onMouseEnter,
         style={{
           position: 'relative',
           padding: '0.875rem 1rem 1rem',
-          maxHeight: maxH,
+          maxHeight: place?.maxHeight,
           overflowY: 'auto',
           overscrollBehavior: 'contain',
         }}
