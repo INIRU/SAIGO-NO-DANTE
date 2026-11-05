@@ -27,10 +27,7 @@ import { THEME_KEYWORDS } from '@/lib/constants/keywords'
 import { normalizePlannerListKeywords } from '@/lib/planner/stripPlanForList'
 import { useLocale, useTranslations } from 'next-intl'
 import {
-  DECK_LANGUAGE_FILTERS,
   localizeDeckKeyword,
-  normalizeDeckLanguageFilter,
-  resolveDeckLanguageParam,
 } from '@/components/decks/decks-types'
 import { getIdentityPortraitUrl, getIdentityInfoUrl } from '@/lib/utils/images'
 import type { SupportedLang } from '@/lib/i18n'
@@ -170,9 +167,6 @@ export default function CommunityClient({ initialPlans, initialTotal, initialShe
   const [sort, setSort] = useQueryState('sort', parseAsString.withDefault('latest'))
   const [difficulty, setDifficulty] = useState<Difficulty | null>(null)
   const [search, setSearch] = useQueryState('q', parseAsString.withDefault(''))
-  const [languageQuery, setLanguageQuery] = useQueryState('lang', parseAsString.withDefault('mine'))
-  const languageFilter = normalizeDeckLanguageFilter(languageQuery)
-  const plannerLanguageParam = resolveDeckLanguageParam(languageFilter, locale)
   const [keywordQuery, setKeywordQuery] = useQueryState('kt', parseAsString.withDefault(''))
   const [keywordModeQuery, setKeywordModeQuery] = useQueryState('ktm', parseAsString.withDefault('or'))
   const [identityIdsQuery, setIdentityIdsQuery] = useQueryState('ids', parseAsString.withDefault(''))
@@ -211,7 +205,6 @@ export default function CommunityClient({ initialPlans, initialTotal, initialShe
   const initialDataKey = useRef<string | null>(initialPlans !== undefined ? (() => {
     const params = new URLSearchParams()
     params.set('sort', 'latest')
-    params.set('lang', resolveDeckLanguageParam('mine', locale))
     params.sort()
     return params.toString()
   })() : null)
@@ -384,7 +377,6 @@ export default function CommunityClient({ initialPlans, initialTotal, initialShe
   const serverQueryKey = useMemo(() => {
     const params = new URLSearchParams()
     params.set('sort', normalizedSort)
-    params.set('lang', plannerLanguageParam)
     if (difficulty) params.set('difficulty', difficulty)
     if (activeKeywordList.length > 0) {
       params.set('keyword_tags', activeKeywordList.join(','))
@@ -397,7 +389,7 @@ export default function CommunityClient({ initialPlans, initialTotal, initialShe
     if (formationCount !== null) params.set('formation_count', String(formationCount))
     params.sort()
     return params.toString()
-  }, [normalizedSort, plannerLanguageParam, difficulty, activeKeywordList, keywordMode, selectedIdentityIdList, identityMode, formationCount])
+  }, [normalizedSort, difficulty, activeKeywordList, keywordMode, selectedIdentityIdList, identityMode, formationCount])
 
   const buildPlannerSearchParams = useCallback((offset: number) => {
     const params = new URLSearchParams(serverQueryKey)
@@ -748,8 +740,7 @@ export default function CommunityClient({ initialPlans, initialTotal, initialShe
   }, [planIndexes, debouncedSearch, activeKeywordList, keywordMode, selectedIdentityIdList, identityMode, filterOwnedIdentity, filterOwnedEgo, effectiveOwned, affiliationQuery, egoQuery, giftQuery, themeQuery]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const collectionFilterCount = (filterOwnedIdentity ? 1 : 0) + (filterOwnedEgo ? 1 : 0)
-  const languageFilterCount = languageFilter === 'mine' ? 0 : 1
-  const totalActiveCount = (inputValue.trim() ? 1 : 0) + (difficulty ? 1 : 0) + (formationCount !== null ? 1 : 0) + activeKeywords.size + selectedIdentityIds.size + languageFilterCount + collectionFilterCount + Object.values(facetSelections).reduce((sum, list) => sum + list.length, 0)
+  const totalActiveCount = (inputValue.trim() ? 1 : 0) + (difficulty ? 1 : 0) + (formationCount !== null ? 1 : 0) + activeKeywords.size + selectedIdentityIds.size + collectionFilterCount + Object.values(facetSelections).reduce((sum, list) => sum + list.length, 0)
   const hasAnyFilter = totalActiveCount > 0
 
   const clearCollectionFilters = () => {
@@ -905,16 +896,6 @@ export default function CommunityClient({ initialPlans, initialTotal, initialShe
         onToggle={() => setShowFormationFilter(v => !v)}
       >
         <FormationCountFilter value={formationCount} onChange={value => { void setFormationCountQuery(value, QUERY_OPTIONS) }} />
-      </FilterSection>
-
-      <FilterSection label={t('languageFilter.label')}>
-        <div className={filterStyles.choices}>
-          {DECK_LANGUAGE_FILTERS.map(option => (
-            <FilterChoice key={option} active={languageFilter === option} onClick={() => { void setLanguageQuery(option === 'mine' ? null : option, QUERY_OPTIONS) }}>
-              {t(`languageFilter.${option === 'mine' ? 'current' : option}`)}
-            </FilterChoice>
-          ))}
-        </div>
       </FilterSection>
 
       <FilterSection

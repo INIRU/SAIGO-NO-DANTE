@@ -4,10 +4,6 @@ export type SearchSuggestion = {
   imageUrl?: string
 }
 
-export type DeckLanguageFilter = 'mine' | 'all' | 'ko' | 'en' | 'ja'
-
-export const DECK_LANGUAGE_FILTERS: DeckLanguageFilter[] = ['mine', 'all', 'ko', 'en', 'ja']
-
 type DeckKeywordInfo = {
   nameEn?: string | null
   nameJp?: string | null
@@ -26,16 +22,6 @@ const COMBAT_KEYWORD_ALIASES: Record<string, keyof typeof COMBAT_KEYWORD_LABELS>
   pierce: 'pierce',
   '타격': 'blunt',
   blunt: 'blunt',
-}
-
-export function normalizeDeckLanguageFilter(value: string | null | undefined): DeckLanguageFilter {
-  return value === 'all' || value === 'ko' || value === 'en' || value === 'ja' ? value : 'mine'
-}
-
-export function resolveDeckLanguageParam(filter: DeckLanguageFilter, locale: string): 'all' | 'ko' | 'en' | 'ja' {
-  if (filter === 'all') return 'all'
-  if (filter === 'ko' || filter === 'en' || filter === 'ja') return filter
-  return locale === 'en' || locale === 'ja' ? locale : 'ko'
 }
 
 export function localizeDeckKeyword(
