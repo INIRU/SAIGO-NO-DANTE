@@ -11,10 +11,8 @@ import { getIdentityInfoUrl } from '@/lib/utils/images'
 import { useKeywords } from '@/components/providers/KeywordProvider'
 import type { SupportedLang } from '@/lib/i18n'
 import {
-  DECK_LANGUAGE_FILTERS,
   contentTypeMessageKey,
   localizeDeckKeyword,
-  type DeckLanguageFilter,
   type SearchSuggestion,
 } from './decks-types'
 import type { DeckFilterIdentity, DeckFilterSinner } from './DeckIdentityFilterModal'
@@ -93,8 +91,6 @@ interface DeckListFiltersProps {
   onToggleSelectedIdentity: (identityId: string) => void
   onToggleIdentityMode: () => void
   onClearSelectedIdentities: () => void
-  languageFilter: DeckLanguageFilter
-  onLanguageFilterChange: (value: DeckLanguageFilter) => void
   /** Board facet sections (affiliation, E.G.O), placed before the collection filter. */
   facetSections?: React.ReactNode
 }
@@ -220,7 +216,7 @@ export default function DeckListFilters({
   selectedIdentityIds, selectedIdentities,
   identityMode,
   onToggleSelectedIdentity, onToggleIdentityMode, onClearSelectedIdentities,
-  languageFilter, onLanguageFilterChange, facetSections,
+  facetSections,
   openSignal,
 }: DeckListFiltersProps) {
   const t = useTranslations('decks')
@@ -511,14 +507,6 @@ export default function DeckListFilters({
 
       <FilterSection label={t('filters.formationCount')} count={formationCount !== null ? 1 : 0} open={showFormationFilter} onToggle={() => setShowFormationFilter(v => !v)}>
         <FormationCountFilter value={formationCount} onChange={onFormationCountChange} />
-      </FilterSection>
-
-      <FilterSection label={t('languageFilter.label')}>
-        <div className={filterStyles.choices}>
-          {DECK_LANGUAGE_FILTERS.map(option => (
-            <FilterChoice key={option} active={languageFilter === option} onClick={() => onLanguageFilterChange(option)}>{t(`languageFilter.${option === 'mine' ? 'current' : option}`)}</FilterChoice>
-          ))}
-        </div>
       </FilterSection>
 
       <FilterSection label={t('filters.collection')} count={collectionCount} open={showCollectionFilter} onToggle={onToggleCollectionFilter}

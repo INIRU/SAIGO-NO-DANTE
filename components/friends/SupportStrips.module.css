@@ -30,13 +30,14 @@ button.strip:hover .frame polygon { stroke: var(--gold-light); }
 .ego i[data-on='HE'] { background: #b33a32; }
 .ego i[data-on='WAW'] { background: #8b5fd0; }
 .ego i[data-on='ALEPH'] { background: var(--text-primary); }
-/* A short row (wanted identities): fixed-width strips, no E.G.O places. */
-.few { gap: 0.35rem; padding-top: 0; }
-.few .strip { flex: 0 0 3.6rem; }
+/* A short row (wanted identities): fixed-width strips, no E.G.O places. The width is named, not only the flex basis: a strip is
+   an inline-size container with no content width, so an auto grid column would otherwise collapse and the strips overlap the next column. */
+.few { --few-width: 3.6rem; gap: 0.35rem; padding-top: 0; }
+.few .strip { flex: 0 0 var(--few-width); width: var(--few-width); }
 .few .ego { display: none; }
 @media (max-width: 51.25rem) {
   .strips:not(.few) { display: grid; grid-template-columns: repeat(6, 1fr); gap: 0.5rem 0.3rem; }
   .ego { left: 0.3rem; right: 0.3rem; gap: 1px; }
   .ego i { height: 0.22rem; }
-  .few .strip { flex-basis: 3rem; }
+  .few { --few-width: 3rem; }
 }
