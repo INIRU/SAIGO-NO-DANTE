@@ -43,8 +43,40 @@ describe('REQ-SHARED-074 feature boundaries', () => {
     expect(check('e2e/a.spec.ts', "import { A } from '@/features/decks/components/A'")).toEqual([])
   })
 
+  it('REQ-SHARED-074 allows the server entry', () => {
+    expect(check('app/[lang]/meta/page.tsx', "import { aggregate } from '@/features/meta/server'")).toEqual([])
+    expect(check('app/[lang]/meta/page.tsx', "import { x } from '@/features/meta/server/aggregate'")).toMatchObject([{ rule: 'feature-internal' }])
+    expect(check('components/ui/Button.tsx', "import { aggregate } from '@/features/meta/server'")).toMatchObject([{ rule: 'shared-imports-feature' }])
+  })
+
+  it('REQ-SHARED-076 the feature entry does not export server code', () => {
+    const out = check('features/meta/index.ts', "export * from './server/aggregate'")
+    expect(out).toMatchObject([{ file: 'features/meta/index.ts', rule: 'entry-exports-server' }])
+    expect(check('features/meta/index.ts', "export { A } from '@/features/meta/server'")).toMatchObject([{ rule: 'entry-exports-server' }])
+    const viaServerOnly = findImportViolations([
+      { path: 'features/meta/index.ts', source: "export { read } from './lib/read'" },
+      { path: 'features/meta/lib/read.ts', source: "import 'server-only'\nexport const read = 1" },
+    ])
+    expect(viaServerOnly).toMatchObject([{ file: 'features/meta/index.ts', rule: 'entry-exports-server' }])
+  })
+
+  it('REQ-SHARED-076 lets the entry export client-safe code and the server folder import server-only', () => {
+    const files = [
+      { path: 'features/meta/index.ts', source: "export { A } from './components/A'\nexport type { T } from './types'" },
+      { path: 'features/meta/components/A.tsx', source: 'export const A = 1' },
+      { path: 'features/meta/server/index.ts', source: "import 'server-only'\nexport const aggregate = 1" },
+    ]
+    expect(findImportViolations(files)).toEqual([])
+  })
+
+  it('REQ-SHARED-077 tests live under tests/ only', () => {
+    const tracked = execFileSync('git', ['ls-files', '*.test.ts', '*.test.tsx'], { encoding: 'utf8' })
+    const outside = tracked.split('\n').filter((p) => p && !p.startsWith('tests/'))
+    expect(outside).toEqual([])
+  })
+
   it('REQ-SHARED-074 the repository has no violations', () => {
-    const tracked = execFileSync('git', ['ls-files', 'app', 'components', 'lib', 'hooks', 'features'], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 })
+    const tracked = execFileSync('git', ['ls-files', 'app', 'components', 'lib', 'hooks', 'features', 'proxy.ts', ':(glob)instrumentation*.ts'], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 })
     const files = tracked
       .split('\n')
       .filter((p) => /\.tsx?$/.test(p) && existsSync(p))
