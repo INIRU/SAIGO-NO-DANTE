@@ -70,7 +70,7 @@
 
 32개 컬럼 전체 감사 기록은 복구 폴더의 `identity-column-audit.json`이다. 한국어 획득 대사 185건을 모두 복구했다. 최신 게임 데이터에서 빠진 `11215` LCE E.G.O:: AEDD의 대사는 2026-03-23 원본 백업에서 확인했다. 남은 빈 배열은 원본 `skillKeywordList` 자체가 빈 인격 5건이다. 이 5건은 전체 `keywords`가 있어 화면에서 대체 표시한다. 원본에 없는 대표 키워드나 대사를 만들어 넣지 않았다. `bg_image_url` 185건은 검증된 해당 인격의 원본 일러스트 경로로 연결했다.
 
-기존 저장소의 `backups/2026-03-23/identities.json` 170개 행에서 수동 획득 JSON과 설명을 복구했다. 이벤트/출석 보상, 재화·가격, 교환 시점은 현재 게임 데이터에 과거 상점이 없다고 삭제하지 않는다. 원본 희귀도로 확인된 `10805` 파편 가격(150)과 `11103` 게임 시즌(1)은 오래된 백업 값을 수정했다. 백업의 입력 해시·적용 계획은 `historical-metadata-plan.json`, 복구 직전 값은 `before-historical-metadata.json`에 남겼다.
+DB 백업(`2026-03-23/identities.json`, 저장소 밖 `limbus-db-backups/`에 보관) 170개 행에서 수동 획득 JSON과 설명을 복구했다. 이벤트/출석 보상, 재화·가격, 교환 시점은 현재 게임 데이터에 과거 상점이 없다고 삭제하지 않는다. 원본 희귀도로 확인된 `10805` 파편 가격(150)과 `11103` 게임 시즌(1)은 오래된 백업 값을 수정했다. 백업의 입력 해시·적용 계획은 `historical-metadata-plan.json`, 복구 직전 값은 `before-historical-metadata.json`에 남겼다.
 
 ## 키워드 카탈로그와 사용 관계
 
@@ -160,7 +160,7 @@
 
 `limbus_retired`는 2026-10-29에 지웠으므로 되돌리는 스크립트(`supabase/rollback/retire_unused_features.sql`)도 함께 없앴다. 과거 마이그레이션, 사용자/덱/플래너 기록, Discord 봇 테이블, 기존 backup 테이블은 보존했다. 전체 DB 권한 정비를 완료한 것은 아니다. 당시 Supabase 검사에는 기존 `skills`, `deck_identities`, 일부 게임/백업 테이블의 RLS 미설정과 함수 search_path 경고가 남아 있었다. RLS는 이후 모든 표에 켜졌고(위 "현재 표") search_path는 5단계에 남아 있다.
 
-2026-09-29 `20260929095502_drop_discord_bot_tables.sql`로 서비스를 종료한 Discord 봇 테이블 5개(`feed_tracker`, `guild_settings`, `guild_feed_history`, `tickets`, `warnings`)를 삭제했다. 사이트 코드는 이 테이블을 쓰지 않았고, 참조하는 외래 키·뷰·트리거·함수·cron도 없었다. 삭제 직전 행은 `backups/2026-09-29/`에 있고, 스키마는 `supabase/rollback/drop_discord_bot_tables.sql`로 되살린다. 관리자 공지를 Discord로 보내는 웹훅은 봇과 별개라 유지한다.
+2026-09-29 `20260929095502_drop_discord_bot_tables.sql`로 서비스를 종료한 Discord 봇 테이블 5개(`feed_tracker`, `guild_settings`, `guild_feed_history`, `tickets`, `warnings`)를 삭제했다. 사이트 코드는 이 테이블을 쓰지 않았고, 참조하는 외래 키·뷰·트리거·함수·cron도 없었다. 삭제 직전 행은 DB 백업 `2026-09-29/`(저장소 밖 `limbus-db-backups/`, 마이그레이션 주석의 `backups/` 경로는 옮기기 전 위치)에 있고, 스키마는 `supabase/rollback/drop_discord_bot_tables.sql`로 되살린다. 관리자 공지를 Discord로 보내는 웹훅은 봇과 별개라 유지한다.
 
 2026-09-10 `20260910071945_restore_ego_skill_source_fields.sql`을 적용했다. `ego_skills.game_skill_id`는 이름이 해석 단계에 따라 바뀌어도 같은 원본 스킬을 연결하며, `mental_consume`은 원본 정신력 소모다. 해석 I~V는 원본이 지원하는 최대 단계까지만 저장한다. 카드의 `max_construe_level`은 스킬 관계에서 계산하는 조회 값이며 중복 DB 컬럼을 추가하지 않는다.
 

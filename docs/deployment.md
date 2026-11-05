@@ -127,4 +127,4 @@ AWS 예산 `saigo-monthly`가 이번 달 실제 요금이 10달러를 넘을 때
 
 ## 약관 원문 복구
 
-`node scripts/restore-legal-docs.mjs`로 누락된 한국어 문서를 확인하고, `--apply`를 붙여 등록한다. `backups/2026-03-23/legal_docs.json`의 2026년 2월 28일자 원문과 날짜를 그대로 복구하며, 이미 등록된 문서와 동의 기록은 덮어쓰지 않는다. 연결 환경의 `NEXT_PUBLIC_SUPABASE_URL`과 서버 전용 `SUPABASE_SECRET_KEY`를 사용한다. 복구 후 `/ko/terms`, `/ko/privacy` 및 번역 경로의 페이지 캐시를 무효화한다. 원문 복구는 현재 기능에 맞춘 약관 개정과 별개다.
+`node scripts/maintenance/restore-legal-docs.mjs --from <백업 폴더>/2026-03-23/legal_docs.json`으로 누락된 한국어 문서를 확인하고, `--apply`를 붙여 등록한다. DB 백업은 저장소 밖(소유자 맥의 `limbus-db-backups/`)에 보관한다. 2026년 2월 28일자 원문과 날짜를 그대로 복구하며, 이미 등록된 문서와 동의 기록은 덮어쓰지 않는다. 연결 환경의 `NEXT_PUBLIC_SUPABASE_URL`과 서버 전용 `SUPABASE_SECRET_KEY`를 사용한다. 복구 후 `/ko/terms`, `/ko/privacy` 및 번역 경로의 페이지 캐시를 무효화한다. 원문 복구는 현재 기능에 맞춘 약관 개정과 별개다.
