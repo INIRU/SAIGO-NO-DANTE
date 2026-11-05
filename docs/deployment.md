@@ -27,6 +27,7 @@ Cloudflare 무료 요금제는 한국 방문자를 LAX로 보내 페이지 하�
 | 함수 | `saigo-viewer-ip`(viewer-request): `www` → apex 301, 방문자 IP를 `x-viewer-ip`로 덮어쓴다 |
 | 비밀 헤더 | CloudFront가 원본 요청에 `X-Origin-Verify`를 붙인다. 서버 `ORIGIN_VERIFY_SECRET`과 같을 때만 `x-viewer-ip`를 방문자로 믿는다(`lib/request-meta.ts`) |
 | 분석 | Cloudflare 프록시가 넣던 Web Analytics 비컨을 레이아웃이 직접 넣는다. 전환 뒤 Cloudflare의 자동 삽입은 끈다 |
+| 이미지 | 최적화 이미지(`/_next/image`)는 `media.saigo-no-dante.com`(Cloudflare 프록시 → 터널)에서 받는다. CloudFront 요청 요금의 절반을 넘던 몫이라 빼서, 하루 1,300명 기준 CloudFront 요청이 무료 한도(월 1천만 건) 안이다. 터널은 media 주소에서 `/_next/image`만 서버로 보내고 나머지는 404 |
 
 운영 전환은 Cloudflare DNS에서 apex·`www`를 `d3ra6rwderl7mq.cloudfront.net` CNAME(DNS only)으로 바꾸는 것이다. 되돌리기는 두 기록을 터널 CNAME(`5d996eb4-a451-4d35-a31c-0814b44c01b3.cfargotunnel.com`, 프록시)으로 돌리는 것이다.
 
