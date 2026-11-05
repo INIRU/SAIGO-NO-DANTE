@@ -1,7 +1,7 @@
 import { HtmlFlag } from '@/hooks/useHtmlFlag'
 import Skeleton, { SkeletonLine } from '@/components/ui/Skeleton'
 import { PageHeaderSkeleton } from '@/components/ui/PageHeader'
-import page from '@/app/[lang]/friends/Friends.module.css'
+import page from './FriendsSkeleton.module.css'
 import strips from './SupportStrips.module.css'
 
 /** Empty strips drawn with the real strip classes, so the row has the size the loaded one will have. */

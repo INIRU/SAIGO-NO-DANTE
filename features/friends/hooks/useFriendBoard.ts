@@ -7,8 +7,8 @@ import useSWR from 'swr'
 import { fetchNoteAssets } from '@/components/notes/NoteBlockViewer'
 import { assetName, type NoteAssetData } from '@/lib/notes/assets'
 import { GUEST_KEY_HEADER, guestHeaders, readGuestKey } from '@/lib/guest/key'
-import { WANT_LIMIT, type RequestStatus, type StoredSlot, type Visibility } from '@/lib/friends/codes'
-import { EGO_GRADES, type SupportSlot } from './SupportStrips'
+import { WANT_LIMIT, type RequestStatus, type StoredSlot, type Visibility } from '@/features/friends/lib/codes'
+import { EGO_GRADES, type SupportSlot } from '@/features/friends/components/SupportStrips'
 
 /** What the friend code screens share: the API's shapes, the catalogue lookups and the requests. */
 export type Kind = 'support' | 'want'

@@ -3,11 +3,11 @@
 import { useState } from 'react'
 import { useTranslations } from 'next-intl'
 import useSWR from 'swr'
-import SupportStrips from '@/components/friends/SupportStrips'
-import { useFriendCatalog } from '@/components/friends/board'
 import Button from '@/components/ui/Button'
 import ConfirmModal from '@/components/ui/ConfirmModal'
-import { WANT_LIMIT, type StoredSlot } from '@/lib/friends/codes'
+import SupportStrips from '@/features/friends/components/SupportStrips'
+import { useFriendCatalog } from '@/features/friends/hooks/useFriendBoard'
+import { WANT_LIMIT, type StoredSlot } from '@/features/friends'
 import { showError, showSuccess } from '@/lib/toast'
 
 type Item = {
