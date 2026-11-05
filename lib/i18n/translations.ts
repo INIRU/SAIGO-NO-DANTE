@@ -389,11 +389,13 @@ export const translations = {
   // Legal pages (shared between terms and privacy)
   'legal.terms.title': { ko: '이용약관', en: 'Terms of Service', ja: '利用規約' },
   'legal.privacy.title': { ko: '개인정보 처리방침', en: 'Privacy Policy', ja: 'プライバシーポリシー' },
+  'legal.about.title': { ko: '사이트 소개', en: 'About', ja: 'サイトについて' },
   'legal.lastUpdated': { ko: '최종 수정일', en: 'Last updated', ja: '最終更新日' },
   'legal.version': { ko: '버전', en: 'Version', ja: 'バージョン' },
   'legal.empty': { ko: '문서를 불러올 수 없습니다', en: 'Unable to load document', ja: 'ドキュメントを読み込めません' },
   'legal.terms.linkToPrivacy': { ko: '개인정보 처리방침 보기', en: 'View Privacy Policy', ja: 'プライバシーポリシーを見る' },
   'legal.privacy.linkToTerms': { ko: '이용약관 보기', en: 'View Terms of Service', ja: '利用規約を見る' },
+  'legal.about.linkToSupport': { ko: '문의하기', en: 'Contact us', ja: 'お問い合わせ' },
   'legal.tableOfContents': { ko: '목차', en: 'Table of Contents', ja: '目次' },
 
   // Mirror Dungeon — Tab labels
@@ -425,6 +427,7 @@ export const translations = {
   'developers.meta.description': { ko: '최애의 관리자 개발자 API의 시작 방법, 문서, 테스트, 키와 사용량을 확인하는 개발자 도구입니다.', en: 'Developer tools for the SAIGO NO DANTE API: getting started, API reference, test requests, keys and usage.', ja: 'SAIGO NO DANTE APIの開発者ツール。はじめ方、APIドキュメント、テスト、キーと使用量を確認できます。' },
   'legal.terms.meta.description': { ko: '림버스 컴퍼니 팬 사이트 최애의 관리자의 이용약관입니다.', en: 'Terms of Service for SAIGO NO DANTE, a Limbus Company fan site.', ja: 'リンバスカンパニーのファンサイト SAIGO NO DANTE の利用規約です。' },
   'legal.privacy.meta.description': { ko: '림버스 컴퍼니 팬 사이트 최애의 관리자의 개인정보 처리방침입니다.', en: 'Privacy Policy for SAIGO NO DANTE, a Limbus Company fan site.', ja: 'リンバスカンパニーのファンサイト SAIGO NO DANTE のプライバシーポリシーです。' },
+  'legal.about.meta.description': { ko: '림버스 컴퍼니 비공식 팬 사이트 최애의 관리자가 무엇을 제공하는지, 데이터와 저작권, 운영과 문의 방법을 안내합니다.', en: 'What SAIGO NO DANTE, an unofficial Limbus Company fan site, offers, where its data comes from, who holds the rights and how to reach us.', ja: 'リンバスカンパニーの非公式ファンサイト SAIGO NO DANTE の内容、データと権利、運営とお問い合わせ先のご案内です。' },
 
   // Home — Page metadata
   'home.meta.title': { ko: '림버스 컴퍼니 정보·도감 | 최애의 관리자', en: 'SAIGO NO DANTE | Limbus Company Fan Archive', ja: 'SAIGO NO DANTE | リンバスカンパニー情報サイト' },
