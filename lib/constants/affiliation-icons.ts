@@ -1,6 +1,6 @@
 /**
  * Affiliation (association_list key) → its icon in public/assets/game-ui/affiliations: the affiliation's signature
- * keyword (a status only its identities use, found by scripts/assets/pick-affiliation-icons.py) or, when there is none,
+ * keyword (a status only its identities use, picked by the extractor, the Windows extraction tool) or, when there is none,
  * its gift. Affiliations with only generic keywords (stat arrows) have no icon.
  */
 const ICON: Record<string, string> = {

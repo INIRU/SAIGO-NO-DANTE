@@ -38,7 +38,7 @@
 - 색을 고칠 때는 색조를 유지하고 명도만 올린다. `--error`는 흰 글자를 얹는 면, 글자에는 `--error-text`를 쓴다.
 - 갈색·금색 계열 안에서 명도로 층을 나눈다. 파랑·보라 같은 새 강조색을 만들지 않는다.
 - 키워드 색은 `GIFT_KEYWORD_COLORS`, 죄악 색은 `SIN_COLORS` 하나만 쓴다. 파일마다 색을 새로 적지 않는다.
-- 강화된 기프트 배경(`gift/background-enhanced.webp`)은 주황 줄무늬 슬롯 위에 노란 팔각형을 얹은 게임 슬롯이다(`scripts/assets/extract-gift-slot-enhanced.mjs`). 아틀라스의 주황 발광 테두리는 선택 표시라서 넣지 않는다. 노란색으로 칠하지 않는다.
+- 강화된 기프트 배경(`gift/background-enhanced.webp`)은 주황 줄무늬 슬롯 위에 노란 팔각형을 얹은 게임 슬롯이다(윈도우 추출 도구가 만든다). 아틀라스의 주황 발광 테두리는 선택 표시라서 넣지 않는다. 노란색으로 칠하지 않는다.
 - 어시스트의 계획 기프트는 테두리 대신 그룹 제목(이 층 계획 → 최종 기프트 → 그 밖의 기프트)으로 구분한다. 빨간 경고 삼각형은 "테마팩 전용 · 이 층에서 획득"에만 쓴다.
 - 노란 경고 삼각형은 거울 던전 체크 모드의 합성 기프트에만 쓴다. 같은 자리(오른쪽 위)에 전용 테마팩이 있는 기프트는 그 팩 그림을 테두리 없이 작게 붙인다.
 - 회색조(greyscale) 필터로 비활성 상태를 표현하지 않는다. 투명도나 오버레이를 쓴다.
@@ -53,7 +53,7 @@
 | 게임 카드 설명(가호·제약) | S-Core Dream (en/ja는 본문 글꼴) | `--font-game-text` |
 
 - Bebas는 숫자(층, 비용, 편성 번호, 수치)와 로고에만 쓴다. 한글 제목에 쓰지 않는다. `display: optional`이라 미리 받는다(`preload: true`). 안 받으면 첫 방문 내내 대체 글꼴로 남는다.
-- 게임 화면을 옮긴 카드는 게임 글꼴을 따른다: 제목 KOTRA Bold, 설명 S-Core Dream, 숫자 Bebas Kai. 강조 단어는 게임 원문의 색 표시를 쓴다(가호: `scripts/assets/mark-blessing-terms.py`).
+- 게임 화면을 옮긴 카드는 게임 글꼴을 따른다: 제목 KOTRA Bold, 설명 S-Core Dream, 숫자 Bebas Kai. 강조 단어는 게임 원문의 색 표시를 쓴다(가호: `scripts/data/mark-blessing-terms.py`).
 - 영어(`html[lang=en]`)는 제목·본문 모두 Pretendard를 쓴다. 인격 카드 이름은 Mikodacs.
 - 일본어(`html[lang=ja]`)는 제목·본문 모두 M PLUS 1p(`--font-noto-jp` 변수), 인격 카드 이름은 Corporate Logo Bold를 쓴다.
 - 모든 글꼴은 `public/fonts`에 직접 올려 `next/font/local`로 불러온다(Google Fonts 사용 안 함). 라이선스는 `public/fonts/licenses/`.
