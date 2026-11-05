@@ -726,6 +726,8 @@ a.note-mention:is(:hover,:focus-visible),.note-block-document a[href].note-menti
 .note-preview-text{display:flex;min-width:0;flex:1;flex-direction:column;gap:.25rem}
 .note-preview-text>strong{font-family:var(--font-heading);font-size:1rem;font-weight:400;color:var(--text-primary);overflow-wrap:anywhere}
 .note-preview-text>small{color:var(--text-secondary);font-size:.8125rem}
+.note-preview-keyword{display:flex;align-items:center;gap:.25rem;font-family:var(--font-heading)}.note-preview-keyword>img{width:1rem;height:1rem;object-fit:contain}
+.note-preview-card[data-kind=gift] .note-preview-text>div{margin-top:.25rem;padding-top:.5rem;border-top:1px solid var(--border);font-family:var(--font-game-text)}
 .note-preview-modal{display:flex;flex-direction:column;gap:1rem;padding:1.25rem}
 .note-preview-more{align-self:flex-end;padding:.5rem .875rem;border-radius:.4rem;background:var(--bg-elevated);color:var(--gold-light);font-size:.875rem;text-decoration:none;transition:background-color .15s ease}
 @media (prefers-reduced-motion:no-preference){.note-preview-popover{animation:note-popover-in .15s ease-out}}
