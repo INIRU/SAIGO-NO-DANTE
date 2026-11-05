@@ -1,6 +1,6 @@
 """Copy the game's term colour into the planner's blessing texts as <k>term</k> (messages/{ko,en,ja}.json).
 
-usage: python3 -I scripts/assets/mark-blessing-terms.py <Localize dir> [--write]
+usage: python3 -I scripts/data/mark-blessing-terms.py <Localize dir> [--write]
 
 <Localize dir> holds kr/KR_, en/EN_, jp/JP_DungeonStartBuffs_MD7.json from the game. Each effect in
 planner.blessingTab.blessings is matched against those templates, placeholders as wildcards; the template with the

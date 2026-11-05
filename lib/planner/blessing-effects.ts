@@ -5,7 +5,7 @@ const NUMBER = /[+-]?\d+(?:\/\d+)*(?:~\d+)?%?(?:층|회|개|등급)?/g
 
 /**
  * One blessing effect line, cut where its colour changes. Terms are what the game colours (`<k>…</k>` in the
- * messages, copied by scripts/assets/mark-blessing-terms.py). From the second level on (`previousEffects` = the level
+ * messages, copied by scripts/data/mark-blessing-terms.py). From the second level on (`previousEffects` = the level
  * below), the part that differs from the same line of the level below is a change, shown on its numbers (or on all of
  * it when it has none). A line the level below also has does not change; a line it lacks is all new.
  */
