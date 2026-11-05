@@ -68,3 +68,6 @@ public/models/assist-ocr/lang/
 
 # recommender evaluation snapshot (local export of public formations)
 /.recsys-snapshot/
+
+# DB backups hold member data: kept outside the repository
+/backups/
