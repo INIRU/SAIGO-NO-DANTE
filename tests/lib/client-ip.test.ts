@@ -30,6 +30,18 @@ describe('REQ-SHARED-048 trusted visitor IP', () => {
     expect(elsewhere).not.toBe(selfHosted)
   })
 
+  it('REQ-SHARED-071 behind CloudFront trusts the viewer address only with the origin secret', () => {
+    vi.stubEnv('SELF_HOSTED', '1')
+    vi.stubEnv('ORIGIN_VERIFY_SECRET', 'origin-secret')
+    // Cloudflare sees CloudFront, so CF-Connecting-IP is the edge; the CloudFront function writes the visitor to x-viewer-ip.
+    const viaCloudFront = (secret?: string) => new Headers({ 'cf-connecting-ip': '13.0.0.1', 'x-viewer-ip': '5.5.5.5', ...(secret === undefined ? {} : { 'x-origin-verify': secret }) })
+    expect(getClientIp(viaCloudFront('origin-secret'))).toBe('5.5.5.5')
+    expect(getClientIp(viaCloudFront('guess'))).toBe('13.0.0.1')
+    expect(getClientIp(viaCloudFront())).toBe('13.0.0.1')
+    vi.stubEnv('ORIGIN_VERIFY_SECRET', '')
+    expect(getClientIp(viaCloudFront(''))).toBe('13.0.0.1')
+  })
+
   it('REQ-SHARED-048 rate limits and votes read the IP only through getClientIp', () => {
     for (const file of ['proxy.ts', 'lib/rate-limit.ts', 'app/api/decks/[id]/vote/route.ts']) {
       const source = readFileSync(file, 'utf8')

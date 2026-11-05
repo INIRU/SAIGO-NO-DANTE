@@ -20,7 +20,7 @@ import { notFound } from 'next/navigation'
 import { routing } from '@/lib/i18n/routing'
 import type { SupportedLang } from '@/lib/i18n/types'
 import { translations } from '@/lib/i18n/translations'
-import { ADSENSE_ACCOUNT, OG_LOCALE, SITE_NAME, SITE_URL, localeUrl } from '@/lib/seo/metadata'
+import { ADSENSE_ACCOUNT, CLOUDFLARE_WEB_ANALYTICS_TOKEN, OG_LOCALE, SITE_NAME, SITE_URL, localeUrl } from '@/lib/seo/metadata'
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
 import PageNavigation from '@/components/ui/PageNavigation'
@@ -203,6 +203,9 @@ export default async function LangLayout({
           }}
         />
         {shouldRenderAnalytics ? <Analytics /> : null}
+        {process.env.SELF_HOSTED === '1' ? (
+          <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon={JSON.stringify({ token: CLOUDFLARE_WEB_ANALYTICS_TOKEN })} />
+        ) : null}
         <ServiceWorkerRegister />
       </body>
     </html>
