@@ -2,7 +2,7 @@
 
 import { createClient } from '@supabase/supabase-js'
 import { config } from 'dotenv'
-import { normalizeFloorPlanDifficulty } from '../lib/planner/floor-difficulty'
+import { normalizeFloorPlanDifficulty } from '../../lib/planner/floor-difficulty'
 
 config({ path: '.env.local' })
 
