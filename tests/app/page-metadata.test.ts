@@ -62,6 +62,7 @@ const PAGES: [string, () => Promise<unknown>][] = [
   ['/developers', () => import('@/app/[lang]/developers/page')],
   ['/privacy', () => import('@/app/[lang]/privacy/page')],
   ['/terms', () => import('@/app/[lang]/terms/page')],
+  ['/about', () => import('@/app/[lang]/about/page')],
 ]
 const LANGS = ['ko', 'en', 'ja'] as const
 const metadataOf = async (load: () => Promise<unknown>, lang: string) => ((await load()) as PageModule).generateMetadata({ params: Promise.resolve({ lang }) })

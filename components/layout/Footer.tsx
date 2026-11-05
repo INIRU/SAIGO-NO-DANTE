@@ -70,6 +70,12 @@ export default async function Footer({ lang }: { lang: string }) {
         {/* 약관 링크 */}
         {/* Wraps between the links on a phone, never inside one. */}
         <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 whitespace-nowrap">
+          <Link href={`/${lang}/about`}
+            className="hit-target transition-colors hover:text-yellow-300"
+            style={{ color: 'var(--text-tertiary)', fontSize: 'var(--text-xs)' }}>
+            {tCommon('about')}
+          </Link>
+          <span aria-hidden className="max-sm:hidden" style={{ color: 'var(--text-muted)' }}>·</span>
           <Link href={`/${lang}/terms`}
             className="hit-target transition-colors hover:text-yellow-300"
             style={{ color: 'var(--text-tertiary)', fontSize: 'var(--text-xs)' }}>
