@@ -1,5 +1,5 @@
 /**
- * Steps of the friend code guide: the real game screen of each (scripts/assets/crop-friend-guide.mjs writes
+ * Steps of the friend code guide: the real game screen of each (the extractor, the Windows extraction tool, writes
  * public/assets/guides/friend-codes/<name>.webp with other players' cards blurred out) and what to press on it.
  * spots: the marks as percentages of the 1920x1080 screen, printed by that script.
  */
