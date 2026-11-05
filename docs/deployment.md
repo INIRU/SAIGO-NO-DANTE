@@ -15,6 +15,21 @@
 
 한국 방문자는 Cloudflare 무료 요금제라 LAX 같은 해외 거점으로 들어온다. 서버에 직접 붙는 것보다 첫 응답이 약 0.5초 늦지만, 공격 방어를 위해 Cloudflare 경유를 택했다(2026-10-19 결정).
 
+## CloudFront 서울 거점(2026-11-05)
+
+Cloudflare 무료 요금제는 한국 방문자를 LAX로 보내 페이지 하나에 3~8초가 걸렸다. AWS 서울에서는 Cloudflare가 ICN으로 붙어서, 앞에 CloudFront를 둔다: 방문자 → CloudFront(ICN) → Cloudflare(ICN, `origin.saigo-no-dante.com`) → 터널 → 서버. 서버 포트는 그대로 닫혀 있고 Cloudflare 방어도 원본 앞에 남는다.
+
+| 부분 | 값 |
+|---|---|
+| 배포 | `EQGC66ZU23RAB` (`d3ra6rwderl7mq.cloudfront.net`), 별칭 apex·`www`, 인증서 ACM us-east-1 |
+| 원본 | `origin.saigo-no-dante.com`(Cloudflare 프록시 CNAME → 터널). 터널 설정이 이 호스트의 `Host`를 `saigo-no-dante.com`으로 바꾼다(`originRequest.httpHostHeader`) |
+| 캐시 | `/_next/static/*`만 CloudFront가 캐시(CachingOptimized). 나머지는 캐시하지 않고 모든 헤더·쿠키·쿼리를 넘긴다(Host 제외) |
+| 함수 | `saigo-viewer-ip`(viewer-request): `www` → apex 301, 방문자 IP를 `x-viewer-ip`로 덮어쓴다 |
+| 비밀 헤더 | CloudFront가 원본 요청에 `X-Origin-Verify`를 붙인다. 서버 `ORIGIN_VERIFY_SECRET`과 같을 때만 `x-viewer-ip`를 방문자로 믿는다(`lib/request-meta.ts`) |
+| 분석 | Cloudflare 프록시가 넣던 Web Analytics 비컨을 레이아웃이 직접 넣는다. 전환 뒤 Cloudflare의 자동 삽입은 끈다 |
+
+운영 전환은 Cloudflare DNS에서 apex·`www`를 `d3ra6rwderl7mq.cloudfront.net` CNAME(DNS only)으로 바꾸는 것이다. 되돌리기는 두 기록을 터널 CNAME(`5d996eb4-a451-4d35-a31c-0814b44c01b3.cfargotunnel.com`, 프록시)으로 돌리는 것이다.
+
 ## 배포
 
 `main`이 움직이면 GitHub이 빌드하고 서버는 받아서 바꿔 끼운다(2026-10-22부터). 서버 스크립트의 원본은 저장소 `deploy/server/`이고, 고치면 서버의 `~/saigo/`(덧붙임은 `/etc/systemd/system/saigo-web.service.d/`)에 복사한다.
