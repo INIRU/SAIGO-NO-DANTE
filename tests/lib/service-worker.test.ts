@@ -52,11 +52,11 @@ describe('service worker image freshness', () => {
     await Promise.all(tasks)
     expect(put).toHaveBeenCalledOnce()
   })
-  it('refreshes mutable images but leaves hashed chunks cached and APIs untouched', () => {
+  it('REQ-SHARED-070 refreshes mutable images but leaves hashed chunks to the browser cache and APIs untouched', () => {
     const { api } = worker()
     expect(api.classifyRequest(new Request('https://site.test/_next/image?url=x'))).toBe('stale-while-revalidate')
     expect(api.classifyRequest(new Request('https://site.test/icons/a.webp'))).toBe('stale-while-revalidate')
-    expect(api.classifyRequest(new Request('https://site.test/_next/static/hash.js'))).toBe('cache-first-static')
+    expect(api.classifyRequest(new Request('https://site.test/_next/static/hash.js'))).toBe('skip')
     expect(api.classifyRequest(new Request('https://site.test/api/ego'))).toBe('skip')
   })
   it('leaves opaque storage images to the browser, which the worker could never cache', () => {
@@ -86,3 +86,60 @@ describe('REQ-SHARED-049 stale image copies are dropped', () => {
   })
 })
 
+
+/** Loads the worker with its event handlers captured, as the browser would run it. */
+function installed(keys: string[] = []) {
+  const handlers: Record<string, (event: unknown) => void> = {}
+  const deleted: string[] = []
+  const cache = { match: vi.fn(), put: vi.fn(), keys: vi.fn().mockResolvedValue([]), delete: vi.fn() }
+  const caches = {
+    keys: vi.fn().mockResolvedValue(keys),
+    delete: vi.fn(async (key: string) => { deleted.push(key); return true }),
+    open: vi.fn().mockResolvedValue(cache),
+    match: vi.fn(async (url: string) => url === '/offline' ? new Response('offline page') : undefined),
+  }
+  const enable = vi.fn().mockResolvedValue(undefined)
+  const fetch = vi.fn()
+  const self = { location: { origin: 'https://site.test' }, registration: { navigationPreload: { enable } }, clients: { claim: vi.fn() },
+    addEventListener: (type: string, handler: (event: unknown) => void) => { handlers[type] = handler } }
+  runInNewContext(readFileSync('public/sw.js', 'utf8'), { URL, Headers, Response, fetch, caches, self })
+  return { handlers, deleted, caches, cache, fetch, enable }
+}
+const navigation = (url = 'https://site.test/ko/collection') => ({ url, method: 'GET', mode: 'navigate', headers: new Headers({ accept: 'text/html' }) })
+async function respond(handlers: Record<string, (event: unknown) => void>, event: Record<string, unknown>) {
+  let answer: Promise<Response> | undefined
+  handlers.fetch({ ...event, respondWith: (p: Promise<Response>) => { answer = p }, waitUntil: () => {} })
+  return answer && await answer
+}
+
+describe('REQ-SHARED-070 the worker stays off the page and script path', () => {
+  it('REQ-SHARED-070 answers a page with the navigation preload response and stores nothing', async () => {
+    const { handlers, fetch, caches } = installed()
+    const response = await respond(handlers, { request: navigation(), preloadResponse: Promise.resolve(new Response('page')) })
+    expect(await response!.text()).toBe('page')
+    expect(fetch).not.toHaveBeenCalled()
+    expect(caches.open).not.toHaveBeenCalled()
+  })
+
+  it('REQ-SHARED-070 fetches the page itself without a preload, and shows the offline page only when the network fails', async () => {
+    const { handlers, fetch } = installed()
+    fetch.mockResolvedValueOnce(new Response('from network'))
+    expect(await (await respond(handlers, { request: navigation(), preloadResponse: Promise.resolve(undefined) }))!.text()).toBe('from network')
+    fetch.mockRejectedValueOnce(new TypeError('offline'))
+    expect(await (await respond(handlers, { request: navigation(), preloadResponse: Promise.resolve(undefined) }))!.text()).toBe('offline page')
+  })
+
+  it('REQ-SHARED-070 leaves script chunks to the browser', async () => {
+    const { handlers } = installed()
+    expect(await respond(handlers, { request: new Request('https://site.test/_next/static/chunks/a.js') })).toBeUndefined()
+  })
+
+  it('REQ-SHARED-070 turns navigation preload on and drops every saigo cache but v7 on activation', async () => {
+    const { handlers, deleted, enable } = installed(['saigo-images-v6', 'saigo-static-v6', 'saigo-pages-v6', 'saigo-images-v7', 'other-app'])
+    let done: Promise<unknown> = Promise.resolve()
+    handlers.activate({ waitUntil: (p: Promise<unknown>) => { done = p } })
+    await done
+    expect(enable).toHaveBeenCalledOnce()
+    expect(deleted.sort()).toEqual(['saigo-images-v6', 'saigo-pages-v6', 'saigo-static-v6'])
+  })
+})
