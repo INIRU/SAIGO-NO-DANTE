@@ -25,9 +25,6 @@ import DeckListFilters from '@/components/decks/DeckListFilters'
 import { BoardResults, BrowseBar } from '@/components/board/Browse'
 import type { RowPost } from '@/components/board/parts'
 import {
-  normalizeDeckLanguageFilter,
-  resolveDeckLanguageParam,
-  type DeckLanguageFilter,
   type SearchSuggestion,
 } from '@/components/decks/decks-types'
 import type { DeckFilterIdentity } from '@/components/decks/DeckIdentityFilterModal'
@@ -191,7 +188,6 @@ interface DecksClientProps {
   initialDecks?: DeckSummary[]
   initialTotal?: number
   initialSort?: SortKey
-  initialLanguageFilter?: DeckLanguageFilter
   initialShelf?: InitialShelf
 }
 
@@ -225,7 +221,6 @@ function appendCsvParam(params: URLSearchParams, name: string, values: Iterable<
 export default function DecksClient({
   initialDecks,
   initialSort = 'latest',
-  initialLanguageFilter = 'mine',
   initialShelf,
 }: DecksClientProps = {}) {
   const locale = useLocale()
@@ -243,7 +238,7 @@ export default function DecksClient({
   const [loadingMore, setLoadingMore] = useState(false)
   const [hasMore, setHasMore] = useState(true)
   const scrollRootRef = useRef<HTMLDivElement>(null)
-  const initialDataKey = useRef<string | null>(hasServerInitialDecks ? `${initialSort}:${initialLanguageFilter}` : null)
+  const initialDataKey = useRef<string | null>(hasServerInitialDecks ? initialSort : null)
   const deckRequestId = useRef(0)
   const [filterSignal, setFilterSignal] = useState(0)
   const loadMoreRequestId = useRef(0)
@@ -254,12 +249,8 @@ export default function DecksClient({
   const [browse, setBrowse] = useQueryState('browse', parseAsString.withDefault(''))
   const [sortQuery, setSortQuery] = useQueryState('sort', parseAsString.withDefault('latest'))
   const sort = normalizeSortKey(sortQuery)
-  const [languageQuery, setLanguageQuery] = useQueryState('lang', parseAsString.withDefault(initialLanguageFilter))
-  const languageFilter = normalizeDeckLanguageFilter(languageQuery)
-  const deckLanguageParam = resolveDeckLanguageParam(languageFilter, locale)
   const [search, setSearch] = useQueryState('q', parseAsString.withDefault(''))
   const latestSortRef = useRef(sort)
-  const latestDeckLanguageRef = useRef(deckLanguageParam)
   const latestServerQueryRef = useRef('')
 
   // ── Search UI state ──
@@ -463,7 +454,6 @@ export default function DecksClient({
   const serverQueryKey = useMemo(() => {
     const params = new URLSearchParams()
     params.set('sort', sort)
-    params.set('lang', deckLanguageParam)
     if (debouncedSearch.trim()) params.set('q', debouncedSearch.trim())
     if (activeContentType) params.set('content_type', activeContentType)
     appendCsvParam(params, 'tags', activeTags)
@@ -479,7 +469,6 @@ export default function DecksClient({
     return params.toString()
   }, [
     sort,
-    deckLanguageParam,
     debouncedSearch,
     activeContentType,
     activeTags,
@@ -514,26 +503,23 @@ export default function DecksClient({
   const [codeError, setCodeError] = useState(false)
   const collectionRequestRef = useRef<Promise<CollectionData | null> | null>(null)
 
-  const languageFilterCount = languageFilter === 'mine' ? 0 : 1
-  const hasAnyFilter = Boolean(inputValue || activeContentType || activeTags.size > 0 || activeKeywordTags.size > 0 || activeMainKeywords.size > 0 || formationCount !== null || minInfoScore !== null || selectedIdentityIds.size > 0 || filterOwnedIdentity || filterOwnedEgo || languageFilterCount || affiliationQuery || egoFacetQuery)
+  const hasAnyFilter = Boolean(inputValue || activeContentType || activeTags.size > 0 || activeKeywordTags.size > 0 || activeMainKeywords.size > 0 || formationCount !== null || minInfoScore !== null || selectedIdentityIds.size > 0 || filterOwnedIdentity || filterOwnedEgo || affiliationQuery || egoFacetQuery)
   // Only browsing all or filtering shows the list; the default view is the discovery shelf, so nothing is loaded for it.
   const listVisible = browse === 'all' || hasAnyFilter
 
   // ── Initial deck load (skip if server data present) ──
   useEffect(() => {
     if (!listVisible) return
-    if (!hasServerBackedFilters && initialDataKey.current === `${sort}:${languageFilter}`) {
+    if (!hasServerBackedFilters && initialDataKey.current === sort) {
       initialDataKey.current = null
       if (initialDecks && mergeDeckRows([], initialDecks).length < PAGE_SIZE) setHasMore(false)
       setLoading(false)
       setRefreshing(false)
       latestSortRef.current = sort
-      latestDeckLanguageRef.current = deckLanguageParam
       latestServerQueryRef.current = serverQueryKey
       return
     }
     latestSortRef.current = sort
-    latestDeckLanguageRef.current = deckLanguageParam
     latestServerQueryRef.current = serverQueryKey
     const requestId = deckRequestId.current + 1
     deckRequestId.current = requestId
@@ -564,7 +550,7 @@ export default function DecksClient({
         setRefreshing(false)
       })
     return () => controller.abort()
-  }, [listVisible, sort, languageFilter, deckLanguageParam, serverQueryKey, hasServerBackedFilters, buildDeckSearchParams]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [listVisible, sort, serverQueryKey, hasServerBackedFilters, buildDeckSearchParams]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Load more ──
   const loadMore = useCallback(() => {
@@ -576,13 +562,12 @@ export default function DecksClient({
     const controller = new AbortController()
     loadMoreAbortRef.current = controller
     const requestSort = sort
-    const requestDeckLanguage = deckLanguageParam
     const requestQueryKey = serverQueryKey
     const params = buildDeckSearchParams(decks.length)
     fetch(`/api/decks?${params.toString()}`, { signal: controller.signal })
       .then(r => r.json())
       .then(data => {
-        if (loadMoreRequestId.current !== requestId || latestSortRef.current !== requestSort || latestDeckLanguageRef.current !== requestDeckLanguage || latestServerQueryRef.current !== requestQueryKey) return
+        if (loadMoreRequestId.current !== requestId || latestSortRef.current !== requestSort || latestServerQueryRef.current !== requestQueryKey) return
         if (!Array.isArray(data) || data.length === 0) { setHasMore(false); return }
         if (data.length < PAGE_SIZE) setHasMore(false)
         setDecks(prev => mergeDeckRows(prev, data.map(mapDeck)))
@@ -595,9 +580,9 @@ export default function DecksClient({
         if (loadMoreRequestId.current === requestId) {
           loadMoreAbortRef.current = null
         }
-        if (loadMoreRequestId.current === requestId && latestSortRef.current === requestSort && latestDeckLanguageRef.current === requestDeckLanguage && latestServerQueryRef.current === requestQueryKey) setLoadingMore(false)
+        if (loadMoreRequestId.current === requestId && latestSortRef.current === requestSort && latestServerQueryRef.current === requestQueryKey) setLoadingMore(false)
       })
-  }, [sort, deckLanguageParam, serverQueryKey, buildDeckSearchParams, decks.length, loading, refreshing, loadingMore, hasMore])
+  }, [sort, serverQueryKey, buildDeckSearchParams, decks.length, loading, refreshing, loadingMore, hasMore])
 
   useEffect(() => {
     loadMoreAbortRef.current?.abort()
@@ -828,7 +813,7 @@ export default function DecksClient({
     return list
   }, [decks, deckDerived, filterOwnedIdentity, filterOwnedEgo, effectiveOwned, affiliationQuery, egoFacetQuery, facetData]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const advancedFilterCount = activeTags.size + activeKeywordTags.size + activeMainKeywords.size + (formationCount !== null ? 1 : 0) + (minInfoScore !== null ? 1 : 0) + selectedIdentityIds.size + (filterOwnedIdentity ? 1 : 0) + (filterOwnedEgo ? 1 : 0) + languageFilterCount + facetSelections.affiliation.length + facetSelections.ego.length
+  const advancedFilterCount = activeTags.size + activeKeywordTags.size + activeMainKeywords.size + (formationCount !== null ? 1 : 0) + (minInfoScore !== null ? 1 : 0) + selectedIdentityIds.size + (filterOwnedIdentity ? 1 : 0) + (filterOwnedEgo ? 1 : 0) + facetSelections.affiliation.length + facetSelections.ego.length
 
   if (!listVisible) return <DiscoveryShelf kind="deck" initialData={initialShelf} onBrowse={() => setBrowse('all', { history: 'push' })} />
 
@@ -908,8 +893,6 @@ export default function DecksClient({
           onToggleSelectedIdentity={toggleSelectedIdentity}
           onToggleIdentityMode={() => { void setFilterQuery({ identityMode: identityMode === 'or' ? 'and' : 'or' }) }}
           onClearSelectedIdentities={() => { void setFilterQuery({ identityIds: null }) }}
-          languageFilter={languageFilter}
-          onLanguageFilterChange={value => { void setLanguageQuery(value === 'mine' ? null : value, QUERY_OPTIONS) }}
           facetSections={<FacetSections kinds={['affiliation', 'ego']} facets={facetData} selections={facetSelections} onRemove={toggleFacet} onOpen={setFacetModal} />}
         />
         <FacetPickerModal kind={facetModal} facets={facetData} selected={facetModal ? facetSelections[facetModal] : []}
