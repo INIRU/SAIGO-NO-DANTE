@@ -192,6 +192,34 @@ it('reads the plan gifts for a pack wherever the plan placed it, plus the given 
   expect(planThemeGiftIds(createInitialRunState(), [], 'A', 1)).toEqual([])
 })
 
+it('REQ-PLANNER-047 leaves the clear reward off the pack on floor 15 but keeps the gifts planned there', () => {
+  const state = createInitialRunState()
+  state.sourcePlanSnapshot = { floorPlan: [
+    { floor: 14, theme_id: 'A', gift_ids: ['10'] },
+    { floor: 15, theme_id: 'B', gift_ids: ['30'] },
+  ] as NonNullable<typeof state.sourcePlanSnapshot>['floorPlan'] }
+  const packs = [{ ...theme('A', [], []), fixed_reward_gift_ids: [9250] }, { ...theme('B', [], []), fixed_reward_gift_ids: [9251] }]
+  expect(planThemeGiftIds(state, packs, 'A')).toEqual([10, 9250])
+  expect(planThemeGiftIds(state, packs, 'B')).toEqual([30])
+  // a pack that is not in the plan takes the floor it was given
+  expect(planThemeGiftIds(state, packs, 'B', 15)).toEqual([30])
+  expect(planThemeGiftIds({ ...state, sourcePlanSnapshot: { floorPlan: [] } as unknown as RunState['sourcePlanSnapshot'] }, packs, 'B', 3)).toEqual([9251])
+})
+
+it('REQ-PLANNER-047 the current floor 15 does not count the pack clear reward as planned', () => {
+  const tiered = (game_id: number) => ({ game_id, name: String(game_id), grade: '4' }) as GiftData
+  const map = new Map([10, 20, 9250].map(id => [id, tiered(id)]))
+  const purple = { ...theme('P', [10, 20, 9250], []), fixed_reward_gift_ids: [9250] }
+  const state = createInitialRunState()
+  state.floorLogs[0].themeId = 'P'
+  state.currentFloor = 1
+  expect(getCurrentFloorPriorityGifts(state, [purple], map).map(item => item.game_id)[0]).toBe(9250)
+  state.currentFloor = 15
+  state.floorLogs[14] = { ...state.floorLogs[0], themeId: 'P' }
+  state.sourcePlanSnapshot = { floorPlan: [{ floor: 15, gift_ids: ['20'] }] } as unknown as RunState['sourcePlanSnapshot']
+  expect(getCurrentFloorPriorityGifts(state, [purple], map).map(item => item.game_id)).toEqual([20, 10, 9250])
+})
+
 it('lists the plan unowned tier IV+ gifts for the fusion screen, a pack exclusive only on its own floor', () => {
   const tiered = (game_id: number, grade: string) => ({ game_id, name: String(game_id), grade }) as GiftData
   const map = new Map([tiered(1, '3'), tiered(2, '4'), tiered(3, '5'), tiered(4, '4'), tiered(5, 'EX'), tiered(6, '5'), tiered(7, '4'), tiered(8, '4')].map(item => [item.game_id, item]))

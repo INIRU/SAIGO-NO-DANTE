@@ -557,7 +557,7 @@ export default function FloorTab({ state, dispatch, themes, gifts, recipes, gift
   }
 
   function getFloorGifts(entry: FloorEntry, theme: ThemeData | null) {
-    return withThemeRewards(entry.gift_ids, theme)
+    return withThemeRewards(entry.gift_ids, theme, entry.floor)
       .map(id => giftMap.get(parseInt(id, 10)))
       .filter((gift): gift is GiftData => Boolean(gift))
       .map(localizedGift)

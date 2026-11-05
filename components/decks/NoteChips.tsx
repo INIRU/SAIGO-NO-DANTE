@@ -2,7 +2,7 @@
 
 import { GIFT_KEYWORD_COLORS } from '@/lib/constants/gift'
 
-import { useState, useRef, useEffect, useCallback, useContext, useMemo } from 'react'
+import { useState, useRef, useEffect, useLayoutEffect, useCallback, useContext, useMemo } from 'react'
 import useSWR from 'swr'
 import { createPortal } from 'react-dom'
 import Image from 'next/image'
@@ -14,6 +14,7 @@ import NoteTocLayout, { NoteHeadingLink } from '@/components/notes/NoteToc'
 import { NOTE_TOC_MIN, markdownHeadings } from '@/lib/notes/toc'
 import { noteBlockTokenPattern, noteInlineMarkdownPattern, noteTokenPattern } from '@/lib/notes/inline-tokens'
 import { PlaceholderText } from '@/components/ui/PlaceholderLabel'
+import { placePopoverIn, type PopoverPlacement } from '@/lib/utils/popover'
 import IdentitySkillFrameCard from '@/components/identity/IdentitySkillFrameCard'
 import { PassiveNoteRow } from '@/components/passive/PassiveEffect'
 import { MultipliedCount } from '@/components/passive/PassiveParts'
@@ -120,31 +121,36 @@ function TooltipPopup({
   const contentRef = useRef<HTMLDivElement>(null)
   const [overflowing, setOverflowing] = useState(false)
 
-  const spaceAbove = rect.top
-  const spaceBelow = window.innerHeight - rect.bottom
-  const showAbove = spaceAbove > spaceBelow
-  const maxH = Math.min((showAbove ? spaceAbove : spaceBelow) - 20, window.innerHeight * 0.5)
+  const cardRef = useRef<HTMLSpanElement>(null)
+  const [place, setPlace] = useState<PopoverPlacement | null>(null)
+
+  // Measured on the real card before it shows: maxWidth, then 1.5x, then 2x, the narrowest that fits (a short note keeps its own width).
+  useLayoutEffect(() => {
+    const card = cardRef.current, scroller = contentRef.current
+    if (!card || !scroller) return
+    setPlace(placePopoverIn(card, scroller, { anchor: rect, view: { width: window.innerWidth, height: window.innerHeight }, widths: [maxWidth, maxWidth * 1.5, maxWidth * 2], gap: 6, margin: 10, fit: 'shrink' }))
+  }, [rect, maxWidth])
 
   useEffect(() => {
     const el = contentRef.current
     if (el) setOverflowing(el.scrollHeight > el.clientHeight)
-  }, [])
+  }, [place])
 
   return (
     <span
+      ref={cardRef}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
       style={{
         position: 'fixed',
-        left: Math.min(rect.left, window.innerWidth - maxWidth - 10),
-        ...(showAbove
-          ? { bottom: window.innerHeight - rect.top + 6 }
-          : { top: rect.bottom + 6 }),
+        left: place?.left ?? 0,
+        ...(place ? (place.above ? { bottom: window.innerHeight - place.top } : { top: place.top }) : { top: 0 }),
+        visibility: place ? 'visible' : 'hidden',
         zIndex: 200,
         background: 'var(--bg-card)',
         border: '1px solid #3a3020',
         borderRadius: 4,
-        minWidth, maxWidth,
+        minWidth, maxWidth: place?.width ?? maxWidth,
         whiteSpace: 'normal',
         overflow: 'hidden',
       }}
@@ -153,7 +159,7 @@ function TooltipPopup({
         ref={contentRef}
         style={{
           padding: '8px 10px',
-          maxHeight: maxH,
+          maxHeight: place?.maxHeight,
           overflowY: overflowing ? 'auto' : 'hidden',
           overscrollBehavior: 'contain',
         }}
