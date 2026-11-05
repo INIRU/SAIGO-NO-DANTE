@@ -17,7 +17,8 @@ const SUFFIXES = ['', '.ts', '.tsx', '/index.ts', '/index.tsx']
 // import/export ... from '…', import '…', import('…')
 const STATEMENT =
   /\b(?:import|export)\s+(?:type\s+)?([^'";]*?)\s*\bfrom\s*(['"])([^'"\n]+)\2|\bimport\s*(['"])([^'"\n]+)\4|\bimport\(\s*(['"])([^'"\n]+)\6\s*\)/g
-const CODE = /\.(?:ts|tsx|mts|mjs|cjs|js)$/
+// 번들러(Next, Vitest)가 읽는 TS만 `@/` 별칭을 쓴다. Node가 바로 읽는 파일(설정, 스크립트, .mjs/.cjs/.js)은 별칭을 못 푼다.
+const ALIAS_OK = (path) => /\.(?:ts|tsx|mts)$/.test(path) && !/^(?:scripts\/|next\.config\.|vitest\.config\.)/.test(path)
 
 const relativeSpec = (fromDir, target) => {
   const rel = posix.relative(fromDir || '.', target)
@@ -46,7 +47,7 @@ export function rewriteSources(renames, files, dirList = []) {
   const result = []
   for (const { path, source } of files) {
     const newPath = map.get(path) ?? path
-    const aliasStyle = CODE.test(path)
+    const aliasStyle = ALIAS_OK(newPath)
     const out = source.replace(TOKEN, (tok) => {
       const trail = /\.+$/.exec(tok)?.[0] ?? '' // 문장 끝 마침표
       const body = tok.slice(0, tok.length - trail.length)
@@ -140,20 +141,34 @@ export function expandRenames(lines, tracked) {
     for (const f of under) renames.push([f, to + f.slice(from.length)])
     dirs.push([from, to])
   }
+  const seen = new Set()
+  for (const [from] of renames) {
+    if (seen.has(from)) throw new Error(`map에 같은 파일이 두 번 나옵니다: ${from}`)
+    seen.add(from)
+  }
   return { renames, dirs }
 }
 
 // ---- CLI -------------------------------------------------------------------
 
-const SCAN_DIRS = ['app/', 'components/', 'lib/', 'hooks/', 'features/', 'tests/', 'e2e/', 'scripts/', 'docs/']
-const ROOT_FILES = /^(?:AGENTS\.md|README\.md|DESIGN\.md|next\.config\.ts|vitest\.config\.ts|proxy\.ts|instrumentation[^/]*\.ts)$/
-const SCAN_EXT = /\.(?:ts|tsx|mts|mjs|cjs|js|css|md|json)$/
+const SCAN_DIRS = ['.github/', 'app/', 'components/', 'lib/', 'hooks/', 'features/', 'tests/', 'e2e/', 'scripts/', 'docs/']
+const ROOT_FILES = /^(?:AGENTS\.md|README\.md|DESIGN\.md|package\.json|next\.config\.ts|vitest\.config\.ts|proxy\.ts|instrumentation[^/]*\.ts)$/
+const SCAN_EXT = /\.(?:ts|tsx|mts|mjs|cjs|js|css|md|json|ya?ml)$/
 const NEVER = /^(?:node_modules\/)/
 
 const git = (...args) => execFileSync('git', args, { encoding: 'utf8', maxBuffer: 256 * 1024 * 1024 })
 const lsFiles = (...args) => git('ls-files', '-z', ...args).split('\0').filter(Boolean)
 
 function main(argv) {
+  try {
+    return run(argv)
+  } catch (error) {
+    console.error(`거부합니다: ${error.message}`)
+    return 1
+  }
+}
+
+function run(argv) {
   const mapFile = argv.find((a) => !a.startsWith('--'))
   const write = argv.includes('--write')
   if (!mapFile) {

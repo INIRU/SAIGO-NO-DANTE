@@ -1,5 +1,8 @@
 import { spawnSync } from 'node:child_process'
-import { describe, expect, it } from 'vitest'
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { dirname, join, resolve } from 'node:path'
+import { afterAll, describe, expect, it } from 'vitest'
 import { expandRenames, externalImporters, rewriteSources } from '../../../scripts/dev/move-files.mjs'
 
 // 가짜 기능 이름(gizmo)을 쓴다. 실제 폴더 이름을 쓰면 나중에 이 도구가 이 테스트의 예시 글자까지 고친다.
@@ -119,6 +122,43 @@ describe('REQ-SHARED-079 rewriteSources', () => {
     expect(out.map((f) => f.path)).toEqual(['app/b.tsx'])
   })
 
+  it('REQ-SHARED-079 keeps next.config.ts on relative specifiers and rewrites plain string paths', () => {
+    const [out] = rewrite(
+      'next.config.ts',
+      "import { guide } from './lib/gizmo/guide'\nconst plugin = createNextIntlPlugin('./lib/gizmo/guide.ts')\n",
+    )
+    expect(out.source).toBe(
+      "import { guide } from './features/gizmo/lib/guide'\nconst plugin = createNextIntlPlugin('./features/gizmo/lib/guide.ts')\n",
+    )
+  })
+
+  it('REQ-SHARED-079 keeps node-run scripts and .mjs files on relative specifiers', () => {
+    const [mjs] = rewrite('scripts/tool/run.mjs', "import { guide } from '../../lib/gizmo/guide.ts'\n")
+    expect(mjs.source).toBe("import { guide } from '../../features/gizmo/lib/guide.ts'\n")
+    const [ts] = rewrite('scripts/tool/run.ts', "import { guide } from '../../lib/gizmo/guide'\n")
+    expect(ts.source).toBe("import { guide } from '../../features/gizmo/lib/guide'\n")
+    // 번들러가 읽는 파일은 계속 별칭
+    const [app] = rewrite('proxy.ts', "import { guide } from './lib/gizmo/guide'\n")
+    expect(app.source).toBe("import { guide } from '@/features/gizmo/lib/guide'\n")
+  })
+
+  it('REQ-SHARED-079 rewrites repo paths in package.json scripts and workflow files', () => {
+    const [pkg] = rewrite(
+      'package.json',
+      '{ "scripts": { "build:x": "esbuild lib/gizmo/guide.ts --bundle --outfile=public/guide.js && cp lib/gizmo/guide-steps.ts public/" } }\n',
+    )
+    expect(pkg.source).toBe(
+      '{ "scripts": { "build:x": "esbuild features/gizmo/lib/guide.ts --bundle --outfile=public/guide.js && cp lib/gizmo/guide-steps.ts public/" } }\n',
+    )
+    const [yml] = rewrite(
+      '.github/workflows/ci.yml',
+      "on:\n  pull_request:\n    paths:\n      - 'lib/gizmo/guide.ts'\n      - lib/gizmo/guide-steps.ts\njobs:\n  a:\n    steps:\n      - run: node scripts/check.mjs lib/gizmo/guide.ts\n",
+    )
+    expect(yml.source).toBe(
+      "on:\n  pull_request:\n    paths:\n      - 'features/gizmo/lib/guide.ts'\n      - lib/gizmo/guide-steps.ts\njobs:\n  a:\n    steps:\n      - run: node scripts/check.mjs features/gizmo/lib/guide.ts\n",
+    )
+  })
+
   it('REQ-SHARED-079 rewrites a folder mention when the folder map is given', () => {
     const [out] = rewriteSources(renames, [{ path: 'docs/a.md', source: 'See `components/gizmo/` and `components/gizmo-extra`.\n' }], [
       ['components/gizmo', 'features/gizmo/components'],
@@ -141,6 +181,11 @@ describe('REQ-SHARED-079 expandRenames', () => {
       ['lib/one.ts', 'features/gizmo/lib/one.ts'],
     ])
     expect(dirs).toEqual([['components/gizmo', 'features/gizmo/components']])
+  })
+
+  it('REQ-SHARED-079 rejects a file that appears twice in the map', () => {
+    expect(() => expandRenames(['components/gizmo a/b', 'components/gizmo/a.tsx c/d.tsx'], tracked)).toThrow(/components\/gizmo\/a\.tsx/)
+    expect(() => expandRenames(['lib/one.ts a.ts', 'lib/one.ts b.ts'], tracked)).toThrow(/lib\/one\.ts/)
   })
 
   it('REQ-SHARED-079 rejects a line with no tracked file and a malformed line', () => {
@@ -176,9 +221,90 @@ describe('REQ-SHARED-079 externalImporters', () => {
 })
 
 describe('REQ-SHARED-079 CLI', () => {
+  const script = resolve('scripts/dev/move-files.mjs')
+  const dirs: string[] = []
+  afterAll(() => dirs.forEach((d) => rmSync(d, { recursive: true, force: true })))
+
+  const git = (cwd: string, ...args: string[]) =>
+    spawnSync('git', ['-c', 'user.email=t@example.com', '-c', 'user.name=t', ...args], { cwd, encoding: 'utf8' })
+  const put = (root: string, path: string, text: string) => {
+    mkdirSync(dirname(join(root, path)), { recursive: true })
+    writeFileSync(join(root, path), text)
+  }
+  // 작은 git 저장소: 옮길 파일 하나와 그것을 가져오는 파일 하나
+  function repo() {
+    const root = mkdtempSync(join(tmpdir(), 'move-files-'))
+    dirs.push(root)
+    git(root, 'init', '-q')
+    put(root, 'lib/gizmo/guide.ts', 'export const guide = 1\n')
+    put(root, 'app/page.tsx', "import { guide } from '@/lib/gizmo/guide'\n")
+    put(root, 'map.txt', 'lib/gizmo features/gizmo/lib\n')
+    git(root, 'add', 'lib/gizmo/guide.ts', 'app/page.tsx', 'map.txt')
+    git(root, 'commit', '-q', '-m', 'init')
+    return root
+  }
+  const run = (cwd: string, ...args: string[]) => spawnSync(process.execPath, [script, ...args], { cwd, encoding: 'utf8' })
+
   it('REQ-SHARED-079 prints the usage and exits with 1 when no map is given', () => {
-    const run = spawnSync(process.execPath, ['scripts/dev/move-files.mjs'], { encoding: 'utf8' })
-    expect(run.status).toBe(1)
-    expect(run.stderr).toContain('사용법')
+    const out = spawnSync(process.execPath, ['scripts/dev/move-files.mjs'], { encoding: 'utf8' })
+    expect(out.status).toBe(1)
+    expect(out.stderr).toContain('사용법')
+  })
+
+  it('REQ-SHARED-079 only prints the plan without --write', () => {
+    const root = repo()
+    const out = run(root, 'map.txt')
+    expect(out.status).toBe(0)
+    expect(out.stdout).toContain('lib/gizmo/guide.ts -> features/gizmo/lib/guide.ts')
+    expect(existsSync(join(root, 'lib/gizmo/guide.ts'))).toBe(true)
+    expect(readFileSync(join(root, 'app/page.tsx'), 'utf8')).toContain('@/lib/gizmo/guide')
+  })
+
+  it('REQ-SHARED-079 moves with git mv and rewrites the importers with --write', () => {
+    const root = repo()
+    const out = run(root, 'map.txt', '--write')
+    expect(out.status).toBe(0)
+    expect(existsSync(join(root, 'lib/gizmo/guide.ts'))).toBe(false)
+    expect(readFileSync(join(root, 'features/gizmo/lib/guide.ts'), 'utf8')).toBe('export const guide = 1\n')
+    expect(readFileSync(join(root, 'app/page.tsx'), 'utf8')).toBe("import { guide } from '@/features/gizmo/lib/guide'\n")
+    expect(git(root, 'status', '--short').stdout).toContain('R  lib/gizmo/guide.ts -> features/gizmo/lib/guide.ts')
+  })
+
+  it('REQ-SHARED-079 also scans package.json and .github workflows', () => {
+    const root = repo()
+    put(root, 'package.json', '{ "scripts": { "build": "esbuild lib/gizmo/guide.ts --bundle" } }\n')
+    put(root, '.github/workflows/ci.yml', "paths:\n  - 'lib/gizmo/guide.ts'\n")
+    git(root, 'add', 'package.json', '.github/workflows/ci.yml')
+    git(root, 'commit', '-q', '-m', 'more')
+    expect(run(root, 'map.txt', '--write').status).toBe(0)
+    expect(readFileSync(join(root, 'package.json'), 'utf8')).toContain('esbuild features/gizmo/lib/guide.ts')
+    expect(readFileSync(join(root, '.github/workflows/ci.yml'), 'utf8')).toContain("'features/gizmo/lib/guide.ts'")
+  })
+
+  it('REQ-SHARED-079 refuses when the target already exists', () => {
+    const root = repo()
+    put(root, 'features/gizmo/lib/guide.ts', 'other\n')
+    const out = run(root, 'map.txt', '--write')
+    expect(out.status).toBe(1)
+    expect(out.stderr).toContain('이미 파일이 있습니다')
+    expect(existsSync(join(root, 'lib/gizmo/guide.ts'))).toBe(true)
+  })
+
+  it('REQ-SHARED-079 refuses when a file it would touch has unstaged changes', () => {
+    const root = repo()
+    put(root, 'app/page.tsx', "import { guide } from '@/lib/gizmo/guide'\n// edited\n")
+    const out = run(root, 'map.txt', '--write')
+    expect(out.status).toBe(1)
+    expect(out.stderr).toContain('스테이지하지 않은 변경')
+    expect(existsSync(join(root, 'lib/gizmo/guide.ts'))).toBe(true)
+  })
+
+  it('REQ-SHARED-079 refuses a map that lists the same file twice', () => {
+    const root = repo()
+    put(root, 'dup.txt', 'lib/gizmo features/gizmo/lib\nlib/gizmo/guide.ts features/other/guide.ts\n')
+    const out = run(root, 'dup.txt', '--write')
+    expect(out.status).toBe(1)
+    expect(out.stderr).toContain('두 번')
+    expect(existsSync(join(root, 'lib/gizmo/guide.ts'))).toBe(true)
   })
 })
