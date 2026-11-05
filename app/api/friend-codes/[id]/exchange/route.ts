@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { authorRateKey, resolveAuthor } from '@/lib/guest/server'
 import { checkRequestRateLimit, rateLimitResponse } from '@/lib/rate-limit'
-import { FRIEND_CODE_RE, fail } from '@/lib/friends/codes'
-import { isAuthorOf, isBlocked } from '@/lib/friends/server'
+import { FRIEND_CODE_RE, fail } from '@/features/friends'
+import { isAuthorOf, isBlocked } from '@/features/friends/server'
 
 /** A viewer gives their own friend code to an 'exchange' post (support or want) and gets the author's code back (REQ-COMMUNITY-021). */
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {

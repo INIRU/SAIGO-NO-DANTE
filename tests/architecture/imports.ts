@@ -4,6 +4,8 @@ export type Violation = { file: string; specifier: string; rule: 'feature-intern
 
 const SHARED = /^(components\/(ui|layout)|lib|hooks)\//
 const SERVER_ONLY = /\bimport\s*(['"])server-only\1/
+// 입구 파일 말고 밖에서 가져올 수 있는 한 파일 경로: `@/features/<기능>/components/<이름>`, `@/features/<기능>/hooks/<이름>`.
+const PUBLIC_FILE = /^\/(?:components|hooks)\/[A-Za-z0-9]+$/
 const SKIPPED = /^(tests|e2e)\//
 // `from '…'` (import/export), side-effect `import '…'`, and dynamic `import('…')`.
 // regex, not a parser; a specifier-looking string inside a comment is also read. Switch to the TypeScript AST if that ever bites.
@@ -32,7 +34,7 @@ export function findImportViolations(files: { path: string; source: string }[]):
       const hit = target && /^features\/([^/]+)(\/.+)?$/.exec(target)
       if (!hit) continue
       if (SHARED.test(path)) violations.push({ file: path, specifier, rule: 'shared-imports-feature' })
-      else if (hit[2] && hit[2] !== '/server' && hit[1] !== own) violations.push({ file: path, specifier, rule: 'feature-internal' })
+      else if (hit[2] && hit[2] !== '/server' && !PUBLIC_FILE.test(hit[2]) && hit[1] !== own) violations.push({ file: path, specifier, rule: 'feature-internal' })
     }
   }
   return violations

@@ -5,7 +5,7 @@ vi.mock('@/lib/auth', () => ({ authOptions: {} }))
 
 import { cleanGuestPin, isGuestPin, isWeakGuestPin } from '@/lib/guest/key'
 import { guestPinHash, guestPinOf, recordGuestAuthorship, type Author } from '@/lib/guest/server'
-import { friendAuthorColumns } from '@/lib/friends/server'
+import { friendAuthorColumns } from '@/features/friends/server/posts'
 
 const guest: Author = { kind: 'guest', keyHash: 'a'.repeat(64), tag: 'aaaa' }
 const user: Author = { kind: 'user', userId: 'u1', isAdmin: false, email: 'a@b.c' }
