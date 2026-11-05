@@ -20,7 +20,7 @@ import { notFound } from 'next/navigation'
 import { routing } from '@/lib/i18n/routing'
 import type { SupportedLang } from '@/lib/i18n/types'
 import { translations } from '@/lib/i18n/translations'
-import { ADSENSE_ACCOUNT, OG_LOCALE, SITE_NAME, SITE_URL, localeUrl } from '@/lib/seo/metadata'
+import { ADSENSE_ACCOUNT, CLOUDFLARE_WEB_ANALYTICS_TOKEN, OG_LOCALE, SITE_NAME, SITE_URL, localeUrl } from '@/lib/seo/metadata'
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
 import PageNavigation from '@/components/ui/PageNavigation'
@@ -34,6 +34,7 @@ import { getKeywordCatalog } from '@/lib/keywords/server-data'
 import { fontVariables } from '../fonts'
 import { ROOT_OMITTED_MESSAGES, omitMessages } from '@/lib/i18n/client-messages'
 import { NAV_BOOT_SCRIPT } from '@/lib/constants/nav-boot'
+import { MEDIA_ORIGIN } from '@/lib/seo/media-origin'
 
 const shouldRenderAnalytics = process.env.VERCEL === '1'
 const toastPositionStyle = {
@@ -150,8 +151,9 @@ export default async function LangLayout({
       <head>
         {/* Sets html[data-mac]/[data-auth-hint] before paint so the navbar never swaps its hint or login slot. */}
         <script dangerouslySetInnerHTML={{ __html: NAV_BOOT_SCRIPT }} />
-        {/* Game icons shown without the optimizer load from storage directly; avatars go through /_next/image. */}
+        {/* Game icons shown without the optimizer load from storage directly; optimized images come from the media host when self-hosted. */}
         <link rel="preconnect" href="https://lpgqcleszdlldneiwgep.supabase.co" />
+        {process.env.SELF_HOSTED === '1' ? <link rel="preconnect" href={MEDIA_ORIGIN} /> : null}
         {/* The AdSense code as AdSense gives it (async, in the head): site review and Auto ads read it from the HTML. */}
         <script async src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_ACCOUNT}`} crossOrigin="anonymous" />
         <JsonLd data={websiteJsonLd(validLang)} />
@@ -203,6 +205,9 @@ export default async function LangLayout({
           }}
         />
         {shouldRenderAnalytics ? <Analytics /> : null}
+        {process.env.SELF_HOSTED === '1' ? (
+          <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon={JSON.stringify({ token: CLOUDFLARE_WEB_ANALYTICS_TOKEN })} />
+        ) : null}
         <ServiceWorkerRegister />
       </body>
     </html>

@@ -1,5 +1,5 @@
 import type { NextRequest } from 'next/server'
-import { createHmac } from 'crypto'
+import { createHmac, timingSafeEqual } from 'crypto'
 
 export type RequestMetadata = {
   ip: string | null
@@ -60,12 +60,24 @@ export function hashDeviceToken(token: string | null): string | null {
   return keyedHash(token)
 }
 
+/** True when CloudFront sent the request: only its origin request carries the shared secret (ORIGIN_VERIFY_SECRET). */
+function fromCloudFront(headers: Headers): boolean {
+  const secret = process.env.ORIGIN_VERIFY_SECRET
+  const sent = headers.get('x-origin-verify')
+  if (!secret || !sent || sent.length !== secret.length) return false
+  return timingSafeEqual(Buffer.from(sent), Buffer.from(secret))
+}
+
 /**
- * The visitor address from the header the host overwrites: Cloudflare's on the self-hosted server (a client can prefix
- * X-Forwarded-For there), X-Forwarded-For on Vercel (where anyone can send CF-Connecting-IP).
+ * The visitor address from the header the host overwrites: on the self-hosted server the CloudFront function's
+ * x-viewer-ip when CloudFront sent the request (Cloudflare then sees CloudFront), otherwise Cloudflare's (a client can
+ * prefix X-Forwarded-For there); X-Forwarded-For on Vercel (where anyone can send CF-Connecting-IP).
  */
 export function getClientIp(headers: Headers): string | null {
-  if (process.env.SELF_HOSTED === '1') return getFirstHeaderValue(headers.get('cf-connecting-ip'))
+  if (process.env.SELF_HOSTED === '1') {
+    if (fromCloudFront(headers)) return getFirstHeaderValue(headers.get('x-viewer-ip'))
+    return getFirstHeaderValue(headers.get('cf-connecting-ip'))
+  }
   return getFirstHeaderValue(headers.get('x-forwarded-for')) ?? getFirstHeaderValue(headers.get('x-real-ip'))
 }
 
