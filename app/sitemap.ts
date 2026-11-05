@@ -73,6 +73,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     entry('/tools/damage'),
     entry('/tools/clash'),
     entry('/motion/skills'),
+    entry('/about'),
     entry('/privacy'),
     entry('/terms'),
     ...SINNER_SLUGS.map(slug => entry(`/sinners/${slug}`, latest([...identityRows, ...egoRows].filter(row => row.sinner_id === slug), 'release_date'))),

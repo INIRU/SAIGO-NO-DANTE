@@ -6,7 +6,7 @@ import PageHeader, { PageHeaderSkeleton } from '@/components/ui/PageHeader'
 import Skeleton, { SkeletonLine, SkeletonPage } from '@/components/ui/Skeleton'
 import LegalToc from './LegalToc'
 
-type LegalType = LegalDoc['type']
+type LegalType = LegalDoc['type'] | 'about'
 
 // Shared by the page and its skeleton so both keep the same grid.
 const PAGE = 'mx-auto min-h-[100dvh] max-w-[42rem] px-4 pb-24 pt-[5.5rem] md:px-6 lg:grid lg:max-w-[62rem] lg:grid-cols-[13rem_minmax(0,42rem)] lg:content-start lg:justify-center lg:gap-x-16 print:block print:max-w-none print:p-0'
@@ -15,10 +15,10 @@ const NAV = 'sticky-under-nav z-30 -mx-4 border-b border-[#2e2417] bg-[var(--bg-
 const ARTICLE = 'min-w-0 pt-8 lg:col-start-2 lg:row-start-2 print:pt-4'
 const SECTION = 'border-t border-[#241c14] py-8 first:border-t-0 first:pt-0 print:break-inside-avoid print:border-[#ccc]'
 
-const OTHER = { terms: 'privacy', privacy: 'terms' } as const
-const OTHER_LINK = { terms: 'legal.terms.linkToPrivacy', privacy: 'legal.privacy.linkToTerms' } as const
+const OTHER = { terms: 'privacy', privacy: 'terms', about: 'support' } as const
+const OTHER_LINK = { terms: 'legal.terms.linkToPrivacy', privacy: 'legal.privacy.linkToTerms', about: 'legal.about.linkToSupport' } as const
 
-export default function LegalDocument({ type, lang, doc }: { type: LegalType; lang: string; doc: LegalDoc | null }) {
+export default function LegalDocument({ type, lang, doc }: { type: LegalType; lang: string; doc: Omit<LegalDoc, 'type'> | null }) {
   const t = (key: keyof typeof translations) => translations[key][lang as SupportedLang] ?? translations[key].ko
   const sections = doc?.sections ?? []
   const lastUpdated = doc?.last_updated
