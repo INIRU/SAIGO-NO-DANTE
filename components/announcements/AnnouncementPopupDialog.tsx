@@ -36,7 +36,8 @@ export default function AnnouncementPopupDialog({ announcement }: { announcement
         className="relative flex max-h-[min(44rem,90dvh)] flex-col overflow-hidden rounded-t-2xl border border-b-0 border-[var(--border)] bg-[var(--bg-card)] shadow-[0_1.5rem_3rem_rgba(0,0,0,0.55)] sm:rounded-2xl sm:border-b">
         {announcement.cover && (
           <div className="relative aspect-[16/9] shrink-0 overflow-hidden bg-[var(--bg-deep)] empty:hidden after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:h-16 after:bg-gradient-to-t after:from-[var(--bg-card)] after:to-transparent">
-            <QuietImage src={announcement.cover} alt="" fill sizes="30rem" className="object-cover" />
+            {/* The largest picture of the page while the popup is open: fetched at once, ahead of the page's images. */}
+            <QuietImage src={announcement.cover} alt="" fill sizes="30rem" loading="eager" fetchPriority="high" className="object-cover" />
           </div>
         )}
         <Button variant="ghost" icon={X} aria-label={t('close')} onClick={close}
