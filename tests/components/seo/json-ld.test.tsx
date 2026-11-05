@@ -1,6 +1,6 @@
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it, vi } from 'vitest'
-import { websiteJsonLd } from '@/components/seo/JsonLd'
+import { gameCharacterJsonLd, videoGameJsonLd, websiteJsonLd } from '@/components/seo/JsonLd'
 import { translations } from '@/lib/i18n/translations'
 
 const ID = '11111111-1111-4111-8111-111111111111'
@@ -39,5 +39,21 @@ describe('REQ-SHARED-042 site name and breadcrumbs in structured data', () => {
       ['ファウスト', 'https://saigo-no-dante.com/ja/sinners/faust'],
       ['表象放出器', `https://saigo-no-dante.com/ja/sinners/faust/ego/${ID}`],
     ])
+  })
+})
+
+describe('REQ-SHARED-066 the game blocks speak the page language', () => {
+  it('REQ-SHARED-066 an en or ja page carries no Korean in the VideoGame and character blocks', () => {
+    for (const lang of ['en', 'ja'] as const) {
+      expect(JSON.stringify(videoGameJsonLd(lang)), lang).not.toMatch(/[가-힣]/)
+      const character = gameCharacterJsonLd({ name: 'Faust', description: 'x', image: 'https://a/b.webp', url: `https://saigo-no-dante.com/${lang}/sinners/faust`, siteUrl: `https://saigo-no-dante.com/${lang}`, lang })
+      expect(JSON.stringify(character), lang).not.toMatch(/[가-힣]/)
+    }
+  })
+
+  it('REQ-SHARED-066 each language names the game and the site in its own words', () => {
+    expect(videoGameJsonLd('ko')).toMatchObject({ alternateName: '림버스 컴퍼니', inLanguage: ['ko', 'en', 'ja', 'zh'] })
+    expect(videoGameJsonLd('ja')).toMatchObject({ alternateName: 'リンバスカンパニー', publisher: { name: 'Project Moon', alternateName: 'プロジェクトムーン' } })
+    expect(videoGameJsonLd('en').subjectOf).toMatchObject({ '@type': 'WebSite', url: 'https://saigo-no-dante.com/en', description: translations['home.meta.description'].en })
   })
 })
