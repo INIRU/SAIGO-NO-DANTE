@@ -1,4 +1,4 @@
-import type { RecipeData, GiftData } from './types'
+import { FINAL_FLOOR, type RecipeData, type GiftData } from './types'
 import { normalizeThemeKeyword } from '../constants/keywords'
 
 /**
@@ -521,8 +521,9 @@ export function themeExclusiveGiftIds(theme: ThemeGiftLists | null | undefined):
   return [...new Set([...(theme?.specific_ego_gift_ids ?? []), ...(theme?.fixed_reward_gift_ids ?? []).filter(id => !regular.has(id))])]
 }
 
-/** A floor's planned gift keys plus its pack's clear rewards, which a plan with that pack always obtains. */
-export function withThemeRewards(giftIds: string[], theme: ThemeGiftLists | null | undefined): string[] {
+/** A floor's planned gift keys plus its pack's clear rewards, which a plan with that pack always obtains. The last floor has none. */
+export function withThemeRewards(giftIds: string[], theme: ThemeGiftLists | null | undefined, floor: number | undefined): string[] {
+  if (floor === FINAL_FLOOR) return giftIds
   const rewards = (theme?.fixed_reward_gift_ids ?? []).filter(id => !giftIds.some(key => parseInt(key, 10) === id))
   return [...giftIds, ...rewards.map(String)]
 }
