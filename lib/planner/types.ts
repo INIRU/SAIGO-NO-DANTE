@@ -20,6 +20,9 @@ export const DIFFICULTY_CONFIG = {
   extreme: { label: '익스트림', floors: 15 },
 } as const
 
+/** The last floor of a run. */
+export const FINAL_FLOOR = 15
+
 export const DIFFICULTY_FLOOR_KEY: Record<Difficulty, string> = {
   normal: '노말',
   hard: '하드',

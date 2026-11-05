@@ -155,7 +155,7 @@ export default function FloorPlanPreviewBoard({
                 ? getLocalizedName({ name_kr: theme.name, name_en: theme.name_en, name_jp: theme.name_jp }, locale)
                 : tFloor('empty')
               // A pack's clear rewards belong to the floor that has it even when the plan did not list them.
-              const floorGifts = withThemeRewards(entry.gift_ids, theme)
+              const floorGifts = withThemeRewards(entry.gift_ids, theme, entry.floor)
                 .map(id => giftMap.get(parseInt(id, 10)))
                 .filter((gift): gift is GiftData => Boolean(gift))
               const memoPreview = getMemoPreview(entry.memo)
