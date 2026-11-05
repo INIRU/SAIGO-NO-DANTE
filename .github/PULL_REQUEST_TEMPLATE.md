@@ -11,6 +11,6 @@
 
 ## 병합 후
 
-- [ ] DB 스키마나 추출 도구 `site-sync/lib/`로 복사된 `lib/` 파일을 바꿨다면 추출 도구 반영 PR (`limbus-asset-extractor/site-sync/docs/developing.md`)
+- [ ] DB 스키마나 동기화가 쓰는 표·칸을 바꿨다면 추출 도구 소유자에게 영향만 알림 (추출 도구 PR은 만들지 않음)
 - [ ] DB 마이그레이션을 운영에 적용했다면 파일 이름을 적용된 버전과 맞춤
 - [ ] 병합 뒤 `gh pr view <번호> --json state`가 `MERGED`인지 확인

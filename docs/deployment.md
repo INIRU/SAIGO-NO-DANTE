@@ -10,10 +10,10 @@
 | 앱 | `~/saigo/app` (`REVISION`에 배포된 커밋), systemd `saigo-web`이 `127.0.0.1:3000`에서 실행하고 죽으면 다시 켠다 |
 | 환경 변수 | `~/saigo/env.production`(권한 600). 앱의 `.env.production.local`이 이 파일을 가리킨다 |
 | 터널 | systemd `cloudflared`, 설정 `/etc/cloudflared/config.yml`(터널 `saigo-web`, 호스트 `saigo-no-dante.com`·`www`·`new`) |
-| DNS | Cloudflare. apex·`www`·`new`는 터널을 가리키는 프록시 CNAME이다 |
+| DNS | Cloudflare. apex·`www`는 `d3ra6rwderl7mq.cloudfront.net`을 가리키는 CNAME(DNS 전용, TTL 60), `new`는 터널 프록시 CNAME이다 |
 | 열린 포트 | Lightsail 방화벽과 ufw 모두 22번(SSH)만. 웹 포트는 열지 않는다(터널이 서버에서 바깥으로 연결한다) |
 
-한국 방문자는 Cloudflare 무료 요금제라 LAX 같은 해외 거점으로 들어온다. 서버에 직접 붙는 것보다 첫 응답이 약 0.5초 늦지만, 공격 방어를 위해 Cloudflare 경유를 택했다(2026-10-19 결정).
+apex·`www`의 앞단 구성은 아래 CloudFront 서울 거점 절을 본다. Cloudflare 거점(LAX 등)을 거치는 것은 `media.`·`assets.`뿐이다.
 
 ## CloudFront 서울 거점(2026-11-05)
 
@@ -27,9 +27,9 @@ Cloudflare 무료 요금제는 한국 방문자를 LAX로 보내 페이지 하�
 | 함수 | `saigo-viewer-ip`(viewer-request): `www` → apex 301, 방문자 IP를 `x-viewer-ip`로 덮어쓴다 |
 | 비밀 헤더 | CloudFront가 원본 요청에 `X-Origin-Verify`를 붙인다. 서버 `ORIGIN_VERIFY_SECRET`과 같을 때만 `x-viewer-ip`를 방문자로 믿는다(`lib/request-meta.ts`) |
 | 분석 | Cloudflare 프록시가 넣던 Web Analytics 비컨을 레이아웃이 직접 넣는다. 전환 뒤 Cloudflare의 자동 삽입은 끈다 |
-| 이미지 | 최적화 이미지(`/_next/image`)는 `media.saigo-no-dante.com`(Cloudflare 프록시 → 터널)에서 받는다. CloudFront 요청 요금의 절반을 넘던 몫이라 빼서, 하루 1,300명 기준 CloudFront 요청이 무료 한도(월 1천만 건) 안이다. 터널은 media 주소에서 `/_next/image`만 서버로 보내고 나머지는 404 |
+| 이미지 | 최적화 이미지(`/_next/image`)는 `media.saigo-no-dante.com`(Cloudflare 프록시 → 터널)에서 받는다. CloudFront 요청 요금의 절반을 넘던 몫이라 빼서, 하루 1,300명 기준 CloudFront 요청이 무료 한도(월 1천만 건) 안이다. 터널은 media 주소에서 `/_next/image`만 서버로 보내고 나머지는 404. Cloudflare 요청 헤더 변환 규칙이 media `/_next/image`에 `Accept: image/webp,image/*;q=0.8`을 붙여, Accept 없는 요청(curl·봇)이 JPEG 한 벌을 캐시에 남겨 투명 아이콘 뒤가 검게 되는 일을 막는다 |
 
-운영 전환은 Cloudflare DNS에서 apex·`www`를 `d3ra6rwderl7mq.cloudfront.net` CNAME(DNS only)으로 바꾸는 것이다. 되돌리기는 두 기록을 터널 CNAME(`5d996eb4-a451-4d35-a31c-0814b44c01b3.cfargotunnel.com`, 프록시)으로 돌리는 것이다.
+2026-11-05에 운영을 전환했다. apex·`www`는 `d3ra6rwderl7mq.cloudfront.net` CNAME(DNS 전용, TTL 60)이고, 측정값은 `x-amz-cf-pop: ICN80`, `/ko` 0.14~0.23초다. 되돌리기는 두 기록을 터널 CNAME(`5d996eb4-a451-4d35-a31c-0814b44c01b3.cfargotunnel.com`, 프록시)으로 돌리는 것이다.
 
 ## 배포
 
