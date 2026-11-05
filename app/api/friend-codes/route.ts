@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { authorRateKey, guestPinOf, resolveAuthor, type Author } from '@/lib/guest/server'
 import { checkRequestRateLimit, rateLimitResponse } from '@/lib/rate-limit'
-import { codeForViewer, fail, newlyWanted, seenIsStale, nextBumpedAt, parseSupportPost, parseWantPost, slotAssetIds, wantExpiresAt, wantIdentityIds } from '@/lib/friends/codes'
-import { friendAuthorColumns, isAuthorOf, isBlocked, ownerFilter, viewerOf, type FriendPostRow } from '@/lib/friends/server'
+import { codeForViewer, fail, newlyWanted, seenIsStale, nextBumpedAt, parseSupportPost, parseWantPost, slotAssetIds, wantExpiresAt, wantIdentityIds } from '@/features/friends'
+import { friendAuthorColumns, isAuthorOf, isBlocked, ownerFilter, viewerOf, type FriendPostRow } from '@/features/friends/server'
 
 const COLUMNS = 'id,code,visibility,slots,identity_ids,user_id,key_hash,guest_tag,created_at,bumped_at,seen_at'
 const LIST_LIMIT = 60
