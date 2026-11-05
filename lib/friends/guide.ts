@@ -1,7 +1,7 @@
 /**
  * Steps of the friend code guide: the real game screen of each (the extractor, the Windows extraction tool, writes
  * public/assets/guides/friend-codes/<name>.webp with other players' cards blurred out) and what to press on it.
- * spots: the marks as percentages of the 1920x1080 screen, printed by that script.
+ * spots: the marks as percentages of the 1920x1080 screen.
  */
 export const FRIEND_GUIDE_STEPS = [
   { key: 'code', spots: [{ left: 4.4, top: 17.9, width: 14.7, height: 4.5 }] },

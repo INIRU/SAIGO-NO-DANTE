@@ -75,7 +75,7 @@
 
 ## 5. 게임 에셋
 
-- 원본은 구글 드라이브 UI 에셋 폴더(https://drive.google.com/drive/folders/1Nk9WWMxEcovs5Ewku5ICT1PbfByNcV_z)와 Supabase Storage `limbus-assets`에 있다. 한 이미지에 여러 UI가 모여 있는 아틀라스가 많으니 필요한 부분을 잘라서 `public/assets` 또는 Storage에 올린다. 잘라낸 스크립트는 `scripts/assets/`에 남긴다.
+- 원본은 구글 드라이브 UI 에셋 폴더(https://drive.google.com/drive/folders/1Nk9WWMxEcovs5Ewku5ICT1PbfByNcV_z)와 Supabase Storage `limbus-assets`에 있다. 한 이미지에 여러 UI가 모여 있는 아틀라스가 많으니 필요한 부분을 잘라서 `public/assets` 또는 Storage에 올린다. 추출·자르기 스크립트는 이 저장소가 아니라 추출 도구 저장소에 둔다.
 - 이미지 URL은 `lib/utils/images.ts`의 helper만 쓴다.
 - 기프트 등급은 I~IV 이미지(`public/assets/ego-stages/{1..5}.webp`)로 표시한다. 로마 숫자 글자로 쓰지 않는다. 크기는 `GiftGrade`가 맞춘다.
 - 기프트 강화는 +/++ 스프라이트와 강화 배경으로 표시한다.

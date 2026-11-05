@@ -49,6 +49,7 @@ describe('REQ-SHARED-074 feature boundaries', () => {
       .split('\n')
       .filter((p) => /\.tsx?$/.test(p) && existsSync(p))
       .map((p) => ({ path: p, source: readFileSync(p, 'utf8') }))
+    expect(files.length).toBeGreaterThan(0)
     expect(findImportViolations(files)).toEqual([])
   })
 })
