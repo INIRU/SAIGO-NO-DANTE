@@ -13,3 +13,11 @@ it('REQ-ACCOUNT-010 the v6 change notes say the frames train the recognizer, wit
     expect(notes[2], lang).toContain(words[lang][2])
   }
 })
+
+it('REQ-ACCOUNT-023 the v7 change notes name the AdSense ads, the advertising cookies with their opt-out and the new hosts, in every language', () => {
+  const words = { ko: ['애드센스', '광고 쿠키', '광고 설정', 'Cloudflare'], en: ['AdSense', 'advertising cookies', 'Ads Settings', 'Cloudflare'], ja: ['AdSense', '広告Cookie', '広告設定', 'Cloudflare'] } as const
+  for (const lang of ['ko', 'en', 'ja'] as const) {
+    const notes = (LEGAL_CHANGES.v7?.[lang] ?? []).join(' ')
+    for (const word of words[lang]) expect(notes, lang).toContain(word)
+  }
+})
