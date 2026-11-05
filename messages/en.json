@@ -286,14 +286,6 @@
       "or": "OR",
       "and": "AND"
     },
-    "languageFilter": {
-      "label": "Language",
-      "current": "Use Site",
-      "all": "All",
-      "ko": "KR",
-      "en": "EN",
-      "ja": "JA"
-    },
     "contentTypes": {
       "story": "Story",
       "expDungeon": "EXP Dungeon",
@@ -1103,14 +1095,6 @@
         "clear": "Clear",
         "or": "OR",
         "and": "AND"
-      },
-      "languageFilter": {
-        "label": "Language",
-        "current": "Current language",
-        "all": "All",
-        "ko": "한국어",
-        "en": "English",
-        "ja": "日本語"
       },
       "identityFilter": {
         "fallbackTitle": "Select identity"

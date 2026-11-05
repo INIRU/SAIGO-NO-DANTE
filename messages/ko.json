@@ -286,14 +286,6 @@
       "or": "OR",
       "and": "AND"
     },
-    "languageFilter": {
-      "label": "언어",
-      "current": "내 언어",
-      "all": "전체",
-      "ko": "KR",
-      "en": "EN",
-      "ja": "JA"
-    },
     "contentTypes": {
       "story": "스토리",
       "expDungeon": "경험치 던전",
@@ -1103,14 +1095,6 @@
         "clear": "초기화",
         "or": "OR",
         "and": "AND"
-      },
-      "languageFilter": {
-        "label": "언어",
-        "current": "현재 언어",
-        "all": "전체",
-        "ko": "한국어",
-        "en": "English",
-        "ja": "日本語"
       },
       "identityFilter": {
         "fallbackTitle": "인격 선택"

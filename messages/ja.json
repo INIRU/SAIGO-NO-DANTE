@@ -286,14 +286,6 @@
       "or": "OR",
       "and": "AND"
     },
-    "languageFilter": {
-      "label": "言語",
-      "current": "サイト",
-      "all": "全て",
-      "ko": "KR",
-      "en": "EN",
-      "ja": "JA"
-    },
     "contentTypes": {
       "story": "ストーリー",
       "expDungeon": "経験値ダンジョン",
@@ -1103,14 +1095,6 @@
         "clear": "クリア",
         "or": "OR",
         "and": "AND"
-      },
-      "languageFilter": {
-        "label": "言語",
-        "current": "現在の言語",
-        "all": "全て",
-        "ko": "한국어",
-        "en": "English",
-        "ja": "日本語"
       },
       "identityFilter": {
         "fallbackTitle": "人格を選択"
