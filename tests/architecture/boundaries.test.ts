@@ -7,8 +7,17 @@ const check = (path: string, source: string) => findImportViolations([{ path, so
 
 describe('REQ-SHARED-074 feature boundaries', () => {
   it('REQ-SHARED-074 flags a deep import of another feature', () => {
-    const out = check('app/[lang]/decks/page.tsx', "import { A } from '@/features/decks/components/A'")
+    const out = check('app/[lang]/decks/page.tsx', "import { A } from '@/features/decks/lib/a'")
     expect(out).toMatchObject([{ rule: 'feature-internal' }])
+  })
+
+  it('REQ-SHARED-074 allows one component or hook file by path, nothing deeper', () => {
+    expect(check('app/[lang]/decks/page.tsx', "import A from '@/features/decks/components/A'")).toEqual([])
+    expect(check('app/[lang]/decks/page.tsx', "import { useA } from '@/features/decks/hooks/useA'")).toEqual([])
+    expect(check('app/[lang]/decks/page.tsx', "import s from '@/features/decks/components/A.module.css'")).toMatchObject([{ rule: 'feature-internal' }])
+    expect(check('app/[lang]/decks/page.tsx', "import { x } from '@/features/decks/components/sub/A'")).toMatchObject([{ rule: 'feature-internal' }])
+    expect(check('features/decks/lib/a.ts', "import A from '@/features/notes/components/A'")).toEqual([])
+    expect(check('components/ui/Button.tsx', "import A from '@/features/decks/components/A'")).toMatchObject([{ rule: 'shared-imports-feature' }])
   })
 
   it('REQ-SHARED-074 allows the feature entry and its own internals', () => {
@@ -27,7 +36,7 @@ describe('REQ-SHARED-074 feature boundaries', () => {
       "import type { T } from '@/features/decks/types'",
       "export { x } from '@/features/notes/lib/x'",
       "const m = await import('@/features/planner/lib/y')",
-      "import { z } from '../../features/shop/components/Z'",
+      "import { z } from '../../features/shop/lib/z'",
     ].join('\n')
     const out = check('app/[lang]/page.tsx', source)
     expect(out.map((v) => v.rule)).toEqual(Array(4).fill('feature-internal'))
