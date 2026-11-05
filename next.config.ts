@@ -2,6 +2,7 @@ import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs/config";
 import createNextIntlPlugin from 'next-intl/plugin';
 import { HTML_LIMITED_BOTS } from './lib/seo/html-limited-bots';
+import { MEDIA_ORIGIN } from './lib/seo/media-origin';
 
 const withNextIntl = createNextIntlPlugin('./lib/i18n/request.ts');
 // Vercel and the self-hosted server (behind Cloudflare) are HTTPS-only; local `next start` stays on http.
@@ -87,6 +88,8 @@ const nextConfig: NextConfig = {
   },
 
   images: {
+    // The self-hosted site serves optimized images from the media host (lib/seo/media-origin.ts).
+    ...(process.env.SELF_HOSTED === '1' && { path: `${MEDIA_ORIGIN}/_next/image` }),
     // Source sprite corrections use content-versioned URLs to invalidate stale crops.
     localPatterns: [
       { pathname: '/assets/game-ui/**' },
