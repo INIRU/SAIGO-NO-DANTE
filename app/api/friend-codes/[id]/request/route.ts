@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { authorRateKey, resolveAuthor } from '@/lib/guest/server'
 import { checkRequestRateLimit, rateLimitResponse } from '@/lib/rate-limit'
-import { fail, isRequestDecision } from '@/lib/friends/codes'
-import { isAuthorOf, isBlocked } from '@/lib/friends/server'
+import { fail, isRequestDecision } from '@/features/friends'
+import { isAuthorOf, isBlocked } from '@/features/friends/server'
 
 const UUID_RE = /^[0-9a-f-]{36}$/i
 

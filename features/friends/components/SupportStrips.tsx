@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useTranslations } from 'next-intl'
-import { SINNER_NUMBERS, sinnerNumber } from '@/lib/friends/codes'
+import { SINNER_NUMBERS, sinnerNumber } from '@/features/friends/lib/codes'
 import { getIdentityImageUrl } from '@/lib/utils/images'
 import styles from './SupportStrips.module.css'
 

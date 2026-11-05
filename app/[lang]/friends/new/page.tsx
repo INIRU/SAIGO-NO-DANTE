@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { getTranslations } from 'next-intl/server'
-import ComposeClient from './ComposeClient'
+import ComposeClient from '../_components/ComposeClient'
 
 type Props = { params: Promise<{ lang: string }>; searchParams: Promise<{ kind?: string | string[] }> }
 

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { authorRateKey, resolveAuthor } from '@/lib/guest/server'
 import { checkRequestRateLimit, rateLimitResponse } from '@/lib/rate-limit'
-import { fail } from '@/lib/friends/codes'
+import { fail } from '@/features/friends'
 
 /** Reports a post (someone else's code, a fake code): once per reporter, for the admin list (REQ-COMMUNITY-025). */
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {

@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { guestKeyFrom, guestKeyHash, guestPinHash, type GuestPinKind } from '@/lib/guest/server'
 import { isGuestPin } from '@/lib/guest/key'
-import { FRIEND_CODE_RE } from '@/lib/friends/codes'
+import { FRIEND_CODE_RE } from '@/features/friends'
 import { checkRequestRateLimit, rateLimitResponse } from '@/lib/rate-limit'
 import { writeAuditLog } from '@/lib/audit'
 

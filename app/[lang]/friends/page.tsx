@@ -1,8 +1,8 @@
 import { Suspense } from 'react'
 import type { Metadata } from 'next'
 import { metaText, pageMetadata } from '@/lib/seo/metadata'
-import { FriendsSkeleton } from '@/components/friends/FriendsSkeleton'
-import FriendsClient from './FriendsClient'
+import { FriendsSkeleton } from '@/features/friends/components/FriendsSkeleton'
+import FriendsClient from './_components/FriendsClient'
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params
