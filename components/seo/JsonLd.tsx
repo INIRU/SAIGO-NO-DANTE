@@ -1,5 +1,6 @@
 import { JsonLdScript } from 'next-seo'
-import { SITE_NAME, SITE_URL, localeUrl, metaText } from '@/lib/seo/metadata'
+import { SITE_NAME, SITE_URL, localeUrl, metaText, seoLang } from '@/lib/seo/metadata'
+import type { SupportedLang } from '@/lib/i18n/types'
 
 type JsonLdProps = {
   data: Record<string, unknown>
@@ -50,30 +51,38 @@ export function breadcrumbJsonLd(
   }
 }
 
+/** The game as each page language names it: an en or ja page carries no Korean. */
+const GAME: Record<SupportedLang, { name: string; publisher: string; description: string; genre: string[] }> = {
+  ko: { name: '림버스 컴퍼니', publisher: '프로젝트 문', description: '프로젝트 문이 개발한 턴제 RPG. 12명의 수감자와 함께 도시를 탐험하며 인격과 E.G.O를 수집한다.', genre: ['턴제 RPG', '가챠'] },
+  en: { name: 'Limbus Company', publisher: 'Project Moon', description: 'A turn-based RPG by Project Moon. Lead the 12 Sinners through the City and collect their Identities and E.G.O.', genre: ['Turn-based RPG', 'Gacha'] },
+  ja: { name: 'リンバスカンパニー', publisher: 'プロジェクトムーン', description: 'Project Moonが開発したターン制RPG。12人の囚人と都市を巡り、人格とE.G.Oを集める。', genre: ['ターン制RPG', 'ガチャ'] },
+}
+
 export function videoGameJsonLd(lang: string) {
+  const game = GAME[seoLang(lang)]
   return {
     '@context': 'https://schema.org',
     '@type': 'VideoGame',
     name: 'Limbus Company',
-    alternateName: '림버스 컴퍼니',
-    description: '프로젝트 문이 개발한 턴제 RPG. 12명의 수감자와 함께 도시를 탐험하며 인격과 E.G.O를 수집한다.',
-    genre: ['턴제 RPG', 'Turn-based RPG', '가챠', 'Gacha'],
+    ...(game.name !== 'Limbus Company' ? { alternateName: game.name } : {}),
+    description: game.description,
+    genre: game.genre,
     gamePlatform: ['Android', 'iOS', 'PC (Steam)'],
     applicationCategory: 'Game',
     operatingSystem: 'Android, iOS, Windows',
     publisher: {
       '@type': 'Organization',
       name: 'Project Moon',
-      alternateName: '프로젝트 문',
+      ...(game.publisher !== 'Project Moon' ? { alternateName: game.publisher } : {}),
       url: 'https://projectmoon.studio',
     },
     inLanguage: ['ko', 'en', 'ja', 'zh'],
     url: 'https://limbuscompany.com',
     subjectOf: {
       '@type': 'WebSite',
-      name: '최애의 관리자 | SAIGO NO DANTE',
+      name: SITE_NAME[seoLang(lang)],
       url: localeUrl(lang),
-      description: '림버스 컴퍼니 비공식 팬 정보 사이트',
+      description: metaText('home.meta.description', lang),
     },
   }
 }
@@ -121,7 +130,9 @@ export function gameCharacterJsonLd(opts: {
   image: string
   url: string
   siteUrl: string
+  lang: string
 }) {
+  const game = GAME[seoLang(opts.lang)]
   return {
     '@context': 'https://schema.org',
     '@type': 'Thing',
@@ -132,7 +143,7 @@ export function gameCharacterJsonLd(opts: {
     isPartOf: {
       '@type': 'VideoGame',
       name: 'Limbus Company',
-      alternateName: '림버스 컴퍼니',
+      ...(game.name !== 'Limbus Company' ? { alternateName: game.name } : {}),
       publisher: { '@type': 'Organization', name: 'Project Moon' },
     },
     mainEntityOfPage: {

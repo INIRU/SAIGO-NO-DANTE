@@ -109,11 +109,12 @@ export default async function SinnerPage({ params }: { params: Promise<{ lang: s
       ])} />
       {profileUrl && (
         <JsonLd data={gameCharacterJsonLd({
-          name: `${sinner.name_kr} (${sinner.name})`,
-          description: sinner.description ?? `Limbus Company 수감자 ${sinner.name_kr}`,
+          name: getLocalizedName({ name_kr: sinner.name_kr, name_en: sinner.name, name_jp: sinner.name_jp }, lang),
+          description: translations[`sinnerDetail.desc.${slug}` as keyof typeof translations]?.[lang] ?? (lang === 'ko' ? sinner.description : null) ?? `${translations['nav.sinners'][lang]} · Limbus Company`,
           image: profileUrl,
           url: localeUrl(lang, `/sinners/${slug}`),
           siteUrl,
+          lang,
         })} />
       )}
       <Suspense fallback={null}>

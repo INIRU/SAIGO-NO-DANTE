@@ -172,6 +172,7 @@ export default async function IdentityPage({
           image: identityImageUrl,
           url: canonical,
           siteUrl: `${SITE_URL}/${lang}`,
+          lang,
         })} />
       )}
       <Suspense fallback={null}>
