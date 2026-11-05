@@ -28,3 +28,20 @@ it('REQ-SHARED-047 the Cloudflare Web Analytics beacon may load and report', asy
   expect(directives.find(d => d.startsWith('script-src'))).toContain('https://static.cloudflareinsights.com')
   expect(directives.find(d => d.startsWith('connect-src'))).toContain('https://cloudflareinsights.com')
 })
+
+it('REQ-SHARED-067 the AdSense code may load its scripts, frames, pictures and reports', async () => {
+  const directives = await csp({})
+  const directive = (name: string) => directives.find(d => d.startsWith(`${name} `)) ?? ''
+  for (const host of ['https://pagead2.googlesyndication.com', 'https://*.googlesyndication.com', 'https://*.doubleclick.net', 'https://*.adtrafficquality.google', 'https://fundingchoicesmessages.google.com']) {
+    expect(directive('script-src')).toContain(host)
+  }
+  for (const host of ['https://*.googlesyndication.com', 'https://*.doubleclick.net', 'https://*.adtrafficquality.google', 'https://www.google.com', 'https://fundingchoicesmessages.google.com']) {
+    expect(directive('frame-src')).toContain(host)
+  }
+  expect(directive('img-src')).toContain('https:')
+  for (const host of ['https://*.googlesyndication.com', 'https://*.doubleclick.net', 'https://*.adtrafficquality.google', 'https://*.google.com']) {
+    expect(directive('connect-src')).toContain(host)
+  }
+  // The rest of the policy stays as strict as before.
+  expect(directives).toEqual(expect.arrayContaining(["object-src 'none'", "frame-ancestors 'none'", "base-uri 'self'"]))
+})

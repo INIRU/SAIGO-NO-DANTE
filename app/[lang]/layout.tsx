@@ -152,6 +152,8 @@ export default async function LangLayout({
         <script dangerouslySetInnerHTML={{ __html: NAV_BOOT_SCRIPT }} />
         {/* Game icons shown without the optimizer load from storage directly; avatars go through /_next/image. */}
         <link rel="preconnect" href="https://lpgqcleszdlldneiwgep.supabase.co" />
+        {/* The AdSense code as AdSense gives it (async, in the head): site review and Auto ads read it from the HTML. */}
+        <script async src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_ACCOUNT}`} crossOrigin="anonymous" />
         <JsonLd data={websiteJsonLd(validLang)} />
         <JsonLd data={organizationJsonLd(SITE_URL)} />
         <JsonLd data={videoGameJsonLd(validLang)} />

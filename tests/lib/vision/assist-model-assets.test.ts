@@ -76,9 +76,13 @@ describe('REQ-ASSIST-075 runtime data files come from Storage, runtime scripts s
     for (const file of runtime) expect(file).toMatch(/\.(wasm|traineddata\.gz)$/)
   })
 
-  it('REQ-ASSIST-075 script-src gains no external host besides the visitor analytics beacons', () => {
-    const line = text('next.config.ts').split('\n').find(row => row.includes('script-src'))!
-    const hosts = line.match(/https?:\/\/[^\s`"']+/g)
-    expect(hosts).toEqual(['https://va.vercel-scripts.com', 'https://static.cloudflareinsights.com'])
+  it('REQ-ASSIST-075 script-src gains no external host besides the visitor analytics beacons and the AdSense code', () => {
+    const config = text('next.config.ts')
+    const line = config.split('\n').find(row => row.includes('script-src'))!
+    expect(line.match(/https?:\/\/[^\s`"']+/g)).toEqual(['https://va.vercel-scripts.com', 'https://static.cloudflareinsights.com'])
+    // The only other source is ADSENSE_HOSTS, and it names nothing but Google's ad hosts.
+    expect(line.replace(/https?:\/\/[^\s`"']+/g, '')).toMatch(/\$\{ADSENSE_HOSTS\}`,$/)
+    const adsense = config.match(/ADSENSE_HOSTS = '([^']+)'/)![1].split(' ')
+    for (const host of adsense) expect(host).toMatch(/^https:\/\/(pagead2\.googlesyndication\.com|\*\.googlesyndication\.com|\*\.doubleclick\.net|\*\.googleadservices\.com|\*\.adtrafficquality\.google|fundingchoicesmessages\.google\.com)$/)
   })
 })

@@ -8,17 +8,22 @@ const withNextIntl = createNextIntlPlugin('./lib/i18n/request.ts');
 const isHttpsDeployment = process.env.VERCEL === '1' || process.env.SELF_HOSTED === '1';
 const isProduction = process.env.NODE_ENV === 'production';
 
+// The AdSense code (adsbygoogle.js) and what it loads: ad scripts, ad frames, the consent message (Funding Choices) and
+// the traffic-quality checks. AdSense supports only a nonce-based strict CSP, which would make every prerendered page
+// per-request; these host families are the fallback. an allowlist Google may outgrow, check the console's
+// CSP reports after AdSense changes.
+const ADSENSE_HOSTS = 'https://pagead2.googlesyndication.com https://*.googlesyndication.com https://*.doubleclick.net https://*.googleadservices.com https://*.adtrafficquality.google https://fundingchoicesmessages.google.com'
 const contentSecurityPolicyDirectives = [
   "default-src 'self'",
-  `script-src 'self' 'unsafe-inline'${isProduction ? " 'wasm-unsafe-eval'" : " 'unsafe-eval'"} https://va.vercel-scripts.com https://static.cloudflareinsights.com`,
+  `script-src 'self' 'unsafe-inline'${isProduction ? " 'wasm-unsafe-eval'" : " 'unsafe-eval'"} https://va.vercel-scripts.com https://static.cloudflareinsights.com ${ADSENSE_HOSTS}`,
   "style-src 'self' 'unsafe-inline'",
-  // The last five hosts serve news images partners post for the calendar (NEWS_MEDIA_HOSTS in lib/news/payload.ts).
-  "img-src 'self' data: blob: https://lpgqcleszdlldneiwgep.supabase.co https://lh3.googleusercontent.com https://i.ytimg.com https://*.steamstatic.com https://*.twimg.com https://*.ytimg.com https://*.pstatic.net https://livecloud-thumb.akamaized.net",
+  // Any https picture: the ads' pictures come from the advertisers' hosts (and https: covers storage, avatars and news images).
+  "img-src 'self' data: blob: https:",
   "font-src 'self'",
   // assets.saigo-no-dante.com: the skill motion videos and their layer data on R2, read by the motion player.
-  "connect-src 'self' https://lpgqcleszdlldneiwgep.supabase.co https://va.vercel-scripts.com https://cloudflareinsights.com https://assets.saigo-no-dante.com",
+  `connect-src 'self' https://lpgqcleszdlldneiwgep.supabase.co https://va.vercel-scripts.com https://cloudflareinsights.com https://assets.saigo-no-dante.com ${ADSENSE_HOSTS} https://*.google.com`,
   "worker-src 'self' blob:",
-  "frame-src https://www.youtube.com https://www.youtube-nocookie.com",
+  `frame-src https://www.youtube.com https://www.youtube-nocookie.com ${ADSENSE_HOSTS} https://www.google.com`,
   "media-src 'self' https://assets.saigo-no-dante.com",
   "object-src 'none'",
   "base-uri 'self'",
