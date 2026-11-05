@@ -1,8 +1,9 @@
 import { posix } from 'node:path'
 
-export type Violation = { file: string; specifier: string; rule: 'feature-internal' | 'shared-imports-feature' }
+export type Violation = { file: string; specifier: string; rule: 'feature-internal' | 'shared-imports-feature' | 'entry-exports-server' }
 
 const SHARED = /^(components\/(ui|layout)|lib|hooks)\//
+const SERVER_ONLY = /\bimport\s*(['"])server-only\1/
 const SKIPPED = /^(tests|e2e)\//
 // `from '…'` (import/export), side-effect `import '…'`, and dynamic `import('…')`.
 // regex, not a parser; a specifier-looking string inside a comment is also read. Switch to the TypeScript AST if that ever bites.
@@ -16,16 +17,22 @@ function resolve(file: string, specifier: string): string | null {
 
 export function findImportViolations(files: { path: string; source: string }[]): Violation[] {
   const violations: Violation[] = []
+  const serverOnly = new Set(files.filter((f) => SERVER_ONLY.test(f.source)).map((f) => f.path.replace(/(\/index)?\.tsx?$/, '')))
   for (const { path, source } of files) {
     if (SKIPPED.test(path)) continue
     const own = /^features\/([^/]+)\//.exec(path)?.[1]
+    const entry = /^features\/([^/]+)\/index\.tsx?$/.exec(path)?.[1]
     for (const match of source.matchAll(SPECIFIER)) {
       const specifier = match[2]
       const target = resolve(path, specifier)
+      if (entry && target && (target === `features/${entry}/server` || target.startsWith(`features/${entry}/server/`) || serverOnly.has(target))) {
+        violations.push({ file: path, specifier, rule: 'entry-exports-server' })
+        continue
+      }
       const hit = target && /^features\/([^/]+)(\/.+)?$/.exec(target)
       if (!hit) continue
       if (SHARED.test(path)) violations.push({ file: path, specifier, rule: 'shared-imports-feature' })
-      else if (hit[2] && hit[1] !== own) violations.push({ file: path, specifier, rule: 'feature-internal' })
+      else if (hit[2] && hit[2] !== '/server' && hit[1] !== own) violations.push({ file: path, specifier, rule: 'feature-internal' })
     }
   }
   return violations
