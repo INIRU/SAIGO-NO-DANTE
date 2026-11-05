@@ -7,7 +7,7 @@ import BaseModal from '@/components/ui/BaseModal'
 import EgoDisplayCard from '@/components/sinners/EgoDisplayCard'
 import { fetchNoteAssets } from '@/components/notes/NoteBlockViewer'
 import { assetName } from '@/lib/notes/assets'
-import { sinnerNumber } from '@/lib/friends/codes'
+import { sinnerNumber } from '@/features/friends/lib/codes'
 import { EGO_GRADES, SupportStripArt, type SupportSlot } from './SupportStrips'
 import styles from './SupportSlotDetail.module.css'
 

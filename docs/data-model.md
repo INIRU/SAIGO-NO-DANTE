@@ -14,7 +14,7 @@
 | 거울 던전 | `ego_gifts`, `ego_gift_themes`, `ego_gift_recipes`, `md_events`, `md_event_choices`, `gift_presets`(로그인 사용자의 기프트 프리셋) | `lib/planner/`, `lib/mirror-dungeon/` |
 | 덱 | `decks`, `deck_identities`, `deck_egos`, `deck_votes`, `deck_comments`, `deck_bookmarks` | `app/api/decks/`, `lib/decks/` |
 | 플래너 | `md_plans`(편성과 층별 계획은 JSON), `md_plan_votes`, `md_plan_comments`, `final_gift_presets` | `app/api/planner/`, `lib/planner/` |
-| 친구 코드 게시판 | `friend_posts`(지원 인격·인격 구해요 글), `friend_exchanges`(코드 교환), `friend_want_stats`(인격별 요청 수), `friend_requests`(승인 후 공개 글의 코드 요청), `friend_reports`, `friend_blocks` | `app/api/friend-codes/`, `lib/friends/` |
+| 친구 코드 게시판 | `friend_posts`(지원 인격·인격 구해요 글), `friend_exchanges`(코드 교환), `friend_want_stats`(인격별 요청 수), `friend_requests`(승인 후 공개 글의 코드 요청), `friend_reports`, `friend_blocks` | `app/api/friend-codes/`, `features/friends/` |
 | 계정·커뮤니티 | `profiles`, `follows`, `community_activity`, `guest_authorship`, `profile_easter_eggs`, `legal_docs`, `legal_acknowledgements`, `profile_access_signals`, `profile_duplicate_signal_events` | `app/api/community/`, `lib/community/`, `lib/auth.ts` |
 | 운영 | `announcements`, `inquiries`, `support_messages`, `site_maintenance`, `audit_logs` | `app/api/admin/` |
 | 발견·개발자 API | `discovery_visits`, `developer_keys`, `developer_usage` | `app/api/discovery/`, `lib/discovery/` |

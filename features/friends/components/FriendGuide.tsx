@@ -5,7 +5,7 @@ import Image from 'next/image'
 import { useTranslations } from 'next-intl'
 import { ChevronLeft, ChevronRight, X } from 'lucide-react'
 import BaseModal from '@/components/ui/BaseModal'
-import { FRIEND_GUIDE_STEPS } from '@/lib/friends/guide'
+import { FRIEND_GUIDE_STEPS } from '@/features/friends/lib/guide'
 import styles from './FriendGuide.module.css'
 
 /** For players new to friend codes: where the code is in the game, how to add a friend with it, and where support identities are set. */

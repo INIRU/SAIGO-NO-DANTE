@@ -68,6 +68,7 @@ export function rewriteSources(renames, files, dirList = []) {
       const target = moved ?? abs
       const rel = relativeSpec(posix.dirname(newPath), target)
       if (rel === body) return undefined // 같이 옮겨져서 상대 경로가 그대로 맞음
+      if (moved && newPath !== path && rel.startsWith('./')) return rel // 둘 다 옮겨져 같은 폴더가 됨: 상대 경로 그대로 쓴다
       return aliasStyle ? `@/${target}` : rel
     }
   }

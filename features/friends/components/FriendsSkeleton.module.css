@@ -1,0 +1,39 @@
+/* The loading shapes of the board and the writing page: the same rules as app/[lang]/friends/_components/Friends.module.css for the classes the skeletons use. */
+.page { max-width: 78rem; margin: 0 auto; padding: 5.5rem 1.25rem 4rem; color: var(--text-primary); }
+.bar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.6rem; padding-bottom: 0.7rem; border-bottom: 1px solid #2e2417; }
+
+.list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 2.25rem; }
+.post { padding: 1.4rem 0 1.6rem; border-bottom: 1px solid #241c14; }
+.post header { display: flex; align-items: center; flex-wrap: wrap; gap: 0.6rem; margin-bottom: 0.4rem; }
+.codeBox { display: flex; align-items: center; gap: 0.6rem; margin-left: auto; }
+
+.wants { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.5rem 1.25rem; margin-top: 1.5rem; }
+.want { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 1rem; padding-bottom: 1.5rem; border-bottom: 1px solid #241c14; }
+.info { display: flex; flex-direction: column; min-width: 0; padding-top: 0.9rem; }
+.info .codeBox { margin: auto 0 0; padding-top: 0.9rem; flex-wrap: wrap; }
+
+.editor { padding: 1.25rem 1.25rem 1.4rem; background: var(--bg-panel); border: 1px solid #5a4526; }
+.fields { display: flex; align-items: flex-end; flex-wrap: wrap; gap: 1.25rem; margin-bottom: 1.2rem; }
+.fields > label, .fields > div { display: flex; flex-direction: column; gap: 0.35rem; font-size: 0.78rem; font-weight: 600; color: var(--text-secondary); }
+
+@media (max-width: 64rem) {
+  .list { grid-template-columns: 1fr; }
+  .wants { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 40rem) {
+  .page { padding: 4.75rem 0.9rem 3rem; }
+  .wants { grid-template-columns: 1fr; gap: 1.1rem; }
+  .codeBox { margin-left: 0; width: 100%; }
+}
+
+.compose { padding-top: 1.25rem; }
+.stage { min-width: 0; }
+@media (min-width: 64rem) {
+  .compose { display: flex; flex-direction: column; height: 100dvh; padding-bottom: 1.25rem; }
+  .compose > .editor { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+  .compose .fields { flex: 0 0 auto; }
+  .stage { flex: 1; min-height: 0; container-type: size; display: flex; justify-content: center; }
+  .stage > div:not([class*='few']) { width: min(100cqw, calc((100cqh - 0.9rem) * 12 * 197 / 982 + 3.3rem)); }
+  .stage > div[class*='few'] { align-self: flex-start; }
+  .stage > div[class*='few'] > * { flex: 0 0 calc(min(100cqh, 30rem) * 197 / 982); }
+}

@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { FRIEND_CODE_RE, FRIEND_ERRORS, VISIBILITIES, codeForViewer, fail, isRequestDecision, newlyWanted, nextBumpedAt, parseSupportPost, parseWantPost, seenIsStale, sinnerNumber, slotAssetIds, wantExpiresAt, wantIdentityIds } from '@/lib/friends/codes'
+import { FRIEND_CODE_RE, FRIEND_ERRORS, VISIBILITIES, codeForViewer, fail, isRequestDecision, newlyWanted, nextBumpedAt, parseSupportPost, parseWantPost, seenIsStale, sinnerNumber, slotAssetIds, wantExpiresAt, wantIdentityIds } from '@/features/friends/lib/codes'
 import ko from '@/messages/ko.json'
 import en from '@/messages/en.json'
 import ja from '@/messages/ja.json'
 import { existsSync } from 'node:fs'
-import { FRIEND_GUIDE_STEPS } from '@/lib/friends/guide'
+import { FRIEND_GUIDE_STEPS } from '@/features/friends/lib/guide'
 
 const I1 = '11111111-1111-4111-8111-111111111111', I2 = '22222222-2222-4222-8222-222222222222'
 const E1 = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', E2 = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'

@@ -7,8 +7,17 @@ const check = (path: string, source: string) => findImportViolations([{ path, so
 
 describe('REQ-SHARED-074 feature boundaries', () => {
   it('REQ-SHARED-074 flags a deep import of another feature', () => {
-    const out = check('app/[lang]/decks/page.tsx', "import { A } from '@/features/decks/components/A'")
+    const out = check('app/[lang]/decks/page.tsx', "import { A } from '@/features/decks/lib/a'")
     expect(out).toMatchObject([{ rule: 'feature-internal' }])
+  })
+
+  it('REQ-SHARED-074 allows one component or hook file by path, nothing deeper', () => {
+    expect(check('app/[lang]/decks/page.tsx', "import A from '@/features/decks/components/A'")).toEqual([])
+    expect(check('app/[lang]/decks/page.tsx', "import { useA } from '@/features/decks/hooks/useA'")).toEqual([])
+    expect(check('app/[lang]/decks/page.tsx', "import s from '@/features/decks/components/A.module.css'")).toMatchObject([{ rule: 'feature-internal' }])
+    expect(check('app/[lang]/decks/page.tsx', "import { x } from '@/features/decks/components/sub/A'")).toMatchObject([{ rule: 'feature-internal' }])
+    expect(check('features/decks/lib/a.ts', "import A from '@/features/notes/components/A'")).toEqual([])
+    expect(check('components/ui/Button.tsx', "import A from '@/features/decks/components/A'")).toMatchObject([{ rule: 'shared-imports-feature' }])
   })
 
   it('REQ-SHARED-074 allows the feature entry and its own internals', () => {
@@ -27,7 +36,7 @@ describe('REQ-SHARED-074 feature boundaries', () => {
       "import type { T } from '@/features/decks/types'",
       "export { x } from '@/features/notes/lib/x'",
       "const m = await import('@/features/planner/lib/y')",
-      "import { z } from '../../features/shop/components/Z'",
+      "import { z } from '../../features/shop/lib/z'",
     ].join('\n')
     const out = check('app/[lang]/page.tsx', source)
     expect(out.map((v) => v.rule)).toEqual(Array(4).fill('feature-internal'))
@@ -62,11 +71,30 @@ describe('REQ-SHARED-074 feature boundaries', () => {
 
   it('REQ-SHARED-076 lets the entry export client-safe code and the server folder import server-only', () => {
     const files = [
-      { path: 'features/meta/index.ts', source: "export { A } from './components/A'\nexport type { T } from './types'" },
-      { path: 'features/meta/components/A.tsx', source: 'export const A = 1' },
+      { path: 'features/meta/index.ts', source: "export { a } from './lib/a'\nexport type { T } from './types'" },
+      { path: 'features/meta/lib/a.ts', source: 'export const a = 1' },
       { path: 'features/meta/server/index.ts', source: "import 'server-only'\nexport const aggregate = 1" },
     ]
     expect(findImportViolations(files)).toEqual([])
+  })
+
+  it('REQ-SHARED-074 the feature entry does not export components or hooks', () => {
+    expect(check('features/meta/index.ts', "export { A } from './components/A'")).toMatchObject([{ rule: 'entry-exports-ui' }])
+    expect(check('features/meta/index.ts', "export { useA } from '@/features/meta/hooks/useA'")).toMatchObject([{ rule: 'entry-exports-ui' }])
+    expect(check('features/meta/index.ts', "export type { T } from './components/A'")).toMatchObject([{ rule: 'entry-exports-ui' }])
+    const viaClient = findImportViolations([
+      { path: 'features/meta/index.ts', source: "export { read } from './lib/read'" },
+      { path: 'features/meta/lib/read.ts', source: "'use client'\nexport const read = 1" },
+    ])
+    expect(viaClient).toMatchObject([{ file: 'features/meta/index.ts', rule: 'entry-exports-ui' }])
+    expect(check('features/meta/index.ts', "export { x } from './lib/x'\nexport type { T } from './types'")).toEqual([])
+  })
+
+  it('REQ-SHARED-074 a feature does not import from app', () => {
+    expect(check('features/decks/components/A.tsx', "import s from '@/app/[lang]/decks/X.module.css'")).toMatchObject([{ rule: 'feature-imports-app' }])
+    expect(check('features/decks/lib/a.ts', "import { x } from '../../../app/[lang]/decks/x'")).toMatchObject([{ rule: 'feature-imports-app' }])
+    expect(check('features/decks/lib/a.ts', "import { x } from '@/lib/x'")).toEqual([])
+    expect(check('app/[lang]/decks/page.tsx', "import { x } from '@/app/[lang]/decks/x'")).toEqual([])
   })
 
   it('REQ-SHARED-077 tests live under tests/ only', () => {
