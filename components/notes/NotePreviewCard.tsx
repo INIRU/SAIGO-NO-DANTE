@@ -6,7 +6,10 @@ import BaseModal from '@/components/ui/BaseModal'
 import IdentityFrameCard from '@/components/ui/IdentityFrameCard'
 import { EffectText } from '@/components/ui/GiftDetailModal'
 import { Link } from '@/lib/i18n/navigation'
-import { GIFT_KEYWORD_COLORS } from '@/lib/constants/gift'
+import Image from 'next/image'
+import { GIFT_KEYWORD_COLORS, getGiftKeywordColor, getGiftKeywordIconUrl, getGiftKeywordSlug } from '@/lib/constants/gift'
+import { localizeGiftKeyword } from '@/lib/i18n/localize'
+import type { SupportedLang } from '@/lib/i18n/types'
 import { assetName, type NoteAssetData } from '@/lib/notes/assets'
 import { PREVIEW_DELAY_MS, PREVIEW_WIDTHS_REM, usesHover } from '@/lib/notes/preview'
 import { placePopoverIn, type PopoverPlacement } from '@/lib/utils/popover'
@@ -19,7 +22,11 @@ export function NotePreviewBody({ asset }: { asset: NoteAssetData }) {
   const lang = useLocale(), tSinner = useTranslations('sinner')
   const name = assetName(asset, lang)
   const sinnerId = asset.identity?.sinner_id ?? asset.sinnerId
-  const sub = [sinnerId ? tSinner(sinnerId) : null, asset.kind === 'ego' && asset.ego?.grade ? asset.ego.grade : null, asset.kind === 'gift' ? asset.keyword : null].filter(Boolean).join(' · ')
+  const sub = [sinnerId ? tSinner(sinnerId) : null, asset.kind === 'ego' && asset.ego?.grade ? asset.ego.grade : null].filter(Boolean).join(' · ')
+  // A gift's keyword reads like the detail window's stat line: its icon and its colour.
+  const keyword = asset.kind === 'gift' ? asset.keyword : null
+  const kwSlug = keyword ? getGiftKeywordSlug(keyword) : null
+  const kwIcon = kwSlug ? getGiftKeywordIconUrl(kwSlug) : null
   const description = (lang === 'en' ? asset.description_en : lang === 'ja' ? asset.description_jp : asset.description) || asset.description
   return <div className="note-preview-card" data-kind={asset.kind}>
     <div className="note-preview-art">
@@ -28,6 +35,9 @@ export function NotePreviewBody({ asset }: { asset: NoteAssetData }) {
     <div className="note-preview-text">
       <strong>{name}</strong>
       {sub && <small>{sub}</small>}
+      {keyword && <small className="note-preview-keyword" style={{ color: getGiftKeywordColor(keyword) }}>
+        {kwIcon && <Image src={kwIcon} alt="" width={16} height={16} />}{localizeGiftKeyword(keyword, lang as SupportedLang)}
+      </small>}
       {asset.kind === 'gift' && description && <EffectText text={description} color={GIFT_KEYWORD_COLORS[asset.keyword ?? ''] ?? '#c8b898'} />}
     </div>
   </div>

@@ -10,9 +10,8 @@ import GiftArtwork, { type GiftArtworkGift } from '@/components/ui/GiftArtwork'
 import GiftCard, { GiftEnhanceMark, GiftEnhancePicker } from '@/components/ui/GiftCard'
 import { GiftConditionDivider } from '@/components/ui/GiftCondition'
 import { blurPlaceholder } from '@/lib/utils/thumbhash'
-import KeywordChip from '@/components/ui/KeywordChip'
 import { useFormatSkillDesc } from '@/components/sinners/KeywordTooltip'
-import { getGiftKeywordColor } from '@/lib/constants/gift'
+import { getGiftKeywordColor, getGiftKeywordIconUrl, getGiftKeywordSlug } from '@/lib/constants/gift'
 import { getThemePackCompositeImageUrl, getThemePackVisualConfig } from '@/lib/data/theme-pack-visuals'
 import { getLocalizedAffiliation, getLocalizedName, localizeGiftKeyword } from '@/lib/i18n/localize'
 import type { SupportedLang } from '@/lib/i18n/types'
@@ -27,8 +26,8 @@ const CREDIT_ICON = getGameUiAsset('resources/md-credit')
 
 function Credits({ value }: { value: number }) {
   return (
-    <dd className="inline-flex items-center gap-1 tabular-nums" style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-title)', fontSize: '1.0625rem' }}>
-      <Image src={CREDIT_ICON} alt="" width={64} height={64} unoptimized className="size-[1.125rem] self-center" />
+    <dd className="inline-flex items-center gap-1 tabular-nums" style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-title)', fontSize: '1.25rem', lineHeight: 1 }}>
+      <Image src={CREDIT_ICON} alt="" width={64} height={64} unoptimized className="size-[1.25rem]" />
       {value}
     </dd>
   )
@@ -119,18 +118,15 @@ export interface GiftDetailData {
   giftLinks?: { targets: GiftLinkTarget[]; selfId?: string | null; convertToId?: string | null } | null
 }
 
-const BADGE_TONES = {
-  gold: { color: '#e8b030', border: 'rgba(200,144,10,0.45)' },
-  red: { color: '#e06a5a', border: 'rgba(155,44,35,0.7)' },
-  orange: { color: '#e89030', border: 'rgba(232,144,48,0.45)' },
-  purple: { color: '#c09ae0', border: 'rgba(180,120,220,0.45)' },
-} as const
+const BADGE_TONES = { gold: '#e8b030', red: '#ec6a5e', orange: '#e89030', purple: '#c09ae0' } as const
 
+/** A titled block of the game info window: the title, a rule running to the edge (or to `aside`), then the content. */
 function Section({ title, aside, children }: { title: string; aside?: ReactNode; children: ReactNode }) {
   return (
-    <section className="border-t px-5 py-4" style={{ borderColor: '#2e2417' }}>
-      <div className="mb-2.5 flex min-h-7 items-center justify-between gap-3">
-        <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '0.875rem', color: '#9c8b73' }}>{title}</h3>
+    <section className="px-5 pb-4 sm:px-6">
+      <div className="mb-2 flex min-h-11 items-center gap-3">
+        <h3 className="shrink-0" style={{ fontFamily: 'var(--font-heading)', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>{title}</h3>
+        <span aria-hidden="true" className="h-px min-w-4 flex-1" style={{ background: 'var(--border)' }} />
         {aside}
       </div>
       {children}
@@ -236,6 +232,8 @@ export default function GiftDetailModal({ gift, lang, onClose, initialLevel = 0,
   const effect = [base, plus, plusplus][level] ?? base
   const effectColor = level === 2 ? '#e8b030' : level === 1 ? '#d8b878' : '#c8b898'
   const kwColor = getGiftKeywordColor(gift.keyword ?? null)
+  const kwSlug = getGiftKeywordSlug(gift.keyword ?? null)
+  const kwIcon = kwSlug ? getGiftKeywordIconUrl(kwSlug) : null
   // Reward and exclusive packs come first; a long pool list shows six chips and a "+N" that expands.
   const [showAllThemes, setShowAllThemes] = useState(false)
   const themes = gift.themes ?? []
@@ -246,7 +244,7 @@ export default function GiftDetailModal({ gift, lang, onClose, initialLevel = 0,
     <BaseModal open={true} onClose={onClose} maxWidth="34rem" title={gift.name || t('title')} sheet>
       <div
         className="relative flex max-h-[88dvh] w-full flex-col overflow-hidden rounded-t-xl border sm:max-h-[85vh] sm:rounded-xl"
-        style={{ background: '#17120c', borderColor: '#2e2417', boxShadow: '0 1.5rem 4rem rgba(0,0,0,0.6)' }}
+        style={{ background: 'var(--bg-panel)', borderColor: 'var(--border)', boxShadow: '0 1.5rem 4rem rgba(0,0,0,0.6)' }}
       >
         <button
           type="button"
@@ -271,52 +269,53 @@ export default function GiftDetailModal({ gift, lang, onClose, initialLevel = 0,
             </button>
           )}
 
-          <header className="flex items-center gap-4 px-5 pb-4 pr-14 pt-5 sm:gap-5">
-            <div className="relative w-[5.75rem] shrink-0 sm:w-[7.5rem]" style={{ filter: 'drop-shadow(0 0.5rem 1rem ' + kwColor + '33)' }}>
-              <GiftArtwork gift={gift.art} displayName={gift.name} enhance={level} sizes="120px">
+          {/* Like the game's gift panel: the slot leads, the price sits under it as in the shop, the name and a terse stat line beside it. */}
+          <header className="flex items-center gap-4 px-5 pb-3 pr-14 pt-5 sm:gap-5 sm:px-6 sm:pt-6">
+            <div className="w-[6rem] shrink-0 sm:w-[8rem]">
+              <GiftArtwork gift={gift.art} displayName={gift.name} enhance={level} sizes="128px">
                 {level > 0 && <GiftEnhanceMark level={level} />}
               </GiftArtwork>
+              {(gift.price != null || gift.buyDisabled) && (
+                <dl className="mt-1.5 flex justify-center">
+                  <dt className="sr-only">{t('price')}</dt>
+                  {gift.buyDisabled
+                    ? <dd style={{ color: 'var(--error-text)', fontSize: '0.8125rem', fontFamily: 'var(--font-heading)' }}>{t('notForSale')}</dd>
+                    : gift.price != null && <Credits value={gift.price} />}
+                </dl>
+              )}
             </div>
             <div className="min-w-0 flex-1">
-              <h2 className="text-pretty" style={{ fontFamily: 'var(--font-heading)', fontSize: '1.3125rem', lineHeight: 1.3, color: 'var(--text-primary)' }}>
+              <h2 className="text-balance" style={{ fontFamily: 'var(--font-heading)', fontSize: '1.375rem', lineHeight: 1.3, color: 'var(--text-primary)' }}>
                 {gift.name}
               </h2>
-              <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                {gift.keyword && <KeywordChip keyword={gift.keyword} label={localizeGiftKeyword(gift.keyword, lang)} size="md" />}
-                {gift.badges?.map(b => (
-                  <span key={b.label} className="inline-flex items-center rounded-sm border px-2" style={{ minHeight: '1.5rem', fontSize: '0.75rem', color: BADGE_TONES[b.tone].color, borderColor: BADGE_TONES[b.tone].border }}>
-                    {b.label}
-                  </span>
-                ))}
-              </div>
-              {(gift.price != null || gift.buyDisabled) && (
-                <dl className="mt-2.5 flex flex-wrap gap-x-4 gap-y-1" style={{ fontSize: '0.8125rem' }}>
-                  {gift.buyDisabled ? (
-                    <div className="flex gap-1.5"><dt className="sr-only">{t('price')}</dt><dd style={{ color: '#e06a5a' }}>{t('notForSale')}</dd></div>
-                  ) : gift.price != null && (
-                    <div className="flex items-center gap-1.5"><dt style={{ color: '#9c8b73' }}>{t('price')}</dt><Credits value={gift.price} /></div>
+              {(gift.keyword || gift.badges?.length) && (
+                <p className="mt-2 flex flex-wrap items-center gap-y-1 divide-x divide-[var(--border)] [&>span]:px-2.5 [&>span:first-child]:pl-0" style={{ fontFamily: 'var(--font-heading)', fontSize: '0.875rem', lineHeight: 1.2 }}>
+                  {gift.keyword && (
+                    <span className="inline-flex items-center gap-1" style={{ color: kwColor }}>
+                      {kwIcon && <Image src={kwIcon} alt="" width={18} height={18} className="size-[1.125rem] object-contain" />}
+                      {localizeGiftKeyword(gift.keyword, lang)}
+                    </span>
                   )}
-                </dl>
+                  {gift.badges?.map(b => <span key={b.label} style={{ color: BADGE_TONES[b.tone] }}>{b.label}</span>)}
+                </p>
               )}
             </div>
           </header>
 
           {/* With no effect text to follow it, the condition's divider shows on its own. */}
-          {gift.condition && !effect && <div className="px-5 pb-4"><GiftConditionDivider text={gift.condition} condition={gift.activation} scope={gift.conditionScope} status={gift.conditionStatus} /></div>}
+          {gift.condition && !effect && <div className="px-5 pb-4 sm:px-6"><GiftConditionDivider text={gift.condition} condition={gift.activation} scope={gift.conditionScope} status={gift.conditionStatus} /></div>}
 
           {effect && (
             <Section
               title={t('effect')}
-              aside={maxLevel > 0 && (
-                <div className="w-[9.5rem] shrink-0 [&>div]:mt-0">
-                  <GiftEnhancePicker level={level} max={maxLevel as 1 | 2} giftName={gift.name} onChange={setLevel} />
-                </div>
-              )}
+              aside={maxLevel > 0 && <div className="-my-2 -mr-1 shrink-0"><GiftEnhancePicker level={level} max={maxLevel as 1 | 2} giftName={gift.name} onChange={setLevel} bare /></div>}
             >
-              <EffectText key={level} text={effect} color={effectColor} links={gift.giftLinks}
-                gate={gift.condition ? { partial: !!gift.activation?.partial, divider: lines => (
-                  <GiftConditionDivider text={gift.condition!} condition={gift.activation} scope={gift.conditionScope} status={gift.conditionStatus}>{lines}</GiftConditionDivider>
-                ) } : undefined} />
+              <div style={{ fontFamily: 'var(--font-game-text)' }}>
+                <EffectText key={level} text={effect} color={effectColor} links={gift.giftLinks}
+                  gate={gift.condition ? { partial: !!gift.activation?.partial, divider: lines => (
+                    <GiftConditionDivider text={gift.condition!} condition={gift.activation} scope={gift.conditionScope} status={gift.conditionStatus}>{lines}</GiftConditionDivider>
+                  ) } : undefined} />
+              </div>
             </Section>
           )}
 
@@ -349,8 +348,8 @@ export default function GiftDetailModal({ gift, lang, onClose, initialLevel = 0,
                       type="button"
                       onClick={() => setShowAllThemes(true)}
                       aria-label={t('showAllThemes', { count: themes.length })}
-                      className="inline-flex h-8 items-center rounded-sm border px-2.5 tabular-nums transition-colors hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold-light)]"
-                      style={{ borderColor: '#3a2e1e', color: '#d8ccb4', fontSize: '0.8125rem' }}
+                      className="inline-flex h-11 min-w-11 items-center justify-center rounded-sm border px-3 tabular-nums transition-colors hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold-light)] sm:h-9"
+                      style={{ borderColor: 'var(--border)', color: 'var(--gold-light)', fontFamily: 'var(--font-title)', fontSize: '1.0625rem' }}
                     >
                       +{hiddenThemeCount}
                     </button>
@@ -375,15 +374,15 @@ function ThemeChip({ theme, lang, tagLabel }: { theme: GiftDetailTheme; lang: Su
   const body = (
     <>
       {src && (
-        <span className="relative h-6 shrink-0 overflow-hidden" style={{ aspectRatio: '416/684' }}>
-          <QuietImage src={src} alt="" fill sizes="16px" className="object-cover" {...blurPlaceholder(src)} />
+        <span className="relative h-full shrink-0 overflow-hidden" style={{ aspectRatio: '416/684' }}>
+          <QuietImage src={src} alt="" fill sizes="28px" className="object-cover" {...blurPlaceholder(src)} />
         </span>
       )}
       <span className="truncate" style={{ color: '#d8ccb4' }}>{name}</span>
       {tagLabel && <span className="shrink-0" style={{ color: tagColor, fontSize: '0.6875rem', fontFamily: 'var(--font-heading)' }}>{tagLabel}</span>}
     </>
   )
-  const className = 'inline-flex h-8 max-w-[15rem] items-center gap-1.5 rounded-sm border pl-1 pr-2.5'
+  const className = `inline-flex h-11 max-w-[15rem] items-center gap-2 overflow-hidden rounded-sm border pr-3 sm:h-9${src ? '' : ' pl-3'}`
   const style = { borderColor: theme.tag ? (theme.tag === 'reward' ? 'rgba(155,44,35,0.7)' : 'rgba(200,144,10,0.4)') : '#2e2417', background: '#0d0b08', fontSize: '0.8125rem' }
   return (
     <li>

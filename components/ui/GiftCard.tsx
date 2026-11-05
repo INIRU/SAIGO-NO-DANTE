@@ -99,13 +99,33 @@ export function GiftEnhanceMark({ level, onClick }: { level: number; onClick?: (
  * Base / + / ++ switch shown under a picked gift. It sits outside GiftCard (a button) so the buttons stay valid,
  * and stays visible because touch screens have no hover.
  */
-export function GiftEnhancePicker({ level, max, giftName, onChange }: { level: number; max: 1 | 2; giftName: string; onChange: (level: number) => void }) {
+export function GiftEnhancePicker({ level, max, giftName, onChange, bare = false }: { level: number; max: 1 | 2; giftName: string; onChange: (level: number) => void
+  /** The detail window's switch: the sprites alone, lit when picked, no box. */
+  bare?: boolean }) {
   const t = useTranslations('giftEnhance')
   const options = [
     { value: 0, label: t('base'), idle: 'minus', active: 'minus' },
     { value: 1, label: t('plus'), idle: 'plusIdle', active: 'plus' },
     { value: 2, label: t('plusplus'), idle: 'plusplusIdle', active: 'plusplus' },
   ].slice(0, max + 1) as { value: number; label: string; idle: keyof typeof ENHANCE_SPRITES; active: keyof typeof ENHANCE_SPRITES }[]
+  if (bare) return (
+    <div role="radiogroup" aria-label={t('group', { gift: giftName })} className="flex items-center">
+      {options.map(option => {
+        const checked = level === option.value
+        return (
+          <button key={option.value} type="button" role="radio" aria-checked={checked} aria-label={option.label} title={option.label}
+            onClick={() => onChange(option.value)}
+            className={`${styles.key} flex min-h-11 min-w-11 items-center justify-center px-1 focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-[var(--gold-light)]`}
+            data-checked={checked || undefined}>
+            {/* The game's own picked state: the lit, larger sprite. Idle keys stay dim until hovered. */}
+            <span className="flex" style={{ height: option.value === 0 ? '0.5625rem' : checked ? '1.5rem' : '0.9375rem' }}>
+              <EnhanceSprite sprite={checked ? option.active : option.idle} />
+            </span>
+          </button>
+        )
+      })}
+    </div>
+  )
   return (
     <div role="radiogroup" aria-label={t('group', { gift: giftName })} className="mt-1 flex w-full overflow-hidden rounded-sm border" style={{ borderColor: '#2e2417', background: 'var(--bg-deep)' }}>
       {options.map(option => {
