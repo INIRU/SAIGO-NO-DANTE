@@ -9,7 +9,7 @@ import { parseNoteImage } from '@/lib/notes/images'
  * Old memos showed keywords by guessing them from plain words; memos now show keywords only as explicit chips
  * (`noteKeyword` nodes in a block document, `[k:이름]` tokens in a plain/markdown memo). This module rewrites an old memo
  * into the chips the guess would have drawn (lib/keywords/keyword-guess.ts is that guess), so nothing changes on screen.
- * Pure: the extractor-side conversion tool that read and wrote the database is gone.
+ * Pure: it does no database access.
  *
  * - Not touched: existing chips and tokens, code, links, images, `{{skill:…}}` cards, anything without a match.
  * - Idempotent: a second run finds nothing, also next to a chip (the matcher is told the letters around the text).
