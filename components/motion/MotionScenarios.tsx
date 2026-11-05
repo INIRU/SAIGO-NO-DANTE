@@ -91,7 +91,7 @@ export default function MotionScenarios({ states, current, allies, onPick, voice
   const fallback = (s: MotionState, k: number) => {
     const told = isBase(s.state) || s.conditions?.length || s.extras?.length || facesOf(s, allies?.[s.state]).length
     if (told && signatures.indexOf(signatures[k]) === signatures.lastIndexOf(signatures[k])) return null
-    return lang === 'ko' ? s.label : t('scenarioNumber', { n: k + 1 })
+    return lang === 'ko' ? s.sentence ?? s.label : t('scenarioNumber', { n: k + 1 })
   }
   const links = [...new Map(states.flatMap(s => (s.link ? [[s.link.id, s.link] as const] : []))).values()]
   // One faces column for the whole list (links included), as wide as its most faces; a play icon sits in it for a line.
