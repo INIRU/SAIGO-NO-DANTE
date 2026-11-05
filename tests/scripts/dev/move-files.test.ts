@@ -48,6 +48,16 @@ describe('REQ-SHARED-079 rewriteSources', () => {
     )
   })
 
+  it('REQ-SHARED-079 keeps a relative import relative when both files move into the same folder', () => {
+    const pair: Array<[string, string]> = [
+      ['app/[lang]/gizmo/new/Compose.tsx', 'app/[lang]/gizmo/_components/Compose.tsx'],
+      ['app/[lang]/gizmo/Gizmo.module.css', 'app/[lang]/gizmo/_components/Gizmo.module.css'],
+    ]
+    const [out] = rewrite('app/[lang]/gizmo/new/Compose.tsx', "import styles from '../Gizmo.module.css'\n", pair)
+    expect(out.path).toBe('app/[lang]/gizmo/_components/Compose.tsx')
+    expect(out.source).toBe("import styles from './Gizmo.module.css'\n")
+  })
+
   it('REQ-SHARED-079 points a relative import in an unmoved file at the new location', () => {
     const [out] = rewrite('components/other/Thing.tsx', "import { GizmoCard } from '../gizmo/GizmoCard'\nimport { x } from './x'\n")
     expect(out.source).toBe("import { GizmoCard } from '@/features/gizmo/components/GizmoCard'\nimport { x } from './x'\n")
