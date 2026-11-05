@@ -1,5 +1,5 @@
 import localFont from 'next/font/local'
-import { pretendardCore, pretendardExt, pretendardHeadingLatin as headingLatin } from './pretendard'
+import { pretendardHeadingLatin as headingLatin, pretendardPieces } from './pretendard'
 
 /* ── All fonts are self-hosted; licenses in public/fonts/licenses ── */
 
@@ -41,13 +41,13 @@ const kotraBold = localFont({
   fallback: ['Apple SD Gothic Neo', 'Malgun Gothic', 'sans-serif'],
 })
 
-// body font — keep swap (critical for readability) + similar-metric fallbacks
+// game-text font (cards, skill text) — swap with similar-metric fallbacks; not preloaded: Pretendard draws the body text
 const scDream = localFont({
   src: '../public/fonts/SCDream5.woff2',
   weight: '500',
   variable: '--font-scdream',
   display: 'swap',
-  preload: true,
+  preload: false,
   fallback: ['Pretendard', 'Apple SD Gothic Neo', 'Malgun Gothic', 'sans-serif'],
 })
 
@@ -103,5 +103,5 @@ const notoSansMono = localFont({
   preload: false,
 })
 
-// Pretendard is split by unicode-range (scripts/assets/subset-pretendard.py); globals.css joins core and ext as --font-pretendard.
-export const fontVariables = [excelsiorSans, mikodacs, bebasKai, kotraBold, scDream, pretendardCore, pretendardExt, paperlogy, japaneseSans, corporateLogo, headingLatin, headingJapanese, notoSansMono].map(font => font.variable).join(' ')
+// Pretendard is split by unicode-range (scripts/assets/subset-pretendard.py); globals.css joins the pieces as --font-pretendard.
+export const fontVariables = [excelsiorSans, mikodacs, bebasKai, kotraBold, scDream, ...pretendardPieces, paperlogy, japaneseSans, corporateLogo, headingLatin, headingJapanese, notoSansMono].map(font => font.variable).join(' ')

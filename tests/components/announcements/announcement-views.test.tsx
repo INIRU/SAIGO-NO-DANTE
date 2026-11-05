@@ -72,4 +72,10 @@ describe('popup announcement', () => {
     expect(dialog).toContain('sheet')
     expect(dialog).toContain('/announcements/${announcement.id}')
   })
+
+  it('REQ-ADMIN-015 fetches the cover at once and first, being the largest picture of the page when it opens', () => {
+    const cover = source('components/announcements/AnnouncementPopupDialog.tsx').match(/<QuietImage src=\{announcement\.cover\}[^>]*\/>/)?.[0]
+    expect(cover).toContain('loading="eager"')
+    expect(cover).toContain('fetchPriority="high"')
+  })
 })
