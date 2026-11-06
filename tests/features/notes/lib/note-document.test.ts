@@ -1,7 +1,7 @@
 import {expect,it,vi} from 'vitest'
 import {markdownToTiptapContent,tiptapContentToMarkdown} from '@/features/notes/lib/document'
 import {isNoteImageUrl} from '@/lib/notes/images'
-import {createApiKey,readApiKey,hashApiKey} from '@/lib/developer/keys'
+import {createApiKey,readApiKey,hashApiKey} from '@/features/account/server/developer-keys'
 it('preserves Korean paragraphs, format and safe uploaded image through document editing',()=>{
  vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL','https://example.supabase.co')
  const src='https://example.supabase.co/storage/v1/object/public/limbus-assets/notes/aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee.webp'

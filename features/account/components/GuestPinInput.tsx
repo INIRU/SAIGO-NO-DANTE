@@ -1,8 +1,8 @@
 'use client'
 
 import type { InputHTMLAttributes } from 'react'
-import { getGuestCopy } from '@/lib/guest/copy'
-import { cleanGuestPin } from '@/lib/guest/key'
+import { getGuestCopy } from '@/features/account/lib/guest-copy'
+import { cleanGuestPin } from '@/features/account/lib/guest-key'
 
 type Props = { value: string; onChange: (pin: string) => void; locale: string } & Omit<InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange'>
 

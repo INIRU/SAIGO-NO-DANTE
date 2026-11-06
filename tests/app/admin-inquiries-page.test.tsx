@@ -3,7 +3,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import InquiriesPage from '@/app/[lang]/admin/inquiries/page'
 
 vi.mock('next-intl/server', () => ({ getTranslations: async () => (key: string) => key }))
-vi.mock('@/components/support/SupportDesk', () => ({
+vi.mock('@/features/account/components/SupportDesk', () => ({
   default: ({ admin, initialId }: { admin?: boolean; initialId?: string }) => <div data-desk={admin ? 'admin' : 'user'} data-initial-id={initialId ?? ''} />,
 }))
 

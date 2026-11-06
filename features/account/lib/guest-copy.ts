@@ -1,4 +1,4 @@
-import { isGuestPin, isWeakGuestPin } from './key'
+import { isGuestPin, isWeakGuestPin } from './guest-key'
 
 /** Guest (anonymous) posting copy. Kept here instead of messages/*.json. */
 const copy = {

@@ -6,7 +6,7 @@ import { useSession } from 'next-auth/react'
 import useSWR from 'swr'
 import { fetchNoteAssets } from '@/features/notes/components/NoteBlockViewer'
 import { assetName, type NoteAssetData } from '@/features/notes'
-import { GUEST_KEY_HEADER, guestHeaders, readGuestKey } from '@/lib/guest/key'
+import { GUEST_KEY_HEADER, guestHeaders, readGuestKey } from '@/features/account'
 import { WANT_LIMIT, type RequestStatus, type StoredSlot, type Visibility } from '@/features/friends/lib/codes'
 import { EGO_GRADES, type SupportSlot } from '@/features/friends/components/SupportStrips'
 

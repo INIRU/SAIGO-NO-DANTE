@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { getGuestCopy, guestAuthorName, guestPinProblem, guestRecoverMessage } from '@/lib/guest/copy'
+import { getGuestCopy, guestAuthorName, guestPinProblem, guestRecoverMessage } from '@/features/account/lib/guest-copy'
 
 describe('guest copy', () => {
   it('labels guest authors by tag in each locale', () => {

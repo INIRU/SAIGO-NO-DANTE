@@ -1,1 +1,1 @@
-export { LegalDocumentSkeleton as default } from '@/components/legal/LegalDocument'
+export { LegalDocumentSkeleton as default } from '@/features/account/components/LegalDocument'

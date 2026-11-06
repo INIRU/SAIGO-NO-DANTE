@@ -1,6 +1,6 @@
 
 import { notePlainText, notePreviewText } from '@/lib/notes/blocks'
-import { authorColumns, authorRateKey, guestPinOf, recordGuestAuthorship, resolveAuthor } from '@/lib/guest/server'
+import { authorColumns, authorRateKey, guestPinOf, recordGuestAuthorship, resolveAuthor } from '@/features/account/server'
 import { NextRequest, NextResponse, after } from 'next/server'
 import { pushForPost } from '@/lib/push/send'
 import { revalidatePath, revalidateTag } from 'next/cache'

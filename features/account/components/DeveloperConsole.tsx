@@ -7,13 +7,13 @@ import { useHtmlFlag } from "@/hooks/useHtmlFlag";
 import PageHeader from "@/components/ui/PageHeader";
 import UnderlineTabBar from "@/components/ui/UnderlineTabBar";
 import DanteLogo from "@/components/brand/DanteLogo";
-import DocsTab from "@/components/developers/DocsTab";
-import GuideTab from "@/components/developers/GuideTab";
-import KeysTab from "@/components/developers/KeysTab";
-import PartnerTab from "@/components/developers/PartnerTab";
-import PlaygroundTab from "@/components/developers/PlaygroundTab";
-import { useText, type Account, type Open, type TabKey } from "@/components/developers/developer-ui";
-import { LIMITS, endpointsFor } from "./api-reference";
+import DocsTab from "./DocsTab";
+import GuideTab from "./GuideTab";
+import KeysTab from "./KeysTab";
+import PartnerTab from "./PartnerTab";
+import PlaygroundTab from "./PlaygroundTab";
+import { useText, type Account, type Open, type TabKey } from "./DeveloperUi";
+import { LIMITS, endpointsFor } from "../lib/api-reference";
 
 /** Developer tools: a guide, the API reference, a request tester, the account's keys and, for partners, the partner tab. The tab and item live in the address. */
 export default function DeveloperConsole() {

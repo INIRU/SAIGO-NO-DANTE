@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import type { createAdminClient } from '@/lib/supabase/admin'
-import { guestPinHash, resolveAuthor, type Author } from '@/lib/guest/server'
+import { guestPinHash, resolveAuthor, type Author } from '@/features/account/server'
 
 type Admin = ReturnType<typeof createAdminClient>
 export type FriendPostRow = {

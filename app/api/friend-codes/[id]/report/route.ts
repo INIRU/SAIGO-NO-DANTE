@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { authorRateKey, resolveAuthor } from '@/lib/guest/server'
+import { authorRateKey, resolveAuthor } from '@/features/account/server'
 import { checkRequestRateLimit, rateLimitResponse } from '@/lib/rate-limit'
 import { fail } from '@/features/friends'
 
