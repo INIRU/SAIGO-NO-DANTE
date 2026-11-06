@@ -16,7 +16,7 @@ function walk(dir: string, keep: (file: string) => boolean): string[] {
 const isMarkdown = (file: string) => file.endsWith('.md')
 /** The documents people are told to read. */
 const GUIDES = [
-  'DESIGN.md',
+  'README.md', 'CONTRIBUTING.md', 'DESIGN.md',
   ...['docs', '.github'].flatMap(dir => walk(dir, isMarkdown)),
 ].filter(file => existsSync(join(ROOT, file)))
 
@@ -41,13 +41,18 @@ describe('REQ-SHARED-028 guide documents', () => {
   it('REQ-SHARED-028 docs/README.md starts new work, links the assist document and sends sync work to the extraction tool', () => {
     const readme = readFileSync(join(ROOT, 'docs/README.md'), 'utf8')
     expect(readme).toContain('## 새 작업 시작하기')
-    expect(relativeLinks('docs/README.md')).toContain('assist.md')
+    expect(relativeLinks('docs/README.md')).toContain('guides/assist-evaluation.md')
     // The sync code and its documents live in the extraction tool repository since 2026-10-07.
     for (const name of ['runbook', 'developing', 'rules', 'adding-a-field', 'provenance']) {
       expect(readme).toContain(`https://github.com/INIRU/limbus-asset-extractor/blob/main/site-sync/docs/${name}.md`)
     }
     expect(existsSync(join(ROOT, 'docs/data-sync'))).toBe(false)
     expect(existsSync(join(ROOT, 'scripts/sync'))).toBe(false)
+  })
+
+  it('REQ-SHARED-028 docs/ holds guides and reference only, with no one-off reports', () => {
+    const top = readdirSync(join(ROOT, 'docs')).sort()
+    expect(top).toEqual(['README.md', 'guides', 'reference'])
   })
 
   it('REQ-SHARED-028 nothing points at the removed docs/data-pipeline.md', () => {
