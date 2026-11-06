@@ -3,7 +3,7 @@
  *   npx tsx scripts/recommender/tune-floor.ts
  * Objective = (MRR of packs + MRR of gifts) / 2 on the leave-author-out queries (gift queries with at least 6 choices).
  */
-import { FLOOR_CONFIG, rankGifts, rankThemes, type FloorConfig } from '@/lib/discovery/floor-recs'
+import { FLOOR_CONFIG, rankGifts, rankThemes, type FloorConfig } from '@/features/community/lib/floor-recs'
 import { loadSnapshot } from './load-snapshot'
 import { giftQueries, hash, themeQueries } from './queries'
 import { floorQueryOf, v2Parts } from './v2'

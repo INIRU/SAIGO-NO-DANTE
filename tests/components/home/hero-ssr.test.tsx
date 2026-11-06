@@ -1,6 +1,6 @@
 import { renderToString } from 'react-dom/server'
 import { expect, it, vi } from 'vitest'
-import HeroGlitchSlider from '@/components/home/HeroGlitchSlider'
+import HeroGlitchSlider from '@/app/[lang]/(home)/_components/HeroGlitchSlider'
 import type { IdentityWithSinner } from '@/lib/data/sinners'
 
 vi.mock('next-intl', () => ({ useLocale: () => 'ko', useTranslations: () => (key: string) => key }))

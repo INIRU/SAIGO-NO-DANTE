@@ -32,7 +32,7 @@ vi.mock('@/hooks/useNotifications', () => ({
   useNotifications: (_on: boolean, onFresh: (fresh: Notification[]) => void) => { if (feed.fresh.length) onFresh(feed.fresh); return { ...feed, open: vi.fn() } },
 }))
 vi.mock('@/lib/toast', () => ({ toast: toasts }))
-vi.mock('@/components/community/easterEggs', () => ({ useTapEgg: () => () => {} }))
+vi.mock('@/components/brand/easter-eggs', () => ({ useTapEgg: () => () => {} }))
 vi.mock('next/dynamic', async () => {
   const { lazy } = await import('react')
   return { default: (loader: () => Promise<{ default: React.ComponentType }>) => lazy(loader) }

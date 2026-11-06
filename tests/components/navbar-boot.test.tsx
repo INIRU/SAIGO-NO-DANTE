@@ -12,7 +12,7 @@ vi.mock('@/lib/i18n/navigation', () => ({
 }))
 vi.mock('@/components/ui/LanguageSwitcher', () => ({ default: () => null }))
 vi.mock('@/hooks/useSupportUnread', () => ({ useSupportUnread: () => false }))
-vi.mock('@/components/community/easterEggs', () => ({ useTapEgg: () => () => {} }))
+vi.mock('@/components/brand/easter-eggs', () => ({ useTapEgg: () => () => {} }))
 
 function runBootScript(userAgent: string, hint: string | null) {
   const attrs = new Set<string>()

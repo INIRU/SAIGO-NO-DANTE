@@ -7,8 +7,8 @@ import { Heart, Map as MapIcon, Plus } from 'lucide-react'
 import { Link } from '@/lib/i18n/navigation'
 import PlanCard, { type PlanSummary } from '@/components/planner/PlanCard'
 import Skeleton from '@/components/ui/Skeleton'
-import { getCommunityCopy } from '@/lib/community/copy'
-import styles from '@/components/community/profile.module.css'
+import { getCommunityCopy } from '@/features/community'
+import styles from '@/styles/components/CommunityProfile.module.css'
 
 export default function PlannerTab() {
   const t = getCommunityCopy(useLocale())

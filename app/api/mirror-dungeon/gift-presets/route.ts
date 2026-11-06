@@ -5,7 +5,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { findOrCreateSupabaseUser } from '@/lib/supabase/findOrCreateUser'
 import { checkRequestRateLimit, rateLimitResponse } from '@/lib/rate-limit'
 import { isAllowedRequestOrigin } from '@/lib/request-origin'
-import { discoveryUserId } from '@/lib/discovery/user-id'
+import { discoveryUserId } from '@/features/community/server'
 import { GIFT_PRESET_LIMIT, giftPresetBodySchema } from '@/features/mirror-dungeon/server'
 
 const headers = { 'Cache-Control': 'private, no-store' }

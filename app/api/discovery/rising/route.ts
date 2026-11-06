@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { loadRising } from '@/lib/discovery/rising-feed'
+import { loadRising } from '@/features/community/server'
 import { COMMUNITY_FEED_CACHE_CONTROL } from '@/lib/constants/http-cache'
 
 export async function GET(request: Request) {

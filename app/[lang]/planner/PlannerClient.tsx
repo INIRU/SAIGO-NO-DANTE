@@ -30,7 +30,7 @@ import TempSaveMenu from '@/components/ui/TempSaveMenu'
 import AutosaveRestoreModal from '@/components/ui/AutosaveRestoreModal'
 import { useAutosaveDraft } from '@/features/notes/hooks/useAutosaveDraft'
 import { autosaveKey } from '@/features/notes'
-import SeriesPicker from '@/components/series/SeriesPicker'
+import SeriesPicker from '@/features/community/components/SeriesPicker'
 import { workbenchReveal } from '@/lib/animations'
 
 interface Props {

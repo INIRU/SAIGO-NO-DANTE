@@ -7,7 +7,7 @@ import { signOut } from "next-auth/react";
 import { showSuccess, showError } from "@/lib/toast";
 import AvatarPicker from "@/features/account/components/AvatarPicker";
 import { DEFAULT_AVATAR_URL } from "@/lib/constants/game";
-import { getCommunityCopy } from "@/lib/community/copy";
+import { getCommunityCopy } from "@/features/community";
 import { LogOut, Pencil } from "lucide-react";
 import Button from "@/components/ui/Button";
 import { forgetPushSubscription } from "@/hooks/usePushSubscription";

@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
-import { seriesActor, seriesFail, seriesHeaders } from '@/lib/series/actor'
-import { seriesCreateSchema } from '@/lib/series/order'
-import { listUserSeries } from '@/lib/series/server'
+import { seriesActor, seriesFail, seriesHeaders, listUserSeries, seriesCreateSchema } from '@/features/community/server'
 
 const postQuery = z.object({ kind: z.enum(['deck', 'plan']), post: z.string().uuid() })
 

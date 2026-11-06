@@ -1,8 +1,8 @@
 'use client'
 
-import { useSuggestionState } from '@/hooks/useSuggestions'
+import { useSuggestionState } from '@/features/community/hooks/useSuggestions'
 import { LCB_IDS } from '@/lib/constants/game'
-import { identitySuggestUrl, suggestionContext, type SuggestionResponse } from '@/lib/discovery/suggestion-types'
+import { identitySuggestUrl, suggestionContext, type SuggestionResponse } from '@/features/community'
 import { useMemo, useState, type CSSProperties } from 'react'
 import Image from 'next/image'
 import { useReducedMotion } from 'motion/react'

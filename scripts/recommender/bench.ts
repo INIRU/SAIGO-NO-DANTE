@@ -2,10 +2,10 @@
  * Server time of one suggestion request on the real data (model build included, as the API does per request).
  *   npx tsx scripts/recommender/bench.ts
  */
-import { buildEgoModel, suggestEgos } from '@/lib/discovery/ego-recs'
-import { buildFloorModel, rankGifts, rankThemes } from '@/lib/discovery/floor-recs'
-import { buildIdentityModel, suggestIdentities } from '@/lib/discovery/identity-recs'
-import { buildRecCatalog } from '@/lib/discovery/rec-catalog'
+import { buildEgoModel, suggestEgos } from '@/features/community/lib/ego-recs'
+import { buildFloorModel, rankGifts, rankThemes } from '@/features/community/lib/floor-recs'
+import { buildIdentityModel, suggestIdentities } from '@/features/community/lib/identity-recs'
+import { buildRecCatalog } from '@/features/community/lib/rec-catalog'
 import { loadSnapshot } from './load-snapshot'
 import { toFormation } from './v2'
 

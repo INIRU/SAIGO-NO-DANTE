@@ -8,13 +8,13 @@ vi.mock('next-intl', () => ({
   useLocale: () => 'ko',
 }))
 vi.mock('next-intl/server', () => ({ getTranslations: async () => (key: string) => `server.${key}` }))
-vi.mock('@/lib/discovery/co-visited', () => ({
+vi.mock('@/features/community/server/co-visited', () => ({
   getCoVisited: async () => { if (state.fail) throw new Error('missing'); return state.posts },
 }))
 vi.mock('@/components/decks/DeckCard', () => ({ default: ({ deck }: { deck: { id: string } }) => <span data-deck>{deck.id}</span> }))
 vi.mock('@/components/planner/PlanCard', () => ({ default: ({ plan }: { plan: { id: string } }) => <span data-plan>{plan.id}</span> }))
 
-import CoVisitedLane from '@/components/discovery/CoVisitedLane'
+import CoVisitedLane from '@/features/community/components/CoVisitedLane'
 
 const render = async (kind: 'deck' | 'planner') => {
   const element = await CoVisitedLane({ kind, id: 'me', lang: 'ko', exclude: [] })

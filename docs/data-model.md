@@ -15,9 +15,9 @@
 | 덱 | `decks`, `deck_identities`, `deck_egos`, `deck_votes`, `deck_comments`, `deck_bookmarks` | `app/api/decks/`, `lib/decks/` |
 | 플래너 | `md_plans`(편성과 층별 계획은 JSON), `md_plan_votes`, `md_plan_comments`, `final_gift_presets` | `app/api/planner/`, `lib/planner/` |
 | 친구 코드 게시판 | `friend_posts`(지원 인격·인격 구해요 글), `friend_exchanges`(코드 교환), `friend_want_stats`(인격별 요청 수), `friend_requests`(승인 후 공개 글의 코드 요청), `friend_reports`, `friend_blocks` | `app/api/friend-codes/`, `features/friends/` |
-| 계정·커뮤니티 | `profiles`, `follows`, `community_activity`, `guest_authorship`, `profile_easter_eggs`, `legal_docs`, `legal_acknowledgements`, `profile_access_signals`, `profile_duplicate_signal_events` | `app/api/community/`, `lib/community/`, `lib/auth.ts` |
+| 계정·커뮤니티 | `profiles`, `follows`, `community_activity`, `guest_authorship`, `profile_easter_eggs`, `legal_docs`, `legal_acknowledgements`, `profile_access_signals`, `profile_duplicate_signal_events` | `app/api/community/`, `features/community/`, `lib/auth.ts` |
 | 운영 | `announcements`, `inquiries`, `support_messages`, `site_maintenance`, `audit_logs` | `app/api/admin/` |
-| 발견·개발자 API | `discovery_visits`, `developer_keys`, `developer_usage` | `app/api/discovery/`, `lib/discovery/` |
+| 발견·개발자 API | `discovery_visits`, `developer_keys`, `developer_usage` | `app/api/discovery/`, `features/community/` |
 | 어시스트 | `assist_text_embeddings`, `assist_samples`, `assist_reports` | `app/api/assist/`, `features/assist/lib/` |
 
 - 표 57개 모두 RLS가 켜져 있다(2026-10-14 확인). 공개 읽기 정책이 없는 표는 서버의 service_role만 접근한다.
@@ -144,7 +144,7 @@ DB 백업(`2026-03-23/identities.json`, 저장소 밖 `limbus-db-backups/`에 �
 
 발견 목록의 ‘최근 수정’은 `updated_at` 대신 `deck_update`·`planner_update` 감사 기록으로 정한다. 최초 업로드와 조회·추천 집계는 편집으로 취급하지 않으며, 기존 게시물 중 편집 기록이 확인된 것만 표시한다. `discovery_recent_edits`는 서비스 전용이며 공개 API에는 게시물만 전달한다.
 
-발견 목록의 ‘자주 찾는’ 덱·플랜은 `discovery_counts`가 준 종류별 상위 12개 가운데 실제로 있는 글을 방문자 수 → 추천 수 → 최신 → id 순으로 정렬해 6개를 싣고, 같은 작성자(`user_id`, 익명은 `guest_tag`)의 글은 2개까지만 싣는다(`lib/discovery/shelf.ts`의 `rankPopular`). 게시판 선반과 홈 선반은 서버가 내려 준 순서를 그대로 쓴다.
+발견 목록의 ‘자주 찾는’ 덱·플랜은 `discovery_counts`가 준 종류별 상위 12개 가운데 실제로 있는 글을 방문자 수 → 추천 수 → 최신 → id 순으로 정렬해 6개를 싣고, 같은 작성자(`user_id`, 익명은 `guest_tag`)의 글은 2개까지만 싣는다(`features/community/lib/shelf.ts`의 `rankPopular`). 게시판 선반과 홈 선반은 서버가 내려 준 순서를 그대로 쓴다.
 
 ## 공지와 문의
 

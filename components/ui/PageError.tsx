@@ -3,7 +3,7 @@
 import DanteLogo from '@/components/brand/DanteLogo'
 import { useEffect } from 'react'
 import { useTranslations } from 'next-intl'
-import { discoverEgg } from '@/components/community/easterEggs'
+import { discoverEgg } from '@/components/brand/easter-eggs'
 import BackLink from '@/components/navigation/BackLink'
 import { useHtmlFlag } from '@/hooks/useHtmlFlag'
 import { Link } from '@/lib/i18n/navigation'

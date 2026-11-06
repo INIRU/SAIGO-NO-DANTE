@@ -2,7 +2,7 @@
 
 import { Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import { forgetPushSubscription } from '@/hooks/usePushSubscription'
-import { useTapEgg } from '@/components/community/easterEggs'
+import { useTapEgg } from '@/components/brand/easter-eggs'
 import { useSession, signOut } from 'next-auth/react'
 import { Menu, X, Search } from 'lucide-react'
 import { CalendarIcon } from '@/components/brand/icons'

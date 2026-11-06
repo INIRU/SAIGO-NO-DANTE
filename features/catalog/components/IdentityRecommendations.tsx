@@ -8,7 +8,7 @@ import PlanCard, { type PlanSummary } from '@/components/planner/PlanCard'
 import { RecommendationLane } from '@/components/deck-detail/DeckRecommendations'
 import { getLocalizedName } from '@/lib/i18n/localize'
 import type { SupportedLang } from '@/lib/i18n/types'
-import type { IdentityCompanion, IdentityPost } from '@/lib/discovery/identity-recommendations'
+import type { IdentityCompanion, IdentityPost } from '@/features/community/server'
 
 /** Identities fielded with this one, and the popular decks and plans that field it. Draws nothing when there are none. */
 export default function IdentityRecommendations({ companions, posts }: { companions: IdentityCompanion[]; posts: IdentityPost[] }) {
