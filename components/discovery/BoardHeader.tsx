@@ -1,5 +1,5 @@
 import { ArrowLeft, Play, Plus, SlidersHorizontal } from 'lucide-react'
-import NoteEditorGuide from '@/components/notes/NoteEditorGuide'
+import NoteEditorGuide from '@/features/notes/components/NoteEditorGuide'
 import { Link } from '@/lib/i18n/navigation'
 
 const press = 'active:scale-[0.97] motion-reduce:active:scale-100 transition-[transform,background-color,filter] duration-150 [transition-timing-function:cubic-bezier(0.23,1,0.32,1)]'

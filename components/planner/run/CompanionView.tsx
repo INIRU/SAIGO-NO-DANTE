@@ -24,8 +24,8 @@ import CompanionFormation from './CompanionFormation'
 import CompanionPlanMemo from './CompanionPlanMemo'
 import CompanionClearBonus from './CompanionClearBonus'
 import FusionGuideList from './FusionGuideList'
-import NotePreviewHost from '@/components/notes/NotePreviewCard'
-import { giftPreviewAsset } from '@/lib/notes/assets'
+import NotePreviewHost from '@/features/notes/components/NotePreviewCard'
+import { giftPreviewAsset } from '@/features/notes'
 
 /** What the window shows, already decided (lib/planner/pip-view, pip-tips): this component only draws it. */
 export interface PipView {

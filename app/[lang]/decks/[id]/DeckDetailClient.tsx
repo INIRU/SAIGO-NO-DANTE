@@ -37,7 +37,7 @@ import {
   type DeckKeywordSlot,
 } from '@/lib/decks/keyword-rules'
 import { NoteRenderer, fetchNoteGifts, type NoteSkillEntry, type NotePassiveEntry, type NoteEgoEntry, type NoteIdentityEntry } from '@/components/decks/NoteChips'
-import { NoteGiftClickContext } from '@/components/notes/NoteBlockViewer'
+import { NoteGiftClickContext } from '@/features/notes/components/NoteBlockViewer'
 import PlannerGiftModal from '@/components/planner/PlannerGiftModal'
 import type { GiftData } from '@/lib/planner/types'
 import KeywordIcon from '@/components/ui/KeywordIcon'
