@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { BLESSING_CONFIGS } from '@/components/planner/BlessingTab'
+import { BLESSING_CONFIGS } from '@/features/planner/components/BlessingTab'
 import { applyEvent, BLESSING_STARLIGHT_MAX, blessingFactor, START_FORMATION_POINTS, startPrescripts, penance, STREAK_BONUS, candidates, createPrescriptRun, endPrescriptRun, eventPrescript, eventRoomOptions, optionLeadingTo, visitShelf, feasible, missOffer, offer, resist, PRESCRIPT_REROLLS, prescriptPoints, receive, reroll, wanted, type PrescriptContext, type PrescriptRun } from '@/features/tools/lib/prescript'
 
 const gifts: Record<number, { keyword: string | null; tier: number | null }> = {

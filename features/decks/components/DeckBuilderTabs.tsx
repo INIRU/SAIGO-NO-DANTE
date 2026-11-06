@@ -26,7 +26,7 @@ import { useLocale, useTranslations } from 'next-intl'
 import type { SupportedLang } from '@/lib/i18n/types'
 import { getLocalizedName } from '@/lib/i18n/localize'
 import { DECK_MAIN_KEYWORDS } from '@/lib/decks/keyword-rules'
-import SkillExchangePanel from '@/components/planner/SkillExchangePanel'
+import SkillExchangePanel from '@/features/planner/components/SkillExchangePanel'
 import { DEPLOYED_SLOT_COUNT } from '@/lib/constants/game'
 import {
   PlannerEgoBoard,
@@ -36,7 +36,7 @@ import {
   type PlannerDeckEgo,
   type PlannerEgoBoardSlot,
   type PlannerIdentityBoardSlot,
-} from '@/components/planner/deck/PlannerDeckSelection'
+} from '@/features/planner/components/PlannerDeckSelection'
 
 const COMPACT_KOTRA_STYLE: CSSProperties = {
   fontFamily: 'var(--font-kotra-bold), var(--font-heading), serif',

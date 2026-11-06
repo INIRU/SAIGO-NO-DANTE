@@ -9,7 +9,7 @@ vi.mock('next-intl', () => ({ useTranslations: () => (key: string) => key }))
 vi.mock('@/lib/i18n/navigation', () => ({ Link: ({ children }: { children: React.ReactNode }) => <a>{children}</a> }))
 vi.mock('@/features/catalog/hooks/useOwnedIdentities', () => ({ useOwnedIdentities: () => null }))
 vi.mock('@/features/decks/components/DeckCard', () => ({ default: ({ deck }: { deck: { id: string } }) => <div data-card>{deck.id}</div> }))
-vi.mock('@/components/planner/PlanCard', () => ({ default: ({ plan }: { plan: { id: string } }) => <div data-card>{plan.id}</div> }))
+vi.mock('@/features/planner/components/PlanCard', () => ({ default: ({ plan }: { plan: { id: string } }) => <div data-card>{plan.id}</div> }))
 
 import ForYou from '@/features/community/components/ForYou'
 

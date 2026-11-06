@@ -11,7 +11,7 @@ import { GiftEnhanceMark, GiftEnhancePicker } from '@/features/mirror-dungeon/co
 import { EffectText } from '@/features/mirror-dungeon/components/GiftDetailModal'
 import KeywordChip from '@/components/ui/KeywordChip'
 import KeywordIcon from '@/components/ui/KeywordIcon'
-import FloorGiftPickerModal from '@/components/planner/FloorGiftPickerModal'
+import FloorGiftPickerModal from '@/features/planner/components/FloorGiftPickerModal'
 import { useKeywords } from '@/components/providers/KeywordProvider'
 import { getKeywordIconUrl } from '@/lib/constants/keywords'
 import { localizeGiftKeyword } from '@/lib/i18n/localize'

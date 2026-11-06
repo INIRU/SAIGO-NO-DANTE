@@ -16,8 +16,8 @@ import { useSuggestionState } from '@/features/community/hooks/useSuggestions'
 import { SuggestionGroupSkeleton, GiftGroupSkeleton, IdentityTileSkeleton } from '@/components/ui/SuggestionSkeleton'
 import { RecommendationLaneSkeleton, IdentityRecommendationsSkeleton } from '@/features/decks/components/RecommendationSkeleton'
 import { ThemePackPickerModal } from '@/components/ui/ThemePackModal'
-import { PlannerEgoSelectModal, PlannerIdentitySelectModal } from '@/components/planner/deck/PlannerDeckSelection'
-import FloorGiftPickerModal from '@/components/planner/FloorGiftPickerModal'
+import { PlannerEgoSelectModal, PlannerIdentitySelectModal } from '@/features/planner/components/PlannerDeckSelection'
+import FloorGiftPickerModal from '@/features/planner/components/FloorGiftPickerModal'
 
 const count = (html: string, needle: string) => html.split(needle).length - 1
 const sinner = { id: 'faust', name_kr: '파우스트' }

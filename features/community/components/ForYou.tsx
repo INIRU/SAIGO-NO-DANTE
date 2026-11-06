@@ -6,7 +6,7 @@ import { useTranslations } from "next-intl";
 import { ArrowRight } from "lucide-react";
 import { Link } from "@/lib/i18n/navigation";
 import DeckCard, { type DeckSummary } from "@/features/decks/components/DeckCard";
-import PlanCard, { type PlanSummary } from "@/components/planner/PlanCard";
+import PlanCard, { type PlanSummary } from "@/features/planner/components/PlanCard";
 import { SkeletonLine } from "@/components/ui/Skeleton";
 import { useOwnedIdentities } from "@/features/catalog/hooks/useOwnedIdentities";
 import { forYouPhase } from "@/features/community/lib/for-you-phase";

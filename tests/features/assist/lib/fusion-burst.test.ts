@@ -1,7 +1,7 @@
 import { expect, it } from 'vitest'
 import { acquisitionSeq, acquisitionsToRelease, ACQUISITION_ORDER_WAIT_MS, continuesFusionDialog, fusionForResult, fusionMaterialsToRemove,
   returnedMaterials } from '@/features/assist/lib/fusion-evidence'
-import { createInitialRunState, runReducer, type RunState } from '@/lib/planner/run-types'
+import { createInitialRunState, runReducer, type RunState } from '@/features/planner/lib/run-types'
 
 // Rapid fusions ("우다다다") in capture time (ms): each dialog is up ~0.6 s, its result popup follows at once and a blessing
 // returns material A in a second popup; the next dialog opens about a second later with the same 3/3.

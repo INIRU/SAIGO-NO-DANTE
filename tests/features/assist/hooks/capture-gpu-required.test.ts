@@ -29,7 +29,7 @@ it('explains the fix in a modal opened by connecting without WebGPU or by a capt
   expect(client).toContain("if (capture.gpu === 'failed') setGpuHelp(true)")
   expect(client).toContain('data-capture-gpu={capture.gpu}')
   expect(client).toContain('<GpuRequiredModal block={capture.gpu} open={gpuHelp}')
-  const modal = read('components/planner/run/GpuRequiredModal.tsx')
+  const modal = read('features/planner/components/GpuRequiredModal.tsx')
   expect(modal).toContain("import BaseModal from '@/components/ui/BaseModal'")
   for (const step of [1, 2, 3]) expect(modal).toContain(`<Callout step={${step}}`)
 })

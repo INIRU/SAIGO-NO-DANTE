@@ -5,7 +5,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { findOrCreateSupabaseUser } from '@/lib/supabase/findOrCreateUser'
 import { checkRequestRateLimit, rateLimitResponse } from '@/lib/rate-limit'
 import { isAllowedRequestOrigin } from '@/lib/request-origin'
-import { MAX_PRESET_GIFTS, MAX_PRESET_NAME, USER_SLOTS, isFinalGiftKey } from '@/lib/planner/final-presets'
+import { MAX_PRESET_GIFTS, MAX_PRESET_NAME, USER_SLOTS, isFinalGiftKey } from '@/features/planner'
 import { discoveryUserId } from '@/features/community/server'
 
 const headers = { 'Cache-Control': 'private, no-store' }

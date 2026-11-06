@@ -13,19 +13,17 @@ import { useQueryState, parseAsString } from 'nuqs'
 import { ArrowLeft, Copy, Upload, Check, Play } from 'lucide-react'
 import { createInitialState, type PlannerState, type PlannerTab, type ThemeData, type GiftData, type RecipeData, type IdentityData, type SinnerData, type PassiveData, type SkillSummary, type EgoData } from '@/lib/planner/types'
 import { buildGiftMap } from '@/lib/planner/fusion'
-import { encodePlan, isPlannerState, snapshotPlannerState, savePlanForRun, loadDraftFromLocal, clearDraftFromLocal, loadPlannerTempSlots, savePlannerTempSlot, deletePlannerTempSlot, type PlannerTempSlot } from '@/lib/planner/encoder'
+import { encodePlan, isPlannerState, snapshotPlannerState, savePlanForRun, loadDraftFromLocal, clearDraftFromLocal, loadPlannerTempSlots, savePlannerTempSlot, deletePlannerTempSlot, withLcbIdentitySlots, type PlannerTempSlot, type Observation } from '@/features/planner'
 import { enrichIdentitySlotsForGiftConditions } from '@/lib/planner/gift-condition-status'
-import { withLcbIdentitySlots } from '@/lib/planner/lcb'
-import { usePlannerStore } from '@/lib/stores/planner'
+import { usePlannerStore } from '@/features/planner/hooks/usePlannerStore'
 import { showSuccess, showError } from '@/lib/toast'
 import { guestHeaders, getGuestCopy, guestPinProblem } from '@/features/account'
 import GuestPinInput from '@/features/account/components/GuestPinInput'
-import DeckTab from '@/components/planner/DeckTab'
-import FloorTab from '@/components/planner/FloorTab'
-import PlanIntroEditor from '@/components/planner/PlanIntroEditor'
-import BlessingTab from '@/components/planner/BlessingTab'
-import GiftPlanTab from '@/components/planner/GiftPlanTab'
-import type { Observation } from '@/lib/planner/observation'
+import DeckTab from '@/features/planner/components/DeckTab'
+import FloorTab from '@/features/planner/components/FloorTab'
+import PlanIntroEditor from '@/features/planner/components/PlanIntroEditor'
+import BlessingTab from '@/features/planner/components/BlessingTab'
+import GiftPlanTab from '@/features/planner/components/GiftPlanTab'
 import TempSaveMenu from '@/components/ui/TempSaveMenu'
 import AutosaveRestoreModal from '@/components/ui/AutosaveRestoreModal'
 import { useAutosaveDraft } from '@/features/notes/hooks/useAutosaveDraft'
@@ -312,7 +310,7 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
     const params = new URLSearchParams(window.location.search)
     const planCode = params.get('plan') ?? params.get('p')
     if (planCode) {
-      import('@/lib/planner/encoder').then(async ({ decodePlan }) => {
+      import('@/features/planner').then(async ({ decodePlan }) => {
         try {
           const decoded = await decodePlan(planCode)
           // identity_ids → identitySlots로 복원
