@@ -30,6 +30,13 @@
   }
 }
 
+/* a phone-only banner (the page has only the side ads on a wide screen) */
+@media (min-width: 768px) {
+  .phoneOnly {
+    display: none;
+  }
+}
+
 /* Side margins: fixed below the navbar, 32px beside the page's measured content (AdSlot sets left / right), never over it.
    Only on screens tall enough for the whole ad. */
 .rail {
