@@ -388,7 +388,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
         source={literarySource}
       />
       {/* the tabs and cards rise from below under the hero */}
-      <div className={`${styles.content} max-w-[90rem] mx-auto mt-6 px-5 sm:mt-8 sm:px-8 relative`} style={{ zIndex: 1 }}>
+      <div className={`${styles.content} max-w-7xl mx-auto mt-6 px-5 sm:mt-8 sm:px-8 relative`} style={{ zIndex: 1 }}>
           {/* 우측: 탭 콘텐츠 */}
           <m.div
             className="min-w-0"

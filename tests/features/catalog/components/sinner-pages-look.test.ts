@@ -45,6 +45,12 @@ describe('REQ-CATALOG-032 sinner detail top', () => {
     expect(source).not.toMatch(/duration: shouldReduceMotion \? 0 : 0\.6/)
     expect(source).not.toMatch(/<StaggerReveal key=\{filtered/)
   })
+  it('REQ-CATALOG-032 keeps the page as wide as the other list pages (80rem), so a laptop has side margins', () => {
+    expect(source).toContain('max-w-7xl mx-auto')
+    expect(source).not.toContain('max-w-[90rem]')
+    expect(read('features/catalog/components/SinnerDetailSkeleton.tsx')).toContain('max-w-7xl')
+    expect(read('features/catalog/components/SinnerHero.module.css')).toMatch(/\.inner \{[^}]*max-width: 80rem/)
+  })
   it('REQ-CATALOG-032 identity cards fill the width at 7.5rem or more', () => {
     expect(read('styles/components/SinnerDetail.module.css')).toContain('grid-template-columns: repeat(auto-fill, minmax(7.5rem, 1fr))')
   })
