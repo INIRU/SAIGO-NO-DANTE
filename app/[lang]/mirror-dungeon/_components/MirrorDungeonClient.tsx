@@ -325,7 +325,7 @@ export default function MirrorDungeonClient({
     <div className={`min-h-screen px-4 pb-16 md:px-6 ${checkMode ? 'pt-1' : 'mx-auto max-w-7xl pt-[5.5rem]'}`}>
       {/* 헤더 + 탭 */}
       <div className={checkMode ? 'hidden' : 'mb-2'}>
-        <PageHeader title={lang === 'ko' ? '거울 던전' : lang === 'ja' ? 'ミラーダンジョン' : 'Mirror Dungeon'} description={tp('intro')} />
+        <PageHeader title={lang === 'ko' ? '거울 던전' : lang === 'ja' ? 'ミラーダンジョン' : 'Mirror Dungeon'} />
 
         {themes.length > 0 && (
           <div role="tablist" aria-label={tp('tabsLabel')} className="flex overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" style={{ borderBottom: '1px solid #2e2417' }}>

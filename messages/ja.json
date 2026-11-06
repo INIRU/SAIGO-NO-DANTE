@@ -2443,7 +2443,6 @@
     "subCoinPowerAdder": "マイナスコイン威力加算"
   },
   "mirrorDungeonPage": {
-    "intro": "階層を下りながら出会うE.G.Oギフト、テーマパック、選択肢をまとめて探せます。",
     "tabsLabel": "ミラーダンジョン図鑑の表示",
     "giftFilters": "ギフトフィルター",
     "themeFilters": "テーマパック検索と難易度",
