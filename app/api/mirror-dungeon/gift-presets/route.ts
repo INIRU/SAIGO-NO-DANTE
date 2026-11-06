@@ -6,8 +6,7 @@ import { findOrCreateSupabaseUser } from '@/lib/supabase/findOrCreateUser'
 import { checkRequestRateLimit, rateLimitResponse } from '@/lib/rate-limit'
 import { isAllowedRequestOrigin } from '@/lib/request-origin'
 import { discoveryUserId } from '@/lib/discovery/user-id'
-import { GIFT_PRESET_LIMIT } from '@/lib/mirror-dungeon/gift-presets'
-import { giftPresetBodySchema } from '@/lib/mirror-dungeon/gift-preset-code'
+import { GIFT_PRESET_LIMIT, giftPresetBodySchema } from '@/features/mirror-dungeon/server'
 
 const headers = { 'Cache-Control': 'private, no-store' }
 const slotSchema = z.coerce.number().int().min(1).max(GIFT_PRESET_LIMIT)

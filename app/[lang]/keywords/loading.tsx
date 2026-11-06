@@ -1,6 +1,6 @@
 import Skeleton, { SkeletonLine, SkeletonPage } from '@/components/ui/Skeleton'
 import { PageHeaderSkeleton } from '@/components/ui/PageHeader'
-import { KeywordGridSkeleton } from './KeywordGrid'
+import { KeywordGridSkeleton } from './_components/KeywordGrid'
 
 /** Mirrors KeywordsClient: header, sticky toolbar (category tabs + search row), card grid. */
 export default function Loading() {

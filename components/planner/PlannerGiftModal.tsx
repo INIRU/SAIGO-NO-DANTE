@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 import { giftConditionScope } from '@/lib/planner/gift-condition-status'
-import GiftDetailModal, { localizedGiftText, useGiftConditionText, type GiftDetailRecipePart } from '@/components/ui/GiftDetailModal'
+import GiftDetailModal, { localizedGiftText, useGiftConditionText, type GiftDetailRecipePart } from '@/features/mirror-dungeon/components/GiftDetailModal'
 import type { GiftData, ThemeData } from '@/lib/planner/types'
 import type { GiftConditionStatus } from '@/lib/planner/gift-condition-status'
 import type { SupportedLang } from '@/lib/i18n/types'

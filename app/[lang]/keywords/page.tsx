@@ -6,7 +6,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import { getGameTextRefNames } from '@/lib/db/game-text-refs'
 import { isMissingColumnError, keywordTextsFromRefs, loadKeywordRefTexts } from '@/lib/keywords/ref-text'
-import KeywordsClient from './KeywordsClient'
+import KeywordsClient from './_components/KeywordsClient'
 import StaticQueryAdapter from '@/components/providers/StaticQueryAdapter'
 import KeywordsLoading from './loading'
 

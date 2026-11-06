@@ -8,7 +8,7 @@ import { getTranslations } from 'next-intl/server'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import { normalizePlannerThemeId } from '@/lib/planner/types'
 import RunWrapper from './RunWrapper'
-import type { MdEvent, MdEventChoice } from '@/components/mirror-dungeon/types'
+import type { MdEvent, MdEventChoice } from '@/features/mirror-dungeon'
 import { withoutOtherLocales } from '@/lib/i18n/strip-locales'
 import { dropRepeatedTopUptie } from '@/lib/identity/skill-model'
 

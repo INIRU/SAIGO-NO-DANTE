@@ -1,0 +1,398 @@
+'use client'
+
+import { useMemo, useState, type ReactNode } from 'react'
+import Image from 'next/image'
+import QuietImage from '@/components/ui/QuietImage'
+import { X, ChevronLeft } from 'lucide-react'
+import { useTranslations } from 'next-intl'
+import BaseModal from '@/components/ui/BaseModal'
+import GiftArtwork, { type GiftArtworkGift } from '@/components/ui/GiftArtwork'
+import GiftCard, { GiftEnhanceMark, GiftEnhancePicker } from '@/features/mirror-dungeon/components/GiftCard'
+import { GiftConditionDivider } from '@/features/mirror-dungeon/components/GiftCondition'
+import { blurPlaceholder } from '@/lib/utils/thumbhash'
+import { useFormatSkillDesc } from '@/components/sinners/KeywordTooltip'
+import { getGiftKeywordColor, getGiftKeywordIconUrl, getGiftKeywordSlug } from '@/lib/constants/gift'
+import { getThemePackCompositeImageUrl, getThemePackVisualConfig } from '@/lib/data/theme-pack-visuals'
+import { getLocalizedAffiliation, getLocalizedName, localizeGiftKeyword } from '@/lib/i18n/localize'
+import type { SupportedLang } from '@/lib/i18n/types'
+import type { GiftConditionScope, GiftConditionStatus } from '@/lib/planner/gift-condition-status'
+import { gameTextToPlain, splitGameTextLines } from '@/lib/game-text/rich-text'
+import { createGiftRefSplitter, type GiftRefTarget } from '@/features/mirror-dungeon/lib/gift-refs'
+import { getGameUiAsset } from '@/lib/utils/game-ui'
+import { conditionLines } from '@/features/mirror-dungeon/lib/gift-condition-lines'
+import { PlaceholderGiftProvider, type PlaceholderGift } from '@/components/ui/PlaceholderLabel'
+
+const CREDIT_ICON = getGameUiAsset('resources/md-credit')
+
+function Credits({ value }: { value: number }) {
+  return (
+    <dd className="inline-flex items-center gap-1 tabular-nums" style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-title)', fontSize: '1.25rem', lineHeight: 1 }}>
+      <Image src={CREDIT_ICON} alt="" width={64} height={64} unoptimized className="size-[1.25rem]" />
+      {value}
+    </dd>
+  )
+}
+
+export { localizeGiftKeyword }
+
+export function localizedGiftText(lang: SupportedLang, ko: string | null | undefined, en?: string | null, ja?: string | null): string | null {
+  if (lang === 'en' && en) return en
+  if (lang === 'ja' && ja) return ja
+  return ko ?? null
+}
+
+type Condition = {
+  type: 'keyword' | 'multi_keyword' | 'affiliation' | 'skill'
+  keyword?: string
+  keywords?: string[]
+  affiliation?: string
+  affiliations?: string[]
+  skill_condition?: string
+  count?: number | null
+}
+
+/** One-line activation condition, e.g. "화상 인격 3인 이상". */
+export function useGiftConditionText(lang: SupportedLang) {
+  const t = useTranslations('giftDetail')
+  return (c: Condition | null | undefined): string | null => {
+    if (!c) return null
+    const count = c.count ?? 0
+    if (c.type === 'keyword' || c.type === 'multi_keyword') {
+      const keywords = (c.keywords ?? (c.keyword ? [c.keyword] : [])).map(k => localizeGiftKeyword(k, lang))
+      return t('conditionIdentity', { keywords: keywords.join('+'), count })
+    }
+    if (c.type === 'affiliation') {
+      const affiliations = (c.affiliations ?? (c.affiliation ? [c.affiliation] : [])).map(a => getLocalizedAffiliation(a, lang))
+      return t('conditionAffiliation', { affiliations: affiliations.join('/'), count })
+    }
+    return t('conditionSkill', { skill: c.skill_condition ?? '', count })
+  }
+}
+
+export interface GiftDetailTheme {
+  id: number | string
+  name: string
+  name_en?: string | null
+  name_jp?: string | null
+  image_url?: string | null
+  /** How this pack gives the gift beyond its random pool. */
+  tag?: 'exclusive' | 'reward'
+  onClick?: () => void
+}
+
+export interface GiftDetailRecipePart {
+  gift?: GiftArtworkGift
+  /** Pseudo ingredient such as "any 2 fragments". */
+  text?: string
+  onClick?: () => void
+}
+
+export interface GiftLinkTarget extends GiftRefTarget {
+  image_url?: string | null
+  /** Game id, so a {{gift:<id>}} placeholder in the effect text shows this gift. */
+  gameId?: number | null
+  onClick: () => void
+}
+
+export interface GiftDetailData {
+  name: string
+  art: GiftArtworkGift
+  /** Korean keyword key for the chip colour and icon. */
+  keyword?: string | null
+  badges?: { label: string; tone: 'gold' | 'red' | 'orange' | 'purple' }[]
+  /** Base, +, ++ effect text, already localized. */
+  effects: [string | null, string | null, string | null]
+  price?: number | null
+  buyDisabled?: boolean
+  condition?: string | null
+  /** The condition data, for its keyword or affiliation icons and steps. */
+  activation?: Condition & { tiers?: { count: number }[] | null; partial?: boolean } | null
+  /** The head count the condition reads (giftConditionScope). */
+  conditionScope?: GiftConditionScope | null
+  conditionStatus?: GiftConditionStatus | null
+  recipe?: { ingredients: GiftDetailRecipePart[]; result: GiftDetailRecipePart } | null
+  themes?: GiftDetailTheme[]
+  /** The gift sits in every listed pack's pool, so one line replaces the list. */
+  inAllThemes?: boolean
+  /** Other gifts that effect text may name (upgrade targets etc.), rendered as links. */
+  giftLinks?: { targets: GiftLinkTarget[]; selfId?: string | null; convertToId?: string | null } | null
+}
+
+const BADGE_TONES = { gold: '#e8b030', red: '#ec6a5e', orange: '#e89030', purple: '#c09ae0' } as const
+
+/** A titled block of the game info window: the title, a rule running to the edge (or to `aside`), then the content. */
+function Section({ title, aside, children }: { title: string; aside?: ReactNode; children: ReactNode }) {
+  return (
+    <section className="px-5 pb-4 sm:px-6">
+      <div className="mb-2 flex min-h-11 items-center gap-3">
+        <h3 className="shrink-0" style={{ fontFamily: 'var(--font-heading)', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>{title}</h3>
+        <span aria-hidden="true" className="h-px min-w-4 flex-1" style={{ background: 'var(--border)' }} />
+        {aside}
+      </div>
+      {children}
+    </section>
+  )
+}
+
+/** The game's yellow for what an enhancement changed: the + / ++ texts mark those runs `<style="upgradeHighlight">`. */
+const ENHANCE_CHANGE = { upgradeHighlight: '#f8c200' }
+
+/**
+ * gate: the gift has a head-count condition. The lines it decides follow its divider (`divider`: the lock and the
+ * condition across the text); the lines before it always apply. A condition no line states gets its divider first.
+ */
+export function EffectText({ text, color, links, gate }: { text: string; color: string; links?: GiftDetailData['giftLinks']; gate?: { partial: boolean; divider: (lines: ReactNode) => ReactNode } }) {
+  const formatSkillDesc = useFormatSkillDesc()
+  const split = useMemo(() => links?.targets.length ? createGiftRefSplitter(links.targets, links) : null, [links])
+  // {{gift:<game id>}} (a convert_to gift's target) shows that gift as a link.
+  const giftById = useMemo(() => {
+    const byId = new Map<number, PlaceholderGift>()
+    for (const target of links?.targets ?? []) if (target.gameId != null) byId.set(target.gameId, target)
+    return byId.size ? (gameId: number) => byId.get(gameId) : null
+  }, [links])
+  // Lines split so a tag spanning lines keeps applying; the bullet check reads the visible text, as a line may start with a tag.
+  const lines = splitGameTextLines(text).map(l => l.trim()).filter(Boolean)
+  const gated = new Set(gate ? conditionLines(lines.map(line => gameTextToPlain(line)), gate.partial)?.gated ?? [] : [])
+  const render = (line: string, lineColor: string) => split
+    ? split(line).map((part, i) => typeof part === 'string'
+      ? <span key={i}>{formatSkillDesc(part, lineColor, undefined, undefined, ENHANCE_CHANGE)}</span>
+      : <GiftLink key={i} target={part.gift as GiftLinkTarget} />)
+    : formatSkillDesc(line, lineColor, undefined, undefined, ENHANCE_CHANGE)
+  return (
+    <PlaceholderGiftProvider lookup={giftById}>
+      <div style={{ color: '#d8ccb4', fontSize: '0.875rem', lineHeight: 1.75 }}>
+        {gate && !gated.size && <div style={{ marginBottom: '0.5rem' }}>{gate.divider(null)}</div>}
+        {lines.map((line, i) => {
+          if (gated.has(i) && i !== Math.min(...gated)) return null
+          const paragraph = (index: number, first: boolean) => {
+            const isSub = /^-\s/.test(gameTextToPlain(lines[index]))
+            return (
+              <p key={index} style={isSub ? { paddingLeft: '0.875rem', textIndent: '-0.625rem', marginTop: '0.125rem' } : { marginTop: first ? 0 : '0.5rem' }}>
+                {render(lines[index], color)}
+              </p>
+            )
+          }
+          // The decided lines, together in the condition's box where the first of them stands.
+          if (gated.has(i)) return <div key={i} style={{ marginTop: i > 0 ? '0.75rem' : 0 }}>{gate!.divider([...gated].sort((x, y) => x - y).map((index, k) => paragraph(index, k === 0)))}</div>
+          return paragraph(i, i === 0)
+        })}
+      </div>
+    </PlaceholderGiftProvider>
+  )
+}
+
+function GiftLink({ target }: { target: GiftLinkTarget }) {
+  return (
+    <button
+      type="button"
+      onClick={target.onClick}
+      className="mx-0.5 inline-flex items-baseline gap-1 rounded-sm align-baseline underline decoration-[rgba(232,176,48,0.6)] underline-offset-[0.2em] transition-colors hover:text-[#ffd479] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold-light)]"
+      style={{ color: 'var(--gold-light)', textIndent: 0, cursor: 'pointer' }}
+    >
+      {target.image_url && <Image src={target.image_url} alt="" width={18} height={18} className="self-center" style={{ width: '1.125rem', height: '1.125rem', objectFit: 'contain' }} />}
+      {target.name}
+    </button>
+  )
+}
+
+function RecipeGift({ part, fragmentsLabel }: { part: GiftDetailRecipePart; fragmentsLabel: string }) {
+  if (!part.gift) {
+    return (
+      <span className="flex h-14 w-14 items-center justify-center rounded-sm border border-dashed px-1 text-center" style={{ borderColor: '#3a2e1e', color: '#9c8b73', fontSize: '0.6875rem', lineHeight: 1.3 }}>
+        {part.text ?? fragmentsLabel}
+      </span>
+    )
+  }
+  if (!part.onClick) {
+    return (
+      <span className="flex w-14 flex-col items-center">
+        <GiftArtwork gift={part.gift} displayName={part.gift.name} sizes="56px" />
+        <span className="mt-1 w-full truncate text-center" style={{ fontSize: '0.625rem', color: '#bfae92', fontFamily: 'var(--font-heading)' }}>{part.gift.name}</span>
+      </span>
+    )
+  }
+  return <GiftCard gift={part.gift} onClick={part.onClick} size="3.5rem" />
+}
+
+const Sign = ({ children }: { children: ReactNode }) => (
+  <span aria-hidden="true" className="flex h-14 items-center" style={{ color: 'var(--text-muted)', fontSize: '1rem' }}>{children}</span>
+)
+
+/** Gift detail layout shared by the Mirror Dungeon catalog and the planner. */
+export default function GiftDetailModal({ gift, lang, onClose, initialLevel = 0, onBack, backLabel }: {
+  gift: GiftDetailData
+  lang: SupportedLang
+  onClose: () => void
+  initialLevel?: number
+  /** Shown while viewing a recipe ingredient opened from another gift. */
+  onBack?: () => void
+  backLabel?: string
+}) {
+  const t = useTranslations('giftDetail')
+  const [base, plus, plusplus] = gift.effects
+  const maxLevel = plusplus ? 2 : plus ? 1 : 0
+  const [level, setLevel] = useState(Math.min(initialLevel, maxLevel))
+  const effect = [base, plus, plusplus][level] ?? base
+  const kwColor = getGiftKeywordColor(gift.keyword ?? null)
+  const kwSlug = getGiftKeywordSlug(gift.keyword ?? null)
+  const kwIcon = kwSlug ? getGiftKeywordIconUrl(kwSlug) : null
+  // Reward and exclusive packs come first; a long pool list shows six chips and a "+N" that expands.
+  const [showAllThemes, setShowAllThemes] = useState(false)
+  const themes = gift.themes ?? []
+  const visibleThemes = showAllThemes ? themes : themes.slice(0, Math.max(6, themes.filter(theme => theme.tag).length))
+  const hiddenThemeCount = themes.length - visibleThemes.length
+
+  return (
+    <BaseModal open={true} onClose={onClose} maxWidth="34rem" title={gift.name || t('title')} sheet>
+      <div
+        className="relative flex max-h-[88dvh] w-full flex-col overflow-hidden rounded-t-xl border sm:max-h-[85vh] sm:rounded-xl"
+        style={{ background: 'var(--bg-panel)', borderColor: 'var(--border)', boxShadow: '0 1.5rem 4rem rgba(0,0,0,0.6)' }}
+      >
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label={t('close')}
+          className="absolute right-2 top-2 z-20 inline-flex h-11 w-11 items-center justify-center rounded-full transition-colors hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold-light)]"
+          style={{ color: '#9c8b73' }}
+        >
+          <X size={18} aria-hidden="true" />
+        </button>
+
+        <div className="overflow-y-auto overscroll-contain" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+          {onBack && (
+            <button
+              type="button"
+              onClick={onBack}
+              className="ml-3 mt-3 inline-flex min-h-9 items-center gap-1 rounded px-2 transition-colors hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold-light)]"
+              style={{ color: '#bfae92', fontSize: '0.8125rem' }}
+            >
+              <ChevronLeft size={16} aria-hidden="true" />
+              {backLabel}
+            </button>
+          )}
+
+          {/* Like the game's gift panel: the slot leads, the price sits under it as in the shop, the name and a terse stat line beside it. */}
+          <header className="flex items-center gap-4 px-5 pb-3 pr-14 pt-5 sm:gap-5 sm:px-6 sm:pt-6">
+            <div className="w-[6rem] shrink-0 sm:w-[8rem]">
+              <GiftArtwork gift={gift.art} displayName={gift.name} enhance={level} sizes="128px">
+                {level > 0 && <GiftEnhanceMark level={level} />}
+              </GiftArtwork>
+              {(gift.price != null || gift.buyDisabled) && (
+                <dl className="mt-1.5 flex justify-center">
+                  <dt className="sr-only">{t('price')}</dt>
+                  {gift.buyDisabled
+                    ? <dd style={{ color: 'var(--error-text)', fontSize: '0.8125rem', fontFamily: 'var(--font-heading)' }}>{t('notForSale')}</dd>
+                    : gift.price != null && <Credits value={gift.price} />}
+                </dl>
+              )}
+            </div>
+            <div className="min-w-0 flex-1">
+              <h2 className="text-balance" style={{ fontFamily: 'var(--font-heading)', fontSize: '1.375rem', lineHeight: 1.3, color: 'var(--text-primary)' }}>
+                {gift.name}
+              </h2>
+              {(gift.keyword || gift.badges?.length) && (
+                <p className="mt-2 flex flex-wrap items-center gap-y-1 divide-x divide-[var(--border)] [&>span]:px-2.5 [&>span:first-child]:pl-0" style={{ fontFamily: 'var(--font-heading)', fontSize: '0.875rem', lineHeight: 1.2 }}>
+                  {gift.keyword && (
+                    <span className="inline-flex items-center gap-1" style={{ color: kwColor }}>
+                      {kwIcon && <Image src={kwIcon} alt="" width={18} height={18} className="size-[1.125rem] object-contain" />}
+                      {localizeGiftKeyword(gift.keyword, lang)}
+                    </span>
+                  )}
+                  {gift.badges?.map(b => <span key={b.label} style={{ color: BADGE_TONES[b.tone] }}>{b.label}</span>)}
+                </p>
+              )}
+            </div>
+          </header>
+
+          {/* With no effect text to follow it, the condition's divider shows on its own. */}
+          {gift.condition && !effect && <div className="px-5 pb-4 sm:px-6"><GiftConditionDivider text={gift.condition} condition={gift.activation} scope={gift.conditionScope} status={gift.conditionStatus} /></div>}
+
+          {effect && (
+            <Section
+              title={t('effect')}
+              aside={maxLevel > 0 && <div className="-my-2 -mr-1 shrink-0"><GiftEnhancePicker level={level} max={maxLevel as 1 | 2} giftName={gift.name} onChange={setLevel} bare /></div>}
+            >
+              <div style={{ fontFamily: 'var(--font-game-text)' }}>
+                <EffectText key={level} text={effect} color="#c8b898" links={gift.giftLinks}
+                  gate={gift.condition ? { partial: !!gift.activation?.partial, divider: lines => (
+                    <GiftConditionDivider text={gift.condition!} condition={gift.activation} scope={gift.conditionScope} status={gift.conditionStatus}>{lines}</GiftConditionDivider>
+                  ) } : undefined} />
+              </div>
+            </Section>
+          )}
+
+          {gift.recipe && (
+            <Section title={t('recipe')}>
+              <div className="flex flex-wrap items-start gap-x-2 gap-y-2">
+                {gift.recipe.ingredients.map((part, i) => (
+                  <span key={i} className="flex items-start gap-2">
+                    {i > 0 && <Sign>+</Sign>}
+                    <RecipeGift part={part} fragmentsLabel={t('recipeFragments')} />
+                  </span>
+                ))}
+                <Sign>=</Sign>
+                <RecipeGift part={gift.recipe.result} fragmentsLabel={t('recipeFragments')} />
+              </div>
+            </Section>
+          )}
+
+          {gift.inAllThemes ? (
+            <Section title={t('themes')}>
+              <p style={{ fontSize: '0.875rem', color: '#d8ccb4' }}>{t('allThemes')}</p>
+            </Section>
+          ) : themes.length > 0 && (
+            <Section title={t('themes')} aside={<span className="tabular-nums" style={{ fontFamily: 'var(--font-title)', fontSize: '1.125rem', color: 'var(--text-muted)' }}>{themes.length}</span>}>
+              <ul className="flex flex-wrap gap-1.5">
+                {visibleThemes.map(theme => <ThemeChip key={theme.id} theme={theme} lang={lang} tagLabel={theme.tag === 'reward' ? t('clearReward') : theme.tag === 'exclusive' ? t('exclusive') : null} />)}
+                {hiddenThemeCount > 0 && (
+                  <li>
+                    <button
+                      type="button"
+                      onClick={() => setShowAllThemes(true)}
+                      aria-label={t('showAllThemes', { count: themes.length })}
+                      className="inline-flex h-11 min-w-11 items-center justify-center rounded-sm border px-3 tabular-nums transition-colors hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold-light)] sm:h-9"
+                      style={{ borderColor: 'var(--border)', color: 'var(--gold-light)', fontFamily: 'var(--font-title)', fontSize: '1.0625rem' }}
+                    >
+                      +{hiddenThemeCount}
+                    </button>
+                  </li>
+                )}
+              </ul>
+            </Section>
+          )}
+
+          <div className="h-2 sm:h-1" />
+        </div>
+      </div>
+    </BaseModal>
+  )
+}
+
+function ThemeChip({ theme, lang, tagLabel }: { theme: GiftDetailTheme; lang: SupportedLang; tagLabel: string | null }) {
+  const id = Number(theme.id)
+  const src = getThemePackVisualConfig(id) ? getThemePackCompositeImageUrl(id) : theme.image_url
+  const name = getLocalizedName({ name_kr: theme.name, name_en: theme.name_en, name_jp: theme.name_jp }, lang)
+  const tagColor = theme.tag === 'reward' ? '#e06a5a' : '#e8b030'
+  const body = (
+    <>
+      {src && (
+        <span className="relative h-full shrink-0 overflow-hidden" style={{ aspectRatio: '416/684' }}>
+          <QuietImage src={src} alt="" fill sizes="28px" className="object-cover" {...blurPlaceholder(src)} />
+        </span>
+      )}
+      <span className="truncate" style={{ color: '#d8ccb4' }}>{name}</span>
+      {tagLabel && <span className="shrink-0" style={{ color: tagColor, fontSize: '0.6875rem', fontFamily: 'var(--font-heading)' }}>{tagLabel}</span>}
+    </>
+  )
+  const className = `inline-flex h-11 max-w-[15rem] items-center gap-2 overflow-hidden rounded-sm border pr-3 sm:h-9${src ? '' : ' pl-3'}`
+  const style = { borderColor: theme.tag ? (theme.tag === 'reward' ? 'rgba(155,44,35,0.7)' : 'rgba(200,144,10,0.4)') : '#2e2417', background: '#0d0b08', fontSize: '0.8125rem' }
+  return (
+    <li>
+      {theme.onClick ? (
+        <button type="button" onClick={theme.onClick} className={className + ' transition-colors hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold-light)]'} style={{ ...style, cursor: 'pointer' }}>
+          {body}
+        </button>
+      ) : <span className={className} style={style}>{body}</span>}
+    </li>
+  )
+}

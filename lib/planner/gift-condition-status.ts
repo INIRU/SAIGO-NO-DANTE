@@ -6,7 +6,7 @@ import { isDeployedSlot } from '@/lib/constants/game'
 /**
  * A gift whose activation condition the formation does not meet. warn: the deployed identities (slots 1-7) fall short
  * but the bench makes up the rest; unmet: short even with the bench. Subjects are the condition's keywords or
- * affiliations in Korean; components/ui/GiftCondition.tsx turns them into the page language.
+ * affiliations in Korean; features/mirror-dungeon/components/GiftCondition.tsx turns them into the page language.
  */
 export type GiftConditionStatus = {
   level: 'warn' | 'unmet'
