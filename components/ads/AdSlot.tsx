@@ -82,12 +82,15 @@ function useRailOffset(place: Place, pathname: string | null): number | null | u
 }
 
 /**
- * A side ad stays between the page's top and its footer: it starts below a full-bleed backdrop (`data-ad-rail-below`, e.g. a
- * sinner's hero art) instead of over it and rises with the page to its usual place under the navbar (RAIL_TOP); at the end of
- * the page it stops GAP above the footer and scrolls up with it, never over it (owner, 2026-11-06). Written straight to the
- * element on scroll, so scrolling does not re-render the ad.
+ * Where a side ad stands vertically. AdSense allows one sticky ad visible at a time (support.google.com/adsense/answer/10734935),
+ * so only the right one is sticky; the left one scrolls with the page.
+ * - Sticky (right): starts below a full-bleed backdrop (`data-ad-rail-below`, e.g. a sinner's hero art) and rises with the page
+ *   to its place under the navbar (RAIL_TOP); at the end of the page it stops GAP above the footer and scrolls up with it.
+ * - Scrolling (left): stands at the top of the page (below the backdrop when there is one); on a page too short to hold it
+ *   above the footer it is hidden (`data-short`) rather than running into the footer.
+ * Written straight to the element on scroll and resize, so neither re-renders the ad.
  */
-function useRailTop(rail: boolean) {
+function useRailTop(rail: boolean, sticky: boolean) {
   const ref = useRef<HTMLElement>(null)
   useEffect(() => {
     if (!rail) return
@@ -98,9 +101,17 @@ function useRailTop(rail: boolean) {
       if (!ad) return
       const backdrop = document.querySelector('[data-ad-rail-below]')
       const footer = document.querySelector('.site-footer')
-      const top = backdrop ? Math.max(RAIL_TOP, backdrop.getBoundingClientRect().bottom + GAP) : RAIL_TOP
-      const floor = footer ? footer.getBoundingClientRect().top - GAP - ad.offsetHeight : Infinity
-      ad.style.top = `${Math.min(top, floor)}px`
+      const below = backdrop ? backdrop.getBoundingClientRect().bottom + GAP : -Infinity
+      const footerTop = footer ? footer.getBoundingClientRect().top : Infinity
+      if (sticky) {
+        ad.style.top = `${Math.min(Math.max(RAIL_TOP, below), footerTop - GAP - ad.offsetHeight)}px`
+        return
+      }
+      // page coordinates, against the element the absolute ad is placed in
+      const page = scrollY, base = ad.offsetParent ? ad.offsetParent.getBoundingClientRect().top + page : 0
+      const top = Math.max(RAIL_TOP, below + page)
+      ad.style.top = `${top - base}px`
+      ad.toggleAttribute('data-short', top + ad.offsetHeight > footerTop + page - GAP)
     }
     const schedule = () => { if (!frame) frame = requestAnimationFrame(place) }
     place()
@@ -130,7 +141,8 @@ export default function AdSlot({ slot: unitSlot, place, phoneOnly = false }: {
   const pathname = usePathname()
   const offset = useRailOffset(place, pathname)
   const rail = place === 'left' || place === 'right'
-  const railRef = useRailTop(rail && offset != null)
+  const sticky = place === 'right'
+  const railRef = useRailTop(rail && offset != null, sticky)
   const slot = unitSlot === undefined ? ADSENSE_SLOTS[rail ? 'rail' : place] : unitSlot
   // Each side ad tells the page whether it stands ("on") or found no room ("off"): the page-start banner gives way to a side ad
   // and shows when neither fits, e.g. after the window narrows (owner, 2026-11-06). AdSlot.module.css reads the flags.
@@ -142,16 +154,20 @@ export default function AdSlot({ slot: unitSlot, place, phoneOnly = false }: {
   }, [rail, place, offset])
   // the skill motion player is ad-free and hides page ads, but owns one ad in its side panel
   if (!pathname || (place !== 'panel' && isAdFreePath(pathname))) return null
-  if (rail && offset == null) return null
-  const box = `${rail ? styles.rail : place === 'top' ? styles.top : place === 'panel' ? styles.panel : styles.inline}${phoneOnly ? ` ${styles.phoneOnly}` : ''}`
-  const position = rail ? ({ [place]: `${offset}px` } as CSSProperties) : undefined
+  // The home hero is full width: no side ads there. Elsewhere a side ad stays in the page while it has no room (hidden, not
+  // removed), so the ad it already holds comes back when the window widens; removing it and asking AdSense again after a
+  // resize comes back unfilled (owner, 2026-11-07). Hidden, its unit has no width and asks for nothing until it shows.
+  if (rail && /^\/(?:ko|en|ja)\/?$/.test(pathname)) return null
+  const off = rail && offset == null
+  const box = `${rail ? `${styles.rail}${sticky ? '' : ` ${styles.railScroll}`}` : place === 'top' ? styles.top : place === 'panel' ? styles.panel : styles.inline}${phoneOnly ? ` ${styles.phoneOnly}` : ''}`
+  const position = rail ? ({ [place]: `${offset ?? EDGE}px` } as CSSProperties) : undefined
   const unit = rail ? styles.railUnit : place === 'panel' ? styles.panelUnit : styles.topUnit
   const kind = place === 'panel' ? '' : 'site-ad '
   const preview = process.env.NODE_ENV === 'development' || process.env.NEXT_PUBLIC_AD_PREVIEW === '1'
-  if (preview) return <aside ref={rail ? railRef : undefined} className={`${kind}${box}`} style={position}><div className={`${unit} ${styles.preview}`}>AD</div></aside>
+  if (preview) return <aside ref={rail ? railRef : undefined} data-off={off || undefined} className={`${kind}${box}`} style={position}><div className={`${unit} ${styles.preview}`}>AD</div></aside>
   if (!slot) return null
   return (
-    <aside ref={rail ? railRef : undefined} className={`${kind}${box}`} style={position}>
+    <aside ref={rail ? railRef : undefined} data-off={off || undefined} className={`${kind}${box}`} style={position}>
       <Unit key={pathname} slot={slot} className={unit} />
     </aside>
   )
