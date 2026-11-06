@@ -11,7 +11,7 @@ vi.mock('next-intl', () => ({
 vi.mock('next/image', () => ({ default: ({ src, alt }: { src: string; alt: string }) => <img src={src} alt={alt} /> }))
 vi.mock('@/lib/i18n/navigation', () => ({ Link: ({ href, children, ...rest }: { href: string; children: React.ReactNode }) => <a href={href} {...rest}>{children}</a> }))
 
-import AnnouncementList from '@/components/announcements/AnnouncementList'
+import AnnouncementList from '@/features/admin/components/AnnouncementList'
 import AnnouncementBanner from '@/components/home/AnnouncementBanner'
 import type { AnnouncementPreview } from '@/lib/announcements'
 
@@ -19,7 +19,7 @@ const item = (id: string, extra: Partial<AnnouncementPreview> = {}): Announcemen
   id, title: `제목 ${id}`, created_at: '2026-10-21T09:00:00Z', pinned: false, cover: null, excerpt: `앞부분 ${id}`, ...extra,
 })
 const labels = { pinned: 'announcements.pinned', readMore: 'announcements.readMore', empty: 'announcements.empty' }
-const source = (path: string) => readFileSync(resolve(__dirname, '../../..', path), 'utf8')
+const source = (path: string) => readFileSync(resolve(__dirname, '../../../..', path), 'utf8')
 
 describe('announcement list', () => {
   it('REQ-ADMIN-011 features the first announcement with its cover and links every row to its own page', () => {
@@ -65,16 +65,16 @@ describe('home announcement', () => {
 
 describe('popup announcement', () => {
   it('REQ-ADMIN-013 sends only the preview to the page, not the document', () => {
-    const popup = source('components/announcements/AnnouncementPopup.tsx')
+    const popup = source('features/admin/components/AnnouncementPopup.tsx')
     expect(popup).toContain('announcementPreview')
     expect(popup).not.toContain('content_doc')
-    const dialog = source('components/announcements/AnnouncementPopupDialog.tsx')
+    const dialog = source('features/admin/components/AnnouncementPopupDialog.tsx')
     expect(dialog).toContain('sheet')
     expect(dialog).toContain('/announcements/${announcement.id}')
   })
 
   it('REQ-ADMIN-015 fetches the cover at once and first, being the largest picture of the page when it opens', () => {
-    const cover = source('components/announcements/AnnouncementPopupDialog.tsx').match(/<QuietImage src=\{announcement\.cover\}[^>]*\/>/)?.[0]
+    const cover = source('features/admin/components/AnnouncementPopupDialog.tsx').match(/<QuietImage src=\{announcement\.cover\}[^>]*\/>/)?.[0]
     expect(cover).toContain('loading="eager"')
     expect(cover).toContain('fetchPriority="high"')
   })
