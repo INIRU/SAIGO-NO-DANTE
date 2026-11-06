@@ -18,6 +18,9 @@ describe('REQ-CATALOG-031 the sinner lineup', () => {
 
   it('REQ-CATALOG-031 the number plate is pinned to the left and drops in after its column', () => {
     expect(lineup).toMatch(/\.plate \{ top: \.5rem; bottom: auto; left: \.5rem;/)
+    // a fixed size: when another column widens and this one narrows, the column's edge covers the plate instead of resizing it
+    expect(lineup).toMatch(/\.plate \{ top: \.5rem; bottom: auto; left: \.5rem; width: 4\.25rem; height: auto; \}/)
+    expect(lineup).not.toMatch(/\.plate \{[^}]*max-width/)
     expect(lineup).toMatch(/@keyframes plate-in/)
   })
 
