@@ -19,7 +19,7 @@ import IdentitySkillFrameCard from '@/components/identity/IdentitySkillFrameCard
 import { PassiveNoteRow } from '@/components/passive/PassiveEffect'
 import { MultipliedCount } from '@/components/passive/PassiveParts'
 import { passiveRequirements } from '@/lib/planner/passives'
-import GiftCard from '@/components/ui/GiftCard'
+import GiftCard from '@/features/mirror-dungeon/components/GiftCard'
 import type { GiftConditionStatus } from '@/lib/planner/gift-condition-status'
 import { useFormatGameText, useFormatSkillDesc, useKeywords, useKeywordData, useKeywordDescription, type KeywordInfo } from '@/components/providers/KeywordProvider'
 import {

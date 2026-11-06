@@ -1,11 +1,10 @@
 'use client'
 
 import { useLocale, useTranslations } from 'next-intl'
-import type { MdEvent, MdEventChoice, ChoiceEffect } from '@/components/mirror-dungeon/types'
 import type { GiftData } from '@/lib/planner/types'
 import type { SupportedLang } from '@/lib/i18n/types'
 import { getLocalizedName } from '@/lib/i18n/localize'
-import { groupEventChoices, eventResultCondition } from '@/lib/utils/event-flow'
+import { groupEventChoices, eventResultCondition, type ChoiceEffect, type MdEvent, type MdEventChoice } from '@/features/mirror-dungeon'
 import { eventTitle } from '@/lib/utils/event-catalog'
 import { getEventOutcomes, type EventOutcomeKind } from '@/lib/utils/event-outcomes'
 import { SIN_COLORS } from '@/lib/constants/sin'

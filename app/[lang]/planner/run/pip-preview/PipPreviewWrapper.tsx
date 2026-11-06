@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react'
 import CompanionView, { type PipActions, type PipView } from '@/components/planner/run/CompanionView'
 import { giftBadges } from '@/lib/planner/pip-view'
 import type { GiftData, ThemeData } from '@/lib/planner/types'
-import type { MdEvent, MdEventChoice } from '@/components/mirror-dungeon/types'
+import type { MdEvent, MdEventChoice } from '@/features/mirror-dungeon'
 
 /** The window sizes the preview draws each view at: the smallest the PiP allows, its default, a tall one and a wide one. */
 const SIZES = [

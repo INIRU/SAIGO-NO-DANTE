@@ -108,8 +108,8 @@
 | 6×2 편성 보드 | `components/decks/FormationBoard.tsx`, 편집은 `components/planner/deck/PlannerDeckSelection.tsx` |
 | 키워드 분포, 패시브, 공격 유형, 죄악 자원 | `components/deck-analysis/DeckInsights.tsx`, `DeckResourceSummary.tsx` |
 | 스킬 분포(교환) | `components/planner/SkillExchangePanel.tsx` |
-| 기프트 카드, 아트, 등급 | `components/ui/GiftCard.tsx`, `GiftArtwork.tsx`, `GiftGrade.tsx` |
-| 기프트 목록(키워드 탭, 등급 칩, 검색) | `components/gifts/GiftCatalog.tsx` |
+| 기프트 카드, 아트, 등급 | `features/mirror-dungeon/components/GiftCard.tsx`, `GiftArtwork.tsx`, `GiftGrade.tsx` |
+| 기프트 목록(키워드 탭, 등급 칩, 검색) | `features/mirror-dungeon/components/GiftCatalog.tsx` |
 | 테마팩 카드 | `components/ui/ThemePackCard.tsx` |
 | 게시판 필터 칸(구역 제목, 글자 선택 버튼, 아이콘 타일, 고른 항목 줄, 입력 칸) | `components/board/FilterControls.tsx` |
 | 인격·E.G.O 고르는 창의 왼쪽 필터(이름 검색, 등급, 수감자) | `components/ui/CharacterPickerFilters.tsx` |

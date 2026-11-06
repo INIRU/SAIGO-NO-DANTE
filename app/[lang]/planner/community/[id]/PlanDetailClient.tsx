@@ -33,14 +33,14 @@ import { computeDifficultySummary, planDifficultyBadge } from '@/lib/planner/str
 import { showError, showSuccess } from '@/lib/toast'
 import RelativeTime from '@/components/ui/RelativeTime'
 const PlannerGiftModal = dynamic(() => import('@/components/planner/PlannerGiftModal'), { ssr: false })
-const loadEventModal = () => import('@/components/mirror-dungeon/EventModal')
+const loadEventModal = () => import('@/features/mirror-dungeon/components/EventModal')
 const EventModal = dynamic(loadEventModal, { ssr: false })
-import type { MdEvent, MdEventChoice, EgoGift, EgoGiftTheme } from '@/components/mirror-dungeon/types'
+import type { MdEvent, MdEventChoice, EgoGift, EgoGiftTheme } from '@/features/mirror-dungeon'
 import PlanActions from '@/components/planner/PlanActions'
 import PlanComments from '@/components/planner/PlanComments'
 import PlanDeckTabs from '@/components/planner/PlanDeckTabs'
 import FloorPlanPreviewBoard from '@/components/planner/FloorPlanPreviewBoard'
-import GiftCard from '@/components/ui/GiftCard'
+import GiftCard from '@/features/mirror-dungeon/components/GiftCard'
 import KeywordIcon from '@/components/ui/KeywordIcon'
 import { localizeDeckKeyword } from '@/components/decks/decks-types'
 import { STORAGE_BASE, DEFAULT_AVATAR_URL, DEPLOYED_SLOT_COUNT } from '@/lib/constants/game'
