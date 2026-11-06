@@ -1,10 +1,10 @@
 // ── Supabase Storage 기본 URL ─────────────────────────────────────────────
 export const STORAGE_BASE = 'https://lpgqcleszdlldneiwgep.supabase.co/storage/v1/object/public/limbus-assets'
 
-/** Current identity level cap. Raise it here when the game raises it (and extend LEVEL_COSTS in lib/tools/experience.ts). */
 /**
- * Identities that fight in a formation (SELECTED 1–7); the rest of the 12 are BACKUP. If the game changes the
- * formation size (e.g. to 8), change only this: slot checks, banners and the keyword chart all read it.
+ * Most identities deployed to battle (SELECTED 1–7). The rest of a formation is BACKUP: when a deployed one retreats
+ * or dies, the backup ones step in in their order; an identity left out of the formation does not fight. If the game
+ * changes the battle size (e.g. to 8), change only this: slot checks and banners read it.
  */
 export const DEPLOYED_SLOT_COUNT = 7
 
@@ -13,6 +13,7 @@ export function isDeployedSlot(slotOrder: number | null | undefined): boolean {
   return typeof slotOrder === 'number' && slotOrder >= 0 && slotOrder < DEPLOYED_SLOT_COUNT
 }
 
+/** Current identity level cap; it rises with the seasons. Raise it here (and extend LEVEL_COSTS in lib/tools/experience.ts). */
 export const MAX_IDENTITY_LEVEL = 65
 /** Synced defense and offense levels are stored at level 60 (60 + the game's correction). */
 export const IDENTITY_STAT_BASE_LEVEL = 60
