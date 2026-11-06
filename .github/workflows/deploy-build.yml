@@ -1,4 +1,4 @@
-# Builds the production app for the self-hosted server (docs/deployment.md). The server downloads site.tgz for the commit
+# Builds the production app for the self-hosted server (docs/guides/deployment.md). The server downloads site.tgz for the commit
 # main points at (deploy/server/fetch-build.sh) and only swaps it in: building next to the live app on a 4GB box ran it
 # out of memory (2026-10-22).
 name: Deploy build
