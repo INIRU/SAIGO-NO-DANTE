@@ -7,7 +7,7 @@ import { readAllMetaRows } from '@/lib/meta/pagination'
 import { getGameTextRefNamesOrNull } from '@/lib/db/game-text-refs'
 import { skillSlot } from '@/lib/identity/skill-model'
 import type { SupportedLang } from '@/lib/i18n/types'
-import { MOTION_INDEX_URL, motionCatalogFrom, type MotionEgoInfo, type MotionEntry, type MotionSinner, type MotionSiteData, type MotionSkillFrame } from '@/lib/motion/catalog'
+import { MOTION_INDEX_URL, motionCatalogFrom, type MotionEgoInfo, type MotionEntry, type MotionSinner, type MotionSiteData, type MotionSkillFrame } from '@/features/motion/lib/catalog'
 
 /** The R2 `index.json` (about 0.9 MB) for the sitemap and skill metadata: read once per ten minutes, never copied into the database. */
 async function loadMotionIndex(): Promise<MotionEntry[]> {

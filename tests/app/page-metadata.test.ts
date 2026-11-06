@@ -27,7 +27,7 @@ for (const screen of [
   '@/app/[lang]/sinners/identities/IdentityBrowserClient', '@/app/[lang]/sinners/ego/EGOBrowserClient', '@/app/[lang]/random/RandomClient',
   '@/app/[lang]/collection/CollectionClient', '@/app/[lang]/friends/_components/FriendsClient', '@/app/[lang]/announcements/AnnouncementsClient',
   '@/app/[lang]/developers/DeveloperConsole', '@/components/tools/ExperienceCalculator', '@/components/tools/LunacyCalendar',
-  '@/components/tools/DamageCalculator', '@/components/motion/MotionBrowser', '@/features/news/components/NewsCalendar', '@/components/support/SupportDesk', '@/components/support/SupportSkeleton',
+  '@/components/tools/DamageCalculator', '@/features/motion/components/MotionBrowser', '@/features/news/components/NewsCalendar', '@/components/support/SupportDesk', '@/components/support/SupportSkeleton',
   '@/features/friends/components/FriendsSkeleton', '@/components/planner/PlannerSkeleton', '@/components/mirror-dungeon/MirrorDungeonSkeleton',
   '@/components/sinners/BrowserSkeleton', '@/components/sinners/SinnerLineup', '@/components/discovery/BoardHeader', '@/components/discovery/BoardSkeleton',
   '@/components/providers/StaticQueryAdapter', '@/components/layout/RequestTimeRoute', '@/components/legal/LegalDocument', '@/components/ui/PageHeader',

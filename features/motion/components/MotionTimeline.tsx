@@ -1,7 +1,7 @@
 'use client'
 
 import { memo } from 'react'
-import { useMotionFrame, type MotionChapter, type MotionFrameStore, type MotionMark } from '@/hooks/useSkillMotion'
+import { useMotionFrame, type MotionChapter, type MotionFrameStore, type MotionMark } from '@/features/motion/hooks/useSkillMotion'
 
 /** The track's pieces: one per chapter, the first reaching back to frame 0; the whole track without chapters. */
 export function chapterSpans(chapters: readonly MotionChapter[], frames: number): { from: number; to: number }[] {

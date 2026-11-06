@@ -3,7 +3,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 
 vi.mock('next-intl', () => ({ useTranslations: () => (key: string) => key }))
 
-import MotionStage, { MotionPendingStage } from '@/components/motion/MotionStage'
+import MotionStage, { MotionPendingStage } from '@/features/motion/components/MotionStage'
 
 const store = { subscribe: () => () => {}, get: () => 0 }
 const stage = (props: Partial<Parameters<typeof MotionStage>[0]> = {}) => renderToStaticMarkup(

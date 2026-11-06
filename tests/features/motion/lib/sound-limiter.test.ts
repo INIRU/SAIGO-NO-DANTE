@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 
-// The worklet the player loads (lib/motion/sounds.ts LIMITER_URL).
+// The worklet the player loads (features/motion/lib/sounds.ts LIMITER_URL).
 const LIMITER = readFileSync(join(process.cwd(), 'public/motion-sfx-limiter.js'), 'utf8')
 
 type Proc = { process: (i: Float32Array[][], o: Float32Array[][], p: Record<string, number[]>) => boolean }

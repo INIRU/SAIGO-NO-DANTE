@@ -1,5 +1,5 @@
 import { PageHeaderSkeleton } from '@/components/ui/PageHeader'
-import { MotionBrowserSkeleton } from '@/components/motion/SkillMotionSkeleton'
+import { MotionBrowserSkeleton } from '@/features/motion/components/SkillMotionSkeleton'
 
 export default function Loading() {
   return (
