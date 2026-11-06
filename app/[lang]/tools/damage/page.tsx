@@ -1,4 +1,4 @@
-import DamageCalculator from '@/components/tools/DamageCalculator'
+import DamageCalculator from '@/features/tools/components/DamageCalculator'
 import { metaText, pageMetadata } from '@/lib/seo/metadata'
 export async function generateMetadata({ params }: { params: Promise<{lang: string}> }) {
   const { lang } = await params
