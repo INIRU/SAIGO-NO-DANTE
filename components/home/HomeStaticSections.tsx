@@ -15,6 +15,7 @@ import Skeleton, { SkeletonLine, SkeletonPage } from '@/components/ui/Skeleton'
 import ScrollAnimations from './ScrollAnimations'
 import HomeCommunity from './HomeCommunity'
 import styles from './HomeStaticSections.module.css'
+import AdSlot from '@/components/ads/AdSlot'
 
 type TFn = Awaited<ReturnType<typeof getTranslations>>
 
@@ -198,6 +199,7 @@ export default async function HomeStaticSections({ lang, latestIdentities, lates
       />
       <Tools t={t} identities={latestIdentities} lang={lang} />
       <Suspense fallback={<OfficialSkeleton />}><Official latestVideo={latestVideo} t={t} /></Suspense>
+      <div className={styles.ad}><AdSlot place="inline" /></div>
       <ScrollAnimations belowFold />
     </div>
   )

@@ -136,6 +136,7 @@ type DeckDetail = {
 
 // ── 상수 ──────────────────────────────────────────────────────────────────
 import { THEME_KEYWORDS, normalizeThemeKeyword } from '@/lib/constants/keywords'
+import AdSlot from '@/components/ads/AdSlot'
 const THEME_KW_SET = new Set<string>(THEME_KEYWORDS)
 
 const BOARD_SLOT_COUNT = 12
@@ -994,6 +995,8 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
         </nav>
 
         <main className="min-w-0 overflow-x-clip">
+          {/* a small banner under the section tabs, before the line-up heading (DESIGN.md "광고") */}
+          <AdSlot place="inline" />
           <section id="deck-formation" aria-labelledby="deck-formation-title" className={styles.section}>
             <SectionHead id="deck-formation-title" title={t('sectionFormation')} />
             {filledSlots.length === 0 ? (
