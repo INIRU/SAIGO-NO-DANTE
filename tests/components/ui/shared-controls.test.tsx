@@ -98,7 +98,7 @@ describe('one Switch everywhere', () => {
       'components/support/support.css': /desk-switch/,
     }
     for (const [path, pattern] of Object.entries(left)) expect(source(path), path).not.toMatch(pattern)
-    for (const path of ['app/[lang]/admin/maintenance/page.tsx', 'app/[lang]/admin/announcements/page.tsx', 'components/admin/admin.css']) expect(source(path), path).not.toContain('admin-switch')
+    for (const path of ['app/[lang]/admin/maintenance/page.tsx', 'app/[lang]/admin/announcements/page.tsx', 'features/admin/components/admin.css']) expect(source(path), path).not.toContain('admin-switch')
   })
 })
 

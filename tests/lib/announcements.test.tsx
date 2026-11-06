@@ -13,8 +13,8 @@ import {
   announcementDate,
 } from '@/lib/announcements'
 import { inquirySchema, supportMessageSchema } from '@/lib/support'
-import AnnouncementBody from '@/components/announcements/AnnouncementBody'
-import AnnouncementPopupDialog from '@/components/announcements/AnnouncementPopupDialog'
+import AnnouncementBody from '@/features/admin/components/AnnouncementBody'
+import AnnouncementPopupDialog from '@/features/admin/components/AnnouncementPopupDialog'
 
 vi.mock('next/navigation', () => ({ usePathname: () => '/en' }))
 vi.mock('next-intl', () => ({ useTranslations: () => (key: string) => key, useLocale: () => 'en' }))
