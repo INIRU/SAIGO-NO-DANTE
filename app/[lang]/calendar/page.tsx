@@ -1,10 +1,9 @@
 import { Suspense } from 'react'
 import type { Metadata } from 'next'
 import { metaText, pageMetadata } from '@/lib/seo/metadata'
-import { isMonth, kstDay } from '@/lib/news/calendar'
-import { loadNewsMonth } from '@/lib/news/data'
-import { NEWS_FEEDS } from '@/lib/news/payload'
-import NewsCalendar from '@/components/news/NewsCalendar'
+import { NEWS_FEEDS, isMonth, kstDay } from '@/features/news'
+import { loadNewsMonth } from '@/features/news/server'
+import NewsCalendar from '@/features/news/components/NewsCalendar'
 import { PageHeaderSkeleton } from '@/components/ui/PageHeader'
 import Skeleton from '@/components/ui/Skeleton'
 

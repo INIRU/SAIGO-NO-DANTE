@@ -12,9 +12,9 @@ import QuietImage from '@/components/ui/QuietImage'
 import LiteYoutube from '@/components/ui/LiteYoutube'
 import ConfirmModal from '@/components/ui/ConfirmModal'
 import { showError, showSuccess } from '@/lib/toast'
-import { groupByDay, monthGrid, pickContent, shiftMonth } from '@/lib/news/calendar'
-import { NEWS_FEEDS, type NewsItem, type NewsLang, type NewsMedia } from '@/lib/news/payload'
-import { FeedLogo, PlatformIcon } from './news-marks'
+import { groupByDay, monthGrid, pickContent, shiftMonth } from '../lib/calendar'
+import { NEWS_FEEDS, type NewsItem, type NewsLang, type NewsMedia } from '../lib/payload'
+import { FeedLogo, PlatformIcon } from './NewsMarks'
 import styles from './NewsCalendar.module.css'
 
 type Feed = (typeof NEWS_FEEDS)[number]

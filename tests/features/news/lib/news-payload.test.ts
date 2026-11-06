@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { parseNews } from '@/lib/news/payload'
+import { parseNews } from '@/features/news/lib/payload'
 
 const base = {
   id: 'steam:5124582150142200443',

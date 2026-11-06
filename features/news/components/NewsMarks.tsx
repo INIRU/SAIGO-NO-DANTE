@@ -1,5 +1,5 @@
 import Image from 'next/image'
-import type { NEWS_FEEDS, NEWS_PLATFORMS } from '@/lib/news/payload'
+import type { NEWS_FEEDS, NEWS_PLATFORMS } from '../lib/payload'
 
 type Feed = (typeof NEWS_FEEDS)[number]
 type Platform = (typeof NEWS_PLATFORMS)[number]

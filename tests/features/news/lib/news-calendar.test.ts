@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { groupByDay, isMonth, kstDay, monthGrid, monthRange, pickContent, shiftMonth } from '@/lib/news/calendar'
+import { groupByDay, isMonth, kstDay, monthGrid, monthRange, pickContent, shiftMonth } from '@/features/news/lib/calendar'
 
 const text = (title: string, translated = false) => ({ title, body: '', url: null, media: [], translated })
 

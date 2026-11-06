@@ -1,8 +1,8 @@
 import { cacheLife, cacheTag } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
-import { monthRange } from './calendar'
-import type { NewsItem } from './payload'
+import { monthRange } from '../lib/calendar'
+import type { NewsItem } from '../lib/payload'
 
 /** The news of one Korean month (YYYY-MM), oldest first. Refreshed when a partner posts or deletes an item. */
 export async function loadNewsMonth(month: string): Promise<NewsItem[]> {
