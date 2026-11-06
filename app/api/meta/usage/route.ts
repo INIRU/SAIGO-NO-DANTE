@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getMetaData } from '@/lib/db/meta'
+import { getMetaData } from '@/features/meta/server'
 import { DEFAULT_META_SOURCE, META_SOURCES, parseMetaFilters, parseMetaPeriod, type MetaSource } from '@/lib/meta/types'
 
 export async function GET(request: Request) {

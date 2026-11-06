@@ -3,8 +3,8 @@ import { resolve } from 'node:path'
 import { expect, it, vi } from 'vitest'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { DEFAULT_META_PERIOD, DEFAULT_META_SOURCE, type MetaData } from '@/lib/meta/types'
-import MetaClient from '@/app/[lang]/meta/MetaClient'
-import MetaSkeleton from '@/components/meta/MetaSkeleton'
+import MetaClient from '@/app/[lang]/meta/_components/MetaClient'
+import MetaSkeleton from '@/features/meta/components/MetaSkeleton'
 
 vi.mock('next-intl', () => ({ useTranslations: () => (key: string) => key, useLocale: () => 'ko' }))
 // The URL holds the defaults, and the request has not answered: the page shows what the server handed it.
@@ -16,10 +16,10 @@ vi.mock('nuqs', () => ({
   useQueryStates: (values: object) => [values, () => {}],
 }))
 vi.mock('swr', () => ({ default: (_key: string, _fetch: unknown, options: { fallbackData?: unknown }) => ({ data: options.fallbackData, isLoading: !options.fallbackData }) }))
-vi.mock('@/components/meta/MetaOverview', () => ({ default: () => <div data-overview /> }))
-vi.mock('@/components/meta/IdentityAnalysis', () => ({ default: () => null }))
-vi.mock('@/components/meta/DungeonAnalysis', () => ({ default: () => null }))
-vi.mock('@/components/meta/MetaFilters', () => ({ default: () => null }))
+vi.mock('@/features/meta/components/MetaOverview', () => ({ default: () => <div data-overview /> }))
+vi.mock('@/features/meta/components/IdentityAnalysis', () => ({ default: () => null }))
+vi.mock('@/features/meta/components/DungeonAnalysis', () => ({ default: () => null }))
+vi.mock('@/features/meta/components/MetaFilters', () => ({ default: () => null }))
 
 const read = (file: string) => readFileSync(resolve(__dirname, '../..', file), 'utf8')
 const PARTS = ['toolbar', 'summary', 'views', 'body']
