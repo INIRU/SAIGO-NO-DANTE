@@ -1,6 +1,6 @@
 'use client'
 import dynamic from 'next/dynamic'
-import DeckBuilderSkeleton from '@/components/decks/DeckBuilderSkeleton'
+import DeckBuilderSkeleton from '@/features/decks/components/DeckBuilderSkeleton'
 
 const Inner = dynamic(() => import('../../new/DeckBuilderClient'), {
   ssr: false,

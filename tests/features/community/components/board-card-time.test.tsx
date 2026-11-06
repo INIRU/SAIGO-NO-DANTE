@@ -4,7 +4,7 @@ import { expect, it, vi } from 'vitest'
 vi.mock('next-intl', () => ({ useLocale: () => 'ko', useTranslations: () => (key: string) => key }))
 vi.mock('next/image', () => ({ default: () => <img alt="" /> }))
 vi.mock('@/lib/i18n/navigation', () => ({ Link: ({ children }: { children?: React.ReactNode }) => <a>{children}</a> }))
-vi.mock('@/components/ui/FormationThumbnail', () => ({ Portrait: () => <span /> }))
+vi.mock('@/features/decks/components/FormationThumbnail', () => ({ Portrait: () => <span /> }))
 vi.mock('@/components/ui/RelativeTime', () => ({ default: ({ date }: { date: string }) => <span data-relative={date} /> }))
 
 import BoardCard from '@/features/community/components/BoardCard'

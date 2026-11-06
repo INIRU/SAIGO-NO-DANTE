@@ -1,10 +1,10 @@
 import type { Metadata } from 'next'
 import { getTranslations } from 'next-intl/server'
 import { pageMetadata } from '@/lib/seo/metadata'
-import { fetchDeckBuilderData } from '@/lib/decks/builder-data'
+import { fetchDeckBuilderData } from '@/features/decks/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import DeckBuilderWrapper from './DeckBuilderWrapper'
-import { normalizeUptie } from '@/lib/decks/deck-identity-uptie'
+import { normalizeUptie } from '@/features/decks'
 import type { SupportedLang } from '@/lib/i18n/types'
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: SupportedLang }> }): Promise<Metadata> {
