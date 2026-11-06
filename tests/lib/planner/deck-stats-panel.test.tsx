@@ -2,7 +2,7 @@ import { expect, it, vi } from 'vitest'
 import { renderToStaticMarkup } from 'react-dom/server'
 import DeckStatsPanel from '@/components/planner/DeckStatsPanel'
 
-vi.mock('@/components/passive/PassivePanel', () => ({ default: () => null }))
+vi.mock('@/features/catalog/components/PassivePanel', () => ({ default: () => null }))
 
 it('counts each skill once in the Assist deck stats, not once per uptie row', () => {
   // One identity's rows at upties 1–4 (S3 from uptie 3), as the skills table stores them.

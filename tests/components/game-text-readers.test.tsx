@@ -1,7 +1,7 @@
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it, vi } from 'vitest'
 import { KeywordProvider, type KeywordInfo } from '@/components/providers/KeywordProvider'
-import SkillDescription from '@/components/skill/SkillDescription'
+import SkillDescription from '@/features/catalog/components/SkillDescription'
 import KeywordCard, { type KeywordEntry } from '@/app/[lang]/keywords/_components/KeywordCard'
 import { KeywordChipDescription } from '@/components/decks/NoteChips'
 import DeckIdentityCard, { PassiveDescriptionLines, type IdentitySlot } from '@/components/deck-detail/DeckIdentityCard'

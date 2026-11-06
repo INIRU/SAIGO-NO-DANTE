@@ -2,7 +2,7 @@
 
 import useSWR from 'swr'
 import { useLocale, useTranslations } from 'next-intl'
-import IdentitySkillFrameCard from '@/components/identity/IdentitySkillFrameCard'
+import IdentitySkillFrameCard from '@/features/catalog/components/IdentitySkillFrameCard'
 import Skeleton, { SkeletonLine } from '@/components/ui/Skeleton'
 import type { MotionSkillRow } from '@/features/motion/server/feed'
 

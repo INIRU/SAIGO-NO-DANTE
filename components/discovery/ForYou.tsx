@@ -8,7 +8,7 @@ import { Link } from "@/lib/i18n/navigation";
 import DeckCard, { type DeckSummary } from "@/components/decks/DeckCard";
 import PlanCard, { type PlanSummary } from "@/components/planner/PlanCard";
 import { SkeletonLine } from "@/components/ui/Skeleton";
-import { useOwnedIdentities } from "@/hooks/useOwnedIdentities";
+import { useOwnedIdentities } from "@/features/catalog/hooks/useOwnedIdentities";
 import { forYouPhase } from "@/lib/discovery/for-you-phase";
 import { getGameUiAsset } from "@/lib/utils/game-ui";
 import { CardSkeleton } from "./BoardSkeleton";
