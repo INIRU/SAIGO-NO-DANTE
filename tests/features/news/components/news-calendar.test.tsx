@@ -19,8 +19,8 @@ vi.mock('@/lib/toast', () => ({ showSuccess: () => {}, showError: () => {} }))
 vi.mock('@/components/ui/ConfirmModal', () => ({ default: () => null }))
 vi.mock('@/components/ui/BaseModal', () => ({ default: ({ open, children }: { open: boolean; children: React.ReactNode }) => (open ? <div role="dialog">{children}</div> : null) }))
 
-import NewsCalendar from '@/components/news/NewsCalendar'
-import type { NewsItem } from '@/lib/news/payload'
+import NewsCalendar from '@/features/news/components/NewsCalendar'
+import type { NewsItem } from '@/features/news/lib/payload'
 
 const text = (title: string, more: Partial<NewsItem['content']['ko'] & object> = {}) => ({ title, body: '', url: null, media: [], translated: false, ...more })
 const item = (id: string, more: Partial<NewsItem>): NewsItem => ({

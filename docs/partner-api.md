@@ -136,7 +136,7 @@
 | `content.*.media` | 10개 이하. `image`(주소), `youtube`(영상 ID 11자), `video`(원문 주소와 선택 `thumbnail`) |
 | `content.*.translated` | 기본 `false`. 기계 번역이면 `true` |
 
-- 이미지와 `thumbnail`은 https이고 `steamstatic.com`, `twimg.com`, `ytimg.com`, `pstatic.net`, `livecloud-thumb.akamaized.net`(하위 도메인 포함)만 받는다. 사이트는 원본 주소를 그대로 보여 주며 복사하지 않는다. 호스트를 더하면 `lib/news/payload.ts`의 `NEWS_MEDIA_HOSTS`와 `next.config.ts`의 `img-src`를 함께 고친다.
+- 이미지와 `thumbnail`은 https이고 `steamstatic.com`, `twimg.com`, `ytimg.com`, `pstatic.net`, `livecloud-thumb.akamaized.net`(하위 도메인 포함)만 받는다. 사이트는 원본 주소를 그대로 보여 주며 복사하지 않는다. 호스트를 더하면 `features/news/lib/payload.ts`의 `NEWS_MEDIA_HOSTS`와 `next.config.ts`의 `img-src`를 함께 고친다.
 - 정해지지 않은 칸은 거부한다(`content.jp` 등).
 - 새 `id`는 201, 덮어쓰면 200이다. 응답은 `{ "data": { "id", "created", "day", "url" } }`이고 `url`은 그 날짜의 캘린더 주소다.
 - `?dry_run=1`은 검증만 하고 저장하지 않는다. 저장됐을 때의 값을 `item`으로 돌려준다.
@@ -157,13 +157,13 @@
 |---|---|
 | 라우트(한도, 분기) | `app/api/v1/[resource]/route.ts` |
 | 키 확인과 권한 | `lib/developer/access.ts` |
-| 소식 라우트, 양식 검증, 날짜 계산, 달 단위 조회 | `app/api/v1/news/route.ts`, `lib/news/payload.ts`, `lib/news/calendar.ts`, `lib/news/data.ts` |
-| 캘린더 화면, 관리자 삭제 | `app/[lang]/calendar/page.tsx`, `components/news/NewsCalendar.tsx`, `app/api/admin/news/route.ts` |
+| 소식 라우트, 양식 검증, 날짜 계산, 달 단위 조회 | `app/api/v1/news/route.ts`, `features/news/lib/payload.ts`, `features/news/lib/calendar.ts`, `features/news/server/data.ts` |
+| 캘린더 화면, 관리자 삭제 | `app/[lang]/calendar/page.tsx`, `features/news/components/NewsCalendar.tsx`, `app/api/admin/news/route.ts` |
 | 개발자 도구(문서 데이터, 탭) | `app/[lang]/developers/api-reference.ts`, `components/developers/` |
 | 응답 구성(언어 선택, 주소, 편성·집계) | `lib/developer/partner-api.ts` |
 | 조회(게임 자원은 `'use cache'`, 게임 데이터 태그로 무효화) | `lib/developer/partner-data.ts` |
 | 한도, 권한, 파트너 지정 함수, 소식 표 | `supabase/migrations/20261006120000_partners_and_news.sql` |
-| 검사 | `tests/lib/developer-partner-api.test.ts`, `tests/api/developer-v1-partner.test.ts`, `tests/api/developer-v1-news.test.ts`, `tests/lib/news-payload.test.ts`, `tests/sql/developer-partner.sql`, `tests/sql/partners-and-news.sql`, `e2e/developer-api.acceptance.cjs` |
+| 검사 | `tests/lib/developer-partner-api.test.ts`, `tests/api/developer-v1-partner.test.ts`, `tests/api/developer-v1-news.test.ts`, `tests/features/news/lib/news-payload.test.ts`, `tests/sql/developer-partner.sql`, `tests/sql/partners-and-news.sql`, `e2e/developer-api.acceptance.cjs` |
 
 키 확인과 한도 차감은 DB 함수 `consume_developer_key`가 한다.
 

@@ -27,11 +27,11 @@ for (const screen of [
   '@/app/[lang]/sinners/identities/IdentityBrowserClient', '@/app/[lang]/sinners/ego/EGOBrowserClient', '@/app/[lang]/random/RandomClient',
   '@/app/[lang]/collection/CollectionClient', '@/app/[lang]/friends/_components/FriendsClient', '@/app/[lang]/announcements/AnnouncementsClient',
   '@/app/[lang]/developers/DeveloperConsole', '@/components/tools/ExperienceCalculator', '@/components/tools/LunacyCalendar',
-  '@/components/tools/DamageCalculator', '@/components/motion/MotionBrowser', '@/components/news/NewsCalendar', '@/components/support/SupportDesk', '@/components/support/SupportSkeleton',
+  '@/components/tools/DamageCalculator', '@/components/motion/MotionBrowser', '@/features/news/components/NewsCalendar', '@/components/support/SupportDesk', '@/components/support/SupportSkeleton',
   '@/features/friends/components/FriendsSkeleton', '@/components/planner/PlannerSkeleton', '@/components/mirror-dungeon/MirrorDungeonSkeleton',
   '@/components/sinners/BrowserSkeleton', '@/components/sinners/SinnerLineup', '@/components/discovery/BoardHeader', '@/components/discovery/BoardSkeleton',
   '@/components/providers/StaticQueryAdapter', '@/components/layout/RequestTimeRoute', '@/components/legal/LegalDocument', '@/components/ui/PageHeader',
-  '@/lib/db/queries', '@/lib/db/collection', '@/lib/db/announcements', '@/lib/db/game-text-refs', '@/lib/decks/builder-data', '@/lib/data/legal', '@/lib/news/data',
+  '@/lib/db/queries', '@/lib/db/collection', '@/lib/db/announcements', '@/lib/db/game-text-refs', '@/lib/decks/builder-data', '@/lib/data/legal', '@/features/news/server/data',
 ]) vi.doMock(screen, () => ({ default: () => null, PageHeaderSkeleton: () => null, BoardShelfSkeleton: () => null, FriendsSkeleton: () => null }))
 
 type PageModule = { generateMetadata: (props: { params: Promise<{ lang: string }> }) => Promise<Metadata> }
