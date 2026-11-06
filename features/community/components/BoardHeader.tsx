@@ -36,6 +36,7 @@ export default function BoardHeader({ kind, title, action, viewAll, back, assist
       </div>
     </header>
     {/* the page-start banner, where the side ads do not fit (DESIGN.md "광고") */}
-    <div className="mx-auto w-full max-w-7xl shrink-0 px-4 md:px-6"><AdSlot place="top" /></div>
+    {/* the shelves below keep their own top space */}
+    <div className="mx-auto w-full max-w-7xl shrink-0 px-4 [--ad-bottom-gap:0] md:px-6"><AdSlot place="top" /></div>
   </>)
 }
