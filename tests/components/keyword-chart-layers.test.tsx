@@ -5,10 +5,12 @@ import KeywordChart from '@/components/planner/KeywordChart'
 vi.mock('next-intl', () => ({ useTranslations: () => (key: string, values?: { count?: number }) => `${key}:${values?.count ?? ''}` }))
 
 describe('REQ-DECKS-013 keyword chart layers', () => {
-  it('REQ-DECKS-013 draws a dark all-12 bar behind the deployed bar, with a legend and deployed/all counts', () => {
-    const html = renderToStaticMarkup(<KeywordChart distribution={[{ keyword: '화상', count: 4, deployed: 3 }]} />)
-    expect(html).toContain('keywordDeployed:7')
-    expect(html).toContain('keywordAll:12')
+  it('REQ-DECKS-013 draws a dark all-placed bar behind the deployed bar, with a legend of the real counts', () => {
+    // six deployed of nine placed: the legend says 6 and 9, not the formation cap (7) or the sinner count (12)
+    const html = renderToStaticMarkup(<KeywordChart distribution={[{ keyword: '화상', count: 4, deployed: 3 }]} deployedCount={6} totalCount={9} />)
+    expect(html).toContain('keywordDeployed:6')
+    expect(html).toContain('keywordAll:9')
+    expect(html).not.toContain('keywordDeployed:7')
     expect(html).toContain('opacity:0.32')
     expect(html).toMatch(/3<span[^>]*>\/4<\/span>/)
   })
