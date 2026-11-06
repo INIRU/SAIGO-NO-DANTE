@@ -16,6 +16,7 @@ import MotionScenarios from './MotionScenarios'
 import MotionSkillStrip, { motionSkillIcon } from './MotionSkillStrip'
 import MotionStage, { MotionPendingStage, useCreditNotice } from './MotionStage'
 import MotionSidePanel from './MotionSidePanel'
+import AdSlot from '@/components/ads/AdSlot'
 import { MotionWatchSkeleton } from './SkillMotionSkeleton'
 
 const QUERY = { skill: parseAsString, state: parseAsString }
@@ -148,6 +149,7 @@ export default function MotionWatch() {
             </summary>
             {info && <div className="pt-2"><MotionSidePanel skillId={skill.skillId} icon={ego ? icon(skill) : undefined} /></div>}
           </details>
+          <AdSlot place="panel" />
         </aside>
       </div>
     </div>

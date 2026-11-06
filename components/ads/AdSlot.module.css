@@ -30,6 +30,28 @@
   }
 }
 
+/* the page-start banner gives way to the side ads where either stands (AdSlot flags the root) */
+:global(html[data-ad-rail-left]) .top,
+:global(html[data-ad-rail-right]) .top {
+  display: none;
+}
+
+/* the skill motion player's side panel: a 300x250 rectangle under the skill info */
+.panel {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  padding-top: 0.75rem;
+  contain: layout;
+}
+
+.panelUnit {
+  display: block;
+  width: 300px;
+  height: 250px;
+  max-width: 100%;
+}
+
 /* a phone-only banner (the page has only the side ads on a wide screen) */
 @media (min-width: 768px) {
   .phoneOnly {
@@ -58,7 +80,7 @@
   }
 }
 
-:is(.top, .inline, .rail):has(ins[data-ad-status="unfilled"]) {
+:is(.top, .inline, .panel, .rail):has(ins[data-ad-status="unfilled"]) {
   display: none;
 }
 
