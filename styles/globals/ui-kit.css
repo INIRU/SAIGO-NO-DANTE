@@ -1,0 +1,26 @@
+/*
+ * Game frame: the chamfered panel of the gift category button (9-slice at 35), one line.
+ *   frame         line in --border on --bg-card
+ *   frame-strong  over artwork (the home hero): gold line on a see-through panel
+ *   frame-glow    the game's own yellow focus glow (EgoGiftCatBtn_focused as ui-kit/frame-glow.webp, same slice),
+ *                 shown on hover and keyboard focus
+ */
+:root { --frame-w: 1.25rem; }
+.frame {
+  border: var(--frame-w) solid transparent;
+  border-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Cpath d='M27 14.5h26l12.5 12.5v26L53 65.5H27L14.5 53V27Z' fill='%231a1510' stroke='%233a2a15' stroke-width='1.75'/%3E%3C/svg%3E") 35 fill / var(--frame-w) stretch;
+}
+.frame-strong {
+  border-image-source: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Cpath d='M27 14.5h26l12.5 12.5v26L53 65.5H27L14.5 53V27Z' fill='%2317120c' fill-opacity='.78' stroke='%23c8900a' stroke-opacity='.45' stroke-width='1.75'/%3E%3C/svg%3E");
+}
+.frame-glow { position: relative; }
+.frame-glow::after {
+  content: ""; position: absolute; inset: calc(-1 * var(--frame-w)); pointer-events: none;
+  border: var(--frame-w) solid transparent;
+  border-image: url("/assets/game-ui/ui-kit/frame-glow.webp?v=393cfde4b922") 35 fill / var(--frame-w) stretch;
+  opacity: 0; transition: opacity var(--dur-quick) var(--ease-out);
+}
+@media (hover: hover) { .frame-glow:hover::after { opacity: 1; } }
+.frame-glow:focus-visible { outline: none; }
+.frame-glow:focus-visible::after { opacity: 1; }
+@media (prefers-reduced-motion: reduce) { .frame-glow::after { transition: none; } }

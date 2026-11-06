@@ -25,3 +25,10 @@
 .card:not(:disabled):hover .glow {
   opacity: 1;
 }
+
+/* Detail window enhance keys: the sprite itself is the state (lit when picked). */
+.key { opacity: .5; transition: opacity .15s ease, transform .12s ease-out }
+.key[data-checked] { opacity: 1 }
+.key:active { transform: scale(.94) }
+@media (hover: hover) { .key:hover { opacity: .85 } .key[data-checked]:hover { opacity: 1 } }
+@media (prefers-reduced-motion: reduce) { .key { transition: none } }

@@ -21,8 +21,11 @@ import GameText from '@/components/game-text/GameText'
 import { keywordTextAllowed } from '@/lib/keywords/plain-keywords'
 import { FLAVOR_COLOR } from '@/lib/game-text/flavor'
 import { placePopoverIn, type PopoverPlacement } from '@/lib/utils/popover'
+import { KEYWORD_TOOLTIP_Z, closeTip, openTip, type TipEntry } from '@/lib/keywords/tooltip-stack'
 
 const KeywordContext = createContext<Record<string, KeywordInfo>>({})
+/** How many keyword tooltips the keyword is drawn inside (0 on the page). */
+const TipDepth = createContext(0)
 
 /** Keyword name colour shared by the tooltip and the keyword archive. */
 export function keywordAccentColor(keyword: string, info?: KeywordInfo): string {
@@ -76,6 +79,8 @@ export function useKeywordDescription(keyword: string, info: KeywordInfo | undef
 type FormatSkillDescOptions = {
   /** Tooltips: numbers turn gold and Potency/Count terms take this colour. */
   highlightValues?: string
+  /** Gift text: colour of the runs the game marks `<style="upgradeHighlight">` (what an enhancement changed). */
+  upgradeHighlight?: string
   /**
    * Skill and passive text of an identity or E.G.O only: draw the keywords the 4th argument (`allowedKeywords`) names when
    * the text writes them as plain words (older game text), see lib/keywords/plain-keywords.ts. Off everywhere else.
@@ -83,8 +88,6 @@ type FormatSkillDescOptions = {
   matchPlainKeywords?: boolean
   /** A keyword's own description (tooltip, keyword page): `allowedKeywords` from keywordTextAllowed, the longer name list. */
   keywordText?: boolean
-  /** Drawn inside a tooltip: its keywords show icon and colour but open no tooltip of their own. */
-  nested?: boolean
 }
 
 /**
@@ -113,10 +116,10 @@ export function useFormatSkillDesc() {
           keywordRef={KeywordWithTooltip}
           skillNameColors={skillNameColors}
           highlightValues={options?.highlightValues}
+          upgradeHighlight={options?.upgradeHighlight}
           matchPlainKeywords={options?.matchPlainKeywords}
           allowedKeywords={allowedKeywords}
           keywordText={options?.keywordText}
-          nested={options?.nested}
         />
       )
     },
@@ -127,14 +130,13 @@ export function useFormatSkillDesc() {
 /**
  * For stored text that is not a skill description (flavor, a keyword's own description): game source text is drawn as
  * the game wrote it, anything else is shown as written, `{{token}}` as labels. Plain words are never searched for keywords.
- * `nested` is for use inside a tooltip (see GameText).
  */
 export function useFormatGameText() {
   const keywords = useKeywords()
-  return useCallback((text: string, color: string, nested = false) => {
+  return useCallback((text: string, color: string) => {
     if (!mayBeRawGameText(text)) return <PlaceholderText text={text} />
     wantGameTextRefs()
-    return <GameText nodes={parseGameText(text)} accent={color} keywords={keywords} keywordRef={KeywordWithTooltip} nested={nested} />
+    return <GameText nodes={parseGameText(text)} accent={color} keywords={keywords} keywordRef={KeywordWithTooltip} />
   }, [keywords])
 }
 
@@ -156,8 +158,8 @@ const TOOLTIP_WIDTHS_REM = [22, 33, 44]
  * Tooltip of a keyword. `info` is its keyword_meta row; without one (a `[Id]` of game text that has no row) the popup
  * shows the name as given and the game's own description of `refId`, drawn as game text.
  */
-function KwTooltipPopup({ id, rect, iconUrl, keyword, info, refId, onMouseEnter, onMouseLeave }: {
-  id: string; rect: DOMRect; iconUrl: string | null; keyword: string; info?: KeywordInfo; refId?: string
+function KwTooltipPopup({ id, depth, rect, iconUrl, keyword, info, refId, onMouseEnter, onMouseLeave }: {
+  id: string; depth: number; rect: DOMRect; iconUrl: string | null; keyword: string; info?: KeywordInfo; refId?: string
   onMouseEnter: () => void; onMouseLeave: () => void
 }) {
   const contentRef = useRef<HTMLDivElement>(null)
@@ -201,12 +203,14 @@ function KwTooltipPopup({ id, rect, iconUrl, keyword, info, refId, onMouseEnter,
     <span
       id={id}
       ref={popupRef}
-      className="z-[200] rounded text-left"
+      className="rounded text-left"
       role="tooltip"
+      data-kw-tip={depth}
       onPointerEnter={event => { if (event.pointerType === 'mouse') onMouseEnter() }}
       onPointerLeave={event => { if (event.pointerType === 'mouse') onMouseLeave() }}
       style={{
         position: 'fixed',
+        zIndex: KEYWORD_TOOLTIP_Z,
         left: place?.left ?? 0,
         ...(place ? (showAbove ? { bottom: window.innerHeight - place.top } : { top: place.top }) : { top: 0 }),
         visibility: place ? 'visible' : 'hidden',
@@ -223,6 +227,7 @@ function KwTooltipPopup({ id, rect, iconUrl, keyword, info, refId, onMouseEnter,
           ? { bottom: -6, borderRight: `1px solid ${color}66`, borderBottom: `1px solid ${color}66` }
           : { top: -6, borderLeft: `1px solid ${color}66`, borderTop: `1px solid ${color}66` }),
       }} />
+      <TipDepth.Provider value={depth + 1}>
       <div
         ref={contentRef}
         style={{
@@ -248,15 +253,16 @@ function KwTooltipPopup({ id, rect, iconUrl, keyword, info, refId, onMouseEnter,
           {localDesc === undefined
             ? <span aria-hidden="true" style={{ display: 'block', height: '3.5em', borderRadius: '0.25rem', background: 'linear-gradient(90deg, #211a12, #2b2218, #211a12)' }} />
             : info
-              ? formatDescription(localDesc, '#d0c7b8', undefined, keywordTextAllowed(keyword), { highlightValues: color, matchPlainKeywords: true, keywordText: true, nested: true })
-              : <GameText nodes={parseGameText(localDesc)} accent="#d0c7b8" keywords={keywords} keywordRef={KeywordWithTooltip} nested matchPlainKeywords allowedKeywords={keywordTextAllowed(keyword)} keywordText />}
+              ? formatDescription(localDesc, '#d0c7b8', undefined, keywordTextAllowed(keyword), { highlightValues: color, matchPlainKeywords: true, keywordText: true })
+              : <GameText nodes={parseGameText(localDesc)} accent="#d0c7b8" keywords={keywords} keywordRef={KeywordWithTooltip} matchPlainKeywords allowedKeywords={keywordTextAllowed(keyword)} keywordText />}
         </span>
         {flavor && localDesc !== undefined && (
           <span style={{ display: 'block', marginTop: '0.625rem', color: FLAVOR_COLOR, fontStyle: 'italic', fontSize: '0.8125rem', lineHeight: 1.6, whiteSpace: 'pre-line' }}>
-            {formatGameText(flavor, FLAVOR_COLOR, true)}
+            {formatGameText(flavor, FLAVOR_COLOR)}
           </span>
         )}
       </div>
+      </TipDepth.Provider>
       {overflowing && (
         <div style={{
           position: 'absolute',
@@ -270,8 +276,8 @@ function KwTooltipPopup({ id, rect, iconUrl, keyword, info, refId, onMouseEnter,
   )
 }
 
-// 한 번에 하나의 키워드 툴팁만 표시
-let activeKwClose: (() => void) | null = null
+// The open keyword tooltips, outermost first: a new one closes those at its depth or deeper (tooltip-stack.ts).
+let openTips: TipEntry[] = []
 
 /** 키워드 아이콘 + 툴팁 (context에서 키워드 데이터 사용) */
 export function KeywordWithTooltip({
@@ -283,7 +289,6 @@ export function KeywordWithTooltip({
   plain,
   refId,
   iconSlug,
-  nested,
 }: {
   keyword: string
   /** KR key for lookup when keyword is an EN/JP name */
@@ -297,8 +302,6 @@ export function KeywordWithTooltip({
   refId?: string
   /** The buff's own icon file (game_text_refs.icon_slug), for this keyword and its tooltip instead of keyword_meta's. */
   iconSlug?: string
-  /** Inside a tooltip: icon and colour only, no tooltip of its own (a tooltip in a tooltip). */
-  nested?: boolean
 }) {
   const ref = useRef<HTMLSpanElement>(null)
   const tooltipId = useId()
@@ -307,7 +310,8 @@ export function KeywordWithTooltip({
   const keywords = useKeywords()
   const lookupKey = krKey ?? keyword
   const info = keywords[lookupKey]
-  const hasTooltip = !nested && (!!info || !!refId)
+  const hasTooltip = !!info || !!refId
+  const depth = useContext(TipDepth)
   const iconUrl = refId && !info && !iconSlug ? null : getKeywordIconUrl(lookupKey, iconSlug ?? info?.iconSlug)
   const [failedIconUrl, setFailedIconUrl] = useState<string | null>(null)
   const visibleIconUrl = failedIconUrl === iconUrl ? null : iconUrl
@@ -319,16 +323,18 @@ export function KeywordWithTooltip({
   // The last press landed inside the tooltip: the keyword then loses focus, which must not close it.
   const pressedInPopup = useRef(false)
   const hide = useCallback(() => setRect(null), [])
-  const close = useCallback(() => { setRect(null); if (activeKwClose === hide) activeKwClose = null }, [hide])
+  const tip = useRef<TipEntry>({ depth, close: hide })
+  tip.current.depth = depth
+  const close = useCallback(() => { setRect(null); openTips = closeTip(openTips, tip.current) }, [])
+  useEffect(() => () => { openTips = closeTip(openTips, tip.current) }, [])
   const show = useCallback(() => {
     if (refId && !info) preloadGameTextRefDescriptions(locale)
     else preloadKeywordDescriptions(locale)
     preloadGameTextRefFlavors(locale)
-    if (activeKwClose && activeKwClose !== hide) activeKwClose()
+    openTips = openTip(openTips, tip.current)
     clearTimeout(hideTimeout.current)
     setRect(ref.current?.getBoundingClientRect() ?? null)
-    activeKwClose = hide
-  }, [hide, locale, refId, info])
+  }, [locale, refId, info])
   const scheduleHide = useCallback(() => {
     hideTimeout.current = setTimeout(close, 120)
   }, [close])
@@ -347,16 +353,20 @@ export function KeywordWithTooltip({
 
   useEffect(() => {
     if (!rect) return
-    const popup = () => document.getElementById(tooltipId)
-    // A press outside the keyword and its tooltip closes it. Inside the tooltip it stays, so its text can be scrolled.
+    // Its own tooltip, or one opened inside it: any open tooltip deeper than this one is (stack rule) opened from it.
+    const inTip = (target: Node) => {
+      const tipEl = (target instanceof Element ? target : target.parentElement)?.closest('[data-kw-tip]')
+      return !!tipEl && (tipEl.id === tooltipId || Number(tipEl.getAttribute('data-kw-tip')) > depth)
+    }
+    // A press outside the keyword and its tooltips closes it. Inside one it stays, so the text can be scrolled.
     const press = (e: PointerEvent) => {
       const target = e.target as Node
-      pressedInPopup.current = !!popup()?.contains(target)
+      pressedInPopup.current = inTip(target)
       if (!pressedInPopup.current && !ref.current?.contains(target)) close()
     }
     // The tooltip is fixed to the screen: once the keyword moves away under it (page or panel scroll), close it.
     const scroll = (e: Event) => {
-      if (e.target instanceof Node && popup()?.contains(e.target)) return
+      if (e.target instanceof Node && inTip(e.target)) return
       const now = ref.current?.getBoundingClientRect()
       if (!now || Math.abs(now.top - rect.top) > 1 || Math.abs(now.left - rect.left) > 1) close()
     }
@@ -368,7 +378,7 @@ export function KeywordWithTooltip({
       window.removeEventListener('scroll', scroll, { capture: true })
       window.removeEventListener('resize', close)
     }
-  }, [rect, tooltipId, close])
+  }, [rect, tooltipId, close, depth])
 
   const textColorHint = `${keyword} ${lookupKey}`
   const iconColorHint = `${info?.iconSlug ?? ''} ${iconUrl ?? ''}`.toLowerCase()
@@ -431,7 +441,7 @@ export function KeywordWithTooltip({
       )}
       {renderedChildren}
       {rect && hasTooltip && typeof document !== 'undefined' && createPortal(
-        <KwTooltipPopup id={tooltipId} rect={rect} iconUrl={visibleIconUrl} keyword={info ? lookupKey : keyword} info={info} refId={refId} onMouseEnter={cancelHide} onMouseLeave={scheduleHide} />,
+        <KwTooltipPopup id={tooltipId} depth={depth} rect={rect} iconUrl={visibleIconUrl} keyword={info ? lookupKey : keyword} info={info} refId={refId} onMouseEnter={cancelHide} onMouseLeave={scheduleHide} />,
         document.body,
       )}
     </span>

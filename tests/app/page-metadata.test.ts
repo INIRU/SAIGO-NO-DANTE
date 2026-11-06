@@ -29,7 +29,7 @@ for (const screen of [
   '@/app/[lang]/developers/DeveloperConsole', '@/components/tools/ExperienceCalculator', '@/components/tools/LunacyCalendar',
   '@/components/tools/DamageCalculator', '@/components/motion/MotionBrowser', '@/components/news/NewsCalendar', '@/components/support/SupportDesk', '@/components/support/SupportSkeleton',
   '@/features/friends/components/FriendsSkeleton', '@/components/planner/PlannerSkeleton', '@/components/mirror-dungeon/MirrorDungeonSkeleton',
-  '@/components/sinners/BrowserSkeleton', '@/components/sinners/SinnerCard', '@/components/discovery/BoardHeader', '@/components/discovery/BoardSkeleton',
+  '@/components/sinners/BrowserSkeleton', '@/components/sinners/SinnerLineup', '@/components/discovery/BoardHeader', '@/components/discovery/BoardSkeleton',
   '@/components/providers/StaticQueryAdapter', '@/components/layout/RequestTimeRoute', '@/components/legal/LegalDocument', '@/components/ui/PageHeader',
   '@/lib/db/queries', '@/lib/db/collection', '@/lib/db/announcements', '@/lib/db/game-text-refs', '@/lib/decks/builder-data', '@/lib/data/legal', '@/lib/news/data',
 ]) vi.doMock(screen, () => ({ default: () => null, PageHeaderSkeleton: () => null, BoardShelfSkeleton: () => null, FriendsSkeleton: () => null }))

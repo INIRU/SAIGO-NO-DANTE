@@ -529,7 +529,7 @@ export function IdentityChip({ entry }: { entry: NoteIdentityEntry }) {
 export function KeywordChipDescription({ keyword, info }: { keyword: string; info: KeywordInfo }) {
   const formatGameText = useFormatGameText()
   const description = useKeywordDescription(keyword, info)
-  return <>{description === undefined ? '…' : formatGameText(description, '#aaa', true)}</>
+  return <>{description === undefined ? '…' : formatGameText(description, '#aaa')}</>
 }
 
 // ── EgoGiftChip ─────────────────────────────────────────────────────────

@@ -2,6 +2,7 @@
 @import "../styles/globals/utilities.css";
 @import "../styles/globals/animations.css";
 @import "../styles/globals/popups.css";
+@import "../styles/globals/ui-kit.css";
 
 /* Local fonts are now loaded via next/font/local in app/layout.tsx */
 
@@ -718,7 +719,7 @@ a.note-mention:is(:hover,:focus-visible),.note-block-document a[href].note-menti
 /* Preview card of a mention or a gift name: hover/focus card on a pointer, modal on touch. */
 .note-preview-host{display:inline}
 .note-preview-popover{position:fixed;z-index:10050;width:min(21rem,calc(100vw - 1rem));padding:.75rem;background:var(--bg-card);border:1px solid var(--border);border-radius:.5rem;box-shadow:0 .75rem 2rem #000a;color:var(--text-primary);overflow-y:auto;overscroll-behavior:contain}
-.note-preview-popover[data-above]{transform:translateY(-100%)}
+.note-preview-popover[data-above]{translate:0 -100%}
 .note-preview-card{display:flex;gap:.875rem;align-items:flex-start;font-size:.875rem;line-height:1.5}
 .note-preview-art{flex:0 0 5.5rem;width:5.5rem}
 .note-preview-card[data-kind=identity] .note-preview-art{flex-basis:6.5rem;width:6.5rem}
@@ -726,9 +727,12 @@ a.note-mention:is(:hover,:focus-visible),.note-block-document a[href].note-menti
 .note-preview-text{display:flex;min-width:0;flex:1;flex-direction:column;gap:.25rem}
 .note-preview-text>strong{font-family:var(--font-heading);font-size:1rem;font-weight:400;color:var(--text-primary);overflow-wrap:anywhere}
 .note-preview-text>small{color:var(--text-secondary);font-size:.8125rem}
+.note-preview-keyword{display:flex;align-items:center;gap:.25rem;font-family:var(--font-heading)}.note-preview-keyword>img{width:1rem;height:1rem;object-fit:contain}
+.note-preview-card[data-kind=gift] .note-preview-text>div{margin-top:.25rem;padding-top:.5rem;border-top:1px solid var(--border);font-family:var(--font-game-text)}
 .note-preview-modal{display:flex;flex-direction:column;gap:1rem;padding:1.25rem}
 .note-preview-more{align-self:flex-end;padding:.5rem .875rem;border-radius:.4rem;background:var(--bg-elevated);color:var(--gold-light);font-size:.875rem;text-decoration:none;transition:background-color .15s ease}
-@media (prefers-reduced-motion:no-preference){.note-preview-popover{animation:note-popover-in .15s ease-out}}
+/* The card appears where it sits, 0.25rem toward the name; `translate` (its place above) is not animated. */
+@media (prefers-reduced-motion:no-preference){.note-preview-popover{animation:note-preview-in .16s cubic-bezier(.23,1,.32,1)}.note-preview-popover[data-above]{animation-name:note-preview-in-above}@keyframes note-preview-in{from{opacity:0;transform:translateY(-.25rem)}}@keyframes note-preview-in-above{from{opacity:0;transform:translateY(.25rem)}}}
 /* The gold dot of a new editor tool: no text, gone after the tool is first used. */
 .note-new-dot{position:absolute;top:.3125rem;right:.3125rem;width:.375rem;height:.375rem;border-radius:50%;background:var(--gold-light);pointer-events:none}
 .note-new-dot--row{top:50%;right:.75rem;transform:translateY(-50%)}
@@ -740,4 +744,25 @@ a.note-mention:is(:hover,:focus-visible),.note-block-document a[href].note-menti
 /* Outside any layer so the edge of a field shows on every surface; hover, focus and error keep their own colour. */
 :is(input:not([type='checkbox'], [type='radio'], [type='range'], [type='color']), textarea, select):not(:hover, :focus, [aria-invalid='true']) {
   border-color: var(--border-control);
+}
+
+/* motion kit: one set of curves and durations for the whole site (DESIGN.md 움직임). Springs live in lib/animations.ts. */
+:root {
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+  --dur-press: 120ms;
+  --dur-quick: 180ms;
+  --dur-base: 240ms;
+  --dur-enter: 320ms;
+}
+/* Answers on press, before the click lands. Carries the colour transitions too, since it replaces `transition`. */
+.press { transition: transform var(--dur-press) var(--ease-out), color var(--dur-quick) ease, background-color var(--dur-quick) ease, border-color var(--dur-quick) ease; }
+.press:active { transform: scale(.97); }
+/* A solid surface with the octagon's cut corners (primary buttons). Focus rings must be inset: the cut clips outside. */
+.cut-corners { --cut: .5rem; clip-path: polygon(var(--cut) 0, calc(100% - var(--cut)) 0, 100% var(--cut), 100% calc(100% - var(--cut)), calc(100% - var(--cut)) 100%, var(--cut) 100%, 0 calc(100% - var(--cut)), 0 var(--cut)); }
+
+@media (prefers-reduced-motion: reduce) {
+  .press { transition: color var(--dur-quick) ease, background-color var(--dur-quick) ease, border-color var(--dur-quick) ease; }
+  .press:active { transform: none; }
 }

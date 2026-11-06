@@ -1,0 +1,22 @@
+/* The phone menu (NavbarMobileSheet): no boxes. Each group a small label over its pages, set large in the heading font,
+   two to a row; a hairline between groups; the current page in gold with a dot. */
+.groups { display: flex; flex-direction: column; padding: .5rem 1.25rem 1.25rem; }
+.group { padding: 1rem 0 .75rem; }
+.group + .group { border-top: 1px solid #2e2417; }
+.heading { margin: 0 0 .375rem; color: var(--text-muted); font-family: var(--font-body); font-size: .75rem; font-weight: 600; letter-spacing: .04em; }
+.items { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 1rem; }
+.link {
+  position: relative; display: flex; align-items: center; min-height: 2.75rem; border-radius: .25rem;
+  color: var(--text-primary); font-family: var(--font-heading); font-size: 1.1875rem; line-height: 1.2;
+  transition: color 150ms ease, translate 150ms cubic-bezier(.23, 1, .32, 1);
+}
+.link:active { translate: .25rem 0; color: var(--gold-light); }
+.link[aria-current='page'] { color: var(--gold-light); }
+.link[aria-current='page']::before { content: ''; width: .375rem; height: .375rem; margin-right: .5rem; border-radius: 50%; background: var(--gold); flex-shrink: 0; }
+
+/* Groups settle in one after another (40ms apart) as the sheet opens; nothing waits on them. */
+@media (prefers-reduced-motion: no-preference) {
+  .group { animation: group-in 300ms cubic-bezier(.23, 1, .32, 1) both; animation-delay: calc(var(--i, 0) * 40ms); }
+}
+@keyframes group-in { from { opacity: 0; translate: 0 .5rem; } }
+@media (prefers-reduced-motion: reduce) { .link { transition: none; } .link:active { translate: none; } }
