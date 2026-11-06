@@ -11,7 +11,7 @@ import { DECK_DRAFTS_KEY, autosaveKey, isDeckDraft, loadDeckDraftSlots, type Dec
 import TempSaveMenu from '@/components/ui/TempSaveMenu'
 import AutosaveRestoreModal from '@/components/ui/AutosaveRestoreModal'
 import { useAutosaveDraft } from '@/features/notes/hooks/useAutosaveDraft'
-import SeriesPicker from '@/components/series/SeriesPicker'
+import SeriesPicker from '@/features/community/components/SeriesPicker'
 
 import { useState, useMemo, useEffect } from 'react'
 import dynamic from 'next/dynamic'

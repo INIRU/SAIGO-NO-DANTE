@@ -46,7 +46,7 @@ describe('ad slot', () => {
     const identity = source('app/[lang]/sinners/[slug]/identities/[id]/_components/IdentityDetailClient.tsx')
     expect(identity.indexOf('<AdSlot place="inline" />')).toBeGreaterThan(identity.indexOf('<IdentitySanitySection'))
     expect(identity.indexOf('<AdSlot place="inline" />')).toBeLessThan(identity.indexOf('{recommendations}'))
-    const home = source('components/home/HomeStaticSections.tsx')
+    const home = source('app/[lang]/(home)/_components/HomeStaticSections.tsx')
     expect(home.indexOf('<AdSlot place="inline" />')).toBeGreaterThan(home.indexOf('<Official '))
   })
 

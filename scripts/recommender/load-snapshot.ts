@@ -1,6 +1,6 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import type { RawCatalog } from '@/lib/discovery/rec-catalog'
+import type { RawCatalog } from '@/features/community/lib/rec-catalog'
 
 export type { RawCatalog }
 

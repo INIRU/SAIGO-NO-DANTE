@@ -7,7 +7,7 @@ import { useKeywords } from '@/components/providers/KeywordProvider'
 import { localizeDeckKeyword } from '@/components/decks/decks-types'
 import { getLocalizedAffiliation, getLocalizedName } from '@/lib/i18n/localize'
 import { getIdentityPortraitUrl } from '@/lib/utils/images'
-import { reasonParts, type Archetype, type Suggestion } from '@/lib/discovery/suggestion-types'
+import { reasonParts, type Archetype, type Suggestion } from '@/features/community'
 import type { SupportedLang } from '@/lib/i18n/types'
 import type { PlannerDeckIdentity } from './PlannerDeckSelection'
 

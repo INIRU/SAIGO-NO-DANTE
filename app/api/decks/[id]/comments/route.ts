@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse, after } from 'next/server'
 import { pushForComment } from '@/lib/push/send'
-import { descendantIds } from '@/lib/comments/thread'
+import { descendantIds } from '@/features/community'
 import { revalidateTag } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { requireActiveUser } from '@/lib/auth'

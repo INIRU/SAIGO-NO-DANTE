@@ -1,12 +1,12 @@
 import type { Metadata } from 'next'
 import { pageMetadata } from '@/lib/seo/metadata'
 import { getTranslations } from 'next-intl/server'
-import BoardHeader from '@/components/discovery/BoardHeader'
-import { loadInitialShelf } from '@/lib/discovery/initial-shelf'
-import type { InitialShelf } from '@/components/discovery/DiscoveryShelf'
+import BoardHeader from '@/features/community/components/BoardHeader'
+import { loadInitialShelf } from '@/features/community/server'
+import type { InitialShelf } from '@/features/community/components/DiscoveryShelf'
 import DecksClient from './DecksClient'
 import StaticQueryAdapter from '@/components/providers/StaticQueryAdapter'
-import { BoardShelfSkeleton } from '@/components/board/BoardShelfSkeleton'
+import { BoardShelfSkeleton } from '@/features/community/components/BoardShelfSkeleton'
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params

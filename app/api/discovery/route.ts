@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { loadDiscovery } from "@/lib/discovery/feed";
+import { loadDiscovery } from "@/features/community/server";
 import { popularSince, type PopularPeriod } from "@/lib/discovery/update-window";
 import { COMMUNITY_FEED_CACHE_CONTROL } from "@/lib/constants/http-cache";
 export async function GET(request: Request) {

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { loadCommunityProfile } from "@/lib/community/server";
+import { loadCommunityProfile } from "@/features/community/server";
 const headers = { "Cache-Control": "no-store" };
 export async function GET(
   _request: Request,

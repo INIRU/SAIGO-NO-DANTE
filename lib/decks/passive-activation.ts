@@ -72,7 +72,7 @@ export const reached = (states: Float64Array) => states[states.length - 1]
 
 /**
  * The per-sin caps (the highest count any requirement asks) and each identity's chance per card of making each required sin;
- * null when no fielded identity makes one of the required sins at all. Shared with the recommender (`lib/discovery/passive-fit.ts`).
+ * null when no fielded identity makes one of the required sins at all. Shared with the recommender (`features/community/lib/passive-fit.ts`).
  */
 export function prepareActivation(requirements: readonly ActivationRequirement[], team: readonly SinWeights[]): { caps: number[]; decks: Slot[] } | null {
   const needs = new Map<SinType, number>()

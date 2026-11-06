@@ -7,7 +7,7 @@ import { useSession } from 'next-auth/react'
 import { useTranslations } from 'next-intl'
 import { Send } from 'lucide-react'
 import { showError } from '@/lib/toast'
-import CommentThread, { CommentReplyForm, type ThreadItem } from '@/components/comments/CommentThread'
+import CommentThread, { CommentReplyForm, type ThreadItem } from '@/features/community/components/CommentThread'
 
 type Comment = {
   id: string

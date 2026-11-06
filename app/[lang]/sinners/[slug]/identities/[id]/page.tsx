@@ -13,7 +13,7 @@ import dynamic from 'next/dynamic'
 const IdentityDetailClient = dynamic(() => import('@/app/[lang]/sinners/[slug]/identities/[id]/_components/IdentityDetailClient'))
 import JsonLd, { breadcrumbJsonLd, gameCharacterJsonLd } from '@/components/seo/JsonLd'
 import { getLocalizedName, getLocalizedKeywordName } from '@/lib/i18n/localize'
-import { getIdentityRecommendations } from '@/lib/discovery/identity-recommendations'
+import { getIdentityRecommendations } from '@/features/community/server'
 import IdentityRecommendations from '@/features/catalog/components/IdentityRecommendations'
 import { IdentityRecommendationsSkeleton } from '@/components/deck-detail/RecommendationSkeleton'
 import { getKeywordData } from '@/lib/keywords/server-data'

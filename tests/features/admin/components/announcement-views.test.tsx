@@ -12,7 +12,7 @@ vi.mock('next/image', () => ({ default: ({ src, alt }: { src: string; alt: strin
 vi.mock('@/lib/i18n/navigation', () => ({ Link: ({ href, children, ...rest }: { href: string; children: React.ReactNode }) => <a href={href} {...rest}>{children}</a> }))
 
 import AnnouncementList from '@/features/admin/components/AnnouncementList'
-import AnnouncementBanner from '@/components/home/AnnouncementBanner'
+import AnnouncementBanner from '@/app/[lang]/(home)/_components/AnnouncementBanner'
 import type { AnnouncementPreview } from '@/lib/announcements'
 
 const item = (id: string, extra: Partial<AnnouncementPreview> = {}): AnnouncementPreview => ({

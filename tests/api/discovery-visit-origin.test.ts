@@ -4,7 +4,7 @@ import { NextRequest } from 'next/server'
 const upserts: unknown[] = []
 vi.mock('next-auth', () => ({ getServerSession: async () => null }))
 vi.mock('@/lib/auth', () => ({ authOptions: {} }))
-vi.mock('@/lib/discovery/user-id', () => ({ discoveryUserId: async () => null }))
+vi.mock('@/features/community/lib/user-id', () => ({ discoveryUserId: async () => null }))
 vi.mock('@/lib/rate-limit', () => ({ checkRequestRateLimit: () => ({ allowed: true }), rateLimitResponse: () => new Response(null, { status: 429 }) }))
 vi.mock('@/lib/supabase/admin', () => ({
   createAdminClient: () => ({

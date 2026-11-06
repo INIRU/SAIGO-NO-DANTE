@@ -48,8 +48,8 @@ import {
   type PlannerIdentityBoardSlot,
 } from '@/components/planner/deck/PlannerDeckSelection'
 import { LCB_IDS, isDeployedSlot } from '@/lib/constants/game'
-import { useSuggestionState } from '@/hooks/useSuggestions'
-import { identitySuggestUrl, plannerSuggestionContext, type SuggestionResponse } from '@/lib/discovery/suggestion-types'
+import { useSuggestionState } from '@/features/community/hooks/useSuggestions'
+import { identitySuggestUrl, plannerSuggestionContext, type SuggestionResponse } from '@/features/community'
 import {
   DECK_MAIN_KEYWORDS,
   MAX_DECK_MAIN_KEYWORDS,

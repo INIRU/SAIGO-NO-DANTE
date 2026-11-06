@@ -6,8 +6,8 @@ import { useTranslations } from 'next-intl'
 import { Send } from 'lucide-react'
 import { Link } from '@/lib/i18n/navigation'
 import { showSuccess, showError } from '@/lib/toast'
-import { descendantIds } from '@/lib/comments/thread'
-import CommentThread, { CommentReplyForm, type ThreadItem } from '@/components/comments/CommentThread'
+import { descendantIds } from '@/features/community'
+import CommentThread, { CommentReplyForm, type ThreadItem } from '@/features/community/components/CommentThread'
 
 type Comment = {
   id: string

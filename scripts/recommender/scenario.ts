@@ -3,7 +3,7 @@
  *   npx tsx scripts/recommender/scenario.ts            the reported case: 새벽 사무소 파우스트 + 그레고르 + 거미집 엄지 아비, then 이상's slot
  *   npx tsx scripts/recommender/scenario.ts real       three real formations with one identity hidden
  */
-import { COMPONENTS, IDENTITY_CONFIG, identityComponents, suggestIdentities, type SuggestedIdentity } from '@/lib/discovery/identity-recs'
+import { COMPONENTS, IDENTITY_CONFIG, identityComponents, suggestIdentities, type SuggestedIdentity } from '@/features/community/lib/identity-recs'
 import { legacySuggestIdentities } from './legacy'
 import { loadSnapshot } from './load-snapshot'
 import { rbo } from './metrics'

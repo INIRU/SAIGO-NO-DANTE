@@ -7,7 +7,7 @@ import ko from '@/messages/ko.json'
 import en from '@/messages/en.json'
 import ja from '@/messages/ja.json'
 
-vi.mock('@/components/community/easterEggs', () => ({ useTapEgg: () => () => {} }))
+vi.mock('@/components/brand/easter-eggs', () => ({ useTapEgg: () => () => {} }))
 
 describe('REQ-HOME-008 the home heading says what the site is', () => {
   it('REQ-HOME-008 the h1 reads the given label, and the moving letters stay hidden from assistive technology', () => {

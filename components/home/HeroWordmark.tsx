@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
-import { useTapEgg } from '@/components/community/easterEggs'
+import { useTapEgg } from '@/components/brand/easter-eggs'
 import styles from './HeroWordmark.module.css'
 
 // HOSHI twists into SAIGO on a CSS loop; paused while the tab is hidden or the hero is off-screen.

@@ -5,7 +5,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { checkRequestRateLimit, rateLimitResponse } from "@/lib/rate-limit";
-import { discoveryUserId } from "@/lib/discovery/user-id";
+import { discoveryUserId } from "@/features/community/server";
 import { isAllowedRequestOrigin } from "@/lib/request-origin";
 const schema = z.object({
   kind: z.enum(["identity", "deck", "planner"]),
