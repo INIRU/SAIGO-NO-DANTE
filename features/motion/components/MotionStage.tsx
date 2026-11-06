@@ -3,9 +3,9 @@
 import { useCallback, useEffect, useId, useRef, useState, type RefObject } from 'react'
 import { useTranslations } from 'next-intl'
 import { ChevronLeft, ChevronRight, Hourglass, Info, Maximize, Minimize, Pause, Play, RotateCw, SlidersHorizontal, Smartphone, Volume2, VolumeX } from 'lucide-react'
-import { useMotionFrame, type MotionChapter, type MotionError, type MotionFrameStore, type MotionMark, type MotionStatus, type MotionVolumes } from '@/hooks/useSkillMotion'
-import { useStageScreen } from '@/hooks/useStageScreen'
-import { motionChapterLabel, type MotionChapterWords } from '@/lib/motion/catalog'
+import { useMotionFrame, type MotionChapter, type MotionError, type MotionFrameStore, type MotionMark, type MotionStatus, type MotionVolumes } from '@/features/motion/hooks/useSkillMotion'
+import { useStageScreen } from '@/features/motion/hooks/useStageScreen'
+import { motionChapterLabel, type MotionChapterWords } from '@/features/motion/lib/catalog'
 import MotionTimeline, { currentChapter } from './MotionTimeline'
 import styles from './Motion.module.css'
 

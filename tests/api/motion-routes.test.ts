@@ -1,15 +1,15 @@
 import { beforeEach, expect, it, vi } from 'vitest'
 
 const state = vi.hoisted(() => ({ fail: false, skill: null as unknown }))
-vi.mock('@/lib/motion/feed', async () => ({
+vi.mock('@/features/motion/server', async () => ({
   loadMotionSiteData: async (lang: string) => { if (state.fail) throw new Error('down'); return { identities: [], egos: [], skillNames: [[1, lang]], skillFrames: [], refs: null } },
   loadMotionSkill: async (id: number) => { if (state.fail) throw new Error('down'); return id === 1021601 ? state.skill : null },
-  pickMotionSkillRow: (await vi.importActual<typeof import('@/lib/motion/feed')>('@/lib/motion/feed')).pickMotionSkillRow,
+  pickMotionSkillRow: (await vi.importActual<typeof import('@/features/motion/server/feed')>('@/features/motion/server/feed')).pickMotionSkillRow,
 }))
 
 import { GET as siteData } from '@/app/api/motion/site-data/route'
 import { GET as skill } from '@/app/api/motion/skill/route'
-import { pickMotionSkillRow } from '@/lib/motion/feed'
+import { pickMotionSkillRow } from '@/features/motion/server/feed'
 
 beforeEach(() => { state.fail = false; state.skill = { id: 's1', name: '여명의 섬광', coins: 2 } })
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildMotionCatalog, defaultMotionState, findMotionSkill, isMotionEgo, motionCatalogFrom, motionChapterLabel, MOTION_INDEX_URL, cutinAllyId, formatMotionLabelKey, motionAssetUrl, motionSinnerId, motionStateLabel, type MotionChapterWords, type MotionEgoInfo, type MotionEntry } from '@/lib/motion/catalog'
+import { buildMotionCatalog, defaultMotionState, findMotionSkill, isMotionEgo, motionCatalogFrom, motionChapterLabel, MOTION_INDEX_URL, cutinAllyId, formatMotionLabelKey, motionAssetUrl, motionSinnerId, motionStateLabel, type MotionChapterWords, type MotionEgoInfo, type MotionEntry } from '@/features/motion/lib/catalog'
 
 const entry = (over: Partial<MotionEntry>): MotionEntry => ({
   slug: 'id10216', skillId: 1021601, state: 'v:base', identity: '새벽 사무소 해결사 파우스트', name: '여명의 섬광',

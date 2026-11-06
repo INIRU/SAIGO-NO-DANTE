@@ -3,8 +3,8 @@ import type { MetadataRoute } from 'next'
 import { createClient } from '@/lib/supabase/server'
 import { SINNER_SLUGS } from '@/lib/constants/game'
 import { PRIMARY_LOCALE, localeLanguages, localeUrl } from '@/lib/seo/metadata'
-import { loadMotionCatalog } from '@/lib/motion/feed'
-import { toMotionParam } from '@/lib/motion/catalog'
+import { loadMotionCatalog } from '@/features/motion/server'
+import { toMotionParam } from '@/features/motion'
 
 type Entry = MetadataRoute.Sitemap[number]
 type Row = { id: string; sinner_id?: string; release_date?: string | null; updated_at?: string | null }
