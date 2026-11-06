@@ -10,7 +10,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { SINNER_SLUGS } from '@/lib/constants/game'
 import { notFound } from 'next/navigation'
 import dynamic from 'next/dynamic'
-const SinnerDetailClient = dynamic(() => import('./SinnerDetailClient'))
+const SinnerDetailClient = dynamic(() => import('@/app/[lang]/sinners/[slug]/_components/SinnerDetailClient'))
 import JsonLd, { breadcrumbJsonLd, gameCharacterJsonLd } from '@/components/seo/JsonLd'
 import { getSinnerProfileUrl } from '@/lib/utils/images'
 import type { Identity, EGO } from '@/lib/types'

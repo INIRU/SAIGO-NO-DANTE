@@ -1,7 +1,7 @@
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it, vi } from 'vitest'
 import { KeywordProvider, resolveKeywordIconUrl, useFormatSkillDesc, type KeywordInfo } from '@/components/providers/KeywordProvider'
-import SkillDescription from '@/components/skill/SkillDescription'
+import SkillDescription from '@/features/catalog/components/SkillDescription'
 import { keywordTextAllowed } from '@/lib/keywords/plain-keywords'
 import type { GameTextRefNames } from '@/lib/db/game-text-refs'
 

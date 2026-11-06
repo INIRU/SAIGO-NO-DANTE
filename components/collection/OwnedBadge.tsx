@@ -2,7 +2,7 @@
 
 import { Check } from 'lucide-react'
 import { useTranslations } from 'next-intl'
-import { useOwnedIdentities } from '@/hooks/useOwnedIdentities'
+import { useOwnedIdentities } from '@/features/catalog/hooks/useOwnedIdentities'
 
 type Slot = { id?: string | null; sinnerId?: string | null; slot_order?: number | null }
 

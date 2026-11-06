@@ -4,13 +4,13 @@ import { Suspense } from 'react'
 import { cacheLife, cacheTag } from 'next/cache'
 import { getAllEGOsForBrowser, getSinners } from '@/lib/db/queries'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
-import EGOBrowserClient from './EGOBrowserClient'
+import EGOBrowserClient from '@/app/[lang]/sinners/ego/_components/EGOBrowserClient'
 import JsonLd, { itemListJsonLd } from '@/components/seo/JsonLd'
 import { getTranslations } from 'next-intl/server'
 import { getLocalizedName } from '@/lib/i18n/localize'
 import type { SupportedLang } from '@/lib/i18n/types'
 import StaticQueryAdapter from '@/components/providers/StaticQueryAdapter'
-import BrowserSkeleton from '@/components/sinners/BrowserSkeleton'
+import BrowserSkeleton from '@/features/catalog/components/BrowserSkeleton'
 
 const TITLE = { ko: '림버스 E.G.O 도감 — 등급·죄악별 전체 목록', en: 'Limbus Company E.G.O List — Grades & Sin Affinities', ja: 'リンバスカンパニー E.G.O一覧 — 等級・罪悪属性別' }
 

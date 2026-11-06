@@ -5,9 +5,9 @@ import dynamic from 'next/dynamic'
 import useSWR from 'swr'
 import { useLocale, useTranslations } from 'next-intl'
 import { Plus, RefreshCw, X } from 'lucide-react'
-import SkillFrame from '@/components/identity/SkillFrame'
-import SkillNameBanner from '@/components/skill/SkillNameBanner'
-import IdentityFrameCard from '@/components/ui/IdentityFrameCard'
+import SkillFrame from '@/features/catalog/components/SkillFrame'
+import SkillNameBanner from '@/features/catalog/components/SkillNameBanner'
+import IdentityFrameCard from '@/features/catalog/components/IdentityFrameCard'
 import { SIN_COLORS } from '@/lib/constants/sin'
 import { assetName, type NoteAssetData } from '@/lib/notes/assets'
 import type { ToolSkill } from '@/lib/tools/skill-source'
@@ -15,7 +15,7 @@ import styles from './SkillLoader.module.css'
 
 // The picker (and its catalog request) loads when it is first opened, the E.G.O card when an E.G.O is picked.
 const NoteCharacterPicker = dynamic(() => import('@/components/notes/NoteCharacterPicker'), { ssr: false })
-const EgoDisplayCard = dynamic(() => import('@/components/sinners/EgoDisplayCard'), { ssr: false })
+const EgoDisplayCard = dynamic(() => import('@/features/catalog/components/EgoDisplayCard'), { ssr: false })
 
 type Kind = 'identity' | 'ego'
 const sinColor = (skill: ToolSkill | undefined) => (skill?.sin ? SIN_COLORS[skill.sin] : '#cccccc')

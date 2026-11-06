@@ -3,7 +3,7 @@ import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 're
 import { createPortal } from 'react-dom'
 import { useLocale, useTranslations } from 'next-intl'
 import BaseModal from '@/components/ui/BaseModal'
-import IdentityFrameCard from '@/components/ui/IdentityFrameCard'
+import IdentityFrameCard from '@/features/catalog/components/IdentityFrameCard'
 import { EffectText } from '@/features/mirror-dungeon/components/GiftDetailModal'
 import { Link } from '@/lib/i18n/navigation'
 import Image from 'next/image'

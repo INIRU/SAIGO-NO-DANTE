@@ -9,7 +9,7 @@ vi.mock('next-intl', () => ({
 vi.mock('next/image', () => ({ default: ({ src, alt }: { src: string; alt: string }) => <img src={src} alt={alt} /> }))
 vi.mock('@/components/providers/KeywordProvider', () => ({ useKeywordData: () => ({ keywords: {} }) }))
 vi.mock('@/components/planner/KeywordChart', () => ({ default: () => null }))
-vi.mock('@/components/skill/SkillDescription', () => ({ default: () => null }))
+vi.mock('@/features/catalog/components/SkillDescription', () => ({ default: () => null }))
 
 const passive = (id: string, passive_type: string, active_cond: string | null, sin: string, count: number): DeckInsightPassive => ({
   id, name: id, description: null, passive_type, sin_affinity: sin, sin_count: count, sin_requirements: [{ sin, count }], active_cond,

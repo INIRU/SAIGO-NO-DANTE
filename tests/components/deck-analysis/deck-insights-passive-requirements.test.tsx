@@ -6,7 +6,7 @@ vi.mock('next-intl', () => ({ useLocale: () => 'ko', useTranslations: () => (key
 vi.mock('next/image', () => ({ default: ({ src, alt }: { src: string; alt: string }) => <img src={src} alt={alt} /> }))
 vi.mock('@/components/providers/KeywordProvider', () => ({ useKeywordData: () => ({ keywords: {} }) }))
 vi.mock('@/components/planner/KeywordChart', () => ({ default: () => null }))
-vi.mock('@/components/skill/SkillDescription', () => ({ default: () => null }))
+vi.mock('@/features/catalog/components/SkillDescription', () => ({ default: () => null }))
 
 const identity = (sin_requirements: { sin: string; count: number }[]): DeckInsightIdentity => ({
   id: 'i1',
