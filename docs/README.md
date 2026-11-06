@@ -6,26 +6,41 @@
 
 | 하려는 일 | 먼저 읽을 문서 |
 |---|---|
-| 화면이나 컴포넌트를 고친다 | [디자인 기준](../DESIGN.md), [구조](architecture.md), [개발과 검증](development.md) |
+| 새 기능을 `features/<기능>/`에 만든다 | [새 기능 만들기](guides/new-feature.md), [구조](reference/architecture.md) |
+| 화면이나 컴포넌트를 고친다 | [디자인 기준](../DESIGN.md), [구조](reference/architecture.md), [개발과 검증](guides/development.md) |
 | 새 게임 데이터를 반영한다, 반영을 되돌린다 | [게임 데이터 반영](https://github.com/INIRU/limbus-asset-extractor/blob/main/site-sync/docs/runbook.md) |
 | 동기화 코드를 고친다(코드는 추출 도구 저장소 `site-sync/`에 있다) | [동기화 코드를 고칠 때](https://github.com/INIRU/limbus-asset-extractor/blob/main/site-sync/docs/developing.md), [동기화 규칙](https://github.com/INIRU/limbus-asset-extractor/blob/main/site-sync/docs/rules.md) |
-| 게임 원본의 값을 새로 보여 준다(칸 추가) | [필드 하나 추가하기](https://github.com/INIRU/limbus-asset-extractor/blob/main/site-sync/docs/adding-a-field.md), [데이터 모델](data-model.md) |
+| 게임 원본의 값을 새로 보여 준다(칸 추가) | [필드 하나 추가하기](https://github.com/INIRU/limbus-asset-extractor/blob/main/site-sync/docs/adding-a-field.md), [데이터 모델](reference/data-model.md) |
 | 이미지·아이콘의 원본 위치, 과거 백업과 반영 기록을 찾는다 | [출처와 복구 기록](https://github.com/INIRU/limbus-asset-extractor/blob/main/site-sync/docs/provenance.md) |
-| 어시스트의 화면 인식을 고치거나 평가한다 | [어시스트 화면 인식](assist.md) |
-| 표나 칸을 바꾼다, 권한을 확인한다 | [데이터 모델](data-model.md) |
-| 개발자 API에 자원을 더한다, 파트너 봇 연동을 본다 | [개발자 API와 협업 파트너](partner-api.md) |
-| 배포, 서버 접속, 환경 변수, 롤백 | [배포와 복구](deployment.md) |
+| 어시스트의 화면 인식을 고치거나 평가한다 | [어시스트 화면 인식](guides/assist-evaluation.md) |
+| 표나 칸을 바꾼다, 권한을 확인한다 | [데이터 모델](reference/data-model.md) |
+| 개발자 API에 자원을 더한다, 파트너 봇 연동을 본다 | [개발자 API와 협업 파트너](reference/partner-api.md) |
+| 배포, 서버 접속, 롤백 | [배포와 복구](guides/deployment.md) |
+| 환경 변수를 더하거나 값의 용도를 찾는다 | [환경 변수](reference/env.md), [배포와 복구](guides/deployment.md) |
 
 
 ## 문서 목록
 
-- [구조](architecture.md): 화면, 도메인 로직, 서버 경계.
-- [개발과 검증](development.md): 실행, 테스트, 캐시, 알려진 UI 주의점.
-- [데이터 모델](data-model.md): 현재 표와 칸, 권한, 스키마 변경 기록.
-- [개발자 API와 협업 파트너](partner-api.md): `/api/v1` 자원, 한도, 파트너 권한, 소식 보내기 양식, Discord 봇 연동.
+작업 순서와 방법은 `guides/`에, 찾아보는 자료는 `reference/`에 있다.
+
+**guides/ (하는 방법)**
+
+- [기여 방법](../CONTRIBUTING.md): 브랜치, 계획, 테스트, 커밋, PR, 병합 확인.
+- [새 기능 만들기](guides/new-feature.md): `features/<기능>/` 폴더, 입구 파일, 테스트 위치, 경계 검사.
+- [개발과 검증](guides/development.md): 실행, 테스트, 캐시, 알려진 UI 주의점.
+- [배포와 복구](guides/deployment.md): 서버·터널 구성, 자동 배포, 되돌리기, 집 IP가 바뀔 때 SSH 열기, Cloudflare 설정, 환경 변수 넣는 법, 요금 알림.
+- [어시스트 화면 인식](guides/assist-evaluation.md): 인식 방법, 설정, 평가 도구와 측정 기록.
+
+**reference/ (찾아보기)**
+
+- [구조](reference/architecture.md): 화면, 도메인 로직, 서버 경계.
+- [데이터 모델](reference/data-model.md): 현재 표와 칸, 권한, 스키마 변경 기록.
+- [환경 변수](reference/env.md): 이름, 용도, 서버 전용 여부, 쓰는 곳.
+- [개발자 API와 협업 파트너](reference/partner-api.md): `/api/v1` 자원, 한도, 파트너 권한, 소식 보내기 양식, Discord 봇 연동.
+
+**그 밖**
+
 - 데이터 동기화: [실행](https://github.com/INIRU/limbus-asset-extractor/blob/main/site-sync/docs/runbook.md), [코드 수정](https://github.com/INIRU/limbus-asset-extractor/blob/main/site-sync/docs/developing.md), [규칙](https://github.com/INIRU/limbus-asset-extractor/blob/main/site-sync/docs/rules.md), [필드 추가](https://github.com/INIRU/limbus-asset-extractor/blob/main/site-sync/docs/adding-a-field.md), [출처와 기록](https://github.com/INIRU/limbus-asset-extractor/blob/main/site-sync/docs/provenance.md).
-- [어시스트 화면 인식](assist.md): 인식 방법, 설정, 평가 도구와 측정 기록.
-- [배포와 복구](deployment.md): 서버·터널 구성, 자동 배포, 되돌리기, 집 IP가 바뀔 때 SSH 열기, Cloudflare 설정, 환경 변수, 요금 알림.
 - [디자인 기준](../DESIGN.md): 색, 글꼴, 게임 에셋, 공용 컴포넌트, 레이아웃·움직임·스켈레톤 규칙.
 
 ## 지원 화면

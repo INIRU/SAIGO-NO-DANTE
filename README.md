@@ -40,7 +40,7 @@
 
 ```bash
 npm ci
-cp .env.example .env.local   # 값 채우기: docs/deployment.md의 "환경"
+cp .env.example .env.local   # 값 채우기: docs/reference/env.md
 npm run dev                  # http://localhost:3000
 ```
 
@@ -58,8 +58,9 @@ npm run dev                  # http://localhost:3000
 ```text
 app/[lang]/        공개 페이지(ko/en/ja): 조회와 화면 조합
 app/api/           API 라우트: 요청·인증·입력 검증
-components/        기능별 UI (components/ui/ 는 공용 부품)
-lib/               도메인 계산, DB 조회(db·supabase), 번역(i18n)
+features/          기능별 코드(컴포넌트, 계산, 서버 조회, 테스트는 tests/ 아래)
+components/        여러 기능이 쓰는 UI (components/ui/ 는 공용 부품)
+lib/               여러 기능이 쓰는 계산, DB 조회(db·supabase), 번역(i18n)
 hooks/             브라우저 상태와 생명주기
 messages/          ko·en·ja 번역
 styles/            전역·컴포넌트 CSS
@@ -67,7 +68,7 @@ public/            게임 에셋·글꼴·아이콘·서비스 워커
 supabase/          스키마 마이그레이션과 되돌리기 SQL
 scripts/           에셋 추출, 데이터, 추천·어시스트 평가, maintenance/(일회성 복구·이전)
 tests/  e2e/       Vitest 단위 테스트, Playwright E2E
-docs/              개발 문서
+docs/              개발 문서(guides/ 하는 방법, reference/ 찾아보기)
 deploy/server/     서버 배포 스크립트
 ```
 
@@ -77,12 +78,15 @@ deploy/server/     서버 배포 스크립트
 | 문서 | 내용 |
 |---|---|
 | [개발 문서 목차](docs/README.md) | 작업 종류별로 먼저 읽을 문서 |
+| [기여 방법](CONTRIBUTING.md) | 브랜치, 계획, 테스트, 커밋, PR, 병합 확인 |
+| [새 기능 만들기](docs/guides/new-feature.md) | `features/<기능>/` 폴더와 경계 검사 |
 | [디자인 기준](DESIGN.md) | 색, 글꼴, 게임 에셋, 공용 컴포넌트, 움직임 |
-| [개발과 검증](docs/development.md) | 실행, 테스트, 캐시, 서비스 워커 |
-| [데이터 모델](docs/data-model.md) | 표와 칸, 권한, 스키마 변경 기록 |
-| [배포와 복구](docs/deployment.md) | 서버·터널, 자동 배포, 되돌리기, 환경 변수 |
-| [개발자 API](docs/partner-api.md) | `/api/v1` 자원, 한도, 파트너 연동 |
-| [어시스트 화면 인식](docs/assist.md) | 인식 방법, 평가 도구, 측정 기록 |
+| [개발과 검증](docs/guides/development.md) | 실행, 테스트, 캐시, 서비스 워커 |
+| [데이터 모델](docs/reference/data-model.md) | 표와 칸, 권한, 스키마 변경 기록 |
+| [배포와 복구](docs/guides/deployment.md) | 서버·터널, 자동 배포, 되돌리기 |
+| [환경 변수](docs/reference/env.md) | 이름, 용도, 서버 전용 여부 |
+| [개발자 API](docs/reference/partner-api.md) | `/api/v1` 자원, 한도, 파트너 연동 |
+| [어시스트 화면 인식](docs/guides/assist-evaluation.md) | 인식 방법, 평가 도구, 측정 기록 |
 
 게임 데이터를 DB·Storage에 반영하는 동기화 코드는 추출 도구 저장소([limbus-asset-extractor](https://github.com/INIRU/limbus-asset-extractor))의 `site-sync/`에 있습니다.
 

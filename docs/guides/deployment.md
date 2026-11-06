@@ -88,7 +88,7 @@ Next.js는 로봇 요청에 메타데이터를 본문으로 흘려보내지 않�
 
 로컬 `.env.local`과 서버 `~/saigo/env.production`에 현재 코드가 읽는 이름으로 설정한다. 실제 값은 Git에 넣지 않는다.
 
-이름 목록은 [`.env.example`](../.env.example)이 기준이다(Supabase, 로그인, 사이트, 자체 서버, Sentry, 스크립트 전용). 새 환경 변수를 코드에 넣으면 그 파일에 이름을 추가하고, 서버 파일에도 넣은 뒤 `sudo systemctl restart saigo-web`으로 다시 켠다. `NEXT_PUBLIC_*` 값은 빌드에 박히므로 바꾸면 다시 배포해야 한다(같은 커밋이면 `~/saigo/app/REVISION`을 지우면 타이머가 다시 빌드한다).
+이름 목록은 [`.env.example`](../../.env.example)이 기준이고, 이름마다 용도와 서버 전용 여부는 [환경 변수](../reference/env.md)에 있다. 새 환경 변수를 코드에 넣으면 그 파일에 이름을 추가하고, 서버 파일에도 넣은 뒤 `sudo systemctl restart saigo-web`으로 다시 켠다. `NEXT_PUBLIC_*` 값은 빌드에 박히므로 바꾸면 다시 배포해야 한다(같은 커밋이면 `~/saigo/app/REVISION`을 지우면 타이머가 다시 빌드한다).
 
 - 서버 전용 값: `SELF_HOSTED=1`(CSP `upgrade-insecure-requests`, 방문자 IP를 `CF-Connecting-IP`에서 읽기), `NEXTAUTH_URL=https://saigo-no-dante.com`.
 - 서버에 넣지 않는 값: `EDGE_CONFIG`, `VERCEL_API_TOKEN`, `VERCEL_TEAM_ID`. 없으면 점검 목록을 Supabase에서 읽는다.
