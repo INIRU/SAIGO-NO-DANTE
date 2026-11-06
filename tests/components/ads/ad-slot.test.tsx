@@ -82,15 +82,32 @@ describe('ad slot', () => {
     expect(source('features/catalog/components/SinnerHero.tsx')).toContain('data-ad-rail-below')
     // at the end of the page a side ad stops above the footer and scrolls up with it
     expect(code).toContain("document.querySelector('.site-footer')")
-    expect(code).toMatch(/ad\.style\.top = `\$\{Math\.min\(top, floor\)\}px`/)
+    expect(code).toContain('footerTop - GAP - ad.offsetHeight')
     // a hero's art that reaches the window edge does not count as content (it hid the right side ad on a sinner page)
     expect(code).toMatch(/box\.left <= 0 \|\| box\.right >= width/)
-    // before the content is measured (the server render) there is no side ad, so it never lands on the content
+    // before the content is measured (the server render) the side ad is hidden, so it never lands on the content
     pathname = '/ko/decks/1'
-    expect(renderToStaticMarkup(<AdSlot slot="1234567890" place="left" />)).toBe('')
+    expect(renderToStaticMarkup(<AdSlot slot="1234567890" place="left" />)).toMatch(/<aside[^>]*data-off="true"/)
     pathname = '/ko'
     expect(renderToStaticMarkup(<AdSlot slot="1234567890" place="left" />)).toBe('')
     expect(renderToStaticMarkup(<AdSlot slot="1234567890" place="inline" />)).toContain('data-ad-slot')
+  })
+
+  it('REQ-SHARED-085 keeps both side ads in view while scrolling, the owner\'s call against AdSense\'s one-sticky rule (recorded)', () => {
+    const code = source('components/ads/AdSlot.tsx')
+    expect(code).toContain('support.google.com/adsense/answer/10734935')
+    expect(code).not.toMatch(/railScroll/)
+    expect(source('DESIGN.md')).toContain('정책 위험이 있다는 것을 알고 정한 배치다')
+  })
+
+  it('REQ-SHARED-085 keeps a side ad that loses its room in the page, hidden, so the same ad comes back when the window widens', () => {
+    // removing it and asking again after a resize is what AdSense leaves unfilled, which collapsed every ad (owner, 2026-11-07)
+    const code = source('components/ads/AdSlot.tsx')
+    expect(code).not.toMatch(/if \(rail && offset == null\) return null/)
+    expect(code).toContain('data-off={off || undefined}')
+    expect(source('components/ads/AdSlot.module.css')).toMatch(/\.rail\[data-off\]\s*\{\s*display:\s*none/)
+    pathname = '/ko/decks/1'
+    expect(renderToStaticMarkup(<AdSlot slot="1234567890" place="right" />)).toContain('data-ad-slot="1234567890"')
   })
 
   it('REQ-SHARED-085 puts a page-start banner under a list page title, before its content, with its place kept while loading', () => {
