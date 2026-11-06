@@ -46,8 +46,9 @@
   .artBox { inset: 0; }
   .art { object-position: 47% 50%; transition: scale 600ms cubic-bezier(.23, 1, .32, 1); }
   .shade { background: linear-gradient(to top, rgb(13 11 8 / .96) 0%, rgb(13 11 8 / .55) 30%, rgb(13 11 8 / .35) 100%); transition: opacity 300ms cubic-bezier(.23, 1, .32, 1); }
-  /* Pinned to the left edge: it stays where it is while the column widens. */
-  .plate { top: .5rem; bottom: auto; left: .5rem; width: 4.25rem; max-width: calc(100% - 1rem); height: auto; }
+  /* Pinned to the left edge at a fixed size: it stays put while its column widens, and a column narrowed by its
+     neighbour's hover covers its edge instead of shrinking it (no wobble across the row). */
+  .plate { top: .5rem; bottom: auto; left: .5rem; width: 4.25rem; height: auto; }
   /* Narrow: the name stands upright at the foot of the column. */
   .label {
     position: absolute; bottom: .875rem; left: 50%; translate: -50% 0; display: block;
