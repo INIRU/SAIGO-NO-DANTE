@@ -1,7 +1,7 @@
 import { search, type IndexEntry } from '@/lib/search/engine'
 import { SINNER_ALIASES } from '@/lib/search/sinner-aliases'
 import { translations } from '@/lib/i18n/translations'
-import type { IdentityStat } from './types'
+import type { IdentityStat } from '@/lib/meta/types'
 
 type KeywordNames = Record<string, { nameEn?: string | null; nameJp?: string | null } | undefined>
 
