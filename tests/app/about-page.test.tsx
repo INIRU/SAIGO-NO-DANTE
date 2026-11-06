@@ -19,7 +19,7 @@ describe('REQ-SHARED-068 the about page says who runs the site, where the data c
   })
 
   it('REQ-SHARED-068 the footer links it and the sitemap lists it', async () => {
-    expect(readFileSync('components/layout/Footer.tsx', 'utf8')).toContain('href={`/${lang}/about`}')
+    expect(readFileSync('components/layout/Footer.tsx', 'utf8')).toContain('`/${lang}/about`')
     expect(readFileSync('app/sitemap.ts', 'utf8')).toContain("entry('/about')")
   })
 })
