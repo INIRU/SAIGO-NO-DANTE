@@ -5,6 +5,7 @@ import type { Sinner } from '@/lib/types'
 import { getLocalizedName } from '@/lib/i18n/localize'
 import type { SupportedLang } from '@/lib/i18n/types'
 import { getSinnerLogoUrl } from '@/lib/utils/images'
+import { sinnerColor } from '@/lib/constants/sinner-colors'
 import FilterToggleGroup, { type FilterToggleItem } from './FilterToggleGroup'
 
 type Props = {
@@ -20,6 +21,7 @@ export default function SinnerFilter({ sinners, selected, onToggle }: Props) {
     value: s.id,
     icon: getSinnerLogoUrl(s.id),
     label: getLocalizedName(s, lang),
+    accent: sinnerColor(s.id),
   }))
 
   return (

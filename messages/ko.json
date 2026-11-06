@@ -2571,7 +2571,7 @@
     "countFiltered": "<b>{filtered}개</b> / 전체 {total}개",
     "sortPrefix": "정렬:",
     "sort": {
-      "default": "기본",
+      "default": "최신순",
       "name": "이름순",
       "rarity": "등급순",
       "grade": "등급순"

@@ -2571,7 +2571,7 @@
     "countFiltered": "<b>{filtered}件</b> / 全{total}件",
     "sortPrefix": "並び替え:",
     "sort": {
-      "default": "デフォルト",
+      "default": "新しい順",
       "name": "名前順",
       "rarity": "レアリティ順",
       "grade": "等級順"
