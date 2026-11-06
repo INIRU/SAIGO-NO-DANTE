@@ -9,12 +9,12 @@ import SkillFrame from '@/components/identity/SkillFrame'
 import SkillNameBanner from '@/components/skill/SkillNameBanner'
 import IdentityFrameCard from '@/components/ui/IdentityFrameCard'
 import { SIN_COLORS } from '@/lib/constants/sin'
-import { assetName, type NoteAssetData } from '@/lib/notes/assets'
+import { assetName, type NoteAssetData } from '@/features/notes'
 import type { ToolSkill } from '@/lib/tools/skill-source'
 import styles from './SkillLoader.module.css'
 
 // The picker (and its catalog request) loads when it is first opened, the E.G.O card when an E.G.O is picked.
-const NoteCharacterPicker = dynamic(() => import('@/components/notes/NoteCharacterPicker'), { ssr: false })
+const NoteCharacterPicker = dynamic(() => import('@/features/notes/components/NoteCharacterPicker'), { ssr: false })
 const EgoDisplayCard = dynamic(() => import('@/components/sinners/EgoDisplayCard'), { ssr: false })
 
 type Kind = 'identity' | 'ego'
