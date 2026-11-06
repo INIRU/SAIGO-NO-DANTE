@@ -17,6 +17,8 @@ const GAP = 32
 const EDGE = 24
 /** The window height a 600px side ad needs below the navbar (AdSlot.module.css shows `.rail` from the same height). */
 const RAIL_MIN_HEIGHT = 760
+/** A side ad's top below the navbar (`.rail` top: 6rem). */
+const RAIL_TOP = 96
 
 /** One AdSense request per <ins>; the key in AdSlot gives each page its own <ins> (and so a new ad). */
 function Unit({ slot, className }: { slot: string; className: string }) {
@@ -61,7 +63,9 @@ function useRailOffset(place: Place, pathname: string | null): number | null | u
       let left = width, right = 0
       for (const el of main.querySelectorAll(':scope > *, :scope > * > *, :scope > * > * > *, :scope > * > * > * > *')) {
         const box = el.getBoundingClientRect()
-        if (box.width < 200 || box.width > width - 32 || !box.height || getComputedStyle(el).position === 'fixed') continue
+        // a full-bleed backdrop (a hero's art reaching the window edge) is decoration, not the content the ad stands beside
+        if (box.width < 200 || box.width > width - 32 || box.left <= 0 || box.right >= width || !box.height
+          || getComputedStyle(el).position === 'fixed') continue
         left = Math.min(left, box.left)
         right = Math.max(right, box.right)
       }
@@ -75,6 +79,30 @@ function useRailOffset(place: Place, pathname: string | null): number | null | u
     return () => observer.disconnect()
   }, [place, pathname])
   return offset
+}
+
+/**
+ * A side ad starts below a page's full-bleed backdrop (`data-ad-rail-below`, e.g. a sinner's hero art) instead of over it, and
+ * rises with the page to its usual place under the navbar (RAIL_TOP) as the backdrop scrolls away. Written straight to the
+ * element on scroll, so scrolling does not re-render the ad.
+ */
+function useRailTop(rail: boolean) {
+  const ref = useRef<HTMLElement>(null)
+  useEffect(() => {
+    if (!rail) return
+    let frame = 0
+    const place = () => {
+      frame = 0
+      const backdrop = document.querySelector('[data-ad-rail-below]')
+      if (ref.current) ref.current.style.top = backdrop ? `${Math.max(RAIL_TOP, backdrop.getBoundingClientRect().bottom + GAP)}px` : ''
+    }
+    const schedule = () => { if (!frame) frame = requestAnimationFrame(place) }
+    place()
+    addEventListener('scroll', schedule, { passive: true })
+    addEventListener('resize', schedule)
+    return () => { removeEventListener('scroll', schedule); removeEventListener('resize', schedule); cancelAnimationFrame(frame) }
+  })
+  return ref
 }
 
 /**
@@ -96,6 +124,7 @@ export default function AdSlot({ slot: unitSlot, place, phoneOnly = false }: {
   const pathname = usePathname()
   const offset = useRailOffset(place, pathname)
   const rail = place === 'left' || place === 'right'
+  const railRef = useRailTop(rail && offset != null)
   const slot = unitSlot === undefined ? ADSENSE_SLOTS[rail ? 'rail' : place] : unitSlot
   // Each side ad tells the page whether it stands ("on") or found no room ("off"): the page-start banner gives way to a side ad
   // and shows when neither fits, e.g. after the window narrows (owner, 2026-11-06). AdSlot.module.css reads the flags.
@@ -113,10 +142,10 @@ export default function AdSlot({ slot: unitSlot, place, phoneOnly = false }: {
   const unit = rail ? styles.railUnit : place === 'panel' ? styles.panelUnit : styles.topUnit
   const kind = place === 'panel' ? '' : 'site-ad '
   const preview = process.env.NODE_ENV === 'development' || process.env.NEXT_PUBLIC_AD_PREVIEW === '1'
-  if (preview) return <aside className={`${kind}${box}`} style={position}><div className={`${unit} ${styles.preview}`}>AD</div></aside>
+  if (preview) return <aside ref={rail ? railRef : undefined} className={`${kind}${box}`} style={position}><div className={`${unit} ${styles.preview}`}>AD</div></aside>
   if (!slot) return null
   return (
-    <aside className={`${kind}${box}`} style={position}>
+    <aside ref={rail ? railRef : undefined} className={`${kind}${box}`} style={position}>
       <Unit key={pathname} slot={slot} className={unit} />
     </aside>
   )
