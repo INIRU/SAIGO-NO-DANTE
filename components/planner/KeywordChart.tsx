@@ -3,7 +3,6 @@
 import type { ReactNode } from 'react'
 import { useTranslations } from 'next-intl'
 import { GIFT_KEYWORD_COLORS } from '@/lib/constants/gift'
-import { DEPLOYED_SLOT_COUNT, SINNER_SLUGS } from '@/lib/constants/game'
 
 import Image from 'next/image'
 import { getGiftKeywordIconUrl } from '@/lib/constants/gift'
@@ -29,6 +28,9 @@ interface Props {
   getKeywordLabel?: (keyword: string) => string
   contributorsByKeyword?: Record<string, KeywordChartContributor[]>
   maxItems?: number
+  /** With deployment flags: how many identities are deployed and how many are placed, for the legend. */
+  deployedCount?: number
+  totalCount?: number
 }
 
 export type KeywordChartContributor = {
@@ -42,19 +44,21 @@ export default function KeywordChart({
   getKeywordLabel,
   contributorsByKeyword,
   maxItems = 10,
+  deployedCount,
+  totalCount,
 }: Props) {
   const t = useTranslations('planner.deckTab.stats')
   const maxCount = Math.max(...distribution.map(d => d.count), 1)
-  // With deployment flags each bar has two layers: all 12 identities (dark, behind) and the deployed ones (bright).
+  // With deployment flags each bar has two layers: every placed identity (dark, behind) and the deployed ones (bright).
   const layered = distribution.some(d => d.deployed !== undefined)
   const hasExtra = distribution.some(d => d.extra !== undefined)
 
   return (
     <div className="space-y-2">
-      {layered && (
+      {layered && deployedCount !== undefined && totalCount !== undefined && (
         <div className="flex justify-end gap-3 text-[0.75rem] text-[var(--text-secondary)]" aria-hidden="true">
-          <span className="inline-flex items-center gap-1.5"><span className="h-2 w-3 rounded-full bg-[#c8b898]" />{t('keywordDeployed', { count: DEPLOYED_SLOT_COUNT })}</span>
-          <span className="inline-flex items-center gap-1.5"><span className="h-2 w-3 rounded-full bg-[#c8b898]/35" />{t('keywordAll', { count: SINNER_SLUGS.length })}</span>
+          <span className="inline-flex items-center gap-1.5"><span className="h-2 w-3 rounded-full bg-[#c8b898]" />{t('keywordDeployed', { count: deployedCount })}</span>
+          <span className="inline-flex items-center gap-1.5"><span className="h-2 w-3 rounded-full bg-[#c8b898]/35" />{t('keywordAll', { count: totalCount })}</span>
         </div>
       )}
       {distribution.slice(0, maxItems).map(d => {

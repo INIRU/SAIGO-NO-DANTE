@@ -126,7 +126,7 @@ export default function DeckInsights({ identities, sinCounts, baseSinCounts, sum
         <section aria-labelledby="deck-keyword-distribution">
           <h3 id="deck-keyword-distribution" className="deck-insights__title">{tDeck('stats.keywordDistribution')}</h3>
           {distribution.length > 0
-            ? <KeywordChart distribution={distribution} getKeywordLabel={getKeywordLabel} contributorsByKeyword={contributors} />
+            ? <KeywordChart distribution={distribution} getKeywordLabel={getKeywordLabel} contributorsByKeyword={contributors} deployedCount={deployedIds ? identities.filter(identity => deployedIds.has(identity.id)).length : undefined} totalCount={identities.length} />
             : <p className="deck-insights__empty">{tDeck('stats.keywordEmpty')}</p>}
         </section>
         {summary}
