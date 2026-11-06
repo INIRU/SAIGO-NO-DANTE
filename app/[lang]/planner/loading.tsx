@@ -1,2 +1,2 @@
-import PlannerSkeleton from '@/components/planner/PlannerSkeleton'
+import PlannerSkeleton from '@/features/planner/components/PlannerSkeleton'
 export default function Loading() { return <PlannerSkeleton header /> }

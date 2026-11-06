@@ -6,7 +6,7 @@ vi.mock('swr', () => ({ default: () => ({ data: [{ id: 'd1', title: '출혈 덱'
 vi.mock('@/lib/i18n/navigation', () => ({ Link: 'a' }))
 vi.mock('@/components/ui/BaseModal', () => ({ default: ({ children }: { children: React.ReactNode }) => <div>{children}</div> }))
 vi.mock('@/features/decks/components/DeckCard', () => ({ default: ({ deck }: { deck: { title: string } }) => <article data-deck-card>{deck.title}</article> }))
-vi.mock('@/components/planner/PlanCard', () => ({ default: () => <article data-plan-card /> }))
+vi.mock('@/features/planner/components/PlanCard', () => ({ default: () => <article data-plan-card /> }))
 
 it('REQ-COMMUNITY-045 the card picker uses the gift picker frame and shows results as board cards', async () => {
   const { NoteCardPicker } = await import('@/features/notes/components/NoteCardBlock')

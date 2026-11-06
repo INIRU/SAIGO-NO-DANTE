@@ -1,6 +1,6 @@
 import { getTranslations } from 'next-intl/server'
 import DeckCard, { type DeckSummary } from '@/features/decks/components/DeckCard'
-import PlanCard, { type PlanSummary } from '@/components/planner/PlanCard'
+import PlanCard, { type PlanSummary } from '@/features/planner/components/PlanCard'
 import { RecommendationLane } from '@/features/decks/components/DeckRecommendations'
 import { getCoVisited } from '@/features/community/server/co-visited'
 import type { DiscoveryKind } from '@/features/community/lib/recommend'

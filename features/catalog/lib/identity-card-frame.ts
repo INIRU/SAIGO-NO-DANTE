@@ -5,7 +5,7 @@ import type { CSSProperties } from 'react'
  * their decorations (uptie II chains, III thorns, IV knots) stick out by different amounts. The card box is the
  * frame's outer border line (290×428, measured from the alpha channel), and each crop is placed so its border
  * line is centred on that box. [image width, image height, border x, border y]
- * Same numbers as FramedIdentity in components/planner/deck/PlannerDeckSelection.tsx.
+ * Same numbers as FramedIdentity in features/planner/components/PlannerDeckSelection.tsx.
  */
 export const IDENTITY_CARD_FRAMES: Record<number, Record<number, [number, number, number, number]>> = {
   1: { 1: [304, 442, 7, 7], 2: [328, 484, 15, 41], 3: [323, 458, 15, 15], 4: [320, 458, 14.5, 15] },

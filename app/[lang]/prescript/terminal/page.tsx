@@ -7,7 +7,7 @@ import { GIFT_COLUMNS, MD_EVENT_CHOICE_COLUMNS, MD_EVENT_COLUMNS, RECIPE_COLUMNS
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import { normalizePlannerThemeId } from '@/lib/planner/types'
 import { withoutOtherLocales } from '@/lib/i18n/strip-locales'
-import { OBSERVATION_COLUMNS, type ObservationRow } from '@/lib/planner/observation'
+import { OBSERVATION_COLUMNS, type ObservationRow } from '@/features/planner'
 import PrescriptWrapper from '../_components/PrescriptWrapper'
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {

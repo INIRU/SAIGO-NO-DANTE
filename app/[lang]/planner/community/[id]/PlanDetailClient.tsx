@@ -28,34 +28,34 @@ import { findNoteGift } from '@/features/notes'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
 import { type Difficulty, type FloorDifficulty, type GiftActivationCondition, type IdentitySlot as PlannerIdentitySlot, type RecipeData } from '@/lib/planner/types'
 import { buildGiftMap } from '@/lib/planner/fusion'
-import { normalizeFloorPlanDifficulty } from '@/lib/planner/floor-difficulty'
 import { computeDifficultySummary, planDifficultyBadge } from '@/lib/planner/stripPlanForList'
+import { getGiftActivationConditionStatus, getGiftConditionCountsForSlots, type GiftConditionStatus } from '@/lib/planner/gift-condition-status'
+import { observationCost, type Observation } from '@/features/planner'
+import { normalizeFloorPlanDifficulty } from '@/lib/planner/floor-difficulty'
 import { showError, showSuccess } from '@/lib/toast'
 import RelativeTime from '@/components/ui/RelativeTime'
-const PlannerGiftModal = dynamic(() => import('@/components/planner/PlannerGiftModal'), { ssr: false })
+const PlannerGiftModal = dynamic(() => import('@/features/planner/components/PlannerGiftModal'), { ssr: false })
 const loadEventModal = () => import('@/features/mirror-dungeon/components/EventModal')
 const EventModal = dynamic(loadEventModal, { ssr: false })
 import type { MdEvent, MdEventChoice, EgoGift, EgoGiftTheme } from '@/features/mirror-dungeon'
-import PlanActions from '@/components/planner/PlanActions'
-import PlanComments from '@/components/planner/PlanComments'
-import PlanDeckTabs from '@/components/planner/PlanDeckTabs'
-import FloorPlanPreviewBoard from '@/components/planner/FloorPlanPreviewBoard'
+import PlanActions from '@/features/planner/components/PlanActions'
+import PlanComments from '@/features/planner/components/PlanComments'
+import PlanDeckTabs from '@/features/planner/components/PlanDeckTabs'
+import FloorPlanPreviewBoard from '@/features/planner/components/FloorPlanPreviewBoard'
 import GiftCard from '@/features/mirror-dungeon/components/GiftCard'
 import KeywordIcon from '@/components/ui/KeywordIcon'
 import { localizeDeckKeyword } from '@/features/decks'
 import { STORAGE_BASE, DEFAULT_AVATAR_URL, DEPLOYED_SLOT_COUNT } from '@/lib/constants/game'
 import { getLocalizedName } from '@/lib/i18n/localize'
 import type { SupportedLang } from '@/lib/i18n/types'
-import { getGiftActivationConditionStatus, getGiftConditionCountsForSlots, type GiftConditionStatus } from '@/lib/planner/gift-condition-status'
 import {
   getSelectedBlessingCost,
   getSelectedBlessingLevels,
   normalizeBlessingMessages,
   ReadOnlyBlessingGrid,
-} from '@/components/planner/BlessingTab'
+} from '@/features/planner/components/BlessingTab'
 import { workbenchReveal } from '@/lib/animations'
 import styles from './PlanDetailHeader.module.css'
-import { observationCost, type Observation } from '@/lib/planner/observation'
 import { gameTextToPlain } from '@/lib/game-text/rich-text'
 import AdSlot from '@/components/ads/AdSlot'
 

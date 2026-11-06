@@ -4,7 +4,7 @@ import useSWR from 'swr'
 import { useLocale } from 'next-intl'
 import { Search, X } from 'lucide-react'
 import DeckCard, { type DeckSummary } from '@/features/decks/components/DeckCard'
-import PlanCard, { type PlanSummary } from '@/components/planner/PlanCard'
+import PlanCard, { type PlanSummary } from '@/features/planner/components/PlanCard'
 import BaseModal from '@/components/ui/BaseModal'
 import type { CARD_KINDS } from '@/lib/notes/blocks'
 

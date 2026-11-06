@@ -243,7 +243,7 @@ export default function RandomClient({ sinners, identities, egos }: Props) {
       const code = await encodeRandomResult(sinners, identities, egos, result)
       if (target === 'deck') { router.push(deckLinkFromCode(code)); return }
       const state = plannerStateFromCode(code, sinners, identities as unknown as IdentityData[], egos as never)
-      const { saveDraftToLocal } = await import('@/lib/planner/encoder')
+      const { saveDraftToLocal } = await import('@/features/planner')
       if (!state || !saveDraftToLocal(state)) throw new Error('hand-off failed')
       router.push('/planner')
       showSuccess(t('sentToPlanner'))

@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { expect, it, vi } from 'vitest'
 import { renderToStaticMarkup } from 'react-dom/server'
-import PlanActions from '@/components/planner/PlanActions'
+import PlanActions from '@/features/planner/components/PlanActions'
 
 vi.mock('next-intl', () => ({ useTranslations: () => (key: string) => key, useLocale: () => 'ko' }))
 vi.mock('@/lib/i18n/navigation', () => ({ useRouter: () => ({ push: () => {} }) }))
