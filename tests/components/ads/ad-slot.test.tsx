@@ -5,7 +5,7 @@ import { describe, expect, it, vi } from 'vitest'
 let pathname = '/ko/decks/1'
 vi.mock('next/navigation', () => ({ usePathname: () => pathname }))
 import { renderToStaticMarkup } from 'react-dom/server'
-import AdSlot from '@/components/ads/AdSlot'
+import AdSlot, { AdSlotSpace } from '@/components/ads/AdSlot'
 import { ADSENSE_ACCOUNT } from '@/lib/seo/metadata'
 import { isAdFreePath } from '@/lib/seo/ads'
 
@@ -50,7 +50,7 @@ describe('ad slot', () => {
     expect(home.indexOf('<AdSlot place="inline" />')).toBeGreaterThan(home.indexOf('<Official '))
   })
 
-  it('REQ-SHARED-085 puts a 160x600 ad in each empty side margin, placed beside the measured content and never over it, not on home', () => {
+  it('REQ-SHARED-085 puts a 160x600 ad in each empty side margin, standing off the window edge, far from the measured content and never over it, not on home', () => {
     const layout = source('app/[lang]/layout.tsx')
     expect(layout).toContain('<AdSlot place="left" />')
     expect(layout).toContain('<AdSlot place="right" />')
@@ -58,8 +58,10 @@ describe('ad slot', () => {
     expect(css).toMatch(/\.rail\s*\{[^}]*display:\s*none[^}]*position:\s*fixed/)
     expect(css).toMatch(/\.railUnit\s*\{[^}]*width:\s*160px[^}]*height:\s*600px/)
     const code = source('components/ads/AdSlot.tsx')
-    // the margin must hold the ad, the gap to the content and an edge, or the side ad is not drawn
-    expect(code).toMatch(/margin >= RAIL \+ GAP \+ 16 \? margin - RAIL - GAP : null/)
+    // off the window edge but as far from the content as the margin allows; a margin without room for the edge, the ad and
+    // the gap to the content draws no side ad
+    expect(code).toMatch(/const EDGE = 24/)
+    expect(code).toMatch(/margin >= EDGE \+ RAIL \+ GAP \? EDGE : null/)
     // before the content is measured (the server render) there is no side ad, so it never lands on the content
     pathname = '/ko/decks/1'
     expect(renderToStaticMarkup(<AdSlot slot="1234567890" place="left" />)).toBe('')
@@ -103,6 +105,27 @@ describe('ad slot', () => {
     expect(source('components/ads/AdSlot.module.css')).toMatch(/min-width:\s*768px[^{]*\{\s*\.phoneOnly\s*\{\s*display:\s*none/)
     pathname = '/ko/motion/skills'
     expect(renderToStaticMarkup(<AdSlot slot="1234567890" place="inline" phoneOnly />)).toMatch(/class="site-ad [^"]*phoneOnly/)
+  })
+
+  it('REQ-SHARED-085 hides the list page-start banner where a side ad stands (the side ads flag the page root)', () => {
+    const css = source('components/ads/AdSlot.module.css')
+    expect(css).toMatch(/:global\(html\[data-ad-rail-left\]\) \.top,\s*:global\(html\[data-ad-rail-right\]\) \.top\s*\{\s*display:\s*none/)
+    expect(source('components/ads/AdSlot.tsx')).toMatch(/dataset\[flag\] = ''/)
+    pathname = '/ko/mirror-dungeon'
+    expect(renderToStaticMarkup(<AdSlot slot="1234567890" place="top" />)).toContain('data-ad-slot')
+    expect(renderToStaticMarkup(<AdSlotSpace />)).toContain('aria-hidden')
+  })
+
+  it('REQ-SHARED-085 puts one 300x250 ad under the skill info in the skill motion player side panel', () => {
+    const watch = source('features/motion/components/MotionWatch.tsx')
+    expect(watch.indexOf('<AdSlot place="panel" />')).toBeGreaterThan(watch.indexOf("t('skillInfo')"))
+    expect(source('components/ads/AdSlot.module.css')).toMatch(/\.panelUnit\s*\{[^}]*width:\s*300px[^}]*height:\s*250px/)
+    // the player is otherwise ad-free (no side or banner ads) and hides the page-level ads: the panel ad is its own
+    pathname = '/ko/motion/skills/watch'
+    expect(renderToStaticMarkup(<AdSlot slot="1234567890" place="inline" />)).toBe('')
+    const panel = renderToStaticMarkup(<AdSlot slot="1234567890" place="panel" />)
+    expect(panel).toContain('data-ad-slot')
+    expect(panel).not.toContain('site-ad')
   })
 
   it('REQ-SHARED-085 leaves editors, assist, tools, account, admin, legal and error pages without an ad', () => {
