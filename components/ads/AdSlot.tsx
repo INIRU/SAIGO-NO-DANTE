@@ -45,14 +45,16 @@ function useRailOffset(place: Place, pathname: string | null): number | null {
     const main = document.getElementById('main-content')
     if (!main) return
     const measure = () => {
-      let left = innerWidth, right = 0
+      // the page width without a classic (Windows) scrollbar: a fixed ad's `right` counts from the scrollbar, not the window edge
+      const width = document.documentElement.clientWidth
+      let left = width, right = 0
       for (const el of main.querySelectorAll(':scope > *, :scope > * > *, :scope > * > * > *, :scope > * > * > * > *')) {
         const box = el.getBoundingClientRect()
-        if (box.width < 200 || box.width > innerWidth - 32 || !box.height || getComputedStyle(el).position === 'fixed') continue
+        if (box.width < 200 || box.width > width - 32 || !box.height || getComputedStyle(el).position === 'fixed') continue
         left = Math.min(left, box.left)
         right = Math.max(right, box.right)
       }
-      const margin = place === 'left' ? left : innerWidth - right
+      const margin = place === 'left' ? left : width - right
       setOffset(right && margin >= EDGE + RAIL + GAP ? EDGE : null)
     }
     measure()
