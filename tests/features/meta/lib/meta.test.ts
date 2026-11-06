@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { aggregateDungeon, aggregateMeta, planGiftIds, planThemeIds } from '@/lib/meta/aggregate'
+import { aggregateDungeon, aggregateMeta } from '@/features/meta/lib/aggregate'
+import { planGiftIds, planThemeIds } from '@/lib/meta/posts'
 import { readAllMetaRows } from '@/lib/meta/pagination'
 import { isBaseEgo, parseMetaFilters, type MetaFilters, type MetaIdentity, type MetaPost } from '@/lib/meta/types'
 

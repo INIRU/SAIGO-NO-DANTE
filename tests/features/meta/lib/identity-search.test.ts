@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { searchIdentityRows } from '@/lib/meta/identity-search'
+import { searchIdentityRows } from '@/features/meta/lib/identity-search'
 import type { IdentityStat } from '@/lib/meta/types'
 
 const row = (identity_id: string, sinner_id: string, name_kr: string, name_en: string, name_jp: string, keywords: string[] = []): IdentityStat =>

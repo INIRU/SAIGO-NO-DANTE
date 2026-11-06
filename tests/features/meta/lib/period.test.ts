@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { metaPeriodStart } from '@/lib/meta/aggregate'
+import { metaPeriodStart } from '@/lib/meta/posts'
 import { parseMetaPeriod } from '@/lib/meta/types'
 
 // Wednesday 2026-10-28 15:00 KST: the update week began Thursday 2026-10-22 12:00 KST (03:00 UTC).
