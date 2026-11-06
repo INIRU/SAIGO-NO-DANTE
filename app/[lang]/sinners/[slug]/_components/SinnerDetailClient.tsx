@@ -26,6 +26,7 @@ import { getLocalizedAffiliations } from '@/lib/i18n/localize'
 import { useRoutePrefetch } from '@/lib/hooks/useRoutePrefetch'
 import styles from '@/styles/components/SinnerDetail.module.css'
 import SinnerHero from '@/features/catalog/components/SinnerHero'
+import AdSlot from '@/components/ads/AdSlot'
 import EgoDisplayCard from '@/features/catalog/components/EgoDisplayCard'
 
 interface Props {
@@ -389,6 +390,8 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
       />
       {/* the tabs and cards rise from below under the hero */}
       <div className={`${styles.content} max-w-7xl mx-auto mt-6 px-5 sm:mt-8 sm:px-8 relative`} style={{ zIndex: 1 }}>
+          {/* the page-start banner, where the side ads do not fit (DESIGN.md "광고") */}
+          <AdSlot place="top" />
           {/* 우측: 탭 콘텐츠 */}
           <m.div
             className="min-w-0"
