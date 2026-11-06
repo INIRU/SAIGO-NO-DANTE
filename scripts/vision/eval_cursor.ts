@@ -1,13 +1,13 @@
 // @ts-nocheck -- developer tool run with tsx.
 /**
- * The cursor finder (lib/vision/cursor.ts) on labelled frames: frames with the game cursor drawn in and labelled
+ * The cursor finder (features/assist/lib/cursor.ts) on labelled frames: frames with the game cursor drawn in and labelled
  * (`cursor`: {x, y, down}) and frames without one. Each frame is first scaled to `--width` (the worker's working width).
  * Usage: npx tsx scripts/vision/eval_cursor.ts <dir with cursor frames> <dir with plain frames,...> [--n 300] [--width 960]
  */
 import { readdirSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import sharp from 'sharp'
-import { decodeCursorTemplates, findCursor } from '../../lib/vision/cursor'
+import { decodeCursorTemplates, findCursor } from '../../features/assist/lib/cursor'
 
 const args = process.argv.slice(2)
 const opt = (k, d) => { const i = args.indexOf('--' + k); return i >= 0 ? Number(args[i + 1]) : d }

@@ -8,7 +8,7 @@ import type { GiftData, ThemeData } from '@/lib/planner/types'
 
 // The PiP window is rendered inline so its content can be read as markup.
 vi.mock('react-dom', async importOriginal => ({ ...(await importOriginal<typeof import('react-dom')>()), createPortal: (node: unknown) => node }))
-vi.mock('@/lib/hooks/useCompanionWindow', () => ({
+vi.mock('@/features/assist/hooks/useCompanionWindow', () => ({
   useCompanionWindow: () => ({ container: {}, open: async () => {}, size: { width: 360, height: 480 }, actualSize: { width: 360, height: 480 }, updateSize: () => {} }),
 }))
 vi.mock('@/components/ui/GiftArtwork', () => ({ default: () => <span data-test-artwork /> }))

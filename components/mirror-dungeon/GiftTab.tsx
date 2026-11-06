@@ -22,7 +22,7 @@ import {
 import { createPreset, presetSections } from '@/lib/mirror-dungeon/gift-presets'
 import { useGiftPresets } from '@/hooks/useGiftPresets'
 import { useStored } from '@/hooks/useStored'
-import { useCompanionWindow } from '@/lib/hooks/useCompanionWindow'
+import { useCompanionWindow } from '@/features/assist/hooks/useCompanionWindow'
 import { showError, showSuccess } from '@/lib/toast'
 
 interface GiftTabProps extends GiftCatalogFilters {

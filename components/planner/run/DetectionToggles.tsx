@@ -1,7 +1,7 @@
 'use client'
 
 import { useId } from 'react'
-import { DETECTION_KINDS, type DetectionKind, type DetectionSettings } from '@/lib/vision/detection-settings'
+import { DETECTION_KINDS, type DetectionKind, type DetectionSettings } from '@/features/assist'
 
 interface Props {
   value: DetectionSettings

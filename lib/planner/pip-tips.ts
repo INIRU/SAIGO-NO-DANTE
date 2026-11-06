@@ -1,4 +1,4 @@
-import { bonusPicks, type ClearBonusOffer } from '@/lib/vision/clear-bonus'
+import { bonusPicks, type ClearBonusOffer } from '@/lib/utils/clear-bonus-offer'
 import type { RunState } from './run-types'
 import type { PipMode } from './pip-view'
 

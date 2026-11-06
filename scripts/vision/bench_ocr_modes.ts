@@ -5,9 +5,9 @@ import { chromium } from "playwright"
 import { readFileSync, readdirSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 declare global { interface Window { __ocr: Worker } }
-import { costBeforeSale, isSellWindow, sellCost, sellDialog } from '../../lib/vision/sell-evidence'
-import { fusionConfirmation } from '../../lib/vision/fusion-evidence'
-import { themeSelectionHeaderFloor } from '../../lib/vision/exploration-match'
+import { costBeforeSale, isSellWindow, sellCost, sellDialog } from '../../features/assist/lib/sell-evidence'
+import { fusionConfirmation } from '../../features/assist/lib/fusion-evidence'
+import { themeSelectionHeaderFloor } from '../../features/assist/lib/exploration-match'
 
 const root = process.argv[2] ?? '/Users/iniru/Downloads/assist-analysis-2026-09-24/keyframes'
 const origin = process.argv[3] ?? 'http://localhost:3300'

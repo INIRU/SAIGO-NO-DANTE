@@ -1,13 +1,13 @@
 import { after, NextResponse } from 'next/server'
 import { checkRequestRateLimit, rateLimitResponse } from '@/lib/rate-limit'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { parseAssistReport } from '@/lib/vision/assist-report'
+import { parseAssistReport } from '@/features/assist'
 
 const KEEP_MS = 180 * 86_400_000
 const MAX_BYTES = 64 * 1024
 
 /**
- * Opt-in Assist recognition reports (lib/vision/assist-report.ts): read/held counts and hand edits of one capture session.
+ * Opt-in Assist recognition reports (features/assist/lib/assist-report.ts): read/held counts and hand edits of one capture session.
  * No account, email or IP is stored; rows are removed after 180 days.
  */
 export async function POST(request: Request) {

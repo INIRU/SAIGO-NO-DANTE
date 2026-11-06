@@ -6,7 +6,7 @@ import CompanionPanel from '@/components/planner/run/CompanionPanel'
 import { createInitialRunState, runReducer, type RunState } from '@/lib/planner/run-types'
 import type { ThemeData } from '@/lib/planner/types'
 
-vi.mock('@/lib/hooks/useCompanionWindow', () => ({
+vi.mock('@/features/assist/hooks/useCompanionWindow', () => ({
   useCompanionWindow: () => ({ container: null, open: async () => {}, size: { width: 360, height: 480 }, actualSize: { width: 360, height: 480 }, updateSize: () => {} }),
 }))
 vi.mock('@/components/ui/GiftArtwork', () => ({ default: () => <span data-test-artwork /> }))
