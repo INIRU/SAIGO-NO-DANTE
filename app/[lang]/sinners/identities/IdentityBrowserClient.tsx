@@ -213,7 +213,7 @@ export default function IdentityBrowserClient({ identities, sinners }: Props) {
           ) : (
             <m.div
               role="list"
-              className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6 gap-x-3 gap-y-6 pt-2"
+              className="grid grid-cols-[repeat(auto-fill,minmax(7.5rem,1fr))] gap-x-4 gap-y-5 pt-2 max-sm:grid-cols-3 max-sm:gap-x-3"
               initial={shouldReduceMotion ? false : 'initial'}
               whileInView={shouldReduceMotion ? undefined : 'animate'}
               viewport={shouldReduceMotion ? undefined : { once: true, margin: '-48px' }}

@@ -9,8 +9,8 @@ describe('sinner logos keep their ratio', () => {
     expect(css).toMatch(/\.metaLogo\s*\{[^}]*object-fit:\s*contain/)
   })
 
-  it('the sinner page header contains the logo in its square', () => {
-    const source = readFileSync('app/[lang]/sinners/[slug]/SinnerDetailClient.tsx', 'utf8')
-    expect(source).toMatch(/src=\{getSinnerLogoUrl\(sinner\.id\)\}[\s\S]{0,200}object-contain/)
+  it('the sinner page hero sizes the logo by width only, so it keeps its own height', () => {
+    const css = readFileSync('components/sinners/SinnerHero.module.css', 'utf8')
+    expect(css).toMatch(/\.logo\s*\{[^}]*width:\s*2\.25rem;\s*height:\s*auto/)
   })
 })

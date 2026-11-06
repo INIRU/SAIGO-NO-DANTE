@@ -291,8 +291,9 @@ export async function getAllIdentitiesForBrowser(): Promise<IdentityBrowserItem[
       .schema('limbus')
       .from('identities')
       .select('id, sinner_id, name_kr, name_en, name_jp, rarity, sin_affinity, keywords, skill_keyword_list, folder_name, game_id, hp, base_hp, hp_per_level, speed_min, speed_max, def_level, acquisition_info, sinner:sinners(id, name_kr, order_num)')
-      .order('rarity', { ascending: false })
-      .order('name_kr'),
+      // newest release first (every identity carries a release date); the game id breaks ties within a release
+      .order('release_date', { ascending: false, nullsFirst: false })
+      .order('game_id', { ascending: false }),
     supabase()
       .schema('limbus')
       .from('skills')
@@ -360,8 +361,9 @@ export async function getAllEGOsForBrowser(): Promise<EGOBrowserItem[]> {
     .schema('limbus')
     .from('ego')
     .select('id, sinner_id, name_kr, name_en, name_jp, grade, sin_affinity, keywords, folder_name, image_url, game_id, stage_levels:ego_skills(construe_level), sinner:sinners(id, name_kr, order_num)')
-    .order('grade')
-    .order('name_kr')
+    // newest release first, as the identity browser
+    .order('release_date', { ascending: false, nullsFirst: false })
+    .order('game_id', { ascending: false })
   if (error) throw error
 
   return (data ?? []).map(e => {

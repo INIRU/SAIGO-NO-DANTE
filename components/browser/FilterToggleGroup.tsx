@@ -10,6 +10,8 @@ export type FilterToggleItem<T extends string | number> = {
   value: T
   icon?: string          // 이미지 URL
   color?: string         // 색상 배지 (EGO 등급용)
+  /** Colour of the selected state (a sinner's own colour); the site gold otherwise. */
+  accent?: string
   label: string
 }
 
@@ -47,6 +49,7 @@ export default function FilterToggleGroup<T extends string | number>({
             aria-label={item.label}
             title={item.label}
             className={styles.item}
+            style={item.accent ? { '--accent': item.accent } as React.CSSProperties : undefined}
           >
             {item.icon ? (
               <Image src={item.icon} alt="" width={iconSize} height={iconSize} className={styles.icon} style={{ height: size }} unoptimized />

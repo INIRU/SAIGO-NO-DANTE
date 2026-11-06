@@ -16,7 +16,7 @@ it('REQ-NEWS-012 links the calendar from an icon beside the language button, nam
     const link = source.indexOf('href="/calendar"'), language = source.indexOf('<LanguageSwitcher', link)
     expect(link, file).toBeGreaterThan(0)
     expect(source.slice(link, language), file).toContain("aria-label={t('nav.other.calendar' as TranslationKey)}")
-    expect(source.slice(link, language), file).toContain('<CalendarDays')
+    expect(source.slice(link, language), file).toContain('<CalendarIcon')
     // Nothing but the link sits between it and the language button.
     expect(source.slice(link, language).match(/<NavLink|<button|<div/g), file).toBeNull()
   }

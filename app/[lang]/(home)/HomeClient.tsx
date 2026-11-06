@@ -41,7 +41,7 @@ function CommandUtilityLink({
   return (
     <Link
       href={href}
-      className={`group ${ACTION_BASE} border border-[rgba(200,144,10,0.32)] bg-[rgba(23,18,12,0.72)] text-[0.875rem] font-medium text-[var(--text-primary)] hover:border-[rgba(232,176,48,0.6)] hover:bg-[rgba(36,29,21,0.9)]`}
+      className="group frame frame-strong frame-glow press -m-[0.414rem] flex min-h-[3.83rem] min-w-0 items-center gap-2.5 px-2 text-[0.875rem] font-medium text-[var(--text-primary)] [--frame-w:1rem]"
     >
       <span className="shrink-0 text-[var(--gold)] transition-colors duration-200 group-hover:text-[var(--gold-light)]">{icon}</span>
       <span className="truncate">{children}</span>
@@ -259,7 +259,7 @@ export default function HomeClient({ latestIdentities, pinnedAnnouncement }: Hom
             <div className="home-command-actions mt-6 grid grid-cols-2 gap-2 opacity-0 md:mt-8 md:gap-2.5" suppressHydrationWarning>
               <Link
                 href="/sinners"
-                className={`col-span-2 ${ACTION_BASE} bg-[var(--gold)] text-[0.9375rem] font-semibold text-[var(--bg-deep)] hover:bg-[var(--gold-light)] md:min-h-[3.25rem]`}
+                className={`press cut-corners col-span-2 ${ACTION_BASE} bg-[var(--gold)] text-[0.9375rem] font-semibold text-[var(--bg-deep)] hover:bg-[var(--gold-light)] focus-visible:ring-inset focus-visible:ring-[var(--bg-deep)] focus-visible:ring-offset-0 md:min-h-[3.25rem]`}
               >
                 <SinnerRosterIcon size="1.25rem" className="shrink-0" />
                 <span className="truncate">{t('home.cta.sinners')}</span>

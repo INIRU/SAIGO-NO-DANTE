@@ -25,6 +25,7 @@ import { translations } from '@/lib/i18n/translations'
 import { getLocalizedAffiliations } from '@/lib/i18n/localize'
 import { useRoutePrefetch } from '@/lib/hooks/useRoutePrefetch'
 import styles from '@/styles/components/SinnerDetail.module.css'
+import SinnerHero from '@/components/sinners/SinnerHero'
 import EgoDisplayCard from '@/components/sinners/EgoDisplayCard'
 
 interface Props {
@@ -376,134 +377,24 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
   }, [])
 
   return (
-    <div className={`${styles.page} min-h-[100dvh] pt-[4.75rem] sm:pt-24 pb-16 relative`}>
-      {/* 배경 글로우 */}
-      <div className="fixed inset-0 pointer-events-none" style={{ zIndex: 0 }}>
-        <div style={{
-          position: 'absolute',
-          top: '5%',
-          right: '10%',
-          width: '35rem',
-          height: '35rem',
-          borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(200,144,10,0.03) 0%, transparent 60%)',
-        }} />
-      </div>
-      <div className="max-w-[90rem] mx-auto px-5 sm:px-8 relative" style={{ zIndex: 1 }}>
-        {/* 브레드크럼 */}
-        <div className="mb-2 sm:mb-6 flex items-center gap-2 text-xs sm:text-sm" style={{ color: 'var(--text-muted)' }}>
-          <Link href="/sinners" className="inline-flex min-h-11 items-center gap-2 hover:text-yellow-300 transition-colors">
-            <ArrowLeft size={16} aria-hidden />{t('sinners.title')}
-          </Link>
-          <span aria-hidden style={{ color: 'var(--text-muted)' }}>&rsaquo;</span>
-          <span style={{ color: 'var(--gold)' }}>{getName(sinner.name_kr, sinner.name_en, sinner.name_jp)}</span>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-[15rem_minmax(0,1fr)] xl:grid-cols-[16rem_minmax(0,1fr)] gap-5 sm:gap-8">
-          {/* 좌측: 캐릭터 정보 (sticky) */}
-          <m.div
-            className={`${styles.profileCol} lg:self-start`}
-            initial={shouldReduceMotion ? false : { y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: shouldReduceMotion ? 0 : 0.6, ease: [0.33, 1, 0.68, 1] }}
-          >
-            <div className={styles.profile}>
-              <div className="flex gap-4 lg:block">
-              {/* 프로필 이미지 */}
-              <div
-                className="relative w-16 sm:w-24 lg:w-full rounded-md sm:rounded-lg mb-0 lg:mb-6 overflow-hidden flex-shrink-0"
-                style={{ aspectRatio: '3/4', background: 'var(--bg-elevated)' }}
-              >
-                {getSinnerProfileUrl(sinner.id) ? (
-                  <Image
-                    src={getSinnerProfileUrl(sinner.id)}
-                    alt={getName(sinner.name_kr, sinner.name_en, sinner.name_jp)}
-                    fill
-                    sizes="(max-width: 639px) 4rem, (max-width: 1023px) 6rem, 16rem"
-                    quality={90}
-                    placeholder="blur"
-                    blurDataURL={getBlurDataURL(getSinnerProfileUrl(sinner.id)) ?? BLUR_PLACEHOLDER}
-                    className="object-cover object-top"
-                    style={{ objectPosition: '50% 15%' }}
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <span
-                      className="font-serif text-8xl font-bold"
-                      style={{ color: 'rgba(200,164,90,0.2)' }}
-                    >
-                      {sinner.name[0]}
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              <div className="flex-1 min-w-0">
-              {/* 이름 + 로고 */}
-              <div className="flex items-center gap-2 sm:gap-3 mb-1 min-w-0">
-                <Image
-                  src={getSinnerLogoUrl(sinner.id)}
-                  alt=""
-                  width={40}
-                  height={40}
-                 
-                  className="w-6 h-6 object-contain sm:w-10 sm:h-10"
-                  style={{
-                    filter: 'drop-shadow(0 0 4px rgba(200,144,10,0.3))',
-                    opacity: 0.9,
-                  }}
-                />
-                <div className="flex-1 min-w-0" style={{ containerType: 'inline-size' }}>
-                  <h1
-                    className="text-xl sm:text-[clamp(1.5rem,22cqw,1.875rem)] leading-tight whitespace-nowrap overflow-hidden text-ellipsis"
-                    style={{ color: 'var(--gold)', fontFamily: 'var(--font-heading)', fontWeight: 400 }}
-                  >
-                    {getName(sinner.name_kr, sinner.name_en, sinner.name_jp)}
-                  </h1>
-                  <p className="flex items-baseline gap-2 text-xs sm:text-sm" style={{ color: 'var(--text-muted)' }}>
-                    <span>{sinner.name}</span>
-                    <span style={{ fontFamily: 'var(--font-title)', letterSpacing: '0.04em' }}>No.{String(sinner.order_num).padStart(2, '0')}</span>
-                  </p>
-                </div>
-              </div>
-
-              {/* 설명 */}
-              <p
-                className="text-xs sm:text-sm leading-snug sm:leading-relaxed mt-1 sm:mt-3 mb-1.5 sm:mb-3"
-                style={{
-                  color: 'var(--text-secondary)',
-                  display: '-webkit-box',
-                  WebkitLineClamp: 2,
-                  WebkitBoxOrient: 'vertical',
-                  overflow: 'hidden',
-                }}
-              >
-                {(() => {
-                  const descKey = `sinnerDetail.desc.${sinner.id}` as keyof typeof translations
-                  const entry = translations[descKey]
-                  if (!entry) return sinner.description
-                  return entry[lang] ?? entry['ko'] ?? sinner.description
-                })()}
-              </p>
-
-              {/* 문학 출처 */}
-              <div
-                className="text-[0.6875rem] sm:text-xs pl-2 sm:pl-3"
-                style={{ borderLeft: '0.125rem solid var(--gold)', color: 'var(--text-muted)' }}
-              >
-                {literarySource}
-              </div>
-              </div>
-              </div>
-            </div>
-          </m.div>
-
+    <div className={`${styles.page} min-h-[100dvh] pb-16 relative`}>
+      <SinnerHero
+        sinner={sinner}
+        name={getName(sinner.name_kr, sinner.name_en, sinner.name_jp)}
+        description={(() => {
+          const entry = translations[`sinnerDetail.desc.${sinner.id}` as keyof typeof translations]
+          return entry ? entry[lang] ?? entry['ko'] ?? sinner.description : sinner.description
+        })()}
+        source={literarySource}
+      />
+      {/* the tabs and cards rise from below under the hero */}
+      <div className={`${styles.content} max-w-[90rem] mx-auto mt-6 px-5 sm:mt-8 sm:px-8 relative`} style={{ zIndex: 1 }}>
           {/* 우측: 탭 콘텐츠 */}
           <m.div
             className="min-w-0"
-            initial={shouldReduceMotion ? false : { y: 20 }}
+            initial={shouldReduceMotion ? false : { y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: shouldReduceMotion ? 0 : 0.6, delay: shouldReduceMotion ? 0 : 0.2, ease: [0.33, 1, 0.68, 1] }}
+            transition={{ duration: shouldReduceMotion ? 0 : 0.32, delay: shouldReduceMotion ? 0 : 0.04, ease: [0.23, 1, 0.32, 1] }}
           >
             {/* 탭 */}
             <div className={styles.tabs} role="tablist">
@@ -753,7 +644,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                     {hasActiveFilters ? t('sinnerDetail.noResults') : t('sinnerDetail.noIdentities')}
                   </div>
                 ) : (
-                  <StaggerReveal key={filteredIdentities.map(i => i.id).join()} className={styles.identityGrid} staggerDelay={0.05}>
+                  <StaggerReveal className={styles.identityGrid} staggerDelay={0.03}>
                     {filteredIdentities.map((identity) => (
                       <m.div
                         key={identity.id}
@@ -814,7 +705,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                     {hasActiveFilters ? t('sinnerDetail.noResults') : t('sinnerDetail.noEgo')}
                   </div>
                 ) : (
-                  <StaggerReveal key={filteredEgos.map(e => e.id).join()} className={styles.egoGrid} staggerDelay={0.05}>
+                  <StaggerReveal className={styles.egoGrid} staggerDelay={0.03}>
                     {filteredEgos.map((ego) => {
                       const egoName = getName(ego.name_kr, ego.name_en, ego.name_jp)
 
@@ -842,7 +733,6 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
             )}
             </AnimatePresence>
           </m.div>
-        </div>
       </div>
     </div>
   )

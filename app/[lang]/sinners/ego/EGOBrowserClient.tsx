@@ -144,7 +144,7 @@ export default function EGOBrowserClient({ egos, sinners }: Props) {
           ) : (
             <m.div
               role="list"
-              className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6 gap-x-3 gap-y-6 pt-2 [&>*]:mx-auto [&>*]:w-full [&>*]:max-w-[10rem]"
+              className="grid grid-cols-[repeat(auto-fill,minmax(8rem,1fr))] gap-x-4 gap-y-5 pt-2 max-sm:grid-cols-2 [&>*]:mx-auto [&>*]:w-full [&>*]:max-w-[9.5rem]"
               initial={shouldReduceMotion ? false : 'initial'}
               whileInView={shouldReduceMotion ? undefined : 'animate'}
               viewport={shouldReduceMotion ? undefined : { once: true, margin: '-48px' }}

@@ -1,7 +1,8 @@
 'use client';
 
 import { Suspense, useState, useRef, useEffect } from 'react';
-import { Languages, ChevronDown, Check } from 'lucide-react';
+import { ChevronDown, Check } from 'lucide-react';
+import { LanguageIcon } from '@/components/brand/icons';
 import { useLocale } from 'next-intl';
 import { useRouter, usePathname } from '@/lib/i18n/navigation';
 import { SUPPORTED_LANGS } from '@/lib/i18n/types';
@@ -61,7 +62,7 @@ export default function LanguageSwitcher({ up = false, compact = false }: { up?:
         aria-haspopup="listbox"
         aria-expanded={open}
       >
-        <Languages size={compact ? 17 : 16} aria-hidden="true" />
+        <LanguageIcon size={compact ? 17 : 16} />
         {!compact && current?.nativeLabel}
         {!compact && <ChevronDown
           size={14}

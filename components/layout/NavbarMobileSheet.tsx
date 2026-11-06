@@ -1,6 +1,10 @@
 'use client'
 
-import { MessageCircle, CalendarDays } from 'lucide-react'
+import type { CSSProperties } from 'react'
+import styles from './NavbarMobileSheet.module.css'
+
+import { MessageCircle } from 'lucide-react'
+import { CalendarIcon } from '@/components/brand/icons'
 import { useTranslations } from 'next-intl'
 import { usePathname } from '@/lib/i18n/navigation'
 import type { TranslationKey } from '@/lib/i18n/translations'
@@ -29,25 +33,20 @@ export default function NavbarMobileSheet({ mainNavLabel, sessionStatus, avatarU
       aria-label={mainNavLabel}
       className="mobile-nav-sheet fixed inset-x-0 bottom-0 top-16 z-40 flex flex-col overflow-y-auto overscroll-contain bg-[var(--bg-deep)] lg:hidden"
     >
-      <div className="grid grid-cols-2 gap-x-4 gap-y-6 px-4 pt-5 pb-6">
-        {navGroups.map(group => (
-          <section key={group.label} aria-label={group.label}>
-            <h2 className="mb-1 px-3 text-[0.875rem] text-[var(--gold)]" style={{ fontFamily: 'var(--font-heading)' }}>{group.label}</h2>
-            {group.items.map(item => {
-              const active = isActiveHref(pathname, item.href)
-              return (
-                <NavLink
-                  key={item.href}
-                  href={item.href}
-                  onClick={onClose}
-                  aria-current={active ? 'page' : undefined}
-                  className={`relative flex min-h-11 items-center rounded-md px-3 text-[0.9375rem] font-medium ${focusRing} ${active ? 'bg-[rgba(200,144,10,0.08)] text-[var(--gold-light)]' : 'text-[var(--text-primary)]'}`}
-                >
-                  {active && <span aria-hidden="true" className="absolute left-0 top-3 bottom-3 w-0.5 rounded-full bg-[var(--gold)]" />}
-                  {item.label}
-                </NavLink>
-              )
-            })}
+      <div className={styles.groups}>
+        {navGroups.map((group, index) => (
+          <section key={group.label} aria-label={group.label} className={styles.group} style={{ '--i': index } as CSSProperties}>
+            <h2 className={styles.heading}>{group.label}</h2>
+            <div className={styles.items}>
+              {group.items.map(item => {
+                const active = isActiveHref(pathname, item.href)
+                return (
+                  <NavLink key={item.href} href={item.href} onClick={onClose} aria-current={active ? 'page' : undefined} className={`${styles.link} ${focusRing}`}>
+                    {item.label}
+                  </NavLink>
+                )
+              })}
+            </div>
           </section>
         ))}
       </div>
@@ -72,7 +71,7 @@ export default function NavbarMobileSheet({ mainNavLabel, sessionStatus, avatarU
             aria-current={isActiveHref(pathname, '/calendar') ? 'page' : undefined}
             className={`flex h-11 w-11 items-center justify-center rounded-md text-[var(--text-secondary)] aria-[current=page]:text-[var(--gold-light)] ${focusRing}`}
           >
-            <CalendarDays size={19} aria-hidden="true" />
+            <CalendarIcon size={19} />
           </NavLink>
           <LanguageSwitcher up />
         </div>

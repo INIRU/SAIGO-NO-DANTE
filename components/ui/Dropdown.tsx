@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useRef, useEffect, useId, type CSSProperties } from 'react'
-import { ChevronDown } from 'lucide-react'
+import { Check, ChevronDown } from 'lucide-react'
+import styles from './Dropdown.module.css'
 
 export interface DropdownOption<T extends string = string> {
   value: T
@@ -41,7 +42,7 @@ export default function Dropdown<T extends string = string>({
   const menuId = useId()
   useEffect(() => {
     if (!open) return
-    const buttons = ref.current?.querySelectorAll<HTMLButtonElement>('[role="menuitem"]')
+    const buttons = ref.current?.querySelectorAll<HTMLButtonElement>('[role="menuitemradio"]')
     const selected = Math.max(0, options.findIndex(option => option.value === value))
     buttons?.[selected]?.focus()
     buttons?.[selected]?.scrollIntoView({ block: 'nearest' })
@@ -66,7 +67,7 @@ export default function Dropdown<T extends string = string>({
       if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) return
       event.preventDefault()
       if (!open) { setOpen(true); return }
-      const buttons = Array.from(ref.current?.querySelectorAll<HTMLButtonElement>('[role="menuitem"]') ?? [])
+      const buttons = Array.from(ref.current?.querySelectorAll<HTMLButtonElement>('[role="menuitemradio"]') ?? [])
       const current = buttons.findIndex(button => button === document.activeElement)
       const next = event.key === 'Home' ? 0 : event.key === 'End' ? buttons.length - 1 : (current + (event.key === 'ArrowDown' ? 1 : -1) + buttons.length) % buttons.length
       buttons[next]?.focus()
@@ -80,70 +81,27 @@ export default function Dropdown<T extends string = string>({
         aria-expanded={open}
         aria-controls={open ? menuId : undefined}
         onClick={() => setOpen(v => !v)}
-        className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs transition-colors"
-        style={{
-          minWidth: 0,
-          cursor: 'pointer',
-          background: 'rgba(255,255,255,0.05)',
-          borderWidth: '1px',
-          borderStyle: 'solid',
-          borderColor: isActive ? 'var(--gold-dim)' : 'rgba(255,255,255,0.1)',
-          color: isActive ? 'var(--gold)' : 'var(--text-secondary)',
-          fontFamily: 'var(--font-heading)',
-          ...buttonStyle,
-        }}
+        className={styles.trigger}
+        data-active={isActive || undefined}
+        style={buttonStyle}
       >
-        <span
-          style={{
-            minWidth: 0,
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
-          }}
-        >
-          {prefix ? `${prefix} ${currentLabel}` : currentLabel}
-        </span>
-        <ChevronDown
-          size={14}
-          style={{
-            flexShrink: 0,
-            opacity: 0.5,
-            transform: open ? 'rotate(180deg)' : 'rotate(0deg)',
-            transition: 'transform 0.2s ease',
-          }}
-        />
+        <span className={styles.label}>{prefix && <span className={styles.prefix}>{prefix}</span>}{currentLabel}</span>
+        <ChevronDown size={14} aria-hidden className={styles.chevron} />
       </button>
       {open && (
-        <div
-          id={menuId}
-          role="menu"
-          aria-label={ariaLabel}
-          className="absolute top-full mt-1 left-0 z-30 rounded overflow-y-auto"
-          style={{
-            background: 'var(--bg-card)',
-            borderWidth: '1px',
-            borderStyle: 'solid',
-            borderColor: 'var(--border)',
-            boxShadow: 'var(--shadow-lg)',
-            minWidth: `${minWidth}px`,
-            maxHeight: '16rem',
-          }}
-        >
+        <div id={menuId} role="menu" aria-label={ariaLabel} className={styles.menu} style={{ minWidth: `max(100%, ${minWidth}px)` }}>
           {options.map(opt => (
             <button
               type="button"
-              role="menuitem"
+              role="menuitemradio"
+              aria-checked={value === opt.value}
               key={opt.value}
               onMouseDown={event => event.preventDefault()}
               onClick={() => { onChange(opt.value); setOpen(false); triggerRef.current?.focus() }}
-              className="block w-full text-left px-3 py-2 text-xs transition-colors hover:bg-white/5"
-              style={{
-                cursor: 'pointer',
-                color: value === opt.value ? 'var(--gold)' : 'var(--text-secondary)',
-                fontFamily: 'var(--font-heading)',
-              }}
+              className={styles.item}
             >
               {opt.label}
+              <Check size={14} aria-hidden className={styles.check} />
             </button>
           ))}
         </div>
