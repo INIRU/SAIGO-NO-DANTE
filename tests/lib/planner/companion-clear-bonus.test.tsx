@@ -7,7 +7,7 @@ import type { GiftData } from '@/lib/planner/types'
 
 vi.mock('@/components/ui/GiftArtwork', () => ({ default: () => <span data-test-artwork /> }))
 // the site's preview card (hover) needs the router; the cells are what these tests read
-vi.mock('@/components/notes/NotePreviewCard', () => ({ default: ({ children }: { children: React.ReactNode }) => <>{children}</> }))
+vi.mock('@/features/notes/components/NotePreviewCard', () => ({ default: ({ children }: { children: React.ReactNode }) => <>{children}</> }))
 
 const gift = (id: number, name: string) => ({ game_id: id, name, name_en: null, name_jp: null }) as unknown as GiftData
 const gifts = [gift(9726, '가'), gift(9724, '나'), gift(9723, '다'), gift(9722, '라')]

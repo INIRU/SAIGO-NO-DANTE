@@ -4,14 +4,14 @@ import dynamic from 'next/dynamic'
 import { useMemo, useState } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 import { NoteRenderer, type NoteEgoGiftEntry } from '@/components/decks/NoteChips'
-import { NoteGiftClickContext } from '@/components/notes/NoteBlockViewer'
+import { NoteGiftClickContext } from '@/features/notes/components/NoteBlockViewer'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
-import { buildKeywordPool, buildEgoGiftPool } from '@/components/notes/NoteAutocomplete'
+import { buildKeywordPool, buildEgoGiftPool } from '@/features/notes/components/NoteAutocomplete'
 import type { PlannerState, PlannerAction, ThemeData, GiftData, SinnerData } from '@/lib/planner/types'
 
 const PlannerGiftModal = dynamic(() => import('@/components/planner/PlannerGiftModal'), { ssr: false })
 // Tiptap and ProseMirror load with the editor, not with the planner page. The shell holds its toolbar and 24rem body.
-const NoteDocumentEditor = dynamic(() => import('@/components/notes/NoteDocumentEditor'), {
+const NoteDocumentEditor = dynamic(() => import('@/features/notes/components/NoteDocumentEditor'), {
   ssr: false,
   loading: () => <div className="note-editor-shell min-h-[27rem] rounded-md bg-[var(--bg-deep)]" aria-busy="true" />,
 })

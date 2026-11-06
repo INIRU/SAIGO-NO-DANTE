@@ -354,7 +354,7 @@ python3 scripts/vision/train_icons.py --data <icon dataset> --out <checkpoint> -
 | 창 크기별 배치 | `pipDensity`(compact: 폭 360 미만이나 높이 340 미만, wide: 폭 560 이상이고 높이의 1.25배 이상), `floorLayout` | compact는 메모 2줄·작은 팁, wide는 메모·팁을 왼쪽 열(40%, 스크롤해도 고정)에 두고 기프트를 오른쪽에 |
 | 아이콘 크기 | `fitGrid` 하나 | 높이를 주면 전부 들어가는 가장 큰 크기, 안 주면 최소 크기로 들어가는 만큼 열을 채운 뒤 키운다 |
 | 기프트 칸 표시 | `giftBadges` + `CompanionPanel`의 `badgeRows` | 줄 하나(기프트 집합, 이름, 짧은 이름, 색)를 넣는다. 지금: 플랜, 이 층에서만(빨간 느낌표), 클리어 보너스(그림 아래 가장자리의 "보너스" 띠) |
-| 기프트 정보 | 사이트 공용 미리보기 카드 `NotePreviewHost`(`components/notes/NotePreviewCard.tsx`, 노트·덱과 같은 카드) + `giftPreviewAsset` | 칸에는 그림만 둔다(이름 없음). 마우스를 올리거나 키보드로 고르면 그림·이름·키워드·효과 카드가 뜬다. 카드는 그 요소가 있는 창(PiP 창이면 PiP 문서)에 그린다. 클릭은 기록이라 탭해도 창을 열지 않는다(`modalOnTap` 끔) |
+| 기프트 정보 | 사이트 공용 미리보기 카드 `NotePreviewHost`(`features/notes/components/NotePreviewCard.tsx`, 노트·덱과 같은 카드) + `giftPreviewAsset` | 칸에는 그림만 둔다(이름 없음). 마우스를 올리거나 키보드로 고르면 그림·이름·키워드·효과 카드가 뜬다. 카드는 그 요소가 있는 창(PiP 창이면 PiP 문서)에 그린다. 클릭은 기록이라 탭해도 창을 열지 않는다(`modalOnTap` 끔) |
 | 뉴비 팁 | `lib/planner/pip-tips.ts`의 `PIP_TIPS` + `CompanionView`의 `tipView` | 규칙(보일 화면, 데이터 만드는 함수) 하나와 그리는 코드 하나, 메시지. 지금: 층의 클리어 보너스, 선택 화면에서 계획 기프트가 보너스에 있는 카드 |
 | 그리기 | `components/planner/run/CompanionView.tsx` | 화면마다 한 갈래. 상태·기록·인식은 모르고 받은 것만 그린다 |
 | 기록·인식 연결 | `components/planner/run/CompanionPanel.tsx` | 되돌리기, 자동 기록, 창 열기. 보일 데이터(`PipView`)를 만들어 넘긴다 |

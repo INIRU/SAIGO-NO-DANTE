@@ -2,8 +2,8 @@ import { leadingPlaceholder } from '@/lib/game-text/placeholders'
 
 /**
  * The guess the site used to make when it drew a user memo: which words of a plain text are keywords. The renderer no
- * longer guesses (a memo shows keywords only as explicit chips); this matcher is kept for lib/notes/memo-keywords.ts,
- * which converts old memos into explicit chips, so the conversion picks exactly the words users saw as keywords.
+ * longer guesses (a memo shows keywords only as explicit chips); this matcher stays as the recorded behaviour of the old
+ * renderer (tests/lib/notes/memo-keyword-guess.test.ts); no app code imports it.
  *
  * Rules, as the renderer applied them left to right:
  * - names are tried longest first;
