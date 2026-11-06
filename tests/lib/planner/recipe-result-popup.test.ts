@@ -1,6 +1,6 @@
 import { expect, it } from 'vitest'
 import { recipeFromMaterials, recipeFusionMaterials, recipeIngredientsInInventory, resolveRecipeResult, settleResultPopup } from '@/lib/planner/fusion'
-import { popupCandidateIds } from '@/lib/vision/popup-evidence'
+import { popupCandidateIds } from '@/features/assist/lib/popup-evidence'
 import type { GiftData, RecipeData } from '@/lib/planner/types'
 
 // Recipes as stored (2026-09-24 DB). Their results look like their ingredients: 회중시계 : 타입 E vs 은빛 시계 케이스 0.965,

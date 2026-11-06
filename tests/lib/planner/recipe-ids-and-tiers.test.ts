@@ -3,8 +3,8 @@ import {
   findAvailableFusions, giftTier, mixedFusionKeys, mixedResultFromMaterials, randomFusionTier,
   recipeFromMaterials, recipeIngredientIds, recipeIngredientsInInventory, recipeResultId, settleResultPopup,
 } from '@/lib/planner/fusion'
-import { sellPriceFits, readSaleStep, EMPTY_SALE_STATE } from '@/lib/vision/sell-evidence'
-import { skillExchangeFromPrice } from '@/lib/vision/skill-exchange'
+import { sellPriceFits, readSaleStep, EMPTY_SALE_STATE } from '@/features/assist/lib/sell-evidence'
+import { skillExchangeFromPrice } from '@/features/assist/lib/skill-exchange'
 import type { GiftData, RecipeData } from '@/lib/planner/types'
 
 const gift = (game_id: number, name: string, grade = '1') => [game_id, { game_id, name, grade } as GiftData] as const

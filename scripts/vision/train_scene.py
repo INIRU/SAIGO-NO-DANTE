@@ -11,7 +11,7 @@ class order to the shipped labels.json.
 --arch mnv4s (shipped since 2026-11-04b): timm MobileNetV4-Conv-Small from ImageNet, every layer trained.
 --arch mnv3s: torchvision MobileNetV3-small, its last feature blocks and head trained while the earlier blocks and their
 batch norms stay fixed, from ImageNet or from a shipped scene.onnx (--init-onnx, its batch norms already folded).
-The input is what the worker gives (lib/vision/preprocess.ts): the whole frame to 224x224, RGB, ImageNet mean and std.
+The input is what the worker gives (features/assist/lib/preprocess.ts): the whole frame to 224x224, RGB, ImageNet mean and std.
 Frames are kept at 480x270 for augmentation (as the dataset scripts store them), then resized with antialias.
 Writes <out>/scene-<arch>.onnx (checked against PyTorch), <out>/labels.json and <out>/report.json.
 """

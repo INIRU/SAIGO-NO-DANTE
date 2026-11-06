@@ -59,6 +59,6 @@ Official PaddlePaddle exports, license Apache-2.0 (model cards; full text in LIC
 | dict.json | ${HF}/${REC.repo} (inference.yml PostProcess.character_dict) | ${REC.revision} | ${sha256(Buffer.from(JSON.stringify(dictionary(yml))))} |
 
 Pre/post-processing follows PaddleX (DetResizeForTest, NormalizeImage, DBPostProcess, OCRReisizeNormImg, CTCLabelDecode):
-see lib/vision/paddle-text.ts. The models are used unmodified; no fine-tuning or conversion.
+see features/assist/lib/paddle-text.ts. The models are used unmodified; no fine-tuning or conversion.
 `)
 console.log(`Wrote ${OUT}`)

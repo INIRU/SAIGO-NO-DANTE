@@ -1,8 +1,8 @@
 """Shared by the Assist's training and evaluation scripts (scripts/vision): the input the browser gives the models
-(lib/vision/preprocess.ts for the scene model, lib/vision/icon-classifier.ts for the icon model), the app's strong-read
+(features/assist/lib/preprocess.ts for the scene model, features/assist/lib/icon-classifier.ts for the icon model), the app's strong-read
 bar, the vestige class, a stable split, the model builders and the ONNX export with its parity check.
 
-tests/lib/vision/assist-model-constants.test.ts fails if these constants and the browser's drift apart;
+tests/features/assist/lib/assist-model-constants.test.ts fails if these constants and the browser's drift apart;
 the dataset pipeline (pipeline/assist/_common.py, outside this repository) mirrors them for its dataset and evaluation scripts.
 """
 import hashlib
