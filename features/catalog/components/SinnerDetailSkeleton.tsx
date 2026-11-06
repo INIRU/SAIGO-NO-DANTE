@@ -1,5 +1,6 @@
 import Skeleton, { SkeletonLine, SkeletonPage } from '@/components/ui/Skeleton'
 import hero from './SinnerHero.module.css'
+import { AdSlotSpace } from '@/components/ads/AdSlot'
 import detail from '@/styles/components/SinnerDetail.module.css'
 
 /** The sinner page's own boxes: the hero (SinnerHero.module.css), then the tabs, search, filters and the card grid. */
@@ -20,6 +21,7 @@ export function SinnerDetailSkeleton() {
       </div>
     </section>
     <div className="mx-auto mt-6 max-w-7xl px-5 sm:mt-8 sm:px-8">
+      <AdSlotSpace />
       <div className="mb-4 flex gap-7 border-b border-[#2e2417]">{['2.6rem', '3.2rem'].map((w, i) => <div key={i} className={`-mb-px flex min-h-11 items-center border-b-2 ${i === 0 ? 'border-[var(--gold)]' : 'border-transparent'}`}><SkeletonLine w={w} h="1rem" /></div>)}</div>
       <Skeleton line className="mb-3 h-11 w-full" />
       <div className="flex flex-wrap items-center justify-between gap-2">

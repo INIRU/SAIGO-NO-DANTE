@@ -4,7 +4,8 @@
   display: flex;
   justify-content: center;
   width: 100%;
-  margin-bottom: 1.5rem;
+  margin-top: var(--ad-top-gap, 0);
+  margin-bottom: var(--ad-bottom-gap, 1.5rem);
   contain: layout;
 }
 
@@ -30,10 +31,18 @@
   }
 }
 
-/* the page-start banner gives way to the side ads where either stands (AdSlot flags the root) */
-:global(html[data-ad-rail-left]) .top,
-:global(html[data-ad-rail-right]) .top {
+/* The page-start banner gives way to a side ad that stands. Where the side ads can fit (a window wide enough for 80rem content
+   and two side ads, and tall enough for them) it starts hidden, so it never shows for a moment and then jumps away; it comes
+   back only when both side ads measured no room. The loading placeholder (AdSlotSpace) uses `.top` too. */
+:global(html[data-ad-rail-left="on"]) .top,
+:global(html[data-ad-rail-right="on"]) .top {
   display: none;
+}
+
+@media (min-width: 1712px) and (min-height: 760px) {
+  :global(html:not([data-ad-rail-left="off"][data-ad-rail-right="off"])) .top {
+    display: none;
+  }
 }
 
 /* the skill motion player's side panel: a 300x250 rectangle under the skill info */

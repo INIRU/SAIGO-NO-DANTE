@@ -1,5 +1,6 @@
 'use client'
 
+import AdSlot from '@/components/ads/AdSlot'
 import { getEgoGradeBannerUrl, getEgoArtworkUrl } from '@/lib/utils/images'
 
 import { useMemo, useState } from 'react'
@@ -263,6 +264,9 @@ export default function EGODetailClient({ sinner, ego }: Props) {
           </div>}
         </section>
       </div>
+
+      {/* between the E.G.O's card and its skills, as on an identity page (DESIGN.md "광고") */}
+      <AdSlot place="inline" />
 
       <div className={styles.combat}>
         {normalSkillList.length > 0 && <section className={styles.skillSection} aria-labelledby="ego-awakening">

@@ -1,6 +1,7 @@
 import { ArrowLeft, Play, Plus, SlidersHorizontal } from 'lucide-react'
 import NoteEditorGuide from '@/features/notes/components/NoteEditorGuide'
 import { Link } from '@/lib/i18n/navigation'
+import AdSlot from '@/components/ads/AdSlot'
 
 const press = 'active:scale-[0.97] motion-reduce:active:scale-100 transition-[transform,background-color,filter] duration-150 [transition-timing-function:cubic-bezier(0.23,1,0.32,1)]'
 
@@ -13,7 +14,7 @@ export default function BoardHeader({ kind, title, action, viewAll, back, assist
   kind: 'deck' | 'planner'; title: string; action: string; viewAll: string; back: string; assist?: string
 }) {
   const board = kind === 'deck' ? '/decks' : '/planner/community'
-  return (
+  return (<>
     <header className="board-header mx-auto w-full max-w-7xl shrink-0 px-4 pb-5 pt-[5.25rem] md:px-6 md:pb-7 md:pt-[6.5rem]">
       <div className="flex items-center gap-2 md:gap-3">
         <h1 className="min-w-0 flex-1 break-keep font-[family-name:var(--font-heading)] text-[1.625rem] leading-none text-[var(--gold)] md:text-[2.25rem]">{title}</h1>
@@ -34,5 +35,8 @@ export default function BoardHeader({ kind, title, action, viewAll, back, assist
         </Link>
       </div>
     </header>
-  )
+    {/* the page-start banner, where the side ads do not fit (DESIGN.md "광고") */}
+    {/* the shelves below keep their own top space */}
+    <div className="mx-auto w-full max-w-7xl shrink-0 px-4 [--ad-bottom-gap:0] md:px-6"><AdSlot place="top" /></div>
+  </>)
 }

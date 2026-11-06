@@ -8,6 +8,7 @@ import { publicSupabase } from '@/lib/supabase/public'
 import { getTranslations } from 'next-intl/server'
 import { z } from 'zod'
 import DeckCard from '@/features/decks/components/DeckCard'
+import AdSlot from '@/components/ads/AdSlot'
 import PlanCard from '@/components/planner/PlanCard'
 import PostAuthorName from '@/features/community/components/PostAuthorName'
 import BackLink from '@/components/navigation/BackLink'
@@ -79,6 +80,8 @@ async function SeriesContent({ params }: Props) {
             <SeriesOwnerTools id={series.id} title={series.title} items={series.items} />
           </div>
         </header>
+        {/* the page-start banner, where the side ads do not fit (DESIGN.md "광고") */}
+        <AdSlot place="top" />
         {cards.length ? (
           <ol className={styles.list}>
             {cards.map((card, index) => (
