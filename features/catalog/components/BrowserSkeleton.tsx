@@ -1,3 +1,4 @@
+import { AdSlotSpace } from '@/components/ads/AdSlot'
 import Skeleton, { SkeletonLine, SkeletonPage } from '@/components/ui/Skeleton'
 
 const Label = ({ w }: { w: string }) => <SkeletonLine w={w} h="0.6875rem" />
@@ -9,6 +10,7 @@ export default function BrowserSkeleton() {
       <div className="mb-3 flex h-[1.71875rem] items-center gap-3 md:h-[2.1875rem]"><Skeleton className="h-5 w-5" /><Skeleton className="h-[75%] w-[7rem]" /></div>
       <div className="flex items-center justify-between"><SkeletonLine w="5rem" h="0.8125rem" /><Skeleton line className="h-9 w-[6rem]" /></div>
     </div>
+    <AdSlotSpace />
     <div className="flex gap-6">
       <aside className="hidden w-[16rem] shrink-0 flex-col gap-4 pr-3 lg:flex">
         <div className="space-y-2"><Label w="3.5rem" /><Skeleton line className="h-9" /></div>

@@ -99,6 +99,27 @@ describe('ad slot', () => {
     expect(renderToStaticMarkup(<AdSlot slot="1234567890" place="top" />)).toBe('')
   })
 
+  it('REQ-SHARED-085 gives the boards, the identity and E.G.O lists and a sinner page the same page-start banner (shown where the side ads do not fit)', () => {
+    const board = source('features/community/components/BoardHeader.tsx')
+    expect(board.indexOf('<AdSlot place="top" />')).toBeGreaterThan(board.indexOf('</header>'))
+    const browser = source('features/catalog/components/BrowserHeader.tsx')
+    expect(browser.indexOf('<AdSlot place="top" />')).toBeGreaterThan(browser.indexOf('</h1>'))
+    const sinner = source('app/[lang]/sinners/[slug]/_components/SinnerDetailClient.tsx')
+    expect(sinner.indexOf('<AdSlot place="top" />')).toBeGreaterThan(sinner.indexOf('<SinnerHero'))
+    expect(sinner.indexOf('<AdSlot place="top" />')).toBeLessThan(sinner.indexOf('role="tablist"'))
+    for (const page of ['app/[lang]/series/[id]/page.tsx', 'app/[lang]/announcements/[id]/page.tsx'])
+      expect(source(page).indexOf('<AdSlot place="top" />'), page).toBeGreaterThan(source(page).indexOf('</header>'))
+    const ego = source('app/[lang]/sinners/[slug]/ego/[egoId]/_components/EGODetailClient.tsx')
+    expect(ego.indexOf('<AdSlot place="inline" />')).toBeGreaterThan(ego.indexOf('aria-labelledby="ego-info-title"'))
+    expect(ego.indexOf('<AdSlot place="inline" />')).toBeLessThan(ego.indexOf('className={styles.combat}'))
+    // the loading screens keep the banner's place, so the loaded page does not move
+    for (const skeleton of ['features/community/components/BoardLoading.tsx', 'features/catalog/components/BrowserSkeleton.tsx',
+      'features/catalog/components/SinnerDetailSkeleton.tsx', 'features/community/components/SeriesPageSkeleton.tsx'])
+      expect(source(skeleton), skeleton).toContain('<AdSlotSpace />')
+    // a banner hidden while the side ads stood asks for its ad when a narrower window shows it again
+    expect(source('components/ads/AdSlot.tsx')).toMatch(/new ResizeObserver\(tryRequest\)/)
+  })
+
   it('REQ-SHARED-085 puts a small banner under a deck or plan section tabs, before the first heading', () => {
     for (const [page, first] of [
       ['app/[lang]/decks/[id]/DeckDetailClient.tsx', '<section id="deck-formation"'],
@@ -124,8 +145,10 @@ describe('ad slot', () => {
 
   it('REQ-SHARED-085 hides the list page-start banner where a side ad stands (the side ads flag the page root)', () => {
     const css = source('components/ads/AdSlot.module.css')
-    expect(css).toMatch(/:global\(html\[data-ad-rail-left\]\) \.top,\s*:global\(html\[data-ad-rail-right\]\) \.top\s*\{\s*display:\s*none/)
-    expect(source('components/ads/AdSlot.tsx')).toMatch(/dataset\[flag\] = ''/)
+    expect(css).toMatch(/:global\(html\[data-ad-rail-left="on"\]\) \.top,\s*:global\(html\[data-ad-rail-right="on"\]\) \.top\s*\{\s*display:\s*none/)
+    expect(source('components/ads/AdSlot.tsx')).toMatch(/dataset\[flag\] = offset == null \? 'off' : 'on'/)
+    // where the side ads can fit it starts hidden and shows only when both found no room, so it never flashes and jumps away
+    expect(css).toMatch(/@media \(min-width: 1712px\) and \(min-height: 760px\) \{\s*:global\(html:not\(\[data-ad-rail-left="off"\]\[data-ad-rail-right="off"\]\)\) \.top \{\s*display: none/)
     pathname = '/ko/mirror-dungeon'
     expect(renderToStaticMarkup(<AdSlot slot="1234567890" place="top" />)).toContain('data-ad-slot')
     expect(renderToStaticMarkup(<AdSlotSpace />)).toContain('aria-hidden')
@@ -146,11 +169,11 @@ describe('ad slot', () => {
   it('REQ-SHARED-085 leaves editors, assist, tools, account, admin, legal and error pages without an ad', () => {
     for (const path of ['/ko/decks/new', '/en/decks/abc/edit', '/ko/planner', '/ko/planner/run', '/ko/friends/new', '/ko/login',
       '/ja/mypage', '/ko/admin/users', '/ko/support', '/ko/terms', '/ko/privacy', '/ko/maintenance', '/ko/tools/damage',
-      '/ko/random', '/ko/prescript/ranking', '/ko/motion/skills/watch', '/ko/sinners', '/en/sinners/'])
+      '/ko/random', '/ko/prescript/ranking', '/ko/motion/skills/watch', '/ko/sinners', '/en/sinners/', '/ko/collection', '/ko/users/abc'])
       expect(isAdFreePath(path), path).toBe(true)
     expect(isAdFreePath(null)).toBe(true)
     for (const path of ['/ko', '/en', '/ko/decks', '/ko/decks/abc', '/ko/planner/community', '/ko/planner/community/abc',
-      '/ko/sinners/yi-sang/identities/abc', '/ko/sinners/identities', '/ko/sinners/ego', '/ko/sinners/yi-sang', '/ko/motion/skills', '/ko/mirror-dungeon', '/ko/announcements', '/ko/keywords'])
+      '/ko/sinners/yi-sang/identities/abc', '/ko/sinners/identities', '/ko/sinners/ego', '/ko/sinners/yi-sang', '/ko/motion/skills', '/ko/mirror-dungeon', '/ko/announcements', '/ko/keywords', '/ko/announcements/abc', '/ko/series/abc', '/ko/sinners/faust/ego/abc'])
       expect(isAdFreePath(path), path).toBe(false)
   })
 })

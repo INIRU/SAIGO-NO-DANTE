@@ -15,31 +15,42 @@ const RAIL = 160
 const GAP = 32
 /** A side ad stands this far in from the window edge: off the edge, as far from the content as the margin allows (owner, 2026-11-06). */
 const EDGE = 24
+/** The window height a 600px side ad needs below the navbar (AdSlot.module.css shows `.rail` from the same height). */
+const RAIL_MIN_HEIGHT = 760
 
 /** One AdSense request per <ins>; the key in AdSlot gives each page its own <ins> (and so a new ad). */
 function Unit({ slot, className }: { slot: string; className: string }) {
   const ref = useRef<HTMLModElement>(null)
   useEffect(() => {
-    // Two frames later, so a page-start banner the side ads have just hidden asks for nothing. StrictMode runs effects twice;
-    // a hidden slot (a workspace, a phone-only or rail-hidden banner) has no width to fill.
-    let second = 0
-    const first = requestAnimationFrame(() => { second = requestAnimationFrame(() => {
-      const ins = ref.current
-      if (!ins || ins.dataset.requested || !ins.offsetWidth) return
-      ins.dataset.requested = '1'
-      try { (window.adsbygoogle = window.adsbygoogle || []).push({}) } catch { /* blocked by an ad blocker */ }
-    }) })
-    return () => { cancelAnimationFrame(first); cancelAnimationFrame(second) }
+    const ins = ref.current
+    if (!ins) return
+    // A hidden slot (a workspace, a phone-only banner, a page-start banner while the side ads stand) has no width and asks for
+    // nothing; it asks once it shows, e.g. when a narrower window drops the side ads. Two frames later, so a banner the side
+    // ads hide right after the first paint asks for nothing. StrictMode runs effects twice: `requested` keeps it to one ask.
+    let first = 0, second = 0
+    const tryRequest = () => {
+      cancelAnimationFrame(first); cancelAnimationFrame(second)
+      first = requestAnimationFrame(() => { second = requestAnimationFrame(() => {
+        if (ins.dataset.requested || !ins.offsetWidth) return
+        ins.dataset.requested = '1'
+        observer.disconnect()
+        try { (window.adsbygoogle = window.adsbygoogle || []).push({}) } catch { /* blocked by an ad blocker */ }
+      }) })
+    }
+    const observer = new ResizeObserver(tryRequest)
+    observer.observe(ins)
+    return () => { observer.disconnect(); cancelAnimationFrame(first); cancelAnimationFrame(second) }
   }, [])
   return <ins ref={ref} className={`adsbygoogle ${className}`} data-ad-client={ADSENSE_ACCOUNT} data-ad-slot={slot} />
 }
 
 /**
  * Where a side ad stands: EDGE in from the window edge, away from the page's content, when the margin (measured from the
- * content's own boxes; pages are 64-90rem wide) holds the edge, the ad and at least GAP to the content; null when it does not.
+ * content's own boxes; pages are 64-90rem wide) holds the edge, the ad and at least GAP to the content and the window is tall
+ * enough for the whole ad; null when it does not (and on the home page, whose hero is full width); undefined until measured.
  */
-function useRailOffset(place: Place, pathname: string | null): number | null {
-  const [offset, setOffset] = useState<number | null>(null)
+function useRailOffset(place: Place, pathname: string | null): number | null | undefined {
+  const [offset, setOffset] = useState<number | null>()
   useEffect(() => {
     if (place !== 'left' && place !== 'right') return
     const main = document.getElementById('main-content')
@@ -55,7 +66,8 @@ function useRailOffset(place: Place, pathname: string | null): number | null {
         right = Math.max(right, box.right)
       }
       const margin = place === 'left' ? left : width - right
-      setOffset(right && margin >= EDGE + RAIL + GAP ? EDGE : null)
+      const fits = right && innerHeight >= RAIL_MIN_HEIGHT && !/^\/(?:ko|en|ja)\/?$/.test(location.pathname)
+      setOffset(fits && margin >= EDGE + RAIL + GAP ? EDGE : null)
     }
     measure()
     const observer = new ResizeObserver(measure)
@@ -85,16 +97,17 @@ export default function AdSlot({ slot: unitSlot, place, phoneOnly = false }: {
   const offset = useRailOffset(place, pathname)
   const rail = place === 'left' || place === 'right'
   const slot = unitSlot === undefined ? ADSENSE_SLOTS[rail ? 'rail' : place] : unitSlot
-  // a side ad that stands tells the page so: the page-start banner then gives way to it (owner, 2026-11-06)
+  // Each side ad tells the page whether it stands ("on") or found no room ("off"): the page-start banner gives way to a side ad
+  // and shows when neither fits, e.g. after the window narrows (owner, 2026-11-06). AdSlot.module.css reads the flags.
   useEffect(() => {
-    if (!rail || offset == null) return
+    if (!rail || offset === undefined) return
     const flag = place === 'left' ? 'adRailLeft' : 'adRailRight'
-    document.documentElement.dataset[flag] = ''
+    document.documentElement.dataset[flag] = offset == null ? 'off' : 'on'
     return () => { delete document.documentElement.dataset[flag] }
   }, [rail, place, offset])
   // the skill motion player is ad-free and hides page ads, but owns one ad in its side panel
   if (!pathname || (place !== 'panel' && isAdFreePath(pathname))) return null
-  if (rail && (/^\/(?:ko|en|ja)\/?$/.test(pathname) || offset == null)) return null
+  if (rail && offset == null) return null
   const box = `${rail ? styles.rail : place === 'top' ? styles.top : place === 'panel' ? styles.panel : styles.inline}${phoneOnly ? ` ${styles.phoneOnly}` : ''}`
   const position = rail ? ({ [place]: `${offset}px` } as CSSProperties) : undefined
   const unit = rail ? styles.railUnit : place === 'panel' ? styles.panelUnit : styles.topUnit

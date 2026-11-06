@@ -1,4 +1,5 @@
 import Skeleton from '@/components/ui/Skeleton'
+import { AdSlotSpace } from '@/components/ads/AdSlot'
 import { BoardShelfSkeleton } from '@/features/community/components/BoardShelfSkeleton'
 
 /** /decks, /planner/community 경로 로딩: BoardHeader 자리(제목과 단추들) + 첫 화면 선반. */
@@ -13,6 +14,7 @@ export default function BoardLoading({ kind }: { kind: 'deck' | 'planner' }) {
         <Skeleton className="h-11 w-11 sm:w-[8.5rem]" style={{ background: 'rgba(200,144,10,0.35)' }} />
       </div>
     </div>
+    <div className="mx-auto w-full max-w-7xl shrink-0 px-4 md:px-6"><AdSlotSpace /></div>
     <BoardShelfSkeleton />
   </div>
 }

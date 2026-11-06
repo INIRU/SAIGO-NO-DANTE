@@ -5,6 +5,7 @@ import { Link } from '@/lib/i18n/navigation'
 import { ArrowLeft } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import Dropdown, { type DropdownOption } from '@/components/ui/Dropdown'
+import AdSlot from '@/components/ads/AdSlot'
 import type { SortOption } from '@/lib/types/browser'
 
 type Props = {
@@ -30,7 +31,7 @@ export default function BrowserHeader({
   const showFiltered = filteredCount !== totalCount
   const gold = (chunks: React.ReactNode) => <span style={{ color: 'var(--gold)' }}>{chunks}</span>
 
-  return (
+  return (<>
     <div className="mb-6">
       {/* 뒤로가기 + 타이틀 */}
       <div className="flex items-center gap-3 mb-3">
@@ -63,5 +64,7 @@ export default function BrowserHeader({
         />
       </div>
     </div>
-  )
+    {/* the page-start banner, where the side ads do not fit (DESIGN.md "광고") */}
+    <AdSlot place="top" />
+  </>)
 }
