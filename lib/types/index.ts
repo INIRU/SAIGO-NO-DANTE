@@ -103,6 +103,8 @@ export type Skill = {
   description: string
   flavor?: string | null
   skill_order: number
+  /** Skill tier 1-3 from the game (99 for an E.G.O skill); picks the frame. */
+  skill_tier?: number | null
   atk_weight?: number
   offense_level?: number
   uptie_level?: number

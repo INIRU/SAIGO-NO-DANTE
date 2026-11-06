@@ -117,7 +117,7 @@ function SkillFramePanel({
       sinColor={skillSinColor}
       skillSlot={3}
       label="EGO"
-      size="6.5rem"
+      size="8.125rem"
       name={localName}
       basePower={skill.skillPower}
       coinPower={skill.coinPower}
