@@ -32,7 +32,7 @@ Next.js 16 App Router + React 19 + TypeScript. 공개 페이지는 app/[lang]에
 
 공통 컴포넌트와 계산:
 - `components/passive/PassivePanel`, `PassiveEffect`: 덱·플래너·노트가 같은 패시브 UI를 사용하고 panel/note 변형만 구분한다. 조건 계산과 인격별 색인은 `lib/planner/passives`가 담당한다.
-- `components/ui/GiftCard`: 기존 hover 확대·그림자·0.2초 전환을 CSS로 유지하며 hover만으로 React 상태를 갱신하지 않는다.
+- `features/mirror-dungeon/components/GiftCard`: 기존 hover 확대·그림자·0.2초 전환을 CSS로 유지하며 hover만으로 React 상태를 갱신하지 않는다.
 - `lib/keywords/catalog`: 카탈로그 객체별 WeakMap에 지역화·별칭·죄악 색인을 공유한다. 원본 객체가 교체되면 새 색인을 만든다.
 - `components/collection/useCollectionModel`: 보유 수 집계와 검색 필터를 분리한다.
 

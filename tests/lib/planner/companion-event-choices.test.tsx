@@ -1,7 +1,7 @@
 import { expect, it, vi } from 'vitest'
 import { renderToStaticMarkup } from 'react-dom/server'
 import CompanionEventChoices, { effectTokens, summarizeChoiceEffects } from '@/components/planner/run/CompanionEventChoices'
-import type { MdEvent, MdEventChoice } from '@/components/mirror-dungeon/types'
+import type { MdEvent, MdEventChoice } from '@/features/mirror-dungeon/types'
 import type { GiftData } from '@/lib/planner/types'
 
 vi.mock('next-intl', () => ({
