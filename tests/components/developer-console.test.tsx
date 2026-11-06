@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 const m = vi.hoisted(() => ({ status: 'authenticated', data: undefined as unknown, query: '' }))
 vi.mock('next-intl', () => ({ useLocale: () => 'ko' }))
 vi.mock('next-auth/react', () => ({ useSession: () => ({ status: m.status }) }))
-vi.mock('next/navigation', () => ({ useSearchParams: () => new URLSearchParams(m.query) }))
+vi.mock('next/navigation', () => ({ useSearchParams: () => new URLSearchParams(m.query), usePathname: () => '/ko/developers' }))
 vi.mock('swr', () => ({ default: (key: string | null) => ({ data: key ? m.data : undefined, mutate: async () => {}, isLoading: false }) }))
 vi.mock('@/lib/i18n/navigation', () => ({ Link: 'a', useRouter: () => ({ replace: () => {} }) }))
 vi.mock('@/hooks/useHtmlFlag', () => ({ useHtmlFlag: () => {} }))

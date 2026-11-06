@@ -57,6 +57,7 @@ import { workbenchReveal } from '@/lib/animations'
 import styles from './PlanDetailHeader.module.css'
 import { observationCost, type Observation } from '@/lib/planner/observation'
 import { gameTextToPlain } from '@/lib/game-text/rich-text'
+import AdSlot from '@/components/ads/AdSlot'
 
 // ── 상수 ──────────────────────────────────────────────────────────────────────
 
@@ -738,6 +739,8 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
         </nav>
 
         <main className="min-w-0 overflow-x-clip">
+          {/* a small banner under the section tabs, before the first heading (DESIGN.md "광고") */}
+          <AdSlot place="inline" />
           {plan.description && (
             <Section id="plan-summary">
               <SectionHead id="plan-summary-title" title={tPlanner('tabs.summary')} />

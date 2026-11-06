@@ -1,10 +1,14 @@
 
 import { getGameUiAsset } from '@/lib/utils/game-ui'
-import skillFrameVersions from '@/lib/generated/skill-frame-versions.json'
 import egoArtwork from '@/lib/generated/ego-artwork.json'
 import type { Identity } from '@/lib/types'
 import { skillSlot } from '@/lib/identity/skill-model'
 import { STORAGE_BASE, LCB_IDS } from '@/lib/constants/game'
+
+/** A skill frame sprite from the game, coloured per sin (Storage ui/skill-frame/: `<sin>-<tier>`, `-glow`, `-coin`, `-<attack type>`, `mask`). */
+export function getSkillFrameAssetUrl(name: string): string {
+  return `${STORAGE_BASE}/ui/skill-frame/${name}.webp`
+}
 
 /** Tiny 4x4 warm-dark blur placeholder for remote images */
 export const BLUR_PLACEHOLDER = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAYAAACp8Z5+AAAAFklEQVQIW2M4c+bMfwYGBgYmBgoBAAPOBAUFVsBzAAAAAElFTkSuQmCC'
@@ -103,25 +107,6 @@ export function computeSkillImageIndices(skills: { id: string; skill_order: numb
   }
   variants.forEach((s, i) => { result[s.id] = 5 + i })
   return result
-}
-
-// ── 스킬 프레임 (죄악 × 슬롯) ─────────────────────────────────────────────
-const FRAME_SINS = new Set(['wrath', 'lust', 'sloth', 'gluttony', 'gloom', 'pride', 'envy'])
-
-/** 게임 원본 아틀라스의 명암/알파를 보존하여 죄악 색상을 입힌 프레임. */
-export function getSkillFrameInnerUrl(sin: string, skillSlot: number, layer: 'outline' | 'base' = 'outline'): string {
-  const affinity = FRAME_SINS.has(sin) ? sin : 'neutral'
-  const slot = Number.isFinite(skillSlot) ? Math.min(Math.max(Math.trunc(skillSlot), 1), 4) : 1
-  // Defense shares S1's original shape; neutral uses one shape for every slot.
-  // Use the same URL so repeated frames also share browser/Next image caches.
-  const frameSlot = affinity === 'neutral' || slot === 4 ? 1 : slot
-  const file = `${affinity}-${frameSlot}${layer === 'base' ? '-base' : ''}.webp`
-  return `/assets/skill-frames/${file}?v=${skillFrameVersions[file as keyof typeof skillFrameVersions]}`
-}
-
-export function getSkillFrameBadgeUrl(sin: string): string {
-  const file = `${FRAME_SINS.has(sin) ? sin : 'neutral'}-badge.webp`
-  return `/assets/skill-frames/${file}?v=${skillFrameVersions[file as keyof typeof skillFrameVersions]}`
 }
 
 export function getEGOImageUrl(sinnerId: string, egoFolderName: string): string {

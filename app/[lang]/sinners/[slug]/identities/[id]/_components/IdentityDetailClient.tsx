@@ -28,6 +28,7 @@ import type { SupportedLang } from '@/lib/i18n/types'
 import { getLocalizedName } from '@/lib/i18n/localize'
 import { staggerContainer, workbenchReveal, workbenchStaggerItem } from '@/lib/animations'
 import styles from '@/styles/components/SinnerDetail.module.css'
+import AdSlot from '@/components/ads/AdSlot'
 
 interface Props {
   sinner: Sinner
@@ -212,6 +213,9 @@ export default function IdentityDetailClient({
               <m.div variants={shouldReduceMotion ? undefined : workbenchStaggerItem}>
                 <IdentitySanitySection sanityConditions={sanityConditions} panicInfo={panicInfo} />
               </m.div>
+
+              {/* between the panic section and the related lists (DESIGN.md "광고") */}
+              <AdSlot place="inline" />
 
               {recommendations}
 
