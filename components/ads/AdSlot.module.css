@@ -89,6 +89,11 @@
   }
 }
 
+/* a side ad with no room right now: kept with the ad it holds, only hidden (a resize never asks AdSense again) */
+.rail[data-off] {
+  display: none;
+}
+
 :is(.top, .inline, .panel, .rail):has(ins[data-ad-status="unfilled"]) {
   display: none;
 }
