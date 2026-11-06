@@ -4,8 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { allows, consumeApiKey, type KeyAccess } from "@/lib/developer/access";
 import { CACHE_TAGS } from "@/lib/constants/cache-tags";
 import { SITE_URL } from "@/lib/seo/metadata";
-import { kstDay } from "@/lib/news/calendar";
-import { parseNews } from "@/lib/news/payload";
+import { kstDay, parseNews } from "@/features/news";
 
 const MAX_BODY = 64 * 1024;
 const cors = {

@@ -149,7 +149,7 @@ const SOURCES: Source[] = [
   },
 ];
 
-/** The body of POST /api/v1/news. Top-level, author and per-language names follow lib/news/payload.ts exactly (a test compares them). */
+/** The body of POST /api/v1/news. Top-level, author and per-language names follow features/news/lib/payload.ts exactly (a test compares them). */
 const NEWS_BODY: Field[] = [
   f("id", "string", { ko: "1–120자. 보내는 쪽에서 정하는 고유 값입니다. 같은 id를 다시 보내면 통째로 덮어씁니다. 언어를 뺀 값을 씁니다: steam:{gid}, x:{tweet_id}, youtube:{video_id}", en: "1–120 characters, unique on your side. Posting the same id again replaces the whole item. Leave the language out: steam:{gid}, x:{tweet_id}, youtube:{video_id}", ja: "1〜120文字。送信側で決める一意の値です。同じ id を再送すると丸ごと上書きします。言語を含めない値にします: steam:{gid}, x:{tweet_id}, youtube:{video_id}" }, true),
   f("feed", "string", { ko: "어느 소식인지. limbus(림버스 공식), project_moon(프문 소식), hampang(햄햄팡팡)", en: "Which news it is: limbus (official Limbus), project_moon (Project Moon news), hampang (HamHamPangPang)", ja: "どのニュースか。limbus(リンバス公式)、project_moon(プロムンのニュース)、hampang(ハムハムパンパン)" }, true),
@@ -217,7 +217,7 @@ const NEWS_ENDPOINTS: Endpoint[] = [
   },
 ];
 
-/** One body per kind of news the Limpi bot relays, for the partner tab. Each must pass lib/news/payload.ts (a test posts them through it). */
+/** One body per kind of news the Limpi bot relays, for the partner tab. Each must pass features/news/lib/payload.ts (a test posts them through it). */
 export const NEWS_EXAMPLES: { id: string; name: Text; note: Text; body: unknown }[] = [
   {
     id: "steam",
