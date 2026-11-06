@@ -1,9 +1,9 @@
 import { getTranslations } from 'next-intl/server'
 import type { Metadata } from 'next'
 import { pageMetadata, seoLang } from '@/lib/seo/metadata'
-import { loadMotionCatalog } from '@/lib/motion/feed'
-import { findMotionSkill, toMotionParam } from '@/lib/motion/catalog'
-import MotionWatch from '@/components/motion/MotionWatch'
+import { loadMotionCatalog } from '@/features/motion/server'
+import { findMotionSkill, toMotionParam } from '@/features/motion'
+import MotionWatch from '@/features/motion/components/MotionWatch'
 import RequestTimeRoute from '@/components/layout/RequestTimeRoute'
 
 const STATE_SEPARATOR = { ko: '·', en: ', ', ja: '・' }

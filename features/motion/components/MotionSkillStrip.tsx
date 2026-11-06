@@ -4,7 +4,7 @@ import { useTranslations } from 'next-intl'
 import SkillFrame from '@/components/identity/SkillFrame'
 import { SIN_COLORS, normalizeSin } from '@/lib/constants/sin'
 import { getSkillIconUrl } from '@/lib/utils/images'
-import type { MotionSkill } from '@/lib/motion/catalog'
+import type { MotionSkill } from '@/features/motion/lib/catalog'
 import styles from './MotionDeck.module.css'
 
 /** A game skill sprite from its skill id (the sprite's owner is read from the id; no identity row needed). */

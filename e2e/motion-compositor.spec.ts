@@ -1,12 +1,12 @@
 import { test, expect, type Page } from '@playwright/test'
 import { buildSync } from 'esbuild'
 import { resolve } from 'node:path'
-import type { LayerSetMeta } from '../lib/motion/compositor'
+import type { LayerSetMeta } from '../features/motion/lib/compositor'
 
 test.use({ channel: 'chrome' })
 
 // The compositor as the browser runs it, on the real GPU path (WebGL2), without the page around it.
-const bundle = buildSync({ entryPoints: [resolve(__dirname, '../lib/motion/compositor.ts')], bundle: true, format: 'iife', globalName: 'MotionCompositor', write: false }).outputFiles[0].text
+const bundle = buildSync({ entryPoints: [resolve(__dirname, '../features/motion/lib/compositor.ts')], bundle: true, format: 'iife', globalName: 'MotionCompositor', write: false }).outputFiles[0].text
 
 type Tile = { x: number; y: number; w: number; h: number; rgb: [number, number, number] }
 
@@ -20,7 +20,7 @@ async function compose(page: Page, meta: LayerSetMeta, tiles: Tile[]): Promise<n
     ctx.fillStyle = 'rgb(0,0,0)'
     ctx.fillRect(0, 0, source.width, source.height)
     for (const t of tiles) { ctx.fillStyle = `rgb(${t.rgb.join(',')})`; ctx.fillRect(t.x, t.y, t.w, t.h) }
-    const { LayerCompositor } = (window as unknown as { MotionCompositor: typeof import('../lib/motion/compositor') }).MotionCompositor
+    const { LayerCompositor } = (window as unknown as { MotionCompositor: typeof import('../features/motion/lib/compositor') }).MotionCompositor
     const comp = new LayerCompositor(document.createElement('canvas'), meta)
     comp.draw(source as unknown as HTMLVideoElement, 0)
     const px = new Uint8Array(4)
