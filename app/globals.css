@@ -2,6 +2,7 @@
 @import "../styles/globals/utilities.css";
 @import "../styles/globals/animations.css";
 @import "../styles/globals/popups.css";
+@import "../styles/globals/ui-kit.css";
 
 /* Local fonts are now loaded via next/font/local in app/layout.tsx */
 
@@ -742,4 +743,25 @@ a.note-mention:is(:hover,:focus-visible),.note-block-document a[href].note-menti
 /* Outside any layer so the edge of a field shows on every surface; hover, focus and error keep their own colour. */
 :is(input:not([type='checkbox'], [type='radio'], [type='range'], [type='color']), textarea, select):not(:hover, :focus, [aria-invalid='true']) {
   border-color: var(--border-control);
+}
+
+/* motion kit: one set of curves and durations for the whole site (DESIGN.md 움직임). Springs live in lib/animations.ts. */
+:root {
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+  --dur-press: 120ms;
+  --dur-quick: 180ms;
+  --dur-base: 240ms;
+  --dur-enter: 320ms;
+}
+/* Answers on press, before the click lands. Carries the colour transitions too, since it replaces `transition`. */
+.press { transition: transform var(--dur-press) var(--ease-out), color var(--dur-quick) ease, background-color var(--dur-quick) ease, border-color var(--dur-quick) ease; }
+.press:active { transform: scale(.97); }
+/* A solid surface with the octagon's cut corners (primary buttons). Focus rings must be inset: the cut clips outside. */
+.cut-corners { --cut: .5rem; clip-path: polygon(var(--cut) 0, calc(100% - var(--cut)) 0, 100% var(--cut), 100% calc(100% - var(--cut)), calc(100% - var(--cut)) 100%, var(--cut) 100%, 0 calc(100% - var(--cut)), 0 var(--cut)); }
+
+@media (prefers-reduced-motion: reduce) {
+  .press { transition: color var(--dur-quick) ease, background-color var(--dur-quick) ease, border-color var(--dur-quick) ease; }
+  .press:active { transform: none; }
 }
