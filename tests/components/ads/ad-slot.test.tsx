@@ -97,6 +97,14 @@ describe('ad slot', () => {
     expect(source('components/ads/AdSlot.module.css')).toMatch(/\.inline\s*\{[^}]*margin-top:\s*2\.5rem/)
   })
 
+  it('REQ-SHARED-085 gives the skill motion picker one phone-only banner under its list', () => {
+    const page = source('app/[lang]/motion/skills/page.tsx')
+    expect(page.indexOf('<AdSlot place="inline" phoneOnly />')).toBeGreaterThan(page.indexOf('<MotionBrowser />'))
+    expect(source('components/ads/AdSlot.module.css')).toMatch(/min-width:\s*768px[^{]*\{\s*\.phoneOnly\s*\{\s*display:\s*none/)
+    pathname = '/ko/motion/skills'
+    expect(renderToStaticMarkup(<AdSlot slot="1234567890" place="inline" phoneOnly />)).toMatch(/class="site-ad [^"]*phoneOnly/)
+  })
+
   it('REQ-SHARED-085 leaves editors, assist, tools, account, admin, legal and error pages without an ad', () => {
     for (const path of ['/ko/decks/new', '/en/decks/abc/edit', '/ko/planner', '/ko/planner/run', '/ko/friends/new', '/ko/login',
       '/ja/mypage', '/ko/admin/users', '/ko/support', '/ko/terms', '/ko/privacy', '/ko/maintenance', '/ko/tools/damage',
