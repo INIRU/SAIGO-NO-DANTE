@@ -162,7 +162,7 @@
 .badge { flex: none; width: auto; height: 0.875rem; }
 .meta { display: flex; align-items: center; gap: 0.375rem; min-width: 0; color: var(--text-tertiary); font-size: 0.8125rem; }
 .meta:empty { display: none; }
-.metaLogo { flex: none; width: 1rem; height: 1rem; opacity: 0.85; }
+.metaLogo { flex: none; width: 1rem; height: 1rem; object-fit: contain; opacity: 0.85; }
 .metaText { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* 근거: 칸 이름 – 맞은 글 */
@@ -196,7 +196,7 @@
   text-align: center;
   transition: background-color 0.1s ease, color 0.1s ease;
 }
-.sinner img { width: 2.5rem; height: 2.5rem; }
+.sinner img { width: 2.5rem; height: 2.5rem; object-fit: contain; }
 .sinner[data-active='true'] { background: rgba(200, 144, 10, 0.12); color: var(--gold-light); }
 
 .state { display: flex; flex-direction: column; align-items: center; gap: 0.75rem; padding: 3rem 1rem; color: var(--text-secondary); font-size: 0.9375rem; text-align: center; }
