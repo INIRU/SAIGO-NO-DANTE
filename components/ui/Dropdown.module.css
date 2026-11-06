@@ -1,0 +1,40 @@
+/* The shared dropdown (Dropdown.tsx): a quiet field-like button, a menu card that grows out of it. */
+.trigger {
+  display: inline-flex; align-items: center; justify-content: space-between; gap: .5rem; min-height: 2.25rem; padding: 0 .75rem;
+  border: 1px solid #2e2417; border-radius: .375rem; background: var(--bg-panel); color: var(--text-secondary);
+  font-family: var(--font-body); font-size: .8125rem; cursor: pointer;
+  transition: border-color 150ms ease, color 150ms ease;
+}
+.trigger[aria-expanded='true'] { border-color: var(--gold-dim, #6b5533); color: var(--text-primary); }
+.trigger[data-active] { border-color: var(--gold); color: var(--gold-light); }
+.trigger:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.prefix { margin-right: .25rem; color: var(--text-muted); }
+.chevron { flex-shrink: 0; opacity: .6; transition: rotate 200ms cubic-bezier(.23, 1, .32, 1); }
+.trigger[aria-expanded='true'] .chevron { rotate: 180deg; }
+
+.menu {
+  position: absolute; top: calc(100% + .375rem); left: 0; z-index: 30; max-height: 18rem; overflow-y: auto; padding: .25rem;
+  border: 1px solid var(--border); border-radius: .5rem; background: var(--bg-card); box-shadow: 0 .75rem 2rem rgb(0 0 0 / .6);
+  transform-origin: top left; animation: dropdown-in 160ms cubic-bezier(.23, 1, .32, 1);
+}
+@keyframes dropdown-in { from { opacity: 0; scale: .97; translate: 0 -.25rem; } }
+.item {
+  display: flex; align-items: center; gap: .5rem; width: 100%; min-height: 2.25rem; padding: 0 .625rem; border-radius: .3125rem;
+  color: var(--text-secondary); font-family: var(--font-body); font-size: .8125rem; text-align: left; white-space: nowrap; cursor: pointer;
+  transition: background-color 120ms ease, color 120ms ease;
+}
+.item:focus-visible { outline: none; background: rgb(200 144 10 / .1); color: var(--gold-light); }
+.item[aria-checked='true'] { color: var(--gold-light); }
+.check { flex-shrink: 0; margin-left: auto; color: var(--gold); opacity: 0; }
+.item[aria-checked='true'] .check { opacity: 1; }
+
+@media (hover: hover) and (pointer: fine) {
+  .trigger:hover { border-color: #4a3a22; color: var(--text-primary); }
+  .trigger[data-active]:hover { border-color: var(--gold-light); }
+  .item:hover { background: rgb(200 144 10 / .08); color: var(--gold-light); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .menu { animation: none; }
+  .trigger, .chevron, .item { transition: none; }
+}

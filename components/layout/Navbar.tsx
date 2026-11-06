@@ -4,7 +4,8 @@ import { Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import { forgetPushSubscription } from '@/hooks/usePushSubscription'
 import { useTapEgg } from '@/components/community/easterEggs'
 import { useSession, signOut } from 'next-auth/react'
-import { Menu, X, Search, CalendarDays } from 'lucide-react'
+import { Menu, X, Search } from 'lucide-react'
+import { CalendarIcon } from '@/components/brand/icons'
 import { DEFAULT_AVATAR_URL } from '@/lib/constants/game'
 import LanguageSwitcher from '@/components/ui/LanguageSwitcher'
 import DanteLogo from '@/components/brand/DanteLogo'
@@ -233,7 +234,7 @@ export default function Navbar({ mainNavLabel }: NavbarProps) {
               title={t('nav.other.calendar' as TranslationKey)}
               className={`flex h-9 w-9 items-center justify-center rounded-md text-[var(--text-secondary)] transition-colors duration-150 hover:bg-[rgba(200,144,10,0.06)] hover:text-[var(--gold-light)] ${focusRing}`}
             >
-              <CalendarDays size={17} aria-hidden="true" />
+              <CalendarIcon size={17} />
             </NavLink>
             <LanguageSwitcher compact />
 

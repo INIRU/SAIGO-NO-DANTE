@@ -18,7 +18,7 @@ const TABS = ['identity', 'ego'] as const
 const QUERY = { sinner: parseAsString, tab: parseAsStringLiteral(TABS).withDefault('identity') }
 const QUERY_OPTIONS = { history: 'replace', shallow: true, scroll: false } as const
 const focusRing = 'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--gold-light)]'
-const grid = 'grid grid-cols-[repeat(auto-fill,minmax(7.5rem,1fr))] gap-x-3 gap-y-4 sm:grid-cols-[repeat(auto-fill,minmax(9.5rem,1fr))]'
+const grid = 'grid grid-cols-[repeat(auto-fill,minmax(7.5rem,1fr))] gap-x-3 gap-y-4'
 
 export const motionWatchHref = (skill: string) => `/motion/skills/watch?skill=${skill}`
 
