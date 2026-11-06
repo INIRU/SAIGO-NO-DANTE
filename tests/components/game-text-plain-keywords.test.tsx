@@ -146,15 +146,14 @@ describe('REQ-KEYWORDS-010 a keyword description draws the keywords it names', (
     expect(html).toContain('>침잠<')
   })
 
-  it('REQ-KEYWORDS-010 opens no tooltip from a keyword inside a tooltip: icon and colour only', () => {
-    const inside = keywordText('진동 위력 +1', { nested: true })
+  it('REQ-KEYWORDS-010 a keyword inside a tooltip opens its own tooltip too', () => {
+    // a keyword description is what a tooltip draws: its keywords are live too (tooltip-stack keeps the outer one open)
+    const inside = keywordText('진동 위력 +1')
     expect(tokens(inside)).toBe(1)
     expect(inside).toContain('<img')
-    expect(inside).not.toContain('tabindex="0"')
-    expect(inside).not.toContain('cursor:help')
-    // The keyword page (not a tooltip) keeps the tooltip.
-    expect(keywordText('진동 위력 +1')).toContain('tabindex="0"')
-    // A game [Id] inside a tooltip opens nothing either.
-    expect(render('[Sinking] 3', OWN, { nested: true })).not.toContain('tabindex="0"')
+    expect(inside).toContain('tabindex="0"')
+    expect(inside).toContain('cursor:help')
+    expect(render('[Sinking] 3', OWN)).toContain('tabindex="0"')
   })
+
 })

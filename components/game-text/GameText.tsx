@@ -85,8 +85,6 @@ type GameTextKeywordProps = {
   displayColor: string
   /** Only the tooltip, no icon or keyword colour on the children (a `<link>`). */
   plain: boolean
-  /** Drawn inside a tooltip: a keyword without a keyword_meta row gets no tooltip of its own. */
-  nested: boolean
   children: ReactNode
 }
 
@@ -104,13 +102,12 @@ type GameTextKeywordProps = {
  * background (user decision 2026-10-01); only keywords, condition tags, own skill names and tooltip numbers are coloured.
  * `accent` (the skill/sin colour the callers pass) is for the coin label and for a condition tag with no colour of its own.
  */
-export default function GameText({ nodes, accent, keywords, keywordRef: KeywordRef, nested = false, skillNameColors, highlightValues: valueColor, matchPlainKeywords = false, allowedKeywords, keywordText = false }: {
+export default function GameText({ nodes, accent, keywords, keywordRef: KeywordRef, skillNameColors, highlightValues: valueColor, matchPlainKeywords = false, allowedKeywords, keywordText = false }: {
   nodes: readonly GameTextNode[]
   /** Accent colour of the caller (sin/skill colour): the coin label and condition tags without a colour of their own. */
   accent: string
   keywords: Record<string, KeywordInfo>
   keywordRef: ComponentType<GameTextKeywordProps>
-  nested?: boolean
   /** Names of the identity's own skills, coloured by sin inside plain stretches of text. */
   skillNameColors?: Readonly<Record<string, string>>
   /** Tooltips: numbers turn gold and Potency/Count terms take this colour, in text the game did not colour itself. */
@@ -133,7 +130,7 @@ export default function GameText({ nodes, accent, keywords, keywordRef: KeywordR
   const renderKeyword = (ref: { n: string; kw?: string; i?: string }, id: string | undefined, key: number | string, children?: ReactNode): ReactNode => {
     const keywordColor = resolveKeywordTextColor(ref.n, ref.kw ? keywords[ref.kw] : undefined, ref.kw)
     return (
-      <KeywordRef key={key} keyword={ref.n} krKey={ref.kw} refId={id} iconSlug={ref.i} inline displayColor={keywordColor} plain={children !== undefined} nested={nested}>
+      <KeywordRef key={key} keyword={ref.n} krKey={ref.kw} refId={id} iconSlug={ref.i} inline displayColor={keywordColor} plain={children !== undefined}>
         {children ?? <span style={{ color: keywordColor, fontWeight: 600, ...KEYWORD_UNDERLINE }}>{ref.n}</span>}
       </KeywordRef>
     )
