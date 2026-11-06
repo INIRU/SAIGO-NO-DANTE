@@ -13,7 +13,7 @@ html[data-with-page-error] .site-footer { display: none; }
 html[data-with-page-error], html[data-with-page-error] body { overflow: hidden; }
 /* Support, community, developer console and announcements: a compact footer. */
 html[data-with-compact-footer] .site-footer { margin-top: 2rem; }
-html[data-with-compact-footer] .site-footer :is(.footer-decoration, .footer-brand, nav) { display: none; }
+html[data-with-compact-footer] .site-footer .footer-main { display: none; }
 html[data-with-compact-footer] .footer-content { gap: .75rem; padding-block: 1.5rem; }
 /* Tool screens (random formation): no footer; on desktop tall enough for the whole board, no page scroll either. */
 html[data-with-tool-screen] .site-footer { display: none; }
