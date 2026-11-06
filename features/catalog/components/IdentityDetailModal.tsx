@@ -196,7 +196,7 @@ function LoadedContent({ data, uptie, egos, onEgoClick, onClose }: Omit<Identity
       </Header>
 
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 pb-6 pt-3 sm:px-6 sm:pt-4">
-        <IdentityCombatSection level={MAX_IDENTITY_LEVEL} identity={identity} sinColor={sinColor} allowedKeywords={allowedKeywords} model={model} />
+        <IdentityCombatSection level={MAX_IDENTITY_LEVEL} identity={identity} sinColor={sinColor} allowedKeywords={allowedKeywords} model={model} compact />
 
         {egos && (
           <section className="mt-8" aria-labelledby="identity-modal-ego">

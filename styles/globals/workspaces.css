@@ -28,3 +28,5 @@ html[data-with-friend-compose] :is(.site-navigation, .site-footer) { display: no
 /* Skill motion: a full-screen viewer with its own way back; on desktop each column scrolls on its own and the page does not. */
 html[data-with-motion] :is(.site-navigation, .site-footer) { display: none; }
 @media (min-width: 64rem) { html[data-with-motion], html[data-with-motion] body { overflow: hidden; } }
+/* The page-end ad goes with the footer: no ad on a full-screen workspace, tool screen, login or error page (DESIGN.md "광고"). */
+html:is([data-with-admin-shell], [data-with-assist-run], [data-with-prescript], [data-with-support-page], [data-with-page-error], [data-with-tool-screen], [data-with-mypage], [data-with-gift-check], [data-with-friend-compose], [data-with-motion], [data-with-login-page]) .site-ad { display: none; }

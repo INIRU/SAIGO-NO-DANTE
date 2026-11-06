@@ -93,7 +93,6 @@ const nextConfig: NextConfig = {
     // Source sprite corrections use content-versioned URLs to invalidate stale crops.
     localPatterns: [
       { pathname: '/assets/game-ui/**' },
-      { pathname: '/assets/skill-frames/**' },
       { pathname: '/**', search: '' },
     ],
     // DNS64/NAT64 can make public Supabase Storage resolve to local-looking IPv6 addresses.

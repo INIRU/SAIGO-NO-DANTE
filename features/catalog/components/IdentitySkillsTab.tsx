@@ -1,8 +1,7 @@
 'use client'
 
-import { coinPowerLabels, unbreakableCoinSet, COIN_IMAGES } from '@/lib/identity/skill-description'
+import { coinPowerLabels, unbreakableCoinSet } from '@/lib/identity/skill-description'
 
-import Image from 'next/image'
 import { groupIdentitySkills, skillLabel, skillSlot } from '@/lib/identity/skill-model'
 import {
   Identity,
@@ -12,10 +11,8 @@ import {
   getSkillIconUrl,
 } from '@/lib/data/sinners'
 import SkillDescription from '@/features/catalog/components/SkillDescription'
-import SkillNameBanner from '@/features/catalog/components/SkillNameBanner'
-import SkillFrame from '@/features/catalog/components/SkillFrame'
+import GameSkillBox from '@/features/catalog/components/GameSkillBox'
 import { UptieChangePanel, type StatChange } from '@/features/catalog/components/UptieChanges'
-import { getDetailStatIconUrl } from '@/lib/utils/images'
 import { diffDescriptionLines, type SkillDiff } from '@/lib/utils/uptie-diff'
 import { useTranslations, useLocale } from 'next-intl'
 import { IDENTITY_STAT_BASE_LEVEL, offenseLevelDisplay } from '@/features/catalog/lib/identity-level'
@@ -68,6 +65,8 @@ interface IdentitySkillsTabProps {
   newSkills?: Skill[]
   /** Next uptie level with data; diffs above compare against it. */
   nextLevel?: number | null
+  /** Inside the identity modal: smaller skill boxes and a rule between skills instead of a card */
+  compact?: boolean
 }
 
 export default function IdentitySkillsTab({
@@ -81,6 +80,7 @@ export default function IdentitySkillsTab({
   skillDiffs,
   newSkills,
   nextLevel,
+  compact = false,
 }: IdentitySkillsTabProps) {
   const t = useTranslations()
   const locale = useLocale()
@@ -111,18 +111,16 @@ export default function IdentitySkillsTab({
     <div>
       <h2 className="sr-only">{t('identity.skills.title')}</h2>
 
-      <div className="space-y-3">
+      <div className={compact ? 'divide-y divide-[#2e2417]' : 'space-y-3'}>
         {groupIdentitySkills(filteredSkills).map(group => (
-          <div key={group[0].id} className="rounded border border-[#2e2417] bg-[#17120c] px-4 sm:px-6">
+          <div key={group[0].id} className={compact ? '' : 'rounded border border-[#2e2417] bg-[#17120c] px-4 sm:px-6'}>
           {group.map(skill => {
-          const skillSinColor = SIN_COLORS[skill.sin_affinity] || '#cccccc'
           const imgIdx = skillImgIdxMap[skill.id] ?? skill.skill_order
           const skillIconUrl = getSkillIconUrl(identity, imgIdx, skill)
           const v = variantMap[skill.id]
           const baseOrder = v?.baseOrder ?? skillSlot(skill)
           const diff = skillDiffs?.get(skill.id)
           const offCorrStr = skill.offense_level != null ? offenseLevelDisplay(skill.offense_level - level + IDENTITY_STAT_BASE_LEVEL).correction : ''
-          const isAttackSkill = baseOrder !== 4
           const isDefense = baseOrder === 4
           const label = skillLabel(skill, filteredSkills, SKILL_TYPE_LABELS[skill.skill_type] || skill.skill_type)
           const atkTypeKey = skillAttackType(skill)
@@ -137,112 +135,37 @@ export default function IdentitySkillsTab({
           return (
             <div
               key={skill.id}
-              className="grid min-w-0 gap-3 py-4 sm:py-5 lg:grid-cols-[27rem_minmax(0,1fr)] lg:gap-8 [&+div]:border-t [&+div]:border-[#2e2417]"
+              className="grid min-w-0 gap-3 py-4 sm:py-5 [&+div]:border-t [&+div]:border-[#2e2417]"
             >
-              {/* 스킬 프레임 + 정보 영역 */}
-              <div className="flex items-center gap-1 sm:gap-2 self-start">
-                {/* 프레임 + 오버레이 */}
-                <div className="relative shrink-0 ml-1 sm:ml-4 w-[6.5rem] h-[6.5rem] sm:w-[8rem] sm:h-[8rem]">
-                  {/* 죄악 색 삼각형 */}
-                  <div className="absolute flex items-center justify-center pointer-events-none" style={{
-                    top: '1.5%', left: '50%', transform: 'translateX(-56%)',
-                    width: '1.5rem', height: '1.5rem', zIndex: 0,
-                  }}>
-                    <div className="absolute" style={{
-                      width: '2.25rem', height: '1.5rem',
-                      backgroundColor: skillSinColor,
-                      clipPath: 'polygon(5% 20%, 85% 0%, 100% 100%, 10% 100%)',
-                    }} />
-                  </div>
-                  <SkillFrame
-                    attackType={atkTypeKey}
-                    skillIconUrl={skillIconUrl}
-                    sin={skill.sin_affinity || 'neutral'}
-                    skillSlot={isDefense ? 4 : baseOrder <= 3 ? baseOrder : 1}
-                    sinColor={skillSinColor}
-                    label={label}
-                    size="100%"
-                    eager
-                  />
-                  {/* 기본 위력 (좌측) */}
-                  <div className="absolute z-20" style={{ left: 0, top: '50%', transform: 'translateX(-40%) translateY(-75%)' }}>
-                    <span style={{ fontFamily: "var(--font-excelsior), sans-serif", fontSize: 'clamp(1.375rem, 4vw, 2.125rem)', lineHeight: 1, color: 'oklch(81.35% .0894 69.33)' }}>
-                      {skill.base_power}
-                    </span>
-                  </div>
-                  {/* 코인 위력 (상단) */}
-                  <div className="absolute z-20" style={{ top: 0, left: '50%', transform: 'translateX(-56%) translateY(-12.5%)' }}>
-                    {skill.coin_power >= 0 ? (
-                      <span style={{
-                        fontFamily: "var(--font-excelsior), sans-serif", fontSize: '1.125rem', fontWeight: 700, lineHeight: 1,
-                        color: 'oklch(81.35% .0894 69.33)',
-                        textShadow: '1px 1px 1px black',
-                        WebkitTextStroke: '0.01px black',
-                      }}>
-                        +{skill.coin_power}
-                      </span>
-                    ) : (
-                      <span style={{
-                        fontFamily: "var(--font-excelsior), sans-serif", fontSize: '1.125rem', fontWeight: 700, lineHeight: 1,
-                        color: '#ff8866',
-                        textShadow: '1px 1px 1px black',
-                        WebkitTextStroke: '0.01px black',
-                      }}>
-                        <span style={{ fontSize: '1.5rem' }}>-</span>{Math.abs(skill.coin_power)}
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                {/* 스킬 정보 (오른쪽) */}
-                <div className="flex-1 min-w-0 overflow-hidden pt-1">
-                  {/* 코인 시각화 */}
-                  <div className="flex items-center gap-0.5 mb-0.5">
-                    {Array.from({ length: skill.coins }).map((_, ci) => {
-                      const isUb = unbreakableCoins.has(ci)
-                      return (
-                        <span key={ci} className="flex flex-col items-center">
-                          <Image
-                            src={isUb ? COIN_IMAGES.unbreakable : COIN_IMAGES.normal}
-                            alt={isUb ? t('identity.skills.unbreakableCoin') : t('identity.skills.coin')} width={16} height={16}
-                            title={coinLabels[ci]}
-                            className="w-3 h-3 sm:w-4 sm:h-4"
-                          />
-                          {coinsDiffer && <span className="text-[0.625rem] leading-none text-[var(--text-muted)]">{coinLabels[ci]}</span>}
-                        </span>
-                      )
-                    })}
-                  </div>
-                  {/* 스킬명 배너 (사선 꼬리, pretext 기반 동적 너비) */}
-                  <SkillNameBanner name={localSkillName(skill)} sinColor={skillSinColor} fontSize="clamp(1rem, 1.6vw, 1.25rem)" />
-                  {/* 공격 레벨 + 가중치 */}
-                  <div className="flex items-center gap-1.5 sm:gap-3 flex-wrap">
-                    {skill.offense_level != null && (
-                      <div className="flex items-center gap-1">
-                        <Image src={getDetailStatIconUrl(isDefense ? 'defense' : 'offense')} alt="" width={22} height={22} className="w-4 h-4 sm:w-[1.375rem] sm:h-[1.375rem]" />
-                        <span style={{ fontFamily: "var(--font-excelsior), sans-serif", color: 'var(--text-primary)', fontSize: 'clamp(1rem, 3vw, 1.375rem)', textDecoration: 'underline', textUnderlineOffset: '3px', textDecorationColor: 'var(--text-primary)' }}>
-                          {skill.offense_level}
-                        </span>
-                        {offCorrStr && <span style={{ fontFamily: "var(--font-excelsior), sans-serif", color: '#888', fontSize: '1rem' }}>{offCorrStr}</span>}
-                      </div>
-                    )}
-                    {atkTypeKey && (skill.atk_weight || 1) > 0 && (
-                      <div className="flex items-center gap-1.5">
-                        <span style={{ fontFamily: 'var(--font-heading)', color: 'var(--gold)', fontSize: '0.6875rem', fontWeight: 700 }}>{t('identity.skills.atkWeight')}</span>
-                        <div className="flex gap-0.5">
-                          {Array.from({ length: skill.atk_weight || 1 }).map((_, i) => (
-                            <div key={i} style={{ width: '0.5rem', height: '0.5rem', background: 'var(--gold)', borderRadius: '0.1rem' }} />
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
+              {/* 게임 스킬 박스 그대로: 아이콘, 코인 줄, 한 줄 이름 판, 공격 레벨·가중치 */}
+              <GameSkillBox
+                iconUrl={skillIconUrl}
+                sin={skill.sin_affinity}
+                tier={skill.skill_tier ?? (isDefense ? 1 : baseOrder)}
+                attackType={atkTypeKey}
+                basePower={skill.base_power}
+                coinPower={skill.coin_power}
+                name={localSkillName(skill)}
+                skillType={skill.skill_type}
+                level={skill.offense_level}
+                levelTitle={offCorrStr || undefined}
+                weight={skill.atk_weight || 1}
+                weightLabel={t('identity.skills.atkWeight')}
+                coins={Array.from({ length: skill.coins }, (_, ci) => ({
+                  unbreakable: unbreakableCoins.has(ci),
+                  color: skill.coin_list?.[ci]?.color ?? null,
+                  label: coinsDiffer ? coinLabels[ci] : undefined,
+                }))}
+                coinLabel={t('identity.skills.coin')}
+                unbreakableLabel={t('identity.skills.unbreakableCoin')}
+                maxUnit={compact ? 0.44 : undefined}
+                // the base skill of slot 1-3 (the first of its slot); its variants carry no tier
+                tierLabel={!isDefense && baseOrder <= 3 && (v?.idx ?? 1) === 1 ? `SKILL ${baseOrder}` : undefined}
+              />
 
               {/* 스킬 설명 */}
               {(skillDescription || skillFlavor || diff) && (
-                <div className="min-w-0 max-w-[75ch] lg:pt-3 [&>div]:text-[.875rem]! [&>div]:text-[#c9c3b8]!">
+                <div className={`min-w-0 max-w-[80ch] ${compact ? 'sm:pl-[7.25rem]' : 'sm:pl-[10.25rem]'} [&>div]:text-[.875rem]! [&>div]:text-[#c9c3b8]!`}>
                 <SkillDescription
                   description={skillDescription}
                   accentColor="#c2b79f"
