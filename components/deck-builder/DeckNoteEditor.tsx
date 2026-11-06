@@ -2,7 +2,7 @@
 import { useMemo } from 'react'
 import { Sinner, Identity, EGO, Skill, Passive, getIdentityInfoUrl, computeSkillImageIndices, getSkillIconUrl, type ActivationCondition } from '@/lib/data/sinners'
 import { NoteRenderer, type NoteSkillEntry, type NotePassiveEntry, type NoteEgoEntry, type NoteIdentityEntry, type NoteEgoGiftEntry } from '@/components/decks/NoteChips'
-import NoteDocumentEditor from '@/components/notes/NoteDocumentEditor'
+import NoteDocumentEditor from '@/features/notes/components/NoteDocumentEditor'
 import { localizeIdentityName } from '@/components/deck-detail/DeckIdentityCard'
 import { getGiftActivationConditionStatus } from '@/lib/planner/gift-condition-status'
 import { getDeckIdentityAffiliations } from '@/lib/decks/keyword-rules'

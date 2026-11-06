@@ -1,6 +1,6 @@
 /**
- * The inline syntax of a plain/markdown memo, shared by the renderer (components/decks/NoteChips.tsx) and the converter
- * that rewrites old memos (lib/notes/memo-keywords.ts) so both read the same text the same way.
+ * The inline syntax of a plain/markdown memo, shared by the renderer (components/decks/NoteChips.tsx) and the note text helpers
+ * (lib/notes/blocks.ts) so both read the same text the same way.
  * The functions return fresh global regular expressions (a shared one would keep its position between uses).
  */
 
