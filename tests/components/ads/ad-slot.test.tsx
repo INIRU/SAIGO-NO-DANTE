@@ -61,6 +61,9 @@ describe('ad slot', () => {
     // off the window edge but as far from the content as the margin allows; a margin without room for the edge, the ad and
     // the gap to the content draws no side ad
     expect(code).toMatch(/const EDGE = 24/)
+    // measured without a Windows scrollbar, which a fixed `right` does not count
+    expect(code).toMatch(/const width = document\.documentElement\.clientWidth/)
+    expect(code).toMatch(/: width - right/)
     expect(code).toMatch(/margin >= EDGE \+ RAIL \+ GAP \? EDGE : null/)
     // before the content is measured (the server render) there is no side ad, so it never lands on the content
     pathname = '/ko/decks/1'
