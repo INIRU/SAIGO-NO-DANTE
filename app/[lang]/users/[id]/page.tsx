@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
-import PublicProfile from "@/components/community/PublicProfile";
-import { getCommunityCopy } from "@/lib/community/copy";
+import PublicProfile from "@/features/community/components/PublicProfile";
+import { getCommunityCopy } from "@/features/community";
 export async function generateMetadata({
   params,
 }: {

@@ -5,7 +5,7 @@ import { expect, it } from 'vitest'
 // written to the ISR cache again) after every vote, comment and post. These pages load that data in the browser.
 const STATIC_PAGES = [
   'app/[lang]/(home)/page.tsx',
-  'components/home/HomeStaticSections.tsx',
+  'app/[lang]/(home)/_components/HomeStaticSections.tsx',
   'app/[lang]/decks/page.tsx',
   'app/[lang]/planner/community/page.tsx',
 ]

@@ -3,18 +3,9 @@ import { cacheLife, cacheTag } from "next/cache";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { discoveryUserId } from "@/lib/discovery/user-id";
+import { discoveryUserId, DISCOVERY_COLUMNS, DISCOVERY_TABLE, formatDiscoveryPosts, interestProfile, postFeatures, recommend, type DiscoveryKind } from "@/features/community/server";
 import { popularSince } from "@/lib/discovery/update-window";
 import { CACHE_TAGS } from "@/lib/constants/cache-tags";
-import {
-  DISCOVERY_COLUMNS,
-  DISCOVERY_TABLE,
-  formatDiscoveryPosts,
-  interestProfile,
-  postFeatures,
-  recommend,
-  type DiscoveryKind,
-} from "@/lib/discovery/recommend";
 
 const headers = { "Cache-Control": "private, no-store" };
 type Row = { id: string };

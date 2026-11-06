@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
-import { seriesActor, seriesFail, seriesHeaders } from '@/lib/series/actor'
-import { seriesPatchSchema } from '@/lib/series/order'
-import { loadSeries, revalidateSeries } from '@/lib/series/server'
+import { seriesActor, seriesFail, seriesHeaders, loadSeries, revalidateSeries, seriesPatchSchema } from '@/features/community/server'
 
 const idSchema = z.string().uuid()
 

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { Formation } from '@/lib/discovery/co-occurrence'
-import { catalogOf, ego, identity, NOW, post, times } from '../lib/discovery/rec-fixtures'
+import type { Formation } from '@/features/community/lib/co-occurrence'
+import { catalogOf, ego, identity, NOW, post, times } from '@/tests/features/community/lib/rec-fixtures'
 
 const state = vi.hoisted(() => ({ fail: false }))
 const uuid = (n: number) => `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`
@@ -20,7 +20,7 @@ const catalog = catalogOf({
   ],
 })
 
-vi.mock('@/lib/db/meta', () => {
+vi.mock('@/features/community/server/rec-data', () => {
   const plan = (identities: string[], floors: NonNullable<Formation['floors']>): Formation => ({ ...post(identities, { kind: 'planner', createdAt: NOW - 86_400_000 }), floors })
   return {
     getFormations: async () => {

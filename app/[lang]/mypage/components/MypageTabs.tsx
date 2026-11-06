@@ -3,8 +3,8 @@
 import { useCallback, useRef } from 'react'
 import { useLocale } from 'next-intl'
 import { Archive, Layers, Map as MapIcon, Medal, Settings, Users } from 'lucide-react'
-import { getCommunityCopy } from '@/lib/community/copy'
-import styles from '@/components/community/profile.module.css'
+import { getCommunityCopy } from '@/features/community'
+import styles from '@/styles/components/CommunityProfile.module.css'
 
 export type MypageTab = 'badges' | 'decks' | 'planner' | 'collection' | 'follows' | 'profile'
 export const MYPAGE_TABS: MypageTab[] = ['badges', 'decks', 'planner', 'collection', 'follows', 'profile']
