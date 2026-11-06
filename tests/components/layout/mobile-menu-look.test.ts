@@ -7,11 +7,12 @@ const cssPath = resolve(root, 'components/layout/NavbarMobileSheet.module.css')
 const css = existsSync(cssPath) ? readFileSync(cssPath, 'utf8') : ''
 
 describe('REQ-SHARED-084 the phone menu', () => {
-  it('REQ-SHARED-084 lays each group out as two columns of tiles under a gold heading with a rule', () => {
+  it('REQ-SHARED-084 sets each group as large heading-font links two to a row, no boxes, a hairline between groups', () => {
     expect(css).toMatch(/\.items \{[^}]*grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/)
-    expect(css).toMatch(/\.tile \{[^}]*border: 1px solid #2e2417/)
-    expect(css).toMatch(/\.tile\[aria-current='page'\] \{[^}]*border-color: var\(--gold\)/)
-    expect(css).toMatch(/\.heading::after \{/)
+    expect(css).toMatch(/\.link \{[^}]*font-family: var\(--font-heading\)/)
+    expect(css).not.toMatch(/\.link \{[^}]*border:/)
+    expect(css).toMatch(/\.group \+ \.group \{ border-top: 1px solid #2e2417; \}/)
+    expect(css).toMatch(/\.link\[aria-current='page'\]::before \{/)
   })
 
   it('REQ-SHARED-084 the groups settle in one after another, and not under reduced motion', () => {

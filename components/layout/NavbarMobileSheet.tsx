@@ -41,7 +41,7 @@ export default function NavbarMobileSheet({ mainNavLabel, sessionStatus, avatarU
               {group.items.map(item => {
                 const active = isActiveHref(pathname, item.href)
                 return (
-                  <NavLink key={item.href} href={item.href} onClick={onClose} aria-current={active ? 'page' : undefined} className={`${styles.tile} ${focusRing}`}>
+                  <NavLink key={item.href} href={item.href} onClick={onClose} aria-current={active ? 'page' : undefined} className={`${styles.link} ${focusRing}`}>
                     {item.label}
                   </NavLink>
                 )
