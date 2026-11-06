@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { openStage } from '@/hooks/useStageScreen'
+import { openStage } from '@/features/motion/hooks/useStageScreen'
 
 const element = (fullscreen?: () => Promise<void>) => ({ requestFullscreen: fullscreen }) as unknown as HTMLElement
 

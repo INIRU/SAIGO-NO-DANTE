@@ -3,8 +3,8 @@ import { cacheLife } from 'next/cache'
 import { getTranslations } from 'next-intl/server'
 import type { Metadata } from 'next'
 import { pageMetadata } from '@/lib/seo/metadata'
-import MotionBrowser from '@/components/motion/MotionBrowser'
-import { MotionBrowserSkeleton } from '@/components/motion/SkillMotionSkeleton'
+import MotionBrowser from '@/features/motion/components/MotionBrowser'
+import { MotionBrowserSkeleton } from '@/features/motion/components/SkillMotionSkeleton'
 import PageHeader from '@/components/ui/PageHeader'
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {

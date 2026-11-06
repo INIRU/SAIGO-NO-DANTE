@@ -8,7 +8,7 @@ const motionCatalog = vi.fn(async () => [{ id: 'yi-sang', identities: [
     { key: 'id10116|1011602', skillId: 1011602, title: '차원 가르기', form: null, states: [] },
   ] },
 ] }])
-vi.mock('@/lib/motion/feed', () => ({ loadMotionCatalog: () => motionCatalog() }))
+vi.mock('@/features/motion/server', () => ({ loadMotionCatalog: () => motionCatalog() }))
 
 const rows: Record<string, object[]> = {
   identities: [{ id: '10101', sinner_id: 'yisang', release_date: '2026-09-10' }],

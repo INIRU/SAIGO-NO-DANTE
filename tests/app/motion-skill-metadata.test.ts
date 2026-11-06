@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { describe, expect, it, vi } from 'vitest'
-import type { MotionSinner } from '@/lib/motion/catalog'
+import type { MotionSinner } from '@/features/motion'
 
 vi.mock('next-intl/server', async () => {
   const { createTranslator } = await import('next-intl')
@@ -15,8 +15,8 @@ vi.mock('next-intl/server', async () => {
   }
 })
 vi.mock('@sentry/nextjs', () => ({ captureException: vi.fn() }))
-vi.mock('@/components/motion/MotionWatch', () => ({ default: () => null }))
-vi.mock('@/components/motion/SkillMotionSkeleton', () => ({ default: () => null }))
+vi.mock('@/features/motion/components/MotionWatch', () => ({ default: () => null }))
+vi.mock('@/features/motion/components/SkillMotionSkeleton', () => ({ default: () => null }))
 function RequestTimeMarker() { return null }
 vi.mock('@/components/layout/RequestTimeRoute', () => ({ default: RequestTimeMarker }))
 
@@ -34,7 +34,7 @@ const catalog = (lang: string): MotionSinner[] => [{
   egos: [],
 }]
 const load = vi.fn(async (lang: string) => catalog(lang))
-vi.mock('@/lib/motion/feed', () => ({ loadMotionCatalog: (lang: string) => load(lang) }))
+vi.mock('@/features/motion/server', () => ({ loadMotionCatalog: (lang: string) => load(lang) }))
 
 type Page = { generateMetadata: (props: { params: Promise<{ lang: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> }) => Promise<Metadata> }
 const metadataOf = async (lang: string, query: Record<string, string>) =>

@@ -5,11 +5,11 @@ const locale = vi.hoisted(() => ({ value: 'ko' }))
 vi.mock('next-intl', () => ({ useTranslations: () => (key: string, values?: { n: number }) => (values ? `${key} ${values.n}` : key), useLocale: () => locale.value }))
 vi.mock('next/image', () => ({ default: ({ src, alt }: { src: string; alt: string }) => <img src={src} alt={alt} /> }))
 
-import MotionScenarios from '@/components/motion/MotionScenarios'
-import MotionSkillStrip from '@/components/motion/MotionSkillStrip'
-import MotionTimeline, { chapterSpans, currentChapter } from '@/components/motion/MotionTimeline'
-import { pickLinkState, type MotionPartner, type MotionSkill, type MotionState } from '@/lib/motion/catalog'
-import type { VoiceLink } from '@/lib/motion/soundbuttons'
+import MotionScenarios from '@/features/motion/components/MotionScenarios'
+import MotionSkillStrip from '@/features/motion/components/MotionSkillStrip'
+import MotionTimeline, { chapterSpans, currentChapter } from '@/features/motion/components/MotionTimeline'
+import { pickLinkState, type MotionPartner, type MotionSkill, type MotionState } from '@/features/motion/lib/catalog'
+import type { VoiceLink } from '@/features/motion/lib/soundbuttons'
 
 const state = (id: string, label: string, extra: Partial<MotionState> = {}): MotionState => ({ state: id, label, name: '', video: '', meta: '', bytes: 0, ...extra })
 const person = (gameId: string, sinner: string): MotionPartner => ({ gameId, name: `흑수 ${gameId}`, sinner, portrait: `/p/${gameId}.webp` })

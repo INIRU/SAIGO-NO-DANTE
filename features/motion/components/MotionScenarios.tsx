@@ -5,8 +5,8 @@ import { useLocale, useTranslations } from 'next-intl'
 import { Play, Square } from 'lucide-react'
 import Switch from '@/components/ui/Switch'
 import QuietImage from '@/components/ui/QuietImage'
-import { isBase, pickLinkState, type MotionPartner, type MotionState } from '@/lib/motion/catalog'
-import type { VoiceLink } from '@/lib/motion/soundbuttons'
+import { isBase, pickLinkState, type MotionPartner, type MotionState } from '@/features/motion/lib/catalog'
+import type { VoiceLink } from '@/features/motion/lib/soundbuttons'
 import styles from './MotionDeck.module.css'
 
 const fullName = (p: MotionPartner) => (p.sinner ? `${p.name} ${p.sinner}` : p.name)

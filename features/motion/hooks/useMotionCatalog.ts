@@ -1,7 +1,7 @@
 import { useCallback, useMemo } from 'react'
 import useSWR from 'swr'
 import { useLocale } from 'next-intl'
-import { MOTION_INDEX_URL, cutinAllyId, motionAssetUrl, motionCatalogFrom, type MotionEntry, type MotionPartner, type MotionSiteData, type MotionState } from '@/lib/motion/catalog'
+import { MOTION_INDEX_URL, cutinAllyId, motionAssetUrl, motionCatalogFrom, type MotionEntry, type MotionPartner, type MotionSiteData, type MotionState } from '@/features/motion/lib/catalog'
 import { getIdentityPortraitUrl } from '@/lib/utils/images'
 
 const readJson = async <T,>(url: string, init?: RequestInit): Promise<T> => {

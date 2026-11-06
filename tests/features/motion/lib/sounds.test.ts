@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { SoundPlayer, gainAt, limitCues, type PlayCue, type SoundCue, type SoundMeta } from '@/lib/motion/sounds'
+import { SoundPlayer, gainAt, limitCues, type PlayCue, type SoundCue, type SoundMeta } from '@/features/motion/lib/sounds'
 
 // Web Audio and the video element as recorders: the tests read how the tracks are mixed and when they start, not what a speaker plays.
 class Param {

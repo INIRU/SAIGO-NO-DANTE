@@ -1,12 +1,12 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act, createElement } from 'react'
 import type { Root } from 'react-dom/client'
-import type { useSkillMotion as UseSkillMotion } from '@/hooks/useSkillMotion'
-import type { MotionState } from '@/lib/motion/catalog'
+import type { useSkillMotion as UseSkillMotion } from '@/features/motion/hooks/useSkillMotion'
+import type { MotionState } from '@/features/motion/lib/catalog'
 
 // The hook runs in Node with a thin DOM (react-dom needs a container and a few globals), the compositor and the sound player replaced by recorders.
 const calls = vi.hoisted(() => ({ draws: [] as unknown[][], sound: {} as Record<string, ReturnType<typeof vi.fn>>, comps: [] as unknown[][] }))
-vi.mock('@/lib/motion/compositor', () => ({
+vi.mock('@/features/motion/lib/compositor', () => ({
   LayerCompositor: class {
     onReady: (() => void) | null = null
     constructor(...args: unknown[]) { calls.comps.push(args) }
@@ -14,7 +14,7 @@ vi.mock('@/lib/motion/compositor', () => ({
     dispose() {}
   },
 }))
-vi.mock('@/lib/motion/sounds', () => ({
+vi.mock('@/features/motion/lib/sounds', () => ({
   SoundPlayer: class {
     constructor() {
       for (const name of ['attach', 'dispose', 'unlock', 'load', 'stop', 'setMuted', 'setVolume', 'setVoiceVolume', 'setSfxVolume']) (this as Record<string, unknown>)[name] = (calls.sound[name] ??= vi.fn())
@@ -67,7 +67,7 @@ beforeAll(async () => {
   vi.stubGlobal('HTMLIFrameElement', class {})
   ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
   ;({ createRoot } = await import('react-dom/client'))
-  ;({ useSkillMotion } = await import('@/hooks/useSkillMotion'))
+  ;({ useSkillMotion } = await import('@/features/motion/hooks/useSkillMotion'))
 })
 
 beforeEach(() => {

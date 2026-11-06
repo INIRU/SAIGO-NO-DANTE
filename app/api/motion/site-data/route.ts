@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { loadMotionSiteData } from '@/lib/motion/feed'
+import { loadMotionSiteData } from '@/features/motion/server'
 import { CATALOG_CACHE_CONTROL } from '@/lib/constants/http-cache'
 import type { SupportedLang } from '@/lib/i18n/types'
 

@@ -93,7 +93,7 @@ describe('one Switch everywhere', () => {
     const left: Record<string, RegExp> = {
       'components/collection/CollectionBoard.module.css': /\.switch\b/,
       'components/random/random.module.css': /\.switch\b/,
-      'components/motion/MotionDeck.module.css': /\.switch\b/,
+      'features/motion/components/MotionDeck.module.css': /\.switch\b/,
       'components/tools/LunacyCalendar.module.css': /\.switch(Track|State)\b/,
       'components/support/support.css': /desk-switch/,
     }
