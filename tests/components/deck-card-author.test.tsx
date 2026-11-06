@@ -10,7 +10,7 @@ vi.mock('next/image', () => ({ default: ({ src, alt }: { src: string; alt: strin
 vi.mock('@/lib/i18n/navigation', () => ({ Link: ({ href, children, ...rest }: { href: string; children: React.ReactNode }) => <a href={href} {...rest}>{children}</a> }))
 vi.mock('@/components/providers/KeywordProvider', () => ({ useKeywordData: () => ({ getIconUrl: () => null }), useKeywords: () => ({}) }))
 vi.mock('@/components/decks/NoteChips', () => ({ NoteRenderer: () => null, useNoteGiftLookup: () => ({}) }))
-vi.mock('@/components/collection/OwnedBadge', () => ({ default: () => null, useMissingSinners: () => [] }))
+vi.mock('@/features/tools/components/OwnedBadge', () => ({ default: () => null, useMissingSinners: () => [] }))
 vi.mock('@/components/ui/FormationThumbnail', () => ({ default: () => null }))
 
 import DeckCard, { type DeckSummary } from '@/components/decks/DeckCard'

@@ -17,7 +17,7 @@ import { localizeDeckKeyword } from '@/components/decks/decks-types'
 import type { SupportedLang } from '@/lib/i18n'
 import { normalizePlannerListKeywords, planDifficultyBadge } from '@/lib/planner/stripPlanForList'
 import { guestAuthorName } from '@/lib/guest/copy'
-import OwnedBadge, { useMissingSinners } from '@/components/collection/OwnedBadge'
+import OwnedBadge, { useMissingSinners } from '@/features/tools/components/OwnedBadge'
 
 export type PlanSummary = {
   id: string

@@ -91,10 +91,10 @@ describe('one Switch everywhere', () => {
 
   it('REQ-SHARED-060 has no screen-specific switch styles left', () => {
     const left: Record<string, RegExp> = {
-      'components/collection/CollectionBoard.module.css': /\.switch\b/,
-      'components/random/random.module.css': /\.switch\b/,
+      'features/tools/components/CollectionBoard.module.css': /\.switch\b/,
+      'features/tools/components/random.module.css': /\.switch\b/,
       'features/motion/components/MotionDeck.module.css': /\.switch\b/,
-      'components/tools/LunacyCalendar.module.css': /\.switch(Track|State)\b/,
+      'features/tools/components/LunacyCalendar.module.css': /\.switch(Track|State)\b/,
       'components/support/support.css': /desk-switch/,
     }
     for (const [path, pattern] of Object.entries(left)) expect(source(path), path).not.toMatch(pattern)

@@ -7,8 +7,7 @@ import { routing } from '@/lib/i18n/routing'
 import type { SupportedLang } from '@/lib/i18n/types'
 import { getKeywordData } from '@/lib/keywords/server-data'
 import { isMissingColumnError } from '@/lib/keywords/ref-text'
-import type { KeywordAbility } from '@/lib/tools/damage-abilities'
-import { buildDamageSources, type GiftSourceRow } from '@/lib/tools/damage-sources'
+import { buildDamageSources, type GiftSourceRow, type KeywordAbility } from '@/features/tools'
 
 const GIFT_COLUMNS = 'game_id, name, name_en, name_jp, grade, keyword, image_url, effect_base, effect_plus, effect_plusplus, effect_base_en, effect_plus_en, effect_plusplus_en, effect_base_jp, effect_plus_jp, effect_plusplus_jp'
 
