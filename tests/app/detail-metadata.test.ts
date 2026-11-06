@@ -39,7 +39,7 @@ vi.mock('next-intl/server', async () => {
 })
 // Only generateMetadata is under test: the screens these pages render are left out.
 vi.mock('@/app/[lang]/decks/[id]/DeckDetailClient', () => ({ default: () => null }))
-vi.mock('@/components/decks/DeckDetailSkeleton', () => ({ default: () => null }))
+vi.mock('@/app/[lang]/decks/[id]/_components/DeckDetailSkeleton', () => ({ default: () => null }))
 vi.mock('@/app/[lang]/planner/community/[id]/PlanDetailClient', () => ({ default: () => null }))
 vi.mock('@/app/[lang]/planner/community/[id]/PlanDetailSkeleton', () => ({ default: () => null }))
 vi.mock('@/features/catalog/components/IdentityRecommendations', () => ({ default: () => null }))

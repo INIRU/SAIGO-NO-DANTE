@@ -47,7 +47,7 @@ import {
   buildEgoGiftPool,
   type AutocompleteSuggestion,
 } from '@/features/notes/components/NoteAutocomplete'
-import { NoteRenderer, type NoteEgoGiftEntry } from '@/components/decks/NoteChips'
+import { NoteRenderer, type NoteEgoGiftEntry } from '@/features/decks/components/NoteChips'
 import type { NoteFormationMember } from '@/features/notes'
 import { getLocalizedName } from '@/lib/i18n/localize'
 import type { SupportedLang } from '@/lib/i18n/types'

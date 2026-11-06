@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo } from 'react'
-import { NoteRenderer, type NoteEgoGiftEntry } from '@/components/decks/NoteChips'
+import { NoteRenderer, type NoteEgoGiftEntry } from '@/features/decks/components/NoteChips'
 import { noteLabelPreview } from '@/lib/notes/blocks'
 import type { GiftData } from '@/lib/planner/types'
 

@@ -3,7 +3,7 @@
 import dynamic from 'next/dynamic'
 import { useMemo, useState } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
-import { NoteRenderer, type NoteEgoGiftEntry } from '@/components/decks/NoteChips'
+import { NoteRenderer, type NoteEgoGiftEntry } from '@/features/decks/components/NoteChips'
 import { NoteGiftClickContext } from '@/features/notes/components/NoteBlockViewer'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
 import { buildKeywordPool, buildEgoGiftPool } from '@/features/notes/components/NoteAutocomplete'

@@ -4,7 +4,7 @@ import Image from 'next/image'
 import { SIN_COLORS } from '@/lib/data/sinners'
 import { useLocale } from 'next-intl'
 import { useKeywordData, useKeywords } from '@/components/providers/KeywordProvider'
-import { localizeDeckKeyword } from '@/components/decks/decks-types'
+import { localizeDeckKeyword } from '@/features/decks'
 
 interface KeywordBadgeProps {
   keyword: string

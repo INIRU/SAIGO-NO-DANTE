@@ -1,2 +1,2 @@
-import DeckBuilderSkeleton from '@/components/decks/DeckBuilderSkeleton'
+import DeckBuilderSkeleton from '@/features/decks/components/DeckBuilderSkeleton'
 export default function Loading() { return <DeckBuilderSkeleton /> }

@@ -1,4 +1,4 @@
-/* IdentityFrameCard: the in-game formation card. Box = the frame's border line (290×428, see lib/decks/identity-card-frame.ts). */
+/* IdentityFrameCard: the in-game formation card. Box = the frame's border line (290×428, see features/catalog/lib/identity-card-frame.ts). */
 
 .card { position: relative; isolation: isolate; display: block; width: 100%; aspect-ratio: 290 / 428; container-type: inline-size; }
 

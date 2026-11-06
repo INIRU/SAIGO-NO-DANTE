@@ -1,0 +1,11 @@
+// 클라이언트에서도 쓸 수 있는 순수 코드만. 컴포넌트는 `@/features/decks/components/<이름>`으로 가져온다.
+// `lib/decks/`에 남은 것: 키워드 규칙(`keyword-rules`)과 팀 코드(`team-code`, `deck-code-utils`, `formation-init`). `lib/planner`·`lib/meta`가 쓰고 pako를 끌어오므로, 이 입구에 두면 모든 라우트 첫 JS가 15KB 늘어 공용에 둔다.
+export { computeAttackTypeCounts, computeDeckResources, computeEgoCostTotals, computeSinProduction, fieldedEntries } from './lib/deck-analysis'
+export type { SkillDistributionTuple } from './lib/deck-analysis'
+export { insertDeckIdentities, isAwakenedUptie, normalizeUptie, rowsAtUptie } from './lib/deck-identity-uptie'
+export { contentTypeMessageKey, localizeDeckKeyword } from './lib/decks-types'
+export type { SearchSuggestion } from './lib/decks-types'
+export { formationThumbnail } from './lib/formation-thumbnail'
+export { MAX_SLOTS, RESONANCE_TURNS, addSlot, emptyState, prepareActivation, reached, slotsAtTurn } from './lib/passive-activation'
+export type { ActivationKind, ActivationRequirement, SinWeights } from './lib/passive-activation'
+export { trimDeckIdentity } from './lib/trim-deck-identity'

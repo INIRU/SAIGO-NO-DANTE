@@ -14,7 +14,7 @@ vi.mock('@/features/community/components/BoardSkeleton', () => ({ CardSkeleton: 
 
 import { useSuggestionState } from '@/features/community/hooks/useSuggestions'
 import { SuggestionGroupSkeleton, GiftGroupSkeleton, IdentityTileSkeleton } from '@/components/ui/SuggestionSkeleton'
-import { RecommendationLaneSkeleton, IdentityRecommendationsSkeleton } from '@/components/deck-detail/RecommendationSkeleton'
+import { RecommendationLaneSkeleton, IdentityRecommendationsSkeleton } from '@/features/decks/components/RecommendationSkeleton'
 import { ThemePackPickerModal } from '@/components/ui/ThemePackModal'
 import { PlannerEgoSelectModal, PlannerIdentitySelectModal } from '@/components/planner/deck/PlannerDeckSelection'
 import FloorGiftPickerModal from '@/components/planner/FloorGiftPickerModal'

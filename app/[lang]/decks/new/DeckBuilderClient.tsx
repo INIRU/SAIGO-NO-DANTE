@@ -31,32 +31,30 @@ import {
 } from '@/lib/data/sinners'
 // IdentityCard → IdentityTab 내부에서 직접 렌더링
 
-import { encodeDeckCode, decodeDeckCode } from '@/components/deck-builder/deckCodeUtils'
+import { encodeDeckCode, decodeDeckCode } from '@/lib/decks/deck-code-utils'
+import { deckInitFromTeamCode, formationParamFromSearch } from '@/lib/decks/formation-init'
+import { computeDeckResources, computeSinProduction, fieldedEntries, contentTypeMessageKey, rowsAtUptie } from '@/features/decks'
 import UnderlineTabBar, { type TabItem } from '@/components/ui/UnderlineTabBar'
 import Dropdown from '@/components/ui/Dropdown'
 import Button from '@/components/ui/Button'
 import ConfirmModal from '@/components/ui/ConfirmModal'
 import FormationSourceModal from '@/components/planner/FormationSourceModal'
 import { deckFormationFromPlan } from '@/lib/planner/formation-transfer'
-import { deckInitFromTeamCode, formationParamFromSearch } from '@/lib/decks/formation-init'
 import type { EgoSlot, IdentitySlot } from '@/lib/planner/types'
 import { CONTENT_TYPES } from '@/lib/constants/deck-tokens'
 import { LCB_IDS, isDeployedSlot } from '@/lib/constants/game'
 import { Users, Sparkles, SlidersHorizontal, FileText, ArrowLeft, Copy, Download, Save, Upload, Check } from 'lucide-react'
-import { IdentityTab, EgoTab, SkillsetTab } from '@/components/deck-builder/DeckBuilderTabs'
+import { IdentityTab, EgoTab, SkillsetTab } from '@/features/decks/components/DeckBuilderTabs'
 import { getIdentityImageUrl } from '@/lib/utils/images'
-import DeckInsights, { type DeckInsightIdentity } from '@/components/deck-analysis/DeckInsights'
-import DeckResourceSummary from '@/components/deck-analysis/DeckResourceSummary'
-import { computeDeckResources, computeSinProduction, fieldedEntries } from '@/lib/decks/deck-analysis'
-import { contentTypeMessageKey } from '@/components/decks/decks-types'
+import DeckInsights, { type DeckInsightIdentity } from '@/features/decks/components/DeckInsights'
+import DeckResourceSummary from '@/features/decks/components/DeckResourceSummary'
 import {
   localizeIdentityName,
   localizePassiveDescription,
   localizePassiveName,
-} from '@/components/deck-detail/DeckIdentityCard'
+} from '@/features/decks/components/DeckIdentityCard'
 import type { SupportedLang } from '@/lib/i18n/types'
 import type { EgoGiftNote } from '@/lib/types'
-import { rowsAtUptie } from '@/lib/decks/deck-identity-uptie'
 import {
   DECK_MAIN_KEYWORDS,
   MAX_DECK_MAIN_KEYWORDS,
@@ -117,7 +115,7 @@ const DEFAULT_EGO_NAMES: Record<string, string> = {
 
 const MANUAL_ATTACK_MAIN_KEYWORDS = new Set<string>(['참격', '관통', '타격'])
 
-const DeckNoteEditor = dynamic(() => import('@/components/deck-builder/DeckNoteEditor'), {
+const DeckNoteEditor = dynamic(() => import('@/features/decks/components/DeckNoteEditor'), {
   ssr: false,
   loading: () => null,
 })

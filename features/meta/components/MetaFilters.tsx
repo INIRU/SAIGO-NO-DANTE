@@ -3,7 +3,7 @@
 import Image from 'next/image'
 import { useLocale, useTranslations } from 'next-intl'
 import { useKeywordData, useKeywords } from '@/components/providers/KeywordProvider'
-import { localizeDeckKeyword } from '@/components/decks/decks-types'
+import { localizeDeckKeyword } from '@/features/decks'
 import { FilterChoice, FilterIconTile, FilterSection, FilterTextButton, filterStyles } from '@/components/board/FilterControls'
 import { KEYWORD_DECK_KEYWORDS } from '@/lib/decks/keyword-rules'
 import { RARITY_ICON_MAP, SINNER_SLUGS } from '@/lib/constants/game'

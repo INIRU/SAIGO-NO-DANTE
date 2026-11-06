@@ -1,6 +1,6 @@
 import type { CSSProperties, ReactNode } from 'react'
 import Skeleton, { SkeletonCircle, SkeletonLine } from '@/components/ui/Skeleton'
-import boardStyles from '@/components/decks/FormationBoard.module.css'
+import boardStyles from './DetailPageSkeleton.module.css'
 
 /** Shared by the plan and deck detail pages: both hero modules expose the same class names. */
 type HeroStyles = { readonly [key: string]: string }
