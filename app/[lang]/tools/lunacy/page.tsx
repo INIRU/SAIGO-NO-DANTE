@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import LunacyCalendar from "@/components/tools/LunacyCalendar";
+import LunacyCalendar from "@/features/tools/components/LunacyCalendar";
 import { metaText, pageMetadata } from '@/lib/seo/metadata'
 export async function generateMetadata({
   params,
