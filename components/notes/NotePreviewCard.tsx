@@ -69,7 +69,8 @@ export default function NotePreviewHost({ asset, href, modalOnTap = true, block 
   useEffect(() => {
     if (!anchor) return
     // the card scrolls inside itself when it is capped; that scroll must not close it
-    const hide = (event?: Event) => { if (event?.target instanceof Node && card.current?.contains(event.target)) return; clearTimeout(openTimer.current); setAnchor(null); setPlace(null) }
+    // nor may a keyword tooltip opened from the card (drawn over it, outside it in the page)
+    const hide = (event?: Event) => { if (event?.target instanceof Node && (card.current?.contains(event.target) || (event.target instanceof Element && event.target.closest('[data-kw-tip]')))) return; clearTimeout(openTimer.current); setAnchor(null); setPlace(null) }
     const escape = (event: KeyboardEvent) => { if (event.key === 'Escape') hide() }
     const resize = () => hide()
     const doc = host.current?.ownerDocument ?? document, view = doc.defaultView ?? window
