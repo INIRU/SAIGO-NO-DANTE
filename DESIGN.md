@@ -105,15 +105,15 @@
 | 용도 | 컴포넌트 |
 | --- | --- |
 | 인격 카드(프레임, 동기화, SELECTED 배너, 이름) | `features/catalog/components/IdentityFrameCard.tsx` |
-| 6×2 편성 보드 | `features/decks/components/FormationBoard.tsx`, 편집은 `components/planner/deck/PlannerDeckSelection.tsx` |
+| 6×2 편성 보드 | `features/decks/components/FormationBoard.tsx`, 편집은 `features/planner/components/PlannerDeckSelection.tsx` |
 | 키워드 분포, 패시브, 공격 유형, 죄악 자원 | `features/decks/components/DeckInsights.tsx`, `DeckResourceSummary.tsx` |
-| 스킬 분포(교환) | `components/planner/SkillExchangePanel.tsx` |
+| 스킬 분포(교환) | `features/planner/components/SkillExchangePanel.tsx` |
 | 기프트 카드, 아트, 등급 | `features/mirror-dungeon/components/GiftCard.tsx`, `GiftArtwork.tsx`, `GiftGrade.tsx` |
 | 기프트 목록(키워드 탭, 등급 칩, 검색) | `features/mirror-dungeon/components/GiftCatalog.tsx` |
 | 테마팩 카드 | `components/ui/ThemePackCard.tsx` |
 | 게시판 필터 칸(구역 제목, 글자 선택 버튼, 아이콘 타일, 고른 항목 줄, 입력 칸) | `components/board/FilterControls.tsx` |
 | 인격·E.G.O 고르는 창의 왼쪽 필터(이름 검색, 등급, 수감자) | `components/ui/CharacterPickerFilters.tsx` |
-| 층 제약 | `components/planner/FloorConstraints.tsx` |
+| 층 제약 | `features/planner/components/FloorConstraints.tsx` |
 | 스킬 이름 배너 | `features/catalog/components/SkillNameBanner.tsx` |
 | 페이지 머리말, 뒤로 가기 | `components/ui/PageHeader.tsx`, `components/navigation/BackLink.tsx` |
 | 모달, 확인창 | `components/ui/BaseModal.tsx`, `ConfirmModal.tsx`, 상세는 `GiftDetailModal`·`ThemePackModal`·`IdentityDetailModal`·`EgoDetailModal` |

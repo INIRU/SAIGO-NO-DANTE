@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { BONUS_PLACES, bonusBandPlaces, bonusIconRegions, bonusLayout, bonusLineShare, bonusLineStrip, bonusPicks, cardOfTheme,
   offerKey, BONUS_STRIP_ROWS } from '@/features/assist/lib/clear-bonus'
-import { createInitialRunState, normalizeRunState, runReducer } from '@/lib/planner/run-types'
+import { createInitialRunState, normalizeRunState, runReducer } from '@/features/planner/lib/run-types'
 import type { FusionSlotRead } from '@/features/assist/lib/fusion-evidence'
 
 const strong = (id: string): FusionSlotRead => ({ id, score: 0.97, margin: 0.9 })

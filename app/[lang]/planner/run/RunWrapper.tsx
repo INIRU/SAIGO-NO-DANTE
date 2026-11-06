@@ -1,6 +1,6 @@
 'use client'
 import dynamic from 'next/dynamic'
-import RunSkeleton from '@/components/planner/run/RunSkeleton'
+import RunSkeleton from '@/features/planner/components/RunSkeleton'
 
 const Inner = dynamic(() => import('./RunClient'), {
   ssr: false,

@@ -30,6 +30,6 @@ it('titles the entry events the game leaves unnamed with the first line of their
 
 it('uses the shared title where Assist lists events and in the PiP event panel', async () => {
   const { readFileSync } = await import('node:fs')
-  expect(readFileSync('components/planner/run/EventSection.tsx', 'utf8')).toContain('eventTitle(event, lang) ?? `#${event.id}`')
-  expect(readFileSync('components/planner/run/CompanionEventChoices.tsx', 'utf8')).toContain("const eventName = eventTitle(event, lang) ?? ''")
+  expect(readFileSync('features/planner/components/EventSection.tsx', 'utf8')).toContain('eventTitle(event, lang) ?? `#${event.id}`')
+  expect(readFileSync('features/planner/components/CompanionEventChoices.tsx', 'utf8')).toContain("const eventName = eventTitle(event, lang) ?? ''")
 })

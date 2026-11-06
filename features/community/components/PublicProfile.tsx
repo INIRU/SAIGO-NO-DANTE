@@ -7,7 +7,7 @@ import { Layers, Map as MapIcon } from "lucide-react";
 import ProfileRail from "./ProfileRail";
 import AchievementGrid from "./AchievementGrid";
 import DeckCard from "@/features/decks/components/DeckCard";
-import PlanCard from "@/components/planner/PlanCard";
+import PlanCard from "@/features/planner/components/PlanCard";
 import Skeleton from "@/components/ui/Skeleton";
 import { getCommunityCopy } from "@/features/community/lib/copy";
 import { achievementProgress } from "@/features/community/lib/achievements";

@@ -1,7 +1,7 @@
 import { expect, it } from 'vitest'
 import { RECOGNITION_MODE_STORAGE_KEY, RECOGNITION_PROFILES, readRecognitionMode } from '@/features/assist/lib/recognition-profile'
 import { popupCaptureAction } from '@/features/assist/lib/popup-detect'
-import { RECOGNITION_MODES } from '@/components/planner/run/RecognitionModeControl'
+import { RECOGNITION_MODES } from '@/features/planner/components/RecognitionModeControl'
 
 it('defaults to balanced and keeps only a valid stored mode', () => {
   const storage = (value: string | null) => ({ getItem: (key: string) => key === RECOGNITION_MODE_STORAGE_KEY ? value : null })

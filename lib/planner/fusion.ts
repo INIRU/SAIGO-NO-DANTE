@@ -1,5 +1,5 @@
-import { FINAL_FLOOR, type RecipeData, type GiftData } from './types'
-import { normalizeThemeKeyword } from '../constants/keywords'
+import { FINAL_FLOOR, type RecipeData, type GiftData } from '@/lib/planner/types'
+import { normalizeThemeKeyword } from '@/lib/constants/keywords'
 
 /**
  * A recipe's ingredient gift ids in the order of `ingredients`: the stored game ids when the row has them (one per

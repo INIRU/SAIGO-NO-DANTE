@@ -11,9 +11,9 @@
 | 수감자·인격·E.G.O | `sinners`, `identities`, `skills`, `passives`, `ego`, `ego_skills`, `ego_passives` | `lib/db/queries.ts`, `lib/types/index.ts` |
 | 정신력·설정 | `identity_sanity_conditions`, `mental_condition_templates`, `panic_types`, `app_config` | `lib/db/queries.ts` |
 | 키워드와 게임 원문 참조 | `keyword_meta`, `game_text_refs` | `lib/keywords/`, `lib/game-text/` |
-| 거울 던전 | `ego_gifts`, `ego_gift_themes`, `ego_gift_recipes`, `md_events`, `md_event_choices`, `gift_presets`(로그인 사용자의 기프트 프리셋) | `lib/planner/`, `features/mirror-dungeon/lib/` |
+| 거울 던전 | `ego_gifts`, `ego_gift_themes`, `ego_gift_recipes`, `md_events`, `md_event_choices`, `gift_presets`(로그인 사용자의 기프트 프리셋) | `features/planner/lib/`, `features/mirror-dungeon/lib/` |
 | 덱 | `decks`, `deck_identities`, `deck_egos`, `deck_votes`, `deck_comments`, `deck_bookmarks` | `app/api/decks/`, `features/decks/`, `lib/decks/` |
-| 플래너 | `md_plans`(편성과 층별 계획은 JSON), `md_plan_votes`, `md_plan_comments`, `final_gift_presets` | `app/api/planner/`, `lib/planner/` |
+| 플래너 | `md_plans`(편성과 층별 계획은 JSON), `md_plan_votes`, `md_plan_comments`, `final_gift_presets` | `app/api/planner/`, `features/planner/lib/`, `lib/planner/` |
 | 친구 코드 게시판 | `friend_posts`(지원 인격·인격 구해요 글), `friend_exchanges`(코드 교환), `friend_want_stats`(인격별 요청 수), `friend_requests`(승인 후 공개 글의 코드 요청), `friend_reports`, `friend_blocks` | `app/api/friend-codes/`, `features/friends/` |
 | 계정·커뮤니티 | `profiles`, `follows`, `community_activity`, `guest_authorship`, `profile_easter_eggs`, `legal_docs`, `legal_acknowledgements`, `profile_access_signals`, `profile_duplicate_signal_events` | `app/api/community/`, `features/community/`, `lib/auth.ts` |
 | 운영 | `announcements`, `inquiries`, `support_messages`, `site_maintenance`, `audit_logs` | `app/api/admin/` |

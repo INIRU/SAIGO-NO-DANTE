@@ -4,8 +4,8 @@ import {
   deriveBlockedFinalFusionMaterialIds,
   parseFinalGiftId,
   parseFinalGiftIds,
-} from '../../../lib/planner/fusion'
-import type { GiftData, RecipeData } from '../../../lib/planner/types'
+} from '@/lib/planner/fusion'
+import type { GiftData, RecipeData } from '@/lib/planner/types'
 
 function gift(gameId: number, name: string): GiftData {
   return {

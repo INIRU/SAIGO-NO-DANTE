@@ -12,7 +12,7 @@ vi.mock('@/features/catalog/components/EgoDisplayCard', () => ({ default: ({ nam
 import GiftCatalog, { useGiftCatalogFilters } from '@/features/mirror-dungeon/components/GiftCatalog'
 import type { EgoGift } from '@/features/mirror-dungeon/types'
 import { ThemePackPickerModal } from '@/components/ui/ThemePackModal'
-import { PlannerEgoSelectModal, PlannerIdentitySelectModal } from '@/components/planner/deck/PlannerDeckSelection'
+import { PlannerEgoSelectModal, PlannerIdentitySelectModal } from '@/features/planner/components/PlannerDeckSelection'
 
 const sinner = { id: 'faust', name_kr: '파우스트' }
 const identity = (id: string, name: string) => ({ id, sinner_id: 'faust', name_kr: name, rarity: 3, game_id: '10201', folder_name: name })
