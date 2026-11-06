@@ -15,7 +15,7 @@ vi.mock('@/lib/i18n/navigation', async () => {
 vi.mock('next-intl', () => ({ useTranslations: () => (key: string) => key, useLocale: () => 'ko' }))
 vi.mock('next-auth/react', () => ({ useSession: () => ({ data: null, status: 'loading' }), signOut: vi.fn() }))
 vi.mock('@/hooks/useSupportUnread', () => ({ useSupportUnread: () => false }))
-vi.mock('@/components/community/easterEggs', () => ({ useTapEgg: () => () => {} }))
+vi.mock('@/components/brand/easter-eggs', () => ({ useTapEgg: () => () => {} }))
 // next/dynamic is React.lazy underneath; the search modal chunk never arrives here, like a slow network.
 vi.mock('next/dynamic', async () => {
   const { lazy } = await import('react')

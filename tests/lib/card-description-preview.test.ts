@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { NOTE_PREFIX, notePlainText, notePreviewText, noteSummaryText } from '@/lib/notes/blocks'
-import { formatDiscoveryPosts } from '@/lib/discovery/recommend'
+import { formatDiscoveryPosts } from '@/features/community/lib/recommend'
 import { stripPlanForList } from '@/lib/planner/stripPlanForList'
 
 const note = NOTE_PREFIX + JSON.stringify({

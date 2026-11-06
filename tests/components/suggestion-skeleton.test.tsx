@@ -10,9 +10,9 @@ vi.mock('@/components/ui/BaseModal', () => ({ default: ({ open, children }: { op
 vi.mock('@/features/catalog/components/IdentityFrameCard', () => ({ default: ({ name }: { name: string }) => <span data-identity>{name}</span> }))
 vi.mock('@/lib/i18n/navigation', () => ({ Link: ({ href, children }: { href: string; children: React.ReactNode }) => <a href={href}>{children}</a>, useRouter: () => ({}), usePathname: () => '/' }))
 vi.mock('@/features/catalog/components/EgoDisplayCard', () => ({ default: ({ name }: { name: string }) => <span data-ego>{name}</span> }))
-vi.mock('@/components/discovery/BoardSkeleton', () => ({ CardSkeleton: ({ kind }: { kind: string }) => <div data-card-skeleton={kind} /> }))
+vi.mock('@/features/community/components/BoardSkeleton', () => ({ CardSkeleton: ({ kind }: { kind: string }) => <div data-card-skeleton={kind} /> }))
 
-import { useSuggestionState } from '@/hooks/useSuggestions'
+import { useSuggestionState } from '@/features/community/hooks/useSuggestions'
 import { SuggestionGroupSkeleton, GiftGroupSkeleton, IdentityTileSkeleton } from '@/components/ui/SuggestionSkeleton'
 import { RecommendationLaneSkeleton, IdentityRecommendationsSkeleton } from '@/components/deck-detail/RecommendationSkeleton'
 import { ThemePackPickerModal } from '@/components/ui/ThemePackModal'

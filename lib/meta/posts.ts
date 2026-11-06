@@ -3,7 +3,7 @@ import { getIdentitySkillDistribution } from '@/lib/planner/types'
 import { updateWeekStart } from '@/lib/discovery/update-window'
 import type { MetaIdentity, MetaPeriod, MetaPost } from './types'
 
-// Post helpers shared by the meta feature and lib/db/meta.ts (the discovery readers), which shared code cannot take from features/meta.
+// Post helpers shared by the meta feature, lib/db/meta.ts and the community recommenders (features/community/server/rec-data.ts).
 
 /** Final inventory entries look like 'final_9765', 'start_9029', 'observe_9191'; blessings are not gifts. */
 export function planGiftIds(inventory: unknown): string[] {

@@ -1,6 +1,6 @@
 import { expect, it, vi } from 'vitest'
 import { renderToStaticMarkup } from 'react-dom/server'
-import BoardHeader from '@/components/discovery/BoardHeader'
+import BoardHeader from '@/features/community/components/BoardHeader'
 
 vi.mock('@/lib/i18n/navigation', () => ({
   Link: ({ href, children, ...rest }: { href: string; children: React.ReactNode }) => <a href={href} {...rest}>{children}</a>,

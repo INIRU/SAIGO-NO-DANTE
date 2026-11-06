@@ -9,13 +9,13 @@ import { useTranslations, useLocale } from 'next-intl'
 import { useRoutePrefetch } from '@/lib/hooks/useRoutePrefetch'
 import type { SupportedLang } from '@/lib/i18n/types'
 import HeroWordmark from '@/components/home/HeroWordmark'
-import LimpiLink from '@/components/home/LimpiLink'
-import DiscordSupportLink from '@/components/home/DiscordSupportLink'
+import LimpiLink from '@/app/[lang]/(home)/_components/LimpiLink'
+import DiscordSupportLink from '@/app/[lang]/(home)/_components/DiscordSupportLink'
 import DanteLogo from '@/components/brand/DanteLogo'
 import { SinnerRosterIcon, DeckBoardIcon, MirrorDungeonIcon } from '@/components/brand/icons'
-import AnnouncementBanner from '@/components/home/AnnouncementBanner'
+import AnnouncementBanner from '@/app/[lang]/(home)/_components/AnnouncementBanner'
 import type { AnnouncementPreview } from '@/lib/announcements'
-import ScrollAnimations from '@/components/home/ScrollAnimations'
+import ScrollAnimations from '@/app/[lang]/(home)/_components/ScrollAnimations'
 import {
   type IdentityWithSinner,
   getSinnerLogoUrl,
@@ -24,7 +24,7 @@ import {
 
 // Split into its own chunk but server-rendered: the first slide's preloaded artwork (the page's largest image) is in the
 // HTML instead of waiting for this chunk and hydration. The slider touches the browser only inside effects.
-const HeroGlitchSlider = dynamic(() => import('@/components/home/HeroGlitchSlider'))
+const HeroGlitchSlider = dynamic(() => import('@/app/[lang]/(home)/_components/HeroGlitchSlider'))
 
 const ACTION_BASE =
   'flex min-h-[3rem] min-w-0 items-center gap-2.5 rounded-md px-4 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold-light)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-deep)]'

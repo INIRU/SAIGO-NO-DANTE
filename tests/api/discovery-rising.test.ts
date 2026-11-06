@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const state = vi.hoisted(() => ({ fail: false }))
-vi.mock('@/lib/discovery/rising-feed', () => ({
+vi.mock('@/features/community/server/rising-feed', () => ({
   loadRising: async (kind: string) => { if (state.fail) throw new Error('missing'); return { posts: [{ post: { id: kind }, rise: 120 }], identities: [] } },
 }))
 

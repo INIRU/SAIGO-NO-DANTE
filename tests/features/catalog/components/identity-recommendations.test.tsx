@@ -11,7 +11,7 @@ vi.mock('@/components/decks/DeckCard', () => ({ default: ({ deck }: { deck: { id
 vi.mock('@/components/planner/PlanCard', () => ({ default: ({ plan }: { plan: { id: string } }) => <span data-plan>{plan.id}</span> }))
 
 import IdentityRecommendations from '@/features/catalog/components/IdentityRecommendations'
-import type { IdentityCompanion, IdentityPost } from '@/lib/discovery/identity-recommendations'
+import type { IdentityCompanion, IdentityPost } from '@/features/community/server/identity-recommendations'
 
 const companion = (id: string, count: number): IdentityCompanion =>
   ({ id, sinner_id: 'yisang', rarity: 3, game_id: '10101', folder_name: 'x', name_kr: `인격${id}`, name_en: null, name_jp: null, count })

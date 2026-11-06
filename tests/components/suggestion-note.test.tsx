@@ -11,7 +11,7 @@ vi.mock('@/components/providers/KeywordProvider', () => ({ useKeywords: () => ({
 vi.mock('@/lib/i18n/navigation', () => ({ Link: ({ href, children }: { href: string; children: React.ReactNode }) => <a href={href}>{children}</a>, useRouter: () => ({}), usePathname: () => '/' }))
 
 import { PlannerEgoSelectModal, PlannerIdentitySelectModal } from '@/components/planner/deck/PlannerDeckSelection'
-import type { Suggestion } from '@/lib/discovery/suggestion-types'
+import type { Suggestion } from '@/features/community/lib/suggestion-types'
 
 const sinner = { id: 'faust', name_kr: '파우스트' }
 const identity = (id: string, name: string, sinner_id = 'faust') => ({ id, sinner_id, name_kr: name, rarity: 3, game_id: '10201', folder_name: name })

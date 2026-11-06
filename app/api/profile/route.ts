@@ -1,4 +1,4 @@
-import { invalidateProfileDecks } from '@/lib/community/cache'
+import { invalidateProfileDecks } from '@/features/community/server'
 import * as Sentry from '@sentry/nextjs'
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'

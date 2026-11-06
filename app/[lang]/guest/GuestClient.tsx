@@ -11,8 +11,8 @@ import { showError, showSuccess } from '@/lib/toast'
 import ConfirmModal from '@/components/ui/ConfirmModal'
 import RelativeTime from '@/components/ui/RelativeTime'
 import Skeleton, { SkeletonLine } from '@/components/ui/Skeleton'
-import '@/components/community/community.css'
-import styles from '@/components/community/profile.module.css'
+import '@/styles/components/community.css'
+import styles from '@/styles/components/CommunityProfile.module.css'
 
 const input = 'min-h-10 w-full min-w-0 rounded-lg border border-[var(--border)] bg-[#17120c] px-3 text-[0.875rem] text-[var(--text-primary)] outline-none transition-colors placeholder:text-[var(--text-muted)] focus:border-[var(--gold-dim)] aria-[invalid=true]:border-[#9b2c23]'
 

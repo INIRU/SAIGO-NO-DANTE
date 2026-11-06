@@ -1,8 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getFormations, getRecCatalog } from '@/lib/db/meta'
-import { buildEgoModel, suggestEgos } from '@/lib/discovery/ego-recs'
-import { buildFloorModel, rankGifts, rankThemes } from '@/lib/discovery/floor-recs'
-import { buildIdentityModel, detectArchetype, suggestIdentities } from '@/lib/discovery/identity-recs'
+import { getFormations, getRecCatalog, buildEgoModel, suggestEgos, buildFloorModel, rankGifts, rankThemes, buildIdentityModel, detectArchetype, suggestIdentities } from '@/features/community/server'
 import { getAvailableThemes } from '@/lib/planner/fusion'
 import { DIFFICULTY_FLOOR_KEY, type Difficulty } from '@/lib/planner/types'
 

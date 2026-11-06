@@ -4,7 +4,7 @@
  *   npx tsx scripts/recommender/tune-identity.ts [--beta 1.0] [--skip-hyper] [--no-sin]
  * Objective = mean MRR over the context regimes (full, half, three, one, zero) − beta × (1 − RBO of the top-6 across one added pick).
  */
-import { blend, COMPONENTS, IDENTITY_CONFIG, identityComponents, type IdentityConfig, type Weights } from '@/lib/discovery/identity-recs'
+import { blend, COMPONENTS, IDENTITY_CONFIG, identityComponents, type IdentityConfig, type Weights } from '@/features/community/lib/identity-recs'
 import { loadSnapshot } from './load-snapshot'
 import { rbo } from './metrics'
 import { hash, identityQueries, stabilityQueries, type IdentityQuery, type Regime } from './queries'

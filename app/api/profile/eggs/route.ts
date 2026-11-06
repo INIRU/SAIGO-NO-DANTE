@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { requireUser } from '@/lib/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { findOrCreateSupabaseUser } from '@/lib/supabase/findOrCreateUser'
-import { EASTER_EGGS, type EasterEgg } from '@/lib/community/easter-eggs'
+import { EASTER_EGGS, type EasterEgg } from '@/lib/easter-eggs'
 import { checkRequestRateLimit, rateLimitResponse } from '@/lib/rate-limit'
 
 const headers = { 'Cache-Control': 'private, no-store' }

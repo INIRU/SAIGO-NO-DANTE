@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { withPostAuthors } from '@/lib/community/post-authors'
+import { withPostAuthors } from '@/features/community/server'
 import { CARD_ID } from '@/lib/notes/blocks'
 
 const DECK_SELECT = `id, user_id, title, description, tags, main_keywords, content_type, lang, vote_count, view_count, comment_count, created_at,

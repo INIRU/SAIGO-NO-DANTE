@@ -3,7 +3,7 @@
  *   npx tsx scripts/recommender/tune-ego.ts
  * Objective = MRR on the leave-author-out E.G.O queries.
  */
-import { blendEgo, EGO_COMPONENTS, EGO_CONFIG, egoComponents, type EgoConfig } from '@/lib/discovery/ego-recs'
+import { blendEgo, EGO_COMPONENTS, EGO_CONFIG, egoComponents, type EgoConfig } from '@/features/community/lib/ego-recs'
 import { loadSnapshot } from './load-snapshot'
 import { egoQueries, hash } from './queries'
 import { v2Parts } from './v2'

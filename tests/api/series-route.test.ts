@@ -15,7 +15,7 @@ vi.mock('@/lib/auth', () => ({
     : { error: true, response: new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 }) },
 }))
 vi.mock('@/lib/supabase/findOrCreateUser', () => ({ findOrCreateSupabaseUser: async () => 'user-1' }))
-vi.mock('@/lib/discovery/user-id', () => ({ discoveryUserId: async () => 'user-1' }))
+vi.mock('@/features/community/lib/user-id', () => ({ discoveryUserId: async () => 'user-1' }))
 vi.mock('next/cache', () => ({ revalidateTag: () => {} }))
 vi.mock('@/lib/supabase/admin', () => ({
   createAdminClient: () => ({
