@@ -18,7 +18,7 @@ import {
   getSkillIconUrl,
   SIN_COLORS,
 } from '@/lib/data/sinners'
-import IdentityCard from '@/components/sinners/IdentityCard'
+import IdentityCard from '@/features/catalog/components/IdentityCard'
 import { localizeIdentityName } from '@/components/deck-detail/DeckIdentityCard'
 import { localizeDeckKeyword } from '@/components/decks/decks-types'
 import { useKeywordData } from '@/components/providers/KeywordProvider'

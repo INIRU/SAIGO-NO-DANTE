@@ -1,6 +1,6 @@
 'use client'
 
-import { identityAtLevel, MAX_IDENTITY_LEVEL } from '@/lib/identity/level'
+import { identityAtLevel, MAX_IDENTITY_LEVEL } from '@/features/catalog'
 import { getEgoGradeBannerUrl } from '@/lib/utils/images'
 
 
@@ -18,8 +18,8 @@ import {
   getSinIconUrl,
   type SinType,
 } from '@/lib/data/sinners'
-import { useFormatSkillDesc, useKeywordData, useKeywords } from '@/components/sinners/KeywordTooltip'
-import IdentitySkillFrameCard from '@/components/identity/IdentitySkillFrameCard'
+import { useFormatSkillDesc, useKeywordData, useKeywords } from '@/features/catalog/components/KeywordTooltip'
+import IdentitySkillFrameCard from '@/features/catalog/components/IdentitySkillFrameCard'
 import { useLocale, useTranslations } from 'next-intl'
 import { type SupportedLang } from '@/lib/i18n'
 import { localizeDeckKeyword } from '@/components/decks/decks-types'
@@ -28,7 +28,7 @@ import { splitGameTextLines } from '@/lib/game-text/rich-text'
 import { useOwnKeywords } from '@/lib/hooks/useOwnKeywords'
 import { descriptionTexts } from '@/lib/keywords/own-keywords'
 import { passiveRequirements } from '@/lib/planner/passives'
-import { MultipliedCount } from '@/components/passive/PassiveParts'
+import { MultipliedCount } from '@/features/catalog/components/PassiveParts'
 
 // ── 타입 ──────────────────────────────────────────────────────────────────
 export type SkillDetail = {

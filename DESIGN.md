@@ -104,7 +104,7 @@
 
 | 용도 | 컴포넌트 |
 | --- | --- |
-| 인격 카드(프레임, 동기화, SELECTED 배너, 이름) | `components/ui/IdentityFrameCard.tsx` |
+| 인격 카드(프레임, 동기화, SELECTED 배너, 이름) | `features/catalog/components/IdentityFrameCard.tsx` |
 | 6×2 편성 보드 | `components/decks/FormationBoard.tsx`, 편집은 `components/planner/deck/PlannerDeckSelection.tsx` |
 | 키워드 분포, 패시브, 공격 유형, 죄악 자원 | `components/deck-analysis/DeckInsights.tsx`, `DeckResourceSummary.tsx` |
 | 스킬 분포(교환) | `components/planner/SkillExchangePanel.tsx` |
@@ -114,7 +114,7 @@
 | 게시판 필터 칸(구역 제목, 글자 선택 버튼, 아이콘 타일, 고른 항목 줄, 입력 칸) | `components/board/FilterControls.tsx` |
 | 인격·E.G.O 고르는 창의 왼쪽 필터(이름 검색, 등급, 수감자) | `components/ui/CharacterPickerFilters.tsx` |
 | 층 제약 | `components/planner/FloorConstraints.tsx` |
-| 스킬 이름 배너 | `components/skill/SkillNameBanner.tsx` |
+| 스킬 이름 배너 | `features/catalog/components/SkillNameBanner.tsx` |
 | 페이지 머리말, 뒤로 가기 | `components/ui/PageHeader.tsx`, `components/navigation/BackLink.tsx` |
 | 모달, 확인창 | `components/ui/BaseModal.tsx`, `ConfirmModal.tsx`, 상세는 `GiftDetailModal`·`ThemePackModal`·`IdentityDetailModal`·`EgoDetailModal` |
 | 버튼(주·보조·외곽선·고스트·위험, sm/md, 아이콘만, 처리 중), 버튼 모양 링크 | `components/ui/Button.tsx`(`Button`, `buttonClass()`) |
@@ -123,9 +123,9 @@
 | 키워드 아이콘 | `components/ui/KeywordIcon.tsx` |
 | 실패하면 사라지는 이미지 (기프트·테마팩·이벤트 그림, 스킬 아이콘) | `components/ui/QuietImage.tsx` |
 | 스켈레톤 | `components/ui/Skeleton.tsx`, `DetailPageSkeleton.tsx` |
-| Spine 재생(SD, 풀 일러스트) | `components/spine/SpineStage.tsx` |
-| SD 뷰어, 풀 일러스트 창 | `components/identity/SdViewer.tsx`, `IllustViewer.tsx` |
-| PNG·GIF·동영상 저장 버튼 | `components/spine/StageSaveButtons.tsx` |
+| Spine 재생(SD, 풀 일러스트) | `features/catalog/components/SpineStage.tsx` |
+| SD 뷰어, 풀 일러스트 창 | `features/catalog/components/SdViewer.tsx`, `IllustViewer.tsx` |
+| PNG·GIF·동영상 저장 버튼 | `features/catalog/components/StageSaveButtons.tsx` |
 
 기프트 목록의 키워드 순서는 공통 → 키워드(화상·출혈·진동·파열·침잠·호흡·충전) → 참격·관통·타격이다. 거울 던전 기프트 탭은 사용자가 키워드 순서 창에서 바꾼 순서(브라우저 저장)를 따른다.
 

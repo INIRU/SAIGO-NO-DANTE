@@ -70,8 +70,8 @@ import { workbenchReveal } from '@/lib/animations'
 import styles from './DeckDetail.module.css'
 import { skillSlot } from '@/lib/identity/skill-model'
 
-const IdentityDetailModal = dynamic(() => import('@/components/ui/IdentityDetailModal'), { ssr: false })
-const EgoDetailModal = dynamic(() => import('@/components/ui/EgoDetailModal'), { ssr: false })
+const IdentityDetailModal = dynamic(() => import('@/features/catalog/components/IdentityDetailModal'), { ssr: false })
+const EgoDetailModal = dynamic(() => import('@/features/catalog/components/EgoDetailModal'), { ssr: false })
 
 const postedDeckViews = new Set<string>()
 

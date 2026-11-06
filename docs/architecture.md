@@ -21,9 +21,9 @@ Next.js 16 App Router + React 19 + TypeScript. 공개 페이지는 app/[lang]에
 - IdentityDetailClient: 페이지 탭, 초상화, 각 영역 조합.
 - useIdentitySkillModel: 동기화 단계와 비교 상태, 메모이제이션.
 - lib/identity/skill-model: 단계별 행 선택, 스킬 정렬과 변형 번호.
-- lib/spine/pack: Storage의 Spine 묶음(`limbus-assets/spine/`, 추출 도구가 올림) 형식과, 한 인격의 폼·스킨 묶음·동작·탭 이름 계산. 페이지 서버 코드가 묶음을 읽어 그 인격 몫만 잘라 넘긴다.
-- components/spine/SpineStage: Spine 4.0 런타임으로 SD와 풀 일러스트를 그린다. 파일은 Storage 주소에서 바로 읽는다. 런타임은 4.0에 고정한다(4.1 이상은 이 뼈대를 읽지 못함).
-- lib/spine/save: 그려진 장면을 PNG·GIF·동영상으로 저장한다.
+- features/catalog/lib/spine-pack: Storage의 Spine 묶음(`limbus-assets/spine/`, 추출 도구가 올림) 형식과, 한 인격의 폼·스킨 묶음·동작·탭 이름 계산. 페이지 서버 코드가 묶음을 읽어 그 인격 몫만 잘라 넘긴다.
+- features/catalog/components/SpineStage: Spine 4.0 런타임으로 SD와 풀 일러스트를 그린다. 파일은 Storage 주소에서 바로 읽는다. 런타임은 4.0에 고정한다(4.1 이상은 이 뼈대를 읽지 못함).
+- features/catalog/lib/spine-save: 그려진 장면을 PNG·GIF·동영상으로 저장한다.
 - IdentityCombatSection: 스킬/패시브 탭과 동기화 조작.
 - useIdentityGuideData: 기존 운영법 토큰의 한/영/일 별칭과 자동완성.
 - IdentityGuideSection: 사람이 작성한 운영법. AI 생성 경로는 없다.
@@ -31,7 +31,7 @@ Next.js 16 App Router + React 19 + TypeScript. 공개 페이지는 app/[lang]에
 재사용은 실제 중복·변경 이유를 기준으로 한다. 거대한 파일은 도메인 계산, 데이터 경계, 상태, 화면으로 나누되 단순 전달 wrapper는 만들지 않는다.
 
 공통 컴포넌트와 계산:
-- `components/passive/PassivePanel`, `PassiveEffect`: 덱·플래너·노트가 같은 패시브 UI를 사용하고 panel/note 변형만 구분한다. 조건 계산과 인격별 색인은 `lib/planner/passives`가 담당한다.
+- `features/catalog/components/PassivePanel`, `PassiveEffect`: 덱·플래너·노트가 같은 패시브 UI를 사용하고 panel/note 변형만 구분한다. 조건 계산과 인격별 색인은 `lib/planner/passives`가 담당한다.
 - `features/mirror-dungeon/components/GiftCard`: 기존 hover 확대·그림자·0.2초 전환을 CSS로 유지하며 hover만으로 React 상태를 갱신하지 않는다.
 - `lib/keywords/catalog`: 카탈로그 객체별 WeakMap에 지역화·별칭·죄악 색인을 공유한다. 원본 객체가 교체되면 새 색인을 만든다.
 - `components/collection/useCollectionModel`: 보유 수 집계와 검색 필터를 분리한다.

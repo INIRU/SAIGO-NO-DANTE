@@ -21,8 +21,8 @@ import { getLocalizedName } from '@/lib/i18n/localize'
 import type { SupportedLang } from '@/lib/i18n/types'
 import { isDeployedSlot } from '@/lib/constants/game'
 
-const IdentityDetailModal = dynamic(() => import('@/components/ui/IdentityDetailModal'), { ssr: false })
-const EgoDetailModal = dynamic(() => import('@/components/ui/EgoDetailModal'), { ssr: false })
+const IdentityDetailModal = dynamic(() => import('@/features/catalog/components/IdentityDetailModal'), { ssr: false })
+const EgoDetailModal = dynamic(() => import('@/features/catalog/components/EgoDetailModal'), { ssr: false })
 
 
 type IdentitySlot = {

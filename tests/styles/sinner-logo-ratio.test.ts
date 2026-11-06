@@ -10,7 +10,7 @@ describe('sinner logos keep their ratio', () => {
   })
 
   it('the sinner page hero sizes the logo by width only, so it keeps its own height', () => {
-    const css = readFileSync('components/sinners/SinnerHero.module.css', 'utf8')
+    const css = readFileSync('features/catalog/components/SinnerHero.module.css', 'utf8')
     expect(css).toMatch(/\.logo\s*\{[^}]*width:\s*2\.25rem;\s*height:\s*auto/)
   })
 })

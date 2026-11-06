@@ -9,7 +9,7 @@ import Image from 'next/image'
 import { X, Users, Sparkles, SlidersHorizontal } from 'lucide-react'
 import BaseModal from '@/components/ui/BaseModal'
 
-const IdentityDetailModal = dynamic(() => import('@/components/ui/IdentityDetailModal'), { ssr: false })
+const IdentityDetailModal = dynamic(() => import('@/features/catalog/components/IdentityDetailModal'), { ssr: false })
 import type { RunState, RunAction } from '@/lib/planner/run-types'
 import { getIdentitySkillDistribution, type IdentityData, type SinnerData, type SkillSummary, type EgoData, type PassiveData, type GiftData } from '@/lib/planner/types'
 import DeckStatsPanel from '@/components/planner/DeckStatsPanel'

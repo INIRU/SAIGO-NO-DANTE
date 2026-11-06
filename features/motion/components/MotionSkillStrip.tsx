@@ -1,7 +1,7 @@
 'use client'
 
 import { useTranslations } from 'next-intl'
-import SkillFrame from '@/components/identity/SkillFrame'
+import SkillFrame from '@/features/catalog/components/SkillFrame'
 import { SIN_COLORS, normalizeSin } from '@/lib/constants/sin'
 import { getSkillIconUrl } from '@/lib/utils/images'
 import type { MotionSkill } from '@/features/motion/lib/catalog'

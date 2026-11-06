@@ -7,9 +7,9 @@ vi.mock('next-intl', () => ({ useLocale: () => 'ko', useTranslations: () => (key
 // eslint-disable-next-line @next/next/no-img-element
 vi.mock('next/image', () => ({ default: ({ src, alt }: { src: string; alt: string }) => <img src={src} alt={alt} /> }))
 vi.mock('@/components/ui/BaseModal', () => ({ default: ({ open, children }: { open: boolean; children: React.ReactNode }) => (open ? <div role="dialog">{children}</div> : null) }))
-vi.mock('@/components/ui/IdentityFrameCard', () => ({ default: ({ name }: { name: string }) => <span data-identity>{name}</span> }))
+vi.mock('@/features/catalog/components/IdentityFrameCard', () => ({ default: ({ name }: { name: string }) => <span data-identity>{name}</span> }))
 vi.mock('@/lib/i18n/navigation', () => ({ Link: ({ href, children }: { href: string; children: React.ReactNode }) => <a href={href}>{children}</a>, useRouter: () => ({}), usePathname: () => '/' }))
-vi.mock('@/components/sinners/EgoDisplayCard', () => ({ default: ({ name }: { name: string }) => <span data-ego>{name}</span> }))
+vi.mock('@/features/catalog/components/EgoDisplayCard', () => ({ default: ({ name }: { name: string }) => <span data-ego>{name}</span> }))
 vi.mock('@/components/discovery/BoardSkeleton', () => ({ CardSkeleton: ({ kind }: { kind: string }) => <div data-card-skeleton={kind} /> }))
 
 import { useSuggestionState } from '@/hooks/useSuggestions'

@@ -5,7 +5,7 @@ import Image from 'next/image'
 import { STORAGE_BASE } from '@/lib/constants/game'
 import { SIN_COLORS, SIN_KR_TO_EN, SIN_ORDER, getSinIconUrl } from '@/lib/constants/sin'
 import { computeAttackTypeCounts } from '@/lib/decks/deck-analysis'
-import PlannerPassivePanel from '@/components/passive/PassivePanel'
+import PlannerPassivePanel from '@/features/catalog/components/PassivePanel'
 
 const S = STORAGE_BASE
 

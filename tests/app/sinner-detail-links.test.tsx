@@ -28,7 +28,7 @@ const egos = [
 
 const render = async (tab: 'identities' | 'ego') => {
   view.tab = tab
-  const { default: SinnerDetailClient } = await import('@/app/[lang]/sinners/[slug]/SinnerDetailClient')
+  const { default: SinnerDetailClient } = await import('@/app/[lang]/sinners/[slug]/_components/SinnerDetailClient')
   return renderToStaticMarkup(<SinnerDetailClient sinner={sinner} identities={identities} egos={egos} />)
 }
 const anchors = (html: string, kind: string) => [...html.matchAll(/<a [^>]*>/g)].map(match => match[0]).filter(tag => tag.includes(`/${kind}/`))
