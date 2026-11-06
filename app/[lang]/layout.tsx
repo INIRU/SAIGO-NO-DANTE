@@ -23,6 +23,7 @@ import { translations } from '@/lib/i18n/translations'
 import { ADSENSE_ACCOUNT, CLOUDFLARE_WEB_ANALYTICS_TOKEN, OG_LOCALE, SITE_NAME, SITE_URL, localeUrl } from '@/lib/seo/metadata'
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
+import AdSlot from '@/components/ads/AdSlot'
 import PageNavigation from '@/components/ui/PageNavigation'
 import AnnouncementPopup from '@/components/announcements/AnnouncementPopup'
 import SkipNav from '@/components/a11y/SkipNav'
@@ -178,6 +179,10 @@ export default async function LangLayout({
                       <KonamiListener />
                       {/* Catches page-level dynamic holes (formerly caught by app/loading.tsx above <html>); plain Suspense keeps the old page during navigations. */}
                       <main id="main-content"><Suspense fallback={null}>{children}</Suspense></main>
+                      {/* The side ads, in the empty margins of a wide screen (DESIGN.md "광고"); they read the pathname, so each
+                          is its own island. The other ads sit in the pages, where each fits. */}
+                      <Suspense fallback={null}><AdSlot place="left" /></Suspense>
+                      <Suspense fallback={null}><AdSlot place="right" /></Suspense>
                       <Footer lang={validLang} />
                       <Suspense fallback={null}><PageNavigation /></Suspense>
                       <Suspense fallback={null}><AnnouncementPopup lang={validLang} /></Suspense>

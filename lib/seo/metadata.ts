@@ -8,6 +8,8 @@ export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://saigo-no-da
 export const PRIMARY_LOCALE = 'ko'
 /** The AdSense publisher of public/ads.txt; the account meta tag lets AdSense confirm the site without the ads.txt crawl. */
 export const ADSENSE_ACCOUNT = 'ca-pub-4615018820773123'
+/** The display ad unit (AdSense > Ads > By ad unit) shown in every ad slot; null shows no ads. */
+export const ADSENSE_DISPLAY_SLOT: string | null = '2699879515'
 /** Cloudflare Web Analytics site token (public, it is in every page): the self-hosted layout loads the beacon itself because
  * CloudFront in front of the site does not inject it as the Cloudflare proxy did. */
 export const CLOUDFLARE_WEB_ANALYTICS_TOKEN = 'ebead1286a1d499d8750afee5d27786f'

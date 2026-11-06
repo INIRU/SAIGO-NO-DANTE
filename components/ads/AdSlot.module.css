@@ -1,0 +1,67 @@
+/* Banners: under a list page's title (top), or between a detail page's parts (inline); a 320x100 banner on a phone, 728/970x90
+   wider, at a fixed height so an ad coming in never pushes the page */
+.top {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  margin-bottom: 1.5rem;
+  contain: layout;
+}
+
+.inline {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  margin-top: 2.5rem;
+  contain: layout;
+}
+
+.topUnit {
+  display: block;
+  width: 100%;
+  max-width: 970px;
+  height: 100px;
+  overflow: hidden;
+}
+
+@media (min-width: 768px) {
+  .topUnit {
+    height: 90px;
+  }
+}
+
+/* Side margins: fixed below the navbar, 32px beside the page's measured content (AdSlot sets left / right), never over it.
+   Only on screens tall enough for the whole ad. */
+.rail {
+  display: none;
+  position: fixed;
+  top: 6rem;
+  z-index: 1;
+}
+
+.railUnit {
+  display: block;
+  width: 160px;
+  height: 600px;
+}
+
+@media (min-height: 760px) {
+  .rail {
+    display: block;
+  }
+}
+
+:is(.top, .inline, .rail):has(ins[data-ad-status="unfilled"]) {
+  display: none;
+}
+
+/* development only: the reserved place */
+.preview {
+  display: grid;
+  place-items: center;
+  border: 1px dashed var(--border);
+  border-radius: 0.5rem;
+  color: var(--text-muted);
+  font-family: var(--font-title);
+  letter-spacing: 0.1em;
+}
