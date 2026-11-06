@@ -93,18 +93,11 @@ describe('ad slot', () => {
     expect(renderToStaticMarkup(<AdSlot slot="1234567890" place="inline" />)).toContain('data-ad-slot')
   })
 
-  it('REQ-SHARED-085 keeps one sticky ad on screen: the right side ad stays in view, the left one scrolls with the page', () => {
-    // AdSense allows one sticky ad visible at a time, not one mirrored on each side (support.google.com/adsense/answer/10734935)
+  it('REQ-SHARED-085 keeps both side ads in view while scrolling, the owner\'s call against AdSense\'s one-sticky rule (recorded)', () => {
     const code = source('components/ads/AdSlot.tsx')
-    expect(code).toMatch(/const sticky = place === 'right'/)
-    expect(code).toContain("styles.railScroll")
-    const css = source('components/ads/AdSlot.module.css')
-    expect(css).toMatch(/\.railScroll\s*\{\s*position:\s*absolute/)
-    // a page too short for the scrolling one hides it rather than letting it run into the footer
-    expect(css).toMatch(/\.rail\[data-short\]\s*\{\s*display:\s*none/)
-    pathname = '/ko/decks/1'
-    expect(renderToStaticMarkup(<AdSlot slot="1234567890" place="left" />)).toMatch(/class="[^"]*railScroll/)
-    expect(renderToStaticMarkup(<AdSlot slot="1234567890" place="right" />)).not.toMatch(/railScroll/)
+    expect(code).toContain('support.google.com/adsense/answer/10734935')
+    expect(code).not.toMatch(/railScroll/)
+    expect(source('DESIGN.md')).toContain('정책 위험이 있다는 것을 알고 정한 배치다')
   })
 
   it('REQ-SHARED-085 keeps a side ad that loses its room in the page, hidden, so the same ad comes back when the window widens', () => {
@@ -112,7 +105,7 @@ describe('ad slot', () => {
     const code = source('components/ads/AdSlot.tsx')
     expect(code).not.toMatch(/if \(rail && offset == null\) return null/)
     expect(code).toContain('data-off={off || undefined}')
-    expect(source('components/ads/AdSlot.module.css')).toMatch(/\.rail\[data-off\],\s*\.rail\[data-short\]\s*\{\s*display:\s*none/)
+    expect(source('components/ads/AdSlot.module.css')).toMatch(/\.rail\[data-off\]\s*\{\s*display:\s*none/)
     pathname = '/ko/decks/1'
     expect(renderToStaticMarkup(<AdSlot slot="1234567890" place="right" />)).toContain('data-ad-slot="1234567890"')
   })
