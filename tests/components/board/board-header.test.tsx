@@ -4,7 +4,7 @@ import { expect, it, vi } from 'vitest'
 vi.mock('@/lib/i18n/navigation', () => ({
   Link: ({ href, children, ...rest }: { href: string; children: React.ReactNode }) => <a href={href} {...rest}>{children}</a>,
 }))
-vi.mock('@/components/notes/NoteEditorGuide', () => ({ default: () => <div data-guide /> }))
+vi.mock('@/features/notes/components/NoteEditorGuide', () => ({ default: () => <div data-guide /> }))
 
 import BoardHeader from '@/components/discovery/BoardHeader'
 

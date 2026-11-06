@@ -2,8 +2,8 @@
 
 import { useLocale, useTranslations } from 'next-intl'
 import GiftArtwork from '@/components/ui/GiftArtwork'
-import NotePreviewHost from '@/components/notes/NotePreviewCard'
-import { giftPreviewAsset } from '@/lib/notes/assets'
+import NotePreviewHost from '@/features/notes/components/NotePreviewCard'
+import { giftPreviewAsset } from '@/features/notes'
 import { getLocalizedName } from '@/lib/i18n/localize'
 import type { SupportedLang } from '@/lib/i18n/types'
 import type { GiftData } from '@/lib/planner/types'

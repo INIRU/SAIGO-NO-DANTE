@@ -1,6 +1,6 @@
 import type { KeywordInfo } from '@/lib/keywords/catalog'
 
-/** A small catalog with names in three languages (the converter and the old renderer read the same index of it). */
+/** A small catalog with names in three languages (the matcher and the old renderer read the same index of it). */
 export const CATALOG: Record<string, KeywordInfo> = {
   못: { desc: '', nameEn: 'Nail', nameJp: '釘' },
   화상: { desc: '', nameEn: 'Burn', nameJp: '火傷' },
