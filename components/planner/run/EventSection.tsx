@@ -3,12 +3,12 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 import type { RunState, RunAction } from '@/lib/planner/run-types'
-import type { MdEvent, MdEventChoice, EgoGift, EgoGiftTheme } from '@/components/mirror-dungeon/types'
+import type { MdEvent, MdEventChoice, EgoGift, EgoGiftTheme } from '@/features/mirror-dungeon'
 import type { GiftData, ThemeData } from '@/lib/planner/types'
 import type { SupportedLang } from '@/lib/i18n/types'
 import { eventTitle } from '@/lib/utils/event-catalog'
-import EventTab from '@/components/mirror-dungeon/EventTab'
-import EventModal from '@/components/mirror-dungeon/EventModal'
+import EventTab from '@/features/mirror-dungeon/components/EventTab'
+import EventModal from '@/features/mirror-dungeon/components/EventModal'
 import PlannerGiftModal from '@/components/planner/PlannerGiftModal'
 
 interface Props {

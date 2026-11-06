@@ -22,13 +22,13 @@ vi.mock('@/lib/supabase/admin', () => ({ createAdminClient: () => ({}) }))
 // Only generateMetadata is under test: the screens and the data they read are left out.
 for (const screen of [
   '@/app/[lang]/decks/DecksClient', '@/app/[lang]/decks/new/DeckBuilderWrapper', '@/app/[lang]/planner/PlannerClient',
-  '@/app/[lang]/planner/community/CommunityClient', '@/app/[lang]/planner/run/RunWrapper', '@/app/[lang]/mirror-dungeon/MirrorDungeonClient',
+  '@/app/[lang]/planner/community/CommunityClient', '@/app/[lang]/planner/run/RunWrapper', '@/app/[lang]/mirror-dungeon/_components/MirrorDungeonClient',
   '@/app/[lang]/keywords/_components/KeywordsClient', '@/app/[lang]/keywords/loading', '@/app/[lang]/sinners/SinnersInteractive',
   '@/app/[lang]/sinners/identities/IdentityBrowserClient', '@/app/[lang]/sinners/ego/EGOBrowserClient', '@/app/[lang]/random/RandomClient',
   '@/app/[lang]/collection/CollectionClient', '@/app/[lang]/friends/_components/FriendsClient', '@/app/[lang]/announcements/AnnouncementsClient',
   '@/app/[lang]/developers/DeveloperConsole', '@/components/tools/ExperienceCalculator', '@/components/tools/LunacyCalendar',
   '@/components/tools/DamageCalculator', '@/features/motion/components/MotionBrowser', '@/features/news/components/NewsCalendar', '@/components/support/SupportDesk', '@/components/support/SupportSkeleton',
-  '@/features/friends/components/FriendsSkeleton', '@/components/planner/PlannerSkeleton', '@/components/mirror-dungeon/MirrorDungeonSkeleton',
+  '@/features/friends/components/FriendsSkeleton', '@/components/planner/PlannerSkeleton', '@/features/mirror-dungeon/components/MirrorDungeonSkeleton',
   '@/components/sinners/BrowserSkeleton', '@/components/sinners/SinnerLineup', '@/components/discovery/BoardHeader', '@/components/discovery/BoardSkeleton',
   '@/components/providers/StaticQueryAdapter', '@/components/layout/RequestTimeRoute', '@/components/legal/LegalDocument', '@/components/ui/PageHeader',
   '@/lib/db/queries', '@/lib/db/collection', '@/lib/db/announcements', '@/lib/db/game-text-refs', '@/lib/decks/builder-data', '@/lib/data/legal', '@/features/news/server/data',

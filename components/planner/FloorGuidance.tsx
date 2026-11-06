@@ -5,11 +5,11 @@ import { Link } from "@/lib/i18n/navigation";
 import { MapPin } from "lucide-react";
 import QuietImage from "@/components/ui/QuietImage";
 import { blurPlaceholder } from "@/lib/utils/thumbhash"
-import GiftCard from "@/components/ui/GiftCard";
+import GiftCard from "@/features/mirror-dungeon/components/GiftCard";
 import GiftArtwork from "@/components/ui/GiftArtwork";
 import { craftableAtFloor } from "@/lib/planner/floor-guidance";
 import type { FloorEntry, GiftData, RecipeData } from "@/lib/planner/types";
-import type { MdEvent } from "@/components/mirror-dungeon/types";
+import type { MdEvent } from "@/features/mirror-dungeon";
 type Event = Pick<MdEvent, "id" | "image_url" | "name" | "name_en" | "name_jp" | "desc_text" | "desc_text_en" | "desc_text_jp" | "gift_ids" | "theme_ids"> & { category?: string | null };
 type Context = {
   events: Event[];
