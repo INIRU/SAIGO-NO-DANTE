@@ -13,7 +13,7 @@ import { useLocale, useTranslations } from 'next-intl'
 import { getIdentityImageUrl } from '@/lib/utils/images'
 import type { LegalDoc } from '@/lib/data/legal'
 import { LOGIN_CONSENT_KEY } from '@/lib/legal-consent'
-import LegalConsent, { type LegalConsentState } from '@/components/legal/LegalConsent'
+import LegalConsent, { type LegalConsentState } from '@/features/account/components/LegalConsent'
 import { LEGAL_KEY_POINTS } from '@/lib/legal-summary'
 import './login.css'
 

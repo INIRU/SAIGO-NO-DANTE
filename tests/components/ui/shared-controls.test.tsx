@@ -95,7 +95,7 @@ describe('one Switch everywhere', () => {
       'features/tools/components/random.module.css': /\.switch\b/,
       'features/motion/components/MotionDeck.module.css': /\.switch\b/,
       'features/tools/components/LunacyCalendar.module.css': /\.switch(Track|State)\b/,
-      'components/support/support.css': /desk-switch/,
+      'features/account/components/support.css': /desk-switch/,
     }
     for (const [path, pattern] of Object.entries(left)) expect(source(path), path).not.toMatch(pattern)
     for (const path of ['app/[lang]/admin/maintenance/page.tsx', 'app/[lang]/admin/announcements/page.tsx', 'features/admin/components/admin.css']) expect(source(path), path).not.toContain('admin-switch')
@@ -104,7 +104,7 @@ describe('one Switch everywhere', () => {
 
 describe('shared DownloadModal', () => {
   it('REQ-SHARED-061 is a BaseModal with shared Buttons, not a hand-built overlay', () => {
-    const modal = source('components/mypage/DownloadModal.tsx')
+    const modal = source('features/account/components/DownloadModal.tsx')
     expect(modal).toContain("from '@/components/ui/BaseModal'")
     expect(modal).toContain("from '@/components/ui/Button'")
     expect(modal).not.toContain('fixed inset-0')

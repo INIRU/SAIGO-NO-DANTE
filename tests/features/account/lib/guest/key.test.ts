@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { isGuestKey } from '@/lib/guest/key'
+import { isGuestKey } from '@/features/account/lib/guest-key'
 
 describe('guest key', () => {
   it('accepts only the site format', () => {

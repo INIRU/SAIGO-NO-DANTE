@@ -1,7 +1,7 @@
 import { ArrowRight } from "lucide-react";
-import { ERRORS, type Endpoint } from "@/app/[lang]/developers/api-reference";
+import { ERRORS, type Endpoint } from "@/features/account/lib/api-reference";
 import { exampleRequest } from "./DocsTab";
-import { CodeBlock, RequestCode, digits, goldButton, heading, lineButton, panel, useCodeKind, useText, type Open } from "./developer-ui";
+import { CodeBlock, RequestCode, digits, goldButton, heading, lineButton, panel, useCodeKind, useText, type Open } from "./DeveloperUi";
 
 /** Getting started: the three steps to a first response, then the rules every request shares. */
 export default function GuideTab({ first, limits, open }: { first: Endpoint; limits: { minute: number; day: number | null }; open: Open }) {

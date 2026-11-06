@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { metaText, pageMetadata, seoLang } from '@/lib/seo/metadata'
 import { ABOUT } from '@/lib/data/about'
-import LegalDocument from '@/components/legal/LegalDocument'
+import LegalDocument from '@/features/account/components/LegalDocument'
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params

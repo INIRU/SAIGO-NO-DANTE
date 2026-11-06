@@ -11,8 +11,8 @@ vi.mock('@/hooks/useHtmlFlag', () => ({ useHtmlFlag: () => {} }))
 vi.mock('@/lib/auth-return', () => ({ goToLogin: () => {} }))
 vi.mock('@/lib/toast', () => ({ showSuccess: () => {}, showError: () => {} }))
 
-import DeveloperConsole from '@/app/[lang]/developers/DeveloperConsole'
-import { usageByDay } from '@/app/[lang]/developers/api-reference'
+import DeveloperConsole from '@/features/account/components/DeveloperConsole'
+import { usageByDay } from '@/features/account/lib/api-reference'
 
 const today = new Date().toISOString().slice(0, 10)
 const keys = [

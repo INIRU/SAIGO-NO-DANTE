@@ -4,7 +4,7 @@ import { z } from "zod";
 import { requireActiveUser } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { findOrCreateSupabaseUser } from "@/lib/supabase/findOrCreateUser";
-import { createApiKey } from "@/lib/developer/keys";
+import { createApiKey } from "@/features/account/server";
 import { checkRequestRateLimit, rateLimitResponse } from "@/lib/rate-limit";
 const headers = { "Cache-Control": "private, no-store" };
 async function handle(request: Request) {

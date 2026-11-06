@@ -1,6 +1,6 @@
 /** Who a Bearer key belongs to and what it may do on /api/v1. Server only. */
 import { createAdminClient } from "@/lib/supabase/admin";
-import { hashApiKey, readApiKey } from "./keys";
+import { hashApiKey, readApiKey } from "./developer-keys";
 
 export type Scope = "catalog:read" | "news:write";
 export type KeyAccess = { partner: string | null; scopes: string[]; admin: boolean; remaining: number | null };

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { guestKeyFrom, guestKeyHash } from '@/lib/guest/server'
+import { guestKeyFrom, guestKeyHash } from '@/features/account/server'
 import { checkRequestRateLimit, rateLimitResponse } from '@/lib/rate-limit'
 
 const headers = { 'Cache-Control': 'private, no-store' }

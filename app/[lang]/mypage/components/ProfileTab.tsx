@@ -5,7 +5,7 @@ import { useLocale } from "next-intl";
 import { useSearchParams } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { showSuccess, showError } from "@/lib/toast";
-import AvatarPicker from "@/components/mypage/AvatarPicker";
+import AvatarPicker from "@/features/account/components/AvatarPicker";
 import { DEFAULT_AVATAR_URL } from "@/lib/constants/game";
 import { getCommunityCopy } from "@/lib/community/copy";
 import { LogOut, Pencil } from "lucide-react";

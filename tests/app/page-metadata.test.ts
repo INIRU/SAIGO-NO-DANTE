@@ -26,11 +26,11 @@ for (const screen of [
   '@/app/[lang]/keywords/_components/KeywordsClient', '@/app/[lang]/keywords/loading', '@/app/[lang]/sinners/_components/SinnersInteractive',
   '@/app/[lang]/sinners/identities/_components/IdentityBrowserClient', '@/app/[lang]/sinners/ego/_components/EGOBrowserClient', '@/features/tools/components/RandomClient',
   '@/app/[lang]/collection/_components/CollectionClient', '@/app/[lang]/friends/_components/FriendsClient', '@/app/[lang]/announcements/AnnouncementsClient',
-  '@/app/[lang]/developers/DeveloperConsole', '@/features/tools/components/ExperienceCalculator', '@/features/tools/components/LunacyCalendar',
-  '@/features/tools/components/DamageCalculator', '@/features/motion/components/MotionBrowser', '@/features/news/components/NewsCalendar', '@/components/support/SupportDesk', '@/components/support/SupportSkeleton',
+  '@/features/account/components/DeveloperConsole', '@/features/tools/components/ExperienceCalculator', '@/features/tools/components/LunacyCalendar',
+  '@/features/tools/components/DamageCalculator', '@/features/motion/components/MotionBrowser', '@/features/news/components/NewsCalendar', '@/features/account/components/SupportDesk', '@/features/account/components/SupportSkeleton',
   '@/features/friends/components/FriendsSkeleton', '@/components/planner/PlannerSkeleton', '@/features/mirror-dungeon/components/MirrorDungeonSkeleton',
   '@/features/catalog/components/BrowserSkeleton', '@/features/catalog/components/SinnerLineup', '@/components/discovery/BoardHeader', '@/components/discovery/BoardSkeleton',
-  '@/components/providers/StaticQueryAdapter', '@/components/layout/RequestTimeRoute', '@/components/legal/LegalDocument', '@/components/ui/PageHeader',
+  '@/components/providers/StaticQueryAdapter', '@/components/layout/RequestTimeRoute', '@/features/account/components/LegalDocument', '@/components/ui/PageHeader',
   '@/lib/db/queries', '@/lib/db/collection', '@/lib/db/announcements', '@/lib/db/game-text-refs', '@/lib/decks/builder-data', '@/lib/data/legal', '@/features/news/server/data',
 ]) vi.doMock(screen, () => ({ default: () => null, PageHeaderSkeleton: () => null, BoardShelfSkeleton: () => null, FriendsSkeleton: () => null }))
 
