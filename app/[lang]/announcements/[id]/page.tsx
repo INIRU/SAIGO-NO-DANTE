@@ -10,6 +10,7 @@ import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import { adjacentAnnouncements, announcementPreview } from '@/lib/announcements'
 import { getCachedAnnouncements } from '@/lib/db/announcements'
 import AnnouncementBody from '@/features/admin/components/AnnouncementBody'
+import AdSlot from '@/components/ads/AdSlot'
 import { AnnouncementMeta } from '@/features/admin/components/AnnouncementList'
 import BackLink from '@/components/navigation/BackLink'
 import { HtmlFlag } from '@/hooks/useHtmlFlag'
@@ -69,6 +70,8 @@ export default async function AnnouncementPage({ params }: Props) {
           <AnnouncementMeta item={item} pinnedLabel={t('pinned')} />
           <h1 className="mt-4 text-balance break-keep font-[family-name:var(--font-heading)] text-[1.75rem] leading-[1.3] tracking-[-0.02em] text-[var(--text-primary)] sm:text-[2.125rem]">{item.title}</h1>
         </header>
+        {/* the page-start banner, where the side ads do not fit (DESIGN.md "광고") */}
+        <div style={{ '--ad-top-gap': '1.75rem' } as React.CSSProperties}><AdSlot place="top" /></div>
         <div className="pt-4"><AnnouncementBody doc={item.content_doc} text={item.content} /></div>
       </article>
       {(older || newer) && (

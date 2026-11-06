@@ -1,3 +1,4 @@
+import { AdSlotSpace } from '@/components/ads/AdSlot'
 import { SkeletonLine, SkeletonPage, SkeletonPoster } from '@/components/ui/Skeleton'
 import styles from '@/styles/components/SeriesPage.module.css'
 
@@ -14,6 +15,7 @@ export default function SeriesPageSkeleton() {
           </div>
           <div className="flex h-12 items-end"><SkeletonLine w="7rem" h="2.5rem" /></div>
         </div>
+        <AdSlotSpace />
         <div className={styles.list}>
           {Array.from({ length: 6 }, (_, index) => (
             <div key={index} className="flex flex-col gap-[0.625rem]">

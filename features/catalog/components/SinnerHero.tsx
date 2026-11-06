@@ -20,7 +20,7 @@ export default function SinnerHero({ sinner, name, description, source }: { sinn
   const next = at >= 0 ? SINNER_SLUGS[(at + 1) % SINNER_SLUGS.length] : null
   const number = String(sinner.order_num >= 10 ? sinner.order_num + 1 : sinner.order_num).padStart(2, '0')
   return (
-    <section className={styles.hero} style={{ '--sinner': sinnerColor(sinner.id) } as React.CSSProperties}>
+    <section className={styles.hero} data-ad-rail-below style={{ '--sinner': sinnerColor(sinner.id) } as React.CSSProperties}>
       {/* the art and its shade, behind the text */}
         <div className={styles.backdrop}>
           {art && (
