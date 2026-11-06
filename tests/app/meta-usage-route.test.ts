@@ -1,8 +1,8 @@
 import { beforeEach, expect, it, vi } from 'vitest'
 import { GET } from '@/app/api/meta/usage/route'
-import { getMetaData } from '@/lib/db/meta'
+import { getMetaData } from '@/features/meta/server'
 
-vi.mock('@/lib/db/meta', () => ({ getMetaData: vi.fn(async () => ({ sampleCount: 0 })) }))
+vi.mock('@/features/meta/server', () => ({ getMetaData: vi.fn(async () => ({ sampleCount: 0 })) }))
 
 const get = (query: string) => GET(new Request('http://localhost/api/meta/usage?' + query))
 
