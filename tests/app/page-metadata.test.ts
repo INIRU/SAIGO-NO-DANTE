@@ -23,7 +23,7 @@ vi.mock('@/lib/supabase/admin', () => ({ createAdminClient: () => ({}) }))
 for (const screen of [
   '@/app/[lang]/decks/DecksClient', '@/app/[lang]/decks/new/DeckBuilderWrapper', '@/app/[lang]/planner/PlannerClient',
   '@/app/[lang]/planner/community/CommunityClient', '@/app/[lang]/planner/run/RunWrapper', '@/app/[lang]/mirror-dungeon/_components/MirrorDungeonClient',
-  '@/app/[lang]/keywords/KeywordsClient', '@/app/[lang]/keywords/loading', '@/app/[lang]/sinners/SinnersInteractive',
+  '@/app/[lang]/keywords/_components/KeywordsClient', '@/app/[lang]/keywords/loading', '@/app/[lang]/sinners/SinnersInteractive',
   '@/app/[lang]/sinners/identities/IdentityBrowserClient', '@/app/[lang]/sinners/ego/EGOBrowserClient', '@/app/[lang]/random/RandomClient',
   '@/app/[lang]/collection/CollectionClient', '@/app/[lang]/friends/_components/FriendsClient', '@/app/[lang]/announcements/AnnouncementsClient',
   '@/app/[lang]/developers/DeveloperConsole', '@/components/tools/ExperienceCalculator', '@/components/tools/LunacyCalendar',
