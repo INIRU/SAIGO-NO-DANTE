@@ -5,7 +5,7 @@ import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import { pageMetadata } from '@/lib/seo/metadata'
 import { announcementPreview } from '@/lib/announcements'
 import { getCachedAnnouncements } from '@/lib/db/announcements'
-import AnnouncementList from '@/components/announcements/AnnouncementList'
+import AnnouncementList from '@/features/admin/components/AnnouncementList'
 import PageHeader from '@/components/ui/PageHeader'
 import { HtmlFlag } from '@/hooks/useHtmlFlag'
 

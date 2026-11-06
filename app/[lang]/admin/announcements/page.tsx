@@ -7,7 +7,7 @@ import dynamic from 'next/dynamic'
 import ConfirmModal from '@/components/ui/ConfirmModal'
 import Button from '@/components/ui/Button'
 import Switch from '@/components/ui/Switch'
-import AnnouncementBody from '@/components/announcements/AnnouncementBody'
+import AnnouncementBody from '@/features/admin/components/AnnouncementBody'
 import {
   type Announcement,
   type RichNode,
@@ -15,7 +15,7 @@ import {
   announcementText,
 } from '@/lib/announcements'
 const AnnouncementEditor = dynamic(
-  () => import('@/components/announcements/AnnouncementEditor'),
+  () => import('@/features/admin/components/AnnouncementEditor'),
   { ssr: false },
 )
 export default function AdminAnnouncements() {
