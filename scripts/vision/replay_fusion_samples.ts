@@ -15,8 +15,8 @@ import { createServer } from 'node:http'
 import path from 'node:path'
 import { build } from 'esbuild'
 import { chromium } from 'playwright'
-import { fusionAnchors, fusionConfirmation, fusionMaterials, fusionWheelAnchors, isFusionSelectionScreen, showsFusionTitle, wheelSelectionSize } from '../../lib/vision/fusion-evidence'
-import { AUTO_ACQUIRE_EXCLUDED_GIFT_IDS } from '../../lib/vision/popup-evidence'
+import { fusionAnchors, fusionConfirmation, fusionMaterials, fusionWheelAnchors, isFusionSelectionScreen, showsFusionTitle, wheelSelectionSize } from '../../features/assist/lib/fusion-evidence'
+import { AUTO_ACQUIRE_EXCLUDED_GIFT_IDS } from '../../features/assist/lib/popup-evidence'
 
 const [samplesDir, rowsFile, outFile] = process.argv.slice(2)
 const rows = JSON.parse(readFileSync(rowsFile, 'utf8')).filter(row => String(row.reason).startsWith('fusion'))

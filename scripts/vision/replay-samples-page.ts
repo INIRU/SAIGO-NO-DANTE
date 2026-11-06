@@ -1,5 +1,5 @@
 // Page side of scripts/vision/replay_samples.ts: the app's 480 px popup detection and the shipped OCR and scene workers.
-import { acquisitionPlate, darkPopupPlate, detectGiftPopupLabel, popupIconSignature, popupLabelColor, popupQuality } from '../../lib/vision/popup-detect'
+import { acquisitionPlate, darkPopupPlate, detectGiftPopupLabel, popupIconSignature, popupLabelColor, popupQuality } from '../../features/assist/lib/popup-detect'
 
 type Box = { x: number; y: number; width: number; height: number }
 let ocr: Worker, scene: Worker

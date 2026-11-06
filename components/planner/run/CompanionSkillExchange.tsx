@@ -9,7 +9,8 @@ import { translations } from '@/lib/i18n/translations'
 import type { SupportedLang } from '@/lib/i18n/types'
 import { getIdentitySkillDistribution, type IdentitySlot, type SkillSummary } from '@/lib/planner/types'
 import { getSkillIconUrl } from '@/lib/utils/images'
-import { skillExchangeMoves, type SkillExchangeRead } from '@/lib/vision/skill-exchange'
+import type { SkillExchangeRead } from '@/features/assist'
+import { skillExchangeMoves } from '@/lib/utils/skill-exchange-moves'
 
 /** Sinner number (1 = Yi Sang … 12 = Gregor) of a deck slot: from its identity id (10801 → 8), else its slug. */
 const slotSinner = (slot: IdentitySlot) => slot.game_id && /^1\d{4}$/.test(slot.game_id) ? Number(slot.game_id.slice(1, 3))

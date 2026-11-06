@@ -16,7 +16,7 @@ import { existsSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } 
 import { homedir } from 'node:os'
 import path from 'node:path'
 import { createClient } from '@supabase/supabase-js'
-import { sampleExpiresAt } from '../../lib/vision/assist-samples'
+import { sampleExpiresAt } from '../../features/assist/lib/assist-samples'
 
 const args = process.argv.slice(2).filter(arg => !arg.startsWith('--'))
 const deleteUploaded = process.argv.includes('--delete-uploaded')
