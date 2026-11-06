@@ -134,6 +134,9 @@ function Section({ title, aside, children }: { title: string; aside?: ReactNode;
   )
 }
 
+/** The game's yellow for what an enhancement changed: the + / ++ texts mark those runs `<style="upgradeHighlight">`. */
+const ENHANCE_CHANGE = { upgradeHighlight: '#f8c200' }
+
 /**
  * gate: the gift has a head-count condition. The lines it decides follow its divider (`divider`: the lock and the
  * condition across the text); the lines before it always apply. A condition no line states gets its divider first.
@@ -152,9 +155,9 @@ export function EffectText({ text, color, links, gate }: { text: string; color: 
   const gated = new Set(gate ? conditionLines(lines.map(line => gameTextToPlain(line)), gate.partial)?.gated ?? [] : [])
   const render = (line: string, lineColor: string) => split
     ? split(line).map((part, i) => typeof part === 'string'
-      ? <span key={i}>{formatSkillDesc(part, lineColor)}</span>
+      ? <span key={i}>{formatSkillDesc(part, lineColor, undefined, undefined, ENHANCE_CHANGE)}</span>
       : <GiftLink key={i} target={part.gift as GiftLinkTarget} />)
-    : formatSkillDesc(line, lineColor)
+    : formatSkillDesc(line, lineColor, undefined, undefined, ENHANCE_CHANGE)
   return (
     <PlaceholderGiftProvider lookup={giftById}>
       <div style={{ color: '#d8ccb4', fontSize: '0.875rem', lineHeight: 1.75 }}>
@@ -230,7 +233,6 @@ export default function GiftDetailModal({ gift, lang, onClose, initialLevel = 0,
   const maxLevel = plusplus ? 2 : plus ? 1 : 0
   const [level, setLevel] = useState(Math.min(initialLevel, maxLevel))
   const effect = [base, plus, plusplus][level] ?? base
-  const effectColor = level === 2 ? '#e8b030' : level === 1 ? '#d8b878' : '#c8b898'
   const kwColor = getGiftKeywordColor(gift.keyword ?? null)
   const kwSlug = getGiftKeywordSlug(gift.keyword ?? null)
   const kwIcon = kwSlug ? getGiftKeywordIconUrl(kwSlug) : null
@@ -311,7 +313,7 @@ export default function GiftDetailModal({ gift, lang, onClose, initialLevel = 0,
               aside={maxLevel > 0 && <div className="-my-2 -mr-1 shrink-0"><GiftEnhancePicker level={level} max={maxLevel as 1 | 2} giftName={gift.name} onChange={setLevel} bare /></div>}
             >
               <div style={{ fontFamily: 'var(--font-game-text)' }}>
-                <EffectText key={level} text={effect} color={effectColor} links={gift.giftLinks}
+                <EffectText key={level} text={effect} color="#c8b898" links={gift.giftLinks}
                   gate={gift.condition ? { partial: !!gift.activation?.partial, divider: lines => (
                     <GiftConditionDivider text={gift.condition!} condition={gift.activation} scope={gift.conditionScope} status={gift.conditionStatus}>{lines}</GiftConditionDivider>
                   ) } : undefined} />

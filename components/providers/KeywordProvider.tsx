@@ -79,6 +79,8 @@ export function useKeywordDescription(keyword: string, info: KeywordInfo | undef
 type FormatSkillDescOptions = {
   /** Tooltips: numbers turn gold and Potency/Count terms take this colour. */
   highlightValues?: string
+  /** Gift text: colour of the runs the game marks `<style="upgradeHighlight">` (what an enhancement changed). */
+  upgradeHighlight?: string
   /**
    * Skill and passive text of an identity or E.G.O only: draw the keywords the 4th argument (`allowedKeywords`) names when
    * the text writes them as plain words (older game text), see lib/keywords/plain-keywords.ts. Off everywhere else.
@@ -114,6 +116,7 @@ export function useFormatSkillDesc() {
           keywordRef={KeywordWithTooltip}
           skillNameColors={skillNameColors}
           highlightValues={options?.highlightValues}
+          upgradeHighlight={options?.upgradeHighlight}
           matchPlainKeywords={options?.matchPlainKeywords}
           allowedKeywords={allowedKeywords}
           keywordText={options?.keywordText}
