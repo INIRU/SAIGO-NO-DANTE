@@ -18,7 +18,7 @@ const context = (over: Partial<PrescriptContext> = {}): PrescriptContext => ({
 })
 
 describe('offer', () => {
-  it('offers only prescripts the run can carry out now, at most three of different strengths', () => {
+  it('REQ-TOOLS-021 REQ-TOOLS-022 offers only prescripts the run can carry out now, at most three of different strengths', () => {
     const cards = offer('special', context())
     expect(cards.length).toBeGreaterThan(0)
     expect(cards.length).toBeLessThanOrEqual(3)
@@ -29,7 +29,7 @@ describe('offer', () => {
     }
   })
 
-  it('never asks to sell a gift the plan needs', () => {
+  it('REQ-TOOLS-021 never asks to sell a gift the plan needs', () => {
     const ctx = context({ inventory: ['9001'], planGiftIds: new Set([9001]), craftable: () => [] })
     const sells = [0.05, 0.3, 0.6, 0.9].flatMap(r => offer('special', { ...ctx, random: () => r }))
       .filter(card => card.goal.kind === 'sell-keyword' || card.goal.kind === 'sell-tier')
@@ -50,7 +50,7 @@ describe('offer', () => {
 describe('judging from the screen', () => {
   const sellCard = { scope: 'special' as const, goal: { kind: 'sell-keyword' as const, keyword: 'Bleeding' }, strength: 2 as const }
 
-  it('a sale of a gift with the keyword carries out a sell prescript; another keyword does not', () => {
+  it('REQ-TOOLS-023 a sale of a gift with the keyword carries out a sell prescript; another keyword does not', () => {
     let run = receive(createPrescriptRun(), sellCard, 2, 0)
     run = applyEvent(run, { type: 'sale', giftId: 9001, at: 1 }, context())
     expect(run.prescripts[0].status).toBe('active')
@@ -59,7 +59,7 @@ describe('judging from the screen', () => {
     expect(run.score).toBe(prescriptPoints(2, 'special', 1))
   })
 
-  it('the next floor fails an unfinished special prescript and carries out a ban that was kept', () => {
+  it('REQ-TOOLS-024 the next floor fails an unfinished special prescript and carries out a ban that was kept', () => {
     let run = receive(createPrescriptRun(), sellCard, 2, 0)
     run = receive(run, { scope: 'special', goal: { kind: 'no-sale' }, strength: 2 }, 2, 0)
     run = applyEvent(run, { type: 'floor', floor: 3, themeIds: ['301'], at: 5 }, context())
@@ -84,7 +84,7 @@ describe('judging from the screen', () => {
     expect(run.prescripts[1].status).toBe('failed')
   })
 
-  it('a break in the capture voids what was in progress: neither failed nor scored, with the reason kept', () => {
+  it('REQ-TOOLS-025 a break in the capture voids what was in progress: neither failed nor scored, with the reason kept', () => {
     let run = receive(createPrescriptRun(), sellCard, 2, 0)
     run = applyEvent(run, { type: 'gap', at: 1, reason: 'capture-stopped' }, context())
     expect(run.prescripts[0]).toMatchObject({ status: 'void', reason: 'capture-stopped' })
@@ -123,14 +123,14 @@ describe('shop prescripts', () => {
 })
 
 describe('rerolls and points', () => {
-  it('allows three rerolls a run', () => {
+  it('REQ-TOOLS-022 allows three rerolls a run', () => {
     let run = createPrescriptRun()
     for (let i = 0; i < PRESCRIPT_REROLLS; i++) run = reroll(run)!
     expect(run.rerollsLeft).toBe(0)
     expect(reroll(run)).toBeNull()
   })
 
-  it('strength points, special x1.5 and the streak bonus', () => {
+  it('REQ-TOOLS-026 strength points, special x1.5 and the streak bonus', () => {
     expect([1, 2, 3, 4, 5].map(s => prescriptPoints(s as 1, 'standing', 1))).toEqual([5, 10, 20, 35, 60])
     expect(prescriptPoints(2, 'special', 1)).toBe(15)
     expect(prescriptPoints(2, 'standing', 3)).toBe(11)
@@ -140,7 +140,7 @@ describe('rerolls and points', () => {
 })
 
 describe('no points from the past or from breaks', () => {
-  it('evidence captured before the prescript was received does not carry it out', () => {
+  it('REQ-TOOLS-023 evidence captured before the prescript was received does not carry it out', () => {
     const fuse = { scope: 'shop' as const, goal: { kind: 'fuse-gift' as const, giftId: 9005 }, strength: 2 as const }
     let run = receive(createPrescriptRun(), fuse, 2, 1000)
     run = applyEvent(run, { type: 'fusion', resultId: 9005, at: 900 }, context())
