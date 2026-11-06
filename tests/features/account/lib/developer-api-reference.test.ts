@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { ERRORS, NEWS_EXAMPLES, SCOPES, codeSample, endpointsFor } from '@/app/[lang]/developers/api-reference'
+import { ERRORS, NEWS_EXAMPLES, SCOPES, codeSample, endpointsFor } from '@/features/account/lib/api-reference'
 import { newsAuthorSchema, newsSchema, newsTextSchema, parseNews } from '@/features/news/lib/payload'
 
 const LANGS = ['ko', 'en', 'ja'] as const

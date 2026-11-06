@@ -3,7 +3,7 @@ import { useState, type ReactNode } from "react";
 import { useLocale } from "next-intl";
 import { Copy } from "lucide-react";
 import { showError, showSuccess } from "@/lib/toast";
-import { CODE_KINDS, codeSample, type CodeKind, type Endpoint, type Field, type Text } from "@/app/[lang]/developers/api-reference";
+import { CODE_KINDS, codeSample, type CodeKind, type Endpoint, type Field, type Text } from "@/features/account/lib/api-reference";
 
 export type KeyRow = { id: string; name: string; prefix: string; revoked_at: string | null; developer_usage: { day: string; requests: number }[] };
 export type Partner = { code: string; name: string; scopes: string[] };

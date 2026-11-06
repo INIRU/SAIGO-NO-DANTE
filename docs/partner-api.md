@@ -142,7 +142,7 @@
 - `?dry_run=1`은 검증만 하고 저장하지 않는다. 저장됐을 때의 값을 `item`으로 돌려준다.
 - `DELETE /api/v1/news?id=`는 그 파트너가 보낸 소식만 지운다. 응답은 `{ "data": { "id", "deleted" } }`.
 - 오류: 400(`issues`에 칸 경로와 이유), 401, 403(`Partner scope news:write required`), 413(본문 64KB 초과), 429, 503.
-- 소식 종류별 예시(Steam, X, 프문 소식, 햄햄팡팡, YouTube, 라이브, 점검)는 개발자 도구의 파트너 탭에 있고, 테스트(`tests/lib/developer-api-reference.test.ts`)가 모두 실제 검증을 통과하는지 확인한다.
+- 소식 종류별 예시(Steam, X, 프문 소식, 햄햄팡팡, YouTube, 라이브, 점검)는 개발자 도구의 파트너 탭에 있고, 테스트(`tests/features/account/lib/developer-api-reference.test.ts`)가 모두 실제 검증을 통과하는지 확인한다.
 
 ## Discord 응답 구성
 
@@ -156,14 +156,14 @@
 | 역할 | 파일 |
 |---|---|
 | 라우트(한도, 분기) | `app/api/v1/[resource]/route.ts` |
-| 키 확인과 권한 | `lib/developer/access.ts` |
+| 키 확인과 권한 | `features/account/server/developer-access.ts` |
 | 소식 라우트, 양식 검증, 날짜 계산, 달 단위 조회 | `app/api/v1/news/route.ts`, `features/news/lib/payload.ts`, `features/news/lib/calendar.ts`, `features/news/server/data.ts` |
 | 캘린더 화면, 관리자 삭제 | `app/[lang]/calendar/page.tsx`, `features/news/components/NewsCalendar.tsx`, `app/api/admin/news/route.ts` |
-| 개발자 도구(문서 데이터, 탭) | `app/[lang]/developers/api-reference.ts`, `components/developers/` |
-| 응답 구성(언어 선택, 주소, 편성·집계) | `lib/developer/partner-api.ts` |
-| 조회(게임 자원은 `'use cache'`, 게임 데이터 태그로 무효화) | `lib/developer/partner-data.ts` |
+| 개발자 도구(문서 데이터, 탭) | `features/account/lib/api-reference.ts`, `features/account/components/` |
+| 응답 구성(언어 선택, 주소, 편성·집계) | `features/account/lib/partner-api.ts` |
+| 조회(게임 자원은 `'use cache'`, 게임 데이터 태그로 무효화) | `features/account/server/partner-data.ts` |
 | 한도, 권한, 파트너 지정 함수, 소식 표 | `supabase/migrations/20261006120000_partners_and_news.sql` |
-| 검사 | `tests/lib/developer-partner-api.test.ts`, `tests/api/developer-v1-partner.test.ts`, `tests/api/developer-v1-news.test.ts`, `tests/features/news/lib/news-payload.test.ts`, `tests/sql/developer-partner.sql`, `tests/sql/partners-and-news.sql`, `e2e/developer-api.acceptance.cjs` |
+| 검사 | `tests/features/account/lib/developer-partner-api.test.ts`, `tests/api/developer-v1-partner.test.ts`, `tests/api/developer-v1-news.test.ts`, `tests/features/news/lib/news-payload.test.ts`, `tests/sql/developer-partner.sql`, `tests/sql/partners-and-news.sql`, `e2e/developer-api.acceptance.cjs` |
 
 키 확인과 한도 차감은 DB 함수 `consume_developer_key`가 한다.
 

@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { metaText, pageMetadata } from '@/lib/seo/metadata'
 import { cacheLife } from 'next/cache'
 import { getLegalDoc } from '@/lib/data/legal'
-import LegalDocument from '@/components/legal/LegalDocument'
+import LegalDocument from '@/features/account/components/LegalDocument'
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params

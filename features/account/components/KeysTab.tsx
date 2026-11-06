@@ -2,8 +2,8 @@ import { useState } from "react";
 import { ArrowUpRight, Copy, EyeOff, LoaderCircle, Plus, Trash2 } from "lucide-react";
 import { Link } from "@/lib/i18n/navigation";
 import { goToLogin } from "@/lib/auth-return";
-import { usageByDay } from "@/app/[lang]/developers/api-reference";
-import { copyText, digits, field, goldButton, heading, panel, quietButton, useText, type KeyRow } from "./developer-ui";
+import { usageByDay } from "@/features/account/lib/api-reference";
+import { copyText, digits, field, goldButton, heading, panel, quietButton, useText, type KeyRow } from "./DeveloperUi";
 
 /** API keys of the account (create, revoke) and how much each was used. */
 export default function KeysTab({ status, keys, loading, failed, reload, limits, raise }: {

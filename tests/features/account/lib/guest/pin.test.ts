@@ -3,8 +3,8 @@ import { beforeAll, describe, expect, it, vi } from 'vitest'
 vi.mock('next-auth', () => ({ getServerSession: async () => null }))
 vi.mock('@/lib/auth', () => ({ authOptions: {} }))
 
-import { cleanGuestPin, isGuestPin, isWeakGuestPin } from '@/lib/guest/key'
-import { guestPinHash, guestPinOf, recordGuestAuthorship, type Author } from '@/lib/guest/server'
+import { cleanGuestPin, isGuestPin, isWeakGuestPin } from '@/features/account/lib/guest-key'
+import { guestPinHash, guestPinOf, recordGuestAuthorship, type Author } from '@/features/account/server/guest'
 import { friendAuthorColumns } from '@/features/friends/server/posts'
 
 const guest: Author = { kind: 'guest', keyHash: 'a'.repeat(64), tag: 'aaaa' }

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { authorRateKey, guestPinOf, resolveAuthor, type Author } from '@/lib/guest/server'
+import { authorRateKey, guestPinOf, resolveAuthor, type Author } from '@/features/account/server'
 import { checkRequestRateLimit, rateLimitResponse } from '@/lib/rate-limit'
 import { codeForViewer, fail, newlyWanted, seenIsStale, nextBumpedAt, parseSupportPost, parseWantPost, slotAssetIds, wantExpiresAt, wantIdentityIds } from '@/features/friends'
 import { friendAuthorColumns, isAuthorOf, isBlocked, ownerFilter, viewerOf, type FriendPostRow } from '@/features/friends/server'

@@ -35,7 +35,7 @@ vi.mock('@/lib/supabase/admin', () => ({
 }))
 
 import { POST } from '@/app/api/guest/recover/route'
-import { guestKeyHash, guestPinHash } from '@/lib/guest/server'
+import { guestKeyHash, guestPinHash } from '@/features/account/server/guest'
 
 process.env.NEXTAUTH_SECRET = 'test-secret'
 const send = (body: unknown, key: string | null = KEY) => POST(new Request('http://localhost/api/guest/recover', {
