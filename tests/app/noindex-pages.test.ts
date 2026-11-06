@@ -19,7 +19,7 @@ vi.mock('@/app/[lang]/collection/CollectionClient', () => ({ default: () => null
 vi.mock('@/app/[lang]/friends/_components/FriendsClient', () => ({ default: () => null }))
 vi.mock('@/app/[lang]/planner/PlannerClient', () => ({ default: () => null }))
 vi.mock('@/app/[lang]/random/RandomClient', () => ({ default: () => null }))
-vi.mock('@/components/admin/AdminNavigation', () => ({ default: () => null }))
+vi.mock('@/features/admin/components/AdminNavigation', () => ({ default: () => null }))
 vi.mock('@/components/providers/WithSectionMessages', () => ({ default: () => null }))
 vi.mock('@/components/layout/RequestTimeRoute', () => ({ default: () => null }))
 vi.mock('@/components/ui/PageError', () => ({ default: () => null }))
