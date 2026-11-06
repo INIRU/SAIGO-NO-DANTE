@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { BLESSING_CONFIGS } from '@/components/planner/BlessingTab'
 import { BLESSING_COSTS, blessingSpent, readBlessingCards } from '@/features/assist/lib/blessing-screen'
-import { BLESSING_STARLIGHT_MAX } from '@/lib/fun/prescript'
+import { BLESSING_STARLIGHT_MAX } from '@/features/tools/lib/prescript'
 
 // A drawn Star Blessing screen at width x height (the 1920x1080 layout scaled by min(w/1920, h/1080), centred, under
 // `titleBar` white rows): black around the cards, every card's name in white, `taken` cards' left border lit, a level's

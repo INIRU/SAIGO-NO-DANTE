@@ -1,4 +1,4 @@
-import ClashCalculator from '@/components/tools/ClashCalculator'
+import ClashCalculator from '@/features/tools/components/ClashCalculator'
 import { metaText, pageMetadata } from '@/lib/seo/metadata'
 export async function generateMetadata({ params }: { params: Promise<{lang: string}> }) {
   const { lang } = await params

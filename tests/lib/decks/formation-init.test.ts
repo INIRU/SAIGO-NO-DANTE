@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import { deckInitFromTeamCode, formationParamFromSearch } from '@/lib/decks/formation-init'
-import { encodeRandomResult } from '@/lib/random/deckCode'
-import { generateRandom } from '@/lib/random/engine'
-import { rngFromSeed } from '@/lib/random/seed'
-import { BASE_OPTIONS, EGOS, IDENTITIES, SINNERS } from '../random/fixture'
+import { encodeRandomResult } from '@/features/tools/lib/random/deck-code'
+import { generateRandom } from '@/features/tools/lib/random/engine'
+import { rngFromSeed } from '@/features/tools/lib/random/seed'
+import { BASE_OPTIONS, EGOS, IDENTITIES, SINNERS } from '@/tests/features/tools/lib/random/fixture'
 
 describe('REQ-DECKS-021 deck builder start from a formation code', () => {
   it('REQ-DECKS-021 reads the identities, E.G.O and numbered order out of the code', async () => {
