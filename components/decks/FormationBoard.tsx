@@ -1,7 +1,7 @@
 'use client'
 
 import Image from 'next/image'
-import IdentityFrameCard, { type IdentityFrameCardIdentity } from '@/components/ui/IdentityFrameCard'
+import IdentityFrameCard, { type IdentityFrameCardIdentity } from '@/features/catalog/components/IdentityFrameCard'
 import { getSinnerLogoUrl } from '@/lib/utils/images'
 import styles from './FormationBoard.module.css'
 

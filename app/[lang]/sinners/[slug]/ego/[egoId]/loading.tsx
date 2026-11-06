@@ -1,5 +1,5 @@
 import Skeleton, { SkeletonCircle, SkeletonLine, SkeletonPage } from '@/components/ui/Skeleton'
-import styles from './EGODetail.module.css'
+import styles from '@/app/[lang]/sinners/[slug]/ego/[egoId]/_components/EGODetail.module.css'
 
 const Row = ({ label, children }: { label: string; children: React.ReactNode }) => <div className={styles.infoRow}><SkeletonLine w={label} h="0.75rem" className="mb-2.5" />{children}</div>
 

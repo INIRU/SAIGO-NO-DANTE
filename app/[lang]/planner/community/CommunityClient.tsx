@@ -21,7 +21,7 @@ import { FacetPickerModal, FacetSections, type FacetKind } from '@/components/bo
 import { FilterChoice, FilterFieldHelp, FilterIconTile, FilterSection, FilterSinnerTiles, FilterTextButton, filterStyles } from '@/components/board/FilterControls'
 import { hasAll, useBoardFacets } from '@/hooks/useBoardFacets'
 import { decodeCollectionAsync, missingFormationCount, withBaseIdentities, type CollectionData } from '@/lib/collection'
-import { useOwnedIdentities } from '@/hooks/useOwnedIdentities'
+import { useOwnedIdentities } from '@/features/catalog/hooks/useOwnedIdentities'
 import { parseSearchQuery, getActiveTerm, termMatchesAny } from '@/lib/utils/search'
 import { THEME_KEYWORDS } from '@/lib/constants/keywords'
 import { normalizePlannerListKeywords } from '@/lib/planner/stripPlanForList'

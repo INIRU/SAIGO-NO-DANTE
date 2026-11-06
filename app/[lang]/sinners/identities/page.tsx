@@ -4,13 +4,13 @@ import { Suspense } from 'react'
 import { cacheLife, cacheTag } from 'next/cache'
 import { getAllIdentitiesForBrowser, getSinners } from '@/lib/db/queries'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
-import IdentityBrowserClient from './IdentityBrowserClient'
+import IdentityBrowserClient from '@/app/[lang]/sinners/identities/_components/IdentityBrowserClient'
 import JsonLd, { itemListJsonLd } from '@/components/seo/JsonLd'
 import { getTranslations } from 'next-intl/server'
 import { getLocalizedName } from '@/lib/i18n/localize'
 import type { SupportedLang } from '@/lib/i18n/types'
 import StaticQueryAdapter from '@/components/providers/StaticQueryAdapter'
-import BrowserSkeleton from '@/components/sinners/BrowserSkeleton'
+import BrowserSkeleton from '@/features/catalog/components/BrowserSkeleton'
 
 const TITLE = { ko: '림버스 인격 도감 — 전체 인격 목록·스킬·키워드', en: 'Limbus Company Identity List — Skills & Keywords', ja: 'リンバスカンパニー 人格一覧 — スキル・キーワード' }
 

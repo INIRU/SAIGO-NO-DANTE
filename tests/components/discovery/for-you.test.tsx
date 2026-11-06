@@ -7,7 +7,7 @@ vi.mock('swr', () => ({ default: (key: string | null) => (key ? state.swr : {}) 
 vi.mock('next-auth/react', () => ({ useSession: () => ({ status: state.status }) }))
 vi.mock('next-intl', () => ({ useTranslations: () => (key: string) => key }))
 vi.mock('@/lib/i18n/navigation', () => ({ Link: ({ children }: { children: React.ReactNode }) => <a>{children}</a> }))
-vi.mock('@/hooks/useOwnedIdentities', () => ({ useOwnedIdentities: () => null }))
+vi.mock('@/features/catalog/hooks/useOwnedIdentities', () => ({ useOwnedIdentities: () => null }))
 vi.mock('@/components/decks/DeckCard', () => ({ default: ({ deck }: { deck: { id: string } }) => <div data-card>{deck.id}</div> }))
 vi.mock('@/components/planner/PlanCard', () => ({ default: ({ plan }: { plan: { id: string } }) => <div data-card>{plan.id}</div> }))
 

@@ -8,7 +8,7 @@ vi.mock('@/components/board/BoardCard', () => ({
   default: ({ kind, post }: { kind: string; post: { id: string } }) => <a href={`/ko/${kind === 'deck' ? 'decks' : 'planner/community'}/${post.id}`}>card</a>,
   RankPlate: () => null,
 }))
-vi.mock('@/components/ui/IdentityFrameCard', () => ({ default: () => null }))
+vi.mock('@/features/catalog/components/IdentityFrameCard', () => ({ default: () => null }))
 
 import DiscoveryShelf from '@/components/discovery/DiscoveryShelf'
 
