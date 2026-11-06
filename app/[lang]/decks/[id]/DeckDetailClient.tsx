@@ -5,7 +5,7 @@ import PostAuthorName from '@/features/community/components/PostAuthorName'
 import FollowAuthorButton from '@/features/community/components/FollowAuthorButton'
 import SeriesBox from '@/features/community/components/SeriesBox'
 import type { SeriesView } from '@/features/community'
-import DeckDetailSkeleton from '@/components/decks/DeckDetailSkeleton'
+import DeckDetailSkeleton from '@/app/[lang]/decks/[id]/_components/DeckDetailSkeleton'
 import { useState, useEffect, useCallback, useMemo, useRef, type ReactNode } from 'react'
 import dynamic from 'next/dynamic'
 import useSWR from 'swr'
@@ -35,19 +35,17 @@ import {
   normalizeDeckMainKeyword,
   type DeckKeywordSlot,
 } from '@/lib/decks/keyword-rules'
-import { NoteRenderer, fetchNoteGifts, type NoteSkillEntry, type NotePassiveEntry, type NoteEgoEntry, type NoteIdentityEntry } from '@/components/decks/NoteChips'
+import { NoteRenderer, fetchNoteGifts, type NoteSkillEntry, type NotePassiveEntry, type NoteEgoEntry, type NoteIdentityEntry } from '@/features/decks/components/NoteChips'
 import { NoteGiftClickContext } from '@/features/notes/components/NoteBlockViewer'
 import PlannerGiftModal from '@/components/planner/PlannerGiftModal'
 import type { GiftData } from '@/lib/planner/types'
 import KeywordIcon from '@/components/ui/KeywordIcon'
 import RelativeTime from '@/components/ui/RelativeTime'
-import DeckInsights, { type DeckInsightIdentity } from '@/components/deck-analysis/DeckInsights'
-import DeckResourceSummary from '@/components/deck-analysis/DeckResourceSummary'
+import DeckInsights, { type DeckInsightIdentity } from '@/features/decks/components/DeckInsights'
+import DeckResourceSummary from '@/features/decks/components/DeckResourceSummary'
 import SkillExchangePanel from '@/components/planner/SkillExchangePanel'
-import { computeDeckResources, computeSinProduction, fieldedEntries } from '@/lib/decks/deck-analysis'
-import { rowsAtUptie } from '@/lib/decks/deck-identity-uptie'
+import { computeDeckResources, computeSinProduction, fieldedEntries, rowsAtUptie, contentTypeMessageKey, localizeDeckKeyword } from '@/features/decks'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
-import { contentTypeMessageKey, localizeDeckKeyword } from '@/components/decks/decks-types'
 import {
   localizeEgoName,
   localizeIdentityName,
@@ -58,11 +56,11 @@ import {
   type EgoEntry,
   type IdentityDetail,
   type IdentitySlot,
-} from '@/components/deck-detail/DeckIdentityCard'
-import FormationBoard, { type FormationBoardSlot } from '@/components/decks/FormationBoard'
-import { FormationEgoGrid, FormationTabs, type FormationEgo } from '@/components/decks/FormationEgoGrid'
-import DeckRecommendations, { type DeckRecommendationsData } from '@/components/deck-detail/DeckRecommendations'
-import DeckComments from '@/components/deck-detail/DeckComments'
+} from '@/features/decks/components/DeckIdentityCard'
+import FormationBoard, { type FormationBoardSlot } from '@/features/decks/components/FormationBoard'
+import { FormationEgoGrid, FormationTabs, type FormationEgo } from '@/features/decks/components/FormationEgoGrid'
+import DeckRecommendations, { type DeckRecommendationsData } from '@/features/decks/components/DeckRecommendations'
+import DeckComments from '@/features/decks/components/DeckComments'
 import { getGiftActivationConditionStatus } from '@/lib/planner/gift-condition-status'
 import type { SupportedLang } from '@/lib/i18n/types'
 import { workbenchReveal } from '@/lib/animations'

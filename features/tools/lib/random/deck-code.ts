@@ -1,5 +1,5 @@
 import type { Sinner, Identity, EGO } from '@/lib/types'
-import { encodeDeckCode } from '@/components/deck-builder/deckCodeUtils'
+import { encodeDeckCode } from '@/lib/decks/deck-code-utils'
 import type { RandomResult } from './engine'
 
 /**

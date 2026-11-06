@@ -15,7 +15,7 @@ import JsonLd, { breadcrumbJsonLd, gameCharacterJsonLd } from '@/components/seo/
 import { getLocalizedName, getLocalizedKeywordName } from '@/lib/i18n/localize'
 import { getIdentityRecommendations } from '@/features/community/server'
 import IdentityRecommendations from '@/features/catalog/components/IdentityRecommendations'
-import { IdentityRecommendationsSkeleton } from '@/components/deck-detail/RecommendationSkeleton'
+import { IdentityRecommendationsSkeleton } from '@/features/decks/components/RecommendationSkeleton'
 import { getKeywordData } from '@/lib/keywords/server-data'
 import type { KeywordInfo } from '@/lib/keywords/catalog'
 import { getTranslations, setRequestLocale } from 'next-intl/server'

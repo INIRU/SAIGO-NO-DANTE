@@ -15,7 +15,7 @@ import ProfileTab from "./components/ProfileTab";
 import DecksTab from "./components/DecksTab";
 import PlannerTab from "./components/PlannerTab";
 import CollectionTab from "./components/CollectionTab";
-import { type DeckSummary } from "@/components/decks/DeckCard";
+import { type DeckSummary } from "@/features/decks/components/DeckCard";
 import AchievementGrid, { achievementProgress } from "@/features/community/components/AchievementGrid";
 import { FollowList } from "@/features/community/components/Follows";
 import ProfileSettings from "@/features/community/components/ProfileSettings";

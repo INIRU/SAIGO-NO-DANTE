@@ -6,7 +6,7 @@ import { Link } from "@/lib/i18n/navigation";
 import { Layers, Map as MapIcon } from "lucide-react";
 import ProfileRail from "./ProfileRail";
 import AchievementGrid from "./AchievementGrid";
-import DeckCard from "@/components/decks/DeckCard";
+import DeckCard from "@/features/decks/components/DeckCard";
 import PlanCard from "@/components/planner/PlanCard";
 import Skeleton from "@/components/ui/Skeleton";
 import { getCommunityCopy } from "@/features/community/lib/copy";

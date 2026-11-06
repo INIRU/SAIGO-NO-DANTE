@@ -1,5 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
-import type { DeckSummary } from '@/components/decks/DeckCard'
+import type { DeckSummary } from '@/features/decks/components/DeckCard'
 import type { PlanSummary } from '@/components/planner/PlanCard'
 import { withPostAuthors } from '@/features/community/server/post-authors'
 import { stripPlanForList } from '@/lib/planner/stripPlanForList'

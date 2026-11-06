@@ -7,7 +7,7 @@ vi.mock('next-intl', () => ({
 }))
 vi.mock('@/lib/i18n/navigation', () => ({ Link: ({ href, children, ...rest }: { href: string; children: React.ReactNode }) => <a href={href} {...rest}>{children}</a> }))
 vi.mock('@/features/catalog/components/IdentityFrameCard', () => ({ default: ({ name }: { name: string }) => <span data-card>{name}</span> }))
-vi.mock('@/components/decks/DeckCard', () => ({ default: ({ deck }: { deck: { id: string } }) => <span data-deck>{deck.id}</span> }))
+vi.mock('@/features/decks/components/DeckCard', () => ({ default: ({ deck }: { deck: { id: string } }) => <span data-deck>{deck.id}</span> }))
 vi.mock('@/components/planner/PlanCard', () => ({ default: ({ plan }: { plan: { id: string } }) => <span data-plan>{plan.id}</span> }))
 
 import IdentityRecommendations from '@/features/catalog/components/IdentityRecommendations'

@@ -5,7 +5,7 @@ import { useSession } from "next-auth/react";
 import { useTranslations } from "next-intl";
 import { ArrowRight } from "lucide-react";
 import { Link } from "@/lib/i18n/navigation";
-import DeckCard, { type DeckSummary } from "@/components/decks/DeckCard";
+import DeckCard, { type DeckSummary } from "@/features/decks/components/DeckCard";
 import PlanCard, { type PlanSummary } from "@/components/planner/PlanCard";
 import { SkeletonLine } from "@/components/ui/Skeleton";
 import { useOwnedIdentities } from "@/features/catalog/hooks/useOwnedIdentities";

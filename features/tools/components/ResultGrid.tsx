@@ -12,7 +12,6 @@ import type { SupportedLang } from '@/lib/i18n/types'
 import type { Sinner, Identity } from '@/lib/types'
 import type { RandomResult } from '@/features/tools/lib/random/engine'
 import { EGO_GRADES, isRareEgo, isRareIdentity, revealRanks } from '@/features/tools/lib/random/display'
-import board from '@/components/decks/FormationBoard.module.css'
 import styles from './random.module.css'
 
 /**
@@ -41,7 +40,7 @@ export default function ResultGrid({ sinners, pools, result, view, revealing, fr
   const freshIds = sinnerIds.filter(id => fresh.has(id))
   const ranks = revealRanks(freshIds, result?.order?.filter(id => fresh.has(id)) ?? null)
   return (
-    <ol className={`${board.grid} ${styles.board}`} id="random-board" role="tabpanel" ref={boardRef} data-reveal={revealing || undefined}>
+    <ol className={`${styles.grid} ${styles.board}`} id="random-board" role="tabpanel" ref={boardRef} data-reveal={revealing || undefined}>
       {sinners.map(sinner => {
         const sinnerName = getLocalizedName(sinner, lang)
         const locked = marks.includes(sinner.id)
@@ -104,7 +103,7 @@ export default function ResultGrid({ sinners, pools, result, view, revealing, fr
           <li key={sinner.id} {...cellProps}>
             {identity ? (
               <div key={stamps[sinner.id]} className={styles.slot} data-rare={isRareIdentity(identity) || undefined}>
-                <button type="button" className={`${board.tile} ${styles.card}`} onClick={() => onReroll(sinner.id)} disabled={!canReroll}
+                <button type="button" className={`${styles.tile} ${styles.card}`} onClick={() => onReroll(sinner.id)} disabled={!canReroll}
                   aria-label={t('reroll', { name })} title={canReroll ? t('reroll', { name }) : name}>
                   <IdentityFrameCard identity={identity} name={name} order={result?.order ? (number >= 0 ? number : null) : undefined} sizes="(max-width: 40rem) 30vw, 9rem" />
                   {canReroll && <span className={styles.reroll} aria-hidden="true" data-html2canvas-ignore="true"><RefreshCw /></span>}
@@ -112,7 +111,7 @@ export default function ResultGrid({ sinners, pools, result, view, revealing, fr
                 {lockButton(name, styles.lock)}
               </div>
             ) : (
-              <span className={board.empty}><Image src={getSinnerLogoUrl(sinner.id)} alt={sinnerName} width={32} height={32} /></span>
+              <span className={styles.empty}><Image src={getSinnerLogoUrl(sinner.id)} alt={sinnerName} width={32} height={32} /></span>
             )}
           </li>
         )

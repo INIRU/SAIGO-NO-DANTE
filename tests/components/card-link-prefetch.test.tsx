@@ -9,11 +9,11 @@ vi.mock('next-intl', () => ({
 vi.mock('next/image', () => ({ default: ({ src, alt }: { src: string; alt: string }) => <img src={src} alt={alt} /> }))
 vi.mock('@/lib/i18n/navigation', () => ({ Link: ({ href, children, prefetch, ...rest }: { href: string; children: React.ReactNode; prefetch?: boolean | null }) => <a href={href} data-prefetch={String(prefetch)} {...rest}>{children}</a> }))
 vi.mock('@/components/providers/KeywordProvider', () => ({ useKeywordData: () => ({ getIconUrl: () => null }), useKeywords: () => ({}) }))
-vi.mock('@/components/decks/NoteChips', () => ({ NoteRenderer: () => null, useNoteGiftLookup: () => ({}) }))
+vi.mock('@/features/decks/components/NoteChips', () => ({ NoteRenderer: () => null, useNoteGiftLookup: () => ({}) }))
 vi.mock('@/features/tools/components/OwnedBadge', () => ({ default: () => null, useMissingSinners: () => [] }))
-vi.mock('@/components/ui/FormationThumbnail', () => ({ default: () => null }))
+vi.mock('@/features/decks/components/FormationThumbnail', () => ({ default: () => null }))
 
-import DeckCard, { type DeckSummary } from '@/components/decks/DeckCard'
+import DeckCard, { type DeckSummary } from '@/features/decks/components/DeckCard'
 
 const deck: DeckSummary = { id: 'd1', user_id: 'u1', title: '덱', description: null, tags: [], vote_count: 0, view_count: 0, created_at: '2026-10-15T00:00:00Z' }
 
