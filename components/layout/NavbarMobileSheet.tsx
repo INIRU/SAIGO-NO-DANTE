@@ -1,6 +1,7 @@
 'use client'
 
-import { MessageCircle, CalendarDays } from 'lucide-react'
+import { MessageCircle } from 'lucide-react'
+import { CalendarIcon } from '@/components/brand/icons'
 import { useTranslations } from 'next-intl'
 import { usePathname } from '@/lib/i18n/navigation'
 import type { TranslationKey } from '@/lib/i18n/translations'
@@ -72,7 +73,7 @@ export default function NavbarMobileSheet({ mainNavLabel, sessionStatus, avatarU
             aria-current={isActiveHref(pathname, '/calendar') ? 'page' : undefined}
             className={`flex h-11 w-11 items-center justify-center rounded-md text-[var(--text-secondary)] aria-[current=page]:text-[var(--gold-light)] ${focusRing}`}
           >
-            <CalendarDays size={19} aria-hidden="true" />
+            <CalendarIcon size={19} />
           </NavLink>
           <LanguageSwitcher up />
         </div>
