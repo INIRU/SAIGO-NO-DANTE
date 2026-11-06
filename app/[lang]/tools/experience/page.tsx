@@ -1,4 +1,4 @@
-import ExperienceCalculator from '@/components/tools/ExperienceCalculator'
+import ExperienceCalculator from '@/features/tools/components/ExperienceCalculator'
 import { metaText, pageMetadata } from '@/lib/seo/metadata'
 export async function generateMetadata({ params }: { params: Promise<{lang: string}> }) {
   const { lang } = await params

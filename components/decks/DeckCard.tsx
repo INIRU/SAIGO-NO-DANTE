@@ -16,7 +16,7 @@ import { contentTypeMessageKey, localizeDeckKeyword } from '@/components/decks/d
 import type { SupportedLang } from '@/lib/i18n'
 import { guestAuthorName } from '@/lib/guest/copy'
 import { computeDeckMainKeywordsFromSlots, normalizeDeckMainKeyword } from '@/lib/decks/keyword-rules'
-import OwnedBadge, { useMissingSinners } from '@/components/collection/OwnedBadge'
+import OwnedBadge, { useMissingSinners } from '@/features/tools/components/OwnedBadge'
 import { DEFAULT_AVATAR_URL } from '@/lib/constants/game'
 const EMPTY_NOTE_LOOKUP: Record<string, never> = Object.freeze({})
 

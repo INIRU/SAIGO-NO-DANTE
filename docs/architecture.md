@@ -11,7 +11,7 @@ Next.js 16 App Router + React 19 + TypeScript. 공개 페이지는 app/[lang]에
 | app/[lang] | 서버 조회, 메타데이터, 페이지 조합 |
 | components | 기능별 UI, 재사용 가능한 ui/ primitive |
 | hooks, lib/hooks, lib/stores | 브라우저 상태와 생명주기 |
-| lib/identity, lib/decks, lib/planner, lib/random | 독립 검증 가능한 도메인 로직 |
+| lib/identity, lib/decks, lib/planner, features/tools/lib/random | 독립 검증 가능한 도메인 로직 |
 | app/api, lib/schemas | 요청·인증·입력 검증 |
 | lib/db, lib/supabase | DB 조회와 권한별 클라이언트 |
 | lib/i18n, messages | 번역과 데이터 이름의 지역화 |
@@ -34,7 +34,7 @@ Next.js 16 App Router + React 19 + TypeScript. 공개 페이지는 app/[lang]에
 - `features/catalog/components/PassivePanel`, `PassiveEffect`: 덱·플래너·노트가 같은 패시브 UI를 사용하고 panel/note 변형만 구분한다. 조건 계산과 인격별 색인은 `lib/planner/passives`가 담당한다.
 - `features/mirror-dungeon/components/GiftCard`: 기존 hover 확대·그림자·0.2초 전환을 CSS로 유지하며 hover만으로 React 상태를 갱신하지 않는다.
 - `lib/keywords/catalog`: 카탈로그 객체별 WeakMap에 지역화·별칭·죄악 색인을 공유한다. 원본 객체가 교체되면 새 색인을 만든다.
-- `components/collection/useCollectionModel`: 보유 수 집계와 검색 필터를 분리한다.
+- `features/tools/hooks/useCollectionModel`: 보유 수 집계와 검색 필터를 분리한다.
 
 메타분석은 `features/meta/lib/aggregate`의 순수 집계를 서버 페이지와 `/api/meta/usage`가 공유한다. 공개 덱과 `md_plans`의 편성을 이번 주·최근 4주(목요일 12:00 KST 업데이트 주, 홈·게시판과 같은 기준)·전체 기간 및 출처별로 읽는다. 게시물당 같은 비중이며 알려진 전투 인격이 없는 편성은 분모에서 제외한다. 같은 수감자의 중복 인격·같은 EGO·키워드는 편성당 한 번 계산하고, 동시 편성은 전투 슬롯끼리 계산한다. 채용 빈도를 성능/승률로 해석하지 않는다.
 

@@ -13,7 +13,7 @@ export function isDeployedSlot(slotOrder: number | null | undefined): boolean {
   return typeof slotOrder === 'number' && slotOrder >= 0 && slotOrder < DEPLOYED_SLOT_COUNT
 }
 
-/** Current identity level cap; it rises with the seasons. Raise it here (and extend LEVEL_COSTS in lib/tools/experience.ts). */
+/** Current identity level cap; it rises with the seasons. Raise it here (and extend LEVEL_COSTS in features/tools/lib/experience.ts). */
 export const MAX_IDENTITY_LEVEL = 65
 /** Synced defense and offense levels are stored at level 60 (60 + the game's correction). */
 export const IDENTITY_STAT_BASE_LEVEL = 60
