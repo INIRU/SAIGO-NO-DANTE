@@ -64,13 +64,17 @@ function useRailOffset(place: Place, pathname: string | null): number | null {
  * page, and an unfilled unit hides its box. Ad-free pages draw nothing; development and a preview build (NEXT_PUBLIC_AD_PREVIEW=1,
  * e.g. behind a tunnel AdSense does not serve) show the reserved place instead of an ad.
  */
-export default function AdSlot({ slot = ADSENSE_DISPLAY_SLOT, place }: { slot?: string | null; place: Place }) {
+export default function AdSlot({ slot = ADSENSE_DISPLAY_SLOT, place, phoneOnly = false }: {
+  slot?: string | null; place: Place
+  /** Only below 768px (a page whose other ads are the wide-screen side ones) */
+  phoneOnly?: boolean
+}) {
   const pathname = usePathname()
   const offset = useRailOffset(place, pathname)
   if (isAdFreePath(pathname)) return null
   const rail = place === 'left' || place === 'right'
   if (rail && (/^\/(?:ko|en|ja)\/?$/.test(pathname!) || offset == null)) return null
-  const box = rail ? styles.rail : place === 'top' ? styles.top : styles.inline
+  const box = `${rail ? styles.rail : place === 'top' ? styles.top : styles.inline}${phoneOnly ? ` ${styles.phoneOnly}` : ''}`
   const position = rail ? ({ [place]: `${offset}px` } as CSSProperties) : undefined
   const unit = rail ? styles.railUnit : styles.topUnit
   const preview = process.env.NODE_ENV === 'development' || process.env.NEXT_PUBLIC_AD_PREVIEW === '1'

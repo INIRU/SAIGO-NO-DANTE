@@ -6,6 +6,7 @@ import { pageMetadata } from '@/lib/seo/metadata'
 import MotionBrowser from '@/features/motion/components/MotionBrowser'
 import { MotionBrowserSkeleton } from '@/features/motion/components/SkillMotionSkeleton'
 import PageHeader from '@/components/ui/PageHeader'
+import AdSlot from '@/components/ads/AdSlot'
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params
@@ -24,6 +25,8 @@ export default async function SkillMotionPage({ params }: { params: Promise<{ la
     <div className="mx-auto min-h-[100dvh] max-w-[76rem] px-4 pb-24 pt-[5.5rem] md:px-6">
       <PageHeader title={t('title')} ad={false} />
       <Suspense fallback={<MotionBrowserSkeleton />}><MotionBrowser /></Suspense>
+      {/* phones see none of this page's side ads: one banner under the list (DESIGN.md "광고") */}
+      <AdSlot place="inline" phoneOnly />
     </div>
   )
 }
