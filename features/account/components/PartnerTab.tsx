@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Play } from "lucide-react";
-import { API_BASE, NEWS_EXAMPLES, SCOPES, type Scope } from "@/app/[lang]/developers/api-reference";
-import { RequestCode, goldButton, heading, lineButton, panel, useCodeKind, useText, type Open, type Partner } from "./developer-ui";
+import { API_BASE, NEWS_EXAMPLES, SCOPES, type Scope } from "@/features/account/lib/api-reference";
+import { RequestCode, goldButton, heading, lineButton, panel, useCodeKind, useText, type Open, type Partner } from "./DeveloperUi";
 
 /** What a partner account can do, and how to post news to the calendar, with one example per kind of news. */
 export default function PartnerTab({ partner, admin, news, open }: { partner: Partner | null; admin: boolean; news: boolean; open: Open }) {

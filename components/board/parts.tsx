@@ -10,7 +10,7 @@ import { contentTypeMessageKey, localizeDeckKeyword } from '@/components/decks/d
 import { CONTENT_TYPE_COLORS } from '@/lib/constants/deck-tokens'
 import { normalizeDeckMainKeyword } from '@/lib/decks/keyword-rules'
 import { normalizePlannerListKeywords, planDifficultyBadge } from '@/lib/planner/stripPlanForList'
-import { guestAuthorName } from '@/lib/guest/copy'
+import { guestAuthorName } from '@/features/account'
 import { noteSummaryText } from '@/lib/notes/blocks'
 import type { DiscoveryKind } from '@/lib/discovery/recommend'
 import type { SupportedLang } from '@/lib/i18n/types'

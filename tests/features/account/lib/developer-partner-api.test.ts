@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { localize, parseLang, presentCatalogItem, presentDeck, presentPlan } from '@/lib/developer/partner-api'
+import { localize, parseLang, presentCatalogItem, presentDeck, presentPlan } from '@/features/account/lib/partner-api'
 
 const skill = (order: number, uptie: number, atk: string, sin: string, extra: Record<string, unknown> = {}) => ({
   id: `s${order}-${uptie}`, name: `스킬${order}`, name_en: `Skill ${order}`, name_jp: null, skill_type: atk, atk_type: atk, sin_affinity: sin,

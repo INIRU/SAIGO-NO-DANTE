@@ -1,21 +1,20 @@
 import { z } from "zod";
 import { NextResponse } from "next/server";
 import { publicSupabase } from "@/lib/supabase/public";
-import { allows, consumeApiKey } from "@/lib/developer/access";
 import {
   RESOURCES,
+  allows,
+  consumeApiKey,
+  loadCatalog,
+  loadCatalogItem,
+  loadDeckDetail,
+  loadPlanDetail,
   parseLang,
   presentCatalogItem,
   presentDeck,
   presentPlan,
   withLinks,
-} from "@/lib/developer/partner-api";
-import {
-  loadCatalog,
-  loadCatalogItem,
-  loadDeckDetail,
-  loadPlanDetail,
-} from "@/lib/developer/partner-data";
+} from "@/features/account/server";
 const cors = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, OPTIONS",

@@ -1,6 +1,6 @@
 import { getTranslations } from 'next-intl/server'
 import { z } from 'zod'
-import SupportDesk from '@/components/support/SupportDesk'
+import SupportDesk from '@/features/account/components/SupportDesk'
 type Props = { params: Promise<{ lang: string }>; searchParams: Promise<{ id?: string | string[] }> }
 /** `?id=<inquiry>` (a notification's link) starts the inbox on that thread. The id goes into a request path, so only a uuid passes. */
 export default async function InquiriesPage({ params, searchParams }: Props) {

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Copy, LoaderCircle, Send } from "lucide-react";
-import { API_BASE, codeSample, type Endpoint } from "@/app/[lang]/developers/api-reference";
-import { CodeBlock, Method, copyText, field, goldButton, heading, lineButton, panel, railItem, useText, type Open } from "./developer-ui";
+import { API_BASE, codeSample, type Endpoint } from "@/features/account/lib/api-reference";
+import { CodeBlock, Method, copyText, field, goldButton, heading, lineButton, panel, railItem, useText, type Open } from "./DeveloperUi";
 
 type Result = { status: number; ms: number; remaining: string | null; retry: string | null; body: string };
 

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import useSWR from 'swr'
-import { GUEST_KEY_HEADER, GUEST_KEY_STORAGE, guestHeaders, readGuestKey } from '@/lib/guest/key'
+import { GUEST_KEY_HEADER, GUEST_KEY_STORAGE, guestHeaders, readGuestKey } from '@/features/account/lib/guest-key'
 
 export type GuestPost = { id: string; title: string; created_at: string }
 export type GuestPosts = { decks: GuestPost[]; plans: GuestPost[] }
@@ -30,7 +30,7 @@ export type GuestRecoverTarget = { kind: 'deck' | 'plan'; id: string } | { kind:
 
 /**
  * Proves a guest post is this visitor's with its password; this browser's key (made if there is none) owns it afterwards.
- * Throws an Error whose message is the server's refusal code (guestRecoverMessage in lib/guest/copy.ts names it).
+ * Throws an Error whose message is the server's refusal code (guestRecoverMessage in features/account/lib/guest-copy.ts names it).
  */
 export async function recoverGuestPost(target: GuestRecoverTarget, pin: string) {
   const res = await fetch('/api/guest/recover', { method: 'POST', headers: { 'Content-Type': 'application/json', ...guestHeaders(false) }, body: JSON.stringify({ ...target, pin }) })

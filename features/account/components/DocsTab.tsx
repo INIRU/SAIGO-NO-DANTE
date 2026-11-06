@@ -1,6 +1,6 @@
 import { Play } from "lucide-react";
-import { API_BASE, ERRORS, GROUPS, type Endpoint } from "@/app/[lang]/developers/api-reference";
-import { CodeBlock, FieldTable, Method, RequestCode, heading, lineButton, panel, railItem, useCodeKind, useText, type Open } from "./developer-ui";
+import { API_BASE, ERRORS, GROUPS, type Endpoint } from "@/features/account/lib/api-reference";
+import { CodeBlock, FieldTable, Method, RequestCode, heading, lineButton, panel, railItem, useCodeKind, useText, type Open } from "./DeveloperUi";
 
 /** The example request of an endpoint: its example query and, when it has one, its example body. */
 export const exampleRequest = (endpoint: Endpoint) => ({

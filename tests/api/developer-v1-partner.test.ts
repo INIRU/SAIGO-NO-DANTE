@@ -21,7 +21,7 @@ vi.mock('@supabase/supabase-js', () => ({
     }),
   }),
 }))
-vi.mock('@/lib/developer/partner-data', () => ({ loadCatalog: m.loadCatalog, loadCatalogItem: m.loadCatalogItem, loadDeckDetail: m.loadDeckDetail, loadPlanDetail: m.loadPlanDetail }))
+vi.mock('@/features/account/server/partner-data', () => ({ loadCatalog: m.loadCatalog, loadCatalogItem: m.loadCatalogItem, loadDeckDetail: m.loadDeckDetail, loadPlanDetail: m.loadPlanDetail }))
 vi.mock('@/lib/auth', () => ({ requireActiveUser: m.auth }))
 vi.mock('@/lib/supabase/findOrCreateUser', () => ({ findOrCreateSupabaseUser: async () => 'user-1' }))
 vi.mock('@/lib/rate-limit', () => ({ checkRequestRateLimit: () => ({ allowed: true }), rateLimitResponse: () => new Response(null, { status: 429 }) }))

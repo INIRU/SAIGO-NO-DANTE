@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { allows, consumeApiKey, type KeyAccess } from "@/lib/developer/access";
+import { allows, consumeApiKey, type KeyAccess } from "@/features/account/server";
 import { CACHE_TAGS } from "@/lib/constants/cache-tags";
 import { SITE_URL } from "@/lib/seo/metadata";
 import { kstDay, parseNews } from "@/features/news";

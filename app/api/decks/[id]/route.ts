@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { revalidateTag } from 'next/cache'
 import { revalidatePostSeries, saveSeriesChoice } from '@/lib/series/server'
-import { ownsPost, resolveAuthor } from '@/lib/guest/server'
+import { ownsPost, resolveAuthor } from '@/features/account/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { withPostAuthors } from '@/lib/community/post-authors'

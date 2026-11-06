@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { getGuestCopy } from '@/lib/guest/copy'
+import { getGuestCopy } from '@/features/account'
 import GuestClient from './GuestClient'
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
