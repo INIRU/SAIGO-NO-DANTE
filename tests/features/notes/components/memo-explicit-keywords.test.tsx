@@ -3,7 +3,7 @@ import { join } from 'node:path'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it, vi } from 'vitest'
 import { KeywordProvider } from '@/components/providers/KeywordProvider'
-import { NoteRenderer } from '@/components/decks/NoteChips'
+import { NoteRenderer } from '@/features/decks/components/NoteChips'
 import { NOTE_PREFIX, notePreviewText } from '@/lib/notes/blocks'
 
 vi.mock('next-intl', () => ({ useLocale: () => 'ko', useTranslations: () => (key: string) => key }))

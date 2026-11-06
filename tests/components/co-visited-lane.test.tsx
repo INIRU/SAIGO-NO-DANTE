@@ -11,7 +11,7 @@ vi.mock('next-intl/server', () => ({ getTranslations: async () => (key: string) 
 vi.mock('@/features/community/server/co-visited', () => ({
   getCoVisited: async () => { if (state.fail) throw new Error('missing'); return state.posts },
 }))
-vi.mock('@/components/decks/DeckCard', () => ({ default: ({ deck }: { deck: { id: string } }) => <span data-deck>{deck.id}</span> }))
+vi.mock('@/features/decks/components/DeckCard', () => ({ default: ({ deck }: { deck: { id: string } }) => <span data-deck>{deck.id}</span> }))
 vi.mock('@/components/planner/PlanCard', () => ({ default: ({ plan }: { plan: { id: string } }) => <span data-plan>{plan.id}</span> }))
 
 import CoVisitedLane from '@/features/community/components/CoVisitedLane'

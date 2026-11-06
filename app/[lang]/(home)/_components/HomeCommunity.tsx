@@ -3,7 +3,7 @@
 import useSWR from 'swr'
 import { ArrowUpRight } from 'lucide-react'
 import { Link } from '@/lib/i18n/navigation'
-import DeckCard, { type DeckSummary } from '@/components/decks/DeckCard'
+import DeckCard, { type DeckSummary } from '@/features/decks/components/DeckCard'
 import PlanCard, { type PlanSummary } from '@/components/planner/PlanCard'
 import { CardSkeleton } from '@/features/community/components/BoardSkeleton'
 import { SkeletonLine } from '@/components/ui/Skeleton'

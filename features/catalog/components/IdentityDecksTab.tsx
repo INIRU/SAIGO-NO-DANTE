@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import Image from 'next/image'
 import { useTranslations } from 'next-intl'
-import DeckCard, { DeckSummary } from '@/components/decks/DeckCard'
+import DeckCard, { DeckSummary } from '@/features/decks/components/DeckCard'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
 const PAGE_SIZE = 12
 

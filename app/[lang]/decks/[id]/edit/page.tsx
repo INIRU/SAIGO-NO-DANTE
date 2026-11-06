@@ -5,10 +5,10 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { findOrCreateSupabaseUser } from '@/lib/supabase/findOrCreateUser'
-import { fetchDeckBuilderData } from '@/lib/decks/builder-data'
+import { fetchDeckBuilderData } from '@/features/decks/server'
 import type { SupportedLang } from '@/lib/i18n/types'
 import EditWrapper from './EditWrapper'
-import { normalizeUptie } from '@/lib/decks/deck-identity-uptie'
+import { normalizeUptie } from '@/features/decks'
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params

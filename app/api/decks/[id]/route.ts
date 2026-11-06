@@ -10,7 +10,7 @@ import { writeAuditLog } from '@/lib/audit'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import { parseDeckMainKeywordsInput } from '@/lib/decks/keyword-rules'
 import { encodeTeamCode } from '@/lib/decks/team-code'
-import { insertDeckIdentities, normalizeUptie } from '@/lib/decks/deck-identity-uptie'
+import { insertDeckIdentities, normalizeUptie } from '@/features/decks'
 
 
 type EgoAttackSkill = {

@@ -19,14 +19,12 @@ import {
   type EgoData,
   type SkillDistribution,
 } from '@/lib/planner/types'
-import { rowsAtUptie } from '@/lib/decks/deck-identity-uptie'
+import { rowsAtUptie, computeDeckResources, computeSinProduction, fieldedEntries, localizeDeckKeyword } from '@/features/decks'
 import { getIdentityImageUrl, getSkillIconUrl } from '@/lib/utils/images'
 import { SIN_COLORS } from '@/lib/constants/sin'
-import DeckInsights, { type DeckInsightIdentity } from '@/components/deck-analysis/DeckInsights'
-import DeckResourceSummary from '@/components/deck-analysis/DeckResourceSummary'
-import { computeDeckResources, computeSinProduction, fieldedEntries } from '@/lib/decks/deck-analysis'
-import { localizeIdentityName, localizePassiveDescription, localizePassiveName } from '@/components/deck-detail/DeckIdentityCard'
-import { localizeDeckKeyword } from '@/components/decks/decks-types'
+import DeckInsights, { type DeckInsightIdentity } from '@/features/decks/components/DeckInsights'
+import DeckResourceSummary from '@/features/decks/components/DeckResourceSummary'
+import { localizeIdentityName, localizePassiveDescription, localizePassiveName } from '@/features/decks/components/DeckIdentityCard'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
 import { useLocale, useTranslations } from 'next-intl'
 import type { SupportedLang } from '@/lib/i18n/types'

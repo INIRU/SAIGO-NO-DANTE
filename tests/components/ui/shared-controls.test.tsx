@@ -75,7 +75,7 @@ describe('shared Sheet', () => {
   })
 
   it('REQ-SHARED-058 replaces the hand-built mobile filter sheets', () => {
-    for (const path of ['components/decks/DeckListFilters.tsx', 'app/[lang]/planner/community/CommunityClient.tsx', 'features/catalog/components/FilterSidebar.tsx']) {
+    for (const path of ['features/decks/components/DeckListFilters.tsx', 'app/[lang]/planner/community/CommunityClient.tsx', 'features/catalog/components/FilterSidebar.tsx']) {
       const file = source(path)
       expect(file, path).toContain("from '@/components/ui/Sheet'")
       expect(file, path).not.toContain('popup-drawer')

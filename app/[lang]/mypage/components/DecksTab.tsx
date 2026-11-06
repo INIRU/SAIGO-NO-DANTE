@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useLocale } from 'next-intl'
 import { Bookmark, Layers, Plus, Trash2, X } from 'lucide-react'
 import { Link } from '@/lib/i18n/navigation'
-import DeckCard, { type DeckSummary } from '@/components/decks/DeckCard'
+import DeckCard, { type DeckSummary } from '@/features/decks/components/DeckCard'
 import { getCommunityCopy } from '@/features/community'
 import styles from '@/styles/components/CommunityProfile.module.css'
 

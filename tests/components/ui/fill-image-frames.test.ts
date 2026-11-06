@@ -4,7 +4,7 @@ import { expect, it } from 'vitest'
 // A `fill` image is absolutely placed in its nearest positioned box. Styles written with styled-jsx can arrive after the
 // first paint (Safari, streamed pages), so the box that holds a fill image must be positioned and sized with global classes.
 const frames = [
-  ['components/deck-analysis/DeckInsights.tsx', 'deck-passives__thumb'],
+  ['features/decks/components/DeckInsights.tsx', 'deck-passives__thumb'],
   ['components/planner/SkillExchangePanel.tsx', 'skx__thumb'],
   ['components/planner/deck/SuggestionNote.tsx', 'aria-expanded={open}'],
 ] as const

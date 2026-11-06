@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { decodeDeckCode, encodeDeckCode } from '@/components/deck-builder/deckCodeUtils'
+import { decodeDeckCode, encodeDeckCode } from '@/lib/decks/deck-code-utils'
 import type { EGO, Identity, Sinner } from '@/lib/types'
 
 function pad2(value: number): string {
