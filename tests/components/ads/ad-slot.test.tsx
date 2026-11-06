@@ -24,6 +24,18 @@ describe('ad slot', () => {
     expect(html).not.toContain('data-full-width-responsive')
   })
 
+  it('REQ-SHARED-085 gives each place its own ad unit, so the report shows what each place earns', () => {
+    const unit = (place: 'top' | 'inline' | 'left' | 'panel') => renderToStaticMarkup(<AdSlot place={place} />).match(/data-ad-slot="(\d+)"/)?.[1]
+    pathname = '/ko/mirror-dungeon'
+    expect(unit('top')).toBe('2699879515')
+    pathname = '/ko/decks/1'
+    expect(unit('inline')).toBe('1649300531')
+    pathname = '/ko/motion/skills/watch'
+    expect(unit('panel')).toBe('6377068943')
+    expect(source('components/ads/AdSlot.tsx')).toMatch(/ADSENSE_SLOTS\[rail \? 'rail' : place\]/)
+    expect(source('lib/seo/metadata.ts')).toMatch(/rail: '1316313953'/)
+  })
+
   it('REQ-SHARED-085 draws nothing outside development without a unit, and nothing on an ad-free page', () => {
     pathname = '/ko/decks/1'
     expect(renderToStaticMarkup(<AdSlot slot={null} place="inline" />)).toBe('')
