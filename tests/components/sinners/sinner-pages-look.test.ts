@@ -46,3 +46,10 @@ describe('REQ-CATALOG-032 sinner detail top', () => {
     expect(read('styles/components/SinnerDetail.module.css')).toContain('grid-template-columns: repeat(auto-fill, minmax(7.5rem, 1fr))')
   })
 })
+
+describe('REQ-CATALOG-031 lineup art stays sharp', () => {
+  it('REQ-CATALOG-031 asks for an image as wide as the cover crop needs, not the column width', () => {
+    // object-fit: cover fills a column up to 44rem tall with 16:9 art, so the bitmap must be about 44rem × 16/9 wide
+    expect(read('components/sinners/SinnerLineup.tsx')).toContain('sizes="(min-width: 1024px) 80rem, 100vw"')
+  })
+})

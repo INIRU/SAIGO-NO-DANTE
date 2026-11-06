@@ -29,8 +29,9 @@ export default async function SinnerLineup({ sinners }: { sinners: Sinner[] }) {
                   src={art}
                   alt=""
                   fill
-                  sizes="(min-width: 1024px) 34rem, 100vw"
-                  quality={80}
+                  // cover crops the 16:9 art to the column's height (up to 44rem), so a wide column needs ~44rem × 16/9 of width
+                  sizes="(min-width: 1024px) 80rem, 100vw"
+                  quality={85}
                   placeholder="blur"
                   blurDataURL={getBlurDataURL(art) ?? BLUR_PLACEHOLDER}
                   loading={i < 6 ? 'eager' : 'lazy'}
