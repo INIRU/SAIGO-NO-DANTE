@@ -1,6 +1,6 @@
 // Uploads the assist recognition models (public/models/**/*.onnx|json) to Storage under models/<version>/ and the runtime
 // data the workers fetch (ONNX .wasm, Tesseract language data) under runtime/<version>/, then writes both versions into
-// lib/vision/model-assets.ts. The runtime files are build copies: run `npm run build:assist-worker` and
+// features/assist/lib/model-assets.ts. The runtime files are build copies: run `npm run build:assist-worker` and
 // `npm run build:assist-ocr` first. Run after replacing a model or upgrading onnxruntime-web / tesseract:
 // npm run upload:assist-models
 // `-- --dry-run` lists what would be sent and touches neither Storage nor model-assets.ts.
@@ -33,7 +33,7 @@ async function main() {
     { folder: 'models', version: assistModelVersion(), files: assistModelFiles(), constant: 'ASSIST_MODEL_VERSION' },
     { folder: 'runtime', version: assistRuntimeVersion(), files: assistRuntimeFiles(), constant: 'ASSIST_RUNTIME_VERSION' },
   ]
-  const assets = resolve(MODELS_DIR, '../../lib/vision/model-assets.ts')
+  const assets = resolve(MODELS_DIR, '../../features/assist/lib/model-assets.ts')
   let source = readFileSync(assets, 'utf8')
   for (const { folder, version, files, constant } of groups) {
     if (!files.length) throw new Error(`no ${folder} files under public/models (run the build:assist-* scripts first)`)

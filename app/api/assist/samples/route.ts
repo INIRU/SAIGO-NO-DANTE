@@ -2,7 +2,7 @@ import { after, NextResponse } from 'next/server'
 import { randomUUID } from 'node:crypto'
 import { checkRequestRateLimit, rateLimitResponse } from '@/lib/rate-limit'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { parseSampleMeta, SAMPLE_BUCKET, SAMPLE_KEEP_MS, SAMPLE_MAX_FRAMES, SAMPLE_MAX_FRAME_BYTES } from '@/lib/vision/assist-samples'
+import { parseSampleMeta, SAMPLE_BUCKET, SAMPLE_KEEP_MS, SAMPLE_MAX_FRAMES, SAMPLE_MAX_FRAME_BYTES } from '@/features/assist'
 
 /** All uploads together, per UTC day; later samples are refused for the day. */
 const DAILY_BYTES = 2 * 1024 ** 3
