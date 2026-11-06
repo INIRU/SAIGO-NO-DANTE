@@ -1,7 +1,7 @@
 // @ts-nocheck -- developer tool run with tsx; Playwright page callbacks are untyped.
 /**
  * Replays downloaded sale samples (sale-unresolved) through the app's sale reading: the shipped full-frame OCR on every
- * frame, then sellCost and readSaleStep (lib/vision/sell-evidence.ts) in frame order, as useAssistCapture does. A sample
+ * frame, then sellCost and readSaleStep (features/assist/lib/sell-evidence.ts) in frame order, as useAssistCapture does. A sample
  * is `sold` when a sale is recorded, which in the app means it would not have been uploaded.
  * Usage: npx tsx scripts/vision/replay_sale_samples.ts <samples dir> <out.json>   (samples dir from pull_samples.ts)
  * REPLAY_OCR_CACHE=<file.json> keeps the OCR between runs, so a change to the sale rules replays in seconds.
@@ -11,7 +11,7 @@ import { createServer } from 'node:http'
 import path from 'node:path'
 import { build } from 'esbuild'
 import { chromium } from 'playwright'
-import { EMPTY_SALE_STATE, readSaleStep, sellCost, sellDialog, sellGiftId, sellQuestion } from '../../lib/vision/sell-evidence'
+import { EMPTY_SALE_STATE, readSaleStep, sellCost, sellDialog, sellGiftId, sellQuestion } from '../../features/assist/lib/sell-evidence'
 
 const [samplesDir, outFile] = process.argv.slice(2)
 const rows = JSON.parse(readFileSync(path.join(samplesDir, 'rows.json'), 'utf8')).filter(row => String(row.reason).startsWith('sale'))

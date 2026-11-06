@@ -1,7 +1,7 @@
 import { expect, it } from 'vitest'
 import { renderToStaticMarkup } from 'react-dom/server'
 import DetectionToggles from '@/components/planner/run/DetectionToggles'
-import { DETECTION_STORAGE_KEY, readDetectionSettings } from '@/lib/vision/detection-settings'
+import { DETECTION_STORAGE_KEY, readDetectionSettings } from '@/features/assist/lib/detection-settings'
 
 const storage = (value: string | null) => ({ getItem: (key: string) => key === DETECTION_STORAGE_KEY ? value : null })
 

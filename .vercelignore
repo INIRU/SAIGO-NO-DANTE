@@ -1,4 +1,4 @@
-# Assist recognition models: a deployed site reads them from Supabase Storage (lib/vision/model-assets.ts,
+# Assist recognition models: a deployed site reads them from Supabase Storage (features/assist/lib/model-assets.ts,
 # `npm run upload:assist-models`); a local dev server reads these copies.
 public/models/**/*.onnx
 public/models/**/*.json

@@ -42,7 +42,7 @@ export function getFusionTierGifts(state: RunState, themes: ThemeData[], giftMap
 }
 
 /**
- * Scene labels (lib/vision scene classifier) where gifts on screen are offered or shown outside combat, so a sighting
+ * Scene labels (features/assist/lib scene classifier) where gifts on screen are offered or shown outside combat, so a sighting
  * may move a gift forward. battle/battle_setup freeze the promotion; loading, unknown labels or no stable scene leave
  * it as it is.
  */
