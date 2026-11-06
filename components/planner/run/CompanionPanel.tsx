@@ -17,7 +17,7 @@ import { recipeIngredientsInInventory, recipeOwnedGiftIds, themeExclusiveGiftIds
 import { getLocalizedName } from '@/lib/i18n/localize'
 import type { SupportedLang } from '@/lib/i18n/types'
 import type { FloorThemeObservation, FusionEvidence, GiftSale, PopupAcquisition } from '@/features/assist/hooks/useAssistCapture'
-import type { MdEvent, MdEventChoice } from '@/components/mirror-dungeon/types'
+import type { MdEvent, MdEventChoice } from '@/features/mirror-dungeon'
 import CompanionAcquisitionOverlay, { fusionFeedback, type AcquisitionOverlayEvent } from './CompanionAcquisitionOverlay'
 import CompanionNextFloorButton from './CompanionNextFloorButton'
 import { giftBadges, pickPipMode } from '@/lib/planner/pip-view'

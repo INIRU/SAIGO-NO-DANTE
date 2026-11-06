@@ -2,10 +2,10 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it, vi } from 'vitest'
 import { KeywordProvider, type KeywordInfo } from '@/components/providers/KeywordProvider'
 import SkillDescription from '@/components/skill/SkillDescription'
-import KeywordCard, { type KeywordEntry } from '@/app/[lang]/keywords/KeywordCard'
+import KeywordCard, { type KeywordEntry } from '@/app/[lang]/keywords/_components/KeywordCard'
 import { KeywordChipDescription } from '@/components/decks/NoteChips'
 import DeckIdentityCard, { PassiveDescriptionLines, type IdentitySlot } from '@/components/deck-detail/DeckIdentityCard'
-import { EffectText } from '@/components/ui/GiftDetailModal'
+import { EffectText } from '@/features/mirror-dungeon/components/GiftDetailModal'
 import type { GameTextRefNames } from '@/lib/db/game-text-refs'
 
 const REFS: GameTextRefNames = {

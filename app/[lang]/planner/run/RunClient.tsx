@@ -17,7 +17,7 @@ import { decodedPlanToPlannerState, decodePlan, loadPlanForRun, runStateToPlanne
 import { enrichIdentitySlotsForGiftConditions } from '@/lib/planner/gift-condition-status'
 import { useRunStore } from '@/lib/stores/run'
 import type { ThemeData, GiftData, RecipeData, IdentityData, SinnerData, SkillSummary, EgoData, PassiveData } from '@/lib/planner/types'
-import type { MdEvent, MdEventChoice } from '@/components/mirror-dungeon/types'
+import type { MdEvent, MdEventChoice } from '@/features/mirror-dungeon'
 import RunSetup from '@/components/planner/run/RunSetup'
 import FloorPanel, { type RunView } from '@/components/planner/run/FloorPanel'
 import CompanionPanel from '@/components/planner/run/CompanionPanel'

@@ -1,7 +1,7 @@
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it, vi } from 'vitest'
 import { KeywordProvider, useFormatSkillDesc, type KeywordInfo } from '@/components/providers/KeywordProvider'
-import { EffectText } from '@/components/ui/GiftDetailModal'
+import { EffectText } from '@/features/mirror-dungeon/components/GiftDetailModal'
 
 vi.mock('next-intl', () => ({ useLocale: () => 'ko', useTranslations: () => (key: string) => key }))
 vi.mock('@/lib/i18n/navigation', () => ({ Link: 'a' }))

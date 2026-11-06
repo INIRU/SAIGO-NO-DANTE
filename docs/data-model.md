@@ -11,7 +11,7 @@
 | 수감자·인격·E.G.O | `sinners`, `identities`, `skills`, `passives`, `ego`, `ego_skills`, `ego_passives` | `lib/db/queries.ts`, `lib/types/index.ts` |
 | 정신력·설정 | `identity_sanity_conditions`, `mental_condition_templates`, `panic_types`, `app_config` | `lib/db/queries.ts` |
 | 키워드와 게임 원문 참조 | `keyword_meta`, `game_text_refs` | `lib/keywords/`, `lib/game-text/` |
-| 거울 던전 | `ego_gifts`, `ego_gift_themes`, `ego_gift_recipes`, `md_events`, `md_event_choices`, `gift_presets`(로그인 사용자의 기프트 프리셋) | `lib/planner/`, `lib/mirror-dungeon/` |
+| 거울 던전 | `ego_gifts`, `ego_gift_themes`, `ego_gift_recipes`, `md_events`, `md_event_choices`, `gift_presets`(로그인 사용자의 기프트 프리셋) | `lib/planner/`, `features/mirror-dungeon/lib/` |
 | 덱 | `decks`, `deck_identities`, `deck_egos`, `deck_votes`, `deck_comments`, `deck_bookmarks` | `app/api/decks/`, `lib/decks/` |
 | 플래너 | `md_plans`(편성과 층별 계획은 JSON), `md_plan_votes`, `md_plan_comments`, `final_gift_presets` | `app/api/planner/`, `lib/planner/` |
 | 친구 코드 게시판 | `friend_posts`(지원 인격·인격 구해요 글), `friend_exchanges`(코드 교환), `friend_want_stats`(인격별 요청 수), `friend_requests`(승인 후 공개 글의 코드 요청), `friend_reports`, `friend_blocks` | `app/api/friend-codes/`, `features/friends/` |
@@ -122,7 +122,7 @@ DB 백업(`2026-03-23/identities.json`, 저장소 밖 `limbus-db-backups/`에 �
 
 ## 거울 던전 기프트 프리셋
 
-`20261014032217_gift_presets.sql`을 적용했다(2026-10-14). `limbus.gift_presets`는 로그인 사용자의 거울 던전 기프트 프리셋으로, 사용자(`user_id` → `profiles.id`, 계정이 지워지면 함께 삭제)마다 칸(`slot`) 1~5에 하나씩 둔다. `name`은 20자까지이고 비어 있을 수 있다. `groups`는 묶음 1~6개의 JSON 배열 `[{ name, gifts, memo }]`이다. `gifts`는 `ego_gifts.game_id`를 문자열로 적은 목록(프리셋 전체 60개까지, 한 기프트는 한 묶음에만), `name`은 20자, `memo`는 100자까지다. 표는 배열 여부·묶음 수·전체 크기(8,192바이트)만 막고, 묶음 안의 형식은 `/api/mirror-dungeon/gift-presets`(GET·PUT·DELETE)가 `lib/mirror-dungeon/gift-preset-code.ts`의 `giftPresetBodySchema`로 확인한다. RLS를 켜고 공개 역할 권한을 뺐으며 서비스 역할만 읽고 쓴다. API는 세션 이메일의 프로필 것만 다루고, 읽기는 계정을 만들지 않는다. 동기화(추출 도구)는 이 표를 읽거나 쓰지 않는다. 검사는 `tests/sql/gift-presets.sql`.
+`20261014032217_gift_presets.sql`을 적용했다(2026-10-14). `limbus.gift_presets`는 로그인 사용자의 거울 던전 기프트 프리셋으로, 사용자(`user_id` → `profiles.id`, 계정이 지워지면 함께 삭제)마다 칸(`slot`) 1~5에 하나씩 둔다. `name`은 20자까지이고 비어 있을 수 있다. `groups`는 묶음 1~6개의 JSON 배열 `[{ name, gifts, memo }]`이다. `gifts`는 `ego_gifts.game_id`를 문자열로 적은 목록(프리셋 전체 60개까지, 한 기프트는 한 묶음에만), `name`은 20자, `memo`는 100자까지다. 표는 배열 여부·묶음 수·전체 크기(8,192바이트)만 막고, 묶음 안의 형식은 `/api/mirror-dungeon/gift-presets`(GET·PUT·DELETE)가 `features/mirror-dungeon/lib/gift-preset-code.ts`의 `giftPresetBodySchema`로 확인한다. RLS를 켜고 공개 역할 권한을 뺐으며 서비스 역할만 읽고 쓴다. API는 세션 이메일의 프로필 것만 다루고, 읽기는 계정을 만들지 않는다. 동기화(추출 도구)는 이 표를 읽거나 쓰지 않는다. 검사는 `tests/sql/gift-presets.sql`.
 
 비로그인 사용자의 프리셋은 브라우저 localStorage `snd-gift-presets`에 같은 모양(`{ active, list: [{ id, name, groups }] }`)으로 남는다. 예전 모양(`{ id, name, gifts }`, 최대 10개)은 묶음 1개짜리로 읽는다. 로그인 사용자의 브라우저에는 계정 프리셋의 사본(`snd-gift-presets-account`)이 있고 서버 응답이 오면 서버 것으로 바뀐다. 표가 없거나 API가 실패하면 로그인 사용자도 브라우저 프리셋을 쓴다. 공유 코드는 `{ v: 1, n, g: [[이름, 메모, 기프트]] }`를 deflate한 base64url 문자열이고 8,000자를 넘거나 형식이 다르면 읽지 않는다.
 

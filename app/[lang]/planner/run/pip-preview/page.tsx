@@ -4,7 +4,7 @@ import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { GIFT_COLUMNS, MD_EVENT_COLUMNS, MD_EVENT_CHOICE_COLUMNS } from '@/lib/db/columns'
 import { normalizePlannerThemeId } from '@/lib/planner/types'
-import type { MdEvent, MdEventChoice } from '@/components/mirror-dungeon/types'
+import type { MdEvent, MdEventChoice } from '@/features/mirror-dungeon'
 import PipPreviewWrapper from './PipPreviewWrapper'
 
 /**

@@ -29,7 +29,7 @@ vi.mock('@/lib/supabase/admin', () => ({
     }),
   }),
 }))
-vi.mock('@/app/[lang]/keywords/KeywordsClient', () => ({ default: function KeywordsClient() { return null } }))
+vi.mock('@/app/[lang]/keywords/_components/KeywordsClient', () => ({ default: function KeywordsClient() { return null } }))
 vi.mock('@/app/[lang]/keywords/loading', () => ({ default: function KeywordsLoading() { return null } }))
 vi.mock('@/components/providers/StaticQueryAdapter', () => ({ default: function StaticQueryAdapter() { return null } }))
 

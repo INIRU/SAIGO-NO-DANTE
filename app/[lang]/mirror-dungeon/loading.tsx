@@ -1,2 +1,2 @@
-import MirrorDungeonSkeleton from '@/components/mirror-dungeon/MirrorDungeonSkeleton'
+import MirrorDungeonSkeleton from '@/features/mirror-dungeon/components/MirrorDungeonSkeleton'
 export default function Loading() { return <MirrorDungeonSkeleton /> }
