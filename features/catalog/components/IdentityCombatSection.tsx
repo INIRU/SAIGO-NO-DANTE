@@ -18,9 +18,11 @@ type Props = {
   sinColor: string
   allowedKeywords: ReadonlySet<string>
   model: ReturnType<typeof useIdentitySkillModel>
+  /** Inside the identity modal: smaller skill boxes, no card around each skill */
+  compact?: boolean
 }
 
-export default function IdentityCombatSection({ identity, sinColor, allowedKeywords, model, level }: Props) {
+export default function IdentityCombatSection({ identity, sinColor, allowedKeywords, model, level, compact = false }: Props) {
   const [activeTab, setActiveTab] = useState<'skills' | 'passives'>('skills')
   const shouldReduceMotion = useReducedMotion()
   const t = useTranslations()
@@ -95,6 +97,7 @@ export default function IdentityCombatSection({ identity, sinColor, allowedKeywo
               skillDiffs={skillDiffResult?.diffs}
               newSkills={skillDiffResult?.newSkills}
               nextLevel={nextLevel}
+              compact={compact}
             />
           </m.div>
         )}

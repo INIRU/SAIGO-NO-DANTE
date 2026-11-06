@@ -49,3 +49,12 @@ describe('REQ-KEYWORDS-008 a skill card outside the identity page reads its text
     expect(tokens(html)).toBe(1)
   })
 })
+
+describe('REQ-CATALOG-037 a skill card outside the identity page draws the game skill box', () => {
+  it('uses the game frame and name plate instead of the old frame and banner', () => {
+    const html = card(DONGBAEK)
+    expect(html).toContain('ui/skill-frame/gloom-3.webp')
+    expect(html).toContain('ui/skill-frame/gloom-name.webp')
+    expect(html).not.toContain('/assets/skill-frames/')
+  })
+})
