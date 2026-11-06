@@ -10,11 +10,11 @@ import { GIFT_COLUMNS, RECIPE_COLUMNS, MD_EVENT_COLUMNS, MD_EVENT_CHOICE_COLUMNS
 import { readAllRows } from '@/lib/meta/pagination'
 import { getTranslations } from 'next-intl/server'
 import PlannerClient from './PlannerClient'
-import PlannerSkeleton from '@/components/planner/PlannerSkeleton'
+import PlannerSkeleton from '@/features/planner/components/PlannerSkeleton'
 import PageHeader from '@/components/ui/PageHeader'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import StaticQueryAdapter from '@/components/providers/StaticQueryAdapter'
-import { OBSERVATION_COLUMNS, observationFrom, type ObservationRow } from '@/lib/planner/observation'
+import { OBSERVATION_COLUMNS, observationFrom, type ObservationRow } from '@/features/planner'
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params

@@ -1,5 +1,5 @@
 // The skill replacements from one skill-count line to another. Shared: the Assist reads the shop window (features/assist),
-// the planner's PiP lists the purchases (components/planner/run/CompanionSkillExchange), and a planner view must not
+// the planner's PiP lists the purchases (features/planner/components/CompanionSkillExchange), and a planner view must not
 // pull the whole Assist entry just for this function.
 
 /** Skill 1/2/3 copies of one identity in the run deck. */

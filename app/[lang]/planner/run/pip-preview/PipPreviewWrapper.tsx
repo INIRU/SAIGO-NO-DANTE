@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import CompanionView, { type PipActions, type PipView } from '@/components/planner/run/CompanionView'
+import CompanionView, { type PipActions, type PipView } from '@/features/planner/components/CompanionView'
 import { giftBadges } from '@/lib/planner/pip-view'
 import type { GiftData, ThemeData } from '@/lib/planner/types'
 import type { MdEvent, MdEventChoice } from '@/features/mirror-dungeon'

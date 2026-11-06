@@ -1,4 +1,4 @@
-// The CLEAR BONUS offer shape and pick rule. Shared: the Assist reads the offer, the planner's tips (lib/planner/pip-tips)
+// The CLEAR BONUS offer shape and pick rule. Shared: the Assist reads the offer, the planner's tips (features/planner/lib/pip-tips)
 // use it, and shared code (lib/) cannot import features/assist.
 
 /** One pack card's clear bonus. `place`: its UI x; `themeIds`: the pack its name reads as, when read. */

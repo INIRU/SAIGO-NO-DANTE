@@ -1,6 +1,6 @@
 import { notePlainText } from '@/lib/notes/blocks'
 import { resolvePlannerIdentity } from '@/lib/planner/catalog-references'
-import { trimPlanDetailCatalog } from '@/lib/planner/plan-detail-catalog'
+import { trimPlanDetailCatalog, OBSERVATION_COLUMNS, observationFrom, type ObservationRow } from '@/features/planner'
 import { selectUptieRows } from '@/lib/identity/skill-model'
 import type { Metadata } from 'next'
 import { localeUrl, metaText, pageMetadata } from '@/lib/seo/metadata'
@@ -21,7 +21,6 @@ import CoVisitedLane from '@/features/community/components/CoVisitedLane'
 import { RecommendationLaneSkeleton } from '@/features/decks/components/RecommendationSkeleton'
 import type { SupportedLang } from '@/lib/i18n/types'
 import PlanDetailClient from './PlanDetailClient'
-import { OBSERVATION_COLUMNS, observationFrom, type ObservationRow } from '@/lib/planner/observation'
 import PlanDetailSkeleton from './PlanDetailSkeleton'
 
 interface Props {

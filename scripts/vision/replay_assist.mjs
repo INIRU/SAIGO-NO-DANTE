@@ -359,7 +359,7 @@ export function evaluate(truth, record) {
 /** Short hashes of the app files the replay exercises (other people edit them while replays run). */
 function appFileHashes() {
   const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
-  return Object.fromEntries(['features/assist/hooks/useAssistCapture.ts', 'features/assist/lib/fusion-evidence.ts', 'features/assist/lib/sell-evidence.ts', 'components/planner/run/CompanionPanel.tsx',
+  return Object.fromEntries(['features/assist/hooks/useAssistCapture.ts', 'features/assist/lib/fusion-evidence.ts', 'features/assist/lib/sell-evidence.ts', 'features/planner/components/CompanionPanel.tsx',
     'public/models/assist-scene/scene-worker.js', 'public/models/assist-ocr/ocr-worker.js'].map(file => {
     try { return [file, crypto.createHash('sha1').update(fs.readFileSync(path.join(root, file))).digest('hex').slice(0, 10)] } catch { return [file, null] }
   }))

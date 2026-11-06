@@ -28,7 +28,7 @@ for (const screen of [
   '@/app/[lang]/collection/_components/CollectionClient', '@/app/[lang]/friends/_components/FriendsClient', '@/app/[lang]/announcements/AnnouncementsClient',
   '@/features/account/components/DeveloperConsole', '@/features/tools/components/ExperienceCalculator', '@/features/tools/components/LunacyCalendar',
   '@/features/tools/components/DamageCalculator', '@/features/motion/components/MotionBrowser', '@/features/news/components/NewsCalendar', '@/features/account/components/SupportDesk', '@/features/account/components/SupportSkeleton',
-  '@/features/friends/components/FriendsSkeleton', '@/components/planner/PlannerSkeleton', '@/features/mirror-dungeon/components/MirrorDungeonSkeleton',
+  '@/features/friends/components/FriendsSkeleton', '@/features/planner/components/PlannerSkeleton', '@/features/mirror-dungeon/components/MirrorDungeonSkeleton',
   '@/features/catalog/components/BrowserSkeleton', '@/features/catalog/components/SinnerLineup', '@/features/community/components/BoardHeader', '@/features/community/components/BoardSkeleton',
   '@/components/providers/StaticQueryAdapter', '@/components/layout/RequestTimeRoute', '@/features/account/components/LegalDocument', '@/components/ui/PageHeader',
   '@/lib/db/queries', '@/lib/db/collection', '@/lib/db/announcements', '@/lib/db/game-text-refs', '@/features/decks/server/builder-data', '@/lib/data/legal', '@/features/news/server/data',

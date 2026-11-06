@@ -1,4 +1,4 @@
-import type { EgoData, EgoSlot, IdentityData, IdentitySlot } from './types'
+import type { EgoData, EgoSlot, IdentityData, IdentitySlot } from '@/lib/planner/types'
 
 /** A saved deck's identity row, as /api/decks/[id] (nested identity) or the deck tables (flat id) return it. */
 export interface DeckIdentityRow {

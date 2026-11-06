@@ -1,6 +1,5 @@
 import { THEME_KEYWORDS, normalizeThemeKeyword } from '@/lib/constants/keywords'
 import { notePreviewText } from '@/lib/notes/blocks'
-import type { PlanSummary } from '@/components/planner/PlanCard'
 import { DECK_MAIN_KEYWORDS, computeDeckMainKeywordsFromSlots, normalizeDeckMainKeyword } from '@/lib/decks/keyword-rules'
 import {
   getLegacyPlanFloorDifficulty,
@@ -10,6 +9,41 @@ import {
   type FloorDifficulty,
 } from '@/lib/planner/floor-difficulty'
 import type { Difficulty } from '@/lib/planner/types'
+
+export type PlanSummary = {
+  id: string
+  title: string
+  description: string | null
+  difficulty: Difficulty
+  deck: { identity_id?: string; sinner_id?: string; name_kr?: string; game_id?: string | null; folder_name?: string | null; slot_order?: number }[] | null
+  egos: { ego_id?: string }[] | null
+  tags: string[] | null
+  vote_count: number
+  view_count: number
+  comment_count: number
+  created_at: string
+  lang?: 'ko' | 'en' | 'ja' | null
+  profiles: { username: string | null; avatar_url: string | null } | null
+  guest_tag?: string | null
+  /** Pre-computed server-side: theme keywords extracted from deck */
+  theme_keywords?: string[]
+  /** Pre-computed server-side: theme + combat keywords used by board filters */
+  filter_keywords?: string[]
+  /** Planner-selected main keywords stored through tags for schema compatibility */
+  selected_keywords?: string[]
+  /** Compact server-side floor difficulty summary for list cards */
+  difficulty_summary?: {
+    key: '1-5' | '6-10' | '11-15'
+    start: number
+    end: number
+    counts: Partial<Record<Difficulty, number>>
+  }[]
+  /** Pre-computed server-side: gifts the plan aims for (floor picks and final gifts) and the theme packs it routes through */
+  gift_ids?: number[]
+  theme_ids?: number[]
+  /** Pre-computed server-side: identity name_kr values for search */
+  identity_names?: string[]
+}
 
 const THEME_KW_SET = new Set<string>(THEME_KEYWORDS)
 const COMBAT_KEYWORDS = ['참격', '관통', '타격'] as const

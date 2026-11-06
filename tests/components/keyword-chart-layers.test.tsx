@@ -1,6 +1,6 @@
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it, vi } from 'vitest'
-import KeywordChart from '@/components/planner/KeywordChart'
+import KeywordChart from '@/features/planner/components/KeywordChart'
 
 vi.mock('next-intl', () => ({ useTranslations: () => (key: string, values?: { count?: number }) => `${key}:${values?.count ?? ''}` }))
 
