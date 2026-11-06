@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { usePathname } from 'next/navigation'
-import { ADSENSE_ACCOUNT, ADSENSE_DISPLAY_SLOT } from '@/lib/seo/metadata'
+import { ADSENSE_ACCOUNT, ADSENSE_SLOTS } from '@/lib/seo/metadata'
 import { isAdFreePath } from '@/lib/seo/ads'
 import styles from './AdSlot.module.css'
 
@@ -75,7 +75,8 @@ function useRailOffset(place: Place, pathname: string | null): number | null {
  * page, and an unfilled unit hides its box. Ad-free pages draw nothing; development and a preview build (NEXT_PUBLIC_AD_PREVIEW=1,
  * e.g. behind a tunnel AdSense does not serve) show the reserved place instead of an ad.
  */
-export default function AdSlot({ slot = ADSENSE_DISPLAY_SLOT, place, phoneOnly = false }: {
+export default function AdSlot({ slot: unitSlot, place, phoneOnly = false }: {
+  /** The place's own unit when left out; null draws no ad. */
   slot?: string | null; place: Place
   /** Only below 768px (a page whose other ads are the wide-screen side ones) */
   phoneOnly?: boolean
@@ -83,6 +84,7 @@ export default function AdSlot({ slot = ADSENSE_DISPLAY_SLOT, place, phoneOnly =
   const pathname = usePathname()
   const offset = useRailOffset(place, pathname)
   const rail = place === 'left' || place === 'right'
+  const slot = unitSlot === undefined ? ADSENSE_SLOTS[rail ? 'rail' : place] : unitSlot
   // a side ad that stands tells the page so: the page-start banner then gives way to it (owner, 2026-11-06)
   useEffect(() => {
     if (!rail || offset == null) return
