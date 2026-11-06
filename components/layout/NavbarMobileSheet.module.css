@@ -1,0 +1,20 @@
+/* The phone menu (NavbarMobileSheet): each group a gold heading with a rule, its pages as two columns of tiles. */
+.groups { display: flex; flex-direction: column; gap: 1.25rem; padding: 1.25rem 1rem 1.5rem; }
+.heading { display: flex; align-items: center; gap: .75rem; margin: 0 0 .625rem; color: var(--gold); font-family: var(--font-heading); font-size: .875rem; }
+.heading::after { content: ''; flex: 1; height: 1px; background: #2e2417; }
+.items { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .5rem; }
+.tile {
+  display: flex; align-items: center; min-height: 3rem; padding: 0 .875rem;
+  border: 1px solid #2e2417; border-radius: .375rem; background: var(--bg-panel);
+  color: var(--text-primary); font-size: .9375rem; font-weight: 500;
+  transition: border-color 150ms ease, background-color 150ms ease, transform 120ms cubic-bezier(.23, 1, .32, 1);
+}
+.tile:active { transform: scale(.97); }
+.tile[aria-current='page'] { border-color: var(--gold); background: rgb(200 144 10 / .1); color: var(--gold-light); }
+
+/* Groups settle in one after another (40ms apart) as the sheet opens; nothing waits on them. */
+@media (prefers-reduced-motion: no-preference) {
+  .group { animation: group-in 300ms cubic-bezier(.23, 1, .32, 1) both; animation-delay: calc(var(--i, 0) * 40ms); }
+}
+@keyframes group-in { from { opacity: 0; translate: 0 .5rem; } }
+@media (prefers-reduced-motion: reduce) { .tile { transition: none; } .tile:active { transform: none; } }
