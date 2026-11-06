@@ -1,6 +1,6 @@
 import { expect, it } from 'vitest'
 import { createInitialRunState, normalizeRunState, runReducer } from '../../../lib/planner/run-types'
-import { AUTO_ACQUIRE_EXCLUDED_GIFT_IDS } from '../../../lib/vision/popup-evidence'
+import { AUTO_ACQUIRE_EXCLUDED_GIFT_IDS } from '@/features/assist/lib/popup-evidence'
 
 const keyOf = (state: Parameters<typeof normalizeRunState>[0]) => JSON.stringify(normalizeRunState(state))
 

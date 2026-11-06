@@ -5,7 +5,7 @@ import { useTranslations } from 'next-intl'
 import { toast } from 'sonner'
 import { Copy, RotateCw } from 'lucide-react'
 import BaseModal from '@/components/ui/BaseModal'
-import { graphicsSettingsUrl, type GpuBlock } from '@/lib/vision/device'
+import { graphicsSettingsUrl, type GpuBlock } from '@/features/assist'
 
 /** Gold ring with its step number, as on the capture guide's screenshot callouts. */
 function Callout({ step, className = '', children }: { step: number; className?: string; children: ReactNode }) {
