@@ -80,6 +80,9 @@ describe('ad slot', () => {
     // a side ad starts below a full-bleed hero (a sinner's art) and rises to its place under the navbar as the page scrolls
     expect(code).toContain("document.querySelector('[data-ad-rail-below]')")
     expect(source('features/catalog/components/SinnerHero.tsx')).toContain('data-ad-rail-below')
+    // at the end of the page a side ad stops above the footer and scrolls up with it
+    expect(code).toContain("document.querySelector('.site-footer')")
+    expect(code).toMatch(/ad\.style\.top = `\$\{Math\.min\(top, floor\)\}px`/)
     // a hero's art that reaches the window edge does not count as content (it hid the right side ad on a sinner page)
     expect(code).toMatch(/box\.left <= 0 \|\| box\.right >= width/)
     // before the content is measured (the server render) there is no side ad, so it never lands on the content

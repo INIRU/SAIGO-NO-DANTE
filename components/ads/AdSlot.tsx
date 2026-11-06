@@ -82,8 +82,9 @@ function useRailOffset(place: Place, pathname: string | null): number | null | u
 }
 
 /**
- * A side ad starts below a page's full-bleed backdrop (`data-ad-rail-below`, e.g. a sinner's hero art) instead of over it, and
- * rises with the page to its usual place under the navbar (RAIL_TOP) as the backdrop scrolls away. Written straight to the
+ * A side ad stays between the page's top and its footer: it starts below a full-bleed backdrop (`data-ad-rail-below`, e.g. a
+ * sinner's hero art) instead of over it and rises with the page to its usual place under the navbar (RAIL_TOP); at the end of
+ * the page it stops GAP above the footer and scrolls up with it, never over it (owner, 2026-11-06). Written straight to the
  * element on scroll, so scrolling does not re-render the ad.
  */
 function useRailTop(rail: boolean) {
@@ -93,8 +94,13 @@ function useRailTop(rail: boolean) {
     let frame = 0
     const place = () => {
       frame = 0
+      const ad = ref.current
+      if (!ad) return
       const backdrop = document.querySelector('[data-ad-rail-below]')
-      if (ref.current) ref.current.style.top = backdrop ? `${Math.max(RAIL_TOP, backdrop.getBoundingClientRect().bottom + GAP)}px` : ''
+      const footer = document.querySelector('.site-footer')
+      const top = backdrop ? Math.max(RAIL_TOP, backdrop.getBoundingClientRect().bottom + GAP) : RAIL_TOP
+      const floor = footer ? footer.getBoundingClientRect().top - GAP - ad.offsetHeight : Infinity
+      ad.style.top = `${Math.min(top, floor)}px`
     }
     const schedule = () => { if (!frame) frame = requestAnimationFrame(place) }
     place()
