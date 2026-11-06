@@ -6,7 +6,7 @@ import { CATALOG_CACHE_CONTROL } from '@/lib/constants/http-cache'
 import { routing } from '@/lib/i18n/routing'
 import type { SupportedLang } from '@/lib/i18n/types'
 import { isMissingColumnError } from '@/lib/keywords/ref-text'
-import { buildEgoSkills, buildIdentitySkills, type EgoSkillRow, type IdentitySkillRow } from '@/lib/tools/skill-source'
+import { buildEgoSkills, buildIdentitySkills, type EgoSkillRow, type IdentitySkillRow } from '@/features/tools'
 
 const SKILL_COLUMNS = 'id, name, name_en, name_jp, skill_type, atk_type, sin_affinity, coins, base_power, coin_power, skill_order, variant_order, uptie_level, offense_level, image_id'
 const EGO_SKILL_COLUMNS = 'id, category, construe_level, name, name_en, name_jp, skill_type, sin_affinity, coins, base_power, coin_power, offense_level'

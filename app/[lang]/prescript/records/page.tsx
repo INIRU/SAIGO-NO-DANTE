@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { getTranslations } from 'next-intl/server'
 import { pageMetadata } from '@/lib/seo/metadata'
-import PrescriptRecords from '@/components/fun/prescript/PrescriptRecords'
+import PrescriptRecords from '@/features/tools/components/PrescriptRecords'
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params

@@ -5,7 +5,7 @@ import { getSinners, getIdentities, getEGOs } from '@/lib/db/queries'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import { metaText, pageMetadata } from '@/lib/seo/metadata'
 import PageHeader from '@/components/ui/PageHeader'
-import RandomClient from './RandomClient'
+import RandomClient from '@/features/tools/components/RandomClient'
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params

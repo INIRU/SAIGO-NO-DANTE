@@ -2,9 +2,9 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { applyEvent, createPrescriptRun, penance, endPrescriptRun, eventPrescript, feasible, gradeOf, missOffer, offer, receive, resist, reroll as rerollRun, startPrescripts, wanted, type PrescriptCard, type PrescriptContext, type PrescriptGrade,
-  type PrescriptEvent, type PrescriptRun, type PrescriptScope } from '@/lib/fun/prescript'
+  type PrescriptEvent, type PrescriptRun, type PrescriptScope } from '@/features/tools/lib/prescript'
 import { fusionResultFollows, EVENT_EXIT_SCENES, type OwnedGridRead, type FormationRead, plog } from '@/features/assist'
-import { HISTORY_KEY, readHistory, summarizeRun, withRun } from '@/lib/fun/prescript-history'
+import { HISTORY_KEY, readHistory, summarizeRun, withRun } from '@/features/tools/lib/prescript-history'
 import type { FloorThemeObservation, FusionEvidence, GiftSale, PopupAcquisition } from '@/features/assist/hooks/useAssistCapture'
 
 /** The last finished run's record in this browser. A run not yet ended is never kept: a reload or a break starts over
