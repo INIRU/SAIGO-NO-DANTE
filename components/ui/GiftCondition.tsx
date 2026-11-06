@@ -94,9 +94,14 @@ export function GiftConditionDivider({ text, condition, scope, status, children 
     <section className={styles.gate} data-level={status?.level ?? 'met'} aria-label={text}>
       <header className={styles.gateHead}>
         <i className={styles.rule} aria-hidden="true" />
-        <Image src={LOCK_URL} alt="" width={118} height={157} className={styles.lock} />
-        {icons.map(src => <Image key={src} src={src} alt="" width={24} height={24} className={styles.lockIcon} />)}
-        <strong>{text}</strong>
+        <span className={styles.gateTitle}>
+          <Image src={LOCK_URL} alt="" width={118} height={157} className={styles.lock} />
+          {icons.map(src => <Image key={src} src={src} alt="" width={24} height={24} className={styles.lockIcon} />)}
+          <strong>{text}</strong>
+        </span>
+        <i className={styles.rule} aria-hidden="true" />
+      </header>
+      {(scope || tiers.length > 1 || status) && <div className={styles.gateMeta}>
         {scope && <span className={styles.gateChip}>{t(scope === 'deployed' ? 'scopeDeployed' : 'scopeFormation')}</span>}
         {tiers.length > 1 && <span className={styles.gateChip}>{t('tierSteps', { steps: tiers.join(' / ') })}</span>}
         {status && <span className={styles.gateStatus} aria-label={summary(status).title}>
@@ -106,8 +111,7 @@ export function GiftConditionDivider({ text, condition, scope, status, children 
           <b aria-hidden="true">{counted}<small>/{status.need}</small></b>
           <em aria-hidden="true">{t(status.level === 'unmet' ? 'conditionUnmet' : 'conditionWarn')}</em>
         </span>}
-        <i className={styles.rule} aria-hidden="true" />
-      </header>
+      </div>}
       {children && <div className={styles.gateLines}>{children}</div>}
     </section>
   )

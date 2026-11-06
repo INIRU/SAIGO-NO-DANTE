@@ -21,7 +21,7 @@
 .item > :not(.text, .sub) { opacity: 0.6; transition: opacity 0.15s ease; }
 .item:hover { border-color: #4a3a22; color: var(--text-primary); }
 .item:hover > *, .item[aria-pressed='true'] > * { opacity: 1; }
-.item[aria-pressed='true'] { border-color: var(--gold); background: rgba(200, 144, 10, 0.12); color: var(--gold); }
+.item[aria-pressed='true'] { border-color: var(--accent, var(--gold)); background: color-mix(in srgb, var(--accent, var(--gold)) 14%, transparent); color: var(--accent, var(--gold)); }
 .item:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
 
 .icon { width: auto; max-width: 100%; object-fit: contain; }

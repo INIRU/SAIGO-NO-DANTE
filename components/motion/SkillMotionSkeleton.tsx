@@ -9,7 +9,7 @@ export function MotionBrowserSkeleton() {
         <div className="flex gap-6"><SkeletonLine w="3.5rem" h="1.5rem" /><SkeletonLine w="3.5rem" h="1.5rem" /></div>
         <Skeleton className="h-10 w-full sm:w-72" />
       </div>
-      <div className="grid grid-cols-[repeat(auto-fill,minmax(7.5rem,1fr))] gap-x-3 gap-y-4 sm:grid-cols-[repeat(auto-fill,minmax(9.5rem,1fr))]">{Array.from({ length: 12 }, (_, i) => <Skeleton key={i} className="aspect-[3/4]" />)}</div>
+      <div className="grid grid-cols-[repeat(auto-fill,minmax(7.5rem,1fr))] gap-x-3 gap-y-4">{Array.from({ length: 12 }, (_, i) => <Skeleton key={i} className="aspect-[3/4]" />)}</div>
     </div>
   )
 }

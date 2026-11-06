@@ -226,7 +226,7 @@ export default function DamageModifiers({ modifiers, setModifiers, coinCount }: 
                 {levels.length > 1 && <div className={styles.enhance}><GiftEnhancePicker level={level} max={Math.max(...levels) >= 2 ? 2 : 1} giftName={name} onChange={next => setLevel(chosen, next)} /></div>}
               </div>
               {text
-                ? <EffectText key={level} text={text} color={level === 2 ? '#e8b030' : level === 1 ? '#d8b878' : '#c8b898'} />
+                ? <EffectText key={level} text={text} color="#c8b898" />
                 : <p className={styles.hint} role={error ? 'alert' : 'status'}>{error ? t('picker.loadError') : t('picker.loading')}</p>}
               {chosen.effects && <ul className={styles.effectList}>{chosen.effects.map((effect, index) => <li key={index}>{effectLine(effect)}</li>)}</ul>}
               {unsupported > 0 && <p className={styles.hint}>{t('picker.unsupported', { count: unsupported })}</p>}

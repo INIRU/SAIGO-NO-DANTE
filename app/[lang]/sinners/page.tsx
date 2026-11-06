@@ -5,7 +5,7 @@ import { cacheLife, cacheTag } from 'next/cache'
 import { getSinners } from '@/lib/db/queries'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import SinnersInteractive from './SinnersInteractive'
-import SinnerCard from '@/components/sinners/SinnerCard'
+import SinnerLineup from '@/components/sinners/SinnerLineup'
 import JsonLd, { itemListJsonLd } from '@/components/seo/JsonLd'
 import { setRequestLocale } from 'next-intl/server'
 import type { SupportedLang } from '@/lib/i18n/types'
@@ -52,17 +52,7 @@ export default async function SinnersPage({ params }: { params: Promise<{ lang: 
       <JsonLd data={sinnerListLd} />
       <Suspense fallback={null}>
         <SinnersInteractive>
-          {/* 카드 그리드 — 서버에서 HTML로 렌더링되어 LCP 개선 */}
-          <div
-            className="sinners-grid grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 relative"
-            style={{ zIndex: 1 }}
-          >
-            {sinners.map((sinner, i) => (
-              <div key={sinner.id} className="sinner-card-item">
-                <SinnerCard sinner={sinner} index={i} priority={i < 6} />
-              </div>
-            ))}
-          </div>
+          <SinnerLineup sinners={sinners} />
         </SinnersInteractive>
       </Suspense>
     </>

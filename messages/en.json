@@ -2571,7 +2571,7 @@
     "countFiltered": "<b>{filtered}</b> of {total}",
     "sortPrefix": "Sort:",
     "sort": {
-      "default": "Default",
+      "default": "Newest",
       "name": "Name",
       "rarity": "Rarity",
       "grade": "Grade"

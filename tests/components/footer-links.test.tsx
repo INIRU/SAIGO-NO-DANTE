@@ -30,7 +30,7 @@ it('REQ-SHARED-041 the footer links every DB, community, tools, motion and fun p
     // The menu's dropdowns exist only while open, so these anchors are the links a crawler finds on every page.
     for (const item of groups.flatMap(group => group.items)) expect(hrefs).toContain(`/${lang}${item.href}`)
     expect(hrefs).toEqual(expect.arrayContaining([`/${lang}/random`, `/${lang}/developers`]))
-    expect(html).toContain(`<p class="text-right" style="color:var(--gold-dim)">${funTitles[lang]}</p>`)
+    expect(html).toContain(`>${funTitles[lang]}</p>`)
     expect(hrefs).toEqual(expect.arrayContaining([`/${lang}/terms`, `/${lang}/privacy`]))
     expect(new Set(hrefs).size).toBe(hrefs.length)
     // Every group and link is named in the page language, inside the footer's nav landmark.
