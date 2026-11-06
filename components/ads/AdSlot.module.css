@@ -89,14 +89,8 @@
   }
 }
 
-/* the left side ad scrolls with the page: only one sticky ad may be on screen (the right one) */
-.railScroll {
-  position: absolute;
-}
-
-/* a side ad with no room right now (or a page too short for the scrolling one): kept with the ad it holds, only hidden */
-.rail[data-off],
-.rail[data-short] {
+/* a side ad with no room right now: kept with the ad it holds, only hidden (a resize never asks AdSense again) */
+.rail[data-off] {
   display: none;
 }
 

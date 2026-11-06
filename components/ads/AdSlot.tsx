@@ -82,15 +82,13 @@ function useRailOffset(place: Place, pathname: string | null): number | null | u
 }
 
 /**
- * Where a side ad stands vertically. AdSense allows one sticky ad visible at a time (support.google.com/adsense/answer/10734935),
- * so only the right one is sticky; the left one scrolls with the page.
- * - Sticky (right): starts below a full-bleed backdrop (`data-ad-rail-below`, e.g. a sinner's hero art) and rises with the page
- *   to its place under the navbar (RAIL_TOP); at the end of the page it stops GAP above the footer and scrolls up with it.
- * - Scrolling (left): stands at the top of the page (below the backdrop when there is one); on a page too short to hold it
- *   above the footer it is hidden (`data-short`) rather than running into the footer.
- * Written straight to the element on scroll and resize, so neither re-renders the ad.
+ * Where a side ad stands vertically: both stay in view while the page scrolls (owner, 2026-11-07, choosing this over AdSense's
+ * "one sticky ad visible at a time", support.google.com/adsense/answer/10734935 — see DESIGN.md "광고"). Each starts below a
+ * full-bleed backdrop (`data-ad-rail-below`, e.g. a sinner's hero art) and rises with the page to its place under the navbar
+ * (RAIL_TOP); at the end of the page it stops GAP above the footer and scrolls up with it. Written straight to the element on
+ * scroll and resize, so neither re-renders the ad.
  */
-function useRailTop(rail: boolean, sticky: boolean) {
+function useRailTop(rail: boolean) {
   const ref = useRef<HTMLElement>(null)
   useEffect(() => {
     if (!rail) return
@@ -103,15 +101,7 @@ function useRailTop(rail: boolean, sticky: boolean) {
       const footer = document.querySelector('.site-footer')
       const below = backdrop ? backdrop.getBoundingClientRect().bottom + GAP : -Infinity
       const footerTop = footer ? footer.getBoundingClientRect().top : Infinity
-      if (sticky) {
-        ad.style.top = `${Math.min(Math.max(RAIL_TOP, below), footerTop - GAP - ad.offsetHeight)}px`
-        return
-      }
-      // page coordinates, against the element the absolute ad is placed in
-      const page = scrollY, base = ad.offsetParent ? ad.offsetParent.getBoundingClientRect().top + page : 0
-      const top = Math.max(RAIL_TOP, below + page)
-      ad.style.top = `${top - base}px`
-      ad.toggleAttribute('data-short', top + ad.offsetHeight > footerTop + page - GAP)
+      ad.style.top = `${Math.min(Math.max(RAIL_TOP, below), footerTop - GAP - ad.offsetHeight)}px`
     }
     const schedule = () => { if (!frame) frame = requestAnimationFrame(place) }
     place()
@@ -141,8 +131,7 @@ export default function AdSlot({ slot: unitSlot, place, phoneOnly = false }: {
   const pathname = usePathname()
   const offset = useRailOffset(place, pathname)
   const rail = place === 'left' || place === 'right'
-  const sticky = place === 'right'
-  const railRef = useRailTop(rail && offset != null, sticky)
+  const railRef = useRailTop(rail && offset != null)
   const slot = unitSlot === undefined ? ADSENSE_SLOTS[rail ? 'rail' : place] : unitSlot
   // Each side ad tells the page whether it stands ("on") or found no room ("off"): the page-start banner gives way to a side ad
   // and shows when neither fits, e.g. after the window narrows (owner, 2026-11-06). AdSlot.module.css reads the flags.
@@ -159,7 +148,7 @@ export default function AdSlot({ slot: unitSlot, place, phoneOnly = false }: {
   // resize comes back unfilled (owner, 2026-11-07). Hidden, its unit has no width and asks for nothing until it shows.
   if (rail && /^\/(?:ko|en|ja)\/?$/.test(pathname)) return null
   const off = rail && offset == null
-  const box = `${rail ? `${styles.rail}${sticky ? '' : ` ${styles.railScroll}`}` : place === 'top' ? styles.top : place === 'panel' ? styles.panel : styles.inline}${phoneOnly ? ` ${styles.phoneOnly}` : ''}`
+  const box = `${rail ? styles.rail : place === 'top' ? styles.top : place === 'panel' ? styles.panel : styles.inline}${phoneOnly ? ` ${styles.phoneOnly}` : ''}`
   const position = rail ? ({ [place]: `${offset ?? EDGE}px` } as CSSProperties) : undefined
   const unit = rail ? styles.railUnit : place === 'panel' ? styles.panelUnit : styles.topUnit
   const kind = place === 'panel' ? '' : 'site-ad '
