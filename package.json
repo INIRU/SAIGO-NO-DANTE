@@ -15,6 +15,7 @@
     "typecheck": "tsc --noEmit",
     "perf:sizes": "node scripts/perf/route-sizes.mjs",
     "perf:lighthouse": "node scripts/perf/lighthouse.mjs",
+    "perf:budget": "node scripts/perf/route-sizes.mjs --budget perf-budget.json",
     "audit:data": "tsx scripts/audit/data-integrity.ts",
     "env:pull": "vercel env pull .env.local"
   },

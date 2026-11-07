@@ -1,5 +1,5 @@
 // Per-route first-load JS and CSS (gzip + raw bytes) of the last `next build`.
-// usage: node scripts/perf/route-sizes.mjs [repo] [--out sizes.json] [--compare before.json]
+// usage: node scripts/perf/route-sizes.mjs [repo] [--out sizes.json] [--compare before.json] [--budget perf-budget.json]
 import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -75,6 +75,21 @@ export function compareSizes(before, after) {
     .sort((a, b) => b.jsGz + b.cssGz - (a.jsGz + a.cssGz))
 }
 
+/**
+ * Routes past their limit in a budget ({ route: { jsKB, cssKB } }, gzip KB): each JS or CSS size over its limit, and a budgeted
+ * route the build no longer has (a renamed route takes its limit along). In the budget's order.
+ */
+export function overBudget(sizes, budget) {
+  const over = []
+  for (const [route, limit] of Object.entries(budget)) {
+    const size = sizes[route]
+    if (!size) { over.push({ route, kind: 'missing', sizeKB: 0, limitKB: 0 }); continue }
+    if (size.jsGz > limit.jsKB * 1024) over.push({ route, kind: 'js', sizeKB: Math.ceil(size.jsGz / 1024), limitKB: limit.jsKB })
+    if (size.cssGz > limit.cssKB * 1024) over.push({ route, kind: 'css', sizeKB: Math.ceil(size.cssGz / 1024), limitKB: limit.cssKB })
+  }
+  return over
+}
+
 const kb = n => (n < 0 ? '-' : (n / 1024).toFixed(1) + 'KB')
 const signed = n => (n > 0 ? '+' : '') + (n / 1024).toFixed(1) + 'KB'
 
@@ -86,6 +101,17 @@ function main(argv) {
   const repo = argv.find((a, i) => !a.startsWith('--') && !argv[i - 1]?.startsWith('--')) ?? '.'
   const sizes = routeSizes(repo)
   if (flag('--out')) writeFileSync(flag('--out'), JSON.stringify(sizes, null, 1))
+  if (flag('--budget')) {
+    const over = overBudget(sizes, JSON.parse(readFileSync(flag('--budget'), 'utf8')))
+    for (const o of over) {
+      console.log(o.kind === 'missing' ? `${o.route}: in the budget but not in this build` : `${o.route}: ${o.kind} ${o.sizeKB}KB > ${o.limitKB}KB`)
+    }
+    if (over.length) {
+      console.log('Over the route size budget. Shrink it, or raise the limit in perf-budget.json with the reason in the PR.')
+      process.exitCode = 1
+    } else console.log('Within the route size budget.')
+    return
+  }
   const before = flag('--compare') ? JSON.parse(readFileSync(flag('--compare'), 'utf8')) : null
   if (before) {
     console.log('route'.padEnd(44), 'jsGz'.padStart(10), 'cssGz'.padStart(10))
