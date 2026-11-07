@@ -37,6 +37,7 @@
 - [데이터 모델](reference/data-model.md): 현재 표와 칸, 권한, 스키마 변경 기록.
 - [환경 변수](reference/env.md): 이름, 용도, 서버 전용 여부, 쓰는 곳.
 - [개발자 API와 협업 파트너](reference/partner-api.md): `/api/v1` 자원, 한도, 파트너 권한, 소식 보내기 양식, Discord 봇 연동.
+- [성능 측정](reference/performance.md): 라우트별 첫 로드 크기와 Lighthouse 재는 법, 화면 8개의 기준·지금 숫자, 레이아웃 묶음의 큰 모듈.
 
 **그 밖**
 
