@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { createEarlyErrors } from '@/lib/sentry/early'
-import { scrubEvent } from '@/lib/sentry/scrub'
+import { scrubEvent, stripUrlQueries } from '@/lib/sentry/scrub'
 
 const read = (path: string) => readFileSync(resolve(__dirname, '../../..', path), 'utf8')
 
@@ -57,5 +57,51 @@ describe('Sentry after the page loads', () => {
     const init = read('lib/sentry/client-init.ts')
     expect(init).toMatch(/beforeSend: scrubEvent/)
     expect(init).toMatch(/beforeSendTransaction: scrubEvent/)
+  })
+})
+
+describe('URL queries in what the browser Sentry sends', () => {
+  it('REQ-SHARED-089 strips queries and fragments from URLs in spans, breadcrumbs and replay URLs', () => {
+    const page = 'https://saigo-no-dante.com/ko/decks?q=secret&kw=burn#top'
+    const event = stripUrlQueries({
+      type: 'transaction',
+      spans: [
+        { description: `GET https://googleads.g.doubleclick.net/pagead/ads?client=x&url=${encodeURIComponent(page)}`, data: { 'url.full': page, 'http.query': '?q=secret' } },
+        { description: 'GET /api/search?q=secret', data: { 'url.path': '/api/search' } },
+      ],
+      breadcrumbs: [{ category: 'navigation', data: { from: '/ko/decks?q=secret', to: '/ko/planner' } }],
+      urls: [page],
+      contexts: { trace: { data: { 'url.full': page } } },
+    })
+    expect(JSON.stringify(event)).not.toMatch(/secret|kw=burn|#top/)
+    expect(event.spans[0].description).toBe('GET https://googleads.g.doubleclick.net/pagead/ads')
+    expect(event.spans[1].description).toBe('GET /api/search')
+    expect(event.urls).toEqual(['https://saigo-no-dante.com/ko/decks'])
+    expect(event.breadcrumbs[0].data).toEqual({ from: '/ko/decks', to: '/ko/planner' })
+  })
+
+  it('REQ-SHARED-089 survives objects that point back at themselves and leaves the SDK\'s processing data alone', () => {
+    // a transaction carries scopes in sdkProcessingMetadata that point at each other: walking them overflowed the stack and
+    // the transaction was dropped
+    const scope: Record<string, unknown> = { url: '/ko/decks?q=secret' }
+    scope.self = scope
+    const shared = { description: '/ko/decks?q=secret' }
+    const event = stripUrlQueries({ sdkProcessingMetadata: { scope }, spans: [shared, shared], extra: { loop: null as unknown } })
+    event.extra.loop = event.extra
+    expect(() => stripUrlQueries(event)).not.toThrow()
+    expect(event.spans[0].description).toBe('/ko/decks')
+    expect(scope.url).toBe('/ko/decks?q=secret')
+  })
+
+  it('REQ-SHARED-089 leaves stack frames alone, so source maps still match', () => {
+    const frame = { abs_path: 'https://saigo-no-dante.com/_next/static/chunks/a.js?dpl=1', filename: 'a.js?dpl=1' }
+    const event = stripUrlQueries({ exception: { values: [{ value: 'x', stacktrace: { frames: [frame] } }] } })
+    expect(event.exception.values[0].stacktrace.frames[0]).toEqual(frame)
+  })
+
+  it('REQ-SHARED-089 applies to every event (errors, transactions, replays) and to the replay recording\'s custom events', () => {
+    const init = read('lib/sentry/client-init.ts')
+    expect(init).toMatch(/on\("postprocessEvent", stripUrlQueries\)/)
+    expect(init).toMatch(/beforeAddRecordingEvent: stripUrlQueries/)
   })
 })
