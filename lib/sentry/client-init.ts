@@ -1,5 +1,5 @@
 import * as Sentry from "@sentry/nextjs";
-import { scrubEvent } from "@/lib/sentry/scrub";
+import { scrubEvent, stripUrlQueries } from "@/lib/sentry/scrub";
 
 /**
  * The browser Sentry, loaded by instrumentation-client.ts once the page is idle so the SDK (about 80KB gzip) stays out of every
@@ -42,6 +42,8 @@ export function startSentry() {
       /compressed data was not valid/,
     ],
   });
+  // every event (error, transaction, replay) right before beforeSend: URL queries out of spans, breadcrumbs and replay URLs
+  Sentry.getClient()?.on("postprocessEvent", stripUrlQueries);
   loadReplay();
   return Sentry;
 }
@@ -57,6 +59,8 @@ function loadReplay() {
       networkCaptureBodies: false,
       networkRequestHeaders: [],
       networkResponseHeaders: [],
+      // the recording's custom events (navigations, requests): the same URL query stripping
+      beforeAddRecordingEvent: stripUrlQueries,
     }));
   }).catch(() => {});
 }
