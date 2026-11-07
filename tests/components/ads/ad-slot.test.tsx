@@ -16,7 +16,10 @@ describe('ad slot', () => {
   it('REQ-SHARED-085 draws one display unit of the account in a reserved box', () => {
     pathname = '/ko/decks/1'
     const html = renderToStaticMarkup(<AdSlot slot="1234567890" place="inline" />)
-    expect(html).toContain('class="adsbygoogle')
+    // push({}) fills the first unprocessed ins.adsbygoogle on the page, not the one that asked: a hidden page-start banner
+    // earlier in the page would take the side ad's request. So the class goes on only right before this slot's own push.
+    expect(html).not.toContain('adsbygoogle')
+    expect(source('components/ads/AdSlot.tsx')).toMatch(/ins\.classList\.add\('adsbygoogle'\)\s*\n\s*try \{ \(window\.adsbygoogle/)
     expect(html).toContain(`data-ad-client="${ADSENSE_ACCOUNT}"`)
     expect(html).toContain('data-ad-slot="1234567890"')
     // the size comes from the reserved box, not from AdSense's own auto sizing (which can grow and push the page)
