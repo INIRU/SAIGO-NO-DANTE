@@ -554,6 +554,8 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
     { id: 'plan-comments', label: tDetail('commentsLabel'), count: plan.comment_count },
   ]
   const sectionKey = sections.map(s => s.id).join()
+  // a second detail banner under the line after the final gifts, above the related posts (owner, 2026-11-07: "선 밑에")
+  const lowerAd = <div className={`${styles.section} ${styles.adSection}`}><AdSlot place="inline" /></div>
   const [activeSection, setActiveSection] = useState(sections[0].id)
   // 스크롤 위치에 맞춰 구역 목차의 현재 항목을 표시한다: 화면 위 30% 선을 지난 마지막 구역
   useEffect(() => {
@@ -848,6 +850,8 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
               <EmptyState text={tDetail('emptyFinalGifts')} />
             )}
           </Section>
+
+          {lowerAd}
 
           <div className={`${styles.section} empty:hidden`}>{coVisited}</div>
 
