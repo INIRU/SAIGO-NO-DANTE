@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { locateInSeries, moveSeriesItem, orderSeriesItems, seriesPostHref, seriesCreateSchema, seriesPatchSchema, seriesChoiceSchema } from '@/features/community/lib/series-order'
+import { locateInSeries, moveSeriesItem, orderSeriesItems, seriesPostHref } from '@/features/community/lib/series-order'
+import { seriesChoiceSchema, seriesCreateSchema, seriesPatchSchema } from '@/features/community/server/series-schema'
 
 const items = [
   { kind: 'plan' as const, id: 'c', title: 'C', position: 2 },

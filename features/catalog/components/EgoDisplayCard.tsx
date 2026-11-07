@@ -5,7 +5,6 @@ import { getFormationBannerUrl } from '@/lib/utils/images'
 import { useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
 import IntentLink from '@/components/ui/IntentLink'
-import { layoutWithLines, prepareWithSegments, setLocale as setPretextLocale } from '@chenglou/pretext'
 import { GRADE_COLORS, SIN_COLORS, STORAGE_BASE, type SinType, getSinnerLogoUrl, normalizeSin } from '@/lib/data/sinners'
 import type { SupportedLang } from '@/lib/i18n/types'
 import { getBlurDataURL } from '@/lib/utils/thumbhash'
@@ -80,6 +79,11 @@ const EGO_NAME_OPENING_BY_CLOSING_BRACKET: Record<string, string> = Object.fromE
   Object.entries(EGO_NAME_BRACKET_PAIR_BY_OPENING).map(([opening, closing]) => [closing, opening]),
 )
 let activeEgoPretextLocale: SupportedLang | null = null
+// The name is measured after the card mounts, so the text measuring library (40KB) loads then, once for every card, and stays
+// out of the first load of the pages that show E.G.O cards.
+let pretext: typeof import('@chenglou/pretext') | null = null
+let pretextLoad: Promise<void> | null = null
+const loadPretext = () => (pretextLoad ??= import('@chenglou/pretext').then(mod => { pretext = mod }))
 
 type EgoNameLineLayout = {
   allowAnywhere: boolean
@@ -216,7 +220,7 @@ const getEgoNameFont = (fontSizePx: number) => {
 }
 
 const getEgoNameLineWidth = (line: string, maxWidth: number, font: string, lineHeightPx: number) => {
-  const result = layoutWithLines(prepareWithSegments(line, font), maxWidth, lineHeightPx)
+  const result = pretext!.layoutWithLines(pretext!.prepareWithSegments(line, font), maxWidth, lineHeightPx)
   if (result.lineCount !== 1 || result.lines.length !== 1) return null
   return result.lines[0].width
 }
@@ -309,7 +313,7 @@ const measureEgoNameLayout = (
   const resolvedFontFamily = resolveEgoNameFontFamily()
 
   if (activeEgoPretextLocale !== locale) {
-    setPretextLocale(locale)
+    pretext!.setLocale(locale)
     activeEgoPretextLocale = locale
   }
 
@@ -413,8 +417,17 @@ function EgoCardName({ lang, name }: { lang: SupportedLang; name: string }) {
       })
     }
 
-    updateLayout()
-    return watchEgoNameBox(box, updateLayout)
+    let cancelled = false
+    let stopWatching: (() => void) | undefined
+    const start = () => {
+      if (cancelled) return
+      updateLayout()
+      stopWatching = watchEgoNameBox(box, updateLayout)
+    }
+    // the first card waits for the library; the rest start at once
+    if (pretext) start()
+    else loadPretext().then(start).catch(() => {})
+    return () => { cancelled = true; stopWatching?.() }
   }, [lang, name])
 
   return (

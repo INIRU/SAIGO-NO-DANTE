@@ -5,7 +5,6 @@ import { useRouter } from '@/lib/i18n/navigation'
 import { useLocale, useTranslations } from 'next-intl'
 import { Copy, GitFork, Pencil, Trash2, Check, Play } from 'lucide-react'
 import { saveDraftToLocal, savePlanForRun } from '@/features/planner/lib/encoder'
-import { teamCodeFromPlanSlots } from '@/lib/planner/team-code-import'
 import { showSuccess, showError } from '@/lib/toast'
 import { guestHeaders, getGuestCopy } from '@/features/account'
 import ConfirmModal from '@/components/ui/ConfirmModal'
@@ -114,6 +113,8 @@ export default function PlanActions({
 
   const handleCopyCode = async () => {
     try {
+      // the code writer (and its gzip library) loads on the click, not with the page
+      const { teamCodeFromPlanSlots } = await import('@/lib/planner/team-code-import')
       // 편성하지 않은 수감자의 인격도 넣는다(빠지면 코드가 그 칸을 LCB 인격으로 채운다)
       const code = teamCodeFromPlanSlots(deck, egoSlots, sinners, identities, egos)
       await navigator.clipboard.writeText(code)
