@@ -130,7 +130,8 @@ export function PlannerIdentityBoard({
   /** Clears every formation number (all back to the bench). */
   onResetOrder?: () => void
   /** Loads a pasted formation code; false when it is not a valid code (the field then shows the error). */
-  onApplyCode?: (code: string) => boolean
+  /** Resolves true when the code was read (the reader loads on the first use). */
+  onApplyCode?: (code: string) => Promise<boolean>
   /** Opens the picker of my saved decks/plans to take a formation from. */
   onImport?: { label: string; open: () => void }
   /** Hold a view tile (500ms) to open identity details. */
@@ -145,15 +146,15 @@ export function PlannerIdentityBoard({
   const [codeInvalid, setCodeInvalid] = useState(false)
   // 평소에는 버튼 하나: 클립보드의 코드를 바로 불러오고, 읽을 수 없거나 코드가 아니면 그때 입력창을 연다.
   const [codeOpen, setCodeOpen] = useState(false)
-  const applyCode = () => {
+  const applyCode = async () => {
     if (!onApplyCode || !code.trim()) return
-    if (onApplyCode(code.trim())) { setCode(''); setCodeOpen(false) }
+    if (await onApplyCode(code.trim())) { setCode(''); setCodeOpen(false) }
     else setCodeInvalid(true)
   }
   const pasteCode = async () => {
     if (!onApplyCode) return
     const text = await navigator.clipboard?.readText().catch(() => '') ?? ''
-    if (text.trim() && onApplyCode(text.trim())) return
+    if (text.trim() && await onApplyCode(text.trim())) return
     setCode(text.trim())
     setCodeInvalid(Boolean(text.trim()))
     setCodeOpen(true)
