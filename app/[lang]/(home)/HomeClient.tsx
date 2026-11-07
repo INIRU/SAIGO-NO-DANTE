@@ -11,6 +11,7 @@ import type { SupportedLang } from '@/lib/i18n/types'
 import HeroWordmark from '@/components/home/HeroWordmark'
 import LimpiLink from '@/app/[lang]/(home)/_components/LimpiLink'
 import DiscordSupportLink from '@/app/[lang]/(home)/_components/DiscordSupportLink'
+import AdSlot from '@/components/ads/AdSlot'
 import DanteLogo from '@/components/brand/DanteLogo'
 import { SinnerRosterIcon, DeckBoardIcon, MirrorDungeonIcon } from '@/components/brand/icons'
 import AnnouncementBanner from '@/app/[lang]/(home)/_components/AnnouncementBanner'
@@ -157,7 +158,8 @@ export default function HomeClient({ latestIdentities, pinnedAnnouncement }: Hom
         }
       `}</style>
 
-      <div className="home-first-viewport flex min-h-svh flex-col">
+      {/* the side ads start below the first screen and follow the page from there (AdSlot) */}
+      <div className="home-first-viewport flex min-h-svh flex-col" data-ad-rail-below>
       {/* ── 히어로 ─────────────────────────────────────────────── */}
       <section
         ref={sectionRef}
@@ -273,6 +275,7 @@ export default function HomeClient({ latestIdentities, pinnedAnnouncement }: Hom
               <LimpiLink />
               <DiscordSupportLink />
             </div>
+            <AdSlot place="hero" />
           </div>
         </div>
       </section>

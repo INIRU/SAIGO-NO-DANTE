@@ -35,7 +35,7 @@ describe('ad slot', () => {
     expect(unit('inline')).toBe('1649300531')
     pathname = '/ko/motion/skills/watch'
     expect(unit('panel')).toBe('6377068943')
-    expect(source('components/ads/AdSlot.tsx')).toMatch(/ADSENSE_SLOTS\[rail \? 'rail' : place\]/)
+    expect(source('components/ads/AdSlot.tsx')).toMatch(/ADSENSE_SLOTS\[rail \? 'rail' : place === 'hero' \? 'top' : place\]/)
     expect(source('lib/seo/ads.ts')).toMatch(/rail: '1316313953'/)
   })
 
@@ -65,7 +65,7 @@ describe('ad slot', () => {
     expect(home.indexOf('<AdSlot place="inline" />')).toBeGreaterThan(home.indexOf('<Official '))
   })
 
-  it('REQ-SHARED-085 puts a 160x600 ad in each empty side margin, standing off the window edge, far from the measured content and never over it, not on home', () => {
+  it('REQ-SHARED-085 puts a 160x600 ad in each empty side margin, standing off the window edge, far from the measured content and never over it', () => {
     const layout = source('app/[lang]/layout.tsx')
     expect(layout).toContain('<AdSlot place="left" />')
     expect(layout).toContain('<AdSlot place="right" />')
@@ -93,9 +93,30 @@ describe('ad slot', () => {
     // before the content is measured (the server render) the side ad is hidden, so it never lands on the content
     pathname = '/ko/decks/1'
     expect(renderToStaticMarkup(<AdSlot slot="1234567890" place="left" />)).toMatch(/<aside[^>]*data-off="true"/)
+    // the home too (owner, 2026-11-07: "메인 페이지가 밑으로 내려야만 광고가 보여서"): its side ads start below the first
+    // screen (hero and notice strip) and follow the page from there; what stands in the hero does not narrow the margin
     pathname = '/ko'
-    expect(renderToStaticMarkup(<AdSlot slot="1234567890" place="left" />)).toBe('')
+    expect(renderToStaticMarkup(<AdSlot slot="1234567890" place="left" />)).toMatch(/<aside[^>]*data-off="true"/)
+    expect(code).not.toMatch(/\/\^\\\/\(\?:ko\|en\|ja\)\\\/\?\$\//)
+    expect(source('app/[lang]/(home)/HomeClient.tsx')).toMatch(/className="home-first-viewport[^"]*" data-ad-rail-below/)
+    expect(code).toMatch(/el\.closest\('\[data-ad-rail-below\]'\)/)
     expect(renderToStaticMarkup(<AdSlot slot="1234567890" place="inline" />)).toContain('data-ad-slot')
+  })
+
+  it('REQ-SHARED-085 puts a banner in the home hero under its links, from 768px wide, kept while the side ads stand', () => {
+    pathname = '/ko'
+    const html = renderToStaticMarkup(<AdSlot place="hero" />)
+    // the home's page-start banner: the list pages' start unit
+    expect(html).toContain('data-ad-slot="2699879515"')
+    const home = source('app/[lang]/(home)/HomeClient.tsx')
+    expect(home.indexOf('<AdSlot place="hero" />')).toBeGreaterThan(home.indexOf('<DiscordSupportLink />'))
+    const css = source('components/ads/AdSlot.module.css')
+    expect(css).toMatch(/\.hero\s*\{[^}]*display:\s*none/)
+    expect(css).toMatch(/@media \(min-width: 768px\)\s*\{\s*\.hero\s*\{[^}]*display:\s*flex/)
+    expect(css).toMatch(/\.heroUnit\s*\{[^}]*height:\s*90px/)
+    // only the list banner gives way to the side ads
+    expect(css).not.toMatch(/data-ad-rail-left="on"\]\)\s*\.hero/)
+    expect(css).toMatch(/:is\(\.top, \.inline, \.panel, \.rail, \.hero\):has\(ins\[data-ad-status="unfilled"\]\)/)
   })
 
   it('REQ-SHARED-085 keeps both side ads in view while scrolling, the owner\'s call against AdSense\'s one-sticky rule (recorded)', () => {
