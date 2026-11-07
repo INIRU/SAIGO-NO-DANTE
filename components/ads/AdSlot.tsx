@@ -9,7 +9,7 @@ declare global {
   interface Window { adsbygoogle?: unknown[] }
 }
 
-type Place = 'top' | 'inline' | 'panel' | 'left' | 'right'
+type Place = 'top' | 'inline' | 'panel' | 'hero' | 'left' | 'right'
 const RAIL = 160
 const GAP = 32
 /** A side ad stands this far in from the window edge: off the edge, as far from the content as the margin allows (owner, 2026-11-06). */
@@ -51,7 +51,8 @@ function Unit({ slot, className }: { slot: string; className: string }) {
 /**
  * Where a side ad stands: EDGE in from the window edge, away from the page's content, when the margin (measured from the
  * content's own boxes; pages are 64-90rem wide) holds the edge, the ad and at least GAP to the content and the window is tall
- * enough for the whole ad; null when it does not (and on the home page, whose hero is full width); undefined until measured.
+ * enough for the whole ad; null when it does not; undefined until measured. Content inside a `data-ad-rail-below` backdrop (a
+ * sinner's hero, the home's first screen) stands above the side ads and does not count.
  */
 function useRailOffset(place: Place, pathname: string | null): number | null | undefined {
   const [offset, setOffset] = useState<number | null>()
@@ -67,12 +68,12 @@ function useRailOffset(place: Place, pathname: string | null): number | null | u
         const box = el.getBoundingClientRect()
         // a full-bleed backdrop (a hero's art reaching the window edge) is decoration, not the content the ad stands beside
         if (box.width < 200 || box.width > width - 32 || box.left <= 0 || box.right >= width || !box.height
-          || getComputedStyle(el).position === 'fixed') continue
+          || getComputedStyle(el).position === 'fixed' || el.closest('[data-ad-rail-below]')) continue
         left = Math.min(left, box.left)
         right = Math.max(right, box.right)
       }
       const margin = place === 'left' ? left : width - right
-      const fits = right && innerHeight >= RAIL_MIN_HEIGHT && !/^\/(?:ko|en|ja)\/?$/.test(location.pathname)
+      const fits = right && innerHeight >= RAIL_MIN_HEIGHT
       setOffset(fits && margin >= EDGE + RAIL + GAP ? EDGE : null)
     }
     measure()
@@ -121,7 +122,7 @@ function useRailTop(rail: boolean) {
  * to the side ads where they stand); `inline`, the
  * same banner between a detail page's parts (under a deck's or plan's section tabs, before an identity's related lists, between
  * the home tools and video); `left` / `right`, a 160 x 600 ad standing in the empty margin near the window edge, away from the content, only when the
- * margin has room (and not on the home page, whose hero is full width); `panel`, a 300 x 250 ad in the skill motion player's
+ * margin has room (below the home's first screen there); `hero`, a banner under the home hero's links (768px and wider); `panel`, a 300 x 250 ad in the skill motion player's
  * side panel. The size is reserved so an ad coming in never pushes the
  * page, and an unfilled unit hides its box. Ad-free pages draw nothing; development and a preview build (NEXT_PUBLIC_AD_PREVIEW=1,
  * e.g. behind a tunnel AdSense does not serve) show the reserved place instead of an ad.
@@ -136,7 +137,8 @@ export default function AdSlot({ slot: unitSlot, place, phoneOnly = false }: {
   const offset = useRailOffset(place, pathname)
   const rail = place === 'left' || place === 'right'
   const railRef = useRailTop(rail && offset != null)
-  const slot = unitSlot === undefined ? ADSENSE_SLOTS[rail ? 'rail' : place] : unitSlot
+  // the home hero's banner is the home's page-start banner: the list pages' start unit
+  const slot = unitSlot === undefined ? ADSENSE_SLOTS[rail ? 'rail' : place === 'hero' ? 'top' : place] : unitSlot
   // Each side ad tells the page whether it stands ("on") or found no room ("off"): the page-start banner gives way to a side ad
   // and shows when neither fits, e.g. after the window narrows (owner, 2026-11-06). AdSlot.module.css reads the flags.
   useEffect(() => {
@@ -147,14 +149,13 @@ export default function AdSlot({ slot: unitSlot, place, phoneOnly = false }: {
   }, [rail, place, offset])
   // the skill motion player is ad-free and hides page ads, but owns one ad in its side panel
   if (!pathname || (place !== 'panel' && isAdFreePath(pathname))) return null
-  // The home hero is full width: no side ads there. Elsewhere a side ad stays in the page while it has no room (hidden, not
-  // removed), so the ad it already holds comes back when the window widens; removing it and asking AdSense again after a
-  // resize comes back unfilled (owner, 2026-11-07). Hidden, its unit has no width and asks for nothing until it shows.
-  if (rail && /^\/(?:ko|en|ja)\/?$/.test(pathname)) return null
+  // A side ad stays in the page while it has no room (hidden, not removed), so the ad it already holds comes back when the
+  // window widens; removing it and asking AdSense again after a resize comes back unfilled (owner, 2026-11-07). Hidden, its
+  // unit has no width and asks for nothing until it shows.
   const off = rail && offset == null
-  const box = `${rail ? styles.rail : place === 'top' ? styles.top : place === 'panel' ? styles.panel : styles.inline}${phoneOnly ? ` ${styles.phoneOnly}` : ''}`
+  const box = `${rail ? styles.rail : place === 'top' ? styles.top : place === 'panel' ? styles.panel : place === 'hero' ? styles.hero : styles.inline}${phoneOnly ? ` ${styles.phoneOnly}` : ''}`
   const position = rail ? ({ [place]: `${offset ?? EDGE}px` } as CSSProperties) : undefined
-  const unit = rail ? styles.railUnit : place === 'panel' ? styles.panelUnit : styles.topUnit
+  const unit = rail ? styles.railUnit : place === 'panel' ? styles.panelUnit : place === 'hero' ? styles.heroUnit : styles.topUnit
   const kind = place === 'panel' ? '' : 'site-ad '
   const preview = process.env.NODE_ENV === 'development' || process.env.NEXT_PUBLIC_AD_PREVIEW === '1'
   if (preview) return <aside ref={rail ? railRef : undefined} data-off={off || undefined} className={`${kind}${box}`} style={position}><div className={`${unit} ${styles.preview}`}>AD</div></aside>
