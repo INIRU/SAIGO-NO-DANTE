@@ -58,3 +58,37 @@ export function scrubEvent<T extends ScrubbableEvent>(event: T): T {
 
   return event;
 }
+
+// A URL (absolute, or a path) followed by its query and/or fragment: the query is cut off.
+const URL_QUERY = /((?:https?:\/\/|\/)[^\s?#"'<>]*)[?#][^\s"'<>]*/g
+// Stack frames keep their file URLs as they are (source maps match them); the SDK block is ours; sdkProcessingMetadata is the
+// SDK's own working data (scopes that point at each other), never sent.
+const LEFT_ALONE = new Set(["exception", "stacktrace", "debug_meta", "sdk", "sdkProcessingMetadata"]);
+// Fields that hold only a query string.
+const QUERY_FIELD = /(^|\.)query(_string)?$/;
+
+function stripIn(value: unknown, seen: WeakSet<object>): unknown {
+  if (typeof value === "string") return value.replace(URL_QUERY, "$1");
+  if (!value || typeof value !== "object" || seen.has(value)) return value;
+  // an object met again (shared, or pointing back at itself) was already cleaned
+  seen.add(value);
+  if (Array.isArray(value)) {
+    for (let i = 0; i < value.length; i++) value[i] = stripIn(value[i], seen);
+  } else {
+    const record = value as Record<string, unknown>;
+    for (const key of Object.keys(record)) {
+      if (LEFT_ALONE.has(key)) continue;
+      if (QUERY_FIELD.test(key)) delete record[key];
+      else record[key] = stripIn(record[key], seen);
+    }
+  }
+  return value;
+}
+
+/**
+ * Page URLs carry filters, search words and deck codes in their queries: every URL in an event (span descriptions and URLs,
+ * breadcrumbs, a replay's URLs, a recording's custom events) loses its query and fragment. Changes the event in place.
+ */
+export function stripUrlQueries<T>(event: T): T {
+  return stripIn(event, new WeakSet()) as T;
+}
