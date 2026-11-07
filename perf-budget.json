@@ -1,0 +1,42 @@
+{
+  "/[lang]": {
+    "jsKB": 408,
+    "cssKB": 76
+  },
+  "/[lang]/decks": {
+    "jsKB": 454,
+    "cssKB": 76
+  },
+  "/[lang]/decks/[id]": {
+    "jsKB": 450,
+    "cssKB": 74
+  },
+  "/[lang]/planner": {
+    "jsKB": 508,
+    "cssKB": 74
+  },
+  "/[lang]/planner/community/[id]": {
+    "jsKB": 466,
+    "cssKB": 75
+  },
+  "/[lang]/mirror-dungeon": {
+    "jsKB": 388,
+    "cssKB": 75
+  },
+  "/[lang]/sinners/[slug]/identities/[id]": {
+    "jsKB": 423,
+    "cssKB": 77
+  },
+  "/[lang]/meta": {
+    "jsKB": 389,
+    "cssKB": 83
+  },
+  "/[lang]/collection": {
+    "jsKB": 343,
+    "cssKB": 74
+  },
+  "/[lang]/licenses": {
+    "jsKB": 291,
+    "cssKB": 74
+  }
+}
