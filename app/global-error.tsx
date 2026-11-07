@@ -1,6 +1,6 @@
 'use client'
 
-import * as Sentry from '@sentry/nextjs'
+import { earlyErrors } from '@/lib/sentry/early'
 import { usePathname } from 'next/navigation'
 import { useEffect } from 'react'
 
@@ -13,7 +13,8 @@ const COPY = {
 
 export default function GlobalError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   useEffect(() => {
-    Sentry.captureException(error)
+    // sent once the browser Sentry has started (it loads after the page)
+    earlyErrors.report(error)
   }, [error])
 
   const segment = usePathname()?.split('/')[1]
