@@ -84,7 +84,9 @@ describe('ad slot', () => {
     expect(code).toContain("document.querySelector('[data-ad-rail-below]')")
     expect(source('features/catalog/components/SinnerHero.tsx')).toContain('data-ad-rail-below')
     // at the end of the page a side ad stops above the footer and scrolls up with it
-    expect(code).toContain("document.querySelector('.site-footer')")
+    // only a footer that is drawn: a hidden one (a page that hides it, a streamed copy not shown yet) reads top 0 and pushed
+    // both side ads above the window on plan and deck details
+    expect(code).toMatch(/\[\.\.\.document\.querySelectorAll\('\.site-footer'\)\]\.find\(f => f\.getClientRects\(\)\.length\)/)
     expect(code).toContain('footerTop - GAP - ad.offsetHeight')
     // a hero's art that reaches the window edge does not count as content (it hid the right side ad on a sinner page)
     expect(code).toMatch(/box\.left <= 0 \|\| box\.right >= width/)
