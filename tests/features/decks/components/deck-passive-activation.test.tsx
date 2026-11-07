@@ -1,4 +1,6 @@
 import { renderToStaticMarkup } from 'react-dom/server'
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { describe, expect, it, vi } from 'vitest'
 import DeckInsights, { type DeckInsightIdentity, type DeckInsightPassive } from '@/features/decks/components/DeckInsights'
 
@@ -33,10 +35,11 @@ const bench = identity('bench', [
 // The static markup shows the battle tab; who a support passive is rated for is REQ-DECKS-025 (rateIdentityPassive).
 const render = (identities: DeckInsightIdentity[], deployedIds?: Set<string>) =>
   renderToStaticMarkup(<DeckInsights identities={identities} sinCounts={{ wrath: 6 }} deployedIds={deployedIds} />)
-const names = (html: string) => [...html.matchAll(/class="deck-passive__name">([^<]*)</g)].map(match => match[1])
+const names = (html: string) => [...html.matchAll(/class="deck-passive" data-name="([^"]*)"/g)].map(match => match[1])
 const rate = (html: string, name: string) => {
-  const from = html.indexOf(`class="deck-passive__name">${name}<`)
-  const row = html.slice(from, html.indexOf('</div>', from))
+  const from = html.indexOf(`data-name="${name}"`)
+  const next = html.indexOf('class="deck-passive"', from + 1)
+  const row = html.slice(from, next < 0 ? undefined : next)
   return row.match(/class="deck-passive__rate" data-level="(\w+)"(?: title="([^"]*)")?>([^<]*)</)
 }
 
@@ -65,5 +68,22 @@ describe('REQ-DECKS-026 passive activation marker', () => {
     expect(rate(building, 'battle-of-bench')?.[1]).toBe('easy')
     const noDeck = render([{ ...fielded, deck: undefined }], new Set(['fielded']))
     expect(noDeck).not.toContain('class="deck-passive__rate"')
+  })
+})
+
+describe('REQ-DECKS-053 passive list', () => {
+  const html = render([fielded], new Set(['fielded']))
+
+  it('REQ-DECKS-053 names each passive with the identity page\'s passive name plate, so passives in a group stand apart', () => {
+    const plates = [...html.matchAll(/class="deck-passive" data-name="([^"]*)"[\s\S]*?data-skill-name-banner[\s\S]*?<span[^>]*>([^<]*)<\/span>/g)]
+    expect(plates.map(match => match[2])).toEqual(names(html))
+    expect(plates.length).toBe(4)
+  })
+
+  it('REQ-DECKS-053 lets a page scroll pass through the passive list (wheel intent, native chaining at its ends)', () => {
+    const source = readFileSync(resolve(__dirname, '../../../../features/decks/components/DeckInsights.tsx'), 'utf8')
+    expect(source).toMatch(/useWheelIntent\(scrollRef\)/)
+    expect(source).toMatch(/className="deck-insights__scroll" ref=\{scrollRef\}/)
+    expect(source).not.toMatch(/overscroll-behavior: contain/)
   })
 })
