@@ -101,7 +101,9 @@ function useRailTop(rail: boolean) {
       const ad = ref.current
       if (!ad) return
       const backdrop = document.querySelector('[data-ad-rail-below]')
-      const footer = document.querySelector('.site-footer')
+      // the drawn footer only: a hidden one (display: none on some pages, a streamed copy not shown yet) reads top 0, which put
+      // both side ads above the window on plan and deck details
+      const footer = [...document.querySelectorAll('.site-footer')].find(f => f.getClientRects().length)
       const below = backdrop ? backdrop.getBoundingClientRect().bottom + GAP : -Infinity
       const footerTop = footer ? footer.getBoundingClientRect().top : Infinity
       ad.style.top = `${Math.min(Math.max(RAIL_TOP, below), footerTop - GAP - ad.offsetHeight)}px`
