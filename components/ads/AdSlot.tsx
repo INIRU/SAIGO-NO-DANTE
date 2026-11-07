@@ -36,6 +36,9 @@ function Unit({ slot, className }: { slot: string; className: string }) {
         if (ins.dataset.requested || !ins.offsetWidth) return
         ins.dataset.requested = '1'
         observer.disconnect()
+        // push({}) fills the first unprocessed ins.adsbygoogle on the page, not this one: with the class on every slot from the
+        // start, a hidden page-start banner earlier in the page took the side ad's request. Only the slot asking now has it.
+        ins.classList.add('adsbygoogle')
         try { (window.adsbygoogle = window.adsbygoogle || []).push({}) } catch { /* blocked by an ad blocker */ }
       }) })
     }
@@ -43,7 +46,7 @@ function Unit({ slot, className }: { slot: string; className: string }) {
     observer.observe(ins)
     return () => { observer.disconnect(); cancelAnimationFrame(first); cancelAnimationFrame(second) }
   }, [])
-  return <ins ref={ref} className={`adsbygoogle ${className}`} data-ad-client={ADSENSE_ACCOUNT} data-ad-slot={slot} />
+  return <ins ref={ref} className={className} data-ad-client={ADSENSE_ACCOUNT} data-ad-slot={slot} />
 }
 
 /**
