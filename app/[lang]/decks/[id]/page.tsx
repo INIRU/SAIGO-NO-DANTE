@@ -623,19 +623,22 @@ async function getCachedDeckDetailPayload(lang: 'ko' | 'en' | 'ja', id: string) 
       })
     }
     if (data) {
+      // Four reads that need only the deck, together (they waited for each other: four round trips → one). A series that
+      // fails to load leaves the deck shown; any other failure falls back to the client fetch, as before.
+      const [series, recommendations, egoSkillsByEgoId, [author]] = await Promise.all([
+        loadSeriesOfPost(supabase, 'deck', id).catch(() => null),
+        fetchDeckRecommendations(supabase, lang, data as unknown as CurrentDeckForRecommendations),
+        fetchEgoAttackSkillsByEgoId(
+          supabase,
+          getSelectedEgoIds(data.deck_egos as Array<{ ego: { id?: string | null } | { id?: string | null }[] | null }> | null),
+          id,
+        ),
+        withPostAuthors([data]),
+      ])
+      initialSeries = series
       // A series change revalidates its own tag (and the tag of each post it adds or drops), as does a member's new title.
-      initialSeries = await loadSeriesOfPost(supabase, 'deck', id).catch(() => null)
       if (initialSeries) cacheTag(CACHE_TAGS.series(initialSeries.id))
-      initialRecommendations = await fetchDeckRecommendations(
-        supabase,
-        lang,
-        data as unknown as CurrentDeckForRecommendations
-      )
-      const egoSkillsByEgoId = await fetchEgoAttackSkillsByEgoId(
-        supabase,
-        getSelectedEgoIds(data.deck_egos as Array<{ ego: { id?: string | null } | { id?: string | null }[] | null }> | null),
-        id,
-      )
+      initialRecommendations = recommendations
 
       const sortedIdentities = (data.deck_identities ?? [])
         .map((slot) => ({
@@ -673,7 +676,7 @@ async function getCachedDeckDetailPayload(lang: 'ko' | 'en' | 'ja', id: string) 
             ego: ego ? { ...ego, ego_skills: egoSkillsByEgoId.get(ego.id) ?? [] } : null,
           }
         }) as EgoSlot[],
-        profiles: (await withPostAuthors([data]))[0].profiles,
+        profiles: author.profiles,
         all_sinner_egos: [],
         is_owner: false,
         is_admin: false,
