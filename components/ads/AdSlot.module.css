@@ -46,6 +46,26 @@
 }
 
 /* the skill motion player's side panel: a 300x250 rectangle under the skill info */
+/* The home hero's banner, under its links: the column's width, 90px high, from 768px wide (a phone's hero has no room). It
+   stays while the side ads stand: they start below the first screen. */
+.hero {
+  display: none;
+  width: 100%;
+  margin-top: 1.5rem;
+  contain: layout;
+}
+
+@media (min-width: 768px) {
+  .hero { display: flex; }
+}
+
+.heroUnit {
+  display: block;
+  width: 100%;
+  height: 90px;
+  overflow: hidden;
+}
+
 .panel {
   display: flex;
   justify-content: center;
@@ -94,7 +114,7 @@
   display: none;
 }
 
-:is(.top, .inline, .panel, .rail):has(ins[data-ad-status="unfilled"]) {
+:is(.top, .inline, .panel, .rail, .hero):has(ins[data-ad-status="unfilled"]) {
   display: none;
 }
 
