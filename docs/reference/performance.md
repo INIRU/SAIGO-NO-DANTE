@@ -49,7 +49,23 @@ npm run perf:lighthouse -- http://localhost:3320 --form mobile   # 화면 8개, 
 
 ## 지금
 
-기준과 같다(아직 줄인 작업 없음).
+작업 2(레이아웃 묶음) 뒤, 2026-11-07. 첫 로드 JS(gzip, 기준 대비):
+
+| 화면 | 첫 로드 JS | 차이 |
+|---|---|---|
+| 홈 | 487KB | −47KB |
+| 덱 게시판 | 531KB | −47KB |
+| 덱 상세 | 556KB | −16KB |
+| 플래너 | 626KB | −17KB |
+| 거울 던전 | 430KB | −47KB |
+| 인격 상세 | 501KB | −46KB |
+| 메타 | 469KB | −47KB |
+| 보유 현황 | 425KB | −64KB |
+| `licenses`(틀만) | 338KB | −64KB |
+
+- 덱 상세·플래너는 페이지가 zod를 직접 써서 덜 줄었다.
+- Lighthouse 휴대폰, 같은 기계에서 전후 각 3회 중앙값(점수 / LCP / TBT): 홈 61→60 / 9.7→9.6s / 325→338ms, 덱 게시판 49→49 / 11.0→10.4s / 423→429ms, 거울 던전 58→58 / 8.7→8.4s / 210→227ms. LCP만 조금 빨라졌고 점수·TBT는 오차 안이다. 휴대폰 점수를 깎는 것은 JS 크기보다 LCP(큰 그림·글꼴)와 화면 밀림(CLS)이다.
+- 한 번만 잰 휴대폰 숫자는 같은 빌드에서도 점수가 10점, LCP가 몇 초씩 흔들린다. 전후 비교는 `--runs 3` 이상으로 한다.
 
 ## 큰 모듈: `[lang]` 레이아웃 묶음
 
@@ -68,4 +84,5 @@ npm run perf:lighthouse -- http://localhost:3320 --form mobile   # 화면 8개, 
 | 5KB | `nuqs` | 레이아웃 `NuqsAdapter` |
 | 3KB | `components/providers/KeywordProvider.tsx` | 레이아웃 |
 
+- 작업 2에서 뺀 것: zod(서버 전용 `lib/push/schema.ts`로), 움직임 기능 묶음(`LazyMotion`이 페이지 뒤에 불러옴), 번역 사전(광고 상수는 `lib/seo/ads.ts`, 선물 키워드 번역은 `lib/i18n/gift-keyword.ts`). `tests/architecture/layout-client-weight.test.ts`가 다시 들어오는 것을 막는다.
 - 레이아웃이 받는 글꼴 중 미리 불러오는 것(`.p.`): Pretendard 라틴·한글 1, KOTRA, Bebas. 나머지는 쓰일 때 받는다(작업 9 대상).

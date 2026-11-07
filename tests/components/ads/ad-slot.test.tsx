@@ -36,7 +36,7 @@ describe('ad slot', () => {
     pathname = '/ko/motion/skills/watch'
     expect(unit('panel')).toBe('6377068943')
     expect(source('components/ads/AdSlot.tsx')).toMatch(/ADSENSE_SLOTS\[rail \? 'rail' : place\]/)
-    expect(source('lib/seo/metadata.ts')).toMatch(/rail: '1316313953'/)
+    expect(source('lib/seo/ads.ts')).toMatch(/rail: '1316313953'/)
   })
 
   it('REQ-SHARED-085 draws nothing outside development without a unit, and nothing on an ad-free page', () => {

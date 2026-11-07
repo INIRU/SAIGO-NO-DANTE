@@ -14,7 +14,8 @@ vi.mock('web-push', () => ({
   },
 }))
 
-import { pushSubscriptionSchema, urlBase64ToUint8Array } from '@/lib/push/keys'
+import { urlBase64ToUint8Array } from '@/lib/push/keys'
+import { pushSubscriptionSchema } from '@/lib/push/schema'
 import { pushMessage, shouldPushPost } from '@/lib/push/message'
 import { sendPushes, type PushNote } from '@/lib/push/send'
 
