@@ -1,0 +1,12 @@
+[
+  {
+    "route": "/[lang]",
+    "firstLoadUncompressedJsBytes": 0,
+    "firstLoadChunkPaths": [".next/static/chunks/a.js", ".next/static/chunks/b.js", ".next/static/chunks/c.js"]
+  },
+  {
+    "route": "/[lang]/licenses",
+    "firstLoadUncompressedJsBytes": 0,
+    "firstLoadChunkPaths": [".next/static/chunks/a.js", ".next/static/chunks/b.js"]
+  }
+]
