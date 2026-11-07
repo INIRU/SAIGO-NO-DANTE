@@ -2,7 +2,8 @@ import { NextResponse } from 'next/server'
 import { revalidateTag } from 'next/cache'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
-import { seriesChoiceSchema, type SeriesItem, type SeriesPostKind, type SeriesSummary, type SeriesView } from '@/features/community/lib/series-order'
+import type { SeriesItem, SeriesPostKind, SeriesSummary, SeriesView } from '@/features/community/lib/series-order'
+import { seriesChoiceSchema } from './series-schema'
 
 // Any client works: reads are public (RLS), writes need the service role.
 type Db = SupabaseClient
