@@ -1,7 +1,11 @@
 'use client'
 
 import type { ReactNode } from 'react'
-import { LazyMotion, MotionConfig, domAnimation } from 'motion/react'
+import { LazyMotion, MotionConfig } from 'motion/react'
+
+// The features load in their own chunk after the page (motion.dev LazyMotion, "dynamic loading"); `m.*` components render
+// in their initial style until then and animate once it arrives.
+const loadFeatures = () => import('./motion-features').then(mod => mod.default)
 
 /**
  * Animation features for every `m.*` component below. `domAnimation` covers what the site animates (enter, exit, hover,
@@ -11,7 +15,7 @@ import { LazyMotion, MotionConfig, domAnimation } from 'motion/react'
 export default function MotionProvider({ children }: { children: ReactNode }) {
   return (
     <MotionConfig reducedMotion="user">
-      <LazyMotion features={domAnimation} strict>{children}</LazyMotion>
+      <LazyMotion features={loadFeatures} strict>{children}</LazyMotion>
     </MotionConfig>
   )
 }

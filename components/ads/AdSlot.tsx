@@ -2,8 +2,7 @@
 
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { usePathname } from 'next/navigation'
-import { ADSENSE_ACCOUNT, ADSENSE_SLOTS } from '@/lib/seo/metadata'
-import { isAdFreePath } from '@/lib/seo/ads'
+import { ADSENSE_ACCOUNT, ADSENSE_SLOTS, isAdFreePath } from '@/lib/seo/ads'
 import styles from './AdSlot.module.css'
 
 declare global {
