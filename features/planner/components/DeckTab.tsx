@@ -31,7 +31,7 @@ import type { SupportedLang } from '@/lib/i18n/types'
 import SkillExchangePanel from './SkillExchangePanel'
 import ConfirmModal from '@/components/ui/ConfirmModal'
 import { showError, showSuccess } from '@/lib/toast'
-import { planSlotsFromTeamCode } from '@/lib/planner/team-code-import'
+import type { planSlotsFromTeamCode } from '@/lib/planner/team-code-import'
 import { withLcbIdentitySlots } from '@/features/planner/lib/lcb'
 import { planSlotsFromDeckRows } from '@/lib/planner/formation-transfer'
 import FormationSourceModal from './FormationSourceModal'
@@ -138,7 +138,9 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
     dispatch({ type: 'LOAD_PLAN', state: slots })
     showSuccess(tDeck('identity.codeApplied'))
   }
-  const handleApplyCode = (code: string) => {
+  // the formation code reader (and its gzip library) loads when a code is applied, not with the planner
+  const handleApplyCode = async (code: string) => {
+    const { planSlotsFromTeamCode } = await import('@/lib/planner/team-code-import')
     const slots = planSlotsFromTeamCode(code, sinners, identities, egos)
     if (!slots) return false
     if (state.identitySlots.length) setPendingCode(slots)
