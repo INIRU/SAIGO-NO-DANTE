@@ -8,7 +8,7 @@ import { EffectText } from '@/features/mirror-dungeon/components/GiftDetailModal
 import { Link } from '@/lib/i18n/navigation'
 import Image from 'next/image'
 import { GIFT_KEYWORD_COLORS, getGiftKeywordColor, getGiftKeywordIconUrl, getGiftKeywordSlug } from '@/lib/constants/gift'
-import { localizeGiftKeyword } from '@/lib/i18n/localize'
+import { localizeGiftKeyword } from '@/lib/i18n/gift-keyword'
 import type { SupportedLang } from '@/lib/i18n/types'
 import { assetName, type NoteAssetData } from '@/features/notes/lib/assets'
 import { PREVIEW_DELAY_MS, PREVIEW_WIDTHS_REM, usesHover } from '@/features/notes/lib/preview'

@@ -5,7 +5,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { findOrCreateSupabaseUser } from '@/lib/supabase/findOrCreateUser'
 import { isAllowedRequestOrigin } from '@/lib/request-origin'
 import { checkRequestRateLimit, rateLimitResponse } from '@/lib/rate-limit'
-import { pushSubscriptionSchema } from '@/lib/push/keys'
+import { pushSubscriptionSchema } from '@/lib/push/schema'
 import { pushKeys } from '@/lib/push/send'
 
 const headers = { 'Cache-Control': 'private, no-store' }
