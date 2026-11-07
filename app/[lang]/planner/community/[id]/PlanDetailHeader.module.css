@@ -233,10 +233,15 @@
   border-bottom: 1px solid #5a4526;
 }
 
+/* Sideways only: the tabs' underline sits 1px low to cover the bar's border; the list keeps that pixel in its padding, so it
+   never scrolls vertically and a wheel over the tabs scrolls the page. */
 .sectionNav ol {
   display: flex;
   gap: 0.25rem;
   overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 1px;
+  margin-bottom: -1px;
   scrollbar-width: none;
 }
 
