@@ -156,6 +156,12 @@
 .section { scroll-margin-top: 4rem; min-width: 0; padding-top: 2.5rem; }
 .section + .section { border-top: 1px solid #2e2417; margin-top: 2.5rem; }
 
+/* The lower banner sits under the line after its section; the section after it starts without another line. A hidden
+   (empty) co-visited block between them is skipped. */
+.adSection { padding-top: 2.5rem; }
+.adSection :global(.site-ad) { margin-top: 0; }
+.adSection + .section, .adSection + .section:empty + .section { border-top: 0; margin-top: 0; }
+
 .block { margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid #241c14; }
 .subhead { margin-bottom: 1rem; font-family: var(--font-heading); font-size: 1.0625rem; color: var(--text-primary); }
 .empty { border-left: 2px solid #2e2417; padding: 0.25rem 0 0.25rem 0.75rem; color: var(--text-muted); font-size: 0.9375rem; line-height: 1.6; }

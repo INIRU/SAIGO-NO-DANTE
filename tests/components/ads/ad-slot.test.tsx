@@ -65,6 +65,24 @@ describe('ad slot', () => {
     expect(home.indexOf('<AdSlot place="inline" />')).toBeGreaterThan(home.indexOf('<Official '))
   })
 
+  it('REQ-SHARED-085 puts a second detail banner under the line after a plan\'s final gifts and a deck\'s note, above the related posts', () => {
+    // owner, 2026-11-07: "플랜은 최종 기프트 밑에 덱은 스킬 분포 밑에", "선 밑에"
+    for (const [page, after, before] of [
+      ['app/[lang]/planner/community/[id]/PlanDetailClient.tsx', '<Section id="plan-final">', '{coVisited}'],
+      ['app/[lang]/decks/[id]/DeckDetailClient.tsx', 'id="deck-note"', '{hasRecommendations ? ('],
+    ]) {
+      const text = source(page)
+      expect(text, page).toMatch(/const lowerAd = <div className=\{`\$\{styles\.section\} \$\{styles\.adSection\}`\}><AdSlot place="inline" \/><\/div>/)
+      const at = text.indexOf('{lowerAd}')
+      expect(at, page).toBeGreaterThan(text.indexOf(after))
+      expect(at, page).toBeLessThan(text.indexOf(before))
+    }
+    for (const css of ['app/[lang]/decks/[id]/DeckDetail.module.css', 'app/[lang]/planner/community/[id]/PlanDetailHeader.module.css']) {
+      // the line above the banner comes from `.section + .section`; the section after it draws none
+      expect(source(css), css).toMatch(/\.adSection \+ \.section, \.adSection \+ \.section:empty \+ \.section \{ border-top: 0; margin-top: 0; \}/)
+    }
+  })
+
   it('REQ-SHARED-085 puts a 160x600 ad in each empty side margin, standing off the window edge, far from the measured content and never over it', () => {
     const layout = source('app/[lang]/layout.tsx')
     expect(layout).toContain('<AdSlot place="left" />')
@@ -177,11 +195,13 @@ describe('ad slot', () => {
       ['app/[lang]/planner/community/[id]/PlanDetailClient.tsx', '{plan.description && ('],
     ]) {
       const text = source(page)
-      const inline = text.indexOf('<AdSlot place="inline" />')
-      expect(inline, page).toBeGreaterThan(text.indexOf('<main className="min-w-0 overflow-x-clip">'))
+      const main = text.indexOf('<main className="min-w-0 overflow-x-clip">')
+      const inline = text.indexOf('<AdSlot place="inline" />', main)
+      expect(main, page).toBeGreaterThan(0)
       expect(inline, page).toBeGreaterThan(text.indexOf('sticky-under-nav'))
       expect(inline, page).toBeLessThan(text.indexOf(first))
-      expect(text.match(/<AdSlot\b/g), page).toHaveLength(1)
+      // this one and the lower banner above the related posts (REQ-SHARED-085, second detail banner)
+      expect(text.match(/<AdSlot\b/g), page).toHaveLength(2)
     }
     expect(source('components/ads/AdSlot.module.css')).toMatch(/\.inline\s*\{[^}]*margin-top:\s*2\.5rem/)
   })
