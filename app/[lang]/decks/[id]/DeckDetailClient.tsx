@@ -762,6 +762,9 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
 
   const hasRecommendations = [...(initialRecommendations?.otherOpinions ?? []), ...(initialRecommendations?.similarDecks ?? [])].some(rec => rec.id !== id)
   const hasNote = Boolean(deck?.description?.trim()) || customSkillSlots.length > 0
+  // a second detail banner under the line after the deck note (the skill distribution) or the formation, above the related
+  // decks (owner, 2026-11-07: "선 밑에")
+  const lowerAd = <div className={`${styles.section} ${styles.adSection}`}><AdSlot place="inline" /></div>
   const sections: { id: string; label: string }[] = [
     { id: 'deck-formation', label: t('sectionFormation') },
     ...(hasNote ? [{ id: 'deck-note', label: t('deckNote') }] : []),
@@ -1040,7 +1043,7 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
             )}
           </section>
 
-          {(deck.description?.trim() || customSkillSlots.length > 0) && (
+          {hasNote && (
             <section id="deck-note" aria-labelledby="deck-note-title" className={styles.section}>
               <SectionHead id="deck-note-title" title={t('deckNote')} />
               {deck.description?.trim() && (
@@ -1101,6 +1104,8 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
               )}
             </section>
           )}
+
+          {lowerAd}
 
           {hasRecommendations ? (
             <section id="deck-similar" aria-labelledby="deck-similar-title" className={styles.section}>

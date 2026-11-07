@@ -280,6 +280,12 @@
 
 .section + .section { border-top: 1px solid #2e2417; margin-top: 2.5rem; }
 
+/* The lower banner sits under the line after its section; the section after it starts without another line. A hidden
+   (empty) co-visited block between them is skipped. */
+.adSection { padding-top: 2.5rem; }
+.adSection :global(.site-ad) { margin-top: 0; }
+.adSection + .section, .adSection + .section:empty + .section { border-top: 0; margin-top: 0; }
+
 /* Gift grid cells: a quiet tile that lights up on hover and keyboard focus. */
 .giftGrid {
   display: grid;
