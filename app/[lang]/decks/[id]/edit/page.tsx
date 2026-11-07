@@ -20,13 +20,15 @@ export default async function EditDeckPage({ params }: { params: Promise<{ lang:
   const { lang: rawLang, id } = await params
   const lang: SupportedLang = rawLang === 'en' || rawLang === 'ja' ? rawLang : 'ko'
 
-  // 인증 확인. 익명 덱은 로그인 없이 열고, 저장할 때 브라우저의 익명 키로 소유를 확인한다.
-  const session = await getServerSession(authOptions)
-
   const admin = createAdminClient()
-  const userId = session?.user?.email
-    ? await findOrCreateSupabaseUser(admin, session.user.email, session.user.name, session.user.image)
-    : null
+  // 인증 확인. 익명 덱은 로그인 없이 열고, 저장할 때 브라우저의 익명 키로 소유를 확인한다.
+  const checkSignIn = async () => {
+    const session = await getServerSession(authOptions)
+    const userId = session?.user?.email
+      ? await findOrCreateSupabaseUser(admin, session.user.email, session.user.name, session.user.image)
+      : null
+    return { session, userId }
+  }
 
   const deckSelectWithMainKeywords = `
     id, user_id, title, description, tags, main_keywords, content_type, updated_at,
@@ -58,8 +60,9 @@ export default async function EditDeckPage({ params }: { params: Promise<{ lang:
     return result
   }
 
-  // 덱 데이터 + 게임 데이터 병렬 fetch (게임 데이터는 덱 빌더와 같은 캐시)
-  const [deckRes, { sinners, identities, egos, skills, passives, egoGifts }] = await Promise.all([
+  // 로그인 확인, 덱, 게임 데이터(덱 빌더와 같은 캐시)를 함께 읽는다: 덱은 사용자 정보가 필요 없다
+  const [{ session, userId }, deckRes, { sinners, identities, egos, skills, passives, egoGifts }] = await Promise.all([
+    checkSignIn(),
     loadDeck(),
     fetchDeckBuilderData(lang),
   ])
