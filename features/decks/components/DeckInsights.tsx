@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useMemo, useState, type ReactNode } from 'react'
+import { useCallback, useMemo, useRef, useState, type ReactNode } from 'react'
 import Image from 'next/image'
 import { useLocale, useTranslations } from 'next-intl'
 import { SIN_COLORS, getSinIconUrl } from '@/lib/constants/sin'
@@ -10,6 +10,8 @@ import { getPassiveCondition, passiveRequirements, type PlannerPassiveLike } fro
 import { ACTIVATION_ORDER, STOCK_MAX_TURNS, rateIdentityPassive, type PassiveActivation, type SinWeights } from '@/features/decks/lib/passive-activation'
 import KeywordChart, { type KeywordChartContributor } from '@/features/planner/components/KeywordChart'
 import SkillDescription from '@/features/catalog/components/SkillDescription'
+import { PassiveNameLabel } from '@/features/catalog/components/PassiveParts'
+import { useWheelIntent } from '@/lib/hooks/useWheelIntent'
 import { localizeDeckKeyword } from '@/features/decks/lib/decks-types'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
 import { useOwnKeywordSets } from '@/lib/hooks/useOwnKeywords'
@@ -69,6 +71,9 @@ export default function DeckInsights({ identities, sinCounts, baseSinCounts, sum
   const locale = useLocale() as SupportedLang
   const { keywords: keywordInfo } = useKeywordData()
   const [passiveType, setPassiveType] = useState<'battle' | 'support'>('battle')
+  // The list scrolls inside the keyword column's height; a page scroll passing over it keeps scrolling the page.
+  const scrollRef = useRef<HTMLDivElement>(null)
+  useWheelIntent(scrollRef)
 
   const getKeywordLabel = useCallback(
     (keyword: string) => localizeDeckKeyword(keyword, keywordInfo[keyword], locale),
@@ -142,7 +147,7 @@ export default function DeckInsights({ identities, sinCounts, baseSinCounts, sum
             ))}
           </div>
         </div>
-        <div className="deck-insights__scroll">
+        <div className="deck-insights__scroll" ref={scrollRef}>
           {groups.length === 0 ? (
             <p className="deck-insights__empty">
               {identities.length === 0 ? tDeck('stats.passiveSelectIdentity') : tDeck('stats.passiveEmpty')}
@@ -168,9 +173,10 @@ export default function DeckInsights({ identities, sinCounts, baseSinCounts, sum
                       const accent = primarySin ? SIN_COLORS[primarySin] : '#888'
                       const condition = isResonance ? tDeck('stats.resonance') : tDeck('stats.stock')
                       return (
-                        <div key={passive.id ?? index} className="deck-passive" data-unmet={!!passive.active_cond && !isMet}>
-                          <div className="deck-passive__line">
-                            <span className="deck-passive__name">{passive.name}</span>
+                        <div key={passive.id ?? index} className="deck-passive" data-name={passive.name} data-unmet={!!passive.active_cond && !isMet}>
+                          {/* the identity page's passive name plate: each passive in a group starts on its own banner */}
+                          <PassiveNameLabel>{passive.name}</PassiveNameLabel>
+                          {(requirements.length > 0 || activation || distributionWarning) && <div className="deck-passive__line">
                             {requirements.length > 0 && (
                               <span className="deck-passive__cost" data-met={passive.active_cond ? isMet : undefined} title={passive.active_cond ? condition : undefined}>
                                 {passive.active_cond && <span className="deck-passive__cond">{condition}</span>}
@@ -186,7 +192,7 @@ export default function DeckInsights({ identities, sinCounts, baseSinCounts, sum
                               <span className="deck-passive__rate" data-level={activation.level} title={activationValue(activation)}>{tDeck(`stats.activation.${activation.level}`)}</span>
                             )}
                             {distributionWarning && <span className="deck-passive__warn" title={tDeck('stats.passiveWarning')}>!</span>}
-                          </div>
+                          </div>}
                           {passive.description && (
                             <div className="deck-passive__desc">
                               <SkillDescription description={passive.description} accentColor={accent} variant="detail" showCoinBadges={false} allowedKeywords={ownKeywords.get(identity.id)} matchPlainKeywords />
@@ -212,7 +218,8 @@ export default function DeckInsights({ identities, sinCounts, baseSinCounts, sum
         .deck-insights__empty { color: #9c8b73; font-size: 0.875rem; }
         /* Passives follow the keyword column's height and scroll inside it (contain: size keeps the list from growing the row). */
         .deck-insights__passives { display: flex; min-width: 0; flex-direction: column; }
-        .deck-insights__scroll { max-height: 24rem; overflow-y: auto; overscroll-behavior: contain; padding-right: 0.75rem; }
+        /* No overscroll containment: at the list's ends the page goes on scrolling (useWheelIntent decides who a wheel gesture moves). */
+        .deck-insights__scroll { max-height: 24rem; overflow-y: auto; padding-right: 0.75rem; }
         .deck-insights__scroll::-webkit-scrollbar { width: 4px; }
         .deck-insights__scroll::-webkit-scrollbar-track { background: transparent; }
         .deck-insights__scroll::-webkit-scrollbar-thumb { background: #3a2c18; border-radius: 4px; }
@@ -240,8 +247,9 @@ export default function DeckInsights({ identities, sinCounts, baseSinCounts, sum
         .deck-passives__body { display: flex; min-width: 0; flex-direction: column; gap: 0.75rem; }
         @media (min-width: 40rem) { .deck-passives__body { padding-left: 2.625rem; } }
         .deck-passive__line { display: flex; flex-wrap: wrap; align-items: center; gap: 0.375rem 0.5rem; margin-bottom: 0.25rem; }
-        .deck-passive__name { color: #e8dcc8; font-size: 0.9375rem; font-weight: 600; }
-        .deck-passive[data-unmet='true'] .deck-passive__name { color: #9c8b73; }
+        .deck-passive + .deck-passive { padding-top: 0.75rem; border-top: 1px solid #221a10; }
+        .deck-passive[data-unmet='true'] [data-skill-name-banner] { opacity: 0.55; }
+        .deck-passive h4 { margin-bottom: 0.375rem; }
         .deck-passive__cost {
           display: inline-flex; align-items: center; gap: 0.25rem; min-height: 1.5rem; padding: 0 0.5rem 0 0.3125rem;
           border: 1px solid #3a2c18; border-radius: 0.25rem; background: #120e08; color: #e8dcc8; font-size: 0.8125rem;

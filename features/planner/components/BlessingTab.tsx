@@ -2,6 +2,7 @@
 
 import { getGameUiAsset } from '@/lib/utils/game-ui'
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { useWheelIntent } from '@/lib/hooks/useWheelIntent'
 import type { CSSProperties, Dispatch, RefObject } from 'react'
 import Image from 'next/image'
 import { useLocale, useTranslations } from 'next-intl'
@@ -332,6 +333,9 @@ function BlessingCard({
   const previousEffects = selectedLevel > 1 ? blessing.effectsByLevel[selectedLevel - 2] : undefined
   const locale = useLocale()
   const displayName = getBlessingDisplayName(blessing, level)
+  // The effect text scrolls inside the card; a page scroll passing over the cards keeps scrolling the page (REQ-DECKS-053).
+  const effectsRef = useRef<HTMLDivElement>(null)
+  useWheelIntent(effectsRef)
 
   const cardContent = (
     <>
@@ -411,6 +415,7 @@ function BlessingCard({
       </div>
 
       <div
+        ref={effectsRef}
         className="planner-blessing-effects absolute overflow-y-auto overflow-x-hidden pr-1"
         style={{
           left: '25px',
@@ -427,7 +432,6 @@ function BlessingCard({
           wordBreak: locale === 'ko' ? 'keep-all' : 'normal',
           overflowWrap: 'anywhere',
           pointerEvents: 'auto',
-          overscrollBehavior: 'contain',
         }}
       >
         {currentEffects.map((effect: string, i: number) => (
