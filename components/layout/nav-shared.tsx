@@ -12,6 +12,7 @@ export const NAV_GROUPS: { labelKey: string; items: { href: string; labelKey: st
       { href: '/sinners',        labelKey: 'nav.sinners' },
       { href: '/mirror-dungeon', labelKey: 'nav.db.mirrorDungeon' },
       { href: '/keywords',       labelKey: 'nav.db.keywords' },
+      { href: '/story',          labelKey: 'nav.db.story' },
     ],
   },
   {

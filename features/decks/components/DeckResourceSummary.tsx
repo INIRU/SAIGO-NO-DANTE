@@ -2,7 +2,7 @@
 
 import Image from 'next/image'
 import { useTranslations } from 'next-intl'
-import { STORAGE_BASE } from '@/lib/constants/game'
+import AttackTypeIcon from '@/components/ui/AttackTypeIcon'
 import { SIN_COLORS, SIN_ORDER, getSinIconUrl } from '@/lib/constants/sin'
 import type { SinType } from '@/lib/types'
 import { ATTACK_TYPES, DEFENSE_TYPES, type AttackType, type DeckResources } from '@/features/decks/lib/deck-analysis'
@@ -36,7 +36,7 @@ export default function DeckResourceSummary({ resources }: { resources: DeckReso
         <h3 id="deck-attack-types" className="deck-insights__title">{tDeck('stats.attackTypes')}{basis}</h3>
         <KeywordChart
           getKeywordLabel={type => tSkill(type as AttackType)}
-          distribution={ATTACK_TYPES.map(type => ({ keyword: type, count: attack.skills[type], iconUrl: `${STORAGE_BASE}/icons/stats/${type}.webp`, color: ATTACK_COLORS[type] }))}
+          distribution={ATTACK_TYPES.map(type => ({ keyword: type, count: attack.skills[type], icon: <AttackTypeIcon type={type} />, color: ATTACK_COLORS[type] }))}
         />
         {(defense.length > 0 || ego.length > 0) && (
           <dl className="deck-resources__apart">

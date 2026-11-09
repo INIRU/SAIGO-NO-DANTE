@@ -150,18 +150,21 @@ export default async function LangLayout({
   return (
     <html lang={validLang} suppressHydrationWarning data-scroll-behavior="smooth" className={fontVariables}>
       <head>
-        {/* Sets html[data-mac]/[data-auth-hint] before paint so the navbar never swaps its hint or login slot. */}
-        <script dangerouslySetInnerHTML={{ __html: NAV_BOOT_SCRIPT }} />
         {/* Game icons shown without the optimizer load from storage directly; optimized images come from the media host when self-hosted. */}
         <link rel="preconnect" href="https://lpgqcleszdlldneiwgep.supabase.co" />
         {process.env.SELF_HOSTED === '1' ? <link rel="preconnect" href={MEDIA_ORIGIN} /> : null}
         {/* The AdSense code as AdSense gives it (async, in the head): site review and Auto ads read it from the HTML. */}
         <script async src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_ACCOUNT}`} crossOrigin="anonymous" />
+      </head>
+      <body className="antialiased">
+        {/* The inline scripts open the body rather than sit in the head: AdSense puts its own script first in the head
+            before React hydrates, and React then finds every head child one place off (a hydration mismatch). They
+            still run before the page paints. */}
+        {/* Sets html[data-mac]/[data-auth-hint] before paint so the navbar never swaps its hint or login slot. */}
+        <script dangerouslySetInnerHTML={{ __html: NAV_BOOT_SCRIPT }} />
         <JsonLd data={websiteJsonLd(validLang)} />
         <JsonLd data={organizationJsonLd(SITE_URL)} />
         <JsonLd data={videoGameJsonLd(validLang)} />
-      </head>
-      <body className="antialiased">
         <NuqsAdapter>
           <SessionProvider>
             <SWRProvider>
