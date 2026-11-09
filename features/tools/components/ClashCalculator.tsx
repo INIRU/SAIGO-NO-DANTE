@@ -93,7 +93,7 @@ export default function ClashCalculator() {
     } />
     <div className={clash.arena}>
       <SidePanel side="a" title={t('sideA')} form={a} onChange={patch => setA(current => ({ ...current, ...patch }))} resetKey={resetKey} />
-      <section className={clash.versus} aria-labelledby="clash-result-heading">
+      <section className={`${clash.versus} nav-slide`} aria-labelledby="clash-result-heading">
         <h2 id="clash-result-heading" className={clash.versusTitle}>{t('result')}</h2>
         <div className={clash.odds} aria-live="polite" aria-atomic="true">
           <p className={clash.oddsA}><span>{t('sideA')}</span><strong data-testid="clash-win-a">{percent(result.winA)}</strong></p>

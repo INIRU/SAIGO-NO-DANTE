@@ -9,9 +9,9 @@ export function isStuck(rectTop: number, translateY: number, stickyTop: number) 
   return rectTop - translateY <= stickyTop + 0.5
 }
 
-/** Marks each sticky bar `data-stuck` while it is stuck: all reads first, then the writes, so one frame lays out once. */
+/** Marks each sticky bar (and `.nav-slide` element) `data-stuck` while it is stuck: all reads first, then the writes, so one frame lays out once. */
 export function markStuckBars() {
-  const bars = [...document.querySelectorAll<HTMLElement>('.sticky-under-nav')]
+  const bars = [...document.querySelectorAll<HTMLElement>('.sticky-under-nav, .nav-slide')]
   const stuck = bars.map(bar => {
     const style = getComputedStyle(bar)
     if (style.position !== 'sticky') return false

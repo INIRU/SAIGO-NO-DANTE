@@ -61,7 +61,7 @@ export default function DocsTab({ endpoints, endpoint, open }: { endpoints: Endp
               </table>
             </section>
           </div>
-          <div className="min-w-0 space-y-3 xl:sticky xl:top-[var(--nav-offset)] xl:h-fit xl:transition-[top] xl:duration-300 motion-reduce:transition-none">
+          <div className="min-w-0 space-y-3 nav-slide xl:sticky xl:top-[var(--nav-height)] xl:h-fit">
             <RequestCode request={exampleRequest(endpoint)} kind={kind} onKind={setKind} maxHeight="22rem" />
             <CodeBlock title={label("응답", "レスポンス", "Response")} code={endpoint.sample} maxHeight="22rem" />
           </div>
