@@ -3,7 +3,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 
 vi.mock('next-intl', () => ({ useLocale: () => 'ko', useTranslations: () => (key: string) => key }))
 // eslint-disable-next-line @next/next/no-img-element
-vi.mock('next/image', () => ({ default: ({ src, alt }: { src: string; alt: string }) => <img src={src} alt={alt} /> }))
+vi.mock('next/image', () => ({ default: ({ src, alt }: { src: string; alt: string }) => <img src={src} alt={alt} />, getImageProps: ({ src, alt }: { src: string; alt: string }) => ({ props: { src, alt } }) }))
 vi.mock('@/components/ui/BaseModal', () => ({ default: ({ open, children }: { open: boolean; children: React.ReactNode }) => (open ? <div role="dialog">{children}</div> : null) }))
 vi.mock('@/features/catalog/components/IdentityFrameCard', () => ({ default: ({ name }: { name: string }) => <span data-identity>{name}</span> }))
 vi.mock('@/lib/i18n/navigation', () => ({ Link: ({ href, children }: { href: string; children: React.ReactNode }) => <a href={href}>{children}</a>, useRouter: () => ({}), usePathname: () => '/' }))

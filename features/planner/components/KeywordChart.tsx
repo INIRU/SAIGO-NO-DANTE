@@ -4,7 +4,7 @@ import type { ReactNode } from 'react'
 import { useTranslations } from 'next-intl'
 import { GIFT_KEYWORD_COLORS } from '@/lib/constants/gift'
 
-import Image from 'next/image'
+import QuietImage from '@/components/ui/QuietImage'
 import { getGiftKeywordIconUrl } from '@/lib/constants/gift'
 import KeywordIcon from '@/components/ui/KeywordIcon'
 
@@ -110,7 +110,7 @@ export default function KeywordChart({
                     title={contributor.name}
                     aria-label={contributor.name}
                   >
-                    <Image
+                    <QuietImage
                       src={contributor.imageUrl}
                       alt={contributor.name}
                       fill

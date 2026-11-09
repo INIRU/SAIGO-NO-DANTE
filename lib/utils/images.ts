@@ -158,3 +158,20 @@ export function getFormationBannerUrl(kind: 'selected' | 'backup'): string {
 export function getConstraintAssetUrl(layer: string): string {
   return `/assets/planner/constraint-ui/md8-${layer}.webp`
 }
+
+/** The CSS pixel width of a `sizes` that is one fixed length (`120px`, `2rem`), or null when it depends on the screen. */
+export function fixedSizePx(sizes: string | undefined): number | null {
+  const match = sizes?.trim().match(/^(\d+(?:\.\d+)?)(px|rem)$/)
+  return match ? Number(match[1]) * (match[2] === 'rem' ? 16 : 1) : null
+}
+
+/**
+ * Of a `w` srcset, the smallest width that fills a slot of `cssPx` on a 1x, 2x and 3x screen: the only ones a browser picks.
+ * next/image lists every width the site knows for any `sizes`, about 190 characters each, so a page of small gift icons
+ * carried 762KB of srcset (a plan detail, 2.8MB of HTML).
+ */
+export function trimFixedSrcSet(srcSet: string, cssPx: number): string {
+  const entries = srcSet.split(', ').map(entry => ({ entry, width: Number(entry.slice(entry.lastIndexOf(' ') + 1, -1)) })).sort((a, b) => a.width - b.width)
+  const keep = new Set([1, 2, 3].map(density => (entries.find(item => item.width >= cssPx * density) ?? entries.at(-1))?.width))
+  return entries.filter(item => keep.has(item.width)).map(item => item.entry).join(', ')
+}
