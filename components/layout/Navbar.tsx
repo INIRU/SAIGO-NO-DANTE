@@ -1,6 +1,7 @@
 'use client'
 
 import { Suspense, useCallback, useEffect, useRef, useState } from 'react'
+import { markStuckBars } from '@/lib/navigation/sticky-under-nav'
 import { forgetPushSubscription } from '@/hooks/usePushSubscription'
 import { useTapEgg } from '@/components/brand/easter-eggs'
 import { useSession, signOut } from 'next-auth/react'
@@ -60,6 +61,7 @@ export default function Navbar({ mainNavLabel }: NavbarProps) {
         const shouldHide = current > lastScrollY.current && current > 80
         lastScrollY.current = current
         setHidden(prev => prev === shouldHide ? prev : shouldHide)
+        markStuckBars()
         ticking = false
       })
     }
@@ -70,6 +72,7 @@ export default function Navbar({ mainNavLabel }: NavbarProps) {
   // 고정 목차·필터가 같은 타이밍에 따라오도록 숨김 상태를 <html>에 알린다 (--nav-offset, globals.css)
   useEffect(() => {
     document.documentElement.toggleAttribute('data-nav-hidden', hidden && !mobileMenuOpen && !notifyOpen)
+    markStuckBars()
   }, [hidden, mobileMenuOpen, notifyOpen])
 
 
