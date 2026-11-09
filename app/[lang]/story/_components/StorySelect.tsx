@@ -2,7 +2,6 @@
 
 import FullscreenGate from './FullscreenGate'
 import { useState } from 'react'
-import Link from 'next/link'
 import type { StoryIndexEntry, Texts } from '@/lib/story-map'
 import { BackButton, useFullScreen } from './StoryClient'
 import { useStoryProgress } from './progress'
@@ -122,8 +121,9 @@ function ChapterCard({ entry, base, lang, chapter, active, hidden, reveal, onRev
 }) {
   return (
     // Spoilers: a chapter past the furthest one opened shows ???; the first click on it opens it here (and every
-    // chapter before it), the next click goes in.
-    <Link href={`/${lang}/story/${entry.id}`} aria-label={hidden ? reveal : undefined}
+    // chapter before it), the next click goes in. A plain link (a full page load): the chapter pages are postponed in
+    // the cache, and a client-side move into one sometimes got its RSC stream cut ("Connection closed", React #412).
+    <a href={`/${lang}/story/${entry.id}`} aria-label={hidden ? reveal : undefined}
       onClick={hidden ? e => { e.preventDefault(); onReveal() } : undefined}
       // Narrow cards for the in-between stories (3.5, LC-PC …); a whole number is a chapter even when it is filed under
       // part 91 (9128 carries the rest of chapter 10).
@@ -153,6 +153,6 @@ function ChapterCard({ entry, base, lang, chapter, active, hidden, reveal, onRev
       <span className="absolute bottom-[8%] right-[5%] max-w-[85%] break-keep text-right font-[family-name:var(--font-heading)] text-[1.5rem] leading-[1.3] text-[#f3e4cb] [text-shadow:0_0_2px_#000,0_1px_3px_#000,0_0_8px_#000]">
         {hidden ? '???' : text(entry.title, lang)}
       </span>
-    </Link>
+    </a>
   )
 }

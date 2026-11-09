@@ -112,10 +112,11 @@ export default function StoryClient({ lang, sub, base, order, parts, difficulty 
         // A rerun's NORMAL / HARD, at the bottom left as in the game: green plate for normal, red for hard.
         <nav aria-label="NORMAL / HARD" className="absolute bottom-4 left-4 flex gap-2">
           {parts.map((id, i) => (
-            <Link key={id} href={`/${lang}/story/${id}`} aria-current={id === sub.id ? 'page' : undefined}
+            // a full page load, as from the chapter list (StorySelect ChapterCard)
+            <a key={id} href={`/${lang}/story/${id}`} aria-current={id === sub.id ? 'page' : undefined}
               className={`flex h-10 min-w-[6.5rem] items-center justify-center rounded-[3px] border-2 px-3 font-[family-name:var(--font-title)] text-[1.375rem] leading-none shadow-[0_2px_0_#000] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--gold)] ${i === 0 ? 'border-[var(--gold)] bg-[linear-gradient(180deg,#5f8f2a,#3b6118)] text-[#f0c418]' : 'border-[#3a0b0b] bg-[linear-gradient(180deg,#c2302b,#8a1512)] text-[#f3e4cb]'} ${id === sub.id ? '' : 'opacity-50 hover:opacity-80'}`}>
               {i === 0 ? 'NORMAL' : 'HARD'}
-            </Link>
+            </a>
           ))}
         </nav>
       )}
