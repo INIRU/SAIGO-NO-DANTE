@@ -112,7 +112,14 @@ function useRailTop(rail: boolean) {
     place()
     addEventListener('scroll', schedule, { passive: true })
     addEventListener('resize', schedule)
-    return () => { removeEventListener('scroll', schedule); removeEventListener('resize', schedule); cancelAnimationFrame(frame) }
+    // the page under it changes without a scroll (a loading screen with no hero giving way to the home, sections streaming in,
+    // which move the backdrop and the footer): placed only on scroll, the side ad stayed at the navbar, over the home's hero
+    const content = new ResizeObserver(schedule)
+    const main = document.getElementById('main-content')
+    if (main) content.observe(main)
+    return () => {
+      removeEventListener('scroll', schedule); removeEventListener('resize', schedule); content.disconnect(); cancelAnimationFrame(frame)
+    }
   })
   return ref
 }
