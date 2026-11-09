@@ -139,6 +139,15 @@ describe('ad slot', () => {
     expect(css).toMatch(/:is\(\.top, \.inline, \.panel, \.rail, \.hero\):has\(ins\[data-ad-status="unfilled"\]\)/)
   })
 
+  it('REQ-SHARED-085 puts the phone\'s home start banner under the notice strip, before the new identities', () => {
+    // a phone's hero has no room for its banner: the plan detail's start banner stands right after the first screen instead
+    const home = source('app/[lang]/(home)/HomeClient.tsx')
+    const ad = home.indexOf('<AdSlot place="inline" phoneOnly />')
+    expect(ad).toBeGreaterThan(home.indexOf('<AnnouncementBanner'))
+    // outside the first screen, so it does not squeeze the hero
+    expect(home.slice(ad - 200, ad)).toMatch(/<\/div>\s*(\{\/\*[^*]*\*\/\}\s*)?$/)
+  })
+
   it('REQ-SHARED-085 keeps both side ads in view while scrolling, the owner\'s call against AdSense\'s one-sticky rule (recorded)', () => {
     const code = source('components/ads/AdSlot.tsx')
     expect(code).toContain('support.google.com/adsense/answer/10734935')
