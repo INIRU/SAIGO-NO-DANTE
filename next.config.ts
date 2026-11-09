@@ -22,7 +22,8 @@ const contentSecurityPolicyDirectives = [
   "img-src 'self' data: blob: https:",
   "font-src 'self'",
   // assets.saigo-no-dante.com: the skill motion videos and their layer data on R2, read by the motion player.
-  `connect-src 'self' https://lpgqcleszdlldneiwgep.supabase.co https://va.vercel-scripts.com https://cloudflareinsights.com https://assets.saigo-no-dante.com ${ADSENSE_HOSTS} https://*.google.com`,
+  // data: PixiJS tests image formats by fetching a tiny data: picture (the story map effects).
+  `connect-src 'self' data: https://lpgqcleszdlldneiwgep.supabase.co https://va.vercel-scripts.com https://cloudflareinsights.com https://assets.saigo-no-dante.com ${ADSENSE_HOSTS} https://*.google.com`,
   "worker-src 'self' blob:",
   `frame-src https://www.youtube.com https://www.youtube-nocookie.com ${ADSENSE_HOSTS} https://www.google.com`,
   "media-src 'self' https://assets.saigo-no-dante.com",

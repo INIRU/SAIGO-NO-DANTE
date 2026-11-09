@@ -63,6 +63,7 @@ export const translations = {
   'nav.db.title': { ko: 'DB', en: 'DB', ja: 'DB' },
   'nav.db.mirrorDungeon': { ko: '거던', en: 'Mirror Dungeon', ja: 'ミラーダンジョン' },
   'nav.db.keywords': { ko: '키워드', en: 'Keywords', ja: 'キーワード' },
+  'nav.db.story': { ko: '스토리', en: 'Story', ja: 'ストーリー' },
   'nav.community.planner': { ko: '거던 플래너', en: 'MD Planner', ja: 'ミラダンプランナー' },
   'nav.support': { ko: '문의', en: 'Support', ja: 'お問い合わせ' },
   'nav.community.collection': { ko: '보유 현황', en: 'Collection', ja: 'コレクション' },
