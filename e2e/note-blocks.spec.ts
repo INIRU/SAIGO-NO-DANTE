@@ -3,6 +3,9 @@ import { test, expect, type Page } from '@playwright/test'
 test.use({ channel: 'chrome' })
 test.setTimeout(90000)
 async function openEditor(page: Page) {
+  // a site notice opens over any page once: close it whenever it shows
+  const popup = page.getByRole('dialog').filter({ has: page.locator('[data-announcement-popup]') })
+  await page.addLocatorHandler(popup, async () => { await popup.getByRole('button', { name: '닫기' }).last().click() })
   await page.goto('/ko/decks/new', { waitUntil:'domcontentloaded' })
   await page.getByRole('tab', { name:/덱 노트/ }).click()
   await expect(page.locator('.tiptap')).toBeVisible()
@@ -67,6 +70,28 @@ test('nested blocks survive draft reload and preview hides empty editing slots',
   await expect(preview).not.toContainText('여기에 글을')
   await preview.getByRole('button',{name:'아코디언 접기 또는 펼치기'}).click()
   await expect(preview.locator('.note-accordion')).toHaveAttribute('data-open','false')
+})
+
+test('an accordion saved as closed starts closed in the editor and for readers', async ({page}) => {
+  await openEditor(page)
+  await page.getByPlaceholder('덱 제목을 입력하세요').fill('기본 접힘 검증')
+  await page.locator('.tiptap').fill('/아코디언')
+  await page.keyboard.press('Tab')
+  await page.locator('[data-note-title]').click()
+  await page.keyboard.insertText('접어 둔 내용')
+  await page.keyboard.press('Enter')
+  await page.keyboard.insertText('펼쳐야 보이는 글')
+  await page.getByRole('button',{name:'기본 펼침',exact:true}).click()
+  await expect(page.getByRole('button',{name:'기본 접힘',exact:true})).toHaveAttribute('aria-pressed','true')
+  await expect(page.locator('[data-note-body]')).toBeHidden()
+  await saveToFirstSlot(page)
+  await page.reload({waitUntil:'domcontentloaded'})
+  await restoreDraft(page)
+  await page.getByRole('tab',{name:/덱 노트/}).click()
+  await expect(page.getByRole('button',{name:'기본 접힘',exact:true})).toBeVisible()
+  await expect(page.locator('[data-note-body]')).toBeHidden()
+  await page.getByRole('button',{name:'미리보기',exact:true}).click()
+  await expect(page.locator('.note-editor-preview .note-accordion')).toHaveAttribute('data-open','false')
 })
 
 for (const width of [1440,390]) test(`asset picker and game frames at ${width}px`,async({page})=>{
