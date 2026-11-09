@@ -1,29 +1,39 @@
 .card {
-  transform: scale(1);
   z-index: 1;
+  transition: opacity 0.15s;
 }
 
-.card:not(:disabled):hover {
-  transform: scale(1.06);
-  z-index: 10;
+/* The game's hover (EgoGiftIconPrefab img_hover, EgoGift_bg_hover 371x370): no zoom. Rect 357x345 centred in the 350
+   slot, 2.5 up, Image Simple + preserveAspect → a box 102% x 98.571% of the card, top at 0 (centre 0.714% up), the
+   sprite contained. Fade: UISlot.OnPointerEnter → SetHighlight → img_hover.CrossFadeAlpha(1, 0.1 s); OnPointerExit →
+   SetDefault → (0, 0.1 s), linear (EgoGiftSellSlot / EgoGiftUpgradeSlot, Oct 8 build). */
+.hover {
+  position: absolute;
+  top: 0;
+  left: -1%;
+  width: 102%;
+  max-width: none;
+  height: auto;
+  aspect-ratio: 357 / 345;
+  object-fit: contain;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.1s linear;
 }
 
-.frame {
-  box-shadow: none;
-}
-
-.card:not(:disabled):hover .frame {
-  box-shadow: 0 0 0.75rem rgba(200,144,10,0.3);
-}
-
-.remove,
-.glow {
+.remove {
   opacity: 0;
 }
 
 .card:not(:disabled):hover .remove,
-.card:not(:disabled):hover .glow {
+.card:not(:disabled):hover .hover,
+.card:not(:disabled):focus-visible .hover {
   opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hover { transition: none }
 }
 
 /* Detail window enhance keys: the sprite itself is the state (lit when picked). */

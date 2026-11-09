@@ -236,6 +236,24 @@ textarea:focus-visible {
   .animate-dropdown-in, .animate-fade-in, .animate-ghost-pulse, .animate-roll-glow, .card-shimmer::after, .skill-marquee-track { animation: none; }
 }
 
+/* ── 스토리 맵 ──────────────────────────────────── */
+/* Only what a click changes moves: the camera zooms to the picked stage (StoryMap, the game's own curves) and the bus
+   follows, the panel swaps in from the map side, the enemy portraits rise in order, the chapter tickets slide in once
+   when the select screen opens. */
+@media (prefers-reduced-motion: no-preference) {
+  .story-panel-in { animation: story-panel-in .32s cubic-bezier(.22,1,.36,1) both; }
+  .story-rise { animation: story-rise .36s cubic-bezier(.22,1,.36,1) both; animation-delay: calc(var(--i, 0) * 35ms + 120ms); }
+  .story-ticket-in { animation: story-ticket-in .45s cubic-bezier(.22,1,.36,1) both; animation-delay: calc(var(--i, 0) * 40ms); }
+  .story-bus { transition: left .5s cubic-bezier(.22,1,.36,1), top .5s cubic-bezier(.22,1,.36,1); }
+  .story-bg-in { animation: story-bg-in .5s ease-out both; }
+}
+@keyframes story-bg-in { from { opacity: 0; transform: scale(1.03); } to { opacity: 1; transform: none; } }
+@keyframes story-panel-in { from { opacity: 0; transform: translateX(1.25rem); } to { opacity: 1; transform: none; } }
+/* the event monitor's REC dot (the game's CameraShooting blinks it) */
+@keyframes event-rec { 50% { opacity: 0; } }
+@keyframes story-rise { from { opacity: 0; transform: translateY(.5rem) scale(.96); } to { opacity: 1; transform: none; } }
+@keyframes story-ticket-in { from { opacity: 0; transform: translateX(-1.5rem); } to { opacity: 1; transform: none; } }
+
 /* ── 랜덤 편성 ──────────────────────────────────── */
 @keyframes ghost-pulse {
   0%, 100% { border-color: rgba(42,32,21,0.4); }
@@ -557,7 +575,7 @@ html[data-auth-hint] .nav-auth-guest,html:not([data-auth-hint]) .nav-auth-user{d
 
 /* Sticky bars sit right under the fixed navbar and move with it (Navbar sets html[data-nav-hidden]). */
 :root{--nav-offset:4rem}
-html:is([data-nav-hidden],[data-with-admin-shell],[data-with-assist-run],[data-with-prescript],[data-with-mypage],[data-with-gift-check],[data-with-motion]){--nav-offset:0rem}
+html:is([data-nav-hidden],[data-with-admin-shell],[data-with-assist-run],[data-with-prescript],[data-with-mypage],[data-with-gift-check],[data-with-motion],[data-with-story]){--nav-offset:0rem}
 .sticky-under-nav{position:sticky;top:var(--nav-offset);transition:top 300ms cubic-bezier(0.4,0,0.2,1)}
 @media (prefers-reduced-motion:reduce){.sticky-under-nav{transition:none}}
 /* Print: page content only, on white. */

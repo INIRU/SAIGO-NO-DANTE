@@ -23,7 +23,8 @@
     "db": {
       "title": "DB",
       "mirrorDungeon": "Mirror Dungeon",
-      "keywords": "Keywords"
+      "keywords": "Keywords",
+      "story": "Story Map"
     },
     "other": {
       "calendar": "News calendar"

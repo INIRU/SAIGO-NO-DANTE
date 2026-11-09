@@ -220,7 +220,7 @@ const Sign = ({ children }: { children: ReactNode }) => (
 )
 
 /** Gift detail layout shared by the Mirror Dungeon catalog and the planner. */
-export default function GiftDetailModal({ gift, lang, onClose, initialLevel = 0, onBack, backLabel }: {
+export default function GiftDetailModal({ gift, lang, onClose, initialLevel = 0, onBack, backLabel, zIndex }: {
   gift: GiftDetailData
   lang: SupportedLang
   onClose: () => void
@@ -228,6 +228,8 @@ export default function GiftDetailModal({ gift, lang, onClose, initialLevel = 0,
   /** Shown while viewing a recipe ingredient opened from another gift. */
   onBack?: () => void
   backLabel?: string
+  /** Over a full-screen layer (the story dungeon view is z-70) */
+  zIndex?: number
 }) {
   const t = useTranslations('giftDetail')
   const [base, plus, plusplus] = gift.effects
@@ -244,7 +246,7 @@ export default function GiftDetailModal({ gift, lang, onClose, initialLevel = 0,
   const hiddenThemeCount = themes.length - visibleThemes.length
 
   return (
-    <BaseModal open={true} onClose={onClose} maxWidth="34rem" title={gift.name || t('title')} sheet>
+    <BaseModal open={true} onClose={onClose} maxWidth="34rem" title={gift.name || t('title')} sheet zIndex={zIndex}>
       <div
         className="relative flex max-h-[88dvh] w-full flex-col overflow-hidden rounded-t-xl border sm:max-h-[85vh] sm:rounded-xl"
         style={{ background: 'var(--bg-panel)', borderColor: 'var(--border)', boxShadow: '0 1.5rem 4rem rgba(0,0,0,0.6)' }}

@@ -23,7 +23,8 @@
     "db": {
       "title": "DB",
       "mirrorDungeon": "거던",
-      "keywords": "키워드"
+      "keywords": "키워드",
+      "story": "스토리 맵"
     },
     "other": {
       "calendar": "소식 캘린더"

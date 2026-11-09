@@ -8,6 +8,7 @@ import styles from './GiftCard.module.css'
 import { useLocale, useTranslations } from 'next-intl'
 import { X } from 'lucide-react'
 import { getGameUiAsset } from '@/lib/utils/game-ui'
+const GIFT_HOVER_URL = getGameUiAsset('gift/hover')
 import type { GiftConditionStatus } from '@/lib/planner/gift-condition-status'
 import { GiftConditionLine, GiftConditionMark } from './GiftCondition'
 
@@ -197,7 +198,6 @@ const GiftCard = memo(function GiftCard({
         border: 'none',
         padding: 0,
         opacity: disabled ? 0.4 : 1,
-        transition: 'transform 0.2s ease, opacity 0.15s',
         position: 'relative',
       }}
     >
@@ -245,14 +245,12 @@ const GiftCard = memo(function GiftCard({
         )}
 
         {!isInsert && conditionStatus && <GiftConditionMark status={conditionStatus} />}
-
-        {/* Hover glow */}
-        <div className={styles.glow} style={{
-          position: 'absolute', inset: 0,
-          background: 'linear-gradient(135deg, rgba(251,183,46,0.18) 0%, transparent 50%)',
-          transition: 'opacity 0.2s', pointerEvents: 'none',
-        }} />
       </GiftArtwork>
+
+      {/* The game's hover frame: EgoGiftIconPrefab img_hover (MirrorDungeon/EgoGift/EgoGift_bg_hover). Outside the
+          artwork so the octagon clip does not cut its glowing corners. */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={GIFT_HOVER_URL} alt="" aria-hidden="true" draggable={false} className={styles.hover} />
 
       {warning && <GiftWarningMark label={warning} />}
 

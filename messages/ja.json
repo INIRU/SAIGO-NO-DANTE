@@ -23,7 +23,8 @@
     "db": {
       "title": "DB",
       "mirrorDungeon": "ミラーダンジョン",
-      "keywords": "キーワード"
+      "keywords": "キーワード",
+      "story": "ストーリーマップ"
     },
     "other": {
       "calendar": "ニュースカレンダー"
