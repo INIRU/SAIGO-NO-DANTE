@@ -574,9 +574,13 @@ html[data-mac] .nav-kbd-other,html:not([data-mac]) .nav-kbd-mac{display:none}
 html[data-auth-hint] .nav-auth-guest,html:not([data-auth-hint]) .nav-auth-user{display:none}
 
 /* Sticky bars sit right under the fixed navbar and move with it (Navbar sets html[data-nav-hidden]). */
-:root{--nav-offset:4rem}
+/* --nav-height stays put while the navbar hides; a stuck .sticky-under-nav slides up with it (a transform: animating top laid
+   out the page every frame and stuttered on phones). lib/navigation/sticky-under-nav.ts marks the stuck ones. */
+:root{--nav-offset:4rem;--nav-height:4rem}
 html:is([data-nav-hidden],[data-with-admin-shell],[data-with-assist-run],[data-with-prescript],[data-with-mypage],[data-with-gift-check],[data-with-motion],[data-with-story]){--nav-offset:0rem}
-.sticky-under-nav{position:sticky;top:var(--nav-offset);transition:top 300ms cubic-bezier(0.4,0,0.2,1)}
+html:is([data-with-admin-shell],[data-with-assist-run],[data-with-prescript],[data-with-mypage],[data-with-gift-check],[data-with-motion],[data-with-story]){--nav-height:0rem}
+.sticky-under-nav{position:sticky;top:var(--nav-height);transition:transform 300ms cubic-bezier(0.4,0,0.2,1)}
+html[data-nav-hidden] .sticky-under-nav[data-stuck]{transform:translateY(calc(-1 * var(--nav-height)))}
 @media (prefers-reduced-motion:reduce){.sticky-under-nav{transition:none}}
 /* Print: page content only, on white. */
 @media print{.site-navigation,.site-footer{display:none!important}html,body{background:#fff!important}}
