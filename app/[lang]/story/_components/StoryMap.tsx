@@ -335,12 +335,31 @@ export default function StoryMap({ sub, base, lang, selected, zoomed, spoiler, o
     // A click that did not drag reaches the node / card buttons.
     setTimeout(() => { drag.current = null }, 0)
   }
-  const onWheel = (e: React.WheelEvent) => {
-    if (!cam || !unit || (!e.deltaX && !e.shiftKey)) return
-    // a sideways scroll closes a stage's panel like a drag and moves the map
+  const onWheel = (e: WheelEvent) => {
+    if (!cam || !unit || !size) return
+    // not passive (below): a ctrl + wheel would also zoom the whole page
+    e.preventDefault()
+    // a scroll closes a stage's panel like a drag
     if (zoomed) onDragStart()
-    pan((e.deltaX || e.deltaY) / unit, 0)
+    // a sideways scroll (or shift + wheel) moves the map
+    if (!e.ctrlKey && (e.deltaX || e.shiftKey)) { pan((e.deltaX || e.deltaY) / unit, 0); return }
+    // VIEWER (USER 2026-11-09: PC could not zoom): the wheel (and a touchpad pinch, ctrl + wheel) zooms as two fingers do,
+    // keeping the map point under the cursor in place
+    const dy = e.deltaY * (e.deltaMode === 1 ? 40 : e.deltaMode === 2 ? size.h : 1)
+    const z = Math.min(2.5, Math.max(0.6, pinchZ.current * Math.exp(-dy * (e.ctrlKey ? 0.01 : 0.0015))))
+    if (z === pinchZ.current) return
+    const [x, y] = local(e.clientX, e.clientY)
+    const u1 = unit / pinchZ.current * z, gain = 1 / unit - 1 / u1
+    pinchZ.current = z
+    pan((x - size.w / 2) * gain, -(y - size.h / 2) * gain)
   }
+  const wheel = useRef(onWheel)
+  wheel.current = onWheel
+  useEffect(() => {
+    const el = viewRef.current, h = (e: WheelEvent) => wheel.current(e)
+    el?.addEventListener('wheel', h, { passive: false })
+    return () => el?.removeEventListener('wheel', h)
+  }, [])
   const pick = (id: number) => { if (!drag.current?.moved) onSelect(id) }
 
   const ny = (n: StoryNode) => map.h - n.y
@@ -365,7 +384,6 @@ export default function StoryMap({ sub, base, lang, selected, zoomed, spoiler, o
       onPointerMove={onPointerMove}
       onPointerUp={endDrag}
       onPointerCancel={endDrag}
-      onWheel={onWheel}
     >
       {/* While the first tiles load: the chapter's picture, blurred and dark, and the loading mark */}
       {painted < Math.min(2, sub.map.tiles.length) && (
