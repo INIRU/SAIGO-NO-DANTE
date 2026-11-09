@@ -62,6 +62,8 @@ export interface StorySubchapter {
   /** 상·중·하편: the last node id of each stage group (subchapter-detail), when there is more than one */
   groups?: number[] | null
   nodes: StoryNode[]
+  /** cover/<id>.webp exists (the chapter list's background): shown blurred while the map loads */
+  coverImg?: boolean
   /** Per unit id. The full enemy records (hp, speed, stagger, skills …) are in story-map/enemies.json for an enemy DB. */
   enemies: Record<string, {
     name: Texts | null
