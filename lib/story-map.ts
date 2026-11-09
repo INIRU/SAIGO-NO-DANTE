@@ -70,6 +70,8 @@ export interface StorySubchapter {
     desc: Texts | null
     /** Unit id of the portrait to show (its own, or the unit whose appearance it wears) */
     portrait?: number | null
+    /** No portrait in the game: sd/<id>.webp, the unit's battle SD drawn whole (VIEWER) */
+    sd?: number | null
     /** atk: SLASH / PENETRATE / HIT, sin: CRIMSON … VIOLET (+ WHITE / BLACK) → damage multiplier */
     resist?: { atk: Record<string, number>; sin: Record<string, number> }
     /** The game marks it a mob (Enemies desc 잡몹 / 일반 적, or a *Mob* appearance). VIEWER: others are spoilers */
