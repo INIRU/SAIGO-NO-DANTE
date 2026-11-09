@@ -155,7 +155,7 @@ export default function AdSlot({ slot: unitSlot, place, phoneOnly = false }: {
   const off = rail && offset == null
   const box = `${rail ? styles.rail : place === 'top' ? styles.top : place === 'panel' ? styles.panel : place === 'hero' ? styles.hero : styles.inline}${phoneOnly ? ` ${styles.phoneOnly}` : ''}`
   const position = rail ? ({ [place]: `${offset ?? EDGE}px` } as CSSProperties) : undefined
-  const unit = rail ? styles.railUnit : place === 'panel' ? styles.panelUnit : place === 'hero' ? styles.heroUnit : styles.topUnit
+  const unit = rail ? styles.railUnit : place === 'panel' ? styles.panelUnit : place === 'hero' ? styles.heroUnit : place === 'inline' ? styles.inlineUnit : styles.topUnit
   const kind = place === 'panel' ? '' : 'site-ad '
   const preview = process.env.NODE_ENV === 'development' || process.env.NEXT_PUBLIC_AD_PREVIEW === '1'
   if (preview) return <aside ref={rail ? railRef : undefined} data-off={off || undefined} className={`${kind}${box}`} style={position}><div className={`${unit} ${styles.preview}`}>AD</div></aside>

@@ -31,6 +31,24 @@
   }
 }
 
+/* Between a detail page's parts on a phone: a 300x250 rectangle. A phone-wide x 100 box only took 320x100 / 320x50 ads and
+   AdSense left it unfilled most of the time (owner, 2026-11-09). From 768px the same 90px banner as `top`. */
+.inlineUnit {
+  display: block;
+  width: 300px;
+  max-width: 100%;
+  height: 250px;
+  overflow: hidden;
+}
+
+@media (min-width: 768px) {
+  .inlineUnit {
+    width: 100%;
+    max-width: 970px;
+    height: 90px;
+  }
+}
+
 /* The page-start banner gives way to a side ad that stands. Where the side ads can fit (a window wide enough for 80rem content
    and two side ads, and tall enough for them) it starts hidden, so it never shows for a moment and then jumps away; it comes
    back only when both side ads measured no room. The loading placeholder (AdSlotSpace) uses `.top` too. */
