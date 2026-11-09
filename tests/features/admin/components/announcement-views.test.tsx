@@ -8,7 +8,7 @@ vi.mock('next-intl', () => ({
   useLocale: () => 'ko',
 }))
 // eslint-disable-next-line @next/next/no-img-element
-vi.mock('next/image', () => ({ default: ({ src, alt }: { src: string; alt: string }) => <img src={src} alt={alt} /> }))
+vi.mock('next/image', () => ({ default: ({ src, alt }: { src: string; alt: string }) => <img src={src} alt={alt} />, getImageProps: ({ src, alt }: { src: string; alt: string }) => ({ props: { src, alt } }) }))
 vi.mock('@/lib/i18n/navigation', () => ({ Link: ({ href, children, ...rest }: { href: string; children: React.ReactNode }) => <a href={href} {...rest}>{children}</a> }))
 
 import AnnouncementList from '@/features/admin/components/AnnouncementList'
