@@ -23,7 +23,7 @@ const L = {
   ko: {
     title: '스토리 맵', back: '장 선택으로', close: '닫기', enterDungeon: '입장', floorCount: (n: number) => `${n}층`, chapterName: (n: string) => `${n}장`,
     recommended: '추천 레벨', effective: '유효', atk: { slash: '참격', pierce: '관통', blunt: '타격' } as Record<AttackTypeKey, string>, sin: { wrath: '분노', lust: '색욕', sloth: '나태', gluttony: '탐식', gloom: '우울', pride: '오만', envy: '질투' } as Record<SinType, string>, ex: 'EX 클리어 조건', enemies: '적 정보', turnLimit: (n: number) => `${n}턴 제한`, boss: '보스전',
-    wave: (i: number) => `${i}웨이브`, hidden: '처음엔 보이지 않음', reveal: '눌러서 보기', story: '스토리', storyOnly: '전투 없이 이야기만 진행되는 스테이지입니다.', spoiler: '아직 열지 않은 장입니다. 장 선택에서 이 장을 누르면 보입니다.',
+    wave: (i: number) => `${i}웨이브`, hidden: '처음엔 보이지 않음', story: '스토리', storyOnly: '전투 없이 이야기만 진행되는 스테이지입니다.', spoiler: '아직 열지 않은 장입니다. 장 선택에서 이 장을 누르면 보입니다.',
     spoilerTitle: '스포일러 주의', spoilerBody: '아직 열지 않은 장입니다. 열면 이 장의 스테이지와 적이 보이고, 그 앞의 장도 모두 열립니다.', openAnyway: '그래도 열기',
     ending: '엔딩', otherFloor: '그 외', endingNote: '백화점을 돌아다니며 만나는 전투입니다. 엔딩마다 다릅니다.',
     difficulty: ['노말', '하드'], groups: '편', group: (n: number) => ['상편', '중편', '하편'][n - 1] ?? `${n}편`, pickHint: '스테이지를 누르면 적 정보가 열립니다', loading: '지도를 불러오는 중',
@@ -31,7 +31,7 @@ const L = {
   en: {
     title: 'Story Map', back: 'Back to chapters', close: 'Close', enterDungeon: 'Enter', floorCount: (n: number) => `${n} floors`, chapterName: (n: string) => `Ch. ${n}`,
     recommended: 'Recommended', effective: 'Weak to', atk: { slash: 'Slash', pierce: 'Pierce', blunt: 'Blunt' } as Record<AttackTypeKey, string>, sin: { wrath: 'Wrath', lust: 'Lust', sloth: 'Sloth', gluttony: 'Gluttony', gloom: 'Gloom', pride: 'Pride', envy: 'Envy' } as Record<SinType, string>, ex: 'EX clear', enemies: 'Enemies', turnLimit: (n: number) => `${n}-turn limit`, boss: 'Boss battle',
-    wave: (i: number) => `Wave ${i}`, hidden: 'hidden at first', reveal: 'Show', story: 'Story', storyOnly: 'A story stage with no battle.', spoiler: 'Not opened yet. Pick this chapter on the chapter list to show it.',
+    wave: (i: number) => `Wave ${i}`, hidden: 'hidden at first', story: 'Story', storyOnly: 'A story stage with no battle.', spoiler: 'Not opened yet. Pick this chapter on the chapter list to show it.',
     spoilerTitle: 'Spoiler warning', spoilerBody: 'You have not opened this chapter yet. Opening it shows its stages and enemies, and opens every chapter before it.', openAnyway: 'Open anyway',
     ending: 'Ending', otherFloor: 'Other', endingNote: 'The battles met while walking the store, different for each ending.',
     difficulty: ['Normal', 'Hard'], groups: 'Parts', group: (n: number) => `Part ${n}`, pickHint: 'Pick a stage to see its enemies', loading: 'Loading the map',
@@ -39,7 +39,7 @@ const L = {
   ja: {
     title: 'ストーリーマップ', back: '章の選択へ', close: '閉じる', enterDungeon: '入場', floorCount: (n: number) => `${n}階`, chapterName: (n: string) => `${n}章`,
     recommended: '推奨レベル', effective: '有効', atk: { slash: '斬撃', pierce: '貫通', blunt: '打撃' } as Record<AttackTypeKey, string>, sin: { wrath: '憤怒', lust: '色欲', sloth: '怠惰', gluttony: '暴食', gloom: '憂鬱', pride: '傲慢', envy: '嫉妬' } as Record<SinType, string>, ex: 'EXクリア条件', enemies: '敵情報', turnLimit: (n: number) => `${n}ターン制限`, boss: 'ボス戦',
-    wave: (i: number) => `ウェーブ${i}`, hidden: '最初は見えない', reveal: '押して表示', story: 'ストーリー', storyOnly: '戦闘のないストーリーステージです。', spoiler: 'まだ開いていない章です。章の選択でこの章を押すと表示されます。',
+    wave: (i: number) => `ウェーブ${i}`, hidden: '最初は見えない', story: 'ストーリー', storyOnly: '戦闘のないストーリーステージです。', spoiler: 'まだ開いていない章です。章の選択でこの章を押すと表示されます。',
     spoilerTitle: 'ネタバレ注意', spoilerBody: 'まだ開いていない章です。開くとこの章のステージと敵が表示され、それ以前の章もすべて開きます。', openAnyway: 'それでも開く',
     ending: 'エンディング', otherFloor: 'その他', endingNote: '百貨店を歩き回って出会う戦闘です。エンディングごとに異なります。',
     difficulty: ['ノーマル', 'ハード'], groups: '編', group: (n: number) => ['上編', '中編', '下編'][n - 1] ?? `${n}編`, pickHint: 'ステージを押すと敵情報が開きます', loading: 'マップを読み込み中',
@@ -265,10 +265,7 @@ export function StagePanel({ node, sub, base, lang, spoiler, onClose, note, acti
   const b = spoiler ? undefined : node.battle
   const eff = effective(node, sub)
   const [wave, setWave] = useState(0)
-  // Bosses and named characters stay behind ? until the reader asks for them (VIEWER, USER 2026-11-08)
-  const [shown, setShown] = useState<Set<string>>(() => new Set())
-  const veiled = (id: string) => !sub.enemies[id]?.mob && !shown.has(id)
-  const unveil = (id: string) => setShown(v => new Set(v).add(id))
+  // No per-enemy cover (USER 2026-11-09): the chapter and stage spoiler guards hide what is not reached yet
   const units = b?.waves[wave] ?? []
   return (
     // As in the game: see-through black over a blurred map, a plain edge on the map side. (A mask on top of
@@ -295,7 +292,7 @@ export function StagePanel({ node, sub, base, lang, spoiler, onClose, note, acti
         <p className="relative mt-3 break-keep text-[0.9375rem] leading-relaxed text-[#cfc3ad]">{text(story, lang)}</p>
       )}
       {!spoiler && node.endings ? (
-        <Endings endings={node.endings} sub={sub} base={base} lang={lang} veiled={veiled} unveil={unveil} />
+        <Endings endings={node.endings} sub={sub} base={base} lang={lang} />
       ) : !b ? (
         !(action && !spoiler) && <p className="relative mt-5 text-[0.9375rem] text-[var(--text-secondary)]">{spoiler ? s.spoiler : note ?? s.storyOnly}</p>
       ) : (
@@ -351,7 +348,7 @@ export function StagePanel({ node, sub, base, lang, spoiler, onClose, note, acti
           </div>
           <ul key={wave} className="mt-3 grid grid-cols-3 gap-x-3 gap-y-4 @min-[40rem]:grid-cols-4 @3xl:grid-cols-3">
             {units.map((u, j) => {
-              return <EnemyCard key={j} u={u} j={j} sub={sub} base={base} lang={lang} veil={veiled(String(u.id))} onReveal={() => unveil(String(u.id))} />
+              return <EnemyCard key={j} u={u} j={j} sub={sub} base={base} lang={lang} />
             })}
           </ul>
         </div>
@@ -361,20 +358,18 @@ export function StagePanel({ node, sub, base, lang, spoiler, onClose, note, acti
   )
 }
 
-/** One enemy: the game's enemy info card, a head crop of the unit portrait inside its bronze portrait frame. A spoiler
- * card is a button that shows the face. */
-function EnemyCard({ u, j, sub, base, lang, veil, onReveal }: {
-  u: StoryUnit; j: number; sub: StorySubchapter; base: string; lang: Lang; veil: boolean; onReveal: () => void
+/** One enemy: the game's enemy info card, a head crop of the unit portrait inside its bronze portrait frame. */
+function EnemyCard({ u, j, sub, base, lang }: {
+  u: StoryUnit; j: number; sub: StorySubchapter; base: string; lang: Lang
 }) {
   const s = L[lang]
   const e = sub.enemies[String(u.id)]
-  const name = veil ? '???' : text(e?.name, lang) || '???'
+  const name = text(e?.name, lang) || '???'
   return (
     <li className="story-rise group min-w-0" style={{ '--i': j } as React.CSSProperties}>
       <div className={`relative aspect-[279/361] ${u.hidden ? 'opacity-60' : ''}`}>
-        {veil && <button type="button" onClick={onReveal} aria-label={s.reveal} className="absolute inset-0 z-10 cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--gold)]" />}
         <div className="absolute inset-[5%] overflow-hidden bg-[radial-gradient(circle_at_50%_30%,#2e261d,#0f0c08)]">
-          {e?.portrait && !veil
+          {e?.portrait
             // eslint-disable-next-line @next/next/no-img-element
             ? <img src={`${base}/portrait/${e.portrait}.webp`} alt="" loading="lazy" className="absolute left-1/2 top-[-4%] h-[170%] w-auto max-w-none -translate-x-1/2 transition-transform duration-300 group-hover:scale-[1.04]" />
             : <span className="flex h-full items-center justify-center font-[family-name:var(--font-title)] text-[2rem] text-[#5a4526]">?</span>}
@@ -387,7 +382,7 @@ function EnemyCard({ u, j, sub, base, lang, veil, onReveal }: {
         )}
       </div>
       <p className="mt-1.5 line-clamp-2 break-keep text-center font-[family-name:var(--font-heading)] text-[0.8125rem] leading-[1.4] text-[var(--text-primary)]" title={u.hidden ? `${name} (${s.hidden})` : name}>{name}</p>
-      {e?.desc && !veil && <p className="truncate text-center text-[0.6875rem] leading-[1.4] text-[#94887a]">{text(e.desc, lang)}</p>}
+      {e?.desc && <p className="truncate text-center text-[0.6875rem] leading-[1.4] text-[#94887a]">{text(e.desc, lang)}</p>}
     </li>
   )
 }
@@ -404,9 +399,8 @@ function battlesOf(battles: NonNullable<StoryNode['endings']>[number]['floors'][
 }
 
 /** 10장 시지프 백화점: the store is walked in RPG mode (not drawn here); its battles, by ending and floor. */
-function Endings({ endings, sub, base, lang, veiled, unveil }: {
+function Endings({ endings, sub, base, lang }: {
   endings: NonNullable<StoryNode['endings']>; sub: StorySubchapter; base: string; lang: Lang
-  veiled: (id: string) => boolean; unveil: (id: string) => void
 }) {
   const s = L[lang]
   const [pick, setPick] = useState(0)
@@ -437,7 +431,7 @@ function Endings({ endings, sub, base, lang, veiled, unveil }: {
                   <span className="w-12 shrink-0 pt-1 font-[family-name:var(--font-title)] text-[1.125rem] leading-none text-[#9c8b73]">LV.{bt.recommended || bt.level || '??'}</span>
                   <ul className="grid flex-1 grid-cols-4 gap-x-2.5 gap-y-3 @min-[40rem]:grid-cols-5 @3xl:grid-cols-4">
                     {bt.waves.flat().map((u, j) => (
-                      <EnemyCard key={j} u={u} j={j} sub={sub} base={base} lang={lang} veil={veiled(String(u.id))} onReveal={() => unveil(String(u.id))} />
+                      <EnemyCard key={j} u={u} j={j} sub={sub} base={base} lang={lang} />
                     ))}
                   </ul>
                 </li>
