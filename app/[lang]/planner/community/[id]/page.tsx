@@ -1,6 +1,6 @@
 import { notePlainText } from '@/lib/notes/blocks'
 import { resolvePlannerIdentity } from '@/lib/planner/catalog-references'
-import { trimPlanDetailCatalog, OBSERVATION_COLUMNS, observationFrom, type ObservationRow } from '@/features/planner'
+import { trimPlanDetailCatalog, slimPlanThemes, OBSERVATION_COLUMNS, observationFrom, type ObservationRow } from '@/features/planner'
 import { selectUptieRows } from '@/lib/identity/skill-model'
 import type { Metadata } from 'next'
 import { localeUrl, metaText, pageMetadata } from '@/lib/seo/metadata'
@@ -154,6 +154,12 @@ export default async function PlanDetailPage({ params }: Props) {
   // 플랜이 쓰는 기프트·레시피·인격·에고만 보낸다(전체 카탈로그는 flight 페이로드 1MB)
   const used = trimPlanDetailCatalog({ plan, gifts: game.gifts, recipes: game.recipes, themes, identities, egos: game.egos, events: planEvents.events, eventChoices: planEvents.choices })
   const gifts = used.gifts.map(gift => withoutOtherLocales(gift, lang, ['effect_base', 'effect_plus', 'effect_plusplus']))
+  // one locale of text, and the other themes' gift pools cut to this plan's gifts (the page's data was about 570KB)
+  const planThemes = slimPlanThemes(themes.map(theme => withoutOtherLocales(theme, lang, ['name'])), {
+    floorThemeIds: new Set((Array.isArray(plan.floor_plan) ? plan.floor_plan : []).flatMap((entry: { theme_id?: unknown }) => entry?.theme_id != null ? [String(entry.theme_id)] : [])),
+    giftIds: new Set(gifts.map(gift => gift.game_id)),
+  })
+  const oneLocale = <T extends Record<string, unknown>>(row: T) => withoutOtherLocales(row, lang, ['name', 'description'])
   if (skillsError) console.error('Failed to fetch skills:', skillsError)
   if (passivesError) console.error('Failed to fetch passives:', passivesError)
 
@@ -169,13 +175,13 @@ export default async function PlanDetailPage({ params }: Props) {
         plan={plan as any}
         series={series}
         coVisited={<Suspense fallback={<RecommendationLaneSkeleton kind="planner" />}><CoVisitedLane kind="planner" id={id} lang={lang as SupportedLang} exclude={[]} /></Suspense>}
-        themes={themes}
+        themes={planThemes}
         gifts={gifts}
         recipes={used.recipes}
         identities={used.identities}
         sinners={sinners}
-        skills={memberIds.flatMap(id => selectUptieRows((skills ?? []).filter(row => row.identity_id === id), 4))}
-        passives={memberIds.flatMap(id => selectUptieRows((passives ?? []).filter(row => row.identity_id === id), 4))}
+        skills={memberIds.flatMap(id => selectUptieRows((skills ?? []).filter(row => row.identity_id === id), 4)).map(oneLocale)}
+        passives={memberIds.flatMap(id => selectUptieRows((passives ?? []).filter(row => row.identity_id === id), 4)).map(oneLocale)}
         egos={used.egos}
         observation={game.observation}
         events={planEvents.events.map(event => withoutOtherLocales(event, lang, ['desc_text'], ['judgment'])) as unknown as MdEvent[]}

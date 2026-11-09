@@ -63,3 +63,14 @@ export function trimPlanDetailCatalog<G extends Gift, R extends Recipe, T extend
     egos: egos.filter(ego => egoIds.has(ego.id)),
   }
 }
+
+/**
+ * Themes for the plan detail, light enough for its payload: a floor theme stays whole (the floor board counts its gift pool);
+ * every other theme keeps only the plan's gifts in its pool, all the gift window asks of it (is this gift in that theme). The
+ * whole pools of all themes were about 60KB of the page's data.
+ */
+export function slimPlanThemes<T extends Theme & { ego_gift_ids?: number[] | null }>(themes: T[], { floorThemeIds, giftIds }: { floorThemeIds: ReadonlySet<string>; giftIds: ReadonlySet<number> }): T[] {
+  return themes.map(theme => floorThemeIds.has(String(theme.id))
+    ? theme
+    : { ...theme, ego_gift_ids: (theme.ego_gift_ids ?? []).filter(id => giftIds.has(id)) })
+}
