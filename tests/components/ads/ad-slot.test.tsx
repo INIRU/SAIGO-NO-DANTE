@@ -108,6 +108,9 @@ describe('ad slot', () => {
     // both side ads above the window on plan and deck details
     expect(code).toMatch(/\[\.\.\.document\.querySelectorAll\('\.site-footer'\)\]\.find\(f => f\.getClientRects\(\)\.length\)/)
     expect(code).toContain('footerTop - GAP - ad.offsetHeight')
+    // placed again when the page under it changes, not only on scroll: coming to the home from another page, the loading
+    // screen (no hero) placed the right side ad at the navbar and it stayed over the hero until a scroll
+    expect(code).toMatch(/useRailTop[\s\S]*?new ResizeObserver\(schedule\)\s*const main = document\.getElementById\('main-content'\)\s*if \(main\) content\.observe\(main\)/)
     // a hero's art that reaches the window edge does not count as content (it hid the right side ad on a sinner page)
     expect(code).toMatch(/box\.left <= 0 \|\| box\.right >= width/)
     // before the content is measured (the server render) the side ad is hidden, so it never lands on the content
