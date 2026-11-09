@@ -69,6 +69,8 @@ function focusCam(node: StoryNode, pivot: [number, number, number]): Cam {
   return { x: node.x + (0.5 - pivot[0]) * VIEWPORT.w, y: node.y + ((node.upper ? pivot[1] : pivot[2]) - 0.5) * VIEWPORT.h }
 }
 
+const LOADING = { ko: '지도를 불러오는 중', en: 'Loading the map', ja: 'マップを読み込み中' }
+
 export default function StoryMap({ sub, base, lang, selected, zoomed, spoiler, onSelect, onDragStart }: {
   sub: StorySubchapter
   base: string
@@ -99,6 +101,8 @@ export default function StoryMap({ sub, base, lang, selected, zoomed, spoiler, o
   const [, setTilesKey] = useState('')
   // StoryFx draws the tiles on the GPU once it runs (onGround): the <img> tiles below are only the fallback
   const [gpuGround, setGpuGround] = useState(false)
+  // Map tiles loaded so far: until the first ones come in, the map would be black with empty cards (USER 2026-11-09)
+  const [painted, setPainted] = useState(0)
   const tilesLayer = useRef<HTMLDivElement>(null)
   const nodesLayer = useRef<HTMLDivElement>(null)
   // VIEWER: two fingers zoom the map (the game has no pinch): a factor on every zoom, 0.6 .. 2.5
@@ -342,6 +346,11 @@ export default function StoryMap({ sub, base, lang, selected, zoomed, spoiler, o
   const ny = (n: StoryNode) => map.h - n.y
   const order = [...sub.nodes].sort((a, b) => a.id - b.id)
   const current = order.find(n => n.id === selected)
+  // Stages after the furthest one picked here are not reached yet: the game's spoiler picture and ??? (USER 2026-11-09:
+  // it was lost when the chapter-level spoiler came in). Picking a hidden stage reveals it and every stage before it.
+  const at = order.findIndex(n => n.id === selected)
+  const [reach, setReach] = useState(at)
+  if (at > reach) setReach(at)
   const layer = cam && size ? transformOf(cam, unit) : undefined
   const line = order.map(n => `${n.x},${ny(n)}`).join(' ')
   // StoryFx draws in its own WebGL canvas every frame: it reads the camera from here (paint keeps it current)
@@ -358,12 +367,24 @@ export default function StoryMap({ sub, base, lang, selected, zoomed, spoiler, o
       onPointerCancel={endDrag}
       onWheel={onWheel}
     >
+      {/* While the first tiles load: the chapter's picture, blurred and dark, and the loading mark */}
+      {painted < Math.min(2, sub.map.tiles.length) && (
+        <div role="status" className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-4">
+          {sub.coverImg && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={`${base}/cover/${sub.id}.webp`} alt="" aria-hidden className="absolute inset-0 h-full w-full object-cover blur-xl brightness-[.35]" />
+          )}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={`${base}/ui/train.webp`} alt="" aria-hidden className="relative h-16 w-auto motion-safe:animate-pulse" />
+          <p className="relative font-[family-name:var(--font-heading)] text-[1rem] text-[#d8ccb6] [text-shadow:0_1px_6px_#000]">{LOADING[lang]}</p>
+        </div>
+      )}
       {layer && (
         <div ref={tilesLayer} className="absolute left-0 top-0 origin-top-left" style={{ width: map.w, height: map.h, transform: layer }}>
           {/* Beyond the tiles stays black, as in the game where the camera may look past the map's edge. */}
           {!gpuGround && shown.current.list.map(([r, c]) => (
             // eslint-disable-next-line @next/next/no-img-element
-            <img key={`${r}_${c}`} src={`${base}/map/${sub.map.id ?? sub.id}/${shown.current.dir}${r}_${c}.webp`} alt="" draggable={false} decoding="async"
+            <img key={`${r}_${c}`} src={`${base}/map/${sub.map.id ?? sub.id}/${shown.current.dir}${r}_${c}.webp`} alt="" draggable={false} decoding="async" onLoad={() => setPainted(n => n + 1)}
               // <id>_<row>_<col>: row 0 is the bottom of the map, like the node positions
               className="absolute max-w-none" style={{ left: c * STRIDE, top: (rows - 1 - r) * STRIDE, width: sub.map.tile, height: sub.map.tile }} />
           ))}
@@ -381,7 +402,7 @@ export default function StoryMap({ sub, base, lang, selected, zoomed, spoiler, o
             <polyline points={line} fill="none" stroke="#ffd23a" strokeWidth={7 * ui} strokeLinejoin="round" />
           </svg>
           {order.filter(n => !shown.current.nodes || shown.current.nodes.has(n.id) || n.id === selected).map(n => <StageNode key={n.id} node={n} y={ny(n)} ui={ui} base={base} lang={lang} selected={n.id === selected}
-            hidden={spoiler} onPick={pick} />)}
+            hidden={spoiler || order.indexOf(n) > reach} onPick={pick} />)}
           {current && (
             // One bus for the whole map: it rides to the picked stage.
             // eslint-disable-next-line @next/next/no-img-element

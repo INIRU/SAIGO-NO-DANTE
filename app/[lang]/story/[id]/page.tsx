@@ -38,7 +38,7 @@ export default async function StoryPage({ params }: { params: Promise<{ lang: st
   if (!sub) notFound()
   // StoryClient reads the address (?stage=, nuqs): on this cached page it is drawn in the browser, behind StoryShell
   return (
-    <Suspense fallback={<StoryShell lang={langOf(lang)} base={STORY_MAP_PAGE_BASE} />}>
+    <Suspense fallback={<StoryShell lang={langOf(lang)} base={STORY_MAP_PAGE_BASE} id={sub.id} number={sub.number} cover={!!index.find(e => e.id === sub.id)?.coverImg} />}>
       <StoryClient lang={langOf(lang)} sub={sub} base={STORY_MAP_PAGE_BASE} order={storyOrder(index).filter(e => !isExtraPart(index, e)).map(e => e.id)}
         parts={chapterParts(index, sub.id).map(e => e.id)} difficulty={chapterParts(index, sub.id).length > 1} />
     </Suspense>
