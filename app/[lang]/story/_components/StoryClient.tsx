@@ -113,7 +113,7 @@ export default function StoryClient({ lang, sub, base, order, parts, difficulty 
         <nav aria-label="NORMAL / HARD" className="absolute bottom-4 left-4 flex gap-2">
           {parts.map((id, i) => (
             <Link key={id} href={`/${lang}/story/${id}`} aria-current={id === sub.id ? 'page' : undefined}
-              className={`flex h-10 min-w-[6.5rem] items-center justify-center rounded-[3px] border-2 px-3 font-[family-name:var(--font-title)] text-[1.375rem] leading-none shadow-[0_2px_0_#000] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--gold)] ${i === 0 ? 'border-[#c8900a] bg-[linear-gradient(180deg,#5f8f2a,#3b6118)] text-[#f0c418]' : 'border-[#3a0b0b] bg-[linear-gradient(180deg,#c2302b,#8a1512)] text-[#f3e4cb]'} ${id === sub.id ? '' : 'opacity-50 hover:opacity-80'}`}>
+              className={`flex h-10 min-w-[6.5rem] items-center justify-center rounded-[3px] border-2 px-3 font-[family-name:var(--font-title)] text-[1.375rem] leading-none shadow-[0_2px_0_#000] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--gold)] ${i === 0 ? 'border-[var(--gold)] bg-[linear-gradient(180deg,#5f8f2a,#3b6118)] text-[#f0c418]' : 'border-[#3a0b0b] bg-[linear-gradient(180deg,#c2302b,#8a1512)] text-[#f3e4cb]'} ${id === sub.id ? '' : 'opacity-50 hover:opacity-80'}`}>
               {i === 0 ? 'NORMAL' : 'HARD'}
             </Link>
           ))}
@@ -127,10 +127,10 @@ export default function StoryClient({ lang, sub, base, order, parts, difficulty 
             const firstNode = [...sub.nodes].sort((a, b) => a.id - b.id).find(n => n.id > prev && n.id <= last)
             if (!firstNode) return null
             const here = node != null && node.id > prev && node.id <= last
-            const color = here ? 'bg-[#e8b030] text-[#e8b030]' : 'bg-[#d8ccb6] text-[#d8ccb6] group-hover:bg-[#f3e4cb] group-hover:text-[#f3e4cb]'
+            const color = here ? 'bg-[var(--gold-light)] text-[var(--gold-light)]' : 'bg-[#d8ccb6] text-[#d8ccb6] group-hover:bg-[#f3e4cb] group-hover:text-[#f3e4cb]'
             return (
               <button key={last} type="button" onClick={() => setLastPicked(firstNode.id)} aria-label={s.group(g + 1)} aria-pressed={here}
-                className={`group flex h-12 items-center gap-2 rounded-sm border bg-[#0b0906]/85 px-4 shadow-[0_2px_8px_#000a] backdrop-blur-sm transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--gold)] ${here ? 'border-[#e8b030]' : 'border-[#5a4526] hover:border-[#86683a]'}`}>
+                className={`group flex h-12 items-center gap-2 rounded-sm border bg-[#0b0906]/85 px-4 shadow-[0_2px_8px_#000a] backdrop-blur-sm transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--gold)] ${here ? 'border-[var(--gold-light)]' : 'border-[#5a4526] hover:border-[#86683a]'}`}>
                 <span aria-hidden className={`h-6 w-6 transition-colors ${color.split(' ').filter(c => c.includes('bg-')).join(' ')}`}
                   style={{ maskImage: `url(${base}/ui/group-icon.webp)`, WebkitMaskImage: `url(${base}/ui/group-icon.webp)`, maskSize: 'contain', WebkitMaskSize: 'contain', maskRepeat: 'no-repeat', WebkitMaskRepeat: 'no-repeat' }} />
                 <span className={`font-[family-name:var(--font-title)] text-[1.75rem] leading-none transition-colors ${color.split(' ').filter(c => c.includes('text-')).join(' ')}`}>{['I', 'II', 'III', 'IV', 'V'][g] ?? g + 1}</span>
@@ -183,15 +183,15 @@ function DungeonEntry({ node, base, lang, onEnter }: { node: StoryNode; base: st
   return (
     <div className="relative">
       {info && (
-        <ul className="mt-3 flex flex-wrap items-center gap-y-2 text-[0.875rem] leading-none [&>li]:flex [&>li]:items-center [&>li]:gap-1.5 [&>li]:border-[#3a2a15] [&>li:not(:first-child)]:border-l [&>li:not(:first-child)]:pl-3 [&>li:not(:last-child)]:pr-3">
+        <ul className="mt-3 flex flex-wrap items-center gap-y-2 text-[0.875rem] leading-none [&>li]:flex [&>li]:items-center [&>li]:gap-1.5 [&>li]:border-[var(--border)] [&>li:not(:first-child)]:border-l [&>li:not(:first-child)]:pl-3 [&>li:not(:last-child)]:pr-3">
           <li>
             <span className="text-[#9c8b73]">{s.recommended}</span>
-            <span className="font-[family-name:var(--font-title)] text-[1.375rem] text-[#e8b030]">LV.{info.recommended || '??'}</span>
+            <span className="font-[family-name:var(--font-title)] text-[1.375rem] text-[var(--gold-light)]">LV.{info.recommended || '??'}</span>
           </li>
           {info.ex.map((q, i) => (
-            <li key={i}><span className="text-[#9c8b73]">EX</span><span className="break-keep text-[#e8dcc8]">{text(q, lang)}</span></li>
+            <li key={i}><span className="text-[#9c8b73]">EX</span><span className="break-keep text-[var(--text-primary)]">{text(q, lang)}</span></li>
           ))}
-          {info.floors > 1 && <li className="text-[#b0a890]">{s.floorCount(info.floors)}</li>}
+          {info.floors > 1 && <li className="text-[var(--text-secondary)]">{s.floorCount(info.floors)}</li>}
         </ul>
       )}
       {/* The game's dungeon card ([CanvasGroup]Dungeon): the entrance picture under its mask, the frame and the rail with
@@ -272,11 +272,11 @@ export function StagePanel({ node, sub, base, lang, spoiler, onClose, note, acti
   return (
     // As in the game: see-through black over a blurred map, a plain edge on the map side. (A mask on top of
     // backdrop-filter makes Chrome drop the whole panel.)
-    <aside className="story-panel-in absolute inset-x-0 bottom-0 max-h-[60%] overflow-y-auto overscroll-contain border-t border-[#3a2a15] bg-black/80 px-4 pb-6 pt-4 backdrop-blur-md @3xl:inset-x-auto @3xl:bottom-0 @3xl:right-0 @3xl:top-0 @3xl:max-h-none @3xl:w-[min(32rem,46cqw)] @3xl:border-l @3xl:border-t-0 @3xl:px-8 @3xl:py-6">
+    <aside className="story-panel-in absolute inset-x-0 bottom-0 max-h-[60%] overflow-y-auto overscroll-contain border-t border-[var(--border)] bg-black/80 px-4 pb-6 pt-4 backdrop-blur-md @3xl:inset-x-auto @3xl:bottom-0 @3xl:right-0 @3xl:top-0 @3xl:max-h-none @3xl:w-[min(32rem,46cqw)] @3xl:border-l @3xl:border-t-0 @3xl:px-8 @3xl:py-6">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={`${base}/ui/s/${node.tag}.webp`} alt="" aria-hidden className="pointer-events-none absolute bottom-10 right-10 w-44 opacity-[0.08]" />
       <button type="button" onClick={onClose} aria-label={s.close}
-        className="absolute right-3 top-3 z-10 flex h-9 w-9 items-center justify-center rounded-sm text-[#b0a890] hover:bg-[#241c12] hover:text-[#e8dcc8] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--gold)] @3xl:right-6 @3xl:top-5"><X size={20} /></button>
+        className="absolute right-3 top-3 z-10 flex h-9 w-9 items-center justify-center rounded-sm text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--gold)] @3xl:right-6 @3xl:top-5"><X size={20} /></button>
 
       <header className="relative -mx-2 overflow-hidden px-2 pb-3 pt-2">
         {node.cg && !spoiler && (
@@ -296,25 +296,25 @@ export function StagePanel({ node, sub, base, lang, spoiler, onClose, note, acti
       {!spoiler && node.endings ? (
         <Endings endings={node.endings} sub={sub} base={base} lang={lang} veiled={veiled} unveil={unveil} />
       ) : !b ? (
-        !(action && !spoiler) && <p className="relative mt-5 text-[0.9375rem] text-[#b0a890]">{spoiler ? s.spoiler : note ?? s.storyOnly}</p>
+        !(action && !spoiler) && <p className="relative mt-5 text-[0.9375rem] text-[var(--text-secondary)]">{spoiler ? s.spoiler : note ?? s.storyOnly}</p>
       ) : (
         <div className="relative">
           {/* The info line of the site's game info windows (DESIGN.md 5): items side by side, split by a --border
               line, no box or chip. */}
-          <ul className="mt-3 flex flex-wrap items-center gap-y-2 text-[0.875rem] leading-none [&>li]:flex [&>li]:items-center [&>li]:gap-1.5 [&>li]:border-[#3a2a15] [&>li:not(:first-child)]:border-l [&>li:not(:first-child)]:pl-3 [&>li:not(:last-child)]:pr-3">
+          <ul className="mt-3 flex flex-wrap items-center gap-y-2 text-[0.875rem] leading-none [&>li]:flex [&>li]:items-center [&>li]:gap-1.5 [&>li]:border-[var(--border)] [&>li:not(:first-child)]:border-l [&>li:not(:first-child)]:pl-3 [&>li:not(:last-child)]:pr-3">
             <li>
               <span className="text-[#9c8b73]">{s.recommended}</span>
               {/* 0 in the data: the game prints LV.?? */}
-              <span className="font-[family-name:var(--font-title)] text-[1.375rem] text-[#e8b030]">LV.{b.recommended || '??'}</span>
+              <span className="font-[family-name:var(--font-title)] text-[1.375rem] text-[var(--gold-light)]">LV.{b.recommended || '??'}</span>
             </li>
             {eff.atk.length + eff.sin.length > 0 && (
               <li>
                 <span className="text-[#9c8b73]">{s.effective}</span>
                 {eff.atk.map(e => (
-                  <span key={e.key} className="flex items-center gap-1 text-[#e8dcc8]"><AttackTypeIcon type={e.icon} className="h-5 w-5" />{s.atk[e.icon]}</span>
+                  <span key={e.key} className="flex items-center gap-1 text-[var(--text-primary)]"><AttackTypeIcon type={e.icon} className="h-5 w-5" />{s.atk[e.icon]}</span>
                 ))}
                 {eff.sin.map(e => (
-                  <span key={e.key} className="flex items-center gap-1 text-[#e8dcc8]">
+                  <span key={e.key} className="flex items-center gap-1 text-[var(--text-primary)]">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={SIN_ICON_MAP[e.sin]} alt="" className="h-5 w-5 object-contain" />{s.sin[e.sin]}
                   </span>
@@ -324,24 +324,24 @@ export function StagePanel({ node, sub, base, lang, spoiler, onClose, note, acti
             {b.ex?.map((q, i) => (
               <li key={i}>
                 <span className="text-[#9c8b73]">EX</span>
-                <span className="break-keep text-[#e8dcc8]">{text(q, lang)}</span>
+                <span className="break-keep text-[var(--text-primary)]">{text(q, lang)}</span>
               </li>
             ))}
             {b.boss && <li className="text-[#ec6a5e]">{s.boss}</li>}
             {/* 99 turns = no limit in the data */}
-            {b.turnLimit != null && b.turnLimit < 99 && <li className="text-[#b0a890]">{s.turnLimit(b.turnLimit)}</li>}
+            {b.turnLimit != null && b.turnLimit < 99 && <li className="text-[var(--text-secondary)]">{s.turnLimit(b.turnLimit)}</li>}
           </ul>
 
           {/* Section title of the site's info windows: the title, a --border line to the right edge, controls at the end. */}
           <div className="mt-6 flex items-center gap-3">
-            <h3 className="shrink-0 font-[family-name:var(--font-heading)] text-[1.125rem] leading-none text-[#e8dcc8]">{s.enemies}</h3>
-            <span aria-hidden className="h-px flex-1 bg-[#3a2a15]" />
+            <h3 className="shrink-0 font-[family-name:var(--font-heading)] text-[1.125rem] leading-none text-[var(--text-primary)]">{s.enemies}</h3>
+            <span aria-hidden className="h-px flex-1 bg-[var(--border)]" />
             {b.waves.length > 1 && (
               // Waves: bare Bebas numbers at the end of the title line, the shown one in gold.
               <div role="tablist" aria-label={s.enemies} className="-my-2 flex shrink-0">
                 {b.waves.map((_, w) => (
                   <button key={w} type="button" role="tab" aria-selected={w === wave} aria-label={s.wave(w + 1)} onClick={() => setWave(w)}
-                    className={`flex h-9 min-w-9 items-center justify-center font-[family-name:var(--font-title)] text-[1.375rem] leading-none transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--gold)] ${w === wave ? 'text-[#e8b030]' : 'text-[#94887a] hover:text-[#e8dcc8]'}`}>
+                    className={`flex h-9 min-w-9 items-center justify-center font-[family-name:var(--font-title)] text-[1.375rem] leading-none transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--gold)] ${w === wave ? 'text-[var(--gold-light)]' : 'text-[#94887a] hover:text-[var(--text-primary)]'}`}>
                     {w + 1}
                   </button>
                 ))}
@@ -385,7 +385,7 @@ function EnemyCard({ u, j, sub, base, lang, veil, onReveal }: {
           <span className="absolute -right-1 -top-1 bg-[#8a0b0b] px-1.5 py-0.5 font-[family-name:var(--font-title)] text-[1.0625rem] leading-none text-[#f3e4cb] shadow-[0_1px_3px_#000]">×{u.count}</span>
         )}
       </div>
-      <p className="mt-1.5 line-clamp-2 break-keep text-center font-[family-name:var(--font-heading)] text-[0.8125rem] leading-[1.4] text-[#e8dcc8]" title={u.hidden ? `${name} (${s.hidden})` : name}>{name}</p>
+      <p className="mt-1.5 line-clamp-2 break-keep text-center font-[family-name:var(--font-heading)] text-[0.8125rem] leading-[1.4] text-[var(--text-primary)]" title={u.hidden ? `${name} (${s.hidden})` : name}>{name}</p>
       {e?.desc && !veil && <p className="truncate text-center text-[0.6875rem] leading-[1.4] text-[#94887a]">{text(e.desc, lang)}</p>}
     </li>
   )
@@ -414,12 +414,12 @@ function Endings({ endings, sub, base, lang, veiled, unveil }: {
     <div className="relative">
       <p className="mt-3 break-keep text-[0.9375rem] leading-relaxed text-[#cfc3ad]">{s.endingNote}</p>
       <div className="mt-6 flex items-center gap-3">
-        <h3 className="shrink-0 font-[family-name:var(--font-heading)] text-[1.125rem] leading-none text-[#e8dcc8]">{s.ending}</h3>
-        <span aria-hidden className="h-px flex-1 bg-[#3a2a15]" />
+        <h3 className="shrink-0 font-[family-name:var(--font-heading)] text-[1.125rem] leading-none text-[var(--text-primary)]">{s.ending}</h3>
+        <span aria-hidden className="h-px flex-1 bg-[var(--border)]" />
         <div role="tablist" aria-label={s.ending} className="-my-2 flex shrink-0">
           {endings.map((e, i) => (
             <button key={e.key} type="button" role="tab" aria-selected={i === pick} aria-label={`${s.ending} ${e.key}`} onClick={() => setPick(i)}
-              className={`flex h-9 min-w-9 items-center justify-center font-[family-name:var(--font-title)] text-[1.375rem] leading-none transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--gold)] ${i === pick ? 'text-[#e8b030]' : 'text-[#94887a] hover:text-[#e8dcc8]'}`}>
+              className={`flex h-9 min-w-9 items-center justify-center font-[family-name:var(--font-title)] text-[1.375rem] leading-none transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--gold)] ${i === pick ? 'text-[var(--gold-light)]' : 'text-[#94887a] hover:text-[var(--text-primary)]'}`}>
               {e.key}
             </button>
           ))}
@@ -428,8 +428,8 @@ function Endings({ endings, sub, base, lang, veiled, unveil }: {
       <div key={ending.key} role="tabpanel" className="story-panel-in">
         {ending.floors.map((f, fi) => (
           <section key={fi} className="mt-5">
-            {f.floor ? <h4 className="font-[family-name:var(--font-title)] text-[1.75rem] leading-none text-[#e8b030]">{f.floor}</h4>
-              : <h4 className="font-[family-name:var(--font-heading)] text-[1.125rem] leading-none text-[#e8b030]">{s.otherFloor}</h4>}
+            {f.floor ? <h4 className="font-[family-name:var(--font-title)] text-[1.75rem] leading-none text-[var(--gold-light)]">{f.floor}</h4>
+              : <h4 className="font-[family-name:var(--font-heading)] text-[1.125rem] leading-none text-[var(--gold-light)]">{s.otherFloor}</h4>}
             <ol className="mt-2 space-y-4">
               {battlesOf(f.battles).map(bt => (
                 <li key={bt.id} className="flex gap-3">
@@ -483,7 +483,7 @@ function SpoilerGate({ lang, onOpen }: { lang: Lang; onOpen: () => void }) {
         <p className="mt-3 break-keep text-[1rem] leading-[1.6] text-[#d8ccb6]">{s.spoilerBody}</p>
         <div className="mt-7 flex items-center gap-3">
           <Link href={`/${lang}/story`}
-            className="flex h-11 items-center rounded-sm px-5 font-[family-name:var(--font-heading)] text-[1rem] text-[#b0a890] transition-colors hover:text-[#f3e4cb] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--gold)]">{s.back}</Link>
+            className="flex h-11 items-center rounded-sm px-5 font-[family-name:var(--font-heading)] text-[1rem] text-[var(--text-secondary)] transition-colors hover:text-[#f3e4cb] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--gold)]">{s.back}</Link>
           <button type="button" onClick={onOpen} autoFocus
             className="flex h-11 items-center rounded-[3px] border-2 border-[#3a0b0b] bg-[#a8201b] px-6 font-[family-name:var(--font-heading)] text-[1.0625rem] text-[#f3e4cb] shadow-[0_2px_0_#000] transition-colors hover:bg-[#c2302b] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--gold)]">{s.openAnyway}</button>
         </div>

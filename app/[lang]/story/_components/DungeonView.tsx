@@ -592,7 +592,7 @@ export default function DungeonView({ id, base, lang, title, floor: floorProp, r
           <nav aria-label={s.floors} className="pointer-events-auto flex gap-2" onPointerDown={e => e.stopPropagation()} onPointerUp={e => e.stopPropagation()}>
             {d.floors.map((_, f) => (
               <button key={f} type="button" onClick={() => toFloor(f)} aria-pressed={f === floor}
-                className={`flex h-11 items-center rounded-sm border bg-[#0b0906]/85 px-3.5 font-[family-name:var(--font-heading)] text-[1.0625rem] shadow-[0_2px_8px_#000a] backdrop-blur-sm transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--gold)] ${f === floor ? 'border-[#e8b030] text-[#e8b030]' : 'border-[#5a4526] text-[#d8ccb6] hover:border-[#86683a]'}`}>
+                className={`flex h-11 items-center rounded-sm border bg-[#0b0906]/85 px-3.5 font-[family-name:var(--font-heading)] text-[1.0625rem] shadow-[0_2px_8px_#000a] backdrop-blur-sm transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--gold)] ${f === floor ? 'border-[var(--gold-light)] text-[var(--gold-light)]' : 'border-[#5a4526] text-[#d8ccb6] hover:border-[#86683a]'}`}>
                 {s.floor(f + 1)}
               </button>
             ))}
