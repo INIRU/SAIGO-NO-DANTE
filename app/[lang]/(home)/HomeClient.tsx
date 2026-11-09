@@ -285,6 +285,8 @@ export default function HomeClient({ latestIdentities, pinnedAnnouncement }: Hom
         <AnnouncementBanner announcement={pinnedAnnouncement} />
       )}
       </div>
+      {/* a phone's hero has no room for its banner: the start banner stands under the first screen instead */}
+      <AdSlot place="inline" phoneOnly />
     </>
   )
 }
