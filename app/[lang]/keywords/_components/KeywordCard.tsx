@@ -107,25 +107,31 @@ export default function KeywordCard({ keyword: kw, counts, onClick, lang, compac
   )
 }
 
+/**
+ * Off screen the browser skips what these boxes hold, so the placeholder cards waiting below the list (the scroll sentinel)
+ * stop their endless shimmer until they come into view. Each box has its own fixed size, so skipping never changes the layout.
+ */
+const OFFSCREEN_STILL = '[content-visibility:auto]'
+
 /** Same box as KeywordCard; used by loading.tsx and while more cards are revealed. */
 export function KeywordCardSkeleton({ compact = false, ref }: { compact?: boolean; ref?: Ref<HTMLDivElement> }) {
   if (compact) {
     return (
       <div ref={ref} aria-hidden="true" className={TILE}>
-        <Skeleton raised className="size-10" />
-        <span className="flex min-h-[2.025rem] w-full items-start justify-center pt-0.5"><SkeletonLine raised w="70%" h="0.75rem" /></span>
+        <div className={`size-10 ${OFFSCREEN_STILL}`}><Skeleton raised className="size-10" /></div>
+        <span className={`flex min-h-[2.025rem] w-full items-start justify-center pt-0.5 ${OFFSCREEN_STILL}`}><SkeletonLine raised w="70%" h="0.75rem" /></span>
       </div>
     )
   }
   return (
     <div ref={ref} aria-hidden="true" className={DETAIL}>
-      <div className="flex h-11 w-full items-center gap-3">
+      <div className={`flex h-11 w-full items-center gap-3 ${OFFSCREEN_STILL}`}>
         <Skeleton raised className="size-11 shrink-0" />
         <div className="min-w-0 flex-1 space-y-1.5"><SkeletonLine raised w="6rem" h="0.9375rem" /><SkeletonLine raised w="3rem" h="0.75rem" /></div>
       </div>
-      <div className="mt-3 min-h-[2.6rem] w-full space-y-2 pt-1"><SkeletonLine raised w="95%" h="0.8125rem" /><SkeletonLine raised w="65%" h="0.8125rem" /></div>
+      <div className={`mt-3 min-h-[2.6rem] w-full space-y-2 pt-1 ${OFFSCREEN_STILL}`}><SkeletonLine raised w="95%" h="0.8125rem" /><SkeletonLine raised w="65%" h="0.8125rem" /></div>
       <div className="mt-auto grid w-full grid-cols-3 border-t border-[#2e2417] pt-2.5">
-        {[0, 1, 2].map(i => <div key={i} className="flex h-6 items-center"><SkeletonLine raised w="3.5rem" h="0.875rem" /></div>)}
+        {[0, 1, 2].map(i => <div key={i} className={`flex h-6 items-center ${OFFSCREEN_STILL}`}><SkeletonLine raised w="3.5rem" h="0.875rem" /></div>)}
       </div>
     </div>
   )

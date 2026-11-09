@@ -17,7 +17,7 @@
 .adders summary{cursor:pointer;color:var(--text-secondary);font:.95rem var(--font-heading);transition:color .16s ease}.adders[open] summary{margin-bottom:.9rem;color:var(--text-primary)}
 @media(hover:hover) and (pointer:fine){.adders summary:hover{color:var(--gold-light)}}
 /* The odds between the sides: each side's chance, and one bar split between them (what is left over is the unresolved share). */
-.versus{position:sticky;top:calc(var(--nav-offset) + 1.5rem);display:flex;flex-direction:column;gap:1.25rem;padding:1.5rem 0;transition:top 300ms cubic-bezier(.4,0,.2,1)}
+.versus{position:sticky;top:calc(var(--nav-height) + 1.5rem);display:flex;flex-direction:column;gap:1.25rem;padding:1.5rem 0}
 .versusTitle{margin:0;text-align:center;color:var(--text-secondary);font:.95rem var(--font-heading)}
 .odds{display:flex;flex-direction:column;align-items:stretch;gap:.8rem}
 .oddsA,.oddsB{display:flex;flex-direction:column;align-items:center;gap:.15rem;margin:0}
@@ -41,7 +41,7 @@
 .left li{display:grid;grid-template-columns:3rem minmax(0,1fr) 3.5rem;align-items:center;gap:.6rem;color:var(--text-muted)}.left b{text-align:right;color:var(--text-primary);font-weight:400;font-family:var(--font-mono);font-size:.8rem}
 .leftBar{position:relative;height:.375rem;background:#241c14}.leftBar i{position:absolute;inset:0;background:var(--gold);transform:scaleX(var(--share));transform-origin:left;transition:transform .32s var(--ease)}
 /* Phone: the odds become a bar under the navbar, above both sides. */
-@media(max-width:1080px){.arena{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.versus{order:-1;grid-column:1/-1;position:sticky;top:var(--nav-offset);z-index:5;flex-direction:row;align-items:center;gap:1rem;padding:.7rem 1rem;background:var(--bg-card);border:1px solid var(--border);box-shadow:0 .5rem 1rem rgba(0,0,0,.45)}
+@media(max-width:1080px){.arena{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.versus{order:-1;grid-column:1/-1;position:sticky;top:var(--nav-height);z-index:5;flex-direction:row;align-items:center;gap:1rem;padding:.7rem 1rem;background:var(--bg-card);border:1px solid var(--border);box-shadow:0 .5rem 1rem rgba(0,0,0,.45)}
   .versusTitle{display:none}.odds{flex:1;flex-direction:row;align-items:center;gap:.9rem}.odds .meter{flex:1}.oddsA strong,.oddsB strong{font-size:2.2rem}.versus dl{margin:0;min-width:10rem}}
 @media(max-width:760px){.arena{grid-template-columns:1fr}.versus dl{display:none}.oddsA strong,.oddsB strong{font-size:1.9rem}.outcome{grid-template-columns:1fr;gap:1.5rem}.histogram{height:9rem}.column{height:5.5rem}}
 @media(prefers-reduced-motion:reduce){.coin button,.meter i,.histogram a,.column i,.leftBar i,.versus{transition:none}}

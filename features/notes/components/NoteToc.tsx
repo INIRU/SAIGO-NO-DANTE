@@ -60,7 +60,7 @@ export default function NoteTocLayout({ headings, children }: { headings: NoteHe
   if (!shown) return <>{children}</>
   const title = tr(lang, '목차', '目次', 'Contents')
   return <div className="note-toc-frame"><div className="note-toc-layout">
-    <aside className="note-toc" data-open={open || undefined}>
+    <aside className="note-toc nav-slide" data-open={open || undefined}>
       <button type="button" className="note-toc-toggle" aria-expanded={open} aria-controls={listId} onClick={() => setOpen(!open)}>{title}<ChevronDown size={16} aria-hidden="true" /></button>
       <p className="note-toc-title" aria-hidden="true">{title}</p>
       <nav id={listId} aria-label={title}>

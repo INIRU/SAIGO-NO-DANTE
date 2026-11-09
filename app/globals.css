@@ -244,7 +244,7 @@ textarea:focus-visible {
   .story-panel-in { animation: story-panel-in .32s cubic-bezier(.22,1,.36,1) both; }
   .story-rise { animation: story-rise .36s cubic-bezier(.22,1,.36,1) both; animation-delay: calc(var(--i, 0) * 35ms + 120ms); }
   .story-ticket-in { animation: story-ticket-in .45s cubic-bezier(.22,1,.36,1) both; animation-delay: calc(var(--i, 0) * 40ms); }
-  .story-bus { transition: left .5s cubic-bezier(.22,1,.36,1), top .5s cubic-bezier(.22,1,.36,1); }
+  .story-bus { transition: transform .5s cubic-bezier(.22,1,.36,1); }
   .story-bg-in { animation: story-bg-in .5s ease-out both; }
 }
 @keyframes story-bg-in { from { opacity: 0; transform: scale(1.03); } to { opacity: 1; transform: none; } }
@@ -579,9 +579,11 @@ html[data-auth-hint] .nav-auth-guest,html:not([data-auth-hint]) .nav-auth-user{d
 :root{--nav-offset:4rem;--nav-height:4rem}
 html:is([data-nav-hidden],[data-with-admin-shell],[data-with-assist-run],[data-with-prescript],[data-with-mypage],[data-with-gift-check],[data-with-motion],[data-with-story]){--nav-offset:0rem}
 html:is([data-with-admin-shell],[data-with-assist-run],[data-with-prescript],[data-with-mypage],[data-with-gift-check],[data-with-motion],[data-with-story]){--nav-height:0rem}
-.sticky-under-nav{position:sticky;top:var(--nav-height);transition:transform 300ms cubic-bezier(0.4,0,0.2,1)}
-html[data-nav-hidden] .sticky-under-nav[data-stuck]{transform:translateY(calc(-1 * var(--nav-height)))}
-@media (prefers-reduced-motion:reduce){.sticky-under-nav{transition:none}}
+/* .nav-slide: a sticky element with its own position and top (a contents rail, a calculator's result) that slides the same way */
+.sticky-under-nav{position:sticky;top:var(--nav-height)}
+:is(.sticky-under-nav,.nav-slide){transition:transform 300ms cubic-bezier(0.4,0,0.2,1)}
+html[data-nav-hidden] :is(.sticky-under-nav,.nav-slide)[data-stuck]{transform:translateY(calc(-1 * var(--nav-height)))}
+@media (prefers-reduced-motion:reduce){:is(.sticky-under-nav,.nav-slide){transition:none}}
 /* Print: page content only, on white. */
 @media print{.site-navigation,.site-footer{display:none!important}html,body{background:#fff!important}}
 /* Inline gift in a sentence (like keywords): art at text height, name in the gift keyword's colour. */
@@ -714,7 +716,7 @@ a.note-mention:is(:hover,:focus-visible),.note-block-document a[href].note-menti
 /* Wide: the rail stands at the right edge of the row, below the site bar and the page's section tabs (3rem + hairline). */
 @container (min-width:72rem){
   .note-toc-layout{display:grid;grid-template-columns:minmax(0,52rem) 15rem;justify-content:space-between;align-items:start;gap:3rem}
-  .note-toc{order:2;position:sticky;top:calc(var(--nav-offset) + 4.5rem);max-height:calc(100dvh - var(--nav-offset) - 6rem);overflow:auto;overscroll-behavior:contain;transition:top 300ms cubic-bezier(0.4,0,0.2,1)}
+  .note-toc{order:2;position:sticky;top:calc(var(--nav-height) + 4.5rem);max-height:calc(100dvh - var(--nav-offset) - 6rem);overflow:auto;overscroll-behavior:contain}
   .note-toc-toggle{display:none}
   .note-toc-title{display:block;margin:0 0 .5rem;color:var(--text-muted);font-family:var(--font-heading);font-size:.8125rem}
   .note-toc nav{display:block}

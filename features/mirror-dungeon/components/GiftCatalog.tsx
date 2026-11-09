@@ -533,7 +533,7 @@ export default function GiftCatalog({
         ref={toolbarRef}
         role="search"
       aria-label={tp('giftFilters')}
-        className={compact ? 'sticky z-10 pb-2 transition-[top] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] motion-reduce:transition-none' : 'sticky-under-nav z-30 -mx-4 px-4 pt-1 pb-2 md:-mx-6 md:px-6'}
+        className={compact ? 'sticky z-10 pb-2 nav-slide' : 'sticky-under-nav z-30 -mx-4 px-4 pt-1 pb-2 md:-mx-6 md:px-6'}
         style={{ top: compact ? 'var(--gift-catalog-sticky-top, 0px)' : undefined, background: compact ? 'var(--gift-catalog-bg, var(--bg-deep))' : 'var(--bg-deep)', borderBottom: '1px solid #2e2417' }}
       >
         {/* 키워드 */}
