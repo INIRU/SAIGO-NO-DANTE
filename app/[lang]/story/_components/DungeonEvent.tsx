@@ -246,7 +246,7 @@ function Monitor({ picSrc, picKey, text }: { picSrc: string | null; picKey: numb
             <img src={ui('rec')} alt="" className="h-3 w-auto opacity-90" />
           </span>
         </div>
-        <div className="relative min-h-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain bg-[length:100%_100%] px-7 pb-12 pt-4 [scrollbar-color:#5a4526_transparent]"
+        <div className="relative min-h-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain bg-[length:100%_100%] px-7 pb-12 pt-4"
           style={{ backgroundImage: `url(${ui('scan')})` }}>
           <p key={text} className="story-panel-in whitespace-pre-line break-keep font-[family-name:var(--font-game-text)] text-[0.9375rem] leading-[1.85] text-[#efe6d6] [text-shadow:0_1px_2px_#000]"><Rich text={text} /></p>
         </div>
@@ -292,7 +292,7 @@ export default function DungeonEventWindow({ events, gifts, pics, first, title, 
           </div>
           <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] gap-5 overflow-hidden p-4 @5xl:gap-8 @5xl:p-6">
             <Monitor picSrc={picId != null && small != null ? `${base}/event/${small}${picId}.webp` : null} picKey={picId} text={text} />
-            <section key={steps.length} className="story-panel-in min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain py-1 pl-3 pr-2 [scrollbar-color:#5a4526_transparent]">
+            <section key={steps.length} className="story-panel-in min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain py-1 pl-3 pr-2">
               <Side step={step} ctx={ctx} />
             </section>
           </div>
@@ -574,7 +574,7 @@ function CheckChain({ first, ctx, seen, boxed }: { first: CheckEvent; ctx: Ctx; 
   const index = new Map(list.map((ev, i) => [ev.id, i + 1]))
   const all = new Set([...seen, ...list.map(ev => ev.id)])
   const outcomes = (ev: CheckEvent) => (
-    <div className="grid grid-cols-2 divide-x divide-[#3a2a15]">
+    <div className="grid grid-cols-2 divide-x divide-[var(--border)]">
       {(['success', 'fail'] as const).map(side => (
         <div key={side} className={`min-w-0 ${side === 'success' ? 'pr-5' : 'pl-5'}`}>
           <p className={`pt-1 font-[family-name:var(--font-heading)] text-[1rem] leading-none ${side === 'success' ? 'text-[var(--gold-light)]' : 'text-[var(--error-text)]'}`}>

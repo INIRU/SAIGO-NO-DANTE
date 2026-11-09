@@ -38,7 +38,7 @@ export default function FullscreenGate({ lang }: { lang: Lang }) {
       <button type="button" onClick={go} className={buttonClass({ variant: 'primary' })}>
         <Maximize size={18} aria-hidden />{s.go}
       </button>
-      <p className="text-[0.875rem] text-[#b0a890]">{s.note}</p>
+      <p className="text-[0.875rem] text-[var(--text-secondary)]">{s.note}</p>
     </div>
   )
 }

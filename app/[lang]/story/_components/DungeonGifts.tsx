@@ -64,10 +64,10 @@ export default function DungeonGifts({ events, gifts, firsts, lang, base }: {
       {/* the title row folds the list away and back */}
       <button type="button" aria-expanded={shown} onClick={() => setShown(v => !v)}
         className="group flex min-h-10 w-full min-w-[14rem] items-center gap-2 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--gold)]">
-        <h3 className="shrink-0 font-[family-name:var(--font-heading)] text-[0.9375rem] leading-none text-[#e8dcc8] group-hover:text-[#f3e4cb]">{s.title}</h3>
-        <span aria-hidden className="h-px flex-1 bg-[#3a2a15]" />
-        <span className="font-[family-name:var(--font-title)] text-[1.125rem] leading-none text-[#e8b030]">{list.length}</span>
-        <ChevronDown size={16} aria-hidden className={`shrink-0 text-[#94887a] transition-transform duration-200 group-hover:text-[#e8b030] ${shown ? 'rotate-180' : ''}`} />
+        <h3 className="shrink-0 font-[family-name:var(--font-heading)] text-[0.9375rem] leading-none text-[var(--text-primary)] group-hover:text-[#f3e4cb]">{s.title}</h3>
+        <span aria-hidden className="h-px flex-1 bg-[var(--border)]" />
+        <span className="font-[family-name:var(--font-title)] text-[1.125rem] leading-none text-[var(--gold-light)]">{list.length}</span>
+        <ChevronDown size={16} aria-hidden className={`shrink-0 text-[#94887a] transition-transform duration-200 group-hover:text-[var(--gold-light)] ${shown ? 'rotate-180' : ''}`} />
       </button>
       {/* no scroll box: a card grows on hover, which would make one scroll; pt / pr: room for the ×N badges; up to 8
           cards a row (8 x 3rem + 7 gaps + the badge room), right aligned: the box is as wide as its cards */}

@@ -74,7 +74,7 @@ export default function StorySelect({ lang, index, base }: { lang: Lang; index: 
 
       {current && (
         <div aria-hidden key={current.id} className="story-panel-in pointer-events-none absolute bottom-10 right-10 hidden max-w-[40rem] text-right [text-shadow:0_2px_12px_#000] @3xl:block">
-          <div className="font-[family-name:var(--font-heading)] text-[1.25rem] text-[#e8b030]">{s.chapter(current.number)}</div>
+          <div className="font-[family-name:var(--font-heading)] text-[1.25rem] text-[var(--gold-light)]">{s.chapter(current.number)}</div>
           <div className="break-keep font-[family-name:var(--font-heading)] text-[3.5rem] leading-tight text-[#f3e4cb]">{hidden(current.id) ? '???' : text(current.title, lang)}</div>
           <div className="mt-1 text-[1rem] text-[#d8ccb6]">{`${text(current.company, lang)} ${text(current.area, lang)}`.trim()}</div>
         </div>
@@ -129,7 +129,7 @@ function ChapterCard({ entry, base, lang, chapter, active, hidden, reveal, onRev
       // part 91 (9128 carries the rest of chapter 10).
       className={`group relative block aspect-[625/208] focus-visible:outline-none ${/^\d+$/.test(entry.number) ? 'w-full' : 'ml-auto w-[82%]'}`}>
       {/* The picture inside the frame's cut corners. */}
-      <span className="absolute inset-[3%_1.6%] overflow-hidden bg-[#120e09] [clip-path:polygon(3%_0,97%_0,100%_14%,100%_86%,97%_100%,3%_100%,0_86%,0_14%)]">
+      <span className="absolute inset-[3%_1.6%] overflow-hidden bg-[var(--bg-panel)] [clip-path:polygon(3%_0,97%_0,100%_14%,100%_86%,97%_100%,3%_100%,0_86%,0_14%)]">
         {entry.illust && (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={`${base}/illust/${entry.id}.webp`} alt="" loading="lazy" className={`h-full w-full object-cover group-hover:scale-[1.03] ${hidden ? 'scale-110 blur-md brightness-50' : ''} [transition:filter_.5s,transform_.3s]`} />

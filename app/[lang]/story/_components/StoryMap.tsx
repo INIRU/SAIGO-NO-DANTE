@@ -432,7 +432,7 @@ function StageNode({ node, y, ui, base, lang, selected, hidden, onPick }: {
       <button type="button" onClick={() => onPick(node.id)} tabIndex={-1}
         className="absolute block text-left transition-[filter] duration-300" style={{ left: node.x - cw / 2, top: cardTop, width: cw, height: ch, filter: glow }}>
         {/* [Mask]: the picture and the title band are clipped to the card's window. */}
-        <span className="absolute overflow-hidden bg-[#1a1510]" style={{ left: 13 * ui, top: 13 * ui, right: 13 * ui, bottom: 11 * ui }}>
+        <span className="absolute overflow-hidden bg-[var(--bg-card)]" style={{ left: 13 * ui, top: 13 * ui, right: 13 * ui, bottom: 11 * ui }}>
           {(hidden || node.cg) && (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={hidden ? `${base}/ui/spoiler.webp` : `${base}/cg/${node.id}.webp`} alt="" draggable={false} loading="lazy" className="h-full w-full max-w-none object-cover" />
