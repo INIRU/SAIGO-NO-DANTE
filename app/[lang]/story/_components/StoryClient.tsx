@@ -26,7 +26,7 @@ const L = {
     wave: (i: number) => `${i}웨이브`, hidden: '처음엔 보이지 않음', reveal: '눌러서 보기', story: '스토리', storyOnly: '전투 없이 이야기만 진행되는 스테이지입니다.', spoiler: '아직 열지 않은 장입니다. 장 선택에서 이 장을 누르면 보입니다.',
     spoilerTitle: '스포일러 주의', spoilerBody: '아직 열지 않은 장입니다. 열면 이 장의 스테이지와 적이 보이고, 그 앞의 장도 모두 열립니다.', openAnyway: '그래도 열기',
     ending: '엔딩', otherFloor: '그 외', endingNote: '백화점을 돌아다니며 만나는 전투입니다. 엔딩마다 다릅니다.',
-    difficulty: ['노말', '하드'], groups: '편', group: (n: number) => ['상편', '중편', '하편'][n - 1] ?? `${n}편`, pickHint: '스테이지를 누르면 적 정보가 열립니다',
+    difficulty: ['노말', '하드'], groups: '편', group: (n: number) => ['상편', '중편', '하편'][n - 1] ?? `${n}편`, pickHint: '스테이지를 누르면 적 정보가 열립니다', loading: '지도를 불러오는 중',
   },
   en: {
     title: 'Story Map', back: 'Back to chapters', close: 'Close', enterDungeon: 'Enter', floorCount: (n: number) => `${n} floors`, chapterName: (n: string) => `Ch. ${n}`,
@@ -34,7 +34,7 @@ const L = {
     wave: (i: number) => `Wave ${i}`, hidden: 'hidden at first', reveal: 'Show', story: 'Story', storyOnly: 'A story stage with no battle.', spoiler: 'Not opened yet. Pick this chapter on the chapter list to show it.',
     spoilerTitle: 'Spoiler warning', spoilerBody: 'You have not opened this chapter yet. Opening it shows its stages and enemies, and opens every chapter before it.', openAnyway: 'Open anyway',
     ending: 'Ending', otherFloor: 'Other', endingNote: 'The battles met while walking the store, different for each ending.',
-    difficulty: ['Normal', 'Hard'], groups: 'Parts', group: (n: number) => `Part ${n}`, pickHint: 'Pick a stage to see its enemies',
+    difficulty: ['Normal', 'Hard'], groups: 'Parts', group: (n: number) => `Part ${n}`, pickHint: 'Pick a stage to see its enemies', loading: 'Loading the map',
   },
   ja: {
     title: 'ストーリーマップ', back: '章の選択へ', close: '閉じる', enterDungeon: '入場', floorCount: (n: number) => `${n}階`, chapterName: (n: string) => `${n}章`,
@@ -42,7 +42,7 @@ const L = {
     wave: (i: number) => `ウェーブ${i}`, hidden: '最初は見えない', reveal: '押して表示', story: 'ストーリー', storyOnly: '戦闘のないストーリーステージです。', spoiler: 'まだ開いていない章です。章の選択でこの章を押すと表示されます。',
     spoilerTitle: 'ネタバレ注意', spoilerBody: 'まだ開いていない章です。開くとこの章のステージと敵が表示され、それ以前の章もすべて開きます。', openAnyway: 'それでも開く',
     ending: 'エンディング', otherFloor: 'その他', endingNote: '百貨店を歩き回って出会う戦闘です。エンディングごとに異なります。',
-    difficulty: ['ノーマル', 'ハード'], groups: '編', group: (n: number) => ['上編', '中編', '下編'][n - 1] ?? `${n}編`, pickHint: 'ステージを押すと敵情報が開きます',
+    difficulty: ['ノーマル', 'ハード'], groups: '編', group: (n: number) => ['上編', '中編', '下編'][n - 1] ?? `${n}編`, pickHint: 'ステージを押すと敵情報が開きます', loading: 'マップを読み込み中',
   },
 }
 
@@ -273,7 +273,7 @@ export function StagePanel({ node, sub, base, lang, spoiler, onClose, note, acti
   return (
     // As in the game: see-through black over a blurred map, a plain edge on the map side. (A mask on top of
     // backdrop-filter makes Chrome drop the whole panel.)
-    <aside className="story-panel-in absolute inset-x-0 bottom-0 max-h-[60%] overflow-y-auto overscroll-contain border-t border-[var(--border)] bg-black/80 px-4 pb-6 pt-4 backdrop-blur-md @3xl:inset-x-auto @3xl:bottom-0 @3xl:right-0 @3xl:top-0 @3xl:max-h-none @3xl:w-[min(32rem,46cqw)] @3xl:border-l @3xl:border-t-0 @3xl:px-8 @3xl:py-6">
+    <aside className="story-panel-in absolute inset-x-0 bottom-0 max-h-[60%] overflow-y-auto overscroll-contain border-t border-[var(--border)] bg-[#050403]/[.93] px-4 pb-6 pt-4 backdrop-blur-md @3xl:inset-x-auto @3xl:bottom-0 @3xl:right-0 @3xl:top-0 @3xl:max-h-none @3xl:w-[min(32rem,46cqw)] @3xl:border-l @3xl:border-t-0 @3xl:px-8 @3xl:py-6">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={`${base}/ui/s/${node.tag}.webp`} alt="" aria-hidden className="pointer-events-none absolute bottom-10 right-10 w-44 opacity-[0.08]" />
       <button type="button" onClick={onClose} aria-label={s.close}
@@ -495,12 +495,26 @@ function SpoilerGate({ lang, onOpen }: { lang: Lang; onOpen: () => void }) {
 
 /** What a chapter page shows before its map: the page reads ?stage= etc. (nuqs), which the server cannot know for a
  * cached page, so the map is drawn in the browser. Until then this covers the site's nav and footer at once. */
-export function StoryShell({ lang, base }: { lang: Lang; base: string }) {
+export function StoryShell({ lang, base, id, number, cover }: { lang: Lang; base: string; id: number; number: string; cover: boolean }) {
   useFullScreen()
+  const s = L[lang]
   return (
     <div className="story-landscape [container-type:size] fixed inset-0 z-[60] overflow-hidden bg-black">
+      {/* the chapter's own picture from the chapter list, blurred and dark (the reader's progress is not known yet, so it
+          gives nothing away); the chapter number only, its title may be a spoiler */}
+      {cover && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={`${base}/cover/${id}.webp`} alt="" aria-hidden className="story-bg-in absolute inset-0 h-full w-full object-cover blur-xl brightness-[.35]" />
+      )}
       <div className="absolute left-0 top-0 flex items-center gap-3 px-3 pt-3 @3xl:px-6">
-        <BackButton href={`/${lang}/story`} base={base} label={L[lang].back} />
+        <BackButton href={`/${lang}/story`} base={base} label={s.back} />
+        <div className="story-title font-[family-name:var(--font-heading)] text-[1.5rem] text-[var(--gold)] [text-shadow:0_1px_3px_#000,0_0_8px_#000] @3xl:text-[1.875rem]">{s.chapterName(number)}</div>
+      </div>
+      <div role="status" className="absolute inset-0 flex flex-col items-center justify-center gap-4">
+        {/* the game's bus that marks the current stage */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={`${base}/ui/train.webp`} alt="" aria-hidden className="h-16 w-auto motion-safe:animate-pulse" />
+        <p className="font-[family-name:var(--font-heading)] text-[1rem] text-[#d8ccb6] [text-shadow:0_1px_6px_#000]">{s.loading}</p>
       </div>
     </div>
   )
