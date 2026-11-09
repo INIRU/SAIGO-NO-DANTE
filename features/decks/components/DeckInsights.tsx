@@ -2,6 +2,7 @@
 
 import { useCallback, useMemo, useRef, useState, type ReactNode } from 'react'
 import Image from 'next/image'
+import QuietImage from '@/components/ui/QuietImage'
 import { useLocale, useTranslations } from 'next-intl'
 import { SIN_COLORS, getSinIconUrl } from '@/lib/constants/sin'
 import { normalizeThemeKeyword } from '@/lib/constants/keywords'
@@ -157,7 +158,7 @@ export default function DeckInsights({ identities, sinCounts, baseSinCounts, sum
               {groups.map(({ identity, list }) => (
                 <li key={identity.id} className="deck-passives__group">
                   <div className="deck-passives__head">
-                    <span className="deck-passives__thumb relative block h-8 w-8 shrink-0 overflow-hidden">{identity.imageUrl && <Image src={identity.imageUrl} alt="" fill sizes="2rem" style={{ objectFit: 'cover', objectPosition: '50% 8%' }} />}</span>
+                    <span className="deck-passives__thumb relative block h-8 w-8 shrink-0 overflow-hidden">{identity.imageUrl && <QuietImage src={identity.imageUrl} alt="" fill sizes="2rem" style={{ objectFit: 'cover', objectPosition: '50% 8%' }} />}</span>
                     <p className="deck-passives__who">
                       <span className="deck-passives__identity">{identity.name}</span>
                       <span className="deck-passives__sinner">{identity.sinnerName}</span>

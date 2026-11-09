@@ -5,6 +5,7 @@ import { LCB_IDS } from '@/lib/constants/game'
 import { identitySuggestUrl, suggestionContext, type SuggestionResponse } from '@/features/community'
 import { useMemo, useState, type CSSProperties } from 'react'
 import Image from 'next/image'
+import QuietImage from '@/components/ui/QuietImage'
 import { useReducedMotion } from 'motion/react'
 import * as m from 'motion/react-m'
 import {
@@ -82,7 +83,7 @@ function SinnerGhostCard({ sinner, children }: { sinner: Sinner; children?: Reac
       }}
     >
       {profileUrl && (
-        <Image src={profileUrl} alt={sinner.name} fill className="object-cover object-top" style={{ opacity: 0.18 }} sizes="120px" />
+        <QuietImage src={profileUrl} alt={sinner.name} fill className="object-cover object-top" style={{ opacity: 0.18 }} sizes="120px" />
       )}
       {children}
       <div className="absolute bottom-0 left-0 right-0 text-center pb-1.5 z-10" style={{ background: 'rgba(13,11,8,0.9)', borderTop: '1px solid rgba(200,144,10,0.12)' }}>

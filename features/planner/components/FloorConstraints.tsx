@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import QuietImage from "@/components/ui/QuietImage";
 import { useLocale } from "next-intl";
 import {
   constraintsForFloor,
@@ -41,7 +42,7 @@ export default function FloorConstraints({
           {floor}F · {label("제약 설정", "制約設定", "Constraints")}
         </h4>
         <div className="relative aspect-[407/214] w-32 shrink-0">
-          <Image
+          <QuietImage
             src={getConstraintAssetUrl("total")}
             alt=""
             fill
@@ -84,7 +85,7 @@ export default function FloorConstraints({
           const active = selected.includes(c.id);
           const content = (
             <>
-              <Image
+              <QuietImage
                 src={getConstraintAssetUrl("card")}
                 alt=""
                 fill
@@ -95,7 +96,7 @@ export default function FloorConstraints({
                 className={`pointer-events-none absolute transition-opacity duration-300 motion-reduce:transition-none ${active ? "opacity-100" : "opacity-0 group-hover:opacity-40"}`}
                 style={{ left: "0%", top: "0%", width: "100%", height: "100.64%" }}
               >
-                <Image
+                <QuietImage
                   src={getConstraintAssetUrl("selected")}
                   loading="eager"
                   alt=""

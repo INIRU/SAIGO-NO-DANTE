@@ -3,7 +3,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 
 const locale = vi.hoisted(() => ({ value: 'ko' }))
 vi.mock('next-intl', () => ({ useTranslations: () => (key: string, values?: { n: number }) => (values ? `${key} ${values.n}` : key), useLocale: () => locale.value }))
-vi.mock('next/image', () => ({ default: ({ src, alt }: { src: string; alt: string }) => <img src={src} alt={alt} /> }))
+vi.mock('next/image', () => ({ default: ({ src, alt }: { src: string; alt: string }) => <img src={src} alt={alt} />, getImageProps: ({ src, alt }: { src: string; alt: string }) => ({ props: { src, alt } }) }))
 
 import MotionScenarios from '@/features/motion/components/MotionScenarios'
 import MotionSkillStrip from '@/features/motion/components/MotionSkillStrip'
