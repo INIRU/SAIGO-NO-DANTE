@@ -21,10 +21,10 @@ const KEYWORD_COLOR = GIFT_KEYWORD_COLORS
 interface Props {
   /**
    * `deployed`: of `count`, the identities in SELECTED slots (computeKeywordDistribution with flags).
-   * A row that is not a keyword (an attack type, a sin) brings its own `iconUrl` and `color`; `extra` is drawn at the
-   * end of the row.
+   * A row that is not a keyword (an attack type, a sin) brings its own `iconUrl` (or a ready `icon`) and `color`;
+   * `extra` is drawn at the end of the row.
    */
-  distribution: { keyword: string; count: number; deployed?: number; iconUrl?: string | null; color?: string; extra?: ReactNode }[]
+  distribution: { keyword: string; count: number; deployed?: number; iconUrl?: string | null; icon?: ReactNode; color?: string; extra?: ReactNode }[]
   getKeywordLabel?: (keyword: string) => string
   contributorsByKeyword?: Record<string, KeywordChartContributor[]>
   maxItems?: number
@@ -72,7 +72,7 @@ export default function KeywordChart({
         return (
           <div key={d.keyword} className="space-y-1.5">
             <div className="grid items-center gap-2" style={{ gridTemplateColumns: `1rem minmax(4rem, 5.5rem) minmax(0, 1fr) ${layered ? '2.75rem' : '1.75rem'}${hasExtra ? (layered ? ' 2.75rem' : ' 1.75rem') : ''}` }}>
-              {iconUrl ? (
+              {d.icon ?? (iconUrl ? (
                 <KeywordIcon
                   src={iconUrl}
                   alt="" width={16} height={16}
@@ -80,7 +80,7 @@ export default function KeywordChart({
                 />
               ) : (
                 <span aria-hidden="true" />
-              )}
+              ))}
               <span className="min-w-0 truncate" style={{ fontSize: '0.875rem', color: '#b0a898' }}>
                 {getKeywordLabel ? getKeywordLabel(d.keyword) : d.keyword}
               </span>

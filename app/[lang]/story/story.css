@@ -1,0 +1,47 @@
+/* The story screens are full-window like the game's stage map (DESIGN.md 7: tool screens hide nav and footer). */
+html[data-with-story] :is(.site-navigation, .site-footer, .site-ad) { display: none; }
+html[data-with-story], html[data-with-story] body { overflow: hidden; }
+
+/* Phones and tablets held upright: the story drawn turned to landscape (USER: 모바일은 가로 화면으로 무조건). The whole
+   body turns 90° clockwise (so dialogs portaled into it turn too, and its size is their container for cqw/cqh and
+   the @3xl layouts); landscape.ts turns pointer positions back. Keep the query in step with
+   landscape.ts TURNED. */
+@media (orientation: portrait) and (pointer: coarse) {
+  html[data-with-story] body { position: fixed; top: 0; left: 0; width: 100dvh; height: 100vw; min-height: 0; transform-origin: 0 0; transform: rotate(90deg) translateY(-100%); container-type: size; }
+}
+
+/* Short screens (phones in landscape): the story UI is sized in rem, so the root size follows the screen height, one
+   36th of it, at most the site's 17px (globals.css pins it with !important) (a 390px-tall phone: 10.8px; 612px and taller: unchanged). Turned phones (above) measure their width. */
+html[data-with-story] { font-size: clamp(10px, calc(100vh / 36), 17px) !important; }
+@media (orientation: portrait) and (pointer: coarse) {
+  html[data-with-story] { font-size: clamp(10px, calc(100vw / 36), 17px) !important; }
+}
+
+/* Turned phones: the shared modal (BaseModal sheet) docks to the bottom below 640px of viewport width, which the
+   turned screen still reports (390px); on the turned landscape screen it sits in the middle like a desktop one. */
+@media (orientation: portrait) and (pointer: coarse) {
+  html[data-with-story] [role="dialog"].items-end { align-items: center; padding: 1rem; }
+}
+
+/* Touch devices: the stage line's blur re-renders over the whole map on every drag; a faint wide line stands in */
+@media (pointer: coarse) {
+  .story-line-glow { filter: none; stroke-opacity: 0.35; }
+}
+
+/* Touch devices: no background blur behind the story panels (it blurs the moving map again every frame); their dark
+   see-through fill stays */
+@media (pointer: coarse) {
+  html[data-with-story] :is(.backdrop-blur-sm, .backdrop-blur-md) { backdrop-filter: none; -webkit-backdrop-filter: none; }
+}
+
+/* Short screens (phones in landscape, turned phones): the desktop sizes (@3xl: 768px wide and up) took a 844px-wide
+   phone too; the back button and the chapter / dungeon title come down to phone size */
+@media (max-height: 500px), (orientation: portrait) and (pointer: coarse) {
+  html[data-with-story] .story-back { height: 2.5rem; width: 4.5rem; }
+  html[data-with-story] .story-title { font-size: 1.125rem; }
+}
+
+/* The spoiler notice fades in after a beat: the server draws every later chapter as unopened, and the reader's stored
+   progress arrives right after hydration, so a reader who opened the chapter never sees it flash. */
+.story-spoiler-in { animation: story-spoiler-in .3s ease-out .15s both; }
+@keyframes story-spoiler-in { from { opacity: 0; } to { opacity: 1; } }
