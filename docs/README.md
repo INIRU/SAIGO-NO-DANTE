@@ -8,6 +8,7 @@
 |---|---|
 | 새 기능을 `features/<기능>/`에 만든다 | [새 기능 만들기](guides/new-feature.md), [구조](reference/architecture.md) |
 | 화면이나 컴포넌트를 고친다 | [디자인 기준](../DESIGN.md), [구조](reference/architecture.md), [개발과 검증](guides/development.md) |
+| 게임이 업데이트됐다(무엇을 어디서 다시 뽑고 올리나, `/game-updated`) | [게임 업데이트 대응](guides/game-update.md) |
 | 새 게임 데이터를 반영한다, 반영을 되돌린다 | [게임 데이터 반영](https://github.com/INIRU/limbus-asset-extractor/blob/main/site-sync/docs/runbook.md) |
 | 동기화 방식을 알아본다(코드는 추출 도구 저장소 `site-sync/`에 있고 소유자가 고친다) | [동기화 코드를 고칠 때](https://github.com/INIRU/limbus-asset-extractor/blob/main/site-sync/docs/developing.md), [동기화 규칙](https://github.com/INIRU/limbus-asset-extractor/blob/main/site-sync/docs/rules.md) |
 | 게임 원본의 값을 새로 보여 준다(칸 추가) | [필드 하나 추가하기](https://github.com/INIRU/limbus-asset-extractor/blob/main/site-sync/docs/adding-a-field.md), [데이터 모델](reference/data-model.md) |
@@ -28,6 +29,7 @@
 - [기여 방법](../CONTRIBUTING.md): 브랜치, 계획, 테스트, 커밋, PR, 병합 확인.
 - [새 기능 만들기](guides/new-feature.md): `features/<기능>/` 폴더, 입구 파일, 테스트 위치, 경계 검사.
 - [개발과 검증](guides/development.md): 실행, 테스트, 캐시, 알려진 UI 주의점.
+- [게임 업데이트 대응](guides/game-update.md): 업데이트 확인, 게임 받기, 추출·반영과 결과 점검, 추출 도구 유지보수, 스토리 맵, 모션 클라이언트, 스킬 모션 영상, 공지.
 - [배포와 복구](guides/deployment.md): 서버·터널 구성, 자동 배포, 되돌리기, 집 IP가 바뀔 때 SSH 열기, Cloudflare 설정, 환경 변수 넣는 법, 요금 알림.
 - [어시스트 화면 인식](guides/assist-evaluation.md): 인식 방법, 설정, 평가 도구와 측정 기록.
 
