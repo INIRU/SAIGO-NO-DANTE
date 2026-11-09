@@ -3,7 +3,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 
 vi.mock('next-intl', () => ({ useLocale: () => 'ko', useTranslations: () => (key: string) => key }))
 // eslint-disable-next-line @next/next/no-img-element
-vi.mock('next/image', () => ({ default: ({ src, alt, style }: { src: string; alt: string; style?: React.CSSProperties }) => <img src={src} alt={alt} style={style} /> }))
+vi.mock('next/image', () => ({ default: ({ src, alt, style }: { src: string; alt: string; style?: React.CSSProperties }) => <img src={src} alt={alt} style={style} />, getImageProps: ({ src, alt, style }: { src: string; alt: string; style?: React.CSSProperties }) => ({ props: { src, alt, style } }) }))
 
 import FloorConstraints from '@/features/planner/components/FloorConstraints'
 import { ReadOnlyBlessingGrid, type Blessing } from '@/features/planner/components/BlessingTab'

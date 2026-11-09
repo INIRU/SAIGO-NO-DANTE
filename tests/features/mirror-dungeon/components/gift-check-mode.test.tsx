@@ -9,7 +9,7 @@ vi.mock('next-intl', () => ({
   useLocale: () => 'ko',
 }))
 // eslint-disable-next-line @next/next/no-img-element
-vi.mock('next/image', () => ({ default: ({ src, alt }: { src: string; alt: string }) => <img src={src} alt={alt} /> }))
+vi.mock('next/image', () => ({ default: ({ src, alt }: { src: string; alt: string }) => <img src={src} alt={alt} />, getImageProps: ({ src, alt }: { src: string; alt: string }) => ({ props: { src, alt } }) }))
 vi.mock('next-auth/react', () => ({ useSession: () => ({ status: 'unauthenticated' }) }))
 // The stored presets; empty unless a test chooses one.
 const stored = vi.hoisted(() => ({ presets: { active: null as string | null, list: [] as { id: string; name: string; groups: { name: string; gifts: string[]; memo: string }[] }[] } }))

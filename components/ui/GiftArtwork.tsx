@@ -1,7 +1,6 @@
 'use client'
 
 import type { ReactNode } from 'react'
-import Image from 'next/image'
 import QuietImage from '@/components/ui/QuietImage'
 import { FlaskConical } from 'lucide-react'
 import GiftGrade from './GiftGrade'
@@ -77,7 +76,7 @@ export default function GiftArtwork({ gift, displayName, isInsert = false, isSel
             width: '28%',
             height: '28%',
           }}>
-            <Image src={kwIconUrl} alt="" fill sizes="40px" style={{ objectFit: 'contain' }} />
+            <QuietImage src={kwIconUrl} alt="" fill sizes="40px" style={{ objectFit: 'contain' }} />
           </div>
         )}
 
