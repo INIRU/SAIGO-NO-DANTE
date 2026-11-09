@@ -49,6 +49,8 @@ describe('ad slot', () => {
   it('REQ-SHARED-085 reserves the space and hides an unfilled unit and the ad of a full-screen workspace', () => {
     const css = source('components/ads/AdSlot.module.css')
     expect(css).toMatch(/\.topUnit\s*\{[^}]*height:\s*100px/)
+    // the in-content banner is a 300x250 rectangle on a phone (owner 2026-11-09)
+    expect(css).toMatch(/\.inlineUnit\s*\{[^}]*width:\s*300px[^}]*height:\s*250px/)
     expect(css).toMatch(/:has\(ins\[data-ad-status=["']?unfilled["']?\]\)[^{]*\{[^}]*display:\s*none/)
     const workspaces = source('styles/globals/workspaces.css')
     for (const flag of ['admin-shell', 'assist-run', 'prescript', 'support-page', 'page-error', 'tool-screen', 'mypage', 'gift-check', 'friend-compose', 'motion', 'login-page'])
