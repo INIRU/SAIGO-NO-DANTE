@@ -122,6 +122,8 @@ export function normalizeDocument(value: unknown): JSONContent | null {
     }
     if (['text','hardBreak','horizontalRule','image','noteAsset','noteVideo','noteKeyword','noteGift','noteMention','noteCard'].includes(n.type)) delete result.content
     if (n.type === 'noteAccordion') {
+      // the writer's default: only a closed one is kept (an open one is the default)
+      if (n.attrs?.collapsed === true) result.attrs = { collapsed: true }
       result.content = [result.content?.find(c => c.type === 'noteTitle') ?? { type: 'noteTitle' }, result.content?.find(c => c.type === 'noteBody') ?? { type: 'noteBody', content: [{ type: 'paragraph' }] }]
     }
     if (n.type === 'noteAsset' && result.attrs?.kind === 'keyword') return {type:'paragraph',content:[{type:'noteKeyword',attrs:{id:result.attrs.id}}]}
