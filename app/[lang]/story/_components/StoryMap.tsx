@@ -407,7 +407,7 @@ export default function StoryMap({ sub, base, lang, selected, zoomed, spoiler, o
             // One bus for the whole map: it rides to the picked stage.
             // eslint-disable-next-line @next/next/no-img-element
             <img src={`${base}/ui/train.webp`} alt="" draggable={false} className="story-bus pointer-events-none absolute max-w-none"
-              style={{ left: current.x - TRAIN_W * ui / 2, top: ny(current) + 28 * ui - TRAIN_H * ui, width: TRAIN_W * ui, height: TRAIN_H * ui }} />
+              style={{ left: 0, top: 0, transform: `translate(${current.x - TRAIN_W * ui / 2}px, ${ny(current) + 28 * ui - TRAIN_H * ui}px)`, width: TRAIN_W * ui, height: TRAIN_H * ui }} />
           )}
         </div>
       )}

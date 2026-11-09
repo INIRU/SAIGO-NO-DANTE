@@ -1019,7 +1019,7 @@ export default function FloorTab({ state, dispatch, themes, gifts, recipes, gift
             style={{
               borderColor: '#2e2417',
               '--gift-catalog-bg': 'var(--bg-deep)',
-              '--gift-catalog-sticky-top': 'calc(var(--nav-offset, 4rem) + var(--planner-bar-h, 0rem))',
+              '--gift-catalog-sticky-top': 'calc(var(--nav-height, 4rem) + var(--planner-bar-h, 0rem))',
               '--gift-catalog-min-h': 'calc(100dvh - var(--gift-catalog-sticky-top) - 6rem)',
             } as React.CSSProperties}
           >

@@ -128,7 +128,7 @@ export default function DamageCalculator() {
           ))}
         </div>
       </section>
-      <section className={`${arena.versus} ${styles.outcome}`} aria-labelledby="damage-result-heading">
+      <section className={`${arena.versus} ${styles.outcome} nav-slide`} aria-labelledby="damage-result-heading">
         <h2 id="damage-result-heading" className={arena.versusTitle}>{t('result')}</h2>
         <div className={styles.total} aria-live="polite" aria-atomic="true"><span>{t('total')}</span><strong key={total} data-testid="damage-total">{total}</strong></div>
         <ol className={styles.coinResults}>

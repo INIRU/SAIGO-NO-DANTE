@@ -15,7 +15,7 @@ export default function PlaygroundTab({ endpoints, endpoint, open }: { endpoints
   const [key, setKey] = useState("");
   return (
     <div className="grid gap-x-6 gap-y-4 lg:grid-cols-[12.5rem_minmax(0,1fr)]">
-      <div className="-mx-1 flex gap-1 overflow-x-auto px-1 pb-1 lg:sticky lg:top-[var(--nav-offset)] lg:mx-0 lg:transition-[top] lg:duration-300 motion-reduce:transition-none lg:block lg:h-fit lg:space-y-0 lg:overflow-visible lg:px-0 lg:pt-1" role="group" aria-label={label("보낼 요청", "送るリクエスト", "Request to send")}>
+      <div className="-mx-1 flex gap-1 overflow-x-auto px-1 pb-1 nav-slide lg:sticky lg:top-[var(--nav-height)] lg:mx-0 lg:block lg:h-fit lg:space-y-0 lg:overflow-visible lg:px-0 lg:pt-1" role="group" aria-label={label("보낼 요청", "送るリクエスト", "Request to send")}>
         {endpoints.map((item) => (
           <button key={item.id} type="button" aria-pressed={item.id === endpoint.id} onClick={() => open("test", item.id)} className={`${railItem(item.id === endpoint.id)} lg:w-full`}>
             <Method method={item.method} small /><span>{t(item.name)}</span>
