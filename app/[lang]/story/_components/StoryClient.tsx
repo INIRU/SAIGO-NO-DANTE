@@ -372,6 +372,10 @@ function EnemyCard({ u, j, sub, base, lang }: {
           {e?.portrait
             // eslint-disable-next-line @next/next/no-img-element
             ? <img src={`${base}/portrait/${e.portrait}.webp`} alt="" loading="lazy" className="absolute left-1/2 top-[-4%] h-[170%] w-auto max-w-none -translate-x-1/2 transition-transform duration-300 group-hover:scale-[1.04]" />
+            : e?.sd
+            // no portrait in the game: its battle figure, whole, fitted into the card
+            // eslint-disable-next-line @next/next/no-img-element
+            ? <img src={`${base}/sd/${e.sd}.webp`} alt="" loading="lazy" className="absolute inset-[6%] h-[88%] w-[88%] object-contain object-bottom transition-transform duration-300 group-hover:scale-[1.04]" />
             : <span className="flex h-full items-center justify-center font-[family-name:var(--font-title)] text-[2rem] text-[#5a4526]">?</span>}
           <span className="absolute inset-x-0 bottom-0 h-1/3 bg-[linear-gradient(transparent,#0b0906)]" aria-hidden />
         </div>
