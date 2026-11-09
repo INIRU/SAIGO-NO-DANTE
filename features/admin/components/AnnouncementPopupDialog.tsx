@@ -31,7 +31,9 @@ export default function AnnouncementPopupDialog({ announcement }: { announcement
     try { localStorage.setItem(POPUP_SEEN_KEY, announcement.id) } catch {}
   }
   return (
-    <BaseModal open={open} onClose={close} title={announcement.title} maxWidth="30rem" initialFocus="dialog" sheet>
+    // A story chapter's map covers the page at z-60: below it the popup was hidden yet still took every click and scroll
+    <BaseModal open={open} onClose={close} title={announcement.title} maxWidth="30rem" initialFocus="dialog" sheet
+      zIndex={/\/story\/[^/]+/.test(pathname ?? '') ? 70 : undefined}>
       <section data-announcement-popup={announcement.id}
         className="relative flex max-h-[min(44rem,90dvh)] flex-col overflow-hidden rounded-t-2xl border border-b-0 border-[var(--border)] bg-[var(--bg-card)] shadow-[0_1.5rem_3rem_rgba(0,0,0,0.55)] sm:rounded-2xl sm:border-b">
         {announcement.cover && (
