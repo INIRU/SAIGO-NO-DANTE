@@ -22,7 +22,7 @@ export default function FilterSidebar({ children, activeCount }: Props) {
         className="sticky-under-nav hidden lg:block shrink-0 self-start overflow-y-auto"
         style={{
           width: '16rem',
-          top: 'calc(var(--nav-offset) + 1rem)',
+          top: 'calc(var(--nav-height) + 1rem)',
           maxHeight: 'calc(100dvh - var(--nav-offset) - 2rem)',
           paddingRight: '0.75rem',
         }}
