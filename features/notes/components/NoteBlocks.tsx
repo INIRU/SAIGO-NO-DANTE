@@ -134,10 +134,12 @@ export const NoteKeyword = Node.create({name:'noteKeyword',group:'inline',inline
   renderText({node}){return node.attrs.id},
   addNodeView(){return ReactNodeViewRenderer(KeywordNodeView)},
 })
-function AccordionNodeView({deleteNode}:NodeViewProps) {
-  const lang=useLocale(),[closed,setClosed]=useState(false)
+function AccordionNodeView({node,updateAttributes,deleteNode}:NodeViewProps) {
+  const lang=useLocale(),saved=node.attrs.collapsed===true,[closed,setClosed]=useState(saved)
   return <NodeViewWrapper className="note-accordion note-accordion-editor" data-collapsed={closed || undefined}>
     <button type="button" className="note-accordion-toggle" contentEditable={false} aria-expanded={!closed} aria-label={tr(lang,'아코디언 접기 또는 펼치기','アコーディオン開閉','Toggle accordion')} onClick={()=>setClosed(!closed)}><ChevronDown size={18}/></button>
+    {/* the state readers (and this editor, next time) start with; choosing it also folds or opens it here */}
+    <button type="button" className="note-accordion-default" contentEditable={false} aria-pressed={saved} onClick={()=>{updateAttributes({collapsed:!saved});setClosed(!saved)}}>{saved?tr(lang,'기본 접힘','初期状態: 閉じる','Starts closed'):tr(lang,'기본 펼침','初期状態: 開く','Starts open')}</button>
     <button type="button" className="note-accordion-delete" contentEditable={false} aria-label={tr(lang,'아코디언 삭제','アコーディオン削除','Delete accordion')} onClick={deleteNode}><X size={14}/></button>
     <NodeViewContent className="note-accordion-content"/>
   </NodeViewWrapper>
@@ -196,7 +198,8 @@ export const NoteAsset = Node.create({name:'noteAsset',group:'block',atom:true,d
   addNodeView(){return ReactNodeViewRenderer(AssetNodeView,{attrs:({node})=>({'data-kind':String(node.attrs.kind)})})},
 })
 export const NoteAccordion = Node.create({name:'noteAccordion',group:'block',content:'noteTitle noteBody',defining:true,isolating:true,
-  parseHTML(){return [{tag:'section[data-note-accordion]'}]},renderHTML(){return ['section',{'data-note-accordion':''},0]},addNodeView(){return ReactNodeViewRenderer(AccordionNodeView)},
+  addAttributes(){return {collapsed:{default:false,parseHTML:(el:HTMLElement)=>el.getAttribute('data-collapsed')==='true',renderHTML:(attrs:Record<string,unknown>)=>attrs.collapsed===true?{'data-collapsed':'true'}:{}}}},
+  parseHTML(){return [{tag:'section[data-note-accordion]'}]},renderHTML({HTMLAttributes}){return ['section',{...HTMLAttributes,'data-note-accordion':''},0]},addNodeView(){return ReactNodeViewRenderer(AccordionNodeView)},
 })
 export const NoteTitle = Node.create({name:'noteTitle',content:'inline*',defining:true,
   parseHTML(){return [{tag:'div[data-note-title]'}]},renderHTML(){return ['div',{'data-note-title':''},0]},

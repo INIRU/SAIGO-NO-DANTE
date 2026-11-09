@@ -124,7 +124,8 @@ export default function NoteBlockViewer({doc,renderText,anchors=false}:{doc:JSON
   const accordions=useMemo(()=>{const found:JSONContent[]=[];const visit=(n:JSONContent)=>{if(n.type==='noteAccordion')found.push(n);n.content?.forEach(visit)};visit(doc);return found},[doc])
   // By position in the document: a parent that parses the text again makes new node objects, the positions stay.
   const accordionAt=useMemo(()=>new Map(accordions.map((a,index)=>[a,index])),[accordions])
-  const [closed,setClosed]=useState<ReadonlySet<number>>(()=>new Set())
+  // each starts as its writer saved it (open unless set to closed in the editor)
+  const [closed,setClosed]=useState<ReadonlySet<number>>(()=>new Set(accordions.flatMap((a,index)=>a.attrs?.collapsed===true?[index]:[])))
   const allOpen=accordions.every((_,index)=>!closed.has(index))
   const toggleAccordion=(index:number)=>setClosed(current=>{const next=new Set(current);if(!next.delete(index))next.add(index);return next})
   const headingIds=useMemo(()=>headings.length>=NOTE_TOC_MIN?new Map(headings.map(h=>[h.node,h])):null,[headings])
