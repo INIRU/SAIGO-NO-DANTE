@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { trimPlanDetailCatalog } from '@/features/planner/lib/plan-detail-catalog'
+import { trimPlanDetailCatalog, slimPlanThemes } from '@/features/planner/lib/plan-detail-catalog'
 
 const gift = (game_id: number, name: string) => ({ id: `g${game_id}`, game_id, name })
 const gifts = [1, 2, 3, 4, 5, 6, 7, 8].map(n => gift(n, `기프트${n}`))
@@ -41,4 +41,24 @@ describe('trimPlanDetailCatalog', () => {
     expect(out.identities.map(i => i.id).sort()).toEqual(['i1', 'i2'])
     expect(out.egos.map(e => e.id)).toEqual(['e2'])
   })
+})
+
+describe('slimPlanThemes', () => {
+  const theme = (id: string, ego: number[]) => ({ id, name: id, ego_gift_ids: ego, specific_ego_gift_ids: [9], fixed_reward_gift_ids: null })
+  it('REQ-PLANNER-048 keeps a floor theme whole and cuts the other themes\' gift pools to the plan\'s gifts', () => {
+    const slim = slimPlanThemes([theme('1', [1, 2, 3, 4]), theme('2', [2, 3, 5, 6])], { floorThemeIds: new Set(['1']), giftIds: new Set([2, 5]) })
+    // the floor board counts the floor theme's whole pool
+    expect(slim[0].ego_gift_ids).toEqual([1, 2, 3, 4])
+    // the gift window asks only whether a plan gift is in a theme's pool
+    expect(slim[1].ego_gift_ids).toEqual([2, 5])
+    expect(slim[1].specific_ego_gift_ids).toEqual([9])
+  })
+})
+
+it('REQ-PLANNER-048 the plan detail page sends one locale of skill, passive and theme text and the slim themes', async () => {
+  const { readFileSync } = await import('node:fs')
+  const page = readFileSync('app/[lang]/planner/community/[id]/page.tsx', 'utf8')
+  expect(page).toContain("withoutOtherLocales(row, lang, ['name', 'description'])")
+  expect(page).toMatch(/slimPlanThemes\(themes\.map\(theme => withoutOtherLocales\(theme, lang, \['name'\]\)\)/)
+  expect(page).toContain('themes={planThemes}')
 })
