@@ -151,20 +151,11 @@ CREATE TABLE IF NOT EXISTS limbus.deck_votes (
 
 -- ── 함수 & 트리거 ──────────────────────────────────────────
 
--- vote_count 증감 RPC
-CREATE OR REPLACE FUNCTION limbus.increment_vote(deck_id UUID)
-RETURNS void AS $$
-  UPDATE limbus.decks SET vote_count = vote_count + 1 WHERE id = deck_id;
-$$ LANGUAGE sql SECURITY DEFINER;
-
+-- 조회수 증가 RPC. (추천 수를 올리고 내리던 increment_vote / decrement_vote 는 toggle_deck_vote 로 바뀌어
+-- migrations/20261111090000_drop_unused_functions.sql 에서 지웠다.)
 CREATE OR REPLACE FUNCTION limbus.increment_view(deck_id UUID)
 RETURNS void AS $$
   UPDATE limbus.decks SET view_count = view_count + 1 WHERE id = deck_id;
-$$ LANGUAGE sql SECURITY DEFINER;
-
-CREATE OR REPLACE FUNCTION limbus.decrement_vote(deck_id UUID)
-RETURNS void AS $$
-  UPDATE limbus.decks SET vote_count = GREATEST(0, vote_count - 1) WHERE id = deck_id;
 $$ LANGUAGE sql SECURITY DEFINER;
 
 -- updated_at 자동 갱신
@@ -547,16 +538,8 @@ CREATE TABLE IF NOT EXISTS limbus.deck_comments (
 -- decks 테이블에 comment_count 추가
 ALTER TABLE limbus.decks ADD COLUMN IF NOT EXISTS comment_count INT DEFAULT 0;
 
--- 댓글 수 증감 RPC
-CREATE OR REPLACE FUNCTION limbus.increment_comment(deck_id UUID)
-RETURNS void AS $$
-  UPDATE limbus.decks SET comment_count = comment_count + 1 WHERE id = deck_id;
-$$ LANGUAGE sql SECURITY DEFINER;
-
-CREATE OR REPLACE FUNCTION limbus.decrement_comment(deck_id UUID)
-RETURNS void AS $$
-  UPDATE limbus.decks SET comment_count = GREATEST(0, comment_count - 1) WHERE id = deck_id;
-$$ LANGUAGE sql SECURITY DEFINER;
+-- 댓글 수는 트리거(sync_deck_comment_count)가 센다. 예전 increment_comment / decrement_comment RPC 는
+-- migrations/20261111090000_drop_unused_functions.sql 에서 지웠다.
 
 -- ── RLS (Row Level Security) ───────────────────────────────
 
