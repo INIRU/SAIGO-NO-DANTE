@@ -1,0 +1,12 @@
+{
+  "blessing": {
+    "top": "#2f323a",
+    "bottom": "#2c355a",
+    "border": "#6b728c"
+  },
+  "constraint": {
+    "top": "#3a0b14",
+    "bottom": "#5a0813",
+    "border": "#8c525a"
+  }
+}
