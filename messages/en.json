@@ -168,7 +168,9 @@
       "discard": "Discard",
       "restored": "Draft restored",
       "restoreFailed": "Could not restore the draft"
-    }
+    },
+    "updateAvailable": "A new version is out",
+    "updateReload": "Reload"
   },
   "globalSearch": {
     "ariaLabel": "Site search",

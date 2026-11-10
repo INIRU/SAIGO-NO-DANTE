@@ -168,7 +168,9 @@
       "discard": "破棄",
       "restored": "下書きを読み込みました",
       "restoreFailed": "下書きを読み込めませんでした"
-    }
+    },
+    "updateAvailable": "新しいバージョンが​あります",
+    "updateReload": "更新"
   },
   "globalSearch": {
     "ariaLabel": "サイト内検索",
