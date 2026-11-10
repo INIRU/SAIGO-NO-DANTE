@@ -12,7 +12,7 @@ import FinalGiftPresets from './FinalGiftPresets'
 import { GRADE_ROMAN, SLUG_TO_KEYWORD, getKeywordSlug } from '@/lib/planner/gift-plan-constants'
 import type { PlannerAction, GiftData, IdentitySlot, RecipeData } from '@/lib/planner/types'
 import { deriveBlockedFinalFusionMaterialIds, findAvailableFusions, getFinalGiftVariantIds, parseFinalGiftIds } from '@/lib/planner/fusion'
-import { finalEnhanceEdit, type FinalGift, type deriveFinalGifts } from '@/features/planner/lib/final-gifts'
+import { finalEnhanceAction, type FinalGift, type deriveFinalGifts } from '@/features/planner/lib/final-gifts'
 import { getLocalizedName } from '@/lib/i18n/localize'
 import type { SupportedLang } from '@/lib/i18n/types'
 import { getGiftActivationConditionStatus, getGiftConditionCountsForSlots, giftConditionKey } from '@/lib/planner/gift-condition-status'
@@ -227,10 +227,8 @@ export default function FinalGiftSection({ giftInventory, identitySlots, dispatc
   const inventoryRef = useRef(giftInventory)
   useLayoutEffect(() => { inventoryRef.current = giftInventory })
   const setFinalEnhance = useCallback((entry: FinalGift, level: number) => {
-    const { oldId, newId } = finalEnhanceEdit(inventoryRef.current, entry, level)
-    if (oldId && newId) dispatch({ type: 'REPLACE_GIFT', oldId, newId })
-    else if (newId) dispatch({ type: 'ADD_GIFT', giftId: newId })
-    else if (oldId) dispatch({ type: 'REMOVE_GIFT', giftId: oldId })
+    const action = finalEnhanceAction(inventoryRef.current, entry, level)
+    if (action) dispatch(action)
   }, [dispatch])
 
   return (

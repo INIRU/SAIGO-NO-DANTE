@@ -44,7 +44,9 @@ interface GiftCardProps {
   enhance?: number          // 0=base, 1=+, 2=++
   onEnhance?: () => void
   // ── Remove ──
+  /** Shows the one remove chip every gift list uses (top-right corner; always visible on touch screens). */
   onRemove?: () => void
+  removeLabel?: string
   // ── Condition status ──
   warning?: string
   conditionStatus?: GiftConditionStatus | null
@@ -83,7 +85,7 @@ const ENHANCE_SPRITES = {
   plusplus: { src: 'gift/enhance-plusplus', width: 70, height: 41 },
 } as const
 
-function EnhanceSprite({ sprite, alt = '', className, style }: { sprite: keyof typeof ENHANCE_SPRITES; alt?: string; className?: string; style?: CSSProperties }) {
+export function EnhanceSprite({ sprite, alt = '', className, style }: { sprite: keyof typeof ENHANCE_SPRITES; alt?: string; className?: string; style?: CSSProperties }) {
   const { src, width, height } = ENHANCE_SPRITES[sprite]
   return <Image src={getGameUiAsset(src)} alt={alt} width={width} height={height} draggable={false} className={className} style={{ height: '100%', width: 'auto', ...style }} />
 }
@@ -178,6 +180,7 @@ const GiftCard = memo(function GiftCard({
   enhance,
   onEnhance,
   onRemove,
+  removeLabel,
   conditionStatus,
   conditionDetail = true,
   warning,
@@ -251,28 +254,6 @@ const GiftCard = memo(function GiftCard({
           <GiftEnhanceMark level={0} onClick={onEnhance} />
         )}
 
-        {/* Remove button */}
-        {!isInsert && onRemove && (
-          <div
-            className={styles.remove}
-            role="button"
-            tabIndex={0}
-            data-no-hold=""
-            onClick={e => { e.stopPropagation(); onRemove() }}
-            onKeyDown={e => { if (e.key === 'Enter') { e.stopPropagation(); onRemove() } }}
-            style={{
-              position: 'absolute', bottom: '4%', left: '4%', zIndex: 25,
-              background: 'rgba(220,38,38,0.85)', borderRadius: '50%',
-              width: '1rem', height: '1rem',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              cursor: 'pointer', padding: 0,
-              transition: 'opacity 0.15s',
-            }}
-          >
-            <X size={10} color="#fff" />
-          </div>
-        )}
-
         {!isInsert && conditionStatus && <GiftConditionMark status={conditionStatus} />}
       </GiftArtwork>
 
@@ -280,6 +261,22 @@ const GiftCard = memo(function GiftCard({
           artwork so the octagon clip does not cut its glowing corners. */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={GIFT_HOVER_URL} alt="" aria-hidden="true" draggable={false} className={styles.hover} />
+
+      {/* Remove chip: outside the artwork so the octagon clip does not cut it. A div, since the card itself is a button. */}
+      {!isInsert && onRemove && (
+        <div
+          className={styles.remove}
+          role="button"
+          tabIndex={0}
+          data-no-hold=""
+          aria-label={removeLabel ?? t('remove', { gift: displayName })}
+          title={removeLabel ?? t('remove', { gift: displayName })}
+          onClick={e => { e.stopPropagation(); onRemove() }}
+          onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); onRemove() } }}
+        >
+          <X size={12} aria-hidden="true" />
+        </div>
+      )}
 
       {holding && (
         <svg viewBox="0 0 36 36" aria-hidden="true" className={styles.hold}>
