@@ -1114,7 +1114,7 @@
       "finalAutoStartTag": "開始",
       "finalAutoObserveTag": "観測",
       "finalEnhanceHint": "押して強化段階を変更",
-      "finalRemoveHint": "長押しまたはDeleteキーで削除",
+      "finalRemoveHint": "×ボタンまたはDeleteキーで削除",
       "finalWorkbenchHint": "左の反映済みカードは押すと削除し、全ギフト側はカードを押して追加、もう一度押すと削除します。",
       "finalSelectedPanel": "反映リスト",
       "finalGiftEmpty": "反映済みの最終ギフトはまだありません",

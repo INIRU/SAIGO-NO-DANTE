@@ -1,7 +1,7 @@
 'use client'
 
 import { giftConditionKey } from '@/lib/planner/gift-condition-status'
-import { memo, useRef } from 'react'
+import { memo } from 'react'
 import Image from 'next/image'
 import { X } from 'lucide-react'
 import { useTranslations } from 'next-intl'
@@ -19,7 +19,7 @@ const LEVELS = [
 
 /**
  * One gift in the final set. Clicking or tapping the card cycles its enhancement; on hover or focus a band of the game's
- * −/+/++ sprites sets it directly. Picked gifts leave through the corner × or a long press; start and observed gifts are
+ * −/+/++ sprites sets it directly. Picked gifts leave through the corner × (holding a gift opens its detail); start and observed gifts are
  * tagged and stay, since they come from the start plan.
  */
 type Props = {
@@ -43,8 +43,6 @@ export default memo(function FinalGiftTile({ gift, entry, conditionStatus, onEnh
   const te = useTranslations('giftEnhance')
   const max = gift.effect_plusplus ? 2 : gift.effect_plus ? 1 : 0
   const removable = entry.source === 'final'
-  const press = useRef<{ timer?: ReturnType<typeof setTimeout>; fired?: boolean }>({})
-  const cancelPress = () => clearTimeout(press.current.timer)
   const levelName = entry.level === 2 ? te('plusplus') : entry.level === 1 ? te('plus') : null
   const label = [
     gift.name,
@@ -58,15 +56,6 @@ export default memo(function FinalGiftTile({ gift, entry, conditionStatus, onEnh
     <li
       className="group relative w-full min-w-0 max-w-[5rem] select-none [-webkit-touch-callout:none]"
       onKeyDown={event => { if (removable && (event.key === 'Delete' || event.key === 'Backspace')) onRemove() }}
-      onContextMenu={event => { if (removable) event.preventDefault() }}
-      onPointerDown={event => {
-        if (!removable || event.pointerType === 'mouse') return
-        press.current.fired = false
-        press.current.timer = setTimeout(() => { press.current.fired = true; navigator.vibrate?.(12); onRemove() }, 550)
-      }}
-      onPointerUp={cancelPress}
-      onPointerLeave={cancelPress}
-      onPointerCancel={cancelPress}
     >
       <div className="relative">
         <GiftCard
@@ -76,22 +65,11 @@ export default memo(function FinalGiftTile({ gift, entry, conditionStatus, onEnh
           className={`hover:transform-none! ${max === 0 ? 'cursor-default!' : ''}`}
           enhance={entry.level || undefined}
           conditionStatus={conditionStatus}
-          onClick={() => {
-            if (press.current.fired) { press.current.fired = false; return }
-            if (max > 0) onEnhance(nextEnhanceLevel(gift, entry.level))
-          }}
+          bandLabel={entry.source !== 'final' ? t(entry.source === 'start' ? 'finalAutoStartTag' : 'finalAutoObserveTag') : undefined}
+          onClick={() => { if (max > 0) onEnhance(nextEnhanceLevel(gift, entry.level)) }}
           ariaLabel={label}
           title={label}
         />
-        {entry.source !== 'final' && (
-          <span
-            aria-hidden="true"
-            className="pointer-events-none absolute bottom-[7%] left-[7%] z-20 rounded-[0.1875rem] border px-1 text-[0.625rem] leading-[1rem] transition-opacity group-hover:opacity-0 group-focus-within:opacity-0"
-            style={{ background: 'rgba(13,11,8,0.88)', borderColor: 'rgba(200,144,10,0.45)', color: 'var(--gold-light)' }}
-          >
-            {t(entry.source === 'start' ? 'finalAutoStartTag' : 'finalAutoObserveTag')}
-          </span>
-        )}
         {max > 0 && (
           // Pointer shortcut; keyboard users cycle with the card itself.
           <div
@@ -124,7 +102,7 @@ export default memo(function FinalGiftTile({ gift, entry, conditionStatus, onEnh
             onClick={onRemove}
             aria-label={t('removeFinalGift', { gift: gift.name })}
             title={t('removeFinalGift', { gift: gift.name })}
-            className="absolute -right-3 -top-3 z-40 flex h-5 w-5 items-center justify-center rounded-full border opacity-0 transition-[opacity,color] hover:text-[#ff8b8b] focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold)] group-hover:opacity-100 motion-reduce:transition-none [@media(hover:none)]:hidden"
+            className="absolute -right-3 -top-3 z-40 flex h-5 w-5 items-center justify-center rounded-full border opacity-0 transition-[opacity,color] hover:text-[#ff8b8b] focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold)] group-hover:opacity-100 motion-reduce:transition-none [@media(hover:none)]:opacity-100"
             style={{ background: '#17120c', borderColor: '#4a3a24', color: '#c9b89f' }}
           >
             <X size={12} aria-hidden="true" />

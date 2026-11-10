@@ -2,7 +2,7 @@
 
 import GiftArtwork, { type GiftArtworkGift } from '@/components/ui/GiftArtwork'
 
-import { memo, type CSSProperties } from 'react'
+import { createContext, memo, useContext, useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react'
 import Image from 'next/image'
 import styles from './GiftCard.module.css'
 import { useLocale, useTranslations } from 'next-intl'
@@ -13,6 +13,10 @@ const GIFT_SELECTED_PANEL_URL = getGameUiAsset('gift/selected-panel')
 const GIFT_SELECTED_TAB_URL = getGameUiAsset('gift/selected-tab')
 import type { GiftConditionStatus } from '@/lib/planner/gift-condition-status'
 import { GiftConditionLine, GiftConditionMark } from './GiftCondition'
+import { createLongPress, LONG_PRESS_MS } from '@/lib/utils/long-press'
+
+/** Under this provider, holding a gift card opens that gift's detail (the planner provides it). */
+export const GiftDetailContext = createContext<((giftId: string | number) => void) | null>(null)
 
 // ── Props ────────────────────────────────────────────────────────────────────
 
@@ -34,6 +38,8 @@ interface GiftCardProps {
   disabled?: boolean
   // ── Selection ──
   isSelected?: boolean
+  /** Shows the selected band with this text instead of 선택됨 (e.g. 관측 on a final gift that came from the start plan). */
+  bandLabel?: string
   // ── Enhancement ──
   enhance?: number          // 0=base, 1=+, 2=++
   onEnhance?: () => void
@@ -89,6 +95,7 @@ export function GiftEnhanceMark({ level, onClick }: { level: number; onClick?: (
   return (
     <span
       aria-hidden={level === 0 || undefined}
+      data-no-hold={onClick ? '' : undefined}
       onClick={onClick ? e => { e.stopPropagation(); onClick() } : undefined}
       className="pointer-events-auto absolute z-25 flex justify-end"
       style={{ top: '1%', right: '2%', height: level > 0 ? '30%' : '22%', maxWidth: '62%', opacity: level > 0 ? 1 : 0.35, cursor: onClick ? 'pointer' : undefined }}
@@ -167,6 +174,7 @@ const GiftCard = memo(function GiftCard({
   showName = true,
   disabled,
   isSelected,
+  bandLabel,
   enhance,
   onEnhance,
   onRemove,
@@ -183,6 +191,18 @@ const GiftCard = memo(function GiftCard({
       ? gift.name_jp || gift.name
       : gift.name
 
+  // Long press (the game's long click): a ring fills while held, then the gift's detail opens. A short press still clicks.
+  const openDetail = useContext(GiftDetailContext)
+  const detailId = giftId ?? (gift as { game_id?: number }).game_id
+  const canHold = !!openDetail && detailId != null && !isInsert
+  const [holding, setHolding] = useState(false)
+  const fireHold = useRef(() => {})
+  useLayoutEffect(() => { fireHold.current = () => { setHolding(false); if (detailId != null) openDetail?.(detailId) } })
+  const [press] = useState(() => createLongPress(() => fireHold.current()))
+  const origin = useRef({ x: 0, y: 0 })
+  const endHold = () => { press.cancel(); setHolding(false) }
+  useEffect(() => press.cancel, [press])
+
   return (
     <button
       className={`gift-card ${styles.card}${className ? ` ${className}` : ''}`}
@@ -190,7 +210,21 @@ const GiftCard = memo(function GiftCard({
       title={title ?? displayName}
       data-gift-id={giftId}
       aria-pressed={isSelected}
-      onClick={onClick}
+      onClick={() => { if (!press.consume()) onClick() }}
+      data-hold={canHold ? '' : undefined}
+      onPointerDown={canHold ? event => {
+        // Not from the remove / enhance marks: they have their own click.
+        if (event.button !== 0 || (event.target as Element).closest('[data-no-hold]')) return
+        origin.current = { x: event.clientX, y: event.clientY }
+        press.start()
+        setHolding(true)
+      } : undefined}
+      // A drag (or a scroll, which arrives as pointercancel) is not a press.
+      onPointerMove={holding ? event => { if (Math.hypot(event.clientX - origin.current.x, event.clientY - origin.current.y) > 10) endHold() } : undefined}
+      onPointerUp={canHold ? endHold : undefined}
+      onPointerLeave={canHold ? endHold : undefined}
+      onPointerCancel={canHold ? endHold : undefined}
+      onContextMenu={holding ? event => event.preventDefault() : undefined}
       disabled={disabled}
       style={{
         cursor: disabled ? 'not-allowed' : 'pointer',
@@ -223,6 +257,7 @@ const GiftCard = memo(function GiftCard({
             className={styles.remove}
             role="button"
             tabIndex={0}
+            data-no-hold=""
             onClick={e => { e.stopPropagation(); onRemove() }}
             onKeyDown={e => { if (e.key === 'Enter') { e.stopPropagation(); onRemove() } }}
             style={{
@@ -246,12 +281,18 @@ const GiftCard = memo(function GiftCard({
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={GIFT_HOVER_URL} alt="" aria-hidden="true" draggable={false} className={styles.hover} />
 
+      {holding && (
+        <svg viewBox="0 0 36 36" aria-hidden="true" className={styles.hold}>
+          <circle cx="18" cy="18" r="15" pathLength="100" style={{ animationDuration: `${LONG_PRESS_MS}ms` }} />
+        </svg>
+      )}
+
       {/* Selected: the observation slot's "보유 중" overlay (dark panel + red tab), labelled 선택됨. Outside the artwork so
           the octagon clip does not cut it; aria-pressed carries the state. */}
-      {!isInsert && isSelected && (
+      {!isInsert && (isSelected || bandLabel) && (
         <span className={styles.selected} aria-hidden="true"
           style={{ '--selected-panel': `url(${GIFT_SELECTED_PANEL_URL})`, '--selected-tab': `url(${GIFT_SELECTED_TAB_URL})` } as CSSProperties}>
-          <span className={styles.selectedTab} data-lang={locale}>{t('selected')}</span>
+          <span className={styles.selectedTab} data-lang={locale}>{bandLabel ?? t('selected')}</span>
         </span>
       )}
 
