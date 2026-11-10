@@ -227,7 +227,6 @@
       "description": "リンバスカンパニーのデッキ構築・人格編成・E.G.O構成を共有。人気デッキと新着デッキを探せます。"
     },
     "header": {
-      "eyebrow": "DECK BOARD",
       "title": "デッキ掲示板",
       "newDeck": "デッキ作成"
     },
@@ -318,9 +317,6 @@
         "note": "デッキノート"
       },
       "actions": {
-        "loadDraft": "下書きを読み込む",
-        "saveDraft": "下書き保存",
-        "draftSaved": "保存完了",
         "copyCode": "コードコピー",
         "copied": "コピー済み",
         "copyDisabled": "12人全員の人格を編成するとコードをコピーできます",
@@ -377,30 +373,21 @@
       "note": {
         "placeholder": "デッキ運用ノートを入力してください。角括弧または二重波括弧でチップとブロックを挿入できます。",
         "insert": "挿入",
-        "preview": "プレビュー",
         "edit": "編集",
         "emptyPalette": "囚人を選択すると、編成済みの人格、スキル、パッシブ、E.G.Oの挿入ツールが開きます",
         "giftInsert": "ギフト追加",
         "giftTokenStart": "ギフトトークン開始",
         "groups": {
-          "history": "履歴",
-          "paragraph": "段落",
-          "format": "書式",
-          "insertPreview": "挿入とプレビュー"
+          "paragraph": "段落"
         },
         "blocks": {
-          "paragraph": "段落",
-          "heading2": "見出し"
+          "paragraph": "段落"
         },
         "tools": {
-          "undo": "元に戻す",
-          "redo": "やり直す",
-          "paragraphFormat": "段落形式",
           "bold": "太字",
           "italic": "斜体",
           "bulletList": "リスト",
           "orderedList": "番号付きリスト",
-          "quote": "引用",
           "link": "リンク"
         },
         "types": {
@@ -414,14 +401,8 @@
         "aria": {
           "editor": "デッキノート",
           "toolbar": "デッキノート編集ツール",
-          "sinnerTools": "囚人挿入ツール",
-          "sinnerPalette": "{sinner} 挿入パレット",
-          "identityChip": "{identity} 人格チップを挿入",
-          "skillBlock": "{label} 詳細ブロックを挿入",
-          "passiveBlock": "{passive} 詳細説明を挿入",
           "passiveDescriptionTitle": "{passive}説明",
-          "chipTitle": "{name}チップ",
-          "preview": "デッキノートプレビュー"
+          "chipTitle": "{name}チップ"
         }
       }
     },
@@ -429,7 +410,8 @@
       "countMore": "{count}件以上のデッキ",
       "countExact": "{count}件のデッキ",
       "refreshing": " 更新中…",
-      "filtered": "（フィルター適用中）"
+      "filtered": "（フィルター適用中）",
+      "loadFailed": "デッキ一覧を読み込めませんでした。"
     },
     "grid": {
       "noResults": "条件に合うデッキがありません。",
@@ -454,12 +436,8 @@
     "detail": {
       "backToList": "デッキ掲示板",
       "notFound": "デッキが見つかりません",
-      "notFoundEyebrow": "経路の確認が必要です",
-      "notFoundDescription": "このアドレスで開けるデッキが見つかりませんでした。デッキが削除されたか、共有リンクが正しくない可能性があります。",
-      "notFoundAction": "デッキ掲示板へ戻る",
       "backToBoard": "← 掲示板へ戻る",
       "identityEmpty": "人格情報がありません",
-      "boardLabel": "デッキ編成ボード",
       "slotPreview": "{index}番スロット {identity} の詳細プレビューを開く",
       "emptySlot": "{index}番の空きスロット",
       "boardHint": "人格カードを選択すると、スキル、パッシブ、E.G.O詳細を確認できます。",
@@ -471,7 +449,6 @@
       "battlePassive": "バトル",
       "supportPassive": "サポート",
       "egoGifts": "E.G.Oギフト",
-      "sinResourceCost": "罪悪資源 / コスト",
       "attackTypes": "攻撃タイプ",
       "vote": "推薦",
       "bookmark": "ブックマーク",
@@ -507,7 +484,6 @@
       "count": "{count}件",
       "otherOpinions": "別の運用",
       "otherOpinionsDescription": "同じ人格編成で、順序やE.G.O選択が異なるデッキです。",
-      "otherOpinionsEmpty": "同じ人格編成の別運用はまだありません。",
       "similarDecks": "似たデッキ",
       "similarDecksDescription": "編成、テーマ、E.G.O構成が近いデッキです。",
       "coVisited": "一緒に見られた投稿"
@@ -539,7 +515,6 @@
       "moderator": "管理",
       "anonymous": "匿名",
       "reply": "返信",
-      "replyCount": "返信 {count}",
       "replyingToSuffix": "へ返信",
       "deleteComment": "コメントを削除",
       "deleteReply": "返信を削除",
@@ -642,11 +617,9 @@
       "pipHeight": "高さ",
       "pipChooseThemeBlank": "テーマパックを選択してください",
       "pipThemeGuidance": "現在の階のテーマパックを選択",
-      "pipThemeGuidanceHelp": "残りの計画をすべて配置できるテーマを選択してください。",
       "pipThemePossible": "選択可能",
       "pipThemePlanGifts": "このテーマパックで入手するプランのE.G.Oギフト",
       "pipPlanGift": "プランに設定したE.G.Oギフト",
-      "fusionTierGiftsCount": "合成で入手するプランのランクIV以上のE.G.Oギフト（{count}個）",
       "fusionTierGiftsOwned": "プランのランクIV以上のE.G.Oギフトをすべて所持しています。",
       "skillExchangeTitle": "{sinner} スキル交換のおすすめ",
       "skillExchangeBuy": "購入するスキル交換",
@@ -657,7 +630,6 @@
       "skillExchangeUnreachable": "交換は低いスキルを高いスキルに変えるだけなので、プランの配分にはできません。",
       "skillExchangeNotInPlan": "プランの編成にいない囚人です。",
       "skillExchangeReading": "スキル保有状況を読み取っています。",
-      "pipThemeUnavailable": "残りの計画を配置不可",
       "pipThemeFloors": "出現可能階: {floors}",
       "pipThemeRemaining": "残りの計画: {themes}",
       "observedEventCandidates": "画面で検出したイベント候補",
@@ -665,13 +637,11 @@
       "pipModeButton": "PiP補助ウィンドウモード",
       "pipModeClose": "PiP補助ウィンドウを閉じる",
       "pipModeUnsupported": "このブラウザーはPiP補助ウィンドウに対応していません。デスクトップのChromeまたはEdgeで利用できます。",
-      "floorStatus": "{floor}階 · ギフト{count}個",
       "pipObserveGifts": "観測ギフト",
       "pipStartGiftsEmpty": "このプランには開始ギフト・観測ギフトがありません。",
       "pipStartThemeWait": "テーマパック選択画面を認識すると、おすすめのテーマパックを表示します。",
       "planMode": "プラン実行モード",
       "recordMode": "白紙記録モード",
-      "planGoals": "作成者の階別計画",
       "unselected": "未指定",
       "limited": "途中参加：開始前の記録は復元できません。",
       "start": "アシストモード開始",
@@ -681,8 +651,6 @@
       "backToPlanner": "戻る",
       "screenPreview": "画面を接続",
       "stopScreenPreview": "画面プレビューを終了",
-      "screenPreviewFailed": "画面を接続できませんでした。",
-      "captureStatus": "画面解析",
       "captureFramesPrivacy": "画面はこのブラウザー内でのみ解析し、保存・送信しません。",
       "capture_idle": "画面接続待ち",
       "capture_requesting": "共有する画面を選択してください",
@@ -741,37 +709,14 @@
       "samplesYes": "協力する",
       "samplesNo": "協力しない",
       "captureFramesPrivacySamples": "画面はこのブラウザー内で解析します。認識に失敗した動作の画面だけを認識改善のために送信します。",
-      "ocrWorkers": "同時処理 {count}件",
-      "floorBehindInventoryOnly": "画面は{observed}階、記録は{recorded}階です。階が確定するまで、獲得したギフトは階の記録なしで所持ギフトにのみ追加します。",
-      "ocr_idle": "文字認識は待機中",
-      "ocr_loading": "ローカル文字認識を準備中",
-      "ocr_running": "このブラウザー内で文字も解析中",
-      "ocr_error": "文字認識を利用できません。画像解析は続行します。",
-      "scene_battle": "戦闘",
-      "scene_battle_setup": "戦闘準備",
-      "scene_enhance": "強化",
-      "scene_event": "イベント",
-      "scene_exploration": "探索",
-      "scene_fusion": "合成",
-      "scene_gift_acquired": "ギフト獲得画面",
-      "scene_loading": "読み込み",
-      "scene_reward_choice": "報酬選択",
-      "scene_run_end": "ダンジョン終了",
-      "scene_run_setup": "ダンジョン準備",
-      "scene_sell": "売却",
-      "scene_shop": "ショップ",
       "scene_start_gift": "開始ギフト",
-      "scene_theme_select": "テーマ選択",
       "reset": "初期化",
       "resetTitle": "記録を初期化",
       "resetMessage": "現在の進行記録を消去して最初から始めますか？",
       "cancel": "キャンセル",
       "resetDone": "新しい記録を開始できます。",
-      "dataError": "一部のゲームデータを読み込めませんでした。更新して再試行してください。",
       "loadingPlan": "プランを読み込み中...",
       "invalidPlan": "プランのURLを読み込めませんでした。",
-      "beforeStart": "開始前に",
-      "setupHelp": "難易度と開始階を選んで記録を始めてください。プランの目標は実際の記録と分けて保存されます。",
       "captureGuideTitle": "画面接続の手順",
       "captureGuideStep1": "ゲームでミラーダンジョンの入場画面を開きます。",
       "captureGuideStep2": "難易度と開始階を選び、「{start}」を押します。",
@@ -791,7 +736,6 @@
       "floorNumber": "{floor}階",
       "currentFloor": "現在の階",
       "editTheme": "テーマパックを変更",
-      "observedTheme": "選んだテーマが実際の進行として記録されました。",
       "chooseThemeHint": "ゲームで選んだテーマを記録してください。",
       "planned": "計画",
       "observed": "実際の記録",
@@ -821,15 +765,8 @@
       "completeRun": "記録完了",
       "nextFloor": "次の階",
       "targetGifts": "計画した最終ギフト",
-      "floorPriorityGifts": "この階の優先ギフト",
-      "currentThemeGiftsCount": "この階で入手可能なギフト（{count}個）",
-      "priorityGiftsFirst": "計画・目標ギフトを先頭に表示します。",
-      "noCurrentThemeGifts": "テーマパックを選ぶと入手可能なギフトを表示します。",
       "allThemeGiftsOwned": "このテーマパックに未所持のギフトはありません。",
-      "noFloorPriorityGifts": "この階で狙う計画ギフトはありません。",
-      "noTargets": "目標ギフトが設定されていません。",
       "recentActivity": "最近の観測",
-      "noRecent": "この階のギフト獲得記録はありません。",
       "difficulty": "難易度",
       "difficulty_normal": "ノーマル",
       "difficulty_hard": "ハード",
@@ -843,10 +780,6 @@
       "resumeRun": "前の記録を再開",
       "restore": "復元",
       "chooseThemeFirst": "先にテーマを選んでください。",
-      "searchEvents": "イベントを検索",
-      "noEvents": "このテーマに関連するイベントはありません。",
-      "eventCycle": "前のイベントに戻ります。",
-      "missingNextEvent": "関連イベント#{id}が見つかりません。",
       "recordChoice": "この選択を記録",
       "recordedChoice": "記録済み · 押すと取消",
       "chooseThemeCount": "テーマを選択（{count}件）",
@@ -856,13 +789,9 @@
       "clearThemeLabel": "{floor}階のテーマパック選択を解除：{name}",
       "themeCleared": "{floor}階のテーマパック選択を解除しました。",
       "noAvailableThemes": "この階と難易度で利用できるテーマはありません。",
-      "themeExclusiveGifts": "専用ギフト（{count}個）",
-      "scrollForMoreGifts": "全{count}個 · スクロールして続きを表示できます。",
       "giftListEnd": "全{count}個を表示しました。",
       "giftSearchCount": "検索結果 {count}件",
       "addGiftIdleHint": "キーワードか等級を選ぶか、名前で検索してください。押すと所持ギフトに追加し、もう一度押すと外します。",
-      "shopPurchase": "ショップで購入",
-      "finalGiftSearch": "最終ギフトを検索...",
       "giftGrade": "グレード{grade}",
       "owned": "所持",
       "targetProgress": "{acquired} / {total} 獲得",
@@ -885,17 +814,10 @@
       "active": "編成",
       "bench": "待機",
       "change": "変更",
-      "removeFromFormation": "編成解除",
-      "addToFormation": "編成する",
       "chooseIdentityFirst": "先に人格を選んでください。",
-      "changeIdentity": "人格を変更",
-      "chooseIdentity": "人格を選択",
       "clearSelection": "選択解除",
       "chooseEgo": "E.G.Oを選択",
       "noEgoGrade": "このグレードのE.G.Oはありません。",
-      "skillPending": "あと{count}個のスキルを割り振ると保存されます。",
-      "decreaseSkill": "スキル{skill}の数を減らす",
-      "increaseSkill": "スキル{skill}の数を増やす",
       "setupTitle": "記録の設定",
       "setupPlanPick": "プランを選ぶ",
       "setupPlanChange": "別のプランを選ぶ",
@@ -944,7 +866,6 @@
       "anonymous": "匿名",
       "loginRequired": "推薦するにはログインが必要です。",
       "floorCount": "{count}階",
-      "deckCount": "{count}人格編成",
       "egoCount": "E.G.O {count}",
       "voteWithCount": "推薦 {count}",
       "descriptionTitle": "プラン説明",
@@ -978,7 +899,9 @@
       "factIdentities": "人格",
       "factFloors": "階",
       "shareFailed": "リンクをコピーできませんでした。",
-      "commentPlaceholder": "コメントを入力 (最大500文字)"
+      "commentPlaceholder": "コメントを入力 (最大500文字)",
+      "voteFailed": "推薦に失敗しました。",
+      "commentsLoadFailed": "コメントを読み込めませんでした。"
     },
     "difficulty": "難易度",
     "normal": "通常",
@@ -988,9 +911,7 @@
       "button": "一時保存",
       "menuLabel": "プランナーの一時保存",
       "closeMenu": "閉じる",
-      "saveCurrent": "現在のプランを保存",
       "empty": "一時保存されたプランはありません。",
-      "slotLabel": "スロット {slot}",
       "emptySlot": "空き",
       "saveToSlot": "保存",
       "overwriteSlot": "上書き",
@@ -1050,7 +971,6 @@
         "description": "コミュニティが投稿したミラーダンジョンのプランを難易度・テーマパック別に閲覧して評価できます。"
       },
       "header": {
-        "eyebrow": "MIRROR DUNGEON PLANS",
         "title": "コミュニティプラン",
         "newPlan": "プラン作成"
       },
@@ -1104,20 +1024,17 @@
       },
       "result": {
         "total": "{count}件のプラン",
-        "filtered": "{filtered}/{total}件のプラン",
-        "filterApplied": "（フィルター適用中）"
+        "filtered": "{filtered}/{total}件のプラン"
       },
       "grid": {
         "empty": "まだ登録されたプランがありません。",
         "noSearchResults": "\"{query}\" の検索結果がありません。",
         "createFirst": "最初のプランを作成 →",
         "loadMore": "もっと見る",
-        "loadingMore": "読み込み中...",
-        "scrollForMore": "スクロールするとさらに読み込みます"
+        "loadingMore": "読み込み中..."
       },
       "card": {
         "anonymous": "匿名",
-        "difficultyCount": "{count}階",
         "toggleKeyword": "{keyword}キーワードフィルターを切り替え"
       },
       "relativeTime": {
@@ -1127,7 +1044,8 @@
         "days": "{count}日前",
         "months": "{count}か月前",
         "years": "{count}年前"
-      }
+      },
+      "loadFailed": "プラン一覧を読み込めませんでした。"
     },
     "tabs": {
       "deck": "編成",
@@ -1156,33 +1074,24 @@
         "overlap": "インフィニティループ",
         "extreme": "エクストリーム"
       },
-      "themeSection": "テーマパック選択",
       "difficultySelectorLabel": "{floor}階の難易度選択",
-      "fixedDifficulty": "固定難易度",
       "themeModalTitle": "{floor}階テーマパック",
-      "difficultySummary": "階層別難易度",
-      "difficultySummaryCount": "{count}階",
       "configuredFloorCount": "{configured}/{total}階",
       "noTheme": "テーマパック未選択",
       "themeSearch": "テーマパック・ギフト名で検索",
       "themeSearchEmpty": "該当するテーマパックがありません",
       "themeResultCount": "{count}件",
-      "noFloorThemes": "この階層はありません",
       "emptyThemes": "この階層で利用できるテーマパックがありません",
       "changeTheme": "変更",
       "clearTheme": "選択解除",
       "themeGiftCount": "ギフト {count}種",
-      "acquiredGifts": "獲得ギフト",
       "acquiredGiftCount": "獲得ギフト {count}個",
       "addGift": "追加",
       "giftPickerTitle": "獲得ギフトを追加",
       "giftPickerHint": "{theme}からこの階層で獲得するギフトを検索して追加します",
       "giftPickerSearchPlaceholder": "テーマギフト検索...",
       "giftPickerEmpty": "検索結果がありません",
-      "noThemeGifts": "このテーマのギフトは最終ギフト一覧にありません",
-      "addToFinal": "+最終に追加",
       "memo": "プランメモ",
-      "floorBoard": "階層ボード",
       "floorBoardHint": "階層を選択し、編集パネルでテーマパック、獲得ギフト、メモを調整します",
       "segment": {
         "early": "{start}-{end} · ノーマル/ハード",
@@ -1190,22 +1099,15 @@
         "extreme": "{start}-{end} · エクストリーム"
       },
       "activeFloor": "{floor}階編集",
-      "chooseFloorAria": "{floor}階を選択",
       "empty": "未設定",
-      "shortGiftCount": "ギフト {count}",
       "selectTheme": "テーマパック選択",
       "availableThemeCount": "利用可能 {count}件",
       "close": "閉じる",
-      "memoPlaceholder": "この階層の戦略メモ…（キーワード・ギフトの自動補完対応）",
-      "memoPreview": "プレビュー",
       "memoExpand": "もっと見る",
       "memoCollapse": "閉じる",
-      "constraintSelected": "選択中",
       "keywordDistribution": "累積ギフトキーワード分布",
-      "totalGifts": "合計 {count}個のギフト",
       "finalGifts": "最終反映ギフト",
       "finalGiftCount": "最終ギフト {count}個",
-      "finalGiftRule": "開始・観測ギフトは自動で含まれ、合成結果を入れると素材は外れます（月の記憶を除く）。カードを押すと強化段階が変わり、×または長押しで外します。",
       "finalAutoStart": "開始ギフトのため自動で含まれます",
       "finalAutoObserve": "観測ギフトのため自動で含まれます",
       "finalAutoStartTag": "開始",
@@ -1214,26 +1116,15 @@
       "finalRemoveHint": "長押しまたはDeleteキーで削除",
       "finalWorkbenchHint": "左の反映済みカードは押すと削除し、全ギフト側はカードを押して追加、もう一度押すと削除します。",
       "finalSelectedPanel": "反映リスト",
-      "finalGiftSearchPlaceholder": "最終ギフト検索...",
       "finalGiftEmpty": "反映済みの最終ギフトはまだありません",
       "finalGiftNoResults": "検索結果がありません",
-      "finalKeywordFilter": "キーワード",
       "finalGradeFilter": "等級",
-      "filterAll": "すべて",
-      "allGiftAddPanel": "全ギフトから追加",
       "allGiftCatalog": "全ギフト",
       "finalBlockedByRecipe": "{gift}: {result}の合成素材のため最終ギフトに入れられません",
       "allGiftAddHint": "カードを押すと最終一覧へ追加し、追加済みのカードはもう一度押すと削除します。",
-      "allGiftSearchPlaceholder": "全ギフト検索...",
-      "allGiftNoResults": "検索結果がありません",
-      "alreadyAdded": "追加済み",
-      "alreadyAddedRemove": "追加済み · クリックで削除",
-      "alreadyAddedGift": "{gift}は追加済み",
       "addFinalGift": "{gift}を最終ギフトに追加",
-      "addFinalGiftShort": "追加",
       "removeFinalGift": "{gift}を最終ギフトから削除",
       "removeAlreadyAddedGift": "{gift}を最終ギフトから削除",
-      "removeFinalGiftShort": "削除",
       "fusionAlertTitle": "合成可能なギフト",
       "fusionAlertHint": "反映すると素材が最終一覧から外れ、結果が追加されます。",
       "fusionAlertDismiss": "合成通知を閉じる",
@@ -1288,7 +1179,6 @@
         "skillset": "スキル交換"
       },
       "identity": {
-        "formed": "編成",
         "bench": "控え",
         "change": "変更",
         "removeFormation": "編成解除",
@@ -1299,7 +1189,6 @@
         "close": "人格選択を閉じる",
         "searchPlaceholder": "人格名を検索...",
         "clearSearch": "検索語を消去",
-        "rarityAll": "全て",
         "rarity": "{rarity}星",
         "noResults": "条件に合う人格がありません",
         "openDetailHint": "クリックで詳細",
@@ -1764,21 +1653,16 @@
     "cta": {
       "sinners": "囚人一覧",
       "decks": "デッキ掲示板",
-      "planner": "ミラダンプランナー",
-      "discordBot": "Discordボット"
+      "planner": "ミラダンプランナー"
     },
     "official": {
-      "site": "公式サイト",
-      "discord": "ファンDiscord",
-      "discordSub": "ボット紹介・サーバー参加",
-      "youtubeSub": "公式チャンネル"
+      "site": "公式サイト"
     },
     "watchVideo": "映像を見る",
     "officialChannels": "公式チャンネル",
     "latestVideo": "最新映像",
     "viewChannel": "チャンネルを見る",
     "viewAllSinners": "全囚人を見る",
-    "fanArchiveFooter": "Limbus Company ファンアーカイブ",
     "newIdentities": "新規人格",
     "newEgos": "新規E.G.O",
     "popularPlans": "今週の人気プラン",
@@ -1924,7 +1808,6 @@
       "hp": "HP",
       "speed": "速度",
       "defLevel": "防御レベル",
-      "breakSection": "パニック区間",
       "breakSectionTitle": "崩れ区間",
       "breakPhase": "{n}段階",
       "level": "レベル"
@@ -1932,7 +1815,6 @@
     "skills": {
       "title": "スキル",
       "preparing": "スキル情報は準備中です。",
-      "uptie4Changes": "4同期化変更点",
       "atkWeight": "攻撃加重値",
       "unbreakableCoin": "破壊不可コイン",
       "coin": "コイン"
@@ -1999,12 +1881,6 @@
       "00等級",
       "000等級"
     ],
-    "timeAgo": {
-      "justNow": "たった今",
-      "minutesAgo": "分前",
-      "hoursAgo": "時間前",
-      "daysAgo": "日前"
-    },
     "notFound": "人格が見つかりません",
     "meta": {
       "description": "ステータス、スキル、パッシブ"
@@ -2121,8 +1997,6 @@
       "month": "直近4週",
       "all": "全期間"
     },
-    "methodologyLabel": "集計基準",
-    "methodology": "公開投稿1件を同じ比重で集計します。人格・E.G.O・キーワードは編成ごとに1回だけ数え、同時編成とデッキ用途は編成順のある人格のみを対象にします。プランナーはすべて鏡ダンジョンとして数えます。採用率であり、性能や勝率ではありません。",
     "smallSample": "標本が20件未満です。少数の投稿の影響を大きく受ける可能性があります。",
     "loadError": "統計を読み込めませんでした。",
     "retry": "再試行",
@@ -2150,7 +2024,6 @@
       "overview": "全体の編成",
       "usageTitle": "コンテンツ",
       "comboTitle": "キーワードデッキ",
-      "comboHint": "出撃枠に同じキーワードの人格が5人以上いれば、そのキーワードデッキとして数えます。2つのキーワードが条件を満たす場合は組み合わせとして別に数えます。",
       "topIdentities": "よく編成される人格",
       "mixed": "混成",
       "count": "{count}件",
@@ -2239,12 +2112,12 @@
     "sampleValid": "有効な編成",
     "sampleDecks": "デッキ",
     "samplePlanner": "プランナー",
-    "excluded": "編成が空の投稿{count}件は除外しています。",
     "views": {
       "overall": "全体メタ",
       "identity": "人格分析",
       "dungeon": "鏡ダンジョン"
-    }
+    },
+    "footnote": "公開された編成での採用頻度です。性能や勝率を示すものではありません。"
   },
   "experience": {
     "title": "経験値計算機",
@@ -2266,8 +2139,6 @@
     "fixed": "固定報酬 · 最小 = 平均 = 最大",
     "manual": "手動戦闘",
     "skip": "スキップ",
-    "runs": "必要な回数",
-    "modules": "エンケファリンモジュール",
     "enkephalin": "エンケファリン換算",
     "perRun": "1回の獲得EXP",
     "perModule": "モジュールあたりのEXP",
@@ -2288,8 +2159,7 @@
     "level": "レベル",
     "cumulative": "レベル1からの累積EXP",
     "next": "次のレベルに必要なEXP",
-    "max": "最大レベル",
-    "tools": "ツール"
+    "max": "最大レベル"
   },
   "damage": {
     "title": "ダメージ計算機",
@@ -2434,7 +2304,6 @@
     "unresolved": "{max}回以内に終わらない",
     "rounds": "交換回数",
     "roundLabel": "{count}回",
-    "restRounds": "その他",
     "toDamage": "ダメージ計算機へ",
     "left": "残るコイン",
     "leftCoins": "{count}枚",
@@ -2607,7 +2476,6 @@
     "keywordRemove": "{kw}フィルターを解除",
     "added": "追加済み",
     "filter": "フィルター",
-    "filterPanel": "フィルターパネル",
     "closeFilter": "フィルターを閉じる",
     "reset": "フィルターをリセット（{count}件）",
     "resetAll": "すべてのフィルターをリセット",

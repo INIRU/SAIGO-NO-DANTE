@@ -1,6 +1,7 @@
 'use client'
 
 import { identityAtLevel, MAX_IDENTITY_LEVEL } from '@/features/catalog'
+import { topUptiePassives, topUptieSkills } from '@/features/decks/lib/deck-identity-uptie'
 import { getEgoGradeBannerUrl } from '@/lib/utils/images'
 
 
@@ -18,7 +19,7 @@ import {
   getSinIconUrl,
   type SinType,
 } from '@/lib/data/sinners'
-import { useFormatSkillDesc, useKeywordData, useKeywords } from '@/features/catalog/components/KeywordTooltip'
+import { useFormatSkillDesc, useKeywordData, useKeywords } from '@/components/providers/KeywordProvider'
 import IdentitySkillFrameCard from '@/features/catalog/components/IdentitySkillFrameCard'
 import { useLocale, useTranslations } from 'next-intl'
 import { type SupportedLang } from '@/lib/i18n'
@@ -28,6 +29,11 @@ import { splitGameTextLines } from '@/lib/game-text/rich-text'
 import { useOwnKeywords } from '@/lib/hooks/useOwnKeywords'
 import { descriptionTexts } from '@/lib/keywords/own-keywords'
 import { passiveRequirements } from '@/lib/planner/passives'
+import { sinColorOf } from '@/lib/constants/sin'
+import { localizeEgoName, localizeIdentityName, localizePassiveDescription, localizePassiveName } from '@/features/decks/lib/localize'
+
+// Kept here so every existing `…/DeckIdentityCard` import of these keeps working.
+export { localizeEgoName, localizeIdentityName, localizePassiveDescription, localizePassiveName, localizeSkillDescription, localizeSkillName } from '@/features/decks/lib/localize'
 import { MultipliedCount } from '@/features/catalog/components/PassiveParts'
 
 // ── 타입 ──────────────────────────────────────────────────────────────────
@@ -168,76 +174,12 @@ function sinIconUrl(sin: string): string {
   return getSinIconUrl(sin as SinType)
 }
 
-function sinColor(sin: string): string {
-  const en = SIN_KR_TO_EN[sin] ?? sin
-  return SIN_COLORS[en as SinType] ?? '#cccccc'
-}
-
 function resistanceMessageKey(value: string): 'fatal' | 'normal' | 'endured' | 'ineffective' | 'nullified' {
   if (value === '효율' || value === '취약') return 'fatal'
   if (value === '내성') return 'endured'
   if (value === '견딤') return 'ineffective'
   if (value === '무효') return 'nullified'
   return 'normal'
-}
-
-function present(value: string | null | undefined): string | null {
-  const trimmed = value?.trim()
-  return trimmed ? trimmed : null
-}
-
-export function localizeIdentityName(
-  identity: { name_en?: string | null; name_jp?: string | null; name_kr?: string | null; name?: string | null; id?: string | null },
-  locale: string,
-): string {
-  if (locale === 'en') return present(identity.name_en) ?? present(identity.name_jp) ?? present(identity.name_kr) ?? present(identity.name) ?? identity.id ?? ''
-  if (locale === 'ja') return present(identity.name_jp) ?? present(identity.name_en) ?? present(identity.name_kr) ?? present(identity.name) ?? identity.id ?? ''
-  return present(identity.name_kr) ?? present(identity.name) ?? present(identity.name_en) ?? present(identity.name_jp) ?? identity.id ?? ''
-}
-
-export function localizeSkillName(
-  skill: { name: string; name_en?: string | null; name_jp?: string | null },
-  locale: string,
-): string {
-  if (locale === 'en') return present(skill.name_en) ?? present(skill.name_jp) ?? skill.name
-  if (locale === 'ja') return present(skill.name_jp) ?? present(skill.name_en) ?? skill.name
-  return skill.name
-}
-
-export function localizeSkillDescription(
-  skill: { description?: string | null; description_en?: string | null; description_jp?: string | null },
-  locale: string,
-): string | null {
-  if (locale === 'en') return present(skill.description_en) ?? present(skill.description_jp) ?? present(skill.description)
-  if (locale === 'ja') return present(skill.description_jp) ?? present(skill.description_en) ?? present(skill.description)
-  return present(skill.description)
-}
-
-export function localizePassiveName(
-  passive: { name: string; name_en?: string | null; name_jp?: string | null },
-  locale: string,
-): string {
-  if (locale === 'en') return present(passive.name_en) ?? present(passive.name_jp) ?? passive.name
-  if (locale === 'ja') return present(passive.name_jp) ?? present(passive.name_en) ?? passive.name
-  return passive.name
-}
-
-export function localizePassiveDescription(
-  passive: { description?: string | null; description_en?: string | null; description_jp?: string | null },
-  locale: string,
-): string | null {
-  if (locale === 'en') return present(passive.description_en) ?? present(passive.description_jp) ?? present(passive.description)
-  if (locale === 'ja') return present(passive.description_jp) ?? present(passive.description_en) ?? present(passive.description)
-  return present(passive.description)
-}
-
-export function localizeEgoName(
-  ego: { name_en?: string | null; name_jp?: string | null; name_kr?: string | null; name?: string | null; id?: string | null },
-  locale: string,
-): string {
-  if (locale === 'en') return present(ego.name_en) ?? present(ego.name_jp) ?? present(ego.name_kr) ?? present(ego.name) ?? ego.id ?? ''
-  if (locale === 'ja') return present(ego.name_jp) ?? present(ego.name_en) ?? present(ego.name_kr) ?? present(ego.name) ?? ego.id ?? ''
-  return present(ego.name_kr) ?? present(ego.name) ?? present(ego.name_en) ?? present(ego.name_jp) ?? ego.id ?? ''
 }
 
 export function portraitUrl(
@@ -292,27 +234,13 @@ export default function DeckIdentityCard({
   const themeKws = [...new Set((id_.keywords ?? []).map(normalizeThemeKeyword).filter(kw => THEME_KW_SET.has(kw)))]
 
   // 4동기화 우선: 같은 (skill_order, variant_order)에서 최고 uptie_level만 유지
-  const rawSkills = id_.skills ?? []
-  const skillBest = new Map<string, typeof rawSkills[0]>()
-  for (const s of rawSkills) {
-    const key = `${s.skill_order}:${(s as Record<string, unknown>).variant_order ?? 0}`
-    const ex = skillBest.get(key)
-    if (!ex || (s.uptie_level ?? 3) > (ex.uptie_level ?? 3)) skillBest.set(key, s)
-  }
-  const sortedSkills = [...skillBest.values()].sort((a, b) => a.skill_order - b.skill_order || ((a as Record<string, unknown>).variant_order as number ?? 0) - ((b as Record<string, unknown>).variant_order as number ?? 0))
+  const sortedSkills = topUptieSkills(id_.skills ?? []).sort((a, b) => a.skill_order - b.skill_order || ((a as Record<string, unknown>).variant_order as number ?? 0) - ((b as Record<string, unknown>).variant_order as number ?? 0))
 
   // 4동기화 우선: 같은 (passive_type, passive_order)에서 최고 uptie_level만 유지
-  const rawPassives = id_.passives ?? []
-  const passiveBest = new Map<string, typeof rawPassives[0]>()
-  for (const p of rawPassives) {
-    const key = `${p.passive_type}:${p.passive_order}`
-    const ex = passiveBest.get(key)
-    if (!ex || (p.uptie_level ?? 3) > (ex.uptie_level ?? 3)) passiveBest.set(key, p)
-  }
-  const sortedPassives = [...passiveBest.values()].sort((a, b) => a.passive_order - b.passive_order)
+  const sortedPassives = topUptiePassives(id_.passives ?? []).sort((a, b) => a.passive_order - b.passive_order)
 
   const s1 = sortedSkills.find(s => s.skill_order === 1) ?? sortedSkills[0]
-  const primaryColor = s1 ? sinColor(s1.sin_affinity) : rarityColor
+  const primaryColor = s1 ? sinColorOf(s1.sin_affinity, '#cccccc') : rarityColor
 
   return (
     <div

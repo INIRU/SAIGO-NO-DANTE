@@ -6,8 +6,8 @@ import type { Editor } from '@tiptap/react'
 import { showSuccess } from '@/lib/toast'
 import { basicTemplate, guideTemplate } from '@/features/notes/lib/templates'
 import { useNoteNew } from './NoteNewDot'
+import { tr } from '@/features/notes/lib/tr'
 
-const tr = (lang: string, ko: string, ja: string, en: string) => lang === 'ja' ? ja : lang === 'en' ? en : ko
 
 /** "양식 넣기": a small menu of starting templates; the guide template is the new one and carries the gold dot. */
 export default function NoteTemplateMenu({ editor, disabled }: { editor: Editor | null; disabled: boolean }) {

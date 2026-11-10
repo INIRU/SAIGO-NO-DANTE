@@ -4,12 +4,13 @@ import { authorRateKey, resolveAuthor } from '@/features/account/server'
 import { checkRequestRateLimit, rateLimitResponse } from '@/lib/rate-limit'
 import { FRIEND_CODE_RE, fail } from '@/features/friends'
 import { isAuthorOf, isBlocked } from '@/features/friends/server'
+import { isUuid } from '@/lib/utils/uuid'
 
 /** A viewer gives their own friend code to an 'exchange' post (support or want) and gets the author's code back (REQ-COMMUNITY-021). */
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
-    if (!/^[0-9a-f-]{36}$/i.test(id)) return NextResponse.json(fail('invalid_request'), { status: 400 })
+    if (!isUuid(id)) return NextResponse.json(fail('invalid_request'), { status: 400 })
     const admin = createAdminClient(), db = admin.schema('limbus')
     const resolved = await resolveAuthor(request, admin)
     if ('response' in resolved) return resolved.response

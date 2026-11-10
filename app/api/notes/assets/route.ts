@@ -9,6 +9,7 @@ import { getIdentityInfoUrl } from '@/lib/utils/images'
 import { resolveKeywordIconUrl } from '@/lib/keywords/catalog'
 import { withEgoStage } from '@/lib/db/queries'
 import type { Identity, Skill } from '@/lib/types'
+import { isUuid } from '@/lib/utils/uuid'
 
 const TABLES = { gift:'ego_gifts', theme:'ego_gift_themes', identity:'identities', ego:'ego', skill:'skills', keyword:'keyword_meta' } as const
 const COLUMNS = {
@@ -78,7 +79,7 @@ export async function GET(req: NextRequest) {
     const kind=p.get('kind'), q=p.get('q')?.trim() ?? '', offset=Number(p.get('offset') ?? 0)
     if (!isAssetKind(kind) || q.length > 100 || !Number.isInteger(offset) || offset < 0 || offset > 5000) return NextResponse.json({error:'Invalid search'},{status:400})
     const identityIds = p.has('identities') ? p.get('identities')!.split(',').filter(Boolean) : null
-    if (identityIds && (identityIds.length > 12 || identityIds.some(id => !/^[0-9a-f-]{36}$/i.test(id)))) return NextResponse.json({error:'Invalid identities'},{status:400})
+    if (identityIds && (identityIds.length > 12 || identityIds.some(id => !isUuid(id)))) return NextResponse.json({error:'Invalid identities'},{status:400})
     return NextResponse.json(await load(kind,q,[],offset,grade,identityIds,['gift', 'identity', 'ego'].includes(kind) && p.get('catalog') === '1'))
   } catch { return NextResponse.json({error:'Assets unavailable'},{status:503}) }
 }

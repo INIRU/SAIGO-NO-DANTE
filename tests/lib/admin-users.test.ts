@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 const m = vi.hoisted(() => ({ auth: vi.fn(), db: vi.fn(), rpc: vi.fn() }))
-vi.mock('@/lib/auth', () => ({ requireAdmin: m.auth }))
+vi.mock('@/lib/auth', () => ({ requireAdmin: m.auth, adminEmails: () => [] }))
 vi.mock('@/lib/supabase/admin', () => ({ createAdminClient: m.db }))
 import { GET } from '@/app/api/admin/users/route'
 import { GET as detail, PATCH } from '@/app/api/admin/users/[id]/route'

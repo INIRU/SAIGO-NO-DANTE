@@ -5,8 +5,8 @@ import { isGuestPin } from '@/features/account'
 import { FRIEND_CODE_RE } from '@/features/friends'
 import { checkRequestRateLimit, rateLimitResponse } from '@/lib/rate-limit'
 import { writeAuditLog } from '@/lib/audit'
+import { isUuid } from '@/lib/utils/uuid'
 
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const refuse = (code: string, status: number) => NextResponse.json({ code }, { status })
 /** What limbus.guest_pin_recover answers when it does not hand the post over. */
 const REFUSALS: Record<string, [code: string, status: number]> = { wrong: ['wrong_pin', 403], locked: ['pin_locked', 429], none: ['no_pin', 404] }
@@ -29,7 +29,7 @@ export async function POST(request: Request) {
   const friendKind = body?.kind === 'support' || body?.kind === 'want' ? body.kind : null
   const pinKind: GuestPinKind | null = friendKind ? 'friend' : body?.kind === 'deck' || body?.kind === 'plan' ? body.kind : null
   const target = friendKind ? body?.code : body?.id
-  if (!pin || !pinKind || typeof target !== 'string' || !(friendKind ? FRIEND_CODE_RE : UUID_RE).test(target)) return refuse('invalid_request', 400)
+  if (!pin || !pinKind || typeof target !== 'string' || !(friendKind ? FRIEND_CODE_RE.test(target) : isUuid(target))) return refuse('invalid_request', 400)
 
   try {
     const db = createAdminClient().schema('limbus')

@@ -6,6 +6,19 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { authOptions, requireActiveUser } from '@/lib/auth'
 import { findOrCreateSupabaseUser } from '@/lib/supabase/findOrCreateUser'
 import { STORAGE_BASE } from '@/lib/constants/game'
+import { z } from 'zod'
+
+const TAKEN = '이미 사용 중인 닉네임입니다.'
+const BAD = '잘못된 요청입니다.'
+// A nickname is trimmed first; the messages are what the settings page has always shown for each rule.
+const patchSchema = z.object({
+  username: z.string(BAD).trim().min(1, '닉네임은 1~20자여야 합니다.').max(20, '닉네임은 1~20자여야 합니다.')
+    .regex(/^[a-zA-Z0-9가-힣ㄱ-ㅎㅏ-ㅣ_\- ]+$/, '닉네임에 허용되지 않는 문자가 포함되어 있습니다.').optional(),
+  bio: z.string(BAD).max(300, '소개는 최대 300자까지 입력할 수 있습니다.').optional(),
+  // A gzipped bit set of the owned identities and E.G.O, base64: about a kilobyte.
+  collection_code: z.string(BAD).max(4000, BAD).optional(),
+  avatar_url: z.string(BAD).startsWith(STORAGE_BASE + '/', '유효하지 않은 이미지 URL입니다.').nullable().optional(),
+}, BAD)
 
 
 export async function GET() {
@@ -99,8 +112,8 @@ export async function GET() {
       },
     })
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Internal Server Error'
-    return NextResponse.json({ error: message }, { status: 500 })
+    console.error('[api/profile]', err)
+    return NextResponse.json({ error: '요청을 처리하지 못했습니다.' }, { status: 500 })
   }
 }
 
@@ -110,31 +123,9 @@ export async function PATCH(request: NextRequest) {
     if (auth.error) return auth.response
     const { session } = auth
 
-    const body = await request.json()
-    const { username, bio, collection_code, avatar_url } = body as { username?: string; bio?: string; collection_code?: string; avatar_url?: string | null }
-
-    // username 유효성 검사
-    if (username !== undefined) {
-      const trimmed = username.trim()
-      if (trimmed.length === 0 || trimmed.length > 20) {
-        return NextResponse.json({ error: '닉네임은 1~20자여야 합니다.' }, { status: 400 })
-      }
-      if (!/^[a-zA-Z0-9가-힣ㄱ-ㅎㅏ-ㅣ_\- ]+$/.test(trimmed)) {
-        return NextResponse.json({ error: '닉네임에 허용되지 않는 문자가 포함되어 있습니다.' }, { status: 400 })
-      }
-    }
-
-    // bio 유효성 검사
-    if (bio !== undefined && bio.length > 300) {
-      return NextResponse.json({ error: '소개는 최대 300자까지 입력할 수 있습니다.' }, { status: 400 })
-    }
-
-    // avatar_url 유효성 검사
-    if (avatar_url !== undefined && avatar_url !== null) {
-      if (!avatar_url.startsWith(STORAGE_BASE)) {
-        return NextResponse.json({ error: '유효하지 않은 이미지 URL입니다.' }, { status: 400 })
-      }
-    }
+    const parsed = patchSchema.safeParse(await request.json().catch(() => null))
+    if (!parsed.success) return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 })
+    const { username, bio, collection_code, avatar_url } = parsed.data
 
     const admin = createAdminClient()
     const userId = await findOrCreateSupabaseUser(
@@ -149,7 +140,7 @@ export async function PATCH(request: NextRequest) {
 
     // 닉네임 중복 확인
     if (username !== undefined) {
-      const { data: existing } = await admin
+      const { data: existing, error: lookupError } = await admin
         .schema('limbus')
         .from('profiles')
         .select('id')
@@ -157,13 +148,17 @@ export async function PATCH(request: NextRequest) {
         .neq('id', userId)
         .maybeSingle()
 
+      if (lookupError) {
+        console.error('[api/profile]', lookupError)
+        return NextResponse.json({ error: '요청을 처리하지 못했습니다.' }, { status: 500 })
+      }
       if (existing) {
-        return NextResponse.json({ error: '이미 사용 중인 닉네임입니다.' }, { status: 409 })
+        return NextResponse.json({ error: TAKEN }, { status: 409 })
       }
     }
 
     const updates: Record<string, string | null> = {}
-    if (username !== undefined) updates.username = username.trim()
+    if (username !== undefined) updates.username = username
     if (bio !== undefined) updates.bio = bio
     if (collection_code !== undefined) updates.collection_code = collection_code || null
     if (avatar_url !== undefined) updates.avatar_url = avatar_url
@@ -175,14 +170,17 @@ export async function PATCH(request: NextRequest) {
       .eq('id', userId)
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 })
+      // A second request can take the nickname between the check above and this write.
+      if (error.code === '23505') return NextResponse.json({ error: TAKEN }, { status: 409 })
+      console.error('[api/profile]', error)
+      return NextResponse.json({ error: '요청을 처리하지 못했습니다.' }, { status: 500 })
     }
 
     await invalidateProfileDecks(admin, userId)
     return NextResponse.json({ ok: true })
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Internal Server Error'
-    return NextResponse.json({ error: message }, { status: 500 })
+    console.error('[api/profile]', err)
+    return NextResponse.json({ error: '요청을 처리하지 못했습니다.' }, { status: 500 })
   }
 }
 
@@ -209,7 +207,8 @@ export async function DELETE() {
       .rpc('delete_user_account', { p_user_id: userId })
 
     if (deleteDataError) {
-      return NextResponse.json({ error: deleteDataError.message }, { status: 500 })
+      console.error('[api/profile]', deleteDataError)
+      return NextResponse.json({ error: '요청을 처리하지 못했습니다.' }, { status: 500 })
     }
 
     // Delete auth user (must be separate — admin API only)
@@ -218,12 +217,13 @@ export async function DELETE() {
       // App data is already deleted but auth user remains
       // Log this for manual cleanup
       Sentry.captureException(error, { tags: { location: 'api/profile/route:DELETE' }, extra: { msg: 'Auth user deletion failed after app data cleanup' } })
-      return NextResponse.json({ error: error.message }, { status: 500 })
+      console.error('[api/profile]', error)
+      return NextResponse.json({ error: '요청을 처리하지 못했습니다.' }, { status: 500 })
     }
 
     return NextResponse.json({ ok: true })
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Internal Server Error'
-    return NextResponse.json({ error: message }, { status: 500 })
+    console.error('[api/profile]', err)
+    return NextResponse.json({ error: '요청을 처리하지 못했습니다.' }, { status: 500 })
   }
 }

@@ -109,11 +109,6 @@ export function computeSkillImageIndices(skills: { id: string; skill_order: numb
   return result
 }
 
-export function getEGOImageUrl(sinnerId: string, egoFolderName: string): string {
-  const folder = encodeURIComponent(egoFolderName)
-  return `${STORAGE_BASE}/sinners/${sinnerId}/ego/${folder}/`
-}
-
 /**
  * Full-resolution EGO art for the detail hero. The row's own `artwork_url` (set by the sync, `{id}_cg-{hash12}.webp`) wins; EGO
  * synced before it existed fall back to the hand-kept verified map (lib/generated/ego-artwork.json), then to the small profile.

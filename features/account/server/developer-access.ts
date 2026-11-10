@@ -1,4 +1,5 @@
 /** Who a Bearer key belongs to and what it may do on /api/v1. Server only. */
+import { adminEmails } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { hashApiKey, readApiKey } from "./developer-keys";
 
@@ -14,7 +15,7 @@ export async function consumeApiKey(authorization: string | null): Promise<{ acc
     .schema("limbus")
     .rpc("consume_developer_key", {
       token_hash: hashApiKey(token),
-      p_admin_emails: (process.env.ADMIN_EMAILS ?? "").split(",").map((email) => email.trim()).filter(Boolean),
+      p_admin_emails: adminEmails(),
     });
   if (error) throw error;
   if (data.status !== 200)

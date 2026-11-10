@@ -42,12 +42,6 @@ export default function FloorGuidance({
     lang === "ko" ? ko : lang === "ja" ? ja : en;
   const { data, error, mutate } = useSWR<Context>(
     providedEvents ? null : "/api/planner/context",
-    async (u) => {
-      const r = await fetch(u);
-      if (!r.ok) throw Error();
-      return r.json();
-    },
-    { revalidateOnFocus: false },
   );
   const craftable = craftableAtFloor(
     entry.floor,

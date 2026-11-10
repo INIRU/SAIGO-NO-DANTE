@@ -35,7 +35,7 @@ export async function GET() {
     const data = await getCachedAvatars()
     return NextResponse.json(data)
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Internal Server Error'
-    return NextResponse.json({ error: message }, { status: 500 })
+    console.error('[api/identities/avatars]', err)
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
   }
 }

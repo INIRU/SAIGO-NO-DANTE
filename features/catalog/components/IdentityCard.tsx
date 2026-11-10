@@ -10,8 +10,10 @@ import { useKeywordData } from '@/components/providers/KeywordProvider'
 import { normalizeThemeKeyword } from '@/lib/constants/keywords'
 import { identityNameLines } from '../lib/identity-name-lines'
 import { identityCardFrame } from '../lib/identity-card-frame'
+import { getRepresentativeKeywords } from '../lib/representative-keywords'
 import { identityAtLevel, MAX_IDENTITY_LEVEL } from '@/features/catalog/lib/identity-level'
 import { getLocalizedAffiliation } from '@/lib/i18n'
+import { getLocalizedName } from '@/lib/i18n/localize'
 import type { SupportedLang } from '@/lib/i18n/types'
 import styles from '@/styles/components/IdentityCard.module.css'
 
@@ -35,18 +37,7 @@ interface IdentityCardProps {
   preload?: boolean
 }
 
-type IdentityWithRepresentativeKeywords = Identity & {
-  skill_keyword_list?: string[] | null
-  keywords?: string[] | null
-}
-
 const SELECTED_BANNER_URL = getFormationBannerUrl('selected')
-
-function getRepresentativeKeywords(identity: IdentityWithRepresentativeKeywords) {
-  return identity.skill_keyword_list && identity.skill_keyword_list.length > 0
-    ? identity.skill_keyword_list
-    : (identity.keywords ?? [])
-}
 
 function getAssociationChips(identity: Identity, locale: SupportedLang) {
   const associations = identity.association_list
@@ -78,7 +69,7 @@ export default function IdentityCard({
   const t = useTranslations()
   const locale = useLocale() as SupportedLang
   const atMaxLevel = identityAtLevel(identity, MAX_IDENTITY_LEVEL)
-  const displayName = (locale === 'en' ? identity.name_en : locale === 'ja' ? identity.name_jp : null) ?? identity.name_kr ?? ''
+  const displayName = getLocalizedName(identity, locale)
   const nameLines = identityNameLines(displayName, identity.game_id, locale)
   const associationChips = getAssociationChips(identity, locale)
   const representativeKeywords = getRepresentativeKeywords(identity)

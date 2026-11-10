@@ -34,7 +34,7 @@ export default function MetaOverview({ data, onSelect, shows = () => true }: {
       {data.sampleCount > 0 ? <div className={styles.overviewGrid}>
         <div className={styles.chartBlock}><h3>{t('usageTitle')}</h3>
           <DonutChart label={t('usageTitle')} segments={segments.usage(data.usageStats ?? [])} active={usage} onSelect={setUsage} /></div>
-        <div className={styles.chartBlock}><h3>{t('comboTitle')}</h3><p className={styles.hint}>{t('comboHint')}</p>
+        <div className={styles.chartBlock}><h3>{t('comboTitle')}</h3>
           <DonutChart label={t('comboTitle')} segments={segments.combo(data.comboStats ?? [])} active={combo} onSelect={setCombo} /></div>
         <div className={styles.chartBlock}>
           <div className={styles.rankingHead}><h3>{t('topIdentities')}</h3>

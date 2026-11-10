@@ -144,7 +144,6 @@ export default function SupportDesk({ admin = false, initialTopic, initialId }: 
       <section className="support-desk is-page" data-support-page>
         <div className="desk-gate">
           {home}
-          <MessageSquare size={32} aria-hidden="true" />
           <h1>{t('title')}</h1>
           <p>{t('loginHint')}</p>
           <Button

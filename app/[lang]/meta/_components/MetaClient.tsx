@@ -104,10 +104,7 @@ export default function MetaClient({ initialData }: { initialData: MetaData | nu
             <div><dt>{t('sampleDecks')}</dt><dd>{data.sourceCounts.decks}</dd></div>
             <div><dt>{t('samplePlanner')}</dt><dd>{data.sourceCounts.planner}</dd></div>
           </dl>
-          <div className={styles.overviewNotes}>
-            {data.sampleCount < 20 && <p className={styles.caution}>{t('smallSample')}</p>}
-            <details className={styles.methodology}><summary>{t('methodologyLabel')}</summary><p>{t('methodology')}</p>{data.excludedSamples > 0 && <p>{t('excluded', { count: data.excludedSamples })}</p>}</details>
-          </div>
+          {data.sampleCount < 20 && <div className={styles.overviewNotes}><p className={styles.caution}>{t('smallSample')}</p></div>}
         </div>
         <div className={`${styles.views} ${styles.arrive}`} style={order(1)} data-meta-views>
           <UnderlineTabBar tabs={VIEWS.map(key => ({ key, label: t('views.' + key) }))} activeKey={view.tab} onTabChange={key => showTab(key as typeof VIEWS[number])} />
@@ -120,6 +117,7 @@ export default function MetaClient({ initialData }: { initialData: MetaData | nu
             {view.tab === 'dungeon' && <DungeonAnalysis data={data} />}
           </div>
         </div>
+        <p className={styles.footnote}>{t('footnote')}</p>
       </>}
     </div>
 }

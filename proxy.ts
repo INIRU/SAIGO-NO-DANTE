@@ -28,31 +28,21 @@ type SupportedLocale = (typeof SUPPORTED_LOCALES)[number]
 const MAINTENANCE_SKIP = ['/api', '/admin', '/maintenance', '/login', '/auth', '/_next', '/icons']
 
 // ── 봇/스캐너 프로빙 차단 패턴 ──
+// matcher가 점이 든 경로(.php, .env, .git 등)를 proxy로 보내지 않으므로, 점 없는 경로만 둔다.
 const BLOCKED_PATHS = [
   // WordPress
-  '/wp-config.php', '/wp-admin', '/wp-login.php', '/wp-content',
-  '/wp-includes', '/xmlrpc.php', '/wp-json', '/wp-cron.php',
+  '/wp-admin', '/wp-content', '/wp-includes', '/wp-json',
   // PHP / 서버 설정
-  '/phpMyAdmin', '/phpmyadmin', '/pma', '/.htaccess', '/.htpasswd',
-  '/server-status', '/server-info', '/web.config',
-  // 민감 파일
-  '/.env', '/.git', '/.aws', '/.ssh', '/.DS_Store',
-  '/config.json', '/config.yml', '/config.yaml',
+  '/phpMyAdmin', '/phpmyadmin', '/pma', '/server-status', '/server-info',
   // DB 도구
-  '/adminer', '/adminer.php',
+  '/adminer',
   // 기타 공격 벡터
-  '/cgi-bin', '/backup', '/dump', '/debug', '/console',
-  '/telescope', '/.well-known/security.txt',
+  '/cgi-bin', '/backup', '/dump', '/debug', '/console', '/telescope',
 ]
-
-// 확장자 기반 차단 (Next.js에 존재하지 않는 확장자)
-const BLOCKED_EXTENSIONS = ['.php', '.asp', '.aspx', '.jsp', '.cgi', '.sql', '.bak', '.swp']
 
 function isBlockedPath(pathname: string): boolean {
   const lower = pathname.toLowerCase()
-  if (BLOCKED_PATHS.some(p => lower.startsWith(p.toLowerCase()))) return true
-  if (BLOCKED_EXTENSIONS.some(ext => lower.endsWith(ext))) return true
-  return false
+  return BLOCKED_PATHS.some(p => lower.startsWith(p.toLowerCase()))
 }
 
 function isSupportedLocale(value: string | undefined): value is SupportedLocale {
@@ -202,7 +192,7 @@ export async function proxy(request: NextRequest) {
   // 쓰기 API(POST/PUT/PATCH/DELETE) 또는 보호 페이지 접근 시 정지된 사용자 차단
   const method = request.method
   const isWriteApi = pathname.startsWith('/api/') && method !== 'GET' && !pathname.startsWith('/api/auth/')
-  const isSuspendedPage = ['/decks/new', '/mypage'].some(p => hasPathPrefix(routePathname, p))
+  const isSuspendedPage = hasPathPrefix(routePathname, '/mypage')
 
   if (isWriteApi || isSuspendedPage) {
     const token = await readToken()

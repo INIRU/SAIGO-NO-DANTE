@@ -11,7 +11,6 @@ import { SERIES_TITLE_MAX, type SeriesPostKind, type SeriesSummary } from '@/fea
 import { showError } from '@/lib/toast'
 
 type Listing = { series: SeriesSummary[]; current: string | null }
-const fetchListing = (url: string) => fetch(url).then(res => { if (!res.ok) throw new Error(); return res.json() }) as Promise<Listing>
 
 /**
  * Picks the series a deck or plan joins, for the editors. `onChange` is called only when the author chooses:
@@ -22,7 +21,7 @@ export default function SeriesPicker({ kind, postId, onChange }: { kind: SeriesP
   const t = useTranslations('series')
   const { status } = useSession()
   const query = postId ? `?kind=${kind}&post=${postId}` : ''
-  const { data, error, mutate } = useSWR(status === 'authenticated' ? `/api/series${query}` : null, fetchListing, { revalidateOnFocus: false })
+  const { data, error, mutate } = useSWR<Listing>(status === 'authenticated' ? `/api/series${query}` : null, { revalidateOnFocus: false })
   const [open, setOpen] = useState(false)
   const [choice, setChoice] = useState<string | null | undefined>(undefined)
   const [name, setName] = useState('')

@@ -53,6 +53,12 @@ export function normalizeSin(sin: string | null): SinType | null {
   return SIN_KR_TO_EN[sin] ?? null
 }
 
+/** The color of a sin given as Korean or English; `fallback` when it is none of the seven. */
+export function sinColorOf(sin: string | null, fallback: string): string {
+  const key = normalizeSin(sin)
+  return key ? SIN_COLORS[key] : fallback
+}
+
 // ── 죄악 순서 (3개 파일에서 중복되던 것 통합) ────────────────────────────────
 export const SIN_ORDER: SinType[] = ['wrath', 'lust', 'sloth', 'gluttony', 'gloom', 'pride', 'envy']
 

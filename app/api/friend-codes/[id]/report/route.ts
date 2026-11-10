@@ -3,12 +3,13 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { authorRateKey, resolveAuthor } from '@/features/account/server'
 import { checkRequestRateLimit, rateLimitResponse } from '@/lib/rate-limit'
 import { fail } from '@/features/friends'
+import { isUuid } from '@/lib/utils/uuid'
 
 /** Reports a post (someone else's code, a fake code): once per reporter, for the admin list (REQ-COMMUNITY-025). */
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
-    if (!/^[0-9a-f-]{36}$/i.test(id)) return NextResponse.json(fail('invalid_request'), { status: 400 })
+    if (!isUuid(id)) return NextResponse.json(fail('invalid_request'), { status: 400 })
     const admin = createAdminClient(), db = admin.schema('limbus')
     const resolved = await resolveAuthor(request, admin)
     if ('response' in resolved) return resolved.response

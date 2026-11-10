@@ -47,7 +47,7 @@ export default async function MetaPage({ params }: { params: Promise<{ lang: str
       }} />
 
       {/* Server-rendered header — always in HTML for LCP */}
-      <PageHeader title={t('title')} description={t('description')} />
+      <PageHeader title={t('title')} />
 
       {/* Query-state controls require a Suspense boundary; the skeleton holds the page's place while the data is read. */}
       <Suspense fallback={<MetaSkeleton />}>

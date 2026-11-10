@@ -56,7 +56,7 @@ function PackMark({ packs, label }: { packs: EgoGiftTheme[]; label: string }) {
   )
 }
 
-const TOOL = 'flex h-9 shrink-0 items-center justify-center gap-1.5 rounded border border-[#2e2417] text-[0.8125rem] text-[#9c8b73] transition-colors hover:text-[var(--text-primary)] disabled:pointer-events-none disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold-light)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--bg-deep)]'
+const TOOL = 'flex h-9 max-sm:h-11 shrink-0 items-center justify-center gap-1.5 rounded border border-[#2e2417] text-[0.8125rem] text-[#9c8b73] transition-colors hover:text-[var(--text-primary)] disabled:pointer-events-none disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold-light)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--bg-deep)]'
 
 /** Mirror Dungeon gift list. A click opens the gift detail; in check mode it records the gift as obtained. */
 export default function GiftTab({ gifts, themes, recipes, getGiftKeywordIcon, onSelectGift, checkMode, onCheckModeChange, ...filters }: GiftTabProps) {
@@ -185,7 +185,7 @@ export default function GiftTab({ gifts, themes, recipes, getGiftKeywordIcon, on
         keywordOrder={order}
         keywordsEnd={
           <button type="button" aria-label={t('keywordOrder')} title={t('keywordOrder')} onClick={() => setOrderOpen(true)}
-            className="grid h-9 w-9 place-items-center rounded text-[#9c8b73] transition-colors hover:text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--gold-light)]">
+            className="grid h-9 w-9 max-sm:h-11 max-sm:w-11 place-items-center rounded text-[#9c8b73] transition-colors hover:text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--gold-light)]">
             <Settings size={16} aria-hidden />
           </button>
         }

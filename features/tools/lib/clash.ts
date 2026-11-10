@@ -11,8 +11,6 @@ export const MAX_CLASH_ROUNDS = 99
 export const SANITY_RANGE = 45
 /** The heads chance stays in this range (estimate). */
 export const PROBABILITY_LIMITS = { min: 0.05, max: 0.95 } as const
-/** One exchange of a clash adds this much damage to the skill that follows it (CLASH_BONUS of the damage calculator). */
-export const CLASH_DAMAGE_BONUS = 0.03
 /** Every this many attack levels above the other side add 1 to each exchange total (estimate: the game's divisor was not read). */
 export const LEVEL_GAP_DIVISOR = 3
 

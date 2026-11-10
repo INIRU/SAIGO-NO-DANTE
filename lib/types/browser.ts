@@ -85,8 +85,5 @@ export type SortOption = 'default' | 'name' | 'rarity' | 'grade'
 // ── 상수 ────────────────────────────────────────────────────────────
 
 export const EGO_GRADES = ['ZAYIN', 'TETH', 'HE', 'WAW', 'ALEPH'] as const
-export const EGO_GRADE_LABELS: Record<string, string> = {
-  ZAYIN: 'ZAYIN', TETH: 'TETH', HE: 'HE', WAW: 'WAW', ALEPH: 'ALEPH',
-}
 export const ATK_TYPES = ['slash', 'pierce', 'blunt', 'evade', 'defense', 'counter'] as const
 export const RARITIES = [1, 2, 3] as const

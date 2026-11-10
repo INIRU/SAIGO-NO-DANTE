@@ -196,7 +196,15 @@ type FontInfo = { face: string; asc: number; desc: number }
 type Target = { fb: WebGLFramebuffer; tex: WebGLTexture; w: number; h: number }
 type Prog = { p: WebGLProgram; u: Record<string, WebGLUniformLocation | null> }
 
+/** Counts instances so the font names of two maps (one leaving, one arriving) never meet in document.fonts. */
+let instances = 0
+
 export class DungeonGL {
+  /** destroy() ran: pictures and fonts that arrive later are dropped */
+  private dead = false
+  private readonly id = ++instances
+  /** the FontFaces added to document.fonts, removed again on destroy() */
+  private registered: FontFace[] = []
   private gl: WebGL2RenderingContext
   private ui: Prog
   private fx: Prog
@@ -295,7 +303,10 @@ export class DungeonGL {
     this.tex.set(key, null)
     fetch(url).then(r => (r.ok ? r.blob() : Promise.reject(r.status)))
       .then(b => createImageBitmap(b, { premultiplyAlpha: 'none', colorSpaceConversion: 'none' }))
-      .then(bm => { this.tex.set(key, this.upload(bm, bm.width, bm.height, wrap)); bm.close(); this.onLoad() }, () => {})
+      .then(bm => {
+        if (this.dead) { bm.close(); return }
+        this.tex.set(key, this.upload(bm, bm.width, bm.height, wrap)); bm.close(); this.onLoad()
+      }, () => {})
     return null
   }
 
@@ -311,10 +322,12 @@ export class DungeonGL {
           tables.set(String.fromCharCode(v.getUint8(o), v.getUint8(o + 1), v.getUint8(o + 2), v.getUint8(o + 3)), v.getUint32(o + 8))
         }
         const em = v.getUint16(tables.get('head')! + 18), hh = tables.get('hhea')!
-        const face = `dungeon-font-${this.fonts.size}`
+        const face = `dungeon-font-${this.id}-${this.fonts.size}`
         const ff = new FontFace(face, buf)
         await ff.load()
+        if (this.dead) return null
         document.fonts.add(ff)
+        this.registered.push(ff)
         const info = { face, asc: v.getInt16(hh + 4) / em, desc: -v.getInt16(hh + 6) / em }
         this.fontInfo.set(url, info)
         this.onLoad()
@@ -329,9 +342,13 @@ export class DungeonGL {
   private webFont(url: string): string | null {
     if (!this.webFonts.has(url)) {
       this.webFonts.set(url, null)
-      const face = `dungeon-web-${this.webFonts.size}`
+      const face = `dungeon-web-${this.id}-${this.webFonts.size}`
       const ff = new FontFace(face, `url(${url})`)
-      ff.load().then(f => { document.fonts.add(f); this.webFonts.set(url, face); this.onLoad() }, () => {})
+      ff.load().then(f => {
+        if (this.dead) return
+        document.fonts.add(f); this.registered.push(f)
+        this.webFonts.set(url, face); this.onLoad()
+      }, () => {})
     }
     return this.webFonts.get(url) ?? null
   }
@@ -765,6 +782,9 @@ export class DungeonGL {
   }
 
   destroy() {
+    this.dead = true
+    for (const f of this.registered) document.fonts.delete(f)
+    this.registered = []
     const gl = this.gl
     for (const t of this.tex.values()) if (t) gl.deleteTexture(t.t)
     for (const l of this.labels.values()) gl.deleteTexture(l.t.t)

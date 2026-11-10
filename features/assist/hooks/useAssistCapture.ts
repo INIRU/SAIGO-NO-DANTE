@@ -29,14 +29,15 @@ import { isVerbose, plog } from '@/features/assist/lib/assist-log'
 import { parseFusionSlots, WHEEL_FRAMES, WHEEL_KEEP_MS, WHEEL_CROP_WIDTH, WHEEL_AFTER_DIALOG_MS, WHEEL_BEFORE_DIALOG_MS, wheelReadOrder, DIALOGLESS_WHEEL_MS, CAPACITY_KEEP_MS, wheelSignature, showsWheel, resultBoxBand, sameAnchors, FUSION_HOLD_MS, SCREEN_HOLD_MS, OCR_READ_FAILURES, SCENE_READ_FAILURES, OCR_REBUILD_MS, OCR_STABLE_MS, ocrRebuildsAfterRead, ocrErrorAction, parseShopShelf, mobileBlocked, gpuBlocked, canCapture, validMatches, runFrameTask, type WheelFrame, type PopupAcquisition, type GiftSale, type SkillExchangeView, type FloorThemeObservation, type PopupFrame, type PopupPending, type OpenFrame, type FrameTask } from '@/features/assist/lib/capture-helpers'
 export { OCR_READ_FAILURES, SCENE_READ_FAILURES, OCR_REBUILD_MS, OCR_STABLE_MS, ocrRebuildsAfterRead, ocrErrorAction, runFrameTask }
 export type { PopupAcquisition, GiftSale, SkillExchangeView, FloorThemeObservation }
+import { captureEvidence, named, noteShopDialog, screenTags, type CaptureStatus, type OcrCandidates, type ShopDialog } from '@/features/assist/lib/capture-evidence'
+export { captureEvidence, noteShopDialog, screenTags }
+export type { OcrCandidates, ShopDialog }
 import { confirmsExploration, explorationFloor, explorationThemeReads, themeSelectionHeaderFloor, type ExplorationObservation,
   type ExplorationThemeReference } from '@/features/assist/lib/exploration-match'
 import { acquisitionPlate, darkPopupPlate, detectGiftPopupLabel, popupCaptureAction, popupIconSignature, popupLabelColor, popupPriority, popupQuality, POPUP_SETTLE_MS, samePopupEpisode, type PopupObservation } from '@/features/assist/lib/popup-detect'
 
-type CaptureStatus = 'idle' | 'requesting' | 'loading' | 'running' | 'unsupported' | 'error'
 export interface ScenePrediction { label: string; confidence: number }
 type OcrStatus = 'idle' | 'loading' | 'running' | 'error'
-export interface OcrCandidates extends OcrMatches, EventScreenEvidence { observedAt: number; expiresAt: number; floor: number | null }
 /** Worker jobs running now, and queued popup frames counted once per frame (text and image copies listed separately). */
 export interface CaptureQueueStatus { analyzing: number; frames: number; text: number; image: number }
 const IDLE_QUEUE: CaptureQueueStatus = { analyzing: 0, frames: 0, text: 0, image: 0 }
@@ -57,35 +58,6 @@ const FREQUENT = new Set(['cursor', 'bands', 'alone'])
 const dlog = (kind: string, ...args: unknown[]) => plog(kind, args.length === 1 ? args[0] : args, FREQUENT.has(kind))
 /** Screens with the formation's bottom bar: the shop, and the formation screens (the run's entry, before a fight). */
 const FORMATION_BAR_SCENES: ReadonlySet<string> = new Set(['shop', 'battle_setup', 'run_setup'])
-
-/** The cards with the pack names read for their places (unchanged cards keep their object; the array too when none changed). */
-function named(cards: ClearBonusCard[], names: ReadonlyMap<number, string[]>): ClearBonusCard[] {
-  let changed = false
-  const next = cards.map(card => {
-    const ids = names.get(card.place)
-    if (!ids || card.themeIds?.join('|') === ids.join('|')) return card
-    changed = true
-    return { ...card, themeIds: ids }
-  })
-  return changed ? next : cards
-}
-
-/** The screens a verdict hangs on, by the text detectors that already decide them (for the log). */
-export function screenTags(text: string): string[] {
-  return ([['purchase-dialog', popupPurchaseHeader], ['sale-dialog', sellQuestion], ['acquired-header', showsAcquiredHeader],
-    ['sell-window', isSellWindow], ['blessings', showsBlessingScreen], ['run-end', showsRunEndScreen],
-    ['theme-select', (value: string) => themeSelectionHeaderFloor(value) !== null]] as const)
-    .filter(([, shows]) => shows(text)).map(([tag]) => tag)
-}
-
-/** A purchase or sale confirmation on screen, from its first to its last full-frame sighting. */
-export interface ShopDialog { kind: 'purchase' | 'sale'; firstAt: number; lastAt: number }
-/** Sightings under 3 s apart are one dialog; the last eight are kept. */
-export function noteShopDialog(items: readonly ShopDialog[], kind: ShopDialog['kind'], at: number): ShopDialog[] {
-  const last = items.findLast(item => item.kind === kind)
-  if (last && at - last.lastAt < 3000) return items.map(item => item === last ? { ...item, lastAt: at } : item)
-  return [...items.slice(-7), { kind, firstAt: at, lastAt: at }]
-}
 
 export function useAssistCapture({ giftReferences = [], eventReferences = [], ocrCatalog, themeCatalog, language = 'ko', floor = null,
   mode = 'balanced', detection = DEFAULT_DETECTION, resolvePopup, completeFusion, samples = false, heldGiftIds = [], giftPrice }: {
@@ -458,10 +430,8 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
     visualCapture.current = null
   }, [])
 
-  const stop = useCallback(() => {
-    cleanup()
-    setStatus('idle')
-    setError(null)
+  /** Everything the capture has read, back to nothing (a new capture, a stop, an error): the one list, so no read outlives the capture it came from. */
+  const resetReadings = useCallback(() => {
     setPrediction(null)
     setVisualCandidates(null)
     setOcrCandidates(null)
@@ -474,14 +444,21 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
     setOcrWorkers(0)
     setFusionEvidence([])
     setShopShelf(null); setOwnedGrid(null); setFormation(null); setEventPick(null); pickState.current = EMPTY_PICK; cursorSamples.current = []
-    setGiftSales([]); setSkillExchange(null)
+    setGiftSales([]); setShopDialogs([]); setSkillExchange(null)
     saleState.current = EMPTY_SALE_STATE
     setObservedFloor(null)
     setScene(null)
     setThemeSelectionFloor(null)
     setBlessings(null); lastBlessingRead.current = ''; blessingRequest.current = null
     setClearBonus(null); lastBonusRead.current = ''; bonusRequest.current = null; bonusNames.current = null; selectionHeader.current = null
-  }, [cleanup])
+  }, [])
+
+  const stop = useCallback(() => {
+    cleanup()
+    setStatus('idle')
+    setError(null)
+    resetReadings()
+  }, [cleanup, resetReadings])
 
   const catalogFilled = Boolean(ocrCatalog && Object.values(ocrCatalog).some(items => items.length > 0))
   useEffect(() => {
@@ -535,23 +512,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
     cleanup()
     ocrRebuilds.current = 0
     ocrBuiltAt.current = null
-    setPrediction(null)
-    setVisualCandidates(null)
-    setOcrCandidates(null)
-    setOcrStatus('idle')
-    setPopupAcquisitions([])
-    setFloorThemeObservation(null)
-    setQueueStatus(IDLE_QUEUE)
-    setInference(null)
-    setOcrEngine(null)
-    setOcrWorkers(0)
-    setFusionEvidence([])
-    setShopShelf(null); setOwnedGrid(null); setFormation(null); setEventPick(null); pickState.current = EMPTY_PICK; cursorSamples.current = []
-    setGiftSales([]); setSkillExchange(null)
-    saleState.current = EMPTY_SALE_STATE
-    setObservedFloor(null)
-    setScene(null)
-    setThemeSelectionFloor(null)
+    resetReadings()
     setError(null)
     if (mobileBlocked() || !canCapture()) {
       setStatus('unsupported')
@@ -602,23 +563,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
       const fail = (message: string) => {
         if (run !== generation.current) return
         cleanup()
-        setPrediction(null)
-        setVisualCandidates(null)
-        setOcrCandidates(null)
-        setOcrStatus('idle')
-        setPopupAcquisitions([])
-        setFloorThemeObservation(null)
-        setQueueStatus(IDLE_QUEUE)
-        setInference(null)
-        setOcrEngine(null)
-        setOcrWorkers(0)
-        setFusionEvidence([])
-        setShopShelf(null); setOwnedGrid(null); setFormation(null); setEventPick(null); pickState.current = EMPTY_PICK; cursorSamples.current = []
-        setGiftSales([]); setSkillExchange(null)
-        saleState.current = EMPTY_SALE_STATE
-        setObservedFloor(null)
-        setScene(null)
-        setThemeSelectionFloor(null)
+        resetReadings()
         setError(message)
         setStatus('error')
       }
@@ -2108,26 +2053,11 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
     } catch (reason) {
       if (run !== generation.current) return
       cleanup()
-      setPrediction(null)
-      setVisualCandidates(null)
-      setOcrCandidates(null)
-      setOcrStatus('idle')
-      setFloorThemeObservation(null)
-      setQueueStatus(IDLE_QUEUE)
-      setInference(null)
-      setOcrEngine(null)
-      setOcrWorkers(0)
-      setFusionEvidence([])
-      setShopShelf(null); setOwnedGrid(null); setFormation(null); setEventPick(null); pickState.current = EMPTY_PICK; cursorSamples.current = []
-      setGiftSales([]); setSkillExchange(null)
-      saleState.current = EMPTY_SALE_STATE
-      setObservedFloor(null)
-      setScene(null)
-      setThemeSelectionFloor(null)
+      resetReadings()
       setError(reason instanceof Error ? reason.message : 'Screen sharing unavailable')
       setStatus('error')
     }
-  }, [cleanup, stop, language])
+  }, [cleanup, stop, resetReadings, language])
 
   /** The skill replacement window stays shown until 1.5 s of reads without it, so one missed read does not flicker. */
   function readSkillWindow(text: string, at: number) {
@@ -2177,31 +2107,4 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
   return { supported, status, error, prediction, visualCandidates, ocrCandidates, ocrStatus,
     popupAcquisitions, floorThemeObservation, observedFloor, scene, themeSelectionFloor, queueStatus, mobile, gpu, inference, ocrEngine,
     ocrWorkers, fusionEvidence, giftSales, shopDialogs, skillExchange, shopShelf, ownedGrid, formation, blessings, clearBonus, eventPick, start, stop, reportInventoryChange }
-}
-
-/**
- * Fresh screen evidence for the recorded floor: the one event whose choices or intro are shown (image or event text must
- * identify it first; its result page never opens a summary). How long a summary stays is decided by the scene.
- */
-export function captureEvidence({ status, visualCandidates, ocrCandidates }: {
-  status: CaptureStatus
-  visualCandidates: (VisualCandidates & { floor: number | null }) | null
-  ocrCandidates: OcrCandidates | null
-}, floor: number | null, now: number) {
-  const visual = status === 'running' && visualCandidates && visualCandidates.floor === floor && visualCandidates.expiresAt > now
-    ? visualCandidates : null
-  const ocr = status === 'running' && ocrCandidates && ocrCandidates.floor === floor && ocrCandidates.expiresAt > now
-    ? ocrCandidates : null
-  // Events named by their own text; shared art alone never names an event.
-  const textEventIds = [...new Set([...(ocr?.events.map(item => item.id) ?? []), ...(ocr?.choiceEventIds ?? []),
-    ...(ocr?.bodyEventIds ?? [])])]
-  const corroboratedEventIds = [...(visual?.events.map(item => item.id) ?? []), ...textEventIds]
-  const listedEventId = ocr ? corroboratedChoiceEvent({ choices: ocr.choices, scopedChoices: ocr.scopedChoices,
-    outcomeEventIds: ocr.outcomeEventIds, corroboratedEventIds }) : null
-  // Intro and narration pages: one text-identified event previews its known outcomes until its result page appears.
-  const choiceEventId = listedEventId ?? (ocr && textEventIds.length === 1 && !ocr.outcomeEventIds.includes(textEventIds[0])
-    ? textEventIds[0] : null)
-  const eventChoiceEvidence = choiceEventId === null || !ocr ? null
-    : { eventId: Number(choiceEventId), observedAt: ocr.observedAt, floor: ocr.floor }
-  return { visualCandidates: visual, ocrCandidates: ocr, eventChoiceEvidence }
 }

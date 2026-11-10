@@ -42,7 +42,8 @@ export async function GET(
       .order('created_at', { ascending: true })
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 })
+      console.error('[deck comments] database error', error)
+      return NextResponse.json({ error: '요청을 처리하지 못했습니다. 다시 시도해주세요.' }, { status: 500 })
     }
 
     const comments = (data ?? []).map((c: Record<string, unknown>) => {
@@ -103,7 +104,8 @@ export async function POST(
         .maybeSingle()
 
       if (parentError) {
-        return NextResponse.json({ error: parentError.message }, { status: 500 })
+        console.error('[deck comments] database error', parentError)
+        return NextResponse.json({ error: '요청을 처리하지 못했습니다. 다시 시도해주세요.' }, { status: 500 })
       }
       if (!parentComment) {
         return NextResponse.json({ error: '유효하지 않은 부모 댓글입니다.' }, { status: 400 })
@@ -128,13 +130,15 @@ export async function POST(
       .single()
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 })
+      console.error('[deck comments] database error', error)
+      return NextResponse.json({ error: '요청을 처리하지 못했습니다. 다시 시도해주세요.' }, { status: 500 })
     }
 
     const { error: incrementError } = await admin.schema('limbus').rpc('increment_comment', { deck_id: id })
     if (incrementError) {
       revalidateDeckCommentCaches(id)
-      return NextResponse.json({ error: incrementError.message }, { status: 500 })
+      console.error('[deck comments] database error', incrementError)
+      return NextResponse.json({ error: '요청을 처리하지 못했습니다. 다시 시도해주세요.' }, { status: 500 })
     }
 
     // 프로필에서 username, role 조회
@@ -154,8 +158,8 @@ export async function POST(
       role: profile?.role ?? 'user',
     })
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Internal Server Error'
-    return NextResponse.json({ error: message }, { status: 500 })
+    console.error('[deck comments] unexpected failure', err)
+    return NextResponse.json({ error: '요청을 처리하지 못했습니다. 다시 시도해주세요.' }, { status: 500 })
   }
 }
 
@@ -213,7 +217,8 @@ export async function DELETE(
       .select('id, parent_id')
       .eq('deck_id', id)
     if (threadError) {
-      return NextResponse.json({ error: threadError.message }, { status: 500 })
+      console.error('[deck comments] database error', threadError)
+      return NextResponse.json({ error: '요청을 처리하지 못했습니다. 다시 시도해주세요.' }, { status: 500 })
     }
     const replyCount = descendantIds(threadRows ?? [], commentId).size
 
@@ -224,7 +229,8 @@ export async function DELETE(
       .eq('id', commentId)
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 })
+      console.error('[deck comments] database error', error)
+      return NextResponse.json({ error: '요청을 처리하지 못했습니다. 다시 시도해주세요.' }, { status: 500 })
     }
 
     // 본 댓글 + 답글 수만큼 감소
@@ -233,7 +239,8 @@ export async function DELETE(
       const { error: decrementError } = await admin.schema('limbus').rpc('decrement_comment', { deck_id: id })
       if (decrementError) {
         revalidateDeckCommentCaches(id)
-        return NextResponse.json({ error: decrementError.message }, { status: 500 })
+        console.error('[deck comments] database error', decrementError)
+        return NextResponse.json({ error: '요청을 처리하지 못했습니다. 다시 시도해주세요.' }, { status: 500 })
       }
     }
 
@@ -242,7 +249,7 @@ export async function DELETE(
     revalidateDeckCommentCaches(id)
     return NextResponse.json({ ok: true })
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Internal Server Error'
-    return NextResponse.json({ error: message }, { status: 500 })
+    console.error('[deck comments] unexpected failure', err)
+    return NextResponse.json({ error: '요청을 처리하지 못했습니다. 다시 시도해주세요.' }, { status: 500 })
   }
 }

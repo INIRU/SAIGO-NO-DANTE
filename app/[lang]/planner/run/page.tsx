@@ -18,6 +18,12 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
   return pageMetadata({ lang, path: '/planner/run', noindex: true, title: t('run.metaTitle'), description: t('run.metaDescription') })
 }
 
+// 조회가 실패하면 빈 결과를 캐시에 굳히지 않도록 던진다
+function failOnReadError(...errors: ({ message: string } | null)[]) {
+  const failed = errors.find(error => error)
+  if (failed) throw new Error(`[RunPage] query failed: ${failed.message}`)
+}
+
 export default async function RunPage({ params }: { params: Promise<{ lang: string }> }) {
   'use cache'
   cacheLife('max')
@@ -30,7 +36,7 @@ export default async function RunPage({ params }: { params: Promise<{ lang: stri
     supabase.schema('limbus').from('ego_gifts').select(GIFT_COLUMNS).order('keyword').order('grade'),
     supabase.schema('limbus').from('ego_gift_recipes').select(RECIPE_COLUMNS),
   ])
-  if (e1 || e2 || e3) console.error('[RunPage] query group 1:', e1?.message, e2?.message, e3?.message)
+  failOnReadError(e1, e2, e3)
 
   const [{ data: identities, error: e4 }, { data: sinners, error: e5 }, { data: skills, error: e6 }, { data: passives, error: e6b }] = await Promise.all([
     supabase.schema('limbus').from('identities').select('id, sinner_id, name_kr, rarity, keywords, skill_keyword_list, affiliation, association_list, game_id, folder_name').order('rarity', { ascending: false }),
@@ -39,14 +45,14 @@ export default async function RunPage({ params }: { params: Promise<{ lang: stri
     readAllRows((from, to) => supabase.schema('limbus').from('skills').select('identity_id, name, sin_affinity, skill_type, skill_order, uptie_level').order('id').range(from, to)),
     readAllRows((from, to) => supabase.schema('limbus').from('passives').select('id, name, identity_id, passive_type, sin_affinity, sin_count, sin_requirements, active_cond, description, uptie_level').order('id').range(from, to)),
   ])
-  if (e4 || e5 || e6 || e6b) console.error('[RunPage] query group 2:', e4?.message, e5?.message, e6?.message, e6b?.message)
+  failOnReadError(e4, e5, e6, e6b)
 
   const [{ data: egos, error: e7 }, { data: mdEvents, error: e8 }, { data: mdChoices, error: e9 }] = await Promise.all([
     supabase.schema('limbus').from('ego').select('id, sinner_id, name_kr, grade, sin_affinity, image_url, cost, game_id'),
     supabase.schema('limbus').from('md_events').select(MD_EVENT_COLUMNS).order('id'),
     supabase.schema('limbus').from('md_event_choices').select(MD_EVENT_CHOICE_COLUMNS).order('event_id').order('sort_order'),
   ])
-  if (e7 || e8 || e9) console.error('[RunPage] query group 3:', e7?.message, e8?.message, e9?.message)
+  failOnReadError(e7, e8, e9)
 
   const normalizedThemes = (themes ?? []).flatMap(theme => {
     const id = normalizePlannerThemeId(theme.id)
@@ -67,7 +73,6 @@ export default async function RunPage({ params }: { params: Promise<{ lang: stri
       egos={egos ?? []}
       events={(mdEvents ?? []).map(event => withoutOtherLocales(event, lang, ['desc_text'], ['judgment'])) as MdEvent[]}
       eventChoices={(mdChoices ?? []).map(choice => withoutOtherLocales(choice, lang, ['result_text', 'message', 'message_desc'], ['effects'])) as MdEventChoice[]}
-      dataError={!!(e1 || e2 || e3 || e4 || e5 || e6 || e6b || e7 || e8 || e9)}
     />
   )
 }

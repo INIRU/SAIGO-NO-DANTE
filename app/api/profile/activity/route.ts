@@ -36,7 +36,8 @@ export async function POST(request: NextRequest) {
       })
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 })
+      console.error('[api/profile/activity]', error)
+      return NextResponse.json({ error: '요청을 처리하지 못했습니다.' }, { status: 500 })
     }
 
     const response = NextResponse.json({ ok: true })
@@ -52,7 +53,7 @@ export async function POST(request: NextRequest) {
 
     return response
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Internal Server Error'
-    return NextResponse.json({ error: message }, { status: 500 })
+    console.error('[api/profile/activity]', err)
+    return NextResponse.json({ error: '요청을 처리하지 못했습니다.' }, { status: 500 })
   }
 }

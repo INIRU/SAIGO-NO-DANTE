@@ -11,7 +11,7 @@ import { notFound } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { GIFT_COLUMNS, RECIPE_COLUMNS, MD_EVENT_COLUMNS, MD_EVENT_CHOICE_COLUMNS } from '@/lib/db/columns'
+import { GIFT_COLUMNS, RECIPE_COLUMNS, MD_EVENT_CHOICE_COLUMNS } from '@/lib/db/columns'
 import { withPostAuthors, loadSeriesOfPost } from '@/features/community/server'
 import { cacheLife, cacheTag } from 'next/cache'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
@@ -20,7 +20,7 @@ import type { MdEvent, MdEventChoice } from '@/features/mirror-dungeon'
 import CoVisitedLane from '@/features/community/components/CoVisitedLane'
 import { RecommendationLaneSkeleton } from '@/features/decks/components/RecommendationSkeleton'
 import type { SupportedLang } from '@/lib/i18n/types'
-import PlanDetailClient from './PlanDetailClient'
+import PlanDetailClient, { type Plan } from './PlanDetailClient'
 import PlanDetailSkeleton from './PlanDetailSkeleton'
 
 interface Props {
@@ -35,12 +35,13 @@ interface Props {
  */
 async function fetchFullPlan(id: string) {
   const supabase = await createClient()
-  const { data } = await supabase
+  const { data, error } = await supabase
     .schema('limbus')
     .from('md_plans')
     .select('id, title, description, difficulty, tags, deck, egos, floor_plan, gift_inventory, vote_count, view_count, comment_count, created_at, user_id, guest_tag, profiles:user_id(username, avatar_url)')
     .eq('id', id)
-    .maybeSingle()
+    .maybeSingle<Plan>()
+  if (error) throw new Error(`Failed to fetch plan: ${error.message}`)
   return data ? (await withPostAuthors([data]))[0] : data
 }
 
@@ -81,7 +82,7 @@ async function fetchPlanDetailGameData() {
     db.from('md_observation').select(OBSERVATION_COLUMNS).order('mirror_dungeon_id', { ascending: false }).limit(1).maybeSingle<ObservationRow>(),
   ])
   for (const [name, result] of Object.entries({ themes, gifts, recipes, identities, sinners, egos, observation })) {
-    if (result.error) console.error('Failed to fetch ' + name + ':', result.error)
+    if (result.error) throw new Error('Failed to fetch ' + name + ': ' + result.error.message)
   }
   return { themes: themes.data ?? [], gifts: gifts.data ?? [], recipes: recipes.data ?? [], identities: identities.data ?? [], sinners: sinners.data ?? [], egos: egos.data ?? [], observation: observationFrom(observation.data) }
 }
@@ -95,20 +96,20 @@ async function fetchPlanEvents(giftIds: number[]) {
   const db = createAdminClient().schema('limbus')
   const columns = 'id, name, name_en, name_jp, desc_text, desc_text_en, desc_text_jp, event_type, source, image_url, theme_ids, gift_ids, variant_of, category, judgment'
   const roots = await db.from('md_events').select(columns).eq('category', 'entry').overlaps('gift_ids', giftIds)
-  if (roots.error) { console.error('Failed to fetch plan events:', roots.error); return { events: [], choices: [] } }
+  if (roots.error) throw new Error('Failed to fetch plan events: ' + roots.error.message)
   const events = [...roots.data]
   const choices: Record<string, unknown>[] = []
   let pending = events.map(event => event.id)
   // 후속 이벤트 체인은 4단계까지만 따라간다(실제 데이터는 그보다 얕다)
   for (let depth = 0; pending.length && depth < 4; depth++) {
     const next = await db.from('md_event_choices').select(MD_EVENT_CHOICE_COLUMNS).in('event_id', pending).order('event_id').order('sort_order')
-    if (next.error) { console.error('Failed to fetch plan event choices:', next.error); break }
+    if (next.error) throw new Error('Failed to fetch plan event choices: ' + next.error.message)
     choices.push(...next.data)
     const known = new Set(events.map(event => event.id))
     const linked = [...new Set(next.data.flatMap(choice => choice.next_event_id && !known.has(choice.next_event_id) ? [choice.next_event_id as number] : []))]
     if (!linked.length) break
     const more = await db.from('md_events').select(columns).in('id', linked)
-    if (more.error) { console.error('Failed to fetch linked events:', more.error); break }
+    if (more.error) throw new Error('Failed to fetch linked events: ' + more.error.message)
     events.push(...more.data)
     pending = more.data.map(event => event.id)
   }
@@ -172,7 +173,7 @@ export default async function PlanDetailPage({ params }: Props) {
     ])} />
     <Suspense fallback={<PlanDetailSkeleton />}>
       <PlanDetailClient
-        plan={plan as any}
+        plan={plan}
         series={series}
         coVisited={<Suspense fallback={<RecommendationLaneSkeleton kind="planner" />}><CoVisitedLane kind="planner" id={id} lang={lang as SupportedLang} exclude={[]} /></Suspense>}
         themes={planThemes}

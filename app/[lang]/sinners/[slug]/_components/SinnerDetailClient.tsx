@@ -16,13 +16,13 @@ const DROPDOWN_BUTTON_STYLE = { minHeight: '2.5rem', background: '#120e09', bord
 import { Sinner, Identity, EGO, getSinnerProfileUrl, getSinnerLogoUrl, STORAGE_BASE, SIN_COLORS, type SinType, GRADE_COLORS, BLUR_PLACEHOLDER } from '@/lib/data/sinners'
 import { getBlurDataURL } from '@/lib/utils/thumbhash'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
-import { decodeCollectionAsync } from '@/lib/collection'
-import type { CollectionData } from '@/lib/collection'
+import { useOwnedIdentities } from '@/features/catalog/hooks/useOwnedIdentities'
 import IdentityCard from '@/features/catalog/components/IdentityCard'
+import { countKeywords, filterSinnerEgos, filterSinnerIdentities, getRepresentativeKeywords, type OwnershipFilter } from '@/features/catalog'
 import { useTranslations, useLocale } from 'next-intl'
 import type { SupportedLang } from '@/lib/i18n/types'
 import { translations } from '@/lib/i18n/translations'
-import { getLocalizedAffiliations } from '@/lib/i18n/localize'
+import { getLocalizedName } from '@/lib/i18n/localize'
 import { useRoutePrefetch } from '@/lib/hooks/useRoutePrefetch'
 import styles from '@/styles/components/SinnerDetail.module.css'
 import SinnerHero from '@/features/catalog/components/SinnerHero'
@@ -36,47 +36,6 @@ interface Props {
 }
 
 type Tab = 'identities' | 'ego'
-type OwnershipFilter = 'all' | 'owned' | 'unowned'
-type IdentityWithRepresentativeKeywords = Identity & {
-  skill_keyword_list?: string[] | null
-  keywords?: string[] | null
-}
-
-const LOCAL_STORAGE_KEY = 'limbus-collection'
-
-function getRepresentativeKeywords(identity: IdentityWithRepresentativeKeywords) {
-  return identity.skill_keyword_list && identity.skill_keyword_list.length > 0
-    ? identity.skill_keyword_list
-    : (identity.keywords ?? [])
-}
-
-const getEgoReleaseTime = (ego: EGO) => {
-  if (!ego.release_date) return null
-  const time = Date.parse(ego.release_date)
-  return Number.isNaN(time) ? null : time
-}
-
-const compareEgoFallback = (a: EGO, b: EGO) => {
-  const aGameId = parseInt(a.game_id ?? '', 10)
-  const bGameId = parseInt(b.game_id ?? '', 10)
-  if (!Number.isNaN(aGameId) && !Number.isNaN(bGameId) && aGameId !== bGameId) {
-    return aGameId - bGameId
-  }
-  return a.id.localeCompare(b.id)
-}
-
-const compareEgosByReleaseDate = (a: EGO, b: EGO, sortOrder: 'newest' | 'oldest') => {
-  const aTime = getEgoReleaseTime(a)
-  const bTime = getEgoReleaseTime(b)
-
-  if (aTime !== null && bTime !== null && aTime !== bTime) {
-    return sortOrder === 'newest' ? bTime - aTime : aTime - bTime
-  }
-  if (aTime !== null && bTime === null) return -1
-  if (aTime === null && bTime !== null) return 1
-  const fallbackOrder = compareEgoFallback(a, b)
-  return sortOrder === 'newest' ? -fallbackOrder : fallbackOrder
-}
 
 export default function SinnerDetailClient({ sinner, identities, egos }: Props) {
   const t = useTranslations()
@@ -85,12 +44,6 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
   const shouldReduceMotion = useReducedMotion()
   useRoutePrefetch([`/${lang}/sinners/identities`, `/${lang}/sinners/ego`])
   const { sinMap: kwSinMap, iconMap: kwIconMap } = useKeywordData()
-
-  const getName = (kr?: string | null, en?: string | null, jp?: string | null) => {
-    if (lang === 'en') return en ?? kr ?? ''
-    if (lang === 'ja') return jp ?? kr ?? ''
-    return kr ?? ''
-  }
 
   const literarySource = (() => {
     const key = `sinner.source.${sinner.id}` as keyof typeof translations
@@ -107,39 +60,8 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
   const [selectedKeywords, setSelectedKeywords] = useState<Set<string>>(new Set())
   const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest')
   const [ownershipFilter, setOwnershipFilter] = useState<OwnershipFilter>('all')
-  const [ownedIds, setOwnedIds] = useState<Set<string> | null>(null)
+  const ownedIds = useOwnedIdentities()
   const searchInputRef = useRef<HTMLInputElement>(null)
-
-  // 보유 데이터 로드 (localStorage → 없으면 DB에서 동기화)
-  useEffect(() => {
-    (async () => {
-      try {
-        const res = await fetch('/api/collection')
-        if (!res.ok) return
-        const data: CollectionData = await res.json()
-        if (!data.sinners?.length) return
-
-        let code = localStorage.getItem(LOCAL_STORAGE_KEY)
-        if (!code) {
-          try {
-            const profileRes = await fetch('/api/profile')
-            if (profileRes.ok) {
-              const profile = await profileRes.json()
-              code = profile?.profile?.collection_code ?? null
-              if (code) localStorage.setItem(LOCAL_STORAGE_KEY, code)
-            }
-          } catch { /* 비로그인 */ }
-        }
-        if (code) {
-          const decoded = await decodeCollectionAsync(code, data.sinners, data.identities, data.egos)
-          setOwnedIds(decoded)
-        } else {
-          setOwnedIds(new Set())
-        }
-      } catch { /* 실패 시 필터 비활성 */ }
-    })()
-  }, [])
-
 
   // 초기 해시 읽기 + 브라우저 뒤로가기/앞으로가기 동기화
   useEffect(() => {
@@ -154,33 +76,10 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
     setTab(t)
   }
 
-  const keywordStats = useMemo(() => {
-    const freq = new Map<string, number>()
-    for (const i of identities) {
-      const keywords = getRepresentativeKeywords(i)
-      if (keywords.length === 0) continue
-      for (const kw of keywords) {
-        freq.set(kw, (freq.get(kw) ?? 0) + 1)
-      }
-    }
-    return [...freq.entries()]
-      .sort((a, b) => b[1] - a[1])
-      .map(([kw, count]) => ({ kw, count }))
-  }, [identities])
+  const keywordStats = useMemo(() => countKeywords(identities.map(getRepresentativeKeywords)), [identities])
 
   // EGO 키워드 빈도 계산
-  const egoKeywordStats = useMemo(() => {
-    const freq = new Map<string, number>()
-    for (const e of egos) {
-      if (!e.keywords) continue
-      for (const kw of e.keywords) {
-        freq.set(kw, (freq.get(kw) ?? 0) + 1)
-      }
-    }
-    return [...freq.entries()]
-      .sort((a, b) => b[1] - a[1])
-      .map(([kw, count]) => ({ kw, count }))
-  }, [egos])
+  const egoKeywordStats = useMemo(() => countKeywords(egos.map(e => e.keywords)), [egos])
 
   const toggleKeyword = (kw: string) => {
     setSelectedKeywords(prev => {
@@ -200,69 +99,14 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
 
   const hasActiveFilters = searchQuery || selectedKeywords.size > 0 || rarityFilter || ownershipFilter !== 'all'
 
-  // 인격 필터링: 등급 → 검색어 → 키워드 → 보유
-  const filteredIdentities = useMemo(() => {
-    let result = identities
-    if (rarityFilter) result = result.filter(i => `${i.rarity}성` === rarityFilter)
-    if (searchQuery.trim()) {
-      const q = searchQuery.trim().toLowerCase()
-      result = result.filter(i => {
-        const rawAffiliations = [
-          i.affiliation,
-          ...(i.association_list ?? []),
-        ].filter((affiliation): affiliation is string => Boolean(affiliation))
-        const affiliationTerms = [
-          ...rawAffiliations,
-          ...getLocalizedAffiliations(rawAffiliations, lang),
-        ]
-
-        return i.name_kr.toLowerCase().includes(q) ||
-          affiliationTerms.some(affiliation => affiliation.toLowerCase().includes(q)) ||
-          getRepresentativeKeywords(i).some(kw => kw.toLowerCase().startsWith(q))
-      })
-    }
-    if (selectedKeywords.size > 0) {
-      result = result.filter(i =>
-        [...selectedKeywords].every(kw => getRepresentativeKeywords(i).includes(kw))
-      )
-    }
-    if (ownershipFilter !== 'all' && ownedIds) {
-      result = result.filter(i =>
-        ownershipFilter === 'owned' ? ownedIds.has(i.id) : !ownedIds.has(i.id)
-      )
-    }
-    result = [...result].sort((a, b) => {
-      const aId = parseInt(a.game_id ?? '0')
-      const bId = parseInt(b.game_id ?? '0')
-      return sortOrder === 'newest' ? bId - aId : aId - bId
-    })
-    return result
-  }, [identities, rarityFilter, searchQuery, selectedKeywords, sortOrder, ownershipFilter, ownedIds])
-
-  // EGO 필터링: 검색어 → 키워드 → 보유
-  const filteredEgos = useMemo(() => {
-    let result = egos
-    if (searchQuery.trim()) {
-      const q = searchQuery.trim().toLowerCase()
-      result = result.filter(e =>
-        (e.name_kr && e.name_kr.toLowerCase().includes(q)) ||
-        (e.keywords && e.keywords.some(kw => kw.toLowerCase().startsWith(q)))
-      )
-    }
-    if (selectedKeywords.size > 0) {
-      result = result.filter(e =>
-        e.keywords && [...selectedKeywords].every(kw => e.keywords!.includes(kw))
-      )
-    }
-    if (ownershipFilter !== 'all' && ownedIds) {
-      result = result.filter(e =>
-        ownershipFilter === 'owned' ? ownedIds.has(e.id) : !ownedIds.has(e.id)
-      )
-    }
-    result = [...result].sort((a, b) => compareEgosByReleaseDate(a, b, sortOrder))
-    return result
-  }, [egos, searchQuery, selectedKeywords, sortOrder, ownershipFilter, ownedIds])
-
+  const filteredIdentities = useMemo(
+    () => filterSinnerIdentities(identities, { rarityFilter, searchQuery, selectedKeywords, sortOrder, ownershipFilter, ownedIds, lang }),
+    [identities, rarityFilter, searchQuery, selectedKeywords, sortOrder, ownershipFilter, ownedIds, lang],
+  )
+  const filteredEgos = useMemo(
+    () => filterSinnerEgos(egos, { searchQuery, selectedKeywords, sortOrder, ownershipFilter, ownedIds }),
+    [egos, searchQuery, selectedKeywords, sortOrder, ownershipFilter, ownedIds],
+  )
 
   // 자동완성 드롭다운
   const [showAutocomplete, setShowAutocomplete] = useState(false)
@@ -381,7 +225,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
     <div className={`${styles.page} min-h-[100dvh] pb-16 relative`}>
       <SinnerHero
         sinner={sinner}
-        name={getName(sinner.name_kr, sinner.name_en, sinner.name_jp)}
+        name={getLocalizedName(sinner, lang)}
         description={(() => {
           const entry = translations[`sinnerDetail.desc.${sinner.id}` as keyof typeof translations]
           return entry ? entry[lang] ?? entry['ko'] ?? sinner.description : sinner.description
@@ -528,7 +372,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                                   className="inline-block w-1.5 h-1.5 rounded-full flex-shrink-0"
                                   style={{ background: ident.rarity === 3 ? 'var(--gold)' : ident.rarity === 2 ? '#5588bb' : '#556677' }}
                                 />
-                                <span>{getName(ident.name_kr, ident.name_en, ident.name_jp)}</span>
+                                <span>{getLocalizedName(ident, lang)}</span>
                                 <span style={{ color: 'var(--text-muted)', fontSize: '0.625rem', marginLeft: 'auto' }}>{t('browser.rarityStar', { n: ident.rarity })}</span>
                               </div>
                             )
@@ -560,7 +404,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                                   className="inline-block w-1.5 h-1.5 rounded-full flex-shrink-0"
                                   style={{ background: gradeColor }}
                                 />
-                                <span>{getName(ego.name_kr, ego.name_en, ego.name_jp)}</span>
+                                <span>{getLocalizedName(ego, lang)}</span>
                                 <span style={{ color: gradeColor, fontSize: '0.625rem', marginLeft: 'auto' }}>{ego.grade}</span>
                               </div>
                             )
@@ -657,7 +501,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                         {/* A real link (crawlers and new-tab clicks follow it); the card keeps its own hover and size. */}
                         <Link
                           href={`/sinners/${sinner.id}/identities/${identity.id}`}
-                          aria-label={getName(identity.name_kr, identity.name_en, identity.name_jp)}
+                          aria-label={getLocalizedName(identity, lang)}
                         >
                           <IdentityCard identity={identity} gacksung={gacksung} compact />
                         </Link>
@@ -710,7 +554,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                 ) : (
                   <StaggerReveal className={styles.egoGrid} staggerDelay={0.03}>
                     {filteredEgos.map((ego) => {
-                      const egoName = getName(ego.name_kr, ego.name_en, ego.name_jp)
+                      const egoName = getLocalizedName(ego, lang)
 
                       return (
                         <m.div

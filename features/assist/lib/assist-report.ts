@@ -4,10 +4,11 @@
  * recorded marks a wrong read; a hand-added gift marks a missed one. A random session id, never an account, ties the
  * reports and samples of one capture together so the edits can label the samples.
  */
+import { isUuid } from '@/lib/utils/uuid'
+
 export const REPORT_ACTIONS = ['popup', 'fusion', 'sale'] as const
 export type ReportAction = typeof REPORT_ACTIONS[number]
 export const REPORT_MAX_CORRECTIONS = 200
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 
 export interface AssistCorrection { op: 'add' | 'remove'; giftId: string; auto: boolean; clientAt: number }
 /**
@@ -26,7 +27,7 @@ export interface AssistReport extends ReportContext {
   corrections: AssistCorrection[]
 }
 
-export const isSessionId = (value: unknown): value is string => typeof value === 'string' && UUID.test(value)
+export const isSessionId = (value: unknown): value is string => isUuid(value)
 
 // Set while CompanionPanel applies a recognized action: inventory changes then come from Assist, not the user's hand.
 let automatic = 0

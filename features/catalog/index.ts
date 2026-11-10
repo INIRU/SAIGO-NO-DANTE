@@ -3,3 +3,5 @@
 export { egoPassiveAtStage, egoSkillsAtStage, egoStages } from './lib/ego-stages'
 export { identityAtLevel, MAX_IDENTITY_LEVEL, skillsAtLevel } from './lib/identity-level'
 export { identitySpine, type IdentitySpine, type SpineManifest, type SpinePack, type SpinePackKind } from './lib/spine-pack'
+export { getRepresentativeKeywords } from './lib/representative-keywords'
+export { countKeywords, filterSinnerEgos, filterSinnerIdentities, type OwnershipFilter } from './lib/sinner-filter'
