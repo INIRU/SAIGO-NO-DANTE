@@ -288,7 +288,7 @@ export function ThemePackPickerModal<TTheme extends ThemePackPickerTheme>({
   const picked = new Set(picks.map(row => String(row.theme.id)))
   const rest = picks.length ? shown.filter(theme => !picked.has(String(theme.id))) : shown
   const rank = (theme: TTheme) => (order ?? []).findIndex(id => String(id) === String(theme.id)) + 1
-  const card = (theme: TTheme) => (
+  const card = (theme: TTheme, count?: number) => (
     <>
       <ThemePackCard
         theme={theme}
@@ -296,9 +296,15 @@ export function ThemePackPickerModal<TTheme extends ThemePackPickerTheme>({
         isSelected={rank(theme) > 0 || (selectedThemeId != null && String(selectedThemeId) === String(theme.id))}
         lang={lang}
       />
-      {rank(theme) > 0 && (
-        <span data-theme-order={rank(theme)} className="pointer-events-none absolute left-1.5 top-1.5 z-30 rounded bg-[var(--gold)] px-1.5 pt-0.5 font-[family-name:var(--font-title)] text-[1.25rem] leading-none text-[var(--bg-deep)]">{rank(theme)}</span>
-      )}
+      {/* Marks over the card: one layer the size of the art that grows with it on hover (the card scales its art 1.03), so they stay on its corners. */}
+      <span className="pointer-events-none absolute inset-0.5 z-30 transition-transform duration-300 motion-safe:group-hover/tile:scale-[1.03]">
+        {rank(theme) > 0 && (
+          <span data-theme-order={rank(theme)} className="absolute left-1 top-1 rounded bg-[var(--gold)] px-1.5 pt-0.5 font-[family-name:var(--font-title)] text-[1.25rem] leading-none text-[var(--bg-deep)]">{rank(theme)}</span>
+        )}
+        {count != null && (
+          <span className="absolute right-1 top-1 rounded bg-[rgba(13,11,8,0.82)] px-1.5 pt-0.5 font-[family-name:var(--font-title)] text-[1.25rem] leading-none text-[var(--gold-light)]">{count}</span>
+        )}
+      </span>
     </>
   )
 
@@ -356,16 +362,13 @@ export function ThemePackPickerModal<TTheme extends ThemePackPickerTheme>({
                   <div className="px-5 pt-5 max-sm:px-3 max-sm:pt-4"><SuggestionRibbon /></div>
                   <ul className={filterStyles.pickerGrid} style={{ paddingTop: '0.75rem' }}>
                     {picks.map(({ theme, count }) => (
-                      <li key={String(theme.id)} className="relative">
-                        {card(theme)}
-                        <span className="pointer-events-none absolute right-1.5 top-1.5 z-30 rounded bg-[rgba(13,11,8,0.82)] px-1.5 pt-0.5 font-[family-name:var(--font-title)] text-[1.25rem] leading-none text-[var(--gold-light)]">{count}</span>
-                      </li>
+                      <li key={String(theme.id)} className="group/tile relative">{card(theme, count)}</li>
                     ))}
                   </ul>
                 </>
               )}
               <ul className={filterStyles.pickerGrid} style={picks.length || holdPicks ? { borderTop: '1px solid #2e2417' } : undefined}>
-                {rest.map(theme => <li key={String(theme.id)} className="relative">{card(theme)}</li>)}
+                {rest.map(theme => <li key={String(theme.id)} className="group/tile relative">{card(theme)}</li>)}
               </ul>
             </>
           )}
