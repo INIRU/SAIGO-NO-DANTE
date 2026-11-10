@@ -285,7 +285,6 @@ export function ThemePackPickerModal<TTheme extends ThemePackPickerTheme>({
         theme={theme}
         onClick={() => onSelectTheme(theme)}
         isSelected={rank(theme) > 0 || (selectedThemeId != null && String(selectedThemeId) === String(theme.id))}
-        imageSurface="bare"
         lang={lang}
       />
       {rank(theme) > 0 && (

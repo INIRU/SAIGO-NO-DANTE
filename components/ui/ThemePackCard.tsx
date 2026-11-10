@@ -36,8 +36,6 @@ interface ThemePackCardProps {
   sizes?: string
   isSelected?: boolean
   lang?: SupportedLang
-  /** Use a bare image surface when the surrounding layout already provides the frame. */
-  imageSurface?: 'default' | 'bare'
 }
 
 const TITLE_MIN_FONT_REM = 0.32
@@ -66,7 +64,6 @@ export default function ThemePackCard({
   onClick,
   isSelected,
   lang: langProp,
-  imageSurface = 'default',
   ariaLabel,
   title,
   sizes = '(max-width: 640px) 50vw, (max-width: 768px) 33vw, 20vw',
@@ -92,7 +89,6 @@ export default function ThemePackCard({
   const titleWidthRatio = (100 - titleBox.left - titleBox.right) / 100
   const showTitle = !titleBox.printedIn?.includes(lang)
   const imageSrc = visualConfig ? getThemePackCompositeImageUrl(numId) : theme.image_url
-  const isBareImageSurface = imageSurface === 'bare'
   const titleFontFamily = lang === 'en'
     ? 'var(--font-mikodacs), var(--font-scdream), system-ui, sans-serif'
     : lang === 'ja'
@@ -167,14 +163,10 @@ export default function ThemePackCard({
           style={{
             aspectRatio: THEME_CARD_ASPECT_RATIO,
             borderRadius: 'var(--radius-md)',
-            background: isBareImageSurface ? 'transparent' : 'var(--bg-deep)',
           }}
         >
           {/* The card names the pack itself (aria-label, title text): the art is decoration, and a failed load leaves the card face. */}
           <QuietImage src={imageSrc} alt="" fill sizes={sizes} className="object-contain" {...blurPlaceholder(imageSrc)} />
-          {!isBareImageSurface && (
-            <div className="absolute" style={{ inset: '-0.0625rem', background: 'linear-gradient(to top, rgba(13,11,8,0.95) 0%, rgba(13,11,8,0.3) 35%, transparent 100%)' }} />
-          )}
 
           {/* Theme name, in the poster's title band (per-pack box when a printed logo sits there) */}
           {showTitle && <div
