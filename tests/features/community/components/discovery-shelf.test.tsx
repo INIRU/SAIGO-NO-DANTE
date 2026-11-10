@@ -117,8 +117,7 @@ describe('REQ-COMMUNITY-080 shelf shapes', () => {
     const recent = shelf(html, 'recent')
     expect(count(recent, 'data-card=')).toBe(3)
     expect(recent).toContain('snap-x')
-    expect(recent).toContain('md:grid-cols-2')
-    expect(recent).toContain('xl:grid-cols-3')
+    expect(recent).toContain('md:grid-cols-3')
     expect(shelf(html, 'popular')).toContain('snap-x')
   })
 

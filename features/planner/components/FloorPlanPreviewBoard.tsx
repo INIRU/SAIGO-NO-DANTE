@@ -11,18 +11,13 @@ import FloorGuidance from './FloorGuidance'
 import { useLocale, useTranslations } from 'next-intl'
 import { useReducedMotion } from 'motion/react'
 import * as m from 'motion/react-m'
-import QuietImage from '@/components/ui/QuietImage'
-import { blurPlaceholder } from '@/lib/utils/thumbhash'
 import GiftCard from '@/features/mirror-dungeon/components/GiftCard'
+import ThemePackStack from '@/components/ui/ThemePackStack'
 import { getLegacyPlanFloorDifficulty, isAllowedFloorDifficulty, isFloorDifficulty } from '@/lib/planner/floor-difficulty'
 import type { Difficulty, FloorDifficulty, GiftData, ThemeData, RecipeData } from '@/lib/planner/types'
 import { themeExclusiveGiftIds, withThemeRewards } from '@/lib/planner/fusion'
 import { getLocalizedName } from '@/lib/i18n/localize'
 import type { SupportedLang } from '@/lib/i18n/types'
-import {
-  getThemePackCompositeImageUrl,
-  getThemePackVisualConfig,
-} from '@/lib/data/theme-pack-visuals'
 import { staggerContainer, workbenchStaggerItem } from '@/lib/animations'
 
 type FloorPreviewEntry = {
@@ -30,6 +25,7 @@ type FloorPreviewEntry = {
   floor: number
   difficulty?: FloorDifficulty
   theme_id: string | null
+  theme_alt_ids?: string[]
   gift_ids: string[]
   memo: string
 }
@@ -83,13 +79,6 @@ function getMemoPreview(memo: string) {
     .replace(/[#*_`>~-]/g, '')
     .replace(/\s+/g, ' ')
     .trim()
-}
-
-function getThemeImageSrc(theme: ThemeData) {
-  const numericId = parseInt(String(theme.id), 10)
-  return getThemePackVisualConfig(numericId)
-    ? getThemePackCompositeImageUrl(numericId)
-    : theme.image_url
 }
 
 export default function FloorPlanPreviewBoard({
@@ -160,7 +149,7 @@ export default function FloorPlanPreviewBoard({
                 .filter((gift): gift is GiftData => Boolean(gift))
               const memoPreview = getMemoPreview(entry.memo)
 
-              const themeImageSrc = theme ? getThemeImageSrc(theme) : null
+              const altThemes = (entry.theme_alt_ids ?? []).flatMap(id => themeMap.get(String(id)) ?? [])
 
               return (
                 <m.div
@@ -173,29 +162,12 @@ export default function FloorPlanPreviewBoard({
                   </div>
 
                   <div className="floor-preview-cover">
-                    <div
-                      className="overflow-hidden rounded-md"
-                      style={{
-                        borderColor: theme ? 'rgba(200,144,10,0.34)' : '#2a2118',
-                        background: theme ? 'var(--bg-card)' : 'var(--bg-deep)',
-                      }}
-                    >
-                      <div className="relative aspect-[416/684] w-full overflow-hidden rounded-sm bg-[#151210]">
-                        {themeImageSrc ? (
-                          <QuietImage
-                            src={themeImageSrc}
-                            alt=""
-                            fill
-                            {...blurPlaceholder(themeImageSrc)}
-                            sizes="(max-width: 640px) 80px, 112px"
-                            className="object-cover saturate-[0.9]"
-                          />
-                        ) : (
-                          <div className="flex h-full w-full items-center justify-center text-[1rem] text-[var(--text-muted)]">-</div>
-                        )}
-                        {themeImageSrc && <div className="absolute inset-0 bg-[#080604]/18" aria-hidden="true" />}
-                      </div>
-                    </div>
+                    {/* The game's card (name in its own layout), fallbacks behind it. */}
+                    {theme ? (
+                      <ThemePackStack themes={[theme, ...altThemes]} lang={locale} sizes="(max-width: 640px) 80px, 136px" />
+                    ) : (
+                      <div className="flex aspect-[416/684] w-[var(--w)] items-center justify-center rounded-sm bg-[#151210] text-[1rem] text-[var(--text-muted)]">-</div>
+                    )}
                   </div>
 
                   <div className="floor-preview-content flex min-w-0 flex-col gap-4">
@@ -210,7 +182,7 @@ export default function FloorPlanPreviewBoard({
                           </span>
                         )}
                       </div>
-                      <div className="min-w-0 font-[family-name:var(--font-paperlogy)] text-lg font-semibold leading-snug text-[var(--text-primary)]">
+                      <div className="min-w-0 font-[family-name:var(--font-paperlogy)] text-xl font-semibold leading-snug text-[var(--text-primary)]">
                         {themeName}
                       </div>
                     </div>

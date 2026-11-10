@@ -70,7 +70,7 @@ export default function DungeonAnalysis({ data }: { data: MetaData }) {
         return <li key={floor.floor} className={styles.floorCell}>
           <span className={styles.sinnerHead}><b className={styles.floorNumber}>{t('floorLabel', { floor: floor.floor })}</b><em>{t('count', { count: floor.plans })}</em></span>
           <div className={styles.floorTop}>
-            <div className={styles.floorCard}><ThemePackCard theme={top.theme} sizes="6rem" imageSurface="bare" lang={locale} ariaLabel={themeName(top.theme) + ' ' + (top.count / floor.plans * 100).toFixed(1) + '%'} onClick={() => router.push(board('tp', top.key))} /></div>
+            <div className={styles.floorCard}><ThemePackCard theme={top.theme} sizes="6rem" lang={locale} ariaLabel={themeName(top.theme) + ' ' + (top.count / floor.plans * 100).toFixed(1) + '%'} onClick={() => router.push(board('tp', top.key))} /></div>
             <div className={styles.floorText}>
               <span className={styles.sinnerName}>{themeName(top.theme)}</span>
               <Share value={top.count / floor.plans * 100} />

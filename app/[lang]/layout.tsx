@@ -29,6 +29,7 @@ import { ADS_ON } from '@/lib/seo/ads'
 import PageNavigation from '@/components/ui/PageNavigation'
 import AnnouncementPopup from '@/features/admin/components/AnnouncementPopup'
 import SkipNav from '@/components/a11y/SkipNav'
+import ScrollbarHover from '@/components/layout/ScrollbarHover'
 import AprilFoolsWrapper from '@/features/mirror-dungeon/components/AprilFoolsWrapper'
 import { KeywordProvider } from '@/components/providers/KeywordProvider'
 import { GameTextRefsProvider } from '@/components/providers/GameTextRefsProvider'
@@ -215,6 +216,7 @@ export default async function LangLayout({
             },
           }}
         />
+        <ScrollbarHover />
         {shouldRenderAnalytics ? <Analytics /> : null}
         {process.env.SELF_HOSTED === '1' ? (
           <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon={JSON.stringify({ token: CLOUDFLARE_WEB_ANALYTICS_TOKEN })} />

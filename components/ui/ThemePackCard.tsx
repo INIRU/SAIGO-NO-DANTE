@@ -36,16 +36,15 @@ interface ThemePackCardProps {
   sizes?: string
   isSelected?: boolean
   lang?: SupportedLang
-  /** Use a bare image surface when the surrounding layout already provides the frame. */
-  imageSurface?: 'default' | 'bare'
 }
 
 const TITLE_MIN_FONT_REM = 0.32
-// Font size as a share of the poster width: at 0.105 the ink (with outline) is ~6% of the poster height, as in game
-// captures. Long names shrink to fit one line, like the game (its longest names fill ~72% of the width).
-const TITLE_FONT_RATIO = 0.105
-// 8-way hard outline in the page's darkest brown so any pack colour stays legible on busy art.
-const TITLE_OUTLINE = '0.07em 0 0 #0d0b08, -0.07em 0 0 #0d0b08, 0 0.07em 0 #0d0b08, 0 -0.07em 0 #0d0b08, 0.05em 0.05em 0 #0d0b08, -0.05em 0.05em 0 #0d0b08, 0.05em -0.05em 0 #0d0b08, -0.05em -0.05em 0 #0d0b08, 0 0.12em 0.25em rgba(0,0,0,0.85)'
+// Font size as a share of the poster width: the prefab's 65 card px max auto-size is 42.1 px on the 416x684 poster.
+// Long names shrink to fit the box, like TMP auto-size.
+const TITLE_FONT_RATIO = 0.101
+// The name material (KOTRA_BOLD SDF Underline) has no outline, only an underlay: #040001, offset (1,-1), dilate 0.35.
+// shortcut: a CSS shadow approximates the SDF underlay (offset and spread by eye), not the exact TMP rendering.
+const TITLE_OUTLINE = '0.06em 0.06em 0 #040001, 0.095em 0.06em 0 #040001, 0.025em 0.06em 0 #040001, 0.06em 0.095em 0 #040001, 0.06em 0.025em 0 #040001'
 const THEME_CARD_ASPECT_RATIO = '416/684'
 // The 436x740 selection sprite, placed so its gold line sits 1.5px outside the 416x684 poster art.
 // Measured from the sprite stroke vs. the poster alpha edge (normal: pack outline incl. crimp notches,
@@ -65,7 +64,6 @@ export default function ThemePackCard({
   onClick,
   isSelected,
   lang: langProp,
-  imageSurface = 'default',
   ariaLabel,
   title,
   sizes = '(max-width: 640px) 50vw, (max-width: 768px) 33vw, 20vw',
@@ -91,7 +89,6 @@ export default function ThemePackCard({
   const titleWidthRatio = (100 - titleBox.left - titleBox.right) / 100
   const showTitle = !titleBox.printedIn?.includes(lang)
   const imageSrc = visualConfig ? getThemePackCompositeImageUrl(numId) : theme.image_url
-  const isBareImageSurface = imageSurface === 'bare'
   const titleFontFamily = lang === 'en'
     ? 'var(--font-mikodacs), var(--font-scdream), system-ui, sans-serif'
     : lang === 'ja'
@@ -166,14 +163,10 @@ export default function ThemePackCard({
           style={{
             aspectRatio: THEME_CARD_ASPECT_RATIO,
             borderRadius: 'var(--radius-md)',
-            background: isBareImageSurface ? 'transparent' : 'var(--bg-deep)',
           }}
         >
           {/* The card names the pack itself (aria-label, title text): the art is decoration, and a failed load leaves the card face. */}
           <QuietImage src={imageSrc} alt="" fill sizes={sizes} className="object-contain" {...blurPlaceholder(imageSrc)} />
-          {!isBareImageSurface && (
-            <div className="absolute" style={{ inset: '-0.0625rem', background: 'linear-gradient(to top, rgba(13,11,8,0.95) 0%, rgba(13,11,8,0.3) 35%, transparent 100%)' }} />
-          )}
 
           {/* Theme name, in the poster's title band (per-pack box when a printed logo sits there) */}
           {showTitle && <div
@@ -207,7 +200,8 @@ export default function ThemePackCard({
                 minWidth: 0,
                 paddingBlock: '0.125rem',
                 whiteSpace: 'nowrap',
-                overflow: 'hidden',
+                // Clip sideways only: the glyph tops rise above the line-height-1 box and were cut off.
+                overflowX: 'clip',
                 overflowWrap: 'normal',
                 wordBreak: lang === 'ko' || lang === 'ja' ? 'keep-all' : 'normal',
                 display: 'block',

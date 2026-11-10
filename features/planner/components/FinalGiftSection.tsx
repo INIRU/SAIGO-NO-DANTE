@@ -12,7 +12,7 @@ import FinalGiftPresets from './FinalGiftPresets'
 import { GRADE_ROMAN, SLUG_TO_KEYWORD, getKeywordSlug } from '@/lib/planner/gift-plan-constants'
 import type { PlannerAction, GiftData, IdentitySlot, RecipeData } from '@/lib/planner/types'
 import { deriveBlockedFinalFusionMaterialIds, findAvailableFusions, getFinalGiftVariantIds, parseFinalGiftIds } from '@/lib/planner/fusion'
-import { finalEnhanceEdit, type FinalGift, type deriveFinalGifts } from '@/features/planner/lib/final-gifts'
+import { finalEnhanceAction, type FinalGift, type deriveFinalGifts } from '@/features/planner/lib/final-gifts'
 import { getLocalizedName } from '@/lib/i18n/localize'
 import type { SupportedLang } from '@/lib/i18n/types'
 import { getGiftActivationConditionStatus, getGiftConditionCountsForSlots, giftConditionKey } from '@/lib/planner/gift-condition-status'
@@ -182,7 +182,22 @@ export default function FinalGiftSection({ giftInventory, identitySlots, dispatc
     dispatch({ type: 'ADD_GIFT', giftId: `final_${giftGameId}` })
   }, [blockedFinalMaterialIds, dispatch, finalEntryById, removeFinalGift])
 
-  const onCatalogGiftClick = useCallback((gift: EgoGift) => toggleFinalGift(Number(gift.id)), [toggleFinalGift])
+  // 전체 기프트에서 고르면 위의 최종 반영 목록이 늘거나 줄어 목록이 밀린다. 누르기 직전 목록 위치를 기억했다가
+  // 그 변화가 화면에 그려지기 전(useLayoutEffect)에 같은 만큼 창을 옮겨, 누르던 칸이 손가락·마우스 아래 그대로 있게 한다.
+  const catalogRef = useRef<HTMLDivElement>(null)
+  const catalogTopBeforeRef = useRef<number | null>(null)
+  const onCatalogGiftClick = useCallback((gift: EgoGift) => {
+    catalogTopBeforeRef.current = catalogRef.current?.getBoundingClientRect().top ?? null
+    toggleFinalGift(Number(gift.id))
+  }, [toggleFinalGift])
+  useLayoutEffect(() => {
+    const before = catalogTopBeforeRef.current
+    if (before === null || !catalogRef.current) return
+    catalogTopBeforeRef.current = null
+    const shift = catalogRef.current.getBoundingClientRect().top - before
+    // instant: html의 scroll-behavior: smooth가 보정을 미끄러지는 움직임으로 바꾸지 않게
+    if (Math.abs(shift) >= 1) window.scrollTo({ top: window.scrollY + shift, behavior: 'instant' })
+  }, [finalFloorGifts])
   // 칸 속성은 (막힘 이유, 출처)가 같으면 같은 객체를 돌려준다: 448칸의 번역 호출과 비교를 누를 때마다 반복하지 않게
   const cardPropsCache = useMemo(() => new Map<string, GiftCatalogCardProps>(), [locale, t])
   const catalogCardProps = useCallback((gift: EgoGift): GiftCatalogCardProps => {
@@ -212,15 +227,13 @@ export default function FinalGiftSection({ giftInventory, identitySlots, dispatc
   const inventoryRef = useRef(giftInventory)
   useLayoutEffect(() => { inventoryRef.current = giftInventory })
   const setFinalEnhance = useCallback((entry: FinalGift, level: number) => {
-    const { oldId, newId } = finalEnhanceEdit(inventoryRef.current, entry, level)
-    if (oldId && newId) dispatch({ type: 'REPLACE_GIFT', oldId, newId })
-    else if (newId) dispatch({ type: 'ADD_GIFT', giftId: newId })
-    else if (oldId) dispatch({ type: 'REMOVE_GIFT', giftId: oldId })
+    const action = finalEnhanceAction(inventoryRef.current, entry, level)
+    if (action) dispatch(action)
   }, [dispatch])
 
   return (
     <>
-      <section aria-labelledby="final-gifts-title" className="relative border-t pt-5 lg:-ml-[var(--planner-rail-w,0rem)]" style={{ borderColor: '#2e2417' }}>
+      <section id="plan-final" aria-labelledby="final-gifts-title" className="relative scroll-mt-[6rem] border-t pt-5 lg:-ml-[var(--planner-rail-w,0rem)]" style={{ borderColor: '#2e2417' }}>
         {/* 이 영역은 처음부터 목차 레일 자리까지 넓다. 여기에 오면 레일 대신 위쪽 가로 막대가 겹쳐 나타난다(PlannerClient가 관찰) */}
         <div data-final-gifts-start aria-hidden="true" className="pointer-events-none absolute inset-y-0 left-0 w-px" />
         <div className="mb-1 flex items-baseline gap-2">
@@ -301,6 +314,7 @@ export default function FinalGiftSection({ giftInventory, identitySlots, dispatc
           <h4 className="mb-2 text-[0.9375rem]" style={{ fontFamily: 'var(--font-heading)', color: 'var(--text-primary)' }}>{t('allGiftCatalog')}</h4>
           {/* 페이지 흐름 안에 둔다(스크롤은 창 하나). 도구줄은 사이트 메뉴와 플래너 가로 목차 아래에 붙고, 결과 칸은 필터를 바꿔도 페이지가 줄지 않게 한 화면 높이를 확보한다. */}
           <div
+            ref={catalogRef}
             className="border-t px-0.5 pb-3"
             style={{
               borderColor: '#2e2417',

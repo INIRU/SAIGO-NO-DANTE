@@ -527,9 +527,11 @@
   },
   "giftEnhance": {
     "group": "{gift} enhancement",
+    "remove": "Remove {gift}",
     "base": "Not enhanced",
     "plus": "Enhanced +",
-    "plusplus": "Enhanced ++"
+    "plusplus": "Enhanced ++",
+    "selected": "Selected"
   },
   "giftDetail": {
     "title": "Gift Details",
@@ -618,6 +620,7 @@
       "pipChooseThemeBlank": "Please select a theme pack",
       "pipThemeGuidance": "Choose this floor’s theme pack",
       "pipThemePossible": "Available",
+      "pipThemeFallbacks": "Fallback packs",
       "pipThemePlanGifts": "Plan gifts to obtain from this theme pack",
       "pipPlanGift": "Gift set in the plan",
       "fusionTierGiftsOwned": "You own every tier IV+ gift in the plan.",
@@ -1052,7 +1055,8 @@
       "blessing": "Blessings",
       "gift": "Gifts",
       "floor": "Floor Plan",
-      "summary": "Plan intro"
+      "summary": "Plan intro",
+      "final": "Final Gifts"
     },
     "intro": {
       "titlePlaceholder": "Plan title",
@@ -1083,6 +1087,17 @@
       "themeResultCount": "{count}",
       "emptyThemes": "No theme packs are available for this floor.",
       "changeTheme": "Change",
+      "themeClickHint": "Tap to change or add fallbacks",
+      "themePickHint": "Packs rank in the order you pick them: first choice, then fallbacks. Tap one again to remove it.",
+      "clearAllThemes": "Clear all",
+      "themePickDone": "Done",
+      "altThemes": "Fallback packs (tap to make first choice)",
+      "addAltTheme": "Add fallback",
+      "altLabel": "Fallback",
+      "altThemeModalTitle": "Floor {floor} fallback theme packs",
+      "altPromoteAria": "{theme}: make first choice",
+      "altRemoveAria": "{theme}: remove from fallbacks",
+      "altThemeCount": "{count} fallback theme packs",
       "clearTheme": "Clear theme",
       "themeGiftCount": "{count} gifts",
       "acquiredGiftCount": "{count} acquired gifts",
@@ -1113,7 +1128,7 @@
       "finalAutoStartTag": "Start",
       "finalAutoObserveTag": "Obs.",
       "finalEnhanceHint": "Click to change enhancement",
-      "finalRemoveHint": "Long-press or press Delete to remove",
+      "finalRemoveHint": "Use the × button or press Delete to remove",
       "finalWorkbenchHint": "Click reflected cards on the left to remove them, or click catalog cards to add them and click again to remove.",
       "finalSelectedPanel": "Reflected list",
       "finalGiftEmpty": "No final gifts reflected yet.",
@@ -1677,6 +1692,8 @@
       "deckBuilder": "Deck board",
       "experience": "EXP Calculator",
       "lunacy": "Monthly Lunacy Calculator",
+      "motion": "Skill Motion",
+      "story": "Story Map",
       "random": "Random Formation"
     },
     "slide": {

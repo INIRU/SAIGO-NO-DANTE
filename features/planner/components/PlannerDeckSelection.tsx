@@ -10,6 +10,7 @@ import SuggestionRibbon from '@/components/ui/SuggestionRibbon'
 import { IdentityTileSkeleton, SuggestionTitleSkeleton } from '@/components/ui/SuggestionSkeleton'
 import { SkeletonPage } from '@/components/ui/Skeleton'
 import SuggestionNote, { useArchetypeLabel } from './SuggestionNote'
+import { createLongPress } from '@/lib/utils/long-press'
 import type { Archetype, Suggestion } from '@/features/community'
 import CharacterPickerFilters from '@/components/ui/CharacterPickerFilters'
 import { compareReleaseDate } from '@/lib/utils/release-order'
@@ -84,22 +85,20 @@ export function PlannerIdentityBoard({
     setCodeInvalid(Boolean(text.trim()))
     setCodeOpen(true)
   }
-  const press = useRef<{ timer?: ReturnType<typeof setTimeout>; fired: boolean }>({ fired: false })
+  const [press] = useState(() => createLongPress<string>(sinnerId => latest.current.onLongPress?.(sinnerId), 500))
   // Tiles are memoized; handlers read the latest callbacks through a ref so a formation click
   // re-renders only the tiles whose number changed.
   const latest = useRef({ onFormationToggle, onOpenIdentityModal, onLongPress })
   useLayoutEffect(() => { latest.current = { onFormationToggle, onOpenIdentityModal, onLongPress } })
   const startPress = useCallback((sinnerId: string) => {
-    if (!latest.current.onLongPress) return
-    press.current.fired = false
-    press.current.timer = setTimeout(() => { press.current.fired = true; latest.current.onLongPress?.(sinnerId) }, 500)
-  }, [])
-  const endPress = useCallback(() => clearTimeout(press.current.timer), [])
+    if (latest.current.onLongPress) press.start(sinnerId)
+  }, [press])
+  const endPress = press.cancel
   const activate = useCallback((sinnerId: string, view: boolean) => {
     if (!view) return latest.current.onOpenIdentityModal(sinnerId)
-    if (press.current.fired) { press.current.fired = false; return }
+    if (press.consume()) return
     latest.current.onFormationToggle(sinnerId)
-  }, [])
+  }, [press])
   const hasOrder = sinners.some(sinner => slots[sinner.id]?.identity && getFormationOverlay(slots[sinner.id]?.slotOrder ?? null))
 
   const tile = (sinner: PlannerDeckSinner, mode: 'view' | 'edit') => {
@@ -181,14 +180,15 @@ export function PlannerIdentityBoard({
       <style jsx global>{`
         /* One card width drives the grid and the tools row above it, so both share the same edges. */
         .fboard { --bar: 3rem; --gap: 0.5rem; --fboard-w: 100%; position: relative; width: 100%; min-width: 0; padding-block: calc(var(--bar) + var(--gap)); }
-        .fboard__stage { position: relative; overflow: hidden; }
+        /* clip, not hidden: the clip margin leaves room for the game's hover frame and focus growth of edge cards. */
+        .fboard__stage { position: relative; overflow: clip; overflow-clip-margin: 0.75rem; }
         .fboard__grid {
           display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.625rem 0.375rem;
           width: 100%; max-width: var(--fboard-w); margin: 0 auto; padding: 0.75rem 0; list-style: none;
         }
         .fboard__grid > li { min-width: 0; }
         .fboard__sheet {
-          position: absolute; inset: 0; z-index: 10; overflow: hidden;
+          position: absolute; inset: 0; z-index: 10; overflow: clip; overflow-clip-margin: 0.75rem;
           background: #17120c; box-shadow: inset 0 1px #2e2417, inset 0 -1px #2e2417;
           transform: translateY(100%); visibility: hidden;
           transition: transform 280ms cubic-bezier(0.22, 1, 0.36, 1), visibility 0s linear 280ms;
@@ -362,7 +362,7 @@ export function PlannerIdentitySelectModal({
   const compactNameStyle = getCompactNameStyle(locale)
   const [query, setQuery] = useState(''), [grade, setGrade] = useState('')
   const [picker, setPicker] = useState<string | null>(null)
-  const press = useRef<{ timer?: ReturnType<typeof setTimeout>; fired: boolean }>({ fired: false })
+  const [press] = useState(() => createLongPress<string>(setPicker, 450))
   useEffect(() => { setQuery(''); setGrade(''); setPicker(null) }, [open, sinner?.id])
   const needle = query.trim().toLocaleLowerCase()
   const filtered = identities
@@ -429,17 +429,15 @@ export function PlannerIdentitySelectModal({
                             aria-pressed={selected}
                             aria-label={name + ' ' + t('uptie', { level: ROMAN[3] })}
                             onClick={() => {
-                              if (press.current.fired) { press.current.fired = false; return }
+                              if (press.consume()) return
                               onSelect(identity, 4)
                             }}
                             onPointerDown={event => {
-                              if (event.pointerType === 'mouse') return
-                              press.current.fired = false
-                              press.current.timer = setTimeout(() => { press.current.fired = true; setPicker(identity.id) }, 450)
+                              if (event.pointerType !== 'mouse') press.start(identity.id)
                             }}
-                            onPointerUp={() => clearTimeout(press.current.timer)}
-                            onPointerLeave={() => clearTimeout(press.current.timer)}
-                            onPointerCancel={() => clearTimeout(press.current.timer)}
+                            onPointerUp={press.cancel}
+                            onPointerLeave={press.cancel}
+                            onPointerCancel={press.cancel}
                             onContextMenu={event => event.preventDefault()}
                           >
                             <IdentityFrameCard identity={identity} uptie={shownUptie} name={name} selected={selected} sizes="(max-width: 40rem) 30vw, 10rem" />

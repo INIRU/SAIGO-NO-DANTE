@@ -1,6 +1,9 @@
 import { Suspense } from 'react'
 import Image from 'next/image'
 import { getTranslations } from 'next-intl/server'
+import { cacheLife } from 'next/cache'
+import { getPageVisits } from '@/lib/cloudflare/page-visits'
+import { STORY_MAP_PAGE_BASE } from '@/lib/story-map'
 import { ArrowUpRight, ExternalLink, Globe, XIcon } from 'lucide-react'
 import { Link } from '@/lib/i18n/navigation'
 import { getGameUiAsset } from '@/lib/utils/game-ui'
@@ -99,17 +102,31 @@ const TOOLS = [
   { href: '/planner/community', key: 'planner', art: ['start-buffs/starlight'] },
   { href: '/planner/run', key: 'assist', art: [], portrait: true },
   { href: '/decks', key: 'deckBuilder', art: [] },
+  { href: '/random', key: 'random', art: ['shards/yi-sang', 'shards/ishmael', 'shards/heathcliff'] },
+  { href: '/motion/skills', key: 'motion', art: ['coins/normal'] },
+  { href: '/story', key: 'story', art: [], image: STORY_MAP_PAGE_BASE + '/ui/train.webp', wide: true },
   { href: '/tools/experience', key: 'experience', art: ['resources/ticket-4'], wide: true },
   { href: '/tools/lunacy', key: 'lunacy', art: ['resources/lunacy-5'] },
-  { href: '/random', key: 'random', art: ['shards/yi-sang', 'shards/ishmael', 'shards/heathcliff'] },
 ] as const
 
-function Tools({ t, identities, lang }: { t: TFn; identities: IdentityWithSinner[]; lang: SupportedLang }) {
+const HOME_TOOL_COUNT = 6
+
+/** Page loads of each tool over the last week (Cloudflare Web Analytics), read at most once an hour. Null without the token. */
+async function getToolVisits() {
+  'use cache'
+  cacheLife('hours')
+  return getPageVisits(Object.fromEntries(TOOLS.map(tool => [tool.key, tool.href])) as Record<(typeof TOOLS)[number]['key'], string>, 'saigo-no-dante.com')
+}
+
+async function Tools({ t, identities }: { t: TFn; identities: IdentityWithSinner[]; lang: SupportedLang }) {
+  // The six most visited, most visited first; without visit counts the first six above (sort is stable).
+  const visits = await getToolVisits()
+  const tools = (visits ? [...TOOLS].sort((a, b) => visits[b.key] - visits[a.key]) : TOOLS).slice(0, HOME_TOOL_COUNT)
   return (
     <section className={styles.section} data-home-reveal aria-labelledby="home-tools-heading">
       <Heading id="home-tools-heading" title={t('home.tools.title')} />
       <div className={styles.tools}>
-        {TOOLS.map(tool => (
+        {tools.map(tool => (
           <Link key={tool.key} href={tool.href} className={styles.tool}>
             <span className={styles.toolName}>{t(`home.tools.${tool.key}`)}</span>
             {tool.key === 'deckBuilder' ? (
@@ -119,6 +136,8 @@ function Tools({ t, identities, lang }: { t: TFn; identities: IdentityWithSinner
             ) : 'portrait' in tool ? (
               // Faust, the clever one, for the recognition helper.
               <FaustPortrait className={`${styles.toolArt} ${styles.portrait}`} />
+            ) : 'image' in tool ? (
+              <Image src={tool.image} alt="" width={256} height={256} className={styles.toolArt + ' ' + styles.wideArt} unoptimized />
             ) : tool.art.length > 1 ? (
               <span className={`${styles.toolArt} ${styles.fan} ${styles.shardFan}`} aria-hidden>
                 {tool.art.map(art => <Image key={art} src={getGameUiAsset(art)} alt="" width={256} height={256} className={styles.fanCard} unoptimized />)}

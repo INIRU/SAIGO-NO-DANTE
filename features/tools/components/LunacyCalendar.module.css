@@ -250,7 +250,7 @@
 }
 .modalBody {
   padding: 1.5rem;
-  overflow-y: auto;
+  overflow-y: auto; scrollbar-gutter: stable;
 }
 .dayTotal {
   display: flex;

@@ -90,6 +90,7 @@ export interface GiftDetailRecipePart {
 
 export interface GiftLinkTarget extends GiftRefTarget {
   image_url?: string | null
+  keyword?: string | null
   /** Game id, so a {{gift:<id>}} placeholder in the effect text shows this gift. */
   gameId?: number | null
   onClick: () => void
@@ -220,11 +221,13 @@ const Sign = ({ children }: { children: ReactNode }) => (
 )
 
 /** Gift detail layout shared by the Mirror Dungeon catalog and the planner. */
-export default function GiftDetailModal({ gift, lang, onClose, initialLevel = 0, onBack, backLabel, zIndex }: {
+export default function GiftDetailModal({ gift, lang, onClose, initialLevel = 0, onLevelChange, onBack, backLabel, zIndex }: {
   gift: GiftDetailData
   lang: SupportedLang
   onClose: () => void
   initialLevel?: number
+  /** When the gift is one the plan holds: the level picked here is written back to the plan. */
+  onLevelChange?: (level: number) => void
   /** Shown while viewing a recipe ingredient opened from another gift. */
   onBack?: () => void
   backLabel?: string
@@ -313,7 +316,7 @@ export default function GiftDetailModal({ gift, lang, onClose, initialLevel = 0,
           {effect && (
             <Section
               title={t('effect')}
-              aside={maxLevel > 0 && <div className="-my-2 -mr-1 shrink-0"><GiftEnhancePicker level={level} max={maxLevel as 1 | 2} giftName={gift.name} onChange={setLevel} bare /></div>}
+              aside={maxLevel > 0 && <div className="-my-2 -mr-1 shrink-0"><GiftEnhancePicker level={level} max={maxLevel as 1 | 2} giftName={gift.name} onChange={next => { setLevel(next); onLevelChange?.(next) }} bare /></div>}
             >
               <div style={{ fontFamily: 'var(--font-game-text)' }}>
                 <EffectText key={level} text={effect} color="#c8b898" links={gift.giftLinks}

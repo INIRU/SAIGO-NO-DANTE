@@ -1,6 +1,7 @@
 'use client'
 
 import { getFormationBannerUrl } from '@/lib/utils/images'
+import { getGameUiAsset } from '@/lib/utils/game-ui'
 
 import { useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
@@ -64,6 +65,7 @@ const EGO_RANK_BANNER_SRC_BY_GRADE: Record<string, string> = {
   ALEPH: `${EGO_UI_BASE}/rank-banners/aleph.webp`,
 }
 const EGO_SELECTED_BANNER_SRC = getFormationBannerUrl('selected')
+const EGO_HOVER_URL = getGameUiAsset('formation/ego-hover')
 const ROMAN_STAGES = ['', 'I', 'II', 'III', 'IV', 'V']
 const EGO_BADGE_RING_SRC = `${EGO_UI_BASE}/common-frame/sinner-badge.webp`
 
@@ -332,6 +334,17 @@ function EgoDisplayCardBody({ ego, name, selected, sinnerId, lang, preload }: Re
           fill
           className="pointer-events-none select-none object-contain"
           sizes="8.35rem"
+        />
+        {/* FormationSwitchableEgoUIScrollViewItem ClickedFrame / SelectedFrame (MainUI_Formation_9_4): its ring is 1.66% wider
+            than the frame's, centred on it. Hover tints it with the item's hover colour (0.784 grey); selected shows it full. */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={EGO_HOVER_URL}
+          alt=""
+          aria-hidden="true"
+          draggable={false}
+          className={`pointer-events-none absolute max-w-none select-none transition-opacity duration-100 ease-linear motion-reduce:transition-none ${selected ? 'opacity-100' : 'opacity-0 brightness-[0.784] group-hover:opacity-100 group-focus-visible:opacity-100'}`}
+          style={{ left: '-0.47%', top: '-0.47%', width: '100.74%', height: '100.74%' }}
         />
       </div>
 

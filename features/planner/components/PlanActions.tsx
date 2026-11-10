@@ -34,6 +34,7 @@ type FloorEntry = {
   floor: number
   difficulty?: FloorDifficulty
   theme_id: string | null
+  theme_alt_ids?: string[]
   gift_ids: string[]
   memo: string
 }
@@ -158,6 +159,7 @@ export default function PlanActions({
         floor: i + 1,
         difficulty: isFloorDifficulty(e?.difficulty) && isAllowedFloorDifficulty(e.difficulty, i + 1) ? e.difficulty : getLegacyPlanFloorDifficulty(difficulty, i + 1),
         theme_id: e?.theme_id ?? null,
+        theme_alt_ids: e?.theme_alt_ids ?? [],
         gift_ids: e?.gift_ids ?? [],
         memo: e?.memo ?? '',
       })),

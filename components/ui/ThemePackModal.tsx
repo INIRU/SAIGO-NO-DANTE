@@ -47,7 +47,7 @@ export function ThemePackModalShell({
           boxShadow: '0 1.5rem 4rem rgba(0,0,0,0.6)',
         }}
       >
-        <div style={{ maxHeight: '88dvh', overflowY: 'auto', overscrollBehavior: 'contain' }}>
+        <div style={{ maxHeight: '88dvh', overflowY: 'auto', scrollbarGutter: 'stable', overscrollBehavior: 'contain' }}>
           <button
             type="button"
             onClick={onClose}
@@ -237,8 +237,15 @@ interface ThemePackPickerModalProps<TTheme extends ThemePackPickerTheme> {
   countLabel: (count: number) => string
   themes: TTheme[]
   selectedThemeId?: string | number | null
+  /** Packs already chosen, first choice first: each shows as selected with its place in the order. */
+  order?: (string | number)[]
   onClose: () => void
   onSelectTheme: (theme: TTheme) => void
+  /** Multi-pick (the window stays open): a line saying how picking works, a button that clears every pick and one that closes. */
+  hint?: string
+  onClearAll?: () => void
+  clearAllLabel?: string
+  doneLabel?: string
   lang?: SupportedLang
   meta?: ReactNode
   /** Text the search matches; defaults to the pack's names. */
@@ -259,8 +266,13 @@ export function ThemePackPickerModal<TTheme extends ThemePackPickerTheme>({
   countLabel,
   themes,
   selectedThemeId,
+  order,
   onClose,
   onSelectTheme,
+  hint,
+  onClearAll,
+  clearAllLabel,
+  doneLabel,
   lang,
   meta,
   searchText = theme => [theme.name, theme.name_en, theme.name_jp].join(' '),
@@ -275,14 +287,25 @@ export function ThemePackPickerModal<TTheme extends ThemePackPickerTheme>({
   const holdPicks = suggestionsLoading && !needle
   const picked = new Set(picks.map(row => String(row.theme.id)))
   const rest = picks.length ? shown.filter(theme => !picked.has(String(theme.id))) : shown
-  const card = (theme: TTheme) => (
-    <ThemePackCard
-      theme={theme}
-      onClick={() => onSelectTheme(theme)}
-      isSelected={selectedThemeId != null && String(selectedThemeId) === String(theme.id)}
-      imageSurface="bare"
-      lang={lang}
-    />
+  const rank = (theme: TTheme) => (order ?? []).findIndex(id => String(id) === String(theme.id)) + 1
+  const card = (theme: TTheme, count?: number) => (
+    <>
+      <ThemePackCard
+        theme={theme}
+        onClick={() => onSelectTheme(theme)}
+        isSelected={rank(theme) > 0 || (selectedThemeId != null && String(selectedThemeId) === String(theme.id))}
+        lang={lang}
+      />
+      {/* Marks over the card: one layer the size of the art that grows with it on hover (the card scales its art 1.03), so they stay on its corners. */}
+      <span className="pointer-events-none absolute inset-0.5 z-30 transition-transform duration-300 motion-safe:group-hover/tile:scale-[1.03]">
+        {rank(theme) > 0 && (
+          <span data-theme-order={rank(theme)} className="absolute left-1 top-1 rounded bg-[var(--gold)] px-1.5 pt-0.5 font-[family-name:var(--font-title)] text-[1.25rem] leading-none text-[var(--bg-deep)]">{rank(theme)}</span>
+        )}
+        {count != null && (
+          <span className="absolute right-1 top-1 rounded bg-[rgba(13,11,8,0.82)] px-1.5 pt-0.5 font-[family-name:var(--font-title)] text-[1.25rem] leading-none text-[var(--gold-light)]">{count}</span>
+        )}
+      </span>
+    </>
   )
 
   return (
@@ -306,6 +329,19 @@ export function ThemePackPickerModal<TTheme extends ThemePackPickerTheme>({
             <span className="shrink-0 text-sm tabular-nums text-[#9c8b73]">{countLabel(shown.length)}</span>
           </div>
         )}
+        {onClearAll && (
+          <div className="flex shrink-0 flex-wrap items-center justify-end gap-x-3 gap-y-2 px-5 pt-3 max-sm:px-3">
+            {hint && <p className="min-w-[12rem] flex-1 text-sm text-[#9c8b73]">{hint}</p>}
+            <button type="button" onClick={onClearAll} disabled={!order?.length}
+              className="min-h-10 rounded-md border border-[#2e2417] px-3 text-[0.9375rem] text-[#c9b89f] transition-colors hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold)] disabled:cursor-not-allowed disabled:opacity-45">
+              {clearAllLabel}
+            </button>
+            <button type="button" onClick={onClose}
+              className="min-h-10 rounded-md border border-[rgba(200,144,10,0.4)] bg-[rgba(200,144,10,0.12)] px-4 text-[0.9375rem] font-semibold text-[var(--gold-light)] transition-colors hover:bg-[rgba(200,144,10,0.2)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold)]">
+              {doneLabel}
+            </button>
+          </div>
+        )}
         <div className={filterStyles.pickerResults}>
           {themes.length === 0 ? (
             <div className="p-5"><ThemePackModalEmpty>{emptyLabel}</ThemePackModalEmpty></div>
@@ -326,16 +362,13 @@ export function ThemePackPickerModal<TTheme extends ThemePackPickerTheme>({
                   <div className="px-5 pt-5 max-sm:px-3 max-sm:pt-4"><SuggestionRibbon /></div>
                   <ul className={filterStyles.pickerGrid} style={{ paddingTop: '0.75rem' }}>
                     {picks.map(({ theme, count }) => (
-                      <li key={String(theme.id)} className="relative">
-                        {card(theme)}
-                        <span className="pointer-events-none absolute right-1.5 top-1.5 z-30 rounded bg-[rgba(13,11,8,0.82)] px-1.5 pt-0.5 font-[family-name:var(--font-title)] text-[1.25rem] leading-none text-[var(--gold-light)]">{count}</span>
-                      </li>
+                      <li key={String(theme.id)} className="group/tile relative">{card(theme, count)}</li>
                     ))}
                   </ul>
                 </>
               )}
               <ul className={filterStyles.pickerGrid} style={picks.length || holdPicks ? { borderTop: '1px solid #2e2417' } : undefined}>
-                {rest.map(theme => <li key={String(theme.id)}>{card(theme)}</li>)}
+                {rest.map(theme => <li key={String(theme.id)} className="group/tile relative">{card(theme)}</li>)}
               </ul>
             </>
           )}
