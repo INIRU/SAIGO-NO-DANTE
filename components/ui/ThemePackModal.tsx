@@ -297,7 +297,7 @@ export function ThemePackPickerModal<TTheme extends ThemePackPickerTheme>({
         lang={lang}
       />
       {rank(theme) > 0 && (
-        <span data-theme-order={rank(theme)} className="pointer-events-none absolute left-1.5 top-1.5 z-30 rounded bg-[var(--gold)] px-1.5 pt-0.5 font-[family-name:var(--font-title)] text-[1.25rem] leading-none text-[#0d0b08]">{rank(theme)}</span>
+        <span data-theme-order={rank(theme)} className="pointer-events-none absolute left-1.5 top-1.5 z-30 rounded bg-[var(--gold)] px-1.5 pt-0.5 font-[family-name:var(--font-title)] text-[1.25rem] leading-none text-[var(--bg-deep)]">{rank(theme)}</span>
       )}
     </>
   )

@@ -2,7 +2,6 @@
 
 import Image from 'next/image'
 import { useState } from 'react'
-import { Lock } from 'lucide-react'
 import { getIdentityPortraitUrl } from '@/lib/utils/images'
 import { formationThumbnail, type ThumbnailSlot } from '@/features/decks/lib/formation-thumbnail'
 
@@ -26,23 +25,9 @@ export function Portrait({ slot, dim, locked, ratio = '3 / 4', sizes = '(max-wid
           sizes={sizes}
           quality={60}
           className="transition-[filter,opacity] duration-200 group-hover:opacity-100 group-hover:grayscale-0"
-          style={{ objectFit: 'cover', objectPosition: 'center top', opacity: dim ? 0.38 : 1, filter: dim ? 'grayscale(0.7)' : locked ? 'brightness(0.55)' : undefined }}
+          style={{ objectFit: 'cover', objectPosition: 'center top', opacity: dim ? 0.38 : 1, filter: dim ? 'grayscale(0.7)' : undefined }}
           onError={() => (gacksung ? setAwakenFailed(true) : setFailed(true))}
         />
-      )}
-      {locked && (
-        <span aria-hidden="true" className="absolute right-0.5 top-0.5 z-[1] grid h-4 w-4 place-items-center rounded-[0.1875rem]"
-          style={{ background: 'rgba(13,11,8,0.85)', color: '#c9b89f', boxShadow: 'inset 0 0 0 1px #4a3a24' }}>
-          <Lock size={10} strokeWidth={2.5} />
-        </span>
-      )}
-      {slot.order !== null && (
-        <span
-          className="absolute bottom-0 left-0 z-[1] grid place-items-center"
-          style={{ minWidth: '1.125rem', height: '1.125rem', padding: '0 0.2rem', background: 'rgba(13,11,8,0.85)', color: 'var(--gold-light)', fontFamily: 'var(--font-title)', fontSize: '0.8125rem', lineHeight: 1, borderTopRightRadius: '0.25rem' }}
-        >
-          {slot.order + 1}
-        </span>
       )}
     </div>
   )

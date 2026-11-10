@@ -140,9 +140,8 @@ describe('REQ-COMMUNITY-084 recommendation lanes', () => {
   it('REQ-COMMUNITY-084 draws the lane as a heading, a count and post cards on the lane\'s own grid', () => {
     const html = renderToStaticMarkup(<RecommendationLaneSkeleton kind="planner" />)
     expect(html).toContain('data-recommendation-skeleton')
-    expect(html).toContain('grid-cols-1')
-    expect(html).toContain('md:grid-cols-2')
-    expect(html).toContain('xl:grid-cols-3')
+    expect(html).toContain('flex-wrap')
+    expect(html).toContain('flex-[1_1_15rem]')
     expect(count(html, 'data-card-skeleton="planner"')).toBe(3)
     expect(html).toContain('role="status"')
   })

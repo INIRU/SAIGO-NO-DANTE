@@ -19,7 +19,7 @@ export function FormationMosaic({ kind, post }: { kind: DiscoveryKind; post: Row
     return all.slice(0, 6).map(slot => ({ slot, dim: formed && slot.order === null }))
   }, [kind, post])
   return (
-    <span aria-hidden="true" className="grid w-[6.5rem] shrink-0 grid-cols-3 gap-[2px] overflow-hidden rounded-md bg-[var(--bg-deep)] md:w-[8.25rem]">
+    <span aria-hidden="true" className="grid w-[clamp(5rem,30%,8.25rem)] shrink-0 grid-cols-3 gap-[2px] overflow-hidden rounded-md bg-[var(--bg-deep)]">
       {tiles.map(({ slot, dim }) => <Portrait key={slot.sinnerId} slot={{ ...slot, order: null }} dim={dim} locked={false} ratio="1 / 1" sizes="9rem" />)}
     </span>
   )
@@ -48,7 +48,7 @@ export default function FormationRow({ kind, post, lead, tags = true }: {
       <span className="min-w-0 flex-1">
         <span className="line-clamp-2 font-[family-name:var(--font-heading)] text-[0.9375rem] leading-snug text-[var(--text-primary)]">{post.title}</span>
         {tags && <PostChips kind={kind} post={post} max={3} nowrap className="mt-1.5" />}
-        <span className="mt-1 flex min-w-0 items-center gap-2.5">
+        <span className="mt-1 flex min-w-0 flex-wrap items-center gap-x-2.5 gap-y-0.5">
           <AuthorLine kind={kind} post={post} locale={locale} anonymous={anonymous} />
           <PostCounts post={post} className="ml-auto" />
         </span>

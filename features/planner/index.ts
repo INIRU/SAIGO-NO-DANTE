@@ -14,3 +14,4 @@ export { trimPlanDetailCatalog, slimPlanThemes } from './lib/plan-detail-catalog
 export { planFormationCount } from './lib/plan-formation-count'
 export { normalizeRunState } from './lib/run-normalize'
 export type { RunState } from './lib/run-types'
+export { deriveFinalGifts, finalEnhanceAction } from './lib/final-gifts'
