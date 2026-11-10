@@ -60,7 +60,7 @@ export function Rail({ children, columns = 3 }: { children: ReactNode[]; columns
 export function IdentityCards({ items, kind }: { items: { identity: Identity; trailing: ReactNode }[]; kind: DiscoveryKind }) {
   const lang = useLocale() as SupportedLang
   return (
-    <ul className="-mx-4 flex snap-x scroll-px-4 gap-3 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:mx-0 md:gap-4 md:overflow-visible md:px-0">
+    <ul className="-mx-4 -mt-3 flex snap-x scroll-px-4 gap-3 overflow-x-auto px-4 pb-1 pt-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:mx-0 md:gap-4 md:overflow-visible md:px-0">
       {items.map(({ identity, trailing }) => (
         <li key={identity.id} className="w-24 shrink-0 snap-start md:w-auto md:max-w-[9.5rem] md:min-w-0 md:flex-1">
           <Link href={`${baseOf(kind)}?browse=all&ids=${identity.id}`} className="group block active:scale-[0.97] motion-reduce:active:scale-100" style={{ transition: 'transform 150ms cubic-bezier(0.23,1,0.32,1)' }}>
