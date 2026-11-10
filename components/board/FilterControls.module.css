@@ -52,7 +52,7 @@
 .pickerHead{display:flex;flex-shrink:0;align-items:center;gap:.75rem;padding:.5rem .75rem .5rem 1.25rem;border-bottom:1px solid #2e2417}.pickerHead img{width:1.5rem;height:1.5rem;opacity:.75}
 .pickerHead p{flex:1;min-width:0;margin:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text-primary);font:1.0625rem/1.4 var(--font-heading)}.pickerHead p b{margin-left:.5rem;color:var(--gold-light);font:1.125rem/1 var(--font-title);font-weight:400}
 .pickerHead button{display:grid;flex-shrink:0;place-items:center;width:2.75rem;height:2.75rem;color:#9c8b73;cursor:pointer}.pickerHead button:hover{color:var(--text-primary)}
-.pickerResults{min-height:0;overflow-y:auto;overscroll-behavior:contain}
+.pickerResults{min-height:0;overflow-y: auto; scrollbar-gutter: stable;overscroll-behavior:contain}
 .pickerGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(8.5rem,1fr));gap:1.25rem 1rem;margin:0;padding:1.25rem;list-style:none}.pickerGrid li{min-width:0}
 .pickerGrid button{display:block;width:100%;padding:0;cursor:pointer;transition:filter .15s ease,transform .18s cubic-bezier(.22,1,.36,1)}@media(hover:hover){.pickerGrid button:hover{filter:brightness(1.1);transform:translateY(-.15rem)}}.pickerGrid button:focus-visible{outline:2px solid var(--gold-light);outline-offset:3px}
 .pickerEmpty{padding:2rem 1rem;text-align:center;color:#9c8b73;font-size:.9375rem}

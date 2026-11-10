@@ -234,7 +234,7 @@ function KwTooltipPopup({ id, depth, rect, iconUrl, keyword, info, refId, onMous
           position: 'relative',
           padding: '0.875rem 1rem 1rem',
           maxHeight: place?.maxHeight,
-          overflowY: 'auto',
+          overflowY: 'auto', scrollbarGutter: 'stable',
           overscrollBehavior: 'contain',
         }}
       >

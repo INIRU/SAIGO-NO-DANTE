@@ -26,7 +26,7 @@
 .guide button:focus-visible { outline: 2px solid var(--gold-light); outline-offset: 0.15rem; }
 @media (max-width: 51.25rem) {
   .guide { max-height: 100dvh; }
-  .body { grid-template-columns: 1fr; overflow-y: auto; }
+  .body { grid-template-columns: 1fr; overflow-y: auto; scrollbar-gutter: stable; }
   /* Only the current step's line on a phone: the picture needs the room. */
   .steps li:not(:has([aria-current='step'])) { display: none; }
 }

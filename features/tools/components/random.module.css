@@ -227,7 +227,7 @@
 
 @media (min-width: 64rem) {
   .layout { grid-template-columns: 16rem minmax(0, 1fr); align-items: start; gap: 1.5rem; }
-  .layout .panel { position: sticky; max-height: calc(100dvh - var(--nav-offset) - 1.5rem); overflow-y: auto; }
+  .layout .panel { position: sticky; max-height: calc(100dvh - var(--nav-offset) - 1.5rem); overflow-y: auto; scrollbar-gutter: stable; }
   .keywords { grid-template-columns: 1fr 1fr; }
   .actions { display: grid; gap: 0.5rem; padding-top: 1rem; border-top: 1px solid #2e2417; }
   .mobileBar { display: none; }

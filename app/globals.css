@@ -154,14 +154,20 @@ body {
   -webkit-font-smoothing: antialiased; /* 텍스트 서브픽셀 품질 향상 */
 }
 
-::-webkit-scrollbar { width: 5px; height: 4px; }
-::-webkit-scrollbar-track { background: var(--bg-deep); }
-::-webkit-scrollbar-thumb { background: var(--gold-dim); border-radius: 2px; }
-::-webkit-scrollbar-thumb:hover { background: var(--gold); }
+/* One scrollbar for the whole site, the same across and down. The bar is a 10px strip to aim at; the thumb in it is a
+   slim rounded line (the transparent border hides the rest) that fills out when the pointer is on it, so it is easy to grab. */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track, ::-webkit-scrollbar-corner { background: transparent; }
+::-webkit-scrollbar-thumb { min-width: 2.5rem; min-height: 2.5rem; border: 3px solid transparent; border-radius: 999px; background: color-mix(in srgb, var(--gold-dim) 65%, transparent) padding-box; }
+::-webkit-scrollbar-thumb:hover, ::-webkit-scrollbar-thumb:active { border-width: 1px; background: var(--gold) padding-box; }
+::-webkit-scrollbar-thumb:active { background: var(--gold-light) padding-box; }
+/* A list that scrolls down keeps the bar's place from the start: content does not jump sideways when the bar appears.
+   (The page itself does the same on html, below. Touch screens draw the bar over the content, so nothing is reserved there.) */
+.overflow-y-auto, .overflow-y-scroll { scrollbar-gutter: stable; }
 /* The site's scrollbar is the rule above. In Chrome and Safari any scrollbar-width or scrollbar-color on an element turns it
    off for the system bar, so components do not set them (only `none` to hide one). Firefox, which has no ::-webkit-scrollbar,
    takes the same colours from the standard properties. */
-@supports not selector(::-webkit-scrollbar) { * { scrollbar-width: thin; scrollbar-color: var(--gold-dim) var(--bg-deep); } }
+@supports not selector(::-webkit-scrollbar) { * { scrollbar-width: thin; scrollbar-color: var(--gold-dim) transparent; } }
 ::selection { background: rgba(200,144,10,0.3); color: var(--gold-light); }
 
 /* ── content-visibility 유틸리티 (오프스크린 렌더링 지연) ── */
@@ -356,7 +362,7 @@ html.board-browse body :is(footer, [data-floating-font-control]) { display: none
 .note-character-picker .note-picker-header{padding:.75rem 1rem;margin:0;border-bottom:1px solid var(--border);flex-shrink:0}
 .note-character-picker .note-picker-header h2{font-family:var(--font-heading);font-size:1.25rem}
 .character-picker-layout{display:grid;overflow:hidden;grid-template-columns:11rem minmax(0,1fr);min-height:0;flex:1}
-.character-picker-layout>.character-picker-filters{padding:.75rem;border-right:1px solid var(--border);border-bottom:0;overflow-y:auto}
+.character-picker-layout>.character-picker-filters{padding:.75rem;border-right:1px solid var(--border);border-bottom:0;overflow-y: auto; scrollbar-gutter: stable}
 .note-character-picker .note-picker-results{padding:1rem;min-height:0}
 .note-character-picker section+section{margin-top:1.5rem}
 .note-character-picker section h3{display:flex;align-items:center;gap:.5rem;margin-bottom:.75rem;font-family:var(--font-heading);font-size:1rem;color:var(--text-primary)}
@@ -425,8 +431,6 @@ html body[data-scroll-locked] { overflow-y: scroll !important; margin-right: 0 !
 
 /* ── Page-scoped additions: other pages keep the site defaults above. ── */
 /* Assist run page and its PiP window only. */
-html:is([data-with-assist-run], [data-assist-pip])::-webkit-scrollbar, html:is([data-with-assist-run], [data-assist-pip]) ::-webkit-scrollbar { width: 8px; height: 8px; }
-html:is([data-with-assist-run], [data-assist-pip])::-webkit-scrollbar-thumb, html:is([data-with-assist-run], [data-assist-pip]) ::-webkit-scrollbar-thumb { border: 2px solid var(--bg-deep); border-radius: 8px; }
 /* Preserve a visible keyboard cue even on borderless search fields. */
 :is([data-assist-run], html[data-assist-pip]) input:not([type="checkbox"], [type="radio"], [type="range"], [type="file"]):hover,
 :is([data-assist-run], html[data-assist-pip]) textarea:hover {
@@ -619,7 +623,7 @@ a.note-mention:is(:hover,:focus-visible),.note-block-document a[href].note-menti
 @media (hover:hover){.note-accordion-all:hover{color:var(--gold-light)}}
 /* Preview card of a mention or a gift name: hover/focus card on a pointer, modal on touch. */
 .note-preview-host{display:inline}
-.note-preview-popover{position:fixed;z-index:10050;width:min(21rem,calc(100vw - 1rem));padding:.75rem;background:var(--bg-card);border:1px solid var(--border);border-radius:.5rem;box-shadow:0 .75rem 2rem #000a;color:var(--text-primary);overflow-y:auto;overscroll-behavior:contain}
+.note-preview-popover{position:fixed;z-index:10050;width:min(21rem,calc(100vw - 1rem));padding:.75rem;background:var(--bg-card);border:1px solid var(--border);border-radius:.5rem;box-shadow:0 .75rem 2rem #000a;color:var(--text-primary);overflow-y: auto; scrollbar-gutter: stable;overscroll-behavior:contain}
 .note-preview-popover[data-above]{translate:0 -100%}
 .note-preview-card{display:flex;gap:.875rem;align-items:flex-start;font-size:.875rem;line-height:1.5}
 .note-preview-art{flex:0 0 5.5rem;width:5.5rem}

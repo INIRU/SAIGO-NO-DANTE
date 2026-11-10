@@ -268,7 +268,7 @@ export function NoteAutocompleteDropdown({
       zIndex: 120,
       overflow: 'hidden',
     }}>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.0625rem', maxHeight: `${DROPDOWN_MAX_HEIGHT_REM}rem`, overflowY: 'auto', overscrollBehavior: 'contain' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.0625rem', maxHeight: `${DROPDOWN_MAX_HEIGHT_REM}rem`, overflowY: 'auto', scrollbarGutter: 'stable', overscrollBehavior: 'contain' }}>
         {suggestions.map((sugg, i) => {
           const isSelected = i === Math.max(selectedIdx, 0)
           const Icon = sugg.type === 'keyword' ? KeywordIcon : Image

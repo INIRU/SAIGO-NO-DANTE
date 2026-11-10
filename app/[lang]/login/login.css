@@ -18,7 +18,7 @@ html[data-with-login-page], html[data-with-login-page] body { overflow: hidden; 
 .login-back { position: absolute; top: max(1rem, env(safe-area-inset-top)); left: clamp(1rem, 3vw, 2rem); display: inline-flex; align-items: center; gap: .45rem; min-height: 2.5rem; padding: 0 .9rem 0 .7rem; border: 1px solid var(--border); border-radius: 999px; background: #14100b; color: var(--text-primary); font-size: .85rem; font-weight: 600; box-shadow: 0 .25rem 1rem rgba(0,0,0,.5); transition: border-color 150ms; }
 .login-back:hover { border-color: var(--gold); color: var(--gold-light); }
 
-.login-main { display: flex; flex-direction: column; align-items: center; width: min(100%, 27rem); max-height: 100%; padding: clamp(1.5rem, 4dvh, 2.5rem) clamp(1.25rem, 4vw, 2.25rem); border: 1px solid #2e2417; border-radius: 1rem; background: #14100b; box-shadow: 0 1.5rem 4rem rgba(0,0,0,.55); overflow-y: auto; animation: login-in 450ms cubic-bezier(.2,.7,.2,1) both; }
+.login-main { display: flex; flex-direction: column; align-items: center; width: min(100%, 27rem); max-height: 100%; padding: clamp(1.5rem, 4dvh, 2.5rem) clamp(1.25rem, 4vw, 2.25rem); border: 1px solid #2e2417; border-radius: 1rem; background: #14100b; box-shadow: 0 1.5rem 4rem rgba(0,0,0,.55); overflow-y: auto; scrollbar-gutter: stable; animation: login-in 450ms cubic-bezier(.2,.7,.2,1) both; }
 .login-title { display: flex; flex-direction: column; align-items: center; gap: .6rem; text-align: center; }
 .login-wordmark { font-size: clamp(2.6rem, 9vw, 3.6rem); }
 .login-wordmark > span { justify-content: center; }

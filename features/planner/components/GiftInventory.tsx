@@ -110,7 +110,7 @@ export default function GiftInventory({ inventory, gifts, giftMap, onAdd, onRemo
             borderRadius: '0.375rem',
             zIndex: 50,
             maxHeight: '14rem',
-            overflowY: 'auto',
+            overflowY: 'auto', scrollbarGutter: 'stable',
           }}>
             {suggestions.map(gift => (
               <button
