@@ -181,14 +181,15 @@ export function PlannerIdentityBoard({
       <style jsx global>{`
         /* One card width drives the grid and the tools row above it, so both share the same edges. */
         .fboard { --bar: 3rem; --gap: 0.5rem; --fboard-w: 100%; position: relative; width: 100%; min-width: 0; padding-block: calc(var(--bar) + var(--gap)); }
-        .fboard__stage { position: relative; overflow: hidden; }
+        /* clip, not hidden: the clip margin leaves room for the game's hover frame and focus growth of edge cards. */
+        .fboard__stage { position: relative; overflow: clip; overflow-clip-margin: 0.75rem; }
         .fboard__grid {
           display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.625rem 0.375rem;
           width: 100%; max-width: var(--fboard-w); margin: 0 auto; padding: 0.75rem 0; list-style: none;
         }
         .fboard__grid > li { min-width: 0; }
         .fboard__sheet {
-          position: absolute; inset: 0; z-index: 10; overflow: hidden;
+          position: absolute; inset: 0; z-index: 10; overflow: clip; overflow-clip-margin: 0.75rem;
           background: #17120c; box-shadow: inset 0 1px #2e2417, inset 0 -1px #2e2417;
           transform: translateY(100%); visibility: hidden;
           transition: transform 280ms cubic-bezier(0.22, 1, 0.36, 1), visibility 0s linear 280ms;
