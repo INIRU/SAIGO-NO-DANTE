@@ -168,7 +168,9 @@
       "discard": "버리기",
       "restored": "임시 저장한 글을 불러왔어요",
       "restoreFailed": "임시 저장한 글을 불러오지 못했어요"
-    }
+    },
+    "updateAvailable": "새 버전이 나왔어요",
+    "updateReload": "새로고침"
   },
   "globalSearch": {
     "ariaLabel": "전역 검색",

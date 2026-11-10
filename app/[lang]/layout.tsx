@@ -7,6 +7,7 @@ import { NuqsAdapter } from 'nuqs/adapters/next/app'
 import SessionProvider from '@/components/providers/SessionProvider'
 import SWRProvider from '@/components/providers/SWRProvider'
 import ServiceWorkerRegister from '@/components/pwa/ServiceWorkerRegister'
+import UpdateNotice from '@/components/pwa/UpdateNotice'
 import JsonLd, { websiteJsonLd, organizationJsonLd, videoGameJsonLd } from '@/components/seo/JsonLd'
 import VisitTracker from '@/features/community/components/VisitTracker'
 import { NavigationTracker } from '@/components/navigation/BackLink'
@@ -190,6 +191,7 @@ export default async function LangLayout({
                       <Footer lang={validLang} />
                       <Suspense fallback={null}><PageNavigation /></Suspense>
                       <Suspense fallback={null}><AnnouncementPopup lang={validLang} /></Suspense>
+                      <UpdateNotice />
                     </KeywordProvider>
                   </GameTextRefsProvider>
                 </IntlClientProvider>
