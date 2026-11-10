@@ -17,6 +17,8 @@ export async function getPageVisits<K extends string>(paths: Record<K, string>, 
   const fields = keys.map(key =>
     `${key}:rumPageloadEventsAdaptiveGroups(limit:1,filter:{date_geq:$since,date_leq:$until,requestHost:$host,requestPath_like:"%${paths[key]}%"}){count}`).join(' ')
   try {
+    // No abort timer: while Next renders a cached page ahead of time the timer fired with the request still healthy
+    // (production, 2026-11-11), so the counts never arrived.
     const response = await fetch(ENDPOINT, {
       method: 'POST',
       headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' },
@@ -24,7 +26,6 @@ export async function getPageVisits<K extends string>(paths: Record<K, string>, 
         query: `query($account:String!,$since:Date!,$until:Date!,$host:String!){viewer{accounts(filter:{accountTag:$account}){${fields}}}}`,
         variables: { account, since: day(days), until: day(0), host },
       }),
-      signal: AbortSignal.timeout(5000),
     })
     const body = await response.json() as { errors?: unknown[] | null; data?: { viewer?: { accounts?: Record<string, { count?: number }[]>[] } } }
     const row = body.data?.viewer?.accounts?.[0]
