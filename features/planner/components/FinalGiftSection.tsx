@@ -182,7 +182,22 @@ export default function FinalGiftSection({ giftInventory, identitySlots, dispatc
     dispatch({ type: 'ADD_GIFT', giftId: `final_${giftGameId}` })
   }, [blockedFinalMaterialIds, dispatch, finalEntryById, removeFinalGift])
 
-  const onCatalogGiftClick = useCallback((gift: EgoGift) => toggleFinalGift(Number(gift.id)), [toggleFinalGift])
+  // 전체 기프트에서 고르면 위의 최종 반영 목록이 늘거나 줄어 목록이 밀린다. 누르기 직전 목록 위치를 기억했다가
+  // 그 변화가 화면에 그려지기 전(useLayoutEffect)에 같은 만큼 창을 옮겨, 누르던 칸이 손가락·마우스 아래 그대로 있게 한다.
+  const catalogRef = useRef<HTMLDivElement>(null)
+  const catalogTopBeforeRef = useRef<number | null>(null)
+  const onCatalogGiftClick = useCallback((gift: EgoGift) => {
+    catalogTopBeforeRef.current = catalogRef.current?.getBoundingClientRect().top ?? null
+    toggleFinalGift(Number(gift.id))
+  }, [toggleFinalGift])
+  useLayoutEffect(() => {
+    const before = catalogTopBeforeRef.current
+    if (before === null || !catalogRef.current) return
+    catalogTopBeforeRef.current = null
+    const shift = catalogRef.current.getBoundingClientRect().top - before
+    // instant: html의 scroll-behavior: smooth가 보정을 미끄러지는 움직임으로 바꾸지 않게
+    if (Math.abs(shift) >= 1) window.scrollTo({ top: window.scrollY + shift, behavior: 'instant' })
+  }, [finalFloorGifts])
   // 칸 속성은 (막힘 이유, 출처)가 같으면 같은 객체를 돌려준다: 448칸의 번역 호출과 비교를 누를 때마다 반복하지 않게
   const cardPropsCache = useMemo(() => new Map<string, GiftCatalogCardProps>(), [locale, t])
   const catalogCardProps = useCallback((gift: EgoGift): GiftCatalogCardProps => {
@@ -301,6 +316,7 @@ export default function FinalGiftSection({ giftInventory, identitySlots, dispatc
           <h4 className="mb-2 text-[0.9375rem]" style={{ fontFamily: 'var(--font-heading)', color: 'var(--text-primary)' }}>{t('allGiftCatalog')}</h4>
           {/* 페이지 흐름 안에 둔다(스크롤은 창 하나). 도구줄은 사이트 메뉴와 플래너 가로 목차 아래에 붙고, 결과 칸은 필터를 바꿔도 페이지가 줄지 않게 한 화면 높이를 확보한다. */}
           <div
+            ref={catalogRef}
             className="border-t px-0.5 pb-3"
             style={{
               borderColor: '#2e2417',
