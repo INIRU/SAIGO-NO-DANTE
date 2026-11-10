@@ -1692,6 +1692,8 @@
       "deckBuilder": "Deck board",
       "experience": "EXP Calculator",
       "lunacy": "Monthly Lunacy Calculator",
+      "motion": "Skill Motion",
+      "story": "Story Map",
       "random": "Random Formation"
     },
     "slide": {

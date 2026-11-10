@@ -1692,6 +1692,8 @@
       "deckBuilder": "デッキ掲示板",
       "experience": "経験値計算機",
       "lunacy": "月間狂気計算機",
+      "motion": "スキルモーション",
+      "story": "ストーリーマップ",
       "random": "ランダム編成"
     },
     "slide": {

@@ -38,6 +38,15 @@
 | `REVALIDATION_SECRET` | 동기화와 스크립트가 캐시된 게임 데이터를 비울 때(`POST /api/revalidate`) 보내는 비밀 값. 추출 도구의 값과 같아야 한다 | 서버 전용 | `app/api/revalidate/route.ts` |
 | `DISCORD_ANNOUNCEMENT_WEBHOOK_URL` | 한국어 공지가 게시될 때 Discord로 보내는 웹훅 주소. 없으면 전송을 건너뛰고 관리자 화면에 실패를 알린다 | 서버 전용 | `lib/discord/announcement.ts`, `app/[lang]/admin/announcements/page.tsx` |
 
+## 방문 통계(Cloudflare Web Analytics)
+
+둘 다 있어야 읽는다. 없거나 조회가 실패하면 홈의 도구는 코드에 적힌 기본 순서로 보인다. 토큰 권한은 "계정 > 계정 분석(Account Analytics) > 읽기" 하나다.
+
+| 이름 | 용도 | 노출 | 쓰는 곳 |
+|---|---|---|---|
+| `CLOUDFLARE_ANALYTICS_TOKEN` | 최근 7일 페이지 방문 수를 읽는 API 토큰(홈 도구를 방문 순으로 정렬, 1시간에 한 번 읽음) | 서버 전용 | `lib/cloudflare/page-visits.ts` |
+| `CLOUDFLARE_ACCOUNT_ID` | 통계를 읽을 Cloudflare 계정 번호(32자리) | 서버 전용 | `lib/cloudflare/page-visits.ts` |
+
 ## 자체 서버
 
 | 이름 | 용도 | 노출 | 쓰는 곳 |
