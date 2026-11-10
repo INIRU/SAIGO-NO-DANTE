@@ -155,12 +155,22 @@ body {
 }
 
 /* One scrollbar for the whole site, the same across and down. The bar is a 10px strip to aim at; the thumb in it is a
-   slim rounded line (the transparent border hides the rest) that fills out when the pointer is on it, so it is easy to grab. */
+   slim rounded line (the transparent border hides the rest) that fills out when the pointer comes to the bar.
+   Scrollbar parts cannot transition, so the thumb reads two registered properties that are animated on the scroller
+   itself; components/layout/ScrollbarHover.tsx marks the scroller whose bar the pointer is on (data-sb-hot). */
+@property --sb-gap { syntax: "<length>"; inherits: true; initial-value: 3px; }
+@property --sb-thumb { syntax: "<color>"; inherits: true; initial-value: rgb(173 127 26 / .65); }
 ::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-track, ::-webkit-scrollbar-corner { background: transparent; }
-::-webkit-scrollbar-thumb { min-width: 2.5rem; min-height: 2.5rem; border: 3px solid transparent; border-radius: 999px; background: color-mix(in srgb, var(--gold-dim) 65%, transparent) padding-box; }
-::-webkit-scrollbar-thumb:hover, ::-webkit-scrollbar-thumb:active { border-width: 1px; background: var(--gold) padding-box; }
+::-webkit-scrollbar-thumb { min-width: 2.5rem; min-height: 2.5rem; border: var(--sb-gap) solid transparent; border-radius: 999px; background: var(--sb-thumb) padding-box; }
 ::-webkit-scrollbar-thumb:active { background: var(--gold-light) padding-box; }
+[data-sb-hot="1"] { animation: sb-grow var(--dur-quick) var(--ease-out) forwards; }
+[data-sb-hot="0"] { animation: sb-shrink var(--dur-base) var(--ease-out); }
+/* The properties inherit (the thumb takes them from its scroller), so lists inside the marked one are set back. */
+[data-sb-hot] * { --sb-gap: 3px; --sb-thumb: rgb(173 127 26 / .65); }
+@keyframes sb-grow { to { --sb-gap: 1px; --sb-thumb: var(--gold); } }
+@keyframes sb-shrink { from { --sb-gap: 1px; --sb-thumb: var(--gold); } }
+@media (prefers-reduced-motion: reduce) { [data-sb-hot="1"] { animation: none; --sb-gap: 1px; --sb-thumb: var(--gold); } [data-sb-hot="0"] { animation: none; } }
 /* A list that scrolls down keeps the bar's place from the start: content does not jump sideways when the bar appears.
    (The page itself does the same on html, below. Touch screens draw the bar over the content, so nothing is reserved there.) */
 .overflow-y-auto, .overflow-y-scroll { scrollbar-gutter: stable; }
