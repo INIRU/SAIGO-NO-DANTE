@@ -8,79 +8,9 @@ import { checkRateLimit } from '@/lib/rate-limit'
 import { getClientIp } from '@/lib/request-meta'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 
-type SupabaseRouteError = {
-  code?: string
-  message?: string
-}
-
 function logVoteError(message: string, error: unknown) {
   console.error(`[deck vote] ${message}`, error)
 }
-
-async function toggleVote(
-  admin: ReturnType<typeof createAdminClient>,
-  deckId: string,
-  userId: string,
-): Promise<{ voted: boolean; error?: SupabaseRouteError }> {
-  const { data: existingVote, error: selectError } = await admin
-    .schema('limbus')
-    .from('deck_votes')
-    .select('deck_id')
-    .eq('deck_id', deckId)
-    .eq('user_id', userId)
-    .maybeSingle()
-
-  if (selectError) return { voted: false, error: selectError }
-
-  if (existingVote) {
-    const { data: deletedVote, error: deleteError } = await admin
-      .schema('limbus')
-      .from('deck_votes')
-      .delete()
-      .eq('deck_id', deckId)
-      .eq('user_id', userId)
-      .select('deck_id')
-      .maybeSingle()
-
-    if (deleteError) return { voted: true, error: deleteError }
-
-    if (deletedVote) {
-      const { error: decrementError } = await admin
-        .schema('limbus')
-        .rpc('decrement_vote', { deck_id: deckId })
-
-      if (decrementError) return { voted: false, error: decrementError }
-    }
-
-    return { voted: false }
-  }
-
-  const { data: insertedVote, error: insertError } = await admin
-    .schema('limbus')
-    .from('deck_votes')
-    .insert({ deck_id: deckId, user_id: userId })
-    .select('deck_id')
-    .single()
-
-  if (insertError) {
-    if (insertError.code === '23505') {
-      return { voted: true }
-    }
-
-    return { voted: false, error: insertError }
-  }
-
-  if (insertedVote) {
-    const { error: incrementError } = await admin
-      .schema('limbus')
-      .rpc('increment_vote', { deck_id: deckId })
-
-    if (incrementError) return { voted: true, error: incrementError }
-  }
-
-  return { voted: true }
-}
-
 
 export async function GET(
   _request: NextRequest,
@@ -149,7 +79,9 @@ export async function POST(
       return NextResponse.json({ error: '사용자를 찾을 수 없습니다.' }, { status: 500 })
     }
 
-    const { voted, error: voteError } = await toggleVote(admin, id, userId)
+    const { data: voted, error: voteError } = await admin
+      .schema('limbus')
+      .rpc('toggle_deck_vote', { p_deck_id: id, p_user_id: userId })
 
     if (voteError) {
       logVoteError('Failed to toggle vote', voteError)

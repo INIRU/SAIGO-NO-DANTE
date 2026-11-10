@@ -111,21 +111,6 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 
-    // comment_count 갱신
-    const { count, error: countError } = await admin.schema('limbus').from('md_plan_comments').select('id', { count: 'exact', head: true }).eq('plan_id', id)
-    if (countError) {
-      revalidatePlannerCommentCaches(id)
-      console.error('[planner/[id]/comments]', countError.message)
-      return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-    }
-
-    const { error: updateError } = await admin.schema('limbus').from('md_plans').update({ comment_count: count ?? 0 }).eq('id', id)
-    if (updateError) {
-      revalidatePlannerCommentCaches(id)
-      console.error('[planner/[id]/comments]', updateError.message)
-      return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-    }
-
     revalidatePlannerCommentCaches(id)
     after(() => pushForComment('plan', data.id))
     return NextResponse.json(data, { status: 201 })

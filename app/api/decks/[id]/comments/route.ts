@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse, after } from 'next/server'
 import { pushForComment } from '@/lib/push/send'
-import { descendantIds } from '@/features/community'
 import { revalidateTag } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { requireActiveUser } from '@/lib/auth'
@@ -134,13 +133,6 @@ export async function POST(
       return NextResponse.json({ error: '요청을 처리하지 못했습니다. 다시 시도해주세요.' }, { status: 500 })
     }
 
-    const { error: incrementError } = await admin.schema('limbus').rpc('increment_comment', { deck_id: id })
-    if (incrementError) {
-      revalidateDeckCommentCaches(id)
-      console.error('[deck comments] database error', incrementError)
-      return NextResponse.json({ error: '요청을 처리하지 못했습니다. 다시 시도해주세요.' }, { status: 500 })
-    }
-
     // 프로필에서 username, role 조회
     const { data: profile } = await admin
       .schema('limbus')
@@ -210,18 +202,6 @@ export async function DELETE(
       return NextResponse.json({ error: '삭제 권한이 없습니다.' }, { status: 403 })
     }
 
-    // 아래로 이어진 답글 전체 수 (CASCADE 삭제 전, 답글의 답글까지)
-    const { data: threadRows, error: threadError } = await admin
-      .schema('limbus')
-      .from('deck_comments')
-      .select('id, parent_id')
-      .eq('deck_id', id)
-    if (threadError) {
-      console.error('[deck comments] database error', threadError)
-      return NextResponse.json({ error: '요청을 처리하지 못했습니다. 다시 시도해주세요.' }, { status: 500 })
-    }
-    const replyCount = descendantIds(threadRows ?? [], commentId).size
-
     const { error } = await admin
       .schema('limbus')
       .from('deck_comments')
@@ -231,17 +211,6 @@ export async function DELETE(
     if (error) {
       console.error('[deck comments] database error', error)
       return NextResponse.json({ error: '요청을 처리하지 못했습니다. 다시 시도해주세요.' }, { status: 500 })
-    }
-
-    // 본 댓글 + 답글 수만큼 감소
-    const totalToDecrement = 1 + replyCount
-    for (let i = 0; i < totalToDecrement; i++) {
-      const { error: decrementError } = await admin.schema('limbus').rpc('decrement_comment', { deck_id: id })
-      if (decrementError) {
-        revalidateDeckCommentCaches(id)
-        console.error('[deck comments] database error', decrementError)
-        return NextResponse.json({ error: '요청을 처리하지 못했습니다. 다시 시도해주세요.' }, { status: 500 })
-      }
     }
 
     writeAuditLog({ actorId: userId, action: 'comment_delete', targetType: 'comment', targetId: commentId, details: { deck_id: id } })
