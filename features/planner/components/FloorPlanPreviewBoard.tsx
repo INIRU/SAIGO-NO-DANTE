@@ -30,6 +30,7 @@ type FloorPreviewEntry = {
   floor: number
   difficulty?: FloorDifficulty
   theme_id: string | null
+  theme_alt_ids?: string[]
   gift_ids: string[]
   memo: string
 }
@@ -161,6 +162,7 @@ export default function FloorPlanPreviewBoard({
               const memoPreview = getMemoPreview(entry.memo)
 
               const themeImageSrc = theme ? getThemeImageSrc(theme) : null
+              const altThemes = (entry.theme_alt_ids ?? []).flatMap(id => themeMap.get(String(id)) ?? [])
 
               return (
                 <m.div
@@ -213,6 +215,19 @@ export default function FloorPlanPreviewBoard({
                       <div className="min-w-0 font-[family-name:var(--font-paperlogy)] text-lg font-semibold leading-snug text-[var(--text-primary)]">
                         {themeName}
                       </div>
+                      {altThemes.length > 0 && (
+                        <ul className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1.5 pt-1 text-[0.875rem] text-[var(--text-muted)]" data-floor-alt-themes aria-label={tFloor('altThemeCount', { count: altThemes.length })}>
+                          <li className="text-[#b9a47f]">{tFloor('altLabel')}</li>
+                          {altThemes.map((alt, index) => (
+                            <li key={String(alt.id)} className="flex min-w-0 items-center gap-1.5">
+                              <span className="relative block aspect-[416/684] w-6 shrink-0 overflow-hidden rounded-sm bg-[#151210]">
+                                {(src => src && <QuietImage src={src} alt="" fill sizes="24px" className="object-cover" />)(getThemeImageSrc(alt))}
+                              </span>
+                              <span className="min-w-0 truncate">{index + 2}. {getLocalizedName({ name_kr: alt.name, name_en: alt.name_en, name_jp: alt.name_jp }, locale)}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
                     </div>
 
                     <div className="flex min-w-0 items-start">

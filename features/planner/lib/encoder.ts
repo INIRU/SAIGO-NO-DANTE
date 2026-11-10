@@ -12,6 +12,7 @@ interface PlanData {
   sd?: SkillDistribution[] // S1/S2/S3 counts aligned with identity_ids
   e: string[]             // ego_ids
   f: (string | number | null)[] // floor theme_ids
+  fa?: string[][]         // per-floor fallback theme_ids, in order; left out when no floor has any
   fc?: number[][]
   fg?: string[][]
   fm?: string[]
@@ -41,6 +42,7 @@ export async function encodePlan(state: PlannerState): Promise<string> {
     fd: state.floorPlan.map(f => DIFF_SHORT[f.difficulty] ?? DIFF_SHORT[getLegacyPlanFloorDifficulty(state.difficulty, f.floor)]),
     g: state.giftInventory,
   }
+  if (state.floorPlan.some(f => f.theme_alt_ids?.length)) data.fa = state.floorPlan.map(f => f.theme_alt_ids ?? [])
   if (state.title) data.t = state.title
   if (state.description) data.desc = state.description
 
@@ -58,6 +60,7 @@ export async function decodePlan(encoded: string): Promise<{
   skillDistributions: SkillDistribution[]
   egoIds: string[]
   floorThemeIds: (string | null)[]
+  floorThemeAlts: string[][]
   floorConstraints: number[][]
   floorGifts: string[][]
   floorMemos: string[]
@@ -94,6 +97,9 @@ export async function decodePlan(encoded: string): Promise<{
     skillDistributions: (data.i ?? []).map((_, index) => normalizeSkillDistribution(data.sd?.[index])),
     egoIds: data.e ?? [],
     floorThemeIds,
+    floorThemeAlts: floorThemeIds.map((primary, i) => primary && Array.isArray(data.fa?.[i])
+      ? [...new Set(data.fa[i].map(normalizePlannerThemeId).filter((id): id is string => !!id && id !== primary))]
+      : []),
     floorDifficulties,
     floorConstraints: floorThemeIds.map((_, i) => Array.isArray(data.fc?.[i]) ? data.fc[i].filter(Number.isInteger) : []),
     floorGifts: floorThemeIds.map((_, i) => Array.isArray(data.fg?.[i]) ? data.fg[i].filter(x => typeof x === "string") : []),
@@ -143,6 +149,7 @@ export function decodedPlanToPlannerState(decoded: DecodedPlan, identities: Iden
         ...floor,
         difficulty: decoded.floorDifficulties[index] ?? floor.difficulty,
         theme_id: decoded.floorThemeIds[index] ?? null,
+        theme_alt_ids: decoded.floorThemeAlts[index] ?? [],
         gift_ids: decoded.floorGifts[index] ?? [],
         memo: decoded.floorMemos[index] ?? '',
         constraints: decoded.floorConstraints[index] ?? [],

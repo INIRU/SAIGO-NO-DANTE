@@ -237,6 +237,8 @@ interface ThemePackPickerModalProps<TTheme extends ThemePackPickerTheme> {
   countLabel: (count: number) => string
   themes: TTheme[]
   selectedThemeId?: string | number | null
+  /** Packs already chosen, first choice first: each shows as selected with its place in the order. */
+  order?: (string | number)[]
   onClose: () => void
   onSelectTheme: (theme: TTheme) => void
   lang?: SupportedLang
@@ -259,6 +261,7 @@ export function ThemePackPickerModal<TTheme extends ThemePackPickerTheme>({
   countLabel,
   themes,
   selectedThemeId,
+  order,
   onClose,
   onSelectTheme,
   lang,
@@ -275,14 +278,20 @@ export function ThemePackPickerModal<TTheme extends ThemePackPickerTheme>({
   const holdPicks = suggestionsLoading && !needle
   const picked = new Set(picks.map(row => String(row.theme.id)))
   const rest = picks.length ? shown.filter(theme => !picked.has(String(theme.id))) : shown
+  const rank = (theme: TTheme) => (order ?? []).findIndex(id => String(id) === String(theme.id)) + 1
   const card = (theme: TTheme) => (
-    <ThemePackCard
-      theme={theme}
-      onClick={() => onSelectTheme(theme)}
-      isSelected={selectedThemeId != null && String(selectedThemeId) === String(theme.id)}
-      imageSurface="bare"
-      lang={lang}
-    />
+    <>
+      <ThemePackCard
+        theme={theme}
+        onClick={() => onSelectTheme(theme)}
+        isSelected={rank(theme) > 0 || (selectedThemeId != null && String(selectedThemeId) === String(theme.id))}
+        imageSurface="bare"
+        lang={lang}
+      />
+      {rank(theme) > 0 && (
+        <span data-theme-order={rank(theme)} className="pointer-events-none absolute left-1.5 top-1.5 z-30 rounded bg-[var(--gold)] px-1.5 pt-0.5 font-[family-name:var(--font-title)] text-[1.25rem] leading-none text-[#0d0b08]">{rank(theme)}</span>
+      )}
+    </>
   )
 
   return (
@@ -335,7 +344,7 @@ export function ThemePackPickerModal<TTheme extends ThemePackPickerTheme>({
                 </>
               )}
               <ul className={filterStyles.pickerGrid} style={picks.length || holdPicks ? { borderTop: '1px solid #2e2417' } : undefined}>
-                {rest.map(theme => <li key={String(theme.id)}>{card(theme)}</li>)}
+                {rest.map(theme => <li key={String(theme.id)} className="relative">{card(theme)}</li>)}
               </ul>
             </>
           )}
