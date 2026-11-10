@@ -47,6 +47,15 @@ export function finalEnhanceEdit(inventory: readonly string[], gift: FinalGift, 
   return oldId === newId ? {} : { oldId, newId }
 }
 
+/** The one reducer action that sets a final gift's enhancement, or null when nothing changes. */
+export function finalEnhanceAction(inventory: readonly string[], gift: FinalGift, level: number) {
+  const { oldId, newId } = finalEnhanceEdit(inventory, gift, level)
+  if (oldId && newId) return { type: 'REPLACE_GIFT', oldId, newId } as const
+  if (newId) return { type: 'ADD_GIFT', giftId: newId } as const
+  if (oldId) return { type: 'REMOVE_GIFT', giftId: oldId } as const
+  return null
+}
+
 /** Next level when tapping an enhanceable gift: 0 → + → ++ (when it has one) → 0. */
 export function nextEnhanceLevel(gift: Pick<GiftData, 'effect_plus' | 'effect_plusplus'>, level: number): number {
   const max = gift.effect_plusplus ? 2 : gift.effect_plus ? 1 : 0

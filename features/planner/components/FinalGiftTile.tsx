@@ -2,25 +2,18 @@
 
 import { giftConditionKey } from '@/lib/planner/gift-condition-status'
 import { memo } from 'react'
-import Image from 'next/image'
-import { X } from 'lucide-react'
 import { useTranslations } from 'next-intl'
-import GiftCard from '@/features/mirror-dungeon/components/GiftCard'
-import { getGameUiAsset } from '@/lib/utils/game-ui'
+import GiftCard, { EnhanceSprite } from '@/features/mirror-dungeon/components/GiftCard'
 import { nextEnhanceLevel, type FinalGift } from '@/features/planner/lib/final-gifts'
 import type { GiftData } from '@/lib/planner/types'
 
-// The game's enhancement sprites (intrinsic sizes), idle and lit.
-const LEVELS = [
-  { idle: ['gift/enhance-minus', 30, 18], lit: ['gift/enhance-minus', 30, 18] },
-  { idle: ['gift/enhance-plus-idle', 31, 30], lit: ['gift/enhance-plus', 40, 41] },
-  { idle: ['gift/enhance-plusplus-idle', 61, 30], lit: ['gift/enhance-plusplus', 70, 41] },
-] as const
+// The game's enhancement sprites, idle and lit (GiftCard owns them).
+const LEVELS = [['minus', 'minus'], ['plusIdle', 'plus'], ['plusplusIdle', 'plusplus']] as const
 
 /**
- * One gift in the final set. Clicking or tapping the card cycles its enhancement; on hover or focus a band of the game's
- * −/+/++ sprites sets it directly. Picked gifts leave through the corner × (holding a gift opens its detail); start and observed gifts are
- * tagged and stay, since they come from the start plan.
+ * One gift in the final set. Clicking or tapping the card cycles its enhancement; with a mouse a band of the game's
+ * −/+/++ sprites sets it directly, and on any device holding the gift opens its detail, whose keys set it too. Picked
+ * gifts leave through GiftCard's corner ×; start and observed gifts are tagged and stay, since they come from the start plan.
  */
 type Props = {
   gift: GiftData
@@ -69,44 +62,34 @@ export default memo(function FinalGiftTile({ gift, entry, conditionStatus, onEnh
           onClick={() => { if (max > 0) onEnhance(nextEnhanceLevel(gift, entry.level)) }}
           ariaLabel={label}
           title={label}
+          onRemove={removable ? onRemove : undefined}
+          removeLabel={removable ? t('removeFinalGift', { gift: gift.name }) : undefined}
         />
         {max > 0 && (
           // Pointer shortcut; keyboard users cycle with the card itself.
           <div
             aria-hidden="true"
-            className="absolute inset-x-[10%] bottom-[6%] z-30 flex h-[1.375rem] items-center justify-center gap-[0.1875rem] rounded-[0.1875rem] px-1 opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100 motion-reduce:transition-none [@media(hover:none)]:hidden"
+            className="absolute inset-x-[4%] bottom-[5%] z-30 flex h-[1.5rem] items-stretch overflow-hidden rounded-[0.1875rem] opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100 motion-reduce:transition-none [@media(hover:none)]:hidden"
             style={{ background: 'rgba(13,11,8,0.9)', boxShadow: 'inset 0 0 0 1px #2e2417' }}
           >
-            {LEVELS.slice(0, max + 1).map(({ idle, lit }, level) => {
+            {LEVELS.slice(0, max + 1).map(([idle, lit], level) => {
               const on = entry.level === level
-              const [src, width, height] = on ? lit : idle
               return (
                 <button
                   key={level}
                   type="button"
                   tabIndex={-1}
                   onClick={() => onEnhance(level)}
-                  className="flex h-full items-center px-px transition-opacity hover:opacity-100"
-                  style={{ opacity: on ? 1 : 0.45 }}
+                  className="flex min-w-0 flex-1 items-center justify-center transition-opacity hover:opacity-100"
+                  style={{ opacity: on ? 1 : 0.45, background: on ? 'rgba(200,144,10,0.16)' : undefined }}
                 >
-                  <Image src={getGameUiAsset(src)} alt="" width={width} height={height} draggable={false}
-                    style={{ width: 'auto', height: level === 0 ? '0.4375rem' : on ? '1rem' : '0.75rem' }} />
+                  <span className="flex" style={{ height: level === 0 ? '0.4375rem' : on ? '1rem' : '0.75rem' }}>
+                    <EnhanceSprite sprite={on ? lit : idle} />
+                  </span>
                 </button>
               )
             })}
           </div>
-        )}
-        {removable && (
-          <button
-            type="button"
-            onClick={onRemove}
-            aria-label={t('removeFinalGift', { gift: gift.name })}
-            title={t('removeFinalGift', { gift: gift.name })}
-            className="absolute -right-1.5 -top-1.5 z-40 flex h-5 w-5 items-center justify-center rounded-full border opacity-0 transition-[opacity,color] hover:text-[#ff8b8b] focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold)] group-hover:opacity-100 motion-reduce:transition-none [@media(hover:none)]:opacity-100"
-            style={{ background: '#17120c', borderColor: '#4a3a24', color: '#c9b89f' }}
-          >
-            <X size={12} aria-hidden="true" />
-          </button>
         )}
       </div>
       <span aria-hidden="true" className="mt-1 block truncate text-center text-[0.6875rem] leading-tight" style={{ color: entry.level ? 'var(--gold-light)' : '#b9aa98' }}>

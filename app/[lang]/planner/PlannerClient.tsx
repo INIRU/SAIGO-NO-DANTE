@@ -15,6 +15,7 @@ import { useQueryState, parseAsString } from 'nuqs'
 import { ArrowLeft, Copy, Upload, Check, Play } from 'lucide-react'
 import { createInitialState, type PlannerState, type PlannerTab, type ThemeData, type GiftData, type RecipeData, type IdentityData, type SinnerData, type PassiveData, type SkillSummary, type EgoData } from '@/lib/planner/types'
 import { buildGiftMap } from '@/lib/planner/fusion'
+import { deriveFinalGifts, finalEnhanceAction } from '@/features/planner/lib/final-gifts'
 import { encodePlan, isPlannerState, snapshotPlannerState, savePlanForRun, loadDraftFromLocal, clearDraftFromLocal, loadPlannerTempSlots, savePlannerTempSlot, deletePlannerTempSlot, withLcbIdentitySlots, type PlannerTempSlot, type Observation } from '@/features/planner'
 import { enrichIdentitySlotsForGiftConditions } from '@/lib/planner/gift-condition-status'
 import { usePlannerStore } from '@/features/planner/hooks/usePlannerStore'
@@ -103,6 +104,8 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
   // Holding any gift card in the planner opens that gift's detail here.
   const [detailGiftId, setDetailGiftId] = useState<string | number | null>(null)
   const detailGift = detailGiftId == null ? undefined : giftMap.get(Number(detailGiftId))
+  // A gift the run ends with carries an enhancement: the detail window shows it and its keys set it.
+  const detailFinal = detailGift && deriveFinalGifts(state.giftInventory, recipes, giftMap).gifts.find(entry => entry.id === detailGift.game_id)
   // 인격이 바뀔 때만 다시 만든다: 기프트·층 구역은 identitySlots가 같은 배열이면 다시 그리지 않는다
   const conditionSlots = useMemo(
     () => enrichIdentitySlotsForGiftConditions(sectionState.identitySlots, identities),
@@ -456,18 +459,18 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
       <div className="max-w-[90rem] mx-auto px-3 md:px-6">
         {/* 헤더는 server-rendered page.tsx에서 렌더링 — 여기서는 액션 버튼만 */}
         <m.div
-          className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4"
+          className="relative z-[41] mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between"
           variants={shouldReduceMotion ? undefined : workbenchReveal}
           initial={shouldReduceMotion ? false : 'initial'}
           animate={shouldReduceMotion ? undefined : 'animate'}
         >
           <div>
-            <BackLink href="/planner/community" className="inline-flex items-center gap-1 transition-colors" style={{ color: '#9c8b73', fontSize: '0.875rem' }}>
+            <BackLink href="/planner/community" className="inline-flex items-center gap-1 whitespace-nowrap transition-colors" style={{ color: '#9c8b73', fontSize: '0.875rem' }}>
               <ArrowLeft style={{ width: '0.75rem', height: '0.75rem' }} /> {tPlanner('community')}
             </BackLink>
           </div>
           {/* 휴대폰은 같은 폭 2열(한 버튼만 다음 줄에 남지 않게), 넓은 화면은 한 줄 */}
-          <div className="grid grid-cols-2 gap-2 [&>button]:min-h-10 [&>button]:justify-center [&>div>button]:min-h-10 [&>div>button]:w-full [&>div>button]:justify-center sm:flex sm:flex-wrap sm:items-center sm:justify-end sm:[&>button]:min-h-9 sm:[&>div>button]:w-auto">
+          <div className="grid min-w-0 grid-cols-2 gap-2 [&>button]:whitespace-nowrap [&>button]:min-h-10 [&>button]:justify-center [&>div>button]:min-h-10 [&>div>button]:w-full [&>div>button]:justify-center sm:flex sm:flex-wrap sm:items-center sm:justify-end sm:[&>button]:min-h-9 sm:[&>div>button]:w-auto">
             {<button
               onClick={() => { savePlanForRun({ ...giftConditionState, title: state.title, description: state.description }); window.location.href = '/planner/run?from-plan=1' }}
               style={{
@@ -565,7 +568,9 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
         </div>
       </div>
     </div>
-    {detailGift && <PlannerGiftModal gift={detailGift} onClose={() => setDetailGiftId(null)} themes={themes} gifts={gifts} />}
+    {detailGift && <PlannerGiftModal gift={detailGift} onClose={() => setDetailGiftId(null)} themes={themes} gifts={gifts}
+      enhance={detailFinal?.level}
+      onEnhance={detailFinal ? level => { const action = finalEnhanceAction(state.giftInventory, detailFinal, level); if (action) dispatch(action) } : undefined} />}
     </GiftDetailContext.Provider>
   )
 }

@@ -21,13 +21,15 @@ interface Props {
   themes?: ThemeData[]
   onThemeClick?: (themeId: string) => void
   enhance?: number
+  /** Sets the planned gift's enhancement from the detail window's keys (the touch path: hold a gift, pick + or ++). */
+  onEnhance?: (level: number) => void
   conditionStatus?: GiftConditionStatus | null
   recipe?: RecipeLookup | null
   /** All gifts, so a gift the effect text points at ({{gift:<id>}}) shows by name and opens here. */
   gifts?: GiftData[]
 }
 
-export default function PlannerGiftModal({ gift, onClose, themes = [], onThemeClick, enhance, conditionStatus, recipe, gifts }: Props) {
+export default function PlannerGiftModal({ gift, onClose, themes = [], onThemeClick, enhance, onEnhance, conditionStatus, recipe, gifts }: Props) {
   const lang = useLocale() as SupportedLang
   const t = useTranslations('giftDetail')
   const conditionText = useGiftConditionText(lang)
@@ -46,6 +48,7 @@ export default function PlannerGiftModal({ gift, onClose, themes = [], onThemeCl
       lang={lang}
       onClose={onClose}
       initialLevel={material ? 0 : enhance ?? 0}
+      onLevelChange={material ? undefined : onEnhance}
       onBack={material ? () => setMaterial(null) : undefined}
       backLabel={t('back', { gift: localName(gift) })}
       gift={{
