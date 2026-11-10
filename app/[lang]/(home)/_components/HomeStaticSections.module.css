@@ -71,7 +71,8 @@ img.fanCard { width: 5rem; bottom: 1.5rem; }
   .posts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .third { display: none; }
   .releases { grid-template-columns: 1fr; gap: 2.5rem; }
-  .egos { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 1.25rem; }
+  /* The E.G.O card has a fixed drawing size (8.35rem): three by two, so cards never overlap. */
+  .egos { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.5rem 1.25rem; }
 }
 @media (max-width: 700px) {
   .posts { grid-template-columns: 1fr; }
@@ -85,7 +86,7 @@ img.fanCard { width: 5rem; bottom: 1.5rem; }
   .heading h2 { font-size: 1.25rem; }
   .textLink { font-size: .8125rem; }
   .identities { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.25rem .875rem; }
-  .egos { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.25rem .875rem; }
+  .egos { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.25rem .875rem; }
   .tool { min-height: 7rem; padding: 1rem; }
   .toolName { max-width: 100%; font-size: .9375rem; }
   .toolArt { width: 5.5rem; height: 5.5rem; right: -.5rem; bottom: -1.25rem; }
