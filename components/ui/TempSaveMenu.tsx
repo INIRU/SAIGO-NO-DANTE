@@ -46,7 +46,7 @@ export default function TempSaveMenu<T>({ title, slots, onSave, onLoad, onDelete
       </button>
       {open && (
         <div role="menu" aria-label={title}
-          className="fixed inset-x-3 top-36 z-40 overflow-hidden rounded-lg border border-[rgba(200,144,10,0.25)] bg-[#17120c] shadow-[0_1rem_2.5rem_rgba(0,0,0,0.55)] sm:absolute sm:inset-x-auto sm:right-0 sm:top-full sm:mt-2 sm:w-[25rem]">
+          className="pop-in fixed inset-x-3 top-36 z-40 overflow-hidden rounded-lg border border-[rgba(200,144,10,0.25)] bg-[#17120c] shadow-[0_1rem_2.5rem_rgba(0,0,0,0.55)] sm:absolute sm:inset-x-auto sm:right-0 sm:top-full sm:mt-2 sm:w-[25rem]">
           <div className="flex items-center justify-between border-b border-[#2e2417] px-3 py-2">
             <span className="text-[0.9375rem] font-bold text-[var(--text-primary)]">{title}</span>
             <button type="button" onClick={() => setOpen(false)} aria-label={t('closeMenu')}

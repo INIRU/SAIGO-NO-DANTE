@@ -141,7 +141,7 @@ export default function FinalGiftPresets({ inventory, dispatch, giftMap }: {
       </button>
       {open && presets && (
         <div ref={panel} role="dialog" aria-label={t('title')}
-          className="fixed inset-x-3 top-24 z-40 flex max-h-[calc(100dvh-7rem)] flex-col overflow-hidden rounded-lg border border-[rgba(200,144,10,0.25)] bg-[#17120c] shadow-[0_1rem_2.5rem_rgba(0,0,0,0.55)] sm:absolute sm:inset-x-auto sm:right-0 sm:top-full sm:mt-2 sm:max-h-[min(40rem,calc(100dvh-10rem))] sm:w-[27rem]">
+          className="pop-in fixed inset-x-3 top-24 z-40 flex max-h-[calc(100dvh-7rem)] flex-col overflow-hidden rounded-lg border border-[rgba(200,144,10,0.25)] bg-[#17120c] shadow-[0_1rem_2.5rem_rgba(0,0,0,0.55)] sm:absolute sm:inset-x-auto sm:right-0 sm:top-full sm:mt-2 sm:max-h-[min(40rem,calc(100dvh-10rem))] sm:w-[27rem]">
           <div className="flex items-center justify-between border-b border-[#2e2417] px-3 py-2">
             <span className="text-[0.9375rem] font-bold text-[var(--text-primary)]">{t('title')}</span>
             <button type="button" onClick={() => setOpen(false)} aria-label={t('close')}
