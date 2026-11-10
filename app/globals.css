@@ -663,6 +663,15 @@ a.note-mention:is(:hover,:focus-visible),.note-block-document a[href].note-menti
 /* A solid surface with the octagon's cut corners (primary buttons). Focus rings must be inset: the cut clips outside. */
 .cut-corners { --cut: .5rem; clip-path: polygon(var(--cut) 0, calc(100% - var(--cut)) 0, 100% var(--cut), 100% calc(100% - var(--cut)), calc(100% - var(--cut)) 100%, var(--cut) 100%, 0 calc(100% - var(--cut)), 0 var(--cut)); }
 
+/* Things that appear on a click (nav menus, dropdowns, popovers, the phone menu): a short rise instead of popping in. */
+@media (prefers-reduced-motion: no-preference) {
+  .nav-pop, .pop-in, .note-command-menu { transform-origin: top; animation: pop-in var(--dur-quick) var(--ease-out); }
+  .pop-in-up { transform-origin: bottom; animation: pop-in-up var(--dur-quick) var(--ease-out); }
+  .mobile-nav-sheet { animation: sheet-in var(--dur-base) var(--ease-drawer); }
+  @keyframes pop-in { from { opacity: 0; transform: translateY(-.375rem) scale(.98); } }
+  @keyframes pop-in-up { from { opacity: 0; transform: translateY(.375rem) scale(.98); } }
+  @keyframes sheet-in { from { opacity: 0; transform: translateY(-.75rem); } }
+}
 @media (prefers-reduced-motion: reduce) {
   .press { transition: color var(--dur-quick) ease, background-color var(--dur-quick) ease, border-color var(--dur-quick) ease; }
   .press:active { transform: none; }

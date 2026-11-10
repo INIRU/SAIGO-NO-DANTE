@@ -15,7 +15,7 @@ function LanguageOptions({ up, onDone }: { up: boolean; onDone: () => void }) {
   return (
     <div
       role="listbox"
-      className={`absolute right-0 z-50 min-w-[9rem] rounded-lg border border-[var(--border)] bg-[var(--bg-card)] p-1 shadow-[var(--shadow-lg)] ${up ? 'bottom-full mb-2' : 'top-full mt-2'}`}
+      className={`absolute right-0 z-50 min-w-[9rem] rounded-lg border border-[var(--border)] bg-[var(--bg-card)] p-1 shadow-[var(--shadow-lg)] ${up ? 'pop-in-up bottom-full mb-2' : 'pop-in top-full mt-2'}`}
     >
       {SUPPORTED_LANGS.map(l => {
         const isActive = l.value === locale;

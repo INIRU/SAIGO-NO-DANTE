@@ -336,7 +336,7 @@ export default function DeckListFilters({
           </label>
             {keywordTagSuggestions.length > 0 && (
               <div
-                className="max-h-56 overflow-y-auto rounded"
+                className="pop-in max-h-56 overflow-y-auto rounded"
                 style={{
                   background: 'var(--bg-card)',
                   border: '1px solid var(--border)',
