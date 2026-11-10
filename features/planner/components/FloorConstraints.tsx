@@ -9,6 +9,8 @@ import {
 } from "@/lib/planner/constraints";
 import { getConstraintAssetUrl } from "@/lib/utils/images";
 import { getGameUiAsset } from "@/lib/utils/game-ui";
+import seasonPalette from "@/lib/generated/season-palette.json";
+import { seasonTileStyle } from "@/features/planner/lib/season-tile";
 
 export default function FloorConstraints({
   floor,
@@ -80,7 +82,33 @@ export default function FloorConstraints({
           })}
         </ul>
       )}
-      <div className={`${onChange ? "grid" : "hidden sm:grid"} grid-cols-[repeat(auto-fit,minmax(min(100%,10.75rem),1fr))] gap-x-1 gap-y-3 pb-2 pt-2`}>
+      {/* 모바일(편집): 큰 카드 대신 가호 타일처럼 점수와 이름의 작은 타일. 고른 제약은 이번 시즌 제약 카드 색으로 채운다 */}
+      {onChange && (
+        <ul data-constraint-tiles className="grid grid-cols-3 gap-1.5 pb-2 pt-1 sm:hidden">
+          {rows.map((c) => {
+            const active = selected.includes(c.id);
+            return (
+              <li key={c.id}>
+                <button
+                  type="button"
+                  aria-pressed={active}
+                  aria-label={`${c.names[lang]}: ${c.descriptions[lang].replace(/\n{2,}/g, "\n")}`}
+                  onClick={() => onChange(active ? selected.filter((id) => id !== c.id) : [...selected, c.id])}
+                  style={active ? seasonTileStyle(seasonPalette.constraint) : undefined}
+                  className={`flex aspect-[17/15] w-full cursor-pointer flex-col items-center justify-between rounded-md border px-1.5 pb-1.5 pt-1.5 text-center transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#ff8aa0] ${active ? "" : "border-[#2e2417] bg-[var(--bg-panel)]"}`}
+                >
+                  <Image src={getConstraintAssetUrl(`score-${c.score}`)} alt={label(`${c.score}점`, `${c.score}点`, `${c.score} points`)} width={231} height={197} className={`h-auto w-9 object-contain ${active ? "" : "opacity-60"}`} />
+                  <span aria-hidden="true" className={`block h-px w-full ${active ? "bg-[rgba(255,220,226,0.25)]" : "bg-[#2e2417]"}`} />
+                  <span style={{ wordBreak: lang === "ko" ? "keep-all" : "normal" }} className={`flex min-h-[2.25rem] items-center text-[0.75rem] font-bold leading-tight ${active ? "text-[#ffe3e8]" : "text-[var(--text-secondary)]"}`}>
+                    {c.names[lang]}
+                  </span>
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+      <div className={`hidden sm:grid grid-cols-[repeat(auto-fit,minmax(min(100%,10.75rem),1fr))] gap-x-1 gap-y-3 pb-2 pt-2`}>
         {rows.map((c) => {
           const active = selected.includes(c.id);
           const content = (
