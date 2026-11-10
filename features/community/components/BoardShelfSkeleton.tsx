@@ -29,7 +29,7 @@ export function CardGridSkeleton({ count = 6 }: { count?: number }) {
 /** A shelf's cards as a swipe rail on a phone, a grid from md up (the same boxes as `Rail`). */
 export function RailSkeleton() {
   return (
-    <div className="-mx-4 flex gap-3 overflow-hidden px-4 md:mx-0 md:grid md:grid-cols-2 md:gap-4 md:px-0 xl:grid-cols-3">
+    <div className="-mx-4 flex gap-3 overflow-hidden px-4 md:mx-0 md:grid md:grid-cols-3 md:gap-4 md:px-0">
       {Array.from({ length: 3 }, (_, index) => (
         <div key={index} className="w-[78vw] max-w-[21rem] shrink-0 md:w-auto md:max-w-none md:min-w-0"><BoardCardSkeleton /></div>
       ))}

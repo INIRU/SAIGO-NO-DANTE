@@ -71,7 +71,7 @@ it('REQ-COMMUNITY-083 draws the loading card with the same parts as the real car
 it('REQ-COMMUNITY-083 draws the loading shelves on the same rail and grid as the real shelves', () => {
   const real = renderToStaticMarkup(<Rail>{[<i key="a" />, <i key="b" />, <i key="c" />]}</Rail>)
   const shape = renderToStaticMarkup(<RailSkeleton />)
-  for (const needle of ['md:grid-cols-2', 'xl:grid-cols-3', 'w-[78vw] max-w-[21rem]', '-mx-4 flex']) {
+  for (const needle of ['md:grid-cols-3', 'w-[78vw] max-w-[21rem]', '-mx-4 flex']) {
     expect(real).toContain(needle)
     expect(shape).toContain(needle)
   }

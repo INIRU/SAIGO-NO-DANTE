@@ -5,7 +5,7 @@
 .actions button:hover { color: var(--gold-light); }
 .actions button:disabled { opacity: 0.3; cursor: default; }
 .withSide { grid-template-columns: 11rem minmax(0, 1fr) 23rem; }
-.results { overflow-y: auto; }
+.results { overflow-y: auto; scrollbar-gutter: stable; }
 .identities { display: grid; grid-template-columns: repeat(auto-fill, minmax(6.5rem, 1fr)); gap: 0.8rem; }
 .identities button { display: block; padding: 0; border: 0; background: none; color: inherit; text-align: left; cursor: pointer; }
 .egoRow button { display: block; padding: 0; border: 0; cursor: pointer; }
@@ -29,7 +29,7 @@
 }
 @media (max-width: 40rem) {
   .identities { grid-template-columns: repeat(4, 1fr); gap: 0.5rem; }
-  .side { border-left: 0; border-top: 1px solid var(--border); padding: 0.75rem; overflow: visible; flex: 0 0 auto; max-height: 40dvh; overflow-y: auto; }
+  .side { border-left: 0; border-top: 1px solid var(--border); padding: 0.75rem; overflow: visible; flex: 0 0 auto; max-height: 40dvh; overflow-y: auto; scrollbar-gutter: stable; }
 }
 /* The choice is already applied; this closes the window and reads as confirming it. */
 .actions .apply { display: inline-flex; align-items: center; gap: 0.4rem; min-height: 2.5rem; padding: 0 1rem; border-radius: 0; background: var(--gold); color: #140e02; font-size: 0.9rem; font-weight: 700; }

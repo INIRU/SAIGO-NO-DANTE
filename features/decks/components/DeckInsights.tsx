@@ -221,10 +221,6 @@ export default function DeckInsights({ identities, sinCounts, baseSinCounts, sum
         .deck-insights__passives { display: flex; min-width: 0; flex-direction: column; }
         /* No overscroll containment: at the list's ends the page goes on scrolling (useWheelIntent decides who a wheel gesture moves). */
         .deck-insights__scroll { max-height: 24rem; overflow-y: auto; padding-right: 0.75rem; }
-        .deck-insights__scroll::-webkit-scrollbar { width: 4px; }
-        .deck-insights__scroll::-webkit-scrollbar-track { background: transparent; }
-        .deck-insights__scroll::-webkit-scrollbar-thumb { background: #3a2c18; border-radius: 4px; }
-        .deck-insights__scroll:hover::-webkit-scrollbar-thumb { background: #6b5024; }
         @media (min-width: 64rem) {
           .deck-insights__passives { min-height: 16rem; }
           .deck-insights__scroll { flex: 1 1 0; min-height: 0; max-height: none; contain: size; }

@@ -106,7 +106,7 @@ export default memo(function GiftGridPanel({
         flex: 1,
         minWidth: 0,
         maxHeight,
-        overflowY: 'auto',
+        overflowY: 'auto', scrollbarGutter: 'stable',
         paddingRight: '0.25rem',
         display: 'flex',
         flexDirection: 'column',
@@ -175,6 +175,10 @@ export default memo(function GiftGridPanel({
                         contentVisibility: 'auto',
                         contain: 'layout style paint',
                         containIntrinsicSize: '4.5rem',
+                        // Paint containment clips to this box: the padding (taken back by the margin) leaves room for the
+                        // selected overlay, which reaches 5.6% past the card's sides and its tab 8.3% above the card.
+                        padding: '0.75rem 0.5rem 0',
+                        margin: '-0.75rem -0.5rem 0',
                       }}
                     >
                       <GiftCard

@@ -527,9 +527,11 @@
   },
   "giftEnhance": {
     "group": "{gift}の強化段階",
+    "remove": "{gift}を外す",
     "base": "強化なし",
     "plus": "強化+",
-    "plusplus": "強化++"
+    "plusplus": "強化++",
+    "selected": "選択済み"
   },
   "giftDetail": {
     "title": "ギフト詳細",
@@ -618,6 +620,7 @@
       "pipChooseThemeBlank": "テーマパックを選択してください",
       "pipThemeGuidance": "現在の階のテーマパックを選択",
       "pipThemePossible": "選択可能",
+      "pipThemeFallbacks": "代替テーマパック",
       "pipThemePlanGifts": "このテーマパックで入手するプランのE.G.Oギフト",
       "pipPlanGift": "プランに設定したE.G.Oギフト",
       "fusionTierGiftsOwned": "プランのランクIV以上のE.G.Oギフトをすべて所持しています。",
@@ -1052,7 +1055,8 @@
       "blessing": "加護",
       "gift": "ギフト",
       "floor": "階層計画",
-      "summary": "プラン紹介"
+      "summary": "プラン紹介",
+      "final": "最終ギフト"
     },
     "intro": {
       "titlePlaceholder": "プランのタイトル",
@@ -1083,6 +1087,17 @@
       "themeResultCount": "{count}件",
       "emptyThemes": "この階層で利用できるテーマパックがありません",
       "changeTheme": "変更",
+      "themeClickHint": "押して変更・代替を追加",
+      "themePickHint": "選んだ順に第1候補、代替テーマパックになります。もう一度押すと外れます。",
+      "clearAllThemes": "すべて解除",
+      "themePickDone": "完了",
+      "altThemes": "代替テーマパック（押すと第1候補に）",
+      "addAltTheme": "代替を追加",
+      "altLabel": "代替",
+      "altThemeModalTitle": "{floor}階の代替テーマパック",
+      "altPromoteAria": "{theme}：第1候補にする",
+      "altRemoveAria": "{theme}：代替から外す",
+      "altThemeCount": "代替テーマパック{count}個",
       "clearTheme": "選択解除",
       "themeGiftCount": "ギフト {count}種",
       "acquiredGiftCount": "獲得ギフト {count}個",
@@ -1113,7 +1128,7 @@
       "finalAutoStartTag": "開始",
       "finalAutoObserveTag": "観測",
       "finalEnhanceHint": "押して強化段階を変更",
-      "finalRemoveHint": "長押しまたはDeleteキーで削除",
+      "finalRemoveHint": "×ボタンまたはDeleteキーで削除",
       "finalWorkbenchHint": "左の反映済みカードは押すと削除し、全ギフト側はカードを押して追加、もう一度押すと削除します。",
       "finalSelectedPanel": "反映リスト",
       "finalGiftEmpty": "反映済みの最終ギフトはまだありません",
@@ -1677,6 +1692,8 @@
       "deckBuilder": "デッキ掲示板",
       "experience": "経験値計算機",
       "lunacy": "月間狂気計算機",
+      "motion": "スキルモーション",
+      "story": "ストーリーマップ",
       "random": "ランダム編成"
     },
     "slide": {

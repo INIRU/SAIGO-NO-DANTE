@@ -44,7 +44,7 @@ export function RecommendationLane({ id, title, description, count, children }: 
           {t('count', { count })}
         </span>
       </div>
-      <div className="grid min-w-0 grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+      <div className="flex min-w-0 flex-wrap gap-3 [&>*]:min-w-0 [&>*]:flex-[1_1_15rem]">
         {children}
       </div>
     </section>

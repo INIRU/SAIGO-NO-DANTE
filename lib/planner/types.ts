@@ -63,6 +63,8 @@ export interface FloorEntry {
   floor: number
   difficulty: FloorDifficulty
   theme_id: string | null
+  /** Fallback packs for this floor, in order, when the first choice does not show up. Never holds theme_id. */
+  theme_alt_ids?: string[]
   gift_ids: string[]  // 이 층에서 획득할 기프트 game_id
   memo: string        // 층별 플랜 메모 (마크다운 + chip)
 }
@@ -91,6 +93,9 @@ export type PlannerAction =
   | { type: 'SET_SKILL_DISTRIBUTION'; sinnerId: string; distribution: SkillDistribution }
   | { type: 'SET_FLOOR_DIFFICULTY'; floor: number; difficulty: FloorDifficulty; clearSelection?: boolean }
   | { type: 'SET_FLOOR_THEME'; floor: number; themeId: string | null }
+  | { type: 'ADD_FLOOR_THEME_ALT'; floor: number; themeId: string }
+  | { type: 'REMOVE_FLOOR_THEME_ALT'; floor: number; themeId: string }
+  | { type: 'REORDER_FLOOR_THEME'; floor: number; themeIds: string[] }
   | { type: 'SET_FLOOR_GIFTS'; floor: number; giftIds: string[] }
   | { type: 'SET_FLOOR_CONSTRAINTS'; floor: number; ids: number[] }
   | { type: 'SET_FLOOR_MEMO'; floor: number; memo: string }
@@ -181,8 +186,25 @@ function normalizeFloorGiftIds(giftIds: unknown): string[] {
     .map(giftId => String(giftId))
 }
 
-type LoadableFloorEntry = Partial<Omit<FloorEntry, 'theme_id' | 'gift_ids'>> & {
+/** A floor's packs in order: first choice, then the fallbacks. */
+export function floorThemeOrder(entry: Pick<FloorEntry, 'theme_id' | 'theme_alt_ids'>): string[] {
+  return entry.theme_id ? [entry.theme_id, ...(entry.theme_alt_ids ?? [])] : []
+}
+
+function withThemeOrder(entry: FloorEntry, themeIds: string[]): FloorEntry {
+  const [primary = null, ...alts] = [...new Set(themeIds)]
+  // Gifts picked before any pack exclude every pack's own gifts, so the first pack keeps them; a change of first choice clears them.
+  const gift_ids = primary === entry.theme_id || (!entry.theme_id && primary) ? entry.gift_ids : []
+  return { ...entry, theme_id: primary, theme_alt_ids: alts, gift_ids }
+}
+
+function mapFloor(state: PlannerState, floor: number, change: (entry: FloorEntry) => FloorEntry): PlannerState {
+  return { ...state, floorPlan: state.floorPlan.map(f => f.floor === floor ? change(f) : f) }
+}
+
+type LoadableFloorEntry = Partial<Omit<FloorEntry, 'theme_id' | 'theme_alt_ids' | 'gift_ids'>> & {
   theme_id?: unknown
+  theme_alt_ids?: unknown
   gift_ids?: unknown
 }
 
@@ -192,10 +214,16 @@ function normalizeFloorEntry(entry: LoadableFloorEntry | undefined, index: numbe
     ? entry.difficulty
     : getLegacyPlanFloorDifficulty(planDifficulty, floor)
 
+  const theme_id = normalizePlannerThemeId(entry?.theme_id)
+  const alts = theme_id && Array.isArray(entry?.theme_alt_ids)
+    ? entry.theme_alt_ids.map(normalizePlannerThemeId).filter((id): id is string => !!id && id !== theme_id)
+    : []
+
   return {
     floor,
     difficulty,
-    theme_id: normalizePlannerThemeId(entry?.theme_id),
+    theme_id,
+    theme_alt_ids: [...new Set(alts)],
     gift_ids: normalizeFloorGiftIds(entry?.gift_ids),
     memo: typeof entry?.memo === 'string' ? entry.memo : '',
     constraints: Array.isArray(entry?.constraints) ? entry.constraints.filter(Number.isInteger) : [],
@@ -224,6 +252,7 @@ export function plannerReducer(state: PlannerState, action: PlannerAction): Plan
           floor: i + 1,
           difficulty: state.floorPlan[i]?.difficulty ?? getLegacyPlanFloorDifficulty(normalizedDifficulty, i + 1),
           theme_id: state.floorPlan[i]?.theme_id ?? null,
+          theme_alt_ids: state.floorPlan[i]?.theme_alt_ids ?? [],
           gift_ids: state.floorPlan[i]?.gift_ids ?? [],
           memo: state.floorPlan[i]?.memo ?? '',
         })),
@@ -267,19 +296,23 @@ export function plannerReducer(state: PlannerState, action: PlannerAction): Plan
               ...f,
               difficulty: action.difficulty,
               theme_id: action.clearSelection ? null : f.theme_id,
+              theme_alt_ids: action.clearSelection ? [] : f.theme_alt_ids,
               gift_ids: action.clearSelection ? [] : f.gift_ids,
             }
             : f
         ),
       }
-    case 'SET_FLOOR_THEME':
-      return {
-        ...state,
-        floorPlan: state.floorPlan.map(f =>
-          // Gifts picked before any pack exclude every pack's own gifts, so the first pack keeps them; a change clears them.
-          f.floor === action.floor ? { ...f, theme_id: action.themeId, gift_ids: !f.theme_id && action.themeId ? f.gift_ids : [], memo: f.memo } : f
-        ),
-      }
+    case 'SET_FLOOR_THEME': {
+      // A new first choice keeps the fallbacks; removing the first choice promotes the next fallback.
+      const { themeId } = action
+      return mapFloor(state, action.floor, f => withThemeOrder(f, themeId ? [themeId, ...(f.theme_alt_ids ?? [])] : f.theme_alt_ids ?? []))
+    }
+    case 'ADD_FLOOR_THEME_ALT':
+      return mapFloor(state, action.floor, f => withThemeOrder(f, [...floorThemeOrder(f), action.themeId]))
+    case 'REMOVE_FLOOR_THEME_ALT':
+      return mapFloor(state, action.floor, f => withThemeOrder(f, floorThemeOrder(f).filter(id => id !== action.themeId)))
+    case 'REORDER_FLOOR_THEME':
+      return mapFloor(state, action.floor, f => withThemeOrder(f, action.themeIds))
     case 'SET_FLOOR_GIFTS':
       return {
         ...state,

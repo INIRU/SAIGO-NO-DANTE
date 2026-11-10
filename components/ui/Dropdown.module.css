@@ -14,7 +14,7 @@
 .trigger[aria-expanded='true'] .chevron { rotate: 180deg; }
 
 .menu {
-  position: absolute; top: calc(100% + .375rem); left: 0; z-index: 30; max-height: 18rem; overflow-y: auto; padding: .25rem;
+  position: absolute; top: calc(100% + .375rem); left: 0; z-index: 30; max-height: 18rem; overflow-y: auto; scrollbar-gutter: stable; padding: .25rem;
   border: 1px solid var(--border); border-radius: .5rem; background: var(--bg-card); box-shadow: 0 .75rem 2rem rgb(0 0 0 / .6);
   transform-origin: top left; animation: dropdown-in 160ms cubic-bezier(.23, 1, .32, 1);
 }

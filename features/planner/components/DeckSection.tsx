@@ -375,7 +375,7 @@ export default function DeckSection({ state, dispatch, identities, sinners, skil
           for (const e of selectedEgos) egoByGrade[e.grade] = e
 
           return (
-          <div className="relative w-full" style={{ background: 'var(--bg-card)', border: '1px solid #333', borderRadius: '0.5rem', maxHeight: '85vh', overflowY: 'auto', boxShadow: '0 1rem 3rem rgba(0,0,0,0.8)' }}>
+          <div className="relative w-full" style={{ background: 'var(--bg-card)', border: '1px solid #333', borderRadius: '0.5rem', maxHeight: '85vh', overflowY: 'auto', scrollbarGutter: 'stable', boxShadow: '0 1rem 3rem rgba(0,0,0,0.8)' }}>
             {/* 헤더 */}
             <div className="flex items-center justify-between sticky top-0 z-10" style={{ padding: '1rem 1.25rem', background: 'var(--bg-card)', borderBottom: '1px solid #222' }}>
               <div className="flex items-center gap-2 min-w-0">

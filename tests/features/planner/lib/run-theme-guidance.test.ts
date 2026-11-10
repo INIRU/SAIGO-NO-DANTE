@@ -83,3 +83,14 @@ it('shows no artwork in blank mode or without a planned current slot', () => {
   state.currentFloor = 2
   expect(getRunThemeGuidance(state, themes)).toEqual([])
 })
+
+it('lists the plan fallbacks that can be chosen here and leads with one when the first choice cannot', () => {
+  const state = createInitialRunState('hard')
+  state.sourcePlanSnapshot = { floorPlan: (plan(['A', '', 'E']) ?? []).map((entry, index) => index ? entry : { ...entry, theme_alt_ids: ['B', 'C', 'D'] }) }
+  state.floorLogs[1].themeId = 'D'
+  // C cannot appear on floor 1 and D is already taken on floor 2.
+  const themes = [theme('A', [1]), theme('B', [1]), theme('C', [2]), theme('D', [1, 2])]
+  expect(getRunThemeGuidance(state, themes)[0].fallbacks.map(item => item.id)).toEqual(['B'])
+  const led = getRunThemeGuidance(state, [theme('A', [2]), ...themes.slice(1)])
+  expect(led.map(item => [item.theme.id, item.plannedHere, item.fallbacks.length])).toEqual([['B', false, 0]])
+})

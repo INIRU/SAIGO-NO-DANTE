@@ -51,7 +51,7 @@ export default function ThemeSection({ state, themes, onSelect, onClear, onClose
     </div>
     {available.length === 0 ? <p className="py-6 text-sm text-[var(--text-secondary)]">{t('noAvailableThemes')}</p> :
       <div className="grid grid-cols-[repeat(auto-fill,minmax(6.25rem,1fr))] gap-x-2 gap-y-2.5 sm:grid-cols-[repeat(auto-fill,minmax(7rem,1fr))]">
-        {available.map(theme => <div key={theme.id} className="mx-auto w-full max-w-[8rem]"><ThemePackCard theme={theme} onClick={() => onSelect(theme)} isSelected={String(currentLog?.themeId) === String(theme.id)} imageSurface="bare" sizes="(max-width: 640px) 34vw, 128px" /></div>)}
+        {available.map(theme => <div key={theme.id} className="mx-auto w-full max-w-[8rem]"><ThemePackCard theme={theme} onClick={() => onSelect(theme)} isSelected={String(currentLog?.themeId) === String(theme.id)} sizes="(max-width: 640px) 34vw, 128px" /></div>)}
       </div>}
   </section>
 }

@@ -78,32 +78,3 @@
   color: var(--gold-light);
 }
 
-.giftImage {
-  display: inline-block;
-  width: 1.25em;
-  height: 1.25em;
-  margin: -0.15em 0.25em -0.15em -0.15em;
-  object-fit: contain;
-  vertical-align: middle;
-}
-
-button.chip {
-  cursor: pointer;
-  transition: background-color 150ms ease, border-color 150ms ease;
-}
-
-button.chip:hover {
-  border-color: var(--gold-light);
-  background: rgba(200, 144, 10, 0.2);
-}
-
-button.chip:focus-visible {
-  outline: 2px solid var(--gold-light);
-  outline-offset: 1px;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  button.chip {
-    transition: none;
-  }
-}

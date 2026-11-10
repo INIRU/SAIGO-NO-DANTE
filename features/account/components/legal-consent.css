@@ -10,7 +10,7 @@
 .legal-consent-toggle { display: inline-flex; flex-shrink: 0; align-items: center; gap: .25rem; min-height: 2.5rem; padding: 0 .6rem; border: 0; background: none; color: var(--gold-light); font: 600 .8rem var(--font-body); cursor: pointer; }
 .legal-consent-toggle svg { transition: transform 150ms; }
 .legal-consent-toggle[aria-expanded="true"] svg { transform: rotate(180deg); }
-.legal-consent-text { border-radius: .4rem; max-height: min(13rem, 28dvh); overflow-y: auto; overscroll-behavior: contain; margin: 0 .75rem .75rem; padding: .75rem; border-top: 1px solid #2e2417; background: var(--bg-deep); color: var(--text-secondary); font-size: .78rem; line-height: 1.7; }
+.legal-consent-text { border-radius: .4rem; max-height: min(13rem, 28dvh); overflow-y: auto; scrollbar-gutter: stable; overscroll-behavior: contain; margin: 0 .75rem .75rem; padding: .75rem; border-top: 1px solid #2e2417; background: var(--bg-deep); color: var(--text-secondary); font-size: .78rem; line-height: 1.7; }
 .legal-consent-text:focus-visible { outline: 2px solid var(--gold-light); outline-offset: 2px; }
 .legal-consent-meta { margin-bottom: .5rem; color: var(--text-muted); font-size: .72rem; }
 .legal-consent-text h3 { margin: .75rem 0 .25rem; color: var(--gold-light); font: .82rem/1.4 var(--font-heading), var(--font-body); }

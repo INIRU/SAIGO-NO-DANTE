@@ -1,12 +1,10 @@
 'use client'
 
 import { maxObserved, observationCost, type Observation } from '@/features/planner/lib/observation'
-import GiftGrade from '@/components/ui/GiftGrade'
 
-import { GIFT_BG_URL } from '@/lib/constants/gift'
 
 import { getGameUiAsset } from '@/lib/utils/game-ui'
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useMemo, useState, type CSSProperties } from 'react'
 import Image from 'next/image'
 import { useLocale, useTranslations } from 'next-intl'
 import type { PlannerState, PlannerAction, GiftData } from '@/lib/planner/types'
@@ -14,13 +12,13 @@ import { START_GIFT_IDS } from '@/features/planner/lib/start-gifts'
 import {
   GRADE_ROMAN,
   GRADE_ORDER,
-  OCTAGON_CLIP,
   getKeywordIconUrl,
   getKeywordSlug,
 } from '@/lib/planner/gift-plan-constants'
 import type { GiftSubTab } from '@/lib/planner/gift-plan-constants'
 import GiftGridPanel from './GiftGridPanel'
 import SelectedPanel from './SelectedPanel'
+import GiftCard from '@/features/mirror-dungeon/components/GiftCard'
 
 interface Props {
   state: PlannerState
@@ -35,6 +33,7 @@ interface Props {
 export default function GiftPlanTab({ state, dispatch, gifts, giftMap, observation }: Props) {
   const locale = useLocale()
   const t = useTranslations('planner.giftTab')
+  const tFloor = useTranslations('planner.floorTab')
   const [subTab, setSubTab] = useState<GiftSubTab>('observe')
   const getGiftDisplayName = (gift: GiftData) => locale === 'en'
     ? gift.name_en || gift.name
@@ -188,6 +187,7 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap, observati
             />
             <SelectedPanel
               title={t('observe.selectedTitle')}
+              bandLabel={tFloor('finalAutoObserveTag')}
               selectedGifts={getGiftsByIds(observeIds)}
               onRemove={gift => dispatch({ type: 'REMOVE_GIFT', giftId: `observe_${gift.game_id}` })}
               badge={
@@ -255,100 +255,51 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap, observati
 
         return (
           <div className="planner-gift-start-layout" style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
-            <div className="planner-gift-start-main" style={{ flex: 1, minWidth: 0 }}>
-              {/* 키워드별 카드 그리드 (게임 UI 스타일) */}
-              <div className="planner-gift-start-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(14rem, 1fr))', gap: '0.75rem' }}>
+            <div className="planner-gift-start-main" style={{ flex: 1, minWidth: 0, containerType: 'inline-size' }}>
+              {/* Keyword columns: the keyword on top and its gifts stacked under it, so all ten keywords fit across a wide screen. */}
+              <div className="planner-gift-start-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(5, minmax(0, 1fr))', gap: '0.5rem' }}>
                 {KEYWORD_ORDER.map(kw => {
                   const kwGifts = grouped.get(kw) ?? []
                   if (kwGifts.length === 0) return null
                   const slug = getKeywordSlug(kw)
                   const iconUrl = slug ? getKeywordIconUrl(slug) : null
                   return (
-                    <div key={kw} className="planner-gift-start-group" style={{
+                    <section key={kw} aria-label={keywordLabel(slug)} className="planner-gift-start-group" style={{
+                      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', minWidth: 0,
+                      padding: '0.5rem 0.375rem 0.625rem',
                       background: 'var(--bg-card)',
                       border: '1px solid #2a2520',
                       borderRadius: '0.5rem',
-                      overflow: 'hidden',
-                    }}>
-                      {/* 키워드 헤더 */}
-                      <div style={{
-                        display: 'flex', alignItems: 'center', gap: '0.375rem',
-                        padding: '0.5rem 0.75rem',
-                        background: '#12100d',
-                        borderBottom: '1px solid #2a2520',
-                      }}>
+                      '--gift-name-size': 'var(--text-xs)',
+                    } as CSSProperties}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', minHeight: '1.5rem' }}>
                         {iconUrl && (
                           <Image src={iconUrl} alt="" width={18} height={18} style={{ width: '1.125rem', height: '1.125rem', objectFit: 'contain' }} />
                         )}
-                        <span style={{ color: 'var(--text-primary)', fontSize: '0.8125rem', fontWeight: 600 }}>{keywordLabel(slug)}</span>
+                        <span style={{ color: 'var(--text-primary)', fontSize: '0.8125rem', fontWeight: 600, whiteSpace: 'nowrap' }}>{keywordLabel(slug)}</span>
                       </div>
-                      {/* 기프트 3개 */}
-                      <div className="planner-gift-start-card-row" style={{ display: 'flex', justifyContent: 'center', gap: '0.5rem', padding: '0.75rem' }}>
-                        {kwGifts.map(gift => {
-                          const isSelected = startIds.has(gift.game_id)
-                          return (
-                            <button
-                              key={gift.id}
-                              title={getGiftDisplayName(gift)}
-                              aria-label={getGiftDisplayName(gift)}
-                              onClick={() => {
-                                const key = `start_${gift.game_id}`
-                                if (isSelected) {
-                                  dispatch({ type: 'REMOVE_GIFT', giftId: key })
-                                } else if (startIds.size < maxStartGifts) {
-                                  dispatch({ type: 'ADD_GIFT', giftId: key })
-                                }
-                              }}
-                              className="group"
-                              style={{
-                                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.25rem',
-                                cursor: startIds.size >= maxStartGifts && !isSelected ? 'not-allowed' : 'pointer',
-                                opacity: startIds.size >= maxStartGifts && !isSelected ? 0.4 : 1,
-                                transition: 'all 0.15s',
-                              }}
-                            >
-                              <div style={{
-                                width: '3.5rem', height: '3.5rem',
-                                clipPath: OCTAGON_CLIP,
-                                backgroundImage: `url(${GIFT_BG_URL})`,
-                                backgroundSize: 'contain',
-                                position: 'relative',
-                                overflow: 'hidden',
-                                outline: isSelected ? '2px solid var(--gold)' : 'none',
-                                outlineOffset: '2px',
-                              }}>
-                                <GiftGrade grade={gift.grade} style={{
-                                  position: 'absolute', top: '4%', left: '5%', zIndex: 10,
-                                  fontFamily: "'Bebas Neue', var(--font-title), sans-serif",
-                                  fontWeight: 700, fontSize: '0.875rem', lineHeight: 1,
-                                  color: 'rgb(251,183,46)',
-                                  textShadow: '0 0 0.375rem rgb(255,114,21), 0 0 0.125rem rgba(0,0,0,0.6)',
-                                }} />
-                                <div style={{ position: 'absolute', inset: '15%' }}>
-                                  {gift.image_url?.startsWith('http') && (
-                                    <Image src={gift.image_url} alt={getGiftDisplayName(gift)} fill sizes="56px" style={{ objectFit: 'contain' }} />
-                                  )}
-                                </div>
-                                {isSelected && (
-                                  <div style={{ position: 'absolute', inset: 0, background: 'rgba(200,144,10,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 20 }}>
-                                    <span style={{ color: 'var(--gold-light)', fontSize: '1.25rem', textShadow: '0 0 0.5rem rgba(0,0,0,0.8)' }}>✓</span>
-                                  </div>
-                                )}
-                              </div>
-                              <span style={{ fontSize: '0.5625rem', color: '#aaa', textAlign: 'center', lineHeight: 1.2, maxWidth: '3.5rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                {getGiftDisplayName(gift)}
-                              </span>
-                            </button>
-                          )
-                        })}
-                      </div>
-                    </div>
+                      {kwGifts.map(gift => {
+                        const isSelected = startIds.has(gift.game_id)
+                        return (
+                          // The shared gift card: its own 선택됨 band marks a pick, like every other gift list.
+                          <GiftCard
+                            key={gift.id}
+                            gift={gift}
+                            size="min(100%, 4.5rem)"
+                            isSelected={isSelected}
+                            disabled={startIds.size >= maxStartGifts && !isSelected}
+                            onClick={() => dispatch({ type: isSelected ? 'REMOVE_GIFT' : 'ADD_GIFT', giftId: 'start_' + gift.game_id })}
+                          />
+                        )
+                      })}
+                    </section>
                   )
                 })}
               </div>
             </div>
             <SelectedPanel
               title={t('start.selectedTitle')}
+              bandLabel={tFloor('finalAutoStartTag')}
               selectedGifts={getGiftsByIds(startIds)}
               onRemove={gift => dispatch({ type: 'REMOVE_GIFT', giftId: `start_${gift.game_id}` })}
               badge={
@@ -370,6 +321,9 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap, observati
       })()}
 
       <style jsx global>{`
+        /* Ten keywords: one row when the picker is wide enough for ten columns, else five by two (never a short last row). */
+        @container (min-width: 56rem) { .planner-gift-start-grid { grid-template-columns: repeat(10, minmax(0, 1fr)) !important; } }
+        @container (max-width: 26rem) { .planner-gift-start-grid { gap: 0.25rem !important; } .planner-gift-start-group { padding: 0.375rem 0.125rem 0.5rem !important; } }
         @media (max-width: 767px) {
           .planner-gift-tab {
             gap: 0.875rem !important;
@@ -493,51 +447,8 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap, observati
             font-size: 0.875rem !important;
           }
 
-          .planner-selected-panel-list {
-            display: grid !important;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 0.375rem !important;
-          }
-
-          .planner-selected-gift-row {
-            min-width: 0;
-            padding: 0.375rem !important;
-          }
-
-          .planner-selected-remove {
-            width: 1.75rem !important;
-            height: 1.75rem !important;
-            min-width: 1.75rem;
-          }
-
           .planner-gift-start-main {
             width: 100%;
-          }
-
-          .planner-gift-start-grid {
-            grid-template-columns: 1fr !important;
-            gap: 0.625rem !important;
-          }
-
-          .planner-gift-start-card-row {
-            justify-content: space-between !important;
-            gap: 0.375rem !important;
-            padding: 0.75rem 0.625rem !important;
-          }
-
-          .planner-gift-start-card-row button {
-            min-width: 0;
-            min-height: 5.75rem;
-            flex: 1 1 0;
-          }
-
-          .planner-gift-start-card-row button > span {
-            font-size: 0.75rem !important;
-            max-width: 5.75rem !important;
-            white-space: normal !important;
-            display: -webkit-box !important;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
           }
 
           .planner-gift-final-build {
@@ -642,6 +553,13 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap, observati
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
+          }
+        }
+
+        /* Tablet width in the stacked layout: more columns instead of five cards stretched to ~8rem each. */
+        @media (min-width: 480px) and (max-width: 767px) {
+          .planner-gift-card-grid {
+            grid-template-columns: repeat(auto-fill, minmax(5rem, 1fr)) !important;
           }
         }
 

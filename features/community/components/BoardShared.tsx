@@ -45,7 +45,7 @@ export function TextAction({ onClick, children }: { onClick: () => void; childre
 /** A horizontal scroll-snap rail on phones (next card peeking), a grid from md up. */
 export function Rail({ children, columns = 3 }: { children: ReactNode[]; columns?: 2 | 3 }) {
   return (
-    <div className={`-mx-4 flex snap-x snap-mandatory scroll-px-4 items-stretch gap-3 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:mx-0 md:grid md:gap-4 md:overflow-visible md:px-0 md:pb-0 ${columns === 3 ? 'md:grid-cols-2 xl:grid-cols-3' : 'md:grid-cols-2'}`}>
+    <div className={`-mx-4 flex snap-x snap-mandatory scroll-px-4 items-stretch gap-3 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:mx-0 md:grid md:gap-4 md:overflow-visible md:px-0 md:pb-0 ${columns === 3 ? 'md:grid-cols-3' : 'md:grid-cols-2'}`}>
       {children.map((child, index) => (
         <div key={index} className="w-[78vw] max-w-[21rem] shrink-0 snap-start md:w-auto md:max-w-none md:min-w-0 [&>article]:h-full">{child}</div>
       ))}
@@ -60,7 +60,7 @@ export function Rail({ children, columns = 3 }: { children: ReactNode[]; columns
 export function IdentityCards({ items, kind }: { items: { identity: Identity; trailing: ReactNode }[]; kind: DiscoveryKind }) {
   const lang = useLocale() as SupportedLang
   return (
-    <ul className="-mx-4 flex snap-x scroll-px-4 gap-3 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:mx-0 md:gap-4 md:overflow-visible md:px-0">
+    <ul className="-mx-4 -mt-3 flex snap-x scroll-px-4 gap-3 overflow-x-auto px-4 pb-1 pt-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:mx-0 md:gap-4 md:overflow-visible md:px-0">
       {items.map(({ identity, trailing }) => (
         <li key={identity.id} className="w-24 shrink-0 snap-start md:w-auto md:max-w-[9.5rem] md:min-w-0 md:flex-1">
           <Link href={`${baseOf(kind)}?browse=all&ids=${identity.id}`} className="group block active:scale-[0.97] motion-reduce:active:scale-100" style={{ transition: 'transform 150ms cubic-bezier(0.23,1,0.32,1)' }}>
@@ -80,7 +80,7 @@ export function UpdatedRows({ kind, posts }: { kind: DiscoveryKind; posts: RowPo
   const shown = posts.slice(0, open ? 6 : 3)
   return (
     <>
-      <ul className="-mx-4 divide-y divide-[#241c14] md:mx-0 lg:grid lg:grid-cols-3 lg:gap-x-4 lg:divide-y-0 [&>li]:lg:border-b [&>li]:lg:border-[#241c14]">
+      <ul className="-mx-4 divide-y divide-[#241c14] md:mx-0 lg:grid lg:grid-cols-3 lg:gap-x-4 lg:divide-y-0 [&>li]:min-w-0 [&>li]:lg:border-b [&>li]:lg:border-[#241c14]">
         {shown.map(post => <li key={post.id}><FormationRow kind={kind} post={post} tags={false} lead={<DateLead iso={post.updated_at ?? post.created_at} />} /></li>)}
       </ul>
       {posts.length > 3 && <TextAction onClick={() => setOpen(value => !value)}>{open ? t('less') : t('more')}</TextAction>}

@@ -31,7 +31,7 @@ export default async function Footer({ lang }: { lang: string }) {
             <p className="text-[1rem]" style={{ color: 'var(--gold)', fontFamily: 'var(--font-heading)' }}>{tSite('name')}</p>
           </div>
 
-          <nav aria-label={tCommon('footerNav')} className="grid gap-y-5 sm:grid-cols-3 sm:gap-x-6 sm:gap-y-8 lg:grid-cols-5 lg:gap-x-10">
+          <nav aria-label={tCommon('footerNav')} className="grid gap-y-5 sm:grid-cols-3 sm:gap-x-6 sm:gap-y-8 md:grid-cols-5 lg:gap-x-10">
             {NAV_GROUPS.map(group => (
               <div key={group.labelKey}>
                 <p className="mb-2 text-[0.8125rem] lg:mb-3" style={{ color: 'var(--gold)', fontFamily: 'var(--font-heading)' }}>{label(group.labelKey)}</p>

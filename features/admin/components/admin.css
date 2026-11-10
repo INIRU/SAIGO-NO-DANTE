@@ -74,7 +74,7 @@
   align-content: start;
   gap: 1.25rem;
   min-height: 0;
-  overflow-y: auto;
+  overflow-y: auto; scrollbar-gutter: stable;
   padding: 1rem 0.625rem;
 }
 .admin-nav-group {

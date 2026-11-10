@@ -4,6 +4,8 @@ import BackLink from '@/components/navigation/BackLink'
 import { pendingNoteUploads, noteUploadInProgressMessage } from '@/lib/notes/images'
 
 import { memo, useMemo, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import dynamic from 'next/dynamic'
+import { GiftDetailContext } from '@/features/mirror-dungeon/components/GiftCard'
 import { useReducedMotion } from 'motion/react'
 import * as m from 'motion/react-m'
 import { Link, useRouter } from '@/lib/i18n/navigation'
@@ -13,6 +15,7 @@ import { useQueryState, parseAsString } from 'nuqs'
 import { ArrowLeft, Copy, Upload, Check, Play } from 'lucide-react'
 import { createInitialState, type PlannerState, type PlannerTab, type ThemeData, type GiftData, type RecipeData, type IdentityData, type SinnerData, type PassiveData, type SkillSummary, type EgoData } from '@/lib/planner/types'
 import { buildGiftMap } from '@/lib/planner/fusion'
+import { deriveFinalGifts, finalEnhanceAction } from '@/features/planner'
 import { encodePlan, isPlannerState, snapshotPlannerState, savePlanForRun, loadDraftFromLocal, clearDraftFromLocal, loadPlannerTempSlots, savePlannerTempSlot, deletePlannerTempSlot, withLcbIdentitySlots, type PlannerTempSlot, type Observation } from '@/features/planner'
 import { enrichIdentitySlotsForGiftConditions } from '@/lib/planner/gift-condition-status'
 import { usePlannerStore } from '@/features/planner/hooks/usePlannerStore'
@@ -30,6 +33,8 @@ import { useAutosaveDraft } from '@/features/notes/hooks/useAutosaveDraft'
 import { autosaveKey } from '@/features/notes'
 import SeriesPicker from '@/features/community/components/SeriesPicker'
 import { workbenchReveal } from '@/lib/animations'
+
+const PlannerGiftModal = dynamic(() => import('@/features/planner/components/PlannerGiftModal'), { ssr: false })
 
 interface Props {
   themes: ThemeData[]
@@ -53,6 +58,9 @@ const TABS: { key: PlannerTab; labelKey: string }[] = [
   { key: 'gift', labelKey: 'tabs.gift' },
   { key: 'floor', labelKey: 'tabs.floor' },
 ]
+// 최종 기프트는 층별 계획 구역 안에 있다: 목차에만 따로 두고 그 자리(plan-final)로 이동한다.
+type NavKey = PlannerTab | 'final'
+const NAV: { key: NavKey; labelKey: string }[] = [...TABS, { key: 'final', labelKey: 'tabs.final' }]
 
 // 무거운 구역은 자기가 읽는 상태가 바뀔 때만 다시 그린다(인격 순서를 바꿔도 층별 계획까지 다시 그리던 지연)
 type SectionProps = { state: PlannerState }
@@ -84,7 +92,7 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
   const state = usePlannerStore()
   const dispatch = usePlannerStore(s => s.dispatch)
   const [tabParam, setTabParam] = useQueryState('tab', parseAsString.withDefault('summary'))
-  const [currentSection, setCurrentSection] = useState<PlannerTab>(isPlannerTab(tabParam) ? tabParam : 'summary')
+  const [currentSection, setCurrentSection] = useState<NavKey>(isPlannerTab(tabParam) ? tabParam : 'summary')
   const shouldReduceMotion = useReducedMotion()
   const [navLayout, setNavLayout] = useState<NavLayout>('rail')
 
@@ -93,6 +101,11 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
   if (sectionState !== state && SECTION_KEYS.some(key => sectionState[key] !== state[key])) setSectionState(state)
 
   const giftMap = useMemo(() => buildGiftMap(gifts), [gifts])
+  // Holding any gift card in the planner opens that gift's detail here.
+  const [detailGiftId, setDetailGiftId] = useState<string | number | null>(null)
+  const detailGift = detailGiftId == null ? undefined : giftMap.get(Number(detailGiftId))
+  // A gift the run ends with carries an enhancement: the detail window shows it and its keys set it.
+  const detailFinal = detailGift && deriveFinalGifts(state.giftInventory, recipes, giftMap).gifts.find(entry => entry.id === detailGift.game_id)
   // 인격이 바뀔 때만 다시 만든다: 기프트·층 구역은 identitySlots가 같은 배열이면 다시 그리지 않는다
   const conditionSlots = useMemo(
     () => enrichIdentitySlotsForGiftConditions(sectionState.identitySlots, identities),
@@ -204,8 +217,20 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
   }, [floorMounted])
 
 
-  const goToSection = (key: PlannerTab) => {
-    const index = TABS.findIndex(tab => tab.key === key)
+  // 최종 기프트가 화면 위쪽 띠에 들어오면 목차에 표시하고, 위로 벗어나면 층별 계획으로 되돌린다
+  useEffect(() => {
+    const final = document.getElementById('plan-final')
+    if (!final) return
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) setCurrentSection('final')
+      else if (entry.boundingClientRect.top > 0) setCurrentSection(current => current === 'final' ? 'floor' : current)
+    }, { rootMargin: '-25% 0px -65% 0px' })
+    observer.observe(final)
+    return () => observer.disconnect()
+  }, [floorMounted])
+
+  const goToSection = (key: NavKey) => {
+    const index = key === 'final' ? TABS.length - 1 : TABS.findIndex(tab => tab.key === key)
     const needsMount = index >= mountedCount
     if (needsMount) setMountedCount(index + 1)
     // 새로 그린 구역의 높이가 잡힌 뒤에 이동한다
@@ -213,7 +238,7 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
       document.getElementById(`plan-${key}`)?.scrollIntoView({ behavior: shouldReduceMotion || needsMount ? 'auto' : 'smooth', block: 'start' })
     }))
     setCurrentSection(key)
-    void setTabParam(key === 'summary' ? null : key, { history: 'replace' })
+    void setTabParam(key === 'summary' ? null : key === 'final' ? 'floor' : key, { history: 'replace' })
   }
 
   // edit 모드 감지
@@ -359,6 +384,7 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
                 floor: i + 1,
                 difficulty: decoded.floorDifficulties[i],
                 theme_id: tid,
+                theme_alt_ids: decoded.floorThemeAlts[i],
                 gift_ids: decoded.floorGifts[i],
                 memo: decoded.floorMemos[i],
                 constraints: decoded.floorConstraints[i],
@@ -399,13 +425,13 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
     floor: <FloorSection state={giftConditionState} dispatch={dispatch} themes={themes} gifts={gifts} recipes={recipes} giftMap={giftMap} />,
   }
   const plannedFloors = state.floorPlan.filter(floor => floor.theme_id).length
-  const sectionStatus: Partial<Record<PlannerTab, string>> = {
+  const sectionStatus: Partial<Record<NavKey, string>> = {
     deck: `${state.identitySlots.filter(slot => slot.slot_order < 99).length}/12`,
     gift: state.giftInventory.length ? String(state.giftInventory.length) : undefined,
     floor: plannedFloors ? `${plannedFloors}/${state.floorPlan.length}` : undefined,
     summary: state.title.trim() ? '✓' : undefined,
   }
-  const renderNavLink = (tab: typeof TABS[number], variant: 'rail' | 'bar') => {
+  const renderNavLink = (tab: typeof NAV[number], variant: 'rail' | 'bar') => {
     const status = sectionStatus[tab.key]
     return (
       <a
@@ -427,23 +453,24 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
   const railHidden = 'lg:group-data-[layout=bar]/planner:invisible lg:group-data-[layout=bar]/planner:-translate-x-3 lg:group-data-[layout=bar]/planner:opacity-0 lg:group-data-[layout=bar]/planner:duration-0'
 
   return (
+    <GiftDetailContext.Provider value={setDetailGiftId}>
     <div className="min-h-[100dvh] pb-16" style={{ background: 'var(--bg-deep)' }}>
       <AutosaveRestoreModal savedAt={autosave.offer?.savedAt ?? null} onRestore={autosave.restore} onDiscard={autosave.discard} />
       <div className="max-w-[90rem] mx-auto px-3 md:px-6">
         {/* 헤더는 server-rendered page.tsx에서 렌더링 — 여기서는 액션 버튼만 */}
         <m.div
-          className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4"
+          className="relative z-[41] mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between"
           variants={shouldReduceMotion ? undefined : workbenchReveal}
           initial={shouldReduceMotion ? false : 'initial'}
           animate={shouldReduceMotion ? undefined : 'animate'}
         >
           <div>
-            <BackLink href="/planner/community" className="inline-flex items-center gap-1 transition-colors" style={{ color: '#9c8b73', fontSize: '0.875rem' }}>
+            <BackLink href="/planner/community" className="inline-flex items-center gap-1 whitespace-nowrap transition-colors" style={{ color: '#9c8b73', fontSize: '0.875rem' }}>
               <ArrowLeft style={{ width: '0.75rem', height: '0.75rem' }} /> {tPlanner('community')}
             </BackLink>
           </div>
           {/* 휴대폰은 같은 폭 2열(한 버튼만 다음 줄에 남지 않게), 넓은 화면은 한 줄 */}
-          <div className="grid grid-cols-2 gap-2 [&>button]:min-h-10 [&>button]:justify-center [&>div>button]:min-h-10 [&>div>button]:w-full [&>div>button]:justify-center sm:flex sm:flex-wrap sm:items-center sm:justify-end sm:[&>button]:min-h-9 sm:[&>div>button]:w-auto">
+          <div className="grid min-w-0 grid-cols-2 gap-2 [&>button]:whitespace-nowrap [&>button]:min-h-10 [&>button]:justify-center [&>div>button]:min-h-10 [&>div>button]:w-full [&>div>button]:justify-center sm:flex sm:flex-wrap sm:items-center sm:justify-end sm:[&>button]:min-h-9 sm:[&>div>button]:w-auto">
             {<button
               onClick={() => { savePlanForRun({ ...giftConditionState, title: state.title, description: state.description }); window.location.href = '/planner/run?from-plan=1' }}
               style={{
@@ -513,11 +540,11 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
         <nav aria-label={tPlanner('sectionNav')} className="sticky-under-nav z-40 -mx-3 border-b border-[#5a4526] bg-[var(--bg-deep)] px-3 md:-mx-6 md:px-6 lg:mx-0 lg:h-0 lg:border-0 lg:bg-transparent lg:px-0">
           <div className={`lg:absolute lg:-inset-x-6 lg:top-0 lg:border-b lg:border-[#5a4526] lg:bg-[var(--bg-deep)] lg:px-6 ${navFade} ${barHidden}`}>
             <ol ref={sectionNavRef} className="flex gap-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-              {TABS.map(tab => <li key={tab.key} className="shrink-0">{renderNavLink(tab, 'bar')}</li>)}
+              {NAV.map(tab => <li key={tab.key} className="shrink-0">{renderNavLink(tab, 'bar')}</li>)}
             </ol>
           </div>
           <ol ref={railRef} className={`hidden lg:absolute lg:left-0 lg:top-7 lg:block lg:w-44 lg:border-l lg:border-[#2e2417] ${navFade} ${railHidden}`}>
-            {TABS.map(tab => <li key={tab.key}>{renderNavLink(tab, 'rail')}</li>)}
+            {NAV.map(tab => <li key={tab.key}>{renderNavLink(tab, 'rail')}</li>)}
           </ol>
         </nav>
 
@@ -541,5 +568,9 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
         </div>
       </div>
     </div>
+    {detailGift && <PlannerGiftModal gift={detailGift} onClose={() => setDetailGiftId(null)} themes={themes} gifts={gifts}
+      enhance={detailFinal?.level}
+      onEnhance={detailFinal ? level => { const action = finalEnhanceAction(state.giftInventory, detailFinal, level); if (action) dispatch(action) } : undefined} />}
+    </GiftDetailContext.Provider>
   )
 }

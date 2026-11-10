@@ -172,7 +172,7 @@ export function PlanInsights({ summary, data, identityId, headingId }: { summary
           segments={summary.difficulty.map(row => ({ key: row.key, count: row.count, colors: [DIFFICULTY_COLORS[row.key] ?? '#6a6058'], label: rootT('planner.difficultyValues.' + row.key) }))} /></div>}
       {themes.length > 0 && <div className={styles.chartBlock}><h4>{t('plannedThemes')}</h4>
         <ul className={styles.themeGrid}>{themes.map(({ key, count, theme }) => <li key={key}>
-          <ThemePackCard theme={theme} sizes="8rem" imageSurface="bare" lang={locale} ariaLabel={getLocalizedName({ name_kr: theme.name, name_en: theme.name_en, name_jp: theme.name_jp }, locale) + ' ' + (count / summary.count * 100).toFixed(1) + '%'} onClick={() => router.push(board('tp', key))} />
+          <ThemePackCard theme={theme} sizes="8rem" lang={locale} ariaLabel={getLocalizedName({ name_kr: theme.name, name_en: theme.name_en, name_jp: theme.name_jp }, locale) + ' ' + (count / summary.count * 100).toFixed(1) + '%'} onClick={() => router.push(board('tp', key))} />
           <div className={styles.egoStat}><Share value={count / summary.count * 100} /><span className={styles.legendCount}>{t('count', { count })}</span></div>
         </li>)}</ul></div>}
     </div>

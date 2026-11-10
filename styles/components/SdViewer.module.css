@@ -1,6 +1,6 @@
 /* SD viewer (components/identity/SdViewer.tsx). Phones: title, a square stage, then the controls, in one scroll.
    From 48rem: the stage on the left, the title and controls in a column beside it. */
-.viewer { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-areas: "head" "stage" "panel"; max-height: 92dvh; overflow-y: auto; }
+.viewer { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-areas: "head" "stage" "panel"; max-height: 92dvh; overflow-y: auto; scrollbar-gutter: stable; }
 .head { grid-area: head; }
 .stage { grid-area: stage; position: relative; aspect-ratio: 1; overflow: hidden; touch-action: none; cursor: grab; border-block: 1px solid #2e2417; }
 .stage:active { cursor: grabbing; }
@@ -18,5 +18,5 @@
 @media (min-width: 48rem) {
   .viewer { grid-template-columns: minmax(0, 1fr) 18rem; grid-template-rows: auto minmax(0, 1fr); grid-template-areas: "stage head" "stage panel"; overflow: hidden; }
   .stage { border-block: 0; border-right: 1px solid #2e2417; }
-  .panel { overflow-y: auto; padding-top: 0.5rem; }
+  .panel { overflow-y: auto; scrollbar-gutter: stable; padding-top: 0.5rem; }
 }

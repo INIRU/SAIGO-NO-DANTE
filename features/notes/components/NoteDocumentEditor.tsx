@@ -323,7 +323,6 @@ export default function NoteDocumentEditor({
         <button type="button" disabled={preview || !editor} aria-label={label("링크", "リンク", "Link")} className="flex h-9 w-9 items-center justify-center text-[var(--text-primary)]" onClick={()=>{setLinkUrl(editor?.getAttributes('link').href ?? '');setLinkError(false);setLinkOpen(!linkOpen)}}><Link2 size={16}/></button>
         {onPreviewChange && <button type="button" className="note-preview-button" aria-pressed={preview} onClick={()=>onPreviewChange(!preview)}>{preview ? <Pencil size={16}/> : <Eye size={16}/>}{preview ? label("편집", "編集", "Edit") : label("미리보기", "プレビュー", "Preview")}</button>}
       </div>
-      {!preview && <p className="px-3 py-1 text-xs text-[var(--text-secondary)]">{label('키워드 자동 인식 끄기: \\못 → 못', 'キーワードの自動認識を切る: \\火傷 → 火傷', 'Disable keyword detection: \\Burn → Burn')}</p>}
       {linkOpen && !preview && <form noValidate className="note-link-form" onSubmit={e=>{
         e.preventDefault();
         if (!editor) return;
