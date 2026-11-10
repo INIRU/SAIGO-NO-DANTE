@@ -35,6 +35,7 @@ interface Props {
 export default function GiftPlanTab({ state, dispatch, gifts, giftMap, observation }: Props) {
   const locale = useLocale()
   const t = useTranslations('planner.giftTab')
+  const tFloor = useTranslations('planner.floorTab')
   const [subTab, setSubTab] = useState<GiftSubTab>('observe')
   const getGiftDisplayName = (gift: GiftData) => locale === 'en'
     ? gift.name_en || gift.name
@@ -188,6 +189,7 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap, observati
             />
             <SelectedPanel
               title={t('observe.selectedTitle')}
+              bandLabel={tFloor('finalAutoObserveTag')}
               selectedGifts={getGiftsByIds(observeIds)}
               onRemove={gift => dispatch({ type: 'REMOVE_GIFT', giftId: `observe_${gift.game_id}` })}
               badge={
@@ -349,6 +351,7 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap, observati
             </div>
             <SelectedPanel
               title={t('start.selectedTitle')}
+              bandLabel={tFloor('finalAutoStartTag')}
               selectedGifts={getGiftsByIds(startIds)}
               onRemove={gift => dispatch({ type: 'REMOVE_GIFT', giftId: `start_${gift.game_id}` })}
               badge={
@@ -491,23 +494,6 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap, observati
 
           .planner-selected-panel-empty {
             font-size: 0.875rem !important;
-          }
-
-          .planner-selected-panel-list {
-            display: grid !important;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 0.375rem !important;
-          }
-
-          .planner-selected-gift-row {
-            min-width: 0;
-            padding: 0.375rem !important;
-          }
-
-          .planner-selected-remove {
-            width: 1.75rem !important;
-            height: 1.75rem !important;
-            min-width: 1.75rem;
           }
 
           .planner-gift-start-main {

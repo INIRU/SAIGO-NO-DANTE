@@ -1053,7 +1053,8 @@
       "blessing": "Blessings",
       "gift": "Gifts",
       "floor": "Floor Plan",
-      "summary": "Plan intro"
+      "summary": "Plan intro",
+      "final": "Final Gifts"
     },
     "intro": {
       "titlePlaceholder": "Plan title",

@@ -1,14 +1,8 @@
 'use client'
 
-import GiftGrade from '@/components/ui/GiftGrade'
-
-import { GIFT_BG_URL } from '@/lib/constants/gift'
-
-import Image from 'next/image'
-import { useLocale, useTranslations } from 'next-intl'
-import { X } from 'lucide-react'
+import { useTranslations } from 'next-intl'
+import GiftCard from '@/features/mirror-dungeon/components/GiftCard'
 import type { GiftData } from '@/lib/planner/types'
-import { OCTAGON_CLIP, GRADE_COLORS } from '@/lib/planner/gift-plan-constants'
 
 // ── Selected gift panel (right sidebar) ──────────────────────────────────────
 export default function SelectedPanel({
@@ -17,14 +11,16 @@ export default function SelectedPanel({
   onRemove,
   badge,
   footer,
+  bandLabel,
 }: {
+  /** The band over each card (관측 / 시작). */
+  bandLabel?: string
   title: string
   selectedGifts: GiftData[]
   onRemove: (gift: GiftData) => void
   badge?: React.ReactNode
   footer?: React.ReactNode
 }) {
-  const locale = useLocale()
   const t = useTranslations('planner.giftTab')
 
   return (
@@ -72,103 +68,15 @@ export default function SelectedPanel({
           {t('selectedPanel.empty')}
         </div>
       ) : (
-        <div className="planner-selected-panel-list" style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-          {selectedGifts.map(gift => {
-            const gradeColor = GRADE_COLORS[gift.grade ?? '1'] ?? '#888'
-            const displayName = locale === 'en'
-              ? gift.name_en || gift.name
-              : locale === 'ja'
-                ? gift.name_jp || gift.name
-                : gift.name
-            return (
-              <div
-                key={gift.id}
-                className="planner-selected-gift-row"
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.375rem',
-                  padding: '0.3rem 0.375rem',
-                  background: 'var(--bg-card)',
-                  border: '1px solid #2a2520',
-                  borderRadius: '0.375rem',
-                  transition: 'border-color 0.15s',
-                }}
-              >
-                {/* Mini octagon image with grade */}
-                <div style={{
-                  width: '2.25rem',
-                  height: '2.25rem',
-                  flexShrink: 0,
-                  clipPath: OCTAGON_CLIP,
-                  backgroundImage: `url(${GIFT_BG_URL})`,
-                  backgroundSize: 'contain',
-                  position: 'relative',
-                  overflow: 'hidden',
-                }}>
-                  <GiftGrade grade={gift.grade} style={{
-                    position: 'absolute', top: '2%', left: '4%', zIndex: 10,
-                    fontFamily: "'Bebas Neue', var(--font-title), sans-serif",
-                    fontWeight: 700, fontSize: '0.75rem', lineHeight: 1,
-                    color: 'rgb(251,183,46)',
-                    textShadow: '0 0 0.25rem rgb(255,114,21), 0 0 0.125rem rgba(0,0,0,0.6)',
-                  }} />
-                  {gift.image_url?.startsWith('http') && (
-                    <Image
-                      src={gift.image_url}
-                      alt={displayName}
-                      fill
-                      sizes="36px"
-                      style={{ objectFit: 'contain', padding: '15%' }}
-                    />
-                  )}
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <span style={{
-                    fontSize: '0.6875rem',
-                    color: '#d1d5db',
-                    lineHeight: 1.3,
-                    wordBreak: 'keep-all',
-                    display: 'block',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                  }}>
-                    {displayName}
-                  </span>
-                  <GiftGrade plain grade={gift.grade} style={{
-                    fontSize: '0.5rem',
-                    color: gradeColor,
-                    fontWeight: 700,
-                  }} />
-                </div>
-                <button
-                  className="planner-selected-remove"
-                  onClick={() => onRemove(gift)}
-                  style={{
-                    background: 'rgba(220,38,38,0.6)',
-                    border: 'none',
-                    borderRadius: '50%',
-                    width: '1rem',
-                    height: '1rem',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    cursor: 'pointer',
-                    padding: 0,
-                    flexShrink: 0,
-                    transition: 'background 0.15s',
-                  }}
-                  title={t('selectedPanel.remove')}
-                  onMouseEnter={e => (e.currentTarget.style.background = 'rgba(220,38,38,0.9)')}
-                  onMouseLeave={e => (e.currentTarget.style.background = 'rgba(220,38,38,0.6)')}
-                >
-                  <X size={10} color="#fff" />
-                </button>
-              </div>
-            )
-          })}
-        </div>
+        <ul className="planner-selected-panel-list" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(4.25rem, 1fr))', gap: '0.5rem' }}>
+          {selectedGifts.map(gift => (
+            <li key={gift.id} style={{ minWidth: 0 }}>
+              {/* 카드를 누르면 빠진다(꾹 누르면 설명). 왼쪽 아래 ×는 마우스를 올렸을 때의 표시다. */}
+              <GiftCard gift={gift} size="100%" bandLabel={bandLabel} title={t('selectedPanel.remove')}
+                onClick={() => onRemove(gift)} onRemove={() => onRemove(gift)} />
+            </li>
+          ))}
+        </ul>
       )}
 
       {/* Footer (starlight cost, etc.) */}

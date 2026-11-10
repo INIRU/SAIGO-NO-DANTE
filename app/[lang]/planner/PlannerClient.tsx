@@ -57,6 +57,9 @@ const TABS: { key: PlannerTab; labelKey: string }[] = [
   { key: 'gift', labelKey: 'tabs.gift' },
   { key: 'floor', labelKey: 'tabs.floor' },
 ]
+// 최종 기프트는 층별 계획 구역 안에 있다: 목차에만 따로 두고 그 자리(plan-final)로 이동한다.
+type NavKey = PlannerTab | 'final'
+const NAV: { key: NavKey; labelKey: string }[] = [...TABS, { key: 'final', labelKey: 'tabs.final' }]
 
 // 무거운 구역은 자기가 읽는 상태가 바뀔 때만 다시 그린다(인격 순서를 바꿔도 층별 계획까지 다시 그리던 지연)
 type SectionProps = { state: PlannerState }
@@ -88,7 +91,7 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
   const state = usePlannerStore()
   const dispatch = usePlannerStore(s => s.dispatch)
   const [tabParam, setTabParam] = useQueryState('tab', parseAsString.withDefault('summary'))
-  const [currentSection, setCurrentSection] = useState<PlannerTab>(isPlannerTab(tabParam) ? tabParam : 'summary')
+  const [currentSection, setCurrentSection] = useState<NavKey>(isPlannerTab(tabParam) ? tabParam : 'summary')
   const shouldReduceMotion = useReducedMotion()
   const [navLayout, setNavLayout] = useState<NavLayout>('rail')
 
@@ -211,8 +214,20 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
   }, [floorMounted])
 
 
-  const goToSection = (key: PlannerTab) => {
-    const index = TABS.findIndex(tab => tab.key === key)
+  // 최종 기프트가 화면 위쪽 띠에 들어오면 목차에 표시하고, 위로 벗어나면 층별 계획으로 되돌린다
+  useEffect(() => {
+    const final = document.getElementById('plan-final')
+    if (!final) return
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) setCurrentSection('final')
+      else if (entry.boundingClientRect.top > 0) setCurrentSection(current => current === 'final' ? 'floor' : current)
+    }, { rootMargin: '-25% 0px -65% 0px' })
+    observer.observe(final)
+    return () => observer.disconnect()
+  }, [floorMounted])
+
+  const goToSection = (key: NavKey) => {
+    const index = key === 'final' ? TABS.length - 1 : TABS.findIndex(tab => tab.key === key)
     const needsMount = index >= mountedCount
     if (needsMount) setMountedCount(index + 1)
     // 새로 그린 구역의 높이가 잡힌 뒤에 이동한다
@@ -220,7 +235,7 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
       document.getElementById(`plan-${key}`)?.scrollIntoView({ behavior: shouldReduceMotion || needsMount ? 'auto' : 'smooth', block: 'start' })
     }))
     setCurrentSection(key)
-    void setTabParam(key === 'summary' ? null : key, { history: 'replace' })
+    void setTabParam(key === 'summary' ? null : key === 'final' ? 'floor' : key, { history: 'replace' })
   }
 
   // edit 모드 감지
@@ -406,13 +421,13 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
     floor: <FloorSection state={giftConditionState} dispatch={dispatch} themes={themes} gifts={gifts} recipes={recipes} giftMap={giftMap} />,
   }
   const plannedFloors = state.floorPlan.filter(floor => floor.theme_id).length
-  const sectionStatus: Partial<Record<PlannerTab, string>> = {
+  const sectionStatus: Partial<Record<NavKey, string>> = {
     deck: `${state.identitySlots.filter(slot => slot.slot_order < 99).length}/12`,
     gift: state.giftInventory.length ? String(state.giftInventory.length) : undefined,
     floor: plannedFloors ? `${plannedFloors}/${state.floorPlan.length}` : undefined,
     summary: state.title.trim() ? '✓' : undefined,
   }
-  const renderNavLink = (tab: typeof TABS[number], variant: 'rail' | 'bar') => {
+  const renderNavLink = (tab: typeof NAV[number], variant: 'rail' | 'bar') => {
     const status = sectionStatus[tab.key]
     return (
       <a
@@ -521,11 +536,11 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
         <nav aria-label={tPlanner('sectionNav')} className="sticky-under-nav z-40 -mx-3 border-b border-[#5a4526] bg-[var(--bg-deep)] px-3 md:-mx-6 md:px-6 lg:mx-0 lg:h-0 lg:border-0 lg:bg-transparent lg:px-0">
           <div className={`lg:absolute lg:-inset-x-6 lg:top-0 lg:border-b lg:border-[#5a4526] lg:bg-[var(--bg-deep)] lg:px-6 ${navFade} ${barHidden}`}>
             <ol ref={sectionNavRef} className="flex gap-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-              {TABS.map(tab => <li key={tab.key} className="shrink-0">{renderNavLink(tab, 'bar')}</li>)}
+              {NAV.map(tab => <li key={tab.key} className="shrink-0">{renderNavLink(tab, 'bar')}</li>)}
             </ol>
           </div>
           <ol ref={railRef} className={`hidden lg:absolute lg:left-0 lg:top-7 lg:block lg:w-44 lg:border-l lg:border-[#2e2417] ${navFade} ${railHidden}`}>
-            {TABS.map(tab => <li key={tab.key}>{renderNavLink(tab, 'rail')}</li>)}
+            {NAV.map(tab => <li key={tab.key}>{renderNavLink(tab, 'rail')}</li>)}
           </ol>
         </nav>
 
@@ -549,7 +564,7 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
         </div>
       </div>
     </div>
-    {detailGift && <PlannerGiftModal gift={detailGift} onClose={() => setDetailGiftId(null)} themes={themes} />}
+    {detailGift && <PlannerGiftModal gift={detailGift} onClose={() => setDetailGiftId(null)} themes={themes} gifts={gifts} />}
     </GiftDetailContext.Provider>
   )
 }

@@ -1053,7 +1053,8 @@
       "blessing": "加護",
       "gift": "ギフト",
       "floor": "階層計画",
-      "summary": "プラン紹介"
+      "summary": "プラン紹介",
+      "final": "最終ギフト"
     },
     "intro": {
       "titlePlaceholder": "プランのタイトル",

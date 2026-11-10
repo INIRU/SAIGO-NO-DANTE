@@ -102,7 +102,7 @@ export default memo(function FinalGiftTile({ gift, entry, conditionStatus, onEnh
             onClick={onRemove}
             aria-label={t('removeFinalGift', { gift: gift.name })}
             title={t('removeFinalGift', { gift: gift.name })}
-            className="absolute -right-3 -top-3 z-40 flex h-5 w-5 items-center justify-center rounded-full border opacity-0 transition-[opacity,color] hover:text-[#ff8b8b] focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold)] group-hover:opacity-100 motion-reduce:transition-none [@media(hover:none)]:opacity-100"
+            className="absolute -right-1.5 -top-1.5 z-40 flex h-5 w-5 items-center justify-center rounded-full border opacity-0 transition-[opacity,color] hover:text-[#ff8b8b] focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold)] group-hover:opacity-100 motion-reduce:transition-none [@media(hover:none)]:opacity-100"
             style={{ background: '#17120c', borderColor: '#4a3a24', color: '#c9b89f' }}
           >
             <X size={12} aria-hidden="true" />
