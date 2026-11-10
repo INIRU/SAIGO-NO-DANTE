@@ -3,20 +3,18 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 type Call = { table: string; op: 'select' | 'update' | 'delete' | 'insert'; payload?: unknown }
 
 const calls: Call[] = []
+const rpcCalls: { name: string; args: Record<string, unknown> }[] = []
+let rpcError: { message: string } | null = null
 let failOn: (call: Call) => boolean = () => false
 let rateAllowed = true
 
 const deckRow = { id: 'd1', user_id: 'u1', title: 'old', description: null, tags: ['keep'], main_keywords: [], content_type: '없음', content_edited_at: null }
-const origChildren: Record<string, unknown[]> = {
-  deck_identities: [{ deck_id: 'd1', identity_id: 'orig-identity', slot_order: 0 }],
-  deck_egos: [{ deck_id: 'd1', ego_id: 'orig-ego', grade: 'ZAYIN' }],
-}
 
 function from(table: string) {
   const make = (op: Call['op'], payload?: unknown) => {
     const call: Call = { table, op, payload }
     calls.push(call)
-    const result = { data: op === 'select' ? (origChildren[table] ?? []) : null, error: failOn(call) ? { message: 'secret db text' } : null }
+    const result = { data: null, error: failOn(call) ? { message: 'secret db text' } : null }
     const chain: Record<string, unknown> = {
       eq: () => chain,
       single: async () => ({ data: table === 'decks' ? deckRow : null, error: null }),
@@ -31,7 +29,11 @@ function from(table: string) {
     insert: (payload: unknown) => make('insert', payload),
   }
 }
-const admin = { schema: () => ({ from }) }
+const rpc = async (name: string, args: Record<string, unknown>) => {
+  rpcCalls.push({ name, args })
+  return { data: null, error: rpcError }
+}
+const admin = { schema: () => ({ from, rpc }) }
 
 vi.mock('@/lib/supabase/admin', () => ({ createAdminClient: () => admin }))
 vi.mock('@/lib/supabase/server', () => ({ createClient: async () => admin }))
@@ -68,10 +70,12 @@ const patch = (body: unknown) => PATCH(
   new NextRequest('http://localhost/api/decks/d1', { method: 'PATCH', body: JSON.stringify(body) }),
   { params: Promise.resolve({ id: 'd1' }) },
 )
-const writes = () => calls.filter(c => c.op !== 'select')
+const writes = () => [...calls.filter(c => c.op !== 'select'), ...rpcCalls]
 
 beforeEach(() => {
   calls.length = 0
+  rpcCalls.length = 0
+  rpcError = null
   failOn = () => false
   rateAllowed = true
   vi.restoreAllMocks()
@@ -98,6 +102,7 @@ describe('REQ-DECKS-058 the deck update API checks its input', () => {
     const res = await patch(goodBody)
     expect(res.status).toBe(429)
     expect(calls).toEqual([])
+    expect(rpcCalls).toEqual([])
   })
 
   it('REQ-DECKS-058 the bookmark toggle is rate limited too', async () => {
@@ -109,34 +114,35 @@ describe('REQ-DECKS-058 the deck update API checks its input', () => {
 
   it('REQ-DECKS-058 tags are written only when the body has them', async () => {
     expect((await patch(goodBody)).status).toBe(200)
-    expect(calls.find(c => c.table === 'decks' && c.op === 'update')?.payload).not.toHaveProperty('tags')
+    expect(rpcCalls[0].args.p_patch).not.toHaveProperty('tags')
 
-    calls.length = 0
+    rpcCalls.length = 0
     expect((await patch({ ...goodBody, tags: ['a'] })).status).toBe(200)
-    expect(calls.find(c => c.table === 'decks' && c.op === 'update')?.payload).toMatchObject({ tags: ['a'] })
+    expect(rpcCalls[0].args.p_patch).toMatchObject({ tags: ['a'] })
   })
 
-  it('REQ-DECKS-058 a failed ego insert deletes the new rows, then puts the original rows back', async () => {
-    failOn = c => c.table === 'deck_egos' && c.op === 'insert' && JSON.stringify(c.payload).includes('"e1"')
+  it('REQ-DECKS-061 a valid update is one replace_deck call and no other write', async () => {
+    const res = await patch({ ...goodBody, content_type: '무한', main_keywords: ['참격'] })
+    expect(res.status).toBe(200)
+    expect(calls.filter(c => c.op !== 'select')).toEqual([])
+    expect(rpcCalls).toHaveLength(1)
+    expect(rpcCalls[0].name).toBe('replace_deck')
+    expect(rpcCalls[0].args).toEqual({
+      p_deck_id: 'd1',
+      p_patch: { title: 'new', description: null, main_keywords: ['참격'], content_type: '무한', content_edited_at: expect.any(String) },
+      p_identities: [{ deck_id: 'd1', identity_id: 'i0', slot_order: 0, gacksung: true, s1_count: 3, s2_count: 2, s3_count: 1, uptie: 4 }],
+      p_egos: [{ deck_id: 'd1', ego_id: 'e1', grade: 'ZAYIN' }],
+    })
+  })
+
+  it('REQ-DECKS-061 a failed replace_deck is a 500 with a fixed message and no other write', async () => {
+    rpcError = { message: 'secret db text' }
+    const log = vi.spyOn(console, 'error').mockImplementation(() => {})
     const res = await patch(goodBody)
     expect(res.status).toBe(500)
     expect(JSON.stringify(await res.json())).not.toContain('secret')
-
-    const failedAt = calls.findIndex(c => c.table === 'deck_egos' && c.op === 'insert')
-    const after = calls.slice(failedAt + 1).map(c => `${c.op} ${c.table}`)
-    expect(after).toEqual([
-      'delete deck_identities', 'delete deck_egos', 'update decks', 'insert deck_identities', 'insert deck_egos',
-    ])
-    expect(calls.at(-2)?.payload).toEqual(origChildren.deck_identities)
-    expect(calls.at(-1)?.payload).toEqual(origChildren.deck_egos)
-  })
-
-  it('REQ-DECKS-058 a rollback step that fails is logged and the response is still a 500', async () => {
-    const log = vi.spyOn(console, 'error').mockImplementation(() => {})
-    failOn = c => c.op === 'insert' && c.table === 'deck_egos'
-    const res = await patch(goodBody)
-    expect(res.status).toBe(500)
-    // the failed insert itself, then the failed restore of the original ego rows
-    expect(log.mock.calls.length).toBeGreaterThanOrEqual(2)
+    expect(log).toHaveBeenCalled()
+    expect(rpcCalls).toHaveLength(1)
+    expect(calls.filter(c => c.op !== 'select')).toEqual([])
   })
 })
