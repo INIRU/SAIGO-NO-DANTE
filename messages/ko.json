@@ -1053,7 +1053,8 @@
       "blessing": "가호",
       "gift": "기프트",
       "floor": "층별 계획",
-      "summary": "플랜 소개"
+      "summary": "플랜 소개",
+      "final": "최종 기프트"
     },
     "intro": {
       "titlePlaceholder": "플랜 제목",

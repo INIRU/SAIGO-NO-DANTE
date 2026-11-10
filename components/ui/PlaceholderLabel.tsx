@@ -1,16 +1,19 @@
 'use client'
 
-import { createContext, useContext, type ReactNode } from 'react'
+import { createContext, useContext, type CSSProperties, type ReactNode } from 'react'
 import Image from 'next/image'
 import { Activity, Crosshair, Gift, UserRound } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { splitPlaceholders, type PlaceholderMatch, type PlaceholderToken } from '@/lib/game-text/placeholders'
+import { GIFT_KEYWORD_COLORS } from '@/lib/constants/gift'
 import styles from './PlaceholderLabel.module.css'
 
 /** A gift a {{gift:<game id>}} token names, as the page knows it. */
 export interface PlaceholderGift {
   name: string
   image_url?: string | null
+  /** Korean keyword key, for the label colour. */
+  keyword?: string | null
   /** Opens the gift (e.g. in the same modal); without it the chip is not a button. */
   onClick?: () => void
 }
@@ -43,17 +46,17 @@ export default function PlaceholderLabel({ token, giftId }: PlaceholderMatch) {
   const hint = t(`hint.${token}`)
 
   if (gift) {
+    // The notes' gift label (globals.css .note-gift-label): icon and name in the keyword colour, no box.
+    const style = { '--gift-color': GIFT_KEYWORD_COLORS[gift.keyword ?? ''] ?? '#c8b898', textIndent: 0 } as CSSProperties
     const content = (
       <>
-        {gift.image_url
-          ? <Image src={gift.image_url} alt="" width={40} height={40} className={styles.giftImage} />
-          : <Gift aria-hidden="true" className={styles.icon} />}
-        {gift.name}
+        {gift.image_url && <Image src={gift.image_url} alt="" width={40} height={40} />}
+        <strong>{gift.name}</strong>
       </>
     )
     return gift.onClick
-      ? <button type="button" data-placeholder="gift" className={styles.chip} title={hint} onClick={gift.onClick}>{content}</button>
-      : <span data-placeholder="gift" className={styles.chip} title={hint}>{content}</span>
+      ? <button type="button" data-placeholder="gift" className="note-gift-label" style={style} title={hint} onClick={gift.onClick}>{content}</button>
+      : <span data-placeholder="gift" className="note-gift-label" style={style} title={hint}>{content}</span>
   }
 
   return (

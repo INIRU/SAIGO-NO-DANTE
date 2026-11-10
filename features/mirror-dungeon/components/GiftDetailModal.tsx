@@ -90,6 +90,7 @@ export interface GiftDetailRecipePart {
 
 export interface GiftLinkTarget extends GiftRefTarget {
   image_url?: string | null
+  keyword?: string | null
   /** Game id, so a {{gift:<id>}} placeholder in the effect text shows this gift. */
   gameId?: number | null
   onClick: () => void

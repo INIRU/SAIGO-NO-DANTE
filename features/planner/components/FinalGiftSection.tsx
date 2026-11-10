@@ -235,7 +235,7 @@ export default function FinalGiftSection({ giftInventory, identitySlots, dispatc
 
   return (
     <>
-      <section aria-labelledby="final-gifts-title" className="relative border-t pt-5 lg:-ml-[var(--planner-rail-w,0rem)]" style={{ borderColor: '#2e2417' }}>
+      <section id="plan-final" aria-labelledby="final-gifts-title" className="relative scroll-mt-[6rem] border-t pt-5 lg:-ml-[var(--planner-rail-w,0rem)]" style={{ borderColor: '#2e2417' }}>
         {/* 이 영역은 처음부터 목차 레일 자리까지 넓다. 여기에 오면 레일 대신 위쪽 가로 막대가 겹쳐 나타난다(PlannerClient가 관찰) */}
         <div data-final-gifts-start aria-hidden="true" className="pointer-events-none absolute inset-y-0 left-0 w-px" />
         <div className="mb-1 flex items-baseline gap-2">

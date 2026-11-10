@@ -794,6 +794,7 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
           themes={themes}
           conditionStatus={getConditionStatus(selectedGift.gift)}
           recipe={recipeMap.get(selectedGift.gift.game_id) ?? null}
+          gifts={gifts}
         />
       )}
     </div>
