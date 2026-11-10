@@ -7,10 +7,10 @@ import DeckCard, { type DeckSummary } from '@/features/decks/components/DeckCard
 import PlanCard, { type PlanSummary } from '@/features/planner/components/PlanCard'
 import BaseModal from '@/components/ui/BaseModal'
 import type { CARD_KINDS } from '@/lib/notes/blocks'
+import { tr } from '@/features/notes/lib/tr'
 
 export type NoteCardKind = typeof CARD_KINDS[number]
 type CardRow = DeckSummary & PlanSummary
-const tr = (lang: string, ko: string, ja: string, en: string) => lang === 'ja' ? ja : lang === 'en' ? en : ko
 const fetchCards = async (url: string): Promise<CardRow[]> => {
   const response = await fetch(url)
   if (!response.ok) throw Error('Cards unavailable')

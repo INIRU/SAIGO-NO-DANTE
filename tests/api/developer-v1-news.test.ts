@@ -20,7 +20,7 @@ vi.mock('@/lib/supabase/admin', () => ({
   }),
 }))
 vi.mock('next/cache', () => ({ revalidateTag: m.revalidate }))
-vi.mock('@/lib/auth', () => ({ requireAdmin: m.admin }))
+vi.mock('@/lib/auth', () => ({ requireAdmin: m.admin, adminEmails: () => (process.env.ADMIN_EMAILS ?? '').split(',').filter(Boolean) }))
 
 import { DELETE, POST } from '@/app/api/v1/news/route'
 import { DELETE as adminDelete } from '@/app/api/admin/news/route'

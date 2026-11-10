@@ -37,7 +37,8 @@ async function fetchAllKeywords(supabase: ReturnType<typeof createAdminClient>, 
         .order('name')
         .range(from, from + 999)
       if (error && isMissingColumnError(error) && select !== KEYWORD_COLUMNS) { missingColumn = true; break }
-      if (error || !data || data.length === 0) break
+      if (error) throw error
+      if (!data || data.length === 0) break
       all.push(...data)
       if (data.length < 1000) break
       from += 1000
@@ -93,10 +94,13 @@ async function renderKeywords(withRefs: boolean) {
       .order('name_kr'),
   ])
 
-  if (identitiesError) console.error('Failed to fetch identities:', identitiesError)
-  if (sinnersError) console.error('Failed to fetch sinners:', sinnersError)
-  if (giftsError) console.error('Failed to fetch gifts:', giftsError)
-  if (egosError) console.error('Failed to fetch egos:', egosError)
+  // A failed read throws so the empty list is not cached.
+  for (const [label, error] of [['identities', identitiesError], ['sinners', sinnersError], ['gifts', giftsError], ['egos', egosError]] as const) {
+    if (error) {
+      console.error(`Failed to fetch ${label}:`, error)
+      throw error
+    }
+  }
 
   const safeKeywords = keywords
   const safeIdentities = identities ?? []

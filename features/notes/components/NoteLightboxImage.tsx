@@ -4,8 +4,8 @@ import { useLocale } from 'next-intl'
 import { X } from 'lucide-react'
 import BaseModal from '@/components/ui/BaseModal'
 import { lightboxStartTransform } from '@/features/notes/lib/lightbox'
+import { tr } from '@/features/notes/lib/tr'
 
-const tr = (lang: string, ko: string, ja: string, en: string) => lang === 'ja' ? ja : lang === 'en' ? en : ko
 
 /** The big picture: grows out of the picture that was pressed (unless the reader asked for less motion). */
 function LargeImage({ src, alt, from, onClose }: { src: string; alt: string; from: DOMRect | null; onClose: () => void }) {

@@ -12,7 +12,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 import { toast } from 'sonner'
 import { ArrowLeft, RotateCcw, MonitorUp, MoreHorizontal } from 'lucide-react'
-import { Link, useRouter } from '@/lib/i18n/navigation'
+import { useRouter } from '@/lib/i18n/navigation'
 import { AUTO_ACQUIRE_EXCLUDED_GIFT_IDS, DETECTION_STORAGE_KEY, DEFAULT_DETECTION, readDetectionSettings, type DetectionSettings, readSampleConsent, SAMPLES_STORAGE_KEY, downloadLog, installConsole, plog, GAME_LANGUAGE_STORAGE_KEY, GAME_LANGUAGES, readGameLanguage, readRecognitionMode, RECOGNITION_MODE_STORAGE_KEY, type GameLanguage, type RecognitionMode } from '@/features/assist'
 import { useRunStore } from '@/features/planner/hooks/useRunStore'
 import type { ThemeData, GiftData, RecipeData, IdentityData, SinnerData, SkillSummary, EgoData, PassiveData } from '@/lib/planner/types'
@@ -50,10 +50,9 @@ interface Props {
   egos: EgoData[]
   events: MdEvent[]
   eventChoices: MdEventChoice[]
-  dataError?: boolean
 }
 
-export default function RunClient({ themes, gifts, recipes, identities, sinners, skills, passives, egos, events, eventChoices, dataError }: Props) {
+export default function RunClient({ themes, gifts, recipes, identities, sinners, skills, passives, egos, events, eventChoices }: Props) {
   const t = useTranslations('planner.run')
   const locale = useLocale()
   const router = useRouter()
@@ -398,7 +397,6 @@ export default function RunClient({ themes, gifts, recipes, identities, sinners,
         <button type="button" onClick={() => changeSamples(false)} className="min-h-9 rounded-md border border-[var(--border)] px-3 text-[var(--text-secondary)] hover:text-[var(--text-primary)] focus-visible:outline-2 focus-visible:outline-[var(--gold-light)]">{t('samplesNo')}</button>
       </div>}
 
-      {dataError && <p role="alert" className="mb-5 shrink-0 rounded-md border border-[var(--error)] p-3 text-sm text-[var(--error-text)]">{t('dataError')}</p>}
       {loadingPlan ? <div role="status" className={`${card} animate-pulse p-8 text-center text-[var(--text-secondary)]`}>{t('loadingPlan')}</div> : state.phase === 'setup' ?
         <RunSetup state={state} dispatch={dispatch} gifts={gifts} giftMap={giftMap} identities={identities} sinners={sinners} egos={egos}
           recognition={capture.mobile || gpuRefused ? undefined : recognitionControls} recognitionSummary={recognitionSummary} /> : state.phase === 'completed' ?

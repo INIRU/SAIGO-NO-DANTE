@@ -50,8 +50,7 @@ export function UptieChangePanel({ level, title, stats = [], lines, accentColor,
   return (
     <section
       aria-label={t('identity.uptie.changesAt', { level: UPTIE_NUMERALS[level] ?? level })}
-      className="mt-3 rounded-sm border-l-2 bg-[var(--bg-panel)] px-3 py-2.5 text-[.8125rem] leading-[1.7]"
-      style={{ borderLeftColor: 'var(--gold)' }}
+      className="mt-3 rounded-sm border border-[var(--border)] bg-[var(--bg-panel)] px-3 py-2.5 text-[.8125rem] leading-[1.7]"
     >
       <div className="mb-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs" style={{ color: 'var(--gold)', fontFamily: 'var(--font-heading)' }}>
         <UptieNumeral level={level} height="0.875rem" />

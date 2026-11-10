@@ -4,6 +4,9 @@ import GoogleProvider from 'next-auth/providers/google'
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 
+/** 환경변수 ADMIN_EMAILS(쉼표로 구분)의 관리자 이메일 목록. */
+export const adminEmails = () => (process.env.ADMIN_EMAILS ?? '').split(',').map(email => email.trim()).filter(Boolean)
+
 export const authOptions: NextAuthOptions = {
   providers: [
     GoogleProvider({
@@ -21,8 +24,7 @@ export const authOptions: NextAuthOptions = {
       if (!email) return token
 
       // 1) 환경변수 ADMIN_EMAILS 체크
-      const admins = (process.env.ADMIN_EMAILS ?? '').split(',').map(e => e.trim()).filter(Boolean)
-      const isEnvAdmin = admins.includes(email)
+      const isEnvAdmin = adminEmails().includes(email)
 
       // 2) DB role + suspended 체크 (매 요청마다)
       try {
@@ -82,7 +84,10 @@ export async function requireActiveUser() {
   return { error: false as const, session }
 }
 
-/** Requires sign-in only. For routes a suspended user must still reach, such as appealing through support inquiries. */
+/**
+ * Requires sign-in only; suspension is not looked at here. A suspended account still reads what is its own (inquiries,
+ * notifications), but its writes (POST/PUT/PATCH/DELETE under /api) are refused earlier by proxy.ts, so the 403 never reaches this check.
+ */
 export async function requireUser() {
   const session = await getServerSession(authOptions)
   if (!session?.user?.email) {

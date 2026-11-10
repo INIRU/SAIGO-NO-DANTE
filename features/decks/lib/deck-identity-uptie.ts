@@ -23,6 +23,25 @@ export function rowsAtUptie<T extends { identity_id: string; uptie_level?: numbe
   return rows.filter(row => (row.uptie_level ?? 3) === chosen.get(row.identity_id))
 }
 
+/** The highest-uptie row of each key, in first-seen order; rows with no uptie_level count as 3. */
+export function topUptieRows<T extends { uptie_level?: number | null }>(rows: readonly T[], keyOf: (row: T) => string): T[] {
+  const top = new Map<string, T>()
+  for (const row of rows) {
+    const key = keyOf(row)
+    const best = top.get(key)
+    if (!best || (row.uptie_level ?? 3) > (best.uptie_level ?? 3)) top.set(key, row)
+  }
+  return [...top.values()]
+}
+
+/** One skill per (skill_order, variant_order), at its highest uptie. */
+export const topUptieSkills = <T extends { skill_order: number; variant_order?: number | null; uptie_level?: number | null }>(rows: readonly T[]) =>
+  topUptieRows(rows, s => `${s.skill_order}:${s.variant_order ?? 0}`)
+
+/** One passive per (passive_type, passive_order), at its highest uptie. */
+export const topUptiePassives = <T extends { passive_type: string; passive_order: number; uptie_level?: number | null }>(rows: readonly T[]) =>
+  topUptieRows(rows, p => `${p.passive_type}:${p.passive_order}`)
+
 type InsertResult = { error: { message: string } | null }
 
 /**

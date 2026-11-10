@@ -3,7 +3,7 @@
 import { useSuggestionState } from '@/features/community/hooks/useSuggestions'
 import { LCB_IDS } from '@/lib/constants/game'
 import { identitySuggestUrl, suggestionContext, type SuggestionResponse } from '@/features/community'
-import { useMemo, useState, type CSSProperties } from 'react'
+import { useMemo, useState } from 'react'
 import Image from 'next/image'
 import QuietImage from '@/components/ui/QuietImage'
 import { useReducedMotion } from 'motion/react'
@@ -29,6 +29,7 @@ import { getLocalizedName } from '@/lib/i18n/localize'
 import { DECK_MAIN_KEYWORDS } from '@/lib/decks/keyword-rules'
 import SkillExchangePanel from '@/features/planner/components/SkillExchangePanel'
 import { DEPLOYED_SLOT_COUNT } from '@/lib/constants/game'
+import { getCompactNameStyle } from '@/lib/planner/compact-name-style'
 import {
   PlannerEgoBoard,
   PlannerEgoSelectModal,
@@ -38,21 +39,6 @@ import {
   type PlannerEgoBoardSlot,
   type PlannerIdentityBoardSlot,
 } from '@/features/planner/components/PlannerDeckSelection'
-
-const COMPACT_KOTRA_STYLE: CSSProperties = {
-  fontFamily: 'var(--font-kotra-bold), var(--font-heading), serif',
-  fontWeight: 400,
-  WebkitTextStroke: '0 transparent',
-}
-
-function getCompactNameStyle(locale: SupportedLang): CSSProperties {
-  if (locale === 'ko') return COMPACT_KOTRA_STYLE
-  return {
-    fontFamily: 'var(--font-sans)',
-    fontWeight: 700,
-    WebkitTextStroke: '0 transparent',
-  }
-}
 
 function isPlaceholderName(value: string | null | undefined): boolean {
   const normalized = value?.trim()

@@ -5,7 +5,7 @@ import { useSession } from 'next-auth/react'
 import { UserCheck, UserPlus } from 'lucide-react'
 import Button from '@/components/ui/Button'
 import { getCommunityCopy } from '@/features/community/lib/copy'
-import { followsEndpoint, followsFetcher, useFollowMutation } from './Follows'
+import { followsEndpoint, useFollowMutation, type FollowState } from './Follows'
 
 /**
  * Follow the author of the post being read, from beside their name. Signed out it still offers to follow (the press
@@ -14,7 +14,7 @@ import { followsEndpoint, followsFetcher, useFollowMutation } from './Follows'
 export default function FollowAuthorButton({ userId }: { userId: string }) {
   const t = getCommunityCopy(useLocale())
   const { status } = useSession()
-  const { data } = useSWR(status === 'authenticated' ? followsEndpoint(userId) : null, followsFetcher)
+  const { data } = useSWR<FollowState>(status === 'authenticated' ? followsEndpoint(userId) : null)
   const { busy, change } = useFollowMutation()
   if (data?.owner) return null
   const following = data?.is_following === true

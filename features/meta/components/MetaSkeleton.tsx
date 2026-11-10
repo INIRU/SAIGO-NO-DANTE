@@ -37,7 +37,6 @@ export default function MetaSkeleton() {
     </div>
     <div className={styles.summaryBar} data-meta-skeleton="summary">
       <div className={styles.boneStats}>{[0, 1, 2].map(i => <div key={i}><SkeletonLine w="2.5rem" h="1.625rem" raised /><SkeletonLine w="2.5rem" h="0.6875rem" raised /></div>)}</div>
-      <div className={styles.overviewNotes}><SkeletonLine w="3.5rem" h="0.75rem" raised className={styles.boneNote} /></div>
     </div>
     <div className={`${styles.views} ${styles.boneViews}`} data-meta-skeleton="views">
       <div className={styles.boneTabs}>{[0, 1, 2].map(i => <SkeletonLine key={i} w="4rem" h="0.9375rem" />)}</div>

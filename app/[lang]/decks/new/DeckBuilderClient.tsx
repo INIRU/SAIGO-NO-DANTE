@@ -33,7 +33,7 @@ import {
 
 import { encodeDeckCode, decodeDeckCode } from '@/lib/decks/deck-code-utils'
 import { deckInitFromTeamCode, formationParamFromSearch } from '@/lib/decks/formation-init'
-import { computeDeckResources, computeSinProduction, fieldedEntries, contentTypeMessageKey, rowsAtUptie } from '@/features/decks'
+import { computeDeckResources, computeSinProduction, fieldedEntries, contentTypeMessageKey, rowsAtUptie, topUptiePassives, topUptieSkills } from '@/features/decks'
 import UnderlineTabBar, { type TabItem } from '@/components/ui/UnderlineTabBar'
 import Dropdown from '@/components/ui/Dropdown'
 import Button from '@/components/ui/Button'
@@ -137,6 +137,7 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
   const deckT = useTranslations('decks')
   const builderT = useTranslations('decks.builder')
   const tTempSaves = useTranslations('planner.tempSaves')
+  const tCopy = useTranslations('planner.detail')
   const router = useRouter()
   // A new deck can start from a formation code in ?formation= (sent from the random formation page). Edit and fork keep their own start.
   // The builder is client-only (no SSR), so the address is readable on the first render; an unreadable code is ignored.
@@ -229,13 +230,7 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
     // 4동기화 우선: 같은 (skill_order, variant_order)에서 최고 uptie_level만 유지
     const map: Record<string, Skill[]> = {}
     for (const [id, list] of Object.entries(raw)) {
-      const best = new Map<string, Skill>()
-      for (const s of list) {
-        const key = `${s.skill_order}:${s.variant_order ?? 0}`
-        const ex = best.get(key)
-        if (!ex || (s.uptie_level ?? 3) > (ex.uptie_level ?? 3)) best.set(key, s)
-      }
-      map[id] = [...best.values()].sort((a, b) => a.skill_order - b.skill_order || (a.variant_order ?? 0) - (b.variant_order ?? 0))
+      map[id] = topUptieSkills(list).sort((a, b) => a.skill_order - b.skill_order || (a.variant_order ?? 0) - (b.variant_order ?? 0))
     }
     return map
   }, [identityUpties, skills])
@@ -248,13 +243,7 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
     // 4동기화 우선: 같은 (passive_type, passive_order)에서 최고 uptie_level만 유지
     const map: Record<string, Passive[]> = {}
     for (const [id, list] of Object.entries(raw)) {
-      const best = new Map<string, Passive>()
-      for (const p of list) {
-        const key = `${p.passive_type}:${p.passive_order}`
-        const ex = best.get(key)
-        if (!ex || (p.uptie_level ?? 3) > (ex.uptie_level ?? 3)) best.set(key, p)
-      }
-      map[id] = [...best.values()].sort((a, b) => a.passive_order - b.passive_order)
+      map[id] = topUptiePassives(list).sort((a, b) => a.passive_order - b.passive_order)
     }
     return map
   }, [identityUpties, passives])
@@ -387,19 +376,26 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
     const url = editMode ? `/api/decks/${editMode.deckId}` : '/api/decks'
     const method = editMode ? 'PATCH' : 'POST'
     const signedIn = authStatus === 'authenticated'
-    const res = await fetch(url, {
-      method,
-      headers: { 'Content-Type': 'application/json', ...guestHeaders(signedIn) },
-      body: JSON.stringify({ title, description, tags: [], main_keywords: effectiveMainKeywords, content_type: contentType, identitySlots, egoSlots: egoRows, ...(needsPin ? { pin } : {}), ...(seriesChoice !== undefined ? { series_id: seriesChoice } : {}) }),
-    })
-    setSaving(false)
-    if (res.ok) {
-      if (!signedIn) showSuccess(editMode ? getGuestCopy(locale).updated : getGuestCopy(locale).posted)
-      autosave.clear()
-      router.push(editMode ? `/decks/${editMode.deckId}` : '/decks', { locale: locale as SupportedLang })
-    } else {
-      const data = await res.json().catch(() => null)
-      showError(data?.error ?? (editMode ? builderT('errors.updateFailed') : builderT('errors.saveFailed')))
+    try {
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json', ...guestHeaders(signedIn) },
+        body: JSON.stringify({ title, description, tags: editMode?.tags ?? [], main_keywords: effectiveMainKeywords, content_type: contentType, identitySlots, egoSlots: egoRows, ...(needsPin ? { pin } : {}), ...(seriesChoice !== undefined ? { series_id: seriesChoice } : {}) }),
+      })
+      if (res.ok) {
+        if (!signedIn) showSuccess(editMode ? getGuestCopy(locale).updated : getGuestCopy(locale).posted)
+        autosave.clear()
+        router.push(editMode ? `/decks/${editMode.deckId}` : '/decks', { locale: locale as SupportedLang })
+      } else {
+        const data = await res.json().catch(() => null)
+        const fallback = editMode ? builderT('errors.updateFailed') : builderT('errors.saveFailed')
+        // A server fault says nothing a visitor can act on; the translated line does.
+        showError(res.status >= 500 ? fallback : data?.error ?? fallback)
+      }
+    } catch {
+      showError(editMode ? builderT('errors.updateFailed') : builderT('errors.saveFailed'))
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -524,7 +520,12 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
 
   const handleCopyCode = async () => {
     const code = await encodeDeckCode(sinners, identities, egos, deckSlots, egoSlots, formationOrder)
-    await navigator.clipboard.writeText(code)
+    try {
+      await navigator.clipboard.writeText(code)
+    } catch {
+      showError(tCopy('copyDeckCodeFailed'))
+      return
+    }
     setCodeCopied(true)
     setTimeout(() => setCodeCopied(false), 2000)
   }

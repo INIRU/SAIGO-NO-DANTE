@@ -26,7 +26,7 @@
 
 .icon { width: auto; max-width: 100%; object-fit: contain; }
 .text { font-size: 0.8125rem; font-weight: 600; line-height: 1; font-variant-numeric: tabular-nums; }
-.sub { max-width: 100%; overflow: hidden; font-size: 0.625rem; line-height: 1.2; text-overflow: ellipsis; white-space: nowrap; }
+.sub { max-width: 100%; overflow: hidden; font-size: var(--text-xs); line-height: 1.2; text-overflow: ellipsis; white-space: nowrap; }
 .swatch { border-radius: 0.25rem; border: 1px solid rgba(255, 255, 255, 0.15); }
 
 .input {

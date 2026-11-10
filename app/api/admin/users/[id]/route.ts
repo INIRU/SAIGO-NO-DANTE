@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
-import { requireAdmin } from '@/lib/auth'
+import { adminEmails, requireAdmin } from '@/lib/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
 
 const uuid = z.uuid()
@@ -9,7 +9,6 @@ const mutation = z.union([
   z.object({ suspended: z.literal(true), reason: z.string().trim().min(1).max(1000), durationDays: z.union([z.literal(7), z.literal(30), z.null()]), expectedSuspendedAt: z.iso.datetime({ offset: true }).nullable() }).strict(),
   z.object({ suspended: z.literal(false), expectedSuspendedAt: z.iso.datetime({ offset: true }).nullable() }).strict(),
 ])
-const adminEmails = () => (process.env.ADMIN_EMAILS ?? '').split(',').map(s => s.trim()).filter(Boolean)
 type Context = { params: Promise<{ id: string }> }
 
 export async function GET(_request: Request, context: Context) {

@@ -1,4 +1,4 @@
-import { rowsAtUptie } from '@/features/decks/lib/deck-identity-uptie'
+import { rowsAtUptie, topUptieRows } from '@/features/decks/lib/deck-identity-uptie'
 
 type Row = { uptie_level?: number | null; description?: string | null; description_en?: string | null; description_jp?: string | null }
 
@@ -16,13 +16,7 @@ function localizedDescription(row: Row, locale: string): string | null {
  * plus the slot's own uptie (insight panels). Descriptions collapse to the page language.
  */
 function trimRows<T extends Row>(rows: readonly T[], identityId: string, uptie: number | null | undefined, locale: string, keyOf: (row: T) => string): T[] {
-  const top = new Map<string, T>()
-  for (const row of rows) {
-    const key = keyOf(row)
-    const best = top.get(key)
-    if (!best || (row.uptie_level ?? 3) > (best.uptie_level ?? 3)) top.set(key, row)
-  }
-  const keep = new Set<T>(top.values())
+  const keep = new Set<T>(topUptieRows(rows, keyOf))
   const upties = new Map([[identityId, uptie ?? undefined]])
   for (const row of rowsAtUptie(rows.map(r => ({ ...r, identity_id: identityId, source: r })), upties)) keep.add(row.source)
 

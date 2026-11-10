@@ -27,24 +27,6 @@
   --font-serif: var(--font-kotra-bold), Georgia, serif;
 }
 
-/* Compact labels keep the project title face without the global .font-serif stroke. */
-.font-compact-serif {
-  font-family: var(--font-heading);
-  font-weight: 400;
-  -webkit-text-stroke: 0 transparent;
-  text-shadow: none;
-  letter-spacing: 0;
-}
-
-.font-compact-serif-label {
-  font-family: var(--font-heading);
-  font-weight: 400;
-  -webkit-text-stroke: 0 transparent;
-  text-shadow: none;
-  letter-spacing: 0;
-  line-height: 1.35;
-}
-
 :root {
   --bg-deep:     #0d0b08;
   --bg-card:     #1a1510;
@@ -214,28 +196,6 @@ textarea:focus-visible {
   outline: none;
 }
 
-/* ── 드롭다운 진입 애니메이션 ─────────────────────────── */
-@keyframes dropdown-in {
-  from { opacity: 0; transform: translateX(-50%) translateY(-0.25rem); }
-  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
-}
-.animate-dropdown-in {
-  animation: dropdown-in 0.2s ease-out;
-}
-
-/* ── 공통 애니메이션 ──────────────────────────────────── */
-@keyframes fade-in {
-  from { opacity: 0; transform: translateY(0.5rem); }
-  to { opacity: 1; transform: translateY(0); }
-}
-.animate-fade-in {
-  animation: fade-in 0.4s ease-out;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .animate-dropdown-in, .animate-fade-in, .animate-ghost-pulse, .animate-roll-glow, .card-shimmer::after, .skill-marquee-track { animation: none; }
-}
-
 /* ── 스토리 맵 ──────────────────────────────────── */
 /* Only what a click changes moves: the camera zooms to the picked stage (StoryMap, the game's own curves) and the bus
    follows, the panel swaps in from the map side, the enemy portraits rise in order, the chapter tickets slide in once
@@ -254,84 +214,10 @@ textarea:focus-visible {
 @keyframes story-rise { from { opacity: 0; transform: translateY(.5rem) scale(.96); } to { opacity: 1; transform: none; } }
 @keyframes story-ticket-in { from { opacity: 0; transform: translateX(-1.5rem); } to { opacity: 1; transform: none; } }
 
-/* ── 랜덤 편성 ──────────────────────────────────── */
-@keyframes ghost-pulse {
-  0%, 100% { border-color: rgba(42,32,21,0.4); }
-  50% { border-color: rgba(138,96,16,0.25); }
-}
-.animate-ghost-pulse {
-  animation: ghost-pulse 2.5s ease-in-out infinite;
-}
-
-@keyframes roll-glow {
-  0%, 100% { box-shadow: 0 0 1.5rem rgba(200,144,10,0.2), inset 0 1px 0 rgba(255,255,255,0.15); }
-  50% { box-shadow: 0 0 2.5rem rgba(200,144,10,0.4), 0 0 4rem rgba(232,176,48,0.15), inset 0 1px 0 rgba(255,255,255,0.15); }
-}
-.animate-roll-glow {
-  animation: roll-glow 2s ease-in-out infinite;
-}
-
-@keyframes spin-slow {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
-@keyframes card-shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
-}
-.card-shimmer::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background: linear-gradient(90deg, transparent 30%, rgba(200,144,10,0.06) 50%, transparent 70%);
-  background-size: 200% 100%;
-  animation: card-shimmer 3s ease-in-out infinite;
-  border-radius: inherit;
-}
-
-/* 스킬명 무한 마퀴 스크롤 — hover 시 정지 */
-@keyframes skill-marquee {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
-}
-.skill-marquee-track {
-  display: inline-flex;
-  animation: skill-marquee 6s linear infinite;
-}
-.skill-banner-scroll:hover .skill-marquee-track {
-  animation-play-state: paused;
-}
-
-/* 트리거 모드 — Navbar, Footer 숨김 */
-.trigger-mode nav[aria-label="메인 내비게이션"],
-.trigger-mode footer {
-  display: none !important;
-}
 
 .keyword-token img[src*="bladetrail-afterimage"] + span,
 span.inline img[src*="bladetrail-afterimage"] + span {
   color: #ff4f42 !important;
-}
-
-/* ── 히어로 슬라이더 CSS 애니메이션 ─────────────────────────────────────── */
-
-/* 켄번즈 줌인 (layerARef에 JS로 직접 적용) */
-@keyframes kenBurns {
-  from { transform: scale(1) translate(0%, 0%); }
-  to   { transform: scale(1.06) translate(-1%, -0.8%); }
-}
-
-/* 글리치 아웃 — 슬라이드 전환 시 현재 이미지에 적용 */
-@keyframes glitchOut {
-  0%   { clip-path: inset(0 0 0 0);      transform: translateX(0);  filter: none; }
-  15%  { clip-path: inset(12% 0 75% 0);  transform: translateX(-7px); filter: brightness(1.8); }
-  30%  { clip-path: inset(50% 0 28% 0);  transform: translateX(9px);  filter: hue-rotate(80deg); }
-  45%  { clip-path: inset(6% 0 82% 0);   transform: translateX(-5px); filter: brightness(2.2); }
-  60%  { clip-path: inset(70% 0 10% 0);  transform: translateX(6px);  filter: hue-rotate(-60deg); }
-  78%  { clip-path: inset(28% 0 52% 0);  transform: translateX(-8px); filter: brightness(1.5); }
-  100% { clip-path: inset(0 0 100% 0);   transform: translateX(0);  filter: none; }
 }
 
 /* 히어로 워터마크 페이드인 */
@@ -392,9 +278,6 @@ html.board-browse body :is(footer, [data-floating-font-control]) { display: none
 .note-block-document :focus-visible,.note-picker :focus-visible,.note-block-menu :focus-visible,.note-accordion-editor button:focus-visible,.note-asset-node button:focus-visible{outline:2px solid var(--gold-light);outline-offset:3px}
 @media(max-width:40rem){.note-accordion-body,.note-accordion-content [data-note-body]{padding:.5rem .75rem 1rem}.note-picker-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.note-picker-grid--skills{grid-template-columns:1fr}.note-block-actions{opacity:1}}
 @media(prefers-reduced-motion:reduce){.note-accordion-panel,.note-accordion-heading svg,.note-accordion-toggle svg,.note-empty-slot{transition:none}}
-.deck-detail-actions>button,.deck-detail-edit{min-height:2.5rem!important;padding:.5rem .85rem!important;font-size:.875rem!important;font-family:var(--font-body)!important;font-weight:600!important;border-radius:.35rem!important}.deck-detail-edit{display:inline-flex;align-items:center;color:var(--gold);background:var(--bg-card)}
-.deck-analysis-summary{display:grid;grid-template-columns:minmax(12rem,.55fr) minmax(0,1.45fr);align-items:start;gap:.75rem;margin:.75rem 0}.deck-analysis-summary>div:only-child{grid-column:1/-1}.deck-analysis-summary>div{border:0!important;background:var(--bg-card)!important;border-radius:.4rem!important}.deck-detail-note-section::before{display:none!important}.deck-detail-note-section .deck-detail-note-header{background:transparent;border:0;padding:.5rem 0 1rem}.deck-detail-note-section .deck-detail-note-body{padding:0}.deck-detail-note-section .deck-detail-note-title{font-size:1.3rem;font-family:var(--font-heading);color:var(--text-primary)}
-@media(max-width:40rem){.deck-analysis-summary{grid-template-columns:1fr}.deck-detail-actions{width:100%}.deck-detail-actions>button{flex:1}.deck-detail-heading h1{overflow-wrap:anywhere}}
 .note-editor-shell{position:relative;border:1px solid #3a2a1580;overflow:visible}.note-editor-toolbar{background:#1a151066;border-radius:.4rem .4rem 0 0}.note-editor-toolbar>button:disabled{opacity:.4}.note-preview-button{margin-left:auto;display:flex;align-items:center;gap:.5rem;min-height:2.25rem;padding:0 .75rem;color:var(--gold-light);font-size:.9rem}.note-editor-preview{min-height:20rem;padding:1.5rem}.note-editor-shell .note-document-content{padding:1.5rem;min-height:24rem;font-size:1rem}.note-document-content>.node-noteAsset,.note-document-content [data-note-body]>.node-noteAsset{display:inline-block;vertical-align:top}.note-document-content .node-noteAsset{max-width:100%}
 .note-document-content .node-noteAccordion,.note-document-content .node-noteAsset,.note-document-content .node-noteVideo{animation:note-block-enter .22s ease-out}@keyframes note-block-enter{from{opacity:0;transform:translateY(.25rem)}to{opacity:1;transform:translateY(0)}}
 @media(max-width:40rem){.note-editor-shell .note-document-content,.note-editor-preview{padding:1rem}.note-editor-toolbar{gap:.1rem}.note-preview-button{margin-left:0}}
@@ -403,11 +286,6 @@ html.board-browse body :is(footer, [data-floating-font-control]) { display: none
 .note-link-form{display:flex;align-items:center;flex-wrap:wrap;gap:.6rem;padding:.8rem 1rem;background:var(--bg-card)}.note-link-form input{flex:1;min-width:8rem;background:var(--bg-deep);border:1px solid var(--border);padding:.6rem;border-radius:.3rem}.note-link-form button{min-height:2.5rem;padding:.5rem;color:var(--gold)}.note-link-form [role=alert]{width:100%;color:#e48b7f;font-size:.875rem}
 
 .note-keyword-node,.note-keyword-label{display:inline;vertical-align:baseline;font-size:inherit;line-height:inherit}.note-keyword-label strong{font-weight:600}.note-keyword-insert{display:inline-flex;align-items:center;gap:.2em;padding:.1em .4em;border-radius:.25rem;background:var(--bg-elevated);color:var(--gold);font-size:inherit;vertical-align:baseline}.note-keyword-node.ProseMirror-selectednode{outline:1px solid var(--gold);border-radius:.2em}.note-picker--keyword .note-picker-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.note-picker--keyword .note-picker-artwork{aspect-ratio:auto}.note-picker--keyword .note-picker-artwork img{width:1.25rem;height:1.25rem}.note-picker--keyword .note-picker-item>span{display:none}.note-picker--keyword .note-asset-art{flex-direction:row;gap:.4rem;font-size:.875rem}.note-picker--keyword .note-picker-item{padding:.75rem;text-align:left}
-
-/* Keep the deck's original six-column cards together without changing planner spacing. */
-.deck-detail-formation .formation-board-grid{column-gap:.375rem;row-gap:.625rem}
-@media(min-width:40rem){.deck-detail-formation .formation-board-grid{column-gap:.5rem;row-gap:.75rem}}
-@media(min-width:64rem){.deck-detail-formation .formation-board-grid{grid-template-columns:repeat(6,minmax(0,8.75rem));justify-content:center;column-gap:1.25rem;row-gap:1.125rem}}
 
 /* Deck authoring: compact controls above the existing tabs. */
 .deck-workspace-formation{min-width:0;padding:.5rem 0}
@@ -444,7 +322,6 @@ html.board-browse body :is(footer, [data-floating-font-control]) { display: none
 .note-picker-empty{padding:3rem 1rem;text-align:center;color:var(--text-muted);font-size:.875rem;line-height:1.6}
 .deck-workspace-fields{display:grid;gap:.75rem}
 .deck-workspace-formation>.min-w-0{margin-top:1rem;border-top:1px solid var(--border);padding-top:.75rem}
-.deck-workspace .deck-builder-desktop-stats{display:block!important}
 .note-direct-picker--skill .note-direct-layout{grid-template-columns:9rem minmax(0,1fr)}
 .note-direct-picker--skill .note-direct-grid{grid-template-columns:repeat(auto-fill,minmax(7rem,1fr));gap:1rem}.note-direct-picker--skill .note-direct-item{display:flex;flex-direction:column;align-items:center;gap:.5rem;padding:1rem .5rem}
 .note-direct-sidebar>button{display:flex;align-items:center;gap:.5rem}

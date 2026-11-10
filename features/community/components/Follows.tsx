@@ -15,7 +15,6 @@ import { showError, showSuccess } from '@/lib/toast'
 type FollowKind = 'following' | 'followers'
 export type FollowState = { owner:boolean; public_following:boolean; public_followers:boolean; following_count:number|null; follower_count:number|null; is_following:boolean; can_view:boolean; items:{id:string;username:string|null;avatar_url:string|null;bio:string|null;is_following:boolean;is_self:boolean}[] }
 export const followsEndpoint = (id:string) => `/api/community/profiles/${id}/follows`
-export async function followsFetcher(url:string):Promise<FollowState> { const r=await fetch(url);if(!r.ok)throw Error();return r.json() }
 function useCopy() {const lang=useLocale();return (ko:string,ja:string,en:string)=>lang==='ko'?ko:lang==='ja'?ja:en}
 /** Follow or unfollow `id`; every follow view refreshes and a toast says how it went. Signed-out visitors go to sign-in. */
 export function useFollowMutation() {
@@ -32,7 +31,7 @@ export function useFollowMutation() {
   return {busy,change}
 }
 export function FollowSummary({id,onOpen}:{id:string;onOpen?:(kind:FollowKind)=>void}) {
-  const label=useCopy(), {data,error,mutate}=useSWR(followsEndpoint(id),followsFetcher), {busy,change}=useFollowMutation()
+  const label=useCopy(), {data,error,mutate}=useSWR<FollowState>(followsEndpoint(id)), {busy,change}=useFollowMutation()
   const [kind,setKind]=useState<FollowKind|null>(null)
   if(error)return <button className="community-link" onClick={()=>mutate()}>{label('팔로우 정보 다시 불러오기','再読み込み','Retry follow information')}</button>
   if(!data)return <p className="community-muted py-2" role="status">{label('팔로우 정보 불러오는 중','読み込み中','Loading follows')}</p>
@@ -51,7 +50,7 @@ export function FollowSummary({id,onOpen}:{id:string;onOpen?:(kind:FollowKind)=>
 }
 export function FollowList({id,initialKind='following'}:{id:string;initialKind?:FollowKind}) {
   const label=useCopy(), [kind,setKind]=useState<FollowKind>(initialKind), [offset,setOffset]=useState(0)
-  const {data,error,mutate}=useSWR(`${followsEndpoint(id)}?kind=${kind}&offset=${offset}`,followsFetcher)
+  const {data,error,mutate}=useSWR<FollowState>(`${followsEndpoint(id)}?kind=${kind}&offset=${offset}`)
   const {busy,change}=useFollowMutation()
   return <section className="min-w-0" aria-label={label('팔로우 목록','フォローリスト','Follow list')}>
     <div className="mb-4 flex gap-3" role="group" aria-label={label('목록 종류','リストの種類','List type')}>

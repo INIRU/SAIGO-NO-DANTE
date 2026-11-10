@@ -2,7 +2,7 @@
 
 import { GIFT_KEYWORD_COLORS } from '@/lib/constants/gift'
 
-import { useState, useRef, useEffect, useLayoutEffect, useCallback, useContext, useMemo } from 'react'
+import { memo, useState, useRef, useEffect, useContext, useMemo } from 'react'
 import useSWR from 'swr'
 import { createPortal } from 'react-dom'
 import Image from 'next/image'
@@ -14,7 +14,6 @@ import NoteTocLayout, { NoteHeadingLink } from '@/features/notes/components/Note
 import { NOTE_TOC_MIN, markdownHeadings } from '@/features/notes'
 import { noteBlockTokenPattern, noteInlineMarkdownPattern, noteTokenPattern } from '@/lib/notes/inline-tokens'
 import { PlaceholderText } from '@/components/ui/PlaceholderLabel'
-import { placePopoverIn, type PopoverPlacement } from '@/lib/utils/popover'
 import IdentitySkillFrameCard from '@/features/catalog/components/IdentitySkillFrameCard'
 import { PassiveNoteRow } from '@/features/catalog/components/PassiveEffect'
 import { MultipliedCount } from '@/features/catalog/components/PassiveParts'
@@ -35,11 +34,8 @@ import { useTranslations, useLocale } from 'next-intl'
 import type { SupportedLang } from '@/lib/i18n/types'
 import { localizeDeckKeyword } from '@/features/decks/lib/decks-types'
 import { skillDescriptionBlocks } from '@/lib/identity/skill-description'
-
-function sinColorOf(sin: string | null): string {
-  const en = normalizeSin(sin)
-  return en ? (SIN_COLORS[en] ?? '#888888') : '#888888'
-}
+import { sinColorOf } from '@/lib/constants/sin'
+import { TooltipPopup, useTooltip } from './NoteTooltip'
 
 /** 게임 스타일 칩 공통 인라인 스타일 (clipPath 테두리 = outline 기법) */
 function chipStyle(color: string): React.CSSProperties {
@@ -53,130 +49,6 @@ function chipStyle(color: string): React.CSSProperties {
     filter: `drop-shadow(0 0 2px ${color}40)`,
     lineHeight: 1.45,
   }
-}
-
-// ── 툴팁 hover + 터치 관리 훅 ───────────────────────────────────────────
-// 한 번에 하나의 칩 툴팁만 표시
-let activeChipClose: (() => void) | null = null
-
-function useTooltip(ref: React.RefObject<HTMLElement | null>) {
-  const [rect, setRect] = useState<DOMRect | null>(null)
-  const hideTimeout = useRef<ReturnType<typeof setTimeout>>(undefined)
-
-  const hide = useCallback(() => setRect(null), [])
-  const show = useCallback(() => {
-    if (activeChipClose && activeChipClose !== hide) activeChipClose()
-    clearTimeout(hideTimeout.current)
-    setRect(ref.current?.getBoundingClientRect() ?? null)
-    activeChipClose = hide
-  }, [ref, hide])
-
-  const scheduleHide = useCallback(() => {
-    hideTimeout.current = setTimeout(() => { setRect(null); if (activeChipClose === hide) activeChipClose = null }, 120)
-  }, [hide])
-
-  const cancelHide = useCallback(() => {
-    clearTimeout(hideTimeout.current)
-  }, [])
-
-  // 모바일 터치 토글
-  const toggle = useCallback((e: React.MouseEvent | React.TouchEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setRect(prev => {
-      if (prev) { if (activeChipClose === hide) activeChipClose = null; return null }
-      if (activeChipClose && activeChipClose !== hide) activeChipClose()
-      activeChipClose = hide
-      return ref.current?.getBoundingClientRect() ?? null
-    })
-  }, [ref, hide])
-
-  // 외부 탭 시 닫기
-  useEffect(() => {
-    if (!rect) return
-    const handler = (e: MouseEvent | TouchEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
-        setRect(null)
-        if (activeChipClose === hide) activeChipClose = null
-      }
-    }
-    document.addEventListener('pointerdown', handler)
-    return () => document.removeEventListener('pointerdown', handler)
-  }, [rect, ref, hide])
-
-  return { rect, show, scheduleHide, cancelHide, toggle }
-}
-
-// ── 공용 툴팁 래퍼 (스마트 포지셔닝 + 스크롤 + 페이드) ─────────────────
-function TooltipPopup({
-  rect, children, minWidth = 200, maxWidth = 300, onMouseEnter, onMouseLeave,
-}: {
-  rect: DOMRect
-  children: React.ReactNode
-  minWidth?: number
-  maxWidth?: number
-  onMouseEnter: () => void
-  onMouseLeave: () => void
-}) {
-  const contentRef = useRef<HTMLDivElement>(null)
-  const [overflowing, setOverflowing] = useState(false)
-
-  const cardRef = useRef<HTMLSpanElement>(null)
-  const [place, setPlace] = useState<PopoverPlacement | null>(null)
-
-  // Measured on the real card before it shows: maxWidth, then 1.5x, then 2x, the narrowest that fits (a short note keeps its own width).
-  useLayoutEffect(() => {
-    const card = cardRef.current, scroller = contentRef.current
-    if (!card || !scroller) return
-    setPlace(placePopoverIn(card, scroller, { anchor: rect, view: { width: window.innerWidth, height: window.innerHeight }, widths: [maxWidth, maxWidth * 1.5, maxWidth * 2], gap: 6, margin: 10, fit: 'shrink' }))
-  }, [rect, maxWidth])
-
-  useEffect(() => {
-    const el = contentRef.current
-    if (el) setOverflowing(el.scrollHeight > el.clientHeight)
-  }, [place])
-
-  return (
-    <span
-      ref={cardRef}
-      onMouseEnter={onMouseEnter}
-      onMouseLeave={onMouseLeave}
-      style={{
-        position: 'fixed',
-        left: place?.left ?? 0,
-        ...(place ? (place.above ? { bottom: window.innerHeight - place.top } : { top: place.top }) : { top: 0 }),
-        visibility: place ? 'visible' : 'hidden',
-        zIndex: 200,
-        background: 'var(--bg-card)',
-        border: '1px solid #3a3020',
-        borderRadius: 4,
-        minWidth, maxWidth: place?.width ?? maxWidth,
-        whiteSpace: 'normal',
-        overflow: 'hidden',
-      }}
-    >
-      <div
-        ref={contentRef}
-        style={{
-          padding: '8px 10px',
-          maxHeight: place?.maxHeight,
-          overflowY: overflowing ? 'auto' : 'hidden',
-          overscrollBehavior: 'contain',
-        }}
-      >
-        {children}
-      </div>
-      {overflowing && (
-        <div style={{
-          position: 'absolute',
-          bottom: 0, left: 0, right: 0, height: 32,
-          background: 'linear-gradient(to bottom, transparent, var(--bg-card))',
-          borderRadius: '0 0 4px 4px',
-          pointerEvents: 'none',
-        }} />
-      )}
-    </span>
-  )
 }
 
 // ── 엔트리 타입 ─────────────────────────────────────────────────────────
@@ -273,7 +145,7 @@ function SkillFramePlaceholder({
         className="rounded-md p-2.5"
         style={{
           background: 'rgba(12,10,7,0.9)',
-          border: `1px solid ${sinColorOf(entry.sin_affinity)}33`,
+          border: `1px solid ${sinColorOf(entry.sin_affinity, '#888888')}33`,
         }}
       />
     </div>
@@ -329,7 +201,7 @@ export function SkillChip({ entry, interactive = true }: { entry: NoteSkillEntry
   const ref = useRef<HTMLSpanElement>(null)
   const { rect, show, scheduleHide, cancelHide, toggle } = useTooltip(ref)
   const atkIcon = ATK_TYPE_ICON_MAP[entry.skill_type]
-  const sc = sinColorOf(entry.sin_affinity)
+  const sc = sinColorOf(entry.sin_affinity, '#888888')
   const [imgSrc, setImgSrc] = useState(entry.iconUrl)
   useEffect(() => { setImgSrc(entry.iconUrl) }, [entry.iconUrl])
   return (
@@ -609,7 +481,7 @@ function FallbackChip({ type, tokenKey }: { type: string; tokenKey: string }) {
 }
 
 // ── NoteRenderer ────────────────────────────────────────────────────────
-export function NoteRenderer({
+function NoteRendererImpl({
   text,
   skillLookup = {},
   passiveLookup = {},
@@ -1001,6 +873,9 @@ export function NoteRenderer({
   )
   return headingAt ? <NoteTocLayout headings={headings}>{body}</NoteTocLayout> : body
 }
+
+/** Memoized: a note re-renders only when its text or lookups change (pages re-render on every vote, bookmark and comment). */
+export const NoteRenderer = memo(NoteRendererImpl)
 
 export const fetchNoteGifts = (url: string): Promise<NoteEgoGiftEntry[]> => fetch(url).then(response => { if (!response.ok) throw new Error('gifts'); return response.json() })
 

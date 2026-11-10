@@ -55,18 +55,6 @@ export const RARITY_ICON_MAP: Record<number, string> = {
   3: `${STORAGE_BASE}/icons/Rarity/3star.webp`,
 }
 
-export const RARITY_FRAME_MAP: Record<number, string> = {
-  1: `${STORAGE_BASE}/icons/Rarity/0_frame.webp`,
-  2: `${STORAGE_BASE}/icons/Rarity/00_frame.webp`,
-  3: `${STORAGE_BASE}/icons/Rarity/000_frame.webp`,
-}
-
-export const IDENTITY_CARD_FRAME_MAP: Record<number, string> = {
-  1: '/assets/identity-card-frames/1star.webp',
-  2: '/assets/identity-card-frames/2star.webp',
-  3: '/assets/identity-card-frames/3star.webp',
-}
-
 export const RARITY_COLORS: Record<number, { border: string; glow: string }> = {
   1: { border: '#a87340', glow: 'rgba(168,115,64,0.3)' },
   2: { border: '#c83030', glow: 'rgba(200,48,48,0.3)' },

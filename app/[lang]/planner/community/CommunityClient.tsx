@@ -32,6 +32,7 @@ import {
 import { getIdentityPortraitUrl, getIdentityInfoUrl } from '@/lib/utils/images'
 import type { SupportedLang } from '@/lib/i18n'
 import Sheet from '@/components/ui/Sheet'
+import { usePlanList } from '@/features/planner/hooks/usePlanList'
 
 type SortKey = 'latest' | 'popular'
 type SearchSuggestion = { label: string; type: 'identity' | 'keyword'; imageUrl?: string }
@@ -111,18 +112,6 @@ function toDeckFilterIdentity(identity: IdentityNameEntry): DeckFilterIdentity {
   }
 }
 
-function mergePlanRows(existing: PlanSummary[], incoming: PlanSummary[]) {
-  const byId = new Map<string, PlanSummary>()
-  const orderedIds: string[] = []
-
-  for (const plan of [...existing, ...incoming]) {
-    if (!byId.has(plan.id)) orderedIds.push(plan.id)
-    byId.set(plan.id, plan)
-  }
-
-  return orderedIds.map(id => byId.get(id)!)
-}
-
 // 플랜의 모든 인격 이름 (검색용) — API가 pre-compute한 값 우선 사용
 function getPlanIdentityNames(plan: PlanSummary): string[] {
   return plan.identity_names ?? []
@@ -154,15 +143,6 @@ export default function CommunityClient({ initialPlans, initialTotal, initialShe
   const { iconMap: kwIconMap, getIconUrl } = useKeywordData()
   const keywords = useKeywords()
   const ALL_KEYWORDS = useMemo(() => Object.keys(kwIconMap), [kwIconMap])
-  const [plans, setPlans] = useState<PlanSummary[]>(initialPlans ?? [])
-  const [loading, setLoading] = useState(initialPlans === undefined)
-  const [loadingMore, setLoadingMore] = useState(false)
-  const [hasMore, setHasMore] = useState(
-    initialPlans !== undefined && initialTotal !== undefined
-      ? initialPlans.length < initialTotal
-      : true
-  )
-  const [total, setTotal] = useState(initialTotal ?? 0)
   const [browse, setBrowse] = useQueryState('browse', parseAsString.withDefault(''))
   const [sort, setSort] = useQueryState('sort', parseAsString.withDefault('latest'))
   const [difficulty, setDifficulty] = useState<Difficulty | null>(null)
@@ -200,18 +180,7 @@ export default function CommunityClient({ initialPlans, initialTotal, initialShe
   // inputValue: local state for immediate input display (avoids IME composition breaks)
   const [inputValue, setInputValue] = useState(search)
   const [debouncedSearch, setDebouncedSearch] = useState(search)
-  const offsetRef = useRef(initialPlans?.length ?? 0)
   const scrollRootRef = useRef<HTMLDivElement>(null)
-  const initialDataKey = useRef<string | null>(initialPlans !== undefined ? (() => {
-    const params = new URLSearchParams()
-    params.set('sort', 'latest')
-    params.sort()
-    return params.toString()
-  })() : null)
-  const planRequestId = useRef(0)
-  const loadMoreRequestId = useRef(0)
-  const loadMoreAbortRef = useRef<AbortController | null>(null)
-  const latestRequestKeyRef = useRef('')
   const searchRef = useRef<HTMLDivElement>(null)
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [acIndex, setAcIndex] = useState(-1)
@@ -401,92 +370,9 @@ export default function CommunityClient({ initialPlans, initialTotal, initialShe
   // Only browsing all or searching shows the list; the default view is the discovery shelf, so nothing is loaded for it.
   const listVisible = browse === 'all' || Boolean(search || keywordQuery || identityIdsQuery)
 
-  useEffect(() => {
-    if (!listVisible) return
-    latestRequestKeyRef.current = serverQueryKey
-    if (initialDataKey.current === serverQueryKey && initialPlans !== undefined) {
-      initialDataKey.current = null
-      setLoading(false)
-      setLoadingMore(false)
-      setHasMore(initialTotal === undefined ? initialPlans.length >= PAGE_SIZE : initialPlans.length < initialTotal)
-      offsetRef.current = initialPlans.length
-      return
-    }
-
-    loadMoreAbortRef.current?.abort()
-    loadMoreRequestId.current += 1
-    const requestId = planRequestId.current + 1
-    planRequestId.current = requestId
-    const controller = new AbortController()
-    const hasExistingPlans = plans.length > 0
-    setLoading(!hasExistingPlans)
-    setLoadingMore(false)
-    setHasMore(true)
-
-    fetch(`/api/planner?${buildPlannerSearchParams(0).toString()}`, { signal: controller.signal })
-      .then(res => res.ok ? res.json() : Promise.reject(new Error('planner fetch failed')))
-      .then(json => {
-        if (planRequestId.current !== requestId || latestRequestKeyRef.current !== serverQueryKey) return
-        const fetched: PlanSummary[] = json.plans ?? []
-        const nextTotal = json.total ?? 0
-        setTotal(nextTotal)
-        setPlans(fetched)
-        setHasMore(fetched.length < nextTotal)
-        offsetRef.current = fetched.length
-      })
-      .catch(error => {
-        if (error instanceof DOMException && error.name === 'AbortError') return
-      })
-      .finally(() => {
-        if (planRequestId.current !== requestId || latestRequestKeyRef.current !== serverQueryKey) return
-        setLoading(false)
-      })
-
-    return () => controller.abort()
-  }, [listVisible, serverQueryKey, buildPlannerSearchParams, initialPlans, initialTotal]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  const loadMore = useCallback(() => {
-    if (loading || loadingMore || !hasMore) return
-    setLoadingMore(true)
-    loadMoreAbortRef.current?.abort()
-    const requestId = loadMoreRequestId.current + 1
-    loadMoreRequestId.current = requestId
-    const requestQueryKey = serverQueryKey
-    const controller = new AbortController()
-    loadMoreAbortRef.current = controller
-
-    fetch(`/api/planner?${buildPlannerSearchParams(offsetRef.current).toString()}`, { signal: controller.signal })
-      .then(res => res.ok ? res.json() : Promise.reject(new Error('planner fetch failed')))
-      .then(json => {
-        if (loadMoreRequestId.current !== requestId || latestRequestKeyRef.current !== requestQueryKey) return
-        const fetched: PlanSummary[] = json.plans ?? []
-        const nextTotal = json.total ?? 0
-        setTotal(nextTotal)
-        if (fetched.length === 0) {
-          setHasMore(false)
-          return
-        }
-        setPlans(prev => {
-          const merged = mergePlanRows(prev, fetched)
-          offsetRef.current = merged.length
-          setHasMore(merged.length < nextTotal)
-          return merged
-        })
-      })
-      .catch(error => {
-        if (error instanceof DOMException && error.name === 'AbortError') return
-      })
-      .finally(() => {
-        if (loadMoreRequestId.current === requestId) loadMoreAbortRef.current = null
-        if (loadMoreRequestId.current === requestId && latestRequestKeyRef.current === requestQueryKey) setLoadingMore(false)
-      })
-  }, [loading, loadingMore, hasMore, serverQueryKey, buildPlannerSearchParams])
-
-  useEffect(() => {
-    loadMoreAbortRef.current?.abort()
-    loadMoreRequestId.current += 1
-    setLoadingMore(false)
-  }, [serverQueryKey])
+  const { plans, loading, loadingMore, hasMore, total, loadMore } = usePlanList({
+    initialPlans, initialTotal, serverQueryKey, listVisible, buildSearchParams: buildPlannerSearchParams, pageSize: PAGE_SIZE, errorMessage: t('loadFailed'),
+  })
 
   const sentinelRef = useLoadMoreSentinel(loadMore, scrollRootRef, serverQueryKey)
 

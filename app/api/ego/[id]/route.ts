@@ -69,7 +69,7 @@ export async function GET(
     if (!detail) return NextResponse.json({ error: 'EGO not found' }, { status: 404 })
     return NextResponse.json(detail, { headers: { 'Cache-Control': CATALOG_CACHE_CONTROL } })
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Internal Server Error'
-    return NextResponse.json({ error: message }, { status: 500 })
+    console.error('[api/ego/[id]]', err)
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
   }
 }

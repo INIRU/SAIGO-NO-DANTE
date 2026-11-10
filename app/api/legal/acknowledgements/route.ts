@@ -41,7 +41,8 @@ export async function POST() {
       .upsert(rows, { onConflict: 'user_id,doc_type,version' })
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 })
+      console.error('[api/legal/acknowledgements]', error)
+      return NextResponse.json({ error: '요청을 처리하지 못했습니다.' }, { status: 500 })
     }
 
     const acknowledgements = await getUserLegalAcknowledgements(userId)
@@ -50,7 +51,7 @@ export async function POST() {
       legal: toLegalStatusPayload(docs, acknowledgements),
     })
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Internal Server Error'
-    return NextResponse.json({ error: message }, { status: 500 })
+    console.error('[api/legal/acknowledgements]', err)
+    return NextResponse.json({ error: '요청을 처리하지 못했습니다.' }, { status: 500 })
   }
 }

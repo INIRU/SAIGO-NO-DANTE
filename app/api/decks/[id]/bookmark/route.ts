@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { authOptions, requireActiveUser } from '@/lib/auth'
 import { findOrCreateSupabaseUser } from '@/lib/supabase/findOrCreateUser'
+import { checkRequestRateLimit, rateLimitResponse } from '@/lib/rate-limit'
 
 type SupabaseRouteError = {
   code?: string
@@ -108,7 +109,7 @@ export async function GET(
 }
 
 export async function POST(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
@@ -116,6 +117,13 @@ export async function POST(
     const auth = await requireActiveUser()
     if (auth.error) return auth.response
     const { session } = auth
+
+    const rateLimit = checkRequestRateLimit(request, {
+      bucket: 'write',
+      scope: 'deck-bookmark:toggle',
+      authenticatedKey: session.user.email,
+    })
+    if (!rateLimit.allowed) return rateLimitResponse(rateLimit)
 
     const admin = createAdminClient()
     const userId = await findOrCreateSupabaseUser(

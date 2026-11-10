@@ -2,7 +2,6 @@
 .font-logo      { font-family: var(--font-logo); }
 .font-title     { font-family: var(--font-title); }
 .font-heading   { font-family: var(--font-heading); }
-.font-game-mono { font-family: var(--font-mono); }
 
 /* Song Myung 두께 보정 */
 .font-serif {
@@ -21,28 +20,7 @@
   box-shadow: 0 0 16px rgba(200, 144, 10, 0.15);
 }
 
-/* ── 골드 글로우 ───────────────────────────────────────── */
-.gold-glow {
-  box-shadow: 0 0 20px rgba(200, 144, 10, 0.4), 0 0 40px rgba(200, 144, 10, 0.2);
-  border-color: var(--gold) !important;
-}
-
-/* ── 티어 배지 ────────────────────────────────────────── */
-.tier-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 22px;
-  height: 22px;
-  border-radius: 2px;
-  font-family: var(--font-title);
-  font-weight: 700;
-  font-size: 0.6875rem;
-  border: 1px solid currentColor;
-}
-
-/* ── 구분선 ───────────────────────────────────────────── */
-.divider-gold {
-  height: 1px;
-  background: linear-gradient(to right, transparent, var(--gold-dim), transparent);
+/* The gift catalogue on a phone: five cells across, names at the smallest text step. */
+@media (max-width: 40rem) {
+  .gift-catalog-grid { --gift-catalog-min: 4.25rem; --gift-name-size: var(--text-xs); }
 }

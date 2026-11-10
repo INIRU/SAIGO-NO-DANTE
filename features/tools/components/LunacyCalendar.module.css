@@ -19,12 +19,6 @@
   font-family: var(--font-heading);
   color: var(--gold-light);
 }
-.settingsBody {
-  display: grid;
-  gap: 1.25rem;
-  padding: 1.5rem 0 0.5rem;
-}
-.settingsBody p,
 .editor p {
   font-size: 0.8rem;
   line-height: 1.7;
@@ -60,24 +54,6 @@
   padding: 0.65rem 0.8rem;
   border-radius: 0.2rem;
   color-scheme: dark;
-}
-.checks {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-  padding-top: 1rem;
-}
-.check {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  font-size: 0.85rem;
-}
-.check input {
-  accent-color: var(--gold);
-  width: 1rem;
-  height: 1rem;
-  flex-shrink: 0;
 }
 .button,
 .primary {
@@ -476,10 +452,6 @@
 .settings > summary {
   padding: 1rem 1.25rem;
 }
-.settingsBody {
-  padding: 1.25rem;
-  border-top: 1px solid var(--border);
-}
 .dayTotal {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
@@ -545,9 +517,6 @@
   }
   .totals .currencyCard strong {
     font-size: 1.4rem;
-  }
-  .hero > img {
-    display: none;
   }
   .day .currencyIcon {
     width: 0.7rem;
@@ -720,10 +689,6 @@
   font-size: 0.7rem;
   margin-top: 0.3rem;
 }
-.firstPurchaseList {
-  display: grid;
-  gap: 0.2rem;
-}
 .doneButton {
   width: 100%;
 }
@@ -751,24 +716,6 @@
 }
 .weeklySchedule > .primary {
   width: 100%;
-}
-.productCategories {
-  display: flex;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
-}
-.productCategories button {
-  border: 1px solid var(--border);
-  padding: 0.5rem 0.9rem;
-  border-radius: 2rem;
-  font-size: 0.75rem;
-  color: var(--text-secondary);
-  cursor: pointer;
-}
-.productCategories button[aria-pressed="true"] {
-  background: var(--gold);
-  border-color: var(--gold);
-  color: var(--bg-deep);
 }
 .productGrid {
   display: grid;
@@ -840,8 +787,7 @@
   flex: 1;
   align-content: start;
 }
-.productCurrency,
-.productItem {
+.productCurrency {
   display: flex;
   align-items: center;
   gap: 0.3rem;
@@ -864,19 +810,6 @@
 .productCurrency small {
   font-size: 0.65rem;
   color: var(--gold-light);
-}
-.productItem img {
-  flex-shrink: 0;
-  object-fit: contain;
-}
-.productItem > span {
-  flex: 1;
-  color: var(--text-secondary);
-}
-.productItem > b {
-  flex-shrink: 0;
-  color: var(--text-primary);
-  font-size: 0.75rem;
 }
 .productWarning {
   font-size: 0.7rem;
@@ -905,13 +838,8 @@
   .productContents {
     padding: 0.5rem;
   }
-  .productCurrency,
-  .productItem {
+  .productCurrency {
     font-size: 0.6rem;
-  }
-  .productItem > img {
-    width: 1.3rem;
-    height: 1.3rem;
   }
   .productCurrency > .currencyIcon {
     width: 1.3rem;

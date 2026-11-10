@@ -54,12 +54,3 @@ export function remember(item: HistoryItem | string) {
     /* Browsing works when storage is unavailable. */
   }
 }
-export function clearHistory(enabled: boolean) {
-  try {
-    localStorage.setItem(
-      key,
-      JSON.stringify({ items: [], queries: [], enabled }),
-    );
-    window.dispatchEvent(new Event("limbus-history-changed"));
-  } catch {}
-}

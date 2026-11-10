@@ -103,7 +103,10 @@ input.pin::placeholder { font: 400 0.85rem/1 var(--font-body); letter-spacing: 0
   .count { font-size: 1.2rem; }
   .wants { grid-template-columns: 1fr; gap: 1.1rem; }
   .codeBox { margin-left: 0; width: 100%; }
-  .primary, .ghost { padding: 0 0.8rem; font-size: 0.82rem; }
+  .primary, .ghost { height: 2.75rem; padding: 0 0.8rem; font-size: 0.82rem; }
+  .icon { width: 2.75rem; height: 2.75rem; }
+  .icon.boxed { width: 2.75rem; height: 2.75rem; }
+  .codeBox .primary { height: 2.75rem; }
 }
 
 /* Writing page as an editor screen (html[data-with-friend-compose] hides the site navigation and footer): on desktop the

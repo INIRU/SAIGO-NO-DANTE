@@ -25,11 +25,6 @@ export function SkeletonPoster({ ratio = '3 / 4', className = '', raised, line }
   return <Skeleton className={`w-full ${className}`} style={{ aspectRatio: ratio }} raised={raised} line={line} />
 }
 
-/** 수감자·인격 초상 (기본 2:3, 테두리 포함). */
-export function SkeletonPortrait({ ratio = '2 / 3', className = '' }: { ratio?: string; className?: string }) {
-  return <SkeletonPoster ratio={ratio} line className={className} />
-}
-
 /** E.G.O 기프트 타일: 정사각 아이콘 + 이름 한 줄. */
 export function SkeletonGift({ className = '' }: { className?: string }) {
   return <div className={`min-w-0 ${className}`}><Skeleton className="w-full" style={{ aspectRatio: '1' }} /><SkeletonLine w="80%" h="0.625rem" className="mx-auto mt-1.5" /></div>

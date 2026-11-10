@@ -233,6 +233,10 @@
   .mobileBar { display: none; }
 }
 @media (max-width: 40rem) {
+  /* Phone tap height; the keyword chips stay a step shorter so the panel does not double in length. */
+  .toggle { min-height: 2.75rem; }
+  .keywords .toggle { min-height: 2.5rem; }
+  .tab { min-height: 2.75rem; }
   .egoHead { padding: 0.25rem 0.375rem; font-size: 0.6875rem; }
   .egoName { font-size: 0.625rem; -webkit-line-clamp: 1; }
   .lock { width: 1.5rem; height: 1.5rem; }

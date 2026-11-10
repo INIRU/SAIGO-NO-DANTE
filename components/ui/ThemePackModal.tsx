@@ -173,45 +173,6 @@ export function ThemePackModalPill({ children, tone = 'neutral' }: ThemePackModa
   )
 }
 
-interface ThemePackModalSectionProps {
-  title: ReactNode
-  count?: number
-  icon?: ReactNode
-  children: ReactNode
-  tone?: 'gold' | 'purple' | 'neutral'
-}
-
-export function ThemePackModalSection({
-  title,
-  count,
-  icon,
-  children,
-  tone = 'gold',
-}: ThemePackModalSectionProps) {
-  const color = tone === 'purple' ? '#b090d0' : tone === 'gold' ? 'var(--gold)' : '#aaa'
-
-  return (
-    <section className="mb-5">
-      <div className="mb-2.5 flex items-center gap-1.5">
-        {icon && (
-          <span aria-hidden="true" style={{ color, fontSize: '0.9375rem' }}>
-            {icon}
-          </span>
-        )}
-        <span className="font-serif font-medium" style={{ color, fontSize: '0.9375rem' }}>
-          {title}
-        </span>
-        {typeof count === 'number' && (
-          <span style={{ color: 'var(--text-muted)', fontSize: '0.875rem', fontFamily: 'var(--font-mono)' }}>
-            ({count})
-          </span>
-        )}
-      </div>
-      {children}
-    </section>
-  )
-}
-
 interface ThemePackModalGridProps {
   children: ReactNode
   minColumnWidth?: string

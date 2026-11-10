@@ -18,11 +18,7 @@ export type { Period }
 
 /** The shelves of one board and period, with the server-rendered first page as the start value. */
 export function useBoardData(kind: DiscoveryKind, days: Period, initialData?: BoardData) {
-  return useSWR<BoardData>(`/api/discovery?kind=${kind}&period=${days}`, async (url: string) => {
-    const response = await fetch(url)
-    if (!response.ok) throw Error()
-    return response.json()
-  }, { keepPreviousData: true, fallbackData: days === 'week' ? initialData : undefined })
+  return useSWR<BoardData>(`/api/discovery?kind=${kind}&period=${days}`, { keepPreviousData: true, fallbackData: days === 'week' ? initialData : undefined })
 }
 
 export const baseOf = (kind: DiscoveryKind) => (kind === 'deck' ? '/decks' : '/planner/community')
