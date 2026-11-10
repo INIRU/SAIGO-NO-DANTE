@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import useSWR from 'swr'
+import useSWR, { useSWRConfig } from 'swr'
 import { useLocale, useTranslations } from 'next-intl'
 import { useSession } from 'next-auth/react'
 import { X } from 'lucide-react'
@@ -9,12 +9,6 @@ import BaseModal from '@/components/ui/BaseModal'
 import { showError } from '@/lib/toast'
 
 type Row = { id: string; title: string; created_at: string }
-
-async function getJson(url: string) {
-  const res = await fetch(url)
-  if (!res.ok) throw new Error(String(res.status))
-  return res.json()
-}
 
 /**
  * Picks one of my decks (for a plan) or one of my plans (for a deck) and hands back its full record. Lists come from the
@@ -29,8 +23,9 @@ export default function FormationSourceModal({ kind, open, onClose, onLoaded }: 
   const t = useTranslations('planner.formationImport')
   const locale = useLocale()
   const { status } = useSession()
+  const { fetcher } = useSWRConfig()
   const listUrl = kind === 'deck' ? '/api/profile' : '/api/planner?userId=me&limit=50'
-  const list = useSWR<{ decks?: Row[]; plans?: Row[] }>(open && status === 'authenticated' ? listUrl : null, getJson, { revalidateOnFocus: false })
+  const list = useSWR<{ decks?: Row[]; plans?: Row[] }>(open && status === 'authenticated' ? listUrl : null)
   const rows = (kind === 'deck' ? list.data?.decks : list.data?.plans) ?? []
   const [busyId, setBusyId] = useState<string | null>(null)
   const title = t(kind === 'deck' ? 'decksTitle' : 'plansTitle')
@@ -40,7 +35,7 @@ export default function FormationSourceModal({ kind, open, onClose, onLoaded }: 
     if (busyId) return
     setBusyId(row.id)
     try {
-      onLoaded(await getJson(kind === 'deck' ? `/api/decks/${row.id}` : `/api/planner/${row.id}`))
+      onLoaded(await fetcher!(kind === 'deck' ? `/api/decks/${row.id}` : `/api/planner/${row.id}`) as Record<string, unknown>)
     } catch { showError(t('loadFailed')) }
     finally { setBusyId(null) }
   }

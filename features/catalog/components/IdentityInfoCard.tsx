@@ -7,8 +7,7 @@ import {
   Identity,
   RARITY_ICON_MAP,
 } from '@/lib/data/sinners'
-import { KeywordWithTooltip } from '@/features/catalog/components/KeywordTooltip'
-import { useKeywords } from '@/components/providers/KeywordProvider'
+import { KeywordWithTooltip, useKeywords } from '@/components/providers/KeywordProvider'
 import { useTranslations, useLocale } from 'next-intl'
 import type { SupportedLang } from '@/lib/i18n'
 import { getLocalizedAffiliation, getLocalizedKeywordName } from '@/lib/i18n'

@@ -38,7 +38,10 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
       .eq('plan_id', id)
       .order('created_at', { ascending: true })
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) {
+      console.error('[planner/[id]/comments]', error.message)
+      return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    }
 
     return NextResponse.json({ comments: data })
   } catch {
@@ -81,7 +84,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         .maybeSingle()
 
       if (parentError) {
-        return NextResponse.json({ error: parentError.message }, { status: 500 })
+        console.error('[planner/[id]/comments]', parentError.message)
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
       }
       if (!parentComment) {
         return NextResponse.json({ error: '유효하지 않은 부모 댓글입니다.' }, { status: 400 })
@@ -102,19 +106,24 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       .select('id, content, parent_id, created_at')
       .single()
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) {
+      console.error('[planner/[id]/comments]', error.message)
+      return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    }
 
     // comment_count 갱신
     const { count, error: countError } = await admin.schema('limbus').from('md_plan_comments').select('id', { count: 'exact', head: true }).eq('plan_id', id)
     if (countError) {
       revalidatePlannerCommentCaches(id)
-      return NextResponse.json({ error: countError.message }, { status: 500 })
+      console.error('[planner/[id]/comments]', countError.message)
+      return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 
     const { error: updateError } = await admin.schema('limbus').from('md_plans').update({ comment_count: count ?? 0 }).eq('id', id)
     if (updateError) {
       revalidatePlannerCommentCaches(id)
-      return NextResponse.json({ error: updateError.message }, { status: 500 })
+      console.error('[planner/[id]/comments]', updateError.message)
+      return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 
     revalidatePlannerCommentCaches(id)

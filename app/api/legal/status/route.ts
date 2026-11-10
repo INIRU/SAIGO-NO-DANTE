@@ -70,7 +70,8 @@ export async function GET(request: Request) {
     ])
 
     if (profileRes.error) {
-      return NextResponse.json({ error: profileRes.error.message }, { status: 500 })
+      console.error('[api/legal/status]', profileRes.error)
+      return NextResponse.json({ error: '요청을 처리하지 못했습니다.' }, { status: 500 })
     }
 
     const legal = toLegalStatusPayload(docs, acknowledgements)
@@ -81,7 +82,7 @@ export async function GET(request: Request) {
       suspension: buildSuspensionPayload(profileRes.data as ProfileSuspensionRow | null),
     })
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Internal Server Error'
-    return NextResponse.json({ error: message }, { status: 500 })
+    console.error('[api/legal/status]', err)
+    return NextResponse.json({ error: '요청을 처리하지 못했습니다.' }, { status: 500 })
   }
 }

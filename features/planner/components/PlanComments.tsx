@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import type { FormEvent } from 'react'
 import { Link } from '@/lib/i18n/navigation'
 import { useSession } from 'next-auth/react'
@@ -35,22 +35,26 @@ export default function PlanComments({ planId, headingId }: Props) {
   const [replyTo, setReplyTo] = useState<{ id: string; username: string } | null>(null)
   const [replyText, setReplyText] = useState('')
 
+  // 가장 마지막에 보낸 요청의 응답만 쓴다(늦게 온 다른 플랜·이전 요청의 응답은 버린다)
+  const latestRequest = useRef(0)
   const fetchComments = useCallback(async () => {
+    const requestId = ++latestRequest.current
     setCommentsLoading(true)
     try {
       const res = await fetch(`/api/planner/${planId}/comments`)
-      if (!res.ok) return
+      if (!res.ok) throw new Error('comments fetch failed')
       const json = await res.json()
-      setComments(json.comments ?? [])
+      if (latestRequest.current === requestId) setComments(json.comments ?? [])
     } catch {
-      /* 무시 */
+      if (latestRequest.current === requestId) showError(tDetail('commentsLoadFailed'))
     } finally {
-      setCommentsLoading(false)
+      if (latestRequest.current === requestId) setCommentsLoading(false)
     }
-  }, [planId])
+  }, [planId, tDetail])
 
   useEffect(() => {
     fetchComments()
+    return () => { latestRequest.current++ }
   }, [fetchComments])
 
   const post = async (content: string, parentId: string | null) => {

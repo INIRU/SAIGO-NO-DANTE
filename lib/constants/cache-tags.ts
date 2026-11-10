@@ -54,18 +54,3 @@ export const ALL_GAME_DATA_TAGS: readonly string[] = [
   CACHE_TAGS.meta,
   CACHE_TAGS.mirrorDungeon,
 ] as const
-
-// 정적 (문자열 리터럴) 게임 데이터 태그만 허용하는 유니언 타입.
-// 동적 엔티티 태그(sinner/egoEntry/deck/plan)는 별도 타입 체계.
-export type GameDataTag = typeof CACHE_TAGS[
-  | 'gameData'
-  | 'sinners'
-  | 'identities'
-  | 'ego'
-  | 'egoGifts'
-  | 'themes'
-  | 'keywords'
-  | 'gameTextRefs'
-  | 'meta'
-  | 'mirrorDungeon'
-]

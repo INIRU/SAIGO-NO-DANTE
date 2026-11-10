@@ -177,11 +177,11 @@ async function fetchPlannerSkillTypeMap(supabase: SupabaseServerClient, identity
       .select('identity_id, skill_type')
       .in('identity_id', identityIds)
       .eq('uptie_level', 4)
-    if (fallback.error) return { error: fallback.error.message }
+    if (fallback.error) { console.error('[planner] skill types:', fallback.error.message); return { error: true as const } }
     return { skillTypesByIdentityId: buildPlannerSkillTypeMap((fallback.data ?? []) as PlannerSkillRow[]) }
   }
 
-  if (error) return { error: error.message }
+  if (error) { console.error('[planner] skill types:', error.message); return { error: true as const } }
   return { skillTypesByIdentityId: buildPlannerSkillTypeMap((data ?? []) as PlannerSkillRow[]) }
 }
 
@@ -290,6 +290,8 @@ export async function GET(req: NextRequest) {
     // The normal filter also reads the plans stored as hard and keeps those with normal floors: that takes each plan's floors, like the filters above.
     const hasAdvancedFilters = identityIds.length > 0 || keywordTags.length > 0 || formationCount !== null || difficulty === 'normal'
 
+    if (userIdParam !== null && userIdParam !== 'me') return NextResponse.json({ error: 'userId must be me' }, { status: 400 })
+
     // userId=me 또는 votedBy=me → 인증 필요
     let resolvedUserId: string | null = null
     if (userIdParam === 'me' || votedBy === 'me') {
@@ -303,11 +305,15 @@ export async function GET(req: NextRequest) {
     let votedPlanIds: string[] | null = null
     if (votedBy === 'me' && resolvedUserId) {
       const admin = createAdminClient()
-      const { data: votes } = await admin
+      const { data: votes, error: votesError } = await admin
         .schema('limbus')
         .from('md_plan_votes')
         .select('plan_id')
         .eq('user_id', resolvedUserId)
+      if (votesError) {
+        console.error('[planner] votedBy:', votesError.message)
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+      }
       votedPlanIds = votes?.map((v: { plan_id: string }) => v.plan_id) ?? []
       if (votedPlanIds.length === 0) {
         return NextResponse.json({ plans: [], total: 0 })
@@ -336,11 +342,14 @@ export async function GET(req: NextRequest) {
     const rangeStart = hasAdvancedFilters ? 0 : offset
     const rangeEnd = hasAdvancedFilters ? ADVANCED_FILTER_CANDIDATE_LIMIT - 1 : offset + limit - 1
     const { data, count, error } = await buildQuery(rangeStart, rangeEnd)
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) {
+      console.error('[planner] list:', error.message)
+      return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    }
 
     const rows = (await withPostAuthors((data ?? []) as { user_id?: string | null; profiles?: unknown }[])) as Record<string, unknown>[]
     const skillTypeResult = await fetchPlannerSkillTypeMap(supabase, getFormationIdentityIds(rows))
-    if ('error' in skillTypeResult) return NextResponse.json({ error: skillTypeResult.error }, { status: 500 })
+    if ('error' in skillTypeResult) return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
 
     const enrichedRows = addPlannerSkillTypesToRows(rows, skillTypeResult.skillTypesByIdentityId)
     if (hasAdvancedFilters) {
@@ -411,7 +420,10 @@ export async function POST(req: NextRequest) {
       .select('id')
       .single()
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) {
+      console.error('[planner] create:', error.message)
+      return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    }
 
     const { error: activityError } = userId
       ? await admin.schema('limbus').rpc('community_record_plan', { p_plan_id: data.id, p_user_id: userId })

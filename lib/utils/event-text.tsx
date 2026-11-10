@@ -1,5 +1,4 @@
 import type { CSSProperties, ReactNode } from 'react'
-import { ACTION_EVENT_EFFECTS, AB_EVENT_EFFECTS } from '@/lib/data/event-effects-map'
 import PlaceholderLabel from '@/components/ui/PlaceholderLabel'
 import { splitPlaceholders } from '@/lib/game-text/placeholders'
 
@@ -40,13 +39,6 @@ export function parseUnityColorTags(raw: string): ReactNode {
   return root.children
 }
 
-export function getOptionEffects(eventId: number, optionIndex: number): ReactNode[] {
-  return (ACTION_EVENT_EFFECTS[eventId]?.[optionIndex] ?? []).map(text => parseUnityColorTags(text))
-}
-export function getAbEventEffects(eventId: number): { success: ReactNode[]; failure: ReactNode[] } {
-  const data = AB_EVENT_EFFECTS[eventId]
-  return { success: (data?.success ?? []).map(text => parseUnityColorTags(text)), failure: (data?.failure ?? []).map(text => parseUnityColorTags(text)) }
-}
 /** Event text from before the sync stored {{sinner}} (a bare {0}) reads the same as the token. */
 export function replaceEventPlaceholders(text: string | null | undefined): string {
   return (text ?? '').replace(/\{\d+\}/g, '{{sinner}}')

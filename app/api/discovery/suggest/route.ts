@@ -2,10 +2,10 @@ import { NextResponse } from 'next/server'
 import { getFormations, getRecCatalog, buildEgoModel, suggestEgos, buildFloorModel, rankGifts, rankThemes, buildIdentityModel, detectArchetype, suggestIdentities } from '@/features/community/server'
 import { getAvailableThemes } from '@/lib/planner/fusion'
 import { DIFFICULTY_FLOOR_KEY, type Difficulty } from '@/lib/planner/types'
+import { isUuid } from '@/lib/utils/uuid'
 
 // Counted from public decks and plans only, so one answer is shared: the counts themselves are cached for hours.
 const headers = { 'Cache-Control': 'public, max-age=300' }
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 const bad = () => NextResponse.json({ error: 'Invalid filter' }, { status: 400, headers })
 const list = (value: string | null, max: number) => (value ? value.split(',').filter(Boolean).slice(0, max) : [])
 
@@ -26,14 +26,14 @@ export async function GET(request: Request) {
   try {
     if (type === 'identity') {
       const sinner = query.get('sinner') ?? '', context = list(query.get('with'), 12)
-      if (!sinner || !context.every(id => UUID.test(id))) return bad()
+      if (!sinner || !context.every(isUuid)) return bad()
       const [formations, catalog] = await Promise.all([getFormations(), getRecCatalog()])
       const result = suggestIdentities(buildIdentityModel(formations, catalog), { context, sinner, keywords: list(query.get('keywords'), 6), now: Date.now() }, { limit: 24 })
       return NextResponse.json(result, { headers })
     }
     if (type === 'ego') {
       const identity = query.get('identity') ?? '', board = list(query.get('with'), 12), equipped = list(query.get('equipped'), 24)
-      if (!UUID.test(identity) || ![...board, ...equipped].every(id => UUID.test(id))) return bad()
+      if (!isUuid(identity) || ![...board, ...equipped].every(isUuid)) return bad()
       const [formations, catalog] = await Promise.all([getFormations(), getRecCatalog()])
       return NextResponse.json(suggestEgos(buildEgoModel(formations, catalog), { identity, board, equipped, now: Date.now() }, { limit: 12 }), { headers })
     }
@@ -45,7 +45,7 @@ export async function GET(request: Request) {
       const difficulty = query.get('difficulty')
       const theme = query.get('theme')
       const taken = list(query.get('taken'), 200)
-      if (!Number.isInteger(floor) || floor < 1 || floor > 15 || !identities.every(id => UUID.test(id)) || (difficulty && !(difficulty in DIFFICULTY_FLOOR_KEY))
+      if (!Number.isInteger(floor) || floor < 1 || floor > 15 || !identities.every(isUuid) || (difficulty && !(difficulty in DIFFICULTY_FLOOR_KEY))
         || (theme && !/^\d+$/.test(theme)) || !taken.every(id => /^\d+$/.test(id))) return bad()
       const [formations, catalog] = await Promise.all([getFormations(), getRecCatalog()])
       const model = buildFloorModel(formations, catalog)

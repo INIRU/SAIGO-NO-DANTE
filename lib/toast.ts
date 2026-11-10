@@ -25,10 +25,4 @@ export const showError = (message: string) => dedupedToast(`error:${message}`, (
 /** 경고 토스트 */
 export const showWarning = (message: string) => dedupedToast(`warning:${message}`, () => toast.warning(message))
 
-/** 복사 완료 토스트 */
-export const showCopied = () => dedupedToast('success:copied', () => toast.success('클립보드에 복사되었습니다'))
-
-/** 로딩 후 완료 패턴 */
-export const showLoading = (message: string) => toast.loading(message)
-
 export { toast }

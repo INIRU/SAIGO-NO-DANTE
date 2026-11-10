@@ -234,7 +234,7 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
 
   const handleUpload = async () => {
     if (pendingNoteUploads.size) { showError(noteUploadInProgressMessage(locale)); return }
-    if (uploading) return
+    if (uploading || uploaded) return
     if (!state.title.trim()) { showError(tPlanner('actions.titleRequired')); return }
     // A new guest plan takes a password, asked for when the browser's key is gone (REQ-COMMUNITY-031).
     const needsPin = session.status === 'unauthenticated' && !editId
@@ -271,8 +271,10 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
           setTimeout(() => router.push(`/planner/community/${targetId}`), 800)
         }
       } else {
-        const data = await res.json()
-        showError(data.error ?? (editId ? tPlanner('actions.updateFailed') : tPlanner('actions.uploadFailed')))
+        const data = await res.json().catch(() => null)
+        const fallback = editId ? tPlanner('actions.updateFailed') : tPlanner('actions.uploadFailed')
+        // 서버 쪽 실패(5xx)의 고정 문구는 사용자에게 뜻이 없어서 화면 문구를 쓴다.
+        showError(res.status >= 500 ? fallback : data?.error ?? fallback)
       }
     } catch { showError(tPlanner('actions.uploadError')) }
     finally { setUploading(false) }
@@ -467,7 +469,7 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
             <TempSaveMenu title={tTempSaves('menuLabel')} slots={tempSlots} onSave={handleSaveTempSlot} onLoad={handleLoadTempSlot} onDelete={handleDeleteTempSlot} />
             <button
               onClick={handleUpload}
-              disabled={session.status === 'loading' || uploading}
+              disabled={session.status === 'loading' || uploading || uploaded}
               style={{
                 display: 'flex', alignItems: 'center', gap: '0.25rem', padding: '0.375rem 0.625rem',
                 background: uploaded ? 'rgba(34,197,94,0.12)' : 'rgba(200,144,10,0.1)',

@@ -52,7 +52,10 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       .select('id, user_id, difficulty, floor_plan')
       .eq('id', id)
       .single()
-    if (planError) return NextResponse.json({ error: planError.message }, { status: 500 })
+    if (planError) {
+      console.error('[planner/[id]]', planError.message)
+      return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    }
     if (!plan || !(await ownsPost(admin, author, 'plan', plan))) return NextResponse.json({ error: '권한이 없습니다' }, { status: 403 })
 
     const body = await req.json()
@@ -76,7 +79,10 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     }
 
     const { error } = await admin.schema('limbus').from('md_plans').update(updates).eq('id', id)
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) {
+      console.error('[planner/[id]]', error.message)
+      return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    }
 
     const seriesError = await saveSeriesChoice(admin, { kind: 'plan', postId: id, userId, body })
     if (seriesError) return seriesError
@@ -110,12 +116,18 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
     const userId = author.kind === 'user' ? author.userId : null
 
     const { data: plan, error: planError } = await admin.schema('limbus').from('md_plans').select('id, user_id').eq('id', id).single()
-    if (planError) return NextResponse.json({ error: planError.message }, { status: 500 })
+    if (planError) {
+      console.error('[planner/[id]]', planError.message)
+      return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    }
     if (!plan || !(await ownsPost(admin, author, 'plan', plan))) return NextResponse.json({ error: '권한이 없습니다' }, { status: 403 })
 
     await revalidatePostSeries(admin, 'plan', id)
     const { error } = await admin.schema('limbus').from('md_plans').delete().eq('id', id)
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) {
+      console.error('[planner/[id]]', error.message)
+      return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    }
 
     await writeAuditLog({
       actorId: userId,

@@ -84,11 +84,19 @@ async function fetchMirrorDungeonData() {
       .order('id'),
     supabase.schema('limbus').from('md_event_choices').select(MD_EVENT_CHOICE_COLUMNS).order('event_id').order('sort_order'),
   ])
-  if (giftsError) Sentry.captureException(giftsError, { tags: { location: 'mirror-dungeon/page:MirrorDungeonPage' }, extra: { msg: 'Failed to fetch gifts' } })
-  if (recipesError) Sentry.captureException(recipesError, { tags: { location: 'mirror-dungeon/page:MirrorDungeonPage' }, extra: { msg: 'Failed to fetch recipes' } })
-  if (themesError) Sentry.captureException(themesError, { tags: { location: 'mirror-dungeon/page:MirrorDungeonPage' }, extra: { msg: 'Failed to fetch themes' } })
-  if (eventsError) Sentry.captureException(eventsError, { tags: { location: 'mirror-dungeon/page:MirrorDungeonPage' }, extra: { msg: 'Failed to fetch events' } })
-  if (choicesError) Sentry.captureException(choicesError, { tags: { location: 'mirror-dungeon/page:MirrorDungeonPage' }, extra: { msg: 'Failed to fetch event choices' } })
+  // A failed read throws (after the report) so the empty result is not cached for good.
+  const failures = [
+    [giftsError, 'Failed to fetch gifts'],
+    [recipesError, 'Failed to fetch recipes'],
+    [themesError, 'Failed to fetch themes'],
+    [eventsError, 'Failed to fetch events'],
+    [choicesError, 'Failed to fetch event choices'],
+  ] as const
+  for (const [error, msg] of failures) {
+    if (error) Sentry.captureException(error, { tags: { location: 'mirror-dungeon/page:MirrorDungeonPage' }, extra: { msg } })
+  }
+  const failed = failures.find(([error]) => error)?.[0]
+  if (failed) throw failed
 
   return { gifts, recipes, themes, events, choices }
 }

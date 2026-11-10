@@ -103,9 +103,9 @@ export async function POST(request: Request) {
       timestamp: Date.now(),
     })
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Internal Server Error'
+    console.error('[api/revalidate]', err)
     return NextResponse.json(
-      { error: { code: 'internal', message } },
+      { error: { code: 'internal', message: 'Internal Server Error' } },
       { status: 500 },
     )
   }

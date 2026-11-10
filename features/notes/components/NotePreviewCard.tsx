@@ -14,8 +14,8 @@ import { assetName, type NoteAssetData } from '@/features/notes/lib/assets'
 import { PREVIEW_DELAY_MS, PREVIEW_WIDTHS_REM, usesHover } from '@/features/notes/lib/preview'
 import { placePopoverIn, type PopoverPlacement } from '@/lib/utils/popover'
 import { NoteAssetArtwork } from './NoteBlockViewer'
+import { tr } from '@/features/notes/lib/tr'
 
-const tr = (lang: string, ko: string, ja: string, en: string) => lang === 'ja' ? ja : lang === 'en' ? en : ko
 
 /** The card itself: art on the left, name and what it is on the right (a gift also says what it does). */
 export function NotePreviewBody({ asset }: { asset: NoteAssetData }) {

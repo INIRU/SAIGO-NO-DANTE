@@ -16,7 +16,7 @@ export async function GET() {
       .sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0))
     return NextResponse.json(data, { headers: { 'Cache-Control': CATALOG_CACHE_CONTROL } })
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Internal Server Error'
-    return NextResponse.json({ error: message }, { status: 500 })
+    console.error('[api/keyword-meta]', err)
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
   }
 }

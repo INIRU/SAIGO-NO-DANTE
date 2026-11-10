@@ -16,7 +16,6 @@ import type { ReactNode } from 'react'
 import dynamic from 'next/dynamic'
 import { useReducedMotion } from 'motion/react'
 import * as m from 'motion/react-m'
-import { Link } from '@/lib/i18n/navigation'
 import Image from 'next/image'
 import { useLocale, useTranslations } from 'next-intl'
 import { useSession } from 'next-auth/react'
@@ -26,11 +25,16 @@ import { NoteRenderer, type NoteEgoGiftEntry } from '@/features/decks/components
 import { NoteGiftClickContext } from '@/features/notes/components/NoteBlockViewer'
 import { findNoteGift } from '@/features/notes'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
-import { type Difficulty, type FloorDifficulty, type GiftActivationCondition, type IdentitySlot as PlannerIdentitySlot, type RecipeData } from '@/lib/planner/types'
+import {
+  type Difficulty, type EgoData as PlannerEgoData, type EgoSlot as PlannerEgoSlot, type FloorEntry as PlannerFloorEntry,
+  type GiftData as PlannerGiftData, type IdentityData as PlannerIdentityData, type IdentitySlot as PlannerIdentitySlot,
+  type PassiveData as PlannerPassiveData, type RecipeData, type SinnerData as PlannerSinnerData,
+  type SkillSummary as PlannerSkillSummary, type ThemeData as PlannerThemeData,
+} from '@/lib/planner/types'
 import { buildGiftMap } from '@/lib/planner/fusion'
 import { computeDifficultySummary, planDifficultyBadge } from '@/lib/planner/stripPlanForList'
 import { getGiftActivationConditionStatus, getGiftConditionCountsForSlots, type GiftConditionStatus } from '@/lib/planner/gift-condition-status'
-import { observationCost, type Observation } from '@/features/planner'
+import { getSelectedBlessingCost, getSelectedBlessingLevels, normalizeBlessingMessages, observationCost, type Observation } from '@/features/planner'
 import { normalizeFloorPlanDifficulty } from '@/lib/planner/floor-difficulty'
 import { showError, showSuccess } from '@/lib/toast'
 import RelativeTime from '@/components/ui/RelativeTime'
@@ -45,15 +49,10 @@ import FloorPlanPreviewBoard from '@/features/planner/components/FloorPlanPrevie
 import GiftCard from '@/features/mirror-dungeon/components/GiftCard'
 import KeywordIcon from '@/components/ui/KeywordIcon'
 import { localizeDeckKeyword } from '@/features/decks'
-import { STORAGE_BASE, DEFAULT_AVATAR_URL, DEPLOYED_SLOT_COUNT } from '@/lib/constants/game'
+import { DEFAULT_AVATAR_URL, DEPLOYED_SLOT_COUNT } from '@/lib/constants/game'
 import { getLocalizedName } from '@/lib/i18n/localize'
 import type { SupportedLang } from '@/lib/i18n/types'
-import {
-  getSelectedBlessingCost,
-  getSelectedBlessingLevels,
-  normalizeBlessingMessages,
-  ReadOnlyBlessingGrid,
-} from '@/features/planner/components/BlessingTab'
+import { ReadOnlyBlessingGrid } from '@/features/planner/components/BlessingGrid'
 import { workbenchReveal } from '@/lib/animations'
 import styles from './PlanDetailHeader.module.css'
 import { gameTextToPlain } from '@/lib/game-text/rich-text'
@@ -61,8 +60,6 @@ import AdSlot from '@/components/ads/AdSlot'
 import { ADS_ON } from '@/lib/seo/ads'
 
 // ── 상수 ──────────────────────────────────────────────────────────────────────
-
-const S = STORAGE_BASE
 
 // 편성 N번 전용 효과 슬롯 파싱
 function parseFormationSlots(text: string | null): number[] {
@@ -82,83 +79,23 @@ const DIFFICULTY_STYLE: Record<Difficulty, { bg: string; color: string; border: 
 
 // ── 타입 ──────────────────────────────────────────────────────────────────────
 
-type IdentitySlot = {
-  identity_id?: string
-  sinner_id?: string
-  name_kr?: string
+type IdentitySlot = PlannerIdentitySlot & {
   name_en?: string | null
   name_jp?: string | null
-  rarity?: number
-  keywords?: string[]
-  skill_keyword_list?: string[] | null
   gacksung?: boolean
-  s1_count?: number | null
-  s2_count?: number | null
-  s3_count?: number | null
-  game_id?: string | null
-  folder_name?: string | null
-  slot_order?: number
 }
 
-type EgoSlot = {
-  ego_id?: string
-  sinner_id?: string
-  name_kr?: string
-  grade?: string
-}
+type EgoSlot = PlannerEgoSlot
 
-type FloorEntry = {
-  floor: number
-  difficulty?: FloorDifficulty
-  theme_id: string | null
-  gift_ids: string[]
-  memo: string
-}
+type FloorEntry = PlannerFloorEntry
 
-type GiftData = {
-  id: string
-  game_id: number
-  name: string
-  name_en?: string | null
-  name_jp?: string | null
-  keyword: string | null
-  grade: string | null
-  image_url: string | null
-  effect_base: string | null
-  effect_plus: string | null
-  effect_plusplus: string | null
-  theme_ids: number[] | null
-  activation_condition: GiftActivationCondition | null
-}
+type GiftData = PlannerGiftData
 
-type ThemeData = {
-  id: string
-  name: string
-  name_en?: string | null
-  name_jp?: string | null
-  ego_gift_ids: number[] | null
-  specific_ego_gift_ids: number[] | null
-  fixed_reward_gift_ids?: number[] | null
-  image_url: string | null
-  difficulty: string | null
-  floor_info: Record<string, number[] | string> | null
-}
+type ThemeData = PlannerThemeData
 
-type IdentityData = {
-  id: string
-  sinner_id: string
+type IdentityData = PlannerIdentityData & {
   name?: string | null
-  name_kr: string
-  name_en?: string | null
-  name_jp?: string | null
   tier: number
-  rarity: number
-  keywords: string[] | null
-  skill_keyword_list?: string[] | null
-  affiliation?: string | null
-  association_list?: string[] | null
-  game_id: string | null
-  folder_name: string | null
   hp: number | null
   speed_min: number | null
   speed_max: number | null
@@ -168,66 +105,29 @@ type IdentityData = {
   blunt_res: string | null
 }
 
-type SinnerData = {
-  id: string
-  name_kr: string
-  order_num: number
-}
+type SinnerData = PlannerSinnerData
 
-type EgoData = {
+type EgoData = PlannerEgoData & { folder_name?: string | null }
+
+type SkillSummary = PlannerSkillSummary & {
   id: string
-  sinner_id: string
-  name_kr: string
   name_en?: string | null
   name_jp?: string | null
-  grade: string
-  sin_affinity: string | null
-  folder_name?: string | null
-  image_url: string | null
-  cost: number[] | null
-}
-
-type SkillSummary = {
-  id: string
-  identity_id: string
-  name: string
-  name_en?: string | null
-  name_jp?: string | null
-  sin_affinity: string
-  skill_type: string
   atk_type?: string | null
   coins: number | null
   base_power: number | null
   coin_power: number | null
-  skill_order: number
   variant_order?: number | null
   atk_weight: number | null
   offense_level: number | null
   description?: string | null
   description_en?: string | null
   description_jp?: string | null
-  uptie_level: number | null
 }
 
-type PassiveSummary = {
-  id: string
-  identity_id: string
-  name: string
-  name_en?: string | null
-  name_jp?: string | null
-  passive_type: string
-  sin_affinity: string | null
-  sin_count: number | null
-  sin_requirements?: { sin: string; count: number }[] | null
-  active_cond: string | null
-  description: string | null
-  description_en?: string | null
-  description_jp?: string | null
-  passive_order: number
-  uptie_level: number | null
-}
+type PassiveSummary = PlannerPassiveData & { passive_order: number }
 
-type Plan = {
+export type Plan = {
   id: string
   title: string
   description: string | null
@@ -361,7 +261,7 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
   const tBlessing = useTranslations('planner.blessingTab')
   const tShare = useTranslations('decks.detail')
   const { data: session, status: authStatus } = useSession()
-  const viewer = useSWR<{ id?: string }>(authStatus === 'authenticated' ? '/api/profile/avatar' : null, (url: string) => fetch(url).then(res => res.json())).data
+  const viewer = useSWR<{ id?: string }>(authStatus === 'authenticated' ? '/api/profile/avatar' : null).data
   // Signed-out visitors own a guest plan when this browser's key wrote it.
   const guest = useGuestPosts(authStatus === 'unauthenticated' && !plan.user_id), guestPosts = guest.posts
   const guestOwner = authStatus === 'unauthenticated' && !!guestPosts.data?.plans.some(post => post.id === plan.id)
@@ -510,8 +410,13 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
     return getGiftActivationConditionStatus({ gift, ...conditionCounts })
   }
 
-  // 조회수 증가 (페이지 로드 시 1회)
+  // 조회수 증가 (플랜당 브라우저 세션에 1회)
   useEffect(() => {
+    const key = `plan-viewed:${plan.id}`
+    try {
+      if (sessionStorage.getItem(key)) return
+      sessionStorage.setItem(key, '1')
+    } catch { /* 저장소를 못 쓰면 매번 센다 */ }
     fetch(`/api/planner/${plan.id}/view`, { method: 'POST' }).catch(() => {})
   }, [plan.id])
 
@@ -533,8 +438,10 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
       if (res.ok) {
         setVoted(json.voted)
         setVoteCount(prev => json.voted ? prev + 1 : prev - 1)
+      } else {
+        showError(tDetail('voteFailed'))
       }
-    } catch { /* 무시 */ } finally {
+    } catch { showError(tDetail('voteFailed')) } finally {
       setVoteLoading(false)
     }
   }

@@ -6,7 +6,8 @@ vi.mock('next-intl', () => ({ useLocale: () => 'ko', useTranslations: () => (key
 vi.mock('next/image', () => ({ default: ({ src, alt, style }: { src: string; alt: string; style?: React.CSSProperties }) => <img src={src} alt={alt} style={style} />, getImageProps: ({ src, alt, style }: { src: string; alt: string; style?: React.CSSProperties }) => ({ props: { src, alt, style } }) }))
 
 import FloorConstraints from '@/features/planner/components/FloorConstraints'
-import { ReadOnlyBlessingGrid, type Blessing } from '@/features/planner/components/BlessingTab'
+import { ReadOnlyBlessingGrid } from '@/features/planner/components/BlessingGrid'
+import type { Blessing } from '@/features/planner/lib/blessing'
 
 const blessing: Blessing = { baseId: 100, name: '시작의 별', costs: [10, 20, 30], effectsByLevel: [['시작 <k>코스트</k> +150'], [], []] }
 

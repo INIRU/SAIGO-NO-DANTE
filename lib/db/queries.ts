@@ -4,6 +4,7 @@ import type { Sinner, Identity, IdentityWithSinner, Skill, Passive, EGO, EGOWith
 import type { IdentityBrowserItem, EGOBrowserItem } from '@/lib/types/browser'
 import { splitEgoSkillDescription } from '@/lib/identity/skill-description'
 import { readAllMetaRows } from '@/lib/meta/pagination'
+import { isUuid } from '@/lib/utils/uuid'
 
 // ── Supabase 클라이언트 (browser/server 공용 publishable key, 프로세스당 하나: lib/supabase/public.ts) ──
 const supabase = publicSupabase
@@ -19,9 +20,8 @@ export async function getSinners(): Promise<Sinner[]> {
   return data ?? []
 }
 
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 /** Row ids are UUIDs; any other id in a URL names nothing (and would make the query itself fail). */
-export const isRowId = (id: string) => UUID.test(id)
+export const isRowId = (id: string) => isUuid(id)
 
 // Detail reads throw on a failed query and return null/[] only for data that is really absent, so a cached page never
 // keeps a transient error as "not found" or as missing skills.

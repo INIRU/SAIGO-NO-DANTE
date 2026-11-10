@@ -33,7 +33,7 @@ describe('wheel intent', () => {
 
 describe('panels a page scroll passes through', () => {
   it('REQ-DECKS-053 the blessing cards\' effect text uses the same wheel intent, without overscroll containment', () => {
-    const source = readFileSync(resolve(__dirname, '../../../features/planner/components/BlessingTab.tsx'), 'utf8')
+    const source = readFileSync(resolve(__dirname, '../../../features/planner/components/BlessingGrid.tsx'), 'utf8')
     expect(source).toMatch(/useWheelIntent\(effectsRef\)/)
     expect(source).toMatch(/ref=\{effectsRef\}\s*\n\s*className="planner-blessing-effects/)
     expect(source).not.toMatch(/overscrollBehavior: 'contain'/)

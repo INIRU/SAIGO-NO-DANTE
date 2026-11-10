@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
-import { X, Camera } from 'lucide-react'
+import { X } from 'lucide-react'
 import BaseModal from '@/components/ui/BaseModal'
 import { STORAGE_BASE } from '@/lib/constants/game'
 import { BLUR_PLACEHOLDER, getIdentityImageUrl } from '@/lib/utils/images'
@@ -272,22 +272,5 @@ export default function AvatarPicker({ open, currentUrl, onSelect, onReset, onCl
         </div>
       </div>
     </BaseModal>
-  )
-}
-
-/** 아바타 편집 오버레이 버튼 */
-export function AvatarEditOverlay({ onClick }: { onClick: () => void }) {
-  return (
-    <button
-      onClick={onClick}
-      className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity duration-200"
-      style={{
-        borderRadius: '50%',
-        background: 'rgba(0,0,0,0.55)',
-        cursor: 'pointer',
-      }}
-    >
-      <Camera size={20} style={{ color: 'var(--gold)' }} />
-    </button>
   )
 }

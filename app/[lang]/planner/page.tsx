@@ -6,7 +6,7 @@ import { pageMetadata } from '@/lib/seo/metadata'
 import { Suspense } from 'react'
 import { cacheLife, cacheTag } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { GIFT_COLUMNS, RECIPE_COLUMNS, MD_EVENT_COLUMNS, MD_EVENT_CHOICE_COLUMNS } from '@/lib/db/columns'
+import { GIFT_COLUMNS, RECIPE_COLUMNS } from '@/lib/db/columns'
 import { readAllRows } from '@/lib/meta/pagination'
 import { getTranslations } from 'next-intl/server'
 import PlannerClient from './PlannerClient'
@@ -20,6 +20,15 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
   const { lang } = await params
   const t = await getTranslations({ locale: lang, namespace: 'planner' })
   return pageMetadata({ lang, path: '/planner', noindex: true, title: t('metaTitle'), description: t('metaDescription') })
+}
+
+// 조회가 실패하면 빈 결과를 캐시에 굳히지 않도록 던진다(Sentry에는 남긴다)
+function failOnReadError(errors: Record<string, Error | { message: string } | null>) {
+  for (const [name, error] of Object.entries(errors)) {
+    if (!error) continue
+    Sentry.captureException(error, { tags: { location: 'planner/page:fetchPlannerStaticData' }, extra: { msg: 'Failed to fetch ' + name } })
+    throw new Error(`Failed to fetch ${name}: ${error.message}`)
+  }
 }
 
 async function fetchPlannerStaticData() {
@@ -43,10 +52,7 @@ async function fetchPlannerStaticData() {
     supabase.schema('limbus').from('ego_gift_recipes').select(RECIPE_COLUMNS),
     supabase.schema('limbus').from('md_observation').select(OBSERVATION_COLUMNS).order('mirror_dungeon_id', { ascending: false }).limit(1).maybeSingle<ObservationRow>(),
   ])
-  if (observationError) Sentry.captureException(observationError, { tags: { location: 'planner/page:fetchPlannerStaticData' }, extra: { msg: 'Failed to fetch md_observation' } })
-  if (themesError) Sentry.captureException(themesError, { tags: { location: 'planner/page:fetchPlannerStaticData' }, extra: { msg: 'Failed to fetch themes' } })
-  if (giftsError) Sentry.captureException(giftsError, { tags: { location: 'planner/page:fetchPlannerStaticData' }, extra: { msg: 'Failed to fetch gifts' } })
-  if (recipesError) Sentry.captureException(recipesError, { tags: { location: 'planner/page:fetchPlannerStaticData' }, extra: { msg: 'Failed to fetch recipes' } })
+  failOnReadError({ md_observation: observationError, themes: themesError, gifts: giftsError, recipes: recipesError })
 
   // 그룹 2: 인격/수감자/패시브/스킬
   const [{ data: identities, error: identitiesError }, { data: sinners, error: sinnersError }, { data: passives, error: passivesError }, { data: skills, error: skillsError }] = await Promise.all([
@@ -56,14 +62,11 @@ async function fetchPlannerStaticData() {
     readAllRows((from, to) => supabase.schema('limbus').from('passives').select('id, name, name_en, name_jp, identity_id, passive_type, sin_affinity, sin_count, sin_requirements, active_cond, description, description_en, description_jp, uptie_level').order('id').range(from, to)),
     readAllRows((from, to) => supabase.schema('limbus').from('skills').select('identity_id, name, sin_affinity, skill_type, skill_order, uptie_level').order('id').range(from, to)),
   ])
-  if (identitiesError) Sentry.captureException(identitiesError, { tags: { location: 'planner/page:fetchPlannerStaticData' }, extra: { msg: 'Failed to fetch identities' } })
-  if (sinnersError) Sentry.captureException(sinnersError, { tags: { location: 'planner/page:fetchPlannerStaticData' }, extra: { msg: 'Failed to fetch sinners' } })
-  if (passivesError) Sentry.captureException(passivesError, { tags: { location: 'planner/page:fetchPlannerStaticData' }, extra: { msg: 'Failed to fetch passives' } })
-  if (skillsError) Sentry.captureException(skillsError, { tags: { location: 'planner/page:fetchPlannerStaticData' }, extra: { msg: 'Failed to fetch skills' } })
+  failOnReadError({ identities: identitiesError, sinners: sinnersError, passives: passivesError, skills: skillsError })
 
   // 그룹 3: EGO
   const { data: egos, error: egosError } = await supabase.schema('limbus').from('ego').select('id, sinner_id, name_kr, name_en, name_jp, grade, sin_affinity, image_url, cost, game_id, stage_levels:ego_skills(construe_level)')
-  if (egosError) Sentry.captureException(egosError, { tags: { location: 'planner/page:fetchPlannerStaticData' }, extra: { msg: 'Failed to fetch egos' } })
+  failOnReadError({ egos: egosError })
 
   return { themes, gifts, recipes, identities, sinners, passives, skills, egos: egos?.map(withEgoStage), observation: observationFrom(observationRow) }
 }

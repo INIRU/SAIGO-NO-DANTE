@@ -190,8 +190,8 @@ export default function PlanActions({
         if (guestOwner) showSuccess(getGuestCopy(locale).deleted)
         router.push('/planner/community')
       } else {
-        const data = await res.json()
-        showError(data.error ?? t('deleteFailed'))
+        const data = await res.json().catch(() => null)
+        showError(res.status >= 500 ? t('deleteFailed') : data?.error ?? t('deleteFailed'))
       }
     } catch {
       showError(t('deleteError'))

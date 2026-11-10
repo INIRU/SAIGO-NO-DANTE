@@ -20,8 +20,8 @@ import { assetName, type NoteAssetData } from '@/features/notes/lib/assets'
 import { isNoteImageUrl, pendingNoteUploads } from '@/lib/notes/images'
 import { NoteCardView, NoteCardPicker, type NoteCardKind } from './NoteCardBlock'
 import { NoteAssetView, NoteAssetArtwork, NoteKeywordLabel, NoteGiftLabel, NoteMentionLabel, NoteVideo, fetchNoteAssets } from './NoteBlockViewer'
+import { tr } from '@/features/notes/lib/tr'
 
-const tr = (lang:string,ko:string,ja:string,en:string)=>lang==='ja'?ja:lang==='en'?en:ko
 const pickTitle = (kind:BlockKind,lang:string)=>{const label=blockLabel(kind,lang);return tr(lang,`${label} 선택`,`${label}を選択`,`Choose ${kind==='ego'||kind==='youtube'?label:label.toLowerCase()}`)}
 function LegacyAssetPicker({kind,onSelect,onClose}:{kind:AssetKind;onSelect:(asset:NoteAssetData)=>void;onClose:()=>void}) {
   const lang=useLocale(), [query,setQuery]=useState(''), [debounced,setDebounced]=useState(''), [offset,setOffset]=useState(0), [grade,setGrade]=useState('')

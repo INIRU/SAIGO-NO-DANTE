@@ -8,7 +8,8 @@ vi.mock('next-intl', () => ({ useLocale: () => 'ko', useTranslations: () => (key
 vi.mock('next/image', () => ({ default: ({ src, alt }: { src: string; alt: string }) => <img src={src} alt={alt} />, getImageProps: ({ src, alt }: { src: string; alt: string }) => ({ props: { src, alt } }) }))
 
 import FloorConstraints from '@/features/planner/components/FloorConstraints'
-import { ReadOnlyBlessingGrid, type Blessing } from '@/features/planner/components/BlessingTab'
+import { ReadOnlyBlessingGrid } from '@/features/planner/components/BlessingGrid'
+import type { Blessing } from '@/features/planner/lib/blessing'
 import palette from '@/lib/generated/season-palette.json'
 import { constraintsForFloor } from '@/lib/planner/constraints'
 import { samplePalettes } from '@/scripts/assets/season-palette.mjs'

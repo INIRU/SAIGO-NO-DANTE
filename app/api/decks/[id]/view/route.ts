@@ -29,7 +29,8 @@ export async function POST(
       .rpc('increment_view', { deck_id: id })
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 })
+      console.error('[deck view] database error', error)
+      return NextResponse.json({ error: '요청을 처리하지 못했습니다. 다시 시도해주세요.' }, { status: 500 })
     }
 
     void data
@@ -44,7 +45,7 @@ export async function POST(
     })
     return response
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Internal Server Error'
-    return NextResponse.json({ error: message }, { status: 500 })
+    console.error('[deck view] unexpected failure', err)
+    return NextResponse.json({ error: '요청을 처리하지 못했습니다. 다시 시도해주세요.' }, { status: 500 })
   }
 }

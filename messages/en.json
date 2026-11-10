@@ -227,7 +227,6 @@
       "description": "Share and browse Limbus Company deck builds, Identity formations and E.G.O setups. Find popular and recent decks."
     },
     "header": {
-      "eyebrow": "DECK BOARD",
       "title": "Deck Board",
       "newDeck": "Create Deck"
     },
@@ -318,9 +317,6 @@
         "note": "Deck notes"
       },
       "actions": {
-        "loadDraft": "Load draft",
-        "saveDraft": "Save draft",
-        "draftSaved": "Draft saved",
         "copyCode": "Copy code",
         "copied": "Copied",
         "copyDisabled": "Assign all 12 identities before copying a deck code",
@@ -377,30 +373,21 @@
       "note": {
         "placeholder": "Write deck notes. Use brackets or double braces to insert chips and blocks.",
         "insert": "Insert",
-        "preview": "Preview",
         "edit": "Edit",
         "emptyPalette": "Select a sinner to open tools for assigned identities, skills, passives, and E.G.O.",
         "giftInsert": "Add gift",
         "giftTokenStart": "Start gift token",
         "groups": {
-          "history": "History",
-          "paragraph": "Paragraph",
-          "format": "Formatting",
-          "insertPreview": "Insert and preview"
+          "paragraph": "Paragraph"
         },
         "blocks": {
-          "paragraph": "Paragraph",
-          "heading2": "Heading"
+          "paragraph": "Paragraph"
         },
         "tools": {
-          "undo": "Undo",
-          "redo": "Redo",
-          "paragraphFormat": "Paragraph format",
           "bold": "Bold",
           "italic": "Italic",
           "bulletList": "Bullet list",
           "orderedList": "Numbered list",
-          "quote": "Quote",
           "link": "Link"
         },
         "types": {
@@ -414,14 +401,8 @@
         "aria": {
           "editor": "Deck notes",
           "toolbar": "Deck note editor tools",
-          "sinnerTools": "Sinner insert tools",
-          "sinnerPalette": "{sinner} insert palette",
-          "identityChip": "Insert {identity} identity chip",
-          "skillBlock": "Insert {label} detail block",
-          "passiveBlock": "Insert {passive} detail description",
           "passiveDescriptionTitle": "{passive} description",
-          "chipTitle": "{name} chip",
-          "preview": "Deck note preview"
+          "chipTitle": "{name} chip"
         }
       }
     },
@@ -429,7 +410,8 @@
       "countMore": "{count}+ decks",
       "countExact": "{count} decks",
       "refreshing": " refreshing…",
-      "filtered": " (filters applied)"
+      "filtered": " (filters applied)",
+      "loadFailed": "Could not load the deck list."
     },
     "grid": {
       "noResults": "No decks match your filters.",
@@ -454,12 +436,8 @@
     "detail": {
       "backToList": "Deck Board",
       "notFound": "Deck not found",
-      "notFoundEyebrow": "Route check needed",
-      "notFoundDescription": "We could not find a deck at this address. The deck may have been removed, or the shared link may be incorrect.",
-      "notFoundAction": "Back to Deck Board",
       "backToBoard": "← Back to Board",
       "identityEmpty": "No identity information",
-      "boardLabel": "Deck formation board",
       "slotPreview": "Open detail preview for slot {index}, {identity}",
       "emptySlot": "Empty slot {index}",
       "boardHint": "Select an identity card to view skills, passives, and E.G.O details.",
@@ -471,7 +449,6 @@
       "battlePassive": "Battle",
       "supportPassive": "Support",
       "egoGifts": "E.G.O Gifts",
-      "sinResourceCost": "Sin Resources / Cost",
       "attackTypes": "Attack Types",
       "vote": "Vote",
       "bookmark": "Bookmark",
@@ -507,7 +484,6 @@
       "count": "{count} decks",
       "otherOpinions": "Other Takes",
       "otherOpinionsDescription": "Decks using the same identities with different order or E.G.O choices.",
-      "otherOpinionsEmpty": "No alternate take with this identity lineup yet.",
       "similarDecks": "Similar Decks",
       "similarDecksDescription": "Decks close in formation, theme, or E.G.O setup.",
       "coVisited": "Viewed together"
@@ -539,7 +515,6 @@
       "moderator": "MOD",
       "anonymous": "Anonymous",
       "reply": "Reply",
-      "replyCount": "Reply {count}",
       "replyingToSuffix": " reply",
       "deleteComment": "Delete comment",
       "deleteReply": "Delete reply",
@@ -642,11 +617,9 @@
       "pipHeight": "Height",
       "pipChooseThemeBlank": "Please select a theme pack",
       "pipThemeGuidance": "Choose this floor’s theme pack",
-      "pipThemeGuidanceHelp": "Choose a theme that still allows every remaining planned theme to fit.",
       "pipThemePossible": "Available",
       "pipThemePlanGifts": "Plan gifts to obtain from this theme pack",
       "pipPlanGift": "Gift set in the plan",
-      "fusionTierGiftsCount": "Plan tier IV+ gifts to fuse ({count})",
       "fusionTierGiftsOwned": "You own every tier IV+ gift in the plan.",
       "skillExchangeTitle": "{sinner} skill replacement guide",
       "skillExchangeBuy": "Skill replacements to buy",
@@ -657,7 +630,6 @@
       "skillExchangeUnreachable": "Replacements only turn lower skills into higher ones, so the plan's counts can't be reached.",
       "skillExchangeNotInPlan": "This sinner is not in the plan's formation.",
       "skillExchangeReading": "Reading the current skill counts.",
-      "pipThemeUnavailable": "Remaining plan cannot fit",
       "pipThemeFloors": "Available floors: {floors}",
       "pipThemeRemaining": "Remaining plan: {themes}",
       "observedEventCandidates": "Events detected on screen",
@@ -665,13 +637,11 @@
       "pipModeButton": "PiP companion mode",
       "pipModeClose": "Close PiP companion",
       "pipModeUnsupported": "This browser does not support the PiP companion. Use desktop Chrome or Edge.",
-      "floorStatus": "Floor {floor} · {count} gifts",
       "pipObserveGifts": "Observed gifts",
       "pipStartGiftsEmpty": "This plan has no starting or observed gifts.",
       "pipStartThemeWait": "Recommended theme packs appear once the theme pack selection screen is recognized.",
       "planMode": "Follow a plan",
       "recordMode": "Record a run",
-      "planGoals": "Author’s floor plan",
       "unselected": "Not specified",
       "limited": "Joined mid-run: earlier activity cannot be recovered.",
       "start": "Start Assist Mode",
@@ -681,8 +651,6 @@
       "backToPlanner": "Back",
       "screenPreview": "Connect screen",
       "stopScreenPreview": "Stop screen preview",
-      "screenPreviewFailed": "Could not connect the screen.",
-      "captureStatus": "Screen analysis",
       "captureFramesPrivacy": "Frames are analyzed only in this browser, never saved or sent.",
       "capture_idle": "Waiting for a screen",
       "capture_requesting": "Choose the screen to share",
@@ -741,37 +709,14 @@
       "samplesYes": "Join",
       "samplesNo": "No thanks",
       "captureFramesPrivacySamples": "The screen is analyzed in this browser. Only frames of actions it failed to read are sent to improve recognition.",
-      "ocrWorkers": "{count} at once",
-      "floorBehindInventoryOnly": "The screen shows floor {observed} but the run records floor {recorded}. Until the floor is confirmed, acquired gifts are added to your inventory without a floor record.",
-      "ocr_idle": "Text recognition idle",
-      "ocr_loading": "Preparing local text recognition",
-      "ocr_running": "Analyzing text in this browser",
-      "ocr_error": "Text recognition is unavailable. Image analysis continues.",
-      "scene_battle": "Battle",
-      "scene_battle_setup": "Battle setup",
-      "scene_enhance": "Enhancement",
-      "scene_event": "Event",
-      "scene_exploration": "Exploration",
-      "scene_fusion": "Fusion",
-      "scene_gift_acquired": "Gift acquisition screen",
-      "scene_loading": "Loading",
-      "scene_reward_choice": "Reward choice",
-      "scene_run_end": "Dungeon end",
-      "scene_run_setup": "Dungeon setup",
-      "scene_sell": "Selling",
-      "scene_shop": "Shop",
       "scene_start_gift": "Starting gift",
-      "scene_theme_select": "Theme selection",
       "reset": "Reset",
       "resetTitle": "Reset run",
       "resetMessage": "Erase the current run record and start over?",
       "cancel": "Cancel",
       "resetDone": "Ready for a new run.",
-      "dataError": "Some game data could not be loaded. Refresh and try again.",
       "loadingPlan": "Loading plan...",
       "invalidPlan": "Could not read the plan URL.",
-      "beforeStart": "Before you start",
-      "setupHelp": "Choose the difficulty and starting floor, then begin recording. If you came from a plan, its goals stay separate from your observations.",
       "captureGuideTitle": "Connecting the game screen",
       "captureGuideStep1": "Open the Mirror Dungeon entry screen in the game.",
       "captureGuideStep2": "Pick the difficulty and starting floor, then select “{start}”.",
@@ -791,7 +736,6 @@
       "floorNumber": "Floor {floor}",
       "currentFloor": "Current floor",
       "editTheme": "Edit theme pack",
-      "observedTheme": "This theme is recorded as your actual selection.",
       "chooseThemeHint": "Record the theme you selected in the game.",
       "planned": "Planned",
       "observed": "Observed",
@@ -821,15 +765,8 @@
       "completeRun": "Complete run",
       "nextFloor": "Next floor",
       "targetGifts": "Planned final gifts",
-      "floorPriorityGifts": "Priority gifts this floor",
-      "currentThemeGiftsCount": "Gifts available this floor ({count})",
-      "priorityGiftsFirst": "Planned and target gifts appear first.",
-      "noCurrentThemeGifts": "Choose a theme pack to see its available gifts.",
       "allThemeGiftsOwned": "No unowned gifts remain in this theme pack.",
-      "noFloorPriorityGifts": "No planned gifts are available on this floor.",
-      "noTargets": "No target gifts set.",
       "recentActivity": "Recent observations",
-      "noRecent": "No gift acquisitions recorded on this floor.",
       "difficulty": "Difficulty",
       "difficulty_normal": "Normal",
       "difficulty_hard": "Hard",
@@ -843,10 +780,6 @@
       "resumeRun": "Resume previous run",
       "restore": "Restore",
       "chooseThemeFirst": "Select a theme first.",
-      "searchEvents": "Search events",
-      "noEvents": "No events are linked to this theme.",
-      "eventCycle": "Returns to an earlier event.",
-      "missingNextEvent": "Linked event #{id} is unavailable.",
       "recordChoice": "Record this choice",
       "recordedChoice": "Recorded · click to undo",
       "chooseThemeCount": "Select theme ({count})",
@@ -856,13 +789,9 @@
       "clearThemeLabel": "Clear the floor {floor} theme pack: {name}",
       "themeCleared": "Cleared the floor {floor} theme pack.",
       "noAvailableThemes": "No themes are available for this floor and difficulty.",
-      "themeExclusiveGifts": "Exclusive gifts ({count})",
-      "scrollForMoreGifts": "{count} gifts total · scroll the list to see more.",
       "giftListEnd": "All {count} gifts shown.",
       "giftSearchCount": "{count} search results",
       "addGiftIdleHint": "Pick a keyword or grade, or search by name. Tap a gift to add it to your held gifts; tap again to remove it.",
-      "shopPurchase": "Shop purchase",
-      "finalGiftSearch": "Search final gifts...",
       "giftGrade": "Grade {grade}",
       "owned": "Held",
       "targetProgress": "{acquired} / {total} acquired",
@@ -885,17 +814,10 @@
       "active": "Active",
       "bench": "Bench",
       "change": "Change",
-      "removeFromFormation": "Remove from formation",
-      "addToFormation": "Add to formation",
       "chooseIdentityFirst": "Select an identity first.",
-      "changeIdentity": "Change identity",
-      "chooseIdentity": "Select identity",
       "clearSelection": "Clear selection",
       "chooseEgo": "Select E.G.O",
       "noEgoGrade": "No E.G.O at this grade.",
-      "skillPending": "Assign {count} more skills to save.",
-      "decreaseSkill": "Decrease Skill {skill} count",
-      "increaseSkill": "Increase Skill {skill} count",
       "setupTitle": "Run setup",
       "setupPlanPick": "Choose a plan",
       "setupPlanChange": "Choose another plan",
@@ -944,7 +866,6 @@
       "anonymous": "Anonymous",
       "loginRequired": "Log in to recommend this plan.",
       "floorCount": "{count} floors",
-      "deckCount": "{count} identities",
       "egoCount": "E.G.O {count}",
       "voteWithCount": "Recommend {count}",
       "descriptionTitle": "Plan Notes",
@@ -978,7 +899,9 @@
       "factIdentities": "Identities",
       "factFloors": "Floors",
       "shareFailed": "Could not copy the link.",
-      "commentPlaceholder": "Write a comment (up to 500 characters)"
+      "commentPlaceholder": "Write a comment (up to 500 characters)",
+      "voteFailed": "Could not vote.",
+      "commentsLoadFailed": "Could not load the comments."
     },
     "difficulty": "Difficulty",
     "normal": "Normal",
@@ -988,9 +911,7 @@
       "button": "Temp saves",
       "menuLabel": "Planner temporary saves",
       "closeMenu": "Close",
-      "saveCurrent": "Save current plan",
       "empty": "No temporary plans saved.",
-      "slotLabel": "Slot {slot}",
       "emptySlot": "Empty",
       "saveToSlot": "Save",
       "overwriteSlot": "Overwrite",
@@ -1050,7 +971,6 @@
         "description": "Browse and vote on community Mirror Dungeon plans for Limbus Company by difficulty and Theme Pack."
       },
       "header": {
-        "eyebrow": "MIRROR DUNGEON PLANS",
         "title": "Community Plans",
         "newPlan": "Create Plan"
       },
@@ -1104,20 +1024,17 @@
       },
       "result": {
         "total": "{count} plans",
-        "filtered": "{filtered}/{total} plans",
-        "filterApplied": "(filters applied)"
+        "filtered": "{filtered}/{total} plans"
       },
       "grid": {
         "empty": "No plans have been posted yet.",
         "noSearchResults": "No results for \"{query}\".",
         "createFirst": "Create the first plan →",
         "loadMore": "Load more",
-        "loadingMore": "Loading...",
-        "scrollForMore": "Scroll to load more"
+        "loadingMore": "Loading..."
       },
       "card": {
         "anonymous": "Anonymous",
-        "difficultyCount": "{count}F",
         "toggleKeyword": "Toggle {keyword} keyword filter"
       },
       "relativeTime": {
@@ -1127,7 +1044,8 @@
         "days": "{count}d ago",
         "months": "{count}mo ago",
         "years": "{count}y ago"
-      }
+      },
+      "loadFailed": "Could not load the plan list."
     },
     "tabs": {
       "deck": "Deck",
@@ -1156,33 +1074,24 @@
         "overlap": "Infinity Loop",
         "extreme": "Extreme"
       },
-      "themeSection": "Theme pack",
       "difficultySelectorLabel": "Floor {floor} difficulty",
-      "fixedDifficulty": "Fixed difficulty",
       "themeModalTitle": "Floor {floor} theme packs",
-      "difficultySummary": "Floor difficulties",
-      "difficultySummaryCount": "{count}F",
       "configuredFloorCount": "{configured}/{total}F",
       "noTheme": "No theme pack",
       "themeSearch": "Search packs or gifts",
       "themeSearchEmpty": "No matching theme packs",
       "themeResultCount": "{count}",
-      "noFloorThemes": "No themes for this floor",
       "emptyThemes": "No theme packs are available for this floor.",
       "changeTheme": "Change",
       "clearTheme": "Clear theme",
       "themeGiftCount": "{count} gifts",
-      "acquiredGifts": "Acquired gifts",
       "acquiredGiftCount": "{count} acquired gifts",
       "addGift": "Add",
       "giftPickerTitle": "Add acquired gift",
       "giftPickerHint": "Search gifts from {theme} to add them to this floor.",
       "giftPickerSearchPlaceholder": "Search theme gifts...",
       "giftPickerEmpty": "No gifts match your search.",
-      "noThemeGifts": "This theme has no gifts in the final gift list.",
-      "addToFinal": "+Add to final",
       "memo": "Plan memo",
-      "floorBoard": "Floor board",
       "floorBoardHint": "Pick a floor, then tune its theme pack, acquired gifts, and memo in the editor.",
       "segment": {
         "early": "{start}-{end} · Normal/Hard",
@@ -1190,22 +1099,15 @@
         "extreme": "{start}-{end} · Extreme"
       },
       "activeFloor": "Floor {floor} editor",
-      "chooseFloorAria": "Select floor {floor}",
       "empty": "Unset",
-      "shortGiftCount": "{count} gifts",
       "selectTheme": "Choose theme pack",
       "availableThemeCount": "{count} available",
       "close": "Close",
-      "memoPlaceholder": "Strategy memo for this floor… (keyword and gift autocomplete supported)",
-      "memoPreview": "Preview",
       "memoExpand": "Show more",
       "memoCollapse": "Show less",
-      "constraintSelected": "Selected",
       "keywordDistribution": "Accumulated gift keyword distribution",
-      "totalGifts": "{count} gifts total",
       "finalGifts": "Final inventory gifts",
       "finalGiftCount": "{count} final gifts",
-      "finalGiftRule": "Start and observed gifts are included automatically, and adding a fusion result drops its materials (except Memory of the Moon). Click a card to change its enhancement; remove it with × or a long press.",
       "finalAutoStart": "Included automatically as a start gift",
       "finalAutoObserve": "Included automatically as an observed gift",
       "finalAutoStartTag": "Start",
@@ -1214,26 +1116,15 @@
       "finalRemoveHint": "Long-press or press Delete to remove",
       "finalWorkbenchHint": "Click reflected cards on the left to remove them, or click catalog cards to add them and click again to remove.",
       "finalSelectedPanel": "Reflected list",
-      "finalGiftSearchPlaceholder": "Search final gifts...",
       "finalGiftEmpty": "No final gifts reflected yet.",
       "finalGiftNoResults": "No gifts match your search.",
-      "finalKeywordFilter": "Keyword",
       "finalGradeFilter": "Grade",
-      "filterAll": "All",
-      "allGiftAddPanel": "Add from all gifts",
       "allGiftCatalog": "All gifts",
       "finalBlockedByRecipe": "{gift}: an ingredient of {result}, so it can't be a final gift",
       "allGiftAddHint": "Click a card to add it to final inventory. Click an already-added card again to remove it.",
-      "allGiftSearchPlaceholder": "Search all gifts...",
-      "allGiftNoResults": "No gifts match your search.",
-      "alreadyAdded": "Added",
-      "alreadyAddedRemove": "Added · click to remove",
-      "alreadyAddedGift": "{gift} already added",
       "addFinalGift": "Add {gift} to final gifts",
-      "addFinalGiftShort": "Add",
       "removeFinalGift": "Remove {gift} from final gifts",
       "removeAlreadyAddedGift": "Remove {gift} from final gifts",
-      "removeFinalGiftShort": "Remove",
       "fusionAlertTitle": "Craftable fusion",
       "fusionAlertHint": "Applying removes the materials from your final gifts and adds the result.",
       "fusionAlertDismiss": "Dismiss fusion alert",
@@ -1288,7 +1179,6 @@
         "skillset": "Skill Exchange"
       },
       "identity": {
-        "formed": "Front",
         "bench": "Bench",
         "change": "Change",
         "removeFormation": "Remove",
@@ -1299,7 +1189,6 @@
         "close": "Close identity picker",
         "searchPlaceholder": "Search identities...",
         "clearSearch": "Clear search",
-        "rarityAll": "All",
         "rarity": "{rarity} star",
         "noResults": "No identities match these filters.",
         "openDetailHint": "Click for details",
@@ -1764,21 +1653,16 @@
     "cta": {
       "sinners": "Sinner List",
       "decks": "Deck Board",
-      "planner": "MD Planner",
-      "discordBot": "Discord Bot"
+      "planner": "MD Planner"
     },
     "official": {
-      "site": "Official Site",
-      "discord": "Fan Discord",
-      "discordSub": "Bot intro · Join server",
-      "youtubeSub": "Official Channel"
+      "site": "Official Site"
     },
     "watchVideo": "Watch video",
     "officialChannels": "Official channels",
     "latestVideo": "Latest Video",
     "viewChannel": "View Channel",
     "viewAllSinners": "View All Sinners",
-    "fanArchiveFooter": "Limbus Company Fan Archive",
     "newIdentities": "New Identities",
     "newEgos": "New E.G.O",
     "popularPlans": "Popular plans this week",
@@ -1924,7 +1808,6 @@
       "hp": "HP",
       "speed": "Speed",
       "defLevel": "Def Level",
-      "breakSection": "Panic Threshold",
       "breakSectionTitle": "Stagger Threshold",
       "breakPhase": "Phase {n}",
       "level": "Level"
@@ -1932,7 +1815,6 @@
     "skills": {
       "title": "Skills",
       "preparing": "Skill information is being prepared.",
-      "uptie4Changes": "Uptie 4 Changes",
       "atkWeight": "Atk Weight",
       "unbreakableCoin": "Unbreakable Coin",
       "coin": "Coin"
@@ -1999,12 +1881,6 @@
       "SS",
       "SSS"
     ],
-    "timeAgo": {
-      "justNow": "just now",
-      "minutesAgo": "m ago",
-      "hoursAgo": "h ago",
-      "daysAgo": "d ago"
-    },
     "notFound": "Identity not found",
     "meta": {
       "description": "Stats, skills, passives"
@@ -2121,8 +1997,6 @@
       "month": "Last 4 weeks",
       "all": "All time"
     },
-    "methodologyLabel": "How counts work",
-    "methodology": "Each public post counts once. Identities, E.G.O and keywords are counted once per formation; co-deployment and deck purpose only use identities with a formation order. Every planner counts as Mirror Dungeon. This is pick rate, not performance or win rate.",
     "smallSample": "Fewer than 20 samples. Individual posts can strongly affect the results.",
     "loadError": "Could not load statistics.",
     "retry": "Try again",
@@ -2150,7 +2024,6 @@
       "overview": "All formations",
       "usageTitle": "Content",
       "comboTitle": "Keyword decks",
-      "comboHint": "A formation counts as a keyword deck when five or more deployed identities share that keyword. Formations that pass two keywords are counted as that pair.",
       "topIdentities": "Most fielded identities",
       "mixed": "Mixed",
       "count": "{count}",
@@ -2239,12 +2112,12 @@
     "sampleValid": "Formations",
     "sampleDecks": "Decks",
     "samplePlanner": "Plans",
-    "excluded": "{count} posts with an empty formation are excluded.",
     "views": {
       "overall": "Overall",
       "identity": "Identities",
       "dungeon": "Mirror Dungeon"
-    }
+    },
+    "footnote": "How often public posts use each identity, not performance or win rate."
   },
   "experience": {
     "title": "EXP calculator",
@@ -2266,8 +2139,6 @@
     "fixed": "Fixed rewards · minimum = average = maximum",
     "manual": "Manual battle",
     "skip": "Skip",
-    "runs": "Runs needed",
-    "modules": "Enkephalin modules",
     "enkephalin": "Enkephalin equivalent",
     "perRun": "EXP per run",
     "perModule": "EXP per module",
@@ -2288,8 +2159,7 @@
     "level": "Level",
     "cumulative": "Total EXP from level 1",
     "next": "EXP to next level",
-    "max": "Level cap",
-    "tools": "Tools"
+    "max": "Level cap"
   },
   "damage": {
     "title": "Damage calculator",
@@ -2434,7 +2304,6 @@
     "unresolved": "Not over within {max} exchanges",
     "rounds": "Exchanges",
     "roundLabel": "{count}",
-    "restRounds": "Other",
     "toDamage": "To the damage calculator",
     "left": "Coins left",
     "leftCoins": "{count}",
@@ -2607,7 +2476,6 @@
     "keywordRemove": "Remove {kw} filter",
     "added": "Added",
     "filter": "Filters",
-    "filterPanel": "Filter panel",
     "closeFilter": "Close filters",
     "reset": "Reset filters ({count} active)",
     "resetAll": "Reset all filters",
