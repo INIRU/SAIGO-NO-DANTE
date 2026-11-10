@@ -106,7 +106,7 @@ export default memo(function GiftGridPanel({
         flex: 1,
         minWidth: 0,
         maxHeight,
-        overflowY: 'auto',
+        overflowY: 'auto', scrollbarGutter: 'stable',
         paddingRight: '0.25rem',
         display: 'flex',
         flexDirection: 'column',

@@ -47,7 +47,7 @@ export function ThemePackModalShell({
           boxShadow: '0 1.5rem 4rem rgba(0,0,0,0.6)',
         }}
       >
-        <div style={{ maxHeight: '88dvh', overflowY: 'auto', overscrollBehavior: 'contain' }}>
+        <div style={{ maxHeight: '88dvh', overflowY: 'auto', scrollbarGutter: 'stable', overscrollBehavior: 'contain' }}>
           <button
             type="button"
             onClick={onClose}

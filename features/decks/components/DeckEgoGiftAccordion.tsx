@@ -105,7 +105,7 @@ export default function DeckEgoGiftAccordion({
         </svg>
       </button>
       {open && (
-        <div className="px-4 py-3 flex flex-col gap-2" style={{ maxHeight: '320px', overflowY: 'auto' }}>
+        <div className="px-4 py-3 flex flex-col gap-2" style={{ maxHeight: '320px', overflowY: 'auto', scrollbarGutter: 'stable' }}>
           {KW_ORDER.filter(kw => grouped[kw]).map(kw => (
             <div key={kw}>
               <div className="flex items-center gap-1.5 mb-1">

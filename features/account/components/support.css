@@ -107,7 +107,7 @@
 .desk-list-scroll {
   flex: 1;
   min-height: 0;
-  overflow-y: auto;
+  overflow-y: auto; scrollbar-gutter: stable;
   overscroll-behavior: contain;
 }
 .desk-row {
@@ -262,7 +262,7 @@
   flex-direction: column;
   gap: 1.25rem;
   min-height: 0;
-  overflow-y: auto;
+  overflow-y: auto; scrollbar-gutter: stable;
   overscroll-behavior: contain;
   padding: 1.5rem clamp(1.25rem, 3vw, 2.5rem);
   list-style: none;
@@ -348,7 +348,7 @@
   flex-direction: column;
   gap: 1.25rem;
   min-height: 0;
-  overflow-y: auto;
+  overflow-y: auto; scrollbar-gutter: stable;
   padding: 1.5rem clamp(1.25rem, 3vw, 2.5rem);
 }
 .desk-form fieldset {

@@ -307,7 +307,7 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                         border: '1px solid var(--border)',
                         boxShadow: '0 8px 24px rgba(0,0,0,0.6)',
                         maxHeight: '17.5rem',
-                        overflowY: 'auto',
+                        overflowY: 'auto', scrollbarGutter: 'stable',
                       }}
                     >
                       {/* 키워드 매칭 */}

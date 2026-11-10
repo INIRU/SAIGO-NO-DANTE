@@ -30,7 +30,7 @@
   margin-left: auto; padding: .125rem .5rem; border-radius: 9999px; background: rgba(200, 144, 10, .12);
   font-family: var(--font-body); font-size: .75rem; font-weight: 600; color: var(--gold-light);
 }
-.list { overflow-y: auto; overscroll-behavior: contain; padding: .375rem; }
+.list { overflow-y: auto; scrollbar-gutter: stable; overscroll-behavior: contain; padding: .375rem; }
 /* The rise is on the card, inside the item's padding: a row moved below its place would stick out of the list and flash a scrollbar. */
 .row .card { animation: arrive 240ms ease-out both; animation-delay: calc(var(--i) * 40ms); }
 .item { display: block; padding: .75rem .875rem; border-radius: .5rem; transition: background-color 150ms ease; }

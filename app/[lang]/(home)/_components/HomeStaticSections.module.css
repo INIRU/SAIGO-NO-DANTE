@@ -17,6 +17,8 @@
 .releases { display: grid; grid-template-columns: minmax(0, 1fr) 17rem; gap: 3rem; align-items: start; }
 .identities { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 1.25rem; padding-top: .5rem; }
 .egos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+/* Beside the identities there is room for two; once the block drops below them it gets a full row of six. */
+@media (min-width: 1101px) { .egos > :nth-child(n+3) { display: none; } }
 .release { display: flex; min-width: 0; flex-direction: column; align-items: center; }
 a.release { transition: transform 200ms ease; }
 @media (hover: hover) { a.release:hover { transform: translateY(-.1875rem); } }
@@ -69,7 +71,7 @@ img.fanCard { width: 5rem; bottom: 1.5rem; }
   .posts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .third { display: none; }
   .releases { grid-template-columns: 1fr; gap: 2.5rem; }
-  .egos { grid-template-columns: repeat(2, 9.5rem); }
+  .egos { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 1.25rem; }
 }
 @media (max-width: 700px) {
   .posts { grid-template-columns: 1fr; }
@@ -83,7 +85,7 @@ img.fanCard { width: 5rem; bottom: 1.5rem; }
   .heading h2 { font-size: 1.25rem; }
   .textLink { font-size: .8125rem; }
   .identities { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.25rem .875rem; }
-  .egos { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .egos { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.25rem .875rem; }
   .tool { min-height: 7rem; padding: 1rem; }
   .toolName { max-width: 100%; font-size: .9375rem; }
   .toolArt { width: 5.5rem; height: 5.5rem; right: -.5rem; bottom: -1.25rem; }

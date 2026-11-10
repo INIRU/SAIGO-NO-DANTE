@@ -131,7 +131,7 @@ async function getCachedLatestEgos() {
   'use cache'
   cacheLife('max')
   cacheTag(CACHE_TAGS.gameData, CACHE_TAGS.ego, CACHE_TAGS.sinners)
-  return getLatestEGOs(2)
+  return getLatestEGOs(6)
 }
 
 export default async function HomePage({ params }: { params: Promise<{ lang: string }> }) {
