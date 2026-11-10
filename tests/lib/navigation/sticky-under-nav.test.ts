@@ -37,7 +37,7 @@ describe('bars that stick under the navbar', () => {
     for (const file of ['features/tools/components/DamageCalculator.tsx', 'features/tools/components/ClashCalculator.tsx']) expect(source(file), file).toContain('nav-slide')
     expect(source('features/account/components/DocsTab.tsx')).toContain('xl:top-[var(--nav-height)]')
     expect(source('features/account/components/PlaygroundTab.tsx')).toContain('lg:top-[var(--nav-height)]')
-    expect(source('features/planner/components/FloorTab.tsx')).toContain("'calc(var(--nav-height, 4rem) + var(--planner-bar-h, 0rem))'")
+    expect(source('features/planner/components/FinalGiftSection.tsx')).toContain("'calc(var(--nav-height, 4rem) + var(--planner-bar-h, 0rem))'")
   })
 
   it('REQ-SHARED-094 the story map bus rides by transform, not by left and top', () => {

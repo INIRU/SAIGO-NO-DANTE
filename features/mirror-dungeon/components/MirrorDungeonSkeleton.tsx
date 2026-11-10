@@ -23,8 +23,8 @@ export default function MirrorDungeonSkeleton() {
         <div className="grid h-10 w-9 shrink-0 place-items-center"><Skeleton className="h-4 w-4" /></div>
       </div>
       <div className="mt-2 flex items-center gap-2 sm:gap-x-3">
-        <Skeleton line className="h-9 min-w-0 flex-1 sm:w-[13rem] sm:flex-none" />
-        <Skeleton line className="h-9 w-[4.5rem] sm:hidden" />
+        <Skeleton line className="h-9 max-sm:h-11 min-w-0 flex-1 sm:w-[13rem] sm:flex-none" />
+        <Skeleton line className="h-11 w-[4.5rem] sm:hidden" />
         <div className="hidden items-center gap-0.5 sm:flex">{Array.from({ length: 6 }, (_, i) => <div key={i} className="flex h-9 w-[2.125rem] items-center justify-center"><Skeleton className="h-3.5 w-3" /></div>)}</div>
         <span className="hidden h-5 w-px bg-[#2e2417] sm:block" />
         {['4rem', '5rem', '4rem'].map((w, i) => <Skeleton key={i} line className="hidden h-9 sm:block" style={{ width: w }} />)}
@@ -32,8 +32,8 @@ export default function MirrorDungeonSkeleton() {
         <SkeletonLine w="4rem" h="0.8125rem" className="hidden sm:block" />
         {/* 프리셋, 체크 모드 */}
         <div className="flex shrink-0 gap-1.5">
-          <Skeleton line className="h-9 w-[2.375rem] sm:w-[5rem]" />
-          <Skeleton line className="h-9 w-[2.375rem] sm:w-[6rem]" />
+          <Skeleton line className="h-9 max-sm:h-11 w-[2.375rem] sm:w-[5rem]" />
+          <Skeleton line className="h-9 max-sm:h-11 w-[2.375rem] sm:w-[6rem]" />
         </div>
       </div>
     </div>

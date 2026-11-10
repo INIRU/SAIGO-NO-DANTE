@@ -14,7 +14,7 @@ const state = vi.hoisted(() => ({
 
 // One mock for both reads of the shelf: the board feed and the rising feed (told apart by their address).
 vi.mock('swr', () => ({
-  default: (key: string, _fetcher: unknown, options: unknown) => {
+  default: (key: string, options: unknown) => {
     if (key.startsWith('/api/discovery/rising')) return { data: state.rising }
     state.options = options
     return state.feed

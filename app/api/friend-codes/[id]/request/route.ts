@@ -4,14 +4,14 @@ import { authorRateKey, resolveAuthor } from '@/features/account/server'
 import { checkRequestRateLimit, rateLimitResponse } from '@/lib/rate-limit'
 import { fail, isRequestDecision } from '@/features/friends'
 import { isAuthorOf, isBlocked } from '@/features/friends/server'
+import { isUuid } from '@/lib/utils/uuid'
 
-const UUID_RE = /^[0-9a-f-]{36}$/i
 
 /** A viewer asks the author of an 'approval' post for its code: one request per viewer, pending until the author answers (REQ-COMMUNITY-028). */
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
-    if (!UUID_RE.test(id)) return NextResponse.json(fail('invalid_request'), { status: 400 })
+    if (!isUuid(id)) return NextResponse.json(fail('invalid_request'), { status: 400 })
     const admin = createAdminClient(), db = admin.schema('limbus')
     const resolved = await resolveAuthor(request, admin)
     if ('response' in resolved) return resolved.response
@@ -39,7 +39,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   try {
     const { id } = await params
     const body = await request.json().catch(() => null)
-    if (!UUID_RE.test(id) || typeof body?.request !== 'string' || !UUID_RE.test(body.request) || !isRequestDecision(body?.decision)) return NextResponse.json(fail('invalid_request'), { status: 400 })
+    if (!isUuid(id) || !isUuid(body?.request) || !isRequestDecision(body?.decision)) return NextResponse.json(fail('invalid_request'), { status: 400 })
     const admin = createAdminClient(), db = admin.schema('limbus')
     const resolved = await resolveAuthor(request, admin)
     if ('response' in resolved) return resolved.response

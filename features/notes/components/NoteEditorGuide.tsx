@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useLocale } from 'next-intl'
-import { BookOpen, ChevronRight, X } from 'lucide-react'
+import { BookOpen, X } from 'lucide-react'
 import BaseModal from '@/components/ui/BaseModal'
 import styles from './NoteEditorGuide.module.css'
 import { useNoteNew } from './NoteNewDot'
@@ -34,12 +34,13 @@ export const guideCopy = {
   },
 }
 
-export default function NoteEditorGuide({compact=false}:{compact?:boolean}) {
+// Callers still pass `compact`; the full notice banner was never used, so the button is always the compact one.
+export default function NoteEditorGuide(_props:{compact?:boolean}) {
   const locale=useLocale(), lang=locale==='en'||locale==='ja'?locale:'ko', c=guideCopy[lang]
   const [open,setOpen]=useState(false), news=useNoteNew('guide')
   return <>
-    <button type="button" className={compact?styles.help:styles.notice} onClick={()=>{news.used();setOpen(true)}} aria-label={news.label(c.title)} aria-haspopup="dialog" data-new={news.isNew||undefined}>
-      {compact ? <><BookOpen size={15}/>{c.title}</> : <><span className={styles.badge}>{c.badge}</span><span className={styles.noticeText}><strong>{c.title}</strong><span>{c.intro}</span></span><ChevronRight size={18}/></>}{news.dot}
+    <button type="button" className={styles.help} onClick={()=>{news.used();setOpen(true)}} aria-label={news.label(c.title)} aria-haspopup="dialog" data-new={news.isNew||undefined}>
+      <BookOpen size={15}/>{c.title}{news.dot}
     </button>
     <BaseModal open={open} onClose={()=>setOpen(false)} title={c.title} maxWidth="60rem" zIndex={10000}>
       <div className={styles.guide}>

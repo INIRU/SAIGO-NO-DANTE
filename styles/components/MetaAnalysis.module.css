@@ -39,7 +39,6 @@
 .share small { margin-left: .0625rem; font-size: .6875rem; color: var(--gold-dim); }
 .empty { padding: 2.5rem 1rem; color: var(--text-muted); text-align: center; font-size: .875rem; }
 .emptyRow { display: flex; align-items: center; justify-content: center; gap: .75rem; min-height: 7rem; padding: 0 1.25rem; font-size: .875rem; color: var(--text-muted); }
-.hint { margin-top: -.375rem; font-size: .75rem; line-height: 1.6; color: var(--text-muted); }
 
 /* Overview */
 .overviewHead { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 1rem 2.5rem; padding-bottom: 1.25rem; margin-bottom: 1.5rem; border-bottom: 1px solid #2e2417; }
@@ -51,10 +50,7 @@
 .sampleStats div:first-child dd { color: var(--gold-light); }
 .overviewNotes { flex: 1; min-width: 14rem; display: flex; flex-direction: column; align-items: flex-end; gap: .25rem; text-align: right; }
 .caution { font-size: .75rem; line-height: 1.6; color: var(--gold-dim); }
-.methodology { font-size: .75rem; line-height: 1.7; color: var(--text-tertiary, var(--text-muted)); }
-.methodology summary { cursor: pointer; margin-left: auto; width: fit-content; padding: .25rem 0; }
-.methodology summary:hover { color: var(--text-secondary); }
-.methodology p { max-width: 40rem; padding-top: .375rem; text-align: left; }
+.footnote { margin-top: 1.5rem; font-size: .75rem; line-height: 1.6; color: var(--text-muted); }
 .overviewGrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(19rem, 1fr)); gap: 1.75rem 2.5rem; }
 .chartBlock { min-width: 0; display: flex; flex-direction: column; gap: .75rem; }
 .chartBlock h3 { font-family: var(--font-heading); font-size: .9375rem; font-weight: 700; color: var(--text-primary); }
@@ -70,7 +66,7 @@
 .donutCenter strong small { margin-left: .0625rem; font-size: .875rem; color: var(--gold-dim); }
 .donutCenter span { max-width: 100%; font-size: .6875rem; line-height: 1.3; color: var(--text-primary); overflow-wrap: anywhere; word-break: keep-all; }
 .donutCenter span img { width: .75rem; height: .75rem; }
-.donutCenter em { font-style: normal; font-size: .625rem; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+.donutCenter em { font-style: normal; font-size: var(--text-xs); color: var(--text-muted); font-variant-numeric: tabular-nums; }
 .legend { flex: 1; min-width: 0; display: grid; gap: .125rem; }
 .legendRow { display: grid; grid-template-columns: .625rem minmax(0, 1fr) auto 2.75rem; align-items: center; gap: .625rem; width: 100%; min-height: 2.25rem; padding: .25rem .5rem; border-radius: .25rem; text-align: left; font-size: .8125rem; color: var(--text-secondary); transition: background-color 160ms ease, color 160ms ease; }
 .legendRow:hover { background: rgba(255,255,255,.03); color: var(--text-primary); }
@@ -186,14 +182,16 @@
 @media(max-width: 639px) {
   .page { padding: 5.5rem 1rem 3rem; }
   .toolbar { gap: .5rem; }
-  .toolbar [role=tablist], .toolbar .boneTabs, .toolbarEnd, .periods { width: 100%; }
-  .filterToggle { margin-left: auto; }
+  .toolbar [role=tablist], .toolbar .boneTabs, .toolbarEnd { width: 100%; }
+  /* The filter button shares the period row instead of a row of its own. */
+  .toolbarEnd { flex-wrap: nowrap; align-items: stretch; gap: .375rem; }
+  .periods { flex: 1; flex-wrap: nowrap; min-width: 0; }
+  .filterToggle { flex: none; }
   .toolbar [role=tab], .toolbar .boneTabs > *, .period { flex: 1; }
   .period { padding-inline: .375rem; font-size: .75rem; }
   .panel, .overview { padding: 1.125rem; }
   .overviewHead { gap: .875rem 1.5rem; }
   .overviewNotes { align-items: flex-start; text-align: left; flex-basis: 100%; }
-  .methodology summary { margin-left: 0; }
   .overviewGrid, .purposeCharts { grid-template-columns: minmax(0, 1fr); }
   .donut { gap: .875rem; }
   .donutRing { width: 7.5rem; }
@@ -204,7 +202,7 @@
   .subjectStats { gap: 1.25rem; margin-top: .75rem; }
   .subjectStats dd { font-size: 1.5rem; }
   .orderChart { height: 10rem; gap: .1875rem; }
-  .orderShare { font-size: .5625rem; }
+  .orderShare { font-size: var(--text-xs); }
   .orderNumber { font-size: .8125rem; }
   .companions { grid-template-columns: minmax(0, 1fr); }
   .egoGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -366,8 +364,6 @@
 .boneStats { display: flex; gap: 1.75rem; }
 /* A count over its label: the number, the gap and the label's line box (.6875rem at line-height 1.5). */
 .boneStats > div { display: flex; flex-direction: column; justify-content: space-between; height: calc(1.625rem + .25rem + .6875rem * 1.5); }
-/* The methodology line: .75rem at line-height 1.7, with its .25rem padding. */
-.boneNote { margin-block: calc(.75rem * .35 + .25rem); }
 .subject { scroll-margin-top: calc(var(--nav-offset, 4rem) + 4.25rem); }
 .views [role=tab] { flex: 1 1 0; justify-content: center; font-size: .9375rem; }
 @media(min-width: 640px) { .views [role=tab] { flex: 0 0 auto; padding-inline: 1.25rem; } }
@@ -412,7 +408,7 @@
 .constraintCards li[data-skipped] { opacity: .5; border-style: dashed; }
 .constraintName { min-width: 0; font-size: .8125rem; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .constraintShare { font-family: var(--font-title); font-size: 1rem; line-height: 1; color: var(--gold-light); }
-.constraintShare small { margin-left: .0625rem; font-size: .625rem; color: var(--gold-dim); }
+.constraintShare small { margin-left: .0625rem; font-size: var(--text-xs); color: var(--gold-dim); }
 .constraintScore { display: grid; place-items: center; width: 1.75rem; height: 1.75rem; border: 1px solid var(--gold-dim); border-radius: 50%; font-family: var(--font-title); font-size: .9375rem; color: var(--gold-light); }
 @media(max-width: 639px) {
   .summaryBar { padding: .875rem 1rem; gap: .875rem 1.5rem; }

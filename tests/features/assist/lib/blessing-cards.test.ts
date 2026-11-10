@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { BLESSING_CONFIGS } from '@/features/planner/components/BlessingTab'
+import { BLESSING_CONFIGS } from '@/features/planner/lib/blessing'
 import { BLESSING_COSTS, blessingSpent, readBlessingCards } from '@/features/assist/lib/blessing-screen'
 import { BLESSING_STARLIGHT_MAX } from '@/features/tools/lib/prescript'
 

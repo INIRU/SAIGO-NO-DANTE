@@ -435,7 +435,7 @@
 }
 .desk-gate h1 {
   font: 2rem/1.1 var(--font-heading);
-  color: var(--text-primary);
+  color: var(--gold);
 }
 .support-desk :is(a, button, input, textarea):focus-visible {
   outline: 2px solid var(--gold);

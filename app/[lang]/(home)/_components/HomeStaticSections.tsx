@@ -7,6 +7,7 @@ import { getGameUiAsset } from '@/lib/utils/game-ui'
 import type { YoutubeVideo } from '@/lib/utils/youtube'
 import type { EGOWithSinner, IdentityWithSinner } from '@/lib/types'
 import type { SupportedLang } from '@/lib/i18n/types'
+import { getLocalizedName } from '@/lib/i18n/localize'
 import IdentityFrameCard from '@/features/catalog/components/IdentityFrameCard'
 import EgoDisplayCard from '@/features/catalog/components/EgoDisplayCard'
 import FaustPortrait from './FaustPortrait'
@@ -21,7 +22,7 @@ type TFn = Awaited<ReturnType<typeof getTranslations>>
 
 type Named = { name_kr?: string | null; name_en?: string | null; name_jp?: string | null }
 const localName = (row: Named | null | undefined, lang: SupportedLang) =>
-  (lang === 'en' ? row?.name_en : lang === 'ja' ? row?.name_jp : null) || row?.name_kr || ''
+  row ? getLocalizedName({ ...row, name_kr: row.name_kr ?? '' }, lang) : ''
 
 function YoutubeIcon({ size = 16 }: { size?: number | string }) {
   return (

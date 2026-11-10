@@ -1,6 +1,5 @@
 'use client'
 
-import { notePlainText } from '@/lib/notes/blocks'
 import { useLoadMoreSentinel } from '@/hooks/useLoadMoreSentinel'
 
 import DiscoveryShelf, { type InitialShelf } from '@/features/community/components/DiscoveryShelf'
@@ -20,7 +19,7 @@ import { hasAll, useBoardFacets } from '@/features/community/hooks/useBoardFacet
 import type { CollectionData } from '@/lib/collection'
 import { getActiveTerm } from '@/lib/utils/search'
 import { THEME_KEYWORDS, normalizeThemeKeyword } from '@/lib/constants/keywords'
-import { DECK_MAIN_KEYWORDS, computeDeckMainKeywordsFromSlots, normalizeDeckMainKeyword } from '@/lib/decks/keyword-rules'
+import { DECK_MAIN_KEYWORDS } from '@/lib/decks/keyword-rules'
 import DeckListFilters from '@/features/decks/components/DeckListFilters'
 import { BoardResults, BrowseBar } from '@/features/community/components/Browse'
 import type { RowPost } from '@/features/community/components/BoardParts'
@@ -29,6 +28,7 @@ import {
 } from '@/features/decks'
 import type { DeckFilterIdentity } from '@/features/decks/components/DeckIdentityFilterModal'
 import { useLocale, useTranslations } from 'next-intl'
+import { showError } from '@/lib/toast'
 import { useRoutePrefetch } from '@/lib/hooks/useRoutePrefetch'
 
 const PAGE_SIZE = 12
@@ -64,83 +64,15 @@ type IdentityNameEntry = {
 }
 
 type DeckDerivedIndex = {
-  searchValues: string[]
-  mainKeywords: string[]
-  keywordTagValues: string[]
-  identityIds: string[]
   egoIds: string[]
-  /** Affiliations of the formed identities (filled in once the board facets load). */
+  /** Identities in the formation order (the board's affiliation facet reads these). */
   formedIdentityIds: string[]
-  formationCount: number
-  hasFormationOrder: boolean
-  hasNonDefaultEgo: boolean
-  hasDescription: boolean
-  infoScore: number
 }
 
 function buildDeckDerivedIndex(deck: DeckSummary): DeckDerivedIndex {
-  const allKeywords = new Set<string>()
-  const keywordTagValues = new Set<string>()
-  const identityNames: string[] = []
-  const identityIds: string[] = []
-  const formationSinnerIds = new Set<string>()
-  let hasFormationOrder = false
-
-  for (const slot of deck.deck_identities ?? []) {
-    const identity = slot?.identities
-    if (identity?.name_kr) identityNames.push(identity.name_kr)
-    if (identity?.id) identityIds.push(identity.id)
-
-    for (const kw of slot?.identities?.keywords ?? []) {
-      allKeywords.add(kw)
-    }
-
-    if (slot.slot_order < 99) hasFormationOrder = true
-    if (!identity || slot.slot_order >= 99) continue
-    if (identity.sinner_id) formationSinnerIds.add(identity.sinner_id)
-
-    for (const rawKeyword of identity.keywords ?? []) {
-      const kw = rawKeyword.trim()
-      if (!kw) continue
-      keywordTagValues.add(kw)
-      const normalized = normalizeThemeKeyword(kw)
-      if (THEME_KEYWORD_SET.has(normalized)) keywordTagValues.add(normalized)
-    }
-
-  }
-
-  const formationCount = formationSinnerIds.size
-  const hasNonDefaultEgo = (deck.deck_egos ?? []).some(ego => {
-    const grade = typeof ego.grade === 'string' ? ego.grade.trim().toUpperCase() : ''
-    return grade !== '' && grade !== 'ZAYIN'
-  })
-  const hasDescription = notePlainText(deck.description ?? '').length >= 20
-  const infoScore = Number(hasFormationOrder) + Number(hasNonDefaultEgo) + Number(hasDescription)
-  const persistedMainKeywords = (deck.main_keywords ?? [])
-    .map(normalizeDeckMainKeyword)
-    .filter((keyword): keyword is string => Boolean(keyword))
-  const mainKeywords = persistedMainKeywords.length > 0
-    ? persistedMainKeywords
-    : computeDeckMainKeywordsFromSlots(deck.deck_identities ?? [])
-
   return {
-    searchValues: [
-      deck.title,
-      deck.description ?? '',
-      ...deck.tags,
-      ...allKeywords,
-      ...identityNames,
-    ],
-    mainKeywords,
-    keywordTagValues: [...keywordTagValues],
-    identityIds,
     egoIds: (deck.deck_egos ?? []).map(e => e.ego_id),
     formedIdentityIds: (deck.deck_identities ?? []).filter(slot => slot.slot_order < 99 && slot.identities?.id).map(slot => slot.identities!.id),
-    formationCount,
-    hasFormationOrder,
-    hasNonDefaultEgo,
-    hasDescription,
-    infoScore,
   }
 }
 
@@ -243,6 +175,7 @@ export default function DecksClient({
   const [filterSignal, setFilterSignal] = useState(0)
   const loadMoreRequestId = useRef(0)
   const loadMoreAbortRef = useRef<AbortController | null>(null)
+  const loadMoreFailedRef = useRef(false)
   const [, startTransition] = useTransition()
 
   // ── URL-synced state ──
@@ -529,9 +462,10 @@ export default function DecksClient({
     setRefreshing(hasExistingDecks)
     setLoadingMore(false)
     setHasMore(true)
+    loadMoreFailedRef.current = false
     const params = buildDeckSearchParams(0)
     fetch(`/api/decks?${params.toString()}`, { signal: controller.signal })
-      .then(r => r.json())
+      .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json() })
       .then(data => {
         if (deckRequestId.current !== requestId) return
         if (Array.isArray(data)) {
@@ -543,6 +477,7 @@ export default function DecksClient({
       .catch(e => {
         if (e instanceof DOMException && e.name === 'AbortError') return
         console.error('덱 목록 로드 실패:', e)
+        if (deckRequestId.current === requestId) showError(t('result.loadFailed'))
       })
       .finally(() => {
         if (deckRequestId.current !== requestId) return
@@ -554,7 +489,8 @@ export default function DecksClient({
 
   // ── Load more ──
   const loadMore = useCallback(() => {
-    if (loading || refreshing || loadingMore || !hasMore) return
+    // A failed page is not retried on its own (the sentinel would re-fire it at once); a new filter or sort clears this.
+    if (loading || refreshing || loadingMore || !hasMore || loadMoreFailedRef.current) return
     setLoadingMore(true)
     loadMoreAbortRef.current?.abort()
     const requestId = loadMoreRequestId.current + 1
@@ -565,7 +501,7 @@ export default function DecksClient({
     const requestQueryKey = serverQueryKey
     const params = buildDeckSearchParams(decks.length)
     fetch(`/api/decks?${params.toString()}`, { signal: controller.signal })
-      .then(r => r.json())
+      .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json() })
       .then(data => {
         if (loadMoreRequestId.current !== requestId || latestSortRef.current !== requestSort || latestServerQueryRef.current !== requestQueryKey) return
         if (!Array.isArray(data) || data.length === 0) { setHasMore(false); return }
@@ -575,6 +511,10 @@ export default function DecksClient({
       .catch(e => {
         if (e instanceof DOMException && e.name === 'AbortError') return
         console.error('덱 추가 로드 실패:', e)
+        if (loadMoreRequestId.current === requestId) {
+          loadMoreFailedRef.current = true
+          showError(t('result.loadFailed'))
+        }
       })
       .finally(() => {
         if (loadMoreRequestId.current === requestId) {

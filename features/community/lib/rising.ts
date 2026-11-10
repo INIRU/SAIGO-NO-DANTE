@@ -1,7 +1,5 @@
 import type { Formation } from '@/features/community/lib/co-occurrence'
 
-export const RECENT_DAYS = 7
-export const BASE_DAYS = 21
 /** A post counts for the rising identities when it was written or edited within these days. */
 const IDENTITY_DAYS = 14
 /** An identity on one post is no trend. */

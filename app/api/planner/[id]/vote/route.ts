@@ -18,7 +18,10 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     const userId = await findOrCreateSupabaseUser(admin, session.user.email, session.user.name, session.user.image)
 
     const { data, error } = await admin.schema('limbus').from('md_plan_votes').select('plan_id').eq('plan_id', id).eq('user_id', userId).maybeSingle()
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) {
+      console.error('[planner/[id]/vote]', error.message)
+      return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    }
 
     return NextResponse.json({ voted: !!data })
   } catch {
@@ -42,7 +45,10 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
       p_user_id: userId,
     })
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) {
+      console.error('[planner/[id]/vote]', error.message)
+      return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    }
 
     revalidateTag(CACHE_TAGS.plan(id), 'max')
     revalidateTag(CACHE_TAGS.plansList, 'max')

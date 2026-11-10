@@ -15,11 +15,7 @@ export type BoardFacets = {
 
 /** Filter options drawn from the board's posts (app/api/board/facets). */
 export function useBoardFacets(kind: 'deck' | 'planner') {
-  return useSWR<BoardFacets>(`/api/board/facets?kind=${kind}`, async (url: string) => {
-    const response = await fetch(url)
-    if (!response.ok) throw new Error('facets')
-    return response.json()
-  }, { revalidateOnFocus: false })
+  return useSWR<BoardFacets>(`/api/board/facets?kind=${kind}`, { revalidateOnFocus: false })
 }
 
 /** Every value in the post's set: selected facets narrow, they never widen. */

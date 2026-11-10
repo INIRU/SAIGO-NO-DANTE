@@ -15,16 +15,10 @@ import { KEYWORD_COLORS, GRADE_LABELS, GRADES } from '@/features/mirror-dungeon/
 import type { GiftData } from '@/lib/planner/types'
 import { getGiftKeywordIconUrl, getGiftKeywordSlug } from '@/lib/constants/gift'
 import { GIFT_KEYWORD_ORDER } from '@/features/mirror-dungeon/lib/gift-check'
+import { PINNED_GROUP, countGiftGroups, filterAndSortGifts, groupGifts } from '@/features/mirror-dungeon/lib/gift-catalog-sort'
 import SuggestionRibbon from '@/components/ui/SuggestionRibbon'
 
-const keywordRank = (keyword: string | null | undefined, order: readonly string[]) => {
-  const index = order.indexOf(!keyword || keyword.startsWith('공통') ? '공통' : keyword)
-  return index < 0 ? 99 : index
-}
-
-const GRADE_ORDER: Record<string, number> = { '1': 1, '2': 2, '3': 3, '4': 4, '5': 5, 'EX': 6 }
 const PAGE_SIZE = 40
-const PINNED_GROUP = '__pinned'
 
 /** '난이도:' 같은 기존 접두어 번역에서 콜론을 떼어 칩 이름으로 쓴다. */
 const filterName = (prefix: string) => prefix.replace(/\s*[:：]\s*$/, '')
@@ -53,7 +47,7 @@ export function GiftKeywordTab({ label, iconUrl, color, active, count, onClick }
       type="button"
       aria-pressed={active}
       onClick={onClick}
-      className={`flex min-h-[2.5rem] shrink-0 items-center gap-1.5 px-2.5 text-[0.8125rem] transition-colors hover:text-[var(--text-primary)] md:px-3 ${FOCUS_RING}`}
+      className={`flex min-h-[2.5rem] max-sm:min-h-11 shrink-0 items-center gap-1.5 px-2.5 text-[0.8125rem] transition-colors hover:text-[var(--text-primary)] md:px-3 ${FOCUS_RING}`}
       style={{
         cursor: 'pointer',
         color: active ? 'var(--text-primary)' : '#9c8b73',
@@ -80,7 +74,7 @@ export function GiftGradeChip({ grade, ariaLabel, active, count, onClick }: {
       aria-pressed={active}
       aria-label={count === undefined ? ariaLabel : `${ariaLabel} ${count}`}
       onClick={onClick}
-      className={`inline-flex h-9 min-w-[2.125rem] flex-1 items-center justify-center gap-1 rounded px-1.5 text-[1rem] leading-none transition-colors hover:text-[var(--text-primary)] sm:flex-none ${FOCUS_RING}`}
+      className={`inline-flex h-9 max-sm:h-11 min-w-[2.125rem] flex-1 items-center justify-center gap-1 rounded px-1.5 text-[1rem] leading-none transition-colors hover:text-[var(--text-primary)] sm:flex-none ${FOCUS_RING}`}
       style={{
         fontFamily: 'var(--font-title)',
         letterSpacing: '0.04em',
@@ -403,38 +397,7 @@ export default function GiftCatalog({
 
   const query = search.trim().toLocaleLowerCase()
   const filtered = useMemo(() => {
-    const slotNum = slotFilter !== '전체' ? Number(slotFilter) : null
-    const result = gifts.filter(g => {
-      if (keywords.size > 0 && !keywords.has(g.keyword)) return false
-      if (grades.size > 0 && !grades.has(g.grade)) return false
-      // Difficulty = the first difficulty the gift can be obtained in (sync: giftTiers), so each option lists only the
-      // gifts that start there: 익스트림 shows the extreme-only gifts, not everything obtainable in extreme.
-      if (tiers.size > 0 && !tiers.has(g.difficulty || '노말')) return false
-      if (slotNum !== null) {
-        const slots = giftSlotMap.get(g.id)
-        if (!slots || !slots.has(slotNum)) return false
-      }
-      if (query && ![g.name, g.name_en, g.name_jp].some(name => name?.toLocaleLowerCase().includes(query))) return false
-      if (themeGiftNames && !themeGiftNames.has(g.name)) return false
-      return true
-    })
-
-    if (keepOrder) {
-      // The sort is stable: inside a keyword the gifts stay in the order given. Pinned groups keep that order as it is.
-      if (!pinned?.length) return result.sort((a, b) => keywordRank(a.keyword, keywordOrder) - keywordRank(b.keyword, keywordOrder))
-    } else if (sortBy === 'name') {
-      result.sort((a, b) => a.name.localeCompare(b.name, 'ko'))
-    } else if (sortBy === 'grade') {
-      result.sort((a, b) => (GRADE_ORDER[a.grade] ?? 0) - (GRADE_ORDER[b.grade] ?? 0))
-    } else {
-      // 키워드별: 공통 → 키워드 → 참격·관통·타격, 같은 키워드는 등급순
-      result.sort((a, b) => keywordRank(a.keyword, keywordOrder) - keywordRank(b.keyword, keywordOrder) || (GRADE_ORDER[a.grade] ?? 0) - (GRADE_ORDER[b.grade] ?? 0))
-    }
-
-    if (sortDesc && !keepOrder) result.reverse()
-    if (!pinned?.length) return result
-    const rank = (g: EgoGift) => { const index = pinned.findIndex(group => group.ids.has(g.id)); return index < 0 ? pinned.length : index }
-    return result.map((g, i) => [g, rank(g), i] as const).sort((a, b) => a[1] - b[1] || a[2] - b[2]).map(([g]) => g)
+    return filterAndSortGifts(gifts, { keywords, grades, tiers, query, sortBy, sortDesc, slotFilter, themeGiftNames, giftSlotMap, pinned, keywordOrder, keepOrder })
   }, [gifts, keywords, grades, tiers, query, sortBy, sortDesc, themeGiftNames, slotFilter, giftSlotMap, pinned, keywordOrder, keepOrder])
 
   const deferredFiltered = useDeferredValue(filtered)
@@ -473,26 +436,8 @@ export default function GiftCatalog({
 
   // 기본 정렬 = 키워드별, 등급 정렬 = 등급별 묶음. 이름 정렬은 한 덩어리.
   const groupBy: 'keyword' | 'grade' | null = keepOrder || sortBy === 'default' ? 'keyword' : sortBy === 'grade' ? 'grade' : null
-  const groupCounts = useMemo(() => {
-    const map = new Map<string, number>()
-    for (const g of deferredFiltered) {
-      const pin = pinned?.findIndex(group => group.ids.has(g.id)) ?? -1
-      const key = pin >= 0 ? PINNED_GROUP + pin : groupBy === 'keyword' ? g.keyword : groupBy === 'grade' ? g.grade : ''
-      map.set(key, (map.get(key) ?? 0) + 1)
-    }
-    return map
-  }, [deferredFiltered, groupBy, pinned])
-  const groups = useMemo(() => {
-    const out: { key: string; gifts: EgoGift[] }[] = []
-    for (const g of visibleGifts) {
-      const pin = pinned?.findIndex(group => group.ids.has(g.id)) ?? -1
-      const key = pin >= 0 ? PINNED_GROUP + pin : groupBy === 'keyword' ? g.keyword : groupBy === 'grade' ? g.grade : ''
-      const last = out[out.length - 1]
-      if (last && last.key === key) last.gifts.push(g)
-      else out.push({ key, gifts: [g] })
-    }
-    return out
-  }, [visibleGifts, groupBy, pinned])
+  const groupCounts = useMemo(() => countGiftGroups(deferredFiltered, groupBy, pinned), [deferredFiltered, groupBy, pinned])
+  const groups = useMemo(() => groupGifts(visibleGifts, groupBy, pinned), [visibleGifts, groupBy, pinned])
 
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false)
   // 모바일 '필터' 버튼 숫자: 시트 안에 접힌 등급·난이도·편성·테마팩 중 켜진 수
@@ -568,7 +513,7 @@ export default function GiftCatalog({
               placeholder={t('mirrorDungeon.search.placeholder')}
               value={inputValue}
               onChange={e => setInputValue(e.target.value)}
-              className="h-9 w-full min-w-0 rounded border border-[#2e2417] bg-[#17120c] pl-8 pr-7 text-[0.8125rem] text-[var(--text-primary)] outline-none placeholder:text-[var(--text-muted)] focus-visible:border-[var(--gold)] [&::-webkit-search-cancel-button]:hidden"
+              className="h-9 max-sm:h-11 w-full min-w-0 rounded border border-[#2e2417] bg-[#17120c] pl-8 pr-7 text-[0.8125rem] text-[var(--text-primary)] outline-none placeholder:text-[var(--text-muted)] focus-visible:border-[var(--gold)] [&::-webkit-search-cancel-button]:hidden"
             />
             {(inputValue || search) && (
               <button
@@ -592,7 +537,7 @@ export default function GiftCatalog({
             aria-expanded={mobileFiltersOpen}
             aria-controls="md-gift-more-filters"
             onClick={() => setMobileFiltersOpen(v => !v)}
-            className={`flex h-9 shrink-0 items-center gap-1.5 rounded border px-3 text-[0.8125rem] ${collapsed ? '' : 'sm:hidden'} ${focusRing}`}
+            className={`flex h-9 max-sm:h-11 shrink-0 items-center gap-1.5 rounded border px-3 text-[0.8125rem] ${collapsed ? '' : 'sm:hidden'} ${focusRing}`}
             style={{
               fontFamily: 'var(--font-heading)',
               color: mobileFilterCount > 0 || mobileFiltersOpen ? 'var(--gold-light)' : '#9c8b73',
@@ -672,7 +617,7 @@ export default function GiftCatalog({
                   setInputValue('')
                   setSearch('')
                 }}
-                className={`h-9 shrink-0 px-1 text-[0.8125rem] text-[#9c8b73] underline-offset-2 hover:text-[var(--text-primary)] hover:underline ${focusRing}`}
+                className={`h-9 max-sm:h-11 shrink-0 px-1 text-[0.8125rem] text-[#9c8b73] underline-offset-2 hover:text-[var(--text-primary)] hover:underline ${focusRing}`}
               >
                 {t('mirrorDungeon.filter.reset')}
               </button>
@@ -702,7 +647,7 @@ export default function GiftCatalog({
                   aria-label={tp('sortReverse')}
                   aria-pressed={sortDesc}
                   onClick={() => setSortDesc(v => !v)}
-                  className={`flex h-9 w-7 items-center justify-center rounded text-[#9c8b73] hover:text-[var(--text-primary)] ${focusRing}`}
+                  className={`flex h-9 max-sm:h-11 w-7 items-center justify-center rounded text-[#9c8b73] hover:text-[var(--text-primary)] ${focusRing}`}
                 >
                   {sortDesc ? <ArrowDown size={13} aria-hidden /> : <ArrowUp size={13} aria-hidden />}
                 </button>
@@ -755,10 +700,10 @@ export default function GiftCatalog({
                 )}
                 {pin?.note && <p className="mb-2 whitespace-pre-wrap break-words text-[0.8125rem] leading-[1.5] text-[var(--text-secondary)]">{pin.note}</p>}
                 <div
-                  className={compact ? 'gift-grid [&_.gift-card:hover]:[transform:none]!' : 'gift-grid'}
+                  className={compact ? 'gift-grid [&_.gift-card:hover]:[transform:none]!' : 'gift-grid gift-catalog-grid'}
                   style={{
                     display: 'grid',
-                    gridTemplateColumns: `repeat(auto-fill, minmax(${compact ? 'var(--gift-catalog-cell, 4.5rem)' : '3.625rem'}, 1fr))`,
+                    gridTemplateColumns: `repeat(auto-fill, minmax(${compact ? 'var(--gift-catalog-cell, 4.5rem)' : 'var(--gift-catalog-min, 3.625rem)'}, 1fr))`,
                     gap: '0.5rem 0.375rem',
                   }}
                 >

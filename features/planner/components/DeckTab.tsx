@@ -1,6 +1,6 @@
 'use client'
 
-import { memo, useMemo, useState, useCallback, useEffect, useLayoutEffect, useRef, type CSSProperties } from 'react'
+import { memo, useMemo, useState, useCallback, useEffect, useLayoutEffect, useRef } from 'react'
 import Image from 'next/image'
 import { Users, Sparkles, SlidersHorizontal } from 'lucide-react'
 import { useReducedMotion } from 'motion/react'
@@ -34,6 +34,8 @@ import { showError, showSuccess } from '@/lib/toast'
 import type { planSlotsFromTeamCode } from '@/lib/planner/team-code-import'
 import { withLcbIdentitySlots } from '@/features/planner/lib/lcb'
 import { planSlotsFromDeckRows } from '@/lib/planner/formation-transfer'
+import { toggleFormationSlot } from '@/lib/planner/formation-toggle'
+import { COMPACT_KOTRA_STYLE } from '@/lib/planner/compact-name-style'
 import FormationSourceModal from './FormationSourceModal'
 import {
   PLANNER_EGO_GRADE_ORDER,
@@ -64,12 +66,6 @@ const SUB_TABS: { key: DeckSubTab; labelKey: string; icon: typeof Users }[] = [
   { key: 'ego', labelKey: 'subTabs.ego', icon: Sparkles },
   { key: 'skillset', labelKey: 'subTabs.skillset', icon: SlidersHorizontal },
 ]
-
-const COMPACT_KOTRA_STYLE: CSSProperties = {
-  fontFamily: 'var(--font-kotra-bold), var(--font-heading), serif',
-  fontWeight: 400,
-  WebkitTextStroke: '0 transparent',
-}
 
 const DEFAULT_EGO_NAMES: Record<string, string> = {
   '이상': '오감도',
@@ -404,19 +400,13 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
     const slot = state.identitySlots.find(item => item.sinner_id === sinnerId)
     if (!slot) return
 
+    const updated = toggleFormationSlot(state.identitySlots, sinnerId)
     if (slot.slot_order < 99) {
-      const removed = slot.slot_order
-      const updated = state.identitySlots.map(item => {
-        if (item.sinner_id === sinnerId) return { ...item, slot_order: 99 }
-        if (item.slot_order < 99 && item.slot_order > removed) return { ...item, slot_order: item.slot_order - 1 }
-        return item
-      })
       dispatch({ type: 'LOAD_PLAN', state: { identitySlots: updated } })
       return
     }
 
-    const nextOrder = state.identitySlots.filter(item => item.slot_order < 99).length
-    dispatch({ type: 'ADD_IDENTITY', slot: { ...slot, slot_order: nextOrder } })
+    dispatch({ type: 'ADD_IDENTITY', slot: updated.find(item => item.sinner_id === sinnerId)! })
   }
 
   const handleSkillChange = (sinnerId: string, idx: number, delta: number) => {

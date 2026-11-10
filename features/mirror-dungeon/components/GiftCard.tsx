@@ -257,7 +257,7 @@ const GiftCard = memo(function GiftCard({
       {/* Name below card */}
       {showName && !isInsert && (
         <p style={{
-          fontSize: '0.5625rem',
+          fontSize: 'var(--gift-name-size, 0.5625rem)',
           color: conditionStatus?.level === 'unmet' ? '#ef4444'
             : conditionStatus?.level === 'warn' ? 'var(--gold-light)'
             : isSelected ? 'var(--gold-light)' : '#aaa',

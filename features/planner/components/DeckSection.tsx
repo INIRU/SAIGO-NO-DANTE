@@ -23,6 +23,7 @@ import { localizeIdentityName } from '@/features/decks/components/DeckIdentityCa
 import { getIdentityImageUrl, getSinnerLogoUrl, getSkillIconUrl } from '@/lib/utils/images'
 import { GRADE_COLORS, isDeployedSlot } from '@/lib/constants/game'
 import { SIN_COLORS, SIN_KR_TO_EN, getSinIconUrl, normalizeSin } from '@/lib/constants/sin'
+import { toggleFormationSlot } from '@/lib/planner/formation-toggle'
 import { gameTextToPlain } from '@/lib/game-text/rich-text'
 
 type DeckSubTab = 'identity' | 'ego' | 'skillset'
@@ -162,15 +163,12 @@ export default function DeckSection({ state, dispatch, identities, sinners, skil
   }
 
   const handleToggleFormation = (sinnerId: string) => {
-    const slot = getSelected(sinnerId)
-    if (!slot) return
-    if (slot.slot_order < 99) {
-      // 편성→벤치
-      dispatch({ type: 'SWAP_IDENTITY', sinnerId, newSlot: { ...slot, slot_order: 99 } })
-    } else {
-      // 벤치→편성: 다음 순서
-      const nextOrder = state.identitySlots.filter(s => s.slot_order < 99).length
-      dispatch({ type: 'SWAP_IDENTITY', sinnerId, newSlot: { ...slot, slot_order: nextOrder } })
+    if (!getSelected(sinnerId)) return
+    // 편성→벤치면 뒤 번호가 당겨지고, 벤치→편성이면 다음 번호를 받는다
+    const updated = toggleFormationSlot(state.identitySlots, sinnerId)
+    const toggled = updated.find(item => item.sinner_id === sinnerId)!
+    for (const item of [toggled, ...updated.filter((item, index) => item !== toggled && item !== state.identitySlots[index])]) {
+      dispatch({ type: 'SWAP_IDENTITY', sinnerId: item.sinner_id, newSlot: item })
     }
   }
 

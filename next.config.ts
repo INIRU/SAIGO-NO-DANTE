@@ -76,7 +76,6 @@ const nextConfig: NextConfig = {
     'page-5m':  { stale: 300,  revalidate: 300,  expire: 1800  },
     'page-10m': { stale: 600,  revalidate: 600,  expire: 3600  },
     'page-1h':  { stale: 3600, revalidate: 3600, expire: 86400 },
-    'page-1d':  { stale: 86400, revalidate: 86400, expire: 604800 },
   },
 
   experimental: {

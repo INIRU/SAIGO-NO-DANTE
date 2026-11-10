@@ -315,7 +315,7 @@
 }
 
 .giftCell > button > p:first-of-type + p {
-  font-size: 0.625rem !important;
+  font-size: var(--text-xs) !important;
 }
 
 @media (min-width: 640px) {

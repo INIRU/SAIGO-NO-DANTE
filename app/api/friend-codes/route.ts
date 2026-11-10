@@ -1,9 +1,10 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { after, NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { authorRateKey, guestPinOf, resolveAuthor, type Author } from '@/features/account/server'
 import { checkRequestRateLimit, rateLimitResponse } from '@/lib/rate-limit'
 import { codeForViewer, fail, newlyWanted, seenIsStale, nextBumpedAt, parseSupportPost, parseWantPost, slotAssetIds, wantExpiresAt, wantIdentityIds } from '@/features/friends'
 import { friendAuthorColumns, isAuthorOf, isBlocked, ownerFilter, viewerOf, type FriendPostRow } from '@/features/friends/server'
+import { isUuid } from '@/lib/utils/uuid'
 
 const COLUMNS = 'id,code,visibility,slots,identity_ids,user_id,key_hash,guest_tag,created_at,bumped_at,seen_at'
 const LIST_LIMIT = 60
@@ -12,9 +13,8 @@ const WANT_LIFE_MS = 24 * 60 * 60 * 1000
 type Db = ReturnType<ReturnType<typeof createAdminClient>['schema']>
 const kindOf = (value: unknown) => value === 'want' ? 'want' : 'support'
 
-/** Want posts live one day (REQ-COMMUNITY-022): the expired ones are deleted whenever want posts are read or written. */
+/** Want posts live one day (REQ-COMMUNITY-022): the expired ones are deleted after want posts are read and whenever one is written. */
 const dropExpiredWants = (db: Db) => db.from('friend_posts').delete().eq('kind', 'want').lt('created_at', new Date(Date.now() - WANT_LIFE_MS).toISOString())
-const UUID_RE = /^[0-9a-f-]{36}$/i
 
 /**
  * Posts of a kind (?kind=want, support by default), newest first, optionally only those with ?identity=<id>. A post's code
@@ -23,12 +23,15 @@ const UUID_RE = /^[0-9a-f-]{36}$/i
  */
 export async function GET(request: NextRequest) {
   try {
+    const rateLimit = checkRequestRateLimit(request, { bucket: 'readonly', scope: 'friends:list' })
+    if (!rateLimit.allowed) return rateLimitResponse(rateLimit)
     const admin = createAdminClient(), db = admin.schema('limbus')
     const viewer = await viewerOf(request, admin)
     const identity = request.nextUrl.searchParams.get('identity')
-    if (identity && !UUID_RE.test(identity)) return NextResponse.json(fail('invalid_request'), { status: 400 })
+    if (identity && !isUuid(identity)) return NextResponse.json(fail('invalid_request'), { status: 400 })
     const kind = kindOf(request.nextUrl.searchParams.get('kind'))
-    if (kind === 'want') await dropExpiredWants(db)
+    // The list below already leaves expired posts out; the delete waits until the answer is sent.
+    if (kind === 'want') after(async () => { try { await dropExpiredWants(db) } catch (error) { console.error('friend-codes expired wants', error) } })
     let query = db.from('friend_posts').select(COLUMNS).eq('kind', kind).order('bumped_at', { ascending: false }).limit(LIST_LIMIT)
     query = kind === 'want' ? query.gte('created_at', new Date(Date.now() - WANT_LIFE_MS).toISOString()) : query.gte('bumped_at', new Date(Date.now() - HIDE_AFTER_MS).toISOString())
     if (identity) query = query.contains('identity_ids', [identity])

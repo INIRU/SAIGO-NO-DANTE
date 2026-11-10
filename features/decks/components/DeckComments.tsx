@@ -39,7 +39,7 @@ export default function DeckComments({ deckId, initialComments, headingId }: Pro
   // Refresh comments when deckId changes (e.g. navigation)
   useEffect(() => {
     setComments(initialComments)
-  }, [initialComments])
+  }, [deckId]) // eslint-disable-line react-hooks/exhaustive-deps -- a new array from the parent must not overwrite comments just added here
 
   const handleCommentSubmit = useCallback(async () => {
     if (!commentText.trim() || commentSubmitting || authStatus !== 'authenticated') return

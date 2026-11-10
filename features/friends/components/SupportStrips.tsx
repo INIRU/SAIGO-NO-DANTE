@@ -2,12 +2,11 @@
 
 import { useState } from 'react'
 import { useTranslations } from 'next-intl'
-import { SINNER_NUMBERS, sinnerNumber } from '@/features/friends/lib/codes'
+import { sinnerNumber } from '@/features/friends/lib/codes'
 import { getIdentityImageUrl } from '@/lib/utils/images'
 import styles from './SupportStrips.module.css'
 
 export { sinnerNumber }
-export const SUPPORT_SLOT_NUMBERS = SINNER_NUMBERS
 export const EGO_GRADES = ['ZAYIN', 'TETH', 'HE', 'WAW', 'ALEPH'] as const
 export type EgoGrade = typeof EGO_GRADES[number]
 export type SupportIdentity = { sinner_id: string; rarity: number; folder_name?: string | null; game_id?: string | null }

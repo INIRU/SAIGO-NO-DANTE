@@ -1,5 +1,6 @@
 /** Friend code board rules: what a post may hold and who sees its code. No database access. */
 import { SINNER_SLUGS } from '@/lib/constants/game'
+import { isUuid } from '@/lib/utils/uuid'
 export const FRIEND_CODE_RE = /^[A-Z][0-9]{9}$/
 export const VISIBILITIES = ['public', 'members', 'exchange', 'approval'] as const
 export type Visibility = typeof VISIBILITIES[number]
@@ -20,13 +21,12 @@ export type FriendErrorCode = keyof typeof FRIEND_ERRORS
 export type FriendError = { error: string; code: FriendErrorCode }
 export const fail = (code: FriendErrorCode): FriendError => ({ error: FRIEND_ERRORS[code], code })
 
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null && !Array.isArray(value)
 
 /** Identity and E.G.O ids a request names, to look up before parseSupportPost. Malformed ids are left out (and fail there). */
 export function slotAssetIds(body: unknown): { identities: string[]; egos: string[] } {
   const slots = isRecord(body) && Array.isArray(body.slots) ? body.slots.filter(isRecord) : []
-  const ids = (values: unknown[]) => [...new Set(values.filter((value): value is string => typeof value === 'string' && UUID_RE.test(value)))]
+  const ids = (values: unknown[]) => [...new Set(values.filter(isUuid))]
   return { identities: ids(slots.map(slot => slot.identity)), egos: ids(slots.flatMap(slot => isRecord(slot.egos) ? Object.values(slot.egos) : [])) }
 }
 
@@ -89,7 +89,7 @@ export type WantPostInput = { code: string; visibility: Visibility; identityIds:
 /** Identity ids a want request names, to look up before parseWantPost. */
 export function wantIdentityIds(body: unknown): string[] {
   const list = isRecord(body) && Array.isArray(body.identities) ? body.identities : []
-  return [...new Set(list.filter((value): value is string => typeof value === 'string' && UUID_RE.test(value)))]
+  return [...new Set(list.filter(isUuid))]
 }
 
 /** A "wanted identity" post: the author's own code, the visibility and one to three identities the catalogue has. Nothing else is read. */

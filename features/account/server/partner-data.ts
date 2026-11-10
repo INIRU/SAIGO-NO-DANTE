@@ -1,6 +1,7 @@
 import { cacheLife, cacheTag } from 'next/cache'
 import { publicSupabase } from '@/lib/supabase/public'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
+import { isUuid } from '@/lib/utils/uuid'
 
 type Row = Record<string, any>
 
@@ -81,7 +82,6 @@ export async function loadCatalogItem(resource: 'identities' | 'egos', id: strin
 
 const FORMATION_IDENTITY = `id, game_id, sinner_id, folder_name, name_kr, name_en, name_jp, rarity, slash_res, pierce_res, blunt_res, ${SKILLS}`
 const FORMATION_EGO = 'id, sinner_id, name_kr, name_en, name_jp, grade, sin_affinity, image_url, cost, ego_skills(skill_type, category, construe_level, skill_order)'
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 /** A public deck with every slot's identity, skills and E.G.O, for presentDeck. */
 export async function loadDeckDetail(id: string): Promise<Row | null> {
@@ -103,7 +103,7 @@ export async function loadPlanDetail(id: string): Promise<{ plan: Row; identitie
     .maybeSingle()
   if (error) throw new Error(error.message)
   if (!plan) return null
-  const ids = (value: unknown, key: string) => (Array.isArray(value) ? value.map(entry => entry?.[key]).filter((entry): entry is string => typeof entry === 'string' && UUID.test(entry)) : [])
+  const ids = (value: unknown, key: string) => (Array.isArray(value) ? value.map(entry => entry?.[key]).filter((entry): entry is string => isUuid(entry)) : [])
   const [identities, egos] = await Promise.all([
     db().from('identities').select(FORMATION_IDENTITY).in('id', ids(plan.deck, 'identity_id')),
     db().from('ego').select(FORMATION_EGO).in('id', ids(plan.egos, 'ego_id')),

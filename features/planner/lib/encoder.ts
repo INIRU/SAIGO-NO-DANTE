@@ -306,7 +306,7 @@ export function loadPlanForRun(): Partial<PlannerState> | null {
 
 // ── 트리거 모드 런 저장/복원 ──────────────────────────────────────────────────
 
-import { normalizeRunState } from './run-types'
+import { normalizeRunState } from './run-normalize'
 
 const RUN_DRAFT_KEY = 'md-run-draft'
 const RUN_HISTORY_KEY = 'md-run-history'
@@ -328,17 +328,6 @@ const DIFF_LABELS: Record<string, string> = {
   normal: '노말', hard: '하드', overlap: '평행중첩', extreme: '익스트림',
 }
 
-export function saveRunDraft(state: RunState): void {
-  try {
-    const draft: RunDraft = {
-      state,
-      savedAt: new Date().toISOString(),
-      label: makeRunLabel(state),
-    }
-    localStorage.setItem(RUN_DRAFT_KEY, JSON.stringify(draft))
-  } catch { /* quota exceeded */ }
-}
-
 export function loadRunDraft(): RunDraft | null {
   try {
     const raw = localStorage.getItem(RUN_DRAFT_KEY)
@@ -354,10 +343,6 @@ export function loadRunDraft(): RunDraft | null {
   } catch {
     return null
   }
-}
-
-export function clearRunDraft(): void {
-  try { localStorage.removeItem(RUN_DRAFT_KEY) } catch { /* */ }
 }
 
 export function saveRunToHistory(state: RunState): boolean {

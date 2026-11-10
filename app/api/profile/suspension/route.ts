@@ -45,7 +45,8 @@ export async function GET() {
       .maybeSingle()
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 })
+      console.error('[api/profile/suspension]', error)
+      return NextResponse.json({ error: '요청을 처리하지 못했습니다.' }, { status: 500 })
     }
 
     const profile = data as ProfileSuspensionRow | null
@@ -64,7 +65,7 @@ export async function GET() {
       },
     })
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Internal Server Error'
-    return NextResponse.json({ error: message }, { status: 500 })
+    console.error('[api/profile/suspension]', err)
+    return NextResponse.json({ error: '요청을 처리하지 못했습니다.' }, { status: 500 })
   }
 }

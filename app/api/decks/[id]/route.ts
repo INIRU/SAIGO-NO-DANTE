@@ -1,24 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { revalidateTag } from 'next/cache'
 import { revalidatePostSeries, saveSeriesChoice, withPostAuthors } from '@/features/community/server'
-import { ownsPost, resolveAuthor } from '@/features/account/server'
+import { authorRateKey, ownsPost, resolveAuthor } from '@/features/account/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { writeAuditLog } from '@/lib/audit'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
+import { checkRequestRateLimit, rateLimitResponse } from '@/lib/rate-limit'
 import { parseDeckMainKeywordsInput } from '@/lib/decks/keyword-rules'
 import { encodeTeamCode } from '@/lib/decks/team-code'
 import { insertDeckIdentities, normalizeUptie } from '@/features/decks'
+import { fetchEgoAttackSkillsByEgoId, type EgoAttackSkill } from '@/features/decks/server'
 
-
-type EgoAttackSkill = {
-  skill_type: string | null
-  category: string | null
-  construe_level: number | null
-  skill_order: number | null
-}
 
 // The detail page already has the deck from its first view: `?part=viewer` sends only what that lacks (REQ-DECKS-051).
 const VIEWER_COLUMNS = `
@@ -66,7 +61,8 @@ export async function GET(
   ])
 
   if (deckRes.error) {
-    return NextResponse.json({ error: deckRes.error.message }, { status: 404 })
+    console.error('[deck detail] deck read failed', deckRes.error)
+    return NextResponse.json({ error: '덱을 찾을 수 없습니다.' }, { status: 404 })
   }
   const [deck] = viewerOnly ? [deckRes.data] : await withPostAuthors([deckRes.data])
   const sinners = sinnersRes.data ?? []
@@ -93,30 +89,12 @@ export async function GET(
     ...new Set(deckEgoRows.map(r => r.ego?.id).filter((x): x is string => Boolean(x))),
   ]
 
-  const [egoRes, egoSkillsRes] = await Promise.all([
+  const [egoRes, egoSkillsByEgoId] = await Promise.all([
     allSinnerIds.length > 0
       ? supabase.schema('limbus').from('ego').select('id, sinner_id, grade, name_kr, sin_affinity, image_url, game_id').in('sinner_id', allSinnerIds).order('game_id')
       : Promise.resolve({ data: [] }),
-    !viewerOnly && selectedEgoIds.length > 0
-      ? supabase.schema('limbus').from('ego_skills').select('ego_id, skill_type, category, construe_level, skill_order').in('ego_id', selectedEgoIds)
-      : Promise.resolve({ data: [], error: null }),
+    viewerOnly ? new Map<string, EgoAttackSkill[]>() : fetchEgoAttackSkillsByEgoId(supabase, selectedEgoIds),
   ])
-
-  if (egoSkillsRes.error) {
-    return NextResponse.json({ error: egoSkillsRes.error.message }, { status: 500 })
-  }
-  const egoSkillsByEgoId = new Map<string, EgoAttackSkill[]>()
-  for (const row of egoSkillsRes.data ?? []) {
-    if (typeof row.ego_id !== 'string') continue
-    const skills = egoSkillsByEgoId.get(row.ego_id) ?? []
-    skills.push({
-      skill_type: row.skill_type ?? null,
-      category: row.category ?? null,
-      construe_level: row.construe_level ?? null,
-      skill_order: row.skill_order ?? null,
-    })
-    egoSkillsByEgoId.set(row.ego_id, skills)
-  }
 
   // 인격 슬롯 맵
   const deckSlots: Record<string, { id: string; sinner_id: string; game_id: string | null } | undefined> = {}
@@ -180,8 +158,8 @@ export async function GET(
 
   return NextResponse.json({ ...deck, deck_egos: deckEgosWithSkills, deck_code: deckCode, is_owner: isOwner, is_admin: isAdmin, all_sinner_egos: allSinnerEgos })
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Internal Server Error'
-    return NextResponse.json({ error: message }, { status: 500 })
+    console.error('[deck detail] unexpected failure', err)
+    return NextResponse.json({ error: '덱 정보를 불러오지 못했습니다.' }, { status: 500 })
   }
 }
 
@@ -222,7 +200,8 @@ export async function DELETE(
       .eq('id', id)
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 })
+      console.error('[deck delete] failed', error)
+      return NextResponse.json({ error: '덱을 삭제하지 못했습니다. 다시 시도해주세요.' }, { status: 500 })
     }
 
     await writeAuditLog({ actorId: userId, action: 'deck_delete', targetType: 'deck', targetId: id })
@@ -231,30 +210,56 @@ export async function DELETE(
     revalidateTag(CACHE_TAGS.decksList, 'max')
     return NextResponse.json({ ok: true })
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Internal Server Error'
-    return NextResponse.json({ error: message }, { status: 500 })
+    console.error('[deck delete] unexpected failure', err)
+    return NextResponse.json({ error: '덱을 삭제하지 못했습니다. 다시 시도해주세요.' }, { status: 500 })
   }
 }
 
 // ── PATCH ─────────────────────────────────────────────────────────────────
+const MAX_TITLE_LENGTH = 200
+const MAX_IDENTITY_SLOTS = 12
+const MAX_EGO_SLOTS = 60
+const MAX_TAGS = 30
+const MAX_TAG_LENGTH = 100
+
+const isObject = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null
+
+/** The first thing wrong with an update body's shape, or null. */
+function patchBodyProblem(body: unknown): string | null {
+  if (!isObject(body)) return '요청 형식이 올바르지 않습니다.'
+  const { title, description, tags, identitySlots, egoSlots } = body
+  if (typeof title !== 'string' || !title.trim()) return '제목을 입력해주세요.'
+  if (title.length > MAX_TITLE_LENGTH) return `제목은 ${MAX_TITLE_LENGTH}자 이하여야 합니다.`
+  if (description !== undefined && description !== null && typeof description !== 'string') return '설명 형식이 올바르지 않습니다.'
+  if (tags !== undefined && (!Array.isArray(tags) || tags.length > MAX_TAGS || tags.some(tag => typeof tag !== 'string' || tag.length > MAX_TAG_LENGTH))) return '태그 형식이 올바르지 않습니다.'
+  if (!Array.isArray(identitySlots) || identitySlots.length > MAX_IDENTITY_SLOTS || identitySlots.some(slot => !isObject(slot) || typeof slot.identity_id !== 'string')) return '인격 편성 형식이 올바르지 않습니다.'
+  if (!Array.isArray(egoSlots) || egoSlots.length > MAX_EGO_SLOTS || egoSlots.some(slot => !isObject(slot) || typeof slot.ego_id !== 'string' || typeof slot.grade !== 'string')) return 'E.G.O 편성 형식이 올바르지 않습니다.'
+  return null
+}
+
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params
-    const body = await request.json()
-    const { title, description, tags, identitySlots, egoSlots, content_type } = body
-
-    if (!title?.trim()) {
-      return NextResponse.json({ error: '제목을 입력해주세요.' }, { status: 400 })
-    }
-
     const admin = createAdminClient()
     const resolved = await resolveAuthor(request, admin)
     if ('response' in resolved) return resolved.response
     const { author } = resolved
     const userId = author.kind === 'user' ? author.userId : null
+
+    const rateLimit = checkRequestRateLimit(request, {
+      bucket: 'write',
+      scope: author.kind === 'guest' ? 'decks:update:guest' : 'decks:update',
+      authenticatedKey: authorRateKey(author),
+    })
+    if (!rateLimit.allowed) return rateLimitResponse(rateLimit)
+
+    const body = await request.json()
+    const problem = patchBodyProblem(body)
+    if (problem) return NextResponse.json({ error: problem }, { status: 400 })
+    const { title, description, tags, identitySlots, egoSlots, content_type } = body
 
     // 소유권 확인 (관리자는 소유자가 아니어도 수정 가능, 단 소유자 변경 불가)
     const { data: deck } = await admin
@@ -293,19 +298,45 @@ export async function PATCH(
     }
 
     // 자식 롤백을 위해 기존 children 미리 저장
-    const [{ data: origIdents }, { data: origEgos }] = await Promise.all([
+    const [{ data: origIdents, error: origIdentsError }, { data: origEgos, error: origEgosError }] = await Promise.all([
       admin.schema('limbus').from('deck_identities').select('*').eq('deck_id', id),
       admin.schema('limbus').from('deck_egos').select('*').eq('deck_id', id),
     ])
+    if (origIdentsError || origEgosError) {
+      console.error('[deck update] original rows read failed', origIdentsError ?? origEgosError)
+      return NextResponse.json({ error: '덱을 수정하지 못했습니다. 다시 시도해주세요.' }, { status: 500 })
+    }
 
-    // decks 테이블 UPDATE (소유자는 변경하지 않음)
+    const db = admin.schema('limbus')
+    /** Puts the deck back as it was: the rows already inserted go first, so the originals never meet them. */
+    const rollback = async () => {
+      const steps: [string, PromiseLike<{ error: unknown }>][] = [
+        ['new identities', db.from('deck_identities').delete().eq('deck_id', id)],
+        ['new egos', db.from('deck_egos').delete().eq('deck_id', id)],
+        ['deck', db.from('decks').update(originalValues).eq('id', id)],
+      ]
+      if (origIdents?.length) steps.push(['original identities', db.from('deck_identities').insert(origIdents)])
+      if (origEgos?.length) steps.push(['original egos', db.from('deck_egos').insert(origEgos)])
+      // One at a time, in order: each step depends on the one before it.
+      for (const [label, step] of steps) {
+        const { error } = await step
+        if (error) console.error(`[deck update] rollback of ${label} failed`, error)
+      }
+    }
+    const failed = async (error: unknown) => {
+      console.error('[deck update] failed', error)
+      await rollback()
+      return NextResponse.json({ error: '덱을 수정하지 못했습니다. 다시 시도해주세요.' }, { status: 500 })
+    }
+
+    // decks 테이블 UPDATE (소유자는 변경하지 않음). 태그는 body에 있을 때만 바꾼다.
     const { error: updateError } = await admin
       .schema('limbus')
       .from('decks')
       .update({
         title,
         description,
-        tags: tags || [],
+        ...(tags !== undefined ? { tags } : {}),
         main_keywords: mainKeywordsResult.value,
         content_type: content_type || '없음',
         content_edited_at: new Date().toISOString(),
@@ -313,18 +344,14 @@ export async function PATCH(
       .eq('id', id)
 
     if (updateError) {
-      return NextResponse.json({ error: updateError.message }, { status: 500 })
+      console.error('[deck update] deck update failed', updateError)
+      return NextResponse.json({ error: '덱을 수정하지 못했습니다. 다시 시도해주세요.' }, { status: 500 })
     }
 
     // deck_identities: 기존 삭제 → 새로 삽입
     const { error: delIdentitiesError } = await admin.schema('limbus').from('deck_identities').delete().eq('deck_id', id)
-    if (delIdentitiesError) {
-      await admin.schema('limbus').from('decks').update(originalValues).eq('id', id)
-      if (origIdents?.length) await admin.schema('limbus').from('deck_identities').insert(origIdents)
-      if (origEgos?.length) await admin.schema('limbus').from('deck_egos').insert(origEgos)
-      return NextResponse.json({ error: delIdentitiesError.message }, { status: 500 })
-    }
-    if (identitySlots?.length > 0) {
+    if (delIdentitiesError) return failed(delIdentitiesError)
+    if (identitySlots.length > 0) {
       const rows = identitySlots.map((slot: { identity_id: string; gacksung: boolean; slot_order: number; s1_count?: number; s2_count?: number; s3_count?: number; uptie?: number }) => ({
         deck_id: id,
         identity_id: slot.identity_id,
@@ -336,35 +363,20 @@ export async function PATCH(
         uptie: normalizeUptie(slot.uptie),
       }))
       const { error: insIdentitiesError } = await insertDeckIdentities(next => admin.schema('limbus').from('deck_identities').insert(next), rows)
-      if (insIdentitiesError) {
-        await admin.schema('limbus').from('decks').update(originalValues).eq('id', id)
-        if (origIdents?.length) await admin.schema('limbus').from('deck_identities').insert(origIdents)
-        if (origEgos?.length) await admin.schema('limbus').from('deck_egos').insert(origEgos)
-        return NextResponse.json({ error: insIdentitiesError.message }, { status: 500 })
-      }
+      if (insIdentitiesError) return failed(insIdentitiesError)
     }
 
     // deck_egos: 기존 삭제 → 새로 삽입
     const { error: delEgosError } = await admin.schema('limbus').from('deck_egos').delete().eq('deck_id', id)
-    if (delEgosError) {
-      await admin.schema('limbus').from('decks').update(originalValues).eq('id', id)
-      if (origIdents?.length) await admin.schema('limbus').from('deck_identities').insert(origIdents)
-      if (origEgos?.length) await admin.schema('limbus').from('deck_egos').insert(origEgos)
-      return NextResponse.json({ error: delEgosError.message }, { status: 500 })
-    }
-    if (egoSlots?.length > 0) {
+    if (delEgosError) return failed(delEgosError)
+    if (egoSlots.length > 0) {
       const rows = egoSlots.map((slot: { ego_id: string; grade: string }) => ({
         deck_id: id,
         ego_id: slot.ego_id,
         grade: slot.grade,
       }))
       const { error: insEgosError } = await admin.schema('limbus').from('deck_egos').insert(rows)
-      if (insEgosError) {
-        await admin.schema('limbus').from('decks').update(originalValues).eq('id', id)
-        if (origIdents?.length) await admin.schema('limbus').from('deck_identities').insert(origIdents)
-        if (origEgos?.length) await admin.schema('limbus').from('deck_egos').insert(origEgos)
-        return NextResponse.json({ error: insEgosError.message }, { status: 500 })
-      }
+      if (insEgosError) return failed(insEgosError)
     }
 
     const seriesError = await saveSeriesChoice(admin, { kind: 'deck', postId: id, userId: isOwner ? userId : null, body })
@@ -377,10 +389,10 @@ export async function PATCH(
       targetId: id,
       details: {
         contentType: content_type || '없음',
-        tagCount: Array.isArray(tags) ? tags.length : 0,
+        tagCount: Array.isArray(tags) ? tags.length : (deck.tags?.length ?? 0),
         mainKeywordCount: mainKeywordsResult.value.length,
-        identityCount: Array.isArray(identitySlots) ? identitySlots.length : 0,
-        egoCount: Array.isArray(egoSlots) ? egoSlots.length : 0,
+        identityCount: identitySlots.length,
+        egoCount: egoSlots.length,
         isAdmin: !isOwner && isAdmin,
       },
     })
@@ -389,7 +401,7 @@ export async function PATCH(
     revalidateTag(CACHE_TAGS.decksList, 'max')
     return NextResponse.json({ ok: true })
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Internal Server Error'
-    return NextResponse.json({ error: message }, { status: 500 })
+    console.error('[deck update] unexpected failure', err)
+    return NextResponse.json({ error: '덱을 수정하지 못했습니다. 다시 시도해주세요.' }, { status: 500 })
   }
 }

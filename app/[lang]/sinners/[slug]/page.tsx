@@ -78,6 +78,10 @@ async function getCachedSinnerData(slug: string) {
       .order('name_kr'),
   ])
 
+  // A failed read throws so the empty result is not cached for good.
+  if (identitiesRes.error) throw identitiesRes.error
+  if (egosRes.error) throw egosRes.error
+
   const identities = ((identitiesRes.data ?? []) as unknown as Identity[]).map(identity => {
     const associations = identity.association_list?.map(item => item.trim()).filter(Boolean) ?? []
     if (associations.length === 0) return identity

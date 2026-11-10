@@ -4,18 +4,12 @@ import useSWR from 'swr'
 import { ChevronUp } from 'lucide-react'
 import type { RisingFeed } from '@/features/community/server/rising-feed'
 
-async function read(url: string): Promise<RisingFeed> {
-  const response = await fetch(url)
-  if (!response.ok) throw new Error(`rising ${response.status}`)
-  return response.json()
-}
-
 /**
  * The rising lists of one board. `feed` is null while loading or when the read fails (the database function may not be there
  * yet); `loading` is true only until the first answer or failure, so the shelf can hold its place meanwhile.
  */
 export function useRising(kind: 'deck' | 'planner'): { feed: RisingFeed | null; loading: boolean } {
-  const { data, error } = useSWR(`/api/discovery/rising?kind=${kind}`, read, { revalidateOnFocus: false })
+  const { data, error } = useSWR<RisingFeed>(`/api/discovery/rising?kind=${kind}`, { revalidateOnFocus: false })
   return { feed: data ?? null, loading: data === undefined && !error }
 }
 

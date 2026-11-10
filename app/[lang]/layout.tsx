@@ -207,9 +207,9 @@ export default async function LangLayout({
           toastOptions={{
             closeButtonAriaLabel: 'Dismiss notification',
             style: {
-              background: '#1a1510',
+              background: 'var(--bg-card)',
               border: '0.0625rem solid #3a3020',
-              color: '#e8dcc8',
+              color: 'var(--text-primary)',
               fontFamily: 'var(--font-body)',
               paddingRight: '2.5rem',
             },

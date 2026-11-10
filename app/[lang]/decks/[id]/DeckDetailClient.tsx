@@ -21,10 +21,9 @@ import ConfirmModal from '@/components/ui/ConfirmModal'
 import { useGuestPosts } from '@/features/account/hooks/useGuestPosts'
 import { guestHeaders, getGuestCopy, guestAuthorName } from '@/features/account'
 import GuestPinRecover from '@/features/account/components/GuestPinRecover'
-import { DEFAULT_AVATAR_URL, STORAGE_BASE, isDeployedSlot } from '@/lib/constants/game'
-import { SIN_COLORS, SIN_KR_TO_EN, normalizeSin } from '@/lib/constants/sin'
-import { getIdentityImageUrl, getIdentityPortraitUrl, getSkillIconUrl, computeSkillImageIndices } from '@/lib/utils/images'
-import type { Identity, Skill } from '@/lib/types'
+import { DEFAULT_AVATAR_URL, SINNER_SLUGS, isDeployedSlot } from '@/lib/constants/game'
+import { sinColorOf } from '@/lib/constants/sin'
+import { getIdentityImageUrl, getSkillIconUrl, computeSkillImageIndices } from '@/lib/utils/images'
 import {
   computeAllGiftAffiliationCounts,
   computeAllGiftAffiliationMembers,
@@ -35,7 +34,7 @@ import {
   normalizeDeckMainKeyword,
   type DeckKeywordSlot,
 } from '@/lib/decks/keyword-rules'
-import { NoteRenderer, fetchNoteGifts, type NoteSkillEntry, type NotePassiveEntry, type NoteEgoEntry, type NoteIdentityEntry } from '@/features/decks/components/NoteChips'
+import { NoteRenderer, fetchNoteGifts } from '@/features/decks/components/NoteChips'
 import { NoteGiftClickContext } from '@/features/notes/components/NoteBlockViewer'
 import PlannerGiftModal from '@/features/planner/components/PlannerGiftModal'
 import type { GiftData } from '@/lib/planner/types'
@@ -44,14 +43,13 @@ import RelativeTime from '@/components/ui/RelativeTime'
 import DeckInsights, { type DeckInsightIdentity } from '@/features/decks/components/DeckInsights'
 import DeckResourceSummary from '@/features/decks/components/DeckResourceSummary'
 import SkillExchangePanel from '@/features/planner/components/SkillExchangePanel'
-import { computeDeckResources, computeSinProduction, fieldedEntries, rowsAtUptie, contentTypeMessageKey, localizeDeckKeyword } from '@/features/decks'
+import { computeDeckResources, computeSinProduction, fieldedEntries, rowsAtUptie, topUptieSkills, BOARD_SLOT_COUNT, adaptBoardIdentity, buildBoardSlots, buildNoteLookups, topKeywords, contentTypeMessageKey, localizeDeckKeyword, type SinnerEgo } from '@/features/decks'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
 import {
   localizeEgoName,
   localizeIdentityName,
   localizePassiveDescription,
   localizePassiveName,
-  localizeSkillDescription,
   localizeSkillName,
   type EgoEntry,
   type IdentityDetail,
@@ -61,11 +59,11 @@ import FormationBoard, { type FormationBoardSlot } from '@/features/decks/compon
 import { FormationEgoGrid, FormationTabs, type FormationEgo } from '@/features/decks/components/FormationEgoGrid'
 import DeckRecommendations, { type DeckRecommendationsData } from '@/features/decks/components/DeckRecommendations'
 import DeckComments from '@/features/decks/components/DeckComments'
+import { useDeckReactions } from '@/features/decks/hooks/useDeckReactions'
 import { getGiftActivationConditionStatus } from '@/lib/planner/gift-condition-status'
 import type { SupportedLang } from '@/lib/i18n/types'
 import { workbenchReveal } from '@/lib/animations'
 import styles from './DeckDetail.module.css'
-import { skillSlot } from '@/lib/identity/skill-model'
 
 const IdentityDetailModal = dynamic(() => import('@/features/catalog/components/IdentityDetailModal'), { ssr: false })
 const EgoDetailModal = dynamic(() => import('@/features/catalog/components/EgoDetailModal'), { ssr: false })
@@ -98,18 +96,6 @@ type EgoAttackSkill = {
   skill_order?: number | null
 }
 
-type SinnerEgo = {
-  sinner_id: string
-  id?: string | null
-  name?: string | null
-  name_kr: string | null
-  name_en?: string | null
-  name_jp?: string | null
-  grade: string
-  sin_affinity: string | null
-  image_url: string | null
-}
-
 type DeckDetail = {
   id: string
   title: string
@@ -132,231 +118,13 @@ type DeckDetail = {
 }
 
 // ── 상수 ──────────────────────────────────────────────────────────────────
-import { THEME_KEYWORDS, normalizeThemeKeyword } from '@/lib/constants/keywords'
 import AdSlot from '@/components/ads/AdSlot'
 import { ADS_ON } from '@/lib/seo/ads'
-const THEME_KW_SET = new Set<string>(THEME_KEYWORDS)
-
-const BOARD_SLOT_COUNT = 12
 // Saved uptie; rows without one fall back to gacksung (= uptie III–IV), non-awakened reading as uptie II.
 const slotUptie = (slot: IdentitySlot | null) => slot?.uptie ?? (slot?.gacksung === false ? 2 : 4)
 const EGO_GRADE_ORDER = ['ZAYIN', 'TETH', 'HE', 'WAW', 'ALEPH']
 
 // ── 헬퍼 ──────────────────────────────────────────────────────────────────
-function sinColor(sin: string, isKr = false): string {
-  const en = isKr ? (SIN_KR_TO_EN[sin] ?? sin) : sin
-  return SIN_COLORS[en as keyof typeof SIN_COLORS] ?? '#888888'
-}
-
-function buildBoardSlots(slots: IdentitySlot[]): (IdentitySlot | null)[] {
-  const board: (IdentitySlot | null)[] = Array.from({ length: BOARD_SLOT_COUNT }, () => null)
-  const bySinner = new Map<string, IdentitySlot>()
-
-  for (const slot of slots.filter(slot => slot.identities)) {
-    const sinnerId = slot.identities!.sinner_id
-    const existing = bySinner.get(sinnerId)
-    const shouldReplace =
-      !existing ||
-      (slot.slot_order < 99 && existing.slot_order === 99) ||
-      (slot.slot_order < 99 && existing.slot_order < 99 && slot.slot_order < existing.slot_order) ||
-      (slot.slot_order === 99 && existing.slot_order === 99 && slot.slot_order < existing.slot_order)
-
-    if (shouldReplace) bySinner.set(sinnerId, slot)
-  }
-
-  SINNER_ORDER.forEach((sinnerId, index) => {
-    board[index] = bySinner.get(sinnerId) ?? null
-  })
-
-  return board
-}
-
-function topKeywords(slots: IdentitySlot[]): string[] {
-  const formed = slots.filter(s => s.slot_order < 99 && s.identities)
-  const total = formed.length
-  if (total === 0) return []
-
-  const freq: Record<string, number> = {}
-  for (const slot of formed) {
-    for (const kw of slot.identities?.keywords ?? []) {
-      const nkw = normalizeThemeKeyword(kw)
-      if (THEME_KW_SET.has(nkw)) freq[nkw] = (freq[nkw] ?? 0) + 1
-    }
-  }
-
-  const minCount = total <= 1 ? 1 : Math.max(2, Math.ceil(total * 0.4))
-  return Object.entries(freq)
-    .filter(([, n]) => n >= minCount)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 3)
-    .map(([kw]) => kw)
-}
-
-function adaptBoardIdentity(identity: IdentityDetail, locale: string): Identity {
-  const name = localizeIdentityName(identity, locale)
-  return {
-    id: identity.id,
-    sinner_id: identity.sinner_id,
-    name,
-    name_kr: identity.name_kr,
-    name_en: identity.name_en,
-    name_jp: identity.name_jp,
-    tier: identity.tier,
-    hp: identity.hp ?? 0,
-    speed_min: identity.speed_min ?? 0,
-    speed_max: identity.speed_max ?? 0,
-    def_level: identity.def_level ?? 0,
-    keywords: identity.keywords ?? [],
-    rarity: identity.rarity,
-    slash_res: identity.slash_res ?? undefined,
-    pierce_res: identity.pierce_res ?? undefined,
-    blunt_res: identity.blunt_res ?? undefined,
-    game_id: identity.game_id,
-    folder_name: identity.folder_name,
-  }
-}
-
-const SINNER_ORDER = [
-  'yi-sang', 'faust', 'don-quixote', 'ryoshu', 'meursault', 'hong-lu',
-  'heathcliff', 'ishmael', 'rodion', 'sinclair', 'outis', 'gregor',
-] as const
-
-const SINNER_NAMES: Record<string, string> = {
-  'yi-sang': '이상', 'faust': '파우스트', 'don-quixote': '돈키호테',
-  'ryoshu': '료슈', 'meursault': '뫼르소', 'hong-lu': '홍루',
-  'heathcliff': '히스클리프', 'ishmael': '이스마엘', 'rodion': '로쟈',
-  'sinclair': '싱클레어', 'outis': '오티스', 'gregor': '그레고르',
-}
-
-function uniqueNames(...names: Array<string | null | undefined>): string[] {
-  return [...new Set(names.map(name => name?.trim()).filter((name): name is string => Boolean(name)))]
-}
-
-function getNoteSkillBaseOrder(skill: Pick<IdentityDetail['skills'][number], 'skill_order' | 'skill_type'>): number {
-  return skillSlot(skill)
-}
-
-function buildNoteLookups(
-  slots: IdentitySlot[],
-  allEgos: SinnerEgo[],
-  locale: string,
-  localizeSinnerName: (sinnerId: string) => string,
-) {
-  const skillLookup: Record<string, NoteSkillEntry> = {}
-  const passiveLookup: Record<string, NotePassiveEntry> = {}
-  const egoLookup: Record<string, NoteEgoEntry> = {}
-  const identityLookup: Record<string, NoteIdentityEntry> = {}
-
-  for (const slot of slots) {
-    const id_ = slot.identities
-    if (!id_) continue
-    const koreanSinnerName = SINNER_NAMES[id_.sinner_id] ?? id_.sinner_id
-    const localizedSinnerName = localizeSinnerName(id_.sinner_id)
-    const sinnerTokenNames = uniqueNames(koreanSinnerName, localizedSinnerName)
-    const identityName = localizeIdentityName(id_, locale)
-    const identityImageUrl = id_.game_id && id_.folder_name
-      ? getIdentityPortraitUrl(id_.sinner_id, id_.folder_name, id_.game_id, false)
-      : undefined
-
-    const identityEntry: NoteIdentityEntry = {
-      name: identityName,
-      rarity: id_.rarity,
-      imageUrl: identityImageUrl,
-      sinnerName: localizedSinnerName,
-      keywords: id_.keywords ?? undefined,
-    }
-    for (const sinnerName of sinnerTokenNames) {
-      for (const name of uniqueNames(id_.name_kr, id_.name, id_.name_en, id_.name_jp, identityName)) {
-        identityLookup[`${sinnerName}:${name}`] = identityEntry
-      }
-    }
-
-    const rawSk = id_.skills ?? []
-    const skBest = new Map<string, typeof rawSk[0]>()
-    for (const s of rawSk) {
-      const key = `${s.skill_order}:${(s as Record<string, unknown>).variant_order ?? 0}`
-      const ex = skBest.get(key)
-      if (!ex || (s.uptie_level ?? 3) > (ex.uptie_level ?? 3)) skBest.set(key, s)
-    }
-    const sortedSkills = [...skBest.values()].sort((a, b) => a.skill_order - b.skill_order || ((a as Record<string, unknown>).variant_order as number ?? 0) - ((b as Record<string, unknown>).variant_order as number ?? 0))
-    const frameSkills: Skill[] = sortedSkills.map(skill => ({
-      ...skill,
-      identity_id: id_.id,
-      sin_affinity: (normalizeSin(skill.sin_affinity) ?? 'wrath') as Skill['sin_affinity'],
-      description: localizeSkillDescription(skill, locale) ?? skill.description ?? '',
-      atk_weight: skill.atk_weight ?? undefined,
-      offense_level: skill.offense_level ?? undefined,
-      uptie_level: skill.uptie_level ?? undefined,
-      variant_order: skill.variant_order ?? undefined,
-    }))
-    const frameSkillById = new Map(frameSkills.map(skill => [skill.id, skill]))
-    const imgIdx = computeSkillImageIndices(sortedSkills)
-    const orderCount: Record<number, number> = {}
-    for (const sk of sortedSkills) {
-      const baseOrder = getNoteSkillBaseOrder(sk)
-      const subIdx = orderCount[baseOrder] || 0
-      orderCount[baseOrder] = subIdx + 1
-      const iconUrl = id_.game_id
-        ? `${STORAGE_BASE}/icons/skills/${id_.sinner_id}/${id_.game_id}${String(imgIdx[sk.id] ?? sk.skill_order).padStart(2, '0')}.webp`
-        : undefined
-      const entry = {
-        name: localizeSkillName(sk, locale), skill_type: sk.atk_type ?? sk.skill_type, sin_affinity: sk.sin_affinity,
-        skill_order: sk.skill_order, description: localizeSkillDescription(sk, locale),
-        iconUrl, identityName, sinnerName: localizedSinnerName,
-        skill: frameSkillById.get(sk.id),
-        skills: frameSkills,
-        identity: { sinner_id: id_.sinner_id, game_id: id_.game_id, keywords: id_.keywords },
-      }
-      for (const sinnerName of sinnerTokenNames) {
-        const key = subIdx === 0
-          ? `${sinnerName}:${baseOrder}`
-          : `${sinnerName}:${baseOrder}:${subIdx + 1}`
-        skillLookup[key] = entry
-        if (subIdx === 1) {
-          skillLookup[`${sinnerName}:${baseOrder}:1`] = entry
-        }
-        // 이전 형식 호환: S3 변형처럼 원래 skill_order로 저장된 토큰도 인식
-        if (sk.skill_order !== baseOrder) {
-          skillLookup[`${sinnerName}:${sk.skill_order}`] = entry
-        }
-      }
-    }
-    const rawPa = id_.passives ?? []
-    const paBest = new Map<string, typeof rawPa[0]>()
-    for (const p of rawPa) {
-      const key = `${p.passive_type}:${p.passive_order}`
-      const ex = paBest.get(key)
-      if (!ex || (p.uptie_level ?? 3) > (ex.uptie_level ?? 3)) paBest.set(key, p)
-    }
-    for (const pa of paBest.values()) {
-      const entry = {
-        name: localizePassiveName(pa, locale), sin_affinity: pa.sin_affinity,
-        sin_count: pa.sin_count, sin_requirements: pa.sin_requirements, active_cond: pa.active_cond,
-        description: localizePassiveDescription(pa, locale), sinnerName: localizedSinnerName,
-        imageUrl: identityImageUrl,
-      }
-      for (const passiveName of uniqueNames(pa.name, localizePassiveName(pa, locale))) {
-        passiveLookup[passiveName] = entry
-      }
-    }
-  }
-  for (const ego of allEgos) {
-    const koreanSinnerName = SINNER_NAMES[ego.sinner_id] ?? ego.sinner_id
-    const localizedSinnerName = localizeSinnerName(ego.sinner_id)
-    const name = localizeEgoName(ego, locale)
-    const entry = {
-      name, grade: ego.grade, sin_affinity: ego.sin_affinity,
-      image_url: ego.image_url, sinnerName: localizedSinnerName,
-    }
-    for (const sinnerName of uniqueNames(koreanSinnerName, localizedSinnerName)) {
-      for (const egoName of uniqueNames(ego.name_kr, ego.name, ego.name_en, ego.name_jp, name)) {
-        egoLookup[`${sinnerName}:${egoName}`] = entry
-      }
-    }
-  }
-  return { skillLookup, passiveLookup, egoLookup, identityLookup }
-}
-
 // ── 메인 ──────────────────────────────────────────────────────────────────
 type Comment = {
   id: string
@@ -399,15 +167,10 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
   // A guest deck this browser has no key for: its author takes it back with the deck's password (REQ-COMMUNITY-031).
   const canRecover = authStatus === 'unauthenticated' && !!deck?.guest_tag && guest.keyRead && !guestPosts.isLoading && !guestOwner
   const [confirmDelete, setConfirmDelete] = useState(false)
-  const [voted, setVoted] = useState(false)
-  const [voteCount, setVoteCount] = useState(0)
-  const [voting, setVoting] = useState(false)
+  const { voted, voteCount, setVoteCount, voting, handleVote, bookmarked, bookmarking, handleBookmark } = useDeckReactions({ id, authStatus, initialVoteCount: initialDeck?.vote_count ?? 0 })
   const [copied, setCopied] = useState(false)
   const [identityPreview, setIdentityPreview] = useState<IdentityPreviewState | null>(null)
   const [formationTab, setFormationTab] = useState<'identity' | 'ego'>('identity')
-
-  const [bookmarked, setBookmarked] = useState(false)
-  const [bookmarking, setBookmarking] = useState(false)
 
   const [shared, setShared] = useState(false)
   const [shareGenerating, setShareGenerating] = useState(false)
@@ -493,68 +256,17 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
     }
   }, [id, initialDeck, t])
 
-  useEffect(() => {
-    if (authStatus !== 'authenticated') return
-    fetch(`/api/decks/${id}/vote`)
-      .then(r => r.ok ? r.json() : null)
-      .then(data => { if (data) setVoted(data.voted) })
-      .catch(() => {})
-  }, [id, authStatus])
-
-  useEffect(() => {
-    if (authStatus !== 'authenticated') return
-    fetch(`/api/decks/${id}/bookmark`)
-      .then(r => r.ok ? r.json() : null)
-      .then(data => { if (data) setBookmarked(data.bookmarked) })
-      .catch(() => {})
-  }, [id, authStatus])
-
-  const handleVote = useCallback(async () => {
-    if (authStatus !== 'authenticated' || voting) return
-    setVoting(true)
-    try {
-      const res = await fetch(`/api/decks/${id}/vote`, { method: 'POST' })
-      const data = await res.json()
-      if (res.ok) {
-        setVoted(data.voted)
-        setVoteCount(c => data.voted ? c + 1 : c - 1)
-        router.refresh()
-      } else {
-        showError(t('voteFailed'))
-      }
-    } catch {
-      showError(t('voteFailed'))
-    } finally {
-      setVoting(false)
-    }
-  }, [authStatus, id, router, voting, t])
-
   const handleCopyCode = useCallback(async () => {
     if (!deck?.deck_code) return
-    await navigator.clipboard.writeText(deck.deck_code)
+    try {
+      await navigator.clipboard.writeText(deck.deck_code)
+    } catch {
+      showError(rootT('planner.detail.copyDeckCodeFailed'))
+      return
+    }
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
-  }, [deck?.deck_code])
-
-  const handleBookmark = useCallback(async () => {
-    if (authStatus !== 'authenticated' || bookmarking) return
-    setBookmarking(true)
-    try {
-      const res = await fetch(`/api/decks/${id}/bookmark`, { method: 'POST' })
-      const data = await res.json()
-      if (res.ok) {
-        setBookmarked(data.bookmarked)
-        showSuccess(data.bookmarked ? t('bookmarkAdded') : t('bookmarkRemoved'))
-        router.refresh()
-      } else {
-        showError(t('bookmarkFailed'))
-      }
-    } catch {
-      showError(t('bookmarkFailed'))
-    } finally {
-      setBookmarking(false)
-    }
-  }, [authStatus, id, bookmarking, router, t])
+  }, [deck?.deck_code, rootT])
 
   const handleShare = useCallback(async () => {
     if (shareGenerating || !deck) return
@@ -572,10 +284,12 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
         setShared(true)
         setTimeout(() => setShared(false), 2000)
       }
+    } catch {
+      showError(rootT('planner.detail.shareFailed'))
     } finally {
       setShareGenerating(false)
     }
-  }, [shareGenerating, deck, id, locale])
+  }, [shareGenerating, deck, id, locale, rootT])
 
   const handleFork = useCallback(() => {
     router.push(`/decks/new?fork=${id}`, { locale })
@@ -718,7 +432,7 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
 
   // Planner deck panels: keyword distribution, passives, attack types and sin resources (each slot at its own uptie).
   const insightSlots = useMemo(() => {
-    const order = SINNER_ORDER as readonly string[]
+    const order = SINNER_SLUGS
     const bySinner = [...filledSlots].sort((a, b) => order.indexOf(a.identities!.sinner_id) - order.indexOf(b.identities!.sinner_id))
     const upties = new Map(bySinner.map(slot => [slot.identities!.id, slotUptie(slot)]))
     return bySinner.map(slot => {
@@ -1016,7 +730,7 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
                 />
                 {formationTab === 'ego' ? (
                   <FormationEgoGrid
-                    sinners={SINNER_ORDER.map((sinnerId, index) => ({ id: sinnerId, name: rootT(`sinner.${sinnerId}`), filled: Boolean(boardSlots[index]?.identities) }))}
+                    sinners={SINNER_SLUGS.map((sinnerId, index) => ({ id: sinnerId, name: rootT(`sinner.${sinnerId}`), filled: Boolean(boardSlots[index]?.identities) }))}
                     egos={formationEgos}
                     onEgoClick={setEgoModalId}
                     noIdentityLabel={rootT('planner.deckTab.ego.noIdentity')}
@@ -1029,7 +743,7 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
                     return {
                       key: `${identity?.id ?? 'empty'}-${index}`,
                       identity: identity ? adaptBoardIdentity(identity, locale) : null,
-                      sinnerId: SINNER_ORDER[index],
+                      sinnerId: SINNER_SLUGS[index],
                       slotOrder: slot?.slot_order ?? null,
                       uptie: slotUptie(slot),
                       ariaLabel: identity ? t('slotPreview', { index: index + 1, identity: identityName }) : t('emptySlot', { index: index + 1 }),
@@ -1067,21 +781,14 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
                       const identity = slot.identities!
                       const adapted = adaptBoardIdentity(identity, locale)
                       const dist: [number, number, number] = [slot.s1_count ?? 3, slot.s2_count ?? 2, slot.s3_count ?? 1]
-                      const best = new Map<string, typeof identity.skills[number]>()
-                      for (const s of identity.skills ?? []) {
-                        if (['evade', 'defense', 'counter'].includes(s.skill_type)) continue
-                        const key = `${s.skill_order}:${(s as { variant_order?: number | null }).variant_order ?? 0}`
-                        const existing = best.get(key)
-                        if (!existing || (s.uptie_level ?? 3) > (existing.uptie_level ?? 3)) best.set(key, s)
-                      }
-                      const sortedSkills = [...best.values()].sort((a, b) => a.skill_order - b.skill_order)
+                      const sortedSkills = topUptieSkills((identity.skills ?? []).filter(s => !['evade', 'defense', 'counter'].includes(s.skill_type))).sort((a, b) => a.skill_order - b.skill_order)
                       const imageIndices = computeSkillImageIndices(sortedSkills)
                       const skillAt = (idx: number) => {
                         const skill = sortedSkills.find(s => s.skill_order === idx + 1)
                         return skill ? {
                           name: localizeSkillName(skill, locale),
                           iconSrc: getSkillIconUrl(adapted, imageIndices[skill.id] ?? idx + 1, skill),
-                          sinColor: sinColor(skill.sin_affinity),
+                          sinColor: sinColorOf(skill.sin_affinity, '#888888'),
                         } : null
                       }
                       return (

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { writeAuditLog } from '@/lib/audit'
+import { isUuid } from '@/lib/utils/uuid'
 
 /**
  * An admin's answer to a reported post: ?action=remove takes the post down, ?action=block also bars its author (account or
@@ -12,7 +13,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
   if (auth.error) return auth.response
   const { id } = await params
   const action = request.nextUrl.searchParams.get('action')
-  if (!/^[0-9a-f-]{36}$/i.test(id) || !['remove', 'block', 'dismiss'].includes(action ?? '')) return NextResponse.json({ error: '잘못된 요청입니다.' }, { status: 400 })
+  if (!isUuid(id) || !['remove', 'block', 'dismiss'].includes(action ?? '')) return NextResponse.json({ error: '잘못된 요청입니다.' }, { status: 400 })
   const db = createAdminClient().schema('limbus')
   try {
     if (action === 'dismiss') {
