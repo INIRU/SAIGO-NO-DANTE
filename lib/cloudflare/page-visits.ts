@@ -28,9 +28,14 @@ export async function getPageVisits<K extends string>(paths: Record<K, string>, 
     })
     const body = await response.json() as { errors?: unknown[] | null; data?: { viewer?: { accounts?: Record<string, { count?: number }[]>[] } } }
     const row = body.data?.viewer?.accounts?.[0]
-    if (!response.ok || body.errors?.length || !row) return null
+    if (!response.ok || body.errors?.length || !row) {
+      // Never the token: only the status and Cloudflare's own message.
+      console.error('[page-visits]', response.status, JSON.stringify(body.errors ?? null).slice(0, 300))
+      return null
+    }
     return Object.fromEntries(keys.map(key => [key, row[key]?.[0]?.count ?? 0])) as Record<K, number>
-  } catch {
+  } catch (error) {
+    console.error('[page-visits]', error instanceof Error ? `${error.name}: ${error.message}` : 'request failed')
     return null
   }
 }
