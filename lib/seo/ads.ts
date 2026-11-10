@@ -1,3 +1,10 @@
+/**
+ * The site's ads on or off. Off since 2026-11-10 (owner): a week earned under a dollar, so the site grows first and the ads come
+ * back once it leads. Off, no ad, reserved place or AdSense script is drawn; the account meta tag and public/ads.txt stay, so
+ * turning this back on is the whole change.
+ */
+export const ADS_ON = false
+
 /** The AdSense publisher of public/ads.txt; the account meta tag lets AdSense confirm the site without the ads.txt crawl. */
 export const ADSENSE_ACCOUNT = 'ca-pub-4615018820773123'
 /** One display ad unit (AdSense > Ads > By ad unit) per ad place, so the report shows what each place earns. */
