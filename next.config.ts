@@ -36,6 +36,8 @@ const contentSecurityPolicyDirectives = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  // A number per build: a page left open compares its own with /api/version and offers a reload (components/pwa/UpdateNotice).
+  env: { NEXT_PUBLIC_BUILD_ID: process.env.GITHUB_SHA || String(Date.now()) },
   // The production server (4GB) builds next to the live app; TypeScript 7's separate tsc (~1.75GB) ran it out of memory
   // and froze the site (2026-10-22). Its deploy script sets SKIP_BUILD_TYPECHECK=1: CI's TypeCheck job checks every PR.
   typescript: { ignoreBuildErrors: process.env.SKIP_BUILD_TYPECHECK === '1' },
