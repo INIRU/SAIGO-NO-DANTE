@@ -8,7 +8,7 @@ import FloorGuidance from './FloorGuidance'
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useReducedMotion } from 'motion/react'
-import { ChevronUp, Plus } from 'lucide-react'
+import { ChevronUp, Plus, X } from 'lucide-react'
 import { useLocale, useTranslations } from 'next-intl'
 import GiftCard from '@/features/mirror-dungeon/components/GiftCard'
 import FloorGiftPickerModal from './FloorGiftPickerModal'
@@ -23,7 +23,7 @@ import {
   ThemePackPickerModal,
 } from '@/components/ui/ThemePackModal'
 import type { PlannerState, PlannerAction, ThemeData, GiftData, FloorDifficulty, FloorEntry, RecipeData } from '@/lib/planner/types'
-import { DIFFICULTY_FLOOR_KEY } from '@/lib/planner/types'
+import { DIFFICULTY_FLOOR_KEY, floorThemeOrder } from '@/lib/planner/types'
 import {
   getAvailableThemes,
   getFinalGiftVariantIds,
@@ -141,6 +141,8 @@ export default function FloorTab({ state, dispatch, themes, gifts, recipes, gift
   const shouldReduceMotion = useReducedMotion()
   const [activeFloor, setActiveFloor] = useState<number | null>(null)
   const [themeModalOpen, setThemeModalOpen] = useState(false)
+  // The same picker, kept open to tick fallback packs on and off.
+  const [altPicking, setAltPicking] = useState(false)
   const [giftPickerOpen, setGiftPickerOpen] = useState(false)
   const tCopy = useTranslations('planner.floorCopy')
   const [copyConfirm, setCopyConfirm] = useState<{ floor: number; giftIds: string[] } | null>(null)
@@ -484,6 +486,38 @@ export default function FloorTab({ state, dispatch, themes, gifts, recipes, gift
                 </button>
               </div>
             </div>
+            {(entry.theme_alt_ids ?? []).some(id => themeMap.has(id)) && (
+              <div className="flex flex-wrap items-start gap-2.5" data-floor-alt-themes>
+                <p className="basis-full text-sm" style={{ color: '#9c8b73' }}>{t('altThemes')}</p>
+                {(entry.theme_alt_ids ?? []).flatMap((id, index) => {
+                  const theme = themeMap.get(id)
+                  if (!theme) return []
+                  const name = themeName(theme)
+                  return [(
+                    <div key={id} className="relative w-[3.25rem] sm:w-[3.75rem]">
+                      <ThemePackCard
+                        theme={theme}
+                        lang={locale}
+                        sizes="60px"
+                        ariaLabel={t('altPromoteAria', { theme: name })}
+                        title={t('altPromoteAria', { theme: name })}
+                        onClick={() => dispatch({ type: 'REORDER_FLOOR_THEME', floor: entry.floor, themeIds: [id, ...floorThemeOrder(entry).filter(other => other !== id)] })}
+                      />
+                      <span aria-hidden="true" className="pointer-events-none absolute left-0.5 top-0.5 z-30 rounded bg-[rgba(13,11,8,0.82)] px-1 text-xs font-semibold leading-4 text-[var(--gold-light)]">{index + 2}</span>
+                      <button
+                        type="button"
+                        onClick={() => dispatch({ type: 'REMOVE_FLOOR_THEME_ALT', floor: entry.floor, themeId: id })}
+                        aria-label={t('altRemoveAria', { theme: name })}
+                        className={`absolute -right-1.5 -top-1.5 z-30 grid h-6 w-6 place-items-center rounded-full border transition-colors hover:text-[var(--text-primary)] ${focusRing}`}
+                        style={{ background: '#17120c', borderColor: '#4a3b28', color: '#9c8b73' }}
+                      >
+                        <X size={12} aria-hidden="true" />
+                      </button>
+                    </div>
+                  )]
+                })}
+              </div>
+            )}
             <div className="flex flex-wrap gap-2">
               <button
                 type="button"
@@ -502,6 +536,16 @@ export default function FloorTab({ state, dispatch, themes, gifts, recipes, gift
                   style={{ borderColor: '#2e2417', color: '#9c8b73' }}
                 >
                   {t('clearTheme')}
+                </button>
+              )}
+              {selectedTheme && pickerThemes.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => setAltPicking(true)}
+                  className={`min-h-[2.75rem] rounded-md border px-3 text-[0.9375rem] transition-colors hover:bg-white/5 ${focusRing}`}
+                  style={{ borderColor: '#2e2417', color: '#9c8b73' }}
+                >
+                  {t('addAltTheme')}
                 </button>
               )}
               {selectedTheme && previousFloorGifts(state.floorPlan, entry.floor).length > 0 && (
@@ -610,13 +654,25 @@ export default function FloorTab({ state, dispatch, themes, gifts, recipes, gift
   function renderSummary(entry: FloorEntry, theme: ThemeData | null, floorGifts: GiftData[]) {
     const difficulty = normalizeFloorDifficulty(entry.difficulty, entry.floor)
     const memoPreview = getMemoPreview(entry.memo)
+    const alts = (entry.theme_alt_ids ?? []).flatMap(id => themeMap.get(id) ?? [])
     return (
       // The floor number is the keyboard control; clicking anywhere on the row is a pointer shortcut.
       <div
         className="-m-1 flex cursor-pointer gap-3 rounded-sm p-1 transition-colors hover:bg-[rgba(200,144,10,0.05)] sm:gap-4"
         onClick={() => openFloor(entry.floor)}
       >
-        <div className="w-[3.5rem] shrink-0 sm:w-[4rem]">
+        <div className="relative w-[3.5rem] shrink-0 sm:w-[4rem]">
+          {/* Fallback packs: small posters stacked on the lower right corner of the first choice. */}
+          {alts.length > 0 && (
+            <div className="pointer-events-none absolute -bottom-1 -right-2 z-30 flex items-end" data-floor-alt-stack title={t('altThemeCount', { count: alts.length })}>
+              {alts.slice(0, 2).map((alt, index) => (
+                <span key={alt.id} className="block w-[1.5rem] rounded-sm shadow-[0_0_0_1px_#0d0b08] sm:w-[1.75rem]" style={{ marginLeft: index ? '-0.75rem' : 0 }} inert>
+                  <ThemePackCard theme={alt} lang={locale} sizes="28px" onClick={() => undefined} />
+                </span>
+              ))}
+              {alts.length > 2 && <span className="ml-0.5 rounded bg-[rgba(13,11,8,0.82)] px-1 text-xs leading-4 text-[var(--gold-light)]">+{alts.length - 2}</span>}
+            </div>
+          )}
           {theme ? (
             <ThemePackCard
               theme={theme}
@@ -753,9 +809,9 @@ export default function FloorTab({ state, dispatch, themes, gifts, recipes, gift
         localizedGift={localizedGift}
       />
 
-      {themeModalOpen && activeEntry && (
+      {(themeModalOpen || altPicking) && activeEntry && (
         <ThemePackPickerModal
-          title={t('themeModalTitle', { floor: activeEntry.floor })}
+          title={t(altPicking ? 'altThemeModalTitle' : 'themeModalTitle', { floor: activeEntry.floor })}
           closeLabel={t('close')}
           emptyLabel={t('emptyThemes')}
           searchLabel={t('themeSearch')}
@@ -766,10 +822,15 @@ export default function FloorTab({ state, dispatch, themes, gifts, recipes, gift
           themes={pickerThemes}
           suggested={floorSuggestions?.themes}
           suggestionsLoading={floorSuggestionsLoading}
-          selectedThemeId={activeEntry.theme_id}
+          order={floorThemeOrder(activeEntry)}
           lang={locale}
-          onClose={() => setThemeModalOpen(false)}
-          onSelectTheme={theme => selectTheme(String(theme.id))}
+          onClose={() => { setThemeModalOpen(false); setAltPicking(false) }}
+          onSelectTheme={theme => {
+            const id = String(theme.id)
+            if (!altPicking) return selectTheme(id)
+            // Ticking fallbacks: the first choice stays; any other pack goes on or off the list.
+            if (id !== activeEntry.theme_id) dispatch({ type: (activeEntry.theme_alt_ids ?? []).includes(id) ? 'REMOVE_FLOOR_THEME_ALT' : 'ADD_FLOOR_THEME_ALT', floor: activeEntry.floor, themeId: id })
+          }}
           meta={
             <ThemePackModalPill tone={activeDifficulty === 'extreme' ? 'red' : activeDifficulty === 'overlap' ? 'purple' : activeDifficulty === 'hard' ? 'gold' : 'neutral'}>
               {t(`difficulty.${activeDifficulty}`)}

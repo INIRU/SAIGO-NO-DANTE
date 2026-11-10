@@ -381,6 +381,7 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
                 floor: i + 1,
                 difficulty: decoded.floorDifficulties[i],
                 theme_id: tid,
+                theme_alt_ids: decoded.floorThemeAlts[i],
                 gift_ids: decoded.floorGifts[i],
                 memo: decoded.floorMemos[i],
                 constraints: decoded.floorConstraints[i],
