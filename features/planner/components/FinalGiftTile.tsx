@@ -93,7 +93,7 @@ export default memo(function FinalGiftTile({ gift, entry, conditionStatus, onEnh
         )}
       </div>
       <span aria-hidden="true" className="mt-1 block truncate text-center text-[0.6875rem] leading-tight" style={{ color: entry.level ? 'var(--gold-light)' : '#b9aa98' }}>
-        {gift.name}
+        {gift.name}{entry.level ? (entry.level >= 2 ? ' ++' : ' +') : ''}
       </span>
     </li>
   )

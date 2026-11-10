@@ -314,7 +314,7 @@ const GiftCard = memo(function GiftCard({
           transition: 'color 0.15s',
           fontFamily: 'var(--font-heading)',
         }}>
-          {displayName}
+          {displayName}{enhance ? (enhance >= 2 ? ' ++' : ' +') : ''}
         </p>
       )}
       {!isInsert && conditionStatus && conditionDetail && <GiftConditionLine status={conditionStatus} />}
