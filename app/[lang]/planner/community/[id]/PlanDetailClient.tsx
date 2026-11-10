@@ -58,6 +58,7 @@ import { workbenchReveal } from '@/lib/animations'
 import styles from './PlanDetailHeader.module.css'
 import { gameTextToPlain } from '@/lib/game-text/rich-text'
 import AdSlot from '@/components/ads/AdSlot'
+import { ADS_ON } from '@/lib/seo/ads'
 
 // ── 상수 ──────────────────────────────────────────────────────────────────────
 
@@ -555,7 +556,7 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
   ]
   const sectionKey = sections.map(s => s.id).join()
   // a second detail banner under the line after the final gifts, above the related posts (owner, 2026-11-07: "선 밑에")
-  const lowerAd = <div className={`${styles.section} ${styles.adSection}`}><AdSlot place="inline" /></div>
+  const lowerAd = ADS_ON && <div className={`${styles.section} ${styles.adSection}`}><AdSlot place="inline" /></div>
   const [activeSection, setActiveSection] = useState(sections[0].id)
   // 스크롤 위치에 맞춰 구역 목차의 현재 항목을 표시한다: 화면 위 30% 선을 지난 마지막 구역
   useEffect(() => {

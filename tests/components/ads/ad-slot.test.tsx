@@ -4,6 +4,8 @@ import { describe, expect, it, vi } from 'vitest'
 
 let pathname = '/ko/decks/1'
 vi.mock('next/navigation', () => ({ usePathname: () => pathname }))
+// these check the ads as they run with the switch on (REQ-SHARED-097 covers it off)
+vi.mock('@/lib/seo/ads', async importOriginal => ({ ...await importOriginal<typeof import('@/lib/seo/ads')>(), ADS_ON: true }))
 import { renderToStaticMarkup } from 'react-dom/server'
 import AdSlot, { AdSlotSpace } from '@/components/ads/AdSlot'
 import { ADSENSE_ACCOUNT } from '@/lib/seo/metadata'
@@ -74,7 +76,7 @@ describe('ad slot', () => {
       ['app/[lang]/decks/[id]/DeckDetailClient.tsx', 'id="deck-note"', '{hasRecommendations ? ('],
     ]) {
       const text = source(page)
-      expect(text, page).toMatch(/const lowerAd = <div className=\{`\$\{styles\.section\} \$\{styles\.adSection\}`\}><AdSlot place="inline" \/><\/div>/)
+      expect(text, page).toMatch(/const lowerAd = ADS_ON && <div className=\{`\$\{styles\.section\} \$\{styles\.adSection\}`\}><AdSlot place="inline" \/><\/div>/)
       const at = text.indexOf('{lowerAd}')
       expect(at, page).toBeGreaterThan(text.indexOf(after))
       expect(at, page).toBeLessThan(text.indexOf(before))
