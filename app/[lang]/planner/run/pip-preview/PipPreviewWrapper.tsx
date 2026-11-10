@@ -58,7 +58,7 @@ export default function PipPreviewWrapper({ themes, gifts, events, eventChoices 
       { key: 'floor-hard', label: '층 화면 (하드: 보너스 2개)', view: have => ({ ...base('floor', have), tips: [{ kind: 'clear-bonus', gifts: bonus, picks: 2 }] }) },
       { key: 'floor-plain', label: '층 화면 (보너스 못 읽음)', view: have => base('floor', have) },
       { key: 'pack', label: '테마팩 선택', view: have => ({ ...base('pack-choice', have), theme: undefined,
-        pack: { guidance: { theme, availableFloors: [3, 4], feasible: true, remainingOrder: [], plannedHere: true }, gifts: giftsOf([...plannedIds]) },
+        pack: { guidance: { theme, fallbacks: [], availableFloors: [3, 4], feasible: true, remainingOrder: [], plannedHere: true }, gifts: giftsOf([...plannedIds]) },
         tips: [{ kind: 'clear-bonus-offer', picks: 1, cards: [
           { place: 648, index: 0, gifts: bonus, themeId: String(theme.id) },
           { place: 1280, index: 2, gifts: [general[0], general[7], general[8]].filter((id): id is number => id !== undefined), themeId: null },

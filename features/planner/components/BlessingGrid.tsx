@@ -216,7 +216,9 @@ export function useBlessingGridMetrics(): BlessingGridMetrics {
       const compactTwoColumnScale = 0.64
       const gap = viewportWidth >= 1024 ? 8 : 6
       const canFitTwoCompactColumns = width >= (CARD_WRAPPER_WIDTH_NUMBER * compactTwoColumnScale * 2) + gap
-      const columnCount = viewportWidth >= 1024 ? 5 : canFitTwoCompactColumns ? 2 : 1
+      // Tablet widths: as many columns as fit at 0.8 scale or more (3 or 4), instead of two narrow columns with empty sides.
+      const roomyColumns = Math.min(5, Math.floor((width + gap) / (CARD_WRAPPER_WIDTH_NUMBER * 0.8 + gap)))
+      const columnCount = viewportWidth >= 1024 ? 5 : roomyColumns >= 3 ? roomyColumns : canFitTwoCompactColumns ? 2 : 1
       const trackWidth = (width - gap * (columnCount - 1)) / columnCount
       const minimumScale = columnCount === 1 ? 0.68 : compactTwoColumnScale
       const nextScale = Math.min(1, Math.max(minimumScale, trackWidth / CARD_WRAPPER_WIDTH_NUMBER))

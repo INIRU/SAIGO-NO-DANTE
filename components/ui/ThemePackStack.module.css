@@ -1,0 +1,36 @@
+/* --w: one card's width (set by the caller). Each fallback peeks 14% of a card past the one in front of it. */
+.stack {
+  position: relative;
+  width: calc(var(--w) * (1 + var(--n) * 0.14));
+  /* Fanned out, a fallback sits a card (and a little gap) further right; on a narrow screen they overlap instead of
+     leaving the viewport. */
+  --fan: min(calc(var(--w) * 1.05), calc((100vw - var(--w) - 3rem) / max(var(--n), 1)));
+}
+
+.stack[data-open] { z-index: 30 }
+
+.first {
+  position: relative;
+  z-index: 10;
+  width: var(--w);
+}
+
+.alt {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: var(--w);
+  transform: translateX(calc(var(--w) * 0.14 * var(--i))) scale(0.94);
+  transform-origin: right center;
+  filter: brightness(0.6);
+  transition: transform var(--dur-base) var(--ease-out), filter var(--dur-base) var(--ease-out);
+}
+
+.stack[data-open] .alt {
+  transform: translateX(calc(var(--fan) * var(--i)));
+  filter: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .alt { transition: none }
+}

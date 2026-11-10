@@ -241,6 +241,11 @@ interface ThemePackPickerModalProps<TTheme extends ThemePackPickerTheme> {
   order?: (string | number)[]
   onClose: () => void
   onSelectTheme: (theme: TTheme) => void
+  /** Multi-pick (the window stays open): a line saying how picking works, a button that clears every pick and one that closes. */
+  hint?: string
+  onClearAll?: () => void
+  clearAllLabel?: string
+  doneLabel?: string
   lang?: SupportedLang
   meta?: ReactNode
   /** Text the search matches; defaults to the pack's names. */
@@ -264,6 +269,10 @@ export function ThemePackPickerModal<TTheme extends ThemePackPickerTheme>({
   order,
   onClose,
   onSelectTheme,
+  hint,
+  onClearAll,
+  clearAllLabel,
+  doneLabel,
   lang,
   meta,
   searchText = theme => [theme.name, theme.name_en, theme.name_jp].join(' '),
@@ -312,6 +321,19 @@ export function ThemePackPickerModal<TTheme extends ThemePackPickerTheme>({
                 className="min-h-10 w-full rounded-md border border-[#2e2417] bg-[var(--bg-deep)] pl-9 pr-3 text-[0.9375rem] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus-visible:border-[var(--gold)] focus-visible:outline-none" />
             </label>
             <span className="shrink-0 text-sm tabular-nums text-[#9c8b73]">{countLabel(shown.length)}</span>
+          </div>
+        )}
+        {onClearAll && (
+          <div className="flex shrink-0 flex-wrap items-center justify-end gap-x-3 gap-y-2 px-5 pt-3 max-sm:px-3">
+            {hint && <p className="min-w-[12rem] flex-1 text-sm text-[#9c8b73]">{hint}</p>}
+            <button type="button" onClick={onClearAll} disabled={!order?.length}
+              className="min-h-10 rounded-md border border-[#2e2417] px-3 text-[0.9375rem] text-[#c9b89f] transition-colors hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold)] disabled:cursor-not-allowed disabled:opacity-45">
+              {clearAllLabel}
+            </button>
+            <button type="button" onClick={onClose}
+              className="min-h-10 rounded-md border border-[rgba(200,144,10,0.4)] bg-[rgba(200,144,10,0.12)] px-4 text-[0.9375rem] font-semibold text-[var(--gold-light)] transition-colors hover:bg-[rgba(200,144,10,0.2)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold)]">
+              {doneLabel}
+            </button>
           </div>
         )}
         <div className={filterStyles.pickerResults}>
