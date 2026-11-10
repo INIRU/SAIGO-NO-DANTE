@@ -88,11 +88,7 @@ GRANT SELECT ON limbus.audit_logs TO authenticated;
 GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA limbus TO authenticated;
 
 -- ── 1d. RPC functions — grant EXECUTE only on functions users legitimately call
-GRANT EXECUTE ON FUNCTION limbus.increment_vote(UUID)      TO authenticated;
-GRANT EXECUTE ON FUNCTION limbus.decrement_vote(UUID)      TO authenticated;
 GRANT EXECUTE ON FUNCTION limbus.increment_view(UUID)      TO anon, authenticated;
-GRANT EXECUTE ON FUNCTION limbus.increment_comment(UUID)   TO authenticated;
-GRANT EXECUTE ON FUNCTION limbus.decrement_comment(UUID)   TO authenticated;
 GRANT EXECUTE ON FUNCTION limbus.get_user_role(TEXT)       TO authenticated, service_role;
 GRANT EXECUTE ON FUNCTION limbus.is_user_suspended(TEXT)   TO authenticated, service_role;
 
