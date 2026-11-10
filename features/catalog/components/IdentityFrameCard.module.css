@@ -30,6 +30,19 @@
 
 .card[data-deployed] :is(.art, .rarity, .badge, .label, .frame) { filter: brightness(0.56) saturate(0.84); }
 
+/* Hover: FormationSwitchablePersonalityUIScrollViewItem. ClickedFrame (MainUI_Formation_5_24, 322x459, preserveAspect)
+   sits between the name and the sinner badge, its orange line 1.06% wider / 0.88% taller than the frame's border line and
+   1.6 game px higher; hover colour white. The card animator grows the slot from 1.02 to 1.05 in 0.167 s
+   (PersonalityCardBiggerAnim) and back (PersonalityCardReturnAnim). */
+.hover {
+  position: absolute; z-index: 2; left: -4.06%; top: -3.6%; width: 108.11%; height: 105.96%; max-width: none;
+  pointer-events: none; opacity: 0; transition: opacity 0.1s linear;
+}
+.card { transition: transform 0.167s ease-out; }
+:is(a, button, [role='button']):is(:hover, :focus-visible) .card { transform: scale(1.0294); }
+:is(a, button, [role='button']):is(:hover, :focus-visible) .card .hover { opacity: 1; }
+@media (prefers-reduced-motion: reduce) { .card, .hover { transition: none; } }
+
 .order { position: absolute; inset: 0; z-index: 4; pointer-events: none; }
 .banner { position: absolute; left: 0; top: 54.5%; width: 100%; max-width: none; height: auto; transform: translateY(-50%); filter: drop-shadow(0 0.25rem 0.5rem rgba(0, 0, 0, 0.6)); }
 .number {
