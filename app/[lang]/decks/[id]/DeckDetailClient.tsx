@@ -134,6 +134,7 @@ type DeckDetail = {
 // ── 상수 ──────────────────────────────────────────────────────────────────
 import { THEME_KEYWORDS, normalizeThemeKeyword } from '@/lib/constants/keywords'
 import AdSlot from '@/components/ads/AdSlot'
+import { ADS_ON } from '@/lib/seo/ads'
 const THEME_KW_SET = new Set<string>(THEME_KEYWORDS)
 
 const BOARD_SLOT_COUNT = 12
@@ -764,7 +765,7 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
   const hasNote = Boolean(deck?.description?.trim()) || customSkillSlots.length > 0
   // a second detail banner under the line after the deck note (the skill distribution) or the formation, above the related
   // decks (owner, 2026-11-07: "선 밑에")
-  const lowerAd = <div className={`${styles.section} ${styles.adSection}`}><AdSlot place="inline" /></div>
+  const lowerAd = ADS_ON && <div className={`${styles.section} ${styles.adSection}`}><AdSlot place="inline" /></div>
   const sections: { id: string; label: string }[] = [
     { id: 'deck-formation', label: t('sectionFormation') },
     ...(hasNote ? [{ id: 'deck-note', label: t('deckNote') }] : []),
