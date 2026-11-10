@@ -10,6 +10,9 @@ import { identityCardFrame } from '../lib/identity-card-frame'
 import { identityNameLines } from '../lib/identity-name-lines'
 import type { SupportedLang } from '@/lib/i18n/types'
 import styles from './IdentityFrameCard.module.css'
+import { getGameUiAsset } from '@/lib/utils/game-ui'
+
+const IDENTITY_HOVER_URL = getGameUiAsset('formation/identity-hover')
 
 export type IdentityFrameCardIdentity = {
   sinner_id: string
@@ -79,6 +82,9 @@ export default function IdentityFrameCard({ identity, uptie = 4, name, order, se
           {identityNameLines(name, identity.game_id, locale).map((line, i) => <span key={i}>{line}</span>)}
         </span>
       </span>
+      {/* The game's ClickedFrame (MainUI_Formation_5_24): shown while the card's control is hovered or focused. */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={IDENTITY_HOVER_URL} alt="" aria-hidden="true" draggable={false} className={styles.hover} />
       {overlay && (
         <span className={styles.order} aria-hidden="true">
           <Image src={overlay.bannerUrl} alt="" width={260} height={66} className={styles.banner} />
