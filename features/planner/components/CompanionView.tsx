@@ -168,9 +168,12 @@ export default function CompanionView({ view, data, actions, width, height, inPi
       // beside the poster; a narrow window puts them under it, and a very long list scrolls.
       const pack = view.pack
       const packGifts = pack?.gifts ?? []
+      const fallbacks = pack?.guidance.fallbacks.slice(0, 3) ?? []
+      // Room under the poster for the fallback row (label + 40px-wide cards).
+      const fallbackRow = fallbacks.length ? 94 : 0
       const stacked = packGifts.length > 0 && availableWidth < 300
       const posterWidth = Math.max(96, Math.min(packGifts.length && !stacked ? 150 : 180, Math.floor(availableWidth * (packGifts.length && !stacked ? 0.42 : 0.6)),
-        Math.floor(((inPip ? height : 448) - 132) * 416 / 684)))
+        Math.floor(((inPip ? height : 448) - 132 - fallbackRow) * 416 / 684)))
       const posterHeight = Math.floor(posterWidth * 684 / 416)
       const grid = stacked ? fitGrid({ count: packGifts.length, width: availableWidth, min: 40, max: 56, maxColumns: 6 })
         : fitGrid({ count: packGifts.length, width: availableWidth - posterWidth - 12, height: posterHeight - 20, min: 28, max: 56, maxColumns: 6 })
@@ -184,6 +187,15 @@ export default function CompanionView({ view, data, actions, width, height, inPi
                 ariaLabel={`${localized(pack.guidance.theme)} · ${t('pipThemePossible')} · ${t('pipThemeFloors', { floors })}${pack.guidance.remainingOrder.length ? ` · ${t('pipThemeRemaining', { themes: pack.guidance.remainingOrder.map(next => `${next.floor}F ${localized(next.theme)}`).join(' · ') })}` : ''}`}
                 title={`${localized(pack.guidance.theme)} · ${t('pipThemeFloors', { floors })}`}
                 onClick={() => actions.chooseTheme(pack.guidance.theme.id)} />
+              {fallbacks.length > 0 && <div data-theme-fallbacks className="mt-2">
+                <p className="mb-1 text-[0.6875rem] font-bold text-[var(--gold-light)]">{t('pipThemeFallbacks')}</p>
+                <ul className="flex gap-1.5">
+                  {fallbacks.map(alt => <li key={alt.id} style={{ width: 40 }}>
+                    <ThemePackCard theme={alt} sizes="40px" title={localized(alt)} ariaLabel={`${t('pipThemeFallbacks')} · ${localized(alt)}`}
+                      onClick={() => actions.chooseTheme(alt.id)} />
+                  </li>)}
+                </ul>
+              </div>}
             </div>
             {packGifts.length > 0 && <div className="min-w-0">
               <p className="mb-1.5 text-[0.6875rem] font-bold text-[var(--gold-light)]">{t('pipThemePlanGifts')} <span className="font-[family-name:var(--font-title)] font-normal text-[var(--text-secondary)]">{packGifts.length}</span></p>

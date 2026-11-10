@@ -5,6 +5,8 @@ import { DIFFICULTY_FLOOR_KEY, type ThemeData } from '@/lib/planner/types'
 
 export interface ThemeGuidance {
   theme: ThemeData
+  /** The plan's fallback packs for this floor that can be chosen here, in the plan's order. */
+  fallbacks: ThemeData[]
   availableFloors: number[]
   feasible: boolean
   remainingOrder: { floor: number; theme: ThemeData }[]
@@ -38,8 +40,9 @@ function effectivePlan(state: RunState): Map<number, string> {
 }
 
 /**
- * The pack the plan puts on the current floor (after replaying packs picked elsewhere), when it can be chosen there.
- * Alternative packs are not suggested: they made the selection view hard to read.
+ * The pack the plan puts on the current floor (after replaying packs picked elsewhere), with the fallback packs the
+ * plan lists for it. A pack that cannot appear on this floor, or a fallback already taken on another floor, is left out;
+ * when the first choice is out, the next fallback leads. Packs the plan does not name are never suggested.
  */
 export function getRunThemeGuidance(state: RunState, themes: ThemeData[]): ThemeGuidance[] {
   const current = state.currentFloor
@@ -55,13 +58,17 @@ export function getRunThemeGuidance(state: RunState, themes: ThemeData[]): Theme
     return [floor, new Set(getAvailableThemes(themes, DIFFICULTY_FLOOR_KEY[difficulty], floor).map(theme => theme.id))] as const
   }))
   const eligible = (id: string, floor: number) => availableIds.get(floor)?.has(id) ?? false
-  const theme = byId.get(plannedHere)
-  if (!theme || !eligible(plannedHere, current)) return []
+  const source = state.sourcePlanSnapshot?.floorPlan?.find(entry => entry.theme_id === plannedHere)
+  const taken = new Set(state.floorLogs.filter(log => log.floor !== current && log.themeId).map(log => log.themeId))
+  const [theme, ...fallbacks] = [...new Set([plannedHere, ...(source?.theme_alt_ids ?? [])])]
+    .filter(id => eligible(id, current) && (id === plannedHere || !taken.has(id)))
+    .flatMap(id => byId.get(id) ?? [])
+  if (!theme) return []
   const remainingOrder = openFloors.filter(floor => floor !== current).flatMap(floor => {
     const next = byId.get(plan.get(floor) ?? '')
     return next ? [{ floor, theme: next }] : []
   })
-  return [{ theme, availableFloors: openFloors.filter(floor => eligible(plannedHere, floor)), feasible: true, remainingOrder, plannedHere: true }]
+  return [{ theme, fallbacks, availableFloors: openFloors.filter(floor => eligible(theme.id, floor)), feasible: true, remainingOrder, plannedHere: theme.id === plannedHere }]
 }
 
 /**

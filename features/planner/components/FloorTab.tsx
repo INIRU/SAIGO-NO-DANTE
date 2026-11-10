@@ -8,7 +8,7 @@ import FloorGuidance from './FloorGuidance'
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useReducedMotion } from 'motion/react'
-import { ChevronUp, Plus, X } from 'lucide-react'
+import { ChevronUp, Plus } from 'lucide-react'
 import { useLocale, useTranslations } from 'next-intl'
 import GiftCard from '@/features/mirror-dungeon/components/GiftCard'
 import FloorGiftPickerModal from './FloorGiftPickerModal'
@@ -17,7 +17,7 @@ import ConfirmModal from '@/components/ui/ConfirmModal'
 import { previousFloorGifts } from '@/features/planner/lib/floor-copy'
 import { showSuccess } from '@/lib/toast'
 import FinalGiftSection from './FinalGiftSection'
-import ThemePackCard from '@/components/ui/ThemePackCard'
+import ThemePackStack from '@/components/ui/ThemePackStack'
 import {
   ThemePackModalPill,
   ThemePackPickerModal,
@@ -141,8 +141,6 @@ export default function FloorTab({ state, dispatch, themes, gifts, recipes, gift
   const shouldReduceMotion = useReducedMotion()
   const [activeFloor, setActiveFloor] = useState<number | null>(null)
   const [themeModalOpen, setThemeModalOpen] = useState(false)
-  // The same picker, kept open to tick fallback packs on and off.
-  const [altPicking, setAltPicking] = useState(false)
   const [giftPickerOpen, setGiftPickerOpen] = useState(false)
   const tCopy = useTranslations('planner.floorCopy')
   const [copyConfirm, setCopyConfirm] = useState<{ floor: number; giftIds: string[] } | null>(null)
@@ -258,13 +256,6 @@ export default function FloorTab({ state, dispatch, themes, gifts, recipes, gift
     () => deriveFinalGifts(state.giftInventory, recipes, giftMap),
     [giftMap, recipes, state.giftInventory],
   )
-
-  const selectTheme = useCallback((themeId: string | null) => {
-    if (!activeEntry) return
-    dispatch({ type: 'SET_FLOOR_THEME', floor: activeEntry.floor, themeId })
-    setThemeModalOpen(false)
-    setGiftPickerOpen(false)
-  }, [activeEntry, dispatch])
 
   const setDifficulty = useCallback((difficulty: FloorDifficulty) => {
     if (!activeEntry || activeEntry.floor > 5) return
@@ -403,23 +394,27 @@ export default function FloorTab({ state, dispatch, themes, gifts, recipes, gift
         style={{ background: '#17120c', borderColor: '#2e2417' }}
       >
         {/* 포스터 옆에 테마팩 이름·난이도·접기·버튼과 획득 기프트를 모은다. 모바일에서는 기프트가 전체 폭으로 내려간다. */}
-        <div className="grid grid-cols-[6.5rem_minmax(0,1fr)] gap-x-4 gap-y-4 sm:grid-cols-[9rem_minmax(0,1fr)] sm:grid-rows-[auto_1fr]">
+        <div className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-4 [--w:6.5rem] sm:[--w:9rem] sm:grid-rows-[auto_1fr]">
           <div className="min-w-0 sm:row-span-2">
             {selectedTheme ? (
-              <ThemePackCard
-                theme={selectedTheme}
-                lang={locale}
-                sizes="(max-width: 640px) 104px, 144px"
-                ariaLabel={t('ladder.changeThemeAria', { floor: entry.floor, theme: activeThemeName ?? selectedTheme.name })}
-                onClick={() => setThemeModalOpen(true)}
-              />
+              <>
+                {/* The packs are the control: the first choice with its fallbacks behind it; a click opens the picker. */}
+                <ThemePackStack
+                  themes={[selectedTheme, ...(entry.theme_alt_ids ?? []).flatMap(id => themeMap.get(id) ?? [])]}
+                  lang={locale}
+                  sizes="(max-width: 640px) 104px, 144px"
+                  ariaLabel={t('ladder.changeThemeAria', { floor: entry.floor, theme: activeThemeName ?? selectedTheme.name })}
+                  onClick={() => setThemeModalOpen(true)}
+                />
+                <p className="mt-1.5 w-[var(--w)] text-balance text-center text-xs leading-snug" style={{ color: '#9c8b73' }}>{t('themeClickHint')}</p>
+              </>
             ) : (
               <button
                 type="button"
                 onClick={() => setThemeModalOpen(true)}
                 disabled={pickerThemes.length === 0}
                 aria-label={t('selectTheme')}
-                className={`flex aspect-[416/684] w-full items-center justify-center rounded-sm border border-dashed transition-colors hover:border-[var(--gold)] hover:text-[var(--gold-light)] disabled:cursor-not-allowed disabled:opacity-60 ${focusRing}`}
+                className={`flex aspect-[416/684] w-[var(--w)] items-center justify-center rounded-sm border border-dashed transition-colors hover:border-[var(--gold)] hover:text-[var(--gold-light)] disabled:cursor-not-allowed disabled:opacity-60 ${focusRing}`}
                 style={{ borderColor: '#4a3b28', background: 'var(--bg-panel)', color: 'var(--text-muted)' }}
               >
                 <Plus size={28} aria-hidden="true" />
@@ -486,68 +481,7 @@ export default function FloorTab({ state, dispatch, themes, gifts, recipes, gift
                 </button>
               </div>
             </div>
-            {(entry.theme_alt_ids ?? []).some(id => themeMap.has(id)) && (
-              <div className="flex flex-wrap items-start gap-2.5" data-floor-alt-themes>
-                <p className="basis-full text-sm" style={{ color: '#9c8b73' }}>{t('altThemes')}</p>
-                {(entry.theme_alt_ids ?? []).flatMap((id, index) => {
-                  const theme = themeMap.get(id)
-                  if (!theme) return []
-                  const name = themeName(theme)
-                  return [(
-                    <div key={id} className="relative w-[3.25rem] sm:w-[3.75rem]">
-                      <ThemePackCard
-                        theme={theme}
-                        lang={locale}
-                        sizes="60px"
-                        ariaLabel={t('altPromoteAria', { theme: name })}
-                        title={t('altPromoteAria', { theme: name })}
-                        onClick={() => dispatch({ type: 'REORDER_FLOOR_THEME', floor: entry.floor, themeIds: [id, ...floorThemeOrder(entry).filter(other => other !== id)] })}
-                      />
-                      <span aria-hidden="true" className="pointer-events-none absolute left-0.5 top-0.5 z-30 rounded bg-[rgba(13,11,8,0.82)] px-1 text-xs font-semibold leading-4 text-[var(--gold-light)]">{index + 2}</span>
-                      <button
-                        type="button"
-                        onClick={() => dispatch({ type: 'REMOVE_FLOOR_THEME_ALT', floor: entry.floor, themeId: id })}
-                        aria-label={t('altRemoveAria', { theme: name })}
-                        className={`absolute -right-1.5 -top-1.5 z-30 grid h-6 w-6 place-items-center rounded-full border transition-colors hover:text-[var(--text-primary)] ${focusRing}`}
-                        style={{ background: '#17120c', borderColor: '#4a3b28', color: '#9c8b73' }}
-                      >
-                        <X size={12} aria-hidden="true" />
-                      </button>
-                    </div>
-                  )]
-                })}
-              </div>
-            )}
-            <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={() => setThemeModalOpen(true)}
-                disabled={pickerThemes.length === 0}
-                className={`min-h-[2.75rem] rounded-md border px-4 text-[0.9375rem] font-semibold transition-colors hover:bg-[rgba(200,144,10,0.2)] disabled:cursor-not-allowed disabled:opacity-60 ${focusRing}`}
-                style={{ borderColor: 'rgba(200,144,10,0.4)', background: 'rgba(200,144,10,0.12)', color: 'var(--gold-light)' }}
-              >
-                {selectedTheme ? t('changeTheme') : t('selectTheme')}
-              </button>
-              {selectedTheme && (
-                <button
-                  type="button"
-                  onClick={() => selectTheme(null)}
-                  className={`min-h-[2.75rem] rounded-md border px-3 text-[0.9375rem] transition-colors hover:bg-white/5 ${focusRing}`}
-                  style={{ borderColor: '#2e2417', color: '#9c8b73' }}
-                >
-                  {t('clearTheme')}
-                </button>
-              )}
-              {selectedTheme && pickerThemes.length > 1 && (
-                <button
-                  type="button"
-                  onClick={() => setAltPicking(true)}
-                  className={`min-h-[2.75rem] rounded-md border px-3 text-[0.9375rem] transition-colors hover:bg-white/5 ${focusRing}`}
-                  style={{ borderColor: '#2e2417', color: '#9c8b73' }}
-                >
-                  {t('addAltTheme')}
-                </button>
-              )}
+            <div className="flex flex-wrap gap-2 empty:hidden">
               {selectedTheme && previousFloorGifts(state.floorPlan, entry.floor).length > 0 && (
                 <button
                   type="button"
@@ -661,30 +595,19 @@ export default function FloorTab({ state, dispatch, themes, gifts, recipes, gift
         className="-m-1 flex cursor-pointer gap-3 rounded-sm p-1 transition-colors hover:bg-[rgba(200,144,10,0.05)] sm:gap-4"
         onClick={() => openFloor(entry.floor)}
       >
-        <div className="relative w-[3.5rem] shrink-0 sm:w-[4rem]">
-          {/* Fallback packs: small posters stacked on the lower right corner of the first choice. */}
-          {alts.length > 0 && (
-            <div className="pointer-events-none absolute -bottom-1 -right-2 z-30 flex items-end" data-floor-alt-stack title={t('altThemeCount', { count: alts.length })}>
-              {alts.slice(0, 2).map((alt, index) => (
-                <span key={alt.id} className="block w-[1.5rem] rounded-sm shadow-[0_0_0_1px_#0d0b08] sm:w-[1.75rem]" style={{ marginLeft: index ? '-0.75rem' : 0 }} inert>
-                  <ThemePackCard theme={alt} lang={locale} sizes="28px" onClick={() => undefined} />
-                </span>
-              ))}
-              {alts.length > 2 && <span className="ml-0.5 rounded bg-[rgba(13,11,8,0.82)] px-1 text-xs leading-4 text-[var(--gold-light)]">+{alts.length - 2}</span>}
-            </div>
-          )}
+        <div className="shrink-0 [--w:4rem] sm:[--w:4.75rem]">
           {theme ? (
-            <ThemePackCard
-              theme={theme}
+            <ThemePackStack
+              themes={[theme, ...alts]}
               lang={locale}
-              sizes="(max-width: 640px) 56px, 64px"
+              sizes="76px"
               ariaLabel={t('ladder.expand', { floor: entry.floor })}
               onClick={() => openFloor(entry.floor)}
             />
           ) : (
             <span
               aria-hidden="true"
-              className="flex h-[3rem] items-center justify-center rounded-sm border border-dashed"
+              className="flex h-[3rem] w-[var(--w)] items-center justify-center rounded-sm border border-dashed"
               style={{ borderColor: '#3a2f22', color: 'var(--text-muted)' }}
             >
               <Plus size={18} />
@@ -697,7 +620,7 @@ export default function FloorTab({ state, dispatch, themes, gifts, recipes, gift
               {t(`difficulty.${difficulty}`)}
             </span>
             <span
-              className={`min-w-0 leading-snug ${theme ? 'text-[1rem]' : 'text-[0.9375rem]'}`}
+              className={`min-w-0 leading-snug ${theme ? 'text-[1.125rem]' : 'text-[0.9375rem]'}`}
               style={{ fontFamily: theme ? 'var(--font-heading)' : undefined, color: theme ? 'var(--text-primary)' : 'var(--text-muted)' }}
             >
               {theme ? themeName(theme) : t('ladder.emptyHint')}
@@ -809,9 +732,9 @@ export default function FloorTab({ state, dispatch, themes, gifts, recipes, gift
         localizedGift={localizedGift}
       />
 
-      {(themeModalOpen || altPicking) && activeEntry && (
+      {themeModalOpen && activeEntry && (
         <ThemePackPickerModal
-          title={t(altPicking ? 'altThemeModalTitle' : 'themeModalTitle', { floor: activeEntry.floor })}
+          title={t('themeModalTitle', { floor: activeEntry.floor })}
           closeLabel={t('close')}
           emptyLabel={t('emptyThemes')}
           searchLabel={t('themeSearch')}
@@ -824,13 +747,13 @@ export default function FloorTab({ state, dispatch, themes, gifts, recipes, gift
           suggestionsLoading={floorSuggestionsLoading}
           order={floorThemeOrder(activeEntry)}
           lang={locale}
-          onClose={() => { setThemeModalOpen(false); setAltPicking(false) }}
-          onSelectTheme={theme => {
-            const id = String(theme.id)
-            if (!altPicking) return selectTheme(id)
-            // Ticking fallbacks: the first choice stays; any other pack goes on or off the list.
-            if (id !== activeEntry.theme_id) dispatch({ type: (activeEntry.theme_alt_ids ?? []).includes(id) ? 'REMOVE_FLOOR_THEME_ALT' : 'ADD_FLOOR_THEME_ALT', floor: activeEntry.floor, themeId: id })
-          }}
+          onClose={() => setThemeModalOpen(false)}
+          hint={t('themePickHint')}
+          clearAllLabel={t('clearAllThemes')}
+          doneLabel={t('themePickDone')}
+          onClearAll={() => dispatch({ type: 'REORDER_FLOOR_THEME', floor: activeEntry.floor, themeIds: [] })}
+          // The window stays open: a pack goes on the end of the order (the first pick is the first choice), a picked one comes off.
+          onSelectTheme={theme => dispatch({ type: floorThemeOrder(activeEntry).includes(String(theme.id)) ? 'REMOVE_FLOOR_THEME_ALT' : 'ADD_FLOOR_THEME_ALT', floor: activeEntry.floor, themeId: String(theme.id) })}
           meta={
             <ThemePackModalPill tone={activeDifficulty === 'extreme' ? 'red' : activeDifficulty === 'overlap' ? 'purple' : activeDifficulty === 'hard' ? 'gold' : 'neutral'}>
               {t(`difficulty.${activeDifficulty}`)}
