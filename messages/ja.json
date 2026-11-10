@@ -529,7 +529,8 @@
     "group": "{gift}の強化段階",
     "base": "強化なし",
     "plus": "強化+",
-    "plusplus": "強化++"
+    "plusplus": "強化++",
+    "selected": "選択済み"
   },
   "giftDetail": {
     "title": "ギフト詳細",

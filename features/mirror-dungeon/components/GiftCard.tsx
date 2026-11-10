@@ -9,6 +9,8 @@ import { useLocale, useTranslations } from 'next-intl'
 import { X } from 'lucide-react'
 import { getGameUiAsset } from '@/lib/utils/game-ui'
 const GIFT_HOVER_URL = getGameUiAsset('gift/hover')
+const GIFT_SELECTED_PANEL_URL = getGameUiAsset('gift/selected-panel')
+const GIFT_SELECTED_TAB_URL = getGameUiAsset('gift/selected-tab')
 import type { GiftConditionStatus } from '@/lib/planner/gift-condition-status'
 import { GiftConditionLine, GiftConditionMark } from './GiftCondition'
 
@@ -173,6 +175,7 @@ const GiftCard = memo(function GiftCard({
   warning,
 }: GiftCardProps) {
   const locale = useLocale()
+  const t = useTranslations('giftEnhance')
   const isInsert = variant === 'insert'
   const displayName = locale === 'en'
     ? gift.name_en || gift.name
@@ -186,6 +189,7 @@ const GiftCard = memo(function GiftCard({
       aria-label={warning ? `${ariaLabel ?? displayName} · ${warning}` : ariaLabel ?? displayName}
       title={title ?? displayName}
       data-gift-id={giftId}
+      aria-pressed={isSelected}
       onClick={onClick}
       disabled={disabled}
       style={{
@@ -201,17 +205,7 @@ const GiftCard = memo(function GiftCard({
         position: 'relative',
       }}
     >
-      <GiftArtwork gift={gift} displayName={displayName} isInsert={isInsert} isSelected={isSelected} enhance={enhance} className={styles.frame}>
-        {/* Selected checkmark */}
-        {!isInsert && isSelected && (
-          <div style={{
-            position: 'absolute', inset: 0, zIndex: 20,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            background: 'rgba(200,144,10,0.22)',
-          }}>
-            <span style={{ color: 'var(--gold-light)', fontSize: '1.5rem', textShadow: '0 0 0.5rem rgba(200,144,10,0.6)' }}>✓</span>
-          </div>
-        )}
+      <GiftArtwork gift={gift} displayName={displayName} isInsert={isInsert} enhance={enhance} className={styles.frame}>
 
         {/* Enhancement mark: the game's own +/++ sprite in the top-right corner. */}
         {!isInsert && enhance != null && enhance > 0 && (
@@ -251,6 +245,15 @@ const GiftCard = memo(function GiftCard({
           artwork so the octagon clip does not cut its glowing corners. */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={GIFT_HOVER_URL} alt="" aria-hidden="true" draggable={false} className={styles.hover} />
+
+      {/* Selected: the observation slot's "보유 중" overlay (dark panel + red tab), labelled 선택됨. Outside the artwork so
+          the octagon clip does not cut it; aria-pressed carries the state. */}
+      {!isInsert && isSelected && (
+        <span className={styles.selected} aria-hidden="true"
+          style={{ '--selected-panel': `url(${GIFT_SELECTED_PANEL_URL})`, '--selected-tab': `url(${GIFT_SELECTED_TAB_URL})` } as CSSProperties}>
+          <span className={styles.selectedTab} data-lang={locale}>{t('selected')}</span>
+        </span>
+      )}
 
       {warning && <GiftWarningMark label={warning} />}
 
