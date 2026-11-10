@@ -1114,7 +1114,7 @@
       "finalAutoStartTag": "시작",
       "finalAutoObserveTag": "관측",
       "finalEnhanceHint": "눌러서 강화 단계 변경",
-      "finalRemoveHint": "길게 누르거나 Delete 키로 제거",
+      "finalRemoveHint": "× 버튼이나 Delete 키로 제거",
       "finalWorkbenchHint": "반영된 기프트는 왼쪽 카드 클릭으로 제거하고, 전체 기프트는 카드 클릭으로 추가하거나 다시 눌러 제거합니다.",
       "finalSelectedPanel": "반영 목록",
       "finalGiftEmpty": "아직 반영된 최종 기프트가 없습니다",

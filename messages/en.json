@@ -1114,7 +1114,7 @@
       "finalAutoStartTag": "Start",
       "finalAutoObserveTag": "Obs.",
       "finalEnhanceHint": "Click to change enhancement",
-      "finalRemoveHint": "Long-press or press Delete to remove",
+      "finalRemoveHint": "Use the × button or press Delete to remove",
       "finalWorkbenchHint": "Click reflected cards on the left to remove them, or click catalog cards to add them and click again to remove.",
       "finalSelectedPanel": "Reflected list",
       "finalGiftEmpty": "No final gifts reflected yet.",

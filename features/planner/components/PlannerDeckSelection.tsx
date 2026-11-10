@@ -10,6 +10,7 @@ import SuggestionRibbon from '@/components/ui/SuggestionRibbon'
 import { IdentityTileSkeleton, SuggestionTitleSkeleton } from '@/components/ui/SuggestionSkeleton'
 import { SkeletonPage } from '@/components/ui/Skeleton'
 import SuggestionNote, { useArchetypeLabel } from './SuggestionNote'
+import { createLongPress } from '@/lib/utils/long-press'
 import type { Archetype, Suggestion } from '@/features/community'
 import CharacterPickerFilters from '@/components/ui/CharacterPickerFilters'
 import { compareReleaseDate } from '@/lib/utils/release-order'
@@ -84,22 +85,20 @@ export function PlannerIdentityBoard({
     setCodeInvalid(Boolean(text.trim()))
     setCodeOpen(true)
   }
-  const press = useRef<{ timer?: ReturnType<typeof setTimeout>; fired: boolean }>({ fired: false })
+  const [press] = useState(() => createLongPress<string>(sinnerId => latest.current.onLongPress?.(sinnerId), 500))
   // Tiles are memoized; handlers read the latest callbacks through a ref so a formation click
   // re-renders only the tiles whose number changed.
   const latest = useRef({ onFormationToggle, onOpenIdentityModal, onLongPress })
   useLayoutEffect(() => { latest.current = { onFormationToggle, onOpenIdentityModal, onLongPress } })
   const startPress = useCallback((sinnerId: string) => {
-    if (!latest.current.onLongPress) return
-    press.current.fired = false
-    press.current.timer = setTimeout(() => { press.current.fired = true; latest.current.onLongPress?.(sinnerId) }, 500)
-  }, [])
-  const endPress = useCallback(() => clearTimeout(press.current.timer), [])
+    if (latest.current.onLongPress) press.start(sinnerId)
+  }, [press])
+  const endPress = press.cancel
   const activate = useCallback((sinnerId: string, view: boolean) => {
     if (!view) return latest.current.onOpenIdentityModal(sinnerId)
-    if (press.current.fired) { press.current.fired = false; return }
+    if (press.consume()) return
     latest.current.onFormationToggle(sinnerId)
-  }, [])
+  }, [press])
   const hasOrder = sinners.some(sinner => slots[sinner.id]?.identity && getFormationOverlay(slots[sinner.id]?.slotOrder ?? null))
 
   const tile = (sinner: PlannerDeckSinner, mode: 'view' | 'edit') => {
@@ -363,7 +362,7 @@ export function PlannerIdentitySelectModal({
   const compactNameStyle = getCompactNameStyle(locale)
   const [query, setQuery] = useState(''), [grade, setGrade] = useState('')
   const [picker, setPicker] = useState<string | null>(null)
-  const press = useRef<{ timer?: ReturnType<typeof setTimeout>; fired: boolean }>({ fired: false })
+  const [press] = useState(() => createLongPress<string>(setPicker, 450))
   useEffect(() => { setQuery(''); setGrade(''); setPicker(null) }, [open, sinner?.id])
   const needle = query.trim().toLocaleLowerCase()
   const filtered = identities
@@ -430,17 +429,15 @@ export function PlannerIdentitySelectModal({
                             aria-pressed={selected}
                             aria-label={name + ' ' + t('uptie', { level: ROMAN[3] })}
                             onClick={() => {
-                              if (press.current.fired) { press.current.fired = false; return }
+                              if (press.consume()) return
                               onSelect(identity, 4)
                             }}
                             onPointerDown={event => {
-                              if (event.pointerType === 'mouse') return
-                              press.current.fired = false
-                              press.current.timer = setTimeout(() => { press.current.fired = true; setPicker(identity.id) }, 450)
+                              if (event.pointerType !== 'mouse') press.start(identity.id)
                             }}
-                            onPointerUp={() => clearTimeout(press.current.timer)}
-                            onPointerLeave={() => clearTimeout(press.current.timer)}
-                            onPointerCancel={() => clearTimeout(press.current.timer)}
+                            onPointerUp={press.cancel}
+                            onPointerLeave={press.cancel}
+                            onPointerCancel={press.cancel}
                             onContextMenu={event => event.preventDefault()}
                           >
                             <IdentityFrameCard identity={identity} uptie={shownUptie} name={name} selected={selected} sizes="(max-width: 40rem) 30vw, 10rem" />

@@ -4,6 +4,8 @@ import BackLink from '@/components/navigation/BackLink'
 import { pendingNoteUploads, noteUploadInProgressMessage } from '@/lib/notes/images'
 
 import { memo, useMemo, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import dynamic from 'next/dynamic'
+import { GiftDetailContext } from '@/features/mirror-dungeon/components/GiftCard'
 import { useReducedMotion } from 'motion/react'
 import * as m from 'motion/react-m'
 import { Link, useRouter } from '@/lib/i18n/navigation'
@@ -30,6 +32,8 @@ import { useAutosaveDraft } from '@/features/notes/hooks/useAutosaveDraft'
 import { autosaveKey } from '@/features/notes'
 import SeriesPicker from '@/features/community/components/SeriesPicker'
 import { workbenchReveal } from '@/lib/animations'
+
+const PlannerGiftModal = dynamic(() => import('@/features/planner/components/PlannerGiftModal'), { ssr: false })
 
 interface Props {
   themes: ThemeData[]
@@ -93,6 +97,9 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
   if (sectionState !== state && SECTION_KEYS.some(key => sectionState[key] !== state[key])) setSectionState(state)
 
   const giftMap = useMemo(() => buildGiftMap(gifts), [gifts])
+  // Holding any gift card in the planner opens that gift's detail here.
+  const [detailGiftId, setDetailGiftId] = useState<string | number | null>(null)
+  const detailGift = detailGiftId == null ? undefined : giftMap.get(Number(detailGiftId))
   // 인격이 바뀔 때만 다시 만든다: 기프트·층 구역은 identitySlots가 같은 배열이면 다시 그리지 않는다
   const conditionSlots = useMemo(
     () => enrichIdentitySlotsForGiftConditions(sectionState.identitySlots, identities),
@@ -427,6 +434,7 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
   const railHidden = 'lg:group-data-[layout=bar]/planner:invisible lg:group-data-[layout=bar]/planner:-translate-x-3 lg:group-data-[layout=bar]/planner:opacity-0 lg:group-data-[layout=bar]/planner:duration-0'
 
   return (
+    <GiftDetailContext.Provider value={setDetailGiftId}>
     <div className="min-h-[100dvh] pb-16" style={{ background: 'var(--bg-deep)' }}>
       <AutosaveRestoreModal savedAt={autosave.offer?.savedAt ?? null} onRestore={autosave.restore} onDiscard={autosave.discard} />
       <div className="max-w-[90rem] mx-auto px-3 md:px-6">
@@ -541,5 +549,7 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
         </div>
       </div>
     </div>
+    {detailGift && <PlannerGiftModal gift={detailGift} onClose={() => setDetailGiftId(null)} themes={themes} />}
+    </GiftDetailContext.Provider>
   )
 }
