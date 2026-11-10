@@ -10,7 +10,7 @@ export function RecommendationLaneSkeleton({ kind, count = 3 }: { kind: 'deck' |
           <div className="flex h-[1.4375rem] items-center"><SkeletonLine w="7rem" h="1.0625rem" /></div>
           <div className="flex h-[1.3125rem] items-center"><SkeletonLine w="2.5rem" h="0.875rem" /></div>
         </div>
-        <div className="grid min-w-0 grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+        <div className="flex min-w-0 flex-wrap gap-3 [&>*]:min-w-0 [&>*]:flex-[1_1_15rem]">
           {Array.from({ length: count }, (_, index) => (
             <div key={index} className={`min-w-0 ${index >= 2 ? 'max-xl:hidden' : ''}`}><CardSkeleton kind={kind} /></div>
           ))}
