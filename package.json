@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "npm run build:assist-worker && npm run build:assist-ocr && next build",
+    "build": "node scripts/assets/season-palette.mjs && npm run build:assist-worker && npm run build:assist-ocr && next build",
     "build:assist-worker": "esbuild features/assist/lib/scene-worker.ts --bundle --format=esm --platform=browser --target=es2022 --outfile=public/models/assist-scene/scene-worker.js && esbuild features/assist/lib/frame-tape-worker.ts --bundle --format=esm --platform=browser --target=es2022 --outfile=public/models/assist-scene/frame-tape-worker.js && cp node_modules/onnxruntime-web/dist/ort-wasm-simd-threaded.asyncify.mjs node_modules/onnxruntime-web/dist/ort-wasm-simd-threaded.asyncify.wasm public/models/assist-scene/",
     "fetch:assist-paddle": "node scripts/vision/fetch_paddle_ocr.mjs",
     "upload:assist-models": "tsx scripts/vision/upload-assist-models.ts",

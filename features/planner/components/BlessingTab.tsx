@@ -9,14 +9,16 @@ import { useLocale, useTranslations } from 'next-intl'
 import { type PlannerState, type PlannerAction } from '@/lib/planner/types'
 import { blessingEffectSegments } from '@/features/planner/lib/blessing-effects'
 import { STORAGE_BASE } from '@/lib/constants/game'
+import seasonPalette from '@/lib/generated/season-palette.json'
+import { seasonTileStyle } from '@/features/planner/lib/season-tile'
 
 const S = STORAGE_BASE
 const BLESSING_UI_ASSET_BASE = '/assets/planner/blessing-ui'
 // Mirror Dungeon 8 "시지프 별의 가호" card (game sprites MainUI_MirrorDungeon8_2_2 / 2_4 / 2_9 / 2_10).
-const BLESSING_CARD_BASE = `${BLESSING_UI_ASSET_BASE}/blessing-card-sisyphus-base.webp`
-const BLESSING_CARD_SELECTED_OVERLAY = `${BLESSING_UI_ASSET_BASE}/blessing-card-sisyphus-selected-overlay.webp`
-const BLESSING_BUTTON = `${BLESSING_UI_ASSET_BASE}/blessing-button-sisyphus.webp`
-const BLESSING_BUTTON_SELECTED_OVERLAY = `${BLESSING_UI_ASSET_BASE}/blessing-button-sisyphus-selected-overlay.webp`
+const BLESSING_CARD_BASE = `${BLESSING_UI_ASSET_BASE}/blessing-card-base.webp`
+const BLESSING_CARD_SELECTED_OVERLAY = `${BLESSING_UI_ASSET_BASE}/blessing-card-selected-overlay.webp`
+const BLESSING_BUTTON = `${BLESSING_UI_ASSET_BASE}/blessing-button.webp`
+const BLESSING_BUTTON_SELECTED_OVERLAY = `${BLESSING_UI_ASSET_BASE}/blessing-button-selected-overlay.webp`
 const BLESSING_PLUS_DANTE_NORMAL = `${BLESSING_UI_ASSET_BASE}/blessing-plus-dante.webp`
 const BLESSING_PLUS_DANTE_SELECTED = `${BLESSING_UI_ASSET_BASE}/blessing-plus-dante-normal.webp`
 const BLESSING_PLUSPLUS_DANTE_SELECTED = `${BLESSING_UI_ASSET_BASE}/blessing-plusplus-dante-normal.webp`
@@ -618,13 +620,13 @@ export function ReadOnlyBlessingGrid({ blessings, selectedBlessings, emptyText }
 
   return (
     <>
-    {/* 모바일: 고른 가호만 아이콘과 이름의 작은 타일로 간결하게 */}
+    {/* 모바일: 고른 가호만 아이콘과 이름의 작은 타일로 간결하게. 색은 이번 시즌 가호 카드 그림에서 빌드 때 뽑는다 */}
     <ul className="grid grid-cols-3 gap-1.5 pt-3 sm:hidden">
       {displayCards.filter(({ level }) => level > 0).map(({ blessing, level }) => (
         <li
           key={blessing.baseId}
-          className="flex aspect-[17/15] flex-col items-center justify-between rounded-md border border-[#7a2a26] px-1.5 pb-1.5 pt-2 text-center"
-          style={{ background: 'linear-gradient(180deg, #3a1210 0%, #5a1b18 100%)' }}
+          className="flex aspect-[17/15] flex-col items-center justify-between rounded-md border px-1.5 pb-1.5 pt-2 text-center"
+          style={seasonTileStyle(seasonPalette.blessing)}
         >
           <span className="relative block h-7 w-7">
             <Image src={getGameUiAsset(`start-buffs/${blessing.baseId}`)} alt="" fill sizes="28px" style={{ objectFit: 'contain' }} />
