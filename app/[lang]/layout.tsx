@@ -24,6 +24,7 @@ import { ADSENSE_ACCOUNT, CLOUDFLARE_WEB_ANALYTICS_TOKEN, OG_LOCALE, SITE_NAME, 
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
 import AdSlot from '@/components/ads/AdSlot'
+import { ADS_ON } from '@/lib/seo/ads'
 import PageNavigation from '@/components/ui/PageNavigation'
 import AnnouncementPopup from '@/features/admin/components/AnnouncementPopup'
 import SkipNav from '@/components/a11y/SkipNav'
@@ -154,7 +155,7 @@ export default async function LangLayout({
         <link rel="preconnect" href="https://lpgqcleszdlldneiwgep.supabase.co" />
         {process.env.SELF_HOSTED === '1' ? <link rel="preconnect" href={MEDIA_ORIGIN} /> : null}
         {/* The AdSense code as AdSense gives it (async, in the head): site review and Auto ads read it from the HTML. */}
-        <script async src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_ACCOUNT}`} crossOrigin="anonymous" />
+        {ADS_ON && <script async src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_ACCOUNT}`} crossOrigin="anonymous" />}
       </head>
       <body className="antialiased">
         {/* The inline scripts open the body rather than sit in the head: AdSense puts its own script first in the head

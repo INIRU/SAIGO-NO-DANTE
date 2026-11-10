@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { usePathname } from 'next/navigation'
-import { ADSENSE_ACCOUNT, ADSENSE_SLOTS, isAdFreePath } from '@/lib/seo/ads'
+import { ADSENSE_ACCOUNT, ADSENSE_SLOTS, ADS_ON, isAdFreePath } from '@/lib/seo/ads'
 import styles from './AdSlot.module.css'
 
 declare global {
@@ -134,12 +134,19 @@ function useRailTop(rail: boolean) {
  * page, and an unfilled unit hides its box. Ad-free pages draw nothing; development and a preview build (NEXT_PUBLIC_AD_PREVIEW=1,
  * e.g. behind a tunnel AdSense does not serve) show the reserved place instead of an ad.
  */
-export default function AdSlot({ slot: unitSlot, place, phoneOnly = false }: {
+type AdSlotProps = {
   /** The place's own unit when left out; null draws no ad. */
   slot?: string | null; place: Place
   /** Only below 768px (a page whose other ads are the wide-screen side ones) */
   phoneOnly?: boolean
-}) {
+}
+
+/** Nothing at all while the ads are switched off (ADS_ON): not even the side ads' measuring. */
+export default function AdSlot(props: AdSlotProps) {
+  return ADS_ON ? <Ad {...props} /> : null
+}
+
+function Ad({ slot: unitSlot, place, phoneOnly = false }: AdSlotProps) {
   const pathname = usePathname()
   const offset = useRailOffset(place, pathname)
   const rail = place === 'left' || place === 'right'
@@ -177,6 +184,6 @@ export default function AdSlot({ slot: unitSlot, place, phoneOnly = false }: {
 /** The `top` ad's place while the page loads (PageHeaderSkeleton), so the loaded page does not move. */
 export function AdSlotSpace() {
   const pathname = usePathname()
-  if (isAdFreePath(pathname)) return null
+  if (!ADS_ON || isAdFreePath(pathname)) return null
   return <div className={styles.top} aria-hidden><div className={styles.topUnit} /></div>
 }
