@@ -2,9 +2,9 @@
 .stack {
   position: relative;
   width: calc(var(--w) * (1 + var(--n) * 0.14));
-  /* Fanned out, a fallback sits a card (and a little gap) further right; on a narrow screen they overlap instead of
-     leaving the viewport. */
-  --fan: min(calc(var(--w) * 1.05), calc((100vw - var(--w) - 3rem) / max(var(--n), 1)));
+  /* Fanned out, the cards stay together: each fallback shows about two thirds of itself, enough for its name; on a narrow
+     screen they overlap more instead of leaving the viewport. */
+  --fan: min(calc(var(--w) * 0.68), calc((100vw - var(--w) - 3rem) / max(var(--n), 1)));
 }
 
 .stack[data-open] { z-index: 30 }
