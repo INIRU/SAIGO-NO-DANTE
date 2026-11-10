@@ -645,6 +645,13 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap, observati
           }
         }
 
+        /* Tablet width in the stacked layout: more columns instead of five cards stretched to ~8rem each. */
+        @media (min-width: 480px) and (max-width: 767px) {
+          .planner-gift-card-grid {
+            grid-template-columns: repeat(auto-fill, minmax(5rem, 1fr)) !important;
+          }
+        }
+
         @media (max-width: 359px) {
           .planner-gift-card-grid,
           .planner-gift-final-selected-grid,
