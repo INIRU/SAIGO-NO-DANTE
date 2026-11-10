@@ -11,7 +11,7 @@ import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import { checkRequestRateLimit, rateLimitResponse } from '@/lib/rate-limit'
 import { parseDeckMainKeywordsInput } from '@/lib/decks/keyword-rules'
 import { encodeTeamCode } from '@/lib/decks/team-code'
-import { insertDeckIdentities, normalizeUptie } from '@/features/decks'
+import { normalizeUptie } from '@/features/decks'
 import { fetchEgoAttackSkillsByEgoId, type EgoAttackSkill } from '@/features/decks/server'
 
 
@@ -265,7 +265,7 @@ export async function PATCH(
     const { data: deck } = await admin
       .schema('limbus')
       .from('decks')
-      .select('id, user_id, title, description, tags, main_keywords, content_type, content_edited_at')
+      .select('id, user_id, tags, main_keywords')
       .eq('id', id)
       .single()
 
@@ -287,96 +287,38 @@ export async function PATCH(
       return NextResponse.json({ error: mainKeywordsResult.error }, { status: 400 })
     }
 
-    // 롤백용 원본 값 저장
-    const originalValues = {
-      title: deck.title,
-      description: deck.description,
-      tags: deck.tags,
-      main_keywords: deck.main_keywords,
-      content_type: deck.content_type,
-      content_edited_at: deck.content_edited_at,
-    }
-
-    // 자식 롤백을 위해 기존 children 미리 저장
-    const [{ data: origIdents, error: origIdentsError }, { data: origEgos, error: origEgosError }] = await Promise.all([
-      admin.schema('limbus').from('deck_identities').select('*').eq('deck_id', id),
-      admin.schema('limbus').from('deck_egos').select('*').eq('deck_id', id),
-    ])
-    if (origIdentsError || origEgosError) {
-      console.error('[deck update] original rows read failed', origIdentsError ?? origEgosError)
-      return NextResponse.json({ error: '덱을 수정하지 못했습니다. 다시 시도해주세요.' }, { status: 500 })
-    }
-
-    const db = admin.schema('limbus')
-    /** Puts the deck back as it was: the rows already inserted go first, so the originals never meet them. */
-    const rollback = async () => {
-      const steps: [string, PromiseLike<{ error: unknown }>][] = [
-        ['new identities', db.from('deck_identities').delete().eq('deck_id', id)],
-        ['new egos', db.from('deck_egos').delete().eq('deck_id', id)],
-        ['deck', db.from('decks').update(originalValues).eq('id', id)],
-      ]
-      if (origIdents?.length) steps.push(['original identities', db.from('deck_identities').insert(origIdents)])
-      if (origEgos?.length) steps.push(['original egos', db.from('deck_egos').insert(origEgos)])
-      // One at a time, in order: each step depends on the one before it.
-      for (const [label, step] of steps) {
-        const { error } = await step
-        if (error) console.error(`[deck update] rollback of ${label} failed`, error)
-      }
-    }
-    const failed = async (error: unknown) => {
-      console.error('[deck update] failed', error)
-      await rollback()
-      return NextResponse.json({ error: '덱을 수정하지 못했습니다. 다시 시도해주세요.' }, { status: 500 })
-    }
-
-    // decks 테이블 UPDATE (소유자는 변경하지 않음). 태그는 body에 있을 때만 바꾼다.
-    const { error: updateError } = await admin
-      .schema('limbus')
-      .from('decks')
-      .update({
+    // 덱 칸과 인격·E.G.O 행을 DB 함수 하나(한 트랜잭션)로 바꾼다. 소유자는 변경하지 않고, 태그는 body에 있을 때만 바꾼다.
+    const identityRows = identitySlots.map((slot: { identity_id: string; slot_order: number; s1_count?: number; s2_count?: number; s3_count?: number; uptie?: number }) => ({
+      deck_id: id,
+      identity_id: slot.identity_id,
+      slot_order: slot.slot_order,
+      gacksung: normalizeUptie(slot.uptie) >= 3,
+      s1_count: slot.s1_count ?? 3,
+      s2_count: slot.s2_count ?? 2,
+      s3_count: slot.s3_count ?? 1,
+      uptie: normalizeUptie(slot.uptie),
+    }))
+    const egoRows = egoSlots.map((slot: { ego_id: string; grade: string }) => ({
+      deck_id: id,
+      ego_id: slot.ego_id,
+      grade: slot.grade,
+    }))
+    const { error: replaceError } = await admin.schema('limbus').rpc('replace_deck', {
+      p_deck_id: id,
+      p_patch: {
         title,
         description,
         ...(tags !== undefined ? { tags } : {}),
         main_keywords: mainKeywordsResult.value,
         content_type: content_type || '없음',
         content_edited_at: new Date().toISOString(),
-      })
-      .eq('id', id)
-
-    if (updateError) {
-      console.error('[deck update] deck update failed', updateError)
+      },
+      p_identities: identityRows,
+      p_egos: egoRows,
+    })
+    if (replaceError) {
+      console.error('[deck update] replace_deck failed', replaceError)
       return NextResponse.json({ error: '덱을 수정하지 못했습니다. 다시 시도해주세요.' }, { status: 500 })
-    }
-
-    // deck_identities: 기존 삭제 → 새로 삽입
-    const { error: delIdentitiesError } = await admin.schema('limbus').from('deck_identities').delete().eq('deck_id', id)
-    if (delIdentitiesError) return failed(delIdentitiesError)
-    if (identitySlots.length > 0) {
-      const rows = identitySlots.map((slot: { identity_id: string; gacksung: boolean; slot_order: number; s1_count?: number; s2_count?: number; s3_count?: number; uptie?: number }) => ({
-        deck_id: id,
-        identity_id: slot.identity_id,
-        slot_order: slot.slot_order,
-        gacksung: normalizeUptie(slot.uptie) >= 3,
-        s1_count: slot.s1_count ?? 3,
-        s2_count: slot.s2_count ?? 2,
-        s3_count: slot.s3_count ?? 1,
-        uptie: normalizeUptie(slot.uptie),
-      }))
-      const { error: insIdentitiesError } = await insertDeckIdentities(next => admin.schema('limbus').from('deck_identities').insert(next), rows)
-      if (insIdentitiesError) return failed(insIdentitiesError)
-    }
-
-    // deck_egos: 기존 삭제 → 새로 삽입
-    const { error: delEgosError } = await admin.schema('limbus').from('deck_egos').delete().eq('deck_id', id)
-    if (delEgosError) return failed(delEgosError)
-    if (egoSlots.length > 0) {
-      const rows = egoSlots.map((slot: { ego_id: string; grade: string }) => ({
-        deck_id: id,
-        ego_id: slot.ego_id,
-        grade: slot.grade,
-      }))
-      const { error: insEgosError } = await admin.schema('limbus').from('deck_egos').insert(rows)
-      if (insEgosError) return failed(insEgosError)
     }
 
     const seriesError = await saveSeriesChoice(admin, { kind: 'deck', postId: id, userId: isOwner ? userId : null, body })
