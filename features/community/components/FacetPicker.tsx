@@ -127,7 +127,7 @@ export function FacetPickerModal({ kind, facets, selected, onToggle, onClose }: 
       <div className="grid grid-cols-3 gap-x-3 gap-y-2 sm:grid-cols-5 md:grid-cols-7">
         {(facets?.themes ?? []).filter(theme => match(theme.name, theme.name_en, theme.name_jp)).map(theme => (
           <div key={theme.id} className="min-w-0">
-            <ThemePackCard theme={theme} sizes="7rem" imageSurface="bare" isSelected={selectedSet.has(String(theme.id))} onClick={() => onToggle(String(theme.id))} />
+            <ThemePackCard theme={theme} sizes="7rem" isSelected={selectedSet.has(String(theme.id))} onClick={() => onToggle(String(theme.id))} />
             <Count value={theme.count} />
           </div>
         ))}

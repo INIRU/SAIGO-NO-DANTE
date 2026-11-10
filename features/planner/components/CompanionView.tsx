@@ -180,7 +180,7 @@ export default function CompanionView({ view, data, actions, width, height, inPi
           transition={{ duration: reducedMotion ? 0 : 0.18, ease: 'easeOut' }} className="grid place-items-center gap-3" style={{ minHeight: inPip ? Math.max(180, height - 96) : 180 }}>
           {pack ? <div data-theme-choice={pack.guidance.theme.id} className={`flex justify-center gap-3 ${stacked ? 'flex-col items-center' : 'items-start'}`}>
             <div className="shrink-0" style={{ width: posterWidth }}>
-              <ThemePackCard theme={pack.guidance.theme} imageSurface="bare" sizes={`${posterWidth}px`}
+              <ThemePackCard theme={pack.guidance.theme} sizes={`${posterWidth}px`}
                 ariaLabel={`${localized(pack.guidance.theme)} · ${t('pipThemePossible')} · ${t('pipThemeFloors', { floors })}${pack.guidance.remainingOrder.length ? ` · ${t('pipThemeRemaining', { themes: pack.guidance.remainingOrder.map(next => `${next.floor}F ${localized(next.theme)}`).join(' · ') })}` : ''}`}
                 title={`${localized(pack.guidance.theme)} · ${t('pipThemeFloors', { floors })}`}
                 onClick={() => actions.chooseTheme(pack.guidance.theme.id)} />
