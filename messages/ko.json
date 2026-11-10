@@ -529,7 +529,8 @@
     "group": "{gift} 강화 단계",
     "base": "강화 안 함",
     "plus": "+ 강화",
-    "plusplus": "++ 강화"
+    "plusplus": "++ 강화",
+    "selected": "선택됨"
   },
   "giftDetail": {
     "title": "기프트 상세",

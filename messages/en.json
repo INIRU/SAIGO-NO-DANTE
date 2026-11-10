@@ -529,7 +529,8 @@
     "group": "{gift} enhancement",
     "base": "Not enhanced",
     "plus": "Enhanced +",
-    "plusplus": "Enhanced ++"
+    "plusplus": "Enhanced ++",
+    "selected": "Selected"
   },
   "giftDetail": {
     "title": "Gift Details",
