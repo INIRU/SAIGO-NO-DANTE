@@ -13,8 +13,8 @@ export interface ThemePackNameStyle {
   name_segments?: Partial<Record<SupportedLang, ThemePackNameSegment[]>> | null
 }
 
-/** Packs without a textColor (12xx-15xx mostly) use the warm beige of the game's selection screen. */
-export const THEME_PACK_DEFAULT_COLOR = '#E5C6A0'
+/** Packs without a textColor use the name text's own colour in the card prefab (m_fontColor 0.922, 0.792, 0.635). */
+export const THEME_PACK_DEFAULT_COLOR = '#EBCAA2'
 
 export function getThemePackNameColor(theme: ThemePackNameStyle): string {
   return theme.name_color ?? THEME_PACK_DEFAULT_COLOR

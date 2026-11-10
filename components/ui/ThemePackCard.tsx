@@ -41,11 +41,12 @@ interface ThemePackCardProps {
 }
 
 const TITLE_MIN_FONT_REM = 0.32
-// Font size as a share of the poster width: at 0.105 the ink (with outline) is ~6% of the poster height, as in game
-// captures. Long names shrink to fit one line, like the game (its longest names fill ~72% of the width).
-const TITLE_FONT_RATIO = 0.105
-// 8-way hard outline in the page's darkest brown so any pack colour stays legible on busy art.
-const TITLE_OUTLINE = '0.07em 0 0 #0d0b08, -0.07em 0 0 #0d0b08, 0 0.07em 0 #0d0b08, 0 -0.07em 0 #0d0b08, 0.05em 0.05em 0 #0d0b08, -0.05em 0.05em 0 #0d0b08, 0.05em -0.05em 0 #0d0b08, -0.05em -0.05em 0 #0d0b08, 0 0.12em 0.25em rgba(0,0,0,0.85)'
+// Font size as a share of the poster width: the prefab's 65 card px max auto-size is 42.1 px on the 416x684 poster.
+// Long names shrink to fit the box, like TMP auto-size.
+const TITLE_FONT_RATIO = 0.101
+// The name material (KOTRA_BOLD SDF Underline) has no outline, only an underlay: #040001, offset (1,-1), dilate 0.35.
+// shortcut: a CSS shadow approximates the SDF underlay (offset and spread by eye), not the exact TMP rendering.
+const TITLE_OUTLINE = '0.06em 0.06em 0 #040001, 0.095em 0.06em 0 #040001, 0.025em 0.06em 0 #040001, 0.06em 0.095em 0 #040001, 0.06em 0.025em 0 #040001'
 const THEME_CARD_ASPECT_RATIO = '416/684'
 // The 436x740 selection sprite, placed so its gold line sits 1.5px outside the 416x684 poster art.
 // Measured from the sprite stroke vs. the poster alpha edge (normal: pack outline incl. crimp notches,
