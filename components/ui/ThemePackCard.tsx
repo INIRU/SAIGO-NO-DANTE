@@ -208,7 +208,8 @@ export default function ThemePackCard({
                 minWidth: 0,
                 paddingBlock: '0.125rem',
                 whiteSpace: 'nowrap',
-                overflow: 'hidden',
+                // Clip sideways only: the glyph tops rise above the line-height-1 box and were cut off.
+                overflowX: 'clip',
                 overflowWrap: 'normal',
                 wordBreak: lang === 'ko' || lang === 'ja' ? 'keep-all' : 'normal',
                 display: 'block',
