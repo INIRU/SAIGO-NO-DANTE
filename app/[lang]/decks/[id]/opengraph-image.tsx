@@ -16,8 +16,7 @@ export default async function DeckOgImage({ params }: { params: Promise<{ lang: 
     const identity = Array.isArray(slot.identities) ? slot.identities[0] : slot.identities
     return identity ? getIdentityPortraitUrl(identity.sinner_id, identity.folder_name, identity.game_id, slot.gacksung ?? true) : ''
   })
-  return renderOgPreview({ lang, eyebrow: 'DECK BOARD', layout: 'formation', images,
+  return renderOgPreview({ lang, label: lang === 'ko' ? '덱' : lang === 'ja' ? 'デッキ' : 'Deck', layout: 'formation', images,
     title: deck?.title ?? (lang === 'ko' ? '덱을 찾을 수 없습니다' : lang === 'ja' ? 'デッキが見つかりません' : 'Deck not found'),
-    subtitle: lang === 'ko' ? '덱 편성과 공략을 확인하세요.' : lang === 'ja' ? 'デッキ編成と攻略を確認しましょう。' : 'Explore this deck and its strategy.',
   })
 }

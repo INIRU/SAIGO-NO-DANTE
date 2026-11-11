@@ -1,6 +1,6 @@
 import { getTranslations } from 'next-intl/server'
 import type { Metadata } from 'next'
-import { pageMetadata, seoLang } from '@/lib/seo/metadata'
+import { localeUrl, pageMetadata, seoLang } from '@/lib/seo/metadata'
 import { loadMotionCatalog } from '@/features/motion/server'
 import { findMotionSkill, toMotionParam } from '@/features/motion'
 import MotionWatch from '@/features/motion/components/MotionWatch'
@@ -19,13 +19,12 @@ export async function generateMetadata({ params, searchParams }: { params: Promi
   if (!found) return list
   const { owner, skill } = found
   const names = { sinner: (await getTranslations({ locale: lang, namespace: 'sinner' }))(found.sinnerId), identity: owner.label, skill: skill.title }
-  const picture = 'egoId' in owner ? owner.image : owner.portrait
   return pageMetadata({
     lang,
     path: `/motion/skills/watch?skill=${toMotionParam(skill.key)}`,
     title: t('skillMetaTitle', names),
     description: t('skillMetaDescription', { ...names, states: skill.states.map(state => state.label).join(STATE_SEPARATOR[seoLang(lang)]) }),
-    image: picture ? { url: picture, alt: owner.label } : undefined,
+    image: { url: localeUrl(lang, `/og/motion/skills/${toMotionParam(skill.key)}`), width: 1200, height: 630, alt: `${owner.label} — ${skill.title}` },
   })
 }
 

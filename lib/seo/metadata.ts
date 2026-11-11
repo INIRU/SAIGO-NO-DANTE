@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { routing } from '@/lib/i18n/routing'
 import { translations, type TranslationKey } from '@/lib/i18n/translations'
 import type { SupportedLang } from '@/lib/i18n/types'
+import { ogCardPath } from './og-cards'
 
 export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://saigo-no-dante.com'
 /** Korean players are the primary audience: x-default, crawler redirects and the sitemap use /ko. */
@@ -64,7 +65,7 @@ export function pageMetadata({ lang, path, title, description, ogTitle = title, 
   noindex?: boolean
 }): Metadata {
   const locale = seoLang(lang)
-  const images = [image ?? { url: localeUrl(lang, '/opengraph-image'), width: 1200, height: 630 }]
+  const images = [image ?? { url: localeUrl(lang, ogCardPath(path) ?? '/opengraph-image'), width: 1200, height: 630 }]
   return {
     title,
     description,

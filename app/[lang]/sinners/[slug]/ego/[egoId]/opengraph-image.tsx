@@ -1,6 +1,7 @@
 import { getEGOById, getSinnerById } from '@/lib/db/queries'
 import { getLocalizedName } from '@/lib/i18n/localize'
 import { renderOgPreview } from '@/components/ui/OgPreview'
+import { SINNER_COLORS } from '@/lib/constants/sinner-colors'
 import { OG_SIZE, OG_CONTENT_TYPE, isSupportedLang } from '@/lib/utils/og-image'
 export const alt = 'E.G.O 공유 이미지'
 export const size = OG_SIZE
@@ -12,8 +13,8 @@ export default async function OgImage({ params }: { params: Promise<{ lang: stri
   const valid = sinner && item && item.sinner_id === slug
   const title = valid ? getLocalizedName({ name_kr: item.name_kr, name_en: item.name_en, name_jp: item.name_jp }, lang) : (lang === 'ko' ? '정보를 찾을 수 없습니다' : lang === 'ja' ? '情報が見つかりません' : 'Not found')
   const art = valid ? (item.image_url || item.cor_image_url || '') : ''
-  return renderOgPreview({ lang, eyebrow: 'E.G.O ARCHIVE', title,
-    subtitle: valid ? getLocalizedName({ name_kr: sinner.name_kr, name_en: sinner.name, name_jp: sinner.name_jp }, lang) : undefined,
+  return renderOgPreview({ lang, title, accent: SINNER_COLORS[slug],
+    label: valid ? getLocalizedName({ name_kr: sinner.name_kr, name_en: sinner.name, name_jp: sinner.name_jp }, lang) : undefined,
     images: art ? [art] : [],
   })
 }

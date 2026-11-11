@@ -61,7 +61,7 @@
 - 게임 화면을 옮긴 카드는 게임 글꼴을 따른다: 제목 KOTRA Bold, 설명 S-Core Dream, 숫자 Bebas Kai. 강조 단어는 게임 원문의 색 표시를 쓴다(가호: `scripts/data/mark-blessing-terms.py`).
 - 영어(`html[lang=en]`)는 제목·본문 모두 Pretendard를 쓴다. 인격 카드 이름은 Mikodacs.
 - 일본어(`html[lang=ja]`)는 제목·본문 모두 M PLUS 1p(`--font-noto-jp` 변수), 인격 카드 이름은 Corporate Logo Bold를 쓴다.
-- 공유 미리보기(OG) 이미지는 제목에 Paperlogy, 수치에 PerfectDOS를 쓴다(`lib/utils/og-image.ts`). 화면 글꼴과 별개다.
+- 공유 미리보기(OG) 이미지는 제목에 Paperlogy(일본어는 M PLUS 1p Bold)를 쓴다(`lib/utils/og-image.ts`). 화면 글꼴과 별개다. 카드는 그림이 오른쪽을 가득 채우고 제목은 왼쪽 아래에 두며, 편성은 6×2 비스듬한 칸으로 넣는다(`components/ui/OgPreview.tsx`). 영어 소제목과 설명 문구는 넣지 않는다.
 - 모든 글꼴은 `public/fonts`에 직접 올려 `next/font/local`로 불러온다(Google Fonts 사용 안 함). 라이선스는 `public/fonts/licenses/`.
 - 크기는 `--text-xs`(11px)부터 `--text-xl`(28px)까지의 단계를 쓴다. 페이지 제목은 과하게 키우지 않는다. 거울 던전 소개처럼 한 줄 설명이 붙은 머리말은 작게 둔다.
 - 굵기는 제목 700, 본문 400, 강조 600 정도로 제한한다. 모든 글자를 굵게 만들지 않는다.

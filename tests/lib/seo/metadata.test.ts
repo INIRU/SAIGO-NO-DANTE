@@ -14,13 +14,13 @@ describe('REQ-SHARED-039 pageMetadata', () => {
         url: 'https://saigo-no-dante.com/ko/decks',
         title: '림버스 덱 게시판',
         description: '덱을 공유합니다.',
-        images: [{ url: 'https://saigo-no-dante.com/ko/opengraph-image', width: 1200, height: 630 }],
+        images: [{ url: 'https://saigo-no-dante.com/ko/og/decks', width: 1200, height: 630 }],
       },
       twitter: {
         card: 'summary_large_image',
         title: '림버스 덱 게시판',
         description: '덱을 공유합니다.',
-        images: ['https://saigo-no-dante.com/ko/opengraph-image'],
+        images: ['https://saigo-no-dante.com/ko/og/decks'],
       },
     })
   })
@@ -28,7 +28,7 @@ describe('REQ-SHARED-039 pageMetadata', () => {
   it('REQ-SHARED-039 uses the locale of the page for the site name, og:locale and the shared image', () => {
     const { openGraph, twitter } = pageMetadata({ lang: 'ja', path: '/keywords', title: 'キーワード図鑑', description: '説明' })
     expect(openGraph).toMatchObject({ locale: 'ja_JP', siteName: 'SAIGO NO DANTE', url: 'https://saigo-no-dante.com/ja/keywords' })
-    expect(twitter?.images).toEqual(['https://saigo-no-dante.com/ja/opengraph-image'])
+    expect(twitter?.images).toEqual(['https://saigo-no-dante.com/ja/og/keywords'])
   })
 
   it('REQ-SHARED-039 takes a share title, share description, image and type when the page has its own', () => {
