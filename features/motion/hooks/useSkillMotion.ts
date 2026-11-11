@@ -383,10 +383,23 @@ export function useSkillMotion() {
     v.muted = !on
     soundOn.current = on
     keepSoundOn(on)
-    sounds.current?.setMuted(!on)
+    const fetching = sounds.current?.setMuted(!on)
     setMuted(!on)
-    if (on && v.paused && !held.current) v.play().catch(() => {})
-  }, [])
+    // Turned on with its files not fetched yet (off, nothing is): the video holds on the loading state, then plays with them.
+    if (fetching && meta.current && !held.current) {
+      const mine = token.current
+      clearTail()
+      v.pause()
+      setStatus('loading')
+      let timer = 0
+      void Promise.race([fetching, new Promise(resolve => { timer = window.setTimeout(resolve, SOUND_WAIT_MS) })]).then(() => {
+        window.clearTimeout(timer)
+        if (mine !== token.current) return
+        setStatus('ready')
+        if (!held.current && !document.hidden) playVideo()
+      })
+    } else if (on && v.paused && !held.current) v.play().catch(() => {})
+  }, [clearTail, playVideo])
   const toggleMute = useCallback(() => {
     const v = video.current
     if (!v) return

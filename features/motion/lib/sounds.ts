@@ -168,6 +168,7 @@ export class SoundPlayer {
   private rulesLoad: Promise<void> = Promise.resolve();
   private loading = 0;
   private filling = 0;   // the load whose files are fetched (once)
+  private pending: Promise<void> | null = null;   // that fetch, while it runs
   private cues: SoundCue[] = [];
   private pools: SoundPoolMeta[] = [];
   private buffers = new Map<string, AudioBuffer | null>();
@@ -211,7 +212,14 @@ export class SoundPlayer {
     if (this.ctx!.state !== "running") void this.ctx!.resume();
   }
 
-  setMuted(m: boolean) { this.muted = m; if (!m) { this.unlock(); void this.fill(this.loading); } this.level(); }
+  /** on: the wait for this state's sounds when they still have to be fetched (the page holds the video for it) */
+  setMuted(m: boolean): Promise<void> | undefined {
+    this.muted = m;
+    this.level();
+    if (m) return;
+    this.unlock();
+    return this.fill(this.loading) ?? undefined;
+  }
   /** the page's volume 0..1, after the last limiter */
   setVolume(v: number) { this.vol = Math.max(0, Math.min(1, v)); this.level(); }
   get volume() { return this.vol; }
@@ -266,10 +274,18 @@ export class SoundPlayer {
     if (!this.muted) await this.fill(token);
   }
 
-  /** the files and tracks of the loaded state (token: the load it belongs to) */
-  private async fill(token: number) {
-    if (!this.cues.length || this.filling === token) return;
-    this.filling = token;
+  /** the loaded state's files and tracks, fetched once: the wait for them, null when there is nothing (left) to wait for */
+  private fill(token: number): Promise<void> | null {
+    if (!this.cues.length) return null;
+    if (this.filling !== token) {
+      this.filling = token;
+      const run: Promise<void> = this.fetchAll(token).finally(() => { if (this.pending === run) this.pending = null; });
+      this.pending = run;
+    }
+    return this.pending;
+  }
+
+  private async fetchAll(token: number) {
     const root = this.root;
     if (!this.ctx) this.make();
     const ctx = this.ctx!;

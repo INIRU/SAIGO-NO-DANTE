@@ -367,3 +367,24 @@ describe('REQ-MOTION-025 the sound stays on', () => {
     expect(video.paused).toBe(false)
   })
 })
+
+describe('REQ-MOTION-058 the sound turned on waits for its files', () => {
+  it('REQ-MOTION-058 stops the video on the loading state while the sound is fetched, then plays with it', async () => {
+    await open()
+    let done = () => {}
+    calls.sound.setMuted.mockReturnValueOnce(new Promise<void>(r => { done = r }))
+    await act(async () => { result.current.toggleMute() })
+    expect(result.current.status).toBe('loading')
+    expect(video.paused).toBe(true)
+    await act(async () => { done() })
+    expect(result.current.status).toBe('ready')
+    expect(video.paused).toBe(false)
+  })
+
+  it('REQ-MOTION-058 plays on at once when the sound is already there', async () => {
+    await open()
+    await act(async () => { result.current.toggleMute() })
+    expect(result.current.status).toBe('ready')
+    expect(video.paused).toBe(false)
+  })
+})
