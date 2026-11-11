@@ -1,7 +1,7 @@
 import { renderOgPreview } from '@/components/ui/OgPreview'
 import { SINNER_SLUGS } from '@/lib/constants/game'
 import { SINNER_COLORS } from '@/lib/constants/sinner-colors'
-import { getThemePackCompositeImageUrl, THEME_PACK_VISUALS } from '@/lib/data/theme-pack-visuals'
+import { getThemePackCompositeImageUrl } from '@/lib/data/theme-pack-visuals'
 import { getCachedAnnouncements } from '@/lib/db/announcements'
 import { getLatestEGOs, getLatestIdentities, getSinnerById } from '@/lib/db/queries'
 import { getLocalizedName } from '@/lib/i18n/localize'
@@ -28,8 +28,8 @@ async function art(kind: OgArt): Promise<Pick<Card, 'images' | 'layout'>> {
   }
   if (kind === 'ego') return { layout: 'portrait', images: [(await getLatestEGOs(1))[0]?.image_url ?? ''] }
   if (kind === 'themepacks') {
-    const ids = Object.keys(THEME_PACK_VISUALS).map(Number).sort((a, b) => b - a).slice(0, 12)
-    return { layout: 'formation', images: ids.map(getThemePackCompositeImageUrl) }
+    // Three packs whose art reads at a glance; the extreme ones are a red frame around Korean lettering.
+    return { layout: 'posters', images: [1003, 1004, 1006].map(getThemePackCompositeImageUrl) }
   }
   if (kind === 'story') {
     const newest = (await getStoryIndex()).filter(entry => (entry.coverImg || entry.cover) && !entry.hard && entry.sync == null).at(-1)

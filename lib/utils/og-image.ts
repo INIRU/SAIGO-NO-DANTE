@@ -118,6 +118,21 @@ export async function formationArt(urls: string[], width: number, height: number
   return `data:image/jpeg;base64,${output.toString('base64')}`
 }
 
+/** Whole posters side by side, uncropped (theme packs as the game lays them out to choose from). */
+export async function posterRowArt(urls: string[], posterWidth: number, posterHeight: number, gap: number): Promise<string> {
+  const posters = (await Promise.all(urls.map(async url => {
+    try {
+      const response = await fetch(url, { cache: 'force-cache' })
+      if (!response.ok) return null
+      return await sharp(Buffer.from(await response.arrayBuffer())).resize(posterWidth, posterHeight, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } }).png().toBuffer()
+    } catch { return null }
+  }))).flatMap(poster => poster ? [poster] : [])
+  if (!posters.length) return ''
+  const output = await sharp({ create: { width: posters.length * (posterWidth + gap) - gap, height: posterHeight, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } } })
+    .composite(posters.map((input, index) => ({ input, left: index * (posterWidth + gap), top: 0 }))).png({ compressionLevel: 8 }).toBuffer()
+  return `data:image/png;base64,${output.toString('base64')}`
+}
+
 export function absoluteUrl(path: string): string {
   return new URL(path, SITE_URL).toString()
 }
