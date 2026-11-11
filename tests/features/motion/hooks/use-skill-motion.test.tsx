@@ -387,4 +387,17 @@ describe('REQ-MOTION-058 the sound turned on waits for its files', () => {
     expect(result.current.status).toBe('ready')
     expect(video.paused).toBe(false)
   })
+
+  it('REQ-MOTION-058 leaves a video that is still loading on its loading state', async () => {
+    await open()
+    let arrive = (_: unknown) => {}
+    vi.stubGlobal('fetch', vi.fn(() => new Promise(r => { arrive = r })))
+    let loading = Promise.resolve()
+    await act(async () => { loading = result.current.load(STATE) })
+    calls.sound.setMuted.mockReturnValueOnce(Promise.resolve())
+    await act(async () => { result.current.toggleMute() })
+    expect(result.current.status).toBe('loading')
+    await act(async () => { arrive({ ok: true, status: 200, json: async () => json }); await loading })
+    expect(result.current.status).toBe('ready')
+  })
 })
