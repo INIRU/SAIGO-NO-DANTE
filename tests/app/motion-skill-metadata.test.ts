@@ -48,7 +48,7 @@ describe('REQ-MOTION-022 each skill motion has its own address for search', () =
     expect(metadata.description).toContain('차원 베기')
     expect(metadata.description).toContain('기본·최고 상태')
     expect(metadata.alternates).toMatchObject({ canonical: url, languages: { en: 'https://saigo-no-dante.com/en/motion/skills/watch?skill=id10116~1011601' } })
-    expect(metadata.openGraph).toMatchObject({ url, images: [{ url: catalog('ko')[0].identities[1].portrait }] })
+    expect(metadata.openGraph).toMatchObject({ url, images: [{ url: 'https://saigo-no-dante.com/ko/og/motion/skills/id10116~1011601' }] })
   })
 
   it('REQ-MOTION-022 writes the skill page in English and Japanese without Korean', async () => {
