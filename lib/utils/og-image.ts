@@ -31,8 +31,19 @@ try {
   perfectDos = null
 }
 
+// Japanese titles: Paperlogy has no kana, and the fallback face is a thin one.
+let mplusBold: ArrayBuffer | null = null
+try {
+  mplusBold = toArrayBuffer(readFileSync(join(process.cwd(), 'public', 'fonts', 'MPLUS1p-Bold.ttf')))
+} catch {
+  mplusBold = null
+}
+
 export const ogFontOptions = {
   fonts: [
+    ...(mplusBold
+      ? [{ name: 'MPLUS', data: mplusBold, style: 'normal' as const, weight: 700 as const }]
+      : []),
     ...(pretendardRegular
       ? [{ name: 'Pretendard', data: pretendardRegular, style: 'normal' as const, weight: 400 as const }]
       : []),
@@ -78,6 +89,33 @@ export async function fetchImageDataUri(url: string, options: ImageDataUriOption
   } catch {
     return ''
   }
+}
+
+/**
+ * Up to 12 portraits in the game's 6×2 formation order as one picture of slanted panels (the game's own panel cut),
+ * sized to stand where a single illustration would. An empty slot stays a dark panel.
+ */
+export async function formationArt(urls: string[], width: number, height: number): Promise<string> {
+  const gap = 4, slant = 44, cols = 6
+  const cellH = Math.floor((height - gap) / 2)
+  const cellW = Math.floor((width - slant) / cols) - gap
+  const boxW = cellW + slant
+  const mask = Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${boxW}" height="${cellH}"><polygon points="${slant},0 ${boxW},0 ${cellW},${cellH} 0,${cellH}"/></svg>`)
+  const panels = await Promise.all(urls.slice(0, cols * 2).map(async (url, index) => {
+    let panel = sharp({ create: { width: boxW, height: cellH, channels: 4, background: '#1a1510' } })
+    try {
+      const response = url ? await fetch(url, { cache: 'force-cache' }) : null
+      if (response?.ok) panel = sharp(Buffer.from(await response.arrayBuffer())).resize(boxW, cellH, { fit: 'cover', position: 'top' })
+    } catch { /* the dark panel stands in */ }
+    const input = await panel.ensureAlpha().composite([{ input: mask, blend: 'dest-in' }]).png().toBuffer()
+    const row = Math.floor(index / cols)
+    // The lower row sits one slant to the left so the cut runs through both rows as one line.
+    return { input, left: (index % cols) * (cellW + gap) + (row ? 0 : slant), top: row * (cellH + gap) }
+  }))
+  if (!panels.length) return ''
+  const output = await sharp({ create: { width: width + slant, height, channels: 4, background: { r: 13, g: 11, b: 8, alpha: 1 } } })
+    .composite(panels).extract({ left: 0, top: 0, width, height }).jpeg({ quality: 86, mozjpeg: true }).toBuffer()
+  return `data:image/jpeg;base64,${output.toString('base64')}`
 }
 
 export function absoluteUrl(path: string): string {
