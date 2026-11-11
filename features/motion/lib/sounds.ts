@@ -167,6 +167,7 @@ export class SoundPlayer {
   private rulesRoot = "";
   private rulesLoad: Promise<void> = Promise.resolve();
   private loading = 0;
+  private filling = 0;   // the load whose files are fetched (once)
   private cues: SoundCue[] = [];
   private pools: SoundPoolMeta[] = [];
   private buffers = new Map<string, AudioBuffer | null>();
@@ -210,7 +211,7 @@ export class SoundPlayer {
     if (this.ctx!.state !== "running") void this.ctx!.resume();
   }
 
-  setMuted(m: boolean) { this.muted = m; if (!m) this.unlock(); this.level(); }
+  setMuted(m: boolean) { this.muted = m; if (!m) { this.unlock(); void this.fill(this.loading); } this.level(); }
   /** the page's volume 0..1, after the last limiter */
   setVolume(v: number) { this.vol = Math.max(0, Math.min(1, v)); this.level(); }
   get volume() { return this.vol; }
@@ -258,8 +259,18 @@ export class SoundPlayer {
     this.cues = m.sounds ?? [];
     this.pools = m.soundPools ?? [];
     this.tracks = this.spare = null; this.over = false; this.last = 0;
-    if (this.buffers.size > 240) this.buffers.clear();
-    if (!this.cues.length) return;
+    // Only this state's files stay decoded (stereo PCM, about 0.4 MB a second): a phone that went through many videos ran out of memory.
+    const used = new Set(this.cues.flatMap((c) => c.files));
+    for (const f of this.buffers.keys()) if (!used.has(f)) this.buffers.delete(f);
+    // With the sound off nothing is fetched or decoded; turning it on fills this state.
+    if (!this.muted) await this.fill(token);
+  }
+
+  /** the files and tracks of the loaded state (token: the load it belongs to) */
+  private async fill(token: number) {
+    if (!this.cues.length || this.filling === token) return;
+    this.filling = token;
+    const root = this.root;
     if (!this.ctx) this.make();
     const ctx = this.ctx!;
     if (this.rulesRoot !== root) {
