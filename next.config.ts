@@ -138,6 +138,14 @@ const nextConfig: NextConfig = {
         ],
       },
       {
+        // Pages and their RSC payloads. Next sends `s-maxage=…, stale-while-revalidate=…`, meant for a CDN that rewrites it; no
+        // CDN here does, and Chrome honours stale-while-revalidate itself: after a deploy it answered a navigation from its
+        // disk cache with the last build's payload, whose chunks do not fit the new build ("Element type is invalid", "x is
+        // not a function" on the error screen until a hard refresh). The browser asks the server every time instead.
+        source: '/:lang(ko|en|ja)/:path*',
+        headers: [{ key: 'Cache-Control', value: 'private, no-cache' }],
+      },
+      {
         // robots.txt lets crawlers fetch the API (a rendered page reads from it); the responses themselves stay out of the index.
         source: '/api/:path*',
         headers: [{ key: 'X-Robots-Tag', value: 'noindex' }],
