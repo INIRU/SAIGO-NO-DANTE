@@ -20,8 +20,7 @@ export default async function PlanOgImage({ params }: { params: Promise<{ lang: 
       return identity ? getIdentityPortraitUrl(identity.sinner_id, identity.folder_name, identity.game_id, slot.gacksung !== false) : ''
     })
   }
-  return renderOgPreview({ lang, eyebrow: 'MIRROR DUNGEON PLANNER', layout: 'formation', images,
+  return renderOgPreview({ lang, label: lang === 'ko' ? '거울 던전 플랜' : lang === 'ja' ? 'ミラーダンジョンプラン' : 'Mirror Dungeon plan', layout: 'formation', images,
     title: plan?.title ?? (lang === 'ko' ? '플랜을 찾을 수 없습니다' : lang === 'ja' ? 'プランが見つかりません' : 'Plan not found'),
-    subtitle: lang === 'ko' ? '층별 계획부터 최종 기프트까지' : lang === 'ja' ? '階層ごとの計画から最終ギフトまで' : 'From floor plans to final gifts',
   })
 }
