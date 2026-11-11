@@ -41,6 +41,7 @@ let tracks: Offline[] = []
 let limiters: Limiter[] = []
 let gains: Gain[] = []
 let durations: Record<string, number> = {}
+let gate: Promise<void> | undefined   // a mix waits here for its limiter module
 class Ctx {
   currentTime = 10; state = 'running'; destination = new Node()
   audioWorklet = { addModule: async () => {} }
@@ -52,7 +53,7 @@ class Ctx {
 }
 class Offline {
   destination = new Node()
-  audioWorklet = { addModule: async () => {} }
+  audioWorklet = { addModule: async () => { await gate } }
   made: Source[] = []
   constructor(public channels: number, public length: number, public sampleRate: number) { tracks.push(this) }
   createGain() { return new Gain() }
@@ -104,7 +105,7 @@ function play(at = 0.8) {
 
 beforeEach(() => {
   vi.useFakeTimers()
-  sources = []; cues = []; tracks = []; limiters = []; gains = []; durations = {}
+  sources = []; cues = []; tracks = []; limiters = []; gains = []; durations = {}; gate = undefined
   ctx = new Ctx()
   vi.stubGlobal('window', globalThis)
   vi.stubGlobal('AudioContext', function () { return ctx })
@@ -517,5 +518,19 @@ describe('REQ-MOTION-058 only the sounds in use are held', () => {
     // (Nothing left to wait for: off and on again starts no second wait.)
     player.setMuted(true)
     expect(player.setMuted(false)).toBeUndefined()
+  })
+
+  it('REQ-MOTION-058 finishes a mix whose files a newer load has dropped', async () => {
+    await setup(meta([]))
+    let open = () => {}
+    gate = new Promise(r => { open = r })
+    const first = player.load('https://r2/', meta([cue({ files: ['sfx/x.m4a'] })]))
+    await flush()
+    const second = player.load('https://r2/', meta([cue({ files: ['sfx/y.m4a'] })]))
+    open()
+    await expect(first).resolves.toBeUndefined()
+    await second
+    play()
+    expect(sources[0].buffer!.cues!.map(c => c.buffer!.url)).toEqual(['sfx/y.m4a'])
   })
 })

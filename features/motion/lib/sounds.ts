@@ -310,8 +310,9 @@ export class SoundPlayer {
         const response = await fetch(this.root + f);
         if (!response.ok) throw new Error(String(response.status));
         const data = await response.arrayBuffer();
-        this.buffers.set(f, await new Promise<AudioBuffer>((res, rej) => ctx.decodeAudioData(data, res, rej)));
-      } catch { this.buffers.set(f, null); }
+        const buffer = await new Promise<AudioBuffer>((res, rej) => ctx.decodeAudioData(data, res, rej));
+        if (token === this.loading) this.buffers.set(f, buffer);   // (a newer load: its files only)
+      } catch { if (token === this.loading) this.buffers.set(f, null); }
     }));
     if (token !== this.loading) return;
     const tracks = await this.mix();
@@ -323,10 +324,11 @@ export class SoundPlayer {
 
   /** one play: the draw, the limit on what it drew, and its two tracks */
   private async mix(): Promise<Tracks> {
-    const play = limitCues(pickCues(this.cues, this.pools), this.rules, (c) => this.buffers.get(c.file)?.duration ?? 0).filter((c) => this.buffers.get(c.file));
+    const buffers = new Map(this.buffers);   // (its own copy: a newer load drops files while this mix still waits)
+    const play = limitCues(pickCues(this.cues, this.pools), this.rules, (c) => buffers.get(c.file)?.duration ?? 0).filter((c) => buffers.get(c.file));
     const [sfx, voice] = await Promise.all([
-      mixTrack(play.filter((c) => c.kind !== "voice"), this.buffers, this.fps, this.rules?.limiter),
-      mixTrack(play.filter((c) => c.kind === "voice"), this.buffers, this.fps),
+      mixTrack(play.filter((c) => c.kind !== "voice"), buffers, this.fps, this.rules?.limiter),
+      mixTrack(play.filter((c) => c.kind === "voice"), buffers, this.fps),
     ]);
     return { play, sfx, voice };
   }
