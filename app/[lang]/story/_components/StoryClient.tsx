@@ -7,7 +7,7 @@ import { parseAsInteger, useQueryStates } from 'nuqs'
 import Link from 'next/link'
 import { useHtmlFlag } from '@/hooks/useHtmlFlag'
 import '../story.css'
-import { X } from 'lucide-react'
+import { ArrowUp, X } from 'lucide-react'
 import type { StoryNode, StorySubchapter, StoryUnit, Texts } from '@/lib/story-map'
 import { SIN_ICON_MAP } from '@/lib/constants/sin'
 import type { SinType } from '@/lib/types'
@@ -21,7 +21,7 @@ type Lang = 'ko' | 'en' | 'ja'
 
 const L = {
   ko: {
-    title: '스토리 맵', back: '장 선택으로', close: '닫기', enterDungeon: '입장', floorCount: (n: number) => `${n}층`, chapterName: (n: string) => `${n}장`,
+    title: '스토리 맵', back: '장 선택으로', close: '닫기', enterDungeon: '입장', dungeonMap: '던전 맵 보기', floorCount: (n: number) => `${n}층`, chapterName: (n: string) => `${n}장`,
     recommended: '추천 레벨', effective: '유효', atk: { slash: '참격', pierce: '관통', blunt: '타격' } as Record<AttackTypeKey, string>, sin: { wrath: '분노', lust: '색욕', sloth: '나태', gluttony: '탐식', gloom: '우울', pride: '오만', envy: '질투' } as Record<SinType, string>, ex: 'EX 클리어 조건', enemies: '적 정보', turnLimit: (n: number) => `${n}턴 제한`, boss: '보스전',
     wave: (i: number) => `${i}웨이브`, hidden: '처음엔 보이지 않음', story: '스토리', storyOnly: '전투 없이 이야기만 진행되는 스테이지입니다.', spoiler: '아직 열지 않은 장입니다. 장 선택에서 이 장을 누르면 보입니다.',
     spoilerTitle: '스포일러 주의', spoilerBody: '아직 열지 않은 장입니다. 열면 이 장의 스테이지와 적이 보이고, 그 앞의 장도 모두 열립니다.', openAnyway: '그래도 열기',
@@ -29,7 +29,7 @@ const L = {
     difficulty: ['노말', '하드'], groups: '편', group: (n: number) => ['상편', '중편', '하편'][n - 1] ?? `${n}편`, pickHint: '스테이지를 누르면 적 정보가 열립니다', loading: '지도를 불러오는 중',
   },
   en: {
-    title: 'Story Map', back: 'Back to chapters', close: 'Close', enterDungeon: 'Enter', floorCount: (n: number) => `${n} floors`, chapterName: (n: string) => `Ch. ${n}`,
+    title: 'Story Map', back: 'Back to chapters', close: 'Close', enterDungeon: 'Enter', dungeonMap: 'View dungeon map', floorCount: (n: number) => `${n} floors`, chapterName: (n: string) => `Ch. ${n}`,
     recommended: 'Recommended', effective: 'Weak to', atk: { slash: 'Slash', pierce: 'Pierce', blunt: 'Blunt' } as Record<AttackTypeKey, string>, sin: { wrath: 'Wrath', lust: 'Lust', sloth: 'Sloth', gluttony: 'Gluttony', gloom: 'Gloom', pride: 'Pride', envy: 'Envy' } as Record<SinType, string>, ex: 'EX clear', enemies: 'Enemies', turnLimit: (n: number) => `${n}-turn limit`, boss: 'Boss battle',
     wave: (i: number) => `Wave ${i}`, hidden: 'hidden at first', story: 'Story', storyOnly: 'A story stage with no battle.', spoiler: 'Not opened yet. Pick this chapter on the chapter list to show it.',
     spoilerTitle: 'Spoiler warning', spoilerBody: 'You have not opened this chapter yet. Opening it shows its stages and enemies, and opens every chapter before it.', openAnyway: 'Open anyway',
@@ -37,7 +37,7 @@ const L = {
     difficulty: ['Normal', 'Hard'], groups: 'Parts', group: (n: number) => `Part ${n}`, pickHint: 'Pick a stage to see its enemies', loading: 'Loading the map',
   },
   ja: {
-    title: 'ストーリーマップ', back: '章の選択へ', close: '閉じる', enterDungeon: '入場', floorCount: (n: number) => `${n}階`, chapterName: (n: string) => `${n}章`,
+    title: 'ストーリーマップ', back: '章の選択へ', close: '閉じる', enterDungeon: '入場', dungeonMap: 'ダンジョンマップを見る', floorCount: (n: number) => `${n}階`, chapterName: (n: string) => `${n}章`,
     recommended: '推奨レベル', effective: '有効', atk: { slash: '斬撃', pierce: '貫通', blunt: '打撃' } as Record<AttackTypeKey, string>, sin: { wrath: '憤怒', lust: '色欲', sloth: '怠惰', gluttony: '暴食', gloom: '憂鬱', pride: '傲慢', envy: '嫉妬' } as Record<SinType, string>, ex: 'EXクリア条件', enemies: '敵情報', turnLimit: (n: number) => `${n}ターン制限`, boss: 'ボス戦',
     wave: (i: number) => `ウェーブ${i}`, hidden: '最初は見えない', story: 'ストーリー', storyOnly: '戦闘のないストーリーステージです。', spoiler: 'まだ開いていない章です。章の選択でこの章を押すと表示されます。',
     spoilerTitle: 'ネタバレ注意', spoilerBody: 'まだ開いていない章です。開くとこの章のステージと敵が表示され、それ以前の章もすべて開きます。', openAnyway: 'それでも開く',
@@ -198,6 +198,10 @@ function DungeonEntry({ node, base, lang, onEnter }: { node: StoryNode; base: st
       {/* The game's dungeon card ([CanvasGroup]Dungeon): the entrance picture under its mask, the frame and the rail with
           the octagon; the whole card enters the dungeon (the site has no separate enter button) */}
       <DungeonCard src={info?.illust ? `${base}/dungeon/${node.dungeon}/illust.webp` : null} base={base} label={`${s.enterDungeon} ${node.label}`} onEnter={onEnter} />
+      {/* USER 2026-11-11: nothing said the card is the way into the dungeon map */}
+      <button type="button" onClick={onEnter} className="mx-auto mt-1 flex items-center gap-1 px-2 py-1 text-[0.75rem] leading-none text-[var(--text-secondary)]">
+        <ArrowUp size={12} aria-hidden />{s.dungeonMap}
+      </button>
     </div>
   )
 }
