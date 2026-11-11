@@ -41,6 +41,7 @@ let tracks: Offline[] = []
 let limiters: Limiter[] = []
 let gains: Gain[] = []
 let durations: Record<string, number> = {}
+let gate: Promise<void> | undefined   // a mix waits here for its limiter module
 class Ctx {
   currentTime = 10; state = 'running'; destination = new Node()
   audioWorklet = { addModule: async () => {} }
@@ -52,7 +53,7 @@ class Ctx {
 }
 class Offline {
   destination = new Node()
-  audioWorklet = { addModule: async () => {} }
+  audioWorklet = { addModule: async () => { await gate } }
   made: Source[] = []
   constructor(public channels: number, public length: number, public sampleRate: number) { tracks.push(this) }
   createGain() { return new Gain() }
@@ -104,7 +105,7 @@ function play(at = 0.8) {
 
 beforeEach(() => {
   vi.useFakeTimers()
-  sources = []; cues = []; tracks = []; limiters = []; gains = []; durations = {}
+  sources = []; cues = []; tracks = []; limiters = []; gains = []; durations = {}; gate = undefined
   ctx = new Ctx()
   vi.stubGlobal('window', globalThis)
   vi.stubGlobal('AudioContext', function () { return ctx })
@@ -366,6 +367,7 @@ describe('REQ-MOTION-051 play rules an edge keeps as missing', () => {
     }))
     player = new SoundPlayer(); video = new Video()
     player.attach(video as unknown as HTMLVideoElement)
+    player.setMuted(false)
     await player.load('https://r2/', meta([cue()]))
     expect(urls.filter(u => u.includes('sound_rules.json'))).toHaveLength(2)
     expect(gains.some(g => g.gain.value === 4)).toBe(true)
@@ -486,5 +488,49 @@ describe('REQ-MOTION-049 the sound follows the picture', () => {
     vi.advanceTimersByTime(30)
     expect(sources).toHaveLength(1)
     expect(sources[0].stops).toHaveLength(0)
+  })
+})
+
+describe('REQ-MOTION-058 only the sounds in use are held', () => {
+  it('REQ-MOTION-058 drops the decoded files another video does not use, and keeps the ones it shares', async () => {
+    const decode = vi.spyOn(Ctx.prototype, 'decodeAudioData')
+    const decoded = () => decode.mock.calls.map(call => (call[0] as unknown as { url: string }).url)
+    await setup(meta([cue({ files: ['sfx/a.m4a'] }), cue({ files: ['sfx/shared.m4a'] })]))
+    await player.load('https://r2/', meta([cue({ files: ['sfx/b.m4a'] }), cue({ files: ['sfx/shared.m4a'] })]))
+    await player.load('https://r2/', meta([cue({ files: ['sfx/a.m4a'] })]))
+    expect(decoded()).toEqual(['sfx/a.m4a', 'sfx/shared.m4a', 'sfx/b.m4a', 'sfx/a.m4a'])
+  })
+
+  it('REQ-MOTION-058 fetches nothing while the sound is off, and joins the playing video once it is turned on', async () => {
+    const fetched = vi.fn(async (url: string) => url.endsWith('sound_rules.json') ? { ok: true, json: async () => RULES } : { ok: true, arrayBuffer: async () => ({ url }) })
+    vi.stubGlobal('fetch', fetched)
+    player = new SoundPlayer(); video = new Video()
+    player.attach(video as unknown as HTMLVideoElement)
+    await player.load('https://r2/', meta([cue({ start: 0.5 })]))
+    play(0.3)
+    expect(fetched).not.toHaveBeenCalled()
+    expect(tracks).toHaveLength(0)
+    const filling = player.setMuted(false)
+    expect(filling).toBeInstanceOf(Promise)
+    await filling
+    vi.advanceTimersByTime(30)
+    expect(sources).toHaveLength(1)
+    // (Nothing left to wait for: off and on again starts no second wait.)
+    player.setMuted(true)
+    expect(player.setMuted(false)).toBeUndefined()
+  })
+
+  it('REQ-MOTION-058 finishes a mix whose files a newer load has dropped', async () => {
+    await setup(meta([]))
+    let open = () => {}
+    gate = new Promise(r => { open = r })
+    const first = player.load('https://r2/', meta([cue({ files: ['sfx/x.m4a'] })]))
+    await flush()
+    const second = player.load('https://r2/', meta([cue({ files: ['sfx/y.m4a'] })]))
+    open()
+    await expect(first).resolves.toBeUndefined()
+    await second
+    play()
+    expect(sources[0].buffer!.cues!.map(c => c.buffer!.url)).toEqual(['sfx/y.m4a'])
   })
 })

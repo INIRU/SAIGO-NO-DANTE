@@ -66,6 +66,8 @@ export function useSkillMotion() {
   // The frame on the canvas (the sound tail keeps the last one).
   const drawn = useRef(-1)
   const [status, setStatus] = useState<MotionStatus>('idle')
+  const statusRef = useRef(status)
+  statusRef.current = status
   const [error, setError] = useState<MotionError | null>(null)
   const [playing, setPlaying] = useState(false)
   const [muted, setMuted] = useState(true)
@@ -383,10 +385,24 @@ export function useSkillMotion() {
     v.muted = !on
     soundOn.current = on
     keepSoundOn(on)
-    sounds.current?.setMuted(!on)
+    const fetching = sounds.current?.setMuted(!on)
     setMuted(!on)
-    if (on && v.paused && !held.current) v.play().catch(() => {})
-  }, [])
+    // Turned on with its files not fetched yet (off, nothing is): the video holds on the loading state, then plays with them.
+    // (A video that is still loading, or failed, keeps its state: its own load waits for the sound.)
+    if (fetching && statusRef.current === 'ready' && !held.current) {
+      const mine = token.current
+      clearTail()
+      v.pause()
+      setStatus('loading')
+      let timer = 0
+      void Promise.race([fetching.catch(() => {}), new Promise(resolve => { timer = window.setTimeout(resolve, SOUND_WAIT_MS) })]).then(() => {
+        window.clearTimeout(timer)
+        if (mine !== token.current) return
+        setStatus('ready')
+        if (!held.current && !document.hidden) playVideo()
+      })
+    } else if (on && v.paused && !held.current) v.play().catch(() => {})
+  }, [clearTail, playVideo])
   const toggleMute = useCallback(() => {
     const v = video.current
     if (!v) return
