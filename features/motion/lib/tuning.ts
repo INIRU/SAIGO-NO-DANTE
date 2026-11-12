@@ -21,7 +21,7 @@ export function uploadAsked(): Upload {
 export function drawMeter(video: HTMLVideoElement, label: () => string): ((draw: () => void) => void) | null {
   if (asked('debug') !== '1') return null
   const box = document.createElement('div')
-  box.style.cssText = 'position:fixed;left:0;bottom:0;z-index:9999;padding:4px 6px;font:11px/1.3 monospace;background:rgba(0,0,0,.75);color:#7f7;pointer-events:none;white-space:pre'
+  box.style.cssText = 'position:fixed;left:0;bottom:0;z-index:9999;padding:4px 6px;font:11px/1.3 monospace;background:rgba(0,0,0,.75);color:#7f7;pointer-events:none;white-space:pre-wrap;max-width:100vw'
   document.body.appendChild(box)
   let n = 0, sum = 0, worst = 0, since = performance.now()
   return draw => {
