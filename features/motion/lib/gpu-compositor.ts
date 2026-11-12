@@ -31,29 +31,34 @@ let shared: Promise<GPUDevice | null> | null = null
 function device(): Promise<GPUDevice | null> {
   return (shared ??= (async () => {
     try {
-      const adapter = await navigator.gpu?.requestAdapter()
-      const d = (await adapter?.requestDevice()) ?? null
+      if (!navigator.gpu) { GpuCompositor.why = 'no navigator.gpu'; return null }
+      const adapter = await navigator.gpu.requestAdapter()
+      if (!adapter) { GpuCompositor.why = 'no adapter'; return null }
+      const d = await adapter.requestDevice()
       void d?.lost.then(() => { shared = null })
       return d
-    } catch { return null }
+    } catch (e) { GpuCompositor.why = 'device: ' + String(e); return null }
   })())
 }
 
 export class GpuCompositor {
   readonly kind = 'webgpu'
+  /** why the last create() gave the WebGL2 compositor the video (the `?debug=1` meter shows it) */
+  static why = ''
+  private failed = ''
   onReady: (() => void) | null = null
   private constructor(private dev: GPUDevice, private ctx: GPUCanvasContext, private pipeline: GPURenderPipeline, private sampler: GPUSampler, private uniforms: GPUBuffer) {}
 
   /** Null when this browser, this video (layers) or a first frame drawn from `video` (which must have one) does not work here: the caller takes the WebGL2 compositor. */
   static async create(canvas: HTMLCanvasElement, meta: LayerSetMeta, video: HTMLVideoElement): Promise<GpuCompositor | null> {
-    if (meta.layers.length || meta.chroma || meta.frameCode || (meta.basePlanes && !(meta.basePlanes.cb && meta.basePlanes.cr))) return null
+    if (meta.layers.length || meta.chroma || meta.frameCode || (meta.basePlanes && !(meta.basePlanes.cb && meta.basePlanes.cr))) { GpuCompositor.why = 'video with layers'; return null }
     const dev = await device()
     if (!dev) return null
     try {
       canvas.width = meta.tile.w
       canvas.height = meta.tile.h
       const ctx = canvas.getContext('webgpu') as GPUCanvasContext | null
-      if (!ctx) return null
+      if (!ctx) { GpuCompositor.why = 'no webgpu canvas context'; return null }
       const format = navigator.gpu.getPreferredCanvasFormat()
       ctx.configure({ device: dev, format, alphaMode: 'opaque' })
       dev.pushErrorScope('validation')
@@ -67,9 +72,10 @@ export class GpuCompositor {
       const comp = new GpuCompositor(dev, ctx, pipeline, dev.createSampler({ magFilter: 'linear', minFilter: 'linear' }), uniforms)
       const drawn = comp.draw(video)
       const error = await dev.popErrorScope()
-      if (!drawn || error) { comp.dispose(); return null }
+      if (!drawn || error) { GpuCompositor.why = error ? 'validation: ' + error.message : 'first draw: ' + comp.failed; comp.dispose(); return null }
+      GpuCompositor.why = ''
       return comp
-    } catch { return null }
+    } catch (e) { GpuCompositor.why = 'create: ' + String(e); return null }
   }
 
   /** draws the video's current frame; false when the video has none to give (the canvas keeps the last picture) */
@@ -87,7 +93,7 @@ export class GpuCompositor {
       pass.end()
       dev.queue.submit([encoder.finish()])
       return true
-    } catch { return false }
+    } catch (e) { this.failed = String(e); return false }
   }
 
   dispose(): void {
