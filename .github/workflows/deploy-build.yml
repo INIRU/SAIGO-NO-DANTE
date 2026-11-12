@@ -11,6 +11,10 @@ on:
 concurrency:
   group: deploy-build-${{ github.sha }}
 
+permissions:
+  contents: read
+  actions: write   # deletes the older site-* artifacts
+
 jobs:
   build:
     name: Build site.tgz
@@ -47,7 +51,20 @@ jobs:
           rm -rf "$S/.next/cache"
           tar -czf site.tgz -C "$S" .
           ls -l site.tgz
+      # Each site.tgz is about 195MB and the storage quota counts every one still kept: six merges in a day filled it
+      # and the upload failed (2026-11-11). Only the newest earlier build stays (the one the server may be running).
+      - name: Delete older builds
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api "repos/$GITHUB_REPOSITORY/actions/artifacts?per_page=100" \
+            --jq '[.artifacts[] | select(.expired == false and (.name | startswith("site-")))] | sort_by(.created_at) | reverse | .[1:][] | .id' \
+            | while read -r id; do gh api -X DELETE "repos/$GITHUB_REPOSITORY/actions/artifacts/$id"; done
+      # A failed upload (the quota) must not fail the run: the server reads a failed run as a broken build and skips the
+      # commit, while a finished run without the artifact makes it build the commit itself (deploy/server/fetch-build.sh).
       - uses: actions/upload-artifact@v4
+        continue-on-error: true
         with:
           name: site-${{ github.sha }}
           path: site.tgz
