@@ -14,6 +14,9 @@ vi.mock('@/features/motion/lib/compositor', () => ({
     dispose() {}
   },
 }))
+// (WebGPU: what the browser's own compositor would be; null = this browser has none, the WebGL2 one is built.)
+const gpu = vi.hoisted(() => ({ made: null as null | { kind: 'webgpu'; onReady: null; draw: () => boolean; dispose: () => void } }))
+vi.mock('@/features/motion/lib/gpu-compositor', () => ({ GpuCompositor: { create: async () => gpu.made } }))
 vi.mock('@/features/motion/lib/sounds', () => ({
   SoundPlayer: class {
     constructor() {
@@ -73,6 +76,7 @@ beforeAll(async () => {
 beforeEach(() => {
   vi.useFakeTimers()
   calls.draws.length = 0; calls.comps.length = 0; calls.sound = {}
+  gpu.made = null
   video = new FakeVideo(); video.duration = 2.5
   store = {}
   doc.hidden = false
@@ -158,6 +162,23 @@ describe('REQ-MOTION-059 a phone plays the smaller copy of the video', () => {
     await act(async () => { await result.current.load(STATE) })
     expect(video.src).toMatch(/a\/layers\.mp4$/)
     expect(metaOf().tile).toEqual({ w: 1920, h: 1080 })
+  })
+})
+
+describe('REQ-MOTION-060 WebGPU draws the video where the browser has it', () => {
+  it('REQ-MOTION-060 draws with the WebGPU compositor and builds no WebGL2 one', async () => {
+    const draw = vi.fn(() => true)
+    gpu.made = { kind: 'webgpu', onReady: null, draw, dispose: () => {} }
+    await open()
+    expect(result.current.status).toBe('ready')
+    expect(calls.comps).toHaveLength(0)
+    expect(draw).toHaveBeenCalled()
+  })
+
+  it('REQ-MOTION-060 builds the WebGL2 compositor when the browser has no WebGPU', async () => {
+    await open()
+    expect(result.current.status).toBe('ready')
+    expect(calls.comps).toHaveLength(1)
   })
 })
 

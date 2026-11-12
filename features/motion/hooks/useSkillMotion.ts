@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { LayerCompositor, type LayerSetMeta } from '@/features/motion/lib/compositor'
 import { isPhone, phoneMeta, type PhoneVideo } from '@/features/motion/lib/phone'
+import { drawMeter, gpuAsked, uploadAsked } from '@/features/motion/lib/tuning'
+import { GpuCompositor } from '@/features/motion/lib/gpu-compositor'
 import { SoundPlayer } from '@/features/motion/lib/sounds'
 import { SoundButtons, type VoiceLink } from '@/features/motion/lib/soundbuttons'
 import { MOTION_ASSET_BASE, motionAssetUrl, type MotionState } from '@/features/motion/lib/catalog'
@@ -52,7 +54,7 @@ export function useSkillMotion() {
   const hostRef = useRef<HTMLDivElement | null>(null)
   const video = useRef<HTMLVideoElement | null>(null)
   const sounds = useRef<SoundPlayer | null>(null)
-  const comp = useRef<LayerCompositor | null>(null)
+  const comp = useRef<LayerCompositor | GpuCompositor | null>(null)
   const meta = useRef<MotionMeta | null>(null)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   // The stage out of view (a phone scrolled down to the skill card): no frame is drawn, so iOS Safari does not upload a
@@ -66,6 +68,8 @@ export function useSkillMotion() {
   const frame = useRef({ value: 0, listeners: new Set<() => void>() })
   // The frame on the canvas (the sound tail keeps the last one).
   const drawn = useRef(-1)
+  // The `?debug=1` meter around each draw (undefined: not asked yet; null: not wanted).
+  const meter = useRef<ReturnType<typeof drawMeter> | undefined>(undefined)
   const [status, setStatus] = useState<MotionStatus>('idle')
   const statusRef = useRef(status)
   statusRef.current = status
@@ -141,7 +145,10 @@ export function useSkillMotion() {
     // The sound tail: the audio runs on past the last picture frame, where the video has no frame (Safari shows black).
     if (exact === undefined && v.currentTime >= m.frames / m.fps && drawn.current === last) { show(last); return }
     const n = exact ?? Math.min(last, Math.floor(v.currentTime * m.fps + 1e-3))
-    comp.current.draw(v, n, exact !== undefined)
+    const c = comp.current
+    if (meter.current === undefined) meter.current = drawMeter(v, () => { const now = comp.current; return `${!now ? '' : 'kind' in now ? 'webgpu' : `webgl ${now.grey ? 'r8' : 'rgba'}${now.reuse ? ' sub' : ''}`} ${v.videoWidth}x${v.videoHeight}` })
+    if (meter.current) meter.current(() => c.draw(v, n, exact !== undefined))
+    else c.draw(v, n, exact !== undefined)
     drawn.current = n
     show(n)
   }, [show])
@@ -306,17 +313,24 @@ export function useSkillMotion() {
         setError('load')
         setStatus('error')
       }
-      // A canvas keeps its first GL context: a new element for every load.
-      const canvas = document.createElement('canvas')
-      canvas.className = 'block h-auto w-full'
+      // A canvas keeps its first context: a new element for every load, and another when WebGPU was tried on the first.
+      const fresh = () => Object.assign(document.createElement('canvas'), { className: 'block h-auto w-full' })
+      let canvas = fresh()
       const base = motionAssetUrl(state.meta.slice(0, state.meta.lastIndexOf('/') + 1))
-      try {
-        comp.current = new LayerCompositor(canvas, m, file => base + file)
-      } catch {
-        v.pause()
-        setError('webgl')
-        setStatus('error')
-        return
+      // WebGPU first: the video's frame goes to the shader without a copy. Without it (or when it fails here) the WebGL2 compositor draws the same picture.
+      const gpu = gpuAsked() ? await GpuCompositor.create(canvas, m, v) : null
+      if (mine !== token.current) { gpu?.dispose(); return }
+      if (gpu) comp.current = gpu
+      else {
+        canvas = fresh()
+        try {
+          comp.current = new LayerCompositor(canvas, m, file => base + file, uploadAsked())
+        } catch {
+          v.pause()
+          setError('webgl')
+          setStatus('error')
+          return
+        }
       }
       // (A frame the compositor decodes itself, ready after the draw that wanted it: playing, the next frame draws.)
       comp.current.onReady = () => { if (v.paused) draw() }
