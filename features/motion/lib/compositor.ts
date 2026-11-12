@@ -55,10 +55,18 @@ export class LayerCompositor {
   private codeShift = 0;
   /** version 9: called when a layer frame the last draw waited for has been decoded (a paused page draws again) */
   onReady: (() => void) | null = null;
+  /** how the video frame goes into its texture: as one grey channel, and into storage made once (see the constructor) */
+  readonly grey: boolean;
+  readonly reuse: boolean;
+  private stored = false;
 
   /** layerUrl (version 9): the URL of a layer's video file (layers.json's `file`, next to it) */
-  constructor(readonly canvas: HTMLCanvasElement, readonly meta: LayerSetMeta, private layerUrl?: (file: string) => string) {
+  constructor(readonly canvas: HTMLCanvasElement, readonly meta: LayerSetMeta, private layerUrl?: (file: string) => string, upload?: { grey?: boolean; reuse?: boolean }) {
     if (meta.layers.length > MAX_LAYERS) throw new Error(`at most ${MAX_LAYERS} layers`);
+    // One channel and kept storage only for the plain picture of three grey planes: layers, the barcode and a colour base read the other channels or other sizes.
+    const planesOnly = !!meta.basePlanes?.cb && !!meta.basePlanes.cr && !meta.layers.length && !meta.chroma && !meta.frameCode;
+    this.grey = planesOnly && !!upload?.grey;
+    this.reuse = planesOnly && !!upload?.reuse;
     canvas.width = meta.tile.w;
     canvas.height = meta.tile.h;
     // (No kept drawing buffer: nothing reads the canvas after a frame is shown, and the copy is a full picture of memory on a phone.)
@@ -82,6 +90,7 @@ export class LayerCompositor {
     gl.uniform4fv(this.loc.uCb, meta.basePlanes?.cb ? r(meta.basePlanes.cb) : [0, 0, 0, 0]);
     gl.uniform4fv(this.loc.uCr, meta.basePlanes?.cr ? r(meta.basePlanes.cr) : [0, 0, 0, 0]);
     gl.uniform1f(this.loc.uPlanes, meta.basePlanes ? 1 : 0);
+    gl.uniform1f(gl.getUniformLocation(prog, "uGrey"), this.grey ? 1 : 0);
     gl.uniform1i(this.loc.uCount, meta.layers.length);
     gl.uniform4fv(this.loc.uDelta, pad(meta.layers.map((l) => (l.ycocg ? r(l.ycocg.y) : l.delta ? r(l.delta) : [0, 0, 0, 0]))));
     gl.uniform4fv(this.loc.uCo, pad(meta.layers.map((l) => (l.ycocg ? r(l.ycocg.co) : [0, 0, 0, 0]))));
@@ -237,7 +246,12 @@ void main() {
   draw(video: HTMLVideoElement, frame: number, exact = false): boolean {
     const gl = this.gl;
     gl.bindTexture(gl.TEXTURE_2D, this.tex);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, video);
+    const format = this.grey ? gl.RED : gl.RGBA;
+    if (this.reuse) {
+      // (The storage once, at the video's size; each frame fills it: no texture of the video's size is made and dropped 60 times a second.)
+      if (!this.stored) { gl.texStorage2D(gl.TEXTURE_2D, 1, this.grey ? gl.R8 : gl.RGBA8, this.meta.video.w, this.meta.video.h); this.stored = true; }
+      gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, format, gl.UNSIGNED_BYTE, video);
+    } else gl.texImage2D(gl.TEXTURE_2D, 0, this.grey ? gl.R8 : gl.RGBA, format, gl.UNSIGNED_BYTE, video);
     if (this.meta.chroma) {
       const n = exact ? frame + this.codeShift : this.frameCode();
       const f = n >= 0 && n < this.meta.frames ? n : frame; // (a misread code: the clock's frame)
