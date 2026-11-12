@@ -146,7 +146,8 @@ export function useSkillMotion() {
     if (exact === undefined && v.currentTime >= m.frames / m.fps && drawn.current === last) { show(last); return }
     const n = exact ?? Math.min(last, Math.floor(v.currentTime * m.fps + 1e-3))
     const c = comp.current
-    if (meter.current === undefined) meter.current = drawMeter(v, () => { const now = comp.current; return `${!now ? '' : 'kind' in now ? 'webgpu' : `webgl ${now.grey ? 'r8' : 'rgba'}${now.reuse ? ' sub' : ''}`} ${v.videoWidth}x${v.videoHeight}` })
+    if (meter.current === undefined) meter.current = drawMeter(v, () => { const now = comp.current; return `${!now ? '' : 'kind' in now ? 'webgpu' : `webgl ${now.grey ? 'r8' : 'rgba'}${now.reuse ? ' sub' : ''}${GpuCompositor.why ? `
+(webgpu: ${GpuCompositor.why.slice(0, 120)})` : ''}`} ${v.videoWidth}x${v.videoHeight}` })
     if (meter.current) meter.current(() => c.draw(v, n, exact !== undefined))
     else c.draw(v, n, exact !== undefined)
     drawn.current = n
