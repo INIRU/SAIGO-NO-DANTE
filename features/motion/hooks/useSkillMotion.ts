@@ -227,11 +227,14 @@ export function useSkillMotion() {
         resuming.current = !v.paused || Boolean(tailTimer.current)
         clearTail()
         v.pause()
-      } else if (resuming.current && !held.current) {
-        resuming.current = false
-        wake()
-        playVideo()
-      } else wake()
+      } else {
+        draw()   // (the canvas keeps no drawing buffer: a page shown again gets its picture drawn again)
+        if (resuming.current && !held.current) {
+          resuming.current = false
+          wake()
+          playVideo()
+        } else wake()
+      }
     }
     v.addEventListener('play', onPlay)
     v.addEventListener('pause', onPause)
