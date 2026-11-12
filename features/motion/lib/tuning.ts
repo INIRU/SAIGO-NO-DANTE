@@ -1,4 +1,4 @@
-// How the player hands a video frame to the GPU, and a meter to read on a real phone what each way costs.
+// How the player hands a video frame to the GPU (`?gpu=0`: WebGL2, not WebGPU), and a meter to read on a real phone what each way costs.
 // `?tex=r8` / `?tex=sub` / `?tex=r8sub` / `?tex=rgba` in the address picks the way by hand; `?debug=1` shows the meter.
 export type Upload = {
   /** the frame as one grey channel (the stacked Y, Cb, Cr planes are grey): a quarter of the texture's memory */
@@ -8,6 +8,9 @@ export type Upload = {
 }
 
 const asked = (name: string) => (typeof window === 'undefined' ? null : new URLSearchParams(window.location?.search ?? '').get(name))
+
+/** WebGPU draws the video when the browser has it; `?gpu=0` keeps the WebGL2 compositor. */
+export const gpuAsked = () => asked('gpu') !== '0'
 
 export function uploadAsked(): Upload {
   const tex = asked('tex') ?? ''
