@@ -122,6 +122,45 @@ describe('REQ-MOTION-028 the load check of the three Y, Cb, Cr planes', () => {
   })
 })
 
+describe('REQ-MOTION-059 a phone plays the smaller copy of the video', () => {
+  const PHONE = { ...META, phone: { file: 'layers.m.mp4', w: 1920, h: 1080 } }
+  const screenOf = (coarse: boolean, w: number, h: number) => {
+    vi.stubGlobal('matchMedia', (q: string) => ({ matches: coarse && q === '(pointer: coarse)' }))
+    vi.stubGlobal('screen', { width: w, height: h })
+  }
+  const metaOf = () => (calls.comps[0] as { tile?: unknown }[]).find(a => a?.tile) as { tile: object; video: object; base?: object; basePlanes?: object }
+
+  it('REQ-MOTION-059 takes the phone file next to the full one, as one colour picture, on a small touch screen', async () => {
+    json = PHONE
+    screenOf(true, 390, 844)
+    await mount()
+    await act(async () => { await result.current.load(STATE) })
+    expect(result.current.status).toBe('ready')
+    expect(video.src).toMatch(/a\/layers\.m\.mp4$/)
+    expect(metaOf().tile).toEqual({ w: 1920, h: 1080 })
+    expect(metaOf().video).toEqual({ file: 'layers.m.mp4', w: 1920, h: 1080 })
+    expect(metaOf().base).toEqual({ x: 0, y: 0, w: 1920, h: 1080 })
+    expect(metaOf().basePlanes).toBeUndefined()
+  })
+
+  it.each([['a desktop', false, 1920, 1080], ['a tablet', true, 820, 1180]])('REQ-MOTION-059 keeps the full video on %s', async (_name, coarse, w, h) => {
+    json = PHONE
+    screenOf(coarse as boolean, w as number, h as number)
+    await mount()
+    await act(async () => { await result.current.load(STATE) })
+    expect(video.src).toMatch(/a\/layers\.mp4$/)
+    expect(metaOf().tile).toEqual({ w: 1920, h: 1080 })
+  })
+
+  it('REQ-MOTION-059 keeps the full video on a phone when the data lists no phone copy', async () => {
+    screenOf(true, 390, 844)
+    await mount()
+    await act(async () => { await result.current.load(STATE) })
+    expect(video.src).toMatch(/a\/layers\.mp4$/)
+    expect(metaOf().tile).toEqual({ w: 1920, h: 1080 })
+  })
+})
+
 describe('REQ-MOTION-041 chapters and marks come out of the hook', () => {
   it('REQ-MOTION-041 returns the chapters and marks of the loaded layers.json, none before it and for a video without them', async () => {
     await mount()
