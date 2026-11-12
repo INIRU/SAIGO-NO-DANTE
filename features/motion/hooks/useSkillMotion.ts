@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { LayerCompositor, type LayerSetMeta } from '@/features/motion/lib/compositor'
 import { isPhone, phoneMeta, type PhoneVideo } from '@/features/motion/lib/phone'
+import { drawMeter, uploadAsked } from '@/features/motion/lib/tuning'
 import { SoundPlayer } from '@/features/motion/lib/sounds'
 import { SoundButtons, type VoiceLink } from '@/features/motion/lib/soundbuttons'
 import { MOTION_ASSET_BASE, motionAssetUrl, type MotionState } from '@/features/motion/lib/catalog'
@@ -66,6 +67,8 @@ export function useSkillMotion() {
   const frame = useRef({ value: 0, listeners: new Set<() => void>() })
   // The frame on the canvas (the sound tail keeps the last one).
   const drawn = useRef(-1)
+  // The `?debug=1` meter around each draw (undefined: not asked yet; null: not wanted).
+  const meter = useRef<ReturnType<typeof drawMeter> | undefined>(undefined)
   const [status, setStatus] = useState<MotionStatus>('idle')
   const statusRef = useRef(status)
   statusRef.current = status
@@ -141,7 +144,10 @@ export function useSkillMotion() {
     // The sound tail: the audio runs on past the last picture frame, where the video has no frame (Safari shows black).
     if (exact === undefined && v.currentTime >= m.frames / m.fps && drawn.current === last) { show(last); return }
     const n = exact ?? Math.min(last, Math.floor(v.currentTime * m.fps + 1e-3))
-    comp.current.draw(v, n, exact !== undefined)
+    const c = comp.current
+    if (meter.current === undefined) meter.current = drawMeter(v,() => `${comp.current?.grey ? 'r8' : 'rgba'}${comp.current?.reuse ? ' sub' : ''} ${v.videoWidth}x${v.videoHeight}`)
+    if (meter.current) meter.current(() => c.draw(v, n, exact !== undefined))
+    else c.draw(v, n, exact !== undefined)
     drawn.current = n
     show(n)
   }, [show])
@@ -311,7 +317,7 @@ export function useSkillMotion() {
       canvas.className = 'block h-auto w-full'
       const base = motionAssetUrl(state.meta.slice(0, state.meta.lastIndexOf('/') + 1))
       try {
-        comp.current = new LayerCompositor(canvas, m, file => base + file)
+        comp.current = new LayerCompositor(canvas, m, file => base + file, uploadAsked())
       } catch {
         v.pause()
         setError('webgl')
