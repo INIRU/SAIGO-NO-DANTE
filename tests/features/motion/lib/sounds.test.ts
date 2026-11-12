@@ -218,6 +218,11 @@ describe('REQ-MOTION-038 a place in the middle, a negative start, an end', () =>
     expect(cues[0].started).toEqual([[0, 0.5]])
   })
 
+  it('REQ-MOTION-038 starts a cue with clipIn that far into its file: a long line goes on from coin to coin', async () => {
+    await setup(meta([cue({ start: 1, clipIn: 2.23 }), cue({ start: -0.5, clipIn: 1 })]))
+    expect(cues.map(c => c.started)).toEqual([[[0, 1.5]], [[1, 2.23]]]) // in the order of their starts
+  })
+
   it('REQ-MOTION-038 stops at end with no fade of its own', async () => {
     await setup(meta([cue({ start: 1, end: 1.5, mix: [[60, 1, 1], [90, 1, 1]] })]))
     expect(cues[0].stops).toEqual([1.5])
