@@ -30,11 +30,13 @@ uniform float uOn[${MAX_LAYERS}];
 uniform vec2 uTexel; // one video texel in uv
 // a point of a tile (t in 0..1, y down), kept half a texel inside it: LINEAR filtering never reads the neighbouring tile
 vec2 tuv(vec4 r, vec2 t) { return r.xy + clamp(t * r.zw, 0.5 * uTexel, r.zw - 0.5 * uTexel); }
+uniform float uGrey; // 1: the video texture has one channel (red)
+float plane(vec4 r, vec2 t) { vec4 p = texture(uVideo, tuv(r, t)); return uGrey > 0.5 ? p.r : p.g; }
 void main() {
   vec2 t = vec2(vUv.x, 1.0 - vUv.y); // canvas y is up, tiles are y down
   vec3 c;
   if (uPlanes > 0.5) {
-    float y = texture(uVideo, tuv(uBase, t)).g, cb = texture(uVideo, tuv(uCb, t)).g - 0.5, cr = texture(uVideo, tuv(uCr, t)).g - 0.5;
+    float y = plane(uBase, t), cb = plane(uCb, t) - 0.5, cr = plane(uCr, t) - 0.5;
     c = vec3(y + 1.5748 * cr, y - 0.1873 * cb - 0.4681 * cr, y + 1.8556 * cb);
   } else c = texture(uVideo, tuv(uBase, t)).rgb;
   for (int k = 0; k < ${MAX_LAYERS}; k++) {
