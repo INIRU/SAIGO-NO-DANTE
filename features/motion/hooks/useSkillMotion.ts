@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { LayerCompositor, type LayerSetMeta } from '@/features/motion/lib/compositor'
+import { isPhone, phoneMeta, type PhoneVideo } from '@/features/motion/lib/phone'
 import { SoundPlayer } from '@/features/motion/lib/sounds'
 import { SoundButtons, type VoiceLink } from '@/features/motion/lib/soundbuttons'
 import { MOTION_ASSET_BASE, motionAssetUrl, type MotionState } from '@/features/motion/lib/catalog'
@@ -274,7 +275,10 @@ export function useSkillMotion() {
     try {
       const response = await fetch(motionAssetUrl(state.meta))
       if (!response.ok) throw new Error(String(response.status))
-      const m = await response.json() as MotionMeta
+      const full = await response.json() as MotionMeta & { phone?: PhoneVideo }
+      // A phone takes the smaller copy of the video when the data has one (the file sits next to the full one).
+      const small = isPhone() ? phoneMeta(full) : null
+      const m: MotionMeta = small ?? full
       if (mine !== token.current) return
       // The picture is three planes stacked in the video (Y, Cb, Cr, 1920×3240); one missing is a load failure.
       if (!m.basePlanes?.y || !m.basePlanes.cb || !m.basePlanes.cr) throw new Error('layers.json without the Y, Cb, Cr planes')
@@ -283,7 +287,7 @@ export function useSkillMotion() {
       meta.current = null
       // A video with a tail does not loop by itself: the hook waits out the tail, then plays it again.
       v.loop = !m.tail
-      v.src = motionAssetUrl(state.video)
+      v.src = motionAssetUrl(small ? state.video.replace(/[^/]+$/, small.video.file) : state.video)
       const loaded = new Promise<void>((resolve, reject) => {
         v.onloadeddata = () => resolve()
         v.onerror = () => reject(new Error('video'))
