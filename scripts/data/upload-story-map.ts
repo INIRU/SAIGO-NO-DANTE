@@ -2,7 +2,7 @@
 // index.json and sub/<id>.json (the stages and their enemies), map/<id>/<r>_<c>.webp (map tiles), cg/<nodeId>.webp
 // (stage card pictures) and ui/*.webp (node, card frame, icons). The story page reads them from STORY_MAP_BASE.
 // npx tsx scripts/data/upload-story-map.ts [export dir, default E:/Limbus Assets/out/_story_map]
-// `-- --dry-run` lists what would be sent. Pictures already there are kept; the JSON files are replaced. Nothing is deleted.
+// `-- --dry-run` lists what would be sent. Pictures already there are kept; a JSON file is replaced only when its content differs from the site's, and the changed ones are named. Nothing is deleted.
 // `--replace <file>`: pictures whose paths (one per line, relative to the export, e.g. cg/911207.webp) are replaced too.
 import { readFileSync, readdirSync, statSync } from 'node:fs'
 import { join, relative } from 'node:path'
@@ -33,9 +33,11 @@ function storageClient() {
 }
 
 async function main() {
-  const storage = dryRun ? null : storageClient()
+  // a dry run reads too: it says which data files differ from what the site has
+  const storage = storageClient()
   const all = files(root).filter(f => /\.(json|webp|png|ttf)$/.test(f))
-  let uploaded = 0, kept = 0, bytes = 0, total = 0
+  let uploaded = 0, kept = 0, bytes = 0, total = 0, same = 0
+  const changed: string[] = []
   for (const file of all) {
     // Storage keys are ASCII: a file named in other letters goes up as storageName(name)
     const rel = relative(root, file).replaceAll('\\', '/').split('/')
@@ -45,7 +47,14 @@ async function main() {
     const json = file.endsWith('.json')
     const overwrite = json || replace.has(relative(root, file).replaceAll('\\', '/'))
     total += body.length
-    if (!storage) continue
+    if (json) {
+      // A data file with the content the site already has is left alone, so the run tells what a game update changed
+      // (2026-11-12: all 69 were sent again and nothing could be told from the count).
+      const { data: live } = await storage.download(path)
+      if (live && Buffer.from(await live.arrayBuffer()).equals(body)) { same++; continue }
+      changed.push(path)
+    }
+    if (dryRun) continue
     const { error } = await storage.upload(path, body, {
       contentType: json ? 'application/json' : file.endsWith('.png') ? 'image/png' : file.endsWith('.ttf') ? 'font/ttf' : 'image/webp', // png: the map effects' textures (fx/*/tex)
       // Pictures keep their content per path; the data changes with game updates, so it is replaced and cached briefly.
@@ -56,9 +65,10 @@ async function main() {
     if (error) kept++
     else { uploaded++; bytes += body.length }
   }
-  console.log(storage
-    ? `${uploaded} uploaded (${(bytes / 1048576).toFixed(1)}MB), ${kept} already there`
-    : `${all.length} files, ${(total / 1048576).toFixed(1)}MB would go to ${prefix}/ (dry run);${all.filter(f => replace.has(relative(root, f).replaceAll('\\', '/'))).length} pictures to replace`)
+  for (const path of changed) console.log(`${dryRun ? 'would change' : 'changed'}: ${path}`)
+  console.log(!dryRun
+    ? `${uploaded} uploaded (${(bytes / 1048576).toFixed(1)}MB), ${kept} pictures already there, ${same} data files unchanged`
+    : `${all.length} files, ${(total / 1048576).toFixed(1)}MB in the export (dry run); ${changed.length} data files differ from the site, ${same} are the same; ${all.filter(f => replace.has(relative(root, f).replaceAll('\\', '/'))).length} pictures to replace`)
 }
 
 main().catch(error => { console.error(error); process.exit(1) })
