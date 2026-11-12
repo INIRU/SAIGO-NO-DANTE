@@ -215,10 +215,16 @@ export default function SpineStage({ pack, form, skins, animation, paused = fals
       } else {
         const box = measure(main)
         if (box) {
+          // A figure stands on its skeleton's origin (between the feet). The box is every skin and animation together, so a long
+          // weapon or a lunge to one side pushed the idle figure off the middle (10316's spear). The box is widened to the same
+          // distance on both sides of the origin: the feet sit in the middle and nothing is cut.
+          const left = main.skeleton.x + box.x * main.skeleton.scaleX
+          const width = box.w * Math.abs(main.skeleton.scaleX)
+          const half = Math.max(main.skeleton.x - left, left + width - main.skeleton.x)
           bounds = {
-            x: main.skeleton.x + box.x * main.skeleton.scaleX,
+            x: main.skeleton.x - half,
             y: main.skeleton.y + box.y * main.skeleton.scaleY,
-            w: box.w * Math.abs(main.skeleton.scaleX),
+            w: half * 2,
             h: box.h * main.skeleton.scaleY,
           }
         }
