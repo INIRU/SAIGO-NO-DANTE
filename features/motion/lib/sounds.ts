@@ -2,6 +2,8 @@
 // distance and pan and the fade of a sound the game stopped. All effects are mixed into one track and all voices into another before the play, so what sounds is the same every time, sample for sample.
 export interface SoundCue {
   start: number; files: string[]; seconds: number; kind?: "sfx" | "loop" | "voice"; d3?: boolean; event?: string; end?: number;
+  /** seconds into the file where the game starts it: a long line spoken on from coin to coin */
+  clipIn?: number;
   /** [frame, left, right]: straight lines between the points, the first / last value outside them */
   mix: [number, number, number][];
   pool?: string; option?: number;
@@ -87,7 +89,7 @@ export function limitCues(cues: readonly PlayCue[], rules: Pick<SoundRules, "eve
 /** Where a cue stops sounding: its file, or sooner at `end` or a cut. */
 function cueStop(c: PlayCue, buffer: AudioBuffer) {
   const looping = c.kind === "loop" && c.end !== undefined && buffer.duration < c.end - c.start;
-  const fileEnd = looping ? Infinity : c.start + buffer.duration;
+  const fileEnd = looping ? Infinity : c.start + buffer.duration - (c.clipIn ?? 0);
   return { looping, fileEnd, stop: Math.min(c.end ?? Infinity, c.cut !== undefined ? c.cut + CUT_FADE : Infinity, fileEnd) };
 }
 
@@ -108,7 +110,7 @@ function addCue(ctx: BaseAudioContext, to: AudioNode, buffer: AudioBuffer, c: Pl
   const fromFrame = begin * fps, cutFrame = c.cut !== undefined ? c.cut * fps : undefined;
   setCurve(left.gain, c.mix, 1, fromFrame, toTime, cutFrame);
   setCurve(right.gain, c.mix, 2, fromFrame, toTime, cutFrame);
-  src.start(begin, begin - c.start);
+  src.start(begin, (c.clipIn ?? 0) + begin - c.start);
   if (stop < fileEnd) src.stop(stop);
 }
 
@@ -325,7 +327,7 @@ export class SoundPlayer {
   /** one play: the draw, the limit on what it drew, and its two tracks */
   private async mix(): Promise<Tracks> {
     const buffers = new Map(this.buffers);   // (its own copy: a newer load drops files while this mix still waits)
-    const play = limitCues(pickCues(this.cues, this.pools), this.rules, (c) => buffers.get(c.file)?.duration ?? 0).filter((c) => buffers.get(c.file));
+    const play = limitCues(pickCues(this.cues, this.pools), this.rules, (c) => (buffers.get(c.file)?.duration ?? 0) - (c.clipIn ?? 0)).filter((c) => buffers.get(c.file));
     const [sfx, voice] = await Promise.all([
       mixTrack(play.filter((c) => c.kind !== "voice"), buffers, this.fps, this.rules?.limiter),
       mixTrack(play.filter((c) => c.kind === "voice"), buffers, this.fps),

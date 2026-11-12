@@ -38,7 +38,7 @@ Cloudflare 무료 요금제는 한국 방문자를 LAX로 보내 페이지 하�
 1. GitHub Actions `deploy-build.yml`이 main의 커밋마다 운영용으로 빌드한다(타입 검사 포함, `SELF_HOSTED=1`). `output: 'standalone'`에 `.next/static`·`public`을 넣어 `site-<sha>`(`site.tgz`)로 1일 보관한다. 배포 사이트가 Storage에서 읽는 인식 모델 데이터는 넣지 않는다. 빌드에 쓰는 값은 GitHub 비밀값(Supabase 3개, `NEXT_PUBLIC_SENTRY_DSN`, `NEXT_PUBLIC_SITE_URL`, `YOUTUBE_CHANNEL_ID`, `SENTRY_ORG`, `SENTRY_PROJECT`)이고, 운영 서버 값과 같아야 한다.
 2. 서버의 `saigo-deploy.timer`가 2분마다 `auto-deploy.sh`를 돌려 `~/saigo/src`(읽기 전용 배포 키로 받은 main)를 확인하고, 새 커밋이면 `fetch-build.sh`로 그 커밋의 결과물을 받는다(토큰 `~/saigo/github-token`, 이 저장소 Actions 읽기 전용). GitHub 빌드가 진행 중이면 다음 확인까지 기다리고, 실패했으면 배포하지 않는다.
 3. 결과물을 받았으면 `deploy.sh`가 `~/saigo/app-new`에 풀고 앱 폴더를 바꿔 끼운 뒤 서비스를 다시 켠다(멈춤은 1초 안팎, 서버는 빌드도 설치도 하지 않는다). 60초 안에 `/ko`가 응답하지 않으면 이전 폴더(`app-old`)로 되돌린다. 실패한 커밋은 `~/saigo/failed-rev`에 남고, main이 다시 움직일 때까지 재시도하지 않는다.
-4. 토큰이 없거나 20분이 지나도 GitHub 결과물이 없으면 예전처럼 서버에서 빌드한다(같은 standalone 모양, 타입 검사는 건너뜀: `SKIP_BUILD_TYPECHECK=1`, `nice -n 10`). 2026-10-22 서버 빌드 중 TypeScript 7의 tsc(약 1.75GB)가 빌드·운영 앱과 함께 돌다 메모리가 바닥나 사이트가 몇 분 멈췄다. 그래서 빌드는 GitHub에서 한다.
+4. 토큰이 없거나 20분이 지나도 GitHub 결과물이 없으면, 또는 빌드는 끝났는데 결과물 올리기가 실패했으면(저장 한도, 2026-11-11) 예전처럼 서버에서 빌드한다. 워크플로는 새 결과물을 올리기 전에 가장 최근 것 하나만 남기고 옛 `site-*`를 지운다. 서버에서 빌드할 때는 이렇게 한다(같은 standalone 모양, 타입 검사는 건너뜀: `SKIP_BUILD_TYPECHECK=1`, `nice -n 10`). 2026-10-22 서버 빌드 중 TypeScript 7의 tsc(약 1.75GB)가 빌드·운영 앱과 함께 돌다 메모리가 바닥나 사이트가 몇 분 멈췄다. 그래서 빌드는 GitHub에서 한다.
 
 서비스는 덧붙임 `standalone.conf`로 앱 폴더에 `server.js`가 있으면 `node server.js`, 없으면(되돌린 예전 폴더) `next start`로 뜬다. 환경 변수 파일(`~/saigo/env.production`)은 systemd도 넘긴다.
 
