@@ -33,6 +33,7 @@
 ### 1. 업데이트 확인과 새 빌드 보관
 
 - 업데이트 여부: 게임 카탈로그 `C:\Users\iniru\AppData\LocalLow\ProjectMoon\LimbusCompany\com.unity.addressables\catalog_S1.bin`의 수정 시각과 번들 수를 추출 도구의 `state/manual/last-game-update.json`(`catalogBefore`)과 비교한다. Steam 공지는 그림(세로로 긴 PNG)이라 페이지 본문을 `<img>`로 바꿔 읽는다.
+- Steam이 아직 새 빌드를 받지 않았으면(`appmanifest_1973530.acf`의 `buildid`와 `TargetBuildID`가 다름) 설치된 파일은 옛 빌드다. 2단계(게임 받기)를 먼저 돌려 Steam이 받게 한 뒤 보관한다(2026-11-12).
 - **바로** 새 빌드를 보관한다: 작업 저장소에서 `.venv/Scripts/python pipeline/il2cpp/new_build.py`. Steam이 파일을 다시 덮기 전에 DLL·메타데이터를 `out/_code/game_<mmdd>`로 복사하고 차이(`diff.json`)를 쓴다. 10-22 빌드는 이걸 빠뜨려 잃었다.
 - Ghidra 프로젝트(무겁다, 다른 무거운 일과 같이 돌리지 않는다): `analyzeHeadless.bat C:\Users\iniru\tools\gproj_<mmdd> LimbusGA -import "E:\Limbus Assets\out\_code\game_<mmdd>\GameAssembly.dll" -noanalysis` (`ghidra_12.1.4_PUBLIC\support\`).
 - 시뮬레이션이 인용하는 함수의 코드 차이를 `out/_logs/build_diff_<mmdd>.md`로 정리한다. 바뀐 게 있으면 6단계(재기록) 대상이다.
@@ -42,6 +43,7 @@
 - 추출 도구 폴더에서 PowerShell 7(그 PC의 `pwsh.exe`)로 `-File scripts/Update-LimbusGame.ps1 -TimeoutMinutes 9`. 게임을 켜고 로그인·다운로드 확인 창을 누르고, 카탈로그의 번들이 캐시에 다 들어오고 60초 조용하면 끈다(11-05: 약 3분).
 - 확인: `state/manual/last-game-update.json`의 `ok: true`, 마지막 줄 "남은 번들 0".
 - 게임이 켜져 있는 동안 추출하지 않는다.
+- "남은 번들 N"에서 시간 초과로 끝나면 다운로드 확인 창의 [확인]을 못 누른 것이다(2026-11-12: 게임 창이 화면 아래로 내려가 있었다). `-Record`를 붙여 돌리면 `state/manual/game-update/<시각>/`에 화면 사진이 남는다. 스크립트는 누르기 전에 창을 화면에 꽉 채운다.
 
 ### 3. 추출과 사이트 반영 (추출 도구)
 
@@ -65,6 +67,10 @@
 - 게임 코드에만 있는 동작 수정(데이터에 안 남는 것)은 반영되지 않는다. 시시포스의 거울 업적, 투사 레벨도 반영 대상이 아니다.
 - `gift-constants.cjs`는 대조용이라 새 빌드에서 "unmatched"가 나와도 문장 값으로 반영된다.
 - 남은 `state/manual/run.lock`은 PID를 확인한 뒤에만 지운다.
+- **추출이 도는 동안 추출 도구의 `scripts/` 아래 파일을 고치지 않는다.** 그 파일들도 입력으로 세기 때문에 "추출 중 입력 파일이 변경되었습니다"로 결과를 버린다(2026-11-12). 고친 뒤에는 처음부터 다시 추출한다.
+- 같은 업데이트에서 새로 생기는 것끼리 서로를 가리키면 반영이 멈춘 적이 있다(2026-11-12, 모두 고침): 새 이벤트가 새 기프트를 줌, 새 기프트가 다른 새 기프트로 바뀜, 두 폴더에 이름이 같은 데이터 파일. 실패하면 `runs/<runId>/site-sync/run/logs/<단계>.log`의 마지막 줄이 원인을 말한다. 실제 반영 중 실패는 백업으로 자동 되돌려진다.
+- Spine 단계는 추출이 끝까지 간 실행에서만 돈다. "반영만 다시"(`--apply-once`)는 Spine을 돌리지 않으므로, 추출이 중간에 실패했었다면 `--run-once`를 한 번 더 돌린다.
+- 반영 뒤 실제 사이트에서 본다: 메인의 "신규 E.G.O"에 새 E.G.O가 있는지(출시일이 비면 빠진다), 새 인격 상세.
 
 **추출 도구가 틀렸을 때 (유지보수)**
 
@@ -74,6 +80,8 @@
 - 반영 안전장치(검증, dry-run 실패 시 중단, 백업, 자동 되돌리기)를 약하게 하는 변경은 소유자 확인을 받는다.
 
 ### 4. 스토리 맵 (수동)
+
+**새 장이 있을 때만 한다.** 발푸르기스의 밤 같은 이벤트 스테이지는 스토리 맵에 들어가지 않는다. 내보내기 뒤 `index.json`의 장 목록이 그대로면 올리지 않는다(올리기는 그림은 건너뛰지만 JSON은 내용이 같아도 전부 덮어쓴다).
 
 게임 업데이트가 **끝난 뒤에** 돌린다. 먼저 돌리면 새 장의 적 초상화가 빠진다(2026-11-09: 10장 적 45명).
 
@@ -90,7 +98,8 @@
 
 - `C:\림도구\버스`에서 `bash update.sh`(기본 `SAIGO-NO-SKILL`), 전체 클라이언트는 `CLIENT=/c/림도구/SAIGO-NO-BUS SLIM=0 bash update.sh`. 새 빌드 맞춤 → 설정 → 첫 실행(BepInEx, 몇 분) → 플러그인 빌드 → `tools/client_check.cjs`(스킬 방까지 들어가 스킬이 소리와 함께 재생되면 0).
 - 둘은 같은 포트(7766)를 쓰므로 하나씩. 앱 터미널 탭은 ASCII 명령만 받으니 한글 경로는 `.sh`/`.ps1` 파일로 감싼다.
-- 함정: "CheckClientVersion" 반복은 다운로드 예/아니오 창이었다. `BepInEx/saigo-no-bus/save.json`에 "mirror" 샘플이 있으면 "no skill room"으로 실패한다.
+- 함정: "CheckClientVersion" 반복은 다운로드 예/아니오 창이었다. `BepInEx/saigo-no-bus/save.json`에 "mirror" 샘플이 있으면 "no skill room"으로 실패한다. 이때 플러그인은 일부러 로비에 머무는 것이므로 `save.json`을 지우지 말고 MCP `panel_enter` + `panel_play`로 확인한다.
+- 첫 실행이 "plugins loaded without ours"로 닫히고 `Undefined target method for patch method …`가 나오면 플러그인이 붙잡는 게임 함수가 그 빌드에서 없어진 것이다. 새 빌드의 `dump.txt`에서 그 클래스를 찾아 플러그인의 그 패치를 고친다(2026-11-12).
 
 ### 6. 새 인격·재기록·스킬 모션 영상 (사용자 확인 필요)
 
