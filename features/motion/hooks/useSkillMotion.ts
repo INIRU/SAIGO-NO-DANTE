@@ -276,12 +276,12 @@ export function useSkillMotion() {
       const response = await fetch(motionAssetUrl(state.meta))
       if (!response.ok) throw new Error(String(response.status))
       const full = await response.json() as MotionMeta & { phone?: PhoneVideo }
-      // A phone takes the smaller copy of the video when the data has one (the file sits next to the full one).
-      const small = isPhone() ? phoneMeta(full) : null
-      const m: MotionMeta = small ?? full
       if (mine !== token.current) return
       // The picture is three planes stacked in the video (Y, Cb, Cr, 1920×3240); one missing is a load failure.
-      if (!m.basePlanes?.y || !m.basePlanes.cb || !m.basePlanes.cr) throw new Error('layers.json without the Y, Cb, Cr planes')
+      if (!full.basePlanes?.y || !full.basePlanes.cb || !full.basePlanes.cr) throw new Error('layers.json without the Y, Cb, Cr planes')
+      // A phone takes the plain copy of the video when the data has one (the file sits next to the full one).
+      const small = isPhone() ? phoneMeta(full) : null
+      const m: MotionMeta = small ?? full
       v.pause()
       free()
       meta.current = null
