@@ -45,6 +45,7 @@ import type { MdEvent, MdEventChoice, EgoGift, EgoGiftTheme } from '@/features/m
 import PlanActions from '@/features/planner/components/PlanActions'
 import PlanComments from '@/features/planner/components/PlanComments'
 import PlanDeckTabs from '@/features/planner/components/PlanDeckTabs'
+import PlanSectionNav from '@/features/planner/components/PlanSectionNav'
 import FloorPlanPreviewBoard from '@/features/planner/components/FloorPlanPreviewBoard'
 import GiftCard from '@/features/mirror-dungeon/components/GiftCard'
 import KeywordIcon from '@/components/ui/KeywordIcon'
@@ -461,51 +462,8 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
     { id: 'plan-final', label: tDetail('finalGifts') },
     { id: 'plan-comments', label: tDetail('commentsLabel'), count: plan.comment_count },
   ]
-  const sectionKey = sections.map(s => s.id).join()
   // a second detail banner under the line after the final gifts, above the related posts (owner, 2026-11-07: "선 밑에")
   const lowerAd = ADS_ON && <div className={`${styles.section} ${styles.adSection}`}><AdSlot place="inline" /></div>
-  const [activeSection, setActiveSection] = useState(sections[0].id)
-  // 스크롤 위치에 맞춰 구역 목차의 현재 항목을 표시한다: 화면 위 30% 선을 지난 마지막 구역
-  useEffect(() => {
-    const ids = sectionKey.split(',')
-    let frame = 0
-    const update = () => {
-      cancelAnimationFrame(frame)
-      frame = requestAnimationFrame(() => {
-        const line = window.innerHeight * 0.3
-        let current = ids[0]
-        for (const id of ids) {
-          const top = document.getElementById(id)?.getBoundingClientRect().top
-          if (top != null && top <= line) current = id
-        }
-        setActiveSection(current)
-      })
-    }
-    update()
-    window.addEventListener('scroll', update, { passive: true })
-    window.addEventListener('resize', update)
-    return () => { cancelAnimationFrame(frame); window.removeEventListener('scroll', update); window.removeEventListener('resize', update) }
-  }, [sectionKey])
-
-  // 모바일의 가로 목차에서 현재 항목이 보이도록 목차만 가로로 스크롤한다
-  const sectionNavRef = useRef<HTMLOListElement>(null)
-  useEffect(() => {
-    const list = sectionNavRef.current
-    const link = list?.querySelector<HTMLElement>('[aria-current]')
-    if (!list || !link) return
-    const left = link.offsetLeft - list.offsetLeft
-    if (left < list.scrollLeft || left + link.offsetWidth > list.scrollLeft + list.clientWidth) {
-      list.scrollTo({ left: Math.max(0, left - 16) })
-    }
-  }, [activeSection])
-
-  // 해시를 남기지 않고 이동해 BackLink의 뒤로 가기 기록을 그대로 둔다
-  const goToSection = (id: string) => {
-    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    document.getElementById(id)?.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' })
-    setActiveSection(id)
-  }
-
   const handleShare = async () => {
     const url = window.location.href.split('#')[0]
     try {
@@ -631,22 +589,7 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
           </div>
         </m.header>
 
-        <nav aria-label={tPlanner('sectionNav')} className={`sticky-under-nav ${styles.sectionNav}`}>
-          <ol ref={sectionNavRef}>
-            {sections.map(section => (
-              <li key={section.id} className="shrink-0">
-                <a
-                  href={`#${section.id}`}
-                  aria-current={activeSection === section.id ? 'location' : undefined}
-                  onClick={event => { event.preventDefault(); goToSection(section.id) }}
-                >
-                  {section.label}
-                  {section.count != null && <span>{section.count}</span>}
-                </a>
-              </li>
-            ))}
-          </ol>
-        </nav>
+        <PlanSectionNav sections={sections} label={tPlanner('sectionNav')} className={`sticky-under-nav ${styles.sectionNav}`} />
 
         <main className="min-w-0 overflow-x-clip">
           {/* a small banner under the section tabs, before the first heading (DESIGN.md "광고") */}
