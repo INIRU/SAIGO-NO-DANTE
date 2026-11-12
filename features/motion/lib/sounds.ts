@@ -338,7 +338,8 @@ export class SoundPlayer {
   /** The next play's tracks, while this one sounds; data with nothing random has only the one. */
   private mixAhead() {
     this.spare = null;
-    if (!this.pools.length && !this.cues.some((c) => c.files.length > 1)) return;
+    // Nothing random: the two tracks are all this video ever plays, so its decoded files (about 0.4 MB a second each) go now.
+    if (!this.pools.length && !this.cues.some((c) => c.files.length > 1)) { this.buffers.clear(); return; }
     const token = this.loading;
     void this.mix().then((t) => { if (token === this.loading) this.spare = t; });
   }
