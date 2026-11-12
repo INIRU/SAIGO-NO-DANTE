@@ -61,7 +61,8 @@ export class LayerCompositor {
     if (meta.layers.length > MAX_LAYERS) throw new Error(`at most ${MAX_LAYERS} layers`);
     canvas.width = meta.tile.w;
     canvas.height = meta.tile.h;
-    const gl = canvas.getContext("webgl2", { antialias: false, preserveDrawingBuffer: true });
+    // (No kept drawing buffer: nothing reads the canvas after a frame is shown, and the copy is a full picture of memory on a phone.)
+    const gl = canvas.getContext("webgl2", { antialias: false });
     if (!gl) throw new Error("WebGL2 is not available");
     this.gl = gl;
     const prog = (this.prog = link(gl, VERT, FRAG));

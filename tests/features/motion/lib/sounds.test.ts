@@ -497,13 +497,24 @@ describe('REQ-MOTION-049 the sound follows the picture', () => {
 })
 
 describe('REQ-MOTION-058 only the sounds in use are held', () => {
-  it('REQ-MOTION-058 drops the decoded files another video does not use, and keeps the ones it shares', async () => {
+  it('REQ-MOTION-058 drops the decoded files another video does not use, and keeps the ones it shares, while a video mixes a new draw each play', async () => {
+    const decode = vi.spyOn(Ctx.prototype, 'decodeAudioData')
+    const decoded = () => decode.mock.calls.map(call => (call[0] as unknown as { url: string }).url)
+    await setup(meta([cue({ files: ['sfx/a.m4a', 'sfx/a2.m4a'] }), cue({ files: ['sfx/shared.m4a'] })]))
+    await player.load('https://r2/', meta([cue({ files: ['sfx/b.m4a', 'sfx/b2.m4a'] }), cue({ files: ['sfx/shared.m4a'] })]))
+    await player.load('https://r2/', meta([cue({ files: ['sfx/a.m4a', 'sfx/a2.m4a'] })]))
+    expect(decoded()).toEqual(['sfx/a.m4a', 'sfx/a2.m4a', 'sfx/shared.m4a', 'sfx/b.m4a', 'sfx/b2.m4a', 'sfx/a.m4a', 'sfx/a2.m4a'])
+  })
+
+  it('REQ-MOTION-058 holds no decoded file once the tracks of a video with nothing random are mixed', async () => {
     const decode = vi.spyOn(Ctx.prototype, 'decodeAudioData')
     const decoded = () => decode.mock.calls.map(call => (call[0] as unknown as { url: string }).url)
     await setup(meta([cue({ files: ['sfx/a.m4a'] }), cue({ files: ['sfx/shared.m4a'] })]))
     await player.load('https://r2/', meta([cue({ files: ['sfx/b.m4a'] }), cue({ files: ['sfx/shared.m4a'] })]))
-    await player.load('https://r2/', meta([cue({ files: ['sfx/a.m4a'] })]))
-    expect(decoded()).toEqual(['sfx/a.m4a', 'sfx/shared.m4a', 'sfx/b.m4a', 'sfx/a.m4a'])
+    // (The shared file was let go with the first video's mix: the second decodes it again, and still plays.)
+    expect(decoded()).toEqual(['sfx/a.m4a', 'sfx/shared.m4a', 'sfx/b.m4a', 'sfx/shared.m4a'])
+    play()
+    expect(sources[0].buffer!.cues!.map(c => c.buffer!.url)).toEqual(['sfx/b.m4a', 'sfx/shared.m4a'])
   })
 
   it('REQ-MOTION-058 fetches nothing while the sound is off, and joins the playing video once it is turned on', async () => {
