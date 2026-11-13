@@ -255,12 +255,12 @@ export function PlannerEgoSelectModal({
           <CharacterPickerFilters query={query} onQuery={setQuery} grade={gradeFilter} onGrade={setGradeFilter} grades={PLANNER_EGO_GRADE_ORDER.map(value => ({ value, label: value }))} count={filtered.length} />
           <div className="planner-deck-select-modal__results flex flex-col gap-5 p-5">
             {holdSuggested && (
-              <SuggestionGroupSkeleton shape="ego" count={SUGGESTED_LIMIT} titleClassName="mb-2" tilesClassName="grid grid-cols-2 gap-3 sm:grid-cols-3" archetype />
+              <SuggestionGroupSkeleton shape="ego" count={SUGGESTED_LIMIT} titleClassName="mb-2" tilesClassName="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5" archetype />
             )}
             {suggested.length > 0 && (
               <div>
                 <div className="mb-2 flex items-center gap-2.5"><SuggestionRibbon />{archetypeLabel && <span className="font-[family-name:var(--font-heading)] text-[0.9375rem] text-[#cbb994]">{archetypeLabel}</span>}</div>
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">{suggested.map(ego => renderEgo(ego, true))}</div>
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">{suggested.map(ego => renderEgo(ego, true))}</div>
               </div>
             )}
             {!filtered.length && <p className="py-8 text-center" style={{ color: 'var(--text-secondary)' }}>{locale === 'ja' ? '結果がありません' : locale === 'en' ? 'No results' : '검색 결과가 없습니다'}</p>}
@@ -298,7 +298,7 @@ export function PlannerEgoSelectModal({
                       <span style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>{t('emptyGrade')}</span>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
                       {gradeEgos.map(ego => renderEgo(ego))}
                     </div>
                   )}

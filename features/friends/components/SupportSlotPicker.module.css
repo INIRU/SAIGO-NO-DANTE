@@ -28,7 +28,7 @@
   .side > :first-child { display: none; }
 }
 @media (max-width: 40rem) {
-  .identities { grid-template-columns: repeat(4, 1fr); gap: 0.5rem; }
+  .identities { grid-template-columns: repeat(3, 1fr); gap: 0.5rem; }
   .side { border-left: 0; border-top: 1px solid var(--border); padding: 0.75rem; overflow: visible; flex: 0 0 auto; max-height: 40dvh; overflow-y: auto; scrollbar-gutter: stable; }
 }
 /* The choice is already applied; this closes the window and reads as confirming it. */
