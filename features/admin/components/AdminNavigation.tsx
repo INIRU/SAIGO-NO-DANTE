@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, usePathname } from '@/lib/i18n/navigation'
 import { useLocale, useTranslations } from 'next-intl'
-import { Flag, MessageSquare, Megaphone, Users, Construction, ArrowUpRight, Menu, X, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
+import { Flag, LayoutDashboard, MessageSquare, Megaphone, Users, Construction, ArrowUpRight, Menu, X, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 import Button from '@/components/ui/Button'
 import './admin.css'
 const STORAGE_KEY = 'admin-nav-collapsed'
@@ -31,6 +31,10 @@ export default function AdminNavigation() {
   }, [open])
   const visit = ko ? '사이트로' : ja ? 'サイトへ' : 'Visit site'
   const groups = [
+    {
+      label: ko ? '운영' : ja ? '運営' : 'Overview',
+      items: [{ href: '/admin', label: ko ? '대시보드' : ja ? 'ダッシュボード' : 'Dashboard', icon: LayoutDashboard }],
+    },
     {
       label: t('groupCommunity'),
       items: [
@@ -101,7 +105,7 @@ export default function AdminNavigation() {
                   key={i.href}
                   href={i.href}
                   title={collapsed ? i.label : undefined}
-                  aria-current={path.startsWith(i.href) ? 'page' : undefined}
+                  aria-current={(i.href === '/admin' ? path === '/admin' : path.startsWith(i.href)) ? 'page' : undefined}
                   onClick={() => setOpen(false)}
                 >
                   <i.icon size={18} aria-hidden="true" />
