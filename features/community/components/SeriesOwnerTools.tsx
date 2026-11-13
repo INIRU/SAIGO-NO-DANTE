@@ -84,8 +84,8 @@ export default function SeriesOwnerTools({ id, title, items }: { id: string; tit
                   <span className="w-6 shrink-0 text-right font-[family-name:var(--font-title)] text-[1rem] text-[#9c8b73]">{index + 1}</span>
                   <Icon size={16} className="shrink-0 text-[#9c8b73]" aria-hidden="true" />
                   <span className="min-w-0 flex-1 truncate text-[0.875rem] text-[var(--text-primary)]">{item.title}</span>
-                  <button type="button" aria-label={t('owner.moveUp')} disabled={index === 0} onClick={() => setOrder(moveSeriesItem(order, index, -1))} className="grid h-8 w-8 place-items-center rounded text-[#b9a47f] transition-colors hover:text-[var(--gold-light)] disabled:opacity-30"><ArrowUp size={16} aria-hidden="true" /></button>
-                  <button type="button" aria-label={t('owner.moveDown')} disabled={index === order.length - 1} onClick={() => setOrder(moveSeriesItem(order, index, 1))} className="grid h-8 w-8 place-items-center rounded text-[#b9a47f] transition-colors hover:text-[var(--gold-light)] disabled:opacity-30"><ArrowDown size={16} aria-hidden="true" /></button>
+                  <button type="button" aria-label={t('owner.moveUp')} disabled={index === 0} onClick={() => setOrder(moveSeriesItem(order, index, -1))} className="grid h-10 w-10 place-items-center rounded text-[#b9a47f] transition-colors hover:text-[var(--gold-light)] disabled:opacity-30"><ArrowUp size={16} aria-hidden="true" /></button>
+                  <button type="button" aria-label={t('owner.moveDown')} disabled={index === order.length - 1} onClick={() => setOrder(moveSeriesItem(order, index, 1))} className="grid h-10 w-10 place-items-center rounded text-[#b9a47f] transition-colors hover:text-[var(--gold-light)] disabled:opacity-30"><ArrowDown size={16} aria-hidden="true" /></button>
                 </li>
               )
             })}
