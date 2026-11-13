@@ -164,13 +164,6 @@ export default function AdminAnnouncements() {
       <header className="admin-topbar">
         <div>
           <h1>{ko ? '공지 관리' : ja ? 'お知らせ管理' : 'Announcements'}</h1>
-          <p>
-            {ko
-              ? '작성하고, 미리 보고, 준비되면 게시하세요.'
-              : ja
-                ? '編集・プレビュー・公開をひとつの画面で。'
-                : 'Write, preview, and publish when ready.'}
-          </p>
         </div>
         <div className="admin-topbar-actions">
           <Button variant="primary" icon={Plus} onClick={() => open('new')}>
