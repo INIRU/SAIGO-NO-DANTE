@@ -28,7 +28,7 @@ import { localizeIdentityName, localizePassiveDescription, localizePassiveName }
 import { useKeywordData } from '@/components/providers/KeywordProvider'
 import { useLocale, useTranslations } from 'next-intl'
 import type { SupportedLang } from '@/lib/i18n/types'
-import SkillExchangePanel from './SkillExchangePanel'
+import { SKILL_EXCHANGE_PRESETS } from './SkillExchangePanel'
 import ConfirmModal from '@/components/ui/ConfirmModal'
 import { showError, showSuccess } from '@/lib/toast'
 import type { planSlotsFromTeamCode } from '@/lib/planner/team-code-import'
@@ -37,12 +37,14 @@ import { planSlotsFromDeckRows } from '@/lib/planner/formation-transfer'
 import { toggleFormationSlot } from '@/lib/planner/formation-toggle'
 import { COMPACT_KOTRA_STYLE } from '@/lib/planner/compact-name-style'
 import FormationSourceModal from './FormationSourceModal'
+import { buildStripSkills, toEgoSlotItems } from '@/features/decks'
 import {
   PLANNER_EGO_GRADE_ORDER,
   PlannerEgoBoard,
   PlannerEgoSelectModal,
   PlannerIdentityBoard,
   PlannerIdentitySelectModal,
+  PlannerSkillBoard,
   type PlannerDeckEgo,
   type PlannerEgoBoardSlot,
   type PlannerIdentityBoardSlot,
@@ -265,22 +267,6 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
     [keywordInfo, locale],
   )
 
-  const identityBoardSlots = useMemo<Record<string, PlannerIdentityBoardSlot>>(() => {
-    const slots: Record<string, PlannerIdentityBoardSlot> = {}
-    for (const sinner of sinners) {
-      const slot = getSelectedIdentity(sinner.id)
-      const identity = slot ? identityById.get(slot.identity_id) : undefined
-      slots[sinner.id] = {
-        sinnerId: sinner.id,
-        identity: identity ?? null,
-        identityName: slot ? getIdentitySlotName(slot) : undefined,
-        slotOrder: slot?.slot_order ?? null,
-        uptie: slot?.uptie,
-      }
-    }
-    return slots
-  }, [getIdentitySlotName, getSelectedIdentity, identityById, sinners])
-
   // EGO grouped by sinner (grade order within each group)
   const sinnerEgosMap = useMemo(() => {
     const map = new Map<string, EgoData[]>()
@@ -313,11 +299,30 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
       slots[sinner.id] = {
         sinnerId: sinner.id,
         enabled: !!selectedIdentity,
+        identityName: selectedIdentity ? getIdentitySlotName(selectedIdentity) : undefined,
         egosByGrade,
       }
     }
     return slots
-  }, [egoById, getSelectedIdentity, sinners, state.egoSlots])
+  }, [egoById, getIdentitySlotName, getSelectedIdentity, sinners, state.egoSlots])
+
+  const identityBoardSlots = useMemo<Record<string, PlannerIdentityBoardSlot>>(() => {
+    const slots: Record<string, PlannerIdentityBoardSlot> = {}
+    for (const sinner of sinners) {
+      const slot = getSelectedIdentity(sinner.id)
+      const identity = slot ? identityById.get(slot.identity_id) : undefined
+      slots[sinner.id] = {
+        sinnerId: sinner.id,
+        identity: identity ?? null,
+        identityName: slot ? getIdentitySlotName(slot) : undefined,
+        slotOrder: slot?.slot_order ?? null,
+        uptie: slot?.uptie,
+        skills: slot && identity ? buildStripSkills(identity, skills.filter((skill): skill is SkillSummary & { id: string } => skill.identity_id === slot.identity_id && !!skill.id), getIdentitySkillDistribution(slot)) : undefined,
+        egos: toEgoSlotItems(egoBoardSlots[sinner.id]?.egosByGrade ?? {}, locale),
+      }
+    }
+    return slots
+  }, [egoBoardSlots, getIdentitySlotName, getSelectedIdentity, identityById, locale, sinners, skills])
 
   const egoModalSelectedByGrade = useMemo<Record<string, PlannerDeckEgo | undefined>>(() => {
     if (!egoModalSinner) return {}
@@ -671,63 +676,31 @@ export default function DeckTab({ state, dispatch, identities, sinners, passives
       {/* ── 스킬 교환 탭 ── */}
       {subTab === 'skillset' && (
         <div>
+          {/* the counts are edited on the cards: − / + beside each skill and the presets under them (USER 2026-11-13) */}
+          {state.identitySlots.length > 0 && (
+            <PlannerSkillBoard
+              sinners={sinners}
+              slots={identityBoardSlots}
+              edits={Object.fromEntries(sinners.flatMap(sinner => {
+                const slot = getSelectedIdentity(sinner.id)
+                if (!slot) return []
+                const dist = getIdentitySkillDistribution(slot)
+                return [[sinner.id, {
+                  canDecrease: (idx: number) => dist[idx] > 0,
+                  canIncrease: (idx: number) => dist[idx] < 6 && getHighestDonorIndex(dist, idx) !== null,
+                  onAdjust: (idx: number, delta: number) => handleSkillChange(sinner.id, idx, delta),
+                  presets: SKILL_EXCHANGE_PRESETS,
+                  onPreset: (preset: [number, number, number]) => dispatch({ type: 'SET_SKILL_DISTRIBUTION', sinnerId: sinner.id, distribution: normalizeSkillDistribution(preset) }),
+                }]]
+              }))}
+            />
+          )}
           {state.identitySlots.length === 0 ? (
             <div className="text-center" style={{ padding: '3rem 1rem', color: 'var(--text-muted)', fontSize: '0.8125rem' }}>
               {tDeck('skillset.selectIdentityFirst')}
             </div>
           ) : (
-            <div className="skill-exchange-list">
-              {sinners.map(sinner => {
-                const slot = getSelectedIdentity(sinner.id)
-                if (!slot) return null
-
-                const identData = identityById.get(slot.identity_id)
-                const dist = getIdentitySkillDistribution(slot)
-
-                // Build a fake Identity-like object for getSkillIconUrl
-                const identForIcon = identData ? { game_id: identData.game_id, sinner_id: identData.sinner_id } as { game_id: string | null; sinner_id: string } : null
-
-                // 각 슬롯(S1,S2,S3)별 최고 업타이 스킬 (죄악 속성 시각화용)
-                const slotBestSkills = [1, 2, 3].map(order =>
-                  skills
-                    .filter(sk => sk.identity_id === slot.identity_id && sk.skill_order === order)
-                    .sort((a, b) => (b.uptie_level ?? 0) - (a.uptie_level ?? 0))[0] ?? null
-                )
-
-                return (
-                  <SkillExchangePanel
-                      key={sinner.id}
-                      identity={{
-                        imageUrl: identData ? getIdentityInfoImageUrl(identData) : null,
-                        name: getIdentitySlotName(slot),
-                        sinnerName: getLocalizedSinnerName(sinner),
-                      }}
-                      distribution={dist}
-                      skills={[
-                        slotBestSkills[0] ? {
-                          name: slotBestSkills[0].name,
-                          iconSrc: identForIcon?.game_id ? getSkillIconUrl(identForIcon as Parameters<typeof getSkillIconUrl>[0], 1) : null,
-                          sinColor: SIN_COLORS[slotBestSkills[0].sin_affinity as keyof typeof SIN_COLORS] ?? '#555',
-                        } : null,
-                        slotBestSkills[1] ? {
-                          name: slotBestSkills[1].name,
-                          iconSrc: identForIcon?.game_id ? getSkillIconUrl(identForIcon as Parameters<typeof getSkillIconUrl>[0], 2) : null,
-                          sinColor: SIN_COLORS[slotBestSkills[1].sin_affinity as keyof typeof SIN_COLORS] ?? '#555',
-                        } : null,
-                        slotBestSkills[2] ? {
-                          name: slotBestSkills[2].name,
-                          iconSrc: identForIcon?.game_id ? getSkillIconUrl(identForIcon as Parameters<typeof getSkillIconUrl>[0], 3) : null,
-                          sinColor: SIN_COLORS[slotBestSkills[2].sin_affinity as keyof typeof SIN_COLORS] ?? '#555',
-                        } : null,
-                      ]}
-                      canDecrease={idx => dist[idx] > 0}
-                      canIncrease={idx => dist[idx] < 6 && getHighestDonorIndex(dist, idx) !== null}
-                      onAdjust={(idx, delta) => handleSkillChange(sinner.id, idx, delta)}
-                      onPresetSelect={preset => dispatch({ type: 'SET_SKILL_DISTRIBUTION', sinnerId: sinner.id, distribution: normalizeSkillDistribution(preset) })}
-                    />
-                )
-              })}
-            </div>
+            null
           )}
         </div>
       )}

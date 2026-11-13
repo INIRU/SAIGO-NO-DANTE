@@ -681,6 +681,9 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
               identities={identities}
               deckSlots={deckSlots}
               upties={upties}
+              egoSlots={egoSlots}
+              skillsByIdentityId={skillsByIdentityId}
+              skillDistribution={skillDistribution}
               mainKeywordCounts={deckKeywordCounts}
               selectedMainKeywords={effectiveMainKeywords}
               maxMainKeywords={MAX_DECK_MAIN_KEYWORDS}
@@ -739,6 +742,7 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
             <SkillsetTab
               sinners={sinners}
               deckSlots={deckSlots}
+              upties={upties}
               skillsByIdentityId={skillsByIdentityId}
               skillDistribution={skillDistribution}
               onDistributionChange={(sinnerId, dist) =>

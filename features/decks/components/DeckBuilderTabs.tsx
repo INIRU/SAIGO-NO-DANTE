@@ -27,7 +27,9 @@ import { useLocale, useTranslations } from 'next-intl'
 import type { SupportedLang } from '@/lib/i18n/types'
 import { getLocalizedName } from '@/lib/i18n/localize'
 import { DECK_MAIN_KEYWORDS } from '@/lib/decks/keyword-rules'
-import SkillExchangePanel from '@/features/planner/components/SkillExchangePanel'
+import { SKILL_EXCHANGE_PRESETS } from '@/features/planner/components/SkillExchangePanel'
+import type { SkillCountEdit } from '@/features/catalog/components/EgoSlotRows'
+import { buildStripSkills, toEgoSlotItems } from '@/features/decks/lib/strip-skills'
 import { DEPLOYED_SLOT_COUNT } from '@/lib/constants/game'
 import { getCompactNameStyle } from '@/lib/planner/compact-name-style'
 import {
@@ -35,6 +37,7 @@ import {
   PlannerEgoSelectModal,
   PlannerIdentityBoard,
   PlannerIdentitySelectModal,
+  PlannerSkillBoard,
   type PlannerDeckEgo,
   type PlannerEgoBoardSlot,
   type PlannerIdentityBoardSlot,
@@ -79,10 +82,37 @@ function SinnerGhostCard({ sinner, children }: { sinner: Sinner; children?: Reac
   )
 }
 
+/** The builder's identity board data: formation number, uptie, skills 1-3 with the deck's counts, and the chosen E.G.O (the strip under each card). */
+function builderBoardSlots({ sinners, deckSlots, upties, formationOrder = [], skillsByIdentityId, skillDistribution, egoSlots = {}, locale }: {
+  sinners: Sinner[]
+  deckSlots: Record<string, Identity | undefined>
+  upties: Record<string, number>
+  formationOrder?: string[]
+  skillsByIdentityId: Record<string, Skill[]>
+  skillDistribution: Record<string, [number, number, number]>
+  egoSlots?: Record<string, Record<string, EGO>>
+  locale: SupportedLang
+}) {
+  return sinners.reduce<Record<string, PlannerIdentityBoardSlot>>((acc, sinner) => {
+    const identity = deckSlots[sinner.id] ?? null
+    const formIdx = formationOrder.indexOf(sinner.id)
+    acc[sinner.id] = {
+      sinnerId: sinner.id,
+      identity,
+      slotOrder: identity && formIdx >= 0 ? formIdx : null,
+      uptie: upties[sinner.id],
+      identityName: identity ? localizeIdentityName(identity, locale) : undefined,
+      skills: identity ? buildStripSkills(identity, skillsByIdentityId[identity.id] ?? [], skillDistribution[sinner.id] ?? [3, 2, 1]) : undefined,
+      egos: toEgoSlotItems(egoSlots[sinner.id] ?? {}, locale),
+    }
+    return acc
+  }, {})
+}
+
 const MANUAL_ATTACK_MAIN_KEYWORDS = new Set<string>(['참격', '관통', '타격'])
 /* ── 탭 1: 인격 편성 (플래너 패턴: 40% 변경 / 60% 편성 토글) ── */
 export function IdentityTab({
-  sinners, identities, deckSlots, upties,
+  sinners, identities, deckSlots, upties, egoSlots, skillsByIdentityId, skillDistribution,
   formationOrder, onFormationToggle, onFormationReset, onIdentitySelect,
   mainKeywordCounts, selectedMainKeywords, maxMainKeywords, mainKeywordLabel, onMainKeywordToggle,
 }: {
@@ -91,6 +121,9 @@ export function IdentityTab({
   deckSlots: Record<string, Identity | undefined>
   /** sinnerId → uptie 1–4 (missing = 4) */
   upties: Record<string, number>
+  egoSlots: Record<string, Record<string, EGO>>
+  skillsByIdentityId: Record<string, Skill[]>
+  skillDistribution: Record<string, [number, number, number]>
   mainKeywordCounts: Record<string, number>
   selectedMainKeywords: string[]
   maxMainKeywords: number
@@ -119,19 +152,7 @@ export function IdentityTab({
         .sort((a, b) => b.rarity - a.rarity)
     : []
   const openIdentityModal = (sinnerId: string) => setModalSinnerId(sinnerId)
-  const boardSlots = sinners.reduce<Record<string, PlannerIdentityBoardSlot>>((acc, sinner) => {
-    const identity = deckSlots[sinner.id] ?? null
-    const formIdx = formationOrder.indexOf(sinner.id)
-    const isFormed = formIdx >= 0
-    acc[sinner.id] = {
-      sinnerId: sinner.id,
-      identity,
-      slotOrder: identity && isFormed ? formIdx : null,
-      uptie: upties[sinner.id],
-      identityName: identity ? localizeIdentityName(identity, locale) : undefined,
-    }
-    return acc
-  }, {})
+  const boardSlots = builderBoardSlots({ sinners, deckSlots, upties, formationOrder, skillsByIdentityId, skillDistribution, egoSlots, locale })
 
   return (
     <>
@@ -254,6 +275,7 @@ export function EgoTab({
     acc[sinner.id] = {
       sinnerId: sinner.id,
       enabled: true,
+      identityName: identityById.has(identityIds[sinner.id] ?? '') ? localizeIdentityName(identityById.get(identityIds[sinner.id]!)!, lang) : undefined,
       egosByGrade: egoSlots[sinner.id] ?? {},
     }
     return acc
@@ -368,67 +390,43 @@ export function OrderTab({
 
 /* ── 탭 4: 스킬 배분 ─────────────────────────────────── */
 export function SkillsetTab({
-  sinners, deckSlots, skillsByIdentityId, skillDistribution, onDistributionChange,
+  sinners, deckSlots, upties, skillsByIdentityId, skillDistribution, onDistributionChange,
 }: {
   sinners: Sinner[]
   deckSlots: Record<string, Identity | undefined>
+  upties: Record<string, number>
   skillsByIdentityId: Record<string, Skill[]>
   skillDistribution: Record<string, [number, number, number]>
   onDistributionChange: (sinnerId: string, dist: [number, number, number]) => void
 }) {
   const locale = useLocale() as SupportedLang
+  // The counts are edited on the cards themselves: − / + beside each skill and the presets under them (USER 2026-11-13).
+  const edits: Record<string, SkillCountEdit> = {}
+  for (const sinner of sinners) {
+    if (!deckSlots[sinner.id]) continue
+    const dist = skillDistribution[sinner.id] ?? [3, 2, 1]
+    const total = dist[0] + dist[1] + dist[2]
+    edits[sinner.id] = {
+      canDecrease: idx => dist[idx] > 0,
+      canIncrease: () => total < 6,
+      onAdjust: (idx, delta) => {
+        const next: [number, number, number] = [dist[0], dist[1], dist[2]]
+        const value = next[idx] + delta
+        if (value < 0 || total + delta > 6) return
+        next[idx] = value
+        onDistributionChange(sinner.id, next)
+      },
+      presets: SKILL_EXCHANGE_PRESETS,
+      onPreset: preset => onDistributionChange(sinner.id, preset),
+    }
+  }
+  if (!sinners.some(sinner => deckSlots[sinner.id])) return null
   return (
-    <div className="skill-exchange-list">
-      {sinners.map(sinner => {
-        const identity = deckSlots[sinner.id]
-        if (!identity) return null
-
-        const dist = skillDistribution[sinner.id] ?? [3, 2, 1]
-        const total = dist[0] + dist[1] + dist[2]
-        const skills = (skillsByIdentityId[identity.id] ?? [])
-          .filter(s => s.skill_order >= 1 && s.skill_order <= 3)
-          .sort((a, b) => a.skill_order - b.skill_order)
-          .filter((s, i, arr) => arr.findIndex(x => x.skill_order === s.skill_order) === i)
-
-        const handleChange = (idx: number, delta: number) => {
-          const next: [number, number, number] = [dist[0], dist[1], dist[2]]
-          const newVal = next[idx] + delta
-          if (newVal < 0 || total + delta > 6) return
-          next[idx] = newVal
-          onDistributionChange(sinner.id, next)
-        }
-
-        return (
-            <SkillExchangePanel
-              key={sinner.id}
-              identity={{
-                imageUrl: getIdentityInfoUrl(identity),
-                name: localizeIdentityName(identity, locale),
-                sinnerName: getDeckBuilderSinnerName(sinner, locale),
-              }}
-              distribution={dist}
-              skills={[
-                skills[0] ? {
-                  name: skills[0].name,
-                  iconSrc: identity.game_id ? getSkillIconUrl(identity, skills[0].skill_order, skills[0]) : null,
-                  sinColor: SIN_COLORS[skills[0].sin_affinity] ?? '#888',
-                } : null,
-                skills[1] ? {
-                  name: skills[1].name,
-                  iconSrc: identity.game_id ? getSkillIconUrl(identity, skills[1].skill_order, skills[1]) : null,
-                  sinColor: SIN_COLORS[skills[1].sin_affinity] ?? '#888',
-                } : null,
-                skills[2] ? {
-                  name: skills[2].name,
-                  iconSrc: identity.game_id ? getSkillIconUrl(identity, skills[2].skill_order, skills[2]) : null,
-                  sinColor: SIN_COLORS[skills[2].sin_affinity] ?? '#888',
-                } : null,
-              ]}
-              onAdjust={handleChange}
-              onPresetSelect={preset => onDistributionChange(sinner.id, preset)}
-            />
-        )
-      })}
-    </div>
+    <PlannerSkillBoard
+      sinners={sinners}
+      slots={builderBoardSlots({ sinners, deckSlots, upties, skillsByIdentityId, skillDistribution, locale })}
+      getSinnerName={sinner => getDeckBuilderSinnerName(sinner as Sinner, locale)}
+      edits={edits}
+    />
   )
 }

@@ -2,6 +2,8 @@
 
 import { Fragment, memo, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import IdentityFrameCard, { getFormationOverlay } from '@/features/catalog/components/IdentityFrameCard'
+import type { EgoSlotItem, FormationStripSkill, SkillCountEdit } from '@/features/catalog/components/EgoSlotRows'
+import FormationBoard from '@/features/decks/components/FormationBoard'
 import Image from 'next/image'
 import { ChevronDown, ChevronUp, ClipboardPaste, Download, RotateCcw, X } from 'lucide-react'
 import { showSuccess } from '@/lib/toast'
@@ -120,6 +122,8 @@ export function PlannerIdentityBoard({
         sinnerName={sinnerName}
         order={order}
         giftBadgeUrls={view ? slot?.giftBadgeUrls : undefined}
+        skills={view ? slot?.skills : undefined}
+        egos={view ? slot?.egos : undefined}
         ariaLabel={view
           ? sinnerName + ' ' + name + ' ' + (overlay ? t('removeFormation') + ' ' + overlay.order : t('addFormation'))
           : t('change') + ' ' + sinnerName + ' ' + name}
@@ -286,6 +290,9 @@ type BoardTileProps = {
   sinnerName: string
   order: number | null
   giftBadgeUrls?: string[]
+  /** Under the card (view only): skills 1-3 and this sinner's E.G.O, as on the deck detail board. */
+  skills?: (FormationStripSkill | null)[]
+  egos?: Record<string, EgoSlotItem | undefined>
   ariaLabel: string
   longPress: boolean
   onActivate: (sinnerId: string, view: boolean) => void
@@ -293,7 +300,7 @@ type BoardTileProps = {
   onPressEnd: () => void
 }
 
-const BoardTile = memo(function BoardTile({ sinnerId, view, identity, uptie, name, sinnerName, order, giftBadgeUrls, ariaLabel, longPress, onActivate, onPressStart, onPressEnd }: BoardTileProps) {
+const BoardTile = memo(function BoardTile({ sinnerId, view, identity, uptie, name, sinnerName, order, giftBadgeUrls, skills, egos, ariaLabel, longPress, onActivate, onPressStart, onPressEnd }: BoardTileProps) {
   return (
     <li>
       <button
@@ -318,11 +325,44 @@ const BoardTile = memo(function BoardTile({ sinnerId, view, identity, uptie, nam
           </span>
         )}
       </button>
+      {/* no strip under the card here: the builders keep the board plain (USER 2026-11-13: 만드는 곳에서는 안 보이게) */}
     </li>
   )
 }, (a, b) => (Object.keys(a) as (keyof BoardTileProps)[]).every(key => (
-  key === 'giftBadgeUrls' ? String(a[key]) === String(b[key]) : Object.is(a[key], b[key])
+  // arrays/objects are rebuilt on every render of the board: compare by content so a formation click still re-renders only the changed tiles
+  key === 'giftBadgeUrls' || key === 'skills' || key === 'egos' ? JSON.stringify(a[key]) === JSON.stringify(b[key]) : Object.is(a[key], b[key])
 )))
+
+/** The identity board in the skill look (deck detail's skill view): cards darkened, skills 1-3 with ×count over them. `edits` puts − / + and the presets on each card (the skill exchange of the builders). */
+export function PlannerSkillBoard({ sinners, slots, getSinnerName, edits }: {
+  sinners: PlannerDeckSinner[]
+  slots: Record<string, PlannerIdentityBoardSlot | undefined>
+  getSinnerName?: (sinner: PlannerDeckSinner) => string
+  edits?: Record<string, SkillCountEdit | undefined>
+}) {
+  const locale = useLocale() as SupportedLang
+  const sinnerNameOf = useSinnerName(locale, getSinnerName)
+  return (
+    <FormationBoard
+      view="skill"
+      slots={sinners.map(sinner => {
+        const slot = slots[sinner.id]
+        const identity = slot?.identity ?? null
+        const name = slot?.identityName ?? (identity ? localizeIdentityName(identity, locale) : '')
+        return {
+          key: sinner.id,
+          identity: identity && { ...identity, name },
+          sinnerId: sinner.id,
+          slotOrder: null,
+          uptie: slot?.uptie,
+          skills: identity ? slot?.skills : undefined,
+          skillEdit: identity ? edits?.[sinner.id] : undefined,
+          ariaLabel: sinnerNameOf(sinner) + ' ' + name,
+        }
+      })}
+    />
+  )
+}
 
 export function PlannerIdentitySelectModal({
   open,
