@@ -194,7 +194,7 @@ describe('ad slot', () => {
     expect(sinner.indexOf('<AdSlot place="top" />')).toBeLessThan(sinner.indexOf('role="tablist"'))
     for (const page of ['app/[lang]/series/[id]/page.tsx', 'app/[lang]/announcements/[id]/page.tsx'])
       expect(source(page).indexOf('<AdSlot place="top" />'), page).toBeGreaterThan(source(page).indexOf('</header>'))
-    const ego = source('app/[lang]/sinners/[slug]/ego/[egoId]/_components/EGODetailClient.tsx')
+    const ego = source('features/catalog/components/EgoDetailView.tsx')
     expect(ego.indexOf('<AdSlot place="inline" />')).toBeGreaterThan(ego.indexOf('aria-labelledby="ego-info-title"'))
     expect(ego.indexOf('<AdSlot place="inline" />')).toBeLessThan(ego.indexOf('className={styles.combat}'))
     // the loading screens keep the banner's place, so the loaded page does not move

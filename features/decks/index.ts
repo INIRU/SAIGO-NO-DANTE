@@ -12,3 +12,4 @@ export type { ActivationKind, ActivationRequirement, SinWeights } from './lib/pa
 export { trimDeckIdentity } from './lib/trim-deck-identity'
 export { BOARD_SLOT_COUNT, adaptBoardIdentity, buildBoardSlots, buildNoteLookups, topKeywords } from './lib/deck-detail-model'
 export type { SinnerEgo } from './lib/deck-detail-model'
+export { buildStripSkills, toEgoSlotItems } from './lib/strip-skills'

@@ -3,8 +3,6 @@
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import { X } from 'lucide-react'
-import { useReducedMotion } from 'motion/react'
-import * as m from 'motion/react-m'
 import BaseModal from '@/components/ui/BaseModal'
 import SuggestionRibbon from '@/components/ui/SuggestionRibbon'
 import { SuggestionGroupSkeleton } from '@/components/ui/SuggestionSkeleton'
@@ -14,7 +12,8 @@ import CharacterPickerFilters from '@/components/ui/CharacterPickerFilters'
 import EgoDisplayCard from '@/features/catalog/components/EgoDisplayCard'
 import { localizeEgoName } from '@/features/decks/components/DeckIdentityCard'
 import { GRADE_COLORS } from '@/lib/constants/game'
-import { SIN_COLORS, SIN_KR_TO_EN } from '@/lib/constants/sin'
+import { EgoPanelBoard } from '@/features/decks/components/EgoBackPanel'
+import { toEgoSlotItems } from '@/features/decks'
 import { getEgoGradeBannerUrl, getSinnerLogoUrl } from '@/lib/utils/images'
 import type { SupportedLang } from '@/lib/i18n/types'
 import { getCompactNameStyle } from '@/lib/planner/compact-name-style'
@@ -36,145 +35,24 @@ export function PlannerEgoBoard({
   const t = useTranslations('planner.deckTab.ego')
   const locale = useLocale() as SupportedLang
   const getLocalizedSinnerName = useSinnerName(locale, getSinnerName)
-  const compactNameStyle = getCompactNameStyle(locale)
-  const reduceMotion = useReducedMotion()
 
+  // Same grid and card footprint as the identity board; each sinner is the flat back panel of the deck detail's E.G.O view.
   return (
-    <div className="planner-deck-ego-grid">
-      {sinners.map((sinner, sinnerIndex) => {
+    <EgoPanelBoard
+      items={sinners.map(sinner => {
         const slot = slots[sinner.id]
-        const enabled = slot?.enabled ?? true
-        const egosByGrade = slot?.egosByGrade ?? {}
         const sinnerName = getLocalizedSinnerName(sinner)
-        return (
-          <m.button
-            key={sinner.id}
-            type="button"
-            onClick={() => { if (enabled) onOpenEgoModal(sinner.id) }}
-            disabled={!enabled}
-            className="planner-deck-ego-card text-left"
-            aria-label={`${t('modalTitle')} ${sinnerName}`}
-            style={{
-              border: `1px solid ${enabled ? '#221a0f' : '#18120a'}`,
-              opacity: enabled ? 1 : 0.5,
-              cursor: enabled ? 'pointer' : 'default',
-            }}
-            animate={{ opacity: enabled ? 1 : 0.5 }}
-            transition={{ duration: reduceMotion ? 0 : 0.16, ease: [0.22, 1, 0.36, 1] }}
-          >
-            <div className="flex min-w-0 items-center gap-1.5" style={{ padding: '0.375rem 0.5rem', borderBottom: '1px solid #1a1208' }}>
-              <Image src={getSinnerLogoUrl(sinner.id)} alt="" width={14} height={14} style={{ width: '0.875rem', height: '0.875rem', opacity: 0.5 }} />
-              <span className="min-w-0 truncate" title={sinnerName} style={{ ...compactNameStyle, color: enabled ? '#8a7a60' : '#3a2a10', fontSize: '0.875rem' }}>
-                {sinnerName}
-              </span>
-            </div>
-            <div className="flex flex-col gap-0.5 p-0.5">
-              {PLANNER_EGO_GRADE_ORDER.map(grade => {
-                const ego = egosByGrade[grade]
-                const gradeColor = GRADE_COLORS[grade] ?? '#555'
-                const sinEn = ego?.sin_affinity ? (SIN_KR_TO_EN[ego.sin_affinity] ?? ego.sin_affinity) : null
-                const egoColor = sinEn ? (SIN_COLORS[sinEn as keyof typeof SIN_COLORS] ?? gradeColor) : gradeColor
-                return (
-                  <div
-                    key={grade}
-                    className="planner-deck-ego-row flex items-center gap-1.5 rounded-sm"
-                    style={{
-                      background: ego ? `${egoColor}1a` : 'rgba(10,8,5,0.7)',
-                      border: `1px solid ${ego ? `${egoColor}55` : '#18120a'}`,
-                      padding: '0.25rem 0.3125rem',
-                      minHeight: '1.5rem',
-                    }}
-                  >
-                    <Image
-                      src={getEgoGradeBannerUrl(grade)}
-                      alt={grade}
-                      width={48}
-                      height={22}
-                      unoptimized
-                      style={{ width: '2.75rem', height: '1.25rem', objectFit: 'contain', opacity: ego ? 1 : 0.45, flexShrink: 0 }}
-                    />
-                    {ego ? (() => {
-                      const egoName = localizeEgoName(ego, locale)
-                      return (
-                      <span className="planner-deck-ego-name" title={egoName} style={{ ...compactNameStyle, color: egoColor, fontSize: '0.875rem', lineHeight: 1.2, flex: 1, textAlign: 'left' }}>
-                        {egoName}
-                      </span>
-                      )
-                    })() : (
-                      <span style={{ color: 'var(--text-muted)', fontSize: '0.875rem', lineHeight: 1 }}>{enabled ? '—' : ''}</span>
-                    )}
-                  </div>
-                )
-              })}
-            </div>
-            {!enabled && (
-              <div className="px-2 pb-1.5 pt-1 text-center">
-                <span style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>{t('noIdentity')}</span>
-              </div>
-            )}
-          </m.button>
-        )
+        return {
+          key: sinner.id,
+          sinnerId: sinner.id,
+          name: slot?.identityName || sinnerName,
+          egos: toEgoSlotItems(slot?.egosByGrade ?? {}, locale),
+          disabled: !(slot?.enabled ?? true),
+          ariaLabel: `${t('modalTitle')} ${sinnerName}`,
+          onClick: () => onOpenEgoModal(sinner.id),
+        }
       })}
-      <style jsx>{`
-        .planner-deck-ego-grid {
-          display: grid;
-          grid-template-columns: repeat(2, minmax(0, 1fr));
-          column-gap: 1rem;
-          row-gap: 1rem;
-        }
-        .planner-deck-ego-card {
-          min-width: 0;
-          overflow: hidden;
-          border-radius: 0.25rem;
-          background: linear-gradient(160deg, #1a1510 0%, #100d08 100%);
-          transition: border-color 0.15s ease, filter 0.15s ease;
-        }
-        .planner-deck-ego-card:not(:disabled):hover,
-        .planner-deck-ego-card:not(:disabled):focus-visible {
-          border-color: rgba(200,144,10,0.42);
-          filter: brightness(1.05);
-          outline: none;
-        }
-        .planner-deck-ego-card:not(:disabled):focus-visible {
-          box-shadow: 0 0 0 2px rgba(232,176,48,0.55);
-        }
-        .planner-deck-ego-row {
-          min-width: 0;
-          overflow: hidden;
-        }
-        .planner-deck-ego-name {
-          display: block;
-          min-width: 0;
-          max-width: 100%;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          white-space: nowrap;
-          word-break: keep-all;
-        }
-        @media (min-width: 40rem) {
-          .planner-deck-ego-grid {
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-          }
-        }
-        @media (min-width: 48rem) {
-          .planner-deck-ego-grid {
-            grid-template-columns: repeat(4, minmax(0, 1fr));
-          }
-        }
-        @media (min-width: 64rem) {
-          .planner-deck-ego-grid {
-            grid-template-columns: repeat(6, minmax(0, 1fr));
-          }
-        }
-        @media (max-width: 39.9375rem) {
-          .planner-deck-ego-grid {
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            column-gap: 0.5rem;
-            row-gap: 0.5rem;
-          }
-        }
-      `}</style>
-    </div>
+    />
   )
 }
 

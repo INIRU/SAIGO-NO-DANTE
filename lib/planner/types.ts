@@ -474,6 +474,10 @@ export interface EgoData {
 }
 
 export interface SkillSummary {
+  id?: string
+  atk_type?: string | null
+  image_id?: string | null
+  variant_order?: number | null
   identity_id: string
   name: string
   sin_affinity: string

@@ -1,0 +1,16 @@
+/* Flat back of a formation card: header (sinner logo + name) and the five E.G.O rows. cqi = the card's width (a container-type: inline-size ancestor). */
+.panel {
+  display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 0; padding: 3.5cqi 5cqi 1.5cqi;
+  border: 1px solid var(--border); border-radius: 0.25rem; background: var(--bg-panel);
+}
+.head {
+  display: flex; align-items: center; gap: 2cqi; min-width: 0; padding-bottom: 1.5cqi; border-bottom: 1px solid var(--border);
+  font-family: var(--font-heading); font-size: 6.4cqi; line-height: 1.5; color: var(--text-secondary);
+}
+.head img { width: 9cqi; height: 9cqi; flex: none; object-fit: contain; opacity: 0.85; }
+/* line-height 1.5 and the top padding: KOTRA's tall glyphs were cut by the ellipsis box at 1.1 */
+.head span { min-width: 0; padding-top: 0.08em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* The builders' board: the panel at the identity card's size (290 x 428). */
+.box { display: block; container-type: inline-size; }
+.box > .panel { aspect-ratio: 290 / 428; text-align: left; }

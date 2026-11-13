@@ -9,7 +9,7 @@ import { getSinnerById, getEGOById } from '@/lib/db/queries'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import { notFound } from 'next/navigation'
 import dynamic from 'next/dynamic'
-const EGODetailClient = dynamic(() => import('@/app/[lang]/sinners/[slug]/ego/[egoId]/_components/EGODetailClient'))
+const EgoDetailView = dynamic(() => import('@/features/catalog/components/EgoDetailView'))
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://saigo-no-dante.com'
 function absoluteUrl(path: string): string {
@@ -75,7 +75,7 @@ export default async function EGODetailPage({ params }: { params: Promise<{ lang
         { name: getLocalizedName({ ...ego, name_kr: ego.name_kr }, lang), url: localeUrl(lang, `/sinners/${slug}/ego/${egoId}`) },
       ])} />
       <Suspense fallback={null}>
-        <EGODetailClient sinner={sinner} ego={ego} />
+        <EgoDetailView sinner={sinner} ego={ego} />
       </Suspense>
     </>
   )

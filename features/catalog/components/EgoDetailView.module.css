@@ -44,9 +44,16 @@
 .passiveContent { padding-top: 1rem; max-width: 75ch; }
 
 .empty { color: var(--text-muted); padding: 1.25rem 0; font-size: .875rem; }
+/* inside the E.G.O info window: the window gives the padding */
+.embedded { max-width: none; padding: 0; }
+/* room for the window's close button in the top right corner */
+.embedded .info > .sectionHeading { padding-right: 2.75rem; }
 .page a:focus-visible, .page button:focus-visible { outline: 2px solid var(--gold); outline-offset: .25rem; }
 @media (max-width: 47.9375rem) {
   .page { padding: 5rem 1rem 3rem; }
+  .embedded { padding: 0; }
+  .embedded .titleRow { padding-right: 2.75rem; }
+  .embedded .info > .sectionHeading { padding-right: 0; }
   .breadcrumb { margin-bottom: 1rem; }
   .hero { grid-template-columns: minmax(0, 1fr); gap: 1.5rem; }
   .artwork { width: min(80%, 20rem); margin-top: .75rem; }

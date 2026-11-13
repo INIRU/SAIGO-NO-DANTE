@@ -60,7 +60,7 @@ async function fetchPlannerStaticData() {
     supabase.schema('limbus').from('sinners').select('id, name_kr, name_en, name_jp, order_num').order('order_num'),
     // Every uptie level (the deck picks each slot's level); more rows than one page.
     readAllRows((from, to) => supabase.schema('limbus').from('passives').select('id, name, name_en, name_jp, identity_id, passive_type, sin_affinity, sin_count, sin_requirements, active_cond, description, description_en, description_jp, uptie_level').order('id').range(from, to)),
-    readAllRows((from, to) => supabase.schema('limbus').from('skills').select('identity_id, name, sin_affinity, skill_type, skill_order, uptie_level').order('id').range(from, to)),
+    readAllRows((from, to) => supabase.schema('limbus').from('skills').select('id, identity_id, name, sin_affinity, skill_type, atk_type, image_id, skill_order, variant_order, uptie_level').order('id').range(from, to)),
   ])
   failOnReadError({ identities: identitiesError, sinners: sinnersError, passives: passivesError, skills: skillsError })
 
