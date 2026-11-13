@@ -56,7 +56,7 @@ import {
   type IdentitySlot,
 } from '@/features/decks/components/DeckIdentityCard'
 import FormationBoard, { type FormationBoardSlot } from '@/features/decks/components/FormationBoard'
-import { FormationEgoGrid, FormationTabs, type FormationEgo } from '@/features/decks/components/FormationEgoGrid'
+import { FormationTabs, type FormationEgo } from '@/features/decks/components/FormationEgoGrid'
 import DeckRecommendations, { type DeckRecommendationsData } from '@/features/decks/components/DeckRecommendations'
 import DeckComments from '@/features/decks/components/DeckComments'
 import { useDeckReactions } from '@/features/decks/hooks/useDeckReactions'
@@ -170,7 +170,7 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
   const { voted, voteCount, setVoteCount, voting, handleVote, bookmarked, bookmarking, handleBookmark } = useDeckReactions({ id, authStatus, initialVoteCount: initialDeck?.vote_count ?? 0 })
   const [copied, setCopied] = useState(false)
   const [identityPreview, setIdentityPreview] = useState<IdentityPreviewState | null>(null)
-  const [formationTab, setFormationTab] = useState<'identity' | 'ego'>('identity')
+  const [formationTab, setFormationTab] = useState<'identity' | 'ego' | 'skill'>('identity')
 
   const [shared, setShared] = useState(false)
   const [shareGenerating, setShareGenerating] = useState(false)
@@ -305,12 +305,21 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
     })
   }, [deck?.deck_identities])
   const boardSlots = useMemo(() => buildBoardSlots(sorted), [sorted])
+  // 카드 아래 줄: 스킬 1·2·3의 아이콘, 죄악, 공격 유형 (스킬 분포 패널과 같은 아이콘 규칙)
+  const stripSkills = (identity: IdentityDetail, counts: (number | null | undefined)[]) => {
+    const attacks = topUptieSkills((identity.skills ?? []).filter(skill => !['evade', 'defense', 'counter'].includes(skill.skill_type))).sort((a, b) => a.skill_order - b.skill_order)
+    const imageIndices = computeSkillImageIndices(attacks)
+    return [1, 2, 3].map(order => {
+      const skill = attacks.find(row => row.skill_order === order)
+      return skill ? { iconUrl: getSkillIconUrl(adaptBoardIdentity(identity, locale), imageIndices[skill.id] ?? order, skill), sin: skill.sin_affinity, attackType: skill.atk_type ?? null, count: counts[order - 1] ?? 4 - order } : null
+    })
+  }
   // E.G.O 탭: 수감자 → 등급 → E.G.O
   const formationEgos = useMemo(() => {
     const map: Record<string, Record<string, FormationEgo>> = {}
     for (const row of deck?.deck_egos ?? []) {
       if (!row.ego) continue
-      ;(map[row.ego.sinner_id] ??= {})[row.grade] = { id: row.ego.id, name: localizeEgoName(row.ego, locale), sin_affinity: row.ego.sin_affinity }
+      ;(map[row.ego.sinner_id] ??= {})[row.grade] = { id: row.ego.id, name: localizeEgoName(row.ego, locale), sin_affinity: row.ego.sin_affinity, image_url: row.ego.image_url }
     }
     return map
   }, [deck?.deck_egos, locale])
@@ -722,21 +731,16 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
                   tabs={[
                     { key: 'identity', label: rootT('planner.deckTab.subTabs.identity'), count: `${formedSlots.length}/${BOARD_SLOT_COUNT}` },
                     { key: 'ego', label: rootT('planner.deckTab.subTabs.ego'), count: String(deck.deck_egos?.filter(row => row.ego).length ?? 0) },
+                    { key: 'skill', label: rootT('identity.tab.skills') },
                   ]}
                   active={formationTab}
                   onChange={setFormationTab}
                   label={rootT('planner.deckTab.subTabs.label')}
                   hint={formationTab === 'identity' ? t('boardHintShort') : null}
                 />
-                {formationTab === 'ego' ? (
-                  <FormationEgoGrid
-                    sinners={SINNER_SLUGS.map((sinnerId, index) => ({ id: sinnerId, name: rootT(`sinner.${sinnerId}`), filled: Boolean(boardSlots[index]?.identities) }))}
-                    egos={formationEgos}
-                    onEgoClick={setEgoModalId}
-                    noIdentityLabel={rootT('planner.deckTab.ego.noIdentity')}
-                  />
-                ) : (<>
                 <FormationBoard
+                  view={formationTab}
+                  onEgoClick={setEgoModalId}
                   slots={boardSlots.map((slot, index): FormationBoardSlot => {
                     const identity = slot?.identities ?? null
                     const identityName = identity ? localizeIdentityName(identity, locale) : ''
@@ -746,14 +750,15 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
                       sinnerId: SINNER_SLUGS[index],
                       slotOrder: slot?.slot_order ?? null,
                       uptie: slotUptie(slot),
+                      skills: identity ? stripSkills(identity, [slot?.s1_count, slot?.s2_count, slot?.s3_count]) : undefined,
+                      egos: formationEgos[SINNER_SLUGS[index]] ?? {},
                       ariaLabel: identity ? t('slotPreview', { index: index + 1, identity: identityName }) : t('emptySlot', { index: index + 1 }),
                       onClick: identity && slot ? () => setIdentityPreview({ slot }) : undefined,
                     }
                   })}
                 />
 
-                <DeckInsights identities={insightIdentities} sinCounts={deckAnalysis.sinCounts} baseSinCounts={deckAnalysis.baseSinCounts} summary={deckAnalysis.summary} deployedIds={deployedIdentityIds} />
-                </>)}
+                {formationTab === 'identity' && <DeckInsights identities={insightIdentities} sinCounts={deckAnalysis.sinCounts} baseSinCounts={deckAnalysis.baseSinCounts} summary={deckAnalysis.summary} deployedIds={deployedIdentityIds} />}
               </>
             )}
           </section>
