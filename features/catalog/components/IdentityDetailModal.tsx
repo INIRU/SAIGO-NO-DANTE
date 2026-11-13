@@ -143,7 +143,7 @@ function LoadedContent({ data, uptie, egos, onEgoClick, onClose }: Omit<Identity
         <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[0.8125rem]">
           <span style={{ color: 'var(--text-secondary)' }}>{rootT(`sinner.${identity.sinner_id}`)}</span>
           <Link href={`/sinners/${identity.sinner_id}/identities/${identity.id}`}
-            className="inline-flex items-center gap-0.5 text-[var(--text-muted)] transition-colors hover:text-[var(--gold-light)]">
+            className="-my-2.5 inline-flex items-center gap-0.5 py-2.5 text-[var(--text-muted)] transition-colors hover:text-[var(--gold-light)]">
             {t('openPage')}<ArrowUpRight size={13} aria-hidden="true" />
           </Link>
         </div>
