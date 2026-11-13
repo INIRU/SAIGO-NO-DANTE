@@ -6,16 +6,12 @@ type Props = { params: Promise<{ lang: string }>; searchParams: Promise<{ id?: s
 export default async function InquiriesPage({ params, searchParams }: Props) {
   const [{ lang }, { id }] = await Promise.all([params, searchParams])
   const initialId = z.string().uuid().safeParse(id).data
-  const [desk, shell] = await Promise.all([
-    getTranslations({ locale: lang, namespace: 'supportDesk' }),
-    getTranslations({ locale: lang, namespace: 'adminShell' }),
-  ])
+  const desk = await getTranslations({ locale: lang, namespace: 'supportDesk' })
   return (
     <div className="admin-page">
       <header className="admin-topbar">
         <div>
           <h1>{desk('inbox')}</h1>
-          <p>{shell('inquiriesIntro')}</p>
         </div>
       </header>
       <div className="admin-body is-flush">

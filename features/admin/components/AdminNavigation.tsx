@@ -3,7 +3,9 @@ import { useEffect, useRef, useState } from 'react'
 import { Link, usePathname } from '@/lib/i18n/navigation'
 import { useLocale, useTranslations } from 'next-intl'
 import { Flag, LayoutDashboard, MessageSquare, Megaphone, Users, Construction, ArrowUpRight, Menu, X, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
+import useSWR from 'swr'
 import Button from '@/components/ui/Button'
+import DanteLogo from '@/components/brand/DanteLogo'
 import './admin.css'
 const STORAGE_KEY = 'admin-nav-collapsed'
 export default function AdminNavigation() {
@@ -29,6 +31,9 @@ export default function AdminNavigation() {
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [open])
+  // Shares the dashboard's request: the two lists that can be waiting show their count.
+  const { data: overview } = useSWR<{ queue: Record<string, number> }>('/api/admin/overview', (url: string) => fetch(url).then(r => (r.ok ? r.json() : Promise.reject(Error('overview')))))
+  const waiting: Record<string, number | undefined> = { '/admin/inquiries': overview?.queue.inquiries, '/admin/friends': overview?.queue.reports }
   const visit = ko ? '사이트로' : ja ? 'サイトへ' : 'Visit site'
   const groups = [
     {
@@ -78,7 +83,7 @@ export default function AdminNavigation() {
       <aside id="admin-navigation" className="admin-navigation" data-collapsed={collapsed} data-open={open}>
         <div className="admin-brand">
           <Link href="/admin" className="admin-wordmark" title={collapsed ? '최애의 관리자' : undefined} onClick={() => setOpen(false)}>
-            <span className="admin-mark" aria-hidden="true" />
+            <DanteLogo size={30} aria-hidden="true" />
             <span className="admin-wordmark-text">
               <small>최애의 관리자</small>
               <strong>{ko ? '운영 데스크' : ja ? '運営デスク' : 'Operations'}</strong>
@@ -110,6 +115,7 @@ export default function AdminNavigation() {
                 >
                   <i.icon size={18} aria-hidden="true" />
                   <span>{i.label}</span>
+                  {!!waiting[i.href] && <b className="admin-nav-count">{waiting[i.href]}</b>}
                 </Link>
               ))}
             </div>
