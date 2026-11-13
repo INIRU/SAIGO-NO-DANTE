@@ -233,7 +233,8 @@ export default function DeckInsights({ identities, sinCounts, baseSinCounts, sum
         @media (pointer: coarse) { .deck-passive-tabs button { min-height: 2.5rem; } }
         @media (prefers-reduced-motion: reduce) { .deck-passive-tabs button { transition: none; } }
         .deck-passives { display: flex; flex-direction: column; list-style: none; }
-        .deck-passives__group { display: flex; flex-direction: column; gap: 0.625rem; padding: 1rem 0; border-top: 1px solid #221a10; }
+        /* Groups outside the list's window are neither laid out nor painted; the remembered height keeps the scrollbar steady. */
+        .deck-passives__group { display: flex; flex-direction: column; gap: 0.625rem; padding: 1rem 0; border-top: 1px solid #221a10; content-visibility: auto; contain-intrinsic-size: auto 14rem; }
         .deck-passives__group:first-child { border-top: 0; padding-top: 0; }
         .deck-passives__head { display: flex; min-width: 0; align-items: center; gap: 0.625rem; }
         .deck-passives__thumb { position: relative; flex: 0 0 auto; width: 2rem; aspect-ratio: 1; overflow: hidden; border: 1px solid #2e2417; border-radius: 0.25rem; background: #120e08; }
