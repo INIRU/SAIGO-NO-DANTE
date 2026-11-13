@@ -1,11 +1,9 @@
 'use client'
 
 import Image from 'next/image'
-import { getEgoGradeBannerUrl, getSinnerLogoUrl } from '@/lib/utils/images'
-import { GRADE_COLORS } from '@/lib/constants/game'
-import { SIN_COLORS, SIN_KR_TO_EN } from '@/lib/constants/sin'
-
-const GRADE_ORDER = ['ZAYIN', 'TETH', 'HE', 'WAW', 'ALEPH']
+import { getSinnerLogoUrl } from '@/lib/utils/images'
+import { EgoSlotCards, type EgoSlotItem } from '@/features/catalog/components/EgoSlotRows'
+import type { SupportedLang } from '@/lib/i18n/types'
 
 export type FormationTab<K extends string> = { key: K; label: string; count?: string | null }
 
@@ -41,65 +39,32 @@ export function FormationTabs<K extends string>({ tabs, active, onChange, label,
   )
 }
 
-export type FormationEgo = { id: string; name: string; sin_affinity: string | null }
+export type FormationEgo = EgoSlotItem
 
-/** 수감자별 E.G.O 등급 칸. 인격을 편성하지 않은 수감자는 흐리게 보인다. */
-export function FormationEgoGrid({ sinners, egos, onEgoClick, noIdentityLabel }: {
+/** 수감자별 E.G.O 다섯 칸(게임 편성 화면의 막대). 인격을 편성하지 않은 수감자는 흐리게 보인다. */
+export function FormationEgoGrid({ sinners, egos, onEgoClick, noIdentityLabel, lang }: {
   /** 편성 순서대로: id, 표시 이름, 인격 편성 여부 */
   sinners: { id: string; name: string; filled: boolean }[]
   /** 수감자 id → 등급 → E.G.O */
   egos: Record<string, Record<string, FormationEgo | undefined>>
   onEgoClick: (egoId: string) => void
   noIdentityLabel: string
+  lang?: SupportedLang
 }) {
   return (
-    <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
-      {sinners.map(sinner => {
-        const byGrade = egos[sinner.id] ?? {}
-        return (
-          <li key={sinner.id} className={`min-w-0 overflow-hidden rounded border border-[#241c14] bg-[#17120c] ${sinner.filled ? '' : 'opacity-50'}`}>
-            <div className="flex items-center gap-2 border-b border-[#241c14] px-2.5 py-2">
-              <Image src={getSinnerLogoUrl(sinner.id)} alt="" width={16} height={16} className="h-4 w-4 opacity-60" />
-              <span className={`truncate font-[family-name:var(--font-heading)] text-[0.875rem] ${sinner.filled ? 'text-[#cfc2ad]' : 'text-[var(--text-muted)]'}`}>
-                {sinner.name}
-              </span>
-            </div>
-            <div className="flex flex-col gap-0.5 p-1">
-              {GRADE_ORDER.map(grade => {
-                const ego = byGrade[grade]
-                const gc = GRADE_COLORS[grade] ?? '#555'
-                const sinEn = ego?.sin_affinity ? (SIN_KR_TO_EN[ego.sin_affinity] ?? ego.sin_affinity) : null
-                const ec = sinEn ? (SIN_COLORS[sinEn as keyof typeof SIN_COLORS] ?? gc) : gc
-                const banner = (
-                  <Image
-                    src={getEgoGradeBannerUrl(grade)} alt={grade} width={22} height={11} unoptimized
-                    className={`h-3 w-auto shrink-0 ${ego ? 'opacity-90' : 'opacity-30'}`}
-                  />
-                )
-                return ego ? (
-                  <button
-                    key={grade}
-                    type="button"
-                    onClick={() => onEgoClick(ego.id)}
-                    className="flex min-h-8 items-center gap-2 rounded-sm border px-1.5 py-1 text-left transition-[filter] hover:brightness-125 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--gold-light)]"
-                    style={{ background: `${ec}1a`, borderColor: `${ec}55` }}
-                  >
-                    {banner}
-                    <span className="min-w-0 flex-1 text-[0.75rem] font-semibold leading-tight" style={{ color: gc }}>{ego.name}</span>
-                  </button>
-                ) : (
-                  <div key={grade} className="flex min-h-8 items-center gap-2 rounded-sm border border-transparent px-1.5 py-1">
-                    {banner}
-                    {sinner.filled && <span className="text-[0.75rem] text-[var(--text-muted)]" aria-hidden="true">—</span>}
-                  </div>
-                )
-              })}
-            </div>
-            {!sinner.filled && <p className="px-2 pb-2 text-center text-[0.75rem] text-[var(--text-muted)]">{noIdentityLabel}</p>}
-          </li>
-        )
-      })}
+    <ul className="grid grid-cols-1 gap-x-6 gap-y-5 lg:grid-cols-2">
+      {sinners.map(sinner => (
+        <li key={sinner.id} className={`min-w-0 ${sinner.filled ? '' : 'opacity-50'}`}>
+          <div className="mb-1 flex items-center gap-2 border-b border-[#2e2417] pb-1.5">
+            <Image src={getSinnerLogoUrl(sinner.id)} alt="" width={16} height={16} className="h-4 w-4 opacity-70" />
+            <span className={`truncate font-[family-name:var(--font-heading)] text-[0.875rem] ${sinner.filled ? 'text-[#cfc2ad]' : 'text-[var(--text-muted)]'}`}>
+              {sinner.name}
+            </span>
+            {!sinner.filled && <span className="ml-auto text-[0.75rem] text-[var(--text-muted)]">{noIdentityLabel}</span>}
+          </div>
+          <EgoSlotCards sinnerId={sinner.id} egos={egos[sinner.id] ?? {}} onEgoClick={onEgoClick} lang={lang} />
+        </li>
+      ))}
     </ul>
   )
 }
-
