@@ -474,3 +474,61 @@
     justify-content: flex-end;
   }
 }
+
+/* 2026-11 renewal. Kept last: these override the rules above. */
+/* One reading column: wide panes centre the thread instead of pinning bubbles to both edges. */
+.desk-thread-head,
+.desk-messages,
+.desk-composer,
+.desk-closed,
+.desk-form-body,
+.desk-form-footer {
+  padding-inline: max(clamp(1.25rem, 3vw, 2.5rem), (100% - 52rem) / 2);
+}
+.desk-thread-head {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.5rem 1.25rem;
+}
+.desk-thread-head > :is(.desk-back, h2, .desk-row-meta) {
+  grid-column: 1;
+}
+.desk-thread-head h2 {
+  font-size: 1.25rem;
+}
+.desk-thread-actions {
+  grid-column: 2;
+  grid-row: 1 / -1;
+  align-self: center;
+}
+.desk-filters span {
+  font: 1rem/1 var(--font-title);
+  font-variant-numeric: tabular-nums;
+}
+.desk-msg time,
+.desk-row-meta time {
+  font-variant-numeric: tabular-nums;
+}
+.desk-grow {
+  flex: none;
+}
+.desk-form textarea {
+  height: clamp(12rem, 40dvh, 22rem);
+}
+.desk-row,
+.desk-filters button,
+.desk-choice button {
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+.support-desk ::selection {
+  background: rgba(200, 144, 10, 0.35);
+}
+@media (max-width: 767px) {
+  .desk-thread-head {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .desk-thread-actions {
+    grid-column: 1;
+    grid-row: auto;
+  }
+}

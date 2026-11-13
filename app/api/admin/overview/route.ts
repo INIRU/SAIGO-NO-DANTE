@@ -1,10 +1,9 @@
 import { NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { lastDays, tallyByDay } from '@/features/admin'
 
 const DAYS = 14
-/** A date as the site's operators read it (Korea time), `YYYY-MM-DD`. */
-const kstDay = (at: Date | string) => new Date(new Date(at).getTime() + 9 * 36e5).toISOString().slice(0, 10)
 
 /** Everything the admin dashboard shows, in one read: the work queue, 14 days of activity and the latest inquiries. */
 export async function GET() {
@@ -12,7 +11,7 @@ export async function GET() {
   if (auth.error) return auth.response
   const db = createAdminClient().schema('limbus')
   const now = Date.now()
-  const days = Array.from({ length: DAYS }, (_, i) => kstDay(new Date(now - (DAYS - 1 - i) * 864e5)))
+  const days = lastDays(DAYS, now)
   const since = new Date(now - DAYS * 864e5).toISOString()
   const ago = (hours: number) => new Date(now - hours * 36e5).toISOString()
   const count = (table: string) => db.from(table).select('*', { count: 'exact', head: true })
@@ -36,11 +35,7 @@ export async function GET() {
   if ([open, reports, drafts, maintenance, users, seenDay, seenWeek, decks, plans, joined, newDecks, newPlans, recent, ...visits].some(r => r.error))
     return NextResponse.json({ error: 'unavailable' }, { status: 500 })
 
-  const perDay = (rows: { created_at: string }[] | null) => {
-    const tally = new Map<string, number>()
-    for (const row of rows ?? []) tally.set(kstDay(row.created_at), (tally.get(kstDay(row.created_at)) ?? 0) + 1)
-    return days.map(day => tally.get(day) ?? 0)
-  }
+  const perDay = (rows: { created_at: string }[] | null) => tallyByDay(days, rows ?? [])
   const posts = perDay([...(newDecks.data ?? []), ...(newPlans.data ?? [])])
   return NextResponse.json({
     queue: {
