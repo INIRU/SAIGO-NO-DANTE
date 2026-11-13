@@ -110,10 +110,8 @@ export async function generateMetadata({
       title: '최애의 관리자',
     },
     icons: {
-      icon: [
-        { url: '/favicon.ico', sizes: '16x16 32x32 48x48' },
-        { url: '/icons/icon.svg', type: 'image/svg+xml' },
-      ],
+      // Google Search does not accept SVG favicons, and one unusable icon link makes it drop them all.
+      icon: [{ url: '/favicon.ico', sizes: '16x16 32x32 48x48' }],
       apple: '/icons/apple-touch-icon.png',
     },
     other: {
