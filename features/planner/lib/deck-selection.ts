@@ -1,3 +1,5 @@
+import type { EgoSlotItem, FormationStripSkill } from '@/features/catalog/components/EgoSlotRows'
+
 export type PlannerDeckSinner = {
   id: string
   name_kr: string
@@ -43,11 +45,16 @@ export type PlannerIdentityBoardSlot = {
   uptie?: number
   /** Formation-slot gift icons (Assist mode). */
   giftBadgeUrls?: string[]
+  /** Skills 1-3 and this sinner's chosen E.G.O: the strip under the card, and (skills) the skill view. */
+  skills?: (FormationStripSkill | null)[]
+  egos?: Record<string, EgoSlotItem | undefined>
 }
 
 export type PlannerEgoBoardSlot = {
   sinnerId: string
   enabled?: boolean
+  /** The identity's name, or empty when the sinner has none (the panel then shows the sinner's name). */
+  identityName?: string
   egosByGrade: Record<string, PlannerDeckEgo | undefined>
 }
 
