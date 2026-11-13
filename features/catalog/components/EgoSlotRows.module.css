@@ -1,0 +1,73 @@
+/* E.G.O cards per sinner and the strip under a formation card. Sprites: the game's round E.G.O frame (MainUI_Formation_9_0)
+   and class letters (public/assets/ego-ui/formation). */
+
+.cards { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0.75rem 0.5rem; justify-items: center; align-items: start; min-width: 0; }
+.cardEmpty { position: relative; display: block; width: 100%; max-width: 10rem; aspect-ratio: 1; margin-top: 1.05rem; opacity: 0.55; }
+
+.frame { position: absolute; inset: 0; width: 100%; height: 100%; max-width: none; object-fit: contain; pointer-events: none; }
+.emptyLetter { position: absolute; left: 50%; top: 50%; width: auto; height: 42%; max-width: 46%; object-fit: contain; transform: translate(-50%, -50%); }
+
+/* Strip under a card: tucked right under the frame, the two rows close together. */
+.strip { display: grid; justify-items: center; gap: 0.0625rem; margin-top: 0.125rem; }
+.skills { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; width: 100%; padding: 0 5%; }
+.skill { position: relative; display: block; min-width: 0; }
+/* the tan attack type mark on the middle of the skill art; the art under it is darkened so the mark reads */
+.skill::after { content: ''; position: absolute; left: 50%; top: 50%; width: 44%; aspect-ratio: 1; border-radius: 50%; transform: translate(-50%, -50%); background: rgba(12, 7, 3, 0.62); }
+.skillType { position: absolute; z-index: 1; left: 50%; top: 50%; width: 34%; height: 34%; transform: translate(-50%, -50%); }
+
+.slots { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0.0625rem; width: 100%; }
+.slot { position: relative; display: block; aspect-ratio: 1; min-width: 0; }
+.slotArt { position: absolute; inset: 7%; width: 86%; height: 86%; border-radius: 50%; object-fit: cover; background: #120e08; }
+.slotLetter { position: absolute; right: -2%; bottom: -6%; width: auto; height: 48%; max-width: 55%; object-fit: contain; filter: drop-shadow(0 0 1px #000) drop-shadow(0 0 1px #000); }
+.slotEmpty { opacity: 0.5; }
+
+/* E.G.O view of a formation card: rows inside the frame, from under the rarity mark to the bottom border. cqi = the tile's width. */
+.rows { display: grid; grid-template-rows: repeat(5, minmax(0, 1fr)); gap: 1.6cqi; min-height: 0; padding-top: 2cqi; }
+/* Art strips: the E.G.O's own art fills the row, darkened by a filter (no overlay, no gradient); the game's class letter and the name
+   sit on it; a thin line of the sin colour runs under it (USER 2026-11-13: 이거 좋은데, on this version). */
+.row {
+  position: relative; display: grid; grid-template-columns: 10cqi minmax(0, 1fr); align-items: center; gap: 3cqi;
+  min-width: 0; min-height: 0; overflow: hidden; padding: 0 3cqi; border: 0; border-bottom: 0.125rem solid var(--ego-sin);
+  background: #120e08; color: inherit; text-align: left;
+}
+.rowArt { position: absolute; inset: 0; width: 100%; height: 100%; max-width: none; object-fit: cover; object-position: 50% 30%; filter: brightness(0.42); transition: filter 0.15s ease; }
+button.row { cursor: pointer; }
+button.row:hover .rowArt { filter: brightness(0.62); }
+button.row:focus-visible { outline: 2px solid var(--gold-light); outline-offset: -2px; }
+/* the game's own letter sprites, colours untouched: lit when equipped, dark when empty */
+.rowLetter { position: relative; width: 100%; height: 70%; object-fit: contain; }
+.rowName {
+  /* always one line: the size is fitted to the name (fitFontSize), so no row grows or wraps */
+  position: relative; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+  font-family: var(--font-heading); font-size: 8.4cqi; line-height: 1.5; padding-top: 0.08em; letter-spacing: -0.02em;
+  color: var(--text-primary); text-shadow: 0 0.0625rem 0.125rem rgba(0, 0, 0, 0.9);
+}
+.rowEmpty { border-bottom-color: transparent; background: none; }
+.rowEmpty .rowLetter { height: 58%; }
+@media (prefers-reduced-motion: reduce) { button.row { transition: none; } }
+
+/* Skill view of a formation card: three rows over the dimmed card, icon then count. cqi = the tile's width. */
+.skillRows { position: absolute; inset: 12% 9% 12%; z-index: 5; display: grid; grid-template-rows: repeat(3, minmax(0, 1fr)); }
+.skillRow { display: grid; grid-template-columns: 36cqi auto; justify-content: center; align-items: center; gap: 5cqi; min-height: 0; border-top: 1px solid rgba(232, 220, 200, 0.14); }
+.skillRow:first-child { border-top: 0; }
+/* the count, as the identity page writes "SKILL 1" (GameSkillBox SkillTier: Bebas Kai, rgb(161,106,59)), lifted for the dark card */
+.skillRowCount { font-family: var(--font-bebas-kai), sans-serif; font-size: 24cqi; line-height: 1; color: #d9a46c; }
+.skillRowCount span { margin-right: 0.08em; font-size: 0.6em; color: rgb(161, 106, 59); }
+/* Editable skill view (builders): − count + beside each skill, the preset distributions under the rows. */
+.skillRows[data-edit] { inset: 14% 5% 4%; grid-template-rows: repeat(3, minmax(0, 1fr)) auto; }
+.skillRows[data-edit] .skillRow { grid-template-columns: 30cqi auto; gap: 3cqi; }
+.stepper { display: grid; grid-template-columns: 15cqi 13cqi 15cqi; align-items: center; justify-items: center; }
+.stepper .skillRowCount { font-size: 22cqi; }
+.stepper button {
+  width: 100%; aspect-ratio: 1; padding: 0; border: 1px solid var(--border-control); border-radius: 0.1875rem; background: rgba(18, 14, 9, 0.7);
+  font-family: var(--font-bebas-kai), sans-serif; font-size: 12cqi; line-height: 1; color: var(--text-primary); cursor: pointer;
+}
+.stepper button:disabled { border-color: var(--border); color: var(--text-muted); opacity: 0.45; cursor: default; }
+.stepper button:not(:disabled):hover { border-color: var(--gold); color: var(--gold-light); }
+.stepper button:focus-visible, .presets button:focus-visible { outline: 2px solid var(--gold-light); outline-offset: 1px; }
+.presets { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2cqi; padding-top: 3cqi; }
+.presets button {
+  padding: 1.5cqi 0; border: 1px solid var(--border); border-radius: 0.1875rem; background: rgba(18, 14, 9, 0.7);
+  font-family: var(--font-bebas-kai), sans-serif; font-size: 8.5cqi; line-height: 1; color: var(--text-secondary); cursor: pointer;
+}
+.presets button[aria-pressed='true'] { border-color: var(--gold); color: var(--gold-light); }

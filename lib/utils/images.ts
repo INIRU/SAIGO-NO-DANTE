@@ -14,6 +14,11 @@ export function getSkillFrameAssetUrl(name: string): string {
 export const BLUR_PLACEHOLDER = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAYAAACp8Z5+AAAAFklEQVQIW2M4c+bMfwYGBgYmBgoBAAPOBAUFVsBzAAAAAElFTkSuQmCC'
 
 /** Original formation-screen rank banners, shared by every E.G.O label. */
+/** The game formation screen E.G.O class letters, lit and dark: public/assets/ego-ui/formation. */
+export function getEgoFormationAsset(name: string): string {
+  return `/assets/ego-ui/formation/${name}.webp`
+}
+
 export function getEgoGradeBannerUrl(grade: string): string {
   return `/assets/ego-ui/rank-banners/${grade.toLowerCase()}.webp`
 }

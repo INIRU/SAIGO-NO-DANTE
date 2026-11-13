@@ -44,12 +44,14 @@ export interface GameSkillIconProps {
   /** The skill art failed to load (the caller may swap in another) */
   onIconError?: () => void
   eager?: boolean
+  /** The sin-coloured glow behind the frame and the attack badge. Off for small icons in a row, where the glows run into each other. */
+  glow?: boolean
   /** Width of the whole icon (CSS length) */
   size?: string
   className?: string
 }
 
-export default function GameSkillIcon({ iconUrl, sin, tier, attackType, basePower, coinPower, size = '9rem', className, onIconError, eager }: GameSkillIconProps) {
+export default function GameSkillIcon({ iconUrl, sin, tier, attackType, basePower, coinPower, size = '9rem', className, onIconError, eager, glow = true }: GameSkillIconProps) {
   const s = sin && SINS.has(sin) ? sin : 'neutral'
   const t = Math.min(3, Math.max(1, Math.trunc(tier || 1)))
   const mask = `url(${getSkillFrameAssetUrl('mask')})`
@@ -59,14 +61,14 @@ export default function GameSkillIcon({ iconUrl, sin, tier, attackType, basePowe
   const frame = (
     <>
       {/* glow (on by default on the site), the icon cut by the heptagon mask, the frame */}
-      <div style={box(-3.2, 0.6, 210, 210)}><Sprite name={`${s}-${t}-glow`} loading={loading} /></div>
+      {glow && <div style={box(-3.2, 0.6, 210, 210)}><Sprite name={`${s}-${t}-glow`} loading={loading} /></div>}
       <div style={{ ...box(-7, -7, 224, 224), background: '#000', maskImage: mask, WebkitMaskImage: mask, maskSize: '100% 100%', WebkitMaskSize: '100% 100%' }}>
         <div style={box(62, 62, 100, 100)}><Image src={iconUrl} alt="" fill sizes="5rem" loading={loading} onError={onIconError} style={{ objectFit: 'cover' }} /></div>
       </div>
       <div style={layer}><Sprite name={`${s}-${t}`} loading={loading} /></div>
       {attackType && (
         <div style={box(73.2, 136.9, 52, 52)}>
-          <div style={box(-64, -64, 180, 180)}><Sprite name={`${s}-attack-glow`} fit="contain" loading={loading} /></div>
+          {glow && <div style={box(-64, -64, 180, 180)}><Sprite name={`${s}-attack-glow`} fit="contain" loading={loading} /></div>}
           <div style={layer}><Sprite name={`${s}-${attackType}`} loading={loading} /></div>
         </div>
       )}
