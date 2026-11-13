@@ -108,6 +108,9 @@
   font-weight: 700;
 }
 .more {
+  /* a 44px-tall target without moving the label */
+  margin: -0.875rem -0.5rem;
+  padding: 0.875rem 0.5rem;
   color: var(--gold);
   font-family: var(--font-body);
   font-size: 0.8125rem;

@@ -79,7 +79,7 @@ export default function InfoScoreLabel() {
           ref={tooltipRef}
           id={tooltipId}
           role="tooltip"
-          className="pointer-events-none fixed z-50 w-[13rem] rounded border px-2.5 py-2 text-left"
+          className="pointer-events-none fixed z-[100] w-[13rem] rounded border px-2.5 py-2 text-left"
           style={{
             top: position.top,
             left: position.left,

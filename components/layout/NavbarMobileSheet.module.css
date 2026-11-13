@@ -5,6 +5,8 @@
 .group + .group { border-top: 1px solid #2e2417; }
 .heading { margin: 0 0 .375rem; color: var(--text-muted); font-family: var(--font-body); font-size: .75rem; font-weight: 600; letter-spacing: .04em; }
 .items { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 1rem; }
+/* tablet: three to a row, so the second column does not sit half a screen away */
+@media (min-width: 40rem) { .items { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 .link {
   position: relative; display: flex; align-items: center; min-height: 2.75rem; border-radius: .25rem;
   color: var(--text-primary); font-family: var(--font-heading); font-size: 1.1875rem; line-height: 1.2;
