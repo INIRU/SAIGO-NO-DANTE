@@ -276,7 +276,7 @@ export default function PlanDeckTabs({
       if (!slot.sinner_id || !slot.grade || !slot.ego_id) continue
       const ego = egoById.get(slot.ego_id)
       const name = getLocalizedName({ name_kr: ego?.name_kr ?? slot.name_kr ?? '', name_en: ego?.name_en, name_jp: ego?.name_jp }, locale as SupportedLang)
-      ;(map[slot.sinner_id] ??= {})[slot.grade] = { id: slot.ego_id, name, sin_affinity: ego?.sin_affinity ?? null }
+      ;(map[slot.sinner_id] ??= {})[slot.grade] = { id: slot.ego_id, name, sin_affinity: ego?.sin_affinity ?? null, image_url: ego?.image_url ?? null }
     }
     return map
   }, [egoSlots, egos, locale])
@@ -357,6 +357,7 @@ export default function PlanDeckTabs({
             egos={formationEgos}
             onEgoClick={setEgoModalId}
             noIdentityLabel={tDeck('ego.noIdentity')}
+            lang={locale as SupportedLang}
           />
         ) : (
           <EmptyState text={tDeck('skillset.selectIdentityFirst')} />
