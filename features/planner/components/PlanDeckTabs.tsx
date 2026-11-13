@@ -14,8 +14,8 @@ import type { Identity } from '@/lib/types'
 import { getIdentityImageUrl, getSkillIconUrl } from '@/lib/utils/images'
 import { SIN_COLORS } from '@/lib/constants/sin'
 import { getIdentitySkillDistribution } from '@/lib/planner/types'
-import SkillExchangePanel from './SkillExchangePanel'
-import { FormationEgoGrid, FormationTabs, type FormationEgo } from '@/features/decks/components/FormationEgoGrid'
+import { FormationTabs, type FormationEgo } from '@/features/decks/components/FormationEgoGrid'
+import { buildStripSkills } from '@/features/decks'
 import { getLocalizedName } from '@/lib/i18n/localize'
 import type { SupportedLang } from '@/lib/i18n/types'
 import { isDeployedSlot } from '@/lib/constants/game'
@@ -103,6 +103,7 @@ type SkillSummary = {
   sin_affinity: string
   skill_type: string
   atk_type?: string | null
+  image_id?: string | null
   coins: number | null
   base_power: number | null
   coin_power: number | null
@@ -248,6 +249,18 @@ export default function PlanDeckTabs({
     return map
   }, [deck])
 
+  const formationEgos = useMemo(() => {
+    const egoById = new Map(egos.map(ego => [ego.id, ego]))
+    const map: Record<string, Record<string, FormationEgo>> = {}
+    for (const slot of egoSlots) {
+      if (!slot.sinner_id || !slot.grade || !slot.ego_id) continue
+      const ego = egoById.get(slot.ego_id)
+      const name = getLocalizedName({ name_kr: ego?.name_kr ?? slot.name_kr ?? '', name_en: ego?.name_en, name_jp: ego?.name_jp }, locale as SupportedLang)
+      ;(map[slot.sinner_id] ??= {})[slot.grade] = { id: slot.ego_id, name, sin_affinity: ego?.sin_affinity ?? null, image_url: ego?.image_url ?? null }
+    }
+    return map
+  }, [egoSlots, egos, locale])
+
   const boardSlots = useMemo(() => {
     return sinners.map((sinner, index): FormationBoardSlot => {
       const slot = slotBySinner[sinner.id]
@@ -260,6 +273,10 @@ export default function PlanDeckTabs({
         sinnerId: sinner.id,
         slotOrder: slot?.slot_order ?? null,
         uptie: slot?.uptie,
+        skills: slot?.identity_id && identity
+          ? buildStripSkills(identity, skills.filter(skill => skill.identity_id === slot.identity_id), getIdentitySkillDistribution(slot))
+          : undefined,
+        egos: formationEgos[sinner.id] ?? {},
         giftBadgeUrls: slot?.slot_order != null && slot.slot_order < 99
           ? (slotGiftMap.get(slot.slot_order + 1) ?? [])
           : [],
@@ -267,19 +284,8 @@ export default function PlanDeckTabs({
         onClick: slot?.identity_id ? () => setIdentityModalId(slot.identity_id!) : undefined,
       }
     })
-  }, [identityMap, locale, sinners, slotBySinner, slotGiftMap])
+  }, [formationEgos, identityMap, locale, sinners, skills, slotBySinner, slotGiftMap])
 
-  const formationEgos = useMemo(() => {
-    const egoById = new Map(egos.map(ego => [ego.id, ego]))
-    const map: Record<string, Record<string, FormationEgo>> = {}
-    for (const slot of egoSlots) {
-      if (!slot.sinner_id || !slot.grade || !slot.ego_id) continue
-      const ego = egoById.get(slot.ego_id)
-      const name = getLocalizedName({ name_kr: ego?.name_kr ?? slot.name_kr ?? '', name_en: ego?.name_en, name_jp: ego?.name_jp }, locale as SupportedLang)
-      ;(map[slot.sinner_id] ??= {})[slot.grade] = { id: slot.ego_id, name, sin_affinity: ego?.sin_affinity ?? null, image_url: ego?.image_url ?? null }
-    }
-    return map
-  }, [egoSlots, egos, locale])
 
   // 키워드 분포·패시브·공격 유형·죄악 자원 (플래너 덱 탭과 같은 패널)
   const deployedIdentityIds = useMemo(() => new Set(Object.values(slotBySinner).filter(slot => slot?.identity_id && isDeployedSlot(slot.slot_order)).map(slot => slot!.identity_id!)), [slotBySinner])
@@ -332,11 +338,13 @@ export default function PlanDeckTabs({
         hint={deckSubTab === 'identity' && deck.length > 0 ? tDeck('identity.openDetailHint') : null}
       />
 
-      {/* 인격 그리드 */}
-      {deckSubTab === 'identity' && (
+      {/* 편성 보드: 인격 / E.G.O(카드가 제자리에서 뒤집힘) / 스킬(어두워진 카드 위에 스킬과 개수). 덱 상세와 같다 */}
+      {deck.length > 0 || deckSubTab === 'identity' ? (
         <div className="relative">
-          <FormationBoard slots={boardSlots} className="mt-2" />
+          <FormationBoard slots={boardSlots} className="mt-2" view={deckSubTab === 'skillset' ? 'skill' : deckSubTab} onEgoClick={setEgoModalId} />
         </div>
+      ) : (
+        <EmptyState text={tDeck('skillset.selectIdentityFirst')} />
       )}
 
       {deckSubTab === 'identity' && deck.length > 0 && (
@@ -347,75 +355,6 @@ export default function PlanDeckTabs({
           baseSinCounts={deckAnalysis.baseSinCounts}
           summary={<DeckResourceSummary resources={deckAnalysis.resources} />}
         />
-      )}
-
-      {/* EGO 그리드 */}
-      {deckSubTab === 'ego' && (
-        deck.length > 0 ? (
-          <FormationEgoGrid
-            sinners={sinners.map(sinner => ({ id: sinner.id, name: tSinner(sinner.id as Parameters<typeof tSinner>[0]), filled: Boolean(slotBySinner[sinner.id]) }))}
-            egos={formationEgos}
-            onEgoClick={setEgoModalId}
-            noIdentityLabel={tDeck('ego.noIdentity')}
-            lang={locale as SupportedLang}
-          />
-        ) : (
-          <EmptyState text={tDeck('skillset.selectIdentityFirst')} />
-        )
-      )}
-
-      {/* 스킬 교환 */}
-      {deckSubTab === 'skillset' && (
-        deck.length > 0 ? (
-          <div className="skill-exchange-list">
-            {sinners.map(sinner => {
-              const slot = slotBySinner[sinner.id]
-              if (!slot) return null
-              const identData = slot.identity_id ? identityMap.get(slot.identity_id) : undefined
-              const dist = getIdentitySkillDistribution(slot)
-              const identForIcon = identData ? { game_id: identData.game_id, sinner_id: identData.sinner_id } : null
-              const slotBestSkills = [1, 2, 3].map(order =>
-                skills
-                  .filter(sk => sk.identity_id === slot.identity_id && sk.skill_order === order)
-                  .sort((a, b) => (b.uptie_level ?? 0) - (a.uptie_level ?? 0))[0] ?? null
-              )
-
-              return (
-                  <SkillExchangePanel
-                    key={sinner.id}
-                    identity={{
-                      imageUrl: identData ? getIdentityImageUrl(identData.sinner_id, identData.folder_name ?? '', `${identData.game_id}_normal_info`) : null,
-                      name: localizeIdentityName(identData ?? slot, locale),
-                      sinnerName: tSinner(sinner.id as Parameters<typeof tSinner>[0]),
-                    }}
-                    onIdentityClick={slot.identity_id ? () => setIdentityModalId(slot.identity_id!) : undefined}
-                    distribution={dist}
-                    skills={[
-                      slotBestSkills[0] ? {
-                        name: slotBestSkills[0].name,
-                        iconSrc: identForIcon?.game_id ? getSkillIconUrl(identForIcon as Parameters<typeof getSkillIconUrl>[0], 1) : null,
-                        sinColor: SIN_COLORS[slotBestSkills[0].sin_affinity as keyof typeof SIN_COLORS] ?? '#555',
-                      } : null,
-                      slotBestSkills[1] ? {
-                        name: slotBestSkills[1].name,
-                        iconSrc: identForIcon?.game_id ? getSkillIconUrl(identForIcon as Parameters<typeof getSkillIconUrl>[0], 2) : null,
-                        sinColor: SIN_COLORS[slotBestSkills[1].sin_affinity as keyof typeof SIN_COLORS] ?? '#555',
-                      } : null,
-                      slotBestSkills[2] ? {
-                        name: slotBestSkills[2].name,
-                        iconSrc: identForIcon?.game_id ? getSkillIconUrl(identForIcon as Parameters<typeof getSkillIconUrl>[0], 3) : null,
-                        sinColor: SIN_COLORS[slotBestSkills[2].sin_affinity as keyof typeof SIN_COLORS] ?? '#555',
-                      } : null,
-                    ]}
-                    readOnly
-                    showTotal={false}
-                  />
-              )
-            })}
-          </div>
-        ) : (
-          <EmptyState text={tDeck('skillset.selectIdentityFirst')} />
-        )
       )}
 
       {/* 모달 */}
