@@ -14,7 +14,7 @@ import {
   SIN_ORDER,
 } from '@/lib/data/sinners'
 import EgoStageTabs from '@/features/catalog/components/EgoStageTabs'
-import { egoStages, egoSkillsAtStage, egoPassiveAtStage } from '@/features/catalog'
+import { egoStages, egoSkillsAtStage, egoPassiveAtStage } from '../lib/ego-stages'
 import SkillFrameBlock from '@/features/catalog/components/SkillFrameBlock'
 import SkillDescription from '@/features/catalog/components/SkillDescription'
 import { isUnbreakableCoinText } from '@/lib/identity/skill-description'
@@ -24,7 +24,7 @@ import { egoTexts } from '@/lib/keywords/own-keywords'
 import { getLocalizedName, getLocalizedKeywordName } from '@/lib/i18n'
 import { useTranslations, useLocale } from 'next-intl'
 import type { SupportedLang } from '@/lib/i18n/types'
-import styles from './EGODetail.module.css'
+import styles from './EgoDetailView.module.css'
 import { MultipliedCount, PassiveNameLabel } from '@/features/catalog/components/PassiveParts'
 import portraitStyles from '@/styles/components/SinnerDetail.module.css'
 
@@ -140,9 +140,12 @@ function SkillFramePanel({
 interface Props {
   sinner: Sinner
   ego: EGO
+  /** Inside a window (EgoDetailModal): no breadcrumb, back link or ad, and no page padding. */
+  embedded?: boolean
 }
 
-export default function EGODetailClient({ sinner, ego }: Props) {
+/** The E.G.O detail: art, info, skills by stage, passive. The E.G.O page and the E.G.O info window both show this. */
+export default function EgoDetailView({ sinner, ego, embedded = false }: Props) {
   const normalSkillList = ego.ego_skills ?? []
   const corSkillList = ego.ego_cor_skills ?? []
   const normalStages = egoStages(normalSkillList)
@@ -197,12 +200,12 @@ export default function EGODetailClient({ sinner, ego }: Props) {
   const passiveFlavor = stageFlavor && (lang === 'en' ? stageFlavor.passive_flavor_en : lang === 'ja' ? stageFlavor.passive_flavor_jp : stageFlavor.passive_flavor)
 
   return (
-    <div className={styles.page}>
-      <nav className={styles.breadcrumb} aria-label={t('nav.sinnerList')}>
+    <div className={embedded ? `${styles.page} ${styles.embedded}` : styles.page}>
+      {!embedded && <nav className={styles.breadcrumb} aria-label={t('nav.sinnerList')}>
         <Link href="/sinners">{t('nav.sinnerList')}</Link><span aria-hidden="true">›</span>
         <Link href={`/sinners/${sinner.id}`}>{sinnerLocalName}</Link><span aria-hidden="true">›</span>
         <span>{egoLocalName}</span>
-      </nav>
+      </nav>}
 
       <div className={styles.hero}>
         <section className={styles.portrait} aria-labelledby="ego-title">
@@ -224,7 +227,7 @@ export default function EGODetailClient({ sinner, ego }: Props) {
               : <span className={styles.artworkFallback}>{ego.grade}</span>}
             {corrosionArtwork && <Image src={corrosionArtwork} alt={`${egoLocalName} ${t('ego.corrosionLabel')}`} fill sizes="(max-width: 767px) 85vw, 32rem" className={styles.artworkImage} data-hidden={heroArt !== 'corrosion' || undefined} />}
           </div>
-          <Link href={`/sinners/${sinner.id}#ego`} className={styles.backLink}>← {t('ego.backToEgoList')}</Link>
+          {!embedded && <Link href={`/sinners/${sinner.id}#ego`} className={styles.backLink}>← {t('ego.backToEgoList')}</Link>}
         </section>
 
         <section className={styles.info} aria-labelledby="ego-info-title">
@@ -265,7 +268,7 @@ export default function EGODetailClient({ sinner, ego }: Props) {
       </div>
 
       {/* between the E.G.O's card and its skills, as on an identity page (DESIGN.md "광고") */}
-      <AdSlot place="inline" />
+      {!embedded && <AdSlot place="inline" />}
 
       <div className={styles.combat}>
         {normalSkillList.length > 0 && <section className={styles.skillSection} aria-labelledby="ego-awakening">
