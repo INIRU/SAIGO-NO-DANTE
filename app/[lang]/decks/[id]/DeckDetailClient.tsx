@@ -412,7 +412,7 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
     if (!styleElement) {
       styleElement = document.createElement('style')
       styleElement.id = styleId
-      styleElement.textContent = `body.${className} footer { display: none !important; }`
+      styleElement.textContent = `body.${className} .site-footer { display: none !important; }`
       document.head.appendChild(styleElement)
     }
 

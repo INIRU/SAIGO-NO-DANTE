@@ -26,7 +26,7 @@ export default function PlannerFooterHide() {
 
   return (
     <style>{`
-      body.${PLANNER_FOOTER_HIDDEN_CLASS} footer {
+      body.${PLANNER_FOOTER_HIDDEN_CLASS} .site-footer {
         display: none !important;
       }
     `}</style>

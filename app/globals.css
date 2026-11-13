@@ -385,7 +385,7 @@ html.board-browse body :is(footer, [data-floating-font-control]) { display: none
 .note-character-picker--identity .note-picker-grid{grid-template-columns:repeat(auto-fill,minmax(7.25rem,1fr))}
 .note-character-picker--identity .note-picker-item,.note-character-picker--ego .note-picker-item{border:0;background:transparent;overflow:visible;border-radius:0}
 
-@media(max-width:48rem){.note-character-picker .note-picker-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:48rem){.note-character-picker--ego .note-picker-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:40rem){
   .character-picker-filters{padding:.5rem .75rem}
   .character-picker-search input{font-size:1rem}
@@ -399,7 +399,7 @@ html.board-browse body :is(footer, [data-floating-font-control]) { display: none
   .character-picker-layout{display:flex;flex-direction:column}
   .character-picker-layout>.character-picker-filters{border-right:0;border-bottom:1px solid var(--border);padding:.5rem .75rem;max-height:45dvh}
   .note-character-picker .note-picker-results{padding:.75rem;flex:1}
-  .note-character-picker .note-picker-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:.75rem}
+  .note-character-picker--identity .note-picker-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:1rem .5rem}
 }
 
 .character-picker-ego-card{transition:transform .16s ease,filter .16s ease}
@@ -689,4 +689,23 @@ a.note-mention:is(:hover,:focus-visible),.note-block-document a[href].note-menti
 @media (prefers-reduced-motion: reduce) {
   .press { transition: color var(--dur-quick) ease, background-color var(--dur-quick) ease, border-color var(--dur-quick) ease; }
   .press:active { transform: none; }
+}
+
+/* Note pickers on phone and tablet (2026-11-13 audit). Kept last: these override the picker rules above. */
+/* The filter column was 9rem: the search placeholder was cut off in it. */
+@media(min-width:40.0625rem){
+  .note-direct-layout,.note-direct-picker--skill .note-direct-layout,.note-direct-picker--card .note-direct-layout{grid-template-columns:11rem minmax(0,1fr)}
+  .note-picker--keyword .note-picker-grid{grid-template-columns:repeat(auto-fill,minmax(10rem,1fr))}
+}
+@media(min-width:64.0625rem){.note-direct-picker--gift .note-direct-layout{grid-template-columns:11rem minmax(0,1fr) 17rem}}
+.note-card-grid{grid-template-columns:repeat(auto-fill,minmax(14.5rem,1fr))}
+/* a sinner has four skills: always one row each */
+.note-direct-picker--skill .note-direct-grid{grid-template-columns:repeat(4,minmax(0,1fr));max-width:36rem}
+@media(max-width:40rem){
+  .note-card-grid{grid-template-columns:1fr}
+  /* a sinner has four skills: one row each; the sinners in one row that scrolls sideways */
+  .note-direct-picker--skill .note-direct-grid{gap:.5rem .25rem}
+  .note-direct-picker--skill .note-direct-item{padding:.75rem .125rem}
+  .note-direct-picker--skill .note-direct-sidebar{max-height:none;overflow:auto hidden;white-space:nowrap;scrollbar-width:none}
+  .note-direct-picker--skill .note-direct-sidebar .note-picker-controls{position:sticky;left:0}
 }
