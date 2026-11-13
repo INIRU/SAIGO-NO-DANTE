@@ -1,9 +1,4 @@
-import { redirect } from 'next/navigation'
-export default async function AdminPage({
-  params,
-}: {
-  params: Promise<{ lang: string }>
-}) {
-  const { lang } = await params
-  redirect(`/${lang}/admin/inquiries`)
+import AdminDashboard from '@/features/admin/components/AdminDashboard'
+export default function AdminPage() {
+  return <AdminDashboard />
 }
