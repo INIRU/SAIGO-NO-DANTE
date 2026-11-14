@@ -10,7 +10,7 @@ import { getGiftsFromThemes, themeExclusiveGiftIds } from '@/lib/planner/fusion'
 import { planThemeGiftIds } from '@/features/planner/lib/run-priority-gifts'
 import GiftCatalog, { giftKeywordIcon, toCatalogGift, useGiftCatalogFilters, type GiftCatalogCardProps } from '@/features/mirror-dungeon/components/GiftCatalog'
 import type { EgoGift } from '@/features/mirror-dungeon'
-import { getLocalizedName } from '@/lib/i18n/localize'
+import { localizeRowName } from '@/lib/i18n/localize'
 import type { SupportedLang } from '@/lib/i18n/types'
 
 interface Props {
@@ -33,7 +33,7 @@ export const runSectionTitle = 'font-[family-name:var(--font-heading)] text-base
 export default function GiftCheckSection({ state, dispatch, gifts, giftMap, themes, onChooseTheme }: Props) {
   const t = useTranslations('planner.run')
   const locale = useLocale() as SupportedLang
-  const localized = (item: { name: string; name_en?: string | null; name_jp?: string | null }) => getLocalizedName({ name_kr: item.name, name_en: item.name_en, name_jp: item.name_jp }, locale)
+  const localized = (item: { name: string; name_en?: string | null; name_jp?: string | null }) => localizeRowName(item, locale)
   const currentLog = state.floorLogs[state.currentFloor - 1]
   const currentTheme = currentLog?.themeId ? themes.find(theme => String(theme.id) === String(currentLog.themeId)) ?? null : null
 

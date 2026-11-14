@@ -1,12 +1,12 @@
 'use client'
 
-import { getIdentityPortraitUrl } from '@/lib/utils/images'
+import { getIdentityPortraitUrl, getSinnerLogoUrl } from '@/lib/utils/images'
 import { useEffect, useState, useCallback, useRef, forwardRef } from 'react'
 import { useCollectionModel } from '@/features/tools/hooks/useCollectionModel'
 import { useSearchParams } from 'next/navigation'
 import { useLocale, useTranslations } from 'next-intl'
 import { useQueryState, parseAsString } from 'nuqs'
-import { STORAGE_BASE, SIN_COLORS, normalizeSin } from '@/lib/data/sinners'
+import { SIN_COLORS, normalizeSin } from '@/lib/data/sinners'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
 import { Check, CheckSquare, Square, Link2, Download } from 'lucide-react'
 import DownloadModal from './DownloadModal'
@@ -64,10 +64,6 @@ async function encodeCollection(
 function identityProfileUrl(identity: IdentityInfo): string {
   if (!identity.game_id || !identity.folder_name) return ''
   return getIdentityPortraitUrl(identity.sinner_id, identity.folder_name, identity.game_id, false)
-}
-
-function sinnerLogoUrl(sinnerId: string): string {
-  return `${STORAGE_BASE}/icons/Sinners/${sinnerId}.webp`
 }
 
 // ── 컴포넌트 ────────────────────────────────────────────────────────────────
@@ -356,7 +352,7 @@ export default function CollectionSection({ savedCode, persistMode = 'db', title
         owned={owned}
         stats={stats}
         downloadOptions={downloadOptions}
-        sinnerLogoUrl={sinnerLogoUrl}
+        sinnerLogoUrl={getSinnerLogoUrl}
         identityProfileUrl={identityProfileUrl}
       />}
     </section>

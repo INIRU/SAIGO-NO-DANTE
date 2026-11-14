@@ -21,6 +21,7 @@ import { keywordTextAllowed } from '@/lib/keywords/plain-keywords'
 import { FLAVOR_COLOR } from '@/lib/game-text/flavor'
 import { placePopoverIn, type PopoverPlacement } from '@/lib/utils/popover'
 import { KEYWORD_TOOLTIP_Z, closeTip, openTip, type TipEntry } from '@/lib/keywords/tooltip-stack'
+import { fetchJson } from '@/lib/utils/http'
 
 const KeywordContext = createContext<Record<string, KeywordInfo>>({})
 /** How many keyword tooltips the keyword is drawn inside (0 on the page). */
@@ -53,8 +54,7 @@ export function useKeywords() {
 
 // The layout's catalog has no descriptions (they only show in tooltips); one cached request per language brings them.
 const descriptionsUrl = (locale: string) => `/api/keyword-descriptions/${locale}`
-const fetchDescriptions = (url: string): Promise<Record<string, string>> =>
-  fetch(url).then(response => { if (!response.ok) throw new Error(`${response.status}`); return response.json() })
+const fetchDescriptions = (url: string) => fetchJson<Record<string, string>>(url)
 const DESCRIPTION_OPTIONS = { revalidateOnFocus: false, revalidateIfStale: false, revalidateOnReconnect: false } as const
 
 /** Starts loading the descriptions (e.g. when a keyword is hovered) so the tooltip usually opens with its text. */

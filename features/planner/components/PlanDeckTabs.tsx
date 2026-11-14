@@ -18,6 +18,7 @@ import { buildStripSkills } from '@/features/decks'
 import { getLocalizedName } from '@/lib/i18n/localize'
 import type { SupportedLang } from '@/lib/i18n/types'
 import { isDeployedSlot } from '@/lib/constants/game'
+import EmptyState from '@/components/ui/EmptyState'
 
 const IdentityDetailModal = dynamic(() => import('@/features/catalog/components/IdentityDetailModal'), { ssr: false })
 const EgoDetailModal = dynamic(() => import('@/features/catalog/components/EgoDetailModal'), { ssr: false })
@@ -144,12 +145,6 @@ interface Props {
   passives: PassiveSummary[]
   /** Map of formation slot number → gift image URLs (from formation slot effects) */
   slotGiftMap: Map<number, string[]>
-}
-
-function EmptyState({ text }: { text: string }) {
-  return (
-    <p className="border-l-2 border-[#2e2417] py-1 pl-3 text-[0.9375rem] leading-relaxed text-[var(--text-muted)]">{text}</p>
-  )
 }
 
 function getIdentityKeywordSource(slot: IdentitySlot, sourceIdentity: IdentityData | undefined): string[] {

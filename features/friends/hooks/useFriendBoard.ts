@@ -9,6 +9,7 @@ import { assetName, type NoteAssetData } from '@/features/notes'
 import { GUEST_KEY_HEADER, guestHeaders, readGuestKey } from '@/features/account'
 import { WANT_LIMIT, type RequestStatus, type StoredSlot, type Visibility } from '@/features/friends/lib/codes'
 import { EGO_GRADES, type SupportSlot } from '@/features/friends/components/SupportStrips'
+import { fetchJson, sendJson } from '@/lib/utils/http'
 
 /** What the friend code screens share: the API's shapes, the catalogue lookups and the requests. */
 export type Kind = 'support' | 'want'
@@ -60,16 +61,10 @@ export function useFriendApi() {
       signedIn,
       load: async (url: string) => {
         const guest = signedIn ? null : readGuestKey()
-        const response = await fetch(url, { headers: guest ? { [GUEST_KEY_HEADER]: guest } : {} })
-        if (!response.ok) throw Error('list')
-        return await response.json() as Listing
+        return fetchJson<Listing>(url, { headers: guest ? { [GUEST_KEY_HEADER]: guest } : {} })
       },
-      send: async (url: string, method: string, body?: unknown) => {
-        const response = await fetch(url, { method, headers: { 'Content-Type': 'application/json', ...guestHeaders(signedIn) }, body: body === undefined ? undefined : JSON.stringify(body) })
-        const data = await response.json().catch(() => ({}))
-        if (!response.ok) throw Error(message(data))
-        return data
-      },
+      send: (url: string, method: 'POST' | 'PATCH' | 'DELETE', body?: unknown) =>
+        sendJson(url, method, body, { headers: guestHeaders(signedIn), errorMessage: data => message(data as { code?: string; error?: string }) }),
     }
   }, [signedIn, t])
 }

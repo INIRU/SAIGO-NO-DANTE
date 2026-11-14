@@ -19,7 +19,7 @@ import { useKeywordData } from '@/components/providers/KeywordProvider'
 import { useLocale } from 'next-intl'
 import type { SupportedLang } from '@/lib/i18n/types'
 import { getLocalizedName } from '@/lib/i18n/localize'
-import { DECK_MAIN_KEYWORDS } from '@/lib/decks/keyword-rules'
+import { DECK_MAIN_KEYWORDS, MANUAL_ATTACK_MAIN_KEYWORDS } from '@/lib/decks/keyword-rules'
 import { SKILL_EXCHANGE_PRESETS } from '@/features/planner/components/SkillExchangePanel'
 import type { SkillCountEdit } from '@/features/catalog/components/EgoSlotRows'
 import { buildStripSkills, toEgoSlotItems } from '@/features/decks/lib/strip-skills'
@@ -74,7 +74,6 @@ function builderBoardSlots({ sinners, deckSlots, upties, formationOrder = [], sk
   }, {})
 }
 
-const MANUAL_ATTACK_MAIN_KEYWORDS = new Set<string>(['참격', '관통', '타격'])
 /* ── 탭 1: 인격 편성 (플래너 패턴: 40% 변경 / 60% 편성 토글) ── */
 export function IdentityTab({
   sinners, identities, deckSlots, upties, egoSlots, skillsByIdentityId, skillDistribution,

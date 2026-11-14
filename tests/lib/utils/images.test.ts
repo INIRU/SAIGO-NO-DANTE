@@ -9,8 +9,10 @@ import {
   computeSkillImageIndices,
   getIdentityImageUrl,
   getEgoArtworkUrl,
+  getEgoProfileUrl,
+  getLockIconUrl,
 } from '@/lib/utils/images'
-import { STORAGE_BASE } from '@/lib/constants/game'
+import { ATK_TYPE_ICON_MAP, RARITY_ICON_MAP, STORAGE_BASE } from '@/lib/constants/game'
 import type { Identity } from '@/lib/types'
 
 it('EGO 상세는 업로드가 검증된 CG만 사용하고 미등록 이미지는 보존한다', () => {
@@ -225,5 +227,28 @@ describe('restored original portraits', () => {
       }
     }
     expect(getIdentityImageUrl('ryoshu', 'folder', '10415_normal_info')).not.toContain('?')
+  })
+})
+
+describe('getEgoProfileUrl', () => {
+  it('builds the awakening and erosion profile URLs the EGO detail used to build inline', () => {
+    // The folder comes already encoded from the stored image_url, so it is used as is.
+    expect(getEgoProfileUrl('faust', '9%202', '20205', 'awaken')).toBe(`${STORAGE_BASE}/sinners/faust/ego/9%202/20205_awaken_profile.webp`)
+    expect(getEgoProfileUrl('faust', 'Hollow', '20211', 'erosion')).toBe(`${STORAGE_BASE}/sinners/faust/ego/Hollow/20211_erosion_profile.webp`)
+  })
+})
+
+describe('getLockIconUrl', () => {
+  it('is the lock sprite the skill and gift texts draw', () => {
+    expect(getLockIconUrl()).toBe(`${STORAGE_BASE}/icons/ui/lock.webp`)
+  })
+})
+
+describe('icon maps stay equal to the URLs call sites built by hand', () => {
+  it('rarity stars', () => {
+    for (const rarity of [1, 2, 3]) expect(RARITY_ICON_MAP[rarity]).toBe(`${STORAGE_BASE}/icons/Rarity/${rarity}star.webp`)
+  })
+  it('attack types', () => {
+    for (const type of ['slash', 'pierce', 'blunt']) expect(ATK_TYPE_ICON_MAP[type]).toBe(`${STORAGE_BASE}/icons/stats/${type}.webp`)
   })
 })

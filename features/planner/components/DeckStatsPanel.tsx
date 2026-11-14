@@ -2,12 +2,10 @@
 
 import { memo } from 'react'
 import Image from 'next/image'
-import { STORAGE_BASE } from '@/lib/constants/game'
+import { ATK_TYPE_ICON_MAP } from '@/lib/constants/game'
 import { SIN_COLORS, SIN_KR_TO_EN, SIN_ORDER, getSinIconUrl } from '@/lib/constants/sin'
 import { computeAttackTypeCounts } from '@/features/decks'
 import PlannerPassivePanel from '@/features/catalog/components/PassivePanel'
-
-const S = STORAGE_BASE
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -140,7 +138,7 @@ function DeckStatsPanel({
         <div className="deck-stats-summary-card__attacks flex flex-col gap-1.5">
           {Object.entries(atkCount).map(([type, count]) => (
             <div key={type} className="deck-stats-attack-row flex items-center gap-2">
-              <Image src={`${S}/icons/stats/${type}.webp`} alt="" width={14} height={14} style={{ width: '0.875rem', height: '0.875rem', opacity: 0.8 }} />
+              <Image src={ATK_TYPE_ICON_MAP[type]} alt="" width={14} height={14} style={{ width: '0.875rem', height: '0.875rem', opacity: 0.8 }} />
               <span className="deck-stats-attack-label" style={{ color: ATK_CLR[type], fontFamily: 'var(--font-mono)', width: '2rem' }}>{ATK_LABELS[type]}</span>
               <div style={{ flex: 1, height: '0.375rem', background: 'rgba(255,255,255,0.05)', borderRadius: '0.1875rem', overflow: 'hidden' }}>
                 <div style={{ width: `${(count / atkTotal) * 100}%`, height: '100%', background: ATK_CLR[type], borderRadius: '0.1875rem' }} />

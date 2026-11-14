@@ -29,6 +29,7 @@ import { captureEvidence, useAssistCapture } from '@/features/assist/hooks/useAs
 import { recognizableEvents } from '@/lib/utils/event-catalog'
 import { gameTextForScreen, refNameLabels } from '@/lib/game-text/rich-text'
 import { useGameTextRefs } from '@/lib/hooks/useGameTextRefs'
+import { writeJson } from '@/lib/utils/local-storage'
 
 /** Assist temporary saves: five slots of whole runs in this browser. */
 const RUN_DRAFTS_KEY = 'md-run-temp-slots'
@@ -128,7 +129,7 @@ export default function RunClient({ themes, gifts, recipes, identities, sinners,
   useEffect(() => { setDetection(readDetectionSettings(window.localStorage)) }, [])
   const changeDetection = (next: DetectionSettings) => {
     setDetection(next)
-    try { window.localStorage.setItem(DETECTION_STORAGE_KEY, JSON.stringify(next)) } catch { /* applies to this session */ }
+    writeJson(DETECTION_STORAGE_KEY, next) // applies to this session when storage refuses
   }
   // Recognition samples: off until chosen; undefined until this browser's choice is read, null while never asked.
   const [samples, setSamples] = useState<boolean | null | undefined>(undefined)

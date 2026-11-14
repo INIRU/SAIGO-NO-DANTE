@@ -3,6 +3,8 @@ import { isDeployedSlot } from '@/lib/constants/game'
 
 export const DECK_MAIN_KEYWORDS = ['참격', '관통', '타격', '화상', '파열', '침잠', '호흡', '진동', '충전', '출혈'] as const
 export const MAX_DECK_MAIN_KEYWORDS = 5
+/** The attack types a main keyword may be set to by hand even before any skill of the deck uses them. */
+export const MANUAL_ATTACK_MAIN_KEYWORDS = new Set<string>(['참격', '관통', '타격'])
 
 const DECK_MAIN_KEYWORD_SET = new Set<string>(DECK_MAIN_KEYWORDS)
 const DECK_MAIN_KEYWORD_ORDER = new Map<string, number>(

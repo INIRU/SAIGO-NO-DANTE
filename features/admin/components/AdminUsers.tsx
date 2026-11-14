@@ -11,6 +11,7 @@ import QuietImage from '@/components/ui/QuietImage'
 import BaseModal from '@/components/ui/BaseModal'
 import Button from '@/components/ui/Button'
 import { showError, showSuccess } from '@/lib/toast'
+import { fetchJson } from '@/lib/utils/http'
 import './admin-users.css'
 
 const copy = {
@@ -33,11 +34,7 @@ type Detail = User & {
   decks: Post[]; plans: Post[]; deckCount: number; planCount: number; partners: { code: string; name: string }[];
   history: { id: string; action: string; created_at: string; details: { reason?: string | null } | null }[];
 }
-async function fetcher(url: string) {
-  const response = await fetch(url, { cache: 'no-store' })
-  if (!response.ok) throw new Error('unavailable')
-  return response.json()
-}
+const fetcher = <T,>(url: string) => fetchJson<T>(url, { cache: 'no-store' })
 function Avatar({ user, size = 36 }: { user: User; size?: number }) {
   return <QuietImage src={user.avatar_url || DEFAULT_AVATAR_URL} width={size} height={size} alt="" className="admin-users-avatar" />
 }

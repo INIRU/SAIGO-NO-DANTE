@@ -2,6 +2,7 @@ import type { RandomResult } from './engine'
 import { refOf, type RollSnapshot } from './roll'
 import { encodeSnapshot } from './share'
 import { isSeed } from './seed'
+import { writeJson } from '@/lib/utils/local-storage'
 
 export const RECENT_LIMIT = 10
 const STORAGE_KEY = 'random_recent_rolls'
@@ -45,11 +46,7 @@ export function readRecent(storage: KeyValueStorage | null = browserStorage()): 
 
 /** False when the browser refused to store it. */
 export function writeRecent(list: RecentRoll[], storage: KeyValueStorage | null = browserStorage()): boolean {
-  try {
-    if (!storage) return false
-    storage.setItem(STORAGE_KEY, JSON.stringify(list.slice(0, RECENT_LIMIT)))
-    return true
-  } catch { return false }
+  return writeJson(STORAGE_KEY, list.slice(0, RECENT_LIMIT), storage)
 }
 
 export function clearRecent(storage: KeyValueStorage | null = browserStorage()): void {

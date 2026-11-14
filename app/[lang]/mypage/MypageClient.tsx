@@ -22,6 +22,7 @@ import ProfileSettings from "@/features/community/components/ProfileSettings";
 import Skeleton from "@/components/ui/Skeleton";
 import { getCommunityCopy } from "@/features/community";
 import { EASTER_EGGS, EGGS_KEY, readEggs, type EasterEgg } from "@/lib/easter-eggs";
+import { writeJson } from "@/lib/utils/local-storage";
 import BackLink from "@/components/navigation/BackLink";
 import DanteLogo from "@/components/brand/DanteLogo";
 import { ArrowLeft } from "lucide-react";
@@ -92,7 +93,7 @@ export default function MypageClient() {
     const missing = local.filter((egg) => !accountEggs.includes(egg));
     if (missing.length) void fetch("/api/profile/eggs", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ eggs: missing }) }).catch(() => {});
     const merged = EASTER_EGGS.filter((egg) => local.includes(egg) || accountEggs.includes(egg));
-    try { localStorage.setItem(EGGS_KEY, JSON.stringify(merged)); } catch { /* private mode */ }
+    writeJson(EGGS_KEY, merged); // private mode: kept for this page only
     setEggs(merged);
   }, [accountEggs]);
   // Anonymous posts written in this browser before signing in can be moved to the account.

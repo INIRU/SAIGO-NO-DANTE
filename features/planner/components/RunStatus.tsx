@@ -8,7 +8,7 @@ import type { RunState, RunAction } from '@/features/planner/lib/run-types'
 import type { GiftData, RecipeData } from '@/lib/planner/types'
 import GiftArtwork from '@/components/ui/GiftArtwork'
 import GiftCard from '@/features/mirror-dungeon/components/GiftCard'
-import { getLocalizedName } from '@/lib/i18n/localize'
+import { localizeRowName } from '@/lib/i18n/localize'
 import type { SupportedLang } from '@/lib/i18n/types'
 import { runSectionTitle } from './GiftCheckSection'
 import InventoryPanel from './InventoryPanel'
@@ -30,7 +30,7 @@ interface Props {
 export default function RunStatus({ state, dispatch, gifts, giftMap, recipes }: Props) {
   const t = useTranslations('planner.run')
   const locale = useLocale() as SupportedLang
-  const localized = (gift: GiftData) => getLocalizedName({ name_kr: gift.name, name_en: gift.name_en, name_jp: gift.name_jp }, locale)
+  const localized = (gift: GiftData) => localizeRowName(gift, locale)
   const ownedIds = useMemo(() => new Set(state.giftInventory.map(String)), [state.giftInventory])
   const targets = useMemo(() => [...new Set((state.targetGifts ?? []).map(id => String(Number(id))))].map(id => giftMap.get(Number(id))).filter(Boolean) as GiftData[],
     [state.targetGifts, giftMap])

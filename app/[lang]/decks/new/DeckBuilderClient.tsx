@@ -33,6 +33,8 @@ import {
 
 import { encodeDeckCode, decodeDeckCode } from '@/lib/decks/deck-code-utils'
 import { deckInitFromTeamCode, formationParamFromSearch } from '@/lib/decks/formation-init'
+import { DEFAULT_EGO_NAMES } from '@/lib/decks/default-ego'
+import { MANUAL_ATTACK_MAIN_KEYWORDS } from '@/lib/decks/keyword-rules'
 import { computeDeckResources, computeSinProduction, fieldedEntries, contentTypeMessageKey, rowsAtUptie, topUptiePassives, topUptieSkills } from '@/features/decks'
 import UnderlineTabBar, { type TabItem } from '@/components/ui/UnderlineTabBar'
 import Dropdown from '@/components/ui/Dropdown'
@@ -99,21 +101,6 @@ interface Props {
 }
 
 type Tab = 'identity' | 'ego' | 'skillset' | 'note'
-
-// 수감자별 기본 E.G.O (name_kr 기준)
-const DEFAULT_EGO_NAMES: Record<string, string> = {
-  '이상':    '오감도',
-  '파우스트': '표사 방출기',
-  '돈키호테': '라 상그레 산초',
-  '료슈':    '삼라영삼',
-  '뫼르소':  '타인의 사슬',
-  '홍루':    '허환경',
-  '이스마엘': '작살박이',
-  '오티스':  '토 파토스 마토스',
-  '그레고르': '어느날 갑자기',
-}
-
-const MANUAL_ATTACK_MAIN_KEYWORDS = new Set<string>(['참격', '관통', '타격'])
 
 const DeckNoteEditor = dynamic(() => import('@/features/decks/components/DeckNoteEditor'), {
   ssr: false,

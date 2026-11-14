@@ -33,6 +33,7 @@ import { getIdentityPortraitUrl, getIdentityInfoUrl } from '@/lib/utils/images'
 import type { SupportedLang } from '@/lib/i18n'
 import Sheet from '@/components/ui/Sheet'
 import { usePlanList } from '@/features/planner/hooks/usePlanList'
+import { useAutocompleteKeys } from '@/hooks/useAutocompleteKeys'
 
 type SortKey = 'latest' | 'popular'
 type SearchSuggestion = { label: string; type: 'identity' | 'keyword'; imageUrl?: string }
@@ -271,20 +272,9 @@ export default function CommunityClient({ initialPlans, initialTotal, initialShe
 
   useEffect(() => { setAcIndex(suggestions.length > 0 ? 0 : -1) }, [suggestions.length])
 
-  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'ArrowDown' && !showSuggestions && suggestions.length > 0) {
-      e.preventDefault(); setShowSuggestions(true); return
-    }
-    if (!showSuggestions || suggestions.length === 0) {
-      if (e.key === 'Escape') setShowSuggestions(false)
-      return
-    }
-    if (e.key === 'ArrowDown') {
-      e.preventDefault(); setAcIndex(prev => (prev + 1) % suggestions.length)
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault(); setAcIndex(prev => (prev <= 0 ? suggestions.length - 1 : prev - 1))
-    } else if (e.key === 'Tab' && acIndex >= 0) {
-      e.preventDefault()
+  const handleSearchKeyDown = useAutocompleteKeys({
+    open: showSuggestions, count: suggestions.length, index: acIndex, setOpen: setShowSuggestions, setIndex: setAcIndex,
+    onPick: e => {
       const selected = suggestions[acIndex].label
       const { prefix } = getActiveTerm(inputValue)
       // IME 조합 강제 종료
@@ -296,10 +286,8 @@ export default function CommunityClient({ initialPlans, initialTotal, initialShe
         setInputValue(prefix + selected)
         ;(e.target as HTMLInputElement).focus()
       }, 10)
-    } else if (e.key === 'Escape') {
-      setShowSuggestions(false); setAcIndex(-1)
-    }
-  }
+    },
+  })
 
   // 외부 클릭 시 자동완성 닫기
   useEffect(() => {

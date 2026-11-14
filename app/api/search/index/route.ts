@@ -6,7 +6,7 @@ import { STORAGE_BASE } from '@/lib/constants/game'
 import { gameTextToPlain, refNameLabels } from '@/lib/game-text/rich-text'
 import { getGameTextRefNames } from '@/lib/db/game-text-refs'
 import { resolveKeywordIconUrl } from '@/lib/keywords/catalog'
-import { getIdentityImageUrl } from '@/lib/utils/images'
+import { getIdentityImageUrl, getSinnerLogoUrl } from '@/lib/utils/images'
 import { localizeGiftKeyword } from '@/lib/i18n/gift-keyword'
 import { translations } from '@/lib/i18n/translations'
 import { pageEntries } from '@/lib/search/pages'
@@ -85,7 +85,7 @@ function buildEntries(rows: Awaited<ReturnType<typeof getRows>>, lang: Lang): In
   return [
     ...rows.sinners.map((s): IndexEntry => ({
       type: 'sinner', label: pick(s, lang), names: names(s), href: `/sinners/${s.id}`,
-      icon: `${STORAGE_BASE}/icons/Sinners/${s.id}.webp`,
+      icon: getSinnerLogoUrl(s.id),
       context: (SINNER_ALIASES[s.id] ?? []).map(text => ({ field: 'alias', text })),
     })),
     ...rows.identities.map((i): IndexEntry => ({
