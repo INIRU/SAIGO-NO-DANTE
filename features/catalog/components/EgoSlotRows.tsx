@@ -1,13 +1,11 @@
 import Image from 'next/image'
 import { sinColorOf, normalizeSin } from '@/lib/constants/sin'
 import { getEgoFormationAsset } from '@/lib/utils/images'
-import type { SupportedLang } from '@/lib/i18n/types'
-import EgoDisplayCard from './EgoDisplayCard'
 import AttackTypeIcon from '@/components/ui/AttackTypeIcon'
 import GameSkillIcon from './GameSkillIcon'
 import styles from './EgoSlotRows.module.css'
 
-export const EGO_SLOT_GRADES = ['ZAYIN', 'TETH', 'HE', 'WAW', 'ALEPH'] as const
+const EGO_SLOT_GRADES = ['ZAYIN', 'TETH', 'HE', 'WAW', 'ALEPH'] as const
 
 export type EgoSlotItem = { id: string; name: string; sin_affinity: string | null; image_url?: string | null }
 export type FormationStripSkill = { iconUrl: string; sin: string | null; attackType: string | null; /** How many of this skill the deck holds (3 / 2 / 1 by default). */ count?: number }
@@ -48,33 +46,6 @@ function EmptySlot({ grade, className }: { grade: string; className: string }) {
       <Image src={EGO_FRAME_SRC} alt="" width={96} height={96} unoptimized className={styles.frame} />
       <Letter grade={grade} lit={false} className={styles.emptyLetter} />
     </span>
-  )
-}
-
-/** One sinner's five E.G.O as game E.G.O cards (ZAYIN to ALEPH); an empty grade keeps its place with the empty frame. */
-export function EgoSlotCards({ sinnerId, egos, onEgoClick, lang }: {
-  sinnerId: string
-  egos: ByGrade
-  onEgoClick?: (egoId: string) => void
-  lang?: SupportedLang
-}) {
-  return (
-    <div className={styles.cards}>
-      {EGO_SLOT_GRADES.map(grade => {
-        const ego = egos[grade]
-        return ego ? (
-          <EgoDisplayCard
-            key={grade}
-            ego={{ grade, image_url: ego.image_url, sin_affinity: ego.sin_affinity }}
-            name={ego.name}
-            sinnerId={sinnerId}
-            lang={lang}
-            onClick={onEgoClick ? () => onEgoClick(ego.id) : undefined}
-            displayOnly={!onEgoClick}
-          />
-        ) : <EmptySlot key={grade} grade={grade} className={styles.cardEmpty} />
-      })}
-    </div>
   )
 }
 

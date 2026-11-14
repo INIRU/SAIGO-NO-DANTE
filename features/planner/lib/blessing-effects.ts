@@ -1,5 +1,5 @@
-export type EffectTone = 'normal' | 'term' | 'diff'
-export type EffectSegment = { text: string; tone: EffectTone }
+type EffectTone = 'normal' | 'term' | 'diff'
+type EffectSegment = { text: string; tone: EffectTone }
 
 const NUMBER = /[+-]?\d+(?:\/\d+)*(?:~\d+)?%?(?:층|회|개|등급)?/g
 

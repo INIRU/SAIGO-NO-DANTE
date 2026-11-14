@@ -72,7 +72,6 @@ export function getIdentityInfoUrl(identity: Identity, gacksung = false): string
 
 /**
  * Portrait (_info) URL from raw DB fields — safe to call in Server Components.
- * Use this instead of importing portraitUrl from DeckIdentityCard (client module).
  */
 export function getIdentityPortraitUrl(
   sinnerId: string,

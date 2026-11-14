@@ -1,6 +1,6 @@
 import { deflate, inflate } from "pako";
 import { planSchema, type Plan } from "./calculator";
-export const COOKIE_NAME = "limbus_lunacy_v1";
+const COOKIE_NAME = "limbus_lunacy_v1";
 const MAX_COOKIE_LENGTH = 3800;
 export function encodePlans(plans: Record<string, Plan>): string {
   const json = JSON.stringify(plans);

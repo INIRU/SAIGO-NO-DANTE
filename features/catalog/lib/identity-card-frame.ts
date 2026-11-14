@@ -7,13 +7,13 @@ import type { CSSProperties } from 'react'
  * line is centred on that box. [image width, image height, border x, border y]
  * Same numbers as FramedIdentity in features/planner/components/PlannerDeckSelection.tsx.
  */
-export const IDENTITY_CARD_FRAMES: Record<number, Record<number, [number, number, number, number]>> = {
+const IDENTITY_CARD_FRAMES: Record<number, Record<number, [number, number, number, number]>> = {
   1: { 1: [304, 442, 7, 7], 2: [328, 484, 15, 41], 3: [323, 458, 15, 15], 4: [320, 458, 14.5, 15] },
   2: { 1: [304, 442, 7, 6.5], 2: [323, 486, 10, 44.5], 3: [324, 455, 14, 17], 4: [320, 458, 15, 15] },
   3: { 1: [305, 443, 7, 8], 2: [322, 481, 10, 45], 3: [331, 462, 18, 20], 4: [320, 458, 15, 15] },
 }
-export const IDENTITY_CARD_W = 290
-export const IDENTITY_CARD_H = 428
+const IDENTITY_CARD_W = 290
+const IDENTITY_CARD_H = 428
 
 const pct = (value: number, of: number) => (value / of * 100).toFixed(3) + '%'
 

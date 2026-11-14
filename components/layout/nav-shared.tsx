@@ -53,7 +53,7 @@ export const NAV_GROUPS: { labelKey: string; items: { href: string; labelKey: st
 
 export const focusRing = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(232,176,48,0.55)]'
 // 데스크탑 상단 항목 공통: 같은 높이(h-9), hover는 사이트 금색
-export const navBase = `flex h-9 items-center gap-1.5 rounded-md px-3 whitespace-nowrap transition-colors duration-150 hover:bg-[rgba(200,144,10,0.08)] hover:text-[var(--gold-light)] ${focusRing}`
+const navBase = `flex h-9 items-center gap-1.5 rounded-md px-3 whitespace-nowrap transition-colors duration-150 hover:bg-[rgba(200,144,10,0.08)] hover:text-[var(--gold-light)] ${focusRing}`
 // 메뉴 그룹: 제목 서체(Kotra), 오른쪽 도구(문의·언어·로그인): 본문 서체
 export const groupItem = `${navBase} [font-family:var(--font-heading)] text-[0.9375rem] tracking-[0.01em]`
 export const navItem = `${navBase} text-[0.875rem] font-medium`

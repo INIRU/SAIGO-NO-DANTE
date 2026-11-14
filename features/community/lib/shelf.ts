@@ -1,5 +1,5 @@
 /** One home shelf: the three most visited posts of the week, or the newest three when fewer than three were visited. */
-export type CommunityShelf<T> = { popular: boolean; posts: T[] }
+type CommunityShelf<T> = { popular: boolean; posts: T[] }
 
 /** The /api/discovery response fields a shelf reads. `popular` arrives ranked (rankPopular). */
 export type DiscoveryFeed<T> = {

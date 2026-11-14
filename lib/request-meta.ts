@@ -1,7 +1,7 @@
 import type { NextRequest } from 'next/server'
 import { createHmac, timingSafeEqual } from 'crypto'
 
-export type RequestMetadata = {
+type RequestMetadata = {
   ip: string | null
   ipHash: string | null
   ipMasked: string | null

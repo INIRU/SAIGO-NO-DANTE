@@ -6,8 +6,8 @@ import { DIFFICULTY_CONFIG, normalizePlannerThemeId, normalizeSkillDistribution 
 import { getLegacyPlanFloorDifficulty, isAllowedFloorDifficulty, isFloorDifficulty } from '@/lib/planner/floor-difficulty'
 import { createFloorLog, createInitialRunState, floorNumber, isRecord, normalizePlanSnapshot, normalizeRunState, stringArray } from './run-normalize'
 
-export type RunPhase = 'setup' | 'playing' | 'completed'
-export type FloorSubTab = 'deck' | 'theme' | 'event' | 'gift'
+type RunPhase = 'setup' | 'playing' | 'completed'
+type FloorSubTab = 'deck' | 'theme' | 'event' | 'gift'
 
 export interface DeckChange {
   type: 'swap_identity' | 'swap_ego' | 'rearrange_skill'

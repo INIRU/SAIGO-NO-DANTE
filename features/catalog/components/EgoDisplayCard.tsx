@@ -6,7 +6,7 @@ import { getGameUiAsset } from '@/lib/utils/game-ui'
 import { useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
 import IntentLink from '@/components/ui/IntentLink'
-import { GRADE_COLORS, SIN_COLORS, STORAGE_BASE, type SinType, getSinnerLogoUrl, normalizeSin } from '@/lib/data/sinners'
+import { GRADE_COLORS, type SinType, getSinnerLogoUrl, normalizeSin } from '@/lib/data/sinners'
 import type { SupportedLang } from '@/lib/i18n/types'
 import {
   EGO_NAME_FIT_BUFFER_PX,

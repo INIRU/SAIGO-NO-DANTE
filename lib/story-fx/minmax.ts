@@ -1,8 +1,8 @@
 // Unity MinMaxCurve / MinMaxGradient / Gradient evaluation (compact forms written by pipeline/extract_fx.py).
-export type Keys = [number, number, number | null, number | null][];
-export interface MMC { m: number; s: number; n: number; max: Keys; min: Keys }
-export interface Grad { c: [number, number, number, number][]; a: [number, number][]; mode: number }
-export interface MMG { m: number; cmin: { r: number; g: number; b: number; a: number }; cmax: { r: number; g: number; b: number; a: number }; gmax: Grad; gmin: Grad }
+type Keys = [number, number, number | null, number | null][];
+interface MMC { m: number; s: number; n: number; max: Keys; min: Keys }
+interface Grad { c: [number, number, number, number][]; a: [number, number][]; mode: number }
+interface MMG { m: number; cmin: { r: number; g: number; b: number; a: number }; cmax: { r: number; g: number; b: number; a: number }; gmax: Grad; gmin: Grad }
 
 export function keys(k: Keys, t: number): number {
   if (!k.length) return 0;
@@ -30,7 +30,7 @@ export function mmc(c: MMC | undefined, t: number, r: number): number {
   return c.s;
 }
 
-export function grad(g: Grad, t: number): [number, number, number, number] {
+function grad(g: Grad, t: number): [number, number, number, number] {
   const ev = <T extends number[]>(arr: T[], n: number): number[] => {
     if (!arr.length) return new Array(n).fill(1);
     if (t <= arr[0][0]) return arr[0].slice(1);

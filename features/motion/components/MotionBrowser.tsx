@@ -20,7 +20,7 @@ const QUERY_OPTIONS = { history: 'replace', shallow: true, scroll: false } as co
 const focusRing = 'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--gold-light)]'
 const grid = 'grid grid-cols-[repeat(auto-fill,minmax(7.5rem,1fr))] gap-x-3 gap-y-4'
 
-export const motionWatchHref = (skill: string) => `/motion/skills/watch?skill=${skill}`
+const motionWatchHref = (skill: string) => `/motion/skills/watch?skill=${skill}`
 
 function IdentityCell({ sinnerId, identity, skill }: { sinnerId: string; identity: MotionIdentity; skill?: MotionIdentity['skills'][number] }) {
   const t = useTranslations('motionPage')

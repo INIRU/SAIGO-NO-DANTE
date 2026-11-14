@@ -8,7 +8,7 @@ export type KeywordAbility = { ability: string; value?: number | null; attribute
 
 /** damage: dealt by the carrier (self) or taken by it (target); power: the skill's power; coin_power: the heads coin's added power; physical, sin: resistance of the target. */
 export type EffectTarget = 'damage' | 'power' | 'coin_power' | 'physical' | 'sin'
-export type EffectSide = 'self' | 'target'
+type EffectSide = 'self' | 'target'
 
 /**
  * value: percent for damage (10 = +10%), a whole number for power and coin_power, a resistance amount for physical and sin.
@@ -20,7 +20,7 @@ type Rule = { target: EffectTarget; side: EffectSide; scaled: boolean }
 
 // What each ability does. "ByStack" / "AsStack" abilities multiply their value by the stack count (AsStack: (int)value × stack);
 // the others add it once. Fragile, Protection and Damage Up are the ByStack kind with ±0.1 and a maximum of 10 in the game data.
-export const ABILITY_RULES: Readonly<Record<string, Rule>> = {
+const ABILITY_RULES: Readonly<Record<string, Rule>> = {
   AtkDamageMultiplier: { target: 'damage', side: 'self', scaled: false },
   AtkDamageMultiplierByStack: { target: 'damage', side: 'self', scaled: true },
   TakeAtkDamageMultiplier: { target: 'damage', side: 'target', scaled: false },

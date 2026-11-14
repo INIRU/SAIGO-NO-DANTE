@@ -7,7 +7,7 @@ import { findOrCreateSupabaseUser } from '@/lib/supabase/findOrCreateUser'
 import { GUEST_KEY_HEADER, isGuestKey, isGuestPin, isWeakGuestPin } from '@/features/account/lib/guest-key'
 
 type Admin = ReturnType<typeof createAdminClient>
-export type GuestPostKind = 'deck' | 'plan'
+type GuestPostKind = 'deck' | 'plan'
 
 /**
  * Who is writing: a signed-in user, or a guest identified by the secret key their browser keeps.

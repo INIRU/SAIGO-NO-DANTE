@@ -3,8 +3,6 @@ import { describe, expect, it, vi } from 'vitest'
 import { KeywordProvider, type KeywordInfo } from '@/components/providers/KeywordProvider'
 import SkillDescription from '@/features/catalog/components/SkillDescription'
 import KeywordCard, { type KeywordEntry } from '@/app/[lang]/keywords/_components/KeywordCard'
-import { KeywordChipDescription } from '@/features/decks/components/NoteChips'
-import DeckIdentityCard, { PassiveDescriptionLines, type IdentitySlot } from '@/features/decks/components/DeckIdentityCard'
 import { EffectText } from '@/features/mirror-dungeon/components/GiftDetailModal'
 import type { GameTextRefNames } from '@/lib/db/game-text-refs'
 
@@ -54,40 +52,12 @@ describe('keyword descriptions with tags', () => {
     expect(html).toContain('화상 3 부여')
   })
 
-  it('draws the note keyword tooltip description as game text', () => {
-    const html = wrap(<KeywordChipDescription keyword="화상" info={KEYWORDS['화상']} />)
-    expect(html).not.toContain('&lt;')
-    expect(html).not.toContain('[Combustion]')
-    expect(html).toContain('끝')
-    expect(html).not.toContain('#f8c200')
-    expect(html).not.toContain('color:#ff0000')
-  })
-
-  it('gives the deck identity theme keyword a plain-text title without tags', () => {
-    const slot = {
-      slot_order: 0,
-      gacksung: false,
-      identities: {
-        id: 'i1', sinner_id: 'yi-sang', folder_name: null, game_id: null, keywords: ['화상'], name_kr: '인격', tier: 1, rarity: 3,
-        hp: null, speed_min: null, speed_max: null, def_level: null, slash_res: null, pierce_res: null, blunt_res: null,
-        skills: [], passives: [],
-      },
-    } as unknown as IdentitySlot
-    const html = wrap(<DeckIdentityCard slot={slot} keywordMeta={{ 화상: { description: RAW_DESC } }} />)
-    expect(html).toContain('title="화상 3 부여\n끝"')
-  })
 })
 
 describe('a tag that spans lines keeps applying on every line', () => {
   const SPAN = '<style="highlight">- 첫째\n- 둘째</style>'
   // The highlight colour is no longer drawn: each line must still lose the tag and keep its text.
   const both = (html: string) => html.includes('첫째') && html.includes('둘째') && !html.includes('#f8c200') && !html.includes('style=&quot;')
-
-  it('in the deck identity passive description', () => {
-    const html = wrap(<PassiveDescriptionLines text={SPAN} color="#686050" />)
-    expect(html).not.toContain('&lt;')
-    expect(both(html)).toBe(true)
-  })
 
   it('in the gift detail effect, keeping the bullet layout of a highlighted line', () => {
     const html = wrap(<EffectText text={SPAN} color="#c2b79f" />)

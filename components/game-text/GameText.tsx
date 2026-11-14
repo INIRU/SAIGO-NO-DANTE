@@ -45,7 +45,7 @@ const ELEMENT_STYLES: Record<'u' | 'b' | 'i' | 's', CSSProperties> = {
 const VALUE_PATTERN = /(효과 위력|위력|횟수|Potency|Count|威力|回数|[+-]?\d+(?:\.\d+)?%?)/
 
 /** Tooltips: numbers turn gold and Potency/Count terms take `termColor`. */
-export function highlightValues(text: string, termColor: string) {
+function highlightValues(text: string, termColor: string) {
   return text.split(VALUE_PATTERN).map((part, i) =>
     i % 2 === 0 ? part
       : /\d/.test(part) ? <b key={i} style={{ color: '#e8b030', fontWeight: 700 }}>{part}</b>

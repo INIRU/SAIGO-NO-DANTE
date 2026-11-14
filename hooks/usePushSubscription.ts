@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { PUSH_SCOPE, urlBase64ToUint8Array } from '@/lib/push/keys'
 
 /** `unsupported`: no Push API in this browser or no keys on the server; `denied`: the browser blocks this site's notifications. */
-export type PushState = 'loading' | 'unsupported' | 'denied' | 'off' | 'on' | 'busy'
+type PushState = 'loading' | 'unsupported' | 'denied' | 'off' | 'on' | 'busy'
 
 const supported = () => typeof window !== 'undefined' && 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window
 const registration = () => navigator.serviceWorker.getRegistration(PUSH_SCOPE)

@@ -22,9 +22,9 @@ import {
 import { showError, showSuccess } from '@/lib/toast'
 
 /** The gift being dragged; `from` is the group it was taken from, null for one taken from the gift list. */
-export interface HeldGift { key: string; from: number | null }
+interface HeldGift { key: string; from: number | null }
 /** Where a dragged gift would land: in `group`, before the gift `before` or at the end. */
-export interface DropSpot { group: number; before: string | null }
+interface DropSpot { group: number; before: string | null }
 
 const DRAG_START = 6
 const ICON = 'grid h-11 w-11 shrink-0 place-items-center rounded text-[#9c8b73] transition-colors hover:bg-white/5 hover:text-[var(--text-primary)] motion-reduce:transition-none'

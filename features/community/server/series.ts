@@ -77,13 +77,13 @@ export function revalidateSeries(seriesId: string, posts: { kind: SeriesPostKind
   for (const post of posts) revalidateTag(postTag(post.kind, post.id), 'max')
 }
 
-export type SeriesWrite = { ok: true } | { ok: false; status: number; error: string }
+type SeriesWrite = { ok: true } | { ok: false; status: number; error: string }
 
 /**
  * Puts a post the user owns into one of the user's series (appended last), or takes it out (null).
  * The route has already proved the user owns the post; the series owner is checked here and again by the DB trigger.
  */
-export async function applyPostSeries(
+async function applyPostSeries(
   db: Db,
   { kind, postId, userId, seriesId }: { kind: SeriesPostKind; postId: string; userId: string; seriesId: string | null },
 ): Promise<SeriesWrite> {

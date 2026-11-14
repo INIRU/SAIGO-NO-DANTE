@@ -27,7 +27,7 @@ interface Sinner {
 type KeywordCategory = '상태이상' | '버프' | '디버프' | '고유' | '기타'
 type SortKey = 'default' | 'name'
 
-export const KEYWORD_CATEGORIES: { value: KeywordCategory; key: string }[] = [
+const KEYWORD_CATEGORIES: { value: KeywordCategory; key: string }[] = [
   { value: '상태이상', key: 'keyword.category.statusEffect' },
   { value: '버프', key: 'keyword.category.buff' },
   { value: '디버프', key: 'keyword.category.debuff' },

@@ -19,7 +19,7 @@ export type Post = {
   /** approval posts: the viewer's own request (others' posts), or everyone's requests (the viewer's own post). */
   request?: RequestStatus | null; requests?: { id: string; name: string | null; userId: string | null; guestTag: string | null; status: RequestStatus; createdAt: string }[]
 }
-export type Listing = { posts: Post[]; own: Post | null; wanted?: { identityId: string; count: number }[] }
+type Listing = { posts: Post[]; own: Post | null; wanted?: { identityId: string; count: number }[] }
 export type Slots = (SupportSlot | null)[]
 export const emptySlots = (kind: Kind): Slots => Array(kind === 'support' ? 12 : WANT_LIMIT).fill(null)
 

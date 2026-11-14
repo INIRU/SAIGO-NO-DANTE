@@ -44,7 +44,7 @@ export function countKeywords(lists: Iterable<readonly string[] | null | undefin
     .map(([kw, count]) => ({ kw, count }))
 }
 
-export interface SinnerFilter {
+interface SinnerFilter {
   searchQuery: string
   selectedKeywords: ReadonlySet<string>
   sortOrder: 'newest' | 'oldest'

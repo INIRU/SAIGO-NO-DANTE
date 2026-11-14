@@ -16,7 +16,7 @@ export const DT = 1 / 60;
 // a particle's gravityModifier scales it
 const G = 120;
 
-export interface Particle {
+interface Particle {
   p: V3; // position: system local (local space) or world (world space)
   v: V3; // velocity, same space
   age: number;
@@ -336,7 +336,7 @@ function invDir(M: M4, v: V3): V3 {
 }
 
 /** Position and direction in the system's local space for the shape module. */
-export function shapeSample(sh: any, R: () => number): [V3, V3] {
+function shapeSample(sh: any, R: () => number): [V3, V3] {
   if (!sh || !sh.enabled) return [[0, 0, 0], [0, 0, 1]];
   const rad = sh.radius?.value ?? 1, thick = sh.radiusThickness ?? 1, arc = ((sh.arc?.value ?? 360) * Math.PI) / 180;
   const ang = (sh.angle ?? 0) * (Math.PI / 180), length = sh.length ?? 1;

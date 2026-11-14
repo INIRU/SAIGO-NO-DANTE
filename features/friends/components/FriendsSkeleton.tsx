@@ -5,7 +5,7 @@ import page from './FriendsSkeleton.module.css'
 import strips from './SupportStrips.module.css'
 
 /** Empty strips drawn with the real strip classes, so the row has the size the loaded one will have. */
-export function StripsSkeleton({ count = 12 }: { count?: number }) {
+function StripsSkeleton({ count = 12 }: { count?: number }) {
   return <div className={`${strips.strips} ${count < 12 ? strips.few : ''}`} aria-hidden="true">
     {Array.from({ length: count }, (_, index) => <div key={index} className={`${strips.strip} ${strips.empty}`}>
       <span className={strips.cut} />

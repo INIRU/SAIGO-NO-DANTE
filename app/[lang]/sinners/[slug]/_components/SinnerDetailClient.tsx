@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { AnimatePresence, useReducedMotion } from 'motion/react'
 import * as m from 'motion/react-m'
 import { Link } from '@/lib/i18n/navigation'
@@ -9,12 +9,11 @@ import { useRouter, usePathname } from '@/lib/i18n/navigation'
 import Image from 'next/image'
 import KeywordIcon from '@/components/ui/KeywordIcon'
 import { getKeywordIconUrl } from '@/lib/constants/keywords'
-import { Search, X, ArrowLeft, ArrowDown, ArrowUp } from 'lucide-react'
+import { Search, X, ArrowDown, ArrowUp } from 'lucide-react'
 import Dropdown from '@/components/ui/Dropdown'
 
 const DROPDOWN_BUTTON_STYLE = { minHeight: '2.5rem', background: '#120e09', borderColor: '#2e2417', fontFamily: 'var(--font-body)', fontSize: '0.8125rem' }
-import { Sinner, Identity, EGO, getSinnerProfileUrl, getSinnerLogoUrl, STORAGE_BASE, SIN_COLORS, type SinType, GRADE_COLORS, BLUR_PLACEHOLDER } from '@/lib/data/sinners'
-import { getBlurDataURL } from '@/lib/utils/thumbhash'
+import { Sinner, Identity, EGO, STORAGE_BASE, SIN_COLORS, type SinType, GRADE_COLORS } from '@/lib/data/sinners'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
 import { useOwnedIdentities } from '@/features/catalog/hooks/useOwnedIdentities'
 import IdentityCard from '@/features/catalog/components/IdentityCard'

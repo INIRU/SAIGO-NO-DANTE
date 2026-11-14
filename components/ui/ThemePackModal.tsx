@@ -198,7 +198,7 @@ interface ThemePackModalEmptyProps {
   children: ReactNode
 }
 
-export function ThemePackModalEmpty({ children }: ThemePackModalEmptyProps) {
+function ThemePackModalEmpty({ children }: ThemePackModalEmptyProps) {
   return (
     <div
       style={{

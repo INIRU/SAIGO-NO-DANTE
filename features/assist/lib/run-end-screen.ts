@@ -17,5 +17,5 @@ export const showsRunEndScreen = (text: string) => {
 
 export const RUN_END_SCENE = 'run_end'
 /** How long a read of that screen keeps it on after the capture it came from. */
-export const RUN_END_KEEP_MS = 4000
+const RUN_END_KEEP_MS = 4000
 export const onRunEndScreen = (readAt: number, now: number) => readAt > 0 && now - readAt < RUN_END_KEEP_MS

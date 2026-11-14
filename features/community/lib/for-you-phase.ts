@@ -1,4 +1,4 @@
-export type ForYouPhase = 'hidden' | 'choosing' | 'ready' | 'empty'
+type ForYouPhase = 'hidden' | 'choosing' | 'ready' | 'empty'
 
 /**
  * What the personal shelf of a board shows. Only a logged-in visitor with history on gets one; while the picks are on

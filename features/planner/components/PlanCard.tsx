@@ -41,7 +41,6 @@ function PlanCard({
   const t = useTranslations('planner.communityBoard.card')
   const difficultyT = useTranslations('planner.communityBoard.difficulty')
   const missing = useMissingSinners(Array.isArray(plan.deck) ? plan.deck.map(slot => ({ id: slot.identity_id, sinnerId: slot.sinner_id, slot_order: slot.slot_order })) : [])
-  const diffStyle = DIFFICULTY_STYLE[plan.difficulty]
   const username = plan.profiles?.username ?? guestAuthorName(plan.guest_tag, locale) ?? t('anonymous')
   const avatarUrl = plan.profiles?.avatar_url ?? DEFAULT_AVATAR_URL
   const preview = plan.description ? notePreviewText(plan.description) : ''

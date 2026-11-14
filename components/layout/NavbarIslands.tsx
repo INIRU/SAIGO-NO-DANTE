@@ -2,9 +2,7 @@
 
 import { Suspense, useEffect, useRef, useState } from 'react'
 import { ChevronDown } from 'lucide-react'
-import { useTranslations } from 'next-intl'
 import { usePathname } from '@/lib/i18n/navigation'
-import type { TranslationKey } from '@/lib/i18n/translations'
 import PathnameBoundary from './PathnameBoundary'
 import { NavLink, groupItem, isActiveHref, menuRow, panel, useNavGroups } from './nav-shared'
 

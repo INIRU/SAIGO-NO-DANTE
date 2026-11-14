@@ -1,7 +1,7 @@
 import { z } from "zod";
 import catalog from "@/lib/generated/lunacy-products.json";
 
-export type Product = {
+type Product = {
   id: string;
   name: { ko: string; en: string; ja: string };
   price: number;
@@ -15,13 +15,13 @@ export type Product = {
 };
 export const PRODUCTS = catalog as Product[];
 const DAY = 86_400_000;
-export function dateNumber(date: string) {
+function dateNumber(date: string) {
   return Date.parse(`${date}T00:00:00Z`);
 }
-export function addDays(date: string, days: number) {
+function addDays(date: string, days: number) {
   return new Date(dateNumber(date) + days * DAY).toISOString().slice(0, 10);
 }
-export function nextMonth(month: string) {
+function nextMonth(month: string) {
   const [year, m] = month.split("-").map(Number);
   return new Date(Date.UTC(year, m, 1)).toISOString().slice(0, 7);
 }
@@ -47,7 +47,7 @@ const dateSchema = z
   );
 const amount = z.number().int().min(0).max(10_000_000);
 const eventBase = { id: z.string().min(1).max(80), date: dateSchema };
-export const eventSchema = z.discriminatedUnion("kind", [
+const eventSchema = z.discriminatedUnion("kind", [
   z.object({
     ...eventBase,
     kind: z.literal("mirror"),
@@ -106,7 +106,7 @@ export function createPlan(month: string): Plan {
     events: [],
   };
 }
-export type Reward = {
+type Reward = {
   free: number;
   paid: number;
   cash: number;
@@ -121,13 +121,13 @@ export type Entry = Reward & {
   bonuses?: number;
   warning?: "weeklyCap" | "purchaseCap" | "membershipCap";
 };
-export type Day = Reward & {
+type Day = Reward & {
   date: string;
   entries: Entry[];
   balanceFree: number;
   balancePaid: number;
 };
-export type Month = Reward & {
+type Month = Reward & {
   month: string;
   balanceFree: number;
   balancePaid: number;

@@ -55,12 +55,6 @@ export const RARITY_ICON_MAP: Record<number, string> = {
   3: `${STORAGE_BASE}/icons/Rarity/3star.webp`,
 }
 
-export const RARITY_COLORS: Record<number, { border: string; glow: string }> = {
-  1: { border: '#a87340', glow: 'rgba(168,115,64,0.3)' },
-  2: { border: '#c83030', glow: 'rgba(200,48,48,0.3)' },
-  3: { border: '#c8900a', glow: 'rgba(200,144,10,0.4)' },
-}
-
 // ── 공격 타입 아이콘/라벨 ───────────────────────────────────────────────────
 export const ATK_TYPE_ICON_MAP: Record<string, string> = {
   slash:  `${STORAGE_BASE}/icons/stats/slash.webp`,
@@ -69,11 +63,6 @@ export const ATK_TYPE_ICON_MAP: Record<string, string> = {
   '참격': `${STORAGE_BASE}/icons/stats/slash.webp`,
   '관통': `${STORAGE_BASE}/icons/stats/pierce.webp`,
   '타격': `${STORAGE_BASE}/icons/stats/blunt.webp`,
-}
-
-export const SKILL_TYPE_LABELS: Record<string, string> = {
-  slash: '참격', pierce: '관통', blunt: '타격',
-  defense: '방어', counter: '반격', evade: '회피',
 }
 
 const DEFENSE_TYPES = new Set(['evade', 'defense', 'counter'])

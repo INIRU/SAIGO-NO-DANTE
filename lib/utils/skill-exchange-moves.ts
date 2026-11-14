@@ -6,7 +6,7 @@
 export type SkillCounts = [number, number, number]
 
 /** One kind of replacement the window offers (S1→S2, S2→S3 or S1→S3) and how many times to buy it. */
-export interface SkillExchangeMove { from: 1 | 2; to: 2 | 3; count: number }
+interface SkillExchangeMove { from: 1 | 2; to: 2 | 3; count: number }
 
 /**
  * Replacements from the current counts to the plan's: each one turns a lower skill copy into a higher one, so a target

@@ -2,12 +2,11 @@
 
 import { getIdentityPortraitUrl } from '@/lib/utils/images'
 import { useEffect, useState, useCallback, useRef, forwardRef } from 'react'
-import Image from 'next/image'
 import { useCollectionModel } from '@/features/tools/hooks/useCollectionModel'
 import { useSearchParams } from 'next/navigation'
 import { useLocale, useTranslations } from 'next-intl'
 import { useQueryState, parseAsString } from 'nuqs'
-import { STORAGE_BASE, GRADE_COLORS, SIN_COLORS, normalizeSin, type SinType } from '@/lib/data/sinners'
+import { STORAGE_BASE, SIN_COLORS, normalizeSin } from '@/lib/data/sinners'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
 import { Check, CheckSquare, Square, Link2, Download } from 'lucide-react'
 import DownloadModal from './DownloadModal'

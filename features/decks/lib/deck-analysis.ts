@@ -2,9 +2,9 @@ import { SIN_ORDER, normalizeSin } from '@/lib/constants/sin'
 import type { SinType } from '@/lib/types'
 
 export type SkillDistributionTuple = readonly [number, number, number]
-export const BASE_SKILL_DISTRIBUTION: SkillDistributionTuple = [3, 2, 1]
+const BASE_SKILL_DISTRIBUTION: SkillDistributionTuple = [3, 2, 1]
 
-export type AnalysisSkill = {
+type AnalysisSkill = {
   sin_affinity: string | null
   skill_type: string
   skill_order: number
@@ -13,7 +13,7 @@ export type AnalysisSkill = {
   variant_order?: number | null
 }
 
-export type AnalysisEgoSkill = {
+type AnalysisEgoSkill = {
   skill_type?: string | null
   atkType?: string | null
   attack_type?: string | null
@@ -26,7 +26,7 @@ export type AnalysisEgoSkill = {
 export const ATTACK_TYPES = ['slash', 'pierce', 'blunt'] as const
 export const DEFENSE_TYPES = ['evade', 'defense', 'counter'] as const
 export type AttackType = (typeof ATTACK_TYPES)[number]
-export type DefenseType = (typeof DEFENSE_TYPES)[number]
+type DefenseType = (typeof DEFENSE_TYPES)[number]
 
 const ATTACK_ALIASES: Record<string, AttackType> = {
   slash: 'slash', pierce: 'pierce', penetrate: 'pierce', blunt: 'blunt', hit: 'blunt',
@@ -87,7 +87,7 @@ export function computeSinProduction(entries: { skills: AnalysisSkill[]; distrib
 }
 
 /** One placed identity with its sinner's EGOs, as the deck and plan screens analyse it. */
-export type DeckAnalysisEntry = {
+type DeckAnalysisEntry = {
   skills: AnalysisSkill[]
   distribution?: SkillDistributionTuple | null
   /** The sinner's chosen EGOs: their skills (awakening and corrosion) and costs (SIN_ORDER order). */
@@ -96,7 +96,7 @@ export type DeckAnalysisEntry = {
   deployed?: boolean
 }
 
-export type AttackProfile = {
+type AttackProfile = {
   /** S1–S3 of each identity, each skill once. */
   skills: Record<AttackType, number>
   /** Defensive skills, one per identity skill. */

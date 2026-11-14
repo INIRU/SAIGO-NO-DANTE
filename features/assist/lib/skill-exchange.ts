@@ -1,8 +1,7 @@
 import { SINNER_SLUGS } from '@/lib/constants/game'
 import { translations } from '@/lib/i18n/translations'
-import { skillExchangeMoves, type SkillCounts, type SkillExchangeMove } from '@/lib/utils/skill-exchange-moves'
+import { skillExchangeMoves, type SkillCounts } from '@/lib/utils/skill-exchange-moves'
 
-export type { SkillCounts, SkillExchangeMove }
 export { skillExchangeMoves }
 
 /** Shop skill replacement window: the sinner in its title (1 = Yi Sang … 12 = Gregor) and the "스킬 보유 현황" counts. */
@@ -50,14 +49,3 @@ function oneEdit(a: string[], b: string[]): boolean {
   return edits + (a.length - i) + (b.length - j) === 1
 }
 
-/**
- * Cost of each replacement (mirrordungeon-08 shop `upgradePersonality`: fromSkill/toSkill are 0-based): S1->S2 45, S2->S3 75, S1->S3 120.
- * `detectingPrice` is the same replacement when the shop shows it as a detected offer: twice that.
- */
-export const SKILL_EXCHANGE_PRICES: Record<'1-2' | '2-3' | '1-3', number> = { '1-2': 45, '2-3': 75, '1-3': 120 }
-
-/** The replacement a read cost can be (45, 75 or 120, or double for a detected offer), or null for any other number (a misread). */
-export function skillExchangeFromPrice(price: number): '1-2' | '2-3' | '1-3' | null {
-  const base = Object.entries(SKILL_EXCHANGE_PRICES).find(([, value]) => value === price || value * 2 === price)
-  return (base?.[0] as '1-2' | '2-3' | '1-3' | undefined) ?? null
-}

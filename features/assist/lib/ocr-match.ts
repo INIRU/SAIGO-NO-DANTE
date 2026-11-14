@@ -12,14 +12,14 @@ export interface OcrWord {
 export interface OcrDocument { text: string; words: OcrWord[] }
 export interface OcrReference { id: string; texts: string[]; effectTexts?: string[] }
 /** `option`: the option the row belongs to (an option with several possible results has a row each, sharing text). */
-export interface OcrChoiceReference extends OcrReference { eventId: string; resultTexts?: string[]; option?: number }
+interface OcrChoiceReference extends OcrReference { eventId: string; resultTexts?: string[]; option?: number }
 export interface OcrCatalog {
   gifts: OcrReference[]
   events: OcrReference[]
   choices: OcrChoiceReference[]
 }
-export interface OcrMatch { id: string; score: number }
-export interface OcrChoiceMatch extends OcrMatch { eventId: string }
+interface OcrMatch { id: string; score: number }
+interface OcrChoiceMatch extends OcrMatch { eventId: string }
 export interface OcrMatches { gifts: OcrMatch[]; events: OcrMatch[]; choices: OcrChoiceMatch[] }
 
 const normalized = ocrNormalized

@@ -27,7 +27,7 @@ export type TeamCodeEgo = {
   game_id?: string | null
 }
 
-export type TeamCodeDecodeResult<TIdentity, TEgo> = {
+type TeamCodeDecodeResult<TIdentity, TEgo> = {
   deckSlots: Record<string, TIdentity | undefined>
   egoSlots: Record<string, Record<string, TEgo>>
   formationOrder: string[]
@@ -92,7 +92,7 @@ function writeBits(bits: string[], start: number, length: number, value: number)
   for (let i = 0; i < length; i++) bits[start + i] = encoded[i]
 }
 
-export function getTeamCodeLocalId(gameId: string | number | null | undefined): number | null {
+function getTeamCodeLocalId(gameId: string | number | null | undefined): number | null {
   if (gameId == null) return null
   const raw = String(gameId).trim()
   if (raw.length <= 3) return null

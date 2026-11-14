@@ -48,7 +48,7 @@ export function getFinalGiftVariantIds(gameId: number): string[] {
 }
 
 /** 달의 기억 is fused from any of its fragments, which the run keeps: its ingredients never leave the final set. */
-export const KEPT_INGREDIENTS_RESULT = '달의 기억'
+const KEPT_INGREDIENTS_RESULT = '달의 기억'
 
 /**
  * Gifts consumed by fusing the selected fixed-recipe results: every ingredient of every recipe variant, through nested
@@ -267,8 +267,8 @@ function heldIngredientKeys(recipe: RecipeData, inventory: readonly string[], id
  * `bNeed` out of group B make the result, whichever ones. There is one: 달의 기억 (9083) from 2 of the 7 first-tier
  * fragments (9105...9136) and 3 of the 3 second-tier ones (9142, 9147, 9152). Not in ego_gift_recipes.
  */
-export interface MixedRecipe { aIds: readonly number[]; aNeed: number; bIds: readonly number[]; bNeed: number; resultId: number }
-export const MIXED_RECIPES: readonly MixedRecipe[] = [
+interface MixedRecipe { aIds: readonly number[]; aNeed: number; bIds: readonly number[]; bNeed: number; resultId: number }
+const MIXED_RECIPES: readonly MixedRecipe[] = [
   { aIds: [9105, 9110, 9116, 9121, 9126, 9131, 9136], aNeed: 2, bIds: [9142, 9147, 9152], bNeed: 3, resultId: 9083 },
 ]
 

@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState, useRef } from 'react'
-import { Node, Extension, type Editor, type JSONContent } from '@tiptap/core'
+import { Node, Extension, type Editor } from '@tiptap/core'
 import { NodeViewWrapper, NodeViewContent, ReactNodeViewRenderer, type NodeViewProps } from '@tiptap/react'
 import { Plugin, PluginKey } from '@tiptap/pm/state'
 import { Table, TableRow, TableCell, TableHeader } from '@tiptap/extension-table'
@@ -55,7 +55,7 @@ function AssetPicker(props: {kind:AssetKind;onSelect:(asset:NoteAssetData)=>void
  * Swaps a block with its previous (-1) or next (+1) sibling. Touch screens cannot drag atom nodes reliably (a failed
  * drop removed the block), so blocks move with buttons.
  */
-export function moveNoteBlock(editor:Editor,getPos:NodeViewProps['getPos'],direction:-1|1) {
+function moveNoteBlock(editor:Editor,getPos:NodeViewProps['getPos'],direction:-1|1) {
   const pos=getPos()
   if (typeof pos!=='number') return
   const tr=moveBlockAtTr(editor.state,pos,direction)
@@ -112,7 +112,7 @@ function MentionInlineNodeView({node}:NodeViewProps) {
   return <NodeViewWrapper as="span" className="note-mention-node" contentEditable={false}><NoteMentionLabel kind={node.attrs.kind} id={node.attrs.id} name={node.attrs.name} linked={false}/></NodeViewWrapper>
 }
 /** An identity or E.G.O named inside a sentence (typed with @). Stores the name too for plain text and search. */
-export const NoteMention = Node.create({name:'noteMention',group:'inline',inline:true,atom:true,
+const NoteMention = Node.create({name:'noteMention',group:'inline',inline:true,atom:true,
   addAttributes(){return {kind:{default:'identity'},id:{default:''},name:{default:''}}},
   parseHTML(){return [{tag:'span[data-note-mention]',getAttrs:el=>{const kind=el.getAttribute('data-note-mention'),id=(el.getAttribute('data-mention-id') ?? '').slice(0,150);return isMentionKind(kind)&&id?{kind,id,name:(el.textContent ?? '').slice(0,100)}:false}}]},
   renderHTML({node}){return ['span',{'data-note-mention':node.attrs.kind,'data-mention-id':node.attrs.id},node.attrs.name]},
@@ -120,14 +120,14 @@ export const NoteMention = Node.create({name:'noteMention',group:'inline',inline
   addNodeView(){return ReactNodeViewRenderer(MentionInlineNodeView)},
 })
 /** A gift inside a sentence, like a keyword: small art and its name. Stores the name too for plain text and search. */
-export const NoteGift = Node.create({name:'noteGift',group:'inline',inline:true,atom:true,
+const NoteGift = Node.create({name:'noteGift',group:'inline',inline:true,atom:true,
   addAttributes(){return {id:{default:''},name:{default:''}}},
   parseHTML(){return [{tag:'span[data-note-gift]',getAttrs:el=>({id:(el.getAttribute('data-note-gift') ?? '').slice(0,150),name:(el.textContent ?? '').slice(0,100)})}]},
   renderHTML({node}){return ['span',{'data-note-gift':node.attrs.id},node.attrs.name]},
   renderText({node}){return node.attrs.name},
   addNodeView(){return ReactNodeViewRenderer(GiftInlineNodeView)},
 })
-export const NoteKeyword = Node.create({name:'noteKeyword',group:'inline',inline:true,atom:true,
+const NoteKeyword = Node.create({name:'noteKeyword',group:'inline',inline:true,atom:true,
   addAttributes(){return {id:{default:''}}},
   parseHTML(){return [{tag:'span[data-note-keyword]',getAttrs:el=>({id:(el.getAttribute('data-note-keyword') ?? '').slice(0,150)})}]},
   renderHTML({node}){return ['span',{'data-note-keyword':node.attrs.id},node.attrs.id]},
@@ -152,7 +152,7 @@ function VideoNodeView({node,updateAttributes,deleteNode}:NodeViewProps) {
   </NodeViewWrapper>
 }
 /** Kind names of a callout; the head above the text shows it (and, in the editor, switches it). */
-export const calloutLabel=(variant:string,lang:string)=>variant==='warning'?tr(lang,'주의','注意','Warning'):tr(lang,'팁','ヒント','Tip')
+const calloutLabel=(variant:string,lang:string)=>variant==='warning'?tr(lang,'주의','注意','Warning'):tr(lang,'팁','ヒント','Tip')
 function CalloutNodeView({node,updateAttributes,deleteNode}:NodeViewProps) {
   const lang=useLocale(), variant=node.attrs.variant==='warning'?'warning':'tip'
   return <NodeViewWrapper as="aside" className="note-callout" data-variant={variant}>
@@ -174,24 +174,24 @@ function CardNodeView({node,updateAttributes,deleteNode,selected,editor,getPos}:
     {picking && <NoteCardPicker kind={kind} onKind={k=>updateAttributes({kind:k})} onClose={()=>setPicking(false)} onSelect={(k,cardId)=>{updateAttributes({kind:k,id:cardId});setPicking(false)}}/>}
   </NodeViewWrapper>
 }
-export const NoteCallout = Node.create({name:'noteCallout',group:'block',content:'block+',defining:true,isolating:true,
+const NoteCallout = Node.create({name:'noteCallout',group:'block',content:'block+',defining:true,isolating:true,
   addAttributes(){return {variant:{default:'tip'}}},
   parseHTML(){return [{tag:'aside[data-note-callout]',getAttrs:el=>({variant:CALLOUT_VARIANTS.find(v=>v===el.getAttribute('data-note-callout')) ?? 'tip'})}]},
   renderHTML({node}){return ['aside',{'data-note-callout':node.attrs.variant},0]},
   addNodeView(){return ReactNodeViewRenderer(CalloutNodeView)},
 })
-export const NoteCard = Node.create({name:'noteCard',group:'block',atom:true,draggable:true,
+const NoteCard = Node.create({name:'noteCard',group:'block',atom:true,draggable:true,
   addAttributes(){return {kind:{default:'deck'},id:{default:''}}},
   parseHTML(){return [{tag:'div[data-note-card]',getAttrs:el=>{const kind=el.getAttribute('data-note-card') as NoteCardKind,id=el.getAttribute('data-card-id') ?? '';return CARD_KINDS.includes(kind)&&(!id||CARD_ID.test(id))?{kind,id}:false}}]},
   renderHTML({node}){return ['div',{'data-note-card':node.attrs.kind,'data-card-id':node.attrs.id}]},
   addNodeView(){return ReactNodeViewRenderer(CardNodeView)},
 })
-export function insertNoteBlock(editor:Editor,kind:BlockKind,range?:{from:number;to:number}) {
+function insertNoteBlock(editor:Editor,kind:BlockKind,range?:{from:number;to:number}) {
   const chain=editor.chain().focus()
   if(range)chain.deleteRange(range)
   chain.insertContent(kind==='keyword' ? [newBlock(kind),{type:'text',text:' '}] : [newBlock(kind),{type:'paragraph'}]).run()
 }
-export const NoteAsset = Node.create({name:'noteAsset',group:'block',atom:true,draggable:true,
+const NoteAsset = Node.create({name:'noteAsset',group:'block',atom:true,draggable:true,
   addAttributes(){return {kind:{default:'gift'},id:{default:''}}},
   parseHTML(){return [{tag:'div[data-note-asset]',getAttrs:el=>{const kind=el.getAttribute('data-note-asset'),id=el.getAttribute('data-asset-id') ?? '';return isAssetKind(kind)&&id.length<=150?{kind,id}:false}}]}, renderHTML({node}){return ['div',{'data-note-asset':node.attrs.kind,'data-asset-id':node.attrs.id}]},
   // The wrapper carries the kind so phone widths can size it (a percentage on the card itself resolves against it).
@@ -201,17 +201,17 @@ export const NoteAccordion = Node.create({name:'noteAccordion',group:'block',con
   addAttributes(){return {collapsed:{default:false,parseHTML:(el:HTMLElement)=>el.getAttribute('data-collapsed')==='true',renderHTML:(attrs:Record<string,unknown>)=>attrs.collapsed===true?{'data-collapsed':'true'}:{}}}},
   parseHTML(){return [{tag:'section[data-note-accordion]'}]},renderHTML({HTMLAttributes}){return ['section',{...HTMLAttributes,'data-note-accordion':''},0]},addNodeView(){return ReactNodeViewRenderer(AccordionNodeView)},
 })
-export const NoteTitle = Node.create({name:'noteTitle',content:'inline*',defining:true,
+const NoteTitle = Node.create({name:'noteTitle',content:'inline*',defining:true,
   parseHTML(){return [{tag:'div[data-note-title]'}]},renderHTML(){return ['div',{'data-note-title':''},0]},
   addKeyboardShortcuts(){return {Enter:()=>{const {$from}=this.editor.state.selection;if($from.parent.type.name!=='noteTitle')return false;return this.editor.commands.setTextSelection($from.after()+2)}}},
 })
-export const NoteBody = Node.create({name:'noteBody',content:'block+',defining:true,
+const NoteBody = Node.create({name:'noteBody',content:'block+',defining:true,
   parseHTML(){return [{tag:'div[data-note-body]'}]},renderHTML(){return ['div',{'data-note-body':''},0]},
 })
-export const NoteVideoNode = Node.create({name:'noteVideo',group:'block',atom:true,draggable:true,
+const NoteVideoNode = Node.create({name:'noteVideo',group:'block',atom:true,draggable:true,
   addAttributes(){return {videoId:{default:''}}},parseHTML(){return [{tag:'div[data-note-video]',getAttrs:el=>{const videoId=el.getAttribute('data-note-video') ?? '';return /^[\w-]{11}$/.test(videoId)?{videoId}:false}}]},renderHTML({node}){return ['div',{'data-note-video':node.attrs.videoId}]},addNodeView(){return ReactNodeViewRenderer(VideoNodeView)},
 })
-export const NoteUpload = Node.create({name:'noteUpload',group:'block',atom:true,
+const NoteUpload = Node.create({name:'noteUpload',group:'block',atom:true,
   addAttributes(){return {id:{default:''}}},renderHTML(){return ['div',{'class':'note-upload','role':'status'},'↑ …']},
 })
 export async function uploadNoteFiles(editor:Editor,files:File[],lang:string,position?:number) {

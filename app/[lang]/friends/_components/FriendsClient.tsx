@@ -9,7 +9,7 @@ import SupportStrips, { sinnerNumber, type SupportSlot } from '@/features/friend
 import SupportSlotPicker from '@/features/friends/components/SupportSlotPicker'
 import FriendGuide from '@/features/friends/components/FriendGuide'
 import SupportSlotDetail from '@/features/friends/components/SupportSlotDetail'
-import { KINDS, readOwnCode, rememberOwnCode, useFriendApi, useFriendCatalog, type Kind, type Post } from '@/features/friends/hooks/useFriendBoard'
+import { KINDS, readOwnCode, rememberOwnCode, useFriendApi, useFriendCatalog, type Post } from '@/features/friends/hooks/useFriendBoard'
 import { PostsSkeleton } from '@/features/friends/components/FriendsSkeleton'
 import { FRIEND_CODE_RE, WANT_LIMIT } from '@/features/friends'
 import BaseModal from '@/components/ui/BaseModal'

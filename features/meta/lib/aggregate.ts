@@ -11,7 +11,7 @@ const USAGE_BY_CONTENT_TYPE: Record<string, MetaUsage> = {
   '거굴철': 'refractionRailway', '사영 전투': 'reflectrial',
 }
 
-export function metaPostUsage(post: Pick<MetaPost, 'source' | 'content_type'>): MetaUsage {
+function metaPostUsage(post: Pick<MetaPost, 'source' | 'content_type'>): MetaUsage {
   return post.source === 'planner' ? 'mirrorDungeon' : USAGE_BY_CONTENT_TYPE[post.content_type ?? ''] ?? 'none'
 }
 

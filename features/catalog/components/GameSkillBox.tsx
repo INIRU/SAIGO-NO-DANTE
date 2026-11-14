@@ -20,7 +20,7 @@ const COIN_URL: Record<string, string> = {
   GREY: getSkillFrameAssetUrl('coin-grey'), GREEN: getSkillFrameAssetUrl('coin-green'), PURPLE: getSkillFrameAssetUrl('coin-purple'),
 }
 
-export interface GameSkillBoxCoin {
+interface GameSkillBoxCoin {
   unbreakable?: boolean
   /** The game's coin colour (GREY, GREEN, PURPLE); gold otherwise */
   color?: string | null
@@ -28,7 +28,7 @@ export interface GameSkillBoxCoin {
   label?: string
 }
 
-export interface GameSkillBoxProps extends Omit<GameSkillIconProps, 'size' | 'className'> {
+interface GameSkillBoxProps extends Omit<GameSkillIconProps, 'size' | 'className'> {
   name: string
   /** slash / pierce / blunt / evade / defense / counter: picks the level icon */
   skillType: string

@@ -1,8 +1,8 @@
 import type { ComponentProps } from 'react'
 import { Loader2, type LucideIcon } from 'lucide-react'
 
-export type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger' | 'dangerSolid'
-export type ButtonSize = 'sm' | 'md'
+type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger' | 'dangerSolid'
+type ButtonSize = 'sm' | 'md'
 
 const BASE = 'inline-flex shrink-0 select-none items-center justify-center gap-2 whitespace-nowrap rounded-[var(--radius-lg)] border font-semibold '
   + 'transition-[transform,background-color,border-color,color,opacity] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] '

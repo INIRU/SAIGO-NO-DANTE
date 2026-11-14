@@ -3,7 +3,7 @@ import type { SinType } from '@/lib/types'
 /** Cards per sin in one identity's skill deck (what `computeSinProduction` returns for that identity alone). */
 export type SinWeights = Partial<Record<SinType, number>>
 export type ActivationKind = 'stock' | 'resonance'
-export type ActivationLevel = 'easy' | 'medium' | 'hard' | 'impossible'
+type ActivationLevel = 'easy' | 'medium' | 'hard' | 'impossible'
 export type ActivationRequirement = { sin: SinType; count: number }
 
 export type PassiveActivation = {
@@ -20,16 +20,16 @@ export const MAX_SLOTS = 12
 export const STOCK_MAX_TURNS = 10
 export const RESONANCE_TURNS = 6
 /** Stock: at most this many turns is easy / medium. Resonance: at least this chance is easy / medium. */
-export const STOCK_EASY_TURNS = 2
-export const STOCK_MEDIUM_TURNS = 4
-export const RESONANCE_EASY_CHANCE = 0.6
-export const RESONANCE_MEDIUM_CHANCE = 0.25
+const STOCK_EASY_TURNS = 2
+const STOCK_MEDIUM_TURNS = 4
+const RESONANCE_EASY_CHANCE = 0.6
+const RESONANCE_MEDIUM_CHANCE = 0.25
 
 /** Listing order: the hardest first. */
 export const ACTIVATION_ORDER: Record<ActivationLevel, number> = { impossible: 0, hard: 1, medium: 2, easy: 3 }
 
 /** Per-slot chance of each required sin (the rest of the deck makes some other sin). */
-export type Slot = number[]
+type Slot = number[]
 
 /**
  * Slots of a turn: a fight starts with one column per fielded identity and one more column a turn (random identity), up to 12.

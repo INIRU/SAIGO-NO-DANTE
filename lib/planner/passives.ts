@@ -22,7 +22,7 @@ export interface PlannerPassiveLike {
   passive_order?: number | null
 }
 
-export type PassiveSinRequirement = { sin: string; count: number }
+type PassiveSinRequirement = { sin: string; count: number }
 export type PassiveRequirement = { sin: SinType; count: number }
 
 export interface PlannerPassiveSinnerLike {

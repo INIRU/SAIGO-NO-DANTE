@@ -12,12 +12,12 @@ const DECK_MAIN_KEYWORD_ORDER = new Map<string, number>(
 export const KEYWORD_DECK_KEYWORDS = ['화상', '파열', '침잠', '호흡', '진동', '충전', '출혈'] as const
 const STATUS_KEYWORDS = new Set<string>(KEYWORD_DECK_KEYWORDS)
 
-export type DeckKeywordSkill = {
+type DeckKeywordSkill = {
   atk_type?: string | null
   skill_type?: string | null
 }
 
-export type DeckKeywordIdentity = {
+type DeckKeywordIdentity = {
   keywords?: string[] | null
   skill_keyword_list?: string[] | null
   affiliation?: string | null
@@ -33,7 +33,7 @@ export type DeckKeywordSlot = {
   identities?: DeckKeywordIdentity | DeckKeywordIdentity[] | null
 }
 
-export type DeckKeywordCounts = {
+type DeckKeywordCounts = {
   formationCount: number
   counts: Record<string, number>
 }
@@ -65,11 +65,11 @@ export function parseDeckMainKeywordsInput(value: unknown): { value: string[] } 
   return { value: keywords }
 }
 
-export function isFormationKeywordSlot(slotOrder: number | null | undefined): boolean {
+function isFormationKeywordSlot(slotOrder: number | null | undefined): boolean {
   return isDeployedSlot(slotOrder)
 }
 
-export function isAssignedKeywordSlot(slotOrder: number | null | undefined): boolean {
+function isAssignedKeywordSlot(slotOrder: number | null | undefined): boolean {
   return typeof slotOrder === 'number' && slotOrder >= 0 && slotOrder < 99
 }
 
@@ -111,7 +111,7 @@ export function computeDeckKeywordCounts(slots: readonly DeckKeywordSlot[]): Dec
 }
 
 /** Players call a formation a keyword deck once five deployed identities share that status keyword. */
-export const KEYWORD_DECK_MIN_IDENTITIES = 5
+const KEYWORD_DECK_MIN_IDENTITIES = 5
 
 /** Keywords that make this formation a keyword deck, in DECK_MAIN_KEYWORDS order. Empty = mixed. */
 export function computeKeywordDeckCombo(slots: readonly DeckKeywordSlot[]): string[] {

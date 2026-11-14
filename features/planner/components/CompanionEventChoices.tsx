@@ -42,7 +42,7 @@ function TargetLabel({ target, condition, t, ts }: { target: string; condition?:
 }
 
 /** Structured DB effects only; no narration or inferred clicked choice. */
-export function summarizeChoiceEffects(effects: ChoiceEffect[] | null, lang: SupportedLang): BranchSummary {
+export function summarizeChoiceEffects(effects: ChoiceEffect[] | null, _lang: SupportedLang): BranchSummary {
   const lines: string[] = []
   const gifts = new Map<number, boolean>()
   for (const effect of effects ?? []) {

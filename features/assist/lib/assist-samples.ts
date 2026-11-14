@@ -14,12 +14,12 @@ export const SAMPLES_STORAGE_KEY = 'limbus-assist-samples-v3'
 /** The consent text a sample was sent under, in its metadata. Samples without it were promised deletion after 180 days. */
 export const SAMPLE_CONSENT = 3
 export const SAMPLE_KEEP_MS = 180 * 86_400_000
-export const SAMPLES_DAILY_KEY = 'limbus-assist-samples-daily'
-export const SAMPLE_REASONS = ['popup-unresolved', 'fusion-materials', 'fusion-dialogless', 'sale-unresolved'] as const
-export type SampleReason = typeof SAMPLE_REASONS[number]
+const SAMPLES_DAILY_KEY = 'limbus-assist-samples-daily'
+const SAMPLE_REASONS = ['popup-unresolved', 'fusion-materials', 'fusion-dialogless', 'sale-unresolved'] as const
+type SampleReason = typeof SAMPLE_REASONS[number]
 /** Frames kept per group (latest first) plus the frames after it. */
-export const SAMPLE_GROUP_FRAMES = 45
-export const SAMPLE_AFTER_FRAMES = 3
+const SAMPLE_GROUP_FRAMES = 45
+const SAMPLE_AFTER_FRAMES = 3
 export const SAMPLE_MAX_FRAMES = SAMPLE_GROUP_FRAMES + SAMPLE_AFTER_FRAMES
 export const SAMPLE_MAX_FRAME_BYTES = 400 * 1024
 export const SAMPLE_BUCKET = 'assist-samples'
@@ -135,10 +135,10 @@ export function parseSampleMeta(raw: unknown): SampleMeta | null {
   }
 }
 
-export type SampleContext = Omit<SampleMeta, 'reason' | 'width' | 'height' | 'candidates' | 'clientAt' | 'consent' | 'diagnosis'>
+type SampleContext = Omit<SampleMeta, 'reason' | 'width' | 'height' | 'candidates' | 'clientAt' | 'consent' | 'diagnosis'>
 
 /** Grayscale thumbnail used only to tell whether the screen changed. */
-export function frameThumb(pixels: Uint8ClampedArray): Uint8Array {
+function frameThumb(pixels: Uint8ClampedArray): Uint8Array {
   const out = new Uint8Array(pixels.length / 4)
   for (let i = 0; i < out.length; i++) out[i] = (pixels[i * 4] * 77 + pixels[i * 4 + 1] * 150 + pixels[i * 4 + 2] * 29) >> 8
   return out

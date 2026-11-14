@@ -6,7 +6,7 @@ import { maxObserved, observationCost, type Observation } from '@/features/plann
 import { getGameUiAsset } from '@/lib/utils/game-ui'
 import { useCallback, useMemo, useState, type CSSProperties } from 'react'
 import Image from 'next/image'
-import { useLocale, useTranslations } from 'next-intl'
+import { useTranslations } from 'next-intl'
 import type { PlannerState, PlannerAction, GiftData } from '@/lib/planner/types'
 import { START_GIFT_IDS } from '@/features/planner/lib/start-gifts'
 import {
@@ -31,15 +31,9 @@ interface Props {
 
 // ── Main component ───────────────────────────────────────────────────────────
 export default function GiftPlanTab({ state, dispatch, gifts, giftMap, observation }: Props) {
-  const locale = useLocale()
   const t = useTranslations('planner.giftTab')
   const tFloor = useTranslations('planner.floorTab')
   const [subTab, setSubTab] = useState<GiftSubTab>('observe')
-  const getGiftDisplayName = (gift: GiftData) => locale === 'en'
-    ? gift.name_en || gift.name
-    : locale === 'ja'
-      ? gift.name_jp || gift.name
-      : gift.name
 
   // Parse selected IDs by prefix. 관찰 목록은 observe_ 항목이 바뀔 때만 새로 만든다(최종 기프트를 눌러도 관찰 격자를 다시 그리지 않게)
   const observeKey = state.giftInventory.filter(id => id.startsWith('observe_')).join()

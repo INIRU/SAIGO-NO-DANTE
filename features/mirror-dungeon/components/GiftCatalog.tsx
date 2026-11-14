@@ -202,7 +202,7 @@ export interface GiftCatalogCardProps {
   onRemove?: () => void
 }
 
-export interface GiftCatalogProps {
+interface GiftCatalogProps {
   gifts: EgoGift[]
   themes?: EgoGiftTheme[]
   getGiftKeywordIcon: (keyword: string) => string | null

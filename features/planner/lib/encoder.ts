@@ -1,4 +1,4 @@
-import { deleteTempSlot, loadTempSlots, saveTempSlot, type TempDraft, type TempSlot } from '@/lib/drafts/temp-slots'
+import { deleteTempSlot, loadTempSlots, saveTempSlot, type TempSlot } from '@/lib/drafts/temp-slots'
 import { createInitialState, getIdentitySkillDistribution, normalizePlannerThemeId, normalizeSkillDistribution, type PlannerState, type Difficulty, type SkillDistribution, type IdentityData, type EgoData } from '@/lib/planner/types'
 import { getLegacyPlanFloorDifficulty, isFloorDifficulty } from '@/lib/planner/floor-difficulty'
 import type { RunState } from './run-types'
@@ -112,7 +112,7 @@ export async function decodePlan(encoded: string): Promise<{
   }
 }
 
-export type DecodedPlan = Awaited<ReturnType<typeof decodePlan>>
+type DecodedPlan = Awaited<ReturnType<typeof decodePlan>>
 
 export function decodedPlanToPlannerState(decoded: DecodedPlan, identities: IdentityData[], egos: EgoData[]): PlannerState {
   const initial = createInitialState(decoded.difficulty)
@@ -206,7 +206,6 @@ export function runStateToPlannerState(run: RunState): PlannerState {
 // localStorage 키
 const PLANNER_HANDOFF_KEY = 'md-planner-handoff'
 const PLANNER_TEMP_DRAFTS_KEY = 'md-planner-temp-drafts'
-export type PlannerTempDraft = TempDraft<PlannerState>
 export type PlannerTempSlot = TempSlot<PlannerState>
 
 export function snapshotPlannerState(state: PlannerState): PlannerState {
@@ -366,7 +365,7 @@ export function saveRunToHistory(state: RunState): boolean {
   } catch { return false }
 }
 
-export function loadRunHistory(): RunDraft[] {
+function loadRunHistory(): RunDraft[] {
   try {
     const parsed: unknown = JSON.parse(localStorage.getItem(RUN_HISTORY_KEY) ?? '[]')
     if (!Array.isArray(parsed)) return []

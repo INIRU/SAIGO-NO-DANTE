@@ -4,7 +4,7 @@ import { MAINTENANCE_EDGE_KEY, type MaintenanceEntry } from '@/lib/maintenance'
 
 const VERCEL_TEAM_ID = 'team_RxyMN3TspcaLiqajgbZ1YBuQ'
 
-export type EdgeSync = 'synced' | 'unconfigured' | 'failed'
+type EdgeSync = 'synced' | 'unconfigured' | 'failed'
 
 /** Copies every active window from Supabase to Edge Config so the proxy sees changes within seconds. */
 export async function syncMaintenanceToEdge(): Promise<EdgeSync> {

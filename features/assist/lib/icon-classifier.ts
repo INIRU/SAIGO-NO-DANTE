@@ -11,7 +11,7 @@ export const ICON_INPUT = 96
 /** Crop side relative to the slot region, as in training. */
 export const ICON_CROP = 1.3
 /** The label of an empty slot and of the five vestiges, one class each (the app never tells vestiges apart). */
-export const BLANK_LABEL = 'blank'
+const BLANK_LABEL = 'blank'
 const VESTIGE_LABEL = '9991'
 /**
  * Logit scale before the softmax. Label smoothing keeps the trained probabilities low (median 0.90 on 887 labelled real

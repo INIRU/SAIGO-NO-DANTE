@@ -46,7 +46,7 @@ export function pickPipMode(context: PipModeContext): PipMode {
  * How roomy the window is. compact: narrow or short (one column of sections, smaller icons); wide: room for two
  * columns side by side (at least 560 wide and 1.25 times as wide as tall); regular otherwise.
  */
-export type PipDensity = 'compact' | 'regular' | 'wide'
+type PipDensity = 'compact' | 'regular' | 'wide'
 export function pipDensity(width: number, height: number): PipDensity {
   if (width < 360 || height < 340) return 'compact'
   if (width >= 560 && width >= height * 1.25) return 'wide'
@@ -58,14 +58,14 @@ export function pipDensity(width: number, height: number): PipDensity {
  * memo keeps two lines and tips draw small; wide: the memo and tips go in a left column beside the gift list (2:3), so
  * nothing above the list pushes it down; regular: one column. `hasSide`: there is a memo or a tip to put aside.
  */
-export interface FloorLayout { side: boolean; memoLines: number; compactTips: boolean; cell: { min: number; max: number } }
+interface FloorLayout { side: boolean; memoLines: number; compactTips: boolean; cell: { min: number; max: number } }
 export function floorLayout(density: PipDensity, hasSide: boolean): FloorLayout {
   if (density === 'compact') return { side: false, memoLines: 2, compactTips: true, cell: { min: 46, max: 60 } }
   if (density === 'wide' && hasSide) return { side: true, memoLines: 8, compactTips: false, cell: { min: 52, max: 72 } }
   return { side: false, memoLines: 3, compactTips: false, cell: { min: 52, max: 72 } }
 }
 
-export interface GridFit { columns: number; size: number }
+interface GridFit { columns: number; size: number }
 
 /**
  * Icon size and columns for `count` icons in a box `width` wide. With a `height` the whole set must fit, so the largest

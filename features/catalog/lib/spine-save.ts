@@ -7,7 +7,7 @@ const GIF_FRAMES = 150
 const VIDEO_FPS = 30
 const VIDEO_SECONDS = 20
 
-export interface Recording {
+interface Recording {
   /** The live stage. Null once its viewer has closed, which stops the recording. */
   stage: () => SpineStageHandle | null
   /** What stands behind a transparent figure. Null keeps a GIF transparent; a video cannot be and gets black. */

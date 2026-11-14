@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { VisualCandidates, VisualReference } from '@/features/assist/lib/embedding-match'
-import { corroboratedChoiceEvent, effectGiftIds, eventScreenEvidence, matchOcrCandidates, type EventScreenEvidence, type OcrCatalog, type OcrMatches,
+import { effectGiftIds, eventScreenEvidence, matchOcrCandidates, type OcrCatalog,
   type OcrWord } from '@/features/assist/lib/ocr-match'
 import { acquiredGiftFromPopup, acquisitionFloor, AUTO_ACQUIRE_EXCLUDED_GIFT_IDS, popupCandidateIds, popupHeaderEvidence, popupPurchaseHeader, showsAcquiredHeader, type PopupLabelRead } from '@/features/assist/lib/popup-evidence'
 import type { RecipePopupEvidence } from '@/lib/planner/fusion'
@@ -27,22 +27,22 @@ import { BONUS_PLACES, bonusCardThemes, offerKey, type ClearBonusCard, type Clea
 import { onRunEndScreen, RUN_END_SCENE, showsRunEndScreen } from '@/features/assist/lib/run-end-screen'
 import { isVerbose, plog } from '@/features/assist/lib/assist-log'
 import { parseFusionSlots, WHEEL_FRAMES, WHEEL_KEEP_MS, WHEEL_CROP_WIDTH, WHEEL_AFTER_DIALOG_MS, WHEEL_BEFORE_DIALOG_MS, wheelReadOrder, DIALOGLESS_WHEEL_MS, CAPACITY_KEEP_MS, wheelSignature, showsWheel, resultBoxBand, sameAnchors, FUSION_HOLD_MS, SCREEN_HOLD_MS, OCR_READ_FAILURES, SCENE_READ_FAILURES, OCR_REBUILD_MS, OCR_STABLE_MS, ocrRebuildsAfterRead, ocrErrorAction, parseShopShelf, mobileBlocked, gpuBlocked, canCapture, validMatches, runFrameTask, type WheelFrame, type PopupAcquisition, type GiftSale, type SkillExchangeView, type FloorThemeObservation, type PopupFrame, type PopupPending, type OpenFrame, type FrameTask } from '@/features/assist/lib/capture-helpers'
-export { OCR_READ_FAILURES, SCENE_READ_FAILURES, OCR_REBUILD_MS, OCR_STABLE_MS, ocrRebuildsAfterRead, ocrErrorAction, runFrameTask }
-export type { PopupAcquisition, GiftSale, SkillExchangeView, FloorThemeObservation }
+export { OCR_READ_FAILURES, OCR_REBUILD_MS, OCR_STABLE_MS, ocrRebuildsAfterRead, ocrErrorAction, runFrameTask }
+export type { PopupAcquisition, GiftSale, FloorThemeObservation }
 import { captureEvidence, named, noteShopDialog, screenTags, type CaptureStatus, type OcrCandidates, type ShopDialog } from '@/features/assist/lib/capture-evidence'
 export { captureEvidence, noteShopDialog, screenTags }
-export type { OcrCandidates, ShopDialog }
+export type { OcrCandidates }
 import { confirmsExploration, explorationFloor, explorationThemeReads, themeSelectionHeaderFloor, type ExplorationObservation,
   type ExplorationThemeReference } from '@/features/assist/lib/exploration-match'
 import { acquisitionPlate, darkPopupPlate, detectGiftPopupLabel, popupCaptureAction, popupIconSignature, popupLabelColor, popupPriority, popupQuality, POPUP_SETTLE_MS, samePopupEpisode, type PopupObservation } from '@/features/assist/lib/popup-detect'
 
-export interface ScenePrediction { label: string; confidence: number }
+interface ScenePrediction { label: string; confidence: number }
 type OcrStatus = 'idle' | 'loading' | 'running' | 'error'
 /** Worker jobs running now, and queued popup frames counted once per frame (text and image copies listed separately). */
-export interface CaptureQueueStatus { analyzing: number; frames: number; text: number; image: number }
+interface CaptureQueueStatus { analyzing: number; frames: number; text: number; image: number }
 const IDLE_QUEUE: CaptureQueueStatus = { analyzing: 0, frames: 0, text: 0, image: 0 }
 /** Text reader actually serving capture: GPU PP-OCR once loaded, otherwise Tesseract (also while PP-OCR loads). */
-export interface OcrEngineStatus { engine: 'paddle' | 'tesseract'; adapter: string; loading: boolean; reason?: string }
+interface OcrEngineStatus { engine: 'paddle' | 'tesseract'; adapter: string; loading: boolean; reason?: string }
 /** `failures`: reads in a row the worker answered with an error (a failed frame, not a dead worker). */
 /** `since`: when its current read was sent (a read never answered is given up after OCR_WATCHDOG_MS). */
 interface OcrLane { worker: Worker; ready: boolean; inFlight: boolean; activeRequest: number; engine: OcrEngineStatus | null; failures: number; since: number }

@@ -25,7 +25,7 @@ const localizedName = (item: Named, lang: SupportedLang) =>
   (lang === 'en' ? item.name_en : lang === 'ja' ? item.name_jp : null) || item.name_kr || item.name
 
 /** Display name and thumbnail of a selected option, for the sidebar list and removable chips. */
-export function facetOption(kind: FacetKind, id: string, facets: BoardFacets | undefined, lang: SupportedLang): { label: string; image: string | null } {
+function facetOption(kind: FacetKind, id: string, facets: BoardFacets | undefined, lang: SupportedLang): { label: string; image: string | null } {
   if (kind === 'affiliation') return { label: getLocalizedAffiliation(id, lang), image: getAffiliationIconUrl(id) }
   const item = kind === 'ego' ? facets?.egos.find(ego => ego.id === id)
     : kind === 'gift' ? facets?.gifts.find(gift => String(gift.game_id) === id)
