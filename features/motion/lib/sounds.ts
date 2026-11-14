@@ -10,7 +10,7 @@ export interface SoundCue {
 }
 export interface SoundPoolMeta { id: string; kind: string; options: { weight: number; silence?: boolean }[]; }
 export interface SoundMeta { fps: number; sounds?: SoundCue[]; soundPools?: SoundPoolMeta[]; }
-export interface SoundRules {
+interface SoundRules {
   version: number;
   steal: { fade: number };
   limiter: { release: number; lookahead: number; ceiling: number; ceiling3D: number };
@@ -45,7 +45,7 @@ export function gainAt(mix: SoundCue["mix"], f: number, side: 1 | 2): number {
 }
 
 /** Lays a cue's curve on a gain from its value at the first frame played, so a start in the middle fits. A cut fades over 0.043 s. */
-export function setCurve(param: AudioParam, mix: SoundCue["mix"], side: 1 | 2, fromFrame: number, toTime: (f: number) => number, cutFrame?: number) {
+function setCurve(param: AudioParam, mix: SoundCue["mix"], side: 1 | 2, fromFrame: number, toTime: (f: number) => number, cutFrame?: number) {
   param.setValueAtTime(gainAt(mix, fromFrame, side), toTime(fromFrame));
   for (const p of mix) {
     if (p[0] <= fromFrame) continue;
@@ -59,7 +59,7 @@ export function setCurve(param: AudioParam, mix: SoundCue["mix"], side: 1 | 2, f
 }
 
 /** One play's cues: an option of every pool by weight, one of each cue's files at the same odds. Called again each time the video plays anew. */
-export function pickCues(cues: readonly SoundCue[], pools: readonly SoundPoolMeta[]): PlayCue[] {
+function pickCues(cues: readonly SoundCue[], pools: readonly SoundPoolMeta[]): PlayCue[] {
   const chosen: Record<string, number> = {};
   for (const p of pools) {
     let r = Math.random() * p.options.reduce((a, o) => a + o.weight, 0);

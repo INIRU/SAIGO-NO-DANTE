@@ -17,7 +17,7 @@ const PROPORTION = 10
 export const MAX_STACKS = 10
 
 /** Who carries an effect: the attacker (damage dealt) or the target (damage taken, resistances). */
-export type Side = 'self' | 'target'
+type Side = 'self' | 'target'
 /** perStack: percent for damage, a resistance value for physical and sin. */
 export type StackEffect = { target: 'damage' | 'physical' | 'sin'; perStack: number; max: number; side: Side }
 
@@ -61,7 +61,7 @@ const direction = (sign: string | undefined, word?: string) => sign === '-' || s
  * value: the signed percent, null for a formula that states no maximum. taken: the damage its holder takes ("받는"), not
  * deals. foe: it is the enemy who takes it ("적이 받는"), so it raises what the attacker deals.
  */
-export type DamageChange = { value: number | null; taken: boolean; foe: boolean }
+type DamageChange = { value: number | null; taken: boolean; foe: boolean }
 
 // While a line is read, a change also remembers its direction, for the maximum that may follow it.
 type Found = DamageChange & { sign: number }

@@ -17,10 +17,10 @@ export type KeywordRefTexts = {
   description_jp: string | null
 }
 
-export type KeywordRefTextTable = Readonly<Record<string, KeywordRefTexts>>
+type KeywordRefTextTable = Readonly<Record<string, KeywordRefTexts>>
 
 /** The keyword_meta fields the references replace. */
-export type KeywordMetaTexts = {
+type KeywordMetaTexts = {
   name: string
   game_id?: string | null
   name_en?: string | null

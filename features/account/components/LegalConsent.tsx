@@ -8,7 +8,7 @@ import './legal-consent.css'
 
 type DocType = LegalDoc['type']
 export type LegalConsentState = Partial<Record<DocType, boolean>>
-export type LegalConsentLabels = { agreeAll: string; agreeTerms: string; agreePrivacy: string; readFull: string; hideFull: string }
+type LegalConsentLabels = { agreeAll: string; agreeTerms: string; agreePrivacy: string; readFull: string; hideFull: string }
 
 function Emphasis({ text }: { text: string }) {
   return <>{emphasisParts(text).map((part, index) => part.strong ? <strong key={index}>{part.text}</strong> : part.text)}</>

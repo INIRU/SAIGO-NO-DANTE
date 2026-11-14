@@ -1,6 +1,6 @@
 import { decodeTeamCode, type TeamCodeEgo, type TeamCodeIdentity, type TeamCodeSinner } from '@/lib/decks/team-code'
 
-export type DeckFormationInit = {
+type DeckFormationInit = {
   identitySlotIds: Record<string, string>
   egoSlotIds: Record<string, Record<string, string>>
   /** Sinner ids by formation number; only the numbered ones. */

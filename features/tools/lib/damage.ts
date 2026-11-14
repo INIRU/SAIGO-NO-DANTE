@@ -9,20 +9,20 @@ export const STAGGER_RESIST = [null, 2, 2.5, 3] as const
 /** A sin resistance is held between 0 and this after every buff and weakening. */
 export const SIN_RESIST_MAX = 2
 /** Outside stagger the physical resistance is held between −2 and 2 after every buff and weakening. */
-export const PHYSICAL_RESIST_LIMIT = 2
+const PHYSICAL_RESIST_LIMIT = 2
 /** The least a hit does: this share of the coin's power, rounded down, and at least 1. */
-export const MIN_DAMAGE_RATE = 0.05
+const MIN_DAMAGE_RATE = 0.05
 export type StaggerStage = 0 | 1 | 2 | 3
 
-export const CRITICAL_BONUS = 0.2
-export const CLASH_BONUS = 0.03
-export const OBSERVATION_BONUS = 0.03
+const CRITICAL_BONUS = 0.2
+const CLASH_BONUS = 0.03
+const OBSERVATION_BONUS = 0.03
 
 /**
  * damage: summed with buffs, passives, gifts and skill effects. resist: summed with resistances and the level difference.
  * final: multiplies the finished damage. physical, sin: added to that resistance itself (a weakening of 0.1 a stack).
  */
-export type FormulaTarget = 'damage' | 'resist' | 'final' | 'physical' | 'sin'
+type FormulaTarget = 'damage' | 'resist' | 'final' | 'physical' | 'sin'
 /** power, coin_power: added to the skill's power / the heads coin's power before the damage is figured (a keyword's or gift's effect, never typed in). */
 export type ModifierTarget = FormulaTarget | Extract<EffectTarget, 'power' | 'coin_power'>
 /** value: a fraction for damage and resist (0.25 = +25%), a multiplier for final (2 = double), a resistance amount for physical and sin (0.3). */

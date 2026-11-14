@@ -15,7 +15,7 @@ const POST_FLOORS = [8, 5, 3]
 
 /** One entity with its visitors in both windows and the whole kind's visitors in both (`discovery_rising_windows`). */
 export type RisingRow = { entity_id: string; recent: number; base: number; recent_total: number; base_total: number }
-export type Rising = { id: string; recent: number; /** Multiplier of its share of the board's traffic, one decimal, at most 99. */ rise: number }
+type Rising = { id: string; recent: number; /** Multiplier of its share of the board's traffic, one decimal, at most 99. */ rise: number }
 
 /** What is shown: the biggest multiplier first, then the most evidence. */
 export const byRise = (a: Rising, b: Rising) => b.rise - a.rise || b.recent - a.recent || a.id.localeCompare(b.id)
@@ -49,7 +49,7 @@ function scored(rows: RisingRow[], minRecent: number) {
   })
 }
 
-export type RisingIdentity = { id: string; /** Recent posts of the board that field it. */ count: number }
+type RisingIdentity = { id: string; /** Recent posts of the board that field it. */ count: number }
 
 /**
  * Identities of one board's recent formations: the posts of `kind` written or edited in the last 14 days are counted per

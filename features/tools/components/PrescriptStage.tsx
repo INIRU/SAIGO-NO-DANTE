@@ -17,7 +17,7 @@ const cell = () => { const i = Math.floor(Math.random() * 65); return `${(i % 13
 const ROLL = 800, SETTLE = 800
 
 /** The terminal's sound level (0 to 1, 0 is silent), kept in this browser. */
-export const VOLUME_KEY = 'prescript-volume'
+const VOLUME_KEY = 'prescript-volume'
 export function readVolume(): number {
   try {
     const stored = window.localStorage.getItem(VOLUME_KEY)
@@ -117,7 +117,7 @@ const partsOf = (text: string): Part[] => text.split(/(\u0001[^\u0002]*\u0002)/)
 const plain = (text: string) => text.replace(/\u0007[^\u0007]*\u0007/g, '').replace(/[\u0001\u0002]/g, '')
 
 /** A gift's image and keyword, by its id (the page's gift data). */
-export type GiftLook = (id: number) => { image: string | null; keyword: string | null } | undefined
+type GiftLook = (id: number) => { image: string | null; keyword: string | null } | undefined
 const GiftLookContext = createContext<GiftLook>(() => undefined)
 
 /** The prescript text itself: every letter a rolling glyph for `roll` ms, then changing into the text letter by letter over

@@ -69,9 +69,9 @@ export interface ImageLayer {
   local?: { x: number; y: number; w: number; h: number; rotation: number }
 }
 
-export interface Rect { x: number; y: number; w: number; h: number }
+interface Rect { x: number; y: number; w: number; h: number }
 
-export interface SpineScene {
+interface SpineScene {
   id: number | null
   /** full illustrations only: the 1536×864 canvas, centre 0,0 */
   frame?: Rect
@@ -108,7 +108,7 @@ export interface IdentitySpine {
 }
 
 /** A skin set as a prefab starts it. `start` is the skin worn at first; null means the set starts bare. */
-export interface SkinSet {
+interface SkinSet {
   key: string
   skins: string[]
   start: string | null

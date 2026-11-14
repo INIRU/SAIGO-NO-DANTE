@@ -28,7 +28,7 @@ export default function EgoBackPanel({ sinnerId, name, egos, onEgoClick, classNa
   )
 }
 
-export type EgoPanelBoardItem = {
+type EgoPanelBoardItem = {
   key: string
   sinnerId: string
   name: string

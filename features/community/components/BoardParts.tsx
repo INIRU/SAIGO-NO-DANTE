@@ -77,7 +77,7 @@ export function PostChips({ kind, post, max = 2, className = '', nowrap = false 
 
 
 /** Who wrote a post, as its card shows it. */
-export function postAuthor(kind: DiscoveryKind, post: RowPost, locale: SupportedLang, anonymous: string): string {
+function postAuthor(kind: DiscoveryKind, post: RowPost, locale: SupportedLang, anonymous: string): string {
   return kind === 'deck'
     ? post.username ?? guestAuthorName(post.guest_tag, locale) ?? ''
     : post.profiles?.username ?? guestAuthorName(post.guest_tag, locale) ?? anonymous

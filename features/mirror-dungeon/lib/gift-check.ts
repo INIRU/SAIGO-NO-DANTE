@@ -54,7 +54,7 @@ export function fusionIngredientNames(resultName: string, recipes: readonly Pick
   return [...names]
 }
 
-export interface GiftCheckMark {
+interface GiftCheckMark {
   fusion: boolean
   /** Packs this gift is only found in (see themeExclusiveGiftIds), in theme order. */
   packs: EgoGiftTheme[]

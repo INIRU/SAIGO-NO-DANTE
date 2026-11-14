@@ -25,7 +25,7 @@ import type { KeywordInfo } from '@/lib/keywords/catalog'
  */
 
 /** `free`: found wherever the name stands; `counted`: only next to a number, for names that are also ordinary words. */
-export type PlainKeywordTier = 'free' | 'counted'
+type PlainKeywordTier = 'free' | 'counted'
 
 const FREE = [
   '진동', '충전', '출혈', '파열', '호흡', '화상', '침잠', '진동 폭발', '침잠쇄도', '충전 역장', '충전 인격',

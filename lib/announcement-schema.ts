@@ -2,7 +2,7 @@ import { z } from 'zod'
 import { announcementCover, announcementText, validAnnouncementDocument, type RichNode } from '@/lib/announcements'
 
 // Request validation lives apart from lib/announcements so the public announcement body does not ship zod.
-export const announcementDocumentSchema = z
+const announcementDocumentSchema = z
   .custom<RichNode>(
     validAnnouncementDocument,
     '지원하지 않는 본문 또는 이미지입니다.',

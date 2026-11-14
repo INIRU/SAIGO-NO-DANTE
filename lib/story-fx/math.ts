@@ -1,6 +1,6 @@
 // Small 3D math for the particle runtime. Matrices are column-major Float32Array(16) like WebGL.
 export type V3 = [number, number, number];
-export type Q = [number, number, number, number];
+type Q = [number, number, number, number];
 export type M4 = Float32Array;
 
 export const ident = (): M4 => new Float32Array([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
@@ -39,9 +39,9 @@ export function euler(xd: number, yd: number, zd: number): Q {
   return [cy * sx * cz + sy * cx * sz, sy * cx * cz - cy * sx * sz, cy * cx * sz - sy * sx * cz, cy * cx * cz + sy * sx * sz];
 }
 
-export const len = (v: V3) => Math.hypot(v[0], v[1], v[2]);
+const len = (v: V3) => Math.hypot(v[0], v[1], v[2]);
 export const norm = (v: V3): V3 => { const l = len(v) || 1; return [v[0] / l, v[1] / l, v[2] / l]; };
-export const cross = (a: V3, b: V3): V3 => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+const cross = (a: V3, b: V3): V3 => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
 
 /** Shortest rotation taking +Z onto direction d, as a matrix. */
 export function fromZTo(d: V3): M4 {

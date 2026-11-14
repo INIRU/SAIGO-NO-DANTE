@@ -3,7 +3,7 @@ import { localizeEgoName } from '@/features/decks/lib/localize'
 import { topUptieSkills } from '@/features/decks/lib/deck-identity-uptie'
 import type { EgoSlotItem, FormationStripSkill } from '@/features/catalog/components/EgoSlotRows'
 
-export type StripSkillRow = {
+type StripSkillRow = {
   id: string
   skill_order: number
   skill_type: string

@@ -12,7 +12,7 @@ import styles from './HomeStaticSections.module.css'
 
 const CARD_SLOT = ['', '', styles.third]
 
-export type ShelfCopy = { popular: string; recent: string; link: string }
+type ShelfCopy = { popular: string; recent: string; link: string }
 
 async function fetchFeed<T>(url: string): Promise<DiscoveryFeed<T>> {
   const response = await fetch(url)

@@ -15,14 +15,14 @@ import { bonusPicks, type ClearBonusCard, type ClearBonusOffer } from '@/lib/uti
  * each card's bonus band has a one-pixel line on top at y 807 (blue on normal floors, red on hard ones) and holds up to
  * four icons 65.2 apart, centred on the card, centres at y 843.6, side 64.9.
  */
-export const BONUS_CARD_X = 964
-export const BONUS_CARD_STEP = 315.8
-export const BONUS_LINE_Y = 807
-export const BONUS_ICON_Y = 843.6
-export const BONUS_ICON = 64.9
-export const BONUS_ICON_STEP = 65.2
+const BONUS_CARD_X = 964
+const BONUS_CARD_STEP = 315.8
+const BONUS_LINE_Y = 807
+const BONUS_ICON_Y = 843.6
+const BONUS_ICON = 64.9
+const BONUS_ICON_STEP = 65.2
 /** The band line is looked for under the card's middle, this far each way (UI units). */
-export const BONUS_LINE_HALF = 100
+const BONUS_LINE_HALF = 100
 /** Rows above and below the line in the strip the worker samples (frame pixels). */
 export const BONUS_STRIP_ROWS = 5
 

@@ -2,7 +2,7 @@ import { cacheLife, cacheTag } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import type { Announcement } from '@/lib/announcements'
-export type AnnouncementRow = Announcement
+type AnnouncementRow = Announcement
 export async function getAnnouncementsForLang(
   langInput?: string | null,
 ): Promise<AnnouncementRow[]> {

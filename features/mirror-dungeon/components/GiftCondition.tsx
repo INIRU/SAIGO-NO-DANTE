@@ -13,7 +13,7 @@ import type { SupportedLang } from '@/lib/i18n/types'
 import styles from './GiftCondition.module.css'
 
 /** A condition status in the page language: its subject (keywords or affiliations) and both counts. */
-export function useGiftConditionText() {
+function useGiftConditionText() {
   const t = useTranslations('planner.giftTab.conditionStatus')
   const lang = useLocale() as SupportedLang
   return (status: GiftConditionStatus) => {

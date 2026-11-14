@@ -178,7 +178,7 @@ export type EGOSkill = {
   coin5Effect_jp?: string | null
 }
 
-export interface EGOPassive {
+interface EGOPassive {
   game_passive_id: number
   min_stage: number
   max_stage: number

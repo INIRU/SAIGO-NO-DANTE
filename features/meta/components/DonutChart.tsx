@@ -12,7 +12,7 @@ import { GIFT_KEYWORD_COLORS } from '@/lib/constants/gift'
 import type { CountStat, MetaUsage } from '@/lib/meta/types'
 import styles from '@/styles/components/MetaAnalysis.module.css'
 
-export type DonutSegment = { key: string; label: ReactNode; colors: string[]; count: number }
+type DonutSegment = { key: string; label: ReactNode; colors: string[]; count: number }
 
 export const OTHER = '__other'
 const LEGEND_LIMIT = 6
@@ -46,12 +46,12 @@ export function usageColor(usage: MetaUsage): string {
   return key ? CONTENT_TYPE_COLORS[key].color : MUTED
 }
 
-export function comboColors(combo: string): string[] {
+function comboColors(combo: string): string[] {
   return combo ? combo.split('+').slice(0, 2).map(keyword => GIFT_KEYWORD_COLORS[keyword] ?? MUTED) : [MUTED]
 }
 
 /** '화상+진동' as keyword icons and localized names; '' is a formation no keyword reached. */
-export function ComboLabel({ combo }: { combo: string }) {
+function ComboLabel({ combo }: { combo: string }) {
   const t = useTranslations('meta.analysis')
   const locale = useLocale()
   const keywords = useKeywords()

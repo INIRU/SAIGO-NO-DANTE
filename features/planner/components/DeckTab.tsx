@@ -20,8 +20,7 @@ import {
   type SkillDistribution,
 } from '@/lib/planner/types'
 import { rowsAtUptie, computeDeckResources, computeSinProduction, fieldedEntries, localizeDeckKeyword } from '@/features/decks'
-import { getIdentityImageUrl, getSkillIconUrl } from '@/lib/utils/images'
-import { SIN_COLORS } from '@/lib/constants/sin'
+import { getIdentityImageUrl } from '@/lib/utils/images'
 import DeckInsights, { type DeckInsightIdentity } from '@/features/decks/components/DeckInsights'
 import DeckResourceSummary from '@/features/decks/components/DeckResourceSummary'
 import { localizeIdentityName, localizePassiveDescription, localizePassiveName } from '@/features/decks/components/DeckIdentityCard'

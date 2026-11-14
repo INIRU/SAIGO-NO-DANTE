@@ -300,7 +300,7 @@ type BoardTileProps = {
   onPressEnd: () => void
 }
 
-const BoardTile = memo(function BoardTile({ sinnerId, view, identity, uptie, name, sinnerName, order, giftBadgeUrls, skills, egos, ariaLabel, longPress, onActivate, onPressStart, onPressEnd }: BoardTileProps) {
+const BoardTile = memo(function BoardTile({ sinnerId, view, identity, uptie, name, sinnerName, order, giftBadgeUrls, ariaLabel, longPress, onActivate, onPressStart, onPressEnd }: BoardTileProps) {
   return (
     <li>
       <button

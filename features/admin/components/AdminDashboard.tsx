@@ -70,7 +70,7 @@ export default function AdminDashboard() {
                     <dd>{n(values?.[at])}</dd>
                   </dl>
                   <div className="admin-dash-bars" role="img" aria-label={`${c[key]} ${values?.join(', ') ?? ''}`}>
-                    {days.map((day, i) => (
+                    {days.map((_day, i) => (
                       <span key={i} data-on={i === at} onMouseEnter={() => setHover(i)}>
                         {values && <i style={{ transform: `scaleY(${Math.max(values[i] / max, values[i] ? 0.03 : 0)})`, transitionDelay: `${i * 18}ms` }} />}
                       </span>

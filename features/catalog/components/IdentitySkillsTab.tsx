@@ -2,12 +2,11 @@
 
 import { coinPowerLabels, unbreakableCoinSet } from '@/lib/identity/skill-description'
 
-import { groupIdentitySkills, skillLabel, skillSlot } from '@/lib/identity/skill-model'
+import { groupIdentitySkills, skillSlot } from '@/lib/identity/skill-model'
 import {
   Identity,
   Skill,
   SIN_COLORS,
-  SKILL_TYPE_LABELS,
   getSkillIconUrl,
 } from '@/lib/data/sinners'
 import SkillDescription from '@/features/catalog/components/SkillDescription'
@@ -122,7 +121,6 @@ export default function IdentitySkillsTab({
           const diff = skillDiffs?.get(skill.id)
           const offCorrStr = skill.offense_level != null ? offenseLevelDisplay(skill.offense_level - level + IDENTITY_STAT_BASE_LEVEL).correction : ''
           const isDefense = baseOrder === 4
-          const label = skillLabel(skill, filteredSkills, SKILL_TYPE_LABELS[skill.skill_type] || skill.skill_type)
           const atkTypeKey = skillAttackType(skill)
           const skillDescription = localSkillDesc(skill)
           const skillFlavor = localSkillFlavor(skill, locale)

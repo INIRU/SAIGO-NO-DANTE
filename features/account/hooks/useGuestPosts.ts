@@ -5,7 +5,7 @@ import useSWR from 'swr'
 import { GUEST_KEY_HEADER, GUEST_KEY_STORAGE, guestHeaders, readGuestKey } from '@/features/account/lib/guest-key'
 
 export type GuestPost = { id: string; title: string; created_at: string }
-export type GuestPosts = { decks: GuestPost[]; plans: GuestPost[] }
+type GuestPosts = { decks: GuestPost[]; plans: GuestPost[] }
 
 async function fetchGuestPosts([, key]: readonly [string, string]): Promise<GuestPosts> {
   const res = await fetch('/api/guest/posts', { headers: { [GUEST_KEY_HEADER]: key }, cache: 'no-store' })
@@ -26,7 +26,7 @@ export function useGuestPosts(enabled = true) {
   return { key, keyRead, reloadKey, posts }
 }
 
-export type GuestRecoverTarget = { kind: 'deck' | 'plan'; id: string } | { kind: 'support' | 'want'; code: string }
+type GuestRecoverTarget = { kind: 'deck' | 'plan'; id: string } | { kind: 'support' | 'want'; code: string }
 
 /**
  * Proves a guest post is this visitor's with its password; this browser's key (made if there is none) owns it afterwards.

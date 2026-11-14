@@ -9,7 +9,7 @@ import type { FloorThemeObservation, FusionEvidence, GiftSale, PopupAcquisition 
 
 /** The last finished run's record in this browser. A run not yet ended is never kept: a reload or a break starts over
  * (USER 2026-11-04: turned off or cut before the dungeon ends, its score and record are reset). */
-export const PRESCRIPT_STORAGE_KEY = 'md-prescript-run'
+const PRESCRIPT_STORAGE_KEY = 'md-prescript-run'
 
 const load = (): PrescriptRun | null => {
   try {
@@ -35,7 +35,7 @@ export interface PrescriptOffer { scope: PrescriptScope; floor: number; cards: P
  * Offers a card choice whenever a kind wants one; the player only chooses, never marks a prescript done.
  */
 /** How long a room left waits for its kept frames to be read again before it is judged by what is known. */
-export const LEAVE_GRACE_MS = 4000
+const LEAVE_GRACE_MS = 4000
 
 export function usePrescript({ enabled, grade = 'proselyte', status, acquisitions, sales, fusions, floorObservation, ownedGrid, eventRoom, eventOutcome, eventPick, formation, blessings, scene, inShop, context }: {
   enabled: boolean

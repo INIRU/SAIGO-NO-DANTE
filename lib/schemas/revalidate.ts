@@ -8,7 +8,7 @@ import { z } from 'zod'
 //   paths : revalidatePath (backward compat)
 //   scope : 미리 정의된 번들 (`all-game-data` | `announcements`)
 
-export const revalidateScopeSchema = z.enum(['all-game-data', 'announcements'])
+const revalidateScopeSchema = z.enum(['all-game-data', 'announcements'])
 
 export const revalidateBodySchema = z
   .object({
@@ -19,4 +19,3 @@ export const revalidateBodySchema = z
   .strict()
 
 export type RevalidateScope = z.infer<typeof revalidateScopeSchema>
-export type RevalidateBody = z.infer<typeof revalidateBodySchema>

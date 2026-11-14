@@ -5,7 +5,6 @@ import { LCB_IDS } from '@/lib/constants/game'
 import { identitySuggestUrl, suggestionContext, type SuggestionResponse } from '@/features/community'
 import { useMemo, useState } from 'react'
 import Image from 'next/image'
-import QuietImage from '@/components/ui/QuietImage'
 import { useReducedMotion } from 'motion/react'
 import * as m from 'motion/react-m'
 import {
@@ -13,25 +12,17 @@ import {
   Identity,
   EGO,
   Skill,
-  getSinnerLogoUrl,
-  getIdentityInfoUrl,
-  getSinnerProfileUrl,
-  getSkillIconUrl,
-  SIN_COLORS,
 } from '@/lib/data/sinners'
-import IdentityCard from '@/features/catalog/components/IdentityCard'
 import { localizeIdentityName } from '@/features/decks/components/DeckIdentityCard'
 import { localizeDeckKeyword } from '@/features/decks/lib/decks-types'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
-import { useLocale, useTranslations } from 'next-intl'
+import { useLocale } from 'next-intl'
 import type { SupportedLang } from '@/lib/i18n/types'
 import { getLocalizedName } from '@/lib/i18n/localize'
 import { DECK_MAIN_KEYWORDS } from '@/lib/decks/keyword-rules'
 import { SKILL_EXCHANGE_PRESETS } from '@/features/planner/components/SkillExchangePanel'
 import type { SkillCountEdit } from '@/features/catalog/components/EgoSlotRows'
 import { buildStripSkills, toEgoSlotItems } from '@/features/decks/lib/strip-skills'
-import { DEPLOYED_SLOT_COUNT } from '@/lib/constants/game'
-import { getCompactNameStyle } from '@/lib/planner/compact-name-style'
 import {
   PlannerEgoBoard,
   PlannerEgoSelectModal,
@@ -54,32 +45,6 @@ function getDeckBuilderSinnerName(sinner: Sinner, locale: SupportedLang): string
   if (!isPlaceholderName(sinner.name_en)) return sinner.name_en!.trim()
   if (!isPlaceholderName(sinner.name)) return sinner.name.trim()
   return sinner.name_kr
-}
-
-/* ── 수감자 빈 카드 (공통) ────────────────────────────── */
-function SinnerGhostCard({ sinner, children }: { sinner: Sinner; children?: React.ReactNode }) {
-  const profileUrl = getSinnerProfileUrl(sinner.id)
-  const locale = useLocale() as SupportedLang
-  return (
-    <div
-      className="relative w-full"
-      style={{
-        aspectRatio: '2/3',
-        background: 'rgba(18,14,9,0.88)',
-        border: '0.09375rem dashed #2a2015',
-        borderRadius: '0.25rem',
-        overflow: 'hidden',
-      }}
-    >
-      {profileUrl && (
-        <QuietImage src={profileUrl} alt={sinner.name} fill className="object-cover object-top" style={{ opacity: 0.18 }} sizes="120px" />
-      )}
-      {children}
-      <div className="absolute bottom-0 left-0 right-0 text-center pb-1.5 z-10" style={{ background: 'rgba(13,11,8,0.9)', borderTop: '1px solid rgba(200,144,10,0.12)' }}>
-        <p style={{ ...getCompactNameStyle(locale), color: 'rgba(232,220,200,0.72)', fontSize: '0.875rem' }}>{getDeckBuilderSinnerName(sinner, locale)}</p>
-      </div>
-    </div>
-  )
 }
 
 /** The builder's identity board data: formation number, uptie, skills 1-3 with the deck's counts, and the chosen E.G.O (the strip under each card). */
@@ -309,82 +274,6 @@ export function EgoTab({
       getSinnerName={sinner => getDeckBuilderSinnerName(sinner as Sinner, lang)}
     />
     </>
-  )
-}
-
-/* ── 탭 3: 편성 순서 ─────────────────────────────────── */
-export function OrderTab({
-  sinners, deckSlots, formationOrder, onToggle,
-}: {
-  sinners: Sinner[]
-  deckSlots: Record<string, Identity | undefined>
-  formationOrder: string[]
-  onToggle: (sinnerId: string) => void
-}) {
-  return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-x-4 gap-y-8">
-      {sinners.map(sinner => {
-        const idx = formationOrder.indexOf(sinner.id)
-        const position = idx === -1 ? 0 : idx + 1
-        const isAssigned = position > 0
-        const isBattle = position <= DEPLOYED_SLOT_COUNT
-        const color = isBattle ? '#c83020' : '#3870b0'
-        const identity = deckSlots[sinner.id]
-
-        return (
-          <div
-            key={sinner.id}
-            onClick={() => onToggle(sinner.id)}
-            className="relative cursor-pointer"
-            style={{ overflow: 'visible' }}
-          >
-            {identity ? (
-              <IdentityCard identity={identity} compact />
-            ) : (
-              <SinnerGhostCard sinner={sinner}>
-                <div className="absolute inset-0 flex items-center justify-center z-10">
-                  <Image src={getSinnerLogoUrl(sinner.id)} alt="" width={24} height={24} style={{ height: '1.5rem', width: 'auto', opacity: 0.35 }} />
-                </div>
-              </SinnerGhostCard>
-            )}
-
-            <div
-              style={{
-                position: 'absolute',
-                top: '-8px',
-                right: '-8px',
-                zIndex: 20,
-                width: '32px',
-                height: '32px',
-                borderRadius: '50%',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                background: isAssigned ? color : 'rgba(20,16,10,0.9)',
-                border: isAssigned ? `2px solid ${color}` : '1.5px dashed rgba(200,144,10,0.3)',
-                boxShadow: 'none',
-                transition: 'all 0.2s',
-                cursor: 'pointer',
-              }}
-            >
-              {isAssigned ? (
-                <>
-                  <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.375rem', fontFamily: 'var(--font-mono)', fontWeight: 700, lineHeight: 1 }}>
-                    {isBattle ? 'B' : 'S'}
-                  </span>
-                  <span style={{ color: '#fff', fontSize: '0.8125rem', fontFamily: 'var(--font-title)', fontWeight: 700, lineHeight: 1 }}>
-                    {position}
-                  </span>
-                </>
-              ) : (
-                <span style={{ color: 'rgba(200,144,10,0.4)', fontSize: '1rem', lineHeight: 1 }}>+</span>
-              )}
-            </div>
-          </div>
-        )
-      })}
-    </div>
   )
 }
 

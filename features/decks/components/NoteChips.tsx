@@ -20,12 +20,14 @@ import { MultipliedCount } from '@/features/catalog/components/PassiveParts'
 import { passiveRequirements } from '@/lib/planner/passives'
 import { type GiftConditionStatus } from '@/lib/planner/gift-condition-status'
 import GiftCard from '@/features/mirror-dungeon/components/GiftCard'
-import { useFormatGameText, useFormatSkillDesc, useKeywords, useKeywordData, useKeywordDescription, type KeywordInfo } from '@/components/providers/KeywordProvider'
+import { useFormatSkillDesc, useKeywords, useKeywordData } from '@/components/providers/KeywordProvider'
 import {
   SIN_COLORS,
-  GRADE_COLORS, SIN_ICON_MAP, ATK_TYPE_ICON_MAP,
-  normalizeSin, getSkillOrderLabel,
-  type SinType,
+  GRADE_COLORS,
+  SIN_ICON_MAP,
+  ATK_TYPE_ICON_MAP,
+  normalizeSin,
+  getSkillOrderLabel,
   type Identity,
   type Skill,
   type ActivationCondition,
@@ -195,7 +197,7 @@ function GiftCardPlaceholder({
 }
 
 // ── SkillChip ───────────────────────────────────────────────────────────
-export function SkillChip({ entry, interactive = true }: { entry: NoteSkillEntry; interactive?: boolean }) {
+function SkillChip({ entry, interactive = true }: { entry: NoteSkillEntry; interactive?: boolean }) {
   const formatSkillDesc = useFormatSkillDesc()
   const t = useTranslations()
   const ref = useRef<HTMLSpanElement>(null)
@@ -249,7 +251,7 @@ export function SkillChip({ entry, interactive = true }: { entry: NoteSkillEntry
 }
 
 // ── PassiveChip ─────────────────────────────────────────────────────────
-export function PassiveChip({ entry, interactive = true }: { entry: NotePassiveEntry; interactive?: boolean }) {
+function PassiveChip({ entry, interactive = true }: { entry: NotePassiveEntry; interactive?: boolean }) {
   const formatSkillDesc = useFormatSkillDesc()
   const t = useTranslations()
   const ref = useRef<HTMLSpanElement>(null)
@@ -302,7 +304,7 @@ export function PassiveChip({ entry, interactive = true }: { entry: NotePassiveE
 }
 
 // ── EgoChip ─────────────────────────────────────────────────────────────
-export function EgoChip({ entry, interactive = true }: { entry: NoteEgoEntry; interactive?: boolean }) {
+function EgoChip({ entry, interactive = true }: { entry: NoteEgoEntry; interactive?: boolean }) {
   const t = useTranslations()
   const ref = useRef<HTMLSpanElement>(null)
   const { rect, show, scheduleHide, cancelHide, toggle } = useTooltip(ref)
@@ -345,7 +347,7 @@ export function EgoChip({ entry, interactive = true }: { entry: NoteEgoEntry; in
 }
 
 // ── IdentityChip ────────────────────────────────────────────────────────
-export function IdentityChip({ entry }: { entry: NoteIdentityEntry }) {
+function IdentityChip({ entry }: { entry: NoteIdentityEntry }) {
   const t = useTranslations()
   const locale = useLocale()
   const keywords = useKeywords()
@@ -396,19 +398,11 @@ export function IdentityChip({ entry }: { entry: NoteIdentityEntry }) {
   )
 }
 
-// ── KeywordChip ──────────────────────────────────────────────────────────
-/** The tooltip's description, loaded on first open (the page catalog carries none). */
-export function KeywordChipDescription({ keyword, info }: { keyword: string; info: KeywordInfo }) {
-  const formatGameText = useFormatGameText()
-  const description = useKeywordDescription(keyword, info)
-  return <>{description === undefined ? '…' : formatGameText(description, '#aaa')}</>
-}
-
 // ── EgoGiftChip ─────────────────────────────────────────────────────────
 const EGO_GIFT_KW_COLORS = GIFT_KEYWORD_COLORS
 
 /** `label`: icon then name, no chip box (one-line card previews). */
-export function EgoGiftChip({ entry, label = false }: { entry: NoteEgoGiftEntry; label?: boolean }) {
+function EgoGiftChip({ entry, label = false }: { entry: NoteEgoGiftEntry; label?: boolean }) {
   const locale = useLocale()
   const keywords = useKeywords()
   const formatSkillDesc = useFormatSkillDesc()

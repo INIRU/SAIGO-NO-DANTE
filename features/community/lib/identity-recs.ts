@@ -17,7 +17,7 @@ import { STATUS_KEYWORDS, cosine, statusShare, type RecCatalog, type RecIdentity
  *  meta     recent usage (half-life, post views) as a prior; fresh  a boost for new identities nobody has fielded yet
  */
 export const COMPONENTS = ['pair', 'team', 'status', 'faction', 'kw', 'sinOwn', 'sinTeam', 'meta', 'fresh'] as const
-export type Component = (typeof COMPONENTS)[number]
+type Component = (typeof COMPONENTS)[number]
 export type Weights = Record<Component, number>
 
 export type IdentityConfig = {
@@ -102,7 +102,7 @@ export function buildIdentityModel(formations: readonly Formation[], catalog: Re
   }
 }
 
-export type IdentityQuery = {
+type IdentityQuery = {
   /** Identities on the board (any order); starters and the asked sinner's own are ignored. */
   context: readonly string[]
   sinner: string
@@ -113,8 +113,8 @@ export type IdentityQuery = {
   now: number
 }
 
-export type Hint = { keyword?: string; faction?: string; passive?: { kind: 'stock' | 'resonance'; sin: string } }
-export type Scored = { id: string; z: number[]; hint: Hint }
+type Hint = { keyword?: string; faction?: string; passive?: { kind: 'stock' | 'resonance'; sin: string } }
+type Scored = { id: string; z: number[]; hint: Hint }
 
 export const clip = (value: number, cap: number) => Math.max(-cap, Math.min(cap, value))
 const zero = () => COMPONENTS.map(() => 0)
@@ -378,7 +378,7 @@ export function suggestIdentities(model: IdentityModel, query: IdentityQuery, { 
   return { items, archetype }
 }
 
-export type Companion = { identity_id: string; /** Public posts fielding both. */ count: number; score: number }
+type Companion = { identity_id: string; /** Public posts fielding both. */ count: number; score: number }
 
 /**
  * "함께 쓰는 인격" of an identity page: identities of other sinners that posts field with it (at least once), best first by

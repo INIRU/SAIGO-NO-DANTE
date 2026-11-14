@@ -21,7 +21,7 @@ export function formatDiscoveryPosts(kind: DiscoveryKind, rows: unknown[]) {
   })
 }
 
-export type Features = { identities: string[]; sinners: string[]; keywords: string[] }
+type Features = { identities: string[]; sinners: string[]; keywords: string[] }
 type Person = { id?: string; sinner_id?: string }
 type Slot = { identity_id?: string; sinner_id?: string; slot_order?: number | null; identities?: Person | Person[] | null }
 

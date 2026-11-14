@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { createInitialRunState, runReducer, type RunState } from '@/features/planner/lib/run-types'
-import { acquisitionAttributionFloor, clearedThemeFloors, floorThemeObservationAction, getRunThemeGuidance, observedRunTheme, pendingThemeSelectionFloor, recordedFloorBehind, themeSelectionTarget } from '@/features/planner/lib/run-theme-guidance'
+import { acquisitionAttributionFloor, clearedThemeFloors, floorThemeObservationAction, getRunThemeGuidance, observedRunTheme, pendingThemeSelectionFloor, themeSelectionTarget } from '@/features/planner/lib/run-theme-guidance'
 import type { ThemeData } from '@/lib/planner/types'
 
 const theme = (id: string, floorInfo: ThemeData['floor_info']): ThemeData =>
@@ -70,16 +70,6 @@ it('drops stale or future-dated observations without consuming them for a later 
   expect(floorThemeObservationAction(state, themes, observation, consumed, 500)).toBeNull()
   expect(floorThemeObservationAction(state, themes, { ...observation, observedAt: 19_000 }, consumed, 20_000))
     .toMatchObject({ floor: 1, themeId: '1003' })
-})
-
-it('reports a recorded floor behind the screen only for a later floor inside the run', () => {
-  const state = playing()
-  expect(recordedFloorBehind(state, null)).toBe(false)
-  expect(recordedFloorBehind(state, 1)).toBe(false)
-  expect(recordedFloorBehind(state, 3)).toBe(true)
-  expect(recordedFloorBehind(state, 9)).toBe(false)
-  expect(recordedFloorBehind({ ...state, currentFloor: 3 }, 3)).toBe(false)
-  expect(recordedFloorBehind({ ...state, phase: 'completed' }, 3)).toBe(false)
 })
 
 it('registers an acquired gift in the inventory even when its floor is unknown or already left', () => {

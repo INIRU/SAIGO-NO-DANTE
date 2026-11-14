@@ -1,6 +1,6 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 
-export type PostAuthor = { username: string; avatar_url: string | null; public_profile: boolean }
+type PostAuthor = { username: string; avatar_url: string | null; public_profile: boolean }
 
 /**
  * Sets each post's `profiles` to its author's name, avatar and profile privacy. The profiles table lets the public key read

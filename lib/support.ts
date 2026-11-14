@@ -8,9 +8,9 @@ export const supportMessageSchema = z.object({ body: z.string().trim().min(1).ma
 export const inquiryAdminPatchSchema = z
   .object({ closed: z.boolean().optional(), contribution_accepted: z.boolean().optional() })
   .refine(v => v.closed !== undefined || v.contribution_accepted !== undefined)
-export type InquiryStatus = 'open' | 'answered' | 'closed'
-export type SupportRole = 'user' | 'admin'
-export type SupportMessage = { id?: string; author_role: SupportRole; body: string; created_at: string }
+type InquiryStatus = 'open' | 'answered' | 'closed'
+type SupportRole = 'user' | 'admin'
+type SupportMessage = { id?: string; author_role: SupportRole; body: string; created_at: string }
 export type Inquiry = {
   id: string
   title: string

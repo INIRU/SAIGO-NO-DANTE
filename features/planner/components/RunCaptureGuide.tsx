@@ -5,7 +5,7 @@ import { useTranslations } from 'next-intl'
 import { MonitorUp } from 'lucide-react'
 
 /** Where the callouts sit on the original 1919×1079 game screenshot, as percentages of the image. */
-export const CAPTURE_GUIDE_CALLOUTS = {
+const CAPTURE_GUIDE_CALLOUTS = {
   before: { step: 1, left: 69.3, top: 18.9, width: 25.6, height: 5.9 },
   enter: { step: 4, left: 79, top: 62.6, width: 15.4, height: 12.4 },
 } as const

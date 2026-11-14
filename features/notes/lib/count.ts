@@ -6,7 +6,7 @@ export function noteTextLength(text: string): number {
   return [...text.replace(/[\r\n]/g, '')].length
 }
 
-export type NoteCountState = 'ok' | 'near' | 'limit'
+type NoteCountState = 'ok' | 'near' | 'limit'
 export function noteCountState(length: number, limit = NOTE_CHAR_LIMIT): NoteCountState {
   return length >= limit ? 'limit' : length >= limit * 0.9 ? 'near' : 'ok'
 }

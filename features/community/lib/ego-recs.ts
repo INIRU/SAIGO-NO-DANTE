@@ -14,7 +14,7 @@ import { STATUS_KEYWORDS, cosine, statusShare, type RecCatalog, type RecIdentity
  * ZAYIN (every sinner has it free) is not suggested.
  */
 export const EGO_COMPONENTS = ['meta', 'own', 'team', 'status', 'sin', 'fresh'] as const
-export type EgoComponent = (typeof EGO_COMPONENTS)[number]
+type EgoComponent = (typeof EGO_COMPONENTS)[number]
 
 export type EgoConfig = { shrink: number; cap: number; halfLife: number; viewBoost: number; newDays: number; weights: Record<EgoComponent, number>; mmr: number }
 
@@ -41,7 +41,7 @@ export function buildEgoModel(formations: readonly Formation[], catalog: RecCata
   return { catalog, rows }
 }
 
-export type EgoQuery = {
+type EgoQuery = {
   /** The sinner's chosen identity (the E.G.O is suggested for it); the board holds the other chosen identities. */
   identity: string
   board: readonly string[]
@@ -51,8 +51,8 @@ export type EgoQuery = {
   now: number
 }
 
-export type EgoHint = { keyword?: string; sin?: string }
-export type EgoScored = { id: string; z: number[]; hint: EgoHint }
+type EgoHint = { keyword?: string; sin?: string }
+type EgoScored = { id: string; z: number[]; hint: EgoHint }
 
 const slot = (component: EgoComponent) => EGO_COMPONENTS.indexOf(component)
 
@@ -129,7 +129,7 @@ export function rankEgos(model: EgoModel, query: EgoQuery, cfg: EgoConfig = EGO_
   return scored.map(row => ({ ...row, score: blendEgo(row.z, cfg.weights) })).sort((a, b) => b.score - a.score || a.id.localeCompare(b.id))
 }
 
-export type SuggestedEgo = { id: string; score: number; /** Public posts equipping it on this identity. */ count: number; reasons: string[]; partners: Partner[] }
+type SuggestedEgo = { id: string; score: number; /** Public posts equipping it on this identity. */ count: number; reasons: string[]; partners: Partner[] }
 const PARTNERS = 3
 const READABLE = /^(keyword|faction|sin):/
 const round = (value: number) => Math.round(value * 1000) / 1000
@@ -138,7 +138,7 @@ const round = (value: number) => Math.round(value * 1000) / 1000
  * Who an E.G.O goes with: board members first (shrunk log-lift of fielding them in posts that equip it, plus kit likeness),
  * then the identities of other sinners most over-represented in those posts.
  */
-function egoPartners(model: EgoModel, query: EgoQuery, cfg: EgoConfig, egoIds: string[], sinner: string, board: readonly RecIdentity[]): Map<string, Partner[]> {
+function egoPartners(model: EgoModel, _query: EgoQuery, cfg: EgoConfig, egoIds: string[], sinner: string, board: readonly RecIdentity[]): Map<string, Partner[]> {
   const { catalog } = model
   const universe = model.rows.filter(row => row.infoSinners.has(sinner) && [...row.identities].some(id => catalog.identities[id]?.sinner === sinner))
   const fielded = new Map<string, number>(), together = new Map<string, Map<string, number>>(egoIds.map(id => [id, new Map()]))

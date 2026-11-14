@@ -5,7 +5,7 @@
  */
 export const TEMP_SLOT_COUNT = 5
 
-export interface TempDraft<T> { id: string; label: string; savedAt: string; state: T }
+interface TempDraft<T> { id: string; label: string; savedAt: string; state: T }
 export interface TempSlot<T> { slotNumber: number; draft: TempDraft<T> | null }
 
 const isDraft = <T,>(value: unknown, isState: (state: unknown) => state is T): value is TempDraft<T> => {

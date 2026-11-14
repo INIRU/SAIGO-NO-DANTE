@@ -21,7 +21,7 @@ async function loadOwned(signedIn: boolean): Promise<Set<string> | null> {
   return owned.size ? withBaseIdentities(owned, catalog.identities) : null
 }
 
-export const OWNED_KEY = 'owned-collection'
+const OWNED_KEY = 'owned-collection'
 
 /** One request per session however many cards ask (SWR dedupes by key). */
 export function useOwnedIdentities(): Set<string> | null {

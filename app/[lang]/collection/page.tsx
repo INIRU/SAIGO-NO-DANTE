@@ -1,6 +1,5 @@
 import type { Metadata } from 'next'
 import { metaText, pageMetadata } from '@/lib/seo/metadata'
-import { Suspense } from 'react'
 import { fetchCollectionData } from '@/lib/db/collection'
 import CollectionClient from './_components/CollectionClient'
 import RequestTimeRoute from '@/components/layout/RequestTimeRoute'

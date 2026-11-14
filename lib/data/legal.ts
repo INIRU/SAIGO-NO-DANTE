@@ -1,6 +1,6 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 
-export type LegalSection = {
+type LegalSection = {
   heading: string
   body?: string
   items?: string[]
@@ -15,14 +15,14 @@ export type LegalDoc = {
   sections: LegalSection[]
 }
 
-export type LegalDocSummary = {
+type LegalDocSummary = {
   type: 'privacy' | 'terms'
   version: string
   last_updated: string | null
   updated_at?: string | null
 }
 
-export type LegalAcknowledgement = {
+type LegalAcknowledgement = {
   doc_type: 'privacy' | 'terms'
   version: string
   acknowledged_at: string

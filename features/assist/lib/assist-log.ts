@@ -5,10 +5,10 @@
  * and `assist.*` commands (USER 2026-11-04: "설정으로 로그 내보내기, F12 누르면 나오면 좋을듯"). Nothing leaves the browser
  * unless the player saves the file.
  */
-export interface LogEntry { at: number; kind: string; data?: unknown }
+interface LogEntry { at: number; kind: string; data?: unknown }
 
 export const LOG_MAX = 3000
-export const DEBUG_KEY = 'assist-debug'
+const DEBUG_KEY = 'assist-debug'
 
 const entries: LogEntry[] = []
 let verbose = (() => { try { return typeof window !== 'undefined' && Boolean(window.localStorage.getItem(DEBUG_KEY)) } catch { return false } })()

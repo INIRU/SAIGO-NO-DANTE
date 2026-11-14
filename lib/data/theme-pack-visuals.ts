@@ -1,9 +1,9 @@
 import { STORAGE_BASE } from '@/lib/constants/game'
 import type { SupportedLang } from '@/lib/i18n/types'
 
-export type ThemePackVisualKind = 'normal' | 'extreme'
+type ThemePackVisualKind = 'normal' | 'extreme'
 
-export interface ThemePackVisualConfig {
+interface ThemePackVisualConfig {
   kind: ThemePackVisualKind
   bossSpriteId?: string
   showWarning?: boolean
@@ -13,7 +13,7 @@ export interface ThemePackVisualConfig {
   title?: ThemePackTitleBox
 }
 
-export interface ThemePackTitleBox {
+interface ThemePackTitleBox {
   top?: number
   height?: number
   left?: number
@@ -32,7 +32,7 @@ export const THEME_PACK_EXTREME_TITLE_BOX = { top: 81.2, height: 9.9, left: 15.7
 // Both texts auto-size up to 65 card px; the extreme poster is drawn 2% smaller than a normal pack.
 const EXTREME_TITLE_SCALE = 0.98
 
-export interface ThemePackTitleLayout {
+interface ThemePackTitleLayout {
   top: number
   height: number
   left: number
@@ -42,7 +42,7 @@ export interface ThemePackTitleLayout {
   printedIn?: readonly SupportedLang[]
 }
 
-export type ThemePackTitleBoxKind = 'normal' | 'boss' | 'extreme'
+type ThemePackTitleBoxKind = 'normal' | 'boss' | 'extreme'
 
 export function getThemePackTitleBoxKind(config: ThemePackVisualConfig | null): ThemePackTitleBoxKind {
   if (config?.kind === 'extreme') return 'extreme'

@@ -8,7 +8,7 @@ import { LayerVideo } from './layer-video';
 
 /** a tile in the video's pixels; w / h absent = the base size (meta.tile): version 2 exports had one tile size */
 export interface Rect { x: number; y: number; w?: number; h?: number }
-export interface LayerMeta { id: string; label: string; /** version 4: the layer's difference tile */ delta?: Rect; /** version 5 / 7: its Y / Co / Cg grey tiles */ ycocg?: { y: Rect; co: Rect; cg: Rect }; /** version 8: per frame (cropStride numbers) the screen box (x, y, w, h; w 0 = nothing), the tile w, h and the Y, Co, Cg tiles x, y */ crops?: number[]; /** version 9: the video holding the crops' tiles (next to layers.json) */ file?: string; enabled?: boolean; /** never drawn in this skill (its tiles are empty) */ empty?: boolean; /** 시작 때 꺼짐: the game switches it off when the skill starts */ offAtSkill?: boolean; /** the frame ranges [from, to) in which the game shows it (absent: always) */ visible?: [number, number][] }
+interface LayerMeta { id: string; label: string; /** version 4: the layer's difference tile */ delta?: Rect; /** version 5 / 7: its Y / Co / Cg grey tiles */ ycocg?: { y: Rect; co: Rect; cg: Rect }; /** version 8: per frame (cropStride numbers) the screen box (x, y, w, h; w 0 = nothing), the tile w, h and the Y, Co, Cg tiles x, y */ crops?: number[]; /** version 9: the video holding the crops' tiles (next to layers.json) */ file?: string; enabled?: boolean; /** never drawn in this skill (its tiles are empty) */ empty?: boolean; /** 시작 때 꺼짐: the game switches it off when the skill starts */ offAtSkill?: boolean; /** the frame ranges [from, to) in which the game shows it (absent: always) */ visible?: [number, number][] }
 export interface LayerSetMeta {
   /** version 7: the base picture (every layer on) as BT.709 full-range Y / Cb / Cr grey planes; layers are taken away when unticked */
   basePlanes?: { y: Rect; cb?: Rect; cr?: Rect }; // (version 10: Y only, Cb / Cr in `chroma`)
@@ -484,7 +484,7 @@ class GuidedPath {
 }
 
 /** whether the game shows the layer's effect at this frame (the checkbox only says whether the visitor wants it) */
-export const visibleAt = (l: LayerMeta | undefined, frame: number): boolean => !l?.visible || l.visible.some(([a, b]) => frame >= a && frame < b);
+const visibleAt = (l: LayerMeta | undefined, frame: number): boolean => !l?.visible || l.visible.some(([a, b]) => frame >= a && frame < b);
 
 const pad = (v: number[][]): Float32Array => {
   const a = new Float32Array(MAX_LAYERS * 4);

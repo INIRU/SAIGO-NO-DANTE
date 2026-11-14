@@ -18,9 +18,9 @@ export type AutocompleteSuggestion = {
   aliases?: string[]
 }
 
-export type TokenType = AutocompleteSuggestion['type']
+type TokenType = AutocompleteSuggestion['type']
 
-export type AutocompleteContext = {
+type AutocompleteContext = {
   syntax: 'inline' | 'block' | 'word'
   mode: 'type' | 'value' | 'word' | 'closed'
   query: string

@@ -9,7 +9,7 @@ import type { GiftConditionStatus } from '@/lib/planner/gift-condition-status'
 import type { SupportedLang } from '@/lib/i18n/types'
 import { getLocalizedName } from '@/lib/i18n/localize'
 
-export interface RecipeLookup {
+interface RecipeLookup {
   materials: GiftData[]
   result: GiftData
   pseudoIngredients?: string[]

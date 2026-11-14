@@ -3,7 +3,7 @@ import { adminEmails } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { hashApiKey, readApiKey } from "./developer-keys";
 
-export type Scope = "catalog:read" | "news:write";
+type Scope = "catalog:read" | "news:write";
 export type KeyAccess = { partner: string | null; scopes: string[]; admin: boolean; remaining: number | null };
 type Refusal = { status: number; error: string; retry?: number };
 

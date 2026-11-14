@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 
 // Phones and tablets held upright draw the story turned to landscape (USER: 모바일은 가로 화면으로 무조건): story.css
 // turns the whole body 90° clockwise. Pointer positions come in screen pixels, so they are turned back here.
-export const TURNED = '(orientation: portrait) and (pointer: coarse)'
+const TURNED = '(orientation: portrait) and (pointer: coarse)'
 
 /** A client point as a point on the (maybe turned) story screen, from its top-left */
 export function local(cx: number, cy: number): [number, number] {
