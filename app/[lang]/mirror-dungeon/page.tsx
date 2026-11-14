@@ -5,12 +5,13 @@ import { metaText, pageMetadata } from '@/lib/seo/metadata'
 import { Suspense } from 'react'
 import { cacheLife, cacheTag } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { GIFT_COLUMNS, RECIPE_COLUMNS, MD_EVENT_COLUMNS, MD_EVENT_CHOICE_COLUMNS } from '@/lib/db/columns'
+import { MD_EVENT_COLUMNS, MD_EVENT_CHOICE_COLUMNS } from '@/lib/db/columns'
 import type { SupportedLang } from '@/lib/i18n/types'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import MirrorDungeonClient from '@/app/[lang]/mirror-dungeon/_components/MirrorDungeonClient'
 import MirrorDungeonSkeleton from '@/features/mirror-dungeon/components/MirrorDungeonSkeleton'
 import type { MdEvent, MdEventChoice } from '@/features/mirror-dungeon'
+import { giftsQuery, recipesQuery } from '@/features/mirror-dungeon/server'
 import JsonLd, { faqJsonLd } from '@/components/seo/JsonLd'
 import StaticQueryAdapter from '@/components/providers/StaticQueryAdapter'
 
@@ -74,8 +75,8 @@ async function fetchMirrorDungeonData() {
     { data: events, error: eventsError },
     { data: choices, error: choicesError },
   ] = await Promise.all([
-    supabase.schema('limbus').from('ego_gifts').select(GIFT_COLUMNS).order('keyword').order('grade'),
-    supabase.schema('limbus').from('ego_gift_recipes').select(RECIPE_COLUMNS),
+    giftsQuery(supabase),
+    recipesQuery(supabase),
     supabase.schema('limbus').from('ego_gift_themes').select('id, name, name_en, name_jp, ego_gift_ids, specific_ego_gift_ids, image_url, difficulty, floor_info, is_hidden, hidden_rate, fixed_reward_gift_ids, name_color, name_segments').order('id'),
     supabase
       .schema('limbus')

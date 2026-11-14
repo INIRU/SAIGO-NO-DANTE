@@ -1,4 +1,5 @@
 import { loadTempSlots, saveTempSlot, type TempSlot } from '@/lib/drafts/temp-slots'
+import { readJson } from '@/lib/utils/local-storage'
 
 /** Deck builder temporary saves: five slots in this browser. */
 export const DECK_DRAFTS_KEY = 'limbus-deck-drafts'
@@ -26,7 +27,7 @@ export const isDeckDraft = (value: unknown): value is DeckDraft =>
 export function loadDeckDraftSlots(): TempSlot<DeckDraft>[] {
   const slots = loadTempSlots(DECK_DRAFTS_KEY, isDeckDraft)
   try {
-    const legacy: unknown = JSON.parse(localStorage.getItem(LEGACY_DECK_DRAFT_KEY) ?? 'null')
+    const legacy = readJson(LEGACY_DECK_DRAFT_KEY)
     const free = slots.find(slot => !slot.draft)
     if (isDeckDraft(legacy) && free) {
       const moved = saveTempSlot(DECK_DRAFTS_KEY, free.slotNumber, legacy, legacy.title?.trim() || 'Draft', isDeckDraft)

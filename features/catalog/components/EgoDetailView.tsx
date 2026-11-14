@@ -1,13 +1,13 @@
 'use client'
 
 import AdSlot from '@/components/ads/AdSlot'
-import { getEgoGradeBannerUrl, getEgoArtworkUrl } from '@/lib/utils/images'
+import { getEgoGradeBannerUrl, getEgoArtworkUrl, getEgoProfileUrl } from '@/lib/utils/images'
 
 import { useMemo, useState } from 'react'
 import { Link } from '@/lib/i18n/navigation'
 import Image from 'next/image'
 import {
-  Sinner, EGO, EGOSkill, STORAGE_BASE,
+  Sinner, EGO, EGOSkill,
   SIN_COLORS, SinType,
   GRADE_COLORS, SIN_KR_TO_EN,
   getSinIconUrl,
@@ -176,10 +176,10 @@ export default function EgoDetailView({ sinner, ego, embedded = false }: Props) 
     ? ego.image_url.split('/ego/')[1]?.split('/')[0] ?? ''
     : ''
   const awakenIconUrl = egoGameId
-    ? `${STORAGE_BASE}/sinners/${sinner.id}/ego/${egoFolder}/${egoGameId}_awaken_profile.webp`
+    ? getEgoProfileUrl(sinner.id, egoFolder, egoGameId, 'awaken')
     : ''
   const erosionIconUrl = egoGameId
-    ? `${STORAGE_BASE}/sinners/${sinner.id}/ego/${egoFolder}/${egoGameId}_erosion_profile.webp`
+    ? getEgoProfileUrl(sinner.id, egoFolder, egoGameId, 'erosion')
     : ''
 
   // 로컬라이즈된 이름

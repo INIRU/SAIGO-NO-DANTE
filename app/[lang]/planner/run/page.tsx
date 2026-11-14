@@ -2,13 +2,14 @@ import type { Metadata } from 'next'
 import { pageMetadata } from '@/lib/seo/metadata'
 import { cacheLife, cacheTag } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { GIFT_COLUMNS, RECIPE_COLUMNS, MD_EVENT_COLUMNS, MD_EVENT_CHOICE_COLUMNS } from '@/lib/db/columns'
+import { MD_EVENT_COLUMNS, MD_EVENT_CHOICE_COLUMNS } from '@/lib/db/columns'
 import { readAllRows } from '@/lib/meta/pagination'
 import { getTranslations } from 'next-intl/server'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import { normalizePlannerThemeId } from '@/lib/planner/types'
 import RunWrapper from './RunWrapper'
 import type { MdEvent, MdEventChoice } from '@/features/mirror-dungeon'
+import { giftsQuery, recipesQuery, themesQuery } from '@/features/mirror-dungeon/server'
 import { withoutOtherLocales } from '@/lib/i18n/strip-locales'
 import { dropRepeatedTopUptie } from '@/lib/identity/skill-model'
 
@@ -32,9 +33,9 @@ export default async function RunPage({ params }: { params: Promise<{ lang: stri
   const supabase = createAdminClient()
 
   const [{ data: themes, error: e1 }, { data: gifts, error: e2 }, { data: recipes, error: e3 }] = await Promise.all([
-    supabase.schema('limbus').from('ego_gift_themes').select('id, name, name_en, name_jp, ego_gift_ids, specific_ego_gift_ids, fixed_reward_gift_ids, image_url, difficulty, floor_info, name_color, name_segments'),
-    supabase.schema('limbus').from('ego_gifts').select(GIFT_COLUMNS).order('keyword').order('grade'),
-    supabase.schema('limbus').from('ego_gift_recipes').select(RECIPE_COLUMNS),
+    themesQuery(supabase),
+    giftsQuery(supabase),
+    recipesQuery(supabase),
   ])
   failOnReadError(e1, e2, e3)
 

@@ -13,7 +13,7 @@ import EventSection from './EventSection'
 import GiftCheckSection from './GiftCheckSection'
 import FloorLog from './FloorLog'
 import RunStatus from './RunStatus'
-import { getLocalizedName } from '@/lib/i18n/localize'
+import { localizeRowName } from '@/lib/i18n/localize'
 import type { SupportedLang } from '@/lib/i18n/types'
 
 /** What the run page shows under its bar: the run overview, or one of the views reached from it. */
@@ -49,7 +49,7 @@ export default memo(FloorPanel)
 function FloorPanel({ state, dispatch, themes, gifts, giftMap, recipes, identities, sinners, skills, passives, egos, events, eventChoices, observedEventIds, view, onView }: Props) {
   const t = useTranslations('planner.run')
   const locale = useLocale() as SupportedLang
-  const localized = (item: { name: string; name_en?: string | null; name_jp?: string | null }) => getLocalizedName({ name_kr: item.name, name_en: item.name_en, name_jp: item.name_jp }, locale)
+  const localized = (item: { name: string; name_en?: string | null; name_jp?: string | null }) => localizeRowName(item, locale)
   const floor = state.currentFloor
   const log = state.floorLogs[floor - 1]
   const isLastFloor = floor >= state.maxFloors

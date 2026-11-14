@@ -14,7 +14,7 @@ import type { ThemeData, GiftData, SkillSummary, RecipeData, SinnerData, Identit
 import { committedKeywords, formationRow, fusionGuide } from '@/features/planner/lib/assist-gift-guide'
 import { teamCodeFromPlanSlots } from '@/lib/planner/team-code-import'
 import { recipeIngredientsInInventory, recipeOwnedGiftIds, themeExclusiveGiftIds } from '@/lib/planner/fusion'
-import { getLocalizedName } from '@/lib/i18n/localize'
+import { localizeRowName } from '@/lib/i18n/localize'
 import type { SupportedLang } from '@/lib/i18n/types'
 import type { FloorThemeObservation, FusionEvidence, GiftSale, PopupAcquisition } from '@/features/assist/hooks/useAssistCapture'
 import type { MdEvent, MdEventChoice } from '@/features/mirror-dungeon'
@@ -69,7 +69,7 @@ export default function CompanionPanel({ state, dispatch, themes, giftMap, obser
   skillExchange = null, skills = [], recipes = [], sinners = [], identities = [], egos = [], clearBonus = null }: Props) {
   const t = useTranslations('planner.run')
   const locale = useLocale() as SupportedLang
-  const localized = (item: { name: string; name_en?: string | null; name_jp?: string | null }) => getLocalizedName({ name_kr: item.name, name_en: item.name_en, name_jp: item.name_jp }, locale)
+  const localized = (item: { name: string; name_en?: string | null; name_jp?: string | null }) => localizeRowName(item, locale)
   const { container, open, close, size, actualSize, updateSize } = useCompanionWindow()
   // Document Picture-in-Picture exists only in some desktop browsers; known after mount (the server cannot tell).
   const [pipSupported, setPipSupported] = useState(true)

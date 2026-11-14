@@ -1,9 +1,6 @@
 import { NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { requireAccount } from '@/lib/auth-account'
 import { getCurrentLegalDocs, getLegalDoc, getUserLegalAcknowledgements, toLegalStatusPayload, type LegalDoc } from '@/lib/data/legal'
-import { createAdminClient } from '@/lib/supabase/admin'
-import { findOrCreateSupabaseUser } from '@/lib/supabase/findOrCreateUser'
 
 type ProfileSuspensionRow = {
   suspended: boolean | null
@@ -42,21 +39,9 @@ async function legalTexts(lang: string) {
 
 export async function GET(request: Request) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.email) {
-      return NextResponse.json({ error: '로그인이 필요합니다.' }, { status: 401 })
-    }
-
-    const admin = createAdminClient()
-    const userId = await findOrCreateSupabaseUser(
-      admin,
-      session.user.email,
-      session.user.name,
-      session.user.image,
-    )
-    if (!userId) {
-      return NextResponse.json({ error: '사용자를 찾을 수 없습니다.' }, { status: 500 })
-    }
+    const auth = await requireAccount()
+    if (auth.error) return auth.response
+    const { admin, userId } = auth
 
     const [docs, acknowledgements, profileRes] = await Promise.all([
       getCurrentLegalDocs('ko'),

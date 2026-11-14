@@ -12,6 +12,11 @@ export function getLocalizedName(entity: LocalizableEntity, lang: SupportedLang)
   return entity.name_kr
 }
 
+/** The same as getLocalizedName for a row whose Korean name column is `name` (gifts, themes, events). */
+export function localizeRowName(row: { name: string; name_en?: string | null; name_jp?: string | null }, lang: SupportedLang): string {
+  return getLocalizedName({ name_kr: row.name, name_en: row.name_en, name_jp: row.name_jp }, lang)
+}
+
 /* ── Affiliation localization ── */
 
 const AFFILIATION_MAP: Record<string, { en: string; ja: string }> = {

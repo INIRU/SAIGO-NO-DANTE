@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 import { ChevronDown, FolderOpen, Save, Trash2, X } from 'lucide-react'
 import type { TempSlot } from '@/lib/drafts/temp-slots'
+import { formatShortDateTime } from '@/lib/utils/format-date'
 
 /**
  * Five browser-local save slots behind one button: save or overwrite, load, and clear each slot. Shared by the planner,
@@ -30,10 +31,6 @@ export default function TempSaveMenu<T>({ title, slots, onSave, onLoad, onDelete
     document.addEventListener('keydown', close)
     return () => { document.removeEventListener('pointerdown', close); document.removeEventListener('keydown', close) }
   }, [open])
-  const savedAt = (value: string) => {
-    const date = new Date(value)
-    return Number.isNaN(date.getTime()) ? '' : new Intl.DateTimeFormat(locale, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }).format(date)
-  }
   const used = slots.filter(slot => slot.draft).length
   return (
     <div ref={root} className="relative">
@@ -58,7 +55,7 @@ export default function TempSaveMenu<T>({ title, slots, onSave, onLoad, onDelete
                 <span className={`grid h-7 w-7 place-items-center rounded text-[0.875rem] font-bold ${slot.draft ? 'bg-[rgba(200,144,10,0.16)] text-[var(--gold-light)]' : 'bg-[#1f1810] text-[var(--text-muted)]'}`}>{slot.slotNumber}</span>
                 <span className="min-w-0">
                   <span className={`block truncate text-[0.9375rem] font-semibold ${slot.draft ? 'text-[var(--text-primary)]' : 'text-[var(--text-muted)]'}`}>{slot.draft?.label ?? t('emptySlot')}</span>
-                  {slot.draft && <span className="block text-[0.8125rem] text-[#8a7d69]">{savedAt(slot.draft.savedAt)}</span>}
+                  {slot.draft && <span className="block text-[0.8125rem] text-[#8a7d69]">{formatShortDateTime(locale, slot.draft.savedAt)}</span>}
                 </span>
                 <span className="flex gap-1">
                   <button type="button" role="menuitem" onClick={() => onSave(slot)}

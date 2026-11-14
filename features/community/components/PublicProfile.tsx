@@ -13,14 +13,11 @@ import { getCommunityCopy } from "@/features/community/lib/copy";
 import { achievementProgress } from "@/features/community/lib/achievements";
 import { useHtmlFlag } from "@/hooks/useHtmlFlag";
 import type { CommunityProfile } from "@/features/community/lib/rules";
+import { fetchJson } from "@/lib/utils/http";
 import "@/styles/components/community.css";
 import styles from "@/styles/components/CommunityProfile.module.css";
 
-async function fetcher(url: string): Promise<CommunityProfile> {
-  const r = await fetch(url);
-  if (!r.ok) throw Object.assign(new Error(), { status: r.status });
-  return r.json();
-}
+const fetcher = (url: string) => fetchJson<CommunityProfile>(url);
 
 /** Someone's profile: the same rail as my page, then the badges they earned and their latest decks and plans. */
 export default function PublicProfile({ id }: { id: string }) {

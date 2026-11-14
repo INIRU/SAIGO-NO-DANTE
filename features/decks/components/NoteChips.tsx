@@ -37,6 +37,7 @@ import type { SupportedLang } from '@/lib/i18n/types'
 import { localizeDeckKeyword } from '@/features/decks/lib/decks-types'
 import { skillDescriptionBlocks } from '@/lib/identity/skill-description'
 import { sinColorOf } from '@/lib/constants/sin'
+import { fetchJson } from '@/lib/utils/http'
 import { TooltipPopup, useTooltip } from './NoteTooltip'
 
 /** 게임 스타일 칩 공통 인라인 스타일 (clipPath 테두리 = outline 기법) */
@@ -871,7 +872,7 @@ function NoteRendererImpl({
 /** Memoized: a note re-renders only when its text or lookups change (pages re-render on every vote, bookmark and comment). */
 export const NoteRenderer = memo(NoteRendererImpl)
 
-export const fetchNoteGifts = (url: string): Promise<NoteEgoGiftEntry[]> => fetch(url).then(response => { if (!response.ok) throw new Error('gifts'); return response.json() })
+export const fetchNoteGifts = (url: string) => fetchJson<NoteEgoGiftEntry[]>(url)
 
 /** Gift lookup for one-line previews (cards). Loads the cached gift list once, only when the text mentions a gift. */
 export function useNoteGiftLookup(text: string): Record<string, NoteEgoGiftEntry> {

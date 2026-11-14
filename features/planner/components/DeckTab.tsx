@@ -54,10 +54,12 @@ import { identitySuggestUrl, plannerSuggestionContext, type SuggestionResponse }
 import {
   DECK_MAIN_KEYWORDS,
   MAX_DECK_MAIN_KEYWORDS,
+  MANUAL_ATTACK_MAIN_KEYWORDS,
   computeDeckMainKeywordsFromSlots,
   computeDeckKeywordCounts,
   type DeckKeywordSlot,
 } from '@/lib/decks/keyword-rules'
+import { DEFAULT_EGO_NAMES } from '@/lib/decks/default-ego'
 
 type DeckSubTab = 'identity' | 'ego' | 'skillset'
 type RosterSlot = Omit<PlannerState['identitySlots'][number], 'slot_order'>
@@ -67,19 +69,6 @@ const SUB_TABS: { key: DeckSubTab; labelKey: string; icon: typeof Users }[] = [
   { key: 'ego', labelKey: 'subTabs.ego', icon: Sparkles },
   { key: 'skillset', labelKey: 'subTabs.skillset', icon: SlidersHorizontal },
 ]
-
-const DEFAULT_EGO_NAMES: Record<string, string> = {
-  '이상': '오감도',
-  '파우스트': '표사 방출기',
-  '돈키호테': '라 상그레 산초',
-  '료슈': '삼라영삼',
-  '뫼르소': '타인의 사슬',
-  '홍루': '허환경',
-  '이스마엘': '작살박이',
-  '오티스': '토 파토스 마토스',
-  '그레고르': '어느날 갑자기',
-}
-const MANUAL_ATTACK_MAIN_KEYWORDS = new Set<string>(['참격', '관통', '타격'])
 
 const getHighestDonorIndex = (dist: SkillDistribution, targetIdx: number) => {
   let donorIdx: number | null = null

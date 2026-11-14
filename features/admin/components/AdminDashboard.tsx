@@ -6,6 +6,7 @@ import { useLocale } from 'next-intl'
 import { ArrowUpRight, RotateCw } from 'lucide-react'
 import { Link } from '@/lib/i18n/navigation'
 import Button from '@/components/ui/Button'
+import { fetchJson } from '@/lib/utils/http'
 import './admin-dashboard.css'
 
 type Overview = {
@@ -20,11 +21,7 @@ const copy = {
   en: { title: 'Dashboard', queue: 'To do', inquiries: 'Inquiries waiting', reports: 'Friend code reports', drafts: 'Draft announcements', maintenance: 'Maintenance running', days: 'Last 14 days', visits: 'Views', joined: 'Sign-ups', posts: 'New decks and plans', today: 'Today', inbox: 'Inquiries', all: 'All', empty: 'No inquiries.', status: 'Totals', users: 'Users', seenDay: 'Seen in 24 hours', seenWeek: 'Seen in 7 days', decks: 'Decks', plans: 'Plans', open: 'Waiting', answered: 'Answered', closed: 'Closed', error: 'Could not load.', retry: 'Retry' },
   ja: { title: 'ダッシュボード', queue: '対応待ち', inquiries: '返信待ちのお問い合わせ', reports: 'フレンドコード通報', drafts: 'お知らせの下書き', maintenance: '実施中のメンテナンス', days: '直近14日', visits: '閲覧', joined: '登録', posts: '新しいデッキ・プラン', today: '今日', inbox: 'お問い合わせ', all: 'すべて', empty: 'お問い合わせはありません。', status: '現況', users: '全ユーザー', seenDay: '24時間以内の接続', seenWeek: '7日以内の接続', decks: 'デッキ', plans: 'プラン', open: '返信待ち', answered: '返信済み', closed: '終了', error: '読み込めませんでした。', retry: '再試行' },
 }
-const fetcher = async (url: string) => {
-  const response = await fetch(url)
-  if (!response.ok) throw Error('overview')
-  return (await response.json()) as Overview
-}
+const fetcher = (url: string) => fetchJson<Overview>(url)
 const QUEUE = [['inquiries', '/admin/inquiries'], ['reports', '/admin/friends'], ['drafts', '/admin/announcements'], ['maintenance', '/admin/maintenance']] as const
 const SERIES = ['visits', 'joined', 'posts'] as const
 const TOTALS = ['users', 'seenDay', 'seenWeek', 'decks', 'plans'] as const

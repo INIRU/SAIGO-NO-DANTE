@@ -6,7 +6,6 @@ import { pageMetadata } from '@/lib/seo/metadata'
 import { Suspense } from 'react'
 import { cacheLife, cacheTag } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { GIFT_COLUMNS, RECIPE_COLUMNS } from '@/lib/db/columns'
 import { readAllRows } from '@/lib/meta/pagination'
 import { getTranslations } from 'next-intl/server'
 import PlannerClient from './PlannerClient'
@@ -14,7 +13,8 @@ import PlannerSkeleton from '@/features/planner/components/PlannerSkeleton'
 import PageHeader from '@/components/ui/PageHeader'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import StaticQueryAdapter from '@/components/providers/StaticQueryAdapter'
-import { OBSERVATION_COLUMNS, observationFrom, type ObservationRow } from '@/features/planner'
+import { observationFrom } from '@/features/planner'
+import { giftsQuery, observationQuery, recipesQuery, themesQuery } from '@/features/mirror-dungeon/server'
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params
@@ -47,10 +47,10 @@ async function fetchPlannerStaticData() {
 
   // 그룹 1: 거울 던전 데이터
   const [{ data: themes, error: themesError }, { data: gifts, error: giftsError }, { data: recipes, error: recipesError }, { data: observationRow, error: observationError }] = await Promise.all([
-    supabase.schema('limbus').from('ego_gift_themes').select('id, name, name_en, name_jp, ego_gift_ids, specific_ego_gift_ids, fixed_reward_gift_ids, image_url, difficulty, floor_info, name_color, name_segments'),
-    supabase.schema('limbus').from('ego_gifts').select(GIFT_COLUMNS).order('keyword').order('grade'),
-    supabase.schema('limbus').from('ego_gift_recipes').select(RECIPE_COLUMNS),
-    supabase.schema('limbus').from('md_observation').select(OBSERVATION_COLUMNS).order('mirror_dungeon_id', { ascending: false }).limit(1).maybeSingle<ObservationRow>(),
+    themesQuery(supabase),
+    giftsQuery(supabase),
+    recipesQuery(supabase),
+    observationQuery(supabase),
   ])
   failOnReadError({ md_observation: observationError, themes: themesError, gifts: giftsError, recipes: recipesError })
 

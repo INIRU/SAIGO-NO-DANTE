@@ -10,7 +10,7 @@ import KeywordIcon from '@/components/ui/KeywordIcon'
 import GiftArtwork from '@/components/ui/GiftArtwork'
 import Skeleton, { SkeletonPage } from '@/components/ui/Skeleton'
 import { localeHref } from '@/components/layout/nav-shared'
-import { SINNER_SLUGS, STORAGE_BASE } from '@/lib/constants/game'
+import { RARITY_ICON_MAP, SINNER_SLUGS } from '@/lib/constants/game'
 import { getEgoGradeBannerUrl, getSinnerLogoUrl } from '@/lib/utils/images'
 import { readHistory, remember } from '@/lib/discovery/history'
 import { committedQuery, groupHits, markParts } from '@/lib/utils/global-search'
@@ -18,11 +18,6 @@ import { search, type Hit, type IndexEntry, type Reason, type SearchType } from 
 import { useSearchIndex } from '@/hooks/useSearchIndex'
 import styles from './SearchModal.module.css'
 
-const RARITY_ICONS: Record<number, string> = {
-  1: `${STORAGE_BASE}/icons/Rarity/1star.webp`,
-  2: `${STORAGE_BASE}/icons/Rarity/2star.webp`,
-  3: `${STORAGE_BASE}/icons/Rarity/3star.webp`,
-}
 const EGO_GRADES = new Set(['ZAYIN', 'TETH', 'HE', 'WAW', 'ALEPH'])
 const TYPE_ORDER: SearchType[] = ['sinner', 'identity', 'ego', 'egoGift', 'keyword', 'themePack', 'event', 'page']
 const TYPE_ICON: Record<SearchType, LucideIcon> = { sinner: User, identity: Swords, ego: Brain, egoGift: Gift, keyword: Tags, themePack: Layers, event: ScrollText, page: Compass }
@@ -65,7 +60,7 @@ function Meta({ entry, ranges = [] }: { entry: IndexEntry; ranges?: [number, num
 }
 
 function Badge({ entry }: { entry: IndexEntry }) {
-  if (entry.rarity && RARITY_ICONS[entry.rarity]) return <Image src={RARITY_ICONS[entry.rarity]} alt={`${entry.rarity}`} width={20} height={20} unoptimized className={styles.badge} />
+  if (entry.rarity && RARITY_ICON_MAP[entry.rarity]) return <Image src={RARITY_ICON_MAP[entry.rarity]} alt={`${entry.rarity}`} width={20} height={20} unoptimized className={styles.badge} />
   if (entry.type === 'ego' && entry.grade && EGO_GRADES.has(entry.grade)) return <Image src={getEgoGradeBannerUrl(entry.grade)} alt={entry.grade} width={36} height={16} unoptimized className={styles.badge} />
   return null
 }

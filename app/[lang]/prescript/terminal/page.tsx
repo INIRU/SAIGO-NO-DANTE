@@ -3,11 +3,11 @@ import { cacheLife, cacheTag } from 'next/cache'
 import { getTranslations } from 'next-intl/server'
 import { pageMetadata } from '@/lib/seo/metadata'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { GIFT_COLUMNS, MD_EVENT_CHOICE_COLUMNS, MD_EVENT_COLUMNS, RECIPE_COLUMNS } from '@/lib/db/columns'
+import { MD_EVENT_CHOICE_COLUMNS, MD_EVENT_COLUMNS } from '@/lib/db/columns'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import { normalizePlannerThemeId } from '@/lib/planner/types'
 import { withoutOtherLocales } from '@/lib/i18n/strip-locales'
-import { OBSERVATION_COLUMNS, type ObservationRow } from '@/features/planner'
+import { giftsQuery, observationQuery, recipesQuery, themesQuery } from '@/features/mirror-dungeon/server'
 import PrescriptWrapper from '../_components/PrescriptWrapper'
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
@@ -24,9 +24,9 @@ export default async function PrescriptPage({ params }: { params: Promise<{ lang
   const { lang } = await params
   const supabase = createAdminClient()
   const [{ data: themes, error: e1 }, { data: gifts, error: e2 }, { data: recipes, error: e3 }] = await Promise.all([
-    supabase.schema('limbus').from('ego_gift_themes').select('id, name, name_en, name_jp, ego_gift_ids, specific_ego_gift_ids, fixed_reward_gift_ids, image_url, difficulty, floor_info, name_color, name_segments'),
-    supabase.schema('limbus').from('ego_gifts').select(GIFT_COLUMNS).order('keyword').order('grade'),
-    supabase.schema('limbus').from('ego_gift_recipes').select(RECIPE_COLUMNS),
+    themesQuery(supabase),
+    giftsQuery(supabase),
+    recipesQuery(supabase),
   ])
   // the ? rooms: a room's mandatory prescript names one of its options, judged by the result text read
   const [{ data: events, error: e4 }, { data: eventChoices, error: e5 }, { data: identities, error: e6 }, { data: sinners, error: e7 }] = await Promise.all([
@@ -37,8 +37,7 @@ export default async function PrescriptPage({ params }: { params: Promise<{ lang
     supabase.schema('limbus').from('sinners').select('id, name_kr, name_en, name_jp'),
   ])
   // the opening orders: the gifts observation offers this season (latest row)
-  const { data: observation, error: e8 } = await supabase.schema('limbus').from('md_observation').select(OBSERVATION_COLUMNS)
-    .order('mirror_dungeon_id', { ascending: false }).limit(1).maybeSingle<ObservationRow>()
+  const { data: observation, error: e8 } = await observationQuery(supabase)
   if (e8) console.error('[PrescriptPage] md_observation', e8.message)
   if (e1 || e2 || e3 || e4 || e5 || e6 || e7) console.error('[PrescriptPage]', e1?.message, e2?.message, e3?.message, e4?.message, e5?.message, e6?.message, e7?.message)
   const normalizedThemes = (themes ?? []).flatMap(theme => {

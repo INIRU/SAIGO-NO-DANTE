@@ -4,8 +4,7 @@ import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { X } from 'lucide-react'
 import BaseModal from '@/components/ui/BaseModal'
-import { STORAGE_BASE } from '@/lib/constants/game'
-import { BLUR_PLACEHOLDER, getIdentityImageUrl } from '@/lib/utils/images'
+import { BLUR_PLACEHOLDER, getIdentityImageUrl, getSinnerLogoUrl } from '@/lib/utils/images'
 import { getBlurDataURL } from '@/lib/utils/thumbhash'
 
 type Sinner = { id: string; name_kr: string; order_num: number }
@@ -141,7 +140,7 @@ export default function AvatarPicker({ open, currentUrl, onSelect, onReset, onCl
               }}
             >
               <Image
-                src={`${STORAGE_BASE}/icons/Sinners/${s.id}.webp`}
+                src={getSinnerLogoUrl(s.id)}
                 alt={s.name_kr}
                 width={28}
                 height={28}

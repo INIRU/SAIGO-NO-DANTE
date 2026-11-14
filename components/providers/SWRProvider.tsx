@@ -1,11 +1,9 @@
 'use client'
 
 import { SWRConfig } from 'swr'
+import { fetchJson } from '@/lib/utils/http'
 
-const fetcher = (url: string) => fetch(url).then(res => {
-  if (!res.ok) throw new Error(`${res.status}`)
-  return res.json()
-})
+const fetcher = (url: string) => fetchJson(url)
 
 export default function SWRProvider({ children }: { children: React.ReactNode }) {
   return (

@@ -10,13 +10,13 @@ import IntentLink from '@/components/ui/IntentLink'
 import EgoDisplayCard from '@/features/catalog/components/EgoDisplayCard'
 import { useMotionCatalog } from '@/features/motion/hooks/useMotionCatalog'
 import { toMotionParam, type MotionEgo, type MotionIdentity, type MotionSinner } from '@/features/motion/lib/catalog'
+import { QUERY_OPTIONS } from '@/lib/constants/query-options'
 import type { SupportedLang } from '@/lib/i18n/types'
 import { getSinnerLogoUrl } from '@/lib/utils/images'
 import { MotionBrowserSkeleton } from './SkillMotionSkeleton'
 
 const TABS = ['identity', 'ego'] as const
 const QUERY = { sinner: parseAsString, tab: parseAsStringLiteral(TABS).withDefault('identity') }
-const QUERY_OPTIONS = { history: 'replace', shallow: true, scroll: false } as const
 const focusRing = 'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--gold-light)]'
 const grid = 'grid grid-cols-[repeat(auto-fill,minmax(7.5rem,1fr))] gap-x-3 gap-y-4'
 

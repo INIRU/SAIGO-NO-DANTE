@@ -26,39 +26,16 @@ import { parseSearchQuery, getActiveTerm, termMatchesAny } from '@/lib/utils/sea
 import { THEME_KEYWORDS } from '@/lib/constants/keywords'
 import { normalizePlannerListKeywords } from '@/lib/planner/stripPlanForList'
 import { useLocale, useTranslations } from 'next-intl'
-import {
-  localizeDeckKeyword,
-} from '@/features/decks'
+import { QUERY_OPTIONS, localizeDeckKeyword, parseCsvParam, serializeCsvParam, toDeckFilterIdentity } from '@/features/decks'
+import { useIdentityFilterOptions } from '@/features/decks/hooks/useIdentityFilterOptions'
 import { getIdentityPortraitUrl, getIdentityInfoUrl } from '@/lib/utils/images'
 import type { SupportedLang } from '@/lib/i18n'
 import Sheet from '@/components/ui/Sheet'
 import { usePlanList } from '@/features/planner/hooks/usePlanList'
+import { useAutocompleteKeys } from '@/hooks/useAutocompleteKeys'
 
 type SortKey = 'latest' | 'popular'
 type SearchSuggestion = { label: string; type: 'identity' | 'keyword'; imageUrl?: string }
-type IdentityNameEntry = {
-  id: string
-  name: string
-  name_kr: string
-  name_en?: string | null
-  name_jp?: string | null
-  sinner_id: string
-  folder_name: string | null
-  game_id: string | null
-  rarity: number
-  release_date?: string | null
-  keywords: string[] | null
-  skill_keyword_list?: string[] | null
-  hp: number | null
-  speed_min: number | null
-  speed_max: number | null
-  def_level: number | null
-  sinner?: {
-    id: string
-    name_kr: string
-    order_num: number
-  } | { id: string; name_kr: string; order_num: number }[] | null
-}
 type PlanFilterIndex = {
   plan: PlanSummary
   searchableFields: string[]
@@ -71,46 +48,10 @@ type PlanFilterIndex = {
 }
 // A multiple of 6, so every page fills whole rows of the one-, two- and three-column grids.
 const PAGE_SIZE = 24
-const QUERY_OPTIONS = { history: 'replace', shallow: true, scroll: false } as const
 const COMBAT_KEYWORDS = ['참격', '관통', '타격'] as const
-const IDENTITY_FILTER_SELECT_WITH_SKILL_KEYWORDS = 'id, sinner_id, name_kr, name_en, name_jp, rarity, release_date, keywords, skill_keyword_list, folder_name, game_id, hp, speed_min, speed_max, def_level, sinner:sinners(id, name_kr, order_num)'
-const IDENTITY_FILTER_SELECT_LEGACY = 'id, sinner_id, name_kr, name_en, name_jp, rarity, release_date, keywords, folder_name, game_id, hp, speed_min, speed_max, def_level, sinner:sinners(id, name_kr, order_num)'
 
 const DIFFICULTY_COLOR: Record<string, string> = { normal: '#4a9868', hard: '#e8b030', overlap: '#48b0c0', extreme: '#ec6a5e' }
 
-
-function parseCsvParam(value: string) {
-  if (!value) return []
-  return value.split(',').map(item => item.trim()).filter(Boolean)
-}
-
-function serializeCsvParam(values: Set<string>) {
-  return [...values].join(',')
-}
-
-function toDeckFilterIdentity(identity: IdentityNameEntry): DeckFilterIdentity {
-  const sinner = Array.isArray(identity.sinner) ? identity.sinner[0] : identity.sinner
-  return {
-    id: identity.id,
-    sinner_id: identity.sinner_id,
-    name: identity.name_kr,
-    name_kr: identity.name_kr,
-    name_en: identity.name_en,
-    name_jp: identity.name_jp,
-    rarity: identity.rarity,
-    release_date: identity.release_date ?? undefined,
-    keywords: identity.keywords ?? [],
-    skill_keyword_list: identity.skill_keyword_list ?? identity.keywords ?? [],
-    folder_name: identity.folder_name,
-    game_id: identity.game_id,
-    hp: identity.hp ?? 0,
-    speed_min: identity.speed_min ?? 0,
-    speed_max: identity.speed_max ?? 0,
-    def_level: identity.def_level ?? 0,
-    tier: 0,
-    sinner: sinner ?? null,
-  }
-}
 
 // 플랜의 모든 인격 이름 (검색용) — API가 pre-compute한 값 우선 사용
 function getPlanIdentityNames(plan: PlanSummary): string[] {
@@ -164,7 +105,7 @@ export default function CommunityClient({ initialPlans, initialTotal, initialShe
     const next = new Set(facetSelections[kind])
     if (next.has(id)) next.delete(id)
     else next.add(id)
-    void facetSetters[kind](serializeCsvParam(next) || null, QUERY_OPTIONS)
+    void facetSetters[kind](serializeCsvParam(next), QUERY_OPTIONS)
   }
   const [facetModal, setFacetModal] = useState<FacetKind | null>(null)
   const facetData = useBoardFacets('planner').data
@@ -187,42 +128,7 @@ export default function CommunityClient({ initialPlans, initialTotal, initialShe
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false)
 
   // 전체 인격 목록 (자동완성용 - 이름 + 일러스트)
-  const [allIdentities, setAllIdentities] = useState<IdentityNameEntry[]>([])
-  const identitiesRequestRef = useRef<Promise<void> | null>(null)
-  const ensureIdentities = useCallback(() => {
-    if (allIdentities.length > 0) return Promise.resolve()
-    if (identitiesRequestRef.current) return identitiesRequestRef.current
-
-    identitiesRequestRef.current = (async () => {
-      try {
-        const { createClient: createBrowserClient } = await import('@/lib/supabase/client')
-        const supabase = createBrowserClient()
-        const buildQuery = (select: string) => supabase
-          .schema('limbus')
-          .from('identities')
-          .select(select)
-          .order('sinner_id')
-          .order('rarity', { ascending: false })
-          .order('name_kr')
-
-        let { data, error } = await buildQuery(IDENTITY_FILTER_SELECT_WITH_SKILL_KEYWORDS)
-        if (error && error.message.includes('skill_keyword_list')) {
-          const legacyResult = await buildQuery(IDENTITY_FILTER_SELECT_LEGACY)
-          data = legacyResult.data
-          error = legacyResult.error
-        }
-
-        if (error) throw error
-        if (data) {
-          setAllIdentities(data as unknown as IdentityNameEntry[])
-        }
-      } finally {
-        identitiesRequestRef.current = null
-      }
-    })()
-
-    return identitiesRequestRef.current
-  }, [allIdentities.length])
+  const { identities: allIdentities, ensureLoaded: ensureIdentities } = useIdentityFilterOptions({ lazy: true })
 
   const activeInputTermLength = useMemo(() => getActiveTerm(inputValue).activeTerm.length, [inputValue])
   useEffect(() => {
@@ -271,20 +177,9 @@ export default function CommunityClient({ initialPlans, initialTotal, initialShe
 
   useEffect(() => { setAcIndex(suggestions.length > 0 ? 0 : -1) }, [suggestions.length])
 
-  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'ArrowDown' && !showSuggestions && suggestions.length > 0) {
-      e.preventDefault(); setShowSuggestions(true); return
-    }
-    if (!showSuggestions || suggestions.length === 0) {
-      if (e.key === 'Escape') setShowSuggestions(false)
-      return
-    }
-    if (e.key === 'ArrowDown') {
-      e.preventDefault(); setAcIndex(prev => (prev + 1) % suggestions.length)
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault(); setAcIndex(prev => (prev <= 0 ? suggestions.length - 1 : prev - 1))
-    } else if (e.key === 'Tab' && acIndex >= 0) {
-      e.preventDefault()
+  const handleSearchKeyDown = useAutocompleteKeys({
+    open: showSuggestions, count: suggestions.length, index: acIndex, setOpen: setShowSuggestions, setIndex: setAcIndex,
+    onPick: e => {
       const selected = suggestions[acIndex].label
       const { prefix } = getActiveTerm(inputValue)
       // IME 조합 강제 종료
@@ -296,10 +191,8 @@ export default function CommunityClient({ initialPlans, initialTotal, initialShe
         setInputValue(prefix + selected)
         ;(e.target as HTMLInputElement).focus()
       }, 10)
-    } else if (e.key === 'Escape') {
-      setShowSuggestions(false); setAcIndex(-1)
-    }
-  }
+    },
+  })
 
   // 외부 클릭 시 자동완성 닫기
   useEffect(() => {
@@ -479,7 +372,7 @@ export default function CommunityClient({ initialPlans, initialTotal, initialShe
     const next = new Set(activeKeywords)
     if (next.has(kw)) next.delete(kw)
     else next.add(kw)
-    void setKeywordQuery(serializeCsvParam(next) || null, QUERY_OPTIONS)
+    void setKeywordQuery(serializeCsvParam(next), QUERY_OPTIONS)
   }, [activeKeywords, setKeywordQuery])
 
   const toggleKeywordMode = useCallback(() => {
@@ -490,7 +383,7 @@ export default function CommunityClient({ initialPlans, initialTotal, initialShe
   const availableKeywords = useMemo(() => [...new Set([...COMBAT_KEYWORDS, ...THEME_KEYWORDS])], [])
 
   const filterIdentities = useMemo(
-    () => allIdentities.map(toDeckFilterIdentity),
+    () => allIdentities.map(identity => toDeckFilterIdentity(identity, { fallbackToKeywords: true })),
     [allIdentities],
   )
   const identityFilterSinners = useMemo(() => {
@@ -520,7 +413,7 @@ export default function CommunityClient({ initialPlans, initialTotal, initialShe
 
     if (next.has(identityId)) {
       next.delete(identityId)
-      void setIdentityIdsQuery(serializeCsvParam(next) || null, QUERY_OPTIONS)
+      void setIdentityIdsQuery(serializeCsvParam(next), QUERY_OPTIONS)
       return
     }
 
