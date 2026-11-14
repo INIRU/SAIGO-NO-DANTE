@@ -4,13 +4,14 @@ import { useMemo } from 'react'
 import { useTranslations } from 'next-intl'
 import type { IdentitySlot } from '@/lib/decks/identity-types'
 import type { GiftData } from '@/lib/planner/types'
+import { buildBoardSlots, buildNoteLookups, type SinnerEgo } from '../lib/deck-detail-model'
 import {
-  buildBoardSlots, buildEgoGiftConditionLookup, buildFormationEgos, buildInsightIdentities, buildInsightSlots, buildNoteLookups,
-  findCustomSkillSlots, groupEgosBySinner, pickDeployedIdentityIds, resolveDeckKeywords, sortDeckSlots, type EgoSlot, type SinnerEgo,
-} from '../lib/deck-detail-model'
+  buildEgoGiftConditionLookup, buildFormationEgos, buildInsightIdentities, buildInsightSlots,
+  findCustomSkillSlots, groupEgosBySinner, pickDeployedIdentityIds, resolveDeckKeywords, sortDeckSlots, type EgoSlot,
+} from '../lib/deck-detail-analysis'
 
 // What the deck detail page reads beside the model (not exported by the entry file: that adds to every route's first JS).
-export { buildSkillExchangeRow, computeDeckAnalysis, slotUptie } from '../lib/deck-detail-model'
+export { buildSkillExchangeRow, computeDeckAnalysis, slotUptie } from '../lib/deck-detail-analysis'
 
 type DeckDetailModelInput = {
   deckIdentities: IdentitySlot[] | undefined

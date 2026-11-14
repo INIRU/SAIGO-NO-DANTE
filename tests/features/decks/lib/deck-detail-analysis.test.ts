@@ -6,7 +6,7 @@ import {
   buildEgoGiftConditionLookup, buildFormationEgos, buildInsightIdentities, buildInsightSlots, buildSkillExchangeRow, computeDeckAnalysis,
   findCustomSkillSlots, groupEgosBySinner, mergeViewerFields, normalizeDeckDetail, pickDeployedIdentityIds, resolveDeckKeywords,
   slotUptie, sortDeckSlots, type DeckDetail, type EgoSlot,
-} from '@/features/decks/lib/deck-detail-model'
+} from '@/features/decks/lib/deck-detail-analysis'
 
 const skill = (order: number, over: Record<string, unknown> = {}) => ({
   id: `s${order}`, name: `skill${order}`, skill_type: 'attack', atk_type: 'slash', sin_affinity: 'wrath', coins: 1, base_power: 1, coin_power: 1,
