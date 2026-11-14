@@ -5,7 +5,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { requireActiveUser } from '@/lib/auth'
 import { requireAccount } from '@/lib/auth-account'
-import { findOrCreateSupabaseUser } from '@/lib/supabase/find-or-create-user'
+import { findOrCreateSupabaseUser, forgetSupabaseUser } from '@/lib/supabase/find-or-create-user'
 import { STORAGE_BASE } from '@/lib/constants/game'
 import { isNoRow } from '@/lib/supabase/no-row'
 import { z } from 'zod'
@@ -196,6 +196,8 @@ export async function DELETE() {
       console.error('[api/profile]', deleteDataError)
       return NextResponse.json({ error: '요청을 처리하지 못했습니다.' }, { status: 500 })
     }
+    // The profile is gone: a remembered id would skip recreating it on the next sign-in.
+    forgetSupabaseUser(auth.session.user!.email!)
 
     // Delete auth user (must be separate — admin API only)
     const { error } = await admin.auth.admin.deleteUser(userId)
