@@ -1,7 +1,5 @@
 'use client'
 
-import { getRootEvents } from '@/lib/utils/event-catalog'
-
 import { memo, useState, useMemo, useEffect, useCallback, startTransition } from 'react'
 import { useTranslations } from 'next-intl'
 import { useQueryState, parseAsString } from 'nuqs'
@@ -10,17 +8,16 @@ import { fadeInUp } from '@/lib/animations'
 import dynamic from 'next/dynamic'
 import { useRoutePrefetch } from '@/hooks/useRoutePrefetch'
 import { translations } from '@/lib/i18n/translations'
-import { getLocalizedName } from '@/lib/i18n/localize'
 import type { SupportedLang } from '@/lib/i18n/types'
 import { ATK_TYPE_ICON_MAP } from '@/lib/data/sinners'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
 import type { EgoGift, Recipe, EgoGiftTheme, MdEvent, MdEventChoice } from '@/features/mirror-dungeon'
+import { useMirrorDungeonData } from '@/features/mirror-dungeon/hooks/useMirrorDungeonData'
 import GiftTabView from '@/features/mirror-dungeon/components/GiftTab'
 import ThemeTabView from '@/features/mirror-dungeon/components/ThemeTab'
 import EventTab from '@/features/mirror-dungeon/components/EventTab'
 import PageHeader from '@/components/ui/PageHeader'
 import { useHtmlFlag } from '@/hooks/useHtmlFlag'
-import { gameTextToPlain } from '@/lib/game-text/rich-text'
 const ThemeModal = dynamic(() => import('@/features/mirror-dungeon/components/ThemeModal'), { ssr: false })
 const GiftModal = dynamic(() => import('@/features/mirror-dungeon/components/GiftModal'), { ssr: false })
 const EventModal = dynamic(() => import('@/features/mirror-dungeon/components/EventModal'), { ssr: false })
@@ -147,83 +144,14 @@ export default function MirrorDungeonClient({
 
   const setSelectedThemeId = useCallback((v: number | null) => setThemeIdParam(v !== null ? String(v) : null), [setThemeIdParam])
 
-  const localizedEvents = useMemo(() => {
-    return events.map(ev => {
-      const name = ev.name
-        ? getLocalizedName({ name_kr: ev.name, name_en: ev.name_en, name_jp: ev.name_jp }, lang)
-        : ev.name
-      const descText = lang === 'en'
-        ? ev.desc_text_en ?? ev.desc_text
-        : lang === 'ja'
-          ? ev.desc_text_jp ?? ev.desc_text
-          : ev.desc_text
-
-      return {
-        ...ev,
-        name,
-        desc_text: descText,
-      }
-    })
-  }, [events, lang])
-
-  const localizedChoices = useMemo(() => {
-    return choices.map(choice => {
-      const message = lang === 'en'
-        ? choice.message_en ?? choice.message
-        : lang === 'ja'
-          ? choice.message_jp ?? choice.message
-          : choice.message
-      const messageDesc = lang === 'en'
-        ? choice.message_desc_en ?? choice.message_desc
-        : lang === 'ja'
-          ? choice.message_desc_jp ?? choice.message_desc
-          : choice.message_desc
-      const resultText = lang === 'en'
-        ? choice.result_text_en ?? choice.result_text
-        : lang === 'ja'
-          ? choice.result_text_jp ?? choice.result_text
-          : choice.result_text
-
-      return {
-        ...choice,
-        message,
-        message_desc: messageDesc,
-        result_text: resultText,
-      }
-    })
-  }, [choices, lang])
-
-  // 이벤트 조회 맵 (EventModal + EventTab 공용)
-  const eventById = useMemo(() => {
-    const map = new Map<number, MdEvent>()
-    for (const ev of localizedEvents) map.set(ev.id, ev)
-    return map
-  }, [localizedEvents])
-
-  const choicesByEventId = useMemo(() => {
-    const map = new Map<number, MdEventChoice[]>()
-    for (const c of localizedChoices) {
-      const arr = map.get(c.event_id)
-      if (arr) arr.push(c)
-      else map.set(c.event_id, [c])
-    }
-    return map
-  }, [localizedChoices])
-
-  const eventCount = useMemo(() => getRootEvents(events, choicesByEventId).length, [events, choicesByEventId])
-
-  // ThemeModal용 선택지 수 맵 (choices 배열 직접 순회, choicesByEventId 파생)
-  const choiceCountByEventId = useMemo(() => {
-    const map = new Map<number, number>()
-    for (const [id, arr] of choicesByEventId) map.set(id, arr.length)
-    return map
-  }, [choicesByEventId])
-
   // 로컬 상태 (모달/UI)
   // 기프트·테마팩·이벤트 상세는 주소(gift, pack, event)로 열고 닫는다: 검색 결과가 바로 그 창으로 온다
   // 창 열기는 transition으로: 느린 폰에서도 누른 직후 한 번 그린 뒤 창을 그린다(INP)
   const [giftIdParam, setGiftIdParam] = useQueryState('gift', parseAsString.withDefault(''))
-  const selected = useMemo(() => gifts.find(g => String(g.id) === giftIdParam) ?? null, [gifts, giftIdParam])
+  const {
+    localizedEvents, eventById, choicesByEventId, eventCount, choiceCountByEventId, selected, giftByGameId, themeGiftNames,
+    giftNameByGameId, recipeMap, giftImageMap, giftNameMap, giftSlotMap,
+  } = useMirrorDungeonData({ lang, gifts, recipes, themes, events, choices, selectedThemeId, giftIdParam })
   const setSelected = useCallback((gift: EgoGift | null) => startTransition(() => { void setGiftIdParam(gift ? String(gift.id) : null) }), [setGiftIdParam])
   const [packIdParam, setPackIdParam] = useQueryState('pack', parseAsString.withDefault(''))
   const expandedThemeId = packIdParam && themes.some(t => String(t.id) === packIdParam) ? Number(packIdParam) : null
@@ -231,83 +159,6 @@ export default function MirrorDungeonClient({
   const [eventIdParam, setEventIdParam] = useQueryState('event', parseAsString.withDefault(''))
   const selectedEvent = eventById.get(Number(eventIdParam)) ?? null
   const setSelectedEvent = (event: MdEvent | null) => startTransition(() => { void setEventIdParam(event ? String(event.id) : null) })
-
-  // game_id → EgoGift 매핑 (테마팩 필터 + EventTab 공용)
-  const giftByGameId = useMemo(() => {
-    const map = new Map<number, EgoGift>()
-    for (const g of gifts) {
-      if (g.game_id) map.set(g.game_id, g)
-    }
-    return map
-  }, [gifts])
-
-  // 테마팩별 기프트 이름 Set (GiftTab 필터용)
-  const themeGiftNames = useMemo(() => {
-    if (!selectedThemeId) return null
-    const theme = themes.find(t => t.id === selectedThemeId)
-    if (!theme) return null
-    const names = new Set<string>()
-    for (const gid of theme.ego_gift_ids) {
-      const g = giftByGameId.get(gid)
-      if (g) names.add(g.name)
-    }
-    return names
-  }, [selectedThemeId, themes, giftByGameId])
-
-  // game_id → 로컬라이즈된 기프트 이름 (convert_to {0} 치환용)
-  const giftNameByGameId = useMemo(() => {
-    const m = new Map<number, string>()
-    gifts.forEach(g => {
-      if (g.game_id) {
-        m.set(g.game_id, getLocalizedName({ name_kr: g.name, name_en: g.name_en, name_jp: g.name_jp }, lang))
-      }
-    })
-    return m
-  }, [gifts, lang])
-
-  // 레시피 맵: result_name → Recipe
-  const recipeMap = useMemo(() => {
-    const map = new Map<string, Recipe>()
-    recipes.forEach(r => map.set(r.result_name, r))
-    return map
-  }, [recipes])
-
-  // 기프트 이름 → 이미지 URL 맵
-  const giftImageMap = useMemo(() => {
-    const map = new Map<string, string>()
-    gifts.forEach(g => { if (g.image_url) map.set(g.name, g.image_url) })
-    return map
-  }, [gifts])
-
-  const giftNameMap = useMemo(() => {
-    const map = new Map<string, string>()
-    gifts.forEach(g => {
-      map.set(g.name, getLocalizedName({ name_kr: g.name, name_en: g.name_en, name_jp: g.name_jp }, lang))
-    })
-    return map
-  }, [gifts, lang])
-
-  // 편성 전용 효과 슬롯 번호 파싱 (gift.id → Set<number>)
-  const giftSlotMap = useMemo(() => {
-    const map = new Map<string, Set<number>>()
-    const regex = /\[(?:편성\s*(?:순서\s*)?)?([\d번\s,]+?)(?:\s*인격\s*)?(?:편성\s*)?전용\s*효과\]/g
-    for (const g of gifts) {
-      const slots = new Set<number>()
-      for (const text of [g.effect_base, g.effect_plus, g.effect_plusplus]) {
-        if (!text) continue
-        // Game text may put colour tags (digits and all) inside the bracket label; read the text as shown.
-        const plain = gameTextToPlain(text)
-        regex.lastIndex = 0
-        let m: RegExpExecArray | null
-        while ((m = regex.exec(plain)) !== null) {
-          const nums = m[1].match(/\d+/g)
-          if (nums) nums.forEach(n => slots.add(Number(n)))
-        }
-      }
-      if (slots.size > 0) map.set(g.id, slots)
-    }
-    return map
-  }, [gifts])
 
   // ThemeModal에서 기프트 선택 시: 테마 모달 닫고 GiftModal 열기
   const handleThemeModalSelectGift = useCallback((gift: EgoGift) => {
