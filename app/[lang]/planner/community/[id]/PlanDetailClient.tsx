@@ -10,8 +10,7 @@ import { useGuestPosts } from '@/features/account/hooks/useGuestPosts'
 import { guestAuthorName } from '@/features/account'
 import { resolvePlannerIdentity, resolvePlannerEgo } from '@/lib/planner/catalog-references'
 
-import { getGameUiAsset } from '@/lib/utils/game-ui'
-import { useState, useEffect, useMemo } from 'react'
+import { useState } from 'react'
 import type { ReactNode } from 'react'
 import dynamic from 'next/dynamic'
 import { useReducedMotion } from 'motion/react'
@@ -21,7 +20,7 @@ import { useLocale, useTranslations } from 'next-intl'
 import { useSession } from 'next-auth/react'
 import useSWR from 'swr'
 import { ArrowLeft, Heart, Share2 } from 'lucide-react'
-import { NoteRenderer, type NoteEgoGiftEntry } from '@/features/notes/components/NoteChips'
+import { NoteRenderer } from '@/features/notes/components/NoteChips'
 import { NoteGiftClickContext } from '@/features/notes/components/NoteBlockViewer'
 import { findNoteGift } from '@/features/notes'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
@@ -31,46 +30,33 @@ import {
   type PassiveData as PlannerPassiveData, type RecipeData, type SinnerData as PlannerSinnerData,
   type SkillSummary as PlannerSkillSummary, type ThemeData as PlannerThemeData,
 } from '@/lib/planner/types'
-import { buildGiftMap } from '@/lib/planner/fusion'
 import { computeDifficultySummary, planDifficultyBadge } from '@/lib/planner/strip-plan-for-list'
-import { getGiftActivationConditionStatus, getGiftConditionCountsForSlots, type GiftConditionStatus } from '@/lib/planner/gift-condition-status'
-import { getSelectedBlessingCost, getSelectedBlessingLevels, normalizeBlessingMessages, observationCost, type Observation } from '@/features/planner'
+import { getGiftActivationConditionStatus, type GiftConditionStatus } from '@/lib/planner/gift-condition-status'
+import { observationCost, type Observation } from '@/features/planner'
 import { normalizeFloorPlanDifficulty } from '@/lib/planner/floor-difficulty'
-import { showError, showSuccess } from '@/lib/toast'
 import RelativeTime from '@/components/ui/RelativeTime'
 const PlannerGiftModal = dynamic(() => import('@/features/planner/components/PlannerGiftModal'), { ssr: false })
 const loadEventModal = () => import('@/features/mirror-dungeon/components/EventModal')
 const EventModal = dynamic(loadEventModal, { ssr: false })
-import type { MdEvent, MdEventChoice, EgoGift, EgoGiftTheme } from '@/features/mirror-dungeon'
+import type { MdEvent, MdEventChoice, EgoGift } from '@/features/mirror-dungeon'
 import PlanActions from '@/features/planner/components/PlanActions'
 import PlanComments from '@/features/planner/components/PlanComments'
 import PlanDeckTabs from '@/features/planner/components/PlanDeckTabs'
 import PlanSectionNav from '@/features/planner/components/PlanSectionNav'
 import FloorPlanPreviewBoard from '@/features/planner/components/FloorPlanPreviewBoard'
-import GiftCard from '@/features/mirror-dungeon/components/GiftCard'
 import KeywordIcon from '@/components/ui/KeywordIcon'
 import { localizeDeckKeyword } from '@/features/decks'
 import { DEFAULT_AVATAR_URL, DEPLOYED_SLOT_COUNT } from '@/lib/constants/game'
-import { getLocalizedName } from '@/lib/i18n/localize'
 import type { SupportedLang } from '@/lib/i18n/types'
 import { ReadOnlyBlessingGrid } from '@/features/planner/components/BlessingGrid'
 import { workbenchReveal } from '@/lib/animations'
 import styles from './PlanDetailHeader.module.css'
-import { gameTextToPlain } from '@/lib/game-text/rich-text'
 import AdSlot from '@/components/ads/AdSlot'
 import { ADS_ON } from '@/lib/seo/ads'
 import EmptyState from '@/components/ui/EmptyState'
-
-// ── 상수 ──────────────────────────────────────────────────────────────────────
-
-// 편성 N번 전용 효과 슬롯 파싱
-function parseFormationSlots(text: string | null): number[] {
-  if (!text) return []
-  // Game text may put colour tags (digits and all) inside the bracket label; read the text as shown.
-  const label = gameTextToPlain(text).match(/\[편성[^\]]*전용\s*효과\]|\[\d[^\]]*편성\s*전용\s*효과\]/)
-  if (!label) return []
-  return [...label[0].matchAll(/(\d+)/g)].map(r => parseInt(r[1]))
-}
+import { usePlanDetailModel } from '@/features/planner/hooks/usePlanDetailModel'
+import { usePlanDetailReactions } from '@/features/planner/hooks/usePlanDetailReactions'
+import { GiftGrid, Section, SectionHead, StarlightCost, SubHead } from './_components/PlanDetailParts'
 
 const DIFFICULTY_STYLE: Record<Difficulty, { bg: string; color: string; border: string }> = {
   normal:  { bg: 'rgba(74,152,104,0.15)',  color: '#4a9868', border: 'rgba(74,152,104,0.35)' },
@@ -148,79 +134,6 @@ export type Plan = {
   profiles: { username: string | null; avatar_url: string | null; public_profile?: boolean } | null
 }
 
-// ── Sub-components ────────────────────────────────────────────────────────────
-
-function SectionHead({ id, title, meta, caption }: { id: string; title: string; meta?: ReactNode; caption?: string }) {
-  return (
-    <div className="mb-5 flex min-w-0 flex-wrap items-end justify-between gap-x-4 gap-y-1">
-      <div className="min-w-0">
-        <h2 id={id} className="font-[family-name:var(--font-heading)] text-[1.375rem] leading-snug text-[var(--text-primary)] sm:text-[1.5rem]">{title}</h2>
-        {caption && <p className="mt-1 text-[0.9375rem] leading-snug text-[#9c8b73]">{caption}</p>}
-      </div>
-      {meta != null && <div className="shrink-0 text-[0.9375rem] tabular-nums text-[#9c8b73]">{meta}</div>}
-    </div>
-  )
-}
-
-/** Same starlight chip as the planner's blessing and observation costs. */
-function StarlightCost({ label, value }: { label: string; value: number }) {
-  return (
-    <span className="inline-flex min-h-9 items-center gap-1.5 rounded-md border border-[rgba(92,73,54,0.86)] bg-[rgba(18,15,12,0.72)] px-2.5 text-[0.875rem] text-[#d8c1a0]">
-      <Image src={getGameUiAsset('start-buffs/starlight')} alt="" width={18} height={18} className="h-[1.125rem] w-[1.125rem]" />
-      {label}
-      <span className="font-semibold tabular-nums text-[var(--gold-light)]">{value}</span>
-    </span>
-  )
-}
-
-function SubHead({ title, meta }: { title: string; meta: ReactNode }) {
-  return (
-    <div className="mb-3 flex items-center justify-between gap-3">
-      <h3 className="font-[family-name:var(--font-heading)] text-[1.0625rem] text-[var(--text-primary)]">{title}</h3>
-      <span className="flex items-center gap-2 text-[0.875rem] tabular-nums text-[#9c8b73]">{meta}</span>
-    </div>
-  )
-}
-
-function Section({ id, children }: { id: string; children: ReactNode }) {
-  return (
-    <section id={id} aria-labelledby={`${id}-title`} className={styles.section}>
-      {children}
-    </section>
-  )
-}
-
-function GiftGrid({ gifts, getCondition, onGiftClick, locale }: {
-  gifts: { gift: GiftData; enhance: number }[]
-  getCondition?: (gift: GiftData) => GiftConditionStatus | null
-  onGiftClick?: (gift: GiftData, enhance: number) => void
-  locale: SupportedLang
-}) {
-  return (
-    <ul className={styles.giftGrid}>
-      {gifts.map(({ gift, enhance }) => {
-        const cond = getCondition?.(gift)
-        const giftName = getLocalizedName({ name_kr: gift.name, name_en: gift.name_en, name_jp: gift.name_jp }, locale)
-        return (
-          <li key={`${gift.game_id}_${enhance}`} className={styles.giftCell}>
-            <GiftCard
-              gift={gift}
-              onClick={() => onGiftClick?.(gift, enhance)}
-              disabled={!onGiftClick}
-              enhance={enhance}
-              conditionStatus={cond}
-              title={giftName}
-              ariaLabel={giftName}
-              size="100%"
-              className="max-w-[5rem]"
-            />
-          </li>
-        )
-      })}
-    </ul>
-  )
-}
-
 // ── Props ─────────────────────────────────────────────────────────────────────
 
 interface Props {
@@ -261,9 +174,6 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
   const guestOwner = authStatus === 'unauthenticated' && !!guestPosts.data?.plans.some(post => post.id === plan.id)
   // A guest plan this browser has no key for: its author takes it back with the plan's password.
   const canRecover = authStatus === 'unauthenticated' && !!plan.guest_tag && guest.keyRead && !guestPosts.isLoading && !guestOwner
-  const [voted, setVoted] = useState(false)
-  const [voteCount, setVoteCount] = useState(plan.vote_count)
-  const [voteLoading, setVoteLoading] = useState(false)
   const [selectedGift, setSelectedGift] = useState<{ gift: GiftData; enhance?: number } | null>(null)
   const [selectedEventId, setSelectedEventId] = useState<number | null>(null)
   const openNoteGift = (key: string) => {
@@ -285,160 +195,21 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
   const username = plan.profiles?.username ?? guestAuthorName(plan.guest_tag, locale) ?? tDetail('anonymous')
   const avatarUrl = plan.profiles?.avatar_url ?? DEFAULT_AVATAR_URL
 
-  // Maps
-  const giftMap = useMemo(() => buildGiftMap(gifts), [gifts])
-  const themeMap = useMemo(() => new Map(themes.map(t => [String(t.id), t])), [themes])
-  const eventById = useMemo(() => new Map(events.map(event => [event.id, event])), [events])
-  const choicesByEventId = useMemo(() => {
-    const map = new Map<number, MdEventChoice[]>()
-    for (const choice of eventChoices) map.set(choice.event_id, [...(map.get(choice.event_id) ?? []), choice])
-    return map
-  }, [eventChoices])
+  const {
+    giftMap, themeMap, eventById, choicesByEventId, eventThemes, recipeMap, egoGiftLookup, allowedKeywords,
+    localizedBlessings, selectedBlessings, totalBlessingCost, observeGifts, startGifts, finalGifts, slotGiftMap, conditionCounts,
+  } = usePlanDetailModel({ gifts, themes, recipes, identities, events, eventChoices, giftInventory, deck })
   // 상세 페이지의 기프트 행은 ego_gifts 전체 컬럼이라 이벤트 모달의 EgoGift로 그대로 쓸 수 있다
   const eventGifts = giftMap as unknown as Map<number, EgoGift>
-  const eventThemes = useMemo(() => themes.map(theme => ({ ...theme, id: Number(theme.id) }) as unknown as EgoGiftTheme), [themes])
   const selectedEvent = selectedEventId == null ? null : eventById.get(selectedEventId) ?? null
-
-  // 레시피맵
-  const giftByName = useMemo(() => {
-    const map = new Map<string, GiftData>()
-    for (const g of gifts) map.set(g.name, g)
-    return map
-  }, [gifts])
-  const recipeMap = useMemo(() => {
-    const map = new Map<number, { materials: GiftData[]; result: GiftData }>()
-    for (const r of recipes) {
-      const result = giftByName.get(r.result_name)
-      if (!result) continue
-      const mats = r.ingredients.map((name: string) => giftByName.get(name)).filter(Boolean) as GiftData[]
-      map.set(result.game_id, { materials: mats, result })
-    }
-    return map
-  }, [recipes, giftByName])
-
-  // EgoGift lookup for NoteRenderer
-  const egoGiftLookup = useMemo(() => {
-    const map: Record<string, NoteEgoGiftEntry> = {}
-    for (const g of gifts) {
-      if (g.name && g.keyword) {
-        map[g.name] = { name: g.name, keyword: g.keyword, grade: g.grade ?? '1', image_url: g.image_url, effect_base: g.effect_base }
-      }
-    }
-    return map
-  }, [gifts])
-
   const kwContext = useKeywordData()
-  const allowedKeywords = useMemo(() => new Set(Object.keys(kwContext.keywords)), [kwContext.keywords])
-  const localizedBlessings = useMemo(
-    () => normalizeBlessingMessages(tBlessing.raw('blessings'), baseId => tBlessing('fallbackName', { baseId })),
-    [tBlessing],
-  )
-  const selectedBlessings = useMemo(
-    () => getSelectedBlessingLevels(giftInventory),
-    [giftInventory],
-  )
-
-  const totalBlessingCost = useMemo(
-    () => getSelectedBlessingCost(localizedBlessings, selectedBlessings),
-    [localizedBlessings, selectedBlessings],
-  )
-
-  // Gift categorization
-  const observeGifts = useMemo(() =>
-    giftInventory.filter(id => id.startsWith('observe_')).map(id => giftMap.get(parseInt(id.replace('observe_', '')))).filter(Boolean) as GiftData[]
-  , [giftInventory, giftMap])
-
-  const startGifts = useMemo(() =>
-    giftInventory.filter(id => id.startsWith('start_')).map(id => giftMap.get(parseInt(id.replace('start_', '')))).filter(Boolean) as GiftData[]
-  , [giftInventory, giftMap])
-
-  const finalGifts = useMemo(() => {
-    const list: { gift: GiftData; enhance: number }[] = []
-    for (const id of giftInventory) {
-      if (!id.startsWith('final_')) continue
-      let enhance = 0, gid: number
-      if (id.endsWith('_plusplus')) { gid = parseInt(id.replace('final_', '').replace('_plusplus', '')); enhance = 2 }
-      else if (id.endsWith('_plus')) { gid = parseInt(id.replace('final_', '').replace('_plus', '')); enhance = 1 }
-      else { gid = parseInt(id.replace('final_', '')) }
-      const gift = giftMap.get(gid)
-      if (gift) list.push({ gift, enhance })
-    }
-    return list
-  }, [giftInventory, giftMap])
-
-  // 편성 슬롯 → 최종 기프트 이미지 매핑 (PlanDeckTabs에 전달)
-  const slotGiftMap = useMemo(() => {
-    const map = new Map<number, string[]>()
-    for (const { gift, enhance } of finalGifts) {
-      const txt = enhance === 2 ? gift.effect_plusplus : enhance === 1 ? gift.effect_plus : gift.effect_base
-      const slots = parseFormationSlots(txt)
-      if (!gift.image_url || !slots.length) continue
-      for (const s of slots) {
-        if (!map.has(s)) map.set(s, [])
-        map.get(s)!.push(gift.image_url)
-      }
-    }
-    return map
-  }, [finalGifts])
-
-  // Condition checks for final gifts
-  const conditionCounts = useMemo(() => {
-    const conditionSlots: PlannerIdentitySlot[] = deck
-      .filter(slot => slot.identity_id && slot.sinner_id)
-      .map(slot => ({
-        identity_id: slot.identity_id!,
-        sinner_id: slot.sinner_id!,
-        name_kr: slot.name_kr ?? '',
-        rarity: slot.rarity ?? 1,
-        keywords: slot.keywords ?? [],
-        skill_keyword_list: slot.skill_keyword_list,
-        game_id: slot.game_id ?? null,
-        folder_name: slot.folder_name ?? null,
-        slot_order: slot.slot_order ?? 99,
-      }))
-    return getGiftConditionCountsForSlots(conditionSlots, identities)
-  }, [deck, identities])
 
   // Same check as the planner: keyword and affiliation conditions against the deployed slots and the bench.
   function getConditionStatus(gift: GiftData): GiftConditionStatus | null {
     return getGiftActivationConditionStatus({ gift, ...conditionCounts })
   }
 
-  // 조회수 증가 (플랜당 브라우저 세션에 1회)
-  useEffect(() => {
-    const key = `plan-viewed:${plan.id}`
-    try {
-      if (sessionStorage.getItem(key)) return
-      sessionStorage.setItem(key, '1')
-    } catch { /* 저장소를 못 쓰면 매번 센다 */ }
-    fetch(`/api/planner/${plan.id}/view`, { method: 'POST' }).catch(() => {})
-  }, [plan.id])
-
-  // 추천 상태 확인
-  useEffect(() => {
-    if (!session) return
-    fetch(`/api/planner/${plan.id}/vote`)
-      .then(r => r.json())
-      .then(d => setVoted(d.voted ?? false))
-      .catch(() => {})
-  }, [plan.id, session])
-
-  const handleVote = async () => {
-    if (!session) { showError(tDetail('loginRequired')); return }
-    setVoteLoading(true)
-    try {
-      const res = await fetch(`/api/planner/${plan.id}/vote`, { method: 'POST' })
-      const json = await res.json()
-      if (res.ok) {
-        setVoted(json.voted)
-        setVoteCount(prev => json.voted ? prev + 1 : prev - 1)
-      } else {
-        showError(tDetail('voteFailed'))
-      }
-    } catch { showError(tDetail('voteFailed')) } finally {
-      setVoteLoading(false)
-    }
-  }
+  const { voted, voteCount, voteLoading, handleVote, handleShare } = usePlanDetailReactions({ planId: plan.id, planTitle: plan.title, initialVoteCount: plan.vote_count, session })
 
   const difficultyLabel = difficultyBadge.labelKeys.map(key => tCommunity(`difficulty.${key}`)).join("/\u200b")
   const mainKeywords = (plan.tags ?? []).filter(Boolean)
@@ -457,19 +228,6 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
   ]
   // a second detail banner under the line after the final gifts, above the related posts (owner, 2026-11-07: "선 밑에")
   const lowerAd = ADS_ON && <div className={`${styles.section} ${styles.adSection}`}><AdSlot place="inline" /></div>
-  const handleShare = async () => {
-    const url = window.location.href.split('#')[0]
-    try {
-      if (navigator.share && window.matchMedia('(pointer: coarse)').matches) {
-        await navigator.share({ title: plan.title, url })
-        return
-      }
-      await navigator.clipboard.writeText(url)
-      showSuccess(tShare('shareCopied'))
-    } catch (error) {
-      if ((error as Error)?.name !== 'AbortError') showError(tDetail('shareFailed'))
-    }
-  }
 
   return (
     <NoteGiftClickContext value={openNoteGift}>

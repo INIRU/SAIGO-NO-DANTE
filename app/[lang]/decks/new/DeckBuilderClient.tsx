@@ -32,10 +32,8 @@ import {
 // IdentityCard → IdentityTab 내부에서 직접 렌더링
 
 import { encodeDeckCode, decodeDeckCode } from '@/lib/decks/deck-code-utils'
-import { deckInitFromTeamCode, formationParamFromSearch } from '@/lib/decks/formation-init'
-import { DEFAULT_EGO_NAMES } from '@/lib/decks/default-ego'
-import { MANUAL_ATTACK_MAIN_KEYWORDS } from '@/lib/decks/keyword-rules'
-import { computeDeckResources, computeSinProduction, fieldedEntries, contentTypeMessageKey, rowsAtUptie, topUptiePassives, topUptieSkills } from '@/features/decks'
+import { contentTypeMessageKey } from '@/features/decks'
+import { buildDeckInsightData, buildDeckSaveRows, useDeckBuilderModel, useDeckBuilderState, type EditMode, type ForkMode } from '@/features/decks/hooks/useDeckBuilder'
 import UnderlineTabBar, { type TabItem } from '@/components/ui/UnderlineTabBar'
 import Dropdown from '@/components/ui/Dropdown'
 import Button from '@/components/ui/Button'
@@ -44,43 +42,14 @@ import FormationSourceModal from '@/features/planner/components/FormationSourceM
 import { deckFormationFromPlan } from '@/lib/planner/formation-transfer'
 import type { EgoSlot, IdentitySlot } from '@/lib/planner/types'
 import { CONTENT_TYPES } from '@/lib/constants/deck-tokens'
-import { LCB_IDS, isDeployedSlot } from '@/lib/constants/game'
 import { Users, Sparkles, SlidersHorizontal, FileText, ArrowLeft, Copy, Download, Upload, Check } from 'lucide-react'
 import { IdentityTab, EgoTab, SkillsetTab } from '@/features/decks/components/DeckBuilderTabs'
-import { getIdentityImageUrl } from '@/lib/utils/images'
-import DeckInsights, { type DeckInsightIdentity } from '@/features/decks/components/DeckInsights'
+import DeckInsights from '@/features/decks/components/DeckInsights'
 import DeckResourceSummary from '@/features/decks/components/DeckResourceSummary'
-import { localizeIdentityName, localizePassiveDescription, localizePassiveName } from '@/lib/decks/localize'
 import type { SupportedLang } from '@/lib/i18n/types'
 import type { EgoGiftNote } from '@/lib/types'
-import {
-  DECK_MAIN_KEYWORDS,
-  MAX_DECK_MAIN_KEYWORDS,
-  computeAllGiftKeywordCounts,
-  computeDeckKeywordCounts,
-  computeDeckMainKeywordsFromSlots,
-  computeFormationGiftKeywordCounts,
-  type DeckKeywordSlot,
-} from '@/lib/decks/keyword-rules'
+import { MAX_DECK_MAIN_KEYWORDS } from '@/lib/decks/keyword-rules'
 
-interface EditMode {
-  deckId: string
-  title: string
-  description: string
-  /** When the deck was last saved on the server; an older browser draft is not offered. */
-  updatedAt?: string | null
-  tags: string[]
-  content_type?: string
-  mainKeywords?: string[]
-  identitySlotIds: Record<string, string>
-  gacksungSlots: Record<string, boolean>
-  upties?: Record<string, number>
-  skillDistribution?: Record<string, [number, number, number]>
-  formationOrder: string[]
-  egoSlotIds: Record<string, Record<string, string>>
-}
-
-type ForkMode = Omit<EditMode, 'deckId'> & { forkedFrom: string }
 
 // CONTENT_TYPES, ContentType, CONTENT_TYPE_COLORS → deck-tokens.ts에서 import
 
@@ -103,17 +72,6 @@ const DeckNoteEditor = dynamic(() => import('@/features/decks/components/DeckNot
   loading: () => null,
 })
 
-function sanitizeDeckMainKeywords(value: readonly string[] | undefined): string[] {
-  if (!value) return []
-  const allowed = new Set<string>(DECK_MAIN_KEYWORDS)
-  const seen = new Set<string>()
-  return value.filter(keyword => {
-    if (!allowed.has(keyword) || seen.has(keyword)) return false
-    seen.add(keyword)
-    return true
-  }).slice(0, MAX_DECK_MAIN_KEYWORDS)
-}
-
 export default function DeckBuilderClient({ sinners, identities, egos, skills, passives, egoGifts = [], editMode, forkMode }: Props) {
   const locale = useLocale()
   const sinnerT = useTranslations('sinner')
@@ -122,74 +80,20 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
   const tTempSaves = useTranslations('planner.tempSaves')
   const tCopy = useTranslations('planner.detail')
   const router = useRouter()
-  // A new deck can start from a formation code in ?formation= (sent from the random formation page). Edit and fork keep their own start.
-  // The builder is client-only (no SSR), so the address is readable on the first render; an unreadable code is ignored.
-  const [urlStart] = useState<Partial<EditMode> | undefined>(() => {
-    if (editMode || forkMode) return undefined
-    const code = formationParamFromSearch(window.location.search)
-    return (code ? deckInitFromTeamCode(code, sinners, identities, egos) : null) ?? undefined
-  })
-  useEffect(() => {
-    if (formationParamFromSearch(window.location.search) === null) return
-    const url = new URL(window.location.href)
-    url.searchParams.delete('formation')
-    window.history.replaceState(window.history.state, '', url)
-  }, [])
-  const initData: Partial<EditMode> | undefined = editMode ?? forkMode ?? urlStart
-  const lcbIdentity =(sinnerId: string) => identities.find(identity => identity.sinner_id === sinnerId && identity.game_id === LCB_IDS[sinnerId])
-  // 12명 모두 항상 인격을 가진다: 비어 있는 수감자는 LCB 인격으로 채운다 (바꿀 수는 있어도 비울 수는 없다)
-  const withLcb = (slots: Record<string, Identity | undefined>) => Object.fromEntries(sinners.map(sinner => [sinner.id, slots[sinner.id] ?? lcbIdentity(sinner.id)]))
+  // The editor state first (it cleans ?formation= from the address), then the tab, the saved drafts, and last what is derived from the state.
+  const builderState = useDeckBuilderState({ sinners, identities, egos, editMode, forkMode })
+  const {
+    deckSlots, setDeckSlots, egoSlots, setEgoSlots, formationOrder, setFormationOrder, title, setTitle, contentType, setContentType,
+    description, setDescription, gacksungSlots, upties, setUpties, skillDistribution, setSkillDistribution,
+  } = builderState
   const [tabParam, setTab] = useQueryState('tab', parseAsString.withDefault('identity'))
   const tab = (tabParam as Tab) || 'identity'
-  const [deckSlots, setDeckSlots] = useState<Record<string, Identity | undefined>>(() => {
-    if (initData?.identitySlotIds) {
-      const slots: Record<string, Identity | undefined> = {}
-      for (const [sinnerId, identityId] of Object.entries(initData.identitySlotIds)) {
-        slots[sinnerId] = identities.find(i => i.id === identityId)
-      }
-      return withLcb(slots)
-    }
-    return withLcb({})
-  })
-  // egoSlots: sinnerId → { grade → EGO } (등급별 1개), 기본값 = ZAYIN EGO
-  const [egoSlots, setEgoSlots] = useState<Record<string, Record<string, EGO>>>(() => {
-    if (initData?.egoSlotIds) {
-      const slots: Record<string, Record<string, EGO>> = {}
-      for (const [sinnerId, gradeMap] of Object.entries(initData.egoSlotIds)) {
-        slots[sinnerId] = {}
-        for (const [grade, egoId] of Object.entries(gradeMap)) {
-          const ego = egos.find(e => e.id === egoId)
-          if (ego) slots[sinnerId][grade] = ego
-        }
-      }
-      return slots
-    }
-    const initial: Record<string, Record<string, EGO>> = {}
-    for (const sinner of sinners) {
-      const defaultName = DEFAULT_EGO_NAMES[sinner.name_kr]
-      const ego = defaultName
-        ? egos.find(e => e.sinner_id === sinner.id && (e.name_kr === defaultName))
-            ?? egos.find(e => e.sinner_id === sinner.id && e.grade === 'ZAYIN')
-        : egos.find(e => e.sinner_id === sinner.id && e.grade === 'ZAYIN')
-      if (ego) initial[sinner.id] = { [ego.grade]: ego }
-    }
-    return initial
-  })
-  const [formationOrder, setFormationOrder] = useState<string[]>(initData?.formationOrder ?? [])
-  const [title, setTitle] = useState(forkMode ? builderT('forkTitle', { title: forkMode.title }) : editMode?.title ?? '')
-  const [contentType, setContentType] = useState<string>(initData?.content_type && initData.content_type !== '없음' ? initData.content_type : '')
-  const [description, setDescription] = useState(initData?.description ?? '')
-  const [selectedMainKeywords, setSelectedMainKeywords] = useState<string[]>(() => sanitizeDeckMainKeywords(initData?.mainKeywords))
-  const [mainKeywordsManual, setMainKeywordsManual] = useState(() => Array.isArray(initData?.mainKeywords))
   const [saving, setSaving] = useState(false)
   const [pin, setPin] = useState('')
   // undefined: the author did not touch the series picker, so the deck's series stays as it is
   const [seriesChoice, setSeriesChoice] = useState<string | null | undefined>(undefined)
   // toast는 Sonner가 글로벌로 처리 (showError from lib/toast)
   const [descPreview, setDescPreview] = useState(false)
-  const [gacksungSlots, setGacksungSlots] = useState<Record<string, boolean>>(initData?.gacksungSlots ?? {})
-  const [upties, setUpties] = useState<Record<string, number>>(initData?.upties ?? {})
-  const [skillDistribution, setSkillDistribution] = useState<Record<string, [number, number, number]>>(initData?.skillDistribution ?? {})
   const [codeInput, setCodeInput] = useState('')
   const [codeCopied, setCodeCopied] = useState(false)
   const [codeApplying, setCodeApplying] = useState(false)
@@ -202,133 +106,20 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
     setDraftSlots(loadDeckDraftSlots())
   }, [])
 
-  // Skills/passives follow each slot's uptie (nearest level the data has).
-  const identityUpties = useMemo(() => new Map(sinners.flatMap(s => deckSlots[s.id] ? [[deckSlots[s.id]!.id, upties[s.id]] as const] : [])), [deckSlots, sinners, upties])
-
-  const skillsByIdentityId = useMemo(() => {
-    const raw: Record<string, Skill[]> = {}
-    for (const s of rowsAtUptie(skills, identityUpties)) {
-      ;(raw[s.identity_id] ??= []).push(s)
-    }
-    // 4동기화 우선: 같은 (skill_order, variant_order)에서 최고 uptie_level만 유지
-    const map: Record<string, Skill[]> = {}
-    for (const [id, list] of Object.entries(raw)) {
-      map[id] = topUptieSkills(list).sort((a, b) => a.skill_order - b.skill_order || (a.variant_order ?? 0) - (b.variant_order ?? 0))
-    }
-    return map
-  }, [identityUpties, skills])
-
-  const passivesByIdentityId = useMemo(() => {
-    const raw: Record<string, Passive[]> = {}
-    for (const p of rowsAtUptie(passives, identityUpties)) {
-      ;(raw[p.identity_id] ??= []).push(p)
-    }
-    // 4동기화 우선: 같은 (passive_type, passive_order)에서 최고 uptie_level만 유지
-    const map: Record<string, Passive[]> = {}
-    for (const [id, list] of Object.entries(raw)) {
-      map[id] = topUptiePassives(list).sort((a, b) => a.passive_order - b.passive_order)
-    }
-    return map
-  }, [identityUpties, passives])
+  const {
+    skillsByIdentityId, passivesByIdentityId, deckKeywordCounts, effectiveMainKeywords, formationGiftKeywordCounts, allGiftKeywordCounts,
+    handleMainKeywordToggle, handleFormationToggle, identityCount, egoCount, skillsetCustomCount, draftState,
+    applyDraft, applyImportedFormation, applyDecodedDeck,
+  } = useDeckBuilderModel({ sinners, identities, egos, skills, passives, state: builderState })
 
   // Planner deck panels: keyword distribution, passives, attack types and sin resources.
   const deckInsights = useMemo(() => {
-    const placed = sinners.flatMap(sinner => deckSlots[sinner.id] ? [{ sinner, identity: deckSlots[sinner.id]! }] : [])
-    const skillsOf = (identity: Identity) => skillsByIdentityId[identity.id] ?? []
-    const entries = placed.map(({ sinner, identity }) => ({
-      skills: skillsOf(identity),
-      distribution: skillDistribution[sinner.id],
-      deployed: isDeployedSlot(formationOrder.indexOf(sinner.id)),
-      egos: Object.values(egoSlots[sinner.id] ?? {}).map(ego => ({ skills: ego.ego_skills, cost: ego.cost })),
-    }))
-    const resources = computeDeckResources(entries)
-    const identities: DeckInsightIdentity[] = placed.map(({ sinner, identity }) => ({
-      id: identity.id,
-      name: localizeIdentityName(identity, locale),
-      sinnerName: sinnerT(sinner.id as Parameters<typeof sinnerT>[0]),
-      imageUrl: identity.folder_name && identity.game_id ? getIdentityImageUrl(identity.sinner_id, identity.folder_name, `${identity.game_id}_normal_info`) : '',
-      keywords: identity.skill_keyword_list ?? identity.keywords ?? [],
-      passives: (passivesByIdentityId[identity.id] ?? []).map(passive => ({
-        ...passive,
-        name: localizePassiveName(passive, locale),
-        description: localizePassiveDescription(passive, locale) ?? null,
-      })),
-      deck: computeSinProduction([{ skills: skillsOf(identity), distribution: skillDistribution[sinner.id] }]),
-    }))
-    const deployedIds = new Set(placed.filter(({ sinner }) => isDeployedSlot(formationOrder.indexOf(sinner.id))).map(({ identity }) => identity.id))
-    return {
-      identities,
-      deployedIds,
-      sinCounts: resources.production,
-      baseSinCounts: computeSinProduction(fieldedEntries(entries).map(({ skills }) => ({ skills }))),
-      summary: <DeckResourceSummary resources={resources} />,
-    }
+    const { resources, ...insights } = buildDeckInsightData({
+      sinners, deckSlots, egoSlots, formationOrder, skillDistribution, skillsByIdentityId, passivesByIdentityId, locale,
+      localizeSinnerName: sinnerId => sinnerT(sinnerId as Parameters<typeof sinnerT>[0]),
+    })
+    return { ...insights, summary: <DeckResourceSummary resources={resources} /> }
   }, [deckSlots, egoSlots, formationOrder, locale, passivesByIdentityId, sinners, sinnerT, skillDistribution, skillsByIdentityId])
-
-  const deckKeywordSlots = useMemo<DeckKeywordSlot[]>(() => (
-    sinners
-      .map(sinner => {
-        const identity = deckSlots[sinner.id]
-        if (!identity) return null
-        const formationIndex = formationOrder.indexOf(sinner.id)
-        const slot: DeckKeywordSlot = {
-          slot_order: formationIndex >= 0 ? formationIndex : 99,
-          identities: {
-            skill_keyword_list: identity.skill_keyword_list ?? [],
-            affiliation: identity.affiliation ?? null,
-            association_list: identity.association_list ?? [],
-            skills: (skillsByIdentityId[identity.id] ?? []).map(skill => ({
-              skill_type: skill.skill_type,
-              atk_type: (skill as Skill & { atk_type?: string | null }).atk_type ?? skill.skill_type,
-            })),
-          },
-        }
-        return slot
-      })
-      .filter((slot): slot is DeckKeywordSlot => Boolean(slot))
-  ), [deckSlots, formationOrder, sinners, skillsByIdentityId])
-
-  const deckKeywordCounts = useMemo(() => computeDeckKeywordCounts(deckKeywordSlots).counts, [deckKeywordSlots])
-  const autoMainKeywords = useMemo(() => computeDeckMainKeywordsFromSlots(deckKeywordSlots), [deckKeywordSlots])
-  const effectiveMainKeywords = mainKeywordsManual ? selectedMainKeywords : autoMainKeywords
-  const formationGiftKeywordCounts = useMemo(() => computeFormationGiftKeywordCounts(deckKeywordSlots), [deckKeywordSlots])
-  const allGiftKeywordCounts = useMemo(() => computeAllGiftKeywordCounts(deckKeywordSlots), [deckKeywordSlots])
-
-  useEffect(() => {
-    if (!mainKeywordsManual) return
-    setSelectedMainKeywords(prev => prev.filter(keyword => (
-      MANUAL_ATTACK_MAIN_KEYWORDS.has(keyword) || (deckKeywordCounts[keyword] ?? 0) > 0
-    )))
-  }, [deckKeywordCounts, mainKeywordsManual])
-
-  const handleMainKeywordToggle = (keyword: string) => {
-    const isManualAttackKeyword = MANUAL_ATTACK_MAIN_KEYWORDS.has(keyword)
-    if (!isManualAttackKeyword && (deckKeywordCounts[keyword] ?? 0) <= 0) return
-    setMainKeywordsManual(true)
-    setSelectedMainKeywords(prev => {
-      const baseKeywords = mainKeywordsManual ? prev : autoMainKeywords
-      if (baseKeywords.includes(keyword)) return baseKeywords.filter(item => item !== keyword)
-      if (baseKeywords.length >= MAX_DECK_MAIN_KEYWORDS) return baseKeywords
-      return [...baseKeywords, keyword]
-    })
-  }
-
-  const identityCount = Object.values(deckSlots).filter(Boolean).length
-  const egoCount = Object.values(egoSlots).reduce((s, g) => s + Object.keys(g).length, 0)
-  const skillsetCustomCount = useMemo(() => {
-    return Object.entries(skillDistribution).filter(([sinnerId, dist]) => {
-      if (!deckSlots[sinnerId]) return false
-      return !(dist[0] === 3 && dist[1] === 2 && dist[2] === 1)
-    }).length
-  }, [skillDistribution, deckSlots])
-
-  const handleFormationToggle = (sinnerId: string) => {
-    setFormationOrder(prev => {
-      if (prev.includes(sinnerId)) return prev.filter(id => id !== sinnerId)
-      if (prev.length >= 12) return prev
-      return [...prev, sinnerId]
-    })
-  }
 
   // A new guest deck takes a password, asked for when the browser's key is gone.
   const needsPin = authStatus === 'unauthenticated' && !editMode
@@ -339,23 +130,7 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
     const pinProblem = needsPin ? guestPinProblem(pin, locale) : null
     if (pinProblem) { showError(pinProblem); return }
     setSaving(true)
-    const identitySlots = sinners
-      .filter(s => deckSlots[s.id])
-      .map(s => {
-        const dist = skillDistribution[s.id] ?? [3, 2, 1]
-        return {
-          identity_id: deckSlots[s.id]!.id,
-          gacksung: gacksungSlots[s.id] ?? false,
-          uptie: upties[s.id] ?? 4,
-          slot_order: formationOrder.indexOf(s.id) >= 0 ? formationOrder.indexOf(s.id) : 99,
-          s1_count: dist[0],
-          s2_count: dist[1],
-          s3_count: dist[2],
-        }
-      })
-    const egoRows = Object.entries(egoSlots).flatMap(([, gradeMap]) =>
-      Object.entries(gradeMap).map(([grade, ego]) => ({ ego_id: ego.id, grade }))
-    )
+    const { identitySlots, egoRows } = buildDeckSaveRows({ sinners, deckSlots, gacksungSlots, upties, formationOrder, skillDistribution, egoSlots })
     const url = editMode ? `/api/decks/${editMode.deckId}` : '/api/decks'
     const method = editMode ? 'PATCH' : 'POST'
     const signedIn = authStatus === 'authenticated'
@@ -382,22 +157,6 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
     }
   }
 
-  // savedAt stays 0 here so the same editor state always serializes the same (the autosave compares it with the opening state)
-  const draftState = useMemo<DeckDraft>(() => ({
-    title,
-    contentType,
-    description,
-    deckSlotIds: Object.fromEntries(Object.entries(deckSlots).filter(([, v]) => v).map(([k, v]) => [k, v!.id])),
-    egoSlotIds: Object.fromEntries(Object.entries(egoSlots).map(([k, v]) => [k, Object.fromEntries(Object.entries(v).map(([grade, ego]) => [grade, ego.id]))])),
-    formationOrder,
-    mainKeywords: effectiveMainKeywords,
-    mainKeywordsManual,
-    savedAt: 0,
-    gacksungSlots,
-    skillDistribution,
-    upties,
-  }), [title, contentType, description, deckSlots, egoSlots, formationOrder, effectiveMainKeywords, mainKeywordsManual, gacksungSlots, skillDistribution, upties])
-
   const handleSaveDraft = (slot: TempSlot<DeckDraft>) => {
     if (pendingNoteUploads.size) { showError(noteUploadInProgressMessage(locale)); return }
     const draft: DeckDraft = { ...draftState, savedAt: Date.now() }
@@ -407,42 +166,6 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
     showSuccess(tTempSaves(slot.draft ? 'overwritten' : 'savedToSlot', { slot: slot.slotNumber }))
   }
 
-  const applyDraft = (draft: DeckDraft) => {
-    try {
-      if (draft.title) setTitle(draft.title)
-      if (draft.contentType) setContentType(draft.contentType)
-      if (draft.description) setDescription(draft.description)
-      if (draft.formationOrder) setFormationOrder(draft.formationOrder)
-      if (Array.isArray(draft.mainKeywords)) {
-        setSelectedMainKeywords(sanitizeDeckMainKeywords(draft.mainKeywords))
-        setMainKeywordsManual(draft.mainKeywordsManual !== false)
-      } else {
-        setMainKeywordsManual(false)
-      }
-      if (draft.deckSlotIds) {
-        const slots: Record<string, Identity | undefined> = {}
-        for (const [sinnerId, identityId] of Object.entries(draft.deckSlotIds)) {
-          slots[sinnerId] = identities.find(i => i.id === identityId)
-        }
-        setDeckSlots(withLcb(slots))
-      }
-      if (draft.egoSlotIds) {
-        const slots: Record<string, Record<string, EGO>> = {}
-        for (const [sinnerId, gradeMap] of Object.entries(draft.egoSlotIds as Record<string, Record<string, string>>)) {
-          slots[sinnerId] = {}
-          for (const [grade, egoId] of Object.entries(gradeMap)) {
-            const ego = egos.find(e => e.id === egoId)
-            if (ego) slots[sinnerId][grade] = ego
-          }
-        }
-        setEgoSlots(slots)
-      }
-      if (draft.gacksungSlots) setGacksungSlots(draft.gacksungSlots)
-      setUpties(draft.upties ?? {})
-      if (draft.skillDistribution) setSkillDistribution(draft.skillDistribution as typeof skillDistribution)
-      return true
-    } catch { return false }
-  }
   const handleLoadDraft = (slot: TempSlot<DeckDraft>) => {
     if (slot.draft && applyDraft(slot.draft.state)) showSuccess(tTempSaves('loadedFromSlot', { slot: slot.slotNumber }))
   }
@@ -460,21 +183,7 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
   const [importOpen, setImportOpen] = useState(false)
   const [pendingImport, setPendingImport] = useState<{ formation: ReturnType<typeof deckFormationFromPlan>; title: string } | null>(null)
   const applyImport = (formation: ReturnType<typeof deckFormationFromPlan>) => {
-    const slots: Record<string, Identity | undefined> = {}
-    for (const [sinnerId, identityId] of Object.entries(formation.deckSlotIds)) slots[sinnerId] = identities.find(i => i.id === identityId)
-    const nextEgos: Record<string, Record<string, EGO>> = {}
-    for (const [sinnerId, gradeMap] of Object.entries(formation.egoSlotIds)) {
-      for (const [grade, egoId] of Object.entries(gradeMap)) {
-        const ego = egos.find(e => e.id === egoId)
-        if (ego) (nextEgos[sinnerId] ??= {})[grade] = ego
-      }
-    }
-    setDeckSlots(withLcb(slots))
-    setEgoSlots(nextEgos)
-    setFormationOrder(formation.formationOrder)
-    setUpties(formation.upties)
-    setSkillDistribution(formation.skillDistribution)
-    setGacksungSlots({})
+    applyImportedFormation(formation)
     showSuccess(tImport('applied'))
   }
   const handlePlanLoaded = (record: Record<string, unknown>) => {
@@ -493,10 +202,7 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
     const result = await decodeDeckCode(codeInput.trim(), sinners, identities, egos)
     setCodeApplying(false)
     if (!result) { setCodeError(true); return }
-    setDeckSlots(withLcb(result.deckSlots))
-    setUpties({})
-    setEgoSlots(result.egoSlots)
-    setFormationOrder(result.formationOrder)
+    applyDecodedDeck(result)
     setCodeInput('')
     setTab('identity')
   }

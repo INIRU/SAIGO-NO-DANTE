@@ -3,7 +3,8 @@ import { describe, expect, it } from 'vitest'
 
 const read = (path: string) => readFileSync(path, 'utf8')
 const community = read('features/planner/hooks/usePlanList.ts')
-const detail = read('app/[lang]/planner/community/[id]/PlanDetailClient.tsx')
+// the plan page's view count and vote live in the hook the page calls
+const detail = read('features/planner/hooks/usePlanDetailReactions.ts')
 const comments = read('features/planner/components/PlanComments.tsx')
 
 /** The text of the `.catch(...)` that follows the nth fetch of the planner list. */
@@ -34,7 +35,7 @@ describe('community list errors', () => {
   })
 
   it('a failed vote is reported', () => {
-    const vote = detail.slice(detail.indexOf('const handleVote'), detail.indexOf('const difficultyLabel'))
+    const vote = detail.slice(detail.indexOf('const handleVote'), detail.indexOf('const handleShare'))
     expect(vote).toContain("showError(tDetail('voteFailed'))")
     expect(vote).not.toContain('/* 무시 */')
   })

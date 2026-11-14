@@ -4,7 +4,8 @@ import { join } from 'node:path'
 
 const read = (path: string) => readFileSync(join(process.cwd(), path), 'utf8')
 const builder = read('app/[lang]/decks/new/DeckBuilderClient.tsx')
-const detail = read('app/[lang]/decks/[id]/DeckDetailClient.tsx')
+// the detail page's copy and share buttons live in the hook the page calls
+const detail = read('features/decks/hooks/useDeckDetailActions.ts')
 
 /** Body of a `const name = ...` arrow function up to the next top-level handler. */
 function handler(source: string, name: string) {

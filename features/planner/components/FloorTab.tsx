@@ -1,124 +1,52 @@
 'use client'
 
-import dynamic from 'next/dynamic'
-import { isConfiguredFloor } from '@/lib/planner/strip-plan-for-list'
-
 import FloorConstraints from './FloorConstraints'
 import FloorGuidance from './FloorGuidance'
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useReducedMotion } from 'motion/react'
-import { ChevronUp, Plus } from 'lucide-react'
 import { useLocale, useTranslations } from 'next-intl'
-import GiftCard from '@/features/mirror-dungeon/components/GiftCard'
 import FloorGiftPickerModal from './FloorGiftPickerModal'
+import FloorAcquiredGifts from './FloorAcquiredGifts'
+import FloorEditorHeader from './FloorEditorHeader'
+import FloorMemoEditor from './FloorMemoEditor'
+import FloorThemeSlot from './FloorThemeSlot'
+import { Plus } from 'lucide-react'
+import GiftCard from '@/features/mirror-dungeon/components/GiftCard'
+import ThemePackStack from '@/features/planner/components/ThemePackStack'
 import { useSuggestionState } from '@/hooks/useSuggestions'
 import ConfirmModal from '@/components/ui/ConfirmModal'
 import { previousFloorGifts } from '@/features/planner/lib/floor-copy'
+import {
+  FLOOR_FOCUS_RING,
+  availableThemesByFloor,
+  floorDifficultyChange,
+  floorGiftToggleActions,
+  floorRepairAction,
+  getDifficultyTone,
+  getMemoPreview,
+  ladderSegments,
+  normalizeFloorDifficulty,
+  pickerThemesFor,
+  reachableGiftsFor,
+} from '@/features/planner/lib/floor-view'
 import { showSuccess } from '@/lib/toast'
 import FinalGiftSection from './FinalGiftSection'
-import ThemePackStack from '@/features/planner/components/ThemePackStack'
 import {
   ThemePackModalPill,
   ThemePackPickerModal,
 } from '@/components/ui/ThemePackModal'
 import type { PlannerState, PlannerAction, ThemeData, GiftData, FloorDifficulty, FloorEntry, RecipeData } from '@/lib/planner/types'
-import { DIFFICULTY_FLOOR_KEY, floorThemeOrder } from '@/lib/planner/types'
-import {
-  getAvailableThemes,
-  getFinalGiftVariantIds,
-  getGiftsFromThemes,
-  themeExclusiveGiftIds,
-  withThemeRewards,
-} from '@/lib/planner/fusion'
-import { deriveFinalGifts, finalKeyForFloorPick } from '@/features/planner/lib/final-gifts'
-import { isAllowedFloorDifficulty, isFloorDifficulty } from '@/lib/planner/floor-difficulty'
+import { floorThemeOrder } from '@/lib/planner/types'
+import { getGiftsFromThemes, themeExclusiveGiftIds, withThemeRewards } from '@/lib/planner/fusion'
+import { isConfiguredFloor } from '@/lib/planner/strip-plan-for-list'
+import { deriveFinalGifts } from '@/features/planner/lib/final-gifts'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
-import {
-  buildKeywordPool,
-  buildEgoGiftPool,
-  type AutocompleteSuggestion,
-} from '@/features/notes/components/NoteAutocomplete'
-import { NoteRenderer, type NoteEgoGiftEntry } from '@/features/notes/components/NoteChips'
+import { buildKeywordPool, buildEgoGiftPool } from '@/features/notes/components/NoteAutocomplete'
+import type { NoteEgoGiftEntry } from '@/features/notes/components/NoteChips'
 import type { NoteFormationMember } from '@/features/notes'
 import { getLocalizedName } from '@/lib/i18n/localize'
 import type { SupportedLang } from '@/lib/i18n/types'
-
-// Tiptap and ProseMirror load when a floor memo is shown, not with the planner page. The shell holds its toolbar and 7rem body.
-const NoteDocumentEditor = dynamic(() => import('@/features/notes/components/NoteDocumentEditor'), {
-  ssr: false,
-  loading: () => <div className="note-editor-shell min-h-[10rem] rounded-md bg-[var(--bg-deep)]" aria-busy="true" />,
-})
-
-// The descent rail: its colour marks which stretch of the dungeon a floor belongs to.
-const LADDER_SEGMENTS = [
-  { id: 'early', start: 1, end: 5, rail: '#c8900a', label: '#c8900a' },
-  { id: 'loop', start: 6, end: 10, rail: '#e8b030', label: '#e8b030' },
-  { id: 'extreme', start: 11, end: Infinity, rail: '#9b2c23', label: '#d0675c' },
-] as const
-
-function getDifficultyTone(difficulty: FloorDifficulty) {
-  if (difficulty === 'extreme') return '#d0675c'
-  if (difficulty === 'overlap') return '#e8b030'
-  if (difficulty === 'hard') return '#c8900a'
-  return '#9c8b73'
-}
-
-/** Gifts a pack offers: its regular and exclusive pools and its clear rewards, each gift once. */
-function getThemeGiftCount(theme: ThemeData | null) {
-  if (!theme) return 0
-  return new Set([...(theme.ego_gift_ids ?? []), ...(theme.specific_ego_gift_ids ?? []), ...(theme.fixed_reward_gift_ids ?? [])]).size
-}
-
-function getMemoPreview(memo: string) {
-  return memo
-    .replace(/\[(?:s|p|e|k|i|g):([^\]]+)\]/g, '$1')
-    .replace(/\{\{([^}|]+)(?:\|[^}]*)?\}\}/g, '$1')
-    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
-    .replace(/[#*_`>~-]/g, '')
-    .replace(/\s+/g, ' ')
-    .trim()
-}
-
-function normalizeFloorDifficulty(entryDifficulty: unknown, floor: number): FloorDifficulty {
-  if (isFloorDifficulty(entryDifficulty) && isAllowedFloorDifficulty(entryDifficulty, floor)) return entryDifficulty
-  if (floor <= 5) return 'hard'
-  if (floor <= 10) return 'overlap'
-  return 'extreme'
-}
-
-/** A floor's memo: the same block editor as the plan description and deck notes, with its own preview toggle. */
-function FloorMemo({
-  value,
-  onChange,
-  pool,
-  formation,
-  allowedKeywords,
-  egoGiftLookup,
-}: {
-  value: string
-  onChange: (v: string) => void
-  pool: AutocompleteSuggestion[]
-  formation: NoteFormationMember[]
-  allowedKeywords?: Set<string>
-  egoGiftLookup?: Record<string, NoteEgoGiftEntry>
-}) {
-  const [preview, setPreview] = useState(false)
-  return (
-    // 층 메모는 짧다: 편집기 기본 높이(24rem)를 줄인다
-    <div className="[&_.note-document-content]:!min-h-[7rem] [&_.note-document-content]:!px-5 [&_.note-document-content]:!py-4 [&_.note-editor-preview]:!min-h-[7rem] [&_.note-editor-preview]:!p-4">
-    <NoteDocumentEditor
-      formation={formation}
-      pool={pool}
-      value={value}
-      onChange={onChange}
-      preview={preview}
-      onPreviewChange={setPreview}
-      previewContent={<NoteRenderer text={value} allowedKeywords={allowedKeywords} egoGiftLookup={egoGiftLookup} />}
-    />
-    </div>
-  )
-}
 
 interface FloorTabProps {
   state: PlannerState
@@ -166,53 +94,20 @@ export default function FloorTab({ state, dispatch, themes, gifts, recipes, gift
   }, [activeFloor, state.floorPlan])
 
   useEffect(() => {
-    const invalidEntry = state.floorPlan.find(entry => {
-      const difficulty = normalizeFloorDifficulty(entry.difficulty, entry.floor)
-      if (entry.difficulty !== difficulty) return true
-      if (!entry.theme_id) return false
-
-      const availableThemes = getAvailableThemes(themes, DIFFICULTY_FLOOR_KEY[difficulty], entry.floor)
-      return !availableThemes.some(theme => String(theme.id) === entry.theme_id)
-    })
-
-    if (!invalidEntry) return
-
-    const difficulty = normalizeFloorDifficulty(invalidEntry.difficulty, invalidEntry.floor)
-    const availableThemes = getAvailableThemes(themes, DIFFICULTY_FLOOR_KEY[difficulty], invalidEntry.floor)
-    const hasInvalidTheme = Boolean(
-      invalidEntry.theme_id && !availableThemes.some(theme => String(theme.id) === invalidEntry.theme_id)
-    )
-
-    dispatch({
-      type: 'SET_FLOOR_DIFFICULTY',
-      floor: invalidEntry.floor,
-      difficulty,
-      clearSelection: hasInvalidTheme,
-    })
+    const repair = floorRepairAction(state.floorPlan, themes)
+    if (repair) dispatch(repair)
   }, [dispatch, state.floorPlan, themes])
 
-  const availableThemesByFloor = useMemo(() => {
-    const map = new Map<number, ThemeData[]>()
-    for (const entry of state.floorPlan) {
-      const difficulty = normalizeFloorDifficulty(entry.difficulty, entry.floor)
-      map.set(entry.floor, getAvailableThemes(themes, DIFFICULTY_FLOOR_KEY[difficulty], entry.floor))
-    }
-    return map
-  }, [state.floorPlan, themes])
+  const themesByFloor = useMemo(() => availableThemesByFloor(state.floorPlan, themes), [state.floorPlan, themes])
 
   const activeAvailableThemes = activeEntry
-    ? availableThemesByFloor.get(activeEntry.floor) ?? []
+    ? themesByFloor.get(activeEntry.floor) ?? []
     : []
 
-  const pickerThemes = useMemo(() => {
-    if (!activeEntry) return []
-    const usedThemeIds = new Set(
-      state.floorPlan
-        .filter(entry => entry.floor !== activeEntry.floor && entry.theme_id)
-        .map(entry => entry.theme_id!)
-    )
-    return activeAvailableThemes.filter(theme => !usedThemeIds.has(String(theme.id)) || String(theme.id) === activeEntry.theme_id)
-  }, [activeAvailableThemes, activeEntry, state.floorPlan])
+  const pickerThemes = useMemo(
+    () => pickerThemesFor(activeEntry, state.floorPlan, activeAvailableThemes),
+    [activeAvailableThemes, activeEntry, state.floorPlan],
+  )
 
   const kwContext = useKeywordData()
   const localizedGift = useCallback((gift: GiftData): GiftData => ({
@@ -259,40 +154,14 @@ export default function FloorTab({ state, dispatch, themes, gifts, recipes, gift
 
   const setDifficulty = useCallback((difficulty: FloorDifficulty) => {
     if (!activeEntry || activeEntry.floor > 5) return
-    const nextThemes = getAvailableThemes(themes, DIFFICULTY_FLOOR_KEY[difficulty], activeEntry.floor)
-    const selectedStillValid = !activeEntry.theme_id || nextThemes.some(theme => String(theme.id) === activeEntry.theme_id)
-    dispatch({
-      type: 'SET_FLOOR_DIFFICULTY',
-      floor: activeEntry.floor,
-      difficulty,
-      clearSelection: !selectedStillValid,
-    })
+    const { action, selectedStillValid } = floorDifficultyChange(activeEntry, difficulty, themes)
+    dispatch(action)
     if (!selectedStillValid) setGiftPickerOpen(false)
   }, [activeEntry, dispatch, themes])
 
   const toggleGiftId = useCallback((giftGameId: string, currentIds: string[]) => {
     if (!activeEntry) return
-    if (currentIds.includes(giftGameId)) {
-      dispatch({ type: 'SET_FLOOR_GIFTS', floor: activeEntry.floor, giftIds: currentIds.filter(id => id !== giftGameId) })
-      const selectedOnAnotherFloor = state.floorPlan.some(entry => (
-        entry.floor !== activeEntry.floor && entry.gift_ids.includes(giftGameId)
-      ))
-      if (!selectedOnAnotherFloor) {
-        const gid = parseInt(giftGameId, 10)
-        if (!Number.isNaN(gid)) {
-          for (const giftId of getFinalGiftVariantIds(gid)) {
-            dispatch({ type: 'REMOVE_GIFT', giftId })
-          }
-        }
-      }
-    } else {
-      const gid = parseInt(giftGameId, 10)
-      if (Number.isNaN(gid)) return
-      // 층 계획은 최종 조합이 소비하는 재료도 고를 수 있다. 최종 기프트에는 넣지 않는다.
-      dispatch({ type: 'SET_FLOOR_GIFTS', floor: activeEntry.floor, giftIds: [...currentIds, giftGameId] })
-      const finalKey = finalKeyForFloorPick(gid, derivedFinal)
-      if (finalKey) dispatch({ type: 'ADD_GIFT', giftId: finalKey })
-    }
+    for (const action of floorGiftToggleActions(activeEntry.floor, giftGameId, currentIds, state.floorPlan, derivedFinal)) dispatch(action)
   }, [activeEntry, derivedFinal, dispatch, state.floorPlan])
 
   const copyGifts = (floor: number, giftIds: string[]) => {
@@ -364,231 +233,24 @@ export default function FloorTab({ state, dispatch, themes, gifts, recipes, gift
       .map(localizedGift)
   }
 
-  const themeName = (theme: ThemeData) => getLocalizedName({ name_kr: theme.name, name_en: theme.name_en, name_jp: theme.name_jp }, locale)
-  const activeThemeName = selectedTheme ? themeName(selectedTheme) : null
+  const activeThemeName = selectedTheme ? getLocalizedName({ name_kr: selectedTheme.name, name_en: selectedTheme.name_en, name_jp: selectedTheme.name_jp }, locale) : null
   // 최종 조합이 소비하는 재료도 층에서 얻는 기프트라 목록에 둔다
   const availableGifts = selectedTheme ? getThemeAvailableGifts(selectedTheme) : []
   // 이 층에서 얻을 수 있는 전체: 다른 테마팩 전용 기프트만 뺀다(합성·조합식 결과는 포함)
-  const reachableGifts = useMemo(() => {
-    const ownExclusive = new Set(selectedTheme ? themeExclusiveGiftIds(selectedTheme) : [])
-    const otherExclusive = new Set(themes.flatMap(theme => themeExclusiveGiftIds(theme)).filter(id => !ownExclusive.has(id)))
-    return gifts.filter(gift => !otherExclusive.has(gift.game_id))
-  }, [gifts, selectedTheme, themes])
-  const exclusiveLabel = t('ladder.packExclusive')
+  const reachableGifts = useMemo(() => reachableGiftsFor(gifts, themes, selectedTheme), [gifts, selectedTheme, themes])
   const configuredCount = state.floorPlan.filter(isConfiguredFloor).length
-  const segments = LADDER_SEGMENTS
-    .map(segment => ({ ...segment, entries: state.floorPlan.filter(entry => entry.floor >= segment.start && entry.floor <= segment.end) }))
-    .filter(segment => segment.entries.length > 0)
+  const segments = ladderSegments(state.floorPlan)
 
   // A hairline rail; the open floor's stretch lights up so the eye finds it.
   const railClass = 'pointer-events-none absolute inset-y-0 left-[0.875rem] w-[0.125rem] sm:left-[1.375rem]'
   const railStyle = (tone: string, lit = false) => ({ background: tone, opacity: lit ? 0.9 : 0.35 })
-  const focusRing = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold)]'
 
-  function renderEditor(entry: FloorEntry, floorGifts: GiftData[]) {
-    const plannedIds = new Set(entry.gift_ids)
-    return (
-      <div
-        id={`floor-editor-${entry.floor}`}
-        className="rounded-sm border p-3 sm:p-4"
-        style={{ background: '#17120c', borderColor: '#2e2417' }}
-      >
-        {/* 포스터 옆에 테마팩 이름·난이도·접기·버튼과 획득 기프트를 모은다. 모바일에서는 기프트가 전체 폭으로 내려간다. */}
-        <div className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-4 [--w:6.5rem] sm:[--w:9rem] sm:grid-rows-[auto_1fr]">
-          <div className="min-w-0 sm:row-span-2">
-            {selectedTheme ? (
-              <>
-                {/* The packs are the control: the first choice with its fallbacks behind it; a click opens the picker. */}
-                <ThemePackStack
-                  themes={[selectedTheme, ...(entry.theme_alt_ids ?? []).flatMap(id => themeMap.get(id) ?? [])]}
-                  lang={locale}
-                  sizes="(max-width: 640px) 104px, 144px"
-                  ariaLabel={t('ladder.changeThemeAria', { floor: entry.floor, theme: activeThemeName ?? selectedTheme.name })}
-                  onClick={() => setThemeModalOpen(true)}
-                />
-                <p className="mt-1.5 w-[var(--w)] text-balance text-center text-xs leading-snug" style={{ color: '#9c8b73' }}>{t('themeClickHint')}</p>
-              </>
-            ) : (
-              <button
-                type="button"
-                onClick={() => setThemeModalOpen(true)}
-                disabled={pickerThemes.length === 0}
-                aria-label={t('selectTheme')}
-                className={`flex aspect-[416/684] w-[var(--w)] items-center justify-center rounded-sm border border-dashed transition-colors hover:border-[var(--gold)] hover:text-[var(--gold-light)] disabled:cursor-not-allowed disabled:opacity-60 ${focusRing}`}
-                style={{ borderColor: '#4a3b28', background: 'var(--bg-panel)', color: 'var(--text-muted)' }}
-              >
-                <Plus size={28} aria-hidden="true" />
-              </button>
-            )}
-          </div>
-
-          <div className="flex min-w-0 flex-col gap-3">
-            <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-2">
-              <div className="min-w-0 flex-1 basis-40">
-                <h4
-                  className="text-[1.25rem] leading-snug"
-                  style={{ fontFamily: 'var(--font-heading)', color: activeThemeName ? 'var(--gold-light)' : '#9c8b73' }}
-                >
-                  {activeThemeName ?? t('noTheme')}
-                </h4>
-                <p className="mt-0.5 text-sm" style={{ color: '#9c8b73' }}>
-                  {selectedTheme
-                    ? t('themeGiftCount', { count: getThemeGiftCount(selectedTheme) })
-                    : pickerThemes.length > 0 ? t('availableThemeCount', { count: pickerThemes.length }) : t('emptyThemes')}
-                </p>
-              </div>
-              <div className="flex items-center gap-1">
-                {entry.floor <= 5 ? (
-                  <div
-                    role="group"
-                    className="flex rounded-md border p-0.5"
-                    style={{ background: 'var(--bg-deep)', borderColor: '#2e2417' }}
-                    aria-label={t('difficultySelectorLabel', { floor: entry.floor })}
-                  >
-                    {(['normal', 'hard'] as const).map(difficulty => {
-                      const selected = activeDifficulty === difficulty
-                      return (
-                        <button
-                          key={difficulty}
-                          type="button"
-                          onClick={() => setDifficulty(difficulty)}
-                          aria-pressed={selected}
-                          className={`min-h-[2.5rem] rounded px-3.5 text-sm font-semibold transition-colors ${focusRing}`}
-                          style={{
-                            background: selected ? 'rgba(200,144,10,0.2)' : 'transparent',
-                            color: selected ? 'var(--gold-light)' : '#9c8b73',
-                          }}
-                        >
-                          {t(`difficulty.${difficulty}`)}
-                        </button>
-                      )
-                    })}
-                  </div>
-                ) : (
-                  <ThemePackModalPill tone={activeDifficulty === 'extreme' ? 'red' : 'gold'}>
-                    {t(`difficulty.${activeDifficulty}`)}
-                  </ThemePackModalPill>
-                )}
-                <button
-                  type="button"
-                  onClick={() => toggleFloor(entry.floor)}
-                  aria-label={t('ladder.collapse', { floor: entry.floor })}
-                  title={t('ladder.collapseShort')}
-                  className={`grid h-[2.75rem] w-[2.75rem] place-items-center rounded-md transition-colors hover:bg-white/5 hover:text-[var(--text-primary)] ${focusRing}`}
-                  style={{ color: '#9c8b73' }}
-                >
-                  <ChevronUp size={18} aria-hidden="true" />
-                </button>
-              </div>
-            </div>
-            <div className="flex flex-wrap gap-2 empty:hidden">
-              {selectedTheme && previousFloorGifts(state.floorPlan, entry.floor).length > 0 && (
-                <button
-                  type="button"
-                  onClick={() => copyPreviousFloor(entry)}
-                  className={`min-h-[2.75rem] rounded-md border px-3 text-[0.9375rem] transition-colors hover:bg-white/5 ${focusRing}`}
-                  style={{ borderColor: '#2e2417', color: '#9c8b73' }}
-                >
-                  {tCopy('copyPrevious')}
-                </button>
-              )}
-            </div>
-          </div>
-
-          <div className="col-span-2 min-w-0 sm:col-span-1 sm:col-start-2">
-            <h5 className="mb-2 text-[0.9375rem]" style={{ fontFamily: 'var(--font-heading)', color: 'var(--text-primary)' }}>
-              {t('acquiredGiftCount', { count: floorGifts.length })}
-            </h5>
-            <div className="flex flex-wrap items-start gap-2">
-              {floorGifts.map(gift => {
-                const warning = selectedTheme && themeExclusiveGiftIds(selectedTheme).includes(gift.game_id) ? exclusiveLabel : undefined
-                if (!plannedIds.has(String(gift.game_id))) {
-                  return (
-                    <div key={gift.game_id} className="w-[4rem]">
-                      <GiftCard
-                        gift={gift}
-                        size="4rem"
-                        showName={false}
-                        warning={warning}
-                        onClick={() => undefined}
-                        title={t('ladder.rewardTitle', { gift: gift.name })}
-                        ariaLabel={t('ladder.rewardTitle', { gift: gift.name })}
-                      />
-                      <span className="mt-1 block text-center text-[0.75rem]" style={{ color: '#9c8b73' }}>{t('ladder.reward')}</span>
-                    </div>
-                  )
-                }
-                return (
-                  <GiftCard
-                    key={gift.game_id}
-                    gift={gift}
-                    size="4rem"
-                    showName={false}
-                    warning={warning}
-                    onClick={() => toggleGiftId(String(gift.game_id), entry.gift_ids)}
-                    onRemove={() => toggleGiftId(String(gift.game_id), entry.gift_ids)}
-                  />
-                )
-              })}
-              <GiftCard
-                gift={{ name: t('addGift') }}
-                variant="insert"
-                size="4rem"
-                showName
-                ariaLabel={t('giftPickerTitle')}
-                onClick={() => setGiftPickerOpen(true)}
-              />
-            </div>
-          </div>
-
-          <ConfirmModal
-            open={copyConfirm !== null}
-            title={tCopy('replaceTitle')}
-            message={tCopy('copyPrevious')}
-            confirmLabel={tCopy('replaceConfirm')}
-            variant="warning"
-            onConfirm={() => { if (copyConfirm) copyGifts(copyConfirm.floor, copyConfirm.giftIds); setCopyConfirm(null) }}
-            onCancel={() => setCopyConfirm(null)}
-          />
-          <FloorGiftPickerModal
-            open={giftPickerOpen}
-            title={t('floorGiftPickerTitle', { floor: entry.floor })}
-            floorGifts={selectedTheme ? availableGifts : null}
-            allGifts={reachableGifts}
-            exclusiveIds={selectedTheme ? themeExclusiveGiftIds(selectedTheme) : []}
-            showRecent
-            suggestedIds={floorSuggestions?.gifts.map(gift => gift.id)}
-            suggestionsLoading={floorSuggestionsLoading}
-            selectedIds={plannedIds}
-            onToggle={gift => toggleGiftId(String(gift.game_id), entry.gift_ids)}
-            onClose={() => setGiftPickerOpen(false)}
-          />
-        </div>
-
-        <FloorConstraints floor={entry.floor} entries={state.floorPlan} onChange={ids => dispatch({ type: 'SET_FLOOR_CONSTRAINTS', floor: entry.floor, ids })} />
-        <FloorGuidance entry={entry} entries={state.floorPlan} inventory={state.giftInventory} recipes={recipes} gifts={giftMap} />
-
-        <div className="mt-5">
-          <h5 className="mb-2 text-[0.9375rem]" style={{ fontFamily: 'var(--font-heading)', color: 'var(--text-primary)' }}>
-            {t('memo')}
-          </h5>
-          <FloorMemo
-            value={entry.memo}
-            onChange={memo => dispatch({ type: 'SET_FLOOR_MEMO', floor: entry.floor, memo })}
-            pool={acPool}
-            formation={noteFormation}
-            allowedKeywords={allowedKeywords}
-            egoGiftLookup={egoGiftLookup}
-          />
-        </div>
-      </div>
-    )
-  }
-
+  // A plain render function, not a component: the closed row and the open editor share one element slot, as before the split.
   function renderSummary(entry: FloorEntry, theme: ThemeData | null, floorGifts: GiftData[]) {
     const difficulty = normalizeFloorDifficulty(entry.difficulty, entry.floor)
     const memoPreview = getMemoPreview(entry.memo)
     const alts = (entry.theme_alt_ids ?? []).flatMap(id => themeMap.get(id) ?? [])
+    const exclusiveLabel = t('ladder.packExclusive')
     return (
       // The floor number is the keyboard control; clicking anywhere on the row is a pointer shortcut.
       <div
@@ -623,7 +285,7 @@ export default function FloorTab({ state, dispatch, themes, gifts, recipes, gift
               className={`min-w-0 leading-snug ${theme ? 'text-[1.125rem]' : 'text-[0.9375rem]'}`}
               style={{ fontFamily: theme ? 'var(--font-heading)' : undefined, color: theme ? 'var(--text-primary)' : 'var(--text-muted)' }}
             >
-              {theme ? themeName(theme) : t('ladder.emptyHint')}
+              {theme ? getLocalizedName({ name_kr: theme.name, name_en: theme.name_en, name_jp: theme.name_jp }, locale) : t('ladder.emptyHint')}
             </span>
           </p>
           {floorGifts.length > 0 && (
@@ -646,6 +308,89 @@ export default function FloorTab({ state, dispatch, themes, gifts, recipes, gift
               {memoPreview}
             </p>
           )}
+        </div>
+      </div>
+    )
+  }
+
+  function renderEditor(entry: FloorEntry, floorGifts: GiftData[]) {
+    const plannedIds = new Set(entry.gift_ids)
+    return (
+      <div
+        id={`floor-editor-${entry.floor}`}
+        className="rounded-sm border p-3 sm:p-4"
+        style={{ background: '#17120c', borderColor: '#2e2417' }}
+      >
+        {/* 포스터 옆에 테마팩 이름·난이도·접기·버튼과 획득 기프트를 모은다. 모바일에서는 기프트가 전체 폭으로 내려간다. */}
+        <div className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-4 [--w:6.5rem] sm:[--w:9rem] sm:grid-rows-[auto_1fr]">
+          <FloorThemeSlot
+            floor={entry.floor}
+            selectedTheme={selectedTheme}
+            altThemes={(entry.theme_alt_ids ?? []).flatMap(id => themeMap.get(id) ?? [])}
+            themeName={activeThemeName}
+            pickerEmpty={pickerThemes.length === 0}
+            onOpenPicker={() => setThemeModalOpen(true)}
+          />
+
+          <FloorEditorHeader
+            floor={entry.floor}
+            selectedTheme={selectedTheme}
+            themeName={activeThemeName}
+            pickerThemeCount={pickerThemes.length}
+            difficulty={activeDifficulty}
+            canCopyPrevious={Boolean(selectedTheme) && previousFloorGifts(state.floorPlan, entry.floor).length > 0}
+            onDifficulty={setDifficulty}
+            onCollapse={() => toggleFloor(entry.floor)}
+            onCopyPrevious={() => copyPreviousFloor(entry)}
+          />
+
+          <FloorAcquiredGifts
+            floorGifts={floorGifts}
+            plannedIds={plannedIds}
+            selectedTheme={selectedTheme}
+            onToggle={giftGameId => toggleGiftId(giftGameId, entry.gift_ids)}
+            onOpenPicker={() => setGiftPickerOpen(true)}
+          />
+
+          <ConfirmModal
+            open={copyConfirm !== null}
+            title={tCopy('replaceTitle')}
+            message={tCopy('copyPrevious')}
+            confirmLabel={tCopy('replaceConfirm')}
+            variant="warning"
+            onConfirm={() => { if (copyConfirm) copyGifts(copyConfirm.floor, copyConfirm.giftIds); setCopyConfirm(null) }}
+            onCancel={() => setCopyConfirm(null)}
+          />
+          <FloorGiftPickerModal
+            open={giftPickerOpen}
+            title={t('floorGiftPickerTitle', { floor: entry.floor })}
+            floorGifts={selectedTheme ? availableGifts : null}
+            allGifts={reachableGifts}
+            exclusiveIds={selectedTheme ? themeExclusiveGiftIds(selectedTheme) : []}
+            showRecent
+            suggestedIds={floorSuggestions?.gifts.map(gift => gift.id)}
+            suggestionsLoading={floorSuggestionsLoading}
+            selectedIds={plannedIds}
+            onToggle={gift => toggleGiftId(String(gift.game_id), entry.gift_ids)}
+            onClose={() => setGiftPickerOpen(false)}
+          />
+        </div>
+
+        <FloorConstraints floor={entry.floor} entries={state.floorPlan} onChange={ids => dispatch({ type: 'SET_FLOOR_CONSTRAINTS', floor: entry.floor, ids })} />
+        <FloorGuidance entry={entry} entries={state.floorPlan} inventory={state.giftInventory} recipes={recipes} gifts={giftMap} />
+
+        <div className="mt-5">
+          <h5 className="mb-2 text-[0.9375rem]" style={{ fontFamily: 'var(--font-heading)', color: 'var(--text-primary)' }}>
+            {t('memo')}
+          </h5>
+          <FloorMemoEditor
+            value={entry.memo}
+            onChange={memo => dispatch({ type: 'SET_FLOOR_MEMO', floor: entry.floor, memo })}
+            pool={acPool}
+            formation={noteFormation}
+            allowedKeywords={allowedKeywords}
+            egoGiftLookup={egoGiftLookup}
+          />
         </div>
       </div>
     )
@@ -700,7 +445,7 @@ export default function FloorTab({ state, dispatch, themes, gifts, recipes, gift
                         aria-expanded={isOpen}
                         aria-controls={isOpen ? `floor-editor-${entry.floor}` : undefined}
                         aria-label={t(isOpen ? 'ladder.collapse' : 'ladder.expand', { floor: entry.floor })}
-                        className={`relative ml-[1.375rem] mt-2 flex min-h-[2.75rem] min-w-[2.75rem] items-start rounded-sm leading-none tabular-nums sm:ml-[2.125rem] ${focusRing}`}
+                        className={`relative ml-[1.375rem] mt-2 flex min-h-[2.75rem] min-w-[2.75rem] items-start rounded-sm leading-none tabular-nums sm:ml-[2.125rem] ${FLOOR_FOCUS_RING}`}
                         style={{
                           fontFamily: 'var(--font-title)',
                           fontSize: 'clamp(2.125rem, 1.6rem + 1.6vw, 3.25rem)',

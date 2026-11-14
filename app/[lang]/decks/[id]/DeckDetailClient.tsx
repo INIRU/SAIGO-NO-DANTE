@@ -6,7 +6,7 @@ import FollowAuthorButton from '@/features/community/components/FollowAuthorButt
 import SeriesBox from '@/features/community/components/SeriesBox'
 import type { SeriesView } from '@/features/community'
 import DeckDetailSkeleton from '@/app/[lang]/decks/[id]/_components/DeckDetailSkeleton'
-import { useState, useEffect, useCallback, useMemo, useRef, type ReactNode } from 'react'
+import { useState, useEffect, useCallback, useMemo, type ReactNode } from 'react'
 import dynamic from 'next/dynamic'
 import useSWR from 'swr'
 import Image from 'next/image'
@@ -21,38 +21,30 @@ import ConfirmModal from '@/components/ui/ConfirmModal'
 import { useGuestPosts } from '@/features/account/hooks/useGuestPosts'
 import { guestHeaders, getGuestCopy, guestAuthorName } from '@/features/account'
 import GuestPinRecover from '@/features/account/components/GuestPinRecover'
-import { DEFAULT_AVATAR_URL, SINNER_SLUGS, isDeployedSlot } from '@/lib/constants/game'
-import { sinColorOf } from '@/lib/constants/sin'
-import { getIdentityImageUrl, getSkillIconUrl, computeSkillImageIndices } from '@/lib/utils/images'
-import {
-  computeAllGiftAffiliationCounts,
-  computeAllGiftAffiliationMembers,
-  computeAllGiftKeywordCounts,
-  computeFormationGiftAffiliationCounts,
-  computeFormationGiftAffiliationMembers,
-  computeFormationGiftKeywordCounts,
-  normalizeDeckMainKeyword,
-  type DeckKeywordSlot,
-} from '@/lib/decks/keyword-rules'
+import { DEFAULT_AVATAR_URL, SINNER_SLUGS } from '@/lib/constants/game'
+import { getSkillIconUrl, computeSkillImageIndices } from '@/lib/utils/images'
 import { NoteRenderer, fetchNoteGifts } from '@/features/notes/components/NoteChips'
 import { NoteGiftClickContext } from '@/features/notes/components/NoteBlockViewer'
 import PlannerGiftModal from '@/features/planner/components/PlannerGiftModal'
 import type { GiftData } from '@/lib/planner/types'
 import KeywordIcon from '@/components/ui/KeywordIcon'
 import RelativeTime from '@/components/ui/RelativeTime'
-import DeckInsights, { type DeckInsightIdentity } from '@/features/decks/components/DeckInsights'
+import DeckInsights from '@/features/decks/components/DeckInsights'
 import DeckResourceSummary from '@/features/decks/components/DeckResourceSummary'
 import SkillExchangePanel from '@/components/ui/SkillExchangePanel'
-import { computeDeckResources, computeSinProduction, fieldedEntries, rowsAtUptie, topUptieSkills, BOARD_SLOT_COUNT, adaptBoardIdentity, buildBoardSlots, buildNoteLookups, topKeywords, contentTypeMessageKey, localizeDeckKeyword, type SinnerEgo } from '@/features/decks'
+import { topUptieSkills, BOARD_SLOT_COUNT, adaptBoardIdentity, contentTypeMessageKey, localizeDeckKeyword } from '@/features/decks'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
-import { localizeEgoName, localizeIdentityName, localizePassiveDescription, localizePassiveName, localizeSkillName } from '@/lib/decks/localize'
-import { type EgoEntry, type IdentityDetail, type IdentitySlot } from '@/lib/decks/identity-types'
+import { localizeIdentityName } from '@/lib/decks/localize'
+import { type IdentityDetail, type IdentitySlot } from '@/lib/decks/identity-types'
 import FormationBoard, { type FormationBoardSlot } from '@/features/decks/components/FormationBoard'
-import { FormationTabs, type FormationEgo } from '@/features/decks/components/FormationEgoGrid'
+import { FormationTabs } from '@/features/decks/components/FormationEgoGrid'
 import DeckRecommendations, { type DeckRecommendationsData } from '@/features/decks/components/DeckRecommendations'
 import DeckComments from '@/features/decks/components/DeckComments'
+import { useDeckDetailActions } from '@/features/decks/hooks/useDeckDetailActions'
+import { useDeckDetailLoad, useDeckDetailState, type DeckDetail } from '@/features/decks/hooks/useDeckDetailData'
+import { buildSkillExchangeRow, computeDeckAnalysis, slotUptie, useDeckDetailModel } from '@/features/decks/hooks/useDeckDetailModel'
 import { useDeckReactions } from '@/features/decks/hooks/useDeckReactions'
-import { getGiftActivationConditionStatus } from '@/lib/planner/gift-condition-status'
+import { useSectionNav } from '@/features/decks/hooks/useSectionNav'
 import type { SupportedLang } from '@/lib/i18n/types'
 import { workbenchReveal } from '@/lib/animations'
 import styles from './DeckDetail.module.css'
@@ -60,64 +52,9 @@ import styles from './DeckDetail.module.css'
 const IdentityDetailModal = dynamic(() => import('@/features/catalog/components/IdentityDetailModal'), { ssr: false })
 const EgoDetailModal = dynamic(() => import('@/features/catalog/components/EgoDetailModal'), { ssr: false })
 
-const postedDeckViews = new Set<string>()
-
-// ── 타입 ──────────────────────────────────────────────────────────────────
-type EgoSlot = {
-  grade: string
-  ego: {
-    id: string
-    name?: string | null
-    name_kr: string | null
-    name_en?: string | null
-    name_jp?: string | null
-    grade: string
-    sin_affinity: string | null
-    sinner_id: string
-    folder_name: string | null
-    image_url: string | null
-    cost: number[] | null
-    ego_skills?: EgoAttackSkill[] | null
-  } | null
-}
-
-type EgoAttackSkill = {
-  skill_type: string | null
-  category?: string | null
-  construe_level?: number | null
-  skill_order?: number | null
-}
-
-type DeckDetail = {
-  id: string
-  title: string
-  description: string | null
-  tags: string[]
-  main_keywords?: string[] | null
-  content_type?: string
-  vote_count: number
-  view_count: number
-  created_at: string
-  deck_code?: string
-  is_owner?: boolean
-  is_admin?: boolean
-  user_id: string
-  guest_tag?: string | null
-  profiles: { username: string; avatar_url?: string | null; public_profile?: boolean } | null
-  deck_identities: IdentitySlot[]
-  deck_egos?: EgoSlot[]
-  all_sinner_egos?: SinnerEgo[]
-}
-
-// ── 상수 ──────────────────────────────────────────────────────────────────
 import AdSlot from '@/components/ads/AdSlot'
 import { ADS_ON } from '@/lib/seo/ads'
-// Saved uptie; rows without one fall back to gacksung (= uptie III–IV), non-awakened reading as uptie II.
-const slotUptie = (slot: IdentitySlot | null) => slot?.uptie ?? (slot?.gacksung === false ? 2 : 4)
-const EGO_GRADE_ORDER = ['ZAYIN', 'TETH', 'HE', 'WAW', 'ALEPH']
 
-// ── 헬퍼 ──────────────────────────────────────────────────────────────────
-// ── 메인 ──────────────────────────────────────────────────────────────────
 type Comment = {
   id: string
   content: string
@@ -151,8 +88,8 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
   const shouldReduceMotion = useReducedMotion()
   const { status: authStatus } = useSession()
 
-  const [deck, setDeck] = useState<DeckDetail | null>(initialDeck ?? null)
-  const [loading, setLoading] = useState(!initialDeck)
+  // The requests start in this order: the guest's posts, the vote, the bookmark, the gift list, then the view count and the deck.
+  const { deck, setDeck, loading, setLoading } = useDeckDetailState(initialDeck)
   // Signed-out visitors own a guest deck when this browser's key wrote it.
   const guest = useGuestPosts(authStatus === 'unauthenticated' && !deck?.user_id), guestPosts = guest.posts
   const guestOwner = authStatus === 'unauthenticated' && !!guestPosts.data?.decks.some(post => post.id === id)
@@ -160,16 +97,13 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
   const canRecover = authStatus === 'unauthenticated' && !!deck?.guest_tag && guest.keyRead && !guestPosts.isLoading && !guestOwner
   const [confirmDelete, setConfirmDelete] = useState(false)
   const { voted, voteCount, setVoteCount, voting, handleVote, bookmarked, bookmarking, handleBookmark } = useDeckReactions({ id, authStatus, initialVoteCount: initialDeck?.vote_count ?? 0 })
-  const [copied, setCopied] = useState(false)
   const [identityPreview, setIdentityPreview] = useState<IdentityPreviewState | null>(null)
   const [formationTab, setFormationTab] = useState<'identity' | 'ego' | 'skill'>('identity')
-
-  const [shared, setShared] = useState(false)
-  const [shareGenerating, setShareGenerating] = useState(false)
 
   // Same key and fetcher as the card previews' gift lookup, so SWR downloads the gift list once.
   const { data: noteGifts } = useSWR('/api/ego-gifts', fetchNoteGifts, { revalidateOnFocus: false, revalidateIfStale: false })
   const egoGiftLookup = useMemo(() => Object.fromEntries((noteGifts ?? []).map(gift => [gift.name, gift])), [noteGifts])
+  useDeckDetailLoad({ id, initialDeck, setDeck, setLoading, onVoteCount: setVoteCount })
   const [egoModalId, setEgoModalId] = useState<string | null>(null)
   // A gift label in the note: the list above is the light one, so the pressed gift is fetched whole for the modal.
   const [noteGift, setNoteGift] = useState<GiftData | null>(null)
@@ -180,123 +114,8 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
       .catch(() => {})
   }, [])
 
-  useEffect(() => {
-    const viewKey = `deck-view:${id}`
-    if (postedDeckViews.has(viewKey)) return
-    postedDeckViews.add(viewKey)
+  const { copied, shared, shareGenerating, handleCopyCode, handleShare, handleFork } = useDeckDetailActions({ id, locale, deck })
 
-    fetch(`/api/decks/${id}/view`, {
-      method: 'POST',
-      cache: 'no-store',
-      keepalive: true,
-    }).catch(() => {})
-  }, [id])
-
-  useEffect(() => {
-    let cancelled = false
-
-    // With the first view rendered, only the viewer part (deck code, ownership, the sinners' E.G.O list, counts) is missing.
-    fetch(initialDeck ? `/api/decks/${id}?part=viewer` : `/api/decks/${id}`)
-      .then(r => r.ok ? r.json() : null)
-      .then(data => {
-        if (cancelled || !data || data.error) return
-
-        const fixed: DeckDetail = {
-          ...data,
-          deck_identities: (data.deck_identities ?? []).map((slot: IdentitySlot & { identities: unknown }) => ({
-            ...slot,
-            identities: Array.isArray(slot.identities)
-              ? (slot.identities[0] as IdentityDetail | undefined) ?? null
-              : slot.identities as unknown as IdentityDetail | null,
-          })),
-          deck_egos: (data.deck_egos ?? []).map((es: EgoSlot & { ego: unknown }) => ({
-            ...es,
-            ego: Array.isArray(es.ego)
-              ? (es.ego[0] as EgoSlot['ego'] | undefined) ?? null
-              : es.ego as EgoSlot['ego'],
-          })),
-        }
-        // If we already have initialDeck, only patch the fields the server-side
-        // prefetch doesn't include (deck_code, is_owner, is_admin, all_sinner_egos).
-        // This avoids replacing identity/ego data that is already rendered.
-        if (initialDeck) {
-          setDeck(prev => prev ? {
-            ...prev,
-            deck_code: fixed.deck_code,
-            is_owner: fixed.is_owner,
-            is_admin: fixed.is_admin,
-            all_sinner_egos: fixed.all_sinner_egos ?? [],
-            vote_count: fixed.vote_count,
-            view_count: fixed.view_count,
-          } : fixed)
-        } else {
-          setDeck(fixed)
-        }
-        setVoteCount(data.vote_count ?? 0)
-      })
-      .catch((err) => {
-        if (cancelled) return
-        console.error('Failed to fetch deck detail:', err)
-        if (!initialDeck) showError(t('loadFailed'))
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false)
-      })
-
-    return () => {
-      cancelled = true
-    }
-  }, [id, initialDeck, t])
-
-  const handleCopyCode = useCallback(async () => {
-    if (!deck?.deck_code) return
-    try {
-      await navigator.clipboard.writeText(deck.deck_code)
-    } catch {
-      showError(rootT('planner.detail.copyDeckCodeFailed'))
-      return
-    }
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-  }, [deck?.deck_code, rootT])
-
-  const handleShare = useCallback(async () => {
-    if (shareGenerating || !deck) return
-    setShareGenerating(true)
-    try {
-      const shareUrl = `${window.location.origin}/${locale}/decks/${id}`
-      if (navigator.share) {
-        try {
-          await navigator.share({ url: shareUrl, title: deck.title })
-        } catch (e) {
-          if (e instanceof Error && e.name !== 'AbortError') throw e
-        }
-      } else {
-        await navigator.clipboard.writeText(shareUrl)
-        setShared(true)
-        setTimeout(() => setShared(false), 2000)
-      }
-    } catch {
-      showError(rootT('planner.detail.shareFailed'))
-    } finally {
-      setShareGenerating(false)
-    }
-  }, [shareGenerating, deck, id, locale, rootT])
-
-  const handleFork = useCallback(() => {
-    router.push(`/decks/new?fork=${id}`, { locale })
-  }, [id, locale, router])
-
-  // 정렬
-  const sorted = useMemo(() => {
-    if (!deck) return []
-    return [...deck.deck_identities].sort((a, b) => {
-      if (a.slot_order === 99 && b.slot_order !== 99) return 1
-      if (b.slot_order === 99 && a.slot_order !== 99) return -1
-      return a.slot_order - b.slot_order
-    })
-  }, [deck?.deck_identities])
-  const boardSlots = useMemo(() => buildBoardSlots(sorted), [sorted])
   // 카드 아래 줄: 스킬 1·2·3의 아이콘, 죄악, 공격 유형 (스킬 분포 패널과 같은 아이콘 규칙)
   const stripSkills = (identity: IdentityDetail, counts: (number | null | undefined)[]) => {
     const attacks = topUptieSkills((identity.skills ?? []).filter(skill => !['evade', 'defense', 'counter'].includes(skill.skill_type))).sort((a, b) => a.skill_order - b.skill_order)
@@ -306,85 +125,9 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
       return skill ? { iconUrl: getSkillIconUrl(adaptBoardIdentity(identity, locale), imageIndices[skill.id] ?? order, skill), sin: skill.sin_affinity, attackType: skill.atk_type ?? null, count: counts[order - 1] ?? 4 - order } : null
     })
   }
-  // E.G.O 탭: 수감자 → 등급 → E.G.O
-  const formationEgos = useMemo(() => {
-    const map: Record<string, Record<string, FormationEgo>> = {}
-    for (const row of deck?.deck_egos ?? []) {
-      if (!row.ego) continue
-      ;(map[row.ego.sinner_id] ??= {})[row.grade] = { id: row.ego.id, name: localizeEgoName(row.ego, locale), sin_affinity: row.ego.sin_affinity, image_url: row.ego.image_url }
-    }
-    return map
-  }, [deck?.deck_egos, locale])
-  const keywords = useMemo(() => {
-    const persistedKeywords = (deck?.main_keywords ?? [])
-      .map(normalizeDeckMainKeyword)
-      .filter((keyword): keyword is string => Boolean(keyword))
-
-    return persistedKeywords.length > 0 ? persistedKeywords : topKeywords(sorted)
-  }, [deck?.main_keywords, sorted])
-  const filledSlots = useMemo(() => sorted.filter(s => s.identities), [sorted])
-  const formedSlots = useMemo(() => filledSlots.filter(s => s.slot_order < 99), [filledSlots])
-  const customSkillSlots = useMemo(() => formedSlots.filter(s => {
-    const s1 = s.s1_count ?? 3, s2 = s.s2_count ?? 2, s3 = s.s3_count ?? 1
-    return !(s1 === 3 && s2 === 2 && s3 === 1)
-  }), [formedSlots])
-
-  // EGO 그룹핑
-  const egoGrouped = useMemo(() => {
-    const grouped: Record<string, EgoEntry[]> = {}
-    for (const row of deck?.deck_egos ?? []) {
-      if (!row.ego) continue
-      const sid = row.ego.sinner_id
-      ;(grouped[sid] ??= []).push({ grade: row.grade, ego: row.ego })
-    }
-    for (const sid of Object.keys(grouped)) {
-      grouped[sid].sort((a, b) => EGO_GRADE_ORDER.indexOf(a.grade) - EGO_GRADE_ORDER.indexOf(b.grade))
-    }
-    return grouped
-  }, [deck?.deck_egos])
-  const noteLookups = useMemo(
-    () => buildNoteLookups(sorted, deck?.all_sinner_egos ?? [], locale, (sinnerId) => rootT(`sinner.${sinnerId}`)),
-    [deck?.all_sinner_egos, locale, rootT, sorted],
-  )
-  const egoGiftConditionLookup = useMemo(() => {
-    const assignedSlots = filledSlots.filter(slot => slot.slot_order >= 0 && slot.slot_order < 99)
-    const deckKeywordSlots: DeckKeywordSlot[] = assignedSlots.map(slot => {
-      const identity = slot.identities
-      const keywordIdentity = identity as (IdentityDetail & { skill_keyword_list?: string[] | null }) | null
-      return {
-        slot_order: slot.slot_order,
-        identities: {
-          skill_keyword_list: keywordIdentity?.skill_keyword_list ?? identity?.keywords ?? [],
-          affiliation: keywordIdentity?.affiliation ?? null,
-          association_list: keywordIdentity?.association_list ?? [],
-          skills: (identity?.skills ?? []).map(skill => ({
-            skill_type: skill.skill_type,
-            atk_type: skill.atk_type ?? skill.skill_type,
-          })),
-        },
-      }
-    })
-    const formationKeywordCounts = computeFormationGiftKeywordCounts(deckKeywordSlots)
-    const allKeywordCounts = computeAllGiftKeywordCounts(deckKeywordSlots)
-    const formationAffiliationCounts = computeFormationGiftAffiliationCounts(deckKeywordSlots)
-    const allAffiliationCounts = computeAllGiftAffiliationCounts(deckKeywordSlots)
-    const formationAffiliationMembers = computeFormationGiftAffiliationMembers(deckKeywordSlots)
-    const allAffiliationMembers = computeAllGiftAffiliationMembers(deckKeywordSlots)
-
-    const map: Record<string, ReturnType<typeof getGiftActivationConditionStatus>> = {}
-    for (const gift of Object.values(egoGiftLookup)) {
-      map[gift.name] = getGiftActivationConditionStatus({
-        gift: { activation_condition: gift.activation_condition ?? null },
-        formationKeywordCounts,
-        allKeywordCounts,
-        formationAffiliationCounts,
-        allAffiliationCounts,
-        formationAffiliationMembers,
-        allAffiliationMembers,
-      })
-    }
-    return map
-  }, [egoGiftLookup, filledSlots])
+  const { boardSlots, formationEgos, keywords, filledSlots, formedSlots, customSkillSlots, egoGrouped, noteLookups, egoGiftConditionLookup, insightSlots, deployedIdentityIds, insightIdentities } = useDeckDetailModel({
+    deckIdentities: deck?.deck_identities, deckEgos: deck?.deck_egos, mainKeywords: deck?.main_keywords, allSinnerEgos: deck?.all_sinner_egos, locale, egoGiftLookup,
+  })
 
   useEffect(() => {
     if (loading || deck) return
@@ -414,49 +157,9 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
   const commentsT = useTranslations('decks.comments')
   const { getIconUrl, keywords: keywordMessages } = useKeywordData()
 
-  // Planner deck panels: keyword distribution, passives, attack types and sin resources (each slot at its own uptie).
-  const insightSlots = useMemo(() => {
-    const order = SINNER_SLUGS
-    const bySinner = [...filledSlots].sort((a, b) => order.indexOf(a.identities!.sinner_id) - order.indexOf(b.identities!.sinner_id))
-    const upties = new Map(bySinner.map(slot => [slot.identities!.id, slotUptie(slot)]))
-    return bySinner.map(slot => {
-      const identity = slot.identities!
-      return {
-        slot,
-        identity,
-        skills: rowsAtUptie((identity.skills ?? []).map(skill => ({ ...skill, identity_id: identity.id })), upties),
-        passives: rowsAtUptie((identity.passives ?? []).map(passive => ({ ...passive, identity_id: identity.id })), upties),
-      }
-    })
-  }, [filledSlots])
-  const deployedIdentityIds = useMemo(() => new Set(insightSlots.filter(({ slot }) => isDeployedSlot(slot.slot_order)).map(({ identity }) => identity.id)), [insightSlots])
-  const insightIdentities = useMemo<DeckInsightIdentity[]>(() => insightSlots.map(({ slot, identity, passives, skills }) => ({
-    id: identity.id,
-    name: localizeIdentityName(identity, locale),
-    sinnerName: rootT(`sinner.${identity.sinner_id}`),
-    imageUrl: identity.folder_name && identity.game_id ? getIdentityImageUrl(identity.sinner_id, identity.folder_name, `${identity.game_id}_normal_info`) : '',
-    keywords: identity.skill_keyword_list ?? identity.keywords ?? [],
-    passives: [...passives].sort((a, b) => a.passive_order - b.passive_order).map(passive => ({
-      ...passive,
-      name: localizePassiveName(passive, locale),
-      description: localizePassiveDescription(passive, locale) ?? passive.description,
-    })),
-    deck: computeSinProduction([{ skills, distribution: [slot.s1_count ?? 3, slot.s2_count ?? 2, slot.s3_count ?? 1] as const }]),
-  })), [insightSlots, locale, rootT])
   const deckAnalysis = useMemo(() => {
-    const egos = (deck?.deck_egos ?? []).flatMap(row => row.ego ? [row.ego] : [])
-    const entries = insightSlots.map(({ slot, identity, skills }) => ({
-      skills,
-      distribution: [slot.s1_count ?? 3, slot.s2_count ?? 2, slot.s3_count ?? 1] as const,
-      deployed: isDeployedSlot(slot.slot_order),
-      egos: egos.filter(ego => ego.sinner_id === identity.sinner_id).map(ego => ({ skills: ego.ego_skills, cost: ego.cost })),
-    }))
-    const resources = computeDeckResources(entries)
-    return {
-      sinCounts: resources.production,
-      baseSinCounts: computeSinProduction(fieldedEntries(entries).map(({ skills }) => ({ skills }))),
-      summary: <DeckResourceSummary resources={resources} />,
-    }
+    const { resources, sinCounts, baseSinCounts } = computeDeckAnalysis(deck?.deck_egos ?? [], insightSlots)
+    return { sinCounts, baseSinCounts, summary: <DeckResourceSummary resources={resources} /> }
   }, [deck?.deck_egos, insightSlots])
 
   const hasRecommendations = [...(initialRecommendations?.otherOpinions ?? []), ...(initialRecommendations?.similarDecks ?? [])].some(rec => rec.id !== id)
@@ -471,47 +174,7 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
     { id: 'deck-comments', label: commentsT('title') },
   ]
   const sectionKey = sections.map(section => section.id).join()
-  const [activeSection, setActiveSection] = useState('deck-formation')
-  // 스크롤 위치에 맞춰 구역 목차의 현재 항목을 표시한다: 화면 위 30% 선을 지난 마지막 구역
-  useEffect(() => {
-    const ids = sectionKey.split(',')
-    let frame = 0
-    const update = () => {
-      cancelAnimationFrame(frame)
-      frame = requestAnimationFrame(() => {
-        const line = window.innerHeight * 0.3
-        let current = ids[0]
-        for (const sectionId of ids) {
-          const top = document.getElementById(sectionId)?.getBoundingClientRect().top
-          if (top != null && top <= line) current = sectionId
-        }
-        setActiveSection(current)
-      })
-    }
-    update()
-    window.addEventListener('scroll', update, { passive: true })
-    window.addEventListener('resize', update)
-    return () => { cancelAnimationFrame(frame); window.removeEventListener('scroll', update); window.removeEventListener('resize', update) }
-  }, [sectionKey, loading])
-
-  // 모바일의 가로 목차에서 현재 항목이 보이도록 목차만 가로로 스크롤한다
-  const sectionNavRef = useRef<HTMLOListElement>(null)
-  useEffect(() => {
-    const list = sectionNavRef.current
-    const link = list?.querySelector<HTMLElement>('[aria-current]')
-    if (!list || !link) return
-    const left = link.offsetLeft - list.offsetLeft
-    if (left < list.scrollLeft || left + link.offsetWidth > list.scrollLeft + list.clientWidth) {
-      list.scrollTo({ left: Math.max(0, left - 16) })
-    }
-  }, [activeSection])
-
-  // 해시를 남기지 않고 이동해 BackLink의 뒤로 가기 기록을 그대로 둔다
-  const goToSection = (sectionId: string) => {
-    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    document.getElementById(sectionId)?.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' })
-    setActiveSection(sectionId)
-  }
+  const { activeSection, sectionNavRef, goToSection } = useSectionNav(sectionKey, loading, 'deck-formation')
 
   if (loading) return <DeckDetailSkeleton />
 
@@ -759,29 +422,14 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
                   <div className="skill-exchange-list">
                     {customSkillSlots.map((slot, i) => {
                       const identity = slot.identities!
-                      const adapted = adaptBoardIdentity(identity, locale)
-                      const dist: [number, number, number] = [slot.s1_count ?? 3, slot.s2_count ?? 2, slot.s3_count ?? 1]
-                      const sortedSkills = topUptieSkills((identity.skills ?? []).filter(s => !['evade', 'defense', 'counter'].includes(s.skill_type))).sort((a, b) => a.skill_order - b.skill_order)
-                      const imageIndices = computeSkillImageIndices(sortedSkills)
-                      const skillAt = (idx: number) => {
-                        const skill = sortedSkills.find(s => s.skill_order === idx + 1)
-                        return skill ? {
-                          name: localizeSkillName(skill, locale),
-                          iconSrc: getSkillIconUrl(adapted, imageIndices[skill.id] ?? idx + 1, skill),
-                          sinColor: sinColorOf(skill.sin_affinity, '#888888'),
-                        } : null
-                      }
+                      const row = buildSkillExchangeRow(slot, locale, rootT(`sinner.${identity.sinner_id}`))
                       return (
                         <SkillExchangePanel
                           key={`${identity.id}-${i}`}
-                          identity={{
-                            imageUrl: identity.folder_name && identity.game_id ? getIdentityImageUrl(identity.sinner_id, identity.folder_name, `${identity.game_id}_normal_info`) : null,
-                            name: adapted.name ?? '',
-                            sinnerName: rootT(`sinner.${identity.sinner_id}`),
-                          }}
+                          identity={row.identity}
                           onIdentityClick={() => setIdentityPreview({ slot })}
-                          distribution={dist}
-                          skills={[skillAt(0), skillAt(1), skillAt(2)]}
+                          distribution={row.distribution}
+                          skills={row.skills}
                           readOnly
                           showTotal={false}
                         />
