@@ -4,11 +4,11 @@ import { isUuid } from '@/lib/utils/uuid'
 export const FRIEND_CODE_RE = /^[A-Z][0-9]{9}$/
 export const VISIBILITIES = ['public', 'members', 'exchange', 'approval'] as const
 export type Visibility = typeof VISIBILITIES[number]
-export const FRIEND_EGO_GRADES = ['ZAYIN', 'TETH', 'HE', 'WAW', 'ALEPH'] as const
+const FRIEND_EGO_GRADES = ['ZAYIN', 'TETH', 'HE', 'WAW', 'ALEPH'] as const
 type Grade = typeof FRIEND_EGO_GRADES[number]
 /** One support slot as stored: slot 0-11 (game numbers 01-09, 11-13), the identity's id and at most one E.G.O id per grade. */
 export type StoredSlot = { slot: number; identity: string; egos: Partial<Record<Grade, string>> }
-export type SupportPostInput = { code: string; visibility: Visibility; slots: StoredSlot[]; identityIds: string[] }
+type SupportPostInput = { code: string; visibility: Visibility; slots: StoredSlot[]; identityIds: string[] }
 
 /** Why a request was refused: code is the key of the message in messages/*.json (friends.errors), error its Korean text. */
 export const FRIEND_ERRORS = {
@@ -17,8 +17,8 @@ export const FRIEND_ERRORS = {
   bad_ego: '그 인격에 넣을 수 없는 E.G.O입니다.', need_wanted: '구하는 인격을 1~3개 넣어 주세요.', duplicate_code: '이미 올라와 있는 친구 코드입니다.',
   own_code: '자기 친구 코드를 넣어 주세요.', not_exchange: '코드 교환 글이 아닙니다.', not_approval: '승인 후 공개 글이 아닙니다.', blocked: '친구 코드 게시판 이용이 정지되었습니다.', not_found: '글을 찾을 수 없습니다.',
 } as const
-export type FriendErrorCode = keyof typeof FRIEND_ERRORS
-export type FriendError = { error: string; code: FriendErrorCode }
+type FriendErrorCode = keyof typeof FRIEND_ERRORS
+type FriendError = { error: string; code: FriendErrorCode }
 export const fail = (code: FriendErrorCode): FriendError => ({ error: FRIEND_ERRORS[code], code })
 
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -71,7 +71,7 @@ export function codeForViewer(post: { code: string; visibility: string }, viewer
   return viewer.exchanged ? post.code : null
 }
 
-export const REQUEST_DECISIONS = ['approved', 'declined'] as const
+const REQUEST_DECISIONS = ['approved', 'declined'] as const
 export type RequestStatus = 'pending' | typeof REQUEST_DECISIONS[number]
 /** An author's answer to a code request: approved or declined, nothing else. */
 export const isRequestDecision = (value: unknown): value is typeof REQUEST_DECISIONS[number] => REQUEST_DECISIONS.includes(value as never)
@@ -84,7 +84,7 @@ export function nextBumpedAt(previous: string, now: Date): string {
 
 export const WANT_LIMIT = 3
 const WANT_LIFE_MS = 24 * 60 * 60 * 1000
-export type WantPostInput = { code: string; visibility: Visibility; identityIds: string[] }
+type WantPostInput = { code: string; visibility: Visibility; identityIds: string[] }
 
 /** Identity ids a want request names, to look up before parseWantPost. */
 export function wantIdentityIds(body: unknown): string[] {
@@ -112,7 +112,7 @@ export const wantExpiresAt = (createdAt: string) => new Date(new Date(createdAt)
 export const newlyWanted = (previous: readonly string[], next: readonly string[]) => next.filter(id => !previous.includes(id))
 
 /** The game's sinner numbers in sinner order (there is no 10): the number on a strip is its identity's sinner. */
-export const SINNER_NUMBERS = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '11', '12', '13'] as const
+const SINNER_NUMBERS = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '11', '12', '13'] as const
 export const sinnerNumber = (sinnerId: string): string | null => SINNER_NUMBERS[SINNER_SLUGS.indexOf(sinnerId)] ?? null
 
 const SEEN_INTERVAL_MS = 10 * 60 * 1000

@@ -48,7 +48,7 @@ interface EgoCostEntry {
   cost: number[] | null  // SIN_ORDER 순서 (wrath, lust, sloth, gluttony, gloom, pride, envy)
 }
 
-export interface DeckStatsPanelProps {
+interface DeckStatsPanelProps {
   identitySlots: IdentitySlotLike[]
   skills: SkillLike[]
   passives: PassiveLike[]

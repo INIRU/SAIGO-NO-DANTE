@@ -2,7 +2,7 @@
 
 import { useTurnedTouchScroll } from './landscape'
 import FullscreenGate from './FullscreenGate'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { parseAsInteger, useQueryStates } from 'nuqs'
 import Link from 'next/link'
 import { useHtmlFlag } from '@/hooks/useHtmlFlag'

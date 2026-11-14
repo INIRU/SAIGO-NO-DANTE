@@ -16,11 +16,9 @@ export const GRADES: Record<PrescriptGrade, { rerolls: number; replyMs: number; 
 }
 export const gradeOf = (run: PrescriptRun) => GRADES[run.grade ?? 'proselyte']
 export const PRESCRIPT_REROLLS = 3
-/** How long an offer waits for an answer before the terminal chooses for the player (선택받는 삶). */
-export const PRESCRIPT_REPLY_MS = 20000
 /** The five vestiges (잔재): worth nothing to get or to give up, so no prescript asks for or counts them. */
-export const isVestige = (giftId: number) => giftId >= 9991 && giftId <= 9995
-export const LAST_FLOOR = 15
+const isVestige = (giftId: number) => giftId >= 9991 && giftId <= 9995
+const LAST_FLOOR = 15
 export const STRENGTH_POINTS = [5, 10, 20, 35, 60] as const
 
 export function createPrescriptRun(grade: PrescriptGrade = 'proselyte'): PrescriptRun {
@@ -56,9 +54,9 @@ export const runBlessing = (run: PrescriptRun) => blessingFactor(run.blessingSpe
 
 /** Grace for each of the opening formation's twelve Identities, by its star rating (all 1-star: 120). */
 export const START_FORMATION_POINTS: Readonly<Record<number, number>> = { 1: 10, 2: 4, 3: 0 }
-export const FORMATION_SIZE = 12
+const FORMATION_SIZE = 12
 /** The opening formation's grace before the blessing factor: all twelve, once all twelve are read (the order is free). */
-export function startFormationPoints(ids: readonly (string | null)[], ctx: PrescriptContext): number | null {
+function startFormationPoints(ids: readonly (string | null)[], ctx: PrescriptContext): number | null {
   if (ids.length < FORMATION_SIZE || ids.some(id => id === null)) return null
   return ids.reduce((sum, id) => sum + (START_FORMATION_POINTS[ctx.identity?.(id!)?.rarity ?? 3] ?? 0), 0)
 }
@@ -209,7 +207,7 @@ export function feasible(card: PrescriptCard, ctx: PrescriptContext, inShop: boo
  * The seven status keywords a formation is built around. An Identity's keyword list also names every buff its skills
  * use (2026-11-04: "완성되어가는 교본", "피해량 증가", "신속" ...), which no player would read as a keyword to field.
  */
-export const FORMATION_KEYWORDS: readonly string[] = ['화상', '출혈', '진동', '파열', '침잠', '호흡', '충전']
+const FORMATION_KEYWORDS: readonly string[] = ['화상', '출혈', '진동', '파열', '침잠', '호흡', '충전']
 
 /**
  * The gifts on sale this shop visit, from every shelf read of it: a read sees only the slots in view (a special shop's

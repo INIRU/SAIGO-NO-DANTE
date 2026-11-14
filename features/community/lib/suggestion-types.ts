@@ -1,11 +1,11 @@
 /** One suggested identity (or E.G.O) as `/api/discovery/suggest` sends it; everything after `score` may be missing. */
-export type SuggestionPartner = { id: string; score: number; /** Already chosen on the board. */ chosen: boolean }
+type SuggestionPartner = { id: string; score: number; /** Already chosen on the board. */ chosen: boolean }
 export type Suggestion = { id: string; score?: number; reasons?: string[]; partners?: SuggestionPartner[] }
 /** What the chosen identities add up to: the keywords and factions most of them share. */
 export type Archetype = { keywords: string[]; factions: string[] }
 export type SuggestionResponse = { items: Suggestion[]; archetype?: Archetype }
 
-export type ReasonPart = { kind: 'keyword' | 'faction' | 'sin'; value: string }
+type ReasonPart = { kind: 'keyword' | 'faction' | 'sin'; value: string }
 
 const REASON = /^(keyword|faction|sin):(.+)$/
 

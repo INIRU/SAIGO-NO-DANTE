@@ -10,4 +10,3 @@ export const pushSubscriptionSchema = z.object({
   keys: z.object({ p256dh: base64url, auth: base64url }),
   lang: z.enum(['ko', 'en', 'ja']),
 })
-export type PushSubscriptionBody = z.infer<typeof pushSubscriptionSchema>

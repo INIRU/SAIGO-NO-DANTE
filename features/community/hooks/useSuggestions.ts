@@ -12,7 +12,3 @@ export function useSuggestionState<T>(url: string | null): { data: T | null; loa
   return { data: data ?? null, loading: url !== null && data === undefined && !error }
 }
 
-/** The suggestions alone: null while loading, when `url` is null, or when the read fails. */
-export function useSuggestions<T>(url: string | null): T | null {
-  return useSuggestionState<T>(url).data
-}

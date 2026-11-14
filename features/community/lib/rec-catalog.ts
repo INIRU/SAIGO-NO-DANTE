@@ -14,12 +14,12 @@ export type RawCatalog = {
 
 /** The seven status keywords a deck is built around, and the tag each carries in skill text. */
 export const STATUS_KEYWORDS = ['화상', '진동', '출혈', '파열', '침잠', '호흡', '충전'] as const
-export type StatusKeyword = (typeof STATUS_KEYWORDS)[number]
+type StatusKeyword = (typeof STATUS_KEYWORDS)[number]
 const STATUS_TAG: Record<string, StatusKeyword> = { Combustion: '화상', Vibration: '진동', Laceration: '출혈', Burst: '파열', Sinking: '침잠', Breath: '호흡', Charge: '충전' }
 const STATUS_INDEX = new Map<string, number>(STATUS_KEYWORDS.map((keyword, index) => [keyword, index]))
 const DEFAULT_DISTRIBUTION = [3, 2, 1] as const
 
-export type RecPassive = { cond: ActivationKind; req: ActivationRequirement[] }
+type RecPassive = { cond: ActivationKind; req: ActivationRequirement[] }
 export type RecIdentity = {
   id: string; sinner: string; name: string; release: number | null
   /** The LCB 수감자 every sinner starts with: it fills a slot but says nothing about a team. */
@@ -34,8 +34,8 @@ export type RecIdentity = {
   /** Battle passives that depend on the team's sins. */
   passives: RecPassive[]
 }
-export type RecEgo = { id: string; sinner: string; grade: string; sin: string | null; release: number | null; cost: number[]; status: number[]; kw: string[] }
-export type RecTheme = { id: string; difficulty: string | null; gifts: string[]; floorInfo: Record<string, number[] | string> | null }
+type RecEgo = { id: string; sinner: string; grade: string; sin: string | null; release: number | null; cost: number[]; status: number[]; kw: string[] }
+type RecTheme = { id: string; difficulty: string | null; gifts: string[]; floorInfo: Record<string, number[] | string> | null }
 
 /** Plain data (cacheable): ids to features, plus the inverse-frequency weights the similarities use. */
 export type RecCatalog = {

@@ -21,7 +21,7 @@ function normalizeAttackType(atkType?: string | null): 'slash' | 'pierce' | 'blu
   return ATTACK_TYPE_MAP[atkType.trim().toLowerCase()] ?? ATTACK_TYPE_MAP[atkType.trim()] ?? null
 }
 
-export interface SkillFrameBlockProps {
+interface SkillFrameBlockProps {
   /** Skill icon URL */
   skillIconUrl: string
   /** Sin type for frame (English: wrath, lust, etc.) */

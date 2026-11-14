@@ -5,7 +5,7 @@ export const REVEAL_STEP_MS = 80
 export const REVEAL_CARD_MS = 640
 
 export const EGO_GRADES = ['ZAYIN', 'TETH', 'HE', 'WAW', 'ALEPH'] as const
-export type EgoGrade = (typeof EGO_GRADES)[number]
+type EgoGrade = (typeof EGO_GRADES)[number]
 
 /** From the first card turning to the last one landing. */
 export const revealDuration = (count: number) => Math.max(0, count - 1) * REVEAL_STEP_MS + REVEAL_CARD_MS
@@ -20,7 +20,7 @@ export function revealRanks(sinnerIds: string[], order: string[] | null): Record
 export const isRareIdentity = (identity: { rarity: number } | null | undefined) => identity?.rarity === 3
 export const isRareEgo = (ego: { grade: string } | null | undefined) => ego?.grade === 'ALEPH'
 
-export type ResultSummary = { rarity: Record<1 | 2 | 3, number>; grades: Record<EgoGrade, number> }
+type ResultSummary = { rarity: Record<1 | 2 | 3, number>; grades: Record<EgoGrade, number> }
 
 /** How many 000 / 00 / 0 identities and how many E.G.O of each grade the result holds. */
 export function summarize(result: RandomResult | null): ResultSummary {

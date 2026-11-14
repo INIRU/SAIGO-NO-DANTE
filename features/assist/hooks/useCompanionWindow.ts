@@ -8,7 +8,7 @@ interface DocumentPip {
 
 const SIZE_KEY = 'limbus-assist-pip-size'
 export interface CompanionSize { width: number; height: number }
-export function clampCompanionSize(size: CompanionSize): CompanionSize {
+function clampCompanionSize(size: CompanionSize): CompanionSize {
   return { width: Math.min(900, Math.max(320, Math.round(size.width) || 380)), height: Math.min(900, Math.max(280, Math.round(size.height) || 420)) }
 }
 

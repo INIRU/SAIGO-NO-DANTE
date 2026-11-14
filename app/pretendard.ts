@@ -3,7 +3,7 @@
 import localFont from 'next/font/local'
 
 /** Latin, punctuation, common UI symbols, CJK punctuation and jamo: preloaded on every page. */
-export const pretendardLatin = localFont({
+const pretendardLatin = localFont({
   src: '../public/fonts/pretendard/PretendardVariable-latin.woff2',
   weight: '45 920',
   style: 'normal',
@@ -14,7 +14,7 @@ export const pretendardLatin = localFont({
 })
 
 /** The most frequent syllables on the site (UI text first): preloaded on every page. */
-export const pretendardHangul1 = localFont({
+const pretendardHangul1 = localFont({
   src: '../public/fonts/pretendard/PretendardVariable-hangul-1.woff2',
   weight: '45 920',
   style: 'normal',
@@ -26,7 +26,7 @@ export const pretendardHangul1 = localFont({
 })
 
 /** Hangul piece 2 by site frequency: downloaded when a page shows one of its syllables. */
-export const pretendardHangul2 = localFont({
+const pretendardHangul2 = localFont({
   src: '../public/fonts/pretendard/PretendardVariable-hangul-2.woff2',
   weight: '45 920',
   style: 'normal',
@@ -38,7 +38,7 @@ export const pretendardHangul2 = localFont({
 })
 
 /** Hangul piece 3 by site frequency: downloaded when a page shows one of its syllables. */
-export const pretendardHangul3 = localFont({
+const pretendardHangul3 = localFont({
   src: '../public/fonts/pretendard/PretendardVariable-hangul-3.woff2',
   weight: '45 920',
   style: 'normal',
@@ -50,7 +50,7 @@ export const pretendardHangul3 = localFont({
 })
 
 /** Hangul piece 4 by site frequency: downloaded when a page shows one of its syllables. */
-export const pretendardHangul4 = localFont({
+const pretendardHangul4 = localFont({
   src: '../public/fonts/pretendard/PretendardVariable-hangul-4.woff2',
   weight: '45 920',
   style: 'normal',
@@ -62,7 +62,7 @@ export const pretendardHangul4 = localFont({
 })
 
 /** Hangul piece 5 by site frequency: downloaded when a page shows one of its syllables. */
-export const pretendardHangul5 = localFont({
+const pretendardHangul5 = localFont({
   src: '../public/fonts/pretendard/PretendardVariable-hangul-5.woff2',
   weight: '45 920',
   style: 'normal',
@@ -74,7 +74,7 @@ export const pretendardHangul5 = localFont({
 })
 
 /** Other symbols, compatibility jamo, units and full-width forms. */
-export const pretendardSymbols = localFont({
+const pretendardSymbols = localFont({
   src: '../public/fonts/pretendard/PretendardVariable-symbols.woff2',
   weight: '45 920',
   style: 'normal',
@@ -86,7 +86,7 @@ export const pretendardSymbols = localFont({
 })
 
 /** The rest of Pretendard (rare syllables, kana, Cyrillic, ...). */
-export const pretendardExt = localFont({
+const pretendardExt = localFont({
   src: '../public/fonts/pretendard/PretendardVariable-ext.woff2',
   weight: '45 920',
   style: 'normal',

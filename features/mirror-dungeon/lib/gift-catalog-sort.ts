@@ -12,7 +12,7 @@ export const PINNED_GROUP = '__pinned'
 
 type PinnedGroups = readonly { ids: ReadonlySet<string> }[] | undefined
 
-export interface GiftFilterOptions {
+interface GiftFilterOptions {
   keywords: ReadonlySet<string>
   grades: ReadonlySet<string>
   tiers: ReadonlySet<string>
@@ -65,7 +65,7 @@ export function filterAndSortGifts(gifts: readonly EgoGift[], o: GiftFilterOptio
   return result.map((g, i) => [g, rank(g), i] as const).sort((a, b) => a[1] - b[1] || a[2] - b[2]).map(([g]) => g)
 }
 
-export type GiftGroupBy = 'keyword' | 'grade' | null
+type GiftGroupBy = 'keyword' | 'grade' | null
 
 const groupKey = (g: EgoGift, groupBy: GiftGroupBy, pinned: PinnedGroups) => {
   const pin = pinned?.findIndex(group => group.ids.has(g.id)) ?? -1

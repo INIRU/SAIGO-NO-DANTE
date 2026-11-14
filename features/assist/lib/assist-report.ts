@@ -6,19 +6,19 @@
  */
 import { isUuid } from '@/lib/utils/uuid'
 
-export const REPORT_ACTIONS = ['popup', 'fusion', 'sale'] as const
+const REPORT_ACTIONS = ['popup', 'fusion', 'sale'] as const
 export type ReportAction = typeof REPORT_ACTIONS[number]
-export const REPORT_MAX_CORRECTIONS = 200
+const REPORT_MAX_CORRECTIONS = 200
 
-export interface AssistCorrection { op: 'add' | 'remove'; giftId: string; auto: boolean; clientAt: number }
+interface AssistCorrection { op: 'add' | 'remove'; giftId: string; auto: boolean; clientAt: number }
 /**
  * width/height: the shared capture's size when the report is taken (window captures carry title bars and odd ratios).
  * language: the game client's language chosen for recognition, so each client's read rate can be measured apart.
  */
-export interface ReportContext { build: string | null; mode: string; ocr: string | null; width?: number | null; height?: number | null; language?: ReportLanguage | null }
+interface ReportContext { build: string | null; mode: string; ocr: string | null; width?: number | null; height?: number | null; language?: ReportLanguage | null }
 const REPORT_LANGUAGES = ['ko', 'en', 'ja'] as const
 type ReportLanguage = typeof REPORT_LANGUAGES[number]
-export interface AssistReport extends ReportContext {
+interface AssistReport extends ReportContext {
   width: number | null
   height: number | null
   language: ReportLanguage | null

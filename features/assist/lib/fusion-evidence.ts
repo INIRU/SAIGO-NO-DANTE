@@ -42,8 +42,8 @@ export function onFusionScreen(label: string | null, titleAt: number, now: numbe
   return label === 'fusion' || now - titleAt < FUSION_TITLE_KEEP_MS
 }
 
-export type FusionCapacity = 3 | 5
-export interface FusionConfirmation { count: number; capacity: FusionCapacity }
+type FusionCapacity = 3 | 5
+interface FusionConfirmation { count: number; capacity: FusionCapacity }
 
 /**
  * Selected materials and shop capacity when the fusion confirmation dialog is on screen, otherwise null. Anything but
@@ -81,7 +81,7 @@ export function fusionSlotRegions(width: number, height: number, count: number, 
     ({ x: left + x * scale, y: top + layout.centerY * scale, size: layout.side * scale }))
 }
 
-export interface TextBox { left: number; top: number; width: number; height: number }
+interface TextBox { left: number; top: number; width: number; height: number }
 /** `questionWidth`: the question line's width at 1920×1080 in the client language read (Korean when absent). */
 export interface FusionAnchors { header: TextBox; question: TextBox; questionWidth?: number }
 
@@ -413,7 +413,7 @@ export function popupEndBefore(ends: readonly number[], capturedAt: number): num
 export interface FusionDialogEvidence { materials: string[]; observedAt: number; lastSeenAt: number; closedAt?: number }
 
 /** Minimum time after the dialog was last seen for a screen without dialog or popup to mean it closed without a result. */
-export const FUSION_CLOSED_AFTER_MS = 800
+const FUSION_CLOSED_AFTER_MS = 800
 
 /**
  * Whether a screen read at `at` shows the dialog closed without a result. The result popup follows the dialog within
@@ -495,7 +495,7 @@ export function returnedMaterials<T extends { giftId: string; capturedAt?: numbe
 }
 
 /** How long apart two popups of one gift may be captured and still be the same popup (split into two episodes). */
-export const SAME_ACQUISITION_MS = 5000
+const SAME_ACQUISITION_MS = 5000
 
 /**
  * The number of an acquisition of a gift confirmed from popup `episode` captured at `capturedAt`, given its latest earlier

@@ -9,7 +9,7 @@ import styles from './SupportStrips.module.css'
 export { sinnerNumber }
 export const EGO_GRADES = ['ZAYIN', 'TETH', 'HE', 'WAW', 'ALEPH'] as const
 export type EgoGrade = typeof EGO_GRADES[number]
-export type SupportIdentity = { sinner_id: string; rarity: number; folder_name?: string | null; game_id?: string | null }
+type SupportIdentity = { sinner_id: string; rarity: number; folder_name?: string | null; game_id?: string | null }
 /** One support slot: an identity (any sinner) and the E.G.O set on it, at most one per grade. */
 export type SupportSlot = { identityId: string; identity: SupportIdentity; name: string; egos: Partial<Record<EgoGrade, string>> }
 

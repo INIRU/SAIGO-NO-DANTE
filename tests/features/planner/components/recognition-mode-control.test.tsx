@@ -1,6 +1,6 @@
 import { expect, it } from 'vitest'
 import { renderToStaticMarkup } from 'react-dom/server'
-import RecognitionModeControl, { DEFAULT_RECOGNITION_MODE, RECOGNITION_MODES, isRecognitionMode } from '@/features/planner/components/RecognitionModeControl'
+import RecognitionModeControl, { RECOGNITION_MODES } from '@/features/planner/components/RecognitionModeControl'
 
 const options = {
   fastest: { label: 'F-label', description: 'F-desc' },
@@ -9,12 +9,8 @@ const options = {
   quality: { label: 'Q-label', description: 'Q-desc' },
 }
 
-it('defaults to balanced and validates stored values', () => {
-  expect(DEFAULT_RECOGNITION_MODE).toBe('balanced')
+it('lists the four modes in order', () => {
   expect(RECOGNITION_MODES).toEqual(['fastest', 'performance', 'balanced', 'quality'])
-  expect(isRecognitionMode('quality')).toBe(true)
-  expect(isRecognitionMode('max')).toBe(false)
-  expect(isRecognitionMode(null)).toBe(false)
 })
 
 it('renders one labelled native radio group with only the given text', () => {

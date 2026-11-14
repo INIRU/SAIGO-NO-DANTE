@@ -19,7 +19,7 @@ export function SuggestionTitleSkeleton({ archetype = false }: { archetype?: boo
 }
 
 /** The note under a suggested card: "잘 맞는" and three overlapping 28px faces, then one line of reasons. */
-export function SuggestionNoteSkeleton() {
+function SuggestionNoteSkeleton() {
   return (
     <div className="@container mt-1.5 min-w-0" data-suggestion-note-skeleton>
       <div className="flex items-center">
@@ -42,7 +42,7 @@ export function IdentityTileSkeleton({ note = true }: { note?: boolean }) {
 }
 
 /** An E.G.O. card: the round art, the badge above it and the name line, with its note. */
-export function EgoTileSkeleton({ note = true }: { note?: boolean }) {
+function EgoTileSkeleton({ note = true }: { note?: boolean }) {
   return (
     <div className="flex min-w-0 flex-col items-center" data-tile-skeleton="ego">
       <div className="flex w-full max-w-[9.5rem] flex-col items-center sm:max-w-[10rem]" style={{ paddingTop: '1.05rem' }}>
@@ -60,14 +60,14 @@ export function ThemeTileSkeleton() {
 }
 
 /** A gift tile: the square icon cell of the gift grid. */
-export function GiftTileSkeleton() {
+function GiftTileSkeleton() {
   return <Skeleton raised className="w-full" style={{ aspectRatio: '1' }} />
 }
 
 type Shape = 'identity' | 'ego' | 'theme' | 'gift'
 
 /** The tiles of one group, in the grid the real group uses (pass its class or style). */
-export function SuggestionTilesSkeleton({ shape, count, className, style }: { shape: Shape; count: number; className?: string; style?: CSSProperties }) {
+function SuggestionTilesSkeleton({ shape, count, className, style }: { shape: Shape; count: number; className?: string; style?: CSSProperties }) {
   return (
     <div className={className} style={style}>
       {Array.from({ length: count }, (_, index) => (

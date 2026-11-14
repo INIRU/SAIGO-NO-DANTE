@@ -331,22 +331,6 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
     return persistedKeywords.length > 0 ? persistedKeywords : topKeywords(sorted)
   }, [deck?.main_keywords, sorted])
   const filledSlots = useMemo(() => sorted.filter(s => s.identities), [sorted])
-  const localizedFilledSlots = useMemo(() => filledSlots.map(slot => {
-    const identity = slot.identities
-    if (!identity) return slot
-    return {
-      ...slot,
-      identities: {
-        ...identity,
-        name_kr: localizeIdentityName(identity, locale),
-        passives: (identity.passives ?? []).map(passive => ({
-          ...passive,
-          name: localizePassiveName(passive, locale),
-          description: localizePassiveDescription(passive, locale) ?? passive.description,
-        })),
-      },
-    }
-  }), [filledSlots, locale])
   const formedSlots = useMemo(() => filledSlots.filter(s => s.slot_order < 99), [filledSlots])
   const customSkillSlots = useMemo(() => formedSlots.filter(s => {
     const s1 = s.s1_count ?? 3, s2 = s.s2_count ?? 2, s3 = s.s3_count ?? 1
@@ -366,7 +350,6 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
     }
     return grouped
   }, [deck?.deck_egos])
-  const date = deck ? deck.created_at.slice(0, 10).replace(/-/g, '.') : ''
   const noteLookups = useMemo(
     () => buildNoteLookups(sorted, deck?.all_sinner_egos ?? [], locale, (sinnerId) => rootT(`sinner.${sinnerId}`)),
     [deck?.all_sinner_egos, locale, rootT, sorted],

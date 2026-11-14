@@ -5,9 +5,8 @@ import KeywordIcon from '@/components/ui/KeywordIcon'
 import { createPortal } from 'react-dom'
 import { useLocale, useTranslations } from 'next-intl'
 import useSWR, { preload } from 'swr'
-import { STORAGE_BASE } from '@/lib/constants/game'
 import { getKeywordIconUrl } from '@/lib/constants/keywords'
-import { getKeywordIndex, resolveKeywordIconUrl, type KeywordInfo } from '@/lib/keywords/catalog'
+import { getKeywordIndex, type KeywordInfo } from '@/lib/keywords/catalog'
 export { resolveKeywordIconUrl, type KeywordInfo } from '@/lib/keywords/catalog'
 import { expandKeywordCatalog, type KeywordInfoWire } from '@/lib/keywords/catalog-wire'
 import { KEYWORD_DEFAULT_COLOR, KEYWORD_NEGATIVE_COLOR, resolveKeywordTextColor } from '@/lib/keywords/text-color'
@@ -59,7 +58,7 @@ const fetchDescriptions = (url: string): Promise<Record<string, string>> =>
 const DESCRIPTION_OPTIONS = { revalidateOnFocus: false, revalidateIfStale: false, revalidateOnReconnect: false } as const
 
 /** Starts loading the descriptions (e.g. when a keyword is hovered) so the tooltip usually opens with its text. */
-export function preloadKeywordDescriptions(locale: string) {
+function preloadKeywordDescriptions(locale: string) {
   void preload(descriptionsUrl(locale), fetchDescriptions).catch(() => {})
 }
 
@@ -67,7 +66,7 @@ export function preloadKeywordDescriptions(locale: string) {
  * Description of a keyword in the page language: from the catalog when it carries one (older snapshots), otherwise from
  * the lazily loaded descriptions (only when `enabled`). `undefined` while loading; '' when the keyword has none.
  */
-export function useKeywordDescription(keyword: string, info: KeywordInfo | undefined, enabled = true): string | undefined {
+function useKeywordDescription(keyword: string, info: KeywordInfo | undefined, enabled = true): string | undefined {
   const locale = useLocale()
   const inline = info ? getLocalizedKeywordDesc(info.desc, info, locale as SupportedLang) : ''
   const { data, error } = useSWR(inline || !enabled ? null : descriptionsUrl(locale), fetchDescriptions, DESCRIPTION_OPTIONS)

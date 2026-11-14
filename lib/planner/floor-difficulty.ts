@@ -4,7 +4,7 @@ const FLOOR_DIFFICULTIES = ['normal', 'hard', 'overlap', 'extreme'] as const
 
 type FloorEntryRecord = Record<string, unknown>
 
-export type NormalizeFloorPlanResult = {
+type NormalizeFloorPlanResult = {
   floorPlan: unknown[]
   changed: boolean
 }

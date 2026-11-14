@@ -4,9 +4,9 @@ import { z } from 'zod'
 export const NEWS_LANGS = ['ko', 'en', 'ja'] as const
 export const NEWS_FEEDS = ['limbus', 'project_moon', 'hampang'] as const
 export const NEWS_PLATFORMS = ['steam', 'x', 'youtube', 'chzzk', 'partner'] as const
-export const NEWS_CATEGORIES = ['notice', 'update', 'maintenance', 'event', 'video', 'live'] as const
+const NEWS_CATEGORIES = ['notice', 'update', 'maintenance', 'event', 'video', 'live'] as const
 /** Hosts an image or thumbnail may come from; subdomains pass too. Images are shown from the original address, not copied. */
-export const NEWS_MEDIA_HOSTS = ['steamstatic.com', 'twimg.com', 'ytimg.com', 'pstatic.net', 'livecloud-thumb.akamaized.net'] as const
+const NEWS_MEDIA_HOSTS = ['steamstatic.com', 'twimg.com', 'ytimg.com', 'pstatic.net', 'livecloud-thumb.akamaized.net'] as const
 
 const https = (hosts?: readonly string[]) =>
   z.string().max(2000).refine((value) => {

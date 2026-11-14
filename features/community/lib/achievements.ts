@@ -1,11 +1,10 @@
 import type { ActivityKind } from './rules'
-import { FAUST_FACES } from './faust-faces'
 import { EASTER_EGGS, type EasterEgg } from '@/lib/easter-eggs'
 
 export type AchievementGlyph = Exclude<ActivityKind, 'contribution'> | 'points' | 'faust' | 'clock' | 'star' | 'konami' | 'lost' | 'egg'
 export type AchievementTier = 1 | 2 | 3
 /** Hidden ones are easter eggs: name, condition and progress stay secret until found. */
-export type Achievement = { id: string; glyph: AchievementGlyph; goal: number; tier: AchievementTier; hidden?: boolean }
+type Achievement = { id: string; glyph: AchievementGlyph; goal: number; tier: AchievementTier; hidden?: boolean }
 export type AchievementProgress = Achievement & { value: number; earned: boolean }
 type AchievementStats = Record<ActivityKind, number> & { points: number }
 
@@ -15,7 +14,7 @@ const EGG_GLYPH: Record<EasterEgg, AchievementGlyph> = { 'faust-faces': 'faust',
  * Community achievements from the profile's activity stats (nothing stored), then the easter eggs, which only
  * this browser knows about.
  */
-export const ACHIEVEMENTS: Achievement[] = [
+const ACHIEVEMENTS: Achievement[] = [
   { id: 'deck-1', glyph: 'deck', goal: 1, tier: 1 },
   { id: 'deck-5', glyph: 'deck', goal: 5, tier: 2 },
   { id: 'deck-20', glyph: 'deck', goal: 20, tier: 3 },

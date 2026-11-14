@@ -50,3 +50,30 @@ export function findImportViolations(files: { path: string; source: string }[]):
   }
   return violations
 }
+
+// Next가 파일 이름만 보고 읽는 규약 파일. 다른 파일이 import하지 않아도 쓰인다.
+const NEXT_CONVENTION = /^app\/(?:.*\/)?(?:page|layout|template|route|loading|error|global-error|not-found|default|opengraph-image|twitter-image|icon|apple-icon|sitemap|robots|manifest)\.tsx?$/
+const UNUSED_SCOPE = /^(?:app|components|features|lib|hooks)\/.+\.tsx?$/
+// `from '…'`, `import '…'`, `import('…')`, `require('…')`, `new URL('…', import.meta.url)`
+const ANY_SPECIFIER = /\b(?:from|import|require|URL)\s*\(?\s*(['"])([^'"\n]+)\1/g
+
+/**
+ * 소스 파일 가운데 어디서도 import되지 않는 것. 들어오는 쪽은 `files`에 넘긴 파일뿐이라, tests/는 넘기지 않는다.
+ * `allowed`는 import 없이도 쓰이는 파일(설정이 경로 문자열로 가리키는 것 등).
+ */
+export function findUnimportedFiles(files: { path: string; source: string }[], allowed: readonly string[] = []): string[] {
+  const known = new Set(files.map((f) => f.path))
+  const imported = new Set<string>()
+  for (const { path, source } of files) {
+    for (const match of source.matchAll(ANY_SPECIFIER)) {
+      const target = resolve(path, match[2])
+      if (!target) continue
+      for (const candidate of [target, `${target}.ts`, `${target}.tsx`, `${target}/index.ts`, `${target}/index.tsx`]) {
+        if (candidate !== path && known.has(candidate)) imported.add(candidate)
+      }
+    }
+  }
+  return files
+    .map((f) => f.path)
+    .filter((p) => UNUSED_SCOPE.test(p) && !p.endsWith('.d.ts') && !NEXT_CONVENTION.test(p) && !allowed.includes(p) && !imported.has(p))
+}

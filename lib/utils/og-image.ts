@@ -147,32 +147,3 @@ export function isSupportedLang(lang: string): lang is 'ko' | 'en' | 'ja' {
   return lang === 'ko' || lang === 'en' || lang === 'ja'
 }
 
-export function localizedSiteLabels(lang: 'ko' | 'en' | 'ja') {
-  if (lang === 'en') {
-    return {
-      alt: 'SAIGO NO DANTE — Limbus Company fan archive',
-      eyebrow: 'LIMBUS COMPANY FAN ARCHIVE',
-      subtitle: 'Character archive, deck board, Mirror Dungeon records',
-      features: ['Sinner DB', 'Deck board', 'Mirror Dungeon', 'Meta archive'],
-      locale: 'EN ARCHIVE',
-    }
-  }
-
-  if (lang === 'ja') {
-    return {
-      alt: 'SAIGO NO DANTE — Limbus Company ファンアーカイブ',
-      eyebrow: 'LIMBUS COMPANY FAN ARCHIVE',
-      subtitle: '囚人データベース、デッキ掲示板、鏡ダンジョン記録',
-      features: ['囚人DB', 'デッキ掲示板', '鏡ダンジョン', 'メタ記録'],
-      locale: 'JA ARCHIVE',
-    }
-  }
-
-  return {
-    alt: '최애의 관리자 — Limbus Company 팬 아카이브',
-    eyebrow: 'LIMBUS COMPANY FAN ARCHIVE',
-    subtitle: '수감자 데이터베이스, 덱 게시판, 거울 던전 기록',
-    features: ['수감자 DB', '덱 게시판', '거울 던전', '메타 기록'],
-    locale: 'KO ARCHIVE',
-  }
-}

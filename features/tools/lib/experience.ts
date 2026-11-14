@@ -22,7 +22,7 @@ export const LUXCAVATIONS: { stage: number; modules: number; tickets: Tickets }[
   [6, 7, 0, 0], [0, 3, 3, 0], [0, 4, 4, 0], [0, 0, 4, 2], [0, 1, 6, 2],
   [0, 2, 2, 4], [0, 4, 4, 4], [0, 4, 2, 6], [0, 6, 6, 6], [0, 2, 6, 8],
 ].map((tickets, i) => ({ stage: i + 1, modules: i < 3 ? 2 : 3, tickets: tickets as Tickets }))
-export const ENKEPHALIN_PER_MODULE = 20
+const ENKEPHALIN_PER_MODULE = 20
 export function ticketExperience(tickets: Tickets): number {
   return tickets.reduce((sum, count, i) => sum + count * TICKET_EXP[i], 0)
 }

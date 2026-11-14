@@ -10,7 +10,7 @@ import QuietImage from '@/components/ui/QuietImage'
 import { announcementDate, type AnnouncementPreview } from '@/lib/announcements'
 
 /** localStorage key holding the id of the last popup announcement the visitor closed. */
-export const POPUP_SEEN_KEY = 'announcement-popup-seen'
+const POPUP_SEEN_KEY = 'announcement-popup-seen'
 
 /** Opens once per announcement: closing it either way stores its id, so the next popup announcement opens again. */
 export default function AnnouncementPopupDialog({ announcement }: { announcement: AnnouncementPreview }) {

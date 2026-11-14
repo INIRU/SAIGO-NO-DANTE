@@ -58,7 +58,7 @@ export function BoardShelfSkeleton() {
 }
 
 /** The identity row (frame cards with a value under each) while it loads: one swipe row on a phone, the whole width from md. */
-export function IdentityRowSkeleton({ count = 9 }: { count?: number }) {
+function IdentityRowSkeleton({ count = 9 }: { count?: number }) {
   return (
     <ul className="-mx-4 flex gap-3 overflow-hidden px-4 pb-1 md:mx-0 md:gap-4 md:px-0" data-identity-row-skeleton>
       {Array.from({ length: count }, (_, index) => (

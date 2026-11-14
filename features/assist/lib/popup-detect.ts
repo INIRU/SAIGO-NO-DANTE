@@ -136,7 +136,7 @@ export function popupIconSignature(image: ImageData, label: PopupLabelBox): stri
   return values.map(value => value >= mean ? '1' : '0').join('')
 }
 
-export function popupSignatureDistance(left: string, right: string): number {
+function popupSignatureDistance(left: string, right: string): number {
   if (left.length !== 64 || right.length !== 64) return 64
   let distance = 0
   for (let index = 0; index < 64; index++) if (left[index] !== right[index]) distance++

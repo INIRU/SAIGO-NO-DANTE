@@ -37,7 +37,7 @@ type IdentityPreview = {
   } | null
 }
 
-export type DeckLanguage = 'ko' | 'en' | 'ja'
+type DeckLanguage = 'ko' | 'en' | 'ja'
 
 export type DeckSummary = {
   id: string

@@ -29,7 +29,7 @@ export function readGuestKey(): string | null {
   } catch { return null }
 }
 
-export function getOrCreateGuestKey(): string {
+function getOrCreateGuestKey(): string {
   const existing = readGuestKey()
   if (existing) return existing
   const key = newGuestKey()

@@ -35,9 +35,9 @@ export type Item = (
 
 /** The cleared line's material (Shader Graphs/FX_Grp_0_Master_Dissolve): textures by property with their wrap mode
  * (Unity TextureWrapMode: 0 Repeat, 1 Clamp, 2 Mirror), floats and colours by property name */
-export interface LineFx { textures: Record<string, { url: string; wrap: [number, number] }>; floats: Record<string, number>; colors: Record<string, number[]> }
+interface LineFx { textures: Record<string, { url: string; wrap: [number, number] }>; floats: Record<string, number>; colors: Record<string, number[]> }
 /** URP Bloom (VolumeManager stack) */
-export interface Bloom { threshold: number; intensity: number; scatter: number; clamp: number; tint: number[]; maxIterations: number; skipIterations: number; downscale: string }
+interface Bloom { threshold: number; intensity: number; scatter: number; clamp: number; tint: number[]; maxIterations: number; skipIterations: number; downscale: string }
 
 const VS = `#version 300 es
 layout(location = 0) in vec3 aPos; layout(location = 1) in vec2 aUv; layout(location = 2) in vec4 aCol;

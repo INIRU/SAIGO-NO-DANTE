@@ -13,7 +13,7 @@ const CARD_ASPECT = 290 / 428
 const GAP = 6
 
 /** Card width for 6 × 2 cards in a `width` × `height` area: the tighter of the two fits. */
-export function formationCardWidth(width: number, height: number) {
+function formationCardWidth(width: number, height: number) {
   return Math.max(24, Math.floor(Math.min((width - 5 * GAP) / 6, ((height - GAP) / 2) * CARD_ASPECT)))
 }
 

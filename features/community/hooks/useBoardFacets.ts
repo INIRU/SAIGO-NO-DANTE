@@ -2,9 +2,9 @@
 
 import useSWR from 'swr'
 
-export type FacetEgo = { id: string; sinner_id: string; grade: string; sin_affinity: string | null; name: string; name_kr: string | null; name_en: string | null; name_jp: string | null; image_url: string | null; count: number }
-export type FacetGift = { game_id: number; name: string; name_en: string | null; name_jp: string | null; grade: string | null; keyword: string | null; image_url: string | null; count: number }
-export type FacetTheme = { id: number; name: string; name_en: string | null; name_jp: string | null; image_url: string | null; count: number }
+type FacetEgo = { id: string; sinner_id: string; grade: string; sin_affinity: string | null; name: string; name_kr: string | null; name_en: string | null; name_jp: string | null; image_url: string | null; count: number }
+type FacetGift = { game_id: number; name: string; name_en: string | null; name_jp: string | null; grade: string | null; keyword: string | null; image_url: string | null; count: number }
+type FacetTheme = { id: number; name: string; name_en: string | null; name_jp: string | null; image_url: string | null; count: number }
 export type BoardFacets = {
   identityAffiliations: Record<string, string[]>
   affiliations: { key: string; count: number }[]

@@ -1,9 +1,9 @@
 // The third-party fonts and runtime the site ships (the /licenses page), checked against each distributor's own terms
 // (2026-10-29). Holders are the fonts' own copyright fields. `license` is a license's proper name; `licenseKey` a message
 // of licensesPage for the distributors' own terms, which have no short name of their own.
-export type LicenseKey = 'kogl1' | 'scoreFont' | 'dafontFree' | 'authorFree'
+type LicenseKey = 'kogl1' | 'scoreFont' | 'dafontFree' | 'authorFree'
 export type LicenseItem = { name: string; holder: string; url: string } & ({ license: string } | { licenseKey: LicenseKey })
-export type LicenseGroup = { group: 'fonts' | 'software'; items: LicenseItem[] }
+type LicenseGroup = { group: 'fonts' | 'software'; items: LicenseItem[] }
 
 const OFL = 'SIL Open Font License 1.1'
 

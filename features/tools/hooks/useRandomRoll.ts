@@ -7,7 +7,7 @@ import { REVEAL_CARD_MS, revealDuration } from '@/features/tools/lib/random/disp
 import { newRoll, rerollSinner, resolveSnapshot, type RollData, type RollSettings, type RollSnapshot } from '@/features/tools/lib/random/roll'
 import { createSeed } from '@/features/tools/lib/random/seed'
 
-export type RollState = {
+type RollState = {
   snapshot: RollSnapshot
   result: RandomResult
   /** The owned-only pool the roll was drawn from (rerolls draw from the same one). */

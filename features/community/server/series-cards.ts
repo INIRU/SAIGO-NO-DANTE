@@ -5,7 +5,7 @@ import { withPostAuthors } from '@/features/community/server/post-authors'
 import { stripPlanForList } from '@/lib/planner/stripPlanForList'
 import { orderSeriesItems, type SeriesItem } from '@/features/community/lib/series-order'
 
-export type SeriesCard = { kind: 'deck'; id: string; deck: DeckSummary } | { kind: 'plan'; id: string; plan: PlanSummary }
+type SeriesCard = { kind: 'deck'; id: string; deck: DeckSummary } | { kind: 'plan'; id: string; plan: PlanSummary }
 
 const DECK_COLUMNS = 'id,user_id,title,description,tags,main_keywords,content_type,vote_count,view_count,comment_count,created_at,lang,guest_tag,deck_identities(slot_order,gacksung,identities(sinner_id,folder_name,game_id,keywords))'
 const PLAN_COLUMNS = 'id,user_id,title,description,lang,difficulty,deck,egos,floor_plan,gift_inventory,tags,created_at,vote_count,view_count,comment_count,guest_tag,profiles:user_id(username,avatar_url)'

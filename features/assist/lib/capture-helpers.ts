@@ -36,7 +36,7 @@ export const WHEEL_FRAMES = 40
 export const WHEEL_KEEP_MS = 8000
 export const WHEEL_CROP_WIDTH = 640
 /** Wheel states read per dialog and how long after an earlier dialog a crop may belong to a new one. */
-export const WHEEL_READS = 6
+const WHEEL_READS = 6
 export const WHEEL_AFTER_DIALOG_MS = 800
 /** The dialog can already be up this long before OCR first sees it (the late states below). */
 export const WHEEL_BEFORE_DIALOG_MS = 450

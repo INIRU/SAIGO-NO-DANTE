@@ -60,7 +60,7 @@ export function buildFloorModel(formations: readonly Formation[], catalog: RecCa
   return { catalog, plans, packPlans, giftUnderPack }
 }
 
-export type FloorQuery = {
+type FloorQuery = {
   floor: number
   /** The plan's identities (any order), and the main keywords its author declared. */
   identities: readonly string[]
@@ -75,7 +75,7 @@ export type FloorQuery = {
   now: number
 }
 
-export type FloorScored = { id: string; score: number; /** Plans at least half as like this one as the closest plan that took something on this floor, which took it here. */ count: number; freq: number; fit: number; keyword?: string; reasons: string[] }
+type FloorScored = { id: string; score: number; /** Plans at least half as like this one as the closest plan that took something on this floor, which took it here. */ count: number; freq: number; fit: number; keyword?: string; reasons: string[] }
 
 const reasonsOf = (keyword: string | undefined, fit: number, count: number) => [...(keyword && fit >= 0.5 ? [`keyword:${keyword}`] : []), count >= 2 ? 'synergy' : 'meta']
 

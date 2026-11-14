@@ -12,7 +12,7 @@ import type { Period } from '@/features/community/components/ShelfParts'
 import FormationRow, { DateLead } from './FormationRow'
 import type { RowPost } from './BoardParts'
 
-export type Identity = { id: string; sinner_id: string; name_kr: string; name_en?: string | null; name_jp?: string | null; rarity: number; folder_name: string | null; game_id: string | null }
+type Identity = { id: string; sinner_id: string; name_kr: string; name_en?: string | null; name_jp?: string | null; rarity: number; folder_name: string | null; game_id: string | null }
 export type BoardData = { recent: RowPost[]; updated: RowPost[]; popular: RowPost[]; identities: Identity[] }
 export type { Period }
 

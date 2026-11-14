@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState, type RefObject } from 'react'
 type Fullscreenable = HTMLElement & { webkitRequestFullscreen?: () => Promise<void> | void }
 type WebkitDocument = Document & { webkitFullscreenElement?: Element | null; webkitExitFullscreen?: () => void }
 type Orientation = { lock?: (orientation: 'landscape') => Promise<void>; unlock?: () => void }
-export type StageScreen = { full: boolean; native: boolean; turned: boolean }
+type StageScreen = { full: boolean; native: boolean; turned: boolean }
 
 const OFF: StageScreen = { full: false, native: false, turned: false }
 

@@ -1,7 +1,7 @@
 import { deriveBlockedFinalFusionMaterialIds } from '@/lib/planner/fusion'
 import type { GiftData, RecipeData } from '@/lib/planner/types'
 
-export type FinalGiftSource = 'start' | 'observe' | 'final'
+type FinalGiftSource = 'start' | 'observe' | 'final'
 export interface FinalGift { id: number; level: number; source: FinalGiftSource }
 
 const ENTRY = /^(start|observe|final)_(\d+)(?:_(plus|plusplus))?$/

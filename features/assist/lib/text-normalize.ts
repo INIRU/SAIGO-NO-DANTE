@@ -36,7 +36,7 @@ export function gameTextPieces(value: string): string[] {
 }
 
 /** Levenshtein distance between glyph arrays, stopping once it exceeds `limit` (then `limit + 1`). */
-export function editDistance(source: readonly string[], target: readonly string[], limit: number): number {
+function editDistance(source: readonly string[], target: readonly string[], limit: number): number {
   if (Math.abs(source.length - target.length) > limit) return limit + 1
   let previous = Array.from({ length: target.length + 1 }, (_, index) => index)
   for (let row = 1; row <= source.length; row++) {

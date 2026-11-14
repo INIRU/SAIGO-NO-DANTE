@@ -52,15 +52,15 @@ export type MotionEntry = {
 /** An identity a state names: a link partner, a dead 아비. */
 export type MotionPartner = { gameId: string; name: string; sinner: string | null; portrait: string | null }
 /** A link state: every member that is not the skill's owner, the link's id (their ids joined by +) and whether it is the max video. */
-export type MotionLink = { id: string; partners: MotionPartner[]; max: boolean }
+type MotionLink = { id: string; partners: MotionPartner[]; max: boolean }
 /**
  * One video of a skill as the page needs it (frame count, fps and sound are read from its layers.json when it loads).
  * `dead`: the 아비 dead in a 공간참 - 잔 state.
  */
 /** A buff a video was recorded with, written from the site's keyword table. */
-export type MotionCondition = { name: string; icon: string | null; stack: string | null }
+type MotionCondition = { name: string; icon: string | null; stack: string | null }
 /** A part of a labelKey the conditions do not show, in the page language, with the site's picture of it when it has one. */
-export type MotionExtra = { text: string; icon: string | null }
+type MotionExtra = { text: string; icon: string | null }
 export type MotionState = Pick<MotionEntry, 'state' | 'name' | 'video' | 'meta'> & { label: string; /** The index's Korean sentence: label is made from labelKey and can equal another state's. */ sentence?: string; bytes: number; link?: MotionLink; dead?: MotionPartner[]; conditions?: MotionCondition[]; allies?: MotionPartner[]; /** What the labelKey says besides the conditions, in the page language. */ extras?: MotionExtra[] }
 /**
  * The game frame a skill's sprite sits in: its sin, its slot (1–3, 4 for a defense) and its attack type badge. `sprite`: the
@@ -81,12 +81,12 @@ export type MotionIdentity = { slug: string; label: string; identityId: string |
 export type MotionEgo = { egoId: number; grade: string; label: string; image: string | null; sin: string | null; skills: MotionSkill[] }
 export type MotionSinner = { id: string; identities: MotionIdentity[]; egos: MotionEgo[] }
 /** The owner of a skill: an identity or an E.G.O (both have `label`). */
-export type MotionOwner = MotionIdentity | MotionEgo
+type MotionOwner = MotionIdentity | MotionEgo
 export const isMotionEgo = (owner: MotionOwner): owner is MotionEgo => 'egoId' in owner
 /** What the catalog needs of a site E.G.O, its name in the page language. */
 export type MotionEgoInfo = { game_id: string; name: string; image_url: string | null; grade: string; sinner_id: string; sin_affinity: string | null }
 /** What the catalog needs of a site identity, its name (and its sinner's) already in the page's language. */
-export type MotionIdentityInfo = { id: string; name: string; sinner_id: string; sinner_name?: string; game_id: string | null; folder_name: string | null; rarity?: number | null; release_date?: string | null }
+type MotionIdentityInfo = { id: string; name: string; sinner_id: string; sinner_name?: string; game_id: string | null; folder_name: string | null; rarity?: number | null; release_date?: string | null }
 
 // R2 folders (and link slugs) spell the sinners without hyphens.
 const R2_SINNERS: Record<string, string> = Object.fromEntries(SINNER_SLUGS.map(id => [id.replace(/-/g, ''), id]))
@@ -99,7 +99,7 @@ export function motionSinnerId(entry: Pick<MotionEntry, 'video'>): string | null
 const pick = (lang: string, ko: string, en: string, ja: string) => lang === 'en' ? en : lang === 'ja' ? ja : ko
 // The order the index asks for: 기본, the conditions, the best states.
 export const isBase = (state: string) => state === 'v:base'
-export const isTop = (state: string) => /^v:best/.test(state)
+const isTop = (state: string) => /^v:best/.test(state)
 const stateRank = (state: string) => isBase(state) ? 0 : isTop(state) ? 2 : 1
 
 // The index's word tokens in a labelKey, in the page language.
@@ -158,7 +158,7 @@ function labelExtras(entry: Pick<MotionEntry, 'labelKey' | 'conditions'>, refs: 
 }
 
 /** What a state's labelKey needs: the keyword names and the identity names, both in the page language. */
-export type MotionLabelContext = { refs?: GameTextRefNames | null; identityName?: (gameId: string) => string | undefined }
+type MotionLabelContext = { refs?: GameTextRefNames | null; identityName?: (gameId: string) => string | undefined }
 
 /**
  * A state's button text: its `labelKey` written in the page language (a link as "연계: identity", its max video with
@@ -185,7 +185,7 @@ export function defaultMotionState(skill: Pick<MotionSkill, 'states'>): string {
 
 // The address names a skill as "<slug>~<skill id>" ("|" of the internal key reads badly in a URL).
 export const toMotionParam = (key: string) => key.replace('|', '~')
-export const fromMotionParam = (param: string) => param.replace('~', '|')
+const fromMotionParam = (param: string) => param.replace('~', '|')
 
 /** The skill an address names (`?skill=`), with its sinner and its owner (identity or E.G.O); none for an unknown or pending one. */
 export function findMotionSkill(sinners: readonly MotionSinner[], param: string): { sinnerId: string; owner: MotionOwner; skill: MotionSkill } | null {
@@ -235,7 +235,7 @@ const slugRank = (slug: string) => slug.startsWith('id') ? 0 : slug.startsWith('
  * The site data the catalog names things with, in the page language: skill names and frames by skill id, the keyword table.
  * `now`: lists the identities released in the last MOTION_PENDING_DAYS that have no motion yet as pending.
  */
-export type MotionCatalogNames = { skillNames?: ReadonlyMap<number, string>; skillFrames?: ReadonlyMap<number, MotionSkillFrame>; skillBorrowed?: ReadonlyMap<string, { name?: string; frame: MotionSkillFrame }>; egos?: ReadonlyMap<string, MotionEgoInfo>; refs?: GameTextRefNames | null; now?: Date }
+type MotionCatalogNames = { skillNames?: ReadonlyMap<number, string>; skillFrames?: ReadonlyMap<number, MotionSkillFrame>; skillBorrowed?: ReadonlyMap<string, { name?: string; frame: MotionSkillFrame }>; egos?: ReadonlyMap<string, MotionEgoInfo>; refs?: GameTextRefNames | null; now?: Date }
 
 /**
  * What the site adds to the R2 index, by id: identities (by game id), skill names and sprite frames, game text names. It
@@ -253,7 +253,7 @@ export function motionCatalogFrom(entries: readonly MotionEntry[], site: MotionS
 }
 
 /** How long a new identity without motion is listed as pending: recording and building one takes 5 days to 2 weeks. */
-export const MOTION_PENDING_DAYS = 30
+const MOTION_PENDING_DAYS = 30
 
 /**
  * The R2 index as sinners → identities → skills → states, in the order the page lists them. A skill is its slug plus

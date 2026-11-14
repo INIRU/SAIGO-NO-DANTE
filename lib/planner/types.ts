@@ -108,7 +108,7 @@ export type PlannerAction =
   | { type: 'RESET' }
 
 export type SkillDistribution = [number, number, number]
-export const DEFAULT_SKILL_DISTRIBUTION: SkillDistribution = [3, 2, 1]
+const DEFAULT_SKILL_DISTRIBUTION: SkillDistribution = [3, 2, 1]
 
 export function normalizeSkillDistribution(
   dist: readonly (number | null | undefined)[] = DEFAULT_SKILL_DISTRIBUTION,
@@ -381,7 +381,7 @@ export interface ThemeData {
   name_segments?: ThemePackNameStyle['name_segments']
 }
 
-export interface GiftActivationCondition {
+interface GiftActivationCondition {
   type: 'keyword' | 'multi_keyword' | 'affiliation' | 'skill'
   keyword?: string
   keywords?: string[]

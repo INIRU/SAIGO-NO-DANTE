@@ -8,7 +8,7 @@ import { getGameUiAsset } from '@/lib/utils/game-ui'
  * sinMap (keyword→SinType) 매핑에서 첫 번째 매칭 키워드의 죄악을 반환.
  * 매칭 없으면 null.
  */
-export function getIdentityMainSin(keywords: string[] | null | undefined, sinMap: Record<string, string>): SinType | null {
+function getIdentityMainSin(keywords: string[] | null | undefined, sinMap: Record<string, string>): SinType | null {
   if (!keywords || keywords.length === 0) return null
   for (const kw of keywords) {
     const sin = sinMap[kw]
@@ -28,7 +28,7 @@ export function getIdentitySinColor(identity: Identity, sinMap: Record<string, s
 /**
  * 인격의 원본 uniqueAttribute를 개별 스킬 및 키워드 테마보다 우선.
  */
-export function getIdentitySinType(identity: Identity, sinMap: Record<string, string>): SinType | null {
+function getIdentitySinType(identity: Identity, sinMap: Record<string, string>): SinType | null {
   return identity.sin_affinity ?? getIdentityMainSin(identity.keywords, sinMap)
 }
 
@@ -43,7 +43,7 @@ export const THEME_KEYWORDS = ['침잠', '출혈', '파열', '화상', '진동',
  * 특수 충전 키워드 (독립적 — "충전"과 함께 태그되지 않는 것들).
  * 인격 분류/필터에서 충전으로 매핑.
  */
-export const SPECIAL_CHARGE_KEYWORDS = new Set([
+const SPECIAL_CHARGE_KEYWORDS = new Set([
   '사랑/증오', '깊은 눈물', '적안', '적안적안 - 경계적안 - 포식',
   '참회', '참회참회 - 경계참회 - 고해',
   '생체 재료',
@@ -53,7 +53,7 @@ export const SPECIAL_CHARGE_KEYWORDS = new Set([
  * 충전 관련 부속 키워드 ("충전"과 보통 함께 태그됨).
  * 필터에서는 충전으로 매핑하지만, 통계 합산에서는 중복 카운트 방지용.
  */
-export const CHARGE_SUB_KEYWORDS = new Set([
+const CHARGE_SUB_KEYWORDS = new Set([
   '충전 횟수', '충전 역장', '부하', '과충전', '자가 충전', '전하침',
   '광전', '고전압 외피', '초아광축전',
 ])

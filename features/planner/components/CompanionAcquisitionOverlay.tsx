@@ -51,7 +51,7 @@ export function fusionFeedback(token: string, at: number, before: readonly strin
   return events
 }
 
-export const ACQUISITION_MAX_AGE_MS = 4000
+const ACQUISITION_MAX_AGE_MS = 4000
 
 /**
  * Returns events not yet in `seen` and recorded within `maxAgeMs`, marking every event it looks at as seen.
@@ -68,7 +68,7 @@ export function takeNewAcquisitions(events: readonly AcquisitionOverlayEvent[], 
 }
 
 /** How long each card stays; every card has its own timer, so a burst never waits in line. */
-export const ACQUISITION_LIFETIME_MS = 2000
+const ACQUISITION_LIFETIME_MS = 2000
 /** Cards drawn in the stack (like the site's toasts); older ones collapse behind the last visible one. */
 export const ACQUISITION_VISIBLE = 3
 

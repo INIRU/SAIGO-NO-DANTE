@@ -9,7 +9,7 @@ import type { ActivationKind, ActivationRequirement, SinWeights } from '@/featur
  */
 export type { ActivationKind, ActivationRequirement, SinWeights }
 export { MAX_SLOTS, RESONANCE_TURNS } from '@/features/decks'
-export const STOCK_TURN = 5
+const STOCK_TURN = 5
 
 /** Chance (0–1) that the passive's condition holds for the fielded `team` (each member's skill cards per sin); 0 when no one makes a required sin. */
 export function activationChance(kind: ActivationKind, requirements: readonly ActivationRequirement[], team: readonly SinWeights[]): number {

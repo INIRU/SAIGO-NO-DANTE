@@ -5,13 +5,13 @@ import { isNoteColorSin } from '@/lib/notes/text-style'
  * Text marks of a note beyond bold and italic. The highlight is listed before the colour so it is the outer element
  * (the stylesheet lightens the colour inside it); the viewer draws them in the same nesting.
  */
-export const NoteHighlight = Mark.create({
+const NoteHighlight = Mark.create({
   name: 'highlight',
   parseHTML() { return [{ tag: 'mark' }] },
   renderHTML({ HTMLAttributes }) { return ['mark', mergeAttributes(HTMLAttributes, { class: 'note-highlight' }), 0] },
 })
 
-export const NoteColor = Mark.create({
+const NoteColor = Mark.create({
   name: 'noteColor',
   addAttributes() {
     return {

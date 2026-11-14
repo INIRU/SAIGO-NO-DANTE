@@ -8,7 +8,7 @@ import type { GiftData, IdentitySlot, RecipeData } from '@/lib/planner/types'
 /** Keywords a gift can carry besides 공통; identity keywords outside them (affiliations, effects) never commit a run. */
 const GIFT_KEYWORDS = new Set(['화상', '출혈', '진동', '파열', '침잠', '호흡', '충전', '참격', '관통', '타격'])
 /** A keyword counted this many times (deployed identities plus held gifts) is the run's direction, as a draft bot commits to a colour. */
-export const KEYWORD_COMMIT = 3
+const KEYWORD_COMMIT = 3
 
 export interface FormationCell { sinnerId: string; slot: IdentitySlot | null; position: number | null; deployed: boolean }
 

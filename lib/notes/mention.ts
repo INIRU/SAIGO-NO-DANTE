@@ -1,5 +1,5 @@
 /** `@` mentions in a note: an identity or an E.G.O named inside a sentence. */
-export const MENTION_KINDS = ['identity', 'ego'] as const
+const MENTION_KINDS = ['identity', 'ego'] as const
 export type MentionKind = typeof MENTION_KINDS[number]
 export const isMentionKind = (value: unknown): value is MentionKind => MENTION_KINDS.includes(value as MentionKind)
 

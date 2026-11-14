@@ -38,7 +38,7 @@ const CARD_ROWS = [{ top: 232, bottom: 552, buttons: 505 }, { top: 590, bottom: 
  * A selected card's border is lit. The brightest column of its left edge: 210 to 228 taken, 118 not, on 1920x1080, 1440x1080
  * and 1280x720 client captures; 136 to 179 taken, 91 to 110 not, on a 1280x720 recording of the real game (a thinner line).
  */
-export const BLESSING_SELECTED_MIN = 128
+const BLESSING_SELECTED_MIN = 128
 /** A level's button text turns orange: about 140 of its 108x32 pixels on the samples, none otherwise. */
 const ORANGE_SHARE = 0.01
 

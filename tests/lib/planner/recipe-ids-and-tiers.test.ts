@@ -4,7 +4,6 @@ import {
   recipeFromMaterials, recipeIngredientIds, recipeIngredientsInInventory, recipeResultId, settleResultPopup,
 } from '@/lib/planner/fusion'
 import { sellPriceFits, readSaleStep, EMPTY_SALE_STATE } from '@/features/assist/lib/sell-evidence'
-import { skillExchangeFromPrice } from '@/features/assist/lib/skill-exchange'
 import type { GiftData, RecipeData } from '@/lib/planner/types'
 
 const gift = (game_id: number, name: string, grade = '1') => [game_id, { game_id, name, grade } as GiftData] as const
@@ -90,12 +89,5 @@ describe('price checks', () => {
       cost: ['233'], giftId: () => '9991', giftPrice: () => 100 })
     expect(read(50).state.pending).toMatchObject({ giftId: '9991', price: 50 })
     expect(read(5000).state.pending).toBeNull()
-  })
-
-  it('names the replacement a cost can be', () => {
-    expect(skillExchangeFromPrice(45)).toBe('1-2')
-    expect(skillExchangeFromPrice(150)).toBe('2-3')
-    expect(skillExchangeFromPrice(120)).toBe('1-3')
-    expect(skillExchangeFromPrice(46)).toBeNull()
   })
 })

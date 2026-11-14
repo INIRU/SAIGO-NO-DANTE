@@ -70,7 +70,7 @@ export function useGiftConditionText(lang: SupportedLang) {
   }
 }
 
-export interface GiftDetailTheme {
+interface GiftDetailTheme {
   id: number | string
   name: string
   name_en?: string | null
@@ -88,7 +88,7 @@ export interface GiftDetailRecipePart {
   onClick?: () => void
 }
 
-export interface GiftLinkTarget extends GiftRefTarget {
+interface GiftLinkTarget extends GiftRefTarget {
   image_url?: string | null
   keyword?: string | null
   /** Game id, so a {{gift:<id>}} placeholder in the effect text shows this gift. */
@@ -164,7 +164,7 @@ export function EffectText({ text, color, links, gate }: { text: string; color: 
     <PlaceholderGiftProvider lookup={giftById}>
       <div style={{ color: '#d8ccb4', fontSize: '0.875rem', lineHeight: 1.75 }}>
         {gate && !gated.size && <div style={{ marginBottom: '0.5rem' }}>{gate.divider(null)}</div>}
-        {lines.map((line, i) => {
+        {lines.map((_line, i) => {
           if (gated.has(i) && i !== Math.min(...gated)) return null
           const paragraph = (index: number, first: boolean) => {
             const isSub = /^-\s/.test(gameTextToPlain(lines[index]))

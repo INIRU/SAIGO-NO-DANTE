@@ -90,7 +90,7 @@ export function gameTextRefDescriptions(rows: readonly GameTextRefRow[], lang: S
  * Flavor lines of the keywords as the locale shows them (raw game text; most keywords have none), by game id and, for
  * a tooltip of a keyword_meta row, by `kw:<keyword_meta name>` (the first reference of that keyword with a flavor).
  */
-export function gameTextRefFlavors(rows: readonly GameTextRefRow[], lang: SupportedLang): GameTextRefFlavors {
+function gameTextRefFlavors(rows: readonly GameTextRefRow[], lang: SupportedLang): GameTextRefFlavors {
   const out: GameTextRefFlavors = {}
   for (const row of rows) {
     if (row.kind !== 'keyword') continue
@@ -110,7 +110,7 @@ export async function getGameTextRefNames(lang: SupportedLang): Promise<GameText
 }
 
 /** getGameTextRefNames in the smaller form of the [lang] layout (see ref-names-wire), read on its own so the layout's cache entries stay small. */
-export async function getGameTextRefNamesWire(lang: SupportedLang): Promise<GameTextRefNamesWire> {
+async function getGameTextRefNamesWire(lang: SupportedLang): Promise<GameTextRefNamesWire> {
   'use cache'
   cacheLife('max')
   cacheTag(CACHE_TAGS.gameTextRefs, CACHE_TAGS.gameData)

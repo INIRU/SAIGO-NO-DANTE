@@ -1,8 +1,8 @@
 // The sound buttons of the 연계 section (USER 2026-10-27 "라운드 시작 연계 대사는 연계 칸에 소리 버튼으로 넣자"): audio-only lines the game says because of another Identity on the side (voice_links.json,
 // written by web/layer-proto/voice_links.mjs; contract: out/_handoff_choeae/UPDATE-2026-10-27-voice-link-buttons.md). A button plays the entry's cues once, in order, each at its `start`
 // seconds after the click, from the shared voice library (voices/<line>-<hash>.m4a) — no video. The pools (the lines the game picks one of) are drawn by their odds at every click, as voices.ts does per play.
-export interface LinkCue { start: number; file: string; volume: number; seconds: number; name?: string; unit?: string; clipIn?: number; cut?: number; fade?: number; pool?: string; option?: number; roll?: string; }
-export interface LinkPool { id: string; kind: string; options: { weight: number; silence?: boolean }[]; }
+interface LinkCue { start: number; file: string; volume: number; seconds: number; name?: string; unit?: string; clipIn?: number; cut?: number; fade?: number; pool?: string; option?: number; roll?: string; }
+interface LinkPool { id: string; kind: string; options: { weight: number; silence?: boolean }[]; }
 export interface VoiceLink {
   id: string;
   /** every Identity id (5 digits) the button belongs to: it is listed in each one's 연계 section */
