@@ -2,7 +2,7 @@ import 'server-only'
 import { NextResponse } from 'next/server'
 import { requireActiveUser, requireUser } from '@/lib/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { findOrCreateSupabaseUser } from '@/lib/supabase/findOrCreateUser'
+import { findOrCreateSupabaseUser } from '@/lib/supabase/find-or-create-user'
 
 /**
  * Sign-in and the Supabase account in one step, for routes that need the account id right away: 401 without a session,

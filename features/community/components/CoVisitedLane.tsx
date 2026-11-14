@@ -1,10 +1,11 @@
 import { getTranslations } from 'next-intl/server'
-import DeckCard, { type DeckSummary } from '@/features/decks/components/DeckCard'
-import PlanCard, { type PlanSummary } from '@/features/planner/components/PlanCard'
+import DeckCard, { type DeckSummary } from '@/components/cards/DeckCard'
+import PlanCard, { type PlanSummary } from '@/components/cards/PlanCard'
 import { RecommendationLane } from '@/features/decks/components/DeckRecommendations'
 import { getCoVisited } from '@/features/community/server/co-visited'
 import type { DiscoveryKind } from '@/features/community/lib/recommend'
 import type { SupportedLang } from '@/lib/i18n/types'
+import { NoteCardPreview } from '@/features/notes/components/NoteChips'
 
 /** "함께 본 글" on a deck or plan page. Draws nothing when the read fails or there is nothing to show; stream it inside a Suspense. */
 export default async function CoVisitedLane({ kind, id, lang, exclude }: { kind: DiscoveryKind; id: string; lang: SupportedLang; exclude: string[] }) {
@@ -18,7 +19,7 @@ export default async function CoVisitedLane({ kind, id, lang, exclude }: { kind:
     <RecommendationLane id="co-visited" title={t('coVisited')} count={posts.length}>
       {posts.map(post => (
         <div key={post.id} className="min-w-0">
-          {kind === 'deck' ? <DeckCard deck={post as unknown as DeckSummary} /> : <PlanCard plan={post as unknown as PlanSummary} />}
+          {kind === 'deck' ? <DeckCard deck={post as unknown as DeckSummary} NotePreview={NoteCardPreview} /> : <PlanCard plan={post as unknown as PlanSummary} NotePreview={NoteCardPreview} />}
         </div>
       ))}
     </RecommendationLane>

@@ -37,7 +37,7 @@ const admin = { schema: () => ({ from, rpc }) }
 
 vi.mock('@/lib/supabase/admin', () => ({ createAdminClient: () => admin }))
 vi.mock('@/lib/supabase/server', () => ({ createClient: async () => admin }))
-vi.mock('@/lib/supabase/findOrCreateUser', () => ({ findOrCreateSupabaseUser: async () => 'u1' }))
+vi.mock('@/lib/supabase/find-or-create-user', () => ({ findOrCreateSupabaseUser: async () => 'u1' }))
 vi.mock('next-auth', () => ({ getServerSession: async () => null }))
 vi.mock('@/lib/auth', () => ({
   authOptions: {},

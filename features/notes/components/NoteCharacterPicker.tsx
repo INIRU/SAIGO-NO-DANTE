@@ -6,12 +6,13 @@ import useSWR from 'swr'
 import { X } from 'lucide-react'
 import BaseModal from '@/components/ui/BaseModal'
 import CharacterPickerFilters from '@/components/ui/CharacterPickerFilters'
-import IdentityFrameCard from '@/features/catalog/components/IdentityFrameCard'
+import IdentityFrameCard from '@/components/cards/IdentityFrameCard'
 import { SINNER_SLUGS } from '@/lib/constants/game'
 import { getSinnerLogoUrl } from '@/lib/utils/images'
 import { compareReleaseDate } from '@/lib/utils/release-order'
 import { assetName, type NoteAssetData } from '@/features/notes/lib/assets'
-import { fetchNoteAssets, NoteAssetArtwork } from './NoteBlockViewer'
+import { NoteAssetArtwork } from './NoteAssetArtwork'
+import { fetchNoteAssets } from './NoteBlockViewer'
 
 export default function NoteCharacterPicker({ kind, onSelect, onClose }: {
   kind: 'identity' | 'ego'; onSelect: (asset: NoteAssetData) => void; onClose: () => void

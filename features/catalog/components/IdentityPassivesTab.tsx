@@ -5,7 +5,7 @@ import { passiveRequirements } from '@/lib/planner/passives'
 import { PassiveNameLabel, PassiveRequirements } from '@/features/catalog/components/PassiveParts'
 import SkillDescription from '@/features/catalog/components/SkillDescription'
 import { UptieChangePanel } from '@/features/catalog/components/UptieChanges'
-import { diffDescriptionLines, type PassiveDiff } from '@/lib/utils/uptie-diff'
+import { diffDescriptionLines, type PassiveDiff } from '@/features/catalog/lib/uptie-diff'
 import { useTranslations, useLocale } from 'next-intl'
 
 interface IdentityPassivesTabProps {

@@ -92,7 +92,7 @@ describe('one Switch everywhere', () => {
   it('has no screen-specific switch styles left', () => {
     const left: Record<string, RegExp> = {
       'features/tools/components/CollectionBoard.module.css': /\.switch\b/,
-      'features/tools/components/random.module.css': /\.switch\b/,
+      'features/tools/components/RandomClient.module.css': /\.switch\b/,
       'features/motion/components/MotionDeck.module.css': /\.switch\b/,
       'features/tools/components/LunacyCalendar.module.css': /\.switch(Track|State)\b/,
       'features/account/components/support.css': /desk-switch/,
@@ -104,7 +104,7 @@ describe('one Switch everywhere', () => {
 
 describe('shared DownloadModal', () => {
   it('is a BaseModal with shared Buttons, not a hand-built overlay', () => {
-    const modal = source('features/account/components/DownloadModal.tsx')
+    const modal = source('features/tools/components/DownloadModal.tsx')
     expect(modal).toContain("from '@/components/ui/BaseModal'")
     expect(modal).toContain("from '@/components/ui/Button'")
     expect(modal).not.toContain('fixed inset-0')

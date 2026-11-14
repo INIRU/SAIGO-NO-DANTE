@@ -12,7 +12,7 @@ import {
   Passive,
   getIdentitySinColor,
 } from '@/lib/data/sinners'
-import IdentityDecksTab from '@/features/catalog/components/IdentityDecksTab'
+import IdentityDecksTab from '@/features/decks/components/IdentityDecksTab'
 import IdentityPortraitSection from '@/features/catalog/components/IdentityPortraitSection'
 import IdentityInfoCard from '@/features/catalog/components/IdentityInfoCard'
 import { useIdentitySkillModel } from '@/features/catalog/hooks/useIdentitySkillModel'
@@ -21,7 +21,7 @@ import IdentityStatsCard from '@/features/catalog/components/IdentityStatsCard'
 import IdentitySanitySection from '@/features/catalog/components/IdentitySanitySection'
 import type { SanityCondition, PanicType } from '@/lib/types'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
-import { useOwnKeywords } from '@/lib/hooks/useOwnKeywords'
+import { useOwnKeywords } from '@/hooks/useOwnKeywords'
 import { descriptionTexts } from '@/lib/keywords/own-keywords'
 import { useTranslations, useLocale } from 'next-intl'
 import type { SupportedLang } from '@/lib/i18n/types'

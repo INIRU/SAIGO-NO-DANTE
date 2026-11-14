@@ -2,12 +2,25 @@ import { cacheLife, cacheTag } from 'next/cache'
 import { STORAGE_BASE } from '@/lib/constants/game'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 export { storageName } from '@/lib/storage-name'
-import type { CameraSetting } from '@/app/[lang]/story/_components/story-camera'
 
 /** The story map export (Limbus Assets pipeline/story_map.py) in Storage; NEXT_PUBLIC_STORY_MAP_BASE points a dev server at a local copy. */
 export const STORY_MAP_BASE = process.env.NEXT_PUBLIC_STORY_MAP_BASE || `${STORAGE_BASE}/story-map`
 /** The base the browser gets: a local dev copy as a path on the same site, so a tunnel or another device can load it */
 export const STORY_MAP_PAGE_BASE = STORY_MAP_BASE.replace(/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?/, '')
+
+/** The stage map camera's limits and zoom as the game sets them per chapter (see features/story/lib/story-camera.ts for how they are used). */
+export interface CameraSetting {
+  posZ: number
+  iconScale: number
+  /** zoomInScale when a stage is picked */
+  zoom: number
+  /** stageNodeZoomAnimationPivotX, upper…PivotY, lower…PivotY */
+  pivot: [number, number, number]
+  /** Per camera row (centre y / 2028): [from, to, min, max] of the content x */
+  x: [number, number, number, number][]
+  /** Per camera column (centre x / 2028): [from, to, min, max] of the content y */
+  y: [number, number, number, number][]
+}
 
 export type Texts = Partial<Record<'ko' | 'en' | 'ja', string>>
 

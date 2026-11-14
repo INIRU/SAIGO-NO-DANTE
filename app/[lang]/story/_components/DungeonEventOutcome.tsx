@@ -9,7 +9,7 @@ import { buttonClass } from '@/components/ui/Button'
 import {
   INK, L, SIN_ICON, TONE, checkChain, condLabel, giftArt, lockGifts, nine, pickText, reach, ui,
   type CheckEvent, type ChoiceEvent, type Ctx, type Reward,
-} from './dungeon-event-flow'
+} from '@/features/story'
 
 /** The game's TextMeshPro rich text (color, size, i, b, u, ruby, noparse; nested) as spans in the site's tones, line breaks kept.
  *  Anything else in angle brackets is not a tag to TextMeshPro either, so it stays as text. */

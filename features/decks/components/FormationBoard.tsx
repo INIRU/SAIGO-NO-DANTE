@@ -1,8 +1,8 @@
 'use client'
 
 import Image from 'next/image'
-import IdentityFrameCard, { type IdentityFrameCardIdentity } from '@/features/catalog/components/IdentityFrameCard'
-import { FormationCardStrip, SkillCardRows, type EgoSlotItem, type FormationStripSkill, type SkillCountEdit } from '@/features/catalog/components/EgoSlotRows'
+import IdentityFrameCard, { type IdentityFrameCardIdentity } from '@/components/cards/IdentityFrameCard'
+import { FormationCardStrip, SkillCardRows, type EgoSlotItem, type FormationStripSkill, type SkillCountEdit } from '@/components/cards/EgoSlotRows'
 import { getSinnerLogoUrl } from '@/lib/utils/images'
 import EgoBackPanel from '@/features/decks/components/EgoBackPanel'
 import styles from '@/features/decks/components/FormationBoard.module.css'

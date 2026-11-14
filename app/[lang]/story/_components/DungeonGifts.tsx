@@ -5,7 +5,7 @@ import { ChevronDown } from 'lucide-react'
 import type { DungeonEvent, DungeonEventGift, DungeonEventResult, Texts } from '@/lib/story-map'
 import GiftCard from '@/features/mirror-dungeon/components/GiftCard'
 import { EventGiftModal } from './DungeonEvent'
-import { giftArt } from './dungeon-event-flow'
+import { giftArt } from '@/features/story'
 
 type Lang = 'ko' | 'en' | 'ja'
 const pickText = (t: Texts | null | undefined, lang: Lang) => t?.[lang] ?? t?.ko ?? t?.en ?? ''

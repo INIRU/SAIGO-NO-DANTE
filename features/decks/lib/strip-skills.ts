@@ -1,7 +1,7 @@
 import { computeSkillImageIndices, getSkillIconUrl } from '@/lib/utils/images'
-import { localizeEgoName } from '@/features/decks/lib/localize'
-import { topUptieSkills } from '@/features/decks/lib/deck-identity-uptie'
-import type { EgoSlotItem, FormationStripSkill } from '@/features/catalog/components/EgoSlotRows'
+import { localizeEgoName } from '@/lib/decks/localize'
+import { topUptieSkills } from '@/lib/decks/deck-identity-uptie'
+import type { EgoSlotItem, FormationStripSkill } from '@/components/cards/EgoSlotRows'
 
 type StripSkillRow = {
   id: string

@@ -3,9 +3,10 @@
 import FullscreenGate from './FullscreenGate'
 import { useState } from 'react'
 import type { StoryIndexEntry, Texts } from '@/lib/story-map'
-import { BackButton, useFullScreen } from './StoryClient'
-import { useStoryProgress } from './progress'
-import { isExtraPart, isHiddenChapter, storyOrder } from './story-order'
+import BackButton from './BackButton'
+import { useFullScreen } from './StoryClient'
+import { useStoryProgress } from '@/features/story/hooks/useStoryProgress'
+import { isExtraPart, isHiddenChapter, storyOrder } from '@/features/story'
 
 type Lang = 'ko' | 'en' | 'ja'
 

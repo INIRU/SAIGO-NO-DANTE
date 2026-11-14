@@ -19,7 +19,7 @@ function from(table: string) {
 const admin = { schema: () => ({ from, rpc: async (name: string) => { state.rpcCalls.push(name); return { error: null } } }) }
 
 vi.mock('@/lib/supabase/admin', () => ({ createAdminClient: () => admin }))
-vi.mock('@/lib/supabase/findOrCreateUser', () => ({ findOrCreateSupabaseUser: async () => 'u1' }))
+vi.mock('@/lib/supabase/find-or-create-user', () => ({ findOrCreateSupabaseUser: async () => 'u1' }))
 vi.mock('@/lib/auth', () => ({
   requireActiveUser: async () => ({ error: false, session: { user: { email: 'a@b.c', name: 'a', image: null } } }),
 }))

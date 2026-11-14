@@ -2,7 +2,7 @@
 
 import type { CSSProperties } from 'react'
 import Image from 'next/image'
-import GameSkillIcon, { type GameSkillIconProps } from '@/features/catalog/components/GameSkillIcon'
+import GameSkillIcon, { type GameSkillIconProps } from '@/components/ui/GameSkillIcon'
 import GameSkillName, { skillLevelIconUrl, TARGET_NUM_ICON_URL } from '@/features/catalog/components/GameSkillName'
 import { getSkillFrameAssetUrl } from '@/lib/utils/images'
 import { COIN_IMAGES } from '@/lib/identity/skill-description'

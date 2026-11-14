@@ -6,8 +6,8 @@ import { useLocale, useTranslations } from 'next-intl'
 import { useFormatSkillDesc } from '@/components/providers/KeywordProvider'
 import CoinBadge from '@/features/catalog/components/CoinBadge'
 import { gameTextToPlain, mayBeRawGameText, refNameLabels } from '@/lib/game-text/rich-text'
-import { useGameTextRefs, wantGameTextRefs } from '@/lib/hooks/useGameTextRefs'
-import type { LineChange, NumDiff } from '@/lib/utils/uptie-diff'
+import { useGameTextRefs, wantGameTextRefs } from '@/hooks/useGameTextRefs'
+import type { LineChange, NumDiff } from '@/features/catalog/lib/uptie-diff'
 
 export const UPTIE_NUMERALS = ['', 'I', 'II', 'III', 'IV'] as const
 

@@ -42,7 +42,7 @@ vi.mock('@/app/[lang]/decks/[id]/DeckDetailClient', () => ({ default: () => null
 vi.mock('@/app/[lang]/decks/[id]/_components/DeckDetailSkeleton', () => ({ default: () => null }))
 vi.mock('@/app/[lang]/planner/community/[id]/PlanDetailClient', () => ({ default: () => null }))
 vi.mock('@/app/[lang]/planner/community/[id]/PlanDetailSkeleton', () => ({ default: () => null }))
-vi.mock('@/features/catalog/components/IdentityRecommendations', () => ({ default: () => null }))
+vi.mock('@/features/community/components/IdentityRecommendations', () => ({ default: () => null }))
 vi.mock('@/features/community/components/CoVisitedLane', () => ({ default: () => null }))
 
 type DetailModule = { generateMetadata: (props: { params: Promise<Record<string, string>> }) => Promise<Metadata> }

@@ -28,7 +28,7 @@ import GpuRequiredModal from '@/features/planner/components/GpuRequiredModal'
 import { captureEvidence, useAssistCapture } from '@/features/assist/hooks/useAssistCapture'
 import { recognizableEvents } from '@/lib/utils/event-catalog'
 import { gameTextForScreen, refNameLabels } from '@/lib/game-text/rich-text'
-import { useGameTextRefs } from '@/lib/hooks/useGameTextRefs'
+import { useGameTextRefs } from '@/hooks/useGameTextRefs'
 import { writeJson } from '@/lib/utils/local-storage'
 
 /** Assist temporary saves: five slots of whole runs in this browser. */

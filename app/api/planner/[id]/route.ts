@@ -6,7 +6,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import { writeAuditLog } from '@/lib/audit'
 import { normalizeFloorPlanDifficulty, normalizePlanDifficulty } from '@/lib/planner/floor-difficulty'
-import { storedPlanDifficulty } from '@/lib/planner/stripPlanForList'
+import { storedPlanDifficulty } from '@/lib/planner/strip-plan-for-list'
 
 
 // GET /api/planner/[id] — 플랜 상세

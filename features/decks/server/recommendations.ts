@@ -1,7 +1,7 @@
 import * as Sentry from '@sentry/nextjs'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { THEME_KEYWORDS, normalizeThemeKeyword } from '@/lib/constants/keywords'
-import { withPostAuthors } from '@/features/community/server'
+import { withPostAuthors } from '@/lib/server/post-authors'
 import type { DeckRecommendationSummary, DeckRecommendationsData } from '@/features/decks/components/DeckRecommendations'
 
 const THEME_KEYWORD_SET = new Set<string>(THEME_KEYWORDS)

@@ -4,7 +4,7 @@ import { ArrowLeft } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import BackLink from '@/components/navigation/BackLink'
 import { START_FORMATION_POINTS, STRENGTH_POINTS } from '@/features/tools/lib/prescript'
-import styles from './prescript.module.css'
+import styles from '@/features/tools/components/PrescriptClient.module.css'
 
 /**
  * The mode's rules in plain words, not the Index's voice (USER 2026-11-04): the flow, the kinds of prescripts, how grace is

@@ -2,7 +2,8 @@ import { posix } from 'node:path'
 
 export type Violation = { file: string; specifier: string; rule: 'feature-internal' | 'shared-imports-feature' | 'entry-exports-server' | 'entry-exports-ui' | 'feature-imports-app' }
 
-const SHARED = /^(components\/(ui|layout)|lib|hooks)\//
+// 기능 위에 있는 공용 코드: components/ 전체(ui, layout, providers, brand, cards …), lib, hooks.
+const SHARED = /^(components|lib|hooks)\//
 const SERVER_ONLY = /\bimport\s*(['"])server-only\1/
 // 입구 파일 말고 밖에서 가져올 수 있는 한 파일 경로: `@/features/<기능>/components/<이름>`, `@/features/<기능>/hooks/<이름>`.
 const PUBLIC_FILE = /^\/(?:components|hooks)\/[A-Za-z0-9]+$/
@@ -76,4 +77,102 @@ export function findUnimportedFiles(files: { path: string; source: string }[], a
   return files
     .map((f) => f.path)
     .filter((p) => UNUSED_SCOPE.test(p) && !p.endsWith('.d.ts') && !NEXT_CONVENTION.test(p) && !allowed.includes(p) && !imported.has(p))
+}
+
+// 모든 import의 파일 이름 해석에 쓰는 후보. 확장자·/index가 생략될 수 있다.
+const SUFFIXES = ['', '.ts', '.tsx', '/index.ts', '/index.tsx']
+
+export type ImportEdge = { from: string; to: string }
+
+/** 넘겨 준 파일끼리의 import 관계. 타입만 가져오는 import도 센다(런타임에는 지워져도 두 파일이 서로의 모양을 알아야 하기 때문이다). */
+export function importEdges(files: { path: string; source: string }[]): ImportEdge[] {
+  const known = new Set(files.map((f) => f.path))
+  const edges: ImportEdge[] = []
+  for (const { path, source } of files) {
+    for (const match of source.matchAll(SPECIFIER)) {
+      const target = resolve(path, match[2])
+      if (!target) continue
+      const to = SUFFIXES.map((s) => target + s).find((candidate) => known.has(candidate))
+      if (to && to !== path) edges.push({ from: path, to })
+    }
+  }
+  return edges
+}
+
+/** 서로 오가는 묶음(강한 연결 요소) 가운데 둘 이상으로 이루어진 것. Tarjan 알고리즘, 재귀 없이. */
+function cycleGroups(nodes: string[], edges: ImportEdge[]): string[][] {
+  const next = new Map<string, string[]>(nodes.map((n) => [n, []]))
+  for (const { from, to } of edges) next.get(from)?.push(to)
+  const index = new Map<string, number>()
+  const low = new Map<string, number>()
+  const onStack = new Set<string>()
+  const stack: string[] = []
+  const groups: string[][] = []
+  let counter = 0
+  for (const root of nodes) {
+    if (index.has(root)) continue
+    const work: { node: string; i: number }[] = [{ node: root, i: 0 }]
+    while (work.length) {
+      const frame = work[work.length - 1]
+      const { node } = frame
+      if (frame.i === 0) {
+        index.set(node, counter)
+        low.set(node, counter)
+        counter += 1
+        stack.push(node)
+        onStack.add(node)
+      }
+      const targets = next.get(node) ?? []
+      if (frame.i < targets.length) {
+        const target = targets[frame.i]
+        frame.i += 1
+        if (!index.has(target)) work.push({ node: target, i: 0 })
+        else if (onStack.has(target)) low.set(node, Math.min(low.get(node)!, index.get(target)!))
+        continue
+      }
+      work.pop()
+      const parent = work[work.length - 1]
+      if (parent) low.set(parent.node, Math.min(low.get(parent.node)!, low.get(node)!))
+      if (low.get(node) === index.get(node)) {
+        const group: string[] = []
+        let member: string
+        do {
+          member = stack.pop()!
+          onStack.delete(member)
+          group.push(member)
+        } while (member !== node)
+        if (group.length > 1) groups.push(group.sort())
+      }
+    }
+  }
+  return groups.sort((a, b) => (a[0] < b[0] ? -1 : 1))
+}
+
+/**
+ * 파일끼리 서로를 불러오는 순환 묶음. 파일 하나가 자기 자신만 가져오는 경우는 세지 않는다.
+ * 타입만 가져오는 import도 센다: 런타임 순환은 아니지만, 두 파일이 서로 얽혀 있다는 신호는 같다.
+ */
+export function findFileCycles(files: { path: string; source: string }[]): string[][] {
+  return cycleGroups(files.map((f) => f.path), importEdges(files))
+}
+
+const featureOf = (path: string) => /^features\/([^/]+)\//.exec(path)?.[1]
+
+/**
+ * 서로를 직접·돌아서 가져오는 기능 묶음. 가져오는 쪽 기능이 하나의 방향으로만 흘러야(기능 A가 B를 쓰면 B는 A를 쓰지 않는다) 한다.
+ * 각 묶음에는 그 안에서 서로를 가져오는 대표 파일 한 쌍씩을 `via`로 붙인다.
+ */
+export function findFeatureCycles(files: { path: string; source: string }[]): { features: string[]; via: string[] }[] {
+  const pairs = new Map<string, string>()
+  for (const { from, to } of importEdges(files)) {
+    const a = featureOf(from)
+    const b = featureOf(to)
+    if (a && b && a !== b && !pairs.has(`${a}>${b}`)) pairs.set(`${a}>${b}`, `${from} -> ${to}`)
+  }
+  const names = [...new Set(files.map((f) => featureOf(f.path)).filter((f): f is string => !!f))]
+  const edges = [...pairs.keys()].map((k) => ({ from: k.split('>')[0], to: k.split('>')[1] }))
+  return cycleGroups(names, edges).map((features) => ({
+    features,
+    via: [...pairs].filter(([k]) => features.includes(k.split('>')[0]) && features.includes(k.split('>')[1])).map(([k, v]) => `${k}: ${v}`),
+  }))
 }

@@ -17,7 +17,7 @@ import {
 import { getBlurDataURL } from '@/lib/utils/thumbhash'
 import { useTranslations, useLocale } from 'next-intl'
 import type { SupportedLang } from '@/lib/i18n'
-import { useAutoFontSize } from '@/lib/hooks/useAutoFontSize'
+import { useAutoFontSize } from '@/hooks/useAutoFontSize'
 import { getLocalizedName } from '@/lib/i18n/localize'
 import styles from '@/styles/components/SinnerDetail.module.css'
 import IdentitySdStage from '@/features/catalog/components/IdentitySdStage'

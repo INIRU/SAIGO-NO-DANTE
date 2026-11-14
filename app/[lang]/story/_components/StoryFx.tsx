@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
+import { loadFxLayer } from '@/features/story'
 
 /** Where the map is on screen: the same numbers StoryMap uses for its layer transform. */
 export interface FxView { size: { w: number; h: number }; cam: { x: number; y: number }; unit: number; mapH: number
@@ -10,7 +11,7 @@ export interface FxView { size: { w: number; h: number }; cam: { x: number; y: n
 
 // The stage map drawn on the GPU (PixiJS, WebGPU where the browser has it, else WebGL): the map tiles, and over them the
 // chapter's effect (MainUI.StageMapBackgroundManager: the prefab StageMapEffect_<subchapter>_<stage>,
-// pipeline/story_map_fx.py) played by the game's particle runtime (lib/story-fx). The prefab's positions are map pixels
+// pipeline/story_map_fx.py) played by the game's particle runtime (features/story/lib/fx). The prefab's positions are map pixels
 // from the map centre (DATA: the 4-54 portal at node 10454 minus the centre, off by 1 px in x and 12 in y). GUESS: the
 // viewer shows a map whose stages are all cleared, so the highest stage's prefab.
 // The tiles were <img>s that iPhone Safari decoded and kept as it liked, and it ran out of memory while the map moved
@@ -46,7 +47,7 @@ export default function StoryFx({ effectId, base, rows, cols, tiles, mapId, view
       if (stop || !host.current) return
       const index = await fetch(`${base}/fx/index.json`).then(r => (r.ok ? r.json() : null), () => null)
       const stages: number[] | undefined = index?.[String(effectId)]
-      const { FxLayer } = await import('@/lib/story-fx/layer')
+      const { FxLayer } = await loadFxLayer()
       // phones draw the map without its effect (USER 2026-11-09: they ran out of memory); ?fx in the address shows it
       const phone = window.matchMedia('(pointer: coarse)').matches && !new URLSearchParams(location.search).has('fx')
       const layer = stages?.length && !phone ? await FxLayer.load(`${base}/fx/${effectId}_${Math.max(...stages)}/`, 1) : null
@@ -59,7 +60,7 @@ export default function StoryFx({ effectId, base, rows, cols, tiles, mapId, view
       const touch = window.matchMedia('(pointer: coarse)').matches
       try {
         // ?webgl in the address forces WebGL (to compare the two on a device). WebGPU where the browser has it (iOS 26
-        // Safari, Chrome; USER 2026-11-09), else WebGL: the layer's shaders then take their WGSL twins (lib/story-fx/wgsl.ts)
+        // Safari, Chrome; USER 2026-11-09), else WebGL: the layer's shaders then take their WGSL twins (features/story/lib/fx/wgsl.ts)
         await app.init({ backgroundAlpha: 0, resizeTo: host.current, antialias: !touch, preference: new URLSearchParams(location.search).has('webgl') ? 'webgl' : 'webgpu', autoDensity: true, resolution: touch ? 1 : Math.min(window.devicePixelRatio || 1, 2) })
       } catch {
         ground.current?.(false)

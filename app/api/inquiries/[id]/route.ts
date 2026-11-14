@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { requireUser } from '@/lib/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { findOrCreateSupabaseUser } from '@/lib/supabase/findOrCreateUser'
+import { findOrCreateSupabaseUser } from '@/lib/supabase/find-or-create-user'
 import { INQUIRY_FIELDS, sortMessages, statusAfterMessage, supportMessageSchema, type Inquiry } from '@/lib/support'
 import { checkRequestRateLimit, rateLimitResponse } from '@/lib/rate-limit'
 type Params = { params: Promise<{ id: string }> }

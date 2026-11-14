@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { compactGameTextRefNames, expandGameTextRefNames } from '@/lib/game-text/ref-names-wire'
-import type { GameTextRefNames } from '@/lib/db/game-text-refs'
+import type { GameTextRefNames } from '@/lib/game-text/ref-names'
 
 const NAMES: GameTextRefNames = {
   Combustion: { k: 'keyword', n: '화상', kw: '화상', i: 'game-Combustion' },

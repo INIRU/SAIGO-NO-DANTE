@@ -5,8 +5,8 @@ import { expect, it } from 'vitest'
 // first paint (Safari, streamed pages), so the box that holds a fill image must be positioned and sized with global classes.
 const frames = [
   ['features/decks/components/DeckInsights.tsx', 'deck-passives__thumb'],
-  ['features/planner/components/SkillExchangePanel.tsx', 'skx__thumb'],
-  ['features/planner/components/SuggestionNote.tsx', 'aria-expanded={open}'],
+  ['components/ui/SkillExchangePanel.tsx', 'skx__thumb'],
+  ['features/decks/components/SuggestionNote.tsx', 'aria-expanded={open}'],
 ] as const
 
 it('keeps the passive, skill exchange and partner thumbnails in their box before their scoped styles arrive', () => {

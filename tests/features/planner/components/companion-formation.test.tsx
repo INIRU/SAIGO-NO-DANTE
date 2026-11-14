@@ -7,7 +7,7 @@ import { formationRow } from '@/features/planner/lib/assist-gift-guide'
 import type { IdentitySlot } from '@/lib/planner/types'
 
 vi.mock('@/components/ui/QuietImage', () => ({ default: ({ src }: { src: string }) => <span data-test-image={src} /> }))
-vi.mock('@/features/catalog/components/IdentityFrameCard', () => ({ default: ({ order }: { order: number }) => <span data-test-card={order} /> }))
+vi.mock('@/components/cards/IdentityFrameCard', () => ({ default: ({ order }: { order: number }) => <span data-test-card={order} /> }))
 
 const sinners = [{ id: 'faust', order_num: 2 }, { id: 'yi-sang', order_num: 1 }, { id: 'don-quixote', order_num: 3 }]
 const slot = (sinner_id: string, slot_order: number) => ({ identity_id: `${sinner_id}-x`, sinner_id, name_kr: `${sinner_id} 인격`, rarity: 3, keywords: [],

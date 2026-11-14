@@ -2,7 +2,7 @@
 
 import { getGameUiAsset } from '@/lib/utils/game-ui'
 import { useEffect, useRef, useState } from 'react'
-import { useWheelIntent } from '@/lib/hooks/useWheelIntent'
+import { useWheelIntent } from '@/hooks/useWheelIntent'
 import type { CSSProperties, RefObject } from 'react'
 import Image from 'next/image'
 import { useLocale } from 'next-intl'

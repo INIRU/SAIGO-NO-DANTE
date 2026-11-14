@@ -29,7 +29,7 @@ vi.mock('@/lib/supabase/server', () => ({ createClient: async () => ({ schema: (
 vi.mock('@/lib/supabase/admin', () => ({ createAdminClient: () => ({ schema: () => ({ from: query }) }) }))
 vi.mock('next-auth', () => ({ getServerSession: async () => null }))
 vi.mock('@/lib/auth', () => ({ authOptions: {} }))
-vi.mock('@/features/community/server/post-authors', () => ({ withPostAuthors: async (rows: unknown[]) => rows }))
+vi.mock('@/lib/server/post-authors', () => ({ withPostAuthors: async (rows: unknown[]) => rows }))
 vi.mock('next/cache', () => ({ revalidateTag: vi.fn(), cacheLife: vi.fn(), cacheTag: vi.fn() }))
 
 import { NextRequest } from 'next/server'

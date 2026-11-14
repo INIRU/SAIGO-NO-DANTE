@@ -23,17 +23,17 @@ import { rowsAtUptie, computeDeckResources, computeSinProduction, fieldedEntries
 import { getIdentityImageUrl } from '@/lib/utils/images'
 import DeckInsights, { type DeckInsightIdentity } from '@/features/decks/components/DeckInsights'
 import DeckResourceSummary from '@/features/decks/components/DeckResourceSummary'
-import { localizeIdentityName, localizePassiveDescription, localizePassiveName } from '@/features/decks/components/DeckIdentityCard'
+import { localizeIdentityName, localizePassiveDescription, localizePassiveName } from '@/lib/decks/localize'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
 import { useLocale, useTranslations } from 'next-intl'
 import type { SupportedLang } from '@/lib/i18n/types'
-import { SKILL_EXCHANGE_PRESETS } from './SkillExchangePanel'
+import { SKILL_EXCHANGE_PRESETS } from '@/components/ui/SkillExchangePanel'
 import ConfirmModal from '@/components/ui/ConfirmModal'
 import { showError, showSuccess } from '@/lib/toast'
 import type { planSlotsFromTeamCode } from '@/lib/planner/team-code-import'
 import { withLcbIdentitySlots } from '@/features/planner/lib/lcb'
 import { planSlotsFromDeckRows } from '@/lib/planner/formation-transfer'
-import { toggleFormationSlot } from '@/lib/planner/formation-toggle'
+import { toggleFormationSlot } from '@/features/planner/lib/formation-toggle'
 import { COMPACT_KOTRA_STYLE } from '@/lib/planner/compact-name-style'
 import FormationSourceModal from './FormationSourceModal'
 import { buildStripSkills, toEgoSlotItems } from '@/features/decks'
@@ -47,10 +47,10 @@ import {
   type PlannerDeckEgo,
   type PlannerEgoBoardSlot,
   type PlannerIdentityBoardSlot,
-} from '@/features/planner/components/PlannerDeckSelection'
+} from '@/features/decks/components/PlannerDeckSelection'
 import { LCB_IDS, isDeployedSlot } from '@/lib/constants/game'
-import { useSuggestionState } from '@/features/community/hooks/useSuggestions'
-import { identitySuggestUrl, plannerSuggestionContext, type SuggestionResponse } from '@/features/community'
+import { useSuggestionState } from '@/hooks/useSuggestions'
+import { identitySuggestUrl, plannerSuggestionContext, type SuggestionResponse } from '@/lib/community/suggestion-types'
 import {
   DECK_MAIN_KEYWORDS,
   MAX_DECK_MAIN_KEYWORDS,

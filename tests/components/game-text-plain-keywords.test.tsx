@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { KeywordProvider, resolveKeywordIconUrl, useFormatSkillDesc, type KeywordInfo } from '@/components/providers/KeywordProvider'
 import SkillDescription from '@/features/catalog/components/SkillDescription'
 import { keywordTextAllowed } from '@/lib/keywords/plain-keywords'
-import type { GameTextRefNames } from '@/lib/db/game-text-refs'
+import type { GameTextRefNames } from '@/lib/game-text/ref-names'
 
 const REFS: GameTextRefNames = {
   Sinking: { k: 'keyword', n: '침잠', kw: '침잠' },

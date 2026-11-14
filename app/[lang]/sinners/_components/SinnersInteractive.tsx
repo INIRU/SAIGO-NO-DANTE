@@ -3,7 +3,7 @@
 import { Link } from '@/lib/i18n/navigation'
 import { ArrowRight } from 'lucide-react'
 import { useTranslations, useLocale } from 'next-intl'
-import { useRoutePrefetch } from '@/lib/hooks/useRoutePrefetch'
+import { useRoutePrefetch } from '@/hooks/useRoutePrefetch'
 import PageHeader from '@/components/ui/PageHeader'
 
 export default function SinnersInteractive({ children }: { children: React.ReactNode }) {

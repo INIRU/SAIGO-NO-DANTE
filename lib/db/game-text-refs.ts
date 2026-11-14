@@ -5,13 +5,8 @@ import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import type { SupportedLang } from '@/lib/i18n/types'
 import { flavorKeyOfKeyword } from '@/lib/game-text/flavor'
 import { compactGameTextRefNames, type GameTextRefNamesWire } from '@/lib/game-text/ref-names-wire'
+import type { GameTextRefNames } from '@/lib/game-text/ref-names'
 
-/**
- * What a `[Id]` of raw game text is, in one language: its kind, label and (keywords) the keyword_meta row it maps to.
- * `i` is the buff's own icon file (game_text_refs.icon_slug); without one it draws keyword_meta's.
- */
-export type GameTextRefName = { k: 'keyword' | 'skilltag'; n: string; kw?: string; i?: string }
-export type GameTextRefNames = Record<string, GameTextRefName>
 export type GameTextRefDescriptions = Record<string, string>
 /** Flavor lines of the keywords by game id (raw game text), only for keywords that have one. */
 export type GameTextRefFlavors = Record<string, string>

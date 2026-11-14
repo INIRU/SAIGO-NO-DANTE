@@ -36,6 +36,6 @@ export type CommunityProfile = {
   /** Only in the owner's own profile. */
   settings?: CommunitySettings;
 };
-import type { DeckSummary } from "@/features/decks/components/DeckCard";
-import type { PlanSummary } from "@/features/planner/components/PlanCard";
+import type { DeckSummary } from "@/components/cards/DeckCard";
+import type { PlanSummary } from "@/components/cards/PlanCard";
 import type { EasterEgg } from "@/lib/easter-eggs";

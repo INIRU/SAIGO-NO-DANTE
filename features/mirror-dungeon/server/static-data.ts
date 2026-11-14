@@ -1,6 +1,6 @@
 import { GIFT_COLUMNS, RECIPE_COLUMNS, THEME_COLUMNS } from '@/lib/db/columns'
 import type { createAdminClient } from '@/lib/supabase/admin'
-import { OBSERVATION_COLUMNS, type ObservationRow } from '@/features/planner'
+import { OBSERVATION_COLUMNS, type ObservationRow } from '@/lib/planner/observation'
 
 type AdminClient = ReturnType<typeof createAdminClient>
 

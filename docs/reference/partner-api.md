@@ -82,7 +82,7 @@
 - `formation`은 편성 전원을 편성 순서(`slot_order` 오름차순)대로 담는다. 위 예시는 한 명만 적었다. `99`는 순서를 정하지 않은 인격이다.
 - `skills`는 그 칸의 동기화 단계(`uptie`)에 해당하는 스킬만 담는다. `skill_order` 1–3이 스킬 1–3, 4가 수비 스킬이고 `variant_order`가 다른 줄은 변형 스킬이다. 스킬 설명과 다른 동기화 단계의 스킬은 `identities?id=`에서 받는다(1~4 단계 전부, `uptie_level`로 구분. 1·2단계에는 스킬 3이, 1단계에는 패시브가 없는 인격이 많다).
 - `skill_counts`는 스킬 1·2·3의 분배 개수다. `cost`와 `ego_cost`의 죄악 순서는 분노·색욕·나태·탐식·우울·오만·질투다.
-- `analysis`는 사이트의 덱·플랜 화면과 같은 계산(`features/decks/lib/deck-analysis.ts`)이다.
+- `analysis`는 사이트의 덱·플랜 화면과 같은 계산(`lib/decks/deck-analysis.ts`)이다.
 
 플랜은 여기에 다음이 더 붙는다.
 

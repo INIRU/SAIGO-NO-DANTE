@@ -8,7 +8,7 @@ import type { Identity } from '@/lib/data/sinners'
 import { getSinnerLogoUrl } from '@/lib/utils/images'
 import BaseModal from '@/components/ui/BaseModal'
 import CharacterPickerFilters from '@/components/ui/CharacterPickerFilters'
-import IdentityFrameCard from '@/features/catalog/components/IdentityFrameCard'
+import IdentityFrameCard from '@/components/cards/IdentityFrameCard'
 import { filterStyles } from '@/components/board/FilterControls'
 import { compareReleaseDate } from '@/lib/utils/release-order'
 

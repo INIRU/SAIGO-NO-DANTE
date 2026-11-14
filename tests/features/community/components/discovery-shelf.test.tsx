@@ -27,7 +27,7 @@ vi.mock('@/features/community/components/BoardCard', () => ({
   default: ({ post, lead }: { post: { id: string }; lead?: React.ReactNode }) => <article data-card={post.id}>{lead}</article>,
   RankPlate: ({ rank }: { rank: number }) => <span data-rank={rank} />,
 }))
-vi.mock('@/features/catalog/components/IdentityFrameCard', () => ({ default: ({ identity }: { identity: { id: string } }) => <div data-identity={identity.id} /> }))
+vi.mock('@/components/cards/IdentityFrameCard', () => ({ default: ({ identity }: { identity: { id: string } }) => <div data-identity={identity.id} /> }))
 vi.mock('@/features/community/components/FormationRow', () => ({
   default: ({ post }: { post: { id: string } }) => <div data-row={post.id} />,
   DateLead: () => null,

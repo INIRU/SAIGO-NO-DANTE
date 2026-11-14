@@ -12,7 +12,7 @@ vi.mock('@/lib/auth', () => ({
   authOptions: {},
   requireActiveUser: async () => ({ error: false, session: { user: { email: 'a@b.c', name: 'a', image: null } } }),
 }))
-vi.mock('@/lib/supabase/findOrCreateUser', () => ({ findOrCreateSupabaseUser: async () => 'user-1' }))
+vi.mock('@/lib/supabase/find-or-create-user', () => ({ findOrCreateSupabaseUser: async () => 'user-1' }))
 vi.mock('@/features/community/server', () => ({ invalidateProfileDecks: async () => {} }))
 vi.mock('@/lib/supabase/admin', () => ({
   createAdminClient: () => ({

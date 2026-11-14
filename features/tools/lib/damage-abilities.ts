@@ -1,20 +1,12 @@
 // Keyword and gift effects read from the game's own values (keyword_meta.abilities, ego_gifts.modifiers) instead of from
 // the effect sentences. An ability is a name plus a value; this table says what each known name does to a skill's damage.
 
-import type { Modifier, SavedModifier } from './damage'
+import type { AbilityEffect, EffectSide, EffectTarget, Modifier, SavedModifier } from './damage-types'
 
 /** One entry of keyword_meta.abilities: the game's buff `list` row. attribute (a sin), atk (an attack type) and coinOperator narrow when it applies. */
 export type KeywordAbility = { ability: string; value?: number | null; attribute?: string | null; atk?: string | null; coinOperator?: string | null }
 
-/** damage: dealt by the carrier (self) or taken by it (target); power: the skill's power; coin_power: the heads coin's added power; physical, sin: resistance of the target. */
-export type EffectTarget = 'damage' | 'power' | 'coin_power' | 'physical' | 'sin'
-type EffectSide = 'self' | 'target'
 
-/**
- * value: percent for damage (10 = +10%), a whole number for power and coin_power, a resistance amount for physical and sin.
- * scaled: the value is per stack (or per held item), flat otherwise. attribute, atk: kept in the game's English names; the effect applies only to a skill of that sin / attack type.
- */
-export type AbilityEffect = { target: EffectTarget; side: EffectSide; value: number; scaled: boolean; attribute?: string; atk?: string }
 
 type Rule = { target: EffectTarget; side: EffectSide; scaled: boolean }
 

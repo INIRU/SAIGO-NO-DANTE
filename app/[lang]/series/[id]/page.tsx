@@ -7,9 +7,9 @@ import { cacheLife, cacheTag } from 'next/cache'
 import { publicSupabase } from '@/lib/supabase/public'
 import { getTranslations } from 'next-intl/server'
 import { z } from 'zod'
-import DeckCard from '@/features/decks/components/DeckCard'
+import DeckCard from '@/components/cards/DeckCard'
 import AdSlot from '@/components/ads/AdSlot'
-import PlanCard from '@/features/planner/components/PlanCard'
+import PlanCard from '@/components/cards/PlanCard'
 import PostAuthorName from '@/features/community/components/PostAuthorName'
 import BackLink from '@/components/navigation/BackLink'
 import styles from '@/styles/components/SeriesPage.module.css'
@@ -18,6 +18,7 @@ import SeriesOwnerTools from '@/features/community/components/SeriesOwnerTools'
 import SeriesPageSkeleton from '@/features/community/components/SeriesPageSkeleton'
 import { withPostAuthors, loadSeriesCards, loadSeries, orderSeriesItems } from '@/features/community/server'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
+import { NoteCardPreview } from '@/features/notes/components/NoteChips'
 
 type Props = { params: Promise<{ lang: string; id: string }> }
 
@@ -91,7 +92,7 @@ async function SeriesContent({ params }: Props) {
                   <span className={styles.kind}>{card.kind === 'deck' ? <Layers size={14} /> : <MapIcon size={14} />}{t(card.kind)}</span>
                   <span className={styles.rule} />
                 </div>
-                {card.kind === 'deck' ? <DeckCard deck={card.deck} /> : <PlanCard plan={card.plan} />}
+                {card.kind === 'deck' ? <DeckCard deck={card.deck} NotePreview={NoteCardPreview} /> : <PlanCard plan={card.plan} NotePreview={NoteCardPreview} />}
               </li>
             ))}
           </ol>

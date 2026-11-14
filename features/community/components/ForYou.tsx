@@ -5,14 +5,15 @@ import { useSession } from "next-auth/react";
 import { useTranslations } from "next-intl";
 import { ArrowRight } from "lucide-react";
 import { Link } from "@/lib/i18n/navigation";
-import DeckCard, { type DeckSummary } from "@/features/decks/components/DeckCard";
-import PlanCard, { type PlanSummary } from "@/features/planner/components/PlanCard";
+import DeckCard, { type DeckSummary } from "@/components/cards/DeckCard";
+import PlanCard, { type PlanSummary } from "@/components/cards/PlanCard";
 import { SkeletonLine } from "@/components/ui/Skeleton";
-import { useOwnedIdentities } from "@/features/catalog/hooks/useOwnedIdentities";
+import { useOwnedIdentities } from "@/hooks/useOwnedIdentities";
 import { forYouPhase } from "@/features/community/lib/for-you-phase";
 import { getGameUiAsset } from "@/lib/utils/game-ui";
-import { CardSkeleton } from "./BoardSkeleton";
+import { CardSkeleton } from "@/components/cards/CardSkeleton";
 import styles from "./ForYou.module.css";
+import { NoteCardPreview } from '@/features/notes/components/NoteChips'
 
 type Post = DeckSummary & PlanSummary;
 type Kind = "deck" | "planner";
@@ -112,7 +113,7 @@ export default function ForYou({ kind, personal }: { kind: Kind; personal: boole
             ))
             : items.map((post, index) => (
               <div key={post.id} className={`${slot(index)} ${reveal}`} style={{ "--i": index } as CSSProperties}>
-                {kind === "deck" ? <DeckCard deck={post} /> : <PlanCard plan={post} />}
+                {kind === "deck" ? <DeckCard deck={post} NotePreview={NoteCardPreview} /> : <PlanCard plan={post} NotePreview={NoteCardPreview} />}
               </div>
             ))}
         </div>

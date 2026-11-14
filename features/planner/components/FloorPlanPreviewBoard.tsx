@@ -2,7 +2,7 @@
 
 import FloorMemoView from './FloorMemoView'
 
-import { isConfiguredFloor } from '@/lib/planner/stripPlanForList'
+import { isConfiguredFloor } from '@/lib/planner/strip-plan-for-list'
 
 import './floor-preview.css'
 import FloorConstraints from './FloorConstraints'
@@ -12,7 +12,7 @@ import { useLocale, useTranslations } from 'next-intl'
 import { useReducedMotion } from 'motion/react'
 import * as m from 'motion/react-m'
 import GiftCard from '@/features/mirror-dungeon/components/GiftCard'
-import ThemePackStack from '@/components/ui/ThemePackStack'
+import ThemePackStack from '@/features/planner/components/ThemePackStack'
 import { getLegacyPlanFloorDifficulty, isAllowedFloorDifficulty, isFloorDifficulty } from '@/lib/planner/floor-difficulty'
 import type { Difficulty, FloorDifficulty, GiftData, ThemeData, RecipeData } from '@/lib/planner/types'
 import { themeExclusiveGiftIds, withThemeRewards } from '@/lib/planner/fusion'
