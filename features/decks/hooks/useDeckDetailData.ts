@@ -1,20 +1,34 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type Dispatch, type SetStateAction } from 'react'
 import { useTranslations } from 'next-intl'
 import { showError } from '@/lib/toast'
 import { mergeViewerFields, normalizeDeckDetail, type DeckDetail } from '../lib/deck-detail-model'
 
+export type { DeckDetail } from '../lib/deck-detail-model'
+
 const postedDeckViews = new Set<string>()
 
-/**
- * The deck of the detail page: the server-rendered one if there is one (then only the viewer part is fetched and
- * patched in), else the whole deck. Counts one view per deck and page load. `onVoteCount` gets the fresh vote count.
- */
-export function useDeckDetailData({ id, initialDeck, onVoteCount }: { id: string; initialDeck?: DeckDetail | null; onVoteCount: (count: number) => void }) {
-  const t = useTranslations('decks.detail')
+/** The deck of the detail page and whether it is still being loaded: the server-rendered deck if there is one. */
+export function useDeckDetailState(initialDeck?: DeckDetail | null) {
   const [deck, setDeck] = useState<DeckDetail | null>(initialDeck ?? null)
   const [loading, setLoading] = useState(!initialDeck)
+  return { deck, setDeck, loading, setLoading }
+}
+
+/**
+ * Loads the deck of the detail page into `useDeckDetailState` (with a server-rendered deck, only the viewer part is
+ * fetched and patched in, else the whole deck). Counts one view per deck and page load. `onVoteCount` gets the fresh
+ * vote count. Called after the page's other requests, so those start first.
+ */
+export function useDeckDetailLoad({ id, initialDeck, setDeck, setLoading, onVoteCount }: {
+  id: string
+  initialDeck?: DeckDetail | null
+  setDeck: Dispatch<SetStateAction<DeckDetail | null>>
+  setLoading: Dispatch<SetStateAction<boolean>>
+  onVoteCount: (count: number) => void
+}) {
+  const t = useTranslations('decks.detail')
 
   useEffect(() => {
     const viewKey = `deck-view:${id}`
@@ -58,6 +72,4 @@ export function useDeckDetailData({ id, initialDeck, onVoteCount }: { id: string
       cancelled = true
     }
   }, [id, initialDeck, t]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  return { deck, loading }
 }

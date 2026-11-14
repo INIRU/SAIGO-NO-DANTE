@@ -32,7 +32,7 @@ import RelativeTime from '@/components/ui/RelativeTime'
 import DeckInsights from '@/features/decks/components/DeckInsights'
 import DeckResourceSummary from '@/features/decks/components/DeckResourceSummary'
 import SkillExchangePanel from '@/components/ui/SkillExchangePanel'
-import { computeDeckAnalysis, topUptieSkills, BOARD_SLOT_COUNT, adaptBoardIdentity, contentTypeMessageKey, localizeDeckKeyword, slotUptie, buildSkillExchangeRow, type DeckDetail } from '@/features/decks'
+import { topUptieSkills, BOARD_SLOT_COUNT, adaptBoardIdentity, contentTypeMessageKey, localizeDeckKeyword } from '@/features/decks'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
 import { localizeIdentityName } from '@/lib/decks/localize'
 import { type IdentityDetail, type IdentitySlot } from '@/lib/decks/identity-types'
@@ -41,8 +41,8 @@ import { FormationTabs } from '@/features/decks/components/FormationEgoGrid'
 import DeckRecommendations, { type DeckRecommendationsData } from '@/features/decks/components/DeckRecommendations'
 import DeckComments from '@/features/decks/components/DeckComments'
 import { useDeckDetailActions } from '@/features/decks/hooks/useDeckDetailActions'
-import { useDeckDetailData } from '@/features/decks/hooks/useDeckDetailData'
-import { useDeckDetailModel } from '@/features/decks/hooks/useDeckDetailModel'
+import { useDeckDetailLoad, useDeckDetailState, type DeckDetail } from '@/features/decks/hooks/useDeckDetailData'
+import { buildSkillExchangeRow, computeDeckAnalysis, slotUptie, useDeckDetailModel } from '@/features/decks/hooks/useDeckDetailModel'
 import { useDeckReactions } from '@/features/decks/hooks/useDeckReactions'
 import { useSectionNav } from '@/features/decks/hooks/useSectionNav'
 import type { SupportedLang } from '@/lib/i18n/types'
@@ -88,20 +88,22 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
   const shouldReduceMotion = useReducedMotion()
   const { status: authStatus } = useSession()
 
-  const { voted, voteCount, setVoteCount, voting, handleVote, bookmarked, bookmarking, handleBookmark } = useDeckReactions({ id, authStatus, initialVoteCount: initialDeck?.vote_count ?? 0 })
-  const { deck, loading } = useDeckDetailData({ id, initialDeck, onVoteCount: setVoteCount })
+  // The requests start in this order: the guest's posts, the vote, the bookmark, the gift list, then the view count and the deck.
+  const { deck, setDeck, loading, setLoading } = useDeckDetailState(initialDeck)
   // Signed-out visitors own a guest deck when this browser's key wrote it.
   const guest = useGuestPosts(authStatus === 'unauthenticated' && !deck?.user_id), guestPosts = guest.posts
   const guestOwner = authStatus === 'unauthenticated' && !!guestPosts.data?.decks.some(post => post.id === id)
   // A guest deck this browser has no key for: its author takes it back with the deck's password.
   const canRecover = authStatus === 'unauthenticated' && !!deck?.guest_tag && guest.keyRead && !guestPosts.isLoading && !guestOwner
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const { voted, voteCount, setVoteCount, voting, handleVote, bookmarked, bookmarking, handleBookmark } = useDeckReactions({ id, authStatus, initialVoteCount: initialDeck?.vote_count ?? 0 })
   const [identityPreview, setIdentityPreview] = useState<IdentityPreviewState | null>(null)
   const [formationTab, setFormationTab] = useState<'identity' | 'ego' | 'skill'>('identity')
 
   // Same key and fetcher as the card previews' gift lookup, so SWR downloads the gift list once.
   const { data: noteGifts } = useSWR('/api/ego-gifts', fetchNoteGifts, { revalidateOnFocus: false, revalidateIfStale: false })
   const egoGiftLookup = useMemo(() => Object.fromEntries((noteGifts ?? []).map(gift => [gift.name, gift])), [noteGifts])
+  useDeckDetailLoad({ id, initialDeck, setDeck, setLoading, onVoteCount: setVoteCount })
   const [egoModalId, setEgoModalId] = useState<string | null>(null)
   // A gift label in the note: the list above is the light one, so the pressed gift is fetched whole for the modal.
   const [noteGift, setNoteGift] = useState<GiftData | null>(null)

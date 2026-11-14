@@ -2,11 +2,14 @@
 
 import { useCallback, useMemo, useState } from 'react'
 import { parseAsInteger, parseAsString, useQueryState } from 'nuqs'
-import { collectFilterSinners, normalizeFormationCountParam, parseCsvParam, QUERY_OPTIONS, serializeCsvParam, toDeckFilterIdentity } from '@/features/decks'
-import { useIdentityFilterOptions } from '@/features/decks/hooks/useIdentityFilterOptions'
+import { parseCsvParam, QUERY_OPTIONS, serializeCsvParam, toDeckFilterIdentity } from '@/features/decks'
+import { collectFilterSinners, normalizeFormationCountParam, useIdentityFilterOptions } from '@/features/decks/hooks/useIdentityFilterOptions'
 import { normalizePlannerListKeywords } from '@/lib/planner/strip-plan-for-list'
 import type { Difficulty } from '@/lib/planner/types'
 import { buildPlanPageParams, buildPlanServerQueryKey, groupIdentitiesBySinner } from '../lib/plan-list'
+
+// What the community board page reads of the list's rules (not exported by the entry file: that adds to every route's first JS).
+export { PLAN_FILTER_KEYWORDS, PLAN_LIST_PAGE_SIZE, buildPlanFilterIndexes, filterPlanIndexes } from '../lib/plan-list'
 
 /**
  * The community plan board's filters held in the address (sort, keywords, identities, formation count) and the

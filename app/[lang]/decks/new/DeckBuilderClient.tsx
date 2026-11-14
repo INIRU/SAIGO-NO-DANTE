@@ -32,8 +32,8 @@ import {
 // IdentityCard → IdentityTab 내부에서 직접 렌더링
 
 import { encodeDeckCode, decodeDeckCode } from '@/lib/decks/deck-code-utils'
-import { buildDeckInsightData, buildDeckSaveRows, contentTypeMessageKey, type EditMode, type ForkMode } from '@/features/decks'
-import { useDeckBuilder } from '@/features/decks/hooks/useDeckBuilder'
+import { contentTypeMessageKey } from '@/features/decks'
+import { buildDeckInsightData, buildDeckSaveRows, useDeckBuilderModel, useDeckBuilderState, type EditMode, type ForkMode } from '@/features/decks/hooks/useDeckBuilder'
 import UnderlineTabBar, { type TabItem } from '@/components/ui/UnderlineTabBar'
 import Dropdown from '@/components/ui/Dropdown'
 import Button from '@/components/ui/Button'
@@ -80,15 +80,14 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
   const tTempSaves = useTranslations('planner.tempSaves')
   const tCopy = useTranslations('planner.detail')
   const router = useRouter()
-  const [tabParam, setTab] = useQueryState('tab', parseAsString.withDefault('identity'))
-  const tab = (tabParam as Tab) || 'identity'
+  // The editor state first (it cleans ?formation= from the address), then the tab, the saved drafts, and last what is derived from the state.
+  const builderState = useDeckBuilderState({ sinners, identities, egos, editMode, forkMode })
   const {
     deckSlots, setDeckSlots, egoSlots, setEgoSlots, formationOrder, setFormationOrder, title, setTitle, contentType, setContentType,
     description, setDescription, gacksungSlots, upties, setUpties, skillDistribution, setSkillDistribution,
-    skillsByIdentityId, passivesByIdentityId, deckKeywordCounts, effectiveMainKeywords, formationGiftKeywordCounts, allGiftKeywordCounts,
-    handleMainKeywordToggle, handleFormationToggle, identityCount, egoCount, skillsetCustomCount, draftState,
-    applyDraft, applyImportedFormation, applyDecodedDeck,
-  } = useDeckBuilder({ sinners, identities, egos, skills, passives, editMode, forkMode })
+  } = builderState
+  const [tabParam, setTab] = useQueryState('tab', parseAsString.withDefault('identity'))
+  const tab = (tabParam as Tab) || 'identity'
   const [saving, setSaving] = useState(false)
   const [pin, setPin] = useState('')
   // undefined: the author did not touch the series picker, so the deck's series stays as it is
@@ -106,6 +105,12 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
   useEffect(() => {
     setDraftSlots(loadDeckDraftSlots())
   }, [])
+
+  const {
+    skillsByIdentityId, passivesByIdentityId, deckKeywordCounts, effectiveMainKeywords, formationGiftKeywordCounts, allGiftKeywordCounts,
+    handleMainKeywordToggle, handleFormationToggle, identityCount, egoCount, skillsetCustomCount, draftState,
+    applyDraft, applyImportedFormation, applyDecodedDeck,
+  } = useDeckBuilderModel({ sinners, identities, egos, skills, passives, state: builderState })
 
   // Planner deck panels: keyword distribution, passives, attack types and sin resources.
   const deckInsights = useMemo(() => {

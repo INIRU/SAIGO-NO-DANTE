@@ -9,6 +9,10 @@ import {
 } from '../lib/deck-list'
 import { useIdentityFilterOptions } from './useIdentityFilterOptions'
 
+// What the deck board page reads of the list's rules (not exported by the entry file: that adds to every route's first JS).
+export { DECK_LIST_PAGE_SIZE, deriveDeckListData, filterDeckList, mapDeck, mergeDeckRows, normalizeSortKey } from '../lib/deck-list'
+export type { DeckSortKey } from '../lib/deck-list'
+
 /**
  * The deck list's filters held in the address (the query parameters), what the server is asked for from them, and the
  * identity picker's data. `debouncedSearch` is the search text the list currently loads for.

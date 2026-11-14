@@ -9,6 +9,9 @@ import {
   findCustomSkillSlots, groupEgosBySinner, pickDeployedIdentityIds, resolveDeckKeywords, sortDeckSlots, type EgoSlot, type SinnerEgo,
 } from '../lib/deck-detail-model'
 
+// What the deck detail page reads beside the model (not exported by the entry file: that adds to every route's first JS).
+export { buildSkillExchangeRow, computeDeckAnalysis, slotUptie } from '../lib/deck-detail-model'
+
 type DeckDetailModelInput = {
   deckIdentities: IdentitySlot[] | undefined
   deckEgos: EgoSlot[] | undefined

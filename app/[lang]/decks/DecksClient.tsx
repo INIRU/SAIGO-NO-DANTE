@@ -17,9 +17,10 @@ import { getActiveTerm } from '@/lib/utils/search'
 import DeckListFilters from '@/features/decks/components/DeckListFilters'
 import { BoardResults, BrowseBar } from '@/features/community/components/Browse'
 import type { RowPost } from '@/features/community/components/BoardParts'
-import { DECK_LIST_PAGE_SIZE as PAGE_SIZE, QUERY_OPTIONS, buildDeckSuggestions, deriveDeckListData, filterDeckList, mapDeck, mergeDeckRows, normalizeSortKey, type DeckSortKey as SortKey } from '@/features/decks'
+import { QUERY_OPTIONS } from '@/features/decks'
 import { useDeckCollectionFilter } from '@/features/decks/hooks/useDeckCollectionFilter'
-import { useDeckListFilters } from '@/features/decks/hooks/useDeckListFilters'
+import { buildDeckSuggestions } from '@/features/decks/hooks/useIdentityFilterOptions'
+import { DECK_LIST_PAGE_SIZE as PAGE_SIZE, deriveDeckListData, filterDeckList, mapDeck, mergeDeckRows, normalizeSortKey, useDeckListFilters, type DeckSortKey as SortKey } from '@/features/decks/hooks/useDeckListFilters'
 import { useLocale, useTranslations } from 'next-intl'
 import { showError } from '@/lib/toast'
 import { useRoutePrefetch } from '@/hooks/useRoutePrefetch'
@@ -31,7 +32,6 @@ interface DecksClientProps {
   initialSort?: SortKey
   initialShelf?: InitialShelf
 }
-
 
 export default function DecksClient({
   initialDecks,
@@ -104,7 +104,6 @@ export default function DecksClient({
 
   // ── Search suggestions ──
   const suggestions = useMemo(() => buildDeckSuggestions(inputValue, ALL_KEYWORDS, allIdentities), [inputValue, ALL_KEYWORDS, allIdentities])
-
 
   useEffect(() => { setAcIndex(suggestions.length > 0 ? 0 : -1) }, [suggestions.length])
 
