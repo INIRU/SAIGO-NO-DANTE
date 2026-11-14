@@ -22,6 +22,7 @@ import { isNoteColorSin } from '@/lib/notes/text-style'
 import { GIFT_KEYWORD_COLORS } from '@/lib/constants/gift'
 import { NoteCardView } from './NoteCardBlock'
 import type { NotePreviewComponent } from '@/components/cards/note-preview'
+import './note-blocks.css'
 
 export async function fetchNoteAssets(url: string): Promise<NoteAssetData[]> {
   const r = await fetch(url)

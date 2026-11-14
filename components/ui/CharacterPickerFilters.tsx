@@ -5,6 +5,7 @@ import { useLocale } from 'next-intl'
 import { Search, RotateCcw, SlidersHorizontal } from 'lucide-react'
 import { getSinnerLogoUrl, getEgoGradeBannerUrl } from '@/lib/utils/images'
 import { RARITY_ICON_MAP } from '@/lib/constants/game'
+import './character-picker.css'
 
 export default function CharacterPickerFilters({ query, onQuery, grade, onGrade, grades, count, sinner = '', onSinner, sinners = [], onReset, canReset }: {
   query: string; onQuery: (value: string) => void

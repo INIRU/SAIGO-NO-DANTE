@@ -1,0 +1,78 @@
+/* The character picker window (CharacterPickerFilters, NoteCharacterPicker, SupportSlotPicker, the deck pickers) and the .note-picker frame it shares with the note pickers. */
+.note-picker{display:flex;flex-direction:column;max-height:82dvh;overflow:hidden;font-family:var(--font-body);padding:1.25rem}
+.note-picker-header{display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:1rem}
+.note-picker-header h2{font-size:1.25rem;font-weight:650;color:var(--text-primary)}
+.note-picker-header button{display:grid;place-items:center;min-width:2.5rem;min-height:2.5rem;border-radius:.4rem;color:var(--text-secondary)}
+.note-picker-results{overflow:auto;min-height:12rem;overscroll-behavior:contain;scrollbar-gutter:stable;padding:.25rem}
+.note-picker-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(6.5rem,1fr));gap:1rem .5rem;align-items:start}
+.note-picker-item{text-align:center;align-self:start;padding:.5rem;border-radius:.5rem;min-width:0;transition:background .15s}
+.note-picker-item:hover,.note-picker-header button:hover{background:var(--bg-elevated)}
+.note-picker-item small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.75rem;color:var(--text-secondary)}
+.note-picker :focus-visible{outline:2px solid var(--gold-light);outline-offset:3px}
+@media(max-width:40rem){
+  .note-picker-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+.note-picker-empty{padding:3rem 1rem;text-align:center;color:var(--text-muted);font-size:.875rem;line-height:1.6}
+/* Character catalog pickers: compact tools beside an independent artwork shelf. */
+.character-picker-filters{padding:.75rem 1rem;border-bottom:1px solid var(--border);background:var(--bg-deep);flex-shrink:0}
+.character-picker-search{display:flex;align-items:center;gap:.5rem;padding:.45rem .65rem;border:1px solid var(--border);border-radius:.35rem;color:var(--text-secondary);background:var(--bg-card)}
+.character-picker-search:focus-within{border-color:var(--gold)}
+.character-picker-search input{width:100%;min-width:0;background:none;outline:none;color:var(--text-primary);font-size:.875rem;min-height:1.5rem}
+.character-picker-grades{display:flex;flex-wrap:wrap;gap:.25rem;margin-top:.6rem}
+.character-picker-sinners{display:grid;gap:.2rem;margin-top:.75rem}
+.character-picker-sinners button,.character-picker-grades button{display:inline-flex;align-items:center;justify-content:center;gap:.45rem;min-height:2.25rem;padding:.3rem .55rem;border:1px solid transparent;border-radius:.3rem;font-size:.8125rem;color:var(--text-secondary);background:transparent}
+.character-picker-sinners button{justify-content:flex-start}
+.character-picker-sinners img{width:1.35rem;height:1.35rem;object-fit:contain}
+.character-picker-grades img{height:1.25rem;width:auto;object-fit:contain}
+.character-picker-grades .character-picker-ego-grade{width:2.5rem;height:1.15rem}
+.character-picker-sinners button[aria-pressed=true],.character-picker-grades button[aria-pressed=true]{color:var(--gold-light);border-color:var(--border);background:rgba(200,144,10,.12)}
+.character-picker-result-count{display:flex;align-items:center;justify-content:space-between;gap:.75rem;margin-top:.5rem;font-size:.75rem;color:var(--text-secondary)}
+.character-picker-result-count button{display:flex;gap:.3rem;align-items:center;min-height:2rem;color:var(--gold-light)}
+.character-picker-result-count button:disabled{opacity:.35}
+.character-picker-filters button:focus-visible{outline:2px solid var(--gold-light);outline-offset:2px}
+.character-picker-filter-toggle{display:none}
+.note-character-picker{padding:0;height:82dvh;max-height:50rem;background:var(--bg-deep)}
+.note-character-picker .note-picker-header{padding:.75rem 1rem;margin:0;border-bottom:1px solid var(--border);flex-shrink:0}
+.note-character-picker .note-picker-header h2{font-family:var(--font-heading);font-size:1.25rem}
+.character-picker-layout{display:grid;overflow:hidden;grid-template-columns:11rem minmax(0,1fr);min-height:0;flex:1}
+.character-picker-layout>.character-picker-filters{padding:.75rem;border-right:1px solid var(--border);border-bottom:0;overflow-y: auto; scrollbar-gutter: stable}
+.note-character-picker .note-picker-results{padding:1rem;min-height:0}
+.note-character-picker section+section{margin-top:1.5rem}
+.note-character-picker section h3{display:flex;align-items:center;gap:.5rem;margin-bottom:.75rem;font-family:var(--font-heading);font-size:1rem;color:var(--text-primary)}
+.note-character-picker section h3 img{width:1.5rem;height:1.5rem;object-fit:contain}
+.note-character-picker section h3 small{font-family:var(--font-body);font-size:.75rem;color:var(--text-secondary)}
+.note-character-picker .note-picker-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:.8rem;align-items:stretch}
+.note-character-picker .note-picker-item{padding:0;text-align:left;overflow:hidden;border:1px solid var(--border);border-radius:.35rem;background:var(--bg-card);align-self:stretch}
+.note-character-picker .note-picker-item:hover{border-color:var(--gold)}
+/* Identities show in the game formation card (IdentityFrameCard), E.G.O in the game E.G.O card: no box around either. */
+.note-character-picker--identity .note-picker-grid{grid-template-columns:repeat(auto-fill,minmax(7.25rem,1fr))}
+.note-character-picker--identity .note-picker-item,.note-character-picker--ego .note-picker-item{border:0;background:transparent;overflow:visible;border-radius:0}
+@media(max-width:48rem){
+  .note-character-picker--ego .note-picker-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+@media(max-width:40rem){
+  .character-picker-filters{padding:.5rem .75rem}
+  .character-picker-search input{font-size:1rem}
+  .character-picker-filter-toggle{display:inline-flex;align-items:center;gap:.4rem;min-height:2rem;font-size:.75rem;color:var(--text-secondary)}
+  .character-picker-sinners{display:none;grid-template-columns:repeat(3,minmax(0,1fr));margin-top:.3rem}
+  .character-picker-sinners[data-expanded=true]{display:grid}
+  .character-picker-sinners button{padding:.2rem;min-height:2.5rem;font-size:.7rem;gap:.2rem}
+  .character-picker-sinners img{width:1.15rem;height:1.15rem}
+  .character-picker-grades button{min-height:2.5rem}
+  .character-picker-result-count{display:inline-flex;margin-top:0;margin-left:.5rem}
+  .character-picker-layout{display:flex;flex-direction:column}
+  .character-picker-layout>.character-picker-filters{border-right:0;border-bottom:1px solid var(--border);padding:.5rem .75rem;max-height:45dvh}
+  .note-character-picker .note-picker-results{padding:.75rem;flex:1}
+  .note-character-picker--identity .note-picker-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:1rem .5rem}
+}
+.character-picker-ego-card{transition:transform .16s ease,filter .16s ease}
+.character-picker-ego-card:focus-visible{outline:2px solid var(--gold-light);outline-offset:.2rem}
+@media(hover:hover) and (pointer:fine){
+  .character-picker-ego-card:hover{transform:translateY(-.125rem) scale(1.02);filter:drop-shadow(0 .15rem .4rem rgba(200,144,10,.25)) brightness(1.07)}
+}
+@media(prefers-reduced-motion:reduce){
+  .character-picker-ego-card{transition:none}
+  .character-picker-ego-card:hover{transform:none}
+}
+.character-picker-search input{height:1.5rem;min-height:0;margin:0;padding:0!important;border:0;box-shadow:none;line-height:1.5rem}
+.character-picker-search{min-height:2.25rem;padding:.35rem .6rem;font-size:.875rem}

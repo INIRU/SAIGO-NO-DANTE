@@ -20,6 +20,7 @@ import { getCompactNameStyle } from '@/lib/planner/compact-name-style'
 import { useLocale, useTranslations } from 'next-intl'
 import { useSinnerName } from '@/features/decks/hooks/useSinnerName'
 import { PLANNER_EGO_GRADE_ORDER, SUGGESTED_LIMIT, type PlannerDeckEgo, type PlannerDeckIdentity, type PlannerDeckSinner, type PlannerEgoBoardSlot } from '@/features/decks/lib/deck-selection'
+import '@/components/ui/character-picker.css'
 
 export function PlannerEgoBoard({
   sinners,
