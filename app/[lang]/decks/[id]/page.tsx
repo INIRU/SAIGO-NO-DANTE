@@ -16,7 +16,7 @@ import { isAwakenedUptie, trimDeckIdentity } from '@/features/decks'
 import { withPostAuthors, loadSeriesOfPost } from '@/features/community/server'
 import { EMPTY_RECOMMENDATIONS, fetchDeckRecommendations, fetchEgoAttackSkillsByEgoId, getSelectedEgoIds, type CurrentDeckForRecommendations, type EgoAttackSkill } from '@/features/decks/server'
 import type { SeriesView } from '@/features/community'
-import type { IdentitySlot, IdentityDetail } from '@/features/decks/components/DeckIdentityCard'
+import type { IdentitySlot, IdentityDetail } from '@/lib/decks/identity-types'
 import CoVisitedLane from '@/features/community/components/CoVisitedLane'
 import { RecommendationLaneSkeleton } from '@/features/decks/components/RecommendationSkeleton'
 

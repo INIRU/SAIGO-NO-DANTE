@@ -1,7 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
-import type { DeckSummary } from '@/features/decks/components/DeckCard'
-import type { PlanSummary } from '@/features/planner/components/PlanCard'
-import { withPostAuthors } from '@/features/community/server/post-authors'
+import type { DeckSummary } from '@/components/cards/DeckCard'
+import type { PlanSummary } from '@/components/cards/PlanCard'
+import { withPostAuthors } from '@/lib/server/post-authors'
 import { stripPlanForList } from '@/lib/planner/strip-plan-for-list'
 import { orderSeriesItems, type SeriesItem } from '@/features/community/lib/series-order'
 

@@ -6,10 +6,6 @@ import { useLocale } from 'next-intl'
 import type { JSONContent } from '@tiptap/core'
 import { assetRefs, visibleNode, type AssetKind } from '@/lib/notes/blocks'
 import { assetName, type NoteAssetData } from '@/features/notes/lib/assets'
-import GiftArtwork from '@/components/ui/GiftArtwork'
-import IdentityCard from '@/features/catalog/components/IdentityCard'
-import IdentitySkillFrameCard from '@/features/catalog/components/IdentitySkillFrameCard'
-import EgoDisplayCard from '@/features/catalog/components/EgoDisplayCard'
 import { KeywordWithTooltip, useKeywords } from '@/components/providers/KeywordProvider'
 import { resolveKeywordTextColor } from '@/lib/keywords/text-color'
 import { getLocalizedKeywordName, type SupportedLang } from '@/lib/i18n'
@@ -19,11 +15,13 @@ import QuietImage from '@/components/ui/QuietImage'
 import { Link } from '@/lib/i18n/navigation'
 import NoteLightboxImage from './NoteLightboxImage'
 import NotePreviewHost from './NotePreviewCard'
+import { NoteAssetArtwork } from './NoteAssetArtwork'
 import NoteTocLayout, { NoteHeadingLink } from './NoteToc'
 import { NOTE_TOC_MIN, collectHeadings } from '@/features/notes/lib/toc'
 import { isNoteColorSin } from '@/lib/notes/text-style'
 import { GIFT_KEYWORD_COLORS } from '@/lib/constants/gift'
 import { NoteCardView } from './NoteCardBlock'
+import type { NotePreviewComponent } from '@/components/cards/note-preview'
 
 export async function fetchNoteAssets(url: string): Promise<NoteAssetData[]> {
   const r = await fetch(url)
@@ -79,19 +77,6 @@ export function NoteMentionLabel({kind,id,name,linked=true}:{kind:MentionKind;id
     ? <NotePreviewHost asset={asset} href={href}><Link href={href} className="note-mention">{body}</Link></NotePreviewHost>
     : <span className="note-mention">{body}</span>
 }
-export function NoteAssetArtwork({asset, compact=false}:{asset:NoteAssetData; compact?:boolean}) {
-  const lang=useLocale(), name=assetName(asset,lang)
-  if (asset.kind === 'gift') return <GiftArtwork gift={{...asset,keyword:asset.keyword ?? undefined}} displayName={name} sizes="96px" />
-  if (asset.kind === 'identity' && asset.identity) return <IdentityCard identity={{...asset.identity,name_kr:name}} board compact disableHoverEffects />
-  // The E.G.O card is laid out in fixed rem (9.5rem); on phones it shrinks to its quarter-row slot.
-  if (asset.kind === 'ego' && asset.ego && asset.sinnerId) return <EgoDisplayCard ego={asset.ego} sinnerId={asset.sinnerId} name={name} lang={lang === 'en' || lang === 'ja' ? lang : 'ko'} displayOnly className="max-sm:[zoom:0.7]"/>
-  if (asset.kind === 'skill' && asset.skill) return <IdentitySkillFrameCard skill={compact ? {...asset.skill,description:null,description_en:null,description_jp:null} : asset.skill} skills={asset.skills ?? [asset.skill]} identity={asset.identity} lang={lang} size={compact?'2.5rem':'3.5rem'} />
-  return <span className={`note-asset-art note-asset-art--${asset.kind}`}>
-    {/* Game URLs come only from the public, allowlisted asset endpoint. */}
-    {asset.image_url && <img src={asset.image_url} alt={name} loading="lazy" decoding="async" />}
-    {(asset.kind === 'sin' || asset.kind === 'keyword') && <span>{name}</span>}
-  </span>
-}
 export function NoteAssetView({kind,id}:{kind:AssetKind;id:string}) {
   const lang=useLocale(), {data,loading,error,retry}=useContext(AssetContext), onGiftClick=useContext(NoteGiftClickContext)
   const asset=data.get(`${kind}:${id}`)
@@ -117,7 +102,7 @@ function NoteAccordionView({title,children,open,onToggle}:{title:ReactNode;child
     <div id={id} className="note-accordion-panel" inert={!open}><div><div className="note-accordion-body">{children}</div></div></div>
   </section>
 }
-export default function NoteBlockViewer({doc,renderText,anchors=false}:{doc:JSONContent;renderText:(text:string)=>ReactNode;/** Give the headings ids and a copy-link button, and a table of contents from three headings (detail pages, previews). */anchors?:boolean}) {
+export default function NoteBlockViewer({doc,renderText,NotePreview,anchors=false}:{doc:JSONContent;renderText:(text:string)=>ReactNode;/** Draws the one-line note on a deck or plan card block. The caller passes it: the preview draws notes, and so does this file. */NotePreview?:NotePreviewComponent;/** Give the headings ids and a copy-link button, and a table of contents from three headings (detail pages, previews). */anchors?:boolean}) {
   const lang=useLocale(), tr=(ko:string,ja:string,en:string)=>lang==='ja'?ja:lang==='en'?en:ko
   const headings=useMemo(()=>anchors?collectHeadings(doc):[],[anchors,doc])
   // Open or closed lives here (not in each accordion) so the "close all" button and the accordions share it.
@@ -155,7 +140,7 @@ export default function NoteBlockViewer({doc,renderText,anchors=false}:{doc:JSON
         return accordions.length>1 && n===accordions[0] ? <Fragment key={key}><button type="button" className="note-accordion-all" onClick={()=>setClosed(allOpen?new Set(accordions.map((_,index)=>index)):new Set())}>{allOpen?tr('모두 접기','すべて閉じる','Collapse all'):tr('모두 펼치기','すべて開く','Expand all')}</button>{view}</Fragment> : view
       }
       case 'noteCallout': { const variant = n.attrs?.variant === 'warning' ? 'warning' : 'tip'; return <aside key={key} className="note-callout" data-variant={variant}><div className="note-callout-head"><strong>{variant === 'warning' ? tr('주의', '注意', 'Warning') : tr('팁', 'ヒント', 'Tip')}</strong></div><div className="note-callout-body">{children}</div></aside> }
-      case 'noteCard': return <NoteCardView key={key} kind={n.attrs!.kind} id={n.attrs!.id}/>
+      case 'noteCard': return <NoteCardView key={key} kind={n.attrs!.kind} id={n.attrs!.id} NotePreview={NotePreview}/>
       case 'table': return <div key={key} className="note-block-table"><table><tbody>{children}</tbody></table></div>
       case 'tableRow': return <tr key={key}>{children}</tr>
       case 'tableCell': return <td key={key} colSpan={n.attrs?.colspan} rowSpan={n.attrs?.rowspan}>{children}</td>

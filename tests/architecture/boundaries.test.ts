@@ -31,6 +31,13 @@ describe('feature boundaries', () => {
     expect(out).toMatchObject([{ rule: 'shared-imports-feature' }])
   })
 
+  it('flags every folder under components/, not only ui and layout', () => {
+    for (const folder of ['providers', 'brand', 'cards', 'navigation', 'home', 'board']) {
+      expect(check(`components/${folder}/A.tsx`, "import A from '@/features/account/components/A'")).toMatchObject([{ rule: 'shared-imports-feature' }])
+    }
+    expect(check('components/cards/A.tsx', "import { x } from '@/lib/x'\nimport B from '@/components/ui/B'")).toEqual([])
+  })
+
   it('reads type imports, re-exports and dynamic imports', () => {
     const source = [
       "import type { T } from '@/features/decks/types'",

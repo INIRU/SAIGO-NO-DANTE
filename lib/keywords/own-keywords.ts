@@ -1,4 +1,4 @@
-import type { GameTextRefNames } from '@/lib/db/game-text-refs'
+import type { GameTextRefNames } from '@/lib/game-text/ref-names'
 import { collectKeywordIds, mayBeRawGameText, parseGameText } from '@/lib/game-text/rich-text'
 
 /**

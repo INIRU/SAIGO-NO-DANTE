@@ -9,7 +9,7 @@ Next.js 16 App Router + React 19 + TypeScript. 공개 페이지는 app/[lang]에
 | 영역 | 역할 |
 |---|---|
 | app/[lang] | 서버 조회, 메타데이터, 페이지 조합 |
-| components | 기능별 UI, 재사용 가능한 ui/ primitive |
+| components | 여러 기능이 쓰는 UI. ui/ primitive, cards/ 여러 기능이 같이 쓰는 카드(기능을 가져오지 않는다) |
 | hooks, hooks, lib/stores | 브라우저 상태와 생명주기 |
 | lib/identity, features/decks/lib, lib/decks, features/planner/lib, lib/planner, features/tools/lib/random | 독립 검증 가능한 도메인 로직 |
 | app/api, lib/schemas | 요청·인증·입력 검증 |

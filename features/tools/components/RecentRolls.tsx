@@ -3,7 +3,7 @@
 import { useMemo } from 'react'
 import { Trash2 } from 'lucide-react'
 import { useLocale, useTranslations } from 'next-intl'
-import FormationThumbnail from '@/features/decks/components/FormationThumbnail'
+import FormationThumbnail from '@/components/cards/FormationThumbnail'
 import { refOf } from '@/features/tools/lib/random/roll'
 import type { RecentRoll } from '@/features/tools/lib/random/history'
 import type { Identity, Sinner } from '@/lib/types'

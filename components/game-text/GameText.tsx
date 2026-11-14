@@ -11,7 +11,7 @@ import { resolveKeywordIconUrl, type KeywordInfo } from '@/lib/keywords/catalog'
 import { findPlainKeywords, KEYWORD_TEXT_KEYWORDS, PLAIN_KEYWORDS, plainKeywordMatcher, type PlainKeywordHit, type PlainKeywordMatcher } from '@/lib/keywords/plain-keywords'
 import { KEYWORD_DEFAULT_COLOR, resolveKeywordTextColor } from '@/lib/keywords/text-color'
 import { useGameTextRefs } from '@/hooks/useGameTextRefs'
-import type { GameTextRefName } from '@/lib/db/game-text-refs'
+import type { GameTextRefName } from '@/lib/game-text/ref-names'
 
 /** TextMeshPro's default font size in the game's skill text: `<size=18>` is half of it. */
 const FONT_BASE = 36

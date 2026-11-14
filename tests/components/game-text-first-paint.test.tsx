@@ -5,7 +5,7 @@ import { KeywordProvider, useFormatSkillDesc, type KeywordInfo } from '@/compone
 import { GameTextRefsProvider } from '@/components/providers/GameTextRefsProvider'
 import { compactGameTextRefNames } from '@/lib/game-text/ref-names-wire'
 import { usePlainGameText } from '@/hooks/usePlainGameText'
-import type { GameTextRefNames } from '@/lib/db/game-text-refs'
+import type { GameTextRefNames } from '@/lib/game-text/ref-names'
 
 const REFS: GameTextRefNames = {
   Combustion: { k: 'keyword', n: '화상', kw: '화상' },

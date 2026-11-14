@@ -3,7 +3,7 @@
 import { local } from '@/features/story/hooks/useTurnedTouchScroll'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { StoryNode, StorySubchapter } from '@/lib/story-map'
-import { STRIDE, VIEWPORT, clampCamera, visibleHeight, type Cam } from './story-camera'
+import { STRIDE, VIEWPORT, clampCamera, visibleHeight, type MapCam as Cam } from '@/features/story'
 import StoryFx, { type FxView } from './StoryFx'
 
 // Sizes in map pixels, measured on the game's chapter 0 map (stageIconSlotScale 0.5, 786 map px on screen).

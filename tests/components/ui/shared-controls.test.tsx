@@ -104,7 +104,7 @@ describe('one Switch everywhere', () => {
 
 describe('shared DownloadModal', () => {
   it('is a BaseModal with shared Buttons, not a hand-built overlay', () => {
-    const modal = source('features/account/components/DownloadModal.tsx')
+    const modal = source('features/tools/components/DownloadModal.tsx')
     expect(modal).toContain("from '@/components/ui/BaseModal'")
     expect(modal).toContain("from '@/components/ui/Button'")
     expect(modal).not.toContain('fixed inset-0')

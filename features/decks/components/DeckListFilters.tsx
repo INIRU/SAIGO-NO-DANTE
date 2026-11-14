@@ -13,7 +13,7 @@ import {
   contentTypeMessageKey,
   localizeDeckKeyword,
   type SearchSuggestion,
-} from '@/features/decks/lib/decks-types'
+} from '@/lib/decks/decks-types'
 import type { DeckFilterIdentity, DeckFilterSinner } from './DeckIdentityFilterModal'
 import FormationCountFilter from './FormationCountFilter'
 import InfoScoreLabel from './InfoScoreLabel'

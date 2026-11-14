@@ -5,8 +5,8 @@ import { useTranslations } from 'next-intl'
 import AttackTypeIcon from '@/components/ui/AttackTypeIcon'
 import { SIN_COLORS, SIN_ORDER, getSinIconUrl } from '@/lib/constants/sin'
 import type { SinType } from '@/lib/types'
-import { ATTACK_TYPES, DEFENSE_TYPES, type AttackType, type DeckResources } from '@/features/decks/lib/deck-analysis'
-import KeywordChart from '@/features/planner/components/KeywordChart'
+import { ATTACK_TYPES, DEFENSE_TYPES, type AttackType, type DeckResources } from '@/lib/decks/deck-analysis'
+import KeywordChart from '@/components/ui/KeywordChart'
 
 const ATTACK_COLORS: Record<AttackType, string> = { slash: '#cc4444', pierce: '#dd8833', blunt: '#cc8822' }
 

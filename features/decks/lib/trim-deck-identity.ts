@@ -1,4 +1,4 @@
-import { rowsAtUptie, topUptieRows } from '@/features/decks/lib/deck-identity-uptie'
+import { rowsAtUptie, topUptieRows } from '@/lib/decks/deck-identity-uptie'
 
 type Row = { uptie_level?: number | null; description?: string | null; description_en?: string | null; description_jp?: string | null }
 

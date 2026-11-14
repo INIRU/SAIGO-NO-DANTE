@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import type { PlanSummary } from '@/features/planner/components/PlanCard'
+import type { PlanSummary } from '@/components/cards/PlanCard'
 import { showError } from '@/lib/toast'
 
 function mergePlanRows(existing: PlanSummary[], incoming: PlanSummary[]) {

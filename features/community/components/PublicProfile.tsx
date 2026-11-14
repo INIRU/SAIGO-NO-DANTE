@@ -6,8 +6,8 @@ import { Link } from "@/lib/i18n/navigation";
 import { Layers, Map as MapIcon } from "lucide-react";
 import ProfileRail from "./ProfileRail";
 import AchievementGrid from "./AchievementGrid";
-import DeckCard from "@/features/decks/components/DeckCard";
-import PlanCard from "@/features/planner/components/PlanCard";
+import DeckCard from "@/components/cards/DeckCard";
+import PlanCard from "@/components/cards/PlanCard";
 import Skeleton from "@/components/ui/Skeleton";
 import { getCommunityCopy } from "@/features/community/lib/copy";
 import { achievementProgress } from "@/features/community/lib/achievements";
@@ -16,6 +16,7 @@ import type { CommunityProfile } from "@/features/community/lib/rules";
 import { fetchJson } from "@/lib/utils/http";
 import "@/styles/components/community.css";
 import styles from "@/styles/components/CommunityProfile.module.css";
+import { NoteCardPreview } from '@/features/notes/components/NoteChips'
 
 const fetcher = (url: string) => fetchJson<CommunityProfile>(url);
 
@@ -84,7 +85,7 @@ export default function PublicProfile({ id }: { id: string }) {
             <h2 className={styles.title}>{t.recentDecks}<span className={styles.titleCount}>{data.decks.length}</span></h2>
           </div>
           {data.decks.length ? (
-            <ul className={styles.list}>{data.decks.map((deck) => <li key={deck.id} className={styles.item}><DeckCard deck={deck} /></li>)}</ul>
+            <ul className={styles.list}>{data.decks.map((deck) => <li key={deck.id} className={styles.item}><DeckCard deck={deck} NotePreview={NoteCardPreview} /></li>)}</ul>
           ) : (
             <div className={styles.empty}><Layers aria-hidden="true" /><p>{t.noDecks}</p></div>
           )}
@@ -94,7 +95,7 @@ export default function PublicProfile({ id }: { id: string }) {
             <h2 className={styles.title}>{t.recentPlans}<span className={styles.titleCount}>{data.plans.length}</span></h2>
           </div>
           {data.plans.length ? (
-            <ul className={styles.list}>{data.plans.map((plan) => <li key={plan.id} className={styles.item}><PlanCard plan={plan} /></li>)}</ul>
+            <ul className={styles.list}>{data.plans.map((plan) => <li key={plan.id} className={styles.item}><PlanCard plan={plan} NotePreview={NoteCardPreview} /></li>)}</ul>
           ) : (
             <div className={styles.empty}><MapIcon aria-hidden="true" /><p>{t.noPlans}</p></div>
           )}

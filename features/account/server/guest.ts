@@ -4,7 +4,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import type { createAdminClient } from '@/lib/supabase/admin'
 import { findOrCreateSupabaseUser } from '@/lib/supabase/find-or-create-user'
-import { GUEST_KEY_HEADER, isGuestKey, isGuestPin, isWeakGuestPin } from '@/features/account/lib/guest-key'
+import { GUEST_KEY_HEADER, isGuestKey, isGuestPin, isWeakGuestPin } from '@/lib/guest/key'
 
 type Admin = ReturnType<typeof createAdminClient>
 type GuestPostKind = 'deck' | 'plan'

@@ -15,7 +15,7 @@ vi.mock('@/components/ui/GiftArtwork', () => ({ default: () => <span data-test-a
 // the site's preview card (hover) needs the router; the cells are what these tests read
 vi.mock('@/features/notes/components/NotePreviewCard', () => ({ default: ({ children }: { children: React.ReactNode }) => <>{children}</> }))
 vi.mock('@/components/ui/ImageWithFallback', () => ({ default: () => <span data-test-poster /> }))
-vi.mock('@/features/decks/components/NoteChips', () => ({
+vi.mock('@/features/notes/components/NoteChips', () => ({
   NoteRenderer: ({ text, egoGiftLookup }: { text: string; egoGiftLookup: Record<string, unknown> }) => <span data-note-labels={Object.keys(egoGiftLookup).join(',')}>{text}</span>,
 }))
 

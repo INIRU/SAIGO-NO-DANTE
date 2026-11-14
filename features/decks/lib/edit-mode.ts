@@ -1,4 +1,4 @@
-import { normalizeUptie } from './deck-identity-uptie'
+import { normalizeUptie } from '@/lib/decks/deck-identity-uptie'
 
 type DeckIdentityRow = {
   identity_id: string

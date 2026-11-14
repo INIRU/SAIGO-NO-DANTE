@@ -59,7 +59,7 @@ npm run dev                  # http://localhost:3000
 app/[lang]/        공개 페이지(ko/en/ja): 조회와 화면 조합
 app/api/           API 라우트: 요청·인증·입력 검증
 features/          기능별 코드(컴포넌트, 계산, 서버 조회, 테스트는 tests/ 아래)
-components/        여러 기능이 쓰는 UI (components/ui/ 는 공용 부품)
+components/        여러 기능이 쓰는 UI (ui/ 공용 부품, cards/ 여러 기능이 같이 쓰는 카드)
 lib/               여러 기능이 쓰는 계산, DB 조회(db·supabase), 번역(i18n)
 hooks/             브라우저 상태와 생명주기
 messages/          ko·en·ja 번역

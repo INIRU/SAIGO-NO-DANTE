@@ -4,9 +4,10 @@ import { useState } from 'react'
 import { useLocale } from 'next-intl'
 import { Bookmark, Layers, Plus, Trash2, X } from 'lucide-react'
 import { Link } from '@/lib/i18n/navigation'
-import DeckCard, { type DeckSummary } from '@/features/decks/components/DeckCard'
+import DeckCard, { type DeckSummary } from '@/components/cards/DeckCard'
 import { getCommunityCopy } from '@/features/community'
 import styles from '@/styles/components/CommunityProfile.module.css'
+import { NoteCardPreview } from '@/features/notes/components/NoteChips'
 
 export default function DecksTab({ decks, bookmarkedDecks, onDeleteDeck, onRemoveBookmark }: {
   decks: DeckSummary[]
@@ -39,7 +40,7 @@ export default function DecksTab({ decks, bookmarkedDecks, onDeleteDeck, onRemov
         <ul className={styles.list}>
           {list.map(deck => (
             <li key={deck.id} className={styles.item}>
-              <DeckCard deck={deck} />
+              <DeckCard deck={deck} NotePreview={NoteCardPreview} />
               {subTab === 'saved' ? (
                 <button type="button" className={styles.itemAction} onClick={() => onRemoveBookmark(deck.id)} aria-label={t.removeBookmark} title={t.removeBookmark}><X aria-hidden="true" /></button>
               ) : deletingId === deck.id ? (

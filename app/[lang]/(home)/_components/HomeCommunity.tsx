@@ -3,12 +3,13 @@
 import useSWR from 'swr'
 import { ArrowUpRight } from 'lucide-react'
 import { Link } from '@/lib/i18n/navigation'
-import DeckCard, { type DeckSummary } from '@/features/decks/components/DeckCard'
-import PlanCard, { type PlanSummary } from '@/features/planner/components/PlanCard'
-import { CardSkeleton } from '@/features/community/components/BoardSkeleton'
+import DeckCard, { type DeckSummary } from '@/components/cards/DeckCard'
+import PlanCard, { type PlanSummary } from '@/components/cards/PlanCard'
+import { CardSkeleton } from '@/components/cards/CardSkeleton'
 import { SkeletonLine } from '@/components/ui/Skeleton'
 import { pickShelf, type DiscoveryFeed } from '@/features/community'
 import styles from './HomeStaticSections.module.css'
+import { NoteCardPreview } from '@/features/notes/components/NoteChips'
 
 const CARD_SLOT = ['', '', styles.third]
 
@@ -53,8 +54,8 @@ function Shelf<T extends { id: string | number }>({ kind, id, href, copy, card }
 export default function HomeCommunity({ plans, decks }: { plans: ShelfCopy; decks: ShelfCopy }) {
   return (
     <>
-      <Shelf<PlanSummary> kind="planner" id="plans" href="/planner/community" copy={plans} card={plan => <PlanCard plan={plan} />} />
-      <Shelf<DeckSummary> kind="deck" id="decks" href="/decks" copy={decks} card={deck => <DeckCard deck={deck} />} />
+      <Shelf<PlanSummary> kind="planner" id="plans" href="/planner/community" copy={plans} card={plan => <PlanCard plan={plan} NotePreview={NoteCardPreview} />} />
+      <Shelf<DeckSummary> kind="deck" id="decks" href="/decks" copy={decks} card={deck => <DeckCard deck={deck} NotePreview={NoteCardPreview} />} />
     </>
   )
 }

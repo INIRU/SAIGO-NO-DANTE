@@ -15,7 +15,7 @@ import Dropdown from '@/components/ui/Dropdown'
 const DROPDOWN_BUTTON_STYLE = { minHeight: '2.5rem', background: '#120e09', borderColor: '#2e2417', fontFamily: 'var(--font-body)', fontSize: '0.8125rem' }
 import { Sinner, Identity, EGO, RARITY_ICON_MAP, SIN_COLORS, type SinType, GRADE_COLORS } from '@/lib/data/sinners'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
-import { useOwnedIdentities } from '@/features/catalog/hooks/useOwnedIdentities'
+import { useOwnedIdentities } from '@/hooks/useOwnedIdentities'
 import IdentityCard from '@/features/catalog/components/IdentityCard'
 import { countKeywords, filterSinnerEgos, filterSinnerIdentities, getRepresentativeKeywords, type OwnershipFilter } from '@/features/catalog'
 import { useTranslations, useLocale } from 'next-intl'
@@ -26,7 +26,7 @@ import { useRoutePrefetch } from '@/hooks/useRoutePrefetch'
 import styles from '@/styles/components/SinnerDetail.module.css'
 import SinnerHero from '@/features/catalog/components/SinnerHero'
 import AdSlot from '@/components/ads/AdSlot'
-import EgoDisplayCard from '@/features/catalog/components/EgoDisplayCard'
+import EgoDisplayCard from '@/components/cards/EgoDisplayCard'
 import { useAutocompleteKeys } from '@/hooks/useAutocompleteKeys'
 
 interface Props {
