@@ -115,5 +115,7 @@ export function sendAssistReport(report: AssistReport) {
   try {
     if (navigator.sendBeacon?.('/api/assist/reports', new Blob([body], { type: 'application/json' }))) return
     void fetch('/api/assist/reports', { method: 'POST', headers: { 'content-type': 'application/json' }, body, keepalive: true }).catch(() => {})
-  } catch {}
+  } catch {
+    // Best effort: a report that cannot be sent is dropped.
+  }
 }

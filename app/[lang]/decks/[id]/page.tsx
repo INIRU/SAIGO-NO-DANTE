@@ -17,6 +17,7 @@ import { withPostAuthors, loadSeriesOfPost } from '@/features/community/server'
 import { EMPTY_RECOMMENDATIONS, fetchDeckRecommendations, fetchEgoAttackSkillsByEgoId, getSelectedEgoIds, type CurrentDeckForRecommendations, type EgoAttackSkill } from '@/features/decks/server'
 import type { SeriesView } from '@/features/community'
 import type { IdentitySlot, IdentityDetail } from '@/lib/decks/identity-types'
+import type { DeckDetail } from '@/features/decks/hooks/useDeckDetailData'
 import CoVisitedLane from '@/features/community/components/CoVisitedLane'
 import { RecommendationLaneSkeleton } from '@/features/decks/components/RecommendationSkeleton'
 
@@ -122,7 +123,7 @@ async function getCachedDeckDetailPayload(lang: 'ko' | 'en' | 'ja', id: string) 
 
   // Server-side prefetch: hero portrait strip + basic deck fields for LCP. A failed read throws so that it is not cached
   // as an empty page; the caller catches it outside the cache and the client fetches instead.
-  let initialDeck = null
+  let initialDeck: DeckDetail | null = null
   let initialComments: Comment[] = []
   let initialRecommendations: DeckRecommendationsData = EMPTY_RECOMMENDATIONS
   let initialSeries: SeriesView | null = null
@@ -216,12 +217,13 @@ async function getCachedDeckDetailPayload(lang: 'ko' | 'en' | 'ja', id: string) 
           ego: ego ? { ...ego, ego_skills: egoSkillsByEgoId.get(ego.id) ?? [] } : null,
         }
       }) as EgoSlot[],
-      profiles: author.profiles,
+      // withPostAuthors puts the author object here; the select's join type still says array.
+      profiles: author.profiles as unknown as DeckDetail['profiles'],
       all_sinner_egos: [],
       is_owner: false,
       is_admin: false,
       deck_code: undefined,
-    } as any
+    } as DeckDetail
   }
 
   if (commentsResult.data) {

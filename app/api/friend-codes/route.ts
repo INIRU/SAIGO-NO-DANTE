@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
     if (identity && !isUuid(identity)) return NextResponse.json(fail('invalid_request'), { status: 400 })
     const kind = kindOf(request.nextUrl.searchParams.get('kind'))
     // The list below already leaves expired posts out; the delete waits until the answer is sent.
-    if (kind === 'want') after(async () => { try { await dropExpiredWants(db) } catch (error) { console.error('friend-codes expired wants', error) } })
+    if (kind === 'want') after(async () => { const { error } = await dropExpiredWants(db); if (error) console.error('friend-codes expired wants', error) })
     let query = db.from('friend_posts').select(COLUMNS).eq('kind', kind).order('bumped_at', { ascending: false }).limit(LIST_LIMIT)
     query = kind === 'want' ? query.gte('created_at', new Date(Date.now() - WANT_LIFE_MS).toISOString()) : query.gte('bumped_at', new Date(Date.now() - HIDE_AFTER_MS).toISOString())
     if (identity) query = query.contains('identity_ids', [identity])

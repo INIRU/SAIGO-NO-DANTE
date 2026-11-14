@@ -6,6 +6,7 @@ import { requireActiveUser } from '@/lib/auth'
 import { requireAccount } from '@/lib/auth-account'
 import { findOrCreateSupabaseUser } from '@/lib/supabase/find-or-create-user'
 import { STORAGE_BASE } from '@/lib/constants/game'
+import { isNoRow } from '@/lib/supabase/no-row'
 import { z } from 'zod'
 
 const TAKEN = '이미 사용 중인 닉네임입니다.'
@@ -69,6 +70,13 @@ export async function GET() {
         .select('vote_count')
         .eq('user_id', userId),
     ])
+
+    // A missing profile row (an account made a moment ago) falls back to the session below; any other failed read is not an empty account.
+    const failed = [profileRes, decksRes, bookmarksRes, planCountRes, planVoteSumRes].find(result => result.error && !(result === profileRes && isNoRow(result.error)))
+    if (failed?.error) {
+      console.error('[api/profile]', failed.error)
+      return NextResponse.json({ error: '요청을 처리하지 못했습니다.' }, { status: 500 })
+    }
 
     const bookmarkedDecks = (bookmarksRes.data ?? [])
       .map((b: Record<string, unknown>) => {

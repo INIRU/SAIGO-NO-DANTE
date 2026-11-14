@@ -58,7 +58,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     }
     if (!plan || !(await ownsPost(admin, author, 'plan', plan))) return NextResponse.json({ error: '권한이 없습니다' }, { status: 403 })
 
-    const body = await req.json()
+    const body = await req.json().catch(() => null)
+    if (body === null) return NextResponse.json({ error: '요청 형식이 올바르지 않습니다.' }, { status: 400 })
     const allowed = ['title', 'description', 'difficulty', 'deck', 'egos', 'floor_plan', 'gift_inventory', 'tags']
     const updates: Record<string, unknown> = { updated_at: new Date().toISOString() }
     for (const key of allowed) {

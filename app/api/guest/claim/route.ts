@@ -39,11 +39,18 @@ export async function POST(request: Request) {
     planIds.length ? admin.schema('limbus').from('md_plans').update({ user_id: userId, guest_tag: null }).in('id', planIds).is('user_id', null) : { error: null },
   ])
   if (moved.some(result => result.error)) return NextResponse.json({ error: '옮기지 못했습니다. 다시 시도해주세요.' }, { status: 500 })
-  await admin.schema('limbus').from('guest_authorship').delete().eq('key_hash', keyHash)
-  await Promise.all([
-    ...deckIds.map(id => admin.schema('limbus').rpc('community_record_deck', { p_deck_id: id, p_user_id: userId })),
-    ...planIds.map(id => admin.schema('limbus').rpc('community_record_plan', { p_plan_id: id, p_user_id: userId })),
+  // The posts are the account's by now; a key that is not dropped could still be used, so this is a failure to retry (it moves nothing twice).
+  const { error: dropError } = await admin.schema('limbus').from('guest_authorship').delete().eq('key_hash', keyHash)
+  if (dropError) {
+    console.error('[guest claim] key rows not removed', dropError)
+    return NextResponse.json({ error: '옮기지 못했습니다. 다시 시도해주세요.' }, { status: 500 })
+  }
+  // The key is gone, so a claim cannot be retried: a failed activity record is logged and the claim stands.
+  const recorded = await Promise.all([
+    ...deckIds.map(id => admin.schema('limbus').rpc('community_record_deck', { p_deck_id: id, p_user_id: userId }).then(result => ({ name: 'community_record_deck', id, error: result.error }))),
+    ...planIds.map(id => admin.schema('limbus').rpc('community_record_plan', { p_plan_id: id, p_user_id: userId }).then(result => ({ name: 'community_record_plan', id, error: result.error }))),
   ])
+  for (const { name, id, error } of recorded) if (error) console.error(`[guest claim] ${name} failed`, id, error)
   await writeAuditLog({ actorId: userId, action: 'guest_claim', targetType: 'profile', targetId: userId, details: { decks: deckIds.length, plans: planIds.length } })
   for (const id of deckIds) revalidateTag(CACHE_TAGS.deck(id), 'max')
   for (const id of planIds) revalidateTag(CACHE_TAGS.plan(id), 'max')
