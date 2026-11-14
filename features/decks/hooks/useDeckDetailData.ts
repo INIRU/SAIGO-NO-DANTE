@@ -3,9 +3,9 @@
 import { useEffect, useState, type Dispatch, type SetStateAction } from 'react'
 import { useTranslations } from 'next-intl'
 import { showError } from '@/lib/toast'
-import { mergeViewerFields, normalizeDeckDetail, type DeckDetail } from '../lib/deck-detail-model'
+import { mergeViewerFields, normalizeDeckDetail, type DeckDetail } from '../lib/deck-detail-analysis'
 
-export type { DeckDetail } from '../lib/deck-detail-model'
+export type { DeckDetail } from '../lib/deck-detail-analysis'
 
 const postedDeckViews = new Set<string>()
 
