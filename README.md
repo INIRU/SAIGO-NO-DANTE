@@ -1,20 +1,28 @@
 <div align="center">
 
-# 최애의 관리자 · SAIGO NO DANTE
+<a href="https://saigo-no-dante.com"><img src="public/icons/icon.svg" width="112" height="112" alt="최애의 관리자 로고"></a>
 
-**림버스 컴퍼니 팬 데이터베이스 · 덱 빌더 · 거울 던전 플래너**
+# 최애의 관리자
 
-[saigo-no-dante.com](https://saigo-no-dante.com) · 한국어 / English / 日本語
+**SAIGO NO DANTE**
 
-![Next.js](https://img.shields.io/badge/Next.js-16-000?logo=nextdotjs)
-![React](https://img.shields.io/badge/React-19-149eca?logo=react)
-![TypeScript](https://img.shields.io/badge/TypeScript-7-3178c6?logo=typescript&logoColor=white)
-![Supabase](https://img.shields.io/badge/Supabase-Postgres-3ecf8e?logo=supabase&logoColor=white)
-![Tailwind CSS](https://img.shields.io/badge/Tailwind-4-38bdf8?logo=tailwindcss&logoColor=white)
+림버스 컴퍼니 팬 데이터베이스 · 덱 빌더 · 거울 던전 플래너
+
+<a href="https://saigo-no-dante.com/ko"><b>사이트 열기</b></a> · <a href="https://saigo-no-dante.com/ko">한국어</a> · <a href="https://saigo-no-dante.com/en">English</a> · <a href="https://saigo-no-dante.com/ja">日本語</a>
+
+<br>
+
+![Next.js](https://img.shields.io/badge/Next.js-16-000?style=flat-square&logo=nextdotjs)
+![React](https://img.shields.io/badge/React-19-149eca?style=flat-square&logo=react&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-7-3178c6?style=flat-square&logo=typescript&logoColor=white)
+![Supabase](https://img.shields.io/badge/Supabase-Postgres-3ecf8e?style=flat-square&logo=supabase&logoColor=white)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind-4-38bdf8?style=flat-square&logo=tailwindcss&logoColor=white)
+
+<br>
+
+<a href="https://saigo-no-dante.com/ko"><img src="https://lpgqcleszdlldneiwgep.supabase.co/storage/v1/object/public/limbus-assets/readme/pc-home.webp" width="100%" alt="최애의 관리자 첫 화면"></a>
 
 </div>
-
----
 
 ## 무엇을 하는 사이트인가
 
@@ -26,6 +34,23 @@
 | **커뮤니티** | 덱·플랜 게시판, 시리즈, 친구 코드, 공개 프로필, 댓글 알림 |
 | **도구** | 메타 분석, 보유 현황, 랜덤 편성, 피해량·경험치·광기 계산기, 어시스트 모드(화면 인식) |
 | **운영** | 공지(팝업·Discord), 문의, 관리자 화면, 개발자 API(`/api/v1`) |
+
+## 화면
+
+<table>
+  <tr>
+    <td width="50%"><a href="https://saigo-no-dante.com/ko/sinners"><img src="https://lpgqcleszdlldneiwgep.supabase.co/storage/v1/object/public/limbus-assets/readme/pc-identity.webp" alt="인격 상세"></a><br><sub><b>인격 상세</b> · 스킬, 패시브, 동기화 단계별 수치</sub></td>
+    <td width="50%"><a href="https://saigo-no-dante.com/ko/mirror-dungeon"><img src="https://lpgqcleszdlldneiwgep.supabase.co/storage/v1/object/public/limbus-assets/readme/pc-mirror-dungeon.webp" alt="거울 던전 기프트"></a><br><sub><b>거울 던전</b> · 기프트 475개, 테마팩, 이벤트</sub></td>
+  </tr>
+  <tr>
+    <td width="50%"><a href="https://saigo-no-dante.com/ko/planner/community"><img src="https://lpgqcleszdlldneiwgep.supabase.co/storage/v1/object/public/limbus-assets/readme/pc-plan-detail.webp" alt="거울 던전 공략 플랜"></a><br><sub><b>공략 플랜</b> · 편성, 층별 계획, 기프트 목표</sub></td>
+    <td width="50%"><a href="https://saigo-no-dante.com/ko/motion/skills"><img src="https://lpgqcleszdlldneiwgep.supabase.co/storage/v1/object/public/limbus-assets/readme/pc-motion.webp" alt="스킬 모션"></a><br><sub><b>스킬 모션</b> · 인격·E.G.O 스킬 연출 재생</sub></td>
+  </tr>
+  <tr>
+    <td width="50%"><a href="https://saigo-no-dante.com/ko/meta"><img src="https://lpgqcleszdlldneiwgep.supabase.co/storage/v1/object/public/limbus-assets/readme/pc-meta.webp" alt="인격 메타 분석"></a><br><sub><b>메타 분석</b> · 게시된 덱·플랜의 편성과 키워드 집계</sub></td>
+    <td width="50%" align="center"><img src="https://lpgqcleszdlldneiwgep.supabase.co/storage/v1/object/public/limbus-assets/readme/phone-home.webp" width="40%" alt="휴대폰 첫 화면">&nbsp;&nbsp;<img src="https://lpgqcleszdlldneiwgep.supabase.co/storage/v1/object/public/limbus-assets/readme/phone-identity.webp" width="40%" alt="휴대폰 인격 상세"><br><sub><b>휴대폰</b> · 같은 화면을 좁은 폭에 맞춰</sub></td>
+  </tr>
+</table>
 
 ## 기술 스택
 
