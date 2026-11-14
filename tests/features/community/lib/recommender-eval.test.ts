@@ -4,7 +4,7 @@ import type { EvalFormation, Snapshot } from '@/scripts/recommender/load-snapsho
 import { egoQueries, giftQueries, identityQueries, stabilityQueries, themeQueries } from '@/scripts/recommender/queries'
 
 describe('evaluation metrics', () => {
-  it('REQ-META-030 counts hit@k, MRR and NDCG from the rank of the hidden item, and a missing item as a miss', () => {
+  it('counts hit@k, MRR and NDCG from the rank of the hidden item, and a missing item as a miss', () => {
     const ranks = [1, 2, 4, 9, rankOf(['a'], 'zzz')]
     const summary = summarize(ranks, [true, true, true, true, false])
     expect(summary.n).toBe(5)
@@ -16,7 +16,7 @@ describe('evaluation metrics', () => {
     expect(summary.coverage).toBeCloseTo(4 / 5)
   })
 
-  it('REQ-META-030 scores list stability by Jaccard and rank-biased overlap, a swap at the top costing more than one at the bottom', () => {
+  it('scores list stability by Jaccard and rank-biased overlap, a swap at the top costing more than one at the bottom', () => {
     const list = ['a', 'b', 'c', 'd', 'e', 'f']
     expect(jaccard(list, list)).toBe(1)
     expect(jaccard(list, ['x', 'y'])).toBe(0)
@@ -57,7 +57,7 @@ const snapshot: Snapshot = {
 }
 
 describe('leave-one-out queries', () => {
-  it('REQ-META-031 hides one identity per query, ranks only that sinner\'s identities released by then, and trains without the formation', () => {
+  it('hides one identity per query, ranks only that sinner\'s identities released by then, and trains without the formation', () => {
     const queries = identityQueries(snapshot, 'formation', 'full')
     const query = queries.find(q => q.f.key === 'f1' && q.held === 'a1')!
     expect(query.context).toEqual(['b1', 'c1'])
@@ -67,7 +67,7 @@ describe('leave-one-out queries', () => {
     expect(queries).toHaveLength(3 + 3 + 2)
   })
 
-  it('REQ-META-031 can leave out every formation of the author, so a user\'s own near-copies do not help', () => {
+  it('can leave out every formation of the author, so a user\'s own near-copies do not help', () => {
     const query = identityQueries(snapshot, 'author', 'full').find(q => q.f.key === 'f1' && q.held === 'a1')!
     expect(query.train.map(f => f.key)).toEqual(['f3'])
   })
@@ -78,7 +78,7 @@ describe('leave-one-out queries', () => {
     formations: [formation('w', 'u1', ['a1', 'b1', 'c1', 'd1'])],
   }
 
-  it('REQ-META-031 shrinks the known context for the half, first-picks and empty-board regimes', () => {
+  it('shrinks the known context for the half, first-picks and empty-board regimes', () => {
     const sizes = (regime: 'full' | 'half' | 'three' | 'one' | 'zero') => [...new Set(identityQueries(wide, 'formation', regime).map(q => q.context.length))]
     expect(sizes('full')).toEqual([3])
     expect(sizes('half')).toEqual([2])
@@ -90,13 +90,13 @@ describe('leave-one-out queries', () => {
     expect(identityQueries({ ...wide, formations: [formation('solo', 'u1', ['a1'])] }, 'formation', 'one')).toHaveLength(0)
   })
 
-  it('REQ-META-031 grows the context one identity at a time for the stability sequences', () => {
+  it('grows the context one identity at a time for the stability sequences', () => {
     const sequences = stabilityQueries(wide, 'formation')
     expect(sequences).toHaveLength(4)
     expect(sequences[0].map(q => q.context.length)).toEqual([2, 3])
   })
 
-  it('REQ-META-031 hides a non-ZAYIN E.G.O and offers the sinner\'s E.G.O whose grade slot is open', () => {
+  it('hides a non-ZAYIN E.G.O and offers the sinner\'s E.G.O whose grade slot is open', () => {
     const queries = egoQueries(snapshot, 'formation')
     expect(queries.map(q => q.held).sort()).toEqual(['e-h', 'e-t'])
     const hidden = queries.find(q => q.held === 'e-h')!
@@ -105,7 +105,7 @@ describe('leave-one-out queries', () => {
     expect(hidden.identity).toBe('a1')
   })
 
-  it('REQ-META-031 offers a floor\'s pack among the packs that floor can show and the plan has not used elsewhere', () => {
+  it('offers a floor\'s pack among the packs that floor can show and the plan has not used elsewhere', () => {
     const queries = themeQueries(snapshot, 'formation')
     const first = queries.find(q => q.floor === 1)!
     expect(first.held).toBe('10')

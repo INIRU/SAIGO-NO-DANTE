@@ -12,7 +12,7 @@ const promiseAllAround = (source: string, marker: string) => {
 }
 
 describe('server pages fetch independent data together', () => {
-  it('REQ-SHARED-090 a deck detail reads its series, recommendations, E.G.O skills and author together once the deck is in', () => {
+  it('a deck detail reads its series, recommendations, E.G.O skills and author together once the deck is in', () => {
     const page = read('app/[lang]/decks/[id]/page.tsx')
     const all = promiseAllAround(page, 'fetchDeckRecommendations(supabase, lang')
     for (const call of ['loadSeriesOfPost(', 'fetchDeckRecommendations(', 'fetchEgoAttackSkillsByEgoId(', 'withPostAuthors(']) {
@@ -22,7 +22,7 @@ describe('server pages fetch independent data together', () => {
     expect(all).toMatch(/loadSeriesOfPost\([^)]*\)\.catch\(\(\) => null\)/)
   })
 
-  it('REQ-SHARED-090 a deck editor reads the deck and the builder data while it checks the sign-in', () => {
+  it('a deck editor reads the deck and the builder data while it checks the sign-in', () => {
     const page = read('app/[lang]/decks/[id]/edit/page.tsx')
     const all = promiseAllAround(page, 'checkSignIn(),')
     for (const call of ['checkSignIn()', 'loadDeck()', 'fetchDeckBuilderData(lang)']) expect(all, call).toContain(call)

@@ -28,25 +28,25 @@ function portrait(gacksung: boolean, art: IdentitySpine | null, who = identity) 
 }
 
 describe('identity portrait animated illustration', () => {
-  it('REQ-CATALOG-027 marks the uptie illustration tab as animated when the identity has a full illustration skeleton', () => {
+  it('marks the uptie illustration tab as animated when the identity has a full illustration skeleton', () => {
     for (const gacksung of [false, true]) {
       expect(portrait(gacksung, illust)).toMatch(/aria-label="identity\.portrait\.animated"[^]*identity\.portrait\.uptieIllustration<\/button>/)
     }
   })
 
-  it('REQ-CATALOG-027 leaves the tab of an identity without a skeleton unmarked', () => {
+  it('leaves the tab of an identity without a skeleton unmarked', () => {
     expect(portrait(true, null)).not.toContain('identity.portrait.animated')
   })
 })
 
 describe('identity portrait full illustration button', () => {
-  it('REQ-CATALOG-028 always offers the full illustration under the card', () => {
+  it('always offers the full illustration under the card', () => {
     const html = portrait(false, null, pictured)
     expect(html).toMatch(/<button[^>]*>(?:<svg[^]*?<\/svg>)?identity\.portrait\.viewFull<\/button>/)
     expect(html).not.toContain('artTip')
   })
 
-  it('REQ-CATALOG-028 offers nothing for an identity without an illustration', () => {
+  it('offers nothing for an identity without an illustration', () => {
     expect(portrait(false, null)).not.toContain('identity.portrait.viewFull')
   })
 })

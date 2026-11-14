@@ -7,7 +7,7 @@ import { isAuthorOf, isBlocked } from '@/features/friends/server'
 import { isUuid } from '@/lib/utils/uuid'
 
 
-/** A viewer asks the author of an 'approval' post for its code: one request per viewer, pending until the author answers (REQ-COMMUNITY-028). */
+/** A viewer asks the author of an 'approval' post for its code: one request per viewer, pending until the author answers. */
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params

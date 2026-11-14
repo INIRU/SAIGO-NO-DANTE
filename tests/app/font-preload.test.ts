@@ -34,13 +34,13 @@ function ksX1001Syllables() {
 const pretendard = fonts('app/pretendard.ts')
 const hangul = pretendard.filter(f => /^--font-pretendard-hangul-\d+$/.test(f.variable ?? ''))
 
-describe('REQ-SHARED-069 fonts are fetched by the pieces a page uses', () => {
-  it('REQ-SHARED-069 preloads only the Latin piece, the first Hangul piece, KOTRA and Bebas', () => {
+describe('fonts are fetched by the pieces a page uses', () => {
+  it('preloads only the Latin piece, the first Hangul piece, KOTRA and Bebas', () => {
     const preloaded = [...pretendard, ...fonts('app/fonts.ts')].filter(f => f.preload).map(f => f.variable).sort()
     expect(preloaded).toEqual(['--font-bebas-kai', '--font-kotra-bold', '--font-pretendard-hangul-1', '--font-pretendard-latin'])
   })
 
-  it('REQ-SHARED-069 splits the 2,350 common syllables into non-overlapping pieces, the first one small', () => {
+  it('splits the 2,350 common syllables into non-overlapping pieces, the first one small', () => {
     expect(hangul.length).toBeGreaterThanOrEqual(4)
     const seen = new Set<number>()
     for (const piece of hangul) for (const c of codes(piece.range!)) {
@@ -52,13 +52,13 @@ describe('REQ-SHARED-069 fonts are fetched by the pieces a page uses', () => {
     expect(first).toBeLessThan(120 * 1024)
   })
 
-  it('REQ-SHARED-069 puts every piece in the Pretendard family, the most frequent first', () => {
+  it('puts every piece in the Pretendard family, the most frequent first', () => {
     const family = read('app/globals.css').match(/--font-pretendard: ([^;]+);/)![1]
     const order = family.split(',').map(s => s.trim().match(/--font-[\w-]+/)?.[0])
     expect(order).toEqual(['--font-pretendard-latin', ...hangul.map(f => f.variable), '--font-pretendard-symbols', '--font-pretendard-ext'])
   })
 
-  it('REQ-SHARED-069 lets no installed Korean font or S-Core Dream draw body syllables before the Hangul pieces', () => {
+  it('lets no installed Korean font or S-Core Dream draw body syllables before the Hangul pieces', () => {
     // A piece's `fallback` list is part of its family: a system Hangul font there wins over every later piece.
     for (const piece of pretendard.filter(f => f.variable !== '--font-heading-latin')) expect(read('app/pretendard.ts').split('localFont({').find(b => b.includes(`'${piece.variable}'`))).not.toMatch(/fallback: \[/)
     // A character missing from Pretendard (a Hanja) would download all of S-Core Dream for the body text.

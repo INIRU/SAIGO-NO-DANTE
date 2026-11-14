@@ -393,7 +393,7 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json()
     const { title, description, difficulty, deck, egos, floor_plan, gift_inventory, tags } = body
-    // A guest's password for the plan (REQ-COMMUNITY-029); screens from before it existed send none.
+    // A guest's password for the plan; screens from before it existed send none.
     const pin = author.kind === 'guest' ? guestPinOf(body?.pin) : null
     if (pin === false) return NextResponse.json({ error: '비밀번호는 숫자 4~6자리입니다.' }, { status: 400 })
     const normalizedFloorPlan = normalizeFloorPlanDifficulty(floor_plan ?? [], normalizePlanDifficulty(difficulty)).floorPlan

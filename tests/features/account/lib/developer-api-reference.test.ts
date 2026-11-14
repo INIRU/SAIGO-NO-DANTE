@@ -7,7 +7,7 @@ const all = endpointsFor({ catalog: true, news: true })
 const news = all.find(endpoint => endpoint.id === 'news')!
 
 describe('developer API reference', () => {
-  it('REQ-ACCOUNT-020 lists the endpoints an account may use and nothing about the others', () => {
+  it('lists the endpoints an account may use and nothing about the others', () => {
     const standard = endpointsFor({ catalog: false, news: false })
     expect(standard.map(endpoint => endpoint.id)).toEqual(['decks', 'planners'])
     expect(JSON.stringify(standard)).not.toMatch(/파트너|partner|formation|news/i)
@@ -17,7 +17,7 @@ describe('developer API reference', () => {
     expect(endpointsFor({ catalog: true, news: true })[0].sample).toContain('formation')
   })
 
-  it('REQ-ACCOUNT-020 describes every endpoint, field and error in ko, en and ja with a response that parses', () => {
+  it('describes every endpoint, field and error in ko, en and ja with a response that parses', () => {
     for (const endpoint of all) {
       for (const lang of LANGS) {
         expect(endpoint.name[lang] && endpoint.summary[lang]).toBeTruthy()
@@ -33,7 +33,7 @@ describe('developer API reference', () => {
     expect(new Set(identity.skills.map((skill: { uptie_level: number }) => skill.uptie_level)).size).toBeGreaterThan(1)
   })
 
-  it('REQ-ACCOUNT-020 documents exactly the news fields the validation accepts', () => {
+  it('documents exactly the news fields the validation accepts', () => {
     const names = news.body!.map(field => field.name)
     const under = (prefix: string) => names.filter(name => name.startsWith(prefix) && !name.slice(prefix.length).includes('.')).map(name => name.slice(prefix.length))
     expect(names.filter(name => !name.includes('.'))).toEqual(Object.keys(newsSchema.shape))
@@ -44,7 +44,7 @@ describe('developer API reference', () => {
     expect(parseNews(JSON.parse(news.bodySample!)).ok).toBe(true)
   })
 
-  it('REQ-ACCOUNT-020 gives an example that passes validation for every kind of news the bot sends', () => {
+  it('gives an example that passes validation for every kind of news the bot sends', () => {
     const bodies = NEWS_EXAMPLES.map(example => {
       const result = parseNews(example.body)
       expect(result.ok, `${example.id}: ${result.ok ? '' : JSON.stringify(result.issues)}`).toBe(true)
@@ -55,7 +55,7 @@ describe('developer API reference', () => {
     expect(new Set(bodies.map(body => body.platform))).toEqual(new Set(['steam', 'x', 'youtube', 'chzzk', 'partner']))
   })
 
-  it('REQ-ACCOUNT-020 writes the request in curl, Python and JavaScript', () => {
+  it('writes the request in curl, Python and JavaScript', () => {
     const request = { method: 'POST', url: 'https://saigo-no-dante.com/api/v1/news?dry_run=1', body: { spoiler: false, ends_at: null, title: "it's", ok: true } }
     const curl = codeSample('curl', request)
     expect(curl).toContain('curl -X POST "https://saigo-no-dante.com/api/v1/news?dry_run=1"')

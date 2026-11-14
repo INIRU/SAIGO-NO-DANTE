@@ -261,7 +261,7 @@ export default function PlannerClient({ themes, gifts, recipes, identities, sinn
     if (pendingNoteUploads.size) { showError(noteUploadInProgressMessage(locale)); return }
     if (uploading || uploaded) return
     if (!state.title.trim()) { showError(tPlanner('actions.titleRequired')); return }
-    // A new guest plan takes a password, asked for when the browser's key is gone (REQ-COMMUNITY-031).
+    // A new guest plan takes a password, asked for when the browser's key is gone.
     const needsPin = session.status === 'unauthenticated' && !editId
     const pinProblem = needsPin ? guestPinProblem(pin, locale) : null
     if (pinProblem) { showError(pinProblem); return }

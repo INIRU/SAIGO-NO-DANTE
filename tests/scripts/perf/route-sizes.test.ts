@@ -43,7 +43,7 @@ globalThis.__RSC_MANIFEST[${JSON.stringify(pageKey)}] = ${JSON.stringify({
 }
 
 describe('route-sizes', () => {
-  it('REQ-SHARED-086 sums gzip and raw bytes of first-load JS and CSS per route', () => {
+  it('sums gzip and raw bytes of first-load JS and CSS per route', () => {
     const sizes = routeSizes(fakeRepo())
     const [a, b, c] = ['a.js', 'b.js', 'c.js'].map(n => CHUNKS[n])
     expect(sizes['/[lang]/licenses'].jsGz).toBe(gz(a) + gz(b))
@@ -52,13 +52,13 @@ describe('route-sizes', () => {
     expect(sizes['/[lang]/licenses'].cssGz).toBe(gz(CSS['layout.css']))
   })
 
-  it('REQ-SHARED-086 reads the CSS of a route inside a route group such as (home)', () => {
+  it('reads the CSS of a route inside a route group such as (home)', () => {
     const sizes = routeSizes(fakeRepo())
     expect(sizes['/[lang]'].cssGz).toBe(gz(CSS['layout.css']) + gz(CSS['page.css']))
     expect(sizes['/[lang]'].cssRaw).toBe(CSS['layout.css'].length + CSS['page.css'].length)
   })
 
-  it('REQ-SHARED-086 compareSizes lists routes that grew first, biggest first, and then routes that shrank', () => {
+  it('compareSizes lists routes that grew first, biggest first, and then routes that shrank', () => {
     const entry = (jsGz: number, cssGz: number) => ({ jsGz, jsRaw: 0, cssGz, cssRaw: 0 })
     const before = { '/x': entry(100, 10), '/y': entry(200, 20), '/z': entry(300, 30) }
     const after = { '/x': entry(150, 10), '/y': entry(180, 20), '/z': entry(400, 35) }
@@ -73,7 +73,7 @@ describe('route-sizes', () => {
 describe('route size budget', () => {
   const entry = (jsKB: number, cssKB: number) => ({ jsGz: jsKB * 1024, jsRaw: 0, cssGz: cssKB * 1024, cssRaw: 0 })
 
-  it('REQ-SHARED-093 lists every route past its JS or CSS limit, and a budgeted route the build no longer has', () => {
+  it('lists every route past its JS or CSS limit, and a budgeted route the build no longer has', () => {
     const sizes = { '/a': entry(100, 10), '/b': entry(210, 10), '/c': entry(50, 31), '/unbudgeted': entry(999, 99) }
     const budget = { '/a': { jsKB: 100, cssKB: 10 }, '/b': { jsKB: 200, cssKB: 10 }, '/c': { jsKB: 60, cssKB: 30 }, '/gone': { jsKB: 1, cssKB: 1 } }
     expect(overBudget(sizes, budget)).toEqual([
@@ -83,7 +83,7 @@ describe('route size budget', () => {
     ])
   })
 
-  it('REQ-SHARED-093 fails the command (exit 1) past the budget and passes (exit 0) within it', () => {
+  it('fails the command (exit 1) past the budget and passes (exit 0) within it', () => {
     const repo = fakeRepo()
     const script = resolve(__dirname, '../../../scripts/perf/route-sizes.mjs')
     const sizes = routeSizes(repo)

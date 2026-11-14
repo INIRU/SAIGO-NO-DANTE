@@ -1,7 +1,7 @@
 import type { LegalDoc } from '@/lib/data/legal'
 import type { SupportedLang } from '@/lib/i18n/types'
 
-/** The about page (REQ-SHARED-068), drawn like the legal documents. Kept in code: it changes with the site, not with a policy version. */
+/** The about page, drawn like the legal documents. Kept in code: it changes with the site, not with a policy version. */
 export const ABOUT: Record<SupportedLang, Omit<LegalDoc, 'type'>> = {
   ko: {
     title: '사이트 소개',

@@ -17,7 +17,7 @@ const recipes = [
 ]
 const slot = (sinner_id: string, slot_order: number, keywords: string[] = []) => ({ identity_id: `${sinner_id}-id`, sinner_id, name_kr: sinner_id, rarity: 3, keywords, slot_order }) as IdentitySlot
 
-it('REQ-ASSIST-077 lays the run formation out in sinner order with 1-based formation numbers', () => {
+it('lays the run formation out in sinner order with 1-based formation numbers', () => {
   const sinners = [{ id: 'b', order_num: 2 }, { id: 'a', order_num: 1 }, { id: 'c', order_num: 3 }, { id: 'd', order_num: 4 }]
   const row = formationRow([slot('c', 0), slot('a', 8), slot('d', 99)], sinners)
   expect(row.map(cell => [cell.sinnerId, cell.slot?.identity_id ?? null, cell.position, cell.deployed])).toEqual([
@@ -25,14 +25,14 @@ it('REQ-ASSIST-077 lays the run formation out in sinner order with 1-based forma
   ])
 })
 
-it('REQ-ASSIST-078 commits to keywords counted from deployed identities and held gifts', () => {
+it('commits to keywords counted from deployed identities and held gifts', () => {
   const slots = [slot('a', 0, ['화상']), slot('b', 1, ['화상', '출혈']), slot('c', 9, ['화상'])]
   expect(committedKeywords(slots, ['1'], giftMap)).toEqual(['화상'])
   expect(committedKeywords(slots, ['1', '4', '5'], giftMap)).toEqual(['화상', '출혈'])
   expect(committedKeywords([], ['20', '20', '20'], giftMap)).toEqual([])
 })
 
-it('REQ-ASSIST-078 orders craftable fusions by final, final material, keyword, then grade, and lists finals one material short', () => {
+it('orders craftable fusions by final, final material, keyword, then grade, and lists finals one material short', () => {
   const guide = fusionGuide({ inventory: ['1', '2', '3', '4', '5', '20'], targets: ['10', 'final_14'], recipes, giftMap, committed: ['출혈'] })
   expect(guide.ready.map(item => [item.fusion.result?.game_id, item.reason])).toEqual([
     [10, 'final'], [14, 'final'], [11, 'keyword'], [13, 'other'],
@@ -42,7 +42,7 @@ it('REQ-ASSIST-078 orders craftable fusions by final, final material, keyword, t
   expect(short.nearly.map(item => [item.fusion.result?.game_id, item.missing.map(gift => gift.game_id)])).toEqual([[14, [20]], [10, [2]]])
 })
 
-it('REQ-ASSIST-078 marks a fusion whose result is a material of a final recipe and skips results already held', () => {
+it('marks a fusion whose result is a material of a final recipe and skips results already held', () => {
   const guide = fusionGuide({ inventory: ['1', '2', '4', '20', '13'], targets: ['12'], recipes, giftMap, committed: [] })
   expect(guide.ready.map(item => [item.fusion.result?.game_id, item.reason])).toEqual([[10, 'material']])
 })

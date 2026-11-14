@@ -25,7 +25,7 @@ const read = (file: string) => readFileSync(resolve(__dirname, '../..', file), '
 const PARTS = ['toolbar', 'summary', 'views', 'body']
 const data = { source: DEFAULT_META_SOURCE, period: DEFAULT_META_PERIOD, sampleCount: 40, sourceCounts: { decks: 30, planner: 10 }, excludedSamples: 0 } as unknown as MetaData
 
-it('REQ-META-007 holds the page\'s place with a skeleton of the toolbar, summary, tabs and body while the data is on its way', () => {
+it('holds the page\'s place with a skeleton of the toolbar, summary, tabs and body while the data is on its way', () => {
   expect(read('app/[lang]/meta/page.tsx')).toMatch(/<Suspense fallback=\{<MetaSkeleton \/>\}>/)
   const html = renderToStaticMarkup(<MetaSkeleton />)
   expect(html).toContain('role="status"')
@@ -35,7 +35,7 @@ it('REQ-META-007 holds the page\'s place with a skeleton of the toolbar, summary
   expect([...loading.matchAll(/data-meta-skeleton="(\w+)"/g)].map(match => match[1])).toEqual(['body'])
 })
 
-it('REQ-META-008 the summary, tabs and panel rise in order when the data arrives, and the panel alone on a tab switch', () => {
+it('the summary, tabs and panel rise in order when the data arrives, and the panel alone on a tab switch', () => {
   const html = renderToStaticMarkup(<MetaClient initialData={data} />)
   expect(html).not.toContain('data-meta-skeleton')
   // CSS modules render as _name_hash in tests.

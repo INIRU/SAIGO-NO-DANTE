@@ -47,7 +47,7 @@ beforeEach(() => {
 })
 
 describe('partner resources on the developer API', () => {
-  it('REQ-ACCOUNT-012 refuses partner resources to a standard key without reading them', async () => {
+  it('refuses partner resources to a standard key without reading them', async () => {
     standard()
     for (const resource of ['identities', 'egos', 'ego-gifts', 'theme-packs', 'md-events', 'keywords']) {
       const response = await get(resource)
@@ -58,7 +58,7 @@ describe('partner resources on the developer API', () => {
     expect((await get('unknown')).status).toBe(404)
   })
 
-  it('REQ-ACCOUNT-012 returns a partner catalog in the requested language without a daily quota header', async () => {
+  it('returns a partner catalog in the requested language without a daily quota header', async () => {
     partner()
     const response = await get('ego-gifts', '?lang=en')
     expect(response.status).toBe(200)
@@ -69,7 +69,7 @@ describe('partner resources on the developer API', () => {
     expect((await get('ego-gifts', '?lang=fr')).status).toBe(400)
   })
 
-  it('REQ-ACCOUNT-012 reads one identity with its skills by id', async () => {
+  it('reads one identity with its skills by id', async () => {
     partner()
     m.loadCatalogItem.mockResolvedValue({ id: ID, sinner_id: 'faust', game_id: '10201', folder_name: 'LCB Sinner', name: 'LCB', name_kr: '수감자', name_en: 'Sinner', name_jp: null, skills: [], passives: [] })
     const body = await (await get('identities', `?id=${ID}&lang=en`)).json()
@@ -80,7 +80,7 @@ describe('partner resources on the developer API', () => {
     expect((await (await get('identities', `?id=${ID}`)).json()).data).toEqual([])
   })
 
-  it('REQ-ACCOUNT-013 gives a partner key the formation detail and leaves the standard response as it was', async () => {
+  it('gives a partner key the formation detail and leaves the standard response as it was', async () => {
     partner()
     m.loadDeckDetail.mockResolvedValue({ id: ID, title: '덱', deck_identities: [], deck_egos: [] })
     const detail = await (await get('decks', `?id=${ID}`)).json()
@@ -99,7 +99,7 @@ describe('partner resources on the developer API', () => {
     expect(m.loadDeckDetail).not.toHaveBeenCalled()
   })
 
-  it('REQ-ACCOUNT-015 searches titles literally and sorts by votes on request', async () => {
+  it('searches titles literally and sorts by votes on request', async () => {
     standard()
     await get('planners', '?q=50%25_a&sort=popular')
     expect(called('from')).toEqual([['from', 'md_plans']])
@@ -113,7 +113,7 @@ describe('partner resources on the developer API', () => {
     expect((await get('decks', `?q=${'a'.repeat(101)}`)).status).toBe(400)
   })
 
-  it('REQ-ACCOUNT-018 gives game data only to a partner whose scopes include catalog:read', async () => {
+  it('gives game data only to a partner whose scopes include catalog:read', async () => {
     partner(['news:write'])
     expect((await get('ego-gifts')).status).toBe(403)
     expect(m.loadCatalog).not.toHaveBeenCalled()
@@ -126,7 +126,7 @@ describe('partner resources on the developer API', () => {
     expect((await get('ego-gifts')).status).toBe(200)
   })
 
-  it('REQ-ACCOUNT-022 lets an administrator key read game data without being a partner', async () => {
+  it('lets an administrator key read game data without being a partner', async () => {
     m.rpc.mockResolvedValue({ data: { status: 200, remaining: 9000, partner: null, scopes: [], admin: true }, error: null })
     const response = await get('ego-gifts')
     expect(response.status).toBe(200)
@@ -135,7 +135,7 @@ describe('partner resources on the developer API', () => {
     expect(m.loadDeckDetail).toHaveBeenCalledWith(ID)
   })
 
-  it('REQ-ACCOUNT-014 returns the account partner code, name and scopes with the key list', async () => {
+  it('returns the account partner code, name and scopes with the key list', async () => {
     m.auth.mockResolvedValue({ error: false, session: { user: { email: 'dev@example.invalid', name: 'Dev', image: null } } })
     m.keys.mockImplementation((table: string) => {
       const chain: Record<string, unknown> = {}

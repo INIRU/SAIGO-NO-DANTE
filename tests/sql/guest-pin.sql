@@ -1,4 +1,4 @@
--- REQ-COMMUNITY-029, 030. Run against a configured development database; every fixture is rolled back.
+-- Run against a configured development database; every fixture is rolled back.
 begin;
 do $$
 declare post_id uuid; deck uuid; pin text := repeat('1', 64); bad text := repeat('2', 64); old_key text := repeat('a', 64); new_key text := repeat('b', 64);

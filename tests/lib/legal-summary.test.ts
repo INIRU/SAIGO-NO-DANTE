@@ -1,7 +1,7 @@
 import { expect, it } from 'vitest'
 import { LEGAL_CHANGES } from '@/lib/legal-summary'
 
-it('REQ-ACCOUNT-010 the v6 change notes say the frames train the recognizer, with no deletion date for new ones, in every language', () => {
+it('the v6 change notes say the frames train the recognizer, with no deletion date for new ones, in every language', () => {
   const words = { ko: ['학습', '180일', '전체 화면'], en: ['train', '180 days', 'entire screen'], ja: ['学習', '180日', '画面全体'] } as const
   for (const lang of ['ko', 'en', 'ja'] as const) {
     const notes = LEGAL_CHANGES.v6?.[lang] ?? []
@@ -14,7 +14,7 @@ it('REQ-ACCOUNT-010 the v6 change notes say the frames train the recognizer, wit
   }
 })
 
-it('REQ-ACCOUNT-023 the v7 change notes name the AdSense ads, the advertising cookies with their opt-out and the new hosts, in every language', () => {
+it('the v7 change notes name the AdSense ads, the advertising cookies with their opt-out and the new hosts, in every language', () => {
   const words = { ko: ['애드센스', '광고 쿠키', '광고 설정', 'Cloudflare'], en: ['AdSense', 'advertising cookies', 'Ads Settings', 'Cloudflare'], ja: ['AdSense', '広告Cookie', '広告設定', 'Cloudflare'] } as const
   for (const lang of ['ko', 'en', 'ja'] as const) {
     const notes = (LEGAL_CHANGES.v7?.[lang] ?? []).join(' ')

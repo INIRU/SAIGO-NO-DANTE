@@ -121,7 +121,7 @@ describe('materials of one fusion from the selection wheel and the dialog', () =
     expect(fusionMaterials([wheel([strong('9001'), strong('9002'), strong('9003')], 900)], 2, 3)).toEqual([])
   })
 
-  it('REQ-ASSIST-047 takes the newest accepted material of a wheel position when the player swapped it, but never mixes dialog reads', () => {
+  it('takes the newest accepted material of a wheel position when the player swapped it, but never mixes dialog reads', () => {
     // 2026-09-26 sample 8b74aa01: 9004 picked first, then replaced by 9061 before the dialog.
     const swapped = [wheel([accepted('9004'), blank, strong('9097')], 1000), wheel([accepted('9004'), blank, strong('9097')], 1300),
       wheel([strong('9061'), blank, strong('9097')], 2400), wheel([accepted('9061'), blank, strong('9097')], 2700)]
@@ -132,7 +132,7 @@ describe('materials of one fusion from the selection wheel and the dialog', () =
     expect(fusionMaterials([dialog([strong('9001')], 1000), dialog([strong('9004')], 1400)], 1, 3)).toEqual([])
   })
 
-  it('REQ-ASSIST-045 takes a fusion without a seen dialog as the materials the fullest wheel state held, not the shop capacity', () => {
+  it('takes a fusion without a seen dialog as the materials the fullest wheel state held, not the shop capacity', () => {
     // 2026-09-26 sample e953322b (1684×948): a 2/5 special-shop fusion whose dialog no screen read caught.
     const reads = [wheel([blank, blank, strong('9020'), blank, blank], 900), wheel([blank, blank, strong('9020'), blank, accepted('9061')], 1300),
       wheel([blank, blank, strong('9020'), blank, accepted('9061')], 1700)]
@@ -145,7 +145,7 @@ describe('materials of one fusion from the selection wheel and the dialog', () =
     expect(wheelSelectionSize([dialog([strong('9001'), strong('9002')], 900)])).toBe(0)
   })
 
-  it('REQ-ASSIST-070 does not take the bonus popup after a fusion (Star Blessing) for a second fusion', () => {
+  it('does not take the bonus popup after a fusion (Star Blessing) for a second fusion', () => {
     // Diagnoses of 2026-10-06 samples (2560x1440): the only wheel state between the fusion's result and the bonus popup is empty.
     expect(emptyWheelResult([wheel([blank, blank, blank, blank, blank], 0)], 5)).toBe(true)
     expect(emptyWheelResult([wheel([blank, blank, blank, blank, null], 0)], 5)).toBe(true)
@@ -159,7 +159,7 @@ describe('materials of one fusion from the selection wheel and the dialog', () =
     expect(emptyWheelResult([dialog([blank, blank, blank], 0)], 3)).toBe(false)
   })
 
-  it('REQ-ASSIST-070 leaves out wheel states first seen under the popup before the result', () => {
+  it('leaves out wheel states first seen under the popup before the result', () => {
     // 1600x920 sample: result popup until 9,700, bonus popup captured at 10,000; the state of 8,727 was under the first popup.
     expect(popupEndBefore([4_000, 9_700], 10_000)).toBe(9_700)
     // The result's own popup ends after its capture and does not count; without an earlier popup every state qualifies.
@@ -361,7 +361,7 @@ describe('slots placed from the dialog text', () => {
   })
 })
 
-it('REQ-ASSIST-071 keeps a wheel state apart when one position changed, however little the whole crop did', () => {
+it('keeps a wheel state apart when one position changed, however little the whole crop did', () => {
   // 16x9 grey signatures of the wheel crop. Measured on 501 sample frame pairs: a still wheel differs by under 4 in every cell,
   // a material added or removed by 16-110 in the 4-12 cells of its position (mean 0.4-2.9 over the crop for a dark icon).
   const still = Uint8Array.from({ length: 144 }, (_, index) => 30 + index % 7)

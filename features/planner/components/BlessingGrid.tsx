@@ -266,7 +266,7 @@ export function BlessingCard({
   const previousEffects = selectedLevel > 1 ? blessing.effectsByLevel[selectedLevel - 2] : undefined
   const locale = useLocale()
   const displayName = getBlessingDisplayName(blessing, level)
-  // The effect text scrolls inside the card; a page scroll passing over the cards keeps scrolling the page (REQ-DECKS-053).
+  // The effect text scrolls inside the card; a page scroll passing over the cards keeps scrolling the page.
   const effectsRef = useRef<HTMLDivElement>(null)
   useWheelIntent(effectsRef)
 

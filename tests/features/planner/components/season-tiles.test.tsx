@@ -18,7 +18,7 @@ const root = resolve(__dirname, '../../../..')
 const blessing: Blessing = { baseId: 100, name: '시작의 별', costs: [10, 20, 30], effectsByLevel: [['시작 코스트 +150'], [], []] }
 
 describe('season tiles', () => {
-  it('REQ-PLANNER-049 takes the phone tiles\' colours from the season\'s own card art, sampled at build time', async () => {
+  it('takes the phone tiles\' colours from the season\'s own card art, sampled at build time', async () => {
     // the build samples the cards again, so a new season's art is all a season change needs
     expect(readFileSync(resolve(root, 'package.json'), 'utf8')).toMatch(/"build": "node scripts\/assets\/season-palette\.mjs && /)
     expect(await samplePalettes()).toEqual(palette)
@@ -31,7 +31,7 @@ describe('season tiles', () => {
     expect(readFileSync(resolve(root, 'features/planner/components/BlessingTab.tsx'), 'utf8')).not.toContain('sisyphus')
   })
 
-  it('REQ-PLANNER-050 picks constraints on a phone from small name tiles, like the blessing tiles, the picked ones filled', () => {
+  it('picks constraints on a phone from small name tiles, like the blessing tiles, the picked ones filled', () => {
     const html = renderToStaticMarkup(<FloorConstraints floor={11} entries={[{ floor: 11, constraints: [] }]} onChange={() => {}} />)
     const tiles = html.match(/<ul[^>]*data-constraint-tiles[^>]*class="[^"]*sm:hidden[\s\S]*?<\/ul>/)?.[0] ?? ''
     expect(tiles).toMatch(/<button[^>]*aria-pressed="false"[\s\S]*레벨 강화/)

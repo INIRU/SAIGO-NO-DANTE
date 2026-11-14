@@ -27,7 +27,7 @@ it('keeps the fragments of 달의 기억', () => {
   expect(derive(['observe_8', 'final_9', 'final_7']).map(gift => gift.id)).toEqual([8, 9, 7])
 })
 
-it('REQ-PLANNER-018 lets a floor plan a material the final fusion result consumes, without making it a final gift', () => {
+it('lets a floor plan a material the final fusion result consumes, without making it a final gift', () => {
   const final = deriveFinalGifts(['final_6', 'final_10'], recipes, giftMap)
   // 억류된 찬송(1) and 녹슨 입마개(5) feed 피안개(6): planned on a floor, never a final gift.
   expect(finalKeyForFloorPick(1, final)).toBeNull()

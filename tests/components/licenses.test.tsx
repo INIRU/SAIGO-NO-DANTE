@@ -17,7 +17,7 @@ vi.mock('next-intl/server', async () => {
 })
 vi.mock('next/cache', () => ({ cacheLife: () => {} }))
 
-it('REQ-SHARED-064 the footer links the licenses page, labelled in the page language', async () => {
+it('the footer links the licenses page, labelled in the page language', async () => {
   const { default: Footer } = await import('@/components/layout/Footer')
   const labels: Record<string, string> = { ko: '라이선스', en: 'Licenses', ja: 'ライセンス' }
   for (const lang of ['ko', 'en', 'ja']) {
@@ -26,7 +26,7 @@ it('REQ-SHARED-064 the footer links the licenses page, labelled in the page lang
   }
 })
 
-it('REQ-SHARED-064 the licenses page names each font and the Spine runtime with its holder and license, linked to the license text', async () => {
+it('the licenses page names each font and the Spine runtime with its holder and license, linked to the license text', async () => {
   const { LICENSES } = await import('@/lib/licenses')
   const { default: LicensesPage } = await import('@/app/[lang]/licenses/page')
   const names = LICENSES.flatMap(group => group.items.map(item => item.name))
@@ -49,7 +49,7 @@ it('REQ-SHARED-064 the licenses page names each font and the Spine runtime with 
   expect(ko).toContain('에스코어 글꼴 라이선스')
 })
 
-it('REQ-MOTION-048 the licenses page says the game assets belong to Project Moon, in every language', async () => {
+it('the licenses page says the game assets belong to Project Moon, in every language', async () => {
   const { default: LicensesPage } = await import('@/app/[lang]/licenses/page')
   for (const [lang, word] of [['ko', '스킬 애니메이션'], ['en', 'skill animations'], ['ja', 'スキルアニメーション']]) {
     const html = renderToStaticMarkup(await LicensesPage({ params: Promise.resolve({ lang }) }))

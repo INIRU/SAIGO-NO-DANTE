@@ -14,7 +14,7 @@ const issuesOf = (body: unknown) => {
 }
 
 describe('news payload', () => {
-  it('REQ-NEWS-001 accepts the smallest item and fills the defaults', () => {
+  it('accepts the smallest item and fills the defaults', () => {
     const result = parseNews(base)
     expect(result.ok).toBe(true)
     if (!result.ok) return
@@ -22,7 +22,7 @@ describe('news payload', () => {
     expect(result.value.content.ko).toEqual({ title: '정기 점검 안내', body: '', url: null, media: [], translated: false })
   })
 
-  it('REQ-NEWS-001 takes all three languages, an author and a period in one request', () => {
+  it('takes all three languages, an author and a period in one request', () => {
     const result = parseNews({
       ...base, category: 'live', spoiler: true, starts_at: '2026-10-06T10:00:00Z', ends_at: '2026-10-06T12:00:00Z',
       author: { name: '햄햄팡팡', handle: 'Ham_PangPang' },
@@ -39,7 +39,7 @@ describe('news payload', () => {
     expect(result.value.author).toEqual({ name: '햄햄팡팡', handle: 'Ham_PangPang', url: null })
   })
 
-  it('REQ-NEWS-001 names every field that is wrong', () => {
+  it('names every field that is wrong', () => {
     expect(issuesOf({})).toEqual(expect.arrayContaining(['id', 'feed', 'platform', 'published_at', 'content']))
     expect(issuesOf({ ...base, content: {} })).toEqual(['content'])
     expect(issuesOf({ ...base, content: { jp: { title: 'あ' } } })).toContain('content')
@@ -54,7 +54,7 @@ describe('news payload', () => {
     expect(!failed.ok && failed.issues[0].message).toBeTruthy()
   })
 
-  it('REQ-NEWS-002 takes media only from the allowed hosts over https', () => {
+  it('takes media only from the allowed hosts over https', () => {
     const media = (items: unknown[]) => ({ ...base, content: { ko: { title: '가', media: items } } })
     const ok = parseNews(media([
       { type: 'image', url: 'https://clan.fastly.steamstatic.com/images/1/a.png' },

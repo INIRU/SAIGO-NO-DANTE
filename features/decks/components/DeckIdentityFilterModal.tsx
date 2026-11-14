@@ -60,7 +60,7 @@ export default function DeckIdentityFilterModal({ open, sinnerId, sinners, ident
     [identities, selectedIdentityIds, sinnerId])
   const reset = () => {
     setQuery(''); setGrade('')
-    // the filter keeps one identity per sinner, so a sinner has one pick to toggle off; a hand-written URL with
+    // The filter keeps one identity per sinner, so a sinner has one pick to toggle off; a hand-written URL with
     // two would keep one of them (each toggle reads the same selection).
     if (!sinnerId) onClearIdentities()
     else picked.forEach(onToggleIdentity)

@@ -51,8 +51,8 @@ const items: Notification[] = [
 
 beforeEach(() => { nav.pathname = null; feed.items = []; feed.unread = 0; feed.fresh = []; toasts.custom.mockClear(); auth.status = 'authenticated'; auth.supportUnread = false })
 
-describe('REQ-COMMUNITY-015 the navbar bell shows unread notifications and its panel lists them', () => {
-  it('REQ-COMMUNITY-015 the list links each item to its post\'s comments and names only unread ones as new', async () => {
+describe('the navbar bell shows unread notifications and its panel lists them', () => {
+  it('the list links each item to its post\'s comments and names only unread ones as new', async () => {
     const { NotificationList } = await import('@/components/layout/NavNotifications')
     const html = renderToStaticMarkup(<NotificationList items={items} onNavigate={() => {}} />)
     expect(html).toContain('href="/ko/planner/community/p1#plan-comments-title"')
@@ -61,12 +61,12 @@ describe('REQ-COMMUNITY-015 the navbar bell shows unread notifications and its p
     expect(html.match(/notifications\.new</g)).toHaveLength(1)
   })
 
-  it('REQ-COMMUNITY-015 an empty list says so', async () => {
+  it('an empty list says so', async () => {
     const { NotificationList } = await import('@/components/layout/NavNotifications')
     expect(renderToStaticMarkup(<NotificationList items={[]} onNavigate={() => {}} />)).toContain('notifications.empty')
   })
 
-  it('REQ-COMMUNITY-015 a signed-in navbar has the bell on desktop and mobile, with the unread count only while something is unread, without reading the pathname', async () => {
+  it('a signed-in navbar has the bell on desktop and mobile, with the unread count only while something is unread, without reading the pathname', async () => {
     const { default: Navbar } = await import('@/components/layout/Navbar')
     // No Suspense above: a navbar that needed the pathname would hang here instead of returning markup.
     const quiet = renderToStaticMarkup(<Navbar mainNavLabel="main" />)
@@ -81,7 +81,7 @@ describe('REQ-COMMUNITY-015 the navbar bell shows unread notifications and its p
     expect(html).not.toContain('답글 내용')
   })
 
-  it('REQ-COMMUNITY-015 while the session is still loading the bell\'s place is kept for a returning user and no bell is shown', async () => {
+  it('while the session is still loading the bell\'s place is kept for a returning user and no bell is shown', async () => {
     auth.status = 'loading'
     const { default: Navbar } = await import('@/components/layout/Navbar')
     const html = renderToStaticMarkup(<Navbar mainNavLabel="main" />)
@@ -90,8 +90,8 @@ describe('REQ-COMMUNITY-015 the navbar bell shows unread notifications and its p
   })
 })
 
-describe('REQ-COMMUNITY-017 an inquiry waiting for an answer is a row of an administrator\'s list', () => {
-  it('REQ-COMMUNITY-017 the row names the inquirer and the inquiry, shows its last words and links to it in the admin inbox', async () => {
+describe('an inquiry waiting for an answer is a row of an administrator\'s list', () => {
+  it('the row names the inquirer and the inquiry, shows its last words and links to it in the admin inbox', async () => {
     const { NotificationList } = await import('@/components/layout/NavNotifications')
     const inquiry: Notification = { id: 'm1', kind: 'inquiry', target: 'inquiry', href: '/admin/inquiries?id=q1', title: '로그인 오류', actor: '파우스트', avatar: null, excerpt: '문의 내용', at: '2026-10-03T09:00:00Z', unread: true }
     const html = renderToStaticMarkup(<NotificationList items={[inquiry]} onNavigate={() => {}} />)
@@ -105,8 +105,8 @@ describe('REQ-COMMUNITY-017 an inquiry waiting for an answer is a row of an admi
   })
 })
 
-describe('REQ-COMMUNITY-018 opening the panel does not flash a scrollbar', () => {
-  it('REQ-COMMUNITY-018 the rows of the scrolling list stay in place: the rise is on the card inside each row', () => {
+describe('opening the panel does not flash a scrollbar', () => {
+  it('the rows of the scrolling list stay in place: the rise is on the card inside each row', () => {
     const css = readFileSync(resolve(__dirname, '../../components/layout/NavNotifications.module.css'), 'utf8')
     // A row moved below its place sticks out of the list, which then shows a scrollbar until the row lands.
     expect(css).not.toMatch(/\.row \{[^}]*animation/)
@@ -115,8 +115,8 @@ describe('REQ-COMMUNITY-018 opening the panel does not flash a scrollbar', () =>
   })
 })
 
-describe('REQ-COMMUNITY-016 a new notification is announced as a toast card', () => {
-  it('REQ-COMMUNITY-016 the card shows who did what and the comment, opens the panel when pressed and has a close button', async () => {
+describe('a new notification is announced as a toast card', () => {
+  it('the card shows who did what and the comment, opens the panel when pressed and has a close button', async () => {
     const { NotificationToast } = await import('@/components/layout/NavNotifications')
     const html = renderToStaticMarkup(<NotificationToast item={items[0]} sentence={<><b>료슈</b> replied</>} closeLabel="닫기" onOpen={() => {}} onClose={() => {}} />)
     expect(html).toContain('<b>료슈</b> replied')
@@ -125,7 +125,7 @@ describe('REQ-COMMUNITY-016 a new notification is announced as a toast card', ()
     expect(html).toContain('aria-label="닫기"')
   })
 
-  it('REQ-COMMUNITY-016 the toast is one card: the site toaster\'s box (background, border, padding) is taken off it, and a bar shows the time left', async () => {
+  it('the toast is one card: the site toaster\'s box (background, border, padding) is taken off it, and a bar shows the time left', async () => {
     feed.fresh = [items[0]]
     const { default: Navbar } = await import('@/components/layout/Navbar')
     renderToStaticMarkup(<Navbar mainNavLabel="main" />)
@@ -138,23 +138,23 @@ describe('REQ-COMMUNITY-016 a new notification is announced as a toast card', ()
   })
 })
 
-describe('REQ-COMMUNITY-096 each notification row shows its kind, and the bell\'s badge stays small', () => {
-  it('REQ-COMMUNITY-096 a kind mark sits on every row\'s picture', async () => {
+describe('each notification row shows its kind, and the bell\'s badge stays small', () => {
+  it('a kind mark sits on every row\'s picture', async () => {
     const { NotificationList } = await import('@/components/layout/NavNotifications')
     const html = renderToStaticMarkup(<NotificationList items={items} onNavigate={() => {}} />)
     expect(html).toContain('data-kind="reply"')
     expect(html).toContain('data-kind="comment"')
   })
 
-  it('REQ-COMMUNITY-096 the badge is .875rem tall and rings out as an outline, not a filled circle', () => {
+  it('the badge is .875rem tall and rings out as an outline, not a filled circle', () => {
     const css = readFileSync(resolve(__dirname, '../../components/layout/NavNotifications.module.css'), 'utf8')
     expect(css).toMatch(/\.badge \{[^}]*height: \.875rem;/)
     expect(css).not.toMatch(/\.badge::after \{[^}]*background/)
   })
 })
 
-describe('REQ-SHARED-031 the navbar\'s right side holds search, language, the bell and the account only', () => {
-  it('REQ-SHARED-031 support is not a button of the bar or a menu group item: it is with the account', async () => {
+describe('the navbar\'s right side holds search, language, the bell and the account only', () => {
+  it('support is not a button of the bar or a menu group item: it is with the account', async () => {
     const { NAV_GROUPS } = await import('@/components/layout/nav-shared')
     expect(NAV_GROUPS.flatMap(group => group.items.map(item => item.href))).not.toContain('/support')
     const { default: Navbar } = await import('@/components/layout/Navbar')
@@ -169,14 +169,14 @@ describe('REQ-SHARED-031 the navbar\'s right side holds search, language, the be
     expect(sheet(false)).not.toContain('href="/ko/support"')
   })
 
-  it('REQ-SHARED-031 the desktop language button is an icon that names the current language for screen readers', async () => {
+  it('the desktop language button is an icon that names the current language for screen readers', async () => {
     const { default: LanguageSwitcher } = await import('@/components/ui/LanguageSwitcher')
     const html = renderToStaticMarkup(<LanguageSwitcher compact />)
     expect(html).toMatch(/aria-label="[^"]*한국어[^"]*"/)
     expect(html).not.toMatch(/>한국어</)
   })
 
-  it('REQ-SHARED-031 a new support reply adds one to the bell and leads the panel\'s list', async () => {
+  it('a new support reply adds one to the bell and leads the panel\'s list', async () => {
     auth.supportUnread = true
     feed.unread = 2
     const { default: Navbar } = await import('@/components/layout/Navbar')

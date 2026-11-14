@@ -7,7 +7,7 @@ const p = (text: string) => ({ type: 'paragraph', content: [{ type: 'text', text
 const doc = (...content: object[]) => ({ type: 'doc', content })
 const roundTrip = (d: object) => parseBlockDocument(tiptapContentToMarkdown(d as never))
 
-describe('REQ-COMMUNITY-037 new note blocks', () => {
+describe('new note blocks', () => {
   it('menu offers the new blocks with ko/ja/en labels', () => {
     for (const kind of ['callout', 'table', 'divider', 'card'] as BlockKind[]) {
       expect(BLOCK_LABELS[kind]).toHaveLength(3)
@@ -30,7 +30,7 @@ describe('REQ-COMMUNITY-037 new note blocks', () => {
     expect(c.attrs?.colspan).toBe(1)
     expect(JSON.stringify(c.content)).not.toContain('"table"')
   })
-  it('REQ-COMMUNITY-037 removed: there is no checklist block and saved checklists are dropped', () => {
+  it('removed: there is no checklist block and saved checklists are dropped', () => {
     expect(Object.keys(BLOCK_LABELS)).not.toContain('checklist')
     const d = normalizeDocument(doc(p('a'), { type: 'taskList', content: [{ type: 'taskItem', attrs: { checked: true }, content: [p('x')] }] }))
     expect(JSON.stringify(d)).not.toContain('task')
@@ -54,7 +54,7 @@ describe('REQ-COMMUNITY-037 new note blocks', () => {
   })
 })
 
-describe('REQ-COMMUNITY-038 links look like links', () => {
+describe('links look like links', () => {
   const css = readFileSync('app/globals.css', 'utf8')
   it('styles links in the viewer and the editor with accent colour and underline', () => {
     expect(css).toMatch(/\.note-block-document a\[href\][^}]*text-decoration:\s*underline/)

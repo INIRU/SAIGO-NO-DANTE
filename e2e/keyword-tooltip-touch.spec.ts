@@ -1,6 +1,6 @@
 import { test, expect, devices, type Page } from '@playwright/test'
 
-// REQ-KEYWORDS-006: the keyword tooltip under touch (phones) and under the mouse.
+// The keyword tooltip under touch (phones) and under the mouse.
 // Run against a started server: BASE_URL=http://localhost:3000 npx playwright test e2e/keyword-tooltip-touch.spec.ts
 // Chromium runs the installed Chrome, like the other specs; WebKit has no such channel.
 test.use({ channel: [async ({ browserName }, use) => { await use(browserName === 'chromium' ? 'chrome' : undefined) }, { scope: 'worker' }] })
@@ -30,7 +30,7 @@ async function keyword(page: Page) {
 function touchSuite() {
   test.setTimeout(90_000)
 
-  test('REQ-KEYWORDS-006 one tap opens the tooltip and a second tap closes it', async ({ page }) => {
+  test('one tap opens the tooltip and a second tap closes it', async ({ page }) => {
     const token = await keyword(page)
     await token.tap()
     await expect(tooltip(page)).toHaveCount(1)
@@ -40,7 +40,7 @@ function touchSuite() {
     await expect(tooltip(page)).toHaveCount(0)
   })
 
-  test('REQ-KEYWORDS-006 touching and dragging inside the tooltip keep it open', async ({ page, browserName }) => {
+  test('touching and dragging inside the tooltip keep it open', async ({ page, browserName }) => {
     const token = await keyword(page)
     await token.tap()
     const box = (await tooltip(page).boundingBox())!
@@ -58,7 +58,7 @@ function touchSuite() {
     await expect(tooltip(page)).toHaveCount(1)
   })
 
-  test('REQ-KEYWORDS-006 a tap outside closes the tooltip', async ({ page }) => {
+  test('a tap outside closes the tooltip', async ({ page }) => {
     const token = await keyword(page)
     await token.tap()
     await expect(tooltip(page)).toHaveCount(1)
@@ -69,7 +69,7 @@ function touchSuite() {
     await expect(tooltip(page)).toHaveCount(0)
   })
 
-  test('REQ-KEYWORDS-006 scrolling the page closes the tooltip', async ({ page }) => {
+  test('scrolling the page closes the tooltip', async ({ page }) => {
     const token = await keyword(page)
     await token.tap()
     await expect(tooltip(page)).toHaveCount(1)
@@ -94,7 +94,7 @@ test.describe('keyword tooltip, mouse', () => {
   test.use({ viewport: { width: 1280, height: 900 } })
   test.skip(({ browserName }) => browserName !== 'chromium', 'Installed Chrome')
 
-  test('REQ-KEYWORDS-006 the mouse opens on hover, keeps the tooltip while over it, and closes on leave and Escape', async ({ page }) => {
+  test('the mouse opens on hover, keeps the tooltip while over it, and closes on leave and Escape', async ({ page }) => {
     test.setTimeout(90_000)
     const token = await keyword(page)
     await token.hover()

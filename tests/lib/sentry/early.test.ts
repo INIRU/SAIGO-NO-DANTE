@@ -10,7 +10,7 @@ const errorEvent = (error: unknown) => Object.assign(new Event('error'), { error
 const rejection = (reason: unknown) => Object.assign(new Event('unhandledrejection'), { reason })
 
 describe('Sentry after the page loads', () => {
-  it('REQ-SHARED-088 sends the errors raised before Sentry starts once it starts, once each, in order', () => {
+  it('sends the errors raised before Sentry starts once it starts, once each, in order', () => {
     const early = createEarlyErrors()
     const target = new EventTarget()
     const stop = early.listen(target)
@@ -30,7 +30,7 @@ describe('Sentry after the page loads', () => {
     expect(sent.at(-1)).toBe('after')
   })
 
-  it('REQ-SHARED-088 keeps at most 20 early errors (a loop of errors before the start cannot grow the page memory)', () => {
+  it('keeps at most 20 early errors (a loop of errors before the start cannot grow the page memory)', () => {
     const early = createEarlyErrors()
     for (let i = 0; i < 50; i++) early.report(i)
     const sent: unknown[] = []
@@ -38,7 +38,7 @@ describe('Sentry after the page loads', () => {
     expect(sent).toEqual(Array.from({ length: 20 }, (_, i) => i))
   })
 
-  it('REQ-SHARED-088 still strips personal data from every event', () => {
+  it('still strips personal data from every event', () => {
     const event = scrubEvent({
       user: { email: 'a@b.c', ip_address: '1.2.3.4', username: 'x' },
       request: { url: 'https://saigo-no-dante.com/ko/decks?token=1#h', headers: { Authorization: 'Bearer x', Accept: 'text/html' }, cookies: { a: 'b' }, data: 'd', query_string: 'q' },
@@ -47,7 +47,7 @@ describe('Sentry after the page loads', () => {
     expect(event.request).toEqual({ url: 'https://saigo-no-dante.com/ko/decks', headers: { Authorization: '[Filtered]', Accept: 'text/html' } })
   })
 
-  it('REQ-SHARED-088 keeps the Sentry SDK out of every page\'s first load', () => {
+  it('keeps the Sentry SDK out of every page\'s first load', () => {
     for (const path of ['instrumentation-client.ts', 'app/[lang]/error.tsx', 'app/global-error.tsx']) {
       expect(read(path), path).not.toMatch(/import\s[^;]*from\s*['"]@sentry\/nextjs['"]/)
     }
@@ -61,7 +61,7 @@ describe('Sentry after the page loads', () => {
 })
 
 describe('URL queries in what the browser Sentry sends', () => {
-  it('REQ-SHARED-089 strips queries and fragments from URLs in spans, breadcrumbs and replay URLs', () => {
+  it('strips queries and fragments from URLs in spans, breadcrumbs and replay URLs', () => {
     const page = 'https://saigo-no-dante.com/ko/decks?q=secret&kw=burn#top'
     const event = stripUrlQueries({
       type: 'transaction',
@@ -80,7 +80,7 @@ describe('URL queries in what the browser Sentry sends', () => {
     expect(event.breadcrumbs[0].data).toEqual({ from: '/ko/decks', to: '/ko/planner' })
   })
 
-  it('REQ-SHARED-089 survives objects that point back at themselves and leaves the SDK\'s processing data alone', () => {
+  it('survives objects that point back at themselves and leaves the SDK\'s processing data alone', () => {
     // a transaction carries scopes in sdkProcessingMetadata that point at each other: walking them overflowed the stack and
     // the transaction was dropped
     const scope: Record<string, unknown> = { url: '/ko/decks?q=secret' }
@@ -93,13 +93,13 @@ describe('URL queries in what the browser Sentry sends', () => {
     expect(scope.url).toBe('/ko/decks?q=secret')
   })
 
-  it('REQ-SHARED-089 leaves stack frames alone, so source maps still match', () => {
+  it('leaves stack frames alone, so source maps still match', () => {
     const frame = { abs_path: 'https://saigo-no-dante.com/_next/static/chunks/a.js?dpl=1', filename: 'a.js?dpl=1' }
     const event = stripUrlQueries({ exception: { values: [{ value: 'x', stacktrace: { frames: [frame] } }] } })
     expect(event.exception.values[0].stacktrace.frames[0]).toEqual(frame)
   })
 
-  it('REQ-SHARED-089 applies to every event (errors, transactions, replays) and to the replay recording\'s custom events', () => {
+  it('applies to every event (errors, transactions, replays) and to the replay recording\'s custom events', () => {
     const init = read('lib/sentry/client-init.ts')
     expect(init).toMatch(/on\("postprocessEvent", stripUrlQueries\)/)
     expect(init).toMatch(/beforeAddRecordingEvent: stripUrlQueries/)

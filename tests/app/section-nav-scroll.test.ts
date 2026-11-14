@@ -10,7 +10,7 @@ describe('section tabs', () => {
   it.each([
     'app/[lang]/decks/[id]/DeckDetail.module.css',
     'app/[lang]/planner/community/[id]/PlanDetailHeader.module.css',
-  ])('REQ-DECKS-054 the tab list of %s scrolls sideways only, so a wheel over it scrolls the page', path => {
+  ])('the tab list of %s scrolls sideways only, so a wheel over it scrolls the page', path => {
     const rule = listRule(css(path))
     // the tabs' underline sits 1px low to cover the bar's border: the list keeps that pixel inside its padding, so nothing
     // overflows downwards and the list never takes a vertical wheel

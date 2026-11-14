@@ -114,8 +114,8 @@ beforeEach(() => {
 })
 afterEach(() => { player?.dispose(); vi.useRealTimers(); vi.unstubAllGlobals(); vi.restoreAllMocks() })
 
-describe('REQ-MOTION-037 the level of a cue is its mix curve', () => {
-  it('REQ-MOTION-037 reads the curve linearly between points and holds the first and last value outside them', () => {
+describe('the level of a cue is its mix curve', () => {
+  it('reads the curve linearly between points and holds the first and last value outside them', () => {
     const mix: [number, number, number][] = [[60, 0.2, 0.4], [120, 0.6, 0.0]]
     expect([gainAt(mix, 0, 1), gainAt(mix, 0, 2)]).toEqual([0.2, 0.4])
     expect([gainAt(mix, 60, 1), gainAt(mix, 60, 2)]).toEqual([0.2, 0.4])
@@ -124,7 +124,7 @@ describe('REQ-MOTION-037 the level of a cue is its mix curve', () => {
     expect([gainAt(mix, 500, 1), gainAt(mix, 500, 2)]).toEqual([0.6, 0])
   })
 
-  it('REQ-MOTION-037 puts the curve on a left and a right gain node at frame / fps seconds of the track', async () => {
+  it('puts the curve on a left and a right gain node at frame / fps seconds of the track', async () => {
     await setup(meta([cue({ start: 1, mix: [[60, 0.5, 0.25], [90, 1, 0.5], [120, 0.1, 0.1]] })]))
     const { left, right } = chain(cues[0])
     expect(rounded(left)).toEqual([{ kind: 'set', v: 0.5, t: 1 }, { kind: 'ramp', v: 1, t: 1.5 }, { kind: 'ramp', v: 0.1, t: 2 }])
@@ -132,7 +132,7 @@ describe('REQ-MOTION-037 the level of a cue is its mix curve', () => {
     expect(cues[0].started).toEqual([[1, 0]])
   })
 
-  it('REQ-MOTION-037 starts a curve that begins after the cue from its first value, and lowers nothing while a voice sounds', async () => {
+  it('starts a curve that begins after the cue from its first value, and lowers nothing while a voice sounds', async () => {
     await setup(meta([cue({ start: 1 }), voice({ start: 1, mix: [[0, 0.7, 0.7]] })]))
     const [sfx, line] = tracks.map(t => chain(t.made[0]))
     expect(sfx.left.events).toHaveLength(1)
@@ -141,7 +141,7 @@ describe('REQ-MOTION-037 the level of a cue is its mix curve', () => {
     expect(gains.every(g => g.gain.targets === 0)).toBe(true)
   })
 
-  it('REQ-MOTION-037 moves the effects, voice and page volumes on the sounding tracks, with no new mix', async () => {
+  it('moves the effects, voice and page volumes on the sounding tracks, with no new mix', async () => {
     await setup(meta([cue({ start: 1 }), voice({ start: 1 })]))
     play()
     const mixed = tracks.length
@@ -158,8 +158,8 @@ describe('REQ-MOTION-037 the level of a cue is its mix curve', () => {
   })
 })
 
-describe('REQ-MOTION-050 the voices and the effects are each one track', () => {
-  it('REQ-MOTION-050 mixes every effect into one track and every voice into another, ahead of the play', async () => {
+describe('the voices and the effects are each one track', () => {
+  it('mixes every effect into one track and every voice into another, ahead of the play', async () => {
     await setup(meta([cue({ start: 1 }), cue({ start: 2 }), voice({ start: 1 }), voice({ start: 3 })]))
     expect(tracks).toHaveLength(2)
     expect(tracks.every(t => t.channels === 2 && t.sampleRate === 48000)).toBe(true)
@@ -167,7 +167,7 @@ describe('REQ-MOTION-050 the voices and the effects are each one track', () => {
     expect(tracks.map(t => t.length / 48000)).toEqual([4, 5])    // to the end of its last file
   })
 
-  it('REQ-MOTION-050 starts both tracks at one instant and offset, so nothing slides between them', async () => {
+  it('starts both tracks at one instant and offset, so nothing slides between them', async () => {
     await setup(meta([cue({ start: 1 }), voice({ start: 1 })]))
     play(1.5)
     expect(sources).toHaveLength(2)
@@ -176,7 +176,7 @@ describe('REQ-MOTION-050 the voices and the effects are each one track', () => {
     expect(sources[0].started[0][1]).toBeCloseTo(1.52)
   })
 
-  it('REQ-MOTION-050 mixes once when nothing in the data is random, and leaves out a kind with no cue', async () => {
+  it('mixes once when nothing in the data is random, and leaves out a kind with no cue', async () => {
     await setup(meta([cue({ start: 1 })]))
     play()
     video.currentTime = 2; vi.advanceTimersByTime(30)
@@ -186,7 +186,7 @@ describe('REQ-MOTION-050 the voices and the effects are each one track', () => {
     expect(sources.at(-1)!.started).toHaveLength(1)
   })
 
-  it('REQ-MOTION-050 limits the effects at the game ceilings in their track, the voices not at all, and the sum last at 0.977', async () => {
+  it('limits the effects at the game ceilings in their track, the voices not at all, and the sum last at 0.977', async () => {
     await setup(meta([cue({ d3: false }), cue({ d3: true }), voice()]), { ...RULES, limiter: { ...RULES.limiter, release: 0.007 } })
     const inTrack = limiters.filter(l => l.ctx instanceof Offline), live = limiters.filter(l => l.ctx === ctx)
     expect(inTrack.map(l => [l.ctx === tracks[0], l.parameters.get('ceiling')!.value, l.parameters.get('release')!.value])).toEqual([[true, 0.2648, 0.007], [true, 0.6364, 0.007]])
@@ -197,8 +197,8 @@ describe('REQ-MOTION-050 the voices and the effects are each one track', () => {
   })
 })
 
-describe('REQ-MOTION-038 a place in the middle, a negative start, an end', () => {
-  it('REQ-MOTION-038 plays the track from the video time after a pause and after a seek', async () => {
+describe('a place in the middle, a negative start, an end', () => {
+  it('plays the track from the video time after a pause and after a seek', async () => {
     durations['sfx/a.m4a'] = 4
     await setup(meta([cue({ start: 0, seconds: 4 })]))
     play(0)
@@ -213,23 +213,23 @@ describe('REQ-MOTION-038 a place in the middle, a negative start, an end', () =>
     expect(sources[2].started[0][1]).toBeCloseTo(3.02)
   })
 
-  it('REQ-MOTION-038 skips the front of the file for a negative start and sounds from video time 0', async () => {
+  it('skips the front of the file for a negative start and sounds from video time 0', async () => {
     await setup(meta([cue({ start: -0.5 })]))
     expect(cues[0].started).toEqual([[0, 0.5]])
   })
 
-  it('REQ-MOTION-038 starts a cue with clipIn that far into its file: a long line goes on from coin to coin', async () => {
+  it('starts a cue with clipIn that far into its file: a long line goes on from coin to coin', async () => {
     await setup(meta([cue({ start: 1, clipIn: 2.23 }), cue({ start: -0.5, clipIn: 1 })]))
     expect(cues.map(c => c.started)).toEqual([[[0, 1.5]], [[1, 2.23]]]) // in the order of their starts
   })
 
-  it('REQ-MOTION-038 stops at end with no fade of its own', async () => {
+  it('stops at end with no fade of its own', async () => {
     await setup(meta([cue({ start: 1, end: 1.5, mix: [[60, 1, 1], [90, 1, 1]] })]))
     expect(cues[0].stops).toEqual([1.5])
     expect(stealed(cues[0])).toBe(false)
   })
 
-  it('REQ-MOTION-038 repeats a loop cue shorter than its span', async () => {
+  it('repeats a loop cue shorter than its span', async () => {
     durations['sfx/loop.m4a'] = 1
     await setup(meta([cue({ start: 1, end: 5, kind: 'loop', files: ['sfx/loop.m4a'], seconds: 4, mix: [[60, 1, 1], [300, 0, 0]] })]))
     expect(cues[0].loop).toBe(true)
@@ -238,8 +238,8 @@ describe('REQ-MOTION-038 a place in the middle, a negative start, an end', () =>
   })
 })
 
-describe('REQ-MOTION-039 random files and cues on top of each other', () => {
-  it('REQ-MOTION-039 loads every file of a cue, picks one at the same odds, and again for a later play when the loop wraps', async () => {
+describe('random files and cues on top of each other', () => {
+  it('loads every file of a cue, picks one at the same odds, and again for a later play when the loop wraps', async () => {
     const random = vi.spyOn(Math, 'random').mockReturnValue(0.1)
     await setup(meta([cue({ start: 1, files: ['sfx/a.m4a', 'sfx/b.m4a', 'sfx/c.m4a'] })]))
     const fetched = vi.mocked(fetch).mock.calls.map(c => String(c[0]))
@@ -254,7 +254,7 @@ describe('REQ-MOTION-039 random files and cues on top of each other', () => {
     expect(sources.at(-1)!.buffer!.cues![0].buffer!.url).toBe('sfx/c.m4a')
   })
 
-  it('REQ-MOTION-039 draws every pool again and plays only the cues of the drawn option', async () => {
+  it('draws every pool again and plays only the cues of the drawn option', async () => {
     const pools = [{ id: 'p', kind: 'random', options: [{ weight: 1 }, { weight: 1 }] }]
     const random = vi.spyOn(Math, 'random').mockReturnValue(0.1)
     await setup(meta([cue({ pool: 'p', option: 0 }), cue({ pool: 'p', option: 1, files: ['sfx/b.m4a'] })], { soundPools: pools }))
@@ -266,7 +266,7 @@ describe('REQ-MOTION-039 random files and cues on top of each other', () => {
     expect(player.wanted().map(c => c.option)).toEqual([1])
   })
 
-  it('REQ-MOTION-039 mixes seven cues of one event in the same frame, all of them, inside the event\'s limit', async () => {
+  it('mixes seven cues of one event in the same frame, all of them, inside the event\'s limit', async () => {
     const hit = { start: 1, event: 'event:/SFX/20220329/Hit', d3: true, files: ['sfx/hit.m4a'], mix: [[60, 0.3, 0.2]] as [number, number, number][] }
     await setup(meta(Array.from({ length: 7 }, () => cue(hit))))
     expect(cues).toHaveLength(7)
@@ -274,7 +274,7 @@ describe('REQ-MOTION-039 random files and cues on top of each other', () => {
     expect(new Set(cues.map(s => chain(s).to)).size).toBe(1)
   })
 
-  it('REQ-MOTION-039 fades the oldest over 0.043 s once the event\'s limit is reached', async () => {
+  it('fades the oldest over 0.043 s once the event\'s limit is reached', async () => {
     const rules = { ...RULES, events: { 'event:/sfx/20220329/hit': { max: 3, d3: true } } }
     const hit = (start: number) => cue({ start, event: 'event:/SFX/20220329/Hit', files: ['sfx/hit.m4a'] })
     await setup(meta([hit(1), hit(1.01), hit(1.02), hit(1.03)]), rules)
@@ -285,15 +285,15 @@ describe('REQ-MOTION-039 random files and cues on top of each other', () => {
     expect(down.t - before.t).toBeCloseTo(0.043)
   })
 
-  it('REQ-MOTION-039 sends a cue to the 3D limiter by its own d3, not by the rule of its event', async () => {
+  it('sends a cue to the 3D limiter by its own d3, not by the rule of its event', async () => {
     await setup(meta([cue({ event: 'event:/SFX/20220329/Hit', d3: false }), cue({ event: 'event:/SFX/x', d3: true })]))
     const [plain, spatial] = cues.map(src => chain(src).to)
     expect(plain).not.toBe(spatial)
   })
 })
 
-describe('REQ-MOTION-040 the sound tail after the video ended', () => {
-  it('REQ-MOTION-040 lets the track run past the end of the video, stops it at a seek', async () => {
+describe('the sound tail after the video ended', () => {
+  it('lets the track run past the end of the video, stops it at a seek', async () => {
     await setup(meta([cue({ start: 0.5 })]))
     play(0.3)
     video.currentTime = 2; video.ended = true; video.paused = true
@@ -303,7 +303,7 @@ describe('REQ-MOTION-040 the sound tail after the video ended', () => {
     expect(sources[0].stops).toHaveLength(1)
   })
 
-  it('REQ-MOTION-040 ends the tail with stop(): nothing starts after it', async () => {
+  it('ends the tail with stop(): nothing starts after it', async () => {
     await setup(meta([cue({ start: 2.2 })]))
     play(1.95)
     video.currentTime = 2; video.paused = true; video.ended = true
@@ -314,7 +314,7 @@ describe('REQ-MOTION-040 the sound tail after the video ended', () => {
     expect(sources).toHaveLength(1)
   })
 
-  it('REQ-MOTION-040 plays from the start again after the end', async () => {
+  it('plays from the start again after the end', async () => {
     await setup(meta([cue({ start: 0.5 })]))
     play(0.3)
     video.currentTime = 2; video.paused = true; video.ended = true
@@ -327,8 +327,8 @@ describe('REQ-MOTION-040 the sound tail after the video ended', () => {
   })
 })
 
-describe('REQ-MOTION-047 a video that stops for buffering', () => {
-  it('REQ-MOTION-047 stops the sound at the stall, starts nothing while the video cannot play on, and resumes from its position', async () => {
+describe('a video that stops for buffering', () => {
+  it('stops the sound at the stall, starts nothing while the video cannot play on, and resumes from its position', async () => {
     await setup(meta([cue({ start: 0.5 })]))
     play(0.3)
     video.currentTime = 1; ctx.currentTime = 10.7
@@ -344,7 +344,7 @@ describe('REQ-MOTION-047 a video that stops for buffering', () => {
     expect(sources[1].started[0][1]).toBeCloseTo(1.22)
   })
 
-  it('REQ-MOTION-047 joins when the mix is ready after the video started', async () => {
+  it('joins when the mix is ready after the video started', async () => {
     let done = () => {}
     vi.spyOn(Offline.prototype, 'startRendering').mockImplementationOnce(function (this: Offline) { return new Promise(r => { done = () => r({ duration: 3, cues: this.made }) }) })
     vi.stubGlobal('fetch', vi.fn(async (url: string) => url.endsWith('sound_rules.json') ? { ok: true, json: async () => RULES } : { ok: true, arrayBuffer: async () => ({ url }) }))
@@ -362,8 +362,8 @@ describe('REQ-MOTION-047 a video that stops for buffering', () => {
   })
 })
 
-describe('REQ-MOTION-051 play rules an edge keeps as missing', () => {
-  it('REQ-MOTION-051 asks again past the cache, so the sound never goes on without the output and the limits', async () => {
+describe('play rules an edge keeps as missing', () => {
+  it('asks again past the cache, so the sound never goes on without the output and the limits', async () => {
     const urls: string[] = []
     vi.stubGlobal('fetch', vi.fn(async (url: string) => {
       urls.push(url)
@@ -380,8 +380,8 @@ describe('REQ-MOTION-051 play rules an edge keeps as missing', () => {
   })
 })
 
-describe('REQ-MOTION-047 a sound file that is not on R2', () => {
-  it('REQ-MOTION-047 stays silent and never decodes the error page', async () => {
+describe('a sound file that is not on R2', () => {
+  it('stays silent and never decodes the error page', async () => {
     const decode = vi.spyOn(Ctx.prototype, 'decodeAudioData')
     await setup(meta([cue({ files: ['sfx/gone.m4a'] }), cue({ files: ['sfx/here.m4a'] })]), RULES, 'gone.m4a')
     expect(decode.mock.calls.map(call => (call[0] as unknown as { url: string }).url)).toEqual(['sfx/here.m4a'])
@@ -390,11 +390,11 @@ describe('REQ-MOTION-047 a sound file that is not on R2', () => {
   })
 })
 
-describe('REQ-MOTION-039 the limit of an event', () => {
+describe('the limit of an event', () => {
   const rules = { events: { 'event:/sfx/20220329/hit': { max: 8 } } }
   const hit = (start: number, file = 'f'): PlayCue => ({ ...cue({ start, event: 'event:/SFX/20220329/Hit' }), file })
 
-  it('REQ-MOTION-039 cuts the oldest when a later start goes over, each cue for itself', () => {
+  it('cuts the oldest when a later start goes over, each cue for itself', () => {
     const first = Array.from({ length: 7 }, () => hit(1)), second = Array.from({ length: 7 }, () => hit(1.1))
     const out = limitCues([...first, ...second], rules, () => 1)
     expect(out).toHaveLength(14)
@@ -402,19 +402,19 @@ describe('REQ-MOTION-039 the limit of an event', () => {
     expect(first[6].cut).toBeUndefined()
   })
 
-  it('REQ-MOTION-039 leaves out starts of one frame beyond the limit, without cutting the others', () => {
+  it('leaves out starts of one frame beyond the limit, without cutting the others', () => {
     const cues = Array.from({ length: 10 }, () => hit(1))
     expect(limitCues(cues, rules, () => 1)).toHaveLength(8)
     expect(cues.every(c => c.cut === undefined)).toBe(true)
   })
 
-  it('REQ-MOTION-039 leaves a cue alone once its file has ended, and events with no limit', () => {
+  it('leaves a cue alone once its file has ended, and events with no limit', () => {
     expect(limitCues(Array.from({ length: 12 }, (_, k) => hit(k)), rules, () => 0.5)).toHaveLength(12)
     expect(limitCues(Array.from({ length: 12 }, () => ({ ...cue({ start: 1, event: 'event:/x' }), file: 'f' })), rules, () => 1)).toHaveLength(12)
   })
 })
 
-describe('REQ-MOTION-049 the sound follows the picture', () => {
+describe('the sound follows the picture', () => {
   beforeEach(() => { vi.stubGlobal('performance', { now: () => 0 }) })
 
   class Framed extends Video {
@@ -432,7 +432,7 @@ describe('REQ-MOTION-049 the sound follows the picture', () => {
     return v
   }
 
-  it('REQ-MOTION-049 starts no sound before the first picture is reported, and lays the clock on that frame', async () => {
+  it('starts no sound before the first picture is reported, and lays the clock on that frame', async () => {
     const v = await framed(meta([cue({ start: 1 })]))
     v.currentTime = 0.8; v.paused = false
     v.fire('play'); v.fire('playing')
@@ -446,7 +446,7 @@ describe('REQ-MOTION-049 the sound follows the picture', () => {
     expect(sources[0].started[0][1]).toBeCloseTo(0.9, 3)
   })
 
-  it('REQ-MOTION-049 starts on the video time when no frame is reported, as an off-document video may not', async () => {
+  it('starts on the video time when no frame is reported, as an off-document video may not', async () => {
     const v = await framed(meta([cue({ start: 0.5 })]))
     v.currentTime = 0.8; v.paused = false
     const now = vi.fn(() => 0)
@@ -457,7 +457,7 @@ describe('REQ-MOTION-049 the sound follows the picture', () => {
     expect(sources).toHaveLength(1)
   })
 
-  it('REQ-MOTION-053 wakes the audio a phone suspended when the video changed, while the sound is on', async () => {
+  it('wakes the audio a phone suspended when the video changed, while the sound is on', async () => {
     const v = await framed(meta([cue({ start: 0.5 })]))
     const resume = vi.spyOn(ctx, 'resume')
     ctx.state = 'suspended'
@@ -469,7 +469,7 @@ describe('REQ-MOTION-049 the sound follows the picture', () => {
     expect(resume).not.toHaveBeenCalled()
   })
 
-  it('REQ-MOTION-049 moves the track to the picture when the video has really fallen behind', async () => {
+  it('moves the track to the picture when the video has really fallen behind', async () => {
     const v = await framed(meta([cue({ start: 0.5 })]))
     v.currentTime = 0.4; v.paused = false
     v.fire('playing')
@@ -482,7 +482,7 @@ describe('REQ-MOTION-049 the sound follows the picture', () => {
     expect(sources[1].started[0][1]).toBeCloseTo(1.82, 3)
   })
 
-  it('REQ-MOTION-049 leaves the track alone through the jitter of frame reports', async () => {
+  it('leaves the track alone through the jitter of frame reports', async () => {
     const v = await framed(meta([cue({ start: 0.5 })]))
     v.currentTime = 0.4; v.paused = false
     v.fire('playing')
@@ -496,8 +496,8 @@ describe('REQ-MOTION-049 the sound follows the picture', () => {
   })
 })
 
-describe('REQ-MOTION-058 only the sounds in use are held', () => {
-  it('REQ-MOTION-058 drops the decoded files another video does not use, and keeps the ones it shares, while a video mixes a new draw each play', async () => {
+describe('only the sounds in use are held', () => {
+  it('drops the decoded files another video does not use, and keeps the ones it shares, while a video mixes a new draw each play', async () => {
     const decode = vi.spyOn(Ctx.prototype, 'decodeAudioData')
     const decoded = () => decode.mock.calls.map(call => (call[0] as unknown as { url: string }).url)
     await setup(meta([cue({ files: ['sfx/a.m4a', 'sfx/a2.m4a'] }), cue({ files: ['sfx/shared.m4a'] })]))
@@ -506,7 +506,7 @@ describe('REQ-MOTION-058 only the sounds in use are held', () => {
     expect(decoded()).toEqual(['sfx/a.m4a', 'sfx/a2.m4a', 'sfx/shared.m4a', 'sfx/b.m4a', 'sfx/b2.m4a', 'sfx/a.m4a', 'sfx/a2.m4a'])
   })
 
-  it('REQ-MOTION-058 holds no decoded file once the tracks of a video with nothing random are mixed', async () => {
+  it('holds no decoded file once the tracks of a video with nothing random are mixed', async () => {
     const decode = vi.spyOn(Ctx.prototype, 'decodeAudioData')
     const decoded = () => decode.mock.calls.map(call => (call[0] as unknown as { url: string }).url)
     await setup(meta([cue({ files: ['sfx/a.m4a'] }), cue({ files: ['sfx/shared.m4a'] })]))
@@ -517,7 +517,7 @@ describe('REQ-MOTION-058 only the sounds in use are held', () => {
     expect(sources[0].buffer!.cues!.map(c => c.buffer!.url)).toEqual(['sfx/b.m4a', 'sfx/shared.m4a'])
   })
 
-  it('REQ-MOTION-058 fetches nothing while the sound is off, and joins the playing video once it is turned on', async () => {
+  it('fetches nothing while the sound is off, and joins the playing video once it is turned on', async () => {
     const fetched = vi.fn(async (url: string) => url.endsWith('sound_rules.json') ? { ok: true, json: async () => RULES } : { ok: true, arrayBuffer: async () => ({ url }) })
     vi.stubGlobal('fetch', fetched)
     player = new SoundPlayer(); video = new Video()
@@ -536,7 +536,7 @@ describe('REQ-MOTION-058 only the sounds in use are held', () => {
     expect(player.setMuted(false)).toBeUndefined()
   })
 
-  it('REQ-MOTION-058 finishes a mix whose files a newer load has dropped', async () => {
+  it('finishes a mix whose files a newer load has dropped', async () => {
     await setup(meta([]))
     let open = () => {}
     gate = new Promise(r => { open = r })

@@ -25,7 +25,7 @@ function Formatted({ text }: { text: string }) {
 const formatted = (text: string, locale: PlaceholderLocale = 'ko') =>
   render(<KeywordProvider keywords={{ 화상: { desc: '' } }}><Formatted text={text} /></KeywordProvider>, locale)
 
-describe('REQ-MIRROR-DUNGEON-010 placeholder labels', () => {
+describe('placeholder labels', () => {
   it('uses the same wording in messages and in plain-text labels, for every token and language', () => {
     for (const locale of ['ko', 'en', 'ja'] as const) {
       for (const token of PLACEHOLDER_TOKENS) {
@@ -60,8 +60,8 @@ describe('REQ-MIRROR-DUNGEON-010 placeholder labels', () => {
   })
 })
 
-describe('REQ-MIRROR-DUNGEON-010 text renderers', () => {
-  // REQ-SHARED-021: the word 화상 is no longer guessed to be a keyword in game text; only tokens are drawn.
+describe('text renderers', () => {
+  // The word 화상 is no longer guessed to be a keyword in game text; only tokens are drawn.
   it('skill, passive, keyword and gift descriptions draw tokens as chips, without guessing keywords', () => {
     const html = formatted('{{count}}턴 동안 턴 종료 시 {{potency}}만큼 화상 피해 (현재 {{live}}%)')
     expect(html.match(/data-placeholder=/g)).toHaveLength(3)

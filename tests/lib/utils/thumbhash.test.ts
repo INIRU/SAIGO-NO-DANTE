@@ -28,7 +28,7 @@ it('finds placeholders by Supabase URL or storage path and skips unknown images'
   expect(getBlurDataURL('https://example.com/unknown.webp')).toBeUndefined()
 })
 
-it('REQ-SHARED-030 gives next/image a blur placeholder only for images that have one', () => {
+it('gives next/image a blur placeholder only for images that have one', () => {
   const [path] = Object.keys(map)
   expect(blurPlaceholder(path)).toEqual({ placeholder: 'blur', blurDataURL: getBlurDataURL(path) })
   // No entry (gift icons, skill icons) or no image at all: next/image keeps its plain loading.

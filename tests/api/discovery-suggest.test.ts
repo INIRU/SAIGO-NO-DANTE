@@ -42,7 +42,7 @@ const ask = (query: string) => GET(new Request(`http://localhost/api/discovery/s
 beforeEach(() => { state.fail = false })
 
 describe('GET /api/discovery/suggest', () => {
-  it('REQ-DECKS-022 suggests the asked sinner\'s identities beside every identity on the board, with reasons, partners and the board\'s archetype', async () => {
+  it('suggests the asked sinner\'s identities beside every identity on the board, with reasons, partners and the board\'s archetype', async () => {
     const body = await (await ask(`type=identity&sinner=faust&with=${X},${Q}`)).json()
     expect(body.items.map((row: { id: string }) => row.id)).toEqual([R, P])
     expect(body.items[0]).toMatchObject({ id: R })
@@ -52,7 +52,7 @@ describe('GET /api/discovery/suggest', () => {
     expect(body.archetype).toEqual({ keywords: ['화상'], factions: [] })
   })
 
-  it('REQ-DECKS-040 answers for an empty board and ignores the order of the board and the LCB starter', async () => {
+  it('answers for an empty board and ignores the order of the board and the LCB starter', async () => {
     const empty = await (await ask('type=identity&sinner=faust')).json()
     expect(empty.items.length).toBe(2)
     expect(empty.archetype).toEqual({ keywords: [], factions: [] })
@@ -62,7 +62,7 @@ describe('GET /api/discovery/suggest', () => {
     expect(b).toEqual(a)
   })
 
-  it('REQ-DECKS-023 REQ-DECKS-044 suggests the identity\'s sinner\'s E.G.O with the posts that equip it, reasons and partners, leaving a filled grade out', async () => {
+  it('suggests the identity\'s sinner\'s E.G.O with the posts that equip it, reasons and partners, leaving a filled grade out', async () => {
     const body = await (await ask(`type=ego&identity=${X}&with=${R}`)).json()
     expect(body.items[0]).toMatchObject({ id: E1, count: 5 })
     expect(body.items[0].partners[0]).toMatchObject({ id: R, chosen: true })
@@ -71,7 +71,7 @@ describe('GET /api/discovery/suggest', () => {
     expect(taken.items.map((row: { id: string }) => row.id)).toEqual([E2])
   })
 
-  it('REQ-PLANNER-029 REQ-PLANNER-040 lists the packs the floor can show in its difficulty and that the plan has not used elsewhere, with plan counts and reasons', async () => {
+  it('lists the packs the floor can show in its difficulty and that the plan has not used elsewhere, with plan counts and reasons', async () => {
     const body = await (await ask(`type=floor&floor=1&identities=${X},${R}&difficulty=hard&others=2:12`)).json()
     expect(body.themes.map((row: { id: string }) => row.id)).toEqual(['11'])
     expect(body.themes[0]).toMatchObject({ id: '11', count: 3 })
@@ -85,7 +85,7 @@ describe('GET /api/discovery/suggest', () => {
     expect(open.themes.map((row: { id: string }) => row.id)).not.toContain('13')
   })
 
-  it('REQ-PLANNER-030 REQ-PLANNER-041 lists the gifts of the floor\'s pack that similar plans took, and every gift seen on the floor when the pack is not given', async () => {
+  it('lists the gifts of the floor\'s pack that similar plans took, and every gift seen on the floor when the pack is not given', async () => {
     const body = await (await ask(`type=floor&floor=1&identities=${X},${R}&theme=11&taken=9002`)).json()
     expect(body.gifts.map((row: { id: string }) => row.id)).toEqual(['9001'])
     expect(body.gifts[0]).toMatchObject({ id: '9001', count: 3 })
@@ -93,7 +93,7 @@ describe('GET /api/discovery/suggest', () => {
     expect(anyPack.gifts[0].id).toBe('9001')
   })
 
-  it('REQ-DECKS-024 refuses bad parameters and answers an unreadable count with an error, not guesses', async () => {
+  it('refuses bad parameters and answers an unreadable count with an error, not guesses', async () => {
     expect((await ask('type=identity&sinner=faust&with=not-an-id')).status).toBe(400)
     expect((await ask('type=identity')).status).toBe(400)
     expect((await ask('type=ego&identity=nope')).status).toBe(400)

@@ -53,8 +53,8 @@ beforeEach(() => {
   db.selects = []
 })
 
-describe('REQ-KEYWORDS-004 the keyword catalogue reads names and descriptions from the references', () => {
-  it('REQ-KEYWORDS-004 takes the localized names and descriptions of a row with a game_id from game_text_refs, keyed by the Korean name', async () => {
+describe('the keyword catalogue reads names and descriptions from the references', () => {
+  it('takes the localized names and descriptions of a row with a game_id from game_text_refs, keyed by the Korean name', async () => {
     const data = await getKeywordData()
     expect(data['화상']).toMatchObject({
       desc: '턴 종료 시 피해', nameEn: 'Burn', nameJp: '火傷', descEn: 'At turn end, take damage', descJp: 'ターン終了時にダメージ',
@@ -63,24 +63,24 @@ describe('REQ-KEYWORDS-004 the keyword catalogue reads names and descriptions fr
     expect(Object.keys(data)).toEqual(['화상', '호흡', '원호 공격'])
   })
 
-  it('REQ-KEYWORDS-004 keeps the keyword_meta texts for a row without a game_id', async () => {
+  it('keeps the keyword_meta texts for a row without a game_id', async () => {
     const data = await getKeywordData()
     expect(data['호흡']).toMatchObject({ desc: '크리티컬 확률 증가', nameEn: 'Poise', nameJp: '呼吸', descEn: 'Poise en', descJp: null, maxStack: 20 })
   })
 
-  it('REQ-KEYWORDS-004 keeps the hand-written Korean description of 원호 공격 and takes the other languages from the reference', async () => {
+  it('keeps the hand-written Korean description of 원호 공격 and takes the other languages from the reference', async () => {
     const data = await getKeywordData()
     expect(data['원호 공격']).toMatchObject({ desc: '손으로 쓴 설명', nameEn: 'Cover Attack', descEn: 'Game text', descJp: null })
   })
 
-  it('REQ-KEYWORDS-004 serves tooltip descriptions per language from the references', async () => {
+  it('serves tooltip descriptions per language from the references', async () => {
     const data = await getKeywordData()
     expect(keywordDescriptions(data, 'en')['화상']).toBe('At turn end, take damage')
     expect(keywordDescriptions(data, 'ja')['화상']).toBe('ターン終了時にダメージ')
     expect(keywordDescriptions(data, 'ko')['화상']).toBe('턴 종료 시 피해')
   })
 
-  it('REQ-KEYWORDS-004 leaves descriptions out of the layout catalogue but keeps the reference names of the page language', async () => {
+  it('leaves descriptions out of the layout catalogue but keeps the reference names of the page language', async () => {
     const catalog = await getKeywordCatalog('en')
     expect(catalog['화상']).toMatchObject({ gameId: 'Combustion', nameEn: 'Burn' })
     expect(catalog['화상']).not.toHaveProperty('desc')
@@ -88,26 +88,26 @@ describe('REQ-KEYWORDS-004 the keyword catalogue reads names and descriptions fr
     expect(catalog['화상']).not.toHaveProperty('nameJp')
   })
 
-  it('REQ-KEYWORDS-012 keeps both names for the sections that search across languages', async () => {
+  it('keeps both names for the sections that search across languages', async () => {
     expect((await getKeywordCatalog('all'))['화상']).toMatchObject({ nameEn: 'Burn', nameJp: '火傷' })
     expect((await getKeywordCatalog('ko'))['화상']).not.toHaveProperty('nameEn')
   })
 
-  it('REQ-KEYWORDS-004 reads only keyword references, and none when no row has a game_id', async () => {
+  it('reads only keyword references, and none when no row has a game_id', async () => {
     db.tables.keyword_meta = META.map(row => ({ ...row, game_id: null }))
     const data = await getKeywordData()
     expect(db.selects.some(select => select.table === 'game_text_refs')).toBe(false)
     expect(data['화상']).toMatchObject({ nameEn: 'old Burn', desc: '옛 설명' })
   })
 
-  it('REQ-KEYWORDS-004 still works before the migration: without the game_id column the keyword_meta texts are used', async () => {
+  it('still works before the migration: without the game_id column the keyword_meta texts are used', async () => {
     db.missingColumns = ['game_id']
     const data = await getKeywordData()
     expect(data['화상']).toMatchObject({ nameEn: 'old Burn', desc: '옛 설명', effectType: 'negative' })
     expect(db.selects.some(select => select.table === 'game_text_refs')).toBe(false)
   })
 
-  it('REQ-KEYWORDS-004 falls back to the keyword_meta texts, and does not throw, when the reference table cannot be read', async () => {
+  it('falls back to the keyword_meta texts, and does not throw, when the reference table cannot be read', async () => {
     db.refsError = { code: 'PGRST205', message: 'Could not find the table limbus.game_text_refs' }
     const error = vi.spyOn(console, 'error').mockImplementation(() => {})
     const data = await getKeywordData()

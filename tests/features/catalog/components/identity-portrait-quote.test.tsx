@@ -26,13 +26,13 @@ function portrait(locale: string, quote: string | undefined = QUOTE) {
 }
 
 describe('identity portrait quote', () => {
-  it.each(['ko', 'en', 'ja'])('REQ-CATALOG-022 shows the Korean quote on the %s page, marked as Korean', locale => {
+  it.each(['ko', 'en', 'ja'])('shows the Korean quote on the %s page, marked as Korean', locale => {
     const html = portrait(locale)
     expect(html).toContain(QUOTE)
     expect(html).toMatch(/<blockquote[^>]* lang="ko"/)
   })
 
-  it('REQ-CATALOG-022 draws no quote for an identity without one', () => {
+  it('draws no quote for an identity without one', () => {
     expect(portrait('en', '')).not.toContain('<blockquote')
   })
 })

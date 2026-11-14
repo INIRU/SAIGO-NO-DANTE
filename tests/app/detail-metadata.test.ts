@@ -49,7 +49,7 @@ type DetailModule = { generateMetadata: (props: { params: Promise<Record<string,
 const metadataOf = async (load: () => Promise<unknown>, lang: string) =>
   ((await load()) as DetailModule).generateMetadata({ params: Promise.resolve({ lang, slug: 'faust', id: ID, egoId: ID }) })
 
-describe('REQ-SHARED-040 detail pages name the game and what the page is', () => {
+describe('detail pages name the game and what the page is', () => {
   it.each([
     ['identity', () => import('@/app/[lang]/sinners/[slug]/identities/[id]/page'), `/sinners/faust/identities/${ID}`, {
       ko: 'LCB 수감자 파우스트 — 림버스 컴퍼니 인격 스킬·패시브',
@@ -71,7 +71,7 @@ describe('REQ-SHARED-040 detail pages name the game and what the page is', () =>
       en: '거던 플랜 — Limbus Company Mirror Dungeon Plan',
       ja: '거던 플랜 — リンバスカンパニー ミラーダンジョンプラン',
     }],
-  ] as [string, () => Promise<unknown>, string, Record<string, string>][])('REQ-SHARED-040 %s detail', async (_name, load, path, titles) => {
+  ] as [string, () => Promise<unknown>, string, Record<string, string>][])('%s detail', async (_name, load, path, titles) => {
     for (const lang of ['ko', 'en', 'ja']) {
       const metadata = await metadataOf(load, lang)
       const url = `https://saigo-no-dante.com/${lang}${path}`

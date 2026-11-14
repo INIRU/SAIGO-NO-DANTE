@@ -9,8 +9,8 @@ const root = resolve(__dirname, '../../..')
 const read = (file: string) => readFileSync(resolve(root, file), 'utf8')
 const entries = Object.entries(icons).filter(([name]) => name.endsWith('Icon')) as [string, ComponentType<Record<string, unknown>>][]
 
-describe('REQ-SHARED-080 the site icon set', () => {
-  it('REQ-SHARED-080 ships the generic glyphs and the section icons', () => {
+describe('the site icon set', () => {
+  it('ships the generic glyphs and the section icons', () => {
     const names = entries.map(([name]) => name)
     for (const name of [
       'CloseIcon', 'SearchIcon', 'CheckIcon', 'ArrowLeftIcon', 'ArrowRightIcon', 'ArrowUpIcon', 'ArrowDownIcon', 'ArrowUpRightIcon',
@@ -22,7 +22,7 @@ describe('REQ-SHARED-080 the site icon set', () => {
     ]) expect(names).toContain(name)
   })
 
-  it('REQ-SHARED-080 every icon is a 24-grid SVG in currentColor, hidden from screen readers', () => {
+  it('every icon is a 24-grid SVG in currentColor, hidden from screen readers', () => {
     expect(entries.length).toBeGreaterThan(50)
     for (const [name, Icon] of entries) {
       const html = renderToStaticMarkup(<Icon />)
@@ -36,7 +36,7 @@ describe('REQ-SHARED-080 the site icon set', () => {
     }
   })
 
-  it('REQ-SHARED-080 takes a size and passes SVG props through', () => {
+  it('takes a size and passes SVG props through', () => {
     for (const [name, Icon] of entries) {
       const html = renderToStaticMarkup(<Icon size="1.25rem" className="x" strokeWidth={2.5} data-k="1" />)
       expect(html, name).toContain('width="1.25rem"')
@@ -49,8 +49,8 @@ describe('REQ-SHARED-080 the site icon set', () => {
 })
 
 // The owner picked only the calendar and language glyphs for the navbar; the rest of it keeps its icons.
-describe('REQ-SHARED-081 the navbar calendar and language buttons use the site icons', () => {
-  it('REQ-SHARED-081 calendar and language glyphs come from the site set, not lucide', () => {
+describe('the navbar calendar and language buttons use the site icons', () => {
+  it('calendar and language glyphs come from the site set, not lucide', () => {
     for (const file of ['components/layout/Navbar.tsx', 'components/layout/NavbarMobileSheet.tsx']) {
       const source = read(file)
       expect(source, file).toContain("import { CalendarIcon } from '@/components/brand/icons'")
@@ -61,13 +61,13 @@ describe('REQ-SHARED-081 the navbar calendar and language buttons use the site i
     expect(language).not.toMatch(/\bLanguages\b/)
   })
 
-  it('REQ-SHARED-081 the home hero buttons carry no lucide icons', () => {
+  it('the home hero buttons carry no lucide icons', () => {
     expect(read('app/[lang]/(home)/HomeClient.tsx')).not.toMatch(/from ['"]lucide-react['"]/)
   })
 })
 
-describe('REQ-SHARED-082 shared motion follows reduced motion', () => {
-  it('REQ-SHARED-082 the shared press and frame-glow motion stop under reduced motion', () => {
+describe('shared motion follows reduced motion', () => {
+  it('the shared press and frame-glow motion stop under reduced motion', () => {
     const css = read('app/globals.css')
     const block = css.slice(css.indexOf('/* motion kit'))
     expect(block).toContain('--ease-out')

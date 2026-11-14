@@ -16,7 +16,7 @@ it("only accepts the owner profile visibility setting", () => {
     communitySettingsSchema.safeParse({ public_profile: false }).success,
   ).toBe(true);
 });
-it("REQ-COMMUNITY-089 accepts the six owner settings and nothing else", () => {
+it("accepts the six owner settings and nothing else", () => {
   expect(communitySettingsSchema.safeParse({ notify_comments: false, notify_follows: true, notify_posts: false }).success).toBe(true);
   expect(communitySettingsSchema.safeParse({ public_following: true, public_followers: false }).success).toBe(true);
   for (const data of [{ notify_comments: "false" }, { notify_all: true }, { notifications_read_at: "2026-10-25" }])

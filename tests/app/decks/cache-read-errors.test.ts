@@ -12,27 +12,27 @@ function fn(source: string, header: string) {
   return source.slice(start, next === -1 ? undefined : next)
 }
 
-describe('REQ-SHARED-099 a failed deck read is not cached as an empty page', () => {
+describe('a failed deck read is not cached as an empty page', () => {
   const cached = fn(page, 'async function getCachedDeckDetailPayload')
 
-  it('REQ-SHARED-099 the cached payload throws on a deck or comment read error', () => {
+  it('the cached payload throws on a deck or comment read error', () => {
     expect(cached).toMatch(/if \(deckResult\.error\) throw deckResult\.error/)
     expect(cached).toMatch(/if \(commentsResult\.error\) throw commentsResult\.error/)
   })
 
-  it('REQ-SHARED-099 the cached payload does not swallow errors itself', () => {
+  it('the cached payload does not swallow errors itself', () => {
     expect(cached).not.toMatch(/\} catch \(error\)/)
   })
 
-  it('REQ-SHARED-099 the caller catches outside the cache, reports to Sentry and falls back to the client fetch', () => {
+  it('the caller catches outside the cache, reports to Sentry and falls back to the client fetch', () => {
     const runtime = fn(page, 'async function DeckDetailRuntime')
     expect(runtime).toMatch(/await getCachedDeckDetailPayload\(lang, id\)\.catch\(\(error\) => \{[\s\S]*Sentry\.captureException[\s\S]*return EMPTY_PAYLOAD/)
     expect(page).toMatch(/const EMPTY_PAYLOAD = \{\s*initialDeck: null/)
   })
 })
 
-describe('REQ-SHARED-099 the comment list effect depends on the deck id', () => {
-  it('REQ-SHARED-099 DeckComments does not list the whole initialComments array as a dependency', () => {
+describe('the comment list effect depends on the deck id', () => {
+  it('DeckComments does not list the whole initialComments array as a dependency', () => {
     expect(comments).not.toMatch(/\}, \[[^\]]*initialComments[^\]]*\]\)/)
   })
 })

@@ -19,8 +19,8 @@ const panel = (props: Partial<React.ComponentProps<typeof GiftPresetPanel>> = {}
   renderToStaticMarkup(<GiftPresetPanel preset={preset} gifts={gifts} selected={0} onSelect={() => {}} onChange={() => {}} onRemoveGroup={() => {}} held={null} over={null} actions={null} {...props} />)
 const groupHtml = (html: string) => html.split(/(?=<section[^>]*data-preset-group=)/).slice(1)
 
-describe('REQ-MIRROR-DUNGEON-020 preset editor panel', () => {
-  it('REQ-MIRROR-DUNGEON-020 names the preset on top and gives each group a name, its gifts in order, a memo and a trash button', () => {
+describe('preset editor panel', () => {
+  it('names the preset on top and gives each group a name, its gifts in order, a memo and a trash button', () => {
     const html = panel()
     expect(html).toMatch(/<input[^>]*maxLength="20"[^>]*aria-label="mirrorDungeonPage\.presetName"[^>]*value="화상 덱"/)
     expect(html.indexOf('value="화상 덱"')).toBeLessThan(html.indexOf('data-preset-group'))
@@ -36,7 +36,7 @@ describe('REQ-MIRROR-DUNGEON-020 preset editor panel', () => {
     expect(html).toMatch(/>3<\/span><span[^>]*>\/60</)
   })
 
-  it('REQ-MIRROR-DUNGEON-020 marks the chosen group and shows only that group below the two-column width', () => {
+  it('marks the chosen group and shows only that group below the two-column width', () => {
     const [first, second] = groupHtml(panel({ selected: 1 }))
     expect(first).toMatch(/<button[^>]*aria-pressed="false"[^>]*aria-label="mirrorDungeonPage\.presetGroupSelect/)
     expect(second).toMatch(/<button[^>]*aria-pressed="true"[^>]*aria-label="mirrorDungeonPage\.presetGroupSelect/)
@@ -44,7 +44,7 @@ describe('REQ-MIRROR-DUNGEON-020 preset editor panel', () => {
     expect(second.slice(0, second.indexOf('>'))).not.toContain('max-lg:hidden')
   })
 
-  it('REQ-MIRROR-DUNGEON-020 offers one more group until there are six', () => {
+  it('offers one more group until there are six', () => {
     // The opening tag of the button that ends with the "add a group" text.
     const add = (html: string) => { const end = html.indexOf('mirrorDungeonPage.presetGroupAdd</button>'); return html.slice(html.lastIndexOf('<button', end), html.indexOf('>', html.lastIndexOf('<button', end))) }
     expect(add(panel())).toContain('<button')
@@ -53,7 +53,7 @@ describe('REQ-MIRROR-DUNGEON-020 preset editor panel', () => {
     expect(add(panel({ preset: full }))).toContain('disabled=""')
   })
 
-  it('REQ-MIRROR-DUNGEON-020 dims the gift being dragged and marks where it would land', () => {
+  it('dims the gift being dragged and marks where it would land', () => {
     const html = panel({ held: { key: '3', from: 0 }, over: { group: 1, before: '2' } })
     const [first, second] = groupHtml(html)
     expect(first).toMatch(/<li[^>]*data-preset-chip="3"[^>]*opacity-40/)

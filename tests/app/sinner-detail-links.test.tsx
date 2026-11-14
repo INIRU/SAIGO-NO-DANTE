@@ -34,8 +34,8 @@ const render = async (tab: 'identities' | 'ego') => {
 }
 const anchors = (html: string, kind: string) => [...html.matchAll(/<a [^>]*>/g)].map(match => match[0]).filter(tag => tag.includes(`/${kind}/`))
 
-describe('REQ-CATALOG-030 cards on a sinner page are links', () => {
-  it('REQ-CATALOG-030 every identity card is an anchor to its detail page, named after the identity', async () => {
+describe('cards on a sinner page are links', () => {
+  it('every identity card is an anchor to its detail page, named after the identity', async () => {
     const html = await render('identities')
     const links = anchors(html, 'identities')
 
@@ -47,7 +47,7 @@ describe('REQ-CATALOG-030 cards on a sinner page are links', () => {
     expect(html).not.toContain('role="button"')
   })
 
-  it('REQ-CATALOG-030 every E.G.O card is an anchor to its detail page, named after the E.G.O', async () => {
+  it('every E.G.O card is an anchor to its detail page, named after the E.G.O', async () => {
     const html = await render('ego')
     const links = anchors(html, 'ego')
 

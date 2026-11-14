@@ -13,28 +13,28 @@ function handler(source: string, name: string) {
   return source.slice(start, source.indexOf('\n\n', start))
 }
 
-describe('REQ-DECKS-055 editing a deck keeps its tags', () => {
-  it('REQ-DECKS-055 handleSave sends the edit mode tags instead of an empty list', () => {
+describe('editing a deck keeps its tags', () => {
+  it('handleSave sends the edit mode tags instead of an empty list', () => {
     const save = handler(builder, 'handleSave')
     expect(save).toMatch(/tags: editMode\?\.tags \?\? \[\]/)
     expect(save).not.toMatch(/tags: \[\]/)
   })
 })
 
-describe('REQ-DECKS-056 a failed save or copy is reported and can be retried', () => {
-  it('REQ-DECKS-056 handleSave catches a rejected fetch with showError and always clears saving', () => {
+describe('a failed save or copy is reported and can be retried', () => {
+  it('handleSave catches a rejected fetch with showError and always clears saving', () => {
     const save = handler(builder, 'handleSave')
     expect(save).toMatch(/try \{[\s\S]*await fetch\(/)
     expect(save).toMatch(/\} catch[\s\S]*showError\(/)
     expect(save).toMatch(/\} finally \{\s*setSaving\(false\)/)
   })
 
-  it('REQ-DECKS-056 the builder code copy reports a clipboard failure', () => {
+  it('the builder code copy reports a clipboard failure', () => {
     const copy = handler(builder, 'handleCopyCode')
     expect(copy).toMatch(/try \{[\s\S]*clipboard\.writeText[\s\S]*\} catch[\s\S]*showError\(/)
   })
 
-  it('REQ-DECKS-056 the detail page code copy and share report a clipboard failure', () => {
+  it('the detail page code copy and share report a clipboard failure', () => {
     const copy = handler(detail, 'handleCopyCode')
     expect(copy).toMatch(/try \{[\s\S]*clipboard\.writeText[\s\S]*\} catch[\s\S]*showError\(/)
     const share = handler(detail, 'handleShare')

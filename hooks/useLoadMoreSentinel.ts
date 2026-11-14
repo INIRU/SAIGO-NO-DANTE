@@ -12,7 +12,7 @@ export function useLoadMoreSentinel(loadMore: () => void, rootRef: RefObject<HTM
   useEffect(() => {
     if (!sentinel) return
     const root = rootRef.current
-    // read once per mount; resizing across the lg breakpoint keeps the old root until the list reloads.
+    // Read once per mount; resizing across the lg breakpoint keeps the old root until the list reloads.
     const clips = root && getComputedStyle(root).overflowY !== 'visible'
     const observer = new IntersectionObserver(
       entries => { if (entries[0]?.isIntersecting) loadMore() },

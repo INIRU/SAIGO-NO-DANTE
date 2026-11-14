@@ -36,8 +36,8 @@ function Tab({ checkMode }: { checkMode: boolean }) {
 }
 const sectionLabels = (html: string) => [...html.matchAll(/<section[^>]*aria-label="([^"]+)"/g)].map(m => m[1])
 
-describe('REQ-MIRROR-DUNGEON-017 the catalog follows the chosen keyword order', () => {
-  it('REQ-MIRROR-DUNGEON-017 lists keyword tabs and keyword groups in the given order', () => {
+describe('the catalog follows the chosen keyword order', () => {
+  it('lists keyword tabs and keyword groups in the given order', () => {
     expect(sectionLabels(renderToStaticMarkup(<Catalog />))).toEqual(['공통', '화상', '파열'])
     const html = renderToStaticMarkup(<Catalog keywordOrder={['파열', '공통', '화상', '출혈', '진동', '침잠', '호흡', '충전', '참격', '관통', '타격']} />)
     expect(sectionLabels(html)).toEqual(['파열', '공통', '화상'])
@@ -46,8 +46,8 @@ describe('REQ-MIRROR-DUNGEON-017 the catalog follows the chosen keyword order', 
   })
 })
 
-describe('REQ-MIRROR-DUNGEON-015 check mode', () => {
-  it('REQ-MIRROR-DUNGEON-015 an obtained gift is dimmed and can still be pressed', () => {
+describe('check mode', () => {
+  it('an obtained gift is dimmed and can still be pressed', () => {
     const html = renderToStaticMarkup(<Catalog markedIds={new Set(['uuid-1'])} markedLabel="획득" />)
     const at = html.indexOf('aria-label="기프트1, 획득"')
     const obtained = html.slice(at - 200, at + 400)
@@ -55,7 +55,7 @@ describe('REQ-MIRROR-DUNGEON-015 check mode', () => {
     expect(obtained).not.toMatch(/<button[^>]*disabled=""/)
   })
 
-  it('REQ-MIRROR-DUNGEON-015 shows the check tools only in check mode', () => {
+  it('shows the check tools only in check mode', () => {
     const off = renderToStaticMarkup(<Tab checkMode={false} />)
     expect(off).toContain('mirrorDungeonPage.checkMode')
     expect(off).not.toContain('mirrorDungeonPage.checkReset')
@@ -63,7 +63,7 @@ describe('REQ-MIRROR-DUNGEON-015 check mode', () => {
     for (const key of ['checkReset', 'checkExit', 'checked']) expect(on).toContain(`mirrorDungeonPage.${key}`)
   })
 
-  it('REQ-MIRROR-DUNGEON-015 hides the navigation and footer and frees the space under the navigation', () => {
+  it('hides the navigation and footer and frees the space under the navigation', () => {
     const workspaces = readFileSync(resolve(root, 'styles/globals/workspaces.css'), 'utf8')
     expect(workspaces).toMatch(/html\[data-with-gift-check\] :is\(\.site-navigation, \.site-footer\) \{ display: none; \}/)
     const globals = readFileSync(resolve(root, 'app/globals.css'), 'utf8')
@@ -71,14 +71,14 @@ describe('REQ-MIRROR-DUNGEON-015 check mode', () => {
   })
 })
 
-describe('REQ-MIRROR-DUNGEON-018 gift presets', () => {
-  it('REQ-MIRROR-DUNGEON-018 REQ-MIRROR-DUNGEON-020 keeps the preset button in the toolbar outside check mode too', () => {
+describe('gift presets', () => {
+  it('keeps the preset button in the toolbar outside check mode too', () => {
     const button = /<button[^>]*>(?:<svg[\s\S]*?<\/svg>)?<span[^>]*>mirrorDungeonPage\.preset<\/span><\/button>/
     expect(renderToStaticMarkup(<Tab checkMode={false} />)).toMatch(button)
     expect(renderToStaticMarkup(<Tab checkMode />)).toMatch(button)
   })
 
-  it('REQ-MIRROR-DUNGEON-018 lists a preset by group, in the order its gifts were placed, with the memo under the group name', () => {
+  it('lists a preset by group, in the order its gifts were placed, with the memo under the group name', () => {
     const names = (html: string) => [...html.matchAll(/class="gift-card[^"]*" aria-label="([^"]+)"/g)].map(m => m[1])
     // Placed in this order: a grade-3 burn gift and a common gift in the first group, a rupture gift and a grade-1 burn gift in the second.
     const first = [gift(4, '화상', { grade: '3' }), gifts[0]], second = [gifts[1], gift(5, '화상', { grade: '1' })]
@@ -97,16 +97,16 @@ describe('REQ-MIRROR-DUNGEON-018 gift presets', () => {
     expect(html).not.toContain('aria-label="mirrorDungeonPage.sort"')
   })
 
-  it('REQ-MIRROR-DUNGEON-020 every catalog cell names its gift, so a held cell is known without a handler on each cell', () => {
+  it('every catalog cell names its gift, so a held cell is known without a handler on each cell', () => {
     const html = renderToStaticMarkup(<Catalog />)
     expect([...html.matchAll(/data-gift-id="([^"]+)"/g)].map(m => m[1])).toEqual(['uuid-1', 'uuid-3', 'uuid-2'])
   })
 })
 
-describe('REQ-MIRROR-DUNGEON-023 the chosen preset in a small window', () => {
+describe('the chosen preset in a small window', () => {
   const button = 'aria-label="mirrorDungeonPage.checkPip"'
 
-  it('REQ-MIRROR-DUNGEON-023 check mode offers the window only while a preset with gifts is chosen', () => {
+  it('check mode offers the window only while a preset with gifts is chosen', () => {
     expect(renderToStaticMarkup(<Tab checkMode />)).not.toContain(button)
     stored.presets = { active: 'p1', list: [{ id: 'p1', name: '화상 덱', groups: [{ name: '최우선 먹기', gifts: ['1', '3'], memo: '2층 전에' }] }] }
     try {
@@ -117,7 +117,7 @@ describe('REQ-MIRROR-DUNGEON-023 the chosen preset in a small window', () => {
     }
   })
 
-  it('REQ-MIRROR-DUNGEON-023 the window lists the groups with their memo, marks obtained gifts and counts them', () => {
+  it('the window lists the groups with their memo, marks obtained gifts and counts them', () => {
     const html = renderToStaticMarkup(<GiftCheckWindow title="화상 덱" checkedLabel="획득" checkedIds={new Set(['uuid-1'])} onCheck={() => {}} marks={new Map()}
       sections={[{ label: '최우선 먹기', note: '2층 전에', gifts: [gifts[0], gifts[2]] }, { label: '묶음 2', gifts: [gifts[1]] }]} />)
     expect(sectionLabels(html)).toEqual(['최우선 먹기', '묶음 2'])
@@ -129,8 +129,8 @@ describe('REQ-MIRROR-DUNGEON-023 the chosen preset in a small window', () => {
   })
 })
 
-describe('REQ-MIRROR-DUNGEON-016 fusion and pack-only marks', () => {
-  it('REQ-MIRROR-DUNGEON-016 the fusion triangle is yellow, the planner one stays red', () => {
+describe('fusion and pack-only marks', () => {
+  it('the fusion triangle is yellow, the planner one stays red', () => {
     const red = renderToStaticMarkup(<GiftWarningMark label="이 층" />)
     const yellow = renderToStaticMarkup(<GiftWarningMark label="합성" tone="yellow" />)
     expect(red).toContain('#bd2430')
@@ -138,7 +138,7 @@ describe('REQ-MIRROR-DUNGEON-016 fusion and pack-only marks', () => {
     expect(yellow).toContain('#e8b030')
   })
 
-  it('REQ-MIRROR-DUNGEON-016 check mode marks fusion gifts and pack-only gifts, the plain list does not', () => {
+  it('check mode marks fusion gifts and pack-only gifts, the plain list does not', () => {
     const on = renderToStaticMarkup(<Tab checkMode />)
     expect(on.match(/data-gift-warning/g)).toHaveLength(1)
     expect(on).toContain('https://example.test/pack-1001.webp')

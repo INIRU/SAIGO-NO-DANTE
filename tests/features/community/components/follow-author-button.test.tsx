@@ -19,7 +19,7 @@ const source = (path: string) => readFileSync(resolve(__dirname, '../../../..', 
 describe('follow button next to a post author', () => {
   beforeEach(() => { state.status = 'authenticated'; state.data = undefined })
 
-  it('REQ-COMMUNITY-091 offers to follow, and shows following once followed', () => {
+  it('offers to follow, and shows following once followed', () => {
     state.data = follows({})
     const html = renderToStaticMarkup(<FollowAuthorButton userId="u1" />)
     expect(html).toContain(`>${ko.follow}<`)
@@ -30,18 +30,18 @@ describe('follow button next to a post author', () => {
     expect(followed).toContain('aria-pressed="true"')
   })
 
-  it('REQ-COMMUNITY-091 is absent on one\'s own post', () => {
+  it('is absent on one\'s own post', () => {
     state.data = follows({ owner: true })
     expect(renderToStaticMarkup(<FollowAuthorButton userId="u1" />)).toBe('')
   })
 
-  it('REQ-COMMUNITY-091 still offers to follow when signed out (the press leads to sign-in) without asking the server', () => {
+  it('still offers to follow when signed out (the press leads to sign-in) without asking the server', () => {
     state.status = 'unauthenticated'
     state.data = follows({ is_following: true })
     expect(renderToStaticMarkup(<FollowAuthorButton userId="u1" />)).toContain(`>${ko.follow}<`)
   })
 
-  it('REQ-COMMUNITY-091 deck and plan pages show it only for a signed-up author with a public profile', () => {
+  it('deck and plan pages show it only for a signed-up author with a public profile', () => {
     for (const path of ['app/[lang]/decks/[id]/DeckDetailClient.tsx', 'app/[lang]/planner/community/[id]/PlanDetailClient.tsx']) {
       const page = source(path)
       expect(page, path).toMatch(/profiles\?\.username && \w+\.profiles\.public_profile !== false && <FollowAuthorButton userId=\{\w+\.user_id\}/)

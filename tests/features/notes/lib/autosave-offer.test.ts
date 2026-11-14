@@ -7,17 +7,17 @@ import { shouldOfferAutosave } from '@/features/notes/lib/autosave'
 const baseline = JSON.stringify({ description: '저장본' })
 const draft = (description: string, savedAt: number) => ({ savedAt, state: { description } })
 
-describe('REQ-COMMUNITY-048 restoring an unsaved note draft', () => {
-  it('REQ-COMMUNITY-048 offers a draft that differs from the opening state and is newer than the saved one', () => {
+describe('restoring an unsaved note draft', () => {
+  it('offers a draft that differs from the opening state and is newer than the saved one', () => {
     expect(shouldOfferAutosave(draft('편집 중', 2000), baseline, 1000)).toBe(true)
     expect(shouldOfferAutosave(draft('편집 중', 2000), baseline, null)).toBe(true)
   })
-  it('REQ-COMMUNITY-048 does not offer a draft older than the saved version, an identical one or none', () => {
+  it('does not offer a draft older than the saved version, an identical one or none', () => {
     expect(shouldOfferAutosave(draft('편집 중', 1000), baseline, 2000)).toBe(false)
     expect(shouldOfferAutosave(draft('저장본', 3000), baseline, 1000)).toBe(false)
     expect(shouldOfferAutosave(null, baseline, 1000)).toBe(false)
   })
-  it('REQ-COMMUNITY-048 names the restore dialog and its toasts in every locale', () => {
+  it('names the restore dialog and its toasts in every locale', () => {
     for (const messages of [ko, en, ja]) {
       const copy = messages.common.autosave as Record<string, string>
       for (const key of ['title', 'restore', 'discard', 'restored', 'restoreFailed']) expect(copy[key]).toBeTruthy()

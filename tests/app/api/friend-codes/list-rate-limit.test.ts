@@ -33,15 +33,15 @@ const list = (kind: string) => GET(new NextRequest(`http://localhost/api/friend-
 
 beforeEach(() => { allowed = true; limits.length = 0; deleted.length = 0; afterTasks.length = 0; adminCalls.length = 0 })
 
-describe('REQ-COMMUNITY-098 friend code list', () => {
-  it('REQ-COMMUNITY-098 is rate limited in the read bucket, and a refused request never reaches the database', async () => {
+describe('friend code list', () => {
+  it('is rate limited in the read bucket, and a refused request never reaches the database', async () => {
     allowed = false
     expect((await list('want')).status).toBe(429)
     expect(limits).toEqual([expect.objectContaining({ bucket: 'readonly' })])
     expect(adminCalls).toEqual([])
   })
 
-  it('REQ-COMMUNITY-098 expired want posts are deleted after the response, not while reading', async () => {
+  it('expired want posts are deleted after the response, not while reading', async () => {
     const res = await list('want')
     expect(res.status).toBe(200)
     expect(deleted).toEqual([])
@@ -50,7 +50,7 @@ describe('REQ-COMMUNITY-098 friend code list', () => {
     expect(deleted).toEqual(['friend_posts'])
   })
 
-  it('REQ-COMMUNITY-098 a support list schedules no clean-up', async () => {
+  it('a support list schedules no clean-up', async () => {
     expect((await list('support')).status).toBe(200)
     expect(afterTasks).toEqual([])
   })

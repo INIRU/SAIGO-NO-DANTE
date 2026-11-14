@@ -51,7 +51,7 @@ test('identity analysis updates source, period, EGO filters, and linked decks', 
   await expect(page.getByRole('link', { name: '검증 화상 덱', exact: false })).toHaveAttribute('href', '/ko/decks/sample')
 })
 
-test('REQ-META-011 the filter panel takes several values per filter, narrows the sample, keeps its choices in the address and disables empty options', async ({ page }) => {
+test('the filter panel takes several values per filter, narrows the sample, keeps its choices in the address and disables empty options', async ({ page }) => {
   const requests: URLSearchParams[] = []
   const row = (identity_id: string, sinner_id: string, rarity: number, count: number) => ({ identity_id, sinner_id, name_kr: identity_id, keywords: [], rarity, folder_name: null, game_id: null, count })
   await page.route('**/api/meta/usage?**', async route => {
@@ -129,7 +129,7 @@ test('REQ-META-011 the filter panel takes several values per filter, narrows the
   expect(requests.at(-1)!.get('usage')).toBeNull()
 })
 
-test('REQ-META-014 REQ-META-015 posts show how they were received: ten of an identity\'s at first, and the most popular decks and plans on the overall and Mirror Dungeon tabs', async ({ page }) => {
+test('posts show how they were received: ten of an identity\'s at first, and the most popular decks and plans on the overall and Mirror Dungeon tabs', async ({ page }) => {
   const post = (id: string, source: 'decks' | 'planner', votes: number, views: number, comments = 0): MetaData['topPosts']['decks'][number] => ({ id, source, title: '인기 글 ' + id, usage: 'mirrorDungeon', combo: [], votes, views, comments })
   await page.route('**/api/meta/usage?**', async route => {
     const source = new URL(route.request().url()).searchParams.get('source') as MetaData['source']

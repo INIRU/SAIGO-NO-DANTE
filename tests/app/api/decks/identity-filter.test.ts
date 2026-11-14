@@ -22,14 +22,14 @@ import { GET } from '@/app/api/decks/route'
 
 const get = (query: string) => GET(new NextRequest(`http://localhost/api/decks?${query}`))
 
-describe('REQ-SHARED-100 the identity filter takes only a UUID', () => {
-  it('REQ-SHARED-100 an identity_id that is not a UUID is a 400 and reaches no table', async () => {
+describe('the identity filter takes only a UUID', () => {
+  it('an identity_id that is not a UUID is a 400 and reaches no table', async () => {
     const res = await get('identity_id=not-a-uuid')
     expect(res.status).toBe(400)
     expect(calls).toEqual([])
   })
 
-  it('REQ-SHARED-100 a UUID identity_id goes on to the lookup', async () => {
+  it('a UUID identity_id goes on to the lookup', async () => {
     const res = await get('identity_id=123e4567-e89b-12d3-a456-426614174000')
     expect(res.status).toBe(200)
     expect(calls).toContain('deck_identities')

@@ -33,7 +33,7 @@ import { GET, POST } from '@/app/api/notifications/route'
 
 beforeEach(() => { calls.length = 0; signedIn = true; rpcError = null; admin = false; suspended = false; inboxError = null })
 
-it('REQ-COMMUNITY-013 lists the session user\'s notifications with the unread count, uncached', async () => {
+it('lists the session user\'s notifications with the unread count, uncached', async () => {
   const res = await GET()
   expect(res.headers.get('cache-control')).toBe('private, no-store')
   const body = await res.json()
@@ -44,7 +44,7 @@ it('REQ-COMMUNITY-013 lists the session user\'s notifications with the unread co
   ])
 })
 
-it('REQ-COMMUNITY-013 answers 401 without a session and 500 when the lookup fails', async () => {
+it('answers 401 without a session and 500 when the lookup fails', async () => {
   signedIn = false
   expect((await GET()).status).toBe(401)
   expect((await POST()).status).toBe(401)
@@ -56,7 +56,7 @@ it('REQ-COMMUNITY-013 answers 401 without a session and 500 when the lookup fail
   expect(JSON.stringify(await res.json())).not.toContain('boom')
 })
 
-it('REQ-COMMUNITY-017 an administrator also gets the inquiries waiting for an answer, merged newest first', async () => {
+it('an administrator also gets the inquiries waiting for an answer, merged newest first', async () => {
   admin = true
   const body = await (await GET()).json()
   expect(calls.map(call => call.name).sort()).toEqual(['admin_inquiry_notifications', 'user_notifications'])
@@ -67,7 +67,7 @@ it('REQ-COMMUNITY-017 an administrator also gets the inquiries waiting for an an
   expect(body.unread).toBe(2)
 })
 
-it('REQ-COMMUNITY-017 a suspended administrator gets no inquiries, like anyone who is not an administrator', async () => {
+it('a suspended administrator gets no inquiries, like anyone who is not an administrator', async () => {
   admin = true
   suspended = true
   const body = await (await GET()).json()
@@ -75,7 +75,7 @@ it('REQ-COMMUNITY-017 a suspended administrator gets no inquiries, like anyone w
   expect(body.items.map((item: { id: string }) => item.id)).toEqual(['c2', 'c1'])
 })
 
-it('REQ-COMMUNITY-017 when the inquiry rows cannot be read the administrator still gets the comment notifications', async () => {
+it('when the inquiry rows cannot be read the administrator still gets the comment notifications', async () => {
   admin = true
   inboxError = { message: 'function limbus.admin_inquiry_notifications does not exist' }
   const logged = vi.spyOn(console, 'error').mockImplementation(() => {})
@@ -86,7 +86,7 @@ it('REQ-COMMUNITY-017 when the inquiry rows cannot be read the administrator sti
   logged.mockRestore()
 })
 
-it('REQ-COMMUNITY-014 marks the session user\'s notifications read', async () => {
+it('marks the session user\'s notifications read', async () => {
   const res = await POST()
   expect(await res.json()).toEqual({ ok: true })
   expect(calls).toEqual([{ name: 'mark_notifications_read', args: { user_email: 'a@b.c' } }])

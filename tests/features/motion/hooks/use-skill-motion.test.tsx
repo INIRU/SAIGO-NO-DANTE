@@ -106,8 +106,8 @@ async function open() {
 }
 const advance = (ms: number) => act(async () => { vi.advanceTimersByTime(ms) })
 
-describe('REQ-MOTION-028 the load check of the three Y, Cb, Cr planes', () => {
-  it('REQ-MOTION-028 opens a layers.json with y, cb and cr, and builds the compositor from it', async () => {
+describe('the load check of the three Y, Cb, Cr planes', () => {
+  it('opens a layers.json with y, cb and cr, and builds the compositor from it', async () => {
     await mount()
     await act(async () => { await result.current.load(STATE) })
     expect(result.current.status).toBe('ready')
@@ -115,7 +115,7 @@ describe('REQ-MOTION-028 the load check of the three Y, Cb, Cr planes', () => {
     expect(calls.comps).toHaveLength(1)
   })
 
-  it.each(['y', 'cb', 'cr'])('REQ-MOTION-028 shows a load failure when the %s plane is missing', async plane => {
+  it.each(['y', 'cb', 'cr'])('shows a load failure when the %s plane is missing', async plane => {
     const { [plane as 'y']: _gone, ...planes } = META.basePlanes
     json = { ...META, basePlanes: planes }
     await mount()
@@ -126,7 +126,7 @@ describe('REQ-MOTION-028 the load check of the three Y, Cb, Cr planes', () => {
   })
 })
 
-describe('REQ-MOTION-059 a phone plays the smaller copy of the video', () => {
+describe('a phone plays the smaller copy of the video', () => {
   const PHONE = { ...META, phone: { file: 'layers.m.mp4', w: 1920, h: 1080 } }
   const screenOf = (coarse: boolean, w: number, h: number) => {
     vi.stubGlobal('matchMedia', (q: string) => ({ matches: coarse && q === '(pointer: coarse)' }))
@@ -134,7 +134,7 @@ describe('REQ-MOTION-059 a phone plays the smaller copy of the video', () => {
   }
   const metaOf = () => (calls.comps[0] as { tile?: unknown }[]).find(a => a?.tile) as { tile: object; video: object; base?: object; basePlanes?: object }
 
-  it('REQ-MOTION-059 takes the phone file next to the full one, as one colour picture, on a small touch screen', async () => {
+  it('takes the phone file next to the full one, as one colour picture, on a small touch screen', async () => {
     json = PHONE
     screenOf(true, 390, 844)
     await mount()
@@ -147,7 +147,7 @@ describe('REQ-MOTION-059 a phone plays the smaller copy of the video', () => {
     expect(metaOf().basePlanes).toBeUndefined()
   })
 
-  it.each([['a desktop', false, 1920, 1080], ['a tablet', true, 820, 1180]])('REQ-MOTION-059 keeps the full video on %s', async (_name, coarse, w, h) => {
+  it.each([['a desktop', false, 1920, 1080], ['a tablet', true, 820, 1180]])('keeps the full video on %s', async (_name, coarse, w, h) => {
     json = PHONE
     screenOf(coarse as boolean, w as number, h as number)
     await mount()
@@ -156,7 +156,7 @@ describe('REQ-MOTION-059 a phone plays the smaller copy of the video', () => {
     expect(metaOf().tile).toEqual({ w: 1920, h: 1080 })
   })
 
-  it('REQ-MOTION-059 keeps the full video on a phone when the data lists no phone copy', async () => {
+  it('keeps the full video on a phone when the data lists no phone copy', async () => {
     screenOf(true, 390, 844)
     await mount()
     await act(async () => { await result.current.load(STATE) })
@@ -165,8 +165,8 @@ describe('REQ-MOTION-059 a phone plays the smaller copy of the video', () => {
   })
 })
 
-describe('REQ-MOTION-060 WebGPU draws the video where the browser has it', () => {
-  it('REQ-MOTION-060 draws with the WebGPU compositor and builds no WebGL2 one', async () => {
+describe('WebGPU draws the video where the browser has it', () => {
+  it('draws with the WebGPU compositor and builds no WebGL2 one', async () => {
     const draw = vi.fn(() => true)
     gpu.made = { kind: 'webgpu', onReady: null, draw, dispose: () => {} }
     await open()
@@ -175,15 +175,15 @@ describe('REQ-MOTION-060 WebGPU draws the video where the browser has it', () =>
     expect(draw).toHaveBeenCalled()
   })
 
-  it('REQ-MOTION-060 builds the WebGL2 compositor when the browser has no WebGPU', async () => {
+  it('builds the WebGL2 compositor when the browser has no WebGPU', async () => {
     await open()
     expect(result.current.status).toBe('ready')
     expect(calls.comps).toHaveLength(1)
   })
 })
 
-describe('REQ-MOTION-041 chapters and marks come out of the hook', () => {
-  it('REQ-MOTION-041 returns the chapters and marks of the loaded layers.json, none before it and for a video without them', async () => {
+describe('chapters and marks come out of the hook', () => {
+  it('returns the chapters and marks of the loaded layers.json, none before it and for a video without them', async () => {
     await mount()
     expect(result.current.chapters).toEqual([])
     expect(result.current.marks).toEqual([])
@@ -199,14 +199,14 @@ describe('REQ-MOTION-041 chapters and marks come out of the hook', () => {
   })
 })
 
-describe('REQ-MOTION-031 the sound settings have no critical-hit switch', () => {
-  it('REQ-MOTION-031 starts at the game\'s full loudness, whatever an older page kept at half', async () => {
+describe('the sound settings have no critical-hit switch', () => {
+  it('starts at the game\'s full loudness, whatever an older page kept at half', async () => {
     store['motion-sound'] = JSON.stringify({ master: 0.5, voice: 1, sfx: 1 })
     await mount()
     expect(result.current.volumes).toEqual({ master: 1, voice: 1, sfx: 1 })
   })
 
-  it('REQ-MOTION-031 returns no critical, hasCritical or setCritical, and drops the old saved switch', async () => {
+  it('returns no critical, hasCritical or setCritical, and drops the old saved switch', async () => {
     store['motion-sound-v2'] = JSON.stringify({ master: 0.3, voice: 0.8, sfx: 0.6, critical: false })
     await mount()
     expect(result.current.volumes).toEqual({ master: 0.3, voice: 0.8, sfx: 0.6 })
@@ -217,8 +217,8 @@ describe('REQ-MOTION-031 the sound settings have no critical-hit switch', () => 
   })
 })
 
-describe('REQ-MOTION-040 the sound tail keeps the last frame, then plays again', () => {
-  it('REQ-MOTION-040 does not loop a video with a tail, and loops one without', async () => {
+describe('the sound tail keeps the last frame, then plays again', () => {
+  it('does not loop a video with a tail, and loops one without', async () => {
     json = { ...META, tail: 1.2 }
     await open()
     expect(video.loop).toBe(false)
@@ -227,7 +227,7 @@ describe('REQ-MOTION-040 the sound tail keeps the last frame, then plays again',
     expect(video.loop).toBe(true)
   })
 
-  it('REQ-MOTION-040 holds the last frame and the playing mark through the tail, then plays from the start after frames / fps + tail', async () => {
+  it('holds the last frame and the playing mark through the tail, then plays from the start after frames / fps + tail', async () => {
     json = { ...META, tail: 1.2 }              // 2 s of picture + 1.2 s of tail; the file's own length is 2.5 s: 0.7 s left to wait
     await open()
     expect(result.current.playing).toBe(true)
@@ -245,7 +245,7 @@ describe('REQ-MOTION-040 the sound tail keeps the last frame, then plays again',
     expect(result.current.playing).toBe(true)
   })
 
-  it('REQ-MOTION-040 shows the video as stopped when the play that follows the tail is refused', async () => {
+  it('shows the video as stopped when the play that follows the tail is refused', async () => {
     json = { ...META, tail: 1.2 }
     await open()
     await act(async () => { video.finish() })
@@ -254,7 +254,7 @@ describe('REQ-MOTION-040 the sound tail keeps the last frame, then plays again',
     expect(result.current.playing).toBe(false)
   })
 
-  it('REQ-MOTION-040 waits no longer than the file when it is longer than frames / fps + tail', async () => {
+  it('waits no longer than the file when it is longer than frames / fps + tail', async () => {
     json = { ...META, tail: 0.2 }
     await open()
     await act(async () => { video.finish() })
@@ -263,7 +263,7 @@ describe('REQ-MOTION-040 the sound tail keeps the last frame, then plays again',
     expect(video.plays).toBe(1)
   })
 
-  it('REQ-MOTION-040 lets the pause that comes with the end of a video with a tail pass, but stops at the viewer\'s pause during the wait', async () => {
+  it('lets the pause that comes with the end of a video with a tail pass, but stops at the viewer\'s pause during the wait', async () => {
     json = { ...META, tail: 1.2 }
     await open()
     await act(async () => { video.finish() })
@@ -283,7 +283,7 @@ describe('REQ-MOTION-040 the sound tail keeps the last frame, then plays again',
     ['holding the stage', (r: typeof result) => r.current.hold(true)],
     ['a hidden tab', () => { doc.hidden = true; doc.dispatchEvent(new Event('visibilitychange')) }],
     ['another video', (r: typeof result) => { void r.current.load(STATE) }],
-  ])('REQ-MOTION-040 stops the wait for %s', async (_name, act1) => {
+  ])('stops the wait for %s', async (_name, act1) => {
     json = { ...META, tail: 1.2 }
     await open()
     await act(async () => { video.finish() })
@@ -294,7 +294,7 @@ describe('REQ-MOTION-040 the sound tail keeps the last frame, then plays again',
     expect(video.plays).toBe(0)
   })
 
-  it('REQ-MOTION-040 stops the wait when the page goes', async () => {
+  it('stops the wait when the page goes', async () => {
     json = { ...META, tail: 1.2 }
     await open()
     await act(async () => { video.finish() })
@@ -304,7 +304,7 @@ describe('REQ-MOTION-040 the sound tail keeps the last frame, then plays again',
     expect(video.plays).toBe(0)
   })
 
-  it('REQ-MOTION-040 starts no wait for a video without a tail: its pause is a stop', async () => {
+  it('starts no wait for a video without a tail: its pause is a stop', async () => {
     await open()
     await act(async () => { video.finish() })
     expect(result.current.playing).toBe(false)
@@ -314,8 +314,8 @@ describe('REQ-MOTION-040 the sound tail keeps the last frame, then plays again',
   })
 })
 
-describe('REQ-MOTION-047 stalls and errors while watching', () => {
-  it('REQ-MOTION-047 draws on the display refresh only while the video has a frame ready, not while it stalls', async () => {
+describe('stalls and errors while watching', () => {
+  it('draws on the display refresh only while the video has a frame ready, not while it stalls', async () => {
     await open()
     await advance(200)
     const playing = calls.draws.length
@@ -330,7 +330,7 @@ describe('REQ-MOTION-047 stalls and errors while watching', () => {
     expect(calls.draws.length).toBeGreaterThan(before)
   })
 
-  it('REQ-MOTION-047 shows the retry screen when the video fails while it plays', async () => {
+  it('shows the retry screen when the video fails while it plays', async () => {
     await open()
     expect(result.current.status).toBe('ready')
     await act(async () => { video.onerror?.() })
@@ -338,7 +338,7 @@ describe('REQ-MOTION-047 stalls and errors while watching', () => {
     expect(result.current.error).toBe('load')
   })
 
-  it('REQ-MOTION-047 ignores an error of an older video after a newer one was loaded', async () => {
+  it('ignores an error of an older video after a newer one was loaded', async () => {
     await open()
     const stale = video.onerror
     await act(async () => { await result.current.load(STATE) })
@@ -347,8 +347,8 @@ describe('REQ-MOTION-047 stalls and errors while watching', () => {
   })
 })
 
-describe('REQ-MOTION-025 the sound stays on', () => {
-  it('REQ-MOTION-025 keeps the switch in the browser: on comes back after a new page, off stays off', async () => {
+describe('the sound stays on', () => {
+  it('keeps the switch in the browser: on comes back after a new page, off stays off', async () => {
     store['motion-sound-on'] = '1'
     await mount()
     expect(result.current.muted).toBe(false)
@@ -357,7 +357,7 @@ describe('REQ-MOTION-025 the sound stays on', () => {
     expect(store['motion-sound-on']).toBe('0')
   })
 
-  it('REQ-MOTION-053 plays on when the page comes back, if it was playing when it was left', async () => {
+  it('plays on when the page comes back, if it was playing when it was left', async () => {
     await open()
     expect(video.paused).toBe(false)
     doc.hidden = true; doc.dispatchEvent(new Event('visibilitychange'))
@@ -366,7 +366,7 @@ describe('REQ-MOTION-025 the sound stays on', () => {
     expect(video.paused).toBe(false)
   })
 
-  it('REQ-MOTION-053 keeps a video stopped by the viewer stopped when the page comes back', async () => {
+  it('keeps a video stopped by the viewer stopped when the page comes back', async () => {
     await open()
     await act(async () => { result.current.togglePlay() })
     doc.hidden = true; doc.dispatchEvent(new Event('visibilitychange'))
@@ -374,7 +374,7 @@ describe('REQ-MOTION-025 the sound stays on', () => {
     expect(video.paused).toBe(true)
   })
 
-  it('REQ-MOTION-053 falls back to playing without the silent track when a browser refuses it, and takes it back at the next press', async () => {
+  it('falls back to playing without the silent track when a browser refuses it, and takes it back at the next press', async () => {
     store['motion-sound-on'] = '1'
     await mount()
     let refused = 0
@@ -390,7 +390,7 @@ describe('REQ-MOTION-025 the sound stays on', () => {
     expect(calls.sound.unlock).toHaveBeenCalled()
   })
 
-  it('REQ-MOTION-054 with the sound on, starts the video from its first frame only when the tracks are ready', async () => {
+  it('with the sound on, starts the video from its first frame only when the tracks are ready', async () => {
     store['motion-sound-on'] = '1'
     await mount()
     await act(async () => { result.current.hold(false) })
@@ -407,7 +407,7 @@ describe('REQ-MOTION-025 the sound stays on', () => {
     expect(result.current.status).toBe('ready')
   })
 
-  it('REQ-MOTION-054 with the sound off, plays without waiting for the tracks', async () => {
+  it('with the sound off, plays without waiting for the tracks', async () => {
     await mount()
     await act(async () => { result.current.hold(false) })
     calls.sound.load.mockReturnValue(new Promise<void>(() => {}))
@@ -415,7 +415,7 @@ describe('REQ-MOTION-025 the sound stays on', () => {
     expect(video.paused).toBe(false)
   })
 
-  it('REQ-MOTION-054 gives up waiting for tracks that never come, and plays', async () => {
+  it('gives up waiting for tracks that never come, and plays', async () => {
     store['motion-sound-on'] = '1'
     await mount()
     await act(async () => { result.current.hold(false) })
@@ -428,8 +428,8 @@ describe('REQ-MOTION-025 the sound stays on', () => {
   })
 })
 
-describe('REQ-MOTION-058 the sound turned on waits for its files', () => {
-  it('REQ-MOTION-058 stops the video on the loading state while the sound is fetched, then plays with it', async () => {
+describe('the sound turned on waits for its files', () => {
+  it('stops the video on the loading state while the sound is fetched, then plays with it', async () => {
     await open()
     let done = () => {}
     calls.sound.setMuted.mockReturnValueOnce(new Promise<void>(r => { done = r }))
@@ -441,14 +441,14 @@ describe('REQ-MOTION-058 the sound turned on waits for its files', () => {
     expect(video.paused).toBe(false)
   })
 
-  it('REQ-MOTION-058 plays on at once when the sound is already there', async () => {
+  it('plays on at once when the sound is already there', async () => {
     await open()
     await act(async () => { result.current.toggleMute() })
     expect(result.current.status).toBe('ready')
     expect(video.paused).toBe(false)
   })
 
-  it('REQ-MOTION-058 leaves a video that is still loading on its loading state', async () => {
+  it('leaves a video that is still loading on its loading state', async () => {
     await open()
     let arrive = (_: unknown) => {}
     vi.stubGlobal('fetch', vi.fn(() => new Promise(r => { arrive = r })))

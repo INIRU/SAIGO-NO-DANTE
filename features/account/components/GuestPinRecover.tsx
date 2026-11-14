@@ -10,7 +10,7 @@ import { isGuestPin } from '@/features/account/lib/guest-key'
 import { showError, showSuccess } from '@/lib/toast'
 import GuestPinInput from './GuestPinInput'
 
-/** "Edit with password" on a guest deck or plan this browser has no key for (REQ-COMMUNITY-031). */
+/** "Edit with password" on a guest deck or plan this browser has no key for. */
 export default function GuestPinRecover({ kind, id, onRecovered, className }: { kind: 'deck' | 'plan'; id: string; onRecovered: () => void; className?: string }) {
   const locale = useLocale(), t = getGuestCopy(locale), common = useTranslations('common')
   const [open, setOpen] = useState(false), [pin, setPin] = useState(''), [busy, setBusy] = useState(false)

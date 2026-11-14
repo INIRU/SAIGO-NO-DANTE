@@ -52,30 +52,30 @@ function Formatter({ text, options }: { text: string; options?: FormatOptions })
 const render = (text: string, options?: FormatOptions) =>
   renderToStaticMarkup(<KeywordProvider keywords={KEYWORDS}><Formatter text={text} options={options} /></KeywordProvider>)
 
-describe('REQ-KEYWORDS-011 buff icons in game text', () => {
-  it('REQ-KEYWORDS-011 draws two buffs of one name with their own files', () => {
+describe('buff icons in game text', () => {
+  it('draws two buffs of one name with their own files', () => {
     const html = render('[FullReload] [ReloadLament]')
     expect(html).toContain('game-FullReload.webp')
     expect(html).toContain('game-ReloadLament.webp')
     expect(html).not.toContain('reload-2')
   })
 
-  it('REQ-KEYWORDS-011 falls back to keyword_meta without an icon of its own', () => {
+  it('falls back to keyword_meta without an icon of its own', () => {
     expect(render('[Combustion]')).toContain('burn.webp')
   })
 
-  it('REQ-KEYWORDS-011 draws the icon of a buff that has no keyword_meta row, and none without a file', () => {
+  it('draws the icon of a buff that has no keyword_meta row, and none without a file', () => {
     expect(render('[EnemyOnly]')).toContain('game-EnemyOnly.webp')
     expect(render('[CalcValue]')).not.toContain('icons/keywords')
   })
 
-  it('REQ-KEYWORDS-011 a keyword written as a sprite uses the same icon', () => {
+  it('a keyword written as a sprite uses the same icon', () => {
     expect(render('<sprite name="ReloadLament">')).toContain('game-ReloadLament.webp')
   })
 })
 
-describe('REQ-SHARED-019 game text rendering', () => {
-  it('REQ-SHARED-019 draws underline, bold, italic and strikethrough from their tags, never the tags themselves', () => {
+describe('game text rendering', () => {
+  it('draws underline, bold, italic and strikethrough from their tags, never the tags themselves', () => {
     const html = render('<u>밑줄</u><b>굵게</b><i>기울임</i><s>취소</s>')
     expect(html).toContain('text-decoration:underline')
     expect(html).toContain('font-weight:700')
@@ -84,7 +84,7 @@ describe('REQ-SHARED-019 game text rendering', () => {
     expect(html).not.toContain('&lt;')
   })
 
-  it('REQ-SHARED-019 sizes text by percent, by the TextMeshPro base of 36 for bare numbers, and hides size 0', () => {
+  it('sizes text by percent, by the TextMeshPro base of 36 for bare numbers, and hides size 0', () => {
     expect(render('<size=150%>큼</size>')).toContain('font-size:150%')
     expect(render('<size=18>작음</size>')).toContain('font-size:0.5em')
     expect(render('<size=72>큼</size>')).toContain('font-size:2em')
@@ -93,7 +93,7 @@ describe('REQ-SHARED-019 game text rendering', () => {
     expect(render('<size=0%>숨김</size>보임')).toContain('보임')
   })
 
-  it('REQ-SHARED-019 draws a matched keyword ref as a coloured localized name with a tooltip trigger', () => {
+  it('draws a matched keyword ref as a coloured localized name with a tooltip trigger', () => {
     const html = render('<b>x</b> [Combustion] 3 부여')
     expect(html).toContain('keyword-token')
     expect(html).toContain('color:#ff4f42')
@@ -102,7 +102,7 @@ describe('REQ-SHARED-019 game text rendering', () => {
     expect(html).not.toContain('[Combustion]')
   })
 
-  it('REQ-SHARED-019 draws a keyword ref without a keyword_meta row in the keyword colour with its own tooltip trigger', () => {
+  it('draws a keyword ref without a keyword_meta row in the keyword colour with its own tooltip trigger', () => {
     const html = render('<b>x</b> [CalcValue]')
     expect(html).toContain('data-game-ref="CalcValue"')
     expect(html).toContain('color:#e8dcc8')
@@ -110,7 +110,7 @@ describe('REQ-SHARED-019 game text rendering', () => {
     expect(html).not.toContain('[CalcValue]')
   })
 
-  it('REQ-SHARED-019 gives a keyword ref without a keyword_meta row the shared keyword tooltip trigger, opened only on demand', () => {
+  it('gives a keyword ref without a keyword_meta row the shared keyword tooltip trigger, opened only on demand', () => {
     requestedKeys.length = 0
     const html = render('<b>x</b> [CalcValue]')
     const trigger = html.match(/<span[^>]*data-game-ref="CalcValue"[^>]*>/)?.[0]
@@ -121,21 +121,21 @@ describe('REQ-SHARED-019 game text rendering', () => {
     expect(requestedKeys.filter(key => key?.includes('part=descriptions'))).toEqual([])
   })
 
-  it('REQ-SHARED-019 draws a skill tag ref as its localized label in the condition colour', () => {
+  it('draws a skill tag ref as its localized label in the condition colour', () => {
     const html = render('[OnSucceedAttack] <b>x</b>')
     expect(html).toContain('color:#93f13e')
     expect(html).toContain('>[적중시]<')
     expect(html).not.toContain('OnSucceedAttack')
   })
 
-  it('REQ-SHARED-019 colours a skill tag by its id before its label (StartBattle_Force is green, its label blue)', () => {
+  it('colours a skill tag by its id before its label (StartBattle_Force is green, its label blue)', () => {
     const html = render('[StartBattle_Force] <b>x</b>')
     expect(html).toContain('color:#93f13e')
     expect(html).not.toContain('color:#26cfff')
     expect(html).toContain('>[전투 시작시]<')
   })
 
-  it('REQ-SHARED-019 draws a sprite as the keyword icon and a link as a plain tooltip wrapper without icon or colour', () => {
+  it('draws a sprite as the keyword icon and a link as a plain tooltip wrapper without icon or colour', () => {
     const sprite = render('<sprite name="Burst">폭발')
     expect(sprite).toContain('<img')
     expect(sprite).toContain(resolveKeywordIconUrl('폭발', 'burst')!.split('/').pop()!)
@@ -150,7 +150,7 @@ describe('REQ-SHARED-019 game text rendering', () => {
     expect(render('<sprite name="Unknown">남음')).not.toContain('<img')
   })
 
-  it('REQ-SHARED-019 draws numbered slots and site tokens as labels and keeps named slots as text', () => {
+  it('draws numbered slots and site tokens as labels and keeps named slots as text', () => {
     const html = render('<b>x</b> {0} {1:F1} {{live}} {amount}')
     expect(html.match(/data-placeholder="value"/g)).toHaveLength(2)
     expect(html).toContain('data-placeholder="live"')
@@ -158,7 +158,7 @@ describe('REQ-SHARED-019 game text rendering', () => {
     expect(html).not.toContain('{0}')
   })
 
-  it('REQ-SHARED-019 keeps an unknown ref literal and does not guess keywords in plain text', () => {
+  it('keeps an unknown ref literal and does not guess keywords in plain text', () => {
     const html = render('<b>화상 3</b> 폭발 [Conbustion] [사용시]')
     expect(html).toContain('[Conbustion]')
     expect(html).toContain('[사용시]')
@@ -166,16 +166,16 @@ describe('REQ-SHARED-019 game text rendering', () => {
     expect(html).not.toContain('color:#ff4f42')
   })
 
-  // REQ-SHARED-021 replaces "old-format text is guessed": the stored text is the game's own now, so plain words are
+  // Replaces "old-format text is guessed": the stored text is the game's own now, so plain words are
   // never turned into keywords (see tests/components/game-text-always.test.tsx); only user notes still guess.
-  it('REQ-SHARED-019 draws old-format text as plain text (no keyword guess, no condition colour)', () => {
+  it('draws old-format text as plain text (no keyword guess, no condition colour)', () => {
     const html = render('[사용시] 화상 3 부여')
     expect(html).toContain('[사용시] 화상 3 부여')
     expect(html).not.toContain('keyword-token')
     expect(html).not.toContain('data-game-ref')
   })
 
-  it('REQ-SHARED-019 GameText does not import the keyword provider (no module cycle: the provider hands it the tooltip component)', () => {
+  it('GameText does not import the keyword provider (no module cycle: the provider hands it the tooltip component)', () => {
     const source = readFileSync('components/game-text/GameText.tsx', 'utf8')
     expect(source).not.toMatch(/from '@\/components\/providers\/KeywordProvider'/)
   })
@@ -183,7 +183,7 @@ describe('REQ-SHARED-019 game text rendering', () => {
   describe('<coin=N> blocks', () => {
     const raw = '[OnSucceedAttack] 본문\n<coin=1>[Combustion] 3 부여</coin>\n<coin=2><b>둘째</b></coin>'
 
-    it('REQ-SHARED-019 draws each coin as a block with its own label in the accent colour and the children after it', () => {
+    it('draws each coin as a block with its own label in the accent colour and the children after it', () => {
       currentLocale = 'ko'
       const html = render(raw)
       expect(html).toMatch(/<div[^>]*><span style="color:#abcdef;font-weight:600">\[코인 1\] <\/span>.*keyword-token.*<\/div>/)
@@ -196,7 +196,7 @@ describe('REQ-SHARED-019 game text rendering', () => {
       expect(html).not.toContain('&lt;coin')
     })
 
-    it('REQ-SHARED-019 labels coins [Coin N] in English and [コイン N] in Japanese', () => {
+    it('labels coins [Coin N] in English and [コイン N] in Japanese', () => {
       currentLocale = 'en'
       expect(render('<coin=1>a</coin>')).toContain('[Coin 1]')
       currentLocale = 'ja'
@@ -204,7 +204,7 @@ describe('REQ-SHARED-019 game text rendering', () => {
       currentLocale = 'ko'
     })
 
-    it('REQ-SHARED-019 keeps the main description before the coin blocks and draws the legacy [코인 N] form as before', () => {
+    it('keeps the main description before the coin blocks and draws the legacy [코인 N] form as before', () => {
       currentLocale = 'ko'
       const html = render(raw)
       expect(html.indexOf('본문')).toBeLessThan(html.indexOf('[코인 1]'))

@@ -6,7 +6,7 @@ const side = (basePower: number, coins: ClashCoin[], rest: Partial<ClashSide> = 
 const sum = (values: number[]) => values.reduce((a, b) => a + b, 0)
 
 describe('heads chance', () => {
-  it('REQ-TOOLS-030 is 50% plus 1% per point of sanity and adder, held to 5%–95% and to ±45 sanity', () => {
+  it('is 50% plus 1% per point of sanity and adder, held to 5%–95% and to ±45 sanity', () => {
     expect(headsChance(0)).toBe(0.5)
     expect(headsChance(20, 5)).toBeCloseTo(0.75)
     expect(headsChance(-45)).toBeCloseTo(0.05)
@@ -32,14 +32,14 @@ describe('coins', () => {
 })
 
 describe('comparing rolls', () => {
-  it('REQ-TOOLS-031 splits the chance into win, tie and loss', () => {
+  it('splits the chance into win, tie and loss', () => {
     const a = rollDistribution(4, [add(4)], 0.5), b = rollDistribution(4, [add(4)], 0.5)
     expect(compare(a, b)).toEqual({ win: 0.25, tie: 0.5, lose: 0.25 })
   })
 })
 
 describe('solveClash', () => {
-  it('REQ-TOOLS-032 ends a one-coin clash by geometric ties: an even win chance and two exchanges on average', () => {
+  it('ends a one-coin clash by geometric ties: an even win chance and two exchanges on average', () => {
     const result = solveClash(side(4, [add(4)]), side(4, [add(4)]))
     expect(result.winA).toBeCloseTo(0.5, 10)
     expect(result.winB).toBeCloseTo(0.5, 10)
@@ -88,8 +88,8 @@ describe('solveClash', () => {
   })
 })
 
-describe('REQ-TOOLS-035 game rules of the totals', () => {
-  it('REQ-TOOLS-035 adds a third of the attack level gap (rounded down) to the higher side every exchange', () => {
+describe('game rules of the totals', () => {
+  it('adds a third of the attack level gap (rounded down) to the higher side every exchange', () => {
     // Equal one-coin skills at 50%: a gap of 6 levels is +2 for the higher side, so it wins every tie and every 1-point loss.
     const even = solveClash(side(4, [add(1)]), side(4, [add(1)]))
     const higher = solveClash(side(4, [add(1)], { offenseLevel: 66 }), side(4, [add(1)], { offenseLevel: 60 }))
@@ -98,13 +98,13 @@ describe('REQ-TOOLS-035 game rules of the totals', () => {
     // A gap under 3 changes nothing.
     expect(solveClash(side(4, [add(1)], { offenseLevel: 62 }), side(4, [add(1)], { offenseLevel: 60 })).winA).toBeCloseTo(0.5)
   })
-  it('REQ-TOOLS-035 adds the subtracting coins\' own adder to subtracting coins only', () => {
+  it('adds the subtracting coins\' own adder to subtracting coins only', () => {
     const sub = (scale: number): ClashCoin => ({ scale, operator: 'SUB' })
     // 10 − (3 + 2) at heads against a steady 6: heads 5 loses, tails 10 wins.
     const result = solveClash(side(10, [sub(3)], { sanity: 45, subCoinPowerAdder: 2 }), side(6, [add(0)]))
     expect(result.winA).toBeCloseTo(0.05)
   })
-  it('REQ-TOOLS-035 never lets an exchange total go under 0 after its adders', () => {
+  it('never lets an exchange total go under 0 after its adders', () => {
     // −10 on a 3-power skill is 0, the same as a 0-power skill: a tie forever.
     const result = solveClash(side(3, [add(0)], { clashAdder: -10 }), side(0, [add(0)]))
     expect(result.unresolved).toBe(1)

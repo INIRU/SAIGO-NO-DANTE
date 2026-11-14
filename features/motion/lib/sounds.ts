@@ -382,7 +382,7 @@ export class SoundPlayer {
     const report = (_: number, md: VideoFrameCallbackMetadata) => {
       const ahead = (md.expectedDisplayTime - performance.now()) / 1000;
       if (this.waiting) this.sync(md.mediaTime, ahead);
-      else if (this.running && !v.ended && Math.abs(this.heard() + ahead - (this.at + md.mediaTime - this.from)) > DRIFT) { // a hard jump; a stalling video is already caught by `waiting`
+      else if (this.running && !v.ended && Math.abs(this.heard() + ahead - (this.at + md.mediaTime - this.from)) > DRIFT) { // A hard jump; a stalling video is already caught by `waiting`
         this.sync(md.mediaTime, ahead);
         this.sound();
       }

@@ -7,7 +7,7 @@ import { cleanGuestPin } from '@/features/account/lib/guest-key'
 type Props = { value: string; onChange: (pin: string) => void; locale: string } & Omit<InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange'>
 
 /**
- * Password field of a guest post (REQ-COMMUNITY-031): digits only, six at most. The digits stay readable, since nothing
+ * Password field of a guest post: digits only, six at most. The digits stay readable, since nothing
  * asks the author to type them twice.
  */
 export default function GuestPinInput({ value, onChange, locale, ...rest }: Props) {

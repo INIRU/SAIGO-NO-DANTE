@@ -7,7 +7,7 @@ import { NAV_GROUPS } from '@/components/layout/nav-shared'
 
 const read = (path: string) => readFileSync(path, 'utf8')
 
-it('REQ-NEWS-012 links the calendar from an icon beside the language button, named in every locale', () => {
+it('links the calendar from an icon beside the language button, named in every locale', () => {
   expect([ko, en, ja].map(messages => messages.nav.other.calendar)).toEqual(['소식 캘린더', 'News calendar', 'ニュースカレンダー'])
   // It is its own element, not an entry of a menu group.
   expect(NAV_GROUPS.flatMap(group => group.items.map(item => item.href))).not.toContain('/calendar')
@@ -22,7 +22,7 @@ it('REQ-NEWS-012 links the calendar from an icon beside the language button, nam
   }
 })
 
-it('REQ-NEWS-011 keeps the page scrollbar while a dialog locks scrolling, so the page and navbar keep their width', () => {
+it('keeps the page scrollbar while a dialog locks scrolling, so the page and navbar keep their width', () => {
   const css = read('app/globals.css')
   expect(css).toContain('html { scrollbar-gutter: stable; }')
   // `html body` outranks the rule Radix injects; its margin compensation would shift the page a second time.

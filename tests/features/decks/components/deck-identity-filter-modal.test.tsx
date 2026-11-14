@@ -29,13 +29,13 @@ const render = (props: { sinnerId?: string; selected?: string[] } = {}) => rende
 const order = (html: string) => [...html.matchAll(/aria-label="decks\.identityFilter\.(?:add|remove)\{&quot;identity&quot;:&quot;([^&]+)&quot;\}"/g)].map(m => m[1])
 const reset = (html: string) => html.match(/<button[^>]*>(?:(?!<button).)*?초기화<\/button>/)?.[0] ?? ''
 
-describe('REQ-DECKS-019 the board identity filter window', () => {
-  it('REQ-DECKS-019 lists the newest identities first, not by grade and name', () => {
+describe('the board identity filter window', () => {
+  it('lists the newest identities first, not by grade and name', () => {
     expect(order(render())).toEqual(['하 인격', '나 인격', '가 인격'])
     expect(order(render({ sinnerId: '' }))).toEqual(['sinner.sinclair 하 인격', 'sinner.faust 파우스트 인격', 'sinner.sinclair 나 인격', 'sinner.sinclair 가 인격'])
   })
 
-  it('REQ-DECKS-019 offers reset only when there is something in view to clear', () => {
+  it('offers reset only when there is something in view to clear', () => {
     // Nothing typed, no grade, nothing picked for this sinner: the sinner itself is not something to reset.
     expect(reset(render())).toContain('disabled')
     // A pick of another sinner is outside this view.

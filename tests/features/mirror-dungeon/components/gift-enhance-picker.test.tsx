@@ -10,14 +10,14 @@ const render = (level: number, bare?: boolean) =>
 const sprites = (html: string) =>
   [...html.matchAll(/role="radio".*?enhance-(minus|plus-idle|plusplus-idle|plusplus|plus)[.]webp/g)].map(m => m[1])
 
-describe('REQ-MIRROR-DUNGEON-026 gift enhance switch draws the game sprites', () => {
-  it('REQ-MIRROR-DUNGEON-026 the picked level shows its lit sprite, the others their idle sprite', () => {
+describe('gift enhance switch draws the game sprites', () => {
+  it('the picked level shows its lit sprite, the others their idle sprite', () => {
     expect(sprites(render(0))).toEqual(['minus', 'plus-idle', 'plusplus-idle'])
     expect(sprites(render(1))).toEqual(['minus', 'plus', 'plusplus-idle'])
     expect(sprites(render(2))).toEqual(['minus', 'plus-idle', 'plusplus'])
   })
 
-  it('REQ-MIRROR-DUNGEON-026 the bare switch of the detail window has no box and 44px targets', () => {
+  it('the bare switch of the detail window has no box and 44px targets', () => {
     const html = render(2, true)
     expect(sprites(html)).toEqual(['minus', 'plus-idle', 'plusplus'])
     expect(html).not.toContain('border')

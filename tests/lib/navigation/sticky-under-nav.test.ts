@@ -6,7 +6,7 @@ import { isStuck } from '@/lib/navigation/sticky-under-nav'
 const source = (path: string) => readFileSync(resolve(__dirname, '../../..', path), 'utf8')
 
 describe('bars that stick under the navbar', () => {
-  it('REQ-SHARED-094 a bar is stuck while its layout place (without its slide) is at its sticky top', () => {
+  it('a bar is stuck while its layout place (without its slide) is at its sticky top', () => {
     expect(isStuck(64, 0, 64)).toBe(true)
     // slid up with the hidden navbar: the slide does not count
     expect(isStuck(0, -64, 64)).toBe(true)
@@ -14,7 +14,7 @@ describe('bars that stick under the navbar', () => {
     expect(isStuck(136, -64, 64)).toBe(false)
   })
 
-  it('REQ-SHARED-094 follows the navbar by sliding (transform), not by animating top, which lays out the page every frame', () => {
+  it('follows the navbar by sliding (transform), not by animating top, which lays out the page every frame', () => {
     const css = source('app/globals.css')
     expect(css).toContain('.sticky-under-nav{position:sticky;top:var(--nav-height)}')
     // .nav-slide: a sticky element with its own position and top that slides the same way
@@ -27,7 +27,7 @@ describe('bars that stick under the navbar', () => {
     expect(source('features/catalog/components/FilterSidebar.tsx')).toContain("top: 'calc(var(--nav-height) + 1rem)'")
   })
 
-  it('REQ-SHARED-094 no sticky element animates its top: every one that follows the navbar slides instead', () => {
+  it('no sticky element animates its top: every one that follows the navbar slides instead', () => {
     const files = ['app/globals.css', 'features/tools/components/CalculatorArena.module.css', 'features/account/components/DocsTab.tsx',
       'features/account/components/PlaygroundTab.tsx', 'features/mirror-dungeon/components/GiftCatalog.tsx']
     for (const file of files) expect(source(file), file).not.toMatch(/transition:top|transition-\[top\]/)
@@ -40,7 +40,7 @@ describe('bars that stick under the navbar', () => {
     expect(source('features/planner/components/FinalGiftSection.tsx')).toContain("'calc(var(--nav-height, 4rem) + var(--planner-bar-h, 0rem))'")
   })
 
-  it('REQ-SHARED-094 the story map bus rides by transform, not by left and top', () => {
+  it('the story map bus rides by transform, not by left and top', () => {
     expect(source('app/globals.css')).toContain('.story-bus { transition: transform .5s cubic-bezier(.22,1,.36,1); }')
     expect(source('app/[lang]/story/_components/StoryMap.tsx')).toMatch(/className="story-bus[^"]*"\s*style=\{\{ left: 0, top: 0, transform: `translate\(/)
   })

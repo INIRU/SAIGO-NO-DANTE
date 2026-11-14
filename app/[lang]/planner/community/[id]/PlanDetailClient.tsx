@@ -266,7 +266,7 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
   // Signed-out visitors own a guest plan when this browser's key wrote it.
   const guest = useGuestPosts(authStatus === 'unauthenticated' && !plan.user_id), guestPosts = guest.posts
   const guestOwner = authStatus === 'unauthenticated' && !!guestPosts.data?.plans.some(post => post.id === plan.id)
-  // A guest plan this browser has no key for: its author takes it back with the plan's password (REQ-COMMUNITY-031).
+  // A guest plan this browser has no key for: its author takes it back with the plan's password.
   const canRecover = authStatus === 'unauthenticated' && !!plan.guest_tag && guest.keyRead && !guestPosts.isLoading && !guestOwner
   const [voted, setVoted] = useState(false)
   const [voteCount, setVoteCount] = useState(plan.vote_count)

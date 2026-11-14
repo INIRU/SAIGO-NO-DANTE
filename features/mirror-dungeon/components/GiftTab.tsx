@@ -92,7 +92,7 @@ export default function GiftTab({ gifts, themes, recipes, getGiftKeywordIcon, on
     }
   }, [checkMode, preset, gifts, t])
   // The chosen preset in a window that stays above the game (the assist companion's window). It closes when check mode
-  // ends or no preset is chosen. it shares the companion's stored size; give it its own key if they diverge.
+  // ends or no preset is chosen. It shares the companion's stored size; give it its own key if they diverge.
   const { container: pip, open: openPip, close: closePip } = useCompanionWindow()
   const [pipSupported, setPipSupported] = useState(true)
   useEffect(() => { setPipSupported('documentPictureInPicture' in window) }, [])

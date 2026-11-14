@@ -288,7 +288,7 @@ export default function FloorTab({ state, dispatch, themes, gifts, recipes, gift
     } else {
       const gid = parseInt(giftGameId, 10)
       if (Number.isNaN(gid)) return
-      // 층 계획은 최종 조합이 소비하는 재료도 고를 수 있다. 최종 기프트에는 넣지 않는다(REQ-PLANNER-018).
+      // 층 계획은 최종 조합이 소비하는 재료도 고를 수 있다. 최종 기프트에는 넣지 않는다.
       dispatch({ type: 'SET_FLOOR_GIFTS', floor: activeEntry.floor, giftIds: [...currentIds, giftGameId] })
       const finalKey = finalKeyForFloorPick(gid, derivedFinal)
       if (finalKey) dispatch({ type: 'ADD_GIFT', giftId: finalKey })
@@ -366,7 +366,7 @@ export default function FloorTab({ state, dispatch, themes, gifts, recipes, gift
 
   const themeName = (theme: ThemeData) => getLocalizedName({ name_kr: theme.name, name_en: theme.name_en, name_jp: theme.name_jp }, locale)
   const activeThemeName = selectedTheme ? themeName(selectedTheme) : null
-  // 최종 조합이 소비하는 재료도 층에서 얻는 기프트라 목록에 둔다(REQ-PLANNER-018)
+  // 최종 조합이 소비하는 재료도 층에서 얻는 기프트라 목록에 둔다
   const availableGifts = selectedTheme ? getThemeAvailableGifts(selectedTheme) : []
   // 이 층에서 얻을 수 있는 전체: 다른 테마팩 전용 기프트만 뺀다(합성·조합식 결과는 포함)
   const reachableGifts = useMemo(() => {

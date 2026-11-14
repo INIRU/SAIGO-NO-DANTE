@@ -3,7 +3,7 @@ import { forYouPhase } from '@/features/community/lib/for-you-phase'
 
 const base = { personal: true, status: 'authenticated', loaded: false, held: false, count: 0 } as const
 
-it('REQ-COMMUNITY-012 decides what the personal shelf shows', () => {
+it('decides what the personal shelf shows', () => {
   // No shelf and no skeleton for visitors without an account, while the session is unknown, or with history off.
   expect(forYouPhase({ ...base, status: 'unauthenticated' })).toBe('hidden')
   expect(forYouPhase({ ...base, status: 'loading' })).toBe('hidden')

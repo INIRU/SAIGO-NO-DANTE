@@ -17,19 +17,19 @@ const note = NOTE_PREFIX + JSON.stringify({
   ],
 })
 
-describe('REQ-DECKS-050 REQ-PLANNER-045 list cards carry the one-line preview instead of the note document', () => {
-  it('REQ-DECKS-050 discovery deck posts send the preview text', () => {
+describe('list cards carry the one-line preview instead of the note document', () => {
+  it('discovery deck posts send the preview text', () => {
     const [deck] = formatDiscoveryPosts('deck', [{ id: 'd1', description: note, profiles: null }])
     expect(deck.description).toBe(notePreviewText(note))
     expect(deck.description).not.toContain('"type"')
   })
 
-  it('REQ-PLANNER-045 plan list summaries send the preview text', () => {
+  it('plan list summaries send the preview text', () => {
     const plan = stripPlanForList({ id: 'p1', description: note, deck: null, egos: null, floor_plan: [], tags: [] })
     expect(plan.description).toBe(notePreviewText(note))
   })
 
-  it('REQ-DECKS-050 the preview gives the card, the board row, search and the info score what the note gave', () => {
+  it('the preview gives the card, the board row, search and the info score what the note gave', () => {
     const preview = notePreviewText(note)
     expect(notePreviewText(preview)).toBe(preview)
     expect(noteSummaryText(preview)).toBe(noteSummaryText(note))
@@ -37,7 +37,7 @@ describe('REQ-DECKS-050 REQ-PLANNER-045 list cards carry the one-line preview in
     expect(notePlainText(preview).length >= 20).toBe(notePlainText(note).length >= 20)
   })
 
-  it('REQ-DECKS-050 an empty or missing description stays as it was', () => {
+  it('an empty or missing description stays as it was', () => {
     const [empty, missing] = formatDiscoveryPosts('deck', [{ id: 'd1', description: null }, { id: 'd2' }])
     expect(empty.description).toBeNull()
     expect('description' in missing).toBe(false)

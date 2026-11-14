@@ -15,9 +15,9 @@ function GameFormatter({ text }: { text: string }) {
   return <>{formatSkillDesc(text, '#fff')}</>
 }
 
-// REQ-SHARED-021: game text is drawn by the game text renderer, never searched for keywords; the backslash is no
+// Game text is drawn by the game text renderer, never searched for keywords; the backslash is no
 // escape marker there, so it shows as written. (User memos: tests/features/notes/components/memo-explicit-keywords.test.tsx.)
-it('REQ-SHARED-021 draws game text without guessing keywords and keeps a backslash literal', () => {
+it('draws game text without guessing keywords and keeps a backslash literal', () => {
   const html = renderToStaticMarkup(<KeywordProvider keywords={keywords}><GameFormatter text={'\\못 화상'} /></KeywordProvider>)
   expect(html.match(/keyword-token/g)?.length ?? 0).toBe(0)
   expect(html).toContain('\\못 화상')

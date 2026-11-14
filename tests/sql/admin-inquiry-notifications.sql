@@ -1,4 +1,4 @@
--- REQ-COMMUNITY-017: inquiries waiting for an answer as an administrator's notifications. Isolated accounts and
+-- Inquiries waiting for an answer as an administrator's notifications. Isolated accounts and
 -- inquiries; everything rolls back. Other open inquiries in the database are ignored (`mine`).
 begin;
 do $$

@@ -1,4 +1,4 @@
--- REQ-MIRROR-DUNGEON-019, 021. Run against a configured development database; every fixture is rolled back.
+-- Run against a configured development database; every fixture is rolled back.
 begin;
 do $$
 declare owner_id uuid; one_group jsonb := '[{"name":"최우선 먹기","gifts":["9001","9002"],"memo":"2층 전에"}]';

@@ -31,7 +31,7 @@ const render = (sinCounts: Record<string, number>, requirements = [{ sin: 'pride
 
 const costIcons = (html: string) => html.match(/<img[^>]*>/g)?.filter(tag => tag.includes('pride') || tag.includes('envy')) ?? []
 
-it('REQ-CATALOG-016 draws every sin of a passive with its own count', () => {
+it('draws every sin of a passive with its own count', () => {
   const html = render({ pride: 1, envy: 2 })
   expect(costIcons(html)).toHaveLength(2)
   expect(html).toContain('1/1')
@@ -39,7 +39,7 @@ it('REQ-CATALOG-016 draws every sin of a passive with its own count', () => {
   expect(html).not.toContain('data-unmet="true"')
 })
 
-it('REQ-CATALOG-016 marks the passive unmet when only one sin falls short and warns about the distribution', () => {
+it('marks the passive unmet when only one sin falls short and warns about the distribution', () => {
   const html = render({ pride: 5, envy: 1 })
   expect(costIcons(html)).toHaveLength(2)
   expect(html).toContain('5/1')

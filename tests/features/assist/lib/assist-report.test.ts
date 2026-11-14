@@ -4,7 +4,7 @@ import { parseSampleMeta } from '@/features/assist/lib/assist-samples'
 
 const context = { build: 'abc', mode: 'balanced', ocr: 'paddle' }
 
-it('REQ-ASSIST-039 counts read and held actions and sends each count once', () => {
+it('counts read and held actions and sends each count once', () => {
   const tally = new AssistReportTally(() => context, 'b1946ac9-2c86-4e0e-9f3a-0c8a3d8e6f11')
   expect(tally.take()).toBeNull()
   tally.settle('popup', true); tally.settle('popup', true); tally.settle('popup', false); tally.settle('sale', true)
@@ -15,7 +15,7 @@ it('REQ-ASSIST-039 counts read and held actions and sends each count once', () =
   expect(tally.take()).toBeNull()
 })
 
-it('REQ-ASSIST-040 records hand edits as labels and marks removals of what Assist recorded', () => {
+it('records hand edits as labels and marks removals of what Assist recorded', () => {
   const tally = new AssistReportTally(() => context)
   recordingAutomatically(() => tally.inventoryChanged([], ['9001', '9002'], 10))
   tally.inventoryChanged(['9001', '9002'], ['9001'], 20)            // undo of an automatic read: a wrong read
@@ -29,7 +29,7 @@ it('REQ-ASSIST-040 records hand edits as labels and marks removals of what Assis
   ])
 })
 
-it('REQ-ASSIST-039 rejects malformed reports and links samples to their session', () => {
+it('rejects malformed reports and links samples to their session', () => {
   const tally = new AssistReportTally(() => context)
   tally.settle('fusion', false)
   const report = tally.take()!
@@ -49,7 +49,7 @@ it('REQ-ASSIST-039 rejects malformed reports and links samples to their session'
   expect(parseSampleMeta({ ...meta, session: 'not-a-uuid' })).toBeNull()
 })
 
-it('REQ-ASSIST-044 reports the capture size so windowed and full-screen captures can be told apart', () => {
+it('reports the capture size so windowed and full-screen captures can be told apart', () => {
   const tally = new AssistReportTally(() => ({ ...context, width: 1602, height: 932 }))
   tally.settle('fusion', true)
   const report = tally.take()!

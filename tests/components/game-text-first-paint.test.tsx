@@ -36,8 +36,8 @@ const withRefs = (node: React.ReactNode, locale = 'ko') => (
   <GameTextRefsProvider locale={locale} names={compactGameTextRefNames(REFS)}><KeywordProvider keywords={KEYWORDS}>{node}</KeywordProvider></GameTextRefsProvider>
 )
 
-describe('REQ-SHARED-023 the first paint already has the reference names', () => {
-  it('REQ-SHARED-023 server render resolves [Id] to names and condition labels with no request', () => {
+describe('the first paint already has the reference names', () => {
+  it('server render resolves [Id] to names and condition labels with no request', () => {
     const html = renderToString(withRefs(<Formatter text={RAW} />))
     expect(html).toContain('>화상<')
     expect(html).toContain('>[적중시]<')
@@ -47,7 +47,7 @@ describe('REQ-SHARED-023 the first paint already has the reference names', () =>
     expect(fetchMock).not.toHaveBeenCalled()
   })
 
-  it('REQ-SHARED-023 draws the same markup whether or not the page has started asking for the table (hydration agrees)', async () => {
+  it('draws the same markup whether or not the page has started asking for the table (hydration agrees)', async () => {
     const server = renderToString(withRefs(<Formatter text={RAW} />))
     // The client side of the lazy request flag: set once a text that may hold a ref was formatted in the browser.
     vi.stubGlobal('window', {})
@@ -62,24 +62,24 @@ describe('REQ-SHARED-023 the first paint already has the reference names', () =>
     expect(fetchMock).not.toHaveBeenCalled()
   })
 
-  it('REQ-SHARED-023 lazy readers (plain text) have the names on the first render too', () => {
+  it('lazy readers (plain text) have the names on the first render too', () => {
     const html = renderToString(withRefs(<Plain text="[Combustion] 3 부여" />))
     expect(html).toBe('화상 3 부여')
   })
 
-  it('REQ-SHARED-023 ignores names of another language than the page (the table is requested instead)', () => {
+  it('ignores names of another language than the page (the table is requested instead)', () => {
     pageLocale = 'en'
     const html = renderToString(withRefs(<Formatter text={RAW} />, 'ko'))
     expect(html).toContain('[Combustion]')
     expect(html).not.toContain('>화상<')
   })
 
-  it('REQ-SHARED-023 without a provider the first render still shows the raw id (the request fills it in later)', () => {
+  it('without a provider the first render still shows the raw id (the request fills it in later)', () => {
     const html = renderToString(<KeywordProvider keywords={KEYWORDS}><Formatter text={RAW} /></KeywordProvider>)
     expect(html).toContain('[Combustion]')
   })
 
-  it('REQ-SHARED-023 the root [lang] layout feeds the provider from the cached server read, outside the keyword provider', () => {
+  it('the root [lang] layout feeds the provider from the cached server read, outside the keyword provider', () => {
     const source = readFileSync('app/[lang]/layout.tsx', 'utf8')
     expect(source).toContain("getGameTextRefNamesWireOrNull(validLang)")
     const provider = source.indexOf('<GameTextRefsProvider')

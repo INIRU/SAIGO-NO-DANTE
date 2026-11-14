@@ -9,7 +9,7 @@ vi.mock('@/components/ui/RelativeTime', () => ({ default: ({ date }: { date: str
 
 import BoardCard from '@/features/community/components/BoardCard'
 
-it('REQ-COMMUNITY-088 a deck or plan card shows how long ago it was posted, next to the author', () => {
+it('a deck or plan card shows how long ago it was posted, next to the author', () => {
   for (const kind of ['deck', 'planner'] as const) {
     const post = { id: 'a', title: 'A', created_at: '2026-10-20T03:00:00Z', vote_count: 1, view_count: 2, difficulty: 'normal', ...(kind === 'deck' ? { username: '단테' } : { profiles: { username: '단테' } }) }
     const html = renderToStaticMarkup(<BoardCard kind={kind} post={post} />)

@@ -1,4 +1,4 @@
--- REQ-COMMUNITY-013 REQ-COMMUNITY-014: comment notifications. Isolated accounts and posts; everything rolls back.
+-- Comment notifications. Isolated accounts and posts; everything rolls back.
 begin;
 do $$
 declare a uuid := gen_random_uuid(); b uuid := gen_random_uuid();
