@@ -40,14 +40,17 @@ describe('fonts are fetched by the pieces a page uses', () => {
     expect(preloaded).toEqual(['--font-bebas-kai', '--font-kotra-bold', '--font-pretendard-hangul-1', '--font-pretendard-latin'])
   })
 
-  it('splits the 2,350 common syllables into non-overlapping pieces, the first one small', () => {
+  it('splits the 2,350 common syllables between the pieces, the first one small', () => {
     expect(hangul.length).toBeGreaterThanOrEqual(4)
-    const seen = new Set<number>()
-    for (const piece of hangul) for (const c of codes(piece.range!)) {
-      expect(seen.has(c), `U+${c.toString(16)} is in two pieces`).toBe(false)
-      seen.add(c)
-    }
-    for (const c of ksX1001Syllables()) expect(seen.has(c), `U+${c.toString(16)} has no piece`).toBe(true)
+    // The browser draws a character with the first piece whose range lists it; a later range may span syllables an
+    // earlier piece already has (scripts/assets/subset-pretendard.py), so a syllable belongs to the first piece listing it.
+    const owner = new Map<number, number>()
+    hangul.forEach((piece, index) => {
+      let own = 0
+      for (const c of codes(piece.range!)) if (!owner.has(c)) { owner.set(c, index); own++ }
+      expect(own, `${piece.variable} has syllables of its own`).toBeGreaterThan(0)
+    })
+    for (const c of ksX1001Syllables()) expect(owner.has(c), `U+${c.toString(16)} has no piece`).toBe(true)
     const first = statSync(`app/${hangul[0].src}`).size
     expect(first).toBeLessThan(120 * 1024)
   })
