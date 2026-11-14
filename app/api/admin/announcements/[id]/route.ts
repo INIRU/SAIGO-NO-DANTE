@@ -3,7 +3,8 @@ import { revalidateTag } from 'next/cache'
 import { z } from 'zod'
 import { requireAdmin } from '@/lib/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { announcementText } from '@/lib/announcements'
+import { announcementText, type Announcement } from '@/lib/announcements'
+import type { Json } from '@/lib/supabase/database.types'
 import { announcementSchema, postAnnouncementToDiscord } from '@/features/admin/server'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 export async function PATCH(
@@ -35,6 +36,7 @@ export async function PATCH(
     .from('announcements')
     .update({
       ...body,
+      content_doc: body.content_doc as Json | undefined,
       content: body.content_doc
         ? announcementText(body.content_doc)
         : body.content,
@@ -51,7 +53,7 @@ export async function PATCH(
   revalidateTag(CACHE_TAGS.announcements, { expire: 0 })
   if (!data) return NextResponse.json({ error: '공지가 없습니다.' }, { status: 404 })
   // 임시 저장 → 게시로 바뀔 때만 한 번 보낸다(게시된 공지를 고쳐 저장해도 다시 보내지 않음)
-  const discord = data.published && !before?.published ? await postAnnouncementToDiscord(data, discord_everyone) : 'skipped'
+  const discord = data.published && !before?.published ? await postAnnouncementToDiscord(data as Announcement, discord_everyone) : 'skipped'
   return NextResponse.json({ ...data, discord })
 }
 export async function DELETE(

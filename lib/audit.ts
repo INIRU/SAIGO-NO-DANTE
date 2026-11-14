@@ -1,4 +1,5 @@
 import { createAdminClient } from '@/lib/supabase/admin'
+import { toJson } from '@/lib/supabase/json'
 
 export async function writeAuditLog(params: {
   actorId: string | null
@@ -17,7 +18,7 @@ export async function writeAuditLog(params: {
       action: params.action,
       target_type: params.targetType ?? null,
       target_id: params.targetId ?? null,
-      details: params.details ?? {},
+      details: toJson(params.details ?? {}),
       severity: params.severity ?? 'info',
     })
 

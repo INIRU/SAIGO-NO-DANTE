@@ -245,7 +245,7 @@ export async function POST(request: NextRequest) {
         s3_count: slot.s3_count ?? 1,
         uptie: normalizeUptie(slot.uptie),
       }))
-      const { error: identityInsertError } = await insertDeckIdentities(next => admin.schema('limbus').from('deck_identities').insert(next), rows)
+      const { error: identityInsertError } = await insertDeckIdentities<(typeof rows)[number]>(next => admin.schema('limbus').from('deck_identities').insert(next), rows)
       if (identityInsertError) {
         // Rollback: delete the parent deck
         await rollbackDeck(admin, deck.id)

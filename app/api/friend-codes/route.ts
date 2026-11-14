@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
     if (userIds.length) {
       const profiles = await db.from('profiles').select('id,username').in('id', userIds)
       if (profiles.error) throw profiles.error
-      for (const profile of profiles.data) names.set(profile.id, profile.username)
+      for (const profile of profiles.data) names.set(profile.id, profile.username as string)
     }
 
     // Exchange posts: which ones this viewer already gave a code to, and the codes others gave to the viewer's own post.
@@ -89,7 +89,7 @@ export async function GET(request: NextRequest) {
         if (askers.length) {
           const profiles = await db.from('profiles').select('id,username').in('id', askers)
           if (profiles.error) throw profiles.error
-          for (const profile of profiles.data) names.set(profile.id, profile.username)
+          for (const profile of profiles.data) names.set(profile.id, profile.username as string)
         }
         requests = (got.data ?? []).map(row => ({ id: row.id, name: row.viewer_user_id ? names.get(row.viewer_user_id) ?? null : null, userId: row.viewer_user_id, guestTag: row.viewer_tag, status: row.status, createdAt: row.created_at }))
       }

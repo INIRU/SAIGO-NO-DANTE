@@ -20,7 +20,7 @@ export async function GET(request: Request) {
   if (error) return NextResponse.json({ error: '익명 글을 불러오지 못했습니다.' }, { status: 500, headers })
   type Post = { id: string; title: string; created_at: string }
   const one = (value: Post | Post[] | null) => Array.isArray(value) ? value[0] ?? null : value
-  const rows = (data ?? []) as unknown as { decks: Post | Post[] | null; md_plans: Post | Post[] | null }[]
+  const rows = (data ?? []) as { decks: Post | Post[] | null; md_plans: Post | Post[] | null }[]
   return NextResponse.json({
     decks: rows.map(row => one(row.decks)).filter((post): post is Post => post !== null),
     plans: rows.map(row => one(row.md_plans)).filter((post): post is Post => post !== null),

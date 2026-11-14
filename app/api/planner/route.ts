@@ -5,6 +5,7 @@ import { saveSeriesChoice, withPostAuthors } from '@/features/community/server'
 import { authorColumns, authorRateKey, guestPinOf, recordGuestAuthorship, resolveAuthor } from '@/features/account/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { toJson } from '@/lib/supabase/json'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { findOrCreateSupabaseUser } from '@/lib/supabase/find-or-create-user'
@@ -406,8 +407,8 @@ export async function POST(req: NextRequest) {
         difficulty: planDifficulty,
         deck: deck ?? [],
         egos: egos ?? [],
-        floor_plan: normalizedFloorPlan,
-        gift_inventory: gift_inventory ?? [],
+        floor_plan: toJson(normalizedFloorPlan),
+        gift_inventory: toJson(gift_inventory ?? []),
         tags: tags ?? [],
         lang,
       })

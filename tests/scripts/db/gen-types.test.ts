@@ -206,16 +206,16 @@ describe('generateTypes', () => {
     expect(views).not.toContain('Insert')
   })
 
-  it('writes functions: optional args for defaults, Record for no args, void as undefined, set results as arrays', () => {
+  it('writes functions: every arg nullable, optional args for defaults, Record for no args, void as undefined, set results as arrays', () => {
     const fns = out.slice(out.indexOf('    Functions: {'), out.indexOf('    Enums: {'))
     expect(fns).toContain(
       [
         '      add_one: {',
         '        Args: {',
-        '          n: number',
-        '          step?: number',
-        '          names: string[]',
-        '          state: Database["demo"]["Enums"]["widget_status"]',
+        '          n: number | null',
+        '          step?: number | null',
+        '          names: string[] | null',
+        '          state: Database["demo"]["Enums"]["widget_status"] | null',
         '        }',
         '        Returns: number',
         '      }',

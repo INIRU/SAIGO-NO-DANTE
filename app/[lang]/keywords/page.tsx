@@ -8,6 +8,7 @@ import { getGameTextRefNames } from '@/lib/db/game-text-refs'
 import { isMissingColumnError, keywordTextsFromRefs, loadKeywordRefTexts } from '@/lib/keywords/ref-text'
 import KeywordsClient from './_components/KeywordsClient'
 import type { KeywordEntry } from './_components/KeywordCard'
+import type { KeywordEgo } from './_components/KeywordModal'
 import StaticQueryAdapter from '@/components/providers/StaticQueryAdapter'
 import KeywordsLoading from './loading'
 
@@ -140,7 +141,7 @@ async function renderKeywords(withRefs: boolean) {
           identities={safeIdentities}
           sinners={sinners ?? []}
           gifts={safeGifts}
-          egos={safeEgos}
+          egos={safeEgos as KeywordEgo[]}
           refKeywords={refKeywords}
         />
       </StaticQueryAdapter>

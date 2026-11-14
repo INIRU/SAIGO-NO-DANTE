@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // 스키마 설명 JSON에서 Supabase 공식 `gen types`와 같은 모양의 TypeScript 타입 파일을 만든다.
 // 공식 도구(MCP generate_typescript_types)는 public 스키마만 주기 때문에 limbus 스키마용으로 직접 만든다.
+// 공식 출력과 다른 점: 함수 인자는 모두 `| null`을 허용한다(호출하는 쪽이 일부러 null을 넘긴다).
 //   1. scripts/db/schema-snapshot.sql 을 Supabase SQL 편집기나 MCP execute_sql에서 실행한다(SELECT만 쓴다).
 //   2. 결과의 `snapshot` 값(JSON)을 파일로 저장한다. 이 JSON은 저장소에 넣지 않는다.
 //   3. node scripts/db/gen-types.mjs <스냅샷.json> > lib/supabase/database.types.ts
@@ -120,7 +121,9 @@ function viewBlock(view, ctx) {
 
 // 한 함수(이름이 같은 것이 여럿이면 중복 정의마다 하나씩)의 Args·Returns.
 function overload(fn, ctx) {
-  const args = (fn.args ?? []).map((arg, i) => `${key(arg.name ?? `arg${i + 1}`)}${arg.hasDefault ? '?' : ''}: ${typeOf(arg, ctx)}`)
+  // Every argument takes `| null`: PostgREST passes a JSON null as SQL NULL whatever the function declares (the snapshot
+  // does not say which functions are STRICT), and the callers pass null on purpose for "no filter".
+  const args = (fn.args ?? []).map((arg, i) => `${key(arg.name ?? `arg${i + 1}`)}${arg.hasDefault ? '?' : ''}: ${typeOf(arg, ctx)} | null`)
   return { args, returns: returnsOf(fn, ctx) }
 }
 

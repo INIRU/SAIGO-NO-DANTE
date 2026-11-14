@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { lastDays, tallyByDay } from '@/features/admin'
+import type { Database } from '@/lib/supabase/database.types'
 
 const DAYS = 14
 
@@ -14,7 +15,7 @@ export async function GET() {
   const days = lastDays(DAYS, now)
   const since = new Date(now - DAYS * 864e5).toISOString()
   const ago = (hours: number) => new Date(now - hours * 36e5).toISOString()
-  const count = (table: string) => db.from(table).select('*', { count: 'exact', head: true })
+  const count = <Table extends keyof Database['limbus']['Tables']>(table: Table) => db.from(table).select('*', { count: 'exact', head: true })
 
   const [open, reports, drafts, maintenance, users, seenDay, seenWeek, decks, plans, joined, newDecks, newPlans, recent, ...visits] = await Promise.all([
     count('inquiries').eq('status', 'open'),
@@ -35,7 +36,7 @@ export async function GET() {
   if ([open, reports, drafts, maintenance, users, seenDay, seenWeek, decks, plans, joined, newDecks, newPlans, recent, ...visits].some(r => r.error))
     return NextResponse.json({ error: 'unavailable' }, { status: 500 })
 
-  const perDay = (rows: { created_at: string }[] | null) => tallyByDay(days, rows ?? [])
+  const perDay = (rows: { created_at: string | null }[] | null) => tallyByDay(days, (rows ?? []) as { created_at: string }[])
   const posts = perDay([...(newDecks.data ?? []), ...(newPlans.data ?? [])])
   return NextResponse.json({
     queue: {

@@ -48,7 +48,7 @@ async function getRows(withRefs: boolean) {
   const failed = [sinners, identities, ego, keywords, gifts, themes, events].find(r => r.error)
   if (failed?.error) throw new Error(failed.error.message)
   return {
-    sinners: (sinners.data ?? []).sort((a, b) => a.order_num - b.order_num),
+    sinners: (sinners.data ?? []).sort((a, b) => a.order_num! - b.order_num!),
     identities: identities.data ?? [],
     ego: ego.data ?? [],
     keywords: (keywords.data ?? []).map(k => ({ ...k, description: k.description ? gameTextToPlain(k.description, { names: labels }).slice(0, 80) : null })),
@@ -91,7 +91,7 @@ function buildEntries(rows: Awaited<ReturnType<typeof getRows>>, lang: Lang): In
     ...rows.identities.map((i): IndexEntry => ({
       type: 'identity', label: pick(i, lang), names: names(i), href: `/sinners/${i.sinner_id}/identities/${i.id}`,
       sublabel: sinnerById.has(i.sinner_id) ? pick(sinnerById.get(i.sinner_id)!, lang) : undefined,
-      icon: getIdentityImageUrl(i.sinner_id, i.folder_name, `${i.game_id}_normal`), rarity: i.rarity, sinner: i.sinner_id,
+      icon: getIdentityImageUrl(i.sinner_id, i.folder_name!, `${i.game_id}_normal`), rarity: i.rarity, sinner: i.sinner_id,
     })),
     ...rows.ego.map((e): IndexEntry => ({
       type: 'ego', label: pick(e, lang), names: names(e), href: `/sinners/${e.sinner_id}/ego/${e.id}`,

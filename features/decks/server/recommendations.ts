@@ -1,5 +1,6 @@
 import * as Sentry from '@sentry/nextjs'
 import type { SupabaseClient } from '@supabase/supabase-js'
+import type { Database } from '@/lib/supabase/database.types'
 import { THEME_KEYWORDS, normalizeThemeKeyword } from '@/lib/constants/keywords'
 import { withPostAuthors } from '@/lib/server/post-authors'
 import type { DeckRecommendationSummary, DeckRecommendationsData } from '@/features/decks/components/DeckRecommendations'
@@ -248,7 +249,7 @@ export function getSelectedEgoIds(deckEgos: Array<{ ego: { id?: string | null } 
 }
 
 export async function fetchDeckRecommendations(
-  supabase: SupabaseClient,
+  supabase: SupabaseClient<Database>,
   lang: 'ko' | 'en' | 'ja',
   currentDeck: CurrentDeckForRecommendations
 ): Promise<DeckRecommendationsData> {
@@ -367,7 +368,7 @@ export async function fetchDeckRecommendations(
 
     if (candidateError) throw candidateError
 
-    const candidates = (await withPostAuthors((candidateRows ?? []) as unknown as RecommendationSourceDeck[]))
+    const candidates = (await withPostAuthors((candidateRows ?? []) as RecommendationSourceDeck[]))
       .map(toRecommendationCandidate)
       .filter((candidate): candidate is RecommendationCandidate => {
         if (!candidate) return false

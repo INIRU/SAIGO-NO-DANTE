@@ -11,7 +11,7 @@ export default async function DeckOgImage({ params }: { params: Promise<{ lang: 
   const supabase = publicSupabase()
   const { data: deck, error } = await supabase.schema('limbus').from('decks')
     .select('title, deck_identities(slot_order, gacksung, identities(sinner_id, folder_name, game_id))').eq('id', id).maybeSingle()
-  const slots = error ? [] : [...(deck?.deck_identities ?? [])].sort((a, b) => a.slot_order - b.slot_order)
+  const slots = error ? [] : [...(deck?.deck_identities ?? [])].sort((a, b) => a.slot_order! - b.slot_order!)
   const images = slots.slice(0, 12).map(slot => {
     const identity = Array.isArray(slot.identities) ? slot.identities[0] : slot.identities
     return identity ? getIdentityPortraitUrl(identity.sinner_id, identity.folder_name, identity.game_id, slot.gacksung ?? true) : ''

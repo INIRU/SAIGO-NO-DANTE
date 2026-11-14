@@ -82,7 +82,7 @@ async function getCachedSinnerData(slug: string) {
   if (identitiesRes.error) throw identitiesRes.error
   if (egosRes.error) throw egosRes.error
 
-  const identities = ((identitiesRes.data ?? []) as unknown as Identity[]).map(identity => {
+  const identities = ((identitiesRes.data ?? []) as Identity[]).map(identity => {
     const associations = identity.association_list?.map(item => item.trim()).filter(Boolean) ?? []
     if (associations.length === 0) return identity
     return {
@@ -91,7 +91,7 @@ async function getCachedSinnerData(slug: string) {
     }
   })
 
-  return { sinner, identities, egos: (egosRes.data ?? []) as unknown as EGO[] }
+  return { sinner, identities, egos: (egosRes.data ?? []) as EGO[] }
 }
 
 export default async function SinnerPage({ params }: { params: Promise<{ lang: string; slug: string }> }) {
