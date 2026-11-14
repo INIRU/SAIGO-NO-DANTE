@@ -1,24 +1,21 @@
 'use client'
 
-import { maxObserved, observationCost, type Observation } from '@/lib/planner/observation'
-
-
+import { observationCost, maxObserved, type Observation } from '@/lib/planner/observation'
 import { getGameUiAsset } from '@/lib/utils/game-ui'
-import { useCallback, useMemo, useState, type CSSProperties } from 'react'
+import { useState } from 'react'
 import Image from 'next/image'
 import { useTranslations } from 'next-intl'
 import type { PlannerState, PlannerAction, GiftData } from '@/lib/planner/types'
-import { START_GIFT_IDS } from '@/features/planner/lib/start-gifts'
-import {
-  GRADE_ROMAN,
-  GRADE_ORDER,
-  getKeywordIconUrl,
-  getKeywordSlug,
-} from '@/lib/planner/gift-plan-constants'
+import { GRADE_ORDER } from '@/lib/planner/gift-plan-constants'
 import type { GiftSubTab } from '@/lib/planner/gift-plan-constants'
+import { maxStartGiftCount, pickGiftsByIds } from '@/features/planner/lib/gift-plan-selection'
+import { useGiftPlanSelection } from '@/features/planner/hooks/useGiftPlanSelection'
 import GiftGridPanel from './GiftGridPanel'
 import SelectedPanel from './SelectedPanel'
-import GiftCard from '@/features/mirror-dungeon/components/GiftCard'
+import GiftSubTabBar from './GiftSubTabBar'
+import GiftObserveInfoBar from './GiftObserveInfoBar'
+import GiftStartPicker from './GiftStartPicker'
+import GiftPlanTabStyles from './GiftPlanTabStyles'
 
 interface Props {
   state: PlannerState
@@ -35,140 +32,22 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap, observati
   const tFloor = useTranslations('planner.floorTab')
   const [subTab, setSubTab] = useState<GiftSubTab>('observe')
 
-  // Parse selected IDs by prefix. 관찰 목록은 observe_ 항목이 바뀔 때만 새로 만든다(최종 기프트를 눌러도 관찰 격자를 다시 그리지 않게)
-  const observeKey = state.giftInventory.filter(id => id.startsWith('observe_')).join()
-  const observeIds = useMemo(
-    () => new Set(observeKey ? observeKey.split(',').map(id => parseInt(id.replace('observe_', ''))) : []),
-    [observeKey]
-  )
-  const toggleObserve = useCallback((gift: GiftData) => {
-    const key = `observe_${gift.game_id}`
-    if (observeIds.has(gift.game_id)) {
-      dispatch({ type: 'REMOVE_GIFT', giftId: key })
-    } else if (observeIds.size < maxObserved(observation)) {
-      dispatch({ type: 'ADD_GIFT', giftId: key })
-    }
-  }, [dispatch, observeIds, observation])
-  const startIds = useMemo(
-    () => new Set(
-      state.giftInventory
-        .filter(id => id.startsWith('start_'))
-        .map(id => parseInt(id.replace('start_', '')))
-    ),
-    [state.giftInventory]
-  )
-  function getGiftsByIds(ids: Set<number>): GiftData[] {
-    return Array.from(ids)
-      .map(id => giftMap.get(id))
-      .filter(Boolean) as GiftData[]
-  }
-
-  const observeGifts = useMemo(
-    // Only what the start observation can actually offer, per the game's observation list.
-    () => {
-      const ids = new Set(observation.giftIds)
-      return gifts.filter(g => ids.has(g.game_id))
-    },
-    [gifts, observation]
-  )
+  const { observeIds, startIds, toggleObserve, observeGifts } = useGiftPlanSelection(state.giftInventory, dispatch, gifts, observation)
 
   const subTabs: { key: GiftSubTab; label: string; count: number }[] = [
     { key: 'observe', label: t('tabs.observe'), count: observeIds.size },
     { key: 'start', label: t('tabs.start'), count: startIds.size },
   ]
-  const keywordLabel = (slug: string | null) => t(`keywords.${slug ?? 'all'}`)
+  const maxStartGifts = maxStartGiftCount(state.giftInventory)
 
   return (
     <div className="planner-gift-tab" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-      {/* ── Sub-tab bar ─────────────────────────────────────────────────── */}
-      <div className="planner-gift-subtabs" style={{
-        display: 'flex',
-        gap: '0',
-        borderBottom: '1px solid #1f1a14',
-      }}>
-        {subTabs.map(tab => {
-          const isActive = subTab === tab.key
-          return (
-            <button
-              key={tab.key}
-              onClick={() => setSubTab(tab.key)}
-              className="planner-gift-subtab"
-              style={{
-                padding: '0.5rem 1.25rem',
-                background: 'transparent',
-                border: 'none',
-                borderBottom: `2px solid ${isActive ? 'var(--gold)' : 'transparent'}`,
-                cursor: 'pointer',
-                color: isActive ? 'var(--gold-light)' : 'var(--text-muted)',
-                fontSize: '0.8125rem',
-                fontWeight: isActive ? 700 : 400,
-                transition: 'all 0.2s',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.375rem',
-                marginBottom: '-1px',
-                letterSpacing: '0.02em',
-              }}
-            >
-              {tab.label}
-              {tab.count > 0 && (
-                <span style={{
-                  fontSize: '0.5625rem',
-                  background: isActive ? 'rgba(200,144,10,0.2)' : 'var(--bg-card)',
-                  color: isActive ? 'var(--gold)' : 'var(--text-muted)',
-                  border: `1px solid ${isActive ? '#c8900a40' : '#222'}`,
-                  borderRadius: '0.75rem',
-                  padding: '0 0.375rem',
-                  lineHeight: 1.6,
-                }}>
-                  {tab.count}
-                </span>
-              )}
-            </button>
-          )
-        })}
-      </div>
+      <GiftSubTabBar tabs={subTabs} active={subTab} onSelect={setSubTab} />
 
       {/* ── Observe tab ─────────────────────────────────────────────────── */}
       {subTab === 'observe' && (
         <div className="planner-gift-observe" style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
-          {/* Info bar */}
-          <div className="planner-gift-info-bar" style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.75rem',
-            flexWrap: 'wrap',
-            padding: '0.5rem 0.625rem',
-            background: 'rgba(26,21,16,0.5)',
-            borderRadius: '0.375rem',
-            border: '1px solid #1f1a14',
-          }}>
-            <span style={{ fontSize: '0.75rem', color: '#9ca3af', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-              {t('observe.cost')}
-              <Image
-                src={getGameUiAsset('start-buffs/starlight')}
-                alt={t('observe.starlightAlt')}
-                width={16}
-                height={16}
-                style={{ width: '1rem', height: '1rem', verticalAlign: 'middle' }}
-              />
-              <span style={{ color: 'var(--gold-light)', fontWeight: 700 }}>{observationCost(observation, observeIds.size)}</span>
-            </span>
-            <span style={{
-              fontSize: '0.6875rem',
-              color: observeIds.size >= 3 ? '#dc2626' : 'var(--gold)',
-              background: observeIds.size >= 3 ? 'rgba(220,38,38,0.1)' : 'rgba(200,144,10,0.1)',
-              padding: '0.125rem 0.5rem',
-              borderRadius: '0.25rem',
-              border: `1px solid ${observeIds.size >= 3 ? 'rgba(220,38,38,0.25)' : 'rgba(200,144,10,0.25)'}`,
-              fontWeight: 600,
-            }}>
-              {t('observe.selected', { count: observeIds.size, max: maxObserved(observation) })}
-            </span>
-            <span style={{ fontSize: '0.625rem', color: 'var(--text-muted)' }}>
-              {t('observe.gradeRange', { from: GRADE_ROMAN['1'], to: GRADE_ROMAN['3'] })}
-            </span>
-          </div>
+          <GiftObserveInfoBar count={observeIds.size} max={maxObserved(observation)} cost={observationCost(observation, observeIds.size)} />
 
           {/* 3-column layout: sidebar + grid + selected */}
           <div className="planner-gift-observe-layout" style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
@@ -182,7 +61,7 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap, observati
             <SelectedPanel
               title={t('observe.selectedTitle')}
               bandLabel={tFloor('finalAutoObserveTag')}
-              selectedGifts={getGiftsByIds(observeIds)}
+              selectedGifts={pickGiftsByIds(observeIds, giftMap)}
               onRemove={gift => dispatch({ type: 'REMOVE_GIFT', giftId: `observe_${gift.game_id}` })}
               badge={
                 <span style={{
@@ -225,346 +104,32 @@ export default function GiftPlanTab({ state, dispatch, gifts, giftMap, observati
       )}
 
       {/* ── Start tab ───────────────────────────────────────────────────── */}
-      {subTab === 'start' && (() => {
-        // 가호에서 시작 기프트 추가 선택 수 계산
-        // baseId 103(쏟아지는 유성우), 109(완전한 가능성)가 ADDITIONAL_START_EGO_GIFT_SELECT +1
-        const BLESSING_START_GIFT_IDS = [103, 109]
-        let maxStartGifts = 1 // 기본 1개
-        for (const inv of state.giftInventory) {
-          if (!inv.startsWith('blessing_')) continue
-          const parts = inv.split('_')
-          const baseId = parseInt(parts[1])
-          if (BLESSING_START_GIFT_IDS.includes(baseId)) maxStartGifts += 1
-        }
+      {subTab === 'start' && (
+        <div className="planner-gift-start-layout" style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
+          <GiftStartPicker gifts={gifts} startIds={startIds} maxStartGifts={maxStartGifts} dispatch={dispatch} />
+          <SelectedPanel
+            title={t('start.selectedTitle')}
+            bandLabel={tFloor('finalAutoStartTag')}
+            selectedGifts={pickGiftsByIds(startIds, giftMap)}
+            onRemove={gift => dispatch({ type: 'REMOVE_GIFT', giftId: `start_${gift.game_id}` })}
+            badge={
+              <span style={{
+                fontSize: '0.5625rem',
+                color: startIds.size >= maxStartGifts ? '#dc2626' : 'var(--gold)',
+                background: startIds.size >= maxStartGifts ? 'rgba(220,38,38,0.1)' : 'rgba(200,144,10,0.1)',
+                padding: '0.125rem 0.375rem',
+                borderRadius: '0.25rem',
+                border: `1px solid ${startIds.size >= maxStartGifts ? 'rgba(220,38,38,0.25)' : 'rgba(200,144,10,0.25)'}`,
+                fontWeight: 600,
+              }}>
+                {t('start.selected', { count: startIds.size, max: maxStartGifts })}
+              </span>
+            }
+          />
+        </div>
+      )}
 
-        const startPool = gifts.filter(g => START_GIFT_IDS.has(g.game_id))
-        const KEYWORD_ORDER = ['화상', '출혈', '진동', '파열', '침잠', '호흡', '충전', '참격', '관통', '타격']
-        const grouped = new Map<string, GiftData[]>()
-        for (const kw of KEYWORD_ORDER) grouped.set(kw, [])
-        for (const g of startPool) {
-          const kw = g.keyword ?? '공통'
-          if (!grouped.has(kw)) grouped.set(kw, [])
-          grouped.get(kw)!.push(g)
-        }
-
-        return (
-          <div className="planner-gift-start-layout" style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
-            <div className="planner-gift-start-main" style={{ flex: 1, minWidth: 0, containerType: 'inline-size' }}>
-              {/* Keyword columns: the keyword on top and its gifts stacked under it, so all ten keywords fit across a wide screen. */}
-              <div className="planner-gift-start-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(5, minmax(0, 1fr))', gap: '0.5rem' }}>
-                {KEYWORD_ORDER.map(kw => {
-                  const kwGifts = grouped.get(kw) ?? []
-                  if (kwGifts.length === 0) return null
-                  const slug = getKeywordSlug(kw)
-                  const iconUrl = slug ? getKeywordIconUrl(slug) : null
-                  return (
-                    <section key={kw} aria-label={keywordLabel(slug)} className="planner-gift-start-group" style={{
-                      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', minWidth: 0,
-                      padding: '0.5rem 0.375rem 0.625rem',
-                      background: 'var(--bg-card)',
-                      border: '1px solid #2a2520',
-                      borderRadius: '0.5rem',
-                      '--gift-name-size': 'var(--text-xs)',
-                    } as CSSProperties}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', minHeight: '1.5rem' }}>
-                        {iconUrl && (
-                          <Image src={iconUrl} alt="" width={18} height={18} style={{ width: '1.125rem', height: '1.125rem', objectFit: 'contain' }} />
-                        )}
-                        <span style={{ color: 'var(--text-primary)', fontSize: '0.8125rem', fontWeight: 600, whiteSpace: 'nowrap' }}>{keywordLabel(slug)}</span>
-                      </div>
-                      {kwGifts.map(gift => {
-                        const isSelected = startIds.has(gift.game_id)
-                        return (
-                          // The shared gift card: its own 선택됨 band marks a pick, like every other gift list.
-                          <GiftCard
-                            key={gift.id}
-                            gift={gift}
-                            size="min(100%, 4.5rem)"
-                            isSelected={isSelected}
-                            disabled={startIds.size >= maxStartGifts && !isSelected}
-                            onClick={() => dispatch({ type: isSelected ? 'REMOVE_GIFT' : 'ADD_GIFT', giftId: 'start_' + gift.game_id })}
-                          />
-                        )
-                      })}
-                    </section>
-                  )
-                })}
-              </div>
-            </div>
-            <SelectedPanel
-              title={t('start.selectedTitle')}
-              bandLabel={tFloor('finalAutoStartTag')}
-              selectedGifts={getGiftsByIds(startIds)}
-              onRemove={gift => dispatch({ type: 'REMOVE_GIFT', giftId: `start_${gift.game_id}` })}
-              badge={
-                <span style={{
-                  fontSize: '0.5625rem',
-                  color: startIds.size >= maxStartGifts ? '#dc2626' : 'var(--gold)',
-                  background: startIds.size >= maxStartGifts ? 'rgba(220,38,38,0.1)' : 'rgba(200,144,10,0.1)',
-                  padding: '0.125rem 0.375rem',
-                  borderRadius: '0.25rem',
-                  border: `1px solid ${startIds.size >= maxStartGifts ? 'rgba(220,38,38,0.25)' : 'rgba(200,144,10,0.25)'}`,
-                  fontWeight: 600,
-                }}>
-                  {t('start.selected', { count: startIds.size, max: maxStartGifts })}
-                </span>
-              }
-            />
-          </div>
-        )
-      })()}
-
-      <style jsx global>{`
-        /* Ten keywords: one row when the picker is wide enough for ten columns, else five by two (never a short last row). */
-        @container (min-width: 56rem) { .planner-gift-start-grid { grid-template-columns: repeat(10, minmax(0, 1fr)) !important; } }
-        @container (max-width: 26rem) { .planner-gift-start-grid { gap: 0.25rem !important; } .planner-gift-start-group { padding: 0.375rem 0.125rem 0.5rem !important; } }
-        @media (max-width: 767px) {
-          .planner-gift-tab {
-            gap: 0.875rem !important;
-          }
-
-          .planner-gift-subtabs {
-            overflow-x: auto;
-            scrollbar-width: none;
-          }
-
-          .planner-gift-subtabs::-webkit-scrollbar,
-          .planner-keyword-sidebar::-webkit-scrollbar,
-          .planner-gift-final-keywords::-webkit-scrollbar {
-            display: none;
-          }
-
-          .planner-gift-subtab {
-            min-height: 2.75rem !important;
-            padding: 0.625rem 0.875rem !important;
-            font-size: 0.9375rem !important;
-            white-space: nowrap;
-            flex: 0 0 auto;
-          }
-
-          .planner-gift-subtab span {
-            font-size: 0.75rem !important;
-            min-width: 1.5rem;
-            text-align: center;
-          }
-
-          .planner-gift-info-bar {
-            padding: 0.625rem 0.75rem !important;
-            gap: 0.5rem !important;
-          }
-
-          .planner-gift-info-bar > span {
-            font-size: 0.875rem !important;
-          }
-
-          .planner-gift-observe-layout,
-          .planner-gift-start-layout {
-            flex-direction: column !important;
-            align-items: stretch !important;
-            gap: 0.875rem !important;
-          }
-
-          .planner-gift-observe-layout > .planner-selected-panel,
-          .planner-gift-start-layout > .planner-selected-panel {
-            order: -1 !important;
-          }
-
-          .planner-gift-grid-panel {
-            flex-direction: column !important;
-            width: 100%;
-            gap: 0.75rem !important;
-          }
-
-          .planner-keyword-sidebar {
-            width: 100%;
-            max-width: none !important;
-            min-width: 0 !important;
-            flex-direction: row !important;
-            overflow-x: auto;
-            gap: 0.375rem !important;
-            padding: 0.125rem 0 0.25rem;
-            scroll-snap-type: x proximity;
-          }
-
-          .planner-keyword-filter {
-            min-height: 2.75rem !important;
-            min-width: 8.25rem;
-            flex: 0 0 auto;
-            border: 1px solid #2a2520 !important;
-            border-left: 1px solid #2a2520 !important;
-            border-bottom: 2px solid transparent !important;
-            border-radius: 0.375rem !important;
-            padding: 0.5rem 0.625rem !important;
-            font-size: 0.9375rem !important;
-            scroll-snap-align: start;
-          }
-
-          .planner-keyword-filter.is-active {
-            border-bottom-color: #c8900a !important;
-          }
-
-          .planner-keyword-filter > span:last-child {
-            font-size: 0.75rem !important;
-            line-height: 1.8 !important;
-          }
-
-          .planner-gift-grid-scroll {
-            width: 100%;
-            max-height: none !important;
-            overflow-y: visible !important;
-            padding-right: 0 !important;
-            gap: 0.875rem !important;
-          }
-
-          .planner-gift-card-grid {
-            grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
-            gap: 0.375rem !important;
-          }
-
-          .planner-gift-empty {
-            padding: 2rem 1rem !important;
-            font-size: 0.9375rem !important;
-          }
-
-          .planner-selected-panel {
-            width: 100%;
-            min-width: 0 !important;
-            max-width: none !important;
-            padding: 0.75rem !important;
-          }
-
-          .planner-selected-panel-title {
-            font-size: 0.9375rem !important;
-          }
-
-          .planner-selected-panel-empty {
-            font-size: 0.875rem !important;
-          }
-
-          .planner-gift-start-main {
-            width: 100%;
-          }
-
-          .planner-gift-final-build {
-            padding: 0.75rem !important;
-          }
-
-          .planner-gift-final-build-header,
-          .planner-gift-final-filters,
-          .planner-gift-final-condition-legend {
-            align-items: stretch !important;
-            flex-wrap: wrap !important;
-          }
-
-          .planner-gift-final-build-header > div {
-            flex-wrap: wrap;
-          }
-
-          .planner-gift-final-build-header button,
-          .planner-gift-grade-select {
-            min-height: 2.75rem !important;
-            font-size: 0.9375rem !important;
-          }
-
-          .planner-gift-final-help,
-          .planner-gift-final-drop-empty,
-          .planner-gift-final-list > span {
-            font-size: 0.875rem !important;
-          }
-
-          .planner-gift-final-drop-empty {
-            min-height: 5rem !important;
-            padding: 0.5rem;
-            text-align: center;
-          }
-
-          .planner-gift-final-condition-legend {
-            gap: 0.375rem !important;
-            font-size: 0.75rem !important;
-          }
-
-          .planner-gift-final-search input {
-            min-height: 2.75rem !important;
-            font-size: 1rem !important;
-          }
-
-          .planner-gift-final-keywords {
-            order: 2;
-            flex: 1 0 100% !important;
-            display: grid !important;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            overflow-x: visible !important;
-            gap: 0.375rem !important;
-            padding-bottom: 0 !important;
-          }
-
-          .planner-gift-final-keywords button {
-            min-height: 2.75rem !important;
-            justify-content: center;
-            font-size: 0.875rem !important;
-            white-space: normal !important;
-          }
-
-          .planner-gift-grade-select {
-            width: 100%;
-            padding: 0.5rem 0.625rem !important;
-          }
-
-          .planner-gift-final-selected-grid,
-          .planner-gift-final-source-grid {
-            grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
-            gap: 0.375rem !important;
-          }
-
-          .planner-gift-final-grid-scroll {
-            max-height: none !important;
-            overflow-y: visible !important;
-          }
-
-          .planner-gift-quick-adds {
-            gap: 0.5rem !important;
-          }
-
-          .planner-quick-add-label {
-            font-size: 0.875rem !important;
-          }
-
-          .planner-quick-add-list {
-            display: grid !important;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 0.375rem !important;
-          }
-
-          .planner-quick-add-chip {
-            min-width: 0;
-            min-height: 2.75rem !important;
-            justify-content: flex-start;
-            font-size: 0.875rem !important;
-          }
-
-          .planner-quick-add-chip > span {
-            min-width: 0;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-          }
-        }
-
-        /* Tablet width in the stacked layout: more columns instead of five cards stretched to ~8rem each. */
-        @media (min-width: 480px) and (max-width: 767px) {
-          .planner-gift-card-grid {
-            grid-template-columns: repeat(auto-fill, minmax(5rem, 1fr)) !important;
-          }
-        }
-
-        @media (max-width: 359px) {
-          .planner-gift-card-grid,
-          .planner-gift-final-selected-grid,
-          .planner-gift-final-source-grid {
-            grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
-          }
-        }
-      `}</style>
+      <GiftPlanTabStyles />
     </div>
   )
 }

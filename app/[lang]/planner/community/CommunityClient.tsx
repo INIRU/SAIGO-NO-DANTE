@@ -5,7 +5,7 @@ import DiscoveryShelf, { type InitialShelf } from '@/features/community/componen
 import BoardBrowseLock from '@/features/community/components/BoardBrowseLock'
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
-import { useQueryState, parseAsBoolean, parseAsInteger, parseAsString } from 'nuqs'
+import { useQueryState, parseAsString } from 'nuqs'
 import { Link } from '@/lib/i18n/navigation'
 import Image from 'next/image'
 import { useSession } from 'next-auth/react'
@@ -15,60 +15,27 @@ import { BoardResults, BrowseBar } from '@/features/community/components/Browse'
 import type { RowPost } from '@/features/community/components/BoardParts'
 import { DIFFICULTY_CONFIG, type Difficulty } from '@/lib/planner/types'
 import { useKeywordData, useKeywords } from '@/components/providers/KeywordProvider'
-import DeckIdentityFilterModal, { type DeckFilterIdentity, type DeckFilterSinner } from '@/features/decks/components/DeckIdentityFilterModal'
+import DeckIdentityFilterModal, { type DeckFilterSinner } from '@/features/decks/components/DeckIdentityFilterModal'
 import FormationCountFilter from '@/features/decks/components/FormationCountFilter'
 import { FacetPickerModal, FacetSections, type FacetKind } from '@/features/community/components/FacetPicker'
 import { FilterChoice, FilterFieldHelp, FilterIconTile, FilterSection, FilterSinnerTiles, FilterTextButton, filterStyles } from '@/components/board/FilterControls'
-import { hasAll, useBoardFacets } from '@/features/community/hooks/useBoardFacets'
-import { decodeCollectionAsync, missingFormationCount, withBaseIdentities, type CollectionData } from '@/lib/collection'
-import { useOwnedIdentities } from '@/hooks/useOwnedIdentities'
-import { parseSearchQuery, getActiveTerm, termMatchesAny } from '@/lib/utils/search'
-import { THEME_KEYWORDS } from '@/lib/constants/keywords'
-import { normalizePlannerListKeywords } from '@/lib/planner/strip-plan-for-list'
+import { useBoardFacets } from '@/features/community/hooks/useBoardFacets'
+import { getActiveTerm } from '@/lib/utils/search'
 import { useLocale, useTranslations } from 'next-intl'
-import { QUERY_OPTIONS, localizeDeckKeyword, parseCsvParam, serializeCsvParam, toDeckFilterIdentity } from '@/features/decks'
-import { useIdentityFilterOptions } from '@/features/decks/hooks/useIdentityFilterOptions'
-import { getIdentityPortraitUrl, getIdentityInfoUrl } from '@/lib/utils/images'
+import { QUERY_OPTIONS, localizeDeckKeyword, parseCsvParam, serializeCsvParam } from '@/features/decks'
+import { buildDeckSuggestions } from '@/features/decks/hooks/useIdentityFilterOptions'
+import { getIdentityInfoUrl } from '@/lib/utils/images'
 import type { SupportedLang } from '@/lib/i18n'
 import Sheet from '@/components/ui/Sheet'
 import { usePlanList } from '@/features/planner/hooks/usePlanList'
+import { usePlanCollectionFilter } from '@/features/planner/hooks/usePlanCollectionFilter'
+import { PLAN_FILTER_KEYWORDS, PLAN_LIST_PAGE_SIZE as PAGE_SIZE, buildPlanFilterIndexes, filterPlanIndexes, usePlanListFilters } from '@/features/planner/hooks/usePlanListFilters'
 import { useAutocompleteKeys } from '@/hooks/useAutocompleteKeys'
 
 type SortKey = 'latest' | 'popular'
-type SearchSuggestion = { label: string; type: 'identity' | 'keyword'; imageUrl?: string }
-type PlanFilterIndex = {
-  plan: PlanSummary
-  searchableFields: string[]
-  filterKeywordSet: Set<string>
-  identityIds: string[]
-  egoIds: string[]
-  affiliations: Set<string>
-  giftIds: Set<string>
-  themeIds: Set<string>
-}
-// A multiple of 6, so every page fills whole rows of the one-, two- and three-column grids.
-const PAGE_SIZE = 24
-const COMBAT_KEYWORDS = ['참격', '관통', '타격'] as const
 
 const DIFFICULTY_COLOR: Record<string, string> = { normal: '#4a9868', hard: '#e8b030', overlap: '#48b0c0', extreme: '#ec6a5e' }
 
-
-// 플랜의 모든 인격 이름 (검색용) — API가 pre-compute한 값 우선 사용
-function getPlanIdentityNames(plan: PlanSummary): string[] {
-  return plan.identity_names ?? []
-}
-
-// 플랜 테마 키워드 — API가 서버사이드에서 pre-compute한 값 사용
-function getPlanThemeKeywords(plan: PlanSummary): string[] {
-  return plan.theme_keywords ?? []
-}
-
-function getPlanFilterKeywords(plan: PlanSummary): string[] {
-  return normalizePlannerListKeywords([
-    ...(plan.filter_keywords ?? getPlanThemeKeywords(plan)),
-    ...(plan.selected_keywords ?? []),
-  ])
-}
 
 type CommunityClientProps = {
   initialPlans?: PlanSummary[]
@@ -85,13 +52,13 @@ export default function CommunityClient({ initialPlans, initialTotal, initialShe
   const keywords = useKeywords()
   const ALL_KEYWORDS = useMemo(() => Object.keys(kwIconMap), [kwIconMap])
   const [browse, setBrowse] = useQueryState('browse', parseAsString.withDefault(''))
-  const [sort, setSort] = useQueryState('sort', parseAsString.withDefault('latest'))
-  const [difficulty, setDifficulty] = useState<Difficulty | null>(null)
   const [search, setSearch] = useQueryState('q', parseAsString.withDefault(''))
-  const [keywordQuery, setKeywordQuery] = useQueryState('kt', parseAsString.withDefault(''))
-  const [keywordModeQuery, setKeywordModeQuery] = useQueryState('ktm', parseAsString.withDefault('or'))
-  const [identityIdsQuery, setIdentityIdsQuery] = useQueryState('ids', parseAsString.withDefault(''))
-  const [identityModeQuery, setIdentityModeQuery] = useQueryState('im', parseAsString.withDefault('or'))
+  const {
+    setSort, difficulty, setDifficulty, keywordQuery, setKeywordQuery, identityIdsQuery, setIdentityIdsQuery, setFormationCountQuery, formationCount,
+    activeKeywordList, activeKeywords, keywordMode, selectedIdentityIdList, selectedIdentityIds, identityMode,
+    allIdentities, ensureIdentities, normalizedSort, serverQueryKey, buildPlannerSearchParams,
+    toggleKeyword, toggleKeywordMode, filterIdentities, identityFilterSinners, selectedIdentitiesBySinner, toggleSelectedIdentity, toggleIdentityMode,
+  } = usePlanListFilters()
   // 소속·E.G.O·기프트·테마팩: 고른 것을 모두 담은 글만 남긴다
   const [affiliationQuery, setAffiliationQuery] = useQueryState('af', parseAsString.withDefault(''))
   const [egoQuery, setEgoQuery] = useQueryState('eg', parseAsString.withDefault(''))
@@ -109,15 +76,6 @@ export default function CommunityClient({ initialPlans, initialTotal, initialShe
   }
   const [facetModal, setFacetModal] = useState<FacetKind | null>(null)
   const facetData = useBoardFacets('planner').data
-  const [formationCountQuery, setFormationCountQuery] = useQueryState('fc', parseAsInteger)
-  const formationCount = formationCountQuery !== null && Number.isInteger(formationCountQuery) && formationCountQuery >= 1 && formationCountQuery <= 12
-    ? formationCountQuery : null
-  const activeKeywordList = useMemo(() => normalizePlannerListKeywords(parseCsvParam(keywordQuery)), [keywordQuery])
-  const activeKeywords = useMemo(() => new Set(activeKeywordList), [activeKeywordList])
-  const keywordMode: 'or' | 'and' = keywordModeQuery === 'and' ? 'and' : 'or'
-  const selectedIdentityIdList = useMemo(() => parseCsvParam(identityIdsQuery), [identityIdsQuery])
-  const selectedIdentityIds = useMemo(() => new Set(selectedIdentityIdList), [selectedIdentityIdList])
-  const identityMode: 'or' | 'and' = identityModeQuery === 'and' ? 'and' : 'or'
   // inputValue: local state for immediate input display (avoids IME composition breaks)
   const [inputValue, setInputValue] = useState(search)
   const [debouncedSearch, setDebouncedSearch] = useState(search)
@@ -126,9 +84,6 @@ export default function CommunityClient({ initialPlans, initialTotal, initialShe
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [acIndex, setAcIndex] = useState(-1)
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false)
-
-  // 전체 인격 목록 (자동완성용 - 이름 + 일러스트)
-  const { identities: allIdentities, ensureLoaded: ensureIdentities } = useIdentityFilterOptions({ lazy: true })
 
   const activeInputTermLength = useMemo(() => getActiveTerm(inputValue).activeTerm.length, [inputValue])
   useEffect(() => {
@@ -142,38 +97,7 @@ export default function CommunityClient({ initialPlans, initialTotal, initialShe
   }, [ensureIdentities])
 
   // 인격 + 키워드 자동완성 후보
-  const suggestions = useMemo((): SearchSuggestion[] => {
-    const { activeTerm } = getActiveTerm(inputValue)
-    if (activeTerm.length === 0) return []
-    const q = activeTerm.toLowerCase()
-
-    const sortByRelevance = (a: string, b: string) => {
-      const aStarts = a.toLowerCase().startsWith(q) ? 0 : 1
-      const bStarts = b.toLowerCase().startsWith(q) ? 0 : 1
-      if (aStarts !== bStarts) return aStarts - bStarts
-      return a.length - b.length
-    }
-
-    const idMatches: SearchSuggestion[] = allIdentities
-      .filter(id => id.name_kr.toLowerCase().includes(q))
-      .sort((a, b) => sortByRelevance(a.name_kr, b.name_kr))
-      .slice(0, 5)
-      .map(id => ({
-        label: id.name_kr,
-        type: 'identity',
-        imageUrl: id.game_id && id.folder_name && id.sinner_id
-          ? getIdentityPortraitUrl(id.sinner_id, id.folder_name, id.game_id, false)
-          : undefined,
-      }))
-
-    const kwMatches: SearchSuggestion[] = ALL_KEYWORDS
-      .filter(kw => kw.toLowerCase().includes(q))
-      .sort(sortByRelevance)
-      .slice(0, 5)
-      .map(label => ({ label, type: 'keyword' }))
-
-    return [...idMatches, ...kwMatches].slice(0, 8)
-  }, [inputValue, ALL_KEYWORDS, allIdentities])
+  const suggestions = useMemo(() => buildDeckSuggestions(inputValue, ALL_KEYWORDS, allIdentities), [inputValue, ALL_KEYWORDS, allIdentities])
 
   useEffect(() => { setAcIndex(suggestions.length > 0 ? 0 : -1) }, [suggestions.length])
 
@@ -222,43 +146,7 @@ export default function CommunityClient({ initialPlans, initialTotal, initialShe
 
   // 컬렉션 필터
   const [showCollectionFilter, setShowCollectionFilter] = useState(true)
-  // URL에 남긴다: 게시판 위 "보유 인격으로 편성할 수 있는 플랜만 보기" 링크가 이 필터를 켠 채로 연다(덱 게시판과 같은 oi)
-  const [filterOwnedIdentity, setFilterOwnedIdentity] = useQueryState('oi', parseAsBoolean.withDefault(false))
-  const [filterOwnedEgo, setFilterOwnedEgo] = useState(false)
-  const [ownedIds, setOwnedIds] = useState<Set<string> | null>(null)
-  const [hasCollection, setHasCollection] = useState(false)
-  const [collectionLoading, setCollectionLoading] = useState(false)
-  const [collectionData, setCollectionData] = useState<CollectionData | null>(null)
-  const [codeInput, setCodeInput] = useState('')
-  const [codeError, setCodeError] = useState(false)
-  const collectionDataRef = useRef<CollectionData | null>(null)
-  const collectionRequestRef = useRef<Promise<CollectionData | null> | null>(null)
   const localKeyword = useCallback((keyword: string) => localizeDeckKeyword(keyword, keywords[keyword], locale), [keywords, locale])
-
-  const normalizedSort: SortKey = sort === 'popular' ? 'popular' : 'latest'
-  const serverQueryKey = useMemo(() => {
-    const params = new URLSearchParams()
-    params.set('sort', normalizedSort)
-    if (difficulty) params.set('difficulty', difficulty)
-    if (activeKeywordList.length > 0) {
-      params.set('keyword_tags', activeKeywordList.join(','))
-      params.set('keyword_tag_mode', keywordMode)
-    }
-    if (selectedIdentityIdList.length > 0) {
-      params.set('identity_ids', selectedIdentityIdList.join(','))
-      params.set('identity_mode', identityMode)
-    }
-    if (formationCount !== null) params.set('formation_count', String(formationCount))
-    params.sort()
-    return params.toString()
-  }, [normalizedSort, difficulty, activeKeywordList, keywordMode, selectedIdentityIdList, identityMode, formationCount])
-
-  const buildPlannerSearchParams = useCallback((offset: number) => {
-    const params = new URLSearchParams(serverQueryKey)
-    params.set('limit', String(PAGE_SIZE))
-    params.set('offset', String(offset))
-    return params
-  }, [serverQueryKey])
 
   // Only browsing all or searching shows the list; the default view is the discovery shelf, so nothing is loaded for it.
   const listVisible = browse === 'all' || Boolean(search || keywordQuery || identityIdsQuery)
@@ -269,268 +157,26 @@ export default function CommunityClient({ initialPlans, initialTotal, initialShe
 
   const sentinelRef = useLoadMoreSentinel(loadMore, scrollRootRef, serverQueryKey)
 
-  useEffect(() => {
-    collectionDataRef.current = collectionData
-  }, [collectionData])
+  const {
+    filterOwnedIdentity, filterOwnedEgo, hasCollection, collectionLoading, codeInput, codeError, effectiveOwned, changeCodeInput,
+    applyCollectionCode, toggleFilterOwnedIdentity, toggleFilterOwnedEgo, clearCollectionFilters,
+  } = usePlanCollectionFilter(authStatus)
 
-  const loadCollectionData = useCallback(async () => {
-    if (collectionDataRef.current) return collectionDataRef.current
-    if (!collectionRequestRef.current) {
-      setCollectionLoading(true)
-      collectionRequestRef.current = fetch('/api/collection')
-        .then(r => r.json())
-        .then((d: CollectionData) => {
-          if (d.sinners?.length > 0) {
-            collectionDataRef.current = d
-            setCollectionData(d)
-            return d
-          }
-          return null
-        })
-        .catch(() => null)
-        .finally(() => {
-          collectionRequestRef.current = null
-          setCollectionLoading(false)
-        })
-    }
-    return collectionRequestRef.current
-  }, [])
-
-  const loadProfileCollection = useCallback(async () => {
-    if (authStatus !== 'authenticated') return false
-    setCollectionLoading(true)
-    try {
-      const data = await loadCollectionData()
-      if (!data) return false
-      const profileData = await fetch('/api/profile').then(r => r.json()) as { profile?: { collection_code?: string | null } }
-      const code = profileData.profile?.collection_code
-      if (!code) return false
-      const ticked = await decodeCollectionAsync(code, data.sinners, data.identities, data.egos)
-      // An empty code is invalid; LCB identities are added only after that check.
-      const decoded = ticked.size ? withBaseIdentities(ticked, data.identities) : ticked
-      if (decoded.size === 0) return false
-      setOwnedIds(decoded)
-      setHasCollection(true)
-      return true
-    } catch {
-      return false
-    } finally {
-      setCollectionLoading(false)
-    }
-  }, [authStatus, loadCollectionData])
-
-  // 로그인 유저: 프로필에서 컬렉션 코드 자동 로드
-  useEffect(() => {
-    void loadProfileCollection()
-  }, [loadProfileCollection])
-
-  // 보유 코드 적용
-  const applyCollectionCode = useCallback(async (rawInput: string) => {
-    setCodeError(false)
-    let code = rawInput.trim()
-    try {
-      const url = new URL(code)
-      code = url.searchParams.get('code') ?? code
-    } catch {
-      // URL이 아닌 경우 그대로 사용
-    }
-    if (!code) return
-    try {
-      const data = await loadCollectionData()
-      if (!data) { setCodeError(true); return }
-      const ticked = await decodeCollectionAsync(code, data.sinners, data.identities, data.egos)
-      // An empty code is invalid; LCB identities are added only after that check.
-      const decoded = ticked.size ? withBaseIdentities(ticked, data.identities) : ticked
-      if (decoded.size === 0) { setCodeError(true); return }
-      setOwnedIds(decoded)
-      setHasCollection(true)
-    } catch {
-      setCodeError(true)
-    }
-  }, [loadCollectionData])
-
-  const toggleFilterOwnedIdentity = useCallback(async () => {
-    let hasOwnedIds = ownedIds !== null
-    if (!hasOwnedIds) {
-      hasOwnedIds = await loadProfileCollection()
-    }
-    if (!hasOwnedIds) return
-    void setFilterOwnedIdentity(prev => !prev)
-  }, [loadProfileCollection, ownedIds])
-
-  const toggleFilterOwnedEgo = useCallback(async () => {
-    let hasOwnedIds = ownedIds !== null
-    if (!hasOwnedIds) {
-      hasOwnedIds = await loadProfileCollection()
-    }
-    if (!hasOwnedIds) return
-    setFilterOwnedEgo(prev => !prev)
-  }, [loadProfileCollection, ownedIds])
-
-  // 키워드 토글
-  const toggleKeyword = useCallback((kw: string) => {
-    const next = new Set(activeKeywords)
-    if (next.has(kw)) next.delete(kw)
-    else next.add(kw)
-    void setKeywordQuery(serializeCsvParam(next), QUERY_OPTIONS)
-  }, [activeKeywords, setKeywordQuery])
-
-  const toggleKeywordMode = useCallback(() => {
-    void setKeywordModeQuery(keywordMode === 'or' ? 'and' : 'or', QUERY_OPTIONS)
-  }, [keywordMode, setKeywordModeQuery])
-
-  // 항상 전투 속성 키워드를 먼저 보여주고, 전체 테마 키워드를 중복 없이 이어붙인다.
-  const availableKeywords = useMemo(() => [...new Set([...COMBAT_KEYWORDS, ...THEME_KEYWORDS])], [])
-
-  const filterIdentities = useMemo(
-    () => allIdentities.map(identity => toDeckFilterIdentity(identity, { fallbackToKeywords: true })),
-    [allIdentities],
-  )
-  const identityFilterSinners = useMemo(() => {
-    const byId = new Map<string, DeckFilterSinner>()
-    for (const identity of filterIdentities) {
-      if (!identity.sinner) continue
-      byId.set(identity.sinner.id, identity.sinner)
-    }
-    return [...byId.values()].sort((a, b) => a.order_num - b.order_num)
-  }, [filterIdentities])
-  const selectedIdentities = useMemo(
-    () => filterIdentities.filter(identity => selectedIdentityIds.has(identity.id)),
-    [filterIdentities, selectedIdentityIds],
-  )
-  const selectedIdentitiesBySinner = useMemo(() => {
-    const grouped = new Map<string, DeckFilterIdentity[]>()
-    for (const identity of selectedIdentities) {
-      const group = grouped.get(identity.sinner_id) ?? []
-      group.push(identity)
-      grouped.set(identity.sinner_id, group)
-    }
-    return grouped
-  }, [selectedIdentities])
-  const toggleSelectedIdentity = useCallback((identityId: string) => {
-    const next = new Set(selectedIdentityIds)
-    const target = filterIdentities.find(identity => identity.id === identityId)
-
-    if (next.has(identityId)) {
-      next.delete(identityId)
-      void setIdentityIdsQuery(serializeCsvParam(next), QUERY_OPTIONS)
-      return
-    }
-
-    if (target) {
-      for (const identity of filterIdentities) {
-        if (identity.sinner_id === target.sinner_id) next.delete(identity.id)
-      }
-    }
-
-    next.add(identityId)
-    void setIdentityIdsQuery(serializeCsvParam(next), QUERY_OPTIONS)
-  }, [filterIdentities, selectedIdentityIds, setIdentityIdsQuery])
-  const toggleIdentityMode = useCallback(() => {
-    void setIdentityModeQuery(identityMode === 'or' ? 'and' : 'or', QUERY_OPTIONS)
-  }, [identityMode, setIdentityModeQuery])
   const localizeSinnerName = useCallback((sinner: DeckFilterSinner) => (
     rootT(`sinner.${sinner.id}` as Parameters<typeof rootT>[0])
   ), [rootT])
 
-  const planIndexes = useMemo((): PlanFilterIndex[] => plans.map(plan => ({
-    plan,
-    searchableFields: [
-      plan.title,
-      plan.description ?? '',
-      ...getPlanIdentityNames(plan),
-    ],
-    filterKeywordSet: new Set(getPlanFilterKeywords(plan)),
-    identityIds: (plan.deck ?? [])
-      .map(s => s.identity_id)
-      .filter((id): id is string => Boolean(id)),
-    egoIds: (plan.egos ?? [])
-      .map(e => e.ego_id)
-      .filter((id): id is string => Boolean(id)),
-    affiliations: new Set((plan.deck ?? []).filter(slot => (slot.slot_order ?? 99) < 99)
-      .flatMap(slot => (slot.identity_id && facetData?.identityAffiliations[slot.identity_id]) || [])),
-    giftIds: new Set((plan.gift_ids ?? []).map(String)),
-    themeIds: new Set((plan.theme_ids ?? []).map(String)),
-  })), [plans, facetData])
+  const planIndexes = useMemo(() => buildPlanFilterIndexes(plans, facetData?.identityAffiliations), [plans, facetData])
 
-  // 붙여 넣은 보유 코드가 없으면 카드 뱃지와 같은 저장된 보유 현황을 쓴다(링크로 oi=1이 먼저 켜져도 바로 걸린다)
-  const profileOwned = useOwnedIdentities()
-  const effectiveOwned = ownedIds ?? profileOwned
   // 클라이언트 필터
-  const filtered = useMemo(() => {
-    let list = planIndexes
-
-    // 텍스트 검색: 인격 + 제목 + 설명 (+: OR, *: AND)
-    if (debouncedSearch.trim()) {
-      const parsed = parseSearchQuery(debouncedSearch)
-      if (parsed.terms.length > 0) {
-        list = list.filter(({ searchableFields }) => {
-          if (parsed.mode === 'and') {
-            return parsed.terms.every(term => termMatchesAny(term, searchableFields))
-          } else {
-            return parsed.terms.some(term => termMatchesAny(term, searchableFields))
-          }
-        })
-      }
-    }
-
-    // 키워드 필터
-    if (activeKeywordList.length > 0) {
-      list = list.filter(({ filterKeywordSet }) => {
-        if (keywordMode === 'and') {
-          return activeKeywordList.every(kw => filterKeywordSet.has(kw))
-        } else {
-          return activeKeywordList.some(kw => filterKeywordSet.has(kw))
-        }
-      })
-    }
-
-    // 선택 인격 필터: 서버 결과에 대한 안전한 fallback
-    if (selectedIdentityIdList.length > 0) {
-      list = list.filter(({ identityIds }) => {
-        if (identityMode === 'and') {
-          return selectedIdentityIdList.every(id => identityIds.includes(id))
-        }
-        return selectedIdentityIdList.some(id => identityIds.includes(id))
-      })
-    }
-
-    // 보유 인격 필터
-    if (filterOwnedIdentity && effectiveOwned) {
-      // 카드 뱃지와 같은 기준: 편성 순서가 있는 인격만(대기 인격은 없어도 된다)
-      list = list.filter(({ plan }) => missingFormationCount((plan.deck ?? []).map(slot => ({ id: slot.identity_id, slot_order: slot.slot_order })), effectiveOwned) === 0)
-    }
-
-    // 보유 에고 필터
-    if (filterOwnedEgo && effectiveOwned) {
-      list = list.filter(({ egoIds }) => {
-        if (egoIds.length === 0) return true
-        return egoIds.every(id => effectiveOwned.has(id))
-      })
-    }
-
-    const { affiliation, ego, gift, theme } = facetSelections
-    if (affiliation.length) list = list.filter(({ affiliations }) => hasAll(affiliation, affiliations))
-    if (ego.length) list = list.filter(({ egoIds }) => hasAll(ego, new Set(egoIds)))
-    if (gift.length) list = list.filter(({ giftIds }) => hasAll(gift, giftIds))
-    if (theme.length) list = list.filter(({ themeIds }) => hasAll(theme, themeIds))
-
-    return list.map(({ plan }) => plan)
-  }, [planIndexes, debouncedSearch, activeKeywordList, keywordMode, selectedIdentityIdList, identityMode, filterOwnedIdentity, filterOwnedEgo, effectiveOwned, affiliationQuery, egoQuery, giftQuery, themeQuery]) // eslint-disable-line react-hooks/exhaustive-deps
+  const filtered = useMemo(() => filterPlanIndexes(planIndexes, {
+    search: debouncedSearch, keywords: activeKeywordList, keywordMode, identityIds: selectedIdentityIdList, identityMode,
+    filterOwnedIdentity, filterOwnedEgo, effectiveOwned, facets: facetSelections,
+  }), [planIndexes, debouncedSearch, activeKeywordList, keywordMode, selectedIdentityIdList, identityMode, filterOwnedIdentity, filterOwnedEgo, effectiveOwned, affiliationQuery, egoQuery, giftQuery, themeQuery]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const collectionFilterCount = (filterOwnedIdentity ? 1 : 0) + (filterOwnedEgo ? 1 : 0)
   const totalActiveCount = (inputValue.trim() ? 1 : 0) + (difficulty ? 1 : 0) + (formationCount !== null ? 1 : 0) + activeKeywords.size + selectedIdentityIds.size + collectionFilterCount + Object.values(facetSelections).reduce((sum, list) => sum + list.length, 0)
   const hasAnyFilter = totalActiveCount > 0
-
-  const clearCollectionFilters = () => {
-    setOwnedIds(null)
-    setHasCollection(false)
-    void setFilterOwnedIdentity(false)
-    setFilterOwnedEgo(false)
-    setCodeInput('')
-    setCodeError(false)
-    setCollectionLoading(false)
-  }
 
   const filterSurface = (
     <div className={filterStyles.surface}>
@@ -639,7 +285,7 @@ export default function CommunityClient({ initialPlans, initialTotal, initialShe
         </>}
       >
         <div className={filterStyles.tiles}>
-          {availableKeywords.map(kw => (
+          {PLAN_FILTER_KEYWORDS.map(kw => (
             <FilterIconTile key={kw} active={activeKeywords.has(kw)} label={localKeyword(kw)} iconUrl={getIconUrl(kw)} onClick={() => toggleKeyword(kw)} />
           ))}
         </div>
@@ -696,7 +342,7 @@ export default function CommunityClient({ initialPlans, initialTotal, initialShe
               <input
                 type="text"
                 value={codeInput}
-                onChange={e => { setCodeInput(e.target.value); setCodeError(false) }}
+                onChange={e => changeCodeInput(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter') applyCollectionCode(codeInput) }}
                 placeholder={t('filters.collectionCodePlaceholder')}
                 className={filterStyles.fieldInput}
