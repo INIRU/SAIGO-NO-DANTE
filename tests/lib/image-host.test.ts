@@ -15,12 +15,12 @@ afterEach(() => vi.unstubAllEnvs())
 
 // Optimized images are over half of all requests: they leave CloudFront (billed per request) for media.*, which stays on
 // the Cloudflare tunnel and its edge cache.
-it('REQ-SHARED-073 the self-hosted build points next/image at the media host, other builds keep /_next/image', async () => {
+it('the self-hosted build points next/image at the media host, other builds keep /_next/image', async () => {
   expect(await imagePath({ SELF_HOSTED: '1' })).toBe('https://media.saigo-no-dante.com/_next/image')
   expect(await imagePath({ SELF_HOSTED: undefined })).toBeUndefined()
 })
 
-it('REQ-SHARED-073 the self-hosted layout opens the connection to the media host early', () => {
+it('the self-hosted layout opens the connection to the media host early', () => {
   const layout = readFileSync('app/[lang]/layout.tsx', 'utf8')
   expect(layout).toMatch(/SELF_HOSTED === '1' \? <link rel="preconnect" href=\{MEDIA_ORIGIN\}/)
 })

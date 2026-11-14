@@ -22,7 +22,7 @@ const labels = { pinned: 'announcements.pinned', readMore: 'announcements.readMo
 const source = (path: string) => readFileSync(resolve(__dirname, '../../../..', path), 'utf8')
 
 describe('announcement list', () => {
-  it('REQ-ADMIN-011 features the first announcement with its cover and links every row to its own page', () => {
+  it('features the first announcement with its cover and links every row to its own page', () => {
     const html = renderToStaticMarkup(<AnnouncementList lang="ko" items={[item('a1', { pinned: true, cover: 'https://x/cover.webp' }), item('a2', { cover: 'https://x/thumb.webp' }), item('a3')]} labels={labels} />)
     for (const id of ['a1', 'a2', 'a3']) expect(html).toContain(`href="/ko/announcements/${id}"`)
     expect(html).toContain('src="https://x/cover.webp"')
@@ -34,17 +34,17 @@ describe('announcement list', () => {
     expect(html).not.toMatch(/uppercase/)
   })
 
-  it('REQ-ADMIN-011 shows an empty state without announcements', () => {
+  it('shows an empty state without announcements', () => {
     expect(renderToStaticMarkup(<AnnouncementList lang="ko" items={[]} labels={labels} />)).toContain('announcements.empty')
   })
 
-  it('REQ-ADMIN-011 renders on the server without the old client list', () => {
+  it('renders on the server without the old client list', () => {
     const page = source('app/[lang]/announcements/page.tsx')
     expect(page).toContain('AnnouncementList')
     expect(page).not.toContain('AnnouncementsClient')
   })
 
-  it('REQ-ADMIN-010 has a cached detail page that 404s on a missing announcement', () => {
+  it('has a cached detail page that 404s on a missing announcement', () => {
     const detail = source('app/[lang]/announcements/[id]/page.tsx')
     expect(detail).toContain('notFound()')
     expect(detail).toContain('adjacentAnnouncements')
@@ -53,7 +53,7 @@ describe('announcement list', () => {
 })
 
 describe('home announcement', () => {
-  it('REQ-HOME-010 shows a preview with a link to the announcement, kept out of focus while folded', () => {
+  it('shows a preview with a link to the announcement, kept out of focus while folded', () => {
     const html = renderToStaticMarkup(<AnnouncementBanner announcement={item('a1', { cover: 'https://x/cover.webp' })} />)
     expect(html).toContain('aria-expanded="false"')
     expect(html).toContain('href="/announcements/a1"')
@@ -64,7 +64,7 @@ describe('home announcement', () => {
 })
 
 describe('popup announcement', () => {
-  it('REQ-ADMIN-013 sends only the preview to the page, not the document', () => {
+  it('sends only the preview to the page, not the document', () => {
     const popup = source('features/admin/components/AnnouncementPopup.tsx')
     expect(popup).toContain('announcementPreview')
     expect(popup).not.toContain('content_doc')
@@ -73,7 +73,7 @@ describe('popup announcement', () => {
     expect(dialog).toContain('/announcements/${announcement.id}')
   })
 
-  it('REQ-ADMIN-015 fetches the cover at once and first, being the largest picture of the page when it opens', () => {
+  it('fetches the cover at once and first, being the largest picture of the page when it opens', () => {
     const cover = source('features/admin/components/AnnouncementPopupDialog.tsx').match(/<QuietImage src=\{announcement\.cover\}[^>]*\/>/)?.[0]
     expect(cover).toContain('loading="eager"')
     expect(cover).toContain('fetchPriority="high"')

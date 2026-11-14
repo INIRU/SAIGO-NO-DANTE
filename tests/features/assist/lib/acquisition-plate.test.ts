@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { acquisitionPlate } from '@/features/assist/lib/popup-detect'
 
 describe('acquisition plate layout', () => {
-  it('REQ-ASSIST-036 keeps plates at the acquisition popup place at any capture size', () => {
+  it('keeps plates at the acquisition popup place at any capture size', () => {
     // Measured plates (full-frame pixels): 1920x1080, a 1084x584 window with a title bar, 2560x1440.
     expect(acquisitionPlate({ x: 480, y: 604, width: 268, height: 128 }, 1920, 1080)).toBe(true)
     expect(acquisitionPlate({ x: 279, y: 342, width: 146, height: 70 }, 1084, 584)).toBe(true)
@@ -11,7 +11,7 @@ describe('acquisition plate layout', () => {
     expect(acquisitionPlate({ x: 800, y: 604, width: 268, height: 128 }, 2560, 1080)).toBe(true)
   })
 
-  it('REQ-ASSIST-036 drops plates elsewhere or of another shape', () => {
+  it('drops plates elsewhere or of another shape', () => {
     // A skill-exchange card in the right third, a boss banner across the top, a tiny card label, a square badge.
     expect(acquisitionPlate({ x: 1300, y: 500, width: 260, height: 124 }, 1920, 1080)).toBe(false)
     expect(acquisitionPlate({ x: 0, y: 80, width: 700, height: 180 }, 1920, 1080)).toBe(false)

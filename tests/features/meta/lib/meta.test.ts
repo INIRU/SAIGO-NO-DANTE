@@ -153,7 +153,7 @@ it('counts a keyword deck only from five deployed identities and keeps combos se
   expect(data.usageStats).toEqual([{ key: 'mirrorDungeon', count: 2 }, { key: 'story', count: 1 }])
   const k0 = data.identityInsights.k0
   expect(k0.count).toBe(2)
-  // Equally received posts of one day are listed by id, bench posts among the rest (REQ-META-012).
+  // Equally received posts of one day are listed by id, bench posts among the rest.
   expect(k0.posts.map(p => [p.id, p.support ?? false])).toEqual([['both', false], ['burn', true], ['reserve', false]])
   expect(data.battleIdentityStats.find(row => row.identity_id === 'k0')).not.toHaveProperty('skill_keyword_list')
 })
@@ -196,7 +196,7 @@ it('tallies plan difficulty, final gifts and theme packs overall and for each fi
   expect(data.identityInsights.b.plan).toMatchObject({ count: 1, gifts: [{ key: '1', count: 1 }] })
 })
 
-it('REQ-META-003 tallies each fielded identity skill exchange, most used first, counting a slot without counts as 3-2-1', () => {
+it('tallies each fielded identity skill exchange, most used first, counting a slot without counts as 3-2-1', () => {
   const withSkills = (id: string, s: [number, number, number] | null, supportSkills: [number, number, number] = [0, 0, 6]): MetaPost => ({ ...post(id), identities: [
     { identity_id: 'a', slot_order: 0, ...(s ? { s1_count: s[0], s2_count: s[1], s3_count: s[2] } : {}) },
     { identity_id: 'b', slot_order: 1, s1_count: 1, s2_count: 0, s3_count: 5 },
@@ -208,7 +208,7 @@ it('REQ-META-003 tallies each fielded identity skill exchange, most used first, 
   expect(data.identityInsights.c).toBeUndefined()
 })
 
-it('REQ-META-003 ranks the skill exchange of every fielded slot', () => {
+it('ranks the skill exchange of every fielded slot', () => {
   const data = aggregate([{ ...post('p1'), identities: [
     { identity_id: 'a', slot_order: 0, s1_count: 0, s2_count: 1, s3_count: 5 },
     { identity_id: 'b', slot_order: 1 },
@@ -217,7 +217,7 @@ it('REQ-META-003 ranks the skill exchange of every fielded slot', () => {
   expect(data.skillSplits).toEqual([{ key: '0-1-5', count: 2 }, { key: '3-2-1', count: 1 }])
 })
 
-it('REQ-META-004 counts each plan once per floor pack, gift, inventory entry and floor 11–15 card', () => {
+it('counts each plan once per floor pack, gift, inventory entry and floor 11–15 card', () => {
   const floorPlan = [
     { floor: 1, theme_id: '1007', gift_ids: ['9414'], constraints: [] },
     { floor: 1, theme_id: '9999', gift_ids: ['1'] },
@@ -264,7 +264,7 @@ describe('sample filters', () => {
   const filtered = (filters: MetaFilters = {}) => aggregateMeta({ posts, identities: catalog, egos: [], keywordSinMap: {}, source: 'all', period: 'all', now, filters })
   const count = (filters: object) => filtered(filters as MetaFilters).sampleCount
 
-  it('REQ-META-009 counts only the formations every filter matches', () => {
+  it('counts only the formations every filter matches', () => {
     expect(count({})).toBe(7)
     const railway = filtered({ usage: ['refractionRailway'] })
     expect(railway).toMatchObject({ sampleCount: 1, filters: { usage: ['refractionRailway'] }, sourceCounts: { decks: 1, planner: 0 } })
@@ -278,13 +278,13 @@ describe('sample filters', () => {
     expect(count({ usage: ['refractionRailway'], keyword: ['진동'] })).toBe(0)
   })
 
-  it('REQ-META-009 keeps the decks of every chosen keyword (a dual deck), or of any one on request', () => {
+  it('keeps the decks of every chosen keyword (a dual deck), or of any one on request', () => {
     expect(count({ keyword: ['진동'] })).toBe(3)
     expect(count({ keyword: ['화상', '진동'] })).toBe(1)
     expect(count({ keyword: ['화상', '진동'], keywordMode: 'or' })).toBe(6)
   })
 
-  it('REQ-META-009 keeps the formations that field an identity of the chosen sinners and rarity', () => {
+  it('keeps the formations that field an identity of the chosen sinners and rarity', () => {
     // The trio fields sinners 1 to 3 only.
     expect(count({ sinner: ['4'] })).toBe(6)
     expect(count({ sinner: ['1', '4'] })).toBe(6)
@@ -295,7 +295,7 @@ describe('sample filters', () => {
     expect(count({ sinner: ['1'], rarity: ['2'] })).toBe(2)
   })
 
-  it('REQ-META-009 ties a sinner to a rarity: that sinner\'s identity of that rarity, on the field', () => {
+  it('ties a sinner to a rarity: that sinner\'s identity of that rarity, on the field', () => {
     // Sinner 1 fields a rarity-2 identity and sinner 4 a rarity-3 one; sinner 5 sits on the bench.
     const mixed = sample('mixed', 'burn', { identities: [{ identity_id: 'tremor1', slot_order: 0 }, { identity_id: 'burn4', slot_order: 1 }, { identity_id: 'burn5', slot_order: 99 }] })
     const run = (filters: object) => aggregateMeta({ posts: [mixed], identities: catalog, egos: [], keywordSinMap: {}, source: 'all', period: 'all', now, filters: filters as MetaFilters }).sampleCount
@@ -306,13 +306,13 @@ describe('sample filters', () => {
     expect(run({ sinner: ['5'] })).toBe(0)
   })
 
-  it('REQ-META-009 does not apply a difficulty to the deck board, which has none', () => {
+  it('does not apply a difficulty to the deck board, which has none', () => {
     const decksOnly = aggregateMeta({ posts, identities: catalog, egos: [], keywordSinMap: {}, source: 'decks', period: 'all', now, filters: { difficulty: ['hard'], usage: ['mirrorDungeon'] } })
     expect(decksOnly.sampleCount).toBe(3)
     expect(JSON.stringify(decksOnly.filters)).toBe('{"usage":["mirrorDungeon"]}')
   })
 
-  it('REQ-META-009 counts each filter option over the formations the other filters keep', () => {
+  it('counts each filter option over the formations the other filters keep', () => {
     expect(filtered().facets).toEqual({
       usage: { mirrorDungeon: 5, refractionRailway: 1, story: 1 },
       keyword: { '화상': 4, '진동': 3 },
@@ -334,7 +334,7 @@ describe('sample filters', () => {
     expect(filtered({ rarity: ['2'] }).facets).toEqual({ usage: { mirrorDungeon: 2 }, keyword: { '진동': 2 }, difficulty: { hard: 1 } })
   })
 
-  it('REQ-META-010 reads known filter values in one order and flags the rest', () => {
+  it('reads known filter values in one order and flags the rest', () => {
     const read = (params: Record<string, string>) => parseMetaFilters(key => params[key] ?? null)
     expect(read({ usage: 'story,mirrorDungeon', keyword: '진동,화상', difficulty: 'hard', sinner: 'faust,yi-sang', rarity: '3' })).toEqual({
       filters: { usage: ['mirrorDungeon', 'story'], keyword: ['화상', '진동'], difficulty: ['hard'], sinner: ['yi-sang', 'faust'], rarity: ['3'] }, invalid: false,
@@ -356,7 +356,7 @@ describe('sample filters', () => {
 describe('popular posts', () => {
   const rated = (id: string, source: MetaPost['source'], votes: number, views: number, age = 1): MetaPost => ({ ...post(id, source, age), votes, views })
 
-  it('REQ-META-012 carries votes, views and comments and lists an identity\'s posts most recommended first, then most viewed, newest and by id', () => {
+  it('carries votes, views and comments and lists an identity\'s posts most recommended first, then most viewed, newest and by id', () => {
     const posts = aggregate([
       rated('z-old', 'decks', 1, 5, 9),
       rated('viewed', 'decks', 1, 9, 9),
@@ -372,7 +372,7 @@ describe('popular posts', () => {
     expect(posts.at(-1)).toMatchObject({ votes: 0, views: 0, comments: 0 })
   })
 
-  it('REQ-META-013 returns the six most popular decks and plans that the source, period and filters keep', () => {
+  it('returns the six most popular decks and plans that the source, period and filters keep', () => {
     const posts = [
       ...Array.from({ length: 8 }, (_, i) => rated('d' + i, 'decks', i, 0)),
       ...Array.from({ length: 3 }, (_, i) => rated('p' + i, 'planner', 0, i)),
@@ -394,7 +394,7 @@ describe('popular posts', () => {
   })
 })
 
-it('REQ-META-004 feeds only plans in scope into the Mirror Dungeon breakdown', () => {
+it('feeds only plans in scope into the Mirror Dungeon breakdown', () => {
   const plan = { ...post('p1', 'planner'), identities: [{ identity_id: 'a', slot_order: 0 }], floorPlan: [{ floor: 1, theme_id: '1007' }], inventory: ['start_9005'] }
   expect(aggregate([plan, post('deck')]).dungeon).toMatchObject({ plans: 1, start: [{ key: '9005', count: 1 }] })
   expect(aggregate([plan], 'decks').dungeon.plans).toBe(0)

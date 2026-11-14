@@ -33,7 +33,7 @@ const STACK = {
 }
 
 describe('damage sources', () => {
-  it('REQ-TOOLS-010 reads the plain damage percents of gift and keyword texts', () => {
+  it('reads the plain damage percents of gift and keyword texts', () => {
     expect(damageValues(GIFTS.artisticSense)).toEqual([35, 10])
     expect(damageValues(GIFTS.artisticSensePlusPlus)).toEqual([50, 10])
     expect(damageValues(GIFTS.redNecktie)).toEqual([30])
@@ -42,7 +42,7 @@ describe('damage sources', () => {
     expect(damageValues(KEYWORDS.inspiration)).toEqual([10])
     expect(damageValues(KEYWORDS.gaze)).toEqual([20])
   })
-  it('REQ-TOOLS-010 takes the stated maximum of a damage change that scales', () => {
+  it('takes the stated maximum of a damage change that scales', () => {
     expect(damageValues(GIFTS.shadowHat)).toEqual([30, -30])
     expect(damageValues(GIFTS.violin)).toEqual([10, 30])
     expect(damageValues(KEYWORDS.seventhBullet)).toEqual([200])
@@ -56,7 +56,7 @@ describe('damage sources', () => {
     expect(damageValues('- 자신의 속도가 대상보다 빠르면, 피해량 (대상과의 속도 차이 x 3)% (최대 15%)')).toEqual([15])
     expect(damageValues('- 기본 공격 스킬의 피해량이 (수치 x 10)%만큼 증가 (최대 30%)')).toEqual([30])
   })
-  it('REQ-TOOLS-010 leaves out what is not a skill damage percent', () => {
+  it('leaves out what is not a skill damage percent', () => {
     // A formula without a maximum, a count with no sign, a multiplier, a keyword that is granted, heals, effect and SP damage.
     for (const text of [GIFTS.sourAroma, GIFTS.hat, GIFTS.grant, KEYWORDS.boldTouch, KEYWORDS.traumaShield, KEYWORDS.grudge, KEYWORDS.protection, '']) {
       expect(damageValues(text)).toEqual([])
@@ -67,7 +67,7 @@ describe('damage sources', () => {
     expect(damageValues('아군이 받는 [Laceration] 피해량이 (편성된 수 x 10)% 감소 (최대 40%)\n적이 받는 [Laceration] 피해량이 (편성된 수 x 5)% 증가 (최대 20%)')).toEqual([])
     expect(damageValues('[Vibration] 위력을 부여하는 스킬로 적을 공격할 경우, 효과가 강화되어 피해량 +25%')).toEqual([25])
   })
-  it('REQ-TOOLS-010 tells damage taken from damage dealt, and whose', () => {
+  it('tells damage taken from damage dealt, and whose', () => {
     expect(damageChanges('가하는 피해량 +10%')).toEqual([{ value: 10, taken: false, foe: false }])
     expect(damageChanges(KEYWORDS.dokkaebi)).toEqual([{ value: -15, taken: true, foe: false }])
     expect(damageChanges('받는 피해량과 자신이 받는 회복량이 50% 감소')).toEqual([{ value: -50, taken: true, foe: false }])
@@ -80,7 +80,7 @@ describe('damage sources', () => {
     // A formula without a maximum is a change whose value is unknown.
     expect(damageChanges(GIFTS.sourAroma)).toEqual([{ value: null, taken: false, foe: false }])
   })
-  it('REQ-TOOLS-010 keeps a damage formula it cannot read as a change, with its maximum when one is stated', () => {
+  it('keeps a damage formula it cannot read as a change, with its maximum when one is stated', () => {
     const dealt = (value: number | null) => [{ value, taken: false, foe: false }]
     // Nested brackets, the formula before the word, "N%씩": none is the plain "피해량 +(…)%".
     expect(damageChanges('피해량 +(자신의 [Charge]와 특수 충전(위력 고정)의 합 x 4)% (최대 40%)')).toEqual(dealt(40))
@@ -94,12 +94,12 @@ describe('damage sources', () => {
     expect(damageChanges('스킬로 입힌 피해량의 (수치 x 2)%만큼 체력 회복')).toEqual([])
     expect(damageChanges('[Burst] 효과로 받는 피해량이 (수치 x 5)% 증가')).toEqual([])
   })
-  it('REQ-TOOLS-010 knows which texts speak of damage at all', () => {
+  it('knows which texts speak of damage at all', () => {
     expect(mentionsDamage(GIFTS.sourAroma)).toBe(true)
     expect(mentionsDamage(KEYWORDS.protection)).toBe(true)
     expect(mentionsDamage('턴 종료 시 다음 턴에 신속 1 얻음')).toBe(false)
   })
-  it('REQ-TOOLS-011 knows a stack keyword by the sentence of its text, whatever it is called', () => {
+  it('knows a stack keyword by the sentence of its text, whatever it is called', () => {
     const taken = (perStack: number) => ({ target: 'damage', perStack, max: 10, side: 'target' })
     const dealt = (perStack: number) => ({ target: 'damage', perStack, max: 10, side: 'self' })
     expect(stackEffect(KEYWORDS.protection)).toEqual(taken(-10))
@@ -124,7 +124,7 @@ describe('damage sources', () => {
     const { keywords } = buildDamageSources({ '취약': row(KEYWORDS.gaze), '낙인': row(STACK.fragile) }, [], 'ko')
     expect(keywords.map(keyword => [keyword.name, keyword.stack?.perStack ?? null, keyword.side])).toEqual([['낙인', 10, 'target'], ['취약', null, 'target']])
   })
-  it('REQ-TOOLS-012 lists the keywords and gifts that change damage, in the language asked for', () => {
+  it('lists the keywords and gifts that change damage, in the language asked for', () => {
     const keywords = {
       '보호': { desc: KEYWORDS.protection, nameEn: 'Protection', nameJp: '保護', descEn: 'Take less damage from skills for one turn (max 10)', descJp: null },
       '도깨비팔': { desc: KEYWORDS.dokkaebi, nameEn: 'Dokkaebi Arms', nameJp: 'ドッケビの腕', descEn: '- Take -15% damage', descJp: '- 被ダメージ量が15%減少' },
@@ -175,7 +175,7 @@ describe('damage sources', () => {
     expect(ja.keywords[2].text).toBe('- 被ダメージ量が15%減少')
     expect(buildDamageSources(keywords, gifts, 'ko').gifts.map(row => row.label)).toEqual(['미적 감각', '시큼한 주향', '표식'])
   })
-  it('REQ-TOOLS-012 lists the stack keywords by kind, the general one first, then attack types, then sins', () => {
+  it('lists the stack keywords by kind, the general one first, then attack types, then sins', () => {
     const texts: Record<string, string> = {
       '오만 취약': '한 턴 동안 오만 속성 스킬로 받는 피해가 수치에 비례하여 증가 (최대 10)', '참격 내성 약화': STACK.slashWeak, '보호': KEYWORDS.protection,
       '분노 보호': '한 턴 동안 분노 속성 스킬로 받는 피해가 수치에 비례하여 감소 (최대 10)', '취약': STACK.fragile,
@@ -184,7 +184,7 @@ describe('damage sources', () => {
     const keywords = Object.fromEntries(Object.entries(texts).map(([name, desc]) => [name, { desc, nameEn: null, nameJp: null, descEn: null, descJp: null }]))
     expect(buildDamageSources(keywords, [], 'ko').keywords.map(row => row.name)).toEqual(['취약', '참격 취약', '관통 취약', '오만 취약', '보호', '분노 보호', '피해량 증가', '참격 내성 약화', '주시'])
   })
-  it('REQ-TOOLS-012 turns a keyword into a modifier: a stack keyword starts at 1, the others at their first value', () => {
+  it('turns a keyword into a modifier: a stack keyword starts at 1, the others at their first value', () => {
     const row = { text: '', values: [] as number[], stack: null, side: 'self' as const }
     const fragile = { target: 'damage' as const, perStack: 10, max: 10, side: 'target' as const }
     // The stack effect is the one the list read from the text; the side is the effect's own.
@@ -195,7 +195,7 @@ describe('damage sources', () => {
     expect(keywordModifier({ ...row, name: '일곱번째 마탄', label: 'The Seventh Magic Bullet', values: [200, 50] })).toEqual({ name: 'The Seventh Magic Bullet', keyword: '일곱번째 마탄', value: 200, options: [200, 50], target: 'damage', side: 'self' })
     expect(keywordModifier({ ...row, name: '맺혀가는 응어리', label: '맺혀가는 응어리' })).toEqual({ name: '맺혀가는 응어리', keyword: '맺혀가는 응어리', value: 0, options: [], target: 'damage', side: 'self' })
   })
-  it('REQ-TOOLS-012 knows what a picked candidate already stands for: the same gift, or the same keyword on the same side', () => {
+  it('knows what a picked candidate already stands for: the same gift, or the same keyword on the same side', () => {
     const gift = { id: '9065', level: 0, image_url: null, grade: null, keyword: null }
     const applied = [
       { id: 1, name: '책임감', value: 20, target: 'damage' as const, keyword: '책임감', side: 'target' as const },
@@ -212,7 +212,7 @@ describe('damage sources', () => {
     // A typed modifier stands for no candidate, whatever it is called.
     expect(findApplied(applied, { name: '직접 입력', value: 10, target: 'damage' })).toBeUndefined()
   })
-  it('REQ-TOOLS-012 suggests keywords and gifts by name, the closest names first', () => {
+  it('suggests keywords and gifts by name, the closest names first', () => {
     const stack = { target: 'damage' as const, perStack: 10, max: 10, side: 'target' as const }
     const sources: DamageSources = {
       keywords: [

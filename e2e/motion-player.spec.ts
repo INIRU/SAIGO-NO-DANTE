@@ -29,7 +29,7 @@ async function open(page: Page, address = SKILL) {
   await expect(page.getByRole('button', { name: '일시정지' })).toBeEnabled({ timeout: 30000 })
 }
 
-test('REQ-MOTION-021 a frame step or the seek bar moves to that frame at once, even before the video gets there', async ({ page }) => {
+test('a frame step or the seek bar moves to that frame at once, even before the video gets there', async ({ page }) => {
   await open(page)
   await page.getByRole('button', { name: '일시정지' }).click()
   const slider = page.getByRole('slider', { name: '프레임' })
@@ -42,7 +42,7 @@ test('REQ-MOTION-021 a frame step or the seek bar moves to that frame at once, e
   expect(await frameOf(page), 'the video lands on the frame the controls show').toBe(105)
 })
 
-test('REQ-MOTION-021 another condition starts from the first frame', async ({ page }) => {
+test('another condition starts from the first frame', async ({ page }) => {
   await open(page)
   await page.getByRole('button', { name: '일시정지' }).click()
   await page.getByRole('slider', { name: '프레임' }).fill('120')
@@ -52,7 +52,7 @@ test('REQ-MOTION-021 another condition starts from the first frame', async ({ pa
   expect(await frameOf(page)).toBeLessThan(30)
 })
 
-test('REQ-MOTION-024 a sinner tab seen once comes back as it was, without loading its cards again', async ({ page }) => {
+test('a sinner tab seen once comes back as it was, without loading its cards again', async ({ page }) => {
   await closeAnnouncements(page)
   await page.goto('/ko/motion/skills')
   const tabs = page.getByRole('tablist', { name: '수감자' }).getByRole('tab')
@@ -65,7 +65,7 @@ test('REQ-MOTION-024 a sinner tab seen once comes back as it was, without loadin
   expect(await card().evaluate(img => (img as HTMLImageElement & { seen?: boolean }).seen ?? false), 'the same image element, not a new one').toBe(true)
 })
 
-test('REQ-MOTION-043 a card of the picking page opens the watching page, and the way back keeps the sinner and tab', async ({ page }) => {
+test('a card of the picking page opens the watching page, and the way back keeps the sinner and tab', async ({ page }) => {
   await closeAnnouncements(page)
   await page.goto('/ko/motion/skills?tab=ego')
   await page.locator('main ul:visible a').first().click()
@@ -76,18 +76,18 @@ test('REQ-MOTION-043 a card of the picking page opens the watching page, and the
   await expect(page).toHaveURL(/\/motion\/skills\?.*tab=ego/)
 })
 
-test('REQ-MOTION-045 the old single-page address goes to the watching page with its query', async ({ request }) => {
+test('the old single-page address goes to the watching page with its query', async ({ request }) => {
   const response = await request.get('/ko/motion/skills?skill=id10116~1011601&state=v:base', { maxRedirects: 0 })
   expect(response.status()).toBe(308)
   expect(response.headers().location).toContain('/ko/motion/skills/watch?skill=id10116~1011601')
 })
 
-test('REQ-MOTION-041 the timeline is cut at the chapters of the real video and carries its marks', async ({ page }) => {
+test('the timeline is cut at the chapters of the real video and carries its marks', async ({ page }) => {
   await open(page)
   await expect(page.locator('[data-mark]').first()).toBeAttached({ timeout: 30000 })
 })
 
-test('REQ-MOTION-052 the back button lands on the list, and the scenarios moved through stay out of the history', async ({ page }) => {
+test('the back button lands on the list, and the scenarios moved through stay out of the history', async ({ page }) => {
   await page.goto('/ko')
   await open(page)
   const start = await page.evaluate(() => history.length)
@@ -103,7 +103,7 @@ test('REQ-MOTION-052 the back button lands on the list, and the scenarios moved 
   await page.waitForURL(/\/ko$/)
 })
 
-test('REQ-MOTION-025 coming back to the page, the sound stays on and the volume panel holds the volumes set before', async ({ page }) => {
+test('coming back to the page, the sound stays on and the volume panel holds the volumes set before', async ({ page }) => {
   // The page's <video> is not in the document: record the element the hook last muted or unmuted.
   await page.addInitScript(() => {
     const property = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, 'muted')!
@@ -131,7 +131,7 @@ test('REQ-MOTION-025 coming back to the page, the sound stays on and the volume 
   await expect(page.getByRole('slider', { name: '효과음' })).toHaveValue('1')
 })
 
-test('REQ-MOTION-030 the sounds come from the shared library and the play rules on R2, not from the video', async ({ page }) => {
+test('the sounds come from the shared library and the play rules on R2, not from the video', async ({ page }) => {
   const asked: string[] = []
   page.on('request', request => { if (request.url().startsWith('https://assets.saigo-no-dante.com/')) asked.push(new URL(request.url()).pathname) })
   await open(page)
@@ -141,7 +141,7 @@ test('REQ-MOTION-030 the sounds come from the shared library and the play rules 
   await expect(page.getByRole('switch')).toHaveCount(0)
 })
 
-test('REQ-MOTION-032 REQ-MOTION-040 past the last frame of a video with a tail the picture and the counter stay, and it still reads as playing', async ({ page }) => {
+test('past the last frame of a video with a tail the picture and the counter stay, and it still reads as playing', async ({ page }) => {
   await page.addInitScript(() => {
     const w = window as unknown as { uploads: number; media: HTMLMediaElement }
     w.uploads = 0
@@ -166,7 +166,7 @@ test('REQ-MOTION-032 REQ-MOTION-040 past the last frame of a video with a tail t
   expect(await frameOf(page)).toBe(last)
 })
 
-test('REQ-MOTION-037 the real sound files decode and start when the sound is turned on', async ({ page }) => {
+test('the real sound files decode and start when the sound is turned on', async ({ page }) => {
   await page.addInitScript(() => {
     const w = window as unknown as { started: number }
     w.started = 0
@@ -178,7 +178,7 @@ test('REQ-MOTION-037 the real sound files decode and start when the sound is tur
   await expect.poll(() => page.evaluate(() => (window as unknown as { started: number }).started), { timeout: 20000 }).toBeGreaterThan(0)
 })
 
-test('REQ-MOTION-046 공간참 - 잔 lists the dead allies as scenarios and opens the one pressed', async ({ page }) => {
+test('공간참 - 잔 lists the dead allies as scenarios and opens the one pressed', async ({ page }) => {
   await closeAnnouncements(page)
   await page.goto('/ko/motion/skills/watch?skill=id10415~1041507')
   await page.getByRole('button', { name: '확인' }).click()
@@ -189,7 +189,7 @@ test('REQ-MOTION-046 공간참 - 잔 lists the dead allies as scenarios and open
   await expect(all).toHaveAttribute('aria-pressed', 'true')
 })
 
-test('REQ-MOTION-046 an identity with link lines has their sound buttons in its link section', async ({ page }) => {
+test('an identity with link lines has their sound buttons in its link section', async ({ page }) => {
   await closeAnnouncements(page)
   await page.goto('/ko/motion/skills/watch?skill=id10315~1031505')
   await page.getByRole('button', { name: '확인' }).click()
@@ -201,7 +201,7 @@ test('REQ-MOTION-046 an identity with link lines has their sound buttons in its 
   await expect(line).toHaveAttribute('aria-pressed', 'false')
 })
 
-test('REQ-MOTION-003 the video and its layers.json are read at their plain R2 paths, which the upload purges', async ({ page }) => {
+test('the video and its layers.json are read at their plain R2 paths, which the upload purges', async ({ page }) => {
   const assets: string[] = []
   page.on('request', request => { if (request.url().startsWith('https://assets.saigo-no-dante.com/') && !request.url().endsWith('index.json')) assets.push(request.url()) })
   await open(page)
@@ -209,7 +209,7 @@ test('REQ-MOTION-003 the video and its layers.json are read at their plain R2 pa
   expect(assets.filter(url => url.includes('?'))).toEqual([])
 })
 
-test('REQ-MOTION-001 every page open reads index.json from R2 in the browser, not a list the server kept', async ({ page }) => {
+test('every page open reads index.json from R2 in the browser, not a list the server kept', async ({ page }) => {
   const index: string[] = [], lists: string[] = []
   page.on('request', request => {
     if (request.url() === 'https://assets.saigo-no-dante.com/index.json') index.push(request.headers()['cache-control'] ?? '')
@@ -222,7 +222,7 @@ test('REQ-MOTION-001 every page open reads index.json from R2 in the browser, no
   expect(lists).toEqual([])
 })
 
-test('REQ-MOTION-026 the stage keeps drawing while the video plays even when the browser stops reporting new video frames', async ({ page }) => {
+test('the stage keeps drawing while the video plays even when the browser stops reporting new video frames', async ({ page }) => {
   // Windows Chrome: the canvas froze mid-skill while the video, fully buffered, played on. Here the frame reports never come.
   await page.addInitScript(() => {
     HTMLVideoElement.prototype.requestVideoFrameCallback = function () { return 1 }
@@ -235,7 +235,7 @@ test('REQ-MOTION-026 the stage keeps drawing while the video plays even when the
   expect(await frame()).toBeGreaterThan(first + 30)
 })
 
-test('REQ-MOTION-028 a layers.json from before version 7 (no Y·Cb·Cr planes) is not drawn: the stage says it could not load', async ({ page }) => {
+test('a layers.json from before version 7 (no Y·Cb·Cr planes) is not drawn: the stage says it could not load', async ({ page }) => {
   await page.route('https://assets.saigo-no-dante.com/**/layers.json', route => route.fulfill({
     json: { version: 4, fps: 60, frames: 10, tile: { w: 1920, h: 1080 }, video: { file: 'layers.mp4', w: 1920, h: 1080 }, base: { x: 0, y: 0, w: 1920, h: 1080 }, layers: [] },
     headers: { 'access-control-allow-origin': '*' },

@@ -17,7 +17,7 @@ const results = (props: Partial<React.ComponentProps<typeof BoardResults>> = {})
   <BoardResults kind="deck" posts={[{ id: 'a', title: 'A' }, { id: 'b', title: 'B' }]} loading={false} hasMore={false} loadingMore={false} sentinelRef={() => {}} empty={<p data-empty>none</p>} {...props} />,
 )
 
-it('REQ-COMMUNITY-082 lists the posts as one card column on a phone, two from md and three from xl, with one row of portraits on a phone', () => {
+it('lists the posts as one card column on a phone, two from md and three from xl, with one row of portraits on a phone', () => {
   const html = results()
   expect(html).toContain('grid-cols-1')
   expect(html).toContain('md:grid-cols-2')
@@ -26,14 +26,14 @@ it('REQ-COMMUNITY-082 lists the posts as one card column on a phone, two from md
   expect(count(html, 'data-compact="1"')).toBe(2)
 })
 
-it('REQ-COMMUNITY-082 shows the empty state when nothing matches and the loading shapes while loading', () => {
+it('shows the empty state when nothing matches and the loading shapes while loading', () => {
   expect(results({ posts: [] })).toContain('data-empty')
   const loading = results({ loading: true })
   expect(loading).not.toContain('data-card')
   expect(count(loading, 'overflow-hidden rounded-lg border'), 'six card shapes').toBe(6)
 })
 
-it('REQ-COMMUNITY-082 fills the rest of the grid with card shapes while the next page loads: six from md up, two on a phone', () => {
+it('fills the rest of the grid with card shapes while the next page loads: six from md up, two on a phone', () => {
   const html = results({ loadingMore: true, hasMore: true })
   expect(count(html, 'overflow-hidden rounded-lg border')).toBe(6)
   // In the same grid as the cards, so they take the empty cells after the last card.
@@ -42,7 +42,7 @@ it('REQ-COMMUNITY-082 fills the rest of the grid with card shapes while the next
   expect(count(html, 'data-loading-card="" class="min-w-0 max-md:hidden"')).toBe(4)
 })
 
-it('REQ-COMMUNITY-082 puts the search field and the filters button on top of a phone list, with the result count and the sort', () => {
+it('puts the search field and the filters button on top of a phone list, with the result count and the sort', () => {
   const html = renderToStaticMarkup(
     <BrowseBar search={{ value: 'q', onChange: () => {}, onClear: () => {}, placeholder: 'search', label: 'label' }}
       sort={{ value: 'latest', options: [{ key: 'latest', label: 'L' }, { key: 'popular', label: 'P' }], onChange: () => {} }}
@@ -57,7 +57,7 @@ it('REQ-COMMUNITY-082 puts the search field and the filters button on top of a p
   expect(html).toContain('lg:hidden')
 })
 
-it('REQ-COMMUNITY-083 draws the loading card with the same parts as the real card: twelve portraits, title and tags, a footer 44px high', () => {
+it('draws the loading card with the same parts as the real card: twelve portraits, title and tags, a footer 44px high', () => {
   const html = renderToStaticMarkup(<BoardCardSkeleton />)
   expect(count(html, 'aspect-ratio:3 / 4')).toBe(12)
   expect(html).toContain('h-[1.375rem]')
@@ -68,7 +68,7 @@ it('REQ-COMMUNITY-083 draws the loading card with the same parts as the real car
   expect(count(list, 'max-md:hidden')).toBe(6)
 })
 
-it('REQ-COMMUNITY-083 draws the loading shelves on the same rail and grid as the real shelves', () => {
+it('draws the loading shelves on the same rail and grid as the real shelves', () => {
   const real = renderToStaticMarkup(<Rail>{[<i key="a" />, <i key="b" />, <i key="c" />]}</Rail>)
   const shape = renderToStaticMarkup(<RailSkeleton />)
   for (const needle of ['md:grid-cols-3', 'w-[78vw] max-w-[21rem]', '-mx-4 flex']) {

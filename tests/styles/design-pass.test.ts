@@ -10,7 +10,7 @@ const narrow = (css: string, needle: string) => {
 const messages = (lang: string) => JSON.parse(read(`messages/${lang}.json`)) as { meta: Record<string, unknown> }
 
 describe('design pass', () => {
-  it('REQ-SHARED-103 the meta page carries no explanatory copy, only one closing line', () => {
+  it('the meta page carries no explanatory copy, only one closing line', () => {
     const page = read('app/[lang]/meta/page.tsx')
     const client = read('app/[lang]/meta/_components/MetaClient.tsx')
     const overview = read('features/meta/components/MetaOverview.tsx')
@@ -26,13 +26,13 @@ describe('design pass', () => {
     }
   })
 
-  it('REQ-SHARED-103 the filter button shares the period row on a phone', () => {
+  it('the filter button shares the period row on a phone', () => {
     const block = narrow(read('styles/components/MetaAnalysis.module.css'), '.toolbarEnd')
     expect(block).toMatch(/\.toolbarEnd\s*\{[^}]*flex-wrap:\s*nowrap/)
     expect(block).toMatch(/\.periods\s*\{[^}]*flex:\s*1/)
   })
 
-  it('REQ-SHARED-104 the gift catalogue has wider cells and a readable name on a phone', () => {
+  it('the gift catalogue has wider cells and a readable name on a phone', () => {
     const catalog = read('features/mirror-dungeon/components/GiftCatalog.tsx')
     const card = read('features/mirror-dungeon/components/GiftCard.tsx')
     const css = read('styles/globals/utilities.css')
@@ -44,7 +44,7 @@ describe('design pass', () => {
     expect(block).toMatch(/--gift-name-size:\s*var\(--text-xs\)/)
   })
 
-  it('REQ-SHARED-105 labels are no smaller than --text-xs', () => {
+  it('labels are no smaller than --text-xs', () => {
     const identity = read('styles/components/IdentityCard.module.css')
     expect(identity).toMatch(/\.stats dt\s*\{[^}]*font-size:\s*var\(--text-xs\)/)
     expect(identity).toMatch(/\.chips span\s*\{[^}]*font-size:\s*var\(--text-xs\)/)
@@ -56,7 +56,7 @@ describe('design pass', () => {
     expect(read('app/[lang]/planner/community/[id]/PlanDetailHeader.module.css')).not.toMatch(/font-size:\s*0\.625rem/)
   })
 
-  it('REQ-SHARED-106 phone controls are 2.75rem tall', () => {
+  it('phone controls are 2.75rem tall', () => {
     const friends = narrow(read('app/[lang]/friends/_components/Friends.module.css'), '.primary')
     expect(friends).toMatch(/\.primary,\s*\.ghost\s*\{[^}]*height:\s*2\.75rem/)
     expect(friends).toMatch(/\.icon\s*\{[^}]*height:\s*2\.75rem/)
@@ -67,12 +67,12 @@ describe('design pass', () => {
     expect(catalog).not.toMatch(/className=[`"{][^\n]*\bh-9\b(?![^\n]*max-sm:h-11)/)
   })
 
-  it('REQ-SHARED-107 change notes and errors have no thick side stripe', () => {
+  it('change notes and errors have no thick side stripe', () => {
     expect(read('features/catalog/components/UptieChanges.tsx')).not.toContain('border-l-2')
     expect(read('app/[lang]/login/login.css')).not.toMatch(/\.login-error\s*\{[^}]*border-left:/)
   })
 
-  it('REQ-SHARED-108 the support sign-in gate is a title and a button', () => {
+  it('the support sign-in gate is a title and a button', () => {
     const desk = read('features/account/components/SupportDesk.tsx')
     const gate = desk.slice(desk.indexOf('className="desk-gate"'), desk.indexOf('desk-privacy'))
     expect(gate).not.toContain('<MessageSquare')

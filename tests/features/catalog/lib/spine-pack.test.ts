@@ -26,7 +26,7 @@ const idle: SpinePack = {
 }
 
 describe('identity spine pack', () => {
-  it('REQ-CATALOG-020 keeps only the forms and skeletons of the requested identity', () => {
+  it('keeps only the forms and skeletons of the requested identity', () => {
     expect(identitySpine(idle, '1')).toEqual({
       base: 'spine/idle/',
       skeletons: { a: idle.skeletons.a },
@@ -34,23 +34,23 @@ describe('identity spine pack', () => {
     })
   })
 
-  it('REQ-CATALOG-020 gives nothing for an identity the pack does not hold', () => {
+  it('gives nothing for an identity the pack does not hold', () => {
     expect(identitySpine(idle, '404')).toBeNull()
     expect(identitySpine(idle, null)).toBeNull()
     expect(identitySpine(null, '1')).toBeNull()
   })
 
-  it('REQ-CATALOG-021 gives one form per prefab, base form first', () => {
+  it('gives one form per prefab, base form first', () => {
     const sd = identitySpine(idle, 2)
     expect(dirs(sd)).toEqual(['B:b', 'B_Awaken:b_awaken'])
     expect(Object.keys(sd!.skeletons).sort()).toEqual(['b', 'b_awaken'])
   })
 
-  it('REQ-CATALOG-021 splits a prefab holding two skeletons into two forms, the one switched on first', () => {
+  it('splits a prefab holding two skeletons into two forms, the one switched on first', () => {
     expect(dirs(identitySpine(idle, 3))).toEqual(['C:c_new', 'C:c_old'])
   })
 
-  it('REQ-CATALOG-020 keeps a full illustration as one form with its frame and without the layers switched off', () => {
+  it('keeps a full illustration as one form with its frame and without the layers switched off', () => {
     const frame = { x: 0, y: 0, w: 1536, h: 864 }
     const illust: SpinePack = {
       pack: 'illust', spine: '4.0.64', base: 'spine/illust/',
@@ -69,21 +69,21 @@ describe('SD skin sets', () => {
   const skinned = (skins: string[], skinSets?: SpineSkeleton['skinSets']): SpineSkeleton => ({ ...skeleton('s'), skins: ['default', ...skins], skinSets })
   const starts = (sets: ReturnType<typeof skinSetsOf>) => sets.map(set => `${set.key}:${set.skins.join('/')}=${set.start}`)
 
-  it('REQ-CATALOG-024 starts a set on the skin the prefab names', () => {
+  it('starts a set on the skin the prefab names', () => {
     expect(starts(skinSetsOf(skinned(['1', '2'], [{ key: '', skins: ['1', '2'] }]), '2'))).toEqual([':1/2=2'])
   })
 
-  it('REQ-CATALOG-024 leaves the sets the start skin is not in bare', () => {
+  it('leaves the sets the start skin is not in bare', () => {
     const sets = [{ key: 'head', skins: ['head_off', 'head_on'] }, { key: 'weapon', skins: ['weapon1', 'weapon2'] }]
     expect(starts(skinSetsOf(skinned(['head_off', 'head_on', 'weapon1', 'weapon2'], sets), 'head_on'))).toEqual(['head:head_off/head_on=head_on', 'weapon:weapon1/weapon2=null'])
   })
 
-  it('REQ-CATALOG-024 treats the named skins as one set when the pack gives none, worn from its first skin', () => {
+  it('treats the named skins as one set when the pack gives none, worn from its first skin', () => {
     expect(starts(skinSetsOf(skinned(['on']), null))).toEqual([':on=on'])
     expect(starts(skinSetsOf(skinned(['off', 'on']), 'missing'))).toEqual([':off/on=off'])
   })
 
-  it('REQ-CATALOG-024 gives no set for a skeleton with only its default skin', () => {
+  it('gives no set for a skeleton with only its default skin', () => {
     expect(skinSetsOf(skinned([]), 'default')).toEqual([])
   })
 })
@@ -91,17 +91,17 @@ describe('SD skin sets', () => {
 describe('SD tab names', () => {
   const named = (prefab: string, dir: string) => ({ prefab, layers: [rig(dir)] })
 
-  it('REQ-CATALOG-026 names a form after its prefab, without the id, the sinner and "Appearance"', () => {
+  it('names a form after its prefab, without the id, the sinner and "Appearance"', () => {
     const forms = [named('10401_Ryoshu_BaseAppearance', '10401'), named('10401_Ryoshu_Base_CP9Appearance', '10401_Ryoshu_Base_CP9')]
     expect(forms.map(form => formLabel(form, forms))).toEqual(['Base', 'Base CP9'])
   })
 
-  it('REQ-CATALOG-026 names two forms of one prefab after their skeletons', () => {
+  it('names two forms of one prefab after their skeletons', () => {
     const forms = [named('10202_Faust_WAppearance', '10202_faust'), named('10202_Faust_WAppearance', '10202_02_wcorp_faust')]
     expect(forms.map(form => formLabel(form, forms))).toEqual(['faust', 'wcorp faust'])
   })
 
-  it('REQ-CATALOG-026 shows a skin or animation name as the data spells it, with spaces for underscores', () => {
+  it('shows a skin or animation name as the data spells it, with spaces for underscores', () => {
     expect(['blood', 'nomal', 'head_off', '1_helmet_off'].map(dataLabel)).toEqual(['blood', 'nomal', 'head off', '1 helmet off'])
   })
 })
@@ -109,12 +109,12 @@ describe('SD tab names', () => {
 describe('SD animations', () => {
   const moving = (animations: string[]): SpineSkeleton => ({ ...skeleton('s'), animations })
 
-  it('REQ-CATALOG-025 offers the animations of a skeleton that has several', () => {
+  it('offers the animations of a skeleton that has several', () => {
     expect(motionsOf(moving(['animation', 'animation2']))).toEqual(['animation', 'animation2'])
     expect(motionsOf(moving(['idle']))).toEqual([])
   })
 
-  it('REQ-CATALOG-025 offers nothing when one animation plays all the others together', () => {
+  it('offers nothing when one animation plays all the others together', () => {
     expect(motionsOf(moving(['all', 'idle_body', 'idle_clothes']))).toEqual([])
   })
 })

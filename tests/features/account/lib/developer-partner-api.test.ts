@@ -14,7 +14,7 @@ const second = identity('b', 'faust', [skill(1, 4, 'blunt', 'pride'), skill(2, 4
 const ego = { id: 'e1', sinner_id: 'yi-sang', name: 'Crow', name_kr: '오감도', name_en: "Crow's Eye View", name_jp: null, grade: 'ZAYIN', sin_affinity: 'sloth', image_url: 'https://img/ego.webp', cost: [0, 0, 2, 0, 0, 1, 0], ego_skills: [{ skill_type: 'slash', category: 'awakening', construe_level: 4, skill_order: 1 }] }
 
 describe('partner API response shaping', () => {
-  it('REQ-ACCOUNT-012 picks the requested language and falls back to Korean', () => {
+  it('picks the requested language and falls back to Korean', () => {
     const row = { name: '화상', name_en: 'Burn', name_jp: '', nested: [{ description: '설명', description_en: 'Text', description_jp: '説明' }] }
     expect(localize(row, 'en')).toEqual({ name: 'Burn', nested: [{ description: 'Text' }] })
     expect(localize(row, 'ja')).toEqual({ name: '화상', nested: [{ description: '説明' }] })
@@ -22,7 +22,7 @@ describe('partner API response shaping', () => {
     expect([parseLang(null), parseLang('ja'), parseLang('fr')]).toEqual(['ko', 'ja', null])
   })
 
-  it('REQ-ACCOUNT-012 adds site, card and image addresses to catalog items', () => {
+  it('adds site, card and image addresses to catalog items', () => {
     const item = presentCatalogItem('identities', first, 'en') as Record<string, any>
     expect(item.name).toBe('LCB Sinner')
     expect(item.url).toMatch(/\/en\/sinners\/yi-sang\/identities\/a$/)
@@ -37,7 +37,7 @@ describe('partner API response shaping', () => {
     expect(presentCatalogItem('keywords', { name: '화상', name_en: 'Burn', name_jp: null, max_stack: 99 }, 'en')).toEqual({ key: '화상', name: 'Burn', max_stack: 99 })
   })
 
-  it('REQ-ACCOUNT-013 lists a deck in formation order with skills at each slot uptie and site analysis', () => {
+  it('lists a deck in formation order with skills at each slot uptie and site analysis', () => {
     const deck = presentDeck({
       id: 'd1', title: '덱', lang: 'ko', vote_count: 3,
       deck_identities: [
@@ -60,7 +60,7 @@ describe('partner API response shaping', () => {
     expect(deck).not.toHaveProperty('deck_identities')
   })
 
-  it('REQ-ACCOUNT-013 resolves plan floors and inventory to named gifts and theme packs', () => {
+  it('resolves plan floors and inventory to named gifts and theme packs', () => {
     const plan = presentPlan({
       id: 'p1', title: '플랜', lang: 'ko', difficulty: 'hard',
       deck: [{ identity_id: 'b', slot_order: 1, s1_count: 3, s2_count: 2, s3_count: 1 }, { identity_id: 'a', slot_order: 0, s1_count: 3, s2_count: 2, s3_count: 1 }, { identity_id: 'gone', slot_order: 2 }],

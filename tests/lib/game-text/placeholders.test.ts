@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { hasRawPlaceholder, placeholdersToPlainText, splitPlaceholders, tokenizeGamePlaceholders } from '@/lib/game-text/placeholders'
 
-describe('REQ-MIRROR-DUNGEON-010 placeholder tokens', () => {
+describe('placeholder tokens', () => {
   it('turns numbered game slots into tokens and reports the ones without a role', () => {
     const unknown: number[] = []
     expect(tokenizeGamePlaceholders('(현재 {0}%) {1} {0:F1} {amount}', index => (index === 0 ? 'live' : undefined), index => unknown.push(index)))

@@ -11,8 +11,8 @@ import { filterStyles } from '@/components/board/FilterControls'
 
 const theme = { id: 1014, name: '기어오는 심연', image_url: null, ego_gift_ids: [1, 2, 3], floor_info: null }
 
-describe('REQ-PLANNER-028 theme pack picker', () => {
-  it('REQ-PLANNER-028 uses the shared picker frame and shows no gift counts', () => {
+describe('theme pack picker', () => {
+  it('uses the shared picker frame and shows no gift counts', () => {
     const html = renderToStaticMarkup(
       <ThemePackPickerModal title="5층 테마팩" closeLabel="닫기" emptyLabel="없음" searchLabel="검색" noResultsLabel="결과 없음"
         countLabel={count => `${count}개`} themes={[theme]} onClose={() => {}} onSelectTheme={() => {}} lang="ko" />,

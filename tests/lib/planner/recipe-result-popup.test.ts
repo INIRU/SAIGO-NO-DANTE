@@ -62,7 +62,7 @@ it('collects every gift a result popup points at, weak reads included, only unde
   expect(popupCandidateIds({ header: '합성', labels: [read('탁마')], iconGiftIds: ['9277'], effectGiftIds: [], gifts })).toEqual({ named: [], others: [] })
 })
 
-it('REQ-ASSIST-038 settles a misread fusion result from its weak lexicon name when only that recipe is craftable', () => {
+it('settles a misread fusion result from its weak lexicon name when only that recipe is craftable', () => {
   // Sample 2026-09-25 f7af0303: plate OCR "회중시계:라임트", lexicon best 타입 E by 7.6 nats (below the 9-nat bar), no icon.
   const gifts = names.map(([id, name]) => ({ id: String(id), texts: [name] }))
   const header = 'E.G.O 기프트를 획득했습니다.'

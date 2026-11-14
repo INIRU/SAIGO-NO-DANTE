@@ -43,14 +43,9 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-.omc
 # sentry
 .env.sentry-build-plugin
 
-# Tool/plugin state (not project code)
-.bkit/
-.playwright-mcp/
-.serena/
 .worktrees/
 
 # Python-generated caches

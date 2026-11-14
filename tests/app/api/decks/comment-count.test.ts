@@ -33,16 +33,16 @@ import { POST, DELETE } from '@/app/api/decks/[id]/comments/route'
 
 const params = { params: Promise.resolve({ id: 'd1' }) }
 
-describe('REQ-DECKS-060 the database keeps the deck comment count', () => {
+describe('the database keeps the deck comment count', () => {
   beforeEach(() => { state.rpcCalls.length = 0; vi.spyOn(console, 'error').mockImplementation(() => {}) })
 
-  it('REQ-DECKS-060 writing a comment does not call increment_comment', async () => {
+  it('writing a comment does not call increment_comment', async () => {
     const res = await POST(new NextRequest('http://localhost/api/decks/d1/comments', { method: 'POST', body: JSON.stringify({ content: 'hi' }) }), params)
     expect(res.status).toBe(200)
     expect(state.rpcCalls).toEqual([])
   })
 
-  it('REQ-DECKS-060 deleting a comment with a reply does not call decrement_comment', async () => {
+  it('deleting a comment with a reply does not call decrement_comment', async () => {
     const res = await DELETE(new NextRequest('http://localhost/api/decks/d1/comments?commentId=c1', { method: 'DELETE' }), params)
     expect(res.status).toBe(200)
     expect(state.rpcCalls).toEqual([])

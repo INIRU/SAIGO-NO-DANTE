@@ -15,7 +15,7 @@ const resources: DeckResources = {
 const section = (html: string, from: string, to?: string) => html.slice(html.indexOf(from), to ? html.indexOf(to) : undefined)
 
 describe('deck resource summary', () => {
-  it('REQ-DECKS-018 REQ-PLANNER-023 draws the deployed identities\' attack types and sin production in the keyword chart\'s bars', () => {
+  it('draws the deployed identities\' attack types and sin production in the keyword chart\'s bars', () => {
     const html = renderToStaticMarkup(<DeckResourceSummary resources={resources} />)
     // Whose numbers these are, beside both titles.
     expect(html.match(/stats\.keywordDeployed:7/g)).toHaveLength(2)
@@ -31,7 +31,7 @@ describe('deck resource summary', () => {
     expect(produced).not.toContain('envy')
   })
 
-  it('REQ-DECKS-018 lists defensive skills, EGO skill types and EGO costs under the bars instead of in them', () => {
+  it('lists defensive skills, EGO skill types and EGO costs under the bars instead of in them', () => {
     const html = renderToStaticMarkup(<DeckResourceSummary resources={resources} />)
     const defense = section(html, 'data-deck-defense', 'data-deck-ego-attack')
     expect(defense).toMatch(/evade <strong>5<\/strong>/)
@@ -47,7 +47,7 @@ describe('deck resource summary', () => {
     expect(cost).toMatch(/data-sin="envy" data-short="true"/)
   })
 
-  it('REQ-DECKS-018 says so when nobody is deployed and every placed identity is counted', () => {
+  it('says so when nobody is deployed and every placed identity is counted', () => {
     const html = renderToStaticMarkup(<DeckResourceSummary resources={{ ...resources, identities: 12, deployedOnly: false, attack: { ...resources.attack, ego: { slash: 0, pierce: 0, blunt: 0 } }, egoCost: sins({}) }} />)
     expect(html).toContain('stats.keywordAll:12')
     expect(html).not.toContain('data-deck-ego-attack')

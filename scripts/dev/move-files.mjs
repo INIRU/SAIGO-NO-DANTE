@@ -153,7 +153,7 @@ export function expandRenames(lines, tracked) {
 // ---- CLI -------------------------------------------------------------------
 
 const SCAN_DIRS = ['.github/', 'app/', 'components/', 'lib/', 'hooks/', 'features/', 'tests/', 'e2e/', 'scripts/', 'docs/']
-const ROOT_FILES = /^(?:AGENTS\.md|README\.md|DESIGN\.md|package\.json|next\.config\.ts|vitest\.config\.ts|proxy\.ts|instrumentation[^/]*\.ts)$/
+const ROOT_FILES = /^(?:README\.md|CONTRIBUTING\.md|DESIGN\.md|package\.json|next\.config\.ts|vitest\.config\.ts|proxy\.ts|instrumentation[^/]*\.ts)$/
 const SCAN_EXT = /\.(?:ts|tsx|mts|mjs|cjs|js|css|md|json|ya?ml)$/
 const NEVER = /^(?:node_modules\/)/
 

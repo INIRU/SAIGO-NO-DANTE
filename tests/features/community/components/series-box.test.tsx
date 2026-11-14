@@ -20,7 +20,7 @@ const series: SeriesView = {
   ],
 }
 
-describe('REQ-COMMUNITY-041 series box', () => {
+describe('series box', () => {
   const html = renderToStaticMarkup(<SeriesBox series={series} kind="plan" postId="b" />)
   it('shows the title, the position and the link to the whole series', () => {
     expect(html).toContain('화상 입문')
@@ -48,7 +48,7 @@ describe('REQ-COMMUNITY-041 series box', () => {
   })
 })
 
-describe('REQ-COMMUNITY-043 post author name', () => {
+describe('post author name', () => {
   it('links to the profile when it is public', () => {
     const html = renderToStaticMarkup(<PostAuthorName userId="u1" username="작성자" profilePublic={true} className="x" />)
     expect(html).toContain('href="/users/u1"')

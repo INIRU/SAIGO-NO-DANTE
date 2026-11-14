@@ -167,7 +167,7 @@ export const getGuestCopy = (locale: string): GuestCopy => copy[locale as keyof 
 export const guestAuthorName = (tag: string | null | undefined, locale: string) =>
   tag ? `${getGuestCopy(locale).anonymous} #${tag}` : null
 
-/** Why a new guest post cannot go up with this password, or null when it can (REQ-COMMUNITY-031). */
+/** Why a new guest post cannot go up with this password, or null when it can. */
 export function guestPinProblem(pin: string, locale: string) {
   const t = getGuestCopy(locale)
   return !isGuestPin(pin) ? t.pinRequired : isWeakGuestPin(pin) ? t.pinWeak : null

@@ -25,13 +25,13 @@ vi.mock('@/app/[lang]/planner/community/[id]/PlanDetailSkeleton', () => ({ defau
 
 const params = Promise.resolve({ lang: 'ko', id: '00000000-0000-0000-0000-000000000000' })
 
-describe('REQ-SHARED-035 a missing post is not indexed', () => {
-  it('REQ-SHARED-035 a missing deck answers with noindex', async () => {
+describe('a missing post is not indexed', () => {
+  it('a missing deck answers with noindex', async () => {
     const { generateMetadata } = await import('@/app/[lang]/decks/[id]/page')
     expect(await generateMetadata({ params })).toMatchObject({ title: '덱을 찾을 수 없습니다', robots: { index: false } })
   })
 
-  it('REQ-SHARED-035 a missing plan answers with noindex', async () => {
+  it('a missing plan answers with noindex', async () => {
     const { generateMetadata } = await import('@/app/[lang]/planner/community/[id]/page')
     expect(await generateMetadata({ params })).toMatchObject({ title: 'notFoundTitle', robots: { index: false } })
   })

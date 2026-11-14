@@ -12,14 +12,14 @@ function chain(n: number) {
   return source.slice(at, source.indexOf('.finally', at))
 }
 
-describe('REQ-DECKS-056 a failed deck list request is reported', () => {
-  it('REQ-DECKS-056 the first page request rejects a non-ok response and shows an error', () => {
+describe('a failed deck list request is reported', () => {
+  it('the first page request rejects a non-ok response and shows an error', () => {
     const first = chain(0)
     expect(first).toMatch(/!r\.ok\) throw/)
     expect(first).toMatch(/showError\(/)
   })
 
-  it('REQ-DECKS-056 load more rejects a non-ok response, shows an error and keeps hasMore', () => {
+  it('load more rejects a non-ok response, shows an error and keeps hasMore', () => {
     const more = chain(1)
     expect(more).toMatch(/!r\.ok\) throw/)
     expect(more).toMatch(/showError\(/)

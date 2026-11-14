@@ -39,13 +39,13 @@ function clientProps(node: ReactNode): Record<string, unknown> | null {
 }
 const lives = () => mocks.cacheLife.mock.calls.map(([life]) => life)
 
-describe('REQ-SHARED-020 keywords page refs and caching', () => {
+describe('keywords page refs and caching', () => {
   beforeEach(() => {
     mocks.cacheLife.mockClear()
     mocks.getGameTextRefNames.mockReset()
   })
 
-  it('REQ-SHARED-020 hands the client the id to keyword table and caches for good when the table is read', async () => {
+  it('hands the client the id to keyword table and caches for good when the table is read', async () => {
     mocks.getGameTextRefNames.mockResolvedValue({
       Combustion: { k: 'keyword', n: '화상', kw: '화상' },
       OnHit: { k: 'skilltag', n: '[적중시]' },
@@ -55,14 +55,14 @@ describe('REQ-SHARED-020 keywords page refs and caching', () => {
     expect(lives()).toEqual(['max'])
   })
 
-  it('REQ-SHARED-020 does not cache for good a page built while the refs read failed', async () => {
+  it('does not cache for good a page built while the refs read failed', async () => {
     mocks.getGameTextRefNames.mockRejectedValue(new Error('game_text_refs: down'))
     const props = clientProps(await KeywordsPage())
     expect(props?.refKeywords).toEqual({})
     expect(lives().at(-1)).toBe('page-1m')
   })
 
-  it('REQ-SHARED-020 does not cache for good a page built while the refs table is still empty', async () => {
+  it('does not cache for good a page built while the refs table is still empty', async () => {
     mocks.getGameTextRefNames.mockResolvedValue({})
     await KeywordsPage()
     expect(lives().at(-1)).toBe('page-1m')

@@ -49,8 +49,8 @@ const risingFeed = { posts: [{ post: { id: 'x1' }, rise: 4.4 }, { post: { id: 'x
 
 beforeEach(() => { state.feed = {}; state.rising = undefined; state.options = undefined })
 
-describe('REQ-COMMUNITY-012 shelf order', () => {
-  it('REQ-COMMUNITY-012 puts new posts first, then the frequently visited, rising, personal, identity and edited shelves', () => {
+describe('shelf order', () => {
+  it('puts new posts first, then the frequently visited, rising, personal, identity and edited shelves', () => {
     state.rising = risingFeed
     const html = render(full)
     const at = (needle: string) => html.indexOf(needle)
@@ -59,7 +59,7 @@ describe('REQ-COMMUNITY-012 shelf order', () => {
     expect(order.map(at)).toEqual([...order.map(at)].sort((a, b) => a - b))
   })
 
-  it('REQ-COMMUNITY-012 leaves out the shelves a board has nothing for', () => {
+  it('leaves out the shelves a board has nothing for', () => {
     const html = render({ recent: [], updated: [], popular: posts('p1'), identities: [] })
     expect(html).not.toContain('data-shelf="recent"')
     expect(html).not.toContain('data-shelf="updated"')
@@ -68,41 +68,41 @@ describe('REQ-COMMUNITY-012 shelf order', () => {
   })
 })
 
-describe('REQ-COMMUNITY-032 period tabs', () => {
-  it('REQ-COMMUNITY-032 keeps the previous period on screen while the next one loads', () => {
+describe('period tabs', () => {
+  it('keeps the previous period on screen while the next one loads', () => {
     const html = render(full)
     expect(state.options).toMatchObject({ keepPreviousData: true })
     expect(html).not.toContain('data-board-skeleton')
   })
 
-  it('REQ-COMMUNITY-032 puts the tabs once, in the head of the frequently visited shelf', () => {
+  it('puts the tabs once, in the head of the frequently visited shelf', () => {
     const html = render(full)
     expect(count(html, 'aria-pressed')).toBe(3)
     expect(count(shelf(html, 'popular'), 'aria-pressed')).toBe(3)
   })
 
-  it('REQ-COMMUNITY-032 keeps the head and its tabs when the period has no popular posts', () => {
+  it('keeps the head and its tabs when the period has no popular posts', () => {
     const html = render({ ...full, popular: [], identities: [] })
     expect(count(shelf(html, 'popular'), 'aria-pressed')).toBe(3)
     expect(shelf(html, 'popular')).toContain('popularDecks')
     expect(shelf(html, 'popular')).not.toContain('data-card')
   })
 
-  it('REQ-COMMUNITY-032 shows no tabs on a board without posts', () => {
+  it('shows no tabs on a board without posts', () => {
     const html = render({ recent: [], updated: [], popular: [], identities: [] })
     expect(html).toContain('data-discovery-empty')
     expect(html).not.toContain('aria-pressed')
   })
 
-  it('REQ-COMMUNITY-032 shows the loading shapes only until the first answer', () => {
+  it('shows the loading shapes only until the first answer', () => {
     const html = render(undefined)
     expect(html).toContain('data-discovery-shelf')
     expect(html).toContain('data-board-skeleton')
   })
 })
 
-describe('REQ-COMMUNITY-033 popular order', () => {
-  it('REQ-COMMUNITY-033 shows the popular posts in the order the server sent, with their rank plates, six at most', () => {
+describe('popular order', () => {
+  it('shows the popular posts in the order the server sent, with their rank plates, six at most', () => {
     const html = shelf(render({ ...full, popular: posts('p2', 'p1', 'p3', 'p4', 'p5', 'p6', 'p7') }), 'popular')
     expect(html.indexOf('data-card="p2"')).toBeGreaterThan(-1)
     expect(html.indexOf('data-card="p2"')).toBeLessThan(html.indexOf('data-card="p1"'))
@@ -111,8 +111,8 @@ describe('REQ-COMMUNITY-033 popular order', () => {
   })
 })
 
-describe('REQ-COMMUNITY-080 shelf shapes', () => {
-  it('REQ-COMMUNITY-080 lays each card shelf out as a phone rail and a wide grid with three new posts', () => {
+describe('shelf shapes', () => {
+  it('lays each card shelf out as a phone rail and a wide grid with three new posts', () => {
     const html = render(full)
     const recent = shelf(html, 'recent')
     expect(count(recent, 'data-card=')).toBe(3)
@@ -121,26 +121,26 @@ describe('REQ-COMMUNITY-080 shelf shapes', () => {
     expect(shelf(html, 'popular')).toContain('snap-x')
   })
 
-  it('REQ-COMMUNITY-080 shows the identities in one row of frame cards with their visit rank beneath', () => {
+  it('shows the identities in one row of frame cards with their visit rank beneath', () => {
     const html = shelf(render(full), 'identities')
     expect(count(html, 'data-identity=')).toBe(2)
     expect(html).toContain('data-numeral="1"')
     expect(html).toContain('md:flex-1')
   })
 
-  it('REQ-COMMUNITY-080 shows the recently edited posts as three rows and opens six on request', () => {
+  it('shows the recently edited posts as three rows and opens six on request', () => {
     const html = shelf(render({ ...full, updated: posts('u1', 'u2', 'u3', 'u4', 'u5') }), 'updated')
     expect(count(html, 'data-row=')).toBe(3)
     expect(html).toContain('more')
   })
 
-  it('REQ-COMMUNITY-080 opens the full list from the new posts shelf', () => {
+  it('opens the full list from the new posts shelf', () => {
     expect(shelf(render(full), 'recent')).toContain('viewAll')
   })
 })
 
-describe('REQ-COMMUNITY-074 rising shelf', () => {
-  it('REQ-COMMUNITY-074 shows rising posts as cards and rising identities as frame cards with their multiplier', () => {
+describe('rising shelf', () => {
+  it('shows rising posts as cards and rising identities as frame cards with their multiplier', () => {
     state.rising = risingFeed
     const html = shelf(render(full), 'rising')
     expect(html).toContain('data-card="x1"')
@@ -149,7 +149,7 @@ describe('REQ-COMMUNITY-074 rising shelf', () => {
     expect(html).toContain('×12')
   })
 
-  it('REQ-COMMUNITY-085 holds the rising shelf with its loading shape until the feed answers, then swaps it for the shelf', () => {
+  it('holds the rising shelf with its loading shape until the feed answers, then swaps it for the shelf', () => {
     const loading = render(full)
     expect(loading).toContain('data-shelf-skeleton="rising"')
     expect(loading).toContain('data-identity-row-skeleton')
@@ -160,7 +160,7 @@ describe('REQ-COMMUNITY-074 rising shelf', () => {
     expect(arrived).toContain('data-shelf="rising"')
   })
 
-  it('REQ-COMMUNITY-085 lets the loading shape go without a header when nothing is rising', () => {
+  it('lets the loading shape go without a header when nothing is rising', () => {
     state.rising = { posts: [], identities: [] }
     const html = render(full)
     expect(html).not.toContain('data-shelf-skeleton="rising"')
@@ -168,7 +168,7 @@ describe('REQ-COMMUNITY-074 rising shelf', () => {
     expect(html).not.toContain('>rising</h2>')
   })
 
-  it('REQ-COMMUNITY-074 draws nothing while loading, on a failed read, or with fewer than two rising', () => {
+  it('draws nothing while loading, on a failed read, or with fewer than two rising', () => {
     expect(render(full)).not.toContain('data-shelf="rising"')
     state.rising = { posts: [{ post: { id: 'x1' }, rise: 2 }], identities: [] }
     expect(render(full)).not.toContain('data-shelf="rising"')
@@ -177,8 +177,8 @@ describe('REQ-COMMUNITY-074 rising shelf', () => {
   })
 })
 
-describe('REQ-COMMUNITY-036 shelf titles', () => {
-  it('REQ-COMMUNITY-036 reads every shelf title from the messages', () => {
+describe('shelf titles', () => {
+  it('reads every shelf title from the messages', () => {
     state.rising = risingFeed
     const decks = render(full)
     for (const key of ['recentDecks', 'updatedDecks', 'popularDecks', 'popularIdentities', 'rising']) expect(decks).toContain(`>${key}</h2>`)
@@ -186,11 +186,11 @@ describe('REQ-COMMUNITY-036 shelf titles', () => {
     for (const key of ['recentPlans', 'updatedPlans', 'popularPlans', 'popularIdentities', 'rising']) expect(plans).toContain(`>${key}</h2>`)
   })
 
-  it('REQ-COMMUNITY-036 draws the shelf titles in gold', () => {
+  it('draws the shelf titles in gold', () => {
     expect(render(full)).toContain('text-[var(--gold)]')
   })
 
-  it('REQ-COMMUNITY-036 keeps the Korean wording and one tone across the three frequently visited shelves', () => {
+  it('keeps the Korean wording and one tone across the three frequently visited shelves', () => {
     type Titles = Record<'recentDecks' | 'recentPlans' | 'updatedDecks' | 'updatedPlans' | 'popularDecks' | 'popularPlans' | 'popularIdentities' | 'rising', string>
     const titles = (messages: unknown) => (messages as { discoveryShelf: Titles }).discoveryShelf
     expect(titles(ko)).toMatchObject({

@@ -9,7 +9,7 @@ const frames = [
   ['features/planner/components/SuggestionNote.tsx', 'aria-expanded={open}'],
 ] as const
 
-it('REQ-DECKS-026 keeps the passive, skill exchange and partner thumbnails in their box before their scoped styles arrive', () => {
+it('keeps the passive, skill exchange and partner thumbnails in their box before their scoped styles arrive', () => {
   for (const [file, marker] of frames) {
     const line = readFileSync(file, 'utf8').split('\n').find(text => text.includes(marker) && text.includes('className='))
     expect(line, `${file}: ${marker}`).toMatch(/className="[^"]*\brelative\b[^"]*\bh-\S+[^"]*\bw-\S+/)

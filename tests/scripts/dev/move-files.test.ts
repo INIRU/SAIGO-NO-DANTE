@@ -15,8 +15,8 @@ const renames: Array<[string, string]> = [
 const rewrite = (path: string, source: string, extra: Array<[string, string]> = renames) =>
   rewriteSources(extra, [{ path, source }])
 
-describe('REQ-SHARED-079 rewriteSources', () => {
-  it('REQ-SHARED-079 rewrites alias imports, keeping the extension style, .module.css and a dropped /index', () => {
+describe('rewriteSources', () => {
+  it('rewrites alias imports, keeping the extension style, .module.css and a dropped /index', () => {
     const [out] = rewrite(
       'app/[lang]/gizmo/page.tsx',
       [
@@ -37,7 +37,7 @@ describe('REQ-SHARED-079 rewriteSources', () => {
     )
   })
 
-  it('REQ-SHARED-079 turns a relative import inside a moved file into an alias to the same file', () => {
+  it('turns a relative import inside a moved file into an alias to the same file', () => {
     const [out] = rewrite(
       'components/gizmo/GizmoCard.tsx',
       "import { Button } from '../ui/Button'\nimport styles from './GizmoCard.module.css'\nimport { guide } from '../../lib/gizmo/guide'\n",
@@ -48,7 +48,7 @@ describe('REQ-SHARED-079 rewriteSources', () => {
     )
   })
 
-  it('REQ-SHARED-079 keeps a relative import relative when both files move into the same folder', () => {
+  it('keeps a relative import relative when both files move into the same folder', () => {
     const pair: Array<[string, string]> = [
       ['app/[lang]/gizmo/new/Compose.tsx', 'app/[lang]/gizmo/_components/Compose.tsx'],
       ['app/[lang]/gizmo/Gizmo.module.css', 'app/[lang]/gizmo/_components/Gizmo.module.css'],
@@ -58,12 +58,12 @@ describe('REQ-SHARED-079 rewriteSources', () => {
     expect(out.source).toBe("import styles from './Gizmo.module.css'\n")
   })
 
-  it('REQ-SHARED-079 points a relative import in an unmoved file at the new location', () => {
+  it('points a relative import in an unmoved file at the new location', () => {
     const [out] = rewrite('components/other/Thing.tsx', "import { GizmoCard } from '../gizmo/GizmoCard'\nimport { x } from './x'\n")
     expect(out.source).toBe("import { GizmoCard } from '@/features/gizmo/components/GizmoCard'\nimport { x } from './x'\n")
   })
 
-  it('REQ-SHARED-079 rewrites vi.mock, dynamic import and readFileSync paths', () => {
+  it('rewrites vi.mock, dynamic import and readFileSync paths', () => {
     const [out] = rewrite(
       'tests/components/gizmo/GizmoCard.test.tsx',
       [
@@ -81,7 +81,7 @@ describe('REQ-SHARED-079 rewriteSources', () => {
     )
   })
 
-  it('REQ-SHARED-079 rewrites backticked paths and relative links in markdown', () => {
+  it('rewrites backticked paths and relative links in markdown', () => {
     const [spec] = rewrite('docs/reference/gizmo.md', '- `components/gizmo/GizmoCard.tsx` — 수정\n- `lib/gizmo/guide.ts`.\n')
     expect(spec.source).toBe('- `features/gizmo/components/GizmoCard.tsx` — 수정\n- `features/gizmo/lib/guide.ts`.\n')
 
@@ -91,7 +91,7 @@ describe('REQ-SHARED-079 rewriteSources', () => {
     )
   })
 
-  it('REQ-SHARED-079 keeps a markdown link valid when the markdown file itself moves', () => {
+  it('keeps a markdown link valid when the markdown file itself moves', () => {
     const [out] = rewrite('docs/note.md', '[g](../lib/gizmo/guide.ts) [u](../lib/utils.ts)\n', [
       ['docs/note.md', 'docs/guides/note.md'],
       ...renames,
@@ -100,7 +100,7 @@ describe('REQ-SHARED-079 rewriteSources', () => {
     expect(out.source).toBe('[g](../../features/gizmo/lib/guide.ts) [u](../../lib/utils.ts)\n')
   })
 
-  it('REQ-SHARED-079 leaves a path that only shares a prefix with a moved file', () => {
+  it('leaves a path that only shares a prefix with a moved file', () => {
     const source = [
       "import { steps } from '@/lib/gizmo/guide-steps'",
       "import { guide } from '@/lib/gizmo/guide'",
@@ -116,14 +116,14 @@ describe('REQ-SHARED-079 rewriteSources', () => {
     )
   })
 
-  it("REQ-SHARED-079 keeps 'use client' and 'use cache' as the first line", () => {
+  it("keeps 'use client' and 'use cache' as the first line", () => {
     const [client] = rewrite('components/gizmo/GizmoCard.tsx', "'use client'\n\nimport { Button } from '../ui/Button'\n")
     expect(client.source.startsWith("'use client'\n")).toBe(true)
     const [cached] = rewrite('lib/gizmo/guide.ts', "'use cache'\n\nimport { db } from '../db/client'\n")
     expect(cached.source).toBe("'use cache'\n\nimport { db } from '@/lib/db/client'\n")
   })
 
-  it('REQ-SHARED-079 returns only changed files, with the new path for moved ones', () => {
+  it('returns only changed files, with the new path for moved ones', () => {
     const out = rewriteSources(renames, [
       { path: 'lib/gizmo/guide.ts', source: 'export const guide = 1\n' },
       { path: 'app/a.tsx', source: "import { b } from '@/lib/b'\n" },
@@ -132,7 +132,7 @@ describe('REQ-SHARED-079 rewriteSources', () => {
     expect(out.map((f) => f.path)).toEqual(['app/b.tsx'])
   })
 
-  it('REQ-SHARED-079 keeps next.config.ts on relative specifiers and rewrites plain string paths', () => {
+  it('keeps next.config.ts on relative specifiers and rewrites plain string paths', () => {
     const [out] = rewrite(
       'next.config.ts',
       "import { guide } from './lib/gizmo/guide'\nconst plugin = createNextIntlPlugin('./lib/gizmo/guide.ts')\n",
@@ -142,7 +142,7 @@ describe('REQ-SHARED-079 rewriteSources', () => {
     )
   })
 
-  it('REQ-SHARED-079 keeps node-run scripts and .mjs files on relative specifiers', () => {
+  it('keeps node-run scripts and .mjs files on relative specifiers', () => {
     const [mjs] = rewrite('scripts/tool/run.mjs', "import { guide } from '../../lib/gizmo/guide.ts'\n")
     expect(mjs.source).toBe("import { guide } from '../../features/gizmo/lib/guide.ts'\n")
     const [ts] = rewrite('scripts/tool/run.ts', "import { guide } from '../../lib/gizmo/guide'\n")
@@ -152,7 +152,7 @@ describe('REQ-SHARED-079 rewriteSources', () => {
     expect(app.source).toBe("import { guide } from '@/features/gizmo/lib/guide'\n")
   })
 
-  it('REQ-SHARED-079 rewrites repo paths in package.json scripts and workflow files', () => {
+  it('rewrites repo paths in package.json scripts and workflow files', () => {
     const [pkg] = rewrite(
       'package.json',
       '{ "scripts": { "build:x": "esbuild lib/gizmo/guide.ts --bundle --outfile=public/guide.js && cp lib/gizmo/guide-steps.ts public/" } }\n',
@@ -169,7 +169,7 @@ describe('REQ-SHARED-079 rewriteSources', () => {
     )
   })
 
-  it('REQ-SHARED-079 rewrites a folder mention when the folder map is given', () => {
+  it('rewrites a folder mention when the folder map is given', () => {
     const [out] = rewriteSources(renames, [{ path: 'docs/a.md', source: 'See `components/gizmo/` and `components/gizmo-extra`.\n' }], [
       ['components/gizmo', 'features/gizmo/components'],
     ])
@@ -177,10 +177,10 @@ describe('REQ-SHARED-079 rewriteSources', () => {
   })
 })
 
-describe('REQ-SHARED-079 expandRenames', () => {
+describe('expandRenames', () => {
   const tracked = ['components/gizmo/a.tsx', 'components/gizmo/sub/b.ts', 'components/gizmo-extra/c.ts', 'lib/one.ts']
 
-  it('REQ-SHARED-079 expands a folder entry to every tracked file under it', () => {
+  it('expands a folder entry to every tracked file under it', () => {
     const { renames: out, dirs } = expandRenames(
       ['# comment', '', 'components/gizmo features/gizmo/components', 'lib/one.ts features/gizmo/lib/one.ts'],
       tracked,
@@ -193,19 +193,19 @@ describe('REQ-SHARED-079 expandRenames', () => {
     expect(dirs).toEqual([['components/gizmo', 'features/gizmo/components']])
   })
 
-  it('REQ-SHARED-079 rejects a file that appears twice in the map', () => {
+  it('rejects a file that appears twice in the map', () => {
     expect(() => expandRenames(['components/gizmo a/b', 'components/gizmo/a.tsx c/d.tsx'], tracked)).toThrow(/components\/gizmo\/a\.tsx/)
     expect(() => expandRenames(['lib/one.ts a.ts', 'lib/one.ts b.ts'], tracked)).toThrow(/lib\/one\.ts/)
   })
 
-  it('REQ-SHARED-079 rejects a line with no tracked file and a malformed line', () => {
+  it('rejects a line with no tracked file and a malformed line', () => {
     expect(() => expandRenames(['nowhere/x a/b'], tracked)).toThrow(/nowhere\/x/)
     expect(() => expandRenames(['only-one-column'], tracked)).toThrow(/only-one-column/)
   })
 })
 
-describe('REQ-SHARED-079 externalImporters', () => {
-  it('REQ-SHARED-079 lists importers outside the move with the names they use', () => {
+describe('externalImporters', () => {
+  it('lists importers outside the move with the names they use', () => {
     const out = externalImporters(renames, [
       {
         path: 'app/page.tsx',
@@ -230,7 +230,7 @@ describe('REQ-SHARED-079 externalImporters', () => {
   })
 })
 
-describe('REQ-SHARED-079 CLI', () => {
+describe('CLI', () => {
   const script = resolve('scripts/dev/move-files.mjs')
   const dirs: string[] = []
   afterAll(() => dirs.forEach((d) => rmSync(d, { recursive: true, force: true })))
@@ -255,13 +255,13 @@ describe('REQ-SHARED-079 CLI', () => {
   }
   const run = (cwd: string, ...args: string[]) => spawnSync(process.execPath, [script, ...args], { cwd, encoding: 'utf8' })
 
-  it('REQ-SHARED-079 prints the usage and exits with 1 when no map is given', () => {
+  it('prints the usage and exits with 1 when no map is given', () => {
     const out = spawnSync(process.execPath, ['scripts/dev/move-files.mjs'], { encoding: 'utf8' })
     expect(out.status).toBe(1)
     expect(out.stderr).toContain('사용법')
   })
 
-  it('REQ-SHARED-079 only prints the plan without --write', () => {
+  it('only prints the plan without --write', () => {
     const root = repo()
     const out = run(root, 'map.txt')
     expect(out.status).toBe(0)
@@ -270,7 +270,7 @@ describe('REQ-SHARED-079 CLI', () => {
     expect(readFileSync(join(root, 'app/page.tsx'), 'utf8')).toContain('@/lib/gizmo/guide')
   })
 
-  it('REQ-SHARED-079 moves with git mv and rewrites the importers with --write', () => {
+  it('moves with git mv and rewrites the importers with --write', () => {
     const root = repo()
     const out = run(root, 'map.txt', '--write')
     expect(out.status).toBe(0)
@@ -280,7 +280,7 @@ describe('REQ-SHARED-079 CLI', () => {
     expect(git(root, 'status', '--short').stdout).toContain('R  lib/gizmo/guide.ts -> features/gizmo/lib/guide.ts')
   })
 
-  it('REQ-SHARED-079 also scans package.json and .github workflows', () => {
+  it('also scans package.json and .github workflows', () => {
     const root = repo()
     put(root, 'package.json', '{ "scripts": { "build": "esbuild lib/gizmo/guide.ts --bundle" } }\n')
     put(root, '.github/workflows/ci.yml', "paths:\n  - 'lib/gizmo/guide.ts'\n")
@@ -291,7 +291,7 @@ describe('REQ-SHARED-079 CLI', () => {
     expect(readFileSync(join(root, '.github/workflows/ci.yml'), 'utf8')).toContain("'features/gizmo/lib/guide.ts'")
   })
 
-  it('REQ-SHARED-079 refuses when the target already exists', () => {
+  it('refuses when the target already exists', () => {
     const root = repo()
     put(root, 'features/gizmo/lib/guide.ts', 'other\n')
     const out = run(root, 'map.txt', '--write')
@@ -300,7 +300,7 @@ describe('REQ-SHARED-079 CLI', () => {
     expect(existsSync(join(root, 'lib/gizmo/guide.ts'))).toBe(true)
   })
 
-  it('REQ-SHARED-079 refuses when a file it would touch has unstaged changes', () => {
+  it('refuses when a file it would touch has unstaged changes', () => {
     const root = repo()
     put(root, 'app/page.tsx', "import { guide } from '@/lib/gizmo/guide'\n// edited\n")
     const out = run(root, 'map.txt', '--write')
@@ -309,7 +309,7 @@ describe('REQ-SHARED-079 CLI', () => {
     expect(existsSync(join(root, 'lib/gizmo/guide.ts'))).toBe(true)
   })
 
-  it('REQ-SHARED-079 refuses a map that lists the same file twice', () => {
+  it('refuses a map that lists the same file twice', () => {
     const root = repo()
     put(root, 'dup.txt', 'lib/gizmo features/gizmo/lib\nlib/gizmo/guide.ts features/other/guide.ts\n')
     const out = run(root, 'dup.txt', '--write')

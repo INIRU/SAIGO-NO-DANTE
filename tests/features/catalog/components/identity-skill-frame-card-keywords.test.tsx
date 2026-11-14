@@ -37,20 +37,20 @@ const card = (description: string) => {
 }
 const tokens = (html: string) => html.match(/keyword-token/g)?.length ?? 0
 
-describe('REQ-KEYWORDS-008 a skill card outside the identity page reads its text like the identity page', () => {
-  it('REQ-KEYWORDS-008 draws the plain keywords of older text from the identity\'s own keywords, with no set handed over', () => {
+describe('a skill card outside the identity page reads its text like the identity page', () => {
+  it('draws the plain keywords of older text from the identity\'s own keywords, with no set handed over', () => {
     // 진동 ×2, 침잠 ×2, the [Sinking] ref and 침잠쇄도: as on the identity page.
     expect(tokens(card(DONGBAEK))).toBe(6)
   })
 
-  it('REQ-KEYWORDS-008 colours the identity\'s own skill names by their sin', () => {
+  it('colours the identity\'s own skill names by their sin', () => {
     const html = card('침잠의 파도 후 침잠 3 부여')
     expect(html).toContain(`color:${SIN_COLORS.gloom}`)
     expect(tokens(html)).toBe(1)
   })
 })
 
-describe('REQ-CATALOG-037 a skill card outside the identity page draws the game skill box', () => {
+describe('a skill card outside the identity page draws the game skill box', () => {
   it('uses the game frame and name plate instead of the old frame and banner', () => {
     const html = card(DONGBAEK)
     expect(html).toContain('ui/skill-frame/gloom-3.webp')

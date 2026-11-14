@@ -9,8 +9,8 @@ function routeFiles(dir: string): string[] {
   })
 }
 
-describe('REQ-SHARED-100 deck API responses carry no database error text', () => {
-  it('REQ-SHARED-100 no NextResponse.json body in app/api/decks holds an error message', () => {
+describe('deck API responses carry no database error text', () => {
+  it('no NextResponse.json body in app/api/decks holds an error message', () => {
     const offenders = routeFiles(join(process.cwd(), 'app/api/decks')).flatMap(file =>
       readFileSync(file, 'utf8').split('\n')
         .map((text, i) => ({ text, line: i + 1 }))

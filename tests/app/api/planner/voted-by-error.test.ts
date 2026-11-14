@@ -32,25 +32,25 @@ import { GET } from '@/app/api/planner/route'
 
 const get = (query: string) => GET(new NextRequest('http://localhost/api/planner?' + query))
 
-describe('REQ-PLANNER-053 planner list votedBy and userId', () => {
+describe('planner list votedBy and userId', () => {
   beforeEach(() => { state.votesError = null; state.plansError = null; vi.spyOn(console, 'error').mockImplementation(() => {}) })
 
-  it('REQ-PLANNER-053 a votedBy lookup DB error is a 500 with a fixed message, not an empty list', async () => {
+  it('a votedBy lookup DB error is a 500 with a fixed message, not an empty list', async () => {
     state.votesError = { message: 'relation "md_plan_votes" does not exist' }
     const res = await get('votedBy=me')
     expect(res.status).toBe(500)
     expect(JSON.stringify(await res.json())).not.toContain('md_plan_votes')
   })
 
-  it('REQ-PLANNER-053 a userId that is not "me" is a 400', async () => {
+  it('a userId that is not "me" is a 400', async () => {
     expect((await get('userId=someone-else')).status).toBe(400)
   })
 
-  it('REQ-PLANNER-053 userId=me still works', async () => {
+  it('userId=me still works', async () => {
     expect((await get('userId=me')).status).toBe(200)
   })
 
-  it('REQ-SHARED-100 the list query error does not leak the DB message', async () => {
+  it('the list query error does not leak the DB message', async () => {
     state.plansError = { message: 'permission denied for table md_plans' }
     const res = await get('')
     expect(res.status).toBe(500)

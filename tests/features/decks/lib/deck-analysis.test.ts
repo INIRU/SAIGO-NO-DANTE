@@ -24,7 +24,7 @@ describe('deck analysis', () => {
     })
   })
 
-  it('REQ-DECKS-017 counts each of S1–S3 once per identity, with defensive and EGO skills apart', () => {
+  it('counts each of S1–S3 once per identity, with defensive and EGO skills apart', () => {
     const egoSkills = [{ skill_type: 'slash', skill_order: 1 }, { skill_type: 'slash', skill_order: 1, construe_level: 2 }, { skill_type: 'blunt', category: 'corrosion', skill_order: 1 }]
     // One slash, one pierce, one blunt. The S3 variant and the counter variant of the evade are the same skills transformed.
     expect(computeAttackProfile([{ skills, egos: [{ skills: egoSkills }] }])).toEqual({
@@ -36,7 +36,7 @@ describe('deck analysis', () => {
     expect(computeAttackProfile([{ skills }, { skills, distribution: [0, 2, 4] }]).skills).toEqual({ slash: 2, pierce: 2, blunt: 2 })
   })
 
-  it('REQ-DECKS-017 counts the deployed identities only, and every placed one while nobody is deployed', () => {
+  it('counts the deployed identities only, and every placed one while nobody is deployed', () => {
     const bench = { skills, deployed: false, egos: [{ cost: [1] }, { skills: [{ skill_type: 'pierce' }] }] }
     expect(computeDeckResources([{ skills, deployed: true, egos: [{ cost: [1, 0, 0, 0, 0, 0, 2], skills: [{ skill_type: 'blunt' }] }] }, bench])).toMatchObject({
       identities: 1, deployedOnly: true,
@@ -55,7 +55,7 @@ describe('deck analysis', () => {
     expect(computeDeckResources([{ skills, deployed: true }])).toMatchObject({ identities: 1, deployedOnly: true })
   })
 
-  it('REQ-DECKS-001 sums EGO costs in sin order', () => {
+  it('sums EGO costs in sin order', () => {
     expect(computeEgoCostTotals([[1, 0, 0, 0, 0, 0, 2], null, [1]])).toMatchObject({ wrath: 2, envy: 2 })
   })
 })

@@ -9,14 +9,14 @@ const LANGS = ['ko', 'en', 'ja'] as const
 const wrap = (content: JSONContent[]) => ({ type: 'doc', content })
 const walk = (nodes: JSONContent[], visit: (n: JSONContent) => void) => nodes.forEach(n => { visit(n); if (n.content) walk(n.content, visit) })
 
-describe('REQ-COMMUNITY-065 note templates', () => {
-  it('REQ-COMMUNITY-065 the basic template is the three headings it always was', () => {
+describe('note templates', () => {
+  it('the basic template is the three headings it always was', () => {
     expect(basicTemplate('ko').filter(n => n.type === 'heading').map(n => n.content![0].text)).toEqual(['운용 순서', '핵심 기프트', '대체 편성'])
   })
-  it('REQ-COMMUNITY-065 the guide template has enough headings for a table of contents, in every language', () => {
+  it('the guide template has enough headings for a table of contents, in every language', () => {
     for (const lang of LANGS) expect(collectHeadings(normalizeDocument(wrap(guideTemplate(lang)))!).length).toBeGreaterThanOrEqual(NOTE_TOC_MIN)
   })
-  it('REQ-COMMUNITY-065 the guide template shows the new tools: sin colours, a highlight, empty slots and an accordion', () => {
+  it('the guide template shows the new tools: sin colours, a highlight, empty slots and an accordion', () => {
     for (const lang of LANGS) {
       const types = new Set<string>(), marks = new Set<string>(), slots: string[] = []
       walk(guideTemplate(lang), n => {
@@ -30,12 +30,12 @@ describe('REQ-COMMUNITY-065 note templates', () => {
       expect(slots).toEqual(expect.arrayContaining(['identity', 'gift']))
     }
   })
-  it('REQ-COMMUNITY-065 every node and mark of the templates passes the saved-document whitelist unchanged', () => {
+  it('every node and mark of the templates passes the saved-document whitelist unchanged', () => {
     for (const lang of LANGS) for (const template of [guideTemplate(lang), basicTemplate(lang)]) {
       expect(normalizeDocument(wrap(template))!.content).toEqual(template)
     }
   })
-  it('REQ-COMMUNITY-065 the three languages differ and use the game\'s own sin names', () => {
+  it('the three languages differ and use the game\'s own sin names', () => {
     const text = (lang: typeof LANGS[number]) => JSON.stringify(guideTemplate(lang))
     expect(text('ko')).not.toBe(text('en'))
     expect(text('ja')).not.toBe(text('en'))

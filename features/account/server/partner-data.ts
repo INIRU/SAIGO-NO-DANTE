@@ -54,7 +54,7 @@ const CATALOGS: Record<string, { table: string; columns: string; detail?: string
 
 /**
  * Every row of a partner catalog in all three languages, cached until a game data sync invalidates it.
- * one request, and PostgREST returns at most 1,000 rows. The largest catalog has 456 (gifts); page it when one nears 1,000.
+ * One request, and PostgREST returns at most 1,000 rows. The largest catalog has 456 (gifts); page it when one nears 1,000.
  */
 export async function loadCatalog(resource: string): Promise<Row[]> {
   'use cache'

@@ -32,7 +32,7 @@ describe('fold', () => {
   })
 })
 
-describe('search ranking (REQ-SHARED-050, REQ-SHARED-008)', () => {
+describe('search ranking', () => {
   it('a sinner name finds that sinner first, then their identities and E.G.O through the sinner context', () => {
     const r = hrefs('료슈')
     expect(r[0]).toBe('/sinners/ryoshu')
@@ -75,7 +75,7 @@ describe('search ranking (REQ-SHARED-050, REQ-SHARED-008)', () => {
   })
 })
 
-describe('search reasons (REQ-SHARED-051)', () => {
+describe('search reasons', () => {
   it('marks the matched letters of the shown label', () => {
     const hit = search(entries, 'lcb수감')[0]
     expect(hit.reasons[0]).toEqual({ field: 'label', text: 'LCB 수감자', ranges: [[0, 6]] })

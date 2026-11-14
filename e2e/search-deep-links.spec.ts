@@ -4,7 +4,7 @@ import type { IndexEntry, SearchType } from '@/lib/search/engine'
 test.use({ channel: 'chrome' })
 test.setTimeout(120000)
 
-// REQ-SHARED-052, REQ-MIRROR-DUNGEON-025, REQ-KEYWORDS-009: 검색 결과 주소는 그 대상을 연다
+// 검색 결과 주소는 그 대상을 연다
 const MODAL_TYPES: SearchType[] = ['egoGift', 'keyword', 'themePack', 'event']
 
 test('search index links open the matching detail', async ({ page, request }) => {

@@ -24,10 +24,10 @@ async function load() {
     renderToStaticMarkup(<KeywordProvider keywords={{}}><Formatter text={text} options={options} /></KeywordProvider>)
 }
 
-describe('REQ-SHARED-019 reference table is fetched only when a text needs it', () => {
+describe('reference table is fetched only when a text needs it', () => {
   beforeEach(() => { requestedKeys.length = 0 })
 
-  it('REQ-SHARED-019 does not request the table for older stored text or plain text', async () => {
+  it('does not request the table for older stored text or plain text', async () => {
     const render = await load()
     render('[사용시] 화상 3 부여')
     render('[On Hit] Inflict 3 Burn {0}')
@@ -35,10 +35,10 @@ describe('REQ-SHARED-019 reference table is fetched only when a text needs it', 
     expect(refsRequests()).toEqual([])
   })
 
-  // REQ-SHARED-021: game text always goes through GameText now, so a text with only styling tags (no ref, link or
+  // Game text always goes through GameText now, so a text with only styling tags (no ref, link or
   // sprite) has nothing to look up in the table; the client asks for it later through wantGameTextRefs, which a
   // server render cannot observe.
-  it('REQ-SHARED-019 requests the table once a text holds a ref, and not for plain or only styled text', async () => {
+  it('requests the table once a text holds a ref, and not for plain or only styled text', async () => {
     const render = await load()
     render('화상 3 부여')
     render('<b>굵게</b>')

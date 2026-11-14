@@ -11,8 +11,8 @@ const roll = (seed: string, deploy: { min: number; max: number } | null) =>
 const encode = (result: ReturnType<typeof roll>) => encodeRandomResult(SINNERS, IDENTITIES, EGOS, result)
 const decode = (code: string) => decodeTeamCode(code, SINNERS, IDENTITIES, EGOS)!
 
-describe('REQ-TOOLS-016 the formation code carries the random order', () => {
-  it('REQ-TOOLS-016 writes exactly the rolled count and order, and nothing for the unnumbered sinners', async () => {
+describe('the formation code carries the random order', () => {
+  it('writes exactly the rolled count and order, and nothing for the unnumbered sinners', async () => {
     for (const seed of ['a', 'b', 'c', 'd', 'e', 'f']) {
       const result = roll(seed, { min: 1, max: 12 })
       const decoded = decode(await encode(result))
@@ -21,7 +21,7 @@ describe('REQ-TOOLS-016 the formation code carries the random order', () => {
     }
   })
 
-  it('REQ-TOOLS-016 keeps every identity and E.G.O of the roll, numbered or not', async () => {
+  it('keeps every identity and E.G.O of the roll, numbered or not', async () => {
     const result = roll('whole', { min: 3, max: 3 })
     const decoded = decode(await encode(result))
     for (const id of sinnerIds()) {
@@ -30,15 +30,15 @@ describe('REQ-TOOLS-016 the formation code carries the random order', () => {
     }
   })
 
-  it('REQ-TOOLS-005 keeps the old behaviour without a random order: all twelve in sinner order', async () => {
+  it('keeps the old behaviour without a random order: all twelve in sinner order', async () => {
     const result = roll('plain', null)
     expect(result.order).toBeNull()
     expect(decode(await encode(result)).formationOrder).toEqual(sinnerIds())
   })
 })
 
-describe('REQ-TOOLS-020 sending the roll on', () => {
-  it('REQ-TOOLS-020 turns the code into a planner state with the same numbers and bench for the rest', async () => {
+describe('sending the roll on', () => {
+  it('turns the code into a planner state with the same numbers and bench for the rest', async () => {
     const result = roll('planner', { min: 4, max: 4 })
     const state = plannerStateFromCode(await encode(result), SINNERS as never, IDENTITIES as never, EGOS as never)!
     expect(state.identitySlots).toHaveLength(12)
@@ -51,11 +51,11 @@ describe('REQ-TOOLS-020 sending the roll on', () => {
     expect(state.activeTab).toBe('deck')
   })
 
-  it('REQ-TOOLS-020 gives nothing for a code that is not one', () => {
+  it('gives nothing for a code that is not one', () => {
     expect(plannerStateFromCode('nope', SINNERS as never, IDENTITIES as never, EGOS as never)).toBeNull()
   })
 
-  it('REQ-TOOLS-020 opens the deck builder with the code in the formation query', () => {
+  it('opens the deck builder with the code in the formation query', () => {
     expect(deckLinkFromCode('a+b/c=')).toBe('/decks/new?formation=a%2Bb%2Fc%3D')
   })
 })

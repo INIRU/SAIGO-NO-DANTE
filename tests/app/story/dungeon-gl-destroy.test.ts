@@ -62,8 +62,8 @@ function make() {
   return { dgl: dgl as unknown as { get(url: string): unknown; font(url: string): unknown; webFont(url: string): unknown; onLoad: () => void; destroy(): void }, calls }
 }
 
-describe('REQ-SHARED-101 DungeonGL after destroy()', () => {
-  it('REQ-SHARED-101 closes a picture that arrives after destroy() and makes no texture', async () => {
+describe('DungeonGL after destroy()', () => {
+  it('closes a picture that arrives after destroy() and makes no texture', async () => {
     const { dgl, calls } = make()
     dgl.get('a.png')
     dgl.destroy()
@@ -75,7 +75,7 @@ describe('REQ-SHARED-101 DungeonGL after destroy()', () => {
     expect(calls.createTexture).toBe(before)
   })
 
-  it('REQ-SHARED-101 still makes the texture of a picture that arrives before destroy()', async () => {
+  it('still makes the texture of a picture that arrives before destroy()', async () => {
     const { dgl, calls } = make()
     const onLoad = vi.fn()
     dgl.onLoad = onLoad
@@ -88,7 +88,7 @@ describe('REQ-SHARED-101 DungeonGL after destroy()', () => {
     expect(onLoad).toHaveBeenCalledTimes(1)
   })
 
-  it('REQ-SHARED-101 does not register a font file that finishes loading after destroy()', async () => {
+  it('does not register a font file that finishes loading after destroy()', async () => {
     const { dgl } = make()
     dgl.font('a.ttf')
     dgl.destroy()
@@ -98,7 +98,7 @@ describe('REQ-SHARED-101 DungeonGL after destroy()', () => {
     expect(added).toEqual([])
   })
 
-  it('REQ-SHARED-101 does not register a web font that finishes loading after destroy()', async () => {
+  it('does not register a web font that finishes loading after destroy()', async () => {
     const { dgl } = make()
     dgl.webFont('a.woff2')
     dgl.destroy()
@@ -107,7 +107,7 @@ describe('REQ-SHARED-101 DungeonGL after destroy()', () => {
     expect(added).toEqual([])
   })
 
-  it('REQ-SHARED-101 removes the fonts it registered from document.fonts on destroy()', async () => {
+  it('removes the fonts it registered from document.fonts on destroy()', async () => {
     const { dgl } = make()
     dgl.font('a.ttf')
     dgl.webFont('b.woff2')
@@ -119,7 +119,7 @@ describe('REQ-SHARED-101 DungeonGL after destroy()', () => {
     expect(deleted.sort()).toEqual([...added].sort())
   })
 
-  it('REQ-SHARED-101 gives two instances font names that never meet', () => {
+  it('gives two instances font names that never meet', () => {
     const first = make().dgl
     const second = make().dgl
     first.webFont('a.woff2')

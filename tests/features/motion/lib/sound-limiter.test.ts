@@ -45,8 +45,8 @@ function reference(): Proc {
   }
 }
 
-describe('REQ-MOTION-036 the sound limiter is light on the audio thread', () => {
-  it('REQ-MOTION-036 limits exactly as the sample-by-sample search did (bursts over the ceiling, silence, a ceiling change)', () => {
+describe('the sound limiter is light on the audio thread', () => {
+  it('limits exactly as the sample-by-sample search did (bursts over the ceiling, silence, a ceiling change)', () => {
     const a = worklet(), b = reference()
     let seed = 7
     const rnd = () => ((seed = (seed * 1103515245 + 12345) % 2 ** 31) / 2 ** 31) * 2 - 1

@@ -13,8 +13,8 @@ function walk(dir: string): string[] {
 
 const read = (file: string) => readFileSync(join(ROOT, file), 'utf8')
 
-describe('REQ-SHARED-030 failed images leave only their frame', () => {
-  it('REQ-SHARED-030 no fallback component, placeholder drawings or pending text remain', () => {
+describe('failed images leave only their frame', () => {
+  it('no fallback component, placeholder drawings or pending text remain', () => {
     // A failed next/image with an empty alt draws nothing, so the gift slot or card face stays as it is.
     expect(existsSync(join(ROOT, 'components/ui/ImageWithFallback.tsx'))).toBe(false)
     expect(existsSync(join(ROOT, 'public/placeholders'))).toBe(false)

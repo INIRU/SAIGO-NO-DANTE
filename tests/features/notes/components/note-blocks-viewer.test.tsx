@@ -26,7 +26,7 @@ it('renders a card slot only when a deck or plan is chosen', () => {
   expect(render(p('a'), { type: 'noteCard', attrs: { kind: 'deck', id: '' } })).not.toContain('note-card')
   expect(render({ type: 'noteCard', attrs: { kind: 'deck', id: 'd1' } })).toContain('note-card')
 })
-it('REQ-COMMUNITY-044 a callout carries a head with its kind above the text', () => {
+it('a callout carries a head with its kind above the text', () => {
   const html = render({ type: 'noteCallout', attrs: { variant: 'warning' }, content: [p('조심')] }, { type: 'noteCallout', attrs: { variant: 'tip' }, content: [p('팁 내용')] })
   expect(html).toMatch(/note-callout-head[^>]*>[\s\S]*주의[\s\S]*조심/)
   expect(html).toMatch(/note-callout-head[^>]*>[\s\S]*팁<[\s\S]*팁 내용/)

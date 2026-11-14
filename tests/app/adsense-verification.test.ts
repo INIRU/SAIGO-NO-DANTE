@@ -17,7 +17,7 @@ describe('AdSense site verification', () => {
     expect(layout).toMatch(/other: \{[^}]*'google-adsense-account': ADSENSE_ACCOUNT/)
   })
 
-  it('REQ-SHARED-067 loads the AdSense code with the account in the head of every page', () => {
+  it('loads the AdSense code with the account in the head of every page', () => {
     const layout = readFileSync(resolve(root, 'app/[lang]/layout.tsx'), 'utf8')
     expect(layout).toContain('https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_ACCOUNT}')
     expect(layout).toMatch(/<script async src=\{`https:\/\/pagead2\.googlesyndication\.com[^`]*`\} crossOrigin="anonymous"/)

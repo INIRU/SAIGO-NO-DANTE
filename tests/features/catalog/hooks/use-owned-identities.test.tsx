@@ -44,8 +44,8 @@ const ask = () => {
   return mocks.swr.at(-1)!
 }
 
-describe('REQ-CATALOG-038 useOwnedIdentities for a visitor who is not signed in', () => {
-  it('REQ-CATALOG-038 reads the code saved on the device and never asks for a profile', async () => {
+describe('useOwnedIdentities for a visitor who is not signed in', () => {
+  it('reads the code saved on the device and never asks for a profile', async () => {
     mocks.status = 'unauthenticated'
     store['limbus-collection'] = 'DEVICE'
     const { key, fetcher } = ask()
@@ -57,20 +57,20 @@ describe('REQ-CATALOG-038 useOwnedIdentities for a visitor who is not signed in'
     expect(fetched).not.toContain('/api/profile')
   })
 
-  it('REQ-CATALOG-038 answers null without downloading the catalog when no code is saved', async () => {
+  it('answers null without downloading the catalog when no code is saved', async () => {
     mocks.status = 'unauthenticated'
     expect(await ask().fetcher()).toBeNull()
     expect(fetched).toEqual([])
   })
 
-  it('REQ-CATALOG-038 waits while the session is still loading', () => {
+  it('waits while the session is still loading', () => {
     mocks.status = 'loading'
     expect(ask().key).toBeNull()
   })
 })
 
-describe('REQ-CATALOG-038 useOwnedIdentities for a signed-in user', () => {
-  it('REQ-CATALOG-038 keeps using the profile code under its own key', async () => {
+describe('useOwnedIdentities for a signed-in user', () => {
+  it('keeps using the profile code under its own key', async () => {
     mocks.status = 'authenticated'
     const { key, fetcher } = ask()
     mocks.status = 'unauthenticated'

@@ -57,7 +57,7 @@ const REFS = [{ id: 'Combustion', name: '화상', name_en: 'Burn', name_jp: '火
 type Keyword = { name: string; name_en: string | null; name_jp: string | null; description: string | null; description_en: string | null }
 const keywordsOf = (props: Record<string, unknown> | null) => props?.keywords as Keyword[]
 
-describe('REQ-KEYWORDS-004 keywords page texts come from the game text references', () => {
+describe('keywords page texts come from the game text references', () => {
   beforeEach(() => {
     mocks.cacheLife.mockClear()
     mocks.getGameTextRefNames.mockReset()
@@ -67,7 +67,7 @@ describe('REQ-KEYWORDS-004 keywords page texts come from the game text reference
     mocks.refsError = false
   })
 
-  it('REQ-KEYWORDS-004 hands the client the reference names and descriptions of a row with a game_id and keyword_meta\'s for the others', async () => {
+  it('hands the client the reference names and descriptions of a row with a game_id and keyword_meta\'s for the others', async () => {
     const keywords = keywordsOf(clientProps(await KeywordsPage()))
     expect(keywords[0]).toMatchObject({ name: '화상', name_en: 'Burn', name_jp: '火傷', description: '턴 종료 시 피해', description_en: 'Take damage' })
     expect(keywords[0]).not.toHaveProperty('game_id')
@@ -75,14 +75,14 @@ describe('REQ-KEYWORDS-004 keywords page texts come from the game text reference
     expect(lives()).toEqual(['max'])
   })
 
-  it('REQ-KEYWORDS-004 still lists every keyword from keyword_meta before the game_id migration is applied', async () => {
+  it('still lists every keyword from keyword_meta before the game_id migration is applied', async () => {
     mocks.missingGameId = true
     const keywords = keywordsOf(clientProps(await KeywordsPage()))
     expect(keywords.map(keyword => keyword.name)).toEqual(['화상', '호흡'])
     expect(keywords[0].name_en).toBe('old Burn')
   })
 
-  it('REQ-KEYWORDS-004 builds the page from keyword_meta and caches it only briefly while the reference texts cannot be read', async () => {
+  it('builds the page from keyword_meta and caches it only briefly while the reference texts cannot be read', async () => {
     mocks.refsError = true
     const error = vi.spyOn(console, 'error').mockImplementation(() => {})
     const keywords = keywordsOf(clientProps(await KeywordsPage()))

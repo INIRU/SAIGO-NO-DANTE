@@ -17,19 +17,19 @@ async function csp(env: Record<string, string | undefined>) {
 
 afterEach(() => vi.unstubAllEnvs())
 
-it('REQ-SHARED-046 HTTPS deployments (Vercel or the self-hosted server) upgrade insecure requests, local http does not', async () => {
+it('HTTPS deployments (Vercel or the self-hosted server) upgrade insecure requests, local http does not', async () => {
   expect(await csp({ VERCEL: '1', SELF_HOSTED: undefined })).toContain('upgrade-insecure-requests')
   expect(await csp({ VERCEL: undefined, SELF_HOSTED: '1' })).toContain('upgrade-insecure-requests')
   expect(await csp({ VERCEL: undefined, SELF_HOSTED: undefined })).not.toContain('upgrade-insecure-requests')
 })
 
-it('REQ-SHARED-047 the Cloudflare Web Analytics beacon may load and report', async () => {
+it('the Cloudflare Web Analytics beacon may load and report', async () => {
   const directives = await csp({})
   expect(directives.find(d => d.startsWith('script-src'))).toContain('https://static.cloudflareinsights.com')
   expect(directives.find(d => d.startsWith('connect-src'))).toContain('https://cloudflareinsights.com')
 })
 
-it('REQ-SHARED-067 the AdSense code may load its scripts, frames, pictures and reports', async () => {
+it('the AdSense code may load its scripts, frames, pictures and reports', async () => {
   const directives = await csp({})
   const directive = (name: string) => directives.find(d => d.startsWith(`${name} `)) ?? ''
   for (const host of ['https://pagead2.googlesyndication.com', 'https://*.googlesyndication.com', 'https://*.doubleclick.net', 'https://*.adtrafficquality.google', 'https://fundingchoicesmessages.google.com']) {

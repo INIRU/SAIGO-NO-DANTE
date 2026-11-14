@@ -105,7 +105,7 @@ it('names a sold gift through one misread glyph only when no other gift is close
 })
 
 // Word boxes as the shipped OCR read them from sale samples (scripts/vision/replay_sale_samples.ts, 2026-10-02).
-it('REQ-ASSIST-061 reads the cost in the 16:9 game view centred in the capture, whatever the window\'s shape', () => {
+it('reads the cost in the 16:9 game view centred in the capture, whatever the window\'s shape', () => {
   const box = (text: string, left: number, top: number, width: number, height: number) => ({ text, left, top, width, height })
   // A nearly square game window (1498x1516 shared, 1280x1295 frame): the sell window sits mid-screen, the cost at 32% of the height.
   expect(sellCost([box('33233', 979, 393, 113, 37), box('E.G.O 기프트판매', 537, 408, 205, 31), box('등급순', 1035, 453, 53, 23),

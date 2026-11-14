@@ -1,4 +1,4 @@
-// Push-only service worker (REQ-SHARED-059), registered with the scope /push/ so it controls no page: the caching worker
+// Push-only service worker, registered with the scope /push/ so it controls no page: the caching worker
 // (sw.js) keeps its own lifecycle, and development builds can keep this one while clearing the other.
 
 self.addEventListener('install', () => self.skipWaiting())

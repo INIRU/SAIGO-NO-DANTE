@@ -23,7 +23,7 @@ it('shows conditional alternatives and fractional probabilities without losing t
   expect(eventResultCondition('Prob_1', 'ko')).toBe('')
 })
 
-it('REQ-MIRROR-DUNGEON-024 reads each option\'s favoured sins from the check event it leads to, by option number', () => {
+it('reads each option\'s favoured sins from the check event it leads to, by option number', () => {
   const rows = [
     { id: 1, option_index: 0, sort_order: 0, next_event_id: 10 },
     { id: 2, option_index: 1, sort_order: 100, next_event_id: 20 },

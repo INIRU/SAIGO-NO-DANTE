@@ -13,7 +13,7 @@ import { pickMotionSkillRow } from '@/features/motion/server/feed'
 
 beforeEach(() => { state.fail = false; state.skill = { id: 's1', name: '여명의 섬광', coins: 2 } })
 
-it('REQ-MOTION-004 serves the site\'s names for the motion list in the asked language, cached publicly, and 503 when the database is down', async () => {
+it('serves the site\'s names for the motion list in the asked language, cached publicly, and 503 when the database is down', async () => {
   const res = await siteData(new Request('http://localhost/api/motion/site-data?lang=en'))
   expect(await res.json()).toEqual({ identities: [], egos: [], skillNames: [[1, 'en']], skillFrames: [], refs: null })
   expect(res.headers.get('cache-control')).toContain('public')
@@ -22,7 +22,7 @@ it('REQ-MOTION-004 serves the site\'s names for the motion list in the asked lan
   expect((await siteData(new Request('http://localhost/api/motion/site-data'))).status).toBe(503)
 })
 
-it('REQ-MOTION-005 returns the site\'s skill for a game skill id, 404 for one it does not have and 400 for a bad id', async () => {
+it('returns the site\'s skill for a game skill id, 404 for one it does not have and 400 for a bad id', async () => {
   const res = await skill(new Request('http://localhost/api/motion/skill?id=1021601&lang=ko'))
   expect(await res.json()).toEqual({ skill: { id: 's1', name: '여명의 섬광', coins: 2 } })
   expect((await skill(new Request('http://localhost/api/motion/skill?id=9999999'))).status).toBe(404)
@@ -31,7 +31,7 @@ it('REQ-MOTION-005 returns the site\'s skill for a game skill id, 404 for one it
   expect((await skill(new Request('http://localhost/api/motion/skill?id=1021601'))).status).toBe(503)
 })
 
-it('REQ-MOTION-005 shows the highest uptie of a skill, then its first variant', () => {
+it('shows the highest uptie of a skill, then its first variant', () => {
   expect(pickMotionSkillRow([
     { id: 'a', uptie_level: 3, variant_order: 1 }, { id: 'b', uptie_level: 4, variant_order: 2 }, { id: 'c', uptie_level: 4, variant_order: 1 },
   ])?.id).toBe('c')

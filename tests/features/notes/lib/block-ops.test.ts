@@ -18,43 +18,43 @@ const cursorIn = (state: EditorState, text: string, offset = 1) => {
   return state.apply(state.tr.setSelection(TextSelection.create(state.doc, found)))
 }
 
-describe('REQ-COMMUNITY-049 block duplicate and keyboard move', () => {
-  it('REQ-COMMUNITY-049 finds the block the caret sits in, or the selected block', () => {
+describe('block duplicate and keyboard move', () => {
+  it('finds the block the caret sits in, or the selected block', () => {
     const state = cursorIn(make(p('a'), p('b')), 'b')
     expect(blockAtSelection(state)?.node.textContent).toBe('b')
     const atom = make(p('a'), { type: 'noteAsset', attrs: { id: 'x' } })
     const selected = atom.apply(atom.tr.setSelection(NodeSelection.create(atom.doc, 3)))
     expect(blockAtSelection(selected)?.node.type.name).toBe('noteAsset')
   })
-  it('REQ-COMMUNITY-049 lists the paragraph first, then the callout around it', () => {
+  it('lists the paragraph first, then the callout around it', () => {
     const state = cursorIn(make({ type: 'noteCallout', content: [p('in')] }, p('out')), 'in')
     expect(blocksAtSelection(state).map(b => b.node.type.name)).toEqual(['paragraph', 'noteCallout'])
   })
-  it('REQ-COMMUNITY-049 moves the callout when its only paragraph has no sibling to swap with', () => {
+  it('moves the callout when its only paragraph has no sibling to swap with', () => {
     const state = cursorIn(make({ type: 'noteCallout', content: [p('in')] }, p('out')), 'in')
     const next = apply(state, moveBlockTr(state, 1))
     expect(next.doc.child(0).textContent).toBe('out')
     expect(next.selection.$from.parent.textContent).toBe('in')
   })
-  it('REQ-COMMUNITY-049 duplicates the block right after itself and selects the copy', () => {
+  it('duplicates the block right after itself and selects the copy', () => {
     const state = cursorIn(make(p('a'), p('b'), p('c')), 'b')
     const next = apply(state, duplicateBlockTr(state))
     expect(texts(next)).toEqual(['a', 'b', 'b', 'c'])
     expect(blockAtSelection(next)?.pos).toBeGreaterThan(blockAtSelection(state)!.pos)
   })
-  it('REQ-COMMUNITY-049 duplicates an atom block and selects the copy', () => {
+  it('duplicates an atom block and selects the copy', () => {
     const state = make({ type: 'noteAsset', attrs: { id: 'x' } }, p('a'))
     const selected = state.apply(state.tr.setSelection(NodeSelection.create(state.doc, 0)))
     const next = apply(selected, duplicateBlockTr(selected))
     expect(texts(next)).toEqual(['noteAsset:x', 'noteAsset:x', 'a'])
     expect(next.selection instanceof NodeSelection && next.selection.from).toBe(1)
   })
-  it('REQ-COMMUNITY-049 does not duplicate an upload placeholder', () => {
+  it('does not duplicate an upload placeholder', () => {
     const state = make({ type: 'noteUpload', attrs: { id: 'u' } }, p('a'))
     const selected = state.apply(state.tr.setSelection(NodeSelection.create(state.doc, 0)))
     expect(duplicateBlockTr(selected)).toBeNull()
   })
-  it('REQ-COMMUNITY-049 moves the block up or down and keeps the caret inside it', () => {
+  it('moves the block up or down and keeps the caret inside it', () => {
     const state = cursorIn(make(p('a'), p('bcd'), p('c')), 'bcd', 2)
     const down = apply(state, moveBlockTr(state, 1))
     expect(texts(down)).toEqual(['a', 'c', 'bcd'])
@@ -63,7 +63,7 @@ describe('REQ-COMMUNITY-049 block duplicate and keyboard move', () => {
     const up = apply(state, moveBlockTr(state, -1))
     expect(texts(up)).toEqual(['bcd', 'a', 'c'])
   })
-  it('REQ-COMMUNITY-049 stays put at the ends', () => {
+  it('stays put at the ends', () => {
     const first = cursorIn(make(p('a'), p('b')), 'a')
     expect(moveBlockTr(first, -1)).toBeNull()
     const last = cursorIn(make(p('a'), p('b')), 'b')

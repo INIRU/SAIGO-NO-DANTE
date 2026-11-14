@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test'
 test.use({ channel: 'chrome', viewport: { width: 1440, height: 900 } })
 
 for (const [board, path] of [['deck', '/ko/decks?browse=all'], ['plan', '/ko/planner/community?browse=all']] as const) {
-  test(`REQ-DECKS-015 ${board} board: the identity picker changes sinner without closing, and a pick filters and closes it`, async ({ page }) => {
+  test(`${board} board: the identity picker changes sinner without closing, and a pick filters and closes it`, async ({ page }) => {
     await page.goto(path)
     const aside = page.locator('aside').first()
     // By attribute, not by role: while the picker is open the page behind it is hidden from the accessibility tree.
@@ -47,7 +47,7 @@ for (const [board, path] of [['deck', '/ko/decks?browse=all'], ['plan', '/ko/pla
 }
 
 for (const [board, path] of [['deck', '/ko/decks?browse=all'], ['plan', '/ko/planner/community?browse=all']] as const) {
-  test(`REQ-DECKS-019 ${board} board: the picker's reset takes the pick off and keeps the sinner`, async ({ page }) => {
+  test(`${board} board: the picker's reset takes the pick off and keeps the sinner`, async ({ page }) => {
     await page.goto(path)
     const aside = page.locator('aside').first()
     const tile = (sinner: string) => aside.locator(`button[aria-label^="${sinner} 인격 선택"]`)
@@ -79,7 +79,7 @@ for (const [board, path] of [['deck', '/ko/decks?browse=all'], ['plan', '/ko/pla
 
 for (const [board, path] of [['deck', '/ko/decks?browse=all'], ['plan', '/ko/planner/community?browse=all']] as const) {
   // A filter written to the URL reached the page a render late: the pressed keyword showed as not pressed for a moment, then pressed again.
-  test(`REQ-DECKS-016 ${board} board: a pressed keyword stays pressed while the URL catches up`, async ({ page }) => {
+  test(`${board} board: a pressed keyword stays pressed while the URL catches up`, async ({ page }) => {
     await page.goto(path)
     const tiles = page.locator('aside').first().locator('button[title][aria-pressed]')
     await expect(tiles.first()).toBeVisible()

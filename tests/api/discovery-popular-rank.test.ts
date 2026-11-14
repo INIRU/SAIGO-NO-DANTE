@@ -42,7 +42,7 @@ vi.mock('@/lib/supabase/admin', () => ({
 
 import { GET } from '@/app/api/discovery/route'
 
-it('REQ-COMMUNITY-033 REQ-COMMUNITY-034 REQ-COMMUNITY-035 sends six existing posts in rank order, two per author', async () => {
+it('sends six existing posts in rank order, two per author', async () => {
   const response = await GET(new Request('http://localhost/api/discovery?kind=deck'))
   expect(response.status).toBe(200)
   const body = await response.json()

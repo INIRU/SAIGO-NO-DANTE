@@ -5,14 +5,14 @@ const c = (id: string, parent_id: string | null, minute: number) => ({ id, paren
 // a ← b ← d ← e, a ← c (later than b), f alone; g answers a comment that is gone.
 const all = [c('a', null, 0), c('b', 'a', 1), c('c', 'a', 2), c('d', 'b', 3), c('e', 'd', 4), c('f', null, 5), c('g', 'x', 6)]
 
-it('REQ-COMMUNITY-086 lists every reply under its root, each right after the one it answers, with its depth and the comment it answers', () => {
+it('lists every reply under its root, each right after the one it answers, with its depth and the comment it answers', () => {
   const threads = commentThreads(all)
   expect(threads.map(t => t.root.id)).toEqual(['a', 'f', 'g'])
   expect(threads[0].replies.map(r => [r.comment.id, r.depth, r.parent?.id])).toEqual([['b', 1, 'a'], ['d', 2, 'b'], ['e', 3, 'd'], ['c', 1, 'a']])
   expect(threads[1].replies).toEqual([])
 })
 
-it('REQ-COMMUNITY-086 counts a comment\'s whole subtree, so deleting it removes and uncounts every reply below', () => {
+it('counts a comment\'s whole subtree, so deleting it removes and uncounts every reply below', () => {
   expect([...descendantIds(all, 'a')].sort()).toEqual(['b', 'c', 'd', 'e'])
   expect([...descendantIds(all, 'd')]).toEqual(['e'])
   expect(descendantIds(all, 'f').size).toBe(0)

@@ -1,4 +1,4 @@
--- REQ-COMMUNITY-019..023. Run against a configured development database; every fixture is rolled back.
+-- Run against a configured development database; every fixture is rolled back.
 begin;
 do $$
 declare owner_id uuid; support_id uuid; hash text := repeat('a', 64); other text := repeat('b', 64);

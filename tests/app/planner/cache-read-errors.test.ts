@@ -38,35 +38,35 @@ import PlanDetailPage, { generateMetadata } from '@/app/[lang]/planner/community
 const params = Promise.resolve({ lang: 'ko' })
 const planParams = Promise.resolve({ lang: 'ko', id: 'p' })
 
-describe('REQ-SHARED-099 planner cache reads', () => {
+describe('planner cache reads', () => {
   beforeEach(() => {
     mocks.failTable = null
     mocks.sentry.mockClear()
     vi.spyOn(console, 'error').mockImplementation(() => {})
   })
 
-  it('REQ-SHARED-099 planner page throws instead of caching an empty result, and still reports to Sentry', async () => {
+  it('planner page throws instead of caching an empty result, and still reports to Sentry', async () => {
     mocks.failTable = 'ego_gifts'
     await expect(PlannerPage({ params })).rejects.toThrow()
     expect(mocks.sentry).toHaveBeenCalled()
   })
 
-  it('REQ-SHARED-099 planner page throws when the paged passives read fails', async () => {
+  it('planner page throws when the paged passives read fails', async () => {
     mocks.failTable = 'passives'
     await expect(PlannerPage({ params })).rejects.toThrow()
   })
 
-  it('REQ-SHARED-099 run page throws instead of caching an empty result', async () => {
+  it('run page throws instead of caching an empty result', async () => {
     mocks.failTable = 'md_events'
     await expect(RunPage({ params })).rejects.toThrow()
   })
 
-  it('REQ-SHARED-099 plan detail game data throws instead of caching an empty result', async () => {
+  it('plan detail game data throws instead of caching an empty result', async () => {
     mocks.failTable = 'ego_gift_themes'
     await expect(PlanDetailPage({ params: planParams })).rejects.toThrow('db down')
   })
 
-  it('REQ-PLANNER-054 a plan read error throws and is not a not-found', async () => {
+  it('a plan read error throws and is not a not-found', async () => {
     mocks.failTable = 'md_plans'
     await expect(generateMetadata({ params: planParams })).rejects.toThrow('db down')
     await expect(PlanDetailPage({ params: planParams })).rejects.toThrow('db down')

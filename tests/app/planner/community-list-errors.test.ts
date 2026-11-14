@@ -14,38 +14,38 @@ const catchAfter = (source: string, nth: number) => {
   return rest.slice(from, rest.indexOf('.finally(', from))
 }
 
-describe('REQ-PLANNER-053 community list errors', () => {
-  it('REQ-PLANNER-053 a failed first page shows an error, empties the list and stops loading more', () => {
+describe('community list errors', () => {
+  it('a failed first page shows an error, empties the list and stops loading more', () => {
     const handler = catchAfter(community, 0)
     expect(handler).toContain('showError(')
     expect(handler).toContain('setPlans([])')
     expect(handler).toContain('setHasMore(false)')
   })
 
-  it('REQ-PLANNER-053 a failed load-more shows an error and stops loading more, without repeating the request', () => {
+  it('a failed load-more shows an error and stops loading more, without repeating the request', () => {
     const handler = catchAfter(community, 1)
     expect(handler).toContain('showError(')
     expect(handler).toContain('setHasMore(false)')
   })
 
-  it('REQ-PLANNER-053 the setPlans updater has no side effects', () => {
+  it('the setPlans updater has no side effects', () => {
     const updater = community.match(/setPlans\(prev => \{[\s\S]*?\n {8}\}\)/)?.[0] ?? ''
     expect(updater).not.toMatch(/setHasMore|offsetRef/)
   })
 
-  it('REQ-PLANNER-053 a failed vote is reported', () => {
+  it('a failed vote is reported', () => {
     const vote = detail.slice(detail.indexOf('const handleVote'), detail.indexOf('const difficultyLabel'))
     expect(vote).toContain("showError(tDetail('voteFailed'))")
     expect(vote).not.toContain('/* 무시 */')
   })
 
-  it('REQ-PLANNER-053 a failed comment list is reported and a late response for another plan is ignored', () => {
+  it('a failed comment list is reported and a late response for another plan is ignored', () => {
     const fetcher = comments.slice(comments.indexOf('const fetchComments'), comments.indexOf('useEffect(() => {'))
     expect(fetcher).toContain("showError(tDetail('commentsLoadFailed'))")
     expect(fetcher).toMatch(/latestRequest\.current === requestId/)
   })
 
-  it('REQ-PLANNER-053 the plan view is counted once per plan per browser session', () => {
+  it('the plan view is counted once per plan per browser session', () => {
     const effect = detail.slice(detail.indexOf('// 조회수 증가'), detail.indexOf('// 추천 상태 확인'))
     expect(effect).toContain('sessionStorage')
     expect(effect).toContain('/view')

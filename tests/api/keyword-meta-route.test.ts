@@ -5,10 +5,10 @@ vi.mock('@/lib/keywords/server-data', () => ({ getKeywordData: mocks.getKeywordD
 
 import { GET } from '@/app/api/keyword-meta/route'
 
-describe('REQ-KEYWORDS-004 /api/keyword-meta serves the same descriptions as the catalogue', () => {
+describe('/api/keyword-meta serves the same descriptions as the catalogue', () => {
   beforeEach(() => { mocks.getKeywordData.mockReset() })
 
-  it('REQ-KEYWORDS-004 lists name, description, max_stack and effect_type from the catalogue (descriptions from the references)', async () => {
+  it('lists name, description, max_stack and effect_type from the catalogue (descriptions from the references)', async () => {
     mocks.getKeywordData.mockResolvedValue({
       호흡: { desc: '크리티컬 확률 증가', maxStack: 20, effectType: 'positive' },
       화상: { desc: '참조 표의 설명', effectType: 'negative' },
@@ -23,7 +23,7 @@ describe('REQ-KEYWORDS-004 /api/keyword-meta serves the same descriptions as the
     ])
   })
 
-  it('REQ-KEYWORDS-004 answers 500 when the catalogue cannot be read', async () => {
+  it('answers 500 when the catalogue cannot be read', async () => {
     mocks.getKeywordData.mockRejectedValue(new Error('down'))
     const response = await GET()
     expect(response.status).toBe(500)

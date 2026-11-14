@@ -14,7 +14,7 @@ const render = (replyingTo: string | null = null) => renderToStaticMarkup(
   <CommentThread items={items} canReply replyingTo={replyingTo} onReply={() => {}} replyForm={<form data-reply-form />} />,
 )
 
-it('REQ-COMMUNITY-086 shows a reply to a reply under it, one step in at most, with the name it answers', () => {
+it('shows a reply to a reply under it, one step in at most, with the name it answers', () => {
   const html = render()
   expect(html.indexOf('text-b')).toBeLessThan(html.indexOf('text-c'))
   expect(html.indexOf('text-c')).toBeLessThan(html.indexOf('text-d'))
@@ -26,7 +26,7 @@ it('REQ-COMMUNITY-086 shows a reply to a reply under it, one step in at most, wi
   expect(html).not.toContain('@루트')
 })
 
-it('REQ-COMMUNITY-086 every comment can be answered, and the reply box opens right under the one being answered', () => {
+it('every comment can be answered, and the reply box opens right under the one being answered', () => {
   const html = render('c')
   expect(html.split('>reply<').length - 1).toBe(4)
   const form = html.indexOf('data-reply-form')

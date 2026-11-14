@@ -16,7 +16,7 @@ const count = (message: DiscordMessage) => 1 + children(message).length
 const chars = (message: DiscordMessage) => children(message).reduce((sum, c) => sum + ('content' in c ? c.content.length : 0), 0)
 
 describe('announcementDiscordMessages', () => {
-  it('REQ-ADMIN-004 puts title, text and images in one gold container in site order', () => {
+  it('puts title, text and images in one gold container in site order', () => {
     const messages = announcementDiscordMessages({ title: '공지', doc, url: 'https://saigo-no-dante.com/ko/announcements' })
     expect(messages).toHaveLength(1)
     const [message] = messages
@@ -33,13 +33,13 @@ describe('announcementDiscordMessages', () => {
     expect(message.allowed_mentions.parse).toEqual([])
   })
 
-  it('REQ-ADMIN-004 mentions everyone only when asked, on the first message', () => {
+  it('mentions everyone only when asked, on the first message', () => {
     const [first] = announcementDiscordMessages({ title: '공지', doc, everyone: true })
     expect(children(first)[0]).toEqual({ type: 10, content: '@everyone\n# 공지\n업데이트 **안내**\n- 기프트' })
     expect(first.allowed_mentions.parse).toEqual(['everyone'])
   })
 
-  it('REQ-ADMIN-004 starts a new message before 40 components or 4000 characters', () => {
+  it('starts a new message before 40 components or 4000 characters', () => {
     const many = { type: 'doc', content: Array.from({ length: 50 }, (_, i) => [
       { type: 'paragraph', content: [text('문단 ' + i)] },
       { type: 'image', attrs: { src: 'https://x/' + i + '.webp' } },
@@ -61,7 +61,7 @@ describe('announcementDiscordMessages', () => {
 describe('sendAnnouncementToDiscord', () => {
   afterEach(() => vi.unstubAllGlobals())
 
-  it('REQ-ADMIN-004 asks the webhook to accept components, keeping its existing query', async () => {
+  it('asks the webhook to accept components, keeping its existing query', async () => {
     const fetch = vi.fn(async () => new Response(null, { status: 204 }))
     vi.stubGlobal('fetch', fetch)
     const messages = announcementDiscordMessages({ title: '공지', doc })

@@ -25,7 +25,7 @@ export async function getIdentityRecommendations(identityId: string): Promise<Id
   const companions = companionsOfIdentity(buildIdentityModel(formations, catalog), identityId)
   if (!formations.some(formation => formation.identities.includes(identityId))) return { companions: [], posts: [] }
   const db = createAdminClient().schema('limbus')
-  // the RPC returns each board's 12 most visited posts, so a post fielding this identity ranks by visits only when it is among them; the rest fall back to votes. A per-identity count would need a new function.
+  // The RPC returns each board's 12 most visited posts, so a post fielding this identity ranks by visits only when it is among them; the rest fall back to votes. A per-identity count would need a new function.
   const counts = await db.rpc('discovery_counts_since', { since: popularSince('month') })
   if (counts.error) throw counts.error
   const visitors = new Map((counts.data as { kind: string; entity_id: string; visitors: number }[]).map(row => [`${row.kind}:${row.entity_id}`, Number(row.visitors)]))
