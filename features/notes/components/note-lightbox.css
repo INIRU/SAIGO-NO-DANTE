@@ -1,4 +1,3 @@
-/* The note image lightbox (NoteLightboxImage). */
 /* Note image lightbox: the picture fits the screen on the deep background; a button wraps the small picture in the reading view. */
 .note-image-button{display:block;max-width:100%;padding:0;border:0;background:none;cursor:zoom-in}
 .note-image-button:focus-visible{outline:2px solid var(--gold-light);outline-offset:3px}
