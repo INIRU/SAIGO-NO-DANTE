@@ -11,7 +11,7 @@ export const smoothTransition: Transition = {
 }
 
 /** Snappy ease-out — good for interactive responses */
-export const snappyTransition: Transition = {
+const snappyTransition: Transition = {
   duration: 0.22,
   ease: [0.33, 1, 0.68, 1],
 }
@@ -24,16 +24,6 @@ export const fadeInUp: Variants = {
   initial: { opacity: 0, y: 12 },
   animate: { opacity: 1, y: 0, transition: smoothTransition },
   exit: { opacity: 0, y: 10, transition: snappyTransition },
-}
-
-// ---------------------------------------------------------------------------
-// Scale variant — subtle zoom-in for cards and modals
-// ---------------------------------------------------------------------------
-
-export const scaleIn: Variants = {
-  initial: { opacity: 0, scale: 0.98 },
-  animate: { opacity: 1, scale: 1, transition: smoothTransition },
-  exit: { opacity: 0, scale: 0.97, transition: snappyTransition },
 }
 
 // ---------------------------------------------------------------------------

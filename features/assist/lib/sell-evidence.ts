@@ -11,7 +11,7 @@
 import type { OcrReference } from './ocr-match'
 import { nearestName, ocrNormalized } from './text-normalize'
 
-export interface SellDialog { name: string; price: number }
+interface SellDialog { name: string; price: number }
 
 /**
  * The sell dialog's price against the gift's price (game ego-gift data `price`). Estimate (추정): sales in the recorded
@@ -23,8 +23,8 @@ export function sellPriceFits(readPrice: number, giftPrice: number | null | unde
   if (!giftPrice) return true
   return readPrice >= Math.floor(giftPrice / 2) && readPrice <= giftPrice
 }
-export interface PendingSale extends SellDialog { giftId: string; at: number; costBefore: number }
-export const SALE_CONFIRM_MS = 5000
+interface PendingSale extends SellDialog { giftId: string; at: number; costBefore: number }
+const SALE_CONFIRM_MS = 5000
 
 /** Names compare as letters and digits, with Japanese OCR swaps folded (text-normalize). */
 const key = ocrNormalized
@@ -136,7 +136,7 @@ export function soldOnShopScreen(pending: PendingSale, text: string): boolean {
   return numbers.has(String(pending.costBefore + pending.price)) && !numbers.has(String(pending.costBefore))
 }
 
-export interface SaleState {
+interface SaleState {
   pending: PendingSale | null
   /** The dialog the latest reads showed; a read without it ends it, so the next dialog is a new sale. */
   dialog: { name: string; price: number; at: number } | null

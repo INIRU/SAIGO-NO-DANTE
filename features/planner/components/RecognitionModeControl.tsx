@@ -3,13 +3,7 @@
 import { useId } from 'react'
 
 export const RECOGNITION_MODES = ['fastest', 'performance', 'balanced', 'quality'] as const
-export type RecognitionMode = typeof RECOGNITION_MODES[number]
-export const DEFAULT_RECOGNITION_MODE: RecognitionMode = 'balanced'
-
-export function isRecognitionMode(value: unknown): value is RecognitionMode {
-  return typeof value === 'string' && (RECOGNITION_MODES as readonly string[]).includes(value)
-}
-
+type RecognitionMode = typeof RECOGNITION_MODES[number]
 interface Props {
   value: RecognitionMode
   onChange: (mode: RecognitionMode) => void

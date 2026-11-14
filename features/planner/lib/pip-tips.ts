@@ -7,7 +7,7 @@ import type { PipMode } from '@/lib/planner/pip-view'
  * (the views it may show in, and a builder that returns its data or null); add one by adding a row to PIP_TIPS, a view
  * for its kind in CompanionView and its words in messages.
  */
-export interface PipTipContext {
+interface PipTipContext {
   mode: PipMode
   state: RunState
   /** The floor the window is about (a floor being chosen on a selection screen, else the current one). */
@@ -29,7 +29,7 @@ export type PipTip =
 const ids = (values: readonly string[] | undefined) => (values ?? []).map(Number).filter(Number.isInteger)
 const picksOn = (state: RunState, floor: number) => bonusPicks(state.floorLogs[floor - 1]?.difficulty ?? state.difficulty)
 
-export const PIP_TIPS: readonly { kind: PipTip['kind']; modes: readonly PipMode[]; build: (context: PipTipContext) => PipTip | null }[] = [
+const PIP_TIPS: readonly { kind: PipTip['kind']; modes: readonly PipMode[]; build: (context: PipTipContext) => PipTip | null }[] = [
   {
     kind: 'clear-bonus',
     modes: ['floor'],

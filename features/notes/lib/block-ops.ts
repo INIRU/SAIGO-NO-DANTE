@@ -6,7 +6,7 @@ const BLOCK_HOSTS = new Set(['doc', 'noteBody', 'noteCallout'])
 /** The upload placeholder carries an id the upload looks for: a copy would be filled in twice. */
 const NOT_DUPLICATED = new Set(['noteUpload'])
 
-export type BlockAt = { pos: number; node: PMNode }
+type BlockAt = { pos: number; node: PMNode }
 
 /**
  * The blocks around the selection, innermost first: the selected block or the paragraph/list/table the caret sits in,

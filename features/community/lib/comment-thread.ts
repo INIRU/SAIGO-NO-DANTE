@@ -1,7 +1,7 @@
 /** The fields a comment needs to be placed in a thread. */
-export type ThreadComment = { id: string; parent_id: string | null; created_at: string }
+type ThreadComment = { id: string; parent_id: string | null; created_at: string }
 /** One reply in a thread: how deep it sits under the root (1 = answers the root) and the comment it answers. */
-export type ThreadReply<T> = { comment: T; depth: number; parent: T | null }
+type ThreadReply<T> = { comment: T; depth: number; parent: T | null }
 
 function childrenOf<T extends ThreadComment>(comments: T[]) {
   const ids = new Set(comments.map(comment => comment.id))

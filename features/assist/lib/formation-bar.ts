@@ -20,7 +20,7 @@ export function formationBarRegions(width: number, height: number, shift = 0): S
 }
 
 /** Each slot's hexagonal frame is orange and 91 wide (the shop's at 1920: 103 to 194 around 148.5); its edges are this far out. */
-export const BAR_HEX_HALF = 45.5
+const BAR_HEX_HALF = 45.5
 /** The rows of the bar's frames, measured up from the bottom edge (UI units): the frames span 148 to 73 above it. */
 export const BAR_BAND = { top: 150, bottom: 70 } as const
 /** The frames' orange (RGB): bright red, middling green, little blue. */
@@ -67,7 +67,7 @@ export function decodePortraitIndex(value: unknown): PortraitIndex | null {
 }
 
 /** RGB values with each channel's mean taken away, scaled to length 1 (brightness and contrast left out). */
-export function normalised(rgb: ArrayLike<number>): Float32Array {
+function normalised(rgb: ArrayLike<number>): Float32Array {
   const out = new Float32Array(rgb.length)
   const mean = [0, 0, 0]
   for (let at = 0; at < rgb.length; at++) mean[at % 3] += rgb[at]
@@ -86,7 +86,7 @@ export function shownPixels(rgba: Uint8ClampedArray, mask: readonly number[]): U
   return out
 }
 
-export interface PortraitRead { id: string; art: string; score: number; margin: number }
+interface PortraitRead { id: string; art: string; score: number; margin: number }
 
 /** The best Identity for a slot, with its correlation and its lead over the best other Identity. */
 export function matchPortrait(index: PortraitIndex, rgb: ArrayLike<number>): PortraitRead | null {
@@ -109,8 +109,8 @@ export function matchPortrait(index: PortraitIndex, rgb: ArrayLike<number>): Por
  * The Identity a slot is read as, or null: a correlation of 0.6 and a lead of 0.05 over every other Identity. On the
  * labelled bar samples every right read scored over 0.63; the lead is what keeps two near-alike arts from being named.
  */
-export const PORTRAIT_MIN_SCORE = 0.6
-export const PORTRAIT_MIN_MARGIN = 0.05
+const PORTRAIT_MIN_SCORE = 0.6
+const PORTRAIT_MIN_MARGIN = 0.05
 export const portraitId = (read: PortraitRead | null) => read && read.score >= PORTRAIT_MIN_SCORE && read.margin >= PORTRAIT_MIN_MARGIN ? read.id : null
 
 export interface FormationRead { ids: (string | null)[]; observedAt: number }

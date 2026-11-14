@@ -14,7 +14,7 @@ export interface IdentityStat {
   count: number
 }
 
-export interface KeywordStat { keyword: string; count: number }
+interface KeywordStat { keyword: string; count: number }
 
 /** Content a formation was built for. Plans are always Mirror Dungeon. */
 export const META_USAGES = ['mirrorDungeon', 'story', 'expDungeon', 'threadDungeon', 'refractionRailway', 'reflectrial', 'none'] as const
@@ -26,7 +26,7 @@ export interface MetaPlanSummary { count: number; difficulty: CountStat[]; gifts
 export interface MetaGift { game_id: number; name: string; name_en?: string | null; name_jp?: string | null; grade: string | null; keyword: string | null; image_url: string | null }
 export interface MetaTheme { id: number; name: string; name_en?: string | null; name_jp?: string | null; image_url: string | null }
 
-export interface Synergy {
+interface Synergy {
   a_id: string; a_name: string; a_sinner_id: string; a_folder: string | null; a_game_id: string | null
   b_id: string; b_name: string; b_sinner_id: string; b_folder: string | null; b_game_id: string | null
   count: number
@@ -112,7 +112,7 @@ export function parseMetaPeriod(value: string | null | undefined): MetaPeriod {
 }
 
 export const META_DIFFICULTIES = ['normal', 'hard', 'extreme'] as const
-export type MetaDifficulty = typeof META_DIFFICULTIES[number]
+type MetaDifficulty = typeof META_DIFFICULTIES[number]
 export const META_RARITIES = ['1', '2', '3'] as const
 /**
  * Narrow which formations are counted. Several values of one filter keep a formation that has any of them, except
@@ -205,7 +205,7 @@ export type MetaInsightPost = {
   support?: true
 }
 
-export interface IdentityInsight {
+interface IdentityInsight {
   companions: { identity_id: string; count: number }[]
   /** Posts where the identity has a formation order. */
   count: number

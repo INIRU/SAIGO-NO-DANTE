@@ -6,7 +6,7 @@ import SkillNameBanner from '@/features/catalog/components/SkillNameBanner'
 import styles from './PassiveParts.module.css'
 
 /** The multiplication sign of counts (×3, ×0.5): two crossed bars, drawn so it keeps its weight and centre in every font. */
-export function MultiplyMark({ className }: { className?: string }) {
+function MultiplyMark({ className }: { className?: string }) {
   return (
     <svg className={`${styles.multiply} ${className ?? ''}`} viewBox="0 0 12 12" aria-hidden="true" focusable="false">
       <rect x="-0.9" y="4.6" width="13.8" height="2.8" transform="rotate(45 6 6)" />

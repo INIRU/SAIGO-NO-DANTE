@@ -4,15 +4,15 @@
 // coins again, the higher total wins and takes one coin from the loser's front, a tie takes none; at most 99 exchanges.
 // The 5%–95% limit of the heads chance and the level-gap divisor 3 are not confirmed by the game's values (estimates).
 
-export type CoinOperator = 'ADD' | 'SUB' | 'MUL'
+type CoinOperator = 'ADD' | 'SUB' | 'MUL'
 export type ClashCoin = { scale: number; operator: CoinOperator }
 
 export const MAX_CLASH_ROUNDS = 99
 export const SANITY_RANGE = 45
 /** The heads chance stays in this range (estimate). */
-export const PROBABILITY_LIMITS = { min: 0.05, max: 0.95 } as const
+const PROBABILITY_LIMITS = { min: 0.05, max: 0.95 } as const
 /** Every this many attack levels above the other side add 1 to each exchange total (estimate: the game's divisor was not read). */
-export const LEVEL_GAP_DIVISOR = 3
+const LEVEL_GAP_DIVISOR = 3
 
 export type ClashSide = {
   basePower: number
@@ -33,7 +33,7 @@ export type ClashSide = {
   offenseLevel?: number
 }
 
-export type ClashResult = {
+type ClashResult = {
   /** Chance that the first side takes all of the other's coins / the other side does. */
   winA: number
   winB: number
@@ -92,7 +92,7 @@ export function compare(a: [number, number][], b: [number, number][]) {
 }
 
 /** The higher attack level's bonus to each exchange: a third of the gap, rounded down (the lower side gets none). */
-export function levelGapBonus(own?: number, other?: number) {
+function levelGapBonus(own?: number, other?: number) {
   if (own == null || other == null) return 0
   return Math.max(0, Math.trunc((own - other) / LEVEL_GAP_DIVISOR))
 }

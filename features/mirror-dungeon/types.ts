@@ -59,61 +59,9 @@ export interface EgoGiftTheme {
   name_segments?: ThemePackNameStyle['name_segments']
 }
 
-export interface EventRewardEffect {
-  type:
-    | 'cost'
-    | 'cost_loss'
-    | 'gift'
-    | 'gift_battle'
-    | 'battle'
-    | 'battle_abnormality'
-    | 'nothing'
-    | 'hp_loss'
-    | 'hp_recover'
-    | 'mp_loss'
-    | 'mp_recover'
-    | 'hp_mp_recover'
-    | 'hp_mp_loss'
-    | 'hp_recover_ratio'
-    | 'level_up'
-    | 'get_character'
-  amount?: number
-  count?: number
-  gift_id?: number
-}
-
-export interface EventRewardBranch {
-  probability: number | string
-  effects: EventRewardEffect[]
-}
-
-export interface EventOption {
-  message: string
-  messageDesc?: string
-  result?: string[]
-  rewards?: EventRewardBranch[]
-  next_event?: {
-    id: number
-    name: string | null
-    desc: string | null
-    options: EventOption[] | null
-  }
-}
-
-export interface MirrorDungeonEvent {
-  id: number
-  name: string | null
-  desc_text: string | null
-  options: EventOption[] | null
-  gift_ids: number[] | null
-  source: string | null
-  image_url: string | null
-  theme_ids: number[] | null
-}
-
 // ── New event types for redesigned 2-table DB ────────────────────────────────
 
-export interface EventJudgment {
+interface EventJudgment {
   intro?: { ko: string; en: string; ja: string }
   participantInfo?: { min: number; max: number }
   judgement?: { upDownType: number; inclusiveValue: number; exclusiveValue: number; judgementDataList: { attributeType: string }[] }

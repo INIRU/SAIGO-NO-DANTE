@@ -17,7 +17,7 @@ export function AnnouncementMeta({ item, pinnedLabel }: { item: Pick<Announcemen
 
 const rise = (index: number) => ({ '--i': index }) as CSSProperties
 
-export type AnnouncementListLabels = { pinned: string; readMore: string; empty: string }
+type AnnouncementListLabels = { pinned: string; readMore: string; empty: string }
 
 /**
  * The newest (pinned first) announcement large with its cover, the rest as rows; each opens its own page.

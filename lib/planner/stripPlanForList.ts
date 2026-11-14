@@ -61,7 +61,7 @@ const COMBAT_KEYWORD_ALIASES: Record<string, typeof COMBAT_KEYWORDS[number]> = {
   '타격': '타격',
 }
 
-export type DeckSlotRaw = {
+type DeckSlotRaw = {
   identity_id?: string
   sinner_id?: string
   name_kr?: string
@@ -73,7 +73,7 @@ export type DeckSlotRaw = {
   slot_order?: number
 }
 
-export type EgoSlotRaw = {
+type EgoSlotRaw = {
   ego_id?: string
   sinner_id?: string
   name_kr?: string
@@ -156,7 +156,7 @@ function extractSelectedMainKeywords(tags: unknown): string[] {
   return selected.sort((a, b) => DECK_MAIN_KEYWORDS.indexOf(a as typeof DECK_MAIN_KEYWORDS[number]) - DECK_MAIN_KEYWORDS.indexOf(b as typeof DECK_MAIN_KEYWORDS[number]))
 }
 
-export function computeThemeKeywords(deck: DeckSlotRaw[] | null): string[] {
+function computeThemeKeywords(deck: DeckSlotRaw[] | null): string[] {
   const formed = (deck ?? []).filter(s => (s.slot_order ?? 99) < 99 && s.keywords)
   const total = formed.length
   if (total === 0) return []
@@ -179,7 +179,7 @@ export function computeThemeKeywords(deck: DeckSlotRaw[] | null): string[] {
     .map(([kw]) => kw)
 }
 
-export function normalizePlannerListKeyword(rawKeyword: string) {
+function normalizePlannerListKeyword(rawKeyword: string) {
   const keyword = rawKeyword.trim()
   if (!keyword) return null
 
@@ -203,7 +203,7 @@ export function normalizePlannerListKeywords(rawKeywords: readonly string[]) {
   return keywords
 }
 
-export function computeFilterKeywords(deck: DeckSlotRaw[] | null): string[] {
+function computeFilterKeywords(deck: DeckSlotRaw[] | null): string[] {
   const formed = (deck ?? []).filter(s => (s.slot_order ?? 99) < 99)
   const keywords = new Set<string>()
 
@@ -277,7 +277,7 @@ export function stripPlanForList(plan: Record<string, unknown>): PlanSummary {
   } as unknown as PlanSummary
 }
 
-export type PlanDifficultyBadge = {
+type PlanDifficultyBadge = {
   key: Difficulty | 'normal-hard'
   styleKey: Difficulty
   labelKeys: Difficulty[]

@@ -18,7 +18,7 @@ import { tr } from '@/features/notes/lib/tr'
 
 
 /** The card itself: art on the left, name and what it is on the right (a gift also says what it does). */
-export function NotePreviewBody({ asset }: { asset: NoteAssetData }) {
+function NotePreviewBody({ asset }: { asset: NoteAssetData }) {
   const lang = useLocale(), tSinner = useTranslations('sinner')
   const name = assetName(asset, lang)
   const sinnerId = asset.identity?.sinner_id ?? asset.sinnerId

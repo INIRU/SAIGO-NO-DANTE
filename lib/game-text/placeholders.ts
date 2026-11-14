@@ -10,39 +10,12 @@
 
 export const PLACEHOLDER_TOKENS = ['live', 'potency', 'count', 'value', 'sinner', 'target', 'gift'] as const
 export type PlaceholderToken = (typeof PLACEHOLDER_TOKENS)[number]
-/** Tokens without an argument. */
-export type PlainPlaceholderToken = Exclude<PlaceholderToken, 'gift'>
-
-export function placeholderToken(name: PlainPlaceholderToken): string
-export function placeholderToken(name: 'gift', gameId: number): string
-export function placeholderToken(name: PlaceholderToken, arg?: number | string): string {
-  return arg == null ? `{{${name}}}` : `{{${name}:${arg}}}`
-}
-
 /** A token stored in DB text: {{live}} … or {{gift:<game id>}}. */
-export const TOKEN_PATTERN = /\{\{(?:(live|potency|count|value|sinner|target)|gift:(\d+))\}\}/g
+const TOKEN_PATTERN = /\{\{(?:(live|potency|count|value|sinner|target)|gift:(\d+))\}\}/g
 /** The same token anchored at the start, for scanners that walk text left to right. */
-export const LEADING_TOKEN_PATTERN = /^\{\{(?:(live|potency|count|value|sinner|target)|gift:(\d+))\}\}/
+const LEADING_TOKEN_PATTERN = /^\{\{(?:(live|potency|count|value|sinner|target)|gift:(\d+))\}\}/
 /** A value slot in game text: {0}, {1}, {0:F1}. Named slots such as {amount} are filled by the event rebuild, not here. */
 export const GAME_PLACEHOLDER_PATTERN = /\{(\d+)(?::[A-Za-z]\d*)?\}/g
-
-/**
- * Replaces the game's numbered slots with tokens. `role` names what slot N means (a token string such as
- * `placeholderToken('gift', 9228)` is used as is); a slot it does not know becomes {{value}} and is passed to
- * `onUnknown`, so new source text never reaches the site as a bare {0}.
- */
-export function tokenizeGamePlaceholders(
-  text: string,
-  role: (index: number) => PlainPlaceholderToken | `{{${string}}}` | undefined,
-  onUnknown?: (index: number) => void,
-): string {
-  return text.replace(GAME_PLACEHOLDER_PATTERN, (_, index: string) => {
-    const name = role(Number(index))
-    if (!name) onUnknown?.(Number(index))
-    if (name?.startsWith('{{')) return name
-    return placeholderToken((name ?? 'value') as PlainPlaceholderToken)
-  })
-}
 
 /**
  * Text a display column must never hold after a sync: a bare game slot ({0}, {1:F1}) or another single-brace
@@ -66,12 +39,12 @@ export const PLACEHOLDER_LABELS: Record<PlaceholderLocale, Record<PlaceholderTok
   ja: { live: 'ゲーム中に表示', potency: '威力', count: '回数', value: '値', sinner: '囚人名', target: '対象', gift: 'ギフト' },
 }
 
-export function placeholderLabel(name: PlaceholderToken, locale: string): string {
+function placeholderLabel(name: PlaceholderToken, locale: string): string {
   return (PLACEHOLDER_LABELS[locale as PlaceholderLocale] ?? PLACEHOLDER_LABELS.ko)[name]
 }
 
 export type PlaceholderMatch = { token: PlaceholderToken; giftId?: number }
-export type PlaceholderPart = string | PlaceholderMatch
+type PlaceholderPart = string | PlaceholderMatch
 
 function toMatch(plain: string | undefined, giftId: string | undefined): PlaceholderMatch {
   return plain ? { token: plain as PlaceholderToken } : { token: 'gift', giftId: Number(giftId) }

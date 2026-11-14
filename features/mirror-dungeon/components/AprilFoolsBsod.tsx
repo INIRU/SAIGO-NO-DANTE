@@ -95,7 +95,6 @@ export function BsodScreen({ onAdvance }: { onAdvance: () => void }) {
         <div style={{ maxWidth: '50rem', margin: '0 auto', position: 'relative', width: '100%' }}>
           {BSOD_LINES.map((line, i) => {
             const isPrompt = line.cls === 'prompt'
-            const isLastVisible = i === BSOD_LINES.length - 1
             return (
               <AnimatePresence key={i}>
                 {showLines && (

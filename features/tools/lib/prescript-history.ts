@@ -23,7 +23,7 @@ export interface PrescriptRunSummary {
 }
 
 export const HISTORY_KEY = 'md-prescript-history'
-export const HISTORY_LIMIT = 50
+const HISTORY_LIMIT = 50
 
 export function summarizeRun(run: PrescriptRun, floor: number, endedAt: number): PrescriptRunSummary {
   let streak = 0, bestStreak = 0

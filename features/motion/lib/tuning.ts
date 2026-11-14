@@ -1,6 +1,6 @@
 // How the player hands a video frame to the GPU (`?gpu=0`: WebGL2, not WebGPU), and a meter to read on a real phone what each way costs.
 // `?tex=r8` / `?tex=sub` / `?tex=r8sub` / `?tex=rgba` in the address picks the way by hand; `?debug=1` shows the meter.
-export type Upload = {
+type Upload = {
   /** the frame as one grey channel (the stacked Y, Cb, Cr planes are grey): a quarter of the texture's memory */
   grey: boolean
   /** the texture's storage made once and filled each frame, not made anew each frame */

@@ -20,7 +20,7 @@
 
 import { GAME_PLACEHOLDER_PATTERN, leadingPlaceholder, placeholdersToPlainText } from './placeholders'
 
-export type GameTextElementTag = 'style' | 'color' | 'u' | 'b' | 'i' | 's' | 'mark' | 'link' | 'size' | 'coin'
+type GameTextElementTag = 'style' | 'color' | 'u' | 'b' | 'i' | 's' | 'mark' | 'link' | 'size' | 'coin'
 
 export type GameTextNode =
   | { type: 'text'; text: string }
@@ -270,7 +270,7 @@ export function isRawGameText(raw: string, refIds: ReadonlySet<string>): boolean
   return refIds.size > 0 && collectRefIds(nodes).some((id) => refIds.has(id))
 }
 
-export type GameTextPlainOptions = {
+type GameTextPlainOptions = {
   /** [Id] → plain name (a BattleKeywords / SkillTag name). An id missing here stays `[Id]`. */
   names?: Readonly<Record<string, string>>
   /** Label put in front of each `<coin=N>` block, e.g. `(n) => `[코인 ${n}]``. Without it a coin shows only its text. */

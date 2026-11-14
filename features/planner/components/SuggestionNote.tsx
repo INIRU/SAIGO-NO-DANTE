@@ -14,7 +14,7 @@ import type { PlannerDeckIdentity } from './PlannerDeckSelection'
 const MAX_PARTNERS = 3
 
 /** The readable reason of a suggestion on one line ("출혈 · 거미집"), or '' when it has none. */
-export function useReasonLabel() {
+function useReasonLabel() {
   const locale = useLocale() as SupportedLang
   const keywords = useKeywords()
   const t = useTranslations('suggestions')

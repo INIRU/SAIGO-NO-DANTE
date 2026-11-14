@@ -14,7 +14,7 @@ import { usageColor } from './DonutChart'
 import { DIFFICULTY_COLORS } from './MetaSections'
 import styles from '@/styles/components/MetaAnalysis.module.css'
 
-export type MetaFilterPatch = { [K in MetaFilterKey]?: string[] | null } & { [K in MetaFilterMode]?: 'or' | null }
+type MetaFilterPatch = { [K in MetaFilterKey]?: string[] | null } & { [K in MetaFilterMode]?: 'or' | null }
 
 /**
  * The analysis page's filters, in the build of the boards' filter column. Every filter takes several values; pressing a

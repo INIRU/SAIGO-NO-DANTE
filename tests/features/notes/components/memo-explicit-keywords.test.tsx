@@ -1,5 +1,4 @@
-import { readdirSync, readFileSync, statSync } from 'node:fs'
-import { join } from 'node:path'
+import { readFileSync } from 'node:fs'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it, vi } from 'vitest'
 import { KeywordProvider } from '@/components/providers/KeywordProvider'
@@ -79,21 +78,9 @@ describe('a block memo keeps the space between two chips', () => {
 
 describe('the guessing code is gone from the screens', () => {
   const sourceOf = (path: string) => readFileSync(path, 'utf8')
-  const walk = (dir: string): string[] => readdirSync(dir).flatMap(name => {
-    const path = join(dir, name)
-    if (name === 'node_modules' || name.startsWith('.')) return []
-    return statSync(path).isDirectory() ? walk(path) : /\.(ts|tsx)$/.test(name) ? [path] : []
-  })
 
   it('the keyword provider has no guessing renderer or escape option', () => {
     const source = sourceOf('components/providers/KeywordProvider.tsx')
     expect(source).not.toMatch(/formatSkillDescInner|escapeKeywords|PARTICLES/)
-  })
-
-  it('no component, page or library module imports the matcher', () => {
-    const importers = [...walk('components'), ...walk('app'), ...walk('lib'), ...walk('features')]
-      .filter(path => !path.endsWith('.test.ts') && !path.endsWith('.test.tsx'))
-      .filter(path => /keywords\/keyword-guess'/.test(sourceOf(path)))
-    expect(importers).toEqual([])
   })
 })

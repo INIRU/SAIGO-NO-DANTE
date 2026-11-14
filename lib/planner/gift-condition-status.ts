@@ -58,7 +58,7 @@ type IdentityConditionSource = Partial<IdentityData> & {
   slot_order?: number | null
 }
 
-export type GiftConditionCounts = {
+type GiftConditionCounts = {
   formationKeywordCounts: Record<string, number>
   allKeywordCounts: Record<string, number>
   formationAffiliationCounts: Record<string, number>

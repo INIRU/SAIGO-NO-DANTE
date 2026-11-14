@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const ACTIVITY_RULES = {
+const ACTIVITY_RULES = {
   deck: { points: 20, dailyLimit: 3 },
   // A plan is much more work than a deck (floors, gifts, notes).
   plan: { points: 40, dailyLimit: 3 },

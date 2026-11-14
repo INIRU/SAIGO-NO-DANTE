@@ -12,7 +12,7 @@ import { AuthorLine, PostChips, PostCounts, postSlots, type RowPost } from './Bo
 export const postHref = (kind: DiscoveryKind, id: string) => (kind === 'deck' ? `/decks/${id}` : `/planner/community/${id}`)
 
 /** The first six active portraits as a 3×2 mosaic: tiles of 34px on a phone, 43px wide, 2px apart, only the outer corners rounded. */
-export function FormationMosaic({ kind, post }: { kind: DiscoveryKind; post: RowPost }) {
+function FormationMosaic({ kind, post }: { kind: DiscoveryKind; post: RowPost }) {
   const tiles = useMemo(() => {
     const all = formationThumbnail(postSlots(kind, post) as never)
     const formed = all.some(slot => slot.order !== null)
@@ -26,7 +26,7 @@ export function FormationMosaic({ kind, post }: { kind: DiscoveryKind; post: Row
 }
 
 /** "10.19" of a timestamp in Korea time (the game's update clock). */
-export const monthDay = (iso: string) => new Date(Date.parse(iso) + 9 * 3_600_000).toISOString().slice(5, 10).replace('-', '.')
+const monthDay = (iso: string) => new Date(Date.parse(iso) + 9 * 3_600_000).toISOString().slice(5, 10).replace('-', '.')
 
 /**
  * One post as a compact row: mosaic, title, one line of tags, author and counts. The whole row is the link (at least 56px tall).

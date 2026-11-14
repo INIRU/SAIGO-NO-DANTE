@@ -4,7 +4,7 @@ export interface GiftRefTarget {
   name: string
 }
 
-export type GiftTextPart = string | { gift: GiftRefTarget; text: string }
+type GiftTextPart = string | { gift: GiftRefTarget; text: string }
 
 const escape = (s: string) => s.replace(/[.*+?^$(){}|[\]\\]/g, '\\$&')
 

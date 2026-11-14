@@ -1,7 +1,7 @@
 import type { EgoData, EgoSlot, IdentityData, IdentitySlot } from '@/lib/planner/types'
 
 /** A saved deck's identity row, as /api/decks/[id] (nested identity) or the deck tables (flat id) return it. */
-export interface DeckIdentityRow {
+interface DeckIdentityRow {
   slot_order: number
   identity_id?: string | null
   identities?: { id: string } | null
@@ -10,7 +10,7 @@ export interface DeckIdentityRow {
   s2_count?: number | null
   s3_count?: number | null
 }
-export interface DeckEgoRow { grade: string; ego_id?: string | null; ego?: { id: string } | null }
+interface DeckEgoRow { grade: string; ego_id?: string | null; ego?: { id: string } | null }
 
 /** A saved deck as the plan's identity and E.G.O slots (formation number, uptie and skill counts kept). Null when no identity resolves. */
 export function planSlotsFromDeckRows(rows: DeckIdentityRow[], egoRows: DeckEgoRow[], identities: IdentityData[],
@@ -34,7 +34,7 @@ export function planSlotsFromDeckRows(rows: DeckIdentityRow[], egoRows: DeckEgoR
   return { identitySlots, egoSlots }
 }
 
-export interface DeckFormation {
+interface DeckFormation {
   deckSlotIds: Record<string, string>
   egoSlotIds: Record<string, Record<string, string>>
   formationOrder: string[]

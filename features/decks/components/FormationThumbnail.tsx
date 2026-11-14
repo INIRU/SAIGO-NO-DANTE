@@ -11,7 +11,7 @@ type Props = {
   missing?: ReadonlySet<string> | null
 }
 
-export function Portrait({ slot, dim, locked, ratio = '3 / 4', sizes = '(max-width: 768px) 17vw, (max-width: 1100px) 9vw, 6vw' }: { slot: ThumbnailSlot; dim: boolean; locked: boolean; ratio?: string; sizes?: string }) {
+export function Portrait({ slot, dim, ratio = '3 / 4', sizes = '(max-width: 768px) 17vw, (max-width: 1100px) 9vw, 6vw' }: { slot: ThumbnailSlot; dim: boolean; locked: boolean; ratio?: string; sizes?: string }) {
   const [awakenFailed, setAwakenFailed] = useState(false)
   const [failed, setFailed] = useState(false)
   const gacksung = slot.gacksung && !awakenFailed

@@ -3,7 +3,7 @@
  * scrolled: the points a user would want to know before agreeing (from the current terms and privacy policy), and what a
  * given version changed. Keep in step with the documents in limbus.legal_docs. **text** marks emphasis.
  */
-export type LegalLang = 'ko' | 'en' | 'ja'
+type LegalLang = 'ko' | 'en' | 'ja'
 
 export const LEGAL_KEY_POINTS: Record<LegalLang, { title: string; items: string[] }> = {
   ko: {

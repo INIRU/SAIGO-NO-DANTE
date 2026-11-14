@@ -1,7 +1,7 @@
 export type SearchType = 'sinner' | 'identity' | 'ego' | 'keyword' | 'egoGift' | 'themePack' | 'event' | 'page'
 export type ContextField = 'sinner' | 'keyword' | 'alias'
 /** 맞은 칸: 표시 이름(label), 다른 언어 이름(ko/en/ja), 맥락 칸, 비슷한 이름(fuzzy) */
-export type ReasonField = 'label' | 'ko' | 'en' | 'ja' | ContextField | 'fuzzy'
+type ReasonField = 'label' | 'ko' | 'en' | 'ja' | ContextField | 'fuzzy'
 
 export interface IndexEntry {
   type: SearchType

@@ -133,15 +133,6 @@ export function clearedThemeFloors(before: RunState, after: RunState): number[] 
 }
 
 /**
- * The game shows a later floor than the run records (its pack not yet confirmed), so automatic records would land on
- * the wrong floor until the run catches up.
- */
-export function recordedFloorBehind(state: RunState, observedFloor: number | null): boolean {
-  return state.phase === 'playing' && observedFloor !== null && Number.isInteger(observedFloor) &&
-    observedFloor > state.currentFloor && observedFloor <= state.maxFloors
-}
-
-/**
  * Floor being chosen on a pack selection screen: the floor its header names when it is not behind the run, otherwise
  * the next floor once the current one has a pack. Null when that floor already has a pack or is past the run.
  */
@@ -188,9 +179,9 @@ export function pendingThemeSelectionFloor(pending: number | null, { state, runn
  * observation gift screens read as start_gift, their confirmation dialogs and popups as other labels), so the start is
  * ended by what follows it rather than by a list of start labels.
  */
-export const AFTER_START_SCENES: ReadonlySet<string> = new Set(['theme_select', 'exploration', 'battle', 'event', 'run_end'])
+const AFTER_START_SCENES: ReadonlySet<string> = new Set(['theme_select', 'exploration', 'battle', 'event', 'run_end'])
 /** A single confident classifier frame of the selection screen ends the start without waiting for the stable scene. */
-export const THEME_SELECT_PREDICTION = 0.8
+const THEME_SELECT_PREDICTION = 0.8
 
 /**
  * Whether the run's first floor has left its start (start and observation gifts). Latches once a pack selection screen

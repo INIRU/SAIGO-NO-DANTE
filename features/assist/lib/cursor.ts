@@ -62,8 +62,8 @@ function correlate(frame: ArrayLike<number>, width: number, height: number, pict
   return aa && bb ? ab / Math.sqrt(aa * bb) : 0
 }
 
-export const CURSOR_MIN_SCORE = 0.85
-export const CURSOR_MIN_OVERLAP = 0.6
+const CURSOR_MIN_SCORE = 0.85
+const CURSOR_MIN_OVERLAP = 0.6
 
 /** Intersection over union of blob `id` (its box x0, y0, w, h) and the picture's opaque part stretched over that box. */
 function outline(blob: Int32Array, id: number, width: number, x0: number, y0: number, w: number, h: number, picture: Uint8Array, form: Shape) {

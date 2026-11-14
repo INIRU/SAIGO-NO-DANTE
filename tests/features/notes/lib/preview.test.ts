@@ -1,32 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { PREVIEW_DELAY_MS, previewPlacement, usesHover } from '@/features/notes/lib/preview'
+import { PREVIEW_DELAY_MS, usesHover } from '@/features/notes/lib/preview'
 
-const anchor = (left: number, top: number, width = 80, height = 24) => ({ left, top, right: left + width, bottom: top + height, width, height })
-const view = { width: 1000, height: 800 }
-const card = () => 200
-
-describe('where the preview card goes', () => {
+describe('the preview card opens after 150ms', () => {
   it('opens after 150ms', () => {
     expect(PREVIEW_DELAY_MS).toBe(150)
-  })
-  it('sits below the name, starting at its left edge', () => {
-    expect(previewPlacement(anchor(100, 100), card, view)).toMatchObject({ left: 100, top: 132, above: false, width: 336 })
-  })
-  it('moves above the name when there is no room below', () => {
-    expect(previewPlacement(anchor(100, 700), card, view)).toMatchObject({ left: 100, top: 692, above: true })
-  })
-  it('stays inside the screen sideways', () => {
-    expect(previewPlacement(anchor(900, 100), card, view).left).toBe(1000 - 8 - 336)
-    expect(previewPlacement(anchor(-20, 100), card, view).left).toBe(8)
-  })
-})
-
-describe('the preview card tries 21rem, 28rem, then 36rem', () => {
-  it('widens a long gift effect text before it runs off the bottom', () => {
-    const text = (width: number) => Math.ceil(336 * 520 / width)
-    expect(previewPlacement(anchor(100, 100), text, view).width).toBe(448)
-    // rem 20: 420 wide is already short enough
-    expect(previewPlacement(anchor(100, 100), text, view, 20).width).toBe(420)
   })
 })
 

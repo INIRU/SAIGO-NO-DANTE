@@ -160,7 +160,7 @@ const copy = {
   },
 }
 
-export type GuestCopy = typeof copy.ko
+type GuestCopy = typeof copy.ko
 export const getGuestCopy = (locale: string): GuestCopy => copy[locale as keyof typeof copy] ?? copy.ko
 
 /** Board label for a guest author: "익명 #1a2b". Null without a tag. */

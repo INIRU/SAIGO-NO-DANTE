@@ -17,7 +17,7 @@ export function useOwnKeywords(listed: readonly string[] | null | undefined, tex
   return useMemo(() => ownKeywordSet(listed, texts, names), [listed, texts, names])
 }
 
-export type OwnKeywordOwner = { id: string; keywords: readonly string[] | null | undefined; texts: readonly Text[] }
+type OwnKeywordOwner = { id: string; keywords: readonly string[] | null | undefined; texts: readonly Text[] }
 
 /** The same for several identities at once (a deck panel), by owner id. `owners` should be a stable (memoized) array. */
 export function useOwnKeywordSets(owners: readonly OwnKeywordOwner[]): ReadonlyMap<string, ReadonlySet<string>> {

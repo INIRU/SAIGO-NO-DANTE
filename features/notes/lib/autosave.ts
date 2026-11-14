@@ -1,5 +1,5 @@
 /** One automatic draft per editor target (a new deck/plan, or one saved id), kept in this browser's localStorage. */
-export type AutosaveKind = 'deck' | 'plan'
+type AutosaveKind = 'deck' | 'plan'
 
 export const autosaveKey = (kind: AutosaveKind, id?: string | null) => `limbus-autosave:${kind}:${id || 'new'}`
 

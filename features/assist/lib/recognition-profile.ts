@@ -5,7 +5,7 @@
  */
 export type RecognitionMode = 'fastest' | 'performance' | 'balanced' | 'quality'
 
-export interface RecognitionProfile {
+interface RecognitionProfile {
   /** 1: popups and screen reads share one OCR worker; 2: a popup lane and a screen (event/pack/banner) lane. */
   ocrWorkers: 1 | 2
   /** Scene/icon inference interval. */

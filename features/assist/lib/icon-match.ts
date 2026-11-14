@@ -12,8 +12,8 @@ export interface IconTemplate { id: string; size: number; pixels: Int32Array; ve
   inner: Float32Array; innerCount: number }
 
 /** Accepted only when clearly ahead of every other icon; measured wrong matches stayed below these. */
-export const ICON_MATCH_MIN = 0.8
-export const ICON_MATCH_MARGIN = 0.2
+const ICON_MATCH_MIN = 0.8
+const ICON_MATCH_MARGIN = 0.2
 const DRAWN = 32
 const OPAQUE = 160
 

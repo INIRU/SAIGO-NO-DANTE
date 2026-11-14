@@ -131,13 +131,13 @@ export function pickText(t: Texts | null | undefined, lang: 'ko' | 'en' | 'ja'):
 export type DungeonRect = [number, number, number, number]
 export type RGBA = [number, number, number, number]
 /** Image.Type.Sliced: borders in map units (left, bottom, right, top), the same as uv fractions, fillCenter */
-export interface DungeonSlice { border: [number, number, number, number]; uv: [number, number, number, number]; fill: boolean }
+interface DungeonSlice { border: [number, number, number, number]; uv: [number, number, number, number]; fill: boolean }
 /** A room's child Image (7장-style rooms): on = active in the prefab, mask = a Unity Mask over its kids */
 export interface DungeonPart { name: string; on: boolean; rect: DungeonRect; tilt?: number; /** turned about its centre, degrees counter-clockwise (8-20 2F slanted sectors) */ rot?: number; /** mirrored [x, y] about its centre (a negative localScale) */ flip?: [boolean, boolean]; sprite?: string; color?: RGBA; fit?: boolean; slice?: DungeonSlice; mask?: boolean; kids?: DungeonPart[] }
 /** fit: Image.preserveAspect (the sprite fitted in the rect, its aspect kept) */
 export interface DungeonDoor { rect: DungeonRect; rot: number; sprite: string | null; slice?: DungeonSlice; fit?: boolean }
 /** One floor as its DungeonMapFloor_<id>_<floor> prefab lays it out (pipeline/story_map.py dungeon_layouts). */
-export interface DungeonFloorMap {
+interface DungeonFloorMap {
   /** order: the Canvas sorting order they draw at (-1: under the LineRenderers; 1: [Script]MapCanvas) */
   pics: { rect: DungeonRect; sprite?: string; illust?: boolean; color: RGBA; clip?: DungeonRect; order?: number; slice?: DungeonSlice; fit?: boolean; lift?: number }[]
   /** iconSprite: the prefab's own Icon sprite (a cleared BOSS room shows it) */

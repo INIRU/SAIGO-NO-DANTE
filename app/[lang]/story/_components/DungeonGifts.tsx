@@ -20,7 +20,7 @@ const maxInto = (into: Tally, m: Tally) => { for (const [k, v] of m) into.set(k,
  * are alternatives; a check's success or failure; what follows adds on), summed over its EVENT rooms. A gift effect
  * gives itemReward.num (1 when unset); destroying or losing one does not count.
  */
-export function giftTally(events: Record<string, DungeonEvent>, firsts: number[]): Tally {
+function giftTally(events: Record<string, DungeonEvent>, firsts: number[]): Tally {
   const ofResults = (rs: DungeonEventResult[], seen: Set<number>): Tally => {
     const out: Tally = new Map()
     for (const r of rs) {

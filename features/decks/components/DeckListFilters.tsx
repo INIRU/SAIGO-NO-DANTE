@@ -104,7 +104,6 @@ export default function DeckListFilters({
   searchRef, showSuggestions, suggestions, acIndex, onSuggestionClick, getIconUrl,
   sort, onSortChange,
   activeContentType, onContentTypeChange,
-  advancedFilterCount,
   allTags, activeTags, showTagFilter, onToggleTagFilter, onToggleTag, onClearTags,
   keywordCandidates, availableKeywords, activeKeywordTags, keywordTagMode,
   onToggleKeywordTag, onClearKeywordTags, onToggleKeywordTagMode,
@@ -136,7 +135,6 @@ export default function DeckListFilters({
   const [identityModalSinnerId, setIdentityModalSinnerId] = useState<string | null>(null)
   const [keywordTagInput, setKeywordTagInput] = useState('')
   const collectionCount = (filterOwnedIdentity ? 1 : 0) + (filterOwnedEgo ? 1 : 0)
-  const totalActiveCount = advancedFilterCount + (activeContentType ? 1 : 0) + (inputValue.trim() ? 1 : 0)
   const selectedIdentitiesBySinner = useMemo(() => {
     const grouped = new Map<string, DeckFilterIdentity[]>()
     for (const identity of selectedIdentities) {
