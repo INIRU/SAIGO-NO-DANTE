@@ -1,6 +1,6 @@
 import { renderToStaticMarkup } from 'react-dom/server'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { GameTextRefNames } from '@/lib/db/game-text-refs'
+import type { GameTextRefNames } from '@/lib/game-text/ref-names'
 
 const REFS: GameTextRefNames = { Combustion: { k: 'keyword', n: '화상', kw: '화상' } }
 const requestedKeys: (string | null)[] = []

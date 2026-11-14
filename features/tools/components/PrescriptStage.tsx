@@ -4,7 +4,7 @@ import { createContext, useContext, useEffect, useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { gradeOf, prescriptPoints, type Prescript, type PrescriptCard, type PrescriptGoal, type PrescriptRun, type PrescriptScope } from '@/features/tools/lib/prescript'
 import type { PrescriptOffer } from '@/features/tools/hooks/usePrescript'
-import styles from './prescript.module.css'
+import styles from '@/features/tools/components/PrescriptClient.module.css'
 import { getGiftKeywordColor } from '@/lib/constants/gift'
 
 const ASSET = '/assets/fun/prescript'

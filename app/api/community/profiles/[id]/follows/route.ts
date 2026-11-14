@@ -4,7 +4,7 @@ import { getServerSession } from 'next-auth';
 import { z } from 'zod';
 import { authOptions } from '@/lib/auth';
 import { createAdminClient } from '@/lib/supabase/admin';
-import { findOrCreateSupabaseUser } from '@/lib/supabase/findOrCreateUser';
+import { findOrCreateSupabaseUser } from '@/lib/supabase/find-or-create-user';
 import { isAllowedRequestOrigin } from '@/lib/request-origin';
 import { checkRequestRateLimit, rateLimitResponse } from '@/lib/rate-limit';
 const headers = { 'Cache-Control': 'private, no-store' };

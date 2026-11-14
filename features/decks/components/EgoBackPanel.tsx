@@ -1,5 +1,5 @@
 import Image from 'next/image'
-import { EgoCardRows, type EgoSlotItem } from '@/features/catalog/components/EgoSlotRows'
+import { EgoCardRows, type EgoSlotItem } from '@/components/cards/EgoSlotRows'
 import { getSinnerLogoUrl } from '@/lib/utils/images'
 import styles from '@/features/decks/components/EgoBackPanel.module.css'
 import boardStyles from '@/features/decks/components/FormationBoard.module.css'

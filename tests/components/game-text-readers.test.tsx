@@ -4,7 +4,7 @@ import { KeywordProvider, type KeywordInfo } from '@/components/providers/Keywor
 import SkillDescription from '@/features/catalog/components/SkillDescription'
 import KeywordCard, { type KeywordEntry } from '@/app/[lang]/keywords/_components/KeywordCard'
 import { EffectText } from '@/features/mirror-dungeon/components/GiftDetailModal'
-import type { GameTextRefNames } from '@/lib/db/game-text-refs'
+import type { GameTextRefNames } from '@/lib/game-text/ref-names'
 
 const REFS: GameTextRefNames = {
   Combustion: { k: 'keyword', n: '화상', kw: '화상' },
@@ -12,7 +12,7 @@ const REFS: GameTextRefNames = {
 }
 vi.mock('next-intl', () => ({ useLocale: () => 'ko', useTranslations: () => (key: string) => key }))
 vi.mock('@/lib/i18n/navigation', () => ({ Link: 'a' }))
-vi.mock('@/lib/hooks/useGameTextRefs', () => ({
+vi.mock('@/hooks/useGameTextRefs', () => ({
   useGameTextRefs: () => ({ names: REFS, refIds: new Set(Object.keys(REFS)) }),
   wantGameTextRefs: () => {},
   preloadGameTextRefDescriptions: () => {},

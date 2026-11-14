@@ -4,7 +4,7 @@ import type { CSSProperties, Ref } from 'react'
 import Image from 'next/image'
 import { useLocale, useTranslations } from 'next-intl'
 import { Lock, LockOpen, RefreshCw } from 'lucide-react'
-import IdentityFrameCard from '@/features/catalog/components/IdentityFrameCard'
+import IdentityFrameCard from '@/components/cards/IdentityFrameCard'
 import { getEgoGradeBannerUrl, getSinnerLogoUrl } from '@/lib/utils/images'
 import { SIN_COLORS, normalizeSin } from '@/lib/constants/sin'
 import { getLocalizedName } from '@/lib/i18n'
@@ -12,7 +12,7 @@ import type { SupportedLang } from '@/lib/i18n/types'
 import type { Sinner, Identity } from '@/lib/types'
 import type { RandomResult } from '@/features/tools/lib/random/engine'
 import { EGO_GRADES, isRareEgo, isRareIdentity, revealRanks } from '@/features/tools/lib/random/display'
-import styles from './random.module.css'
+import styles from '@/features/tools/components/RandomClient.module.css'
 
 /**
  * The 12 sinners on the formation board grid, as identity cards or as E.G.O slots (same cell size, so switching tabs

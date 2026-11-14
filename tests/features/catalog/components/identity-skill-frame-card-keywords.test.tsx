@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { KeywordProvider, type KeywordInfo } from '@/components/providers/KeywordProvider'
 import IdentitySkillFrameCard from '@/features/catalog/components/IdentitySkillFrameCard'
 import { SIN_COLORS } from '@/lib/constants/sin'
-import type { GameTextRefNames } from '@/lib/db/game-text-refs'
+import type { GameTextRefNames } from '@/lib/game-text/ref-names'
 
 const REFS: GameTextRefNames = {
   Sinking: { k: 'keyword', n: '침잠', kw: '침잠' },

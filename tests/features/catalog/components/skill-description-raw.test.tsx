@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { KeywordProvider, type KeywordInfo } from '@/components/providers/KeywordProvider'
 import SkillDescription from '@/features/catalog/components/SkillDescription'
 import { UptieChangePanel } from '@/features/catalog/components/UptieChanges'
-import type { GameTextRefNames } from '@/lib/db/game-text-refs'
+import type { GameTextRefNames } from '@/lib/game-text/ref-names'
 
 const REFS: GameTextRefNames = {
   Combustion: { k: 'keyword', n: '화상', kw: '화상' },
@@ -13,7 +13,7 @@ const REFS: GameTextRefNames = {
 vi.mock('next-intl', () => ({ useLocale: () => 'ko', useTranslations: () => (key: string) => key }))
 vi.mock('@/lib/i18n/navigation', () => ({ Link: 'a' }))
 // A server render never loads the lazy table (the hook waits for a browser), so the loaded table is stood in directly.
-vi.mock('@/lib/hooks/useGameTextRefs', () => ({
+vi.mock('@/hooks/useGameTextRefs', () => ({
   useGameTextRefs: () => ({ names: REFS, refIds: new Set(Object.keys(REFS)) }),
   wantGameTextRefs: () => {},
   preloadGameTextRefDescriptions: () => {},

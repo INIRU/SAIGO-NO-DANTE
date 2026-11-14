@@ -10,7 +10,7 @@ vi.mock('next-intl', () => ({
 }))
 vi.mock('next/image', () => ({ default: ({ src, alt }: { src: string; alt: string }) => <img src={src} alt={alt} /> }))
 vi.mock('@/components/providers/KeywordProvider', () => ({ useKeywordData: () => ({ keywords: {} }) }))
-vi.mock('@/features/planner/components/KeywordChart', () => ({ default: () => null }))
+vi.mock('@/components/ui/KeywordChart', () => ({ default: () => null }))
 vi.mock('@/features/catalog/components/SkillDescription', () => ({ default: () => null }))
 
 const passive = (id: string, passive_type: string, active_cond: string | null, sin: string, count: number): DeckInsightPassive => ({
@@ -32,7 +32,7 @@ const bench = identity('bench', [
   passive('battle-of-bench', 'battle', 'stock', 'wrath', 1),
 ], { pride: 6 })
 
-// The static markup shows the battle tab; who a support passive is rated for is tested with rateIdentityPassive in tests/features/decks/lib/passive-activation.test.ts.
+// The static markup shows the battle tab; who a support passive is rated for is tested with rateIdentityPassive in tests/lib/decks/passive-activation.test.ts.
 const render = (identities: DeckInsightIdentity[], deployedIds?: Set<string>) =>
   renderToStaticMarkup(<DeckInsights identities={identities} sinCounts={{ wrath: 6 }} deployedIds={deployedIds} />)
 const names = (html: string) => [...html.matchAll(/class="deck-passive" data-name="([^"]*)"/g)].map(match => match[1])

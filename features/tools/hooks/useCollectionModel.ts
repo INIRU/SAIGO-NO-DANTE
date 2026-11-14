@@ -3,7 +3,7 @@
 import { useMemo } from 'react'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
 import type { CollectionData } from '@/lib/collection'
-import { countCollection, filterCollection } from '@/lib/collection-view'
+import { countCollection, filterCollection } from '@/features/tools/lib/collection-view'
 
 export function useCollectionModel(data: CollectionData | null, owned: Set<string>, keyword: string | null) {
   const { sinMap } = useKeywordData()

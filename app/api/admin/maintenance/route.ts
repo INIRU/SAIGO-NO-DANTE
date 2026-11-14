@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { maintenanceSchema } from '@/lib/maintenance-schema'
-import { syncMaintenanceToEdge } from '@/lib/maintenance-edge'
+import { maintenanceSchema, syncMaintenanceToEdge } from '@/features/admin/server'
 
 export async function GET() {
   const auth = await requireAdmin()

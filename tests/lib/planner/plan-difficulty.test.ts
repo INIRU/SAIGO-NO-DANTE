@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest'
-import { planDifficultyBadge, planMatchesDifficulty, computeDifficultySummary, storedDifficultiesFor, storedPlanDifficulty } from '@/lib/planner/stripPlanForList'
+import { planDifficultyBadge, planMatchesDifficulty, computeDifficultySummary, storedDifficultiesFor, storedPlanDifficulty } from '@/lib/planner/strip-plan-for-list'
 import { normalizeFloorPlanDifficulty } from '@/lib/planner/floor-difficulty'
 
 const floors = (count: number) => normalizeFloorPlanDifficulty(Array.from({ length: count }, (_, i) => ({ floor: i + 1, theme_id: 't' + i })), 'hard').floorPlan

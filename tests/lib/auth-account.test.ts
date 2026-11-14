@@ -12,7 +12,7 @@ vi.mock('@/lib/auth', () => ({
   requireActiveUser: async () => { state.used.push('requireActiveUser'); return signedIn },
 }))
 vi.mock('@/lib/supabase/admin', () => ({ createAdminClient: () => admin }))
-vi.mock('@/lib/supabase/findOrCreateUser', () => ({
+vi.mock('@/lib/supabase/find-or-create-user', () => ({
   findOrCreateSupabaseUser: async (...args: unknown[]) => { state.used.push(`lookup:${args.slice(1).join('|')}`); return state.userId },
 }))
 

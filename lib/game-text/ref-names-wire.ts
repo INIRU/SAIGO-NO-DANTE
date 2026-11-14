@@ -1,4 +1,4 @@
-import type { GameTextRefNames } from '@/lib/db/game-text-refs'
+import type { GameTextRefNames } from '@/lib/game-text/ref-names'
 
 /**
  * The reference names as the [lang] layout hands them down: every browser load carries them, so what the readers can

@@ -13,7 +13,7 @@ vi.mock('@/components/ui/GiftArtwork', () => ({ default: () => <span data-test-a
 // the site's preview card (hover) needs the router; the cells are what these tests read
 vi.mock('@/features/notes/components/NotePreviewCard', () => ({ default: ({ children }: { children: React.ReactNode }) => <>{children}</> }))
 vi.mock('@/components/ui/ImageWithFallback', () => ({ default: () => <span data-test-poster /> }))
-vi.mock('@/features/decks/components/NoteChips', () => ({ NoteRenderer: () => null }))
+vi.mock('@/features/notes/components/NoteChips', () => ({ NoteRenderer: () => null }))
 
 const theme = (id: string, floorInfo: ThemeData['floor_info']): ThemeData =>
   ({ id, name: `pack-${id}`, floor_info: floorInfo, ego_gift_ids: [], specific_ego_gift_ids: [], image_url: `https://example.test/${id}.webp`, difficulty: null })

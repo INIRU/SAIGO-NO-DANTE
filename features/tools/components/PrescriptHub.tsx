@@ -9,7 +9,7 @@ import { GRADE_KEY, HISTORY_KEY, historyTotals, readGrade, readHistory, type Pre
 import { GRADES, type PrescriptGrade } from '@/features/tools/lib/prescript'
 import IndexIntro from './IndexIntro'
 import PrescriptRules from './PrescriptRules'
-import styles from './prescript.module.css'
+import styles from '@/features/tools/components/PrescriptClient.module.css'
 
 /**
  * The Index mode's entrance: the terminal to switch on, the last finished run, and the ways to my records, the ranking and

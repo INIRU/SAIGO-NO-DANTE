@@ -7,16 +7,16 @@ vi.mock('next-intl', () => ({ useLocale: () => 'ko', useTranslations: () => (key
 // eslint-disable-next-line @next/next/no-img-element
 vi.mock('next/image', () => ({ default: ({ src, alt }: { src: string; alt: string }) => <img src={src} alt={alt} /> }))
 vi.mock('@/components/ui/BaseModal', () => ({ default: ({ open, children }: { open: boolean; children: React.ReactNode }) => (open ? <div role="dialog">{children}</div> : null) }))
-vi.mock('@/features/catalog/components/IdentityFrameCard', () => ({ default: ({ name }: { name: string }) => <span data-identity>{name}</span> }))
+vi.mock('@/components/cards/IdentityFrameCard', () => ({ default: ({ name }: { name: string }) => <span data-identity>{name}</span> }))
 vi.mock('@/lib/i18n/navigation', () => ({ Link: ({ href, children }: { href: string; children: React.ReactNode }) => <a href={href}>{children}</a>, useRouter: () => ({}), usePathname: () => '/' }))
-vi.mock('@/features/catalog/components/EgoDisplayCard', () => ({ default: ({ name }: { name: string }) => <span data-ego>{name}</span> }))
-vi.mock('@/features/community/components/BoardSkeleton', () => ({ CardSkeleton: ({ kind }: { kind: string }) => <div data-card-skeleton={kind} /> }))
+vi.mock('@/components/cards/EgoDisplayCard', () => ({ default: ({ name }: { name: string }) => <span data-ego>{name}</span> }))
+vi.mock('@/components/cards/CardSkeleton', () => ({ CardSkeleton: ({ kind }: { kind: string }) => <div data-card-skeleton={kind} /> }))
 
-import { useSuggestionState } from '@/features/community/hooks/useSuggestions'
+import { useSuggestionState } from '@/hooks/useSuggestions'
 import { SuggestionGroupSkeleton, GiftGroupSkeleton, IdentityTileSkeleton } from '@/components/ui/SuggestionSkeleton'
 import { RecommendationLaneSkeleton, IdentityRecommendationsSkeleton } from '@/features/decks/components/RecommendationSkeleton'
 import { ThemePackPickerModal } from '@/components/ui/ThemePackModal'
-import { PlannerEgoSelectModal, PlannerIdentitySelectModal } from '@/features/planner/components/PlannerDeckSelection'
+import { PlannerEgoSelectModal, PlannerIdentitySelectModal } from '@/features/decks/components/PlannerDeckSelection'
 import FloorGiftPickerModal from '@/features/planner/components/FloorGiftPickerModal'
 
 const count = (html: string, needle: string) => html.split(needle).length - 1

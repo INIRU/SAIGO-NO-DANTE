@@ -3,7 +3,7 @@ import { getKeywordIconUrl } from '@/lib/constants/keywords'
 import { getSinIconUrl, SIN_ATTRIBUTE_CODES } from '@/lib/constants/sin'
 import { getGameUiAsset } from '@/lib/utils/game-ui'
 import { getIdentityPortraitUrl } from '@/lib/utils/images'
-import type { GameTextRefNames } from '@/lib/db/game-text-refs'
+import type { GameTextRefNames } from '@/lib/game-text/ref-names'
 
 /** Where the skill motion videos, their layer metadata and `index.json` live (Cloudflare R2, read directly by the browser). */
 export const MOTION_ASSET_BASE = 'https://assets.saigo-no-dante.com/'

@@ -111,10 +111,10 @@
 
 | 용도 | 컴포넌트 |
 | --- | --- |
-| 인격 카드(프레임, 동기화, SELECTED 배너, 이름) | `features/catalog/components/IdentityFrameCard.tsx` |
-| 6×2 편성 보드 | `features/decks/components/FormationBoard.tsx`, 편집은 `features/planner/components/PlannerDeckSelection.tsx` |
+| 인격 카드(프레임, 동기화, SELECTED 배너, 이름) | `components/cards/IdentityFrameCard.tsx` |
+| 6×2 편성 보드 | `features/decks/components/FormationBoard.tsx`, 편집은 `features/decks/components/PlannerDeckSelection.tsx` |
 | 키워드 분포, 패시브, 공격 유형, 죄악 자원 | `features/decks/components/DeckInsights.tsx`, `DeckResourceSummary.tsx` |
-| 스킬 분포(교환) | `features/planner/components/SkillExchangePanel.tsx` |
+| 스킬 분포(교환) | `components/ui/SkillExchangePanel.tsx` |
 | 기프트 카드, 아트, 등급 | `features/mirror-dungeon/components/GiftCard.tsx`, `GiftArtwork.tsx`, `GiftGrade.tsx` |
 | 기프트 목록(키워드 탭, 등급 칩, 검색) | `features/mirror-dungeon/components/GiftCatalog.tsx` |
 | 테마팩 카드 | `components/ui/ThemePackCard.tsx` |

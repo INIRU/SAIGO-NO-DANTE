@@ -5,7 +5,7 @@ const read = (path: string) => readFileSync(path, 'utf8')
 
 describe('the deck and plan lists have no language filter', () => {
   it('the deck list has no language control, address value or request value', () => {
-    for (const path of ['app/[lang]/decks/DecksClient.tsx', 'features/decks/components/DeckListFilters.tsx', 'features/decks/lib/decks-types.ts']) {
+    for (const path of ['app/[lang]/decks/DecksClient.tsx', 'features/decks/components/DeckListFilters.tsx', 'lib/decks/decks-types.ts']) {
       expect(read(path), path).not.toMatch(/languageFilter|LanguageFilter|DeckLanguage|useQueryState\('lang'|set\('lang'/)
     }
   })

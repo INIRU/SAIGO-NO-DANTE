@@ -34,7 +34,7 @@ import {
   normalizeDeckMainKeyword,
   type DeckKeywordSlot,
 } from '@/lib/decks/keyword-rules'
-import { NoteRenderer, fetchNoteGifts } from '@/features/decks/components/NoteChips'
+import { NoteRenderer, fetchNoteGifts } from '@/features/notes/components/NoteChips'
 import { NoteGiftClickContext } from '@/features/notes/components/NoteBlockViewer'
 import PlannerGiftModal from '@/features/planner/components/PlannerGiftModal'
 import type { GiftData } from '@/lib/planner/types'
@@ -42,19 +42,11 @@ import KeywordIcon from '@/components/ui/KeywordIcon'
 import RelativeTime from '@/components/ui/RelativeTime'
 import DeckInsights, { type DeckInsightIdentity } from '@/features/decks/components/DeckInsights'
 import DeckResourceSummary from '@/features/decks/components/DeckResourceSummary'
-import SkillExchangePanel from '@/features/planner/components/SkillExchangePanel'
+import SkillExchangePanel from '@/components/ui/SkillExchangePanel'
 import { computeDeckResources, computeSinProduction, fieldedEntries, rowsAtUptie, topUptieSkills, BOARD_SLOT_COUNT, adaptBoardIdentity, buildBoardSlots, buildNoteLookups, topKeywords, contentTypeMessageKey, localizeDeckKeyword, type SinnerEgo } from '@/features/decks'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
-import {
-  localizeEgoName,
-  localizeIdentityName,
-  localizePassiveDescription,
-  localizePassiveName,
-  localizeSkillName,
-  type EgoEntry,
-  type IdentityDetail,
-  type IdentitySlot,
-} from '@/features/decks/components/DeckIdentityCard'
+import { localizeEgoName, localizeIdentityName, localizePassiveDescription, localizePassiveName, localizeSkillName } from '@/lib/decks/localize'
+import { type EgoEntry, type IdentityDetail, type IdentitySlot } from '@/lib/decks/identity-types'
 import FormationBoard, { type FormationBoardSlot } from '@/features/decks/components/FormationBoard'
 import { FormationTabs, type FormationEgo } from '@/features/decks/components/FormationEgoGrid'
 import DeckRecommendations, { type DeckRecommendationsData } from '@/features/decks/components/DeckRecommendations'

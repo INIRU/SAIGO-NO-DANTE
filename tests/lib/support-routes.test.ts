@@ -21,7 +21,7 @@ vi.mock('@/lib/auth', () => ({
   requireAdmin: m.admin,
 }))
 vi.mock('@/lib/supabase/admin', () => ({ createAdminClient: m.db }))
-vi.mock('@/lib/supabase/findOrCreateUser', () => ({
+vi.mock('@/lib/supabase/find-or-create-user', () => ({
   findOrCreateSupabaseUser: m.owner,
 }))
 vi.mock('@/lib/rate-limit', () => ({

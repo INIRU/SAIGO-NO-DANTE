@@ -27,7 +27,7 @@ import ResultSummary from '@/features/tools/components/ResultSummary'
 import ResultToolbar from '@/features/tools/components/ResultToolbar'
 import { useRandomRoll } from '@/features/tools/hooks/useRandomRoll'
 import { showSuccess, showError, showWarning } from '@/lib/toast'
-import styles from '@/features/tools/components/random.module.css'
+import styles from '@/features/tools/components/RandomClient.module.css'
 
 type Props = { sinners: Sinner[]; identities: Identity[]; egos: EGO[] }
 

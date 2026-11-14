@@ -22,7 +22,7 @@ vi.mock('next-auth', () => ({ getServerSession: async () => state.session }))
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn(), revalidateTag: vi.fn() }))
 vi.mock('@/features/community/server', () => ({ invalidateProfileDecks: async () => {} }))
 vi.mock('@/lib/supabase/admin', () => ({ createAdminClient: () => admin }))
-vi.mock('@/lib/supabase/findOrCreateUser', () => ({
+vi.mock('@/lib/supabase/find-or-create-user', () => ({
   findOrCreateSupabaseUser: async (...args: unknown[]) => {
     state.lookups.push(args)
     if (state.lookup.error) throw state.lookup.error

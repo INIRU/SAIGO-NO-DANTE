@@ -1,4 +1,4 @@
-/* Same grid as the planner's formation board (features/planner/components/PlannerDeckSelection.tsx .fboard__grid). */
+/* Same grid as the planner's formation board (features/decks/components/PlannerDeckSelection.tsx .fboard__grid). */
 .grid {
   display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.625rem 0.375rem;
   width: 100%; max-width: 62rem; margin: 0 auto; padding: 0.75rem 0.25rem; list-style: none;

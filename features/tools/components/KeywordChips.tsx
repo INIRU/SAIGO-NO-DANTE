@@ -7,7 +7,7 @@ import { SIN_COLORS } from '@/lib/constants/sin'
 import { getLocalizedKeywordName } from '@/lib/i18n'
 import type { SupportedLang } from '@/lib/i18n/types'
 import type { KeywordCondition } from '@/features/tools/lib/random/engine'
-import styles from './random.module.css'
+import styles from '@/features/tools/components/RandomClient.module.css'
 
 const MAIN_KEYWORDS = ['화상', '출혈', '진동', '파열', '침잠', '호흡', '충전']
 

@@ -11,8 +11,9 @@ vi.mock('next-intl/server', () => ({ getTranslations: async () => (key: string) 
 vi.mock('@/features/community/server/co-visited', () => ({
   getCoVisited: async () => { if (state.fail) throw new Error('missing'); return state.posts },
 }))
-vi.mock('@/features/decks/components/DeckCard', () => ({ default: ({ deck }: { deck: { id: string } }) => <span data-deck>{deck.id}</span> }))
-vi.mock('@/features/planner/components/PlanCard', () => ({ default: ({ plan }: { plan: { id: string } }) => <span data-plan>{plan.id}</span> }))
+vi.mock('@/components/cards/DeckCard', () => ({ default: ({ deck }: { deck: { id: string } }) => <span data-deck>{deck.id}</span> }))
+vi.mock('@/features/notes/components/NoteChips', () => ({ NoteCardPreview: () => null }))
+vi.mock('@/components/cards/PlanCard', () => ({ default: ({ plan }: { plan: { id: string } }) => <span data-plan>{plan.id}</span> }))
 
 import CoVisitedLane from '@/features/community/components/CoVisitedLane'
 

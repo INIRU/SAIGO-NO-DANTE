@@ -1,5 +1,5 @@
 /**
- * The inline syntax of a plain/markdown memo, shared by the renderer (features/decks/components/NoteChips.tsx) and the note text helpers
+ * The inline syntax of a plain/markdown memo, shared by the renderer (features/notes/components/NoteChips.tsx) and the note text helpers
  * (lib/notes/blocks.ts) so both read the same text the same way.
  * The functions return fresh global regular expressions (a shared one would keep its position between uses).
  */

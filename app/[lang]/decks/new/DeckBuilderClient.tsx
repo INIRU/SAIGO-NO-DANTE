@@ -50,11 +50,7 @@ import { IdentityTab, EgoTab, SkillsetTab } from '@/features/decks/components/De
 import { getIdentityImageUrl } from '@/lib/utils/images'
 import DeckInsights, { type DeckInsightIdentity } from '@/features/decks/components/DeckInsights'
 import DeckResourceSummary from '@/features/decks/components/DeckResourceSummary'
-import {
-  localizeIdentityName,
-  localizePassiveDescription,
-  localizePassiveName,
-} from '@/features/decks/components/DeckIdentityCard'
+import { localizeIdentityName, localizePassiveDescription, localizePassiveName } from '@/lib/decks/localize'
 import type { SupportedLang } from '@/lib/i18n/types'
 import type { EgoGiftNote } from '@/lib/types'
 import {

@@ -8,7 +8,7 @@ import {
   getThemePackTitleLayout,
   getThemePackVisualConfig,
 } from '@/lib/data/theme-pack-visuals'
-import { useAutoFontSize, useTwoLineTitle } from '@/lib/hooks/useAutoFontSize'
+import { useAutoFontSize, useTwoLineTitle } from '@/hooks/useAutoFontSize'
 import { getLocalizedName } from '@/lib/i18n/localize'
 import { translations } from '@/lib/i18n/translations'
 import type { SupportedLang } from '@/lib/i18n/types'

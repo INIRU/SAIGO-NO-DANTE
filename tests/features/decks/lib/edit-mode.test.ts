@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { normalizeUptie } from '@/features/decks/lib/deck-identity-uptie'
+import { normalizeUptie } from '@/lib/decks/deck-identity-uptie'
 import { buildEditMode } from '@/features/decks/lib/edit-mode'
 
 type Row = Parameters<typeof buildEditMode>[0]['deckIdentities'][number]

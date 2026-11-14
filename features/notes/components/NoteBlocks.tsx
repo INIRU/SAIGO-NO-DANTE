@@ -19,7 +19,9 @@ import { isRichClipboardHtml, pastedMarkdownContent } from '@/features/notes/lib
 import { assetName, type NoteAssetData } from '@/features/notes/lib/assets'
 import { isNoteImageUrl, pendingNoteUploads } from '@/lib/notes/images'
 import { NoteCardView, NoteCardPicker, type NoteCardKind } from './NoteCardBlock'
-import { NoteAssetView, NoteAssetArtwork, NoteKeywordLabel, NoteGiftLabel, NoteMentionLabel, NoteVideo, fetchNoteAssets } from './NoteBlockViewer'
+import { NoteCardPreview } from './NoteChips'
+import { NoteAssetArtwork } from './NoteAssetArtwork'
+import { NoteAssetView, NoteKeywordLabel, NoteGiftLabel, NoteMentionLabel, NoteVideo, fetchNoteAssets } from './NoteBlockViewer'
 import { tr } from '@/features/notes/lib/tr'
 
 const pickTitle = (kind:BlockKind,lang:string)=>{const label=blockLabel(kind,lang);return tr(lang,`${label} 선택`,`${label}を選択`,`Choose ${kind==='ego'||kind==='youtube'?label:label.toLowerCase()}`)}
@@ -170,8 +172,8 @@ function CardNodeView({node,updateAttributes,deleteNode,selected,editor,getPos}:
   const title=tr(lang,'덱·플랜 선택','デッキ・プランを選択','Choose deck or plan')
   return <NodeViewWrapper className="note-asset-node note-card-node" data-selected={selected || undefined} contentEditable={false}>
     <BlockActions editor={editor} getPos={getPos} onDelete={deleteNode}/>
-    {id ? <><NoteCardView kind={kind} id={id}/><button className="note-asset-replace" type="button" onClick={()=>setPicking(true)}>{tr(lang,'변경','変更','Change')}</button></> : <button type="button" className="note-empty-slot" onClick={()=>setPicking(true)} aria-label={title}><Plus size={25}/><span>{title}</span></button>}
-    {picking && <NoteCardPicker kind={kind} onKind={k=>updateAttributes({kind:k})} onClose={()=>setPicking(false)} onSelect={(k,cardId)=>{updateAttributes({kind:k,id:cardId});setPicking(false)}}/>}
+    {id ? <><NoteCardView kind={kind} id={id} NotePreview={NoteCardPreview}/><button className="note-asset-replace" type="button" onClick={()=>setPicking(true)}>{tr(lang,'변경','変更','Change')}</button></> : <button type="button" className="note-empty-slot" onClick={()=>setPicking(true)} aria-label={title}><Plus size={25}/><span>{title}</span></button>}
+    {picking && <NoteCardPicker kind={kind} NotePreview={NoteCardPreview} onKind={k=>updateAttributes({kind:k})} onClose={()=>setPicking(false)} onSelect={(k,cardId)=>{updateAttributes({kind:k,id:cardId});setPicking(false)}}/>}
   </NodeViewWrapper>
 }
 const NoteCallout = Node.create({name:'noteCallout',group:'block',content:'block+',defining:true,isolating:true,

@@ -1,6 +1,7 @@
 import { SITE_URL } from '@/lib/seo/metadata'
 import { computeSkillImageIndices, getIdentityPortraitUrl, getSkillIconUrl } from '@/lib/utils/images'
-import { computeAttackTypeCounts, computeEgoCostTotals, computeSinProduction, type SkillDistributionTuple, isAwakenedUptie, normalizeUptie, rowsAtUptie } from '@/features/decks'
+import { computeAttackTypeCounts, computeEgoCostTotals, computeSinProduction, type SkillDistributionTuple } from '@/lib/decks/deck-analysis'
+import { isAwakenedUptie, normalizeUptie, rowsAtUptie } from '@/lib/decks/deck-identity-uptie'
 
 type Lang = 'ko' | 'en' | 'ja'
 // Rows come straight from PostgREST selects and stored plan JSON; the shapes are checked by the tests.

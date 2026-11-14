@@ -1,8 +1,8 @@
 'use client'
 
-import { useSuggestionState } from '@/features/community/hooks/useSuggestions'
+import { useSuggestionState } from '@/hooks/useSuggestions'
 import { LCB_IDS } from '@/lib/constants/game'
-import { identitySuggestUrl, suggestionContext, type SuggestionResponse } from '@/features/community'
+import { identitySuggestUrl, suggestionContext, type SuggestionResponse } from '@/lib/community/suggestion-types'
 import { useMemo, useState } from 'react'
 import Image from 'next/image'
 import { useReducedMotion } from 'motion/react'
@@ -13,15 +13,15 @@ import {
   EGO,
   Skill,
 } from '@/lib/data/sinners'
-import { localizeIdentityName } from '@/features/decks/components/DeckIdentityCard'
-import { localizeDeckKeyword } from '@/features/decks/lib/decks-types'
+import { localizeIdentityName } from '@/lib/decks/localize'
+import { localizeDeckKeyword } from '@/lib/decks/decks-types'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
 import { useLocale } from 'next-intl'
 import type { SupportedLang } from '@/lib/i18n/types'
 import { getLocalizedName } from '@/lib/i18n/localize'
 import { DECK_MAIN_KEYWORDS, MANUAL_ATTACK_MAIN_KEYWORDS } from '@/lib/decks/keyword-rules'
-import { SKILL_EXCHANGE_PRESETS } from '@/features/planner/components/SkillExchangePanel'
-import type { SkillCountEdit } from '@/features/catalog/components/EgoSlotRows'
+import { SKILL_EXCHANGE_PRESETS } from '@/components/ui/SkillExchangePanel'
+import type { SkillCountEdit } from '@/components/cards/EgoSlotRows'
 import { buildStripSkills, toEgoSlotItems } from '@/features/decks/lib/strip-skills'
 import {
   PlannerEgoBoard,
@@ -32,7 +32,7 @@ import {
   type PlannerDeckEgo,
   type PlannerEgoBoardSlot,
   type PlannerIdentityBoardSlot,
-} from '@/features/planner/components/PlannerDeckSelection'
+} from '@/features/decks/components/PlannerDeckSelection'
 
 function isPlaceholderName(value: string | null | undefined): boolean {
   const normalized = value?.trim()

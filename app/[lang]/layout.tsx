@@ -5,6 +5,7 @@ import { Toaster } from 'sonner'
 import MotionProvider from '@/components/ui/MotionProvider'
 import { NuqsAdapter } from 'nuqs/adapters/next/app'
 import SessionProvider from '@/components/providers/SessionProvider'
+import SignedInNotices from './_components/SignedInNotices'
 import SWRProvider from '@/components/providers/SWRProvider'
 import ServiceWorkerRegister from '@/components/pwa/ServiceWorkerRegister'
 import UpdateNotice from '@/components/pwa/UpdateNotice'
@@ -167,7 +168,7 @@ export default async function LangLayout({
         <JsonLd data={organizationJsonLd(SITE_URL)} />
         <JsonLd data={videoGameJsonLd(validLang)} />
         <NuqsAdapter>
-          <SessionProvider>
+          <SessionProvider notices={<SignedInNotices />}>
             <SWRProvider>
               <MotionProvider>
                 {/* Section-only messages (planner, meta, …) are added by their layouts, not sent with every page. */}

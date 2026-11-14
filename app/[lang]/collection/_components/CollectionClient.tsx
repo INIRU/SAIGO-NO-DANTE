@@ -5,7 +5,7 @@ import { useSearchParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { useCollectionModel } from '@/features/tools/hooks/useCollectionModel'
 import CollectionBoard from '@/features/tools/components/CollectionBoard'
-import CollectionSection from '@/features/account/components/CollectionSection'
+import CollectionSection from '@/features/tools/components/CollectionSection'
 import { decodeCollectionAsync, type CollectionData } from '@/lib/collection'
 
 const PAGE = 'mx-auto max-w-[80rem] px-4 pb-16 pt-[calc(64px+1.5rem)] md:px-6'

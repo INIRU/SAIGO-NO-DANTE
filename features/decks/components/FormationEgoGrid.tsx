@@ -1,6 +1,6 @@
 'use client'
 
-import type { EgoSlotItem } from '@/features/catalog/components/EgoSlotRows'
+import type { EgoSlotItem } from '@/components/cards/EgoSlotRows'
 
 type FormationTab<K extends string> = { key: K; label: string; count?: string | null }
 

@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { type Skill, type Passive, SIN_COLORS, computeSkillImageIndices } from '@/lib/data/sinners'
 import { selectUptieRows, selectIdentitySkills, buildSkillVariantMap, resolveUptieLevel, uptieLevels as listUptieLevels } from '@/lib/identity/skill-model'
-import { computeSkillDiffs, computePassiveDiffs } from '@/lib/utils/uptie-diff'
+import { computeSkillDiffs, computePassiveDiffs } from '@/features/catalog/lib/uptie-diff'
 
 /** initialLevel: starting uptie (deck slot); a level without data resolves to the nearest one (ties: the lower). */
 export function useIdentitySkillModel(skills: Skill[], passives: Passive[], initialLevel?: number | null) {

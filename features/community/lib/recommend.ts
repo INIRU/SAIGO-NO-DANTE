@@ -1,5 +1,5 @@
 import { notePreviewText } from '@/lib/notes/blocks'
-import { stripPlanForList } from '@/lib/planner/stripPlanForList'
+import { stripPlanForList } from '@/lib/planner/strip-plan-for-list'
 
 export type DiscoveryKind = 'deck' | 'planner'
 

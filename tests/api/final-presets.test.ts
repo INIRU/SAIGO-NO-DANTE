@@ -5,7 +5,7 @@ const calls: { op: string; args: unknown[] }[] = []
 let tableError: { message: string } | null = null
 let rpcError: { message: string } | null = null
 vi.mock('@/lib/auth', () => ({ requireActiveUser: async () => ({ error: false, session: { user: { email: 'a@b.c' } } }) }))
-vi.mock('@/lib/supabase/findOrCreateUser', () => ({ findOrCreateSupabaseUser: async () => 'user-1' }))
+vi.mock('@/lib/supabase/find-or-create-user', () => ({ findOrCreateSupabaseUser: async () => 'user-1' }))
 vi.mock('@/lib/supabase/admin', () => ({
   createAdminClient: () => ({
     schema: () => ({

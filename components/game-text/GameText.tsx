@@ -10,8 +10,8 @@ import type { GameTextNode } from '@/lib/game-text/rich-text'
 import { resolveKeywordIconUrl, type KeywordInfo } from '@/lib/keywords/catalog'
 import { findPlainKeywords, KEYWORD_TEXT_KEYWORDS, PLAIN_KEYWORDS, plainKeywordMatcher, type PlainKeywordHit, type PlainKeywordMatcher } from '@/lib/keywords/plain-keywords'
 import { KEYWORD_DEFAULT_COLOR, resolveKeywordTextColor } from '@/lib/keywords/text-color'
-import { useGameTextRefs } from '@/lib/hooks/useGameTextRefs'
-import type { GameTextRefName } from '@/lib/db/game-text-refs'
+import { useGameTextRefs } from '@/hooks/useGameTextRefs'
+import type { GameTextRefName } from '@/lib/game-text/ref-names'
 
 /** TextMeshPro's default font size in the game's skill text: `<size=18>` is half of it. */
 const FONT_BASE = 36
@@ -90,7 +90,7 @@ type GameTextKeywordProps = {
 
 /**
  * Draws parsed game source text (lib/game-text/rich-text.ts) the way the game does. `[Id]` refs are resolved with the
- * reference table (lib/hooks/useGameTextRefs): keywords are drawn by `keywordRef` (the keyword tooltip component of
+ * reference table (hooks/useGameTextRefs): keywords are drawn by `keywordRef` (the keyword tooltip component of
  * KeywordProvider, passed in so this file does not import it back: it shows tooltip descriptions with GameText),
  * skill tags are condition labels. Plain text is not searched for keywords, with one exception: the skill and passive text of an
  * identity or E.G.O (callers that set `matchPlainKeywords` and hand over its `allowedKeywords`) may name its keywords as plain

@@ -1,8 +1,9 @@
 'use client'
 
-import DeckCard, { type DeckSummary } from '@/features/decks/components/DeckCard'
+import DeckCard, { type DeckSummary } from '@/components/cards/DeckCard'
 import { useTranslations } from 'next-intl'
 import type { ReactNode } from 'react'
+import { NoteCardPreview } from '@/features/notes/components/NoteChips'
 
 export type DeckRecommendationSummary = DeckSummary & {
   reason?: string
@@ -77,7 +78,7 @@ export default function DeckRecommendations({
         description={t('otherOpinionsDescription')}
         count={otherOpinions.length}
       >
-        {otherOpinions.map(deck => <div key={deck.id} className="min-w-0"><DeckCard deck={deck} /></div>)}
+        {otherOpinions.map(deck => <div key={deck.id} className="min-w-0"><DeckCard deck={deck} NotePreview={NoteCardPreview} /></div>)}
       </RecommendationLane>
       <RecommendationLane
         id="similar-decks"
@@ -85,7 +86,7 @@ export default function DeckRecommendations({
         description={t('similarDecksDescription')}
         count={similarDecks.length}
       >
-        {similarDecks.map(deck => <div key={deck.id} className="min-w-0"><DeckCard deck={deck} /></div>)}
+        {similarDecks.map(deck => <div key={deck.id} className="min-w-0"><DeckCard deck={deck} NotePreview={NoteCardPreview} /></div>)}
       </RecommendationLane>
     </div>
   )

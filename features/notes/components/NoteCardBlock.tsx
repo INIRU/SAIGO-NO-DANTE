@@ -3,9 +3,10 @@ import { useEffect, useState } from 'react'
 import useSWR from 'swr'
 import { useLocale } from 'next-intl'
 import { Search, X } from 'lucide-react'
-import DeckCard, { type DeckSummary } from '@/features/decks/components/DeckCard'
-import PlanCard, { type PlanSummary } from '@/features/planner/components/PlanCard'
+import DeckCard, { type DeckSummary } from '@/components/cards/DeckCard'
+import PlanCard, { type PlanSummary } from '@/components/cards/PlanCard'
 import BaseModal from '@/components/ui/BaseModal'
+import type { NotePreviewComponent } from '@/components/cards/note-preview'
 import type { CARD_KINDS } from '@/lib/notes/blocks'
 import { tr } from '@/features/notes/lib/tr'
 
@@ -16,13 +17,13 @@ const fetchCards = async (url: string): Promise<CardRow[]> => {
   if (!response.ok) throw Error('Cards unavailable')
   return response.json()
 }
-export function NoteCardView({ kind, id }: { kind: NoteCardKind; id: string }) {
+export function NoteCardView({ kind, id, NotePreview }: { kind: NoteCardKind; id: string; NotePreview?: NotePreviewComponent }) {
   const lang = useLocale()
   const { data, error, isLoading } = useSWR(id ? `/api/notes/cards?kind=${kind}&refs=${encodeURIComponent(id)}` : null, fetchCards, { revalidateOnFocus: false })
   const row = data?.[0]
   if (!id) return null
   return <div className="note-card">
-    {row ? kind === 'deck' ? <DeckCard deck={row} /> : <PlanCard plan={row} />
+    {row ? kind === 'deck' ? <DeckCard deck={row} NotePreview={NotePreview} /> : <PlanCard plan={row} NotePreview={NotePreview} />
       : <div className="note-card-unavailable" aria-busy={isLoading}>{isLoading ? '…' : error || data ? tr(lang, '찾을 수 없습니다', '見つかりません', 'Not found') : '…'}</div>}
   </div>
 }
@@ -30,7 +31,7 @@ export function NoteCardView({ kind, id }: { kind: NoteCardKind; id: string }) {
  * Search window for the card block, in the gift picker's frame (note-direct-picker): search and deck/plan on the left,
  * the matching posts as the board cards on the right. A card is shown, not followed: a transparent button over it picks it.
  */
-export function NoteCardPicker({ kind, onKind, onSelect, onClose }: { kind: NoteCardKind; onKind: (kind: NoteCardKind) => void; onSelect: (kind: NoteCardKind, id: string) => void; onClose: () => void }) {
+export function NoteCardPicker({ kind, onKind, onSelect, onClose, NotePreview }: { kind: NoteCardKind; onKind: (kind: NoteCardKind) => void; onSelect: (kind: NoteCardKind, id: string) => void; onClose: () => void; NotePreview?: NotePreviewComponent }) {
   const lang = useLocale(), [query, setQuery] = useState(''), [debounced, setDebounced] = useState('')
   useEffect(() => { const timer = setTimeout(() => setDebounced(query), 200); return () => clearTimeout(timer) }, [query])
   const { data, error, isLoading, mutate } = useSWR(`/api/notes/cards?kind=${kind}&q=${encodeURIComponent(debounced)}`, fetchCards, { revalidateOnFocus: false })
@@ -49,7 +50,7 @@ export function NoteCardPicker({ kind, onKind, onSelect, onClose }: { kind: Note
           {error && <button type="button" onClick={() => { void mutate() }}>{tr(lang, '불러오지 못했습니다. 다시 시도', '読み込み失敗・再試行', 'Could not load. Retry')}</button>}
           {!isLoading && !error && data?.length === 0 && <p className="note-picker-empty" role="status">{tr(lang, '검색 결과가 없습니다', '結果がありません', 'No results')}</p>}
           {!!data?.length && <div className="note-card-grid">{data.map(row => <div key={row.id} className="note-card-option">
-            <div className="note-card-option-card" inert>{kind === 'deck' ? <DeckCard deck={row} /> : <PlanCard plan={row} />}</div>
+            <div className="note-card-option-card" inert>{kind === 'deck' ? <DeckCard deck={row} NotePreview={NotePreview} /> : <PlanCard plan={row} NotePreview={NotePreview} />}</div>
             <button type="button" aria-label={`${row.title} ${tr(lang, '넣기', '挿入', 'Insert')}`} onClick={() => onSelect(kind, row.id)} />
           </div>)}</div>}
         </div>
